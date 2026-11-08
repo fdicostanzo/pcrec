@@ -1,67 +1,116 @@
 # Span arms: the REP, EMPTY and positive-LOOKAROUND arms of the one fixed-width description
 
-**Status: PROPOSED rev 0** (lane spanarms, opus, 2026-11-08; design and single-pattern
-measurement only, no build go). Base: main `7b9ddd890` (every `file:line` below is at that
-commit). Plan rows: [REPEAT-RUN], [REQ-EMPTYCAT] (its quantified half), [REQ-LOOKAROUND]; parent
-note `docs/design/alt_normal_form.md` (its §3.5 arm table, §3.6, §9 rows S2-S4 and §10's "the
-follow-up notes ... decision points listed, not decided" are what this note decides). Next in
-Frank's 2026-11-06 order: [REWRITE-ADJ] after this note settles.
+**Status: PROPOSED rev 1** (lane spanarms2, opus, 2026-11-08; design and single-pattern measurement
+only, no build go). Rev 1 answers review `docs/dev/reviews/2026-11-08-r1-spanarms.md` as RULED in
+its "Manager rulings (2026-11-08)" section; the disposition table is §R1, and changed text is
+marked `[r1 Fn]`. Rev 0: lane spanarms, main `7b9ddd890`.
 
-Evidence: `docs/dev/lanes/spanarms_evidence/` (`probe.sh`, the facts probe over the lane's own
-build of `7b9ddd890`; `*.out`, its outputs; `oracle.out`, every expected answer quoted below,
-from libpcre2-8 10.46 through `tests/lib/p2probe.c`). "Measured" means one of those files;
-"predicted" means the spelled-out equivalent was measured (`xy(?:ab){2}zw` is predicted from the
-measured run of `xyababzw`), never a hand count.
+**Base: main `dd2fe2de9`.** Between rev 0's base `7b9ddd890`, the review's build tree `14de2b00d`
+and `dd2fe2de9`, nothing under `src/`, `cli/`, `lib/`, `docs/spec/` or `memfn/include/` changed
+except memfn.h's target section (+96 lines after `:1699`, the K0 target table) and three new
+`memfn/src/targets*` files. No line this note cites moved, so every `file:line` holds at all three.
 
-The note's one claim: **each of the three arms is ONE rule over the description, stated as a
-language identity, so its soundness is the CAT arm's soundness and nothing new**:
+Plan rows: [REPEAT-RUN], [REQ-EMPTYCAT] (its quantified half), [REQ-LOOKAROUND]. Parent note:
+`docs/design/alt_normal_form.md` (§3.5's arm table, §3.6, §9 rows S2-S4, and §10's "the follow-up
+notes ... decision points listed, not decided" are what this note decides). Next in Frank's
+2026-11-06 order: [REWRITE-ADJ], after this note settles.
 
-- REP: `X{m,n}` IS `X^m · X{0,n-m}` and IS `X{0,n-m} · X^m` (two decompositions of one
-  language); `X^m` is m copies through the CAT arm.
-- EMPTY: a node that consumes nothing contributes the WIDTH-0 GROUP, CAT's unit; it is EXACT
-  when it cannot fail and GUARDED when it can.
-- positive LOOKAROUND: a guarded unit plus a GUARD, the body's fixed affix placed at its offset
-  from the cursor; it INTERSECTS the consumed positions it overlaps and EXTENDS past them, and
-  how far it may extend past the match is a REACH that each reader admits or refuses.
+**Readiness, as ruled.** The REP + EMPTY half (units E1, R1, E2) was READY WITH TEXT FIXES; rev 1
+applies them (F3, F4, F6, F7, F14 and their doc items) and changes nothing else in §3-§4, so that
+half goes to Frank for a build go with no further round. The LOOKAROUND half (L1, L2, L3) is
+redesigned here (§5, T4) and needs a re-check round before Frank's go.
 
-## 0. Premise tests (main `7b9ddd890`, all HOLD)
+Evidence: rev 0's `docs/dev/lanes/spanarms_evidence/`, plus rev 1's
+`docs/dev/lanes/spanarms2_evidence/`: `oracle.out` (every expected answer rev 1 adds, libpcre2-8
+10.46 through `tests/lib/p2probe.c`, driver `or.sh`), `facts_today.out`/`facts_extra.out`
+(today's facts and stamps of every witness, `build/pcrec` at `dd2fe2de9`, driver `facts.sh`),
+`spell.out` (the spelled equivalents), `span_decline.out` and `nested_lb.out`. "Measured" means
+one of those files. "Predicted" means the spelled-out equivalent was measured. "Hand-derived"
+means the rule was applied by hand; rev 1 uses it only where no spelling is equivalent, and says
+so.
+
+The note's one claim: **each arm is ONE rule over the description, stated as a language identity
+or as a placement of one fact, so its soundness is the CAT arm's soundness and nothing new**:
+
+- REP: `X{m,n}` IS `X^m · X{0,n-m}` and IS `X{0,n-m} · X^m`; `X^m` is m copies through CAT.
+- EMPTY: a node that consumes nothing contributes the WIDTH-0 UNIT of CAT. `[r1 F16]` Rev 0's
+  EXACT/GUARDED split had no reader and is gone from every rule.
+- positive LOOKAROUND `[r1 F1, F2, F15]`: the width-0 unit plus the lookaround's ITEM, the body's
+  fixed affixes at signed offsets from the cursor. The item is the first member of D168's
+  context producer (§5.3). The run reads it as PENDING GUARDS on the run value: `rr_cat` meets
+  them against its neighbour, carries them across an `all` neighbour and drops them anywhere
+  else. Only the top level decides whether a guard extends the run past the attempt's consumed
+  span, and that is the reach the readers admit.
+
+## §R1. Disposition table (every finding of review 2026-11-08 r1, as ruled)
+
+| finding | ruling | what rev 1 changed | where |
+|---|---|---|---|
+| F1 the lookahead arm never sees its right neighbour | FIX-NOW | the guard is carried IN the run value (`rg`, `lg`) and met in `rr_cat` against `r.head`/`l.tail`: T4 is a set of combinator rows, not an arm rule. Witness W-L5 `a(?=b)[bc]`/`ab` | §2, §5.1, §5.2 row CAT-R, T4, §5.7 |
+| F2 guard propagation unstated | FIX-NOW | one declared row per combinator: ITEM (with nested lookarounds, (d)), CAT-R, CAT-L, CAT-EDGE (stacking, (c)), ALT (b), REP, EMPTY-MEET, TOP (tail/best, (e)). No extension below the top level, so `all` never sees guard bytes (a) and no min width is needed (f). "Back never shrinks": a guard is absorbed, carried across an exact-width neighbour, or dropped (f). Each row has a witness with libpcre2 answers | §5.2, T4, §5.7 |
+| F3 no witness for `maxw` from the c copies | FIX-NOW | W-R6 `(a.){10}xyz` (VM, K 20 measured) and its DFA twin `(?:a.){10}.?xyz` (K 21 measured); plant `maxw = c·w` | §3.6 |
+| F4 T2 row 1 has no guard column | FIX-NOW | T2 has a guard column; a min-0 width-0 repeat drops its guard. Witness `x(?=ab)?a[bc]`/`xac` in L1's gate (rev 0's `x(?=ab)?ac` empties a position, which no reader sees, F5) | T2, §5.7, §8 |
+| F5 W-E1 and W-L3 cannot fail | FIX-NOW | the run after an empty meet is stated (EMPTY-MEET: the position keeps its consumed value, the dead fact is listed). W-E1 is `x(?!ab)a[bc]`/`xac`. L1 has `[ac]b(?<=ab\|b)c`/`cbc`; `(?<=ab\|b)c` stays at L3. W-E1 leaves E2's gate (E2 has no meet site) for L1's | §4.5, §5.2, §5.7, §8 |
+| F6 W-R5 equivalent mutant; saturation one copy loose | FIX-NOW | saturation is `ceil(32/w)` over the content fields; offsets come from the c-copy prefix; W-R5's plant is `ceil(32/w) − 1` copies (30 positions against 32) | §3.1, §3.6, T2 |
+| F7 T2 row 2 shadows `X{0}` | FIX-NOW | row 2 deleted (a deleted special case); `m = n = 0` reaches the `m = n` row; W-R3's plant is "c from max(m, 1)" | T2, §3.6, §9 |
+| F8 BACK reader census incomplete | FIX-NOW | §5.4 rows A8-A12 (handoff entry, the derivations and the −1 sentinel, the pick arithmetic, trace readers, the printers); the kit's `head_max` beside `omin`; the K sinks; the VM route's caller text. BACK changes at seven sites, not four | §5.4, §8 L3, §13 Q3 |
+| F9 the BACK bound is borrowed from the wrong seam | FIX-NOW | the reach is the run's signed interval `[omin, maxoff]` from the attempt start, two existing slots. The bound is a declared POLICY row, `-omin <= lb_bytes` (`Ctx.lb_max` in the encoding's bytes). It is not an invariant: a nested lookbehind reads further back than `lb_max` (measured, §5.5) | §2, §5.5, §13 Q5 |
+| F10 §5.2's reason for "no extension" is wrong | DOC | corrected: `[bc]` is a cube; the guard's second position meets no stored run position because `a.` is not `all`; rev 1 predicts `xa` | §5.6 |
+| F11 `kset_walk` does not decline on lookarounds | DOC | §0 corrected; E2's census counts the window statement's R-span movers too | §0, §4.3, §8 E2 |
+| F12 "the kit verifies a candidate against every span" | DOC | "the kit honours each span's verify flag" | §5.3 |
+| F13 `emit_vm.c:4093` is a comment | DOC | `emit_vm.c:4177` | §4.2 |
+| F14 "the match" must mean the attempt span | DOC | defined once in §2; §4.3 and the L2 spec hunk use it | §2, §4.3, §8 L2 |
+| F15 D168 not cited | FIX-NOW | the guard READS D168's producer at its ITEM grain. STOP-RULE finding: the producer's signed-offset half does not exist at `dd2fe2de9`, so the item is designed as its FIRST member, and span_facts' context half becomes its second reader (§5.3) | §5.3, §10, §12 |
+| F16 `ahead` and EXACT/GUARDED have no reader | FIX-NOW | no stored `ahead` (L2 widens the run and the stamp sentence only); no EXACT/GUARDED rule; `exact = false` is kept on a can-fail width-0 group as a sound superset, with no reader | §2, T2, T3, §4.2, §12 |
+| F17 remodel-overlap column missing | FIX-NOW + PLAN | §8 has the column (L3 against A-POSDOM and A-REV; E1/E2 against stage 2a); one fixed-tail producer is named (the description's tail affix of a subtree); the stale gate text of plan rows [REQ-LOOKAROUND] and [RUN-POS-SET] is refreshed | §5.2, §8; plan.md |
+| F18 the lever fires the parent's general form without taking it | FIX-NOW (ruled: take FIX-8's form) | `facts.def`'s deny admits a HARNESS source; the restorable arms are rows of one table; the `--harness=` if-chain is filed as a PLAN member | §3.7, §5.8, §9; plan.md |
+| F19 the lever rule is cited to memory; bit 31 at L3 | DOC | repo homes cited; L3 re-specifies bit 31's text (tuning.md §2.28¶1) | §3.7, §5.8, §8 L3 |
+| F20 a "fact" kind D186 does not have | DOC (ruled: trigger NOT fired) | "a fact change is an INPUT to the existing choice rows, judged at the pick rows it moves, with D186's choice bar applied there" | G4, §8 |
+| F21 `facts_listing.md` hunk | DOC | named in the L1 and L2 gates (facts_listing.md §4.1.2 and §4.1.3) | §8 |
+| F22 W-R3/W-R4's correct run is a tie | NOTED | noted beside the witnesses | §3.6 |
+| standing questions (sibling; general form + unlocks) | PLAN | the general form is §5.3; the four unlocks are filed as plan rows with triggers ([LOOK-LOCATE], [CTX-SIDES-PRODUCER], [PRES-OMIN-TRUE], [DESC-DEAD]), nothing scheduled | §10; plan.md |
+| F18 ruling, second half | PLAN | the `--harness=` lever if-chain in `cli/main.c` is filed as [HARNESS-LEVERS], a member of the facts.def-deny family | plan.md |
+
+## 0. Premise tests (main `dd2fe2de9`, all HOLD unless marked)
 
 - **REP keeps only the body's best.** `rb_rep_into` (`src/facts/req.c:549-558`) builds
   `rr_none(rr_rep_w(rmax, ...))`, copies in `b->runs.best` alone and sets the description to
-  `pcrec_pd_none()` with the comment "REP{n,n} is [REPEAT-RUN]'s (§3.5)" (`:557`). The `A_REP` arm
+  `pcrec_pd_none()`, with the comment "REP{n,n} is [REPEAT-RUN]'s (§3.5)" (`:557`). The `A_REP` arm
   (`:708-740`) takes it at `rmin >= 1` (`:721`) and a gap at `rmin == 0` (`:739`). Nothing is
-  joined across an iteration. Measured: `A{4}` run none, `AAAA` `41414141`; `xy(?:ab){2}zw` run
-  `ab` (2), `xyababzw` 8; `ab{3}c` none, `abbbc` 5.
+  joined across an iteration. Measured: `A{4}` gives run none against `AAAA`'s `41414141`;
+  `xy(?:ab){2}zw` gives `ab` (2) against `xyababzw`'s 8; `ab{3}c` gives none against `abbbc`'s 5.
 - **The lookaround cuts the run.** `case A_LOOK:` (`req.c:761`) falls into `rb_row_into`
   (`:637-645`), whose `KTEXT_ZERO` arm calls `rb_assert_into` (`:627-631`): `rr_none(0)`, a cut,
-  and the description `pd_none`. The header's reason is `req.c:58-63` (a lookbehind's bytes sit
-  before the match start, possibly before `search_from`). Measured: `(?<=foo)bar` run `bar`,
-  `bar(?=baz)` `bar`, `xyz(?<=yz)abc` `abc` (the consumed `xyz` cut too).
-- **The EMPTY arm is not built either.** `case A_EMPTY:` is in the same cut list (`req.c:756`);
-  stage 2a of alt_normal_form is census-first and unbuilt (plan [RUN-POS-SET] status
-  2026-11-07). Measured: `abcd()efgh`, `abcd(?:|)efgh`, `abcd(?:)*efgh`, `abcd(?:){3}efgh`
-  all run `efgh` (4). Not a STOP: the brief asks what remains after 2a's move; §4 keeps 2a's
-  direct half as its first row, unchanged, and designs the rest.
-- **The description module has no power or guard arm.** `src/facts/desc.h:43-47`: unit,
-  none, pos, cat, alt. The adjacency head's REP arm is a WALL (`src/opt/altnf.c:223-230`,
-  alt_normal_form §3.5 r7 FIX-1: "a REP head waits for [REPEAT-RUN]").
-- **The SPAN facts already see through repeats.** `span_facts` and `kset_walk`
-  (`src/facts/kset.c`, NFA-level, shape-blind) report `A{4}` as `4:65,65,65,65` and
-  `xy(?:ab){2}zw` as `8:120,121,97,98,97,98,122,119`, identical to the spelled forms. So
-  [REPEAT-RUN]'s "span analysis" half is ALREADY true; its run half is not. Both decline on a
-  lookaround (`decline:erased-nfa`), except where the NFA itself narrows a one-character
-  context (`a(?=b)[bc]` span `2:97,98`).
-- **What the window site carries today (D172).** The window statement admits span starts in
-  `[-MF_MAX_BACK, MF_WREACH)` = `[-8, 64)` (`memfn/include/memfn.h:235`, `:586-591`), checked
-  loudly at `src/gen/memfn_sites.c:587-592`. pcrec states exactly two negative starts, both
-  `-1`: MLINE's predecessor stop `{-1: \n}` (`src/gen/emit_dfa.c:8393`; `find_site` refuses any
-  other negative offset, `:6909`) and the cover site's context-before side (`src/gen/known.c:465`,
-  `MkEnd.ctx_before`, a MACHINE fact read off the anchored DFA, `src/gen/known.h:25`). The run
-  span R (`pf_window_of`, `emit_dfa.c:6815-6871`) never starts below 0: `walk_proves` refuses
-  `d < 0` (`:6809`). No lookbehind body's bytes are stated anywhere; D172's "fixed lookbehinds
-  ... longer than 1 come with it" is unbuilt. The one existing "step back by the lookbehind"
-  precedent is the UTF check (`emit_dfa.c:745-749`, `<prefix>_VALID_LB` = `Ctx.lb_max`,
-  `:3610-3617`).
+  and the description `pd_none`. Measured: `(?<=foo)bar` gives `bar`, `bar(?=baz)` gives `bar`,
+  and `xyz(?<=yz)abc` gives `abc` (the consumed `xyz` is cut too).
+- **The EMPTY arm is not built either.** `case A_EMPTY:` is in the same cut list (`req.c:756`).
+  Stage 2a of alt_normal_form is census-first and unbuilt. §4 keeps 2a's direct half as its first
+  row, unchanged.
+- **The description module has no power or guard arm.** `src/facts/desc.h:43-47` has unit,
+  none, pos, cat and alt. The adjacency head's REP arm is a WALL (`src/opt/altnf.c:223-230`).
+- **The walk is right-to-left and every non-leftmost spine element gets a fresh accumulator**
+  `[r1 F1]`. The `A_CAT` arm walks `a->r` into a fresh slot (`req.c:682`), and every
+  `rb_walk_at` starts with `rb_init(acc)` (`:677`). So an arm sees "everything to its right" only
+  when it is the LEFTMOST element of its spine. Any rule that must see a neighbour therefore lives
+  in `rr_cat`, which every concatenation passes through.
+- **The SPAN facts see through repeats; only `span_facts` declines on a lookaround**
+  `[r1 F11]`. `kset_walk` reports `A{4}` as `65,65,65,65` and is DERIVED on every lookaround
+  witness: `xyz(?<=yz)abc` gives `120,121,122,97,98,99`, all six consumed bytes. `span_facts`
+  DECLINES (`decline:erased-nfa`) on `(?<=foo)bar`, `bar(?=baz)` and `xyz(?<=yz)abc`
+  (`span_decline.out`). It states only where the recognizer made an `A_CTX` (`a(?=b)[bc]` gives
+  `2:97,98`).
+- **D168's producer at `dd2fe2de9`** `[r1 F15]` (the brief's premise test; §5.3 has the finding).
+  `span_facts` is `MkLang` (`src/facts/facts.h:286-292`): `S_d` at offsets `d >= 0` from the match
+  start only. The context half (`MkCtx`, per-item terms at negative offsets and past the end,
+  `docs/design/ctx_span.md` §3.2) is designed and not built ([DD-11.5] part 1, P1a/P1b). `grep -n
+  'nctx\|MkCtx' src/facts/facts.h` finds nothing.
+- **What the window site carries today (D172).** Span starts in `[-MF_MAX_BACK, MF_WREACH)` =
+  `[-8, 64)` (`memfn/include/memfn.h:235`, `:586-591`), checked at `src/gen/memfn_sites.c:587-592`.
+  pcrec states two negative starts, both `-1`: MLINE's predecessor stop (`src/gen/emit_dfa.c:8393`)
+  and the cover site's context-before side (`src/gen/known.c:465`, `MkEnd.ctx_before`,
+  `src/gen/known.h:25-27` with `absent_*`). The run span R never starts below 0 (`walk_proves`
+  refuses `d < 0`, `emit_dfa.c:6809`). The UTF check's step back is `<prefix>_VALID_LB` =
+  `Ctx.lb_max` (`emit_dfa.c:3610-3617`).
 
 ## 1. Goals
 
@@ -70,111 +119,120 @@ Ranked; the higher wins a conflict.
 | # | goal | who benefits | measurable form (comparison, margin) |
 |---|---|---|---|
 | G1 | No answer moves | every caller | answer identity over corpus + bench, every encoding and axis (`make test`, `make test-axes`), PC-3 unchanged; margin 0 |
-| G2 | Each arm is ONE rule in the one description | maintainers | per unit, the ledger (§9) lists the special cases deleted and the arm rows added; no second walk, no per-construct clause (`A{4}`, `(?:)*`, `(?=..)` are rows of one arm each); the reader of the description stays `req.c`'s one walk |
-| G3 | No reader reads a run outside its admitted reach | every caller | every reader of a moved fact is in §5.4's admission table with its reach; a unit that widens a reach names the reader and its witness; unlisted reader = red at review |
-| G4 | D186's bar per unit, per regime | users with pinned performance | each unit declares its kind (fact / choice) per regime; a choice unit: no regime loses beyond noise on every bench cell whose pick moved |
-| G5 | The movers are the census's | the build lane, the critic | each unit's emitted movers equal an independent model's list (two-sided) over corpus + bench, both encodings; this note's predicted movers (§3.5, §4.5, §5.6) are the model's spot checks |
+| G2 | Each arm is ONE rule in the one description | maintainers | per unit, the ledger (§9) lists the special cases deleted and the rows added; no second walk, no per-construct clause; the run stays `req.c`'s one walk; a lookaround body's per-offset sets have ONE producer (§5.3) |
+| G3 | No reader reads a run outside its admitted reach | every caller | every reader of a moved fact is in §5.4's table with its reach; a unit that widens a reach names the reader and its witness; an unlisted reader is red at review |
+| G4 | D186's bar at every pick row a unit moves, per regime `[r1 F20]` | users with pinned performance | every unit is a FACT change: an INPUT to the existing choice rows, judged at the pick rows it moves, with D186's choice bar applied there (no regime loses beyond noise on a bench cell whose pick moved; a loss narrows that pick row's condition) |
+| G5 | The movers are the census's | the build lane, the critic | each unit's emitted movers equal an independent model's list (two-sided) over corpus + bench, both encodings; the predicted movers here are its spot checks |
 
-Non-goals: the VM half of [REPEAT-RUN] (a counter loop vs one compare: a separate CHOICE row
-with A-ISL overlap, §3.8); lookaround REMOVAL, span intersection as an IR node, the end-of-match
-mark and the group-0 group ([POSTFACT]'s 2026-11-08 entries; §7 only notes where they meet
-this note); negative lookarounds beyond the guarded unit; [REWRITE-ADJ]; making kset/startset/
-endwin readers of the description (alt_normal_form G-1); new public flag bits.
+Non-goals: the VM half of [REPEAT-RUN] (§3.8); lookaround REMOVAL, span intersection as an IR
+node, the end-of-match mark and the group-0 group ([POSTFACT], §7); negative lookarounds beyond
+the width-0 unit; [REWRITE-ADJ]; making kset/startset/endwin readers of the description
+(alt_normal_form G-1); new public flag bits; the necessary SET taking guard bytes (§5.2: T4 is a
+run rule).
 
 ## 2. The general form
 
-alt_normal_form §3.5: every fixed-width, capture-free piece has ONE description, a small set of
-width groups, each a sequence of position sets with an `exact` bit, built bottom-up by the arm
-combinators of `src/facts/desc.c` and read by `req.c`'s walk (the run) and `altnf.c` (the
-adjacency head). This note adds one notion and three arms.
+alt_normal_form §3.5: every fixed-width, capture-free piece has ONE description, built bottom-up by
+the arm combinators of `src/facts/desc.c` and read by `req.c`'s walk (the run) and `altnf.c` (the
+adjacency head). This note adds three arms and one carried value.
 
-**The one notion: a GUARD and its REACH.** A description has a CONSUMED part (today's groups,
-their positions at offsets `[0, width)` from the subtree's start) and a GUARD part: positions the
-subject must hold at stated offsets from the subtree's start that the subtree does not consume,
-offsets that may be NEGATIVE (before the subtree) or `>= width` (after it). The run carries its
-guard as a REACH pair `(back, ahead)`: how many of its positions may lie before the match start
-and after the match end. Every run today has reach `(0, 0)`. The soundness statement grows by
-one clause: "every match contains the run at contiguous subject offsets, beginning at most
-`back` bytes before the match start and ending at most `ahead` bytes after its end." A run with
-`back > 0` still lies inside `[max(0, search_from - back), subject_length)`, because PCRE2 lets a
-lookbehind read before the start offset, so a scan that starts `back` bytes earlier reads only
-bytes the matcher may read.
+**The attempt span** `[r1 F14]`. Every run statement is relative to the ATTEMPT: from the
+position the attempt starts at (`p`, where `search_from` and the handoff put it) to the end of
+what the attempt consumed. The REPORTED match may start later (`\K`): today `abc\Kd` stamps
+`RX_REQ_RUN "616263@1"` while its match is (3,4) (measured; oracle M 3 4). Every reader is
+attempt-relative (invariant F, `src/facts/facts.h:79-87`, "every successful attempt at `p`"), so
+no answer depends on the distinction. The wording does, and §8's spec hunks use "attempt".
+
+**The reach is the run's signed offset interval `[omin, maxoff]`** `[r1 F9, F16]`. `maxoff` is
+`ReqRun.maxoff` (K82): the largest offset from the attempt start at which the run can begin.
+`omin` is its lower twin, the smallest such offset. The kit's presence span already has that slot
+(`memfn.h:679-684`, `int32_t omin`, "the smallest offset, from the MATCH START, at which an
+occurrence of the span can begin"; refused below 0 today, `memfn/src/compose.c:608`). Every run
+today has `omin = 0`. The soundness statement becomes: "every successful attempt at `p` holds the
+run at some `q` in `[p + omin, p + maxoff]`". `omin < 0` (the run begins before the attempt
+start) is BACK, L3. A run that ends past the attempt's consumed end (AHEAD, L2) needs no new
+value: no reader reads the run's end (§5.4), so no `ahead` field is stored (D77) until one does.
+A run with `omin < 0` still lies inside the subject: the scan begins at
+`max(0, search_from + omin)`, and the bytes before `search_from` are ones the matcher may read,
+because PCRE2 lets a lookbehind read before the start offset.
+
+**Pending guards** `[r1 F1, F2]`. A run value (`RbRuns`) carries two pending guards beside its
+consumed runs: `lg`, run positions at offsets `[-t, 0)` before the value's start, and `rg`, run
+positions at offsets `[0, h)` after its end. Each guard position is a cube, like a run position.
+A guard comes only from a positive lookaround's ITEM (§5.1). Below the top level a guard is never
+a byte of `head`, `tail` or `best`. `rr_cat` MEETS it against its neighbour's consumed positions
+(an intersection), CARRIES what is left across an `all` neighbour (whose width is exact), and
+DROPS it at any other neighbour. Only the top level (row TOP) may extend the run with a guard,
+and only at the reach its readers admit. Dropping a guard drops a necessary condition, which is
+always sound; an intersection of two necessary conditions is necessary.
 
 **The three arms, one row each in the arm table (§6 T1):**
 
-| node | consumed part | guard part | proof (a language identity) |
+| node | consumed part | guards | proof |
 |---|---|---|---|
-| REP `X{m,n}`, m ≥ 1 | head and best from `X^m · X{0,n-m}`, tail from `X{0,n-m} · X^m`; `all` iff m = n and `X^m` is `all` | the body's guards, per copy | `X{m,n}` = `X^m X{0,n-m}` = `X{0,n-m} X^m`; CAT is sound on each |
-| REP `X{0,n}` | the width-0 EXACT unit where X's description is width 0 (it can match zero iterations); otherwise today's gap | none | `X{0,n}` admits ε; a width-0 X adds nothing else consumed |
-| a node that consumes nothing (`A_EMPTY`, `\b`, `$`, `\G`, `\K`, a check callout, a lookaround) | the width-0 group: EXACT if the node cannot fail (`A_EMPTY`), GUARDED if it can | none, except a positive lookaround's | consumed bytes on either side of a zero-width node are adjacent in the subject |
-| positive LOOKAROUND | the GUARDED unit | lookahead: the body's fixed HEAD affix at `[0, h)`; lookbehind: the body's fixed TAIL affix at `[-t, 0)` | the body matches at the cursor, so its fixed affix's positions hold in the subject there |
-| negative lookaround, backref, variable, call | unchanged (a negative lookaround is a GUARDED unit; the others stay walls) | none | — |
+| REP `X{m,n}` | §3's T2 rows: `X^c` through CAT, head/best from `X^c · X{0,n-m}`, tail from `X{0,n-m} · X^c` | the copies' guards, through CAT (`lg` from the left decomposition, `rg` from the right); none at `m = 0` for a width-0 body | `X{m,n}` = `X^m X{0,n-m}` = `X{0,n-m} X^m`; CAT is sound on each |
+| a node that consumes nothing (`A_EMPTY`, `\b`, `$`, `\G`, `\K`, a check callout, a negative lookaround) | the width-0 unit (`rr_unit()`: no run, `all`, width 0) | none | consumed bytes on either side of a zero-width node are adjacent in the subject |
+| positive LOOKAROUND | the width-0 unit | the ITEM's terms (§5.1): `rg` from a lookahead body's head affix, `lg` from a lookbehind body's tail affix, plus the body's own guards at their offsets | the body matches at the cursor, so its fixed affixes hold in the subject there |
+| backref, variable, call | unchanged walls | none | — |
 
-GUARDED vs EXACT matters to one reader only: the owner (`altnf.c`) may treat only an EXACT unit
-as "nothing here" in a rewrite; the run (a superset statement) joins across both. The adjacency
-head ALREADY reads through every zero-width node (`altnf.c:192-210`), so the owner's column does
-not move.
+`[r1 F16]` Rev 0's EXACT/GUARDED split is gone. It had one claimed reader (the owner), and the
+owner reads `PdHead`, which has no exact bit (`altnf.c:187-212`); `PdGroup.exact` is read only
+inside `desc.c`. A width-0 group for a node that can fail keeps `exact = false` in the
+description, a sound superset (`facts.h:95-96`) with no reader. A unit that needs the distinction
+(R2, if its census fires) names its reader and witness then.
 
 ## 3. The REP arm ([REPEAT-RUN], alt_normal_form §9 S3)
 
 ### 3.1 The rule and its six decision points
 
-alt_normal_form §9 S3 lists six points; each is decided here.
-
-1. **REP as the description's power arm, not a `req.c`-local rule.** One combinator in
-   `desc.c` (`pcrec_pd_pow`, name at build) and the run walk's `A_REP` arm calling the CAT step
-   `m` times on the run accumulator. A `req.c`-local `rr_rep` would be a second spelling of CAT
-   for one kind; the power IS repeated CAT, so it reuses `rr_cat` and `pcrec_pd_cat` and adds
-   only the copy loop.
+1. **REP as the description's power arm, not a `req.c`-local rule.** One combinator in `desc.c`
+   (`pcrec_pd_pow`, name at build), and the run walk's `A_REP` arm calling the CAT step on the
+   body's value. A `req.c`-local `rr_rep` would be a second spelling of CAT; the power reuses
+   `rr_cat` and `pcrec_pd_cat` and adds only the copy loop.
 2. **The iteration-boundary join is sound because it is the CAT join.** reqpos_2b.md §2.4 item 4
-   declined it "for want of a witness family", not for a soundness gap. Under the rule, the join
-   between copy i's tail and copy i+1's head is `rr_cat`'s own `join` (`req.c:450-468`), whose
-   soundness is today's; the witnesses of §3.6 are the family the decline asked for.
-3. **The copy count is DERIVED from the run's storage bound, no constant.** Unrolling stops at
-   the first of: m copies; or SATURATION, the copy after which no stored field can change. A
-   body that is not `all` saturates at 2 copies (every later copy adds the same join
-   `tail · head` again); an `all` body of width w ≥ 1 saturates when the stored head is full,
-   at `ceil(PCREC_MAX_REQ_RUN_SCAN / w) + 1` copies (`limits.def:409`, 32 bytes); a width-0
-   body is the unit (zero copies). `maxw` is always the exact `rr_rep_w(rmax, ...)`
-   (`req.c:436-440`), and the head's `trunc` bit is set exactly as `rn_app` sets it today. No
-   limits row is added: the bound is a property of an existing one.
+   declined it "for want of a witness family", not for a soundness gap. The join between copy i's
+   tail and copy i+1's head is `rr_cat`'s own `join` (`req.c:450-468`). §3.6 is the family.
+3. **The copy count is DERIVED from the run's storage bound, no constant** `[r1 F6]`. Unrolling
+   stops at `c = min(m, sat)`, where `sat` is the copy count after which no CONTENT field (head,
+   tail and best bytes, `all`, `trunc`) can change. A body that is not `all` saturates at 2 (every
+   later copy adds the same `tail · head` join). An `all` body of width w ≥ 1 saturates at
+   `ceil(PCREC_MAX_REQ_RUN_SCAN / w)` copies (`limits.def:409`, 32 bytes): its stored head is full
+   there, and T2 forces `all` false whenever `c < m`. Rev 0's `+ 1` changed only `best.off` (it
+   loosens by w per extra copy, soundrep SOUNDREP-2). OFFSETS are not content: they come from the
+   c-copy prefix (below), never from more copies. `maxw` is ALWAYS the exact `rr_rep_w(rmax, ...)`
+   (`req.c:436-440`), never `c · w` (F3, W-R6). No limits row is added. Any `c <= m` is sound,
+   since `X^c` is a factor of `X^m`; `sat` is where more copies stop adding information. For a
+   body that carries a guard (an L unit), one more copy can still narrow the last stored copy by
+   its neighbour's guard. That is a looser but sound value at `sat`, and L1's census shows whether
+   it matters.
 4. **The VM half is a separate CHOICE row** (§3.8): not this note's.
-5. **`NFA_ERASED_COUNT` is unaffected.** The run is AST-derived (`req.c:107`); the prefilter's
-   count collapse reads the NFA. Nothing here reads or writes it.
+5. **`NFA_ERASED_COUNT` is unaffected.** The run is AST-derived (`req.c:107`).
 6. **The population census is the trigger (D77)**, §8 unit R1.
 
-**Offsets ([K82]).** In `X^m · X{0,n-m}` the first m copies start at the repeat's start, so the
-head is at 0 and `best` keeps the offset the unrolled CAT computes; in `X{0,n-m} · X^m` the tail
-ends at the repeat's end, so `rn_tail_off(maxw, n)` (`req.c:428-431`) applies unchanged. The
-best of the two decompositions is taken from the first (its offsets are the smaller bounds);
-the second contributes the tail only.
+**Offsets ([K82]).** In `X^c · X{0,n-m}` the copies start at the repeat's start: the head is at 0
+and `best` keeps the offset the c-copy CAT computes. In `X{0,n-m} · X^c` the tail ends at the
+repeat's end, so `rn_tail_off(maxw, n)` (`req.c:428-431`) applies with the exact `maxw`. The best
+is taken from the first decomposition (its offsets are the smaller bounds); the second
+contributes the tail and `rg` only.
 
 ### 3.2 The owner and the code it touches
 
-- `src/facts/req.c` `rb_rep_into` (`:549-558`) and the `A_REP` arm (`:708-740`): the arm's
-  `rmin >= 1` branch becomes "unroll to `min(m, saturation)` through `rr_cat`, then the tail from
-  the second decomposition, `all` per §2's row"; `rmin == 0` becomes "width-0 body: unit,
-  else today's gap". The header paragraph `:64-69` ("a repeat's head and tail runs do NOT
-  survive") and the arm comment `:709-719` are rewritten with it.
-- `src/facts/desc.c`: a power combinator over the group list, `pcrec_pd_cat` applied m times
-  with the same saturation rule (a group stores at most `max_pos` positions, `desc.h:32-39`);
-  `REP{m,n}`, m < n, gives `pd_none` (variable width) exactly as today, so `req_pieces` moves
-  only for exact repeats of a multi-group body.
-- NOT touched by unit R1: `altnf.c:223-230`, the adjacency head's REP wall. A REP adjacency
-  head is unit R2 (§8), with its own witness, because its reader is a TREE REWRITE (exactness),
-  not a fact (superset). alt_normal_form FIX-1 option (a) stands until R2.
+- `src/facts/req.c` `rb_rep_into` (`:549-558`) and the `A_REP` arm (`:708-740`) become T2's rows
+  (§6). The header paragraph `:64-69` and the arm comment `:709-719` are rewritten with them.
+- `src/facts/desc.c`: a power combinator, `pcrec_pd_cat` applied c times with the same saturation
+  (a group stores at most `max_pos` positions, `desc.h:32-39`). `REP{m,n}` with m < n gives
+  `pd_none` exactly as today, so `req_pieces` moves only for exact repeats of a multi-group body.
+- NOT touched by R1: `altnf.c:223-230`, the adjacency head's REP wall (unit R2, §8).
 
-### 3.3 Readers it moves (found by grep at `7b9ddd890`)
+### 3.3 Readers it moves (found by grep at `7b9ddd890`; the cites hold at `dd2fe2de9`)
 
-The run walk's outputs are `req_set` (unchanged: the set walk already unions the body's set,
-`rb_rep_into`'s `rb_union`), `req_set_maxoff` (unchanged), `req_whole_run` and its derived
-`req_run`, `req_run_maxoff`, `req_byte`, `req_landmark_maxoff`, `run_pin` (`src/facts/facts.def:50-60`),
-and `req_pieces`. Every reader of those is listed once in §5.4's admission table; for REP the
-reach stays `(0, 0)`, so every reader admits the moved run as it admits today's (a longer run
-of the same kind). The readers whose OUTPUT moves are the pick readers (`src/core/findings.c`,
-the window/member choice), the window statement's R span (`emit_dfa.c:6815-6871`, longer R),
-and the stamps `RX_REQ_RUN`/`RX_REQ_BYTE`/`RX_REQ_WHY`/`RX_REQ_HANDOFF`; `--emit-facts`
-lists the new values. Answers do not move (§3.5).
+The run walk's outputs are `req_set` (unchanged), `req_set_maxoff` (unchanged), `req_whole_run`
+and its derived `req_run`, `req_run_maxoff`, `req_byte`, `req_landmark_maxoff`, `run_pin`
+(`src/facts/facts.def:50-60`), and `req_pieces`. For REP the reach stays `[0, maxoff]`, so every
+reader in §5.4 admits the moved run as it admits today's. The readers whose OUTPUT moves are the
+pick readers (`src/core/findings.c`), the window statement's R span (`emit_dfa.c:6815-6871`) and
+the stamps `RX_REQ_RUN`/`RX_REQ_BYTE`/`RX_REQ_WHY`/`RX_REQ_HANDOFF`; `--emit-facts` lists the new
+values. Answers do not move (§3.5).
 
 ### 3.4 Predicted movers (measured spellings)
 
@@ -182,112 +240,140 @@ lists the new values. Answers do not move (§3.5).
 |---|---|---|
 | `A{4}` | none | `41414141` (`AAAA`) |
 | `ab{3}c` | none | `6162626263` (`abbbc`) |
-| `xy(?:ab){2}zw` (alt_normal_form S3's witness) | `6162` (2) | 8 (`xyababzw`) |
-| `(?i)xy(?:ab){2}zw` (byte and utf8) | none (the `[aA][bB]` pair is under the floor) | 8 cube positions (`(?i)xyababzw`) |
-| `abcd(?:ab\|Ab){2}efgh` | `65666768` (4) | 12 positions (`abcd(?:ab\|Ab)(?:ab\|Ab)efgh`) |
+| `xy(?:ab){2}zw` | `6162` (2) | 8 (`xyababzw`) |
+| `(?i)xy(?:ab){2}zw` (byte and utf8) | none | 8 cube positions (`(?i)xyababzw`) |
+| `abcd(?:ab\|Ab){2}efgh` | `65666768` (4) | 12 positions |
 | `xy(?:ab){2,3}zw` | `6162` (2) | 6, `xyabab` (`xyabab(?:ab)?zw`) |
-| `xy(?:abc\|abd){2}zw` | `6162` (2) | 4, `xyab` (spelled) |
+| `xy(?:abc\|abd){2}zw` | `6162` (2) | 4, `xyab` |
 | `x(?:a[bc]){2}y` | none | 6 (`xa[bc]a[bc]y`) |
-| `xy(?:é){3}zw` utf8 | `c3a9` (2) | 10 (spelled) |
-| `(?:abc){20}` | `616263` (3) | 32 positions, truncated at the storage bound (a FACT witness, §3.6) |
-| `xy(?:ab)+zw`, `xy(?:ab){1,}zw` | `6162` | 4, `xyab` (`m = 1`: head `ab`, tail `ab`) |
-| `xy(?:ab){0,2}zw`, `xy(?:ab)*zw`, `[0-9]{4}` | `7a77` / none | unchanged (min-0 is a gap; `[0-9]` is out of the cube domain) |
-
-The population (how many corpus and bench compiles move, and whether a bench cell is among them)
-is the census of unit R1, not this table.
+| `xy(?:é){3}zw` utf8 | `c3a9` (2) | 10 |
+| `(?:abc){20}` | `616263` (3) | 32 positions, truncated at the storage bound (W-R5) |
+| `xy(?:ab)+zw`, `xy(?:ab){1,}zw` | `6162` | 4, `xyab` |
+| `xy(?:ab){0}zw` `[r1 F7]` | `7a77` (2) | 4, `78797a77` (`xyzw`, measured) |
+| `xy(?:ab){0,2}zw`, `xy(?:ab)*zw`, `[0-9]{4}` | `7a77` / none | unchanged |
 
 ### 3.5 Answer identity
 
-The run is a necessary condition; a longer necessary run moves which run the pre-check compares
-and where, never which subjects match (alt_normal_form §8a C1: facts are order-free). The rule's
-two decompositions are language identities, and the unrolled CAT is the existing `rr_cat`, so a
-run that is not necessary can only come from a wrong decomposition: exactly what the witnesses
-plant.
+The run is a necessary condition. A longer necessary run moves which run the pre-check compares
+and where, never which subjects match. The two decompositions are language identities and the
+unrolled CAT is `rr_cat`, so an unsound run can come only from a wrong decomposition, a wrong
+width or a wrong copy count: what the witnesses plant.
 
-### 3.6 Sabotage witnesses (each can fail; expected answers from libpcre2, `oracle.out`)
+### 3.6 Sabotage witnesses (each can fail; expected answers from libpcre2)
+
+Each failure mechanism: the sabotaged run clears the 16-bit floor (`limits.def:410`), is absent
+from the subject, and is not walk-verifiable, so it is never `dominated` (the pin needs every
+position to be a k-set singleton, `kset.c:294-318`). So the pre-check compares it and answers
+NOMATCH (soundrep and soundlook PROBED-AND-HELD (b)).
 
 | id (role) | planted error | pattern, subject, expected | correct run | sabotaged run, and why it fails |
 |---|---|---|---|---|
-| W-R1 (all at m < n) | `all` set for `X{m,n}` with m < n | `xy(?:ab){1,2}zw` on `xyababzw`: (0,8) | `xyab` (32 bits) | `xyabzw` (48): absent from the subject, the pre-check answers NOMATCH |
+| W-R1 (all at m < n) | `all` set for `X{m,n}` with m < n | `xy(?:ab){1,2}zw` on `xyababzw`: (0,8) | `xyab` | `xyabzw`: absent, NOMATCH |
 | W-R2 (copies = n) | unroll `rmax` copies, not `rmin` | `xy(?:ab){1,3}zw` on `xyabzw`: (0,6) | `xyab` | `xyababab...`: absent, NOMATCH |
-| W-R3 (min-0 as m = 1) | a min-0 repeat of a consuming body walked as if `m >= 1` (the C-comment shape `req.c:723-738` names) | `ab(?:cd){0,2}ef` on `abef`: (0,4) | `ab` or `ef` (16 bits each) | `abcd` (the head joined through the repeat's head): absent from `abef`, NOMATCH |
-| W-R4 (width-0 test reads min width) | the "width-0 body is the unit" row reads `minw == 0` instead of `maxw == 0` | `ab(?:c?){2}de` on `abcde`: (0,5) | `de` | `abde` (the body treated as the unit): absent, NOMATCH |
-| W-R5 (FACT witness, saturation) | saturation at one copy fewer | `(?:abc){20}` | 32 positions | 29: a shorter run, sound; cannot move an answer (lesson 1, stated): checked on the facts listing only |
+| W-R3 (min-0 as m = 1) `[r1 F7]` | c computed from `max(m, 1)` (the C-comment shape `req.c:723-738` names) | `ab(?:cd){0,2}ef` on `abef`: (0,4) | `ab` or `ef` (a tie, F22: the build's tie-break picks one; the sabotage is detected either way) | `abcd` or `cdef`: absent, NOMATCH |
+| W-R4 (width-0 test reads min width) | the width-0 row reads `minw == 0` instead of `maxw == 0` | `ab(?:c?){2}de` on `abcde`: (0,5) | `de` (tie with `ab`, F22) | `abde`: absent, NOMATCH |
+| W-R5 (FACT witness, saturation) `[r1 F6]` | saturation at `ceil(32/w) − 1` copies | `(?:abc){20}` | 32 positions (11 copies, truncated) | 30 positions (10 copies): shorter, sound, cannot move an answer; checked on the facts listing |
+| W-R6 (exact width) `[r1 F3]` | `maxw` taken from the c unrolled copies (`c · w`) instead of `rr_rep_w` | VM: `(a.){10}xyz` on `a-a-a-a-a-a-a-a-a-a-xyz`: (0,23); DFA: `(?:a.){10}.?xyz` on the same subject: (0,23), and from offset 2: NOMATCH | K = `req_run_maxoff` 20 (VM, `RX_REQ_HANDOFF "20"`, measured) and 21 (DFA, `"21"`, measured) | `a.` is not `all`, so c = 2 and `maxw` = 4: K becomes 4 (5), an attempt at 0 is admitted only with `xyz` in `[0, 4]`, the handoff skips it, and no later start matches: NOMATCH where (0,23) is expected |
 
-W-R3's subject is `abef`: on `abcdef` (also (0,6) in `oracle.out`) the sabotaged run is present
-by accident, so that subject cannot fail.
-Each witness's REACH (the sabotage's site is reached by the witness pattern) is part of the
-build's mech row ([MECH-REACH]).
+W-R3's subject is `abef`: on `abcdef` the sabotaged run is present by accident. The plain
+`(?:a.){10}xyz` is `dominated` today (`RX_REQ_HANDOFF "none"`, measured), so its K is never read
+and it cannot fail; that is why W-R6's DFA twin carries `.?`. Each witness's REACH (the plant's
+site is reached by the witness) is part of the build's mech row ([MECH-REACH]).
 
-### 3.7 Deny lever
+### 3.7 Deny lever `[r1 F18, F19]`
 
-By the owner's rule (2026-10-29, memory "flag follows caller effect"): the speed effect reaches a
-caller only through the pick rows, each with its own deny; the risk is a WRONG answer (W-R1..R4).
-So a TEST-ONLY lever, no public bit: alt_normal_form §11's one harness-only lever for 2a
-("restore today's ALT outcome and EMPTY cut", not yet built) becomes ONE harness lever whose
-value is a set of arms to restore (`alt`, `empty`, `rep`, `guard`, `look`), built by whichever
-unit lands first (its later units add a member, not a lever). `-fno-req-run` (bit 31) and
-`-fno-req-run-fold` (bit 44) keep their texts: bit 44 already denies every multi-member position,
-so `(?i)xy(?:ab){2}zw`'s cube run is under it with no re-specification.
+**The rule.** The owner's 2026-10-29 rule ("the flag follows what a change can DO to a caller":
+a PUBLIC deny only for a change that can be SLOWER, a TEST-ONLY lever for a WRONG-answer risk,
+none for a refactor). It has no D-row. Its repo homes are review 2026-10-29 r3 vmtrail F11,
+`docs/design/alt_normal_form.md` §11 (r7 RDY-9), `docs/dev/lanes/vmcons_report.md` (R1) and the
+comment at `memfn/include/memfn.h:1427-1428` ("a change that cannot make a caller slower carries
+no public deny"). Every unit here can be slower only through the pick rows that read the moved
+fact, each with its own deny, where D186 narrows a loss (alt_normal_form §11's stage-2a row).
+Its wrongness risk is W-R1..W-R6. So it gets a TEST-ONLY lever and no public bit.
+
+**The form: `facts.def`'s deny admits a HARNESS source** (alt_normal_form §3.5 r7 FIX-8's named
+general form). FIX-8's trigger was "a second such change", a second test-only lever on a core
+fact. The trigger FIRES here: 2a's lever was the first, and this note's `rep`, `zero` and `look`
+are the second, third and fourth. So rev 1 takes the form, and does not generalize its own
+lever:
+
+- a fact's `facts.def` row names, beside its public deny bits (`deny`, today
+  `PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN` on `req_whole_run`), the HARNESS ARMS that restore an
+  arm of its derivation to today's form;
+- the arms are rows of ONE declared table (an arm id, the fact rows it applies to, the restored
+  behaviour): 2a's `alt` and `empty`, this note's `rep` (T2 → today's best-only REP), `zero` (T3
+  E-4 → today's cut) and `look` (T4 → today's cut at a positive lookaround);
+- `facts.c` applies both sources where it applies the public deny today (`pf_derive_req_walk`,
+  `facts.c:201-249`, which already turns bit 44 into the walk's `pos_set` parameter). The walk
+  receives the restored-arm set as a parameter of the same kind, so there is one application
+  site and no second deny path;
+- `--emit-facts` lists the harness source of a fact it restored. That closes the invisibility
+  alt_normal_form's stage-2a lever note records (`cli/main.c:3108-3111` builds `pin` without
+  `.harness`).
+
+The spelling (one `--harness=` value naming arms) is the build's. The `--harness=` levers
+themselves are an if-chain of one-bit fields (`cli/main.c:1430-1443`, `PcrecHarnessOptions`) and
+another member of the same family (`pres-window` is the same restore-the-old-form shape). That is
+filed as [HARNESS-LEVERS], not fixed here (as ruled).
+
+**Public bits.** `-fno-req-run` (bit 31, tuning.md §2.28) and `-fno-req-run-fold` (bit 44,
+tuning.md §2.39) keep their texts through E1, R1, E2, L1 and L2. Bit 44 already denies every
+multi-member position, so `(?i)xy(?:ab){2}zw`'s cube run is under it. At L3 see §5.8.
 
 ### 3.8 The VM half (pointer only)
 
 The row's "the VM's literal-run selection" (`vm_det_seq`/`vm_cursor_fits`, ratchet row R02's
-area A-SKIP; an exact `X{n}` matched by one compare instead of a counter loop) is a separate
-CHOICE row with per-regime evidence and its A-ISL overlap (roadmap R04). It reads the same
-power description when built; nothing in R1 depends on it.
+area A-SKIP) is a separate CHOICE row with per-regime evidence and its A-ISL overlap (roadmap
+R04). It reads the same power description when built; nothing in R1 depends on it.
 
 ## 4. The EMPTY arm ([REQ-EMPTYCAT], alt_normal_form §3.6, §9 S2)
 
 ### 4.1 What stage 2a moves, and what remains
 
-Stage 2a (alt_normal_form §5, census-first, unbuilt) moves ONE kind: `case A_EMPTY`
-(`req.c:756`) becomes the description's EMPTY arm, the unit of CAT; the kind row stays
-(`src/core/kindrow.def:61`, TEXT `ZERO`). This note does not re-design that; it is row E-1 of the
-table below. What remains is every OTHER node whose consumed description is width 0. Stated as
-"the width-0 group is the identity of CAT", those are not special cases but the arm's other
-rows:
+Stage 2a moves ONE kind: `case A_EMPTY` (`req.c:756`) becomes the description's EMPTY arm, the
+unit of CAT; the kind row stays (`src/core/kindrow.def:61`, TEXT `ZERO`). It is row E-1 below.
+What remains is every other node whose consumed description is width 0:
 
-| row | the subtree | its consumed description | today | after |
+| row | the subtree | run value | today | after |
 |---|---|---|---|---|
-| E-1 | `A_EMPTY` (`abcd()efgh`, `abcd(?:\|)efgh`, altcls's empty residue, derive's pruned nodes) | width 0, EXACT | cut | unit (stage 2a) |
-| E-2 | a repeat whose body's description is width 0 and EXACT, any `{m,n}` (`(?:)*`, `(?:){3}`) | width 0, EXACT | cut / gap | unit |
-| E-3 | `X{0,n}` whose body is width 0, guarded or exact (`(?:\b)*`) | width 0, EXACT (zero iterations always match) | gap | unit |
-| E-4 | a zero-width node that can fail: `\b`/`\B` (`A_CTX`), `$`/`^` (`A_EOL`, `A_CTX`), `\G`, `\K`, a check callout, a negative lookaround, and `X{m,n}`, m ≥ 1, of such a body (`(?:\b)+`, `pcrec_wrap_bare_anchor`'s `<anchor EMPTY>` under a quantifier) | width 0, GUARDED | cut | unit for the run (joins consumed contiguity); not a unit for the owner |
-| E-5 | a positive lookaround | width 0, GUARDED, plus a guard | cut | §5 |
+| E-1 | `A_EMPTY` (`abcd()efgh`, `abcd(?:\|)efgh`, altcls's empty residue, derive's pruned nodes) | the unit | cut | unit (stage 2a) |
+| E-2 | a repeat whose body is width 0 and consumes nothing that can fail (`(?:)*`, `(?:){3}`) | the unit (T2 row 1) | cut / gap | unit |
+| E-3 | `X{0,n}` whose body is width 0 (`(?:\b)*`) | the unit, no guard (T2 row 1, `m = 0`) | gap | unit |
+| E-4 | a zero-width node that can fail: `\b`/`\B` (`A_CTX`), `$`/`^` (`A_EOL`, `A_CTX`), `\G`, `\K`, a check callout, a negative lookaround, and `X{m,n}`, m ≥ 1, of such a body (`(?:\b)+`, `pcrec_wrap_bare_anchor`'s `<anchor EMPTY>` under a quantifier) | the unit (`exact = false` in the description, no reader, §2) | cut | unit (joins consumed contiguity) |
+| E-5 | a positive lookaround | the unit plus its item | cut | §5 |
 
-E-2/E-3 follow from §3's REP row with no extra clause (a width-0 body: zero copies; `X{0,n}`
-admits ε). E-4 is the decision alt_normal_form left open as §9 S2 point (3): "whether a
-zero-width ASSERTION under a repeat stays a D77 decline or gets its census". Decided here: it
-gets its census, as unit E2 (§8), because its soundness is not in question. The bytes on either
-side of a zero-width node ARE adjacent in the subject (`req.c:748-751` says so itself); what the
-header forbids (`:752-755`) is joining through the BODY of a lookaround, which E-4 does not do.
-The witness that separates the two is alt_normal_form's S-L (§5.7).
+E-2/E-3 follow from T2 with no extra clause. E-4 is alt_normal_form §9 S2 point (3): decided as
+a census, unit E2, because its soundness is not in question. The bytes on either side of a
+zero-width node ARE adjacent (`req.c:748-751` says so); what the header forbids (`:752-755`) is
+joining through the BODY of a lookaround, which E-4 does not do. S-L separates the two.
 
 ### 4.2 The owner and the code it touches
 
-`req.c`'s `rb_walk_at` cut list (`:756-771`) splits by row: E-1 (2a) and E-2/E-3 (unit E1)
-take `rb_init`'s identity (`rr_unit()` + `pcrec_pd_unit()`, `:511-516`) through the REP arm; E-4
-(unit E2) gets a GUARDED unit, `rr_unit()` for the run and a description that is width 0 with
-`exact = false` (a `PdGroup` field that exists, `desc.c:36-41`). `rb_row_into`'s `KTEXT_ZERO` row
-(`:637-645`) is where E-4 lands, since every ZERO-text kind is E-4 except `A_EMPTY` (E-1, its own
-`case`) and `A_LOOK` (E-5). The kind row is untouched (alt_normal_form §3.6's ruling).
-`endwin.c:301` and `emit_vm.c:4093` stay kind tests (alt_normal_form FIX-9).
+`req.c`'s cut list (`:756-771`) splits by row: E-1 (2a) and E-2/E-3 (E1) take `rb_init`'s identity
+(`rr_unit()` + `pcrec_pd_unit()`, `:511-516`) through T2; E-4 (E2) takes `rr_unit()` for the run
+and a width-0 description group with `exact = false`. `rb_row_into`'s `KTEXT_ZERO` row
+(`:637-645`) is where E-4 lands. The kind row is untouched. `endwin.c:301` and `emit_vm.c:4177`
+`[r1 F13]` (the island walk's `case A_EMPTY:`; rev 0 cited `:4093`, a comment) stay kind tests
+(alt_normal_form FIX-9).
 
 ### 4.3 Readers it moves
 
-The same fact set as §3.3, at reach `(0, 0)`: a guarded unit joins two consumed runs that are
-both inside the match. Every reader admits it as today (§5.4).
+The same fact set as §3.3, at reach `[0, maxoff]`: a width-0 unit joins two consumed runs that
+are both inside the attempt span `[r1 F14]` (with `\K`, a joined run may straddle the reported
+start, as `foo\Kbar` would give `foobar` with the match at (3,6); every reader is attempt-
+relative, §2). `[r1 F11]` The window statement's R span also moves: `kset_walk` already proves
+the consumed bytes on both sides of an erased lookaround (`xyz(?<=yz)abc` gives all six), so after
+E2 an R over `xyzabc` is walk-provable with no U-G1. E2's census counts R-span movers beside run
+movers.
 
 ### 4.4 Predicted movers (measured spellings)
 
 | pattern | today | predicted |
 |---|---|---|
 | `abcd()efgh`, `abcd(?:\|)efgh` (E-1, 2a's) | 4 | 8 |
-| `abcd(?:)*efgh`, `abcd(?:){3}efgh` (E-2; §9 S2's witness) | 4 | 8 |
-| `abcd(?:\b)+efgh` (E-4; never matches, `d\be` has no boundary) | 4 | 8 (sound: a pattern that cannot match has every run) |
-| `ab(?:x\b)+cd` (E-4 plus REP) | `6364` | `abx` with the REP head; `x\bc` never matches either, so the witness subject is a non-word spelling below |
-| `xyz(?<=yz)abc` (E-4 alone, the lookbehind body not read) | `abc` (3) | 6, `xyzabc` |
+| `abcd(?:)*efgh`, `abcd(?:){3}efgh` (E-2) | 4 | 8 |
+| `abcd(?:\b)+efgh` (E-4; never matches) | 4 | 8 (sound: a pattern that cannot match has every run) |
+| `xyz(?<=yz)abc` (E-4 alone; the body not read) | `abc` (3) | 6, `xyzabc` (spelling measured) |
 | `x(?!ab)ac` (a negative lookaround, E-4) | `ac` | 3, `xac` |
 
 ### 4.5 Witnesses
@@ -295,173 +381,302 @@ both inside the match. Every reader admits it as today (§5.4).
 | id | planted error | pattern, subject, expected | correct | sabotaged |
 |---|---|---|---|---|
 | S-g (alt_normal_form, 2a) | a consuming kind (`A_BREF`) sent to the EMPTY arm | `(ab)x\1y` on `abxaby`: (0,6) | `abx` | `abxy`: absent, NOMATCH |
-| W-E1 (guarded read as positive) | a negative lookaround's body read as a guard (its positions intersected) | `x(?!ab)ac` on `xac`: (0,3) | `xac` | `ab ∩ ac` empties position 2: the run claims the pattern cannot match, NOMATCH |
+| W-E1 (a negative body read as an item) `[r1 F5]` | a negative lookaround's body read as a positive item (its head affix met against the right side) | `x(?!ab)a[bc]` on `xac`: (0,3); on `xab`: NOMATCH | `xa[bc]` (E-4) | `xab` (the cube `[bc]` narrowed by the body's `b`): absent from `xac`, NOMATCH |
 | W-E2 (E-4's join through the body, S-L) | §5.7 | | | |
+
+W-E1's plant has a site only once item code exists, so it is in L1's gate, not E2's (rev 0 listed
+it at E2, which has no meet site). Rev 0's `x(?!ab)ac` emptied a position, and an emptied position
+is not a run value a reader sees (EMPTY-MEET, §5.2), so it could not fail. `x(?!a)[ab]c`/`xbc`
+(soundlook's, oracle M 0 3) is not used: `[ab]` is not a cube at `pos_set` 2 (`0x61 ^ 0x62` has
+two bits), so the run has no position there for the plant to narrow.
 
 ### 4.6 What closes [REQ-EMPTYCAT]
 
-S2's five points: (1) decided by alt_normal_form (the unit is the description's, not the kind
-row's); (2) E-2/E-3, here, by §3's rule; (3) E-4, here: a census, unit E2; (4) the producer
-census is unit E2's census (it counts every compile whose run is cut by a zero-width node, per
-producer kind); (5) the row closes when 2a, E1 and E2 have landed or been declined by their
-census.
+S2's five points: (1) decided by alt_normal_form; (2) E-2/E-3 by T2; (3) E-4 a census, unit E2;
+(4) the producer census is E2's, per producer kind; (5) the row closes when 2a, E1 and E2 have
+landed or been declined by their census.
 
-## 5. The positive LOOKAROUND arm ([REQ-LOOKAROUND], alt_normal_form §9 S4)
+## 5. The positive LOOKAROUND arm ([REQ-LOOKAROUND], alt_normal_form §9 S4) `[r1: rewritten]`
 
-### 5.1 The rule
+### 5.1 The item and where the run meets it `[r1 F1]`
 
-At a positive lookaround, the run walk holds `acc`, the facts of everything to its RIGHT
-(`req.c:671-674`: the walk accumulates right to left). The arm is the guarded unit (E-4) plus
-the body's fixed affix as a guard:
+**The item.** For a positive lookaround node at cursor `c`, its ITEM is its body's fixed affixes
+stated as terms at signed offsets from `c`, read off the body's value as the same walk computes
+it (the walk descends the body, `rb_walk(w, a->l, ...)`, from L1 on):
 
-- a LOOKAHEAD's guard is the body's HEAD affix `H` (`h` positions from the cursor: the body's
-  fixed-width prefix, the description's head over every branch, `rr_alt`'s common head where the
-  body alternates); it is position-wise INTERSECTED with `acc.head` over `min(h, acc.head.n)`
-  positions, and where `h > acc.head.n` and `acc.all` (the right side is a closed literal of
-  width `acc.maxw`), its remaining `h - acc.head.n` positions EXTEND the head past the right
-  side's end: they are reach `ahead`, and the result is not `all` (nothing may join after a
-  guard extension: the next consumed byte follows the right side, not the guard);
-- a LOOKBEHIND's guard is the body's TAIL affix `B` (`t` positions ending at the cursor); it
-  waits for the LEFT neighbour: in `rr_cat(l, r)` (`req.c:450-468`), `r.head`'s back guard
-  intersects `l.tail`'s last positions; where `t > l.tail.n` and `l.all`, the rest extends
-  before `l`'s start: reach `back` grows by what `l.maxw` does not cover, and at the pattern's
-  top level `back > 0` means the run begins before the match start.
-- an EMPTY intersection at any position proves the subtree cannot match (`foo(?=bar)baz`:
-  `r ∩ z`; libpcre2: NOMATCH on `foobaz` and on `foobarbaz`). This note records it as a fact
-  the walk can state, no consumer (Unlocks U-dead).
+- a LOOKAHEAD (body matching at `[c, c + width)`): `rg` = the body's HEAD affix at `[0, h)`,
+  followed by the body's own `rg` when the body is `all` (exact width, so its end offset is known);
+  `lg` = the body's own `lg` (a lookbehind nested in the body, at its own offset);
+- a LOOKBEHIND (body ending at `c`): `lg` = the body's TAIL affix at `[-n, 0)`, preceded by the
+  body's own `lg` when the body is `all`; `rg` = the body's own `rg` (a lookahead nested in the
+  body, at the cursor).
 
-**The three placements, a declared first-match table (§6 T4):**
+"The body's head/tail affix" is its consumed head/tail run (`RbRuns.head`/`.tail`), which over an
+alternation is `rr_alt`'s common affix and over a variable body its fixed edge (alt_normal_form
+§3.5's last row: "its fixed head and tail affixes are descriptions at its edges"). It is never the
+body's guards: guards nest at their own offsets, which is soundlook's case (d).
 
-| row | where the guard lands | example (measured today → predicted) | new reader obligation |
+**Where the run meets it.** The arm returns the width-0 unit carrying the item as pending guards
+(T4 row ITEM). Everything else happens in `rr_cat`, which every concatenation passes through. That
+matters because the walk hands the arm a fresh accumulator at every spine position but the
+leftmost (§0). So `a(?=b)[bc]`'s lookahead meets `[bc]` in `rr_cat(item, [bc])`, not at its arm.
+Rev 0 met it at the arm and laid the guard end to end with `[bc]` (premise PREMISE-1).
+
+### 5.2 The guard rows, one per combinator (§6 T4, first match within each combinator) `[r1 F2]`
+
+Notation: `l` is to the left of `r` in subject order; `o` is the result. "Meet" is position-wise
+intersection of cubes at equal subject offsets (a cube ∩ a cube is a cube or empty, D187); a
+missing position is all bytes.
+
+| row | combinator | rule | witness (§5.7) |
 |---|---|---|---|
-| INSIDE | every guard position overlaps a consumed position of the same match | `a(?=b)[bc]` none → `ab`; `(?=abcd)abcd` `abcd` → same (no mover) | none: the run stays inside the match (reach (0,0)) |
-| AHEAD | some guard position lies past the match end | `bar(?=baz)` `bar` → `barbaz`, ahead 3 | readers that assume the run ends by the match end (§5.4, assumption C) |
-| BACK | some guard position lies before the match start | `(?<=foo)bar` `bar` → `foobar`, back 3 | readers that scan from `search_from` or read the offset as non-negative (§5.4, A and B) |
+| ITEM | positive lookaround | the unit; `lg`/`rg` = the item's terms (§5.1) | W-N1, W-N2, W-F5, W-L3 |
+| CAT-R | `rr_cat(l, r)`, `l.rg` | `l.rg` meets `r`'s positions at `[0, min(h, r.head.n))` from `r`'s start: `r.head`, and where `r.all` also `r.tail` and `r.best` (the same positions). The narrowed `r.head` feeds `o.head` and the join as today | W-L5 `a(?=b)[bc]` |
+| CAT-L | `rr_cat(l, r)`, `r.lg` | `r.lg` meets `l`'s last positions at `[-min(t, l.tail.n), 0)` from `l`'s end: `l.tail`, and where `l.all` also `l.head` and `l.best` | W-F5 `[ac]b(?<=ab\|b)c`, W-S1 |
+| CAT-EDGE | `rr_cat(l, r)`, the leftovers | `o.lg` = `l.lg`, met at equal offsets with `r.lg`'s positions beyond `l.tail.n` shifted by `l.maxw`, IF `l.all` (exact width); otherwise `o.lg` = `l.lg` and the leftover is DROPPED. Mirror: `o.rg` = `r.rg` met with `l.rg`'s leftover beyond `r.head.n` shifted by `−r.maxw`, IF `r.all`; else dropped. `o.all` is `rr_cat`'s as today (guards never touch it) | W-L2, W-L6, W-L7, W-L8, W-S1 |
+| ALT | `rr_alt(l, r)` | `o.lg` = `rr_alt`'s own common-TAIL rule applied to `l.lg` and `r.lg` (right-aligned at the alternation's start, hull within `pos_set`, ended at the first position outside the domain or missing from a branch); `o.rg` = the common-HEAD rule on `l.rg` and `r.rg`. A branch with no guard gives none | W-A1 `xy[ac](?:(?<=a)b\|c)` |
+| REP | T2 | through CAT, per copy; T2's guard column (none at `m = 0` for a width-0 body) | W-F4 `x(?=ab)?a[bc]`, W-RG `(?:ab(?=a)){2}` |
+| EMPTY-MEET | any meet | an empty intersection at a position proves the subtree cannot match: the walk states the dead fact (a listing value, U-dead) and that position KEEPS its un-narrowed value. A guard position whose meet with a guard position is empty is dropped with every position outward of it | (FACT witness `foo(?=bar)baz`, listing only) |
+| TOP | the root value, at the admitted reach | reach `[0, maxoff]` (L1): the guards are dropped. AHEAD admitted (L2): a candidate `tail ++ rg` at offset `rn_tail_off(maxw, tail.n)`, computed from the CONSUMED `tail.n`, never the extended length; where `all`, `head ++ rg` at 0. BACK admitted (L3): a candidate `lg ++ head` at offset `−t` (`omin = maxoff = −t` for that candidate, since `head` is at 0), if `t <= lb_bytes` (§5.5); where `all`, `lg ++ head ++ rg`. `best` is `rn_better` over the consumed best and the candidates | W-L9 (L2), S-L, W-L1, W-L3, W-L8 (L3) |
 
-Rows AHEAD and BACK are the same rule at different reaches; the walk takes the ADMITTED REACH as
-a parameter, as it takes `pos_set` today (`pcrec_req_walk(cx, root, pos_set, ...)`,
-`req.c:789-801`): at `(0, 0)` every guard position outside the match is dropped and the walk is
-row INSIDE only. One fact, its reach a declared input, no second walk.
+What these rows settle, against each soundlook case:
 
-### 5.2 A variable lookaround's fixed part
+- **(a) `all` and materialized leftovers.** No row below TOP turns a guard into bytes, so `all`
+  never sees one. `y(?:x(?<=yx))z`: in the group, `x` meets `x` and the leftover `y` is carried
+  as the group's `lg` (`x` is `all`). Outside, it meets `y`. The run is `yxz` (spelling `yxz`
+  measured), and rev 0's reading gave `yyxz`.
+- **(b) ALT.** `(?:(?<=a)b|c)`: the branch `c` has no guard, so the alternation has none.
+- **(c) Stacking.** Two lookbehinds at one cursor: the right one's `lg` is a leftover across the
+  left one (width 0, `all`), met with the left one's `lg` at EQUAL offsets.
+  `(?<=ab)(?<=b)c` gives `lg` `ab`, not `abb`.
+- **(d) Nesting.** A body's guards keep their own offsets (ITEM). `x(?=(?<=x)y)y`: the lookahead's
+  `rg` is `y` and its `lg` is `x`; the run is `xy`. `(?<=a(?=b))b`: `lg` `a`, `rg` `b`; the run is
+  `b`, and at full reach `ab` from −1.
+- **(e) tail/best.** Extension happens once, at TOP, and its offset is computed from the consumed
+  tail length (W-L9).
+- **(f) The reach across nesting.** A guard crosses only an `all` neighbour, whose width is
+  exact, so the top-level leftover is exact and no minimum width is needed. "Back never shrinks"
+  holds by construction: a leftover is absorbed, carried exactly, or dropped.
+  `y*(?:ab(?<=xab)c)`: `x` is carried to the group's edge and dropped at `y*` (not `all`); the
+  run is `abc` at reach 0, which W-L8 plants against.
+  `(?:(?=abcd)ab)cd`: the group's `rg` `cd` meets the outer `cd` (CAT-R), and the run is `abcd`
+  at reach 0. `(?:(?=abcd)ab)c?` (oracle M 0 3 on `abcd`): `rg` `cd` is dropped at `c?`, so the
+  run is `ab`.
 
-S4 point (2): a lookbehind body of bounded variable width still has a fixed TAIL affix (the
-description's tail of a variable subtree, alt_normal_form §3.5's last row; the same piece
-vlookbehind_pieces.md calls the fixed tail it would hoist): `(?<=fo{1,3})bar` → `obar` at
-back 1 (pcrec refuses the unbounded `(?<=fo+)bar` the plan row quotes: "every alternative of a
-lookbehind must have a bounded length"); `(?<=ab|b)c` → `bc` at back 1 (the common tail of
-`ab|b`). A lookahead body's fixed HEAD affix likewise (`x(?=ab|ac)a.` → `xa` plus the guard
-`a` at 1: intersection `a ∩ a`, then `[bc]` at 2 out of the cube domain: no extension).
+**A variable lookaround's fixed part, and the ONE fixed-tail producer** `[r1 F17]`. S4 point
+(2): a lookbehind body of bounded variable width still has a fixed TAIL affix, the body's
+`RbRuns.tail`, computed by the walk's existing rules (REP row 3's tail decomposition, `rr_alt`'s
+common tail). `(?<=fo{1,3})bar` gives `lg` `o` (back 1); `(?<=ab|b)c` gives `lg` `b`, the common
+tail of `ab|b`. That affix is the description's tail-affix column of a SUBTREE (alt_normal_form
+§3.5). It is the one producer of "the fixed tail of a lookbehind": this note reads it at the
+lookbehind BODY's node (common over branches), and `docs/design/vlookbehind_pieces.md`'s HELD
+fixed-tail hoist reads it at each BRANCH's node (per branch). Those are two readers of one column
+at two nodes, not two producers. The hoist is code-point level at its VM call site, the run byte
+level; the description is one module with its alphabet a parameter (alt_normal_form r7 FIX-7),
+so the hoist calls the code-point instance when it is built.
 
-### 5.3 The window: the scan begins before the start offset
+### 5.3 The item is D168's producer's first member; the window `[r1 F15, F11, F12]`
 
-S4 point (4). A run with `back = k` is found in `[max(0, search_from - k), subject_length)`.
-Two seams already have the shape and one does not:
+**STOP-RULE finding (stated first, as the brief requires).** D168 rules ONE producer of context
+facts: "the per-offset `S_d` list extended to negative offsets", records {set, includes-absent,
+exact}, where "a FIXED-WIDTH POSITIVE lookbehind enters directly". At `dd2fe2de9` that
+signed-offset half does not exist:
 
-- the WINDOW statement: span starts down to `-MF_MAX_BACK` (`-8`) and a floor
-  (`MF_WFLOOR_SUBJECT`/`_EXPR`, `emit_dfa.c:6882-6897`) saying where reads may begin. Its R span
-  is walk-verified (§5.4 A5) and does not extend below 0 until the k-set walk itself proves bytes
-  there (alt_normal_form G-1; U-G1 below), so BACK changes nothing in it at first;
-- the PRESENCE statement (the pre-check, a kit site since R17-b' B3b, `req_site_define`) does NOT:
-  its `omin` must be `>= 0` (`memfn.h:679-684`). BACK there is `omin = -k`, a kit contract change,
-  and pcrec's own obligations beside it are §5.4's A2-A4. The UTF check's step back by the
-  pattern's lookbehind reach (`<prefix>_VALID_LB`, `emit_dfa.c:3610-3617`) is the precedent that
-  reading below the start offset is already part of pcrec's contract with the subject;
-- a run with `k > MF_MAX_BACK` is not admitted at BACK (its reach row refuses it; the run keeps
-  its reach-`(0,0)` value).
+- `span_facts` is `MkLang` (`facts.h:286-292`): `S_d` at `d >= 0` from the match start, no
+  context records. `MkCtx` and `nctx` are ctx_span.md §3.2's design ([DD-11.5] part 1, P1a/P1b,
+  unbuilt);
+- the built slice DECLINES on every machine with an erased lookaround (`PF_WHY_ERASED`,
+  `facts.h:393-397`; `span_decline.out`: `(?<=foo)bar`, `xyz(?<=yz)abc`, `bar(?=baz)`), which is
+  every `A_LOOK` pattern. The NFA erases the body to `N_EPS`, so no NFA walk can read its bytes;
+- ctx_span.md §3.3's `look-fixed` row already computes a lookbehind's per-offset sets by an AST
+  walk over the body ("`ctxnode.c`'s own walk called on the body"). That is the only level at
+  which the body exists. It also presumes a slice that runs on an erased machine, which the built
+  slice refuses: a DOC finding for ctx_span.md's next revision (filed in the lane report, not
+  edited here).
 
-S4 point (6), the span check reading the same pieces: the kit verifies a found candidate against
-every stated span (D172), so a back span stated later is verified with no new kit mechanism; it is
-stated when U-G1 lets the walk prove it. Until then the guard reaches the kit only through the
-presence run (`omin`).
+So there is no single producer to READ. As the stop rule directs, the guard is designed as the
+producer's FIRST member.
 
-### 5.4 Readers and the reach each admits
+**The general form (the standing question's, at the producer's own grain).** ONE producer of
+"the subject at signed offsets around a point", at the ITEM grain that ctx_span.md §3.2 already
+chose ("one record per context item"). For a positive lookaround the item is §5.1's terms at
+signed offsets from the item's cursor, computed ONCE, by the one walk, from the body's affixes
+(one description, alt_normal_form §3.5). Its readers place it in their own coordinates:
+
+| reader | places the item at | built by |
+|---|---|---|
+| the run (L1-L3) | the item's cursor inside the run value (T4); at TOP, signed offsets from the ATTEMPT START, whose extent is the run's `[omin, maxoff]` | this note |
+| span_facts' context half (D168, ctx_span P1a/P1b) | signed offsets from span 0 (the match-start origin), where the item's offset from span 0 is fixed: the `MkCtx` record's terms | [DD-11.5] part 1 (its `look-fixed` row READS the item instead of a second body walk) |
+| the window spans (D172, U-locate) | a negative-offset window span | [LOOK-LOCATE] |
+| the cover's ctx sides (`MkEnd.ctx_before/ctx_after`) | offset −1 / the end | [CTX-SIDES-PRODUCER] |
+| the presence `omin` (the kit) | the run's `omin` (L3) and its true positive value | L3; [PRES-OMIN-TRUE] |
+
+Why the run reads the item rather than span_facts' records: a record exists only where the item
+sits at a FIXED offset from span 0. The run meets items anywhere a fixed-width neighbour sits
+(`[a-z]+foo(?=bar)` has no fixed span-0 offset for its lookahead, but `foo` meets it). So the run
+needs the item, and span_facts' record is the item placed at span 0. Both are readers of one
+computation, which keeps D168's "two mechanisms for one fact" from happening. **No stored item
+fact until a second reader exists** (D77, F16): at L1 the walk computes the item inline; a
+`facts.def` row for it (PF_CORE, owner `req.c`) arrives with span_facts' context half, its first
+second reader. The item's form for D168 is {set, exact}: today its positions are cubes (hulls,
+SUPERSET where a hull widened a set), and exact sets arrive with alt_normal_form stage 3 (D187 set
+positions). No absent bit: a term at an offset outside the subject FAILS for a positive
+lookaround, which is D168's "no absent bit" for this member.
+
+**The window: the scan begins before the start offset.** S4 point (4). A run with `omin = −t` is
+found in `[max(0, search_from − t), subject_length)`:
+
+- the WINDOW statement: span starts down to `-MF_MAX_BACK` and a floor (`MF_WFLOOR_SUBJECT`/
+  `_EXPR`, `emit_dfa.c:6882-6897`). Its R span is walk-verified (A5) and never starts below 0
+  (`walk_proves`), so BACK does not move it. The window spans are the item's reader at U-locate
+  ([LOOK-LOCATE], whose dependency is this producer, not U-G1);
+- the PRESENCE statement (the pre-check, `req_site_define`) carries BACK as `omin = −t`: a kit
+  contract change, together with `head_max` (§5.4 A1);
+- the span check (S4 point (6)) `[r1 F12]`: the kit honours each stated span's VERIFY flag (D172;
+  `memfn.h:536-538`; pcrec states R `MF_VERIFY_NO`, `emit_dfa.c:6867`). A back span stated
+  later, whether a filter (NO) or a checked span (YES), uses an existing kit mechanism. Until
+  [LOOK-LOCATE] the item reaches the kit only through the presence run.
+
+### 5.4 Readers and the reach each admits `[r1 F8]`
 
 Every reader of the run walk's facts at `7b9ddd890`, found by grep for the accessors
-(`pcrec_fact_req_*`, `pcrec_fact_run_pin*`, `pcrec_fact_stamp_req_*`) over `src/` and `cli/`:
-all are in `src/gen/emit_dfa.c` except the `run_pin` derivation (`src/facts/kset.c:294-318`);
-`emit_vm.c` and `src/opt/` read none of them directly. Grouped by the assumption each makes (one
-row per assumption, its member functions listed); the last two columns say whether the reader
-admits a run outside the match TODAY and what admitting it needs.
+(`pcrec_fact_req_*`, `pcrec_fact_run_pin*`, `pcrec_fact_stamp_req_*`) over `src/` and `cli/`, plus
+the readers of K and `whole_maxoff` downstream of them (premise PREMISE-2, soundlook SOUNDLOOK-6),
+re-checked at `dd2fe2de9`. `emit_vm.c` calls no accessor, but the VM route reads A1-A3 through the
+exported emitters `pcrec_emit_req_run_blocks`/`pcrec_req_site_in_prefilter` (`emit_vm.c:13474`),
+`pcrec_emit_req_byte_check` (`:13583`) and `pcrec_emit_req_attempt_reentry` (`:13945`). So every
+BACK change below applies to the VM caller's text too (its `search_from` is also what `\G` reads,
+`emit_vm.c:13579-13582`).
 
-| # | readers (function, call line in `emit_dfa.c` unless named) | assumption, with its cite | AHEAD admitted? | BACK admitted? |
+| # | readers (function, `emit_dfa.c` unless named) | assumption, with its cite | AHEAD admitted? | BACK admitted? |
 |---|---|---|---|---|
-| A1 | the presence statement `req_pres_spans` (`:1477-1478`), the pre-check define `req_site_define` (`:1536-1584`), `site_kind_of` (`:1470`), `req_parts_in_whole` (`:8864-8872`) | presence is "measured from the match start, and every occurrence lies at or after it", `omin = 0` (`:1465-1467`, `:1501`); the kit's contract: `omin` ">= 0 (presence bytes lie inside [start, end): a lookaround body is never in the necessary set) ... A negative value is refused" (`memfn/include/memfn.h:679-684`) | yes in substance (a span is tested over `[start + omin, n)`, `memfn.h:1108`, no upper bound); no in wording (the kit's sentence) | NO: needs `omin = -back`, which the kit refuses: a kit contract change (an `MF_SITE_ABI` event, the kit's) |
-| A2 | the handoff's re-entry argument (`req_site_define`'s comment, `:1519-1529`) and `emit_req_handoff_rest` (`:1172`) | "any match it can still complete ... implies one wholly in [scan_position, n), so every part holds there; the presence facts hold no lookbehind byte (one may lie below a match's start)" (`:1524-1529`) | yes (a lookahead byte lies before `n`) | NO: a back byte may lie below `scan_position` |
-| A3 | the landmark K: `req_handoff_applies` (`:8834`), `req_handoff_k` (`:8973-8974`), `pf_handoff_applies` (`:9095`), `req_landmark_hit_ppm` (`:8994-8999`), the trace shadow `req_pick_shadow` (`:11187-11255`), and the `<PREFIX>_REQ_HANDOFF` stamp | invariant F, "every successful attempt at `p` holds the window at some `q` in `[p, p + maxoff]`" (`src/facts/facts.h:79-87`), so `q >= p`; and `-1` is the "no run / no needle" SENTINEL (`facts.h:566-567`, `:571-573`), declined at `:8835` (`if (k < 0 ...) return false`) | yes (K bounds the run's START) | NO: a back run's start offset is negative, and `-back` collides with the sentinel (at back 1, exactly `-1`): the fact needs a separate "none" state before any negative K exists |
-| A4 | the set's per-member offsets `req_set_maxoff` (`ReqSet.maxoff`, `facts.h:141-147`; the walk's `RbSet.off` is `uint32_t`, `src/facts/facts_derive.h:74-81`) and the set readers `req_set_leads_applies` (`:8658-8659`), `req_set_leads_own` (`:11045-11049`), `req_byte_dominated_by` (`:8586`), `req_none_applies` (`:8607`) | a set member is a byte at a non-negative offset from the attempt start, in `[search_from, n)` | yes for a guard byte past the end (its offset is still non-negative) | NO: unsigned storage, and a back byte is not in `[search_from, n)` |
-| A5 | the window statement `pf_window_of` (`:6825-6826`), `us_run_pin` (`:7364`), the offset tests `ofs_test_of` (`:7419`), `ofs_test_verifies_run` (`:7489`), `pf_run_applies_common` (`:7374`), and the derivation `pcrec_run_pin` (`kset.c:294-318`) | SELF-VERIFYING: R is stated only where the k-set walk's singletons spell it at a non-negative offset (`walk_proves`, `:6808-6813`; the pin check `:6827-6834` is an internal error otherwise) | yes (a position the walk does not prove is not stated: a lost opportunity, never a wrong statement) | yes, the same; R never starts below 0 until the walk proves bytes there (U-G1) |
-| A6 | the run compare `req_run_tests` (`:1093-1104`), `req_note_run` (`:1221`), `req_part_window` (`:1119-1131`) | the compare tests the run AT its hit, positions `[0, len)` from the hit (`:1128-1130`) | yes (relative to the hit, not the match) | yes, the same: what moves for BACK is A1-A3's floor, not the compare |
-| A7 | the stamps `<PREFIX>_REQ_RUN`, `_REQ_BYTE` (`pcrec_emit_prologue`, `:15831-15859`) and `--emit-facts` | the CONTRACT: "a literal run every match must contain" (`docs/spec/match_api.md` §6.3.7¶6), "a byte every match must contain" (§6.3.7¶4) | NO in wording (a spec hunk, D80) | NO in wording (the same hunk) |
+| A1 | the presence statement `req_pres_spans` (`:1477-1478`), `req_site_define` (`:1536-1584`), `site_kind_of` (`:1470`), `req_parts_in_whole` (`:8864-8872`); the kit field `s->head_max = (uint64_t)req_handoff_k(cx)` (`:1629`) | `omin = 0`, every occurrence at or after the start (`:1465-1467`, `:1501`); the kit's `omin` ">= 0 ... A negative value is refused" (`memfn.h:679-684`, `compose.c:608`); `head_max` is `uint64_t`, "the largest distance ... from a match start to the landmark origin" (`memfn.h:820-824`) | yes in substance (a span is tested over `[start + omin, n)`, no upper bound); a kit doc line | NO: `omin = −t` AND a signed `head_max` (a negative K cast to `uint64_t` wraps): two kit contract fields, one `MF_SITE_ABI` event, the kit's |
+| A2 | the handoff's re-entry argument (`:1519-1529`), `emit_req_handoff_rest` (`:1167`), and the VM caller | "any match it can still complete ... implies one wholly in [scan_position, n)" | yes | NO: the re-entry floor is `scan_position − t`, in the DFA's and the VM caller's text |
+| A3 | the landmark K: `req_handoff_applies` (`:8834`), `req_handoff_k` (`:8971`), `pf_handoff_applies` (`:9095`), `req_landmark_hit_ppm` (`:8994-8999`), `req_pick_shadow` (`:11187-11255`), `req_handoff_stamp` (`:9133-9139`) and its sinks `emit_req_landmark_move` (`:7793-7813`, via `pf_emit_handoff` `:7769-7783` and `pcrec_emit_req_attempt_reentry` `:7823-7832`) | invariant F (`facts.h:79-87`), so `q >= p`; `-1` is the "no run" SENTINEL (`facts.h:566-573`), declined at `:8835` | yes (K bounds the run's START) | NO: a signed K needs a "none" state apart from −1 first. The move at `k <= 0` emits `pos = landmark_position` (`:7804-7808`), which is sound and loose at a negative K (the tight move is `landmark + t`): a precision change, not a soundness one |
+| A4 | the set's offsets `req_set_maxoff` (`facts.h:141-147`; `RbSet.off` `uint32_t`, `facts_derive.h:74-81`) and its readers `req_set_leads_applies` (`:8658-8659`), `req_set_leads_own` (`:11045-11049`), `req_byte_dominated_by` (`:8586`), `req_none_applies` (`:8607`) | a set member is a byte at a non-negative offset | unchanged | unchanged: the SET takes no guard byte (T4 is a run rule, §1 non-goals) |
+| A5 | the window statement `pf_window_of` (`:6825-6826`), `us_run_pin` (`:7364`), `ofs_test_of` (`:7419`), `ofs_test_verifies_run` (`:7489`), `pf_run_applies_common` (`:7374`), `pcrec_run_pin` (`kset.c:294-318`) | SELF-VERIFYING: R is stated only where the k-set walk proves it at a non-negative offset (`walk_proves`, `:6808-6813`; the pin check `:6827-6834`) | yes (an unproved position is not stated) | yes, the same |
+| A6 | the run compare `req_run_tests` (`:1093-1104`), `req_note_run` (`:1221`), `req_part_window` (`:1119-1131`) | the compare tests the run AT its hit, `[0, len)` from the hit (`:1128-1130`) | yes | yes: what moves for BACK is A1-A3's floor, not the compare |
+| A7 | the stamps `<PREFIX>_REQ_RUN`, `_REQ_BYTE` (`pcrec_emit_prologue`, `:15831-15859`) | the contract: "a literal run every match must contain" (`match_api.md` §6.3.7¶6), "a byte every match must contain" (§6.3.7¶4) | NO in wording (a spec hunk, D80) | NO in wording (the same hunk) |
+| A8 | `req_handoff_entry_applies` (`:8908-8923`) and its caller `req_handoff_attempts_applies` (`:8929-8932`), the VM route's `handoff-attempts` row | reads `whole_maxoff`, declines `< 0` | yes | declined, which is sound (the VM handoff is off at BACK); L3's audit states it |
+| A9 | the derivations: `pf_derive_req_walk` (`src/facts/facts.c:201-249`; the `uint32` → `long long` `maxoff` at `:222`, the floor admission at `:231`), the landmark derivation that MAKES the −1 sentinel (`facts.c:332-333`) and `pcrec_fact_req_run_maxoff`'s −1 (`facts.c:581`) | `maxoff >= 0`; −1 = none | yes | NO: the sentinel split (A3) lands here first; `omin` is derived beside `maxoff` |
+| A10 | the pick arithmetic: `pcrec_req_window`/`pcrec_req_pick` (`src/facts/req.c:826-876`, `whole_maxoff + at`), `pcrec_find_run_scan_index` (`src/core/findings.c:745`), `pcrec_find_run_window_start` (`:780`), `pcrec_find_set_pick` (`:686`, also from `emit_dfa.c:8598`) | offsets non-negative | yes | NO: signed arithmetic through the window's offset (`whole_maxoff + at` with a negative base) |
+| A11 | trace-build and choice readers: `req_rest_own_sig` (`:11064-11083`), `req_use_row` (`:8946`), `req_use_whole` (`:8961`) | offset-free, or attempt-relative | yes | yes (at worst a lost dismissal, sound) |
+| A12 | the `--emit-facts` printers (`facts.c:772-866`; the only reader of `req_pieces`, `:804`) | the listing's vocabularies (`facts_listing.md` §4.1.2) | the dead fact's value: a spec hunk at L1 (F21) | `omin`'s value: a spec hunk at L3; L2's widened sentence at L2 |
 
-So **AHEAD needs no reader code** at `7b9ddd890` (A1's and A7's sentences: a kit doc line and a
-spec hunk), and **BACK needs four changes**: A1's negative `omin` (the kit's), A2's re-entry floor,
-A3's sentinel split and a signed K, A4's signed set offsets (or the set takes no back byte). The
-fact has ONE reach, raised for every reader together in the unit that audits them (L2 for AHEAD,
-L3 for BACK); a reader added later is admitted at the fact's current reach only by adding its row
-here (G3). This census was taken by the lane by grep; a build lane re-greps at its own base.
+So **AHEAD needs no reader code** (A1's kit sentence, A7's and A12's spec hunks). **BACK needs
+changes at seven sites**: the kit's `omin` and `head_max` (A1, two fields), A2 the re-entry floor
+(DFA and VM text), A3 the sentinel split and a signed K, A9 the derivation's sentinel and `omin`,
+A10 the signed pick arithmetic, and A12 the listing hunk. A8's decline is stated, not changed. The fact has ONE reach, raised for
+every reader together in the unit that audits them (L2 for AHEAD, L3 for BACK). A reader added
+later is admitted only by adding its row here (G3). The build lane re-greps at its own base.
 
-### 5.5 Negative lookarounds
+### 5.5 The BACK bound is a declared policy, not an invariant `[r1 F9]`
 
-S4 point (5): walls for positions (no guard), GUARDED units for contiguity (E-4). W-E1 is the
-witness that a negative body is never read as a guard.
+`MF_MAX_BACK` (`memfn.h:235`) bounds WINDOW span starts and term offsets (`:586-591`, `:614`). L3
+routes BACK through the PRESENCE `omin`, which has no such bound (an `int32_t` refused only below
+0). So rev 0's cap was borrowed from a seam L3 does not use. Rev 1:
 
-### 5.6 Predicted movers (spellings measured; guard positions counted)
+- **The reach row's bound is `lb_bytes`**: `Ctx.lb_max` (PCRE2's `max_lookbehind`, in
+  characters, `src/core/internal.h:3983-3997`) times the encoding's widest character in bytes (1
+  under `byte`, 4 under `utf8`). TOP admits a BACK candidate only if `t <= lb_bytes`; otherwise
+  the run keeps its reach-0 value. This is a declared POLICY row (a decision table row with its
+  condition stated), the ruled candidate.
+- **It is not an invariant** (measured). `lb_max` is a running max per construct, "nesting does
+  not accumulate" (`internal.h:3983-3997`), so a lookbehind nested in a lookbehind reads further
+  back than `lb_max`. `(?<=c(?<=bc)d)e`: `_VALID_LB 2` (`nested_lb.out`), while libpcre2 matches
+  it on `bcde` FROM OFFSET 3 at (3,4) by reading byte 0, three bytes back (`oracle.out`). So the
+  row is a sound REFUSAL (it admits less), never a check that would fire. The scan is memory-safe
+  at any `t`, because it is clamped at subject offset 0 and a pre-check compares bytes without
+  decoding them, so the UTF check's `_VALID_LB` window is not what makes it safe.
+- **What the kit admits is the kit's.** The `omin`/`head_max` change (A1) may carry the kit's own
+  bound. If it does, TOP's row reads the smaller of the two, and both are named in L3's request.
 
-| pattern | today | INSIDE only (reach (0,0)) | full reach |
+### 5.6 Predicted movers (rule applied; spellings measured where equivalent)
+
+| pattern | today (measured) | reach `[0, maxoff]` (L1) | full reach (L2/L3) |
 |---|---|---|---|
-| `xyz(?<=yz)abc` | `abc` | `xyzabc` (E-4; the body intersects `yz`, no change) | same |
-| `a(?=bc)bc` | `bc` | `abc` | same |
-| `a(?=b)[bc]` | none | `ab` | same |
-| `(?:(?=abcd)ab)cd` | `abcd` | `abcd` (intersection and extension inside the outer match) | same |
-| `foo(?=bar)baz` | `baz` | the dead fact (U-dead) | same |
-| `bar(?=baz)` | `bar` | `bar` | `barbaz`, ahead 3 |
-| `(?<=foo)bar` | `bar` | `bar` | `foobar`, back 3 |
-| `(?<=fo{1,3})bar` | `bar` | `bar` | `obar`, back 1 |
-| `(?<=ab\|b)c` | none | none | `bc`, back 1 |
-| `(?<=\x00\x01)[a-z]+` | none | none | `\x00\x01`, back 2 (the plan row's locate-on-the-lookbehind example) |
+| `xyz(?<=yz)abc` | `abc` | `xyzabc` (E-4; `lg` `yz` meets `xyz`'s tail, no change; spelling `xyzabc` measured) | same |
+| `a(?=b)[bc]` | none | `ab` (CAT-R; spelling `ab` measured) | same |
+| `y(?:x(?<=yx))z` | `yx` | `yxz` (spelling measured) | same |
+| `(?:(?=abcd)ab)cd` | `abcd` | `abcd` (no mover) | same |
+| `xy[ac](?:(?<=a)b\|c)` | `xy[ac]` | `xy[ac][bc]` (ALT drops the guard; spelling `xy[ac][bc]` measured) | same |
+| `[ac][ac]c(?<=ac)(?<=c)d` | `[ac][ac]c` (`616163/fdfdff`) | `[ac]acd` (stacking; spelling measured) | same |
+| `ab[xy](?=(?<=x)y)[xy]` | `ab[xy]` | `abxy` (nesting; spelling measured) | same |
+| `x(?=ab\|ac)a.` `[r1 F10]` | — | `xa`: the body's common head is the cube `a[bc]` (in the domain, soundlook SOUNDLOOK-5), but `a.` is not `all` (`.` is a gap), so `[bc]` meets no stored run position and is dropped (hand-derived; `xa[bc]` is necessary, oracle M 0 3 on `xab` and N on `xad`, and is reachable only when guards meet DESCRIPTION positions, where `.` is a position: §10 U-descguard) | same |
+| `foo(?=bar)baz` | `baz` | the dead fact; run `foobaz` (EMPTY-MEET: the emptied position keeps `z`; sound, the pattern cannot match; oracle N, N) | same |
+| `bar(?=baz)` | `bar` | `bar` | `barbaz`, `omin = maxoff = 0` (AHEAD) |
+| `(?<=foo)bar` | `bar` | `bar` | `foobar` at −3 |
+| `(?<=fo{1,3})bar` | `bar` | `bar` | `obar` at −1 |
+| `(?<=ab\|b)c` | none | none | `bc` at −1 |
+| `(?<=\x00\x01)[a-z]+` | none | none | `\x00\x01` at −2 (the plan row's locate example; `[a-z]` is not a cube) |
 
-### 5.7 Witnesses
+Today's values are measured (`facts_today.out`, `facts_extra.out`).
 
-| id | planted error | pattern, subject, expected | correct | sabotaged |
+### 5.7 Witnesses (each can fail; libpcre2 answers in `oracle.out`)
+
+Failure mechanism as in §3.6: each sabotaged run clears the 16-bit floor, is absent from the
+subject, and is not walk-verifiable. Each correct run below was checked against its subject.
+Every pattern was compiled at `dd2fe2de9` (`facts_today.out`, `facts_extra.out`).
+
+| id (row) | planted error | pattern, subject, expected | correct | sabotaged, and why it fails |
 |---|---|---|---|---|
-| S-L (alt_normal_form §3.5, the leak) | the lookbehind's body read as CONSUMED (offset 0, not back) | `(?<=foo)bar` on `foobar` from offset 3: (3,6) | reach (0,0): `bar`; full reach: `foobar` at back 3 | `foobar@0` as a consumed run: a pre-check from offset 3 (no step back) finds no `foobar`: NOMATCH |
-| W-L1 (§9 S4's witness: the window not widened back) | the pre-check scans from `search_from`, not `search_from - back` | `(?<=foo)bar` on `foobar` from offset 3: (3,6); from 2: (3,6); from 4: NOMATCH | the scan from 0 finds `foobar` | the scan from 3 misses it: NOMATCH where (3,6) is expected |
-| W-L2 (extension treated as consumed) | a guard extension leaves `all` true | `(?:(?=abcd)ab)cd` on `abcd`: (0,4) | `abcd` | `abcdcd` (the outer `cd` appended after the guard): absent, NOMATCH |
-| W-L3 (variable tail from the wrong branch) | the lookbehind's fixed tail taken as the FIRST branch's tail, not the common one | `(?<=ab\|b)c` on `xbc`: (2,3) | `bc` back 1 | `abc` back 2: absent, NOMATCH |
-| W-L4 (FACT witness: the reach leak) | at reach (0,0) an AHEAD guard position is kept | `bar(?=baz)` | `bar` (reach (0,0)) | `barbaz`: STILL SOUND for every reader at `7b9ddd890` (§5.4: no reader assumes the run ends by the match end), so it cannot move an answer; checked on the facts listing and the `_REQ_RUN` stamp (A7's contract), lesson 1 stated |
-| W-E1 | §4.5 | | | |
+| S-L (alt_normal_form §3.5, the leak) | the lookbehind's body read as CONSUMED (offset 0, not −3) | `(?<=foo)bar` on `foobar` from 3: (3,6) | L1: `bar`; L3: `foobar` at −3 | `foobar@0`: a pre-check from 3 (no step back) finds none: NOMATCH |
+| W-L1 (TOP, BACK floor) | the scan starts at `search_from`, not `search_from + omin` | `(?<=foo)bar` from 3: (3,6); from 2: (3,6); from 4: NOMATCH | the scan from 0 finds `foobar` | the scan from 3 misses it: NOMATCH where (3,6) is expected |
+| W-L2 (CAT-EDGE) | a carried leftover materialized as head bytes with `all` kept | `(?:(?=abcd)ab)cd` on `abcd`: (0,4) | `abcd` | `abcdcd`: absent, NOMATCH |
+| W-L3 (ITEM, variable body, L3) | the lookbehind's tail taken as the FIRST branch's, not the common one | `(?<=ab\|b)c` on `xbc`: (2,3) | `bc` at −1 | `abc` at −2: absent, NOMATCH |
+| W-F5 (ITEM + CAT-L, L1) `[r1 F5]` | the same plant, reachable at reach 0 | `[ac]b(?<=ab\|b)c` on `cbc`: (0,3) | `[ac]bc` | `abc` (`a` ∩ `[ac]`): absent, NOMATCH |
+| W-L4 (FACT witness, the reach leak) | at reach 0 an `rg` is kept at TOP | `bar(?=baz)` | `bar` | `barbaz`: sound for every reader (§5.4: no reader reads the end), so it cannot move an answer; checked on the facts listing and the stamp |
+| W-L5 (CAT-R) `[r1 F1]` | the guard laid end to end with `r` (met at the arm, rev 0's text) | `a(?=b)[bc]` on `ab`: (0,2); on `ac`: NOMATCH | `ab` | `ab[bc]`: absent from `ab`, NOMATCH |
+| W-L6 (CAT-EDGE, non-`all` `r`) | a leftover carried across a non-`all` neighbour, shifted by its `maxw` | `(?:(?=abc)a.?)[bc]c` on `abc`: (0,3) | `[bc]c` (the leftover `bc` is dropped at `a.?`; 15 bits, under the floor, so no run check) | `cc` (the `c` shifted to the group's end narrows `[bc]`): absent, NOMATCH |
+| W-L7 (CAT-EDGE, F2 (a)) | a carried leftover materialized as head bytes | `y(?:x(?<=yx))z` on `yxz`: (0,3) | `yxz` | `yyxz`: absent, NOMATCH |
+| W-L8 (CAT-EDGE, F2 (f), L3) | a leftover kept as consumed at a non-`all` left neighbour | `y*(?:ab(?<=xab)c)` on `xabc` from 1: (1,4) | `abc` (`x` dropped at `y*`) | `xabc` at reach 0: a scan from 1 finds none: NOMATCH |
+| W-L9 (TOP, F2 (e), L2) | the extended candidate's offset computed from the EXTENDED length | `[a-z]?[a-z]a(?=bc)` on `zzabc`: (0,3) | `abc` at `maxoff` 2 | `maxoff` 0: an attempt at 0 is admitted only with `abc` at 0, the handoff skips it, and the first answer is no longer (0,3) |
+| W-A1 (ALT) | a guard only one branch carries is kept | `xy[ac](?:(?<=a)b\|c)` on `xycc`: (0,4) | `xy[ac][bc]` | `xya[bc]`: absent, NOMATCH |
+| W-S1 (CAT-EDGE, stacking) | stacked leftovers concatenated, not met at equal offsets | `[ac][ac]c(?<=ac)(?<=c)d` on `cacd`: (0,4) | `[ac]acd` | `accd` (`lg` `acc` meets the left side): absent, NOMATCH |
+| W-N1 (ITEM, nested lookbehind in a lookahead) | the body's own guard flattened into its head affix at offset 0 | `ab[xy](?=(?<=x)y)[xy]` on `abxy`: (0,4) | `abxy` | `ab[xy]x`: absent, NOMATCH |
+| W-N2 (ITEM, nested lookahead in a lookbehind) | the body's tail affix taken with its inner lookahead's guard | `[ac](?<=a(?=c))c` on `ac`: (0,2) | `ac` | `cc`: absent, NOMATCH |
+| W-F4 (REP row 1, F4) | a min-0 repeat of a width-0 body keeps its guard | `x(?=ab)?a[bc]` on `xac`: (0,3) | `xa[bc]` | `xab`: absent, NOMATCH |
+| W-RG (REP through CAT) | a copy's `rg` laid end to end with the next copy | `(?:ab(?=a)){2}` on `ababa`: (0,4) | `abab` | `abaab`: absent, NOMATCH |
+| W-E1 | §4.5 (in L1's gate) | | | |
 
-### 5.8 Lever
+Soundlook's raw shapes, `(?:(?<=a)b|c)`, `(?<=ab)(?<=b)c`, `x(?=(?<=x)y)y` and `(?<=a(?=b))b`,
+stay as oracle facts (all in `oracle.out`). Their sabotaged runs are either dropped at reach 0 or
+under the 16-bit floor (`a[bc]` is 15 bits, measured none), so they cannot fail at L1. The
+witnesses above add a consumed prefix or a cube neighbour so that each plant is observable.
 
-The same harness lever (§3.7), members `guard` (E-4) and `look` (the guard part), plus the
-reach input itself: the harness lever forces reach `(0, 0)` for the `look` member's AHEAD/BACK
-rows. No public bit: the reach widening is a choice reaching a caller only through the pick rows
-(each deny-able) and the pre-check's earlier start (at most 8 bytes per call, a cost the
-D186 bench decides), and its risk is wrong answers (W-L1..L4).
+### 5.8 Lever `[r1 F18, F19]`
+
+The `look` arm of §3.7's harness deny source restores today's cut at a positive lookaround (T4
+off). `zero` restores E-4's cut. The reach is the walk's input, as `pos_set` is: the `look` arm
+also forces reach `[0, maxoff]`, so L2 and L3 have no separate lever. Public bits: L3's earlier
+scan start is a cost INSIDE the pre-check row, and its only public deny is the coarse
+`-fno-req-run` (bit 31), which removes the run check rather than restoring today's start. L3
+therefore RE-SPECIFIES bit 31's text (tuning.md §2.28¶1: the deny also removes a scan that begins
+before the start offset), as alt_normal_form §11 re-specifies bit 44, and adds no bit.
 
 ## 6. Decisions as declared tables (each first-match; the build spells them as rows)
 
-**T1, the arm table** (the description's dispatch; one row per node class, §2's table): CLASS,
-EMPTY (EXACT), zero-width (GUARDED), positive LOOKAROUND (GUARDED + guard), CAT, ALT, REP
-(power), negative LOOKAROUND (GUARDED), BREF/VAR/consume callout/CALL (wall). The `switch` in
-`rb_walk_at` stays exhaustive with no default (`req.c:116-121`'s rule); a kind maps to a row.
+**T1, the arm table** (one row per node class, §2): CLASS, EMPTY and zero-width (the unit),
+positive LOOKAROUND (the unit + item), CAT, ALT, REP (power), BREF/VAR/consume callout/CALL
+(wall). The `switch` in `rb_walk_at` stays exhaustive with no default (`req.c:116-121`).
 
-**T2, the REP rows** (first match):
+**T2, the REP rows** (first match) `[r1 F4, F6, F7]`:
 
-| # | condition | consumed description | `all` |
-|---|---|---|---|
-| 1 | body description width 0 (any m, n) | the EXACT unit if the body is EXACT or m = 0, else the GUARDED unit | true |
-| 2 | m = 0 | today's gap (`rr_none(rr_rep_w(...))`) | false |
-| 3 | m = n | `X^c`, c = min(m, saturation) | iff body `all` and c = m |
-| 4 | otherwise (m ≥ 1, m < n or unbounded) | head and best from `X^c · gap`, tail from `gap · X^c` | false |
+| # | condition | consumed value | guards | `all` |
+|---|---|---|---|---|
+| 1 | body width 0 (`maxw == 0`, any m, n) | `m = 0`: the unit; `m >= 1`: the body's value (width-0 copies coincide) | `m = 0`: NONE; `m >= 1`: the body's | true |
+| 2 | m = n (including m = n = 0, where `X^0` is the unit) | `X^c`, c = min(m, sat), `maxw` := `rr_rep_w` (exact), `tail.off` from it | `X^c`'s | iff c = m and `X^c.all` |
+| 3 | otherwise (m < n or unbounded; m = 0 included, where `X^0 · gap` is today's gap) | head, best, `lg` from `X^c · gap`; tail, `rg` from `gap · X^c`; `maxw` exact | as the cells say | false |
 
-**T3, the zero-width rows**: §4.1's E-1..E-5, first match on the kind row's TEXT `ZERO` and the
-node kind (`A_EMPTY` before the rest; `A_LOOK` positive before negative).
+Rev 0's row 2 ("m = 0: today's gap") is deleted: it is row 3 at c = 0 (simulate SIM-1, soundrep
+SOUNDREP-3), and it shadowed `X{0}` (`xy(?:ab){0}zw` stayed a gap where `xyzw` gives 4).
 
-**T4, the guard placement rows**: §5.1's INSIDE, AHEAD, BACK; a guard position outside the
-admitted reach is dropped (the walk's reach input); an empty intersection anywhere states the
-dead fact.
+**T3, the zero-width rows**: §4.1's E-1..E-5, first match on the kind row's TEXT `ZERO` and the node
+kind (`A_EMPTY` first; `A_LOOK` positive before negative).
+
+**T4, the guard rows**: §5.2's ITEM, CAT-R, CAT-L, CAT-EDGE, ALT, REP, EMPTY-MEET and TOP, first
+match within each combinator. TOP's reach is the walk's input. TOP's BACK condition includes the
+`lb_bytes` policy row (§5.5).
 
 **T5, the reader admission rows**: §5.4.
 
@@ -471,133 +686,126 @@ dead fact.
 
 Noted, not designed (`docs/design/plan_row_bodies/POSTFACT.md`):
 
-- **Span intersection** (`B & P1 & P2` on one span; lookaheads CONTAINED in the span become a
-  plain automaton): this note's INSIDE row is the FACT shadow of the contained case; the
-  intersection node would make the guard a consumed-span condition the automaton checks, after
-  which the run reads it as consumed (reach (0,0)) with no guard row needed.
-- **Lookbehind removal by `\K` with an earlier scan and a floor** (exact for fixed-length A):
-  the same step-back the BACK row's reader performs (scan from `max(0, s − maxlen(A))`, accept
-  only at or after `s`); the BACK row's `back` is that `maxlen(A)` for a fixed body. If the
-  rewrite lands, a fixed lookbehind becomes consumed text plus a start mark, and the BACK row's
-  reach becomes the mark's offset: the reader obligation (the scan floor) is the same one.
-- **The end-of-match mark** (the lookahead mirror): the AHEAD row's `ahead` is that mark's
-  distance to the consumed end; a reader admitting AHEAD is a reader that already knows the
-  reported end is not the consumed end.
-- **The group-0 group** (`A(?<0>B)C`): both marks at once; under it a run over `ABC` has
-  `back = |A|`, `ahead = |C|` relative to the reported match. The reach pair is exactly the
-  vocabulary that construct's facts would need.
-- **"Is read-before-start already a span fact?"** (POSTFACT's "To confirm"): the SHAPE is (D172
-  spans start down to -8, `memfn.h:235`); the statement is not (§0: pcrec states only `-1`).
+- **Span intersection** (lookaheads CONTAINED in the span become a plain automaton): CAT-R's
+  meet is the FACT shadow of the contained case.
+- **Lookbehind removal by `\K` with an earlier scan and a floor**: the same step-back as TOP's
+  BACK candidate (scan from `max(0, s − maxlen(A))`, accept at or after `s`). If it lands, a
+  fixed lookbehind becomes consumed text plus a start mark, and `omin` becomes the mark's offset.
+- **The end-of-match mark**: AHEAD's extension is that mark's distance to the consumed end.
+- **The group-0 group** (`A(?<0>B)C`): both marks at once; the run's `[omin, maxoff]` relative to
+  the attempt, and the reported span, are the vocabulary it needs.
+- **"Is read-before-start already a span fact?"**: the SHAPE is (D172 spans down to −8); the
+  statement is not (§0).
 
-## 8. Staging (separable units; each names the measurement that triggers it, D77)
+## 8. Staging (separable units; each names the measurement that triggers it, D77) `[r1 F17, F20, F21]`
 
-| unit | content | depends on | kind (byte / utf8) | trigger (D77: the census that starts it) | gates |
-|---|---|---|---|---|---|
-| E1 | T2 row 1 and T3 E-2/E-3 (exact width-0 units through REP); rides with stage 2a (E-1) if 2a's census fires, else alone | none (2a's lever if 2a is first) | choice / choice | stage 2a's census extended to `REP`-of-width-0 producers (the `pcrec_wrap_bare_anchor` wrapper, derive's pruned nodes): a bench cell among the movers | the census list = observed movers (two-sided); B0 identity diff with only those movers; PC-3; `make test`, `make test-axes` with the harness lever's `empty` member; S-g, W-R4 |
-| R1 | T2 rows 3-4 (the power arm, runs and pieces) | none | choice / choice | [REPEAT-RUN]'s census: corpus + bench compiles whose run grows under an independent model of T2 (byte spellings of the lowered trees, `pred.py`'s method), a bench cell among them | as E1; W-R1..R5; the pieces listing moves only for exact repeats (declared stream rows) |
-| E2 | T3 E-4 (guarded units) | none | choice / choice | a census of compiles whose run is cut by a zero-width node, per producer kind (S2 point 4), a bench cell among them | as E1; W-E1, S-L (S-L must stay red-able: the body is still not read) |
-| L1 | T4 INSIDE (guard intersection within the match, reach (0,0)) and the dead fact as a listing value | E2 | choice / choice | the plan row's cheap census, narrowed: compiles with a positive lookaround whose run grows at reach (0,0) | as E1; W-L2, W-L3 |
-| L2 | T4 AHEAD (reach `ahead` > 0) | L1 | choice | a bench cell whose rarest bytes sit in a lookahead past the consumed end (`bar(?=baz)` shape) | §5.4 re-grepped at the unit's base: every reader's AHEAD column still "yes"; the A7 spec hunk (`match_api.md` §6.3.7¶4/¶6: "every match must contain" widened to the reach) and the kit's `memfn.h:679-681` sentence (a kit request); W-L4 on the listing |
-| L3 | T4 BACK (reach `back` > 0, at most `MF_MAX_BACK`) | L1; the kit's acceptance of a negative presence `omin` (a request, the kit's `MF_SITE_ABI` event) | choice | the plan row's census (corpus + bench compiles whose rarest bytes sit inside a positive lookbehind), "likely after A-REV" | §5.4's A1-A4 changed in the same unit (A3's sentinel split before any negative K); W-L1 and S-L red-able; the spec hunk as L2's |
-| R2 | the REP adjacency head (`altnf.c:223-230`'s wall becomes `X^m`'s head, `closed` iff m = n, WRITES as today) | R1 | choice (tree movers) | a census of owner refusals (alt_normal_form §3.2 row 3) whose intervening branch's head is a REP: today `(?:ab\|ax{2}\|ad)` has `RX_ALTCLS_MERGES` 0 against 1 for the spelled `(?:ab\|axx\|ad)` (measured, `owner_rep.out`): the REP wall gives head `a` (h = 1); with R2 its head is `axx` and row 1 may pass | the parent's S-d/S-k witness shapes re-run with a REP as the intervening branch; R2's own witness (a REP head claimed `closed` at m < n) is designed at R2's design pass, not here |
+Every unit is a FACT change (G4): an input to the existing choice rows, judged at the pick rows
+it moves, with D186's choice bar applied there. It is not a third kind of change. The kind column
+says which regimes' pick rows a unit can move.
 
-Order: E1 → (R1, E2 independent) → L1 → (L2, L3); R2 after R1 when its census fires. No
-unit is an abi event by itself unless its movers include emitted scaffolding: runs and stamps are
-VALUES (alt_normal_form §4.7's reading); each unit's identity gate says which streams move.
+| unit | content | depends on | remodel overlap (D153) | kind (byte / utf8) | trigger (D77) | gates |
+|---|---|---|---|---|---|---|
+| E1 | T2 row 1 and T3 E-2/E-3; rides with stage 2a (E-1) if 2a's census fires, else alone | none (the span_pick 1e gate in the plan rows is discharged: [MEASURE-SET] "stage 1 COMPLETE at the 1e merge") | alt_normal_form stage 2a: the same `req.c` cut list and the same harness deny source; whichever builds first builds the source (§3.7) | fact change / fact change | stage 2a's census extended to REP-of-width-0 producers, a bench cell among the movers | the census list = observed movers (two-sided); B0 identity diff with only those movers; PC-3; `make test`, `make test-axes` with the `empty` arm; S-g, W-R4 |
+| R1 | T2 rows 2-3 (the power arm, runs and pieces) | none | none (`req.c` REP arm only; [REWRITE-ADJ] reads T2 later, U-rewrite) | fact change / fact change | [REPEAT-RUN]'s census: corpus + bench compiles whose run grows under an independent model of T2, a bench cell among them | as E1 with the `rep` arm; W-R1..W-R6; the pieces listing moves only for exact repeats |
+| E2 | T3 E-4 | none | stage 2a (as E1) | fact change / fact change | compiles whose run is cut by a zero-width node, per producer kind, a bench cell among them; R-span movers counted (F11) | as E1 with the `zero` arm; S-L stays red-able (the body is still not read) |
+| L1 | T4 ITEM, CAT-R/L/EDGE, ALT, REP, EMPTY-MEET, TOP at reach `[0, maxoff]`; the dead fact as a listing value | E2 | [DD-11.5] part 1: the item is its producer's first member (§5.3); its `look-fixed` row reads it when built | fact change / fact change | compiles with a positive lookaround whose run grows at reach 0 | as E1 with the `look` arm; W-L2, W-L5, W-L6, W-L7, W-F4, W-F5, W-A1, W-S1, W-N1, W-N2, W-RG, W-E1; `facts_listing.md` §4.1.2 hunk (the dead fact's value) and §4.1.3 if it carries a `why` |
+| L2 | TOP's AHEAD candidate | L1 | none | fact change (byte) | a bench cell whose rarest bytes sit in a lookahead past the consumed end | §5.4 re-grepped: every AHEAD column still "yes"; the A7 spec hunk (`match_api.md` §6.3.7¶4/¶6: "every successful ATTEMPT holds the run, which may extend past the attempt's consumed end", attempt-relative per §2, F14) and the kit's `memfn.h:679-681` sentence (a kit request); the `facts_listing.md` §4.1.2 hunk if the listing shows it; W-L4, W-L9 |
+| L3 | TOP's BACK candidate (`omin < 0`, `t <= lb_bytes`) | L1; the kit's acceptance of a negative presence `omin` and a signed `head_max` (one request, the kit's `MF_SITE_ABI` event) | A-POSDOM (`docs/design/stream/roadmap.md`: "the FIND frame carries the floor"; the scan floor and A2's re-entry floor are its site): L3 rides with A-POSDOM's step or waits for it. A-REV (ownership ruling 1: `vlookbehind.md` holds the lookbehind admission rows; arev S3 the lookbehind hand-off): L3's item reads the body's tail affix, the hoist the branches' (§5.2), and neither moves the other's rows | fact change | the plan row's census (corpus + bench compiles whose rarest bytes sit inside a positive lookbehind) | §5.4's A1-A3, A8-A10, A12 changed in the same unit (A3's sentinel split before any negative K); bit 31's text re-specified (tuning.md §2.28¶1); the spec hunks as L2's plus `omin` in the listing; S-L, W-L1, W-L3, W-L8 red-able |
+| R2 | the REP adjacency head (`altnf.c:223-230`'s wall becomes `X^m`'s head, `closed` iff m = n) | R1 | [REWRITE-ADJ] (both read T2) | fact change (tree movers) | a census of owner refusals whose intervening branch's head is a REP: `(?:ab\|ax{2}\|ad)` has `RX_ALTCLS_MERGES` 0 against 1 for `(?:ab\|axx\|ad)` (measured, rev 0's `owner_rep.out`) | the parent's S-d/S-k shapes re-run with a REP branch; R2's own witness is designed at its design pass, where it names the reader of EXACT if it needs one (F16) |
+
+Order: E1 → (R1, E2 independent) → L1 → (L2, L3); R2 after R1 when its census fires. No unit is
+an abi event by itself unless its movers include emitted scaffolding; each unit's identity gate
+says which streams move.
 
 ## 9. The ledger (G2)
 
-| change | where (`7b9ddd890`) | kind |
+| change | where (`dd2fe2de9`) | kind |
 |---|---|---|
-| "a repeat's head and tail do not survive" | `req.c:64-69`, `:709-719`, `rb_rep_into` `:549-558` | REPLACED by T2 (unit R1) |
+| "a repeat's head and tail do not survive" | `req.c:64-69`, `:709-719`, `rb_rep_into` `:549-558` | REPLACED by T2 (R1) |
 | "min-0 is a gap" for a width-0 body | `req.c:723-739` | REPLACED by T2 row 1 (E1) |
+| rev 0's T2 row 2 (m = 0) `[r1 F7]` | this note | DELETED (row 3 at c = 0) |
 | `pcrec_pd_none()` for REP | `req.c:557` | REPLACED by the power combinator (R1) |
-| the ZERO-text cut | `req.c:627-645`, `:756-771` | SPLIT by T3: unit (E1/2a), guarded unit (E2), guard (L1) |
-| `A_LOOK`'s "joining across" comment | `req.c:744-755` | REWRITTEN (E2: joining across is sound; reading the body is the L rows, with reach) |
+| the ZERO-text cut | `req.c:627-645`, `:756-771` | SPLIT by T3: unit (E1/2a/E2), unit + item (L1) |
+| `A_LOOK`'s "joining across" comment | `req.c:744-755` | REWRITTEN (E2: joining across is sound; reading the body is L1's item) |
+| rev 0's EXACT/GUARDED split `[r1 F16]` | this note | DELETED (no reader) |
 | the REP adjacency wall | `altnf.c:223-230` | REPLACED (R2) |
 | the power combinator | `desc.c` (new) | ADDED (R1) |
-| the reach input of the walk | `pcrec_req_walk`'s signature (`req.c:789`) | ADDED (L1; reach (0,0) until L2/L3) |
-| the dead fact | `--emit-facts` value | ADDED (L1), no consumer |
-| one harness lever with an arm set | `cli/` harness options (alt_normal_form §11's lever, generalized) | ADDED once (first unit), members per unit |
+| the pending guards `lg`/`rg` | `RbRuns` (`req.c:154`) | ADDED (L1) |
+| the reach input of the walk | `pcrec_req_walk`'s signature (`req.c:789`) | ADDED (L1; reach `[0, maxoff]` until L2/L3) |
+| the dead fact | `--emit-facts` value | ADDED (L1) |
+| a harness source in `facts.def`'s deny, with one restorable-arm table `[r1 F18]` | `facts.def`, `facts.c` (FIX-8's form) | ADDED once (the first of 2a/E1/R1), members per unit |
 
 ## 10. Unlocks (each with its trigger)
 
-| id | unlock | trigger |
-|---|---|---|
-| U-dead | a pattern whose description has an empty intersection cannot match: the compile could emit the constant NOMATCH artifact (`foo(?=bar)baz`, `abc(?=d)efg`) | a corpus or user pattern that is dead this way (count at L1's census) |
-| U-vm | an exact `X{n}` of a fixed body matched by one compare in the VM (S3 point 4) | a VM bench cell with an exact counted repeat on its hot path |
-| U-pieces | `req_pieces` through repeats feeds alt_normal_form U3 (the kit's piece-set request) | the kit's answer to that request |
-| U-locate | a lookbehind's guard as a LOCATE candidate (`(?<=\x00\x01)[a-z]+` locates on the lookbehind bytes): it joins the one find-the-span choice set as a window span with its negative offset (plan row, Frank 2026-11-06) | L3 and U-G1 landed (the walk proves the back bytes), and a bench cell where the guard is rarest |
-| U-G1 | kset/startset/endwin read the description (alt_normal_form G-1): the window's R could then be walk-proven at negative offsets | G-1's own census |
-| U-rewrite | [REWRITE-ADJ]'s REP-OF-REP / TRIVIAL-REP members read T2's rows (one REP rule for facts and rewrites) | [REWRITE-ADJ]'s first build |
-| U-post | [POSTFACT]'s marks: the reach pair is their fact vocabulary (§7) | a design lane for span intersection or the marks |
+| id | unlock | trigger | plan row |
+|---|---|---|---|
+| U-dead | a pattern whose description is EMPTY cannot match: an empty meet (`foo(?=bar)baz`), `a(?!)b` (oracle N; run none today), an empty class. The compile could emit the constant NOMATCH artifact | a corpus or user pattern that is dead this way (counted at L1's census) | [DESC-DEAD] |
+| U-locate | a lookbehind's item as a LOCATE candidate: a window span at its negative offset, in the one find-the-span choice set (`(?<=\x00\x01)[a-z]+`) | L3, and a bench cell whose rarest bytes are in a lookbehind | [LOOK-LOCATE] |
+| U-ctxsides | `MkEnd.ctx_before/ctx_after` read from the producer instead of the anchored DFA | a second machine-side consumer, or cover B1 | [CTX-SIDES-PRODUCER] |
+| U-omin | the kit's true positive presence `omin` (`memfn.h:679-684`, "the true omin is B5's") from the run's `[omin, maxoff]` | the kit's B5 request | [PRES-OMIN-TRUE] |
+| U-descguard | guards meet DESCRIPTION positions, where a gap is a position (`x(?=ab\|ac)a.` → `xa[bc]`) | alt_normal_form stage 3 (set positions) or G-1, whichever makes the description the run's position source | (inside [RUN-POS-SET]) |
+| U-vm | an exact `X{n}` matched by one compare in the VM | a VM bench cell with an exact counted repeat on its hot path | (inside [REPEAT-RUN]) |
+| U-pieces | `req_pieces` through repeats feeds alt_normal_form U3 | the kit's answer to that request | (inside [RUN-POS-SET]) |
+| U-G1 | kset/startset/endwin read the description (alt_normal_form G-1) | G-1's own census | (inside [RUN-POS-SET]) |
+| U-rewrite | [REWRITE-ADJ]'s REP members read T2 | [REWRITE-ADJ]'s first build | (inside [REWRITE-ADJ]) |
+| U-post | [POSTFACT]'s marks use the reach as their vocabulary (§7) | a design lane for span intersection or the marks | (inside [POSTFACT]) |
 
 ## 11. Standing questions (docs/design/CLAUDE.md)
 
 1. **Measurement regime: RELEVANT.** Every number here is a compile-time fact of this box's
-   compiler (gcc 15.2, Zen 4, the lane's own build of `7b9ddd890`); answers from libpcre2-8 10.46.
-   Each unit's speed claim is owed per regime at its gate (bench strata; for L3 a find-all regime,
-   where the step back is paid per call); a different regime can flip a pick, which is why every
-   unit is a CHOICE.
+   compiler (gcc 15.2, Zen 4, the lane's own build of `dd2fe2de9`); answers from libpcre2-8
+   10.46. Each unit's speed claim is owed per regime at the pick rows it moves (bench strata; for
+   L3 a find-all regime, where the step back is paid per call). A different regime can flip a
+   pick, which D186's bar at those rows decides.
 2. **Independent control: RELEVANT.** Each census is an independent model of T2/T3/T4 over byte
    spellings of the lowered trees (no compiler code), compared two-sided with the observed movers
-   (K35: the population is corpus + bench, counted); each witness has a libpcre2 expectation
-   (`oracle.out`), never pcrec's; each sabotage reaches its site ([MECH-REACH]).
+   (K35: the population is corpus + bench, counted). Each witness has a libpcre2 expectation,
+   never pcrec's. Each sabotage reaches its site ([MECH-REACH]). Each witness's failure needs its
+   sabotaged run to clear the floor and stay unverifiable (§3.6), which the build re-measures.
 3. **What moves when data is regenerated: NOT RELEVANT beyond today's.** The arms add no table,
-   calibration or data file; a UCD regeneration moves fold classes and so runs, as today
-   (alt_normal_form §7.3).
+   calibration or data file; a UCD regeneration moves fold classes and so runs, as today.
 
 ## 12. Proposed decision (D-next, text only)
 
-**The one fixed-width description gets its REP, EMPTY and positive-LOOKAROUND arms as language
-identities, and a run gets a REACH.** `X{m,n}` reads as `X^m · X{0,n−m}` (head, best) and
-`X{0,n−m} · X^m` (tail), `X^m` unrolled through CAT to a saturation derived from the run's
-storage bound; every node that consumes nothing is CAT's width-0 unit, EXACT if it cannot fail and
-GUARDED if it can, the run joining across both and the rewrite owner across EXACT only; a
-positive lookaround adds its body's fixed affix as a guard at its offset, intersecting the
-consumed positions it overlaps and extending past them; a run's reach `(back, ahead)` says how far
-it may lie outside the match, the walk computes at the reach its readers admit (a declared table),
-and a reader widens its admission only in a unit that names its witness. No public flag bit; one
-harness lever with an arm set. Staged E1, R1, E2, L1, L2, L3, R2, each on its census.
+**The one fixed-width description gets its REP, EMPTY and positive-LOOKAROUND arms; a lookaround's
+item is the first member of D168's producer; and a run's reach is its signed interval
+`[omin, maxoff]`.** `X{m,n}` reads as `X^c · X{0,n−m}` (head, best) and `X{0,n−m} · X^c` (tail),
+c derived from the run's storage bound and `maxw` always exact. Every node that consumes nothing
+is CAT's width-0 unit. A positive lookaround is the unit plus its ITEM, the body's fixed affixes
+at signed offsets from its cursor, computed once and read by every placement: the run carries it
+as pending guards that `rr_cat` meets, carries across an exact-width neighbour or drops, and only
+the top level may extend the run at the reach its readers admit (BACK capped by the `lb_bytes`
+policy row); span_facts' context half reads the same item at span 0. No stored `ahead`. A test-only
+lever as a harness source in `facts.def`'s deny (alt_normal_form FIX-8's form). No public flag bit
+(bit 31 re-specified at L3). Staged E1, R1, E2, L1, L2, L3, R2, each on its census.
 
 ## 13. Open questions for Frank (plain words, each with a leaning)
 
-1. **Should a repeat count as its copies for the required run?** Today `xy(?:ab){2}zw` gives
-   the two-byte run `ab`; spelled out, `xyababzw` gives all eight bytes. The rule here reads
-   `X{2}` exactly as `XX`, and `X{2,5}` as two copies followed by "maybe more" (for the start)
-   and "maybe more" followed by two copies (for the end), so nothing is claimed that every match
-   does not hold. Forces: one rule, no per-construct case, and it is already true for the span
-   facts the kit gets (they see `A{4}` as four positions today); the cost is a census and a
-   build lane. Leaning: yes, as unit R1, built when its census shows a bench cell.
-
+1. **Should a repeat count as its copies for the required run?** Today `xy(?:ab){2}zw` gives the
+   two-byte run `ab`; spelled out, `xyababzw` gives all eight. The rule reads `X{2}` as `XX` and
+   `X{2,5}` as two copies then "maybe more" (for the start) and "maybe more" then two copies (for
+   the end). Leaning: yes, as unit R1, built when its census shows a bench cell.
 2. **Should `\b`, `$`, `\K` and negative lookarounds stop cutting the run?** They consume nothing,
-   so the bytes on either side are next to each other in the subject: `xyz(?<=yz)abc` could
-   report `xyzabc` (6) instead of `abc` (3), and `x(?!ab)ac` `xac` instead of `ac`. It is sound;
-   the alternation note held it back only because nobody had counted how often it matters.
-   Leaning: count it (unit E2's census) rather than decline it, and build it if a bench cell
-   moves.
-
+   so the bytes on either side are adjacent: `xyz(?<=yz)abc` could give `xyzabc`. Leaning: count it
+   (unit E2's census) and build it if a bench cell moves.
 3. **A run that reaches outside the match: one value for every reader, or two facts?** With a
-   lookbehind, the run of `(?<=foo)bar` is really `foobar`, starting three bytes BEFORE the
-   match. Some readers handle that already; four do not (the pre-check's start offset, its
-   restart argument, the handoff's offset, which today uses -1 to mean "none", and the
-   necessary-byte offsets). Option (a): one run, computed at the reach every reader accepts,
-   raised for all of them together in one unit. Option (b): a second, wider run beside today's,
-   for the readers that can use it. Leaning (a): one fact and one walk; the reach goes up when
-   the readers are ready, and (b) would be the parallel mechanism you asked us not to build.
-
-4. **The `<PREFIX>_REQ_RUN` stamp promises "a run every match must contain".** A lookahead or
-   lookbehind run breaks that sentence (`bar(?=baz)`'s `barbaz` is not inside the match).
-   Leaning: when the reach first rises (unit L2), widen the sentence to "every match, with up to
-   N bytes before it and M after it", show the reach in `--emit-facts`, and leave any new stamp
-   SPELLING (a reach suffix) to the interface push, where stamp changes are collected.
-
-5. **Lookbehinds longer than 8 bytes.** The memory-functions kit accepts window positions at
-   most 8 bytes before the candidate (its own shape bound). A longer lookbehind's run would then
-   stay as today (inside the match). Leaning: accept that, and ask the kit to lift the bound only
-   if the BACK census finds a bench cell with a longer lookbehind.
-
-6. **When does [REWRITE-ADJ] start?** Your order puts it after this note settles. The note
-   builds nothing by itself (every unit waits on its census), and the rewrite table's repeat
-   members (`x{1}`, a repeat of a repeat) would read this note's repeat rows. Leaning: start the
-   [REWRITE-ADJ] design once this note is ruled, not after its units are built.
+   lookbehind, the run of `(?<=foo)bar` is really `foobar`, starting three bytes before the
+   attempt. Most readers already cope; seven places do not: the kit's two fields (the start offset
+   and the landmark distance), the restart floor, the handoff's offset (which uses −1 for "none"),
+   the facts' own derivation, the pick arithmetic and the listing. Option (a): one run, computed at
+   the reach every reader accepts, raised for all of them together in one unit. Option (b): a
+   second, wider run beside today's. Leaning (a): one fact and one walk; (b) is the parallel
+   mechanism you asked us not to build.
+4. **The `<PREFIX>_REQ_RUN` stamp promises "a run every match must contain".** A lookahead run
+   (`bar(?=baz)`'s `barbaz`) extends past the match, and a `\K` pattern's run already lies before
+   the reported match. Leaning: at L2, reword it as "every successful attempt holds this run", show
+   the reach in `--emit-facts`, and leave any new stamp spelling to the interface push.
+5. **How far back may a lookbehind run start?** The scan for `(?<=foo)bar`'s `foobar` begins
+   three bytes before the start offset. Rev 0 capped it at 8 bytes, borrowing the kit's window
+   bound, which is the wrong seam. Rev 1 caps it at the pattern's own declared lookbehind length
+   (PCRE2's `max_lookbehind`, in bytes for the encoding). That cap is a policy, not a law: a
+   lookbehind inside a lookbehind can read further back (`(?<=c(?<=bc)d)e` reads three bytes back
+   while its declared length is two), and such a run just keeps today's value. Leaning: the
+   declared-length cap, plus whatever bound the kit puts on its start-offset change.
+6. **When does [REWRITE-ADJ] start?** Leaning: start its design once this note is ruled, not after
+   its units are built.
