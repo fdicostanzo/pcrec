@@ -10093,3 +10093,24 @@ Generic-loop rule: a caller that serves any artifact loops over `info->next` (on
 **Why:** PCRE2 10.43+ accepts bounded variable-width lookbehind; pcrec refused it as a capability limit for want of the loop, which was the last capability refusal of accepted lookbehind syntax short of backreferences.
 
 **Revisit-when:** stage 2 (backreferences in a lookbehind) or the 255 cap's setting at [IFACE-PUSH].
+
+## D190 — candidate search and candidate validation are separate primitive pieces, composed: the (search, stream, check) triple (owner, 2026-11-07)
+
+**Decision (Frank, directly to the kit, 2026-11-07 ~23:00; kit ledger `memfn/docs/responses.md` notice at 067aca4df, "proposed decision entry"; filed by main, lane kitfile):**
+- Frank's words: "Candidate search and candidate validation are two different primitive pieces that are composed." Asked "Adopt search, stream, check as composed pieces?" he answered "Yes" (kit journal 11-07 ~23:00).
+- Kit reading, as stated in the notice: a site's find-then-verify plan is a triple, (search, candidate stream, check):
+  - search: T-FIND's method (block mask or position);
+  - stream: how the code moves past a rejected candidate: one-shot restart at c + 1, continue through the current mask, or the skip-table shift;
+  - check: T-VERIFY's plan.
+- Each piece is a table; the renderer composes them inline (no call boundary).
+- libc memchr supplies only one-shot. vrun becomes one composition; vany plus the caller's verify is the one-shot composition (kit journal).
+- A comparison between two plans names which pieces differ (Frank's apples-to-apples lesson, same day).
+- Also ruled (Q6, "Yes"): span_pick row 1 waits for an inline one-member finder and its card, so row 1's first priced comparison is like-for-like (controlled).
+
+**Consequences (as stated in the notice):** `docs/design/memfn/plan_frame.md` (unit 3.0) rev 1 shapes the reply as the triple; the kit's reply already carried method + renderer and a two-valued resume, which the triple reshapes. The reply is facts only (D157).
+
+**Why (Frank, same day):** the smp20 comparison was not apples to apples (an inline pair against a libc call); the missing candidate was an inline one-member finder at pair speed.
+
+**Related:** D186, D187 (the kit's span_pick decisions; the notice offered "a D-entry, or an addendum to D186/D187, your call": filed as its own entry because the ruling names a new primitive-piece structure rather than amending either); D188; plan rows [RUNG-LIST], [PIECE-ACCEPT-RULE], [PIECE-COVERAGE].
+
+**Revisit-when:** a site needs a fourth piece beyond (search, stream, check).

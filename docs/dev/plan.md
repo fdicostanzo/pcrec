@@ -710,6 +710,24 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [RUNG-LIST] STATE:not-started — the memfn reply lists the SIMD rungs a define will render, a per-SIMD-level triple
+  filed: 2026-11-07 lane kitfile for the kit (plan_frame.md §7 "Plan rows proposed", ruled at r12 Q13; trigger restated at r13 R28)
+  status (2026-11-07): not started; D77 defers it; rev 2 designed it in full (u30d2, 45f3a337f) and rev 2.1 removed it from unit 3.0 (the reply names the OFF triple only, gap stated in §2.3)
+  trigger: row 1 compares a SIMD-on cell, or the first MASK stream RENDERER ROW lands
+  refs: docs/design/memfn/plan_frame.md §7 and §2.3 (branch lane/memfn-u30d); docs/dev/reviews/2026-11-07-r13-memfn-planframe2.md (R25, R28); decisions D190
+  The reply lists the rungs: `nrung`/`rung[]` (row id, search VECTOR, stream MASK, check TRIM, widest first), the three fact columns on `fn_rows` PREFIX, and the one pcrec fact it needs, whether the define's file-scope sink states `simd_open`/`simd_close` (`fs`), unless U2+U3 has moved vrun's admission into per-target arts by then (then each target art's reply is one rung and no sink fact is asked). It also declares `mf_wsearch`'s VECTOR and the support table's VECTOR row (MASK; basis witness: vrun's text holds `m &= m - 1`), both removed from 3.0.
+- [PIECE-ACCEPT-RULE] STATE:not-started — one intersection rule over the (search, stream, check) pieces: does this frame accept this piece
+  filed: 2026-11-07 lane kitfile (r13 FIXIND standing question 1, PROPOSED as a plan row; tag chosen by the filer)
+  status (2026-11-07): not started; the search has a rule (the renderable set) and the stream one (Table S); the check becomes the third member at the second check renderer row
+  trigger: the second check renderer row, or the finder's MASK row
+  refs: docs/dev/reviews/2026-11-07-r13-memfn-planframe2.md (Standing questions (1)); docs/design/memfn/plan_frame.md; decisions D190
+  General form: one intersection rule over the three pieces, with ST-one / ST-none / ST-many as its first-match rows (it also dissolves R3).
+- [PIECE-COVERAGE] STATE:not-started — a per-piece COVERAGE fact (DESCRIBED / NONE / UNDESCRIBED) for the reply's "not described" residues
+  filed: 2026-11-07 lane kitfile (r13 FIXIND standing question 3, PROPOSED as a plan row; tag chosen by the filer)
+  status (2026-11-07): not started; four residues form a family: ARM's `plan_test` NONE, the D-hors PROVES residue, the SIMD gap, `search` NONE on ARM (conflates "no piece" with "a piece the reply does not describe")
+  trigger: the first reader that must tell "absent" from "unreported" (row 1's first record or [RUNG-LIST])
+  refs: docs/dev/reviews/2026-11-07-r13-memfn-planframe2.md (Standing questions (3)); docs/design/memfn/plan_frame.md Goal 5; decisions D190
+  Cheapest at 3.0b's one MF_SITE_ABI event if ever wanted.
 - [PCRE2-TESTDATA] STATE:not-started — PCRE2's testinput patterns as a DATA document; tests built on it are opt-in
   filed: 2026-11-07 Frank ("Yes as a filler item and to a data document. If we build a test section from this it's additional and opt in. We might use it also to fill in gaps in our main test coverage.")
   status (2026-11-07): not started; FILLER (runs when a lane slot is idle)
