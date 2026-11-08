@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u30d_report.md
+sections: Summary; The design note; Cites checked at the build tree; pcrec-side asks for main; Open questions; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
