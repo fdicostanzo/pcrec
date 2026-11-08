@@ -7485,12 +7485,6 @@ void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *val
 /* [MEASURE-SET] M0 the `<PREFIX>_MEASURES` / `.measures = …` pair, written
  * right after the findings pair at the same two marks (measure_sets.md §3.5). */
 void pcrec_emit_measures_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value);
-/* [MEMFN] the policy word pcrec sends the kit for a job's options: one bit,
- * `MF_P_PORTABLE_ONLY`, set iff the compile's CPU target set is the kit's
- * portable target alone (src/gen/memfn_targets.c: SIMD off, or an explicit
- * list that says so). The ONE derivation; every `mf_art_begin` caller passes
- * this and never a literal. */
-uint32_t pcrec_memfn_policy(const pcrec_options *opt);
 /* [XARCH-DEV] P1: resolves the CPU target set the flag word and the
  * `-fmemfn-simd=` list text select and checks it (every token through the
  * kit's parser, one family, one member for now). 0, or 1 with the refusal

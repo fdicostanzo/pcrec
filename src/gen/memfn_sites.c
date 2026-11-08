@@ -194,11 +194,15 @@ mf_art *pcrec_memfn_art(Ctx *cx)
 #ifdef PCREC_CAND_TRACE
         meas_record(cx, job->mf_ms);
 #endif
-        job->mf = mf_art_begin(ma, cx->opt->prefix,
-                               pcrec_memfn_policy(cx->opt),
+        /* the art-level policy word is read by nothing (memfn.h); the CPU
+           target is stated by its own entry, at once, on every art */
+        job->mf = mf_art_begin(ma, cx->opt->prefix, 0,
                                pcrec_memfn_denies(cx->opt->flags), job->mf_ms,
                                job->analysis);
         if (!job->mf) pcrec_ctx_nomem(cx);
+        if (mf_art_target(job->mf, pcrec_memfn_target(cx)))
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the "
+                           "art's CPU target: %s", mf_art_error(job->mf));
         /* R17-b' B2 (R-MS6): the harness lever's arm-entry counter, under the
            reserved prefix and the artifact's own (placeholder, rendered with
            the rest of the text); never on a shipped compile */
@@ -459,8 +463,7 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
     s->pred.plan_hint = MF_NO_PRED;
-    s->policy = pcrec_memfn_policy(cx->opt) |
-                (pcrec_deleg_sites[id].budget == DELEG_LOOP ? MF_P_INLOOP : 0);
+    s->policy = pcrec_deleg_sites[id].budget == DELEG_LOOP ? MF_P_INLOOP : 0u;
     s->denies = pcrec_memfn_denies(cx->opt->flags);
     s->opts = cx->opt->memfn;
     return s;

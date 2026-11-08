@@ -48,8 +48,22 @@ extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];
 /* ---- the attempt's kit state, and the adapters --------------------------- */
 
 /* The attempt's mf_art, begun on first ask (one per Job attempt, so the
- * size ladder's re-emission starts clean). */
+ * size ladder's re-emission starts clean), its CPU target stated at once
+ * (`mf_art_target`, before any define or emit). */
 mf_art *pcrec_memfn_art(Ctx *cx);
+
+/* [XARCH-DEV] U3 the compile's one CPU target, the kit's row as P1's option
+ * parse resolved it (src/gen/memfn_targets.c): the ONE derivation every art,
+ * the artifact's guard and region and `<PREFIX>_TARGETS` read. */
+const mf_target *pcrec_memfn_target(Ctx *cx);
+/* `<PREFIX>_TARGETS`' value for it, `family:members` (the kit's tokens). */
+const char *pcrec_memfn_targets_stamp(Ctx *cx);
+/* The kit's family guard and region open, at file scope before the
+ * artifact's first function; the region close after its last. Guarded
+ * bytes (no length decision reads them); nothing on a part, nothing for the
+ * portable target. */
+void pcrec_emit_target_open(Ctx *cx, StrBuf *c);
+void pcrec_emit_target_close(Ctx *cx, StrBuf *c);
 
 /* A sink over one StrBuf. The comment gate stays pcrec's WRITE-TIME mute
  * (sb.c): `cmt_open` enters a NONESSENTIAL region, writes the comment's
@@ -106,8 +120,8 @@ uint64_t pcrec_memfn_deny_flags(uint64_t mf);
 /* ---- building a site ------------------------------------------------------ */
 
 /* A zeroed site for DELEG_SITES row `id`, in the arena: its abi, its policy
- * (MF_P_INLOOP from the row's budget and nowhere else; MF_P_PORTABLE_ONLY
- * while -fmemfn-simd is not given), `opts` NULL (no --memfn= until R4d). */
+ * (MF_P_INLOOP from the row's budget and nowhere else: the CPU target is the
+ * art's, `mf_art_target`), `opts` the compile's --memfn= string. */
 mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id);
 /* `n` zeroed predicates in the arena. */
 mf_pred *pcrec_memfn_preds(Ctx *cx, int n);

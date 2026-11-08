@@ -8,10 +8,10 @@
  * (check C4). What it decides is the selection (`simd_rows`, first match
  * over the flag word and the list text) and the one-member rule.
  *
- * The one policy bit the kit reads (`MF_P_PORTABLE_ONLY`) is read off the
- * set: portable iff the set is the kit's portable target alone. P1 moves no
- * byte: the host's default list and the portable target reproduce today's
- * SIMD-off / SIMD-on split exactly. */
+ * The set's one member is the art's TARGET (`pcrec_memfn_target`, unit U3):
+ * every art states it to the kit (`mf_art_target`), and the artifact places
+ * the kit's guard and region text for it (src/gen/emit_dfa.c,
+ * `pcrec_emit_target_open`/`_close`) and names it in `<PREFIX>_TARGETS`. */
 #include <stdio.h>
 #include <string.h>
 
@@ -116,14 +116,58 @@ int pcrec_memfn_simd_check(uint64_t flags, const char *list, char *err, size_t n
     return resolve(flags, list, &s, err, n);
 }
 
-/* The set is validated before any pass runs (`pcrec_compile`, the CLI's
- * option parse), so a refusal here cannot occur; if it did, the portable
- * bit is the conservative answer for the artifact. */
-uint32_t pcrec_memfn_policy(const pcrec_options *opt)
+/* The compile's one CPU target, the kit's row, for `mf_art_target`, the
+ * artifact's guard and region and its `<PREFIX>_TARGETS` stamp. The set is
+ * validated before any pass runs (`pcrec_compile`, the CLI's option parse),
+ * so a refusal here is an internal error, never a quiet default. */
+const mf_target *pcrec_memfn_target(Ctx *cx)
 {
     SimdSet s = { 0, 0 };
     char err[256];
-    if (resolve(opt->flags, opt->memfn_simd, &s, err, sizeof err) != 0)
-        return MF_P_PORTABLE_ONLY;
-    return s.first == mf_portable_target() ? MF_P_PORTABLE_ONLY : 0u;
+    if (resolve(cx->opt->flags, cx->opt->memfn_simd, &s, err, sizeof err) != 0)
+        pcrec_ctx_fail(cx, 0, "internal error: the CPU target set was refused "
+                       "after option parse: %s", err);
+    return s.first;
+}
+
+/* `<PREFIX>_TARGETS`' value: the family and the members, `family:members`
+ * (docs/spec/match_api.md §6.3), every token the kit's; `none` for the
+ * portable target's absent family. */
+const char *pcrec_memfn_targets_stamp(Ctx *cx)
+{
+    const mf_target *t = pcrec_memfn_target(cx);
+    return pcrec_sb_fragf(&cx->arena, "%s:%s", t->family ? t->family->name : "none",
+                          t->name);
+}
+
+/* Writes the kit's text that opens the artifact's target code: the family
+ * guard (file scope, once) and the target's region open, before the part's
+ * first function. Both are target-dependent bytes, so they sit in one
+ * CPU-guarded bracket (StrBuf.simd_guarded): no length decision reads them.
+ * A part writes nothing (its text lies inside its shell's region); the
+ * portable target's texts are empty, so a default artifact gains no byte. */
+void pcrec_emit_target_open(Ctx *cx, StrBuf *c)
+{
+    if (pcrec_is_part(cx)) return;
+    const mf_target *t = pcrec_memfn_target(cx);
+    const char *guard = t->family ? mf_family_c_of(t->family)->guard : "";
+    const char *open = mf_target_c_of(t)->region_open;
+    if (!*guard && !*open) return;
+    pcrec_sb_simd_open(c);
+    pcrec_sb_puts(c, guard);
+    pcrec_sb_puts(c, open);
+    pcrec_sb_simd_close(c);
+}
+
+/* The region's close, after the part's last function (before `main`, which
+ * is shared file text and stays outside it); as the open, guarded, nothing
+ * on a part or for the portable target. */
+void pcrec_emit_target_close(Ctx *cx, StrBuf *c)
+{
+    if (pcrec_is_part(cx)) return;
+    const char *close = mf_target_c_of(pcrec_memfn_target(cx))->region_close;
+    if (!*close) return;
+    pcrec_sb_simd_open(c);
+    pcrec_sb_puts(c, close);
+    pcrec_sb_simd_close(c);
 }

@@ -15916,6 +15916,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     if (!pcrec_is_part(cx))
         pcrec_sb_stamp_str(c, g->upper, "COMPOUND",
                            cx->comp_stamp ? cx->comp_stamp : "none");
+    /* [XARCH-DEV] U3 `<PREFIX>_TARGETS` (match_api.md §6.3): the CPU target
+     * the artifact's code is for, `family:members`, once per artifact. */
+    if (!pcrec_is_part(cx))
+        pcrec_sb_stamp_str(c, g->upper, "TARGETS", pcrec_memfn_targets_stamp(cx));
     if (cx->opt->header_name) {
         pcrec_sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
         /* [EMIT-ENTRIES] the header declares the exported entries; a kept
@@ -15951,6 +15955,9 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * asserted at the attempt's end, `pcrec_memfn_art_end`). */
     cx->job->string_h = need_string_h || pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN);
     pcrec_sb_puts(c, "\n");
+    /* [XARCH-DEV] U3 the kit's family guard and target region open: every
+     * function below, the kit's helpers first, is the target's code */
+    pcrec_emit_target_open(cx, c);
     /* [OPT-LITSCAN] S4 the word-load helpers a VM body's run compares use
      * (the body is written before this prologue, so its widths are known);
      * a DFA artifact's compares sit in file-scope blocks below, whose kit
@@ -16477,6 +16484,7 @@ in_entries:
         InfoStamp st = { 1, NULL, -1, -1, -1, 0, &bs };
         emit_info_def(cx, c, g.infoname, g.upper, &st);
     }
+    pcrec_emit_target_close(cx, c);
 
     if (pcrec_entry_emitted(cx, PCREC_ENTRY_MAIN))
         pcrec_emit_main(cx, &g);
