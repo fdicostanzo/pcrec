@@ -1179,6 +1179,17 @@ none; the step-back through a lookbehind is bounded by the per-encoding `lb_byte
 rows, `look-neg-1` and `pos-start` at −1 are NOT members of the item half: they are zero-width
 cuts, owned by the EMPTY/E2 arm (span_arms §4.1), and are homed there, not in a second
 producer."
+## 12a. Owner ruling 2026-11-08: scan bytes from any run position
+
+Frank, on question 4 / READY2-4 ("why must the scan byte be inside the match?"): "Now or later, the scan bytes should come from any span position. In barbaz case, it could then validate the entire span and finish the search."
+
+Consequences (manager, to be folded into the L2 text and the §8.2 kit request before L2's readiness critic):
+- The CONSUMED-ONLY scan pick (A13, CAT-SET's L2/L3 restriction) is the interim form at most; the end state is that every run position, consumed or guard, is a scan candidate, chosen by the kit (question 7's leaning stands: the kit picks).
+- Two facts, not one: `<PREFIX>_REQ_BYTE` keeps its published meaning (a byte every MATCH consumes); the scan choice is the kit's internal pick over the whole run (what every successful ATTEMPT reads). This is a split of two genuinely different facts, not a parallel mechanism.
+- The §8.2 request therefore states, per run position, its signed offset from the attempt start and whether the match consumes it (for the stamp and the reported match), not a scannable/unscannable mask.
+- "Validate the entire span and finish": when the run is the whole attempt's fixed text (`bar(?=baz)`: the attempt is `barbaz`, the match `bar`), a hit verified across the whole run IS the match, so the matcher reports it without the engine's own finish. This is D187 add. 1's "earn a skip" (the kit replies exact, pcrec skips its finish), stated per run; it needs the run to be exact over the whole attempt and the match bounds as offsets in the run.
+- Timing (manager's leaning): fold it into L2 now, because L2 already waits on the kit's request; the request is written once with the end-state fact.
+
 ## 13. Open questions for Frank (plain words, each with a leaning)
 
 1. **Should a repeat count as its copies for the required run?** Today `xy(?:ab){2}zw` gives the
