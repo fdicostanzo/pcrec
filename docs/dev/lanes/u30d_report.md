@@ -189,5 +189,5 @@ Each has a recommendation in the note's §7:
 Delivered, tip on lane/memfn-u30d. No rulings file was named.
 
 OWED: none (design only: no make, no timing, no queued job).
- The next steps are the kit manager's: rule §7, launch a design critic round on
+The next steps are the kit manager's: rule §7, launch a design critic round on
 `plan_frame.md`, then build 3.0a and 3.0b under R-35's stage-3 GO.
