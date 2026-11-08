@@ -209,9 +209,6 @@ int mf_kernel_find_any(mf_sink *o, const char *fn, const uint8_t *bytes, unsigne
         return vany_refuse(err, errn, "find-any: `fn` must be a C identifier of at most 200 bytes");
     if (!bytes || k < 2 || k > VANY_MAX_K)
         return vany_refuse(err, errn, "find-any: K must be 2..%d bytes, got %u", VANY_MAX_K, k);
-    if (levels >> MF_NLEVEL)
-        return vany_refuse(err, errn, "find-any: level bit %d is not a level (mf_levels() has %d)",
-                           31 - __builtin_clz(levels), MF_NLEVEL);
     for (unsigned lv = 0; lv < MF_NLEVEL; lv++)
         if (levels & 1u << lv && !ops_of[lv].type)
             return vany_refuse(err, errn, "find-any: no form at level %s", kit_level(lv)->stamp);

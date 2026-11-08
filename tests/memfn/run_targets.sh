@@ -42,7 +42,7 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1"; fail=$((fail + 1)); }
 skip() { echo "SKIP: $1"; skipped=$((skipped + 1)); }
 GCC_CELLS=6
-ROW_FLOOR=42   # targets_check.c's PASS lines, measured at K0 (lane k0; one host row on every host)
+ROW_FLOOR=58   # targets_check.c's PASS lines, measured at K0 (lane k0; one host row on every host); +16 at U2 (four admission rows of four checks each, every host)
 
 echo "== 1. the kit's target table check =="
 if out="$(bash "$ROOT_DIR/memfn/tests/check_targets.sh")"; then ok "$out"; else bad "$out"; fi

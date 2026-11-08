@@ -15,26 +15,33 @@ are G2's own scalar byte loop, the generated space and the guard pages.
 WHAT IT CHECKS, AND AGAINST WHAT
   1. THE SPACE (g2/g2_any_gen.c): byte sets, K 2..3, its fixed head (0x00,
      0xFF, high-bit, duplicates, one-bit neighbours, a case pair) then
-     random; each set rendered at four level choices (none, w16 alone, w32
-     alone, both). Every refusal the generator asks (K 1 and 4, a bad name,
-     a level past mf_levels(), a sink without vprintf) must be refused.
-     Population floors per class (K35), literals below.
-  2. ANSWERS, PER BUILD: the rendered file compiled -Wall -Wextra -Werror at
-     x86-64 (w16 live), x86-64-v3 (w32 live; w16 through the ladder's
-     fall-through and its own arm), -mgeneral-regs-only (neither: the body)
-     and ASan+UBSan at x86-64-v3, and run by g2/g2_any_driver.c against ITS
+     random; each set rendered once per kit target (unit U2: x86-64-v3,
+     x86-64, generic; the kit derives the levels), one file per target that
+     G2, as the host, wraps in the target's family guard and region. In each
+     file the kit's text holds NO CPU conditional and its helpers are
+     exactly the target's admitted levels (x86-64-v3: w16+w32; x86-64: w16;
+     generic: none; literals HERE). Every refusal the generator asks (K 1
+     and 4, a bad name, a target that is not a row, NULL, a sink without
+     vprintf) must be refused. Population floors per class (K35), below.
+  2. ANSWERS, PER BUILD (G1's compile at each level's target): each file
+     compiled -Wall -Wextra -Werror at the consumer's default -march=x86-64
+     (the region alone supplies the ISA), the x86-64-v3 file also at
+     x86-64-v3 and under ASan+UBSan, the generic file at
+     -mgeneral-regs-only, and run by g2/g2_any_driver.c against ITS
      OWN byte loop (exact position): every length 0..73, a hit at every
      position, every alignment, guard pages at s + n and below s + pos. A
      wrong answer or a fault is red; checks per build >= CHECK_FLOOR.
-  3. PLANTS: the rendered text mutated per level (each edit counted: it must
-     apply once per helper of the level); each must be RED where its level
-     is live and GREEN where it is compiled out; the three that move a read
-     bound by one byte must FAULT (a signal), not merely answer wrong.
+  3. PLANTS: the rendered text mutated per level in each file whose target
+     admits it (each edit counted: it must apply once per helper of the
+     level); each must be RED in every build of that file; the three that
+     move a read bound by one byte must FAULT (a signal), not merely answer
+     wrong. (Before U2 a plant was also GREEN where an `#if` compiled its
+     level out; an unadmitted level now has no text.)
   4. INSTRUCTION CLASSES: no PDEP/PEXT and no gather in the x86-64-v3
      driver (levels.def's `forbid`), read with objdump.
 On a host that cannot run a level, its builds are BUILT, not run: printed
 `SKIPPED ARM <level>: <why>; N checks NOT run`, never a silent pass. A host
-that is not x86-64 runs the portable build alone (every level SKIPPED).
+that is not x86-64 runs the generic file alone (every level SKIPPED).
 
 Prints `checks passed: N` / `checks failed: N`; exit 1 on any failure.
 """
@@ -54,27 +61,33 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # the register width of each level stamp, written HERE (not read from the
 # kit): the plants move bounds by these
 VW = {'w16': 16, 'w32': 32}
-# builds: name, flags, live levels, the host need (None: any x86-64)
+# the targets rendered at, and the levels each admits: literals written HERE
+# from target_seam_units.md §2, sharing no source with the kit's admission
+TARGETS = {'x86-64-v3': {'w16', 'w32'}, 'x86-64': {'w16'}, 'generic': set()}
+# builds: name, the target whose file it compiles, flags, the host need
+# (None: any x86-64; the x86-64-v3 file needs AVX2 to RUN at any -march)
 BUILDS = [
-    ('x86-64',      ['-O2', '-march=x86-64'],       {'w16'},        None),
-    ('x86-64-v3',   ['-O2', '-march=x86-64-v3'],    {'w16', 'w32'}, 'x86-64-v3'),
-    ('gpr-only',    ['-O2', '-mgeneral-regs-only'], set(),          None),
-    ('asan-x86-64-v3', ['-O1', '-march=x86-64-v3', '-fsanitize=address,undefined',
-                        '-fno-sanitize-recover=all', '-fno-omit-frame-pointer'],
-     {'w16', 'w32'}, 'x86-64-v3'),
+    ('v3-x86-64',   'x86-64-v3', ['-O2', '-march=x86-64'],       'x86-64-v3'),
+    ('x86-64-v3',   'x86-64-v3', ['-O2', '-march=x86-64-v3'],    'x86-64-v3'),
+    ('x86-64',      'x86-64',    ['-O2', '-march=x86-64'],       None),
+    ('gpr-only',    'generic',   ['-O2', '-mgeneral-regs-only'], None),
+    ('asan-x86-64-v3', 'x86-64-v3', ['-O1', '-march=x86-64-v3', '-fsanitize=address,undefined',
+                                     '-fno-sanitize-recover=all', '-fno-omit-frame-pointer'],
+     'x86-64-v3'),
 ]
+CPU_DIRECTIVE = re.compile(r'^[ \t]*#[ \t]*(if|ifdef|ifndef|elif|else|endif)\b', re.M)
 NEEDS = {'x86-64-v3': 'AVX2'}
 # answer checks per full build: 20,292,480 measured (Linux dev box,
-# 2026-10-29, seed 20261029, 40 sets); ~80%
-CHECK_FLOOR = 16000000
+# 2026-10-29, seed 20261029, 40 sets, four kernels per set); one kernel per
+# set per file since U2: a quarter, 5,073,120; ~80%
+CHECK_FLOOR = 4000000
 # the space's populations (40 sets at the default seed; ~80% of measured,
 # each measurement in parentheses)
 POP_FLOOR = {
-    'kernels': 128,        # (160)
-    'levels-0': 32,        # each level choice (40 each)
-    'levels-1': 32,
-    'levels-2': 32,
-    'levels-3': 32,
+    'kernels': 96,         # over the three targets' files (120)
+    'target-x86-64-v3': 32,  # each target (40 each)
+    'target-x86-64': 32,
+    'target-generic': 32,
     'k2': 12, 'k3': 12,    # sets by K
     'dup': 4,              # a set with a repeated byte
     'zero': 3, 'ff': 3,    # 0x00 / 0xFF a member
@@ -222,7 +235,7 @@ def population(meta):
     for line in open(meta):
         kid, k, b, lv = line.rstrip('\n').split('\t')
         pop['kernels'] += 1
-        pop['levels-' + lv] = pop.get('levels-' + lv, 0) + 1
+        pop['target-' + lv] = pop.get('target-' + lv, 0) + 1
         bs = [int(x) for x in b.split(',')][:int(k)]
         key = (k, b)
         if key in seen:
@@ -244,22 +257,43 @@ def run(a, root, work):
     if r.returncode:
         bad('generator build failed: ' + r.stderr[-2000:])
         return
-    r = sh([gen, a.seed, str(a.sets), work])
-    if r.returncode:
-        bad('generator failed: ' + (r.stderr + r.stdout)[-2000:])
-        return
+    x86 = platform.machine() in ('x86_64', 'AMD64')
+    targets = list(TARGETS) if x86 else ['generic']
+    files, metas, texts = {}, [], {}
+    for tg in targets:
+        d = os.path.join(work, 't-' + tg)
+        os.makedirs(d)
+        r = sh([gen, a.seed, str(a.sets), d, tg])
+        if r.returncode:
+            bad('generator failed at %s: %s' % (tg, (r.stderr + r.stdout)[-2000:]))
+            return
+        files[tg] = os.path.join(d, 'g2a_kernels.c')
+        metas.append(os.path.join(d, 'g2a_meta.tsv'))
+        texts[tg] = open(files[tg]).read()
+        kit = texts[tg].partition('/* G2A KIT TEXT BEGIN */')[2].partition('/* G2A KIT TEXT END */')[0]
+        hits = CPU_DIRECTIVE.findall(kit)
+        have = {m.group(2) for m in HELPER.finditer(kit)} - {'body'}
+        print('target %-10s kit text %d bytes, CPU conditionals %d, helper levels %s'
+              % (tg, len(kit), len(hits), sorted(have)))
+        if not kit or hits or have != TARGETS[tg]:
+            bad('target %s: kit text %d bytes, CPU conditionals %r, helpers %s (admits %s)'
+                % (tg, len(kit), hits[:5], sorted(have), sorted(TARGETS[tg])))
+        else:
+            ok()
     ok()
     # 1. the space's populations
-    pop = population(os.path.join(work, 'g2a_meta.tsv'))
+    pop = dict.fromkeys(POP_FLOOR, 0)
+    for m in metas:
+        for key, n in population(m).items():
+            pop[key] = pop.get(key, 0) + n
     for key, floor in POP_FLOOR.items():
+        if key.startswith('target-') and key[7:] not in targets:
+            continue
         (ok() if pop[key] >= floor else bad('population %s %d < floor %d' % (key, pop[key], floor)))
     print('space ' + ' '.join('%s=%d' % kv for kv in sorted(pop.items())))
 
-    kernels = os.path.join(work, 'g2a_kernels.c')
-    text = open(kernels).read()
-    x86 = platform.machine() in ('x86_64', 'AMD64')
     skip = host_skips(work) if x86 else {}
-    builds = BUILDS if x86 else [('native', ['-O2'], set(), None)]
+    builds = BUILDS if x86 else [('native', 'generic', ['-O2'], None)]
     if not x86:
         for lv in VW:
             SKIPPED['level ' + lv] = ('host is %s, not x86-64' % platform.machine(), 0)
@@ -267,8 +301,8 @@ def run(a, root, work):
     # 2. answers per build
     jobs = int(os.environ.get('G2A_JOBS', '4'))
     def answer(b):
-        name, flags, live, need = b
-        exe, r = build(root, work, name, flags, kernels, 'plain')
+        name, tg, flags, need = b
+        exe, r = build(root, work, name, flags, files[tg], 'plain')
         if r.returncode:
             return name, 'build', r.stderr[-1500:], 0
         if need in skip:
@@ -291,23 +325,28 @@ def run(a, root, work):
         if rc not in ('build', 'skip'):
             print('build %s: checks %d rc %s' % (name, n, rc))
 
-    # 3. plants, at the three plain builds
+    # 3. plants, at the plain builds of each file whose target admits the level
     plain = [b for b in builds if 'asan' not in b[0]]
     tasks = []
     for pname, kind, (old, new), per, fault in PLANTS:
         for lvl in (VW if kind == 'lvl' else ['body']):
             vw = VW.get(lvl, 0)
             o, nw = old.format(VW=vw, VW1=vw - 1), new.format(VW=vw, VW1=vw - 1)
-            t = plant_text(text, kind, lvl, o, nw, per)
-            if t is None:
-                bad('plant %s@%s: the edit does not apply once per helper' % (pname, lvl))
-                continue
-            path = os.path.join(work, 'plant-%s-%s.c' % (pname, lvl))
-            open(path, 'w').write(t)
-            for b in plain:
-                tasks.append((pname, lvl, fault, path, b))
+            for tg in targets:
+                if kind == 'lvl' and lvl not in TARGETS[tg]:
+                    continue
+                t = plant_text(texts[tg], kind, lvl, o, nw, per)
+                if t is None:
+                    bad('plant %s@%s at %s: the edit does not apply once per helper'
+                        % (pname, lvl, tg))
+                    continue
+                path = os.path.join(work, 'plant-%s-%s-%s.c' % (pname, lvl, tg))
+                open(path, 'w').write(t)
+                for b in plain:
+                    if b[1] == tg:
+                        tasks.append((pname, lvl, fault, path, b))
     def plant(task):
-        pname, lvl, fault, path, (name, flags, live, need) = task
+        pname, lvl, fault, path, (name, tg, flags, need) = task
         # a dropped member leaves its broadcast unused
         exe, r = build(root, work, name, flags, path, '%s-%s' % (pname, lvl),
                        ['-Wno-unused-variable'])
@@ -315,12 +354,14 @@ def run(a, root, work):
             return task, 'build', r.stderr[-800:]
         if need in skip:
             return task, 'skip', None
-        is_live = lvl == 'body' or lvl in live
-        rr, _ = run_drv(exe, ['1', 'stop'] if is_live else [GREEN_STRIDE], False)
+        # a bound plant runs to the end: `stop` would end it at its first
+        # wrong answer, which can come before the read that faults (U2:
+        # kernel 0 is now a level kernel, no portable kernel ahead of it)
+        rr, _ = run_drv(exe, [] if fault else ['1', 'stop'], False)
         return task, rr.returncode, rr.stdout[-600:]
     with concurrent.futures.ThreadPoolExecutor(jobs) as ex:
         pres = list(ex.map(plant, tasks))
-    for (pname, lvl, fault, path, (name, flags, live, need)), rc, out in pres:
+    for (pname, lvl, fault, path, (name, tg, flags, need)), rc, out in pres:
         tag = 'plant %s@%s at %s' % (pname, lvl, name)
         if rc == 'build':
             bad(tag + ': does not compile: ' + out)
@@ -329,25 +370,23 @@ def run(a, root, work):
             n0 = SKIPPED.get(name, ('', 0))
             SKIPPED[name] = (skip[need], n0[1])
             continue
-        is_live = lvl == 'body' or lvl in live
         print('%s: %s' % (tag, 'GREEN' if rc == 0 else 'FAULT' if rc < 0 else 'RED'))
-        if not is_live:
-            (ok() if rc == 0 else bad(tag + ': compiled out, yet red (rc %s): %s' % (rc, out)))
-        elif fault:
+        if fault:
             (ok() if rc < 0 else bad(tag + ': must FAULT, rc %s: %s' % (rc, out)))
         else:
-            (ok() if rc != 0 else bad(tag + ': stayed GREEN at a live level'))
+            (ok() if rc != 0 else bad(tag + ': stayed GREEN'))
     print('plants: %d runs' % len(pres))
 
-    # 4. instruction classes in the w32 build
+    # 4. instruction classes in the w32 builds
     if x86:
-        exe = os.path.join(work, 'drv-x86-64-v3-plain')
-        if os.path.exists(exe):
+        for name in ('v3-x86-64', 'x86-64-v3'):
+            exe = os.path.join(work, 'drv-%s-plain' % name)
+            if not os.path.exists(exe):
+                continue
             r = sh(['objdump', '-d', '--no-show-raw-insn', exe])
             hits = sorted(set(re.findall(r'\b(pdep|pext|v?p?gather\w*)\b', r.stdout)))
             (ok() if r.returncode == 0 and not hits else
-             bad('instruction classes: objdump rc %d, forbidden %s' % (r.returncode, hits)))
-
+             bad('instruction classes %s: objdump rc %d, forbidden %s' % (name, r.returncode, hits)))
 
 if __name__ == '__main__':
     sys.exit(main())

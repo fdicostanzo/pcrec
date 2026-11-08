@@ -5,11 +5,14 @@
  * memfn/tests/g2/g2_simd_gen.c — G2's SIMD FAMILY, the GENERATOR (R4e'
  * batch 1; integration.md §R4.9.7 "G2, the kit's own"). It generates the
  * batch-1 site space (a FUNC whose predicate is ONE RUN term, the offset-skip
- * site FIND / FUNC / RETURN), renders each site through the kit with the
- * policy word lacking MF_P_PORTABLE_ONLY and a sink that OFFERS the bracket
- * ops, and writes:
- *   OUT/g2v_sites.c   every rendered definition, a one-call wrapper per site
- *                     (`mf_call`'s text) and the site table the driver reads:
+ * site FIND / FUNC / RETURN), renders each site through the kit in an art
+ * whose stated target is TARGET (mf_art_target, unit U2) with a sink that
+ * OFFERS the bracket ops, and writes:
+ *   OUT/g2v_sites.c   TARGET's family guard, then its region around every
+ *                     rendered definition and a one-call wrapper per site
+ *                     (`mf_call`'s text), the kit's text between the markers
+ *                     `G2V KIT TEXT BEGIN`/`END` (G2 acts as the host, as
+ *                     pcrec's U3 does), and the site table the driver reads:
  *                     the RUN term as G2 GENERATED it (bytes, mask, offset),
  *                     never anything the kit computed;
  *   OUT/g2v_meta.tsv  per site: id, class, L, offset, plan_pos, the levels
@@ -32,7 +35,8 @@
  * cube, all four mixed), the scanned position a two-member cube; and its
  * negative controls, each of which must render NO guarded text: the scanned
  * position exact (`fn-memchr`, the OVER test), a span proven shorter than the
- * reach (REACH), the policy PORTABLE (-fno-memfn-simd), each row's own deny,
+ * reach (REACH), the portable target (-fno-memfn-simd: its art states the
+ * portable target whatever TARGET is), each row's own deny,
  * two terms (APPLIES), a run longer than VRUN_MAX_RUN, and a sink without
  * the bracket ops; and `deny-trim` (R-14), a positive site rendered under
  * `no-vrun-trim`, whose verify is the whole run, and `deny-pad` (R-14
@@ -53,7 +57,7 @@
  * past the run, a position outside it, a position twice, rank_n past
  * MF_RANK_MAX), which mf_define must refuse.
  *
- *   g2_simd_gen SEED NSITES OUTDIR
+ *   g2_simd_gen SEED NSITES OUTDIR TARGET     (TARGET a kit target token)
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -368,10 +372,18 @@ static void build_site(vsite *v)
     }
     if (v->id % 7 == 1) s->denies = MF_D_RUN_OVERLAP;   /* the bytes form, 1 in 7 */
     if (v->cls == C_SHORT) s->span_hi = 16 + v->off + v->L - 2;   /* < every reach */
-    s->policy = v->cls == C_PORTABLE ? MF_P_PORTABLE_ONLY : 0;
+    s->policy = 0;
     s->opts = v->cls == C_DENY16 ? "no-vrun-w16" : v->cls == C_DENY32 ? "no-vrun-w32"
             : v->cls == C_DENYKB ? "no-vrun-kb" : v->cls == C_DENYTRIM ? "no-vrun-trim"
             : v->cls == C_DENYPAD ? "no-vrun-pad" : NULL;
+}
+
+/* The target the site's art states: TARGET, or the portable target for the
+ * PORTABLE class (-fno-memfn-simd's compile). */
+static const mf_target *g_target;
+static const mf_target *art_target_of(const vsite *v)
+{
+    return v->cls == C_PORTABLE ? mf_portable_target() : g_target;
 }
 
 /* 1 iff mf_define accepts site `s` under the name `name` (the hook reads
@@ -385,6 +397,7 @@ static int define_ok(vsite *u, const char *name, const mf_site *s)
     tb bd = { 0 };
     mf_sink sd = sink_of(&bd, 1);
     mf_art *art = mf_art_begin(&g_arena, "g2v_bad", s->policy, s->denies, NULL, NULL);
+    if (mf_art_target(art, art_target_of(u))) return 0;
     mf_hooks h = { 0 };
     h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
     h.fn_name = fn_name_hook; h.u = u;
@@ -409,6 +422,10 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
 {
     mf_sink sd = sink_of(def, brackets), sc = sink_of(call, 0);
     mf_art *art = mf_art_begin(&g_arena, prefix, v->site.policy, v->site.denies, NULL, NULL);
+    if (mf_art_target(art, art_target_of(v))) {
+        fprintf(stderr, "g2v: site %u: %s\n", v->id, mf_art_error(art));
+        return -1;
+    }
     mf_hooks h = { 0 };
     h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
     h.fn_name = fn_name_hook; h.u = v;
@@ -417,6 +434,23 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
         fprintf(stderr, "g2v: site %u (%s) refused: %s\n", v->id, class_name[v->cls],
                 mf_art_error(art));
         return -1;
+    }
+    /* the entry's own rule (unit U2): an art whose first define ran with no
+       target stated cannot be given one after it (its text so far was
+       rendered for none); checked once, on the first site's first render */
+    if (v->id == 0 && forms) {
+        tb sdef = { 0 };
+        mf_sink ss = sink_of(&sdef, brackets);
+        mf_art *late = mf_art_begin(&g_arena, prefix, v->site.policy, v->site.denies, NULL, NULL);
+        uint32_t lh = 0;
+        int defined = late && !mf_define(late, G2W(&v->site), &h, &ss, &lh);
+        int accepted = defined && !mf_art_target(late, art_target_of(v));
+        free(sdef.p);
+        if (!defined || accepted) {
+            fprintf(stderr, "g2v: %s\n", !defined ? "the target-less control art refused site 0"
+                    : "mf_art_target accepted a first statement after a define");
+            return -1;
+        }
     }
     char cap[256] = "";
     mf_sink st = { .u = cap, .stamp = stamp_cap, .stamp_int = sk_stamp_int };
@@ -427,7 +461,26 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
 
 int main(int argc, char **argv)
 {
-    if (argc != 4) { fprintf(stderr, "usage: g2_simd_gen SEED NSITES OUTDIR\n"); return 2; }
+    if (argc != 5) { fprintf(stderr, "usage: g2_simd_gen SEED NSITES OUTDIR TARGET\n"); return 2; }
+    char terr[256];
+    g_target = mf_target_parse(argv[4], strlen(argv[4]), terr, sizeof terr);
+    if (!g_target) { fprintf(stderr, "g2_simd_gen: %s\n", terr); return 2; }
+    {
+        /* the entry's refusals (unit U2): a copy of a row is no row, NULL is
+           none, a second DIFFERENT row is refused and the same one accepted */
+        mf_target copy = *g_target;
+        const mf_target *other = g_target == mf_portable_target()
+                               ? mf_target_parse("x86-64", 6, NULL, 0) : mf_portable_target();
+        mf_art *a1 = mf_art_begin(&g_arena, "g2v_t", 0, 0, NULL, NULL);
+        mf_art *a2 = mf_art_begin(&g_arena, "g2v_t", 0, 0, NULL, NULL);
+        mf_art *a3 = mf_art_begin(&g_arena, "g2v_t", 0, 0, NULL, NULL);
+        if (!mf_art_target(a1, &copy) || !mf_art_target(a2, NULL) ||
+            mf_art_target(a3, g_target) || mf_art_target(a3, g_target) ||
+            !mf_art_target(a3, other) || !mf_art_error(a1) || !mf_art_error(a3)) {
+            fprintf(stderr, "g2_simd_gen: mf_art_target's refusals do not hold\n");
+            return 1;
+        }
+    }
     g_rng = strtoull(argv[1], NULL, 10) * 2654435761u + 1;
     unsigned nsites = (unsigned)atoi(argv[2]);
     char path[4096];
@@ -439,6 +492,9 @@ int main(int argc, char **argv)
     fputs("/* generated by memfn/tests/g2/g2_simd_gen.c: do not edit */\n"
           "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
           "#include \"g2_simd.h\"\n\n", c);
+    if (g_target->family) fputs(mf_family_c_of(g_target->family)->guard, c);
+    fputs(mf_target_c_of(g_target)->region_open, c);
+    fputs("/* G2V KIT TEXT BEGIN */\n", c);
     fputs("# id\tclass\tL\toff\tplan_pos\tforms\tguarded_bytes\tw16_alone\tw32_alone"
           "\trmode\trank\tbadrank\tties\tmask\toverlap\n", m);
     vsite *v = calloc(nsites, sizeof *v);
@@ -546,6 +602,8 @@ int main(int argc, char **argv)
         free(def.p); free(call.p); free(mdef.p); free(mcall.p);
     }
     fputs(all.p ? all.p : "", c);
+    fputs("/* G2V KIT TEXT END */\n", c);
+    fputs(mf_target_c_of(g_target)->region_close, c);
     fputs("const g2v_site g2v_sites[] = {\n", c);
     for (unsigned i = 0; i < nsites; i++) {
         fprintf(c, "    { %u, %u, %u, %u, g2v_c%u, {", i, v[i].cls, v[i].L, v[i].off, i);

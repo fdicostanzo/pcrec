@@ -10,12 +10,21 @@ its own:
     python3 memfn/tests/run_g2_simd.py [--root TREE] [--seed N] [--sites N] [--keep]
 
 WHAT IT CHECKS, AND AGAINST WHAT
+  0. THE TARGETS (unit U2, R-37): the space is rendered three times, in
+     arts stating the target x86-64-v3, x86-64 and generic (mf_art_target),
+     each file wrapped by G2 as its host in the target's family guard and
+     region (the kit's own texts, mf_family_c_of / mf_target_c_of). In every
+     file the KIT'S text holds NO CPU conditional (`#if`, `#ifdef`, `#elif`,
+     `#else`, `#endif`: zero lines), its helpers are exactly the target's
+     admitted levels (x86-64-v3: w16 and w32; x86-64: w16; generic: none,
+     each a literal HERE), and every site's MEMFN_FORMS at x86-64 is its
+     x86-64-v3 token less w32, at generic `none` with 0 guarded bytes.
   1. THE SPACE (g2/g2_simd_gen.c): the batch-1 site shape and its negative
-     controls, rendered through the kit at policy 0 with a sink that offers
-     the bracket ops. Each class's MEMFN_FORMS value is held to CLASS_EXPECT
+     controls, rendered through the kit at the target x86-64-v3 with a sink
+     that offers the bracket ops (sections 1-2 read this file). Each class's MEMFN_FORMS value is held to CLASS_EXPECT
      (a table written HERE, sharing no source with the kit): the positive
      sites name the expected levels, every negative control (the OVER test's
-     `fn-memchr` sites, a span proven short, -fno-memfn-simd's PORTABLE, two
+     `fn-memchr` sites, a span proven short, the portable target, two
      terms, a run past the shape bound, a sink without brackets) names none
      and writes 0 guarded bytes, and each row's own deny drops exactly its
      level. Population floors per class (K35).
@@ -55,22 +64,29 @@ WHAT IT CHECKS, AND AGAINST WHAT
      counting sink at pcrec's placeholder prefix and longest FUNC name, are
      at most the sum of tests/memfn/simd_bounds.tsv's bounds of the levels
      its token names (Q-R9-9, D155 item 9). The maximum per token is printed.
-  3. ANSWERS, PER LEVEL: the rendered file compiled at each level's
-     `test_march` and around it (x86-64, x86-64-v3, x86-64-v4,
-     -mgeneral-regs-only, and ASan+UBSan at x86-64 and x86-64-v3), with
+  3. ANSWERS, PER LEVEL (G1's compile at each level's target): each
+     target's file compiled at the consumer's DEFAULT -march=x86-64, where
+     the region alone supplies the target's ISA, and around it (the
+     x86-64-v3 file also at x86-64-v3 and x86-64-v4, above its target; the
+     x86-64 file also at -mgeneral-regs-only, the region supplying SSE2; the
+     generic file at -mgeneral-regs-only; ASan+UBSan on the x86-64-v3 file at
+     x86-64 and x86-64-v3 and on the x86-64 file at x86-64), with
      -Wall -Wextra -Werror, and run by g2/g2_simd_driver.c against G2's OWN
      scalar byte loop (exact returned position), guard pages at both ends,
      every span length 0..2*32+T+8, every alignment 0..31 (poisoned under
      ASan). Any failure or fault is red; checks per build >= a floor.
   4. PATHS: an instrumented copy (THIS script's text edits of the rendered
      file: a counter at each helper's entry fall-through, whole block, final
-     block and verified return) at x86-64 and x86-64-v3; per live level each
-     path >= PATH_FLOOR, and a compiled-out level's paths EXACTLY 0.
+     block and verified return) of each build's file; per level the target
+     admits each path >= PATH_FLOOR, and an unadmitted level's paths EXACTLY
+     0 (it has no helper).
   5. PLANTS, per path and level: the rendered text mutated (the final block's
      guard off by one, the lane mask off by one, lanes highest first, the
      verify skipped, the reach one short, the padded verify's margin E one
-     short); each must be RED where its level is live and GREEN where it is
-     compiled out; the reach and pad-margin plants must FAULT.
+     short), in every file whose target admits the level; each must be RED
+     in every build of that file; the reach and pad-margin plants must FAULT.
+     (Before U2 a plant was also GREEN where an `#if` compiled its level out;
+     there is no such text now: an unadmitted level is not rendered.)
   6. INSTRUCTION CLASSES: no PDEP/PEXT and no gather in any level's object
      (levels.def's `forbid`, [r9 M-11]), read with objdump.
 
@@ -154,18 +170,26 @@ VSHAPE_FLOOR = {
 # verifies whose word ends at the subject's last byte, per live level, from
 # the instrumented build (layout E puts the guard page right after it)
 EDGE_FLOOR = (1650, 640)   # (evaluated, verified): min measured 2078 / 804 (w32 at x86-64-v3)
-# the level a build makes live (top first), and whether w16/w32 is live
+# the targets G2 renders at (unit U2), and the levels each admits: literals
+# written HERE from target_seam_units.md §2 (x86-64 admits w16 only), sharing
+# no source with the kit's admission
+TARGETS = {'x86-64-v3': {'w16', 'w32'}, 'x86-64': {'w16'}, 'generic': set()}
+# name, the target whose file it compiles, flags; its live levels are the
+# target's (TARGETS): the consumer's -march never removes a level now
 BUILDS = [
-    # name,        flags,                      live levels
-    ('x86-64',     ['-march=x86-64'],          {'w16'}),
-    ('x86-64-v3',  ['-march=x86-64-v3'],       {'w16', 'w32'}),
-    ('x86-64-v4',  ['-march=x86-64-v4'],       {'w16', 'w32'}),
-    ('gpr-only',   ['-mgeneral-regs-only'],    set()),
+    ('x86-64',          'x86-64-v3', ['-march=x86-64']),
+    ('x86-64-v3',       'x86-64-v3', ['-march=x86-64-v3']),
+    ('x86-64-v4',       'x86-64-v3', ['-march=x86-64-v4']),
+    ('t16-x86-64',      'x86-64',    ['-march=x86-64']),
+    ('t16-gpr-only',    'x86-64',    ['-mgeneral-regs-only']),
+    ('gpr-only',        'generic',   ['-mgeneral-regs-only']),
 ]
 ASAN_BUILDS = [
-    ('asan-x86-64',    ['-march=x86-64']),
-    ('asan-x86-64-v3', ['-march=x86-64-v3']),
+    ('asan-x86-64',     'x86-64-v3', ['-march=x86-64']),
+    ('asan-x86-64-v3',  'x86-64-v3', ['-march=x86-64-v3']),
+    ('asan-t16-x86-64', 'x86-64',    ['-march=x86-64']),
 ]
+CPU_DIRECTIVE = re.compile(r'^[ \t]*#[ \t]*(if|ifdef|ifndef|elif|else|endif)\b', re.M)
 
 passed = failed = 0
 SKIPPED = {}   # -march level -> [reason, checks not run]: arms built but not run (host_skips)
@@ -375,7 +399,9 @@ def host_skips(work):
         HOST_SKIP[lv] = 'forced by G2V_SKIP_ARMS (%s)' % NEEDS[lv]
 
 
-def arm_skip(flags):
+def arm_skip(flags, target=None):
+    if target in HOST_SKIP:   # the file's region needs the target's ISA to run
+        return target, HOST_SKIP[target]
     for f in flags:
         if f.startswith('-march=') and f[7:] in HOST_SKIP:
             return f[7:], HOST_SKIP[f[7:]]
@@ -392,13 +418,13 @@ def skipped_or_bad(label, err, n=1):
     return False
 
 
-def build_run(work, root, name, sites_c, flags, asan=False):
+def build_run(work, root, name, sites_c, flags, asan=False, target=None):
     if name in _CACHE:
         return _CACHE[name]
-    return _build_run(work, root, name, sites_c, flags, asan)
+    return _build_run(work, root, name, sites_c, flags, asan, target)
 
 
-def _build_run(work, root, name, sites_c, flags, asan=False, extra_cflags=()):
+def _build_run(work, root, name, sites_c, flags, asan=False, target=None, extra_cflags=()):
     g2 = os.path.join(HERE, 'g2')
     exe = os.path.join(work, 'drv-' + name)
     san = ['-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-g'] if asan else []
@@ -406,7 +432,7 @@ def _build_run(work, root, name, sites_c, flags, asan=False, extra_cflags=()):
     r = sh(cc + ['-o', exe, os.path.join(g2, 'g2_simd_driver.c'), sites_c])
     if r.returncode:
         return None, 'compile failed: ' + r.stderr[-2000:]
-    sk = arm_skip(flags)
+    sk = arm_skip(flags, target)
     if sk:   # compiled (the build coverage stays), not run
         e = Skip('not run: ' + sk[1])
         e.level, e.why = sk
@@ -679,13 +705,60 @@ def run(a, root, work):
     if r.returncode:
         bad('generator build failed: ' + r.stderr[-2000:])
         return
-    r = sh([gen, a.seed, str(a.sites), work])
-    if a.reach_err:
-        open(a.reach_err, 'w').write(r.stderr)
-    if r.returncode:
-        bad('generator failed: ' + r.stderr[-2000:])
-        return
+    # 0: one file per target (x86-64-v3's in `work`, sections 1-2 read it)
+    tdir = {tg: work if tg == 'x86-64-v3' else os.path.join(work, 't-' + tg) for tg in TARGETS}
+    for tg, d in tdir.items():
+        os.makedirs(d, exist_ok=True)
+        r = sh([gen, a.seed, str(a.sites), d, tg])
+        if a.reach_err and tg == 'x86-64-v3':   # the one space the row sums read, as before U2
+            open(a.reach_err, 'w').write(r.stderr)
+        if r.returncode:
+            bad('generator failed at %s: %s' % (tg, r.stderr[-2000:]))
+            return
     ok()
+    tfile = {tg: os.path.join(d, 'g2v_sites.c') for tg, d in tdir.items()}
+    tforms = {}
+    for tg, d in tdir.items():
+        with open(os.path.join(d, 'g2v_meta.tsv')) as f:
+            tforms[tg] = [l.split('\t')[5:7] for l in f if not l.startswith('#')]
+        ftext = open(tfile[tg]).read()
+        kit = ftext.partition('/* G2V KIT TEXT BEGIN */')[2].partition('/* G2V KIT TEXT END */')[0]
+        hits = CPU_DIRECTIVE.findall(kit)
+        lv_have = {m.group(2) for m in HELPER.finditer(kit)}
+        print('target %-10s kit text %d bytes, CPU conditionals %d, helper levels %s (expect %s)'
+              % (tg, len(kit), len(hits), sorted(lv_have), sorted(TARGETS[tg])))
+        if not kit:
+            bad('target %s: no kit text between the markers' % tg)
+        elif hits:
+            bad('target %s: the kit text holds %d CPU conditional(s): %s' % (tg, len(hits), hits[:5]))
+        elif lv_have != TARGETS[tg]:
+            bad('target %s: helpers at %s, the target admits %s'
+                % (tg, sorted(lv_have), sorted(TARGETS[tg])))
+        else:
+            ok()
+    # the same sites at the narrower targets: x86-64's token is x86-64-v3's
+    # less w32, generic's `none` with no guarded byte
+    def less_w32(tok):
+        if tok == 'none':
+            return tok
+        form, _, lvs = tok.partition('@')
+        keep = [lv for lv in lvs.split('+') if lv != 'w32']
+        return '%s@%s' % (form, '+'.join(keep)) if keep else 'none'
+    base = tforms['x86-64-v3']
+    for tg, want_of in (('x86-64', less_w32), ('generic', lambda tok: 'none')):
+        got = tforms[tg]
+        diff = [i for i, (b, g) in enumerate(zip(base, got))
+                if g[0] != want_of(b[0]) or (g[0] == 'none' and g[1] != '0')]
+        moved = sum(b[0] != g[0] for b, g in zip(base, got))
+        print('target %-10s %d sites, %d with a token other than x86-64-v3\'s, %d off the rule'
+              % (tg, len(got), moved, len(diff)))
+        if len(got) != len(base) or diff:
+            bad('target %s: sites %s break the rule (x86-64-v3 %r, got %r)'
+                % (tg, diff[:5], [base[i] for i in diff[:3]], [got[i] for i in diff[:3]]))
+        elif not moved:
+            bad('target %s: no site moved from x86-64-v3 (the comparison tests nothing)' % tg)
+        else:
+            ok()
     # 1-2: the classes and the bounds
     bounds = load_bounds(root)
     counts, maxg = {}, {}
@@ -837,36 +910,45 @@ def run(a, root, work):
         lim = bounds.get(tok[6:]) if tok.startswith('alone:') else token_bound(tok, bounds)
         print('guarded bytes: %s max %d (bound %s)' % (tok, g, lim))
     # every build of sections 3-5, prefetched concurrently (each driver run is
-    # pinned to G2V_CPUS; the results are judged below in order)
-    inst = os.path.join(work, 'g2v_sites_paths.c')
-    try:
-        open(inst, 'w').write(edit_helpers(text, None, instrument))
-    except RuntimeError as e:   # a rendered shape the instrumentation does not know: red
-        bad('instrumentation: %s' % e)
-        inst = None
+    # pinned to G2V_CPUS; the results are judged below in order). A build
+    # compiles its TARGET's file; its live levels are that target's.
+    ttext = {tg: open(f).read() for tg, f in tfile.items()}
+    inst = {}
+    for tg in TARGETS:
+        if not TARGETS[tg]:
+            continue
+        pth = os.path.join(tdir[tg], 'g2v_sites_paths.c')
+        try:
+            open(pth, 'w').write(edit_helpers(ttext[tg], None, instrument))
+            inst[tg] = pth
+        except RuntimeError as e:   # a rendered shape the instrumentation does not know: red
+            bad('instrumentation %s: %s' % (tg, e))
     host_skips(work)
-    jobs = [(n, sites_c, f, False) for n, f, _ in BUILDS]
-    jobs += [(n, sites_c, f, True) for n, f in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS)]
-    if inst:
-        jobs += [('paths-' + n, inst, f, False) for n, f, _ in BUILDS if n != 'x86-64-v4']
-    levels = sorted({lv for _, _, live in BUILDS for lv in live})
+    jobs = [(n, tfile[tg], f, False, tg) for n, tg, f in BUILDS]
+    jobs += [(n, tfile[tg], f, True, tg) for n, tg, f in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS)]
+    jobs += [('paths-' + n, inst[tg], f, False, tg) for n, tg, f in BUILDS
+             if n != 'x86-64-v4' and tg in inst]
+    levels = sorted({lv for lvs in TARGETS.values() for lv in lvs})
     plant_files = {}
     for plant in PLANTS:
         for lv in levels:
-            pt = os.path.join(work, 'plant-%s-%s.c' % (plant[0], lv))
-            try:
-                open(pt, 'w').write(plant_text(text, plant, lv))
-            except RuntimeError as e:
-                bad('plant %s %s: %s' % (plant[0], lv, e))
-                continue
-            plant_files[(plant[0], lv)] = pt
-            for n, f, _ in BUILDS:
-                if n != 'x86-64-v4':
-                    jobs.append(('plant-%s-%s-%s' % (plant[0], lv, n), pt, f, False))
+            for tg in TARGETS:
+                if lv not in TARGETS[tg]:
+                    continue
+                pt = os.path.join(tdir[tg], 'plant-%s-%s.c' % (plant[0], lv))
+                try:
+                    open(pt, 'w').write(plant_text(ttext[tg], plant, lv))
+                except RuntimeError as e:
+                    bad('plant %s %s at %s: %s' % (plant[0], lv, tg, e))
+                    continue
+                plant_files[(plant[0], lv, tg)] = pt
+                for n, btg, f in BUILDS:
+                    if n != 'x86-64-v4' and btg == tg:
+                        jobs.append(('plant-%s-%s-%s' % (plant[0], lv, n), pt, f, False, tg))
     prefetch(work, root, jobs, int(os.environ.get('G2V_JOBS', '4')))
     # 3: answers per level
-    for name, flags, live in BUILDS:
-        r, err = build_run(work, root, name, sites_c, flags)
+    for name, tg, flags in BUILDS:
+        r, err = build_run(work, root, name, tfile[tg], flags, target=tg)
         if err:
             skipped_or_bad(name, err)
             continue
@@ -878,8 +960,8 @@ def run(a, root, work):
             bad('%s: %d checks < floor %d' % (name, res[0], CHECK_FLOOR))
         else:
             ok()
-    for name, flags in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS):
-        r, err = build_run(work, root, name, sites_c, flags, asan=True)
+    for name, tg, flags in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS):
+        r, err = build_run(work, root, name, tfile[tg], flags, asan=True, target=tg)
         if err:
             skipped_or_bad(name, err)
             continue
@@ -892,65 +974,60 @@ def run(a, root, work):
         else:
             ok()
     # 4: paths
-    for name, flags, live in (BUILDS[:2] + BUILDS[3:]) if inst else ():
-        r, err = build_run(work, root, 'paths-' + name, inst, flags)
+    for name, tg, flags in BUILDS:
+        if name == 'x86-64-v4' or tg not in inst:
+            continue
+        live = TARGETS[tg]
+        r, err = build_run(work, root, 'paths-' + name, inst[tg], flags, target=tg)
         if err:
             skipped_or_bad('paths ' + name, err, 4)   # 2 levels x (path floor, edge floor)
             continue
         res, paths = parse(r.stdout)
         for lv in ('w16', 'w32'):
             p = paths.get(lv, (0, 0, 0, 0))
-            print('paths %-10s %s entry=%d whole=%d final=%d verified=%d' % ((name, lv) + p))
+            print('paths %-14s %s entry=%d whole=%d final=%d verified=%d' % ((name, lv) + p))
             if lv in live and any(x < PATH_FLOOR for x in p):
                 bad('paths %s %s: a path below floor %d: %r' % (name, lv, PATH_FLOOR, p))
             elif lv not in live and any(p):
-                bad('paths %s %s: a compiled-out level ran: %r' % (name, lv, p))
+                bad('paths %s %s: a level the target does not admit ran: %r' % (name, lv, p))
             else:
                 ok()
             e = paths.get('edge-' + lv, (0, 0))
-            print('edge  %-10s %s padded verify at the subject end: evaluated=%d verified=%d '
+            print('edge  %-14s %s padded verify at the subject end: evaluated=%d verified=%d '
                   '(floor %d/%d)' % ((name, lv) + e + EDGE_FLOOR))
             if lv in live and (e[0] < EDGE_FLOOR[0] or e[1] < EDGE_FLOOR[1]):
                 bad('edge %s %s: %r below floor %r' % (name, lv, e, EDGE_FLOOR))
             elif lv not in live and any(e):
-                bad('edge %s %s: a compiled-out level ran: %r' % (name, lv, e))
+                bad('edge %s %s: a level the target does not admit ran: %r' % (name, lv, e))
             else:
                 ok()
     # 5: plants
     for plant in PLANTS:
         for lv in levels:
-            pt = plant_files.get((plant[0], lv))
-            if not pt:
-                continue
-            for name, flags, live in BUILDS:
-                if name == 'x86-64-v4':
+            for name, tg, flags in BUILDS:
+                pt = plant_files.get((plant[0], lv, tg))
+                if name == 'x86-64-v4' or not pt:
                     continue
-                r, err = build_run(work, root, 'plant-%s-%s-%s' % (plant[0], lv, name), pt, flags)
+                r, err = build_run(work, root, 'plant-%s-%s-%s' % (plant[0], lv, name), pt, flags,
+                                   target=tg)
                 if err:
                     skipped_or_bad('plant %s %s %s' % (plant[0], lv, name), err)
                     continue
                 res, _ = parse(r.stdout)
-                # a w16 plant at x86-64-v3 is live through w32's fall-through
-                # (spans between the two reaches): red there too
+                # a w16 plant in the x86-64-v3 file is live through w32's
+                # fall-through (spans between the two reaches): red there too
                 red = bool(res and (res[1] or res[2]))
                 fault = bool(res and res[2])
-                if lv in live:
-                    if not red or (plant[3] == 'fault' and not fault):
-                        bad('plant %s (%s) at %s: NOT DETECTED %r' % (plant[0], lv, name, res))
-                    else:
-                        ok()
+                if not red or (plant[3] == 'fault' and not fault):
+                    bad('plant %s (%s) at %s: NOT DETECTED %r' % (plant[0], lv, name, res))
                 else:
-                    if red:
-                        bad('plant %s (%s) at %s: red where the level is compiled out %r'
-                            % (plant[0], lv, name, res))
-                    else:
-                        ok()
-                print('plant %-12s %s at %-10s -> %s' % (plant[0], lv, name,
+                    ok()
+                print('plant %-12s %s at %-14s -> %s' % (plant[0], lv, name,
                       'RED' if red else 'green'))
     # 6: instruction classes
-    for name, flags, live in BUILDS:
+    for name, tg, flags in BUILDS:
         obj = os.path.join(work, 'insn-%s.o' % name)
-        r = sh(['gcc', '-O2', '-c', '-I', g2] + flags + ['-o', obj, sites_c])
+        r = sh(['gcc', '-O2', '-c', '-I', g2] + flags + ['-o', obj, tfile[tg]])
         if r.returncode:
             bad('insn %s: compile failed' % name)
             continue
@@ -960,7 +1037,6 @@ def run(a, root, work):
             bad('insn %s: forbidden instruction class used: %s' % (name, sorted(set(hits))))
         else:
             ok()
-
 
 if __name__ == '__main__':
     sys.exit(main())

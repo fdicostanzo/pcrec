@@ -10,5 +10,5 @@ SAB_DESC='the vrun rows serve only the SIZE policy class, so the named SIMD witn
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1852. docs/dev/lanes/fsfix_report.md carries the lane run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    [FLD_policy]          = CM(NONE) | CM(SIZE),      /* SIMD layer: never PORTABLE, never INLOOP */'
+SAB_BEFORE='    [FLD_policy]          = CM(NONE) | CM(SIZE),      /* SIMD layer: never INLOOP */'
 SAB_AFTER='    [FLD_policy]          = CM(SIZE),   /* SABOTAGE S1852 */'

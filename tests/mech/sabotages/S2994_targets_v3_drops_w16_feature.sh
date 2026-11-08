@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# S2994 -- [XARCH-DEV] unit U2 (request R-37; lane u2), LEVEL ADMISSION against the compiler
+# (memfn/tests/check_targets.sh's admission control). THE 32-BYTE TARGET FORGETS A FEATURE IT SUPPLIES.
+#
+# Plant: memfn/src/targets.def's 32-byte target row drops `sse2` from its features (its needs stay),
+# the row as K0 wrote it: the kit then refuses the 16-byte level there, and the target renders its
+# top rung alone (how the lane's own U3 preview first found it: `vrun@w32` without w16).
+# Detectors (arm memfntargets): check_targets.sh's admission control (gcc -march=<the target> -msse2
+# defines nothing new, so the compiler supplies the need the table refuses) and targets_check.c's
+# admission literals (the 32-byte target's kernel loses its w16 helper).
+SAB_ID="S2994-targets-v3-drops-w16-feature"
+SAB_FILE="memfn/src/targets.def"
+SAB_SUITES="memfntargets"
+SAB_DESC='the 32-byte target forgets a feature the compiler supplies there, so the kit refuses the 16-byte level at it'
+SAB_DOC_FIGURE='MEASURED by lane u2, planted by hand in a scratch copy of the table (TARGETS_DEF; u2_report.md, Sabotage rows); exact re-run: bash tests/mech/run_sabotage_matrix.sh S2994.'
+SAB_EXPECT=DETECTED
+SAB_COUNT=1
+SAB_BEFORE='sahf,sse2,sse4.1'
+SAB_AFTER='sahf,sse4.1'
