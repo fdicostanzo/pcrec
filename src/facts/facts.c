@@ -88,6 +88,9 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         pf->req_run.whole_len = 0;
         pf->req_run.whole_maxoff = 0;
         break;
+    case PF_REQ_PIECES:
+        pf->req_pieces = (PdDesc){ -1, PD_WALL, NULL };
+        break;
     case PF_REQ_RUN:
         memset(pf->req_run.bytes, 0, sizeof pf->req_run.bytes);
         memset(pf->req_run.mask, 0, sizeof pf->req_run.mask);
@@ -170,7 +173,9 @@ static void pf_done_why(PatFacts *pf, PfFactId f, PfWhyCode code)
                 code == PF_WHY_NULLABLE || code == PF_WHY_ASSERT_AT_START ||
                 code == PF_WHY_DEAD_START || code == PF_WHY_ALIVE_NOT_ACCEPT ||
                 code == PF_WHY_ASSERT_AFTER || code == PF_WHY_CALL ||
-                code == PF_WHY_ERASED || code == PF_WHY_MARKED;
+                code == PF_WHY_ERASED || code == PF_WHY_MARKED ||
+                code == PF_WHY_PIECES_WALL || code == PF_WHY_PIECES_OVER ||
+                code == PF_WHY_PIECES_ONE;
     pf->have |= pf_bit(f);
     pf->why[f] = (PfWhy){ decl ? PF_ST_DECLINED : PF_ST_DERIVED,
                           (unsigned char)code, 0 };
@@ -198,11 +203,12 @@ static void pf_derive_req_walk(Ctx *cx)
     PatFacts *pf = &cx->job->pf;
     RbSet set;
     RbRun run;
+    PdDesc pieces;
     int bits = 0;
     pcrec_req_walk(cx, pf->root,
                    pcrec_opt_has(cx->opt, PCREC_NO_REQ_RUN_FOLD)
                        ? 1 : PCREC_MAX_REQ_RUN_POS_SET,
-                   &set, &run);
+                   PCREC_MAX_REQ_PIECES, &set, &run, &pieces);
     for (int i = 0; i < run.n; i++) bits += __builtin_popcount(run.mask[i]);
     if (pf_enter(cx, PF_REQ_SET, false)) {
         memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
@@ -230,6 +236,15 @@ static void pf_derive_req_walk(Ctx *cx)
             pf->req_run.whole_maxoff = run.off;
         }
         pf_done(pf, PF_REQ_WHOLE_RUN);
+    }
+    if (pf_enter(cx, PF_REQ_PIECES, false)) {
+        /* [RUN-POS-SET] stage 2p: inert, no pass reads it. A piece SET is
+         * two or more groups; one group is the single run's. */
+        pf->req_pieces = pieces;
+        pf_done_why(pf, PF_REQ_PIECES,
+                    pieces.ng < 0 ? (pieces.why == PD_OVER ? PF_WHY_PIECES_OVER
+                                                           : PF_WHY_PIECES_WALL)
+                    : pieces.ng == 1 ? PF_WHY_PIECES_ONE : PF_WHY_NONE);
     }
 }
 
@@ -289,6 +304,7 @@ static void pf_derive(Ctx *cx, PfFactId f)
     case PF_REQ_SET:
     case PF_REQ_SET_MAXOFF:
     case PF_REQ_WHOLE_RUN:
+    case PF_REQ_PIECES:
         pf_derive_req_walk(cx);
         return;
     case PF_REQ_RUN:
@@ -781,6 +797,33 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         if (pf->req_run.whole_len < 2) return "none";
         return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_mask,
                       pf->req_run.whole_len, -1);
+    case PF_REQ_PIECES: {
+        /* [RUN-POS-SET] stage 2p: `W:` and one `[b,b,...]` byte list per
+         * stored position, the pieces `|`-joined in ascending width; `W@o:`
+         * where only the last positions are stored (the first at offset o). */
+        const PdDesc *d = &pf->req_pieces;
+        if (d->ng < 2) return "none";
+        StrBuf sb = { 0 };
+        sb.cx = cx;
+        for (int i = 0; i < d->ng; i++) {
+            const PdGroup *g = &d->g[i];
+            pcrec_sb_printf(&sb, "%s%lld", i ? "|" : "", g->w);
+            if (g->n < g->w) pcrec_sb_printf(&sb, "@%lld", g->w - g->n);
+            pcrec_sb_printf(&sb, ":");
+            for (int k = 0; k < g->n; k++) {
+                const unsigned char *set = g->pos[k];
+                int m = 0;
+                pcrec_sb_printf(&sb, "[");
+                for (int b = 0; b < 256; b++)
+                    if ((set[b >> 3] >> (b & 7)) & 1)
+                        pcrec_sb_printf(&sb, "%s%d", m++ ? "," : "", b);
+                pcrec_sb_printf(&sb, "]");
+            }
+        }
+        const char *t = pcrec_sb_fragf(&cx->arena, "%s", sb.p);
+        pcrec_sb_free(&sb);
+        return t;
+    }
     case PF_REQ_RUN:
         if (pf->req_run.len < 2) return "none";
         return pf_hex(cx, pf->req_run.bytes, pf->req_run.mask, pf->req_run.len,

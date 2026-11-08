@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 96
-#error "pcrec: this artifact (abi 96) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 97
+#error "pcrec: this artifact (abi 97) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 96
+#define PCREC_RX_ABI_H 97
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1648,7 +1648,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `96` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `97` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1806,7 +1806,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `96` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `97` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -2898,14 +2898,17 @@ whether or not the pattern uses it. `PCREC_*`-named but per-artifact, in the `.c
 build with no `--tune` flag; at no position does an answer move
 (`tuning.md` §5.5).
 
-<a id="s6-3-11-p3"></a>[6.3.11¶3] **`<PREFIX>_ALTCLS_MERGES`** and **`<PREFIX>_ALTCLS_FACTORED`** — counts of
-alternation runs merged into one class and prefix-factored
-(`tuning.md` §2.6, §2.7). Emitted before either engine is built, so they are
-on every artifact, a DFA-only one included.
+<a id="s6-3-11-p3"></a>[6.3.11¶3] **`<PREFIX>_ALTCLS_MERGES`** and **`<PREFIX>_ALTCLS_FACTORED`** — the
+alternation owner's activity (`tuning.md` §2.6, §2.7): the number of branch
+lists in which its sibling merge folded at least once (an alternation and
+each list its factoring creates, once each), and the number of prefix and
+suffix factorings made. Emitted before either engine is built, so they are
+on every artifact, a DFA-only one included. The UTF-8 lowering's merge of a
+wide class's boxes (the same rule, `tuning.md` §2.6¶1) is not counted.
 
 ```c
-#define RX_ALTCLS_MERGES   1   /* alternation runs merged into one class */
-#define RX_ALTCLS_FACTORED 0   /* alternation runs prefix-factored */
+#define RX_ALTCLS_MERGES   1   /* branch lists the sibling merge folded */
+#define RX_ALTCLS_FACTORED 0   /* prefix and suffix factorings */
 ```
 
 <a id="s6-3-11-p4"></a>[6.3.11¶4] **`<PREFIX>_PART_LAYOUT`** and **`<PREFIX>_PART_LAYOUT_WHY`** — the part-layout
@@ -3965,8 +3968,13 @@ order: **fire count and order are unspecified**, beyond the firing class of
 §11.8. A callee whose return depends only on what `rx_ctx` carries for that
 call (a PURE callee) gets a defined answer: the pattern's BACKTRACKING-ORDER
 answer, start positions in order, at each start the paths in priority order,
-every fire on every tried path honoured. Side effects see an unspecified
-sequence.
+every fire on every tried path honoured, for a callee that returns pass or
+fail. Side effects see an unspecified sequence. Whether a fire is made that
+a backtracking order would make and that would end the match by a give-up
+(§11.5¶1) is unspecified too: an exact rewrite may skip a path whose only
+effect is fires (`tuning.md` §2.6-§2.7; `(?:ab|(?C1)x|ad)` on `ad` fires
+once in libpcre2 10.46 and not at all in pcrec, and a callee giving up on
+that fire ends libpcre2's match where pcrec's answers `[0,2)`).
 
 <a id="s11-6-p2"></a>[11.6¶2] **Compatibility with PCRE2.** pcrec is compatible with PCRE2 on a callout
 pattern whose PCRE2 answer does not depend on PCRE2's optimizations. Where

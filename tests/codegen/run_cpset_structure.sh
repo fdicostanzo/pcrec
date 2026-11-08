@@ -71,7 +71,7 @@ echo "== CHECK 1: the interval payload exists and every producer reaches it =="
 # NEGATIVE needle is the one that matters, because a branch that ADDED an
 # interval list beside the bitmap — two representations, which §2.2's second
 # bullet forbids by name — would satisfy the positive half alone.
-if grep -q 'const PcrecCpRange \*iv; int n; } cls;' "$SRC/core/internal.h"; then
+if grep -q 'const PcrecCpRange \*iv; int n; \(int branches; \)\{0,1\}} cls;' "$SRC/core/internal.h"; then
     ok "[1a] Ast's A_CLASS payload is the interval form"
 else
     bad "[1a] src/core/internal.h does not declare the interval A_CLASS payload"
@@ -258,7 +258,7 @@ else
             red=$((red + 1)); echo "  red (as required): $1"
         fi
     }
-    grep -q 'const PcrecCpRange \*iv; int n; } cls;' "$R/core/internal.h" 2>/dev/null
+    grep -q 'const PcrecCpRange \*iv; int n; \(int branches; \)\{0,1\}} cls;' "$R/core/internal.h" 2>/dev/null
     red_or_note "1a payload is the interval form" $?
     ! grep -rq --include='*.c' --include='*.h' 'u\.cls\.bits' "$R" 2>/dev/null
     red_or_note "1a no u.cls.bits survives" $?
@@ -322,13 +322,13 @@ echo "== CHECK 2: pcrec_cls_bits is the sole path from a class node to a bitmap 
 # 2a. THE FLOOR, AND IT COUNTS THE ACCESSOR FAMILY RATHER THAN ONE FUNCTION.
 #
 # §8.1.1 words the floor as "every site in §2.5.1's AFTER rows calls it (count
-# >= 6)", counting `pcrec_cls_bits` alone. **FIVE of the six sites want a
-# bitmap and the sixth does not**, which the census could not have known: row
-# 9's `emit_vm.c:3287` is `vm_isl_single`, whose question is "is this class
-# exactly one literal byte" — it scanned 256 values through `cls_has` to ask
-# it, and the interval form answers it in one comparison through
-# `pcrec_cls_single`. Rendering a bitmap there so the grep would find the word
-# would be writing code for the check.
+# >= 6)", counting `pcrec_cls_bits` alone. **FIVE of the six sites wanted a
+# bitmap and the sixth did not**, which the census could not have known: row
+# 9's island literal asked "is this class exactly one literal byte" through
+# `pcrec_cls_single`. (Since review r5 altcode EMIT-1 the island reads every
+# class as its member bytes, so it renders through `pcrec_cls_bits` too.)
+# Rendering a bitmap only so the grep would find the word would be writing
+# code for the check.
 #
 # So the floor counts the FAMILY — the four functions `src/core/cpset.c`
 # exports for reading a published payload — and a second, tighter assertion
@@ -421,6 +421,23 @@ fi
 #                    `u.cls`, which the check reached on its first run over
 #                    the ic1b tree)
 #
+#   opt/altnf.c      [RUN-POS-SET] stage 1's alternation owner: `anf_cls_hash`,
+#                    `anf_cls_eq`, `anf_cls_disjoint` and `anf_cls_union` ask
+#                    interval-list questions of a branch POSITION (equal?
+#                    disjoint? the union?) for rule M's merge, at both
+#                    callers: altcls ABOVE the lowering, where a byte bitmap
+#                    is wrong for a class past the byte range, and the UTF-8
+#                    lowering's byte boxes, whose positions are A_CLASS nodes
+#                    the lowering itself just built. FUNCTION-scoped (ALLOW_FN
+#                    below), so the rest of altnf.c stays policed. Added by
+#                    lane altbuild (the owner's own population: its first
+#                    run over the tree reached the check)
+#                    `anf_passes`, `anf_node_same` and `anf_prefix` read
+#                    `u.cls.n` (the interval COUNT) only, to charge the
+#                    owner's work budget; no set is rendered. Added by lane
+#                    alttri 2026-11-07 (the 171 triage: the budget charge
+#                    arrived in stage 2b and the allowlist was never widened)
+#
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
 # reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen` or
 # `pcrec_cls_single` (`pcrec_cls_has`, which had no caller, was deleted at
@@ -437,7 +454,7 @@ ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|s
 # silently cover the next read to land in a same-named function). The first
 # entry is [ART-POSS-ARMS]'s (lane posstri): possessify.c's one reader is the
 # function `cls_polarity`, so that file is NOT on ALLOW.
-ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf src/parse/definitions.c:eol_tail_plain src/opt/callout.c:co_line_push src/opt/callout.c:co_line'
+ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf src/parse/definitions.c:eol_tail_plain src/opt/callout.c:co_line_push src/opt/callout.c:co_line src/opt/altnf.c:anf_cls_hash src/opt/altnf.c:anf_cls_eq src/opt/altnf.c:anf_cls_disjoint src/opt/altnf.c:anf_cls_union src/opt/altnf.c:anf_passes src/opt/altnf.c:anf_node_same src/opt/altnf.c:anf_prefix'
 
 # fn_span FILE FUNCTION -> "START END" (1-based, inclusive) or nothing.
 fn_span() {

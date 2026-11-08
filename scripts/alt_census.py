@@ -33,10 +33,12 @@ make flatly) is wrong in one direction — panel r53's semantics lens, F4. Two
 upstream passes move the count the OTHER way before `src/gen/emit_vm.c` ever
 sees a pattern:
 
-  - `src/opt/altcls.c` stage 1 MERGES a run of single-byte alternatives into a
-    CLASS, and a class is not a one-byte literal, so the island declines the
-    whole subtree. MEASURED: `ab|cd|a|b` stamps 0 islands by default and 1
-    under `-fno-altcls-merge`. This scanner counts it as qualifying.
+  - the alternation owner's sibling merge (`src/opt/altnf.c`, called by
+    `src/opt/altcls.c`; [RUN-POS-SET] stage 2b) MERGES single-character
+    alternatives into a CLASS, and a class is not a one-byte literal, so the
+    island declines the whole subtree. MEASURED (stage 2b build): `ab|cd|a|b`
+    stamps 0 islands by default and 1 under `-fno-altcls-merge`. This scanner
+    counts it as qualifying.
   - the emitter's own SIZE RULE declines an alternation whose trie would cost
     more than the chain it replaces, which this scanner does not model at all.
 

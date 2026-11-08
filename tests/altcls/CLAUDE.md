@@ -56,6 +56,16 @@ here because it is worth reading before adding to any of the three:
   declines (no shared first byte, a wide-class first atom, a captured
   branch, a quantifier before any split), and both stages composing on one
   pattern.
+- **`altnf_rules.rxt`** — [RUN-POS-SET] stage 2b: the alternation owner's
+  rules (M's adjacency rows, P, S, the re-run, the writes and head cases),
+  every cell read from libpcre2 10.46 by
+  `docs/dev/lanes/altbuild_evidence/altnf_rules_gen.py` (all `# pcre2-only`).
+  Target of S1888-S1891; S1892/S1893 hit `run_altcls_tests.sh`'s counts.
+- **`altnf_lookbehind.rxt`** (+ its SPEC `altnf_lookbehind.gen.py`,
+  regenerate with `tests/lib/p2gen.py`) — [RUN-POS-SET] x [VLOOKBEHIND]:
+  alternations of rule M/P/S shape inside a variable-width lookbehind (the
+  owner stays out of lookaround bodies today) and beside one (rewritten),
+  every cell libpcre2 10.46's (all `# pcre2-only`).
 - **`patterns.txt`** — `run_altdiff.sh`'s designed population, the same
   families as `altcls.rxt` restated as bare patterns (the differential needs
   patterns, not oracle expectations) plus the row's own quantified

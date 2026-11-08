@@ -13,14 +13,20 @@
 # Detected two ways that do not share a source: the census reads the SOURCE
 # (a switch with a default: and no A_WCLASS label), W3 reads the ARTIFACT
 # (the island stamp is gone). Answer checks see nothing.
+# RE-ANCHORED 2026-11-06 (lane altfix, review r5 altcode EMIT-3/CHK-5): the
+# arm reads the set through `vm_isl_set_split` (stage 1's set reading, the
+# box builder now the shared `pcrec_spine_build`); the plant is unchanged.
 SAB_ID="S366-wclass-island-default"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="wclass"
 SAB_DESC="vm_isl_words' A_WCLASS arm is replaced by a default: return false, so a wide-literal alternation silently loses its island"
-SAB_DOC_FIGURE="MEASURED solo-plant 2026-09-29 at the S3 tip: wclass:3fail/7pass DETECTED -- [5a] (no A_WCLASS label), [5c] (a default:) and [W3] (RX_VM_ALT_ISLANDS gone on café|naïve|résumé)."
+SAB_DOC_FIGURE="MEASURED solo-plant 2026-09-29 at the S3 tip (the arm then walked the byte child; since [RUN-POS-SET] stage 1 it reads the set): wclass:3fail/7pass DETECTED -- [5a] (no A_WCLASS label), [5c] (a default:) and [W3] (RX_VM_ALT_ISLANDS gone on café|naïve|résumé). Re-read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S366."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    case A_WCLASS:
-        return vm_isl_words(v, a->l, out, depth, budget);'
+SAB_BEFORE='    case A_WCLASS: {
+        const Ast *split = vm_isl_set_split(v, a);
+        if (!split) return false;
+        return vm_isl_words(v, split, out, depth, budget);
+    }'
 SAB_AFTER='    default:
         return false;'

@@ -331,7 +331,8 @@ void  pcrec_arena_free(Arena *a);
  * right to left in pattern text. A spine is as long as the pattern, not as
  * deep as its nesting, so a walk iterates it here and recurses only into the
  * elements ([DD-10]; coding_guide.md §2.4). A `root` of another kind is one
- * element. `break` and `return` leave the loop as usual. */
+ * element. `break` and `return` leave the loop as usual. Its array form is
+ * `pcrec_spine_flatten`/`pcrec_spine_build` (declared with `pcrec_ast_node`). */
 #define PCREC_SPINE_EACH(e, root, kind)                                        \
     for (const Ast *e##_at_ = (root), *e;                                       \
          e##_at_ && (e = e##_at_->k == (kind) ? e##_at_->r : e##_at_, 1);       \
@@ -1605,8 +1606,16 @@ struct Ast {
          * THE ARENA'S ZERO IS `{NULL, 0}`, THE EMPTY CLASS, which is what the
          * all-zero 32-byte bitmap also meant, so every "the arena zeroes, so
          * ..." argument in this header survives the re-layout unchanged
-         * (§2.2.3). */
-        struct { const PcrecCpRange *iv; int n; } cls;
+         * (§2.2.3).
+         *
+         * `branches` is the number of alternation branches rule M folded
+         * into this class at its position (src/opt/altnf.c), 0 for a class
+         * as written; read it through `pcrec_cls_branches`. It is a fact for
+         * the VM island's size comparison, which counts the chain the fold
+         * replaced (src/gen/emit_vm.c, review r5 altcode EMIT-3); no answer
+         * reads it, so a pass that copies a node and changes its set leaves at
+         * worst a stale speed estimate. */
+        struct { const PcrecCpRange *iv; int n; int branches; } cls;
 
         /* [CLS-TREE] S3 A_WCLASS: the code-point set, `cls`'s own
          * representation, published by the lowering from the `A_CLASS` it
@@ -2301,6 +2310,10 @@ void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32]);
 void pcrec_cls_bits_widen(Ctx *cx, const Ast *a, uint8_t out[32]);
 /* "Exactly one code point, and it is a byte?" — the code point, or -1. */
 int  pcrec_cls_single(Ctx *cx, const Ast *a);
+/* The alternation branches rule M folded into class `a` (1 for a class as
+ * written), and its setter for the fold's union node. */
+int  pcrec_cls_branches(Ctx *cx, const Ast *a);
+void pcrec_cls_set_branches(Ctx *cx, Ast *a, int branches);
 /* [OPT-LITSCAN] S4 P2 (litscan_s4.md §1.2): is `iv[i..j]` exactly ONE
  * AND-mask cube over the domain [base, base+w)? On success
  * `((x - base) & *care) == *val` is membership for every `x` in that domain.
@@ -3472,6 +3485,10 @@ typedef struct {
      * Written by the emitter at the text it writes; the size-cap ladder's
      * `drop-handoff` row applies only where it is true. */
     bool   req_handoff_vm;
+    /* [RUN-POS-SET] K139: did this attempt EMIT an alternation island? Written
+     * by the VM emitter beside the `VM_ALT_ISLANDS` stamp; the size-cap
+     * ladder's `drop-islands` row applies only where it is true. */
+    bool   vm_islands;
     /* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1), asked
      * once per compile by the driver after the three machines are built
      * (`pcrec_revend_form`). The four bools are the rows' inputs, written by
@@ -3524,7 +3541,9 @@ typedef struct {
      * checks sit at the top of the functions that would otherwise increment
      * these, so a denied build's stamp is indistinguishable from "nothing to
      * merge/factor here" — the same "no trace" rule possessify's denial
-     * follows. */
+     * follows. The UTF-8 lowering's box merges (the same owner, the same
+     * `-fno-altcls-merge`) are NOT counted here ([RUN-POS-SET] stage 1):
+     * the program bytes and the tables already record them. */
     int    altcls_merges;    /* stage 1: alternation runs folded into one class */
     int    altcls_factored;  /* stage 2: alternation runs prefix-factored */
     /* [M6.5.2] WHICH ENCODING RESIDUAL ENTRIES THIS ARTIFACT NEEDS — an OR of
@@ -5058,6 +5077,16 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * tell them apart — see cls_casefold's comment). The ONE constructor every
  * set-producing port uses, so the fold rule cannot be forgotten per site. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k);   /* bare-kind ctor for module TUs */
+/* src/parse/parse.c — a left-nested `kind` spine (`A_CAT` or `A_ALT`) as an
+ * array, and back: the one flattener and builder for the shape
+ * `PCREC_SPINE_EACH` walks (review r5 altcode SLOT-2). `pcrec_spine_flatten`
+ * stores the elements left to right in pattern text and returns their count
+ * (a root of another kind is one element). `pcrec_spine_build` rebuilds the
+ * spine parse.c itself builds, so nothing downstream can tell a rebuilt spine
+ * from a parsed one; `n == 0` is `A_EMPTY` for `A_CAT` and a caller error for
+ * `A_ALT`. */
+int  pcrec_spine_flatten(Ctx *cx, const Ast *root, AKind kind, Ast ***out);
+Ast *pcrec_spine_build(Ctx *cx, AKind kind, Ast *const *arr, int n);
 /* [UCP] U2 a context-assertion node (A_CTX) over a published set. */
 Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint16_t fn);
 /* [DD-11.5] P2e a subject PIN (`^`/`\A`: CTXFN_SUBJECT_START, `\z`:
@@ -6219,6 +6248,11 @@ Ast *pcrec_lower_enc(Ctx *cx, Ast *root);
  * encoding spells a character — and is the parser's literal reader for any
  * byte >= 0x80 (utf8_design.md §2.7). */
 unsigned pcrec_pat_char(Ctx *cx, size_t at, int *len);
+/* [RUN-POS-SET] The canonical split of a code-point set into the compile
+ * encoding's boxes (byte-range sequences, ascending, before any merge): the
+ * lowering's own splitter, for the VM island's set reading
+ * (src/opt/lower_enc.c). `*nb` gets the box count. */
+Ast **pcrec_lower_boxes(Ctx *cx, const PcrecCpRange *iv, int n, int *nb);
 
 /* The graph's readers, for `src/gen/emit_vm.c`, which owns the one fixpoint
  * the emitter runs — `W`'s (a set of SLOT INDICES, which exist nowhere but
@@ -7795,6 +7829,26 @@ bool pcrec_state_view_invariant(const Dfa *d, const DState *st);  /* src/opt/sca
  * build's cx->job->altcls_merges/altcls_factored stay at 0 -- the same
  * "no trace" rule possessify.c's -fno-possessify follows. */
 Ast *pcrec_altcls(Ctx *cx, Ast *root);               /* src/opt/altcls.c */
+
+/* [RUN-POS-SET] THE ALTERNATION OWNER (src/opt/altnf.c;
+ * docs/design/alt_normal_form.md §3.3): rewrites the branch list `br[0..n)`,
+ * in preference order, by the rules `rules` names and returns the new count, the
+ * list rewritten in place. Exact and preference-keeping (§3.2's adjacency
+ * test gates every branch it moves); allocates only new nodes; reads no
+ * option (a denied rule is the caller's to leave out). `*st`, when non-NULL,
+ * is ADDED to: the lists (the given one and every rest or head list the
+ * procedure recursed into) in which rule M folded at least once, and the
+ * rule-P and rule-S factorings made (the altcls stamps' units, §5 2b). */
+typedef struct {
+    bool merge;    /* rule M, sibling merge */
+    bool prefix;   /* rule P, prefix factoring */
+    bool suffix;   /* rule S, suffix factoring */
+} PcrecAnfRules;
+typedef struct {
+    int merge_lists;
+    int factored;
+} PcrecAnfStats;
+int pcrec_altnf(Ctx *cx, Ast **br, int n, PcrecAnfRules rules, PcrecAnfStats *st);
 
 /* ---- [M4.5b] the VM engine (docs/design/engine_m4.md) ---- */
 

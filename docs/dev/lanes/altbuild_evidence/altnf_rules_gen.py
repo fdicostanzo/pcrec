@@ -1,0 +1,101 @@
+"""altnf_rules_gen.py OUT.rxt -- writes tests/altcls/altnf_rules.rxt, stage
+2b's answer witnesses ([RUN-POS-SET], docs/design/alt_normal_form.md §3.2,
+§5 2b S-d/S-k/S-w/S-h; lane altbuild, 2026-11-06). EVERY expectation is
+read from libpcre2 10.46 (ctypes, /usr/lib/x86_64-linux-gnu/libpcre2-8.so.0;
+utf8 cells with UTF|UCP), never from pcrec: span and every capture slot.
+Each block is `# pcre2-only` (\\K, lookaround and backreferences are outside
+python `re`'s tier) and `features all`."""
+import ctypes, sys
+L = ctypes.CDLL("/usr/lib/x86_64-linux-gnu/libpcre2-8.so.0")
+L.pcre2_compile_8.restype = ctypes.c_void_p
+L.pcre2_compile_8.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.c_uint32,
+    ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_size_t), ctypes.c_void_p]
+L.pcre2_match_data_create_from_pattern_8.restype = ctypes.c_void_p
+L.pcre2_match_data_create_from_pattern_8.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+L.pcre2_match_8.restype = ctypes.c_int
+L.pcre2_match_8.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_size_t,
+    ctypes.c_size_t, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p]
+L.pcre2_get_ovector_pointer_8.restype = ctypes.POINTER(ctypes.c_size_t)
+L.pcre2_get_ovector_pointer_8.argtypes = [ctypes.c_void_p]
+L.pcre2_pattern_info_8.restype = ctypes.c_int
+L.pcre2_pattern_info_8.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_void_p]
+UTF, UCP, INFO_CAPTURECOUNT, UNSET = 0x00080000, 0x00020000, 4, (1 << 64) - 1
+
+def run(enc, pat, subj):
+    err, off = ctypes.c_int(), ctypes.c_size_t()
+    p = pat.encode()
+    code = L.pcre2_compile_8(p, len(p), (UTF | UCP) if enc == "utf8" else 0,
+                             ctypes.byref(err), ctypes.byref(off), None)
+    assert code, (pat, err.value)
+    nc = ctypes.c_uint32()
+    L.pcre2_pattern_info_8(code, INFO_CAPTURECOUNT, ctypes.byref(nc))
+    md = L.pcre2_match_data_create_from_pattern_8(code, None)
+    rc = L.pcre2_match_8(code, subj, len(subj), 0, 0, md, None)
+    if rc == -1: return None
+    assert rc > 0, (pat, subj, rc)
+    ov = L.pcre2_get_ovector_pointer_8(md)
+    sl = lambda i: (-1, -1) if ov[2 * i] == UNSET or i >= rc else (ov[2 * i], ov[2 * i + 1])
+    return [sl(i) for i in range(nc.value + 1)]
+
+def q(b):
+    out = ""
+    for c in b:
+        ch = chr(c)
+        if ch in '"\\': out += "\\" + ch
+        elif 0x20 <= c < 0x7f: out += ch
+        else: out += "\\x%02x" % c
+    return '"%s"' % out
+
+# (why, enc, pattern, subjects)
+CELLS = [
+ ("S-d: a merge must not cross an unequal-width sibling (row 3)", "byte", "(?:ab|a|ad)", [b"ad", b"ab", b"a", b"xadx"]),
+ ("S-d: the same over three letters", "byte", "(?:for|fo|fox)", [b"fox", b"for", b"fo"]),
+ ("S-d: the suffix-side form", "byte", "(?:ac|x|xc)", [b"xc", b"ac", b"x"]),
+ ("S-k: a variable-width prefix key is never factored", "byte", "(?:a|ab)c|(?:a|ab)b", [b"abc", b"ac", b"ab", b"abb"]),
+ ("S-w: row 2 must read WRITES (\\K)", "byte", "(?:ab|a\\Kd|ad)", [b"ad", b"ab", b"xad"]),
+ ("S-w: its capture twin", "byte", "(?:ab|(a)d|ad)\\1?", [b"ada", b"ad", b"ab"]),
+ ("S-h: row 1 must not read a head past a missing position", "byte", "(?:ab|a(?:x)?|ad)", [b"ad", b"ax", b"ab"]),
+ ("S-h control: a repeat contributes no head, row 3 refuses", "byte", "(?:ab|ax+|ad)", [b"ad", b"axx", b"ab"]),
+ ("row 2 reads the CONSUMED width, never a lookahead's (r7 SND-4)", "byte", "(?:ab|(?=ad)a|ad)", [b"ad", b"ab"]),
+ ("a lookahead holding a capture writes (row 3)", "byte", "(?:ab|(?=(a))ad|ad)", [b"ad", b"ab"]),
+ ("P never keys through \\K (r7 SND-3)", "byte", "(?:x\\Kac|xab)", [b"xac", b"xab"]),
+ ("M across a branch row 1 passes", "byte", "x(?:a|b|cd|e|f)y", [b"xey", b"xcdy", b"xfy", b"xgy"]),
+ ("M and S: the review's cells", "byte", "aaa|aab|aba|bba", [b"bba", b"aba", b"aab", b"bab"]),
+ ("", "byte", "aab|bbb|bab", [b"bab", b"bbb", b"abb"]),
+ ("", "byte", "ab|abc|ad", [b"abc", b"ad"]),
+ ("", "byte", "aaa|ab|aab", [b"aab", b"aaa", b"ab"]),
+ ("duplicates dropped", "byte", "bba|bb|bba|bb", [b"bba", b"bb", b"b"]),
+ ("S then M over the heads P created", "byte", "(?:ab\\b|ad\\b)", [b"ad", b"ab", b"adq"]),
+ ("S keeps the tried order with \\K in a head", "byte", "(?:a\\Kc|bc)", [b"ac", b"bc"]),
+ ("S over a repeat tail", "byte", "(?:x(?:y)*z|w(?:y)*z)", [b"wyyz", b"xz", b"wz"]),
+ ("S never factors a capture", "byte", "(?:a(x)|b(x))", [b"bx", b"ax"]),
+ ("P with a set-valued key", "byte", "[ab]x|[ab]y|[ab]", [b"by", b"a", b"bz"]),
+ ("utf8: P and M at code-point level", "utf8", "(?:éa|éb|ç)", ["éb".encode(), "ç".encode(), "éc".encode()]),
+ ("utf8: the premise shape under a fold", "utf8", "(?i)(?:αb|α|αd)", ["αd".encode(), "Αb".encode()]),
+]
+
+def main():
+    out = ["# tests/altcls/altnf_rules.rxt -- [RUN-POS-SET] stage 2b: the alternation",
+           "# owner's rules M, P and S at the altcls caller (docs/design/alt_normal_form.md",
+           "# §3.2-§3.3, §5 2b), the answer witnesses of sabotage rows S1888-S1893.",
+           "#",
+           "# GENERATED by docs/dev/lanes/altbuild_evidence/altnf_rules_gen.py: every",
+           "# span and capture slot below was read from libpcre2 10.46, never from",
+           "# pcrec. `# pcre2-only` on every block (\\K, lookaround, backreferences).", ""]
+    for why, enc, pat, subs in CELLS:
+        if why: out.append("# " + why)
+        out.append("# pcre2-only")
+        out.append("pattern " + pat)
+        out.append("features all")
+        if enc == "utf8": out.append("encoding utf8")
+        for s in subs:
+            r = run(enc, pat, s)
+            if r is None:
+                out.append("n " + q(s)); continue
+            out.append("m %s %d %d" % (q(s), r[0][0], r[0][1]))
+            for i, (a, b) in enumerate(r[1:], 1):
+                out.append("g %d %d %d" % (i, a, b))
+        out.append("")
+    open(sys.argv[1], "w").write("\n".join(out))
+
+main()

@@ -23,7 +23,36 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `96` on every artifact today ([VLOOKBEHIND] stage 1 and
+- **`rx_info.abi` is `97` on every artifact today ([RUN-POS-SET] stage 1, 96 -> 97,
+  built as 95 -> 96 by lane altbuild 2026-11-06, renumbered at its catch-up merge
+  over main's [VLOOKBEHIND] 96 in landing order (lane altcatch, 2026-11-07);
+  `docs/design/alt_normal_form.md` rev 3 §5 stage 1; closes [LOWERENC-SEAL]).**
+  The UTF-8 lowering hands a wide class's boxes to the alternation owner
+  (`src/opt/altnf.c`, rule M, sibling merge: two boxes equal at every position
+  but one become one box with the union there, `(?i)β`'s `ce 92|ce b2|cf 90`
+  is `ce [92 b2]|cf 90`), and the `A_CAT(A_EMPTY, alt)` seal around a
+  multi-box class's alternation is gone. A utf8 artifact holding a multi-box
+  wide class moves: smaller DFA tables, longer required runs (`(?i)abcdÀefgh`
+  6 -> 10 positions), a smaller VM program (the seal's `empty` label gone
+  under `-fno-cls-kit`), cursor rungs where a quantified class becomes one
+  box, and a bare wide class's own VM island gone where its boxes merge
+  (`-fno-altcls-merge`, which now denies the merge at both callers, restores
+  each). The VM island reads a wide class as its code-point set.
+  The same number also carries the branch's later stages (review r5 altcode
+  TRD-2/CON-2, lane altfix): stage 2b moves altcls's merge and factoring into
+  the owner (byte artifacts too: `RX_ALTCLS_MERGES`/`FACTORED`, VM program
+  bytes, DFA tables, the island census and rungs on 117 of 6,720 corpus and
+  bench patterns, `docs/dev/lanes/altbuild_report.md` "Movers"; four
+  refusals retired); the size-cap ladder's `drop-islands` row (K139), the LAST
+  VM rung, retires refusals of artifacts an island carried over a cap (the
+  retry is the caller's `-fno-alt-island` artifact with the earlier rungs'
+  drops applied); and the island reads a byte class as its member words, its
+  size row counting the chain before rule M's folds, so an alternation the
+  owner folds keeps the island it had at 96 (bench altwide w-256: 20
+  islands back to 1) and a finite alternation with a written class can now
+  take one where the size row admits it (`x(?:[éà]|foo|bar|baz)y` under
+  `--engine=vm`). No answer moves.
+- **`rx_info.abi` was `96` on every artifact ([VLOOKBEHIND] stage 1 and
   K137, 95 -> 96, lane vlbbuild, 2026-11-06; docs/design/vlookbehind.md rev 4,
   docs/dev/lanes/vlbbuild_report.md).** Two scaffolding changes. (1) K137: the
   utf8 unanchored retry advance's [K49] comment is the backend's own doc half

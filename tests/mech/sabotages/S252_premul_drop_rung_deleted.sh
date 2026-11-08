@@ -34,7 +34,7 @@ SAB_COUNT=1
 # rung rescues it (balanced -- the artifact that is refused at balanced
 # before either rung, and rescued by BOTH rungs together after)? Read as
 # the RX_ENGINE_SEL stamp the rung is a co-writer of.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "[^\p{C}\p{M}\p{P}]xy" 2>&1 | grep -E "^#define RX_(ENGINE_SEL \"size-cap-retry\"|DFA_TABLE \"indexed\")$|dropped the premultiplied DFA transition table"'
+SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "[^\p{C}\p{M}\p{P}]\p{Lo}xy" 2>&1 | grep -E "^#define RX_(ENGINE_SEL \"size-cap-retry\"|DFA_TABLE \"indexed\")$|dropped the premultiplied DFA transition table"'
 SAB_REACH_EXPECT='#define RX_ENGINE_SEL "size-cap-retry"
 #define RX_DFA_TABLE "indexed"
 dropped the premultiplied DFA transition table'

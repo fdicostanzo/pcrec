@@ -33,6 +33,9 @@
 #                 child and `vm_emit` never meets the wrapper (`[é]x` does
 #                 not reach the arm; measured).
 #
+#   PART 4  [RUN-POS-SET] stage 1: the lowering's box merge and the island's
+#           set reading (N1-N5; docs/design/alt_normal_form.md §5 stage 1).
+#
 # Output: PASS:/FAIL: lines and the `checks passed:`/`checks failed:` trailer.
 # Usage: bash tests/codegen/run_wclass_census.sh
 
@@ -204,6 +207,87 @@ if compile '\P{Unknown}' "$TMP/k7a.c" -e utf8 --engine=vm \
 else
     bad "[K7] a retired refusal is back: $(head -c 300 "$TMP/k7a.c.err") $(head -c 300 "$TMP/k7b.c.err")"
 fi
+
+# ---------------------------------------------------------------------------
+# PART 4 — [RUN-POS-SET] stage 1 (docs/design/alt_normal_form.md §5 stage 1):
+# the lowering's box merge (the alternation owner, rule M) and the island's
+# SET reading of a wide class. COUNT witnesses: none of these can move an
+# answer, so the island and box-count stamps are what a wrong build moves.
+# All under `--engine=vm -fno-cls-kit` (the byte tree is what the VM walks).
+# ---------------------------------------------------------------------------
+echo "== PART 4: the alternation owner at the lowering =="
+isl() { grep -oE '^#define RX_VM_ALT_ISLANDS [0-9]+' "$1" | awk '{print $3}'; }
+VMNK=(-e utf8 --engine=vm -fno-cls-kit)
+
+# [N1] a class whose canonical split holds a byte RANGE (`[éè]` = one box
+# `c3 [a8-a9]`) is read member by member, one word per code point (the
+# CLASS-MEMBER widening, review r5 altcode EMIT-1; it retired stage 1's
+# single-string box admission and its sabotage row S1883), so the island is
+# built.
+if compile 'x(?:1[éè]|q2|r3)y' "$TMP/n1.c" "${VMNK[@]}"; then
+    if [ "$(isl "$TMP/n1.c")" = 1 ]; then
+        ok "[N1] x(?:1[éè]|q2|r3)y: a range box is read as its member words (RX_VM_ALT_ISLANDS 1)"
+    else
+        bad "[N1] x(?:1[éè]|q2|r3)y: RX_VM_ALT_ISLANDS $(isl "$TMP/n1.c") where 1 — the island's set reading declined a class whose canonical split holds a range box"
+    fi
+else
+    bad "[N1] x(?:1[éè]|q2|r3)y refused: $(head -c 300 "$TMP/n1.c.err")"
+fi
+
+# [N2] a class at the HEAD of the island's alternation spine reaches the set
+# arm (the island-local step stops at the class). Merged, its byte child is
+# `c3 [a0 a9]`, which an unwrapping walk hands the trie and the trie declines.
+if compile 'x(?:[éà]|q2|r3|s4)y' "$TMP/n2.c" "${VMNK[@]}"; then
+    if [ "$(isl "$TMP/n2.c")" = 1 ]; then
+        ok "[N2] x(?:[éà]|q2|r3|s4)y: a class at the alternation spine's head keeps the island"
+    else
+        bad "[N2] x(?:[éà]|q2|r3|s4)y: RX_VM_ALT_ISLANDS $(isl "$TMP/n2.c") where 1 — the island's A_ALT walk unwraps the class before the set arm sees it"
+    fi
+else
+    bad "[N2] x(?:[éà]|q2|r3|s4)y refused: $(head -c 300 "$TMP/n2.c.err")"
+fi
+
+# [N3] the same at the head of a branch's concatenation spine.
+if compile 'x(?:[éà]1|q2|r3)y' "$TMP/n3.c" "${VMNK[@]}"; then
+    if [ "$(isl "$TMP/n3.c")" = 1 ]; then
+        ok "[N3] x(?:[éà]1|q2|r3)y: a class at a branch's concatenation head keeps the island"
+    else
+        bad "[N3] x(?:[éà]1|q2|r3)y: RX_VM_ALT_ISLANDS $(isl "$TMP/n3.c") where 1 — the island's A_CAT walk unwraps the class before the set arm sees it"
+    fi
+else
+    bad "[N3] x(?:[éà]1|q2|r3)y refused: $(head -c 300 "$TMP/n3.c.err")"
+fi
+
+# [N4] bit 10 is do-or-die at the lowering, read off the program: a bare wide
+# class whose boxes merge loses its own island, and -fno-altcls-merge (the
+# owner's merge denied at both callers) restores the boxes and the island.
+if compile 'a[éÉ]b' "$TMP/n4a.c" "${VMNK[@]}" \
+   && compile 'a[éÉ]b' "$TMP/n4b.c" "${VMNK[@]}" -fno-altcls-merge; then
+    if [ "$(isl "$TMP/n4a.c")" = 0 ] && [ "$(isl "$TMP/n4b.c")" = 1 ]; then
+        ok "[N4] a[éÉ]b: merged (island 0), -fno-altcls-merge restores the boxes (island 1)"
+    else
+        bad "[N4] a[éÉ]b: islands $(isl "$TMP/n4a.c") merged / $(isl "$TMP/n4b.c") denied where 0 / 1 — the lowering does not call the owner, or the deny does not reach it"
+    fi
+else
+    bad "[N4] a[éÉ]b refused: $(head -c 300 "$TMP/n4a.c.err") $(head -c 300 "$TMP/n4b.c.err")"
+fi
+
+# [N5] Gate U1b: the declared merge order (width ascending, last position
+# first) pinned by box counts on the widest classes, read as the VM's
+# alternation entry over the bare class. A first-position-first order gives
+# 105 for \p{Lu}; the counts are UCD 16.0.0's (a UCD bump re-pins them).
+boxes() {
+    "$TIMEOUT_BIN" 120 "$PCREC" -p rx --features all "${VMNK[@]}" --emit-ir --pattern "$1" 2>/dev/null |
+        sed -n 's/.*alternation entry (\([0-9]*\) branches).*/\1/p' | head -1
+}
+for pin in '\p{Lu}=67' '\p{Nd}=39' '\p{L}=330' '.=8'; do
+    pat="${pin%=*}"; want="${pin##*=}"; got="$(boxes "$pat")"
+    if [ "$got" = "$want" ]; then
+        ok "[N5] $pat lowers to $want boxes after the merge (declared order)"
+    else
+        bad "[N5] $pat lowers to ${got:-?} boxes where $want — the owner's merge order or rule moved (docs/design/alt_normal_form.md §3.3 Order)"
+    fi
+done
 
 echo
 echo "checks passed: $pass"

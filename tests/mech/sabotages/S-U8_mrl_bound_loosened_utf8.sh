@@ -27,6 +27,9 @@
 # non-empty return became `return wclass_of(lc, a, res);` (the A_WCLASS
 # wrapper over the rewrite). BEFORE and AFTER both end on that line, so the
 # plant still loosens the byte CHILD, which is what every reader walks.
+# RE-ANCHORED 2026-11-06 (lane altfix, review r5 altcode SLOT-2/SLOT-4): the
+# box alternation is built by the shared `pcrec_spine_build`; the plant is
+# unchanged.
 SAB_ID="S-U8-mrl-bound-loosened-utf8"
 SAB_FILE="src/opt/lower_enc.c"
 SAB_SUITES="codegen encoding"
@@ -36,26 +39,16 @@ SAB_REACH='"$PCREC" -e utf8 -p rx -o - --pattern "(a)(?:\x{3b1}){0,3}x" | grep -
 SAB_REACH_EXPECT='RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2)'
 SAB_REACH_POP='tests/codegen/run_encoding_checks.sh|RX_PRUNE_CLAMP_SPAN|1'
 SAB_COUNT=1
-SAB_BEFORE='            if (bl.n > 1) {
-                Ast *seal = pcrec_ast_node(lc->cx, A_CAT);
-                seal->l = pcrec_ast_node(lc->cx, A_EMPTY);
-                seal->r = res;
-                res = seal;
-            }
-            return wclass_of(lc, a, res);'
-SAB_AFTER='            {   /* SABOTAGE S-U8: a matches-nothing branch — language
-                 * identical, minw of the alternation loosened to 1 */
-                Ast *alt = pcrec_ast_node(lc->cx, A_ALT);
-                Ast *dead = pcrec_ast_node(lc->cx, A_CLASS);
-                PcrecCpSet ds;
-                pcrec_cpset_init(&ds, &lc->cx->arena);
-                pcrec_cpset_publish(&ds, dead);
-                alt->l = res; alt->r = dead; res = alt;
-            }
-            {
-                Ast *seal = pcrec_ast_node(lc->cx, A_CAT);
-                seal->l = pcrec_ast_node(lc->cx, A_EMPTY);
-                seal->r = res;
-                res = seal;
-            }
-            return wclass_of(lc, a, res);'
+SAB_BEFORE='        Ast *res = pcrec_spine_build(lc->cx, A_ALT, bl.br, bl.n);
+        return wclass_of(lc, a, res);'
+SAB_AFTER='        Ast *res = pcrec_spine_build(lc->cx, A_ALT, bl.br, bl.n);
+        {   /* SABOTAGE S-U8: a matches-nothing branch — language
+             * identical, minw of the alternation loosened to 1 */
+            Ast *alt = pcrec_ast_node(lc->cx, A_ALT);
+            Ast *dead = pcrec_ast_node(lc->cx, A_CLASS);
+            PcrecCpSet ds;
+            pcrec_cpset_init(&ds, &lc->cx->arena);
+            pcrec_cpset_publish(&ds, dead);
+            alt->l = res; alt->r = dead; res = alt;
+        }
+        return wclass_of(lc, a, res);'

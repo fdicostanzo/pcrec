@@ -114,6 +114,9 @@ static const char *fd_why(Ctx *cx, const PfWhy *w, const char *enc)
     case PF_WHY_CALL:             return "decline:call";
     case PF_WHY_ERASED:           return "decline:erased-nfa";
     case PF_WHY_MARKED:           return "decline:end-mark";
+    case PF_WHY_PIECES_WALL:      return "decline:not-fixed-width";
+    case PF_WHY_PIECES_OVER:      return "decline:over-bound";
+    case PF_WHY_PIECES_ONE:       return "decline:one-group";
     }
     return "";
 }

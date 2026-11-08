@@ -1,0 +1,16 @@
+[emit_sweep] tree=/home/pcrec/projects/pcrec/worktrees/altbuild out=/var/tmp/pcrec-pcrec/scratch/altbuild/es3 cc=gcc jobs=8 comp_timeout=180 comp_jobs=6 streams=facts extra=[] arms=None trace=False
+[emit_sweep] archiving 80341284e (ref) into /var/tmp/pcrec-pcrec/scratch/altbuild/es3/src_ref ...
+[emit_sweep] building ref (CC=gcc CFLAGS=<default>) ...
+[emit_sweep] reference=ref:80341284e working=bin:/home/pcrec/projects/pcrec/worktrees/altbuild/build/pcrec corpus_dir=/home/pcrec/projects/pcrec/worktrees/altbuild
+[emit_sweep] corpus: 6314 pattern rows (+0 from patterns files), 437 composition files
+[emit_sweep] === REAL RUN: ref:80341284e vs bin:/home/pcrec/projects/pcrec/worktrees/altbuild/build/pcrec ===
+[emit_sweep] === real: stream 6 (--emit-facts=byte,utf8) ===
+
+===== REAL RUN: ref:80341284e  vs  bin:/home/pcrec/projects/pcrec/worktrees/altbuild/build/pcrec =====
+-- stream: facts --
+  population=6314 both_ok(reach)=5795 both_refuse=519 movers=0 asymmetric=0
+  DECLARED MOVES (--facts-declared-moves, judged both ways): patterns=5795 rows=5795
+
+population: argv=6314 composition_files=437 composition_producing=0 composition_artifacts=0
+elapsed: 11.1s
+emit_sweep: DONE rc=0

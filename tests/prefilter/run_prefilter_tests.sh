@@ -284,8 +284,10 @@ check_ir_value "T2 forced-on/SIZECAP"       'yes-collapsed'         '^(\p{Xwd}{1
 # [START-LANDING] SL2 (abi 74) the witness takes RECOVER's `landing` row,
 # drops the reverse machine and fits with its prefilter (a FIT mover); the
 # masked deny puts it back on the reverse pass and the rung (lane sltri).
-check_ir_value "T2 size-dropped/NONE"       'no-size-cap'           '(\p{Xwd})'                    $IRF -e utf8 -fno-start-landing
-check_ir_value "T2 forced-off vs rung"      'no-fno-prefilter'      '(\p{Xwd})'                    $IRF -e utf8 -fno-prefilter
+# RE-AIMED 2026-11-06 (lane altfix): `(\p{Xwd})` fits since [RUN-POS-SET]
+# stage 1 shrank its tables; the two-branch-longer witness still drops.
+check_ir_value "T2 size-dropped/NONE"       'no-size-cap'           '(\p{Xwd}|\p{Nd}x|\p{Sc}y)'   $IRF -e utf8 -fno-start-landing
+check_ir_value "T2 forced-off vs rung"      'no-fno-prefilter'      '(\p{Xwd}|\p{Nd}x|\p{Sc}y)'   $IRF -e utf8 -fno-prefilter
 # var | NONE ([DEC-VAR-ATTRIB] F-B1 + F1: a construct row, listing
 # 'no-variable'; until abi 69 'no-engine-vm', 'no-nullable-exact' on a
 # nullable one, and the flag under -fno-prefilter), on a non-nullable and a

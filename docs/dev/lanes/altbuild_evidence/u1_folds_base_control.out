@@ -1,0 +1,7 @@
+population 1454 fold classes; 911 multi-box; 491 with a fold
+U1(folds)+U3 FAIL (2324 findings)
+    942 : 
+    466 : islands
+    519 : run
+    452 : tables
+    887 : vmbytes

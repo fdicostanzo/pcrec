@@ -1493,8 +1493,8 @@ pfd_ff "prefilter collapse, (a|b){1,30000} -fno-scan-edge" '^#define RX_VM_PREFI
     -fno-scan-edge $PFD_NL --pattern '(a|b){1,30000}'
 pfd_ff "anchored drop, \\p{L}\\p{N}\\p{Lu} -e utf8" '^#define RX_DFA_MATCH "search-filter"' \
     -e utf8 --pattern '\p{L}\p{N}\p{Lu}'
-pfd_ff "premul drop, [^\\p{C}\\p{M}\\p{P}]xy -e utf8" '^#define RX_DFA_TABLE "indexed"' \
-    -e utf8 --pattern '[^\p{C}\p{M}\p{P}]xy'
+pfd_ff "premul drop, [^\\p{C}\\p{M}\\p{P}]\\p{Lo}xy -e utf8" '^#define RX_DFA_TABLE "indexed"' \
+    -e utf8 --pattern '[^\p{C}\p{M}\p{P}]\p{Lo}xy'
 # A PATTERN THAT FITS IS THE SAME ARTIFACT UNDER THE SWITCH: it selects no
 # shape (masked out of `rx_info.flags`, lib/pcrec.h). `(\p{L})` is a VM
 # hybrid at 790 KB, close under the cap, so a switch that leaked into

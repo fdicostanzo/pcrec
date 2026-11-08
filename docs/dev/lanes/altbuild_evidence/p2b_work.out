@@ -1,0 +1,20 @@
+population: 6720 compiles (ok 6211, refused 509)
+altcls: 2286 calls; work p50 6 p99 12870 p99.9 127247 max 831549
+  831549	branches=4096	bench/altwide/s-4096.rx	(?:jkdw|uiehxw|sbisnk|qpav|kqbo|wqmy|zlbt|eolfdr|pjtb|jhzzz|dajiv|gpsi
+  831549	branches=4096	bench/altwide/s-4096.rx	(?:jkdw|uiehxw|sbisnk|qpav|kqbo|wqmy|zlbt|eolfdr|pjtb|jhzzz|dajiv|gpsi
+  127247	branches=2048	bench/altwide/s-2048.rx	(?:jkdw|uiehxw|sbisnk|qpav|kqbo|wqmy|zlbt|eolfdr|pjtb|jhzzz|dajiv|gpsi
+  127247	branches=2048	bench/altwide/s-2048.rx	(?:jkdw|uiehxw|sbisnk|qpav|kqbo|wqmy|zlbt|eolfdr|pjtb|jhzzz|dajiv|gpsi
+  111680	branches=2048	bench/altwide/w-2048.rx	(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivj
+  111680	branches=2048	bench/altwide/w-2048.rx	(?:yoslwssiyybw|dybf|oodo|omykisp|idox|oemrbp|xzxj|qnhl|dwvtih|hykcivj
+  33651	branches=1024	bench/altwide/clsa-1024.rx	(?:yoslwssiyybw[a-z]|dybf[a-z]|oodo[a-z]|omykisp[a-z]|idox[a-z]|oemrbp
+  33651	branches=1024	bench/altwide/clsa-1024.rx	(?:yoslwssiyybw[a-z]|dybf[a-z]|oodo[a-z]|omykisp[a-z]|idox[a-z]|oemrbp
+lower: 1062 calls; work p50 1 p99 643 p99.9 745 max 750
+  750	branches=1124	tests/utf8/uprop_more.rxt:509	\p{Gr_Base}
+  745	branches=1118	tests/utf8/wclass_illformed.rxt:199	x\p{Xwd}y
+  745	branches=1118	tests/utf8/wclass_illformed.rxt:199	x\p{Xwd}y
+  745	branches=1118	tests/utf8/wclass_illformed.rxt:223	x\p{Xwd}y
+  745	branches=1118	tests/utf8/wclass_illformed.rxt:223	x\p{Xwd}y
+  745	branches=1118	tests/utf8/wclass_illformed.rxt:246	x(\p{Xwd})y
+  745	branches=1118	tests/uprops/size_ladder_prefilter_drop.rxt:24	(\p{Xwd})
+  745	branches=1118	tests/uprops/size_ladder_prefilter_drop.rxt:50	(\p{Xwd})x
+p2b work census: PASS

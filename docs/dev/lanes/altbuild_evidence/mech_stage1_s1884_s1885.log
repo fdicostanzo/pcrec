@@ -1,0 +1,20 @@
+[TT-6] TIMEOUT_BIN=/usr/bin/gnutimeout (default 'timeout' is not GNU coreutils; docs/testing.md "The timeout binary itself")
+[ORACLE-LINK] libpcre2 resolved: 10.46 (via pkg-config; tests/lib/resolve_pcre2.sh)
+== pcrec sabotage detection matrix (MECH-1) ==
+tree SHA measured: b2dc24ef8754bb27d9fc0d423215de5c8a4731d2 (working tree has UNCOMMITTED changes not reflected below — this matrix measures committed HEAD only, per MECH-2: sabotage trees are 'git archive HEAD', never a copy of a dirty working tree)
+scratch root: /tmp/pcrec-mech-sabotage.8jaSLH
+
+reach reference: clean tree built at b2dc24ef8754bb27d9fc0d423215de5c8a4731d2 (/tmp/pcrec-mech-sabotage.8jaSLH/_clean/tree)
+
+-- running S1884_island_alt_walk_unwraps_class.sh --
+S1884-island-alt-walk-unwraps-class	src/gen/emit_vm.c	the VM island's alternation walk unwraps a wide class in the first branch to its merged byte child, so the island over x(?:[éà]|q2|r3|s4)y is declined	wclass	pop:tests/codegen/run_wclass_census.sh:/\[N2\]/=4(want>=1),reach:ok(1/1),wclass:1fail/24pass	DETECTED
+-- running S1885_island_cat_walk_unwraps_class.sh --
+S1885-island-cat-walk-unwraps-class	src/gen/emit_vm.c	the VM island's concatenation walk unrolls a wide class at a branch's head into its merged byte child, so the island over x(?:[éà]1|q2|r3)y is declined	wclass	pop:tests/codegen/run_wclass_census.sh:/\[N3\]/=4(want>=1),reach:ok(1/1),wclass:1fail/24pass	DETECTED
+
+== detection matrix ==
+id                                   file               edit                                                                                                                                                     suites run  results                                                                                       verdict
+S1884-island-alt-walk-unwraps-class  src/gen/emit_vm.c  the VM island's alternation walk unwraps a wide class in the first branch to its merged byte child, so the island over x(?:[éà]|q2|r3|s4)y is declined   wclass      pop:tests/codegen/run_wclass_census.sh:/\[N2\]/=4(want>=1),reach:ok(1/1),wclass:1fail/24pass  DETECTED
+S1885-island-cat-walk-unwraps-class  src/gen/emit_vm.c  the VM island's concatenation walk unrolls a wide class at a branch's head into its merged byte child, so the island over x(?:[éà]1|q2|r3)y is declined  wclass      pop:tests/codegen/run_wclass_census.sh:/\[N3\]/=4(want>=1),reach:ok(1/1),wclass:1fail/24pass  DETECTED
+
+
+== mech run COMPLETE: 2 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at b2dc24ef8754bb27d9fc0d423215de5c8a4731d2 ==

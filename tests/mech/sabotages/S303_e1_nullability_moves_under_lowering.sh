@@ -34,6 +34,9 @@
 # RE-ANCHORED at [CLS-TREE] S3 (2026-09-29, lane s3build): the non-empty
 # return became `return wclass_of(lc, a, res);`. The AFTER is unchanged: the
 # class still lowers to a bare A_EMPTY, and the E1/E2 cross-check refuses it.
+# RE-ANCHORED 2026-11-06 (lane altfix, review r5 altcode SLOT-2/SLOT-4): the
+# box alternation is built by the shared `pcrec_spine_build`; the plant is
+# unchanged.
 SAB_ID="S303-e1-nullability-moves-under-lowering"
 SAB_FILE="src/opt/lower_enc.c"
 SAB_SUITES="facts"
@@ -46,9 +49,8 @@ SAB_REACH_EXPECT="REACH-UTF8-LOWERING-REWRITES"
 SAB_REACH_POP="tests/codegen/run_facts_checks.sh|^    'E1W[[:space:]]utf8[[:space:]].*[[:space:]]no'|4"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                res = seal;
-            }
-            return wclass_of(lc, a, res);'
-SAB_AFTER='                res = seal;
-            }
-            return pcrec_ast_node(lc->cx, A_EMPTY);   /* SABOTAGE S303: a non-empty class lowers to A_EMPTY */'
+SAB_BEFORE='        Ast *res = pcrec_spine_build(lc->cx, A_ALT, bl.br, bl.n);
+        return wclass_of(lc, a, res);'
+SAB_AFTER='        Ast *res = pcrec_spine_build(lc->cx, A_ALT, bl.br, bl.n);
+        (void)res;
+        return pcrec_ast_node(lc->cx, A_EMPTY);   /* SABOTAGE S303: a non-empty class lowers to A_EMPTY */'

@@ -27,9 +27,10 @@ The axis is `docs/spec/tuning.md` §2.20 (`-fno-alt-island`,
 - **island_caseless.rxt** — the caseless decline, in its own file because
   `flags` is a BLOCK-scoped directive and the fact under test is about the
   whole population: D23 folds a caseless literal to a two-member CLASS at
-  parse time, so a caseless alternation is class-leading before
-  `src/gen/emit_vm.c` sees it. This is `[FORM-CHAR]`'s axis, not the
-  island's, and this file is where that boundary is pinned.
+  parse time. Since review r5 altcode EMIT-1 the island reads such a class
+  as its member words, and the size row (which counts a written class as one
+  chain test) keeps the chain for these shapes; this file pins the answers
+  either way.
 
 - **run_island_tests.sh** — the STRUCTURAL checks, i.e. everything the two
   `.rxt` files cannot see. Seven blocks: the stamp is unconditional on a VM
@@ -51,5 +52,12 @@ The axis is `docs/spec/tuning.md` §2.20 (`-fno-alt-island`,
   islands on the bench's `w-256` — exactly its own `RX_ALTCLS_FACTORED`
   count — and emitted a 3.0% LARGER artifact than the chain it replaced. It
   passed every answer check in this directory. What sees it is the count.
+
+- **altwide_w256.pattern** — pcrec-bench's altwide `w-256` pattern (bench
+  commit 161e5cf8), byte for byte: section 12's witness that a class rule M
+  folded is read as its member words (review r5 altcode EMIT-1; one island,
+  not 20). Section 12 also pins the size row's reading of the chain before
+  the folds (EMIT-3). Mech sabotage arm `island` runs this script
+  (S1990/S1991).
 
 Maintenance: update this file when files are added/removed or change roles.

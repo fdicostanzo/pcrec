@@ -523,10 +523,17 @@ fi
 # taken, with the SAME body as `capture-alt` but a bounded {0,17} count where
 # that member is an exact {4000}: it sits below the bar where its sibling sits
 # above, which is the bracket the pool is for. The constant is not adjusted.
+# `(?:ab|cd|aqr|cst){8}z` REPLACED `(?:ab|ba|aa|bb){24}c` as `island-4lit` at
+# the alternation owner (lane altbuild2, 2026-11-06, ruling R4 (a)): the
+# owner's rule M merges `ab|ba|aa|bb` into a class pair, so the old member
+# stamped no island and `UNROLL_K_WHY "default"`, a prediction/stamp
+# mismatch. The new member keeps four literals the owner leaves whole
+# (measured: RX_ALTCLS_MERGES 0, RX_ALTCLS_FACTORED 0): 0.7158, `size-model`
+# taken, 1 island, on this block's own reference compiler.
 POOL_PATTERNS='((a)|ab){4000}c	capture-alt
 (|a){0,12}b	empty-branch
 (?:[ab]a|[ab]){8,12}+b	class-leading
-(?:ab|ba|aa|bb){24}c	island-4lit
+(?:ab|cd|aqr|cst){8}z	island-4lit
 (a{1,3}){64}	no-alternation
 (a{10,20}){10,50}	no-alternation
 (?:cat|cats|dog|dogs){12}z	island-4word

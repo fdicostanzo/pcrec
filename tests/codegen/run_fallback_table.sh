@@ -265,13 +265,21 @@ fseq seq-fofsel1  trplain ok 'sel1-collapse@overflow'                          "
 fseq seq-nopfsel1 trplain ok 'sel1-collapse@overflow'                          "$W_OVFNN" -fno-prefilter
 fseq seq-ovfpf    trlowdfa ok 'sel1-drop@overflow'                             "$OVFPF"
 # T1 rows 6-9 (the size-cap ladder), arrival label `size`
+# RE-AIMED 2026-11-06 (lane altfix, the 303 triage): [RUN-POS-SET] stage 1
+# shrank `(\p{Xwd})`'s tables under the cap (933,498 B), so the hybrid-drop
+# witnesses `(\p{Xwd})`/`(\p{Xwd})x` fit with no rung. Their re-aims add two
+# property branches: `(\p{Xwd}|\p{Nd}x|\p{Sc}y)` (hybrid 1,058,204 B, the
+# prefilter drop) and its `x`-suffixed form (handoff first, then the
+# prefilter at 1,060,847 B), each ~6% over the 1,000,000 B cap. note-premul's
+# `[^\p{C}\p{M}\p{P}]` now fits after the anchored drop; `\p{L}` appended
+# restores the second rung.
 # [START-LANDING] SL2 (abi 74, lane sltri 2026-10-10): every utf8 size-rung
 # witness in this file (`(\p{Xwd})`, `(\p{Xwd}{1,3})`, `\p{L}`, `(*UCP)(?i)[\dk]`,
 # `[^\p{C}\p{M}\p{P}]`) is a FIT mover: by default it takes RECOVER's `landing`
 # row, drops the reverse machine and fits with no rung. Each passes
 # `-fno-start-landing` (masked, answer-neutral), which puts it back on the
 # reverse pass, where it reaches its rung exactly as before.
-fseq seq-pfcdrop  trplain ok 'drop-prefilter@size'                             '(\p{Xwd})' -e utf8 -fno-start-landing
+fseq seq-pfcdrop  trplain ok 'drop-prefilter@size'                             '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
 fstate seq-pfcdrop 1 'restart=1'
 # seq-pfdrop holds row 6's deny bit (S648). Since [DEC-COLLAPSE-WASTE]
 # `(\p{Xwd})` has no collapsible repeat, so row 6 is not offered with or
@@ -305,10 +313,10 @@ fstate seq-pfcd2 3 'restart=1'
 # hybrid carries the prefilter's re-entry, so the rung fires first; dropping it does not
 # fit (here it grows the hybrid: the re-entry displaced a start-byte row), and the
 # prefilter drop follows. Since abi 91 the mover census's one `dropped-hybrid-size` cell.
-fseq seq-hodrop   trplain ok 'drop-handoff@size > drop-prefilter@size'          '(\p{Xwd})x' -e utf8
+fseq seq-hodrop   trplain ok 'drop-handoff@size > drop-prefilter@size'          '(\p{Xwd}|\p{Nd}x|\p{Sc}y)x' -e utf8
 fstate seq-hodrop 1 'restart=1'
 # ... and `--size-cap=refuse` denies it with the other degrading rows (S1714)
-fseq seq-horef    trplain refused 'refuse@size'                                 '(\p{Xwd})x' -e utf8 --size-cap=refuse
+fseq seq-horef    trplain refused 'refuse@size'                                 '(\p{Xwd}|\p{Nd}x|\p{Sc}y)x' -e utf8 --size-cap=refuse
 fseq seq-anch     trplain ok 'drop-anchored@size'                              '\p{L}' -e utf8 -fno-start-landing
 fstate seq-anch 1 'sdr=1'
 # [S636] DEFAULT-PATH witness for the drop-anchored row's `sets` cell (lane
@@ -331,13 +339,36 @@ W_LWSIZE='(?:ab|cd|ef|gh|ij|kl|mn|op|qr|st|uv|wx|yz)+(?:AB|CD|EF|GH)+@x'
 fseq seq-lwdrop   trlowsize ok 'drop-landmark-walk@size'                        "$W_LWSIZE"
 fseq seq-lwref    trlowsize refused 'refuse@size'                               "$W_LWSIZE" --size-cap=refuse
 fseq seq-premuls  trlowsize ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8 -fno-start-landing
+# [RUN-POS-SET] K139 `drop-islands` (altbuild2, 2026-11-06): 24 random eight-letter words
+# under --engine=vm take one alternation island and are over trlowsize's 31,815 B code
+# cap with it; without it the chain is 29,750 B code (31,218 B total), so the one rung
+# fits it. The retry IS the caller's own -fno-alt-island artifact (run_island_tests.sh
+# section 11 asserts that byte identity at the shipped caps).
+W_ISLSIZE='(?:bckwnzmr|bgkkxcjd|daqfpxov|euekpgvt|hvtzepji|jpcvyitf|jxyaooxu|ljekxczs|mcplkiyf|nmumjiom|owkoozyc|pozcfzhe|psqnmhjj|qusgoefb|rxigcspz|rzhcueik|uruhmgzj|uzairawu|vkjcrulv|vvcwyezw|vylkxama|wmsfgfgf|xsnkhlbb|zepqiqyh)Z'
+fseq seq-isldrop  trlowsize ok 'drop-islands@size'                              "$W_ISLSIZE" --engine=vm
+fseq seq-islref   trlowsize refused 'refuse@size'                               "$W_ISLSIZE" --engine=vm --size-cap=refuse
+fseq seq-islnone  trlowsize ok '(none)'                                         "$W_ISLSIZE" --engine=vm -fno-alt-island
+# [RUN-POS-SET] K139 at the SHIPPED caps, the rung's place (review r5 altcode
+# EMIT-2, lane altfix): `drop-islands` is the LAST VM rung before `refuse`,
+# since an island is worth ~140x on a wide alternation against the prefilter's
+# ~4x. N random eight-letter words (seed 11, so the list is the fixture)
+# captured and followed by `\d+` make a hybrid over the 1,000,000 B cap. At
+# 400 words the prefilter drop alone fits it, so the island is kept (it was
+# dropped first, at ~140x the work, before EMIT-2); at 1,000 the prefilter
+# drop is not enough (code 524,805 B against 500,000) and the islands go next.
+W_KWORDS() { python3 -I -c 'import random,string,sys
+random.seed(11)
+w=["".join(random.choice(string.ascii_lowercase) for _ in range(8)) for _ in range(1000)]
+sys.stdout.write("("+"|".join(w[:int(sys.argv[1])])+")\\d+")' "$1"; }
+fseq seq-isl400   trplain ok 'drop-prefilter@size'                             "$(W_KWORDS 400)"
+fseq seq-isl1000  trplain ok 'drop-prefilter@size > drop-islands@size'         "$(W_KWORDS 1000)"
 # T1 row 2 (the size term's trial catch), label `other`
 fseq seq-trial    trplain ok 'size-term-trial@other > size-term-trial@other > size-term-trial@other' \
                   "$W_TOWER" --engine=vm
 fseq seq-trialref trlowsize refused 'size-term-trial@other > size-term-trial@other > refuse@size' "$W_NEST8"
 # T1 row 10 (refuse) under every label it is asked on
 fseq seq-refovf   trplain refused 'refuse@overflow'                            '(?:ab){0,16000}' --engine=dfa
-fseq seq-refsize  trplain refused 'refuse@size'                                '(\p{Xwd})' -e utf8 --size-cap=refuse -fno-start-landing
+fseq seq-refsize  trplain refused 'refuse@size'                                '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 --size-cap=refuse -fno-start-landing
 fseq seq-refother trplain refused 'refuse@other'                               '\A*'
 fseq seq-refpf    trplain refused 'refuse@other'                               "$W_OVF" -fprefilter
 # no arrival at all
@@ -377,7 +408,7 @@ frec adm-nulcol   trplain admit 'sel1|nullable-collapsed pf=0' '(?:ab){0,16000}'
 frec adm-ovf      trplain admit 'none|overflow-drop pf=0'      "$W_OVF"
 frec adm-ovfsel1  trplain admit 'sel1|overflow-drop pf=0'      "$W_OVFNN" -fno-prefilter
 frec adm-fon      trplain admit 'none|forced-on pf=1'          '(a)b' --engine=vm -fprefilter
-frec adm-sizedrop trplain admit 'none|size-dropped pf=0'       '(\p{Xwd})' -e utf8 -fno-start-landing
+frec adm-sizedrop trplain admit 'none|size-dropped pf=0'       '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
 frec adm-sizedcol trlowsize admit 'sizecap|size-dropped pf=0'  '(\bcat\b){2,}\w\w' -e utf8
 frec adm-fonsc    trplain admit 'sizecap|forced-on pf=1'       '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 frec att-forced   trplain attrib '-|forced from=forced'                       '(a)b' --engine=vm
@@ -398,7 +429,7 @@ frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-handoff'       '(
 frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}b'
 frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8 -fno-start-landing
 frec att-sclw     trlowsize attrib '-|size-cap-retry from=drop-landmark-walk' "$W_LWSIZE"
-frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd})' -e utf8 -fno-start-landing
+frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
 frec gate-sel1    trplain gate 'sel1|rung pflw=sel1'         "$W_SEL1"
 frec gate-sizecap trplain gate 'sizecap|rung pflw=sizecap'   '(\p{Xwd}{1,3})' -e utf8 -fno-start-landing
 frec gate-forced  trplain gate 'none|forced pflw=forced'     '(x)?a{0,4}\Gb' -fprefilter-collapse
@@ -452,7 +483,7 @@ wit sel-declnulldef   default 'declined-nullable-default' default '(a)*'
 wit sel-ovfdfa        default 'overflowed-dfa'            default '^(?:(?:a|b)*a(?:a|b){20})?$'
 wit sel-collapsedpf   default 'collapsed-prefilter'       default '(1{0,30}?[^]abc][^abc]){28,30}0+|a'
 wit sel-declnull      default 'declined-nullable'         default '(?:ab){0,16000}'
-wit sel-sizecap       default 'size-cap-retry'            default '(\p{Xwd})' -e utf8 -fno-start-landing
+wit sel-sizecap       default 'size-cap-retry'            default '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
 wit sel-ovfpf         lowdfa  'overflowed-prefilter'      default "$OVFPF"
 # UNROLL_K_WHY, seven values (docs: `<PREFIX>_UNROLL_K_WHY`)
 wit why-default       default '-' 'default'               'a(b|c)+d'
@@ -540,13 +571,13 @@ shape() {   # shape ID MACRO LABEL KIND(exact|hybrid) PATTERN [args]
 shape pflw-sizecap VM_PREFILTER_LANG_WHY 'size cap retry, exact N > M' exact '(\p{Xwd}{1,3})' -e utf8 -fno-start-landing
 # RX_VM_PREFILTER_WHY: the hybrid DROP form (the size cap refused the hybrid
 # and the retry dropped the prefilter), same shape rule.
-shape pwhy-sizecap VM_PREFILTER_WHY 'size cap retry, hybrid N > M' hybrid '(\p{Xwd})' -e utf8 -fno-start-landing
+shape pwhy-sizecap VM_PREFILTER_WHY 'size cap retry, hybrid N > M' hybrid '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
 # [decfbB3] the same drop with the collapse denied, so drop-prefilter is the
 # FIRST size rung to fire: its own `sets` carry is then the only source of the
 # figures (on the default witness prefilter-collapse carried them first, and a
 # drop row that stopped carrying still printed that earlier attempt's N > M).
 shape pwhy-sizecap-first VM_PREFILTER_WHY 'size cap retry, hybrid N > M (first rung)' hybrid \
-      '(\p{Xwd})' -e utf8 -fno-prefilter-collapse -fno-start-landing
+      '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-prefilter-collapse -fno-start-landing
 
 # RX_VM_PREFILTER_WHY is the DROP form's alone: absent where a prefilter
 # survives (it explains a "none", never a hybrid).
@@ -582,13 +613,23 @@ fnotes() {
 }
 fnotes note-anch  "$N_ANCH"            '\p{L}' -e utf8 -fno-start-landing
 fnotes note-premul "$N_ANCH
-$N_PREM"                                '[^\p{C}\p{M}\p{P}]' -e utf8 -fno-start-landing
-fnotes note-pf    "$N_PF"              '(\p{Xwd})' -e utf8 -fno-start-landing
+$N_PREM"                                '[^\p{C}\p{M}\p{P}]\p{L}' -e utf8 -fno-start-landing
+fnotes note-pf    "$N_PF"              '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
 fnotes note-ho    "$N_HO
-$N_PF"                                  '(\p{Xwd})x' -e utf8
+$N_PF"                                  '(\p{Xwd}|\p{Nd}x|\p{Sc}y)x' -e utf8
 fnotes note-pfc   ""                   '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 fnotes note-sel1  ""                   "$W_SEL1"
 fnotes note-none  ""                   '(a)b'
+# [RUN-POS-SET] K139: `drop-islands`' note, read off the low-cap build (the shipped
+# caps need a 1,000-word set; run_island_tests.sh section 11 reads the same note there).
+N_ISL="$NOTE_HEAD the VM's alternation islands -- each alternation tries its branches through the serial chain again instead of one trie dispatch (docs/spec/tuning.md section 2.20)$NOTE_TAIL"
+if compile note-isl trlowsize "$W_ISLSIZE" --engine=vm; then
+    got="$(grep -F -- "$NOTE_HEAD" "$WORK/note-isl.err")"
+    [ "$got" = "$N_ISL" ] && ok "notes note-isl [trlowsize --engine=vm]: 1 drop note(s), as hand-written" \
+                          || bad "notes note-isl [trlowsize --engine=vm]: drop notes differ from the hand-written line: '$got'"
+else
+    bad "notes note-isl [trlowsize --engine=vm]: refused: $(head -1 "$WORK/note-isl.err")"
+fi
 
 echo
 echo "== Summary =="

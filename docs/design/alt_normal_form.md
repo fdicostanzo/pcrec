@@ -177,7 +177,11 @@ Rev 0's "the special cases named deleted, none added" was false. The
 simplification the owner is offered is the merge column: one rewrite owner
 instead of altcls's two stages, one position constructor instead of two, the
 seal gone, and **(r4)** one description read at both levels instead of a
-code-point copy (FIX-7). Rev 1's "one unit value instead of three spellings"
+code-point copy (FIX-7). **(code round r5, SLOT-7)** As built, "one
+description at both levels" is CO-LOCATION, not one reader: the piece
+description (`pcrec_pd_*`) is read only by `req.c` and the head description
+(`pcrec_ph_*`) only by `altnf.c`, both in `src/facts/`. No parallel copy
+exists (G3 holds); a single reader is G-1's work. Rev 1's "one unit value instead of three spellings"
 is withdrawn (FIX-9): `req.c`'s spelling moves into the description, the
 other two are correct kind tests until G-1.
 
@@ -591,7 +595,14 @@ scan form and a question (§13 q1).
 **Bound.** The group count is bounded by a declared limits row whose value the
 stage 2p census sets (no silent default: the census reports the distribution
 over corpus and bench; `ci-moskva` needs 4). Over the bound a subtree's groups
-collapse to today's common head/tail (sound, today's answer). **(r4: RDY-6a)**
+collapse to today's common head/tail (sound, today's answer). **(code round
+r5, TRD-5; doc aligned by lane altfix)** The code reads the bound more weakly
+and as soundly: over `PCREC_MAX_REQ_PIECES` (10, equal to the bench's peak,
+21 altwide files at exactly 10, no headroom) it DROPS the subtree's piece
+description and keeps the facts it had without one, rather than collapsing
+the groups. Inert today (no consumer reads the pieces); the bound is
+re-derived with headroom, and the collapse built if a consumer needs it,
+when the first consumer lands (a plan item filed at landing). **(r4: RDY-6a)**
 The census runs BEFORE the `limits.def` row lands (provenance tier, its value
 the census's), so the row never holds a presumed value.
 
@@ -737,7 +748,7 @@ trigger is inside a row that exists):
 | id | general form | trigger | where it lands |
 |---|---|---|---|
 | G-1 | ONE anchored position-set description whose readers are the run, the start set (offset 0), kset (head offsets), the end window (tail) and D172's spans: kset/startset/endwin become readers and their parallel walks go | a census showing the description's head positions equal (or refine, through width groups) kset's on corpus + bench | the stream manifesto's "cross-engine pieces"; [REQ-LOOKAROUND] reads the same pieces |
-| G-2 | the island reads the `A_WCLASS` SET, not the byte tree (shape-blind words) | ADOPTED for its reading at stage 1 (SND-2); its admission widening is [ENG-ISL-S2]'s class-member shape and waits for that row's trigger | stage 1; [ENG-ISL-S2] |
+| G-2 | the island reads the `A_WCLASS` SET, not the byte tree (shape-blind words) | ADOPTED for its reading at stage 1 (SND-2); its admission widening, [ENG-ISL-S2]'s class-member shape, was TRIGGERED by code round r5 EMIT-1 (bench altwide w-256, ~60x) and built by lane altfix: a byte class is read as its member words, the size row counting the chain before rule M's folds (EMIT-3) | stage 1; review r5 altcode EMIT-1/EMIT-3 |
 | G-3 | the information of a position is a property of the READER (a set reader `info(S)`, a cube reader the popcount of what it tests) | the first stage-3 R2 listing where a picked run's cube-reader information is under the floor | §4.4 (adopted as the rule for stage 3) |
 | G-4 | the piece set crosses the kit seam only as a field the kit's `fields.def` declares | the kit's answer to §3.4's request | §3.4 (2p keeps it pcrec-side) |
 
@@ -1067,6 +1078,16 @@ position (a REACH line per position).
   the cap (`\p{L}`, 827 boxes unmerged) declines on the SET's box count before
   the words are materialised. Stated as the requirement; U4's equality is its
   check (the counter equivalence was not read in the tree).
+  **(ERRATUM, stage-1 build, lane altbuild 2026-11-06; manager rulings R1/R2
+  in `docs/dev/lanes/altbuild_rulings.md`)** U4 is NOT an equality inside an
+  enclosing alternation. The WORD list is unchanged, but the chain-size walk
+  above counts the MERGED child the chain now emits, so an island near the size
+  knee (`isl_bytes > chain_bytes * VM_ISL_SIZE_FACTOR`) flips island -> chain
+  when its chain got smaller: `x(?:[éà]|q2|r3)y` under `--engine=vm`
+  `RX_VM_ALT_ISLANDS` 1 -> 0, bit 10 restores it. A D186 choice-cell family,
+  listed two-sided by U4's census; no corpus or bench pattern is in it. The S-i
+  head witness is `x(?:[éà]1|q2|r3)y` (not near the knee). Measured cost and
+  disposition: `docs/dev/lanes/altbuild_report.md` stage 1, "R1/R2".
   **(r7: RDY-2) The stamp unit.** `<PREFIX>_ALTCLS_MERGES` counts alternation
   RUNS altcls folded today (`match_api.md` §6.3.11¶3; measured at `783a45ec0`:
   `x(?:a|b|c)y` 1, `x(?:a|b|cd|e|f)y` 2). Stage 1 leaves the stamp exactly as it

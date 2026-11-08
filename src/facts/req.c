@@ -139,6 +139,7 @@
 #include "core/internal.h"
 #include "core/findings.h"
 #include "facts/facts_derive.h"
+#include "facts/desc.h"
 
 
 
@@ -152,8 +153,9 @@
  * whatever follows the literal, which is 19,968 bytes of a lie. */
 typedef struct { RbRun best, head, tail; bool all; long long maxw; } RbRuns;
 
-/* The two facts, threaded together because they come off one walk. */
-typedef struct { RbSet set; RbRuns runs; } RbVal;
+/* The facts, threaded together because they come off one walk: the set, the
+ * runs, and ([RUN-POS-SET] stage 2p) the piece description (desc.h). */
+typedef struct { RbSet set; RbRuns runs; PdDesc desc; } RbVal;
 
 
 static RbSet rb_empty(void)
@@ -238,6 +240,10 @@ typedef struct {
     int pos_set;
     int depth, nslot;
     RbVal **slot;
+    /* [RUN-POS-SET] stage 2p: the description's bounds and byte alphabet,
+     * and the one-byte position sets, built on first use. */
+    PdCfg pd;
+    const unsigned char *single[256];
 } RbWalk;
 
 /* How many bytes the cube with mask `k` holds: two to the free bits. */
@@ -506,15 +512,18 @@ static PCREC_OWN_FRAME void rb_init(RbVal *acc)
 {
     acc->set  = rb_empty();
     acc->runs = rr_unit();
+    acc->desc = pcrec_pd_unit();
 }
 
 /* `acc` := `r` followed by `acc`: `r` is to the RIGHT of everything still to
  * be walked and to the LEFT of everything in `acc`, which is why the union and
  * the concatenation are spelled in this order and not the other. */
-static PCREC_OWN_FRAME void rb_cat_into(RbVal *acc, const RbVal *r)
+static PCREC_OWN_FRAME void rb_cat_into(const RbWalk *w, RbVal *acc,
+                                        const RbVal *r)
 {
     acc->set  = rb_union(r->set, acc->set, r->runs.maxw);
     acc->runs = rr_cat(r->runs, acc->runs);
+    acc->desc = pcrec_pd_cat(w->cx, &w->pd, r->desc, acc->desc);
 }
 
 /* `r` := the alternation of `b` and `r`: only what both guarantee. */
@@ -523,6 +532,7 @@ static PCREC_OWN_FRAME void rb_alt_into(const RbWalk *w, RbVal *r,
 {
     r->set  = rb_intersect(b->set, r->set);
     r->runs = rr_alt(w, b->runs, r->runs);
+    r->desc = pcrec_pd_alt(w->cx, &w->pd, b->desc, r->desc);
 }
 
 /* `acc` := a stretch of width `maxw` that makes no byte necessary and breaks
@@ -531,6 +541,7 @@ static PCREC_OWN_FRAME void rb_gap_into(RbVal *acc, long long maxw)
 {
     acc->set  = rb_union(rb_empty(), acc->set, maxw);
     acc->runs = rr_cat(rr_none(maxw), acc->runs);
+    acc->desc = pcrec_pd_none();
 }
 
 /* `acc` := a repeat of at least one iteration of body `b`, followed by `acc`
@@ -543,14 +554,58 @@ static PCREC_OWN_FRAME void rb_rep_into(RbVal *acc, const RbVal *b, int rmax)
     rep.best = b->runs.best;
     acc->set  = rb_union(b->set, acc->set, rep.maxw);
     acc->runs = rr_cat(rep, acc->runs);
+    acc->desc = pcrec_pd_none();   /* REP{n,n} is [REPEAT-RUN]'s (§3.5) */
+}
+
+/* [RUN-POS-SET] stage 2p THE BYTE ALPHABET of the piece description: a
+ * position is a 256-bit set (`rb_has`'s layout), 32 bytes. */
+static const void *rb_pd_join(Ctx *cx, const void *a, const void *b)
+{
+    const unsigned char *x = a, *y = b;
+    bool xs = true, ys = true;
+    for (int i = 0; i < 32; i++) {
+        if (y[i] & ~x[i]) xs = false;
+        if (x[i] & ~y[i]) ys = false;
+    }
+    if (xs) return a;
+    if (ys) return b;
+    unsigned char *u = pcrec_arena_alloc(&cx->arena, 32);
+    for (int i = 0; i < 32; i++) u[i] = x[i] | y[i];
+    return u;
+}
+
+static bool rb_pd_same(const void *a, const void *b)
+{
+    return memcmp(a, b, 32) == 0;
+}
+
+static const PdAlpha rb_pd_bytes = { rb_pd_join, rb_pd_same };
+
+/* The lowered class `a`'s byte set as a piece position; `b` its single
+ * member or -1. A single byte's set is built once per walk. */
+static const unsigned char *rb_pos_set(RbWalk *w, const Ast *a, int b)
+{
+    if (b >= 0 && w->single[b]) return w->single[b];
+    unsigned char *s = pcrec_arena_alloc(&w->cx->arena, 32);
+    if (b >= 0) {
+        s[b >> 3] = (unsigned char)(1u << (b & 7));
+        w->single[b] = s;
+    } else {
+        pcrec_cls_bits(w->cx, a, s);
+    }
+    return s;
 }
 
 /* `acc` := the lowered class `a`, followed by `acc`. */
-static PCREC_OWN_FRAME void rb_class_into(const RbWalk *w, RbVal *acc,
+static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
                                           const Ast *a)
 {
     int b = pcrec_cls_single(w->cx, a);
     unsigned char k = 0xFF, t = (unsigned char)b;
+    /* [RUN-POS-SET] stage 2p: a piece position is the class's exact byte
+     * SET, with no member bound (nothing scans a piece, §3.4). */
+    PdDesc desc = pcrec_pd_cat(w->cx, &w->pd,
+                               pcrec_pd_pos(w->cx, rb_pos_set(w, a, b)), acc->desc);
     if (b < 0 && (!pcrec_cls_cube(w->cx, a, &k, &t) ||
                   rn_members(k) > w->pos_set)) {
         /* A class that is not one cube of at most `pos_set` members
@@ -558,18 +613,21 @@ static PCREC_OWN_FRAME void rb_class_into(const RbWalk *w, RbVal *acc,
          * everything around it — which `rr_none`'s cleared `all` is exactly
          * what says. One byte wide: the tree is lowered. */
         rb_gap_into(acc, 1);
+        acc->desc = desc;
         return;
     }
     /* Only a single byte is a member of the necessary SET; a cube position is
      * one the RUN carries (litscan_s4.md §2.3.1). */
     acc->set = rb_union(b >= 0 ? rb_single(b) : rb_empty(), acc->set, 1);
     acc->runs = rr_cat(rr_pos(w, t, k), acc->runs);
+    acc->desc = desc;
 }
 
 /* `acc` := a zero-width assertion followed by `acc`: no byte, and a broken run. */
 static PCREC_OWN_FRAME void rb_assert_into(RbVal *acc)
 {
     acc->runs = rr_cat(rr_none(0), acc->runs);
+    acc->desc = pcrec_pd_none();   /* a CUT, as in the run (§3.4) */
 }
 
 /* `acc` := node `a` followed by `acc`, for a kind whose ROW answers for its
@@ -622,7 +680,7 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
         switch (a->k) {
         case A_CAT:
             rb_walk(w, a->r, &t[0]);
-            rb_cat_into(acc, &t[0]);
+            rb_cat_into(w, acc, &t[0]);
             a = a->l;
             continue;
         case A_CAP:
@@ -644,7 +702,7 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
                 if (!first) rb_alt_into(w, &t[0], &t[1]);
                 first = false;
             }
-            rb_cat_into(acc, &t[0]);
+            rb_cat_into(w, acc, &t[0]);
             return;
         }
         case A_REP:
@@ -728,14 +786,18 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
  * Both are the EMPTY answer where nothing is necessary, which disables every
  * check built on them and is always sound. Reads no prior and no option:
  * `pos_set` is its caller's reading of the fact-level deny. */
-void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, RbSet *set,
-                    RbRun *run)
+void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, int max_pieces,
+                    RbSet *set, RbRun *run, PdDesc *pieces)
 {
-    RbWalk w = { cx, pos_set, 0, 0, NULL };
+    RbWalk *w = pcrec_arena_alloc(&cx->arena, sizeof *w);
+    w->cx = cx;
+    w->pos_set = pos_set;
+    w->pd = (PdCfg){ &rb_pd_bytes, max_pieces, PCREC_MAX_REQ_RUN_SCAN };
     RbVal *v = pcrec_arena_alloc(&cx->arena, sizeof *v);
-    rb_walk(&w, root, v);
+    rb_walk(w, root, v);
     *set = v->set;
     *run = v->runs.best;
+    *pieces = v->desc;
 }
 
 /* The rate rule a derived pick answered by, for `--emit-facts`' `why`

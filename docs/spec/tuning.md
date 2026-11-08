@@ -229,9 +229,9 @@
 <a id="s2-6"></a>
 ### 2.6 `-fno-altcls-merge` — `PCREC_NO_ALTCLS_MERGE` (bit 10)
 
-<a id="s2-6-p1"></a>[2.6¶1] **Denies** stage 1 of the alternation-to-class pass (`src/opt/altcls.c`): merging a maximal run of single-character alternation branches into one class. Default: stage 1 runs where a run qualifies. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Each mergeable run is its own selection point, so the axis is deny-only. The pass runs before either engine is built, so it is not VM-only: a DFA artifact carries its stamp too. **The stamp** is `<PREFIX>_ALTCLS_MERGES`, a count.
+<a id="s2-6-p1"></a>[2.6¶1] **Denies** the alternation owner's SIBLING MERGE (`src/opt/altnf.c`; design `docs/design/alt_normal_form.md` §3.2-§3.3): two branches of one width, each a sequence of character positions, equal at every position but one, become one branch with the union there, the later branch MOVING UP into the earlier one's slot past every branch between them where none of those can change the answer (one that cannot match where the moved branch matches, or one that consumes exactly its width and writes no capture and no `\K`), and a branch identical to an earlier one is dropped. It runs at both of the owner's callers: the alternation-to-class pass (`src/opt/altcls.c`), over every alternation it walks (`x(?:a|b|cd|e|f)y` becomes `x(?:[abef]|cd)y`, `(?:xing|ying)` becomes `[xy]ing`; `(?:ab|a|ad)` does not merge, since `a` would answer differently), and the UTF-8 encoding lowering, merging the byte-range boxes a wide class lowers to (`(?i)β`'s three boxes `ce 92`, `ce b2`, `cf 90` become two, `ce [92 b2]` and `cf 90`). One rule with two callers, so one lever. Default: the merge runs where it qualifies. ANSWER-IDENTICAL (callout fire counts may move, which `match_api.md` §11.6¶1 leaves unspecified), masked out of `rx_info.flags`. Each mergeable branch is its own selection point, so the axis is deny-only. Both callers run before either engine is built, so it is not VM-only: a DFA artifact carries its stamp too. **The stamp** is `<PREFIX>_ALTCLS_MERGES`, the number of branch LISTS at the altcls caller in which the merge folded at least once (the alternation itself and each list §2.7's factoring creates, once each: `x(?:a|b|cd|e|f)y` 1, `(?:ab\b|ad\b)` 1). The lowering's merges are NOT counted, since the program bytes and tables already record them (a `utf8` artifact whose wide class merges carries smaller tables and a smaller VM program, and the denial restores them; that is this axis's observable at the lowering). The owner's work on one alternation is bounded (`PCREC_MAX_ALTNF_WORK`, `limits.md`): past it the rest of that alternation stays as written.
 
-<a id="s2-6-p2"></a>[2.6¶2] **Its denial moves the refusal set.** A nested repeat whose replicated size fits only after the merge (`tests/size/size_term.rxt`'s nested-repeat tower) is refused under the denial (K45).
+<a id="s2-6-p2"></a>[2.6¶2] **Its denial moves the refusal set.** A nested repeat whose replicated size fits only after the merge (`tests/size/size_term.rxt`'s nested-repeat tower) is refused under the denial (K45). Under `utf8` the denial can also cost a pattern holding a wide class its required-run length, a cursor rung on a quantified wide class, and it can restore a bare wide class's own VM island (§2.20¶2), which its merged spelling does not have.
 
 <a id="s2-6-p3"></a>[2.6¶3] **Differential:** `tests/altcls/run_altdiff.sh`, which denies both stages together (§2.7).
 
@@ -240,9 +240,9 @@
 <a id="s2-7"></a>
 ### 2.7 `-fno-altcls-factor` — `PCREC_NO_ALTCLS_FACTOR` (bit 11)
 
-<a id="s2-7-p1"></a>[2.7¶1] **Denies** stage 2 of the same pass: prefix-factoring a maximal run of branches that share a literal first byte. Stage 2 runs on stage 1's output, so denying stage 1 alone still lets stage 2 factor an unmerged run's literal spelling, and denying stage 2 alone leaves single-character merging live. Default: stage 2 runs where a run qualifies. ANSWER-IDENTICAL, masked out of `rx_info.flags`, not VM-only. **The stamp** is `<PREFIX>_ALTCLS_FACTORED`, a count.
+<a id="s2-7-p1"></a>[2.7¶1] **Denies** the alternation owner's two FACTORING rules at the altcls caller: PREFIX factoring, a maximal run of at least two consecutive branches whose first positions are one character set becomes `K(?:rests)`, `K` the longest run of equal leading character positions (`frank|fred` becomes `fr(?:ank|ed)`; a branch equal to `K` stays as an empty branch in its slot, `(?:ab|a|ad)` becomes `a(?:b||d)`), and SUFFIX factoring, a maximal run of at least two adjacent branches ending in identical items becomes `(?:heads)C`, `C` their longest common identical ending (`(?:xyr|zr)` becomes `(?:xy|z)r`). Neither reorders a branch. The lists either creates are rewritten again by the owner's rules, the merge of §2.6 included (`(?:ab\b|ad\b)` becomes `a[bd]\b`), to a depth of `PCREC_MAX_ALTCLS_FACTOR_DEPTH`. Denying the merge alone leaves both factorings live, and denying the factoring alone leaves the merge live. Default: both run where a run qualifies. ANSWER-IDENTICAL (callout fire counts may move, `match_api.md` §11.6¶1), masked out of `rx_info.flags`, not VM-only. **The stamp** is `<PREFIX>_ALTCLS_FACTORED`, the number of prefix and suffix factorings made.
 
-<a id="s2-7-p2"></a>[2.7¶2] **Differential:** `tests/altcls/run_altdiff.sh` (both stages denied against both live, on the shared driver of §2.1).
+<a id="s2-7-p2"></a>[2.7¶2] **Differential:** `tests/altcls/run_altdiff.sh` (both rules denied against both live, on the shared driver of §2.1).
 
 <a id="s2-7-p3"></a>[2.7¶3] **Dial:** no cell: wrong-signed (§5.4).
 
@@ -498,17 +498,15 @@ return 1;
 
 <a id="s2-20-p1"></a>[2.20¶1] **Denies** the ALTERNATION ISLAND, axis `alt-island` in `--list-axes`. Without it, `src/gen/emit_vm.c` lowers an N-way alternation as a chain: one resume frame per untried branch, each branch its own run of byte tests, so matching the last of N branches costs N − 1 push/fail/pop round trips. The island replaces that with a TRIE over the alternatives' literal bytes: a byte compare at a node with one child, a `switch` on the subject byte at a node with several, and one try site per node where an alternative ends. Default: on. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Deny-only. VM route only: the DFA determinizes the same trie on its own, so no DFA artifact carries the stamp.
 
-<a id="s2-20-p2"></a>[2.20¶2] **What it applies to.** The island is built when the alternation's whole subtree matches a FINITE set of literal byte strings — every element a one-byte class, every combination enumerable within the island's budgets (`VM_ISL_MAX_WORDS`, `VM_ISL_MAX_BYTES`, `VM_ISL_MAX_DEPTH`). The predicate is over the language, not the branch list, so it does not depend on how far §2.7's factoring got. Each of these declines, and the alternation keeps the chain:
+<a id="s2-20-p2"></a>[2.20¶2] **What it applies to.** The island is built when the alternation's whole subtree matches a FINITE set of literal byte strings — every element a byte class, read as its member bytes (a class of `k` members is `k` one-byte words, a literal the one-member case), every combination enumerable within the island's budgets (`VM_ISL_MAX_WORDS`, `VM_ISL_MAX_BYTES`, `VM_ISL_MAX_DEPTH`). A `utf8` wide class is read as its code-point SET: the boxes of its canonical UTF-8 split (before §2.6's merge), each read member by member, so its words are the members' encodings in ascending code point. The predicate is over the language, not the branch list, so it does not depend on how far §2.7's factoring got. Each of these declines, and the alternation keeps the chain:
 
 | declined | why |
 |---|---|
-| any element that is not a one-byte class | a trie edge is a byte; a multi-byte class edge would break the disjoint-siblings property the exactness argument rests on |
 | a quantifier, a group, a capture, a backreference, a lookaround, an assertion, a subroutine call | the language is not a finite literal set, or the VM is needed inside the alternation |
-| a caseless alternation | D23 folds a caseless letter to a two-member class at parse time |
 | a literal set over the enumeration budgets | the cross product of concatenated alternations is exponential |
 | fewer than `VM_ISL_MIN_BRANCHES` literal alternatives | there is no dispatch to make |
 | fewer than `VM_ISL_MIN_BRANCHES_PREFIXED` alternatives, for an island that pushes | an island whose alternatives are not prefix-free keeps a resume frame, and below that width it is more work than the chain |
-| an estimated emitted size above `VM_ISL_SIZE_FACTOR` times the chain's | bounded against the chain, so the axis never makes a pattern exceed a cap the chain fits |
+| an estimated emitted size above `VM_ISL_SIZE_FACTOR` times the chain's (for this comparison only, a class that §2.6's sibling merge folded out of `k` branches (at either caller) counts as the `k` branches it replaced, the reading the island's words come from, so the merge cannot flip it; a class as written counts as the one test the chain emits for it, which is why a caseless alternation or `a.\|bc` keeps the chain), or one that would carry the artifact over `PCREC_MAX_VM_EMIT_CODE_BYTES` where the chain stays under it | bounded against the chain. Both are estimates; an artifact the island still carries over a cap is retried without islands (`limits.md` §8.4, rung 6, the last), so the axis never refuses a pattern its chain fits |
 
 <a id="s2-20-p3"></a>[2.20¶3] The width knees and the size factor are `selection knee` rows of `pcrec --list-limits`; they promise a caller nothing and have no `limits.md` section.
 
@@ -516,7 +514,7 @@ return 1;
 
 <a id="s2-20-p5"></a>[2.20¶5] **Identity is modulo which budget binds.** The island charges its trie walk to the WORK counter where the chain spends a STEP per branch resume, so where the chain's step budget binds and the island's does not, the island answers where the chain returns `PCREC_ERR_STEPS`. The island does strictly less stepping, so the direction is one-way: it can answer where the chain gives up, never the reverse.
 
-<a id="s2-20-p6"></a>[2.20¶6] **The stamp** is `<PREFIX>_VM_ALT_ISLANDS`, a count. `tests/island/run_island_tests.sh` carries a cross-product ladder asserting that the refusal set is the chain's.
+<a id="s2-20-p6"></a>[2.20¶6] **The stamp** is `<PREFIX>_VM_ALT_ISLANDS`, a count, `0` after rung 6 (`limits.md` §8.4) fired. `tests/island/run_island_tests.sh` carries a cross-product ladder asserting that the refusal set is the chain's.
 
 <a id="s2-20-p7"></a>[2.20¶7] **Dial:** no cell, PURE WIN (§5.4).
 
@@ -659,7 +657,7 @@ A fact deny: the end-window fact reads `none` for every consumer of it — both 
 
 <a id="s2-27-p4"></a>[2.27¶4] **The stamp** is `<PREFIX>_REQ_BYTE` on every artifact of both engines: the byte as a decimal string, or `"none"` (a string with a `"none"` member, because `0` is a legal byte). Where §2.28's run shipped and its scan member is one exact byte, the stamp is that member, because there is one emitted `memchr` and the stamp reports what it tests. Where the run's scan member is a two-member cube (§2.39), the stamp is the set's pick, or `"none"` where the set is empty (`(?i)union.*?select.*?from`), so every value it carries is a member of the necessary set. The stamp names the ANALYSIS, not the emission: whether anything is emitted is `<PREFIX>_REQ_WHY` (§2.29).
 
-<a id="s2-27-p5"></a>[2.27¶5] **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_set`, `req_set_maxoff`, `req_whole_run`, `req_run`, `req_byte`.
+<a id="s2-27-p5"></a>[2.27¶5] **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_set`, `req_set_maxoff`, `req_whole_run`, `req_pieces`, `req_run`, `req_byte`.
 A fact deny over the whole necessary-byte family: every consumer sees a pattern with nothing necessary — the one-byte and run pre-checks and their stamps, the no-DFA-scan route's whole-set and whole-run compares, the admission (`<PREFIX>_REQ_WHY "none"`), the dominance test, and the run PIN §2.30's run-pinned prefilter rows read, so this flag removes those rows' pin too (`docs/design/litscan_s1.md` §1.1).
 
 <a id="s2-28"></a>
@@ -679,7 +677,7 @@ A fact deny over the whole necessary-byte family: every consumer sees a pattern 
 
 <a id="s2-28-p7"></a>[2.28¶7] **The stamp** is `<PREFIX>_REQ_RUN` on every artifact of both engines: the run's bytes as lowercase hex, `@`, the scanned member's index — `2e746172@0` for `.tar` — then, only where some position is not an exact byte, `/` and each position's `K` in hex — `53454c454354@4/dfdfdfdfdfdf` for `(?i)select` — or `"none"`. `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]` wherever `mask[idx]` is `ff`, so the two stamps are checkable against each other. It names the analysis, not the emission (§2.29).
 
-<a id="s2-28-p8"></a>[2.28¶8] **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run`, `req_run`.
+<a id="s2-28-p8"></a>[2.28¶8] **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run`, `req_pieces`, `req_run`.
 A fact deny over the run: every consumer sees no run — the run pre-check and `<PREFIX>_REQ_RUN`, the no-DFA-scan route's whole-run compare, the dominance test's run conjuncts, and the run pin §2.30's rows read. The necessary set and the one-byte pick are untouched.
 
 <a id="s2-29"></a>
@@ -768,7 +766,7 @@ A fact deny over the run: every consumer sees no run — the run pre-check and `
 
 <a id="s2-33-p6"></a>[2.33¶6] **Denied**, every wide class on the VM is the byte alternation, every byte class reads its table, every scan edge reads its table, and the shared atom table of §2.34 (a kit form too) is denied with them: every table-read byte class keeps its own bitmap. The artifact accepts exactly the same subjects.
 
-<a id="s2-33-p7"></a>[2.33¶7] **The denial moves the refusal set, by design.** The byte alternation of a large wide class can exceed the emitted-code cap, so under this flag such a pattern is refused on the VM (`--engine=vm`, or a default-route pattern that selects it, such as a capturing `\P{Unknown}`), with `pattern too large: N bytes of emitted code (limit 500000)`. No size-ladder rung applies. `make test-axes` records the refusal as this axis's documented limit.
+<a id="s2-33-p7"></a>[2.33¶7] **The denial moves the refusal set, by design.** The byte alternation of a large wide class can exceed the emitted-code cap, so under this flag such a pattern is refused on the VM (`--engine=vm`, or a default-route pattern that selects it, such as a capturing `\P{Unknown}`), with `pattern too large: N bytes of emitted code (limit 500000)`. No size-ladder rung applies. The lowering's box merge (§2.6) keeps that alternation small: with it, no wide class of the corpus or the bench reaches the cap; under `-fno-cls-kit -fno-altcls-merge` the unmerged boxes do (`\p{Xwd}`, `\P{Unknown}`, `\p{L}+`). The refusal is therefore the PAIR's documented limit, not this axis's alone: `make test-axes`, which denies one axis at a time, sees no refusal on this axis.
 
 <a id="s2-34"></a>
 ### 2.34 `-fno-cls-pack` — `PCREC_NO_CLS_PACK` (bit 38)

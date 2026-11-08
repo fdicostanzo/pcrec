@@ -96,7 +96,10 @@ n="$(islands "$WORKDIR/two.c")"
 # island only on the residues altcls just created. A pattern altcls factors
 # must stamp exactly ONE island, never one per factored run.
 # ---------------------------------------------------------------------------
-gen factored 'aaa|aab|aac|aba|abb|abc|baa|bab|bac|bba|bbb|bbc'
+# [RUN-POS-SET] stage 2b: the owner's sibling merge folds a full grid
+# (`aaa|aab|...|bbc`) into classes, which has no island; these words do not
+# merge and still factor (FACTORED 2).
+gen factored 'frank|fred|frost|brad|bobby|bill'
 n="$(islands "$WORKDIR/factored.c")"
 f="$(sed -n 's/^#define RX_ALTCLS_FACTORED \([0-9]*\)$/\1/p' "$WORKDIR/factored.c")"
 # THE PRECONDITION IS ASSERTED, NOT PRINTED. This cell's whole claim is that
@@ -107,7 +110,7 @@ f="$(sed -n 's/^#define RX_ALTCLS_FACTORED \([0-9]*\)$/\1/p' "$WORKDIR/factored.
 # green while testing nothing: [MECH-REACH]'s shape, a witness that stopped
 # reaching its site.
 if [ -z "${f:-}" ] || [ "${f:-0}" -lt 1 ]; then
-    bad "the factoring precondition FAILED: 'aaa|aab|...' has RX_ALTCLS_FACTORED=${f:-<none>}, so altcls did not factor it and the 'one island, not one per factored run' claim below has no population. Find a pattern altcls still factors; do not delete this cell"
+    bad "the factoring precondition FAILED: 'frank|fred|...' has RX_ALTCLS_FACTORED=${f:-<none>}, so altcls did not factor it and the 'one island, not one per factored run' claim below has no population. Find a pattern altcls still factors; do not delete this cell"
 elif [ "${n:-}" = "1" ]; then
     ok "a heavily factored alternation (RX_ALTCLS_FACTORED=$f, precondition asserted) stamps ONE island, not one per factored run"
 else
@@ -125,12 +128,18 @@ decline() {   # decline <name> <pattern> <why> [flags...]
     [ "${got:-}" = "0" ] && ok "declines '$pat' ($why)" \
                          || bad "'$pat' should decline ($why) but stamps ${got:-<none>} islands"
 }
-decline d_class  '[ab]p|[bc]x|[ab]xy' 'overlapping non-identical classes, nfa.c rule 2'
+# d_class, d_dot and d_ci are SIZE-ROW declines since review r5 altcode
+# EMIT-1 (lane altfix): the island reads a multi-member class as its member
+# words, so these enumerate (6, 256 and 24 words) and the island's estimate is
+# over VM_ISL_SIZE_FACTOR times the chain's. Their classes are written, not
+# folded by rule M, so the chain counts as the one test it emits per class
+# (tuning.md §2.20¶2, the size row) and the chain keeps them.
+decline d_class  '[ab]p|[bc]x|[ab]xy' 'written classes enumerate to 6 words; the size row keeps the chain'
 decline d_quant  'a+|b'               'a quantifier: the language is not finite'
 decline d_cap    '(a)|(b)'            'a capture inside a branch'
-decline d_dot    'a.|bc'              'the dot is not a one-byte class'
+decline d_dot    'a.|bc'              'the dot enumerates 255 words; the size row keeps the chain'
 decline d_anch   '^a|b'               'an assertion in a branch'
-decline d_ci     'cat|dog'            'caseless folds to two-member classes at parse time, D23' -i
+decline d_ci     'cat|dog'            'caseless letters are written two-member classes (D23); the size row keeps the chain' -i
 decline d_flag   'cat|dog|cow'        'the axis denied' -fno-alt-island
 
 # The NARROW PREFIX-BEARING decline, and it needs BOTH directions asserted
@@ -395,7 +404,12 @@ BDRV_EOF
 
 bud_ok=1
 for arm in on off; do
-    fl="-fno-req-byte"; [ "$arm" = off ] && fl="-fno-alt-island -fno-req-byte"
+    # -fno-altcls-merge -fno-altcls-factor ([RUN-POS-SET] stage 2b): the
+    # alternation owner merges and factors these words into classes and a
+    # shared tail, which has no island; the cell is about the island's budget,
+    # so both arms compile the words as written.
+    fl="-fno-req-byte -fno-altcls-merge -fno-altcls-factor"
+    [ "$arm" = off ] && fl="-fno-alt-island $fl"
     d="$WORKDIR/bud_$arm"; mkdir -p "$d"
     # -fno-req-byte: [OPT-REQBYTE] stamps a whole-window memchr for this
     # pattern's one required byte ('q'), absent from every BUDGET_SUBJECTS
@@ -451,17 +465,33 @@ fi
 #
 # AND A PER-SUBTREE GUARD IS NOT ENOUGH EITHER, which is what this ladder
 # actually caught. On these patterns the TOP-LEVEL island declines on size and
-# `src/opt/altcls.c`'s factoring then leaves fifteen nested sub-alternations,
+# the prefix factoring (then `src/opt/altcls.c`'s, now the owner's rule P in
+# `src/opt/altnf.c`) then left fifteen nested sub-alternations,
 # each individually reasonable, whose SUM crossed the cap: 514,258 bytes
 # against the chain's 430,442. The artifact-wide budget (`Vm.isl_over_cap`,
 # accumulated in the slot pre-pass so all three readers of `vm_isl_build` see
 # one answer) is what closes that.
 #
+# AND NEITHER GUARD IS EXACT, which is K139 (docs/dev/known_issues.md). Both
+# read ESTIMATES (bytes per node on each side) that were measured to read
+# several times over or under the real programs, in either direction, so no
+# local threshold separates "the island would be refused" from "the island
+# fits": tightening the guard to accept this ladder lost the island on dense
+# sets that fit (dense 1,600 words: island 361,656 real bytes, chain refused).
+# THE EXACT STATEMENT IS A RETRY: the size-cap ladder's `drop-islands` row
+# (docs/spec/limits.md §8.4, `fit_rungs[]` in src/core/compile.c) re-emits a
+# refused island-bearing VM attempt with islands denied, which is the
+# caller's own `-fno-alt-island` artifact. The guard stays as a SHORTCUT
+# that saves the refused attempt where its estimate is right.
+#
 # THE LADDER IS THE WITNESS BECAUSE THE NUMBERS HAVE TO BE NEAR THE CAP.
 # Nothing in the corpus is, and nothing small enough to embed here would be.
 # Each rung is N base words of three letters plus three prefix-extensions of
 # each, so the try sites grow faster than the trie and the island's estimate
-# crosses the cap while the chain's does not.
+# crosses the cap while the chain's does not. It runs under BOTH alternation
+# owner denials (`-fno-altcls-factor -fno-altcls-merge`): at the default the
+# owner shares each base word's prefix and the rung shrinks to ~31 KB, nowhere
+# near the cap (the same denial shape run_trie_identity.sh's controls use).
 # ---------------------------------------------------------------------------
 capwit() {   # capwit <N> -- N*4 words, ~15N characters
     python3 -c '
@@ -474,39 +504,106 @@ for b in base:
     ws += [b, b + "q", b + "qr", b + "qrs"]
 print("(?:" + "|".join(ws) + ")Z")' "$1"
 }
+NOOWN="-fno-altcls-factor -fno-altcls-merge"
 
 cap_bad=0
 for N in 260 300 340; do
     pat="$(capwit "$N")"
     on_ok=1; off_ok=1
-    pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/cap_on.c"  --pattern "$pat" >/dev/null 2>&1 || on_ok=0
-    pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island -o "$WORKDIR/cap_off.c" --pattern "$pat" >/dev/null 2>&1 || off_ok=0
+    # shellcheck disable=SC2086
+    pcrec_run "$PCREC" -p rx --engine=vm $NOOWN -o "$WORKDIR/cap_on.c"  --pattern "$pat" >/dev/null 2>&1 || on_ok=0
+    # shellcheck disable=SC2086
+    pcrec_run "$PCREC" -p rx --engine=vm $NOOWN -fno-alt-island -o "$WORKDIR/cap_off.c" --pattern "$pat" >/dev/null 2>&1 || off_ok=0
     if [ "$off_ok" = "1" ] && [ "$on_ok" = "0" ]; then
-        bad "CAP GUARD: the N=$N rung is REFUSED with the island and ACCEPTED under -fno-alt-island. Its islands cross PCREC_MAX_VM_EMIT_CODE_BYTES where the chain does not — the acceptance regression the guard exists to prevent, and the factor alone does not catch it"
+        bad "CAP GUARD: the N=$N rung is REFUSED with the island and ACCEPTED under -fno-alt-island. Its islands cross PCREC_MAX_VM_EMIT_CODE_BYTES where the chain does not, and neither the guard nor the drop-islands retry caught it (K139)"
         cap_bad=$((cap_bad + 1))
-    elif [ "$on_ok" = "1" ] && [ "$off_ok" = "1" ]; then
+    elif [ "$on_ok" = "1" ] && [ "$off_ok" = "1" ] &&
+         grep -q '^#define RX_VM_ALT_ISLANDS 0$' "$WORKDIR/cap_on.c"; then
+        # An artifact that stamps no island was declined whole (the guard) or
+        # retried without islands (the row); either way it IS the chain's.
+        # A rung whose islands fit (N=260 since the owner) keeps them.
         if ! diff <(grep -v '^#include "' "$WORKDIR/cap_on.c") \
                   <(grep -v '^#include "' "$WORKDIR/cap_off.c") >/dev/null; then
-            bad "CAP GUARD: the N=$N rung compiles both ways but the artifacts DIFFER. Over the cap guard every island in the artifact is declined, so the two builds must be byte-identical; a difference means some island survived the artifact-wide verdict"
+            bad "CAP GUARD: the N=$N rung stamps no island but DIFFERS from its -fno-alt-island artifact. An artifact whose islands were all declined (the guard) or dropped (the drop-islands retry) must be the chain's byte for byte"
             cap_bad=$((cap_bad + 1))
         fi
     fi
 done
-[ "$cap_bad" -eq 0 ] && ok "the cap guard holds over the near-cap ladder (N=260/300/340): no rung is refused with the island and accepted without it, and each declines every island so the artifact is the chain's byte for byte"
+[ "$cap_bad" -eq 0 ] && ok "the cap guard and the drop-islands retry hold over the near-cap ladder (N=260/300/340, owner denied): no rung is refused with the island and accepted without it, and a rung that ships no island ships the chain's artifact byte for byte"
 
-# NON-VACUITY: the ladder must actually STRADDLE the cap, or these cells are
-# three patterns that were never in danger. The top rung's CHAIN must be within
-# 15% of PCREC_MAX_VM_EMIT_CODE_BYTES -- close enough that an island's growth
-# would cross it.
-pat="$(capwit 340)"
-pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island --warn-emit-bytes=1 \
-    -o "$WORKDIR/cap_edge.c" --pattern "$pat" >/dev/null 2>"$WORKDIR/cap_edge.err" || true
-edge="$(sed -n 's/.*(\([0-9]*\) of code).*/\1/p' "$WORKDIR/cap_edge.err" | head -1)"
-if [ -n "$edge" ] && [ "$edge" -gt 425000 ] && [ "$edge" -lt 500000 ]; then
-    ok "the ladder straddles the cap: its top rung's CHAIN emits $edge code bytes against a 500,000 limit, so an island's growth there really would cross it"
+# NON-VACUITY: THE RETRY ROW FIRES at the DEFAULT flags. 1,000 random
+# eight-letter words under `--engine=vm`: the island-bearing attempt is
+# refused (518,578 code bytes, measured) where the chain fits (444,706), the
+# guard's estimate letting the island through. Asserted from the artifact and
+# the stderr note, never from the guard: the compile succeeds, the note names
+# the islands, the artifact stamps no island and equals `-fno-alt-island`'s.
+# Deleting the row (the K139 plant) refuses this pattern.
+randwit() {   # randwit <N> -- N random eight-letter words, seeded by N
+    python3 -c '
+import random, string, sys
+n = int(sys.argv[1]); r = random.Random(n); al = string.ascii_lowercase
+ws = sorted({"".join(r.choice(al) for _ in range(8)) for _ in range(n)})
+print("(?:" + "|".join(ws) + ")Z")' "$1"
+}
+pat="$(randwit 1000)"
+if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/rr_on.c" --pattern "$pat" >/dev/null 2>"$WORKDIR/rr_on.err"; then
+    bad "RETRY: the 1,000-word random set is REFUSED under --engine=vm: $(head -1 "$WORKDIR/rr_on.err" | cut -c1-160). The size-cap ladder's drop-islands row did not rescue an island-bearing attempt whose chain fits (K139)"
+elif ! grep -q "dropped the VM's alternation islands" "$WORKDIR/rr_on.err"; then
+    bad "RETRY: the 1,000-word random set compiled WITHOUT the drop-islands note, so the retry row did not fire on it; the cell no longer reaches the row (re-scale the set, or the guard's estimate changed)"
+elif ! grep -q '^#define RX_VM_ALT_ISLANDS 0$' "$WORKDIR/rr_on.c"; then
+    bad "RETRY: after the drop-islands note the artifact still stamps an island"
+elif ! pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island -o "$WORKDIR/rr_off.c" --pattern "$pat" >/dev/null 2>&1 ||
+     ! diff <(grep -v '^#include "' "$WORKDIR/rr_on.c") <(grep -v '^#include "' "$WORKDIR/rr_off.c") >/dev/null; then
+    bad "RETRY: the drop-islands artifact differs from the caller's own -fno-alt-island one (or that build refused)"
 else
-    bad "the ladder's top rung emits ${edge:-<unknown>} chain code bytes, outside (425,000, 500,000): it is no longer near the cap, so the cells above are not testing the guard. Re-scale N"
+    ok "the drop-islands retry fires at the default flags: the 1,000-word random set's island attempt is refused on the cap and the shipped artifact is -fno-alt-island's byte for byte, with its stderr note"
 fi
+
+# The retry must not cost an island that FITS: the dense sets (every 5-letter
+# word over eight letters, owner denied) take one island the chain could not
+# ship (the chain refuses at 1,600 and above), so a guard or a row that
+# dropped islands too eagerly turns these red.
+dense_bad=0
+for N in 1600 1800 2000; do
+    pat="$(python3 -c '
+import itertools, string, sys
+n = int(sys.argv[1]); al = string.ascii_lowercase
+ws = ["".join(t) for t in itertools.product(al[:8], repeat=5)][:n]
+print("(?:" + "|".join(ws) + ")Z")' "$N")"
+    # shellcheck disable=SC2086
+    if ! pcrec_run "$PCREC" -p rx --engine=vm $NOOWN -o "$WORKDIR/dn.c" --pattern "$pat" >/dev/null 2>"$WORKDIR/dn.err"; then
+        bad "DENSE: the $N-word dense set (owner denied) is REFUSED: $(head -1 "$WORKDIR/dn.err" | cut -c1-160)"; dense_bad=$((dense_bad + 1))
+    elif grep -q '^#define RX_VM_ALT_ISLANDS 0$' "$WORKDIR/dn.c"; then
+        bad "DENSE: the $N-word dense set (owner denied) shipped WITHOUT its island, which fits; the guard or the drop-islands row dropped an island that was not over the cap"; dense_bad=$((dense_bad + 1))
+    fi
+done
+[ "$dense_bad" -eq 0 ] && ok "the dense sets (1,600/1,800/2,000 words, owner denied) keep the island that fits where the chain is refused"
+
+# ---------------------------------------------------------------------------
+# 12. [RUN-POS-SET] THE CLASS IS READ AS ITS MEMBER WORDS, AND THE SIZE ROW
+# COUNTS THE CHAIN BEFORE RULE M's FOLDS (review r5 altcode EMIT-1 / EMIT-3,
+# lane altfix). Rule M folds branches differing at one position into a
+# class (`ea|ga` -> `[eg]a`), and the island reads that class as its members,
+# so the fold changes neither the island's words nor its size. Before the
+# fix the class declined the island (bench altwide w-256: 20 islands where 1,
+# 12.19M instructions against 205K), and after the first repair the size row
+# still compared the island with the FOLDED chain, so small alternations lost
+# it (`x(?:cat|cot|dog)y`). Each witness is a fold the island must read
+# through. `altwide_w256.pattern` is pcrec-bench's altwide w-256 pattern
+# (bench commit 161e5cf8), byte for byte.
+# ---------------------------------------------------------------------------
+memb() {   # memb <name> <want> <pattern> <why> [flags...]
+    local nm="$1" want="$2" pat="$3" why="$4"; shift 4
+    gen "$nm" "$pat" "$@"
+    local got; got="$(islands "$WORKDIR/$nm.c")"
+    [ "${got:-}" = "$want" ] && ok "[MEMB] $nm: $want island(s) ($why)" \
+                             || bad "[MEMB] $nm: RX_VM_ALT_ISLANDS ${got:-<none>} where $want ($why)"
+}
+memb m_w256  1 "$(cat "$SCRIPT_DIR/altwide_w256.pattern")" 'w-256: one island over every word, not one per unfolded remnant'
+memb m_twin  1 'x(?:ea|fb|ga)y'      'rule M folds ea|ga to [eg]a; the island reads its two words'
+memb m_cat   1 'x(?:cat|cot|dog)y'   'the fold [ao] must not shrink the chain the size row compares with'
+memb m_utf8  1 'x(?:[éà]|q2|r3)y'    'a wide class merged by the lowering, read through' -e utf8
+memb m_utf8b 1 'x(?:éa|èb|ça)y'      'the utf8 twin' -e utf8
 
 echo
 echo "island structural checks: $pass passed, $fail failed"

@@ -628,7 +628,7 @@ static void emit_predicate_axes(StrBuf *sb)
         PredAxis p = { "altcls-merge", NULL, "RX_ALTCLS_MERGES", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "merged", "",
                      PCREC_NO_ALTCLS_MERGE, 0, "",
-                     "a maximal run of single-character alternation branches qualifies (runs before either engine is built)");
+                     "the alternation owner's sibling merge, at both callers: every alternation altcls walks, a branch moving up past each branch the adjacency test passes (before either engine is built), and the UTF-8 lowering's boxes");
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback)");
     }
@@ -637,7 +637,7 @@ static void emit_predicate_axes(StrBuf *sb)
         PredAxis p = { "altcls-factor", NULL, "RX_ALTCLS_FACTORED", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "factored", "",
                      PCREC_NO_ALTCLS_FACTOR, 0, "",
-                     "a maximal run sharing a literal first byte qualifies, on stage 1's own output");
+                     "the alternation owner's prefix and suffix factoring: a maximal run of consecutive branches sharing a first class position, or ending in identical nodes, qualifies; the lists it creates are rewritten again");
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback)");
     }

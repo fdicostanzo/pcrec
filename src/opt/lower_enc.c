@@ -140,6 +140,7 @@ typedef struct {
     unsigned  identity_max;  /* lower_class is the identity at or below this */
     Ast     *(*lower_class)(LowerCtx *lc, Ast *a);
     unsigned (*pat_char)(Ctx *cx, size_t at, int *len);
+    void     (*split)(Ctx *cx, const PcrecCpRange *iv, int n, void *bl);   /* NULL: no wide class */
 } LowerOps;
 
 struct LowerCtx {
@@ -317,6 +318,21 @@ static Ast *wclass_of(LowerCtx *lc, const Ast *cls, Ast *child)
     return w;
 }
 
+/* ---- the canonical SPLIT, the boxes a class's set lowers to -------------- */
+
+/* The UTF-8 instance's split: `u8_ranges` per interval, the boxes
+ * `lower_class_utf8` starts from, before any merge, and the boxes
+ * `pcrec_lower_boxes` hands the VM island. The one splitter: both readers
+ * call it (review r5 altcode SLOT-4). The byte instance has none, because no
+ * `A_WCLASS` exists under `byte`: `lower_class_byte` never builds one, so
+ * nothing asks for a byte set's boxes, and `pcrec_lower_boxes` refuses by
+ * name if something does. */
+static void split_utf8(Ctx *cx, const PcrecCpRange *iv, int n, void *bl)
+{
+    (void)cx;
+    for (int i = 0; i < n; i++) u8_ranges(bl, iv[i].lo, iv[i].hi);
+}
+
 /* The UTF8 rewrite of one class node: NULL for a class the byte tier already
  * expresses (every interval at or below 0x7F — the identity fast path that
  * keeps an ASCII pattern's tree untouched, and with it §8.5's expectation
@@ -340,8 +356,7 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
 
     {
         U8Branches bl = { lc->cx, NULL, 0, 0 };
-        for (int i = 0; i < a->u.cls.n; i++)
-            u8_ranges(&bl, a->u.cls.iv[i].lo, a->u.cls.iv[i].hi);
+        split_utf8(lc->cx, a->u.cls.iv, a->u.cls.n, &bl);
 
         if (bl.n == 0) {
             /* Everything fell in the surrogate gap: the set has no encodable
@@ -354,36 +369,29 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
             return e;
         }
 
-        /* Left-nested A_ALT chain, ascending code-point order. The branches
-         * are pairwise disjoint on their FIRST byte or share it with disjoint
-         * continuations, so preference order cannot matter semantically;
-         * ascending is picked for determinism. */
-        {
-            Ast *res = bl.br[0];
-            for (int i = 1; i < bl.n; i++) {
-                Ast *alt = pcrec_ast_node(lc->cx, A_ALT);
-                alt->l = res;
-                alt->r = bl.br[i];
-                res = alt;
-            }
-            /* AN `A_ALT` REPLACEMENT IS SEALED IN AN `A_CAT(A_EMPTY, alt)`
-             * WRAPPER. It was load-bearing when it was written: a lookbehind's
-             * branch walk read a bare alternation in its first-branch slot AS
-             * more spine, and `(?<=[a\x{3b1}])x` compiled to an internal
-             * error. Since K123 the one branch split,
-             * `pcrec_lookbehind_branches`, peels exactly `u.look.nbranch - 1`
-             * spine nodes and takes whatever is left as the first branch, so
-             * the seal is now REDUNDANT. It stays because removing it moves
-             * emitted bytes (an abi event); the two extra nodes emit nothing
-             * (`A_EMPTY` is an epsilon in both backends). */
-            if (bl.n > 1) {
-                Ast *seal = pcrec_ast_node(lc->cx, A_CAT);
-                seal->l = pcrec_ast_node(lc->cx, A_EMPTY);
-                seal->r = res;
-                res = seal;
-            }
-            return wclass_of(lc, a, res);
-        }
+        /* [RUN-POS-SET] stage 1: the boxes go to the alternation owner,
+         * sibling merge only (docs/design/alt_normal_form.md §5 stage 1).
+         * The adjacency test holds for every pair by construction (boxes are
+         * pairwise disjoint and prefix-free, and effect-free), so the merge
+         * moves no answer; it shortens the list (`(?i)β`'s `ce 92|ce b2|cf 90`
+         * becomes `ce [92 b2]|cf 90`). `-fno-altcls-merge` denies the owner's
+         * merge at both its callers, this one and altcls (§11). Not counted
+         * in `altcls_merges`: the program bytes and tables already record it
+         * (§5 stage 1, RDY-2). */
+        if (!pcrec_opt_has(lc->cx->opt, PCREC_NO_ALTCLS_MERGE))
+            bl.n = pcrec_altnf(lc->cx, bl.br, bl.n,
+                               (PcrecAnfRules){ .merge = true }, NULL);
+
+        /* Left-nested A_ALT chain, ascending code-point order of the boxes'
+         * first members. The branches are pairwise disjoint on their FIRST
+         * byte or share it with disjoint continuations, so preference order
+         * cannot matter semantically; ascending is picked for determinism.
+         * No `A_CAT(A_EMPTY, alt)` seal: since K123 the lookbehind's branch
+         * split peels exactly `u.look.nbranch - 1` spine nodes, so a bare
+         * alternation in a first-branch slot is read whole (the `A_WCLASS`
+         * wrapper is what stays load-bearing there). */
+        Ast *res = pcrec_spine_build(lc->cx, A_ALT, bl.br, bl.n);
+        return wclass_of(lc, a, res);
     }
 }
 
@@ -425,8 +433,8 @@ static unsigned pat_char_utf8(Ctx *cx, size_t at, int *len)
 /* ---- the instance table and its one dispatch ----------------------------- */
 
 static const LowerOps lower_ops[] = {
-    { PCREC_ENC_BYTE, 0xFFu, lower_class_byte, pat_char_byte },
-    { PCREC_ENC_UTF8, 0x7Fu, lower_class_utf8, pat_char_utf8 },
+    { PCREC_ENC_BYTE, 0xFFu, lower_class_byte, pat_char_byte, NULL },
+    { PCREC_ENC_UTF8, 0x7Fu, lower_class_utf8, pat_char_utf8, split_utf8 },
 };
 
 /* The LowerOps instance for cx->opt->encoding, or an internal-error refusal if
@@ -451,6 +459,26 @@ static const LowerOps *ops_for(Ctx *cx)
 unsigned pcrec_pat_char(Ctx *cx, size_t at, int *len)
 {
     return ops_for(cx)->pat_char(cx, at, len);
+}
+
+/* [RUN-POS-SET] THE CANONICAL SPLIT of a code-point set: the box branches
+ * (byte-range sequences, ascending) this encoding's lowering starts from,
+ * BEFORE the owner's merge, so a function of the set alone. Exported for the
+ * VM island's `A_WCLASS` arm (src/gen/emit_vm.c), which states today's
+ * admission ("every box a single string") as a predicate on the set, so a
+ * merged class keeps the island its unmerged spelling had
+ * (docs/design/alt_normal_form.md §5 stage 1). The splitter is this file's
+ * own, never a copy. `*nb` gets the box count. */
+Ast **pcrec_lower_boxes(Ctx *cx, const PcrecCpRange *iv, int n, int *nb)
+{
+    U8Branches bl = { cx, NULL, 0, 0 };
+    const LowerOps *ops = ops_for(cx);
+    if (!ops->split)
+        pcrec_ctx_fail(cx, 0, "internal error: the canonical split was asked "
+                       "for under an encoding that builds no wide class");
+    ops->split(cx, iv, n, &bl);
+    *nb = bl.n;
+    return bl.br;
 }
 
 /* Does the lowering leave every class in this subtree alone? Walked over a

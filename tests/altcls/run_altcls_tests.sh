@@ -69,9 +69,11 @@ if [ "${m:-}" = "1" ]; then ok "VM artifact stamps ALTCLS_MERGES (capture-bearin
 else bad "VM artifact ALTCLS_MERGES stamp missing or wrong (got '${m:-<none>}')"; fi
 
 # ---------------------------------------------------------------------------
-# 2. COUNTS ARE ACCURATE, not merely present. A three-run alternation
-# collapses to ONE merge event; a five-branch prefix-factored alternation
-# with two literal-prefix groups (Frank's own exemplar) stamps FACTORED=2.
+# 2. COUNTS ARE ACCURATE, not merely present. MERGES counts the branch LISTS
+# in which the alternation owner's rule M folded at least once ([RUN-POS-SET]
+# stage 2b, match_api.md §6.3.11¶3), so a five-branch merge is ONE; a
+# five-branch prefix-factored alternation with two literal-prefix groups
+# (Frank's own exemplar) stamps FACTORED=2.
 # ---------------------------------------------------------------------------
 gen count1 'a|b|c|d|e'
 m="$(stamp "$WORKDIR/count1.c" ALTCLS_MERGES)"
@@ -83,10 +85,37 @@ f="$(stamp "$WORKDIR/count2.c" ALTCLS_FACTORED)"
 [ "${f:-}" = "2" ] && ok "Frank's own exemplar stamps exactly 2 factored groups" \
                     || bad "exemplar ALTCLS_FACTORED: expected 2, got '${f:-<none>}'"
 
+# Rule M moves a branch up past every branch the adjacency test passes
+# (alt_normal_form.md §3.2): `c` passes `ab` (row 1: they differ at the first
+# position), so 'b|ab|c' merges; `c` cannot pass `cd` (same first position,
+# another width: row 3), so 'b|cd|c' does not.
 gen count3 'b|ab|c'
 m="$(stamp "$WORKDIR/count3.c" ALTCLS_MERGES)"
-[ "${m:-}" = "0" ] && ok "'b|ab|c' stamps 0 merges (non-adjacent single-char branches)" \
-                    || bad "'b|ab|c' ALTCLS_MERGES: expected 0 (not adjacent), got '${m:-<none>}'"
+[ "${m:-}" = "1" ] && ok "'b|ab|c' stamps 1 merge (c passes ab: row 1)" \
+                    || bad "'b|ab|c' ALTCLS_MERGES: expected 1 (c moves past ab), got '${m:-<none>}'"
+gen count4 'b|cd|c'
+m="$(stamp "$WORKDIR/count4.c" ALTCLS_MERGES)"
+[ "${m:-}" = "0" ] && ok "'b|cd|c' stamps 0 merges (c cannot pass cd: row 3)" \
+                    || bad "'b|cd|c' ALTCLS_MERGES: expected 0 (c does not move past cd), got '${m:-<none>}'"
+
+# THE OWNER'S RE-RUN AND ITS SUFFIX RULE ([RUN-POS-SET] stage 2b, design §5
+# 2b S-m/S-s): count witnesses, no answer can move. `(?:ab\b|ad\b)` is
+# P (key `a`), S on the rests (tail `\b`), M on the heads S created
+# (`a[bd]\b`): MERGES 1, FACTORED 2; a build whose created lists are not
+# rewritten again stamps MERGES 0 (S1892). `(?:xyr|zr)` is S alone,
+# FACTORED 1; a build without S stamps 0 (S1893).
+gen rerun '(?:ab\b|ad\b)' --features all
+m="$(stamp "$WORKDIR/rerun.c" ALTCLS_MERGES)"
+f="$(stamp "$WORKDIR/rerun.c" ALTCLS_FACTORED)"
+if [ "${m:-}" = "1" ] && [ "${f:-}" = "2" ]; then
+    ok "'(?:ab\b|ad\b)' stamps MERGES 1, FACTORED 2 (P, S on the rests, M on the heads)"
+else
+    bad "'(?:ab\b|ad\b)': expected MERGES 1 FACTORED 2, got merges=${m:-<none>} factored=${f:-<none>}"
+fi
+gen suffix '(?:xyr|zr)'
+f="$(stamp "$WORKDIR/suffix.c" ALTCLS_FACTORED)"
+[ "${f:-}" = "1" ] && ok "'(?:xyr|zr)' stamps FACTORED 1 (suffix factoring)" \
+                    || bad "'(?:xyr|zr)' ALTCLS_FACTORED: expected 1 (suffix rule), got '${f:-<none>}'"
 
 # ---------------------------------------------------------------------------
 # 2b. THE EMPTY-ALTERNATIVE BARRIER ([M4.7g], Frank's design question).
@@ -118,14 +147,14 @@ m="$(stamp "$WORKDIR/barrier2.c" ALTCLS_MERGES)"
                     || bad "'(?:a||b)c' ALTCLS_MERGES: expected 0, got '${m:-<none>}'"
 
 # The barrier's OTHER half, and the reason a bare "stamps 0" rule would be
-# too strong: merging RESUMES after the barrier. Two independent runs,
-# [ab] and [cd], one on each side of the epsilon — exactly 2, not 1 (which
-# would mean it merged across) and not 0 (which would mean an empty branch
-# anywhere disabled the pass for the whole alternation).
+# too strong: merging RESUMES after the barrier. [ab] and [cd] fold, one on
+# each side of the epsilon, in ONE list, so the stamp is 1 (not 0, which
+# would mean an empty branch anywhere disabled the pass for the whole
+# alternation); that `c` did not cross the epsilon is altcls.rxt's span.
 gen barrier3 '(?:a|b||c|d)x'
 m="$(stamp "$WORKDIR/barrier3.c" ALTCLS_MERGES)"
-[ "${m:-}" = "2" ] && ok "'(?:a|b||c|d)x' stamps exactly 2 merges (a run each side of the barrier)" \
-                    || bad "'(?:a|b||c|d)x' ALTCLS_MERGES: expected 2 (merging resumes after the barrier), got '${m:-<none>}'"
+[ "${m:-}" = "1" ] && ok "'(?:a|b||c|d)x' stamps 1 merge list (folds each side of the barrier)" \
+                    || bad "'(?:a|b||c|d)x' ALTCLS_MERGES: expected 1 (merging resumes after the barrier), got '${m:-<none>}'"
 
 # ---------------------------------------------------------------------------
 # 3. DO-OR-DIE / NO TRACE (D46): a denied build's stamp is 0, asserted
@@ -167,9 +196,10 @@ fi
 # ---------------------------------------------------------------------------
 # 5. BYTE IDENTITY over a pattern with NOTHING to merge or factor: the pass
 # on and the pass off must emit the SAME C, the same way possessify's denial
-# is byte-identity-safe on a verdict-free pattern. `frank|zred|brad` shares
-# no literal first byte across any adjacent pair and has no single-char
-# branch anywhere, so both stages structurally decline on it.
+# is byte-identity-safe on a verdict-free pattern. `frank|zrex|bray` shares
+# no first position and no last node across any adjacent pair, and no two
+# branches of one width differ in one position only, so rules M, P and S
+# all decline on it.
 #
 # SAME output basename in two different directories (tests/possessify's own
 # precedent, run_possessify_tests.sh's on/off dirs) — a different `-o`
@@ -178,14 +208,14 @@ fi
 # property this check is trying to see.
 # ---------------------------------------------------------------------------
 mkdir -p "$WORKDIR/bi_on" "$WORKDIR/bi_off"
-pcrec_run "$PCREC" -p rx -o "$WORKDIR/bi_on/gen.c" --pattern 'frank|zred|brad' >/dev/null 2>&1
+pcrec_run "$PCREC" -p rx -o "$WORKDIR/bi_on/gen.c" --pattern 'frank|zrex|bray' >/dev/null 2>&1
 pcrec_run "$PCREC" -p rx -o "$WORKDIR/bi_off/gen.c" -fno-altcls-merge -fno-altcls-factor \
-    --pattern 'frank|zred|brad' >/dev/null 2>&1
+    --pattern 'frank|zrex|bray' >/dev/null 2>&1
 if diff -q "$WORKDIR/bi_on/gen.c" "$WORKDIR/bi_off/gen.c" >/dev/null 2>&1 && \
    diff -q "$WORKDIR/bi_on/gen.h" "$WORKDIR/bi_off/gen.h" >/dev/null 2>&1; then
-    ok "verdict-free pattern 'frank|zred|brad': byte-identical with the pass on and off"
+    ok "verdict-free pattern 'frank|zrex|bray': byte-identical with the pass on and off"
 else
-    bad "verdict-free pattern 'frank|zred|brad' differs between pass-on and pass-off builds"
+    bad "verdict-free pattern 'frank|zrex|bray' differs between pass-on and pass-off builds"
 fi
 
 # ---------------------------------------------------------------------------

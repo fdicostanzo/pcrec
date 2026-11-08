@@ -373,6 +373,12 @@
 #     run), so `harness` is green on it by construction, and the one wrong
 #     arm that IS loud (a reader rendering the set) is loud only through the
 #     kind guard this arm's W4 witness reaches. Registered before S365-S366.
+#   island — added 2026-11-06 ([RUN-POS-SET], review r5 altcode EMIT-1/3,
+#     lane altfix); runs tests/island/run_island_tests.sh: the island's
+#     structural checks, read off emitted artifacts (stamps, declines, the
+#     size row, the cap guard, and section 12's fold witnesses). Its own arm
+#     because an island that is or is not built moves no answer, so
+#     `harness` is green on it by construction. Registered before S1990-S1991.
 #   prefixinv — added 2026-09-30 (K79, lane k7980); runs
 #     tests/codegen/run_prefix_invariance.sh: the same pattern at prefixes of
 #     1, 2, 3, 23 and 60 characters must give the same artifact up to the
@@ -3262,6 +3268,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/clspack.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/clspack.log" | grep -oE '[0-9]+')"
                 score_arm "$work/clspack.log" "$f" "clspack:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            island)
+                # [ENG-ISL] tests/island/run_island_tests.sh — see the
+                # vocabulary entry above. Compiles with the sabotaged tree's
+                # own build/pcrec; its totals line is its own shape.
+                PCREC="$pcrec" bash "$tree/tests/island/run_island_tests.sh" \
+                    > "$work/island.log" 2>&1
+                p="$(grep -m1 '^island structural checks:' "$work/island.log" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^island structural checks:' "$work/island.log" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+')"
+                score_arm "$work/island.log" "$f" "island:${f:-ERR}fail/${p:-?}pass"
                 ;;
             wclass)
                 # [CLS-TREE] S3 tests/codegen/run_wclass_census.sh — see the

@@ -1070,10 +1070,15 @@ def compile_stream_ir(pcrec_bin, pattern, timeout, extra=()):
     return ok, (out if ok else None), ("" if ok else _err_tail(err))
 
 
+# `--facts-encodings` ([RUN-POS-SET] B0 part 3, lane altbuild): the listing's
+# encoding list; `byte` alone holds a utf8-only change to the byte half.
+FACTS_ENCODINGS = "byte,utf8"
+
+
 def compile_stream_facts(pcrec_bin, pattern, timeout):
     """Stream 6: the facts listing for BOTH encodings in one call -- so no
     `--extra` (an `-e` there would fight the listing's own encoding list)."""
-    argv = [pcrec_bin, "--features", "all", "--emit-facts=byte,utf8"]
+    argv = [pcrec_bin, "--features", "all", "--emit-facts=" + FACTS_ENCODINGS]
     argv += _pattern_argv(pcrec_bin, pattern)
     rc, out, err = run(argv, timeout)
     ok = rc == 0
@@ -1192,6 +1197,11 @@ def parse_fact_moves(spec):
     for item in spec.split(","):
         fact, col, ft = item.split(":", 2)
         frm, to = ft.split(">", 1)
+        # [RUN-POS-SET] stage 2p (lane altbuild): `FACT:row:>new` declares
+        # a NEW fact, one listing row per encoding the REF listing lacks.
+        if col == "row":
+            moves.append((fact, None, frm, to))
+            continue
         moves.append((fact, FACTS_COLUMNS.index(col), frm, to))
     return moves
 
@@ -1207,12 +1217,33 @@ def facts_declared_delta(c_a, c_b, moves):
     lines must be identical."""
     al = c_a.decode("utf-8", "replace").splitlines()
     bl = c_b.decode("utf-8", "replace").splitlines()
+    problems, n = [], 0
+    # A declared NEW fact (`FACT:row:>new`): REF has no row of it, NEW has
+    # exactly one per encoding REF lists; those rows leave NEW and the rest
+    # is judged as before.
+    new_facts = {m[0] for m in moves if m[1] is None}
+    moves = [m for m in moves if m[1] is not None]
+    if new_facts:
+        def fact_of(line):
+            f = line.split("\t")
+            return f[1] if not line.startswith("#") and len(f) > 1 else None
+        encs = {line.split("\t")[0] for line in al
+                if not line.startswith("#") and line.strip() and len(line.split("\t")) > 1}
+        for nf in sorted(new_facts):
+            if any(fact_of(x) == nf for x in al):
+                problems.append("declared-new fact %s already in REF" % nf)
+            got = [y.split("\t")[0] for y in bl if fact_of(y) == nf]
+            if sorted(got) != sorted(encs & {"byte", "utf8"}):
+                problems.append("declared-new fact %s: rows for %s, want one per %s"
+                                % (nf, ",".join(got) or "none", ",".join(sorted(encs & {"byte", "utf8"}))))
+            elif got:
+                n += 1
+        bl = [y for y in bl if fact_of(y) not in new_facts]
     if len(al) != len(bl):
-        return ["line count %d -> %d" % (len(al), len(bl))], 0
+        return problems + ["line count %d -> %d" % (len(al), len(bl))], 0
     by_fact = {}
     for m in moves:
         by_fact.setdefault(m[0], []).append(m)
-    problems, n = [], 0
     for x, y in zip(al, bl):
         if x.startswith("#") or not x.strip():
             if x != y:
@@ -1463,7 +1494,8 @@ DUMP_SURFACES = ("--list-syntax", "--list-definitions", "--list-verbs",
                  "--list-schema")
 
 
-def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset()):
+def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset(),
+                         new=frozenset()):
     """Judges one registry dump against DECLARED line moves, BOTH ways:
     `declared` is {(flag, first tab field): True}; every other line is
     byte-identical in order, every declared row exists on both sides and
@@ -1484,35 +1516,59 @@ def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset()):
             if any(key(x) == g for x in lb):
                 problems.append("%s: declared gone row %s is still in the HEAD dump" % g)
         la = [x for x in la if key(x) not in gone]
+    # `new` is `gone` mirrored ([RUN-POS-SET] stage 2p, lane altbuild): each
+    # row is in the working dump once and not in REF's.
+    if new:
+        key = lambda x: (flag, x.split("\t")[0])
+        for g in sorted(k for k in new if k[0] == flag):
+            nhead = sum(1 for x in lb if key(x) == g)
+            if nhead != 1:
+                problems.append("%s: declared new row %s is listed %d times in the HEAD dump (one expected)" % (g + (nhead,)))
+            if any(key(x) == g for x in la):
+                problems.append("%s: declared new row %s is already in the REF dump" % g)
+        lb = [x for x in lb if key(x) not in new]
     if len(la) != len(lb):
         return problems + ["%s: line count %d -> %d" % (flag, len(la), len(lb))]
     for x, y in zip(la, lb):
-        key = (flag, x.split("\t")[0])
+        # a surface that lists one key on several rows (`--list-axes`' row 1 and
+        # row 2 of an axis) names ONE of them as `KEY@SECOND-FIELD` ([RUN-POS-SET]
+        # B0, lane altbuild: `--list-axes:altcls-merge@1`)
+        f = x.split("\t")
+        key = (flag, f[0])
+        if key not in declared and len(f) > 1 and (flag, f[0] + "@" + f[1]) in declared:
+            key = (flag, f[0] + "@" + f[1])
         if key in declared:
             if x == y:
                 problems.append("%s: declared row %s did not move" % key)
             declared[key] = True
-            if y.split("\t")[0] != key[1]:
+            if y.split("\t")[0] != key[1].split("@")[0]:
                 problems.append("%s: declared row %s lost its key" % key)
         elif x != y:
             problems.append("%s: undeclared row moved: %r" % (flag, x[:60]))
+    # A declared row this surface never listed is a problem too (review r5
+    # altcode CHK-2): an INVENTED declaration beside a real one used to pass
+    # and count as a declared move.
+    for k in sorted(k for k in declared if k[0] == flag and not declared[k]):
+        problems.append("%s: declared row %s is not in the dump" % k)
     return problems
 
 
-def dumps_declarations(label, rows_arg, gone_arg):
+def dumps_declarations(label, rows_arg, gone_arg, new_arg=None):
     """The (declared rows, declared gone rows) a sweep labelled `label`
     judges its dumps by: the declared deltas are the REAL comparison's; a
     self-check (label `selfcheck` or a variant's `selfcheck-NAME`) compares
     one revision with itself, so nothing may move there."""
     if label.startswith("selfcheck"):
-        return (), ()
-    return (rows_arg.split(",") if rows_arg else ()), (gone_arg.split(",") if gone_arg else ())
+        return (), (), ()
+    return ((rows_arg.split(",") if rows_arg else ()), (gone_arg.split(",") if gone_arg else ()),
+            (new_arg.split(",") if new_arg else ()))
 
 
-def sweep_dumps(bin_a, bin_b, timeout, declared_rows=(), gone_rows=()):
+def sweep_dumps(bin_a, bin_b, timeout, declared_rows=(), gone_rows=(), new_rows=()):
     res = StreamResult("dumps")
     declared = {tuple(r.split(":", 1)): False for r in declared_rows}
     gone = frozenset(tuple(r.split(":", 1)) for r in gone_rows)
+    new = frozenset(tuple(r.split(":", 1)) for r in new_rows)
     res.population = len(DUMP_SURFACES)
     for flag in DUMP_SURFACES:
         rc_a, out_a, err_a = run([bin_a, flag], timeout)
@@ -1524,14 +1580,16 @@ def sweep_dumps(bin_a, bin_b, timeout, declared_rows=(), gone_rows=()):
             res.both_refuse += 1
         elif out_a != out_b:
             res.both_ok += 1
-            if any(k[0] == flag for k in declared) or any(k[0] == flag for k in gone):
-                problems = dumps_declared_delta(flag, out_a, out_b, declared, gone)
+            if any(k[0] == flag for k in declared) or any(k[0] == flag for k in gone) \
+                    or any(k[0] == flag for k in new):
+                problems = dumps_declared_delta(flag, out_a, out_b, declared, gone, new)
                 if problems:
                     res.movers.append((flag, "\n".join(problems[:6])))
                 else:
                     res.declared_patterns += 1
                     res.declared_moves += sum(1 for k in declared if k[0] == flag)
                     res.declared_moves += sum(1 for k in gone if k[0] == flag)
+                    res.declared_moves += sum(1 for k in new if k[0] == flag)
             else:
                 res.movers.append((flag, first_diff_hunk(out_a, out_b)))
         else:
@@ -1542,6 +1600,9 @@ def sweep_dumps(bin_a, bin_b, timeout, declared_rows=(), gone_rows=()):
             for k in gone:
                 if k[0] == flag:
                     res.movers.append((flag, "declared gone row %s is still listed (surface identical)" % k[1]))
+            for k in new:
+                if k[0] == flag:
+                    res.movers.append((flag, "declared new row %s is not listed (surface identical)" % k[1]))
     return res
 
 
@@ -3129,17 +3190,28 @@ def main():
                          "pattern: the listing's only movers are these cells (e.g. "
                          "span_facts:used:yes>no), every REF row holding FROM has "
                          "moved to TO, nothing else moved; the stream is then "
-                         "required at movers=0 and reports the declared count")
+                         "required at movers=0 and reports the declared count. "
+                         "FACT:row:>new declares a NEW fact (one row per encoding "
+                         "REF lists, none in REF)")
+    ap.add_argument("--facts-encodings", metavar="LIST", default="byte,utf8",
+                    help="the facts stream's --emit-facts encoding list (default "
+                         "byte,utf8); `byte` holds a utf8-only change to the byte half")
     ap.add_argument("--dumps-declared-rows", metavar="FLAG:KEY[,...]",
                     help="the dumps stream's DECLARED delta, judged both ways: on "
                          "each named surface (e.g. --list-limits) the row whose "
                          "first field is KEY must differ and every other line must "
-                         "be byte-identical")
+                         "be byte-identical; KEY@F names the one row of a key "
+                         "listed on several whose second field is F")
     ap.add_argument("--dumps-declared-gone", metavar="FLAG:KEY[,...]",
                     help="the dumps stream's DECLARED removals, judged both ways: on "
                          "each named surface (e.g. --list-axes) the row whose first "
                          "field is KEY is in REF's dump and not in the working one, "
                          "and every other line is byte-identical in order")
+    ap.add_argument("--dumps-declared-new", metavar="FLAG:KEY[,...]",
+                    help="the dumps stream's DECLARED additions, --dumps-declared-gone "
+                         "mirrored: the row whose first field is KEY is in the "
+                         "working dump once and not in REF's, every other line "
+                         "byte-identical in order")
     ap.add_argument("--census-ref-re", metavar="FILE",
                     help="[MEMFN] R4h: file of regexes (one per line); streams 1-4 hold "
                          "movers == REF artifacts matching any of them, 0 off-diagonal")
@@ -3179,6 +3251,8 @@ def main():
                          "DELIVER-witness exemption (and must not run the composition stream)")
     ap.add_argument("--expect-movers")
     args = ap.parse_args()
+    global FACTS_ENCODINGS
+    FACTS_ENCODINGS = args.facts_encodings
     if args.list_ident_arms:
         tb = os.path.abspath(args.bin) if args.bin else os.path.join(os.path.abspath(args.tree), "build", "pcrec")
         for n, a in ident_arms(tb, args.list_ident_arms):
@@ -3391,9 +3465,10 @@ def main():
             log(f"[emit_sweep] === {label}: stream 5 (registry dumps) ===")
             # the declared deltas are the REAL comparison's: the self-check
             # compares one revision with itself, so nothing may move there
-            rows, gone = dumps_declarations(label, args.dumps_declared_rows,
-                                            args.dumps_declared_gone)
-            res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout, rows, gone)
+            rows, gone, new = dumps_declarations(label, args.dumps_declared_rows,
+                                                 args.dumps_declared_gone,
+                                                 args.dumps_declared_new)
+            res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout, rows, gone, new)
         return res, producing, artifacts, fixtures_hit, nonlocal_flag[0]
 
     if variants:
