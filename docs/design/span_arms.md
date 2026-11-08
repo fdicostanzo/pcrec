@@ -1,24 +1,27 @@
 # Span arms: the REP, EMPTY and positive-LOOKAROUND arms of the one fixed-width description
 
-**Status: PROPOSED rev 1** (lane spanarms2, opus, 2026-11-08; design and single-pattern measurement
-only, no build go). Rev 1 answers review `docs/dev/reviews/2026-11-08-r1-spanarms.md` as RULED in
-its "Manager rulings (2026-11-08)" section; the disposition table is §R1, and changed text is
-marked `[r1 Fn]`. Rev 0: lane spanarms, main `7b9ddd890`.
+**Status: PROPOSED rev 2** (lane spanarms3, opus, 2026-11-08; design and single-pattern measurement
+only, no build go). Rev 2 answers re-check review `docs/dev/reviews/2026-11-08-r2-spanarms2.md` as
+RULED in its "Manager rulings (2026-11-08)" section; the disposition table is §R2, and changed
+text is marked `[r2 Sn]`. Rev 1 (lane spanarms2) answered review 2026-11-08 r1 (§R1, `[r1 Fn]`).
+Rev 0: lane spanarms, main `7b9ddd890`.
 
-**Base: main `dd2fe2de9`.** Between rev 0's base `7b9ddd890`, the review's build tree `14de2b00d`
-and `dd2fe2de9`, nothing under `src/`, `cli/`, `lib/`, `docs/spec/` or `memfn/include/` changed
-except memfn.h's target section (+96 lines after `:1699`, the K0 target table) and three new
-`memfn/src/targets*` files. No line this note cites moved, so every `file:line` holds at all three.
+**Base: main `c054e38e7`.** `git diff dd2fe2de9 c054e38e7` over `src cli lib memfn docs/spec tests`
+is empty, so every `file:line` this note cites holds at rev 0's, rev 1's and rev 2's bases. Rev 2's
+measurements: `docs/dev/lanes/spanarms3_evidence/` (the lane's own build of `c054e38e7`;
+libpcre2-8 10.46 through `tests/lib/p2probe.c`).
 
 Plan rows: [REPEAT-RUN], [REQ-EMPTYCAT] (its quantified half), [REQ-LOOKAROUND]. Parent note:
 `docs/design/alt_normal_form.md` (§3.5's arm table, §3.6, §9 rows S2-S4, and §10's "the follow-up
 notes ... decision points listed, not decided" are what this note decides). Next in Frank's
 2026-11-06 order: [REWRITE-ADJ], after this note settles.
 
-**Readiness, as ruled.** The REP + EMPTY half (units E1, R1, E2) was READY WITH TEXT FIXES; rev 1
-applies them (F3, F4, F6, F7, F14 and their doc items) and changes nothing else in §3-§4, so that
-half goes to Frank for a build go with no further round. The LOOKAROUND half (L1, L2, L3) is
-redesigned here (§5, T4) and needs a re-check round before Frank's go.
+**Readiness, as ruled.** The REP + EMPTY half (units E1, R1, E2) was READY WITH TEXT FIXES at r1;
+rev 1 applied them. At r2, E1 and R1 needed nothing more, and E2 takes S16's sentence and witness
+(§4.1, §4.5) before its go. The LOOKAROUND half: the rules were found sound (two exhaustive
+populations, zero unsound runs); the text was not buildable. Rev 2 closes it. As ruled, L1 gets
+ONE readiness critic over the re-spelled witnesses (no full round), and L2 and L3 get a readiness
+critic each before any go.
 
 Evidence: rev 0's `docs/dev/lanes/spanarms_evidence/`, plus rev 1's
 `docs/dev/lanes/spanarms2_evidence/`: `oracle.out` (every expected answer rev 1 adds, libpcre2-8
@@ -35,12 +38,38 @@ or as a placement of one fact, so its soundness is the CAT arm's soundness and n
 - REP: `X{m,n}` IS `X^m · X{0,n-m}` and IS `X{0,n-m} · X^m`; `X^m` is m copies through CAT.
 - EMPTY: a node that consumes nothing contributes the WIDTH-0 UNIT of CAT. `[r1 F16]` Rev 0's
   EXACT/GUARDED split had no reader and is gone from every rule.
-- positive LOOKAROUND `[r1 F1, F2, F15]`: the width-0 unit plus the lookaround's ITEM, the body's
-  fixed affixes at signed offsets from the cursor. The item is the first member of D168's
-  context producer (§5.3). The run reads it as PENDING GUARDS on the run value: `rr_cat` meets
-  them against its neighbour, carries them across an `all` neighbour and drops them anywhere
-  else. Only the top level decides whether a guard extends the run past the attempt's consumed
-  span, and that is the reach the readers admit.
+- positive LOOKAROUND `[r1 F1, F2, F15]` `[r2 S2, S8]`: the width-0 unit plus the lookaround's
+  ITEM: the subject's EXACT per-offset sets at signed offsets from the cursor, as D168's ONE
+  context producer states them (§5.3). That covers both lowerings of a positive lookaround, the
+  `A_LOOK` sub-match and the one-character `A_CTX` the `ctx-node` row makes. The run is a READER:
+  it derives its own cube hull of the item within `pos_set` and carries it as PENDING GUARDS on
+  the run value. `rr_cat` meets them against its neighbour, carries them across an `all`
+  neighbour and drops them anywhere else. Only the top level decides whether a guard extends the
+  run past the attempt's consumed span, and that is the reach the readers admit.
+
+## §R2. Disposition table (every finding of review 2026-11-08 r2, as ruled)
+
+| finding | ruling | what rev 2 changed | where |
+|---|---|---|---|
+| S1 A3's move at a negative K is unsound | FIX-NOW | A3 now states the only sound move, `pos = max(posvar, c − K)` with K signed and no `size_t` wrap, and the re-entry re-ask condition `c − K < pos`; match_api §6.3.7¶11's `max(startpos, that − K)` is kept and said to hold for signed K. `emit_req_handoff_rest` and `emit_req_landmark_move` are L3 sites. W-L10 `(?<=ab)ab[a-z]*q` on `abababq` from 3 (oracle M 4 7; the rev-1 move reports (2,7)) | §5.4 A3, §5.7, §8 L3 |
+| S2 one-character lookarounds are `A_CTX` | FIX-NOW (decided: (a)) | ITEM reads the producer's item for EVERY positive one-sided context: `A_LOOK` positive and `A_CTX` with `CTXFN_NEXT`/`CTXFN_PREV`; every other `A_CTX` function stays E-4. The run is then the same under `-fno-ctx-node`, which the L1 gate checks. The six witnesses are re-spelled with multi-character bodies, and W-C1 is the `A_CTX` witness. §5.2 (c)/(d) and the §5.6/§5.7 rows are re-derived | §0, §2, §5.1, §5.2, §5.6, §5.7, T1, T3 |
+| S3 W-L5, W-RG `cover`-dominated | FIX-NOW | both re-spelled (`xy(?=bc)[bc]c`, `(?:abc(?=ab)){2}`: VM, `RX_DFA_SCAN "unanchored"`, measured); the mechanism sentence adds "the locator is not `rev-end`/`cover`/`landmark-walk`/`empty`", and every witness row states its measured `RX_DFA_SCAN` | §3.6, §5.7 |
+| S4 `req_byte` can leave `req_set` | FIX-NOW (RULED) | L1: a meet that narrows a CONSUMED position to one byte puts that byte in the necessary SET at that position's offset (row CAT-SET). L2/L3: the scan member is picked among CONSUMED positions only, read from a stored consumed extent (`RbRun.cons`, reader `pcrec_req_pick` and the scan-index pick). A guard byte is never the scan member. New row A13 | §5.2, §5.4 A13, §8, §9 |
+| S5 guard bound and kept end unstated | FIX-NOW | §2: a guard is stored at the run's bound and keeps the end NEAREST the value's edge (`lg` the tail form, `rg` the head form); its `trunc` is never read; REP's saturation does not count guards. TOP: a candidate's `++` keeps the FIRST positions (`rn_app`), BACK's `t` is the STORED `lg.n`. Witnesses W-T1 (guard, L1), W-T2 (TOP, L2), W-T3 (TOP, L3) | §2, §5.2 TOP, §5.7 |
+| S6 dead fact has no propagation rows | FIX-NOW | T4 has a DEAD column (CAT either, ALT both, REP `m = 0` never, `m ≥ 1` the body's, positive lookaround the body's, negative never; any empty meet, guard-guard included, states it). U-dead reads the ROOT's bit. Carrier: a `why` value `dead` on `req_whole_run`. FACT witnesses listed NOT dead | §5.2, T4, §8 L1, §9, §10 |
+| S7 the BACK floor is the kit's behaviour | FIX-NOW | A2: "the kit's two uses (entry and re-entry), from the stated `omin`, clamped at 0". L3 depends on the kit HONOURING a negative presence `omin` at entry and re-entry and a signed `head_max`, with the origin re-defined as the ATTEMPT start. W-L1 is the kit's witness, planted in the kit's emitted text | §2, §5.4 A1-A2, §5.7, §8 L3 |
+| S8 the F15 form | FIX-NOW (RULED) | §5.3 rewritten: ONE producer of EXACT per-offset subject sets at signed offsets (`look-fixed`'s fact), `A_CTX` and `A_LOOK` alike; the guard is a READER that derives its own cube hull within `pos_set`. The producer is the body's DESCRIPTION placed at the cursor (exact 256-bit position sets, unmoved by bit 44). L1 builds that slice and files the D168 addendum (§12); kset's `A_CTX` reading is the producer's in-span half. The coordinate reading is flagged for the manager | §5.3, §8 L1, §12 |
+| S9 the lever is not one site | FIX-NOW (RULED) | §3.7 rewritten as a declared table of WALK PARAMETERS (`pos_set`, the reach, the restored-arm set; with `max_pieces` and `lb_bytes`, the walk's other inputs), two lever sources (public bit, harness), applied at the one walk entry; `facts.def`'s deny column keeps its one meaning (empty a fact, `pf_enter`); listed through a new `facts_listing.md` §4.1.3 token `harness:<arms>` | §3.7, §5.8, §8, §9 |
+| S10 `lb_bytes` per encoding | DOC (RULED) | §5.5: the row's purpose is a per-call step-back COST cap (safety is not its job), stated per encoding; the "reads further back than `lb_max`" fact is libpcre2's NON-UTF behaviour only (UTF mode: `(?<=c(?<=bc)d)e` from 3 is N, measured); Q5 corrected | §5.5, §13 Q5 |
+| S11 L3's spec hunks | DOC | L3's gate names match_api §6.3.7¶10/¶11, tuning §2.41¶1, facts_listing §4.1.2¶8/¶8b and the new `omin` paragraph, by paragraph; ¶11's formula kept for signed K | §8 L3 |
+| S12 `omin` is a new pcrec field | DOC | ledger rows for `RbRun.omin`, `ReqRun.omin` and one `facts.def` row `req_run_omin` (sibling of `req_run_maxoff`, the house pattern of one row per offset fact) | §5.4 A9, §9 |
+| S13 L1's depends-on incomplete | FIX-NOW | L1 depends on E2; on E1 for W-F4; on R1 for the REP row (without R1 the REP row is today's best-only and carries no guard). The harness source is built by the first unit built of 2a/E1/R1/E2/L1 | §8, §9 |
+| S14 W-L4, W-L8 gates | FIX-NOW | W-L4 and W-L8 move to L1's gate (W-L8 stays at L3 too) | §5.7, §8 |
+| S15 two §5.4 cites | DOC | A1 drops `site_kind_of` (it reads no run); A9 cites the run's bound at `facts.c:236` | §5.4 |
+| S16 E2 changed beyond its fixes | FIX-NOW | one T3 sentence: E2 gives every positive lookaround (`A_LOOK` and the `A_CTX` NEXT/PREV rows) the plain unit until L1 adds its item; E2's own witness W-E3 `xy(?<!ab)cd` on `xycd` | §4.1, §4.5, §8 E2 |
+| standing: walk-input family | FIX-NOW in S9 | the walk-parameter table is that family's general form | §3.7 |
+| standing: signed-offset "none" sentinels | DOC | L3's gate: every signed offset (`omin`, `maxoff`, K, `head_max`) carries a stated/none bit beside it, the −1 sentinel retired in the same unit | §8 L3 |
+| standing: U-exactwidth | PLAN | §10 row, trigger L1's census of guards dropped at fixed-width non-literal neighbours | §10 |
 
 ## §R1. Disposition table (every finding of review 2026-11-08 r1, as ruled)
 
@@ -71,7 +100,21 @@ or as a placement of one fact, so its soundness is the CAT arm's soundness and n
 | standing questions (sibling; general form + unlocks) | PLAN | the general form is §5.3; the four unlocks are filed as plan rows with triggers ([LOOK-LOCATE], [CTX-SIDES-PRODUCER], [PRES-OMIN-TRUE], [DESC-DEAD]), nothing scheduled | §10; plan.md |
 | F18 ruling, second half | PLAN | the `--harness=` lever if-chain in `cli/main.c` is filed as [HARNESS-LEVERS], a member of the facts.def-deny family | plan.md |
 
-## 0. Premise tests (main `dd2fe2de9`, all HOLD unless marked)
+## 0. Premise tests (main `dd2fe2de9`, all HOLD unless marked; rev 2's re-run at `c054e38e7`)
+
+- **A one-character positive lookaround is `A_CTX`, not `A_LOOK`** `[r2 S2]` (rev 2's premise
+  test). `pcrec_look_t3`'s `ctx-node` row (`src/parse/ctxnode.c:117-142`, default on, deny
+  `-fno-ctx-node`) lowers `(?=C)`/`(?<=C)` with a body whose language is a set of single
+  one-byte characters to `A_CTX(C, CTXFN_NEXT|CTXFN_PREV)`. Measured: `a(?=b)c` lists
+  `kinds none` (`facts_listing.md` §4.1.2¶4: a context node is not a `lookaround`),
+  `span_facts 0` and `RX_DFA_SCAN "empty"`; `ab(?<=b)[bc]d\w*e` lists `kinds none` and DFA, and
+  under `-fno-ctx-node` `kinds lookaround` and VM, with the same run (`6162`). `req.c:756-761`
+  sends `A_CTX` to the same ZERO cut as `A_LOOK`.
+- **The body's description holds EXACT position sets, unmoved by bit 44** `[r2 S8]`.
+  `desc.h:1-13`: a description is width groups of position SETS (the byte alphabet is a 256-bit
+  set). `[ab](?:bc|d)e` lists `req_pieces 3:[97,98][100][101]|4:[97,98][98][99][101]` with and
+  without `-fno-req-run-fold`; the run's cube domain `pos_set` is read only by the run's own
+  arms (`req.c:366`, `:381`, `:610`).
 
 - **REP keeps only the body's best.** `rb_rep_into` (`src/facts/req.c:549-558`) builds
   `rr_none(rr_rep_w(rmax, ...))`, copies in `b->runs.best` alone and sets the description to
@@ -154,12 +197,22 @@ start) is BACK, L3. A run that ends past the attempt's consumed end (AHEAD, L2) 
 value: no reader reads the run's end (§5.4), so no `ahead` field is stored (D77) until one does.
 A run with `omin < 0` still lies inside the subject: the scan begins at
 `max(0, search_from + omin)`, and the bytes before `search_from` are ones the matcher may read,
-because PCRE2 lets a lookbehind read before the start offset.
+because PCRE2 lets a lookbehind read before the start offset. `[r2 S7]` That floor is the KIT's
+behaviour, not pcrec's text: pcrec states `omin`, and the kit's pre-check (entry and re-entry)
+honours it (§5.4 A1-A2, L3's kit request). The kit's `omin` today is measured from the MATCH
+start (`memfn.h:679`); this note's is from the ATTEMPT start, so L3's request re-defines the
+origin (the two differ under `\K`).
 
 **Pending guards** `[r1 F1, F2]`. A run value (`RbRuns`) carries two pending guards beside its
 consumed runs: `lg`, run positions at offsets `[-t, 0)` before the value's start, and `rg`, run
 positions at offsets `[0, h)` after its end. Each guard position is a cube, like a run position.
-A guard comes only from a positive lookaround's ITEM (§5.1). Below the top level a guard is never
+A guard comes only from a positive lookaround's ITEM (§5.1). `[r2 S5]` A guard is an `RbRun`
+stored at the run's bound (`PCREC_MAX_REQ_RUN_SCAN`, 32 positions) and keeps the end NEAREST the
+edge it touches: `lg` keeps its LAST positions (the tail form, `rn_pre`), `rg` its FIRST (the
+head form, `rn_app`), so every kept position stays at its stated offset as a guard grows (ITEM's
+"followed by"/"preceded by", CAT-EDGE's merged leftover). A guard's `trunc` is never read: a
+truncated guard is a shorter necessary condition at the same offsets. REP's saturation (§3.1
+point 3) does not count guards. Below the top level a guard is never
 a byte of `head`, `tail` or `best`. `rr_cat` MEETS it against its neighbour's consumed positions
 (an intersection), CARRIES what is left across an `all` neighbour (whose width is exact), and
 DROPS it at any other neighbour. Only the top level (row TOP) may extend the run with a guard,
@@ -171,8 +224,8 @@ always sound; an intersection of two necessary conditions is necessary.
 | node | consumed part | guards | proof |
 |---|---|---|---|
 | REP `X{m,n}` | §3's T2 rows: `X^c` through CAT, head/best from `X^c · X{0,n-m}`, tail from `X{0,n-m} · X^c` | the copies' guards, through CAT (`lg` from the left decomposition, `rg` from the right); none at `m = 0` for a width-0 body | `X{m,n}` = `X^m X{0,n-m}` = `X{0,n-m} X^m`; CAT is sound on each |
-| a node that consumes nothing (`A_EMPTY`, `\b`, `$`, `\G`, `\K`, a check callout, a negative lookaround) | the width-0 unit (`rr_unit()`: no run, `all`, width 0) | none | consumed bytes on either side of a zero-width node are adjacent in the subject |
-| positive LOOKAROUND | the width-0 unit | the ITEM's terms (§5.1): `rg` from a lookahead body's head affix, `lg` from a lookbehind body's tail affix, plus the body's own guards at their offsets | the body matches at the cursor, so its fixed affixes hold in the subject there |
+| a node that consumes nothing (`A_EMPTY`, `\b`, `$`, `\G`, `\K`, a check callout, a negative lookaround, any `A_CTX` but the two below) | the width-0 unit (`rr_unit()`: no run, `all`, width 0) | none | consumed bytes on either side of a zero-width node are adjacent in the subject |
+| positive LOOKAROUND (`A_LOOK` positive; `A_CTX` with `CTXFN_NEXT`/`CTXFN_PREV`) `[r2 S2]` | the width-0 unit | the hull of the producer's ITEM (§5.1, §5.3): `rg` at the item's terms `[0, h)` (lookahead), `lg` at `[-t, 0)` (lookbehind), plus the body's own guards at their offsets | the body matches at the cursor, so the subject holds the item's sets there |
 | backref, variable, call | unchanged walls | none | — |
 
 `[r1 F16]` Rev 0's EXACT/GUARDED split is gone. It had one claimed reader (the owner), and the
@@ -263,8 +316,11 @@ width or a wrong copy count: what the witnesses plant.
 
 Each failure mechanism: the sabotaged run clears the 16-bit floor (`limits.def:410`), is absent
 from the subject, and is not walk-verifiable, so it is never `dominated` (the pin needs every
-position to be a k-set singleton, `kset.c:294-318`). So the pre-check compares it and answers
-NOMATCH (soundrep and soundlook PROBED-AND-HELD (b)).
+position to be a k-set singleton, `kset.c:294-318`). `[r2 S3]` And the artifact's locator is not
+one that decides presence itself (`RX_DFA_SCAN` is not `"rev-end"`, `"cover"`, `"landmark-walk"`
+or `"empty"`): match_api §6.3.7¶8's `dominated` row declines the run check there whatever the
+run is. Both halves are checked per witness (the `RX_DFA_SCAN` and k-set columns of §5.7). So
+the pre-check compares the run and answers NOMATCH (soundrep and soundlook PROBED-AND-HELD (b)).
 
 | id (role) | planted error | pattern, subject, expected | correct run | sabotaged run, and why it fails |
 |---|---|---|---|---|
@@ -291,25 +347,34 @@ no public deny"). Every unit here can be slower only through the pick rows that 
 fact, each with its own deny, where D186 narrows a loss (alt_normal_form §11's stage-2a row).
 Its wrongness risk is W-R1..W-R6. So it gets a TEST-ONLY lever and no public bit.
 
-**The form: `facts.def`'s deny admits a HARNESS source** (alt_normal_form §3.5 r7 FIX-8's named
-general form). FIX-8's trigger was "a second such change", a second test-only lever on a core
-fact. The trigger FIRES here: 2a's lever was the first, and this note's `rep`, `zero` and `look`
-are the second, third and fourth. So rev 1 takes the form, and does not generalize its own
-lever:
+**The form: a declared table of WALK PARAMETERS** `[r2 S9]` (RULED; alt_normal_form §3.5 r7
+FIX-8's harness source, placed where it acts). FIX-8's trigger was "a second such change", a
+second test-only lever on a core fact; it FIRES here (2a's lever was the first, this note's
+`rep`, `zero` and `look` the second to fourth). Rev 1 put the arms "beside the deny bits" in a
+fact's `facts.def` row. That was not one application site: the deny column EMPTIES a fact in
+`pf_enter` (`facts.c:147-153`, for every `PF_FACT`), while bit 44 is read separately as the
+walk's `pos_set` (`facts.c:208-211`), and one walk call produces four facts at once (`req_set`,
+`req_set_maxoff`, `req_whole_run`, `req_pieces`, `facts.c:212-249`), so "the fact rows an arm
+applies to" was ill-formed. Rev 2:
 
-- a fact's `facts.def` row names, beside its public deny bits (`deny`, today
-  `PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN` on `req_whole_run`), the HARNESS ARMS that restore an
-  arm of its derivation to today's form;
-- the arms are rows of ONE declared table (an arm id, the fact rows it applies to, the restored
-  behaviour): 2a's `alt` and `empty`, this note's `rep` (T2 → today's best-only REP), `zero` (T3
-  E-4 → today's cut) and `look` (T4 → today's cut at a positive lookaround);
-- `facts.c` applies both sources where it applies the public deny today (`pf_derive_req_walk`,
-  `facts.c:201-249`, which already turns bit 44 into the walk's `pos_set` parameter). The walk
-  receives the restored-arm set as a parameter of the same kind, so there is one application
-  site and no second deny path;
-- `--emit-facts` lists the harness source of a fact it restored. That closes the invisibility
-  alt_normal_form's stage-2a lever note records (`cli/main.c:3108-3111` builds `pin` without
-  `.harness`).
+| parameter | what the walk reads it as | default | lever source | T-row that reads it |
+|---|---|---|---|---|
+| `pos_set` | the run's cube domain | `PCREC_MAX_REQ_RUN_POS_SET` (`limits.def`) | public bit 44 `-fno-req-run-fold` → 1 | every run arm (`rn_common_head`, the class arm) and the guard's hull (§5.3) |
+| `max_pieces` | the description's group bound | `PCREC_MAX_REQ_PIECES` | none | the description (`PdCfg.max_groups`) |
+| reach | TOP's admitted interval | `[0, maxoff]` at L1; AHEAD at L2; BACK at L3 | harness arm `look` → `[0, maxoff]` | TOP |
+| restored arms | the arms run in today's form | none | harness arms `alt`, `empty` (2a), `rep` (T2 → today's best-only REP), `zero` (T3 E-4 → today's cut), `look` (T4 off: today's cut at a positive lookaround, and reach `[0, maxoff]`) | T1's arm switch |
+| `lb_bytes` | TOP's BACK step cap (§5.5) | `Ctx.lb_max` × the encoding's widest character | none (a `Ctx` policy field, deliberately not a fact accessor, `internal.h:3979-3997`) | TOP |
+
+- The table is filled ONCE, at the one walk entry (`pf_derive_req_walk`'s call of
+  `pcrec_req_walk`, `facts.c:208-211`, which already reads bit 44 there) and handed to the walk
+  as one parameter record. There is no second deny path.
+- `facts.def`'s deny column keeps its one meaning: a public bit there EMPTIES the fact
+  (`pf_enter`). A walk parameter never empties a fact; it changes how the walk derives it.
+- `--emit-facts` lists a restored arm on each fact the walk produced, through a new
+  `facts_listing.md` §4.1.3 token `harness:<arm>[+<arm>...]` (a `deny:` wins, since the fact is
+  then empty). That closes the invisibility alt_normal_form's stage-2a lever note records
+  (`cli/main.c:3108-3111` builds `pin` without `.harness`). The token is named in the gate of
+  the first unit that builds the table (§8).
 
 The spelling (one `--harness=` value naming arms) is the build's. The `--harness=` levers
 themselves are an if-chain of one-bit fields (`cli/main.c:1430-1443`, `PcrecHarnessOptions`) and
@@ -339,8 +404,13 @@ What remains is every other node whose consumed description is width 0:
 | E-1 | `A_EMPTY` (`abcd()efgh`, `abcd(?:\|)efgh`, altcls's empty residue, derive's pruned nodes) | the unit | cut | unit (stage 2a) |
 | E-2 | a repeat whose body is width 0 and consumes nothing that can fail (`(?:)*`, `(?:){3}`) | the unit (T2 row 1) | cut / gap | unit |
 | E-3 | `X{0,n}` whose body is width 0 (`(?:\b)*`) | the unit, no guard (T2 row 1, `m = 0`) | gap | unit |
-| E-4 | a zero-width node that can fail: `\b`/`\B` (`A_CTX`), `$`/`^` (`A_EOL`, `A_CTX`), `\G`, `\K`, a check callout, a negative lookaround, and `X{m,n}`, m ≥ 1, of such a body (`(?:\b)+`, `pcrec_wrap_bare_anchor`'s `<anchor EMPTY>` under a quantifier) | the unit (`exact = false` in the description, no reader, §2) | cut | unit (joins consumed contiguity) |
-| E-5 | a positive lookaround | the unit plus its item | cut | §5 |
+| E-4 | a zero-width node that can fail: `\b`/`\B` (`A_CTX`), `$`/`^` (`A_EOL`, `A_CTX`), `\G`, `\K`, a check callout, a negative lookaround (`A_LOOK` or a negative `A_CTX`), and `X{m,n}`, m ≥ 1, of such a body (`(?:\b)+`, `pcrec_wrap_bare_anchor`'s `<anchor EMPTY>` under a quantifier) | the unit (`exact = false` in the description, no reader, §2) | cut | unit (joins consumed contiguity) |
+| E-5 | a positive lookaround: `A_LOOK` positive, `A_CTX` with `CTXFN_NEXT`/`CTXFN_PREV` `[r2 S2]` | E2: the unit; L1: the unit plus its item | cut | §5 |
+
+`[r2 S16]` **Until L1, E-5 is the plain unit.** E2 makes every zero-width node the unit, a
+positive lookaround included (both lowerings), and reads no body. L1 then adds the item to E-5's
+unit. So under E2 `xyz(?<=yz)abc` gives `xyzabc` (§4.4) and S-L's plant (the body walked as
+consumed) has a site in E2's own arm.
 
 E-2/E-3 follow from T2 with no extra clause. E-4 is alt_normal_form §9 S2 point (3): decided as
 a census, unit E2, because its soundness is not in question. The bytes on either side of a
@@ -373,7 +443,7 @@ movers.
 | `abcd()efgh`, `abcd(?:\|)efgh` (E-1, 2a's) | 4 | 8 |
 | `abcd(?:)*efgh`, `abcd(?:){3}efgh` (E-2) | 4 | 8 |
 | `abcd(?:\b)+efgh` (E-4; never matches) | 4 | 8 (sound: a pattern that cannot match has every run) |
-| `xyz(?<=yz)abc` (E-4 alone; the body not read) | `abc` (3) | 6, `xyzabc` (spelling measured) |
+| `xyz(?<=yz)abc` (E-5 under E2, the plain unit; the body not read) | `abc` (3) | 6, `xyzabc` (spelling measured) |
 | `x(?!ab)ac` (a negative lookaround, E-4) | `ac` | 3, `xac` |
 
 ### 4.5 Witnesses
@@ -382,7 +452,12 @@ movers.
 |---|---|---|---|---|
 | S-g (alt_normal_form, 2a) | a consuming kind (`A_BREF`) sent to the EMPTY arm | `(ab)x\1y` on `abxaby`: (0,6) | `abx` | `abxy`: absent, NOMATCH |
 | W-E1 (a negative body read as an item) `[r1 F5]` | a negative lookaround's body read as a positive item (its head affix met against the right side) | `x(?!ab)a[bc]` on `xac`: (0,3); on `xab`: NOMATCH | `xa[bc]` (E-4) | `xab` (the cube `[bc]` narrowed by the body's `b`): absent from `xac`, NOMATCH |
-| W-E2 (E-4's join through the body, S-L) | §5.7 | | | |
+| W-E2 (E-5's join through the body, S-L) | §5.7 | | | |
+| W-E3 (E2's own, a negative body) `[r2 S16]` | a negative lookaround's body walked as CONSUMED | `xy(?<!ab)cd` on `xycd`: (0,4); on `xyabcd`: NOMATCH; `abcd` from 2: NOMATCH | `xycd` (E-4 joins) | `xyabcd` (48 bits): absent from `xycd`, NOMATCH |
+
+W-E3, measured today: `kinds lookaround`, VM, `RX_DFA_SCAN "unanchored"`, run `6364@0`,
+`RX_REQ_WHY "emitted"`, k-set `120,121,99,100`: no locator decides presence, and the sabotaged
+run's position 2 (`a`) is not the k-set's `99`, so it is not pinned.
 
 W-E1's plant has a site only once item code exists, so it is in L1's gate, not E2's (rev 0 listed
 it at E2, which has no meet site). Rev 0's `x(?!ab)ac` emptied a position, and an emptied position
