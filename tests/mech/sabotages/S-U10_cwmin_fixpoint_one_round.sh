@@ -18,6 +18,13 @@
 # is what makes the same corpus cell this row's detector too. One row per
 # loop is D69's one-row-per-claim, not duplication.
 #
+# RE-AIMED (lane mechtri, 2026-11-08): since [VLOOKBEHIND] a wrong `cwmin` no
+# longer REFUSES the two-hop cell -- it opens the pair, the branch VARIES and
+# compiles as a variable lookbehind with the SAME answers, so the .rxt cell
+# stayed green (mech UNDETECTED). The detector is now tests/codegen's
+# `residlbcall` fixture (the same pattern): a fixed-width lookbehind declares
+# ONE back_step site, a varying branch emits two. The harness arm stays as the
+# second reader (it catches the refusal form if variable lookbehind is denied).
 SAB_ID="S-U10-cwmin-fixpoint-one-round"
 # REACH (clean tree): the two-hop acyclic chain — the ONE cell whose verdict
 # needs a second fixpoint round — still COMPILES, i.e. the witness reaches the
@@ -28,7 +35,7 @@ SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "^(?:(?<h>cd)){0}(?:(?<g
 SAB_REACH_EXPECT='Pattern: ^(?:(?<h>cd)){0}(?:(?<g>(?&h)e)){0}cde(?<=(?&g))$'
 SAB_REACH_POP='tests/recursion/inlookaround.rxt|\(\?&h\)e|1'
 SAB_FILE="src/opt/callgraph.c"
-SAB_SUITES="harness"
+SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/recursion/inlookaround.rxt"
 SAB_DESC="the call graph's cwmin iteration stops after one round, so a callee that calls another callee keeps its initial PCREC_MINW_MAX, cwmin != cwmax opens, and a lookbehind over a two-hop acyclic chain is refused"
 SAB_DOC_FIGURE="PREDICTED ([M5.0] stage 2, S171's measured shape): exactly ONE block fails in tests/recursion/inlookaround.rxt -- the two-hop acyclic chain, as a pattern-compile failure; every one-hop cell settles in round 0 and is unmoved. MEASURED at stage 2: harness corpus:2fail/48pass, DETECTED -- the two-hop chain block's two cases and nothing else, S171's own figure arriving through the pair's other half."

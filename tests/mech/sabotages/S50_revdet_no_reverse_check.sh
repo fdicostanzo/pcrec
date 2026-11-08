@@ -31,6 +31,11 @@
 # gained a `Ctx *` (its `pcrec_revdet_first` call refuses an A_WCLASS by
 # `pcrec_ctx_fail`), so the call reads `rd_alt_disjoint(R->cx, rev)`. Same
 # line, same plant, one argument more.
+# RE-AIMED (lane mechtri, 2026-11-08): the [ALT-NF] folds rewrite `(?:ab|b)` to
+# `a?b`, which no longer reaches the rung, so the row above went UNDETECTED over
+# patterns.txt. The witness is now a reverse-ambiguous body the folds leave
+# alone, e.g. `(?:ab|[bc]){1,3}c` (":abcb:abc": rung 6,9, replication 1,4); the
+# family is tests/rungselect/patterns_revambig.txt, run by default.
 SAB_ID="S50-revdet-no-reverse-check"
 SAB_FILE="src/opt/revdet.c"
 SAB_SUITES="rungdiff"

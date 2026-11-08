@@ -10,12 +10,17 @@
 # alternation's WIDTH shift, not from `rb_intersect` (planted: K 2, stamp "2",
 # unchanged; mech UNDETECTED). The member must be carried by BOTH branches:
 # `(?:ab:|c:)` reads K 2 clean, 1 planted (stamp "2" -> "1"), and is a 5.12a row.
+# RE-AIMED AGAIN (lane mechtri, 2026-11-08): the [ALT-NF] folds (f77ed1130, abi 97)
+# factor the common tail, so `(?:ab:|c:)` is `(?:ab|c):` and the ':' is no
+# longer a member carried through BOTH branches -- planted, the stamp still read
+# "2" (mech UNDETECTED, zero checks failed). Unequal tails keep the alternation:
+# `(?:ab:y|c:)` reads K 2 clean, 1 planted, and is a 5.12a row.
 SAB_ID='S806-set-offset-nearer-branch'
 SAB_FILE='src/facts/req.c'
 SAB_SUITES='prechecks'
 SAB_DESC='an alternation'\''s set member keeps the nearer branch'\''s offset bound instead of the farther, so a landmark after the wider branch gets a K too small by the width difference'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/rlhbuild_report.md §5); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S806.'
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?:ab:|c:)'\'' && grep -q '\''^#define RX_REQ_HANDOFF "2"'\'' "$REACH_TMP/o.c" && echo REACH-ALT-LANDMARK'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?:ab:y|c:)'\'' && grep -q '\''^#define RX_REQ_HANDOFF "2"'\'' "$REACH_TMP/o.c" && echo REACH-ALT-LANDMARK'
 SAB_REACH_EXPECT='REACH-ALT-LANDMARK'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

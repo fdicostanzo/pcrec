@@ -35,7 +35,8 @@
 # the runs here go further than the possessify suite's do.
 #
 # Usage: run_rungdiff.sh [--corpus] [patternfile ...]
-#   With no argument it runs tests/rungselect/patterns.txt.
+#   With no argument it runs tests/rungselect/patterns.txt and the hand-written
+#   patterns_revambig.txt (the reverse-ambiguous family S50 needs).
 #   `--corpus` additionally derives and sweeps every .rxt corpus pattern the
 #   rung actually fires on, read out of the emitter's own RUNGS stamp.
 # Env: PCREC, CC, GENCFLAGS, RUNGDIFF_KEEP=1 to keep the work directory.
@@ -269,7 +270,7 @@ if [ "${1:-}" = "--corpus" ]; then
 fi
 
 files="$*"
-[ -n "$files" ] || files="$SCRIPT_DIR/patterns.txt"
+[ -n "$files" ] || files="$SCRIPT_DIR/patterns.txt $SCRIPT_DIR/patterns_revambig.txt"
 
 for f in $files; do
     [ -f "$f" ] || { echo "run_rungdiff.sh: no such pattern file: $f" >&2; exit 2; }
