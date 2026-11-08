@@ -53,4 +53,5 @@ design/memfn CLAUDE.md line: done.
 
 ## STATE AT HANDOFF
 
-Rev 2.1 committed on lane/memfn-u30d. OWED: none. No rulings file was named. Not a build go.
+Rev 2.1 committed on lane/memfn-u30d. No rulings file was named. Not a build go.
+OWED: none.
