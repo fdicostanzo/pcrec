@@ -50,7 +50,12 @@
  *             list (target_seam.md §6.1: never a replacement of the whole
  *             set); MF_NO_NEEDS: nothing (armv8-a: NEON is the baseline)
  *   features  the sorted feature tokens the target supplies; needs is a
- *             subset (the table check asserts it)
+ *             subset (the table check asserts it). What a kit LEVEL's needs
+ *             are checked against (unit U2's admission, levels.def), so it
+ *             lists a feature the family's own compile supplies when a level
+ *             needs it (x86-64-v3's `sse2`, which its region need not push):
+ *             the table check holds every level need to the compiler, a need
+ *             listed here iff `-march=<name>` already supplies it
  *
  * doc (both macros): one short plain-English line in the kit's own words,
  * what pcrec's listing prints for the row. Plain text, never C: the check
@@ -81,7 +86,7 @@ MF_TARGET(MF_TGT_X86_64,    "x86-64",    MF_FAMILY_OF(MF_FAM_X86_64),  MF_NEEDS(
           "the x86-64 baseline, SSE2 (gcc -march=x86-64)")
 MF_TARGET(MF_TGT_X86_64_V3, "x86-64-v3", MF_FAMILY_OF(MF_FAM_X86_64),
           MF_NEEDS("avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave"),
-          "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave",
+          "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse2,sse4.1,sse4.2,ssse3,xsave",
           "x86-64 plus AVX2, BMI1/2, FMA, LZCNT, MOVBE and more (gcc -march=x86-64-v3)")
 MF_TARGET(MF_TGT_ARMV8_A,   "armv8-a",   MF_FAMILY_OF(MF_FAM_AARCH64), MF_NO_NEEDS, "neon",
           "the Armv8-A baseline with NEON (gcc -march=armv8-a)")

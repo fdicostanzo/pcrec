@@ -6,16 +6,19 @@
  * (run_g2_any.py): the family's only kit caller. It draws a GENERATED space
  * of member byte sets (K 2..3: 0x00, 0xFF, high-bit bytes, duplicates,
  * one-bit neighbours, random) and renders, for each set, the standalone
- * kernel `mf_kernel_find_any` at four level choices: none (the portable
- * body alone), each level alone, and every level (the ladder). It writes
+ * kernel `mf_kernel_find_any` at the kit target TARGET (unit U2: the kit
+ * derives the levels from the target; run_g2_any.py runs this once per
+ * target). Acting as the host, it writes the target's family guard once and
+ * its region around the kernels (mf_family_c_of / mf_target_c_of), the
+ * kit's text between the markers `G2A KIT TEXT BEGIN`/`END`. It writes
  *   DIR/g2a_kernels.c  the kernels' text, then `g2a_table[]`: per kernel its
- *                      selector, K, the bytes AS GIVEN (duplicates kept)
- *                      and its level bits;
- *   DIR/g2a_meta.tsv   one row per kernel: id, k, bytes, levels.
- * It also asks for each refusal (K 1 and 4, a bad name, a level bit past
- * mf_levels(), a sink without vprintf) and fails unless each is refused.
+ *                      selector, K and the bytes AS GIVEN (duplicates kept);
+ *   DIR/g2a_meta.tsv   one row per kernel: id, k, bytes, target.
+ * It also asks for each refusal (K 1 and 4, a bad name, a target that is
+ * not a row of the kit's table, a NULL target, a sink without vprintf) and
+ * fails unless each is refused.
  *
- *   g2_any_gen SEED NSETS DIR
+ *   g2_any_gen SEED NSETS DIR TARGET
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -46,12 +49,13 @@ static const struct { unsigned k; uint8_t b[3]; } fixed[] = {
 
 int main(int argc, char **argv)
 {
-    if (argc != 4) { fprintf(stderr, "usage: g2_any_gen SEED NSETS DIR\n"); return 2; }
+    if (argc != 5) { fprintf(stderr, "usage: g2_any_gen SEED NSETS DIR TARGET\n"); return 2; }
     rng = strtoull(argv[1], NULL, 10);
     unsigned nsets = (unsigned)atoi(argv[2]);
-    size_t nlv;
-    mf_levels(&nlv);
     char path[4096], err[256];
+    const mf_target *tg = mf_target_parse(argv[4], strlen(argv[4]), err, sizeof err);
+    if (!tg) { fprintf(stderr, "g2_any_gen: %s\n", err); return 2; }
+    mf_target copy = *tg;   /* the same facts, not a row: refused */
     snprintf(path, sizeof path, "%s/g2a_kernels.c", argv[3]);
     FILE *f = fopen(path, "w");
     snprintf(path, sizeof path, "%s/g2a_meta.tsv", argv[3]);
@@ -61,25 +65,29 @@ int main(int argc, char **argv)
 
     /* the refusals: each must be refused, with a text */
     uint8_t b4[4] = {1, 2, 3, 4};
-    struct { const char *why, *fn; unsigned k; uint32_t lv; int nosink; } neg[] = {
-        {"k 1", "g2a_neg", 1, 0, 0}, {"k 4", "g2a_neg", 4, 0, 0},
-        {"name", "2bad", 2, 0, 0}, {"name", "a b", 2, 0, 0},
-        {"level", "g2a_neg", 2, 1u << nlv, 0}, {"sink", "g2a_neg", 2, 0, 1},
+    struct { const char *why, *fn; unsigned k; const mf_target *t; int nosink; } neg[] = {
+        {"k 1", "g2a_neg", 1, tg, 0}, {"k 4", "g2a_neg", 4, tg, 0},
+        {"name", "2bad", 2, tg, 0}, {"name", "a b", 2, tg, 0},
+        {"target copy", "g2a_neg", 2, &copy, 0}, {"target NULL", "g2a_neg", 2, NULL, 0},
+        {"sink", "g2a_neg", 2, tg, 1},
     };
     mf_sink half = { .u = f, .puts = fput };
     for (size_t j = 0; j < sizeof neg / sizeof neg[0]; j++) {
         err[0] = 0;
-        if (mf_kernel_find_any(neg[j].nosink ? &half : &o, neg[j].fn, b4, neg[j].k, neg[j].lv,
+        if (mf_kernel_find_any(neg[j].nosink ? &half : &o, neg[j].fn, b4, neg[j].k, neg[j].t,
                                err, sizeof err) != -1 || !err[0]) {
             fprintf(stderr, "g2_any_gen: refusal '%s' (#%zu) not refused\n", neg[j].why, j);
             return 1;
         }
     }
 
+    /* the refusals wrote nothing: the host's frame starts here */
+    if (tg->family) fputs(mf_family_c_of(tg->family)->guard, f);
+    fputs(mf_target_c_of(tg)->region_open, f);
+    fputs("/* G2A KIT TEXT BEGIN */\n", f);
     unsigned nk = 0;
     char tab[1 << 16];
     size_t tl = 0;
-    uint32_t all = (1u << nlv) - 1;
     for (unsigned s = 0; s < nsets; s++) {
         unsigned k;
         uint8_t b[3];
@@ -98,31 +106,23 @@ int main(int argc, char **argv)
                 }
             }
         }
-        /* level choices: none, each level alone, all of them */
-        uint32_t choice[8];
-        unsigned nc = 0;
-        choice[nc++] = 0;
-        for (unsigned l = 0; l < nlv; l++) choice[nc++] = 1u << l;
-        choice[nc++] = all;
-        for (unsigned c = 0; c < nc; c++) {
-            char fn[64];
-            snprintf(fn, sizeof fn, "g2a_%u", nk);
-            if (mf_kernel_find_any(&o, fn, b, k, choice[c], err, sizeof err)) {
-                fprintf(stderr, "g2_any_gen: kernel %u refused: %s\n", nk, err);
-                return 1;
-            }
-            fprintf(meta, "%u\t%u\t%u,%u,%u\t%u\n", nk, k, b[0], b[1], k > 2 ? b[2] : 0,
-                    (unsigned)choice[c]);
-            tl += (size_t)snprintf(tab + tl, sizeof tab - tl,
-                                   "    { g2a_%u, %u, { %u, %u, %u }, %uu },\n", nk, k, b[0],
-                                   b[1], k > 2 ? b[2] : 0, (unsigned)choice[c]);
-            if (tl >= sizeof tab - 1) { fprintf(stderr, "g2_any_gen: table overflow\n"); return 1; }
-            nk++;
+        char fn[64];
+        snprintf(fn, sizeof fn, "g2a_%u", nk);
+        if (mf_kernel_find_any(&o, fn, b, k, tg, err, sizeof err)) {
+            fprintf(stderr, "g2_any_gen: kernel %u refused: %s\n", nk, err);
+            return 1;
         }
+        fprintf(meta, "%u\t%u\t%u,%u,%u\t%s\n", nk, k, b[0], b[1], k > 2 ? b[2] : 0, tg->name);
+        tl += (size_t)snprintf(tab + tl, sizeof tab - tl, "    { g2a_%u, %u, { %u, %u, %u } },\n",
+                               nk, k, b[0], b[1], k > 2 ? b[2] : 0);
+        if (tl >= sizeof tab - 1) { fprintf(stderr, "g2_any_gen: table overflow\n"); return 1; }
+        nk++;
     }
+    fputs("/* G2A KIT TEXT END */\n", f);
+    fputs(mf_target_c_of(tg)->region_close, f);
     fprintf(f, "static const struct g2a_kernel g2a_table[] = {\n%s};\n"
                "#define G2A_NKERNEL %u\n", tab, nk);
     if (fclose(f) || fclose(meta)) { perror("g2_any_gen"); return 2; }
-    fprintf(stderr, "g2_any_gen: %u kernels over %u sets, %zu levels\n", nk, nsets, nlv);
+    fprintf(stderr, "g2_any_gen: %u kernels over %u sets at %s\n", nk, nsets, tg->name);
     return 0;
 }

@@ -510,13 +510,18 @@ static void family_site(unsigned i, mf_site *s)
 static const char *fn_name(void *u, uint32_t ref) { (void)ref; return u; }
 
 /* The class of `s` asked under policy `policy` and options `opts`. */
-static int ask_under(const mf_site *s0, const mf_hooks *h0, uint32_t policy, const char *opts,
+/* the class of s0 in an art stating the target `t` (unit U2: the layer is
+ * the art's target; the SIMD-on layer states x86-64-v3, whose levels are
+ * both rows') */
+static int ask_under(const mf_site *s0, const mf_hooks *h0, const char *t, const char *opts,
                      mf_class *c)
 {
     mf_site s = *s0;
-    s.policy = policy;
+    s.policy = 0;
     s.opts = opts;
-    mf_art *art = mf_art_begin(&arena, "rx", policy, s.denies, NULL, NULL);
+    mf_art *art = mf_art_begin(&arena, "rx", 0, s.denies, NULL, NULL);
+    const mf_target *tg = t ? mf_target_parse(t, strlen(t), NULL, 0) : mf_portable_target();
+    if (!art || mf_art_target(art, tg)) return -1;
     return mf_ask(art, &s, h0, c);
 }
 
@@ -713,10 +718,10 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
            equals the SIMD-off class at every offset (LAYER-INVARIANT) */
         mf_class off, on, w16, w32;
         snprintf(name, sizeof name, "C site %u C-PROOF", i);
-        if (ask_under(&s, &h, MF_P_PORTABLE_ONLY, NULL, &off) ||
-            ask_under(&s, &h, 0, NULL, &on) ||
-            ask_under(&s, &h, 0, "no-vrun-w32", &w16) ||
-            ask_under(&s, &h, 0, "no-vrun-w16", &w32))
+        if (ask_under(&s, &h, NULL, NULL, &off) ||
+            ask_under(&s, &h, "x86-64-v3", NULL, &on) ||
+            ask_under(&s, &h, "x86-64-v3", "no-vrun-w32", &w16) ||
+            ask_under(&s, &h, "x86-64-v3", "no-vrun-w16", &w32))
             verdict(name, "a layer refuses the site");
         else if (memcmp(off.proven, r.cls.proven, sizeof off.proven))
             verdict(name, "mf_ask's class is not the define's");

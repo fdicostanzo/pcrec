@@ -636,14 +636,14 @@ static int ctl_render(int kind, int form, int handoff, const char *opts, int k, 
     s.body = MF_BODY_ONESHOT;
     s.site_kind = (uint8_t)kind;
     s.span_hi = MF_SPAN_UNBOUNDED;
-    s.policy = MF_P_PORTABLE_ONLY;
+    s.policy = 0;
     s.opts = opts;
     s.ret_pred = MF_NO_PRED;
     s.pred.fn_ref = 1;
     s.nalt = 1;
     s.alts = &al;
     s.wfloor = MF_WFLOOR_SUBJECT;
-    mf_art *art = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0, NULL, dense ? &an : NULL);
+    mf_art *art = mf_art_begin(&g_arena, "g2c", 0, 0, NULL, dense ? &an : NULL);
     hctx hc = { 9999, { { 0 } }, 0 };
     mf_hooks h;
     memset(&h, 0, sizeof h);
@@ -654,7 +654,7 @@ static int ctl_render(int kind, int form, int handoff, const char *opts, int k, 
     mf_result res;
     mf_class c;
     int rc = mf_emit(art, &s, &h, &sb, &sf, &res);
-    mf_art *aq = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0, NULL, dense ? &an : NULL);
+    mf_art *aq = mf_art_begin(&g_arena, "g2c", 0, 0, NULL, dense ? &an : NULL);
     int qc = mf_ask(aq, &s, &h, &c);
     if (b2.p) bputs(text, b2.p);
     free(b2.p);
@@ -737,7 +737,7 @@ int main(int argc, char **argv)
         s.abi = MF_SITE_ABI;
         s.form = MF_FORM_STMT; s.op = MF_OP_FIND; s.handoff = MF_H_ASSIGN;
         s.empty = MF_EMPTY_MISS; s.body = MF_BODY_ONESHOT;
-        mf_art *art = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        mf_art *art = mf_art_begin(&g_arena, "g2w", 0, 0, NULL, NULL);
         mf_wreply r;
         if (mf_wdecide(art, &s, &r)) fail(-1, "control", "mf_wdecide refused on a plain art");
         else refused_ok++;
@@ -792,7 +792,7 @@ int main(int argc, char **argv)
             to_kit(&gf, &t, talts, tspans);
             t.abi = MF_SITE_ABI;
             t.op = MF_OP_FIND;
-            mf_art *ar = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+            mf_art *ar = mf_art_begin(&g_arena, "g2w", 0, 0, NULL, NULL);
             mf_wreply tr;
             if (!mf_wdecide(ar, &t, &tr))
                 fail(id, "two runs", "an alternative stating two spans of R's shape was decided");
@@ -844,12 +844,12 @@ int main(int argc, char **argv)
            candidate, so one would be refused (their population is Table D's scope) */
         if (h2_below && s.site_kind == MF_SK_REPORT) s.site_kind = MF_SK_DFA_SCAN;
         s.span_hi = MF_SPAN_UNBOUNDED;
-        s.policy = MF_P_PORTABLE_ONLY;
+        s.policy = 0;
         s.pred.fn_ref = 1;
 
         char pfx[24];
         snprintf(pfx, sizeof pfx, "g2w%d", id);
-        mf_art *art = mf_art_begin(&g_arena, pfx, MF_P_PORTABLE_ONLY, 0, NULL,
+        mf_art *art = mf_art_begin(&g_arena, pfx, 0, 0, NULL,
                                    x.rate_kind ? &an : NULL);
         mf_wreply r;
         if (mf_wdecide(art, &s, &r)) { fail(id, "mf_wdecide refused", NULL); continue; }
@@ -928,7 +928,7 @@ int main(int argc, char **argv)
             th.s = "s"; th.n = "n"; th.lo = "lo"; th.result = "r"; th.miss = "((size_t)-1)";
             buf b1 = { 0 }, b2 = { 0 };
             mf_sink s1 = mk_sink(&b1), s2 = mk_sink(&b2);
-            mf_art *ar = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+            mf_art *ar = mf_art_begin(&g_arena, "g2w", 0, 0, NULL, NULL);
             mf_result rr;
             if (!mf_emit(ar, &t, &th, &s1, &s2, &rr) || !strstr(mf_art_error(ar), "NOP"))
                 fail(id, "NOP refusal", "two alternatives disagreeing on the empty range rendered");
@@ -949,7 +949,7 @@ int main(int argc, char **argv)
             th.fn_name = h_fn_name; th.table_name = h_table_name; th.u = &th_c;
             buf b1 = { 0 }, b2 = { 0 };
             mf_sink s1 = mk_sink(&b1), s2 = mk_sink(&b2);
-            mf_art *ar = mf_art_begin(&g_arena, "g2w", MF_P_PORTABLE_ONLY, 0, NULL,
+            mf_art *ar = mf_art_begin(&g_arena, "g2w", 0, 0, NULL,
                                       x.rate_kind ? &an : NULL);
             mf_result rr;
             if (!mf_emit(ar, &s, &th, &s1, &s2, &rr))
@@ -1037,9 +1037,9 @@ int main(int argc, char **argv)
         memset(&def, 0, sizeof def);
         if (mf_defined(art, res.handle, &def)) fail(id, "mf_defined", mf_art_error(art));
         {
-            mf_art *aq = mf_art_begin(&g_arena, pfx, MF_P_PORTABLE_ONLY, 0, NULL,
+            mf_art *aq = mf_art_begin(&g_arena, pfx, 0, 0, NULL,
                                       x.rate_kind ? &an : NULL);
-            mf_art *ad = mf_art_begin(&g_arena, pfx, MF_P_PORTABLE_ONLY, 0, NULL,
+            mf_art *ad = mf_art_begin(&g_arena, pfx, 0, 0, NULL,
                                       x.rate_kind ? &an : NULL);
             buf b3 = { 0 };
             mf_sink s3 = mk_sink(&b3);

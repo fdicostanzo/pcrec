@@ -224,7 +224,8 @@ typedef struct {
     uint8_t  table_ref_on;        /* multi-member SET terms carry table_ref   */
     uint8_t  fn_ref_on;
     uint8_t  plan;                /* plan_hint set                            */
-    uint8_t  policy_simd;         /* MF_P_PORTABLE_ONLY cleared               */
+    uint8_t  policy_simd;         /* a SIMD-on variant: no bit since U2 (the
+                                     art's target admits SIMD, never the word) */
     uint8_t  inloop, sizelean, deny_overlap;
     uint32_t ppm_seed;
     uint8_t  cell_site;           /* generated as a term cell's focus         */
@@ -950,7 +951,7 @@ static void fill_site(gsite *g, mf_site *s, mf_pred *pa)
     uint32_t a = g->ppm_seed % (MF_PPM_FULL + 1), b = (g->ppm_seed >> 7) % (MF_PPM_FULL + 1);
     s->cand_ppm_lo = a < b ? a : b;
     s->cand_ppm_hi = a < b ? b : a;
-    s->policy = (g->policy_simd ? 0 : MF_P_PORTABLE_ONLY) | (g->inloop ? MF_P_INLOOP : 0)
+    s->policy = (g->inloop ? MF_P_INLOOP : 0)
               | (g->sizelean ? MF_P_SIZE_LEANING : 0);
     s->denies = g->deny_overlap ? MF_D_RUN_OVERLAP : 0;
     s->on_miss_leaves = g->d.leaves;
@@ -2172,7 +2173,7 @@ static void cap_opt(gsite *g)
  * enforcement (today a form may still render it). */
 static void refuse_case_x(const char *name, mf_site *s, mf_hooks *h, const char *field, int pend)
 {
-    mf_art *art = mf_art_begin(&g_arena, "g2r", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+    mf_art *art = mf_art_begin(&g_arena, "g2r", 0, 0, NULL, NULL);
     buf body = { 0 }, file = { 0 };
     sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -2269,12 +2270,12 @@ static void refusal_table(void)
     s0.ret_pred = MF_NO_PRED;
     s0.span_hi = MF_SPAN_UNBOUNDED;
     s0.cand_ppm_hi = MF_PPM_FULL;
-    s0.policy = MF_P_PORTABLE_ONLY;
+    s0.policy = 0;
 
     /* control: the baseline itself must render (else every case below
      * "passes" for the wrong reason) */
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        mf_art *art = mf_art_begin(&g_arena, "g2c", 0, 0, NULL, NULL);
         buf body = { 0 }, file = { 0 };
         sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -2456,7 +2457,7 @@ static void refusal_table(void)
     /* the art's error is STICKY (memfn.h): after a refusal, a valid site on
      * the same art fails with the first error's text */
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2s", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        mf_art *art = mf_art_begin(&g_arena, "g2s", 0, 0, NULL, NULL);
         buf body = { 0 }, file = { 0 };
         sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -2475,11 +2476,11 @@ static void refusal_table(void)
     /* mf_art_note_libc: a non-identifier name is refused loudly; a noted name
      * reaches MEMFN_LIBC, once (idempotent), sorted */
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2n", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        mf_art *art = mf_art_begin(&g_arena, "g2n", 0, 0, NULL, NULL);
         int rc = mf_art_note_libc(art, "mem chr");
         api_result(rc && mf_art_error(art) && *mf_art_error(art),
                    "note_libc(\"mem chr\") refused: rc=%d \"%s\"", rc, mf_art_error(art) ? mf_art_error(art) : "");
-        mf_art *a2 = mf_art_begin(&g_arena, "g2n", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        mf_art *a2 = mf_art_begin(&g_arena, "g2n", 0, 0, NULL, NULL);
         int r1 = mf_art_note_libc(a2, "strlen"), r2 = mf_art_note_libc(a2, "memchr"), r3 = mf_art_note_libc(a2, "strlen");
         buf st = { 0 };
         sinku us = { &st, 0, 0, 0 };
@@ -2507,7 +2508,7 @@ static void refusal_table(void)
         s.pred.fn_ref = 1;
         h.floor = NULL;
         h.miss = "n";
-        mf_art *art = mf_art_begin(&g_arena, "g2f", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        mf_art *art = mf_art_begin(&g_arena, "g2f", 0, 0, NULL, NULL);
         buf body = { 0 }, file = { 0 }, st = { 0 };
         sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 }, us = { &st, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf), ss = mk_sink(&us);
@@ -2526,7 +2527,7 @@ static void refusal_table(void)
 
     /* the define/use lifecycle (§14.0 item 1) */
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2l", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        mf_art *art = mf_art_begin(&g_arena, "g2l", 0, 0, NULL, NULL);
         buf file = { 0 };
         sinku uf = { &file, 0, 0, 0 };
         mf_sink sf = mk_sink(&uf);
@@ -2543,7 +2544,7 @@ static void refusal_table(void)
         free(file.p);
     }
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2l", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        mf_art *art = mf_art_begin(&g_arena, "g2l", 0, 0, NULL, NULL);
         buf body = { 0 };
         sinku ub = { &body, 0, 0, 0 };
         mf_sink sb = mk_sink(&ub);
@@ -2559,7 +2560,7 @@ static void refusal_table(void)
         free(body.p);
     }
     {
-        mf_art *art = mf_art_begin(&g_arena, "g2l", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+        mf_art *art = mf_art_begin(&g_arena, "g2l", 0, 0, NULL, NULL);
         int rc = mf_art_end(art, NULL);
         if (!rc) { n_api_pass++; fprintf(g_res, "PASS api empty-artifact ends clean\n"); }
         else { n_api_fail++; fprintf(g_res, "FAIL api empty-artifact: art_end rc=%d %s\n", rc, mf_art_error(art)); }
@@ -2584,7 +2585,7 @@ static void refusal_table(void)
         };
         for (size_t i = 0; i < sizeof nc / sizeof nc[0]; i++) {
             mf_measures ms = { "g2-set", 1, "0000000000000000", "idk", "synthetic", 0, 1, &nc[i].row };
-            mf_art *art = mf_art_begin(&g_arena, "g2m", MF_P_PORTABLE_ONLY, 0, &ms, NULL);
+            mf_art *art = mf_art_begin(&g_arena, "g2m", 0, 0, &ms, NULL);
             const char *e = mf_art_error(art);
             int refused = e && *e;
             api_result(refused != nc[i].ok, "measure noise %s: %s (\"%s\")", nc[i].name,
@@ -2728,7 +2729,14 @@ static void open_batch(void)
     snprintf(px, 16, "g2b%d", g_bi);
     g_batch_denies = g_force_denies >= 0 ? (uint64_t)g_force_denies
                    : g_bi % 3 == 2 ? MF_D_RUN_OVERLAP : 0;
-    g_art = mf_art_begin(&g_arena, px, g_bi & 1 ? 0 : MF_P_PORTABLE_ONLY, g_batch_denies, NULL, NULL);
+    g_art = mf_art_begin(&g_arena, px, 0, g_batch_denies, NULL, NULL);
+    /* an odd batch is SIMD-on: its art states the host's default target
+       (unit U2; the portable one on a host with no family row) */
+    const char *ht = mf_host_defaults();
+    if (g_art && g_bi & 1 && mf_art_target(g_art, mf_target_parse(ht, strlen(ht), NULL, 0))) {
+        fprintf(stderr, "g2: %s\n", mf_art_error(g_art));
+        exit(2);
+    }
 }
 
 /* render g into the current batch; a full batch is flushed and the next one
@@ -2855,7 +2863,7 @@ static void (*g_fam_out)(gsite *) = fam_emit;
 
 /* the common frame of a family site: pcrec's facts as §15 lists them. No
  * floor (§15.1-§15.6 name none: the hook is NULL, "0", and the driver passes
- * fl 0), forward, end_back 0, SIMD off (pcrec's one bit, MF_P_PORTABLE_ONLY,
+ * fl 0), forward, end_back 0, SIMD off (no target stated, unit U2;
  * §R4.3.1), explicit plan/fn_ref per predicate */
 static void fam_site(gsite *g, int op, int h, int form, int fam)
 {
@@ -3698,7 +3706,7 @@ static void gen_fam_mismatch(void)
 static long mm_ref_cases, mm_ref_named, mm_ref_soft_yes, mm_ref_soft_no;
 static void mm_refuse(const char *name, const mf_site *s, const mf_hooks *h, const char *req, const char *soft)
 {
-    mf_art *art = mf_art_begin(&g_arena, "g2q", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+    mf_art *art = mf_art_begin(&g_arena, "g2q", 0, 0, NULL, NULL);
     buf body = { 0 }, file = { 0 };
     sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -3731,7 +3739,7 @@ static void mm_refuse(const char *name, const mf_site *s, const mf_hooks *h, con
 
 static int mm_renders(const mf_site *s, const mf_hooks *h, const char *what)
 {
-    mf_art *art = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+    mf_art *art = mf_art_begin(&g_arena, "g2c", 0, 0, NULL, NULL);
     buf body = { 0 }, file = { 0 };
     sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
@@ -3764,7 +3772,7 @@ static void mm_refusals(void)
     s0.ret_pred = MF_NO_PRED;
     s0.span_hi = MF_SPAN_UNBOUNDED;
     s0.cand_ppm_hi = MF_PPM_FULL;
-    s0.policy = MF_P_PORTABLE_ONLY;
+    s0.policy = 0;
     s0.on_miss_leaves = 1;
     memset(&h0, 0, sizeof h0);
     h0.s = "s"; h0.n = "n"; h0.lo = "lo"; h0.result = "res";
@@ -3844,7 +3852,7 @@ static void mm_refusals(void)
         f0.ret_pred = MF_NO_PRED;
         f0.span_hi = MF_SPAN_UNBOUNDED;
         f0.cand_ppm_hi = MF_PPM_FULL;
-        f0.policy = MF_P_PORTABLE_ONLY;
+        f0.policy = 0;
         memset(&fh, 0, sizeof fh);
         fh.s = "s"; fh.n = "n"; fh.lo = "lo"; fh.miss = "n"; fh.result = "res"; fh.on_miss = "{ return 0; }";
         fh.indent = "    ";
@@ -4203,7 +4211,7 @@ static void st_ref_base(st_big *B, mf_hooks *h, int W, int member)
     s->handoff = MF_H_ADVANCE;
     s->empty = MF_EMPTY_NOP;
     s->span_hi = MF_SPAN_UNBOUNDED;
-    s->policy = MF_P_PORTABLE_ONLY;
+    s->policy = 0;
     s->pred.nterm = (uint8_t)W;
     s->pred.plan_hint = MF_NO_PRED;
     for (int i = 0; i < W && i < MF_MAX_TERM; i++) {
@@ -4239,7 +4247,7 @@ static int st_names_any(const char *err, const char *req)
 }
 static int st_try(const mf_site *s, const mf_hooks *h, char *err, size_t errn, char *form, size_t formn)
 {
-    mf_art *art = mf_art_begin(&g_arena, "g2s", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+    mf_art *art = mf_art_begin(&g_arena, "g2s", 0, 0, NULL, NULL);
     buf body = { 0 }, file = { 0 };
     sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
     mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
