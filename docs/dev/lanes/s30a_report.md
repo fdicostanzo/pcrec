@@ -201,3 +201,5 @@ placeholders for the kit manager.
 
 OWED: none. The lane queued no box job. Gate jobs 500-509 are written and dry-run clean, for the kit
 manager to queue. Tip: lane/memfn-s30a at the commit carrying this section.
+
+Deviation 6 SUPERSEDED by lane s30afix (docs/dev/lanes/s30afix_report.md): §S now reads the working-tree ledger file.

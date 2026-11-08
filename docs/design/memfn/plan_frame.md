@@ -480,12 +480,12 @@ The unbuilt picks (`FF_V1`, `FF_W64`, `FF_A3`, `FF_NONE`) have no row. They are 
 **The support pin** `[rev2.2 R7]`. `tests/memfn/stream_support.tsv`, read by a new section S of
 `tests/memfn/rows_check.py` (beside §R). Columns: `search` (an `mf_wsearch` name, or `floor`), `RESTART`, `MASK`,
 `SHIFT` (each `yes`/`no`), `source` (`RULING` or `DERIVED`) and `basis` (for RULING: the ruling's sentence quoted
-VERBATIM, with its ledger and sha, `responses.md` on lane/memfn-k1107 067aca4df; for DERIVED: the basis sentence
+VERBATIM, with its ledger file and the commit as provenance, `memfn/docs/responses.md` 067aca4df; for DERIVED: the basis sentence
 of the table above). The kit's table is C data, so a new `arm_fixtures --streams` mode prints it (one line per
 row, the same columns less `source`/`basis`); §S compares each pin CELL to the printed table, and for RULING rows
 the cell is the one the quoted sentence states, so the expectation is the ruling's text, never the table read
 twice. §S is red on a missing or extra row, a cell that differs, or a RULING row whose quote is absent from the
-cited ledger at that sha. The DERIVED rows' basis witnesses are LANDING-TIME witnesses of 3.0a, recorded in its
+working-tree ledger file the row names (a missing file is red too; the commit is never looked up). The DERIVED rows' basis witnesses are LANDING-TIME witnesses of 3.0a, recorded in its
 report (base is gone after landing): over emit_sweep's BASE artifacts, joined to each site's FDROUTE `ren=` in a
 trace build, every B-walk, B-pair, B-memchr and floor site resumes `C++` and declares no mask variable, and
 `_sh[256]` appears iff `ren=B-hors`. The standing per-site join is 3.0b's G2 text classes (they read `search`, a

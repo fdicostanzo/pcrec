@@ -111,8 +111,9 @@ subject):
 
   THE SUPPORT PIN (S; plan_frame.md 3.0a §2.5.2): tests/memfn/stream_support.tsv
      against `arm_fixtures --streams` (window.c's support table): every row and
-     cell equal, and a RULING row's quoted sentence present in its cited ledger
-     at the cited sha (`git show`), so its expectation is the owner's text.
+     cell equal, and a RULING row's quoted sentence present in the WORKING-TREE
+     ledger file the row names (read as a file; the commit in the row is a
+     record, never looked up), so its expectation is the owner's text.
 
 WHAT IT DOES NOT SEE: whether the floors hold (the full census does, in a
 slot: n2_report.py --floors); G2's per-row reach (G2 prints form ids, not
@@ -813,7 +814,8 @@ def main():
 
     # ---- S. the support pin (plan_frame.md 3.0a §2.5.2: tests/memfn/stream_support.tsv) ----
     # Each pin row's cells against the kit's table as arm_fixtures prints it;
-    # a RULING row's quoted sentence must be in its cited ledger at its sha.
+    # a RULING row's quoted sentence must be in the working-tree ledger file it
+    # names (no git object is dereferenced; the sha is provenance only).
     pin = read_tsv(os.path.join(root, os.environ.get("STREAM_SUPPORT_TSV", "tests/memfn/stream_support.tsv")), 6)
     r = run([fx, "--streams"])
     kit = [ln.split("\t") for ln in r.stdout.decode().splitlines() if ln and not ln.startswith("#")]
@@ -838,16 +840,19 @@ def main():
         if c[4] == "RULING":
             m = re.match(r'^"([^"]+)" @ (\S+) ([0-9a-f]{7,40})$', c[5])
             if not m:
-                bad("support row %s: a RULING basis is `\"SENTENCE\" @ PATH SHA`, not %r" % (k, c[5]))
+                bad("support row %s: a RULING basis is `\"SENTENCE\" @ PATH PROVENANCE`, not %r" % (k, c[5]))
                 continue
-            key = (m.group(2), m.group(3))
+            key = m.group(2)
             if key not in ledgers:
-                g = run(["git", "-C", root, "show", "%s:%s" % (key[1], key[0])])
-                ledgers[key] = g.stdout.decode("utf-8", "replace") if not g.returncode else None
+                try:
+                    with open(os.path.join(root, key), encoding="utf-8", errors="replace") as lf:
+                        ledgers[key] = lf.read()
+                except OSError:
+                    ledgers[key] = None
             if ledgers[key] is None:
-                bad("support row %s: its ledger %s at %s is not readable (git show)" % ((k,) + key))
+                bad("support row %s: its ledger file %s is not readable" % (k, key))
             elif m.group(1) not in ledgers[key]:
-                bad("support row %s: the ruling's sentence %r is absent from %s at %s" % ((k, m.group(1)) + key))
+                bad("support row %s: the ruling's sentence %r is absent from %s" % (k, m.group(1), key))
             else:
                 ok()
         elif c[4] != "DERIVED":

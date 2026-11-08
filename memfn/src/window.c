@@ -2013,7 +2013,8 @@ _Static_assert(sizeof ren_fused / sizeof *ren_fused == RF_N, "every fused row is
 /* THE SUPPORT TABLE (§2.5.2 [rev2 F8, F21]): which streams each BUILT
  * search feeds, each row's basis naming the SOURCE of its cell. Its pin is
  * tests/memfn/stream_support.tsv (rows_check.py §S, against `arm_fixtures
- * --streams`' print of this table); the LIBC rows' pin cells are the
+ * --streams`' print of this table; the RULING quotes are read from the working-tree
+ * ledger file); the LIBC rows' pin cells are the
  * owner's ruling's text, never this table read twice. The unbuilt picks
  * (V1, W64, A3, NONE) have no row: they feed no stream, so no frame renders
  * them. */

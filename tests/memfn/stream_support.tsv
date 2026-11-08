@@ -2,13 +2,13 @@
 # [rev2 F8, F21, rev2.2 R7]; span_pick unit 3.0a, lane s30a): which candidate streams each BUILT search
 # feeds. HAND-WRITTEN, never generated from the kit's table. Reader: tests/memfn/rows_check.py section S,
 # against `arm_fixtures --streams` (window.c's wf_support): red on a missing or extra row, a cell that
-# differs, or a RULING row whose quoted sentence is absent from its cited ledger at the cited sha (read
-# with `git show SHA:PATH`). A RULING row's cells are the ones its quoted sentence states, so the
+# differs, or a RULING row whose quoted sentence is absent from the working-tree ledger file it names (or
+# whose file is missing; the sha is provenance only, never looked up). A RULING row's cells are the ones its quoted sentence states, so the
 # expectation is the owner's text, never the table read twice. DERIVED rows' basis witnesses are
 # landing-time witnesses of 3.0a over base's text (docs/dev/lanes/s30a_report.md).
 #
 # Columns: search (a T-FIND pick's name, or `floor`), RESTART, MASK, SHIFT (yes/no), source (RULING or
-# DERIVED), basis (RULING: the sentence in double quotes, then `@ PATH SHA`; DERIVED: its basis).
+# DERIVED), basis (RULING: the sentence in double quotes, then `@ PATH PROVENANCE`; DERIVED: its basis).
 #
 # search	RESTART	MASK	SHIFT	source	basis
 LIBC	yes	no	no	RULING	"libc memchr supplies only one-shot" @ memfn/docs/responses.md 067aca4df
