@@ -1319,7 +1319,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
          * at option parse, and refused with the kit's text. */
         else if (!strcmp(a, "-fmemfn-simd") || !strncmp(a, "-fmemfn-simd=", 13)) {
             char terr[256];
-            opt.flags = (opt.flags & ~(uint64_t)PCREC_NO_MEMFN_SIMD) |
+            opt.flags = pcrec_flags_without(opt.flags, PCREC_NO_MEMFN_SIMD) |
                         PCREC_FORCE_MEMFN_SIMD;
             opt.memfn_simd = a[12] == '=' ? a + 13 : NULL;
             if (pcrec_memfn_simd_check(opt.flags, opt.memfn_simd, terr,
@@ -1327,7 +1327,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
                 return cli_err("%s", terr);
         }
         else if (!strcmp(a, "-fno-memfn-simd")) {
-            opt.flags = (opt.flags & ~(uint64_t)PCREC_FORCE_MEMFN_SIMD) |
+            opt.flags = pcrec_flags_without(opt.flags, PCREC_FORCE_MEMFN_SIMD) |
                         PCREC_NO_MEMFN_SIMD;
             opt.memfn_simd = NULL;
         }

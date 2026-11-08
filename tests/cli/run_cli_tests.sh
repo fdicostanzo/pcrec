@@ -2610,7 +2610,7 @@ assert_eq "--version prints its one line" "0:pcrec $(sed -n 's/^#define PCREC_VE
 # parsed by the KIT at option parse. This script names no token: the tokens
 # come from `--list-cpu-targets` (the kit's own rows) and the refusal text
 # from a probe that asks the kit directly (simd_target_probe.c).
-xt_list="$("$PCREC" --list-cpu-targets 2>/dev/null | grep -v '^#')"
+xt_list="$(pcrec_run "$PCREC" --list-cpu-targets 2>/dev/null | grep -v '^#')"
 xt_fam="$(printf '%s\n' "$xt_list" | awk -F'\t' '$1=="family"{print $2}' | head -1)"
 xt_hostfam="$(printf '%s\n' "$xt_list" | awk -F'\t' '$1=="family" && $4=="host"{print $2}' | head -1)"
 xt_port="$(printf '%s\n' "$xt_list" | awk -F'\t' '$1=="target" && $3==""{print $2}' | head -1)"
@@ -2626,7 +2626,7 @@ assert_eq "cpu targets: the listing has a family, a host family, a portable targ
 xt_kit="$(grep -oE '^MF_(FAMILY|TARGET)\([A-Za-z0-9_]+, *"[^"]+"' "$ROOT_DIR/memfn/src/targets.def" | sed -E 's/^MF_(FAMILY|TARGET)\([A-Za-z0-9_]+, *"([^"]+)"/\2/')"
 xt_got="$(printf '%s\n' "$xt_list" | cut -f2)"
 assert_eq "--list-cpu-targets: every kit family and target, once" \
-    "$(printf '%s\n' "$xt_kit" | sort | tr '\n' ' ')" "$(printf '%s\n' "$xt_got" | sort | tr '\n' ' ')"
+    "$(printf '%s\n' "$xt_kit" | LC_ALL=C sort | tr '\n' ' ')" "$(printf '%s\n' "$xt_got" | LC_ALL=C sort | tr '\n' ' ')"
 assert_eq "--list-cpu-targets: at most one host row" "1" "$(printf '%s\n' "$xt_list" | awk -F'\t' '$4=="host"' | wc -l | tr -d ' ')"
 
 xt_pat='(?i)cat'
