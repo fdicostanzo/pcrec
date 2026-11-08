@@ -103,6 +103,7 @@ tests/memfn/run_presence.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md
 tests/memfn/run_proof.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_rank.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_rows.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_targets.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run: the kit's CPU target table, its entries (built by unit_build, which threads $SANFLAGS) and compile cells at fixed compilers and flags ([XARCH-DEV] K0)
 tests/memfn/run_simd_floor.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_simd_guarded.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_site_manifest.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run

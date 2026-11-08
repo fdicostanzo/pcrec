@@ -28,7 +28,7 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 - `ofsskip.c` — offset-skip arm: `fn_rows[]` BODY (`fn-pair`, `fn-memchr`) and PREFIX slots, `ofs_fn_define` (`ofs_fn_define_at` for a site that is not the record's: E-find's B-fn; `ofs_fn_define_lead`, R-30: the verify chain's run compare led by a slice) routed as `<fn>__body` + `<fn>` selector, `ofs_fn_serves`; trace table `fn`; `ofs_pair_text` (+ `ofs_pair_decl`), the ONE two-stream (PAIR) renderer, bounded look-aheads so a find-all stays linear: fn-pair's body and window.c's B-pair.
 - `vrun.c` — fused run-scan SIMD rows `vrun-w16`/`vrun-w32` (KB second filter, trim, padded verify; denies `no-vrun-kb`/`-trim`/`-pad`).
 - `vany.c` — STANDALONE kernel, NOT ROUTED (no row, no deny, no pcrec caller): `mf_kernel_find_any`, find any of 2-3 bytes, `<fn>__body` + per-level helpers + selector (lane simdset). Its tests: `../tests/run_g2_any.py`; its card: `../data/cards/kit-kernels.tsv`.
-- `levels.def`, `levels.c` — the kit's ISA levels table (`MF_LEVEL`), `mf_levels()`, `kit_level()`.
+- `levels.def`, `levels.c` — ISA levels (`MF_LEVEL`, `mf_levels()`, `kit_level()`); `targets*` — CPU targets, facts apart from C (K0).
 - `precheck.c` — pre-check composite: `precheck_arm` (ON_MISS), `precheck_assign_arm`, `precheck_assign_byte_arm` (deny `precheck-assign-byte`; pcrec states the shape from [REQ-HANDOFF-L1] only). R-30: a run part a later run part implies (its run a slice at the same scan byte, not `ret_pred`: the run WINDOW beside the WHOLE run) is neither defined nor asked, and the implying part's compare is LED by its bytes; the test-only lever `pres-window` keeps it.
 - `runcmp.c` — run compare row table (`words`, `overlap`, `bytes`, `memcmp`), `run_cmp_render[_trim|_pad|_lead]` (`_lead`, R-30: a slice compared first, then the words outside it), `mf_flush_helpers`, `mf_run_rows`, `run_cmp_row`; THE NORMAL FORM's one spelling `run_cmp_sat` / `run_pos_sat` (span_pick 1d: gate.c's CL_UNSAT class, `kit_presence_check` and generic.c's RUN chain ask it).
 - `pffind.c` — prefilter find rows (`pf_memchr`, `pf_memchr_bounded`, `pf_walk`, `pf_walk_bounded`, `pf_memchr_back`).
@@ -45,6 +45,6 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 
 ## Pointers
 
-`../CLAUDE.md`; `docs/design/memfn/integration.md` (§R4.7, §R4.9, §14-15), `row_contracts.md`, `r17b_prime.md`, `setfind.md`, `window_contract.md`; `../docs/trace_format.md`; `../PROVENANCE.md`; D145, D147, D149, D155, D157.
+`docs/design/memfn/integration.md` (§R4.7, §R4.9, §14-15), `row_contracts.md`, `r17b_prime.md`, `setfind.md`, `window_contract.md`; `../docs/trace_format.md`; D145, D147, D149, D155, D157.
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/memfn__src.md

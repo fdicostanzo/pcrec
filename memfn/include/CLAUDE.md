@@ -47,4 +47,6 @@ No ISA names appear in it: pcrec must learn no architecture fact from the
 header (C4). An `MF_SITE_ABI` change is a layout or meaning change of a
 struct here; an `MF_VOCAB` change adds an op, handoff or term kind.
 
+Unit K0 (lane k0, R-36) appended, with NO `MF_SITE_ABI`/`MF_VOCAB`/`MF_CLASS_V` move (a new section): THE CPU TARGET TABLE's view: FACTS `mf_target`/`mf_family` (tokens only; the header names no target, family or feature) with `mf_targets`/`mf_families`, `mf_target_parse`/`mf_family_parse` (case-blind, exact: `_` is not `-`; the kit's refusal text), `mf_portable_target`, `mf_host_family`, `mf_host_defaults`, a `doc` line per row; apart from them the C SPELLINGS `mf_target_c`/`mf_family_c` via `mf_target_c_of`/`mf_family_c_of` (C or Rust emitters). CPU predicate: U4.
+
 Lane simdset (2026-10-29) appended, with NO `MF_SITE_ABI`/`MF_VOCAB` move (no struct, field or op changed): the STANDALONE KERNELS section, `mf_kernel_find_any` (F2 as a kernel, find any of 2-3 bytes, rendered outside any site; not routed, no pcrec caller).
