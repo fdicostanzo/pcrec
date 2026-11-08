@@ -80,6 +80,7 @@ sys.path.insert(0, os.path.join(TREE, 'scripts'))
 sys.path.insert(0, HERE)
 import emit_sweep as es  # noqa: E402
 import routing_shape  # noqa: E402
+from target_text import admitted, cut, read_table  # noqa: E402
 
 # Floors per target, pinned AT the measure (deterministic counts of emitted
 # text). History of the pre-seam single count: 44 at w16 (R-13); 33 at D172
@@ -140,31 +141,6 @@ def diff_lines(a, b):
     return dele, ins
 
 
-def read_table(levels_bin):
-    """(levels, targets) from the dumper (tests/memfn/simd_levels.c)."""
-    levels, targets = [], []
-    out = subprocess.run([levels_bin], capture_output=True, text=True, check=True).stdout
-    for row in out.splitlines():
-        f = row.split('\t')
-        if f[0] == 'level':
-            levels.append({'token': f[1], 'family': f[2], 'needs': f[3], 'header': f[4],
-                           'vw': f[5], 'march': f[6], 'stamp': f[7]})
-        elif f[0] == 'target':
-            text = [bytes.fromhex(x).decode('utf-8') for x in f[4:7]]
-            targets.append({'name': f[1], 'family': f[2], 'features': f[3],
-                            'open': text[0], 'close': text[1], 'guard': text[2]})
-    return levels, targets
-
-
-def tokens(s):
-    return set(t for t in s.split(',') if t)
-
-
-def admitted(t, levels):
-    """The levels t admits, by the table's facts (target_seam_units.md §2)."""
-    return [l for l in levels if l['family'] == t['family'] and tokens(l['needs']) <= tokens(t['features'])]
-
-
 def text_legs(toff, ton, t, adm):
     """The text-only legs on one cell: (mover, {fn: vw}, [issue])."""
     issues = []
@@ -196,12 +172,9 @@ def text_legs(toff, ton, t, adm):
                 line = ton[ton.rfind('\n', 0, m.start()) + 1:m.end()]
                 issues.append('placement: a body outside the region: %r' % line[:80])
                 break
-    # EXCLUSIVITY: cut the three declared texts, then only admitted includes
-    cut = ton
-    for what in ('guard', 'open', 'close'):
-        if what in spans:
-            cut = cut.replace(t[what], '', 1)
-    dele, ins = diff_lines(toff, cut)
+    # EXCLUSIVITY: cut the three declared texts (target_text.cut), then only
+    # admitted includes
+    dele, ins = diff_lines(toff, cut(ton, t))
     ins_code = [l for l in ins if not STAMP_MOVES.match(l)]
     for l in ins_code:
         if re.match(r'^\s*#', l):

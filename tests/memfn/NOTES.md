@@ -30,4 +30,7 @@ allows one replaced call per SIMD FUNC; C9's nm leg expects the called helper
 at every `-march` cell (the region supplies the ISA). Five artifact plants
 run on every target's first mover. Floors are per target and per level
 (`FLOORS`). routing_shape.py admits the one-call selector naming a level
-helper defined above it (libc_census reads it too).
+helper defined above it (libc_census reads it too). target_text.py is the ONE
+reader of the target's own text (table, admission, the cut, `aside`): simdfloor's
+lint cuts with it, and libc_census's movers half (R4) compares ON to the default
+with that text set aside, so no check carries a second copy of the spellings.
