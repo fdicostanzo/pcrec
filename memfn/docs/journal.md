@@ -3709,3 +3709,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Sheet rev 1.1 + item 11 relayed to main. With the switch at 1, test-memfn-finder/arms go red on pcrec's arts, which U3 moves in the same merge.
   - Default flags: 0 movers. SIMD: x86-64 -> w16, v3 -> w32+w16. S726 is now UNDETECTED (declared).
   - Gates 560-569 queued; the evening hold applies to make test and mech (no start 19:00-01:00).
+- 11-08 ~18:45: main's u3fix (lane/u3tgt f8cd86c33; U2 merged, MF_TARGET_REQUIRED=1, abi 98, finder/arms green) hit a sheet conflict: the kit's bit-0 refusal reads MF_P_PORTABLE_ONLY, so the #define cannot go. RULED the general form: refuse ANY policy bit outside the kit's named set (one kit.h mask, static-asserted against the named bits). Lane u2fix (sonnet) commits it on lane/memfn-u2 before 01:00, so U2's queued gates validate it. Then message main for the re-merge.
