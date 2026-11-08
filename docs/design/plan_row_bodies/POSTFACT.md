@@ -35,10 +35,12 @@ Examples (Frank):
 - `\d+ ## $ < 256`
 - `(?:\d+## $ <=255)\.` (scope limited by the group)
 
-As stated: `$` names the text matched by the operand on the left (no capture group, so the DFA keeps its speed); the predicate refers to that ONE value only (no two-value relations, so no arithmetic between groups); the result lowers into the automaton (tier 1 above: one-variable predicates over a digit span are regular). Details TBD.
+Frank 2026-11-08 clarification: "The syntax is only an example. I was thinking to the match thus far within scope." So the predicate's value is the text matched SO FAR WITHIN THE ENCLOSING SCOPE (from the start of the enclosing group, or of the whole match at top level, up to the operator), and the spelling `##`/`$` is a placeholder. That also settles precedence: scope is the group, not an operand.
+
+As first stated: `$` names the text matched by the operand on the left (no capture group, so the DFA keeps its speed); the predicate refers to that ONE value only (no two-value relations, so no arithmetic between groups); the result lowers into the automaton (tier 1 above: one-variable predicates over a digit span are regular). Details TBD.
 
 Manager notes for the design, not ruled:
-- `#` starts a comment in extended mode `(?x)`, so `##` there reads as a comment today; the spelling must survive `(?x)` (or be refused there by name).
-- Operator precedence: what `rx` binds to without the group (the whole alternative, or the last atom).
+- Spelling is a placeholder (Frank). Whatever is chosen must survive `(?x)`, where `#` starts a comment.
+- (settled by the clarification) the value is the in-scope match so far; an alternation inside the scope means each alternative's text so far.
 - Supersedes the `int($1)<=255` spelling in this row's title, which needs a capture; the where form needs none.
 
