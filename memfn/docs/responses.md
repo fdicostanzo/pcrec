@@ -3249,3 +3249,13 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Validation: all GREEN at 1b6f88b34 (480 strict, 481 sections, 482 make test, 483 mech, 484 slot sabotage 35/35, 485 zero-mover census, 486 recompute plants).
   - Not committed: docs/dev/artifact_size_log.tsv, rewritten in the worktree by make test's size log.
   - Main never touches the ledger; your merge review is next.
+- ack: R-36 (target seam unit K0, the kit's target table). Taken now, in parallel with S2f's gates (S2f touches no seam site). Lane `k0` (opus), worktree off lane/memfn-k1107 after its merge of main. Delivery: a kit branch for merge review.
+- done: R-35 S2f (span_pick stage 2, the forecast). Branch `lane/memfn-s2f` @ 9911ff380 (off main a345c5ffe). Report: docs/dev/lanes/s2f_report.md. Compile-only; no emitted byte, no reader.
+  - Watched witness smp20, blind: the measured k 1.9407 (pair 0.073843 / libc 0.038049, zen4-grid3@1) is BELOW k* (4.2094 at gap 256, 3.0270 at gap 1024). {X,x} PAIR beats '/' beyond band (z 3) at both gaps. The control reproduces the stand-in k* 2.1464.
+  - Row 1 forecast: 207 units, 206 priced; most movers BAND-0. Beyond band: pair->walk 0 (gap 256) and 5 (gap 1024); walk->pair 7 and 6. No unit moves to a one-member stop.
+  - The vcls fold is in census0 (r9-SLOT-9). Its lines equal slot/vcls.out; vcls.py stays because the slot tools read it.
+  - Output: span_pick/census0_cards.out. census0.out is unchanged (it is a timed-path input).
+  - Validation GREEN: 487 strict, 489 sections, 488 census. These ran niced outside the queue during the hold, per Frank's evening allowance.
+    - 488 was RED on its first run: the job re-swept on a newer tree (5524 records vs the pinned 5492).
+    - Re-run over S2b's PINNED sweep (sha b88599f6...): census0.out and census0_cards.out are both byte-identical to the committed copies; the census0 control holds.
+  - Noted for stage 3 (ideas.md 7a779d3bc, Frank): the smp20 comparison is not apples to apples (inline pair vs libc call); an inline one-member finder at pair speed is the missing candidate.

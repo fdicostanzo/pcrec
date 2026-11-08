@@ -3557,3 +3557,69 @@ Main ruled on the four kit findings (D186 add. 2):
   - Not committed: docs/dev/artifact_size_log.tsv, rewritten in the s2e worktree by make test.
   - Also 11-07: main merged the skill review (10e4f7a67) and the hookrole fix (fd7137d4d). Heartbeat recreated as e517b1ae from monitoring.md's OWNER=kit prompt. Session registered as kit (scripts/session_role).
   - Next after main's merge: S2f (forecast), then stage 3 unit 3.0. S2g/SIMD stays held on XARCH-DEV.
+- 11-07 ~14:00: S2c+S2e LANDED on main (merge 692ec83b7, done line 03ddf925d; no emitted-byte change, no abi bump). Main pushes after its CI run.
+  - New kit branch lane/memfn-k1107 cut from main a345c5ffe; k1102 is retired.
+  - Pruned: worktrees s2c, s2c14fix, s2c15fix, s2rev12 (wtprune, --force for the disposable dirt: the size log and untracked deliver files). branchprune --kit removed 79 merged kit branches. s2e is kept by the quiet gate (build <120 min); prune it later.
+  - S2f lane `s2f` LAUNCHED (sonnet, worktree s2f off k1107; deliver 6cfb70912): the vcls fold into census0 (r9-SLOT-9), census0 re-run with the measured cards, the smp20 k* reading, row 1's mover forecast. Jobs 487-489 (strict, census, sections); the lane writes them and I queue them.
+- 11-07 ~14:40: S2f DELIVERED, tip 9911ff380 (lane closed).
+  - Watched witness: k = 1.9407 (pair 0.073843 / libc 0.038049, zen4-grid3@1) is BELOW k* (4.2094 at gap 256, 3.0270 at gap 1024).
+    - {X,x} beats '/' beyond band (z 3) at both gaps.
+    - Control: the stand-in k* reproduces 2.1464.
+  - Row 1 forecast: 207 units, 206 priced. Band-0 / beyond-band movers:
+    - gap 256: pair->walk 59/0, walk->pair 11/7;
+    - gap 1024: pair->walk 91/5, walk->pair 7/6;
+    - DEF arm: small;
+    - no unit moves to a one-member stop.
+    - Unpriced: PARKED incumbents (1,368 of 3,430), site kinds 0/2, D-hors, memchr-back.
+  - Output: span_pick/census0_cards.out (new `forecast` mode; the vcls fold is its §3 and equals vcls.out byte for byte).
+  RULED (kit manager):
+    (1) census0.out stays as is; the forecast is a separate file, because census0.out is a timed-path input (est NON_TIMED, plan.py).
+    (2) slot/vcls.py and vcls.out stay, because link/plan/est read them. Retiring them is a slot change, filed as a later cleanup (trigger: the next slot revision).
+  - Fixed the lane's 488 expect matcher: it read the job's own rc line, not a number; it now reads collect.py's "== r33 collect COMPLETE: N compiles".
+  - Jobs 487-489 queued.
+- 11-07: main: Frank gave the [XARCH-DEV] BUILD GO ("this should be next (at least in parallel) to unblock kit").
+  - Design: target_seam.md rev 1. The §11 PROPOSED items are adopted, EXCEPT the dispatch step (x86-64-v3 into the default list), which waits for a bench speed verdict.
+  - Kit edits are written emitter-shaped and ride [IR-FORM] (4); no kit split now.
+  - Main's lane xarch1 is writing target_seam_units.md (ordered units, owner per unit, which kit unit is first). HOLD all seam edits until that split arrives.
+  - Answered: S2f touches no seam site (docs/design/memfn/span_pick only).
+- 11-07 ~16:30: Frank's lesson, "speed compare should remove variables. Apples to apples": the smp20 witness compared an inline pair loop against libc memchr (three axes at once). Memory pcrec-speed-compare-apples-to-apples; ideas.md 7a779d3bc (the inline one-member finder).
+- 11-07: R-36 filed (target seam unit K0, the kit's target table, FIRST; Frank: targets are opaque tokens to pcrec, the kit owns the table and parses tokens at option parse).
+  - Kit branch k1107 merged main (f58b31d1f); ack de178e0dd.
+  - Lane `k0` (opus) LAUNCHED, worktree k0 off k1107, deliver 53e7730b8. Jobs 450-453; sabotage ids from S2975.
+  - Runs in parallel with S2f's gates.
+- 11-07: Frank (manifesto log, via main): "we will eventually output code as either C or Rust. Whether we actually do is immaterial."
+  - For K0: the table's FACTS (token, family, features, needs, default lists) stay apart from its C SPELLINGS (region pragma, #error guard, __builtin_cpu_supports predicate).
+  - Sent to the running lane k0 as a structural addendum (it launched minutes before).
+  - VERIFY at K0's review: a facts table readable without C text, plus a check or sabotage row that catches C text in a facts row.
+- 11-07 ~21:40: K0 DELIVERED, tip ad3e25e47 (lane closed).
+  - The first tip, 144111b36, fused facts and C text: a guard column and a region column in the facts rows. The facts/spellings addendum had been MISSED; I sent it back.
+  - Now: targets.def holds only the facts (tokens, families, needs, features); the C spellings are targets_c.def plus mf_target_c_of / mf_family_c_of.
+  - Entries: mf_target_parse, mf_family_parse, mf_targets, mf_families, mf_portable_target, mf_host_defaults. The U4 predicate is deferred.
+  - Table check vs gcc -march ADOPTED, plus the host chain vs the guards. Sabotage S2975-S2980 (S2980: C text in a facts row). No emitted byte (test-codegen green).
+  - Jobs 450-453 queued.
+  - Lesson re-confirmed: an addendum to a running lane was missed; verify it in the deliverable.
+- 11-07 ~21:50: Frank ruled ONE CPU flag (target_seam_units.md §6): -fmemfn-simd = host family default; =TOKEN[,..] = exactly those, a family token = its default list; -fno-memfn-simd = generic; last wins. Family and target tokens must therefore be distinct.
+  - K0's queued jobs 450-453 were CANCELLED before starting.
+  - Kit spelling: FAMILIES amd64, arm64 (Go/Debian). TARGETS generic, x86-64, x86-64-v3, armv8-a (aarch64's target renamed). Main flagged that x86_64 vs x86-64 is a one-character typo hazard, hence amd64/arm64. A distinctness check folds _ to - and case.
+  - Fix lane `k0fix` (sonnet) on lane/memfn-k0 (deliver dedd3591d). The family respelling was sent right after launch: VERIFY in the tip. Then requeue 450-453.
+- 11-07: Frank: "We'll need a --list for these kit arch options". pcrec's P1 adds `--list-cpu-targets` (working name).
+  - K0 already enumerates (mf_targets, mf_families). k0fix addendum 2 adds mf_host_family() and a kit-written `doc` column per facts row (plain text; the check exempts only `doc` and refuses C tokens in it).
+  - Told main: K0, no K1.
+  - VERIFY in k0fix's tip: amd64/arm64 + distinctness, mf_host_family, doc.
+- 11-07 ~22:10: k0fix tip 6bcb248da NOT accepted. Both addenda were missed: families are still x86_64/aarch64, and there is no mf_host_family or doc column. It also edited main's target_seam_units.md.
+  - Sent back as one review message: amd64/arm64 + the fold-aware distinctness check, mf_host_family, the doc column, and revert units.md.
+  - Lesson (memory updated): mid-flight addenda went 0 for 3 today; send changes with the review instead.
+- 11-07 ~22:30: K0 accepted at tip ae1ba4b1e (k0fix closed).
+  - Families amd64/arm64; targets generic/x86-64/x86-64-v3/armv8-a. Fold-aware distinctness check, S2981 (x86_64 as a family).
+  - New: mf_host_family; a doc column on every facts row (refuses C characters; S2980 still red).
+  - main's units.md hunk reverted (ae1ba4b1e). The token statement for main is in k0fix_report.md "For main".
+  - Jobs 450-453 queued.
+- 11-07 19:50: Frank (via main): light or niced jobs may run during tonight's hold (no make test/mech/suites before 01:00).
+  - Cancelled queue copies 450, 451, 487, 488, 489 and ran them directly under nice -n 19 in sequence. Logs: scratch/memfn/kitmgr/night1107/ (summary file).
+  - 452 make test and 453 mech stay queued for 01:00, ahead of main's 500 fullsuite (~12 h). No merges to main during the battery, so K0's landing waits.
+  - OWED: 452's --ready waits on the cancelled kit-k0-sections. On a green direct run, drop that dependency before 01:00.
+- 11-07 ~20:40: niced runs: 450 K0 strict, 451 K0 sections, 487 S2f strict and 489 S2f sections GREEN.
+  - 488 S2f census RED on its first run: the job re-swept on a newer tree (5524 vs the pinned 5492 records).
+  - Re-run over S2b's pinned sweep (sha b88599f6): census0.out and census0_cards.out byte-identical, so GREEN. Job fixed to sha-check and read the pinned sweep.
+  - 452 re-added without its dependency on the cancelled 451 (the queue runs a COPY, so a file edit alone does nothing).
+  - S2f DELIVERED: done line 094ae4e20, waiting on main's review (landing after the 500 battery).
