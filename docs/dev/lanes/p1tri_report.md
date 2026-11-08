@@ -19,4 +19,4 @@ Job 470-main-p1cpu-maketest at 894d55387 went red in five sections. No emitted b
 make, make strict clean; `make test-core test-code test-memfn-arch test-subst test-codegen` each rc=0 alone on the worktree. No emitted-byte movement (sweep job 470-main-p1cpu-sweep was green, and these edits touch no emitter).
 
 ## STATE AT HANDOFF
-Rulings file empty; none applied. OWED: full make test, box-queue key 470-main-p1tri-maketest (log /var/tmp/pcrec-pcrec/scratch/p1cpu/maketest2.log; queue holds 19:00-01:00).
+Rulings file empty; none applied. OWED: full make test, box-queue key main-p1tri-maketest (log /var/tmp/pcrec-pcrec/scratch/p1cpu/maketest2.log; queue holds 19:00-01:00).
