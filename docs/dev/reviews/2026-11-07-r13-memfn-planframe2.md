@@ -280,3 +280,9 @@ Critic texts, `verify.md`, COMMON and the verifier brief: `review/` beside this 
 - R28: the trigger is restated as "row 1 compares a SIMD-on cell, or the first MASK stream RENDERER ROW lands".
 - Readiness: after rev 2.2 applies these, 3.0a may build without another round, once the kit manager checks the by-id table. 3.0b gets its D27 author at its build, as r12 ruled.
 - Process change (one readiness critic per build unit): ACCEPTED for the critic skill.
+
+## Rulings on rev 2.2's Q14 and Q15 (kit manager, 2026-11-07, at 11b522809)
+
+- Q14: ACCEPTED as recommended. Keep the offer fact, and add sabotage row AF (3.0b becomes 19 rows).
+- Q15: FDROUTE prints `frame=`, and reach_equal.py under `-fmemfn-simd` carries the SIMD-layer agreement: both ACCEPTED. `r33_sim/probe.c` "left to break" is REJECTED. Kit census jobs build it (`r33_sim/build.sh`, called by the S2f census job and its successors), so a break reddens the census instrument after 3.0b. Lane files stay frozen after merge, so 3.0b adds a successor probe beside the census instrument under `docs/design/memfn/span_pick/`, built by its own `build.sh` with the new `mf_wdecide` signature, and points the census jobs at it. The 3.0b build lane carries this; 3.0a is unaffected.
+- 3.0a: GO. The by-id table is complete (27 rows; R20 noted). Build under R-35's stage 2-3 GO.
