@@ -173,7 +173,7 @@ typedef struct {
     [FLD_pred] = MF_ANY, [FLD_preds] = MF_ANY, [FLD_ret_pred] = MF_ANY, \
     [FLD_guard_by_caller] = MF_ANY, [FLD_on_miss_leaves] = MF_ANY, \
     [FLD_count_by_caller] = MF_ANY, [FLD_span_hi] = MF_ANY, [FLD_denies] = MF_ANY, \
-    [FLD_policy] = MF_ANY, [FLD_fn_ref] = MF_ANY, \
+    [FLD_policy] = MF_ANY, [FLD_target] = MF_ANY, [FLD_fn_ref] = MF_ANY, \
     [FLD_fold_kind] = MF_ANY, [FLD_stride] = MF_ANY, [FLD_decl_point] = MF_ANY, \
     [FLD_s] = MF_ANY, [FLD_n] = MF_ANY, [FLD_lo] = MF_ANY, [FLD_floor] = MF_ANY, \
     [FLD_miss] = MF_ANY, [FLD_member] = MF_ANY, [FLD_table_name] = MF_ANY, \
@@ -667,7 +667,7 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
         }
         q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
     }
-    gate_in in = { s, def, NULL, &q.ff, st ? st->wf : NULL };
+    gate_in in = { s, def, NULL, &q.ff, st ? st->wf : NULL, NULL };
     gate_tctx tc = { art, "fd", q.handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
     fd_decide(&q, FD_FIND, &in, &tc, &d);
@@ -758,7 +758,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
             q.members = popcount256(sp->term[0].set);
             if (pk.set_leads == 1 && (int)i == pk.set_pick) q.facts |= SF_SET_RARER;
         }
-        gate_in in = { s, NULL, NULL, &q.ff, NULL };
+        gate_in in = { s, NULL, NULL, &q.ff, NULL, NULL };
         gate_tctx tc = { art, "fd", handle, mode == FD_PRES_ASK ? MF_PH_SHADOW : MF_PH_DEFINE,
                          &in, 1, quiet, mode == FD_PRES_ASK };
         fd_decision d;

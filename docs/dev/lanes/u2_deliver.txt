@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u2_report.md
+sections: Summary; The U3 interface sheet; Commits; What moves (both layers); Checks run; Sabotage rows; Validation jobs written (not queued); Deviations from target_seam_units.md; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

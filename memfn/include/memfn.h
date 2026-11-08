@@ -456,8 +456,11 @@ typedef enum { MF_SK_UNSTATED, MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
  * it. */
 typedef enum { MF_USE_POSITION, MF_USE_DISCARD, MF_USE_ENTRY } mf_use_kind;
 
-/* policy bits (§8.5): every bit arch-neutral. pcrec's ONE bit of SIMD
- * policy is MF_P_PORTABLE_ONLY, set when -fmemfn-simd is not forced. */
+/* policy bits (§8.5): every bit arch-neutral. MF_P_PORTABLE_ONLY is
+ * RETIRED (unit U2, R-37): the kit reads no bit 0 (the art's stated target,
+ * mf_art_target, is what admits a SIMD level), and a site carrying it reads
+ * as an unnamed bit, which no SIMD row serves. The name stays until pcrec's
+ * last reader goes (unit U3). */
 #define MF_P_PORTABLE_ONLY (1u << 0)
 #define MF_P_INLOOP        (1u << 1)   /* D91 budget 2, from the site's row    */
 #define MF_P_SIZE_LEANING  (1u << 2)   /* --tune -2/-1 (Q44, ruled at R4d)      */
@@ -868,9 +871,10 @@ typedef struct {
  * positional) writes one with its value UNQUOTED (an integer).
  * `simd_open(u, level)` / `simd_close(u)` (MF_SITE_ABI 10, R4e' batch 1,
  * integration.md §R4.9.2.4; appended LAST) BRACKET every byte the kit writes
- * under a CPU-level guard: the guard's `#if` line through its `#endif` (the
- * intrinsics `#include` and the level's helper included), and the selector's
- * guarded arms. A bracket opens and closes at a line start, never nests and
+ * that depends on the art's target (unit U2: there is no CPU `#if`): each
+ * admitted level's block (the intrinsics `#include` and the level's helper),
+ * and the selector's one call line where it names a level's helper rather
+ * than `<fn>__body`. A bracket opens and closes at a line start, never nests and
  * never splits a comment. `level` is the kit's levels.def index, opaque to
  * the host. pcrec counts the bracketed bytes out of every length decision
  * (RQ-3). NULL = not offered: the kit then renders no guarded text at all
@@ -1323,6 +1327,9 @@ typedef struct mf_analysis {
 mf_art  *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
                       uint64_t denies, const mf_measures *ms,
                       const mf_analysis *an);
+/* The art's CPU TARGET is stated by mf_art_target, right after this call
+ * (the target table's section below; unit U2). The art-level `policy` is
+ * stored and read by nothing: the site's own word is the one the rows read. */
 /* End it: fails if a defined handle was never used (§14.0 item 1), and, on
  * a `decl_point` site, if its mf_locals never came or no use followed it.
  * CHOSEN: the design asserts "at artifact end" but names no end call.
@@ -1687,11 +1694,13 @@ int mf_opts_check(const char *str, char *err, size_t n);
 #define mf_levels MF_NS(levels)
 typedef struct {
     const char *token;      /* kit-private id                                 */
-    const char *family;     /* the architecture family                        */
-    const char *guard;      /* the preprocessor condition its text sits under */
-    const char *header;     /* the compiler header included inside the guard  */
+    const char *family;     /* the family token its text is for (mf_family)   */
+    const char *needs;      /* the feature tokens its text needs, sorted,
+                               comma-separated (admission: mf_art_target)     */
+    const char *header;     /* the compiler header its text includes          */
     unsigned    vw;         /* the register width in bytes                    */
-    const char *test_march; /* the -march the tests compile the level at      */
+    const char *test_march; /* the target token the tests compile it at (also
+                               gcc's -march name); the level is admitted there */
     uint32_t    forbid;     /* instruction classes its rows may not use (kit) */
     const char *stamp;      /* its MEMFN_FORMS token                          */
 } mf_level;
@@ -1735,6 +1744,7 @@ const mf_level *mf_levels(size_t *n);
 #define mf_host_defaults   MF_NS(host_defaults)
 #define mf_target_c_of     MF_NS(target_c_of)
 #define mf_family_c_of     MF_NS(family_c_of)
+#define mf_art_target      MF_NS(art_target)
 
 typedef struct {
     const char *name;      /* canonical token: the largest scope of an artifact */
@@ -1794,6 +1804,22 @@ const char *mf_host_defaults(void);
 /* The C spellings of a row returned above; NULL for any other pointer. */
 const mf_target_c *mf_target_c_of(const mf_target *t);
 const mf_family_c *mf_family_c_of(const mf_family *f);
+
+/* THE ART'S TARGET (unit U2, request R-37; target_seam_units.md §2-§3): the
+ * one target the art's text is planned for, `t` a row returned above (the
+ * one member of the compile's target set, pcrec's opaque token as parsed).
+ * Stated ONCE per art, after mf_art_begin and before its first define or
+ * emit. The kit ADMITS a SIMD level iff the level is of t's family and t's
+ * features supply every need of the level (the kit's levels table), and
+ * renders nothing else target-dependent: the text carries no CPU `#if` and
+ * no CPU test, and it is right only inside t's REGION (mf_target_c_of) under
+ * t's family guard (mf_family_c_of), which the host places. An art whose
+ * target is never stated renders no SIMD level (every SIMD row USES the
+ * target; the gate declines a row whose used field is unstated): the
+ * portable target's text. Returns 0, or -1 with the reason in mf_art_error
+ * (a pointer that is not a row, a second call naming another row, or a call
+ * after the art's first define). */
+int mf_art_target(mf_art *art, const mf_target *t);
 
 /* ---- K1: the primitives' REFERENCE functions (requirements.md §1.3) ------
  *
@@ -1857,13 +1883,14 @@ size_t mf_ref_skip_blocks(const uint8_t *s, size_t n, const uint8_t (*sets)[32],
  * self-contained family of `static inline size_t f(const unsigned char
  * *subject, size_t n, size_t pos)` functions, each returning the least i in
  * [pos, n) with subject[i] equal to one of bytes[0..k), else n, and reading
- * only [pos, n): `<fn>__body` (portable C), one helper per level whose bit
- * is set in `levels` (bit j = mf_levels()[j]; each under its level's guard
- * and header), and the selector `<fn>`, which calls the highest level its
- * compile enables, else the body. k is 2..3 (duplicates allowed);
- * `levels` 0 renders the portable body and selector alone. Returns 0, or
- * -1 with the refusal text in err[0..errn) (a bad sink, `fn`, k or level). */
+ * only [pos, n): `<fn>__body` (portable C), one helper per level target `t`
+ * admits (as mf_art_target admits; each with its header, no CPU `#if`: the
+ * text is right inside t's region), and the selector `<fn>`, ONE call to the
+ * highest admitted level, else to the body. k is 2..3 (duplicates
+ * allowed); a target admitting no level (the portable one) renders the body
+ * and selector alone. Returns 0, or -1 with the refusal text in
+ * err[0..errn) (a bad sink, `fn`, k, or `t` not a row of the table). */
 int mf_kernel_find_any(mf_sink *o, const char *fn, const uint8_t *bytes, unsigned k,
-                       uint32_t levels, char *err, size_t errn);
+                       const mf_target *t, char *err, size_t errn);
 
 #endif /* MEMFN_H */

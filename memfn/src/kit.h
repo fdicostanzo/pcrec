@@ -158,6 +158,9 @@ typedef struct {
     const mf_term  *t;
     const fd_facts *fd;
     const wf_facts *wf;     /* the window family's walks only, else NULL      */
+    const struct mf_art *art;   /* the art whose target the walk reads (U2: the
+                               offset-skip function's walks; NULL elsewhere,
+                               where `target` reads unstated)                */
 } gate_in;
 
 /* The gate's verdict: the fields declined by rule 1 (used, unstated) and by
@@ -273,7 +276,11 @@ typedef struct {
 struct mf_art {
     mf_arena   *a;
     const char *prefix;         /* pcrec's D143 placeholder                   */
-    uint32_t    policy;
+    uint32_t    policy;         /* stored, read by nothing (the site's is read) */
+    /* unit U2 (R-37): the art's stated target (mf_art_target; NULL: unstated,
+       so no SIMD level is admitted) and the levels it admits (bit LV_*) */
+    const mf_target *target;
+    unsigned    levels;
     uint64_t    denies;
     site_rec   *sites;          /* handle h is sites[h - 1]; 0 is no handle   */
     uint32_t    nsites, cap;
@@ -616,11 +623,18 @@ enum {
 };
 
 enum {
-#define MF_LEVEL(token, family, guard, header, vw, test_march, forbid, stamp) token,
+#define MF_LEVEL(token, family, needs, header, vw, test_march, forbid, stamp) token,
 #include "levels.def"
 #undef MF_LEVEL
     MF_NLEVEL
 };
+
+/* The `target` field's classes (fields.def, unit U2): NO_<level> per level,
+ * generated from levels.def right after SIZE, in its order (gate.c asserts
+ * it), so a level's class is CL_SIZE + 1 + its LV_* index. */
+#define CM_NO_LEVEL(lv)   ((kit_set)1 << (CL_SIZE + 1 + (lv)))
+#define MF_TARGET_CLASSES \
+    (CM(NONE) | CM(OTHER) | ((((kit_set)1 << MF_NLEVEL) - 1) << (CL_SIZE + 1)))
 
 struct fn_in;
 
@@ -676,6 +690,7 @@ typedef struct fn_in {
 #define vrun_w32_decl MF_NS(vrun_w32_decl)
 #define vrun_w32_ct   MF_NS(vrun_w32_ct)
 #define kit_level     MF_NS(kit_level)
+#define kit_target_levels MF_NS(kit_target_levels)
 
 /* vrun.c: the batch-1 rows `vrun-w16`/`vrun-w32` (§R4.9.7): the fused
  * run scan over a FUNC whose predicate is one RUN term and its site's only
@@ -685,6 +700,9 @@ extern const gate_contract vrun_w16_ct, vrun_w32_ct;
 
 /* Level `lv` (LV_*) of levels.def (levels.c). */
 const mf_level *kit_level(unsigned lv);
+/* The levels target `t` ADMITS (bit LV_*; levels.c): those of t's family
+ * whose needs t's features supply; 0 for NULL and for the portable target. */
+unsigned kit_target_levels(const mf_target *t);
 
 /* ---- the offset-skip function, shared by two sites (ofsskip.c) ----------
  *
@@ -1089,8 +1107,8 @@ static inline void gate_trace_cand(const gate_tctx *t, const gate_cand *c)
 /* ---- THE FORM-HASH ENTRY TABLE (formhash.c; span_cards.md §3.2) ----------
  *
  * One row per INSTANCE of a form id (the id's canonical instance, `canon` 1,
- * and for a verify form one per class): its site shape, stated facts, policy
- * word and deny string, rendered by ONE path whose text is what
+ * and for a verify form one per class): its site shape, stated facts, target
+ * token and deny string, rendered by ONE path whose text is what
  * mf_form_hash folds (every instance of the id, one text) AND what a
  * span_cards cell times. TEST entries (no
  * memfn.h change): the slot harness and tests/memfn/arm_fixtures.c read them. */
@@ -1107,7 +1125,7 @@ typedef struct {
     uint8_t     empty;      /* mf_site.empty (FIND, WINDOW)                      */
     uint8_t     leaves;     /* mf_site.on_miss_leaves (FIND)                     */
     const char *on_miss;    /* mf_hooks.on_miss, NULL none                       */
-    uint32_t    policy;     /* the policy word                                   */
+    const char *target;     /* the art's target, a kit token (mf_art_target)     */
     const char *deny;       /* mf_site.opts, NULL none                           */
 } mf_form_entry;
 /* A shape's word (the slot harness's wrapper key), the kit entry that

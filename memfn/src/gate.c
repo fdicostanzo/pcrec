@@ -429,15 +429,15 @@ static int cl_span_hi(const gate_in *in)
 }
 
 /* The policy word's single NAMED class (a refusal names one): the most
- * restrictive bit, PORTABLE over INLOOP over SIZE; NONE for no bit. Its full
- * class SET, which the gate reads, is policy_classes below. */
+ * restrictive bit, INLOOP over SIZE; NONE for no bit; OTHER for a bit no
+ * class names (the retired bit 0 among them, unit U2). Its full class SET,
+ * which the gate reads, is policy_classes below. */
 static int cl_policy(const gate_in *in)
 {
     if (!in->s) return CL_OTHER;
     uint32_t p = in->s->policy;
-    if (p & ~(MF_P_PORTABLE_ONLY | MF_P_INLOOP | MF_P_SIZE_LEANING)) return CL_OTHER;
-    return p & MF_P_PORTABLE_ONLY ? CL_PORTABLE : p & MF_P_INLOOP ? CL_INLOOP
-         : p & MF_P_SIZE_LEANING ? CL_SIZE : CL_NONE;
+    if (p & ~(MF_P_INLOOP | MF_P_SIZE_LEANING)) return CL_OTHER;
+    return p & MF_P_INLOOP ? CL_INLOOP : p & MF_P_SIZE_LEANING ? CL_SIZE : CL_NONE;
 }
 
 /* The policy word as the CLASS SET it carries: one class per set bit (a bit
@@ -445,11 +445,36 @@ static int cl_policy(const gate_in *in)
 static kit_set policy_classes(uint32_t p)
 {
     kit_set m = 0;
-    if (p & MF_P_PORTABLE_ONLY) m |= CM(PORTABLE);
     if (p & MF_P_INLOOP)        m |= CM(INLOOP);
     if (p & MF_P_SIZE_LEANING)  m |= CM(SIZE);
-    if (p & ~(MF_P_PORTABLE_ONLY | MF_P_INLOOP | MF_P_SIZE_LEANING)) m |= CM(OTHER);
+    if (p & ~(MF_P_INLOOP | MF_P_SIZE_LEANING)) m |= CM(OTHER);
     return m ? m : CM(NONE);
+}
+
+/* The art's target (unit U2): the NO_<level> classes, generated from
+ * levels.def right after SIZE (fields.def), each at CL_SIZE + 1 + its level. */
+#define MF_LEVEL(token, family, needs, header, vw, test_march, forbid, stamp) \
+    _Static_assert(CL_NO_##token == CL_SIZE + 1 + token, \
+                   "fields.def's NO_<level> classes follow SIZE in levels.def's order");
+#include "levels.def"
+#undef MF_LEVEL
+
+/* The CLASS SET the art's stated target carries: NO_<level> for every level
+ * it does not admit, NONE when it admits them all. */
+static kit_set target_classes(const struct mf_art *art)
+{
+    kit_set m = 0;
+    for (unsigned lv = 0; lv < MF_NLEVEL; lv++)
+        if (!(art->levels >> lv & 1)) m |= CM_NO_LEVEL(lv);
+    return m ? m : CM(NONE);
+}
+
+/* Its single NAMED class: the lowest level not admitted, else NONE; -1
+ * (unstated) where the walk names no art or the art states no target. */
+static int cl_target(const gate_in *in)
+{
+    if (!in->art || !in->art->target) return -1;
+    return kit_set_low(target_classes(in->art));
 }
 
 static int cl_denies(const gate_in *in)
@@ -767,6 +792,7 @@ static int class_of(unsigned f, const gate_in *in)
 static kit_set class_set_of(unsigned f, const gate_in *in, int k)
 {
     if (f == FLD_policy && in->s) return policy_classes(in->s->policy);
+    if (f == FLD_target) return target_classes(in->art);
     if (f == FLD_span_start) return wspan_classes(in, 0);
     if (f == FLD_verify) return wspan_classes(in, 1);
     return (kit_set)1 << k;
