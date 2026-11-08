@@ -8,3 +8,11 @@ Since D172 S2 commit 6 (lane wsc6) the prefix facts, context spans, `absent`/`co
 
 ### The kit's CPU target table (lane k0, [XARCH-DEV] unit K0, R-36)
 - **run_targets.sh**, **targets_check.c** — `make test-memfn-targets` (in TEST_SECTIONS; seconds; mech arm `memfntargets`, rows S2975-S2981): (1) the kit's table check's verdict (`memfn/tests/check_targets.sh`); (2) the kit's target ENTRIES against the design's rows spelled as literals in targets_check.c (floor 42 PASS lines; the host default list held to `uname -m`; the C spellings reached through `mf_target_c_of`/`mf_family_c_of`); (3) the compile cells: a kit-shaped `#if`-free fixture in the kit's own region and guard texts, 6 gcc + 3 clang cells, answers vs a naive finder, the objdump census, the family guard refusing `-m32` and aarch64 clang. RAN floor 6 gcc cells on x86-64; clang cells SKIPPED and counted where clang is absent. Rev 0's U1 harness (commit 171bdb343), its table now the kit's.
+
+## run_targets.sh part 4 ([XARCH-DEV] U3, lane u3tgt 2026-11-08)
+Real `pcrec -fmemfn-simd=TARGET` artifacts of `(?i)cat` (portable, x86-64,
+x86-64-v3) at gcc / -march=native / -march=x86-64-v2 / -mno-sse2 / clang,
+answers held to a naive caseless finder; the v3 object's ymm census; a
+region-stripped v3 artifact must refuse at the default -march; the guard must
+refuse gcc -m32 and clang aarch64. v3 cells are built but not run on a CPU
+without AVX2. `simd_bounds.tsv`'s `target-text` row bounds the guard + region.

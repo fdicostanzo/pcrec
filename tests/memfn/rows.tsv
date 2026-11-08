@@ -109,6 +109,9 @@
 # path again: the cover's window search stops at a cube, decided PAIR, and
 # renders the offset-skip function `<prefix>_mf<h>_ofsskip` (fn-pair's body,
 # vrun's rungs under -fmemfn-simd); each control is the row's own deny.
+# [XARCH-DEV] U3: a SIMD row renders where the art's CPU target admits its
+# level, so each vrun witness names its target (the family explicit, so the
+# pins read the same on every host: target_seam.md §8).
 # table	row	reach	wkind	wflags	witness	signature	cflags	control
 arms	ofsskip	pcrec	pattern	-	abc[0-9]+xyz	rx_ofsskip(const unsigned char *subject, size_t n,	-fno-offset-skip	=
 arms	precheck	pcrec	pattern	-	abc[0-9]+xyz	if (rx_reqrun(	-fno-req-byte	=
@@ -128,8 +131,8 @@ runcmp	bytes	pcrec	pattern	-fno-run-overlap	(?i)(cat)s?dog	& 223) ==	-	=
 runcmp	memcmp	pcrec	pattern	-	(ab)c?userpass	!memcmp(	-	abc[0-9]+xyz
 fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0, wa	-fno-req-run-fold --memfn=no-window-search	=
 fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=
-fn	vrun-w16	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16	=
-fn	vrun-w32	pcrec	pattern	-fmemfn-simd	(?i)cat	_ofsskip__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32	=
+fn	vrun-w16	pcrec	pattern	-fmemfn-simd=x86-64	(?i)cat	_ofsskip__w16(const unsigned char	-fmemfn-simd=x86-64 --memfn=no-vrun-w16	=
+fn	vrun-w32	pcrec	pattern	-fmemfn-simd=x86-64-v3	(?i)cat	_ofsskip__w32(const unsigned char	-fmemfn-simd=x86-64-v3 --memfn=no-vrun-w32	=
 fd	D-hors	pcrec	pattern	-	[0-9a-f]{8}	 row=D-hors arm=E-find	--memfn=no-window-skip	=
 fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
 fd	D1c	pcrec:trace-only	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab

@@ -1962,6 +1962,7 @@ DFA scan (DFA artifacts and VM hybrids); **dfa** = DFA artifacts only;
 | `<PREFIX>_ENGINE_WHY` | vm | prose | `engine_why` | [§6.3.3¶2](#s6-3-3-p2) |
 | `<PREFIX>_TUNE` | all | token | — | [§6.3.11¶2](#s6-3-11-p2) |
 | `<PREFIX>_COMPOUND` | all | token | — | [§6.3.12¶1](#s6-3-12-p1) |
+| `<PREFIX>_TARGETS` | all | string | — | [§6.3.10¶14](#s6-3-10-p14) |
 | `<PREFIX>_PART_LAYOUT`, `_PART_LAYOUT_WHY` | all (present only when a control asks) | string | — | [§6.3.11¶4](#s6-3-11-p4) |
 | `<PREFIX>_ALTCLS_MERGES`, `_ALTCLS_FACTORED` | all | count | — | [§6.3.11¶3](#s6-3-11-p3) |
 | `<PREFIX>_STARTPOS_GUARD` | all | token | — | [§6.3.6¶2](#s6-3-6-p2) |
@@ -2784,11 +2785,14 @@ kit rendered, and which C library functions the artifact calls.
   default, so the value is `"none"` on every artifact compiled at the default
   (D147 addendum 10, Q55). At `-fmemfn-simd` it names the SIMD rows rendered,
   one token per FUNC they reach, in site order (`vrun@w32+w16`; the rows are
-  `registry.md` §6¶8a). The levels are the RENDERED ones, top-down (one per
-  `#if`/`#elif` arm of the FUNC's selector), never the live one: the
-  consumer's `-march` decides which arm compiles, so `vrun@w32+w16` built at
-  the default x86-64 runs the w16 arm and built with `-mgeneral-regs-only`
-  the scalar one. A scalar-layer kit change does not change it;
+  `registry.md` §6¶8a). The levels are the RENDERED ones, top-down: exactly
+  the levels the compile's CPU target admits (`<PREFIX>_TARGETS`,
+  §6.3.10¶14), so `-fmemfn-simd` alone on an amd64 host (its default list,
+  the baseline target) reads `vrun@w16` and `-fmemfn-simd=x86-64-v3`
+  `vrun@w32+w16`. The text carries no CPU `#if`: the FUNC's selector calls its
+  top rendered level, which falls to the next on a short tail, and the
+  target's region (§6.3.10¶15) supplies the ISA whatever the consumer's
+  `-march`. A scalar-layer kit change does not change it;
   such a change is attributed by its `abi` event and its `--memfn=no-NAME`
   deny row, and a consumer that must tell two same-`abi` builds apart records
   the build recipe (`abi`, pcrec commit, argv).
@@ -2813,8 +2817,8 @@ kit rendered, and which C library functions the artifact calls.
   `-fmemfn-simd` compile byte-identical to the default exactly where its
   `MEMFN_FORMS` reads `"none"`.
 
-<a id="s6-3-10-p8"></a>[6.3.10¶8] **`<PREFIX>_SIMD_GUARDED_BYTES`** — how many bytes of the artifact sit under a
-CPU-level guard; written by pcrec directly after `<PREFIX>_MEMFN_LIBC`, an
+<a id="s6-3-10-p8"></a>[6.3.10¶8] **`<PREFIX>_SIMD_GUARDED_BYTES`** — how many bytes of the artifact depend on
+its CPU target; written by pcrec directly after `<PREFIX>_MEMFN_LIBC`, an
 unsigned 64-bit integer spelled as 16 hex digits.
 
 ```c
@@ -2822,15 +2826,16 @@ unsigned 64-bit integer spelled as 16 hex digits.
 ```
 
 <a id="s6-3-10-p9"></a>[6.3.10¶9] It is the number of bytes the search-code kit wrote between its `simd_open`
-and `simd_close` sink calls (the `#if <level>` blocks a SIMD-on form adds: its
-per-level helpers and the guarded arms of its selector,
-`docs/design/memfn/integration.md` §R4.9.2.4), counted in the unit every pcrec
+and `simd_close` sink calls (the blocks a SIMD-on form adds: its per-level
+helpers and its selector's call of the top level,
+`docs/design/memfn/integration.md` §R4.9.2.4), plus the kit's family guard and
+target region pcrec places for a SIMD target (§6.3.10¶14), counted in the unit every pcrec
 length decision uses: comment bytes `-fno-comments` dropped are included, and
 the symbol prefix is counted at a fixed width, so neither `-fno-comments` nor
-`-p` changes the value. It is zero on every artifact that holds no such block,
+`-p` changes the value. It is zero on every artifact for the portable target,
 which is every artifact compiled at the default `-fno-memfn-simd`; at
-`-fmemfn-simd`, every artifact whose `MEMFN_FORMS` names a SIMD row carries a
-nonzero count (`tuning.md` §2.43¶3a; the per-row bounds are `limits.md`
+`-fmemfn-simd[=LIST]` every artifact carries a nonzero count, the guard and
+region at least (`tuning.md` §2.43¶3a; the per-row bounds are `limits.md`
 §8.3¶3). It is the artifact's size beyond its SIMD-off compile.
 Those bytes are invisible to every pcrec size DECISION — the VM entry-shape
 knee and `<PREFIX>_VM_PROGRAM_BYTES`, the size term and its ladder, and the D84
@@ -2839,8 +2844,9 @@ on moves no rung, ladder step, refusal or other stamp's value. There is no
 aggregate budget (D155 addendum 2): each SIMD row bounds its own guarded bytes.
 **Checked by** `make test-memfn-guarded` (`tests/memfn/run_simd_guarded.sh`):
 every artifact of a corpus sample carries the line, its value is at most the
-sum of the declared bounds of the forms `<PREFIX>_MEMFN_FORMS` lists (0 while
-that is `"none"`), and a test-only build writing a synthetic guarded block
+sum of the declared bounds of the forms `<PREFIX>_MEMFN_FORMS` lists plus, for
+a SIMD target, the guard and region's own bound (0 for the portable target),
+and a test-only build writing a synthetic guarded block
 through the same sink calls must equal the plain build, block and stamp value
 aside.
 
@@ -2884,6 +2890,30 @@ loaded (`docs/spec/measures.md` §5¶8). A lookup that found no row still
 consults. With nothing consulted the value is `""` and the artifact's bytes
 are the same under every set. No kit row reads a set today, so every artifact
 carries `""`.
+
+<a id="s6-3-10-p14"></a>[6.3.10¶14] **`<PREFIX>_TARGETS`** — the CPU target the artifact's code is for
+([XARCH-DEV] U3; `tuning.md` §2.43, `cli.md` §1.24): `FAMILY:TARGET`, both the
+search-code kit's own tokens as `--list-cpu-targets` prints them, `FAMILY`
+`none` for the portable target. On every artifact, once, after
+`<PREFIX>_COMPOUND`; a compound's parts carry none (pattern-level, §6.3.12¶2).
+One target per artifact today; the list form is reserved for multi-target
+artifacts.
+
+```c
+#define RX_TARGETS "none:generic"     /* the default, -fno-memfn-simd */
+#define RX_TARGETS "amd64:x86-64"     /* -fmemfn-simd on an amd64 host */
+```
+
+- <a id="s6-3-10-p15"></a>[6.3.10¶15] **The target's text.** For a target with a family, the artifact
+  carries two pieces of the kit's C text, placed by pcrec: the family's GUARD,
+  at file scope ahead of every `#include`, which stops a compile for another
+  CPU family with an `#error` naming the condition; and the target's REGION,
+  opened before the artifact's first function (the kit's helpers and their
+  intrinsic `#include` lines inside it) and closed after `rx_info`, before any
+  `--emit-main` `main`. The region enables the target's features for the
+  functions inside it whatever the consumer's `-march` (§10.7¶4). The
+  portable target has neither (its texts are empty), so a default artifact
+  carries no CPU-specific text at all.
 
 <a id="s6-3-11"></a>
 #### 6.3.11 Feature set, tuning position, alternation normalization
@@ -2956,7 +2986,7 @@ stamp's absence (§6.3.1¶5).
 
 | kind | stamps | value on a compound |
 |---|---|---|
-| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, `_CALLOUTS`, `_CALLOUT_BINDINGS`, `_CODE_LANGS`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
+| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_PART_LAYOUT`, `_PART_LAYOUT_WHY`, `_COMPOUND`, `_TARGETS`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_ITER_RETRY`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, `_CALLOUTS`, `_CALLOUT_BINDINGS`, `_CODE_LANGS`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
 | parts' union | `_MEMFN_FORMS` | the sorted, distinct union of the parts' own values; `"none"` when every part's is `"none"` |
 | pattern, over P and the parts | `_FINDINGS` | the plain artifact's grammar, listing every query P's compile or any part's compile asked (§6.3.10¶11) |
 | pattern, over P and the parts | `_MEASURES` | the loaded set when P's compile or any part's compile consulted it, else `""` (§6.3.10¶13) |
@@ -3280,7 +3310,7 @@ text (`"all"` does not contain it, and naming it is refused), so a pattern
 string never becomes compiled code without the caller's say-so. An unknown
 language refuses the compile through `pcrec_error`.
 
-<a id="s8-2-p7d"></a>[8.2¶7d] **`memfn_simd`** is the CPU target list of `-fmemfn-simd=LIST` (`cli.md` §1.24): NULL (the default) for none. With `PCREC_FORCE_MEMFN_SIMD` set, NULL means the host family's default list and a LIST means exactly those targets; a list without the force bit, or beside `PCREC_NO_MEMFN_SIMD`, is refused. The tokens are the kit's, parsed by the kit before any pass runs; an unknown or empty token, a list of more than one target, or a list mixing families, refuses the compile through `pcrec_error`, the kit's text unchanged where the kit refused. It is not a flag bit and does not move `rx_info.flags` or any artifact byte. `pcrec_cpu_targets_tsv` returns the listing of `cli.md` §2.16.
+<a id="s8-2-p7d"></a>[8.2¶7d] **`memfn_simd`** is the CPU target list of `-fmemfn-simd=LIST` (`cli.md` §1.24): NULL (the default) for none. With `PCREC_FORCE_MEMFN_SIMD` set, NULL means the host family's default list and a LIST means exactly those targets; a list without the force bit, or beside `PCREC_NO_MEMFN_SIMD`, is refused. The tokens are the kit's, parsed by the kit before any pass runs; an unknown or empty token, a list of more than one target, or a list mixing families, refuses the compile through `pcrec_error`, the kit's text unchanged where the kit refused. It is not a flag bit and does not move `rx_info.flags`; the target it resolves to is the artifact's (§6.3.10¶14). `pcrec_cpu_targets_tsv` returns the listing of `cli.md` §2.16.
 
 <a id="s8-2-p8"></a>[8.2¶8] **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
 a comma-separated module-name list spelled as `pcrec --list-syntax`'s `module`
@@ -3737,6 +3767,13 @@ slice works.
   the embedder declares is the embedder's, and the embedder knows whether its
   calls are concurrent. A single-context embedded caller puts the buffer in
   `.bss`, keeps its stack small, and pays nothing.
+
+<a id="s10-7-p4"></a>[10.7¶4] **A consumer that forbids vector registers uses the default target.** A
+SIMD target's region (§6.3.10¶15) enables that target's features for the
+artifact's functions, so its baseline region compiles, and runs vector code,
+under `-mno-sse2` or `-mgeneral-regs-only`; a consumer that may not touch
+vector registers (a kernel, an interrupt handler) compiles at the default
+`-fno-memfn-simd`, whose artifact carries no CPU-specific code.
 
 <a id="s10-8"></a>
 ### 10.8 What the `_in` entries do not change

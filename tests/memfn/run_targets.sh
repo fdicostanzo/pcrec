@@ -17,6 +17,9 @@
 #      ymm registers and the baseline part's xmm ones (objdump: a region that
 #      silently failed to apply), and the family guard must REFUSE a `-m32`
 #      gcc and an aarch64 clang compile with its own message.
+#   4. PCREC'S ARTIFACTS at a target ([XARCH-DEV] U3): part 3's cells on real
+#      `pcrec -fmemfn-simd=TARGET` artifacts (answers vs a naive finder, a ymm
+#      census, a region-stripped control, the guard's refusals).
 # THE RAN FLOOR: on an x86-64 host every gcc cell must run (GCC_CELLS); a
 # clang cell is SKIPPED, counted and printed, only where clang is absent; on
 # another host the x86 cells are SKIPPED and counted.
@@ -138,6 +141,86 @@ if [ "$host" = x86_64 ]; then
     else skip "guard clang-aarch64: no clang"; fi
 else
     skip "x86-64 compile cells, census and guard: host is $host (counted: $((GCC_CELLS + 6)))"
+fi
+
+echo "== 4. pcrec's artifacts at a target (U3) =="
+# The cells of part 3 on REAL artifacts: pcrec states the target to the kit
+# and places its guard and region (match_api.md §6.3.10¶14-¶15). A vrun-shaped
+# pattern at each SIMD target and at the portable one, compiled at each cell,
+# its first match held to a naive caseless finder over every (length, position)
+# of a sweep. Controls: the v3 artifact's object carries ymm registers; with
+# the region's pragmas stripped it no longer compiles at the default -march
+# (the region, not the consumer's flags, supplies the ISA); its guard refuses
+# a -m32 gcc and an aarch64 clang compile.
+PCREC_BIN="${PCREC_BIN:-$ROOT_DIR/build/pcrec}"
+if [ "$host" = x86_64 ] && [ -x "$PCREC_BIN" ]; then
+    cat > "$WORKDIR/drv.c" <<'C'
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+#include <ctype.h>
+#include "a.h"
+static long naive(const unsigned char *s, size_t n) {
+    for (size_t i = 0; i + 3 <= n; i++)
+        if (tolower(s[i]) == 'c' && tolower(s[i + 1]) == 'a' && tolower(s[i + 2]) == 't') return (long)i;
+    return -1;
+}
+int main(void) {
+    unsigned char b[200]; long bad = 0, n_checks = 0;
+    for (size_t n = 0; n <= 150; n++) for (size_t at = 0; at <= n; at++) {
+        memset(b, 'x', n); if (at + 3 <= n) memcpy(b + at, "cAt", 3);
+        if (n > 6) b[n / 2] = 'c';   /* a near miss */
+        ptrdiff_t sp[1][2]; int rc = rx_search(b, n, 0, sp);
+        long got = rc > 0 ? (long)sp[0][0] : -1;
+        n_checks++; if (got != naive(b, n)) bad++;
+    }
+    printf("%ld %ld\n", n_checks, bad); return bad != 0;
+}
+C
+    have_clang=0; command -v clang >/dev/null 2>&1 && have_clang=1
+    host_avx2=0; gcc -march=native -dM -E -x c /dev/null 2>/dev/null | grep -q '__AVX2__' && host_avx2=1
+    acell() {   # acell TARGET NAME CC FLAGS..
+        local tg="$1" name="$2"; shift 2; local d="$WORKDIR/a_${tg}_$name"; mkdir -p "$d"
+        if [ "$tg" = portable ]; then simd=-fno-memfn-simd; else simd="-fmemfn-simd=$tg"; fi
+        if ! "$TIMEOUT_BIN" 60 "$PCREC_BIN" -p rx "$simd" -o "$d/a.c" --pattern '(?i)cat' 2> "$d/pc.err"; then
+            bad "artifact $tg: pcrec refused: $(head -c 200 "$d/pc.err")"; return; fi
+        cp "$WORKDIR/drv.c" "$d/drv.c"
+        if ! "$TIMEOUT_BIN" 120 "$@" -O2 -I"$d" -o "$d/run" "$d/a.c" "$d/drv.c" 2> "$d/cc.err"; then
+            bad "artifact $tg cell $name ($*): did not build: $(head -c 300 "$d/cc.err")"; return; fi
+        if [ "$tg" = x86-64-v3 ] && [ "$host_avx2" != 1 ]; then
+            skip "artifact $tg cell $name: built; not run (this CPU lacks AVX2)"; return; fi
+        ran=$((ran + 1))
+        if out="$("$TIMEOUT_BIN" 60 "$d/run")"; then ok "artifact $tg cell $name ($*): answers equal the naive finder ($out)"
+        else bad "artifact $tg cell $name ($*): answers differ (checks, wrong: $out)"; fi
+    }
+    for tg in portable x86-64 x86-64-v3; do
+        acell "$tg" gcc gcc
+        acell "$tg" native gcc -march=native
+        acell "$tg" v2 gcc -march=x86-64-v2
+        acell "$tg" nosse2 gcc -mno-sse2
+        if [ "$have_clang" = 1 ]; then acell "$tg" clang clang; else skip "artifact $tg cell clang: no clang"; fi
+    done
+    v3="$WORKDIR/a_x86-64-v3_gcc/a.c"
+    if [ -f "$v3" ] && command -v objdump >/dev/null 2>&1; then
+        gcc -O2 -c -I"$(dirname "$v3")" -o "$WORKDIR/v3.o" "$v3"
+        y="$(objdump -d --no-show-raw-insn "$WORKDIR/v3.o" | grep -c '%ymm')"
+        if [ "$y" -gt 0 ]; then ok "census: the x86-64-v3 artifact's object carries $y ymm uses at the default -march"
+        else bad "census: the x86-64-v3 artifact's object carries no ymm register (the region did not apply?)"; fi
+        sed -E '/#pragma (clang attribute (push|pop)|GCC (push_options|pop_options|target))/d' "$v3" > "$WORKDIR/v3_noregion.c"
+        if gcc -O2 -c -I"$(dirname "$v3")" -o "$WORKDIR/v3n.o" "$WORKDIR/v3_noregion.c" 2> "$WORKDIR/v3n.err"; then
+            bad "control: the x86-64-v3 artifact without its region still compiled at the default -march"
+        else ok "control: the x86-64-v3 artifact without its region refuses to compile at the default -march"; fi
+        if gcc -m32 -fsyntax-only -I"$(dirname "$v3")" "$v3" 2> "$WORKDIR/v3g.err"; then bad "artifact guard gcc -m32: compiled"
+        elif grep -q 'generated for another CPU family' "$WORKDIR/v3g.err"; then ok "artifact guard gcc -m32: refused with its own message"
+        else bad "artifact guard gcc -m32: failed, but not at the guard: $(head -c 200 "$WORKDIR/v3g.err")"; fi
+        if [ "$have_clang" = 1 ]; then
+            if clang --target=aarch64-linux-gnu -fsyntax-only -I"$(dirname "$v3")" "$v3" 2> "$WORKDIR/v3c.err"; then bad "artifact guard clang aarch64: compiled"
+            elif grep -q 'generated for another CPU family' "$WORKDIR/v3c.err"; then ok "artifact guard clang aarch64: refused with its own message"
+            else bad "artifact guard clang aarch64: failed, but not at the guard: $(head -c 200 "$WORKDIR/v3c.err")"; fi
+        else skip "artifact guard clang aarch64: no clang"; fi
+    else skip "artifact census and controls: no v3 artifact or no objdump"; fi
+else
+    skip "pcrec artifact cells: host is $host or no $PCREC_BIN"
 fi
 
 [ $((pass + fail)) -gt 2 ] || bad "the section checked nothing past its first two parts"

@@ -125,3 +125,11 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
 ## Deleted files
 
 - `runcmp.c` — DELETED ([MEMFN] M1b; the run compare is the kit's `memfn/src/runcmp.c`).
+
+## memfn_targets.c ([XARCH-DEV] P1, U3; lane u3tgt 2026-11-08)
+P1: the CPU target set (kit-parsed opaque tokens, `simd_rows`). U3: its one
+member is the art's target (`pcrec_memfn_target`, stated on every art through
+`mf_art_target`), the `<PREFIX>_TARGETS` value (`pcrec_memfn_targets_stamp`),
+and the placement of the kit's family guard (ahead of every `#include`) and the
+target region (open before the first function, close after `rx_info`, before
+`main`), all counted as guarded bytes; a compound part writes none of them.

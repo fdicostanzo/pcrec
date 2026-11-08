@@ -1656,6 +1656,45 @@ def distinct_patterns(patterns, every=1):
 # ---------------------------------------------------------------------------
 # THE ARMS sweep (DIFFER_PINS' header says what it checks and why).
 
+# [XARCH-DEV] U3: an arm that names a SIMD CPU target writes that target's
+# FIXED text into EVERY artifact (`<PREFIX>_TARGETS`, the kit's family guard,
+# the region's open and close, the guarded-byte count; match_api.md
+# §6.3.10¶14-¶15), so a raw byte compare would read every pattern as a mover
+# and the DIFFER floor could no longer fail. The fixed text is MEASURED per
+# side, never spelled here: the arm's and the base's compile of a control
+# pattern no kit row serves (TARGET_CONTROL) differ by exactly that text, and
+# the arm's compiles are compared with it set aside. A side whose arm writes
+# no such text (a build before U3, or a non-SIMD arm) sets nothing aside.
+TARGET_CONTROL = b"a"
+TARGET_STAMP_RE = re.compile(rb"^#define \w+_(?:TARGETS|SIMD_GUARDED_BYTES) [^\n]*\n", re.M)
+
+
+def target_fixed_text(pcrec_bin, base_args, flag, timeout):
+    """The blocks the arm adds to the control pattern's artifact: the line runs
+    inserted against the base's compile, stamp lines aside ([] if none)."""
+    import difflib
+    ok_b, base = compile_stream_c(pcrec_bin, TARGET_CONTROL, timeout, extra=list(base_args))[:2]
+    ok_a, arm = compile_stream_c(pcrec_bin, TARGET_CONTROL, timeout,
+                                 extra=list(base_args) + shlex.split(flag))[:2]
+    if not (ok_a and ok_b):
+        return []
+    bl = TARGET_STAMP_RE.sub(b"", base).splitlines(keepends=True)
+    al = TARGET_STAMP_RE.sub(b"", arm).splitlines(keepends=True)
+    sm = difflib.SequenceMatcher(None, bl, al, autojunk=False)
+    return [b"".join(al[j1:j2]) for tag, _, _, j1, j2 in sm.get_opcodes()
+            if tag in ("insert", "replace")]
+
+
+def target_aside(text, fixed):
+    """`text` with the arm's fixed target text removed (each block once) and
+    its TARGETS / SIMD_GUARDED_BYTES stamp lines dropped."""
+    if not fixed:
+        return text
+    for blk in fixed:
+        text = text.replace(blk, b"", 1)
+    return TARGET_STAMP_RE.sub(b"", text)
+
+
 class ArmResult:
     def __init__(self, base, flag, stream):
         self.base, self.flag, self.stream = base, flag, stream
@@ -1684,19 +1723,28 @@ def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs):
         for base, _, flag in arms:
             results[(base, flag, stream)] = ArmResult(base, flag, stream)
     manifests = {k: v[2] for k, v in DIFFER_PINS.items() if v[2] is not None}
+    fixed = {}   # (side, base, flag) -> the arm's measured target text (U3)
+    for base, base_args, flag in arms:
+        if "memfn-simd" in flag:
+            fixed[(0, base, flag)] = target_fixed_text(bin_a, base_args, flag, timeout)
+            fixed[(1, base, flag)] = (fixed[(0, base, flag)] if mirror else
+                                      target_fixed_text(bin_b, base_args, flag, timeout))
 
     def compile_pair(p, engine, args):
         a = compile_stream_c(bin_a, p, timeout, engine=engine, extra=args)
         b = a if mirror else compile_stream_c(bin_b, p, timeout, engine=engine, extra=args)
         return a, b
 
-    def side_cmp(arm_side, base_side):
+    def side_cmp(arm_side, base_side, aside=()):
         """(ok, base_ok, refusal, differ, stamp) of one side's arm compile
-        against the same side's base compile."""
+        against the same side's base compile, the arm's fixed target text
+        (`aside`) set aside."""
         ok, c = arm_side[0], arm_side[1]
         bok, bc = base_side[0], base_side[1]
         if ok != bok:
             return ok, bok, True, False, False
+        if ok and aside and target_aside(c, aside) == target_aside(bc, aside):
+            return ok, bok, False, False, False
         if ok and c != bc:
             return ok, bok, False, True, bool(start_keys_moved(stamps_of(bc), stamps_of(c)))
         return ok, bok, False, False, False
@@ -1717,7 +1765,8 @@ def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs):
                 hunk = first_diff_hunk(ra[1], rb[1]) if ra[0] and rb[0] and ra[1] != rb[1] else None
                 ba, bb = base_out[base]
                 out.append(((base, flag, stream), ra[0], rb[0], hunk,
-                            (side_cmp(ra, ba), side_cmp(rb, bb))))
+                            (side_cmp(ra, ba, fixed.get((0, base, flag), ())),
+                             side_cmp(rb, bb, fixed.get((1, base, flag), ())))))
         return p, out
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as ex:
