@@ -3658,3 +3658,10 @@ Main ruled on the four kit findings (D186 add. 2):
   - The rung list is removed; the grep is clean outside the removal notes.
   - It also removed fn_rows' PREFIX fact columns, which existed only to feed rung[]. Accepted: they are named in the RUNG-LIST plan row (§7).
   - Readiness re-check crit-memfn-planframe2 (opus coordinator; readiness + fix-induced lenses) LAUNCHED.
+- 11-07 ~22:30: re-check r13 (plan_frame rev 2.1): one readiness critic per unit plus fix-induced (opus), a sonnet verifier; R1-R28.
+  - 3.0a: READY WITH TEXT FIXES (R3: the ST-many gate can only decline; R4, R5, R7-R11, R15).
+  - 3.0b: needed two shape rulings. R1 RULED narrow: the frame part vs the stored record; the decision group re-derived, controlled by purity + ASK-3. R2 RULED: a stop_test member; TABLE = hook stated AND span offers it; matched by offset.
+  - R28: the trigger is restated as "the first MASK stream RENDERER ROW lands".
+  - Committed r13 + skill change 8f15e664b; older review index lines moved to the history file (12 KB limit).
+  - Lane u30d4 (opus) -> rev 2.2. Then the kit manager checks the by-id table, and 3.0a builds.
+  - Freeze notes for main: the composition ruling still has no D-entry; the RUNG-LIST plan row is unfiled.
