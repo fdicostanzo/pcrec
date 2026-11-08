@@ -3677,3 +3677,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Sabotage S2982-S2993; (Q) S2992 is committed as declared UNDETECTED, ACCEPTED: its detector needs an independent libc reading, so it is a plan item and was not invented.
   - Deviation 6 REJECTED as shipped: §S `git show`s 067aca4df, so it is red on any checkout without that object. The kit manager merged lane/memfn-k1107 into s30a (d1c743c02). Fix lane s30afix (sonnet) makes §S read the working-tree responses.md, failing closed, planted both ways.
   - Validation jobs 500-509 are written, not queued (/var/tmp/pcrec-pcrec/scratch/memfn/s30a/jobs/). They are queued after s30afix and after agreeing the order with main's 500 battery.
+- 11-07 ~23:55: main OK: 3.0a gates (500-509) queue AFTER 500-main-fullsuite2 (~13:00+ 11-08). Main's docs lane files the composition D-entry, RUNG-LIST and the two r13 plan rows; ids to follow.
