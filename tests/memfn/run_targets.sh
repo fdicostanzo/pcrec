@@ -98,6 +98,14 @@ cell() {
             "$WORKDIR/fixture.c" "$WORKDIR/main.c" 2> "$WORKDIR/cell_$name.err"; then
         bad "cell $name ($cc $*): did not compile: $(head -c 300 "$WORKDIR/cell_$name.err")"; return
     fi
+    # A -march=x86-64-v4 object may carry AVX-512 code (CI's runner lacks it:
+    # SIGILL, run 42530231132): such a cell is compiled and linked everywhere
+    # but RUN only where the host has avx512f; the skip is counted.
+    case " $* " in *" -march=x86-64-v4 "*)
+        if ! grep -qw avx512f /proc/cpuinfo 2>/dev/null; then
+            skip "cell $name ($cc $*): compiled and linked, not run (host lacks avx512f)"; return
+        fi ;;
+    esac
     local r; r="$("$TIMEOUT_BIN" 60 "$exe")"
     if [ $? -eq 0 ]; then ok "cell $name ($cc $*): $r"; ran=$((ran + 1))
     else bad "cell $name ($cc $*): wrong answers: $r"; fi
@@ -115,7 +123,8 @@ if [ "$host" = x86_64 ]; then
         cell clang-native  clang -march=native
         cell clang-v4      clang -march=x86-64-v4
     else skip "clang cells: no clang on this box (3 cells)"; fi
-    [ "$ran" -ge "$GCC_CELLS" ] || bad "RAN floor: $ran cells ran, want at least the $GCC_CELLS gcc cells"
+    want="$GCC_CELLS"; grep -qw avx512f /proc/cpuinfo 2>/dev/null || want=$((GCC_CELLS - 1))   # gcc-v4 not run without avx512f
+    [ "$ran" -ge "$want" ] || bad "RAN floor: $ran cells ran, want at least the $want gcc cells"
 
     echo "== 3b. the target code census (objdump) =="
     if command -v objdump >/dev/null 2>&1; then
