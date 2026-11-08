@@ -3618,3 +3618,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - Cancelled queue copies 450, 451, 487, 488, 489 and ran them directly under nice -n 19 in sequence. Logs: scratch/memfn/kitmgr/night1107/ (summary file).
   - 452 make test and 453 mech stay queued for 01:00, ahead of main's 500 fullsuite (~12 h). No merges to main during the battery, so K0's landing waits.
   - OWED: 452's --ready waits on the cancelled kit-k0-sections. On a green direct run, drop that dependency before 01:00.
+- 11-07 ~20:40: niced runs: 450 K0 strict, 451 K0 sections, 487 S2f strict and 489 S2f sections GREEN.
+  - 488 S2f census RED on its first run: the job re-swept on a newer tree (5524 vs the pinned 5492 records).
+  - Re-run over S2b's pinned sweep (sha b88599f6): census0.out and census0_cards.out byte-identical, so GREEN. Job fixed to sha-check and read the pinned sweep.
+  - 452 re-added without its dependency on the cancelled 451 (the queue runs a COPY, so a file edit alone does nothing).
+  - S2f DELIVERED: done line 094ae4e20, waiting on main's review (landing after the 500 battery).
