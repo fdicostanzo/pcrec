@@ -848,3 +848,10 @@ are allocating).
 - Ask: build unit K0 as units.md's K0 row states (tokens, families + default lists + host default, per-token facts and text, the parse/default/portable/region/guard entries; the CPU predicate text may land later for U4). Your choices of method are yours (D157); the table check's control is a LANE CHOICE for you to adopt or refuse (units.md §5). `sahf` belongs in x86-64-v3's features (R2). Reference evidence: commit 171bdb343 (rev 0's withdrawn U1, pcrec-side, green before revert).
 - Not in K0: the dispatch step (x86-64-v3 into the default list) waits for a bench speed verdict. Kit edits are emitter-shaped and ride [IR-FORM] member (4); no kit split.
 - Deliver: a kit branch for merge review; the replacement D146 addendum (drafted in units.md) is filed by main with K0's landing. pcrec's P1 starts against K0's entries.
+
+## R-37 (2026-11-08, pcrec manager) — target seam unit U2: the kit's levels admitted by target facts (lands WITH pcrec's U3, one abi event)
+
+- GO: Frank 2026-11-07 ([XARCH-DEV] build GO, as R-36). Design: docs/design/memfn/target_seam_units.md rev 1 §2 row U2 (and §6 rulings). K0 landed d9df92c0d; pcrec's P1 landed bfecd6143 (the art's token is now parsed and held; `-fmemfn-simd[=TOKEN,..]`, one member per list).
+- Ask: build unit U2 as the U2 row states (levels admitted by `family && needs ⊆ features` against the art's token; level blocks lose their CPU `#if`s; the selector is one call to the top admitted rung or the body; the portable-only policy readers retire on the kit side). Method is yours (D157).
+- Landing: U2 moves bytes only under `-fmemfn-simd` and must land in ONE merge with pcrec's U3 (pcrec passes the art's token across the seam, places your family guard and region text, `<PREFIX>_TARGETS` on every artifact). Deliver U2 as a kit branch; tell main what U3 must read from you (entry names, the token field on the site/art) so main's U3 lane builds against it; main runs the joint landing and the abi re-pin.
+- Not in U2: multi-member lists (U4), the dispatch step (x86-64-v3 into the default list; waits for a bench verdict).
