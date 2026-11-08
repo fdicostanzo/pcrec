@@ -1,0 +1,4 @@
+(?<=foo)bar	declined	none	decline:erased-nfa
+xyz(?<=yz)abc	declined	none	decline:erased-nfa
+bar(?=baz)	declined	none	decline:erased-nfa
+a(?=b)[bc]	derived	2:97,98	
