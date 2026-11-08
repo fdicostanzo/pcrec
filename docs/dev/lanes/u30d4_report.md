@@ -173,3 +173,10 @@ Two corrections against the review's text:
 - [x] `docs/design/memfn/CLAUDE.md`'s plan_frame line moved to rev 2.2 (the file stays under its 12 KB limit).
 - [x] The report's line is in the history index (`docs/dev/history/claude_md/docs__dev__lanes.md`).
 - [x] `scripts/lanecheck --deliver docs/dev/lanes/u30d4_deliver.txt u30d4` run from the worktree, ending on DONE.
+
+## STATE AT HANDOFF
+
+Delivered at the branch tip that holds this report (lane/memfn-u30d). The design text is complete: the note is rev 2.2,
+and the report and index line are committed. OWED: none (design-text lane; no runs). Last ruling applied: r13's
+"## Rulings (kit manager, 2026-11-07)". Open for the kit manager are §7 Q14 and Q15. Next: the kit manager checks the
+§R2.2 by-id table, and then 3.0a may build.
