@@ -195,7 +195,7 @@ mf_art *pcrec_memfn_art(Ctx *cx)
         meas_record(cx, job->mf_ms);
 #endif
         job->mf = mf_art_begin(ma, cx->opt->prefix,
-                               pcrec_memfn_policy(cx->opt->flags),
+                               pcrec_memfn_policy(cx->opt),
                                pcrec_memfn_denies(cx->opt->flags), job->mf_ms,
                                job->analysis);
         if (!job->mf) pcrec_ctx_nomem(cx);
@@ -459,7 +459,7 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
     s->pred.plan_hint = MF_NO_PRED;
-    s->policy = pcrec_memfn_policy(cx->opt->flags) |
+    s->policy = pcrec_memfn_policy(cx->opt) |
                 (pcrec_deleg_sites[id].budget == DELEG_LOOP ? MF_P_INLOOP : 0);
     s->denies = pcrec_memfn_denies(cx->opt->flags);
     s->opts = cx->opt->memfn;

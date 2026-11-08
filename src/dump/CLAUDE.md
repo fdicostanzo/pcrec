@@ -86,6 +86,7 @@ somebody else OWNS; none is on a compile path.
   `part-layout-table` (off `pcrec_part_layout_table_row`) ([ENTRY-TABLE] E1;
   registry.md §6 para 10-11).
 - limits_dump.c -- `--list-limits` ([LIM-1], D90), public `pcrec_limits_tsv`.
+- cpu_targets_dump.c -- `--list-cpu-targets` ([XARCH-DEV] P1), public `pcrec_cpu_targets_tsv`; every cell the kit's.
 - schema_dump.c -- `--list-schema`, eighth conforming table producer.
 - facts_dump.c -- `--emit-facts` ([PATFACTS] 3.0, D126; sections `facts`,
   `decisions`, plus `part-layout-controls`, `part-layout`; not a `--list-*`
