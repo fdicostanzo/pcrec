@@ -1715,6 +1715,18 @@ typedef struct {
      * say-so. The CLI's `--allow-code=LANGS` sets it. An unknown language
      * is refused through `pcrec_error`. Per call, like `features`. */
     const char        *allow_code;
+
+    /* [XARCH-DEV] P1 THE CPU TARGET LIST of `-fmemfn-simd=LIST`: NULL (the
+     * default) means none was given. With `PCREC_FORCE_MEMFN_SIMD` set, NULL
+     * is the host family's default list and a LIST is exactly those targets
+     * (a family token in it means that family's default list); a LIST
+     * without the force bit, or with `PCREC_NO_MEMFN_SIMD`, is refused. The
+     * tokens are the kit's, parsed by the kit before any pass runs; an
+     * unknown one refuses the compile with the kit's text. One target per
+     * list for now (docs/spec/tuning.md §2.43). Moves no artifact byte. The
+     * CLI sets it from `-fmemfn-simd=LIST`; the flag is renamed at
+     * [IFACE-PUSH]. */
+    const char        *memfn_simd;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos
@@ -1871,5 +1883,9 @@ void pcrec_output_free(pcrec_output *out);
  * this function reads the one table at run time, so a limit that changes
  * cannot disagree with itself. The contract is `docs/spec/limits.md`. */
 char *pcrec_limits_tsv(void);
+/* [XARCH-DEV] P1 `--list-cpu-targets`: the CPU families and targets
+ * `-fmemfn-simd=` accepts, TSV (docs/spec/cli.md §2.16), every cell the
+ * kit's own text. Free with free(). */
+char *pcrec_cpu_targets_tsv(void);
 
 #endif /* PCREC_H */

@@ -2222,6 +2222,16 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             }
         }
     }
+    /* [XARCH-DEV] P1 THE CPU TARGET SET: every token through the kit's
+     * parser, before any pass runs; the kit's refusal text, unchanged. */
+    {
+        char terr[256];
+        if (pcrec_memfn_simd_check(defo.flags, defo.memfn_simd, terr,
+                                   sizeof terr) != 0) {
+            if (err) snprintf(err->msg, sizeof(err->msg), "%s", terr);
+            return -1;
+        }
+    }
     /* [UCP] O-71: the encoding's implied modules join the MASK only. The
      * label and the rendered module list stay the REQUESTED set, which is what
      * `PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` stamp — so no artifact moves;

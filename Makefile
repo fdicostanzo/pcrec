@@ -253,7 +253,8 @@ $(BUILD_DIR)/obj/shared/%.o: shared/%.c shared/%.h
 # left it compiled against a stale memfn.h after D172 grew mf_pred, and every
 # `--harness=kit-proof` compile declined `cover` in an incremental build only
 # (lane wsc3, 2026-10-22).
-$(BUILD_DIR)/obj/dump/axes_dump.o: memfn/include/memfn.h
+$(BUILD_DIR)/obj/dump/axes_dump.o $(BUILD_DIR)/obj/dump/cpu_targets_dump.o \
+$(BUILD_DIR)/obj/gen/memfn_targets.o: memfn/include/memfn.h
 $(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/emit_vm.o \
 $(BUILD_DIR)/obj/gen/vm_stmt.o \
 $(BUILD_DIR)/obj/gen/memfn_sites.o $(BUILD_DIR)/obj/gen/known.o \

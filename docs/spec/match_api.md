@@ -3280,6 +3280,8 @@ text (`"all"` does not contain it, and naming it is refused), so a pattern
 string never becomes compiled code without the caller's say-so. An unknown
 language refuses the compile through `pcrec_error`.
 
+<a id="s8-2-p7d"></a>[8.2¶7d] **`memfn_simd`** is the CPU target list of `-fmemfn-simd=LIST` (`cli.md` §1.24): NULL (the default) for none. With `PCREC_FORCE_MEMFN_SIMD` set, NULL means the host family's default list and a LIST means exactly those targets; a list without the force bit, or beside `PCREC_NO_MEMFN_SIMD`, is refused. The tokens are the kit's, parsed by the kit before any pass runs; an unknown or empty token, a list of more than one target, or a list mixing families, refuses the compile through `pcrec_error`, the kit's text unchanged where the kit refused. It is not a flag bit and does not move `rx_info.flags` or any artifact byte. `pcrec_cpu_targets_tsv` returns the listing of `cli.md` §2.16.
+
 <a id="s8-2-p8"></a>[8.2¶8] **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
 a comma-separated module-name list spelled as `pcrec --list-syntax`'s `module`
 column, the frozen named set `"std1"` (D37), `"all"`, or `"none"`. An unknown

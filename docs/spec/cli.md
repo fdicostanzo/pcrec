@@ -32,6 +32,7 @@
   - [§1.21](#s1-21) `--callout N:ATTRS`: a numbered callout's attributes
   - [§1.22](#s1-22) `--allow-code=LANGS`, `--code-header LANG:HEADER`: embedded code
   - [§1.23](#s1-23) `--include-block FRAGMENT:LINE`: a block reached by `include`
+  - [§1.24](#s1-24) `-fmemfn-simd[=LIST]`, `-fno-memfn-simd`: SIMD, and the CPU it is for
 - [§2](#s2) Listing and query surfaces
   - [§2.1](#s2-1) `--list-syntax`
   - [§2.2](#s2-2) `--list-verbs`
@@ -49,6 +50,7 @@
   - [§2.13](#s2-13) `--count-groups --pattern PATTERN`
   - [§2.14](#s2-14) `--probe-ask WANT CONSTRUCT`
   - [§2.15](#s2-15) `--list-callouts FILE`: the reviewer's view
+  - [§2.16](#s2-16) `--list-cpu-targets`
 - [§3](#s3) Diagnostics
   - [§3.1](#s3-1) Exit codes
   - [§3.2](#s3-2) The diagnostic class tag
@@ -355,10 +357,21 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 <a id="s1-23-p1"></a>[1.23¶1] With exactly one file operand ENTRY and no `--pattern`, the pattern is the `pattern` (or `pattern-esc`) block whose line is `LINE` in `FRAGMENT`, a file ENTRY's `include` lines reach, directly or through other fragments. The block's text comes from the same read of the file that the pins are checked against; it compiles as a `--pattern` would, with every compile flag (`-o`, `-p`, `--features`, `--allow-code`, ...) applying, and the file operand is not compiled. Every `sha256` pin on ENTRY's include closure is verified first. Code in the block is reached code: its `#line` names FRAGMENT, and it is allowed only when every chain of `include` lines from ENTRY to FRAGMENT is pinned (§1.22¶1). A value that is not `FRAGMENT:LINE`, a FRAGMENT ENTRY does not reach, a LINE that is not a `pattern` line, a second operand, `--pattern` and `--pattern-esc` are each refused. It is how the test harness compiles a fragment's blocks (`rxt_format.md` §6¶3); `--subst`, `--subst-file` and `--emit-support` refuse it like any other pattern-compile option (`subst_api.md` §5¶1).
 
+<a id="s1-24"></a>
+### 1.24 `-fmemfn-simd[=LIST]`, `-fno-memfn-simd`: SIMD, and the CPU it is for
+
+<a id="s1-24-p1"></a>[1.24¶1] One flag, gcc's `-f` semantics, the LAST of the three spellings on the command line winning: `-fmemfn-simd` turns SIMD on for the host family's default CPU list; `-fmemfn-simd=TOKEN[,TOKEN...]` turns it on for exactly those CPU targets; `-fno-memfn-simd` turns it off (the portable target). Naming neither is off. There is no CPU option apart from the flag, so a CPU can be specified only with SIMD on. The flag is `tuning.md` §2.43's axis; this section is its list.
+
+<a id="s1-24-p2"></a>[1.24¶2] A `TOKEN` is a CPU target or a CPU family, and the search-code kit owns both spaces (`--list-cpu-targets`, §2.16, prints them): pcrec parses each token through the kit AT OPTION PARSE, so an unknown or empty token is refused before any compile work, with the kit's refusal text shown unchanged after `pcrec: ` (exit 1). A family token in the list means that family's default list. Matching is ASCII-case-blind; the canonical form is the kit's.
+
+<a id="s1-24-p3"></a>[1.24¶3] The list resolves to ONE target in this build. A list that resolves to more than one target is refused at parse with a plain message (naming two of them) until multi-target artifacts are built (unit U4 of `docs/design/memfn/target_seam_units.md`); a list whose targets are of different families is refused as mixing families. Repeating a target is one target. The resolved target is the kit's portable target only when SIMD is off or the list says so; nothing in the emitted artifact changes with the list yet, so every list gives the artifact the same bytes as `-fmemfn-simd` alone.
+
+<a id="s1-24-p4"></a>[1.24¶4] Carriers: the flag; a config's or target's raw `pcrec -fmemfn-simd=LIST` line (`rxt_format.md` §1.1¶2; the same option parser, so the same refusal when that line is parsed); and `pcrec_options.memfn_simd` (`match_api.md` §8.2¶7d). Composition: on the command line the later spelling wins and `-fno-memfn-simd` discards a list given before it; across sources a target's raw line is parsed after the command line's flags, so its spelling wins the same way. The flag is renamed at the interface reshuffle ([IFACE-PUSH]): `memfn` leaves the name.
+
 <a id="s2"></a>
 ## 2. Listing and query surfaces
 
-<a id="s2-p1"></a>[2¶1] Twelve flags print TSV tables about pcrec itself or about a `.rxt` file; a query takes no pattern and no `-o`, and mixing either in is refused. Seven answer from what this build of pcrec knows: `--list-syntax`, `--list-definitions`, `--list-verbs`, `--list-families`, `--list-axes`, `--list-limits` and `--list-schema`. `--list-source` reads the file named by its value, and `--list-callouts` lists its callout sites (§2.15). `--list-analyses` and `--list-analysis` list analyses, and `--list-measurements` measurement sets. The column contract common to all of them (`#` comments, a header row naming every column, append-only columns, resolution by header name) is `table_contract.md`; each table's columns and value sets are `registry.md` (syntax, verbs, families, axes, definitions) or the document named below. This section states what each listing answers. `--flavour NAME` applies to `--list-syntax`, `--list-definitions` and `--explain` only; other listings refuse it, because their rows are not claims about PCRE2 syntax.
+<a id="s2-p1"></a>[2¶1] Thirteen flags print TSV tables about pcrec itself or about a `.rxt` file; a query takes no pattern and no `-o`, and mixing either in is refused. Eight answer from what this build of pcrec knows: `--list-syntax`, `--list-definitions`, `--list-verbs`, `--list-families`, `--list-axes`, `--list-limits`, `--list-cpu-targets` and `--list-schema`. `--list-source` reads the file named by its value, and `--list-callouts` lists its callout sites (§2.15). `--list-analyses` and `--list-analysis` list analyses, and `--list-measurements` measurement sets. The column contract common to all of them (`#` comments, a header row naming every column, append-only columns, resolution by header name) is `table_contract.md`; each table's columns and value sets are `registry.md` (syntax, verbs, families, axes, definitions) or the document named below. This section states what each listing answers. `--flavour NAME` applies to `--list-syntax`, `--list-definitions` and `--explain` only; other listings refuse it, because their rows are not claims about PCRE2 syntax.
 
 <a id="s2-1"></a>
 ### 2.1 `--list-syntax`
@@ -445,6 +458,11 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s2-15-p2"></a>[2.15¶2] `trust` is what a compile with the grant would do with the site's code: `local`, `pinned` (reached through pinned lines only), or `refused: …` with the reason a compile would give. `chain` is the lines from the file to the code's file, `FILE:LINE KIND "PATH"` and the line's `sha256` pin or `unpinned`, joined by ` > `: the chain a compile refuses when one is unpinned, else the first. `flag` names a character a compile would refuse in the segment (a bidirectional control, an invisible character, a control byte), with its byte offset. `code` is the segment's decoded text with every byte outside printable ASCII written `\xNN` and a backslash doubled, so what a reader sees is byte for byte what gcc would compile.
 
 <a id="s2-15-p3"></a>[2.15¶3] It is a describe mode: it needs no `--allow-code`, prints the same rows with or without it, and writes no C. It compiles each target to find its sites, so a target pcrec refuses for any other reason is refused here too; a pin that does not match its file is refused, as in a compile. It composes with no other mode and takes no pattern and no `-o`; `-I`/`--lib-path` apply.
+
+<a id="s2-16"></a>
+### 2.16 `--list-cpu-targets`
+
+<a id="s2-16-p1"></a>[2.16¶1] Every CPU token `-fmemfn-simd=LIST` accepts (§1.24), one row each, in the kit's table order, families first: `kind` (`family` or `target`), `name` (the canonical token), `family` (a target's family; empty for a family row and for the portable target), `host` (`host` on the one family `-fmemfn-simd` alone selects, the family this build was compiled for; at most one row), `defaults` (a family's default list), `features` (a target's feature tokens) and `doc` (one plain line). Every cell is the search-code kit's own text: pcrec holds no token, so a token the kit adds is listed with no change to pcrec. No row marked `host` means the kit's table has no family for this host. It composes with no other mode, takes no pattern, no `-o` and no `--flavour`, and has no flavour axis (its rows are not claims about PCRE2 syntax). The columns are `table_contract.md`'s; the working spelling is renamed with `-fmemfn-simd` at the interface reshuffle ([IFACE-PUSH]).
 
 <a id="s3"></a>
 ## 3. Diagnostics

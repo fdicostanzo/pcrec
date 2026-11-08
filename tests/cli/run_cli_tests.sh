@@ -2603,6 +2603,107 @@ assert_eq "--callout/-I with --version exits 0, stderr empty" "0:" "$corc:$coerr
 coerr="$(pcrec_run "$PCREC" --version 2>/dev/null)"; corc=$?
 assert_eq "--version prints its one line" "0:pcrec $(sed -n 's/^#define PCREC_VERSION "\(.*\)"/\1/p' "$ROOT_DIR/lib/pcrec.h" | head -1)" "$corc:$coerr"
 
+
+# ---------------------------------------------------------------------------
+# [XARCH-DEV] P1 THE CPU TARGET SET (docs/spec/cli.md §1.24, §2.16): the one
+# flag `-fmemfn-simd[=LIST]` / `-fno-memfn-simd`, last wins, every token
+# parsed by the KIT at option parse. This script names no token: the tokens
+# come from `--list-cpu-targets` (the kit's own rows) and the refusal text
+# from a probe that asks the kit directly (simd_target_probe.c).
+xt_list="$(pcrec_run "$PCREC" --list-cpu-targets 2>/dev/null | grep -v '^#')"
+xt_fam="$(printf '%s\n' "$xt_list" | awk -F'\t' '$1=="family"{print $2}' | head -1)"
+xt_hostfam="$(printf '%s\n' "$xt_list" | awk -F'\t' '$1=="family" && $4=="host"{print $2}' | head -1)"
+xt_port="$(printf '%s\n' "$xt_list" | awk -F'\t' '$1=="target" && $3==""{print $2}' | head -1)"
+# a family that has two targets, and a target of another family
+xt_two_fam="$(printf '%s\n' "$xt_list" | awk -F'\t' '$1=="target" && $3!=""{n[$3]++} END{for(f in n) if(n[f]>1){print f; exit}}')"
+xt_t1="$(printf '%s\n' "$xt_list" | awk -F'\t' -v f="$xt_two_fam" '$1=="target" && $3==f{print $2}' | sed -n 1p)"
+xt_t2="$(printf '%s\n' "$xt_list" | awk -F'\t' -v f="$xt_two_fam" '$1=="target" && $3==f{print $2}' | sed -n 2p)"
+xt_other="$(printf '%s\n' "$xt_list" | awk -F'\t' -v f="$xt_two_fam" '$1=="target" && $3!="" && $3!=f{print $2}' | head -1)"
+xt_host_t="$(printf '%s\n' "$xt_list" | awk -F'\t' -v f="$xt_hostfam" '$1=="family" && $2==f{print $5}' | cut -d, -f1)"
+assert_eq "cpu targets: the listing has a family, a host family, a portable target, a two-target family and another family's target" \
+    "yes" "$([ -n "$xt_fam" ] && [ -n "$xt_hostfam" ] && [ -n "$xt_port" ] && [ -n "$xt_t2" ] && [ -n "$xt_other" ] && echo yes || echo no)"
+# the listing against the kit's own table source: same names, same order
+xt_kit="$(grep -oE '^MF_(FAMILY|TARGET)\([A-Za-z0-9_]+, *"[^"]+"' "$ROOT_DIR/memfn/src/targets.def" | sed -E 's/^MF_(FAMILY|TARGET)\([A-Za-z0-9_]+, *"([^"]+)"/\2/')"
+xt_got="$(printf '%s\n' "$xt_list" | cut -f2)"
+assert_eq "--list-cpu-targets: every kit family and target, once" \
+    "$(printf '%s\n' "$xt_kit" | LC_ALL=C sort | tr '\n' ' ')" "$(printf '%s\n' "$xt_got" | LC_ALL=C sort | tr '\n' ' ')"
+assert_eq "--list-cpu-targets: at most one host row" "1" "$(printf '%s\n' "$xt_list" | awk -F'\t' '$4=="host"' | wc -l | tr -d ' ')"
+
+xt_pat='(?i)cat'
+xt_gen() { pcrec_run "$PCREC" -p rx "$@" -o - --pattern "$xt_pat" 2>/dev/null; }
+xt_def="$(xt_gen)"
+xt_on="$(xt_gen -fmemfn-simd)"
+assert_eq "cpu targets: the sample pattern renders differently with SIMD on (the cases below can tell the rows apart)" "differ" \
+    "$([ "$xt_def" != "$xt_on" ] && echo differ || echo same)"
+# table row: SIMD off, no list -> the portable target (the default)
+assert_eq "cpu targets row off: -fno-memfn-simd is the default artifact" "$xt_def" "$(xt_gen -fno-memfn-simd)"
+# table row: on, no list -> the host family's default list
+assert_eq "cpu targets row host: the host family's default target by name is -fmemfn-simd's artifact" "$xt_on" "$(xt_gen "-fmemfn-simd=$xt_host_t")"
+# table row: on, a list -> exactly those; a family token is its default list
+assert_eq "cpu targets row list: a family token is that family's default list" "$xt_on" "$(xt_gen "-fmemfn-simd=$xt_hostfam")"
+assert_eq "cpu targets row list: matching is case-blind" "$xt_on" "$(xt_gen "-fmemfn-simd=$(printf '%s' "$xt_hostfam" | tr a-z A-Z)")"
+assert_eq "cpu targets row list: a repeated target is one target" "$xt_on" "$(xt_gen "-fmemfn-simd=$xt_host_t,$xt_host_t")"
+# the policy bit is read off the set: the portable target alone is SIMD off
+assert_eq "cpu targets: a list that is the portable target alone is the default artifact" "$xt_def" "$(xt_gen "-fmemfn-simd=$xt_port")"
+# last wins (gcc -f semantics); the list belongs to its flag
+assert_eq "cpu targets: -fno-memfn-simd after a list wins" "$xt_def" "$(xt_gen "-fmemfn-simd=$xt_host_t" -fno-memfn-simd)"
+assert_eq "cpu targets: -fmemfn-simd after -fno-memfn-simd wins" "$xt_on" "$(xt_gen -fno-memfn-simd -fmemfn-simd)"
+assert_eq "cpu targets: a list after -fno-memfn-simd turns SIMD on" "$xt_on" "$(xt_gen -fno-memfn-simd "-fmemfn-simd=$xt_host_t")"
+assert_eq "cpu targets: -fno-memfn-simd discards an earlier list (no list beside SIMD off)" "$xt_def" "$(xt_gen "-fmemfn-simd=$xt_host_t" -fno-memfn-simd)"
+
+# early fail: the kit refuses at option parse, its text unchanged, before any
+# compile work (the pattern below would fail LATER, at the parse of the pattern)
+if [ -x "$LIBA" ] || [ -f "$LIBA" ]; then
+    xt_dir="$WORKDIR/xtprobe"; mkdir -p "$xt_dir"
+    xt_blog="$("$CC" $CFLAGS -I"$LIBDIR" -o "$xt_dir/probe" "$ROOT_DIR/tests/cli/simd_target_probe.c" "$LIBA" 2>&1)"
+    assert_eq "cpu targets: the probe builds" "0" "$([ -x "$xt_dir/probe" ] && echo 0 || { echo "$xt_blog" | head -3; echo 1; })"
+    for xt_bad in zz-notatoken ""; do
+        xt_kt="$("$xt_dir/probe" kit "$xt_bad" | sed -n 1p)"; xt_kf="$("$xt_dir/probe" kit "$xt_bad" | sed -n 2p)"
+        xt_err="$(pcrec_run "$PCREC" -p rx "-fmemfn-simd=$xt_bad" -o - --pattern '(' 2>&1 >/dev/null)"; xt_rc=$?
+        assert_eq "cpu targets: token '$xt_bad' is refused at option parse (exit 1, before the pattern's own error)" "1:yes:yes" \
+            "$xt_rc:$(case "$xt_err" in *"$xt_kt"*) echo yes;; *) echo no;; esac):$(case "$xt_err" in *"$xt_kf"*) echo yes;; *) echo no;; esac)"
+    done
+    # "before any compile work" proper: a query mode compiles nothing, so only
+    # option parse can refuse here
+    xt_err="$(pcrec_run "$PCREC" "-fmemfn-simd=zz-notatoken" --list-limits 2>&1 >/dev/null)"; xt_rc=$?
+    assert_eq "cpu targets: an unknown token is refused at option parse even beside a query mode" "1:yes" \
+        "$xt_rc:$(case "$xt_err" in pcrec:*zz-notatoken*) echo yes;; *) echo no;; esac)"
+    xt_err="$(pcrec_run "$PCREC" -p rx "-fmemfn-simd=$xt_hostfam,zz-notatoken" -o - --pattern '(' 2>&1 >/dev/null)"
+    assert_eq "cpu targets: a bad token after a good one is refused too" "yes" "$(case "$xt_err" in pcrec:*zz-notatoken*) echo yes;; *) echo no;; esac)"
+    # the library door: the same checks before any pass, the kit's text unchanged
+    xt_kt="$("$xt_dir/probe" kit zz-notatoken | sed -n 1p)"
+    xt_api="$("$xt_dir/probe" api force zz-notatoken)"
+    assert_eq "cpu targets api: an unknown token refuses pcrec_compile with the kit's text" "yes" \
+        "$(case "$xt_api" in "rc=-1"*"$xt_kt"*) echo yes;; *) echo no;; esac)"
+    assert_eq "cpu targets api: a list beside SIMD off is refused" "rc=-1" "$("$xt_dir/probe" api no "$xt_host_t" | sed -n 1p)"
+    assert_eq "cpu targets api: a list with neither bit is refused" "rc=-1" "$("$xt_dir/probe" api none "$xt_host_t" | sed -n 1p)"
+    assert_eq "cpu targets api: force with the host target compiles" "rc=0" "$("$xt_dir/probe" api force "$xt_host_t" | sed -n 1p)"
+    assert_eq "cpu targets api: force with no list compiles" "rc=0" "$("$xt_dir/probe" api force - | sed -n 1p)"
+fi
+# one family, one member (until multi-target artifacts, unit U4)
+xt_err="$(pcrec_run "$PCREC" -p rx "-fmemfn-simd=$xt_t1,$xt_t2" -o - --pattern "$xt_pat" 2>&1 >/dev/null)"; xt_rc=$?
+assert_eq "cpu targets: two targets of one family are refused (exit 1, names the rule)" "1:yes" \
+    "$xt_rc:$(case "$xt_err" in *"more than one target"*"$xt_t1"*|*"$xt_t1"*"more than one target"*) echo yes;; *) echo no;; esac)"
+xt_err="$(pcrec_run "$PCREC" -p rx "-fmemfn-simd=$xt_t1,$xt_other" -o - --pattern "$xt_pat" 2>&1 >/dev/null)"; xt_rc=$?
+assert_eq "cpu targets: targets of two families are refused (exit 1, names the rule)" "1:yes" \
+    "$xt_rc:$(case "$xt_err" in *"families"*) echo yes;; *) echo no;; esac)"
+# a .rxt config's raw `pcrec` line carries the same flag through the same parser
+cat > "$WORKDIR/xt.rxt" <<XTEOF
+config simd
+  pcrec -fmemfn-simd=$xt_host_t
+
+target xt = cat with simd
+
+pattern (?i)cat
+name cat
+XTEOF
+pcrec_run "$PCREC" -o "$WORKDIR/xt_out.c" "$WORKDIR/xt.rxt" >/dev/null 2>&1; xt_rc=$?
+assert_eq "cpu targets: a config's raw pcrec line carries -fmemfn-simd=LIST (exit 0)" "0" "$xt_rc"
+sed -i "s/-fmemfn-simd=$xt_host_t/-fmemfn-simd=zz-notatoken/" "$WORKDIR/xt.rxt"
+xt_err="$(pcrec_run "$PCREC" -o "$WORKDIR/xt_out.c" "$WORKDIR/xt.rxt" 2>&1 >/dev/null)"; xt_rc=$?
+assert_eq "cpu targets: a config's raw pcrec line with an unknown token is refused with the kit's text" "1:yes" \
+    "$xt_rc:$(case "$xt_err" in *zz-notatoken*) echo yes;; *) echo no;; esac)"
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then

@@ -1,0 +1,5 @@
+report=docs/dev/lanes/p1cpu_report.md
+sections: Summary; Option table; Kit calls; Spec hunks; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: main-p1cpu-sweep main-p1cpu-maketest main-p1cpu-mech

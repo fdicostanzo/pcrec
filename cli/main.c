@@ -434,6 +434,9 @@ static void usage(FILE *f)
           "                    line per limit, its value, unit, kind, whether\n"
           "                    a flag/-D/nothing overrides it, and a one-line\n"
           "                    description. No --flavour axis\n"
+          "  --list-cpu-targets  TSV of the CPU families and targets\n"
+          "                    -fmemfn-simd=LIST accepts, the host's family\n"
+          "                    marked; every cell the kit's own text\n"
           "  --list-schema     TSV of the .rxt FORMAT's own schema\n"
           "                    ([DD-13b.W23.1]): one line per (scope, line\n"
           "                    kind), with its value shape, what may be\n"
@@ -575,6 +578,7 @@ typedef struct {
     int         list_families;
     int         list_axes;
     int         list_limits;
+    int         list_cpu_targets;
     int         list_schema;
     int         count_groups;
     int         emit_ir;
@@ -722,6 +726,7 @@ typedef struct {
     X(LIST_FAMILIES,    list_families,     INT, "--list-families",     TAKES)    \
     X(LIST_AXES,        list_axes,         INT, "--list-axes",         TAKES)    \
     X(LIST_LIMITS,      list_limits,       INT, "--list-limits",       TAKES)    \
+    X(LIST_CPU_TARGETS, list_cpu_targets,  INT, "--list-cpu-targets",  TAKES)    \
     X(LIST_SCHEMA,      list_schema,       INT, "--list-schema",       TAKES)    \
     X(EXPLAIN,          explain,           PTR, "--explain",           TAKES)    \
     X(COUNT_GROUPS,     count_groups,      INT, "--count-groups",      DESCRIBE)    \
@@ -805,6 +810,7 @@ static int cli_modes_count(unsigned modes)
 #define CLI_MODES_REGISTRY_QUERY                                          \
     (CMB(LIST_SYNTAX) | CMB(LIST_DEFINITIONS) | CMB(LIST_VERBS) |         \
      CMB(LIST_FAMILIES) | CMB(LIST_AXES) | CMB(LIST_LIMITS) |             \
+     CMB(LIST_CPU_TARGETS) |                                              \
      CMB(LIST_SCHEMA) | CMB(EXPLAIN) | CMB(LIST_ANALYSES) |               \
      CMB(LIST_ANALYSIS) | CMB(LIST_MEASUREMENTS))
 
@@ -1306,6 +1312,25 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
          * axis's bit, its `-fno-X` / `-fX` spellings and its default
          * polarity. An unknown `-f...` returns 0 here and falls through to
          * the unknown-option diagnostic below exactly as it always did. */
+        /* [XARCH-DEV] P1 THE ONE SIMD/CPU FLAG, gcc `-f` semantics: the last
+         * of `-fmemfn-simd[=LIST]` and `-fno-memfn-simd` wins, and the list
+         * belongs to the `-fmemfn-simd` that carried it, so a CPU list can
+         * never sit beside SIMD off. The tokens are the kit's: parsed HERE,
+         * at option parse, and refused with the kit's text. */
+        else if (!strcmp(a, "-fmemfn-simd") || !strncmp(a, "-fmemfn-simd=", 13)) {
+            char terr[256];
+            opt.flags = pcrec_flags_without(opt.flags, PCREC_NO_MEMFN_SIMD) |
+                        PCREC_FORCE_MEMFN_SIMD;
+            opt.memfn_simd = a[12] == '=' ? a + 13 : NULL;
+            if (pcrec_memfn_simd_check(opt.flags, opt.memfn_simd, terr,
+                                       sizeof terr) != 0)
+                return cli_err("%s", terr);
+        }
+        else if (!strcmp(a, "-fno-memfn-simd")) {
+            opt.flags = pcrec_flags_without(opt.flags, PCREC_FORCE_MEMFN_SIMD) |
+                        PCREC_NO_MEMFN_SIMD;
+            opt.memfn_simd = NULL;
+        }
         else if (cli_axis_apply(a, &opt.flags)) { }
         /* [UTF-VALID] the contract axis's RESERVED second value
          * (docs/design/utf_valid_design.md §2.2, ruled D133: recorded, not
@@ -1526,6 +1551,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
         else if (!strcmp(a, "--list-families")) st->list_families = 1;
         else if (!strcmp(a, "--list-axes"))   st->list_axes = 1;
         else if (!strcmp(a, "--list-limits")) st->list_limits = 1;
+        else if (!strcmp(a, "--list-cpu-targets")) st->list_cpu_targets = 1;
         else if (!strcmp(a, "--list-schema")) st->list_schema = 1;
         else if (!strcmp(a, "--count-groups")) st->count_groups = 1;
         /* [FINDINGS] B2 `--analysis NAME` (or `=NAME`): the bundle a compile
@@ -1835,6 +1861,10 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * the CLI's own) is kept for the process's life first. */
         if (rc == 0 && ts.opt.memfn && ts.opt.memfn != cli->opt.memfn &&
             cli_keep_string(&ts.opt.memfn) != 0) rc = 1;
+        /* [XARCH-DEV] P1 `-fmemfn-simd=LIST` points into the same tokens. */
+        if (rc == 0 && ts.opt.memfn_simd &&
+            ts.opt.memfn_simd != cli->opt.memfn_simd &&
+            cli_keep_string(&ts.opt.memfn_simd) != 0) rc = 1;
         free(v); free(buf);
         if (rc != 0) { free(ts.libdirs); free(ts.callouts); return 1; }
         /* THE CONTAINMENT, and it is one test rather than a list. A config
@@ -2792,6 +2822,7 @@ static int cli_dispatch(CliState st)
     const int list_families  = st.list_families;
     const int list_axes      = st.list_axes;
     const int list_limits    = st.list_limits;
+    const int list_cpu_targets = st.list_cpu_targets;
     const int list_schema    = st.list_schema;
     const int count_groups   = st.count_groups;
     const int emit_ir        = st.emit_ir;
@@ -3235,7 +3266,8 @@ static int cli_dispatch(CliState st)
          * OTHER mode active" and keeps its own shape by ruling. */
         if (cli_modes_count(modes & CLI_MODES_REGISTRY_QUERY) > 1) {
             cli_err("--list-syntax, --list-definitions, --list-verbs, "
-                            "--list-families, --list-axes, --list-limits, --list-schema, "
+                            "--list-families, --list-axes, --list-limits, --list-cpu-targets, "
+                            "--list-schema, "
                             "--list-analyses, --list-analysis "
                             "and --explain are separate queries; use one");
             return 1;
@@ -3295,6 +3327,12 @@ static int cli_dispatch(CliState st)
         }
         if (list_axes) {
             char *v = pcrec_axes_tsv();
+            fputs(v, stdout);
+            free(v);
+            return 0;
+        }
+        if (list_cpu_targets) {
+            char *v = pcrec_cpu_targets_tsv();
             fputs(v, stdout);
             free(v);
             return 0;
