@@ -16,3 +16,18 @@ answers held to a naive caseless finder; the v3 object's ymm census; a
 region-stripped v3 artifact must refuse at the default -march; the guard must
 refuse gcc -m32 and clang aarch64. v3 cells are built but not run on a CPU
 without AVX2. `simd_bounds.tsv`'s `target-text` row bounds the guard + region.
+
+## simdfloor ([XARCH-DEV] U2+U3, lane u3floor 2026-11-08)
+
+The target seam removed every CPU `#if`, so C18 was re-aimed rather than
+retired (target_seam.md §6.4 had proposed retiring it). The population is
+every corpus cell at `-fmemfn-simd=T` for each target T whose family has a
+level (x86-64, x86-64-v3 today), against `-fno-memfn-simd`. simd_levels.c
+dumps the levels AND the targets with their C text (region open/close, the
+family guard, hex), so the lint's admitted spellings are the kit's own. Leg
+(a) (off-target preprocessing) retired with the `#if` arms; leg (c) now
+allows one replaced call per SIMD FUNC; C9's nm leg expects the called helper
+at every `-march` cell (the region supplies the ISA). Five artifact plants
+run on every target's first mover. Floors are per target and per level
+(`FLOORS`). routing_shape.py admits the one-call selector naming a level
+helper defined above it (libc_census reads it too).
