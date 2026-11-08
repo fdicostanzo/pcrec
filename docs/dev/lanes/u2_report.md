@@ -90,7 +90,10 @@ everything else is K0's existing entries. Committed before any code (brief step 
 11. **THE SWITCH U3's merge flips** (rev 1.1, the kit manager's ruling 2026-11-08): `MF_TARGET_REQUIRED`
    in memfn/src/kit.h, ONE line (`#define MF_TARGET_REQUIRED 0`). The joint U2+U3 merge sets it to 1.
    At 1, `mf_define`/`mf_emit` REFUSE (a) an art that states no target, at its first define, and (b) a
-   site carrying policy bit 0. At 0 (this branch) both keep today's decline: the portable text, and class
+   site carrying ANY policy bit outside the kit's named set `MF_P_KIT_NAMED` (kit.h; today INLOOP |
+   SIZE_LEANING), bit 0 among them, the unknown bits named in hex (u2fix, `u2fix_report.md`). No kit
+   code mentions `MF_P_PORTABLE_ONLY` any more, so item 8's delete of the `#define` is now possible in
+   the joint merge without breaking the build. At 0 (this branch) both keep today's decline: the portable text, and class
    OTHER. Flipping it makes pcrec-side callers that leave an art unstated, or pass bit 0, refuse loudly.
    Those are pcrec's `memfn_sites.c` arts and tests/memfn's arm_fixtures.c, proven_check.c and
    run_proof.sh (sheet item 9's list), which U3 must move in the same merge. Every kit-owned G2 art
@@ -282,6 +285,9 @@ TREE before queueing (U2 and U3 land in one merge, which main runs). No job hold
 15. **S726 is DECLARED UNDETECTED.** Under ruling 1, every target that supplies the weaker feature
     supplies the real one, so a weaker need admits the same targets. What closes it: a row that supplies
     the weaker one alone.
+16. **u2fix (kit manager's ruling, 2026-11-08): the bit-0 refusal generalises.** compose.c no longer names
+   `MF_P_PORTABLE_ONLY`: at `MF_TARGET_REQUIRED` it refuses any bit outside `MF_P_KIT_NAMED`, naming them
+   in hex. Items 8 and 11 amended; deviation 12 reads as superseded by this one. See `u2fix_report.md`.
 
 ## Charter-vs-committed checklist
 
