@@ -196,3 +196,8 @@ placeholders for the kit manager.
 | witnesses: identity, G2, hashes + check C, REACH, census, §R/§S, Goal 4 grep, basis | light ones green here; identity, REACH and basis written as jobs 501-504 |
 | heavy runs (make test, emit_sweep per arm) | written as jobs, not queued (the brief) |
 | commit order R12 | yes: commit 1 = §2.5.2-§2.5.3 + §2.6, commit 2 = §2.4 |
+
+## STATE AT HANDOFF
+
+OWED: none. The lane queued no box job. Gate jobs 500-509 are written and dry-run clean, for the kit
+manager to queue. Tip: lane/memfn-s30a at the commit carrying this section.
