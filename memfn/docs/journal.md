@@ -3623,3 +3623,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - Re-run over S2b's pinned sweep (sha b88599f6): census0.out and census0_cards.out byte-identical, so GREEN. Job fixed to sha-check and read the pinned sweep.
   - 452 re-added without its dependency on the cancelled 451 (the queue runs a COPY, so a file edit alone does nothing).
   - S2f DELIVERED: done line 094ae4e20, waiting on main's review (landing after the 500 battery).
+- 11-07 ~21:00: S2f MERGED to main (4e497d99b; done line 5c3b65fb3) before the battery freeze. Stage 2 is COMPLETE (S2a-S2f); S2g (SIMD) waits on K0->P1 and a timing window.
+  - k1107 fast-forwarded to main.
+  - Stage 3 unit 3.0 ("the plan takes the frame", span_pick.md :408): design lane `u30d` (opus, worktree u30d, deliver a22b4fb00) writes docs/design/memfn/plan_frame.md in span_cards' shape.
+  - Its content: goals; the frame facts pcrec states; the reply growth; the asker-fact retirement; the MF_SITE_ABI readers; pcrec-side asks for main; units; what row 1 needs, including Frank's controlled candidate set.
+  - Next: a critic re-check before any build.
