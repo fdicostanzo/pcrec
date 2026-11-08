@@ -13,8 +13,10 @@ seven argv arms (`simd`, R-13, renders the real SIMD rows):
            (D155 addendum 2: a check in place of an aggregate budget). The
            rendered sites are `<UP>_MEMFN_FORMS`' tokens, each bound read
            from tests/memfn/simd_bounds.tsv; a token with no declared bound
-           FAILS (UNDECLARED). Today every value is "none", so the check is
-           0 <= 0 and this half alone is vacuous by construction.
+           FAILS (UNDECLARED). An artifact for a SIMD target (its
+           `<UP>_TARGETS` names a family) adds the `target-text` row: the
+           kit's family guard and region, guarded whatever the forms
+           (unit U3). At the default every value is 0.
   WITNESS  the same tree built with -DPCREC_SIMD_WITNESS: a synthetic guarded
            block written through the sink's simd_open/simd_close at file
            scope (both engines) and at the start of the VM program (the
@@ -55,6 +57,9 @@ STAMP = re.compile(rb'^#define ((?:(?!__)\w)+)_SIMD_GUARDED_BYTES (0x[0-9a-f]{16
 # is STAMP's, the one ARITHMETIC reads).
 ANY_STAMP = re.compile(rb'^#define \w+_SIMD_GUARDED_BYTES (0x[0-9a-f]{16})ULL$', re.M)
 FORMS = re.compile(rb'^#define (?:(?!__)\w)+_MEMFN_FORMS "([^"\n]*)"$', re.M)
+# [XARCH-DEV] U3 the compile's CPU target: `family:members`, family `none`
+# for the portable target (whose artifact carries no guard and no region)
+TARGETS = re.compile(rb'^#define (?:(?!__)\w)+_TARGETS "([^":\n]*):[^"\n]*"$', re.M)
 PROG = re.compile(rb'^#define (?:(?!__)\w)+_VM_PROGRAM_BYTES (\d+)ULL$', re.M)
 UNROLL_WHY = re.compile(rb'^#define (?:(?!__)\w)+_UNROLL_K_WHY "([^"\n]*)"$', re.M)
 
@@ -185,6 +190,8 @@ def main():
         failed.append(msg)
         print('FAIL: ' + msg)
 
+    if 'target-text' not in bounds:
+        bad('simd_bounds.tsv declares no `target-text` bound')
     if 'rq3-witness' not in bounds:
         bad('simd_bounds.tsv declares no `rq3-witness` bound')
         bounds['rq3-witness'] = 0
@@ -235,6 +242,15 @@ def main():
                     rec['issues'].append('MEMFN_FORMS token %r: row %r has no declared bound (UNDECLARED)'
                                          % (site, row))
                 total += bounds.get(row, 0)
+        tg = TARGETS.findall(pout)
+        if len(tg) != 1:
+            rec['issues'].append('plain carries %d TARGETS lines' % len(tg))
+            return rec
+        if tg[0] != b'none':
+            total += bounds.get('target-text', 0)
+            rec['counts'].append('simd-target')
+        elif v:
+            rec['issues'].append('plain stamp %d on a portable-target artifact (no guard, no region)' % v)
         if v > total:
             rec['issues'].append('plain stamp %d exceeds the sum of its rows\' bounds %d' % (v, total))
         if sites:

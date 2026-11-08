@@ -35,3 +35,9 @@ rq3-witness	1700000
 # (memfn/src/vrun.c VRUN_W*_GUARDED_MAX).
 vrun-w32	2800
 vrun-w16	2400
+# target-text ([XARCH-DEV] U3): the kit's family guard and one target's
+# region (open + close), written once per artifact for a SIMD target whatever
+# its forms. MEASURED (lane u3tgt, 2026-11-08) over the kit's targets: the
+# largest, the 14-feature target, writes 615 bytes (a compound `split`
+# artifact whose forms are "none" stamps exactly that); rounded up to 700.
+target-text	700

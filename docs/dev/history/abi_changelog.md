@@ -23,7 +23,24 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `97` on every artifact today ([RUN-POS-SET] stage 1, 96 -> 97,
+- **`rx_info.abi` is `98` on every artifact today ([XARCH-DEV] units U2 + U3, 97 -> 98,
+  one event for the kit's U2 and pcrec's U3, lane u3tgt 2026-11-08;
+  `docs/design/memfn/target_seam_units.md` §2).** pcrec states the compile's
+  one CPU target to the kit on every art (`mf_art_target`) instead of a policy
+  bit, and places the kit's text for it. Every artifact gains
+  `<PREFIX>_TARGETS` (`family:members`; `"none:generic"` at the default) after
+  `<PREFIX>_COMPOUND`; at the default nothing else moves but the abi digits.
+  An artifact for a SIMD target (`-fmemfn-simd[=LIST]`) gains the kit's family
+  guard (an `#if`/`#error`/`#endif` ahead of every `#include`) and the
+  target's region (a pragma push before the first function, its pop after
+  `rx_info` and before `main`), and its SIMD helpers lose their CPU
+  `#if`/`#elif`/`#endif` arms: the kit renders exactly the levels the target
+  admits, so `-fmemfn-simd` alone (the host family's default list, `x86-64`
+  on amd64) renders `vrun@w16` where it rendered `vrun@w32+w16`, and the
+  wider level is reached through `-fmemfn-simd=x86-64-v3`. The guard and
+  region bytes are CPU-guarded (`<PREFIX>_SIMD_GUARDED_BYTES` counts them;
+  no length decision reads them).
+- **`rx_info.abi` was `97` on every artifact ([RUN-POS-SET] stage 1, 96 -> 97,
   built as 95 -> 96 by lane altbuild 2026-11-06, renumbered at its catch-up merge
   over main's [VLOOKBEHIND] 96 in landing order (lane altcatch, 2026-11-07);
   `docs/design/alt_normal_form.md` rev 3 §5 stage 1; closes [LOWERENC-SEAL]).**
