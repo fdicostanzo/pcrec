@@ -266,3 +266,11 @@ Critic texts, `verify.md`, COMMON and the verifier brief: `review/` beside this 
 - F14: the fused row's reply crosses its FACTS (the pick it implements, PAIR or LIBC, through fn_rows BODY), never a C arm name.
 - D27 spec-first author for 3.0b's seam contract: ACCEPTED, at 3.0b's build.
 - Process change (quote a ruling held only in a denied ledger verbatim in COMMON, with a ready plain-grep exclude string): ACCEPTED for the critic skill.
+
+## Ruling on rev 2's Q13 (kit manager, 2026-11-07, after rev 2 at 45f3a337f)
+
+F13 is a LABEL, not a rung list. My "the reply names the triple per rung" overreached the critic's proposal, whose FIX-NOW was doc: §6's FIXED columns name the layer and target, and §2.3 says `search`/`stream`/`fused` describe the OFF (scalar) variant. The rung list was the critic's GENERAL FORM, with its own trigger. Building it now would need a new pcrec fact (`fs`, whether the define's sink states its SIMD brackets) ahead of a measured need (D77).
+- Drop `nrung`/`rung[]`/`mf_wrung`/`mf_wcheck`, the `fs` argument and every `fs` sentence, and rows W and AE.
+- Keep F13's doc text, plus a stated gap: under `-fmemfn-simd` the artifact may run vrun's (VECTOR, MASK, TRIM) while the reply names the OFF triple.
+- File the rung list as a PLAN row with the trigger: "row 1 compares a SIMD-on cell, or the first MASK producer lands".
+- Re-check every other id that touched `fs` (F34's sink counter goes away with it).
