@@ -1,0 +1,16 @@
+ab	whole=6162	run=6162@1
+yxz	whole=79787a	run=79787a@2
+(?:ab|ac|cc)	whole=none	run=none
+abc	whole=616263	run=616263@1
+xy	whole=7879	run=7879@0
+ac	whole=6163	run=6163@1
+[ac]bc	whole=616263/fdffff	run=616263@1/fdffff
+xa[bc]	whole=786162/fffffe	run=786162@0/fffffe
+xa[bc]	whole=786162/fffffe	run=786162@0/fffffe
+(?:abab)	whole=61626162	run=61626162@3
+xyzabc	whole=78797a616263	run=78797a616263@2
+foobar	whole=666f6f626172	run=666f6f626172@3
+barbaz	whole=62617262617a	run=62617262617a@5
+obar	whole=6f626172	run=6f626172@1
+x(?:ab|ac)	whole=786162/fffffe	run=786162@0/fffffe
+xyzw	whole=78797a77	run=78797a77@2

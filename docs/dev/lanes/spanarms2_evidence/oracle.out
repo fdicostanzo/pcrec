@@ -1,0 +1,36 @@
+# libpcre2-8 10.46 via tests/lib/p2probe.c (gcc -O1, pkg-config libpcre2-8), driven by or.sh; columns: pattern, start:subject list, OK ncaps then per subject M start end [groups] or N
+(a.){10}xyz	0:a-a-a-a-a-a-a-a-a-a-xyz	OK 1 M 0 23 18 20 
+(?:a.){10}.?xyz	0:a-a-a-a-a-a-a-a-a-a-xyz 2:a-a-a-a-a-a-a-a-a-a-xyz	OK 0 M 0 23 N 
+xy(?:ab){0}zw	0:xyzw	OK 0 M 0 4 
+ab(?:cd){0,2}ef	0:abef	OK 0 M 0 4 
+x(?=ab)?ac	0:xac	OK 0 M 0 3 
+x(?=ab)?a[bc]	0:xac 0:xab	OK 0 M 0 3 M 0 3 
+x(?!ab)a[bc]	0:xac 0:xab	OK 0 M 0 3 N 
+x(?!a)[ab]c	0:xbc	OK 0 M 0 3 
+abc\Kd	0:abcd	OK 0 M 3 4 
+foo\Kbar	0:foobar	OK 0 M 3 6 
+a(?=b)[bc]	0:ab 0:ac	OK 0 M 0 2 N 
+y(?:x(?<=yx))z	0:yxz	OK 0 M 0 3 
+(?:(?<=a)b|c)	0:c	OK 0 M 0 1 
+xy[ac](?:(?<=a)b|c)	0:xycc 0:xyab	OK 0 M 0 4 M 0 4 
+(?<=ab)(?<=b)c	0:abc	OK 0 M 2 3 
+[ac][ac]c(?<=ac)(?<=c)d	0:cacd 0:accd	OK 0 M 0 4 N 
+x(?=(?<=x)y)y	0:xy	OK 0 M 0 2 
+ab[xy](?=(?<=x)y)[xy]	0:abxy	OK 0 M 0 4 
+(?<=a(?=b))b	0:ab	OK 0 M 1 2 
+[ac](?<=a(?=c))c	0:ac	OK 0 M 0 2 
+[a-z]?[a-z]a(?=bc)	0:zzabc	OK 0 M 0 3 
+(?:(?=abcd)ab)c?	0:abcd	OK 0 M 0 3 
+(?:(?=abcd)ab)c??	0:abcd	OK 0 M 0 2 
+(?:(?=abcd)ab)cd	0:abcd	OK 0 M 0 4 
+(?:(?=abc)a.?)[bc]c	0:abc	OK 0 M 0 3 
+y*(?:ab(?<=xab)c)	1:xabc 0:xabc	OK 0 M 1 4 M 1 4 
+[ac]b(?<=ab|b)c	0:cbc	OK 0 M 0 3 
+(?<=ab|b)c	0:xbc	OK 0 M 2 3 
+x(?=ab|ac)a.	0:xab 0:xad	OK 0 M 0 3 N 
+foo(?=bar)baz	0:foobaz 0:foobarbaz	OK 0 N N 
+a(?!)b	0:ab	OK 0 N 
+(?<=foo)bar	3:foobar 2:foobar 4:foobar	OK 0 M 3 6 M 3 6 N 
+bar(?=baz)	0:barbaz	OK 0 M 0 3 
+(?:ab(?=a)){2}	0:ababa 0:abab	OK 0 M 0 4 N 
+(?<=c(?<=bc)d)e	3:bcde 0:xcde	OK 0 M 3 4 N 
