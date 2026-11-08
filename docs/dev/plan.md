@@ -283,7 +283,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 - [RUN-POS-SET] STATE:started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
   filed: 2026-11-04 Frank ("Let's file it"), from his question on how a caseless position's set is built per encoding
   status (2026-11-07): stages 1, 2p, 2b LANDED on main (merge f77ed1130, abi 97, lane altland); 2a census-first, 3 and 3m wait; r5 PLAN items filed as [ALT-NF-CHK] [ALT-NF-SPINE] [ALT-ISL-HOPELESS] [ALT-REQ-PIECES]
-  trigger: FIRED 2026-11-05 (rpsurvey: runs cut on bench/utf8 ci-* cells); the build waits for span_pick unit 1e's landing and Frank's build go
+  trigger: FIRED 2026-11-05 (rpsurvey: runs cut on bench/utf8 ci-* cells); the span_pick unit 1e gate is DISCHARGED ([MEASURE-SET]: stage 1 complete at 1e); the build waits for Frank's build go
   refs: docs/design/alt_normal_form.md; docs/dev/lanes/altdesign_report.md; docs/dev/lanes/altthink_report.md; docs/dev/lanes/rpsurvey_report.md (its derived москва/αβγ numbers corrected by altthink); D187; D186; D153; src/facts/req.c (rr_alt); src/opt/lower_enc.c (lower_class_utf8); src/opt/altcls.c; [POS-ONE-DETECTOR]; [SEQ-FOLD]; [DFA-ALPHA-MERGE]
   Restated (Frank 2026-11-05): folds are set up as alternations and handled by ONE alternation normal form (width groups, exact sibling merge, a facts-only superset hull), owned by one module called from UTF-8 lowering and from altcls; the run reads it; positions cross the kit seam as sets. Staged: 1 lowering (byte artifacts unchanged), 2 rr_alt hull + A_EMPTY identity, 2b altcls, 3 set positions (with [POS-ONE-DETECTOR]), 3m mixed-width affixes.
   Superseded framing (filed 2026-11-04; Frank 2026-11-05 replaced the byte-set framing with folds-as-alternations): "REQUIRED-RUN POSITIONS AS BYTE SETS: caseless UTF-8 letters stop cutting runs"; filed status: req.c's run carries one byte CUBE per position, so in UTF-8 (?i)k (k|K|E2 84 AA) and (?i)s (with U+017F) cut the run; filed trigger: the survey finds runs cut on real bench cells, or [SEQ-FOLD]'s first child lands.
@@ -756,12 +756,42 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/vlookbehind.md §5.6; tests/codegen/enc_entry_list.c
 - [REQ-LOOKAROUND] STATE:not-started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
-  status (2026-11-05): staged in alt_normal_form.md rev 1 as the positive-lookaround arm of the one description (§3.5, §9 S4: decision points + witness); a later follow-up note designs it; build after span_pick 1e (moved run facts move kit arms)
-  next: alt_normal_form.md rev 1 states it (or stages it); then a critic round and Frank's build go
+  status (2026-11-08): designed as units L1-L3 of docs/design/span_arms.md; review 2026-11-08 r1 ruled L NOT READY at rev 0; rev 1 written (lane spanarms2: guards met in rr_cat, the item as D168's producer's first member); the span_pick 1e gate is discharged
+  next: the re-check round on span_arms.md rev 1 (fix-induced + readiness lenses), then Frank's build go per unit
   refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (span intersection: lookahead removal + lookahead to DFA, a general form of this row); docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
   Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
   Frank, 2026-11-06 ("record it somewhere"): the forward-vs-lookbehind-first question is answered HERE, not by a separate ordering decision. A positive lookaround's fixed part, with its offset (a set, D187/D172), joins the one find-the-span choice set, and pricing picks the window (e.g. `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). Negative lookarounds only veto at FINISH. The in-FINISH check order is left to the reverse-DFA work (A-REV). Cheap trigger: a compile-only census of corpus/bench patterns whose rarest bytes sit inside a positive lookaround; likely after A-REV (same facts).
+- [LOOK-LOCATE] STATE:not-started — a positive lookaround's fixed part as a LOCATE window span at its signed offset
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN; U-locate)
+  status (2026-11-08): not started; a reader of the lookaround item (docs/design/span_arms.md §5.3: the first member of D168's producer), not of U-G1
+  trigger: span_arms unit L3 has landed, and a bench cell whose rarest bytes sit in a lookbehind
+  refs: docs/design/span_arms.md §5.3, §10; docs/dev/reviews/2026-11-08-r1-spanarms.md; D168; D172; [REQ-LOOKAROUND]
+  The item, placed at its negative offset, joins the one find-the-span choice set as a window span (Frank 2026-11-06: `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). The kit honours the span's verify flag (D172); no new kit mechanism.
+- [CTX-SIDES-PRODUCER] STATE:not-started — the cover's MkEnd ctx_before/ctx_after read from D168's signed-offset producer
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
+  status (2026-11-08): not started; today the cover's one-position context sides are a machine reading of the anchored DFA (src/gen/known.h, MkEnd)
+  trigger: a second machine-side consumer of a context side, or cover B1 (kit_proof.md §7)
+  refs: docs/design/span_arms.md §5.3, §10; docs/design/ctx_span.md §3.10; D168; [DD-11.5]
+  One producer of subject sets at signed offsets (D168); the machine reading becomes its control (ctx_span.md's UL-8 shape).
+- [PRES-OMIN-TRUE] STATE:not-started — the kit's true positive presence omin, from the run's [omin, maxoff] interval
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
+  status (2026-11-08): not started; pcrec states presence omin 0, a sound under-estimate (memfn.h: "the true omin is B5's")
+  trigger: the kit's B5 request
+  refs: docs/design/span_arms.md §2, §10; memfn/include/memfn.h (mf_pred omin); [REQ-LOOKAROUND]
+  The run's reach is its signed offset interval [omin, maxoff] from the attempt start (span_arms §2); the true positive omin is the same interval's lower end, stated to the kit as a fact (D157).
+- [DESC-DEAD] STATE:not-started — a pattern whose fixed-width description is EMPTY cannot match (the U-dead fact, generalized)
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
+  status (2026-11-08): not started; span_arms unit L1 lists the dead fact from an empty guard meet, with no consumer; `a(?!)b` and empty classes are dead too (run none today)
+  trigger: a corpus or user pattern that is dead this way (counted at span_arms L1's census)
+  refs: docs/design/span_arms.md §5.2 (EMPTY-MEET), §10; docs/dev/reviews/2026-11-08-r1-spanarms.md (RULINGS-10)
+  "The description is empty" (no group, distinct from the wall) covers an empty intersection (`foo(?=bar)baz`), `a(?!)b` and an empty class; the compile could emit the constant NOMATCH artifact.
+- [HARNESS-LEVERS] STATE:not-started — the cli/main.c `--harness=` lever if-chain as rows of the facts.def-deny harness-source family
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 F18, ruled PLAN)
+  status (2026-11-08): not started; five `--harness=` levers are one-bit fields of an if-chain (cli/main.c, PcrecHarnessOptions); `pres-window` is the same restore-the-old-form shape as the facts.def harness deny source
+  trigger: the first build of facts.def's harness deny source (alt_normal_form stage 2a or span_arms E1/R1, whichever lands first)
+  refs: docs/design/span_arms.md §3.7; docs/design/alt_normal_form.md §3.5 (r7 FIX-8), §11; docs/dev/reviews/2026-11-08-r1-spanarms.md F18; memfn/include/memfn.h (mf_lever)
+  alt_normal_form FIX-8's general form, taken by span_arms rev 1: a fact's deny admits a harness source, the restorable arms are rows of one declared table. The cli levers are the family's other members; the kit's mf_lever list is a sibling to compare at that build.
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
   status (2026-11-05): PARKED, a separate effort (Frank 2026-11-05); investigation done (docs/dev/lanes/condinv_report.md): no outside demand; one general condition node when designed
