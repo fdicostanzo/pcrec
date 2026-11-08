@@ -96,14 +96,14 @@ static void rows(const char *uname_m)
 
     /* every token, canonical and as a caller may spell it */
     static const char v3[] = "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave";
-    /* U2: v3's features add `sse2` (the w16 level's need, which its family's
-       compile supplies and its region does not push) */
-    static const char v3f[] = "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse2,sse4.1,sse4.2,ssse3,xsave";
+    /* U2 (the kit manager's ruling): features are each target's COMPLETE
+       supplied set, the family floor (fxsr, mmx, sse, sse2) written out */
+    static const char v3f[] = "avx,avx2,bmi,bmi2,cx16,f16c,fma,fxsr,lzcnt,mmx,movbe,popcnt,sahf,sse,sse2,sse3,sse4.1,sse4.2,ssse3,xsave";
     target_row("generic", "generic", NULL, "", "");
-    target_row("x86-64", "x86-64", "amd64", "sse2", "sse2");
+    target_row("x86-64", "x86-64", "amd64", "sse2", "fxsr,mmx,sse,sse2");
     target_row("x86-64-v3", "x86-64-v3", "amd64", v3, v3f);
     target_row("armv8-a", "armv8-a", "arm64", "", "neon");
-    target_row("X86-64", "x86-64", "amd64", "sse2", "sse2");
+    target_row("X86-64", "x86-64", "amd64", "sse2", "fxsr,mmx,sse,sse2");
     target_row("X86-64-V3", "x86-64-v3", "amd64", v3, v3f);
     target_row("ARMv8-A", "armv8-a", "arm64", "", "neon");
     target_row("GENERIC", "generic", NULL, "", "");

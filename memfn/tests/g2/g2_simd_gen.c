@@ -445,7 +445,12 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
         uint32_t lh = 0;
         int defined = late && !mf_define(late, G2W(&v->site), &h, &ss, &lh);
         int accepted = defined && !mf_art_target(late, art_target_of(v));
+        /* under MF_TARGET_REQUIRED (the joint merge) the define itself is
+           refused, naming the entry: the rule holds one step earlier */
+        int early = !defined && late && mf_art_error(late) &&
+                    strstr(mf_art_error(late), "mf_art_target");
         free(sdef.p);
+        if (early) defined = 1;
         if (!defined || accepted) {
             fprintf(stderr, "g2v: %s\n", !defined ? "the target-less control art refused site 0"
                     : "mf_art_target accepted a first statement after a define");

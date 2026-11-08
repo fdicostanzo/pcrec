@@ -254,10 +254,55 @@ case "$host" in
     *) [ "$ran" -ge 1 ] || mismatch "the host family $host compared no target against $GCC -march" ;;
 esac
 
+in_list() { case ",$2," in *",$1,"*) return 0 ;; esac; return 1; }
+# THE FEATURES COLUMN IS COMPLETE (the kit manager's ruling, unit U2): over
+# THIS check's feature vocabulary (token -> the macro gcc defines when the
+# feature is enabled; a column of the check, sharing no source with the
+# table), every token a host-family target lists is in the vocabulary and
+# its macro is defined at `gcc -march=<name>`, and every vocabulary token
+# whose macro is defined there is listed. Not in the vocabulary: features no
+# kit level or target row names (crc32 among them, whose macro gcc 14 added).
+declare -A vocab=(
+    [MF_FAM_X86_64:fxsr]=__FXSR__ [MF_FAM_X86_64:mmx]=__MMX__ [MF_FAM_X86_64:sse]=__SSE__
+    [MF_FAM_X86_64:sse2]=__SSE2__ [MF_FAM_X86_64:sse3]=__SSE3__ [MF_FAM_X86_64:ssse3]=__SSSE3__
+    [MF_FAM_X86_64:sse4.1]=__SSE4_1__ [MF_FAM_X86_64:sse4.2]=__SSE4_2__ [MF_FAM_X86_64:popcnt]=__POPCNT__
+    [MF_FAM_X86_64:sahf]=__LAHF_SAHF__ [MF_FAM_X86_64:cx16]=__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16
+    [MF_FAM_X86_64:avx]=__AVX__ [MF_FAM_X86_64:avx2]=__AVX2__ [MF_FAM_X86_64:bmi]=__BMI__
+    [MF_FAM_X86_64:bmi2]=__BMI2__ [MF_FAM_X86_64:f16c]=__F16C__ [MF_FAM_X86_64:fma]=__FMA__
+    [MF_FAM_X86_64:lzcnt]=__LZCNT__ [MF_FAM_X86_64:movbe]=__MOVBE__ [MF_FAM_X86_64:xsave]=__XSAVE__
+)
+FLOOR_VOCAB=20     # the x86-64 vocabulary's tokens, above
+nv=0; for k in "${!vocab[@]}"; do [ "${k%%:*}" = "$host" ] && nv=$((nv + 1)); done
+case "$host" in MF_FAM_X86_64) [ "$nv" -ge "$FLOOR_VOCAB" ] || mismatch "feature vocabulary $nv < floor $FLOOR_VOCAB" ;; esac
+fcomp=0
+for t in "${tgts[@]}"; do
+    f="${tgt_fam[$t]}"
+    [ "$f" != NONE ] && [ "$f" = "$host" ] && [ "$nv" -ge 1 ] || continue
+    m="$("$GCC" -march="${tgt_name[$t]}" -dM -E -x c /dev/null 2>/dev/null)" ||
+        { mismatch "$t: $GCC refuses -march=${tgt_name[$t]}"; continue; }
+    for x in ${tgt_feat[$t]//,/ }; do
+        if [ -z "${vocab[$f:$x]+x}" ]; then mismatch "$t: feature '$x' is not in the check's vocabulary"
+        elif ! printf '%s\n' "$m" | grep -q "^#define ${vocab[$f:$x]} "; then
+            mismatch "$t: lists '$x', but $GCC -march=${tgt_name[$t]} does not define ${vocab[$f:$x]}"
+        fi
+    done
+    for k in "${!vocab[@]}"; do
+        [ "${k%%:*}" = "$f" ] || continue
+        x="${k#*:}"
+        printf '%s\n' "$m" | grep -q "^#define ${vocab[$k]} " || continue
+        in_list "$x" "${tgt_feat[$t]}" ||
+            mismatch "$t: $GCC -march=${tgt_name[$t]} enables '$x' (${vocab[$k]}), which its features do not list"
+    done
+    fcomp=$((fcomp + 1))
+done
+case "$host" in
+    ""|MF_NFAMILY) ;;
+    *) [ "$fcomp" -ge 1 ] || mismatch "the features control compared no target" ;;
+esac
+
 # LEVEL ADMISSION: the table's answer against the compiler's.
 FLOOR_LEVELS=2     # w16, w32 (R-13)
 [ "${#lvls[@]}" -ge "$FLOOR_LEVELS" ] || mismatch "${#lvls[@]} level rows < floor $FLOOR_LEVELS"
-in_list() { case ",$2," in *",$1,"*) return 0 ;; esac; return 1; }
 table_admits() {   # table_admits TARGET LEVEL
     local n f="${tgt_fam[$1]}"
     [ "$f" != NONE ] && [ "${fam_name[$f]}" = "${lvl_fam[$2]}" ] || return 1
@@ -297,5 +342,5 @@ case "$host" in
            mismatch "level admission compared $admitted admitted and $refused refused (both must be >= 1)" ;;
 esac
 
-[ "$bad" = 0 ] && say "ok: ${#fams[@]} families, ${#tgts[@]} targets, $ran compared against $GCC -march, $skipped skipped (another family or no needs), host ${host:-none}, $cells host cells ($cskip skipped), level admission $admitted admitted + $refused refused against $GCC"
+[ "$bad" = 0 ] && say "ok: ${#fams[@]} families, ${#tgts[@]} targets, $ran compared against $GCC -march, $skipped skipped (another family or no needs), host ${host:-none}, $cells host cells ($cskip skipped), level admission $admitted admitted + $refused refused against $GCC, features complete at $fcomp targets over $nv vocabulary tokens"
 finish "$bad"

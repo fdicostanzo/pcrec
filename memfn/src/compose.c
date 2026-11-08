@@ -1082,6 +1082,12 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (s->abi != MF_SITE_ABI)
         return kit_fail(art, "mf_define: site abi %u, kit abi %u", s->abi,
                         (unsigned)MF_SITE_ABI);
+    if (MF_TARGET_REQUIRED && !art->target)
+        return kit_fail(art, "mf_define: the art states no target (mf_art_target before the "
+                        "first define; MF_TARGET_REQUIRED, unit U2)");
+    if (MF_TARGET_REQUIRED && (s->policy & MF_P_PORTABLE_ONLY))
+        return kit_fail(art, "mf_define: policy bit 0 (MF_P_PORTABLE_ONLY) is retired; the art's "
+                        "target says SIMD off (MF_TARGET_REQUIRED, unit U2)");
     const char *why = NULL, *wpath = NULL;
     const struct wf_plan *wplan = NULL;
     const mf_site *ws = s;      /* the window site, where the family routes */

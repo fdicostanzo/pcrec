@@ -698,6 +698,16 @@ typedef struct fn_in {
 extern const mf_formdecl vrun_w16_decl, vrun_w32_decl;
 extern const gate_contract vrun_w16_ct, vrun_w32_ct;
 
+/* THE TARGET SWITCH (unit U2, the kit manager's ruling 2026-11-08): 0 until
+ * the U2+U3 joint merge, which sets it to 1 in this one line. At 0 an art
+ * that states no target renders the portable text (its SIMD rows decline,
+ * rule 1) and a site carrying policy bit 0 classes OTHER (no SIMD row serves
+ * it). At 1 both are REFUSED at the define (define_sel): an art must state
+ * its target, and bit 0 is retired. */
+#ifndef MF_TARGET_REQUIRED
+#define MF_TARGET_REQUIRED 0
+#endif
+
 /* Level `lv` (LV_*) of levels.def (levels.c). */
 const mf_level *kit_level(unsigned lv);
 /* The levels target `t` ADMITS (bit LV_*; levels.c): those of t's family

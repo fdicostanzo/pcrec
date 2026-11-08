@@ -8,7 +8,9 @@
 # without w16).
 # Detectors (arm memfntargets): check_targets.sh's admission control (the compiler's own option for
 # that need defines nothing new at the target, so the compiler supplies the need the table refuses)
-# and targets_check.c's admission literals (the 32-byte target's kernel loses its w16 helper).
+# and targets_check.c's admission literals (the 32-byte target's kernel loses its w16 helper); since
+# the kit manager's ruling (features are each target's complete supplied set) also the table check's
+# features control (a feature the compiler enables there is not listed).
 SAB_ID="S2994-targets-v3-drops-w16-feature"
 SAB_FILE="memfn/src/targets.def"
 SAB_SUITES="memfntargets"
@@ -16,5 +18,5 @@ SAB_DESC='the 32-byte target forgets a feature the compiler supplies there, so t
 SAB_DOC_FIGURE='MEASURED by lane u2, planted by hand in a scratch copy of the table (TARGETS_DEF; u2_report.md, Sabotage rows); exact re-run: bash tests/mech/run_sabotage_matrix.sh S2994.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='sahf,sse2,sse4.1'
-SAB_AFTER='sahf,sse4.1'
+SAB_BEFORE='sse,sse2,sse3'
+SAB_AFTER='sse,sse3'
