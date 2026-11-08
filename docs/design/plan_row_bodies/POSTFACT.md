@@ -72,3 +72,18 @@ Manager notes, not ruled:
 - **To confirm:** [REQ-LOOKAROUND]'s refs say D172 spans carry negative start offsets. If so, "read before the start" is already a span fact.
 - **The lookahead mirror: an END reset.** `B(?=A)` = match `B A` and report the end at B's end; the next find-all search starts at that reported end. The bound to honour is the subject END, which a forward scan already respects, so the mirror is simpler than the lookbehind case. In the IR this is an end-of-match mark: the `\K` equivalent for the end that Frank noted. It is the same node for both: a lookaround becomes consumed text plus a mark on what is reported.
 - **A surface end-`\K`** (Frank: "it also suggests a `\K` equivalent for end of matches") would be a pcrec extension; PCRE2 has none. A user spelling needs Frank's go and a placeholder that cannot collide with PCRE2 syntax. Its find-all rule (resume at the reported end, so the trailing text can be rescanned) must be stated in the spec. The IR mark is useful even with no surface spelling.
+
+## 2026-11-08 — Frank: a group that becomes the match; spelling it as group 0 (recorded, not scheduled)
+
+Frank: "a named group that becomes the match"; then "Can't we state group numbers? Perhaps we just state group 0". `frank(?<0>fred)fish` reports `fred`; `frank` and `fish` are required and consumed. Its start is the `\K` point and its end is the end mark, so ONE construct carries both marks of the entries above.
+
+- **Prior art:** Vim `\zs`/`\ze` (match start/end markers); Raku `<(` ... `)>` (paired, exactly this group).
+- **Spelling `(?<0>...)`:** "this group IS group 0". Checked against the box's libpcre2 10.46 (tests/lib/p2probe.c, 2026-11-08): `(?<0>x)`, `(?'0'x)` and `(?P<0>x)` are all compile errors ("subpattern name must start with a non-digit", error 144). No valid PCRE2 pattern changes meaning, unlike a reserved NAME such as `(?<MATCH>...)`, which is a valid pattern today. pcrec currently refuses `(?<...)` as module 'named-groups'. All three name forms would take the 0.
+- **Only group 0 (Frank's "perhaps we just state group 0").** Stating other numbers (`(?<1>...)`) would be a separate feature that collides with automatic numbering and `(?|...)` branch reset. Not proposed.
+- **Open, with manager leanings:**
+  1. Placement: STRICT first. The group must be on every path (not optional, not in a repeat or in one arm of an alternation), else a compile error; "last pass wins" can come later.
+  2. Find-all resume at the REPORTED end, so trailing context can be rescanned. Then `A(?<0>B)C` behaves exactly like `(?<=A)B(?=C)` and the removal notes above apply unchanged. The alternative, the consumed end, gives different answers on overlapping text; this is the one real semantic choice.
+  3. Captures: not a numbered group (it is group 0); groups in the context still capture.
+  4. The advance rule for an empty reported match with non-empty context must be stated.
+  5. At most one per pattern (or compile error), with the interaction with `\K` stated (leaning: refuse both together).
+- **Why it fits pcrec:** the surface form IS the IR form, consumed text plus two report marks. A DFA takes it directly, and the lookaround rewrites above become the cases where the compiler builds the same thing itself. It is a pcrec extension (PCRE2 has none), so it needs Frank's go, a feature-family placement and a spec hunk.
