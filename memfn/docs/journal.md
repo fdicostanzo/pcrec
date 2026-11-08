@@ -3671,3 +3671,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - 3.0a GO: build lane s30a (opus) in worktrees/s30a, branch lane/memfn-s30a cut from lane/memfn-u30d.
     - Kit-only, zero movers. Light niced builds only during the hold.
     - It WRITES its validation jobs (scratch/memfn/s30a/jobs/) and does not queue them; the kit manager queues them after K0's 01:00 gates, in agreement with main's 500 battery.
+- 11-07 ~23:40: s30a DELIVERED 3.0a (lane/memfn-s30a a75439842; lane closed).
+  - Commit 1 is 8bb9db959 (the triple's tables + the Table B split); commit 2 is b5d1f8dd4 (§2.4).
+  - Light witnesses: zero movers (ident 48/48 SAME at both commits; G2 10444/0; finder hashes 3316/0; check C 0 stale; census green; rows_check §R/§S green; Goal 4 grep empty).
+  - Sabotage S2982-S2993; (Q) S2992 is committed as declared UNDETECTED, ACCEPTED: its detector needs an independent libc reading, so it is a plan item and was not invented.
+  - Deviation 6 REJECTED as shipped: §S `git show`s 067aca4df, so it is red on any checkout without that object. The kit manager merged lane/memfn-k1107 into s30a (d1c743c02). Fix lane s30afix (sonnet) makes §S read the working-tree responses.md, failing closed, planted both ways.
+  - Validation jobs 500-509 are written, not queued (/var/tmp/pcrec-pcrec/scratch/memfn/s30a/jobs/). They are queued after s30afix and after agreeing the order with main's 500 battery.
