@@ -3649,3 +3649,8 @@ Main ruled on the four kit findings (D186 add. 2):
   - RULED: all FIX-NOW accepted. F8: the stream is a separate piece, MASK declared only (D77). F13: the triple per rung. F14: the fused row crosses facts (PAIR/LIBC). D27 author for 3.0b.
   - Committed: review docs/dev/reviews/2026-11-07-r12-memfn-planframe1.md (+ dir) bcd235f4b; skill/guide lessons 5fd23b2bd (on lane/memfn-u30d).
   - Lane u30d2 (opus) writes rev 2.
+- 11-08 ~00:20: u30d2 DELIVERED plan_frame rev 2 (45f3a337f; lane closed).
+  - All 34 r12 ids applied. 3.0a M, 3.0b L. F1-F5, F10 and F11 are in the text.
+  - Q13 RULED by the kit manager: F13 is a LABEL, not a rung list. My "triple per rung" overreached the critic's doc fix. The rung list needs a new pcrec fact (fs) ahead of need (D77), so it becomes a PLAN row with the trigger "row 1 compares a SIMD-on cell, or the first MASK producer lands". Recorded in r12 (9d690a58b).
+  - Lane u30d3 (sonnet) trims it -> rev 2.1. Next: the narrow readiness re-check, then 3.0a's build (under R-35's GO).
+  - For main: Q11 [SEAM-READER-CENSUS] and Q12 (site_kind stays UNSTATED, F22), relayed at delivery.
