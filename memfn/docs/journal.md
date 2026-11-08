@@ -3693,3 +3693,4 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-08 14:20: k0fix2 DELIVERED (lane/memfn-k0 a6f51ac70; closed): S2977 is now COMPILE-CATCH and listed in tests/mech/CLAUDE.md. Its single-row run was yielding on the box lock behind the queue, so I safekilled it (our own) and re-queued the full 453 mech (7 rows) instead.
 - 11-08 14:45: K0 COMPLETE: 453 mech GREEN at a6f51ac70. done: R-36 posted; main messaged.
 - 11-08 15:05: main MERGED K0 (d9df92c0d, with lane/memfn-k1107 4accfde4a; pushed a47aa97ce) and filed D146 add. 1 (target tokens). Main's P1 lane p1cpu started 15:00. Prune worktrees/k0 and s2e at the next quiet pass.
+- 11-08 15:10: main's C4 arch-blind check went red at the K0 merge: k0fix2's S2977 comment named an ISA. Main reworded it (b56c27d60). No kit branch carries S2977. Lesson: sabotage-row and test comments are in C4's scope; name targets by their kit token, never by an ISA name.
