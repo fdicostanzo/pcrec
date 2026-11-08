@@ -12,11 +12,16 @@
  * memfn/src/targets.def: a row edited in the .def disagrees with a literal
  * here. The host's default list is held to `uname -m`, which the runner
  * passes in (argv[1]), not to the kit's own `#if`. The fixture's control is
- * the compiler and a naive finder (run_targets.sh).
+ * the compiler and a naive finder (run_targets.sh). Since unit U2 it also
+ * holds LEVEL ADMISSION through `mf_kernel_find_any` at each target (the
+ * helpers each admits, as literals; no CPU conditional; a one-call selector).
  *
  * Usage: targets_check UNAME_M      -> PASS:/FAIL: lines, exit 0 iff all pass
  *        targets_check --fixture    -> the fixture C text on stdout */
+#define _GNU_SOURCE
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
@@ -224,6 +229,47 @@ static void fixture(void)
     fputs(mf_target_c_of(t32)->region_close, stdout);
 }
 
+/* LEVEL ADMISSION through a kit entry (unit U2): the find-any kernel
+ * rendered at each target holds exactly the helpers the design's table
+ * admits there (target_seam_units.md §2: x86-64 w16; x86-64-v3 w16 and w32;
+ * generic and armv8-a none: literals here), no CPU conditional, and a
+ * selector that is ONE call, to the top admitted rung or to the body. */
+static void mem_puts(void *u, const char *s) { fputs(s, (FILE *)u); }
+static void mem_vp(void *u, const char *f, va_list ap) { vfprintf((FILE *)u, f, ap); }
+
+static void admission(const char *tok, int w16, int w32, const char *callee)
+{
+    char *text = NULL, err[256] = "", line[384];
+    size_t len = 0;
+    FILE *f = open_memstream(&text, &len);
+    mf_sink o = { .u = f, .puts = mem_puts, .vprintf = mem_vp };
+    static const unsigned char b[2] = { 'a', 'z' };
+    int rc = f ? mf_kernel_find_any(&o, "ka", b, 2, tgt(tok), err, sizeof err) : -1;
+    if (f) fclose(f);
+    snprintf(line, sizeof line, "admission %s: the kernel renders (%s)", tok, err);
+    check(rc == 0 && text, line);
+    if (rc || !text) { free(text); return; }
+    int cond = 0;
+    for (const char *l = text; l; l = strchr(l, '\n') ? strchr(l, '\n') + 1 : NULL) {
+        const char *q = l;
+        while (*q == ' ' || *q == '\t') q++;
+        if (*q == '#' && (!strncmp(q + 1, "if", 2) || !strncmp(q + 1, "el", 2) ||
+                          !strncmp(q + 1, "endif", 5)))
+            cond++;
+    }
+    snprintf(line, sizeof line, "admission %s: no CPU conditional in the kit's text (%d)", tok, cond);
+    check(cond == 0, line);
+    snprintf(line, sizeof line, "admission %s: helpers w16 %s, w32 %s", tok, w16 ? "yes" : "no",
+             w32 ? "yes" : "no");
+    check(!!strstr(text, "ka__w16(") == w16 && !!strstr(text, "ka__w32(") == w32, line);
+    char want[96];
+    snprintf(want, sizeof want, "{\n    return ka__%s(subject, n, pos);\n}", callee);
+    const char *sel = strstr(text, "size_t ka(");
+    snprintf(line, sizeof line, "admission %s: the selector is one call, to ka__%s", tok, callee);
+    check(sel && strstr(sel, want) == strchr(sel, '{'), line);
+    free(text);
+}
+
 int main(int argc, char **argv)
 {
     if (argc > 1 && !strcmp(argv[1], "--fixture")) {
@@ -231,5 +277,9 @@ int main(int argc, char **argv)
         return 0;
     }
     rows(argc > 1 ? argv[1] : "");
+    admission("generic", 0, 0, "body");
+    admission("x86-64", 1, 0, "w16");
+    admission("x86-64-v3", 1, 1, "w32");
+    admission("armv8-a", 0, 0, "body");
     return fails != 0;
 }

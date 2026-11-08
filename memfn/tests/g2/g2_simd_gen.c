@@ -435,6 +435,23 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
                 mf_art_error(art));
         return -1;
     }
+    /* the entry's own rule (unit U2): an art whose first define ran with no
+       target stated cannot be given one after it (its text so far was
+       rendered for none); checked once, on the first site's first render */
+    if (v->id == 0 && forms) {
+        tb sdef = { 0 };
+        mf_sink ss = sink_of(&sdef, brackets);
+        mf_art *late = mf_art_begin(&g_arena, prefix, v->site.policy, v->site.denies, NULL, NULL);
+        uint32_t lh = 0;
+        int defined = late && !mf_define(late, G2W(&v->site), &h, &ss, &lh);
+        int accepted = defined && !mf_art_target(late, art_target_of(v));
+        free(sdef.p);
+        if (!defined || accepted) {
+            fprintf(stderr, "g2v: %s\n", !defined ? "the target-less control art refused site 0"
+                    : "mf_art_target accepted a first statement after a define");
+            return -1;
+        }
+    }
     char cap[256] = "";
     mf_sink st = { .u = cap, .stamp = stamp_cap, .stamp_int = sk_stamp_int };
     if (mf_stamps(art, &st) || mf_art_end(art, NULL)) return -1;
@@ -448,6 +465,22 @@ int main(int argc, char **argv)
     char terr[256];
     g_target = mf_target_parse(argv[4], strlen(argv[4]), terr, sizeof terr);
     if (!g_target) { fprintf(stderr, "g2_simd_gen: %s\n", terr); return 2; }
+    {
+        /* the entry's refusals (unit U2): a copy of a row is no row, NULL is
+           none, a second DIFFERENT row is refused and the same one accepted */
+        mf_target copy = *g_target;
+        const mf_target *other = g_target == mf_portable_target()
+                               ? mf_target_parse("x86-64", 6, NULL, 0) : mf_portable_target();
+        mf_art *a1 = mf_art_begin(&g_arena, "g2v_t", 0, 0, NULL, NULL);
+        mf_art *a2 = mf_art_begin(&g_arena, "g2v_t", 0, 0, NULL, NULL);
+        mf_art *a3 = mf_art_begin(&g_arena, "g2v_t", 0, 0, NULL, NULL);
+        if (!mf_art_target(a1, &copy) || !mf_art_target(a2, NULL) ||
+            mf_art_target(a3, g_target) || mf_art_target(a3, g_target) ||
+            !mf_art_target(a3, other) || !mf_art_error(a1) || !mf_art_error(a3)) {
+            fprintf(stderr, "g2_simd_gen: mf_art_target's refusals do not hold\n");
+            return 1;
+        }
+    }
     g_rng = strtoull(argv[1], NULL, 10) * 2654435761u + 1;
     unsigned nsites = (unsigned)atoi(argv[2]);
     char path[4096];

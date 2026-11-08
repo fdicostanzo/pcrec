@@ -13,5 +13,5 @@ SAB_DESC='the form-hash entry table renders two ids (pair, walk) from one site: 
 SAB_DOC_FIGURE='MEASURED by lane memfn-s2c (sub-lane fh) planted and reverted by hand; exact re-run: bash tests/mech/run_sabotage_matrix.sh S2930.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        MF_P_PORTABLE_ONLY, NULL },'
-SAB_AFTER='    { "pair",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        MF_P_PORTABLE_ONLY, NULL },   /* SABOTAGE S2930 */'
+SAB_BEFORE='    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL },'
+SAB_AFTER='    { "pair",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        "generic",          NULL },   /* SABOTAGE S2930 */'
