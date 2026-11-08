@@ -192,6 +192,7 @@ Each one has a plain-words recommendation in the note's §7.
 
 ## STATE AT HANDOFF
 
-Delivered on lane/memfn-u30d. A design note and a report only: no code, no make, no box job. OWED: none. A
-fresh agent resumes from plan_frame.md §R2 and this report. Open: §7 Q13 for the kit manager (it decides
+Delivered on lane/memfn-u30d. A design note and a report only: no code, no make, no box job.
+OWED: none.
+A fresh agent resumes from plan_frame.md §R2 and this report. Open: §7 Q13 for the kit manager (it decides
 whether the rung list and `fs` stay in 3.0b), and Q10-Q12 for main.
