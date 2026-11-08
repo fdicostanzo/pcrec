@@ -177,6 +177,8 @@ Two corrections against the review's text:
 ## STATE AT HANDOFF
 
 Delivered at the branch tip that holds this report (lane/memfn-u30d). The design text is complete: the note is rev 2.2,
-and the report and index line are committed. OWED: none (design-text lane; no runs). Last ruling applied: r13's
+and the report and index line are committed.
+OWED: none (design-text lane; no runs).
+Last ruling applied: r13's
 "## Rulings (kit manager, 2026-11-07)". Open for the kit manager are §7 Q14 and Q15. Next: the kit manager checks the
 §R2.2 by-id table, and then 3.0a may build.
