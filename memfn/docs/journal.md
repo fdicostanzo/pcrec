@@ -3654,3 +3654,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - Q13 RULED by the kit manager: F13 is a LABEL, not a rung list. My "triple per rung" overreached the critic's doc fix. The rung list needs a new pcrec fact (fs) ahead of need (D77), so it becomes a PLAN row with the trigger "row 1 compares a SIMD-on cell, or the first MASK producer lands". Recorded in r12 (9d690a58b).
   - Lane u30d3 (sonnet) trims it -> rev 2.1. Next: the narrow readiness re-check, then 3.0a's build (under R-35's GO).
   - For main: Q11 [SEAM-READER-CENSUS] and Q12 (site_kind stays UNSTATED, F22), relayed at delivery.
+- 11-07 ~21:45: u30d3 DELIVERED plan_frame rev 2.1 (f53d50de4; lane closed).
+  - The rung list is removed; the grep is clean outside the removal notes.
+  - It also removed fn_rows' PREFIX fact columns, which existed only to feed rung[]. Accepted: they are named in the RUNG-LIST plan row (§7).
+  - Readiness re-check crit-memfn-planframe2 (opus coordinator; readiness + fix-induced lenses) LAUNCHED.
