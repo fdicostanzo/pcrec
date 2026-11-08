@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u2c4_report.md
+sections: Summary; C4 findings and their disposition; The S3000 detector; Checks run; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
