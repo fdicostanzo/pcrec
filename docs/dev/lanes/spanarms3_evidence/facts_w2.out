@@ -1,0 +1,8 @@
+ab(?<=b)[bc]d\w*e	kinds=none set=97,98,100,101 whole=6162 run=6162@1 maxoff=0 rb=98 kset=97,98,[2],100,[63] span=5:97,98,[2],100,[63] | "dfa" "unanchored" WHY="dominated" RUN="6162@1" H="none"
+[ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).	kinds=lookaround,collapsible_rep set=none whole=none run=none maxoff=none rb=none kset=[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2] span=none | "vm" "unanchored" WHY="none" RUN="none" H="none"
+(?i:a){40}(?<=(?<=A{20})a{20})y	kinds=lookaround,collapsible_rep set=121 whole=none run=none maxoff=none rb=121 kset=[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2],[2] span=none | "vm" "unanchored" WHY="emitted" RUN="none" H="40"
+a{20}(?=b{20})	kinds=lookaround,collapsible_rep set=97 whole=none run=none maxoff=none rb=97 kset=97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97,97 span=none | "vm" "unanchored" WHY="dominated" RUN="none" H="none"
+(?<=a{20})b{20}	kinds=lookaround,collapsible_rep set=98 whole=none run=none maxoff=none rb=98 kset=98,98,98,98,98,98,98,98,98,98,98,98,98,98,98,98,98,98,98,98 span=none | "vm" "unanchored" WHY="dominated" RUN="none" H="none"
+foo(?=bar)baz	kinds=lookaround set=97,98,102,111,122 whole=62617a run=62617a@2 maxoff=3 rb=122 kset=102,111,111,98,97,122 span=none | "vm" "unanchored" WHY="dominated" RUN="62617a@2" H="none"
+(?<=ab)(?<=cb)c	kinds=lookaround set=99 whole=none run=none maxoff=none rb=99 kset=99 span=none | "vm" "unanchored" WHY="dominated" RUN="none" H="none"
+x(?:foo(?=bar)baz)?y	kinds=lookaround set=120,121 whole=none run=none maxoff=none rb=120 kset=120,[2] span=none | "vm" "unanchored" WHY="dominated" RUN="none" H="none"
