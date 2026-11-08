@@ -359,7 +359,7 @@ applies to" was ill-formed. Rev 2:
 
 | parameter | what the walk reads it as | default | lever source | T-row that reads it |
 |---|---|---|---|---|
-| `pos_set` | the run's cube domain | `PCREC_MAX_REQ_RUN_POS_SET` (`limits.def`) | public bit 44 `-fno-req-run-fold` → 1 | every run arm (`rn_common_head`, the class arm) and the guard's hull (§5.3) |
+| `pos_set` | the run's cube domain | `PCREC_MAX_REQ_RUN_POS_SET` (`limits.def`) | public bit 44 `-fno-req-run-fold` → 1 | every run arm (`rn_common_head`, the class arm) and the guard's hull (§5.1) |
 | `max_pieces` | the description's group bound | `PCREC_MAX_REQ_PIECES` | none | the description (`PdCfg.max_groups`) |
 | reach | TOP's admitted interval | `[0, maxoff]` at L1; AHEAD at L2; BACK at L3 | harness arm `look` → `[0, maxoff]` | TOP |
 | restored arms | the arms run in today's form | none | harness arms `alt`, `empty` (2a), `rep` (T2 → today's best-only REP), `zero` (T3 E-4 → today's cut), `look` (T4 off: today's cut at a positive lookaround, and reach `[0, maxoff]`) | T1's arm switch |
