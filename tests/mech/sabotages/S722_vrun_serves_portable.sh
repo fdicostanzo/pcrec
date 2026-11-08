@@ -7,5 +7,5 @@ SAB_DESC='the w16 vrun row serves every target, so the portable target (-fno-mem
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S722. docs/dev/lanes/r13_report.md carries the lane run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W16),  /* a target admitting its level */'
-SAB_AFTER='    [FLD_target]          = MF_ANY,   /* SABOTAGE S722 */'
+SAB_BEFORE=',  /* a target admitting w16 */'
+SAB_AFTER=' | CM_NO_LEVEL(0),  /* SABOTAGE S722: serves NO_w16 too */'

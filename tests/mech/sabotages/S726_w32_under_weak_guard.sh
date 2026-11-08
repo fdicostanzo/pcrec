@@ -7,5 +7,5 @@ SAB_DESC='the widest level needs the next-lower feature, which the table never l
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S726. docs/dev/lanes/r13_report.md carries the lane run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='MF_LEVEL(LV_X86_W32, "amd64", "avx2",'
-SAB_AFTER='MF_LEVEL(LV_X86_W32, "amd64", "avx",   /* SABOTAGE S726 */'
+SAB_BEFORE='"avx2", "imm'
+SAB_AFTER='"avx", /* SABOTAGE S726 */ "imm'

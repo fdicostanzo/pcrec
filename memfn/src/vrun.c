@@ -509,13 +509,13 @@ static const gate_use vrun_uses[] = {
 const gate_contract vrun_w16_ct = {
     "fn", "vrun-w16", vrun_uses, 1, {
     VRUN_SERVES
-    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W16),  /* a target admitting its level */
+    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W16),  /* a target admitting w16 */
 }};
 
 const gate_contract vrun_w32_ct = {
     "fn", "vrun-w32", vrun_uses, 1, {
     VRUN_SERVES
-    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W32),  /* a target admitting its level */
+    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W32),  /* a target admitting w32 */
 }};
 
 #undef VRUN_SERVES
