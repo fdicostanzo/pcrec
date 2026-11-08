@@ -3633,3 +3633,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - The reply gains framed, frame_row, method, renderer, resume (row ids/enums, no C). The asker fact retires into one renderer table keyed by (frame row, pick). One MF_SITE_ABI event.
   - 5 pcrec-side asks; 6 questions (Q6 for Frank: row 1 waits for an inline one-member finder; recommended yes).
   - HELD before its critic round: Frank's proposal (11-07) that candidate SEARCH and candidate VALIDATION are separate primitives, composed. The kit manager's reading is a triple: search, candidate stream (stream vs one-shot), check. It may reshape 3.0's reply, which already has method + renderer + a two-valued resume. Awaiting his adopt/not.
+- 11-07 ~23:00: RULED by Frank (to the kit, directly), "Yes":
+  (1) Candidate SEARCH and candidate VALIDATION are separate primitive pieces, COMPOSED. The kit's reading is a triple: search (block mask or position), candidate stream (one-shot restart vs a stream that continues through the mask; the skip-table SHIFT is a third), and check (T-VERIFY's plan). vrun becomes one composition; vany plus the caller's verify is the one-shot composition; libc memchr is one-shot only.
+  (2) Q6: row 1 waits for the inline one-member finder, so its first priced comparison is like-for-like.
+  - Next: plan_frame.md rev 1 expresses 3.0's reply as (search, stream, check) before its critic round. Proposed D-entry posted in responses.md.
