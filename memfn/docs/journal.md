@@ -3637,3 +3637,10 @@ Main ruled on the four kit findings (D186 add. 2):
   (1) Candidate SEARCH and candidate VALIDATION are separate primitive pieces, COMPOSED. The kit's reading is a triple: search (block mask or position), candidate stream (one-shot restart vs a stream that continues through the mask; the skip-table SHIFT is a third), and check (T-VERIFY's plan). vrun becomes one composition; vany plus the caller's verify is the one-shot composition; libc memchr is one-shot only.
   (2) Q6: row 1 waits for the inline one-member finder, so its first priced comparison is like-for-like.
   - Next: plan_frame.md rev 1 expresses 3.0's reply as (search, stream, check) before its critic round. Proposed D-entry posted in responses.md.
+- 11-07 ~23:30: u30d1 DELIVERED plan_frame.md rev 1 (tip 35ad9c443; lane closed).
+  - The plan is the triple: search = T-FIND; stream = a support table plus Table S (ONESHOT/MASK/SHIFT); check = T-VERIFY's existing reply group.
+  - Reply fields: framed, frame_row, method, stream, fused (replaces rev 0's renderer).
+  - Table B splits into a search renderer table (rev 0's, kept), a stream renderer table and check rows; B-fn is a fused row. Zero bytes move: D-hors's probe-miss resume respells with identical bytes (window.c:2653 vs :2673).
+  - vrun/vany go to later units. Units 3.0a (kit-only, M) and 3.0b (seam + ASK-1..5).
+  - New questions: Q7 (fused replaces renderer), Q8 (declare MASK now), Q9 (vrun after target seam U2+U3), Q10 for main (a D186 addendum).
+  - Critic round crit-memfn-planframe1 (opus coordinator) LAUNCHED on rev 1.
