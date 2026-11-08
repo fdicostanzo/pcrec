@@ -179,6 +179,9 @@ Each has a recommendation in the note's §7. Q1, Q2, Q3 and Q5 are unchanged fro
 
 ## STATE AT HANDOFF
 
-Delivered on lane/memfn-u30d. No rulings file was named. OWED: none (design only: no make, no timing,
-no queued job). The next steps are the kit manager's: rule §7 (Q4, Q7-Q9; Q10 goes to main), launch a design
+Delivered on lane/memfn-u30d. No rulings file was named.
+
+OWED: none (design only: no make, no timing, no queued job).
+
+The next steps are the kit manager's: rule §7 (Q4, Q7-Q9; Q10 goes to main), launch a design
 critic round on `plan_frame.md` rev 1, then build 3.0a and 3.0b under R-35's stage-3 GO.
