@@ -3689,3 +3689,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - It now waits behind main's battery 500-main-fullsuite2 (running since 01:27, ~12 h). The s30a jobs' common.sh has no clean-tree check, so they are not exposed.
   - Lesson (2nd time: sp1efix too): a job's clean-tree check must exempt artifact_size_log.tsv, which make test writes.
 - 11-08 14:11: main's battery ended. 3.0a gate 500 strict GREEN (17 s). K0's 453 mech is running; 501-509 follow.
+- 11-08 14:20: 453 mech RED triaged (tri453b; closed): class (c), a row-definition defect. 6/7 rows DETECTED; S2977's designed catch is a fixture compile error, but the row declares SAB_EXPECT=DETECTED, so it scored ANOMALY 1 > ceiling 0. Fix lane k0fix2 (sonnet) sets COMPILE-CATCH like S989/S272/S07. Re-queue 453 after it. Not a K0 check gap.
