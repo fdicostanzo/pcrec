@@ -44,3 +44,18 @@ Manager notes for the design, not ruled:
 - (settled by the clarification) the value is the in-scope match so far; an alternation inside the scope means each alternative's text so far.
 - Supersedes the `int($1)<=255` spelling in this row's title, which needs a capture; the where form needs none.
 
+
+## 2026-11-08 — Frank: expose the composition as span intersection; lookaheads as a second client (recorded, not scheduled)
+
+Frank: the base rx and each sub-predicate are separate predicates on ONE span. An intermediate form applies all of them to the span; combining them into one automaton is then an optimization that removes the extra conditions. "The reason to do this exercise, if it worked, is that it enables some lookaheads to be removed and lookahead rx to be buildable in dfa."
+
+Manager notes, not ruled:
+- **The intermediate form is span INTERSECTION, not a plain lookahead.** `(?=A)B` only requires A to match a PREFIX of what follows, so `(?=\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\d+` admits `2550`. Each sub-predicate must end where the span ends: `\d+ & P1 & P2` (an IR node; no surface spelling implied). `$ < 256` is the range automaton; `&&`/`||`/`!` are intersection/union/complement; fold first (intervals, remainder sets), product, minimize.
+- **Lookaheads lower onto the same node:**
+  - CONTAINED (A's matches end inside B's span): `(?=A)B` = `(A Σ*) & B`, so the lookahead disappears and the result is a plain automaton.
+  - EXTENDING past the span into the continuation: still regular. Run A alongside the main automaton until it accepts; determinization can blow up, so it is priced by the size ladder.
+  - NEGATIVE: complement then intersection. Regular, but it needs a determinized A first.
+  - Captures or backreferences inside: stay VM.
+- **Static wins without any DFA (VM too):** subsumption (`B ⊆ A Σ*` drops the lookahead: `(?=\d)\d+` → `\d+`), disjointness (never matches), and folding neighbouring predicates on one span.
+- **Fit:** one general mechanism with three clients: the where predicate, lookahead removal, and lookahead lowered to DFA. It is the forward twin of the reverse DFA in lookbehind (A-REV, `docs/design/stream/arev.md`). It touches [REQ-LOOKAROUND] (runs see through positive lookarounds) and stream unification.
+- **Prior art to check before citing:** lookaheads without captures preserve regularity; RE# (Varatalu et al., POPL 2025; manager's memory, unverified) does intersection, complement and restricted lookarounds in a derivative DFA.
