@@ -11,4 +11,4 @@
 
 ## STATE AT HANDOFF
 Committed on lane/compref3; rulings file empty (no entries). Checked with `compliance_section.py --check/--names/--check-annotations` directly; `make test-registry` NOT run (evening hold, no suites).
-OWED: `make test-registry` (covers compliance_section.py plus PC-3 registry-vs-libpcre2) on lane/compref3 at merge; the manager's normal gate.
+OWED: none (the manager's merge gate runs `make test-registry`, which covers compliance_section.py and PC-3; this lane ran only the three compliance_section.py checks)
