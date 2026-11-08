@@ -2,4 +2,4 @@ report=docs/dev/lanes/k0fix2_report.md
 sections: Summary; The change; Row run; Charter-vs-committed checklist
 nonempty: all
 commit: yes
-owed: S2977 single-row mech verdict (log in report)
+owed: none
