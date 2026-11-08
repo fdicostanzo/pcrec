@@ -85,11 +85,13 @@ from target_text import admitted, cut, read_table  # noqa: E402
 # Floors per target, pinned AT the measure (deterministic counts of emitted
 # text). History of the pre-seam single count: 44 at w16 (R-13); 33 at D172
 # S3; 46 at code review r1 C1 (lane s3), both rungs under one `#if` chain.
-# The target seam (lane u3floor) splits it per target and per level.
+# The target seam (lane u3floor) splits it per target and per level: 55 and
+# 55 measured at both targets on the full corpus (2026-11-08, 5095 patterns;
+# the corpus grew since r1 C1), every selector at its target's top level.
 FLOORS = {
     # target: (movers, SIMD FUNCs, {level stamp: selectors calling it})
-    'x86-64': (46, 46, {'w16': 46}),
-    'x86-64-v3': (46, 46, {'w32': 46}),
+    'x86-64': (55, 55, {'w16': 55}),
+    'x86-64-v3': (55, 55, {'w32': 55}),
 }
 LEVELS_FLOOR = 2       # mf_levels() rows: w16, w32 (R-13)
 TARGETS_FLOOR = 2      # targets whose family has a level (U2)
