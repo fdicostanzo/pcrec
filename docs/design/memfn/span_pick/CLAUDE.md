@@ -18,6 +18,13 @@ design's own formula). A study only: never built or run by `make`. Run python wi
   R-33's sweep at the corners of that grid, BAND-0 argmin vs the incumbent read from the trace: (1) movers by
   class, (2) the card population of row-1-class sites (methods, verify (form, cls), consumer kind x entry).
   Stand-ins and what it does not compute: its docstring. Output `census0.out`.
+- `census0.py forecast SWEEP.jsonl --measures SET.tsv [--swept-at COMMIT] [-o census0_cards.out]` — S2f: the same
+  sites priced with a measurement set's CARDS (`measure_store/zen4-grid3/1/set.tsv`, read from its `rows` section)
+  instead of the stand-ins, at two hit-gap points (256, 1024; random landing), NONE-entry alternatives only, the
+  band from the cards' noises; plus the vcls fold (verify classes, `class_measure`) and the smp20 watched-witness
+  reading (measured k vs k*). Output `census0_cards.out`, committed beside `census0.out` (which stays S2b's: it
+  is a TIMED path, `slot/plan.py` reads it, so S2f leaves it byte for byte). `slot/vcls.py` stays (link.py and
+  plan.py read it); its data lines equal the fold's, checked by the S2f job.
 - `census0_control.sh BUNDLEDIR` — census0's control: `control` on smp20's site must equal `smp20.out` byte
   for byte (sabotage S2920 plants the incumbent read from the wrong field).
 - `witness.sh PCREC PCREC_ANALYZE SCRATCH` — the watched witness: builds the scratch `prose` bundle
@@ -37,3 +44,5 @@ row (git history, 5b3bc376a).
     bash witness.sh build/pcrec build/pcrec-analyze "$S" > witness.out
     B=$S/bundles; bash census0_control.sh $B     # GREEN = smp20.out reproduced
     python3 -I census0.py sweep "$SWEEP" -o census0.out   # J0 does this on the re-made sweep
+    python3 -I census0.py forecast "$SWEEP" --measures ../../../../measure_store/zen4-grid3/1/set.tsv \
+        --swept-at 71cad723e -o census0_cards.out   # S2f; job 488 re-makes the sweep and compares byte for byte

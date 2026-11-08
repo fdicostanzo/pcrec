@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2f_report.md
+sections: Summary; vcls fold into census0; Control (smp20 golden); Forecast with measured cards; Watched witness (k*); Row 1 mover forecast; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: kit-s2f-strict kit-s2f-census kit-s2f-sections
