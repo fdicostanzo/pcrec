@@ -1,0 +1,17 @@
+# libpcre2-8 10.46 via tests/lib/p2probe.c (gcc -O1, pkg-config libpcre2-8); columns: pattern, subjects as startpos:text, OK ncaps then M start end per subject or N
+xy(?:ab){1,2}zw	0:xyababzw 0:xyabzw	OK 0 M 0 8 M 0 6 
+xy(?:ab){1,3}zw	0:xyabzw	OK 0 M 0 6 
+ab(?:cd){0,2}ef	0:abcdef 0:abef	OK 0 M 0 6 M 0 4 
+ab(?:c?){2}de	0:abcde	OK 0 M 0 5 
+xy(?:ab){2}zw	0:xyababzw	OK 0 M 0 8 
+(?<=foo)bar	3:foobar 2:foobar 4:foobar 0:foobar	OK 0 M 3 6 M 3 6 N M 3 6 
+bar(?=baz)	0:barbaz 0:barbax	OK 0 M 0 3 N 
+a(?=b)[bc]	0:ac 0:ab	OK 0 N M 0 2 
+xyz(?<=yz)abc	0:xyzabc	OK 0 M 0 6 
+abcd(?:)*efgh	0:abcdefgh	OK 0 M 0 8 
+(?:(?=abcd)ab)cd	0:abcd	OK 0 M 0 4 
+x(?!ab)ac	0:xac	OK 0 M 0 3 
+(?<=ab|b)c	0:xbc 0:abc	OK 0 M 2 3 M 2 3 
+(?<=fo{1,3})bar	0:foobar 4:fooobar	OK 0 M 3 6 M 4 7 
+foo(?=bar)baz	0:foobaz 0:foobarbaz	OK 0 N N 
+(ab)x\1y	0:abxaby	OK 1 M 0 6 0 2 
