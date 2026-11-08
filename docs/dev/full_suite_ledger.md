@@ -27,6 +27,7 @@ Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it); 1 maj
 
 ### minor
 
+- 2026-11-08 d9df92c0d minor — merge lane/memfn-k0 (kit unit K0, R-36: the CPU target table, new kit TU memfn/src/targets.c + table check at make/strict + 7 sabotage rows S2975-S2981; no emitted byte, no abi event; its gates strict/sections/make test/mech GREEN)
 - 2026-11-06 e7341f87e minor — span_pick stage 2 unit S2a merge (kit measurement set format 2 / loader change, limits_check moved; no pcrec abi; test-registry and test-plan-lint green at the landing)
 - 2026-11-06 6b04768ed minor — span_pick stage 1 unit 1e merge (fd_route merged into fd_find, renderer rows declared, MF_CLASS_V 7 -> 8; zero movers, MF_SITE_ABI 23, no pcrec abi; its gates 430-439 green; kit k1102 merge is docs)
 - 2026-11-05 39e7b20c5 minor — span_pick stage 1 unit 1d merge (memfn/src/window.c planning core; byte-identical kit refactor, zero movers, MF_SITE_ABI 23, no pcrec abi; like 1a/1c)

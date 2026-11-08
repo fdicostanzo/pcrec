@@ -9003,6 +9003,7 @@ The FIRST instance is the pre-round-2 bench outlier read Frank asked for (D144 i
 **Why:** the r2 panel showed the cross-project price layer recreates the measurement-regime, shared-source and recalibration problems at the project boundary. Delegation keeps those concerns inside the kit, where its own exhaustive tests and timed control live.
 **Guard:** pcrec's own bench/alpha timings with the kit on vs off. That control does not share a source with the kit.
 **Revisit-when:** a delegated site's kit code is measured worse than pcrec's pre-migration form and the kit cannot fix it.
+- **Addendum 1 (target tokens; owner 2026-11-07, filed at K0's landing 2026-11-08, merge d9df92c0d; docs/design/memfn/target_seam_units.md §4, §6):** targets are opaque tokens in pcrec. The target table (families, targets, features, the region and guard text, the run-time CPU predicate, the host default) is the kit's, returned per token as facts and text; pcrec validates a token only by asking the kit, at option parse, and passes it across the seam. pcrec keeps the structure: the list, parts, stems, the controller, entries and stamps. Facts and C spellings are separate structs (mf_target/mf_family vs mf_target_c/mf_family_c), so another emitter's spellings sit beside the C ones (owner 2026-11-07: code may be emitted as C or Rust). Supersedes target_seam.md §6.4's draft addendum.
 
 ## D147 — Layers: the scalar algorithm stays live and improvable forever; SIMD is a layer; each layer must be the best it can be on its own (Frank, 2026-10-05, ninetieth session)
 
