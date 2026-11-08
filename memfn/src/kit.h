@@ -705,7 +705,7 @@ extern const gate_contract vrun_w16_ct, vrun_w32_ct;
  * it). At 1 both are REFUSED at the define (define_sel): an art must state
  * its target, and bit 0 is retired. */
 #ifndef MF_TARGET_REQUIRED
-#define MF_TARGET_REQUIRED 0
+#define MF_TARGET_REQUIRED 1
 #endif
 
 /* Level `lv` (LV_*) of levels.def (levels.c). */
