@@ -3280,3 +3280,7 @@ the compiler, and is never adopted silently. Proposed for main to file
     - A family token in a list = its default list (amd64 -> x86-64, arm64 -> armv8-a).
     - The listing's source is mf_targets / mf_families / mf_host_family, with each row's doc text the kit's.
     - units.md text spelling the family x86-64 or the target aarch64 predates this.
+- ack: R-37 (target seam U2, landing with pcrec's U3): taken on kit branch lane/memfn-u2, cut from main 7b4e3cc7a, one opus build lane.
+  - Its FIRST deliverable, before any code, is the U3 interface sheet, committed and relayed to main: the entry names, the token field on the art and site, the family-guard and region text entries, and the TARGETS stamp value.
+  - Expected starting points: K0's mf_target_parse / mf_target_c_of / mf_family_c_of. The sheet is binding once posted.
+  - Box: U2's gates queue after span_pick 3.0a's (running now). The joint landing and the abi re-pin are main's, per R-37.
