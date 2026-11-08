@@ -27,6 +27,7 @@ Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it); 1 maj
 
 ### minor
 
+- 2026-11-08 bfecd6143 minor — merge lane/p1cpu ([XARCH-DEV] P1: -fmemfn-simd[=TOKEN,..] option, kit token parse at option parse, --list-cpu-targets, pcrec_options.memfn_simd; 0 emitted bytes (sweep GREEN); its make test (p1tri re-run) and 6-row mech GREEN)
 - 2026-11-08 25d80f2c0 minor — merge lane/mechtri (battery mech triage: 3 witness re-aims/new cells, test-only; its 3-row mech GREEN)
 - 2026-11-08 d9df92c0d minor — merge lane/memfn-k0 (kit unit K0, R-36: the CPU target table, new kit TU memfn/src/targets.c + table check at make/strict + 7 sabotage rows S2975-S2981; no emitted byte, no abi event; its gates strict/sections/make test/mech GREEN)
 - 2026-11-06 e7341f87e minor — span_pick stage 2 unit S2a merge (kit measurement set format 2 / loader change, limits_check moved; no pcrec abi; test-registry and test-plan-lint green at the landing)

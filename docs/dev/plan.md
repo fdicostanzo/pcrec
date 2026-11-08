@@ -33,7 +33,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 ## Active
 - [XARCH-DEV] STATE:started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
   filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
-  status (2026-11-08): BUILD GO 2026-11-07 (Frank: "this should be next (at least in parallel) to unblock kit"); kit K0 (target table) LANDED d9df92c0d, D146 add. 1; next pcrec's P1 (one flag -fmemfn-simd[=TOKEN,..], kit parse, --list-cpu-targets, 0 bytes); order: target_seam_units.md
+  status (2026-11-08): BUILD GO 2026-11-07 (Frank: "this should be next (at least in parallel) to unblock kit"); kit K0 LANDED d9df92c0d (D146 add. 1); pcrec P1 LANDED bfecd6143 (-fmemfn-simd[=TOKEN,..], kit token parse, --list-cpu-targets, 0 bytes); next U2+U3 (one abi event); order: target_seam_units.md
   trigger: Frank's go, or the first aarch64 kit row
   refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
   Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
