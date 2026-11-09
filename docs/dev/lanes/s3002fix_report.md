@@ -19,3 +19,6 @@ By hand in a scratch copy of the joint tree (u3crit HEAD, kit files identical): 
 - S3002 detector comment re-aimed: done. Plant spelling kept: done.
 - Plant measured DETECTED with counts, unplanted green: done (by hand).
 - arch_blind and anchors: done.
+
+## STATE AT HANDOFF
+Nothing owed. Committed; full matrix row S3002 not run (box rule), re-run command in Plant measured.
