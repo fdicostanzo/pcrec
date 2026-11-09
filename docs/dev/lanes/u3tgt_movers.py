@@ -126,6 +126,13 @@ def judge(mode, r, l, fixed):
         return "simd: MEMFN_FORMS %r, predicted %r from the ref's %r" % (lforms, want, rforms)
     rl, ll = lines(r), lines(l)
     drop_ok = unadmitted_spans(rl, kept)
+    top = {}   # per helper family: the level the lane's one-call selector calls
+    for x in ll:
+        m = re.match(rb"^    return (\w+)__w(\d+)\(subject", x)
+        if m:
+            top[m.group(1)] = max(top.get(m.group(1), 0), int(m.group(2)))
+    if top and max(top.values()) > max(int(k[1:]) for k in kept):
+        return "simd: a selector calls a level its MEMFN_FORMS does not admit"
     for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, rl, ll, autojunk=False).get_opcodes():
         if tag == "equal":
             continue
@@ -138,8 +145,14 @@ def judge(mode, r, l, fixed):
             if (i in drop_ok or STAMP_RE.match(x) or CPU_PP.match(x) or PP_ELSE_END.match(x)
                     or not x.strip() or re.match(rb"^\s*return \w+__body\(", x)):
                 continue
-            arm = re.match(rb"^\s*return \w+__(w\d+)\(", x)   # a selector arm of an unadmitted level
-            if arm and arm.group(1) not in kept:
+            arm = re.match(rb"^\s*return (\w+)__(w\d+)\(", x)   # a selector arm of an unadmitted level
+            if arm and arm.group(2) not in kept:
+                continue
+            # the kit's selector is ONE call, to the top admitted rung (U2 report,
+            # "the selector is one call to the top admitted rung, or __body"): the
+            # ref's chain arms for the lower rungs go. The top is read off the
+            # lane's own selector call and must be the top of its MEMFN_FORMS.
+            if arm and int(arm.group(2)[1:]) < top.get(arm.group(1), 0):
                 continue
             return "simd: unpredicted ref line removed %r" % x[:120]
     return None
