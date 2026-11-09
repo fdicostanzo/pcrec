@@ -94,9 +94,8 @@ STATE: delivered. Validation is owed on the five queued jobs listed under STATE 
 
 ## Checks
 
-- **The suite** (`tests/memfn/d27_region/run.sh`, 4 jobs, 2m19s). Before R2: 8,154 passed, 0 failed. On
-  825d87aae it read 8,141 / 13. Its run on the R2 tip is in `$PCREC_TMPDIR/scratch/u3d27/run3.log`; the
-  queued `-sections` job holds it either way.
+- **The suite** (`tests/memfn/d27_region/run.sh`, 4 jobs, 2m19s): 8,154 passed, 0 failed, both before R2
+  (run2) and on the R2 tip (run3, `$PCREC_TMPDIR/scratch/u3d27/run3.log`). On 825d87aae it read 8,141 / 13.
 - **The wrapper** (`tests/memfn/run_d27_region.sh`, at `D27_QUICK=1 D27_FLOOR=1`): `PASS d27region: 5066
   checks passed` and `PASS d27region control`, rc 0.
 - **`tests/memfn/run_targets.sh`** (`make test-memfn-targets`'s script) has new 4b F1 cells: v3 compounds
