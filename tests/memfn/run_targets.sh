@@ -28,6 +28,16 @@
 # and printed, only where clang is absent; on another host the x86 cells are
 # SKIPPED and counted. A missing build/pcrec on an x86-64 host is a FAIL.
 #
+# A TARGET WHOSE FACT ROWS FAILED IS NOT COMPILED (lane simdskip, learnings §3):
+# parts 1-2 are the facts; a compile over a table that already failed its facts
+# reports the compiler's error as a second, noisier verdict (a mech row reads it
+# as "not a catch"). Each fact failure is attributed to the targets its text
+# names, to every target where it names none; each cell, census and guard below
+# asks facts_failed for the targets it builds, and a skipped one prints a
+# `SKIP ... facts failed` line, is counted, and the RAN floors do not apply to
+# a run that skipped. The count is printed, and a skip with no fact failure is
+# itself a FAIL, so a skip can never stand in for a pass.
+#
 # Usage: bash tests/memfn/run_targets.sh     Env: CC (the unit build), KEEP=1
 # Prints `checks passed: N` / `checks failed: M`; exit 0 iff M is 0.
 
@@ -45,13 +55,38 @@ pass=0; fail=0; ran=0; skipped=0
 ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1"; fail=$((fail + 1)); }
 skip() { echo "SKIP: $1"; skipped=$((skipped + 1)); }
+FACT_MSGS=""      # the fact-row failure texts of parts 1-2, one per line
+csk=0             # compiles skipped because their targets' facts failed
+fact_note() { FACT_MSGS="$FACT_MSGS$1"$'\n'; }
+tok_in() {   # tok_in TOKEN TEXT: TOKEN as a whole target token in TEXT (x86-64 is not x86-64-v3)
+    printf '%s\n' "$2" | grep -qE "(^|[^a-z0-9.-])$1([^a-z0-9.-]|\$)"
+}
+facts_failed() {   # facts_failed TARGET..: 0 iff a fact failure names one of them (or names no target)
+    local line t
+    [ -n "$FACT_MSGS" ] || return 1
+    while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        if ! tok_in generic "$line" && ! tok_in x86-64 "$line" && ! tok_in x86-64-v3 "$line" &&
+           ! tok_in armv8-a "$line"; then return 0; fi
+        for t in "$@"; do tok_in "$t" "$line" && return 0; done
+    done <<<"$FACT_MSGS"
+    return 1
+}
+fskip() {   # fskip WHAT TARGET..: 0 (after counting and printing) iff WHAT must not be compiled
+    local what="$1"; shift
+    facts_failed "$@" || return 1
+    csk=$((csk + 1)); skip "$what: not compiled, the facts of $* failed"
+    return 0
+}
 GCC_CELLS=6
 ART_GCC_CELLS=12   # part 4: 4 gcc cells x 3 targets (the v3 four run only on an AVX2 CPU)
 CONSUMER_CELLS=4   # part 4's consumer-TU cells
 ROW_FLOOR=63   # targets_check.c's PASS lines, measured at K0 (lane k0; one host row on every host); +16 at U2 (four admission rows of four checks each, every host); +5 at u2rev (each admission row's includes, review r5 X-1; the kernel's bracket refusal, SEAM-5)
 
 echo "== 1. the kit's target table check =="
-if out="$(bash "$ROOT_DIR/memfn/tests/check_targets.sh")"; then ok "$out"; else bad "$out"; fi
+if out="$(bash "$ROOT_DIR/memfn/tests/check_targets.sh")"; then ok "$out"
+else bad "$out"; while IFS= read -r l; do case "$l" in *MISMATCH*|*"could not run"*|*"cannot read"*|*"could not read"*) fact_note "$l" ;; esac; done <<<"$out"
+    [ -n "$FACT_MSGS" ] || fact_note "table check failed (no mismatch line)"; fi
 
 echo "== 2. the entries =="
 BIN="$WORKDIR/targets_check"
@@ -63,7 +98,9 @@ host="$(uname -m)"
 cat "$WORKDIR/rows.out"
 nrow="$(grep -c '^PASS' "$WORKDIR/rows.out")"
 if [ "$rc" -eq 0 ] && [ "$nrow" -ge "$ROW_FLOOR" ]; then ok "targets_check: $nrow entry checks green (floor $ROW_FLOOR)"
-else bad "targets_check: rc=$rc, $nrow passing (floor $ROW_FLOOR)"; fi
+else bad "targets_check: rc=$rc, $nrow passing (floor $ROW_FLOOR)"
+    while IFS= read -r l; do fact_note "$l"; done < <(grep '^FAIL' "$WORKDIR/rows.out")
+    [ -n "$FACT_MSGS" ] || fact_note "entry checks failed (no FAIL line)"; fi
 
 echo "== 3. the compile cells =="
 "$BIN" --fixture > "$WORKDIR/fixture.c"
@@ -100,6 +137,7 @@ have_clang=0; command -v clang >/dev/null 2>&1 && have_clang=1
 cell() {
     local name="$1" cc="$2"; shift 2
     local exe="$WORKDIR/cell_$name"
+    fskip "cell $name ($cc $*)" generic x86-64 x86-64-v3 && return   # the fixture holds all three targets
     if ! "$TIMEOUT_BIN" 120 "$cc" -O2 -Wall -Wextra -Werror "$@" -o "$exe" \
             "$WORKDIR/fixture.c" "$WORKDIR/main.c" 2> "$WORKDIR/cell_$name.err"; then
         bad "cell $name ($cc $*): did not compile: $(head -c 300 "$WORKDIR/cell_$name.err")"; return
@@ -130,10 +168,11 @@ if [ "$host" = x86_64 ]; then
         cell clang-v4      clang -march=x86-64-v4
     else skip "clang cells: no clang on this box (3 cells)"; fi
     want="$GCC_CELLS"; grep -qw avx512f /proc/cpuinfo 2>/dev/null || want=$((GCC_CELLS - 1))   # gcc-v4 not run without avx512f
-    [ "$ran" -ge "$want" ] || bad "RAN floor: $ran cells ran, want at least the $want gcc cells"
+    [ "$csk" -gt 0 ] || [ "$ran" -ge "$want" ] || bad "RAN floor: $ran cells ran, want at least the $want gcc cells"
 
     echo "== 3b. the target code census (objdump) =="
-    if command -v objdump >/dev/null 2>&1; then
+    if fskip "census (fixture object)" generic x86-64 x86-64-v3; then :
+    elif command -v objdump >/dev/null 2>&1; then
         gcc -O2 -c -o "$WORKDIR/fx.o" "$WORKDIR/fixture.c"
         dis() { objdump -d --no-show-raw-insn "$WORKDIR/fx.o" | awk -v f="<$1>:" '$2==f{p=1;next} /^$/{p=0} p'; }
         y32="$(dis fx_w32 | grep -c '%ymm')"; x16="$(dis fx_w16 | grep -c '%xmm')"; yg="$(dis fx_generic | grep -c '%ymm')"
@@ -146,6 +185,7 @@ if [ "$host" = x86_64 ]; then
     msg='generated for another CPU family'
     guard() {
         local name="$1"; shift
+        fskip "guard $name ($*)" generic x86-64 x86-64-v3 && return
         if "$TIMEOUT_BIN" 60 "$@" -fsyntax-only "$WORKDIR/fixture.c" 2> "$WORKDIR/g_$name.err"; then
             bad "guard $name ($*): compiled; the #error did not fire"
         elif grep -q "$msg" "$WORKDIR/g_$name.err"; then ok "guard $name ($*): refused with its own message"
@@ -197,6 +237,7 @@ C
     host_avx2=0; gcc -march=native -dM -E -x c /dev/null 2>/dev/null | grep -q '__AVX2__' && host_avx2=1
     acell() {   # acell TARGET NAME CC FLAGS..
         local tg="$1" name="$2"; shift 2; local d="$WORKDIR/a_${tg}_$name"; mkdir -p "$d"
+        fskip "artifact $tg cell $name ($*)" "${tg/portable/generic}" && return
         if [ "$tg" = portable ]; then simd=-fno-memfn-simd; else simd="-fmemfn-simd=$tg"; fi
         if ! "$TIMEOUT_BIN" 60 "$PCREC_BIN" -p rx "$simd" -o "$d/a.c" --pattern '(?i)cat' 2> "$d/pc.err"; then
             bad "artifact $tg: pcrec refused: $(head -c 200 "$d/pc.err")"; return; fi
@@ -218,17 +259,19 @@ C
     done
     want="$ART_GCC_CELLS"; [ "$host_avx2" = 1 ] || want=$((ART_GCC_CELLS - 4))
     clang_cells=0; [ "$have_clang" = 1 ] && clang_cells=3; [ "$have_clang" = 1 ] && [ "$host_avx2" != 1 ] && clang_cells=2
-    [ "$aran" -ge $((want + clang_cells)) ] || bad "RAN floor (artifacts): $aran cells ran, want $((want + clang_cells))"
+    [ "$csk" -gt 0 ] || [ "$aran" -ge $((want + clang_cells)) ] || bad "RAN floor (artifacts): $aran cells ran, want $((want + clang_cells))"
     # the levels each target renders, read off the artifact's own stamp: the
     # portable target none, each SIMD target some (else the answer cells above
     # would pass with no SIMD at all)
     forms() { sed -n 's/^#define RX_MEMFN_FORMS //p' "$WORKDIR/a_$1_gcc/a.c"; }
-    if [ "$(forms portable)" = '"none"' ] && [ -n "$(forms x86-64)" ] && [ "$(forms x86-64)" != '"none"' ] \
+    if [ "$csk" -gt 0 ]; then skip "forms: artifacts were skipped (facts failed)"
+    elif [ "$(forms portable)" = '"none"' ] && [ -n "$(forms x86-64)" ] && [ "$(forms x86-64)" != '"none"' ] \
        && [ -n "$(forms x86-64-v3)" ] && [ "$(forms x86-64-v3)" != '"none"' ]; then
         ok "forms: the portable artifact renders no SIMD form, x86-64 $(forms x86-64), x86-64-v3 $(forms x86-64-v3)"
     else bad "forms: portable $(forms portable) (want \"none\"), x86-64 $(forms x86-64), x86-64-v3 $(forms x86-64-v3) (want SIMD forms)"; fi
     v3="$WORKDIR/a_x86-64-v3_gcc/a.c"
-    if [ -f "$v3" ] && command -v objdump >/dev/null 2>&1; then
+    if fskip "artifact census and controls" x86-64-v3; then :
+    elif [ -f "$v3" ] && command -v objdump >/dev/null 2>&1; then
         gcc -O2 -c -I"$(dirname "$v3")" -o "$WORKDIR/v3.o" "$v3"
         y="$(objdump -d --no-show-raw-insn "$WORKDIR/v3.o" | grep -c '%ymm')"
         if [ "$y" -gt 0 ]; then ok "census: the x86-64-v3 artifact's object carries $y ymm uses at the default -march"
@@ -256,6 +299,7 @@ C
     # FIRST included, so a header first read inside an artifact's region
     # breaks every later use of it outside. Each cell must compile.
     cdir="$WORKDIR/consumer"; mkdir -p "$cdir"
+    if ! fskip "consumer translation units" x86-64 x86-64-v3; then
     gen() { "$TIMEOUT_BIN" 60 "$PCREC_BIN" "$@" 2>> "$cdir/pc.err"; }
     gen -p ra -fmemfn-simd=x86-64-v3 -o "$cdir/a.c" --pattern '(?i)hello' &&
     gen -p rb -fmemfn-simd=x86-64 -o "$cdir/b.c" --pattern '(?i)world' &&
@@ -306,6 +350,7 @@ C
     ccell two-O0 two.c -O0
     ccell fortify fortify.c -O2 -D_FORTIFY_SOURCE=2 # a v3 compound, then a fortified memcpy
     [ "$cran" -ge "$CONSUMER_CELLS" ] || bad "RAN floor (consumer): $cran cells ran, want $CONSUMER_CELLS"
+    fi
 elif [ "$host" = x86_64 ]; then
     bad "pcrec artifact cells: no $PCREC_BIN on an x86-64 host (build it: make)"
 else
@@ -313,7 +358,8 @@ else
 fi
 
 [ $((pass + fail)) -gt 2 ] || bad "the section checked nothing past its first two parts"
-echo "targets: $ran cells ran, $skipped skipped"
+[ "$csk" -eq 0 ] || [ -n "$FACT_MSGS" ] || bad "$csk compiles were skipped with no fact failure"
+echo "targets: $ran cells ran, $skipped skipped, $csk compiles skipped (facts failed)"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
