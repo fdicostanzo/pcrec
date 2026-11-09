@@ -222,7 +222,8 @@ static unsigned char pf_walk_arms_of(unsigned restored, PfFactId f)
  * each: `-fno-req-run-fold` is read as the position bound (1, the single
  * byte), so the walk reads no option and the deny narrows the fact for every
  * consumer at once (D126 Q3); the harness lever's restored arms are read off
- * the emission input (NULL on every shipped path). No second path reaches the
+ * the emission input (NULL on every shipped path), or, in a compound part,
+ * off the walking attempt's inherited set (`PcrecMeasInherit.walk_arms`). No second path reaches the
  * walk, and `facts.def`'s deny column keeps its one meaning (it EMPTIES a
  * fact, `pf_enter`); a parameter changes how the walk derives it. */
 static void pf_derive_req_walk(Ctx *cx)
@@ -233,7 +234,8 @@ static void pf_derive_req_walk(Ctx *cx)
         .pos_set    = pcrec_opt_has(cx->opt, PCREC_NO_REQ_RUN_FOLD)
                     ? 1 : PCREC_MAX_REQ_RUN_POS_SET,
         .max_pieces = PCREC_MAX_REQ_PIECES,
-        .restored   = h ? h->walk_arms : 0,
+        .restored   = h ? h->walk_arms
+                    : cx->emit_in && cx->emit_in->meas ? cx->emit_in->meas->walk_arms : 0,
     };
     RbSet set;
     RbRun run;
