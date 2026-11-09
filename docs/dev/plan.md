@@ -469,7 +469,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/span_arms.md §12a §12c; docs/dev/reviews/2026-11-09-r2-r38s.md (F1); [MATCH-KNOWN] (its prefix-skip member reads the same verified extent); body docs/design/plan_row_bodies/EARNED-SKIP.md
 - [NEVER-MATCH] STATE:not-started — a pattern proved never to match compiles to a constant no-match matcher; a fact, never an error
   filed: 2026-11-09 manager (Frank: "I like your no match ideas. File")
-  status (2026-11-09): UNSCHEDULED. Never an error (D26; best-guess detection must not decide acceptance). Optimize (constant matcher, dead branches dropped) + an --emit-facts fact + an optional warning flag at [IFACE-PUSH]
+  status (2026-11-09): UNSCHEDULED. Default never an error (D26). Optimize (constant matcher, dead branches dropped) + an --emit-facts fact + an opt-in caller policy allow|warn|error ('must be matchable', Frank) at [IFACE-PUSH]
   trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
   refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]
 - [CAPS-VIEW-RERENDER] STATE:not-started — re-render cycle1_caps_view.md's CAPS table under the bench's I-99/I-100 classes
