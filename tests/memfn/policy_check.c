@@ -1,13 +1,12 @@
 /* tests/memfn/policy_check.c -- [XARCH-DEV] unit U2 fix (request R-37): the
- * kit's define-time refusal of a policy bit outside its named set, held at
- * MF_TARGET_REQUIRED 1.
+ * kit's define-time refusal of a policy bit outside its named set
+ * (unconditional since review 2026-11-08 r5 X-5 deleted the staging switch).
  *
- * Built by tests/memfn/run_finder.sh against the kit's own sources compiled
- * with -DMF_TARGET_REQUIRED=1 (kit.h guards the default 0 with #ifndef), and
- * driven through the public header only. At the branch default the refusal is
- * not reached, so this is the one check that can tell it from its absence
- * (S3000). Each case defines a FIND site, differing from the control only in
- * its policy word, on an art whose target is stated:
+ * Built by tests/memfn/run_finder.sh against the library its other parts
+ * link, and driven through the public header only: the one check that can
+ * tell the refusal from its absence (S3000). Each case defines a FIND site,
+ * differing from the control only in its policy word, on an art whose target
+ * is stated:
  *
  *   control   the named bits (MF_P_INLOOP | MF_P_SIZE_LEANING; bit 0 is retired)
  *             define cleanly, so a refusal below is the policy word's alone;

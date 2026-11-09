@@ -7,10 +7,10 @@
  * column became `needs`). An X-macro in options.def's idiom, kit-private:
  * pcrec's build never reads it and pcrec's sources never include it (C4).
  * The ONE place a level is named: a SIMD row references a level by token and
- * never names a feature; the seam (ofsskip.c) writes each level's include
- * from these strings; the tests read them through mf_levels().
+ * never names a feature; the seam (ofsskip.c) notes each rendered level's
+ * header bit on the art; the tests read the rows through mf_levels().
  *
- * MF_LEVEL(token, family, needs, header, vw, test_march, forbid, stamp)
+ * MF_LEVEL(token, family, needs, inc, vw, test_march, forbid, stamp)
  *   token       kit-private id (an enum in kit.h, in this file's order)
  *   family      the family token (targets.def's MF_FAMILY name) the level's
  *               text is for
@@ -25,10 +25,14 @@
  *               table check (memfn/tests/check_targets.sh) holds admission
  *               to the compiler: a need is supplied by a target iff adding
  *               it to `-march=<target>` changes no macro
- *   header      the compiler header the level's text includes, once per
- *               artifact ([r9 C-7, F-10]: a compiler header, not a libc one,
- *               so the artifact stays self-contained), inside the region with
- *               the rest of the text (target_seam.md §3, F10)
+ *   inc         the MF_INC_* bit (memfn.h) of the compiler header the
+ *               level's text needs ([r9 C-7, F-10]: a compiler header, not a
+ *               libc one, so the artifact stays self-contained): a FACT,
+ *               one bit per level, noted on the art's mf_includes; its C
+ *               spelling is includes_c.def's. The host writes it at file
+ *               scope AHEAD of the region, never inside (review 2026-11-08
+ *               r5 X-1: gcc parses a header inside the region under the
+ *               region's target)
  *   vw          the register width in bytes, the DERIVED vector width (D149)
  *   test_march  the TARGET token the kit's tests compile the level at (also
  *               gcc's -march name; [r9 F-13]); the level is admitted there
@@ -47,7 +51,7 @@
  * A 64-byte level and every arm64 level are born with their first row
  * (§R4.9.7's filed list).
  */
-MF_LEVEL(LV_X86_W16, "amd64", "sse2", "emmintrin.h", 16, "x86-64",
+MF_LEVEL(LV_X86_W16, "amd64", "sse2", MF_INC_LEVEL_W16, 16, "x86-64",
          MF_I_PDEP_PEXT | MF_I_GATHER, "w16")
-MF_LEVEL(LV_X86_W32, "amd64", "avx2", "immintrin.h", 32, "x86-64-v3",
+MF_LEVEL(LV_X86_W32, "amd64", "avx2", MF_INC_LEVEL_W32, 32, "x86-64-v3",
          MF_I_PDEP_PEXT | MF_I_GATHER, "w32")

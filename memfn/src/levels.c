@@ -14,8 +14,8 @@
 #include "kit.h"
 
 static const mf_level level_table[] = {
-#define MF_LEVEL(token, family, needs, header, vw, test_march, forbid, stamp) \
-    { #token, family, needs, header, vw, test_march, forbid, stamp },
+#define MF_LEVEL(token, family, needs, inc, vw, test_march, forbid, stamp) \
+    { #token, family, needs, inc, vw, test_march, forbid, stamp },
 #include "levels.def"
 #undef MF_LEVEL
 };

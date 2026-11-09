@@ -555,21 +555,19 @@ static const char *fn_level_name(mf_art *art, const char *fn, const fn_row *r)
 }
 
 /* One rung's BLOCK (§R4.9.2.5 piece 2), bracketed whole by the sink's
- * simd_open/simd_close (§R4.9.2.4): the level's `#include` (once per artifact
- * per level), the helper's head (the function's own, renamed), the row's body
- * (its entry test falls to `fall`) and a blank line. No CPU `#if` (unit U2):
- * the rung is rendered only where the art's target admits its level, and the
- * host's region around the part supplies the ISA. */
+ * simd_open/simd_close (§R4.9.2.4): the helper's head (the function's own,
+ * renamed), the row's body (its entry test falls to `fall`) and a blank line.
+ * The level's header is a FACT, its bit on the art's mf_includes, which the
+ * host writes at file scope ahead of the region (review 2026-11-08 r5 X-1),
+ * never text here. No CPU `#if` (unit U2): the rung is rendered only where
+ * the art's target admits its level, and the host's region around the part
+ * supplies the ISA. */
 static int fn_level_block(mf_art *art, const mf_hooks *h, const fn_in *x,
                           const fn_row *r, const char *name, const char *fall,
                           mf_sink *o)
 {
-    const mf_level *lv = kit_level(r->decl->level);
     o->simd_open(o->u, (int)r->decl->level);
-    if (!(art->simd_inc & 1u << r->decl->level)) {
-        kit_out(o, "#include <%s>\n", lv->header);
-        art->simd_inc |= 1u << r->decl->level;
-    }
+    art->includes |= kit_level(r->decl->level)->includes;
     if (fn_head(art, h, x->p, name, o) || r->decl->render(art, h, x, r->decl, fall, o))
         return -1;
     o->puts(o->u, "\n");

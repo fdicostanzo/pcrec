@@ -197,20 +197,23 @@ static void rows(const char *uname_m)
     check(!strcmp(mf_host_defaults(), want), line);
 }
 
-/* The fixture: the family guard, a generic finder, and one #if-free finder
- * per x86-64 target in that target's region -- the shape a kit form takes
- * after U2 (intrinsics with no CPU `#if`, the header inside the text). */
+/* The fixture: the family guard, the levels' headers at file scope (their
+ * mf_include_c lines, ahead of every region: review 2026-11-08 r5 X-1), a
+ * generic finder, and one #if-free finder per x86-64 target in that
+ * target's region -- the shape a kit form takes after U2 (intrinsics with
+ * no CPU `#if`, no header inside a region). */
 static void fixture(void)
 {
     const mf_target *t16 = tgt("x86-64"), *t32 = tgt("x86-64-v3");
     if (!t16 || !t32) return;
     fputs(mf_family_c_of(t16->family)->guard, stdout);
-    fputs("#include <stddef.h>\n#include <string.h>\n"
-          "size_t fx_generic(const unsigned char *s, size_t n, unsigned char b)\n"
+    fputs("#include <stddef.h>\n#include <string.h>\n", stdout);
+    fputs(mf_include_c(MF_INC_LEVEL_W16), stdout);
+    fputs(mf_include_c(MF_INC_LEVEL_W32), stdout);
+    fputs("size_t fx_generic(const unsigned char *s, size_t n, unsigned char b)\n"
           "{ for (size_t i = 0; i < n; i++) if (s[i] == b) return i; return n; }\n\n", stdout);
     fputs(mf_target_c_of(t16)->region_open, stdout);
-    fputs("#include <emmintrin.h>\n"
-          "size_t fx_w16(const unsigned char *s, size_t n, unsigned char b)\n"
+    fputs("size_t fx_w16(const unsigned char *s, size_t n, unsigned char b)\n"
           "{\n    size_t i = 0;\n    const __m128i v = _mm_set1_epi8((char)b);\n"
           "    for (; n - i >= 16; i += 16) {\n        __m128i w; memcpy(&w, s + i, 16);\n"
           "        unsigned m = (unsigned)_mm_movemask_epi8(_mm_cmpeq_epi8(w, v));\n"
@@ -219,8 +222,7 @@ static void fixture(void)
     fputs(mf_target_c_of(t16)->region_close, stdout);
     fputs("\n", stdout);
     fputs(mf_target_c_of(t32)->region_open, stdout);
-    fputs("#include <immintrin.h>\n"
-          "size_t fx_w32(const unsigned char *s, size_t n, unsigned char b)\n"
+    fputs("size_t fx_w32(const unsigned char *s, size_t n, unsigned char b)\n"
           "{\n    size_t i = 0;\n    const __m256i v = _mm256_set1_epi8((char)b);\n"
           "    for (; n - i >= 32; i += 32) {\n        __m256i w; memcpy(&w, s + i, 32);\n"
           "        unsigned m = (unsigned)_mm256_movemask_epi8(_mm256_cmpeq_epi8(w, v));\n"
@@ -236,15 +238,19 @@ static void fixture(void)
  * selector that is ONE call, to the top admitted rung or to the body. */
 static void mem_puts(void *u, const char *s) { fputs(s, (FILE *)u); }
 static void mem_vp(void *u, const char *f, va_list ap) { vfprintf((FILE *)u, f, ap); }
+static void mem_open(void *u, int level) { (void)u; (void)level; }
+static void mem_close(void *u) { (void)u; }
 
 static void admission(const char *tok, int w16, int w32, const char *callee)
 {
     char *text = NULL, err[256] = "", line[384];
     size_t len = 0;
     FILE *f = open_memstream(&text, &len);
-    mf_sink o = { .u = f, .puts = mem_puts, .vprintf = mem_vp };
+    mf_sink o = { .u = f, .puts = mem_puts, .vprintf = mem_vp, .simd_open = mem_open,
+                  .simd_close = mem_close };
     static const unsigned char b[2] = { 'a', 'z' };
-    int rc = f ? mf_kernel_find_any(&o, "ka", b, 2, tgt(tok), err, sizeof err) : -1;
+    uint32_t inc = 0;
+    int rc = f ? mf_kernel_find_any(&o, "ka", b, 2, tgt(tok), &inc, err, sizeof err) : -1;
     if (f) fclose(f);
     snprintf(line, sizeof line, "admission %s: the kernel renders (%s)", tok, err);
     check(rc == 0 && text, line);
@@ -262,6 +268,13 @@ static void admission(const char *tok, int w16, int w32, const char *callee)
     snprintf(line, sizeof line, "admission %s: helpers w16 %s, w32 %s", tok, w16 ? "yes" : "no",
              w32 ? "yes" : "no");
     check(!!strstr(text, "ka__w16(") == w16 && !!strstr(text, "ka__w32(") == w32, line);
+    /* the headers are facts, never text (review 2026-11-08 r5 X-1): the
+       reported bits are exactly the admitted levels', and no line of the
+       kit's text includes anything */
+    uint32_t want_inc = (w16 ? MF_INC_LEVEL_W16 : 0u) | (w32 ? MF_INC_LEVEL_W32 : 0u);
+    snprintf(line, sizeof line, "admission %s: includes 0x%x (want 0x%x), no #include in the text",
+             tok, (unsigned)inc, (unsigned)want_inc);
+    check(inc == want_inc && !strstr(text, "#include"), line);
     char want[96];
     snprintf(want, sizeof want, "{\n    return ka__%s(subject, n, pos);\n}", callee);
     const char *sel = strstr(text, "size_t ka(");

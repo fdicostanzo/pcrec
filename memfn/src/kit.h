@@ -276,9 +276,8 @@ typedef struct {
 struct mf_art {
     mf_arena   *a;
     const char *prefix;         /* pcrec's D143 placeholder                   */
-    uint32_t    policy;         /* stored, read by nothing (the site's is read) */
     /* unit U2 (R-37): the art's stated target (mf_art_target; NULL: unstated,
-       so no SIMD level is admitted) and the levels it admits (bit LV_*) */
+       and the first define is refused) and the levels it admits (bit LV_*) */
     const mf_target *target;
     unsigned    levels;
     uint64_t    denies;
@@ -296,10 +295,9 @@ struct mf_art {
     unsigned    trace_id;       /* MF_TRACE: the art's number in the process  */
     /* R4e' batch 1: the SIMD forms rendered on this art, MEMFN_FORMS' value
        (`<form>@<level>+<level>`, one token per FUNC carrying a PREFIX row,
-       in site order; empty = "none"), and the levels whose header has been
-       included (bit LV_*: once per artifact per level, [r9 C-7]) */
+       in site order; empty = "none"); a rendered level's header is its
+       bit in `includes`, which the host writes once at file scope */
     kb          forms;
-    unsigned    simd_inc;
     /* R17-b' B1 (MF_SITE_ABI 12): the compile's measurement set (R-MS1) and
        analysis object (DECLARED, E-1; kit_byte_rate reads it), both the
        host's; `consulted` (R-MS2), set when a ROUTED finder decision resolves
@@ -623,7 +621,7 @@ enum {
 };
 
 enum {
-#define MF_LEVEL(token, family, needs, header, vw, test_march, forbid, stamp) token,
+#define MF_LEVEL(token, family, needs, inc, vw, test_march, forbid, stamp) token,
 #include "levels.def"
 #undef MF_LEVEL
     MF_NLEVEL
@@ -699,27 +697,16 @@ extern const mf_formdecl vrun_w16_decl, vrun_w32_decl;
 extern const gate_contract vrun_w16_ct, vrun_w32_ct;
 
 /* THE KIT'S NAMED POLICY SET: every mf_site.policy bit the kit reads, declared
- * once. A bit outside it is unnamed: gate.c classes the site OTHER (no SIMD row
- * serves it) and, at MF_TARGET_REQUIRED, define_sel refuses it. A new named bit
- * joins HERE, built from its #define, and is then known to gate.c and define_sel
- * alike. */
+ * once. A bit outside it is unnamed: mf_define refuses it (define_sel), and
+ * gate.c classes such a site OTHER (no SIMD row serves it) for mf_ask. A new
+ * named bit joins HERE, built from its #define, and is then known to gate.c
+ * and define_sel alike. */
 #define MF_P_KIT_NAMED (MF_P_INLOOP | MF_P_SIZE_LEANING)
 _Static_assert((MF_P_INLOOP & MF_P_SIZE_LEANING) == 0 &&
                (MF_P_INLOOP & (MF_P_INLOOP - 1)) == 0 &&
                (MF_P_SIZE_LEANING & (MF_P_SIZE_LEANING - 1)) == 0 &&
                (MF_P_KIT_NAMED & 1u) == 0,
                "MF_P_KIT_NAMED: named policy bits are distinct single bits, and bit 0 is retired");
-
-/* THE TARGET SWITCH (unit U2, the kit manager's ruling 2026-11-08): 0 until
- * the U2+U3 joint merge, which sets it to 1 in this one line. At 0 an art
- * that states no target renders the portable text (its SIMD rows decline,
- * rule 1) and a site carrying policy bit 0 classes OTHER (no SIMD row serves
- * it). At 1 both are REFUSED at the define (define_sel): an art must state
- * its target, and a policy bit outside MF_P_KIT_NAMED (bit 0 included) is
- * refused, the unknown bits named in hex. */
-#ifndef MF_TARGET_REQUIRED
-#define MF_TARGET_REQUIRED 0
-#endif
 
 /* Level `lv` (LV_*) of levels.def (levels.c). */
 const mf_level *kit_level(unsigned lv);

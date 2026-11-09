@@ -914,9 +914,8 @@ static const char *measures_check(const mf_measures *ms)
     return NULL;
 }
 
-mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
-                     uint64_t denies, const mf_measures *ms,
-                     const mf_analysis *an)
+mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint64_t denies,
+                     const mf_measures *ms, const mf_analysis *an)
 {
     mf_art *art = a->alloc(a->u, sizeof *art);
     if (!art) return NULL;
@@ -924,7 +923,6 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
     kb_init(&art->forms, a);
     art->a = a;
     art->prefix = prefix ? prefix : "mf";
-    art->policy = policy;
     art->denies = denies;
     art->ms = ms;
     art->an = an;       /* the handed rates: kit_byte_rate reads them (the PRES
@@ -951,8 +949,6 @@ int mf_art_target(mf_art *art, const mf_target *t)
     if (art->target && art->target != t)
         return kit_fail(art, "mf_art_target: the art's target is `%s`; it cannot become `%s`",
                         art->target->name, t->name);
-    if (!art->target && art->nsites)
-        return kit_fail(art, "mf_art_target: stated after the art's first define");
     art->target = t;
     art->levels = kit_target_levels(t);
     return 0;
@@ -1082,12 +1078,12 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (s->abi != MF_SITE_ABI)
         return kit_fail(art, "mf_define: site abi %u, kit abi %u", s->abi,
                         (unsigned)MF_SITE_ABI);
-    if (MF_TARGET_REQUIRED && !art->target)
+    if (!art->target)
         return kit_fail(art, "mf_define: the art states no target (mf_art_target before the "
-                        "first define; MF_TARGET_REQUIRED, unit U2)");
-    if (MF_TARGET_REQUIRED && (s->policy & ~(uint32_t)MF_P_KIT_NAMED))
+                        "first define, unit U2)");
+    if (s->policy & ~(uint32_t)MF_P_KIT_NAMED)
         return kit_fail(art, "mf_define: policy bits 0x%x are not in the kit's named set 0x%x "
-                        "(MF_TARGET_REQUIRED, unit U2)",
+                        "(unit U2)",
                         (unsigned)(s->policy & ~(uint32_t)MF_P_KIT_NAMED),
                         (unsigned)MF_P_KIT_NAMED);
     const char *why = NULL, *wpath = NULL;

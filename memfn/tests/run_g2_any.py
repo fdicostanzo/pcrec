@@ -22,7 +22,13 @@ WHAT IT CHECKS, AND AGAINST WHAT
      exactly the target's admitted levels (x86-64-v3: w16+w32; x86-64: w16;
      generic: none; literals HERE). Every refusal the generator asks (K 1
      and 4, a bad name, a target that is not a row, NULL, a sink without
-     vprintf) must be refused. Population floors per class (K35), below.
+     vprintf, a sink without the bracket ops at a target admitting a level,
+     a NULL `includes`) must be refused. Population floors per class (K35),
+     below. THE HEADERS (review 2026-11-08 r5 X-1): the kit's text holds no
+     `#include` line (the kernels report their headers, which G2 writes at
+     file scope ahead of the region), and a CONSUMER translation unit that
+     includes the x86-64-v3 file and then uses SSE2 intrinsics in a function
+     of its own compiles at -march=x86-64, -O2 and -O0.
   2. ANSWERS, PER BUILD (G1's compile at each level's target): each file
      compiled -Wall -Wextra -Werror at the consumer's default -march=x86-64
      (the region alone supplies the ISA), the x86-64-v3 file also at
@@ -162,6 +168,21 @@ def host_skips(work):
 
 
 HELPER = re.compile(r'static inline size_t (g2a_\d+)__(w16|w32|body)\(.*?\n\}\n', re.S)
+INCLUDE = re.compile(r'^[ \t]*#[ \t]*include\b.*$', re.M)
+# THE CONSUMER (review 2026-11-08 r5 X-1): a translation unit that includes
+# a generated file and then uses the baseline vector header itself
+CONSUMER_C = '''#include <stddef.h>
+#include <stdint.h>
+struct g2a_kernel { size_t (*f)(const unsigned char *, size_t, size_t); unsigned k; uint8_t b[3]; };
+#include "%s"
+#include <emmintrin.h>
+size_t g2a_consumer_n(void) { return sizeof g2a_table / sizeof g2a_table[0]; }
+int g2a_consumer(const char *p)
+{
+    __m128i v = _mm_loadu_si128((const __m128i *)p);
+    return _mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_set1_epi8(1)));
+}
+'''
 
 
 def plant_text(text, kind, lvl, old, new, per):
@@ -280,7 +301,20 @@ def run(a, root, work):
                 % (tg, len(kit), hits[:5], sorted(have), sorted(TARGETS[tg])))
         else:
             ok()
+        inc = INCLUDE.findall(kit)
+        (bad('target %s: the kit text holds %d #include line(s): %s' % (tg, len(inc), inc[:3]))
+         if inc else ok())
     ok()
+    if x86:
+        src = os.path.join(work, 'consumer.c')
+        with open(src, 'w') as f:
+            f.write(CONSUMER_C % files['x86-64-v3'])
+        for opt in ('-O2', '-O0'):
+            r = sh(['gcc', opt, '-march=x86-64', '-Wall', '-Wextra', '-Werror', '-c',
+                    '-o', src[:-2] + opt + '.o', src])
+            (bad('consumer TU over the x86-64-v3 file does not compile at %s -march=x86-64: %s'
+                 % (opt, r.stderr[:600])) if r.returncode else ok())
+        print('consumer TU over the x86-64-v3 file: 2 cells')
     # 1. the space's populations
     pop = dict.fromkeys(POP_FLOOR, 0)
     for m in metas:

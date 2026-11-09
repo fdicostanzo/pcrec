@@ -8,7 +8,8 @@
  * option parse, the portable target and the host's default list, none of
  * which touches emitter text. The C SPELLINGS over targets_c.def and the
  * targets' needs: the region pair and the family guard, reached from a
- * fact row by mf_target_c_of / mf_family_c_of (the owner's ruling
+ * fact row by mf_target_c_of / mf_family_c_of, and each mf_includes bit's
+ * header line over includes_c.def, by mf_include_c (the owner's ruling
  * 2026-11-07: facts apart from any one emitter's spelling).
  */
 #include <stdio.h>
@@ -205,5 +206,19 @@ const mf_family_c *mf_family_c_of(const mf_family *f)
 {
     for (size_t i = 0; f && i < MF_NFAMILY; i++)
         if (f == &family_table[i]) return &family_c_table[i];
+    return NULL;
+}
+
+/* Each mf_includes bit's header line (includes_c.def). */
+static const struct { uint32_t bit; const char *line; } include_c_table[] = {
+#define MF_INCLUDE_C(bit, line) { bit, line },
+#include "includes_c.def"
+#undef MF_INCLUDE_C
+};
+
+const char *mf_include_c(uint32_t bit)
+{
+    for (size_t i = 0; i < sizeof include_c_table / sizeof include_c_table[0]; i++)
+        if (include_c_table[i].bit == bit) return include_c_table[i].line;
     return NULL;
 }
