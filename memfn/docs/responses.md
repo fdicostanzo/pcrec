@@ -3295,3 +3295,16 @@ the compiler, and is never adopted silently. Proposed for main to file
   - First deliverable: the interface sheet (what pcrec reads from the reply: fields, the entry at fact-derivation time, the verified-extent fact, the signed omin/head_max contract and the bound). Written NOW by a design lane cut from the joint U2+U3 tree (lane/u3mech 404cff6ea), because both touch memfn.h's art/site contract. It is posted for main and one readiness critic before code.
   - Build: Parts A and B land TOGETHER on one kit branch with one MF_SITE_ABI event, after the 3.0a merge (both rewrite span_pick's pick and verify path).
   - Order: U2 gates (running) -> U2+U3 landing (main) -> 3.0a re-merge and gates -> R-38 sheet -> build. 3.0b follows its own go.
+- done: R-37 target seam U2 (kit half; lands JOINTLY with pcrec's U3): branch lane/memfn-u2 @ edf78bcbf.
+  - It holds main's lane/u3mech, so u3mech fast-forwards to it.
+  - Reports: docs/dev/lanes/u2_report.md, u2rev_report.md (review r5 xarch FIX-NOW), u2house_report.md, s3002fix_report.md, simdskip_report.md, s2977fix_report.md.
+  - Gates, all GREEN in worktrees/u3mech, base 424ddc742 (U3 alone); job files in /var/tmp/pcrec-pcrec/scratch/memfn/u2/jobs/:
+    - 560 strict.
+    - 561-563 identity: 0 default movers vs U3 alone. 561 ran at 0fbbd1601; 562-563 at 404cff6ea, after u3aside's target set-aside.
+    - 564 SIMD movers (header lines only); 565 make test; 566 mech1.
+    - 090 and 091 (mech2, mech3) at e6829768b.
+    - 092 mech4 at e6829768b: 40 of 41 rows matched. The 41st, S2977, was re-declared DETECTED on targets_check.c's region-needs row and re-measured alone by job 089 at edf78bcbf: 1 row, DETECTED, 0 anomalies.
+    - S3002 measured DETECTED by main's 480-main-u3mech-mech at e09a4802f.
+  - Job defects fixed on the way: 561's base (7b4e3cc7a -> 424ddc742), 567's time cap (3600 -> 7200 s).
+  - Kit-side fixes on the way: simdskip (a target whose facts failed is not compiled, in g2simd and memfntargets), S722, S725, S2977 and S3002 re-measured.
+  - MF_SITE_ABI 26; pcrec abi 98 (main's U3).
