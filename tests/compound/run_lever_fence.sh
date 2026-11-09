@@ -51,8 +51,9 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # arms (span_arms E1, lane sae1): the facts check's [facts-arm] section and
 # the three rows that plant its faults (S1907, S1908, S1909), whose reach probes name
 # the lever; and span_arms R1's `rep` arm (lane sar1): the [facts-rep] section
-# and its row S1921 (the arm not restoring), whose reach probe names it.
-ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S1921_|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv)'
+# and its rows S1921 and S1922 (the arm not restoring), whose reach probe names it; S446 and S807's re-aim
+# comment (sar1fix) names the lever as the old anchor's only way in.
+ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S192[12]_|tests/mech/sabotages/S(446|807)_|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv)'
 mentions() {
     (cd "$1" && grep -rnI -e '--harness=' -e "$PFX" docs/spec docs/guide README.md examples lib tests scripts cli 2>/dev/null) |
         grep -Ev "$ALLOW"

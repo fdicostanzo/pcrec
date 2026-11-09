@@ -739,7 +739,8 @@ if [ ! -x "$HBIN" ]; then
 else
     while IFS=$'\t' read -r bin arm pat fact want wwhy; do
         nrw=$((nrw + 1))
-        [ "$bin" = h ] && b="$HBIN" || b="$PCREC"
+        b="$PCREC"
+        [ "$bin" = h ] && b="$HBIN"
         [ "$arm" = - ] && arm=""
         got="$(rget "$b" "$arm" "$pat" "$fact")"
         gval="${got%%$'\t'*}"; gwhy="${got#*$'\t'}"
