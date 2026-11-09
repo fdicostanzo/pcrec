@@ -1710,6 +1710,19 @@ def target_table(tree):
         return target_text.read_table(exe)[1]
 
 
+def same_but_target(ta, tb, fixed_a, fixed_b, targets):
+    """True when two arm artifacts (reference, working) differ only in their
+    target's own text: the header lines a side places ahead of its region (the
+    reference's copy inside the region, target_text.moved_out) and the fixed
+    blocks, each set aside."""
+    sa, sb = (x.decode("utf-8", "surrogateescape") for x in (ta, tb))
+    t = target_text.target_of(sb, targets)
+    if t:
+        sa = target_text.moved_out(sa, sb, t)
+    sa, sb = (x.encode("utf-8", "surrogateescape") for x in (sa, sb))
+    return target_aside(sa, fixed_a, targets) == target_aside(sb, fixed_b, targets)
+
+
 def target_aside(text, fixed, targets=()):
     """`text` with the arm's fixed target text removed (each block once), the
     header lines its target places ahead of the region (target_text.header_run)
@@ -1800,6 +1813,9 @@ def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs, tree=None):
             for base, base_args, flag in arms:
                 ra, rb = compile_pair(p, engine, list(base_args) + shlex.split(flag))
                 hunk = first_diff_hunk(ra[1], rb[1]) if ra[0] and rb[0] and ra[1] != rb[1] else None
+                if hunk is not None and targets and "memfn-simd" in flag and \
+                        same_but_target(ra[1], rb[1], fixed[(0, base, flag)], fixed[(1, base, flag)], targets):
+                    hunk = None
                 ba, bb = base_out[base]
                 out.append(((base, flag, stream), ra[0], rb[0], hunk,
                             (side_cmp(ra, ba, fixed.get((0, base, flag), ())),
