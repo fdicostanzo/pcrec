@@ -733,6 +733,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-08): UNSCHEDULED; notes only, nothing designed or built
   next: when scheduled, a review lane weighs the body's three candidates (fact-function driver, seam record tests, deny-upstream witnesses) against the test-harness-minimal rule
   refs: docs/design/plan_row_bodies/TEST-REVIEW.md; [IR-FORM]; D153; docs/dev/lanes/mechtri_report.md (lane/mechtri)
+- [REVIEW-GATE] STATE:not-started — tool-enforced process: review class from the diff, a push gate for missing rounds
+  filed: 2026-11-08 Frank, after K0/P1/U2/U3 reached main or its edge with no code critic round (lane critgap's causes)
+  status (2026-11-08): UNSCHEDULED; ideas + ride-alongs + a tally; interim prose rule in force (major class needs a round or a written waiver)
+  next: TRIGGER = the next missing critic round (add a tally row); then one tooling lane, accepted by a three-week merge replay
+  refs: docs/design/plan_row_bodies/REVIEW-GATE.md; D6; .claude/skills/pcrec-manager §5; docs/dev/full_suite_ledger.md
 - [PCRE2-TESTDATA] STATE:not-started — PCRE2's testinput patterns as a DATA document; tests built on it are opt-in
   filed: 2026-11-07 Frank ("Yes as a filler item and to a data document. If we build a test section from this it's additional and opt in. We might use it also to fill in gaps in our main test coverage.")
   status (2026-11-07): not started; FILLER (runs when a lane slot is idle)
