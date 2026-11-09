@@ -3714,3 +3714,10 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-08 18:57: cancelled U2 gates 561-569 (ident1 was ready at 18:55 and would have run into Frank's hold, before u2fix/u2c4's commits). Re-queue the whole chain, 560 strict included, after u2c4. Lesson: a start-only hold lets a long job begin just before 19:00; give long jobs a wall-aware ready (start + est must end before 19:00, or wait for 01:00).
 - 11-08 19:10: u2c4 DELIVERED (lane/memfn-u2 6aa26ba77; closed). C4 17/0 under both this branch's and lane/u3tgt's check: main's 13 FAILs came from its older allowlist in the merge. S3000 DETECTED via the new tests/memfn/policy_check.c (in run_finder.sh, 3321/0). U2 gates 560-569 re-queued for 01:00. Main asked to re-merge u2 @ 6aa26ba77 into lane/u3tgt.
 - 11-08 19:29: 3.0a 505 make test GREEN on retry (wall 1818 s; it started just before 19:00 and so ran ~30 min into the hold: the same start-only flaw). 506-509 wait for 01:00.
+- 11-08 ~20:20: main's code review r5 xarch on the joint U2+U3 tip (main c29b18d32, ruled): no answer moves, but two gcc consumer build breaks. Kit FIX-NOW:
+  - X-1: the region encloses the intrinsic #include; ruled shape: headers become includes FACTS (MF_INC_*), placed by pcrec at file scope.
+  - X-5: delete MF_TARGET_REQUIRED (refusals unconditional); drop mf_art_begin's unread policy arg; fix six comments.
+  - X-3: retire S2997.
+  - SEAM-5: vany refuses without the sink's brackets.
+  - PLAN rows: noted, not built.
+  - U2 gates 560-569 cancelled as stale. Lane u2rev (opus) launched; jobs re-queued on its tip.
