@@ -63,11 +63,18 @@
  * direction that deletes matches.
  *
  * WHAT THE RUN DECLINES BEYOND THAT, each with its reason rather than a
- * shared "be careful" (reqpos_2b.md §2.4): a repeat's head and tail runs do
- * NOT survive the repeat, so nothing is ever joined across an iteration
- * boundary; an alternation contributes only its branches' longest COMMON
- * prefix and common suffix, so `(?:xabcy|zabcw)` reports no run where `abc`
- * is one.
+ * shared "be careful" (reqpos_2b.md §2.4): an alternation contributes only
+ * its branches' longest COMMON prefix and common suffix, so
+ * `(?:xabcy|zabcw)` reports no run where `abc` is one.
+ *
+ * A REPEAT IS ITS COPIES (docs/design/span_arms.md §3, T2 rows 2-3, D191):
+ * `X{m,n}` reads as `X^m · X{0,n-m}` for its head and best and as
+ * `X{0,n-m} · X^m` for its tail, so `xy(?:ab){2}zw` is the run `xyababzw`
+ * and the join between two copies is CAT's own join. Only the copies every
+ * match takes count: the optional part is a gap, and it never carries the
+ * fixed copies' offset. The copies are unrolled only until one more changes
+ * no stored byte (`rr_pow_count`); the width is always the repeat's exact
+ * one (`rr_rep_w`).
  *
  * [OPT-LITSCAN] S4 C3 A RUN IS A RUN OF POSITIONS, NOT OF BYTES
  * (docs/design/litscan_s4.md §2.3.1). A position is a byte or a CUBE of at
@@ -561,6 +568,96 @@ static PCREC_OWN_FRAME void rb_rep_into(RbVal *acc, const RbVal *b, int rmax)
     acc->desc = pcrec_pd_none();   /* REP{n,n} is [REPEAT-RUN]'s (§3.5) */
 }
 
+/* ---- THE POWER ARM ([REPEAT-RUN], span_arms R1: T2 rows 2-3) ------------- */
+
+/* How many copies of a body with runs `b` the power unrolls for a repeat of
+ * at least `m` (span_arms §3.1 point 3): `m`, or fewer where more copies
+ * change no CONTENT field (head, tail and best bytes, `all`, `trunc`). A body
+ * that is not `all` stops changing at 2, since every later copy adds the
+ * same `tail · head` join. An `all` body of width `w` fills the stored head
+ * at `ceil(PCREC_MAX_REQ_RUN_SCAN / w)` copies. So the count derives from the
+ * run's storage bound and has no constant of its own. Any count up to `m` is
+ * sound (`X^c` is a factor of `X^m`). A width-0 body is T2 row 1's and
+ * reaches here only with that row restored; every count gives it the same
+ * value, so it takes 1. */
+static int rr_pow_count(const RbRuns *b, int m)
+{
+    int sat = !b->all ? 2
+            : b->maxw > 0 ? (int)((PCREC_MAX_REQ_RUN_SCAN + b->maxw - 1) / b->maxw)
+            : 1;
+    return m < sat ? m : sat;
+}
+
+/* `X^c`: `c` copies of the body with runs `b`, through the CAT step (the
+ * join between two copies is `rr_cat`'s; 0 copies is the unit). */
+static RbRuns rr_pow(RbRuns b, int c)
+{
+    RbRuns o = rr_unit();
+    for (int i = 0; i < c; i++) o = rr_cat(b, o);
+    return o;
+}
+
+/* T2 row 2, the exact repeat `X{m}`: `X^c` with `c = rr_pow_count`, its
+ * width the repeat's exact one, not `c` copies' (W-R6), and the tail placed
+ * from it; `all` only when every copy was unrolled (`c < m` stored a prefix
+ * of a longer literal). `m = 0` gives the unit: `xy(?:ab){0}zw` is `xyzw`. */
+static RbRuns rr_rep_exact(RbRuns b, int m)
+{
+    int c = rr_pow_count(&b, m);
+    RbRuns o = rr_pow(b, c);
+    o.all = o.all && c == m;
+    o.maxw = rr_rep_w(m, b.maxw);
+    o.tail.off = rn_tail_off(o.maxw, o.tail.n);
+    return o;
+}
+
+/* T2 row 3, every other repeat `X{m,n}` (`n` > `m`, or unbounded): the head
+ * and the best from `X^c · X{0,n-m}`, the tail from `X{0,n-m} · X^c`, the
+ * width the repeat's exact one. The optional part is a gap (no byte, no
+ * run), so `all` is false and at `m = 0` this is today's gap. The best is
+ * the first decomposition's: its offsets are the smaller bounds, and the
+ * second's best is the same bytes further in. */
+static RbRuns rr_rep_split(RbRuns b, int m, int n)
+{
+    RbRuns p = rr_pow(b, rr_pow_count(&b, m));
+    RbRuns gap = rr_none(rr_rep_w(n < 0 ? -1 : n - m, b.maxw));
+    RbRuns o = rr_cat(p, gap);
+    o.tail = rr_cat(gap, p).tail;
+    o.maxw = rr_rep_w(n, b.maxw);
+    o.tail.off = rn_tail_off(o.maxw, o.tail.n);
+    return o;
+}
+
+/* `acc` := a repeat of body `b` with the power arm's runs `rep` and pieces
+ * `desc`, followed by `acc`. The SET is today's: the body's members where
+ * every match takes a copy (`rmin >= 1`), none where it may take none, each
+ * at the body's own offsets (the first copy begins where the repeat does). */
+static void rb_rep_copies_into(const RbWalk *w, RbVal *acc, const RbVal *b,
+                               int rmin, const RbRuns *rep, PdDesc desc)
+{
+    acc->set  = rb_union(rmin >= 1 ? b->set : rb_empty(), acc->set, rep->maxw);
+    acc->runs = rr_cat(*rep, acc->runs);
+    acc->desc = pcrec_pd_cat(w->cx, &w->pd, desc, acc->desc);
+}
+
+/* `acc` := the exact repeat `X{m}` of body `b` (T2 row 2), followed by
+ * `acc`; its pieces are the body's `m` copies (`pcrec_pd_pow`). */
+static PCREC_OWN_FRAME void rb_rep_exact_into(const RbWalk *w, RbVal *acc,
+                                              const RbVal *b, int m)
+{
+    RbRuns rep = rr_rep_exact(b->runs, m);
+    rb_rep_copies_into(w, acc, b, m, &rep, pcrec_pd_pow(w->cx, &w->pd, b->desc, m));
+}
+
+/* `acc` := the repeat `X{m,n}` of body `b` (T2 row 3), followed by `acc`;
+ * not fixed-width, so no pieces. */
+static PCREC_OWN_FRAME void rb_rep_split_into(const RbWalk *w, RbVal *acc,
+                                              const RbVal *b, int m, int n)
+{
+    RbRuns rep = rr_rep_split(b->runs, m, n);
+    rb_rep_copies_into(w, acc, b, m, &rep, pcrec_pd_none());
+}
+
 /* [RUN-POS-SET] stage 2p THE BYTE ALPHABET of the piece description: a
  * position is a 256-bit set (`rb_has`'s layout), 32 bytes. */
 static const void *rb_pd_join(Ctx *cx, const void *a, const void *b)
@@ -663,18 +760,27 @@ static PCREC_OWN_FRAME void rb_rep_unit_into(const RbWalk *w, RbVal *acc,
 }
 
 /* T2, THE REPEAT ROWS (docs/design/span_arms.md §6), first match: what a
- * repeat `X{m,n}` contributes, from its body's value `b`. Rows 2 and 3 are
- * today's best-only copy and min-0 gap (`rb_walk_at`'s `A_REP` arm says
- * why), which [REPEAT-RUN] (unit R1) replaces with the power arm's rows. A
- * row whose `arm` the walk parameters restore is passed over, so the next
- * row answers in the old form; the last row matches every repeat. */
-typedef enum { RB_REP_UNIT, RB_REP_BEST, RB_REP_GAP } RbRepRow;
+ * repeat `X{m,n}` contributes, from its body's value `b`. Rows 1-3 are the
+ * design's; the two after them are the forms they replaced (the best-only
+ * copy and the min-0 gap), reached only when the walk parameters restore an
+ * arm. A row whose `arm` is restored is passed over, so the next row answers
+ * in the old form; the last row matches every repeat. */
+typedef enum {
+    RB_REP_UNIT, RB_REP_EXACT, RB_REP_SPLIT, RB_REP_BEST, RB_REP_GAP
+} RbRepRow;
 
 /* The body consumes nothing on any path: its widest match is 0 bytes. */
 static bool rb_rep_width0(const Ast *a, const RbVal *b)
 {
     (void)a;
     return b->runs.maxw == 0;
+}
+
+/* Every match takes the same number of copies: `X{m}`. */
+static bool rb_rep_exact(const Ast *a, const RbVal *b)
+{
+    (void)b;
+    return a->u.rep.rmin == a->u.rep.rmax;
 }
 
 /* Every match takes at least one copy of the body. */
@@ -698,9 +804,13 @@ static const struct {
     unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
 } rb_rep_rows[] = {
     /* 1 (span_arms E1, [REQ-EMPTYCAT]): `abcd(?:)*efgh`, `ab(?:^)+cd` */
-    { rb_rep_width0, RB_REP_UNIT, PCREC_WALK_ARM(EMPTY) },
-    { rb_rep_min1,   RB_REP_BEST, 0 },
-    { rb_rep_any,    RB_REP_GAP,  0 },
+    { rb_rep_width0, RB_REP_UNIT,  PCREC_WALK_ARM(EMPTY) },
+    /* 2-3 (span_arms R1, [REPEAT-RUN]): `xy(?:ab){2}zw`, `xy(?:ab){1,3}zw` */
+    { rb_rep_exact,  RB_REP_EXACT, PCREC_WALK_ARM(REP) },
+    { rb_rep_any,    RB_REP_SPLIT, PCREC_WALK_ARM(REP) },
+    /* the replaced forms, under a restored arm */
+    { rb_rep_min1,   RB_REP_BEST,  0 },
+    { rb_rep_any,    RB_REP_GAP,   0 },
 };
 
 /* The first row of T2 that matches the repeat `a` with body value `b` and
@@ -778,22 +888,27 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
             /* T2's rows (`rb_rep_rows`), first match on the body's value.
              * A WIDTH-0 body is the unit (row 1): it consumes nothing, so
              * the bytes on either side abut however many copies match.
+             * Any other body is read as its copies (rows 2-3, the power
+             * arm): the copies every match takes join their neighbours and
+             * each other through CAT, and an optional part is a gap.
              *
              * `rmin == 0` admits the empty iteration, on which the body
              * contributes no byte at all — the one arm where forgetting the
              * minimum is a deleted match rather than a missed opportunity.
              *
-             * At `rmin >= 1` (row 2) the body's BEST run survives and its
-             * head and tail do NOT: nothing is joined across an iteration
-             * boundary, which reqpos_2b.md §2.4 item 4 declines with its
-             * reason (the population is unmeasured and the reasoning wants
-             * its own witness family; span_arms R1 is that family). So the
-             * repeat is walked for the set exactly as before, and its run
-             * contribution is taken here rather than by falling through. */
+             * Under a restored arm the old forms answer: at `rmin >= 1` the
+             * body's BEST run alone, nothing joined across an iteration
+             * boundary (reqpos_2b.md §2.4 item 4), and below it the gap. */
             rb_walk(w, a->l, &t[0]);
             switch (rb_rep_row(w, a, &t[0])) {
             case RB_REP_UNIT:
                 rb_rep_unit_into(w, acc, &t[0], a->u.rep.rmin, &t[1]);
+                return;
+            case RB_REP_EXACT:
+                rb_rep_exact_into(w, acc, &t[0], a->u.rep.rmin);
+                return;
+            case RB_REP_SPLIT:
+                rb_rep_split_into(w, acc, &t[0], a->u.rep.rmin, a->u.rep.rmax);
                 return;
             case RB_REP_BEST:
                 rb_rep_into(acc, &t[0], a->u.rep.rmax);
@@ -801,7 +916,7 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
             case RB_REP_GAP:
                 break;
             }
-            /* AND AT `rmin == 0` (row 3) THE REPEAT STILL BREAKS
+            /* AND AT `rmin == 0` (the gap) THE REPEAT STILL BREAKS
              * CONTIGUITY, unless its body is width 0 (row 1), which is a
              * different obligation from the empty SET above and is the one
              * arm of this walk where getting it wrong DELETES A MATCH rather

@@ -26,4 +26,9 @@
  * alt_normal_form restores its EMPTY unit under the same name. A later unit
  * adds its own row (R1 `rep`, E2 `zero`, L1 `look`, 2a `alt`). */
 WALK_ARM(EMPTY, "empty", (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
+
+/* span_arms unit R1 ([REPEAT-RUN], T2 rows 2-3, the power arm): a repeat of
+ * a body that consumes, read as its copies. Restored: today's best-only copy
+ * (`m >= 1`) and the gap (`m = 0`, `X{0}` included). */
+WALK_ARM(REP, "rep", (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
 #undef WALK_ARM

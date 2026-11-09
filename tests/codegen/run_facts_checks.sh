@@ -662,6 +662,61 @@ else
     ok "[facts-arm] under --harness=restore=empty the walk runs T2 row 1's old form and its facts name the arm; the default lists the unit's run"
 fi
 
+# [REPEAT-RUN] span_arms R1 (§3, T2 rows 2-3): A REPEAT IS ITS COPIES, on the
+# listing. Expectations by hand from T2 and the description's cat:
+#   - `xy(?:ab){2}zw` is `xyababzw`; under `--harness=restore=rep` (build/
+#     pcrec-harness) today's best-only copy `ab` again, with the token on the
+#     walk facts and none on `req_set` (S1921: a row that the arm no longer
+#     passes over keeps the new run);
+#   - W-R5: `(?:abc){20}` unrolls ceil(32/3) = 11 copies, so the run is the
+#     storage bound's 32 positions, (abc)^10 ab (S1918 stops one copy short:
+#     30 positions, sound, seen only here);
+#   - the pieces are the body's copies for an EXACT repeat only:
+#     `(?:a|bc){2}` is three widths (2 `aa`, 3 the hull of `abc` and `bca`,
+#     4 `bcbc`); `(?:ab){20}(?:c|de)` keeps each group's last 32 positions at
+#     widths 41 and 42 (S1920: the saturated copies add no width); a variable
+#     repeat stays `not-fixed-width`.
+RP='xy(?:ab){2}zw'
+rbad=""; nrw=0
+rget() { # rget <bin> <arm-or-empty> <pattern> <fact> -> "value<TAB>why" (byte)
+    local arm=()
+    [ -n "$2" ] && arm=("--harness=restore=$2")
+    "$TIMEOUT_BIN" 120 "$1" --features all "${arm[@]}" --emit-facts --pattern "$3" > "$WORKDIR/rp.l" 2> "$WORKDIR/rp.err" ||
+        { printf 'REFUSED\t%s\n' "$(head -1 "$WORKDIR/rp.err")"; return; }
+    sect "$WORKDIR/rp.l" facts | grep -F "$(printf 'encoding=byte\t')" | arow "$4" /dev/stdin > "$WORKDIR/rp.r"
+    printf '%s\t%s\n' "$(col value < "$WORKDIR/rp.r")" "$(col why < "$WORKDIR/rp.r")"
+}
+if [ ! -x "$HBIN" ]; then
+    rbad=" $HBIN is missing (make builds it);"
+else
+    while IFS=$'\t' read -r bin arm pat fact want wwhy; do
+        nrw=$((nrw + 1))
+        [ "$bin" = h ] && b="$HBIN" || b="$PCREC"
+        [ "$arm" = - ] && arm=""
+        got="$(rget "$b" "$arm" "$pat" "$fact")"
+        gval="${got%%$'\t'*}"; gwhy="${got#*$'\t'}"
+        [ "$wwhy" = - ] && wwhy=""
+        [ "$gval" = "$want" ] || rbad="$rbad '$pat'${arm:+ restore=$arm} $fact value [$gval], want [$want];"
+        [ "$gwhy" = "$wwhy" ] || rbad="$rbad '$pat'${arm:+ restore=$arm} $fact why [$gwhy], want [$wwhy];"
+    done <<RPEOF
+p	-	$RP	req_whole_run	7879616261627a77	-
+h	rep	$RP	req_whole_run	6162	harness:rep
+h	rep	$RP	req_pieces	none	harness:rep
+h	rep	$RP	req_set	97,98,119,120,121,122	-
+p	-	(?:abc){20}	req_whole_run	6162636162636162636162636162636162636162636162636162636162636162	-
+p	-	(?:a|bc){2}	req_pieces	2:[97][97]|3:[97,98][98,99][97,99]|4:[98][99][98][99]	-
+h	rep	(?:a|bc){2}	req_pieces	none	harness:rep
+p	-	(?:ab){20}(?:c|de)	req_pieces	41@9:[98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][99]|42@10:[97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][100][101]	-
+p	-	xy(?:ab){1,2}zw	req_pieces	none	decline:not-fixed-width
+RPEOF
+fi
+echo "REACH: $nrw [REPEAT-RUN] listing cell(s)"
+if [ "$nrw" -eq 0 ] || [ -n "$rbad" ]; then
+    bad "[facts-rep] the power arm's listing is wrong:${rbad:- no cell was read}"
+else
+    ok "[facts-rep] $nrw cells: an exact repeat lists its copies (run and pieces), the storage bound's 32 positions at W-R5, and --harness=restore=rep the old form"
+fi
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

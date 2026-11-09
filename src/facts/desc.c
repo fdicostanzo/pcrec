@@ -10,6 +10,8 @@
  *   cat   the PRODUCT: every left group before every right group, widths
  *         add, positions concatenate; groups of one total width hull-merge
  *   alt   the UNION of the two group lists; same-width groups hull-merge
+ *   pow   `k` copies: cat applied `k` times (span_arms §3.1 point 1, the
+ *         REP arm of an exact repeat `X{k}`)
  *   none  a wall: no description, and none for anything built on it
  *
  * A HULL MERGE of two groups of one width is the position-wise union of the
@@ -137,6 +139,34 @@ PdDesc pcrec_pd_alt(Ctx *cx, const PdCfg *c, PdDesc l, PdDesc r)
     memcpy(g, l.g, (size_t)l.ng * sizeof *g);
     memcpy(g + l.ng, r.g, (size_t)r.ng * sizeof *g);
     return pd_norm(cx, c, g, l.ng + r.ng);
+}
+
+/* `d` repeated `k` times (`k >= 0`; 0 copies is the unit): cat applied once
+ * per copy, stopping where the rest is known without the walk. A dropped
+ * description stays dropped. A single group that stores no more than its
+ * LAST `max_pos` positions already (full, or truncated) keeps them under
+ * every further copy of a single-group `d` (`pd_cat_group` prepends only
+ * to a group stored whole and short of the bound), so the remaining copies
+ * add width alone, and its strings are no longer its positions' product. A
+ * description of two or more widths gains a width per copy and reaches
+ * `max_groups` (`PD_OVER`) within that many copies, so the loop is bounded
+ * by the two bounds, never by `k`. */
+PdDesc pcrec_pd_pow(Ctx *cx, const PdCfg *c, PdDesc d, int k)
+{
+    PdDesc o = pcrec_pd_unit();
+    for (int i = 0; i < k; i++) {
+        if (o.ng < 0) return o;
+        if (d.ng == 1 && o.ng == 1 &&
+            (o.g[0].n == c->max_pos || o.g[0].n < o.g[0].w)) {
+            PdGroup *g = pcrec_arena_alloc(&cx->arena, sizeof *g);
+            *g = o.g[0];
+            g->w += (long long)(k - i) * d.g[0].w;
+            g->exact = false;
+            return (PdDesc){ 1, 0, g };
+        }
+        o = pcrec_pd_cat(cx, c, d, o);
+    }
+    return o;
 }
 
 /* ---- the adjacency head ---------------------------------------------- */
