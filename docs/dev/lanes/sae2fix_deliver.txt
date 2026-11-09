@@ -1,0 +1,4 @@
+report=docs/dev/lanes/sae2fix_report.md
+sections: Merge of lane/sae1; Fixes; Checks run; STATE AT HANDOFF
+nonempty: all
+commit: yes
