@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """span_arms unit E2's CENSUS (docs/design/span_arms.md §8 row E2, §4.1, §11
 point 2): the population's observed movers against an INDEPENDENT MODEL of
-T3 rows E-4 and E-5 (the plain unit), compared two-sided, with the movers
+T3 rows E-1, E-4 and E-5 (the plain unit), compared two-sided, with the movers
 counted per PRODUCER KIND (the two lookaround lowerings apart) and the
 window statement's R-span movers counted beside the run movers (r1 F11).
 
-THE MODEL reads no compiler code. T3 says a node that consumes nothing (an
-assertion, `\\G`, `\\K`, a lookaround of either lowering) is CAT's width-0
-unit. The reference compiler (unit E1, the branch point) already has that
+THE MODEL reads no compiler code. T3 says a node that consumes nothing (the
+empty string, an assertion, `\\G`, `\\K`, a lookaround of either lowering)
+is CAT's width-0 unit. The reference compiler (unit E1, the branch point) already has that
 unit for a REPEAT of a width-0 body at m = 0 (T2 row 1), spelled `(?:)?`.
 So the walk facts of P under E2 are the reference compiler's walk facts of P's
 SPELLING: every zero-width assertion item (with its quantifier) replaced by
-`(?:)?`. The replacement, not a deletion, keeps every group's content
-non-empty (an empty group or branch is `A_EMPTY`, stage 2a's cut, which E2
-leaves alone) and moves no capture number. The model's own part is the text
+`(?:)?`, and `(?:)?` inserted into every empty branch (an `A_EMPTY` node,
+the reference's cut). The replacement, not a deletion, never creates an
+empty group or branch and moves no capture number. The model's own part is the text
 scanner (census_e1.py's, reused, plus the item classes below); a construct it
 does not know is CONSUMING, so it predicts no move; a pattern it cannot spell
 faithfully (`(?x)`, a callout, a verb, a conditional, a recursion or
@@ -31,8 +31,8 @@ walk facts of P equal the reference walk facts of the spelling.
 
 PER PRODUCER KIND: for each predicted mover, the spelling restricted to one
 kind's items; the kind is a producer of the move where that alone moves the
-walk facts (where no kind does alone, the mover is `joint:` all its kinds). Kinds: wordb (\\b \\B), anchor (^ $ \\A \\Z \\z), gstart (\\G),
-kreset (\\K), and the four lookaround forms, each split by its LOWERING:
+walk facts (where no kind does alone, the mover is `joint:` all its kinds). Kinds: empty (an empty branch), wordb (\\b \\B), anchor (^ $ \\A \\Z
+\\z), gstart (\\G), kreset (\\K), and the four lookaround forms, each split by its LOWERING:
 `look-*:ctx` (lowered to `A_CTX`) or `look-*:look` (an `A_LOOK`), read from
 the reference compiler's `kinds` fact on the item compiled ALONE (the
 lookaround bit is set iff an `A_LOOK` survives lowering).
@@ -84,9 +84,14 @@ def item_kind(p, s, ae):
 
 
 def items(p, a, b, out):
-    """Every zero-width assertion item of p[a:b] (at any group depth, never
-    inside a lookaround, which is replaced whole) as (start, end, kind)."""
+    """Every zero-width item of p[a:b] (at any group depth, never inside a
+    lookaround, which is replaced whole) as (start, end, kind, text): the
+    assertions, and each EMPTY branch (`()`, `(?:|x)`: an `A_EMPTY` node,
+    T3 row E-1), whose edit inserts the unit at its position."""
     for sa, sb in E1.alts(p, a, b):
+        if sa == sb:
+            out.append((sa, sa, "empty", b""))
+            continue
         for (s, ae, e, kind, rmin, rmax) in E1.seq_items(p, sa, sb):
             if kind == "zero":
                 k = item_kind(p, s, ae)
@@ -258,7 +263,7 @@ def main():
         "population: %d rows (%d corpus, %d bench), %d distinct texts, %d compiled on both sides"
         % (len(pop), sum(1 for s, _ in pop if s.startswith("corpus:")),
            sum(1 for s, _ in pop if s.startswith("bench:")), len(seen), len(comp)),
-        "texts with a zero-width assertion item: %d; abstained: %d (of them movers: %d)"
+        "texts with a zero-width item: %d; abstained: %d (of them movers: %d)"
         % (sum(1 for r in comp if r.get("nitems")), sum(1 for r in comp if r.get("abstain")), len(absn)),
         "observed movers: %d (corpus %d, bench %d)" % (len(obs), len(obs) - len(bench_obs), len(bench_obs)),
         "predicted movers: %d" % len(pred),
