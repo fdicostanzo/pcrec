@@ -153,9 +153,9 @@ m "abcd" 0 4
 m "xabcdx" 1 5
 n "ab-cd"
 
-# ---- span arms unit E2 (T3 E-4, E-5 as the plain unit; docs/design/span_arms.md §4.1): a node that
-# consumes nothing is CAT's unit, so the run joins across `\b`, `\B`, `$`, `^`, `\G`, `\K`, `\A`, `\z`
-# and lookarounds of either lowering (src/facts/req.c `rb_zero_rows`). Expectations libpcre2-8 10.46's
+# ---- span arms unit E2 (T3 E-1, E-4, E-5 as the plain unit; docs/design/span_arms.md §4.1): a node that
+# consumes nothing is CAT's unit, so the run joins across `\b`, `\B`, `$`, `^`, `\G`, `\K`, `\A`, `\z`,
+# lookarounds of either lowering and the empty string (src/facts/req.c `rb_zero_rows`). Expectations libpcre2-8 10.46's
 # (tests/lib/p2probe.c, lane sae2, 2026-11-09). S-L, W-E3 and S-g here are rows S1925, S1926, S1927.
 
 # S-L, spelled for E2's site (span_arms §4.1 S16, E-5 as the plain unit): a positive lookbehind consumes nothing, so the run is `xyzabc` across it; S1925 walks its body as CONSUMED, claims `xyzyzabc` and the pre-check deletes every match
@@ -455,3 +455,52 @@ engine vm
 m "abce" 0 4
 n "abcd"
 m "zabcez" 1 5
+
+# E-1 (span_arms E2, taken from alt_normal_form stage 2a): an empty group is the unit, so the run is `abcdefgh` across it
+pattern abcd()efgh
+features all
+m "abcdefgh" 0 8
+g 1 4 4
+m "xxabcdefghxx" 2 10
+g 1 6 6
+n "abcdxefgh"
+
+# E-1 (span_arms E2, taken from alt_normal_form stage 2a): an empty group is the unit, so the run is `abcdefgh` across it [engine vm]
+pattern abcd()efgh
+features all
+engine vm
+m "abcdefgh" 0 8
+g 1 4 4
+m "xxabcdefghxx" 2 10
+g 1 6 6
+n "abcdxefgh"
+
+# E-1: an alternation of two empty branches is the unit's alternation; the run joins across it
+pattern abcd(?:|)efgh
+features all
+m "abcdefgh" 0 8
+n "abcd efgh"
+m "zabcdefgh" 1 9
+
+# E-1: an alternation of two empty branches is the unit's alternation; the run joins across it [engine vm]
+pattern abcd(?:|)efgh
+features all
+engine vm
+m "abcdefgh" 0 8
+n "abcd efgh"
+m "zabcdefgh" 1 9
+
+# E-1 beside a consuming branch: the alternation keeps only the common head and tail, so the run stays `cd` (or `ab`)
+pattern ab(?:|x)cd
+features all
+m "abcd" 0 4
+m "abxcd" 0 5
+n "abycd"
+
+# E-1 beside a consuming branch: the alternation keeps only the common head and tail, so the run stays `cd` (or `ab`) [engine vm]
+pattern ab(?:|x)cd
+features all
+engine vm
+m "abcd" 0 4
+m "abxcd" 0 5
+n "abycd"

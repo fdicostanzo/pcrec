@@ -57,9 +57,9 @@
  * one small cube (below), a quantifier that admits zero iterations (of a
  * body that consumes something: a width-0 body is CAT's unit, span_arms T2
  * row 1), a backreference and a linked call. A node that consumes nothing
- * (an assertion, `\G`, `\K`, a check callout, a lookaround) is CAT's
- * width-0 unit for the run (span_arms T3, `rb_zero_rows`): the bytes on its
- * two sides are adjacent in the subject. A lookaround's body is deliberately
+ * (the empty string, an assertion, `\G`, `\K`, a check callout, a
+ * lookaround) is CAT's width-0 unit for the run (span_arms T3,
+ * `rb_zero_rows`): the bytes on its two sides are adjacent in the subject. A lookaround's body is deliberately
  * not descended into: a LOOKBEHIND's bytes sit BEFORE the match's start and
  * can therefore be outside `[search_from, subject_length)` entirely, which
  * would make the check unsound in the direction that deletes matches.
@@ -629,21 +629,25 @@ static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
     acc->desc = desc;
 }
 
-/* `acc` := a zero-width node followed by `acc`, in today's form: no byte,
- * and a broken run (T3's last row, the form a restored `zero` arm runs). */
+/* `acc` := a zero-width node followed by `acc`, in the old form: no byte,
+ * and a broken run (T3's last row, the form a restored arm runs). */
 static PCREC_OWN_FRAME void rb_assert_into(RbVal *acc)
 {
     acc->runs = rr_cat(rr_none(0), acc->runs);
     acc->desc = pcrec_pd_none();   /* a CUT, as in the run (§3.4) */
 }
 
-/* `acc` := a node that consumes nothing but can fail, followed by `acc`: the
- * width-0 unit for the run (no byte, `all`, width 0), so the bytes on its two
- * sides join; a width-0 description group that is not exact (desc.c `zero`). */
-static PCREC_OWN_FRAME void rb_zero_unit_into(const RbWalk *w, RbVal *acc)
+/* `acc` := a node that consumes nothing, followed by `acc`: the width-0 unit
+ * for the run (no byte, `all`, width 0), so the bytes on its two sides join.
+ * Its description is the unit where the node always matches (`A_EMPTY`) and
+ * a width-0 group that is not exact where it can fail (desc.c `zero`). */
+static PCREC_OWN_FRAME void rb_zero_unit_into(const RbWalk *w, RbVal *acc,
+                                              const Ast *a)
 {
     acc->runs = rr_cat(rr_unit(), acc->runs);
-    acc->desc = pcrec_pd_cat(w->cx, &w->pd, pcrec_pd_zero(), acc->desc);
+    acc->desc = pcrec_pd_cat(w->cx, &w->pd,
+                             a->k == A_EMPTY ? pcrec_pd_unit() : pcrec_pd_zero(),
+                             acc->desc);
 }
 
 /* `acc` := a repeat of the WIDTH-0 body `b` followed by `acc` (T2 row 1): at
@@ -726,16 +730,17 @@ static void rb_walk(RbWalk *w, const Ast *a, RbVal *out)
 /* T3, THE ZERO-WIDTH ROWS (docs/design/span_arms.md §6, §4.1), first match:
  * what a node whose kind row's TEXT is ZERO contributes. A node that
  * consumes nothing leaves the bytes on its two sides ADJACENT in the
- * subject, whether it is an assertion that can fail or a lookaround whose
- * body is not read, so it is CAT's unit (E-4, E-5); joining ACROSS it reads
- * nothing of a lookaround's body, which is what the header forbids. E-1
- * (`A_EMPTY`) stays a cut here: it is alt_normal_form stage 2a's row. E-5
- * (a positive lookaround, `A_LOOK` or `A_CTX` NEXT/PREV) is the plain unit
- * until L1 adds its item. A row whose `arm` the walk parameters restore is
- * passed over; the last row (today's cut) matches every node. */
+ * subject, whether it is the empty string, an assertion that can fail or a
+ * lookaround whose body is not read, so it is CAT's unit (E-1, E-4, E-5);
+ * joining ACROSS it reads nothing of a lookaround's body, which is what the
+ * header forbids. E-5 (a positive lookaround, `A_LOOK` or `A_CTX` NEXT/PREV)
+ * is the plain unit until L1 adds its item. E-1 restores under the `empty`
+ * arm (span arms E2 took it from alt_normal_form stage 2a), E-4 and E-5
+ * under `zero`. A row whose `arm` the walk parameters restore is passed
+ * over; the last row (the old cut) matches every node. */
 typedef enum { RB_ZERO_UNIT, RB_ZERO_CUT } RbZeroRow;
 
-/* `A_EMPTY`: the empty string, stage 2a's (E-1). */
+/* `A_EMPTY`: the empty string (E-1). */
 static bool rb_zero_empty(const Ast *a)
 {
     return a->k == A_EMPTY;
@@ -761,13 +766,14 @@ static const struct {
     RbZeroRow row;
     unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
 } rb_zero_rows[] = {
-    /* E-1 (alt_normal_form stage 2a): `abcd()efgh` */
-    { rb_zero_empty,    RB_ZERO_CUT,  0 },
+    /* E-1 (span_arms E2, from alt_normal_form stage 2a): `abcd()efgh` */
+    { rb_zero_empty,    RB_ZERO_UNIT, PCREC_WALK_ARM(EMPTY) },
+    { rb_zero_empty,    RB_ZERO_CUT,  0 },   /* E-1 restored */
     /* E-5 (span_arms E2; L1 adds the item): `xyz(?<=yz)abc` */
     { rb_zero_look_pos, RB_ZERO_UNIT, PCREC_WALK_ARM(ZERO) },
     /* E-4 (span_arms E2): `foo\bbar`, `x(?!ab)ac`, `ab\Kcd` */
     { rb_zero_any,      RB_ZERO_UNIT, PCREC_WALK_ARM(ZERO) },
-    { rb_zero_any,      RB_ZERO_CUT,  0 },
+    { rb_zero_any,      RB_ZERO_CUT,  0 },   /* E-4 and E-5 restored */
 };
 
 /* `acc` := the zero-width node `a` followed by `acc`, by the first row of T3
@@ -778,7 +784,7 @@ static void rb_zero_into(RbWalk *w, RbVal *acc, const Ast *a)
     while ((rb_zero_rows[i].arm & w->restored) || !rb_zero_rows[i].when(a))
         i++;
     switch (rb_zero_rows[i].row) {
-    case RB_ZERO_UNIT: rb_zero_unit_into(w, acc); return;
+    case RB_ZERO_UNIT: rb_zero_unit_into(w, acc, a); return;
     case RB_ZERO_CUT:  rb_assert_into(acc);       return;
     }
 }
@@ -901,7 +907,7 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
          * side of a node that consumes nothing ARE adjacent in the subject,
          * so the run joins ACROSS it (the unit); that reads nothing of a
          * lookaround's body, whose bytes stay unread until span_arms L1's
-         * item. `A_EMPTY` is still a cut (alt_normal_form stage 2a's row). */
+         * item. */
         case A_EMPTY:
         case A_EOL:
         case A_CTX:

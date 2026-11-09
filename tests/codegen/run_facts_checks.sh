@@ -684,11 +684,33 @@ if [ -x "$HBIN" ] && [ -z "$abad" ]; then
         grep -qF 'harness:' "$WORKDIR/zd.f" && abad="$abad the default build lists a harness: token for '$ZP';"
     fi
 fi
-echo "REACH: 2 restored-arm witnesses ('$AP' empty, '$ZP' zero), $(cat "$WORKDIR/aw" "$WORKDIR/zw" 2>/dev/null | wc -l) listing cells"
+# span_arms E2 took T3 row E-1 (an `A_EMPTY` node, the unit) and restores it
+# under the `empty` arm: `abcd()efgh` lists today's `efgh` again under it,
+# and the default joins all eight bytes (S1929: E-1's row ignores the arm).
+EP='abcd()efgh'
+if [ -x "$HBIN" ] && [ -z "$abad" ]; then
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --features all --emit-facts --pattern "$EP" > "$WORKDIR/ed.l" 2> /dev/null ||
+       ! "$TIMEOUT_BIN" 120 "$HBIN" --features all --harness=restore=empty --emit-facts --pattern "$EP" > "$WORKDIR/er.l" 2> /dev/null; then
+        abad="$abad '$EP' refused;"
+    else
+        sect "$WORKDIR/ed.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/ed.f"
+        sect "$WORKDIR/er.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/er.f"
+        printf '%s\n' \
+            'ed	req_whole_run	6162636465666768	' \
+            'er	req_whole_run	65666768	harness:empty' > "$WORKDIR/ew"
+        while IFS=$'\t' read -r side fact wval wwhy; do
+            r="$(arow "$fact" "$WORKDIR/$side.f")"
+            gval="$(col value <<< "$r")"; gwhy="$(col why <<< "$r")"
+            [ "$gval" = "$wval" ] || abad="$abad $side $fact value [$gval], want [$wval];"
+            [ "$gwhy" = "$wwhy" ] || abad="$abad $side $fact why [$gwhy], want [$wwhy];"
+        done < "$WORKDIR/ew"
+    fi
+fi
+echo "REACH: 3 restored-arm witnesses ('$AP' empty, '$EP' empty, '$ZP' zero), $(cat "$WORKDIR/aw" "$WORKDIR/ew" "$WORKDIR/zw" 2>/dev/null | wc -l) listing cells"
 if [ -n "$abad" ]; then
     bad "[facts-arm] the walk's restored arm or its harness: token is wrong:$abad"
 else
-    ok "[facts-arm] under --harness=restore=empty the walk runs T2 row 1's old form, under restore=zero T3's E-4/E-5 cut, and their facts name the arm; the default lists the units' runs"
+    ok "[facts-arm] under --harness=restore=empty the walk runs T2 row 1's and T3 E-1's old forms, under restore=zero T3's E-4/E-5 cut, and their facts name the arm; the default lists the units' runs"
 fi
 
 echo "checks passed: $pass"

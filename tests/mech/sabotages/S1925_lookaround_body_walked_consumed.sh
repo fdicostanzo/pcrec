@@ -20,5 +20,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "xyz(?<=y
 SAB_REACH_EXPECT="REACH-SL-RUN-JOINED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    case RB_ZERO_UNIT: rb_zero_unit_into(w, acc); return;'
-SAB_AFTER='    case RB_ZERO_UNIT: if (a->k == A_LOOK && !a->u.look.neg) { RbVal *v = pcrec_arena_alloc(&w->cx->arena, sizeof *v); rb_walk(w, a->l, v); rb_cat_into(w, acc, v); return; } rb_zero_unit_into(w, acc); return;   /* SABOTAGE S1925 */'
+SAB_BEFORE='    case RB_ZERO_UNIT: rb_zero_unit_into(w, acc, a); return;'
+SAB_AFTER='    case RB_ZERO_UNIT: if (a->k == A_LOOK && !a->u.look.neg) { RbVal *v = pcrec_arena_alloc(&w->cx->arena, sizeof *v); rb_walk(w, a->l, v); rb_cat_into(w, acc, v); return; } rb_zero_unit_into(w, acc, a); return;   /* SABOTAGE S1925 */'
