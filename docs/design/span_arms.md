@@ -1198,7 +1198,8 @@ Consequences (manager, to be folded into the L2 text and the §8.2 kit request b
 - Q4 (lookbehind cap = declared lookbehind length): AGREED.
 - Q5 (L3 before the start-position clean-up, sites in its table shape): AGREED.
 - Q6 ([REWRITE-ADJ] design starts once this note is ruled): AGREED.
-- Q3: explanation requested; open.
+- Q3 (one run value vs two facts): (a) ONE VALUE, Frank 2026-11-09; every reader raised together in one unit.
+- Frank's follow-up (2026-11-09): for `abc(ab){3,5}xxx`, once the search has proved `abcababab`, can the finish start after it? Answer: yes in principle, already filed as [MATCH-KNOWN]'s prefix-skip member (D142); span arms lengthens the provable prefix; the skip additionally needs the kit to REPORT how far it verified (§12a lets it choose). Not part of this build.
 
 ## 13. Open questions for Frank (plain words, each with a leaning)
 
