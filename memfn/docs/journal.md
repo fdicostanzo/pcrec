@@ -3728,3 +3728,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - G2, finder, simdfloor and arch green. S3001-S3004 DETECTED; S726 UNDETECTED as declared.
   - Jobs 560-569 refreshed (146 mech rows); they need the joint tree (U2_TREE). Relayed u3crit's reading to main; waiting on the joint tree path.
   - HOUSE-6/7/8 (r5, kit files) went to tiny lane u2house (sonnet, zero bytes, no parallel runs).
+- 11-08 ~21:45: u2house DELIVERED (606f2e74d; closed): HOUSE-6/7/8, zero emitted bytes. It found 7 C4 hits in S3001-S3004 comments (target tokens such as x86-64 and the noun 'arm' are flagged), despite u2rev's 17/0 claim. Reworded by the kit manager (43ea5eedd): arch-blind 17/0, anchors resolve. Final U2 tip 43ea5eedd sent to main for u3crit. Lesson: C4 flags kit TARGET tokens in comments too; comments name roles ('the wider SIMD target').
