@@ -86,6 +86,7 @@ this base. One measurement: `build/pcrec --emit-facts` (main's binary, read-only
 
 ## STATE AT HANDOFF
 
-Delivered and committed on lane/memfn-r38s. Owed: none (design lane; no runs queued). No rulings
+OWED: none (design lane; no runs queued).
+Delivered and committed on lane/memfn-r38s. No rulings
 file was named in the brief. Next: main rules §6's six questions; the kit manager reviews the
 sheet (a readiness critic is the manager's call) before K38-1's brief.
