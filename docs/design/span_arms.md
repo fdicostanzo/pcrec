@@ -1205,6 +1205,12 @@ A run stated as per-position byte sets is a COVER of the attempt, not its langua
 - Q3 (one run value vs two facts): (a) ONE VALUE, Frank 2026-11-09; every reader raised together in one unit.
 - Frank's follow-up (2026-11-09): for `abc(ab){3,5}xxx`, once the search has proved `abcababab`, can the finish start after it? Answer: yes in principle, already filed as [MATCH-KNOWN]'s prefix-skip member (D142); span arms lengthens the provable prefix; the skip additionally needs the kit to REPORT how far it verified (§12a lets it choose). Not part of this build.
 
+## 12d. Build-time scope rulings (manager, 2026-11-09; recorded for the frozen §4, §8 and T7 text)
+
+- E1 (lane sae1): T2 row 1 (a width-0 repeat with m>=1 takes its body's value) also moves `(?:\b)+`/`(?:^)+`, which §4.1 gave E2: KEPT under E1 as the general rule; E2 reuses it (review 2026-11-09 r3).
+- E2 (lane sae2): takes T3 row E-1 (plain A_EMPTY mid-CAT) from alt_normal_form stage 2a (not scheduled); restore arms: `empty` for plain A_EMPTY and width-0 repeats, `zero` for E-4 and E-5 (both restored at E2; L1 re-splits E-5). E2 owns the run's definition in match_api §6.3.7¶6 and tuning §2.28¶1 ('every successful attempt contains the run', covering `\K`); L2 adds only its past-the-consumed-end clause. `<PREFIX>_REQ_BYTE` is a byte every successful ATTEMPT consumes (D191's 'consumes'), the same frame; under `\K` it may lie before the reported start (review 2026-11-09 r4).
+- R1 (lane sar1): two §3.4 cells tie the other way (`xy(?:ab){2,3}zw` lists `ababzw`, `xy(?:ab)+zw` lists `abzw`), equal length and answers, the walk's one tie rule; under utf8 `(a.){10}xyz`'s pieces give `decline:over-bound` (was `not-fixed-width`), both none, an advisory listing mover.
+
 ## 13. Open questions for Frank (plain words, each with a leaning)
 
 1. **Should a repeat count as its copies for the required run?** Today `xy(?:ab){2}zw` gives the
