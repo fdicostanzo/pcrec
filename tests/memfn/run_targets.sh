@@ -277,7 +277,7 @@ C
     for f in c.c d.c t.c; do
         nreg=$(grep -c '^#pragma GCC push_options' "$cdir/$f")
         inreg=$(awk '/^#pragma GCC push_options/{r=1} /^#pragma GCC pop_options/{r=0} r && /^#include/' "$cdir/$f" | wc -l)
-        dup=$(grep '^#include <' "$cdir/$f" | sort | uniq -d | tr '\n' ' ')
+        dup=$(grep '^#include <' "$cdir/$f" | LC_ALL=C sort | uniq -d | tr '\n' ' ')
         parts=$(grep -E '^#define R[CD]__\w+_SIMD_GUARDED_BYTES ' "$cdir/$f" | grep -vc ' 0x0000000000000000ULL$')
         if [ "$nreg" = 1 ] && [ "$inreg" = 0 ] && [ -z "$dup" ] && [ "$parts" = 0 ]; then
             ok "F1 $f (v3): no #include inside the region, none twice, every part's count 0"
