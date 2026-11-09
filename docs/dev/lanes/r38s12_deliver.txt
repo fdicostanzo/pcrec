@@ -1,0 +1,5 @@
+report=docs/dev/lanes/r38s12_report.md
+sections: Summary; Item by item; RQ-2 ranking source; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
