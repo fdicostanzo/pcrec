@@ -134,7 +134,9 @@ docs/dev/artifact_size_log.tsv is modified in the worktree by test-codegen. It i
 
 ## STATE AT HANDOFF
 
-Delivered; nothing is owed by this lane. The landing gates (jobs 500-509, refreshed and dry-run
+OWED: none
+
+Delivered. The landing gates (jobs 500-509, refreshed and dry-run
 clean) are the manager's to queue. The worktree's docs/dev/artifact_size_log.tsv is dirty from
 test-codegen and not committed.
 
