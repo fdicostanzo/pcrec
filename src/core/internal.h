@@ -3654,6 +3654,12 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
+    /* [XARCH-DEV] U3 the CPU target's REGION while it is open: csb's offset
+     * where its open text begins (src/gen/memfn_targets.c,
+     * `pcrec_emit_target_open`/`_close`); the attempt's end refuses one
+     * left open. */
+    size_t region_at;
+    bool   region_open;
     /* [KIT-VERIFY] U1 Z2 this attempt's `cover` decision (src/gen/known.h's
      * `PcrecCover`: the `cover_conj[]` walk, the records it read and the
      * kit's class for the REPORT description), memoized on first ask, NULL
@@ -3855,6 +3861,10 @@ typedef struct PendingRef {
 
 struct Ctx {
     Arena                arena;
+    /* [XARCH-DEV] U3 the compile's one CPU target, derived once per attempt
+     * (`pcrec_memfn_target_derive`, src/gen/memfn_sites.h's type) and read
+     * through `pcrec_memfn_target`; NULL before. */
+    const struct PcrecCpuTarget *cpu_target;
     const char          *pat;
     size_t               patlen;
     size_t               pos;      /* parser cursor */
@@ -7491,6 +7501,9 @@ void pcrec_emit_measures_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *val
  * text in err[0..n) — the kit's own where the kit refused. The CLI calls it
  * at option parse, `pcrec_compile` before any pass. */
 int pcrec_memfn_simd_check(uint64_t flags, const char *list, char *err, size_t n);
+/* [XARCH-DEV] U3: derives the compile's one CPU target onto `Ctx.cpu_target`
+ * (src/gen/memfn_targets.c), once per attempt before anything reads it. */
+void pcrec_memfn_target_derive(Ctx *cx);
 /* [MEMFN] RQ-1: validates `opt->memfn` (the `--memfn=` string) with the
  * kit's `mf_opts_check` and refuses the compile with the kit's own text. */
 void pcrec_memfn_opts_check(Ctx *cx);
@@ -8670,6 +8683,9 @@ void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
                      long long ceiling, const BufSurface *bs);
 
 void pcrec_emit_main(Ctx *cx, const GenNames *g);
+/* The artifact's end, both engines, after `rx_info`: the CPU target region's
+ * close, then the `--emit-main` driver where requested (outside the region). */
+void pcrec_emit_artifact_end(Ctx *cx, const GenNames *g);
 
 
 /* ---- driver -- defined in src/core/compile.c and compile_defs.c ------

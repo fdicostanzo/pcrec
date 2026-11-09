@@ -2800,6 +2800,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         /* [MEMFN] RQ-1 the `--memfn=` string, validated ONCE per compile by
          * the kit (every attempt carries the same string). */
         if (attempt == 0) pcrec_memfn_opts_check(&cx);
+        /* [XARCH-DEV] U3 the CPU target, derived once per attempt (it lives
+         * in this attempt's arena) from the set the check above refused or
+         * passed before any pass; every reader reads this one value. */
+        pcrec_memfn_target_derive(&cx);
 
         /* [FINDINGS] B2 THE ANALYSIS CHAIN, resolved here — before the
          * parse, so a bad analysis name refuses even a pattern that would
@@ -3331,6 +3335,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                     pcrec_ctx_fail(&cx, 0, "internal error: a SIMD bracket was "
                                      "left open (a simd_open with no simd_close)");
             }
+            /* [XARCH-DEV] U3 the CPU target's region likewise: an open one
+             * would put `main` and the consumer's code after the artifact
+             * under the target's features. */
+            if (cx.job->region_open)
+                pcrec_ctx_fail(&cx, 0, "internal error: the CPU target's region "
+                               "was left open (no pcrec_emit_artifact_end)");
         }
 
         /* [MEMFN] R4a′: the kit's stamps over the engines' mark, from the

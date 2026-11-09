@@ -14363,10 +14363,7 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
         pcrec_emit_info(cx, g, 2, job->fit.why,
                         has_budget ? budget : -1, work_budget, bt_frames, ceiling,
                         &pl->bufs);
-    pcrec_emit_target_close(cx, &job->csb);
-
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MAIN))
-        pcrec_emit_main(cx, g);
+    pcrec_emit_artifact_end(cx, g);
 
     /* [M4.5c] The listing, rendered LAST — the event stream is complete by
      * now, and so are the stamp numbers it reports, which are the same

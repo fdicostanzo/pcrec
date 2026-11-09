@@ -15957,7 +15957,8 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     cx->job->string_h = need_string_h || pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN);
     pcrec_sb_puts(c, "\n");
     /* [XARCH-DEV] U3 the target's region open: every function below, the
-     * kit's helpers first, is the target's code */
+     * kit's helpers first, is the target's code (its close, and the move of
+     * every `#include` it holds ahead of it: `pcrec_emit_artifact_end`) */
     pcrec_emit_target_open(cx, c);
     /* [OPT-LITSCAN] S4 the word-load helpers a VM body's run compares use
      * (the body is written before this prologue, so its widths are known);
@@ -16062,6 +16063,18 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
         "    printf(\"giveup %%d\\n\", rc);\n"
         "    return 3;\n"
         "}\n", g->upper, g->searchfn);
+}
+
+/* The artifact's end, both engines, after `rx_info`: the CPU target region's
+ * close (src/gen/memfn_targets.c; nothing for the portable target or on a
+ * part), then the `--emit-main` driver, which is shared file text outside
+ * every region. The one caller of the close, so every engine path that opens
+ * the region in `pcrec_emit_prologue` closes it here. */
+void pcrec_emit_artifact_end(Ctx *cx, const GenNames *g)
+{
+    pcrec_emit_target_close(cx, &cx->job->csb);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MAIN))
+        pcrec_emit_main(cx, g);
 }
 
 /* [DD-13] (plan.md [DD-13] "BENCH-DISCOVERED CANDIDATES" (a); pcrec-bench
@@ -16485,10 +16498,7 @@ in_entries:
         InfoStamp st = { 1, NULL, -1, -1, -1, 0, &bs };
         emit_info_def(cx, c, g.infoname, g.upper, &st);
     }
-    pcrec_emit_target_close(cx, c);
-
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MAIN))
-        pcrec_emit_main(cx, &g);
+    pcrec_emit_artifact_end(cx, &g);
 #ifdef PCREC_CAND_TRACE
     pcrec_cand_path_trace(cx);   /* [OPT-REVEND] L0's `CANDPATH` record */
 #endif

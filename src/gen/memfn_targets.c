@@ -8,10 +8,12 @@
  * (check C4). What it decides is the selection (`simd_rows`, first match
  * over the flag word and the list text) and the one-member rule.
  *
- * The set's one member is the art's TARGET (`pcrec_memfn_target`, unit U3):
- * every art states it to the kit (`mf_art_target`), and the artifact places
- * the kit's guard and region text for it (src/gen/emit_dfa.c,
- * `pcrec_emit_target_open`/`_close`) and names it in `<PREFIX>_TARGETS`. */
+ * The set's one member is the art's TARGET (`pcrec_memfn_target`, unit U3),
+ * derived once per attempt onto the Ctx: every art states it to the kit
+ * (`mf_art_target`), the artifact names it in `<PREFIX>_TARGETS`, and this
+ * file places the kit's guard and region text for it (the guard and the
+ * region's open from `pcrec_emit_prologue`, its close from
+ * `pcrec_emit_artifact_end`, src/gen/emit_dfa.c). */
 #include <stdio.h>
 #include <string.h>
 
@@ -35,10 +37,18 @@ typedef struct {
     const mf_target *other;
 } SimdSet;
 
+/* A target's family token, or `none` for the portable target's absent one.
+ * Targets and families are compared by these TOKENS, never by address
+ * (target_seam_units.md §3: pcrec holds a target as its token). */
+static const char *family_name(const mf_target *t, const char *none)
+{
+    return t->family ? t->family->name : none;
+}
+
 static void set_add(SimdSet *s, const mf_target *t)
 {
     if (!s->first) s->first = t;
-    else if (t != s->first && !s->other) s->other = t;
+    else if (strcmp(t->name, s->first->name) && !s->other) s->other = t;
 }
 
 /* Parses the comma list `list` into `s`. `families` admits a family token
@@ -98,7 +108,7 @@ static int resolve(uint64_t flags, const char *list, SimdSet *s, char *err, size
     }
     if (s->other) {
         const mf_target *a = s->first, *b = s->other;
-        if (a->family != b->family)
+        if (strcmp(family_name(a, ""), family_name(b, "")))
             snprintf(err, n, "the CPU list mixes families ('%s' and '%s'); "
                      "a list names the targets of one family", a->name, b->name);
         else
@@ -116,28 +126,38 @@ int pcrec_memfn_simd_check(uint64_t flags, const char *list, char *err, size_t n
     return resolve(flags, list, &s, err, n);
 }
 
-/* The compile's one CPU target, the kit's row, for `mf_art_target`, the
- * artifact's guard and region and its `<PREFIX>_TARGETS` stamp. The set is
- * validated before any pass runs (`pcrec_compile`, the CLI's option parse),
- * so a refusal here is an internal error, never a quiet default. */
-const mf_target *pcrec_memfn_target(Ctx *cx)
+/* Derives the compile's one CPU target, once per attempt, onto the Ctx
+ * (`Ctx.cpu_target`): the kit's row and its `<PREFIX>_TARGETS` value. The
+ * set was validated before any pass ran (`pcrec_compile`, the CLI's option
+ * parse), so a refusal here is an internal error, never a quiet default;
+ * this is the one point it can fail. */
+void pcrec_memfn_target_derive(Ctx *cx)
 {
     SimdSet s = { 0, 0 };
     char err[256];
     if (resolve(cx->opt->flags, cx->opt->memfn_simd, &s, err, sizeof err) != 0)
         pcrec_ctx_fail(cx, 0, "internal error: the CPU target set was refused "
                        "after option parse: %s", err);
-    return s.first;
+    struct PcrecCpuTarget *ct = pcrec_arena_alloc(&cx->arena, sizeof *ct);
+    ct->row = s.first;
+    /* `family:members`, every token the kit's; `none` for the portable
+     * target's absent family (docs/spec/match_api.md §6.3.10¶14) */
+    ct->stamp = pcrec_sb_fragf(&cx->arena, "%s:%s", family_name(s.first, "none"),
+                               s.first->name);
+    cx->cpu_target = ct;
 }
 
-/* `<PREFIX>_TARGETS`' value: the family and the members, `family:members`
- * (docs/spec/match_api.md §6.3), every token the kit's; `none` for the
- * portable target's absent family. */
+/* The compile's one CPU target, the kit's row as derived for this attempt,
+ * for `mf_art_target`, the artifact's guard and region. */
+const mf_target *pcrec_memfn_target(Ctx *cx)
+{
+    return cx->cpu_target->row;
+}
+
+/* `<PREFIX>_TARGETS`' value for it. */
 const char *pcrec_memfn_targets_stamp(Ctx *cx)
 {
-    const mf_target *t = pcrec_memfn_target(cx);
-    return pcrec_sb_fragf(&cx->arena, "%s:%s", t->family ? t->family->name : "none",
-                          t->name);
+    return cx->cpu_target->stamp;
 }
 
 /* Writes `text` as one CPU-guarded bracket (StrBuf.simd_guarded), so no
@@ -160,16 +180,61 @@ void pcrec_emit_target_guard(Ctx *cx, StrBuf *c)
     put_target_text(cx, c, t->family ? mf_family_c_of(t->family)->guard : "");
 }
 
-/* The target's region open, before the part's first function (the kit's
- * helpers and their `#include` lines inside it); "" for the portable target. */
+/* The target's region open, before the part's first function, recorded
+ * (`Job.region_at`) for its close; "" (no region) for a target with nothing
+ * to enable. */
 void pcrec_emit_target_open(Ctx *cx, StrBuf *c)
 {
-    put_target_text(cx, c, mf_target_c_of(pcrec_memfn_target(cx))->region_open);
+    const char *open = mf_target_c_of(pcrec_memfn_target(cx))->region_open;
+    if (pcrec_is_part(cx) || !*open) return;
+    cx->job->region_at = c->len;
+    cx->job->region_open = true;
+    put_target_text(cx, c, open);
+}
+
+/* Moves every `#include` line of c[at..len) to `at`, in order: the region
+ * holds no header. gcc gives a header's inline functions the target in force
+ * where it is FIRST included, so an intrinsic or fortified-libc header read
+ * inside the region breaks every later use of it outside (a consumer's own
+ * intrinsics, a second artifact; review 2026-11-08-r5-xarch X-1, X-2). Whole
+ * lines move and none is added or dropped, so no length and no guarded count
+ * changes. A header inside a conditional cannot leave it: internal error. */
+static void hoist_includes(Ctx *cx, StrBuf *c, size_t at)
+{
+    StrBuf inc = { .cx = cx }, rest = { .cx = cx };
+    int depth = 0;
+    for (const char *p = c->p + at, *end = c->p + c->len; p < end; ) {
+        const char *nl = memchr(p, '\n', (size_t)(end - p));
+        size_t n = nl ? (size_t)(nl - p) + 1 : (size_t)(end - p);
+        StrBuf *to = &rest;
+        if (!strncmp(p, "#if", 3)) depth++;
+        else if (!strncmp(p, "#endif", 6)) depth--;
+        else if (!strncmp(p, "#include", 8)) {
+            if (depth)
+                pcrec_ctx_fail(cx, 0, "internal error: an #include inside a "
+                               "conditional of the CPU target's region");
+            to = &inc;
+        }
+        pcrec_sb_printf(to, "%.*s", (int)n, p);
+        p += n;
+    }
+    if (inc.len) {   /* the same bytes in a new order, written in place */
+        memcpy(c->p + at, inc.p, inc.len);
+        if (rest.len) memcpy(c->p + at + inc.len, rest.p, rest.len);
+    }
+    pcrec_sb_free(&inc);
+    pcrec_sb_free(&rest);
 }
 
 /* The region's close, after the part's last function and before `main`
- * (shared file text, outside every region). */
+ * (shared file text, outside every region), its headers moved ahead of its
+ * open first. The open and this close are the region's only writers;
+ * `pcrec_emit_artifact_end` is this one's only caller, and the attempt's end
+ * refuses a region left open. */
 void pcrec_emit_target_close(Ctx *cx, StrBuf *c)
 {
+    if (!cx->job->region_open) return;
+    hoist_includes(cx, c, cx->job->region_at);
     put_target_text(cx, c, mf_target_c_of(pcrec_memfn_target(cx))->region_close);
+    cx->job->region_open = false;
 }

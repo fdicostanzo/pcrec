@@ -52,16 +52,23 @@ extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];
  * (`mf_art_target`, before any define or emit). */
 mf_art *pcrec_memfn_art(Ctx *cx);
 
-/* [XARCH-DEV] U3 the compile's one CPU target, the kit's row as P1's option
- * parse resolved it (src/gen/memfn_targets.c): the ONE derivation every art,
- * the artifact's guard and region and `<PREFIX>_TARGETS` read. */
+/* [XARCH-DEV] U3 the compile's one CPU target as `pcrec_memfn_target_derive`
+ * put it on the Ctx (src/gen/memfn_targets.c): the kit's row, and its
+ * `<PREFIX>_TARGETS` value `family:members` (the kit's tokens). */
+struct PcrecCpuTarget {
+    const mf_target *row;
+    const char      *stamp;
+};
+/* The derived row: the ONE value every art, the artifact's guard and region
+ * and `<PREFIX>_TARGETS` read. */
 const mf_target *pcrec_memfn_target(Ctx *cx);
-/* `<PREFIX>_TARGETS`' value for it, `family:members` (the kit's tokens). */
+/* `<PREFIX>_TARGETS`' value for it. */
 const char *pcrec_memfn_targets_stamp(Ctx *cx);
 /* The kit's family guard (at file scope ahead of every `#include`), the
  * target's region open (before the artifact's first function) and its close
- * (after the last). Guarded bytes (no length decision reads them); nothing
- * on a part, nothing for the portable target. */
+ * (after the last, every `#include` line the region holds moved ahead of its
+ * open first). Guarded bytes (no length decision reads them); nothing on a
+ * part, nothing for the portable target. */
 void pcrec_emit_target_guard(Ctx *cx, StrBuf *c);
 void pcrec_emit_target_open(Ctx *cx, StrBuf *c);
 void pcrec_emit_target_close(Ctx *cx, StrBuf *c);
