@@ -34,3 +34,4 @@ helper defined above it (libc_census reads it too). target_text.py is the ONE
 reader of the target's own text (table, admission, the cut, `aside`): simdfloor's
 lint cuts with it, and libc_census's movers half (R4) compares ON to the default
 with that text set aside, so no check carries a second copy of the spellings.
+- policy_check.c (unit U2 fix, R-37): the kit built with -DMF_TARGET_REQUIRED=1 refuses a site policy bit outside MF_P_KIT_NAMED at mf_define, hex in mf_art_error; public header only; built by run_finder.sh (floor 4); S3000's detector.

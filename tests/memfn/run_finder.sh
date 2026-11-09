@@ -206,6 +206,32 @@ LIB="$LIB" TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_proof.sh" > "$WORK/proof.l
 rc=$?
 part proof "$WORK/proof.log"
 [ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/proof.log")" -gt 0 ] || { echo "FAIL: run_proof exited $rc with no failed check"; tf=$((tf + 1)); }
+# [XARCH-DEV] unit U2 fix (R-37), S3000's detector: the kit compiled with
+# -DMF_TARGET_REQUIRED=1 (kit.h's default is 0, which never reaches the
+# refusal) must refuse a site policy bit outside its named set at mf_define,
+# the unnamed bits' hex in mf_art_error (tests/memfn/policy_check.c, public
+# header only). POLICY_FLOOR is its case count, a literal.
+POLICY_FLOOR=4
+mkdir -p "$WORK/kitreq"
+for s in "$ROOT"/memfn/src/*.c; do
+    "$CC" -std=gnu11 -O1 -DMF_TARGET_REQUIRED=1 -c -o "$WORK/kitreq/$(basename "${s%.c}").o" "$s" \
+        || { echo "FAIL: $s does not compile with -DMF_TARGET_REQUIRED=1"; tf=$((tf + 1)); }
+done
+if "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror -I"$ROOT/memfn/include" "$ROOT/tests/memfn/policy_check.c" \
+        "$WORK"/kitreq/*.o -o "$WORK/policychk"; then
+    "$WORK/policychk" > "$WORK/policy.log" 2>&1
+    rc=$?
+    part policy "$WORK/policy.log"
+    [ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/policy.log")" -gt 0 ] || { echo "FAIL: policychk exited $rc with no failed check"; tf=$((tf + 1)); }
+    pc=$(grep -m1 '^checks passed:' "$WORK/policy.log" | grep -oE '[0-9]+')
+    if [ "${pc:-0}" -ge "$POLICY_FLOOR" ]; then
+        echo "ok   policy: ${pc} cases passed >= floor $POLICY_FLOOR"; tp=$((tp + 1))
+    else
+        echo "FAIL: policy: ${pc:-0} cases passed < floor $POLICY_FLOOR"; tf=$((tf + 1))
+    fi
+else
+    echo "FAIL: the MF_TARGET_REQUIRED policy check does not build"; tf=$((tf + 1))
+fi
 echo "checks passed: $tp"
 echo "checks failed: $tf"
 [ "$tf" -eq 0 ]

@@ -698,12 +698,25 @@ typedef struct fn_in {
 extern const mf_formdecl vrun_w16_decl, vrun_w32_decl;
 extern const gate_contract vrun_w16_ct, vrun_w32_ct;
 
+/* THE KIT'S NAMED POLICY SET: every mf_site.policy bit the kit reads, declared
+ * once. A bit outside it is unnamed: gate.c classes the site OTHER (no SIMD row
+ * serves it) and, at MF_TARGET_REQUIRED, define_sel refuses it. A new named bit
+ * joins HERE, built from its #define, and is then known to gate.c and define_sel
+ * alike. */
+#define MF_P_KIT_NAMED (MF_P_INLOOP | MF_P_SIZE_LEANING)
+_Static_assert((MF_P_INLOOP & MF_P_SIZE_LEANING) == 0 &&
+               (MF_P_INLOOP & (MF_P_INLOOP - 1)) == 0 &&
+               (MF_P_SIZE_LEANING & (MF_P_SIZE_LEANING - 1)) == 0 &&
+               (MF_P_KIT_NAMED & 1u) == 0,
+               "MF_P_KIT_NAMED: named policy bits are distinct single bits, and bit 0 is retired");
+
 /* THE TARGET SWITCH (unit U2, the kit manager's ruling 2026-11-08): 0 until
  * the U2+U3 joint merge, which sets it to 1 in this one line. At 0 an art
  * that states no target renders the portable text (its SIMD rows decline,
  * rule 1) and a site carrying policy bit 0 classes OTHER (no SIMD row serves
  * it). At 1 both are REFUSED at the define (define_sel): an art must state
- * its target, and bit 0 is retired. */
+ * its target, and a policy bit outside MF_P_KIT_NAMED (bit 0 included) is
+ * refused, the unknown bits named in hex. */
 #ifndef MF_TARGET_REQUIRED
 #define MF_TARGET_REQUIRED 1
 #endif

@@ -436,7 +436,7 @@ static int cl_policy(const gate_in *in)
 {
     if (!in->s) return CL_OTHER;
     uint32_t p = in->s->policy;
-    if (p & ~(MF_P_INLOOP | MF_P_SIZE_LEANING)) return CL_OTHER;
+    if (p & ~(uint32_t)MF_P_KIT_NAMED) return CL_OTHER;
     return p & MF_P_INLOOP ? CL_INLOOP : p & MF_P_SIZE_LEANING ? CL_SIZE : CL_NONE;
 }
 
@@ -447,7 +447,7 @@ static kit_set policy_classes(uint32_t p)
     kit_set m = 0;
     if (p & MF_P_INLOOP)        m |= CM(INLOOP);
     if (p & MF_P_SIZE_LEANING)  m |= CM(SIZE);
-    if (p & ~(MF_P_INLOOP | MF_P_SIZE_LEANING)) m |= CM(OTHER);
+    if (p & ~(uint32_t)MF_P_KIT_NAMED) m |= CM(OTHER);
     return m ? m : CM(NONE);
 }
 

@@ -1085,9 +1085,11 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (MF_TARGET_REQUIRED && !art->target)
         return kit_fail(art, "mf_define: the art states no target (mf_art_target before the "
                         "first define; MF_TARGET_REQUIRED, unit U2)");
-    if (MF_TARGET_REQUIRED && (s->policy & MF_P_PORTABLE_ONLY))
-        return kit_fail(art, "mf_define: policy bit 0 (MF_P_PORTABLE_ONLY) is retired; the art's "
-                        "target says SIMD off (MF_TARGET_REQUIRED, unit U2)");
+    if (MF_TARGET_REQUIRED && (s->policy & ~(uint32_t)MF_P_KIT_NAMED))
+        return kit_fail(art, "mf_define: policy bits 0x%x are not in the kit's named set 0x%x "
+                        "(MF_TARGET_REQUIRED, unit U2)",
+                        (unsigned)(s->policy & ~(uint32_t)MF_P_KIT_NAMED),
+                        (unsigned)MF_P_KIT_NAMED);
     const char *why = NULL, *wpath = NULL;
     const struct wf_plan *wplan = NULL;
     const mf_site *ws = s;      /* the window site, where the family routes */
