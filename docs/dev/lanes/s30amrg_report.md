@@ -8,8 +8,9 @@ cf578177e: per-CPU SIMD targets, abi 98, MF_SITE_ABI 26).
 
 - Merge commit: ba3933ba4.
 - Ledger switch (review r1 s30a F14): 01a1bbc7c.
-- Zero bytes against main: shown on the G2 window family, the finder hashes and an emit_sweep sample
-  at default flags and at `-fmemfn-simd=<each target>`.
+- Zero bytes against main: shown on the G2 window family and the finder hashes. The emit_sweep sample
+  was not run: it waited on the box lock, and the kit manager ruled it covered by the full identity
+  gates 501-503, which run the same arms (default and every `-fmemfn-simd` target) over the whole corpus.
 - Gate jobs 500-509 refreshed for the new base. Every job passes its own `--dry-run`. None is queued.
 
 STATE AT HANDOFF: delivered. Nothing is owed by this lane. The landing gates (jobs 500-509) are the
@@ -80,7 +81,7 @@ BASE is main cf578177e. It was built plain, with `nice make -j2`, from `git arch
 | G2 window family: `g2_win_gen` seed 20261022, 1500 sites (2600 rendered), each side's generator against its own libpcrec.a | g2w_sites.c IDENTICAL (20,787,703 bytes); generator logs IDENTICAL |
 | the same against each side's libpcrec_mftrace.a | sites and logs IDENTICAL; MFTRACE stderr (164,135 lines, 3,106 FDROUTE) is IDENTICAL once the FDROUTE ` frame=` field is set aside. That field is 3.0a's documented trace hunk (memfn/docs/trace_format.md, s30arev F6); it is not an emitted byte |
 | finder form hashes: tests/memfn/run_finder.sh at tip | 3321 passed, 0 failed (policy 4/0, proof 882/0) |
-| emit_sweep, REF = base build vs tip, `--streams c-default,c-vm --every 20 --jobs 2`, arms default and `-fmemfn-simd=` generic, x86-64, x86-64-v3, armv8-a | SWEEP_RESULT |
+| emit_sweep, REF = base build vs tip, `--streams c-default,c-vm --every 20 --jobs 2`, arms default and `-fmemfn-simd=` generic, x86-64, x86-64-v3, armv8-a | NOT RUN. It waited 10 min on the box lock behind queue job 208-main-sae2-maketest-5 and never started. The kit manager ruled it covered by jobs 501-503 (the default arm plus `tgt-generic`, `tgt-x86-64`, `tgt-x86-64-v3` and `tgt-armv8-a` at full corpus). The waiter and its loop were stopped with scripts/safekill (pids 3441875, 3441943 group). |
 
 No header, layout or abi number moved, and there is no abi event. The full identity check is jobs
 501-503. They compare against main on 67 declared arms plus 4 per-target arms.
@@ -129,7 +130,7 @@ Jobs are in /var/tmp/pcrec-pcrec/scratch/memfn/s30a/jobs/. The previous set is b
 | G2 window family | the generator by hand at both commits (above) | identical |
 
 Logs are in /var/tmp/pcrec-pcrec/scratch/memfn/s30amrg/: strict.log, rows.log, anchors.log,
-archblind.log, codegen.log, finder.log, g2w/, sweep.*.log.
+archblind.log, codegen.log, finder.log, g2w/.
 
 docs/dev/artifact_size_log.tsv is modified in the worktree by test-codegen. It is not committed.
 
@@ -139,7 +140,7 @@ docs/dev/artifact_size_log.tsv is modified in the worktree by test-codegen. It i
 |---|---|
 | 1. merge main alone, resolve with both intents, read the U2 and s30a reports, make strict, commit | yes (ba3933ba4) |
 | 2. the support pin's RULING ledger -> docs/dev/decisions.md D190; §S green | yes (01a1bbc7c; §S green, plant red) |
-| 3. zero bytes vs main cf578177e: G2 window, finder hashes, emit_sweep --every 20 at default and each -fmemfn-simd target | yes (table above) |
+| 3. zero bytes vs main cf578177e: G2 window, finder hashes, emit_sweep --every 20 at default and each -fmemfn-simd target | G2 window and finder hashes yes; the emit_sweep sample is covered by jobs 501-503 per the kit manager's ruling (not run here) |
 | 4. sabotage anchors, run_arch_blind.sh, make test-codegen, rows check | yes (all green) |
 | 5. jobs 500-509 refreshed (BASE/REF, identity vs main, added/moved rows, u3aside, mech cap 7200), each --dry-run passes, not queued | yes |
 | report + history index line | yes |
