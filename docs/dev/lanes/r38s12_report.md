@@ -47,3 +47,4 @@ The kit manager confirms or changes this before K38-1's brief.
 ## STATE AT HANDOFF
 Nothing owed. Sheet rev 1.2 committed; no runs queued. Next: the kit manager confirms or changes
 the RQ-2 source (option A) before K38-1's brief.
+OWED: none
