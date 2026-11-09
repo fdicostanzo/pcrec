@@ -18,7 +18,10 @@ brief declared:
             the target does not admit (each such `#if` block whole), the
             selector's other arms and blank lines. Its MEMFN_FORMS is the
             ref's with the unadmitted levels dropped (`vrun@w32+w16` ->
-            `vrun@w16` at the baseline target).
+            `vrun@w16` at the baseline target). A header line MOVES (lane
+            u3crit, review r5 X-1/X-2: every `#include <H>` at file scope
+            ahead of the region): a lane `#include <H>` the ref also carries,
+            a ref one the lane also carries, never one only one side has.
 
 A refusal on one side only is a failure. CONTROL: every compiled cell is
 judged a second time with one line planted in the lane's text, which must be
@@ -133,17 +136,19 @@ def judge(mode, r, l, fixed):
             top[m.group(1)] = max(top.get(m.group(1), 0), int(m.group(2)))
     if top and max(top.values()) > max(int(k[1:]) for k in kept):
         return "simd: a selector calls a level its MEMFN_FORMS does not admit"
+    inc = re.compile(rb"^#include <[^>]*>\n$")
+    rinc, linc = {x for x in rl if inc.match(x)}, {x for x in ll if inc.match(x)}
     for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, rl, ll, autojunk=False).get_opcodes():
         if tag == "equal":
             continue
         for j in range(j1, j2):
             x = ll[j]
-            if not (STAMP_RE.match(x) or x in fixed):
+            if not (STAMP_RE.match(x) or x in fixed or (x in linc and x in rinc)):
                 return "simd: unpredicted lane line %r" % x[:120]
         for i in range(i1, i2):
             x = rl[i]
             if (i in drop_ok or STAMP_RE.match(x) or CPU_PP.match(x) or PP_ELSE_END.match(x)
-                    or not x.strip() or re.match(rb"^\s*return \w+__body\(", x)):
+                    or (x in rinc and x in linc) or not x.strip() or re.match(rb"^\s*return \w+__body\(", x)):
                 continue
             arm = re.match(rb"^\s*return (\w+)__(w\d+)\(", x)   # a selector arm of an unadmitted level
             if arm and arm.group(2) not in kept:

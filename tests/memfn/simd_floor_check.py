@@ -147,7 +147,7 @@ def diff_lines(a, b):
     return dele, ins
 
 
-def text_legs(toff, ton, t, adm):
+def text_legs(toff, ton, t, adm, aside=0):
     """The text-only legs on one cell: (mover, {fn: vw}, [issue])."""
     issues = []
     fam_target = '%s:%s' % (t['family'], t['name'])
@@ -208,7 +208,9 @@ def text_legs(toff, ton, t, adm):
         elif '    return %s__w%s(%s);' % (fn, vw, replaced[fn]) not in ins_code:
             issues.append('(c) %s\'s level call does not forward its floor call\'s arguments' % fn)
     rdele, rins = diff_lines(toff, ton)
-    nbytes = sum(len(l.encode('utf-8', 'surrogateescape')) + 1 for l in rins if not STAMP_MOVES.match(l))
+    # `aside`: the moved header lines' bytes (moved_headers_aside), guarded text too
+    nbytes = aside + sum(len(l.encode('utf-8', 'surrogateescape')) + 1
+                         for l in rins if not STAMP_MOVES.match(l))
     m = GUARDED.search(ton)
     if not m or int(m.group(1), 16) != nbytes:
         issues.append('(c) inserted %d bytes, SIMD_GUARDED_BYTES %s' % (nbytes, m.group(1) if m else 'absent'))
@@ -323,12 +325,13 @@ def main():
                 continue
             # a header line OFF also carries, moved ahead of the region, is no
             # new text: set aside for every leg; C9 compiles the artifact itself
-            ton = moved_headers_aside(open(on, encoding='utf-8', errors='surrogateescape').read(),
-                                      toff, t)
+            raw = open(on, encoding='utf-8', errors='surrogateescape').read()
+            ton = moved_headers_aside(raw, toff, t)
+            aside = len(raw.encode('utf-8', 'surrogateescape')) - len(ton.encode('utf-8', 'surrogateescape'))
             if open(on[:-1] + 'h', 'rb').read() != hoff:
                 rec['issues'].append('the .h moved under -fmemfn-simd (scaffolding in the header?)')
             adm = admitted(t, levels)
-            mover, sel, issues = text_legs(toff, ton, t, adm)
+            mover, sel, issues = text_legs(toff, ton, t, adm, aside)
             rec['issues'] += issues
             rec['mover'], rec['sel'] = mover, sel
             if not mover:
