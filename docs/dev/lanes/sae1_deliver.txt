@@ -1,0 +1,4 @@
+report=docs/dev/lanes/sae1_report.md
+sections: Summary; Census and movers; Identity; Witnesses and sabotage; Spec and listing hunks; Checks run; STATE AT HANDOFF
+nonempty: all
+commit: yes

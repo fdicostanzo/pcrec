@@ -54,12 +54,15 @@
  * check. Every arm that cannot decide takes it: a class with more than one
  * member for the SET (which is every caselessly-folded literal, since D23
  * folds `(?i)a` to `[aA]` at parse time) and for the RUN a class that is not
- * one small cube (below), a quantifier that admits zero iterations, a
- * backreference, a linked call and every assertion. A lookaround's body is
- * deliberately not descended into: a LOOKBEHIND's bytes sit BEFORE the
- * match's start and can therefore be outside `[search_from, subject_length)`
- * entirely, which would make the check unsound in the direction that deletes
- * matches.
+ * one small cube (below), a quantifier that admits zero iterations (of a
+ * body that consumes something: a width-0 body is CAT's unit, span_arms T2
+ * row 1), a backreference, a linked call and every BARE assertion (a
+ * QUANTIFIED zero-width node joins instead, T2 row 1; `restore=empty` puts
+ * the old cut back). A
+ * lookaround's body is deliberately not descended into: a LOOKBEHIND's bytes
+ * sit BEFORE the match's start and can therefore be outside `[search_from,
+ * subject_length)` entirely, which would make the check unsound in the
+ * direction that deletes matches.
  *
  * WHAT THE RUN DECLINES BEYOND THAT, each with its reason rather than a
  * shared "be careful" (reqpos_2b.md §2.4): a repeat's head and tail runs do
@@ -229,8 +232,10 @@ static RbSet rb_intersect(RbSet l, RbSet r)
  * derived `req_run` fact below, through `src/core/findings.c`. */
 
 /* What every run operation needs besides its operands: the compile (for the
- * position constructor's refusal) and the largest member set one position
- * may have, handed in by `pcrec_req_walk`'s caller. The rest is `rb_walk`'s
+ * position constructor's refusal), and from the walk parameters
+ * `pcrec_req_walk`'s caller hands in (`ReqWalkParams`, span_arms §3.7) the
+ * largest member set one position may have and the restored arms. The rest
+ * is `rb_walk`'s
  * own: its per-level result storage, `slot[d]` two `RbVal`s for the children
  * of the walk at recursion depth `d`, so a value never sits in a C frame
  * ([DD-10]: one `RbVal` is over a kilobyte, and the walk recurses once per
@@ -238,6 +243,7 @@ static RbSet rb_intersect(RbSet l, RbSet r)
 typedef struct {
     Ctx *cx;
     int pos_set;
+    unsigned restored;
     int depth, nslot;
     RbVal **slot;
     /* [RUN-POS-SET] stage 2p: the description's bounds and byte alphabet,
@@ -644,6 +650,76 @@ static void rb_row_into(RbVal *acc, const Ast *a)
     rb_gap_into(acc, PCREC_W_UNBOUNDED);
 }
 
+/* `acc` := a repeat of the WIDTH-0 body `b` followed by `acc` (T2 row 1): at
+ * `rmin == 0` the unit, else the body's value (every copy is the same
+ * zero-width stretch); either way `all`, because a subtree that consumes
+ * nothing leaves the bytes on its two sides adjacent in the subject, whether
+ * it matches zero times or many. `v` is scratch storage for the value. */
+static PCREC_OWN_FRAME void rb_rep_unit_into(const RbWalk *w, RbVal *acc,
+                                             const RbVal *b, int rmin, RbVal *v)
+{
+    if (rmin == 0) rb_init(v);
+    else *v = *b;
+    v->desc = pcrec_pd_unit();   /* the body is width 0 at either m */
+    v->runs.all = true;
+    rb_cat_into(w, acc, v);
+}
+
+/* T2, THE REPEAT ROWS (docs/design/span_arms.md §6), first match: what a
+ * repeat `X{m,n}` contributes, from its body's value `b`. Rows 2 and 3 are
+ * today's best-only copy and min-0 gap (`rb_walk_at`'s `A_REP` arm says
+ * why), which [REPEAT-RUN] (unit R1) replaces with the power arm's rows. A
+ * row whose `arm` the walk parameters restore is passed over, so the next
+ * row answers in the old form; the last row matches every repeat. */
+typedef enum { RB_REP_UNIT, RB_REP_BEST, RB_REP_GAP } RbRepRow;
+
+/* The body consumes nothing on any path: its widest match is 0 bytes. */
+static bool rb_rep_width0(const Ast *a, const RbVal *b)
+{
+    (void)a;
+    return b->runs.maxw == 0;
+}
+
+/* Every match takes at least one copy of the body. */
+static bool rb_rep_min1(const Ast *a, const RbVal *b)
+{
+    (void)b;
+    return a->u.rep.rmin >= 1;
+}
+
+/* Every repeat. */
+static bool rb_rep_any(const Ast *a, const RbVal *b)
+{
+    (void)a;
+    (void)b;
+    return true;
+}
+
+static const struct {
+    bool (*when)(const Ast *a, const RbVal *b);
+    RbRepRow row;
+    unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
+} rb_rep_rows[] = {
+    /* 1 (span_arms E1, [REQ-EMPTYCAT]): `abcd(?:)*efgh`, `ab(?:^)+cd` */
+    { rb_rep_width0, RB_REP_UNIT, PCREC_WALK_ARM(EMPTY) },
+    { rb_rep_min1,   RB_REP_BEST, 0 },
+    { rb_rep_any,    RB_REP_GAP,  0 },
+};
+
+/* The first row of T2 that matches the repeat `a` with body value `b` and
+ * that the walk does not restore. */
+static RbRepRow rb_rep_row(const RbWalk *w, const Ast *a, const RbVal *b)
+{
+    const size_t last = sizeof rb_rep_rows / sizeof rb_rep_rows[0] - 1;
+    size_t i = 0;
+    /* the last row matches every repeat and is never restored: the scan
+     * stops there whatever the table above it holds */
+    while (i < last && ((rb_rep_rows[i].arm & w->restored) ||
+                        !rb_rep_rows[i].when(a, b)))
+        i++;
+    return rb_rep_rows[i].row;
+}
+
 static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t);
 
 /* Writes into `*out` the bytes and the runs EVERY match of `a` must contain,
@@ -706,24 +782,35 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
             return;
         }
         case A_REP:
-            /* `rmin == 0` admits the empty iteration, on which the body
+            /* T2's rows (`rb_rep_rows`), first match on the body's value.
+             * A WIDTH-0 body is the unit (row 1): it consumes nothing, so
+             * the bytes on either side abut however many copies match.
+             *
+             * `rmin == 0` admits the empty iteration, on which the body
              * contributes no byte at all — the one arm where forgetting the
              * minimum is a deleted match rather than a missed opportunity.
              *
-             * At `rmin >= 1` the body's BEST run survives and its head and
-             * tail do NOT: nothing is joined across an iteration boundary,
-             * which reqpos_2b.md §2.4 item 4 declines with its reason (the
-             * population is unmeasured and the reasoning wants its own
-             * witness family). So the repeat is walked for the set exactly as
-             * before, and its run contribution is taken here rather than by
-             * falling through. */
+             * At `rmin >= 1` (row 2) the body's BEST run survives and its
+             * head and tail do NOT: nothing is joined across an iteration
+             * boundary, which reqpos_2b.md §2.4 item 4 declines with its
+             * reason (the population is unmeasured and the reasoning wants
+             * its own witness family; span_arms R1 is that family). So the
+             * repeat is walked for the set exactly as before, and its run
+             * contribution is taken here rather than by falling through. */
             rb_walk(w, a->l, &t[0]);
-            if (a->u.rep.rmin >= 1) {
+            switch (rb_rep_row(w, a, &t[0])) {
+            case RB_REP_UNIT:
+                rb_rep_unit_into(w, acc, &t[0], a->u.rep.rmin, &t[1]);
+                return;
+            case RB_REP_BEST:
                 rb_rep_into(acc, &t[0], a->u.rep.rmax);
                 return;
+            case RB_REP_GAP:
+                break;
             }
-            /* AND AT `rmin == 0` THE REPEAT STILL BREAKS CONTIGUITY, which is
-             * a different obligation from the empty SET above and is the one
+            /* AND AT `rmin == 0` (row 3) THE REPEAT STILL BREAKS
+             * CONTIGUITY, unless its body is width 0 (row 1), which is a
+             * different obligation from the empty SET above and is the one
              * arm of this walk where getting it wrong DELETES A MATCH rather
              * than missing an opportunity. A C-comment pattern — an open
              * delimiter, a min-0 repeat of the body, a close delimiter —
@@ -741,7 +828,11 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
         case A_CLASS:
             rb_class_into(w, acc, a);
             return;
-        /* Consumes nothing, so it can make no byte necessary. `A_LOOK`'s body
+        /* These nodes BARE; a QUANTIFIED one is T2 row 1's (a repeat of a
+         * width-0 body joins, `(?:\b)+` included, by the E1 ruling). The
+         * ruled arm for the bare cuts is `zero` (E2); it restores only these.
+         *
+         * Consumes nothing, so it can make no byte necessary. `A_LOOK`'s body
          * is not descended into, and the header says why that is a
          * CORRECTNESS decline rather than a missed opportunity.
          *
@@ -785,14 +876,16 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
  * stored), its positions single bytes or cubes of at most `pos_set` members.
  * Both are the EMPTY answer where nothing is necessary, which disables every
  * check built on them and is always sound. Reads no prior and no option:
- * `pos_set` is its caller's reading of the fact-level deny. */
-void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, int max_pieces,
+ * the parameters `p` are its caller's reading of the fact-level deny and the
+ * harness lever (span_arms §3.7). */
+void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
                     RbSet *set, RbRun *run, PdDesc *pieces)
 {
     RbWalk *w = pcrec_arena_alloc(&cx->arena, sizeof *w);
     w->cx = cx;
-    w->pos_set = pos_set;
-    w->pd = (PdCfg){ &rb_pd_bytes, max_pieces, PCREC_MAX_REQ_RUN_SCAN };
+    w->pos_set = p->pos_set;
+    w->restored = p->restored;
+    w->pd = (PdCfg){ &rb_pd_bytes, p->max_pieces, PCREC_MAX_REQ_RUN_SCAN };
     RbVal *v = pcrec_arena_alloc(&cx->arena, sizeof *v);
     rb_walk(w, root, v);
     *set = v->set;

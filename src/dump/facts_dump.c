@@ -87,11 +87,15 @@ static const char *fd_status(const PfWhy *w)
     return "absent";
 }
 
-/* The `why` token: `deny:<flag>`, `decline:<reason>`, `rate:<source>`, or
- * empty for a plain derivation. The token grammar is the contract; a reason's
- * NAME is advisory (facts_listing.md). */
+/* The `why` token: `harness:<arms>`, `deny:<flag>`, `decline:<reason>`,
+ * `rate:<source>`, or empty for a plain derivation; the first that applies,
+ * in that order (facts_listing.md §4.1.3¶1). The token grammar is the
+ * contract; a reason's NAME is advisory (facts_listing.md). */
 static const char *fd_why(Ctx *cx, const PfWhy *w, const char *enc)
 {
+    if (w->arms)
+        return pcrec_sb_fragf(&cx->arena, "harness:%s",
+                              pcrec_walk_arms_text(&cx->arena, w->arms));
     switch ((PfWhyCode)w->code) {
     case PF_WHY_NONE:             return "";
     case PF_WHY_DENY:

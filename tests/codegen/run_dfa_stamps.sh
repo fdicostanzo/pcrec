@@ -926,11 +926,15 @@ fi
 #       `\w+(?<=\W)` `\w{1,3}(?=a)\W` `a{1,3}?(?=\w)\W`.
 # Every one is U2's context-node shape or the `a\bb` shape above, behind a
 # quantifier -- new SPELLINGS of known members, not a new mechanism.
+# [REQ-EMPTYCAT] (lane sae1, spanarms.rxt): `abcd(?:\b)+efgh` is a witness for the run walk and a
+# proven-no-match pattern (no \b stands between `d` and `e`), so the bucket gains it: 104 -> 105
+# (the corpus member is E1's; the run change does not decide it).
 # [UPROP-MORE] (lane upropb): the last 37 entries are patterns from tests/utf8/uprop_more.rxt
 # and uprop_blk_age.rxt whose property set is EMPTY in the byte universe (Latin-1), so the
 # byte compile is a proven-no-match artifact. Bucket 104 -> 141, re-measured from this check output.
 EMPTY_MANIFEST='\B\b
 \b\B
+abcd(?:\b)+efgh
 \d\b\w
 a\bb
 \p{Cn}

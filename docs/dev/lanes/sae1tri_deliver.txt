@@ -1,0 +1,4 @@
+report=docs/dev/lanes/sae1tri_report.md
+sections: Cause; Fix or disposition; Checks run; STATE AT HANDOFF
+nonempty: all
+commit: yes

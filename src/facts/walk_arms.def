@@ -1,0 +1,29 @@
+/* src/facts/walk_arms.def — THE RESTORED ARMS of the necessary-run walk: the
+ * test-only lever rows of the walk-parameter table (docs/design/span_arms.md
+ * §3.7, T7's `restored arms` row; ruled at review 2026-11-08 r2 S9).
+ *
+ * A restored arm runs one arm of `src/facts/req.c`'s walk in its form BEFORE
+ * the unit that changed it, so `make test-axes` can sweep the old form against
+ * the new one (an answer-identity arm, `tests/axes/run_axes.sh`'s internal
+ * arms). It is reachable only from `build/pcrec-harness`
+ * (`--harness=restore=NAME[+NAME...]`, `PcrecHarnessOptions.walk_arms`), never
+ * from a caller: the units it restores can only change speed through pick rows
+ * that carry their own denies (span_arms §3.7 "The rule"), so no public bit.
+ *
+ *   WALK_ARM(ID, name, facts)
+ *
+ *   ID     `PCREC_WALK_ARM(ID)` is the arm's bit.
+ *   name   its spelling, in `--harness=restore=` and in the `--emit-facts`
+ *          token `harness:<name>[+<name>...]` (facts_listing.md §4.1.3¶4a).
+ *   facts  the walk OUTPUTS the arm can change, a mask of `PfFactId` bits
+ *          (`PatFacts.have`'s layout). A fact derived
+ *          from one of them inherits the token through its ask
+ *          (`src/facts/facts.c` `pf_ask`), so only the walk's own facts are
+ *          listed here.
+ *
+ * One row per restorable arm. `empty` is span_arms unit E1's (T2 row 1, a
+ * repeat of a width-0 body: today's min-0 gap and best-only copy); stage 2a of
+ * alt_normal_form restores its EMPTY unit under the same name. A later unit
+ * adds its own row (R1 `rep`, E2 `zero`, L1 `look`, 2a `alt`). */
+WALK_ARM(EMPTY, "empty", (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
+#undef WALK_ARM

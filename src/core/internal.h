@@ -185,6 +185,11 @@ typedef struct {
     unsigned arm_reach : 1;
     unsigned kit_proof : 1;
     unsigned pres_window : 1;
+    /* [REQ-EMPTYCAT] span_arms E1 (§3.7): the sixth, `--harness=restore=`,
+     * the necessary-run walk's RESTORED ARMS (`PCREC_WALK_ARM` bits,
+     * src/facts/walk_arms.def), read once at the walk entry into its
+     * parameter record. 0 on every shipped compile. */
+    unsigned walk_arms;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
@@ -3369,6 +3374,10 @@ struct PcrecMeasInherit {
     const struct mf_measures *kit;
     const PcrecFindChain *chain;
     const struct mf_analysis *analysis;
+    /* [REQ-EMPTYCAT] the walking attempt's restored walk arms (the harness
+     * lever's `restore=`, `PcrecHarnessOptions.walk_arms`): a part's walk
+     * takes the same parameters, so a split artifact is restored whole. */
+    unsigned walk_arms;
 };
 
 /* `ReqRun` and `ReqSet` — the necessary-run and necessary-set facts' value

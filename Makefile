@@ -224,8 +224,10 @@ $(BUILD_DIR)/targets.check: memfn/src/targets.def memfn/src/targets_c.def memfn/
 # src/parse/codelang.def joined at [INLINE-C] stage 2 WITH the file: the
 # embedded-code language table, an X-macro `#include`d by registry.c,
 # scans.c and mod_code.c (one language row, three projections).
+# src/facts/walk_arms.def joined at span_arms E1 (lane sae1) WITH the file:
+# facts.h includes it (the walk's restored-arm rows).
 FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def \
-              src/facts/desc.h \
+              src/facts/walk_arms.def src/facts/desc.h \
               src/core/findings.h src/core/ksrc.h src/core/ctxfn.def \
               src/core/kindrow.def src/parse/codelang.def
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \

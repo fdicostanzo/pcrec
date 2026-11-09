@@ -119,17 +119,32 @@ static inline bool rb_has(const RbSet *s, int b)
     return b >= 0 && (s->bits[b >> 3] & (unsigned char)(1u << (b & 7))) != 0;
 }
 
+/* THE WALK PARAMETERS (docs/design/span_arms.md §3.7, T7): everything the
+ * walk reads besides the tree, filled ONCE by its one caller
+ * (`pf_derive_req_walk`, src/facts/facts.c) from the option word and the
+ * harness lever, so the walk itself reads no option. One field per row of
+ * the table; a later unit adds its row (L1's reach, L3's `lb_bytes`). */
+typedef struct {
+    /* the run's cube domain: the largest member set one run position may
+     * have, `PCREC_MAX_REQ_RUN_POS_SET`, or 1 under `-fno-req-run-fold` */
+    int pos_set;
+    /* the piece description's group bound, `PCREC_MAX_REQ_PIECES` */
+    int max_pieces;
+    /* the arms run in their form before the unit that changed them
+     * (`PCREC_WALK_ARM` bits, src/facts/walk_arms.def); 0 but under the
+     * harness lever */
+    unsigned restored;
+} ReqWalkParams;
+
 /* THE CORE FACTS from ONE walk of the lowered tree: the whole necessary set
  * (with its threaded rightmost member) and the most informative guaranteed
- * contiguous run. `pos_set` is the largest member set a run position may
- * have (`PCREC_MAX_REQ_RUN_POS_SET`, or 1 under `-fno-req-run-fold`), handed
- * in so the walk itself reads no option. src/facts/req.c's header carries
+ * contiguous run, under the parameters `p`. src/facts/req.c's header carries
  * the whole account: why the whole window and not PCRE2's "other than at its
  * start", why a SET and a RUN, and why a lookaround's body is a correctness
  * decline. [RUN-POS-SET] stage 2p: the same walk builds the whole pattern's
  * byte-level piece description into `*pieces` (src/facts/desc.h), at most
- * `max_pieces` width groups. */
-void pcrec_req_walk(Ctx *cx, const Ast *root, int pos_set, int max_pieces,
+ * `p->max_pieces` width groups. */
+void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
                     RbSet *set, RbRun *run, PdDesc *pieces);
                                                         /* src/facts/req.c */
 

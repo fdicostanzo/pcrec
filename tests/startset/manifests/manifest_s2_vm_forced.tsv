@@ -4180,3 +4180,22 @@ tests/altcls/altnf_lookbehind.rxt:63	--features all	283f3c3d283f3a6162637c616264
 tests/altcls/altnf_lookbehind.rxt:73	--features all	283f3c3d283f3a6361747c6261747c6174297b312c327d2973
 tests/altcls/altnf_lookbehind.rxt:85	--features all	283f3c3d28617b312c327d29283f3a62637c62647c627b312c327d65292978
 tests/altcls/altnf_lookbehind.rxt:99	--features all	283f3c3d28283f3a61627c616329633f7c61292964
+# sae1pin (2026-11-09, lane/sae1 make test pre-pin): +18, the blocks of tests/litscan/spanarms.rxt (span arms E1 witnesses, new corpus file), correct VM-hat movers never pinned; vmhat_checks.py's own mover rule (the sae2mt precedent), no existing row moved, bench rows untouched.
+tests/litscan/spanarms.rxt:14	--features all	6162283f3a633f297b327d6465
+tests/litscan/spanarms.rxt:24	--features all --engine=vm	6162283f3a633f297b327d6465
+tests/litscan/spanarms.rxt:35	--features all	28616229785c312a79
+tests/litscan/spanarms.rxt:44	--features all --engine=vm	28616229785c312a79
+tests/litscan/spanarms.rxt:54	--features all	61626364283f3a292a65666768
+tests/litscan/spanarms.rxt:61	--features all --engine=vm	61626364283f3a292a65666768
+tests/litscan/spanarms.rxt:69	--features all	61626364283f3a5c62292a65666768
+tests/litscan/spanarms.rxt:76	--features all --engine=vm	61626364283f3a5c62292a65666768
+tests/litscan/spanarms.rxt:84	--features all	61626364283f3a5c62292b65666768
+tests/litscan/spanarms.rxt:91	--features all --engine=vm	61626364283f3a5c62292b65666768
+tests/litscan/spanarms.rxt:99	--features all	61626364283f3a5e292a65666768
+tests/litscan/spanarms.rxt:106	--features all --engine=vm	61626364283f3a5e292a65666768
+tests/litscan/spanarms.rxt:114	--features all	61626364283f3a24293f65666768
+tests/litscan/spanarms.rxt:120	--features all --engine=vm	61626364283f3a24293f65666768
+tests/litscan/spanarms.rxt:127	--features all	7879283f3a283f3d6129292a61627a77
+tests/litscan/spanarms.rxt:134	--features all --engine=vm	7879283f3a283f3d6129292a61627a77
+tests/litscan/spanarms.rxt:142	--features all	6162283f3a5c42297b337d6364
+tests/litscan/spanarms.rxt:149	--features all --engine=vm	6162283f3a5c42297b337d6364

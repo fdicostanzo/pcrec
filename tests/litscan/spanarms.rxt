@@ -1,0 +1,154 @@
+# tests/litscan/spanarms.rxt -- span arms unit E1 ([REQ-EMPTYCAT]'s quantified
+# half; docs/design/span_arms.md §4, T2 row 1 in §6): A REPEAT OF A WIDTH-0 BODY
+# IS CAT'S UNIT. The necessary run joins the bytes on its two sides
+# (src/facts/req.c `rb_rep_rows`), so `abcd(?:\b)*efgh` states `abcdefgh`
+# where it stated `efgh`. Every expectation is libpcre2-8 10.46's
+# (tests/lib/p2probe.c, lane sae1, 2026-11-09), never pcrec's. Each block
+# runs on the default route and again under `engine vm`: the run pre-check
+# is emitted into both engines' search entries. W-R4 and S-g are the unit's
+# two sabotage witnesses (rows S1906, S1905); a sabotaged run is absent from
+# the subject, clears the 16-bit floor, and is pinned by no k-set walk, so
+# the pre-check answers NOMATCH where libpcre2 matches.
+
+# W-R4 (span_arms §3.6): T2 row 1 tests the body's MAXIMUM width; `(?:c?){2}` is not width 0, so the run stays `de` (or `ab`); S1906 reads the minimum width, claims `abde` and deletes every match that takes a `c`
+pattern ab(?:c?){2}de
+features all
+m "abcde" 0 5
+m "abde" 0 4
+m "abccde" 0 6
+n "abcccde"
+m "xxabcdexx" 2 7
+n "abce"
+
+# W-R4 (span_arms §3.6): T2 row 1 tests the body's MAXIMUM width; `(?:c?){2}` is not width 0, so the run stays `de` (or `ab`); S1906 reads the minimum width, claims `abde` and deletes every match that takes a `c` [engine vm]
+pattern ab(?:c?){2}de
+features all
+engine vm
+m "abcde" 0 5
+m "abde" 0 4
+m "abccde" 0 6
+n "abcccde"
+m "xxabcdexx" 2 7
+n "abce"
+
+# S-g (alt_normal_form §9 S2, spelled for E1's site): a backreference CONSUMES; `\1*` is not width 0, so the run is `abx`; S1905 tests "carries no run" instead of width 0, sends the backreference to row 1 and claims `abxy`
+pattern (ab)x\1*y
+features all
+m "abxaby" 0 6
+m "abxy" 0 4
+m "abxababy" 0 8
+n "abxa"
+n "abxaay"
+
+# S-g (alt_normal_form §9 S2, spelled for E1's site): a backreference CONSUMES; `\1*` is not width 0, so the run is `abx`; S1905 tests "carries no run" instead of width 0, sends the backreference to row 1 and claims `abxy` [engine vm]
+pattern (ab)x\1*y
+features all
+engine vm
+m "abxaby" 0 6
+m "abxy" 0 4
+m "abxababy" 0 8
+n "abxa"
+n "abxaay"
+
+# E-2: a min-0 repeat of an empty group is the unit; the run joins across it (`abcdefgh`)
+pattern abcd(?:)*efgh
+features all
+m "abcdefgh" 0 8
+n "abcdxefgh"
+m "xxabcdefghxx" 2 10
+
+# E-2: a min-0 repeat of an empty group is the unit; the run joins across it (`abcdefgh`) [engine vm]
+pattern abcd(?:)*efgh
+features all
+engine vm
+m "abcdefgh" 0 8
+n "abcdxefgh"
+m "xxabcdefghxx" 2 10
+
+# E-3: a min-0 repeat of a width-0 assertion (the anchor wrapper's `<anchor EMPTY>` under `*`) is the unit
+pattern abcd(?:\b)*efgh
+features all
+m "abcdefgh" 0 8
+n "abcdxefgh"
+m "xxabcdefghxx" 2 10
+
+# E-3: a min-0 repeat of a width-0 assertion (the anchor wrapper's `<anchor EMPTY>` under `*`) is the unit [engine vm]
+pattern abcd(?:\b)*efgh
+features all
+engine vm
+m "abcdefgh" 0 8
+n "abcdxefgh"
+m "xxabcdefghxx" 2 10
+
+# T2 row 1 at m >= 1: the copies of a width-0 body coincide; this pattern never matches (no boundary between `d` and `e`), and every run is sound for it
+pattern abcd(?:\b)+efgh
+features all
+n "abcdefgh"
+n "abcd"
+n "efgh"
+
+# T2 row 1 at m >= 1: the copies of a width-0 body coincide; this pattern never matches (no boundary between `d` and `e`), and every run is sound for it [engine vm]
+pattern abcd(?:\b)+efgh
+features all
+engine vm
+n "abcdefgh"
+n "abcd"
+n "efgh"
+
+# E-3: the anchor wrapper under `*` (`^` lowered to its context node)
+pattern abcd(?:^)*efgh
+features all
+m "abcdefgh" 0 8
+n "abcd"
+m "xabcdefgh" 1 9
+
+# E-3: the anchor wrapper under `*` (`^` lowered to its context node) [engine vm]
+pattern abcd(?:^)*efgh
+features all
+engine vm
+m "abcdefgh" 0 8
+n "abcd"
+m "xabcdefgh" 1 9
+
+# E-3: the anchor wrapper under `?`
+pattern abcd(?:$)?efgh
+features all
+m "abcdefgh" 0 8
+n "abcdxefgh"
+
+# E-3: the anchor wrapper under `?` [engine vm]
+pattern abcd(?:$)?efgh
+features all
+engine vm
+m "abcdefgh" 0 8
+n "abcdxefgh"
+
+# E-3: a min-0 repeat of a lookahead (its body not read: the run is `xyabzw` through the repeat, never into the body)
+pattern xy(?:(?=a))*abzw
+features all
+m "xyabzw" 0 6
+n "xyzw"
+n "xyabab"
+
+# E-3: a min-0 repeat of a lookahead (its body not read: the run is `xyabzw` through the repeat, never into the body) [engine vm]
+pattern xy(?:(?=a))*abzw
+features all
+engine vm
+m "xyabzw" 0 6
+n "xyzw"
+n "xyabab"
+
+# T2 row 1 at m = n >= 1: three copies of `\B` are one zero-width stretch
+pattern ab(?:\B){3}cd
+features all
+m "abcd" 0 4
+m "xabcdx" 1 5
+n "ab-cd"
+
+# T2 row 1 at m = n >= 1: three copies of `\B` are one zero-width stretch [engine vm]
+pattern ab(?:\B){3}cd
+features all
+engine vm
+m "abcd" 0 4
+m "xabcdx" 1 5
+n "ab-cd"

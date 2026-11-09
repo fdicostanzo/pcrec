@@ -57,6 +57,18 @@ static const char *const pf_name[PF_NFACTS] = {
 
 static uint32_t pf_bit(PfFactId f) { return (uint32_t)1 << f; }
 
+/* The restored-arm table's name and fact columns (src/facts/walk_arms.def),
+ * indexed by arm bit. */
+static const char *const walk_arm_name[PCREC_WALK_ARM_N] = {
+#define WALK_ARM(ID, name, facts) [PCREC_WALK_ARM_BIT_##ID] = name,
+#include "facts/walk_arms.def"
+};
+static const uint32_t walk_arm_facts[PCREC_WALK_ARM_N] = {
+#define WALK_ARM(ID, name, facts) [PCREC_WALK_ARM_BIT_##ID] = (facts),
+#include "facts/walk_arms.def"
+};
+_Static_assert(PCREC_WALK_ARM_N <= 8, "PfWhy.arms is one byte of arm bits");
+
 /* Stores fact `f`'s EMPTY VALUE — the answer for a pattern with nothing to
  * find, which every consumer already handles because real patterns produce
  * it. The switch has no `default:` so a new row is a compile error here. */
@@ -138,7 +150,7 @@ static bool pf_enter(Ctx *cx, PfFactId f, bool pass)
         pf_store_empty(pf, f);
         pf->why[f] = (PfWhy){ PF_ST_ABSENT,
                               cx->job->nfa.n > 0 ? PF_WHY_ATTEMPT_UNWRAPPED
-                                                 : PF_WHY_NO_FORWARD_NFA, 0 };
+                                                 : PF_WHY_NO_FORWARD_NFA, 0, 0 };
         return false;
     }
     if ((int)pf->epoch < (int)pf_epoch[f])
@@ -149,7 +161,7 @@ static bool pf_enter(Ctx *cx, PfFactId f, bool pass)
     if (d) {
         pf->have |= pf_bit(f);
         pf_store_empty(pf, f);
-        pf->why[f] = (PfWhy){ PF_ST_DENIED, PF_WHY_DENY, d & (~d + 1) };
+        pf->why[f] = (PfWhy){ PF_ST_DENIED, PF_WHY_DENY, d & (~d + 1), 0 };
         return false;
     }
     return true;
@@ -159,7 +171,7 @@ static bool pf_enter(Ctx *cx, PfFactId f, bool pass)
 static void pf_done(PatFacts *pf, PfFactId f)
 {
     pf->have |= pf_bit(f);
-    pf->why[f] = (PfWhy){ PF_ST_DERIVED, PF_WHY_NONE, 0 };
+    pf->why[f] = (PfWhy){ PF_ST_DERIVED, PF_WHY_NONE, 0, 0 };
 }
 
 /* Marks `f` derived with the reason its derivation REPORTED — a structural
@@ -178,10 +190,21 @@ static void pf_done_why(PatFacts *pf, PfFactId f, PfWhyCode code)
                 code == PF_WHY_PIECES_ONE;
     pf->have |= pf_bit(f);
     pf->why[f] = (PfWhy){ decl ? PF_ST_DECLINED : PF_ST_DERIVED,
-                          (unsigned char)code, 0 };
+                          (unsigned char)code, 0, 0 };
 }
 
 static void pf_ask(Ctx *cx, PfFactId f, bool pass);
+
+/* The restored arms of `restored` whose rows name fact `f` as one they can
+ * change: the `arms` a walk fact is stored with. */
+static unsigned char pf_walk_arms_of(unsigned restored, PfFactId f)
+{
+    unsigned char a = 0;
+    for (int i = 0; i < PCREC_WALK_ARM_N; i++)
+        if ((restored >> i & 1) && (walk_arm_facts[i] & pf_bit(f)))
+            a |= (unsigned char)(1u << i);
+    return a;
+}
 
 /* The two CORE necessary-byte facts from their one walk. Each is stored only
  * if it is still unasked and not denied (`pf_enter` caches a denied one), so
@@ -195,20 +218,30 @@ static void pf_ask(Ctx *cx, PfFactId f, bool pass);
  * not. A run that passes has at least two positions, so every reader's
  * `len >= 2` still means "a run shipped".
  *
- * `-fno-req-run-fold` IS READ HERE AND HANDED IN as the walk's position
- * bound (1, the single byte), so the walk reads no option and the deny
- * narrows the fact for every consumer at once (D126 Q3). */
+ * THE WALK PARAMETERS ARE FILLED HERE, ONCE (span_arms §3.7, T7), one row
+ * each: `-fno-req-run-fold` is read as the position bound (1, the single
+ * byte), so the walk reads no option and the deny narrows the fact for every
+ * consumer at once (D126 Q3); the harness lever's restored arms are read off
+ * the emission input (NULL on every shipped path), or, in a compound part,
+ * off the walking attempt's inherited set (`PcrecMeasInherit.walk_arms`). No second path reaches the
+ * walk, and `facts.def`'s deny column keeps its one meaning (it EMPTIES a
+ * fact, `pf_enter`); a parameter changes how the walk derives it. */
 static void pf_derive_req_walk(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
+    const PcrecHarnessOptions *h = cx->emit_in ? cx->emit_in->harness : NULL;
+    const ReqWalkParams p = {
+        .pos_set    = pcrec_opt_has(cx->opt, PCREC_NO_REQ_RUN_FOLD)
+                    ? 1 : PCREC_MAX_REQ_RUN_POS_SET,
+        .max_pieces = PCREC_MAX_REQ_PIECES,
+        .restored   = h ? h->walk_arms
+                    : cx->emit_in && cx->emit_in->meas ? cx->emit_in->meas->walk_arms : 0,
+    };
     RbSet set;
     RbRun run;
     PdDesc pieces;
     int bits = 0;
-    pcrec_req_walk(cx, pf->root,
-                   pcrec_opt_has(cx->opt, PCREC_NO_REQ_RUN_FOLD)
-                       ? 1 : PCREC_MAX_REQ_RUN_POS_SET,
-                   PCREC_MAX_REQ_PIECES, &set, &run, &pieces);
+    pcrec_req_walk(cx, pf->root, &p, &set, &run, &pieces);
     for (int i = 0; i < run.n; i++) bits += __builtin_popcount(run.mask[i]);
     if (pf_enter(cx, PF_REQ_SET, false)) {
         memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
@@ -236,6 +269,7 @@ static void pf_derive_req_walk(Ctx *cx)
             pf->req_run.whole_maxoff = run.off;
         }
         pf_done(pf, PF_REQ_WHOLE_RUN);
+        pf->why[PF_REQ_WHOLE_RUN].arms = pf_walk_arms_of(p.restored, PF_REQ_WHOLE_RUN);
     }
     if (pf_enter(cx, PF_REQ_PIECES, false)) {
         /* [RUN-POS-SET] stage 2p: inert, no pass reads it. A piece SET is
@@ -245,6 +279,7 @@ static void pf_derive_req_walk(Ctx *cx)
                     pieces.ng < 0 ? (pieces.why == PD_OVER ? PF_WHY_PIECES_OVER
                                                            : PF_WHY_PIECES_WALL)
                     : pieces.ng == 1 ? PF_WHY_PIECES_ONE : PF_WHY_NONE);
+        pf->why[PF_REQ_PIECES].arms = pf_walk_arms_of(p.restored, PF_REQ_PIECES);
     }
 }
 
@@ -255,6 +290,8 @@ static void pf_derive(Ctx *cx, PfFactId f)
 {
     PatFacts *pf = &cx->job->pf;
     PfWhyCode why = PF_WHY_NONE;
+    unsigned seen = pf->arms_seen;
+    pf->arms_seen = 0;
     switch (f) {
     case PF_KINDS:
         pf->kinds = pcrec_pattern_kinds(pf->root);
@@ -306,6 +343,7 @@ static void pf_derive(Ctx *cx, PfFactId f)
     case PF_REQ_WHOLE_RUN:
     case PF_REQ_PIECES:
         pf_derive_req_walk(cx);
+        pf->arms_seen = seen;
         return;
     case PF_REQ_RUN:
         pf_ask(cx, PF_REQ_WHOLE_RUN, false);
@@ -392,15 +430,47 @@ static void pf_derive(Ctx *cx, PfFactId f)
 #endif
         break;
     case PF_NFACTS:
+        pf->arms_seen = seen;
         return;
     }
     pf_done_why(pf, f, why);
+    /* A derived fact carries the restored arms of every fact it asked. */
+    pf->why[f].arms = (unsigned char)pf->arms_seen;
+    pf->arms_seen = seen;
 }
 
-/* The four steps: `pf_enter`'s three, then the derivation. */
+/* The four steps: `pf_enter`'s three, then the derivation; then `f`'s
+ * restored arms join the asking derivation's (`PatFacts.arms_seen`). */
 static void pf_ask(Ctx *cx, PfFactId f, bool pass)
 {
     if (pf_enter(cx, f, pass)) pf_derive(cx, f);
+    cx->job->pf.arms_seen |= cx->job->pf.why[f].arms;
+}
+
+int pcrec_walk_arms_parse(const char *list, unsigned *arms)
+{
+    const char *p = list;
+    *arms = 0;
+    for (;;) {
+        size_t n = strcspn(p, "+");
+        int i = 0;
+        while (i < PCREC_WALK_ARM_N &&
+               !(strlen(walk_arm_name[i]) == n && !strncmp(walk_arm_name[i], p, n)))
+            i++;
+        if (i == PCREC_WALK_ARM_N) return (int)(p - list);
+        *arms |= 1u << i;
+        if (!p[n]) return -1;
+        p += n + 1;
+    }
+}
+
+const char *pcrec_walk_arms_text(Arena *a, unsigned arms)
+{
+    const char *t = "";
+    for (int i = 0; i < PCREC_WALK_ARM_N; i++)
+        if (arms >> i & 1)
+            t = pcrec_sb_fragf(a, "%s%s%s", t, *t ? "+" : "", walk_arm_name[i]);
+    return t;
 }
 
 /* E1 is FORCED, not lazy (design §2): every E1 fact is derived here, on the
@@ -659,7 +729,7 @@ void pcrec_facts_force_failed(Ctx *cx)
     if (pf->force_next < PF_NFACTS) {
         PfFactId f = (PfFactId)pf->force_next;
         pf->have |= pf_bit(f);
-        pf->why[f] = (PfWhy){ PF_ST_ABSENT, PF_WHY_FORCE_FAILED, 0 };
+        pf->why[f] = (PfWhy){ PF_ST_ABSENT, PF_WHY_FORCE_FAILED, 0, 0 };
         pf->force_next++;
     }
 }
