@@ -180,61 +180,54 @@ void pcrec_emit_target_guard(Ctx *cx, StrBuf *c)
     put_target_text(cx, c, t->family ? mf_family_c_of(t->family)->guard : "");
 }
 
-/* The target's region open, before the part's first function, recorded
- * (`Job.region_at`) for its close; "" (no region) for a target with nothing
- * to enable. */
+/* The mark the artifact's TARGET HEADERS replace (`pcrec_memfn_target_headers`,
+ * rendered by the finishing pass, src/gen/memfn_stamps.c): file scope, after
+ * the prologue's own `#include` lines and ahead of the region open, in its
+ * own bracket so no length decision reads it. Every artifact but a part
+ * carries it until the render, which leaves "" where no header is owed. */
+void pcrec_emit_target_headers_mark(Ctx *cx, StrBuf *c)
+{
+    if (pcrec_is_part(cx)) return;
+    pcrec_sb_simd_open(c);
+    pcrec_sb_puts(c, PCREC_TARGET_HEADERS_MARK);
+    pcrec_sb_simd_close(c);
+}
+
+/* The `#include` lines the artifact's code needs that its prologue could not
+ * write ahead of the region: a compound part's own (`PcrecPartFacts.string_h`)
+ * where its text lies inside the shell's region. gcc gives a header's inline
+ * functions the target in force where it is FIRST included, so a header first
+ * read inside the region breaks every later use of it outside (a fortified
+ * `memcpy`, a consumer's intrinsics, a second artifact; review
+ * 2026-11-08-r5-xarch X-1, X-2); first included here, the part's own later
+ * line is a no-op. "" without a region (the part's line is then at file
+ * scope's target already). Read once, after the last emit. */
+const char *pcrec_memfn_target_headers(Ctx *cx)
+{
+    const PcrecCompShell *sh = cx->job->comp_shell;
+    bool string_h = false;
+    for (int i = 0; sh && cx->job->region_placed && i < PCREC_COMP_MAXPARTS; i++)
+        if (sh->text[i]) string_h = string_h || sh->facts[i].string_h;
+    return string_h && !cx->job->string_h ? "#include <string.h>\n" : "";
+}
+
+/* The target's region open, before the part's first function; "" (no region)
+ * for a target with nothing to enable. */
 void pcrec_emit_target_open(Ctx *cx, StrBuf *c)
 {
     const char *open = mf_target_c_of(pcrec_memfn_target(cx))->region_open;
     if (pcrec_is_part(cx) || !*open) return;
-    cx->job->region_at = c->len;
-    cx->job->region_open = true;
+    cx->job->region_open = cx->job->region_placed = true;
     put_target_text(cx, c, open);
 }
 
-/* Moves every `#include` line of c[at..len) to `at`, in order: the region
- * holds no header. gcc gives a header's inline functions the target in force
- * where it is FIRST included, so an intrinsic or fortified-libc header read
- * inside the region breaks every later use of it outside (a consumer's own
- * intrinsics, a second artifact; review 2026-11-08-r5-xarch X-1, X-2). Whole
- * lines move and none is added or dropped, so no length and no guarded count
- * changes. A header inside a conditional cannot leave it: internal error. */
-static void hoist_includes(Ctx *cx, StrBuf *c, size_t at)
-{
-    StrBuf inc = { .cx = cx }, rest = { .cx = cx };
-    int depth = 0;
-    for (const char *p = c->p + at, *end = c->p + c->len; p < end; ) {
-        const char *nl = memchr(p, '\n', (size_t)(end - p));
-        size_t n = nl ? (size_t)(nl - p) + 1 : (size_t)(end - p);
-        StrBuf *to = &rest;
-        if (!strncmp(p, "#if", 3)) depth++;
-        else if (!strncmp(p, "#endif", 6)) depth--;
-        else if (!strncmp(p, "#include", 8)) {
-            if (depth)
-                pcrec_ctx_fail(cx, 0, "internal error: an #include inside a "
-                               "conditional of the CPU target's region");
-            to = &inc;
-        }
-        pcrec_sb_printf(to, "%.*s", (int)n, p);
-        p += n;
-    }
-    if (inc.len) {   /* the same bytes in a new order, written in place */
-        memcpy(c->p + at, inc.p, inc.len);
-        if (rest.len) memcpy(c->p + at + inc.len, rest.p, rest.len);
-    }
-    pcrec_sb_free(&inc);
-    pcrec_sb_free(&rest);
-}
-
 /* The region's close, after the part's last function and before `main`
- * (shared file text, outside every region), its headers moved ahead of its
- * open first. The open and this close are the region's only writers;
- * `pcrec_emit_artifact_end` is this one's only caller, and the attempt's end
- * refuses a region left open. */
+ * (shared file text, outside every region). The open and this close are the
+ * region's only writers; `pcrec_emit_artifact_end` is this one's only caller,
+ * and the attempt's end refuses a region left open. */
 void pcrec_emit_target_close(Ctx *cx, StrBuf *c)
 {
     if (!cx->job->region_open) return;
-    hoist_includes(cx, c, cx->job->region_at);
     put_target_text(cx, c, mf_target_c_of(pcrec_memfn_target(cx))->region_close);
     cx->job->region_open = false;
 }

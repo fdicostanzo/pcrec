@@ -15956,9 +15956,12 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * asserted at the attempt's end, `pcrec_memfn_art_end`). */
     cx->job->string_h = need_string_h || pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN);
     pcrec_sb_puts(c, "\n");
-    /* [XARCH-DEV] U3 the target's region open: every function below, the
-     * kit's helpers first, is the target's code (its close, and the move of
-     * every `#include` it holds ahead of it: `pcrec_emit_artifact_end`) */
+    /* [XARCH-DEV] U3 the headers the prologue cannot write here yet (a mark
+     * the finishing pass renders), then the target's region open: every
+     * function below, the kit's helpers first, is the target's code (its
+     * close: `pcrec_emit_artifact_end`). No `#include` below may come first
+     * for a header the region's code uses. */
+    pcrec_emit_target_headers_mark(cx, c);
     pcrec_emit_target_open(cx, c);
     /* [OPT-LITSCAN] S4 the word-load helpers a VM body's run compares use
      * (the body is written before this prologue, so its widths are known);

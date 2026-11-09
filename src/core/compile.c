@@ -3647,6 +3647,7 @@ facts_force:
                                                      "p", "s", "n") != 0 ||
                           pcrec_opt_has(cx.opt, PCREC_FORCE_STARTPOS_ALIGN);
             pf->utf_check = pcrec_utf_check_on(&cx);
+            pf->string_h = cx.job->string_h;
             pf->simd_guarded = cx.job->csb.simd_guarded;
             pf->simd_size = cx.job->csb.simd_size;
             pf->scaf_guarded = cx.job->csb.scaf_guarded;

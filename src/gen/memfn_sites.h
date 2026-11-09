@@ -66,10 +66,14 @@ const mf_target *pcrec_memfn_target(Ctx *cx);
 const char *pcrec_memfn_targets_stamp(Ctx *cx);
 /* The kit's family guard (at file scope ahead of every `#include`), the
  * target's region open (before the artifact's first function) and its close
- * (after the last, every `#include` line the region holds moved ahead of its
- * open first). Guarded bytes (no length decision reads them); nothing on a
+ * (after the last). Guarded bytes (no length decision reads them); nothing on a
  * part, nothing for the portable target. */
 void pcrec_emit_target_guard(Ctx *cx, StrBuf *c);
+/* The target headers' mark (ahead of the region open, every artifact but a
+ * part) and its text, which the finishing pass splices over it. */
+#define PCREC_TARGET_HEADERS_MARK "\x01H\n"
+void pcrec_emit_target_headers_mark(Ctx *cx, StrBuf *c);
+const char *pcrec_memfn_target_headers(Ctx *cx);
 void pcrec_emit_target_open(Ctx *cx, StrBuf *c);
 void pcrec_emit_target_close(Ctx *cx, StrBuf *c);
 

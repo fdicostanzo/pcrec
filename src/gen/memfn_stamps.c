@@ -317,6 +317,32 @@ static void ks_stamps_render(Ctx *cx)
     }
 }
 
+/* [XARCH-DEV] U3 renders the target headers over their mark in csb
+ * (`pcrec_emit_target_headers_mark`): the text `pcrec_memfn_target_headers`
+ * names, read now, after the last emit. The mark sat in its own bracket, so
+ * the text takes over its guarded record (both counts and the caps
+ * breakdown move by the difference) and no length decision ever read
+ * either: a header owed only for a target is beyond the SIMD-off compile. A
+ * part carries no mark; any other artifact exactly one. */
+static void target_headers_render(Ctx *cx)
+{
+    StrBuf *c = &cx->job->csb;
+    size_t nm = mark_count(c, PCREC_TARGET_HEADERS_MARK);
+    if (nm != (pcrec_is_part(cx) ? 0u : 1u))
+        pcrec_ctx_fail(cx, 0, "internal error: the artifact holds %zu target "
+                       "header marks (pcrec_emit_target_headers_mark)", nm);
+    if (!nm) return;
+    const char *text = pcrec_memfn_target_headers(cx);
+    PcrecEmitSize was = pcrec_emit_size_measure(PCREC_TARGET_HEADERS_MARK,
+                                                strlen(PCREC_TARGET_HEADERS_MARK), NULL);
+    PcrecEmitSize now = pcrec_emit_size_measure(text, strlen(text), NULL);
+    (void)splice_mark(c, PCREC_TARGET_HEADERS_MARK, text);
+    c->simd_guarded += strlen(text) - strlen(PCREC_TARGET_HEADERS_MARK);
+    c->simd_size.total += now.total - was.total;
+    c->simd_size.prose += now.prose - was.prose;
+    c->simd_size.tables += now.tables - was.tables;
+}
+
 /* The finishing pass (see the header). Reads `cx->job->csb` and `hsb`, the
  * finished artifact at the placeholder prefix; writes the three stamp lines
  * over csb's mark. Called once per attempt, after the engine emitter and
@@ -333,6 +359,7 @@ void pcrec_memfn_stamps_render(Ctx *cx)
 {
     Job *job = cx->job;
     mf_art *art = pcrec_memfn_art(cx);
+    target_headers_render(cx);
     StrBuf lines = { .cx = cx };
     StampSink ss = { &lines, pcrec_sb_upper(&cx->arena, cx->opt->prefix) };
     mf_sink sink = { .u = &ss, .stamp = sink_stamp,

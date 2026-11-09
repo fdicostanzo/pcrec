@@ -3654,12 +3654,10 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
-    /* [XARCH-DEV] U3 the CPU target's REGION while it is open: csb's offset
-     * where its open text begins (src/gen/memfn_targets.c,
-     * `pcrec_emit_target_open`/`_close`); the attempt's end refuses one
-     * left open. */
-    size_t region_at;
-    bool   region_open;
+    /* [XARCH-DEV] U3 the CPU target's REGION (src/gen/memfn_targets.c,
+     * `pcrec_emit_target_open`/`_close`): written at all, and open now; the
+     * attempt's end refuses one left open. */
+    bool region_placed, region_open;
     /* [KIT-VERIFY] U1 Z2 this attempt's `cover` decision (src/gen/known.h's
      * `PcrecCover`: the `cover_conj[]` walk, the records it read and the
      * kit's class for the REPORT description), memoized on first ask, NULL
@@ -8803,6 +8801,7 @@ struct PcrecPartFacts {
     int ncaps;              /* its `<P>_NCAPS` */
     bool guarded;           /* its entries refuse a mid-character position */
     bool utf_check;         /* its entries run the subject check */
+    bool string_h;          /* its text includes <string.h> (`Job.string_h`) */
     size_t simd_guarded;    /* the CPU-guarded bytes its text carries, and */
     PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
     size_t scaf_guarded;    /* [FINDALL-NEXT] its scaffold bytes, and */
