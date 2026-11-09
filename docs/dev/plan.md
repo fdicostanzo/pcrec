@@ -302,6 +302,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
   note (2026-10-26, lane rwsurvey): the stray A_EMPTY is NOT from `(?:)`/`(?i)`/`(?#)` (parse drops them; `a(?:)bc` gives req_run abc); it comes from pcrec_wrap_bare_anchor's `<anchor EMPTY>` wrapper under a quantifier and the derive hook's killed `\G`.
   note (2026-11-09, reviews r3 sae1 / r4 sae2 PLAN items): (1) an alternation whose every branch consumes nothing (`a(?:\b|$)b`) still cuts the run: trigger, a corpus count of such alternations with a run mover; (2) one row selector for T2/T3/T4 when L1 adds T4 (span_arms §6)
+  note (2026-11-09, review r5 sar1 EMIT-2 cause 2, PLAN): a long required run's handoff can displace a cheaper memchr scan; after R1's spelling-independent tie fix, `A{33}x` on English text costs exactly what its unrolled literal costs on lane/u3mech (+86% vs the repeat spelling's old cost; 2.4x FASTER on prior text). Trigger: a bench cell whose run is >= 16 positions and whose time rises at R1's landing; the fix is pricing the run handoff against the scan it displaces (span_pick's priced choice), not a run-walk special case.
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
