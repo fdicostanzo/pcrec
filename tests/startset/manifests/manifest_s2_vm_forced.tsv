@@ -4180,11 +4180,64 @@ tests/altcls/altnf_lookbehind.rxt:63	--features all	283f3c3d283f3a6162637c616264
 tests/altcls/altnf_lookbehind.rxt:73	--features all	283f3c3d283f3a6361747c6261747c6174297b312c327d2973
 tests/altcls/altnf_lookbehind.rxt:85	--features all	283f3c3d28617b312c327d29283f3a62637c62647c627b312c327d65292978
 tests/altcls/altnf_lookbehind.rxt:99	--features all	283f3c3d28283f3a61627c616329633f7c61292964
-# sae1pin (2026-11-09, lane/sae1 make test pre-pin): +18, the blocks of tests/litscan/spanarms.rxt (span arms E1 witnesses, new corpus file), correct VM-hat movers never pinned; vmhat_checks.py's own mover rule (the sae2mt precedent), no existing row moved, bench rows untouched.
+# sae2mt (2026-11-09, lane/sae2 make test triage): +64, the blocks of tests/litscan/spanarms.rxt (span arms E1/E2 witnesses, new corpus file), correct VM-hat movers never pinned; vmhat_checks.py's own mover rule (the mttri and alttri2 precedent), no existing row moved, bench rows untouched.
+tests/litscan/spanarms.rxt:106	--features all --engine=vm	61626364283f3a5e292a65666768
+tests/litscan/spanarms.rxt:114	--features all	61626364283f3a24293f65666768
+tests/litscan/spanarms.rxt:120	--features all --engine=vm	61626364283f3a24293f65666768
+tests/litscan/spanarms.rxt:127	--features all	7879283f3a283f3d6129292a61627a77
+tests/litscan/spanarms.rxt:134	--features all --engine=vm	7879283f3a283f3d6129292a61627a77
 tests/litscan/spanarms.rxt:14	--features all	6162283f3a633f297b327d6465
+tests/litscan/spanarms.rxt:142	--features all	6162283f3a5c42297b337d6364
+tests/litscan/spanarms.rxt:149	--features all --engine=vm	6162283f3a5c42297b337d6364
+tests/litscan/spanarms.rxt:162	--features all	78797a283f3c3d797a29616263
+tests/litscan/spanarms.rxt:170	--features all --engine=vm	78797a283f3c3d797a29616263
+tests/litscan/spanarms.rxt:179	--features all	283f3c3d666f6f29626172
+tests/litscan/spanarms.rxt:187	--features all --engine=vm	283f3c3d666f6f29626172
+tests/litscan/spanarms.rxt:196	--features all	7879283f3c216162296364
+tests/litscan/spanarms.rxt:204	--features all --engine=vm	7879283f3c216162296364
+tests/litscan/spanarms.rxt:213	--features all	28616229785c3179
+tests/litscan/spanarms.rxt:221	--features all --engine=vm	28616229785c3179
+tests/litscan/spanarms.rxt:230	--features all	666f6f5c622d626172
+tests/litscan/spanarms.rxt:237	--features all --engine=vm	666f6f5c622d626172
 tests/litscan/spanarms.rxt:24	--features all --engine=vm	6162283f3a633f297b327d6465
+tests/litscan/spanarms.rxt:245	--features all	61625c426364
+tests/litscan/spanarms.rxt:252	--features all --engine=vm	61625c426364
+tests/litscan/spanarms.rxt:260	--features all	6162245c6e
+tests/litscan/spanarms.rxt:267	--features all --engine=vm	6162245c6e
+tests/litscan/spanarms.rxt:275	--features all	283f6d296162245c6e6364
+tests/litscan/spanarms.rxt:282	--features all --engine=vm	283f6d296162245c6e6364
+tests/litscan/spanarms.rxt:290	--features all	283f6d2961625c6e5e6364
+tests/litscan/spanarms.rxt:297	--features all --engine=vm	283f6d2961625c6e5e6364
+tests/litscan/spanarms.rxt:305	--features all	61625c4b6364
+tests/litscan/spanarms.rxt:312	--features all --engine=vm	61625c4b6364
+tests/litscan/spanarms.rxt:320	--features all	61625c476364
+tests/litscan/spanarms.rxt:326	--features all --engine=vm	61625c476364
+tests/litscan/spanarms.rxt:333	--features all	61625c416364
+tests/litscan/spanarms.rxt:338	--features all --engine=vm	61625c416364
+tests/litscan/spanarms.rxt:344	--features all	61625c7a6364
+tests/litscan/spanarms.rxt:349	--features all --engine=vm	61625c7a6364
 tests/litscan/spanarms.rxt:35	--features all	28616229785c312a79
+tests/litscan/spanarms.rxt:355	--features all	78283f216162296163
+tests/litscan/spanarms.rxt:362	--features all --engine=vm	78283f216162296163
+tests/litscan/spanarms.rxt:370	--features all	6162283f3d63296364
+tests/litscan/spanarms.rxt:377	--features all --engine=vm	6162283f3d63296364
+tests/litscan/spanarms.rxt:385	--features all	6162283f3c3d62296364
+tests/litscan/spanarms.rxt:392	--features all --engine=vm	6162283f3c3d62296364
+tests/litscan/spanarms.rxt:400	--features all	6162283f2178296364
+tests/litscan/spanarms.rxt:407	--features all --engine=vm	6162283f2178296364
+tests/litscan/spanarms.rxt:415	--features all	6162283f3c2178296364
+tests/litscan/spanarms.rxt:422	--features all --engine=vm	6162283f3c2178296364
+tests/litscan/spanarms.rxt:430	--features all	7879283f3d61622961627a77
+tests/litscan/spanarms.rxt:437	--features all --engine=vm	7879283f3d61622961627a77
 tests/litscan/spanarms.rxt:44	--features all --engine=vm	28616229785c312a79
+tests/litscan/spanarms.rxt:445	--features all	6162283f21636429283f3c217879296365
+tests/litscan/spanarms.rxt:452	--features all --engine=vm	6162283f21636429283f3c217879296365
+tests/litscan/spanarms.rxt:460	--features all	61626364282965666768
+tests/litscan/spanarms.rxt:469	--features all --engine=vm	61626364282965666768
+tests/litscan/spanarms.rxt:479	--features all	61626364283f3a7c2965666768
+tests/litscan/spanarms.rxt:486	--features all --engine=vm	61626364283f3a7c2965666768
+tests/litscan/spanarms.rxt:494	--features all	6162283f3a7c78296364
+tests/litscan/spanarms.rxt:501	--features all --engine=vm	6162283f3a7c78296364
 tests/litscan/spanarms.rxt:54	--features all	61626364283f3a292a65666768
 tests/litscan/spanarms.rxt:61	--features all --engine=vm	61626364283f3a292a65666768
 tests/litscan/spanarms.rxt:69	--features all	61626364283f3a5c62292a65666768
@@ -4192,10 +4245,3 @@ tests/litscan/spanarms.rxt:76	--features all --engine=vm	61626364283f3a5c62292a6
 tests/litscan/spanarms.rxt:84	--features all	61626364283f3a5c62292b65666768
 tests/litscan/spanarms.rxt:91	--features all --engine=vm	61626364283f3a5c62292b65666768
 tests/litscan/spanarms.rxt:99	--features all	61626364283f3a5e292a65666768
-tests/litscan/spanarms.rxt:106	--features all --engine=vm	61626364283f3a5e292a65666768
-tests/litscan/spanarms.rxt:114	--features all	61626364283f3a24293f65666768
-tests/litscan/spanarms.rxt:120	--features all --engine=vm	61626364283f3a24293f65666768
-tests/litscan/spanarms.rxt:127	--features all	7879283f3a283f3d6129292a61627a77
-tests/litscan/spanarms.rxt:134	--features all --engine=vm	7879283f3a283f3d6129292a61627a77
-tests/litscan/spanarms.rxt:142	--features all	6162283f3a5c42297b337d6364
-tests/litscan/spanarms.rxt:149	--features all --engine=vm	6162283f3a5c42297b337d6364

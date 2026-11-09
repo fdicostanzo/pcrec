@@ -794,7 +794,8 @@ enum {
 
     /* [OPT-REQBYTE] DENY THE REQUIRED-BYTE WHOLE-WINDOW PRE-CHECK.
      *
-     * Where every match of a pattern must contain some literal byte, a search
+     * Where every successful attempt of a pattern must consume some literal
+     * byte (under `\K` it can lie before the reported start), a search
      * over a window that does not contain that byte can answer NOMATCH in one
      * `memchr`-class pass instead of running an attempt at every start
      * position. PCRE2 records the same fact as
@@ -867,7 +868,7 @@ enum {
 
 /* [OPT-REQPOS] tier 2b DENY THE REQUIRED-RUN WHOLE-WINDOW PRE-CHECK.
  *
- * The bit above tests ONE byte every match must contain; this one is the
+ * The bit above tests ONE byte every successful attempt must consume; this one is the
  * same fact at word grain — the longest run of CONTIGUOUS bytes every
  * match must contain — and today's one-byte check is its `L = 1` case
  * exactly. Where a run exists the emitted pre-check scans for the run's
@@ -901,7 +902,7 @@ enum {
 /* [OPT-LITSCAN] S1 `-fno-run-prefilter` — DENY THE RUN-PINNED PREFILTER ROWS.
  *
  * Where the necessary run `PCREC_NO_REQ_RUN` describes sits at a FIXED
- * offset from every match's start (the offset-k walk proves each of its bytes
+ * offset from the attempt's start (the offset-k walk proves each of its bytes
  * there) and the DFA's candidate-start scan already scans the run's own scan
  * member at that offset, the prefilter tests the WHOLE run on each candidate
  * — one constant-length compare in its `<PREFIX>_ofsskip` block — instead of

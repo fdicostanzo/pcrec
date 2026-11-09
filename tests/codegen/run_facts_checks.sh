@@ -677,7 +677,9 @@ else
         'RX_REQ_RUN	byte	abcd(?:)+efgh	-	6162636465666768@1' \
         'RX_REQ_RUN	byte	abcd(?:)+efgh	empty	65666768@2' \
         'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	-	6162636465666768@1' \
-        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	empty	65666768@2' > "$WORKDIR/ac"
+        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	empty	65666768@2' \
+        'RX__Q_REQ_RUN	byte	^a|abcd\Befgh$	-	6162636465666768@1' \
+        'RX__Q_REQ_RUN	byte	^a|abcd\Befgh$	zero	65666768@2' > "$WORKDIR/ac"
     nac=0
     while IFS=$'\t' read -r mac enc pat arm want; do
         nac=$((nac + 1)); larm=(); [ "$arm" = "-" ] || larm=("--harness=restore=$arm")
@@ -689,11 +691,62 @@ else
     done < "$WORKDIR/ac"
     echo "REACH: $nac restored-arm artifact cells (top, utf8, m>=1, split part)"
 fi
-echo "REACH: 1 restored-arm witness ('$AP'), $(wc -l < "$WORKDIR/aw" 2>/dev/null || echo 0) listing cells"
+# span_arms E2: the `zero` arm runs T3's rows E-4 and E-5 in today's form
+# (the CUT), so a witness holding one node of each (`\B`, E-4; a positive
+# lookbehind, E-5) lists today's run `xyz` again under it, where the default
+# joins all seven bytes across both. A row that ignored the arm lists all seven
+# bytes `78797a61626364` (E-4's, S1928) or `78797a6162` (E-5's) instead. Expectations by hand from T3.
+ZP='xyz(?<=yz)ab\Bcd'
+if [ -x "$HBIN" ] && [ -z "$abad" ]; then
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --features all --emit-facts --pattern "$ZP" > "$WORKDIR/zd.l" 2> "$WORKDIR/zd.err" ||
+       ! "$TIMEOUT_BIN" 120 "$HBIN" --features all --harness=restore=zero --emit-facts --pattern "$ZP" > "$WORKDIR/zr.l" 2> "$WORKDIR/zr.err"; then
+        abad="$abad '$ZP' refused ($(head -1 "$WORKDIR/zd.err" "$WORKDIR/zr.err" 2>/dev/null | tr '\n' ' '));"
+    else
+        sect "$WORKDIR/zd.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/zd.f"
+        sect "$WORKDIR/zr.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/zr.f"
+        printf '%s\n' \
+            'zd	req_whole_run	78797a61626364	' \
+            'zr	req_whole_run	78797a	harness:zero' \
+            'zr	req_run	78797a@2	harness:zero' \
+            'zr	req_byte	-	harness:zero' \
+            'zr	req_pieces	-	harness:zero' \
+            'zr	req_set	-	' > "$WORKDIR/zw"
+        while IFS=$'\t' read -r side fact wval wwhy; do
+            r="$(arow "$fact" "$WORKDIR/$side.f")"
+            gval="$(col value <<< "$r")"; gwhy="$(col why <<< "$r")"
+            [ "$wval" = "-" ] || [ "$gval" = "$wval" ] || abad="$abad $side $fact value [$gval], want [$wval];"
+            [ "$gwhy" = "$wwhy" ] || abad="$abad $side $fact why [$gwhy], want [$wwhy];"
+        done < "$WORKDIR/zw"
+        grep -qF 'harness:' "$WORKDIR/zd.f" && abad="$abad the default build lists a harness: token for '$ZP';"
+    fi
+fi
+# span_arms E2 took T3 row E-1 (an `A_EMPTY` node, the unit) and restores it
+# under the `empty` arm: `abcd()efgh` lists today's `efgh` again under it,
+# and the default joins all eight bytes (S1929: E-1's row ignores the arm).
+EP='abcd()efgh'
+if [ -x "$HBIN" ] && [ -z "$abad" ]; then
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --features all --emit-facts --pattern "$EP" > "$WORKDIR/ed.l" 2> /dev/null ||
+       ! "$TIMEOUT_BIN" 120 "$HBIN" --features all --harness=restore=empty --emit-facts --pattern "$EP" > "$WORKDIR/er.l" 2> /dev/null; then
+        abad="$abad '$EP' refused;"
+    else
+        sect "$WORKDIR/ed.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/ed.f"
+        sect "$WORKDIR/er.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/er.f"
+        printf '%s\n' \
+            'ed	req_whole_run	6162636465666768	' \
+            'er	req_whole_run	65666768	harness:empty' > "$WORKDIR/ew"
+        while IFS=$'\t' read -r side fact wval wwhy; do
+            r="$(arow "$fact" "$WORKDIR/$side.f")"
+            gval="$(col value <<< "$r")"; gwhy="$(col why <<< "$r")"
+            [ "$gval" = "$wval" ] || abad="$abad $side $fact value [$gval], want [$wval];"
+            [ "$gwhy" = "$wwhy" ] || abad="$abad $side $fact why [$gwhy], want [$wwhy];"
+        done < "$WORKDIR/ew"
+    fi
+fi
+echo "REACH: 3 restored-arm witnesses ('$AP' empty, '$EP' empty, '$ZP' zero), $(cat "$WORKDIR/aw" "$WORKDIR/ew" "$WORKDIR/zw" 2>/dev/null | wc -l) listing cells"
 if [ -n "$abad" ]; then
     bad "[facts-arm] the walk's restored arm or its harness: token is wrong:$abad"
 else
-    ok "[facts-arm] under --harness=restore=empty the walk runs T2 row 1's old form and its facts name the arm; the default lists the unit's run"
+    ok "[facts-arm] under --harness=restore=empty the walk runs T2 row 1's and T3 E-1's old forms, under restore=zero T3's E-4/E-5 cut, and their facts name the arm; the default lists the units' runs"
 fi
 
 echo "checks passed: $pass"

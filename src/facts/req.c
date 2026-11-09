@@ -56,13 +56,14 @@
  * folds `(?i)a` to `[aA]` at parse time) and for the RUN a class that is not
  * one small cube (below), a quantifier that admits zero iterations (of a
  * body that consumes something: a width-0 body is CAT's unit, span_arms T2
- * row 1), a backreference, a linked call and every BARE assertion (a
- * QUANTIFIED zero-width node joins instead, T2 row 1; `restore=empty` puts
- * the old cut back). A
- * lookaround's body is deliberately not descended into: a LOOKBEHIND's bytes
- * sit BEFORE the match's start and can therefore be outside `[search_from,
- * subject_length)` entirely, which would make the check unsound in the
- * direction that deletes matches.
+ * row 1), a backreference and a linked call. A node that consumes nothing
+ * (the empty string, an assertion, `\G`, `\K`, a check callout, a
+ * lookaround) is CAT's width-0 unit for the run (span_arms T3,
+ * `rb_zero_rows`; `restore=empty`/`restore=zero` put the old cuts back): the
+ * bytes on its two sides are adjacent in the subject. A lookaround's body is
+ * deliberately not descended into: a LOOKBEHIND's bytes sit BEFORE the match's start and
+ * can therefore be outside `[search_from, subject_length)` entirely, which
+ * would make the check unsound in the direction that deletes matches.
  *
  * WHAT THE RUN DECLINES BEYOND THAT, each with its reason rather than a
  * shared "be careful" (reqpos_2b.md §2.4): a repeat's head and tail runs do
@@ -629,25 +630,23 @@ static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
     acc->desc = desc;
 }
 
-/* `acc` := a zero-width assertion followed by `acc`: no byte, and a broken run. */
+/* `acc` := a zero-width node followed by `acc`, in the old form: no byte,
+ * and a broken run (T3's last row, the form a restored arm runs). */
 static PCREC_OWN_FRAME void rb_assert_into(RbVal *acc)
 {
     acc->runs = rr_cat(rr_none(0), acc->runs);
     acc->desc = pcrec_pd_none();   /* a CUT, as in the run (§3.4) */
 }
 
-/* `acc` := node `a` followed by `acc`, for a kind whose ROW answers for its
- * text: ZERO is a zero-width assertion, ANY a gap of unbounded width (no
- * byte, a broken run, every run to its right moved). An OWN kind has its own
- * arm; it would get the gap, which is always sound. */
-static void rb_row_into(RbVal *acc, const Ast *a)
+/* `acc` := a node that consumes nothing, followed by `acc`: the width-0 unit
+ * for the run (no byte, `all`, width 0), so the bytes on its two sides join.
+ * `d` is the node's description, T3's row's: the empty string's (exact) or
+ * desc.c `zero` (a width-0 group that is not exact). */
+static PCREC_OWN_FRAME void rb_zero_unit_into(const RbWalk *w, RbVal *acc,
+                                              PdDesc d)
 {
-    switch (pcrec_ast_row(a).text) {
-    case KTEXT_ZERO: rb_assert_into(acc); return;
-    case KTEXT_ANY:  rb_gap_into(acc, PCREC_W_UNBOUNDED); return;
-    case KTEXT_OWN:  break;
-    }
-    rb_gap_into(acc, PCREC_W_UNBOUNDED);
+    acc->runs = rr_cat(rr_unit(), acc->runs);
+    acc->desc = pcrec_pd_cat(w->cx, &w->pd, d, acc->desc);
 }
 
 /* `acc` := a repeat of the WIDTH-0 body `b` followed by `acc` (T2 row 1): at
@@ -730,6 +729,87 @@ static void rb_walk(RbWalk *w, const Ast *a, RbVal *out)
     w->depth++;
     rb_walk_at(w, a, out, t);
     w->depth--;
+}
+
+/* T3, THE ZERO-WIDTH ROWS (docs/design/span_arms.md §6, §4.1), first match:
+ * what a node whose kind row's TEXT is ZERO contributes. A node that
+ * consumes nothing leaves the bytes on its two sides ADJACENT in the
+ * subject, whether it is the empty string, an assertion, `\K` or a
+ * lookaround whose body is not read, so it is CAT's unit (E-1, E-4, E-5);
+ * joining ACROSS it reads nothing of a lookaround's body, which is what the
+ * header forbids. E-5 (a positive lookaround, `A_LOOK` or `A_CTX` NEXT/PREV)
+ * is the plain unit until L1 adds its item. E-1 restores under the `empty`
+ * arm (span arms E2 took it from alt_normal_form stage 2a), E-4 and E-5
+ * under `zero`. A row whose `arm` the walk parameters restore is passed
+ * over; the last row (the old cut) matches every node. */
+typedef enum {
+    RB_ZERO_EMPTY,   /* the unit, described as the empty string (exact) */
+    RB_ZERO_UNIT,    /* the unit, described by desc.c `zero` (not exact) */
+    RB_ZERO_CUT      /* the old form: a cut */
+} RbZeroRow;
+
+/* `A_EMPTY`: the empty string (E-1). */
+static bool rb_zero_empty(const Ast *a)
+{
+    return a->k == A_EMPTY;
+}
+
+/* A POSITIVE one-sided lookaround, in either lowering (E-5): `A_LOOK` not
+ * negated, or `A_CTX` whose function is ctxfn.def's NEXT or PREV row. */
+static bool rb_zero_look_pos(const Ast *a)
+{
+    if (a->k == A_LOOK) return !a->u.look.neg;
+    return a->k == A_CTX && (a->u.ctx.fn == CTXFN_NEXT || a->u.ctx.fn == CTXFN_PREV);
+}
+
+/* Every zero-width node. */
+static bool rb_zero_any(const Ast *a)
+{
+    (void)a;
+    return true;
+}
+
+static const struct {
+    bool (*when)(const Ast *a);
+    RbZeroRow row;
+    unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
+} rb_zero_rows[] = {
+    /* E-1 (span_arms E2, from alt_normal_form stage 2a): `abcd()efgh` */
+    { rb_zero_empty,    RB_ZERO_EMPTY, PCREC_WALK_ARM(EMPTY) },
+    { rb_zero_empty,    RB_ZERO_CUT,  0 },   /* E-1 restored */
+    /* E-5 (span_arms E2; L1 adds the item): `xyz(?<=yz)abc` */
+    { rb_zero_look_pos, RB_ZERO_UNIT, PCREC_WALK_ARM(ZERO) },
+    /* E-4 (span_arms E2): `foo\bbar`, `x(?!ab)ac`, `ab\Kcd` */
+    { rb_zero_any,      RB_ZERO_UNIT, PCREC_WALK_ARM(ZERO) },
+    { rb_zero_any,      RB_ZERO_CUT,  0 },   /* E-4 and E-5 restored */
+};
+
+/* `acc` := the zero-width node `a` followed by `acc`, by the first row of T3
+ * that matches it and that the walk does not restore. */
+static void rb_zero_into(RbWalk *w, RbVal *acc, const Ast *a)
+{
+    size_t i = 0;
+    while ((rb_zero_rows[i].arm & w->restored) || !rb_zero_rows[i].when(a))
+        i++;
+    switch (rb_zero_rows[i].row) {
+    case RB_ZERO_EMPTY: rb_zero_unit_into(w, acc, pcrec_pd_unit()); return;
+    case RB_ZERO_UNIT:  rb_zero_unit_into(w, acc, pcrec_pd_zero()); return;
+    case RB_ZERO_CUT:   rb_assert_into(acc);                        return;
+    }
+}
+
+/* `acc` := node `a` followed by `acc`, for a kind whose ROW answers for its
+ * text: ZERO consumes nothing (T3's rows), ANY is a gap of unbounded width
+ * (no byte, a broken run, every run to its right moved). An OWN kind has its
+ * own arm; it would get the gap, which is always sound. */
+static void rb_row_into(RbWalk *w, RbVal *acc, const Ast *a)
+{
+    switch (pcrec_ast_row(a).text) {
+    case KTEXT_ZERO: rb_zero_into(w, acc, a); return;
+    case KTEXT_ANY:  rb_gap_into(acc, PCREC_W_UNBOUNDED); return;
+    case KTEXT_OWN:  break;
+    }
+    rb_gap_into(acc, PCREC_W_UNBOUNDED);
 }
 
 /* The bytes and the runs EVERY match of `a` must contain, into `*acc`; `t` is
@@ -836,14 +916,11 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
          * is not descended into, and the header says why that is a
          * CORRECTNESS decline rather than a missed opportunity.
          *
-         * FOR THE RUN THESE ARE NOT TRANSPARENT EITHER, and the reason is not
-         * the same one: a zero-width assertion consumes nothing, so the bytes
-         * on either side of it ARE adjacent in the subject — but an assertion
-         * is also the one place a run could be joined across something that
-         * is not a literal, and joining across `A_LOOK` in particular would
-         * claim contiguity through a body whose own bytes this analysis
-         * refuses to look at. One rule for all of them, `rr_none`, rather
-         * than a per-assertion contiguity argument nothing has measured. */
+         * FOR THE RUN EACH IS T3's ROW (`rb_zero_rows`): the bytes on either
+         * side of a node that consumes nothing ARE adjacent in the subject,
+         * so the run joins ACROSS it (the unit); that reads nothing of a
+         * lookaround's body, whose bytes stay unread until span_arms L1's
+         * item. */
         case A_EMPTY:
         case A_EOL:
         case A_CTX:
@@ -858,8 +935,9 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
         case A_VAR:
         case A_CALLOUT:
             /* [INLINE-C] 1a: the kind ROW answers (`rb_row_into`): text ZERO
-             * for every kind above the backreference, ANY for the two. */
-            rb_row_into(acc, a);
+             * for every kind above the backreference and a check callout,
+             * ANY for the two and a consuming callout. */
+            rb_row_into(w, acc, a);
             return;
         /* The call's text is its callee's (row OWN), declined for the reason
          * above rather than computed. */

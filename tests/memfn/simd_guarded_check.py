@@ -126,7 +126,7 @@ FLOORS = {
     'two-blocks': 200,      # WITNESS artifacts with the VM program's block
     'ladder-moved': 1,      # UNROLL_K_WHY "size-model" (the ladder ran)
     'refused': 1,           # both sides refused alike, stderr included
-    'simd-form': 14,        # R-13: artifacts whose MEMFN_FORMS names a SIMD row (simd arm; 6 measured;
+    'simd-form': 16,        # R-13: artifacts whose MEMFN_FORMS names a SIMD row (simd arm; 6 measured;
                             # 3 at D172 S3, the fixed-width caseless runs became `cover`; 6 again at
                             # code review r1 C1, their window search's stop PAIR with its SIMD rows;
                             # 5 at R-30 over main 1f5574fac (job 697: a whole run's window search no
@@ -134,8 +134,8 @@ FLOORS = {
                             # (lane r30bfix, 2026-10-31; the named 4 unmoved); pinned AT the measure)
                             # 18 at lane u3crit (2026-11-08): one `simd:` arm per listed target, two
                             # of the three rendering levels (the sample's cells counted at both)
-                            # 14 at lane sae1pin (2026-11-09): tests/litscan/spanarms.rxt (E1 slice, +18 blocks) shifts the
-                            # every-10th sample; with that file held aside this branch counts 18 again, so it is
+                            # 16 at lane sae2mt (2026-11-09): tests/litscan/spanarms.rxt (+64 blocks) shifts the
+                            # every-10th sample; the branch-point compiler (E1's parent) counts 16 too, so it is
                             # corpus drift, not a rule move; pinned AT the measure
     'simd-form-named': 8,    # fsfix 3: the NAMED witnesses alone that render a SIMD row (4 of 4 at each
                              # level-rendering `simd:` arm, 2 arms since lane u3crit);

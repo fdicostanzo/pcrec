@@ -4,8 +4,13 @@
  *
  * The arms:
  *   unit  the empty string: one group, width 0 (CAT's identity; the walk
- *         seeds its accumulator with it, never an `A_EMPTY` node, which is
- *         a CUT until stage 2a, §3.4)
+ *         seeds its accumulator with it, and T3's row E-1 passes it for an
+ *         `A_EMPTY` node)
+ *   zero  a node other than the empty string that consumes nothing (an
+ *         assertion, `\G`, `\K`, a check callout, a lookaround read as no
+ *         body: span_arms §4.1 E-4/E-5): one group,
+ *         width 0, NOT exact (its strings are a subset of the empty
+ *         string's), so a group built through it is not exact either
  *   pos   one position: one group, width 1, exact
  *   cat   the PRODUCT: every left group before every right group, widths
  *         add, positions concatenate; groups of one total width hull-merge
@@ -37,6 +42,13 @@ PdDesc pcrec_pd_unit(void)
 {
     static const void *nopos[1];
     static PdGroup g = { 0, 0, true, nopos };
+    return (PdDesc){ 1, 0, &g };
+}
+
+PdDesc pcrec_pd_zero(void)
+{
+    static const void *nopos[1];
+    static PdGroup g = { 0, 0, false, nopos };
     return (PdDesc){ 1, 0, &g };
 }
 
@@ -117,8 +129,10 @@ PdDesc pcrec_pd_cat(Ctx *cx, const PdCfg *c, PdDesc l, PdDesc r)
 {
     PdDesc o;
     if (pd_dropped(l, r, &o)) return o;
-    if (l.ng == 1 && l.g[0].w == 0) return r;
-    if (r.ng == 1 && r.g[0].w == 0) return l;
+    /* The unit is the identity; a `zero` group is not, since the product
+     * below carries its inexactness into every group. */
+    if (l.ng == 1 && l.g[0].w == 0 && l.g[0].exact) return r;
+    if (r.ng == 1 && r.g[0].w == 0 && r.g[0].exact) return l;
     long long n = (long long)l.ng * r.ng;
     if (n > c->max_groups * (long long)c->max_groups)
         return (PdDesc){ -1, PD_OVER, NULL };
