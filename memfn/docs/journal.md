@@ -3745,3 +3745,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Plants: B and C SILENT-MOVE, red at §R (hosted in §P); M SAME, red at §S; S2993 re-aimed to memfnfinder (F1 made it silent); S2992 UNDETECTED as declared.
   - The lane did NOT see my mid-run ledger ruling (a busy lane misses messages; memory pcrec-no-addenda-to-running-lanes, re-learned). It built option (c), responses.md as the ledger.
   - Plan: after U2+U3 land, the kit merges main into s30a, switches the pin's ledger cell to decisions.md D190, and queues 500-509 on that tree. Fix commit sent to main.
+- 11-09: main's u3aside (lane/u3mech 404cff6ea): emit_sweep sets target header lines aside via target_text.py; start arm 0 movers vs 424ddc742. Retried 562 there; 563-569 follow. 561 (green on 0fbbd1601) stands, since the change only widens the aside.
