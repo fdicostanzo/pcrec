@@ -283,6 +283,27 @@ static void admission(const char *tok, int w16, int w32, const char *callee)
     free(text);
 }
 
+/* The kernel's bracket refusal (review 2026-11-08 r5 SEAM-5): at a target
+ * admitting a level, a sink without simd_open/simd_close is REFUSED, with a
+ * text and nothing written; at the portable target the same sink renders. */
+static void bracket_refusal(void)
+{
+    char *text = NULL, err[256] = "";
+    size_t len = 0;
+    FILE *f = open_memstream(&text, &len);
+    mf_sink o = { .u = f, .puts = mem_puts, .vprintf = mem_vp };
+    static const unsigned char b[2] = { 'a', 'z' };
+    uint32_t inc = 0;
+    int lv = f ? mf_kernel_find_any(&o, "kb", b, 2, tgt("x86-64"), &inc, err, sizeof err) : 0;
+    if (f) fflush(f);
+    size_t wrote = len;
+    int pt = f ? mf_kernel_find_any(&o, "kp", b, 2, tgt("generic"), &inc, NULL, 0) : -1;
+    if (f) fclose(f);
+    check(lv == -1 && err[0] && !wrote && pt == 0,
+          "the kernel refuses a sink without brackets at x86-64 (nothing written), renders at generic");
+    free(text);
+}
+
 int main(int argc, char **argv)
 {
     if (argc > 1 && !strcmp(argv[1], "--fixture")) {
@@ -294,5 +315,6 @@ int main(int argc, char **argv)
     admission("x86-64", 1, 0, "w16");
     admission("x86-64-v3", 1, 1, "w32");
     admission("armv8-a", 0, 0, "body");
+    bracket_refusal();
     return fails != 0;
 }
