@@ -47,7 +47,7 @@ def main():
         x = line.rstrip("\n").split("\t")
         if x[2]:   # moved_facts non-empty: an observed mover
             movers.add(x[1].encode("latin-1").decode("unicode_escape").encode("latin-1"))
-    bad = []; n = {}; facts_seen = set()
+    bad = []; n = {}; facts_seen = set(); prefix_keys = {}
     src_cache = {}
 
     def file_has_mover(f):
@@ -82,10 +82,24 @@ def main():
             if k < 0:
                 bad.append(f"UNPARSED {stream} {key}"); continue
             pat = ast.literal_eval(key[k + 1:])
+            if pat not in movers and len(pat) == 60:
+                # emit_sweep keys carry pat[:60]: a longer pattern's key is its
+                # 60-byte prefix. Resolve by prefix; the keys of one prefix
+                # must be as many as the census movers sharing it (checked below).
+                full = sorted(m for m in movers if m.startswith(pat))
+                if full:
+                    prefix_keys[pat] = prefix_keys.get(pat, 0) + (stream == "facts")
+                    if stream == "facts":
+                        facts_seen.update(full)
+                    continue
             if stream == "facts":
                 facts_seen.add(pat)
             if pat not in movers:
                 bad.append(f"NOT A CENSUS MOVER {stream} {key}")
+    for pre, nk in sorted(prefix_keys.items()):
+        nm = sum(1 for m in movers if m.startswith(pre) and len(m) > 60)
+        if nk != nm:
+            bad.append(f"PREFIX COUNT {pre!r}: {nk} facts keys vs {nm} census movers")
     for p in sorted(movers - facts_seen):
         bad.append(f"CENSUS MOVER NOT IN THE FACTS STREAM {p!r}")
     print("movers by stream: " + ", ".join(f"{k}={v}" for k, v in sorted(n.items())))
