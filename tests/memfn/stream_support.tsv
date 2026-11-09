@@ -9,7 +9,8 @@
 # table read twice. Its source names the decision record and whose words the line is: "libc memchr supplies
 # only one-shot" is a line of the KIT's notice (memfn/docs/responses.md at 067aca4df), which D190
 # (docs/dev/decisions.md) files among the owner's decision; it is not the owner's words, so this control
-# shares an author with the table (review 2026-11-09 r1 s30a F14). DERIVED rows' basis witnesses are
+# shares an author with the table (review 2026-11-09 r1 s30a F14). The LIBC rows name D190 as their
+# ledger (the kit manager's F14 ruling, lane s30amrg): section S requires the sentence inside that entry. DERIVED rows' basis witnesses are
 # landing-time witnesses of 3.0a over base's text (docs/dev/lanes/s30a_report.md).
 #
 # Columns: search (a T-FIND pick's name, or `floor`), RESTART, MASK, SHIFT (yes/no), source (`RULING (Dn,
@@ -17,8 +18,8 @@
 # `@ LEDGER PROVENANCE`, a sha or the D-number; DERIVED: its basis).
 #
 # search	RESTART	MASK	SHIFT	source	basis
-LIBC	yes	no	no	RULING (D190, kit-stated line)	"libc memchr supplies only one-shot" @ memfn/docs/responses.md 067aca4df
-LIBC_BACK	yes	no	no	RULING (D190, kit-stated line)	"libc memchr supplies only one-shot" @ memfn/docs/responses.md 067aca4df
+LIBC	yes	no	no	RULING (D190, kit-stated line)	"libc memchr supplies only one-shot" @ docs/dev/decisions.md D190
+LIBC_BACK	yes	no	no	RULING (D190, kit-stated line)	"libc memchr supplies only one-shot" @ docs/dev/decisions.md D190
 WALK	yes	no	no	DERIVED	a byte loop stops at one position: base's B-walk and PF walk text resumes C++ and declares no mask
 PAIR	yes	no	no	DERIVED	the frontiers are the search's own state, kept across restarts; the restart is still c + 1 (base's B-pair and fn-pair text resumes C++)
 HORS	no	no	yes	DERIVED	the shift table over the window is its stream: _sh[256] iff the search is HORS
