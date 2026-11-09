@@ -3,8 +3,8 @@
 #
 # Plant: memfn/src/vany.c's `*includes` stays 0 at every target, so a caller writes no vector
 # header ahead of the region.
-# Detector (arm memfntargets): tests/memfn/targets_check.c's admission rows (includes equal to
-# the admitted levels' bits) at x86-64 and x86-64-v3.
+# Detector (matrix column memfntargets): tests/memfn/targets_check.c's admission rows (includes equal to
+# the admitted levels' bits) at both SIMD targets.
 SAB_ID="S3004-kernel-includes-not-reported"
 SAB_FILE="memfn/src/vany.c"
 SAB_SUITES="memfntargets"

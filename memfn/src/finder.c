@@ -667,7 +667,7 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
         }
         q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
     }
-    gate_in in = { s, def, NULL, &q.ff, st ? st->wf : NULL, NULL };
+    gate_in in = { .s = s, .h = def, .fd = &q.ff, .wf = st ? st->wf : NULL };
     gate_tctx tc = { art, "fd", q.handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
     fd_decide(&q, FD_FIND, &in, &tc, &d);
@@ -758,7 +758,7 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
             q.members = popcount256(sp->term[0].set);
             if (pk.set_leads == 1 && (int)i == pk.set_pick) q.facts |= SF_SET_RARER;
         }
-        gate_in in = { s, NULL, NULL, &q.ff, NULL, NULL };
+        gate_in in = { .s = s, .fd = &q.ff };
         gate_tctx tc = { art, "fd", handle, mode == FD_PRES_ASK ? MF_PH_SHADOW : MF_PH_DEFINE,
                          &in, 1, quiet, mode == FD_PRES_ASK };
         fd_decision d;

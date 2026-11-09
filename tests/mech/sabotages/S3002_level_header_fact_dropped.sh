@@ -3,8 +3,8 @@
 #
 # Plant: memfn/src/ofsskip.c's level block no longer ORs the level's MF_INC_* bit into the art's
 # includes, so the host never writes the vector header and the helper's intrinsics are undeclared.
-# Detector (arm g2simd): memfn/tests/run_g2_simd.py writes every mf_includes line ahead of the
-# region and compiles each target's file; the x86-64 and x86-64-v3 files fail to build.
+# Detector (matrix column g2simd): memfn/tests/run_g2_simd.py writes every mf_includes line ahead of the
+# region and compiles each target's file; both SIMD targets' files fail to build.
 SAB_ID="S3002-level-header-fact-dropped"
 SAB_FILE="memfn/src/ofsskip.c"
 SAB_SUITES="g2simd"

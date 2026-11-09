@@ -137,6 +137,9 @@ MF_CLASS(UNSAT,       "a RUN term with a run byte outside its mask (Q-G2-13: nev
    (unit U2): it names no class, so a word carrying it reads OTHER */
 MF_CLASS(INLOOP,      "policy carries MF_P_INLOOP (D91 budget 2)")
 MF_CLASS(SIZE,        "policy carries MF_P_SIZE_LEANING (--tune -2/-1; set by nothing yet)")
+/* The NO_<level> classes below are POSITIONAL after SIZE: each takes the next
+   class number in levels.def's row order, so a row placed between or above
+   them renumbers every class after it */
 /* the art's stated target (unit U2, R-37; target_seam.md §3): a BIT-SET
    value, one class per kit level the target does NOT admit (levels.def's
    rows, so a level brings its class); NONE: the target admits every level. A

@@ -461,7 +461,7 @@ const gate_contract *fn_row_contract(size_t i)
 static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
                                const fn_in *x, int slot)
 {
-    gate_in in = { x->site, h, NULL, NULL, NULL, art };
+    gate_in in = { .s = x->site, .h = h, .art = art };
     gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX, 0, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&fn_table, slot, &in, MF_PH_DEFINE, art->denies, x, &tc, &why);
@@ -486,7 +486,7 @@ int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
     if (!ofs_fn_applies(p, h)) return 0;
     fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0, 0, 0 };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
-    gate_in in = { site, h, NULL, NULL, NULL, art };
+    gate_in in = { .s = site, .h = h, .art = art };
     gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
     gate_verdict why = { 0, 0 };
     size_t r = kit_walk(&fn_table, FN_BODY, &in, MF_PH_DEFINE, art->denies, &x, &tc, &why);
@@ -511,7 +511,7 @@ static unsigned fn_rungs(mf_art *art, uint32_t handle, const mf_hooks *h,
 {
     unsigned nr = 0;
     rung[nr++] = top;
-    gate_in in = { x->site, h, NULL, NULL, NULL, art };
+    gate_in in = { .s = x->site, .h = h, .art = art };
     gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 1, 0, 0 };
     for (const char *const *r = top->decl->rungs; *r && nr < MF_NLEVEL; r++) {
         size_t i = fn_row_named(*r);

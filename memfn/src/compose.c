@@ -295,7 +295,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
                              gate_verdict *why, int quiet, const char **row)
 {
-    gate_in in = { s, def, NULL, NULL, NULL, NULL };
+    gate_in in = { .s = s, .h = def };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     /* R17-b' B2 (r17b_prime.md §1.6): a site T-FIND decides (fd_find, the
        one walk; span_pick 1e) renders the deciding row's pick through the
@@ -1117,7 +1117,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                             "`pred`'s terms: a REPORT site is a window site (its spans; "
                             "window.c's E-find row renders it, D172 S3), and NONE is not "
                             "a legal reply (R-26.3)");
-        gate_in in = { s, def, NULL, NULL, NULL, NULL };
+        gate_in in = { .s = s, .h = def };
         char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
         if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
@@ -1247,7 +1247,7 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
                         "(`decl_point` 1: its storage point dominates every use)",
                         handle);
     wf_facts wff = { &r->site, NULL };
-    gate_in in = { &r->site, use, NULL, NULL, r->wplan ? &wff : NULL, NULL };
+    gate_in in = { .s = &r->site, .h = use, .wf = r->wplan ? &wff : NULL };
     gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0, 0 };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);
