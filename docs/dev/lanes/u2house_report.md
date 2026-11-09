@@ -24,3 +24,6 @@ Three XS house-rule items from review 2026-11-08 r5 xarch, kit only, no behaviou
 - -Werror object builds: done. .text identity: shown NOT identical for five of six (explained above).
 - run_arch_blind.sh: run, 7 pre-existing failures reported above.
 - Report and history index line: done.
+
+## STATE AT HANDOFF
+Owed: none. Committed; nothing running. Open: run_arch_blind red on S3001-S3004 (not this lane).
