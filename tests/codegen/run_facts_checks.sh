@@ -614,6 +614,54 @@ else
     ok "[facts-pieces] $npw witnesses list req_pieces exactly as the independent model gives it (all 3 declines)"
 fi
 
+# [REQ-EMPTYCAT] span_arms E1 (§3.7): THE WALK'S RESTORED ARM and its
+# `harness:` token (facts_listing.md §4.1.3¶4a). Through build/pcrec-harness
+# alone (the lever is not a caller's): under the `empty` arm the walk runs T2
+# row 1's old form, so the witness's run is today's `efgh` again, and the walk
+# facts the arm can change (walk_arms.def) plus every fact derived from them
+# name the arm; a fact it cannot change (`req_set`) keeps its plain why; the
+# default build lists the unit's run and no token; an unknown arm is refused.
+# The value under the lever is what shows the arm ACTS (a lever the walk
+# ignored lists the token over the new run, S1907); the derived rows show the
+# token travels along the asks (S1908). Expectations by hand from T2 (`(?:\b)*`
+# is the unit, so the default joins `abcd` and `efgh`).
+HBIN="$BIN_DIR/pcrec-harness"
+AP='abcd(?:\b)*efgh'
+abad=""
+arow() { grep -F "$(printf 'fact=%s\t' "$1")" "$2"; }
+if [ ! -x "$HBIN" ]; then
+    abad=" $HBIN is missing (make builds it);"
+elif ! "$TIMEOUT_BIN" 120 "$PCREC" --features all --emit-facts --pattern "$AP" > "$WORKDIR/ad.l" 2> "$WORKDIR/ad.err" ||
+     ! "$TIMEOUT_BIN" 120 "$HBIN" --features all --harness=restore=empty --emit-facts --pattern "$AP" > "$WORKDIR/ar.l" 2> "$WORKDIR/ar.err"; then
+    abad=" '$AP' refused ($(head -1 "$WORKDIR/ad.err" "$WORKDIR/ar.err" 2>/dev/null | tr '\n' ' '));"
+else
+    sect "$WORKDIR/ad.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/ad.f"
+    sect "$WORKDIR/ar.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/ar.f"
+    printf '%s\n' \
+        'ad	req_whole_run	6162636465666768	' \
+        'ar	req_whole_run	65666768	harness:empty' \
+        'ar	req_run	65666768@2	harness:empty' \
+        'ar	req_byte	-	harness:empty' \
+        'ar	req_pieces	-	harness:empty' \
+        'ar	req_set	-	' > "$WORKDIR/aw"
+    while IFS=$'\t' read -r side fact wval wwhy; do
+        r="$(arow "$fact" "$WORKDIR/$side.f")"
+        gval="$(col value <<< "$r")"; gwhy="$(col why <<< "$r")"
+        [ "$wval" = "-" ] || [ "$gval" = "$wval" ] || abad="$abad $side $fact value [$gval], want [$wval];"
+        [ "$gwhy" = "$wwhy" ] || abad="$abad $side $fact why [$gwhy], want [$wwhy];"
+    done < "$WORKDIR/aw"
+    grep -qF 'harness:' "$WORKDIR/ad.f" && abad="$abad the default build lists a harness: token;"
+    if "$TIMEOUT_BIN" 60 "$HBIN" --harness=restore=empty+nosuch --emit-facts --pattern "$AP" > /dev/null 2>&1; then
+        abad="$abad an unknown arm ('nosuch') was accepted;"
+    fi
+fi
+echo "REACH: 1 restored-arm witness ('$AP'), $(wc -l < "$WORKDIR/aw" 2>/dev/null || echo 0) listing cells"
+if [ -n "$abad" ]; then
+    bad "[facts-arm] the walk's restored arm or its harness: token is wrong:$abad"
+else
+    ok "[facts-arm] under --harness=restore=empty the walk runs T2 row 1's old form and its facts name the arm; the default lists the unit's run"
+fi
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

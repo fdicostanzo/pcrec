@@ -344,6 +344,25 @@ typedef enum {
     PF_NFACTS
 } PfFactId;
 
+/* The necessary-run walk's RESTORED ARMS (src/facts/walk_arms.def; span_arms
+ * §3.7): one bit per row, `PCREC_WALK_ARM(EMPTY)`. Set only by the harness
+ * lever; a fact derived under one lists `harness:<name>` (`PfWhy.arms`). */
+enum {
+#define WALK_ARM(ID, name, facts) PCREC_WALK_ARM_BIT_##ID,
+#include "facts/walk_arms.def"
+    PCREC_WALK_ARM_N
+};
+#define PCREC_WALK_ARM(ID) (1u << PCREC_WALK_ARM_BIT_##ID)
+
+/* Reads `list`, arm names joined by `+` (`empty`, `empty+rep`), into the arm
+ * bits `*arms`; returns the first unknown name's offset in `list`, or -1 when
+ * every name is a row. The `--harness=restore=` spelling's one parser. */
+int pcrec_walk_arms_parse(const char *list, unsigned *arms);
+
+/* The arm bits `arms` as their names joined by `+`, in table order, as
+ * text in `a` (the `harness:` token's body). */
+const char *pcrec_walk_arms_text(Arena *a, unsigned arms);
+
 /* A fact's STATUS — `--emit-facts`' closed `status` vocabulary
  * (docs/spec/facts_listing.md). `PF_ST_UNASKED` never reaches the listing: the
  * force loop asks every fact whose epoch was sealed. */
@@ -409,6 +428,12 @@ typedef struct {
     unsigned char status;    /* PfStatus */
     unsigned char code;      /* PfWhyCode */
     uint64_t      deny;      /* the flag bit, when code == PF_WHY_DENY */
+    /* The RESTORED walk arms the value was derived under (`PCREC_WALK_ARM`
+     * bits; span_arms §3.7): nonzero only under the harness lever. It names
+     * the listing's `why` ahead of `code` (facts_listing.md §4.1.3¶4a) and
+     * leaves `status` to `code`. Last, so a positional `PfWhy` stays as it
+     * was. */
+    unsigned char arms;
 } PfWhy;
 
 typedef struct {
@@ -489,6 +514,11 @@ typedef struct {
      * state what it gives. */
     MkLang    span;
     PfWhy     why[PF_NFACTS];
+    /* The restored arms of every fact asked since the current derivation
+     * began (`pf_ask` ORs each asked fact's `PfWhy.arms` in): what that
+     * derivation's own `arms` becomes, so a derived fact inherits the token
+     * along its DEPENDS-ON edges. */
+    unsigned  arms_seen;
     /* `--emit-facts`' FORCE LOOP (design §11.4, ruled Q10): true while it
      * asks the facts no pass asked, after the artifact is complete, and
      * `force_next` is the row it is on. `compile_driver`'s recovery point

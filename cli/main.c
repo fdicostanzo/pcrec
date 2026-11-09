@@ -1466,6 +1466,16 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
         else if (!strcmp(a, "--harness=kit-proof")) st->harness.kit_proof = 1;
         /* [MEMFN] R-30: the kit's old pre-check form, the window part kept */
         else if (!strcmp(a, "--harness=pres-window")) st->harness.pres_window = 1;
+        /* [REQ-EMPTYCAT] span_arms §3.7: the necessary-run walk's restored
+           arms, names joined by '+' (src/facts/walk_arms.def) */
+        else if (!strncmp(a, "--harness=restore=", 18)) {
+            int bad = pcrec_walk_arms_parse(a + 18, &st->harness.walk_arms);
+            if (bad >= 0) {
+                cli_err("--harness=restore= wants walk arm names joined by '+' "
+                        "(no arm '%s')", a + 18 + bad);
+                return 1;
+            }
+        }
 #endif
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
@@ -2912,6 +2922,12 @@ static int cli_dispatch(CliState st)
                               .code_headers = st.code_headers,
                               .ncode_headers = st.ncode_headers,
                               .code_reach = st.block_reach,
+#ifdef PCREC_HARNESS
+                              /* the lever reaches the listing modes too, so
+                               * `--emit-facts` shows a restored arm's
+                               * `harness:` token (span_arms §3.7) */
+                              .harness = &st.harness,
+#endif
                               .code_origin = st.block_origin };
 
     /* [INLINE-C] stage 3 `--list-callouts FILE` (cli.md §2.15): the

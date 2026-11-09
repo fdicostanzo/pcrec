@@ -47,8 +47,11 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # decline the row; and the memfn presence check's R-30 section, whose witnesses
 # compile under the kit's test-only lever `pres-window` (lane r30b), and the
 # R-30 sabotage row S1548 (the lever ignored), whose reach probe must name the
-# lever to exercise it (lane r30bfix).
-ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv)'
+# lever to exercise it (lane r30bfix); and the necessary-run walk's restored
+# arms (span_arms E1, lane sae1): the facts check's [facts-arm] section and
+# the two rows that plant its faults (S1907, S1908), whose reach probes name
+# the lever.
+ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/mech/sabotages/S190[78]_|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv)'
 mentions() {
     (cd "$1" && grep -rnI -e '--harness=' -e "$PFX" docs/spec docs/guide README.md examples lib tests scripts cli 2>/dev/null) |
         grep -Ev "$ALLOW"

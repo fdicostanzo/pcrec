@@ -98,6 +98,13 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   a utf8 block's (and a byte block python cannot compile) from libpcre2 under
   PCRE2_UTF | PCRE2_MATCH_INVALID_UTF alone, written `# pcre2-only`.
   `--check-pcrec BIN` runs the result through the harness with BIN.
+- **spanarms.rxt** — span arms unit E1 (lane sae1, 2026-11-09;
+  `docs/design/span_arms.md` §4, T2 row 1): a repeat of a width-0 body is
+  the necessary run's unit, so the run joins across `(?:\b)*`, `(?:^)*`,
+  `(?:)*`, `(?:$)?`, `(?:(?=a))*`, `(?:\B){3}`. Hand-written, every cell
+  libpcre2 10.46's (`tests/lib/p2probe.c`); each block on both routes. W-R4
+  and S-g are sabotage S1906's and S1905's detectors; later span arms units
+  (R1, E2, L1) add their witnesses here.
 - **gen_reqcube.py** — writes `reqcube.rxt` from python3 `re`; edit the case
   list there.
 - **presence_deny.rxt** — [MEMFN] R17-b' B3b (lane b3bfix, 2026-10-18;

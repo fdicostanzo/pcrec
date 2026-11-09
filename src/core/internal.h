@@ -185,6 +185,11 @@ typedef struct {
     unsigned arm_reach : 1;
     unsigned kit_proof : 1;
     unsigned pres_window : 1;
+    /* [REQ-EMPTYCAT] span_arms E1 (§3.7): the sixth, `--harness=restore=`,
+     * the necessary-run walk's RESTORED ARMS (`PCREC_WALK_ARM` bits,
+     * src/facts/walk_arms.def), read once at the walk entry into its
+     * parameter record. 0 on every shipped compile. */
+    unsigned walk_arms;
     const struct mf_measures *measures;
 } PcrecHarnessOptions;
 /* The lever's RESERVED symbol prefix: the namespace table refuses a user
