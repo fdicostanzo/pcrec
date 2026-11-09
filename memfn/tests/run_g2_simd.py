@@ -247,6 +247,7 @@ def token_bound(tok, bounds):
 
 # --- the instrumentation and the plants: text edits of the rendered file ----
 HELPER = re.compile(r'^static inline size_t (\w+)__(w16|w32)\(.*?^\}\n', re.M | re.S)
+LEVEL_HEADER = {'w16': 'emmintrin.h', 'w32': 'immintrin.h'}   # each level's vector header, a literal here
 INCLUDE = re.compile(r'^[ \t]*#[ \t]*include\b.*$', re.M)
 # THE CONSUMER (review 2026-11-08 r5 X-1): a translation unit that includes
 # a generated file and then uses the baseline vector header itself
@@ -755,6 +756,7 @@ def run(a, root, work):
     ok()
     tfile = {tg: os.path.join(d, 'g2v_sites.c') for tg, d in tdir.items()}
     tforms = {}
+    hdr_bad = False
     for tg, d in tdir.items():
         with open(os.path.join(d, 'g2v_meta.tsv')) as f:
             tforms[tg] = [l.split('\t')[5:7] for l in f if not l.startswith('#')]
@@ -773,9 +775,23 @@ def run(a, root, work):
                 % (tg, sorted(lv_have), sorted(TARGETS[tg])))
         else:
             ok()
+        # the headers the rendered levels need, derived from the TEXT: each
+        # helper level found in the kit text has its vector header written
+        # at file scope ahead of the region (the art's mf_includes fact)
+        head = ftext.partition('/* G2V KIT TEXT BEGIN */')[0]
+        have_h = {m.group(1) for m in re.finditer(r'^[ \t]*#[ \t]*include[ \t]*<(\w+\.h)>', head, re.M)}
+        miss = sorted(lv for lv in lv_have if LEVEL_HEADER[lv] not in have_h)
+        if miss:
+            hdr_bad = True
+            bad('target %s: levels %s are rendered but their header (%s) is not on mf_includes'
+                % (tg, miss, [LEVEL_HEADER[lv] for lv in miss]))
+        else:
+            ok()
         inc = INCLUDE.findall(kit)
         (bad('target %s: the kit text holds %d #include line(s): %s' % (tg, len(inc), inc[:3]))
          if inc else ok())
+    if hdr_bad:   # a file that lacks its headers cannot compile: the fact is the failure, stop here
+        return
     if platform.machine() in ('x86_64', 'AMD64'):
         consumer_cells(work, tfile['x86-64-v3'], 'x86-64-v3')
     else:
