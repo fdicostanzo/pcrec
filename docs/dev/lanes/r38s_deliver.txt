@@ -1,0 +1,5 @@
+report=docs/dev/lanes/r38s_report.md
+sections: Summary; The interface sheet; What pcrec reads; Open questions; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
