@@ -4,7 +4,7 @@
 # through a NULL bracket).
 #
 # Plant: memfn/src/vany.c's bracket refusal never fires.
-# Detector (arm memfntargets): tests/memfn/targets_check.c's bracket row (x86-64, a sink without
+# Detector (matrix column memfntargets): tests/memfn/targets_check.c's bracket row (the base SIMD target, a sink without
 # simd_open/simd_close: -1, a text, nothing written); under the plant the kernel calls the NULL
 # bracket and the checker dies short of its row floor.
 SAB_ID="S3003-kernel-bracket-refusal-dropped"

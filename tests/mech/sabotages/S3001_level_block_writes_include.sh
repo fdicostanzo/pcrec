@@ -4,8 +4,8 @@
 # Plant: memfn/src/ofsskip.c's level block writes the level's `#include` line inside its bracket
 # again (the pre-u2rev shape: the header parsed inside the host's target region, which breaks a
 # consumer's later intrinsic use at gcc). The fact is still noted, so every compile still builds.
-# Detector (arm g2simd): memfn/tests/run_g2_simd.py's per-target check that the kit's text holds
-# no `#include`, and its consumer TU over the x86-64-v3 file.
+# Detector (matrix column g2simd): memfn/tests/run_g2_simd.py's per-target check that the kit's text holds
+# no `#include`, and its consumer TU over the wider SIMD target's file.
 SAB_ID="S3001-level-block-writes-include"
 SAB_FILE="memfn/src/ofsskip.c"
 SAB_SUITES="g2simd"
