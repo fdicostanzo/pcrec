@@ -19,10 +19,14 @@
 #      gcc and an aarch64 clang compile with its own message.
 #   4. PCREC'S ARTIFACTS at a target ([XARCH-DEV] U3): part 3's cells on real
 #      `pcrec -fmemfn-simd=TARGET` artifacts (answers vs a naive finder, a ymm
-#      census, a region-stripped control, the guard's refusals).
-# THE RAN FLOOR: on an x86-64 host every gcc cell must run (GCC_CELLS); a
-# clang cell is SKIPPED, counted and printed, only where clang is absent; on
-# another host the x86 cells are SKIPPED and counted.
+#      census, a region-stripped control, the guard's refusals), and the
+#      CONSUMER-TU cells: a gcc translation unit that #includes an artifact and
+#      then uses the same facility (SSE intrinsics, a second artifact, a
+#      fortified memcpy) must compile (review 2026-11-08-r5-xarch X-1, X-2).
+# THE RAN FLOORS: on an x86-64 host every gcc cell of parts 3 and 4 must run
+# (GCC_CELLS, ART_GCC_CELLS, CONSUMER_CELLS); a clang cell is SKIPPED, counted
+# and printed, only where clang is absent; on another host the x86 cells are
+# SKIPPED and counted. A missing build/pcrec on an x86-64 host is a FAIL.
 #
 # Usage: bash tests/memfn/run_targets.sh     Env: CC (the unit build), KEEP=1
 # Prints `checks passed: N` / `checks failed: M`; exit 0 iff M is 0.
@@ -42,6 +46,8 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1"; fail=$((fail + 1)); }
 skip() { echo "SKIP: $1"; skipped=$((skipped + 1)); }
 GCC_CELLS=6
+ART_GCC_CELLS=12   # part 4: 4 gcc cells x 3 targets (the v3 four run only on an AVX2 CPU)
+CONSUMER_CELLS=4   # part 4's consumer-TU cells
 ROW_FLOOR=58   # targets_check.c's PASS lines, measured at K0 (lane k0; one host row on every host); +16 at U2 (four admission rows of four checks each, every host)
 
 echo "== 1. the kit's target table check =="
@@ -160,9 +166,12 @@ echo "== 4. pcrec's artifacts at a target (U3) =="
 # of a sweep. Controls: the v3 artifact's object carries ymm registers; with
 # the region's pragmas stripped it no longer compiles at the default -march
 # (the region, not the consumer's flags, supplies the ISA); its guard refuses
-# a -m32 gcc and an aarch64 clang compile.
+# a -m32 gcc and an aarch64 clang compile. Then the consumer-TU cells.
 PCREC_BIN="${PCREC_BIN:-$ROOT_DIR/build/pcrec}"
-if [ "$host" = x86_64 ] && [ -x "$PCREC_BIN" ]; then
+if [ "$host" = x86_64 ] && [ ! -x "$PCREC_BIN" ]; then
+    bad "pcrec artifact cells: no $PCREC_BIN on an x86-64 host (build it: make)"
+elif [ "$host" = x86_64 ]; then
+    aran=0
     cat > "$WORKDIR/drv.c" <<'C'
 #include <stdio.h>
 #include <stddef.h>
@@ -198,7 +207,7 @@ C
             bad "artifact $tg cell $name ($*): did not build: $(head -c 300 "$d/cc.err")"; return; fi
         if [ "$tg" = x86-64-v3 ] && [ "$host_avx2" != 1 ]; then
             skip "artifact $tg cell $name: built; not run (this CPU lacks AVX2)"; return; fi
-        ran=$((ran + 1))
+        ran=$((ran + 1)); aran=$((aran + 1))
         if out="$("$TIMEOUT_BIN" 60 "$d/run")"; then ok "artifact $tg cell $name ($*): answers equal the naive finder ($out)"
         else bad "artifact $tg cell $name ($*): answers differ (checks, wrong: $out)"; fi
     }
@@ -209,6 +218,17 @@ C
         acell "$tg" nosse2 gcc -mno-sse2
         if [ "$have_clang" = 1 ]; then acell "$tg" clang clang; else skip "artifact $tg cell clang: no clang"; fi
     done
+    want="$ART_GCC_CELLS"; [ "$host_avx2" = 1 ] || want=$((ART_GCC_CELLS - 4))
+    clang_cells=0; [ "$have_clang" = 1 ] && clang_cells=3; [ "$have_clang" = 1 ] && [ "$host_avx2" != 1 ] && clang_cells=2
+    [ "$aran" -ge $((want + clang_cells)) ] || bad "RAN floor (artifacts): $aran cells ran, want $((want + clang_cells))"
+    # the levels each target renders, read off the artifact's own stamp: the
+    # portable target none, each SIMD target some (else the answer cells above
+    # would pass with no SIMD at all)
+    forms() { sed -n 's/^#define RX_MEMFN_FORMS //p' "$WORKDIR/a_$1_gcc/a.c"; }
+    if [ "$(forms portable)" = '"none"' ] && [ -n "$(forms x86-64)" ] && [ "$(forms x86-64)" != '"none"' ] \
+       && [ -n "$(forms x86-64-v3)" ] && [ "$(forms x86-64-v3)" != '"none"' ]; then
+        ok "forms: the portable artifact renders no SIMD form, x86-64 $(forms x86-64), x86-64-v3 $(forms x86-64-v3)"
+    else bad "forms: portable $(forms portable) (want \"none\"), x86-64 $(forms x86-64), x86-64-v3 $(forms x86-64-v3) (want SIMD forms)"; fi
     v3="$WORKDIR/a_x86-64-v3_gcc/a.c"
     if [ -f "$v3" ] && command -v objdump >/dev/null 2>&1; then
         gcc -O2 -c -I"$(dirname "$v3")" -o "$WORKDIR/v3.o" "$v3"
@@ -218,7 +238,9 @@ C
         sed -E '/#pragma (clang attribute (push|pop)|GCC (push_options|pop_options|target))/d' "$v3" > "$WORKDIR/v3_noregion.c"
         if gcc -O2 -c -I"$(dirname "$v3")" -o "$WORKDIR/v3n.o" "$WORKDIR/v3_noregion.c" 2> "$WORKDIR/v3n.err"; then
             bad "control: the x86-64-v3 artifact without its region still compiled at the default -march"
-        else ok "control: the x86-64-v3 artifact without its region refuses to compile at the default -march"; fi
+        elif grep -q 'target specific option mismatch' "$WORKDIR/v3n.err"; then
+            ok "control: the x86-64-v3 artifact without its region refuses to compile at the default -march (an ISA mismatch)"
+        else bad "control: the region-stripped artifact failed, but not for its ISA: $(head -c 200 "$WORKDIR/v3n.err")"; fi
         if gcc -m32 -fsyntax-only -I"$(dirname "$v3")" "$v3" 2> "$WORKDIR/v3g.err"; then bad "artifact guard gcc -m32: compiled"
         elif grep -q 'generated for another CPU family' "$WORKDIR/v3g.err"; then ok "artifact guard gcc -m32: refused with its own message"
         else bad "artifact guard gcc -m32: failed, but not at the guard: $(head -c 200 "$WORKDIR/v3g.err")"; fi
@@ -228,8 +250,41 @@ C
             else bad "artifact guard clang aarch64: failed, but not at the guard: $(head -c 200 "$WORKDIR/v3c.err")"; fi
         else skip "artifact guard clang aarch64: no clang"; fi
     else skip "artifact census and controls: no v3 artifact or no objdump"; fi
+
+    echo "== 4b. consumer translation units (gcc) =="
+    # An artifact compiled ALONE builds under every flag set; these are the
+    # uses that #include it and then use the same facility in the same TU.
+    # gcc gives a header's inline functions the target in force where it is
+    # FIRST included, so a header first read inside an artifact's region
+    # breaks every later use of it outside. Each cell must compile.
+    cdir="$WORKDIR/consumer"; mkdir -p "$cdir"
+    gen() { "$TIMEOUT_BIN" 60 "$PCREC_BIN" "$@" 2>> "$cdir/pc.err"; }
+    gen -p ra -fmemfn-simd=x86-64-v3 -o "$cdir/a.c" --pattern '(?i)hello' &&
+    gen -p rb -fmemfn-simd=x86-64 -o "$cdir/b.c" --pattern '(?i)world' &&
+    gen -p rc -fmemfn-simd=x86-64-v3 -o "$cdir/c.c" --pattern '^\s+|\s+$' ||
+        bad "consumer cells: pcrec refused an artifact: $(head -c 200 "$cdir/pc.err")"
+    if grep -q '^#define RC_COMPOUND "none"' "$cdir/c.c"; then
+        bad "consumer cells: the compound control is no compound (RC_COMPOUND none); re-aim its pattern"; fi
+    printf '%s\n' '#include "a.c"' '#include <emmintrin.h>' \
+        'int sse_use(const char *p) { __m128i v = _mm_loadu_si128((const __m128i *)p);' \
+        '    return _mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_set1_epi8(97))); }' > "$cdir/intrin.c"
+    printf '%s\n' '#include "a.c"' '#include "b.c"' > "$cdir/two.c"
+    printf '%s\n' '#include "c.c"' '#include <string.h>' \
+        'void cpy(char *d, const char *s, size_t n) { memcpy(d, s, n); }' > "$cdir/fortify.c"
+    ccell() {   # ccell NAME FILE FLAGS..
+        local name="$1" f="$2"; shift 2
+        if "$TIMEOUT_BIN" 120 gcc "$@" -c -I"$cdir" -o "$cdir/$name.o" "$cdir/$f" 2> "$cdir/$name.err"; then
+            cran=$((cran + 1)); ok "consumer $name (gcc $*): compiles"
+        else cran=$((cran + 1)); bad "consumer $name (gcc $*): $(grep -m1 'error' "$cdir/$name.err" | head -c 300)"; fi
+    }
+    cran=0
+    ccell intrin intrin.c -O2                       # a v3 artifact, then the consumer's SSE intrinsics
+    ccell two-O2 two.c -O2                          # a v3 artifact, then an x86-64 one
+    ccell two-O0 two.c -O0
+    ccell fortify fortify.c -O2 -D_FORTIFY_SOURCE=2 # a v3 compound, then a fortified memcpy
+    [ "$cran" -ge "$CONSUMER_CELLS" ] || bad "RAN floor (consumer): $cran cells ran, want $CONSUMER_CELLS"
 else
-    skip "pcrec artifact cells: host is $host or no $PCREC_BIN"
+    skip "pcrec artifact cells: host is $host, not x86_64 (counted: $((ART_GCC_CELLS + CONSUMER_CELLS + 6)))"
 fi
 
 [ $((pass + fail)) -gt 2 ] || bad "the section checked nothing past its first two parts"

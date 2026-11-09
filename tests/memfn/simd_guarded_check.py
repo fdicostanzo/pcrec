@@ -5,7 +5,10 @@ docs/spec/limits.md "Size limits and SIMD-guarded bytes"). Driven by
 tests/memfn/run_simd_guarded.sh, which builds the WITNESS compiler.
 
 TWO COMPILERS over one population (a corpus sample plus named witnesses) at
-seven argv arms (`simd`, R-13, renders the real SIMD rows):
+six fixed argv arms plus one `simd:TARGET` arm per CPU target with a family
+(R-13 and [XARCH-DEV] U3: the real SIMD rows, at every target the kit lists,
+read from the binary's own `--list-cpu-targets`, so the arms are the same on
+every host: generating for a target needs no compile for it):
 
   PLAIN    the tree's build/pcrec. Every compiled artifact carries exactly
            one `<UP>_SIMD_GUARDED_BYTES` line, and its value is at most the
@@ -13,7 +16,9 @@ seven argv arms (`simd`, R-13, renders the real SIMD rows):
            (D155 addendum 2: a check in place of an aggregate budget). The
            rendered sites are `<UP>_MEMFN_FORMS`' tokens, each bound read
            from tests/memfn/simd_bounds.tsv; a token with no declared bound
-           FAILS (UNDECLARED). An artifact for a SIMD target (its
+           FAILS (UNDECLARED), and so does a declared row no artifact reads
+           (a bound nothing reaches would pass any value, review
+           2026-11-08-r5-xarch X-4). An artifact for a SIMD target (its
            `<UP>_TARGETS` names a family) adds the `target-text` row: the
            kit's family guard and region, guarded whatever the forms
            (unit U3). At the default every value is 0.
@@ -40,6 +45,7 @@ import argparse
 import concurrent.futures
 import os
 import re
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -71,10 +77,23 @@ ARMS = [
     ('nocomments', ['-fno-comments']),
     ('longprefix', ['-p', LONG_PREFIX]),
     ('warn', ['--warn-emit-bytes=1']),   # every compile quotes its two sizes
-    # R-13: the SIMD layer on, so the plain half bounds REAL SIMD rows' bytes
-    # (vrun-w16/-w32) and the witness half holds neutrality beside them
-    ('simd', ['-fmemfn-simd']),
 ]
+# R-13: the SIMD layer on, so the plain half bounds REAL SIMD rows' bytes and
+# the witness half holds neutrality beside them; one arm per target with a
+# family (target_arms), so every level and the largest target's text reach
+# their bounds. K35: at least this many such arms.
+TARGET_ARMS_FLOOR = 2
+
+
+def target_arms(binary):
+    """One `simd:<target>` arm per CPU target with a family, from the
+    binary's `--list-cpu-targets` (the kit's rows, docs/spec/cli.md §2.16):
+    a `target` row whose family column is set."""
+    out = subprocess.run([binary, '--list-cpu-targets'], capture_output=True,
+                         check=True).stdout.decode()
+    rows = [ln.split('\t') for ln in out.splitlines() if ln and not ln.startswith('#')]
+    return [('simd:' + r[1], ['-fmemfn-simd=' + r[1]])
+            for r in rows if len(r) > 2 and r[0] == 'target' and r[2]]
 
 # NAMED WITNESSES, each reaching a reader the corpus sample may not: a VM
 # artifact below the entry-shape knee (`forward`/`inline`) and one above it,
@@ -87,11 +106,13 @@ NAMED = [
     ('knee-above', '(?:(abc)|(def)|(ghi)){1,40}xyz'),
     ('ladder', '((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'),
     ('dfa', 'abc[0-9]+def'),
-    ('vrun', '(?i)union.*?select'),   # R-13: a vrun FUNC under the `simd` arm
+    ('vrun', '(?i)union.*?select'),   # R-13: a vrun FUNC under a `simd:` arm
     # fsfix 3: the SIMD-form population must not ride the every-Nth corpus
     # sample (a 4-file corpus addition shifted it from 6 to 5). Each of these
-    # renders `vrun@w32+w16` under the `simd` arm; FLOORS['simd-form-named']
-    # counts exactly them.
+    # renders a vrun level at every `simd:` arm whose target admits one (its
+    # levels, top down, are the target's: `vrun@w16` at the baseline amd64
+    # target, `vrun@w32+w16` at the 32-byte one); FLOORS['simd-form-named']
+    # counts exactly those cells.
     ('vrun-fixed', '(?i)foobarbaz'),
     ('vrun-gap', '(?i)select.*from'),
     ('vrun-long', '(?i)abcdefghijklmnop'),
@@ -105,13 +126,16 @@ FLOORS = {
     'two-blocks': 200,      # WITNESS artifacts with the VM program's block
     'ladder-moved': 1,      # UNROLL_K_WHY "size-model" (the ladder ran)
     'refused': 1,           # both sides refused alike, stderr included
-    'simd-form': 8,         # R-13: artifacts whose MEMFN_FORMS names a SIMD row (simd arm; 6 measured;
+    'simd-form': 18,        # R-13: artifacts whose MEMFN_FORMS names a SIMD row (simd arm; 6 measured;
                             # 3 at D172 S3, the fixed-width caseless runs became `cover`; 6 again at
                             # code review r1 C1, their window search's stop PAIR with its SIMD rows;
                             # 5 at R-30 over main 1f5574fac (job 697: a whole run's window search no
                             # longer asked); 8 measured on the merge of main 5c60e118c with R-30
                             # (lane r30bfix, 2026-10-31; the named 4 unmoved); pinned AT the measure)
-    'simd-form-named': 4,    # fsfix 3: the NAMED witnesses alone that render a SIMD row (simd arm; 4 of 4);
+                            # 18 at lane u3crit (2026-11-08): one `simd:` arm per listed target, two
+                            # of the three rendering levels (the sample's cells counted at both)
+    'simd-form-named': 8,    # fsfix 3: the NAMED witnesses alone that render a SIMD row (4 of 4 at each
+                             # level-rendering `simd:` arm, 2 arms since lane u3crit);
                              # the sample-independent control, so 'simd-form' above can drift with the corpus
     'scaffold-copy': 200,    # [iterpin] witness artifacts whose VM program block sits in the scaffold copy (the ladder named witness; more measured)
 }
@@ -196,20 +220,25 @@ def main():
         bad('simd_bounds.tsv declares no `rq3-witness` bound')
         bounds['rq3-witness'] = 0
 
+    arms = ARMS + target_arms(a.plain)
+    if len(arms) - len(ARMS) < TARGET_ARMS_FLOOR:
+        bad('--list-cpu-targets gave %d targets with a family (floor %d)'
+            % (len(arms) - len(ARMS), TARGET_ARMS_FLOOR))
+
     corpus = es.enumerate_corpus(a.plain, TREE, 30)
     sample = [('%s:%s' % (f, k), p) for i, (f, k, p) in enumerate(corpus)
               if i % a.every == 0]
     pop = [('named:' + n, p) for n, p in NAMED] + sample
     print('== RQ-3 guarded-bytes check: %d corpus rows, %d sampled, %d named, %d arms =='
-          % (len(corpus), len(sample), len(NAMED), len(ARMS)))
+          % (len(corpus), len(sample), len(NAMED), len(arms)))
 
-    jobs = [(key, pat, arm, argv) for key, pat in pop for arm, argv in ARMS]
+    jobs = [(key, pat, arm, argv) for key, pat in pop for arm, argv in arms]
 
     def one(job):
         key, pat, arm, argv = job
         pr = compile_one(a.plain, pat, argv, a.timeout)
         wr = compile_one(a.witness, pat, argv, a.timeout)
-        rec = {'key': key, 'arm': arm, 'issues': [], 'counts': []}
+        rec = {'key': key, 'arm': arm, 'issues': [], 'counts': [], 'rows': set()}
         prc, pout, perr = pr
         wrc, wout, werr = wr
         if prc is None or wrc is None:
@@ -242,12 +271,14 @@ def main():
                     rec['issues'].append('MEMFN_FORMS token %r: row %r has no declared bound (UNDECLARED)'
                                          % (site, row))
                 total += bounds.get(row, 0)
+                rec['rows'].add(row)
         tg = TARGETS.findall(pout)
         if len(tg) != 1:
             rec['issues'].append('plain carries %d TARGETS lines' % len(tg))
             return rec
         if tg[0] != b'none':
             total += bounds.get('target-text', 0)
+            rec['rows'].add('target-text')
             rec['counts'].append('simd-target')
         elif v:
             rec['issues'].append('plain stamp %d on a portable-target artifact (no guard, no region)' % v)
@@ -297,10 +328,12 @@ def main():
 
     counts = {}
     per_block = {}
+    rows_read = {'rq3-witness'}   # the witness half's own row, read by ARITHMETIC
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
         for rec in ex.map(one, jobs):
             for c in rec['counts']:
                 counts[c] = counts.get(c, 0) + 1
+            rows_read |= rec['rows']
             for i in rec['issues']:
                 bad('%s [%s]: %s' % (rec['key'], rec['arm'], i))
             if 'vw' in rec and rec['nblk']:
@@ -328,6 +361,12 @@ def main():
         bad('arithmetic: the uncut block size differs across artifacts/arms: %s'
             % sorted(sizes)[:8])
 
+    unread = sorted(set(bounds) - rows_read)
+    if unread:
+        bad('simd_bounds.tsv rows no artifact read (a bound nothing reaches): %s'
+            % ', '.join(unread))
+    else:
+        ok('every simd_bounds.tsv row is read by some artifact (%d rows)' % len(bounds))
     for k, floor in FLOORS.items():
         n = counts.get(k, 0)
         if n >= floor:

@@ -133,3 +133,14 @@ member is the art's target (`pcrec_memfn_target`, stated on every art through
 and the placement of the kit's family guard (ahead of every `#include`) and the
 target region (open before the first function, close after `rx_info`, before
 `main`), all counted as guarded bytes; a compound part writes none of them.
+Lane u3crit (review 2026-11-08-r5-xarch): the target is DERIVED ONCE per
+attempt onto `Ctx.cpu_target` (`pcrec_memfn_target_derive`, compile.c; its one
+failure point) and the readers read it (HOUSE-4); the set compares targets
+and families by token, never by address (X-6); the region's close has one
+caller, `pcrec_emit_artifact_end` (emit_dfa.c, both engines), and the
+attempt's end refuses a region left open (HOUSE-5); the region holds no
+`#include` (X-1, X-2): the TARGET HEADERS mark sits ahead of its open and the
+finishing pass (memfn_stamps.c `target_headers_render`) writes there the
+headers a part's text needs (`PcrecPartFacts.string_h`) and, with the kit's
+includes fact, the intrinsic headers; guarded bytes, so no decision reads
+them and a default artifact is byte-identical.

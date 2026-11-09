@@ -2692,12 +2692,14 @@ if [ -x "$LIBA" ] || [ -f "$LIBA" ]; then
     assert_eq "cpu targets api: force with the host target compiles" "rc=0" "$("$xt_dir/probe" api force "$xt_host_t" | sed -n 1p)"
     assert_eq "cpu targets api: force with no list compiles" "rc=0" "$("$xt_dir/probe" api force - | sed -n 1p)"
 
-    # [XARCH-DEV] U3 the art's target, placed (match_api.md §6.3.10¶13): every
-    # artifact names it in <PREFIX>_TARGETS; an artifact for a target with a
-    # family carries the kit's guard ahead of every #include and the kit's
-    # region around its functions, closed before main. The texts are the
-    # kit's (the probe's `text` mode), so this names no token or spelling.
-    xt_place() {   # FILE TEXTDIR: guard/open/close each once, in order, guard before the first #include, close before main
+    # [XARCH-DEV] U3 the art's target, placed (match_api.md §6.3.10¶14-¶15):
+    # every artifact names it in <PREFIX>_TARGETS; an artifact for a target
+    # with a family carries the kit's guard ahead of every #include and the
+    # kit's region around its functions, holding no #include (X-1, X-2 of
+    # review 2026-11-08-r5-xarch), closed after rx_info and before main. The
+    # texts are the kit's (the probe's `text` mode), so this names no token or
+    # spelling.
+    xt_place() {   # FILE TEXTDIR: guard/open/close each once, in order, guard before the first #include, none inside the region, close after rx_info and before main
         python3 -I - "$1" "$2" <<'XTPY'
 import sys
 a = open(sys.argv[1], 'rb').read()
@@ -2710,7 +2712,10 @@ inc, main = a.find(b'\n#include'), a.find(b'\nint main(')
 if not g < o < c: print('out of order'); sys.exit()
 if inc >= 0 and g > inc: print('guard after an include'); sys.exit()
 if main >= 0 and c > main: print('close after main'); sys.exit()
-if a.rfind(b'\n};', 0, c) < a.find(b'struct rx_info rx_info'): print('close before rx_info'); sys.exit()
+if b'\n#include' in a[o:c]: print('an include inside the region'); sys.exit()
+ri = a.find(b'struct rx_info rx_info')
+if ri < 0: print('no rx_info definition'); sys.exit()
+if a.rfind(b'\n};', 0, c) < ri: print('close before rx_info'); sys.exit()
 print('placed')
 XTPY
     }

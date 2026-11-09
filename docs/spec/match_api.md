@@ -2777,8 +2777,14 @@ kit rendered, and which C library functions the artifact calls.
 #define RX_MEMFN_LIBC "memchr,memcmp"   /* or "none" */
 ```
 
-- <a id="s6-3-10-p4"></a>[6.3.10¶4] **`MEMFN_FORMS`** is `"none"` iff the artifact is byte-identical (stamp
-  lines aside) to its own `-fno-memfn-simd` compile; otherwise the ids of the
+- <a id="s6-3-10-p4"></a>[6.3.10¶4] **`MEMFN_FORMS`** names the SIMD FORMS the kit rendered, not the
+  artifact's portability: that is `<PREFIX>_TARGETS` (§6.3.10¶14; `none:generic`
+  runs on any machine, any other target only where its features exist, since
+  the target's region puts every function of the artifact under them,
+  §6.3.10¶15, so an artifact that renders no form still compiles to the
+  target's instructions). It is `"none"` iff the artifact is byte-identical
+  (stamp lines and its target's own text aside: §6.3.10¶15's guard, region and
+  headers) to its own `-fno-memfn-simd` compile; otherwise the ids of the
   forms that make it differ, comma-joined in site order, a site that cascades
   between ISA levels carrying them as `ID@LEVEL+LEVEL`. Ids and level names are
   OPAQUE: bucket on `"none"` / not-`"none"`, never parse an id. SIMD is off by
@@ -2792,7 +2798,15 @@ kit rendered, and which C library functions the artifact calls.
   `vrun@w32+w16`. The text carries no CPU `#if`: the FUNC's selector calls its
   top rendered level, which falls to the next on a short tail, and the
   target's region (§6.3.10¶15) supplies the ISA whatever the consumer's
-  `-march`. A scalar-layer kit change does not change it;
+  `-march`. **Moving between targets:** an artifact carries the levels of ONE
+  target and runs them whatever the consumer's `-march`; it does not follow
+  the consumer's flags. Plain `-fmemfn-simd` on amd64 reads `vrun@w16` under
+  any consumer `-march` (the 32-byte level is `-fmemfn-simd=x86-64-v3`'s), an
+  `x86-64-v3` artifact needs a CPU with that target's features, a compile for
+  another family or `-m32` stops at the guard rather than building scalar C,
+  and gcc may not inline the artifact's entries into a consumer function
+  compiled for fewer features; generate again for another target to change
+  any of these. A scalar-layer kit change does not change it;
   such a change is attributed by its `abi` event and its `--memfn=no-NAME`
   deny row, and a consumer that must tell two same-`abi` builds apart records
   the build recipe (`abi`, pcrec commit, argv).
@@ -2814,12 +2828,18 @@ kit rendered, and which C library functions the artifact calls.
   of the artifact's `-O0 -fno-builtin` object minus the constant-size `memcpy`
   loads. `MEMFN_FORMS`' identity half compares default against
   `-fno-memfn-simd` (`tuning.md` §2.43); its movers half holds an
-  `-fmemfn-simd` compile byte-identical to the default exactly where its
-  `MEMFN_FORMS` reads `"none"`.
+  `-fmemfn-simd` compile byte-identical to the default, its target's own text
+  aside (§6.3.10¶15), exactly where its `MEMFN_FORMS` reads `"none"`.
 
-<a id="s6-3-10-p8"></a>[6.3.10¶8] **`<PREFIX>_SIMD_GUARDED_BYTES`** — how many bytes of the artifact depend on
-its CPU target; written by pcrec directly after `<PREFIX>_MEMFN_LIBC`, an
-unsigned 64-bit integer spelled as 16 hex digits.
+<a id="s6-3-10-p8"></a>[6.3.10¶8] **`<PREFIX>_SIMD_GUARDED_BYTES`** — how many bytes of the artifact's TEXT are its
+CPU target's own (written only because the target has a family); written by
+pcrec directly after `<PREFIX>_MEMFN_LIBC`, an unsigned 64-bit integer spelled
+as 16 hex digits. It counts text, not compiled code: how much of the object
+the target's features reach is the region's whole extent (§6.3.10¶15), read
+off `<PREFIX>_TARGETS`. The name says SIMD; the count is the target's whole
+own text, the guard, the region and the headers included, so it is nonzero
+on an artifact that renders no SIMD form (a name that says what it counts is
+planned).
 
 ```c
 #define RX_SIMD_GUARDED_BYTES 0x0000000000000000ULL   /* or any count */
@@ -2828,14 +2848,16 @@ unsigned 64-bit integer spelled as 16 hex digits.
 <a id="s6-3-10-p9"></a>[6.3.10¶9] It is the number of bytes the search-code kit wrote between its `simd_open`
 and `simd_close` sink calls (the blocks a SIMD-on form adds: its per-level
 helpers and its selector's call of the top level,
-`docs/design/memfn/integration.md` §R4.9.2.4), plus the kit's family guard and
-target region pcrec places for a SIMD target (§6.3.10¶14), counted in the unit every pcrec
+`docs/design/memfn/integration.md` §R4.9.2.4), plus the target's own text pcrec
+places for a target with a family (§6.3.10¶15: the guard, the region, the
+headers ahead of it), counted in the unit every pcrec
 length decision uses: comment bytes `-fno-comments` dropped are included, and
 the symbol prefix is counted at a fixed width, so neither `-fno-comments` nor
-`-p` changes the value. It is zero on every artifact for the portable target,
-which is every artifact compiled at the default `-fno-memfn-simd`; at
-`-fmemfn-simd[=LIST]` every artifact carries a nonzero count, the guard and
-region at least (`tuning.md` §2.43¶3a; the per-row bounds are `limits.md`
+`-p` changes the value. It is zero on every artifact for the portable target:
+every artifact compiled at the default `-fno-memfn-simd`, and every list that
+resolves to it (`-fmemfn-simd=generic`). At a target with a family every
+artifact carries a nonzero count, the guard at least (a target with no region
+carries the guard alone; `tuning.md` §2.43¶3a; the bounds are `limits.md`
 §8.3¶3). It is the artifact's size beyond its SIMD-off compile.
 Those bytes are invisible to every pcrec size DECISION — the VM entry-shape
 knee and `<PREFIX>_VM_PROGRAM_BYTES`, the size term and its ladder, and the D84
@@ -2905,15 +2927,23 @@ artifacts.
 ```
 
 - <a id="s6-3-10-p15"></a>[6.3.10¶15] **The target's text.** For a target with a family, the artifact
-  carries two pieces of the kit's C text, placed by pcrec: the family's GUARD,
-  at file scope ahead of every `#include`, which stops a compile for another
-  CPU family with an `#error` naming the condition; and the target's REGION,
-  opened before the artifact's first function (the kit's helpers and their
-  intrinsic `#include` lines inside it) and closed after `rx_info`, before any
-  `--emit-main` `main`. The region enables the target's features for the
-  functions inside it whatever the consumer's `-march` (§10.7¶4). The
-  portable target has neither (its texts are empty), so a default artifact
-  carries no CPU-specific text at all.
+  carries the kit's C text for it, placed by pcrec: the family's GUARD, at
+  file scope ahead of every `#include`, which stops a compile for another CPU
+  family with an `#error` naming the condition; and the target's REGION,
+  opened before the artifact's first function (the kit's helpers first) and
+  closed after `rx_info`, before any `--emit-main` `main`. The region enables
+  the target's features for the functions inside it whatever the consumer's
+  `-march` (§10.7¶4); a target whose features are its family's baseline
+  enables nothing and has no region, only the guard (`armv8-a`). The region
+  holds no `#include`: every header the artifact's code needs, the
+  intrinsic headers and a compound part's own included, is first included at
+  file scope ahead of the region's open. (gcc gives a header's inline
+  functions the target in force where the header is first included, so a
+  header first read inside the region would break a later use of it outside.)
+  A consumer translation unit may therefore `#include` the artifact and then
+  use intrinsics, the C library or a second artifact, for any target, after
+  it. The portable target has neither text (its texts are empty), so a
+  default artifact carries no CPU-specific text at all.
 
 <a id="s6-3-11"></a>
 #### 6.3.11 Feature set, tuning position, alternation normalization

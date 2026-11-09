@@ -35,6 +35,7 @@
  * kit's consulted kinds join the stamp and the kit is then the last reader.
  * The `rx_info` writer marks each line at its byte position, so moving the
  * render here moved no byte. */
+#include <stdlib.h>
 #include <string.h>
 
 #include "gen/memfn_sites.h"
@@ -336,7 +337,17 @@ static void target_headers_render(Ctx *cx)
     PcrecEmitSize was = pcrec_emit_size_measure(PCREC_TARGET_HEADERS_MARK,
                                                 strlen(PCREC_TARGET_HEADERS_MARK), NULL);
     PcrecEmitSize now = pcrec_emit_size_measure(text, strlen(text), NULL);
-    (void)splice_mark(c, PCREC_TARGET_HEADERS_MARK, text);
+    /* rebuilt in a fresh buffer, never truncated and re-appended in place:
+     * the mark sits near the top, and a truncated csb under a ladder trial's
+     * scratch bound would read a length below its own guarded record */
+    size_t at = (size_t)(strstr(c->p, PCREC_TARGET_HEADERS_MARK) - c->p);
+    StrBuf nb = { .cx = cx };
+    pcrec_sb_printf(&nb, "%.*s%s%s", (int)at, c->p, text,
+                    c->p + at + strlen(PCREC_TARGET_HEADERS_MARK));
+    free(c->p);
+    c->p = nb.p;
+    c->len = nb.len;
+    c->cap = nb.cap;
     c->simd_guarded += strlen(text) - strlen(PCREC_TARGET_HEADERS_MARK);
     c->simd_size.total += now.total - was.total;
     c->simd_size.prose += now.prose - was.prose;

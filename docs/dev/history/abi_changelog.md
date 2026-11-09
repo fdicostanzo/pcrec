@@ -39,7 +39,16 @@ the bump's own commit.**
   on amd64) renders `vrun@w16` where it rendered `vrun@w32+w16`, and the
   wider level is reached through `-fmemfn-simd=x86-64-v3`. The guard and
   region bytes are CPU-guarded (`<PREFIX>_SIMD_GUARDED_BYTES` counts them;
-  no length decision reads them).
+  no length decision reads them). The same event, after review
+  2026-11-08-r5-xarch (lane u3crit): the region holds no `#include` (the
+  intrinsic headers, and a compound part's `<string.h>`, are first included
+  ahead of its open), so a gcc consumer that `#include`s the artifact and then
+  uses intrinsics, a fortified `memcpy` or a second artifact compiles. What an
+  existing `-fmemfn-simd` caller sees change at 98: the artifact no longer
+  follows the consumer's `-march` (plain `-fmemfn-simd` never reaches the
+  32-byte level, an `x86-64-v3` artifact runs AVX2 unconditionally, `-m32`
+  or another family stops at the guard where scalar C used to build, and gcc
+  -O3 may not inline its entries into a default-`-march` consumer).
 - **`rx_info.abi` was `97` on every artifact ([RUN-POS-SET] stage 1, 96 -> 97,
   built as 95 -> 96 by lane altbuild 2026-11-06, renumbered at its catch-up merge
   over main's [VLOOKBEHIND] 96 in landing order (lane altcatch, 2026-11-07);
