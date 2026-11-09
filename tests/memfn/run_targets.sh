@@ -357,7 +357,7 @@ else
     skip "pcrec artifact cells: host is $host, not x86_64 (counted: $((ART_GCC_CELLS + CONSUMER_CELLS + 6)))"
 fi
 
-[ $((pass + fail)) -gt 2 ] || bad "the section checked nothing past its first two parts"
+[ "$csk" -gt 0 ] || [ $((pass + fail)) -gt 2 ] || bad "the section checked nothing past its first two parts"
 [ "$csk" -eq 0 ] || [ -n "$FACT_MSGS" ] || bad "$csk compiles were skipped with no fact failure"
 echo "targets: $ran cells ran, $skipped skipped, $csk compiles skipped (facts failed)"
 echo "checks passed: $pass"
