@@ -18,7 +18,7 @@ ONE organized record of what a pattern HAS (kind mask, nullability, necessary by
 - DD-11.5: multiline anchors are A_CTX nodes (the `Ast.u.anch.multiline` branches are deleted); `sa_walk`, `ew_walk_marked`, `em_set` switch on `pcrec_ctx_class(n)` with no `default:`.
 - NODE-GRAIN CARVE-OUT ([RUN-POS-SET] r7 FIX-4): `desc.c` is a pure function over an unsealed subtree, read through ARM COMBINATORS (`desc.h`, its public surface, callable from `opt/`); it reads no sealed fact and must not include `facts_derive.h` (`run_facts_checks.sh` CARVE list). Callers walk; the module never does (one walk, no O(n^2) re-walk of a left spine).
 - What no check catches: a HAND RE-SPELLING (a consumer writing its own walk, calling no derivation, including no private header). Defence: helpers are `static` here and `tools/review/clone_candidates.py` at review time; a reviewer looks for it (design §4.2.3).
-- Sabotage anchors for walks here (S206/S207 widths, S263 startanch, S264 endwin, S268/S446/S451/S453/S456/S465/S466/S474/S805-S807/S1905-S1907 req, S1908 the arm token, S280 pin, S501/S502 startset, S611/S613 empty masks): keep them reaching their site when editing.
+- Sabotage anchors for walks here (S206/S207 widths, S263 startanch, S264 endwin, S268/S446/S451/S453/S456/S465/S466/S474/S805-S807/S1905-S1907 and S1910 req, S1908 the arm token, S1909 the part carrying the arms, S280 pin, S501/S502 startset, S611/S613 empty masks): keep them reaching their site when editing.
 - Maintenance: update this file when a file is added, moved in or removed.
 
 ## Files

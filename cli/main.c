@@ -1471,8 +1471,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
         else if (!strncmp(a, "--harness=restore=", 18)) {
             int bad = pcrec_walk_arms_parse(a + 18, &st->harness.walk_arms);
             if (bad >= 0) {
+                const char *bp = a + 18 + bad;
                 cli_err("--harness=restore= wants walk arm names joined by '+' "
-                        "(no arm '%s')", a + 18 + bad);
+                        "(no arm '%.*s')", (int)strcspn(bp, "+"), bp);
                 return 1;
             }
         }
