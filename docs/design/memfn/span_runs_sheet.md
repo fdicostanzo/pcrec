@@ -40,6 +40,10 @@ the run (§12b Q3: one value). A set-side change: the one-byte landmark and its 
 The run is a presence span of the pre-check site, as today (`mf_site.pspans`, the run last), but
 its positions now cross in SET form as one D172 span, and it is the ONLY place the run crosses.
 
+The seam stays D172's LIST of span statements, and every other span of the list is unchanged. "One
+uncut span" (R-38, as clarified by main 2026-11-09) means only that the necessary run is ONE entry of
+that list, never cut by pcrec into a window or into several pieces.
+
 | fact | where it lives | type | value |
 |---|---|---|---|
 | the run's positions | the run's `pspans` entry, through the `mf_pred` window-statement members that today serve only FUNC parts: `nalt` 1, `alts[0]` = {`entry` `MF_ENTRY_NONE`, `nspan` 1, `spans[0]`}, `wfloor` `MF_WFLOOR_SUBJECT` | `mf_wspan` | `start` 0 (positions are relative to the occurrence's position 0), `len` n (2..`MF_WSPAN_POS`), `set[j]` position j's byte set (256-bit, D187; a cube is never stated beside it), `table_ref[j]` 0, `core` STATED over all n positions (every successful attempt holds every position inside the subject), `verify` per §2.5 |
