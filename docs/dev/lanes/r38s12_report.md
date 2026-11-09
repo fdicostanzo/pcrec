@@ -43,3 +43,7 @@ The kit manager confirms or changes this before K38-1's brief.
 - F-B, F-I, F-M, RQ-2, cites: applied (above). Revision-log "rev 1.2" entry: added.
 - Not applied: nothing. Not done by design: no further review round (ruled); build/make not run.
 - Deferred to K38-2 and unchanged: `.whole` column and `keep` fates "from the code".
+
+## STATE AT HANDOFF
+Nothing owed. Sheet rev 1.2 committed; no runs queued. Next: the kit manager confirms or changes
+the RQ-2 source (option A) before K38-1's brief.
