@@ -21,4 +21,4 @@ By hand in a scratch copy of the joint tree (u3crit HEAD, kit files identical): 
 - arch_blind and anchors: done.
 
 ## STATE AT HANDOFF
-Nothing owed. Committed; full matrix row S3002 not run (box rule), re-run command in Plant measured.
+OWED: none. Committed; full matrix row S3002 not run (box rule), re-run command in Plant measured.
