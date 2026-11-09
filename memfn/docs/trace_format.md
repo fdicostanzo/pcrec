@@ -173,10 +173,14 @@ before). `ren` is the RENDERER row, the third member of the key the text is
 keyed by (frame row, method row, renderer row): for E-find its search
 renderer row (`B-pair`, `B-memchr`, `B-walk`, `B-hors`) or its FUSED row
 (`B-fn`, rendering the whole triple), for the composer the search renderer
-table's E-stmt row's arm (window.c `ren_search`; equal to `arm`). `frame`
+table's E-stmt row (window.c `ren_search`) whose arm rendered the pick. `frame`
 (since plan_frame.md 3.0a) is the T-FRAME row it rendered on, `E-find` or
-`E-stmt`. tests/memfn/renderer_rows.tsv declares the (frame, row, ren)
-triples; rows_check holds every triple the traces print to it.
+`E-stmt`. Both are read off the row that rendered: for the composer its
+E-stmt row's own `id` and frame (since the r1 s30a review's fixes; the ids
+equal the arms' contract rows today, so no line moved), for E-find its
+search or fused row and its skeleton row. tests/memfn/renderer_rows.tsv
+declares the (frame, row, ren) triples; rows_check holds every triple the
+traces print to it.
 
 The composer's `table=fd` FIND walk also writes the D-hors ROW record
 (`verdict=PRED_FALSE gate=PASS`, or DENIED under `window-skip`), a row the

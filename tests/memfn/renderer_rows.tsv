@@ -8,7 +8,7 @@
 # the frame's (docs/trace_format.md "FDROUTE"):
 #   E-find  window.c `ren_search` (B-pair, B-memchr, B-walk, B-hors) and the
 #           FUSED row `ren_fused` (B-fn, rendering the whole triple)
-#   E-stmt  window.c `ren_search`'s E-stmt rows: the composer's arm
+#   E-stmt  window.c `ren_search`'s E-stmt rows (their own id; each names the composer's arm)
 # HAND-MAINTAINED, and written from the renderer tables, not from the trace.
 # A row added to either table adds its triple(s) here in the same commit.
 #
@@ -18,7 +18,9 @@
 # after `-p rx --features all`); a line with no witness (`-`) prints
 # UNREACHED, never a pass; (3) THE REFUSAL INVARIANT: a witness compile
 # whose refusal names a T-FIND row's routed pick or Table S's refusal is red
-# with its own message (plan_frame.md §5 rows B, C, R).
+# with its own message (plan_frame.md §5 row R). Rows B and C are SILENT
+# MOVES that (1)-(2) see: `foo|bar\d` prints a triple other than its line's
+# (rows_check.py §P, S2983, S2984).
 #
 # Columns (TAB-separated; `-` is empty):
 #   row      the T-FIND row (fd_rows[] id)

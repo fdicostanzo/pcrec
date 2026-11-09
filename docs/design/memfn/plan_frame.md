@@ -609,7 +609,8 @@ The loop-state slot is empty on every 3.0 stream row; a MASK row's `m` will use 
 The CHECK renderer is one row per composing frame in 3.0 `[rev2 F11]`: E-find's C-find (`wf_test_to` less
 the position the search proved: `skip`, C-stop's or the probe's), E-generic's C-floor (`wf_test` :2274,
 which also writes the bound, §2.6.0), and E-stmt's C-caller (no text: pcrec checks). It is keyed by frame
-row only. A second check spelling (vrun's mask-trimmed compare, §2.7) becomes its second row. `[rev2 F19]`
+row only. `[code review r1 s30a F4]` C-caller is not built as a row: no frame renders or reads a check on
+E-stmt (nor does 3.0b's field map, §4.1), so a row there would be a declared cell with no reader. A second check spelling (vrun's mask-trimmed compare, §2.7) becomes its second row. `[rev2 F19]`
 Which positions a search proves has three homes today (C-stop, `d_hors_head`'s `skip`, vrun's TRIM); the
 PROVES column unifies them at its trigger (§7 Q9).
 
@@ -908,20 +909,24 @@ no window.
     `check_hash` refuses the id (:511; `finder_check.py` via `run_finder.sh`). `[rev2 F1]` It is red only
     because `wf_plan_brow` keeps meaning T-FIND's row. (In the product B-pair stops would go to B-walk, and
     B-fn sites would decline too, §2.4's dependency: emit_sweep and G2's fn:48 floor also go red.)
-  - (B) `[rev2 F7]` an (E-stmt, PAIR) search renderer row declared with NO arm: T-FIND picks PAIR on a composer
-    two-member stop, `select_arm`'s refusal (`compose.c` :317-325) fires, and pcrec's `pcrec_ctx_fail`
-    refuses the compile. G2's composer sets with two members and the corpus compile go red; the check asserts
-    the refusal names row PAIR. (An arm-bearing plant would render another arm's text under PAIR's name: not
-    this row.) `[rev2.2 R11]` **The host of "names PAIR"**: the mech runner has no "the failing log must contain
-    X" field, and SAB_REACH runs on the clean tree, so the assertion is a standing INVARIANT, green on a correct
-    build: `rows_check.py` §R fails any witness compile whose refusal names a T-FIND row or Table S's refusal
-    (pcrec surfaces the kit's text, `compose.c` :1100-1104: "(the finder row PAIR's routed pick)", through
-    `pcrec_ctx_fail`, `memfn_sites.c` :449), with its own message, over `renderer_rows.tsv`'s witness lines
-    (`foo|bar\d`: a composer span-0 two-member stop {b, f}; the B-pair line's E-find witness). The row is
-    DETECTED by that message, not by any red.
-  - (C) the renderability check removed from `fd_holds`: the same refusal as (B), asserted by the same
-    invariant's message (rc != 0 AND it names PAIR), not only "the corpus compile is red". This is F5's missing
-    false-branch witness. It stays LOUD only while `select_arm`'s refusal is kept (§2.4).
+  - (B) `[rev2 F7]` an (E-stmt, PAIR) search renderer row declared with NO arm. `[code review r1 s30a F8]`
+    **MEASURED a SILENT MOVE, not a refusal** (this paragraph's earlier text predicted `select_arm`'s refusal
+    and "the refusal names row PAIR"; the build does not do that): T-FIND picks PAIR on a composer two-member
+    stop, `select_arm` finds no arm and declines, so Table E's legacy-first order sees the composer cannot
+    serve the plan's translation, declines E-stmt, and E-find renders the stop as B-pair (a correct, different
+    text: `foo|bar\d` moves from (E-stmt, R7w, pf_walk) to (E-find, PAIR, B-pair), rc 0). The DETECTOR is
+    `rows_check.py` §R's TRIPLE SET over `renderer_rows.tsv`'s witness lines (the witness prints a triple other
+    than its declared one), not a refusal message. Host: §R's in-script plant table (§P, S2983), since no mech
+    arm runs `rows_check.py` (a `memfnrows` arm is a plan row). (An arm-bearing plant would render another
+    arm's text under PAIR's name: not this row.)
+  - (C) the renderability check removed from `fd_holds`. `[code review r1 s30a F8]` **MEASURED a SILENT MOVE**,
+    byte-identical to (B)'s: with the gate gone Table E's legacy-first ask declines E-stmt for the same reason,
+    and the stop renders as E-find B-pair. F5's false-branch witness is therefore §R's triple compare, not a
+    refusal message; detected and hosted as (B) is (§P, S2984). Measured for both (lane s30arev, by hand):
+    9 of 60 (pattern, arm) compiles move silently, none refused; inside `rows_check.py` the arm fixture
+    `mismatch_inplace` is refused by pcrec under either plant ("the memfn kit's text calls <string.h>
+    functions the prologue did not include"), a LOUD side effect off the witness set. `select_arm`'s refusal is kept (§2.4), but the
+    legacy-first order above it means no witness reaches it.
   - (D) `[rev2 F28]` `[rev2.2 R4]` a second renderer list planted in an unlisted function, as a COPY of the one
     accessor's loop (holding the search renderer table's name): `decider_census.py`'s narrowed backstop is red.
     (A twin that copies the rows under a NEW name holds no shape: the census's stated limit, "a decider spelled
@@ -933,9 +938,13 @@ no window.
     window answers are red against `g2_win_ref.c`. Reach: every non-HORS `[rev2.2 R13]` non-B-fn E-find site (B-fn
     is fused: its function's own loop, `wf_find_expr` :2723 returns before any NEXT) and every floor site (the
     floor reads its stream row, §2.6.0); the plant is S-restart's shared text, so both rows of §2.6.2 carry it.
-  - (M) `[rev2 F21]` the support table admits MASK for LIBC: the pin's LIBC row (source: the ruling's text) is
+  - (M) `[rev2 F21]` the support table admits MASK for LIBC: the pin's LIBC row (source: a ruled line) is
     red `[rev2.2 R7]` in `rows_check.py` §S, against `arm_fixtures --streams`' print (this is the ONLY place it
-    shows: no 3.0 frame renders MASK, so no text, hash or census moves). Its source is the ruling, not the table, so this row's control is independent.
+    shows: no 3.0 frame renders MASK, so no text, hash or census moves; MEASURED SAME on every artifact).
+    `[code review r1 s30a F14]` Its source is "libc memchr supplies only one-shot", a line of the KIT's notice
+    that D190 files among the owner's decision (the owner's own words are the other sentence D190 quotes), so
+    this control is a ruled line, not the table read twice, but it shares an author with the table; the pin
+    labels it `RULING (D190, kit-stated line)`. Host: §R/§S's in-script plant table (§P, S2988).
   - (N) E-generic's S-restart stream renderer row deleted (`[rev2.2 R13]` E-find's row stays: two rows, one text,
     §2.6.2): the floor has no stream and every floor site is
     REFUSED (§2.6.0). `[rev2 F3]` Reach control: G2's "no-window-search: a DFA_SCAN site not on the floor"
@@ -946,9 +955,13 @@ no window.
   - (P) `[rev2 F2]` B-pair's loop-state slot emptied: `_ha` is undeclared, and the gcc compile of every B-pair
     site (G2's pair:316 census, `a[Xx].b`) fails.
   - (Q) `[rev2 F5]` the libc union taken over the search and stream pieces only: on `--memfn=no-fd-d1 abcdef`
-    (B-walk with run compares) `libc` reads 0, `includes` drops `<string.h>` and `wf_plan_class` reports
-    `libc_free` 1. emit_sweep is red on that arm, and the reply-class pin (`mf_defined.cls`, the `arm_fixtures`
-    class print) moves.
+    (B-walk with run compares) `libc` reads 0 and `wf_plan_class` reports `libc_free` 1. `[code review r1 s30a
+    F9]` **UNDETECTED, MEASURED** (S2992, `SAB_EXPECT=UNDETECTED`): no byte moves (pcrec's artifact includes
+    `<string.h>` itself and its `RX_MEMFN_LIBC` stamp reads `none` both ways), so emit_sweep cannot be red; only
+    the trace's ASK `libc_free` moves, and no check reads it (`arm_fixtures --query`'s independent libc reading
+    greps `memchr(`/`memcmp(` alone, and the run compare loads words by `memcpy`). The detector this paragraph
+    first named does not exist; closing it needs an independent libc reading that counts `memcpy(` over a
+    B-walk fixture with a run term.
   - (R) `[rev2 F9, F21]` the support table's PAIR row admits SHIFT as well: on E-find Table S's intersection is
     {RESTART, SHIFT}, ST-many refuses, and every B-pair site is refused (G2's pair census and the corpus go
     red). This also witnesses the two-stream rule and a derived row's basis. `[rev2.2 R3]` The refusal is the
@@ -956,7 +969,15 @@ no window.
     Table S's refusal on the B-pair witness line), never a silent move to B-walk; a build whose gate read
     "exactly one" would move B-pair sites to B-walk with no refusal, and (R) would then be red on the wrong
     observation (emit_sweep, formhash's `pair`), which the invariant's message tells apart. §S is also red (the
-    pin's PAIR row says no SHIFT).
+    pin's PAIR row says no SHIFT). `[code review r1 s30a F1]` **RE-MODELLED, MEASURED a SILENT MOVE** (lane
+    s30arev): the refusal is raised only where Table E answers E-find (after its walk), and Table E's
+    legacy-first order then serves the site elsewhere, so no compile is refused and this paragraph's "every
+    B-pair site is refused" and "never a silent move" no longer describe the build. `foo|bar\d` (E-stmt) does
+    not move; `(?:(?!a)z|w)` moves from B-pair to E-stmt's bounded walk; `(?:(?i:abs)|(?i:ab)S)` (B-fn) and the
+    STMT site `a[Xx].b -p rx` move to another form; 12 of 60 hand (pattern, arm) compiles move, rc 0 on all.
+    Detectors: formhash's `pair` (tests/memfn/run_finder.sh, the mech row S2993's suite, re-aimed from the
+    corpus harness, whose answers a correct other text leaves green), §R's triples on the B-pair and B-fn
+    witness lines, and §S.
 
 **3.0b** — the seam, with pcrec's asks, ONE commit.
 
