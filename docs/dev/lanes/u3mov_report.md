@@ -48,3 +48,10 @@ the script edit, ref = the scratch abi-97 build: `u3tgt_movers.py REF LANE TREE 
 `... x86-64-v3`, each 5095 patterns, all 8 cells `unpredicted 0` (simd cells serve 26/24/16/17),
 `== u3tgt movers COMPLETE: unpredicted 0` twice (scratch/u3mov/full.log). The brief's owed queue
 job `main-u3floor-movers` is already queued and needs no change. Nothing else owed.
+
+R6 applied (rulings R1-R6, last R6): merged lane/memfn-u2 6aa26ba77 alone (conflicts only in the two
+index/notes files, both sides kept); deleted `#define MF_P_PORTABLE_ONLY` (its one reader,
+tests/memfn/policy_check.c, now passes 0, the art's unread policy argument); reworded the
+run_sabotage_matrix.sh simdfloor comment ISA-free. On the merged tip: `make strict` rc 0,
+`make test-memfn-arch` 17/0, `make test-memfn-finder` 3321/0, and the movers proof re-run at both
+targets `unpredicted 0` (scratch/u3mov/full2.log).
