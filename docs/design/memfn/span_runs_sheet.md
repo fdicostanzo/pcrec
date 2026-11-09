@@ -1,9 +1,14 @@
-# span_runs_sheet — R-38's interface sheet: the necessary run as one uncut span (design, rev 1)
+# span_runs_sheet — R-38's interface sheet: the necessary run as one uncut span (design, rev 1.1)
 
 Lane r38s1, 2026-11-09. DESIGN ONLY: no code, no build go. Rev 1 applies readiness review
 2026-11-09 r2 r38s AS RULED (`docs/dev/reviews/2026-11-09-r2-r38s.md`, "Manager rulings"): F1-F11,
 the PLAN unit K38-2a, and the owner/manager answers to §6 Q1-Q6. Changed text is marked `[r1 F<n>]`.
 Rev 0 (lane r38s, `0de3cadec`) is in git history.
+
+Rev 1.1 (lane r38s11) applies re-check review 2026-11-09 r6 r38s2 AS RULED
+(`docs/dev/reviews/2026-11-09-r6-r38s2.md`, "Manager rulings"): the text fixes F-A..F-O (F-G as a
+PLAN item, not a fix), main's rulings on Q7 and on the run pin, and the review's DOC/PLAN notes.
+Changed text is marked `[r1.1 F-<x>]`.
 
 ## Revision log
 
@@ -23,15 +28,34 @@ Rev 0 (lane r38s, `0de3cadec`) is in git history.
 | SEAM-7 (PLAN, answer asked) | K38-2 adds NO entry; the general form is noted with its unlocks | §6 Q6 |
 | §6 Q1-Q6 | recorded RULED | §6 |
 
+| rev 1.1 item | what changed | section |
+|---|---|---|
+| F-A Q7's premise | `@` of `<PREFIX>_REQ_RUN` is a first-match table (RULED); population 2 split 2a/2b with an `emitted` example; the four `@` readers named with fates; `req_run` retires into `req_whole_run` | §4.1, §4.3, §5.1, §6 Q7 |
+| F-B the lost pin | the whole-run pin is CLIPPED to the k-set walk's reach; no pin lost by length; the clip named as a pcrec cut | §4.2 |
+| F-C third decider | `pcrec_run_pin`'s rate pick named and counted; "pcrec picks nothing on either site" withdrawn; placement-only pin filed as P6 | §2.5, §7, §6 P6 |
+| F-D caller check | `kit_run_member`'s three callers named with counts; the ranking as a `decider_census` row | §1 Goal 2, §5 K38-1, §4.3 |
+| F-E kept reply | the Job keeps the DEFINE's class; "inputs, closed" restated as invariance; `site_kind` added; trace memcmp against the pre-define ask | §2.2 |
+| F-F shadow records | `scan`/`window`/`rwin`/`rwhole` records, witness rows and PICKS retire; C2 and C4 their successors | §4.3 |
+| F-G landmark mass | NOT a fix (ruled): recorded as a PLAN item with its trigger | §6 P5 |
+| F-H REQ_BYTE stamp | `pcrec_fact_stamp_req_byte` row; the scan-index call moves into `pcrec_req_pick` | §1 Goal 2, §4.1 |
+| F-I witnesses | C1 near-miss at a verified non-scan position; K38-1 plant and twin witness; C4 "(b) under (a)"; plant C and C2 reads; W-K3's rates; S1107 moved to K38-2 | §2.4, §3.5, §5 |
+| F-K derived part | `nterm` 0 and `need` 0 admitted on the derived run part only | §5.1 |
+| F-L sabotage fates | S1700, S448, S1548, S280 (S1546 suspected) fated in K38-2's column | §5 |
+| F-M unnamed readers | one table of checks, goldens and readers with fates; the run recognizer; MFPRES re-record with a K35 floor; `-fcomments` population | §4.3, §5.1 |
+| F-N static coupling | `_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_WSPAN_POS)`; `verify` removed from the `mf_pred` field list | §2.1 |
+| F-O nits | `ofs_window_of` cite; `req_pres_ask`'s callers; the −23 scope; `--features all` | header, §2.2, §2.4, §2.5, §3.4 |
+| NOTED/DOC/PLAN | §12d cited, E2 neighbour paragraphs; round-trip implicit inputs; movers per (artifact, population); `mf_class.run` as the shared reply type | header, §2.2, §4.4, §5.1, §6 P7 |
+| Q7, run pin | recorded RULED | §6 Q7, Q8 |
+
 It answers R-38 (`memfn/docs/requests.md` on main, "R-38"), the kit request of
 `docs/design/span_arms.md` rev 2.2 §8.2 AS AMENDED by the owner's rulings §12a (2026-11-08), §12b
-(2026-11-09) and §12c (the F1 correction), and D191. Where §8.2 and §12a differ, §12a wins:
+(2026-11-09), §12c (the F1 correction) and §12d (build-time scope rulings, 2026-11-09), and D191. Where §8.2 and §12a differ, §12a wins:
 nothing about consumption crosses (no `cons` at the seam), the run is never cut by pcrec, and the
 scan position and verify extent are ONE decision, the kit's.
 
 Base: the joint U2+U3 tree (lane/u3mech 404cff6ea, `MF_SITE_ABI` 26). File:line cites are at this
-base; once `plan_frame.md` 3.0a lands, every `memfn/src/compose.c` cite below `pres_layout_check`'s
-head moves by −23 lines (no cited name is renamed; `fd_find` gains an argument). Cites by function
+base; once `plan_frame.md` 3.0a lands, every `memfn/src/compose.c` cite inside `pres_layout_check`
+moves by −23 lines (no cited name is renamed; `fd_find` gains an argument) `[r1.1 F-O]`. Cites by function
 name are preferred and hold across 3.0a.
 
 What is the seam's and what is the kit's. Sections 2-4 are the SEAM: facts pcrec states, facts
@@ -56,7 +80,7 @@ the remaining questions.
 | # | goal (who benefits) | measurable form |
 |---|---|---|
 | 1 | **pcrec can build L2 and L3 against this sheet without asking again** (the L2/L3 build lanes) | every field pcrec states or reads has its type, home, value range, none state and meaning here; every pcrec reader of the reply and of the retiring cut is named with its fate (§4) |
-| 2 | **One decision for the pre-check's run** (the next editor of either side) `[r1 F4]` | on the PRE-CHECK site, pcrec computes no run scan index and no run window: `git grep` finds `pcrec_find_run_scan_index` called only from `pcrec_req_pick` (REQ_BYTE, §4.1) and `pcrec_find_run_window_start` gone. Inside the kit, `kit_run_member(` and `kit_pres_picks`' run half are called only from `run_decide` (a counted caller check, K38-1). The prefilter window site's run member stays a second decider for a different site, named and counted (§2.5) |
+| 2 | **One decision for the pre-check's run** (the next editor of either side) `[r1 F4, r1.1 F-D, F-H]` | on the PRE-CHECK site, pcrec computes no run scan index and no run window: `git grep` finds `pcrec_find_run_scan_index` called only from `pcrec_req_pick` (REQ_BYTE, §4.1; the call moves there from `pcrec_req_window`, `req.c:841`, and the REQ_BYTE stamp renders the `req_byte` fact, not `req_run_member`) and `pcrec_find_run_window_start` gone. Inside the kit, `kit_run_member(` has exactly three callers, counted (K38-1): `run_decide` (P3's call, `presence.c:158`, moves into it), the verify-NO prefilter member (`window.c:880`, which also served the fabricated verify-YES site that retires) and the RQ-2 position ranking (`window.c:1498`, `rank_pos[]`); `kit_pres_picks`' run half is called only from `run_decide`. The prefilter window site's run member stays a second decider for a different site, named and counted (§2.5) |
 | 3 | **The seam unit moves only named bytes** (every user) | `emit_sweep` at K38-2: zero movers outside the populations §5.1 names, each counted two-sided (pcrec's artifact diff, never the kit's `moved`, K35) |
 | 4 | **The step back is bounded** (lookbehind users; a find-all caller pays it per call) | the step back per call is at most `lb_bytes` (pcrec's cap; the kit states no bound, §3.1) |
 
@@ -90,8 +114,10 @@ that list, never cut by pcrec into a window or into several pieces.
 kit refuses the run span where one is not: `start` 0 (positions are occurrence-relative by
 definition), `table_ref[j]` 0 (pcrec emits no table for a run position), `entry`
 `MF_ENTRY_NONE` (the run is no window site's alternative), `nalt` 1 (one statement). On the derived
-run part the `mf_pred` fields that state a span (`need`, `nterm`, `term`, `omin`, `verify`, `nalt`)
-are UNREAD and must be 0: the span's own fields are the facts, stated once (refused if nonzero).
+run part the `mf_pred` fields that state a span (`need`, `nterm`, `term`, `omin`, `nalt`; `verify`
+is `mf_wspan.verify`, not an `mf_pred` member `[r1.1 F-N]`) are UNREAD and must be 0: the span's own
+fields are the facts, stated once. The refusals are `pres_pred_clear`'s existing ones (named from
+the code at K38-2; this sheet lists no partial subset), and the two that move are §5.1's (F-K).
 
 **Two meanings of "verify", named apart.** `[r1 F9]` The span's VERIFY FACT (`mf_wspan.verify`,
 pcrec's, D172/D187 add. 1's DOWN fact: whether pcrec's own exact check follows) and the link's
@@ -110,7 +136,10 @@ TESTED BIT (`mf_link.verify`, the kit's decision: the span is tested at all). Th
   bound is `MF_WSPAN_POS` (32), DERIVED from `MF_MAX_TERM`, which equals the analysis bound
   `PCREC_MAX_REQ_RUN_SCAN` (32, `src/core/limits.def`). TOP's extensions are clipped at the stored
   bound (span_arms §5.2 TOP); pcrec asserts `n <= MF_WSPAN_POS` where it states the span.
-  `PCREC_MAX_REQ_RUN_EMIT` retires (§4.3). Any length limit on what the kit verifies is the kit's
+  `PCREC_MAX_REQ_RUN_EMIT` retires (§4.3). `[r1.1 F-N]` The build-time tie that the retiring
+  `_Static_assert` (`emit_dfa.c:11185`) was the only holder of is restated beside the span's
+  statement: `_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_WSPAN_POS)` (32 and 32 are two literals;
+  `limits.def:409` has a second reader, `altnf.c`). Any length limit on what the kit verifies is the kit's
   own priced choice.
 - **Why the presence span and not a window site.** The run's attempt-relative placement (`omin`,
   and K) already lives on the presence statement. Today the run crosses as the presence RUN term
@@ -127,7 +156,8 @@ the first renders no run part (`RX_REQ_WHY "dominated"`), the second an 8-positi
 asks where the pre-check site is BUILT, in `src/gen/`, never at fact derivation.
 
 **No new entry.** The question is already asked there: `req_pres_ask` (`src/gen/emit_dfa.c`, the
-one constructor's ask, called by the admission verdicts in `req_admit` and by `req_site_define`)
+one constructor's ask, called by `req_site_define`, `req_dominated_applies`, `req_set_leads_applies`,
+`req_parts_in_whole` and `req_pick_shadow` `[r1.1 F-O]`)
 runs `mf_ask(art, site, hooks, &cls)`, the pure define-time query, which answers each span's link
 (`mf_class.pres[i]`) from the same rows the define runs. The run's reply joins that answer as ONE
 record of the class, so the run's tested bit and its extent come from one decision in one call,
@@ -155,23 +185,32 @@ typedef struct {                /* mf_class.run (MF_CLASS_V moves, §5.1)       
   outside `[ver_lo, ver_lo + ver_len)` (§2.3).
 - **`mf_link.member` on the run span is UNREAD** (no longer "0 = the whole run tested"): the extent
   is `cls.run`'s. On set-member spans `member` keeps its meaning.
-- **Inputs, closed** (what a text round trip of the ask carries, and all it carries): the site as
-  stated (the run span with its `need`, `omin` and verify fact; the set-member spans; `pres_proof`;
-  `policy`; `denies`; `opts`), the define hooks, and the art's {byte-rate payload and its state,
-  measure-set rows, target row and its admitted levels, `levers`}. The run's reply does NOT read
-  `handoff` or `head_max`: pcrec decides those AFTER this ask (`req_use`, the handoff's K) and may
-  change them before the define, so a reply that read them could differ from the define's. The
-  landmark admission reads the reply, never the reverse.
+- **Inputs** (what a text round trip of the ask carries, and all it carries) `[r1.1 F-E]`: the
+  site as stated (the run span with its `need`, `omin` and verify fact; the set-member spans;
+  `pres_proof`; `policy`; `denies`; `opts`; `site_kind`), the define hooks, and the art's
+  {byte-rate payload and its state, measure-set rows, target row and its admitted levels, `levers`}.
+  Two further inputs a text round trip must carry `[r1.1 SEAM]`: the kit build identity
+  (`MF_SITE_ABI`, `MF_CLASS_V`, the target table) and the hooks as text, including their NULL-ness.
+  The ask's site DOES carry `handoff` and `head_max` (constants: `handoff` ON_MISS, `head_max` 0,
+  no parts, from `req_pres_site`), and pcrec mutates `ret_pred`, `handoff`, `preds` and `head_max`
+  after the ask (`emit_dfa.c:1607-1629`) before it defines (`:1643`). So the property needed is
+  INVARIANCE: `cls.run` is the same over every value of `handoff`, `head_max`, `preds` and `ret_pred`
+  (the run decision reads none; plant: `run_decide` reads `s->handoff`). pcrec decides those AFTER
+  this ask (`req_use`, the handoff's K); the landmark admission reads the reply, never the reverse.
 - **Purity and the define.** `mf_ask` is pure (no text, no handle, no art state) and answers what
   `mf_define` renders for the same site, hooks and art state; a trace build re-asks at the define and
   fails on a difference (`mf_result.cls`, §4.5 rule 2 of r17b_prime). `cls.run` inherits both
   properties; it is part of the class.
-- **The Job keeps the defined site's reply.** pcrec keeps the reply of the ask whose site it
-  DEFINES (`req_site_define`'s `req_pres_ask`) on the Job's pre-check record beside the links
-  (pcrec's names; e.g. a `req_run_reply` member), and every reader of §4 reads it there. The
-  admission verdicts' own asks (`req_admit`, with the start search's proof) read only links, as
-  today; a reader that runs before the define asks the same site through `req_pres_ask` (pure, so
-  equal for the same site). `req_whole_run` stays the route-free PATTERN fact;
+- **The Job keeps the DEFINE's own reply** `[r1.1 F-E]`. pcrec keeps the class the define
+  returned (`pcrec_memfn_defined`, `memfn_sites.c:842`; no new entry) on the Job's pre-check record
+  beside the links (pcrec's names; e.g. a `req_run_reply` member), and every reader of §4 reads it
+  there. In the trace build, pcrec memcmps that class's `cls.run` against the `cls.run` of the
+  pre-define ask (`req_site_define`'s `req_pres_ask`): the kit's own trace re-ask
+  (`compose.c:1205`) compares two asks over the DEFINED site and never sees pcrec's kept reply. The
+  admission verdicts' own asks (`req_dominated_applies`, `req_set_leads_applies`,
+  `req_parts_in_whole`, with the start search's proof) read only links, as today; a reader that
+  runs before the define asks the same site through `req_pres_ask` (pure, so equal for the same
+  site). `req_whole_run` stays the route-free PATTERN fact;
   no reply value is stored in a fact (D124: the record holds no route or emission decision).
   `--emit-facts` lists pcrec's run; the scan shows where the site and the stamps are rendered.
 - **The art lifecycle question retires.** The ask runs where the art is live (site construction,
@@ -211,27 +250,34 @@ witness first reaches.
 
 | # | what is controlled | checked against (the independent source) | witness, plant, where it reaches |
 |---|---|---|---|
-| C1 | the kit's candidates are sound: no whole-run occurrence lies in `[floor, c)` (§3.3); and, once a skip exists, a skipped finish is right | libpcre2's answers (the corpus, `make test-axes` on every deny arm, both layers) | At K38-2a/K38-2 the soundness half is the G2 family's occurrence oracle (C1 needs pcrec's answers, and pcrec states no extension yet). Plant "the candidate floor is `lo`": W-L1 (§3.5). The SKIP half reaches only at the unit that builds the skip (§6 P1), on the VM route (`--engine=vm`; the default route of `bar(?=baz)` is `dominated`, no run part): plant in the RENDERER, the compare of the last claimed position dropped while the reply keeps `ver_len` n; subject built FROM the reply, a near-miss differing at that position: `barbaz` on `barbaq barbaz`, expected (7,13) (libpcre2), plant (0,6). Pre-L2 this is a whole-attempt literal run, no lookaround needed |
-| C2 | the reply describes the text | the RENDERED TEXT, classified by G2's presence family (K38-2a): the run part's find byte set CONTAINS `scan`'s set (a superset is a legal cover; an ANDed second position is allowed); its compares cover exactly `[ver_lo, ver_lo + ver_len)`; no run part where the link is untested. The expectation is read off the define's output, not off the decision function (`plan_frame.md` Goal 2's pattern) | plant in the decision: the reply says `ver_len` + 1 while the renderer renders the old extent; G2 red. Plant in the renderer: one compare of the extent dropped; G2 red. Reaches at K38-2a on today's statement form (`omin` 0, K >= 0) |
+| C1 | the kit's candidates are sound: no whole-run occurrence lies in `[floor, c)` (§3.3); and, once a skip exists, a skipped finish is right | libpcre2's answers (the corpus, `make test-axes` on every deny arm, both layers) | At K38-2a/K38-2 the soundness half is the G2 family's occurrence oracle (C1 needs pcrec's answers, and pcrec states no extension yet). Plant "the candidate floor is `lo`": W-L1 (§3.5). The SKIP half reaches only at the unit that builds the skip (§6 P1), on the VM route (`--engine=vm`; the default route of `bar(?=baz)`, which needs `--features all`, is `dominated`, no run part): plant in the RENDERER, the compare of a claimed position dropped while the reply keeps `ver_len` n; subject built FROM the reply, a near-miss differing at a VERIFIED position OTHER than the find's scan position (a near-miss at the scan position is rejected by the find itself in both builds, so the plant still answers (7,13)): `barbbz barbaz` with position 4's compare dropped, expected (7,13) (libpcre2), plant (0,6) `[r1.1 F-I]`. Pre-L2 this is a whole-attempt literal run, no lookaround needed |
+| C2 | the reply describes the text | the RENDERED TEXT, classified by G2's presence family (K38-2a): the run part's find byte set CONTAINS `scan`'s set (a superset is a legal cover; an ANDed second position is allowed); its compares cover exactly `[ver_lo, ver_lo + ver_len)`; no run part where the link is untested. The expectation is read off the define's output, not off the decision function (`plan_frame.md` Goal 2's pattern) | plant in the decision: the reply says `ver_len` + 1 while the renderer renders the old extent; G2 red. Plant in the renderer: one compare of the extent dropped; G2 red. Reaches at K38-2a on today's statement form (`omin` 0, K >= 0); at K38-2a the "reply" read is `run_decide`'s return, `mf_class.run` existing from K38-2 `[r1.1 F-I]` |
 | C3 | the ask's class equals the define's | the purity harness: `mf_ask` interleaved with defines, whole-class `memcmp` (`cls.run` included); and the trace build's re-ask at the define (`mf_result.cls`) | shares the function BY DESIGN (it proves purity, not correctness; C1 and C2 cover correctness). Plant: a static counter the run decision reads; the harness reds |
-| C4 | pcrec reads the reply at every reader (no reader keeps its own pick) | the ARTIFACT TEXT: a pcrec codegen check that `<PREFIX>_REQ_RUN`'s `@scan` names the OFFSET of the position the emitted run-part find reads (not only its set). Population: artifacts with `RX_REQ_WHY "emitted"` and a tested run link, counted; on `dominated`/`cover` artifacts the find is another site's | plant: one reader (the stamp) fed `pcrec_find_run_scan_index`'s index. The two rules agree by construction at K38-1, and default-prior ties fall mostly on positions holding the SAME byte, so the check runs (a) in the all-tie regime (`--analysis=uniform`), where ties fall on different bytes, and (b) under the probe lever `run-tie-left` (K38-2a, §5): the kit breaks the run decision's ties LEFTMOST, pcrec's index stays rightmost, and the planted stamp names the wrong offset. Reaches at K38-2 |
+| C4 | pcrec reads the reply at every reader (no reader keeps its own pick) | the ARTIFACT TEXT: a pcrec codegen check that `<PREFIX>_REQ_RUN`'s `@scan` names the OFFSET of the position the emitted run-part find reads (not only its set). Population: artifacts with `RX_REQ_WHY "emitted"` and a tested run link, counted; on `dominated`/`cover` artifacts the find is another site's | plant: one reader (the stamp) fed `pcrec_find_run_scan_index`'s index. The two rules agree by construction at K38-1, and default-prior ties fall mostly on positions holding the SAME byte, so the check runs (b) UNDER (a) `[r1.1 F-I]`: the all-tie regime (`--analysis=uniform`) puts ties on different bytes but alone cannot red (kit and pcrec are both rightmost there); the reaching regime is the probe lever `run-tie-left` (K38-2a, §5) applied under it: the kit breaks the run decision's ties LEFTMOST, pcrec's index stays rightmost, and the planted stamp names the wrong offset. Reaches at K38-2 |
 
-### 2.5 The run on the prefilter's window site `[r1 F4]`
+### 2.5 The run on the prefilter's window site `[r1 F4, r1.1 F-C, F-O]`
 
-The run-pinned prefilter (`pf_window_of`, `ofs_window_of`, `emit_dfa.c:6815-6870`) states the run's
-pinned stretch again, on a DIFFERENT site (the DFA's prefilter, not the pre-check), and
-`mf_wdecide` names its member (`mf_wreply.run_member`/`run_lo`/`run_len`) by the window family's
-rule: on a verify-NO stretch the least-mass EXACT position, ties to the higher offset. The
-pre-check's rule (`kit_run_member`: least set mass, ties rightmost) shares the tie direction and
-differs only by that EXACT restriction (the verifier's reading). This sheet keeps it: it is that
-site's own decision, and §12a's "one decision" holds on the pcrec side (pcrec picks nothing on
-either site). Consequences:
+The run-pinned prefilter (`pf_window_of`, `emit_dfa.c:6815-6870`; `ofs_window_of`,
+`emit_dfa.c:7592`) states the run's pinned stretch again, on a DIFFERENT site (the DFA's prefilter,
+not the pre-check), and `mf_wdecide` names its member (`mf_wreply.run_member`/`run_lo`/`run_len`)
+by the window family's rule: on a verify-NO stretch the least-mass EXACT position, ties to the
+higher offset. The pre-check's rule (`kit_run_member`: least set mass, ties rightmost) shares the
+tie direction and differs only by that EXACT restriction (the verifier's reading). This sheet keeps
+it: it is that site's own decision. But pcrec is NOT out of that decision `[r1.1 F-C]`: the stretch
+the window site sees is chosen on pcrec's side first. `pcrec_run_pin` (`kset.c:305`) takes
+`x = pos[pcrec_find_pick(rate, ...)]` and then the maximal exact stretch AROUND `x`, and
+`pf_window_of` states `[w+lo, hi-lo)` from it (`emit_dfa.c:6866`); on a run with a masked position
+pcrec thus chooses which exact stretch the window site sees. That rate pick is a THIRD decider of
+the run's stretch (beside `run_decide` and `mf_wdecide`'s member), confined to masked runs, and it is
+cut to the k-set walk's reach (§4.2). §12a's "one decision" holds for the pre-check; on the prefilter
+window site pcrec keeps this one pick (the general form that removes it is P6). Consequences:
 
 - Goal 2 is scoped to the pre-check. On an artifact with both sites the run crosses twice, once
   per site.
-- `decider_census.tsv` lists `mf_wdecide`'s run member as a run decider beside `run_decide`, so the
-  population is counted (K35). The unlock that would merge them is §6 Q6's general form, trigger
-  "K38-1's caller check finds a compile where the two members differ for the same run position".
+- `decider_census.tsv` lists `mf_wdecide`'s run member AND `pcrec_run_pin`'s rate pick as run
+  deciders beside `run_decide`, so the population is counted (K35). The unlock that would merge the
+  two kit deciders is §6 Q6's general form, trigger "K38-1's caller check finds a compile where the
+  two members differ for the same run position".
 
 ## 3. Part B: a negative `omin`, a signed K, and the earned skip
 
@@ -342,7 +388,8 @@ stated only on ASSIGN sites), and the bounds and captures are pcrec's from it.
 - **No unit of this sheet builds the skip.** span_arms L2/L3's rows predate §12a; main names the
   unit and the SUFFICIENT fact's producer (§6 P1). Its witnesses: `(?:ac|ca)xyz` on `aaxyz`
   (expected NOMATCH; plant: skip on necessity only), `(bar)(?=baz)` on `barbaz` (expected group 1
-  (0,3); plant: skip ignoring captures), and C1's skip half (§2.4).
+  (0,3); plant: skip ignoring captures), and C1's skip half (§2.4); the lookahead witnesses compile
+  with `--features all` `[r1.1 F-O]`.
 - **[MATCH-KNOWN]'s prefix skip** (D142, D191 item 4) reads the same extent later. No build here.
 
 ### 3.5 Part B's witnesses (answers measured with libpcre2 by the build) `[r1 F7]`
@@ -356,7 +403,7 @@ in the G2 presence family (K38-2a builds the family on today's form; K38-2 exten
 | W-L1 (span_arms §5.7) | the CANDIDATE floor is `lo`, not `floor` | run `foobar`, `omin` −3, origin 3, subject `foobar`: expected candidate 0. A second case with the art's rates set so the scan falls on a position whose byte lies below `lo` (G2 states the rates), so the spelling "byte search starts at `lo`" also reaches | `(?<=foo)bar` from 3 on `foobar`: (3,6) | NOMATCH / no candidate |
 | W-K1 | `floor` spelled `lo + omin` in `size_t`, no clamp | run `foobar`, `omin` −3, origin 1: expected candidate 0 | `(?<=foo)bar` from 1 on `foobar`: (3,6) | the floor wraps to about 2^64: no candidate / NOMATCH |
 | W-K2 (re-entry) | the re-entry floor read from `lo` | run `abab`, `omin` −2, subject `abababcc`, re-entry `lo` 3: expected candidate 2 | `(?<=ab)ab(\w)\1` on `abababcc` from 0: (4,8), group 1 (6,7) (the entry candidate 0 gives attempt 2, which fails; the re-ask at `lo` 3 must find 2) | plant floor 3: no candidate / NOMATCH. (span_arms W-L14's own instance answers NOMATCH everywhere and cannot show this plant) |
-| W-K3 (twin) | the twin admission reads K unsigned | the landmark port's admission bit for K in {−32..−1} equals its bit at K 0; the expectation is generated from the stated rule `max(K, 0)`, never from `presence.c` | `req_pick_shadow`'s `landmark` record on `(?<=foo)bar(\w)\1` (span_arms W-L13), where K < 0 on an ASSIGN site | the bit differs / the record disagrees |
+| W-K3 (twin) | the twin admission reads K unsigned | the landmark port's admission bit for K in {−32..−1} equals its bit at K 0; the expectation is generated from the stated rule `max(K, 0)`, never from `presence.c`; G2 states rates with m > h so the bit at K 0 is 1 (otherwise every bit is 0 and the plant cannot show) `[r1.1 F-I]` | `req_pick_shadow`'s `landmark` record on `(?<=foo)bar(\w)\1` (span_arms W-L13), where K < 0 on an ASSIGN site | the bit differs / the record disagrees |
 | W-K4a (below-zero reads) | an UNALIGNED read from an unclamped floor | the subject at a page start, a guard page below offset 0, `omin` −8..−32, every admitted level of every target in the art's list (U2) | — | a fault (G2) |
 | W-K4b | a vector block read aligned DOWN from `floor` | ASan, the subject at offset 1..W−1 from a W-aligned heap start, per level of width W (an aligned-down load never leaves its page, so the guard page cannot see it) | — | an ASan report |
 
@@ -371,10 +418,21 @@ All in `src/gen/`, reading the Job's pre-check record (§2.2), and only where th
 | `scan` (where `has_scan`) | `<PREFIX>_REQ_RUN`'s `@scan` (`pcrec_fact_stamp_req_run` renders the whole run from the fact and takes `@scan` from the record), `req_note_run`, `req_set_leads_own`, `req_pick_shadow` | `ReqRun.idx` (`pcrec_find_run_scan_index`) through `req_run_member` |
 | `ver_lo`, `ver_len` | the landmark mass term (`req_landmark_hit_ppm`, §3.2); the run's trace records (`req_pick_shadow`, MFPRES); the earned skip (§3.4, when built); [MATCH-KNOWN] later | `ReqRun.at`/`len`/`bytes` (pcrec's cut window) |
 | the assigned `c` | `emit_req_handoff_rest`, `emit_req_landmark_move` (pcrec's move, K signed) | the window's begin |
-| none | `<PREFIX>_REQ_BYTE` | **stays PCREC'S pick** (§12a, D191 item 2) `[r1 F4]`: `pcrec_req_pick` (`src/facts/req.c`) returns the byte of `pcrec_find_run_scan_index` over the whole run's CONSUMED positions where that position is exact, else the set's pick. At K38-2 every position is consumed (no extension yet), so the value equals today's (today's window always contains the whole run's scan member). From L2 the two may differ (`bar(?=baz)`: the kit may scan `z`, REQ_BYTE stays among `bar`), and they may differ on UNEXTENDED runs at the first kit rule change or regenerated measure set. `req_byte_dominated_by` (`emit_dfa.c:8583-8592`), which reads REQ_BYTE as "the byte the emitted memchr tests", reads the reply's `scan` set instead |
+| none | `<PREFIX>_REQ_BYTE` | **stays PCREC'S pick** (§12a, D191 item 2) `[r1 F4]`: `pcrec_req_pick` (`src/facts/req.c`) returns the byte of `pcrec_find_run_scan_index` over the whole run's CONSUMED positions where that position is exact, else the set's pick. At K38-2 every position is consumed (no extension yet), so the value equals today's (today's window always contains the whole run's scan member). From L2 the two may differ (`bar(?=baz)`: the kit may scan `z`, REQ_BYTE stays among `bar`), and they may differ on UNEXTENDED runs at the first kit rule change or regenerated measure set. `req_byte_dominated_by` (`emit_dfa.c:8583-8592`), which reads REQ_BYTE as "the byte the emitted memchr tests", reads the reply's `scan` set instead. `[r1.1 F-H]` The stamp is rendered from `req_run_member` today (`pcrec_fact_stamp_req_byte(cx, req_run_member(...))`, `emit_dfa.c:15830-15832`, reading the cut `bytes[member]`, `facts.c:919-927`); at K38-2 it renders the `req_byte` fact, whose producer `pcrec_req_pick` now holds the `pcrec_find_run_scan_index` call (moved from `pcrec_req_window`, `req.c:841`, its only caller today), and the `bytes[idx]` comment at `emit_dfa.c:15846` is restated |
 
-Where the run link is untested (P2, or no pre-check site asked on the artifact), `<PREFIX>_REQ_RUN`
-shows the whole run with no kit scan (§6 Q7).
+**`<PREFIX>_REQ_RUN`'s `@` is a FIRST-MATCH TABLE** `[r1.1 F-A; §6 Q7 RULED]`. The hex is the whole
+run in every row; the `@` names the run position THIS artifact's search reads, from the reply of the
+site that renders that search:
+
+| row | when | `@` |
+|---|---|---|
+| 1 | a pre-check run part renders (the run link is tested) | the Job's `cls.run.scan`, where `has_scan` |
+| 2 | else a window-site search reads a run member (the `cover` find, the `run-pinned` prefilter) | that site's `mf_wreply.run_member` (a whole-run index) |
+| 3 | else (`rev-end`, `one-attempt`, `landmark-walk`, which memchr REQ_BYTE) | no `@` |
+
+The table is Q2 (b)'s "the kit's scan position" applied to every site, one meaning of `@`; the stamp
+stays a decision, never a fact (D124). `@` of REQ_BYTE's position would give `@` two meanings and
+is not used. A stamp grammar change in `match_api.md` §6.3.7¶7's hunk (§4.4).
 
 ### 4.2 The run pin reads the WHOLE run `[r1 F6]`
 
@@ -382,14 +440,25 @@ The run-pin family reads the cut window today: `pcrec_run_pin` (`src/facts/kset.
 `cand[PCREC_MAX_REQ_RUN_EMIT]`, loops `r->len`), the `run_pin` listing row (`facts.c:863`),
 `us_run_pin`/`pf_run_applies_common` (`emit_dfa.c:7361-7380`), `ofs_test_of`'s `t->run_bytes`
 (`emit_dfa.c:7419-7423`), `ofs_test_verifies_run` (`emit_dfa.c:7487-7505`, which decides
-`RX_REQ_WHY "dominated"`) and `pf_window_of`. **Choice: they read the WHOLE run** (arrays sized
-`PCREC_MAX_REQ_RUN_SCAN`). Keeping a private 8-position window for the pin would keep pcrec's cut
+`RX_REQ_WHY "dominated"`) and `pf_window_of`. **Choice (RULED, review r6): they read the WHOLE
+run, CLIPPED to the k-set walk's reach** (arrays sized `PCREC_MAX_REQ_RUN_SCAN`; the stretch is
+`l = min(e0, nwalk - w) - s0`, so no pin is lost by length) `[r1.1 F-B]`. Keeping a private 8-position window for the pin would keep pcrec's cut
 under another name, against §12a's no-cut ruling. Consequence: the pin's offset and stretch, the
 prefilter's compare length and possibly `RX_REQ_WHY` move on run-pinned artifacts whose run is
 over 8 positions (measured at the base: `[a-z]abcdefghijkl\d+` `run_pin 5`,
 `\w\wabcdefghijklmnop[0-9]+x` `run_pin 7`, `(?:a|b)abcdefghijklmn\d*z` `run_pin 6`, each
-`run-pinned`/`dominated`). A population of K38-2, counted two-sided (§5.1). This is a pcrec-side
-choice; main may reverse it at K38-2's brief, and the population then leaves the count.
+`run-pinned`/`dominated`). A population of K38-2, counted two-sided (§5.1).
+
+`[r1.1 F-B, F-C]` Why the clip: `kset.c:310` pins only where the whole stretch fits the walk
+(`ro + l <= o->nwalk`), the walk cap is `PCREC_PREFIX_K_MAX` (24) and a whole run is up to 32.
+Unclipped, `error: segmentation fault at` (whole run 28, exact) and
+`[a-z]abcdefghijklmnopqrstuvwx[0-9]` (24 at offset 1), both `run-pinned`/`dominated` today, would
+lose the pin and become `offset-set`/`emitted` (an added pre-check pass on a common log-literal
+shape). The clip is a pcrec cut, named as such (against §12a's no-cut ruling for the pre-check, which
+it does not touch: the pin is the prefilter window site's), and `pcrec_run_pin`'s rate pick is named
+a third decider of the run's stretch (§2.5). The general form, a pin that states only the run's
+PLACEMENT and leaves member and stretch to `mf_wdecide`, is a PLAN row (§6 P6), not K38-2 scope.
+This choice is main's ruling (§6 Q8).
 
 ### 4.3 Readers of the retiring cut, the RUN term and K, with fates `[r1 F6]`
 
@@ -398,15 +467,21 @@ choice; main may reverse it at K38-2's brief, and the population then leaves the
 | `ReqRun.idx`/`at`/`bytes`/`mask`/`len`, `pcrec_req_window`'s cut, `pcrec_find_run_window_start` | the cut window | RETIRE; `pcrec_req_window` keeps only the run's `maxoff` (= `whole_maxoff`, Q1) |
 | `ReqRun.len >= 2` "a run shipped" (`emit_dfa.c:1172, 1542, 1600, 7376, 7491, 8586, 8588, 8607, 8658, 11048`; `facts.c:318, 332, 581, 828, 833, 915`) | the window's length | read `whole_len >= 2` (mechanical: `facts.h:69`, `whole_len` is 0 exactly when `len` is) |
 | K's derivation (`facts.c:318-335` `req_landmark_maxoff = req_run.maxoff`; `req.c` `maxoff = whole_maxoff + at`) | the window's offset | `whole_maxoff` (§6 Q1) |
-| `req_site_define` (`emit_dfa.c:1555-1556`), `req_pres_head`, `req_parts_in_whole` (`:8869-8872`): find the run span by `term[0].kind == MF_T_RUN` | the RUN term | find it by POSITION: pcrec states the run LAST in `pspans` (its own layout fact) |
+| `req_site_define` (`emit_dfa.c:1555-1556`), `req_pres_head`, `req_parts_in_whole` (`:8869-8872`): find the run span by `term[0].kind == MF_T_RUN` | the RUN term | find it by POSITION: pcrec states the run LAST in `pspans` (its own layout fact). `[r1.1 F-M]` The run RECOGNIZER is a seam fact: a presence span is THE RUN iff `nalt` 1, `nterm` 0 and it is LAST, at most one per site. The same recognizer replaces the other `MF_T_RUN` finders: `emit_dfa.c:11297` (`req_pick_shadow`) and `memfn_sites.c:751` (`pres_record`) |
 | `req_parts_in_whole`'s K66 guard (`whole_len > len && member != 0`) | the two-part form | RETIRES with the second part (§6 Q5) |
-| `req_run_tests` `t[1]`, `req_pick_shadow`'s `window`/`rwin`/`rwhole` records (`emit_dfa.c:11229-11336`) | pcrec's window, `k.run_window` | `t[1]` retires; the records read the reply's extent |
+| `req_run_tests` `t[1]`; `req_pick_shadow`'s `scan`/`window`/`rwin`/`rwhole` records (`emit_dfa.c:11229-11336`) `[r1.1 F-F]` | pcrec's own pick compared with the kit's port; both retire at K38-2, leaving one source or none | `t[1]` retires; the four records RETIRE with their witness rows (`tests/memfn/run_pres_picks.sh:61` PICKS; `pres_pick_witnesses.tsv`: scan 4, window 3, rwin 1, rwhole 2); successor controls C2 and C4 (§2.4). `PCREC_PICK_PLANT` and S1093 stay on the surviving records. `landmark` keeps two sources (its mass is P5's) |
 | `_Static_assert(MF_PRES_WINDOW == PCREC_MAX_REQ_RUN_EMIT)` (`emit_dfa.c:11185`) | the shared bound | RETIRES with both names |
 | `PCREC_MAX_REQ_RUN_EMIT` (`limits.def`; `facts.h:65,77`; `kset.c:297-298`; `findings.c:780-800`; `tests/registry/limits_check.sh:161`) and `PCREC_MAX_REQ_RUN_SCAN`'s text ("Sized at four times ...") | sizes the cut | RETIRES (no role left after §4.2); `PCREC_MAX_REQ_RUN_SCAN`'s comment restated |
 | MFPRES trace line (`src/gen/memfn_sites.c:741-757`, `head_max` as `%llu`) and its golden `tests/memfn/c10_presence.tsv` (`runlen`, `head_max` "the run window's largest offset") | unsigned K, window length | print signed; the golden's columns re-meant (whole run, position-0 K) and re-recorded |
 | `tests/findings/structural_check.py` `KNOWN_READERS` | `pcrec_find_run_scan_index`, `pcrec_find_run_window_start` | the second leaves; the first's reader is `pcrec_req_pick` only |
 | the `pres-window` lever (`mf_lever`, `KIT_LEVER_PRES_WINDOW`, `precheck.c:161`; pcrec `--harness=pres-window`, `src/core/internal.h:177-181`, `memfn_sites.c:217-219`; `tests/axes/run_axes.sh` `INTERNAL_ARMS`) | restores a window part beside the whole run | RETIRES: its old form is not constructible once the run is one derived part (memfn.h text, the kit row, pcrec's harness bit, the axes arm) |
-| the listing rows `req_run` and `req_run_maxoff` (`facts_listing.md` §4.1.2¶8/¶8b) | the cut window | show the WHOLE run (equal to `req_whole_run`) and its position-0 offset; no reply value (D124). Whether `req_run` then retires into `req_whole_run` is pcrec's (§6 Q7) |
+| the listing rows `req_run` and `req_run_maxoff` (`facts_listing.md` §4.1.2¶8/¶8b) | the cut window | `req_run` RETIRES into `req_whole_run` (Q7 RULED: after K38-2 the two are equal, §12b Q3's one run value); `req_run_maxoff`, equal to `req_landmark_maxoff` once K = `whole_maxoff`, retires into it. No reply value (D124). `reqcube_check.py:250-259` and `facts_listing.md` §4.1.2¶8/¶8b move in the same hunk `[r1.1 F-A]` |
+| readers of `@` and of the `req_run` row, absent from rev 1 `[r1.1 F-A]`: `run_encoding_checks.sh` `cover_pick_stamped` (:1210-1220, regex :683); `reqcube_check.py:254-259` (stamp == `req_run` fact; a retired row reds every witness, a no-`@` value raises TypeError); `gen_adversarial.py` c2a/c2b (20 of 25 committed `fire-c2a` reach rows are no-part artifacts); `run_prechecks.sh:117-125`. No pcrec-bench reader parses `@` | parse the `@` or the row | move with Q7's table: `@` read from the stamp, hex == `req_whole_run`, a no-`@` value handled (row 3); the c2a/c2b rows re-aimed at rows 2 and 3 and counted |
+| `kit_run_member`'s callers and the RQ-2 ranking `[r1.1 F-D]` | `presence.c:158` (P3), `window.c:880`, `window.c:1498` (`rank_pos[]`) | the three named callers of Goal 2, counted at K38-1; the ranking is a row in `decider_census.tsv` |
+| `tests/findings/witness/witness.tsv:9-10` (w-c2a/w-c2b) and the c2b reader ("the emitted 8-byte window"); `run_prechecks.sh` [4.5]/[4.5b]/[4.5c] and :1522; `run_presence.sh` section D and `run_lever_fence.sh:48-51` (the `pres-window` lever); `decider_census.tsv:56,69` `[r1.1 F-M]` | goldens and checks on the 8-position window and the retiring lever | re-aimed or retired in K38-2 with the lever and the window ("8-byte window" retires); `decider_census.tsv:56,69` move at K38-1 |
+| the `_reqrun_whole` block-name readers: `reqcube_check.py:274-291`, `routing_shape.py:38`, `partlayout/writers.tsv:32`, `arm_fixtures.c:178`, `g2_simd_gen.c:568-569`, `run_dfa_stamps.sh:292`, `run_encoding_checks.sh:644` `[r1.1 F-M]` | the two-part block names | move with Q5's one part, in K38-2, counted |
+| `req_use_whole` / FIRST's `.whole` column (`emit_dfa.c:10441`), `req_handoff_k`, `keep` (`emit_dfa.c:1597`, `nrun - 1`) and its internal error, `emit_req_handoff_rest`'s comment choice, `req_note_run`'s length/bytes text, `pcrec_req_run_masked` `[r1.1 F-M]` | readers of the two-part form and of the cut | the `.whole` column and `keep` with its error retire with the second part (K38-2 states each fate from the code); `req_note_run`'s text is a `-fcomments` mover (§5.1 item 5); `pcrec_req_run_masked` is dead and deleted |
+| MFPRES line `runlen` (`memfn_sites.c:751`, `pres_record`) and the kit's four `term[0]` refusals (`compose.c:607, 613, 625, 635`) `[r1.1 F-M]` | find the run by the RUN term; without the move MFPRES silently prints `runlen 0` and is re-recorded as the golden | found by the recognizer above; the golden's re-record carries a K35 floor (the count of `runlen >= 2` lines equal before and after); the four refusals move |
 
 ### 4.4 The contract text K38-2 rewrites (D80) `[r1 F5]`
 
@@ -421,7 +496,14 @@ cross-check breaks at K38-2, not at L2, so the hunks are K38-2's):
   Q2), ¶11 (the LANDMARK is the run, position 0; K is position 0's offset; the least-candidate
   narrowing; worked examples re-measured: `(?i)straße`, "before the window `TRA`"), §6.3.1¶5a
   ("`_REQ_RUN`'s `@idx` with the `_REQ_BYTE` it implies").
-- `facts_listing.md` §4.1.2¶8/¶8b (`req_run_maxoff` no longer a window's).
+- `facts_listing.md` §4.1.2¶8/¶8b (`req_run` retires; `req_run_maxoff` retires into
+  `req_landmark_maxoff`, Q7).
+- `[r1.1 NOTED]` span_arms §12d (build-time scope rulings) makes E2 the owner of the run's
+  definition in `match_api.md` §6.3.7¶6 and `tuning.md` §2.28¶1 (`<PREFIX>_REQ_BYTE` is a byte every
+  successful ATTEMPT consumes, possibly before the reported start under `\K`). Those are NEIGHBOURS
+  of the hunks above, not the same paragraphs; K38-2's hunks rebase on E2's text. §12d's R1 rule (ties
+  between equal-length run candidates are broken by rarity, never argument order) chooses WHICH run,
+  not the scan member.
 - `findings.md` §4: the "necessary run's scan member" and "necessary run's window" rows, and ¶2
   (the handoff reads the window).
 
@@ -437,9 +519,9 @@ retired with its control named, or kept), checked at build with `REACH_ONLY=1` `
 
 | unit | size | content | check | the plant that makes it fail | existing sabotages |
 |---|---|---|---|---|---|
-| K38-1 | M | ONE run decision inside the kit, NO seam move: P3's run scan and stretch, the whole-run keep (P0/P9), the window family's member for pre-check run parts and the twin admission's mass term all call one function `run_decide(rates, opts, span) -> (has_scan, scan, ver)`; its first rule REPRODUCES today (the incumbent: `kit_run_member`, today's P3 window, whole under P0/P9) | `emit_sweep` byte-identical on every arm (default, each `--memfn=no-X`, `--engine=vm`, both layers); REACH equality; a CALLER check: `kit_run_member(` and `kit_pres_picks`' run half are called only from `run_decide`, counted `[r1 F7]` | a tie plant in `run_decide` that must move EVERY reader's bytes together on a tie witness (S1095's `-e utf8 abcd`), counted per reader (layout, part text, twin mass); a reader left calling `kit_run_member` directly reds the caller check (`decider_census` checks a declared map and cannot see it) | S1095 re-aimed onto `run_decide`'s tie (it becomes the per-reader plant); S1096 re-aimed onto `run_decide`'s stretch choice; S1107 (`pres_layout_check` unchecked): its RUN half can no longer disagree, so re-aimed onto the head/rest halves, or retired with the per-reader tie plant named as its control |
-| K38-2a (NEW, PLAN; ahead of K38-2) `[r1 F7]` | M | THE G2 PRESENCE FAMILY on the CURRENT `MF_SITE_ABI`: a generator of pre-check sites (set-member spans and a run span in today's form, `omin` 0, K >= 0, P0/P2/P3/P9 routes, both layers, every admitted level of the U2 target list), the derived run part, an OCCURRENCE-CONTRACT ORACLE (§3.3 items 1-4 including "least", written from the contract text; D27 spec-first author recommended, denied `memfn/src`), C2's text classifier, the guard-page and ASan placements W-K4 needs; and the PROBE LEVER `run-tie-left` with its pcrec `--harness=` arm | the family reaches the run part on every route it generates (counted per route); the oracle and the classifier agree with today's kit on the whole generated space | plant A: the run part drops one compare of its extent: the classifier reds. Plant B: the kit yields a candidate one above the least occurrence: the oracle reds. Plant C: the lever leaves the tie rightmost: its own reach witness (an all-tie run with distinct bytes, `--analysis=uniform`) shows no moved scan offset | none moved (new family) |
-| K38-2 | L | THE SEAM EVENT, Parts A and B together: §2.1's statement form (the run in set form, `nterm` 0, the run part with no window), `mf_class.run` answered by `mf_ask`/`mf_defined`, `omin < 0` admitted on the run span, `head_max` `int64_t`, the floor `max(0, lo + omin)` at entry and re-entry, the twin admission at `max(K, 0)` with its mass on the reply's extent, the run part derived from the span, the retired members and the moved refusals (§5.1), the refusal texts, `pres-window` retired. G2's presence family extended to negative `omin` and signed K. pcrec's same-commit hunks: `req_pres_spans` states the new form (`omin` 0 and K >= 0: no extension yet), `req_pres_ask` keeps the reply on the Job's pre-check record, `req_run_member` and the cut retire, every reader of §4.1-§4.3 moves, the spec hunks of §4.4, the pcrec abi ritual (§5.1) | C2-C4 (§2.4); C1's oracle half in G2; W-L1, W-K1..W-K4b in G2 (§3.5); `emit_sweep` zero movers except §5.1's populations, counted two-sided | as §2.4 and §3.5 | S278 (`finder.c` `k.member = pk.run_window + 1`): retired, `member` is unread on the run; control the statement rule's plant. S1543, S1544 (`precheck.c`, the R-30 window beside the whole part): retired with the two-part form; control the statement rule "one run part where the link is tested". S449 (K66 whole-run block): retired with the second part. S329 (`pcrec_find_run_scan_index` data tie): kept, re-aimed at a REQ_BYTE witness (its one surviving reader). S453 (`pcrec_req_pick`'s `bytes[idx]`): re-anchored on the new REQ_BYTE text. S285 (`runcmp.c` run-pinned compare length): re-aimed at a run over 8 positions (§4.2 lengthens the pinned run) |
+| K38-1 | M | ONE run decision inside the kit, NO seam move: P3's run scan and stretch, the whole-run keep (P0/P9), the window family's member for pre-check run parts and the twin admission's mass term all call one function `run_decide(rates, opts, span) -> (has_scan, scan, ver)`; its first rule REPRODUCES today (the incumbent: `kit_run_member`, today's P3 window, whole under P0/P9) | `emit_sweep` byte-identical on every arm (default, each `--memfn=no-X`, `--engine=vm`, both layers); REACH equality; a CALLER check with named callers and counts `[r1 F7, r1.1 F-D]`: `kit_run_member(` is called only from `run_decide`, the verify-NO prefilter member (`window.c:880`) and the RQ-2 ranking (`window.c:1498`), and `kit_pres_picks`' run half only from `run_decide`; K38-1 states whether the ranking for a pre-check run part comes from `run_decide` or the `run-tie-left` lever acts on both, and the ranking is a row in `decider_census.tsv` | a tie plant in `run_decide` that must move EVERY reader's bytes together on a tie witness (S1095's `-e utf8 abcd`), counted per reader (layout, part text, twin mass), observed as `req_run_member`'s agreement check (`emit_dfa.c:1071-1074`, kept at K38-1, which kills every tie compile) and `pres_layout_check`'s run half, plus a SECOND witness for the twin, a tied stretch over more than 8 positions (the twin mass is tie-blind on S1095's 4-position run) `[r1.1 F-I]`; a reader left calling `kit_run_member` directly reds the caller check (`decider_census` checks a declared map and cannot see it) | S1095 re-aimed onto `run_decide`'s tie (it becomes the per-reader plant); S1096 re-aimed onto `run_decide`'s stretch choice; S1107 (`pres_layout_check` unchecked): kept at K38-1, its fate moves to K38-2 (`pres_layout_check`'s RUN half is a live two-source check until K38-2, and the control that reds K38-1's own S1096 stretch plant) `[r1.1 F-I]` |
+| K38-2a (NEW, PLAN; ahead of K38-2) `[r1 F7]` | M | THE G2 PRESENCE FAMILY on the CURRENT `MF_SITE_ABI`: a generator of pre-check sites (set-member spans and a run span in today's form, `omin` 0, K >= 0, P0/P2/P3/P9 routes, both layers, every admitted level of the U2 target list), the derived run part, an OCCURRENCE-CONTRACT ORACLE (§3.3 items 1-4 including "least", written from the contract text; D27 spec-first author recommended, denied `memfn/src`), C2's text classifier, the guard-page and ASan placements W-K4 needs; and the PROBE LEVER `run-tie-left` with its pcrec `--harness=` arm | the family reaches the run part on every route it generates (counted per route); the oracle and the classifier agree with today's kit on the whole generated space | plant A: the run part drops one compare of its extent: the classifier reds. Plant B: the kit yields a candidate one above the least occurrence: the oracle reds. Plant C: the lever leaves the tie rightmost: its own reach witness (an all-tie run with distinct bytes, `--analysis=uniform`) shows no moved scan offset. Plant C has no pcrec observable before K38-2 (the agreement check kills the compile), so it is read in G2 only until then; C2's reply at K38-2a is `run_decide`'s return `[r1.1 F-I]` | none moved (new family) |
+| K38-2 | L | THE SEAM EVENT, Parts A and B together: §2.1's statement form (the run in set form, `nterm` 0, the run part with no window), `mf_class.run` answered by `mf_ask`/`mf_defined`, `omin < 0` admitted on the run span, `head_max` `int64_t`, the floor `max(0, lo + omin)` at entry and re-entry, the twin admission at `max(K, 0)` with its mass on the reply's extent, the run part derived from the span, the retired members and the moved refusals (§5.1), the refusal texts, `pres-window` retired. G2's presence family extended to negative `omin` and signed K. pcrec's same-commit hunks: `req_pres_spans` states the new form (`omin` 0 and K >= 0: no extension yet), `req_pres_ask` keeps the reply on the Job's pre-check record, `req_run_member` and the cut retire, every reader of §4.1-§4.3 moves, the spec hunks of §4.4, the pcrec abi ritual (§5.1) | C2-C4 (§2.4); C1's oracle half in G2; W-L1, W-K1..W-K4b in G2 (§3.5); `emit_sweep` zero movers except §5.1's populations, counted two-sided | as §2.4 and §3.5 | S278 (`finder.c` `k.member = pk.run_window + 1`): retired, `member` is unread on the run; control the statement rule's plant. S1543, S1544 (`precheck.c`, the R-30 window beside the whole part): retired with the two-part form; control the statement rule "one run part where the link is tested". S449 (K66 whole-run block): retired with the second part. S329 (`pcrec_find_run_scan_index` data tie): kept, re-aimed at a REQ_BYTE witness (its one surviving reader). S453 (`pcrec_req_pick`'s `bytes[idx]`): re-anchored on the new REQ_BYTE text. S285 (`runcmp.c` run-pinned compare length): re-aimed at a run over 8 positions (§4.2 lengthens the pinned run). `[r1.1 F-L, F-I]` S1700 (`emit_dfa.c:1597` `keep = ... nrun - 1`, the two-part form; reach on a 12-position whole run moves under Q2): re-aimed onto the kit's ASSIGNed value = position 0, detector `handoff_vm.rxt` + G2's oracle. S448 (anchor = `ofs_test_of` lines §4.2 rewrites): re-anchored. S1548 (the `pres-window` lever): retires with the lever, successor the `run-tie-left` lever. S280 (reach on an 11-position run; anchor `pcrec_run_pin`): re-aimed at the clipped pin. S1546 (`ofsskip.c` R-30 lead compare) SUSPECTED: checked at build with `REACH_ONLY=1`. S1107: its RUN half can no longer disagree, so re-aimed onto the head/rest halves, or retired with the per-reader tie plant named as its control |
 | K38-3 | S | the measurement card cell (§5.2) and W-K4a/W-K4b's populations over every level the U2 target table admits | the card's run record (span_cards §4) | a level that reads below its floor faults W-K4a or reds W-K4b under ASan | none |
 
 **Order.** K38-1 after `plan_frame.md` 3.0a lands (both restructure `window.c`'s Table B rendering
@@ -464,7 +546,13 @@ lands first, 3.0b's ASK-2 is void). K38-3 rides with K38-2 or follows it. K38-1 
   window") becomes UNREAD.
 - **Members whose meaning moves, whose refusal moves, or that retire** `[r1 F9]`: `mf_pred.omin`
   (origin the attempt start; negative on the run span); `mf_pred.nterm` (0 is refused today,
-  `memfn.h:667`, Q-G2-10: admitted on the run span, still refused elsewhere); `mf_pred`'s
+  `memfn.h:667`, Q-G2-10: admitted on the run span, still refused elsewhere); `[r1.1 F-K]` the
+  `preds[]` refusals in `pred_kinds` (`compose.c:466-474`) refuse `nterm` 0 and an UNSTATED `need` on
+  every ALL_PRESENT pred (today's FUNC parts pass because `wf_parts_prepare` fills both from their
+  stated window, which the `nalt` 0 run part lacks): `nterm` 0 and `need` 0 are admitted on the
+  derived run part ONLY (FUNC, `nalt` 0, named by the run link), 0 meaning "unread here", not a
+  default (memory `pcrec-no-silent-defaults`); every other part keeps both refusals, and a run part
+  with a nonzero `nterm` or `need` is refused (texts written at K38-2, D26); `mf_pred`'s
   `nalt`/`alts`/`wfloor` (refused off FUNC parts today, `memfn.h:729-741`: admitted on the run's
   `pspans` entry); `mf_site.head_max` (`int64_t`; position 0's offset); the `pspans` RUN term
   (retired for the set form); `mf_pres_picks.run_scan`/`run_window` (retired: `cls.run` owns
@@ -479,10 +567,18 @@ lands first, 3.0b's ASK-2 is void). K38-3 rides with K38-2 or follows it. K38-1 
      (`(?:ab|cd)xabcdefghijkq` 7 -> 2, `\s?xabcdefghijkq` 6 -> 1, `x\wabcdefghijklmn\w+` 7 -> 2);
      the `req_landmark_maxoff`/`req_run_maxoff` listing rows on every route; NEW DFA handoffs where
      the smaller K now clears the margin row (`tuning.md` §2.41¶8a; predicted, counted).
-  2. **Q2, the stamp**: `<PREFIX>_REQ_RUN` on every run over 8 positions, every route (e.g.
-     `xabcdefghijkq`: `65666768696a6b71@7` -> `786162636465666768696a6b71@12`).
+  2. **Q2/Q7, the stamp** `[r1.1 F-A]`: `<PREFIX>_REQ_RUN` on every run over 8 positions, every
+     route, in two populations counted apart. **2a**, tested link (a pre-check run part renders;
+     `@` from `cls.run.scan`, table row 1), with an `emitted` example (`a.*xabcdefghijkq`, stamp
+     measured at the build). **2b**, no pre-check run part (table rows 2 and 3), e.g. the
+     `dominated` artifact `xabcdefghijkq`: `65666768696a6b71@7` -> the whole run, `@` per row 2 or
+     3, measured at the build.
   3. **Q5, block names**: the whole-run route's `<p>_reqrun`/`<p>_reqrun_whole` become one part.
-  4. **§4.2, the run pin**: run-pinned prefilters on runs over 8 positions.
+  4. **§4.2, the run pin**: run-pinned prefilters on runs over 8 positions (clipped to the walk).
+  5. **`-fcomments`** `[r1.1 F-M]`: `req_note_run`'s length/bytes comment text on the runs it names.
+
+  Each mover is counted per (artifact, population) with an overlap column: one artifact can move in
+  populations 2 and 4 and so cross C4's population `[r1.1 NOTED]`.
 
 ### 5.2 What the kit measures (memory `pcrec-new-method-needs-measurement-card`)
 
@@ -535,14 +631,17 @@ test at a run position) and adds its `verify_set` card in that change, not here.
    set-member span, trigger: [MATCH-KNOWN]'s prefix-skip build or the set-side change (§6 P3); (3)
    one serialized reply record for the plan-as-text seam, trigger: `plan_frame.md` 3.0b lands.
 
-**OPEN for main** (each with a recommendation):
+**RULED** (re-check review 2026-11-09 r6 r38s2, manager rulings; recorded in rev 1.1) `[r1.1]`:
 
-7. **What `<PREFIX>_REQ_RUN` shows where no run part renders** (P2 `dominated`, `cover`, or no
-   pre-check site asked). Ruled (b) needs a spelling with no kit scan. **Recommend**: the whole run
-   with no `@` (a stamp grammar change in §4.4's `match_api.md` §6.3.7¶7 hunk), rather than a scan
-   the kit chose for a part it never renders. And the `--emit-facts` `req_run` row, which then
-   equals `req_whole_run`: **recommend** retiring it into `req_whole_run` (one run value) in the
-   same hunk.
+7. **What `<PREFIX>_REQ_RUN`'s `@` shows: a FIRST-MATCH TABLE.** The pre-check reply's scan, else
+   the window site's member, else no `@` (§4.1's table). The hex is the whole run in every row.
+   The premise of rev 1's recommendation (no kit scan where no pre-check run part renders) is false
+   on most such artifacts (F-A): a window-site search reads a run position there. The `req_run` row
+   retires into `req_whole_run` (§4.3). Stamp grammar change: `match_api.md` §6.3.7¶7's hunk
+   (§4.4).
+8. **The run pin keeps reading the WHOLE run, CLIPPED to the k-set walk's reach**, so a run ending
+   past the walk keeps its pin (F-B: `error: segmentation fault at`). `pcrec_run_pin`'s rate pick is
+   named a third decider in §2.5's ownership list. A placement-only pin is a PLAN row (P6).
 
 **PLAN items for main** (from the review, recorded so they are not lost):
 
@@ -556,6 +655,24 @@ test at a run position) and adds its `verify_set` card in that change, not here.
   SET term). Trigger: [MATCH-KNOWN]'s prefix-skip build or the set-side change.
 - P4 (F5): drop `match_api` §6.3.7¶5/¶7/¶11 and findings.md §4's window row from span_arms L2's
   CHECKED-UNCHANGED list; K38-2 owns those hunks.
+- P5 `[r1.1 F-G]` (a PLAN item, not a K38-2 fix): the landmark mass over "the verified extent". The
+  mass (`req_landmark_hit_ppm`, `emit_dfa.c:8992-9007`, and its twin `presence.c:201-217`) is a
+  product from 1e6 over the extent, drops the find's own set, and is 1e6 on an empty extent
+  (`ver_len` 0: the margin declines everywhere); with `scan` outside the extent the product omits
+  `scan`'s filter; both sides share the formula. Form: the landmark's hit set is the extent plus
+  `scan`'s stated set where `has_scan`; `ver_len` 0 and `!has_scan` are a STATED "no landmark mass,
+  the margin row declines"; the `len < 2` branch's fate stated. Trigger: the first kit rule that
+  scans outside a short extent (L2's `bar(?=baz)`, which needs `--features all`), where NEXT's
+  `handoff` row would decline silently; the population is named at that unit. No mover before it.
+- P6 `[r1.1 F-C]`: the placement-only run pin. The pin states only the run's PLACEMENT (position
+  0's attempt offset); the window site gets the whole run and `mf_wdecide` alone picks member and
+  stretch. Precondition: `ofs_test_of`'s loud stop-inside-walk checks (`emit_dfa.c:7409-7413`,
+  `:7436-7438`), so the walk bound becomes a stated fact to the kit. Trigger: the first masked-run
+  mover on the window site, or the unlock merging the two kit deciders (§6 Q6 (1)).
+- P7 `[r1.1 NOTED]`: `mf_class.run` is the THIRD spelling of one run-reply shape (beside
+  `mf_wreply`'s run quartet and the retiring `mf_pres_picks` run half). General form: one record
+  type embedded in both, zero bytes, unlocking §6 Q6 (1)-(3) with their triggers. The kit decides
+  at K38-2 whether `mf_class.run` is that shared type (cheap now: `MF_CLASS_V` moves anyway).
 
 ## 7. The three standing questions (`docs/design/CLAUDE.md`)
 
@@ -570,8 +687,8 @@ test at a run position) and adds its `verify_set` card in that change, not here.
    names the unit where its witness first reaches (C1's skip half only at the skip's unit; C2 and
    the G2 forms of W-* at K38-2a/K38-2; C4 at K38-2 under the all-tie regime and the probe lever).
    Population counts: §5.1's four populations counted two-sided by `emit_sweep` (pcrec's artifact
-   diff, never the kit's `moved`, K35); the prefilter window site's run member counted as a run
-   decider (§2.5). Existing sabotages each have a stated fate (§5).
+   diff, never the kit's `moved`, K35); the prefilter window site's run member and `pcrec_run_pin`'s
+   rate pick counted as run deciders (§2.5). Existing sabotages each have a stated fate (§5).
 3. **What moves when data is regenerated: RELEVANT.** The scan and the extent read the art's
    rates and measure set, so a regenerated measure set or rate table can move `scan`, hence
    `REQ_RUN`'s `@scan` and the emitted find: an abi event (`integration.md` §21.3), as today for
