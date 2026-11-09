@@ -15,8 +15,10 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "ab(?:cd)
 SAB_REACH_EXPECT="REACH-WR3-RUN"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    RbRuns p = rr_pow(b, rr_pow_count(&b, m));'
-SAB_AFTER='    RbRuns p = rr_pow(b, rr_pow_count(&b, m > 1 ? m : 1));   /* SABOTAGE S1917 */'
+SAB_BEFORE='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m));'
+SAB_AFTER='    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m > 1 ? m : 1));   /* SABOTAGE S1917 */'
 # RE-AIMED REACH (lane sar1fix, 2026-11-09, review r5): the two 2-byte runs
 # `ab` and `ef` tie on information and the run choice takes the rarer scan
 # byte (`b`, 9886 ppm, over `f`, 14787), so the clean run is `ab`.
+# RE-ANCHORED (lane sar1fix, 2026-11-09, review r5): the run walk's helpers take the
+# walk `w` (the run choice reads its byte-rate); same site, same plant.

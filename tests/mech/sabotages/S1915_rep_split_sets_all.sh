@@ -16,5 +16,7 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "xy(?:ab)
 SAB_REACH_EXPECT="REACH-WR1-RUN"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    o.tail = rr_cat(gap, p).tail;'
-SAB_AFTER='    o.tail = rr_cat(gap, p).tail; o.all = true;   /* SABOTAGE S1915 */'
+SAB_BEFORE='    o.tail = rr_cat(w, gap, p).tail;'
+SAB_AFTER='    o.tail = rr_cat(w, gap, p).tail; o.all = true;   /* SABOTAGE S1915 */'
+# RE-ANCHORED (lane sar1fix, 2026-11-09, review r5): the run walk's helpers take the
+# walk `w` (the run choice reads its byte-rate); same site, same plant.
