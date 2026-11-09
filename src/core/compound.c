@@ -170,7 +170,9 @@ static int walk_part(CompWalk *w, int i)
     if (!w->tried[i]) {
         const Job *job = w->cx->job;
         const PcrecMeasInherit meas = { job->meas, job->meas_stamp, job->mf_ms,
-                                        &job->find.chain, job->analysis };
+                                        &job->find.chain, job->analysis,
+                                        w->cx->emit_in && w->cx->emit_in->harness
+                                            ? w->cx->emit_in->harness->walk_arms : 0 };
         w->tried[i] = true;
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
         w->facts[i].into = &w->cx->arena;

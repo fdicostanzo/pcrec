@@ -3374,6 +3374,10 @@ struct PcrecMeasInherit {
     const struct mf_measures *kit;
     const PcrecFindChain *chain;
     const struct mf_analysis *analysis;
+    /* [REQ-EMPTYCAT] the walking attempt's restored walk arms (the harness
+     * lever's `restore=`, `PcrecHarnessOptions.walk_arms`): a part's walk
+     * takes the same parameters, so a split artifact is restored whole. */
+    unsigned walk_arms;
 };
 
 /* `ReqRun` and `ReqSet` — the necessary-run and necessary-set facts' value

@@ -654,6 +654,42 @@ else
     if "$TIMEOUT_BIN" 60 "$HBIN" --harness=restore=empty+nosuch --emit-facts --pattern "$AP" > /dev/null 2>&1; then
         abad="$abad an unknown arm ('nosuch') was accepted;"
     fi
+    # The error names the bad arm alone, not the rest of the list.
+    "$TIMEOUT_BIN" 60 "$HBIN" --harness=restore=bogus+empty --emit-facts --pattern "$AP" 2>&1 > /dev/null |
+        grep -qF "(no arm 'bogus')" || abad="$abad the refusal does not name the bad arm alone;"
+    "$TIMEOUT_BIN" 60 "$HBIN" --harness=restore=emp --emit-facts --pattern "$AP" > /dev/null 2>&1 &&
+        abad="$abad a prefix of an arm ('emp') was accepted;"
+    # CHECK-2/3: the lever's reach on the ARTIFACT (not only the listing), on
+    # another encoding, on the m>=1 half of row 1 (default and lever), and on
+    # a SPLIT artifact, whose compound part must take the same arms
+    # (compound.c's part compile; the parent's stamp alone would stay green
+    # with a half-restored artifact). Hand values from T2: a width-0 body
+    # joins its neighbours at any m, and the old form is the gap (m=0) or the
+    # best-only copy (m>=1).
+    # tag, encoding, pattern, arm?, RX_REQ_RUN-line prefix (RX_ top, RX__Q_ part)
+    printf '%s\n' \
+        'RX_REQ_RUN	byte	abcd(?:\b)*efgh	empty	65666768@2' \
+        'RX_REQ_RUN	byte	abcd(?:\b)*efgh	-	6162636465666768@1' \
+        'RX_REQ_RUN	utf8	abcd(?:\b)*efgh	empty	65666768@3' \
+        'RX_REQ_RUN	utf8	abcd(?:\b)*efgh	-	6162636465666768@7' \
+        'RX_REQ_RUN	byte	ab(?:\B){3}cd	-	61626364@1' \
+        'RX_REQ_RUN	byte	ab(?:\B){3}cd	empty	6364@0' \
+        'RX_REQ_RUN	byte	abcd(?:)+efgh	-	6162636465666768@1' \
+        'RX_REQ_RUN	byte	abcd(?:)+efgh	empty	65666768@2' \
+        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	-	6162636465666768@1' \
+        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	empty	65666768@2' \
+        'RX__Q_REQ_RUN	byte	^a|abcd\Befgh$	-	6162636465666768@1' \
+        'RX__Q_REQ_RUN	byte	^a|abcd\Befgh$	zero	65666768@2' > "$WORKDIR/ac"
+    nac=0
+    while IFS=$'\t' read -r mac enc pat arm want; do
+        nac=$((nac + 1)); larm=(); [ "$arm" = "-" ] || larm=("--harness=restore=$arm")
+        if ! "$TIMEOUT_BIN" 120 "$HBIN" --features all -e "$enc" "${larm[@]}" -p rx --emit-main -o "$WORKDIR/ac.c" --pattern "$pat" > /dev/null 2> "$WORKDIR/ac.err"; then
+            abad="$abad '$pat' [$enc/$arm] refused ($(head -1 "$WORKDIR/ac.err"));"; continue
+        fi
+        got="$(sed -n "s/^#define $mac \"\(.*\)\"\$/\1/p" "$WORKDIR/ac.c" | head -1)"
+        [ "$got" = "$want" ] || abad="$abad '$pat' [$enc/$arm] $mac [$got], want [$want];"
+    done < "$WORKDIR/ac"
+    echo "REACH: $nac restored-arm artifact cells (top, utf8, m>=1, split part)"
 fi
 # span_arms E2: the `zero` arm runs T3's rows E-4 and E-5 in today's form
 # (the CUT), so a witness holding one node of each (`\B`, E-4; a positive

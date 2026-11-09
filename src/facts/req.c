@@ -59,8 +59,9 @@
  * row 1), a backreference and a linked call. A node that consumes nothing
  * (the empty string, an assertion, `\G`, `\K`, a check callout, a
  * lookaround) is CAT's width-0 unit for the run (span_arms T3,
- * `rb_zero_rows`): the bytes on its two sides are adjacent in the subject. A lookaround's body is deliberately
- * not descended into: a LOOKBEHIND's bytes sit BEFORE the match's start and
+ * `rb_zero_rows`; `restore=empty`/`restore=zero` put the old cuts back): the
+ * bytes on its two sides are adjacent in the subject. A lookaround's body is
+ * deliberately not descended into: a LOOKBEHIND's bytes sit BEFORE the match's start and
  * can therefore be outside `[search_from, subject_length)` entirely, which
  * would make the check unsound in the direction that deletes matches.
  *
@@ -660,6 +661,7 @@ static PCREC_OWN_FRAME void rb_rep_unit_into(const RbWalk *w, RbVal *acc,
 {
     if (rmin == 0) rb_init(v);
     else *v = *b;
+    v->desc = pcrec_pd_unit();   /* the body is width 0 at either m */
     v->runs.all = true;
     rb_cat_into(w, acc, v);
 }
@@ -709,8 +711,12 @@ static const struct {
  * that the walk does not restore. */
 static RbRepRow rb_rep_row(const RbWalk *w, const Ast *a, const RbVal *b)
 {
+    const size_t last = sizeof rb_rep_rows / sizeof rb_rep_rows[0] - 1;
     size_t i = 0;
-    while ((rb_rep_rows[i].arm & w->restored) || !rb_rep_rows[i].when(a, b))
+    /* the last row matches every repeat and is never restored: the scan
+     * stops there whatever the table above it holds */
+    while (i < last && ((rb_rep_rows[i].arm & w->restored) ||
+                        !rb_rep_rows[i].when(a, b)))
         i++;
     return rb_rep_rows[i].row;
 }
@@ -899,7 +905,11 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
         case A_CLASS:
             rb_class_into(w, acc, a);
             return;
-        /* Consumes nothing, so it can make no byte necessary. `A_LOOK`'s body
+        /* These nodes BARE; a QUANTIFIED one is T2 row 1's (a repeat of a
+         * width-0 body joins, `(?:\b)+` included, by the E1 ruling). The
+         * ruled arm for the bare cuts is `zero` (E2); it restores only these.
+         *
+         * Consumes nothing, so it can make no byte necessary. `A_LOOK`'s body
          * is not descended into, and the header says why that is a
          * CORRECTNESS decline rather than a missed opportunity.
          *
