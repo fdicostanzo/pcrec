@@ -76,7 +76,9 @@ for p in "${ALLOW[@]}"; do
 done
 
 echo "== worktree (delivery target) =="
-git -C "$ROOT" worktree add "$WT" -b "$NAME" HEAD
+# D27_BASE (default HEAD): the commit the delivery branch and the cell start from,
+# e.g. a lane branch not yet on main whose contract the author tests.
+git -C "$ROOT" worktree add "$WT" -b "$NAME" "${D27_BASE:-HEAD}"
 
 echo "== build inside the worktree (the cell's binary matches the branch) =="
 make -C "$WT" >/dev/null
