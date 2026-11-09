@@ -1,0 +1,95 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: original pcrec-memory-functions text; no third-party source
+ *   (memfn/PROVENANCE.md). The rows were checked first on rev 0's withdrawn
+ *   pcrec-side table (commit 171bdb343, lane xarch1), the same rows.
+ *
+ * memfn/src/targets.def — THE KIT'S CPU TARGET TABLE, ITS FACTS (unit K0,
+ * request R-36; docs/design/memfn/target_seam_units.md §2, target_seam.md §2).
+ * Kit-private: pcrec holds a target only as an opaque token, which it asks
+ * the kit to parse (target_seam_units.md R3/R4); everything a token means is
+ * a row here, and pcrec reads it through memfn.h's target entries.
+ *
+ * FACTS ONLY, NO SPELLING (the owner's ruling 2026-11-07: an emitter writes C
+ * today, may write Rust later): every column is a token or a comma-separated
+ * list of tokens, read the same by any emitter. How the C emitter SPELLS a
+ * fact (the region pragma pair, the `#error` family guard, later the CPU
+ * predicate) is targets_c.def and targets.c's C section, keyed by the same
+ * ids. The table check refuses a field that is not a token list
+ * (memfn/tests/check_targets.sh), and this file holds no directive.
+ *
+ * An X-macro in options.def's idiom: an includer defines MF_FAMILY and
+ * MF_TARGET (one of them empty when it wants the other), and MF_FAMILY_OF,
+ * MF_NO_FAMILY, MF_NEEDS and MF_NO_NEEDS for the rows' wrapped columns.
+ * memfn/tests/check_targets.sh reads these rows through the preprocessor too.
+ *
+ * TWO TOKEN SPACES, ONE LIST (the owner's ruling 2026-11-07, one flag
+ *   `-fmemfn-simd[=TOKEN,..]`): a list may mix family and target tokens, so
+ *   no token is both. FAMILY tokens are the Go GOARCH / Debian names (amd64,
+ *   arm64: the Go/Debian names, NOT x86_64/aarch64, because `x86_64` and the
+ *   target `x86-64` differ by one character and a typo would silently pick a
+ *   different valid meaning); TARGET tokens are gcc's -march names (generic, x86-64,
+ *   x86-64-v3, armv8-a). A family token in a list means that family's
+ *   default list. A token is matched ASCII-case-blind and otherwise
+ *   exactly (`_` is not `-`). The table check holds the rule, and also refuses a
+ *   family token that EQUALS a target token after folding `_` to `-`.
+ *
+ * MF_FAMILY(id, name, defaults, doc)
+ *   name      the family's token: the largest scope of one artifact (D188
+ *             addendum 2)
+ *   defaults  the family's default target list (canonical tokens): what
+ *             `-fmemfn-simd` resolves to for this family. amd64's grows to
+ *             "x86-64,x86-64-v3" only at the dispatch step (unit U5), which
+ *             waits for a bench speed verdict (D144 add. 4)
+ *
+ * MF_TARGET(id, name, family, needs, features, doc)
+ *   name      the target's token; also its stem tag and probe string (U4)
+ *   family    MF_FAMILY_OF(<family id>), or MF_NO_FAMILY for the one
+ *             PORTABLE target (no family, needs or features)
+ *   needs     MF_NEEDS("<features>"): what a part compiled for this target
+ *             must ENABLE above its family's portable compile, an additive
+ *             list (target_seam.md §6.1: never a replacement of the whole
+ *             set); MF_NO_NEEDS: nothing (armv8-a: NEON is the baseline)
+ *   features  the target's COMPLETE supplied set, sorted: every feature
+ *             token `-march=<name>` enables, the family floor included and
+ *             written out in full (no inheritance: x86-64-v3 lists x86-64's
+ *             fxsr,mmx,sse,sse2 itself; the kit manager's ruling, unit U2);
+ *             needs is a subset (asserted). What a kit LEVEL's needs are
+ *             checked against (unit U2's admission, levels.def). The table
+ *             check holds the column to the compiler both ways over its
+ *             feature vocabulary: every listed token is enabled at
+ *             `-march=<name>`, and every vocabulary token enabled there is
+ *             listed
+ *
+ * doc (both macros): one short plain-English line in the kit's own words,
+ * what pcrec's listing prints for the row. Plain text, never C: the check
+ * exempts exactly this column from the token-list rule and refuses a `#`,
+ * `_`, brace, semicolon, backslash, quote or `|` in it, and a line over 100
+ * bytes or empty.
+ *
+ * THE TABLE CHECK (memfn/tests/check_targets.sh, at `make`; `make strict` and
+ * `make test-memfn-targets` fail on it): for every target of the building
+ * host's family, gcc at the family floor plus each need defines exactly the
+ * macros gcc defines at `-march=<name>` (the control is the compiler, not
+ * this file); the structural rules in its header. Its first finding put
+ * `sahf` in x86-64-v3's list (`__LAHF_SAHF__`; R2).
+ *
+ * A row is born with the first kit level that needs it (D77): no x86-64-v2
+ * or x86-64-v4 row, because the kit's two x86 levels (16 and 32 bytes) cannot
+ * plan differently there; armv8-a's row has no kit level yet.
+ */
+
+MF_FAMILY(MF_FAM_X86_64,  "amd64", "x86-64",
+          "AMD64/Intel 64 (x86-64) machines, whose default list is x86-64")
+MF_FAMILY(MF_FAM_AARCH64, "arm64", "armv8-a",
+          "64-bit Arm (AArch64) machines, whose default list is armv8-a")
+
+MF_TARGET(MF_TGT_GENERIC,   "generic",   MF_NO_FAMILY,                 MF_NO_NEEDS, "",
+          "portable: no CPU-specific code, builds for any machine")
+MF_TARGET(MF_TGT_X86_64,    "x86-64",    MF_FAMILY_OF(MF_FAM_X86_64),  MF_NEEDS("sse2"), "fxsr,mmx,sse,sse2",
+          "the x86-64 baseline, SSE2 (gcc -march=x86-64)")
+MF_TARGET(MF_TGT_X86_64_V3, "x86-64-v3", MF_FAMILY_OF(MF_FAM_X86_64),
+          MF_NEEDS("avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave"),
+          "avx,avx2,bmi,bmi2,cx16,f16c,fma,fxsr,lzcnt,mmx,movbe,popcnt,sahf,sse,sse2,sse3,sse4.1,sse4.2,ssse3,xsave",
+          "x86-64 plus AVX2, BMI1/2, FMA, LZCNT, MOVBE and more (gcc -march=x86-64-v3)")
+MF_TARGET(MF_TGT_ARMV8_A,   "armv8-a",   MF_FAMILY_OF(MF_FAM_AARCH64), MF_NO_NEEDS, "neon",
+          "the Armv8-A baseline with NEON (gcc -march=armv8-a)")

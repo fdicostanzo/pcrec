@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2977fix_report.md
+sections: Summary; The catching check; Single-row re-run; Checks run; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: 089-kit-u2-s2977

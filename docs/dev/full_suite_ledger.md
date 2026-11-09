@@ -25,8 +25,13 @@ Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it); 1 maj
 
 - 2026-11-07 c44649a69 major — [VLOOKBEHIND] stage 1 merge (lane vlbbuild, landed by vlbland): bounded variable-width lookbehind, a new construct class (supersedes [DD-14.LB]'s refusal), abi 95 -> 96, new seam entry fwd_step; recursion-identity (B) pins re-pinned to the merge; post-merge test-registry, test-codegen, test-plan-lint green; branch validation: make test, mech 1-4, reach, abisweep, axes 495 green
 
+- 2026-11-09 cf578177e major — merge lane/u3mech edf78bcbf ([XARCH-DEV] kit U2 per-CPU SIMD seam + pcrec U3 targets), abi 98, MF_SITE_ABI 26; review 2026-11-08 r5 xarch ruled, fixes in; landing lane landu3; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge; lane gates: make test, strict, axes, mech, movers, sections, sweep (landsweep 080 green on edf78bcbf), kit 560-569 + 089
+
 ### minor
 
+- 2026-11-08 bfecd6143 minor — merge lane/p1cpu ([XARCH-DEV] P1: -fmemfn-simd[=TOKEN,..] option, kit token parse at option parse, --list-cpu-targets, pcrec_options.memfn_simd; 0 emitted bytes (sweep GREEN); its make test (p1tri re-run) and 6-row mech GREEN)
+- 2026-11-08 25d80f2c0 minor — merge lane/mechtri (battery mech triage: 3 witness re-aims/new cells, test-only; its 3-row mech GREEN)
+- 2026-11-08 d9df92c0d minor — merge lane/memfn-k0 (kit unit K0, R-36: the CPU target table, new kit TU memfn/src/targets.c + table check at make/strict + 7 sabotage rows S2975-S2981; no emitted byte, no abi event; its gates strict/sections/make test/mech GREEN)
 - 2026-11-06 e7341f87e minor — span_pick stage 2 unit S2a merge (kit measurement set format 2 / loader change, limits_check moved; no pcrec abi; test-registry and test-plan-lint green at the landing)
 - 2026-11-06 6b04768ed minor — span_pick stage 1 unit 1e merge (fd_route merged into fd_find, renderer rows declared, MF_CLASS_V 7 -> 8; zero movers, MF_SITE_ABI 23, no pcrec abi; its gates 430-439 green; kit k1102 merge is docs)
 - 2026-11-05 39e7b20c5 minor — span_pick stage 1 unit 1d merge (memfn/src/window.c planning core; byte-identical kit refactor, zero movers, MF_SITE_ABI 23, no pcrec abi; like 1a/1c)
@@ -49,6 +54,9 @@ duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored,
 | 2026-10-27 | 7d3be7ec7 | green | green | green | RED (rc=2) | green | green | green | RED (rc=2, known [RECID-A]) | build/full_suite/20261027_7d3be7ec7/ | 40149 s |
 | 2026-11-04 | 4bd002e20 | green | green | RED (rc=2) | RED (rc=2) | green | green | RED (rc=2) | RED (rc=2) | build/full_suite/20261103_4bd002e20/ | 44409 s |
 | 2026-11-05 | daf6f002b | green | green | green | green | green | green | green | green | build/full_suite/20261104_daf6f002b/ | 44139 s |
+| 2026-11-08 | a0a829246 | green | green | green | green | green | green | RED (rc=2) | green | build/full_suite/20261108_a0a829246/ | 45761 s |
+
+RED run (2026-11-08 a0a829246): counters do not reset. mech = 3 UNEXPECTED rows of 1167 (S50, S806, S-U10; 0 anomalies; undetected/unreached otherwise identical to daf6f002b), all stale witnesses moved by the [ALT-NF] folds and variable lookbehind, no src gap and no miscompile. FIXED by lane/mechtri (merge 25d80f2c0; its build/test/3-row mech 460-462 GREEN, 3 DETECTED). Every other stage green, including recidentity. Next: a mech-only re-run on main (the san-only re-run precedent), counters reset if green.
 
 RED run: counters do not reset. Fixes: lane fsfix (axes allowance keys, mech row re-aims). Triage and dispositions: `full_suite_runs/20261023_5596c3207/`.
 
@@ -358,3 +366,7 @@ Landing 2026-11-03 a33ca7b0a/c0f0d543b: span_pick stage 1 unit 1f (finder rows R
 Landing 2026-11-07 692ec83b7: lane/memfn-s2e (kit span_pick S2c + S2e: measurement set zen4-grid3@1, measure_store/DEFAULTS idk -> zen4-grid3@1 with 0 movers, libpcrec +16 KB, standing rule span_cards.md §3.5, checks S2952 + est "class NOT fused" self-test; byte-identical emission, test-codegen green, no pcrec abi event) plus the kit's done line (memfn/docs only); class minor (kit data/check landing, no emitted-byte change, no new engine path). D177: row 5 already fires and stays pending; no full suite queued.
 
 Landing 2026-11-07 f77ed1130: lane/altbuild (alternation folds, [RUN-POS-SET] stages 1/2p/2b, abi 97, new engine paths: altnf.c owner, rr_alt hull, drop-islands rung, K139 retry); class MAJOR (lane validated: make test at def03a8cf, mech + reach, full axes GREEN 19:13). D177: row 5 fires (minors accrued); row 4 (2-3 majors: abi 94, 95, 96, 97) now fires too. No suite queued by the landing lane; the manager queues the night battery.
+
+Landing 2026-11-09 cf578177e: lane/u3mech (kit U2 per-CPU SIMD seam + pcrec U3 targets, abi 98, MF_SITE_ABI 26, review 2026-11-08 r5 xarch ruled); class MAJOR. D177: row 4 (2-3 majors since the last green run: abi 96, 97, 98) FIRES; row 5 already fires and stays pending; the 2026-11-08 a0a829246 run was RED (mech), which resets nothing. A full run IS triggered; not queued by the landing lane (the manager schedules the next window).
+
+RED: 2026-11-08 a0a829246 test=green strict=green axes=green san=green alloc=green lint=green mech=RED(rc=2) recidentity=green log=build/full_suite/20261108_a0a829246 duration=45759s

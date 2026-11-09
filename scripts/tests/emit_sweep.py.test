@@ -125,7 +125,7 @@ fi
 # clean at their floors with the floors APPLIED (no NOT APPLIED line), and each
 # floor raised by one goes red. (A dropped FLAG is S981/S982's: the DIFFER
 # manifest does not differ.)
-for arm in -fmemfn-simd -fcomments; do
+for arm in -fmemfn-simd=x86-64 -fcomments; do
     csweep --extra=$arm; rc=$?
     [ "$rc" = 0 ] && ! grep -q 'COMPOSITION FLOORS: NOT APPLIED' "$T/log" \
         && ok "composition floors: the $arm arm is clean with its floors APPLIED" \

@@ -225,7 +225,7 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const fn_in *x,
  *           position is a two-member cube: the PAIR leapfrog) above
  *           `fn-memchr` (otherwise: one `memchr` stream), the slot's floor,
  *           reached only where `fn-pair` did not hold;
- *   PREFIX  which guarded per-level helper DEFINITIONS sit at file scope
+ *   PREFIX  which per-level helper DEFINITIONS sit at file scope
  *           beside the body (D155). BORN EMPTY: an empty slot renders zero
  *           bytes, and SIMD rows arrive as its rows (batch 1).
  * BODY is asked first, so the floor is known before any PREFIX row is asked,
@@ -461,7 +461,7 @@ const gate_contract *fn_row_contract(size_t i)
 static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
                                const fn_in *x, int slot)
 {
-    gate_in in = { x->site, h, NULL, NULL, NULL };
+    gate_in in = { .s = x->site, .h = h, .art = art };
     gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX, 0, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&fn_table, slot, &in, MF_PH_DEFINE, art->denies, x, &tc, &why);
@@ -486,7 +486,7 @@ int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
     if (!ofs_fn_applies(p, h)) return 0;
     fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0, 0, 0 };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
-    gate_in in = { site, h, NULL, NULL, NULL };
+    gate_in in = { .s = site, .h = h, .art = art };
     gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
     gate_verdict why = { 0, 0 };
     size_t r = kit_walk(&fn_table, FN_BODY, &in, MF_PH_DEFINE, art->denies, &x, &tc, &why);
@@ -511,7 +511,7 @@ static unsigned fn_rungs(mf_art *art, uint32_t handle, const mf_hooks *h,
 {
     unsigned nr = 0;
     rung[nr++] = top;
-    gate_in in = { x->site, h, NULL, NULL, NULL };
+    gate_in in = { .s = x->site, .h = h, .art = art };
     gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 1, 0, 0 };
     for (const char *const *r = top->decl->rungs; *r && nr < MF_NLEVEL; r++) {
         size_t i = fn_row_named(*r);
@@ -554,39 +554,34 @@ static const char *fn_level_name(mf_art *art, const char *fn, const fn_row *r)
     return b.p;
 }
 
-/* One rung's GUARDED BLOCK (§R4.9.2.5 piece 2), bracketed whole by the
- * sink's simd_open/simd_close (§R4.9.2.4): `#if <guard>`, the level's
- * `#include` (once per artifact per level), the helper's head (the
- * function's own, renamed), the row's body (its entry test falls to
- * `fall`), `#endif` and a blank line. */
+/* One rung's BLOCK (§R4.9.2.5 piece 2), bracketed whole by the sink's
+ * simd_open/simd_close (§R4.9.2.4): the helper's head (the function's own,
+ * renamed), the row's body (its entry test falls to `fall`) and a blank line.
+ * The level's header is a FACT, its bit on the art's mf_includes, which the
+ * host writes at file scope ahead of the region (review 2026-11-08 r5 X-1),
+ * never text here. No CPU `#if` (unit U2): the rung is rendered only where
+ * the art's target admits its level, and the host's region around the part
+ * supplies the ISA. */
 static int fn_level_block(mf_art *art, const mf_hooks *h, const fn_in *x,
                           const fn_row *r, const char *name, const char *fall,
                           mf_sink *o)
 {
-    const mf_level *lv = kit_level(r->decl->level);
     o->simd_open(o->u, (int)r->decl->level);
-    kit_out(o, "#if %s\n", lv->guard);
-    if (!(art->simd_inc & 1u << r->decl->level)) {
-        kit_out(o, "#include <%s>\n", lv->header);
-        art->simd_inc |= 1u << r->decl->level;
-    }
+    art->includes |= kit_level(r->decl->level)->includes;
     if (fn_head(art, h, x->p, name, o) || r->decl->render(art, h, x, r->decl, fall, o))
         return -1;
-    o->puts(o->u, "#endif\n\n");
+    o->puts(o->u, "\n");
     o->simd_close(o->u);
     return 0;
 }
 
-/* THE SELECTOR, the function `fn` itself (D155 addendum 1, Q-R9-10 shape
- * (c)): a function that does work never contains `#if`; the selector's
- * whole body is the choice, one call per arm and nothing else. With no
- * PREFIX row rendered that is the one plain call to `callee`, the SIMD-off
- * FUNC. With rungs, the levels are `#if`/`#elif` arms above that call, top
- * level first (the preprocessor's first match is the table's), and the call
- * is the `#else` arm's line byte for byte (floor rule (c), §R4.9.2.5). The
- * bracketed bytes are the chain's guarded part, `#if` through `#else`, and
- * the `#endif`; the head, the `#else` arm's call and the brace are the
- * SIMD-off FUNC's own (§R4.9.2.4). */
+/* THE SELECTOR, the function `fn` itself (D155 addendum 1): a function that
+ * does work never contains `#if`; the selector's whole body is the choice,
+ * ONE call (unit U2): with no PREFIX row rendered, the plain call to
+ * `callee`, the SIMD-off FUNC byte for byte; with rungs, the call to the top
+ * rung's helper, which the rungs' fall-throughs ladder down to `callee`. That
+ * call line is the selector's bracketed byte range (it depends on the
+ * target); the head and the brace are the SIMD-off FUNC's own. */
 static int fn_selector(mf_art *art, const mf_hooks *h, const mf_pred *p,
                        const char *fn, const char *callee,
                        const fn_row *const *rung, const char *const *names,
@@ -595,18 +590,10 @@ static int fn_selector(mf_art *art, const mf_hooks *h, const mf_pred *p,
     if (fn_head(art, h, p, fn, o)) return -1;
     if (nr) {
         o->simd_open(o->u, (int)rung[0]->decl->level);
-        for (unsigned j = 0; j < nr; j++) {
-            kit_out(o, "#%s %s\n", j ? "elif" : "if", kit_level(rung[j]->decl->level)->guard);
-            if (fn_call_line(art, h, p, names[j], o)) return -1;
-        }
-        o->puts(o->u, "#else\n");
+        if (fn_call_line(art, h, p, names[0], o)) return -1;
         o->simd_close(o->u);
-    }
-    if (fn_call_line(art, h, p, callee, o)) return -1;
-    if (nr) {
-        o->simd_open(o->u, (int)rung[0]->decl->level);
-        o->puts(o->u, "#endif\n");
-        o->simd_close(o->u);
+    } else if (fn_call_line(art, h, p, callee, o)) {
+        return -1;
     }
     o->puts(o->u, "}\n\n");
     return 0;
@@ -905,6 +892,7 @@ static const gate_contract ofsskip_ct = {
     [FLD_comment_tier]    = MF_ANY,                   /* legend: handed to cmt_open as given */
     MF_SERVES_WINDOW_TODAY
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
+    [FLD_target]          = MF_ANY,                   /* scalar: right at every target (unit U2) */
 }};
 
 const arm ofsskip_arm = {
@@ -984,7 +972,8 @@ const arm ofsskip_arm = {
     [FLD_indent]          = MF_ANY,                   /* not read: file scope */ \
     [FLD_comment_tier]    = MF_ANY,                   /* not read: the body writes no comment */ \
     MF_SERVES_WINDOW_TODAY \
-    [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
+    [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */ \
+    [FLD_target]          = MF_ANY,                   /* scalar: right at every target (unit U2) */
 
 static const gate_contract fn_pair_ct = {
     "fn", "fn-pair", NULL, 0, {

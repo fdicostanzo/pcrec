@@ -1,0 +1,41 @@
+# CONTRACT — crit-sae1
+## Findings
+
+### CONTRACT-1 — tuning.md §2.28¶3 still says a min-0 quantifier breaks the run (spec hunk missing, D80)
+CONFIRMED. severity: doc. effort: small. blast radius: one spec paragraph (the public `-fno-req-run` entry).
+`docs/spec/tuning.md:670` [2.28¶3]: "a quantifier admitting zero iterations breaks contiguity ... and everything that breaks the byte analysis breaks the run" (assertions included, §2.27¶2). After E1 that is false for a width-0 body: `build/pcrec --features all -p rx -o D/rx.c --pattern 'abcd(?:\b)*efgh'` gives `RX_REQ_RUN "6162636465666768@1"` (BASE `"65666768@2"`); `ab(?:\b){0}cd`, `abcd(?:)*efgh`, `abcd(?:$)?efgh`, `ab(?:\K)*cd` likewise move (16 movers in my 773-pattern corpus). The run's derivation is caller-observable (the `RX_REQ_RUN` stamp and `req_whole_run`), and the subject's only spec hunk is facts_listing §4.1.3. Expected: §2.28¶3 gains the T2 row-1 exception ("...unless its body consumes nothing: a width-0 repeat is the unit the run joins across"). The design's E1 gate (§8) does not name this paragraph either (L1's does name §2.27¶4), so it is a design-ledger gap as much as a build one.
+
+
+### CONTRACT-2 — arm name `empty` is 2a's in the frozen design; the build gives it to E1 and plans one arm for two units
+CONFIRMED (text), consequence SUSPECTED until 2a lands. severity: design/maintenance. effort: small (rename the row, e.g. `emptyrep`/`rep0`, and its 3 readers + spec ¶4a). blast radius: walk_arms.def, run_axes.sh INTERNAL_ARMS, run_facts_checks.sh [facts-arm], S1907/S1908, facts_listing ¶4a's advisory text.
+span_arms §3.7 T7 (main 791e592d3) lists the harness arms as "`alt`, `empty` (2a), `rep` (T2 ...), `zero` (T3 E-4 ...), `look` (...)": `empty` is stage 2a's (E-1, `A_EMPTY`, `req.c` `case A_EMPTY` still a cut at c17a12722), and E1's T2 row 1 has no arm of its own (yet §8 E1's gate says "`make test-axes` with the `empty` arm" — the design is self-inconsistent here). `src/facts/walk_arms.def` resolves it by naming E1's row `empty` and stating "stage 2a of alt_normal_form restores its EMPTY unit under the same name". Once 2a lands, one bit restores two units at two code sites (the `A_EMPTY` case and `rb_rep_rows` row 1): `make test-axes`' `restore=empty` sweep can no longer attribute a non-identity to 2a vs E1, S1907 ("walk ignores restored arm") covers only the rep site, and facts_listing ¶4a's advisory gloss ("a repeat of a body that consumes nothing...") becomes incomplete. D174: the name should say what the test author sees restored; today it restores only a REPEAT row, not "the empty unit". Expected: either E1's row gets its own name and T7 gains it, or the design's T7 cell is amended to "`empty` (2a and E1, one arm)" with the attribution loss accepted.
+
+
+### CONTRACT-3 — consequence of the ruling: E-4's `X{m>=1}` half is now restored by `empty`, not by T7's `zero`
+CONFIRMED (mechanism), SUSPECTED (E2 impact). severity: design. effort: small (a T7/§8 E2 text change). blast radius: E2's arm row and its sweep.
+Not arguing the ruling; reporting what it does to the lever. `rb_rep_width0` tests only `b->runs.maxw == 0`, and `rb_rep_unit_into` at `rmin >= 1` takes the body's value and forces `runs.all = true`. So `abcd(?:\b)+efgh` joins (8 bytes) whatever the body `\b` is (today a cut), and `--harness=restore=empty` is what moves it back (`harness:empty`, value `65666768`). T7 assigns "`X{m,n}`, m >= 1, of such a body" (E-4 row) to `zero` ("T3 E-4 -> today's cut"). When E2 builds `zero`, restoring `\b`'s cut alone will NOT restore `(?:\b)+` (row 1 still matches and overrides the cut), so `restore=zero` would not reproduce the pre-E2 form for that half; E2's sweep must run `zero+empty`, or T7's `zero` cell must drop the m>=1 clause. Confirm when E2 exists: `pcrec-harness --harness=restore=zero --emit-facts --pattern 'abcd(?:\b)+efgh'` lists 8 bytes.
+
+
+### CONTRACT-4 — facts_listing ¶4a "sits on EVERY fact the arm can change" and ¶1's order overstate where the token appears
+CONFIRMED. severity: doc. effort: small. blast radius: two spec sentences.
+(i) Under `-fno-req-run` / `-fno-req-byte`, `pcrec-harness --features all -fno-req-run --harness=restore=empty --emit-facts --pattern 'abcd(?:\b)*efgh'` lists `req_whole_run`, `req_pieces`, `req_run` as `denied ... deny:-fno-req-run` with no `harness:`, and `req_run_maxoff`, `req_byte`, `req_landmark_maxoff`, `run_pin` with no token. Also `run_pin` on an attempt-unwrapped route (`abcd(?:^)?efgh`) is `absent decline:attempt-unwrapped-nfa`, no token. The CODE matches the design ("A `deny:` fact is empty, so neither value arises on it"); the SPEC says "It sits on every fact the restored arm can change (`req_whole_run` and `req_pieces` ...)" with no exception, and ¶1 writes `harness:` "then `deny:`" as if the two could both apply. Expected: ¶4a adds "on a derived or declined fact; a denied or absent fact lists its own reason", and ¶1's order sentence is either kept (harmless) or noted as `deny:` never co-occurring.
+(ii) Under the lever the token REPLACES the fact's own `decline:`/`rate:` reason (`req_pieces` default `decline:one-group` -> `harness:empty`; `req_run`/`req_byte` `rate:builtin-prior` -> `harness:empty`), status kept. That is the ruled one-why order, so not a defect; but ¶4a should say so in words, since a reader comparing listings under the lever loses the decline reason (e.g. whether `req_pieces` declined `one-group` vs `over`).
+
+
+### CONTRACT-5 — the lever's error names the rest of the list, not the bad arm
+CONFIRMED. severity: maintenance (test-only UX). effort: small (print `%.*s` with `strcspn(bad, "+")`). blast radius: cli/main.c:1471-1476.
+`pcrec-harness --harness=restore=bogus+empty ...` -> `(no arm 'bogus+empty')`; `restore=empty++empty` -> `(no arm '+empty')` (the empty name between the pluses is the fault); `restore=empty+` and `restore=` -> `(no arm '')`. `pcrec_walk_arms_parse` returns an OFFSET, and `cli_parse` prints from it to the end of the argument. Expected: name the one bad token (`'bogus'`; for an empty name say "an empty arm name").
+
+## PROBED-AND-HELD
+
+- Token inheritance vs value movement: 773 patterns (all `pattern` lines of tests/{litscan,alt,assertions,lookaround}/*.rxt + 14 hand probes) x 4 regimes (default, `-e utf8`, `-fno-req-run-fold`, `-fno-req-run`), default vs `--harness=restore=empty` listings: 0 facts whose value moved without the token, 0 status changes, 0 why changes on untokened facts. `req_set`/`req_set_maxoff`/`kset_walk`/`land_char`/`width`/`span_facts` never carry it; `req_whole_run`, `req_pieces`, `req_run`, `req_run_maxoff`, `req_byte`, `req_landmark_maxoff`, `run_pin` carry it exactly as ¶4a lists (712 compiling patterns; run_pin on its 550 derived rows). 16 patterns' values moved, all tokened.
+- Token written for an arm that changes nothing (`abc`): yes, on all seven facts; matches both design ("CAN change") and spec ("can change"); HELD.
+- Denied facts (-fno-req-run, -fno-req-byte): no token, `deny:` kept; facts derived from denied ones carry none (their asked facts have arms 0). Matches design.
+- Status stays the derivation's own (`req_pieces` declined under the lever). HELD.
+- `arms_seen` save/restore: nested derivation (`req_landmark_maxoff` -> `req_byte` -> `req_set`+`req_run`) inherits only along asks; top-level accessor asks leak into `arms_seen` but each `pf_derive` zeroes it first, so no fact gains a stray token (corpus shows none). Force-failed rows store arms 0. HELD.
+- Per-encoding: `--emit-facts=byte,utf8` lists the token on both encodings' rows independently, no cross-encoding memo. HELD.
+- Lever reaches the emitted C (RX_REQ_RUN/RX_REQ_BYTE move under `restore=empty`), not just the listing. HELD.
+- Parse: duplicates (`empty+empty`) accepted, one bit; repeated `--harness=restore=` overwrites (last wins); `EMPTY`, `emp`, `empty `, `rep` refused. HELD (beyond CONTRACT-5's wording).
+- `build/pcrec` rejects `--harness=restore=empty`, `--harness=restore`, `--harness=kit-proof` ("unknown option"). HELD.
+- Lever fence: no `--harness=`/`pcrec_harness_` mention outside run_lever_fence.sh's allowlist in the review tree; the spec hunk names "its restore lever", not the spelling. HELD.
+- Only spec file changed is facts_listing.md; see CONTRACT-1 for the one that should also have changed.

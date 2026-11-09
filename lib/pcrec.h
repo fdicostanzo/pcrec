@@ -1135,9 +1135,10 @@ enum {
  * the axis is OFF BY DEFAULT until the SIMD hold lifts, so `PCREC_NO_MEMFN_SIMD`
  * only states the default and `PCREC_FORCE_MEMFN_SIMD` asks for the
  * hardware-optimized forms the kit may render (an artifact that MAY NOT
- * EXECUTE ELSEWHERE). INERT today: no SIMD form exists before R4e', so both
- * settings render the same artifact. pcrec sends the kit one bit,
- * `MF_P_PORTABLE_ONLY`, set iff the force bit is absent.
+ * EXECUTE ELSEWHERE). The force bit (with `memfn_simd`, the CPU list)
+ * selects the compile's CPU target; pcrec states that target to the kit on
+ * every art and the artifact carries the kit's guard and region for it
+ * (docs/spec/match_api.md §6.3.10¶14-¶15).
  * Both bits are masked out of `rx_info.flags` by `emit_info_def`'s
  * `strategy_denials` mask (src/gen/emit_dfa.c; docs/spec/tuning.md §2's
  * `rx_info.flags` rule: every axes.def bit, force bits included, unless
@@ -1715,6 +1716,18 @@ typedef struct {
      * say-so. The CLI's `--allow-code=LANGS` sets it. An unknown language
      * is refused through `pcrec_error`. Per call, like `features`. */
     const char        *allow_code;
+
+    /* [XARCH-DEV] P1 THE CPU TARGET LIST of `-fmemfn-simd=LIST`: NULL (the
+     * default) means none was given. With `PCREC_FORCE_MEMFN_SIMD` set, NULL
+     * is the host family's default list and a LIST is exactly those targets
+     * (a family token in it means that family's default list); a LIST
+     * without the force bit, or with `PCREC_NO_MEMFN_SIMD`, is refused. The
+     * tokens are the kit's, parsed by the kit before any pass runs; an
+     * unknown one refuses the compile with the kit's text. One target per
+     * list for now (docs/spec/tuning.md §2.43), and it is the artifact's. The
+     * CLI sets it from `-fmemfn-simd=LIST`; the flag is renamed at
+     * [IFACE-PUSH]. */
+    const char        *memfn_simd;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos
@@ -1871,5 +1884,9 @@ void pcrec_output_free(pcrec_output *out);
  * this function reads the one table at run time, so a limit that changes
  * cannot disagree with itself. The contract is `docs/spec/limits.md`. */
 char *pcrec_limits_tsv(void);
+/* [XARCH-DEV] P1 `--list-cpu-targets`: the CPU families and targets
+ * `-fmemfn-simd=` accepts, TSV (docs/spec/cli.md §2.16), every cell the
+ * kit's own text. Free with free(). */
+char *pcrec_cpu_targets_tsv(void);
 
 #endif /* PCREC_H */

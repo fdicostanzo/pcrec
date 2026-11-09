@@ -3671,3 +3671,24 @@ Main ruled on the four kit findings (D186 add. 2):
   - 3.0a GO: build lane s30a (opus) in worktrees/s30a, branch lane/memfn-s30a cut from lane/memfn-u30d.
     - Kit-only, zero movers. Light niced builds only during the hold.
     - It WRITES its validation jobs (scratch/memfn/s30a/jobs/) and does not queue them; the kit manager queues them after K0's 01:00 gates, in agreement with main's 500 battery.
+- 11-07 ~23:40: s30a DELIVERED 3.0a (lane/memfn-s30a a75439842; lane closed).
+  - Commit 1 is 8bb9db959 (the triple's tables + the Table B split); commit 2 is b5d1f8dd4 (§2.4).
+  - Light witnesses: zero movers (ident 48/48 SAME at both commits; G2 10444/0; finder hashes 3316/0; check C 0 stale; census green; rows_check §R/§S green; Goal 4 grep empty).
+  - Sabotage S2982-S2993; (Q) S2992 is committed as declared UNDETECTED, ACCEPTED: its detector needs an independent libc reading, so it is a plan item and was not invented.
+  - Deviation 6 REJECTED as shipped: §S `git show`s 067aca4df, so it is red on any checkout without that object. The kit manager merged lane/memfn-k1107 into s30a (d1c743c02). Fix lane s30afix (sonnet) makes §S read the working-tree responses.md, failing closed, planted both ways.
+  - Validation jobs 500-509 are written, not queued (/var/tmp/pcrec-pcrec/scratch/memfn/s30a/jobs/). They are queued after s30afix and after agreeing the order with main's 500 battery.
+- 11-07 ~23:55: main OK: 3.0a gates (500-509) queue AFTER 500-main-fullsuite2 (~13:00+ 11-08). Main's docs lane files the composition D-entry, RUNG-LIST and the two r13 plan rows; ids to follow.
+- 11-08 ~00:10: s30afix DELIVERED (lane/memfn-s30a 34e2ae7b7; lane closed). rows_check §S reads the working-tree responses.md, fails closed; plants (a) quote deleted, (b) invented row, (c) missing file all exit 1; unplanted 243 passed; strict 0.
+  - 3.0a gates 500-509 (kit-s30a-*) QUEUED. 500's --ready waits until no *-main-fullsuite2 is pending or running (any verdict; `after KEY` would wait on green forever). The rest chain after it.
+  - Main filed D190 (the search/stream/check composition, Frank verbatim, Q6 included) plus plan rows [RUNG-LIST], [PIECE-ACCEPT-RULE] and [PIECE-COVERAGE]. Docs citing "067aca4df / proposed D-entry" should cite D190 at the next design touch (3.0b).
+- 11-08 01:26: K0 job 452 make test GREEN (wall 1581 s). 453 mech is next.
+- 11-08 01:27: K0 job 453 mech RED: outcome=failed (never ran), right after 452's green. Read-only triage lane tri453 (sonnet) launched before reading the log.
+- 11-08 01:35: 453 triaged (tri453; lane closed).
+  - Cause: 452's make test rewrote docs/dev/artifact_size_log.tsv in worktrees/k0, and common.sh's clean-tree check failed at the queue's start-time dry run. The queue behaved correctly.
+  - Fix: the check now exempts that test-written path. Restored the file (the only dirt) and re-queued 453.
+  - It now waits behind main's battery 500-main-fullsuite2 (running since 01:27, ~12 h). The s30a jobs' common.sh has no clean-tree check, so they are not exposed.
+  - Lesson (2nd time: sp1efix too): a job's clean-tree check must exempt artifact_size_log.tsv, which make test writes.
+- 11-08 14:11: main's battery ended. 3.0a gate 500 strict GREEN (17 s). K0's 453 mech is running; 501-509 follow.
+- 11-08 14:20: 453 mech RED triaged (tri453b; closed): class (c), a row-definition defect. 6/7 rows DETECTED; S2977's designed catch is a fixture compile error, but the row declares SAB_EXPECT=DETECTED, so it scored ANOMALY 1 > ceiling 0. Fix lane k0fix2 (sonnet) sets COMPILE-CATCH like S989/S272/S07. Re-queue 453 after it. Not a K0 check gap.
+- 11-08 14:20: k0fix2 DELIVERED (lane/memfn-k0 a6f51ac70; closed): S2977 is now COMPILE-CATCH and listed in tests/mech/CLAUDE.md. Its single-row run was yielding on the box lock behind the queue, so I safekilled it (our own) and re-queued the full 453 mech (7 rows) instead.
+- 11-08 14:45: K0 COMPLETE: 453 mech GREEN at a6f51ac70. done: R-36 posted; main messaged.

@@ -1728,6 +1728,7 @@ a.?b%-e byte%2%2%[REQ-HANDOFF-L1] a BYTE landmark b, after a and an optional byt
 (?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}%-e byte%4%4%[REQ-HANDOFF-L1] ipv6-shaped: four hex digits before the first colon
 (?:ab|c):%-e byte%2%2%[REQ-HANDOFF-L1] the colon after the WIDER branch ab (the alternation's maximum width shifts it)
 (?:ab:|c:)%-e byte%2%2%[REQ-HANDOFF-L1] a member BOTH branches carry takes the FARTHER bound, ab's colon at 2 not c's at 1 (S806)
+(?:ab:y|c:)%-e byte%2%2%[REQ-HANDOFF-L1] S806's witness since the [ALT-NF] folds: `(?:ab:|c:)` factors to `(?:ab|c):` and no longer carries the member through rb_intersect; the unequal tails keep the alternation, both branches carry ':', the FARTHER bound is ab's 2
 \w*:%-e byte%unbounded%none%[REQ-HANDOFF-L1] a min-0 UNBOUNDED repeat still shifts the colon (a bounded min-0 repeat is lowered to alternations; S807)
 .{1,3}:%-e utf8%12%12%[REQ-HANDOFF-L1] three characters of up to four bytes before the colon
 \w+:%-e byte%unbounded%none%[REQ-HANDOFF-L1] the colon after an unbounded run

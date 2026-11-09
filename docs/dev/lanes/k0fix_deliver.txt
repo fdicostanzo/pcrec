@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k0fix_report.md
+sections: Summary; Token spellings; Distinctness check; Spec and contract hunks; Light checks; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: kit-k0-strict kit-k0-sections kit-k0-test kit-k0-mech

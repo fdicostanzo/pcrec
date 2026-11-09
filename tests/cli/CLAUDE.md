@@ -7,6 +7,7 @@ Part of `make test` since M2.
 ## Files
 
 - **run_cli_tests.sh** — the cases (count deliberately not hand-copied here — this line has drifted twice; `grep -c '^case[0-9]*()' run_cli_tests.sh` is the source): (1) ...
+- **simd_target_probe.c** — [XARCH-DEV] P1's two oracles (the kit's own refusal text; the `pcrec_options.memfn_simd` door; U3's `text TOKEN DIR` mode writes the kit's guard/region texts the placement cases look for); the "cpu targets" cases in run_cli_tests.sh name no token (they read `--list-cpu-targets`).
 - **case 11 (MOD-0.7)** — `--explain`, the CROSS-SOURCE query surface, and the first case in this file written under a stated assertion rule.
 - **case 12 (R20/MOD07-1)** — A PRODUCING PORT THAT FAILS, on both query surfaces.
 - **case 13 (MOD-0.8c slice 3)** — THE ENCODING GATE (`-e`), which nothing in this repository covered before: `grep -rn '\-e utf8' tests/` found nothing, so the CLI's only ...

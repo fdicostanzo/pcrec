@@ -40,7 +40,6 @@ struct g2a_kernel {
     size_t (*f)(const unsigned char *subject, size_t n, size_t pos);
     unsigned k;
     unsigned char b[3];
-    unsigned levels;
 };
 
 #include G2A_KERNELS
@@ -74,8 +73,8 @@ static void check(const struct g2a_kernel *kn, unsigned id, const char *lay,
     size_t got = kn->f(s, n, pos);
     checks++;
     if (got != want && ++failures <= 20)
-        printf("FAIL kernel %u (levels %u, bytes %u,%u,%u k %u) layout %s align %u n %zu pos %zu: "
-               "got %zu want %zu\n", id, kn->levels, kn->b[0], kn->b[1], kn->b[2], kn->k, lay,
+        printf("FAIL kernel %u (bytes %u,%u,%u k %u) layout %s align %u n %zu pos %zu: "
+               "got %zu want %zu\n", id, kn->b[0], kn->b[1], kn->b[2], kn->k, lay,
                align, n, pos, got, want);
     if (failures && stop_first) {
         printf("checks %llu\nfailures %llu\n", checks, failures);

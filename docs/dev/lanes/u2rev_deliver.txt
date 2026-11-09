@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u2rev_report.md
+sections: Summary; Fixes by finding; The header placement (X-1); Sheet amendments; What moves; Checks run; Sabotage rows; Validation jobs; Deviations; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

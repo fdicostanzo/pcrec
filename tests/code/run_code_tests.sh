@@ -254,9 +254,9 @@ while IFS='|' read -r m c; do
     case "$c" in takes|describe|writes) ;; *) bad "CLI mode '$m' has class '$c', which the entry-point arm does not know" ;; esac
 done <<< "$EP_TABLE"
 # EXACT (F20): a mode added to the table moves this number, visibly.
-[ "$nmodes" -eq 18 ] || bad "$nmodes CLI modes read from cli/main.c's CLI_MODE_TABLE, expected exactly 18: a mode was added (give it its ep_args arguments and move the pin) or the enumeration stopped reaching it"
-[ "$(printf '%s\n' "$EP_ROWS" | wc -l)" -eq 23 ] && [ "$(printf '%s\n' "$NT_ROWS" | wc -l)" -eq 7 ] ||
-    bad "the entry-point rows are not 23 table+writer rows and 7 non-table rows"
+[ "$nmodes" -eq 19 ] || bad "$nmodes CLI modes read from cli/main.c's CLI_MODE_TABLE, expected exactly 19: a mode was added (give it its ep_args arguments and move the pin) or the enumeration stopped reaching it"
+[ "$(printf '%s\n' "$EP_ROWS" | wc -l)" -eq 24 ] && [ "$(printf '%s\n' "$NT_ROWS" | wc -l)" -eq 7 ] ||
+    bad "the entry-point rows are not 24 table+writer rows and 7 non-table rows"
 while IFS='|' read -r spell class; do
     rm -f "$F/w.c" "$F/w.h"
     ep_args "$spell"

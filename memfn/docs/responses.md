@@ -3268,3 +3268,15 @@ the compiler, and is never adopted silently. Proposed for main to file
   - libc memchr supplies only one-shot. A comparison between two plans names which pieces differ (Frank's apples-to-apples lesson, same day).
   - Also ruled: span_pick row 1 waits for an inline one-member finder and its card, so row 1's first priced comparison is controlled.
   - Effect: plan_frame.md (unit 3.0) rev 1 shapes the reply as the triple. Please file this as a D-entry (or an addendum to D186/D187, your call).
+- done: R-36 (target seam unit K0): branch lane/memfn-k0 @ a6f51ac70. Reports: docs/dev/lanes/k0_report.md, k0fix_report.md, k0fix2_report.md.
+  - Validation, boxqueue, all GREEN:
+    - 450 kit-k0-strict (11-07 19:50); 451 kit-k0-sections (11-07 19:50); 452 kit-k0-test, make test (11-08 01:26, wall 1581 s): all three at ae1ba4b1e;
+    - 453 kit-k0-mech (11-08 14:41, 7 rows, wall 57 s) at a6f51ac70.
+  - k0fix2 (after 452) changed only S2977's SAB_EXPECT (DETECTED -> COMPILE-CATCH: its designed catch is the fixture's compile error) plus tests/mech/CLAUDE.md and the report. No kit code.
+  - No emitted byte moved; no abi event.
+  - For main (target_seam_units.md §6 / P1), the kit's token statement:
+    - FAMILY tokens: amd64, arm64. TARGET tokens: generic, x86-64, x86-64-v3, armv8-a. The spaces are disjoint: the kit refuses a family token equal to a target token after lowercasing and _ -> -.
+    - Matching is ASCII-case-blind, otherwise exact.
+    - A family token in a list = its default list (amd64 -> x86-64, arm64 -> armv8-a).
+    - The listing's source is mf_targets / mf_families / mf_host_family, with each row's doc text the kit's.
+    - units.md text spelling the family x86-64 or the target aarch64 predates this.

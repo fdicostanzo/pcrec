@@ -266,7 +266,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
                              gate_verdict *why, int quiet, const char **row,
                              const ren_key **ren)
 {
-    gate_in in = { s, def, NULL, NULL, NULL };
+    gate_in in = { .s = s, .h = def };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     /* R17-b' B2 (r17b_prime.md §1.6): a site T-FIND decides (fd_find, the
        one walk; span_pick 1e) renders the deciding row's pick through the
@@ -891,9 +891,8 @@ static const char *measures_check(const mf_measures *ms)
     return NULL;
 }
 
-mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
-                     uint64_t denies, const mf_measures *ms,
-                     const mf_analysis *an)
+mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint64_t denies,
+                     const mf_measures *ms, const mf_analysis *an)
 {
     mf_art *art = a->alloc(a->u, sizeof *art);
     if (!art) return NULL;
@@ -901,7 +900,6 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
     kb_init(&art->forms, a);
     art->a = a;
     art->prefix = prefix ? prefix : "mf";
-    art->policy = policy;
     art->denies = denies;
     art->ms = ms;
     art->an = an;       /* the handed rates: kit_byte_rate reads them (the PRES
@@ -923,6 +921,19 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
 const char *mf_art_error(const mf_art *art)
 {
     return art && art->err[0] ? art->err : NULL;
+}
+
+int mf_art_target(mf_art *art, const mf_target *t)
+{
+    if (!art) return -1;
+    if (!t || !mf_target_c_of(t))
+        return kit_fail(art, "mf_art_target: the target is not a row of the kit's table");
+    if (art->target && art->target != t)
+        return kit_fail(art, "mf_art_target: the art's target is `%s`; it cannot become `%s`",
+                        art->target->name, t->name);
+    art->target = t;
+    art->levels = kit_target_levels(t);
+    return 0;
 }
 
 /* A copy of `t` in the art's arena (NULL for NULL); *oom set on failure. */
@@ -1050,6 +1061,14 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     if (s->abi != MF_SITE_ABI)
         return kit_fail(art, "mf_define: site abi %u, kit abi %u", s->abi,
                         (unsigned)MF_SITE_ABI);
+    if (!art->target)
+        return kit_fail(art, "mf_define: the art states no target (mf_art_target before the "
+                        "first define, unit U2)");
+    if (s->policy & ~(uint32_t)MF_P_KIT_NAMED)
+        return kit_fail(art, "mf_define: policy bits 0x%x are not in the kit's named set 0x%x "
+                        "(unit U2)",
+                        (unsigned)(s->policy & ~(uint32_t)MF_P_KIT_NAMED),
+                        (unsigned)MF_P_KIT_NAMED);
     const char *why = NULL, *wpath = NULL;
     const struct wf_plan *wplan = NULL;
     const mf_site *ws = s;      /* the window site, where the family routes */
@@ -1085,7 +1104,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
         if (rid && !strcmp(rid, WF_STREAM_REFUSAL))
             return kit_fail(art, "mf_define: no row serves this site: E-stmt: %s",
                             wf_stream_refusal());
-        gate_in in = { s, def, NULL, NULL, NULL };
+        gate_in in = { .s = s, .h = def };
         char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
         if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
@@ -1218,7 +1237,7 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
                         "(`decl_point` 1: its storage point dominates every use)",
                         handle);
     wf_facts wff = { &r->site, NULL };
-    gate_in in = { &r->site, use, NULL, NULL, r->wplan ? &wff : NULL };
+    gate_in in = { .s = &r->site, .h = use, .wf = r->wplan ? &wff : NULL };
     gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0, 0, 0 };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);

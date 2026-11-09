@@ -121,7 +121,7 @@ by a file (`cli.md` §1.22), and a file names its headers with its own
 `code-header` line. The `pcrec` line's raw text is
 re-parsed by the CLI's own option parser (`cli.md` §1.1's config-block
 paragraph), so a literal pattern on that line is spelled `--pattern 'X'`
-there too, exactly as on the command line.
+there too, exactly as on the command line. The CPU for SIMD is chosen there too, by `-fmemfn-simd[=LIST]` / `-fno-memfn-simd` (`cli.md` §1.24), whose tokens the kit parses when the line is parsed.
 
 <a id="s1-1-p2a"></a>[1.1¶2a] A `config` body may also hold one `measures <set>` line: the
 measurement set the target's compile reads (`measures.md` §5), a set NAME,

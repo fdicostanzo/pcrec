@@ -35,6 +35,7 @@
  * kit's consulted kinds join the stamp and the kit is then the last reader.
  * The `rx_info` writer marks each line at its byte position, so moving the
  * render here moved no byte. */
+#include <stdlib.h>
 #include <string.h>
 
 #include "gen/memfn_sites.h"
@@ -317,10 +318,72 @@ static void ks_stamps_render(Ctx *cx)
     }
 }
 
-uint32_t pcrec_memfn_policy(uint64_t flags)
+/* [XARCH-DEV] U3 renders the target headers over their mark in csb
+ * (`pcrec_emit_target_headers_mark`): the text `pcrec_memfn_target_headers`
+ * names, read now, after the last emit, from the prologue ahead of the mark
+ * and the lines held inside the region (`pcrec_emit_include_line`). The mark
+ * sat in its own bracket, so the text takes over its guarded record (both
+ * counts and the caps breakdown move by the difference) and no length
+ * decision ever read either: a header owed only for a target is beyond the
+ * SIMD-off compile. A part carries no mark; any other artifact exactly one.
+ * Each held line goes with its mark, whose bracket record goes with it, so
+ * the region keeps no `#include`. */
+static void target_headers_render(Ctx *cx)
 {
-    return pcrec_axis_on(flags, PCREC_NO_MEMFN_SIMD, PCREC_FORCE_MEMFN_SIMD)
-               ? 0u : MF_P_PORTABLE_ONLY;
+    StrBuf *c = &cx->job->csb;
+    size_t nm = mark_count(c, PCREC_TARGET_HEADERS_MARK);
+    if (nm != (pcrec_is_part(cx) ? 0u : 1u))
+        pcrec_ctx_fail(cx, 0, "internal error: the artifact holds %zu target "
+                       "header marks (pcrec_emit_target_headers_mark)", nm);
+    if (!nm) return;
+    const char *held = PCREC_HELD_HEADER_MARK;
+    size_t at = (size_t)(strstr(c->p, PCREC_TARGET_HEADERS_MARK) - c->p);
+    const char *after = c->p + at + strlen(PCREC_TARGET_HEADERS_MARK);
+    /* pass 1: the held lines, in text order */
+    StrBuf lines = { .cx = cx };
+    size_t nheld = 0;
+    for (const char *h = strstr(after, held); h; h = strstr(h + 1, held)) {
+        const char *line = h + strlen(held), *eol = strchr(line, '\n');
+        if (!eol)
+            pcrec_ctx_fail(cx, 0, "internal error: a held header mark ends "
+                           "the artifact (pcrec_emit_include_line)");
+        pcrec_sb_printf(&lines, "%.*s", (int)(eol + 1 - line), line);
+        nheld++;
+    }
+    const char *text = pcrec_memfn_target_headers(cx, c->p, at, lines.p ? lines.p : "");
+    pcrec_sb_free(&lines);
+    PcrecEmitSize was = pcrec_emit_size_measure(PCREC_TARGET_HEADERS_MARK,
+                                                strlen(PCREC_TARGET_HEADERS_MARK), NULL);
+    PcrecEmitSize now = pcrec_emit_size_measure(text, strlen(text), NULL);
+    PcrecEmitSize hm = pcrec_emit_size_measure(held, strlen(held), NULL);
+    /* pass 2, rebuilt in a fresh buffer, never truncated and re-appended in
+     * place: the mark sits near the top, and a truncated csb under a ladder
+     * trial's scratch bound would read a length below its own guarded record */
+    StrBuf nb = { .cx = cx };
+    pcrec_sb_printf(&nb, "%.*s%s", (int)at, c->p, text);
+    const char *rest = after;
+    for (const char *h; (h = strstr(rest, held)); ) {
+        pcrec_sb_printf(&nb, "%.*s", (int)(h - rest), rest);
+        rest = strchr(h + strlen(held), '\n') + 1;
+    }
+    pcrec_sb_puts(&nb, rest);
+    free(c->p);
+    c->p = nb.p;
+    c->len = nb.len;
+    c->cap = nb.cap;
+    c->simd_guarded += strlen(text) - strlen(PCREC_TARGET_HEADERS_MARK)
+                     - nheld * strlen(held);
+    c->simd_size.total += now.total - was.total - nheld * hm.total;
+    c->simd_size.prose += now.prose - was.prose - nheld * hm.prose;
+    c->simd_size.tables += now.tables - was.tables - nheld * hm.tables;
+}
+
+/* the bytes the held-header marks in `sb` occupy (kept out of the render
+ * function below so the one holding the kit's sink reads no text) */
+static size_t held_marks_bytes(const StrBuf *sb)
+{
+    return mark_count(sb, PCREC_HELD_HEADER_MARK) *
+           strlen(PCREC_HELD_HEADER_MARK);
 }
 
 /* The finishing pass (see the header). Reads `cx->job->csb` and `hsb`, the
@@ -339,6 +402,7 @@ void pcrec_memfn_stamps_render(Ctx *cx)
 {
     Job *job = cx->job;
     mf_art *art = pcrec_memfn_art(cx);
+    target_headers_render(cx);
     StrBuf lines = { .cx = cx };
     StampSink ss = { &lines, pcrec_sb_upper(&cx->arena, cx->opt->prefix) };
     mf_sink sink = { .u = &ss, .stamp = sink_stamp,
@@ -360,10 +424,14 @@ void pcrec_memfn_stamps_render(Ctx *cx)
      * per digit and leak the guarded count into every cap, knee and quoted
      * figure. Measured, not argued: the first build's witness moved
      * `--warn-emit-bytes`' quoted sizes by 6 bytes ("1620166" vs "0"). */
+    /* a spliced part's held marks (`pcrec_emit_include_line`) are bracketed
+     * only so no decision reads them; its shell takes them out, so its count
+     * leaves them out (none remain in a shell's text by now) */
+    size_t held = held_marks_bytes(&job->csb);
     if (!rc)
         pcrec_sb_stampf(&lines, ss.upper, "SIMD_GUARDED_BYTES", "0x%016llxULL",
                         (unsigned long long)(job->csb.simd_guarded +
-                                             job->hsb.simd_guarded));
+                                             job->hsb.simd_guarded - held));
     bool ok = !rc && splice_mark(&job->csb, MEMFN_MARK, lines.p ? lines.p : "");
     pcrec_sb_free(&lines);
     if (rc)

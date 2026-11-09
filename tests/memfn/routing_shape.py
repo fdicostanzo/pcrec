@@ -13,10 +13,12 @@ arm, and nothing else." For an artifact's text it checks:
              _ofsskip) has its helper `<fn>__body`, with the FUNC's own
              parameter list, defined ABOVE it;
   selector   the FUNC's whole body is either the one line
-             `    return <fn>__body(<its parameters>);` or a chain of
-             conditional directives with exactly one such call per arm, the
-             callee `<fn>__body` or a level helper `<fn>__<token>`, and the
-             `#else` arm's call `<fn>__body` (floor rule (c));
+             `    return <callee>(<its parameters>);`, the callee `<fn>__body`
+             or (since the target seam, U2+U3: the art's target picks the
+             level, no `#if`) a level helper `<fn>__<token>` defined above
+             it, or a chain of conditional directives with exactly one such
+             call per arm and the `#else` arm's call `<fn>__body` (floor
+             rule (c));
   no #if     no OTHER function body holds a conditional directive
              (#if/#ifdef/#ifndef/#elif/#else/#endif).
 It returns (number of FUNCs, [violation, ...]).
@@ -92,7 +94,8 @@ def check(text):
         if helper[0][1] != tparams:
             bad.append('%s__body does not take %s\'s parameters' % (fn, fn))
         args = 'subject, n, pos' + ''.join(', ' + t for t in re.findall(r'\*(\w+)', tparams))
-        why = selector_body(fn, body_at(lines, at), args)
+        why = selector_body(fn, body_at(lines, at), args,
+                            {h for h, d in heads.items() if d[0][0] < at})
         if why:
             bad.append('%s: %s' % (fn, why))
     for name, at, body in bodies(lines):
@@ -114,8 +117,9 @@ def body_at(lines, head):
     return lines[head + 2:j]
 
 
-def selector_body(fn, body, args):
-    """None when `body` is a selector's whole body, else why not."""
+def selector_body(fn, body, args, above=()):
+    """None when `body` is a selector's whole body, else why not; `above`
+    names the functions defined above the selector."""
     if body is None:
         return 'its body does not open with a `{` line'
     if not body:
@@ -134,6 +138,11 @@ def selector_body(fn, body, args):
         return None
 
     if len(body) == 1:
+        m = CALL.match(body[0])
+        if m and m.group(1) != fn + '__body' and re.match(re.escape(fn) + r'__\w+$', m.group(1)):
+            if m.group(1) not in above:
+                return 'it calls %s, which is not defined above it' % m.group(1)
+            return call(body[0], False)
         return call(body[0], True)
     # the #if chain: #if, call, (#elif, call)*, #else, call, #endif
     want = 'if'
@@ -168,6 +177,8 @@ CHAIN = ('static inline size_t rx_reqrun__w16(const unsigned char *subject, size
          'static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)\n'
          '{\n#if defined(__SSE2__)\n    return rx_reqrun__w16(subject, n, pos);\n'
          '#else\n    return rx_reqrun__body(subject, n, pos);\n#endif\n}\n\n')
+LEVEL = ('static inline size_t rx_reqrun__w16(const unsigned char *subject, size_t n, size_t pos)\n'
+         '{\n    return rx_reqrun__body(subject, n, pos);\n}\n\n')
 CONTROLS = [
     # (name, text, expect a violation)
     ('routed', HELPER + SELECTOR, False),
@@ -182,6 +193,13 @@ CONTROLS = [
     ('chain arm does work', HELPER + CHAIN.replace('#else\n    return', '#else\n    pos++;\n    return'), True),
     ('chain #else calls a level', HELPER + CHAIN.replace('#else\n    return rx_reqrun__body',
                                                        '#else\n    return rx_reqrun__w16'), True),
+    # the target seam's one-call selector (U2+U3): the art's level, by name
+    ('one call to a level', HELPER + LEVEL + SELECTOR.replace('rx_reqrun__body(', 'rx_reqrun__w16('), False),
+    ('one call to a level not defined', HELPER + SELECTOR.replace('rx_reqrun__body(', 'rx_reqrun__w16('), True),
+    ('one call to a level defined below', HELPER + SELECTOR.replace('rx_reqrun__body(', 'rx_reqrun__w16(')
+     + LEVEL, True),
+    ('one call to another FUNC\'s level', HELPER + LEVEL.replace('rx_reqrun__w16', 'rx_ofsskip__w16')
+     + SELECTOR.replace('rx_reqrun__body(', 'rx_ofsskip__w16('), True),
 ]
 
 

@@ -1,0 +1,4 @@
+report=docs/dev/lanes/u3crit_report.md
+sections: Summary; Disposition table; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes

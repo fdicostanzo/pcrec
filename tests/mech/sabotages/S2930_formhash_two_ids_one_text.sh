@@ -6,6 +6,9 @@
 # set [0-9], row pf_walk), so `pair` and `walk` render one text under two ids.
 # Detector: tests/memfn/finder_check.py check B (arm memfnfinder): every entry-table instance hashes
 # pairwise distinct ("form instances hash one text"); `pair`'s design row PAIR is also missed.
+# RE-AIMED 2026-11-08 (lane u3tgt, [XARCH-DEV] U3): unit U2 replaced the entry table's policy
+# column with the art's target token (`"generic"` on these rows); the anchor follows, the plant
+# is unchanged.
 SAB_ID="S2930-formhash-two-ids-one-text"
 SAB_FILE="memfn/src/formhash.c"
 SAB_SUITES="memfnfinder"
@@ -13,5 +16,5 @@ SAB_DESC='the form-hash entry table renders two ids (pair, walk) from one site: 
 SAB_DOC_FIGURE='MEASURED by lane memfn-s2c (sub-lane fh) planted and reverted by hand; exact re-run: bash tests/mech/run_sabotage_matrix.sh S2930.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        MF_P_PORTABLE_ONLY, NULL },'
-SAB_AFTER='    { "pair",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        MF_P_PORTABLE_ONLY, NULL },   /* SABOTAGE S2930 */'
+SAB_BEFORE='    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL },'
+SAB_AFTER='    { "pair",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        "generic",          NULL },   /* SABOTAGE S2930 */'

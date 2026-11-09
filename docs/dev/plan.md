@@ -33,12 +33,42 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 ## Active
 - [XARCH-DEV] STATE:started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
   filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
-  status (2026-11-07): BUILD GO (Frank: "this should be next (at least in parallel) to unblock kit"); pcrec half = main lane, kit half = kit; kit edits emitter-shaped, ride [IR-FORM] (4)
+  status (2026-11-08): BUILD GO 2026-11-07 (Frank: "this should be next (at least in parallel) to unblock kit"); kit K0 LANDED d9df92c0d (D146 add. 1); pcrec P1 LANDED bfecd6143 (-fmemfn-simd[=TOKEN,..], kit token parse, --list-cpu-targets, 0 bytes); next U2+U3 (one abi event); order: target_seam_units.md
   trigger: Frank's go, or the first aarch64 kit row
   refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
   Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
   REQUIREMENT (Frank, 2026-11-06): "We need the user to be able to support multiple arch simultaneously. Whether that is a single artifact or multiple is the design question." Manager's leaning, NOT ruled: targets are a compile input; per site the kit picks per target; agreeing sites are emitted once and disagreeing sites get compiler-macro #if arms with the neutral pick as #else; one target = today's bytes, so N artifacts is the special case. First measurement: price the corpus with zen4 and an M1-made set and count disagreeing sites (size and test cost scale with it). Every arm is tested on its own arch.
   RULED (Frank, 2026-11-06, "I agree with your points"; details when the item starts): END STATE = per-target VARIANTS, no #if arms. A variant is a complete matcher planned and priced for one target. Build time: pcrec emits the build target's variant. Run time: one artifact holds 2-3 variants (generic + 1-2 SIMD) as target-attributed functions, a once-per-process CPU dispatch entry, and each variant's own entry. The artifact's target set is an explicit LIST (a,b,c) the caller gives, never assumed; with no list, a declared, stamped default list. D188 amended.
+  - [XARCH-FIXEDTEXT] STATE:not-started — emit_sweep: refuse a -fmemfn-simd= arm whose measured target text is empty
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-4, PLAN)
+    status (2026-11-08): filed; SUSPECTED, not confirmed
+    next: confirm (make the control compile fail, or an arm insert nothing, and see the arm still read ok); then FAIL such an arm and add an upper pin beside the DIFFER_PINS floors
+    refs: scripts/emit_sweep.py target_fixed_text; docs/dev/reviews/2026-11-08-r5-xarch.md
+    scripts/emit_sweep.py's target_fixed_text returns [] when its control compile fails or the arm inserts nothing; every pattern then counts as a mover and the floors (differ >= floor) still pass.
+  - [XARCH-PLACECOV] STATE:not-started — placement checks for every listed target, not one: the 32-byte region, a guard-only target
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-6, PLAN part)
+    status (2026-11-08): filed; the FIX-NOW part (xt_place's rx_info -1 guard, its no-include-in-region test, stale comments) landed with lane u3crit
+    next: run tests/cli's xt_place over one artifact per listed target with a family (a guard-only target: guard once, no region); pick the two-target family by listing order, not awk hash order
+    refs: tests/cli/run_cli_tests.sh xt_place; docs/spec/match_api.md §6.3.10¶15
+    Today the cli placement case covers one target (the baseline amd64 one); the larger region and the arm64 guard-only artifact are placed by no check.
+  - [XARCH-NEEDSOK] STATE:not-started — a check that each kit level's declared needs SUFFICE for its intrinsics (the S726 closer)
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-7, PLAN; kit-side, relayed)
+    status (2026-11-08): filed; S726 stays declared UNDETECTED until it lands
+    next: the kit: compile each level's rendered helper at its family's baseline plus -m<need> for exactly its needs, one loop in memfn/tests/check_targets.sh; then S726 re-declared DETECTED
+    refs: tests/mech/sabotages/S726_w32_under_weak_guard.sh; memfn/tests/check_targets.sh
+    check_targets.sh proves needs is a subset of features, never that the needs are enough: a level under-declaring (avx for avx2) is invisible while every target carrying the one carries the other.
+  - [XARCH-TOKERR] STATE:not-started — an unknown CPU token's refusal is cut at 256 bytes mid-text
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch CONTRACT-4, PLAN)
+    status (2026-11-08): filed
+    next: size the joined refusal (or show the kit's target and family refusals separately) so cli.md §1.24¶2's "the kit's text unchanged" holds for any token length
+    refs: src/gen/memfn_targets.c add_list; docs/spec/cli.md §1.24
+    A 120-byte unknown token prints 263 bytes ending mid-token, without the "(known: ...)" lists; each target or family the kit adds lengthens those lists, so the cut moves toward ordinary tokens.
+  - [XARCH-K2PULL] STATE:not-started — weigh pulling the kit's K2 target_dependent fact forward (guard and region only where needed)
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch SEAM-4(ii), NOTED + weigh)
+    status (2026-11-08): filed; the ruled interim stands (every -fmemfn-simd artifact carries guard and region)
+    trigger: the first caller complaint that a -fmemfn-simd artifact with no SIMD form is family-locked or AVX-only, or K2's own go, whichever first
+    refs: docs/design/memfn/target_seam_units.md (K2); docs/spec/match_api.md §6.3.10¶4
+    Most patterns reach no SIMD row, yet their -fmemfn-simd artifacts are locked to the target's family and features; with a per-art target_dependent fact pcrec could place guard and region only where the kit rendered target text.
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
@@ -278,22 +308,33 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
   status (2026-11-07): stage 1 LANDED at c44649a69 (lane vlbland; bounded variable-width lookbehind, abi 96, D189); row stays started for stage 2
   next: re-check critic round (fix-induced on F1/F12 + readiness), then Frank's answer to §13 Q1/Q2 and a build go
-  refs: docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/dev/reviews/2026-11-05-r3-vlookbehind.md; docs/dev/lanes/vlbrev1_report.md; [LB-EXIST]; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
+  refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (lookbehind removal by \K with an earlier scan + floor; exact for fixed-length A); docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/dev/reviews/2026-11-05-r3-vlookbehind.md; docs/dev/lanes/vlbrev1_report.md; [LB-EXIST]; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
   Stage-2 note (2026-11-07, vlbbuild review F4a): a backreference reached THROUGH A CALL still reads "unbounded" in a lookbehind (wording tier, D26); `(a+)(?<=\1)x` is not-built in pcrec where libpcre2 gives err 125, so both refuse.
 - [RUN-POS-SET] STATE:started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
   filed: 2026-11-04 Frank ("Let's file it"), from his question on how a caseless position's set is built per encoding
   status (2026-11-07): stages 1, 2p, 2b LANDED on main (merge f77ed1130, abi 97, lane altland); 2a census-first, 3 and 3m wait; r5 PLAN items filed as [ALT-NF-CHK] [ALT-NF-SPINE] [ALT-ISL-HOPELESS] [ALT-REQ-PIECES]
-  trigger: FIRED 2026-11-05 (rpsurvey: runs cut on bench/utf8 ci-* cells); the build waits for span_pick unit 1e's landing and Frank's build go
+  trigger: FIRED 2026-11-05 (rpsurvey: runs cut on bench/utf8 ci-* cells); the span_pick unit 1e gate is DISCHARGED ([MEASURE-SET]: stage 1 complete at 1e); the build waits for Frank's build go
   refs: docs/design/alt_normal_form.md; docs/dev/lanes/altdesign_report.md; docs/dev/lanes/altthink_report.md; docs/dev/lanes/rpsurvey_report.md (its derived москва/αβγ numbers corrected by altthink); D187; D186; D153; src/facts/req.c (rr_alt); src/opt/lower_enc.c (lower_class_utf8); src/opt/altcls.c; [POS-ONE-DETECTOR]; [SEQ-FOLD]; [DFA-ALPHA-MERGE]
   Restated (Frank 2026-11-05): folds are set up as alternations and handled by ONE alternation normal form (width groups, exact sibling merge, a facts-only superset hull), owned by one module called from UTF-8 lowering and from altcls; the run reads it; positions cross the kit seam as sets. Staged: 1 lowering (byte artifacts unchanged), 2 rr_alt hull + A_EMPTY identity, 2b altcls, 3 set positions (with [POS-ONE-DETECTOR]), 3m mixed-width affixes.
   Superseded framing (filed 2026-11-04; Frank 2026-11-05 replaced the byte-set framing with folds-as-alternations): "REQUIRED-RUN POSITIONS AS BYTE SETS: caseless UTF-8 letters stop cutting runs"; filed status: req.c's run carries one byte CUBE per position, so in UTF-8 (?i)k (k|K|E2 84 AA) and (?i)s (with U+017F) cut the run; filed trigger: the survey finds runs cut on real bench cells, or [SEQ-FOLD]'s first child lands.
   Facts kept from the filing: a class that is not one cube, or has a member above 0xFF, is a gap; UTF-8 alternatives keep only their common cube-hull head/tail (rr_alt); single-byte encodings are unaffected for ASCII letters; the k-set path (src/facts/kset.c) already hands the kit full sets. The filed plan (a survey, then a D186 choice change) ran: survey rpsurvey, thought lane altthink, design altdesign.
+  note (Frank 2026-11-09): the member cap's recorded reason (PCREC_MAX_REQ_RUN_POS_SET = 2, limits.def: "every position must be a scan candidate", two scan arms) is SUPERSEDED: §12a/D191 lets the kit pick the scan position from any run position, and how wide a set the kit can SCAN is the kit's fact, not pcrec's (Frank: the kit can have techniques for classes wider than two; D157). Stage 3 re-rules the cap as: pcrec states every position's set (members, or a cube) (no per-position exact mark: exactness belongs to RANGES, R-38 Part C, owner 2026-11-09); the run stops only where a position carries no information (or the walk's own reach); what to scan and how far to verify is the kit's priced choice. Driver: utf8 non-ASCII classes cut the run at the continuation byte (`[α-ω]foo` -> 64-member second byte). Kit side filed as R-38 Part D.
 - [ANCH-AT] STATE:blocked — one anchored DFA run where the start is known (F-11: 328 _match bodies)
   filed: 2026-11-06 Frank ("File it scheduled"), after asking why the DFA may drift to other starts when the start is known
   status (2026-11-06): SCHEDULED: next after lookbehind stage 1 + alternation land, beside A-REV's chain; a D186 CHOICE change on take[CR_ATTEMPT] adding AT (locate_finish §8 Q7's row), measured on the 328 bodies
   trigger: scheduled (Frank 2026-11-06); starts when the two current builds have landed
   refs: docs/design/locate_finish.md (FIN3 verify-at, the F-11 cell, §8 Q7); decisions D156 D186
   The unanchored machine keeps its restart (start unknown); where the start is known (_match, a pinned candidate) the anchored machine fails at the first byte no prefix allows instead of scanning on. Gate: answers identical; instructions:u per moved body vs search-filter; losses listed by name.
+
+- [REQ-EMPTYCAT] STATE:started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
+  filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
+  status (2026-11-09): BUILD GO (D191, span arms); unit E1 (docs/design/span_arms.md §8) building in lane sae1, then R1/E2, then L1; L2/L3 after the kit's R-38. Earlier: the direct half is alt_normal_form.md stage 2a; the quantified half (REP of empty, anchor wrapper) is span_arms E1
+  next: land E1 (code round first); R1 and E2 lanes off it
+  refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
+  note (2026-10-26, lane rwsurvey): the stray A_EMPTY is NOT from `(?:)`/`(?i)`/`(?#)` (parse drops them; `a(?:)bc` gives req_run abc); it comes from pcrec_wrap_bare_anchor's `<anchor EMPTY>` wrapper under a quantifier and the derive hook's killed `\G`.
+  note (2026-11-09, reviews r3 sae1 / r4 sae2 PLAN items): (1) an alternation whose every branch consumes nothing (`a(?:\b|$)b`) still cuts the run: trigger, a corpus count of such alternations with a run mover; (2) one row selector for T2/T3/T4 when L1 adds T4 (span_arms §6)
+  note (2026-11-09, review r5 sar1 EMIT-2 cause 2, PLAN): a long required run's handoff can displace a cheaper memchr scan; after R1's spelling-independent tie fix, `A{33}x` on English text costs exactly what its unrolled literal costs on lane/u3mech (+86% vs the repeat spelling's old cost; 2.4x FASTER on prior text). Trigger: a bench cell whose run is >= 16 positions and whose time rises at R1's landing; the fix is pricing the run handoff against the scan it displaces (span_pick's priced choice), not a run-walk special case.
+  note (2026-11-09, lane identfix): scripts/emit_sweep.py's patterns-file reader drops lines starting with `#` as comments, so a real pattern `#` (bench litrun floor.rx) is never in any identity sweep: a population nobody counts (learnings §3). The span-arms ident_check prints a NOTE for `#`-led movers as a stopgap. The patterns-file format already has escapes (`--list-source` form, so `\x23` reads back as `#`): the fix is the WRITER escaping a leading `#` (the bench-pattern extraction that builds these files), plus emit_sweep refusing a file whose writer did not (a count of skipped `#` lines vs the source's). Not [RXT-MULTILINE] (a different file format); the general home is [RXT-ONE-READER] (one reader for every pattern-list format). Fix at the next emit_sweep change.
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
@@ -453,6 +494,22 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   ONE general record of what is ALREADY KNOWN about the subject at each point of the emitted matcher, consumed by every emitter, instead of each producer handing its proof to one consumer by a private path. Members today (the family, dispersed): the hybrid prefilter's proof of the window and bytes ([PF-KNOW], D142), the kit's proven facts (D161 add. 8/10), the minimum remaining length (K23 MRL), the known start ([START-LANDING]'s landing / end-minus-width), the match-end mark's distance set (D164), the handoff K landmark (K82/L1), the compound's floor attempt (F proved at the floor), [VM-LEN-HOIST]'s length fact. Distinct from [PATFACTS] (D120: facts about the PATTERN, memoized per compile): this is facts about the SUBJECT at a program point, a dataflow lattice over the program (bytes proven at offsets, length bounds, position pins, context known).
   TRIGGER: the third consumer that would otherwise take a private path (the forest-for-trees threshold) — [VM-LEN-HOIST]'s build or [KIT-VERIFY]'s, whichever first; a design note then, after discussion.
   ARCHITECTURE (Frank, 2026-10-18, r3 Q2 ruled): every mechanism is a FACT PRODUCER stating what it adds at a point (kit proof, exact prefilter, rev-end's pinned end, landing, MRL minw, D164 end set, anchors) into ONE keyed record; ONE static evaluator walks the engine program over the record (partial evaluation, see [CAPS-KNOWN]) and yields report / enter-past / resume / nothing. ORDER MATTERS (Frank): for `\d{10}$` the forward producer knows the digits and rev-end knows the end; if the digit scan is applied first the end fact is lost, so the evaluator sees ALL producers' facts before the runtime order is chosen (position-pinning facts ahead of scanning ones).
+- [EARNED-SKIP] STATE:not-started — a verified run that proves the attempt skips the engine; pcrec states the proof extent
+  filed: 2026-11-09 manager (Frank: "Do we send an index into the span that says don't bother proving beyond this point when we know we'll have to check it with engine"; "File the idea")
+  status (2026-11-09): UNSCHEDULED; no unit owns the skip yet (review r2 r38s F1). Design facts: span_arms §12a, §12c; R-38 Part C (memfn/docs/requests.md)
+  trigger: (D77) a bench cell whose runs are exact over the whole attempt (literal-heavy patterns, `bar(?=baz)` shapes) where the engine's finish is a measurable share of time
+  refs: docs/design/span_arms.md §12a §12c; docs/dev/reviews/2026-11-09-r2-r38s.md (F1); [MATCH-KNOWN] (its prefix-skip member reads the same verified extent); body docs/design/plan_row_bodies/EARNED-SKIP.md
+  ruling (Frank 2026-11-09): the proof is a LIST of exact ranges in the interface (exactness belongs to a range, not a position: `ab|cd` -> `[ac][bd]`); pcrec sends a range only if it uses that range's proof to skip engine work (a sent range is a promise the kit reports on); the kit may verify anything beyond as a filter, never obliged to prove it. Gap handling (checking a hull island so a later range's proof counts) is built only when a count shows proofs breaking at a hull with an exact range after it. Kit side: R-38 Parts C and D.
+- [NEVER-MATCH] STATE:not-started — a pattern proved never to match compiles to a constant no-match matcher; a fact, never an error
+  filed: 2026-11-09 manager (Frank: "I like your no match ideas. File")
+  status (2026-11-09): UNSCHEDULED. Default never an error (D26). Optimize (constant matcher, dead branches dropped) + an --emit-facts fact + an opt-in caller policy allow|warn|error ('must be matchable', Frank) at [IFACE-PUSH]
+  trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
+  refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]
+- [ARRAY-CAPTURE] STATE:not-started — `(X){m,n}` with an opt-in syntax reports every iteration's span in n fixed slots; bounded only
+  filed: 2026-11-09 manager (Frank: "array capture for (X){M, N} perhaps using special syntax. Cap N become N capture groups. No unbounded")
+  status (2026-11-09): UNSCHEDULED. Opt-in syntax only (PCRE2's last-iteration default stays); one group with n entries via its own accessor, never renumbering other groups
+  trigger: (D77) a caller asking for it, or a pattern family that today re-runs a match per iteration to recover each one
+  refs: docs/design/plan_row_bodies/ARRAY-CAPTURE.md; [POSTFACT]
 - [CAPS-VIEW-RERENDER] STATE:not-started — re-render cycle1_caps_view.md's CAPS table under the bench's I-99/I-100 classes
   filed: 2026-09-28 lane admin88
   status (2026-09-28): not started; FILED 2026-09-28, admin88, on `[OPTLOOP.2.analysis]`'s own residual #4, `docs/dev/optloop/cycle2_close.md` §2 item 4 — proposed, not ruled, per that document's own text
@@ -466,6 +523,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/dev/optloop/cycle2_close.md; docs/dev/optloop/; docs/design/pf_know.md; decisions D77 D142
   FINISH `captures_via_dfa_survey.md` candidate (c)'s M-B MATCH-REGIME MEASUREMENT at LARGER subject sizes, for the 17 capture-forced hybrid patterns. `onepass_census.md` already discharged M-A (reach 31.46%/29.41%, clears the ~10% kill threshold); M-B (lane `mbread`, reduced from bench O-46) found the match-regime capture-cost share at median 32.75% but flagged every match-regime subject as a 5-93 byte hand literal, so per-call overhead plausibly dominates — "the next measurement is the match arm at LARGER subject sizes... before candidate (c) is ranked." No dedicated row existed before this filing; the survey and census live only in `docs/dev/optloop/`.
   MEMBER (D142, from [PF-KNOW], docs/design/pf_know.md §2/§8.2): the PREFIX / WHOLE-PROGRAM SKIP — a successful hybrid prefilter proves the window START (its END only under `Vm.mrl_win`, the reseed row `exact`), so the VM's leading fixed-width choice-free segment is redundant work, and the WHOLE program is redundant for the `det_all` subset (164 exact hybrids, 29%; measured x1.13 on a match-dense synthetic, x1.00 sparse) — a first-match row table selecting `whole` / `prefix` / `none` in the one-pass rung, the prefix row being the whole row's fallback, never a mechanism of its own. D77 TRIGGER: a bench cell in the match-dense regime (whole-subject `match`, or find-all over a hit-dense subject such as email's `t-a-valid-addrs`) on which a hybrid's VM share is measured >=10% of TIME on Linux; today's ledgers have no such cell.
+  NOTE (2026-11-09, Frank's question on span arms): runs counting repeats as copies (span_arms.md §12b) lengthen the provable prefix (`abc(ab){3,5}xxx`: `abcababab`, the engine entering inside the repeat with three copies done); under §12a the kit chooses its verify extent, so this member also needs the kit to report how far it verified, as a fact back across the seam.
 - [K88-HANDOFF-DENSE] STATE:not-started — K82 handoff costs ~4.6 ns per call on back-to-back-match literals (K88)
   filed: 2026-10-05 lane k82close
   status (2026-10-05): not started; FILED 2026-10-05, lane k82close, from docs/dev/lanes/k82halpha_report.md §2; known_issues K88
@@ -710,6 +768,39 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [RUNG-LIST] STATE:not-started — the memfn reply lists the SIMD rungs a define will render, a per-SIMD-level triple
+  filed: 2026-11-07 lane kitfile for the kit (plan_frame.md §7 "Plan rows proposed", ruled at r12 Q13; trigger restated at r13 R28)
+  status (2026-11-07): not started; D77 defers it; rev 2 designed it in full (u30d2, 45f3a337f) and rev 2.1 removed it from unit 3.0 (the reply names the OFF triple only, gap stated in §2.3)
+  trigger: row 1 compares a SIMD-on cell, or the first MASK stream RENDERER ROW lands
+  refs: docs/design/memfn/plan_frame.md §7 and §2.3 (branch lane/memfn-u30d); docs/dev/reviews/2026-11-07-r13-memfn-planframe2.md (R25, R28); decisions D190
+  The reply lists the rungs: `nrung`/`rung[]` (row id, search VECTOR, stream MASK, check TRIM, widest first), the three fact columns on `fn_rows` PREFIX, and the one pcrec fact it needs, whether the define's file-scope sink states `simd_open`/`simd_close` (`fs`), unless U2+U3 has moved vrun's admission into per-target arts by then (then each target art's reply is one rung and no sink fact is asked). It also declares `mf_wsearch`'s VECTOR and the support table's VECTOR row (MASK; basis witness: vrun's text holds `m &= m - 1`), both removed from 3.0.
+- [PIECE-ACCEPT-RULE] STATE:not-started — one intersection rule over the (search, stream, check) pieces: does this frame accept this piece
+  filed: 2026-11-07 lane kitfile (r13 FIXIND standing question 1, PROPOSED as a plan row; tag chosen by the filer)
+  status (2026-11-07): not started; the search has a rule (the renderable set) and the stream one (Table S); the check becomes the third member at the second check renderer row
+  trigger: the second check renderer row, or the finder's MASK row
+  refs: docs/dev/reviews/2026-11-07-r13-memfn-planframe2.md (Standing questions (1)); docs/design/memfn/plan_frame.md; decisions D190
+  General form: one intersection rule over the three pieces, with ST-one / ST-none / ST-many as its first-match rows (it also dissolves R3).
+- [PIECE-COVERAGE] STATE:not-started — a per-piece COVERAGE fact (DESCRIBED / NONE / UNDESCRIBED) for the reply's "not described" residues
+  filed: 2026-11-07 lane kitfile (r13 FIXIND standing question 3, PROPOSED as a plan row; tag chosen by the filer)
+  status (2026-11-07): not started; four residues form a family: ARM's `plan_test` NONE, the D-hors PROVES residue, the SIMD gap, `search` NONE on ARM (conflates "no piece" with "a piece the reply does not describe")
+  trigger: the first reader that must tell "absent" from "unreported" (row 1's first record or [RUNG-LIST])
+  refs: docs/dev/reviews/2026-11-07-r13-memfn-planframe2.md (Standing questions (3)); docs/design/memfn/plan_frame.md Goal 5; decisions D190
+  Cheapest at 3.0b's one MF_SITE_ABI event if ever wanted.
+- [TEST-REVIEW] STATE:not-started — testing review: where function-level tests would add to the path tests
+  filed: 2026-11-08 Frank ("Start an unscheduled testing review item with these notes"), from his question on unit tests vs integration tests
+  status (2026-11-08): UNSCHEDULED; notes only, nothing designed or built
+  next: when scheduled, a review lane weighs the body's three candidates (fact-function driver, seam record tests, deny-upstream witnesses) against the test-harness-minimal rule
+  refs: docs/design/plan_row_bodies/TEST-REVIEW.md; [IR-FORM]; D153; docs/dev/lanes/mechtri_report.md (lane/mechtri)
+- [REVIEW-GATE] STATE:not-started — tool-enforced process: review class from the diff, a push gate for missing rounds
+  filed: 2026-11-08 Frank, after K0/P1/U2/U3 reached main or its edge with no code critic round (lane critgap's causes)
+  status (2026-11-08): UNSCHEDULED; ideas + ride-alongs + a tally; interim prose rule in force (major class needs a round or a written waiver)
+  next: TRIGGER = the next missing critic round (add a tally row); then one tooling lane, accepted by a three-week merge replay
+  refs: docs/design/plan_row_bodies/REVIEW-GATE.md; D6; .claude/skills/pcrec-manager §5; docs/dev/full_suite_ledger.md
+- [S30A-PLAN] STATE:not-started — kit 3.0a code review's deferred items (F3 unification, F7, F10, F17, memfnrows arm)
+  filed: 2026-11-09 manager, from review 2026-11-09 r1 s30a (ruled)
+  status (2026-11-09): UNSCHEDULED; five kit-side items, each with its own trigger in the body
+  next: when a trigger fires, the kit builds that item in the change that trips it
+  refs: docs/design/plan_row_bodies/S30A-PLAN.md; docs/dev/reviews/2026-11-09-r1-s30a.md; R-35
 - [PCRE2-TESTDATA] STATE:not-started — PCRE2's testinput patterns as a DATA document; tests built on it are opt-in
   filed: 2026-11-07 Frank ("Yes as a filler item and to a data document. If we build a test section from this it's additional and opt in. We might use it also to fill in gaps in our main test coverage.")
   status (2026-11-07): not started; FILLER (runs when a lane slot is idle)
@@ -733,12 +824,42 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/vlookbehind.md §5.6; tests/codegen/enc_entry_list.c
 - [REQ-LOOKAROUND] STATE:not-started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
-  status (2026-11-05): staged in alt_normal_form.md rev 1 as the positive-lookaround arm of the one description (§3.5, §9 S4: decision points + witness); a later follow-up note designs it; build after span_pick 1e (moved run facts move kit arms)
-  next: alt_normal_form.md rev 1 states it (or stages it); then a critic round and Frank's build go
-  refs: docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
+  status (2026-11-08): designed as units L1-L3 of docs/design/span_arms.md; review 2026-11-08 r1 ruled L NOT READY at rev 0; rev 1 written (lane spanarms2: guards met in rr_cat, the item as D168's producer's first member); the span_pick 1e gate is discharged
+  next: the re-check round on span_arms.md rev 1 (fix-induced + readiness lenses), then Frank's build go per unit
+  refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (span intersection: lookahead removal + lookahead to DFA, a general form of this row); docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
   Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
   Frank, 2026-11-06 ("record it somewhere"): the forward-vs-lookbehind-first question is answered HERE, not by a separate ordering decision. A positive lookaround's fixed part, with its offset (a set, D187/D172), joins the one find-the-span choice set, and pricing picks the window (e.g. `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). Negative lookarounds only veto at FINISH. The in-FINISH check order is left to the reverse-DFA work (A-REV). Cheap trigger: a compile-only census of corpus/bench patterns whose rarest bytes sit inside a positive lookaround; likely after A-REV (same facts).
+- [LOOK-LOCATE] STATE:not-started — a positive lookaround's fixed part as a LOCATE window span at its signed offset
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN; U-locate)
+  status (2026-11-08): not started; a reader of the lookaround item (docs/design/span_arms.md §5.3: the first member of D168's producer), not of U-G1
+  trigger: span_arms unit L3 has landed, and a bench cell whose rarest bytes sit in a lookbehind
+  refs: docs/design/span_arms.md §5.3, §10; docs/dev/reviews/2026-11-08-r1-spanarms.md; D168; D172; [REQ-LOOKAROUND]
+  The item, placed at its negative offset, joins the one find-the-span choice set as a window span (Frank 2026-11-06: `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). The kit honours the span's verify flag (D172); no new kit mechanism.
+- [CTX-SIDES-PRODUCER] STATE:not-started — the cover's MkEnd ctx_before/ctx_after read from D168's signed-offset producer
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
+  status (2026-11-08): not started; today the cover's one-position context sides are a machine reading of the anchored DFA (src/gen/known.h, MkEnd)
+  trigger: a second machine-side consumer of a context side, or cover B1 (kit_proof.md §7)
+  refs: docs/design/span_arms.md §5.3, §10; docs/design/ctx_span.md §3.10; D168; [DD-11.5]
+  One producer of subject sets at signed offsets (D168); the machine reading becomes its control (ctx_span.md's UL-8 shape).
+- [PRES-OMIN-TRUE] STATE:not-started — the kit's true positive presence omin, from the run's [omin, maxoff] interval
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
+  status (2026-11-08): not started; pcrec states presence omin 0, a sound under-estimate (memfn.h: "the true omin is B5's")
+  trigger: the kit's B5 request
+  refs: docs/design/span_arms.md §2, §10; memfn/include/memfn.h (mf_pred omin); [REQ-LOOKAROUND]
+  The run's reach is its signed offset interval [omin, maxoff] from the attempt start (span_arms §2); the true positive omin is the same interval's lower end, stated to the kit as a fact (D157).
+- [DESC-DEAD] STATE:not-started — a pattern whose fixed-width description is EMPTY cannot match (the U-dead fact, generalized)
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 standing question, ruled PLAN)
+  status (2026-11-08): not started; span_arms unit L1 lists the dead fact from an empty guard meet, with no consumer; `a(?!)b` and empty classes are dead too (run none today)
+  trigger: a corpus or user pattern that is dead this way (counted at span_arms L1's census)
+  refs: docs/design/span_arms.md §5.2 (EMPTY-MEET), §10; docs/dev/reviews/2026-11-08-r1-spanarms.md (RULINGS-10)
+  "The description is empty" (no group, distinct from the wall) covers an empty intersection (`foo(?=bar)baz`), `a(?!)b` and an empty class; the compile could emit the constant NOMATCH artifact.
+- [HARNESS-LEVERS] STATE:not-started — the cli/main.c `--harness=` lever if-chain as rows of the facts.def-deny harness-source family
+  filed: 2026-11-08 lane spanarms2 (review 2026-11-08 r1 F18, ruled PLAN)
+  status (2026-11-08): not started; five `--harness=` levers are one-bit fields of an if-chain (cli/main.c, PcrecHarnessOptions); `pres-window` is the same restore-the-old-form shape as the facts.def harness deny source
+  trigger: the first build of facts.def's harness deny source (alt_normal_form stage 2a or span_arms E1/R1, whichever lands first)
+  refs: docs/design/span_arms.md §3.7; docs/design/alt_normal_form.md §3.5 (r7 FIX-8), §11; docs/dev/reviews/2026-11-08-r1-spanarms.md F18; memfn/include/memfn.h (mf_lever)
+  alt_normal_form FIX-8's general form, taken by span_arms rev 1: a fact's deny admits a harness source, the restorable arms are rows of one declared table. The cli levers are the family's other members; the kit's mf_lever list is a sibling to compare at that build.
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
   status (2026-11-05): PARKED, a separate effort (Frank 2026-11-05); investigation done (docs/dev/lanes/condinv_report.md): no outside demand; one general condition node when designed
@@ -1086,12 +1207,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Notes: (add dated notes as related issues surface)
   note (2026-10-26, lane rwsurvey, docs/dev/lanes/rwsurvey_report.md): no pass CREATES absorb-optional / `X+$` shapes on the 5,735 corpus + 351 bench dumps; constructed witnesses do (altcls: `\s+(?:\n|\r)?` -> `\s+[\n\r]?`, then A then B chain, so the table must iterate). Passes DO leave: altcls empty-branch alternations (`f(|rank)`, 107 corpus), possessify ATOMIC(REP possessive) (57). Only 29 outside-written patterns exist (6 carry a shape). More candidates: CTX-IMPLIED-AFTER-RUN (`\w+\b`), ALT-EMPTY normal form, MERGE-RUN (`[0-9][0-9]?`), REP-OF-REP, TRIVIAL-REP (`{1}`), DUP-ZERO-WIDTH/DEAD-PIN, REDUNDANT-CUT. Placement hypothesis: after atomic discharge, before the call graph, bounded fixpoint; must see through lower_enc A_WCLASS.
   2026-11-06 (Frank "Yes"; manager): this row is the home of family (A), SIMPLIFICATIONS (node in, equivalent node out): the parser's empty-node drop, `xx*`->`x+`, the absorbs and merges, possessify. One declared first-match table to a fixpoint, each row named in --explain and deny-able; first build after [RUN-POS-SET]'s alternation owner lands (its output feeds the table). Families (B) [CLASS-SETOPS] and (C) [POSTFACT]/[ENG-LOOK] are linked, not members.
-- [REQ-EMPTYCAT] STATE:not-started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
-  filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
-  status (2026-11-05): direct half (an empty node in a CAT/ALT) is alt_normal_form.md rev 1 stage 2a, the unit owned by the kind row; quantified half (REP of empty, anchor wrapper) staged later, decision points in its §9 S2; the a(?i)bc symptom is already gone
-  next: Frank's word; then trace req.c's A_EMPTY handling in a CAT and make the run continue across it (or drop the empty earlier, the general form).
-  refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
-  note (2026-10-26, lane rwsurvey): the stray A_EMPTY is NOT from `(?:)`/`(?i)`/`(?#)` (parse drops them; `a(?:)bc` gives req_run abc); it comes from pcrec_wrap_bare_anchor's `<anchor EMPTY>` wrapper under a quantifier and the derive hook's killed `\G`.
+  note (2026-11-09, Frank): two candidate rows for the table, built only on a corpus count: (1) a repeated zero-width body without captures/callouts is idempotent: `(?:\b)+` -> `\b`, `(?:\b)*` -> empty (PCRE2 caps a quantified assertion at one repeat); (2) a repeat whose body cannot follow itself collapses: `(?:ab\b)+` -> `ab\b` (the follow-context of the body's end, from D168's producer, meets the body's first-byte set in nothing; minimum >= 2 then never matches)
 - [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
   filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
   status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.
@@ -1343,7 +1459,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-10 Frank
   status (2026-10-10): HARD TRIGGER added 2026-10-10 by Frank, session 105: the push opens when <= 4 flag bits remain in the 64-bit `flags` word (55 of 64 used after [START-LANDING]), whether or not the work has petered out…
   trigger: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it).
-  refs: decisions D76; docs/design/plan_row_bodies/IFACE-PUSH.md (incl. 2026-10-29 candidate: subject-size knowledge, typical + maximum, Frank); 2026-11-03 class option (span_pick rev 5)
+  refs: decisions D76; docs/design/plan_row_bodies/IFACE-PUSH.md (incl. 2026-10-29 candidate: subject-size knowledge, typical + maximum, Frank); 2026-11-03 class option (span_pick rev 5); 2026-11-09 candidate (body): a MEMFN_FORMS form-id list (u3d27, D27 S4)
   UMBRELLA ROW, the gate for: [RXINFO-REMODEL] + [V-E] (rx_info), [STAMP-REVIEW] + [CAP-STAMP-BYTES] (stamps), [OPT-SETS] + the pcrec_options/CLI option surface, [FINDALL-NEXT], [EMIT-ENTRIES]. TRIGGER: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it). ORDER: the interface push as ONE design pass across the four surfaces, THEN the docs pass ([SPEC-ORG], [SPEC-LANG], [GUIDE-1]) once the interface is solid. Until then member rows stay unscheduled; a capability/optimization row that needs a new field or stamp adds it the usual way (D76 ritual), not a remodel. RESIDUE FROM [FLAG-ACCESS] (archived 2026-10-12, merged 67f59d24): the accessors still take/return uint64_t; the word still travels as a uint64_t parameter (cand_select, DFA_SELECT, clskit/memfn deny maps) and is printed into `.flags = N`; writes stay raw and outside the gate.
   So a representation change is a typed sweep over those sites, not one site.
   2026-10-22 CANDIDATE (kit S3, [KIT-VERIFY] B1): flag bit 57, a pcrec-side deny for the cover locator (the proven fixed-width window reported with no engine run, `RX_DFA_SCAN "cover"`); NAME per Frank 2026-10-22: name the behaviour, never an internal module, working name `PCREC_NO_WINDOW_REPORT`, final spelling at the push, deferred here by the manager's ruling; until then the kit deny is the OFF arm (mf_ask refuses, LOCATE falls to composite).
@@ -1713,7 +1829,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 
 - [POSTFACT] STATE:not-started — user-supplied predicates on captures ("post facts", e.g. `int($1)<=255`), compiled into the matcher
   filed: 2026-10-13 Frank (session 111)
-  status (2026-10-13): not started; idea stage, discuss before any design lane
+  status (2026-11-08): idea stage; Frank proposed the WHERE operator `rx ## predicate` (`$` = the operand's text, one value only, no captures, DFA-lowerable), body file 2026-11-08; discuss before any design lane
   next: discussion with Frank: syntax/module (a non-PCRE extension, D26), placement semantics, the three tiers below
   refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26; docs/design/plan_row_bodies/POSTFACT.md
   Frank: callouts can express it (by design), but lean into compilation: place the check INLINE, and check each \d as it arrives for a quicker bail. Three tiers by what the predicate is: (1) REGULAR predicates (numeric range over a digit span, length, set membership) LOWER INTO THE AUTOMATON (pcrec generates the range regex), so the DFA keeps its speed and bails per digit for free; (2) non-regular predicates as compiled inline assertions at their placement point (VM; callout semantics: fail = backtrack); (3) DFA candidate + post-verify only where the decomposition is unique (fixed widths, as [BREF-SPAN]).
@@ -1839,7 +1955,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-11-05 manager (review 2026-11-05 r3 F16, filed by lane vlbrev1)
   status (2026-11-05): HELD, nothing designed beyond docs/design/vlookbehind.md §5.4: [ENG-LOOK]'s forward machine (or reverse-dfa's existence exit) as a filter row before range's finisher; with it `(?<=a+)` (err 125 in PCRE2 too)
   trigger: a real pattern needing unbounded or over-255 lookbehind, from the [UTF-RW] harvest or a user
-  refs: docs/design/vlookbehind.md §5.4; docs/dev/reviews/2026-11-05-r3-vlookbehind.md (F16, owner question 1); [VLOOKBEHIND]; [ENG-LOOK]; [UTF-RW]; D156; D77
+  refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (lookbehind removal by \K with an earlier scan + floor; exact for fixed-length A); docs/design/vlookbehind.md §5.4; docs/dev/reviews/2026-11-05-r3-vlookbehind.md (F16, owner question 1); [VLOOKBEHIND]; [ENG-LOOK]; [UTF-RW]; D156; D77
   Correctness needs no cap; range alone does unbounded at O(n^3) worst case. The filter makes exact capture-free bodies linear per scan and shares one machine with [ENG-LOOK] (trigger: that row opens). Oracle: libpcre2 at max_varlookbehind=65535 on the bounded twin.
 - [SEAM-READER-CENSUS] STATE:not-started — every mf_* seam member has a kit reader or a listed trigger (a census, Boonies weight)
   filed: 2026-11-03 manager (kit review 2026-11-03-r5, unit 1g code round)

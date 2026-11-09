@@ -477,10 +477,10 @@
 #     no identity gate. Registered before S699-S703.
 #   simdfloor — added 2026-10-09 ([MEMFN] R-13, lane r13); runs
 #     tests/memfn/run_simd_floor.sh (the whole corpus: its floors are full-population) with the sabotaged tree's own
-#     pcrec: C18's four legs, the guard lint and the level-guard leg over the -fmemfn-simd
-#     movers. Its own arm because SIMD text sits only under -fmemfn-simd and
-#     inside level guards: every answer arm runs at the default (no SIMD
-#     text) and a compile at the default -march never sees a w32 arm.
+#     pcrec: C18's legs, the scaffolding lint and C9 at every target with a
+#     level (re-aimed for the target seam, lane u3floor). Its own arm because
+#     SIMD text sits only under -fmemfn-simd=TARGET: every answer arm runs at
+#     the default (no SIMD text).
 #     Registered before S716-S730.
 #   g2simd — added 2026-10-09 ([MEMFN] R-13, lane r13); runs
 #     memfn/tests/run_g2_simd.py --quick against the sabotaged tree's
@@ -585,6 +585,15 @@
 #     moves no ANSWER (the handoff is an optimisation) and the identity
 #     gates compare against a tree that lost it too. Compiles with the
 #     sabotaged tree's own build/pcrec. Registered before S518-S523.
+#   memfntargets — added 2026-11-07 ([XARCH-DEV] unit K0, lane k0, R-36);
+#     runs tests/memfn/run_targets.sh (`make test-memfn-targets`): the kit's
+#     CPU target table check (memfn/tests/check_targets.sh, against gcc's own
+#     -march and the guard column under four preprocessor targets), its
+#     entries against the design's rows as literals, and the region and
+#     family-guard compile cells (seconds). Its own arm because no pcrec
+#     caller reads the table before P1 and no artifact carries its text
+#     before U3: a broken row moves no answer and no artifact byte. Links the
+#     sabotaged tree's build/libpcrec.a. Registered before S2975-S2981.
 #   emitsweep — added 2026-10-06 ([START-TABLE] C0, lane stc0); runs
 #     scripts/tests/emit_sweep.py.test (the arms family over its own manifest
 #     population, the sabotaged tree's build/pcrec) and
@@ -3491,6 +3500,17 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnreach.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnreach.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnreach.log" "$f" "memfnreach:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            memfntargets)
+                # [XARCH-DEV] K0 tests/memfn/run_targets.sh — see the
+                # vocabulary entry above. Links the sabotaged tree's own
+                # build/libpcrec.a and reads its own memfn/src/targets.def.
+                LIBPCREC="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/memfn/run_targets.sh" \
+                    > "$work/memfntargets.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/memfntargets.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/memfntargets.log" | grep -oE '[0-9]+')"
+                score_arm "$work/memfntargets.log" "$f" "memfntargets:${f:-ERR}fail/${p:-?}pass"
                 ;;
             simdfloor)
                 # [MEMFN] R-13 tests/memfn/run_simd_floor.sh -- see the

@@ -103,6 +103,7 @@ tests/memfn/run_presence.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md
 tests/memfn/run_proof.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_rank.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_rows.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
+tests/memfn/run_targets.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run: the kit's CPU target table, its entries (built by unit_build, which threads $SANFLAGS) and compile cells at fixed compilers and flags ([XARCH-DEV] K0)
 tests/memfn/run_simd_floor.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_simd_guarded.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
 tests/memfn/run_site_manifest.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md), not a pcrec matcher run
@@ -136,3 +137,4 @@ tests/ucp/run_ctxnode_tests.sh	NO-C-RUN	no compiler invocation: reads files, emi
 tests/ucp/run_ucp_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/uprops/run_uprops_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/utfcheck/run_utfcheck.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/memfn/run_d27_region.sh	NO-C-RUN	no compiler invocation of its own: a thin wrapper that runs tests/memfn/d27_region/run.sh, which builds its own gcc/clang cells outside the sanitizer axes

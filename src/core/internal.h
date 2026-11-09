@@ -3654,6 +3654,10 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
+    /* [XARCH-DEV] U3 the CPU target's REGION (src/gen/memfn_targets.c,
+     * `pcrec_emit_target_open`/`_close`): written at all, and open now; the
+     * attempt's end refuses one left open. */
+    bool region_placed, region_open;
     /* [KIT-VERIFY] U1 Z2 this attempt's `cover` decision (src/gen/known.h's
      * `PcrecCover`: the `cover_conj[]` walk, the records it read and the
      * kit's class for the REPORT description), memoized on first ask, NULL
@@ -3855,6 +3859,10 @@ typedef struct PendingRef {
 
 struct Ctx {
     Arena                arena;
+    /* [XARCH-DEV] U3 the compile's one CPU target, derived once per attempt
+     * (`pcrec_memfn_target_derive`, src/gen/memfn_sites.h's type) and read
+     * through `pcrec_memfn_target`; NULL before. */
+    const struct PcrecCpuTarget *cpu_target;
     const char          *pat;
     size_t               patlen;
     size_t               pos;      /* parser cursor */
@@ -7485,11 +7493,16 @@ void pcrec_emit_findings_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *val
 /* [MEASURE-SET] M0 the `<PREFIX>_MEASURES` / `.measures = …` pair, written
  * right after the findings pair at the same two marks (measure_sets.md §3.5). */
 void pcrec_emit_measures_line(Ctx *cx, StrBuf *c, PcrecKsMark m, const char *value);
-/* [MEMFN] the policy word pcrec sends the kit for a job's flags: one bit,
- * `MF_P_PORTABLE_ONLY`, set iff `-fmemfn-simd` is not in force (the axis
- * resolves deny, force, then `axes.def`'s default). The ONE derivation; every
- * `mf_art_begin` caller passes this and never a literal. */
-uint32_t pcrec_memfn_policy(uint64_t flags);
+/* [XARCH-DEV] P1: resolves the CPU target set the flag word and the
+ * `-fmemfn-simd=` list text select and checks it (every token through the
+ * kit's parser, one family, one member for now). 0, or 1 with the refusal
+ * text in err[0..n) — the kit's own where the kit refused. The CLI calls it
+ * at option parse, `pcrec_compile` before any pass. */
+int pcrec_memfn_simd_check(uint64_t flags, const char *list, char *err, size_t n);
+/* [XARCH-DEV] U3: derives the compile's one CPU target onto `Ctx.cpu_target`
+ * (src/gen/memfn_targets.c), once per attempt before anything reads it. */
+void pcrec_memfn_target_derive(Ctx *cx);
+uint32_t pcrec_memfn_art_includes(Ctx *cx);   /* the kit art's MF_INC_* facts */
 /* [MEMFN] RQ-1: validates `opt->memfn` (the `--memfn=` string) with the
  * kit's `mf_opts_check` and refuses the compile with the kit's own text. */
 void pcrec_memfn_opts_check(Ctx *cx);
@@ -8669,6 +8682,9 @@ void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
                      long long ceiling, const BufSurface *bs);
 
 void pcrec_emit_main(Ctx *cx, const GenNames *g);
+/* The artifact's end, both engines, after `rx_info`: the CPU target region's
+ * close, then the `--emit-main` driver where requested (outside the region). */
+void pcrec_emit_artifact_end(Ctx *cx, const GenNames *g);
 
 
 /* ---- driver -- defined in src/core/compile.c and compile_defs.c ------
@@ -8786,6 +8802,7 @@ struct PcrecPartFacts {
     int ncaps;              /* its `<P>_NCAPS` */
     bool guarded;           /* its entries refuse a mid-character position */
     bool utf_check;         /* its entries run the subject check */
+    uint32_t includes;      /* the kit's header facts for its text (MF_INC_*) */
     size_t simd_guarded;    /* the CPU-guarded bytes its text carries, and */
     PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
     size_t scaf_guarded;    /* [FINDALL-NEXT] its scaffold bytes, and */

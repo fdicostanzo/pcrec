@@ -1,0 +1,5 @@
+report=docs/dev/lanes/mechtri_report.md
+sections: Per-row diagnosis; Fixes; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: main-b202611081406162216137.build main-b202611081406162216137.test main-b202611081406162216137.mech

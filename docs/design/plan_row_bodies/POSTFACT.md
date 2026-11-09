@@ -26,3 +26,64 @@
   - no `--allow-code`, no `<PREFIX>_CODE_LANGS` entry.
 - This holds ONLY because of the lowered-or-refused rule: an `rx:` predicate never falls back to a call. A fallback to a `c:` callout, or a named function implemented as C at run time, would bring it back under the code gate. Named functions (`luhn`, `valid_date`) are pcrec-built automata, not shipped C.
 - What remains is a pattern's own risk class: compile-time size and time. A predicate whose product automaton is too big is refused by the size ladder, like any pattern. A wrong lowering is a miscompile, tested by the oracle like any module.
+
+## 2026-11-08 — Frank: the "where" operator (idea preserved; details TBD)
+
+Frank's words: "a special kind of inline code expression that can be translated to dfa rx. A restriction is that it can only refer to a single \"capture group\" within a predicate- it can't compare two values. I presume that means two capture groups can't really interact at all eg addition. A second point is that the intent is dfa rx which capture groups disallow. The idea: a new operator called the \"where\" operator. Example syntax \"rx ## predicate expression\"."
+
+Examples (Frank):
+- `\d+ ## $ < 256`
+- `(?:\d+## $ <=255)\.` (scope limited by the group)
+
+Frank 2026-11-08 clarification: "The syntax is only an example. I was thinking to the match thus far within scope." So the predicate's value is the text matched SO FAR WITHIN THE ENCLOSING SCOPE (from the start of the enclosing group, or of the whole match at top level, up to the operator), and the spelling `##`/`$` is a placeholder. That also settles precedence: scope is the group, not an operand.
+
+As first stated: `$` names the text matched by the operand on the left (no capture group, so the DFA keeps its speed); the predicate refers to that ONE value only (no two-value relations, so no arithmetic between groups); the result lowers into the automaton (tier 1 above: one-variable predicates over a digit span are regular). Details TBD.
+
+Manager notes for the design, not ruled:
+- Spelling is a placeholder (Frank). Whatever is chosen must survive `(?x)`, where `#` starts a comment.
+- (settled by the clarification) the value is the in-scope match so far; an alternation inside the scope means each alternative's text so far.
+- Supersedes the `int($1)<=255` spelling in this row's title, which needs a capture; the where form needs none.
+
+
+## 2026-11-08 — Frank: expose the composition as span intersection; lookaheads as a second client (recorded, not scheduled)
+
+Frank: the base rx and each sub-predicate are separate predicates on ONE span. An intermediate form applies all of them to the span; combining them into one automaton is then an optimization that removes the extra conditions. "The reason to do this exercise, if it worked, is that it enables some lookaheads to be removed and lookahead rx to be buildable in dfa."
+
+Manager notes, not ruled:
+- **The intermediate form is span INTERSECTION, not a plain lookahead.** `(?=A)B` only requires A to match a PREFIX of what follows, so `(?=\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\d+` admits `2550`. Each sub-predicate must end where the span ends: `\d+ & P1 & P2` (an IR node; no surface spelling implied). `$ < 256` is the range automaton; `&&`/`||`/`!` are intersection/union/complement; fold first (intervals, remainder sets), product, minimize.
+- **Lookaheads lower onto the same node:**
+  - CONTAINED (A's matches end inside B's span): `(?=A)B` = `(A Σ*) & B`, so the lookahead disappears and the result is a plain automaton.
+  - EXTENDING past the span into the continuation: still regular. Run A alongside the main automaton until it accepts; determinization can blow up, so it is priced by the size ladder.
+  - NEGATIVE: complement then intersection. Regular, but it needs a determinized A first.
+  - Captures or backreferences inside: stay VM.
+- **Static wins without any DFA (VM too):** subsumption (`B ⊆ A Σ*` drops the lookahead: `(?=\d)\d+` → `\d+`), disjointness (never matches), and folding neighbouring predicates on one span.
+- **Fit:** one general mechanism with three clients: the where predicate, lookahead removal, and lookahead lowered to DFA. It is the forward twin of the reverse DFA in lookbehind (A-REV, `docs/design/stream/arev.md`). It touches [REQ-LOOKAROUND] (runs see through positive lookarounds) and stream unification.
+- **Prior art to check before citing:** lookaheads without captures preserve regularity; RE# (Varatalu et al., POPL 2025; manager's memory, unverified) does intersection, complement and restricted lookarounds in a derivative DFA.
+
+## 2026-11-08 — Frank: lookbehind removal by `\K`, the lookahead mirror, and an end-of-match `\K` (recorded, not scheduled)
+
+Frank asked whether `(?<=frank)fred` is `frank\Kfred`, "thinking about lookaround removal". They agree for a single search from offset 0. They differ when a search starts mid-subject, as each find-all step does: the lookbehind reads before the start position, while `A\KB` must consume A from it. Frank: that is the blocker.
+
+Manager notes, not ruled:
+- **The start-offset fix: scan earlier and set a floor.** To search `(?<=A)B` from `s`, scan `A\KB` from `max(0, s − maxlen(A))` and accept only matches whose `\K` point is ≥ `s`. A lookbehind may already read before `s`, so nothing new is read. A previous match's text can serve as A, so find-all overlap comes out right (`(?<=a)a` on `aaa` gives 2 matches). `maxlen(A)` exists because lookbehind is bounded.
+- **The real condition is A's length.** `A\KB` finds matches in order of A's START; the lookbehind ranks by B's start. With FIXED-length A the two orders agree and the rewrite is exact. With VARIABLE-length A they can disagree (`(?<=a|bcd)x`: a later B with a long A can have an earlier A start), so: split A by length (one fixed-length case each), or keep the lookbehind.
+- **Payoff:** with fixed-length A the lookbehind is gone. What remains is a plain forward automaton plus a constant offset for the reported start, which is DFA-buildable with no step-back loop.
+- **Negative lookbehind** has no `\K` form. It stays the complement-intersection case of the span-intersection entry above.
+- **To confirm:** [REQ-LOOKAROUND]'s refs say D172 spans carry negative start offsets. If so, "read before the start" is already a span fact.
+- **The lookahead mirror: an END reset.** `B(?=A)` = match `B A` and report the end at B's end; the next find-all search starts at that reported end. The bound to honour is the subject END, which a forward scan already respects, so the mirror is simpler than the lookbehind case. In the IR this is an end-of-match mark: the `\K` equivalent for the end that Frank noted. It is the same node for both: a lookaround becomes consumed text plus a mark on what is reported.
+- **A surface end-`\K`** (Frank: "it also suggests a `\K` equivalent for end of matches") would be a pcrec extension; PCRE2 has none. A user spelling needs Frank's go and a placeholder that cannot collide with PCRE2 syntax. Its find-all rule (resume at the reported end, so the trailing text can be rescanned) must be stated in the spec. The IR mark is useful even with no surface spelling.
+
+## 2026-11-08 — Frank: a group that becomes the match; spelling it as group 0 (recorded, not scheduled)
+
+Frank: "a named group that becomes the match"; then "Can't we state group numbers? Perhaps we just state group 0". `frank(?<0>fred)fish` reports `fred`; `frank` and `fish` are required and consumed. Its start is the `\K` point and its end is the end mark, so ONE construct carries both marks of the entries above.
+
+- **Prior art:** Vim `\zs`/`\ze` (match start/end markers); Raku `<(` ... `)>` (paired, exactly this group).
+- **Spelling `(?<0>...)`:** "this group IS group 0". Checked against the box's libpcre2 10.46 (tests/lib/p2probe.c, 2026-11-08): `(?<0>x)`, `(?'0'x)` and `(?P<0>x)` are all compile errors ("subpattern name must start with a non-digit", error 144). No valid PCRE2 pattern changes meaning, unlike a reserved NAME such as `(?<MATCH>...)`, which is a valid pattern today. pcrec currently refuses `(?<...)` as module 'named-groups'. All three name forms would take the 0.
+- **Only group 0 (Frank's "perhaps we just state group 0").** Stating other numbers (`(?<1>...)`) would be a separate feature that collides with automatic numbering and `(?|...)` branch reset. Not proposed.
+- **Open, with manager leanings:**
+  1. Placement: STRICT first. The group must be on every path (not optional, not in a repeat or in one arm of an alternation), else a compile error; "last pass wins" can come later.
+  2. Find-all resume at the REPORTED end, so trailing context can be rescanned. Then `A(?<0>B)C` behaves exactly like `(?<=A)B(?=C)` and the removal notes above apply unchanged. The alternative, the consumed end, gives different answers on overlapping text; this is the one real semantic choice.
+  3. Captures: not a numbered group (it is group 0); groups in the context still capture.
+  4. The advance rule for an empty reported match with non-empty context must be stated.
+  5. At most one per pattern (or compile error), with the interaction with `\K` stated (leaning: refuse both together).
+- **Why it fits pcrec:** the surface form IS the IR form, consumed text plus two report marks. A DFA takes it directly, and the lookaround rewrites above become the cases where the compiler builds the same thing itself. It is a pcrec extension (PCRE2 has none), so it needs Frank's go, a feature-family placement and a spec hunk.

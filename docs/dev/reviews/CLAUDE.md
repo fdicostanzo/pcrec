@@ -75,3 +75,4 @@ History (long narrative, dated notes, measurements, per-lane records; not auto-i
 - `2026-11-07-r11-memfn-s2rev15.md` — span_cards rev 1.5 critic (fused fact fidelity, est-commit bypass, value = max(0, med)); window 2 FULL accepted.
 - `2026-11-07-r12-memfn-planframe1.md` (+ `2026-11-07-r12-memfn-planframe1/`) — plan_frame rev 1 (span_pick unit 3.0) critic: 5 opus lenses + verifier, F1-F34; not ready, rev 2 with text fixes; search/stream/check triple confirmed.
 - `2026-11-07-r13-memfn-planframe2.md` (+ `2026-11-07-r13-memfn-planframe2/`) — plan_frame rev 2.1 readiness re-check: one readiness critic per unit plus fix-induced, R1-R28; 3.0a ready with text fixes, 3.0b after the R1/R2 shape rulings.
+- `2026-11-08-r1-spanarms.md` (+ dir) — DESIGN round on docs/design/span_arms.md rev 0 (REP/EMPTY/LOOKAROUND arms): REP+EMPTY ready with text fixes; LOOKAROUND not ready (F1 guard met at the arm, F2 propagation, F15 D168); rev 1 by lane spanarms2.

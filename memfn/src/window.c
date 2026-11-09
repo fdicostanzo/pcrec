@@ -663,7 +663,7 @@ static void a_none_choose(wf_x *x)
     [FLD_pred] = MF_ANY, [FLD_preds] = MF_ANY, [FLD_ret_pred] = MF_ANY, \
     [FLD_guard_by_caller] = MF_ANY, [FLD_on_miss_leaves] = MF_ANY, \
     [FLD_count_by_caller] = MF_ANY, [FLD_span_hi] = MF_ANY, [FLD_denies] = MF_ANY, \
-    [FLD_policy] = MF_ANY, [FLD_fn_ref] = MF_ANY, [FLD_table_ref] = MF_ANY, \
+    [FLD_policy] = MF_ANY, [FLD_target] = MF_ANY, [FLD_fn_ref] = MF_ANY, [FLD_table_ref] = MF_ANY, \
     [FLD_fold_kind] = MF_ANY, [FLD_stride] = MF_ANY, [FLD_decl_point] = MF_ANY, \
     [FLD_body] = MF_ANY, [FLD_site_kind] = MF_ANY, \
     [FLD_layer] = MF_ANY, [FLD_need] = MF_ANY, [FLD_s] = MF_ANY, [FLD_n] = MF_ANY, \
@@ -1158,7 +1158,7 @@ static void decide(const mf_art *art, const mf_site *s, int quiet, wf_dec *d)
     for (unsigned ai = 0; ai < d->na; ai++) {
         cands(&s->alts[ai], d->rate, &d->a[ai]);
         wf_facts f = { s, &s->alts[ai] };
-        gate_in in = { s, NULL, NULL, NULL, &f };
+        gate_in in = { .s = s, .wf = &f };
         gate_tctx tc = { art, "wfA", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
         gate_verdict why = { 0, 0 };
         wf_x x = { d, ai };
@@ -1168,7 +1168,7 @@ static void decide(const mf_art *art, const mf_site *s, int quiet, wf_dec *d)
         wf_arows[d->a[ai].arow].choose(&x);
     }
     wf_facts f = { s, NULL };
-    gate_in in = { s, NULL, NULL, NULL, &f };
+    gate_in in = { .s = s, .wf = &f };
     gate_tctx tc = { art, "wfM", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     gate_verdict why = { 0, 0 };
     wf_x x = { d, 0 };
@@ -2270,7 +2270,7 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
     fx->fn = NULL;
     if (wf_find_decide(art, d, w, def, 1, fx)) { *why = "out of memory"; return -1; }
     wf_facts f = { s, d->a[d->ch].alt };
-    gate_in in = { s, def, NULL, NULL, &f };
+    gate_in in = { .s = s, .h = def, .wf = &f };
     gate_tctx tc = { art, "wfE", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     gate_verdict v = { 0, 0 };
     wf_ex e = { d, w, def, gphases, L, fx };

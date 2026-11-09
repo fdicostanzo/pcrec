@@ -390,7 +390,8 @@ static int pf_walk_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     [FLD_indent]          = MF_ANY,                   /* pcrec's prefix, as given */ \
     [FLD_comment_tier]    = MF_ANY,                   /* not read: no comment is written */ \
     MF_SERVES_WINDOW_TODAY \
-    [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
+    [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */ \
+    [FLD_target]          = MF_ANY,                   /* scalar: right at every target (unit U2) */
 
 static const gate_use pf_memchr_uses[] = {
     /* pf_memchr_use pastes s, n, lo, result; runs on_miss on a NULL hit */

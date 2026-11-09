@@ -274,6 +274,7 @@ static const gate_contract inplace_ct = {
     [FLD_comment_tier]    = MF_ANY,
     MF_SERVES_WINDOW_TODAY
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
+    [FLD_target]          = MF_ANY,                   /* scalar: right at every target (unit U2) */
     [FLD_ref]             = MF_ANY,
     [FLD_reflen]          = MF_ANY,
     [FLD_fold]            = CM(FOLD_STMT),

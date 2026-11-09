@@ -9003,6 +9003,7 @@ The FIRST instance is the pre-round-2 bench outlier read Frank asked for (D144 i
 **Why:** the r2 panel showed the cross-project price layer recreates the measurement-regime, shared-source and recalibration problems at the project boundary. Delegation keeps those concerns inside the kit, where its own exhaustive tests and timed control live.
 **Guard:** pcrec's own bench/alpha timings with the kit on vs off. That control does not share a source with the kit.
 **Revisit-when:** a delegated site's kit code is measured worse than pcrec's pre-migration form and the kit cannot fix it.
+- **Addendum 1 (target tokens; owner 2026-11-07, filed at K0's landing 2026-11-08, merge d9df92c0d; docs/design/memfn/target_seam_units.md §4, §6):** targets are opaque tokens in pcrec. The target table (families, targets, features, the region and guard text, the run-time CPU predicate, the host default) is the kit's, returned per token as facts and text; pcrec validates a token only by asking the kit, at option parse, and passes it across the seam. pcrec keeps the structure: the list, parts, stems, the controller, entries and stamps. Facts and C spellings are separate structs (mf_target/mf_family vs mf_target_c/mf_family_c), so another emitter's spellings sit beside the C ones (owner 2026-11-07: code may be emitted as C or Rust). Supersedes target_seam.md §6.4's draft addendum.
 
 ## D147 — Layers: the scalar algorithm stays live and improvable forever; SIMD is a layer; each layer must be the best it can be on its own (Frank, 2026-10-05, ninetieth session)
 
@@ -10093,3 +10094,32 @@ Generic-loop rule: a caller that serves any artifact loops over `info->next` (on
 **Why:** PCRE2 10.43+ accepts bounded variable-width lookbehind; pcrec refused it as a capability limit for want of the loop, which was the last capability refusal of accepted lookbehind syntax short of backreferences.
 
 **Revisit-when:** stage 2 (backreferences in a lookbehind) or the 255 cap's setting at [IFACE-PUSH].
+
+## D190 — candidate search and candidate validation are separate primitive pieces, composed: the (search, stream, check) triple (owner, 2026-11-07)
+
+**Decision (Frank, directly to the kit, 2026-11-07 ~23:00; kit ledger `memfn/docs/responses.md` notice at 067aca4df, "proposed decision entry"; filed by main, lane kitfile):**
+- Frank's words: "Candidate search and candidate validation are two different primitive pieces that are composed." Asked "Adopt search, stream, check as composed pieces?" he answered "Yes" (kit journal 11-07 ~23:00).
+- Kit reading, as stated in the notice: a site's find-then-verify plan is a triple, (search, candidate stream, check):
+  - search: T-FIND's method (block mask or position);
+  - stream: how the code moves past a rejected candidate: one-shot restart at c + 1, continue through the current mask, or the skip-table shift;
+  - check: T-VERIFY's plan.
+- Each piece is a table; the renderer composes them inline (no call boundary).
+- libc memchr supplies only one-shot. vrun becomes one composition; vany plus the caller's verify is the one-shot composition (kit journal).
+- A comparison between two plans names which pieces differ (Frank's apples-to-apples lesson, same day).
+- Also ruled (Q6, "Yes"): span_pick row 1 waits for an inline one-member finder and its card, so row 1's first priced comparison is like-for-like (controlled).
+
+**Consequences (as stated in the notice):** `docs/design/memfn/plan_frame.md` (unit 3.0) rev 1 shapes the reply as the triple; the kit's reply already carried method + renderer and a two-valued resume, which the triple reshapes. The reply is facts only (D157).
+
+**Why (Frank, same day):** the smp20 comparison was not apples to apples (an inline pair against a libc call); the missing candidate was an inline one-member finder at pair speed.
+
+**Related:** D186, D187 (the kit's span_pick decisions; the notice offered "a D-entry, or an addendum to D186/D187, your call": filed as its own entry because the ruling names a new primitive-piece structure rather than amending either); D188; plan rows [RUNG-LIST], [PIECE-ACCEPT-RULE], [PIECE-COVERAGE].
+
+**Revisit-when:** a site needs a fourth piece beyond (search, stream, check).
+
+## D191 — span arms: BUILD GO, and the owner's rulings on the open questions (Frank, 2026-11-08/09)
+
+1. **BUILD GO** (Frank 2026-11-09, "Go on build") for the units of docs/design/span_arms.md rev 2.2 §8: E1, R1, E2, L1 and L3; L2 after the kit's delivery of R-38 plus one readiness critic on its changed text. The proposed decision of §12 (the REP, EMPTY and positive-LOOKAROUND arms of the one fixed-width description, a run's reach its signed interval) is adopted, as amended by 2 and 3 below. Each unit's census still runs as its measurement record, not as a build gate (owner, Q2 below); a unit whose census finds NO mover anywhere stops and reports.
+2. **Rulings 2026-11-08 (span_arms §12a):** the scan byte may come from ANY run position; the kit picks the scan position and the verify extent; the run crosses as ONE uncut span with byte sets at signed offsets from the attempt start; nothing about consumption crosses the seam; `<PREFIX>_REQ_BYTE` keeps its meaning (a byte every match consumes), chosen by pcrec; the pcrec/kit agreement check retires.
+3. **Rulings 2026-11-09 (span_arms §12b):** repeats count as their copies (`X{2}` as `XX`; `X{2,5}` contributes its two fixed copies); zero-width items (`\b`, `$`, `\K`, lookarounds) stop cutting the run, all in unit E2 ("cracking open a piece of code comes with overhead"); a run outside the match is ONE run value, every reader raised together, never a second wider fact; the lookbehind step back is capped at the declared lookbehind length; L3 builds now, ahead of A-POSDOM, its two sites in that table's shape (§8.1); [REWRITE-ADJ]'s design starts now.
+4. The prefix skip after a proved run (`abc(ab){3,5}xxx`) stays [MATCH-KNOWN]'s member on its own trigger; R-38 asks the kit to report how far it verified, the fact that member would read.
+

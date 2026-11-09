@@ -1,45 +1,75 @@
 #!/usr/bin/env python3
-"""tests/memfn/simd_floor_check.py -- C18, THE FLOOR RULE, its four legs and
-the guard lint, plus C9-x86 ([MEMFN] R4e' batch 1, request R-13;
+"""tests/memfn/simd_floor_check.py -- C18, THE FLOOR RULE and the
+scaffolding lint, plus C9-x86 ([MEMFN] R4e' batch 1, request R-13;
 docs/design/memfn/integration.md §R4.9.2.3's floor rule and §R4.9.8's C18
-and C9-x86 rows, as amended by D155). Driven by run_simd_floor.sh
-(`make test-memfn-simdfloor`).
+and C9-x86 rows, as amended by D155; re-aimed for the target seam, units
+U2+U3, docs/design/memfn/target_seam.md §6-§8, lane u3floor). Driven by
+run_simd_floor.sh (`make test-memfn-simdfloor`).
+
+THE TARGET SEAM. An artifact is planned for ONE target: `-fmemfn-simd=T`
+renders T's admitted levels with no CPU `#if`, inside T's REGION (the kit's
+`mf_target_c_of(T)` text) under T's family GUARD (`mf_family_c_of`), and
+stamps `<P>_TARGETS "FAMILY:T"`. The `#if` arms, and with them the old
+off-target leg (a) (the ON text preprocessed off-target IS the OFF text),
+are gone: a no-vector consumer compiles the default target (match_api.md
+§10.7¶4), and another family's compiler is refused by the guard
+(run_targets.sh's guard cells).
 
 THE POPULATION, counted by pcrec's own compile: every corpus pattern (plus
-named witnesses, one per batch-1 route bin) compiled at -fno-memfn-simd (OFF)
-and -fmemfn-simd (ON), at the default engine and at --engine=vm. A MOVER is a
-(pattern, engine) whose ON artifact differs from its OFF artifact; the SIMD
-FUNCs of a mover are the FUNC selectors whose body holds a level arm. Movers
-and SIMD FUNCs are printed with a literal floor (K35). On every mover:
+named witnesses, one per batch-1 route bin) at the default engine and at
+--engine=vm, compiled at -fno-memfn-simd (OFF) and at -fmemfn-simd=T (ON)
+for every target T whose family has a level (read from the dumper, so a new
+target joins). Admission is recomputed HERE from the table's facts (a level
+of T's family whose needs T's features supply), never read from the kit's
+gate. Every ON artifact carries scaffolding; a MOVER is a cell whose ON text,
+the scaffolding and the moved stamps aside, differs from OFF. Its SIMD FUNCs
+are the selectors whose one call names a level helper `<fn>__w<VW>`. Per
+target, movers, SIMD FUNCs and the selectors calling each admitted level
+are printed with a literal floor (K35). On every cell:
 
-  (a) PREPROCESSED-EQUAL off-target: `gcc -E -P` of ON and OFF at
-      -mgeneral-regs-only AND at -mno-sse2 are byte-equal.
-  (b) ONE REPLACED CALL PER SIMD FUNC on-target: at each level's test_march
-      (mf_levels()), the -E -P diff OFF -> ON deletes exactly one line per
-      SIMD FUNC, each `    return <fn>__body(<args>);`, and nothing else.
-  (c) SOURCE-LEVEL INSERTION-ONLY: the raw diff OFF -> ON deletes no line
-      but the two stamp lines the switch moves (`<P>_MEMFN_FORMS`,
-      `<P>_SIMD_GUARDED_BYTES`: the named filter), and the inserted lines'
-      bytes equal the ON artifact's `<P>_SIMD_GUARDED_BYTES` exactly (pcrec's
-      sink counts what the kit bracketed; this script counts the diff: every
-      inserted byte is inside a bracket, and nothing bracketed is missing).
-  (d) NO DIRECTIVE IN A BODY EXCEPT THE SELECTOR'S: routing_shape.py
-      (D155 addendum 1's rule, sharing no code with the kit) over the ON
-      text.
-  guard lint: every `#if`/`#elif` line the diff inserts is `#if`/`#elif`
-      followed by a guard string from mf_levels(), and every inserted
-      `#include` names a level's header.
-  C9-x86: every mover's ON artifact compiles -Wall -Wextra -Werror at
-      x86-64, x86-64-v2, sandybridge, x86-64-v3, x86-64-v4 and
-      -mgeneral-regs-only; at -O0 its object defines the live arm's helper
-      (`<fn>__w16` from x86-64 on, `<fn>__w32` from x86-64-v3 on, neither at
-      -mgeneral-regs-only nor a w32 one at sandybridge, AVX without AVX2),
-      read with nm.
+  scaffolding lint, PLACEMENT: the TARGETS stamp reads "FAMILY:T"; the
+      family guard occurs once, ahead of every `#include`; the region open
+      and close occur once each, in that order, and every function body and
+      initializer of the file lies between them.
+  scaffolding lint, EXCLUSIVITY: with those three texts cut out (exactly the
+      kit's declared spellings, from the dumper), the lines ON inserts over
+      OFF hold no preprocessor line but `#include <H>` for an ADMITTED
+      level's header; no helper of an unadmitted level appears.
+  (c) SOURCE-LEVEL, ONE REPLACED CALL PER SIMD FUNC: the raw diff OFF -> ON
+      deletes no line but the moved stamps (`<P>_TARGETS`, `<P>_MEMFN_FORMS`,
+      `<P>_SIMD_GUARDED_BYTES`) and, per SIMD FUNC, its one
+      `    return <fn>__body(<args>);`, replaced by the same call to
+      `<fn>__w<VW>` with VW an admitted level's width; the inserted lines'
+      bytes (stamps aside) equal the ON artifact's `<P>_SIMD_GUARDED_BYTES`
+      exactly (pcrec's sink counts what the kit bracketed plus the guard and
+      region; this script counts the diff).
+  (d) NO DIRECTIVE IN A FUNCTION BODY, one call per selector: routing_shape.py
+      (D155 addendum 1's rule, sharing no code with the kit) over the ON text.
+A header line ahead of the region whose `#include` OFF also carries (a
+compound part's own <string.h>, moved there: match_api.md §6.3.10¶15) is set
+aside on every leg (target_text.moved_headers_aside), and OFF's own copy of
+it, which ON no longer repeats inside the region, with it (moved_out); C9
+compiles the artifact as emitted.
+On every mover additionally:
+  (b) PREPROCESSED: `gcc -E -P` of OFF and ON, diffed, deletes exactly the one
+      `return <fn>__body(...)` line per SIMD FUNC (a macro in the inserted
+      text that rewrites the scalar floor shows as more).
+  C9-x86: the ON artifact compiles -Wall -Wextra -Werror with no -march and
+      at x86-64, x86-64-v2, sandybridge, x86-64-v3, x86-64-v4 and
+      -mgeneral-regs-only; at -O0 each SIMD FUNC's called helper is defined
+      in the object (read with nm) at EVERY cell: the region, not the
+      consumer's flags, supplies the ISA.
 
-Independent controls: the preprocessor and the compiler (a, b, C9), pcrec's
-own stamp (c), and a rule read from the ruling's text (d). The kit's
-`moved`, FORMS and trace are never read to find a mover. Prints
-`checks passed: N` / `checks failed: N`.
+CONTROLS, on every run: each target's first mover is judged again with one
+plant at a time (a stray `#pragma` outside the region, the region close
+dropped, the guard moved after an `#include`, a stray `#if` around a level
+include inside the region, a scalar floor call deleted); each must be
+rejected by the leg it names. The lint's SPELLINGS share a source with the
+emitter by design (the kit's table: the check holds placement and
+exclusivity, not the text); the compiler is their control (C9 here,
+run_targets.sh's stripped-region refusal). The kit's `moved`, FORMS and
+trace are never read to find a mover. Prints `checks passed: N` /
+`checks failed: N`.
 """
 import argparse
 import concurrent.futures
@@ -55,16 +85,21 @@ sys.path.insert(0, os.path.join(TREE, 'scripts'))
 sys.path.insert(0, HERE)
 import emit_sweep as es  # noqa: E402
 import routing_shape  # noqa: E402
+from target_text import admitted, cut, moved_headers_aside, moved_out, read_table  # noqa: E402
 
-# D172 S3 (lane s3) measured 33 and 33: the cover row took the fixed-width
-# caseless runs, and its window search then rendered no SIMD FUNC (a LOWERED
-# performance-form count, code review r1 C2: a trade never judged). Code review
-# r1 C1 (lane s3): a caseless window's stop is decided PAIR again and rendered by
-# fn-pair with its SIMD rows over it, so 46 and 46 measured; pinned AT the
-# measure (a deterministic count of emitted text)
-MOVERS_FLOOR = 46      # (pattern, engine) movers, corpus + named: 44 at w16 (R-13); 33 at D172 S3; 46 at r1 C1
-SIMD_FUNC_FLOOR = 46   # SIMD FUNCs over the movers: 44 (R-13); 33 at D172 S3; 46 at r1 C1
+# Floors per target, pinned AT the measure (deterministic counts of emitted
+# text). History of the pre-seam single count: 44 at w16 (R-13); 33 at D172
+# S3; 46 at code review r1 C1 (lane s3), both rungs under one `#if` chain.
+# The target seam (lane u3floor) splits it per target and per level: 55 and
+# 55 measured at both targets on the full corpus (2026-11-08, 5095 patterns;
+# the corpus grew since r1 C1), every selector at its target's top level.
+FLOORS = {
+    # target: (movers, SIMD FUNCs, {level stamp: selectors calling it})
+    'x86-64': (55, 55, {'w16': 55}),
+    'x86-64-v3': (55, 55, {'w32': 55}),
+}
 LEVELS_FLOOR = 2       # mf_levels() rows: w16, w32 (R-13)
+TARGETS_FLOOR = 2      # targets whose family has a level (U2)
 NAMED = [
     # `(?i)cat` is a fixed-width `cover` artifact by default (D172 S3); since code
     # review r1 C1 its window search's SIMD FUNC is fn-pair's again, on the DEFAULT
@@ -78,10 +113,16 @@ NAMED = [
 # [COMPOUND] the artifact's own stamp lines: a compound's .c also carries its
 # PARTS' lines under `<prefix>__<role>` (match_api.md §3.7¶1, not contract),
 # and an artifact prefix never contains `__` (cli.md §1.6¶2's `parts` row).
-STAMP_MOVES = re.compile(r'^#define (?:(?!__)\w)+_(MEMFN_FORMS|SIMD_GUARDED_BYTES) ')
+STAMP_MOVES = re.compile(r'^#define (?:(?!__)\w)+_(TARGETS|MEMFN_FORMS|SIMD_GUARDED_BYTES) ')
+TARGETS = re.compile(r'^#define (?:(?!__)\w)+_TARGETS "([^"]*)"$', re.M)
 GUARDED = re.compile(r'^#define (?:(?!__)\w)+_SIMD_GUARDED_BYTES (0x[0-9a-f]+)ULL$', re.M)
-C9_MARCH = ['-march=x86-64', '-march=x86-64-v2', '-march=sandybridge', '-march=x86-64-v3',
-            '-march=x86-64-v4', '-mgeneral-regs-only']
+SELECTOR = re.compile(r'^static inline size_t (\w+)\([^)]*\)\n\{\n    return (\w+)__w(\d+)\(.*\);\n\}$', re.M)
+HELPER = re.compile(r'^static inline size_t (\w+)__w(\d+)\(', re.M)
+BODY_OPEN = re.compile(r'^(\{|\S.*= \{$)', re.M)
+FLOOR_CALL = re.compile(r'^    return (\w+)__body\((.*)\);$')
+LEVEL_CALL = re.compile(r'^    return (\w+)__w(\d+)\((.*)\);$')
+C9_MARCH = [[], ['-march=x86-64'], ['-march=x86-64-v2'], ['-march=sandybridge'],
+            ['-march=x86-64-v3'], ['-march=x86-64-v4'], ['-mgeneral-regs-only']]
 
 
 def sh(cmd, timeout=120, **kw):
@@ -107,6 +148,106 @@ def diff_lines(a, b):
     return dele, ins
 
 
+def text_legs(toff, ton, t, adm, aside=0):
+    """The text-only legs on one cell: (mover, {fn: vw}, [issue])."""
+    issues = []
+    fam_target = '%s:%s' % (t['family'], t['name'])
+    vws = {l['vw'] for l in adm}
+    headers = {l['header'] for l in adm}
+    # PLACEMENT
+    tg = TARGETS.findall(ton)
+    if tg != [fam_target]:
+        issues.append('placement: TARGETS stamp(s) %r, expected [%r]' % (tg, fam_target))
+    spans = {}
+    for what in ('guard', 'open', 'close'):
+        n = ton.count(t[what])
+        if n != 1:
+            issues.append('placement: the %s text occurs %d times, expected once' % (what, n))
+        elif not ton.startswith(t[what]) and ton[ton.index(t[what]) - 1] != '\n':
+            issues.append('placement: the %s text does not start a line' % what)
+        else:
+            spans[what] = (ton.index(t[what]), ton.index(t[what]) + len(t[what]))
+    if 'guard' in spans:
+        inc = re.search(r'^#\s*include\b', ton, re.M)
+        if inc and inc.start() < spans['guard'][0]:
+            issues.append('placement: an #include precedes the family guard: %r' % inc.group(0))
+    if 'open' in spans and 'close' in spans:
+        if spans['open'][1] > spans['close'][0]:
+            issues.append('placement: the region closes before it opens')
+        for m in BODY_OPEN.finditer(ton):
+            if not spans['open'][1] <= m.start() < spans['close'][0]:
+                line = ton[ton.rfind('\n', 0, m.start()) + 1:m.end()]
+                issues.append('placement: a body outside the region: %r' % line[:80])
+                break
+    # EXCLUSIVITY: cut the three declared texts (target_text.cut), then only
+    # admitted includes
+    dele, ins = diff_lines(toff, cut(ton, t))
+    ins_code = [l for l in ins if not STAMP_MOVES.match(l)]
+    for l in ins_code:
+        if re.match(r'^\s*#', l):
+            mi = re.match(r'^#include <([^>]*)>$', l)
+            if not mi or mi.group(1) not in headers:
+                issues.append('guard lint: %r inserted' % l[:100])
+    for fn, vw in HELPER.findall(ton):
+        if vw not in vws:
+            issues.append('guard lint: helper %s__w%s is no admitted level' % (fn, vw))
+    # (c) the deletions: stamps, and one floor call per SIMD FUNC, replaced
+    sel = {m.group(1): m.group(3) for m in SELECTOR.finditer(ton) if m.group(2) == m.group(1)}
+    calls = [l for l in dele if not STAMP_MOVES.match(l)]
+    replaced = {}
+    for l in calls:
+        m = FLOOR_CALL.match(l)
+        if not m or m.group(1) not in sel:
+            issues.append('(c) a deleted line that is no SIMD FUNC\'s floor call: %r' % l[:80])
+            continue
+        replaced[m.group(1)] = m.group(2)
+    for fn, vw in sorted(sel.items()):
+        if vw not in vws:
+            issues.append('(c) %s calls __w%s, no admitted level' % (fn, vw))
+        if fn not in replaced:
+            issues.append('(c) SIMD FUNC %s replaced no floor call' % fn)
+        elif '    return %s__w%s(%s);' % (fn, vw, replaced[fn]) not in ins_code:
+            issues.append('(c) %s\'s level call does not forward its floor call\'s arguments' % fn)
+    rdele, rins = diff_lines(toff, ton)
+    # `aside`: the moved header lines' bytes (moved_headers_aside), guarded text too
+    nbytes = aside + sum(len(l.encode('utf-8', 'surrogateescape')) + 1
+                         for l in rins if not STAMP_MOVES.match(l))
+    m = GUARDED.search(ton)
+    if not m or int(m.group(1), 16) != nbytes:
+        issues.append('(c) inserted %d bytes, SIMD_GUARDED_BYTES %s' % (nbytes, m.group(1) if m else 'absent'))
+    # (d) the routing rule over the ON text
+    _, why = routing_shape.check(ton)
+    issues += ['(d) ' + w for w in why]
+    mover = [l for l in dele if not STAMP_MOVES.match(l)] != [] or ins_code != []
+    if mover and not sel:
+        issues.append('a mover with no SIMD FUNC selector')
+    return mover, sel, issues
+
+
+# the planted controls: (name, the leg that must reject it, plant(ton, t))
+def _move_guard(ton, t):
+    rest = ton.replace(t['guard'], '', 1)
+    m = re.search(r'^#\s*include\b.*\n', rest, re.M)
+    return rest[:m.end()] + t['guard'] + rest[m.end():]
+
+
+def _stray_if(ton, t):
+    m = re.search(r'^#include <[^>]*>\n', ton, re.M)
+    return ton[:m.start()] + '#if 1\n' + m.group(0) + '#endif\n' + ton[m.end():]
+
+
+PLANTS = [
+    ('a stray #pragma outside the region', 'guard lint',
+     lambda ton, t: ton.replace(t['open'], '#pragma GCC optimize("O3")\n' + t['open'], 1)),
+    ('the region close dropped', 'placement', lambda ton, t: ton.replace(t['close'], '', 1)),
+    ('the guard after an #include', 'placement', _move_guard),
+    ('a stray #if around a level include', 'guard lint', _stray_if),
+    ('a line of a scalar floor deleted', '(c)',
+     lambda ton, t: re.sub(r'^(static inline size_t \w+__body\(.*\)\n\{\n).*\n', r'\1', ton,
+                           count=1, flags=re.M)),
+]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--pcrec', required=True)
@@ -125,24 +266,31 @@ def main():
         failed.append(msg)
         print('FAIL: ' + msg)
 
-    lv = [l.split('\t') for l in subprocess.run([a.levels], capture_output=True, text=True,
-                                                check=True).stdout.splitlines()]
-    guards = {l[1] for l in lv}
-    headers = {l[2] for l in lv}
-    print('levels: %s' % ', '.join('%s (vw %s, %s)' % (l[5], l[3], l[4]) for l in lv))
-    if len(lv) >= LEVELS_FLOOR:
-        ok('mf_levels(): %d levels (floor %d)' % (len(lv), LEVELS_FLOOR))
+    levels, alltargets = read_table(a.levels)
+    print('levels: %s' % ', '.join('%s (%s, vw %s, needs %s)' % (l['stamp'], l['family'], l['vw'], l['needs'])
+                                   for l in levels))
+    if len(levels) >= LEVELS_FLOOR:
+        ok('mf_levels(): %d levels (floor %d)' % (len(levels), LEVELS_FLOOR))
     else:
-        bad('mf_levels(): %d levels < floor %d' % (len(lv), LEVELS_FLOOR))
-    marches = [l[4] for l in lv]
+        bad('mf_levels(): %d levels < floor %d' % (len(levels), LEVELS_FLOOR))
+    targets = [t for t in alltargets if t['family'] != '-' and admitted(t, levels)]
+    print('targets: %s' % ', '.join('%s (admits %s)' % (t['name'], '+'.join(l['stamp'] for l in admitted(t, levels)))
+                                    for t in targets))
+    if len(targets) >= TARGETS_FLOOR:
+        ok('targets with a level: %d (floor %d)' % (len(targets), TARGETS_FLOOR))
+    else:
+        bad('targets with a level: %d < floor %d' % (len(targets), TARGETS_FLOOR))
+    for t in targets:
+        if not (t['open'] and t['close'] and t['guard']):
+            bad('target %s: the kit declares an empty region or guard text' % t['name'])
 
     corpus = es.enumerate_corpus(a.pcrec, TREE, 30)
     pats = sorted({p for _, _, p in corpus})
     pats = [p for i, p in enumerate(pats) if i % a.every == 0]
     pop = [('named:' + n, p, x) for n, p, x in NAMED]
     pop += [('corpus', p, x) for p in pats for x in ([], ['--engine=vm'])]
-    print('== C18/C9: %d population cells (%d corpus patterns x 2 engines, %d named)'
-          % (len(pop), len(pats), len(NAMED)))
+    print('== C18/C9: %d population cells (%d corpus patterns x 2 engines, %d named) x %d targets'
+          % (len(pop), len(pats), len(NAMED), len(targets)))
     work = tempfile.mkdtemp(prefix='simdfloor.', dir=os.environ.get('TMPDIR'))
 
     def emit(p, extra, flag, d):
@@ -154,126 +302,142 @@ def main():
             return None
         return out
 
+    def pp(path):
+        r = sh(['gcc', '-E', '-P', path], 60, cwd=os.path.dirname(path))
+        return r.stdout.decode('utf-8', 'surrogateescape') if r and r.returncode == 0 else None
+
     def one(job):
         idx, (key, p, extra) = job
         base = os.path.join(work, str(idx))
         off = emit(p, extra, '-fno-memfn-simd', base + '/off')
-        on = emit(p, extra, '-fmemfn-simd', base + '/on')
-        rec = {'key': key, 'p': p, 'extra': extra, 'issues': [], 'mover': False, 'nfunc': 0}
-        if off is None or on is None:
-            if (off is None) != (on is None):
-                rec['issues'].append('ON and OFF disagree on refusing')
-            subprocess.run(['rm', '-rf', base])
-            return rec
-        toff = open(off, encoding='utf-8', errors='surrogateescape').read()
-        ton = open(on, encoding='utf-8', errors='surrogateescape').read()
-        hoff = open(off[:-1] + 'h', 'rb').read()
-        hon = open(on[:-1] + 'h', 'rb').read()
-        if hoff != hon:
-            rec['issues'].append('the .h moved under -fmemfn-simd (a level guard in the header?)')
-        if toff == ton:
-            subprocess.run(['rm', '-rf', base])
-            return rec
-        rec['mover'] = True
-        # the SIMD FUNCs: selectors whose body holds a level arm
-        simd_fns = re.findall(r'^static inline size_t (\w+)\([^)]*\)\n\{\n#if ', ton, re.M)
-        rec['nfunc'] = len(simd_fns)
-        if not simd_fns:
-            rec['issues'].append('a mover with no SIMD FUNC selector')
-        # (c) raw insertion-only, and the bytes are the bracketed bytes
-        dele, ins = diff_lines(toff, ton)
-        stray = [l for l in dele if not STAMP_MOVES.match(l)]
-        if stray:
-            rec['issues'].append('(c) %d deleted line(s), first %r' % (len(stray), stray[0][:80]))
-        ins_code = [l for l in ins if not STAMP_MOVES.match(l)]
-        m = GUARDED.search(ton)
-        nbytes = sum(len(l.encode('utf-8', 'surrogateescape')) + 1 for l in ins_code)
-        if not m or int(m.group(1), 16) != nbytes:
-            rec['issues'].append('(c) inserted %d bytes, SIMD_GUARDED_BYTES %s'
-                                 % (nbytes, m.group(1) if m else 'absent'))
-        # guard lint
-        for l in ins_code:
-            mm = re.match(r'^#\s*(if|elif)\s+(.*)$', l)
-            if mm and mm.group(2) not in guards:
-                rec['issues'].append('guard lint: %r is no levels.def guard' % l[:100])
-            mi = re.match(r'^#\s*include\s*<([^>]*)>$', l)
-            if mi and mi.group(1) not in headers:
-                rec['issues'].append('guard lint: %r is no level header' % l)
-            if re.match(r'^#\s*(ifdef|ifndef|define|undef|pragma)\b', l):
-                rec['issues'].append('guard lint: %r inserted' % l)
-        # (d) the routing rule over the ON text
-        nf, why = routing_shape.check(ton)
-        for w in why:
-            rec['issues'].append('(d) ' + w)
-        # (a) off-target and (b) on-target, by the preprocessor
-        def pp(path, flags):
-            r = sh(['gcc', '-E', '-P'] + flags + [path], 60, cwd=os.path.dirname(path))
-            return r.stdout.decode('utf-8', 'surrogateescape') if r and r.returncode == 0 else None
-        for flags in (['-mgeneral-regs-only'], ['-mno-sse2']):
-            x, y = pp(off, flags), pp(on, flags)
-            if x is None or y is None or x != y:
-                rec['issues'].append('(a) %s: preprocessed text differs' % flags[0])
-        for march in marches:
-            x, y = pp(off, ['-march=' + march]), pp(on, ['-march=' + march])
+        recs = []
+        if off is not None:
+            toff = open(off, encoding='utf-8', errors='surrogateescape').read()
+            hoff = open(off[:-1] + 'h', 'rb').read()
+        for ti, t in enumerate(targets):
+            rec = {'key': key, 'p': p, 'extra': extra, 'target': t['name'], 'issues': [],
+                   'mover': False, 'sel': {}}
+            recs.append(rec)
+            d = '%s/on%d' % (base, ti)
+            on = emit(p, extra, '-fmemfn-simd=' + t['name'], d)
+            if off is None or on is None:
+                if (off is None) != (on is None):
+                    rec['issues'].append('ON and OFF disagree on refusing')
+                continue
+            # a header line OFF also carries, moved ahead of the region, is no
+            # new text: set aside for every leg; C9 compiles the artifact itself
+            raw = open(on, encoding='utf-8', errors='surrogateescape').read()
+            ton = moved_headers_aside(raw, toff, t)
+            aside = len(raw.encode('utf-8', 'surrogateescape')) - len(ton.encode('utf-8', 'surrogateescape'))
+            # and the OFF copies of a header ON moved out of its region (a
+            # compound part's own lines, F1) set aside on OFF's side
+            toffm = moved_out(toff, raw, t)
+            if open(on[:-1] + 'h', 'rb').read() != hoff:
+                rec['issues'].append('the .h moved under -fmemfn-simd (scaffolding in the header?)')
+            adm = admitted(t, levels)
+            mover, sel, issues = text_legs(toffm, ton, t, adm, aside)
+            rec['issues'] += issues
+            rec['mover'], rec['sel'] = mover, sel
+            if not mover:
+                continue
+            rec['toff'], rec['ton'] = toffm, ton
+            # (b) by the preprocessor: only the floor calls change
+            onpp = on[:-2] + '_pp.c'
+            with open(onpp, 'w', encoding='utf-8', errors='surrogateescape') as f:
+                f.write(ton)
+            offpp = off
+            if toffm != toff:
+                offpp = off[:-2] + '_moved.c'
+                with open(offpp, 'w', encoding='utf-8', errors='surrogateescape') as f:
+                    f.write(toffm)
+            x, y = pp(offpp), pp(onpp)
             if x is None or y is None:
-                rec['issues'].append('(b) %s: preprocessing failed' % march)
-                continue
-            dele, _ = diff_lines(x, y)
-            okdel = [l for l in dele
-                     if re.match(r'^    return (\w+)__body\(.*\);$', l)
-                     and re.match(r'^    return (\w+)__body', l).group(1) in simd_fns]
-            if len(dele) != len(simd_fns) or len(okdel) != len(dele):
-                rec['issues'].append('(b) -march=%s: %d deleted line(s) for %d SIMD FUNC(s): %r'
-                                     % (march, len(dele), len(simd_fns), dele[:3]))
-        # C9-x86: compile clean at every macro set; the live arm by nm at -O0
-        for march in C9_MARCH:
-            r = sh(['gcc', '-O2', '-Wall', '-Wextra', '-Werror', '-c', march, '-o', base + '/c9.o', on],
-                   120, cwd=os.path.dirname(on))
-            if r is None or r.returncode:
-                rec['issues'].append('C9 %s: does not compile -Werror: %s'
-                                     % (march, (r.stderr.decode()[-300:] if r else 'timeout')))
-                continue
-            r = sh(['gcc', '-O0', '-c', march, '-o', base + '/c9o0.o', on], 120,
-                   cwd=os.path.dirname(on))
-            syms = subprocess.run(['nm', base + '/c9o0.o'], capture_output=True,
-                                  text=True).stdout if r and r.returncode == 0 else ''
-            w16 = bool(re.search(r' t \w+__w16$', syms, re.M))
-            w32 = bool(re.search(r' t \w+__w32$', syms, re.M))
-            want16 = march not in ('-mgeneral-regs-only',)
-            want32 = march in ('-march=x86-64-v3', '-march=x86-64-v4') and '__w32(' in ton
-            has16 = '__w16(' in ton
-            if (has16 and w16 != want16) or w32 != want32:
-                rec['issues'].append('C9 %s: live arms w16=%s w32=%s, expected w16=%s w32=%s'
-                                     % (march, w16, w32, want16 and has16, want32))
+                rec['issues'].append('(b) preprocessing failed')
+            else:
+                dele, _ = diff_lines(x, y)
+                okdel = [l for l in dele if FLOOR_CALL.match(l) and FLOOR_CALL.match(l).group(1) in sel]
+                if len(dele) != len(sel) or len(okdel) != len(dele):
+                    rec['issues'].append('(b) %d deleted line(s) for %d SIMD FUNC(s): %r'
+                                         % (len(dele), len(sel), dele[:3]))
+            # C9-x86: compile clean at every cell; the called helper by nm at -O0
+            for march in C9_MARCH:
+                cell = ' '.join(march) or '(no -march)'
+                r = sh(['gcc', '-O2', '-Wall', '-Wextra', '-Werror', '-c'] + march + ['-o', d + '/c9.o', on],
+                       120, cwd=d)
+                if r is None or r.returncode:
+                    rec['issues'].append('C9 %s: does not compile -Werror: %s'
+                                         % (cell, (r.stderr.decode()[-300:] if r else 'timeout')))
+                    continue
+                r = sh(['gcc', '-O0', '-c'] + march + ['-o', d + '/c9o0.o', on], 120, cwd=d)
+                syms = subprocess.run(['nm', d + '/c9o0.o'], capture_output=True,
+                                      text=True).stdout if r and r.returncode == 0 else ''
+                defined = set(re.findall(r' t (\w+)$', syms, re.M))
+                for fn, vw in sorted(sel.items()):
+                    if '%s__w%s' % (fn, vw) not in defined:
+                        rec['issues'].append('C9 %s: %s__w%s is not defined in the -O0 object' % (cell, fn, vw))
         subprocess.run(['rm', '-rf', base])
-        return rec
+        return recs
 
-    movers = funcs = 0
+    stats = {t['name']: {'movers': 0, 'funcs': 0, 'levels': {}} for t in targets}
     named_movers = set()
+    first = {}
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
-        for rec in ex.map(one, enumerate(pop)):
-            for i in rec['issues']:
-                bad('%s %r %s: %s' % (rec['key'], rec['p'][:50], ' '.join(rec['extra']), i))
-            if rec['mover']:
-                movers += 1
-                funcs += rec['nfunc']
-                if rec['key'].startswith('named:'):
-                    named_movers.add(rec['key'])
+        for recs in ex.map(one, enumerate(pop)):
+            for rec in recs:
+                for i in rec['issues']:
+                    bad('%s %s %r %s: %s' % (rec['target'], rec['key'], rec['p'][:50], ' '.join(rec['extra']), i))
                 if not rec['issues']:
                     ok()
+                if rec['mover']:
+                    s = stats[rec['target']]
+                    s['movers'] += 1
+                    s['funcs'] += len(rec['sel'])
+                    for vw in rec['sel'].values():
+                        st = next(l['stamp'] for l in levels if l['vw'] == vw)
+                        s['levels'][st] = s['levels'].get(st, 0) + 1
+                    if rec['key'].startswith('named:'):
+                        named_movers.add((rec['target'], rec['key']))
+                    if rec['target'] not in first and not rec['issues'] and 'ton' in rec:
+                        first[rec['target']] = rec
     subprocess.run(['rm', '-rf', work])
-    print('movers: %d (pattern, engine) cells, %d SIMD FUNCs' % (movers, funcs))
-    for n, _, _ in NAMED:
-        if 'named:' + n in named_movers:
-            ok('named witness %s is a mover' % n)
+    for t in targets:
+        tn = t['name']
+        s = stats[tn]
+        print('%s: movers %d, SIMD FUNCs %d, selectors per level %s'
+              % (tn, s['movers'], s['funcs'], ' '.join('%s=%d' % kv for kv in sorted(s['levels'].items()))))
+        for n, _, _ in NAMED:
+            if (tn, 'named:' + n) in named_movers:
+                ok('%s: named witness %s is a mover' % (tn, n))
+            else:
+                bad('%s: named witness %s is NOT a mover (its bin is unreached)' % (tn, n))
+        if tn not in FLOORS:
+            bad('%s: a target with a level and no floor row (pin its measure)' % tn)
+            continue
+        fm, ff, fl = FLOORS[tn]
+        lows = ['movers %d < %d' % (s['movers'], fm)] if s['movers'] < fm else []
+        lows += ['SIMD FUNCs %d < %d' % (s['funcs'], ff)] if s['funcs'] < ff else []
+        lows += ['%s selectors %d < %d' % (st, s['levels'].get(st, 0), v)
+                 for st, v in sorted(fl.items()) if s['levels'].get(st, 0) < v]
+        if lows:
+            bad('%s: floor dropped (K35): %s' % (tn, '; '.join(lows)))
         else:
-            bad('named witness %s is NOT a mover (its bin is unreached)' % n)
-    if movers >= MOVERS_FLOOR and funcs >= SIMD_FUNC_FLOOR:
-        ok('population: %d movers (floor %d), %d SIMD FUNCs (floor %d)'
-           % (movers, MOVERS_FLOOR, funcs, SIMD_FUNC_FLOOR))
-    else:
-        bad('population: %d movers / %d SIMD FUNCs under floors %d / %d (K35)'
-            % (movers, funcs, MOVERS_FLOOR, SIMD_FUNC_FLOOR))
+            ok('%s: population at or above its floors %r' % (tn, FLOORS[tn]))
+        # the planted controls on this target's first clean mover
+        rec = first.get(tn)
+        if rec is None:
+            bad('%s: no clean mover to plant the controls on' % tn)
+            continue
+        adm = admitted(t, levels)
+        for name, leg, plant in PLANTS:
+            planted = plant(rec['ton'], t)
+            if planted == rec['ton']:
+                bad('%s: control %s did not apply' % (tn, name))
+                continue
+            _, _, why = text_legs(rec['toff'], planted, t, adm)
+            if any(w.startswith(leg) for w in why):
+                ok('%s: control %s rejected by %s' % (tn, name, leg))
+            else:
+                bad('%s: control %s NOT rejected by %s (%r)' % (tn, name, leg, why[:2]))
     print('checks passed: %d' % passed[0])
     print('checks failed: %d' % len(failed))
     return 1 if failed else 0

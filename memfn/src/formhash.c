@@ -15,7 +15,7 @@
  * THE CANONICAL INSTANCE. A form's text for ONE fixed site of the form,
  * rendered through the kit's own entries in a scratch art over a scratch
  * arena with the fixed prefix (`mf`): the ENTRY TABLE below (span_cards.md
- * §3.2, unit S2c) states each instance's site shape, facts, policy word and
+ * §3.2, unit S2c) states each instance's site shape, facts, target token and
  * deny string, and ONE renderer path builds every instance, so the text
  * hashed here is the text a span_cards cell times (the TEST entries
  * mf_form_site_text / mf_form_hash_cls, kit.h). A verify form has one
@@ -259,13 +259,15 @@ static const char *fh_fn(void *u, uint32_t ref) { (void)u; (void)ref; return "mf
  *
  * One row per INSTANCE: an id's canonical instance (`canon` 1; `cls` "-" for
  * an id with one instance) and, for the verify forms, one per class. Each row
- * states the site shape, the facts, the policy word and the deny string; ONE
- * renderer path (fh_render) builds the site from them and reaches the form by
- * the kit's own selection, so the text mf_form_hash folds is the text a cell
- * times. `row` is the kit row the facts must reach (the composer's arm for a
- * FIND, T-FIND's row deciding a window's stop, T-CMP's row for a run): an
- * instance whose facts reach another is REFUSED (-1), never hashed as the id
- * (a form no fact set reaches is reported, never forced).
+ * states the site shape, the facts, the TARGET (a kit token, the art's
+ * mf_art_target, unit U2: timed and shipped text planned for one target,
+ * target_seam.md §4) and the deny string; ONE renderer path (fh_render)
+ * builds the site from them and reaches the form by the kit's own selection,
+ * so the text mf_form_hash folds is the text a cell times. `row` is the
+ * kit row the facts must reach (the composer's arm for a FIND, T-FIND's row
+ * deciding a window's stop, T-CMP's row for a run): an instance whose facts
+ * reach another is REFUSED (-1), never hashed as the id (a form no fact set
+ * reaches is reported, never forced).
  *
  *   walk, libc   canon()'s two sites before S2c, byte for byte: their hashes
  *                did not move (grid1's and the interim sets' readers)
@@ -290,17 +292,17 @@ static const char DIGITS[] = "0123456789";
 static const char WORD[]   = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
 static const mf_form_entry entries[] = {
-    /* id          cls  canon shape          row          bytes                case tbl empty              leaves on_miss      policy              deny */
-    { "walk",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        MF_P_PORTABLE_ONLY, NULL },
-    { "libc",      "-",  1, MF_FH_FIND,    "pf_memchr", "x",                  0, 0, MF_EMPTY_EXCLUDED, 1, "return 0;", MF_P_PORTABLE_ONLY, NULL },
-    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        MF_P_PORTABLE_ONLY, NULL },
-    { "settest",   "c1", 0, MF_FH_SETTEST, NULL,        "/",                  0, 0, 0,                 0, NULL,        MF_P_PORTABLE_ONLY, NULL },
-    { "settest",   "c2", 1, MF_FH_SETTEST, NULL,        "Xx",                 0, 0, 0,                 0, NULL,        MF_P_PORTABLE_ONLY, NULL },
-    { "settest",   "cn", 0, MF_FH_SETTEST, NULL,        WORD,                 0, 0, 0,                 0, NULL,        MF_P_PORTABLE_ONLY, NULL },
-    { "rc-words",  "w1", 0, MF_FH_RUNCMP,  "words",     "USER",               1, 0, 0,                 0, NULL,        MF_P_PORTABLE_ONLY, NULL },
-    { "rc-words",  "w2", 1, MF_FH_RUNCMP,  "words",     "ABC",                1, 0, 0,                 0, NULL,        MF_P_PORTABLE_ONLY, NULL },
-    { "rc-words",  "w3", 0, MF_FH_RUNCMP,  "words",     "ABCDEFGHIJKLMNOPQR", 1, 0, 0,                 0, NULL,        MF_P_PORTABLE_ONLY, NULL },
-    { "rc-memcmp", "l1", 1, MF_FH_RUNCMP,  "memcmp",    "/use",               0, 0, 0,                 0, NULL,        MF_P_PORTABLE_ONLY, NULL },
+    /* id          cls  canon shape          row          bytes                case tbl empty              leaves on_miss      target              deny */
+    { "walk",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        "generic",          NULL },
+    { "libc",      "-",  1, MF_FH_FIND,    "pf_memchr", "x",                  0, 0, MF_EMPTY_EXCLUDED, 1, "return 0;", "generic",          NULL },
+    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL },
+    { "settest",   "c1", 0, MF_FH_SETTEST, NULL,        "/",                  0, 0, 0,                 0, NULL,        "generic",          NULL },
+    { "settest",   "c2", 1, MF_FH_SETTEST, NULL,        "Xx",                 0, 0, 0,                 0, NULL,        "generic",          NULL },
+    { "settest",   "cn", 0, MF_FH_SETTEST, NULL,        WORD,                 0, 0, 0,                 0, NULL,        "generic",          NULL },
+    { "rc-words",  "w1", 0, MF_FH_RUNCMP,  "words",     "USER",               1, 0, 0,                 0, NULL,        "generic",          NULL },
+    { "rc-words",  "w2", 1, MF_FH_RUNCMP,  "words",     "ABC",                1, 0, 0,                 0, NULL,        "generic",          NULL },
+    { "rc-words",  "w3", 0, MF_FH_RUNCMP,  "words",     "ABCDEFGHIJKLMNOPQR", 1, 0, 0,                 0, NULL,        "generic",          NULL },
+    { "rc-memcmp", "l1", 1, MF_FH_RUNCMP,  "memcmp",    "/use",               0, 0, 0,                 0, NULL,        "generic",          NULL },
 };
 #define NENTRIES (sizeof entries / sizeof entries[0])
 
@@ -383,7 +385,6 @@ static void fh_site(const mf_form_entry *e, mf_site *s)
     s->ret_pred = MF_NO_PRED;
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
-    s->policy = e->policy;
     s->opts = e->deny;
     s->body = MF_BODY_ONESHOT;
     s->pred.plan_hint = MF_NO_PRED;
@@ -410,8 +411,9 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
     mf_result *res = &w->res;
     int rc = 1;
     *row = NULL;
-    mf_art *art = mf_art_begin(&ar, "mf", e->policy, 0, NULL, NULL);
+    mf_art *art = mf_art_begin(&ar, "mf", 0, NULL, NULL);
     if (!art) goto out;
+    if (mf_art_target(art, mf_target_parse(e->target, strlen(e->target), NULL, 0))) goto out;
     h->s = sh->s;
     h->n = sh->n;
     h->lo = e->shape == MF_FH_RUNCMP ? sh->cand : sh->lo;
