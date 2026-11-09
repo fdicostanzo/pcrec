@@ -83,3 +83,9 @@ this base. One measurement: `build/pcrec --emit-facts` (main's binary, read-only
 | CLAUDE.md line | docs/design/memfn/CLAUDE.md |
 | REFERENCES.md | not needed: no paper cited |
 | history-index line | docs/dev/history/claude_md/docs__dev__lanes.md |
+
+## STATE AT HANDOFF
+
+Delivered and committed on lane/memfn-r38s. Owed: none (design lane; no runs queued). No rulings
+file was named in the brief. Next: main rules §6's six questions; the kit manager reviews the
+sheet (a readiness critic is the manager's call) before K38-1's brief.
