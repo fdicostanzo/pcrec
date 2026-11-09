@@ -14,7 +14,7 @@ SAB_SUITES='memfnreach'
 SAB_DESC='the VM attempt loop re-enters the handoff where a pre-check part is not a byte of the whole run, so each re-find may rescan the subject'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/reqvm1_report.md, Tests and sabotage); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1704.'
 SAB_REACH='TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_handoff_reach.sh" "$TREE"'
-SAB_REACH_EXPECT='attempt-loop reach floor: 4 >= 4
+SAB_REACH_EXPECT='attempt-loop reach floor: 5 >= 4
 (ab)c?userpass (byte): reaches the attempt loop'\''s entry row'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
