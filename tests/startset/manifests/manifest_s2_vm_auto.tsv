@@ -546,3 +546,14 @@ tests/lookaround/lookbehind_variable_witness.rxt:50	--features lookaround,backre
 tests/recursion/d27/sr_interactions.rxt:363	--features recursion	2861283f31293f6229
 # alttri2 (2026-11-07, lane/altbuild, 210 altcatch-test triage): +1, the new tests/altcls/altnf_lookbehind.rxt (merged in from main's variable-lookbehind stage 1 at the altcatch catch-up) block 124, a correct VM-hat mover never pinned; vmhat_checks.py's own mover rule on lane/altbuild (the mttri precedent), no existing row moved, bench rows untouched.
 tests/altcls/altnf_lookbehind.rxt:124	--features all	283f3c2a28283f3a61627c616329633f7c612929645c31
+# sae1pin (2026-11-09, lane/sae1 make test pre-pin): +10, the blocks of tests/litscan/spanarms.rxt (span arms E1 witnesses, new corpus file), correct VM-hat movers never pinned; vmhat_checks.py's own mover rule (the sae2mt precedent), no existing row moved, bench rows untouched.
+tests/litscan/spanarms.rxt:24	--features all --engine=vm	6162283f3a633f297b327d6465
+tests/litscan/spanarms.rxt:35	--features all	28616229785c312a79
+tests/litscan/spanarms.rxt:44	--features all --engine=vm	28616229785c312a79
+tests/litscan/spanarms.rxt:61	--features all --engine=vm	61626364283f3a292a65666768
+tests/litscan/spanarms.rxt:76	--features all --engine=vm	61626364283f3a5c62292a65666768
+tests/litscan/spanarms.rxt:91	--features all --engine=vm	61626364283f3a5c62292b65666768
+tests/litscan/spanarms.rxt:106	--features all --engine=vm	61626364283f3a5e292a65666768
+tests/litscan/spanarms.rxt:120	--features all --engine=vm	61626364283f3a24293f65666768
+tests/litscan/spanarms.rxt:134	--features all --engine=vm	7879283f3a283f3d6129292a61627a77
+tests/litscan/spanarms.rxt:149	--features all --engine=vm	6162283f3a5c42297b337d6364
