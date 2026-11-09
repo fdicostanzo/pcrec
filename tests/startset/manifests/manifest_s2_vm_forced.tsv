@@ -1627,12 +1627,12 @@ tests/litscan/reqcube.rxt:95	--engine=vm	283f3a283f693a616273297c283f693a6162295
 tests/litscan/presence_deny.rxt:261	--features all --encoding=byte	283f3c3d717a29783f613a
 tests/litscan/presence_deny.rxt:315	--features all --encoding=byte	283f3c3d7129613a
 tests/litscan/presence_deny.rxt:347	--features all --encoding=byte	617b322c347d5c4b62
-tests/litscan/presence_deny.rxt:385	--features all --encoding=byte	283f3a61283f2171297c617129787b302c337d71
-tests/litscan/presence_deny.rxt:426	--features all --encoding=byte	666f6f283f3a757365726e616d657c70617373776f72647c7061737370687261736529626172
-tests/litscan/presence_deny.rxt:501	--features all --encoding=byte	5b612d635d7b322c347d785b302d395d7b322c347d795b412d435d7b322c347d7a5b6a2d6c5d7b322c347d775b782d7a5d7b322c347d
-tests/litscan/presence_deny.rxt:577	--features all --encoding=utf8	782e79
-tests/litscan/presence_deny.rxt:609	--features all --encoding=byte	61623f63
-tests/litscan/presence_deny.rxt:643	--features all --encoding=byte	612e7b312c357d7a
+tests/litscan/presence_deny.rxt:393	--features all --encoding=byte	283f3a61283f2171297c617129787b302c337d71
+tests/litscan/presence_deny.rxt:434	--features all --encoding=byte	666f6f283f3a757365726e616d657c70617373776f72647c7061737370687261736529626172
+tests/litscan/presence_deny.rxt:509	--features all --encoding=byte	5b612d635d7b322c347d785b302d395d7b322c347d795b412d435d7b322c347d7a5b6a2d6c5d7b322c347d775b782d7a5d7b322c347d
+tests/litscan/presence_deny.rxt:585	--features all --encoding=utf8	782e79
+tests/litscan/presence_deny.rxt:617	--features all --encoding=byte	61623f63
+tests/litscan/presence_deny.rxt:651	--features all --encoding=byte	612e7b312c357d7a
 tests/lookaround/alpha_spellings.rxt:115	--features lookaround	282a706f7369746976655f6c6f6f6b626568696e643a612962
 tests/lookaround/alpha_spellings.rxt:129	--features lookaround	282a6e6c623a612962
 tests/lookaround/alpha_spellings.rxt:144	--features lookaround	282a6e656761746976655f6c6f6f6b626568696e643a612962

@@ -37,8 +37,8 @@ window-none	-	a(b|c)+d
 presence-none	-	[a-z](?=the)
 one-attempt	-	^(a)(b|c)
 dominated	--memfn=no-window-search	foo\b
-set-leads	-	\d{2,5}((?i:cat))
-emitted	-fno-req-set-lead	\d{2,5}((?i:cat))
+set-leads	-	(?:é|ü){2,5}((?i:cat))
+emitted	-fno-req-set-lead	(?:é|ü){2,5}((?i:cat))
 emitted	-	a(b|c)+d
 ceiling	-	^((?1)a)$
 width-none	-	a(b|c)+d
@@ -49,7 +49,7 @@ scan-from-startpos	-fno-req-handoff --memfn=no-window-search	\d\dxyz
 # set-rest byte (`x`) is not; the deny lands on scan-from-startpos.
 handoff-attempts	--engine=vm	(?:xx|y)abc
 handoff-attempts	--engine=vm	(a|aa){0,10}cxyz
-handoff-attempts-entry	--engine=vm	\d{2,5}(?i:cat)
+handoff-attempts-entry	--engine=vm	(?:é|ü){2,5}(?i:cat)
 scan-from-startpos	--engine=vm -fno-req-handoff	(?:xx|y)abc
 run-pinned-bounded	--memfn=no-window-search	foo\b
 run-pinned	--memfn=no-window-search	ABCDE
