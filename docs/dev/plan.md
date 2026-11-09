@@ -738,6 +738,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-08): UNSCHEDULED; ideas + ride-alongs + a tally; interim prose rule in force (major class needs a round or a written waiver)
   next: TRIGGER = the next missing critic round (add a tally row); then one tooling lane, accepted by a three-week merge replay
   refs: docs/design/plan_row_bodies/REVIEW-GATE.md; D6; .claude/skills/pcrec-manager §5; docs/dev/full_suite_ledger.md
+- [S30A-PLAN] STATE:not-started — kit 3.0a code review's deferred items (F3 unification, F7, F10, F17, memfnrows arm)
+  filed: 2026-11-09 manager, from review 2026-11-09 r1 s30a (ruled)
+  status (2026-11-09): UNSCHEDULED; five kit-side items, each with its own trigger in the body
+  next: when a trigger fires, the kit builds that item in the change that trips it
+  refs: docs/design/plan_row_bodies/S30A-PLAN.md; docs/dev/reviews/2026-11-09-r1-s30a.md; R-35
 - [PCRE2-TESTDATA] STATE:not-started — PCRE2's testinput patterns as a DATA document; tests built on it are opt-in
   filed: 2026-11-07 Frank ("Yes as a filler item and to a data document. If we build a test section from this it's additional and opt in. We might use it also to fill in gaps in our main test coverage.")
   status (2026-11-07): not started; FILLER (runs when a lane slot is idle)
