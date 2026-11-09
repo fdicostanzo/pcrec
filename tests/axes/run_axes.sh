@@ -1212,8 +1212,9 @@ giveup1_named() {
 #
 # THE POPULATION IS READ, never listed: every row of that section, at TWO
 # LAYERS -- `default` (the shipped SIMD-off layer: a SIMD row is accepted and
-# inert here, a scalar row is live) and `simd` (`-fmemfn-simd` on, the flag
-# spelling derived from the axis table like every other). Each (row, layer)
+# inert here, a scalar row is live) and `simd` (`-fmemfn-simd=TARGET` on, the flag
+# spelling derived from the axis table like every other, the target from
+# --list-cpu-targets). Each (row, layer)
 # is one answer-identity JOB below, against the default baseline, exactly as
 # a bit-flag axis is: the deny's answers must equal the default's.
 #
@@ -1242,6 +1243,19 @@ if [ -z "$AXES" ] || printf ' %s ' "$AXES" | grep -q -- ' --memfn' ; then
         echo "run_axes.sh: FATAL: PCREC_FORCE_MEMFN_SIMD has no CLI spelling in --list-axes -- the kit's SIMD layer cannot be addressed" >&2
         exit 1
     fi
+    # [XARCH-DEV] U3: a SIMD row renders where the art's CPU target admits its
+    # level, so the layer names a target, family explicit (the pins read the
+    # same on every host): of the one family --list-cpu-targets gives more
+    # than one target, the target with the most features (it admits every
+    # level the floors below were measured with). No token is spelled here.
+    _mf_rows="$("$TIMEOUT_BIN" 60 "$PCREC" --list-cpu-targets | awk -F'\t' '$1=="target" && $3!=""')"
+    _mf_fam="$(printf '%s\n' "$_mf_rows" | awk -F'\t' '{n[$3]++} END{for(f in n) if(n[f]>1){print f; exit}}')"
+    _mf_top="$(printf '%s\n' "$_mf_rows" | awk -F'\t' -v f="$_mf_fam" '$3==f{print gsub(/,/,",",$6) "\t" $2}' | sort -n | tail -1 | cut -f2)"
+    if [ -z "$_mf_top" ]; then
+        echo "run_axes.sh: FATAL: --list-cpu-targets gives no family with two targets -- the SIMD layer has no target" >&2
+        exit 1
+    fi
+    memfn_simd_flag="$memfn_simd_flag=$_mf_top"
     memfn_names="$(bash "$ROOT_DIR/tests/lib/table.sh" table-field "$MEMFN_DUMP" memfn name)" \
         || { echo "run_axes.sh: FATAL: --list-axes has no readable memfn section" >&2; exit 1; }
     memfn_spells="$(bash "$ROOT_DIR/tests/lib/table.sh" table-field "$MEMFN_DUMP" memfn spelling)" \

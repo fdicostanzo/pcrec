@@ -6,6 +6,9 @@
 # set [0-9], row pf_walk), so `pair` and `walk` render one text under two ids.
 # Detector: tests/memfn/finder_check.py check B (arm memfnfinder): every entry-table instance hashes
 # pairwise distinct ("form instances hash one text"); `pair`'s design row PAIR is also missed.
+# RE-AIMED 2026-11-08 (lane u3tgt, [XARCH-DEV] U3): unit U2 replaced the entry table's policy
+# column with the art's target token (`"generic"` on these rows); the anchor follows, the plant
+# is unchanged.
 SAB_ID="S2930-formhash-two-ids-one-text"
 SAB_FILE="memfn/src/formhash.c"
 SAB_SUITES="memfnfinder"

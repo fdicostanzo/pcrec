@@ -178,7 +178,7 @@ OPTIONS
   --extra-base=ARGS      the arm's base (default nothing; `-e utf8` is the
                         utf8 base), also on every stream.
   --arms start           every DIFFER_PINS arm (the start-family deny arms at
-                        byte and utf8, plain `-e utf8`, `-i`, `-fmemfn-simd`,
+                        byte and utf8, plain `-e utf8`, `-i`, `-fmemfn-simd=x86-64`,
                         `-fcomments` ([SWEEPARM]: S981/S982), the null arm),
                         streams 1-2, over the DISTINCT patterns. Exclusive
                         with --extra.
@@ -262,6 +262,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # `python3 -I` drops the script's own directory from sys.path; the sibling
 # import of trace_diff below needs it (same house pattern as cls_identity.py).
 sys.path.insert(0, SCRIPT_DIR)
+sys.path.insert(0, os.path.join(os.path.dirname(SCRIPT_DIR), "tests", "memfn"))
+import target_text  # noqa: E402
 DEFAULT_TREE = os.path.dirname(SCRIPT_DIR)
 
 # ---------------------------------------------------------------------------
@@ -512,8 +514,15 @@ DIFFER_PINS = {
     # layers), so the cell is pinned back AT the measure. Its members against main are named
     # by s3_evidence/simd_members.py (s3_report.md §8.8): a JUDGED trade, SIMD off by default
     # and a SIMD-on loss the SIMD thread's finding (window_site.md §6).
-    ("byte", "-fmemfn-simd", "c-default"): (22, 0, b"((?i:abc))"),    # r2 re-pin (S3: 9; main: 20, b"(?i)cat")
-    ("byte", "-fmemfn-simd", "c-vm"): (19, 0, b"(?i)cat"),
+    # [XARCH-DEV] U3 (lane u3tgt, 2026-11-08): the arm names its CPU target, family
+    # explicit, so the cells read the same on every host (bare -fmemfn-simd is the
+    # HOST family's default list: an arm64 host renders no vrun row). x86-64 is what
+    # bare -fmemfn-simd was on this box; it renders vrun@w16 (the w32 level is
+    # x86-64-v3's). The arm sets each target's fixed text aside (target_aside), so
+    # a mover is a pattern a kit SIMD row serves. Floors carried, re-measured by job
+    # u3tgt-sweep-simd (STATE AT HANDOFF in docs/dev/lanes/u3tgt_report.md).
+    ("byte", "-fmemfn-simd=x86-64", "c-default"): (22, 0, b"((?i:abc))"),    # r2 re-pin (S3: 9; main: 20, b"(?i)cat")
+    ("byte", "-fmemfn-simd=x86-64", "c-vm"): (19, 0, b"(?i)cat"),
     ("byte", "-fcomments", "c-default"): (4243, 0, b"a"),
     ("byte", "-fcomments", "c-vm"): (4244, 0, b"a"),
     # the same arms, utf8 base
@@ -543,8 +552,8 @@ DIFFER_PINS = {
     ("utf8", "-fprefilter-collapse", "c-vm"): (0, 0, None),
     ("utf8", "-fno-length-prune", "c-default"): (468, 118, b"(a)*b"),
     ("utf8", "-fno-length-prune", "c-vm"): (815, 0, b"(a)*b"),
-    ("utf8", "-fmemfn-simd", "c-default"): (15, 0, b"((?i:abc))"),    # r2 re-pin (S3: 10; main: 15, b"(?i)cat"; byte cell's note)
-    ("utf8", "-fmemfn-simd", "c-vm"): (15, 0, b"(?i)cat"),
+    ("utf8", "-fmemfn-simd=x86-64", "c-default"): (15, 0, b"((?i:abc))"),    # r2 re-pin (S3: 10; main: 15, b"(?i)cat"; byte cell's note)
+    ("utf8", "-fmemfn-simd=x86-64", "c-vm"): (15, 0, b"(?i)cat"),
     ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
     ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
     # [MEMFN] R17-b' B1 (lane fdb1; r17b_prime.md §3.4 [rev3 B7, B13]): the
@@ -1656,6 +1665,81 @@ def distinct_patterns(patterns, every=1):
 # ---------------------------------------------------------------------------
 # THE ARMS sweep (DIFFER_PINS' header says what it checks and why).
 
+# [XARCH-DEV] U3: an arm that names a SIMD CPU target writes that target's
+# FIXED text into EVERY artifact (`<PREFIX>_TARGETS`, the kit's family guard,
+# the region's open and close, the guarded-byte count; match_api.md
+# §6.3.10¶14-¶15), so a raw byte compare would read every pattern as a mover
+# and the DIFFER floor could no longer fail. The fixed text is MEASURED per
+# side, never spelled here: the arm's and the base's compile of a control
+# pattern no kit row serves (TARGET_CONTROL) differ by exactly that text, and
+# the arm's compiles are compared with it set aside. A side whose arm writes
+# no such text (a build before U3, or a non-SIMD arm) sets nothing aside.
+TARGET_CONTROL = b"a"
+TARGET_STAMP_RE = re.compile(rb"^#define \w+_(?:TARGETS|SIMD_GUARDED_BYTES) [^\n]*\n", re.M)
+
+
+def target_fixed_text(pcrec_bin, base_args, flag, timeout):
+    """The blocks the arm adds to the control pattern's artifact: the line runs
+    inserted against the base's compile, stamp lines aside ([] if none)."""
+    import difflib
+    ok_b, base = compile_stream_c(pcrec_bin, TARGET_CONTROL, timeout, extra=list(base_args))[:2]
+    ok_a, arm = compile_stream_c(pcrec_bin, TARGET_CONTROL, timeout,
+                                 extra=list(base_args) + shlex.split(flag))[:2]
+    if not (ok_a and ok_b):
+        return []
+    bl = TARGET_STAMP_RE.sub(b"", base).splitlines(keepends=True)
+    al = TARGET_STAMP_RE.sub(b"", arm).splitlines(keepends=True)
+    sm = difflib.SequenceMatcher(None, bl, al, autojunk=False)
+    return [b"".join(al[j1:j2]) for tag, _, _, j1, j2 in sm.get_opcodes()
+            if tag in ("insert", "replace")]
+
+
+def target_table(tree):
+    """The kit's declared target rows, read from the levels dumper built
+    against the tree's libpcrec (tests/memfn/target_text.py, the one reader of
+    the target's own text); the header lines the target places ahead of its
+    region are target text too (R1, docs/dev/lanes/u3d27_rulings.md)."""
+    with tempfile.TemporaryDirectory(prefix="emitsweep_levels.") as d:
+        exe = os.path.join(d, "simd_levels")
+        r = subprocess.run(["gcc", "-O2", "-I", os.path.join(tree, "memfn", "include"), "-o", exe,
+                            os.path.join(tree, "tests", "memfn", "simd_levels.c"),
+                            os.path.join(tree, "build", "libpcrec.a")],
+                           capture_output=True, text=True, timeout=120)
+        if r.returncode != 0:
+            sys.exit("emit_sweep: the levels dumper did not build:\n" + r.stderr)
+        return target_text.read_table(exe)[1]
+
+
+def same_but_target(ta, tb, fixed_a, fixed_b, targets):
+    """True when two arm artifacts (reference, working) differ only in their
+    target's own text: the header lines a side places ahead of its region (the
+    reference's copy inside the region, target_text.moved_out) and the fixed
+    blocks, each set aside."""
+    sa, sb = (x.decode("utf-8", "surrogateescape") for x in (ta, tb))
+    t = target_text.target_of(sb, targets)
+    if t:
+        sa = target_text.moved_out(sa, sb, t)
+    sa, sb = (x.encode("utf-8", "surrogateescape") for x in (sa, sb))
+    return target_aside(sa, fixed_a, targets) == target_aside(sb, fixed_b, targets)
+
+
+def target_aside(text, fixed, targets=()):
+    """`text` with the arm's fixed target text removed (each block once), the
+    header lines its target places ahead of the region (target_text.header_run)
+    and its TARGETS / SIMD_GUARDED_BYTES stamp lines dropped."""
+    if not fixed:
+        return text
+    if targets:
+        s = text.decode("utf-8", "surrogateescape")
+        t = target_text.target_of(s, targets)
+        start, end, _ = target_text.header_run(s, t) if t else (None, None, [])
+        if start is not None:
+            text = (s[:start] + s[end:]).encode("utf-8", "surrogateescape")
+    for blk in fixed:
+        text = text.replace(blk, b"", 1)
+    return TARGET_STAMP_RE.sub(b"", text)
+
+
 class ArmResult:
     def __init__(self, base, flag, stream):
         self.base, self.flag, self.stream = base, flag, stream
@@ -1669,7 +1753,7 @@ class ArmResult:
         self.asymmetric = []       # (pattern, ok_a, ok_b)
 
 
-def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs):
+def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs, tree=None):
     """arms: [(base_name, base_args, flag_str)]; pats: distinct bytes.
     Returns {(base, flag, stream): ArmResult} plus base-identity results
     {(base, stream): ArmResult} (flag "" there: the base itself, a vs b)."""
@@ -1684,19 +1768,33 @@ def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs):
         for base, _, flag in arms:
             results[(base, flag, stream)] = ArmResult(base, flag, stream)
     manifests = {k: v[2] for k, v in DIFFER_PINS.items() if v[2] is not None}
+    fixed = {}   # (side, base, flag) -> the arm's measured target text (U3)
+    targets = target_table(tree) if tree and any("memfn-simd" in f for _, _, f in arms) else ()
+    for base, base_args, flag in arms:
+        if "memfn-simd" in flag:
+            fixed[(0, base, flag)] = target_fixed_text(bin_a, base_args, flag, timeout)
+            fixed[(1, base, flag)] = (fixed[(0, base, flag)] if mirror else
+                                      target_fixed_text(bin_b, base_args, flag, timeout))
+            if "memfn-simd=" in flag and not (fixed[(0, base, flag)] and fixed[(1, base, flag)]):
+                # an `=` arm names a target, so it writes target text; none read
+                # would set nothing aside and let a vacuous arm pass
+                sys.exit(f"emit_sweep: arm {flag} wrote no target text on the control pattern")
 
     def compile_pair(p, engine, args):
         a = compile_stream_c(bin_a, p, timeout, engine=engine, extra=args)
         b = a if mirror else compile_stream_c(bin_b, p, timeout, engine=engine, extra=args)
         return a, b
 
-    def side_cmp(arm_side, base_side):
+    def side_cmp(arm_side, base_side, aside=()):
         """(ok, base_ok, refusal, differ, stamp) of one side's arm compile
-        against the same side's base compile."""
+        against the same side's base compile, the arm's fixed target text
+        (`aside`) set aside."""
         ok, c = arm_side[0], arm_side[1]
         bok, bc = base_side[0], base_side[1]
         if ok != bok:
             return ok, bok, True, False, False
+        if ok and aside and target_aside(c, aside, targets) == target_aside(bc, aside, targets):
+            return ok, bok, False, False, False
         if ok and c != bc:
             return ok, bok, False, True, bool(start_keys_moved(stamps_of(bc), stamps_of(c)))
         return ok, bok, False, False, False
@@ -1715,9 +1813,13 @@ def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs):
             for base, base_args, flag in arms:
                 ra, rb = compile_pair(p, engine, list(base_args) + shlex.split(flag))
                 hunk = first_diff_hunk(ra[1], rb[1]) if ra[0] and rb[0] and ra[1] != rb[1] else None
+                if hunk is not None and targets and "memfn-simd" in flag and \
+                        same_but_target(ra[1], rb[1], fixed[(0, base, flag)], fixed[(1, base, flag)], targets):
+                    hunk = None
                 ba, bb = base_out[base]
                 out.append(((base, flag, stream), ra[0], rb[0], hunk,
-                            (side_cmp(ra, ba), side_cmp(rb, bb))))
+                            (side_cmp(ra, ba, fixed.get((0, base, flag), ())),
+                             side_cmp(rb, bb, fixed.get((1, base, flag), ())))))
         return p, out
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as ex:
@@ -1901,7 +2003,7 @@ COMPOSITION_EXTRA_PINS = {
     # binary, 386 composition files). Floors AT the measured value (the
     # counts are deterministic), the --engine=vm entry's stance. Re-pinned
     # 37 / 106 -> 38 / 88 from job 695-kit-simdset-comppin (header above).
-    ("-fmemfn-simd",): {"composition_producing_floor": 38,
+    ("-fmemfn-simd=x86-64",): {"composition_producing_floor": 38,
                         "composition_artifacts_floor": 88},
     ("-fcomments",): {"composition_producing_floor": 38,
                       "composition_artifacts_floor": 88},
@@ -3617,7 +3719,7 @@ def main():
         pats = distinct_patterns(patterns, args.every)
         log(f"[emit_sweep] === arms: {len(arms)} arms x 2 streams over {len(pats)} "
             f"distinct patterns ===")
-        ares, mirror = sweep_arms(arms, pats, ref_bin, tree_bin, args.timeout, args.jobs)
+        ares, mirror = sweep_arms(arms, pats, ref_bin, tree_bin, args.timeout, args.jobs, tree)
         ok_a, text_a, rows = report_arms(ares, pats, full_population, mirror,
                                          waive_unpinned=args.no_differ_floor)
         print(text_a)

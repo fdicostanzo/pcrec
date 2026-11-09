@@ -1,0 +1,25 @@
+# d27region pattern cases. Columns (TAB-separated):
+#   id     a C-identifier-safe case id (also the artifact prefix stem)
+#   opts   extra pcrec options ("-" for none)
+#   kind   plain | compound   (the expected <PREFIX>_COMPOUND class:
+#          "none" vs a row name; match_api.md §3.7, §6.3.12¶1)
+#   pcrec  the pattern as given to pcrec --pattern
+#   python the same pattern for python3 re (bytes); "=" means identical
+#   pieces comma-separated literals the subject generator plants (my alphabet)
+# The caseless one-run patterns are the shape tuning.md §2.43¶3a names
+# (one run of 2 to 32 bytes at a two-member cube); the others are
+# controls the kit should render no form for, and compounds (§3.7¶2).
+n1	-	plain	(?i)needle	=	needle,neeneedle,NEEDLE
+n2	-	plain	(?i)qz	=	qz,QZ,qQzZ
+n3	-	plain	(?i)abcdefghijklmnopqrstuvwxyzabcdef	=	abcdefghijklmnopqrstuvwxyzabcdef,ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEF
+n4	-	plain	(?i)abcdefghijklmnopqrstuvwxyzabcdefg	=	abcdefghijklmnopqrstuvwxyzabcdefg,abcdefghijklmnopqrstuvwxyzabcdef
+n5	-	plain	x(?i:yzzy)	=	xyzzy,xYZZY,XYZZY,yzzy
+n6	-	plain	(?i)needle\d+	=	needle7,NEEDLE42,needle
+n7	-	plain	[a-c]+d	=	abcd,cccd,ad,d
+n8	-	plain	foo|bar	=	foo,bar,fobar,bfoo
+v1	--engine=vm	plain	(?i)needle[0-9]{3}	=	needle123,NEEDLE12,needle9999
+v2	--engine=vm	plain	(?i)(ab|cd)+needle	=	abneedle,cdabNEEDLE,abcd,needle
+v3	--engine=vm --features all	plain	(?i)(ab)needle\1	=	abneedleab,ABneedleAb,abneedle
+c1	-	compound	^abc|xyz$	=	abc,xyz,xyz\n,abxyz
+c2	-	compound	(?i)^needle|haystack$	=	needle,HAYSTACK,haystack\n,needlehaystack
+c3	-	compound	(?i)^ab|kq7[a-z]*zz$	=	ab,kq7zz,KQ7abcZZ,kq7zz\n

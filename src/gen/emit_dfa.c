@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 97
+#define PCREC_ARTIFACT_ABI 98
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -15916,6 +15916,11 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     if (!pcrec_is_part(cx))
         pcrec_sb_stamp_str(c, g->upper, "COMPOUND",
                            cx->comp_stamp ? cx->comp_stamp : "none");
+    /* [XARCH-DEV] U3 `<PREFIX>_TARGETS` (match_api.md §6.3): the CPU target
+     * the artifact's code is for, `family:members`, once per artifact. */
+    if (!pcrec_is_part(cx))
+        pcrec_sb_stamp_str(c, g->upper, "TARGETS", pcrec_memfn_targets_stamp(cx));
+    pcrec_emit_target_guard(cx, c);
     if (cx->opt->header_name) {
         pcrec_sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
         /* [EMIT-ENTRIES] the header declares the exported entries; a kept
@@ -15944,13 +15949,22 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                             pcrec_entry_enc_static(cx));
     }
     if (need_string_h)
-        pcrec_sb_puts(c, "#include <string.h>\n");
-    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN))
-        pcrec_sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
+        pcrec_emit_include_line(cx, c, "#include <string.h>\n");
+    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN)) {
+        pcrec_emit_include_line(cx, c, "#include <stdio.h>\n");
+        pcrec_emit_include_line(cx, c, "#include <string.h>\n");
+    }
     /* [MEMFN] R4c the kit's text needs no header this did not declare (§14.8;
      * asserted at the attempt's end, `pcrec_memfn_art_end`). */
     cx->job->string_h = need_string_h || pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN);
     pcrec_sb_puts(c, "\n");
+    /* [XARCH-DEV] U3 the headers the prologue cannot write here yet (a mark
+     * the finishing pass renders), then the target's region open: every
+     * function below, the kit's helpers first, is the target's code (its
+     * close: `pcrec_emit_artifact_end`). No `#include` below may come first
+     * for a header the region's code uses. */
+    pcrec_emit_target_headers_mark(cx, c);
+    pcrec_emit_target_open(cx, c);
     /* [OPT-LITSCAN] S4 the word-load helpers a VM body's run compares use
      * (the body is written before this prologue, so its widths are known);
      * a DFA artifact's compares sit in file-scope blocks below, whose kit
@@ -16054,6 +16068,18 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
         "    printf(\"giveup %%d\\n\", rc);\n"
         "    return 3;\n"
         "}\n", g->upper, g->searchfn);
+}
+
+/* The artifact's end, both engines, after `rx_info`: the CPU target region's
+ * close (src/gen/memfn_targets.c; nothing for the portable target or on a
+ * part), then the `--emit-main` driver, which is shared file text outside
+ * every region. The one caller of the close, so every engine path that opens
+ * the region in `pcrec_emit_prologue` closes it here. */
+void pcrec_emit_artifact_end(Ctx *cx, const GenNames *g)
+{
+    pcrec_emit_target_close(cx, &cx->job->csb);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MAIN))
+        pcrec_emit_main(cx, g);
 }
 
 /* [DD-13] (plan.md [DD-13] "BENCH-DISCOVERED CANDIDATES" (a); pcrec-bench
@@ -16477,9 +16503,7 @@ in_entries:
         InfoStamp st = { 1, NULL, -1, -1, -1, 0, &bs };
         emit_info_def(cx, c, g.infoname, g.upper, &st);
     }
-
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MAIN))
-        pcrec_emit_main(cx, &g);
+    pcrec_emit_artifact_end(cx, &g);
 #ifdef PCREC_CAND_TRACE
     pcrec_cand_path_trace(cx);   /* [OPT-REVEND] L0's `CANDPATH` record */
 #endif

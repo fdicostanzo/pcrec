@@ -1,0 +1,1 @@
+base 1ffcce0c1; build/pcrec built at that base (nice make -j2); p2probe = tests/lib/p2probe.c against libpcre2-8 10.46

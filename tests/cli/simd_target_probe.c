@@ -8,7 +8,12 @@
  *                                 compiles `abc` through pcrec_compile with
  *                                 pcrec_options.flags = FLAGS ("none", "no",
  *                                 "force") and memfn_simd = LIST ("-" = NULL);
- *                                 prints "rc=N" and the error text */
+ *                                 prints "rc=N" and the error text
+ *   simd_target_probe text TOKEN DIR
+ *                                 writes the kit's C text for target TOKEN
+ *                                 (unit U3): DIR/guard (its family's guard,
+ *                                 empty for no family), DIR/open, DIR/close
+ *                                 (its region); exit 1 if TOKEN is no target */
 #include <stdio.h>
 #include <string.h>
 
@@ -40,6 +45,23 @@ int main(int argc, char **argv)
         if (rc == 0) pcrec_output_free(&out);
         return 0;
     }
-    fprintf(stderr, "usage: simd_target_probe kit TOKEN | api FLAGS LIST\n");
+    if (argc == 4 && !strcmp(argv[1], "text")) {
+        const mf_target *t = mf_target_parse(argv[2], strlen(argv[2]), NULL, 0);
+        if (!t) return 1;
+        const char *text[3] = { t->family ? mf_family_c_of(t->family)->guard : "",
+                                mf_target_c_of(t)->region_open,
+                                mf_target_c_of(t)->region_close };
+        static const char *const name[3] = { "guard", "open", "close" };
+        for (int i = 0; i < 3; i++) {
+            char path[4096];
+            snprintf(path, sizeof path, "%s/%s", argv[3], name[i]);
+            FILE *f = fopen(path, "w");
+            if (!f) return 1;
+            fputs(text[i], f);
+            fclose(f);
+        }
+        return 0;
+    }
+    fprintf(stderr, "usage: simd_target_probe kit TOKEN | api FLAGS LIST | text TOKEN DIR\n");
     return 2;
 }

@@ -1,0 +1,4 @@
+report=docs/dev/lanes/u3fix_report.md
+sections: Summary; Merge; Fixtures moved; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes

@@ -8,10 +8,12 @@
  * (check C4). What it decides is the selection (`simd_rows`, first match
  * over the flag word and the list text) and the one-member rule.
  *
- * The one policy bit the kit reads (`MF_P_PORTABLE_ONLY`) is read off the
- * set: portable iff the set is the kit's portable target alone. P1 moves no
- * byte: the host's default list and the portable target reproduce today's
- * SIMD-off / SIMD-on split exactly. */
+ * The set's one member is the art's TARGET (`pcrec_memfn_target`, unit U3),
+ * derived once per attempt onto the Ctx: every art states it to the kit
+ * (`mf_art_target`), the artifact names it in `<PREFIX>_TARGETS`, and this
+ * file places the kit's guard and region text for it (the guard and the
+ * region's open from `pcrec_emit_prologue`, its close from
+ * `pcrec_emit_artifact_end`, src/gen/emit_dfa.c). */
 #include <stdio.h>
 #include <string.h>
 
@@ -35,10 +37,18 @@ typedef struct {
     const mf_target *other;
 } SimdSet;
 
+/* A target's family token, or `none` for the portable target's absent one.
+ * Targets and families are compared by these TOKENS, never by address
+ * (target_seam_units.md §3: pcrec holds a target as its token). */
+static const char *family_name(const mf_target *t, const char *none)
+{
+    return t->family ? t->family->name : none;
+}
+
 static void set_add(SimdSet *s, const mf_target *t)
 {
     if (!s->first) s->first = t;
-    else if (t != s->first && !s->other) s->other = t;
+    else if (strcmp(t->name, s->first->name) && !s->other) s->other = t;
 }
 
 /* Parses the comma list `list` into `s`. `families` admits a family token
@@ -98,7 +108,7 @@ static int resolve(uint64_t flags, const char *list, SimdSet *s, char *err, size
     }
     if (s->other) {
         const mf_target *a = s->first, *b = s->other;
-        if (a->family != b->family)
+        if (strcmp(family_name(a, ""), family_name(b, "")))
             snprintf(err, n, "the CPU list mixes families ('%s' and '%s'); "
                      "a list names the targets of one family", a->name, b->name);
         else
@@ -116,14 +126,176 @@ int pcrec_memfn_simd_check(uint64_t flags, const char *list, char *err, size_t n
     return resolve(flags, list, &s, err, n);
 }
 
-/* The set is validated before any pass runs (`pcrec_compile`, the CLI's
- * option parse), so a refusal here cannot occur; if it did, the portable
- * bit is the conservative answer for the artifact. */
-uint32_t pcrec_memfn_policy(const pcrec_options *opt)
+/* Derives the compile's one CPU target, once per attempt, onto the Ctx
+ * (`Ctx.cpu_target`): the kit's row and its `<PREFIX>_TARGETS` value. The
+ * set was validated before any pass ran (`pcrec_compile`, the CLI's option
+ * parse), so a refusal here is an internal error, never a quiet default;
+ * this is the one point it can fail. */
+void pcrec_memfn_target_derive(Ctx *cx)
 {
     SimdSet s = { 0, 0 };
     char err[256];
-    if (resolve(opt->flags, opt->memfn_simd, &s, err, sizeof err) != 0)
-        return MF_P_PORTABLE_ONLY;
-    return s.first == mf_portable_target() ? MF_P_PORTABLE_ONLY : 0u;
+    if (resolve(cx->opt->flags, cx->opt->memfn_simd, &s, err, sizeof err) != 0)
+        pcrec_ctx_fail(cx, 0, "internal error: the CPU target set was refused "
+                       "after option parse: %s", err);
+    struct PcrecCpuTarget *ct = pcrec_arena_alloc(&cx->arena, sizeof *ct);
+    ct->row = s.first;
+    /* `family:members`, every token the kit's; `none` for the portable
+     * target's absent family (docs/spec/match_api.md §6.3.10¶14) */
+    ct->stamp = pcrec_sb_fragf(&cx->arena, "%s:%s", family_name(s.first, "none"),
+                               s.first->name);
+    cx->cpu_target = ct;
+}
+
+/* The compile's one CPU target, the kit's row as derived for this attempt,
+ * for `mf_art_target`, the artifact's guard and region. */
+const mf_target *pcrec_memfn_target(Ctx *cx)
+{
+    return cx->cpu_target->row;
+}
+
+/* `<PREFIX>_TARGETS`' value for it. */
+const char *pcrec_memfn_targets_stamp(Ctx *cx)
+{
+    return cx->cpu_target->stamp;
+}
+
+/* Writes `text` as one CPU-guarded bracket (StrBuf.simd_guarded), so no
+ * length decision reads it; nothing for "" or on a compound's part (its text
+ * lies inside its shell's guard and region). */
+static void put_target_text(Ctx *cx, StrBuf *c, const char *text)
+{
+    if (pcrec_is_part(cx) || !*text) return;
+    pcrec_sb_simd_open(c);
+    pcrec_sb_puts(c, text);
+    pcrec_sb_simd_close(c);
+}
+
+/* The kit's family guard: once per artifact, at file scope ahead of every
+ * `#include`, so a compile for another family stops at its `#error` rather
+ * than in a header. None for the portable target (it has no family). */
+void pcrec_emit_target_guard(Ctx *cx, StrBuf *c)
+{
+    const mf_target *t = pcrec_memfn_target(cx);
+    put_target_text(cx, c, t->family ? mf_family_c_of(t->family)->guard : "");
+}
+
+/* The mark the artifact's TARGET HEADERS replace (`pcrec_memfn_target_headers`,
+ * rendered by the finishing pass, src/gen/memfn_stamps.c): file scope, after
+ * the prologue's own `#include` lines and ahead of the region open, in its
+ * own bracket so no length decision reads it. Every artifact but a part
+ * carries it until the render, which leaves "" where no header is owed. */
+void pcrec_emit_target_headers_mark(Ctx *cx, StrBuf *c)
+{
+    if (pcrec_is_part(cx)) return;
+    pcrec_sb_simd_open(c);
+    pcrec_sb_puts(c, PCREC_TARGET_HEADERS_MARK);
+    pcrec_sb_simd_close(c);
+}
+
+/* The kit's header facts for this art (`mf_includes`, MF_INC_* bits; exact
+ * once its sites have rendered); 0 before the art exists. */
+uint32_t pcrec_memfn_art_includes(Ctx *cx)
+{
+    return cx->job->mf ? mf_includes(cx->job->mf) : 0;
+}
+
+/* Whether `text`'s first `n` bytes hold `line` (a whole `#include` line,
+ * newline included) as a line of their own. */
+static bool has_line(const char *text, size_t n, const char *line)
+{
+    size_t k = strlen(line);
+    for (const char *p = text; p && p + k <= text + n; p = memchr(p, '\n', (size_t)(text + n - p))) {
+        if (*p == '\n') p++;
+        if (p + k <= text + n && !memcmp(p, line, k)) return true;
+    }
+    return false;
+}
+
+/* The `#include` lines the artifact's code needs that its prologue could not
+ * write ahead of the region: the lines held inside it (`held`,
+ * `pcrec_emit_include_line`: a compound part's own `<string.h>` and
+ * `--emit-main`'s, a `--trace` VM's `<stdio.h>`), then the kit's header facts
+ * (its own and each compound part's, `PcrecPartFacts.includes`), each spelled
+ * by the kit (`mf_include_c`), each written once and none the text `ahead`
+ * of the mark (the prologue) already includes. gcc gives a header's inline
+ * functions the target in force where it is FIRST included, so a header
+ * first read inside the region breaks every later use of it outside (a
+ * fortified `memcpy`, a consumer's intrinsics, a second artifact; review
+ * 2026-11-08-r5-xarch X-1, X-2). "" without a region (no level renders, and
+ * nothing is held). Read once, after the last emit. */
+const char *pcrec_memfn_target_headers(Ctx *cx, const char *ahead, size_t nahead,
+                                       const char *held)
+{
+    if (!cx->job->region_placed) return "";
+    const PcrecCompShell *sh = cx->job->comp_shell;
+    uint32_t inc = pcrec_memfn_art_includes(cx);
+    for (int i = 0; sh && i < PCREC_COMP_MAXPARTS; i++)
+        if (sh->text[i]) inc |= sh->facts[i].includes;
+    const char *text = "";
+    for (const char *l = held; *l; ) {
+        const char *eol = strchr(l, '\n');
+        const char *line = pcrec_sb_fragf(&cx->arena, "%.*s", (int)(eol + 1 - l), l);
+        if (!has_line(ahead, nahead, line) && !has_line(text, strlen(text), line))
+            text = pcrec_sb_fragf(&cx->arena, "%s%s", text, line);
+        l = eol + 1;
+    }
+    for (uint32_t bit = 1; bit; bit <<= 1) {
+        if (!(inc & bit)) continue;
+        const char *line = mf_include_c(bit);
+        if (!line)
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit names no C "
+                           "spelling for its header fact 0x%x", (unsigned)bit);
+        if (!has_line(ahead, nahead, line) && !has_line(text, strlen(text), line))
+            text = pcrec_sb_fragf(&cx->arena, "%s%s", text, line);
+    }
+    return text;
+}
+
+/* Whether the compile's target opens a region (a target with something to
+ * enable); a compound's part reads it to know its shell's code is inside one. */
+bool pcrec_memfn_target_has_region(Ctx *cx)
+{
+    return *mf_target_c_of(pcrec_memfn_target(cx))->region_open != 0;
+}
+
+/* Writes one `#include` line of pcrec's own. Where the line would land
+ * inside the target's region (written after the region opened, or by a
+ * spliced compound part whose shell opens one) it goes behind the held mark
+ * (`PCREC_HELD_HEADER_MARK`, in its own bracket): every length decision
+ * reads the line, as on the SIMD-off compile, and none reads the mark; the
+ * finishing pass takes both out and places the header at file scope ahead
+ * of the region (`pcrec_memfn_target_headers`), so the region holds no
+ * `#include` (match_api.md §6.3.10¶15). Elsewhere it is the plain line. */
+void pcrec_emit_include_line(Ctx *cx, StrBuf *c, const char *line)
+{
+    if (cx->job->region_open ||
+        (pcrec_is_part(cx) && cx->emit_in->unrendered &&
+         pcrec_memfn_target_has_region(cx))) {
+        pcrec_sb_simd_open(c);
+        pcrec_sb_puts(c, PCREC_HELD_HEADER_MARK);
+        pcrec_sb_simd_close(c);
+    }
+    pcrec_sb_puts(c, line);
+}
+
+/* The target's region open, before the part's first function; "" (no region)
+ * for a target with nothing to enable. */
+void pcrec_emit_target_open(Ctx *cx, StrBuf *c)
+{
+    if (pcrec_is_part(cx) || !pcrec_memfn_target_has_region(cx)) return;
+    const char *open = mf_target_c_of(pcrec_memfn_target(cx))->region_open;
+    cx->job->region_open = cx->job->region_placed = true;
+    put_target_text(cx, c, open);
+}
+
+/* The region's close, after the part's last function and before `main`
+ * (shared file text, outside every region). The open and this close are the
+ * region's only writers; `pcrec_emit_artifact_end` is this one's only caller,
+ * and the attempt's end refuses a region left open. */
+void pcrec_emit_target_close(Ctx *cx, StrBuf *c)
+{
+    if (!cx->job->region_open) return;
+    put_target_text(cx, c, mf_target_c_of(pcrec_memfn_target(cx))->region_close);
+    cx->job->region_open = false;
 }

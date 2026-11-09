@@ -49,15 +49,16 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 ### The per-offset proof and the context spans (lane r26z1, [MEMFN] R-26 Z1)
 - **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** — R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make test-memfn-finder` ... Since D172 S2 commit 1 (lane wsc1) proof_run repeats every call with the subject at a guard page after n, one before 0, and between SENTINEL pads (review S2's read-limit layouts); plant `S1408` (an over-read past n; wsc1's `WSC1-R1`, renamed by wsc2) is their witness. Later history of this check (D172 S2 commit 6, S3): tests/memfn/NOTES.md.
 ### D172 S2 commit 4's lever check (lane wsc4)
-- **run_wreply.sh** — the window family's REPLY check (D172 S2; wsc4, inverted at commit 5, reduced at commit 6 when the planner's pick and the inverse harness lever were deleted): every witness stamps its NEXT row at the default flags and compiles at five flag sets (K35 floors on cases and keys); REACH through a perturbed tree copy (RESEED unstated: no offset-set row, at least five witnesses moved; R stated under `-fno-run-prefilter`: the RE-SEED refusal fires); `--plants` S1413-S1414 each red (S1412 retired with the pick). Opt-in, no make target; ~10 s plus a tree build; takes the box lock.
-### The guarded-bytes check (lane rq3, [MEMFN] RQ-3, D155 addendum 2)
+- **run_wreply.sh** — the window family's REPLY check (D172 S2; wsc4-wsc6). Opt-in, no make target; ~10 s plus a tree build; takes the box lock. Full description: NOTES.md "run_wreply.sh".
+### The guarded-bytes check (RQ-3, D155 add. 2)
 - **run_simd_guarded.sh**, **simd_guarded_check.py**, **simd_bounds.tsv** — `make test-memfn-guarded` (in TEST_SECTIONS; mech arm `simdguarded`).
-### The SIMD floor rule, C9-x86 (lane r13, [MEMFN] R-13, R4e' batch 1)
-- **run_simd_floor.sh**, **simd_floor_check.py**, **simd_levels.c** — `make test-memfn-simdfloor` (in TEST_SECTIONS; mech arm `simdfloor`).
+### The SIMD floor rule, C9-x86 (R-13)
+- **run_simd_floor.sh**, **simd_floor_check.py**, **simd_levels.c**, **target_text.py** (C11 too; NOTES.md) — `make test-memfn-simdfloor` (in TEST_SECTIONS; mech arm `simdfloor`).
 - **simd_bounds.tsv** gains each SIMD row's measured bound (`vrun-w16`, `vrun-w32`); a MEMFN_FORMS token `FORM@L1+L2` is bounded by the sum of its rows `FORM-Lk` ...
 - **libc_census.py** (C11): its SIMD-on half is the MOVERS half since R-13: an ON compile equals the default exactly where its `MEMFN_FORMS` reads `none` (`MOVERS_FLOOR`, ...
 - **simd_accept.tsv** — THE SIMD ACCEPTANCE RECORD (integration.md §R4.9.6): one line per SIMD row x level x official CPU class (zen1, zen4), every line CANDIDATE at ...
-- **run_targets.sh**, **targets_check.c** — `make test-memfn-targets`; NOTES.md "targets".
+- **run_targets.sh**, **targets_check.c** — `make test-memfn-targets`; NOTES.md "targets" (+U3 part 4).
+- **run_d27_region.sh**, **d27_region/** — `make test-memfn-d27region`: the D27 spec-first suite of the CPU-target text, plus its control. Own CLAUDE.md.
 - **run_pres_picks.sh**, **pres_pick_witnesses.tsv** — KW-8's named witnesses (R17-b′ B3a, lane b3a): a `-DPCREC_CAND_TRACE` pcrec compiles each line (pick, nontrivial, ...
 - **run_pr11.sh**, **pr11_front.py**, **pr11_witnesses.tsv** — the PR-11 control (R17-b′ B3a): over count-collapsed VM hybrids (`RX_VM_PREFILTER_LANG "count-collapsed"`), ...
 ### The position ranking (lane rq2, [MEMFN] RQ-2, D157)

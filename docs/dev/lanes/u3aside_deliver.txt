@@ -1,0 +1,4 @@
+report=docs/dev/lanes/u3aside_report.md
+sections: Summary; Cause; Fix; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes

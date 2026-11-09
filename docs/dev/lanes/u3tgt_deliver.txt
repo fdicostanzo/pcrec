@@ -1,0 +1,6 @@
+report=docs/dev/lanes/u3tgt_report.md
+sections: Summary; What crosses the seam; Emitted text; Retired readers; Pins and abi; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/
+owed: main-u3tgt-sections main-u3tgt-movers main-u3tgt-sweepsimd main-u3tgt-mech main-u3tgt-axesmemfn main-u3tgt-maketest

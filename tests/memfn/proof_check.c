@@ -22,7 +22,7 @@
  *   C  C-PROOF and the GENERATED FAMILY (`--gen DIR`): a seeded space of
  *      forward FIND sites (span 0, OPTIONAL terms among them; context stops;
  *      FUNC sites), each defined and used on its own art, its class asked
- *      again under -fmemfn-simd and under each level's deny and held EQUAL
+ *      again under every kit CPU target and each level's deny, held EQUAL
  *      (C-PROOF), its text and its GENERATED facts written to
  *      DIR/proof_sites.c for tests/memfn/proof_run.c, the byte-loop oracle.
  *      The family adds REPORT sites stated in terms (span 0 of 1..3 REQUIRED
@@ -66,6 +66,14 @@ static void *a_alloc(void *u, size_t n)
     return p;
 }
 static mf_arena arena = { NULL, a_alloc };
+
+/* A fresh art named `pfx` on the arena, its CPU target `t` stated as pcrec
+ * states one on every art (unit U3, mf_art_target); NULL if either refuses. */
+static mf_art *art_for(const char *pfx, uint64_t denies, const mf_target *t)
+{
+    mf_art *art = mf_art_begin(&arena, pfx, denies, NULL, NULL);
+    return art && !mf_art_target(art, t) ? art : NULL;
+}
 
 typedef struct { char *p; size_t len, cap; } Text;
 
@@ -163,7 +171,6 @@ static mf_site span_site(void)
     s.ret_pred = MF_NO_PRED;
     s.span_hi = MF_SPAN_UNBOUNDED;
     s.cand_ppm_hi = MF_PPM_FULL;
-    s.policy = MF_P_PORTABLE_ONLY;
     s.body = MF_BODY_ONESHOT;
     s.site_kind = MF_SK_DFA_SCAN;
     s.pred.nterm = 1;
@@ -234,7 +241,7 @@ static const char *define_on(const mf_site *s, char *err, size_t n, mf_class *cl
                              char *row)
 {
     static char form[48];
-    mf_art *art = mf_art_begin(&arena, "rx", s->policy, s->denies, NULL, NULL);
+    mf_art *art = art_for("rx", s->denies, mf_portable_target());
     Text f = { 0 };
     mf_sink sf = sink_of(&f);
     mf_hooks h = stmt_hooks();
@@ -270,7 +277,7 @@ static void refuse(const char *name, const mf_site *s, const char *needle)
     } else if (!strstr(err, needle)) {
         snprintf(why, sizeof why, "refused without naming %s: %s", needle, err);
     } else {
-        mf_art *art = mf_art_begin(&arena, "rx", s->policy, s->denies, NULL, NULL);
+        mf_art *art = art_for("rx", s->denies, mf_portable_target());
         mf_hooks h = stmt_hooks();
         mf_class c;
         if (!mf_ask(art, s, &h, &c)) snprintf(why, sizeof why, "mf_ask answered it");
@@ -509,20 +516,14 @@ static void family_site(unsigned i, mf_site *s)
 
 static const char *fn_name(void *u, uint32_t ref) { (void)ref; return u; }
 
-/* The class of `s` asked under policy `policy` and options `opts`. */
-/* the class of s0 in an art stating the target `t` (unit U2: the layer is
- * the art's target; the SIMD-on layer states x86-64-v3, whose levels are
- * both rows') */
-static int ask_under(const mf_site *s0, const mf_hooks *h0, const char *t, const char *opts,
-                     mf_class *c)
+/* The class of `s` asked on an art for CPU target `t` under options `opts`. */
+static int ask_under(const mf_site *s0, const mf_hooks *h0, const mf_target *t,
+                     const char *opts, mf_class *c)
 {
     mf_site s = *s0;
-    s.policy = 0;
     s.opts = opts;
-    mf_art *art = mf_art_begin(&arena, "rx", 0, s.denies, NULL, NULL);
-    const mf_target *tg = t ? mf_target_parse(t, strlen(t), NULL, 0) : mf_portable_target();
-    if (!art || mf_art_target(art, tg)) return -1;
-    return mf_ask(art, &s, h0, c);
+    mf_art *art = art_for("rx", s.denies, t);
+    return art ? mf_ask(art, &s, h0, c) : -1;
 }
 
 static void put_bytes(FILE *o, const uint8_t *b, size_t n)
@@ -615,10 +616,10 @@ static void family_report(unsigned i, mf_site *s)
 static int render_site(const mf_site *s, const mf_hooks *h, const char *pfx,
                        Text *def, Text *use, mf_result *r, const char **err)
 {
-    mf_art *art = mf_art_begin(&arena, pfx, s->policy, s->denies, NULL, NULL);
+    mf_art *art = art_for(pfx, s->denies, mf_portable_target());
     mf_sink sd = sink_of(def), su = sink_of(use);
     uint32_t handle;
-    *err = "mf_art_begin failed";
+    *err = "mf_art_begin or mf_art_target failed";
     if (!art) return -1;
     if (mf_define(art, s, h, &sd, &handle) || mf_flush_helpers(art, &sd) ||
         (s->form == MF_FORM_FUNC ? mf_call(art, handle, h, &su)
@@ -714,23 +715,28 @@ static int family_c(const char *dir, unsigned nsites, unsigned nreport)
         }
         free(def.p);
         free(use.p);
-        /* C-PROOF: the class under -fmemfn-simd, and with each SIMD row denied,
-           equals the SIMD-off class at every offset (LAYER-INVARIANT) */
-        mf_class off, on, w16, w32;
+        /* C-PROOF: the class under every kit CPU target, and there with each
+           SIMD row denied, equals the portable target's at every offset
+           (LAYER-INVARIANT); the targets are the kit's rows, none named here */
+        static const char *const layer_opts[] = { NULL, "no-vrun-w32", "no-vrun-w16" };
+        size_t nt;
+        const mf_target *tt = mf_targets(&nt);
+        mf_class off, lay;
+        const char *why = NULL;
         snprintf(name, sizeof name, "C site %u C-PROOF", i);
-        if (ask_under(&s, &h, NULL, NULL, &off) ||
-            ask_under(&s, &h, "x86-64-v3", NULL, &on) ||
-            ask_under(&s, &h, "x86-64-v3", "no-vrun-w32", &w16) ||
-            ask_under(&s, &h, "x86-64-v3", "no-vrun-w16", &w32))
-            verdict(name, "a layer refuses the site");
+        if (ask_under(&s, &h, mf_portable_target(), NULL, &off))
+            why = "a layer refuses the site";
         else if (memcmp(off.proven, r.cls.proven, sizeof off.proven))
-            verdict(name, "mf_ask's class is not the define's");
-        else if (memcmp(off.proven, on.proven, sizeof off.proven) ||
-                 memcmp(off.proven, w16.proven, sizeof off.proven) ||
-                 memcmp(off.proven, w32.proven, sizeof off.proven))
-            verdict(name, "proven[] differs across the layers");
-        else
-            cproof++;
+            why = "mf_ask's class is not the define's";
+        for (size_t t = 0; !why && t < nt; t++)
+            for (size_t k = 0; !why && k < sizeof layer_opts / sizeof layer_opts[0]; k++) {
+                if (ask_under(&s, &h, &tt[t], layer_opts[k], &lay))
+                    why = "a layer refuses the site";
+                else if (memcmp(off.proven, lay.proven, sizeof off.proven))
+                    why = "proven[] differs across the layers";
+            }
+        if (why) verdict(name, why);
+        else cproof++;
         /* the facts, then the claim */
         fprintf(o, "  { \"%u\", %d, 1, {\n    ", i, stop);
         put_pred(o, &s.pred, s.pred.span_class == MF_SPAN_CONTEXT);
