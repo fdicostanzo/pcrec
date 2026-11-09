@@ -19,6 +19,7 @@ usage: tiecensus.py REF NEW TREE BENCH OUT_DIR [--census DIR] [--jobs N]
 """
 import concurrent.futures as cf
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "sar1_evidence"))
@@ -85,10 +86,18 @@ def main():
     lines.append("texts where only other facts moved: %d" % len(other))
     unexpl = []
     if cdir:
-        for l in open(os.path.join(cdir, "summary.txt"), encoding="utf-8"):
-            t = l.split()
+        csum = open(os.path.join(cdir, "summary.txt"), encoding="utf-8").read().splitlines()
+        # R1's own exact-repeat pieces movers: the census lists them as PIECES (the design predicts them,
+        # span_arms T2 row 2) and the fix does not touch them, so they are not the fix's to explain
+        pieces = {l.split(None, 2)[2] for l in csum if l.startswith("  PIECES ")}
+        for l in csum:
+            t = l.rstrip("\n").split(None, 2)
             if len(t) >= 3 and t[0] in ("OBS-NOT-PRED", "PRED-NOT-OBS", "VALUE"):
-                if t[2] not in {esc(p) for p in movers}:
+                if re.sub(r" (moved|work)=.*$", "", t[2]) in pieces and " moved=req_pieces " in t[2]:
+                    continue
+                # the pattern text may hold spaces: it is the rest after the source, up to " moved="
+                pat = re.sub(r" (moved|work)=.*$", "", t[2])
+                if pat not in {esc(p) for p in movers}:
                     unexpl.append(l.rstrip("\n"))
         lines.append("R1 census differences not explained by a fix mover: %d" % len(unexpl))
         lines += ["  UNEXPLAINED " + u for u in unexpl]

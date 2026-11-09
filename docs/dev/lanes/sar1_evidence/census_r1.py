@@ -379,6 +379,10 @@ def facts(pcrec, pat):
         if line.startswith("#") or sec != "facts":
             continue
         x = line.split("\t")
+        # the note's leading provenance label ("core"/"derived": req_whole_run is PF_DERIVED
+        # since the rate rule) is a listing label, not a value or a why
+        if len(x) > 8 and x[8].split(";", 1)[0] in ("core", "derived"):
+            x[8] = x[8].split(";", 1)[1] if ";" in x[8] else ""
         rows[(x[0], x[1])] = x
     return rows
 
