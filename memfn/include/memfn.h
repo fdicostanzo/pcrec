@@ -465,12 +465,10 @@ typedef enum { MF_SK_UNSTATED, MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
  * it. */
 typedef enum { MF_USE_POSITION, MF_USE_DISCARD, MF_USE_ENTRY } mf_use_kind;
 
-/* policy bits (§8.5): every bit arch-neutral. MF_P_PORTABLE_ONLY is
- * RETIRED (unit U2, R-37): the kit reads no bit 0 (the art's stated target,
- * mf_art_target, is what admits a SIMD level), and a site carrying it reads
- * as an unnamed bit, which no SIMD row serves. The name stays until pcrec's
- * last reader goes (unit U3); no kit code reads it. */
-#define MF_P_PORTABLE_ONLY (1u << 0)
+/* policy bits (§8.5): every bit arch-neutral. Bit 0 is RETIRED (unit U2,
+ * R-37): the kit reads no bit 0 (the art's stated target, mf_art_target, is
+ * what admits a SIMD level), and a site carrying it reads as an unnamed bit,
+ * which no SIMD row serves. Its name is gone. */
 #define MF_P_INLOOP        (1u << 1)   /* D91 budget 2, from the site's row    */
 #define MF_P_SIZE_LEANING  (1u << 2)   /* --tune -2/-1 (Q44, ruled at R4d)      */
 

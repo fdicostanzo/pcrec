@@ -54,7 +54,7 @@ static const char *h_fn_name(void *u, uint32_t ref) { (void)u; (void)ref; return
 static int define_with(uint32_t policy, char *err, size_t n)
 {
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+    mf_art *art = mf_art_begin(&a, "rx", 0, 0, NULL, NULL);
     mf_site s;
     memset(&s, 0, sizeof s);
     s.abi = MF_SITE_ABI;

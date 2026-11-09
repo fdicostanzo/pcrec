@@ -477,7 +477,7 @@
 #     no identity gate. Registered before S699-S703.
 #   simdfloor — added 2026-10-09 ([MEMFN] R-13, lane r13); runs
 #     tests/memfn/run_simd_floor.sh (the whole corpus: its floors are full-population) with the sabotaged tree's own
-#     pcrec: C18's legs, the scaffolding lint and C9-x86 at every target with a
+#     pcrec: C18's legs, the scaffolding lint and C9 at every target with a
 #     level (re-aimed for the target seam, lane u3floor). Its own arm because
 #     SIMD text sits only under -fmemfn-simd=TARGET: every answer arm runs at
 #     the default (no SIMD text).
