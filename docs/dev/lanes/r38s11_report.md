@@ -39,3 +39,7 @@ review and the rulings was changed.
 - Nothing applied-not: every F-id applied; F-G recorded as a PLAN item as ruled. Where the review left a fate to the build (e.g. `.whole` column and `keep`, refusal texts, post-change stamp values) the sheet says "stated/measured at K38-2/the build" rather than inventing it.
 - Cites not re-verified against the build tree (doc lane, no builds): the review's file:line cites are carried as the review gave them.
 - Final hand-back: SendMessage to main.
+
+## STATE AT HANDOFF
+
+Owed: none. Rev 1.1 committed; the optional one-critic check of the rev 1.0 -> 1.1 diff is main's to launch.
