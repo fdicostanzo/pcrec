@@ -1,0 +1,4 @@
+report=docs/dev/lanes/u3mech_report.md
+sections: Summary; Rows; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes
