@@ -1099,6 +1099,12 @@ fi
 # landmark machine, the inline verify's tables and the walk loop; under
 # `-fno-landmark-walk` it reads 35,231 again (measured), and its stamps here read
 # identically (RX_DFA_PREFILTER is the relocate's). The other eleven rows unchanged.
+# RE-RECORDED 2026-11-09 at the joint U2+U3 landing (lane u3mt, abi 97 -> 98): every
+# EMITTED_BYTES row (all 12) moved by exactly +34 and no other stamp moved. The 34
+# bytes are the one new artifact line `#define RX_TARGETS "none:generic"` (7+1+10+1+14
+# +newline), verified by diffing an abi 97 build (550e23364) against this tree's
+# output on `a` and `a(b|c)+d`: that line, the abi number (same width) and the
+# header name are the whole diff.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

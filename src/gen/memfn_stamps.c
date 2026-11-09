@@ -378,6 +378,14 @@ static void target_headers_render(Ctx *cx)
     c->simd_size.tables += now.tables - was.tables - nheld * hm.tables;
 }
 
+/* the bytes the held-header marks in `sb` occupy (kept out of the render
+ * function below so the one holding the kit's sink reads no text) */
+static size_t held_marks_bytes(const StrBuf *sb)
+{
+    return mark_count(sb, PCREC_HELD_HEADER_MARK) *
+           strlen(PCREC_HELD_HEADER_MARK);
+}
+
 /* The finishing pass (see the header). Reads `cx->job->csb` and `hsb`, the
  * finished artifact at the placeholder prefix; writes the three stamp lines
  * over csb's mark. Called once per attempt, after the engine emitter and
@@ -419,8 +427,7 @@ void pcrec_memfn_stamps_render(Ctx *cx)
     /* a spliced part's held marks (`pcrec_emit_include_line`) are bracketed
      * only so no decision reads them; its shell takes them out, so its count
      * leaves them out (none remain in a shell's text by now) */
-    size_t held = mark_count(&job->csb, PCREC_HELD_HEADER_MARK) *
-                  strlen(PCREC_HELD_HEADER_MARK);
+    size_t held = held_marks_bytes(&job->csb);
     if (!rc)
         pcrec_sb_stampf(&lines, ss.upper, "SIMD_GUARDED_BYTES", "0x%016llxULL",
                         (unsigned long long)(job->csb.simd_guarded +
