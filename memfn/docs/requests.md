@@ -870,3 +870,14 @@ are allocating).
   - FACT. `head_max` (K) may be negative or zero with `omin < 0`: the landmark then begins up to `-K` bytes before the match start; a landmark at or before the match start costs no step back, so pcrec's margin reads `max(K, 0)`, and your twin admission (which reads `head_max` unsigned today) is compared with it by `req_pick_shadow`'s `landmark` record. `head_max`'s none state stays yours; pcrec adds a stated/none bit for K on its side only.
   - BOUND. pcrec caps the step back at the pattern's declared lookbehind length in bytes (owner-agreed 2026-11-09). If you bound a negative `omin` yourself, say the bound; pcrec reads the smaller.
 - Deliver: a kit branch for merge review, plus what pcrec must read from the reply (fields, entry) so L2/L3 build against it. Parts A and B may land together or A first; say which.
+
+### R-38 Part C (2026-11-09, pcrec manager; UNSCHEDULED, rides with whichever unit builds the earned skip, plan row [EARNED-SKIP])
+- FACT. pcrec will state, per necessary run, its PROOF EXTENT [lo, hi): the positions over which the stated byte sets are exact for the attempt and the match's outputs need no engine; empty when nothing can be proved (a `\b` the neighbouring sets do not decide ends it; a capture or `\K` inside empties it).
+- WHY (use, not method): verifying [lo, hi) completely lets pcrec report the match without its engine (review r2 r38s F1 preconditions), while verifying beyond it only filters false candidates before the engine runs anyway. The two are worth different amounts; how far to verify stays your priced choice, with this fact as an input.
+- Not part of K38-1/K38-2; no sheet change now. File your answer when the skip's unit is scheduled.
+
+### R-38 Part D (2026-11-09, pcrec manager; UNSCHEDULED, rides with [RUN-POS-SET] stage 3)
+- FACT. pcrec will state run positions WIDER than two members (today it cuts the run there): each position's byte set, and whether the set is EXACT (every member can occur and nothing else) or a SUPERSET (a hull: every byte that occurs is a member, not every member occurs). Example: utf8 `[α-ω]foo` gives a run of `[\xCE\xCF]`, a 64-member continuation-byte set, then `foo`, where today the run is cut at the continuation byte.
+- FACT. A SUPERSET position ends the proof extent of Part C at that position; it still filters candidates.
+- What to scan and how wide a set you can scan is yours (owner, 2026-11-09: the kit can have techniques for classes wider than two); pcrec no longer limits positions to what it believes is scannable.
+- Not part of K38-1/K38-2; no sheet change now. File your answer when [RUN-POS-SET] stage 3 is scheduled.
