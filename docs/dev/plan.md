@@ -301,6 +301,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: land E1 (code round first); R1 and E2 lanes off it
   refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
   note (2026-10-26, lane rwsurvey): the stray A_EMPTY is NOT from `(?:)`/`(?i)`/`(?#)` (parse drops them; `a(?:)bc` gives req_run abc); it comes from pcrec_wrap_bare_anchor's `<anchor EMPTY>` wrapper under a quantifier and the derive hook's killed `\G`.
+  note (2026-11-09, reviews r3 sae1 / r4 sae2 PLAN items): (1) an alternation whose every branch consumes nothing (`a(?:\b|$)b`) still cuts the run: trigger, a corpus count of such alternations with a run mover; (2) one row selector for T2/T3/T4 when L1 adds T4 (span_arms §6)
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
