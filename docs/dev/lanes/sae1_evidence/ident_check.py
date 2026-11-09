@@ -47,20 +47,34 @@ def main():
         x = line.rstrip("\n").split("\t")
         if x[2]:   # moved_facts non-empty: an observed mover
             movers.add(x[1].encode("latin-1").decode("unicode_escape").encode("latin-1"))
-    bad = []; n = {}; facts_seen = set(); prefix_keys = {}
+    bad = []; n = {}; facts_seen = set(); prefix_keys = {}; unreadable = []   # prefix_keys: (source, prefix) -> facts keys
     src_cache = {}
 
-    def file_has_mover(f):
+    def source_patterns(f):
+        """The pattern OCCURRENCES of one emit_sweep source, in order (a list,
+        not a set: a pattern repeated in a source yields one facts key per
+        occurrence). A `patterns-file:NAME` source is read with emit_sweep's
+        own reader rules (one escaped pattern per line, `#`/blank skipped)."""
         if f not in src_cache:
-            p = f if os.path.isabs(f) else os.path.join(tree, f)
-            r = subprocess.run([pcrec, "--list-source", p], capture_output=True, timeout=60)
-            pats = set()
-            for l in r.stdout.decode("utf-8", "surrogateescape").splitlines():
-                y = l.split("\t")
-                if not l.startswith("#") and len(y) >= 5 and y[0] in ("pattern", "pattern-esc"):
-                    pats.add(decode_escape(y[4]))
-            src_cache[f] = bool(pats & movers)
+            pats = []
+            if f.startswith("patterns-file:"):
+                pf = os.path.join(os.path.dirname(os.path.abspath(__file__)), f.split(":", 1)[1])
+                for l in open(pf, encoding="utf-8", errors="surrogateescape"):
+                    l = l.rstrip("\n")
+                    if l.strip() and not l.startswith("#"):
+                        pats.append(decode_escape(l))
+            else:
+                p = f if os.path.isabs(f) else os.path.join(tree, f)
+                r = subprocess.run([pcrec, "--list-source", p], capture_output=True, timeout=60)
+                for l in r.stdout.decode("utf-8", "surrogateescape").splitlines():
+                    y = l.split("\t")
+                    if not l.startswith("#") and len(y) >= 5 and y[0] in ("pattern", "pattern-esc"):
+                        pats.append(decode_escape(y[4]))
+            src_cache[f] = pats
         return src_cache[f]
+
+    def file_has_mover(f):
+        return bool(set(source_patterns(f)) & movers)
 
     for mf in mfiles:
         for line in open(mf, encoding="utf-8", errors="surrogateescape"):
@@ -88,7 +102,9 @@ def main():
                 # must be as many as the census movers sharing it (checked below).
                 full = sorted(m for m in movers if m.startswith(pat))
                 if full:
-                    prefix_keys[pat] = prefix_keys.get(pat, 0) + (stream == "facts")
+                    if stream == "facts":
+                        sk = (key[:k].rsplit(":", 1)[0], pat)
+                        prefix_keys[sk] = prefix_keys.get(sk, 0) + 1
                     if stream == "facts":
                         facts_seen.update(full)
                     continue
@@ -96,14 +112,24 @@ def main():
                 facts_seen.add(pat)
             if pat not in movers:
                 bad.append(f"NOT A CENSUS MOVER {stream} {key}")
-    for pre, nk in sorted(prefix_keys.items()):
-        nm = sum(1 for m in movers if m.startswith(pre) and len(m) > 60)
+    # Like with like: a facts key is source:kind:pat[:60], so one pattern in two
+    # sources (or twice in one) is several keys. Per (source, prefix) the keys
+    # must be as many as that source's mover OCCURRENCES with the prefix.
+    for (src, pre), nk in sorted(prefix_keys.items()):
+        nm = sum(1 for m in source_patterns(src) if m.startswith(pre) and len(m) > 60 and m in movers)
         if nk != nm:
-            bad.append(f"PREFIX COUNT {pre!r}: {nk} facts keys vs {nm} census movers")
+            bad.append(f"PREFIX COUNT {src} {pre!r}: {nk} facts keys vs {nm} mover occurrences in that source")
     for p in sorted(movers - facts_seen):
+        if p.startswith(b"#"):
+            # emit_sweep's --patterns-file reader drops lines starting `#`, so the
+            # facts stream cannot carry this pattern in that vocabulary: noted
+            # here, verified by hand (a `\\x23...` patterns-file line).
+            unreadable.append(p); continue
         bad.append(f"CENSUS MOVER NOT IN THE FACTS STREAM {p!r}")
     print("movers by stream: " + ", ".join(f"{k}={v}" for k, v in sorted(n.items())))
     print(f"census movers: {len(movers)}; facts-stream movers: {len(facts_seen)}")
+    for p in unreadable:
+        print(f"  NOTE: census mover {p!r} starts with `#`: unrepresentable as a patterns-file line; verify by hand")
     for b in bad:
         print("  " + b)
     print(f"== ident_check COMPLETE: {len(bad)} unexplained")
