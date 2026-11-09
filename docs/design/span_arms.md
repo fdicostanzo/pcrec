@@ -1194,7 +1194,7 @@ Consequences (manager, to be folded into the L2 text and the §8.2 kit request b
 ## 12b. Owner rulings 2026-11-09 on §13
 
 - Q1 (repeats as copies): YES. Frank's concern: the kit proves `abab` but pcrec cannot reverse from the proof and must rematch. Recorded answer: repeats-as-copies does not add a reversal; each copy has a fixed width, so the attempt start stays the hit minus a fixed offset wherever it was fixed before. A rematch (the engine's finish) happens today for every run that does not cover the whole attempt exactly; where the run IS the whole attempt and exact (e.g. `xy(?:ab){2}zw` alone), D187 add. 1's earned skip applies and no rematch is needed. Variable repeats (`X{2,5}`) count only the X^m prefix, so the finish still runs.
-- Q2 (zero-width assertions stop cutting the run): YES for `\b` at least; Frank: "cracking open a piece of code comes with overhead, so complete the task while we're in there" (not count-first). Manager's leaning for the rest (`$`, `\K`, lookarounds): the same treatment in the same unit where they share the cut site; confirm with Frank.
+- Q2 (zero-width assertions stop cutting the run): YES, read as "complete the task while we're in there" (Frank: "cracking open a piece of code comes with overhead"): unit E2 joins across every zero-width item that shares the cut site (`\b`, `$`, `\K`, lookarounds), not `\b` alone; its census still runs, as the unit's measurement record, not as a build gate.
 - Q4 (lookbehind cap = declared lookbehind length): AGREED.
 - Q5 (L3 before the start-position clean-up, sites in its table shape): AGREED.
 - Q6 ([REWRITE-ADJ] design starts once this note is ruled): AGREED.
