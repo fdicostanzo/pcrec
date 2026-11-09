@@ -2779,10 +2779,15 @@ kit rendered, and which C library functions the artifact calls.
 
 - <a id="s6-3-10-p4"></a>[6.3.10¶4] **`MEMFN_FORMS`** names the SIMD FORMS the kit rendered, not the
   artifact's portability: that is `<PREFIX>_TARGETS` (§6.3.10¶14; `none:generic`
-  runs on any machine, any other target only where its features exist, since
+  runs on any machine of the data model the artifact was generated for, any
+  other target only where its features exist, since
   the target's region puts every function of the artifact under them,
   §6.3.10¶15, so an artifact that renders no form still compiles to the
-  target's instructions). It is `"none"` iff the artifact is byte-identical
+  target's instructions). "Any machine" means any CPU of that data model: a
+  VM artifact is tied to the data model (pointer width) of the pcrec that
+  generated it, since its stamped frame sizes are that model's, and a compile
+  for another (`-m32` from a 64-bit pcrec) is refused cleanly by its
+  frame-size asserts (§10.4¶2). It is `"none"` iff the artifact is byte-identical
   (stamp lines and its target's own text aside: §6.3.10¶15's guard, region and
   headers) to its own `-fno-memfn-simd` compile; otherwise the ids of the
   forms that make it differ, comma-joined in site order, a site that cascades
@@ -2858,7 +2863,10 @@ every artifact compiled at the default `-fno-memfn-simd`, and every list that
 resolves to it (`-fmemfn-simd=generic`). At a target with a family every
 artifact carries a nonzero count, the guard at least (a target with no region
 carries the guard alone; `tuning.md` §2.43¶3a; the bounds are `limits.md`
-§8.3¶3). It is the artifact's size beyond its SIMD-off compile.
+§8.3¶3). It is the artifact's size beyond its SIMD-off compile, the stamp
+lines aside (the `<PREFIX>_TARGETS` value's own length differs, as
+`tuning.md` §2.43¶4 sets it aside) and less a compound part's header line,
+which the target moves ahead of its region rather than adds (§6.3.10¶15).
 Those bytes are invisible to every pcrec size DECISION — the VM entry-shape
 knee and `<PREFIX>_VM_PROGRAM_BYTES`, the size term and its ladder, and the D84
 caps (`limits.md` §8) all read the length minus these bytes — so turning SIMD
@@ -2933,17 +2941,24 @@ artifacts.
   opened before the artifact's first function (the kit's helpers first) and
   closed after `rx_info`, before any `--emit-main` `main`. The region enables
   the target's features for the functions inside it whatever the consumer's
-  `-march` (§10.7¶4); a target whose features are its family's baseline
-  enables nothing and has no region, only the guard (`armv8-a`). The region
+  `-march` (§10.7¶4). A target has a region exactly where its region text
+  is not empty: a target whose features every compiler for its family
+  assumes enables nothing and has the guard alone (`armv8-a`), while
+  `x86-64`, amd64's baseline target, keeps a region (`target("sse2")`),
+  which §10.7¶4 relies on. The region
   holds no `#include`: every header the artifact's code needs, the
-  intrinsic headers and a compound part's own included, is first included at
-  file scope ahead of the region's open. (gcc gives a header's inline
+  intrinsic headers, a compound part's own and `--emit-main`'s included, is
+  included at file scope ahead of the region's open, once (a part's own line
+  is not repeated inside it). (gcc gives a header's inline
   functions the target in force where the header is first included, so a
   header first read inside the region would break a later use of it outside.)
   A consumer translation unit may therefore `#include` the artifact and then
   use intrinsics, the C library or a second artifact, for any target, after
-  it. The portable target has neither text (its texts are empty), so a
-  default artifact carries no CPU-specific text at all.
+  it. Two artifacts for different targets at the same `abi` may share a
+  translation unit; artifacts of different `abi` numbers refuse to, at the
+  header's `abi` `#error` (§1¶7). The portable target has neither text (its
+  texts are empty), so a default artifact carries no CPU-specific text at
+  all.
 
 <a id="s6-3-11"></a>
 #### 6.3.11 Feature set, tuning position, alternation normalization
