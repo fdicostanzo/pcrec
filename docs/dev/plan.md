@@ -295,6 +295,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: docs/design/locate_finish.md (FIN3 verify-at, the F-11 cell, §8 Q7); decisions D156 D186
   The unanchored machine keeps its restart (start unknown); where the start is known (_match, a pinned candidate) the anchored machine fails at the first byte no prefix allows instead of scanning on. Gate: answers identical; instructions:u per moved body vs search-filter; losses listed by name.
 
+- [REQ-EMPTYCAT] STATE:started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
+  filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
+  status (2026-11-09): BUILD GO (D191, span arms); unit E1 (docs/design/span_arms.md §8) building in lane sae1, then R1/E2, then L1; L2/L3 after the kit's R-38. Earlier: the direct half is alt_normal_form.md stage 2a; the quantified half (REP of empty, anchor wrapper) is span_arms E1
+  next: land E1 (code round first); R1 and E2 lanes off it
+  refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
+  note (2026-10-26, lane rwsurvey): the stray A_EMPTY is NOT from `(?:)`/`(?i)`/`(?#)` (parse drops them; `a(?:)bc` gives req_run abc); it comes from pcrec_wrap_bare_anchor's `<anchor EMPTY>` wrapper under a quantifier and the derive hook's killed `\G`.
+
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
   filed: 2026-10-29 manager (kit observation at Frank's request, memfn/docs/responses.md on lane/memfn-r30)
@@ -1150,12 +1157,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Notes: (add dated notes as related issues surface)
   note (2026-10-26, lane rwsurvey, docs/dev/lanes/rwsurvey_report.md): no pass CREATES absorb-optional / `X+$` shapes on the 5,735 corpus + 351 bench dumps; constructed witnesses do (altcls: `\s+(?:\n|\r)?` -> `\s+[\n\r]?`, then A then B chain, so the table must iterate). Passes DO leave: altcls empty-branch alternations (`f(|rank)`, 107 corpus), possessify ATOMIC(REP possessive) (57). Only 29 outside-written patterns exist (6 carry a shape). More candidates: CTX-IMPLIED-AFTER-RUN (`\w+\b`), ALT-EMPTY normal form, MERGE-RUN (`[0-9][0-9]?`), REP-OF-REP, TRIVIAL-REP (`{1}`), DUP-ZERO-WIDTH/DEAD-PIN, REDUNDANT-CUT. Placement hypothesis: after atomic discharge, before the call graph, bounded fixpoint; must see through lower_enc A_WCLASS.
   2026-11-06 (Frank "Yes"; manager): this row is the home of family (A), SIMPLIFICATIONS (node in, equivalent node out): the parser's empty-node drop, `xx*`->`x+`, the absorbs and merges, possessify. One declared first-match table to a fixpoint, each row named in --explain and deny-able; first build after [RUN-POS-SET]'s alternation owner lands (its output feeds the table). Families (B) [CLASS-SETOPS] and (C) [POSTFACT]/[ENG-LOOK] are linked, not members.
-- [REQ-EMPTYCAT] STATE:not-started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
-  filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
-  status (2026-11-05): direct half (an empty node in a CAT/ALT) is alt_normal_form.md rev 1 stage 2a, the unit owned by the kind row; quantified half (REP of empty, anchor wrapper) staged later, decision points in its §9 S2; the a(?i)bc symptom is already gone
-  next: Frank's word; then trace req.c's A_EMPTY handling in a CAT and make the run continue across it (or drop the empty earlier, the general form).
-  refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
-  note (2026-10-26, lane rwsurvey): the stray A_EMPTY is NOT from `(?:)`/`(?i)`/`(?#)` (parse drops them; `a(?:)bc` gives req_run abc); it comes from pcrec_wrap_bare_anchor's `<anchor EMPTY>` wrapper under a quantifier and the derive hook's killed `\G`.
 - [STAMP-CASEPREFIX] STATE:not-started — PREFIXES THAT DIFFER ONLY IN CASE COLLIDE IN STAMPS AND HEADER GUARDS
   filed: 2026-10-22 manager (subst d27 witness include.case.prefixes; the rx header-guard residual from session 123)
   status (2026-10-22): filed; nothing built. The subst R4c build refuses the collision cleanly with an #error (ruling R14); rx header guards have the same collision with no refusal.

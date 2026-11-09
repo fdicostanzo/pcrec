@@ -10115,3 +10115,11 @@ Generic-loop rule: a caller that serves any artifact loops over `info->next` (on
 **Related:** D186, D187 (the kit's span_pick decisions; the notice offered "a D-entry, or an addendum to D186/D187, your call": filed as its own entry because the ruling names a new primitive-piece structure rather than amending either); D188; plan rows [RUNG-LIST], [PIECE-ACCEPT-RULE], [PIECE-COVERAGE].
 
 **Revisit-when:** a site needs a fourth piece beyond (search, stream, check).
+
+## D191 — span arms: BUILD GO, and the owner's rulings on the open questions (Frank, 2026-11-08/09)
+
+1. **BUILD GO** (Frank 2026-11-09, "Go on build") for the units of docs/design/span_arms.md rev 2.2 §8: E1, R1, E2, L1 and L3; L2 after the kit's delivery of R-38 plus one readiness critic on its changed text. The proposed decision of §12 (the REP, EMPTY and positive-LOOKAROUND arms of the one fixed-width description, a run's reach its signed interval) is adopted, as amended by 2 and 3 below. Each unit's census still runs as its measurement record, not as a build gate (owner, Q2 below); a unit whose census finds NO mover anywhere stops and reports.
+2. **Rulings 2026-11-08 (span_arms §12a):** the scan byte may come from ANY run position; the kit picks the scan position and the verify extent; the run crosses as ONE uncut span with byte sets at signed offsets from the attempt start; nothing about consumption crosses the seam; `<PREFIX>_REQ_BYTE` keeps its meaning (a byte every match consumes), chosen by pcrec; the pcrec/kit agreement check retires.
+3. **Rulings 2026-11-09 (span_arms §12b):** repeats count as their copies (`X{2}` as `XX`; `X{2,5}` contributes its two fixed copies); zero-width items (`\b`, `$`, `\K`, lookarounds) stop cutting the run, all in unit E2 ("cracking open a piece of code comes with overhead"); a run outside the match is ONE run value, every reader raised together, never a second wider fact; the lookbehind step back is capped at the declared lookbehind length; L3 builds now, ahead of A-POSDOM, its two sites in that table's shape (§8.1); [REWRITE-ADJ]'s design starts now.
+4. The prefix skip after a proved run (`abc(ab){3,5}xxx`) stays [MATCH-KNOWN]'s member on its own trigger; R-38 asks the kit to report how far it verified, the fact that member would read.
+
