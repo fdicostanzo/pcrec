@@ -165,7 +165,7 @@ static void *a_alloc(void *u, size_t n) { (void)u; return calloc(1, n); }
 static mf_art *art_begin(mf_arena *a, const char *pfx, uint64_t denies,
                          const mf_measures *ms, const mf_analysis *an)
 {
-    mf_art *art = mf_art_begin(a, pfx, 0, denies, ms, an);
+    mf_art *art = mf_art_begin(a, pfx, denies, ms, an);
     return art && !mf_art_target(art, mf_portable_target()) ? art : NULL;
 }
 

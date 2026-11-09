@@ -8,15 +8,18 @@
  * one-bit neighbours, random) and renders, for each set, the standalone
  * kernel `mf_kernel_find_any` at the kit target TARGET (unit U2: the kit
  * derives the levels from the target; run_g2_any.py runs this once per
- * target). Acting as the host, it writes the target's family guard once and
- * its region around the kernels (mf_family_c_of / mf_target_c_of), the
- * kit's text between the markers `G2A KIT TEXT BEGIN`/`END`. It writes
+ * target). Acting as the host, it writes the target's family guard once,
+ * the headers the kernels report (`includes`, spelled by mf_include_c) at
+ * file scope, and its region around the kernels (mf_family_c_of /
+ * mf_target_c_of), the kit's text between the markers `G2A KIT TEXT
+ * BEGIN`/`END`, through a sink offering the bracket ops. It writes
  *   DIR/g2a_kernels.c  the kernels' text, then `g2a_table[]`: per kernel its
  *                      selector, K and the bytes AS GIVEN (duplicates kept);
  *   DIR/g2a_meta.tsv   one row per kernel: id, k, bytes, target.
  * It also asks for each refusal (K 1 and 4, a bad name, a target that is
- * not a row of the kit's table, a NULL target, a sink without vprintf) and
- * fails unless each is refused.
+ * not a row of the kit's table, a NULL target, a sink without vprintf, a
+ * sink without the bracket ops at a target admitting a level, a NULL
+ * `includes`) and fails unless each is refused.
  *
  *   g2_any_gen SEED NSETS DIR TARGET
  */
@@ -29,6 +32,11 @@
 
 static void fput(void *u, const char *s) { fputs(s, (FILE *)u); }
 static void fvp(void *u, const char *f, va_list ap) { vfprintf((FILE *)u, f, ap); }
+/* The bracket ops: G2 counts nothing here (G2's SIMD family measures the
+ * guarded bytes); they only have to be offered and to pair. */
+static int g_open;
+static void bopen(void *u, int level) { (void)u; (void)level; g_open++; }
+static void bclose(void *u) { (void)u; g_open--; }
 
 static unsigned long long rng;
 static unsigned rnd(unsigned n)
@@ -57,34 +65,44 @@ int main(int argc, char **argv)
     if (!tg) { fprintf(stderr, "g2_any_gen: %s\n", err); return 2; }
     mf_target copy = *tg;   /* the same facts, not a row: refused */
     snprintf(path, sizeof path, "%s/g2a_kernels.c", argv[3]);
-    FILE *f = fopen(path, "w");
+    FILE *out = fopen(path, "w");
     snprintf(path, sizeof path, "%s/g2a_meta.tsv", argv[3]);
     FILE *meta = fopen(path, "w");
-    if (!f || !meta) { perror("g2_any_gen"); return 2; }
-    mf_sink o = { .u = f, .puts = fput, .vprintf = fvp };
+    char *kit = NULL;
+    size_t kitlen = 0;
+    FILE *f = open_memstream(&kit, &kitlen);   /* the kit's text, held until its
+                                                  headers are known */
+    if (!out || !meta || !f) { perror("g2_any_gen"); return 2; }
+    mf_sink o = { .u = f, .puts = fput, .vprintf = fvp, .simd_open = bopen, .simd_close = bclose };
+    uint32_t inc = 0, one = 0;
 
     /* the refusals: each must be refused, with a text */
     uint8_t b4[4] = {1, 2, 3, 4};
-    struct { const char *why, *fn; unsigned k; const mf_target *t; int nosink; } neg[] = {
-        {"k 1", "g2a_neg", 1, tg, 0}, {"k 4", "g2a_neg", 4, tg, 0},
-        {"name", "2bad", 2, tg, 0}, {"name", "a b", 2, tg, 0},
-        {"target copy", "g2a_neg", 2, &copy, 0}, {"target NULL", "g2a_neg", 2, NULL, 0},
-        {"sink", "g2a_neg", 2, tg, 1},
+    /* nosink: 1 a sink without vprintf, 2 one without the bracket ops (at
+       the x86-64 target, which admits a level whatever TARGET is) */
+    const mf_target *lv_tg = mf_target_parse("x86-64", 6, NULL, 0);
+    struct { const char *why, *fn; unsigned k; const mf_target *t; int nosink, noinc; } neg[] = {
+        {"k 1", "g2a_neg", 1, tg, 0, 0}, {"k 4", "g2a_neg", 4, tg, 0, 0},
+        {"name", "2bad", 2, tg, 0, 0}, {"name", "a b", 2, tg, 0, 0},
+        {"target copy", "g2a_neg", 2, &copy, 0, 0}, {"target NULL", "g2a_neg", 2, NULL, 0, 0},
+        {"sink", "g2a_neg", 2, tg, 1, 0}, {"no brackets", "g2a_neg", 2, lv_tg, 2, 0},
+        {"includes NULL", "g2a_neg", 2, tg, 0, 1},
     };
     mf_sink half = { .u = f, .puts = fput };
+    mf_sink nobr = { .u = f, .puts = fput, .vprintf = fvp };
     for (size_t j = 0; j < sizeof neg / sizeof neg[0]; j++) {
         err[0] = 0;
-        if (mf_kernel_find_any(neg[j].nosink ? &half : &o, neg[j].fn, b4, neg[j].k, neg[j].t,
+        mf_sink *sk = neg[j].nosink == 1 ? &half : neg[j].nosink == 2 ? &nobr : &o;
+        if (mf_kernel_find_any(sk, neg[j].fn, b4, neg[j].k, neg[j].t, neg[j].noinc ? NULL : &one,
                                err, sizeof err) != -1 || !err[0]) {
             fprintf(stderr, "g2_any_gen: refusal '%s' (#%zu) not refused\n", neg[j].why, j);
             return 1;
         }
     }
 
-    /* the refusals wrote nothing: the host's frame starts here */
-    if (tg->family) fputs(mf_family_c_of(tg->family)->guard, f);
-    fputs(mf_target_c_of(tg)->region_open, f);
-    fputs("/* G2A KIT TEXT BEGIN */\n", f);
+    /* the refusals wrote nothing (held to it below): the kit's text starts here */
+    fflush(f);
+    if (kitlen) { fprintf(stderr, "g2_any_gen: a refusal wrote %zu bytes\n", kitlen); return 1; }
     unsigned nk = 0;
     char tab[1 << 16];
     size_t tl = 0;
@@ -108,21 +126,36 @@ int main(int argc, char **argv)
         }
         char fn[64];
         snprintf(fn, sizeof fn, "g2a_%u", nk);
-        if (mf_kernel_find_any(&o, fn, b, k, tg, err, sizeof err)) {
-            fprintf(stderr, "g2_any_gen: kernel %u refused: %s\n", nk, err);
+        if (mf_kernel_find_any(&o, fn, b, k, tg, &one, err, sizeof err) || g_open) {
+            fprintf(stderr, "g2_any_gen: kernel %u refused (%s) or left a bracket open\n", nk, err);
             return 1;
         }
+        inc |= one;
         fprintf(meta, "%u\t%u\t%u,%u,%u\t%s\n", nk, k, b[0], b[1], k > 2 ? b[2] : 0, tg->name);
         tl += (size_t)snprintf(tab + tl, sizeof tab - tl, "    { g2a_%u, %u, { %u, %u, %u } },\n",
                                nk, k, b[0], b[1], k > 2 ? b[2] : 0);
         if (tl >= sizeof tab - 1) { fprintf(stderr, "g2_any_gen: table overflow\n"); return 1; }
         nk++;
     }
-    fputs("/* G2A KIT TEXT END */\n", f);
-    fputs(mf_target_c_of(tg)->region_close, f);
-    fprintf(f, "static const struct g2a_kernel g2a_table[] = {\n%s};\n"
-               "#define G2A_NKERNEL %u\n", tab, nk);
-    if (fclose(f) || fclose(meta)) { perror("g2_any_gen"); return 2; }
+    if (fclose(f)) { perror("g2_any_gen"); return 2; }
+    /* the host's frame: the guard, the headers at file scope (review
+       2026-11-08 r5 X-1), the region around the kit's text */
+    if (tg->family) fputs(mf_family_c_of(tg->family)->guard, out);
+    for (uint32_t bit = 1; bit; bit <<= 1) {
+        if (!(inc & bit)) continue;
+        const char *line = mf_include_c(bit);
+        if (!line) { fprintf(stderr, "g2_any_gen: include bit 0x%x has no spelling\n", (unsigned)bit); return 1; }
+        fputs(line, out);
+    }
+    fputs(mf_target_c_of(tg)->region_open, out);
+    fputs("/* G2A KIT TEXT BEGIN */\n", out);
+    fwrite(kit, 1, kitlen, out);
+    free(kit);
+    fputs("/* G2A KIT TEXT END */\n", out);
+    fputs(mf_target_c_of(tg)->region_close, out);
+    fprintf(out, "static const struct g2a_kernel g2a_table[] = {\n%s};\n"
+                 "#define G2A_NKERNEL %u\n", tab, nk);
+    if (fclose(out) || fclose(meta)) { perror("g2_any_gen"); return 2; }
     fprintf(stderr, "g2_any_gen: %u kernels over %u sets at %s\n", nk, nsets, tg->name);
     return 0;
 }

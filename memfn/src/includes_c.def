@@ -1,0 +1,24 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: original pcrec-memory-functions text; no third-party source
+ *   (memfn/PROVENANCE.md).
+ *
+ * memfn/src/includes_c.def — the C EMITTER'S SPELLING of each mf_includes
+ * fact (memfn.h's MF_INC_* bits; review 2026-11-08 r5 X-1), apart from the
+ * facts themselves (the art's mf_includes, a level's `inc` in levels.def),
+ * as targets_c.def spells the target table's (the owner's ruling
+ * 2026-11-07). Another emitter has no header lines: it reads the same bits
+ * and spells nothing, or its own imports. Reached by mf_include_c
+ * (targets.c's C section).
+ *
+ * MF_INCLUDE_C(bit, line)
+ *   bit    one MF_INC_* bit; one row per bit (the table check holds every
+ *          level's `inc` to exactly one row)
+ *   line   the whole `#include <...>` line, its newline included. The host
+ *          writes it at FILE SCOPE, ahead of any target region: a header
+ *          parsed inside the region carries the region's target into the
+ *          consumer's later uses of it
+ */
+
+MF_INCLUDE_C(MF_INC_STRING_H,  "#include <string.h>\n")
+MF_INCLUDE_C(MF_INC_LEVEL_W16, "#include <emmintrin.h>\n")
+MF_INCLUDE_C(MF_INC_LEVEL_W32, "#include <immintrin.h>\n")

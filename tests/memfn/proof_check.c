@@ -71,7 +71,7 @@ static mf_arena arena = { NULL, a_alloc };
  * states one on every art (unit U3, mf_art_target); NULL if either refuses. */
 static mf_art *art_for(const char *pfx, uint64_t denies, const mf_target *t)
 {
-    mf_art *art = mf_art_begin(&arena, pfx, 0, denies, NULL, NULL);
+    mf_art *art = mf_art_begin(&arena, pfx, denies, NULL, NULL);
     return art && !mf_art_target(art, t) ? art : NULL;
 }
 

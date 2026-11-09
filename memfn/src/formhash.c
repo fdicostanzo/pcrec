@@ -410,7 +410,7 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
     mf_result *res = &w->res;
     int rc = 1;
     *row = NULL;
-    mf_art *art = mf_art_begin(&ar, "mf", 0, 0, NULL, NULL);
+    mf_art *art = mf_art_begin(&ar, "mf", 0, NULL, NULL);
     if (!art) goto out;
     if (mf_art_target(art, mf_target_parse(e->target, strlen(e->target), NULL, 0))) goto out;
     h->s = sh->s;

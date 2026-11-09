@@ -196,7 +196,7 @@ mf_art *pcrec_memfn_art(Ctx *cx)
 #endif
         /* the art-level policy word is read by nothing (memfn.h); the CPU
            target is stated by its own entry, at once, on every art */
-        job->mf = mf_art_begin(ma, cx->opt->prefix, 0,
+        job->mf = mf_art_begin(ma, cx->opt->prefix,
                                pcrec_memfn_denies(cx->opt->flags), job->mf_ms,
                                job->analysis);
         if (!job->mf) pcrec_ctx_nomem(cx);

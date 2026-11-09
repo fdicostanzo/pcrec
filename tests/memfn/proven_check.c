@@ -244,7 +244,7 @@ static void family_c(void)
     /* the real selection: mf_ask over an offset-skip site (ofsskip's row) */
     s.pred.span_class = MF_SPAN_BOUNDED;        /* span 0 (MF_SITE_ABI 18) */
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", 0, 0, NULL, NULL);
+    mf_art *art = mf_art_begin(&a, "rx", 0, NULL, NULL);
     if (art && mf_art_target(art, mf_portable_target())) art = NULL;   /* as pcrec states it (U3) */
     mf_hooks hd = { .fn_name = h_fn_name, .table_name = h_table_name, .miss = MF_MISS_N };
     mf_class c;

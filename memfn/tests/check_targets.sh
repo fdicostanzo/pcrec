@@ -67,6 +67,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 def="${TARGETS_DEF:-$here/../src/targets.def}"
 cdef="${TARGETS_C_DEF:-$here/../src/targets_c.def}"
 ldef="${LEVELS_DEF:-$here/../src/levels.def}"
+idef="${INCLUDES_C_DEF:-$here/../src/includes_c.def}"
 out="${1:-}"
 FLOOR_FAMILIES=2   # the design's two family rows (target_seam.md §2)
 FLOOR_TARGETS=4    # generic, x86-64, x86-64-v3, armv8-a (units.md §2, K0)
@@ -82,7 +83,8 @@ finish() {
 }
 
 command -v "$GCC" >/dev/null 2>&1 || { say "no $GCC: the check could not run"; finish 2; }
-[ -r "$def" ] && [ -r "$cdef" ] && [ -r "$ldef" ] || { say "cannot read $def, $cdef or $ldef"; finish 2; }
+[ -r "$def" ] && [ -r "$cdef" ] && [ -r "$ldef" ] && [ -r "$idef" ] ||
+    { say "cannot read $def, $cdef, $ldef or $idef"; finish 2; }
 
 # The rows, one per line:  F id|name|defaults   T id|name|family|needs|features
 #                          C id|guard (targets_c.def)
@@ -92,10 +94,11 @@ rows="$(printf '%s\n' \
     '#define MF_FAMILY_OF(id) id' '#define MF_NO_FAMILY NONE' \
     '#define MF_NEEDS(list) list' '#define MF_NO_NEEDS ""' \
     '#define MF_FAMILY_C(id, guard) C id|guard' \
-    '#define MF_LEVEL(id, family, needs, header, vw, test_march, forbid, stamp) L id|family|needs|test_march|stamp' \
-    "#include \"$def\"" "#include \"$cdef\"" "#include \"$ldef\"" |
-    "$GCC" -E -P -x c - 2>/dev/null | grep -E '^[FTCL] ')" || {
-    say "could not read $def, $cdef and $ldef through $GCC -E"; finish 2; }
+    '#define MF_LEVEL(id, family, needs, inc, vw, test_march, forbid, stamp) L id|family|needs|test_march|stamp|inc' \
+    '#define MF_INCLUDE_C(bit, line) I bit|line' \
+    "#include \"$def\"" "#include \"$cdef\"" "#include \"$ldef\"" "#include \"$idef\"" |
+    "$GCC" -E -P -x c - 2>/dev/null | grep -E '^[FTCLI] ')" || {
+    say "could not read $def, $cdef, $ldef and $idef through $GCC -E"; finish 2; }
 directives="$(grep -nE '^[[:space:]]*#' "$def" | head -3 | tr '\n' ' ')"
 [ -z "$directives" ] || mismatch "targets.def (the facts) holds a preprocessor directive: $directives"
 
@@ -115,7 +118,7 @@ tokens() { [ -z "$2" ] || printf '%s' "$2" | grep -qxE '[a-z0-9][a-z0-9.-]*(,[a-
     mismatch "$1: '$2' is not a token list (emitter text in a facts row?)"; }
 
 declare -A fam_name fam_guard fam_defs tgt_name tgt_fam tgt_attr tgt_feat seen_tok
-declare -A lvl_fam lvl_needs lvl_march lvl_stamp
+declare -A lvl_fam lvl_needs lvl_march lvl_stamp lvl_inc inc_line
 fams=() tgts=() lvls=()
 while IFS= read -r line; do
     kind="${line%% *}"; body="${line#* }"
@@ -125,7 +128,11 @@ while IFS= read -r line; do
         lvls+=("$a")
         lvl_fam[$a]="$(unq "$b")"; lvl_needs[$a]="$(unq "$c")"
         lvl_march[$a]="$(unq "$d")"; lvl_stamp[$a]="$(unq "$e")"
+        lvl_inc[$a]="$(echo "$f" | tr -d ' ')"
         tokens "level $a needs" "${lvl_needs[$a]}"
+    elif [ "$kind" = I ]; then
+        [ -z "${inc_line[$a]+x}" ] || mismatch "include bit $a: more than one spelling row"
+        inc_line[$a]="$(unq "$b")"
     elif [ "$kind" = C ]; then
         [ -z "${fam_guard[$a]+x}" ] || mismatch "family $a: more than one C spelling row"
         fam_guard[$a]="$(unq "$b")"
@@ -302,6 +309,7 @@ esac
 
 # LEVEL ADMISSION: the table's answer against the compiler's.
 FLOOR_LEVELS=2     # w16, w32 (R-13)
+[ "${#inc_line[@]}" -ge 3 ] || mismatch "${#inc_line[@]} include spelling rows < floor 3 (string.h, w16, w32)"
 [ "${#lvls[@]}" -ge "$FLOOR_LEVELS" ] || mismatch "${#lvls[@]} level rows < floor $FLOOR_LEVELS"
 table_admits() {   # table_admits TARGET LEVEL
     local n f="${tgt_fam[$1]}"
@@ -317,6 +325,15 @@ for l in "${lvls[@]}"; do
     if [ -z "$mt" ]; then mismatch "level $l: test_march '${lvl_march[$l]}' is no target token"
     elif ! table_admits "$mt" "$l"; then mismatch "level $l: its test_march ${lvl_march[$l]} does not admit it"
     fi
+    # its header is a FACT with one C spelling (review 2026-11-08 r5 X-1)
+    i="${lvl_inc[$l]}"
+    if [ -z "${inc_line[$i]+x}" ]; then mismatch "level $l: include bit '$i' has no spelling row in includes_c.def"
+    elif ! printf '%s' "${inc_line[$i]}" | grep -qxE '#include <[A-Za-z0-9_./]+>\\n'; then
+        mismatch "level $l: include bit $i's spelling '${inc_line[$i]}' is not one #include line"
+    fi
+    for k in "${lvls[@]}"; do
+        [ "$k" = "$l" ] || [ "${lvl_inc[$k]}" != "$i" ] || mismatch "levels $l and $k share include bit $i (one bit per level)"
+    done
     [ -n "$lf" ] && [ "$lf" = "$host" ] && [ -n "${floor[$lf]+x}" ] || continue
     for t in "${tgts[@]}"; do
         [ "${tgt_fam[$t]}" = "$lf" ] || continue

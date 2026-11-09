@@ -142,7 +142,7 @@ MF_CLASS(SIZE,        "policy carries MF_P_SIZE_LEANING (--tune -2/-1; set by no
    rows, so a level brings its class); NONE: the target admits every level. A
    SIMD row serves every class but its own level's, so it is DECLINED where
    the art's target does not admit its level */
-#define MF_LEVEL(token, family, needs, header, vw, test_march, forbid, stamp) \
+#define MF_LEVEL(token, family, needs, inc, vw, test_march, forbid, stamp) \
     MF_CLASS(NO_##token, "the art's target does not admit level " stamp)
 #include "levels.def"
 #undef MF_LEVEL

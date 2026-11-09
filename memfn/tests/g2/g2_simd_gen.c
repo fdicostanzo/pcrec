@@ -8,7 +8,9 @@
  * site FIND / FUNC / RETURN), renders each site through the kit in an art
  * whose stated target is TARGET (mf_art_target, unit U2) with a sink that
  * OFFERS the bracket ops, and writes:
- *   OUT/g2v_sites.c   TARGET's family guard, then its region around every
+ *   OUT/g2v_sites.c   TARGET's family guard, the headers the renderings'
+ *                     mf_includes name (mf_include_c, at file scope), then
+ *                     its region around every
  *                     rendered definition and a one-call wrapper per site
  *                     (`mf_call`'s text), the kit's text between the markers
  *                     `G2V KIT TEXT BEGIN`/`END` (G2 acts as the host, as
@@ -381,6 +383,7 @@ static void build_site(vsite *v)
 /* The target the site's art states: TARGET, or the portable target for the
  * PORTABLE class (-fno-memfn-simd's compile). */
 static const mf_target *g_target;
+static uint32_t g_inc;   /* the compiled renderings' mf_includes, OR'd */
 static const mf_target *art_target_of(const vsite *v)
 {
     return v->cls == C_PORTABLE ? mf_portable_target() : g_target;
@@ -396,7 +399,7 @@ static int define_ok(vsite *u, const char *name, const mf_site *s)
     snprintf(u->name, sizeof u->name, "%s", want);
     tb bd = { 0 };
     mf_sink sd = sink_of(&bd, 1);
-    mf_art *art = mf_art_begin(&g_arena, "g2v_bad", s->policy, s->denies, NULL, NULL);
+    mf_art *art = mf_art_begin(&g_arena, "g2v_bad", s->denies, NULL, NULL);
     if (mf_art_target(art, art_target_of(u))) return 0;
     mf_hooks h = { 0 };
     h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
@@ -421,7 +424,7 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
                   char *forms)
 {
     mf_sink sd = sink_of(def, brackets), sc = sink_of(call, 0);
-    mf_art *art = mf_art_begin(&g_arena, prefix, v->site.policy, v->site.denies, NULL, NULL);
+    mf_art *art = mf_art_begin(&g_arena, prefix, v->site.denies, NULL, NULL);
     if (mf_art_target(art, art_target_of(v))) {
         fprintf(stderr, "g2v: site %u: %s\n", v->id, mf_art_error(art));
         return -1;
@@ -435,28 +438,26 @@ static int render(vsite *v, const char *prefix, tb *def, tb *call, int brackets,
                 mf_art_error(art));
         return -1;
     }
-    /* the entry's own rule (unit U2): an art whose first define ran with no
-       target stated cannot be given one after it (its text so far was
-       rendered for none); checked once, on the first site's first render */
+    /* the define's own rule (unit U2): an art that states no target is
+       refused at its first define, naming the entry; checked once, on the
+       first site's first render (the same site the art above accepted) */
     if (v->id == 0 && forms) {
         tb sdef = { 0 };
         mf_sink ss = sink_of(&sdef, brackets);
-        mf_art *late = mf_art_begin(&g_arena, prefix, v->site.policy, v->site.denies, NULL, NULL);
+        mf_art *bare = mf_art_begin(&g_arena, prefix, v->site.denies, NULL, NULL);
         uint32_t lh = 0;
-        int defined = late && !mf_define(late, G2W(&v->site), &h, &ss, &lh);
-        int accepted = defined && !mf_art_target(late, art_target_of(v));
-        /* under MF_TARGET_REQUIRED (the joint merge) the define itself is
-           refused, naming the entry: the rule holds one step earlier */
-        int early = !defined && late && mf_art_error(late) &&
-                    strstr(mf_art_error(late), "mf_art_target");
+        int refused = bare && mf_define(bare, G2W(&v->site), &h, &ss, &lh) &&
+                      mf_art_error(bare) && strstr(mf_art_error(bare), "mf_art_target");
         free(sdef.p);
-        if (early) defined = 1;
-        if (!defined || accepted) {
-            fprintf(stderr, "g2v: %s\n", !defined ? "the target-less control art refused site 0"
-                    : "mf_art_target accepted a first statement after a define");
+        if (!refused) {
+            fprintf(stderr, "g2v: an art that states no target was not refused at its first "
+                    "define, naming mf_art_target\n");
             return -1;
         }
     }
+    /* the compiled rendering's headers (mf_includes), which main writes at
+       file scope ahead of the region */
+    if (forms) g_inc |= mf_includes(art);
     char cap[256] = "";
     mf_sink st = { .u = cap, .stamp = stamp_cap, .stamp_int = sk_stamp_int };
     if (mf_stamps(art, &st) || mf_art_end(art, NULL)) return -1;
@@ -476,9 +477,9 @@ int main(int argc, char **argv)
         mf_target copy = *g_target;
         const mf_target *other = g_target == mf_portable_target()
                                ? mf_target_parse("x86-64", 6, NULL, 0) : mf_portable_target();
-        mf_art *a1 = mf_art_begin(&g_arena, "g2v_t", 0, 0, NULL, NULL);
-        mf_art *a2 = mf_art_begin(&g_arena, "g2v_t", 0, 0, NULL, NULL);
-        mf_art *a3 = mf_art_begin(&g_arena, "g2v_t", 0, 0, NULL, NULL);
+        mf_art *a1 = mf_art_begin(&g_arena, "g2v_t", 0, NULL, NULL);
+        mf_art *a2 = mf_art_begin(&g_arena, "g2v_t", 0, NULL, NULL);
+        mf_art *a3 = mf_art_begin(&g_arena, "g2v_t", 0, NULL, NULL);
         if (!mf_art_target(a1, &copy) || !mf_art_target(a2, NULL) ||
             mf_art_target(a3, g_target) || mf_art_target(a3, g_target) ||
             !mf_art_target(a3, other) || !mf_art_error(a1) || !mf_art_error(a3)) {
@@ -498,8 +499,6 @@ int main(int argc, char **argv)
           "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
           "#include \"g2_simd.h\"\n\n", c);
     if (g_target->family) fputs(mf_family_c_of(g_target->family)->guard, c);
-    fputs(mf_target_c_of(g_target)->region_open, c);
-    fputs("/* G2V KIT TEXT BEGIN */\n", c);
     fputs("# id\tclass\tL\toff\tplan_pos\tforms\tguarded_bytes\tw16_alone\tw32_alone"
           "\trmode\trank\tbadrank\tties\tmask\toverlap\n", m);
     vsite *v = calloc(nsites, sizeof *v);
@@ -606,6 +605,16 @@ int main(int argc, char **argv)
         fprintf(m, "\t%d\n", !!(v[i].site.denies & MF_D_RUN_OVERLAP));
         free(def.p); free(call.p); free(mdef.p); free(mcall.p);
     }
+    /* the headers the kit's text needs, at file scope ahead of the region
+       (review 2026-11-08 r5 X-1), then the region around the kit's text */
+    for (uint32_t bit = 1; bit; bit <<= 1) {
+        if (!(g_inc & bit)) continue;
+        const char *line = mf_include_c(bit);
+        if (!line) { fprintf(stderr, "g2v: include bit 0x%x has no spelling\n", (unsigned)bit); fails++; }
+        else fputs(line, c);
+    }
+    fputs(mf_target_c_of(g_target)->region_open, c);
+    fputs("/* G2V KIT TEXT BEGIN */\n", c);
     fputs(all.p ? all.p : "", c);
     fputs("/* G2V KIT TEXT END */\n", c);
     fputs(mf_target_c_of(g_target)->region_close, c);

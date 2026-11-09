@@ -453,7 +453,7 @@ static kit_set policy_classes(uint32_t p)
 
 /* The art's target (unit U2): the NO_<level> classes, generated from
  * levels.def right after SIZE (fields.def), each at CL_SIZE + 1 + its level. */
-#define MF_LEVEL(token, family, needs, header, vw, test_march, forbid, stamp) \
+#define MF_LEVEL(token, family, needs, inc, vw, test_march, forbid, stamp) \
     _Static_assert(CL_NO_##token == CL_SIZE + 1 + token, \
                    "fields.def's NO_<level> classes follow SIZE in levels.def's order");
 #include "levels.def"

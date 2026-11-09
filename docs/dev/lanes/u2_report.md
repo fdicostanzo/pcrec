@@ -57,6 +57,10 @@ everything else is K0's existing entries. Committed before any code (brief step 
    art renders the portable target's text. That is exactly today's default bytes, and it is why this
    branch builds and runs green at default flags before U3; it is not a default U3 may rely on: U3
    states the target on EVERY art, `generic` included.
+   [Sheet rev 1.2, lane u2rev, review 2026-11-08 r5: X-5. `mf_art_begin` LOSES its art-level policy argument:
+   `mf_art_begin(a, prefix, denies, ms, an)`. The after-define refusal is gone with the switch: an
+   art that has not stated its target is refused at its FIRST `mf_define`/`mf_emit` (text names
+   `mf_art_target`), so `mf_art_target` has two refusals left (not a row; a second, different row).]
 2. **Admission is the kit's, from the stated row**: a level is admitted iff its family token is the
    target's family's and its `needs` are among the target's `features`. pcrec reads nothing of it.
 3. **The family guard text**: `mf_family_c_of(t->family)->guard` (K0; `t->family` NULL for the
@@ -65,11 +69,23 @@ everything else is K0's existing entries. Committed before any code (brief step 
    with no needs, `generic` included). pcrec writes open before the part's first function (the kit's
    file-scope text included: the kit's `#include <...intrin.h>` lines sit INSIDE the region) and
    close after its last.
+   [Sheet rev 1.2, lane u2rev, review 2026-11-08 r5: X-1. The kit writes NO `#include` anywhere. pcrec writes each `mf_includes` header line
+   (`mf_include_c(bit)`, one per set bit) at FILE SCOPE, AHEAD of the region open: a header parsed
+   inside the region carries the region's target into the consumer's own later uses of it (gcc:
+   `inlining failed ... target specific option mismatch`). Item 4's "the kit's `#include` lines sit
+   INSIDE the region" is withdrawn.]
 5. **The kit's text after U2**: no CPU `#if`/`#elif`/`#endif` anywhere; each admitted level's helper
    is written plainly (its compiler `#include` once per art per level, then the helper); the selector
    is ONE call, to the top admitted rung, else to `<fn>__body`. `simd_open(u, level)`/`simd_close(u)`
    still bracket every target-dependent byte: each level block whole, and the selector's one call
    line when it names a rung (so pcrec's guarded-bytes count reads "bytes that depend on the target").
+   [Sheet rev 1.2, lane u2rev, review 2026-11-08 r5: X-1. Each level's header is a FACT: its `MF_INC_LEVEL_*` bit (`MF_INC_LEVEL_W16`,
+   `MF_INC_LEVEL_W32`; arch-blind names) joins `mf_includes(art)` when the level renders, never text
+   in the block. `mf_includes` is exact at `mf_art_end` (and so far at any earlier point); the kit's
+   spelling of each bit is `mf_include_c` (memfn/src/includes_c.def, the C emitter's table). Since
+   the bits are known only after the sites render, pcrec places the lines retroactively (a mark
+   ahead of the region, filled at the finishing pass); the header lines depend on the target, so
+   pcrec counts them guarded. `mf_level` loses `header` for `uint32_t includes`.]
 6. **`<PREFIX>_TARGETS`'s source**: facts only, `t->name` and `t->family ? t->family->name : none`
    (K0 fields). The spelling (target_seam.md §2's `family:members`) is pcrec's stamp, in its spec.
 7. **`MEMFN_FORMS`**: unchanged in meaning (the rendered rungs, top first). Under `x86-64` it reads
@@ -85,8 +101,14 @@ everything else is K0's existing entries. Committed before any code (brief step 
    pass bit 0 to mean "SIMD off", which still renders SIMD-off text after U2 (no target stated).
    This lane changes them only where a check needs a SIMD rendering (named in Commits); the rest are
    U3's list as the design wrote it.
+   [Sheet rev 1.2, lane u2rev, review 2026-11-08 r5: X-5. Every caller drops `mf_art_begin`'s third argument in the merge (list: u2rev_report.md,
+   Sheet amendments).]
 10. **Kernel**: `mf_kernel_find_any(o, fn, bytes, k, const mf_target *t, err, errn)` (the `levels`
    mask argument becomes the target; the kit derives the levels). No pcrec caller.
+   [Sheet rev 1.2, lane u2rev, review 2026-11-08 r5: X-1 + SEAM-5. Now `mf_kernel_find_any(o, fn, bytes, k, t, uint32_t *includes, err, errn)`:
+   `*includes` = the admitted levels' bits, which the caller writes ahead of its region; it REFUSES
+   (-1, nothing written) a NULL `includes`, and a sink without `simd_open`/`simd_close` where `t`
+   admits a level.]
 11. **THE SWITCH U3's merge flips** (rev 1.1, the kit manager's ruling 2026-11-08): `MF_TARGET_REQUIRED`
    in memfn/src/kit.h, ONE line (`#define MF_TARGET_REQUIRED 0`). The joint U2+U3 merge sets it to 1.
    At 1, `mf_define`/`mf_emit` REFUSE (a) an art that states no target, at its first define, and (b) a
@@ -98,6 +120,10 @@ everything else is K0's existing entries. Committed before any code (brief step 
    Those are pcrec's `memfn_sites.c` arts and tests/memfn's arm_fixtures.c, proven_check.c and
    run_proof.sh (sheet item 9's list), which U3 must move in the same merge. Every kit-owned G2 art
    already states a target, so the kit's own tests do not move.
+   [Sheet rev 1.2, lane u2rev, review 2026-11-08 r5: X-5 + X-3. THE SWITCH IS DELETED (no `MF_TARGET_REQUIRED` anywhere): both refusals are
+   unconditional. U3's flipped line goes with the merge (the kit's deletion of the block wins the
+   conflict). S2997 (after-define order) is retired with the refusal it guarded; S3000 is re-aimed at
+   the unconditional policy refusal.]
 
 ## Commits
 

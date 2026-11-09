@@ -48,7 +48,7 @@ skip() { echo "SKIP: $1"; skipped=$((skipped + 1)); }
 GCC_CELLS=6
 ART_GCC_CELLS=12   # part 4: 4 gcc cells x 3 targets (the v3 four run only on an AVX2 CPU)
 CONSUMER_CELLS=4   # part 4's consumer-TU cells
-ROW_FLOOR=58   # targets_check.c's PASS lines, measured at K0 (lane k0; one host row on every host); +16 at U2 (four admission rows of four checks each, every host)
+ROW_FLOOR=63   # targets_check.c's PASS lines, measured at K0 (lane k0; one host row on every host); +16 at U2 (four admission rows of four checks each, every host); +5 at u2rev (each admission row's includes, review r5 X-1; the kernel's bracket refusal, SEAM-5)
 
 echo "== 1. the kit's target table check =="
 if out="$(bash "$ROOT_DIR/memfn/tests/check_targets.sh")"; then ok "$out"; else bad "$out"; fi

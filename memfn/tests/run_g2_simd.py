@@ -19,6 +19,14 @@ WHAT IT CHECKS, AND AGAINST WHAT
      admitted levels (x86-64-v3: w16 and w32; x86-64: w16; generic: none,
      each a literal HERE), and every site's MEMFN_FORMS at x86-64 is its
      x86-64-v3 token less w32, at generic `none` with 0 guarded bytes.
+     THE HEADERS (review 2026-11-08 r5 X-1): the kit's text holds no
+     `#include` line (each level's header is an mf_includes fact, which G2
+     writes at file scope ahead of the region), and a CONSUMER translation
+     unit that includes the x86-64-v3 file and then uses SSE2 intrinsics in
+     a function of its own compiles at the consumer's -march=x86-64, -O2
+     and -O0 (gcc parses a header first included inside the region under
+     the region's target, and the consumer's later inline uses of it then
+     fail). On a host that is not x86-64 the consumer cells are SKIPPED.
   1. THE SPACE (g2/g2_simd_gen.c): the batch-1 site shape and its negative
      controls, rendered through the kit at the target x86-64-v3 with a sink
      that offers the bracket ops (sections 1-2 read this file). Each class's MEMFN_FORMS value is held to CLASS_EXPECT
@@ -95,6 +103,7 @@ Prints `checks passed: N` / `checks failed: N`; exit 1 on any failure.
 import argparse
 import concurrent.futures
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -238,6 +247,34 @@ def token_bound(tok, bounds):
 
 # --- the instrumentation and the plants: text edits of the rendered file ----
 HELPER = re.compile(r'^static inline size_t (\w+)__(w16|w32)\(.*?^\}\n', re.M | re.S)
+INCLUDE = re.compile(r'^[ \t]*#[ \t]*include\b.*$', re.M)
+# THE CONSUMER (review 2026-11-08 r5 X-1): a translation unit that includes
+# a generated file and then uses the baseline vector header itself
+CONSUMER_C = '''#include "%s"
+#include <emmintrin.h>
+int g2_consumer(const char *p)
+{
+    __m128i v = _mm_loadu_si128((const __m128i *)p);
+    return _mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_set1_epi8(1)));
+}
+'''
+
+
+def consumer_cells(work, gen_file, tag):
+    """The consumer TU over `gen_file` at -O2 and -O0, -march=x86-64; one
+    ok() per cell, a bad() naming the compiler's first lines otherwise."""
+    src = os.path.join(work, 'consumer-%s.c' % tag)
+    with open(src, 'w') as f:
+        f.write(CONSUMER_C % gen_file)
+    for opt in ('-O2', '-O0'):
+        r = sh(['gcc', opt, '-march=x86-64', '-Wall', '-Wextra', '-Werror', '-I',
+                os.path.join(HERE, 'g2'), '-c', '-o', src[:-2] + opt + '.o', src])
+        if r.returncode:
+            bad('consumer TU over the %s file does not compile at %s -march=x86-64: %s'
+                % (tag, opt, r.stderr[:600]))
+        else:
+            ok()
+    print('consumer TU over the %s file: 2 cells' % tag)
 
 
 def edit_helpers(text, level, fn):
@@ -736,6 +773,13 @@ def run(a, root, work):
                 % (tg, sorted(lv_have), sorted(TARGETS[tg])))
         else:
             ok()
+        inc = INCLUDE.findall(kit)
+        (bad('target %s: the kit text holds %d #include line(s): %s' % (tg, len(inc), inc[:3]))
+         if inc else ok())
+    if platform.machine() in ('x86_64', 'AMD64'):
+        consumer_cells(work, tfile['x86-64-v3'], 'x86-64-v3')
+    else:
+        SKIPPED['consumer TU'] = ('host is %s, not x86-64' % platform.machine(), 2)
     # the same sites at the narrower targets: x86-64's token is x86-64-v3's
     # less w32, generic's `none` with no guarded byte
     def less_w32(tok):
