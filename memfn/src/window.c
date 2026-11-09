@@ -1156,7 +1156,7 @@ static void decide(const mf_art *art, const mf_site *s, int quiet, wf_dec *d)
     for (unsigned ai = 0; ai < d->na; ai++) {
         cands(&s->alts[ai], d->rate, &d->a[ai]);
         wf_facts f = { s, &s->alts[ai] };
-        gate_in in = { s, NULL, NULL, NULL, &f, NULL };
+        gate_in in = { .s = s, .wf = &f };
         gate_tctx tc = { art, "wfA", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
         gate_verdict why = { 0, 0 };
         wf_x x = { d, ai };
@@ -1166,7 +1166,7 @@ static void decide(const mf_art *art, const mf_site *s, int quiet, wf_dec *d)
         wf_arows[d->a[ai].arow].choose(&x);
     }
     wf_facts f = { s, NULL };
-    gate_in in = { s, NULL, NULL, NULL, &f, NULL };
+    gate_in in = { .s = s, .wf = &f };
     gate_tctx tc = { art, "wfM", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     gate_verdict why = { 0, 0 };
     wf_x x = { d, 0 };
@@ -1910,7 +1910,7 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
     fx->fn = NULL;
     if (wf_find_decide(art, d, w, def, 1, fx)) { *why = "out of memory"; return -1; }
     wf_facts f = { s, d->a[d->ch].alt };
-    gate_in in = { s, def, NULL, NULL, &f, NULL };
+    gate_in in = { .s = s, .h = def, .wf = &f };
     gate_tctx tc = { art, "wfE", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
     gate_verdict v = { 0, 0 };
     wf_ex e = { d, w, def, gphases, L, fx };

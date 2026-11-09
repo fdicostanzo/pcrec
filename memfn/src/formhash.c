@@ -263,10 +263,11 @@ static const char *fh_fn(void *u, uint32_t ref) { (void)u; (void)ref; return "mf
  * mf_art_target, unit U2: timed and shipped text planned for one target,
  * target_seam.md §4) and the deny string; ONE renderer path (fh_render)
  * builds the site from them and reaches the form by the kit's own selection,
- * so the text mf_form_hash folds is the text a cell times. `row` is the kit row the facts must reach (the composer's arm for a
- * FIND, T-FIND's row deciding a window's stop, T-CMP's row for a run): an
- * instance whose facts reach another is REFUSED (-1), never hashed as the id
- * (a form no fact set reaches is reported, never forced).
+ * so the text mf_form_hash folds is the text a cell times. `row` is the
+ * kit row the facts must reach (the composer's arm for a FIND, T-FIND's row
+ * deciding a window's stop, T-CMP's row for a run): an instance whose facts
+ * reach another is REFUSED (-1), never hashed as the id (a form no fact set
+ * reaches is reported, never forced).
  *
  *   walk, libc   canon()'s two sites before S2c, byte for byte: their hashes
  *                did not move (grid1's and the interim sets' readers)
