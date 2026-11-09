@@ -262,6 +262,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # `python3 -I` drops the script's own directory from sys.path; the sibling
 # import of trace_diff below needs it (same house pattern as cls_identity.py).
 sys.path.insert(0, SCRIPT_DIR)
+sys.path.insert(0, os.path.join(os.path.dirname(SCRIPT_DIR), "tests", "memfn"))
+import target_text  # noqa: E402
 DEFAULT_TREE = os.path.dirname(SCRIPT_DIR)
 
 # ---------------------------------------------------------------------------
@@ -1692,11 +1694,34 @@ def target_fixed_text(pcrec_bin, base_args, flag, timeout):
             if tag in ("insert", "replace")]
 
 
-def target_aside(text, fixed):
-    """`text` with the arm's fixed target text removed (each block once) and
-    its TARGETS / SIMD_GUARDED_BYTES stamp lines dropped."""
+def target_table(tree):
+    """The kit's declared target rows, read from the levels dumper built
+    against the tree's libpcrec (tests/memfn/target_text.py, the one reader of
+    the target's own text); the header lines the target places ahead of its
+    region are target text too (R1, docs/dev/lanes/u3d27_rulings.md)."""
+    with tempfile.TemporaryDirectory(prefix="emitsweep_levels.") as d:
+        exe = os.path.join(d, "simd_levels")
+        r = subprocess.run(["gcc", "-O2", "-I", os.path.join(tree, "memfn", "include"), "-o", exe,
+                            os.path.join(tree, "tests", "memfn", "simd_levels.c"),
+                            os.path.join(tree, "build", "libpcrec.a")],
+                           capture_output=True, text=True, timeout=120)
+        if r.returncode != 0:
+            sys.exit("emit_sweep: the levels dumper did not build:\n" + r.stderr)
+        return target_text.read_table(exe)[1]
+
+
+def target_aside(text, fixed, targets=()):
+    """`text` with the arm's fixed target text removed (each block once), the
+    header lines its target places ahead of the region (target_text.header_run)
+    and its TARGETS / SIMD_GUARDED_BYTES stamp lines dropped."""
     if not fixed:
         return text
+    if targets:
+        s = text.decode("utf-8", "surrogateescape")
+        t = target_text.target_of(s, targets)
+        start, end, _ = target_text.header_run(s, t) if t else (None, None, [])
+        if start is not None:
+            text = (s[:start] + s[end:]).encode("utf-8", "surrogateescape")
     for blk in fixed:
         text = text.replace(blk, b"", 1)
     return TARGET_STAMP_RE.sub(b"", text)
@@ -1715,7 +1740,7 @@ class ArmResult:
         self.asymmetric = []       # (pattern, ok_a, ok_b)
 
 
-def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs):
+def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs, tree=None):
     """arms: [(base_name, base_args, flag_str)]; pats: distinct bytes.
     Returns {(base, flag, stream): ArmResult} plus base-identity results
     {(base, stream): ArmResult} (flag "" there: the base itself, a vs b)."""
@@ -1731,11 +1756,16 @@ def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs):
             results[(base, flag, stream)] = ArmResult(base, flag, stream)
     manifests = {k: v[2] for k, v in DIFFER_PINS.items() if v[2] is not None}
     fixed = {}   # (side, base, flag) -> the arm's measured target text (U3)
+    targets = target_table(tree) if tree and any("memfn-simd" in f for _, _, f in arms) else ()
     for base, base_args, flag in arms:
         if "memfn-simd" in flag:
             fixed[(0, base, flag)] = target_fixed_text(bin_a, base_args, flag, timeout)
             fixed[(1, base, flag)] = (fixed[(0, base, flag)] if mirror else
                                       target_fixed_text(bin_b, base_args, flag, timeout))
+            if "memfn-simd=" in flag and not (fixed[(0, base, flag)] and fixed[(1, base, flag)]):
+                # an `=` arm names a target, so it writes target text; none read
+                # would set nothing aside and let a vacuous arm pass
+                sys.exit(f"emit_sweep: arm {flag} wrote no target text on the control pattern")
 
     def compile_pair(p, engine, args):
         a = compile_stream_c(bin_a, p, timeout, engine=engine, extra=args)
@@ -1750,7 +1780,7 @@ def sweep_arms(arms, pats, bin_a, bin_b, timeout, jobs):
         bok, bc = base_side[0], base_side[1]
         if ok != bok:
             return ok, bok, True, False, False
-        if ok and aside and target_aside(c, aside) == target_aside(bc, aside):
+        if ok and aside and target_aside(c, aside, targets) == target_aside(bc, aside, targets):
             return ok, bok, False, False, False
         if ok and c != bc:
             return ok, bok, False, True, bool(start_keys_moved(stamps_of(bc), stamps_of(c)))
@@ -3673,7 +3703,7 @@ def main():
         pats = distinct_patterns(patterns, args.every)
         log(f"[emit_sweep] === arms: {len(arms)} arms x 2 streams over {len(pats)} "
             f"distinct patterns ===")
-        ares, mirror = sweep_arms(arms, pats, ref_bin, tree_bin, args.timeout, args.jobs)
+        ares, mirror = sweep_arms(arms, pats, ref_bin, tree_bin, args.timeout, args.jobs, tree)
         ok_a, text_a, rows = report_arms(ares, pats, full_population, mirror,
                                          waive_unpinned=args.no_differ_floor)
         print(text_a)
