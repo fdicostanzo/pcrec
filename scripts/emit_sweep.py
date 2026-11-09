@@ -229,6 +229,10 @@ OPTIONS
                         must reproduce exactly (stream, base, pattern
                         [, attribution]).
 
+  --movers-out FILE      write every mover/asymmetric key of the run's streams
+                        (stream, class, key), one per line; the report
+                        prints five per stream (span_arms E1's identity
+                        gate compares the list with its census).
   --list-ident-arms REFREV  print the record-first identity gate's DECLARED arm
                         set (IDENT_*, [VMREC] step (a), D182) as NAME<TAB>args
                         rows for a job script; runs nothing else.
@@ -3314,6 +3318,10 @@ def main():
                          "mirrored: the row whose first field is KEY is in the "
                          "working dump once and not in REF's, every other line "
                          "byte-identical in order")
+    ap.add_argument("--movers-out", metavar="FILE",
+                    help="write every mover and asymmetric key of the base run's "
+                         "streams (stream, class, key) to FILE: the report prints "
+                         "five per stream")
     ap.add_argument("--census-ref-re", metavar="FILE",
                     help="[MEMFN] R4h: file of regexes (one per line); streams 1-4 hold "
                          "movers == REF artifacts matching any of them, 0 off-diagonal")
@@ -3648,6 +3656,17 @@ def main():
     inv = {tuple(v): k for k, v in ARM_BASES.items()}
     base_name = inv.get(tuple(run_extra))
     cell = VARIANT_PINS.get(("plain", base_name)) if base_name else None
+    if args.movers_out:
+        # [REQ-EMPTYCAT] span_arms E1's identity gate: EVERY mover and
+        # asymmetric key per stream (the report prints only five), for a
+        # comparison against a census's mover list
+        with open(args.movers_out, "w") as fh:
+            fh.write("#stream\tclass\tkey\n")
+            for name, s in res.items():
+                for key, _ in s.movers:
+                    fh.write(f"{name}\tmover\t{key}\n")
+                for row in s.asymmetric:
+                    fh.write(f"{name}\tasymmetric\t{row[0]}\n")
     for name, s in res.items():
         fl, ident = stream_checks.get(name) or stream_check(name, identity_required_default)
         if cell and name in cell["reach"] and name not in stream_checks:
