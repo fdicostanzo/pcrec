@@ -34,9 +34,9 @@
  *        hands the plan to (no parallel table, see E). On E-find's own text
  *        the FIND slot is asked about the stop itself (fd_find, the one
  *        walk: its set, its offset, D-hors's window, the site's kind and
- *        options, and the asker fact: this family renders PAIR) and the
- *        deciding row's PICK is rendered by THE RENDERER TABLES (Table B
- *        split, plan_frame.md 3.0a: the fused row B-fn, else the search row
+ *        options, under E-find's renderable set) and the deciding row's
+ *        PICK is rendered by THE RENDERER TABLES (plan_frame.md §2.6: the
+ *        fused row B-fn, else the search row
  *        B-pair, B-memchr, B-walk or B-hors, with Table S's stream row and
  *        the check row; the text a (frame row, method row, renderer row)
  *        triple)
@@ -1537,8 +1537,11 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
  * row over the plan's stop. */
 typedef struct {
     int         holds;      /* E-find renders this plan                      */
+    int         refused;    /* T-FIND refused its pick (Table S's ST-many):
+                               E-find holds, and refuses the define          */
     int32_t     wlo, whi;   /* D-hors's window                               */
-    fd_form     pick;       /* T-FIND's pick and its deciding row            */
+    fd_form     pick;       /* T-FIND's pick (the refused one too) and its
+                               deciding row (or the refusal's name)          */
     const char *brow;
     const struct ren_search_row *srch;  /* its search renderer row, or       */
     const struct ren_fused_row  *fused; /* the fused row rendering it whole  */
@@ -1580,7 +1583,7 @@ static int e_legacy_holds(const void *x)
 static int e_find_holds(const void *x)
 {
     const wf_ex *e = x;
-    return e->fx->holds;
+    return e->fx->holds || e->fx->refused;
 }
 
 /* E-generic, the floor, serves every frame and plan but a REPORT site's:
@@ -1630,6 +1633,7 @@ static const struct {
     [E_GENERIC] = { e_generic_holds, &wf_floor_ct, NULL },
 };
 #define WF_NEROWS (sizeof wf_erows / sizeof wf_erows[0])
+_Static_assert(WF_NEROWS == E_GENERIC + 1, "every T-FRAME row is declared (wf_frame_row)");
 
 static const gate_contract *e_ct(size_t i) { return wf_erows[i].ct; }
 static int e_holds(size_t i, const void *x) { return wf_erows[i].holds(x); }
@@ -1749,8 +1753,7 @@ typedef struct wf_rc wf_rc;      /* the renderer's context (E-FIND's TEXT, below
 
 /* D-hors's plan, its two pieces' halves: the SEARCH's probe at the window's
  * last offset (B-hors's prepare) and the STREAM's shift table over the
- * window (S-shift's prepare). One prepare until plan_frame.md 3.0a (Table
- * D's row until span_pick 1e). */
+ * window (S-shift's prepare). */
 static void b_hors_prepare(struct wf_plan *w, const wf_fx *fx)
 {
     w->hl = fx->whi;
@@ -1778,22 +1781,23 @@ static void s_shift_prepare(struct wf_plan *w, const wf_fx *fx)
  * byte identity and the sabotage rows show their reach). No pair of pieces
  * is special-cased. */
 
-/* A renderer row's KEY, first in every renderer row: the T-FRAME row it
- * renders on, the keys it serves (a set: REN_PICK(pick) on a search or a
- * fused row, WF_ST_* on a stream row, REN_FRAME on a row keyed by frame
- * alone), its id (FDROUTE's `ren=`) and its predicate over the selection's
- * context (NULL: the key alone). */
-typedef struct {
-    wf_frame_row frame;
-    uint32_t     keys;
-    const char  *id;
-    int        (*holds)(const void *x);
-} ren_key;
-#define REN_FRAME   1u                  /* a row keyed by its frame alone      */
+/* A renderer row opens with its ren_key (kit.h). The three key spaces are
+ * disjoint bits: a pick's (REN_PICK, bits 1..FF_HORS: FF_UNSTATED, a
+ * refusal's pick, keys nothing), a stream's (WF_ST_*, on stream rows) and
+ * REN_FRAME, a bit no pick or stream takes. */
+#define REN_FRAME   (1u << 31)          /* a row keyed by its frame alone      */
 #define REN_PICK(f) (1u << (f))         /* a search's key: its T-FIND pick     */
 #define REN_ROWS(t) (t), sizeof (t) / sizeof *(t), sizeof *(t)
+_Static_assert(FF_HORS < 31 && WF_ST_SHIFT < REN_FRAME, "the renderer key spaces are disjoint");
 
-/* THE ONE ACCESSOR of every renderer table (§2.4 [rev2 F28]): the first of
+/* The key a lookup by T-FIND pick `f` asks: none for FF_UNSTATED (a refusal
+ * leaves it), so no row renders a refused decision. */
+static uint32_t ren_pick(fd_form f)
+{
+    return f == FF_UNSTATED ? 0 : REN_PICK(f);
+}
+
+/* THE ONE ACCESSOR of every renderer table (§2.4): the first of
  * the `n` rows at `rows` (each `size` bytes, opening with its ren_key) on
  * frame `f` that serves `key` and whose predicate holds over `x`; NULL where
  * none does (the frame has no row for the piece: its caller refuses). */
@@ -1825,17 +1829,17 @@ static int  b_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h, const w
 static int  wf_find_expr(wf_rc *rc, mf_sink *o, int want_value);
 static int  wf_floor_expr(wf_rc *rc, mf_sink *o, int want_value);
 
-/* The selection's context a renderer row's predicate reads: the decision,
- * the plan, the define's hooks, T-FIND's pick, and B-fn's translation. */
+/* The selection's context an E-find renderer row's predicate reads (the
+ * fused rows'; E-find's search rows take none, wf_tables_check): the
+ * decision, the plan, the define's hooks, and B-fn's translation. */
 typedef struct {
     const wf_dec         *d;
     const struct wf_plan *w;
     const mf_hooks       *def;
-    fd_form               pick;
     wf_legacy            *fn;       /* B-fn's translation, where it holds    */
 } wf_bx;
 
-/* B-fn: the pick is PAIR and the plan IS the offset-skip function's
+/* B-fn, over a PAIR pick (its key): the plan IS the offset-skip function's
  * predicate (legacy_ok with no range end beyond the terms; one RUN term
  * holding the stop's cube, ofs_fn_serves: the function's BODY walk takes
  * it), AND that walk takes fn-pair: the FIND slot's pick and the BODY
@@ -1848,7 +1852,7 @@ static int b_fn_holds(const void *x)
 {
     const wf_bx *b = x;
     unsigned eb;
-    if (b->pick != FF_PAIR || !legacy_ok(b->d, b->w, &eb) || eb) return 0;
+    if (!legacy_ok(b->d, b->w, &eb) || eb) return 0;
     translate(b->d, b->w, 0, b->fn);
     const mf_pred *p = &b->fn->site.pred;
     int k, lo, hi, two;
@@ -1857,9 +1861,9 @@ static int b_fn_holds(const void *x)
     return hi >= 0 && ofs_fn_serves(b->d->art, &b->fn->site, b->def, p, &two) && two;
 }
 
-/* THE SKELETON ROWS (§2.6.0 [rev2 F3]): the loop's SHAPE is the frame's, one
- * row per composing frame, each stating its text order and, where it
- * differs, its render order ([rev2.2 R15]). E-stmt has none: its PF arm's
+/* THE SKELETON ROWS (§2.6.0): the loop's SHAPE is the frame's, one row per
+ * composing frame, each stating its text order and, where it differs, its
+ * render order. E-stmt has none: its PF arm's
  * text is a search, and the loop is the caller's. A fused row keeps its own
  * text whole inside E-find's expression. */
 typedef struct ren_skel_row {
@@ -1879,17 +1883,19 @@ static const ren_skel_row ren_skel[] = {
 };
 _Static_assert(sizeof ren_skel / sizeof *ren_skel == RK_N, "every skeleton row is declared");
 
-/* THE SEARCH RENDERER TABLE (§2.4, §2.6.1 [rev2 F2, F11]), keyed (T-FRAME
- * row, pick): each row renders the pick it names. A pick no row names (an
- * unbuilt form: V1, W64, A3, NONE; on E-stmt PAIR and HORS) has no search
- * text on that frame, and the frame's RENDERABLE SET (wf_renders, T-FIND's
- * gate) lacks it. An E-find row's LOOP STATE is written before the frame's
- * RAISE; its HEAD is the loop's head (the find and the bound, or D-hors's
- * bound and probe). An E-stmt row is the composer's (compose.c select_arm,
- * since 3.0a's commit 2; `fd_renderers` until then): its ARM renders the
- * pick, keyed also by the site's `end_back` (its predicate, over the site).
- * (D2's RUN pick retired with D2: a RUN span 0 takes the composer's walk
- * with no deciding row, the same text.) */
+/* THE SEARCH RENDERER TABLE (§2.4, §2.6.1), keyed (T-FRAME row, pick): each
+ * row renders the pick it names. A pick no row names (an unbuilt form: V1,
+ * W64, A3, NONE; on E-stmt PAIR and HORS) has no search text on that frame,
+ * and the frame's RENDERABLE SET (wf_renders, T-FIND's gate) lacks it.
+ * Columns by frame: an E-find row states `libc` (its text calls memchr),
+ * `path`, `prepare`, its LOOP STATE (written before the frame's RAISE) and
+ * its `find` and HEAD (the loop's head: the find and the bound, or D-hors's
+ * bound and probe), and no predicate (wf_tables_check). An E-stmt row is
+ * the composer's (compose.c select_arm): it states only its ARM, which
+ * renders the pick and states its own libc and includes (its contract),
+ * keyed also by the site's `end_back` (its predicate, over the site); its id
+ * is FDROUTE's `ren=`. A RUN span 0 takes the composer's walk with no
+ * deciding row. */
 static int stmt_end0_holds(const void *x) { return !((const mf_site *)x)->end_back; }
 static int stmt_end1_holds(const void *x) { return !!((const mf_site *)x)->end_back; }
 typedef struct ren_search_row {
@@ -1900,7 +1906,7 @@ typedef struct ren_search_row {
     void      (*state)(wf_rc *rc, kb *b);                               /* or NULL */
     int       (*find)(wf_rc *rc, kb *b, const char *p, int32_t d);      /* or NULL */
     int       (*head)(wf_rc *rc, kb *b, const char *bound, int *skip);
-    const arm  *arm;            /* E-stmt: the composer's arm                */
+    const arm  *arm;            /* E-stmt: the composer's arm (NULL: E-find) */
     const char *basis;
 } ren_search_row;
 enum { RB_PAIR, RB_MEMCHR, RB_WALK, RB_HORS, RB_ST_MEMCHR, RB_ST_MEMCHR_B, RB_ST_BACK, RB_ST_WALK,
@@ -1922,25 +1928,25 @@ static const ren_search_row ren_search[] = {
                     NULL, d_hors_head, NULL,
                     "HORS (D-hors): no find; the bound, then the probe of the window's last "
                     "position (its miss resumes by the stream's text)" },
-    [RB_ST_MEMCHR]   = { { E_STMT, REN_PICK(FF_LIBC), "pf_memchr", stmt_end0_holds }, 0, "", NULL, NULL,
-                         NULL, NULL, &pf_memchr_arm, "LIBC: the memchr row" },
-    [RB_ST_MEMCHR_B] = { { E_STMT, REN_PICK(FF_LIBC), "pf_memchr_bounded", stmt_end1_holds }, 0, "", NULL,
-                         NULL, NULL, NULL, &pf_memchr_bounded_arm, "LIBC, end_back 1: the bounded memchr row" },
-    [RB_ST_BACK]     = { { E_STMT, REN_PICK(FF_LIBC_BACK), "pf_memchr_back", NULL }, 0, "", NULL, NULL,
-                         NULL, NULL, &pf_memchr_back_arm, "LIBC_BACK: the memchr below the candidate" },
-    [RB_ST_WALK]     = { { E_STMT, REN_PICK(FF_WALK), "pf_walk", stmt_end0_holds }, 0, "", NULL, NULL,
-                         NULL, NULL, &pf_walk_arm, "WALK: the walk" },
-    [RB_ST_WALK_B]   = { { E_STMT, REN_PICK(FF_WALK), "pf_walk_bounded", stmt_end1_holds }, 0, "", NULL,
-                         NULL, NULL, NULL, &pf_walk_bounded_arm, "WALK, end_back 1: the bounded walk" },
+    [RB_ST_MEMCHR]   = { .k = { E_STMT, REN_PICK(FF_LIBC), "pf_memchr", stmt_end0_holds },
+                         .arm = &pf_memchr_arm, .basis = "LIBC: the memchr row" },
+    [RB_ST_MEMCHR_B] = { .k = { E_STMT, REN_PICK(FF_LIBC), "pf_memchr_bounded", stmt_end1_holds },
+                         .arm = &pf_memchr_bounded_arm, .basis = "LIBC, end_back 1: the bounded memchr row" },
+    [RB_ST_BACK]     = { .k = { E_STMT, REN_PICK(FF_LIBC_BACK), "pf_memchr_back", NULL },
+                         .arm = &pf_memchr_back_arm, .basis = "LIBC_BACK: the memchr below the candidate" },
+    [RB_ST_WALK]     = { .k = { E_STMT, REN_PICK(FF_WALK), "pf_walk", stmt_end0_holds },
+                         .arm = &pf_walk_arm, .basis = "WALK: the walk" },
+    [RB_ST_WALK_B]   = { .k = { E_STMT, REN_PICK(FF_WALK), "pf_walk_bounded", stmt_end1_holds },
+                         .arm = &pf_walk_bounded_arm, .basis = "WALK, end_back 1: the bounded walk" },
 };
 _Static_assert(sizeof ren_search / sizeof *ren_search == RB_N, "every search renderer row is declared");
 
-/* THE STREAM RENDERER TABLE (§2.6.2 [rev2 F2, F11, F24]), keyed (T-FRAME
- * row, stream), ONE row per (frame, stream) ([rev2.2 R13]: E-find's and
- * E-generic's S-restart are two rows sharing one text). NEXT is the resume
- * after a rejection; S-caller has none (the caller's loop restarts). The
- * loop-state slot is empty on every row today (a MASK row's `m` will use
- * it, plan_frame.md §2.5.5). */
+/* THE STREAM RENDERER TABLE (§2.6.2), keyed (T-FRAME row, stream), ONE row
+ * per (frame, stream) (E-find's and E-generic's S-restart are two rows
+ * sharing one text). NEXT is the resume after a rejection; S-caller has
+ * none (the caller's loop restarts), and is read as E-stmt's stream by
+ * Table S (and by 3.0b's reply, plan_frame.md §4.1). The loop-state slot is
+ * empty on every row today (a MASK row's `m` will use it, §2.5.5). */
 typedef struct ren_stream_row {
     ren_key     k;
     uint8_t     libc;
@@ -1963,10 +1969,11 @@ static const ren_stream_row ren_stream[] = {
 };
 _Static_assert(sizeof ren_stream / sizeof *ren_stream == RS_N, "every stream renderer row is declared");
 
-/* THE CHECK RENDERER ROWS (§2.6.2 [rev2 F11]): one per composing frame,
- * keyed by frame alone (a second check spelling, vrun's mask-trimmed
- * compare, is its second row when it is re-expressed). C-caller has no text:
- * pcrec checks. */
+/* THE CHECK RENDERER ROWS (§2.6.2): one per composing frame (E-find,
+ * E-generic), keyed by frame alone (a second check spelling, vrun's
+ * mask-trimmed compare, is its second row when it is re-expressed). E-stmt
+ * has none: pcrec checks, and nothing renders or reads a check there. Both
+ * rows' `libc_runs` are read by the pieces' libc union (pieces_libc). */
 typedef struct ren_check_row {
     ren_key     k;
     uint8_t     libc_runs;      /* its text calls libc iff the plan has a run
@@ -1975,22 +1982,22 @@ typedef struct ren_check_row {
     int       (*test)(wf_rc *rc, kb *t, kb *cond, mf_sink *o, int skip);  /* or NULL */
     const char *basis;
 } ren_check_row;
-enum { RC_FIND, RC_FLOOR, RC_CALLER, RC_N };
+enum { RC_FIND, RC_FLOOR, RC_N };
 static const ren_check_row ren_check[] = {
     [RC_FIND]   = { { E_FIND, REN_FRAME, "C-find", NULL }, 1, c_find_test,
                     "wf_test_to less the position the search proved (C-stop's, or the probe's)" },
     [RC_FLOOR]  = { { E_GENERIC, REN_FRAME, "C-floor", NULL }, 0, c_floor_test,
                     "wf_test, which also writes the bound into the for header" },
-    [RC_CALLER] = { { E_STMT, REN_FRAME, "C-caller", NULL }, 0, NULL, "no text: pcrec checks" },
 };
 _Static_assert(sizeof ren_check / sizeof *ren_check == RC_N, "every check renderer row is declared");
 
-/* THE FUSED ROWS (§2.6.3 [rev2 F1, F10, F14]): a renderer of the WHOLE
- * triple as one piece, matched FIRST, with its declared search and stream
- * (the facts it implements; Table S holds the stream to the search's
- * support). B-fn's reconciliation with fn_rows' BODY is KEPT (span_pick
- * §The tables, T-FRAME). B-fn is reachable only because B-pair's (E-find,
- * PAIR) search row makes PAIR renderable on E-find ([rev2 F1]). */
+/* THE FUSED ROWS (§2.6.3): a renderer of the WHOLE triple as one piece,
+ * matched FIRST, with its declared search and stream (the facts it
+ * implements; Table S holds the stream to the search's support). Its key is
+ * REN_PICK of its declared search (wf_tables_check), the one statement of
+ * the pick its predicate serves. B-fn's reconciliation with fn_rows' BODY is
+ * KEPT (span_pick §The tables, T-FRAME). B-fn is reachable only because
+ * B-pair's (E-find, PAIR) search row makes PAIR renderable on E-find. */
 typedef struct ren_fused_row {
     ren_key     k;
     fd_form     search;         /* its declared search                       */
@@ -2010,18 +2017,19 @@ static const ren_fused_row ren_fused[] = {
 };
 _Static_assert(sizeof ren_fused / sizeof *ren_fused == RF_N, "every fused row is declared");
 
-/* THE SUPPORT TABLE (§2.5.2 [rev2 F8, F21]): which streams each BUILT
- * search feeds, each row's basis naming the SOURCE of its cell. Its pin is
+/* THE SUPPORT TABLE (§2.5.2): which streams each BUILT search feeds, each
+ * row's basis naming the SOURCE of its cell. Its pin is
  * tests/memfn/stream_support.tsv (rows_check.py §S, against `arm_fixtures
- * --streams`' print of this table; the RULING quotes are read from the working-tree
- * ledger file); the LIBC rows' pin cells are the
- * owner's ruling's text, never this table read twice. The unbuilt picks
- * (V1, W64, A3, NONE) have no row: they feed no stream, so no frame renders
- * them. */
+ * --streams`' print of this table; a RULING row's quote is read from an
+ * allowed ledger file); the LIBC rows' pin cells are the line "libc memchr
+ * supplies only one-shot", a line of the kit's notice that D190
+ * (docs/dev/decisions.md) files among the owner's decision, written by the
+ * kit and not the owner's words. The unbuilt picks (V1, W64, A3, NONE) have
+ * no row: they feed no stream, so no frame renders them. */
 static const wf_support_row wf_support[] = {
     { "LIBC",      FF_LIBC,      WF_ST_RESTART,
-      "RULING TEXT: \"libc memchr supplies only one-shot\" (memfn/docs/responses.md, "
-      "lane/memfn-k1107 067aca4df)" },
+      "RULING (D190, kit-stated line): \"libc memchr supplies only one-shot\" (the kit's "
+      "notice, memfn/docs/responses.md, lane/memfn-k1107 067aca4df)" },
     { "LIBC_BACK", FF_LIBC_BACK, WF_ST_RESTART,
       "RULING TEXT, the same (memchr below the candidate, pf_memchr_back)" },
     { "WALK",      FF_WALK,      WF_ST_RESTART,
@@ -2043,14 +2051,15 @@ const wf_support_row *wf_support_rows(size_t *n)
     return wf_support;
 }
 
-/* TABLE S, the stream pick (§2.5.3 [rev2 F8, F9]): ONE rule over S =
- * support(search) INTERSECT streams(frame), first match on S's size. It
- * reads no measurement and no price. Every built search feeds one stream,
- * so ST-one answers every built (search, frame), today's selection
- * reproduced (HORS -> SHIFT on E-find; every other pick, and the floor ->
- * RESTART). ST-none: the pick is not renderable on the frame. ST-many is
- * REFUSED until a row with evidence exists (D186: which stream is a choice
- * change; trigger: the first search with two streams on one frame). */
+/* TABLE S, the stream pick (§2.5.3): ONE rule over S = support(search)
+ * INTERSECT streams(frame), first match on S's size. It reads no
+ * measurement and no price. Every built search feeds one stream, so ST-one
+ * answers every built (search, frame), today's selection reproduced (HORS
+ * -> SHIFT on E-find; every other pick, and the floor -> RESTART). ST-none:
+ * the pick is not renderable on the frame. ST-many is REFUSED until a row
+ * with evidence exists (D186: which stream is a choice change; trigger: the
+ * first search with two streams on one frame). A refusing row's `why` is
+ * its refusal's ONE text, on every frame that raises it. */
 static int st_one_holds(unsigned n)  { return n == 1; }
 static int st_none_holds(unsigned n) { return n == 0; }
 static int st_many_holds(unsigned n) { return n >= 2; }
@@ -2058,10 +2067,15 @@ enum { ST_ONE, ST_NONE, ST_MANY, ST_N };
 static const struct {
     const char *row;
     int (*holds)(unsigned n);
+    const char *why;            /* its refusal, or NULL: it renders          */
 } wf_srows[] = {
-    [ST_ONE]  = { "ST-one",  st_one_holds },
-    [ST_NONE] = { "ST-none", st_none_holds },
-    [ST_MANY] = { "ST-many", st_many_holds },
+    [ST_ONE]  = { "ST-one",  st_one_holds, NULL },
+    [ST_NONE] = { "ST-none", st_none_holds,
+                  "Table S answers ST-none for its search: the frame renders no stream the "
+                  "search feeds" },
+    [ST_MANY] = { "ST-many", st_many_holds,
+                  "Table S answers ST-many for its search: two streams or more, REFUSED until a "
+                  "row with evidence exists (D186)" },
 };
 _Static_assert(sizeof wf_srows / sizeof *wf_srows == ST_N, "every Table S row is declared");
 
@@ -2083,21 +2097,63 @@ static size_t table_s(fd_form search, wf_frame_row f, const ren_fused_row *fu, u
 
 /* THE RENDERABLE SET (kit.h; §2.4): frame `f` renders `pick` for site `s`
  * iff a search renderer row there names it (the predicate of an E-stmt row
- * reads the site; an E-find row has none) and Table S does not answer
- * ST-none; 2 where it answers ST-many. */
-int wf_renders(wf_frame_row f, fd_form pick, const mf_site *s)
+ * reads the site; an E-find row has none) and Table S answers ST-one;
+ * MANY where it answers ST-many. */
+wf_renderable wf_renders(wf_frame_row f, fd_form pick, const mf_site *s)
 {
     uint8_t st;
-    if (!ren_find(REN_ROWS(ren_search), f, REN_PICK(pick), s)) return 0;
+    if (!ren_find(REN_ROWS(ren_search), f, ren_pick(pick), s)) return WF_RENDERS_NOT;
     size_t r = table_s(pick, f, NULL, &st);
-    return r == ST_ONE ? 1 : r == ST_MANY ? 2 : 0;
+    return r == ST_ONE ? WF_RENDERS_ONE : r == ST_MANY ? WF_RENDERS_MANY : WF_RENDERS_NOT;
 }
 
-/* The composer's arm for `pick` (kit.h): its E-stmt search renderer row's. */
-const arm *wf_stmt_arm(const mf_site *s, fd_form pick)
+/* Table S's ST-many refusal text (kit.h). */
+const char *wf_stream_refusal(void)
 {
-    const ren_search_row *r = ren_find(REN_ROWS(ren_search), E_STMT, REN_PICK(pick), s);
-    return r ? r->arm : NULL;
+    return wf_srows[ST_MANY].why;
+}
+
+/* The composer's search renderer row for `pick` (kit.h): its E-stmt row. */
+const ren_key *wf_stmt_row(const mf_site *s, fd_form pick)
+{
+    const ren_search_row *r = ren_find(REN_ROWS(ren_search), E_STMT, ren_pick(pick), s);
+    return r ? &r->k : NULL;
+}
+
+/* The arm of search renderer row `k` (kit.h; `k` opens its row). */
+const arm *wf_ren_arm(const ren_key *k)
+{
+    return ((const ren_search_row *)(const void *)k)->arm;
+}
+
+/* T-FRAME row `f`'s name (kit.h): Table E's ids. */
+const char *wf_frame_name(wf_frame_row f)
+{
+    static const char *const names[] = { [E_FUNC] = "E-func", [E_STMT] = "E-stmt",
+                                         [E_FIND] = "E-find", [E_GENERIC] = "E-generic" };
+    return names[f];
+}
+
+/* THE TABLES' SELF-CHECK (kit.h; refused at mf_art_begin): what no
+ * initializer states. (1) Every Table E row has its predicate and contract
+ * (a designated hole would be a NULL row). (2) An E-find search renderer
+ * row takes no predicate: the renderable set asks it over the SITE (T-FIND's
+ * gate, before any plan exists) and E-find's composition over the plan
+ * (wf_bx), so the two could disagree; trigger to lift it: the first E-find
+ * search row that needs one, which first gives the table one context type
+ * (plan row, review 2026-11-09 r1 s30a F3). (3) A fused row's key is
+ * REN_PICK of its declared search, so the lookup and Table S read one pick. */
+const char *wf_tables_check(void)
+{
+    for (size_t i = 0; i < WF_NEROWS; i++)
+        if (!wf_erows[i].holds || !wf_erows[i].ct) return "a Table E row is a hole";
+    for (size_t i = 0; i < RB_N; i++)
+        if (ren_search[i].k.frame == E_FIND && ren_search[i].k.holds)
+            return "an E-find search renderer row takes a predicate";
+    for (size_t i = 0; i < RF_N; i++)
+        if (ren_fused[i].k.keys != REN_PICK(ren_fused[i].search))
+            return "a fused row's key is not its declared search's pick";
+    return NULL;
 }
 
 /* E-FIND's SETUP: T-FIND (fd_find, the one walk, with the stop's facts and
@@ -2121,27 +2177,38 @@ static int wf_find_decide(const mf_art *art, const wf_dec *d, const struct wf_pl
     fd_stop st = { .set = w->set[w->stop_ix], .off = w->off[w->stop_ix], .rate = d->rate,
                    .wf = &f };
     st.hw = (uint8_t)hors_window(d, &st.wlo, &st.whi);
-    /* fx->brow WF_STREAM_REFUSAL with no pick: Table S's ST-many refusal,
-       which wf_plan_site raises (never a move to the floor) */
-    if (!fd_find(art, s, def, &st, E_FIND, quiet, &fx->pick, &fx->brow)) return 0;
+    int fa = fd_find(art, s, def, &st, E_FIND, quiet, &fx->pick, &fx->brow);
+    /* a refusal (Table S's ST-many: an E-find ask states its need) keeps
+       E-find's row, which refuses the define if Table E answers E-find
+       (wf_plan_site), never a move to the floor */
+    if (fa == FD_REFUSED) fx->refused = 1;
+    if (fa != FD_DECIDED) return 0;
     fx->wlo = st.wlo;
     fx->whi = st.whi;
     if (fx->pick == FF_PAIR && !fx->fn) {
         fx->fn = art->a->alloc(art->a->u, sizeof *fx->fn);
         if (!fx->fn) return -1;
     }
-    wf_bx bx = { d, w, def, fx->pick, fx->fn };
-    fx->fused = ren_find(REN_ROWS(ren_fused), E_FIND, REN_PICK(fx->pick), &bx);
-    if (!fx->fused) fx->srch = ren_find(REN_ROWS(ren_search), E_FIND, REN_PICK(fx->pick), &bx);
+    wf_bx bx = { d, w, def, fx->fn };
+    fx->fused = ren_find(REN_ROWS(ren_fused), E_FIND, ren_pick(fx->pick), &bx);
+    if (!fx->fused) fx->srch = ren_find(REN_ROWS(ren_search), E_FIND, ren_pick(fx->pick), NULL);
     fx->holds = fx->fused || fx->srch;
     return 0;
+}
+
+/* The libc bound of a composing frame's text: the OR over its three pieces
+ * (§2.6.4): the search row's (E-find; the floor has none), the stream row's,
+ * and the check row's where the plan has a run compare. */
+static uint8_t pieces_libc(const struct wf_plan *w)
+{
+    return (uint8_t)((w->srch && w->srch->libc) || w->strm->libc || (w->chk->libc_runs && w->nrun));
 }
 
 /* E-find's plan from its setup and its pieces' rows: B (the pick, its row
  * and renderer; B-fn's translated site), the stop's role, C-run's compares
  * (the terms at the define), the search's and the stream's preparation
- * (D-hors's probe and shift table), and the text's libc and include bounds:
- * the OR over the three pieces ([rev2 F5]). 0, or -1 out of memory. */
+ * (D-hors's probe and shift table), and the text's libc and include bounds
+ * (pieces_libc). 0, or -1 out of memory. */
 static int wf_find_prepare(const mf_art *art, const wf_dec *d, struct wf_plan *w,
                            const wf_fx *fx, int build)
 {
@@ -2163,7 +2230,7 @@ static int wf_find_prepare(const mf_art *art, const wf_dec *d, struct wf_plan *w
     if (w->strm->prepare) w->strm->prepare(w, fx);
     /* memchr where the search calls it (not B-hors: D-hors's probe); a run
        compare's memcmp row and its words' memcpy loads (runcmp.c) */
-    w->libc = (uint8_t)(w->srch->libc || w->strm->libc || (w->chk->libc_runs && w->nrun));
+    w->libc = pieces_libc(w);
     w->includes = w->libc ? MF_INC_STRING_H : 0;
     return 0;
 }
@@ -2174,6 +2241,15 @@ static int wf_find_prepare(const mf_art *art, const wf_dec *d, struct wf_plan *w
  * shared bound exists; compose.c's own buffers are 200). */
 enum { WF_WHY_MAX = 320 };
 
+/* Room in the art's arena for a refusal of wf_plan_site's, into *why
+ * ("out of memory" where none is left): NULL then. */
+static char *why_room(const mf_art *art, const char **why)
+{
+    char *buf = art->a->alloc(art->a->u, WF_WHY_MAX);
+    *why = buf ? buf : "out of memory";
+    return buf;
+}
+
 /* THE PLAN FUNCTION (plan_frame.md §4.1): a window site's decision (its
  * first half, `decide`, which mf_wdecide reads alone) and, under the
  * define's hooks, WHAT THE DEFINE RENDERS: T-FRAME's row (Table E, into
@@ -2182,8 +2258,9 @@ enum { WF_WHY_MAX = 320 };
  * E-generic) the skeleton row, Table S's stream with its stream renderer
  * row and the check renderer row, each stored in `w`, where the define
  * renders from it. 0; -1 with *why where no Table E row serves the frame,
- * a piece has no row on it (Table S's ST-none or ST-many included), or out
- * of memory. */
+ * a piece has no row on it, Table S's row on it refuses (ST-none, or the
+ * ST-many T-FIND's walk refused: raised here, only where Table E answers
+ * E-find, so a site another frame renders keeps it), or out of memory. */
 static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def,
                         unsigned gphases, int quiet, wf_dec *d, struct wf_plan *w,
                         wf_legacy *L, wf_fx *fx, size_t *erow, const char **why)
@@ -2192,12 +2269,6 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
     plan_of(d, def, w);
     fx->fn = NULL;
     if (wf_find_decide(art, d, w, def, 1, fx)) { *why = "out of memory"; return -1; }
-    if (fx->brow && !strcmp(fx->brow, WF_STREAM_REFUSAL)) {
-        /* Table S's ST-many, raised after T-FIND's gate held (§2.4 [rev2.2 R3]) */
-        *why = "E-find: Table S answers ST-many for T-FIND's pick (two streams or more on the "
-               "frame), REFUSED until a row with evidence exists (D186)";
-        return -1;
-    }
     wf_facts f = { s, d->a[d->ch].alt };
     gate_in in = { s, def, NULL, NULL, &f };
     gate_tctx tc = { art, "wfE", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
@@ -2209,8 +2280,8 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
         /* no row: a REPORT site E-find does not render (E-generic declines
            REPORT), or a frame only a contract leaves with none (a stated
            `moved`, an unstated hook a row uses) */
-        char *buf = art->a->alloc(art->a->u, WF_WHY_MAX);
-        if (!buf) { *why = "out of memory"; return -1; }
+        char *buf = why_room(art, why);
+        if (!buf) return -1;
         if (s->site_kind == MF_SK_REPORT && !(v.r1 | v.r2))
             snprintf(buf, WF_WHY_MAX, "no Table E row serves this REPORT site: E-find does "
                      "not render it (denied `" WF_FIND_ID "`, no stop, or no FIND form) and "
@@ -2219,7 +2290,6 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
             snprintf(buf, WF_WHY_MAX, "no Table E row serves this frame: ");
             gate_describe(buf + strlen(buf), WF_WHY_MAX - strlen(buf), &v, &in);
         }
-        *why = buf;
         return -1;
     }
     /* the define records E-find's selection (T-FIND's walk, traced) */
@@ -2229,37 +2299,43 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
     }
     if (r != E_FIND && r != E_GENERIC) return 0;
     /* the composing frame's pieces (§2.5.4): its skeleton; the stream Table
-       S answers for the search (the floor has none) and its stream row; the
-       check row. A fused row renders its triple whole: Table S holds its
-       declared stream to its search, and it has no stream or check row */
+       S answers for the search (the floor has none; a refused pick is asked
+       too, and Table S's row refuses it) and its stream row; the check row.
+       A fused row renders its triple whole: Table S holds its declared
+       stream to its search, and it has no stream or check row */
     const ren_fused_row *fu = r == E_FIND ? fx->fused : NULL;
     fd_form search = r != E_FIND ? WF_NO_SEARCH : fu ? fu->search : fx->pick;
     uint8_t st;
     size_t sr = table_s(search, (wf_frame_row)r, fu, &st);
+    const char *frame = wf_frame_name((wf_frame_row)r);
     w->skel = ren_find(REN_ROWS(ren_skel), (wf_frame_row)r, REN_FRAME, NULL);
     if (sr == ST_ONE && !fu) {
         w->strm = ren_find(REN_ROWS(ren_stream), (wf_frame_row)r, st, NULL);
         w->chk = ren_find(REN_ROWS(ren_check), (wf_frame_row)r, REN_FRAME, NULL);
     }
-    if (sr != ST_ONE || !w->skel || (!fu && (!w->strm || !w->chk))) {
-        char *buf = art->a->alloc(art->a->u, WF_WHY_MAX);
-        if (!buf) { *why = "out of memory"; return -1; }
-        const char *frame = r == E_FIND ? "E-find" : "E-generic";
-        if (sr != ST_ONE)
-            snprintf(buf, WF_WHY_MAX, "%s: Table S answers %s for its search: %s", frame,
-                     sr < ST_N ? wf_srows[sr].row : "no row",
-                     sr == ST_MANY ? "two streams or more, REFUSED until a row with evidence "
-                                     "exists (D186)"
-                                   : "the frame renders no stream the search feeds");
-        else
-            snprintf(buf, WF_WHY_MAX, "%s has no %s renderer row", frame,
-                     !w->skel ? "skeleton" : !w->strm ? "stream" : "check");
-        *why = buf;
+    if (wf_srows[sr].why) {
+        char *buf = why_room(art, why);
+        if (!buf) return -1;
+        snprintf(buf, WF_WHY_MAX, "%s: %s", frame, wf_srows[sr].why);
+        return -1;
+    }
+    const char *none = !w->skel ? "skeleton"
+                     : r == E_FIND && !fu && !fx->srch ? "search"
+                     : !fu && !w->strm ? "stream" : !fu && !w->chk ? "check" : NULL;
+    if (none) {
+        char *buf = why_room(art, why);
+        if (!buf) return -1;
+        snprintf(buf, WF_WHY_MAX, "%s has no %s renderer row", frame, none);
         return -1;
     }
     if (r == E_FIND && wf_find_prepare(art, d, w, fx, !quiet)) {
         *why = "out of memory";
         return -1;
+    }
+    /* the floor's libc bound is its pieces' too (E-find's: wf_find_prepare) */
+    if (r == E_GENERIC) {
+        w->libc = pieces_libc(w);
+        w->includes = w->libc ? MF_INC_STRING_H : 0;
     }
     return 0;
 }
@@ -3165,8 +3241,7 @@ int wf_plan_reads_table(const struct wf_plan *w)
 }
 
 /* The FIND slot's row that decided E-find's stop (kit.h; its renderer row is
- * wf_plan_bren's), NULL where none did (the floor). Since span_pick 1e
- * D-hors is that row too (its FDROUTE record is new; no byte moves). */
+ * wf_plan_bren's), NULL where none did (the floor). D-hors is one of them. */
 const char *wf_plan_brow(const struct wf_plan *w)
 {
     return w->row == &wf_find_arm && (w->fused || w->srch) ? w->brow : NULL;
@@ -3174,7 +3249,9 @@ const char *wf_plan_brow(const struct wf_plan *w)
 
 /* The renderer row that renders E-find's find: the fused row (B-fn) or the
  * search renderer row (B-pair, B-memchr, B-walk, B-hors), NULL where the
- * plan is not E-find's. */
+ * plan is not E-find's. The ids keep their B- names: they are FDROUTE's
+ * `ren=` values, pinned in tests/memfn/renderer_rows.tsv and the trace
+ * format, so the names of the retired Table B stay as ids only. */
 const char *wf_plan_bren(const struct wf_plan *w)
 {
     if (w->row != &wf_find_arm) return NULL;

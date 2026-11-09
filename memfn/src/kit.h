@@ -260,6 +260,7 @@ typedef struct {
        arm-entry counter slot (R-MS6: its index in the art's reach array,
        -1 when the art does not count) */
     const char       *fd_row;
+    const struct ren_key *fd_ren;   /* the E-stmt search renderer row rendering it */
     int               reach_k;
     /* A window site the family rendered (window.c; every art since D172
        S2 commit 6). `wplan` is the plan its own row renders, E-find or the
@@ -543,19 +544,45 @@ typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
  * composer's PF block), E-find, E-generic (the floor). The renderer tables
  * are keyed by it, and T-FIND's asker states its own (fd_find). */
 typedef enum { E_FUNC, E_STMT, E_FIND, E_GENERIC } wf_frame_row;
-/* THE RENDERABLE SET (window.c; plan_frame.md §2.4): 0 where frame `f` does
- * not render T-FIND pick `pick` for site `s` (no search renderer row names
- * it there, or Table S answers ST-none), 1 where it does (ST-one), 2 where
- * Table S answers ST-many: T-FIND's gate holds, and fd_find refuses the
- * decision after it, *row WF_STREAM_REFUSAL (D186: which stream is a choice
- * change, refused until a row with evidence exists). */
+/* THE RENDERABLE SET's answer (window.c wf_renders; plan_frame.md §2.4) for
+ * T-FIND pick `pick` on frame `f`: NOT, no search renderer row names it
+ * there, or Table S answers ST-none (FF_UNSTATED, a refusal's pick, is
+ * never renderable); ONE, Table S answers ST-one; MANY, Table S answers
+ * ST-many: T-FIND's gate holds, and fd_find refuses the decision after it
+ * (D186: which stream is a choice change, refused until a row with evidence
+ * exists). */
+typedef enum { WF_RENDERS_NOT, WF_RENDERS_ONE, WF_RENDERS_MANY } wf_renderable;
 #define wf_renders MF_NS(wf_renders)
-int wf_renders(wf_frame_row f, fd_form pick, const mf_site *s);
+wf_renderable wf_renders(wf_frame_row f, fd_form pick, const mf_site *s);
 #define WF_STREAM_REFUSAL "?stream"
-/* The composer's arm for T-FIND pick `pick` on site `s`: the search renderer
- * table's E-stmt row's (window.c), or NULL where none names it. */
-#define wf_stmt_arm MF_NS(wf_stmt_arm)
-const struct arm *wf_stmt_arm(const mf_site *s, fd_form pick);
+/* Table S's ST-many refusal, its row's text (window.c): the ONE text of the
+ * refusal, on every frame that raises it. */
+#define wf_stream_refusal MF_NS(wf_stream_refusal)
+const char *wf_stream_refusal(void);
+/* A renderer row's KEY, first in every renderer row (window.c's tables): the
+ * T-FRAME row it renders on, the keys it serves (a set: REN_PICK(pick) on a
+ * search or a fused row, WF_ST_* on a stream row, REN_FRAME on a row keyed by
+ * frame alone), its id (FDROUTE's `ren=`) and its predicate over the
+ * selection's context (NULL: the key alone). */
+typedef struct ren_key {
+    wf_frame_row frame;
+    uint32_t     keys;
+    const char  *id;
+    int        (*holds)(const void *x);
+} ren_key;
+/* The search renderer table's E-stmt row rendering T-FIND pick `pick` on
+ * site `s` (window.c), or NULL where none names it; wf_ren_arm is its arm
+ * (the composer's), wf_frame_name its frame's name (FDROUTE's `frame=`). */
+#define wf_stmt_row   MF_NS(wf_stmt_row)
+#define wf_ren_arm    MF_NS(wf_ren_arm)
+#define wf_frame_name MF_NS(wf_frame_name)
+const ren_key *wf_stmt_row(const mf_site *s, fd_form pick);
+const struct arm *wf_ren_arm(const ren_key *row);
+const char *wf_frame_name(wf_frame_row f);
+/* NULL iff the window family's tables hold the invariants no initializer
+ * can state (window.c): else the broken one, which mf_art_begin refuses. */
+#define wf_tables_check MF_NS(wf_tables_check)
+const char *wf_tables_check(void);
 /* THE TRIPLE's candidate STREAMS (window.c; plan_frame.md §2.5.1), a set:
  * how the text moves past a candidate the check rejects. RESTART: the next
  * search starts at c + 1; MASK: a block's lane mask's next set lane, the
@@ -567,7 +594,7 @@ enum { WF_ST_RESTART = 1u << 0, WF_ST_MASK = 1u << 1, WF_ST_SHIFT = 1u << 2 };
 #define WF_NO_SEARCH FF_UNSTATED
 /* A row of THE SUPPORT TABLE (window.c, plan_frame.md §2.5.2): the streams
  * a BUILT search feeds (`search` its name, a T-FIND pick's or `floor`), and
- * the basis of its cells (the owner's ruling's text, or a derived basis).
+ * the basis of its cells (a ruled line's text, or a derived basis).
  * Read by Table S; printed by tests/memfn/arm_fixtures.c --streams. */
 typedef struct {
     const char *search;
@@ -582,9 +609,8 @@ const wf_support_row *wf_support_rows(size_t *n);
  * window D-hors would skip by (the core of the chosen alternative's
  * verify-YES span holding the stop: `hw` 1 with its least and largest
  * offsets, else 0), the handed rates the stop set's mass reads (NULL: the
- * NONE row) and the window family's gate facts for the walk. (Until
- * plan_frame.md 3.0a it also carried THE ASKER FACT; the frame's
- * renderable set, wf_renders, replaced it.) */
+ * NONE row) and the window family's gate facts for the walk. What the asker
+ * renders is its frame's renderable set (wf_renders), not a stop fact. */
 typedef struct {
     const uint8_t  *set;
     int32_t         off;
@@ -601,12 +627,13 @@ typedef struct {
  * UNSTATED need is refused: *row "?need"). `st` non-NULL: the window family
  * asks about window site `s`'s stop `st` (need REQUIRED). The decision is the
  * OFF variant's (§1.5 rule 1: decided once, every layer inherits it), under
- * `def` (the site's kind, body, policy and options). 1 with the deciding
- * row's pick and id, or 0 where no row decides; `*row` is NULL on a 0, but
- * the "?need" refusal, which names a row and returns 0: a caller that must
- * tell the refusal from "no row" reads `*row`, not the return; so is the
- * ST-many refusal, *row WF_STREAM_REFUSAL. `quiet` 1: no record, no reach;
- * 0: a SELECTION (traced, counted). */
+ * `def` (the site's kind, body, policy and options). FD_DECIDED with the
+ * deciding row's pick and id; FD_NO_ROW where no row decides (*row NULL);
+ * FD_REFUSED for a refusal, which names it in *row: "?need" (no pick), or
+ * Table S's ST-many, WF_STREAM_REFUSAL with the refused pick (the asker's
+ * Table S row gives the refusal's text). A refused pick renders nothing.
+ * `quiet` 1: no record, no reach; 0: a SELECTION (traced, counted). */
+enum { FD_REFUSED = -1, FD_NO_ROW = 0, FD_DECIDED = 1 };
 #define fd_find MF_NS(fd_find)
 int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_stop *st,
             wf_frame_row frame, int quiet, fd_form *pick, const char **row);

@@ -33,8 +33,11 @@ question table or named exception, against the kit's sources:
      does not ask the relation. A plant that held the call's text would show
      only that a conforming twin is flagged (sp1dfix, review 2026-11-05 F2).
      Since plan_frame.md 3.0a (S2985, its row (D)): a second renderer list,
-     the one accessor's loop spelled over `ren_search[` in an unlisted
-     function, must turn B red too.
+     a BYTE COPY of the one accessor's loop under a new name, called over the
+     search renderer table through REN_ROWS (the spelling every reader
+     uses), in unlisted functions, must turn B red too (review 2026-11-09 r1
+     s30a F13: the earlier plant indexed `ren_search[i]`, a spelling no
+     reader uses).
 
 Independent control: the map is hand-written (a declaration), the backstop is
 a grep over the raw text and the definition finder a brace count over the
@@ -59,11 +62,15 @@ import tempfile
 # relation has to say `<= b.v` or `< b.v` (S1095's SABOTAGE line does). They
 # match only inside the relation itself (a member) and hold no live hit of
 # their own; each is shown by a PLANT whose text holds no `pick_takes(`.
-# plan_frame.md 3.0a [rev2 F28, rev2.2 R4]: the renderer tables' ONE accessor
-# `ren_find(` and, per renderer table, its name followed by `[` (the `ren_`
-# family); the row-walk idioms `.pick ==` / `].holds(` are not shapes.
+# plan_frame.md 3.0a: the renderer tables' ONE accessor `ren_find(`, the
+# table-walk argument `REN_ROWS(ren_` every renderer read passes, the key walk
+# `keys &` (a renderer row's key test), and, per renderer table, the support
+# table and Table S, its name followed by `[`; the row-walk idioms `.pick ==`
+# / `].holds(` are not shapes (they hit non-member lines; these hit none,
+# review 2026-11-09 r1 s30a F13).
 LIVE = ["kit_walk(", "< best", "tie_takes", "TIE_", "pick_takes(", "ren_find(",
-        "ren_search[", "ren_stream[", "ren_check[", "ren_skel[", "ren_fused["]
+        "REN_ROWS(ren_", "keys &", "ren_search[", "ren_stream[", "ren_check[", "ren_skel[",
+        "ren_fused[", "wf_support[", "wf_srows["]
 BYPASS = ["< b.v", "<= b.v", "< b->v", "<= b->v", ".v <", "->v <"]
 BACKSTOP = LIVE + BYPASS
 # EXACT hit count (K35, like MEMBER_COUNT): lines holding any BACKSTOP shape.
@@ -72,8 +79,10 @@ BACKSTOP = LIVE + BYPASS
 # 48 at plan_frame.md 3.0a commit 1 (the `ren_find(` calls and the renderer
 # tables' definitions, each inside a member); 50 at 3.0a commit 2 (the
 # renderable set's and the composer arm's ren_find( calls; fd_renderer's loop
-# held none of the shapes).
-HITS = 50
+# held none of the shapes); 60 at the r1 s30a review's fixes (F13's shapes
+# `REN_ROWS(ren_`, `keys &`, `wf_support[`, `wf_srows[`; Table S's refusal text,
+# the composer's search row and the tables' self-check).
+HITS = 60
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
@@ -90,8 +99,10 @@ HITS = 50
 # (fd_renderer out, its rows the search table's E-stmt rows; the renderable
 # set wf_renders and the composer's accessor wf_stmt_arm in: the design's
 # expected 59 counted no function for either, plan_frame.md §2.4 "re-derives
-# both numbers from its map").
-MEMBER_COUNT = 61
+# both numbers from its map"); 64 at the r1 s30a review's fixes (wf_stmt_arm
+# now wf_stmt_row; Table S's rows wf_srows, its refusal text
+# wf_stream_refusal, and the excluded self-check wf_tables_check in).
+MEMBER_COUNT = 64
 
 passed = failed = 0
 SHAPE_HITS = {}     # the last census()'s lines per BACKSTOP shape
@@ -332,22 +343,28 @@ def main():
                 planted = [x for x in pst if x.startswith("window.c:")]
                 (ok() if planted else bad("bypass plant `%s` (no pick_takes( text) did not turn the backstop red" % label))
                 print("bypass plant `%s`: %d stray hit(s)" % (label, len(planted)))
-        # C2r (plan_frame.md 3.0a §5 row (D), S2985 [rev2 F28, rev2.2 R4]): a SECOND
-        # renderer list in an unlisted function, the one accessor's loop spelled
-        # over the search renderer table's name (ren_find's own loop is generic:
-        # it names no table, so a copy of it would hold no shape)
-        text = ("\nstatic const void *census_twin(wf_frame_row f, fd_form pick)\n{\n"
-                "    for (size_t i = 0; i < RB_N; i++)\n"
-                "        if (ren_search[i].k.frame == f && (ren_search[i].k.keys & REN_PICK(pick)))\n"
-                "            return &ren_search[i];\n"
-                "    return NULL;\n}\n")
+        # C2r (plan_frame.md 3.0a §5 row (D), S2985): a SECOND renderer list in
+        # unlisted functions, a byte copy of the one accessor's loop under a new
+        # name, called over the search renderer table through REN_ROWS (review
+        # 2026-11-09 r1 s30a F13, its plant b1): the loop's key walk and the
+        # call's table argument must each be a stray
+        text = ("\nstatic const void *census_find2(const void *rows, size_t n, size_t size, "
+                "wf_frame_row f, uint32_t key,\n                                const void *x)\n{\n"
+                "    for (size_t i = 0; i < n; i++) {\n"
+                "        const ren_key *k = (const void *)((const char *)rows + i * size);\n"
+                "        if (k->frame == f && (k->keys & key) && (!k->holds || k->holds(x))) return k;\n"
+                "    }\n    return NULL;\n}\n"
+                "static const void *census_twin_b1(fd_form pick)\n{\n"
+                "    return census_find2(REN_ROWS(ren_search), E_FIND, REN_PICK(pick), NULL);\n}\n")
         with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as t:
             shutil.copytree(src, os.path.join(t, "src"))
             with open(os.path.join(t, "src", "window.c"), "a") as fh:
                 fh.write(text)
             _, pst, _ = census(os.path.join(t, "src"), rows, count=False)
             planted = [x for x in pst if x.startswith("window.c:")]
-            (ok() if planted else bad("renderer-list plant (S2985) did not turn the backstop red"))
+            (ok() if len(planted) == 2 else
+             bad("renderer-list plant (S2985) turned %d line(s) stray, not its 2 (the copied key "
+                 "walk and the REN_ROWS call)" % len(planted)))
             print("renderer-list plant (S2985): %d stray hit(s)" % len(planted))
         # C3: a decider reduced to a bare prototype must turn A red.
         fn_row = next(r for r in rows if r["kind"] == "fn")

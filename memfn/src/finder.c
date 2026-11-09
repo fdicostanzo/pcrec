@@ -36,7 +36,7 @@
  * E-find row; window_site.md §4), ids reserved; PAIR, the two-stream find of
  * a two-byte stop, holds only where the frame renders it (the asker's
  * frame's renderable set, window.c wf_renders: E-find's; plan_frame.md
- * 3.0a, the asker fact's successor); F0, F1,
+ * §2.4); F0, F1,
  * F2 are designed and
  * BUILT at B5, after lockdown, as formal row additions). Slot PRES: P0 P2 P3
  * P4 P9 (P1 at B5). Each row's `basis` is mandatory; the self-check (`mf_finder_rows`'
@@ -507,7 +507,7 @@ static int fd_holds(size_t i, const void *x)
        §2.4; window.c wf_renders: a search renderer row and a stream Table S
        admits), so no row decides a find its asker cannot write. A PRES row
        picks no form: the gate is FIND's alone */
-    if (r->slot == FD_FIND && !wf_renders(q->frame, fd_pick_of(r, q), q->site)) return 0;
+    if (r->slot == FD_FIND && wf_renders(q->frame, fd_pick_of(r, q), q->site) == WF_RENDERS_NOT) return 0;
     /* "where it is BUILT" (§1.3): the LINER form at a SIMD layer and every
        W64 pick */
     if (fd_pick_of(r, q) == FF_W64 && !fd_w64_built()) return 0;
@@ -601,9 +601,8 @@ static int fd_scope(const mf_site *s)
 /* ---- T-FIND, THE ONE WALK (span_pick.md rev 5.2 unit 1e) -------------------- *
  *
  * Slot FIND's decision, ONE first-match walk (D-hors, then today's order: D1,
- * D1c, D1w, PAIR, R7w) for both of its askers; until 1e two entries walked
- * it (the composer's fd_route, the window family's fd_find, after Table D's
- * own walk), and their difference is now a stated fact of the walk's input:
+ * D1c, D1w, PAIR, R7w) for both of its askers, whose difference is a stated
+ * fact of the walk's input:
  *
  *   the composer (`st` NULL, frame E-stmt; compose.c select_arm): a FIND
  *     site in slot FIND's scope, its stop span 0 of its own one term
@@ -622,9 +621,10 @@ static int fd_scope(const mf_site *s)
  *     PREFIX rows, which read the site's actual policy).
  *
  * Each asker states its FRAME; the rows hold only for a pick the frame
- * renders (fd_holds; until plan_frame.md 3.0a, the asker fact).
- * Where Table S answers ST-many for the decided pick on the frame, the
- * decision is REFUSED after the gate: *row WF_STREAM_REFUSAL, no pick.
+ * renders (fd_holds). Where Table S answers ST-many for the decided pick on
+ * the frame, the decision is REFUSED after the gate (FD_REFUSED, *row
+ * WF_STREAM_REFUSAL): the asker's frame raises the refusal from its Table S
+ * row, where its frame is the one that renders the site.
  *
  * The decision is the OFF variant's (§1.5 rule 1: a proven fact is decided
  * once, and every layer inherits it), over the consumer kind pcrec STATES.
@@ -652,7 +652,7 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
 {
     *pick = FF_UNSTATED;
     *row = NULL;
-    if (!st && !(fd_scope(s) & (1 << FD_FIND))) return 0;
+    if (!st && !(fd_scope(s) & (1 << FD_FIND))) return FD_NO_ROW;
     fd_x q;
     memset(&q, 0, sizeof q);
     q.art = art;
@@ -676,7 +676,7 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
            no pick is the composer's refusal. */
         if (q.span && q.span->need == MF_NEED_UNSTATED) {
             *row = "?need";
-            return 0;
+            return FD_REFUSED;
         }
         q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
     }
@@ -684,14 +684,14 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
     gate_tctx tc = { art, "fd", q.handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
     fd_decide(&q, FD_FIND, &in, &tc, &d);
-    if (d.terminal >= FD_NROWS) return 0;
-    if (wf_renders(frame, d.pick, s) == 2) {
-        *row = WF_STREAM_REFUSAL;
-        return 0;
-    }
+    if (d.terminal >= FD_NROWS) return FD_NO_ROW;
     *pick = d.pick;
+    if (wf_renders(frame, d.pick, s) == WF_RENDERS_MANY) {
+        *row = WF_STREAM_REFUSAL;
+        return FD_REFUSED;
+    }
     *row = fd_rows[d.terminal].id;
-    return 1;
+    return FD_DECIDED;
 }
 
 /* ---- THE ROUTED PRES DECISION (§1.4; R17-b' B3b) ------------------------------ *

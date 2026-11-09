@@ -65,7 +65,7 @@ window.c	translate:grouping	part	if (d->pterm[pj] != d->pterm[pi]) break;	EXC:tr
 window.c	wf_find_decide	fn	-	T-FRAME	- (unit 1e: asks T-FIND once; 3.0a: then the fused row, else the search renderer row)
 window.c	wf_plan_site	fn	-	T-FRAME,T-STREAM	- (plan_frame.md 3.0a: THE plan function, wf_prepare's selection moved in: Table E, then the pieces' rows and Table S)
 window.c	ren_find	fn	-	T-FRAME	- (3.0a: the renderer tables' ONE accessor)
-window.c	ren_search	data	-	T-FRAME	- (3.0a: THE search renderer table, Table B's E-find rows and the composer's E-stmt rows, compose.c fd_renderer's until 3.0a commit 2)
+window.c	ren_search	data	-	T-FRAME	- (3.0a: THE search renderer table, its E-find rows and the composer's E-stmt rows)
 window.c	ren_stream	data	-	T-FRAME	- (3.0a: THE stream renderer table)
 window.c	ren_check	data	-	T-FRAME	- (3.0a: the check renderer rows)
 window.c	ren_skel	data	-	T-FRAME	- (3.0a: the skeleton rows)
@@ -73,7 +73,10 @@ window.c	ren_fused	data	-	EXC:the fused rows (arms[] and fn_rows BODY render a w
 window.c	wf_support	data	-	T-STREAM	- (3.0a: THE support table, which streams each built search feeds)
 window.c	table_s	fn	-	T-STREAM	- (3.0a: TABLE S, the stream pick over the support table and the frame's streams)
 window.c	wf_renders	fn	-	T-FRAME,T-STREAM	- (3.0a commit 2: THE RENDERABLE SET, T-FIND's gate in fd_holds, slot FIND; the asker fact's successor)
-window.c	wf_stmt_arm	fn	-	T-FRAME	- (3.0a commit 2: the composer's arm, the search renderer table's E-stmt row; compose.c fd_renderer's successor)
+window.c	wf_stmt_row	fn	-	T-FRAME	- (3.0a: the composer's search renderer row, the search renderer table's E-stmt row; its arm renders the pick)
+window.c	wf_srows	data	-	T-STREAM	- (3.0a: TABLE S's rows, each with its refusal text)
+window.c	wf_stream_refusal	fn	-	T-STREAM	- (3.0a: Table S's ST-many row's text, the composer's refusal)
+window.c	wf_tables_check	excluded	-	the renderer tables' self-check (mf_art_begin refuses a broken table; it decides nothing)	-
 presence.c	kit_pres_picks:set-pick	part	kit_pick_takes(&bs,	T-PRES	- (asks kit_pick_takes since 1d)
 presence.c	kit_pres_picks:run-window	part	kit_pick_takes(&bw,	TIE	- (reads T_WINDOW since 1b; asks kit_pick_takes since 1d)
 presence.c	kit_pres_picks:landmark	part	the FIFTH: the landmark admission	EXC:U6, the kit's landmark shadow	pcrec states the landmark as a candidate

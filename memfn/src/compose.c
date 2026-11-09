@@ -252,7 +252,8 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * when no row serves; `*why` is then the last declined row's verdict (the
  * generic row's, the table's total fallback; on a ROUTED pick, its arm's
  * own), whose fields the refusal names; `*row` the routed finder row, or
- * NULL where the site walks. `gphases` is what the gate reads in this walk: MF_PH_DEFINE for
+ * NULL where the site walks, and `*ren` the search renderer row whose arm
+ * renders its pick (NULL where none does). `gphases` is what the gate reads in this walk: MF_PH_DEFINE for
  * mf_define; MF_PH_DEFINE | MF_PH_USE for a one-call entry (mf_emit), which
  * holds the use hooks at selection time, so a row whose use-time fields the
  * hooks fail to serve is DECLINED here instead of chosen and then refused by
@@ -262,7 +263,8 @@ static const char *site_check(const mf_site *s);
 
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
-                             gate_verdict *why, int quiet, const char **row)
+                             gate_verdict *why, int quiet, const char **row,
+                             const ren_key **ren)
 {
     gate_in in = { s, def, NULL, NULL, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
@@ -274,20 +276,22 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
        the deciding row's name). Everything else walks. */
     const char *rid = NULL;
     *row = NULL;
+    *ren = NULL;
     /* R-26.3: a REPORT site's candidate is the answer, and since D172 S3 the
        window family is its one renderer (window.c's E-find row: its statement
        is a window site's). An old-field statement of one (terms in `pred`) is
        refused here, before any walk: no row was written for one */
     if (s->site_kind == MF_SK_REPORT) return NULL;
     fd_form pick;
-    /* the return is 1 iff a row decides; `rid` alone is the signal here (kit.h):
-       the "?need" refusal names a row (rid set) with no pick, and renders nothing */
-    fd_find(art, s, def, NULL, E_STMT, quiet, &pick, &rid);
-    /* the arm the search renderer table's E-stmt row names (window.c; until
-       plan_frame.md 3.0a this file's fd_renderers): none for a pick the
-       frame does not render, or for a refusal (`?need`, `?stream`) */
-    const arm *ra = rid ? wf_stmt_arm(s, pick) : NULL;
+    /* `rid` is set where a row decides or a refusal is named (kit.h): either
+       way no walk follows; only a decided pick is looked up and rendered */
+    int fa = fd_find(art, s, def, NULL, E_STMT, quiet, &pick, &rid);
+    /* the arm the search renderer table's E-stmt row names (window.c): none
+       for a pick the frame does not render */
+    const ren_key *rk = fa == FD_DECIDED ? wf_stmt_row(s, pick) : NULL;
+    const arm *ra = rk ? wf_ren_arm(rk) : NULL;
     *row = rid;
+    *ren = rk;
     if (rid) {
         for (size_t i = 0; ra && i < NARMS; i++)
             if (arms[i] == ra)
@@ -308,7 +312,8 @@ int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
 {
     gate_verdict why = { 0, 0 };
     const char *rid;
-    return !site_check(s) && select_arm(art, s, def, gphases, &why, 1, &rid) != NULL;
+    const ren_key *ren;
+    return !site_check(s) && select_arm(art, s, def, gphases, &why, 1, &rid, &ren) != NULL;
 }
 
 /* ---- the form CLASS (r17b_prime.md §4.5; MF_SITE_ABI 12, 13, 18) ---------
@@ -904,7 +909,12 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
                            run member (C-member), translate's ranking, D-hors:
                            the readers of `d->rate`, found by grep) */
     gate_trace_art(art);
-    const char *why = ms ? measures_check(ms) : NULL;
+    const char *why = wf_tables_check();
+    if (why) {
+        kit_fail(art, "mf_art_begin: the kit's window tables are refused: %s", why);
+        return art;
+    }
+    why = ms ? measures_check(ms) : NULL;
     if (why) kit_fail(art, "mf_art_begin: the measurement set `%s` is refused: %s",
                       ms->id ? ms->id : "(no id)", why);
     return art;
@@ -1006,7 +1016,8 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
     }
     gate_verdict declined = { 0, 0 };
     const char *rid;
-    const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid);
+    const ren_key *ren;
+    const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid, &ren);
     if (!row || kit_class(row, s, out)) return -1;
     if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;
     if (s->npspan && pres_layout_check(art, s, out)) return -1;
@@ -1056,8 +1067,9 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                         (unsigned long long)art->denies);
     gate_verdict declined = { 0, 0 };
     const char *rid = NULL;
+    const ren_key *ren = NULL;
     const arm *row = wplan ? wf_plan_row(wplan)
-                           : select_arm(art, s, def, gphases, &declined, 0, &rid);
+                           : select_arm(art, s, def, gphases, &declined, 0, &rid, &ren);
     if (!row) {
         /* ONE refusal (ruling (d)), walked or routed: it names the routed
            finder row where one decided the site, and what the gate declined
@@ -1070,12 +1082,13 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
                             "`pred`'s terms: a REPORT site is a window site (its spans; "
                             "window.c's E-find row renders it, D172 S3), and NONE is not "
                             "a legal reply (R-26.3)");
+        if (rid && !strcmp(rid, WF_STREAM_REFUSAL))
+            return kit_fail(art, "mf_define: no row serves this site: E-stmt: %s",
+                            wf_stream_refusal());
         gate_in in = { s, def, NULL, NULL, NULL };
         char f[200], r[64] = "";
         gate_describe(f, sizeof f, &declined, &in);
-        if (rid && !strcmp(rid, WF_STREAM_REFUSAL))
-            snprintf(r, sizeof r, " (Table S's ST-many refusal of the finder's pick)");
-        else if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
+        if (rid) snprintf(r, sizeof r, " (the finder row %s's routed pick)", rid);
         return kit_fail(art, "mf_define: no row serves this site%s: %s", r,
                         f[0] ? f : rid ? "(its arm is denied or does not apply)"
                                        : "(no row applies; the generic row must)");
@@ -1100,6 +1113,7 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     r->site = wplan ? *ws : *s;
     r->arm = row;
     r->fd_row = rid;
+    r->fd_ren = ren;
     r->reach_k = -1;
     r->wplan = wplan;
     r->wpath = wpath;
@@ -1122,14 +1136,14 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
     /* the finder row deciding the site's find: the routed row, or (D172 S3)
        the FIND slot's row deciding E-find's stop (fd_find), whose pick
        E-find renders; `ren` is the renderer row that did (the search
-       renderer table's E-stmt arm, or E-find's search or fused row), and
-       `frame` the T-FRAME row it rendered on (plan_frame.md 3.0a): the key
-       the text is keyed by */
+       renderer table's E-stmt row, or E-find's search or fused row), and
+       `frame` the T-FRAME row it rendered on, each read off that row: the
+       key the text is keyed by */
     const char *frow = rid ? rid : wplan ? wf_plan_brow(wplan) : NULL;
     if (frow)
         fprintf(stderr, "MFTRACE FDROUTE art=%u site=%u row=%s arm=%s ren=%s frame=%s\n",
-                art->trace_id, h, frow, row->ct->row, rid ? row->ct->row : wf_plan_bren(wplan),
-                rid ? "E-stmt" : wf_plan_frame(wplan));
+                art->trace_id, h, frow, row->ct->row, ren ? ren->id : wf_plan_bren(wplan),
+                ren ? wf_frame_name(ren->frame) : wf_plan_frame(wplan));
     /* D172 §2.7: the family's PATH ID per site (the decision's path, the row
        rendering it, the finder row deciding its find where one does) */
     if (wpath)
