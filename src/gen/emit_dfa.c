@@ -15949,9 +15949,11 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                             pcrec_entry_enc_static(cx));
     }
     if (need_string_h)
-        pcrec_sb_puts(c, "#include <string.h>\n");
-    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN))
-        pcrec_sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
+        pcrec_emit_part_header(cx, c, "#include <string.h>\n");
+    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN)) {
+        pcrec_emit_part_header(cx, c, "#include <stdio.h>\n");
+        pcrec_emit_part_header(cx, c, "#include <string.h>\n");
+    }
     /* [MEMFN] R4c the kit's text needs no header this did not declare (§14.8;
      * asserted at the attempt's end, `pcrec_memfn_art_end`). */
     cx->job->string_h = need_string_h || pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN);

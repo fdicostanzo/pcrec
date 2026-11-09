@@ -233,12 +233,37 @@ const char *pcrec_memfn_target_headers(Ctx *cx)
     return text;
 }
 
+/* Whether the compile's target opens a region (a target with something to
+ * enable); a compound's part reads it to know its shell's code is inside one. */
+bool pcrec_memfn_target_has_region(Ctx *cx)
+{
+    return *mf_target_c_of(pcrec_memfn_target(cx))->region_open != 0;
+}
+
+/* Writes one `#include` line of the artifact's prologue. A spliced
+ * compound part whose shell opens a region writes it behind the held mark
+ * (`PCREC_HELD_HEADER_MARK`, in its own bracket): every length decision
+ * reads the line, as on the SIMD-off compile, and none reads the mark; the
+ * shell's finishing pass takes both out, the header being placed at file
+ * scope ahead of the region (`pcrec_memfn_target_headers`, from the part's
+ * facts), so the region holds no `#include` (match_api.md §6.3.10¶15). */
+void pcrec_emit_part_header(Ctx *cx, StrBuf *c, const char *line)
+{
+    if (pcrec_is_part(cx) && cx->emit_in->unrendered &&
+        pcrec_memfn_target_has_region(cx)) {
+        pcrec_sb_simd_open(c);
+        pcrec_sb_puts(c, PCREC_HELD_HEADER_MARK);
+        pcrec_sb_simd_close(c);
+    }
+    pcrec_sb_puts(c, line);
+}
+
 /* The target's region open, before the part's first function; "" (no region)
  * for a target with nothing to enable. */
 void pcrec_emit_target_open(Ctx *cx, StrBuf *c)
 {
+    if (pcrec_is_part(cx) || !pcrec_memfn_target_has_region(cx)) return;
     const char *open = mf_target_c_of(pcrec_memfn_target(cx))->region_open;
-    if (pcrec_is_part(cx) || !*open) return;
     cx->job->region_open = cx->job->region_placed = true;
     put_target_text(cx, c, open);
 }

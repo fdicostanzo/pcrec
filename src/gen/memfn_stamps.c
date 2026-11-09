@@ -323,8 +323,11 @@ static void ks_stamps_render(Ctx *cx)
  * names, read now, after the last emit. The mark sat in its own bracket, so
  * the text takes over its guarded record (both counts and the caps
  * breakdown move by the difference) and no length decision ever read
- * either: a header owed only for a target is beyond the SIMD-off compile. A
- * part carries no mark; any other artifact exactly one. */
+ * either: a header owed only for a target is beyond the SIMD-off compile.
+ * A part carries no mark; any other artifact exactly one. Each spliced
+ * part's held header line (`pcrec_emit_part_header`) goes with its held
+ * mark, whose bracket record goes with it: the header it named is among the
+ * text placed here, so the region keeps no `#include`. */
 static void target_headers_render(Ctx *cx)
 {
     StrBuf *c = &cx->job->csb;
@@ -334,24 +337,37 @@ static void target_headers_render(Ctx *cx)
                        "header marks (pcrec_emit_target_headers_mark)", nm);
     if (!nm) return;
     const char *text = pcrec_memfn_target_headers(cx);
+    const char *held = PCREC_HELD_HEADER_MARK;
+    size_t nheld = mark_count(c, held);
     PcrecEmitSize was = pcrec_emit_size_measure(PCREC_TARGET_HEADERS_MARK,
                                                 strlen(PCREC_TARGET_HEADERS_MARK), NULL);
     PcrecEmitSize now = pcrec_emit_size_measure(text, strlen(text), NULL);
+    PcrecEmitSize hm = pcrec_emit_size_measure(held, strlen(held), NULL);
     /* rebuilt in a fresh buffer, never truncated and re-appended in place:
      * the mark sits near the top, and a truncated csb under a ladder trial's
      * scratch bound would read a length below its own guarded record */
     size_t at = (size_t)(strstr(c->p, PCREC_TARGET_HEADERS_MARK) - c->p);
     StrBuf nb = { .cx = cx };
-    pcrec_sb_printf(&nb, "%.*s%s%s", (int)at, c->p, text,
-                    c->p + at + strlen(PCREC_TARGET_HEADERS_MARK));
+    pcrec_sb_printf(&nb, "%.*s%s", (int)at, c->p, text);
+    const char *rest = c->p + at + strlen(PCREC_TARGET_HEADERS_MARK);
+    for (const char *h; (h = strstr(rest, held)); ) {
+        const char *eol = strchr(h + strlen(held), '\n');
+        if (!eol)
+            pcrec_ctx_fail(cx, 0, "internal error: a held header mark ends "
+                           "the artifact (pcrec_emit_part_header)");
+        pcrec_sb_printf(&nb, "%.*s", (int)(h - rest), rest);
+        rest = eol + 1;
+    }
+    pcrec_sb_puts(&nb, rest);
     free(c->p);
     c->p = nb.p;
     c->len = nb.len;
     c->cap = nb.cap;
-    c->simd_guarded += strlen(text) - strlen(PCREC_TARGET_HEADERS_MARK);
-    c->simd_size.total += now.total - was.total;
-    c->simd_size.prose += now.prose - was.prose;
-    c->simd_size.tables += now.tables - was.tables;
+    c->simd_guarded += strlen(text) - strlen(PCREC_TARGET_HEADERS_MARK)
+                     - nheld * strlen(held);
+    c->simd_size.total += now.total - was.total - nheld * hm.total;
+    c->simd_size.prose += now.prose - was.prose - nheld * hm.prose;
+    c->simd_size.tables += now.tables - was.tables - nheld * hm.tables;
 }
 
 /* The finishing pass (see the header). Reads `cx->job->csb` and `hsb`, the
@@ -392,10 +408,15 @@ void pcrec_memfn_stamps_render(Ctx *cx)
      * per digit and leak the guarded count into every cap, knee and quoted
      * figure. Measured, not argued: the first build's witness moved
      * `--warn-emit-bytes`' quoted sizes by 6 bytes ("1620166" vs "0"). */
+    /* a spliced part's held marks (`pcrec_emit_part_header`) are bracketed
+     * only so no decision reads them; its shell takes them out, so its count
+     * leaves them out (none remain in a shell's text by now) */
+    size_t held = mark_count(&job->csb, PCREC_HELD_HEADER_MARK) *
+                  strlen(PCREC_HELD_HEADER_MARK);
     if (!rc)
         pcrec_sb_stampf(&lines, ss.upper, "SIMD_GUARDED_BYTES", "0x%016llxULL",
                         (unsigned long long)(job->csb.simd_guarded +
-                                             job->hsb.simd_guarded));
+                                             job->hsb.simd_guarded - held));
     bool ok = !rc && splice_mark(&job->csb, MEMFN_MARK, lines.p ? lines.p : "");
     pcrec_sb_free(&lines);
     if (rc)
