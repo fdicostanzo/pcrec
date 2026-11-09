@@ -24,7 +24,7 @@
  * One row per restorable arm. `empty` is span_arms unit E1's (T2 row 1, a
  * repeat of a width-0 body: the old min-0 gap and best-only copy) and E2's T3
  * row E-1 (an `A_EMPTY` node: the old CUT). `zero` is unit E2's (T3 rows E-4
- * and E-5, a node that consumes nothing but can fail: an assertion, `\G`,
+ * and E-5, a node other than the empty string that consumes nothing: an assertion, `\G`,
  * `\K`, a check callout, a lookaround of either lowering, back to the old
  * CUT). A later unit adds its own row (R1 `rep`, L1 `look`). */
 WALK_ARM(EMPTY, "empty", (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))

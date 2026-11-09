@@ -2408,10 +2408,10 @@ under `-fno-end-window` (`tuning.md` §2.26). A non-`"none"` artifact does
 constant work on an arbitrarily long subject; `"none"` does not mean "not
 end-anchored".
 
-<a id="s6-3-7-p4"></a>[6.3.7¶4] **`<PREFIX>_REQ_BYTE`** — a byte every match must contain.
+<a id="s6-3-7-p4"></a>[6.3.7¶4] **`<PREFIX>_REQ_BYTE`** — a byte every successful attempt must consume. An attempt is the search's try at one start position (§6.3.7¶6); under `\K` the byte can lie before the reported start, as the run's can.
 
 ```c
-#define RX_REQ_BYTE "62"       /* every match contains '>' */
+#define RX_REQ_BYTE "62"       /* every successful attempt consumes '>' */
 #define RX_REQ_BYTE "none"     /* no byte is necessary on every path */
 ```
 

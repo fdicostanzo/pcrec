@@ -4,10 +4,11 @@
  *
  * The arms:
  *   unit  the empty string: one group, width 0 (CAT's identity; the walk
- *         seeds its accumulator with it, never an `A_EMPTY` node, which is
- *         a CUT until stage 2a, §3.4)
- *   zero  a node that consumes nothing but can FAIL (an assertion, `\K`,
- *         a lookaround read as no body: span_arms §4.1 E-4/E-5): one group,
+ *         seeds its accumulator with it, and T3's row E-1 passes it for an
+ *         `A_EMPTY` node)
+ *   zero  a node other than the empty string that consumes nothing (an
+ *         assertion, `\G`, `\K`, a check callout, a lookaround read as no
+ *         body: span_arms §4.1 E-4/E-5): one group,
  *         width 0, NOT exact (its strings are a subset of the empty
  *         string's), so a group built through it is not exact either
  *   pos   one position: one group, width 1, exact

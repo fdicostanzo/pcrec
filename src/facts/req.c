@@ -640,15 +640,13 @@ static PCREC_OWN_FRAME void rb_assert_into(RbVal *acc)
 
 /* `acc` := a node that consumes nothing, followed by `acc`: the width-0 unit
  * for the run (no byte, `all`, width 0), so the bytes on its two sides join.
- * Its description is the unit where the node always matches (`A_EMPTY`) and
- * a width-0 group that is not exact where it can fail (desc.c `zero`). */
+ * `d` is the node's description, T3's row's: the empty string's (exact) or
+ * desc.c `zero` (a width-0 group that is not exact). */
 static PCREC_OWN_FRAME void rb_zero_unit_into(const RbWalk *w, RbVal *acc,
-                                              const Ast *a)
+                                              PdDesc d)
 {
     acc->runs = rr_cat(rr_unit(), acc->runs);
-    acc->desc = pcrec_pd_cat(w->cx, &w->pd,
-                             a->k == A_EMPTY ? pcrec_pd_unit() : pcrec_pd_zero(),
-                             acc->desc);
+    acc->desc = pcrec_pd_cat(w->cx, &w->pd, d, acc->desc);
 }
 
 /* `acc` := a repeat of the WIDTH-0 body `b` followed by `acc` (T2 row 1): at
@@ -736,7 +734,7 @@ static void rb_walk(RbWalk *w, const Ast *a, RbVal *out)
 /* T3, THE ZERO-WIDTH ROWS (docs/design/span_arms.md §6, §4.1), first match:
  * what a node whose kind row's TEXT is ZERO contributes. A node that
  * consumes nothing leaves the bytes on its two sides ADJACENT in the
- * subject, whether it is the empty string, an assertion that can fail or a
+ * subject, whether it is the empty string, an assertion, `\K` or a
  * lookaround whose body is not read, so it is CAT's unit (E-1, E-4, E-5);
  * joining ACROSS it reads nothing of a lookaround's body, which is what the
  * header forbids. E-5 (a positive lookaround, `A_LOOK` or `A_CTX` NEXT/PREV)
@@ -744,7 +742,11 @@ static void rb_walk(RbWalk *w, const Ast *a, RbVal *out)
  * arm (span arms E2 took it from alt_normal_form stage 2a), E-4 and E-5
  * under `zero`. A row whose `arm` the walk parameters restore is passed
  * over; the last row (the old cut) matches every node. */
-typedef enum { RB_ZERO_UNIT, RB_ZERO_CUT } RbZeroRow;
+typedef enum {
+    RB_ZERO_EMPTY,   /* the unit, described as the empty string (exact) */
+    RB_ZERO_UNIT,    /* the unit, described by desc.c `zero` (not exact) */
+    RB_ZERO_CUT      /* the old form: a cut */
+} RbZeroRow;
 
 /* `A_EMPTY`: the empty string (E-1). */
 static bool rb_zero_empty(const Ast *a)
@@ -773,7 +775,7 @@ static const struct {
     unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
 } rb_zero_rows[] = {
     /* E-1 (span_arms E2, from alt_normal_form stage 2a): `abcd()efgh` */
-    { rb_zero_empty,    RB_ZERO_UNIT, PCREC_WALK_ARM(EMPTY) },
+    { rb_zero_empty,    RB_ZERO_EMPTY, PCREC_WALK_ARM(EMPTY) },
     { rb_zero_empty,    RB_ZERO_CUT,  0 },   /* E-1 restored */
     /* E-5 (span_arms E2; L1 adds the item): `xyz(?<=yz)abc` */
     { rb_zero_look_pos, RB_ZERO_UNIT, PCREC_WALK_ARM(ZERO) },
@@ -790,8 +792,9 @@ static void rb_zero_into(RbWalk *w, RbVal *acc, const Ast *a)
     while ((rb_zero_rows[i].arm & w->restored) || !rb_zero_rows[i].when(a))
         i++;
     switch (rb_zero_rows[i].row) {
-    case RB_ZERO_UNIT: rb_zero_unit_into(w, acc, a); return;
-    case RB_ZERO_CUT:  rb_assert_into(acc);       return;
+    case RB_ZERO_EMPTY: rb_zero_unit_into(w, acc, pcrec_pd_unit()); return;
+    case RB_ZERO_UNIT:  rb_zero_unit_into(w, acc, pcrec_pd_zero()); return;
+    case RB_ZERO_CUT:   rb_assert_into(acc);                        return;
     }
 }
 

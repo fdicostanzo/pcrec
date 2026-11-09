@@ -694,8 +694,8 @@ fi
 # span_arms E2: the `zero` arm runs T3's rows E-4 and E-5 in today's form
 # (the CUT), so a witness holding one node of each (`\B`, E-4; a positive
 # lookbehind, E-5) lists today's run `xyz` again under it, where the default
-# joins all seven bytes across both. A row that ignored the arm leaves `abcd`
-# (E-4's, S1928) or `xyzab` (E-5's) instead. Expectations by hand from T3.
+# joins all seven bytes across both. A row that ignored the arm lists all seven
+# bytes `78797a61626364` (E-4's, S1928) or `78797a6162` (E-5's) instead. Expectations by hand from T3.
 ZP='xyz(?<=yz)ab\Bcd'
 if [ -x "$HBIN" ] && [ -z "$abad" ]; then
     if ! "$TIMEOUT_BIN" 120 "$PCREC" --features all --emit-facts --pattern "$ZP" > "$WORKDIR/zd.l" 2> "$WORKDIR/zd.err" ||
