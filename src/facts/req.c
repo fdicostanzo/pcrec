@@ -87,7 +87,8 @@
  * byte run:
  *   - ONE RANKING: a run's worth is its INFORMATION, `Σ popcount(K)` over
  *     its positions (8 for a byte, 7 for a pair), so among exact runs the
- *     order and the tie are exactly length's (`rn_better`);
+ *     order is exactly length's (`rn_choice_rows`, whose later rows break an
+ *     equal-information tie by the byte-rate, never by argument order);
  *   - ONE CONSTRUCTOR, `rn_put`, refuses a non-canonical position (`T & ~K`
  *     must be 0: T is the LOWER member, which the pair scan and the masked
  *     compare both read) as an internal error rather than normalizing it;
@@ -109,8 +110,9 @@
  * through `pcrec_sat_add`/`pcrec_sat_mul`): a head sits at 0 in every match,
  * a tail at `maxw - n` or earlier, a right factor's run `maxw(left)` further
  * in, and a repeat's run in its FIRST iteration. The offset is an
- * ANNOTATION: `rn_better` ranks by information alone, so no run is chosen
- * for being bounded. It is NOT `pcrec_cwmax`, which counts characters: on
+ * ANNOTATION: `rn_choice_rows` ranks by information and then rarity, and
+ * reads the offset only to break a tie those leave, so no run is chosen for
+ * being bounded. It is NOT `pcrec_cwmax`, which counts characters: on
  * the lowered tree a `(?i)s` under utf8 is up to two bytes (U+017F), and a
  * character count there under-states the offset, which DELETES matches.
  *
@@ -129,11 +131,13 @@
  * why the alarm is worth more than the default — a new kind that really does
  * carry a necessary byte would silently never contribute one.
  *
- * THE WALK IS A CORE FACT AND THE PICK IS NOT ([PATFACTS] step 3.0,
+ * THE SET IS A CORE FACT AND THE PICK IS NOT ([PATFACTS] step 3.0,
  * docs/design/patfacts/design.md §4.1): this file answers WHAT every match
  * must contain — the whole SET (with its threaded rightmost member, the
- * tiebreak the pick falls back on) and the longest guaranteed RUN — and reads
- * no prior. WHICH member the emitted `memchr` tests, and which 8-byte window
+ * tiebreak the pick falls back on), reading no prior, and the most
+ * informative guaranteed RUN, a DERIVED fact since its equal-information
+ * ties are broken by the byte-rate the walk is handed (`rn_choice_rows`,
+ * review 2026-11-09 r5). WHICH member the emitted `memchr` tests, and which 8-byte window
  * of a longer run is compared, are SPEED choices made from these answers by
  * the rate readers beside the rate primitives (`src/core/findings.c`,
  * [FINDINGS] B1), composed into the derived facts at the foot of this file.
@@ -234,14 +238,16 @@ static RbSet rb_intersect(RbSet l, RbSet r)
 /* ---- THE RUN ACCUMULATOR -------------------------------------------------
  *
  * Seven operations, of which only the two append helpers have a precondition
- * and both state it. Nothing here reads the prior: the run analysis produces
- * a run, and WHICH member of it the scan tests is decided once, by the
- * derived `req_run` fact below, through `src/core/findings.c`. */
+ * and both state it. Only the run choice reads the prior, through the rate
+ * primitives, to break an equal-information tie (`rn_choice_rows`); WHICH
+ * member of the run the scan tests is decided once, by the derived `req_run`
+ * fact below, through `src/core/findings.c`. */
 
 /* What every run operation needs besides its operands: the compile (for the
  * position constructor's refusal), and from the walk parameters
  * `pcrec_req_walk`'s caller hands in (`ReqWalkParams`, span_arms §3.7) the
- * largest member set one position may have and the restored arms. The rest
+ * largest member set one position may have, the restored arms and the
+ * byte-rate the run choice breaks ties by (`rn_choice_rows`). The rest
  * is `rb_walk`'s
  * own: its per-level result storage, `slot[d]` two `RbVal`s for the children
  * of the walk at recursion depth `d`, so a value never sits in a C frame
@@ -251,6 +257,7 @@ typedef struct {
     Ctx *cx;
     int pos_set;
     unsigned restored;
+    const uint32_t *rate;   /* the byte-rate, for the run choice's tie row */
     int depth, nslot;
     RbVal **slot;
     /* [RUN-POS-SET] stage 2p: the description's bounds and byte alphabet,
@@ -348,13 +355,82 @@ static RbRun rn_pre(RbRun a, RbRun b)
     return o;
 }
 
-/* The more INFORMATIVE of two runs (`rn_info`), `a` on a tie — so a
- * left-to-right walk's earlier candidate survives and the answer does not
- * depend on traversal order. An exact run's information is 8 x its length,
- * so among exact runs this is "the longer", with the same tie. */
-static RbRun rn_better(RbRun a, RbRun b)
+/* THE RUN CHOICE: which of two candidate runs a subtree keeps as its best.
+ * A declared first-match table of comparison rows (`rn_choice_rows`); each
+ * row answers > 0 for `a`, < 0 for `b`, or 0 to pass the tie to the next
+ * row. Every row reads only the two runs and is antisymmetric, so the choice
+ * depends on neither the argument order nor the pattern's spelling: a repeat
+ * and its unrolled literal keep the same run (review 2026-11-09 r5 EMIT-1,
+ * EMIT-2; span_arms §12d). */
+typedef int (*RnChoiceRow)(const RbWalk *w, const RbRun *a, const RbRun *b);
+
+/* Row 1, the ranking: the more INFORMATIVE run (`rn_info`). An exact run's
+ * information is 8 x its length, so among exact runs this is "the longer". */
+static int rn_more_info(const RbWalk *w, const RbRun *a, const RbRun *b)
 {
-    return rn_info(&b) > rn_info(&a) ? b : a;
+    (void)w;
+    return rn_info(a) - rn_info(b);
+}
+
+/* What the emitted scan of run `r` costs: the byte-rate mass of the members
+ * of its scan position, the one `pcrec_find_run_scan_index` picks (the same
+ * estimate the `req_run` pick reads). 0 for the empty run, which has none. */
+static uint32_t rn_scan_mass(const RbWalk *w, const RbRun *r)
+{
+    if (r->n == 0) return 0;
+    int i = pcrec_find_run_scan_index(w->rate, r->bytes, r->mask, r->n);
+    unsigned char mem[256];
+    int nm = 0, f = ~r->mask[i] & 0xFF;
+    for (int b = f;; b = (b - 1) & f) {   /* every member of the cube */
+        mem[nm++] = (unsigned char)(r->bytes[i] | b);
+        if (!b) break;
+    }
+    return pcrec_find_seq_mass(w->rate, mem, nm);
+}
+
+/* Row 2, at equal information: the RARER run, its scan position's mass
+ * the smaller. Under NONE the mass is the member count, so it ties wherever
+ * both scan positions are exact bytes. */
+static int rn_rarer(const RbWalk *w, const RbRun *a, const RbRun *b)
+{
+    uint32_t ma = rn_scan_mass(w, a), mb = rn_scan_mass(w, b);
+    return ma < mb ? 1 : ma > mb ? -1 : 0;
+}
+
+/* Row 3, at equal information and rarity: the run with the smaller [K82]
+ * offset bound, the earlier occurrence of a tie a walk meets twice. */
+static int rn_nearer(const RbWalk *w, const RbRun *a, const RbRun *b)
+{
+    (void)w;
+    return a->off < b->off ? 1 : a->off > b->off ? -1 : 0;
+}
+
+/* Row 4, the last: content order (length, then each position's byte and
+ * mask, then truncation), a total order on what a run states. Two runs it
+ * calls equal are the same run at the same offset. */
+static int rn_content(const RbWalk *w, const RbRun *a, const RbRun *b)
+{
+    (void)w;
+    if (a->n != b->n) return a->n < b->n ? 1 : -1;
+    for (int i = 0; i < a->n; i++) {
+        if (a->bytes[i] != b->bytes[i]) return a->bytes[i] < b->bytes[i] ? 1 : -1;
+        if (a->mask[i] != b->mask[i]) return a->mask[i] > b->mask[i] ? 1 : -1;
+    }
+    return (int)b->trunc - (int)a->trunc;
+}
+
+static const RnChoiceRow rn_choice_rows[] = {
+    rn_more_info, rn_rarer, rn_nearer, rn_content,
+};
+
+/* The better of two runs by `rn_choice_rows`, first row that decides. */
+static RbRun rn_better(const RbWalk *w, RbRun a, RbRun b)
+{
+    for (size_t i = 0; i < sizeof rn_choice_rows / sizeof rn_choice_rows[0]; i++) {
+        int c = rn_choice_rows[i](w, &a, &b);
+        if (c) return c > 0 ? a : b;
+    }
+    return a;
 }
 
 /* The CUBE HULL's mask at one position pair: the bits both positions care
@@ -460,7 +536,7 @@ static long long rr_rep_w(int rmax, long long body)
  * literal on its own. `best` is the longest of the two factors' bests, that
  * join, and the resulting head and tail (which a `\z`-free literal makes the
  * same string, and which is what makes `rr_unit` a real identity). */
-static RbRuns rr_cat(RbRuns l, RbRuns r)
+static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
 {
     RbRuns o;
     RbRun rb = r.best, join = rn_app(l.tail, r.head);
@@ -475,8 +551,8 @@ static RbRuns rr_cat(RbRuns l, RbRuns r)
      * tail does. */
     rb.off = pcrec_sat_add(l.maxw, r.best.off, PCREC_W_UNBOUNDED);
     join.off = rn_tail_off(l.maxw, l.tail.n);
-    o.best = rn_better(rn_better(l.best, rb), join);
-    o.best = rn_better(rn_better(o.best, o.head), o.tail);
+    o.best = rn_better(w, rn_better(w, l.best, rb), join);
+    o.best = rn_better(w, rn_better(w, o.best, o.head), o.tail);
     return o;
 }
 
@@ -494,7 +570,7 @@ static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
     o.head.off = 0;
     o.tail = rn_common_tail(w, l.tail, r.tail);
     o.tail.off = rn_tail_off(o.maxw, o.tail.n);
-    o.best = rn_better(o.head, o.tail);
+    o.best = rn_better(w, o.head, o.tail);
     o.all  = false;
     return o;
 }
@@ -535,7 +611,7 @@ static PCREC_OWN_FRAME void rb_cat_into(const RbWalk *w, RbVal *acc,
                                         const RbVal *r)
 {
     acc->set  = rb_union(r->set, acc->set, r->runs.maxw);
-    acc->runs = rr_cat(r->runs, acc->runs);
+    acc->runs = rr_cat(w, r->runs, acc->runs);
     acc->desc = pcrec_pd_cat(w->cx, &w->pd, r->desc, acc->desc);
 }
 
@@ -550,10 +626,11 @@ static PCREC_OWN_FRAME void rb_alt_into(const RbWalk *w, RbVal *r,
 
 /* `acc` := a stretch of width `maxw` that makes no byte necessary and breaks
  * every run, followed by `acc`. */
-static PCREC_OWN_FRAME void rb_gap_into(RbVal *acc, long long maxw)
+static PCREC_OWN_FRAME void rb_gap_into(const RbWalk *w, RbVal *acc,
+                                        long long maxw)
 {
     acc->set  = rb_union(rb_empty(), acc->set, maxw);
-    acc->runs = rr_cat(rr_none(maxw), acc->runs);
+    acc->runs = rr_cat(w, rr_none(maxw), acc->runs);
     acc->desc = pcrec_pd_none();
 }
 
@@ -580,10 +657,10 @@ static int rr_pow_count(const RbRuns *b, int m)
 
 /* `X^c`: `c` copies of the body with runs `b`, through the CAT step (the
  * join between two copies is `rr_cat`'s; 0 copies is the unit). */
-static RbRuns rr_pow(RbRuns b, int c)
+static RbRuns rr_pow(const RbWalk *w, RbRuns b, int c)
 {
     RbRuns o = rr_unit();
-    for (int i = 0; i < c; i++) o = rr_cat(b, o);
+    for (int i = 0; i < c; i++) o = rr_cat(w, b, o);
     return o;
 }
 
@@ -592,10 +669,10 @@ static RbRuns rr_pow(RbRuns b, int c)
  * from it; `all` only when every copy was unrolled (`c < m` stored a prefix
  * of a longer literal) or the body is width 0 (its copies store nothing, so
  * `X^1` is `X^m`). `m = 0` gives the unit: `xy(?:ab){0}zw` is `xyzw`. */
-static RbRuns rr_rep_exact(RbRuns b, int m)
+static RbRuns rr_rep_exact(const RbWalk *w, RbRuns b, int m)
 {
     int c = rr_pow_count(&b, m);
-    RbRuns o = rr_pow(b, c);
+    RbRuns o = rr_pow(w, b, c);
     o.all = o.all && (c == m || b.maxw == 0);
     o.maxw = rr_rep_w(m, b.maxw);
     o.tail.off = rn_tail_off(o.maxw, o.tail.n);
@@ -608,12 +685,12 @@ static RbRuns rr_rep_exact(RbRuns b, int m)
  * run), so `all` is false and at `m = 0` this is today's gap. The best is
  * the first decomposition's: its offsets are the smaller bounds, and the
  * second's best is the same bytes further in. */
-static RbRuns rr_rep_split(RbRuns b, int m, int n)
+static RbRuns rr_rep_split(const RbWalk *w, RbRuns b, int m, int n)
 {
-    RbRuns p = rr_pow(b, rr_pow_count(&b, m));
+    RbRuns p = rr_pow(w, b, rr_pow_count(&b, m));
     RbRuns gap = rr_none(rr_rep_w(n < 0 ? -1 : n - m, b.maxw));
-    RbRuns o = rr_cat(p, gap);
-    o.tail = rr_cat(gap, p).tail;
+    RbRuns o = rr_cat(w, p, gap);
+    o.tail = rr_cat(w, gap, p).tail;
     o.maxw = rr_rep_w(n, b.maxw);
     o.tail.off = rn_tail_off(o.maxw, o.tail.n);
     return o;
@@ -674,21 +751,21 @@ static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
          * contributes no byte and no run, and it also BREAKS contiguity for
          * everything around it — which `rr_none`'s cleared `all` is exactly
          * what says. One byte wide: the tree is lowered. */
-        rb_gap_into(acc, 1);
+        rb_gap_into(w, acc, 1);
         acc->desc = desc;
         return;
     }
     /* Only a single byte is a member of the necessary SET; a cube position is
      * one the RUN carries (litscan_s4.md §2.3.1). */
     acc->set = rb_union(b >= 0 ? rb_single(b) : rb_empty(), acc->set, 1);
-    acc->runs = rr_cat(rr_pos(w, t, k), acc->runs);
+    acc->runs = rr_cat(w, rr_pos(w, t, k), acc->runs);
     acc->desc = desc;
 }
 
 /* `acc` := a zero-width assertion followed by `acc`: no byte, and a broken run. */
-static PCREC_OWN_FRAME void rb_assert_into(RbVal *acc)
+static PCREC_OWN_FRAME void rb_assert_into(const RbWalk *w, RbVal *acc)
 {
-    acc->runs = rr_cat(rr_none(0), acc->runs);
+    acc->runs = rr_cat(w, rr_none(0), acc->runs);
     acc->desc = pcrec_pd_none();   /* a CUT, as in the run (§3.4) */
 }
 
@@ -696,14 +773,14 @@ static PCREC_OWN_FRAME void rb_assert_into(RbVal *acc)
  * text: ZERO is a zero-width assertion, ANY a gap of unbounded width (no
  * byte, a broken run, every run to its right moved). An OWN kind has its own
  * arm; it would get the gap, which is always sound. */
-static void rb_row_into(RbVal *acc, const Ast *a)
+static void rb_row_into(const RbWalk *w, RbVal *acc, const Ast *a)
 {
     switch (pcrec_ast_row(a).text) {
-    case KTEXT_ZERO: rb_assert_into(acc); return;
-    case KTEXT_ANY:  rb_gap_into(acc, PCREC_W_UNBOUNDED); return;
+    case KTEXT_ZERO: rb_assert_into(w, acc); return;
+    case KTEXT_ANY:  rb_gap_into(w, acc, PCREC_W_UNBOUNDED); return;
     case KTEXT_OWN:  break;
     }
-    rb_gap_into(acc, PCREC_W_UNBOUNDED);
+    rb_gap_into(w, acc, PCREC_W_UNBOUNDED);
 }
 
 /* THE REPEAT'S VALUE, one builder per row of T2 below: each writes into
@@ -731,17 +808,17 @@ static PCREC_OWN_FRAME void rb_rep_exact_val(const RbWalk *w, RbVal *v,
                                              const RbVal *b, int m)
 {
     v->set  = m >= 1 ? b->set : rb_empty();
-    v->runs = rr_rep_exact(b->runs, m);
+    v->runs = rr_rep_exact(w, b->runs, m);
     v->desc = pcrec_pd_pow(w->cx, &w->pd, b->desc, m);
 }
 
 /* T2 row 3, the repeat `X{m,n}`: the power arm's runs; not fixed-width, so
  * no pieces. */
-static PCREC_OWN_FRAME void rb_rep_split_val(RbVal *v, const RbVal *b,
-                                             int m, int n)
+static PCREC_OWN_FRAME void rb_rep_split_val(const RbWalk *w, RbVal *v,
+                                             const RbVal *b, int m, int n)
 {
     v->set  = m >= 1 ? b->set : rb_empty();
-    v->runs = rr_rep_split(b->runs, m, n);
+    v->runs = rr_rep_split(w, b->runs, m, n);
     v->desc = pcrec_pd_none();
 }
 
@@ -850,7 +927,7 @@ static void rb_rep_val(const RbWalk *w, const Ast *a, const RbVal *b, RbVal *v)
     switch (rb_rep_row(w, a, b)) {
     case RB_REP_UNIT:  rb_rep_unit_val(v, b, m);     return;
     case RB_REP_EXACT: rb_rep_exact_val(w, v, b, m); return;
-    case RB_REP_SPLIT: rb_rep_split_val(v, b, m, n); return;
+    case RB_REP_SPLIT: rb_rep_split_val(w, v, b, m, n); return;
     case RB_REP_BEST:  rb_rep_best_val(v, b, n);     return;
     case RB_REP_GAP:   rb_rep_gap_val(v, b, n);      return;
     }
@@ -969,25 +1046,26 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
         case A_CALLOUT:
             /* [INLINE-C] 1a: the kind ROW answers (`rb_row_into`): text ZERO
              * for every kind above the backreference, ANY for the two. */
-            rb_row_into(acc, a);
+            rb_row_into(w, acc, a);
             return;
         /* The call's text is its callee's (row OWN), declined for the reason
          * above rather than computed. */
         case A_CALL:
-            rb_gap_into(acc, PCREC_W_UNBOUNDED);
+            rb_gap_into(w, acc, PCREC_W_UNBOUNDED);
             return;
         }
     }
 }
 
-/* THE CORE FACTS, from ONE walk: the whole necessary SET (with its threaded
+/* THE WALK'S FACTS, from ONE walk: the whole necessary SET (with its threaded
  * rightmost member, `RbSet.pick`) and the most informative guaranteed
  * contiguous RUN (`RbRun`, at most `PCREC_MAX_REQ_RUN_SCAN` positions
  * stored), its positions single bytes or cubes of at most `pos_set` members.
  * Both are the EMPTY answer where nothing is necessary, which disables every
- * check built on them and is always sound. Reads no prior and no option:
- * the parameters `p` are its caller's reading of the fact-level deny and the
- * harness lever (span_arms §3.7). */
+ * check built on them and is always sound. Reads no option and asks for no
+ * prior: the parameters `p` are its caller's reading of the fact-level deny,
+ * the harness lever (span_arms §3.7) and the byte-rate the run choice's tie
+ * rows read. */
 void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
                     RbSet *set, RbRun *run, PdDesc *pieces)
 {
@@ -995,6 +1073,7 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
     w->cx = cx;
     w->pos_set = p->pos_set;
     w->restored = p->restored;
+    w->rate = p->rate;
     w->pd = (PdCfg){ &rb_pd_bytes, p->max_pieces, PCREC_MAX_REQ_RUN_SCAN };
     RbVal *v = pcrec_arena_alloc(&cx->arena, sizeof *v);
     rb_walk(w, root, v);
@@ -1008,9 +1087,9 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
  * the accessor's own answer (`pcrec_find_byte_rate_answers`), never of the
  * record's memo and never off the rate pointer, so no reader here tests a
  * rate (findings design §6.3's structural rule) and none reads the memo
- * (window_contract.md §3.7.1). Its two callers ask first, so the answer is
- * theirs. */
-static PfWhyCode req_rate_why(Ctx *cx)
+ * (window_contract.md §3.7.1). Its callers ask first, so the answer is
+ * theirs: the window, the pick and the whole run's choice (`facts.c`). */
+PfWhyCode pcrec_req_rate_why(Ctx *cx)
 {
     return pcrec_find_byte_rate_answers(cx) ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
 }
@@ -1039,7 +1118,7 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
     run->maxoff = 0;
     *why = PF_WHY_NONE;
     if (n < 2) return;
-    *why = req_rate_why(cx);
+    *why = pcrec_req_rate_why(cx);
     {
         int i = pcrec_find_run_scan_index(rate, run->whole, run->whole_mask, n);
         int s = n > PCREC_MAX_REQ_RUN_EMIT
@@ -1072,7 +1151,7 @@ int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
                    PfWhyCode *why)
 {
     const uint32_t *rate = pcrec_find_byte_rate(cx);
-    *why = req_rate_why(cx);
+    *why = pcrec_req_rate_why(cx);
     if (run->len >= 2 && run->mask[run->idx] == 0xFF) return run->bytes[run->idx];
     if (set->rightmost < 0) *why = PF_WHY_NONE;
     return pcrec_find_set_pick(rate, set->bits, set->rightmost);

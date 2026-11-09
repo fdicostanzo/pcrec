@@ -425,8 +425,9 @@ fi
 # two-member class at PARSE time, so there is no singleton left to find — an
 # analysis that read the pattern text instead of the lowered tree would answer
 # 99 here and emit a `memchr` for `c` that `(?i)abC` legitimately does not
-# contain. `a{2,4}b` is the second: its run is one byte because nothing is
-# joined across a repeat's ITERATIONS, so it does NOT report `aa`.
+# contain. `a{2,4}b` is the second: a repeat counts as the copies every match
+# takes (span_arms R1, D191), so its run is `aab`, the two copies joined to
+# the `b` after them, and never a third `a` (a match may take only two).
 while IFS='%' read -r pat _sep want wantrun; do
     [ -n "$pat" ] || continue
     a="$WORKDIR/s3_$RANDOM$RANDOM.c"
@@ -510,11 +511,11 @@ done <<'ROWS'
 a=b%%61%613d62@1
 abc%%98%616263@1
 \w+@\w+%%64%none
-x(?:yz)+%%122%797a@1
+x(?:yz)+%%122%78797a@2
 (ab|cd)e%%101%none
 (a)(b)%%98%6162@1
 [^x]c%%99%none
-a{2,4}b%%98%none
+a{2,4}b%%98%616162@2
 (a)\1?b%%98%none
 foo|bar%%none%none
 (?i)abc%%none%414243@1/dfdfdf
@@ -813,7 +814,7 @@ while IFS='%' read -r pat _sep run len idx off; do
 done <<'ROWS'
 \.tar%%.tar%4%46%
 a=b%%a=b%3%61%1
-x(?:yz)+%%yz%2%122%1
+x(?:yz)+%%xyz%3%122%2
 (a)b\1=z%%=z%2%122%1
 (?:/user|/users)%%/user%5%47%
 a"b%%a\"b%3%34%1
@@ -963,7 +964,7 @@ while IFS='%' read -r pat _sep why; do
         bad "[4.7] $pat: run \"$rr\" / byte \"$rb\" — expected a declined run and a live byte ($why)"
     fi
 done <<'ROWS'
-a{2,4}b%%nothing is joined across a repeat's iterations, so no aa
+a(?:bc)?d%%an optional copy is a gap, so the a and d around it are not joined (since span_arms R1 a repeat's REQUIRED copies join: a{2,4}b is the run aab, §3.1)
 (?:xabcy|wabcv)q%%an alternation contributes only its common affixes, so abc is not claimed (x/w and y/v differ in more than one bit, so not even their cube hull is a position: S4 C3)
 a(?i)b%%a followed by one caseless letter is 15 bits, under the 16-bit floor (S4 C3); a(?i)bc is no longer a decline: the option run is dropped from the concatenation, so it reads as a(?i:bc), a live run ([FLAG-SPELL])
 (?:ab)*c%%a min-0 repeat breaks contiguity in the one direction that would delete a match
@@ -1606,7 +1607,7 @@ done <<'ROWS'
 (?:user|USER)[ \t]*=%%61%55534552@0/dfdfdfdf%userpass's shape: '=' (3323 ppm) is rarer than the scan pair u/U, so it leads (k82diag twin T1)
 (?:user|USER)[ \t]*=%--engine=vm%61%55534552@0/dfdfdfdf%the same on the VM route
 (?:user|USER)[ \t]*=%-fno-req-set-lead%-%55534552@0/dfdfdfdf%the deny: the run search alone, the abi-59 program
-cat\s+sat%%99%736174@0%an EXACT run under the byte-rate: c (18442) is rarer than the scan byte s (42034), so the row is not caseless-only
+cat\s+sate%%99%73617465@0%an EXACT run under the byte-rate: c (18442) is rarer than the scan byte s (42034), so the row is not caseless-only (cat\s+sat no longer serves: its two 3-byte runs tie, and the run choice takes the rarer cat, review r5)
 (?i:xqz)\d+e%%-%58515a@2/dfdfdf%the rate decides, not the shape: e (84235) is commoner than the z/Z pair (548), so the run stays alone
 (?i)union.*?select%%-%*%an empty necessary set: nothing can lead (union-select keeps its win)
 (?i:elect)\d+=%-e utf8%61%454c454354@4/dfdfdfdfdf%NONE: a byte against a two-member pair, so the byte leads (S is not a pair under utf8: it folds with U+017F too)
@@ -1712,9 +1713,9 @@ while IFS='%' read -r pat flags handk wantst why; do
 done <<'ROWS'
 (?i)cat%-e byte%0%0%the run is the whole match's head
 (?i)straße%-e utf8%2%2%the run TRA follows (?i)s, which matches s, S or U+017F (TWO bytes) (r1 C-C11; ci-strasse)
-x{2,5}(?i)cat%-e utf8%5%5%five x bytes at most before the run
+x{2,5}(?i)cat%-e utf8%3%3%the run is the two x copies every match takes and (?i)cat, after at most three more x bytes (span_arms R1)
 .{3}cat%-e utf8%12%12%three characters of up to four bytes
-é{2}cat%-e utf8%4%4%two two-byte characters
+é{2}cat%-e utf8%0%0%the two é copies join the run, which is the whole match's head (span_arms R1)
 ab(?:cdef|xyzdef)g%-e utf8%5%5%the run defg after ab and the wider branch's xyz
 (?:a|bb)?catdog%-e byte%2%2%the WIDER branch bb (S466 takes a's width)
 (?:ab|c)(?i)select%-e utf8%4%4%ab (2), then (?i)s (U+017F under utf8, 2 bytes): the run is ELECT

@@ -617,14 +617,18 @@ fi
 # [REQ-EMPTYCAT] span_arms E1 (§3.7): THE WALK'S RESTORED ARM and its
 # `harness:` token (facts_listing.md §4.1.3¶4a). Through build/pcrec-harness
 # alone (the lever is not a caller's): under the `empty` arm the walk runs T2
-# row 1's old form, so the witness's run is today's `efgh` again, and the walk
+# row 1's old form, so the witness's run is cut in two again, and the walk
 # facts the arm can change (walk_arms.def) plus every fact derived from them
 # name the arm; a fact it cannot change (`req_set`) keeps its plain why; the
 # default build lists the unit's run and no token; an unknown arm is refused.
 # The value under the lever is what shows the arm ACTS (a lever the walk
 # ignored lists the token over the new run, S1907); the derived rows show the
 # token travels along the asks (S1908). Expectations by hand from T2 (`(?:\b)*`
-# is the unit, so the default joins `abcd` and `efgh`).
+# is the unit, so the default joins `abcd` and `efgh`) and the run choice's
+# rows (req.c `rn_choice_rows`): the cut halves tie on information, and the
+# builtin prior's rarer scan byte breaks it, `b` (9886 ppm) over `g` (13375),
+# so the old form keeps `abcd`; under utf8 (NONE) the nearer `abcd` wins.
+# `req_whole_run` is DERIVED (it reads the prior), so its why is the rule.
 HBIN="$BIN_DIR/pcrec-harness"
 AP='abcd(?:\b)*efgh'
 abad=""
@@ -638,9 +642,9 @@ else
     sect "$WORKDIR/ad.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/ad.f"
     sect "$WORKDIR/ar.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/ar.f"
     printf '%s\n' \
-        'ad	req_whole_run	6162636465666768	' \
-        'ar	req_whole_run	65666768	harness:empty' \
-        'ar	req_run	65666768@2	harness:empty' \
+        'ad	req_whole_run	6162636465666768	rate:builtin-prior' \
+        'ar	req_whole_run	61626364	harness:empty' \
+        'ar	req_run	61626364@1	harness:empty' \
         'ar	req_byte	-	harness:empty' \
         'ar	req_pieces	-	harness:empty' \
         'ar	req_set	-	' > "$WORKDIR/aw"
@@ -665,19 +669,24 @@ else
     # (compound.c's part compile; the parent's stamp alone would stay green
     # with a half-restored artifact). Hand values from T2: a width-0 body
     # joins its neighbours at any m, and the old form is the gap (m=0) or the
-    # best-only copy (m>=1).
+    # best-only copy (m>=1); its equal halves go to the rarer scan byte (`b`
+    # over `g`, `b` over `c`) or, under utf8's NONE, to the nearer. The `rep`
+    # arm rides the same part path: `xy(?:ab){2}zw` in the part restores to
+    # its best-only copy, whose three 2-byte runs go to the rarest, `zw`.
     # tag, encoding, pattern, arm?, RX_REQ_RUN-line prefix (RX_ top, RX__Q_ part)
     printf '%s\n' \
-        'RX_REQ_RUN	byte	abcd(?:\b)*efgh	empty	65666768@2' \
+        'RX_REQ_RUN	byte	abcd(?:\b)*efgh	empty	61626364@1' \
         'RX_REQ_RUN	byte	abcd(?:\b)*efgh	-	6162636465666768@1' \
-        'RX_REQ_RUN	utf8	abcd(?:\b)*efgh	empty	65666768@3' \
+        'RX_REQ_RUN	utf8	abcd(?:\b)*efgh	empty	61626364@3' \
         'RX_REQ_RUN	utf8	abcd(?:\b)*efgh	-	6162636465666768@7' \
         'RX_REQ_RUN	byte	ab(?:\B){3}cd	-	61626364@1' \
-        'RX_REQ_RUN	byte	ab(?:\B){3}cd	empty	6364@0' \
+        'RX_REQ_RUN	byte	ab(?:\B){3}cd	empty	6162@1' \
         'RX_REQ_RUN	byte	abcd(?:)+efgh	-	6162636465666768@1' \
-        'RX_REQ_RUN	byte	abcd(?:)+efgh	empty	65666768@2' \
+        'RX_REQ_RUN	byte	abcd(?:)+efgh	empty	61626364@1' \
         'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	-	6162636465666768@1' \
-        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	empty	65666768@2' > "$WORKDIR/ac"
+        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	empty	61626364@1' \
+        'RX__Q_REQ_RUN	byte	^a|xy(?:ab){2}zw$	-	7879616261627a77@6' \
+        'RX__Q_REQ_RUN	byte	^a|xy(?:ab){2}zw$	rep	7a77@0' > "$WORKDIR/ac"
     nac=0
     while IFS=$'\t' read -r mac enc pat arm want; do
         nac=$((nac + 1)); larm=(); [ "$arm" = "-" ] || larm=("--harness=restore=$arm")
@@ -687,7 +696,7 @@ else
         got="$(sed -n "s/^#define $mac \"\(.*\)\"\$/\1/p" "$WORKDIR/ac.c" | head -1)"
         [ "$got" = "$want" ] || abad="$abad '$pat' [$enc/$arm] $mac [$got], want [$want];"
     done < "$WORKDIR/ac"
-    echo "REACH: $nac restored-arm artifact cells (top, utf8, m>=1, split part)"
+    echo "REACH: $nac restored-arm artifact cells (top, utf8, m>=1, split part under empty and rep)"
 fi
 echo "REACH: 1 restored-arm witness ('$AP'), $(wc -l < "$WORKDIR/aw" 2>/dev/null || echo 0) listing cells"
 if [ -n "$abad" ]; then
@@ -699,9 +708,14 @@ fi
 # [REPEAT-RUN] span_arms R1 (§3, T2 rows 2-3): A REPEAT IS ITS COPIES, on the
 # listing. Expectations by hand from T2 and the description's cat:
 #   - `xy(?:ab){2}zw` is `xyababzw`; under `--harness=restore=rep` (build/
-#     pcrec-harness) today's best-only copy `ab` again, with the token on the
-#     walk facts and none on `req_set` (S1921: a row that the arm no longer
-#     passes over keeps the new run);
+#     pcrec-harness) today's best-only copy again, whose three 2-byte runs
+#     `xy`, `ab`, `zw` tie on information and go to the rarest scan byte
+#     (`rn_choice_rows`: `z`, 498 ppm), with the token on the walk facts and
+#     none on `req_set` (S1921: a row that the arm no longer passes over keeps
+#     the new run); the same for T2 row 3, `xy(?:ab){1,2}zw` (`abzw` by
+#     default, the `xyab`/`abzw` tie to the rarer `z`; `zw` restored; S1922);
+#   - a body that is not `all` saturates at TWO copies (`rr_pow_count`):
+#     `(?:ab[0-9]cd){3}` is the join `cdab` (S1923 stops at one copy: `ab`);
 #   - W-R5: `(?:abc){20}` unrolls ceil(32/3) = 11 copies, so the run is the
 #     storage bound's 32 positions, (abc)^10 ab (S1918 stops one copy short:
 #     30 positions, sound, seen only here);
@@ -733,11 +747,14 @@ else
         [ "$gval" = "$want" ] || rbad="$rbad '$pat'${arm:+ restore=$arm} $fact value [$gval], want [$want];"
         [ "$gwhy" = "$wwhy" ] || rbad="$rbad '$pat'${arm:+ restore=$arm} $fact why [$gwhy], want [$wwhy];"
     done <<RPEOF
-p	-	$RP	req_whole_run	7879616261627a77	-
-h	rep	$RP	req_whole_run	6162	harness:rep
+p	-	$RP	req_whole_run	7879616261627a77	rate:builtin-prior
+h	rep	$RP	req_whole_run	7a77	harness:rep
 h	rep	$RP	req_pieces	none	harness:rep
 h	rep	$RP	req_set	97,98,119,120,121,122	-
-p	-	(?:abc){20}	req_whole_run	6162636162636162636162636162636162636162636162636162636162636162	-
+p	-	(?:abc){20}	req_whole_run	6162636162636162636162636162636162636162636162636162636162636162	rate:builtin-prior
+p	-	xy(?:ab){1,2}zw	req_whole_run	61627a77	rate:builtin-prior
+h	rep	xy(?:ab){1,2}zw	req_whole_run	7a77	harness:rep
+p	-	(?:ab[0-9]cd){3}	req_whole_run	63646162	rate:builtin-prior
 p	-	(?:a|bc){2}	req_pieces	2:[97][97]|3:[97,98][98,99][97,99]|4:[98][99][98][99]	-
 h	rep	(?:a|bc){2}	req_pieces	none	harness:rep
 p	-	(?:ab){20}(?:c|de)	req_pieces	41@9:[98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][99]|42@10:[97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][100][101]	-
