@@ -17,5 +17,5 @@ SAB_REACH='"$(dirname "$PCREC")/pcrec-harness" --features all --harness=restore=
 SAB_REACH_EXPECT="REACH-EMPTY-ARM-RESTORES"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { rb_zero_empty,    RB_ZERO_UNIT, PCREC_WALK_ARM(EMPTY) },'
-SAB_AFTER='    { rb_zero_empty,    RB_ZERO_UNIT, 0 },   /* SABOTAGE S1929 */'
+SAB_BEFORE='    { rb_zero_empty,    RB_ZERO_EMPTY, PCREC_WALK_ARM(EMPTY) },'
+SAB_AFTER='    { rb_zero_empty,    RB_ZERO_EMPTY, 0 },   /* SABOTAGE S1929 */'
