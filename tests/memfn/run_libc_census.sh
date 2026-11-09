@@ -69,8 +69,15 @@ fl=()
 for f in "${FLOORS[@]}"; do fl+=(--floor "$f"); done
 
 scratch="$(mktemp -d "${TMPDIR:-/var/tmp}/c11run.XXXXXX")"
+# the kit's target table and its C text (target_text.py reads it): the ON
+# artifact's own target text is set aside by the kit's declared spellings
+if ! "${CC:-gcc}" -O2 -I "$root/memfn/include" -o "$scratch/simd_levels" \
+        "$here/simd_levels.c" "$root/build/libpcrec.a" 2> "$scratch/cc.log"; then
+    echo "FAIL: [c11-levels-build] the levels dumper did not build"; cat "$scratch/cc.log"
+    echo "checks passed: 0"; echo "checks failed: 1"; rm -rf "$scratch"; exit 1
+fi
 TMPDIR="$scratch" python3 "$here/libc_census.py" --pcrec "$root/build/pcrec" \
-    --tree "$root" --cc "${CC:-gcc}" $quick "${fl[@]}"
+    --tree "$root" --cc "${CC:-gcc}" --levels "$scratch/simd_levels" $quick "${fl[@]}"
 rc=$?
 rm -rf "$scratch"
 if [ "$rc" -ne 0 ] && [ "$rc" -ne 1 ]; then

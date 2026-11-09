@@ -1,0 +1,4 @@
+report=docs/dev/lanes/u3mt_report.md
+sections: Summary; Failures; Fixes; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes

@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u2fix_report.md
+sections: Summary; The change; Sheet amendment; Sabotage row; Checks run; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

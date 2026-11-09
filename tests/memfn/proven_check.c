@@ -69,7 +69,6 @@ static mf_site find_site(void)
     s.span_hi = MF_SPAN_UNBOUNDED;
     s.cand_ppm_hi = MF_PPM_FULL;
     s.empty = MF_EMPTY_MISS;
-    s.policy = MF_P_PORTABLE_ONLY;
     s.body = MF_BODY_ONESHOT;
     s.pred.need = MF_REQUIRED;
     s.pred.fn_ref = 1;
@@ -245,7 +244,8 @@ static void family_c(void)
     /* the real selection: mf_ask over an offset-skip site (ofsskip's row) */
     s.pred.span_class = MF_SPAN_BOUNDED;        /* span 0 (MF_SITE_ABI 18) */
     mf_arena a = { NULL, a_alloc };
-    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, 0, NULL, NULL);
+    mf_art *art = mf_art_begin(&a, "rx", 0, NULL, NULL);
+    if (art && mf_art_target(art, mf_portable_target())) art = NULL;   /* as pcrec states it (U3) */
     mf_hooks hd = { .fn_name = h_fn_name, .table_name = h_table_name, .miss = MF_MISS_N };
     mf_class c;
     if (!art || mf_ask(art, &s, &hd, &c))

@@ -39,6 +39,36 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
   REQUIREMENT (Frank, 2026-11-06): "We need the user to be able to support multiple arch simultaneously. Whether that is a single artifact or multiple is the design question." Manager's leaning, NOT ruled: targets are a compile input; per site the kit picks per target; agreeing sites are emitted once and disagreeing sites get compiler-macro #if arms with the neutral pick as #else; one target = today's bytes, so N artifacts is the special case. First measurement: price the corpus with zen4 and an M1-made set and count disagreeing sites (size and test cost scale with it). Every arm is tested on its own arch.
   RULED (Frank, 2026-11-06, "I agree with your points"; details when the item starts): END STATE = per-target VARIANTS, no #if arms. A variant is a complete matcher planned and priced for one target. Build time: pcrec emits the build target's variant. Run time: one artifact holds 2-3 variants (generic + 1-2 SIMD) as target-attributed functions, a once-per-process CPU dispatch entry, and each variant's own entry. The artifact's target set is an explicit LIST (a,b,c) the caller gives, never assumed; with no list, a declared, stamped default list. D188 amended.
+  - [XARCH-FIXEDTEXT] STATE:not-started — emit_sweep: refuse a -fmemfn-simd= arm whose measured target text is empty
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-4, PLAN)
+    status (2026-11-08): filed; SUSPECTED, not confirmed
+    next: confirm (make the control compile fail, or an arm insert nothing, and see the arm still read ok); then FAIL such an arm and add an upper pin beside the DIFFER_PINS floors
+    refs: scripts/emit_sweep.py target_fixed_text; docs/dev/reviews/2026-11-08-r5-xarch.md
+    scripts/emit_sweep.py's target_fixed_text returns [] when its control compile fails or the arm inserts nothing; every pattern then counts as a mover and the floors (differ >= floor) still pass.
+  - [XARCH-PLACECOV] STATE:not-started — placement checks for every listed target, not one: the 32-byte region, a guard-only target
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-6, PLAN part)
+    status (2026-11-08): filed; the FIX-NOW part (xt_place's rx_info -1 guard, its no-include-in-region test, stale comments) landed with lane u3crit
+    next: run tests/cli's xt_place over one artifact per listed target with a family (a guard-only target: guard once, no region); pick the two-target family by listing order, not awk hash order
+    refs: tests/cli/run_cli_tests.sh xt_place; docs/spec/match_api.md §6.3.10¶15
+    Today the cli placement case covers one target (the baseline amd64 one); the larger region and the arm64 guard-only artifact are placed by no check.
+  - [XARCH-NEEDSOK] STATE:not-started — a check that each kit level's declared needs SUFFICE for its intrinsics (the S726 closer)
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-7, PLAN; kit-side, relayed)
+    status (2026-11-08): filed; S726 stays declared UNDETECTED until it lands
+    next: the kit: compile each level's rendered helper at its family's baseline plus -m<need> for exactly its needs, one loop in memfn/tests/check_targets.sh; then S726 re-declared DETECTED
+    refs: tests/mech/sabotages/S726_w32_under_weak_guard.sh; memfn/tests/check_targets.sh
+    check_targets.sh proves needs is a subset of features, never that the needs are enough: a level under-declaring (avx for avx2) is invisible while every target carrying the one carries the other.
+  - [XARCH-TOKERR] STATE:not-started — an unknown CPU token's refusal is cut at 256 bytes mid-text
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch CONTRACT-4, PLAN)
+    status (2026-11-08): filed
+    next: size the joined refusal (or show the kit's target and family refusals separately) so cli.md §1.24¶2's "the kit's text unchanged" holds for any token length
+    refs: src/gen/memfn_targets.c add_list; docs/spec/cli.md §1.24
+    A 120-byte unknown token prints 263 bytes ending mid-token, without the "(known: ...)" lists; each target or family the kit adds lengthens those lists, so the cut moves toward ordinary tokens.
+  - [XARCH-K2PULL] STATE:not-started — weigh pulling the kit's K2 target_dependent fact forward (guard and region only where needed)
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch SEAM-4(ii), NOTED + weigh)
+    status (2026-11-08): filed; the ruled interim stands (every -fmemfn-simd artifact carries guard and region)
+    trigger: the first caller complaint that a -fmemfn-simd artifact with no SIMD form is family-locked or AVX-only, or K2's own go, whichever first
+    refs: docs/design/memfn/target_seam_units.md (K2); docs/spec/match_api.md §6.3.10¶4
+    Most patterns reach no SIMD row, yet their -fmemfn-simd artifacts are locked to the target's family and features; with a per-art target_dependent fact pcrec could place guard and region only where the kit rendered target text.
 - [OPTLOOP] STATE:started — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
@@ -1429,7 +1459,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-10 Frank
   status (2026-10-10): HARD TRIGGER added 2026-10-10 by Frank, session 105: the push opens when <= 4 flag bits remain in the 64-bit `flags` word (55 of 64 used after [START-LANDING]), whether or not the work has petered out…
   trigger: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it).
-  refs: decisions D76; docs/design/plan_row_bodies/IFACE-PUSH.md (incl. 2026-10-29 candidate: subject-size knowledge, typical + maximum, Frank); 2026-11-03 class option (span_pick rev 5)
+  refs: decisions D76; docs/design/plan_row_bodies/IFACE-PUSH.md (incl. 2026-10-29 candidate: subject-size knowledge, typical + maximum, Frank); 2026-11-03 class option (span_pick rev 5); 2026-11-09 candidate (body): a MEMFN_FORMS form-id list (u3d27, D27 S4)
   UMBRELLA ROW, the gate for: [RXINFO-REMODEL] + [V-E] (rx_info), [STAMP-REVIEW] + [CAP-STAMP-BYTES] (stamps), [OPT-SETS] + the pcrec_options/CLI option surface, [FINDALL-NEXT], [EMIT-ENTRIES]. TRIGGER: the capability/optimization work runs dry (the manager proposes the push at a stock-take; Frank opens it). ORDER: the interface push as ONE design pass across the four surfaces, THEN the docs pass ([SPEC-ORG], [SPEC-LANG], [GUIDE-1]) once the interface is solid. Until then member rows stay unscheduled; a capability/optimization row that needs a new field or stamp adds it the usual way (D76 ritual), not a remodel. RESIDUE FROM [FLAG-ACCESS] (archived 2026-10-12, merged 67f59d24): the accessors still take/return uint64_t; the word still travels as a uint64_t parameter (cand_select, DFA_SELECT, clskit/memfn deny maps) and is printed into `.flags = N`; writes stay raw and outside the gate.
   So a representation change is a typed sweep over those sites, not one site.
   2026-10-22 CANDIDATE (kit S3, [KIT-VERIFY] B1): flag bit 57, a pcrec-side deny for the cover locator (the proven fixed-width window reported with no engine run, `RX_DFA_SCAN "cover"`); NAME per Frank 2026-10-22: name the behaviour, never an internal module, working name `PCREC_NO_WINDOW_REPORT`, final spelling at the push, deferred here by the manager's ruling; until then the kit deny is the OFF arm (mf_ask refuses, LOCATE falls to composite).

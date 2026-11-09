@@ -160,7 +160,7 @@
 | name | denies |
 |---|---|
 | `vrun-w16` | the 16-byte vector run scan that `-fmemfn-simd` adds to a FUNC whose predicate is one run (`tuning.md` §2.43) |
-| `vrun-w32` | the same form a level up, the 32-byte arm; its short spans fall to `vrun-w16` where both render. Denied, `vrun-w16` is the site's top arm |
+| `vrun-w32` | the same form a level up, the 32-byte level; its short spans fall to `vrun-w16` where both render. Denied, `vrun-w16` is the site's top level |
 | `vrun-kb` | the 32-byte vrun row's second filter position, which the kit takes from pcrec's rarity ranking (`mf_pred.rank_*`, D157); the 16-byte row reads none. Denied, both rows filter on the scanned position alone |
 | `vrun-trim` | the vrun rows' trimmed verify: each candidate's run compare skips the positions the candidate mask already tested (the scanned position, and the 32-byte row's second filter position where `vrun-kb` is not denied). Denied, both rows verify every candidate over the whole run |
 | `vrun-pad` | the vrun rows' padded verify: in the main block loop, a run of 3 or 5 to 7 bytes is verified as ONE wider masked word (4 or 8 bytes, its bytes past the run masked off), the loop holding the bytes past the run that word reads. Denied, both rows verify by the run compare's words, as `vrun-trim` describes |

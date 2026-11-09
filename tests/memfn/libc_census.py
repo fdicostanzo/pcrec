@@ -33,8 +33,12 @@ WHAT IT CHECKS, per artifact of a corpus-wide population:
             they catch a non-inert switch and prove nothing about a SIMD
             form. At the first SIMD-on form (Q55, R4e') (b) is replaced by
             the movers half (FORMS names the forms an ON artifact differs
-            by), which stays UNREACHED until then. Composition files are not
-            re-compiled.
+            by), which stays UNREACHED until then. Since the target seam
+            (U2+U3, lane u3floor) the ON artifact carries its target's own
+            text (TARGETS, guard, region, guarded bytes) on EVERY artifact,
+            so (b) compares with that text set aside (target_text.aside,
+            the kit's declared spellings via `--levels`). Composition files
+            are not re-compiled.
 
 THE INDEPENDENT CONTROL (docs/dev/learnings.md §3). The names come from the
 COMPILER's symbol table, not from text: no list here is shared with the
@@ -66,6 +70,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import routing_shape  # noqa: E402
+import target_text  # noqa: E402
 
 PRELUDE = r'''#include <string.h>
 #undef memcpy
@@ -244,12 +249,14 @@ def main():
     ap.add_argument('--pcrec', required=True)
     ap.add_argument('--tree', required=True)
     ap.add_argument('--cc', default='gcc')
+    ap.add_argument('--levels', required=True, help='the simd_levels binary (target_text.read_table)')
     ap.add_argument('--jobs', type=int, default=min(8, os.cpu_count() or 4))
     ap.add_argument('--floor', action='append', default=[],
                     help='NAME=N: a population floor (K35)')
     ap.add_argument('--quick', action='store_true',
                     help='the default stream only (a sabotage solo)')
     a = ap.parse_args()
+    _, targets = target_text.read_table(a.levels)
     floors = dict((k, int(v)) for k, v in (f.split('=', 1) for f in a.floor))
 
     sys.path.insert(0, os.path.join(a.tree, 'scripts'))
@@ -300,7 +307,17 @@ def main():
                                     capture_output=True, timeout=60)
             except subprocess.TimeoutExpired:
                 r2 = None
-            same.append(r2 is not None and r2.returncode == 0 and r2.stdout == r.stdout)
+            if flag == '-fmemfn-simd' and r2 is not None and r2.returncode == 0:
+                # the ON artifact's target's own text aside (target_text.py)
+                ontext = r2.stdout.decode('utf-8', 'surrogateescape')
+                on = target_text.aside(ontext, targets)
+                t = target_text.target_of(ontext, targets)
+                # a header line ON moved ahead of its region is set aside on
+                # the default's side too (target_text.moved_out)
+                off = target_text.moved_out(text, ontext, t) if t else text
+                same.append(on is not None and on == target_text.aside(off, targets))
+            else:
+                same.append(r2 is not None and r2.returncode == 0 and r2.stdout == r.stdout)
             if flag == '-fmemfn-simd' and r2 is not None and r2.returncode == 0:
                 m = re.search(r'^#define (?:(?!__)\w)+_MEMFN_FORMS "([^"]*)"$',
                               r2.stdout.decode('utf-8', 'surrogateescape'), re.M)

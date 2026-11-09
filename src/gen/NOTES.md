@@ -125,3 +125,35 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
 ## Deleted files
 
 - `runcmp.c` — DELETED ([MEMFN] M1b; the run compare is the kit's `memfn/src/runcmp.c`).
+
+## memfn_targets.c ([XARCH-DEV] P1, U3; lane u3tgt 2026-11-08)
+P1: the CPU target set (kit-parsed opaque tokens, `simd_rows`). U3: its one
+member is the art's target (`pcrec_memfn_target`, stated on every art through
+`mf_art_target`), the `<PREFIX>_TARGETS` value (`pcrec_memfn_targets_stamp`),
+and the placement of the kit's family guard (ahead of every `#include`) and the
+target region (open before the first function, close after `rx_info`, before
+`main`), all counted as guarded bytes; a compound part writes none of them.
+Lane u3crit (review 2026-11-08-r5-xarch): the target is DERIVED ONCE per
+attempt onto `Ctx.cpu_target` (`pcrec_memfn_target_derive`, compile.c; its one
+failure point) and the readers read it (HOUSE-4); the set compares targets
+and families by token, never by address (X-6); the region's close has one
+caller, `pcrec_emit_artifact_end` (emit_dfa.c, both engines), and the
+attempt's end refuses a region left open (HOUSE-5); the region holds no
+`#include` (X-1, X-2): the TARGET HEADERS mark sits ahead of its open and the
+finishing pass (memfn_stamps.c `target_headers_render`) writes there the
+headers a part's text needs (since lane u3d27: its held lines) and, with the kit's
+includes fact, the intrinsic headers; guarded bytes, so no decision reads
+them and a default artifact is byte-identical.
+
+Lane u3d27 (D27 region suite F1, ruling R2): every `#include` line of
+pcrec's own that would land inside the region (a spliced part's `<string.h>`
+and `--emit-main`'s two; a `--trace` VM's `<stdio.h>`, written after the open)
+goes through `pcrec_emit_include_line` (memfn_targets.c): behind the held
+mark `PCREC_HELD_HEADER_MARK` in its own bracket, so every length decision
+reads the line as on the SIMD-off compile and none reads the mark.
+`target_headers_render` collects the held lines, hands them to
+`pcrec_memfn_target_headers` (which writes each header once, none the
+prologue already has, then the kit's facts), and takes each mark out with its
+line. That replaced `PcrecPartFacts.string_h`. The part's own guarded count
+leaves the marks out (`pcrec_memfn_stamps_render`). A default or no-region
+artifact is byte-identical.

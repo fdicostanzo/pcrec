@@ -2406,21 +2406,35 @@ fi
 # row renders its guarded helper on a caseless run, and its deny takes the
 # artifact back to the SIMD-off bytes exactly (a lone row's DENY arm IS the
 # OFF arm, integration.md §R4.9.5 item 4).
+# [XARCH-DEV] U3: the levels a compile renders are its CPU TARGET's (the kit
+# admits a level by the target's features), so every SIMD case below names
+# its target (target_seam.md §8: the pins read the same on every host). The
+# tokens are the kit's rows from --list-cpu-targets, never named here: of the
+# family with two targets, the one with fewer features (the 16-byte level
+# alone) and the one with more (both levels).
+mf_rows="$(pcrec_run "$PCREC" --list-cpu-targets 2>/dev/null | grep -v '^#' | awk -F'\t' '$1=="target" && $3!=""')"
+mf_fam="$(printf '%s\n' "$mf_rows" | awk -F'\t' '{n[$3]++} END{for(f in n) if(n[f]>1){print f; exit}}')"
+mf_tsort() { printf '%s\n' "$mf_rows" | awk -F'\t' -v f="$mf_fam" '$3==f{print gsub(/,/,",",$6) "\t" $2}' | LC_ALL=C sort -n; }
+mf_t16="$(mf_tsort | head -1 | cut -f2)"
+mf_t32="$(mf_tsort | tail -1 | cut -f2)"
 rm -f "$WORKDIR"/mfs*.c
 pcrec_run "$PCREC" -p rx --memfn=no-window-search -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs0.c"
 pcrec_run "$PCREC" -p rx --memfn=no-window-search,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs1.c"
-pcrec_run "$PCREC" -p rx --memfn=no-window-search -fmemfn-simd -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs2.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs3.c"
+pcrec_run "$PCREC" -p rx --memfn=no-window-search "-fmemfn-simd=$mf_t32" -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs2.c"
+pcrec_run "$PCREC" -p rx --memfn=no-window-search "-fmemfn-simd=$mf_t16" -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs2b.c"
+pcrec_run "$PCREC" -p rx "-fmemfn-simd=$mf_t32" --memfn=no-window-search,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs3.c"
 if [ -s "$WORKDIR/mfs0.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs1.c"; then
     pass "--memfn=no-vrun-w16 at -fno-memfn-simd is accepted and inert"
 else
     fail "--memfn=no-vrun-w16 at -fno-memfn-simd moved the artifact or did not compile"
 fi
-if grep -q '^static inline size_t rx_reqrun__w16(' "$WORKDIR/mfs2.c" \
-   && grep -q '^#define RX_MEMFN_FORMS "vrun@[a-z0-9+]*w16"$' "$WORKDIR/mfs2.c"; then
-    pass "-fmemfn-simd renders the vrun-w16 helper and names it in MEMFN_FORMS"
+if [ -n "$mf_t16" ] && [ "$mf_t16" != "$mf_t32" ] \
+   && grep -q '^static inline size_t rx_reqrun__w16(' "$WORKDIR/mfs2b.c" \
+   && ! grep -q '__w32' "$WORKDIR/mfs2b.c" \
+   && grep -q '^#define RX_MEMFN_FORMS "vrun@w16"$' "$WORKDIR/mfs2b.c"; then
+    pass "-fmemfn-simd=<the 16-byte target> renders the vrun-w16 helper alone and names it in MEMFN_FORMS"
 else
-    fail "-fmemfn-simd did not render the vrun-w16 helper on (?i)cat"
+    fail "-fmemfn-simd=<the 16-byte target> ('$mf_t16') did not render the vrun-w16 helper alone on (?i)cat"
 fi
 if [ -s "$WORKDIR/mfs3.c" ] && ! grep -q '__w16' "$WORKDIR/mfs3.c" \
    && ! cmp -s "$WORKDIR/mfs2.c" "$WORKDIR/mfs3.c"; then
@@ -2431,13 +2445,13 @@ fi
 # ... and vrun-w32 above it: rendered with the 16-byte row as its named rung;
 # its own deny leaves the 16-byte row; both denied at -fmemfn-simd is the
 # SIMD-off artifact byte for byte.
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-w32 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs4.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-w32,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs5.c"
+pcrec_run "$PCREC" -p rx "-fmemfn-simd=$mf_t32" --memfn=no-window-search,no-vrun-w32 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs4.c"
+pcrec_run "$PCREC" -p rx "-fmemfn-simd=$mf_t32" --memfn=no-window-search,no-vrun-w32,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs5.c"
 if grep -q '^static inline size_t rx_reqrun__w32(' "$WORKDIR/mfs2.c" \
    && grep -q '^#define RX_MEMFN_FORMS "vrun@w32+w16"$' "$WORKDIR/mfs2.c"; then
-    pass "-fmemfn-simd renders the vrun-w32 helper above vrun-w16 (MEMFN_FORMS vrun@w32+w16)"
+    pass "-fmemfn-simd=<the 32-byte target> renders the vrun-w32 helper above vrun-w16 (MEMFN_FORMS vrun@w32+w16)"
 else
-    fail "-fmemfn-simd did not render vrun-w32 above vrun-w16 on (?i)cat"
+    fail "-fmemfn-simd=<the 32-byte target> ('$mf_t32') did not render vrun-w32 above vrun-w16 on (?i)cat"
 fi
 if grep -q '__w16(' "$WORKDIR/mfs4.c" && ! grep -q '__w32' "$WORKDIR/mfs4.c" \
    && grep -q '__w32(' "$WORKDIR/mfs3.c" && ! grep -q '__w16' "$WORKDIR/mfs3.c"; then
@@ -2445,11 +2459,9 @@ if grep -q '__w16(' "$WORKDIR/mfs4.c" && ! grep -q '__w32' "$WORKDIR/mfs4.c" \
 else
     fail "a vrun deny removed the wrong level"
 fi
-if [ -s "$WORKDIR/mfs5.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs5.c"; then
-    pass "both vrun rows denied at -fmemfn-simd is the SIMD-off artifact byte for byte"
-else
-    fail "both vrun rows denied at -fmemfn-simd differs from the SIMD-off artifact"
-fi
+# (both rows denied at a SIMD target is the SIMD-off artifact but for the
+# target's own text: checked in the CPU-target block below, which has the
+# kit's texts to set aside)
 # ... and `--memfn=no-vrun-kb` (lane rankuse): the rows' second filter
 # position, the first position of pcrec's rarity ranking (mf_pred.rank_*)
 # other than the scanned one, read at w32 ONLY (D147 addendum 16, R-16:
@@ -2458,7 +2470,7 @@ fi
 # and i + 1 and the w16 mask at i; the deny keeps both rows and loads at i
 # alone in each. Inert at -fno-memfn-simd.
 pcrec_run "$PCREC" -p rx --memfn=no-window-search,no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs6.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs7.c"
+pcrec_run "$PCREC" -p rx "-fmemfn-simd=$mf_t32" --memfn=no-window-search,no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs7.c"
 if [ -s "$WORKDIR/mfs6.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs6.c"; then
     pass "--memfn=no-vrun-kb at -fno-memfn-simd is accepted and inert"
 else
@@ -2485,7 +2497,7 @@ fi
 # addendum 16), so its verify compares A and T; the deny verifies the whole
 # run (two words, both masks whole). Inert at -fno-memfn-simd.
 pcrec_run "$PCREC" -p rx --memfn=no-window-search,no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs8.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs9.c"
+pcrec_run "$PCREC" -p rx "-fmemfn-simd=$mf_t32" --memfn=no-window-search,no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs9.c"
 if [ -s "$WORKDIR/mfs8.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs8.c"; then
     pass "--memfn=no-vrun-trim at -fno-memfn-simd is accepted and inert"
 else
@@ -2514,7 +2526,7 @@ fi
 # keeps the trimmed compare. The deny is the r14b text: one verify, guard
 # i + 34. Inert at -fno-memfn-simd.
 pcrec_run "$PCREC" -p rx --memfn=no-window-search,no-vrun-pad -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs10.c"
-pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-window-search,no-vrun-pad -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs11.c"
+pcrec_run "$PCREC" -p rx "-fmemfn-simd=$mf_t32" --memfn=no-window-search,no-vrun-pad -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs11.c"
 if [ -s "$WORKDIR/mfs10.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs10.c"; then
     pass "--memfn=no-vrun-pad at -fno-memfn-simd is accepted and inert"
 else
@@ -2679,6 +2691,69 @@ if [ -x "$LIBA" ] || [ -f "$LIBA" ]; then
     assert_eq "cpu targets api: a list with neither bit is refused" "rc=-1" "$("$xt_dir/probe" api none "$xt_host_t" | sed -n 1p)"
     assert_eq "cpu targets api: force with the host target compiles" "rc=0" "$("$xt_dir/probe" api force "$xt_host_t" | sed -n 1p)"
     assert_eq "cpu targets api: force with no list compiles" "rc=0" "$("$xt_dir/probe" api force - | sed -n 1p)"
+
+    # [XARCH-DEV] U3 the art's target, placed (match_api.md §6.3.10¶14-¶15):
+    # every artifact names it in <PREFIX>_TARGETS; an artifact for a target
+    # with a family carries the kit's guard ahead of every #include and the
+    # kit's region around its functions, holding no #include (X-1, X-2 of
+    # review 2026-11-08-r5-xarch), closed after rx_info and before main. The
+    # texts are the kit's (the probe's `text` mode), so this names no token or
+    # spelling.
+    xt_place() {   # FILE TEXTDIR: guard/open/close each once, in order, guard before the first #include, none inside the region, close after rx_info and before main
+        python3 -I - "$1" "$2" <<'XTPY'
+import sys
+a = open(sys.argv[1], 'rb').read()
+t = {k: open(sys.argv[2] + '/' + k, 'rb').read() for k in ('guard', 'open', 'close')}
+bad = [k for k in t if not t[k] or a.count(t[k]) != 1]
+if bad:
+    print('not once: ' + ','.join(bad)); sys.exit()
+g, o, c = (a.find(t[k]) for k in ('guard', 'open', 'close'))
+inc, main = a.find(b'\n#include'), a.find(b'\nint main(')
+if not g < o < c: print('out of order'); sys.exit()
+if inc >= 0 and g > inc: print('guard after an include'); sys.exit()
+if main >= 0 and c > main: print('close after main'); sys.exit()
+if b'\n#include' in a[o:c]: print('an include inside the region'); sys.exit()
+ri = a.find(b'struct rx_info rx_info')
+if ri < 0: print('no rx_info definition'); sys.exit()
+if a.rfind(b'\n};', 0, c) < ri: print('close before rx_info'); sys.exit()
+print('placed')
+XTPY
+    }
+    mkdir -p "$xt_dir/t1"
+    "$xt_dir/probe" text "$xt_t1" "$xt_dir/t1"
+    xt_t1art="$(xt_gen "-fmemfn-simd=$xt_t1" --emit-main)"
+    printf '%s\n' "$xt_t1art" > "$xt_dir/t1.c"
+    assert_eq "cpu targets U3: the default artifact names the portable target in TARGETS" \
+        "#define RX_TARGETS \"none:$xt_port\"" "$(printf '%s\n' "$xt_def" | grep '^#define RX_TARGETS ')"
+    assert_eq "cpu targets U3: a target's artifact names its family and itself in TARGETS" \
+        "#define RX_TARGETS \"$xt_two_fam:$xt_t1\"" "$(printf '%s\n' "$xt_t1art" | grep '^#define RX_TARGETS ')"
+    assert_eq "cpu targets U3: -fmemfn-simd names the host family's default target" \
+        "#define RX_TARGETS \"$xt_hostfam:$xt_host_t\"" "$(printf '%s\n' "$xt_on" | grep '^#define RX_TARGETS ')"
+    assert_eq "cpu targets U3: the kit's guard and region are placed once each, in order, around the functions and before main" \
+        "placed" "$(xt_place "$xt_dir/t1.c" "$xt_dir/t1")"
+    assert_eq "cpu targets U3: the default artifact carries none of a target's text, and no guarded byte" "0:0x0000000000000000ULL" \
+        "$(printf '%s\n' "$xt_def" | grep -cF "$(sed -n 1p "$xt_dir/t1/guard")"):$(printf '%s\n' "$xt_def" | sed -n 's/^#define RX_SIMD_GUARDED_BYTES //p')"
+    assert_eq "cpu targets U3: a target's guard and region are guarded bytes" "nonzero" \
+        "$(printf '%s\n' "$xt_t1art" | grep -q '^#define RX_SIMD_GUARDED_BYTES 0x0000000000000000ULL$' && echo zero || echo nonzero)"
+    # both vrun rows denied at the 32-byte target (mfs5, the vrun block above)
+    # is the SIMD-off artifact (mfs0) but for that target's own text: its
+    # guard and region, its TARGETS line and its guarded-byte count
+    mkdir -p "$xt_dir/t32"
+    "$xt_dir/probe" text "$mf_t32" "$xt_dir/t32"
+    xt_aside() {   # FILE TEXTDIR: FILE with the target's texts and those two stamp lines removed
+        python3 -I - "$1" "$2" <<'XTPY'
+import re, sys
+a = open(sys.argv[1], 'rb').read()
+for k in ('guard', 'open', 'close'):
+    t = open(sys.argv[2] + '/' + k, 'rb').read()
+    if t: a = a.replace(t, b'', 1)
+a = re.sub(rb'^#define RX_(TARGETS|SIMD_GUARDED_BYTES) .*\n', b'', a, flags=re.M)
+sys.stdout.buffer.write(a)
+XTPY
+    }
+    assert_eq "cpu targets U3: both vrun rows denied at a SIMD target is the SIMD-off artifact, that target's own text aside" "same" \
+        "$([ -s "$WORKDIR/mfs5.c" ] && [ "$(xt_aside "$WORKDIR/mfs5.c" "$xt_dir/t32")" = "$(xt_aside "$WORKDIR/mfs0.c" "$xt_dir/t32")" ] \
+           && ! cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs5.c" && echo same || echo differ)"
 fi
 # one family, one member (until multi-target artifacts, unit U4)
 xt_err="$(pcrec_run "$PCREC" -p rx "-fmemfn-simd=$xt_t1,$xt_t2" -o - --pattern "$xt_pat" 2>&1 >/dev/null)"; xt_rc=$?

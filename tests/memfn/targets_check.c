@@ -12,11 +12,16 @@
  * memfn/src/targets.def: a row edited in the .def disagrees with a literal
  * here. The host's default list is held to `uname -m`, which the runner
  * passes in (argv[1]), not to the kit's own `#if`. The fixture's control is
- * the compiler and a naive finder (run_targets.sh).
+ * the compiler and a naive finder (run_targets.sh). Since unit U2 it also
+ * holds LEVEL ADMISSION through `mf_kernel_find_any` at each target (the
+ * helpers each admits, as literals; no CPU conditional; a one-call selector).
  *
  * Usage: targets_check UNAME_M      -> PASS:/FAIL: lines, exit 0 iff all pass
  *        targets_check --fixture    -> the fixture C text on stdout */
+#define _GNU_SOURCE
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
@@ -91,12 +96,15 @@ static void rows(const char *uname_m)
 
     /* every token, canonical and as a caller may spell it */
     static const char v3[] = "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave";
+    /* U2 (the kit manager's ruling): features are each target's COMPLETE
+       supplied set, the family floor (fxsr, mmx, sse, sse2) written out */
+    static const char v3f[] = "avx,avx2,bmi,bmi2,cx16,f16c,fma,fxsr,lzcnt,mmx,movbe,popcnt,sahf,sse,sse2,sse3,sse4.1,sse4.2,ssse3,xsave";
     target_row("generic", "generic", NULL, "", "");
-    target_row("x86-64", "x86-64", "amd64", "sse2", "sse2");
-    target_row("x86-64-v3", "x86-64-v3", "amd64", v3, v3);
+    target_row("x86-64", "x86-64", "amd64", "sse2", "fxsr,mmx,sse,sse2");
+    target_row("x86-64-v3", "x86-64-v3", "amd64", v3, v3f);
     target_row("armv8-a", "armv8-a", "arm64", "", "neon");
-    target_row("X86-64", "x86-64", "amd64", "sse2", "sse2");
-    target_row("X86-64-V3", "x86-64-v3", "amd64", v3, v3);
+    target_row("X86-64", "x86-64", "amd64", "sse2", "fxsr,mmx,sse,sse2");
+    target_row("X86-64-V3", "x86-64-v3", "amd64", v3, v3f);
     target_row("ARMv8-A", "armv8-a", "arm64", "", "neon");
     target_row("GENERIC", "generic", NULL, "", "");
 
@@ -189,20 +197,23 @@ static void rows(const char *uname_m)
     check(!strcmp(mf_host_defaults(), want), line);
 }
 
-/* The fixture: the family guard, a generic finder, and one #if-free finder
- * per x86-64 target in that target's region -- the shape a kit form takes
- * after U2 (intrinsics with no CPU `#if`, the header inside the text). */
+/* The fixture: the family guard, the levels' headers at file scope (their
+ * mf_include_c lines, ahead of every region: review 2026-11-08 r5 X-1), a
+ * generic finder, and one #if-free finder per x86-64 target in that
+ * target's region -- the shape a kit form takes after U2 (intrinsics with
+ * no CPU `#if`, no header inside a region). */
 static void fixture(void)
 {
     const mf_target *t16 = tgt("x86-64"), *t32 = tgt("x86-64-v3");
     if (!t16 || !t32) return;
     fputs(mf_family_c_of(t16->family)->guard, stdout);
-    fputs("#include <stddef.h>\n#include <string.h>\n"
-          "size_t fx_generic(const unsigned char *s, size_t n, unsigned char b)\n"
+    fputs("#include <stddef.h>\n#include <string.h>\n", stdout);
+    fputs(mf_include_c(MF_INC_LEVEL_W16), stdout);
+    fputs(mf_include_c(MF_INC_LEVEL_W32), stdout);
+    fputs("size_t fx_generic(const unsigned char *s, size_t n, unsigned char b)\n"
           "{ for (size_t i = 0; i < n; i++) if (s[i] == b) return i; return n; }\n\n", stdout);
     fputs(mf_target_c_of(t16)->region_open, stdout);
-    fputs("#include <emmintrin.h>\n"
-          "size_t fx_w16(const unsigned char *s, size_t n, unsigned char b)\n"
+    fputs("size_t fx_w16(const unsigned char *s, size_t n, unsigned char b)\n"
           "{\n    size_t i = 0;\n    const __m128i v = _mm_set1_epi8((char)b);\n"
           "    for (; n - i >= 16; i += 16) {\n        __m128i w; memcpy(&w, s + i, 16);\n"
           "        unsigned m = (unsigned)_mm_movemask_epi8(_mm_cmpeq_epi8(w, v));\n"
@@ -211,14 +222,86 @@ static void fixture(void)
     fputs(mf_target_c_of(t16)->region_close, stdout);
     fputs("\n", stdout);
     fputs(mf_target_c_of(t32)->region_open, stdout);
-    fputs("#include <immintrin.h>\n"
-          "size_t fx_w32(const unsigned char *s, size_t n, unsigned char b)\n"
+    fputs("size_t fx_w32(const unsigned char *s, size_t n, unsigned char b)\n"
           "{\n    size_t i = 0;\n    const __m256i v = _mm256_set1_epi8((char)b);\n"
           "    for (; n - i >= 32; i += 32) {\n        __m256i w; memcpy(&w, s + i, 32);\n"
           "        unsigned m = (unsigned)_mm256_movemask_epi8(_mm256_cmpeq_epi8(w, v));\n"
           "        if (m) return i + (size_t)__builtin_ctz(m);\n    }\n"
           "    return i + fx_w16(s + i, n - i, b);\n}\n", stdout);
     fputs(mf_target_c_of(t32)->region_close, stdout);
+}
+
+/* LEVEL ADMISSION through a kit entry (unit U2): the find-any kernel
+ * rendered at each target holds exactly the helpers the design's table
+ * admits there (target_seam_units.md §2: x86-64 w16; x86-64-v3 w16 and w32;
+ * generic and armv8-a none: literals here), no CPU conditional, and a
+ * selector that is ONE call, to the top admitted rung or to the body. */
+static void mem_puts(void *u, const char *s) { fputs(s, (FILE *)u); }
+static void mem_vp(void *u, const char *f, va_list ap) { vfprintf((FILE *)u, f, ap); }
+static void mem_open(void *u, int level) { (void)u; (void)level; }
+static void mem_close(void *u) { (void)u; }
+
+static void admission(const char *tok, int w16, int w32, const char *callee)
+{
+    char *text = NULL, err[256] = "", line[384];
+    size_t len = 0;
+    FILE *f = open_memstream(&text, &len);
+    mf_sink o = { .u = f, .puts = mem_puts, .vprintf = mem_vp, .simd_open = mem_open,
+                  .simd_close = mem_close };
+    static const unsigned char b[2] = { 'a', 'z' };
+    uint32_t inc = 0;
+    int rc = f ? mf_kernel_find_any(&o, "ka", b, 2, tgt(tok), &inc, err, sizeof err) : -1;
+    if (f) fclose(f);
+    snprintf(line, sizeof line, "admission %s: the kernel renders (%s)", tok, err);
+    check(rc == 0 && text, line);
+    if (rc || !text) { free(text); return; }
+    int cond = 0;
+    for (const char *l = text; l; l = strchr(l, '\n') ? strchr(l, '\n') + 1 : NULL) {
+        const char *q = l;
+        while (*q == ' ' || *q == '\t') q++;
+        if (*q == '#' && (!strncmp(q + 1, "if", 2) || !strncmp(q + 1, "el", 2) ||
+                          !strncmp(q + 1, "endif", 5)))
+            cond++;
+    }
+    snprintf(line, sizeof line, "admission %s: no CPU conditional in the kit's text (%d)", tok, cond);
+    check(cond == 0, line);
+    snprintf(line, sizeof line, "admission %s: helpers w16 %s, w32 %s", tok, w16 ? "yes" : "no",
+             w32 ? "yes" : "no");
+    check(!!strstr(text, "ka__w16(") == w16 && !!strstr(text, "ka__w32(") == w32, line);
+    /* the headers are facts, never text (review 2026-11-08 r5 X-1): the
+       reported bits are exactly the admitted levels', and no line of the
+       kit's text includes anything */
+    uint32_t want_inc = (w16 ? MF_INC_LEVEL_W16 : 0u) | (w32 ? MF_INC_LEVEL_W32 : 0u);
+    snprintf(line, sizeof line, "admission %s: includes 0x%x (want 0x%x), no #include in the text",
+             tok, (unsigned)inc, (unsigned)want_inc);
+    check(inc == want_inc && !strstr(text, "#include"), line);
+    char want[96];
+    snprintf(want, sizeof want, "{\n    return ka__%s(subject, n, pos);\n}", callee);
+    const char *sel = strstr(text, "size_t ka(");
+    snprintf(line, sizeof line, "admission %s: the selector is one call, to ka__%s", tok, callee);
+    check(sel && strstr(sel, want) == strchr(sel, '{'), line);
+    free(text);
+}
+
+/* The kernel's bracket refusal (review 2026-11-08 r5 SEAM-5): at a target
+ * admitting a level, a sink without simd_open/simd_close is REFUSED, with a
+ * text and nothing written; at the portable target the same sink renders. */
+static void bracket_refusal(void)
+{
+    char *text = NULL, err[256] = "";
+    size_t len = 0;
+    FILE *f = open_memstream(&text, &len);
+    mf_sink o = { .u = f, .puts = mem_puts, .vprintf = mem_vp };
+    static const unsigned char b[2] = { 'a', 'z' };
+    uint32_t inc = 0;
+    int lv = f ? mf_kernel_find_any(&o, "kb", b, 2, tgt("x86-64"), &inc, err, sizeof err) : 0;
+    if (f) fflush(f);
+    size_t wrote = len;
+    int pt = f ? mf_kernel_find_any(&o, "kp", b, 2, tgt("generic"), &inc, NULL, 0) : -1;
+    if (f) fclose(f);
+    check(lv == -1 && err[0] && !wrote && pt == 0,
+          "the kernel refuses a sink without brackets at x86-64 (nothing written), renders at generic");
+    free(text);
 }
 
 int main(int argc, char **argv)
@@ -228,5 +311,10 @@ int main(int argc, char **argv)
         return 0;
     }
     rows(argc > 1 ? argv[1] : "");
+    admission("generic", 0, 0, "body");
+    admission("x86-64", 1, 0, "w16");
+    admission("x86-64-v3", 1, 1, "w32");
+    admission("armv8-a", 0, 0, "body");
+    bracket_refusal();
     return fails != 0;
 }

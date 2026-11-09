@@ -277,7 +277,7 @@ def main():
             check(spelling.get(name) in fl,
                   f"cell ({name}, {layer}) flags {fl} lack the row's spelling "
                   f"{spelling.get(name)!r}")
-            check(("-fmemfn-simd" in fl) == (layer == "simd"),
+            check(any(x == "-fmemfn-simd" or x.startswith("-fmemfn-simd=") for x in fl) == (layer == "simd"),
                   f"cell ({name}, {layer}) flags {fl}: -fmemfn-simd presence != layer")
         for k in cells:
             check(k in MEMFN_CLASS, f"cell {k} has no classification")

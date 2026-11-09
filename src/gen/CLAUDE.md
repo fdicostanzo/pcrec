@@ -43,7 +43,7 @@ Emits self-contained gcc-dialect C from the DFA machines and the VM program; the
 - `part_layout.c` — [ENTRY-TABLE] part-layout tables (art/part/wrap/head rows), marks, render, listings; checks `tests/partlayout/`.
 - `attr_text.c` — [ATTR-TABLE] the one value-to-guarded-text table for function-linkage attributes.
 - `memfn_sites.c` / `memfn_sites.h` / `memfn_sites.def` — pcrec's side of the kit's sites: DELEG_SITES, the `mf_art`, sink, constructors, define/use wrappers, `PcrecFind`, analysis/measures builders, deny map.
-- `memfn_targets.c` — [XARCH-DEV] P1: the CPU target set (kit-parsed opaque tokens, `simd_rows`).
+- `memfn_targets.c` — [XARCH-DEV] P1/U3: CPU target set, art target, guard/region (NOTES.md).
 - `memfn_stamps.c` — the kit's every-artifact stamps (`_MEMFN_FORMS`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`) and pcrec's knowledge stamps (`_FINDINGS`, `_MEASURES`) rendered over marks after emission; check `tests/memfn/run_libc_census.sh`.
 - `clskit.c` / `clskit.h` — [CLS-TREE] class-matcher kit: leaf forms, sectioning DP, `ROWS`/`TAB_ROWS` first-match tables, byte test spellings (VM and scan edge callers); reference `studies/cls_tree_study/`, tests `tests/clskit/`.
 - `emit_subst.c` — [M4-SUBST] the subst artifact (`docs/spec/subst_api.md`): the subst types block, the element `<prefix>_render`, the record and stamps, the support unit (`--emit-support`), module subst-extended; sections in NOTES.md.

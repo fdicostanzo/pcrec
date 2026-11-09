@@ -134,8 +134,11 @@ LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
 # directories as LIBSRCS and KITSRCS.
 KITSRCS  := $(wildcard memfn/src/*.c)
 KITOBJS  := $(patsubst memfn/src/%.c,$(BUILD_DIR)/obj/memfn/%.o,$(KITSRCS))
+# levels.def/targets.def/targets_c.def joined at unit U2 (lane u2): fields.def
+# includes levels.def, so a levels or target row edit rebuilt NOTHING before
+# (a hand plant of levels.def read a stale build)
 KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/src/fields.def \
-            memfn/src/plan_cost.def
+            memfn/src/plan_cost.def memfn/src/levels.def memfn/src/targets.def memfn/src/targets_c.def
 KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
 
 # [INLINE-C] stage 3: shared/, the dependency-free LEAF sources compiled
@@ -459,7 +462,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-targets \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
-      test-memfn-simdfloor \
+      test-memfn-simdfloor test-memfn-d27region \
       test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-claudemd-size test-compound test-endmark test-partlayout \
       test-kitproof test-casemap test-findall test-subst test-subst-d27 test-ci-shards
@@ -1531,6 +1534,15 @@ test-memfn-simdfloor: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-simdfloor.ran"; fi
 	CC="$(CC)" bash tests/memfn/run_simd_floor.sh
 
+# [XARCH-DEV] U3: the D27 spec-first suite of the CPU-target scaffolding
+# (tests/memfn/d27_region/, author d27region; landed by lane u3d27): the
+# guard, the region and its headers, the counts and TARGETS stamps, the
+# refusals and consumer translation units under gcc and clang, then its
+# self-checked control. About 2 min at 4 jobs.
+test-memfn-d27region: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-d27region.ran"; fi
+	bash tests/memfn/run_d27_region.sh
+
 # [MEMFN] RQ-2 (D157): the PROBE build (-DPCREC_RANK_PROBE: every PRE/OFS
 # predicate pcrec hands the kit, with the mf_pred.rank_* it carries, on
 # stderr) over the corpus at three arms: since D172 S2 commit 6 every
@@ -2280,7 +2292,7 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
-        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank test-memfn-finder \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-d27region test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-targets test-memfn-rows \
         test-startset test-spec-history test-plan-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards \

@@ -12023,7 +12023,7 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
             " * and nothing else: it writes to stderr, it is not fast, and it\n"
             " * is never what a plain invocation produces. */\n");
         pcrec_sb_cmt_close(c);
-        pcrec_sb_puts(c, "#include <stdio.h>\n");
+        pcrec_emit_include_line(v->cx, c, "#include <stdio.h>\n");
         pcrec_sb_stampf(c, v->up, "TRACE", "1");
     }
     pcrec_sb_stampf(c, v->up, "NSLOTS", "%d", pl->nstate < 1 ? 1 : pl->nstate);
@@ -14363,9 +14363,7 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
         pcrec_emit_info(cx, g, 2, job->fit.why,
                         has_budget ? budget : -1, work_budget, bt_frames, ceiling,
                         &pl->bufs);
-
-    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MAIN))
-        pcrec_emit_main(cx, g);
+    pcrec_emit_artifact_end(cx, g);
 
     /* [M4.5c] The listing, rendered LAST — the event stream is complete by
      * now, and so are the stamp numbers it reports, which are the same

@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s3002fix_report.md
+sections: Summary; The detector; Plant measured; Checks run; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

@@ -477,10 +477,10 @@
 #     no identity gate. Registered before S699-S703.
 #   simdfloor — added 2026-10-09 ([MEMFN] R-13, lane r13); runs
 #     tests/memfn/run_simd_floor.sh (the whole corpus: its floors are full-population) with the sabotaged tree's own
-#     pcrec: C18's four legs, the guard lint and the level-guard leg over the -fmemfn-simd
-#     movers. Its own arm because SIMD text sits only under -fmemfn-simd and
-#     inside level guards: every answer arm runs at the default (no SIMD
-#     text) and a compile at the default -march never sees a w32 arm.
+#     pcrec: C18's legs, the scaffolding lint and C9 at every target with a
+#     level (re-aimed for the target seam, lane u3floor). Its own arm because
+#     SIMD text sits only under -fmemfn-simd=TARGET: every answer arm runs at
+#     the default (no SIMD text).
 #     Registered before S716-S730.
 #   g2simd — added 2026-10-09 ([MEMFN] R-13, lane r13); runs
 #     memfn/tests/run_g2_simd.py --quick against the sabotaged tree's

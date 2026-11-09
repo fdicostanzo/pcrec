@@ -49,8 +49,16 @@
  *             must ENABLE above its family's portable compile, an additive
  *             list (target_seam.md §6.1: never a replacement of the whole
  *             set); MF_NO_NEEDS: nothing (armv8-a: NEON is the baseline)
- *   features  the sorted feature tokens the target supplies; needs is a
- *             subset (the table check asserts it)
+ *   features  the target's COMPLETE supplied set, sorted: every feature
+ *             token `-march=<name>` enables, the family floor included and
+ *             written out in full (no inheritance: x86-64-v3 lists x86-64's
+ *             fxsr,mmx,sse,sse2 itself; the kit manager's ruling, unit U2);
+ *             needs is a subset (asserted). What a kit LEVEL's needs are
+ *             checked against (unit U2's admission, levels.def). The table
+ *             check holds the column to the compiler both ways over its
+ *             feature vocabulary: every listed token is enabled at
+ *             `-march=<name>`, and every vocabulary token enabled there is
+ *             listed
  *
  * doc (both macros): one short plain-English line in the kit's own words,
  * what pcrec's listing prints for the row. Plain text, never C: the check
@@ -77,11 +85,11 @@ MF_FAMILY(MF_FAM_AARCH64, "arm64", "armv8-a",
 
 MF_TARGET(MF_TGT_GENERIC,   "generic",   MF_NO_FAMILY,                 MF_NO_NEEDS, "",
           "portable: no CPU-specific code, builds for any machine")
-MF_TARGET(MF_TGT_X86_64,    "x86-64",    MF_FAMILY_OF(MF_FAM_X86_64),  MF_NEEDS("sse2"), "sse2",
+MF_TARGET(MF_TGT_X86_64,    "x86-64",    MF_FAMILY_OF(MF_FAM_X86_64),  MF_NEEDS("sse2"), "fxsr,mmx,sse,sse2",
           "the x86-64 baseline, SSE2 (gcc -march=x86-64)")
 MF_TARGET(MF_TGT_X86_64_V3, "x86-64-v3", MF_FAMILY_OF(MF_FAM_X86_64),
           MF_NEEDS("avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave"),
-          "avx2,bmi,bmi2,cx16,f16c,fma,lzcnt,movbe,popcnt,sahf,sse4.1,sse4.2,ssse3,xsave",
+          "avx,avx2,bmi,bmi2,cx16,f16c,fma,fxsr,lzcnt,mmx,movbe,popcnt,sahf,sse,sse2,sse3,sse4.1,sse4.2,ssse3,xsave",
           "x86-64 plus AVX2, BMI1/2, FMA, LZCNT, MOVBE and more (gcc -march=x86-64-v3)")
 MF_TARGET(MF_TGT_ARMV8_A,   "armv8-a",   MF_FAMILY_OF(MF_FAM_AARCH64), MF_NO_NEEDS, "neon",
           "the Armv8-A baseline with NEON (gcc -march=armv8-a)")

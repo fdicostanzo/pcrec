@@ -17,7 +17,10 @@
 # block twice exceeds it (S703).
 rq3-witness	1700000
 # vrun-w16 / vrun-w32 (R4e' batch 1, R-13): one FUNC's helper block at that
-# level, its selector arm and the selector's #else/#endif. MEASURED by G2's
+# level and, for the top level, the selector's one call line (U2: the
+# selector carries no CPU #if, so no arm and no #else/#endif; the bounds
+# below were measured with them and not re-measured since, so they are
+# looser by those lines). MEASURED by G2's
 # SIMD family (memfn/tests/run_g2_simd.py) at pcrec's placeholder prefix and
 # longest FUNC name, each row rendered ALONE: worst 2,661 (w16) and 2,721
 # (w32) bytes, a 32-byte masked run compared byte by byte under
@@ -35,3 +38,16 @@ rq3-witness	1700000
 # (memfn/src/vrun.c VRUN_W*_GUARDED_MAX).
 vrun-w32	2800
 vrun-w16	2400
+# target-text ([XARCH-DEV] U3): the kit's family guard and one target's
+# region (open + close), written once per artifact for a SIMD target whatever
+# its forms. MEASURED (lane u3tgt, 2026-11-08) over the kit's targets: the
+# largest, the 32-byte target (20 feature tokens), writes 615 bytes (a
+# compound `split` artifact whose forms are "none" stamps exactly that); the
+# baseline amd64 target 469, the arm64 one 165 (its guard alone); rounded up
+# to 700. simd_guarded_check reaches every target's text (a `simd:` arm per
+# listed target). The header lines placed ahead of the region join it (lane
+# u3crit, review r5 X-1/X-2): a rendered level's vector header (23 bytes
+# each, 46 with both amd64 levels; moved out of the kit's level text, so a
+# vrun row's bytes shrink by as much) and a compound part's `#include
+# <string.h>` (20): at most 615 + 46 + 20 = 681, inside this bound.
+target-text	700

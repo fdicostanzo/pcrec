@@ -48,8 +48,40 @@ extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];
 /* ---- the attempt's kit state, and the adapters --------------------------- */
 
 /* The attempt's mf_art, begun on first ask (one per Job attempt, so the
- * size ladder's re-emission starts clean). */
+ * size ladder's re-emission starts clean), its CPU target stated at once
+ * (`mf_art_target`, before any define or emit). */
 mf_art *pcrec_memfn_art(Ctx *cx);
+
+/* [XARCH-DEV] U3 the compile's one CPU target as `pcrec_memfn_target_derive`
+ * put it on the Ctx (src/gen/memfn_targets.c): the kit's row, and its
+ * `<PREFIX>_TARGETS` value `family:members` (the kit's tokens). */
+struct PcrecCpuTarget {
+    const mf_target *row;
+    const char      *stamp;
+};
+/* The derived row: the ONE value every art, the artifact's guard and region
+ * and `<PREFIX>_TARGETS` read. */
+const mf_target *pcrec_memfn_target(Ctx *cx);
+/* `<PREFIX>_TARGETS`' value for it. */
+const char *pcrec_memfn_targets_stamp(Ctx *cx);
+/* The kit's family guard (at file scope ahead of every `#include`), the
+ * target's region open (before the artifact's first function) and its close
+ * (after the last). Guarded bytes (no length decision reads them); nothing on a
+ * part, nothing for the portable target. */
+void pcrec_emit_target_guard(Ctx *cx, StrBuf *c);
+/* The target headers' mark (ahead of the region open, every artifact but a
+ * part) and its text, which the finishing pass splices over it. */
+#define PCREC_TARGET_HEADERS_MARK "\x01H\n"
+void pcrec_emit_target_headers_mark(Ctx *cx, StrBuf *c);
+const char *pcrec_memfn_target_headers(Ctx *cx, const char *ahead, size_t nahead,
+                                       const char *held);
+bool pcrec_memfn_target_has_region(Ctx *cx);
+/* An `#include` line inside the region, behind its held mark: the finishing
+ * pass takes both out and places the header at file scope ahead of it. */
+#define PCREC_HELD_HEADER_MARK "\x01h\n"
+void pcrec_emit_include_line(Ctx *cx, StrBuf *c, const char *line);
+void pcrec_emit_target_open(Ctx *cx, StrBuf *c);
+void pcrec_emit_target_close(Ctx *cx, StrBuf *c);
 
 /* A sink over one StrBuf. The comment gate stays pcrec's WRITE-TIME mute
  * (sb.c): `cmt_open` enters a NONESSENTIAL region, writes the comment's
@@ -106,8 +138,8 @@ uint64_t pcrec_memfn_deny_flags(uint64_t mf);
 /* ---- building a site ------------------------------------------------------ */
 
 /* A zeroed site for DELEG_SITES row `id`, in the arena: its abi, its policy
- * (MF_P_INLOOP from the row's budget and nowhere else; MF_P_PORTABLE_ONLY
- * while -fmemfn-simd is not given), `opts` NULL (no --memfn= until R4d). */
+ * (MF_P_INLOOP from the row's budget and nowhere else: the CPU target is the
+ * art's, `mf_art_target`), `opts` the compile's --memfn= string. */
 mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id);
 /* `n` zeroed predicates in the arena. */
 mf_pred *pcrec_memfn_preds(Ctx *cx, int n);

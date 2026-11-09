@@ -39,6 +39,17 @@
 # `_`, quote, `=` or blank fails it -- except the one `doc` column; targets.def holds no preprocessor
 # directive; and targets_c.def has exactly one spelling row per family.
 #
+# LEVEL ADMISSION (unit U2): the kit admits a level (levels.def) at a target
+# iff the level's family token is the target's family's and every one of the
+# level's `needs` is among the target's `features`. For every target of the
+# building host's family and every level of that family, the table's answer
+# is held to THE COMPILER's: a need is supplied at the target iff
+# `gcc -march=<target> -m<need>` defines exactly what `gcc -march=<target>`
+# does (the whole -dM set again), so a feature the table forgets (how
+# x86-64-v3 first lacked sse2 and dropped w16) and one it invents both fail.
+# Every level's family token names a family, and its test_march is a target
+# token whose row admits it. LEVELS_DEF points at another levels table.
+#
 # THE HOST CHAIN (targets_c.def's MF_TARGET_HOST block, the kit's own #if) is
 # held to the guard column under several preprocessor targets (gcc as is,
 # -m32, -mx32; clang --target=aarch64-linux-gnu where clang exists): in each,
@@ -55,6 +66,8 @@ GCC="${TARGETS_GCC:-gcc}"
 here="$(cd "$(dirname "$0")" && pwd)"
 def="${TARGETS_DEF:-$here/../src/targets.def}"
 cdef="${TARGETS_C_DEF:-$here/../src/targets_c.def}"
+ldef="${LEVELS_DEF:-$here/../src/levels.def}"
+idef="${INCLUDES_C_DEF:-$here/../src/includes_c.def}"
 out="${1:-}"
 FLOOR_FAMILIES=2   # the design's two family rows (target_seam.md §2)
 FLOOR_TARGETS=4    # generic, x86-64, x86-64-v3, armv8-a (units.md §2, K0)
@@ -70,7 +83,8 @@ finish() {
 }
 
 command -v "$GCC" >/dev/null 2>&1 || { say "no $GCC: the check could not run"; finish 2; }
-[ -r "$def" ] && [ -r "$cdef" ] || { say "cannot read $def or $cdef"; finish 2; }
+[ -r "$def" ] && [ -r "$cdef" ] && [ -r "$ldef" ] && [ -r "$idef" ] ||
+    { say "cannot read $def, $cdef, $ldef or $idef"; finish 2; }
 
 # The rows, one per line:  F id|name|defaults   T id|name|family|needs|features
 #                          C id|guard (targets_c.def)
@@ -80,8 +94,11 @@ rows="$(printf '%s\n' \
     '#define MF_FAMILY_OF(id) id' '#define MF_NO_FAMILY NONE' \
     '#define MF_NEEDS(list) list' '#define MF_NO_NEEDS ""' \
     '#define MF_FAMILY_C(id, guard) C id|guard' \
-    "#include \"$def\"" "#include \"$cdef\"" | "$GCC" -E -P -x c - 2>/dev/null | grep -E '^[FTC] ')" || {
-    say "could not read $def and $cdef through $GCC -E"; finish 2; }
+    '#define MF_LEVEL(id, family, needs, inc, vw, test_march, forbid, stamp) L id|family|needs|test_march|stamp|inc' \
+    '#define MF_INCLUDE_C(bit, line) I bit|line' \
+    "#include \"$def\"" "#include \"$cdef\"" "#include \"$ldef\"" "#include \"$idef\"" |
+    "$GCC" -E -P -x c - 2>/dev/null | grep -E '^[FTCLI] ')" || {
+    say "could not read $def, $cdef, $ldef and $idef through $GCC -E"; finish 2; }
 directives="$(grep -nE '^[[:space:]]*#' "$def" | head -3 | tr '\n' ' ')"
 [ -z "$directives" ] || mismatch "targets.def (the facts) holds a preprocessor directive: $directives"
 
@@ -101,12 +118,22 @@ tokens() { [ -z "$2" ] || printf '%s' "$2" | grep -qxE '[a-z0-9][a-z0-9.-]*(,[a-
     mismatch "$1: '$2' is not a token list (emitter text in a facts row?)"; }
 
 declare -A fam_name fam_guard fam_defs tgt_name tgt_fam tgt_attr tgt_feat seen_tok
-fams=() tgts=()
+declare -A lvl_fam lvl_needs lvl_march lvl_stamp lvl_inc inc_line
+fams=() tgts=() lvls=()
 while IFS= read -r line; do
     kind="${line%% *}"; body="${line#* }"
     IFS='|' read -r a b c d e f <<<"$body"
     a="$(echo "$a" | tr -d ' ')"
-    if [ "$kind" = C ]; then
+    if [ "$kind" = L ]; then
+        lvls+=("$a")
+        lvl_fam[$a]="$(unq "$b")"; lvl_needs[$a]="$(unq "$c")"
+        lvl_march[$a]="$(unq "$d")"; lvl_stamp[$a]="$(unq "$e")"
+        lvl_inc[$a]="$(echo "$f" | tr -d ' ')"
+        tokens "level $a needs" "${lvl_needs[$a]}"
+    elif [ "$kind" = I ]; then
+        [ -z "${inc_line[$a]+x}" ] || mismatch "include bit $a: more than one spelling row"
+        inc_line[$a]="$(unq "$b")"
+    elif [ "$kind" = C ]; then
         [ -z "${fam_guard[$a]+x}" ] || mismatch "family $a: more than one C spelling row"
         fam_guard[$a]="$(unq "$b")"
     elif [ "$kind" = F ]; then
@@ -234,5 +261,103 @@ case "$host" in
     *) [ "$ran" -ge 1 ] || mismatch "the host family $host compared no target against $GCC -march" ;;
 esac
 
-[ "$bad" = 0 ] && say "ok: ${#fams[@]} families, ${#tgts[@]} targets, $ran compared against $GCC -march, $skipped skipped (another family or no needs), host ${host:-none}, $cells host cells ($cskip skipped)"
+in_list() { case ",$2," in *",$1,"*) return 0 ;; esac; return 1; }
+# THE FEATURES COLUMN IS COMPLETE (the kit manager's ruling, unit U2): over
+# THIS check's feature vocabulary (token -> the macro gcc defines when the
+# feature is enabled; a column of the check, sharing no source with the
+# table), every token a host-family target lists is in the vocabulary and
+# its macro is defined at `gcc -march=<name>`, and every vocabulary token
+# whose macro is defined there is listed. Not in the vocabulary: features no
+# kit level or target row names (crc32 among them, whose macro gcc 14 added).
+declare -A vocab=(
+    [MF_FAM_X86_64:fxsr]=__FXSR__ [MF_FAM_X86_64:mmx]=__MMX__ [MF_FAM_X86_64:sse]=__SSE__
+    [MF_FAM_X86_64:sse2]=__SSE2__ [MF_FAM_X86_64:sse3]=__SSE3__ [MF_FAM_X86_64:ssse3]=__SSSE3__
+    [MF_FAM_X86_64:sse4.1]=__SSE4_1__ [MF_FAM_X86_64:sse4.2]=__SSE4_2__ [MF_FAM_X86_64:popcnt]=__POPCNT__
+    [MF_FAM_X86_64:sahf]=__LAHF_SAHF__ [MF_FAM_X86_64:cx16]=__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16
+    [MF_FAM_X86_64:avx]=__AVX__ [MF_FAM_X86_64:avx2]=__AVX2__ [MF_FAM_X86_64:bmi]=__BMI__
+    [MF_FAM_X86_64:bmi2]=__BMI2__ [MF_FAM_X86_64:f16c]=__F16C__ [MF_FAM_X86_64:fma]=__FMA__
+    [MF_FAM_X86_64:lzcnt]=__LZCNT__ [MF_FAM_X86_64:movbe]=__MOVBE__ [MF_FAM_X86_64:xsave]=__XSAVE__
+)
+FLOOR_VOCAB=20     # the x86-64 vocabulary's tokens, above
+nv=0; for k in "${!vocab[@]}"; do [ "${k%%:*}" = "$host" ] && nv=$((nv + 1)); done
+case "$host" in MF_FAM_X86_64) [ "$nv" -ge "$FLOOR_VOCAB" ] || mismatch "feature vocabulary $nv < floor $FLOOR_VOCAB" ;; esac
+fcomp=0
+for t in "${tgts[@]}"; do
+    f="${tgt_fam[$t]}"
+    [ "$f" != NONE ] && [ "$f" = "$host" ] && [ "$nv" -ge 1 ] || continue
+    m="$("$GCC" -march="${tgt_name[$t]}" -dM -E -x c /dev/null 2>/dev/null)" ||
+        { mismatch "$t: $GCC refuses -march=${tgt_name[$t]}"; continue; }
+    for x in ${tgt_feat[$t]//,/ }; do
+        if [ -z "${vocab[$f:$x]+x}" ]; then mismatch "$t: feature '$x' is not in the check's vocabulary"
+        elif ! printf '%s\n' "$m" | grep -q "^#define ${vocab[$f:$x]} "; then
+            mismatch "$t: lists '$x', but $GCC -march=${tgt_name[$t]} does not define ${vocab[$f:$x]}"
+        fi
+    done
+    for k in "${!vocab[@]}"; do
+        [ "${k%%:*}" = "$f" ] || continue
+        x="${k#*:}"
+        printf '%s\n' "$m" | grep -q "^#define ${vocab[$k]} " || continue
+        in_list "$x" "${tgt_feat[$t]}" ||
+            mismatch "$t: $GCC -march=${tgt_name[$t]} enables '$x' (${vocab[$k]}), which its features do not list"
+    done
+    fcomp=$((fcomp + 1))
+done
+case "$host" in
+    ""|MF_NFAMILY) ;;
+    *) [ "$fcomp" -ge 1 ] || mismatch "the features control compared no target" ;;
+esac
+
+# LEVEL ADMISSION: the table's answer against the compiler's.
+FLOOR_LEVELS=2     # w16, w32 (R-13)
+[ "${#inc_line[@]}" -ge 3 ] || mismatch "${#inc_line[@]} include spelling rows < floor 3 (string.h, w16, w32)"
+[ "${#lvls[@]}" -ge "$FLOOR_LEVELS" ] || mismatch "${#lvls[@]} level rows < floor $FLOOR_LEVELS"
+table_admits() {   # table_admits TARGET LEVEL
+    local n f="${tgt_fam[$1]}"
+    [ "$f" != NONE ] && [ "${fam_name[$f]}" = "${lvl_fam[$2]}" ] || return 1
+    for n in ${lvl_needs[$2]//,/ }; do in_list "$n" "${tgt_feat[$1]}" || return 1; done
+}
+admitted=0 refused=0
+for l in "${lvls[@]}"; do
+    lf="" mt=""
+    for f in "${fams[@]}"; do [ "${fam_name[$f]}" = "${lvl_fam[$l]}" ] && lf="$f"; done
+    [ -n "$lf" ] || mismatch "level $l: family token '${lvl_fam[$l]}' names no family"
+    for t in "${tgts[@]}"; do [ "${tgt_name[$t]}" = "${lvl_march[$l]}" ] && mt="$t"; done
+    if [ -z "$mt" ]; then mismatch "level $l: test_march '${lvl_march[$l]}' is no target token"
+    elif ! table_admits "$mt" "$l"; then mismatch "level $l: its test_march ${lvl_march[$l]} does not admit it"
+    fi
+    # its header is a FACT with one C spelling (review 2026-11-08 r5 X-1)
+    i="${lvl_inc[$l]}"
+    if [ -z "${inc_line[$i]+x}" ]; then mismatch "level $l: include bit '$i' has no spelling row in includes_c.def"
+    elif ! printf '%s' "${inc_line[$i]}" | grep -qxE '#include <[A-Za-z0-9_./]+>\\n'; then
+        mismatch "level $l: include bit $i's spelling '${inc_line[$i]}' is not one #include line"
+    fi
+    for k in "${lvls[@]}"; do
+        [ "$k" = "$l" ] || [ "${lvl_inc[$k]}" != "$i" ] || mismatch "levels $l and $k share include bit $i (one bit per level)"
+    done
+    [ -n "$lf" ] && [ "$lf" = "$host" ] && [ -n "${floor[$lf]+x}" ] || continue
+    for t in "${tgts[@]}"; do
+        [ "${tgt_fam[$t]}" = "$lf" ] || continue
+        base="$("$GCC" -march="${tgt_name[$t]}" -dM -E -x c /dev/null 2>&1 | LC_ALL=C sort)" ||
+            { mismatch "$t: $GCC refuses -march=${tgt_name[$t]}"; continue; }
+        truth=1
+        for n in ${lvl_needs[$l]//,/ }; do
+            w="$("$GCC" -march="${tgt_name[$t]}" -m"$n" -dM -E -x c /dev/null 2>&1 | LC_ALL=C sort)" ||
+                { mismatch "level $l at $t: $GCC refuses -m$n"; truth=x; break; }
+            [ "$w" = "$base" ] || truth=0
+        done
+        [ "$truth" = x ] && continue
+        if table_admits "$t" "$l"; then got=1; else got=0; fi
+        if [ "$got" != "$truth" ]; then
+            mismatch "level $l at ${tgt_name[$t]}: the table $([ "$got" = 1 ] && echo admits || echo refuses) it, $GCC -march=${tgt_name[$t]} $([ "$truth" = 1 ] && echo supplies || echo lacks) its needs (${lvl_needs[$l]}): a feature is $([ "$got" = 1 ] && echo invented || echo missing)"
+        elif [ "$got" = 1 ]; then admitted=$((admitted + 1))
+        else refused=$((refused + 1)); fi
+    done
+done
+case "$host" in
+    ""|MF_NFAMILY) ;;
+    *) [ "$admitted" -ge 1 ] && [ "$refused" -ge 1 ] ||
+           mismatch "level admission compared $admitted admitted and $refused refused (both must be >= 1)" ;;
+esac
+
+[ "$bad" = 0 ] && say "ok: ${#fams[@]} families, ${#tgts[@]} targets, $ran compared against $GCC -march, $skipped skipped (another family or no needs), host ${host:-none}, $cells host cells ($cskip skipped), level admission $admitted admitted + $refused refused against $GCC, features complete at $fcomp targets over $nv vocabulary tokens"
 finish "$bad"
