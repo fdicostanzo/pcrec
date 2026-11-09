@@ -148,6 +148,15 @@ All niced and single-process:
 3. **B/C side effect.** Under either plant, pcrec refuses the arm fixture `mismatch_inplace` in rows_check ("the memfn kit's text calls <string.h> functions the prologue did not include"). The clean tree is unaffected. This is recorded in plan_frame §5 (C) and offered as a PLAN observation.
 4. **SAB_DOC_FIGUREs for S2983/S2984/S2988** live in this report and in the §P comment. These rows have no mech file.
 
+5. **The deliver file gained one line**, `dirty-ok: docs/dev/artifact_size_log.tsv`. Lanecheck refused the tree for that file.
+   - The file has been dirty since 2026-11-08 19:10 (a make test run before this lane started).
+   - The brief says never to commit it, and discarding it is not this lane's call.
+   - No other line of the deliver file changed.
+
+## STATE AT HANDOFF
+
+OWED: none. Nothing is queued or running. Branch lane/memfn-s30a is at the final commit of this lane. Gate jobs 500-509 are refreshed and wait for the kit manager to queue them.
+
 ## Charter-vs-committed checklist
 
 | charter item | committed |
