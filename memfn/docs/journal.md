@@ -3722,3 +3722,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - PLAN rows: noted, not built.
   - U2 gates 560-569 cancelled as stale. Lane u2rev (opus) launched; jobs re-queued on its tip.
 - 11-08 20:57: main flagged u2rev at a load of 35 on 16 cores inside Frank's hold (18 g2 processes, scratch/memfn/u2rev/pv). By 20:56 only one niced g2_run was left. Sent u2rev the binding rule (-j2 nice; multi-process G2 goes to a job file). Lesson: build briefs say 'light' but the G2 harness defaults to a full -j; name the -j cap AND G2's own parallelism flag in the brief.
+- 11-08 ~21:20: u2rev DELIVERED (lane/memfn-u2 bc05bbd6c; closed).
+  - X-1: header facts MF_INC_LEVEL_W16/W32 + mf_include_c; no #include in kit text. X-5: switch deleted, mf_art_begin drops policy. X-3: S2997 retired. SEAM-5: find-any refuses without brackets. MF_SITE_ABI 26.
+  - X-1 witness: 4/4 cells red on u3tgt, green on the preview. Movers: default 0/6394; SIMD 106 per target, header lines only.
+  - G2, finder, simdfloor and arch green. S3001-S3004 DETECTED; S726 UNDETECTED as declared.
+  - Jobs 560-569 refreshed (146 mech rows); they need the joint tree (U2_TREE). Relayed u3crit's reading to main; waiting on the joint tree path.
+  - HOUSE-6/7/8 (r5, kit files) went to tiny lane u2house (sonnet, zero bytes, no parallel runs).
