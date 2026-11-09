@@ -394,3 +394,16 @@ x*$
 # `diff_is_data_only` accepted it, so the class is the existing one, not a
 # new axis. Same class as the rows above.
 (?:cat|bat)(?<=[cb]at|a{1,3}t)s
+
+# [sae2mt, 2026-11-09] (the 208 sae2-maketest-3 triage). One pattern of
+# tests/altcls/altnf_rules.rxt (block at line 96) enters the gate-refinement
+# class on lane/sae2: span_arms E2's T3 row E-4 makes `\K` (a zero-width node
+# that can fail, docs/design/span_arms.md section 4.1) the width-0 run unit,
+# so `x\Kac|xab` gains the required run `xa[bc]` (`RX_REQ_RUN` "786162@0/fffffe"
+# byte, "@1" utf8) where the branch point said "dominated". The prefilter form
+# pair was already divergent at the branch point (byte memchr, utf8 offset-set,
+# both rows named above for this family) and is now run-pinned at both with
+# the byte/utf8 offsets of the K50 boundary gate. Answers unchanged (the corpus
+# block passes in both encodings; restore lever `--harness=restore=zero` returns
+# the branch point's text, `=empty` does not).
+(?:x\Kac|xab)
