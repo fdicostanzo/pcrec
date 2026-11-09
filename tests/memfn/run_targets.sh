@@ -278,7 +278,11 @@ C
         else bad "census: the x86-64-v3 artifact's object carries no ymm register (the region did not apply?)"; fi
         sed -E '/#pragma (clang attribute (push|pop)|GCC (push_options|pop_options|target))/d' "$v3" > "$WORKDIR/v3_noregion.c"
         if gcc -O2 -c -I"$(dirname "$v3")" -o "$WORKDIR/v3n.o" "$WORKDIR/v3_noregion.c" 2> "$WORKDIR/v3n.err"; then
-            bad "control: the x86-64-v3 artifact without its region still compiled at the default -march"
+            if gcc -dM -E -x c /dev/null | grep -q '^#define __AVX2__ '; then
+                skip "control: this gcc already targets AVX2 by default (ambient -march), so the region-stripped artifact compiles; the control cannot discriminate here"
+            else
+                bad "control: the x86-64-v3 artifact without its region still compiled at the default -march (gcc $(gcc -dumpfullversion), ymm in stripped object: $(objdump -d --no-show-raw-insn "$WORKDIR/v3n.o" | grep -c '%ymm'), predefined: $(gcc -dM -E -x c /dev/null | grep -cE '__(AVX|SSE4_2|BMI2)')/3 of AVX/SSE4_2/BMI2)"
+            fi
         elif grep -q 'target specific option mismatch' "$WORKDIR/v3n.err"; then
             ok "control: the x86-64-v3 artifact without its region refuses to compile at the default -march (an ISA mismatch)"
         else bad "control: the region-stripped artifact failed, but not for its ISA: $(head -c 200 "$WORKDIR/v3n.err")"; fi
