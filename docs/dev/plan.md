@@ -467,6 +467,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-09): UNSCHEDULED; no unit owns the skip yet (review r2 r38s F1). Design facts: span_arms §12a, §12c; R-38 Part C (memfn/docs/requests.md)
   trigger: (D77) a bench cell whose runs are exact over the whole attempt (literal-heavy patterns, `bar(?=baz)` shapes) where the engine's finish is a measurable share of time
   refs: docs/design/span_arms.md §12a §12c; docs/dev/reviews/2026-11-09-r2-r38s.md (F1); [MATCH-KNOWN] (its prefix-skip member reads the same verified extent); body docs/design/plan_row_bodies/EARNED-SKIP.md
+- [NEVER-MATCH] STATE:not-started — a pattern proved never to match compiles to a constant no-match matcher; a fact, never an error
+  filed: 2026-11-09 manager (Frank: "I like your no match ideas. File")
+  status (2026-11-09): UNSCHEDULED. Never an error (D26; best-guess detection must not decide acceptance). Optimize (constant matcher, dead branches dropped) + an --emit-facts fact + an optional warning flag at [IFACE-PUSH]
+  trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
+  refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]
 - [CAPS-VIEW-RERENDER] STATE:not-started — re-render cycle1_caps_view.md's CAPS table under the bench's I-99/I-100 classes
   filed: 2026-09-28 lane admin88
   status (2026-09-28): not started; FILED 2026-09-28, admin88, on `[OPTLOOP.2.analysis]`'s own residual #4, `docs/dev/optloop/cycle2_close.md` §2 item 4 — proposed, not ruled, per that document's own text
