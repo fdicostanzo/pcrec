@@ -22,7 +22,7 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 
 - THE RUNNER ARCHIVES HEAD PER ROW (`git archive HEAD` is re-read for EVERY sabotage): COMMIT BEFORE YOU START AND COMMIT NOTHING DURING THE RUN, or the matrix measures N trees.
 - A MISSING OR UNSCRAPEABLE SUITE LOG SCORES ANOMALY, NEVER A SYNTHESIZED COUNT: all arms route through `score_arm`; never default a missing failure count to a detection.
-- A DESIGNED COMPILE-TIME CATCH IS DECLARED, NEVER INFERRED ([MECH-NOCOMPILE]): `SAB_EXPECT=COMPILE-CATCH` on a row whose plant must make an arm's artifact fail to compile (S07 S1112 S1242 S184 S272 S2977 S403 S989); an arm log with a compiler error = `DETECTED-BUILD`, none = UNDETECTED `***UNEXPECTED***`. An undeclared compile failure stays ANOMALY, and `run_sabotage_matrix.sh` exits 1 when anomalies exceed `ANOMALY_CEILING_PIN` (override `MECH_ANOMALY_CEILING`; pinned 0).
+- A DESIGNED COMPILE-TIME CATCH IS DECLARED, NEVER INFERRED ([MECH-NOCOMPILE]): `SAB_EXPECT=COMPILE-CATCH` on a row whose plant must make an arm's artifact fail to compile (S07 S1112 S1242 S184 S272 S403 S989); an arm log with a compiler error = `DETECTED-BUILD`, none = UNDETECTED `***UNEXPECTED***`. An undeclared compile failure stays ANOMALY, and `run_sabotage_matrix.sh` exits 1 when anomalies exceed `ANOMALY_CEILING_PIN` (override `MECH_ANOMALY_CEILING`; pinned 0).
 - Mech ids are passed without a suffix (`S222`, never `S222_...`); read a row verdict from its own `== mech run COMPLETE` trailer; take S-ids from the range your brief names.
 
 
