@@ -1512,6 +1512,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: starts on Frank's word; no row-specific trigger recorded
   refs: decisions D123 D125
   should an -e utf8 compile use the code-point data (cpfreq via encode-utf8) BY DEFAULT? Changes D123 item 5 (default declares byte only). Frank: YES in principle, but only AFTER [FIND-TIE] lands AND a corpus with real non-ASCII text exists (see [UTF-RW]) — an ASCII-only table cannot rank the bytes that matter and would only move the lottery.
+  note (Frank 2026-11-09): UTF-8 needs its OWN rate data, never the byte table borrowed; a default is tricky because UTF-8 text is used in many different ways. Seen at R1's rate tie (`\Gcat\Kdog`: byte picks dog by rate, utf8 has no rate so the next decider picks cat; one rule, different data, no encoding branch).
 - [FIND-MIX] STATE:not-started — WEIGHTED MIXTURE of findings data
   filed: 2026-09-28 Frank
   status (2026-09-28): not started; FILED by Frank 2026-09-28, eighty-fourth session, D125: filed, UNSCHEDULED; pairs with [FIND-UTF8-DEFAULT]
