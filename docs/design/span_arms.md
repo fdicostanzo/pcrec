@@ -1191,6 +1191,15 @@ Consequences (manager, to be folded into the L2 text and the §8.2 kit request b
 - NO PRE-CUT (Frank 2026-11-08, "does kit still get a list of spans with offsets and max overshoot?"): the seam stays D172's list of span statements (position sets, D187; signed offsets from the attempt start, `omin`/`maxoff`, `head_max`, the verify flag). §8.2's step "pcrec cuts its 8-position window around the member" is withdrawn: pcrec states the WHOLE run as ONE span, uncut, and the kit chooses the scan position and how much of the run it verifies, replying with its choice; pcrec's readers (the stamps, `--emit-facts`) read that reply. `PCREC_MAX_REQ_RUN_EMIT` (an unmeasured pcrec constant) stops shaping what the kit sees; any length limit is the kit's own priced choice. A run is one contiguous fact: pcrec never splits it into several spans (that would be pcrec choosing the kit's layout again).
 - Timing (manager's leaning): fold it into L2 now, because L2 already waits on the kit's request; the request is written once with the end-state fact.
 
+## 12b. Owner rulings 2026-11-09 on §13
+
+- Q1 (repeats as copies): YES. Frank's concern: the kit proves `abab` but pcrec cannot reverse from the proof and must rematch. Recorded answer: repeats-as-copies does not add a reversal; each copy has a fixed width, so the attempt start stays the hit minus a fixed offset wherever it was fixed before. A rematch (the engine's finish) happens today for every run that does not cover the whole attempt exactly; where the run IS the whole attempt and exact (e.g. `xy(?:ab){2}zw` alone), D187 add. 1's earned skip applies and no rematch is needed. Variable repeats (`X{2,5}`) count only the X^m prefix, so the finish still runs.
+- Q2 (zero-width assertions stop cutting the run): YES for `\b` at least; Frank: "cracking open a piece of code comes with overhead, so complete the task while we're in there" (not count-first). Manager's leaning for the rest (`$`, `\K`, lookarounds): the same treatment in the same unit where they share the cut site; confirm with Frank.
+- Q4 (lookbehind cap = declared lookbehind length): AGREED.
+- Q5 (L3 before the start-position clean-up, sites in its table shape): AGREED.
+- Q6 ([REWRITE-ADJ] design starts once this note is ruled): AGREED.
+- Q3: explanation requested; open.
+
 ## 13. Open questions for Frank (plain words, each with a leaning)
 
 1. **Should a repeat count as its copies for the required run?** Today `xy(?:ab){2}zw` gives the
