@@ -3721,3 +3721,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - SEAM-5: vany refuses without the sink's brackets.
   - PLAN rows: noted, not built.
   - U2 gates 560-569 cancelled as stale. Lane u2rev (opus) launched; jobs re-queued on its tip.
+- 11-08 20:57: main flagged u2rev at a load of 35 on 16 cores inside Frank's hold (18 g2 processes, scratch/memfn/u2rev/pv). By 20:56 only one niced g2_run was left. Sent u2rev the binding rule (-j2 nice; multi-process G2 goes to a job file). Lesson: build briefs say 'light' but the G2 harness defaults to a full -j; name the -j cap AND G2's own parallelism flag in the brief.
