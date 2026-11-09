@@ -144,3 +144,14 @@ finishing pass (memfn_stamps.c `target_headers_render`) writes there the
 headers a part's text needs (`PcrecPartFacts.string_h`) and, with the kit's
 includes fact, the intrinsic headers; guarded bytes, so no decision reads
 them and a default artifact is byte-identical.
+
+Lane u3d27 (D27 region suite F1): a spliced part's own header lines
+(`<string.h>`, `--emit-main`'s two) are written through
+`pcrec_emit_part_header` (memfn_targets.c): behind the held mark
+`PCREC_HELD_HEADER_MARK` in its own bracket where the shell opens a region,
+so every length decision reads the line as on the SIMD-off compile and none
+reads the mark; `target_headers_render` takes each mark out with its line,
+the header being placed ahead of the region (the part's facts) or already in
+the shell's prologue (`--emit-main`). The part's own guarded count leaves the
+marks out (`pcrec_memfn_stamps_render`). A default or no-region artifact is
+byte-identical.

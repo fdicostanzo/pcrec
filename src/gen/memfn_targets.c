@@ -207,10 +207,11 @@ uint32_t pcrec_memfn_art_includes(Ctx *cx)
  * (`mf_include_c`). gcc gives a header's inline functions the target in force
  * where it is FIRST included, so a header first read inside the region breaks
  * every later use of it outside (a fortified `memcpy`, a consumer's
- * intrinsics, a second artifact; review 2026-11-08-r5-xarch X-1, X-2); first
- * included here, a part's own later line is a no-op. "" without a region (no
- * level renders, and a part's line is then at file scope's target already).
- * Read once, after the last emit. */
+ * intrinsics, a second artifact; review 2026-11-08-r5-xarch X-1, X-2); a
+ * part's own line is held and taken out with its mark
+ * (`pcrec_emit_part_header`), so the region repeats none. "" without a region
+ * (no level renders, and a part's line is then at file scope's target
+ * already). Read once, after the last emit. */
 const char *pcrec_memfn_target_headers(Ctx *cx)
 {
     if (!cx->job->region_placed) return "";

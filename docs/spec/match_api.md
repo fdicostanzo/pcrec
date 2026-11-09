@@ -2789,7 +2789,8 @@ kit rendered, and which C library functions the artifact calls.
   for another (`-m32` from a 64-bit pcrec) is refused cleanly by its
   frame-size asserts (§10.4¶2). It is `"none"` iff the artifact is byte-identical
   (stamp lines and its target's own text aside: §6.3.10¶15's guard, region and
-  headers) to its own `-fno-memfn-simd` compile; otherwise the ids of the
+  headers, a compound part's header line it moves ahead of the region
+  included) to its own `-fno-memfn-simd` compile; otherwise the ids of the
   forms that make it differ, comma-joined in site order, a site that cascades
   between ISA levels carrying them as `ID@LEVEL+LEVEL`. Ids and level names are
   OPAQUE: bucket on `"none"` / not-`"none"`, never parse an id. SIMD is off by

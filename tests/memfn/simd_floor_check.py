@@ -47,8 +47,9 @@ are printed with a literal floor (K35). On every cell:
       (D155 addendum 1's rule, sharing no code with the kit) over the ON text.
 A header line ahead of the region whose `#include` OFF also carries (a
 compound part's own <string.h>, moved there: match_api.md §6.3.10¶15) is set
-aside on every leg (target_text.moved_headers_aside); C9 compiles the
-artifact as emitted.
+aside on every leg (target_text.moved_headers_aside), and OFF's own copy of
+it, which ON no longer repeats inside the region, with it (moved_out); C9
+compiles the artifact as emitted.
 On every mover additionally:
   (b) PREPROCESSED: `gcc -E -P` of OFF and ON, diffed, deletes exactly the one
       `return <fn>__body(...)` line per SIMD FUNC (a macro in the inserted
@@ -84,7 +85,7 @@ sys.path.insert(0, os.path.join(TREE, 'scripts'))
 sys.path.insert(0, HERE)
 import emit_sweep as es  # noqa: E402
 import routing_shape  # noqa: E402
-from target_text import admitted, cut, moved_headers_aside, read_table  # noqa: E402
+from target_text import admitted, cut, moved_headers_aside, moved_out, read_table  # noqa: E402
 
 # Floors per target, pinned AT the measure (deterministic counts of emitted
 # text). History of the pre-seam single count: 44 at w16 (R-13); 33 at D172
@@ -328,20 +329,28 @@ def main():
             raw = open(on, encoding='utf-8', errors='surrogateescape').read()
             ton = moved_headers_aside(raw, toff, t)
             aside = len(raw.encode('utf-8', 'surrogateescape')) - len(ton.encode('utf-8', 'surrogateescape'))
+            # and the OFF copies of a header ON moved out of its region (a
+            # compound part's own lines, F1) set aside on OFF's side
+            toffm = moved_out(toff, raw, t)
             if open(on[:-1] + 'h', 'rb').read() != hoff:
                 rec['issues'].append('the .h moved under -fmemfn-simd (scaffolding in the header?)')
             adm = admitted(t, levels)
-            mover, sel, issues = text_legs(toff, ton, t, adm, aside)
+            mover, sel, issues = text_legs(toffm, ton, t, adm, aside)
             rec['issues'] += issues
             rec['mover'], rec['sel'] = mover, sel
             if not mover:
                 continue
-            rec['toff'], rec['ton'] = toff, ton
+            rec['toff'], rec['ton'] = toffm, ton
             # (b) by the preprocessor: only the floor calls change
             onpp = on[:-2] + '_pp.c'
             with open(onpp, 'w', encoding='utf-8', errors='surrogateescape') as f:
                 f.write(ton)
-            x, y = pp(off), pp(onpp)
+            offpp = off
+            if toffm != toff:
+                offpp = off[:-2] + '_moved.c'
+                with open(offpp, 'w', encoding='utf-8', errors='surrogateescape') as f:
+                    f.write(toffm)
+            x, y = pp(offpp), pp(onpp)
             if x is None or y is None:
                 rec['issues'].append('(b) preprocessing failed')
             else:

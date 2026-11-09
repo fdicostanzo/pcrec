@@ -1,3 +1,9 @@
+# d27region — the D27 author's report (verbatim)
+
+Author: the blinded D27 lane `d27region` (2026-11-08), in cell `worktrees/d27region-cell/`; placed here unchanged by lane u3d27, which landed the suite (paths in the report are the cell's: `d27/` is this directory). The fixes and rulings it led to: docs/dev/lanes/u3d27_report.md.
+
+---
+
 I ran 8,154 checks: 8,141 passed and 13 failed. That covers what match_api.md §6.3.10, §10.7¶4 and §6.3.12, tuning.md §2.43, limits.md §8.3 and cli.md §1.24/§2.16/§1.10 promise a caller, tested against the cell's prebuilt `build/pcrec` (0.2.0-beta, abi 98). The harness blocked writing `d27/REPORT.md` as a report file, so its content is below for you to place. `run.sh` and the case files are in the cell under `d27/`.
 
 ## Summary

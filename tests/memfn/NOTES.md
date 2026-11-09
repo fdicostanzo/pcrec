@@ -16,6 +16,13 @@ answers held to a naive caseless finder; the v3 object's ymm census; a
 region-stripped v3 artifact must refuse at the default -march; the guard must
 refuse gcc -m32 and clang aarch64. v3 cells are built but not run on a CPU
 without AVX2. `simd_bounds.tsv`'s `target-text` row bounds the guard + region.
+Part 4b's F1 checks (lane u3d27, D27 region suite F1): two v3 compound
+controls (`^\s+|\s+$`, plain and `--emit-main`) hold no `#include` inside the
+region, include no header twice, and every part's guarded count reads 0; the
+`--emit-main` compound's count equals a plain `--emit-main` `abc` artifact's
+(the target's text alone). Red on the pre-fix build; rows S1896-S1899.
+`target_text.moved_out` sets OFF's copy of a moved header aside (simdfloor,
+libc_census's movers half).
 
 ## simdfloor ([XARCH-DEV] U2+U3, lane u3floor 2026-11-08)
 
@@ -35,3 +42,7 @@ reader of the target's own text (table, admission, the cut, `aside`): simdfloor'
 lint cuts with it, and libc_census's movers half (R4) compares ON to the default
 with that text set aside, so no check carries a second copy of the spellings.
 - policy_check.c (unit U2 fix, R-37): the kit refuses a site policy bit outside MF_P_KIT_NAMED at mf_define, hex in mf_art_error (unconditional since review 2026-11-08 r5 X-5 deleted the staging switch; linked against the library since); public header only; built by run_finder.sh (floor 4); S3000's detector.
+
+## run_wreply.sh (moved verbatim from CLAUDE.md, lane u3d27, 2026-11-09)
+
+- **run_wreply.sh** — the window family's REPLY check (D172 S2; wsc4, inverted at commit 5, reduced at commit 6 when the planner's pick and the inverse harness lever were deleted): every witness stamps its NEXT row at the default flags and compiles at five flag sets (K35 floors on cases and keys); REACH through a perturbed tree copy (RESEED unstated: no offset-set row, at least five witnesses moved; R stated under `-fno-run-prefilter`: the RE-SEED refusal fires); `--plants` S1413-S1414 each red (S1412 retired with the pick). Opt-in, no make target; ~10 s plus a tree build; takes the box lock.

@@ -263,6 +263,29 @@ C
         bad "consumer cells: pcrec refused an artifact: $(head -c 200 "$cdir/pc.err")"
     if grep -q '^#define RC_COMPOUND "none"' "$cdir/c.c"; then
         bad "consumer cells: the compound control is no compound (RC_COMPOUND none); re-aim its pattern"; fi
+    # F1 (lane u3d27, D27 region suite; match_api.md §6.3.10¶15): the region
+    # holds no #include, a compound part's own and --emit-main's included, and
+    # each header is included once; a part's count stays 0 (its held lines'
+    # marks leave with them) and the --emit-main compound's count is the
+    # target's text alone (the prologue already has its headers), as on a
+    # plain artifact with no form.
+    gen -p rd -fmemfn-simd=x86-64-v3 --emit-main -o "$cdir/d.c" --pattern '^\s+|\s+$' &&
+    gen -p re -fmemfn-simd=x86-64-v3 --emit-main -o "$cdir/e.c" --pattern 'abc' ||
+        bad "consumer cells: pcrec refused an F1 control: $(head -c 200 "$cdir/pc.err")"
+    for f in c.c d.c; do
+        nreg=$(grep -c '^#pragma GCC push_options' "$cdir/$f")
+        inreg=$(awk '/^#pragma GCC push_options/{r=1} /^#pragma GCC pop_options/{r=0} r && /^#include/' "$cdir/$f" | wc -l)
+        dup=$(grep '^#include <' "$cdir/$f" | sort | uniq -d | tr '\n' ' ')
+        parts=$(grep -E '^#define R[CD]__\w+_SIMD_GUARDED_BYTES ' "$cdir/$f" | grep -vc ' 0x0000000000000000ULL$')
+        if [ "$nreg" = 1 ] && [ "$inreg" = 0 ] && [ -z "$dup" ] && [ "$parts" = 0 ]; then
+            ok "F1 $f (compound, v3): no #include inside the region, none twice, every part's count 0"
+        else bad "F1 $f: regions=$nreg includes-inside=$inreg twice=[${dup}] nonzero-part-counts=$parts"; fi
+    done
+    gd=$(sed -n 's/^#define RD_SIMD_GUARDED_BYTES //p' "$cdir/d.c")
+    ge=$(sed -n 's/^#define RE_SIMD_GUARDED_BYTES //p' "$cdir/e.c")
+    if [ -n "$gd" ] && [ "$gd" = "$ge" ]; then
+        ok "F1 d.c: the --emit-main compound's count is the plain control's ($gd)"
+    else bad "F1 d.c: SIMD_GUARDED_BYTES $gd, the plain --emit-main control's $ge"; fi
     printf '%s\n' '#include "a.c"' '#include <emmintrin.h>' \
         'int sse_use(const char *p) { __m128i v = _mm_loadu_si128((const __m128i *)p);' \
         '    return _mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_set1_epi8(97))); }' > "$cdir/intrin.c"

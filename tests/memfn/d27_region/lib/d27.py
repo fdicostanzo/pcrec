@@ -309,12 +309,17 @@ def target_text_diff(off, on, P):
     b = on.split('\n')
     stamp = re.compile(r'#define %s_(TARGETS|SIMD_GUARDED_BYTES) ' % re.escape(P))
     sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
+    # landing change (lane u3d27, F1's fix): a header line the target MOVES
+    # ahead of its region (a compound part's own #include, placed once at file
+    # scope, ¶15) is its target's text, not a difference
+    opens = [i for i, l in enumerate(b) if l.startswith(('#pragma GCC push_options', '#pragma clang attribute push'))]
+    ahead = set(l for l in b[:min(opens)] if l.startswith('#include')) if opens else set()
     bad, ins = [], 0
     for tag, i1, i2, j1, j2 in sm.get_opcodes():
         if tag == 'equal':
             continue
         for l in a[i1:i2]:
-            if not stamp.match(l):
+            if not stamp.match(l) and l not in ahead:
                 bad.append('-' + l)
         for l in b[j1:j2]:
             if stamp.match(l):

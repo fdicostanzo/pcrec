@@ -309,8 +309,13 @@ def main():
                 r2 = None
             if flag == '-fmemfn-simd' and r2 is not None and r2.returncode == 0:
                 # the ON artifact's target's own text aside (target_text.py)
-                on = target_text.aside(r2.stdout.decode('utf-8', 'surrogateescape'), targets)
-                same.append(on is not None and on == target_text.aside(text, targets))
+                ontext = r2.stdout.decode('utf-8', 'surrogateescape')
+                on = target_text.aside(ontext, targets)
+                t = target_text.target_of(ontext, targets)
+                # a header line ON moved ahead of its region is set aside on
+                # the default's side too (target_text.moved_out)
+                off = target_text.moved_out(text, ontext, t) if t else text
+                same.append(on is not None and on == target_text.aside(off, targets))
             else:
                 same.append(r2 is not None and r2.returncode == 0 and r2.stdout == r.stdout)
             if flag == '-fmemfn-simd' and r2 is not None and r2.returncode == 0:

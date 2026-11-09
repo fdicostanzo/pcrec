@@ -15,8 +15,10 @@ simd_floor_check.py (C18: placement and exclusivity, then the cut) and
 libc_census.py (C11's movers half: an ON artifact equals the default, its
 target's own text aside, exactly where FORMS reads "none").
 """
+import os
 import re
 import subprocess
+import tempfile
 
 # the stamps that carry the target's own text (a compound's parts' lines
 # carry `__`; match_api.md §3.7¶1)
@@ -93,6 +95,34 @@ def moved_headers_aside(ton, toff, t):
     keep = ''.join('#include <%s>\n' % h for h in names
                    if '#include <%s>\n' % h not in toff)
     return ton[:start] + keep + ton[end:]
+
+
+def moved_out(toff, ton, t):
+    """`toff` without the `#include <h>` lines the ON text `ton` moved out of
+    its region (lane u3d27, F1: a compound part's own header lines are not
+    repeated inside the region; match_api.md §6.3.10¶15): each OFF line the
+    ON text lacks (a line diff) that includes a header ON includes ahead of
+    t's region open. `toff` unchanged where ON has no open."""
+    if not t['open'] or ton.count(t['open']) != 1:
+        return toff
+    ahead = set(HEADER_LINE.findall(ton[:ton.index(t['open'])]))
+    if not ahead:
+        return toff
+    with tempfile.NamedTemporaryFile('w', delete=False, encoding='utf-8', errors='surrogateescape') as fa, \
+         tempfile.NamedTemporaryFile('w', delete=False, encoding='utf-8', errors='surrogateescape') as fb:
+        fa.write(toff)
+        fb.write(ton)
+    r = subprocess.run(['diff', '--unchanged-line-format= %L', '--old-line-format=-%L',
+                        '--new-line-format=', fa.name, fb.name], capture_output=True)
+    os.unlink(fa.name)
+    os.unlink(fb.name)
+    out = []
+    for l in r.stdout.decode('utf-8', 'surrogateescape').splitlines(True):
+        m = HEADER_LINE.fullmatch(l[1:])
+        if l[0] == '-' and m and m.group(1) in ahead:
+            continue
+        out.append(l[1:])
+    return ''.join(out)
 
 
 def target_of(text, targets):

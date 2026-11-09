@@ -86,6 +86,7 @@ test-cand-oracle	3	14	ci-measured sections.tsv
 test-fallback-table	2	53.2	ci-measured sections.tsv
 test-memfn-guarded	2	190.4	ci-measured sections.tsv
 test-memfn-simdfloor	3	51.3	ci-measured sections.tsv
+test-memfn-d27region	1	240	ESTIMATED (lane u3d27: two suite runs at 4 jobs, never measured on a runner)
 test-memfn-rank	3	24.2	ci-measured sections.tsv
 test-memfn-finder	2	50.9	ci-measured sections.tsv
 test-spec-history	2	5.7	ci-measured sections.tsv
