@@ -13,8 +13,6 @@ cf578177e: per-CPU SIMD targets, abi 98, MF_SITE_ABI 26).
   gates 501-503, which run the same arms (default and every `-fmemfn-simd` target) over the whole corpus.
 - Gate jobs 500-509 refreshed for the new base. Every job passes its own `--dry-run`. None is queued.
 
-STATE AT HANDOFF: delivered. Nothing is owed by this lane. The landing gates (jobs 500-509) are the
-manager's to queue.
 
 ## The merge
 
@@ -133,6 +131,12 @@ Logs are in /var/tmp/pcrec-pcrec/scratch/memfn/s30amrg/: strict.log, rows.log, a
 archblind.log, codegen.log, finder.log, g2w/.
 
 docs/dev/artifact_size_log.tsv is modified in the worktree by test-codegen. It is not committed.
+
+## STATE AT HANDOFF
+
+Delivered; nothing is owed by this lane. The landing gates (jobs 500-509, refreshed and dry-run
+clean) are the manager's to queue. The worktree's docs/dev/artifact_size_log.tsv is dirty from
+test-codegen and not committed.
 
 ## Charter-vs-committed checklist
 
