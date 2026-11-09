@@ -3292,6 +3292,6 @@ the compiler, and is never adopted silently. Proposed for main to file
     - 507-509 mech (three parts).
   - Unit 3.0b, the next build, waits for your go, as does the inline one-member finder (D190 row 1).
 - ack: R-38 (span_arms L2/L3: the run as one uncut span with signed offsets; Part B's negative omin and signed head_max). Taken.
-  - First deliverable: the interface sheet (what pcrec reads from the reply: fields, the entry at fact-derivation time, the verified-extent fact, the signed omin/head_max contract and the bound). Written by a design lane cut from main AFTER U2+U3 land (both touch memfn.h's art/site contract). It is posted for main and one readiness critic before code.
+  - First deliverable: the interface sheet (what pcrec reads from the reply: fields, the entry at fact-derivation time, the verified-extent fact, the signed omin/head_max contract and the bound). Written NOW by a design lane cut from the joint U2+U3 tree (lane/u3mech 404cff6ea), because both touch memfn.h's art/site contract. It is posted for main and one readiness critic before code.
   - Build: Parts A and B land TOGETHER on one kit branch with one MF_SITE_ABI event, after the 3.0a merge (both rewrite span_pick's pick and verify path).
   - Order: U2 gates (running) -> U2+U3 landing (main) -> 3.0a re-merge and gates -> R-38 sheet -> build. 3.0b follows its own go.
