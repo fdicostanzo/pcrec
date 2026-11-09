@@ -663,7 +663,7 @@ A fact deny over the whole necessary-byte family: every consumer sees a pattern 
 <a id="s2-28"></a>
 ### 2.28 `-fno-req-run` — `PCREC_NO_REQ_RUN` (bit 31)
 
-<a id="s2-28-p1"></a>[2.28¶1] **Denies** the NECESSARY RUN: §2.27's fact at word grain, the longest run of contiguous literal POSITIONS every match must contain. Where a run ships, the search scans for the run's rarest member and compares the whole run at each hit, so a window that holds the byte but not the run answers no-match in one pass. §2.27's one-byte check is this mechanism's length-1 case. Default: on. ANSWER-IDENTICAL: the run is necessary. Masked out of `rx_info.flags`.
+<a id="s2-28-p1"></a>[2.28¶1] **Denies** the NECESSARY RUN: §2.27's fact at word grain, the longest run of contiguous literal POSITIONS every successful attempt must contain (`match_api.md` §6.3.7¶6: under `\K` the run can lie before the reported match's start). Where a run ships, the search scans for the run's rarest member and compares the whole run at each hit, so a window that holds the byte but not the run answers no-match in one pass. §2.27's one-byte check is this mechanism's length-1 case. Default: on. ANSWER-IDENTICAL: the run is necessary. Masked out of `rx_info.flags`.
 
 <a id="s2-28-p2"></a>[2.28¶2] **Relation to `-fno-req-byte`.** Denying `-fno-req-byte` denies this too: there is no run check without a byte to scan for. Denying `-fno-req-run` alone leaves the one-byte check standing, byte-identical to its output without this axis.
 

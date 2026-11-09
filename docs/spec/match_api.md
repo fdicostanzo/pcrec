@@ -2428,7 +2428,7 @@ absent PROVIDED `<PREFIX>_REQ_WHY` reads `"emitted"`. `"none"` does not mean
 "no required literal": a caselessly folded literal, an alternation with no
 common byte and `-fno-req-byte` all report it.
 
-<a id="s6-3-7-p6"></a>[6.3.7¶6] **`<PREFIX>_REQ_RUN`** — a literal run every match must contain.
+<a id="s6-3-7-p6"></a>[6.3.7¶6] **`<PREFIX>_REQ_RUN`** — a literal run every successful attempt must contain. An attempt is the search's try at one start position; a successful attempt consumes the run, contiguous, between that position and the end of its match. The reported match can begin later than the attempt (`\K`), so the run can lie partly or wholly before the reported start: `ab\Kcd` states `abcd` while its match is (2,4). Where no `\K` moves the start, the attempt's span is the match's.
 
 ```c
 #define RX_REQ_RUN "2e746172@0"   /* every match contains ".tar"; the
