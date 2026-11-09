@@ -141,17 +141,19 @@ caller, `pcrec_emit_artifact_end` (emit_dfa.c, both engines), and the
 attempt's end refuses a region left open (HOUSE-5); the region holds no
 `#include` (X-1, X-2): the TARGET HEADERS mark sits ahead of its open and the
 finishing pass (memfn_stamps.c `target_headers_render`) writes there the
-headers a part's text needs (`PcrecPartFacts.string_h`) and, with the kit's
+headers a part's text needs (since lane u3d27: its held lines) and, with the kit's
 includes fact, the intrinsic headers; guarded bytes, so no decision reads
 them and a default artifact is byte-identical.
 
-Lane u3d27 (D27 region suite F1): a spliced part's own header lines
-(`<string.h>`, `--emit-main`'s two) are written through
-`pcrec_emit_part_header` (memfn_targets.c): behind the held mark
-`PCREC_HELD_HEADER_MARK` in its own bracket where the shell opens a region,
-so every length decision reads the line as on the SIMD-off compile and none
-reads the mark; `target_headers_render` takes each mark out with its line,
-the header being placed ahead of the region (the part's facts) or already in
-the shell's prologue (`--emit-main`). The part's own guarded count leaves the
-marks out (`pcrec_memfn_stamps_render`). A default or no-region artifact is
-byte-identical.
+Lane u3d27 (D27 region suite F1, ruling R2): every `#include` line of
+pcrec's own that would land inside the region (a spliced part's `<string.h>`
+and `--emit-main`'s two; a `--trace` VM's `<stdio.h>`, written after the open)
+goes through `pcrec_emit_include_line` (memfn_targets.c): behind the held
+mark `PCREC_HELD_HEADER_MARK` in its own bracket, so every length decision
+reads the line as on the SIMD-off compile and none reads the mark.
+`target_headers_render` collects the held lines, hands them to
+`pcrec_memfn_target_headers` (which writes each header once, none the
+prologue already has, then the kit's facts), and takes each mark out with its
+line. That replaced `PcrecPartFacts.string_h`. The part's own guarded count
+leaves the marks out (`pcrec_memfn_stamps_render`). A default or no-region
+artifact is byte-identical.

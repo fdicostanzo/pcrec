@@ -2789,8 +2789,8 @@ kit rendered, and which C library functions the artifact calls.
   for another (`-m32` from a 64-bit pcrec) is refused cleanly by its
   frame-size asserts (§10.4¶2). It is `"none"` iff the artifact is byte-identical
   (stamp lines and its target's own text aside: §6.3.10¶15's guard, region and
-  headers, a compound part's header line it moves ahead of the region
-  included) to its own `-fno-memfn-simd` compile; otherwise the ids of the
+  headers, a header line it moves ahead of the region included: a compound
+  part's, a `--trace` VM's) to its own `-fno-memfn-simd` compile; otherwise the ids of the
   forms that make it differ, comma-joined in site order, a site that cascades
   between ISA levels carrying them as `ID@LEVEL+LEVEL`. Ids and level names are
   OPAQUE: bucket on `"none"` / not-`"none"`, never parse an id. SIMD is off by
@@ -2866,8 +2866,9 @@ artifact carries a nonzero count, the guard at least (a target with no region
 carries the guard alone; `tuning.md` §2.43¶3a; the bounds are `limits.md`
 §8.3¶3). It is the artifact's size beyond its SIMD-off compile, the stamp
 lines aside (the `<PREFIX>_TARGETS` value's own length differs, as
-`tuning.md` §2.43¶4 sets it aside) and less a compound part's header line,
-which the target moves ahead of its region rather than adds (§6.3.10¶15).
+`tuning.md` §2.43¶4 sets it aside) and less a header line the target moves
+ahead of its region rather than adds (a compound part's, a `--trace` VM's;
+§6.3.10¶15).
 Those bytes are invisible to every pcrec size DECISION — the VM entry-shape
 knee and `<PREFIX>_VM_PROGRAM_BYTES`, the size term and its ladder, and the D84
 caps (`limits.md` §8) all read the length minus these bytes — so turning SIMD
@@ -2948,9 +2949,10 @@ artifacts.
   `x86-64`, amd64's baseline target, keeps a region (`target("sse2")`),
   which §10.7¶4 relies on. The region
   holds no `#include`: every header the artifact's code needs, the
-  intrinsic headers, a compound part's own and `--emit-main`'s included, is
-  included at file scope ahead of the region's open, once (a part's own line
-  is not repeated inside it). (gcc gives a header's inline
+  intrinsic headers, a compound part's own, `--emit-main`'s and a `--trace`
+  VM's included, is included at file scope ahead of the region's open, once
+  (a line pcrec would write inside the region is moved ahead of it, not
+  repeated). (gcc gives a header's inline
   functions the target in force where the header is first included, so a
   header first read inside the region would break a later use of it outside.)
   A consumer translation unit may therefore `#include` the artifact and then

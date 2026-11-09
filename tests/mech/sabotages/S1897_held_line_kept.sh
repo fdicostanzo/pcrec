@@ -7,5 +7,5 @@ SAB_DESC="the render drops a held mark but keeps the header line it held, inside
 SAB_DOC_FIGURE="memfntargets: run_targets.sh's F1 checks read red. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1897."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        rest = eol + 1;'
+SAB_BEFORE='        rest = strchr(h + strlen(held), '\''\n'\'') + 1;'
 SAB_AFTER='        rest = h + strlen(held);   /* SABOTAGE S1897 */'

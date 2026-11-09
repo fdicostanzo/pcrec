@@ -12023,7 +12023,7 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
             " * and nothing else: it writes to stderr, it is not fast, and it\n"
             " * is never what a plain invocation produces. */\n");
         pcrec_sb_cmt_close(c);
-        pcrec_sb_puts(c, "#include <stdio.h>\n");
+        pcrec_emit_include_line(v->cx, c, "#include <stdio.h>\n");
         pcrec_sb_stampf(c, v->up, "TRACE", "1");
     }
     pcrec_sb_stampf(c, v->up, "NSLOTS", "%d", pl->nstate < 1 ? 1 : pl->nstate);

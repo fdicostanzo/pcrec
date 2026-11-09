@@ -73,12 +73,13 @@ void pcrec_emit_target_guard(Ctx *cx, StrBuf *c);
  * part) and its text, which the finishing pass splices over it. */
 #define PCREC_TARGET_HEADERS_MARK "\x01H\n"
 void pcrec_emit_target_headers_mark(Ctx *cx, StrBuf *c);
-const char *pcrec_memfn_target_headers(Ctx *cx);
+const char *pcrec_memfn_target_headers(Ctx *cx, const char *ahead, size_t nahead,
+                                       const char *held);
 bool pcrec_memfn_target_has_region(Ctx *cx);
-/* A spliced part's header line behind its held mark, which the finishing
- * pass takes out with the line (the header is placed at file scope). */
+/* An `#include` line inside the region, behind its held mark: the finishing
+ * pass takes both out and places the header at file scope ahead of it. */
 #define PCREC_HELD_HEADER_MARK "\x01h\n"
-void pcrec_emit_part_header(Ctx *cx, StrBuf *c, const char *line);
+void pcrec_emit_include_line(Ctx *cx, StrBuf *c, const char *line);
 void pcrec_emit_target_open(Ctx *cx, StrBuf *c);
 void pcrec_emit_target_close(Ctx *cx, StrBuf *c);
 

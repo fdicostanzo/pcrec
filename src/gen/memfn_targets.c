@@ -200,36 +200,54 @@ uint32_t pcrec_memfn_art_includes(Ctx *cx)
     return cx->job->mf ? mf_includes(cx->job->mf) : 0;
 }
 
+/* Whether `text`'s first `n` bytes hold `line` (a whole `#include` line,
+ * newline included) as a line of their own. */
+static bool has_line(const char *text, size_t n, const char *line)
+{
+    size_t k = strlen(line);
+    for (const char *p = text; p && p + k <= text + n; p = memchr(p, '\n', (size_t)(text + n - p))) {
+        if (*p == '\n') p++;
+        if (p + k <= text + n && !memcmp(p, line, k)) return true;
+    }
+    return false;
+}
+
 /* The `#include` lines the artifact's code needs that its prologue could not
- * write ahead of the region: the kit's header facts (its own and each compound
- * part's, `PcrecPartFacts.includes`) and a part's own `<string.h>`
- * (`PcrecPartFacts.string_h`), less the prologue's, each spelled by the kit
- * (`mf_include_c`). gcc gives a header's inline functions the target in force
- * where it is FIRST included, so a header first read inside the region breaks
- * every later use of it outside (a fortified `memcpy`, a consumer's
- * intrinsics, a second artifact; review 2026-11-08-r5-xarch X-1, X-2); a
- * part's own line is held and taken out with its mark
- * (`pcrec_emit_part_header`), so the region repeats none. "" without a region
- * (no level renders, and a part's line is then at file scope's target
- * already). Read once, after the last emit. */
-const char *pcrec_memfn_target_headers(Ctx *cx)
+ * write ahead of the region: the lines held inside it (`held`,
+ * `pcrec_emit_include_line`: a compound part's own `<string.h>` and
+ * `--emit-main`'s, a `--trace` VM's `<stdio.h>`), then the kit's header facts
+ * (its own and each compound part's, `PcrecPartFacts.includes`), each spelled
+ * by the kit (`mf_include_c`), each written once and none the text `ahead`
+ * of the mark (the prologue) already includes. gcc gives a header's inline
+ * functions the target in force where it is FIRST included, so a header
+ * first read inside the region breaks every later use of it outside (a
+ * fortified `memcpy`, a consumer's intrinsics, a second artifact; review
+ * 2026-11-08-r5-xarch X-1, X-2). "" without a region (no level renders, and
+ * nothing is held). Read once, after the last emit. */
+const char *pcrec_memfn_target_headers(Ctx *cx, const char *ahead, size_t nahead,
+                                       const char *held)
 {
     if (!cx->job->region_placed) return "";
     const PcrecCompShell *sh = cx->job->comp_shell;
     uint32_t inc = pcrec_memfn_art_includes(cx);
     for (int i = 0; sh && i < PCREC_COMP_MAXPARTS; i++)
-        if (sh->text[i])
-            inc |= sh->facts[i].includes |
-                   (sh->facts[i].string_h ? MF_INC_STRING_H : 0);
-    if (cx->job->string_h) inc &= ~(uint32_t)MF_INC_STRING_H;
+        if (sh->text[i]) inc |= sh->facts[i].includes;
     const char *text = "";
+    for (const char *l = held; *l; ) {
+        const char *eol = strchr(l, '\n');
+        const char *line = pcrec_sb_fragf(&cx->arena, "%.*s", (int)(eol + 1 - l), l);
+        if (!has_line(ahead, nahead, line) && !has_line(text, strlen(text), line))
+            text = pcrec_sb_fragf(&cx->arena, "%s%s", text, line);
+        l = eol + 1;
+    }
     for (uint32_t bit = 1; bit; bit <<= 1) {
         if (!(inc & bit)) continue;
         const char *line = mf_include_c(bit);
         if (!line)
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit names no C "
                            "spelling for its header fact 0x%x", (unsigned)bit);
-        text = pcrec_sb_fragf(&cx->arena, "%s%s", text, line);
+        if (!has_line(ahead, nahead, line) && !has_line(text, strlen(text), line))
+            text = pcrec_sb_fragf(&cx->arena, "%s%s", text, line);
     }
     return text;
 }
@@ -241,17 +259,19 @@ bool pcrec_memfn_target_has_region(Ctx *cx)
     return *mf_target_c_of(pcrec_memfn_target(cx))->region_open != 0;
 }
 
-/* Writes one `#include` line of the artifact's prologue. A spliced
- * compound part whose shell opens a region writes it behind the held mark
+/* Writes one `#include` line of pcrec's own. Where the line would land
+ * inside the target's region (written after the region opened, or by a
+ * spliced compound part whose shell opens one) it goes behind the held mark
  * (`PCREC_HELD_HEADER_MARK`, in its own bracket): every length decision
  * reads the line, as on the SIMD-off compile, and none reads the mark; the
- * shell's finishing pass takes both out, the header being placed at file
- * scope ahead of the region (`pcrec_memfn_target_headers`, from the part's
- * facts), so the region holds no `#include` (match_api.md §6.3.10¶15). */
-void pcrec_emit_part_header(Ctx *cx, StrBuf *c, const char *line)
+ * finishing pass takes both out and places the header at file scope ahead
+ * of the region (`pcrec_memfn_target_headers`), so the region holds no
+ * `#include` (match_api.md §6.3.10¶15). Elsewhere it is the plain line. */
+void pcrec_emit_include_line(Ctx *cx, StrBuf *c, const char *line)
 {
-    if (pcrec_is_part(cx) && cx->emit_in->unrendered &&
-        pcrec_memfn_target_has_region(cx)) {
+    if (cx->job->region_open ||
+        (pcrec_is_part(cx) && cx->emit_in->unrendered &&
+         pcrec_memfn_target_has_region(cx))) {
         pcrec_sb_simd_open(c);
         pcrec_sb_puts(c, PCREC_HELD_HEADER_MARK);
         pcrec_sb_simd_close(c);

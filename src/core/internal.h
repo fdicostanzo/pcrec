@@ -8802,7 +8802,6 @@ struct PcrecPartFacts {
     int ncaps;              /* its `<P>_NCAPS` */
     bool guarded;           /* its entries refuse a mid-character position */
     bool utf_check;         /* its entries run the subject check */
-    bool string_h;          /* its text includes <string.h> (`Job.string_h`) */
     uint32_t includes;      /* the kit's header facts for its text (MF_INC_*) */
     size_t simd_guarded;    /* the CPU-guarded bytes its text carries, and */
     PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
