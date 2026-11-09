@@ -16,8 +16,9 @@ answers held to a naive caseless finder; the v3 object's ymm census; a
 region-stripped v3 artifact must refuse at the default -march; the guard must
 refuse gcc -m32 and clang aarch64. v3 cells are built but not run on a CPU
 without AVX2. `simd_bounds.tsv`'s `target-text` row bounds the guard + region.
-Part 4b's F1 checks (lane u3d27, D27 region suite F1): two v3 compound
-controls (`^\s+|\s+$`, plain and `--emit-main`) hold no `#include` inside the
+Part 4b's F1 checks (lane u3d27, D27 region suite F1, ruling R2): two v3
+compound controls (`^\s+|\s+$`, plain and `--emit-main`) and a v3 `--trace`
+VM artifact hold no `#include` inside the
 region, include no header twice, and every part's guarded count reads 0; the
 `--emit-main` compound's count equals a plain `--emit-main` `abc` artifact's
 (the target's text alone). Red on the pre-fix build; rows S1896-S1899.

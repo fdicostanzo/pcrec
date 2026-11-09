@@ -1,0 +1,4 @@
+report=docs/dev/lanes/u3d27_report.md
+sections: Summary; D27 suite landed; Fixes; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes

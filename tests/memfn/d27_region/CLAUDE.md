@@ -38,8 +38,10 @@ control); about 2 minutes at 4 jobs.
   (`guard/v1/generic/gcc-m32-frame-refused`, match_api.md §10.4¶2): the
   manager ruled the refusal right and the spec's "any machine" an overstatement
   (now: any CPU of the data model the artifact was generated for).
-- ¶4's identity check allows a header line the target MOVES ahead of its
-  region (a compound part's `#include`, F1's fix; see lane u3d27's report).
+- ¶4's identity check (`target_text_diff`, the six `ident/c*/forms-iff-identity`
+  checks) admits exactly a removed `#include` whose header the ON file
+  includes at file scope ahead of the region: F1's fix moves a compound
+  part's line there, and the manager ruled such a line target text (R1).
 
 ## Untestable or unreachable promises (the author's S6, S7)
 
