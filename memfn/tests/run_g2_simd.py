@@ -217,6 +217,27 @@ def bad(msg):
     print('FAIL: ' + msg)
 
 
+FACT_FAIL = {}      # target -> fact-check failure messages (every pre-compile check)
+COMPILE_SKIPS = []  # (target, what): compiles NOT made because the target's facts failed
+V3 = 'x86-64-v3'    # the target whose file the site/class/bound fact checks read
+
+
+def fbad(tg, msg):
+    """A fact-check failure of the target's file: a bad(), and the file is not compiled."""
+    FACT_FAIL.setdefault(tg, []).append(msg)
+    bad(msg)
+
+
+def fact_skip(tg, what):
+    """True (and counted, printed) iff the target's facts failed: its file is not compiled."""
+    if tg not in FACT_FAIL:
+        return False
+    COMPILE_SKIPS.append((tg, what))
+    print('SKIPPED COMPILE %s at target %s: its fact checks failed (%d)'
+          % (what, tg, len(FACT_FAIL[tg])))
+    return True
+
+
 def sh(cmd, timeout=900, **kw):
     return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, **kw)
 
@@ -729,6 +750,9 @@ def main():
             '%s: %s; %d checks not run' % (lv, w, n) for lv, (w, n) in sorted(SKIPPED.items()))))
     else:
         print('skipped arms: 0')
+    print('skipped compiles (facts failed): %d' % len(COMPILE_SKIPS))
+    if COMPILE_SKIPS and not FACT_FAIL:   # unreachable by construction; a skip must have its fact failure
+        bad('compiles were skipped with no fact failure')
     print('checks passed: %d' % passed)
     print('checks failed: %d' % failed)
     return 1 if failed else 0
@@ -756,7 +780,6 @@ def run(a, root, work):
     ok()
     tfile = {tg: os.path.join(d, 'g2v_sites.c') for tg, d in tdir.items()}
     tforms = {}
-    hdr_bad = False
     for tg, d in tdir.items():
         with open(os.path.join(d, 'g2v_meta.tsv')) as f:
             tforms[tg] = [l.split('\t')[5:7] for l in f if not l.startswith('#')]
@@ -767,11 +790,11 @@ def run(a, root, work):
         print('target %-10s kit text %d bytes, CPU conditionals %d, helper levels %s (expect %s)'
               % (tg, len(kit), len(hits), sorted(lv_have), sorted(TARGETS[tg])))
         if not kit:
-            bad('target %s: no kit text between the markers' % tg)
+            fbad(tg, 'target %s: no kit text between the markers' % tg)
         elif hits:
-            bad('target %s: the kit text holds %d CPU conditional(s): %s' % (tg, len(hits), hits[:5]))
+            fbad(tg, 'target %s: the kit text holds %d CPU conditional(s): %s' % (tg, len(hits), hits[:5]))
         elif lv_have != TARGETS[tg]:
-            bad('target %s: helpers at %s, the target admits %s'
+            fbad(tg, 'target %s: helpers at %s, the target admits %s'
                 % (tg, sorted(lv_have), sorted(TARGETS[tg])))
         else:
             ok()
@@ -782,18 +805,17 @@ def run(a, root, work):
         have_h = {m.group(1) for m in re.finditer(r'^[ \t]*#[ \t]*include[ \t]*<(\w+\.h)>', head, re.M)}
         miss = sorted(lv for lv in lv_have if LEVEL_HEADER[lv] not in have_h)
         if miss:
-            hdr_bad = True
-            bad('target %s: levels %s are rendered but their header (%s) is not on mf_includes'
+            fbad(tg, 'target %s: levels %s are rendered but their header (%s) is not on mf_includes'
                 % (tg, miss, [LEVEL_HEADER[lv] for lv in miss]))
         else:
             ok()
         inc = INCLUDE.findall(kit)
-        (bad('target %s: the kit text holds %d #include line(s): %s' % (tg, len(inc), inc[:3]))
+        (fbad(tg, 'target %s: the kit text holds %d #include line(s): %s' % (tg, len(inc), inc[:3]))
          if inc else ok())
-    if hdr_bad:   # a file that lacks its headers cannot compile: the fact is the failure, stop here
-        return
+    # a target whose fact checks failed is not compiled (fact_skip), whatever the failure
     if platform.machine() in ('x86_64', 'AMD64'):
-        consumer_cells(work, tfile['x86-64-v3'], 'x86-64-v3')
+        if not fact_skip(V3, 'consumer TU'):
+            consumer_cells(work, tfile[V3], V3)
     else:
         SKIPPED['consumer TU'] = ('host is %s, not x86-64' % platform.machine(), 2)
     # the same sites at the narrower targets: x86-64's token is x86-64-v3's
@@ -813,10 +835,10 @@ def run(a, root, work):
         print('target %-10s %d sites, %d with a token other than x86-64-v3\'s, %d off the rule'
               % (tg, len(got), moved, len(diff)))
         if len(got) != len(base) or diff:
-            bad('target %s: sites %s break the rule (x86-64-v3 %r, got %r)'
+            fbad(tg, 'target %s: sites %s break the rule (x86-64-v3 %r, got %r)'
                 % (tg, diff[:5], [base[i] for i in diff[:3]], [got[i] for i in diff[:3]]))
         elif not moved:
-            bad('target %s: no site moved from x86-64-v3 (the comparison tests nothing)' % tg)
+            fbad(tg, 'target %s: no site moved from x86-64-v3 (the comparison tests nothing)' % tg)
         else:
             ok()
     # 1-2: the classes and the bounds
@@ -841,7 +863,7 @@ def run(a, root, work):
             # 1b: the malformed copy, and the filter the rule gives
             if badrank != '-':
                 if badrank != 'refused':
-                    bad('site %s: a malformed ranking was %s, not refused (control-refused: '
+                    fbad(V3, 'site %s: a malformed ranking was %s, not refused (control-refused: '
                         'its well-formed control was refused too, so the copy tests nothing)'
                         % (sid, badrank))
                 else:
@@ -856,7 +878,7 @@ def run(a, root, work):
                     want = expect_filter(cls, int(off), int(pp), rank, lvl)
                     got = loads.get((int(sid), lvl))
                     if got != [want, want]:
-                        bad('site %s (%s, %s, rank %s): %s filter loads %r (whole block, '
+                        fbad(V3, 'site %s (%s, %s, rank %s): %s filter loads %r (whole block, '
                             'final block), the rule gives %r in each'
                             % (sid, cls, rmode, rank, lvl, got, want))
                     else:
@@ -875,7 +897,7 @@ def run(a, root, work):
                     pad = expect_pad(cls, int(L), int(overlap), vwant)
                     why = verify_check(vlist, guard, vwant, pad, int(off), int(L), lvl)
                     if why:
-                        bad('site %s (%s, L=%s, rank %s): %s verify: %s; texts %r'
+                        fbad(V3, 'site %s (%s, L=%s, rank %s): %s verify: %s; texts %r'
                             % (sid, cls, L, rank, lvl, why,
                                [(v[0], sorted(v[1]) if v[1] is not None else None, v[2])
                                 for v in vlist]))
@@ -901,24 +923,24 @@ def run(a, root, work):
                     continue
                 maxg['alone:' + row] = max(maxg.get('alone:' + row, 0), alone)
                 if row not in bounds or alone > bounds[row]:
-                    bad('site %s (L=%s): %s alone writes %d guarded bytes > bound %s'
+                    fbad(V3, 'site %s (L=%s): %s alone writes %d guarded bytes > bound %s'
                         % (sid, L, row, alone, bounds.get(row)))
             counts[cls] = counts.get(cls, 0) + 1
             want = CLASS_EXPECT.get(cls)
             if forms != want:
-                bad('site %s (%s, L=%s): MEMFN_FORMS %r, expected %r' % (sid, cls, L, forms, want))
+                fbad(V3, 'site %s (%s, L=%s): MEMFN_FORMS %r, expected %r' % (sid, cls, L, forms, want))
                 continue
             if forms == 'none':
                 if gb != 0:
-                    bad('site %s (%s): %d guarded bytes with no SIMD form' % (sid, cls, gb))
+                    fbad(V3, 'site %s (%s): %d guarded bytes with no SIMD form' % (sid, cls, gb))
                     continue
             else:
                 lim = token_bound(forms, bounds)
                 if lim is None:
-                    bad('site %s: token %r has an undeclared row in simd_bounds.tsv' % (sid, forms))
+                    fbad(V3, 'site %s: token %r has an undeclared row in simd_bounds.tsv' % (sid, forms))
                     continue
                 if gb > lim:
-                    bad('site %s (L=%s): %d guarded bytes > bound %d (%s)' % (sid, L, gb, lim, forms))
+                    fbad(V3, 'site %s (L=%s): %d guarded bytes > bound %d (%s)' % (sid, L, gb, lim, forms))
                     continue
                 maxg[forms] = max(maxg.get(forms, 0), gb)
             ok()
@@ -927,43 +949,43 @@ def run(a, root, work):
         fl = POS_FLOOR if cls == 'pos' else CLASS_FLOOR
         print('class %-15s %4d sites (floor %d), expect %s' % (cls, n, fl, CLASS_EXPECT[cls]))
         if n < fl:
-            bad('class %s: %d sites < floor %d' % (cls, n, fl))
+            fbad(V3, 'class %s: %d sites < floor %d' % (cls, n, fl))
         else:
             ok()
     for name, fl in sorted(rmodes.items()):
         print('ranking mode %-10s %4d rendered sites (floor %d)' % (name, fl, RMODE_FLOOR))
     for name in ('none', 'one-ka', 'one-other', 'full-ka', 'full-any', 'end', 'partial'):
         if rmodes.get(name, 0) < RMODE_FLOOR:
-            bad('ranking mode %s: %d rendered sites < floor %d' % (name, rmodes.get(name, 0),
+            fbad(V3, 'ranking mode %s: %d rendered sites < floor %d' % (name, rmodes.get(name, 0),
                                                                   RMODE_FLOOR))
         else:
             ok()
     for shp, fl in SHAPE_FLOOR.items():
         print('filter shape %-12s %4d rendered sites (floor %d)' % (shp, shapes.get(shp, 0), fl))
         if shapes.get(shp, 0) < fl:
-            bad('filter shape %s: %d rendered sites < floor %d' % (shp, shapes.get(shp, 0), fl))
+            fbad(V3, 'filter shape %s: %d rendered sites < floor %d' % (shp, shapes.get(shp, 0), fl))
         else:
             ok()
     for shp, fl in KBLVL_FLOOR.items():
         print('kb per level %-15s %4d rendered helpers (floor %d)' % (shp, kblvl.get(shp, 0), fl))
         if kblvl.get(shp, 0) < fl:
-            bad('kb per level %s: %d rendered helpers < floor %d' % (shp, kblvl.get(shp, 0), fl))
+            fbad(V3, 'kb per level %s: %d rendered helpers < floor %d' % (shp, kblvl.get(shp, 0), fl))
         else:
             ok()
     for k in sorted(kblvl):
         if k not in KBLVL_FLOOR:
             # a KB read at a level outside KB_LEVELS fails the filter check
             # above; a population this table does not name is a new level
-            bad('kb per level: population %s (%d) has no floor' % (k, kblvl[k]))
+            fbad(V3, 'kb per level: population %s (%d) has no floor' % (k, kblvl[k]))
     for shp, fl in VSHAPE_FLOOR.items():
         print('verify shape %-6s %4d rendered helpers (floor %d)' % (shp, vshapes.get(shp, 0), fl))
         if vshapes.get(shp, 0) < fl:
-            bad('verify shape %s: %d rendered helpers < floor %d' % (shp, vshapes.get(shp, 0), fl))
+            fbad(V3, 'verify shape %s: %d rendered helpers < floor %d' % (shp, vshapes.get(shp, 0), fl))
         else:
             ok()
     print('malformed rankings refused: %d (floor %d)' % (nbad, BADRANK_FLOOR))
     if nbad < BADRANK_FLOOR:
-        bad('malformed rankings refused: %d < floor %d' % (nbad, BADRANK_FLOOR))
+        fbad(V3, 'malformed rankings refused: %d < floor %d' % (nbad, BADRANK_FLOOR))
     else:
         ok()
     for tok, g in sorted(maxg.items()):
@@ -975,7 +997,7 @@ def run(a, root, work):
     ttext = {tg: open(f).read() for tg, f in tfile.items()}
     inst = {}
     for tg in TARGETS:
-        if not TARGETS[tg]:
+        if not TARGETS[tg] or tg in FACT_FAIL:
             continue
         pth = os.path.join(tdir[tg], 'g2v_sites_paths.c')
         try:
@@ -984,16 +1006,19 @@ def run(a, root, work):
         except RuntimeError as e:   # a rendered shape the instrumentation does not know: red
             bad('instrumentation %s: %s' % (tg, e))
     host_skips(work)
-    jobs = [(n, tfile[tg], f, False, tg) for n, tg, f in BUILDS]
-    jobs += [(n, tfile[tg], f, True, tg) for n, tg, f in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS)]
+    # a target whose facts failed has no build below: its jobs are not made and
+    # its loops do not look (the skip is counted once, at the loop, by fact_skip)
+    jobs = [(n, tfile[tg], f, False, tg) for n, tg, f in BUILDS if tg not in FACT_FAIL]
+    jobs += [(n, tfile[tg], f, True, tg) for n, tg, f in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS)
+             if tg not in FACT_FAIL]
     jobs += [('paths-' + n, inst[tg], f, False, tg) for n, tg, f in BUILDS
-             if n != 'x86-64-v4' and tg in inst]
+             if n != 'x86-64-v4' and tg in inst and tg not in FACT_FAIL]
     levels = sorted({lv for lvs in TARGETS.values() for lv in lvs})
     plant_files = {}
     for plant in PLANTS:
         for lv in levels:
             for tg in TARGETS:
-                if lv not in TARGETS[tg]:
+                if lv not in TARGETS[tg] or tg in FACT_FAIL:
                     continue
                 pt = os.path.join(tdir[tg], 'plant-%s-%s.c' % (plant[0], lv))
                 try:
@@ -1008,6 +1033,8 @@ def run(a, root, work):
     prefetch(work, root, jobs, int(os.environ.get('G2V_JOBS', '4')))
     # 3: answers per level
     for name, tg, flags in BUILDS:
+        if fact_skip(tg, 'build ' + name):
+            continue
         r, err = build_run(work, root, name, tfile[tg], flags, target=tg)
         if err:
             skipped_or_bad(name, err)
@@ -1021,6 +1048,8 @@ def run(a, root, work):
         else:
             ok()
     for name, tg, flags in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS):
+        if fact_skip(tg, 'build ' + name):
+            continue
         r, err = build_run(work, root, name, tfile[tg], flags, asan=True, target=tg)
         if err:
             skipped_or_bad(name, err)
@@ -1035,7 +1064,7 @@ def run(a, root, work):
             ok()
     # 4: paths
     for name, tg, flags in BUILDS:
-        if name == 'x86-64-v4' or tg not in inst:
+        if name == 'x86-64-v4' or tg not in inst or fact_skip(tg, 'paths ' + name):
             continue
         live = TARGETS[tg]
         r, err = build_run(work, root, 'paths-' + name, inst[tg], flags, target=tg)
@@ -1067,6 +1096,8 @@ def run(a, root, work):
             for name, tg, flags in BUILDS:
                 pt = plant_files.get((plant[0], lv, tg))
                 if name == 'x86-64-v4' or not pt:
+                    if tg in FACT_FAIL and name != 'x86-64-v4' and lv in TARGETS[tg]:
+                        fact_skip(tg, 'plant %s %s %s' % (plant[0], lv, name))
                     continue
                 r, err = build_run(work, root, 'plant-%s-%s-%s' % (plant[0], lv, name), pt, flags,
                                    target=tg)
@@ -1086,6 +1117,8 @@ def run(a, root, work):
                       'RED' if red else 'green'))
     # 6: instruction classes
     for name, tg, flags in BUILDS:
+        if fact_skip(tg, 'insn ' + name):
+            continue
         obj = os.path.join(work, 'insn-%s.o' % name)
         r = sh(['gcc', '-O2', '-c', '-I', g2] + flags + ['-o', obj, tfile[tg]])
         if r.returncode:
