@@ -1,5 +1,5 @@
 # tests/findings/witness/w-c3.rxt — [FINDINGS] B2 witness bundle (design §11.9):
-# 'a' the rarest byte: G1's elision decision flips from emitted to dominated.
+# 'a' the rarest byte: G1's decision flips (with R1, from dominated to emitted; before it, the reverse).
 # Every byte 1000, the one byte 1: constructed, never measured.
 analysis w-c3
     freq
