@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u2house_report.md
+sections: Summary; The three edits; Zero bytes; Checks run; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
