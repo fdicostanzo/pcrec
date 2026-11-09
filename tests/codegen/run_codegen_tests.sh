@@ -3462,7 +3462,7 @@ k37_site_re='(^|[^a-zA-Z_/])(build/pc[r]ec|[$]PCREC|"[$]PCREC")'
 # the binary's existence.
 k37_comment_re='^[^:]*:[0-9]+:[[:space:]]*#'
 k37_assign_re='^[^:]*:[0-9]+:[[:space:]]*(local[[:space:]]+|export[[:space:]]+)?PCREC='
-k37_existtest_re='\[[[:space:]]*!?[[:space:]]*-[xf][[:space:]]+"?[$]PCREC"?[[:space:]]*\]'
+k37_existtest_re='\[[[:space:]]*!?[[:space:]]*-[xf][[:space:]]+"?[$]PCREC(_BIN)?"?[[:space:]]*\]'   # an existence test of the binary (PCREC_BIN: tests/memfn/run_targets.sh), never an invocation
 k37_guard_re='pcrec_run|TIMEOUT_BIN|gen_run\b|gen_cc\b|scripts/watchdog'
 
 # [K37] TWO MORE SHAPES the 2026-08-25 14:11 battery found the first sweep had

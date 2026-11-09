@@ -3,9 +3,11 @@
 one reader of it the SIMD checks share (target seam, units U2+U3; lane
 u3floor). Since the seam a `-fmemfn-simd=T` artifact carries scaffolding no
 SIMD form put there: `<P>_TARGETS "FAMILY:T"`, T's family GUARD
-(`mf_family_c_of`) and T's REGION open/close (`mf_target_c_of`), all counted
-in `<P>_SIMD_GUARDED_BYTES` (match_api.md §6.3.10¶8-¶15; tuning.md
-§2.43¶4: "its target's own text aside").
+(`mf_family_c_of`), T's REGION open/close (`mf_target_c_of`) and the HEADER
+lines placed at file scope just ahead of the open (the kit's header facts and
+a compound part's own <string.h>), all counted in `<P>_SIMD_GUARDED_BYTES`
+(match_api.md §6.3.10¶8-¶15; tuning.md §2.43¶4: "its target's own text
+aside").
 
 The spellings are the kit's declared text, read from the dumper
 (tests/memfn/simd_levels.c), never a copy typed here. Readers:
@@ -58,6 +60,41 @@ def cut(text, t):
     return text
 
 
+HEADER_LINE = re.compile(r'#include <([^>]*)>\n')
+
+
+def header_run(text, t):
+    """The (start, end) span of the `#include <h>` lines directly ahead of t's
+    region open (the target's header lines, match_api.md §6.3.10¶15), and
+    their header names; (None, None, []) when the open is not there once."""
+    if not t['open'] or text.count(t['open']) != 1:
+        return None, None, []
+    end = start = text.index(t['open'])
+    names = []
+    while True:
+        line_at = text.rfind('\n', 0, start - 1) + 1 if start else 0
+        m = HEADER_LINE.fullmatch(text, line_at, start)
+        if not start or not m:
+            break
+        names.insert(0, m.group(1))
+        start = line_at
+    return start, end, names
+
+
+def moved_headers_aside(ton, toff, t):
+    """`ton` without the header lines ahead of t's region whose `#include <h>`
+    the SIMD-off text `toff` also carries (a compound part's own <string.h>,
+    first included there so the region never reads it first): a placement
+    move, not new text. The other header lines (a level's vector header) stay
+    for the caller's lint."""
+    start, end, names = header_run(ton, t)
+    if start is None:
+        return ton
+    keep = ''.join('#include <%s>\n' % h for h in names
+                   if '#include <%s>\n' % h not in toff)
+    return ton[:start] + keep + ton[end:]
+
+
 def target_of(text, targets):
     """The row the artifact's TARGETS stamp names, or None."""
     m = TARGETS.findall(text)
@@ -70,10 +107,13 @@ def target_of(text, targets):
 
 
 def aside(text, targets):
-    """`text` with its target's own text set aside: the pieces cut and the
-    TARGETS / SIMD_GUARDED_BYTES stamp lines dropped. None when the TARGETS
-    stamp names no row."""
+    """`text` with its target's own text set aside: the header lines ahead of
+    the region and the pieces cut, the TARGETS / SIMD_GUARDED_BYTES stamp
+    lines dropped. None when the TARGETS stamp names no row."""
     t = target_of(text, targets)
     if t is None:
         return None
+    start, end, _ = header_run(text, t)
+    if start is not None:
+        text = text[:start] + text[end:]
     return TARGET_STAMPS.sub('', cut(text, t))

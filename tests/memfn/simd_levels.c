@@ -12,6 +12,7 @@
  * than a copy typed into the check. [MEMFN] R-13; re-aimed for the target
  * seam (U2+U3, lane u3floor). */
 #include <stdio.h>
+#include <string.h>
 
 #include "memfn.h"
 
@@ -26,9 +27,13 @@ int main(void)
 {
     size_t n = 0;
     const mf_level *lv = mf_levels(&n);
-    for (size_t i = 0; i < n; i++)
-        printf("level\t%s\t%s\t%s\t%s\t%u\t%s\t%s\n", lv[i].token, lv[i].family, lv[i].needs,
-               lv[i].header, lv[i].vw, lv[i].test_march, lv[i].stamp);
+    for (size_t i = 0; i < n; i++) {
+        /* the header's name, from the kit's spelling of the level's bit */
+        const char *inc = mf_include_c(lv[i].includes), *lt = inc ? strchr(inc, '<') : NULL;
+        int hl = lt && strchr(lt, '>') ? (int)(strchr(lt, '>') - lt - 1) : 0;
+        printf("level\t%s\t%s\t%s\t%.*s\t%u\t%s\t%s\n", lv[i].token, lv[i].family, lv[i].needs,
+               hl, lt ? lt + 1 : "", lv[i].vw, lv[i].test_march, lv[i].stamp);
+    }
     const mf_target *t = mf_targets(&n);
     for (size_t i = 0; i < n; i++) {
         const mf_target_c *c = mf_target_c_of(&t[i]);

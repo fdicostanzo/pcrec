@@ -193,22 +193,44 @@ void pcrec_emit_target_headers_mark(Ctx *cx, StrBuf *c)
     pcrec_sb_simd_close(c);
 }
 
+/* The kit's header facts for this art (`mf_includes`, MF_INC_* bits; exact
+ * once its sites have rendered); 0 before the art exists. */
+uint32_t pcrec_memfn_art_includes(Ctx *cx)
+{
+    return cx->job->mf ? mf_includes(cx->job->mf) : 0;
+}
+
 /* The `#include` lines the artifact's code needs that its prologue could not
- * write ahead of the region: a compound part's own (`PcrecPartFacts.string_h`)
- * where its text lies inside the shell's region. gcc gives a header's inline
- * functions the target in force where it is FIRST included, so a header first
- * read inside the region breaks every later use of it outside (a fortified
- * `memcpy`, a consumer's intrinsics, a second artifact; review
- * 2026-11-08-r5-xarch X-1, X-2); first included here, the part's own later
- * line is a no-op. "" without a region (the part's line is then at file
- * scope's target already). Read once, after the last emit. */
+ * write ahead of the region: the kit's header facts (its own and each compound
+ * part's, `PcrecPartFacts.includes`) and a part's own `<string.h>`
+ * (`PcrecPartFacts.string_h`), less the prologue's, each spelled by the kit
+ * (`mf_include_c`). gcc gives a header's inline functions the target in force
+ * where it is FIRST included, so a header first read inside the region breaks
+ * every later use of it outside (a fortified `memcpy`, a consumer's
+ * intrinsics, a second artifact; review 2026-11-08-r5-xarch X-1, X-2); first
+ * included here, a part's own later line is a no-op. "" without a region (no
+ * level renders, and a part's line is then at file scope's target already).
+ * Read once, after the last emit. */
 const char *pcrec_memfn_target_headers(Ctx *cx)
 {
+    if (!cx->job->region_placed) return "";
     const PcrecCompShell *sh = cx->job->comp_shell;
-    bool string_h = false;
-    for (int i = 0; sh && cx->job->region_placed && i < PCREC_COMP_MAXPARTS; i++)
-        if (sh->text[i]) string_h = string_h || sh->facts[i].string_h;
-    return string_h && !cx->job->string_h ? "#include <string.h>\n" : "";
+    uint32_t inc = pcrec_memfn_art_includes(cx);
+    for (int i = 0; sh && i < PCREC_COMP_MAXPARTS; i++)
+        if (sh->text[i])
+            inc |= sh->facts[i].includes |
+                   (sh->facts[i].string_h ? MF_INC_STRING_H : 0);
+    if (cx->job->string_h) inc &= ~(uint32_t)MF_INC_STRING_H;
+    const char *text = "";
+    for (uint32_t bit = 1; bit; bit <<= 1) {
+        if (!(inc & bit)) continue;
+        const char *line = mf_include_c(bit);
+        if (!line)
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit names no C "
+                           "spelling for its header fact 0x%x", (unsigned)bit);
+        text = pcrec_sb_fragf(&cx->arena, "%s%s", text, line);
+    }
+    return text;
 }
 
 /* The target's region open, before the part's first function; "" (no region)

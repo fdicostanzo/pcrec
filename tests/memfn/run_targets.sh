@@ -168,9 +168,7 @@ echo "== 4. pcrec's artifacts at a target (U3) =="
 # (the region, not the consumer's flags, supplies the ISA); its guard refuses
 # a -m32 gcc and an aarch64 clang compile. Then the consumer-TU cells.
 PCREC_BIN="${PCREC_BIN:-$ROOT_DIR/build/pcrec}"
-if [ "$host" = x86_64 ] && [ ! -x "$PCREC_BIN" ]; then
-    bad "pcrec artifact cells: no $PCREC_BIN on an x86-64 host (build it: make)"
-elif [ "$host" = x86_64 ]; then
+if [ "$host" = x86_64 ] && [ -x "$PCREC_BIN" ]; then
     aran=0
     cat > "$WORKDIR/drv.c" <<'C'
 #include <stdio.h>
@@ -283,6 +281,8 @@ C
     ccell two-O0 two.c -O0
     ccell fortify fortify.c -O2 -D_FORTIFY_SOURCE=2 # a v3 compound, then a fortified memcpy
     [ "$cran" -ge "$CONSUMER_CELLS" ] || bad "RAN floor (consumer): $cran cells ran, want $CONSUMER_CELLS"
+elif [ "$host" = x86_64 ]; then
+    bad "pcrec artifact cells: no $PCREC_BIN on an x86-64 host (build it: make)"
 else
     skip "pcrec artifact cells: host is $host, not x86_64 (counted: $((ART_GCC_CELLS + CONSUMER_CELLS + 6)))"
 fi

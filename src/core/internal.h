@@ -7502,6 +7502,7 @@ int pcrec_memfn_simd_check(uint64_t flags, const char *list, char *err, size_t n
 /* [XARCH-DEV] U3: derives the compile's one CPU target onto `Ctx.cpu_target`
  * (src/gen/memfn_targets.c), once per attempt before anything reads it. */
 void pcrec_memfn_target_derive(Ctx *cx);
+uint32_t pcrec_memfn_art_includes(Ctx *cx);   /* the kit art's MF_INC_* facts */
 /* [MEMFN] RQ-1: validates `opt->memfn` (the `--memfn=` string) with the
  * kit's `mf_opts_check` and refuses the compile with the kit's own text. */
 void pcrec_memfn_opts_check(Ctx *cx);
@@ -8802,6 +8803,7 @@ struct PcrecPartFacts {
     bool guarded;           /* its entries refuse a mid-character position */
     bool utf_check;         /* its entries run the subject check */
     bool string_h;          /* its text includes <string.h> (`Job.string_h`) */
+    uint32_t includes;      /* the kit's header facts for its text (MF_INC_*) */
     size_t simd_guarded;    /* the CPU-guarded bytes its text carries, and */
     PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
     size_t scaf_guarded;    /* [FINDALL-NEXT] its scaffold bytes, and */

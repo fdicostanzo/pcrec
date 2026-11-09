@@ -45,6 +45,10 @@ are printed with a literal floor (K35). On every cell:
       region; this script counts the diff).
   (d) NO DIRECTIVE IN A FUNCTION BODY, one call per selector: routing_shape.py
       (D155 addendum 1's rule, sharing no code with the kit) over the ON text.
+A header line ahead of the region whose `#include` OFF also carries (a
+compound part's own <string.h>, moved there: match_api.md §6.3.10¶15) is set
+aside on every leg (target_text.moved_headers_aside); C9 compiles the
+artifact as emitted.
 On every mover additionally:
   (b) PREPROCESSED: `gcc -E -P` of OFF and ON, diffed, deletes exactly the one
       `return <fn>__body(...)` line per SIMD FUNC (a macro in the inserted
@@ -80,7 +84,7 @@ sys.path.insert(0, os.path.join(TREE, 'scripts'))
 sys.path.insert(0, HERE)
 import emit_sweep as es  # noqa: E402
 import routing_shape  # noqa: E402
-from target_text import admitted, cut, read_table  # noqa: E402
+from target_text import admitted, cut, moved_headers_aside, read_table  # noqa: E402
 
 # Floors per target, pinned AT the measure (deterministic counts of emitted
 # text). History of the pre-seam single count: 44 at w16 (R-13); 33 at D172
@@ -317,7 +321,10 @@ def main():
                 if (off is None) != (on is None):
                     rec['issues'].append('ON and OFF disagree on refusing')
                 continue
-            ton = open(on, encoding='utf-8', errors='surrogateescape').read()
+            # a header line OFF also carries, moved ahead of the region, is no
+            # new text: set aside for every leg; C9 compiles the artifact itself
+            ton = moved_headers_aside(open(on, encoding='utf-8', errors='surrogateescape').read(),
+                                      toff, t)
             if open(on[:-1] + 'h', 'rb').read() != hoff:
                 rec['issues'].append('the .h moved under -fmemfn-simd (scaffolding in the header?)')
             adm = admitted(t, levels)
@@ -328,7 +335,10 @@ def main():
                 continue
             rec['toff'], rec['ton'] = toff, ton
             # (b) by the preprocessor: only the floor calls change
-            x, y = pp(off), pp(on)
+            onpp = on[:-2] + '_pp.c'
+            with open(onpp, 'w', encoding='utf-8', errors='surrogateescape') as f:
+                f.write(ton)
+            x, y = pp(off), pp(onpp)
             if x is None or y is None:
                 rec['issues'].append('(b) preprocessing failed')
             else:

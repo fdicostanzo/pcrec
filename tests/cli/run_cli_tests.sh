@@ -2414,7 +2414,7 @@ fi
 # alone) and the one with more (both levels).
 mf_rows="$(pcrec_run "$PCREC" --list-cpu-targets 2>/dev/null | grep -v '^#' | awk -F'\t' '$1=="target" && $3!=""')"
 mf_fam="$(printf '%s\n' "$mf_rows" | awk -F'\t' '{n[$3]++} END{for(f in n) if(n[f]>1){print f; exit}}')"
-mf_tsort() { printf '%s\n' "$mf_rows" | awk -F'\t' -v f="$mf_fam" '$3==f{print gsub(/,/,",",$6) "\t" $2}' | sort -n; }
+mf_tsort() { printf '%s\n' "$mf_rows" | awk -F'\t' -v f="$mf_fam" '$3==f{print gsub(/,/,",",$6) "\t" $2}' | LC_ALL=C sort -n; }
 mf_t16="$(mf_tsort | head -1 | cut -f2)"
 mf_t32="$(mf_tsort | tail -1 | cut -f2)"
 rm -f "$WORKDIR"/mfs*.c

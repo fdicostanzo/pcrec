@@ -45,7 +45,9 @@ vrun-w16	2400
 # compound `split` artifact whose forms are "none" stamps exactly that); the
 # baseline amd64 target 469, the arm64 one 165 (its guard alone); rounded up
 # to 700. simd_guarded_check reaches every target's text (a `simd:` arm per
-# listed target). A compound's text also carries the target headers a part
-# needs ahead of the region (a `#include <string.h>` line, 20 bytes; lane
-# u3crit), inside this bound.
+# listed target). The header lines placed ahead of the region join it (lane
+# u3crit, review r5 X-1/X-2): a rendered level's vector header (23 bytes
+# each, 46 with both amd64 levels; moved out of the kit's level text, so a
+# vrun row's bytes shrink by as much) and a compound part's `#include
+# <string.h>` (20): at most 615 + 46 + 20 = 681, inside this bound.
 target-text	700
