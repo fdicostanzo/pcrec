@@ -152,3 +152,306 @@ engine vm
 m "abcd" 0 4
 m "xabcdx" 1 5
 n "ab-cd"
+
+# ---- span arms unit E2 (T3 E-4, E-5 as the plain unit; docs/design/span_arms.md §4.1): a node that
+# consumes nothing is CAT's unit, so the run joins across `\b`, `\B`, `$`, `^`, `\G`, `\K`, `\A`, `\z`
+# and lookarounds of either lowering (src/facts/req.c `rb_zero_rows`). Expectations libpcre2-8 10.46's
+# (tests/lib/p2probe.c, lane sae2, 2026-11-09). S-L, W-E3 and S-g here are rows S1925, S1926, S1927.
+
+# S-L, spelled for E2's site (span_arms §4.1 S16, E-5 as the plain unit): a positive lookbehind consumes nothing, so the run is `xyzabc` across it; S1925 walks its body as CONSUMED, claims `xyzyzabc` and the pre-check deletes every match
+pattern xyz(?<=yz)abc
+features all
+m "xyzabc" 0 6
+n "xyzyzabc"
+m "qqxyzabcq" 2 8
+n "xyabc"
+
+# S-L, spelled for E2's site (span_arms §4.1 S16, E-5 as the plain unit): a positive lookbehind consumes nothing, so the run is `xyzabc` across it; S1925 walks its body as CONSUMED, claims `xyzyzabc` and the pre-check deletes every match [engine vm]
+pattern xyz(?<=yz)abc
+features all
+engine vm
+m "xyzabc" 0 6
+n "xyzyzabc"
+m "qqxyzabcq" 2 8
+n "xyabc"
+
+# S-L (span_arms §5.7, E2's correct value): a lookbehind at the start leaves the run `bar`; S1925 walks its body as CONSUMED, claims `foobar` at offset 0 and a search from 3 finds no attempt
+pattern (?<=foo)bar
+features all
+m "foobar" 3 6
+ms 3 "foobar" 3 6
+ns 4 "foobar"
+n "fobar"
+
+# S-L (span_arms §5.7, E2's correct value): a lookbehind at the start leaves the run `bar`; S1925 walks its body as CONSUMED, claims `foobar` at offset 0 and a search from 3 finds no attempt [engine vm]
+pattern (?<=foo)bar
+features all
+engine vm
+m "foobar" 3 6
+ms 3 "foobar" 3 6
+ns 4 "foobar"
+n "fobar"
+
+# W-E3 (span_arms §4.5, E-4): a negative lookbehind consumes nothing, so the run is `xycd` across it; S1926 walks its body as CONSUMED, claims `xyabcd` and deletes `xycd`
+pattern xy(?<!ab)cd
+features all
+m "xycd" 0 4
+n "xyabcd"
+ns 2 "abcd"
+m "abxycd" 2 6
+
+# W-E3 (span_arms §4.5, E-4): a negative lookbehind consumes nothing, so the run is `xycd` across it; S1926 walks its body as CONSUMED, claims `xyabcd` and deletes `xycd` [engine vm]
+pattern xy(?<!ab)cd
+features all
+engine vm
+m "xycd" 0 4
+n "xyabcd"
+ns 2 "abcd"
+m "abxycd" 2 6
+
+# S-g (alt_normal_form §9 S2, at E2's site): a backreference is TEXT ANY, never T3's unit, so the run stays `abx`; S1927 sends TEXT ANY to T3, claims `abxy` and deletes `abxaby`
+pattern (ab)x\1y
+features all
+m "abxaby" 0 6
+g 1 0 2
+n "abxy"
+n "abxaay"
+
+# S-g (alt_normal_form §9 S2, at E2's site): a backreference is TEXT ANY, never T3's unit, so the run stays `abx`; S1927 sends TEXT ANY to T3, claims `abxy` and deletes `abxaby` [engine vm]
+pattern (ab)x\1y
+features all
+engine vm
+m "abxaby" 0 6
+g 1 0 2
+n "abxy"
+n "abxaay"
+
+# E-4 `\b`: the run is `foo-bar` across the boundary
+pattern foo\b-bar
+features all
+m "foo-bar" 0 7
+m "xfoo-barx" 1 8
+n "foo-baz"
+
+# E-4 `\b`: the run is `foo-bar` across the boundary [engine vm]
+pattern foo\b-bar
+features all
+engine vm
+m "foo-bar" 0 7
+m "xfoo-barx" 1 8
+n "foo-baz"
+
+# E-4 `\B`: the run is `abcd` across it
+pattern ab\Bcd
+features all
+m "abcd" 0 4
+m "xabcdx" 1 5
+n "ab-cd"
+
+# E-4 `\B`: the run is `abcd` across it [engine vm]
+pattern ab\Bcd
+features all
+engine vm
+m "abcd" 0 4
+m "xabcdx" 1 5
+n "ab-cd"
+
+# E-4 `$` before the final newline: the run is `ab\n`
+pattern ab$\n
+features all
+m "ab\n" 0 3
+n "ab\nx"
+m "xab\n" 1 4
+
+# E-4 `$` before the final newline: the run is `ab\n` [engine vm]
+pattern ab$\n
+features all
+engine vm
+m "ab\n" 0 3
+n "ab\nx"
+m "xab\n" 1 4
+
+# E-4 multiline `$` (an A_CTX): the run is `ab\ncd`
+pattern (?m)ab$\ncd
+features all
+m "ab\ncd" 0 5
+m "xab\ncdx" 1 6
+n "ab\nxcd"
+
+# E-4 multiline `$` (an A_CTX): the run is `ab\ncd` [engine vm]
+pattern (?m)ab$\ncd
+features all
+engine vm
+m "ab\ncd" 0 5
+m "xab\ncdx" 1 6
+n "ab\nxcd"
+
+# E-4 multiline `^` (an A_CTX): the run is `ab\ncd`
+pattern (?m)ab\n^cd
+features all
+m "ab\ncd" 0 5
+m "zab\ncdz" 1 6
+n "ab\n cd"
+
+# E-4 multiline `^` (an A_CTX): the run is `ab\ncd` [engine vm]
+pattern (?m)ab\n^cd
+features all
+engine vm
+m "ab\ncd" 0 5
+m "zab\ncdz" 1 6
+n "ab\n cd"
+
+# E-4 `\K`: the run is `abcd` across it (the attempt's span; the reported match starts after `\K`)
+pattern ab\Kcd
+features all
+m "abcd" 2 4
+m "xabcdx" 3 5
+n "abxcd"
+
+# E-4 `\K`: the run is `abcd` across it (the attempt's span; the reported match starts after `\K`) [engine vm]
+pattern ab\Kcd
+features all
+engine vm
+m "abcd" 2 4
+m "xabcdx" 3 5
+n "abxcd"
+
+# E-4 `\G` mid-pattern (never matches, so every run is sound: `abcd`)
+pattern ab\Gcd
+features all
+n "abcd"
+ns 2 "abcd"
+
+# E-4 `\G` mid-pattern (never matches, so every run is sound: `abcd`) [engine vm]
+pattern ab\Gcd
+features all
+engine vm
+n "abcd"
+ns 2 "abcd"
+
+# E-4 `\A` mid-pattern (never matches)
+pattern ab\Acd
+features all
+n "abcd"
+
+# E-4 `\A` mid-pattern (never matches) [engine vm]
+pattern ab\Acd
+features all
+engine vm
+n "abcd"
+
+# E-4 `\z` mid-pattern (never matches)
+pattern ab\zcd
+features all
+n "abcd"
+
+# E-4 `\z` mid-pattern (never matches) [engine vm]
+pattern ab\zcd
+features all
+engine vm
+n "abcd"
+
+# E-4 a negative lookahead (span_arms §4.4): the run is `xac`, the body unread
+pattern x(?!ab)ac
+features all
+m "xac" 0 3
+n "xab"
+m "zxacz" 1 4
+
+# E-4 a negative lookahead (span_arms §4.4): the run is `xac`, the body unread [engine vm]
+pattern x(?!ab)ac
+features all
+engine vm
+m "xac" 0 3
+n "xab"
+m "zxacz" 1 4
+
+# E-5 a one-character lookahead (lowered to A_CTX NEXT): the run is `abcd`
+pattern ab(?=c)cd
+features all
+m "abcd" 0 4
+n "abce"
+m "xabcdx" 1 5
+
+# E-5 a one-character lookahead (lowered to A_CTX NEXT): the run is `abcd` [engine vm]
+pattern ab(?=c)cd
+features all
+engine vm
+m "abcd" 0 4
+n "abce"
+m "xabcdx" 1 5
+
+# E-5 a one-character lookbehind (lowered to A_CTX PREV): the run is `abcd`
+pattern ab(?<=b)cd
+features all
+m "abcd" 0 4
+n "abce"
+m "xabcdx" 1 5
+
+# E-5 a one-character lookbehind (lowered to A_CTX PREV): the run is `abcd` [engine vm]
+pattern ab(?<=b)cd
+features all
+engine vm
+m "abcd" 0 4
+n "abce"
+m "xabcdx" 1 5
+
+# E-4 a one-character negative lookahead (A_CTX NOT_NEXT): the run is `abcd`
+pattern ab(?!x)cd
+features all
+m "abcd" 0 4
+n "abxd"
+m "xabcdx" 1 5
+
+# E-4 a one-character negative lookahead (A_CTX NOT_NEXT): the run is `abcd` [engine vm]
+pattern ab(?!x)cd
+features all
+engine vm
+m "abcd" 0 4
+n "abxd"
+m "xabcdx" 1 5
+
+# E-4 a one-character negative lookbehind (A_CTX NOT_PREV): the run is `abcd`
+pattern ab(?<!x)cd
+features all
+m "abcd" 0 4
+m "xabcdx" 1 5
+n "abd"
+
+# E-4 a one-character negative lookbehind (A_CTX NOT_PREV): the run is `abcd` [engine vm]
+pattern ab(?<!x)cd
+features all
+engine vm
+m "abcd" 0 4
+m "xabcdx" 1 5
+n "abd"
+
+# E-5 a positive lookahead (A_LOOK): the run is `xyabzw`, the body unread
+pattern xy(?=ab)abzw
+features all
+m "xyabzw" 0 6
+n "xyabab"
+m "qxyabzwq" 1 7
+
+# E-5 a positive lookahead (A_LOOK): the run is `xyabzw`, the body unread [engine vm]
+pattern xy(?=ab)abzw
+features all
+engine vm
+m "xyabzw" 0 6
+n "xyabab"
+m "qxyabzwq" 1 7
+
+# E-4 two negative lookarounds in a row: the run is `abce`
+pattern ab(?!cd)(?<!xy)ce
+features all
+m "abce" 0 4
+n "abcd"
+m "zabcez" 1 5
+
+# E-4 two negative lookarounds in a row: the run is `abce` [engine vm]
+pattern ab(?!cd)(?<!xy)ce
+features all
+engine vm
+m "abce" 0 4
+n "abcd"
+m "zabcez" 1 5

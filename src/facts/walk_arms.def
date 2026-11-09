@@ -23,7 +23,12 @@
  *
  * One row per restorable arm. `empty` is span_arms unit E1's (T2 row 1, a
  * repeat of a width-0 body: today's min-0 gap and best-only copy); stage 2a of
- * alt_normal_form restores its EMPTY unit under the same name. A later unit
- * adds its own row (R1 `rep`, E2 `zero`, L1 `look`, 2a `alt`). */
+ * alt_normal_form restores its EMPTY unit under the same name. `zero` is unit
+ * E2's (T3 rows E-4 and E-5, a node that consumes nothing but can fail: an
+ * assertion, `\G`, `\K`, a check callout, a lookaround of either lowering,
+ * back to today's CUT). A later unit adds its own row (R1 `rep`, L1 `look`,
+ * 2a `alt`). */
 WALK_ARM(EMPTY, "empty", (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
+/* span_arms E2 (T3 E-4, E-5 as the plain unit) */
+WALK_ARM(ZERO,  "zero",  (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
 #undef WALK_ARM

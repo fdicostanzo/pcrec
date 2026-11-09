@@ -2,7 +2,7 @@
  * (docs/design/alt_normal_form.md §3.4-§3.5, stage 2p).
  *
  * A node-grain pure function over a subtree, built bottom-up by its callers
- * through ARM COMBINATORS (unit, pos, cat, alt, none): a small set of WIDTH
+ * through ARM COMBINATORS (unit, zero, pos, cat, alt, none): a small set of WIDTH
  * GROUPS, each a sequence of position SETS over the caller's alphabet. The
  * soundness statement: every match of the subtree is, at contiguous
  * offsets, a string of ONE group's position product (a group is a superset
@@ -41,6 +41,7 @@ typedef struct {
 /* `PdGroup`/`PdDesc`, the value types, are facts.h's (the record holds
  * one: `PatFacts.req_pieces`). */
 PdDesc pcrec_pd_unit(void);
+PdDesc pcrec_pd_zero(void);
 PdDesc pcrec_pd_none(void);
 PdDesc pcrec_pd_pos(Ctx *cx, const void *pos);
 PdDesc pcrec_pd_cat(Ctx *cx, const PdCfg *c, PdDesc l, PdDesc r);

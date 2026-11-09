@@ -655,11 +655,40 @@ else
         abad="$abad an unknown arm ('nosuch') was accepted;"
     fi
 fi
-echo "REACH: 1 restored-arm witness ('$AP'), $(wc -l < "$WORKDIR/aw" 2>/dev/null || echo 0) listing cells"
+# span_arms E2: the `zero` arm runs T3's rows E-4 and E-5 in today's form
+# (the CUT), so a witness holding one node of each (`\B`, E-4; a positive
+# lookbehind, E-5) lists today's run `xyz` again under it, where the default
+# joins all seven bytes across both. A row that ignored the arm leaves `abcd`
+# (E-4's, S1928) or `xyzab` (E-5's) instead. Expectations by hand from T3.
+ZP='xyz(?<=yz)ab\Bcd'
+if [ -x "$HBIN" ] && [ -z "$abad" ]; then
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --features all --emit-facts --pattern "$ZP" > "$WORKDIR/zd.l" 2> "$WORKDIR/zd.err" ||
+       ! "$TIMEOUT_BIN" 120 "$HBIN" --features all --harness=restore=zero --emit-facts --pattern "$ZP" > "$WORKDIR/zr.l" 2> "$WORKDIR/zr.err"; then
+        abad="$abad '$ZP' refused ($(head -1 "$WORKDIR/zd.err" "$WORKDIR/zr.err" 2>/dev/null | tr '\n' ' '));"
+    else
+        sect "$WORKDIR/zd.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/zd.f"
+        sect "$WORKDIR/zr.l" facts | grep -F "$(printf 'encoding=byte\t')" > "$WORKDIR/zr.f"
+        printf '%s\n' \
+            'zd	req_whole_run	78797a61626364	' \
+            'zr	req_whole_run	78797a	harness:zero' \
+            'zr	req_run	78797a@2	harness:zero' \
+            'zr	req_byte	-	harness:zero' \
+            'zr	req_pieces	-	harness:zero' \
+            'zr	req_set	-	' > "$WORKDIR/zw"
+        while IFS=$'\t' read -r side fact wval wwhy; do
+            r="$(arow "$fact" "$WORKDIR/$side.f")"
+            gval="$(col value <<< "$r")"; gwhy="$(col why <<< "$r")"
+            [ "$wval" = "-" ] || [ "$gval" = "$wval" ] || abad="$abad $side $fact value [$gval], want [$wval];"
+            [ "$gwhy" = "$wwhy" ] || abad="$abad $side $fact why [$gwhy], want [$wwhy];"
+        done < "$WORKDIR/zw"
+        grep -qF 'harness:' "$WORKDIR/zd.f" && abad="$abad the default build lists a harness: token for '$ZP';"
+    fi
+fi
+echo "REACH: 2 restored-arm witnesses ('$AP' empty, '$ZP' zero), $(cat "$WORKDIR/aw" "$WORKDIR/zw" 2>/dev/null | wc -l) listing cells"
 if [ -n "$abad" ]; then
     bad "[facts-arm] the walk's restored arm or its harness: token is wrong:$abad"
 else
-    ok "[facts-arm] under --harness=restore=empty the walk runs T2 row 1's old form and its facts name the arm; the default lists the unit's run"
+    ok "[facts-arm] under --harness=restore=empty the walk runs T2 row 1's old form, under restore=zero T3's E-4/E-5 cut, and their facts name the arm; the default lists the units' runs"
 fi
 
 echo "checks passed: $pass"
