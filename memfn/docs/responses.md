@@ -3284,3 +3284,10 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Its FIRST deliverable, before any code, is the U3 interface sheet, committed and relayed to main: the entry names, the token field on the art and site, the family-guard and region text entries, and the TARGETS stamp value.
   - Expected starting points: K0's mf_target_parse / mf_target_c_of / mf_family_c_of. The sheet is binding once posted.
   - Box: U2's gates queue after span_pick 3.0a's (running now). The joint landing and the abi re-pin are main's, per R-37.
+- done: R-35 span_pick stage 3, unit 3.0a: branch lane/memfn-s30a @ 6dc54e383. Reports docs/dev/lanes/s30a_report.md and s30afix_report.md.
+  - Gates, all GREEN on worktrees/s30a at that tip; job files in /var/tmp/pcrec-pcrec/scratch/memfn/s30a/jobs/; queue keys kit-s30a-*:
+    - 500 strict; 501-503 identity (three shards); 504 reach (a retry: the first run hit the basis.py tuple bug, a job defect).
+    - 505 make test (a retry: the first run hit PL14, a line-numbered plan cite, fixed in 6dc54e383).
+    - 506 plants, 26/26 RED as designed (a retry: the first run failed POPULATION-OVER 29>26 on the job's own tail reprint, a job defect).
+    - 507-509 mech (three parts).
+  - Unit 3.0b, the next build, waits for your go, as does the inline one-member finder (D190 row 1).
