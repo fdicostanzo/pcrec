@@ -3754,3 +3754,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - Rulings: Q1 yes; Q2 (b) REQ_RUN shows the whole run with @scan; Q3 NO; Q4 yes with K38-2a (a G2 presence family) first; Q5 accept; Q6 src/gen.
   - Lane r38s1 (opus) writes rev 1, then a short re-check round.
   - Lesson: the sheet had the kit infer exactness from its own sets, a kit-side claim about the pattern's language. The kit reports what it checked; pcrec decides what that means.
+- 11-09: r38s1 DELIVERED (lane/memfn-r38s 0135bc89a; closed). Rev 1 applies F1-F11, Q1-Q6 RULED, K38-2a. No new entry: the reply is mf_class.run, read through req_pres_ask's existing mf_ask in src/gen (closes SEAM-6/7). Kit calls accepted: class-not-entry, the run-tie-left probe lever. Q7 and the run-pin choice went to main with the re-check.
