@@ -265,3 +265,10 @@ merge tree.
 | sabotage rows from S3001 | S3001-S3004 (Sabotage rows) |
 | run_arch_blind.sh, make strict, make test-codegen | Checks run |
 | validation jobs refreshed, each passing --dry-run | Validation jobs |
+
+## STATE AT HANDOFF
+
+Delivered on `lane/memfn-u2`, commits 9c1f0db4a, 8603336eb, f33b5561b and this report's commit. Nothing
+is owed by this lane. The jobs are written, not queued. The joint merge needs u3crit's pcrec half,
+whose shape is in The header placement items 1-8. The scratch preview (`scratch/memfn/u2rev/pv/`) and
+its patch are evidence only.
