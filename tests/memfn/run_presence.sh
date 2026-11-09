@@ -82,7 +82,10 @@ def art(tag, flags, pat):
 # A
 # (D172 S3: the fixed-width witnesses `é{2}cat` and `a{3}(?i:cat)` became
 # `cover`, which runs no pre-check; a variable count keeps their route)
-WIT = [([], "é{2,3}cat"), (["--engine=vm"], "é{2,3}cat"), (["-e", "utf8"], "a{3,4}(?i:cat)"),
+# (Span arms R1, lane sar1: a repeat of a literal is its copies in the run, so
+# `é{2,3}cat` states `éécat` and no set lead precedes it; the witnesses are
+# the same count shapes over an alternation body, whose copies are not a run)
+WIT = [([], "(?:é|ü){2,3}cat"), (["--engine=vm"], "(?:é|ü){2,3}cat"), (["-e", "utf8"], "(?:é|ü){2,3}(?i:cat)"),
        ([], "(?:user|USER)[ \\t]*="), (["-e", "byte"], "(x?)([a-z]+)+Z.@#\\1")]
 na = 0
 for i, (fl, pat) in enumerate(WIT):
