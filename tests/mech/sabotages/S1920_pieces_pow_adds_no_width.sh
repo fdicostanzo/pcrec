@@ -16,5 +16,7 @@ SAB_REACH='"$PCREC" --features all --emit-facts --pattern "(?:ab){20}(?:c|de)" |
 SAB_REACH_EXPECT="REACH-PIECES-W41"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            g->w += (long long)(k - i) * d.g[0].w;'
+SAB_BEFORE='            g->w = pcrec_sat_add(g->w, pcrec_sat_mul(k - i, d.g[0].w, PCREC_W_UNBOUNDED), PCREC_W_UNBOUNDED);'
 SAB_AFTER='            (void)i;   /* SABOTAGE S1920 */'
+# RE-ANCHORED (lane sar1fix, 2026-11-09, review r5 SLOT-1): the copies' width
+# is added saturating now; intent unchanged (the saturated copies add no width).

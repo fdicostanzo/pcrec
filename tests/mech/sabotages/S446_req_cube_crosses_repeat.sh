@@ -20,9 +20,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)sel(
 SAB_REACH_EXPECT="REACH-MIN0-SPLIT"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            rb_gap_into(acc, rr_rep_w(a->u.rep.rmax, t[0].runs.maxw));'
-SAB_AFTER='            acc->set  = rb_union(rb_empty(), acc->set, rr_rep_w(a->u.rep.rmax, t[0].runs.maxw));
-            acc->runs = rr_cat(t[0].runs, acc->runs);   /* SABOTAGE S446 */'
+SAB_BEFORE='    RbRuns gap = rr_none(rr_rep_w(n < 0 ? -1 : n - m, b.maxw));'
+SAB_AFTER='    RbRuns gap = m == 0 ? b : rr_none(rr_rep_w(n < 0 ? -1 : n - m, b.maxw));   /* SABOTAGE S446 */'
 # RE-ANCHORED (lane dd10tri, 2026-10-22, dd10 stack-depth branch): the walk's
 # arms became rb_*_into helpers over `acc` by pointer (PCREC_OWN_FRAME); the
 # min-0 repeat arm is now one rb_gap_into call (shared with the class and
@@ -36,3 +35,8 @@ SAB_AFTER='            acc->set  = rb_union(rb_empty(), acc->set, rr_rep_w(a->u.
 # RE-ANCHORED 2026-10-05 ([K82] (B), lane k82hbuild), INTENT RE-VERIFIED: the
 # min-0 repeat's `rr_none` now carries the body's WIDTH (the run offset walk);
 # the plant still joins the body's runs across the zero-iteration repeat.
+# RE-AIMED (lane sar1fix, 2026-11-09): since span arms R1 a min-0 repeat is
+# T2 row 3 (`rr_rep_split`, the optional part a gap); the old anchor, the
+# post-switch gap, was reached only under `--harness=restore=rep`. The plant
+# now joins the body's runs across the optional part at the live site, the
+# repeat's width kept. Intent unchanged.
