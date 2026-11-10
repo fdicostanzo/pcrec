@@ -6,7 +6,7 @@
                                              item grep: match each item at level -in (default 0), print it whole
                                              at level -l (default 0). The archive is read only with -p completed.
     scripts/entry --work [-p PROFILE] [-s SECTION] [-k WORD]
-                                             plan: every not-started and blocked row at level 1, by section
+                                             plan: every ready, started, blocked, not-started row (in that order), then ongoing, at level 1
     scripts/entry --levels [-p PROFILE]      the level and work-view rows of the profile table
     scripts/entry --over-cap                 soft-cap line for scripts/gestalt (docs/dev/doc_format.md)
     scripts/entry --lint-scripts             scripts/INDEX.md covers every script, every line names a file (make test-doc-lint)
@@ -33,7 +33,7 @@ import plan_lint  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 ARCH_HEAD = re.compile(r"^( *)- \[([^\]\n]+)\] STATE:(\S+)")  # the archive's states vary (completed, done, ...)
-L1_PLAN = ("next", "trigger", "status", "refs", "now")
+L1_PLAN = ("next", "trigger", "status", "refs", "now", "ready", "waits", "why", "review")
 ALIAS = re.compile(
     r"^(D[0-9]+) (?:add\.|addendum|ADDENDUM|Addendum)(?: (.+))?$"
     r"|^(D[0-9]+) (first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth) (?:add\.|addendum|ADDENDUM)$")
@@ -582,6 +582,9 @@ def run(argv, out, root=ROOT, profiles=None):
     return res.rc if res.items else EXIT_NONE
 
 
+WORK_ORDER = ("ready", "started", "blocked", "not-started", "ongoing")
+
+
 def list_items(ctx, a, out):
     ps = sel_profiles(ctx, a["p"])
     if not ps:
@@ -604,7 +607,7 @@ def list_items(ctx, a, out):
                 continue
             if a["state"] and it.state != a["state"]:
                 continue
-            if a["work"] and (p["form"] != "single" or it.state not in ("not-started", "blocked")):
+            if a["work"] and (p["form"] != "single" or it.state not in WORK_ORDER):
                 continue
             blob = "\n".join(it.text(a["in"] if a["in"] is not None else 0))
             if rx is not None and not rx.search(blob):
@@ -612,10 +615,12 @@ def list_items(ctx, a, out):
             if a["k"] and a["k"].lower() not in "\n".join(it.text(1)).lower():
                 continue
             hits.append(it)
+    if a["work"]:  # ready first (Frank 2026-11-10: a ready stage outranks not-started work), ongoing last
+        hits.sort(key=lambda it: WORK_ORDER.index(it.state))
     lines, sect = [], object()
     for i, it in enumerate(hits):
-        if a["work"] and it.section != sect:
-            sect = it.section
+        if a["work"] and it.state != sect:
+            sect = it.state
             lines.append("## " + str(sect))
         elif i and level >= 1:
             lines.append("")
@@ -666,7 +671,7 @@ PLAN_FIX = """# fixture plan
 
 ## Policy
 
-    - [ID] STATE:<not-started|started|blocked|deferred> — <title>
+    - [ID] STATE:<not-started|started|blocked|deferred|ongoing|ready> — <title>
     - [CHILD-ID] STATE:<state> — <child>
 
 - [ID] STATE:not-started — a template-looking tag outside the Policy fence is not this row
@@ -694,6 +699,15 @@ PLAN_FIX = """# fixture plan
   filed: 2026-11-01 test
   status (2026-11-02): stuck
   trigger: unblocked
+- [DD-4] STATE:ready — a ready fixture row
+  filed: 2026-11-01 test
+  status (2026-11-02): stage 2 designed
+  ready: stage 2; stage 1 landed abc123
+- [EE-5] STATE:ongoing — an open-ended fixture row
+  filed: 2026-11-01 test
+  status (2026-11-02): loops
+  why ongoing: no end state
+  review: yearly
 """
 ARCH_FIX = """# fixture archive
 
@@ -754,7 +768,7 @@ def selftest():
         with open(os.path.join(tmp, name), "w", encoding="utf-8") as fh:
             fh.write(text)
 
-    def check(label, argv, rc, has=(), lacks=(), profiles=None, root=None, exact=None):
+    def check(label, argv, rc, has=(), lacks=(), profiles=None, root=None, exact=None, order=()):
         n[0] += 1
         buf = io.StringIO()
         got = run(argv, buf, root or tmp, profiles or doc_profiles.FIXTURE_PROFILES)
@@ -764,6 +778,9 @@ def selftest():
             why.append("rc %d, want %d" % (got, rc))
         why += ["missing %r" % s for s in has if s not in o]
         why += ["unexpected %r" % s for s in lacks if s in o]
+        pos = [o.find(t) for t in order]
+        if order and (min(pos) < 0 or pos != sorted(pos)):
+            why.append("order %r not in sequence" % (order,))
         if exact is not None and o != exact:
             why.append("output %r != %r" % (o, exact))
         if why:
@@ -813,8 +830,9 @@ def selftest():
     check("grep -in 2 content hit", ["-g", "stuck", "-in", "2", "-p", "fixplan", "-l", "1"], 0, has=["[CC-3]", "trigger: unblocked"])
     check("grep archive only with -p", ["-g", "second PC-3"], 1, lacks=["second PC-3 row"])
     check("grep archive -p", ["-g", "second PC-3", "-p", "fixarch"], 0, has=["the second PC-3 row"])
-    # work view: not-started + blocked at level 1, by section, never the archive
-    check("work view", ["--work", "-p", "fixplan"], 0, has=["## Backlog", "[BB-2]", "next: later", "[CC-3]", "[AA-1.1]"], lacks=["[AA-1] STATE:started"])
+    # work view: ready, started, blocked, not-started, then ongoing at level 1, by state, never the archive
+    check("work view", ["--work", "-p", "fixplan"], 0, has=["## not-started", "## started", "[BB-2]", "next: later", "[CC-3]", "[AA-1.1]", "[AA-1] STATE:started"])
+    check("work view order", ["--work", "-p", "fixplan"], 0, order=["## ready", "## started", "## blocked", "## not-started", "## ongoing"])
     check("work view section filter", ["--work", "-p", "fixplan", "-s", "backlog"], 0, has=["[BB-2]"], lacks=["[AA-1.1]"])
     check("work view keyword", ["--work", "-p", "fixplan", "-k", "unblocked"], 0, has=["[CC-3]"], lacks=["[BB-2]"])
     check("levels table", ["--levels", "-p", "fixplan"], 0, has=["fixplan [single]"])

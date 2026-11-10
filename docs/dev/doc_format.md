@@ -35,8 +35,8 @@ addendum); (6) a lower-case kebab slug (every live pair profile; 2+ hits exit 2)
 Plan linting refuses a `[TAG]` shaped like rows 2, 3, 5 or 6 (PL18), so a tag is always reachable.
 
 `-g` searches each item at level `-in` (default 0 = index lines; 2 = full content) and prints every matching item
-whole at level `-l` (default 0). The archive is read only with `-p completed`. `--work` = every not-started and
-blocked plan row at level 1, by section; it never reads the archive. `--rev SHA` reads the files at that commit
+whole at level `-l` (default 0). The archive is read only with `-p completed`. `--work` = every ready, started,
+blocked and not-started plan row (sections in that order), then ongoing rows, at level 1, by state; it never reads the archive. `--rev SHA` reads the files at that commit
 (read-only `git show`) with the WORKING TREE's profile table, the form chosen by which files exist at SHA.
 Output ends `entry: <n> items (profile <p>, level <l>)`; exit 0 found, 1 none, 2 ambiguous. Without the tool:
 `awk '/^## /{p=($2=="D26")} p' docs/dev/decisions_details.md` prints one entry once a pair exists.
