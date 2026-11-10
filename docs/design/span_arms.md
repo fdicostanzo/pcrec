@@ -422,7 +422,7 @@ applies to" was ill-formed. Rev 2:
 | `pos_set` | the run's cube domain | `PCREC_MAX_REQ_RUN_POS_SET` (`limits.def`) | public bit 44 `-fno-req-run-fold` → 1 | every run arm (`rn_common_head`, the class arm) and the guard's hull (§5.1) |
 | `max_pieces` | the description's group bound | `PCREC_MAX_REQ_PIECES` | none | the description (`PdCfg.max_groups`) |
 | reach | TOP's admitted interval | `[0, maxoff]` at L1; AHEAD at L2; BACK at L3 | harness arm `look` → `[0, maxoff]` | TOP |
-| restored arms | the arms run in today's form | none | harness arms `alt`, `empty` (2a), `rep` (T2 → today's best-only REP), `zero` (T3 E-4 → today's cut; E-5 stays E2's plain unit), `look` (T4 off: E-5 as E2's plain unit, no item and no guards, and reach `[0, maxoff]`) `[r3 READY-9]` | T1's arm switch |
+| restored arms | the arms run in today's form | none | harness arms `alt`, `empty` (2a), `rep` (T2 → today's best-only REP), `zero` (T3 E-4 → today's cut; E-5 stays E2's plain unit), `tie` (R1's rarity tie rule, `rn_choice_rows` rows 2-4 → information, then the first run; added by lane sartie, Frank 2026-11-10, so that `rep`+`tie` reproduces the pre-R1 compiler exactly), `look` (T4 off: E-5 as E2's plain unit, no item and no guards, and reach `[0, maxoff]`) `[r3 READY-9]` | T1's arm switch |
 | `lb_bytes` | TOP's BACK step cap (§5.5) | `Ctx.lb_max` × the encoding's widest character | none (a `Ctx` policy field, deliberately not a fact accessor, `internal.h:3979-3997`) | TOP |
 
 - The table is filled ONCE, at the one walk entry (`pf_derive_req_walk`'s call of
