@@ -6533,3 +6533,31 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   refs: docs/dev/chunks_2026-10-11.md; docs/dev/optloop/lossreview_charter.md; decisions D6 D160; known_issues K103 K104
   the next [OPTLOOP] round's selection input. Charter: docs/dev/optloop/lossreview_charter.md. Population: gapreport_2026-10-11.md's trailing cells (non-SIMD) + K103, K104, tail-dotstar-txt, bak-2, hcolon entry +13% / hcolon_in x1.5, DENSE, BCLS. Phase 1 attribution by route (lanes lrdfa / lrvm / lrmisc, load-insensitive evidence while the box is busy; timing twins in a quiet slot), phase 2 general fixes (fix-existing first), phase 3 D6 panel + ranked list to Frank. SESSION 107: phase 1 DONE (lossreview/dfa.md 51.2 ms, vm.md 34.6 ms, misc.md 8.6 ms; ~46 answer-checked twins, timing OWED to a quiet slot); phase 2 DONE (lossreview/fixes.md: families F1-F4, candidates in order). Frank approved a FAST PATH for candidates #1 (seam helpers internal linkage) and #2 (D160 length-ordered prior): time twins modj-static-seam and T5 after the L1 merge, then build both as small lanes — NEXT SESSION.
   Phase 3 (remaining twins, D6 panel, ranked list) follows.
+
+- [REGIME] STATE:completed — THE KNOWLEDGE-FILTERED CANDIDATE FINDER: plan to validated build (umbrella)
+  completed: 2026-11-10 lane closeb (owner close-out ruling 2026-11-10, Q3 "verify and close"; SUPERSEDED, not built; row verbatim below)
+  filed: 2026-10-13 Frank
+  status (2026-10-17): R17-b' B1+B2 landed on main (merge 0ec28bddd); R-23 landed (merge 3f04dff85, MF_SITE_ABI 14); B3 next; the grid2 harness is ready, its timed run in the evening quiet window; owners each own their pieces
+  status (2026-11-10): CLOSED, SUPERSEDED; per chartered piece: CORPUS done b39a69c2e; EVAL and TWIN superseded (below); prerequisites live in [FINDALL-NEXT], [MEASURE-SET], [UTF-RW]; the kit's R17-b' (B1-B3b landed, B4' withdrew V1/R5/R0) and R17-b'' / LOCKDOWN are the kit's own ledger; the official verdict is [OPT-SIMD]'s review; [REGIME-LANDINGS] is filed Deferred. Table: docs/dev/lanes/closeb_report.md
+  next: [REGIME-CORPUS] and [REGIME-EVAL] first; then [REGIME-TWIN]; D6 rounds on each design and result
+  refs: docs/design/regime_tables.md; decisions D157 D161 D162 D165 D166 D169; [FINDALL-NEXT] [MEASURE-SET] [REGIME-LANDINGS] [UTF-RW]
+  Order: (1) [REGIME-CORPUS] real subjects + user questions; (2) [REGIME-EVAL] replay evaluator, pre-registered acceptance, held-out populations, failing-direction controls; (3) [REGIME-TWIN] the dispatch timed; (4) D6 critic rounds on designs and on results; (5) prerequisites in parallel: [FINDALL-NEXT] (D165), [REGIME-LANDINGS], [MEASURE-SET], the kit's R17-b′; (6) R17-b″ with F4/F7 and D165's parity gate; (7) official verdict: F5 Zen 1 + a bench run on targeted hardware (D144 add. 4). ACCEPTANCE (Frank 2026-10-13): looser bars are fine; outliers and some regression are accepted for a cleaner, clearer design. OWNERSHIP (Frank): the kit owns its rows, evaluator and twin; pcrec owns knowledge plumbing, arms and its own tables; each comments on the other's work.
+
+- [REGIME-EVAL] STATE:completed — test the regime table by REPLAY before any production code
+  completed: 2026-11-10 lane closeb (owner close-out ruling 2026-11-10, Q3 "verify and close"; SUPERSEDED, not built; row verbatim below)
+  filed: 2026-10-13 Frank
+  status (2026-10-14): kit design rev 2.2 (regime_eval.md); Frank agreed Q-REVAL-12 lean, -16 constants+loosenings, -17 k=3; every verdict-changing constant is a VISIBLE listed parameter
+  status (2026-11-10): SUPERSEDED, never built: the hand-written V1/A1/A3 table it would have replayed was overtaken by B4' (V1/R5/R0 withdrawn 2026-10-21, the walk is every set FIND's default; walk_vs_v1_record.md) and by D186 (a choice row carries per-regime evidence from job 588 runs) with priced picks from [MEASURE-SET] sets (span_pick, D188); the replay-judge idea lives on in [TABLE-JUDGE]; its J1 population is [REGIME-CORPUS]
+  next: a design note, then a D6 panel
+  refs: docs/design/regime_tables.md; the kit's costmodel/gridread scripts; [REGIME-CORPUS]
+  An evaluator: (measurement set, cell knowledge) -> the table's pick vs the measured best form. Pre-registered acceptance (loose, per Frank). Thresholds fitted on synthetic grids, judged on held-out real text, the bench's subjects and later Zen 1. Failing-direction controls: swapped thresholds, the R3 short-span error, a deleted row must score visibly worse. SIMD-on and SIMD-off both.
+
+- [REGIME-TWIN] STATE:completed — time the table's own dispatch (a hand-built table arm vs fixed forms vs the per-row best)
+  completed: 2026-11-10 lane closeb (owner close-out ruling 2026-11-10, Q3 "verify and close"; SUPERSEDED, not built; row verbatim below)
+  filed: 2026-10-13 Frank
+  status (2026-10-13): not started; after [REGIME-EVAL]'s design
+  status (2026-11-10): SUPERSEDED, never built: the dispatch compares of a hand-built regime table are timed row by row in span_pick stage 3 (each row a 588-style run on every arm, D186) and the grid harness became [MEASURE-SET]'s method (zen4-grid3@1 692ec83b7); no table arm is built
+  next: design with [REGIME-EVAL]; one grid slot (grid1's harness as the standing instrument)
+  refs: [REGIME-EVAL]; the kit's grid1 harness; docs/dev/lanes/slotarms_report.md
+  Replay cannot see the dispatch compares' cost. A hand-built table arm (run-time rows as real emitted compares) timed in one slot against the fixed forms and the per-row best, on synthetic + [REGIME-CORPUS] subjects. The harness becomes [MEASURE-SET]'s formal method.
+
