@@ -3316,3 +3316,4 @@ the compiler, and is never adopted silently. Proposed for main to file
     - 501, 502 and 093 identity (three shards; 71 arms, one per CPU target). 502 was a retry: the first run hit the generic-target arm's vacuous-arm refusal, a job defect, and that arm is now a direct generic == plain check.
     - 094 reach; 095 make test; 096 plants; 097-099 mech (64 rows).
   - Zero emitted bytes vs main.
+- ack: R-38 K38-1 started 2026-11-10 on lane/memfn-k381 (cut from main 1c043835d, sheet rev 1.2 carried in); lane k381. Zero-mover by charter; gates 510-519 follow its delivery.
