@@ -58,7 +58,7 @@ Parser structure (PARSE-1):
 - uprops_tables.inc — GENERATED property tables: categories, scripts, binary properties, Bidi_Class, Block, Age (do not edit)
 - mod_ucp.c — module `ucp`: `(*UTF)`/`(*UCP)`, option run, UCP sets
 - mod_named_groups.c — module `named-groups` declaring port
-- mod_assertions.c — module `assertions` (`\A \Z \z \b \B \G \K`)
+- mod_assertions.c — module `assertions` (`\A \Z \z \b \B \G`) and, since the [FEAT-FAMILIES] split, the producer for `\K`, which is its own module `match-start-reset`
 - mod_lookaround.c — module `lookaround` (one port, width rule, `\K` check)
 - mod_atomic_groups.c — module `atomic-groups`, `pcrec_atomic_suffix_row`
 - mod_vars.c — module `vars` (`${name}`)
