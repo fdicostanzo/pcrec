@@ -10123,3 +10123,16 @@ Generic-loop rule: a caller that serves any artifact loops over `info->next` (on
 3. **Rulings 2026-11-09 (span_arms §12b):** repeats count as their copies (`X{2}` as `XX`; `X{2,5}` contributes its two fixed copies); zero-width items (`\b`, `$`, `\K`, lookarounds) stop cutting the run, all in unit E2 ("cracking open a piece of code comes with overhead"); a run outside the match is ONE run value, every reader raised together, never a second wider fact; the lookbehind step back is capped at the declared lookbehind length; L3 builds now, ahead of A-POSDOM, its two sites in that table's shape (§8.1); [REWRITE-ADJ]'s design starts now.
 4. The prefix skip after a proved run (`abc(ab){3,5}xxx`) stays [MATCH-KNOWN]'s member on its own trigger; R-38 asks the kit to report how far it verified, the fact that member would read.
 
+## D192 — [DOC-INDEX] the index + details format for ruling and tracker files: the owner's six answers (Frank, 2026-11-10)
+
+Answered against docs/design/doc_index_format.md rev 0 §7 (six open questions, each with a leaning); applied in rev 1 and kept in rev 2 (its §7). The critic round on rev 1 (docs/dev/reviews/2026-11-10-r1-docfmt.md) was ruled by the manager with every proposed disposition accepted; none of its findings re-opens an answer below.
+
+1. **Statements: OPUS writers, a fresh OPUS critic, no owner read-through.** Each one-sentence index statement is written by an opus session that reads the whole details entry, and checked by a fresh opus critic against the details (no ruling added or dropped, `(+n more)` right). The owner does not read the finished index.
+2. **One details file per index or one file per entry: the manager's call**, since every read goes through the accessor. Ruled: one details file per index (`<name>_details.md`).
+3. **A LEVELED accessor.** `scripts/entry` serves different levels of an entry (index line; working fields; the whole entry) and greps by ITEM, plus a work-choosing view; a not-started plan row's trigger or next step stays out of the index and comes from the accessor.
+4. **Soft caps now, revisit later.** A file over its size cap is reported, never refused; `scripts/gestalt` prints one line per index over its cap and nothing otherwise. Whether the per-LINE limits are also soft is an open question (doc §7).
+5. **Kit ledgers: yes, as a proposal.** Send the kit the format (doc §8) for feedback once the design is vetted; the kit decides its own files.
+6. **Known issues third**, right after decisions and plan; upstream issues after it.
+7. **Which index is read when (Frank, 2026-11-10, at the re-check round r2-docfmt2):** "Decision should be read at wake but plan index can be read at first look for existing plans." The decisions index is read whole at wake; the plan index is read on first need, the first time a session looks for existing plans (through `scripts/entry`); the post-compact hook inlines neither (it prints a re-read line for the decisions index only). Supersedes the manager's earlier choice of reading the plan index at wake.
+
+Revisit-when: a unit's stop point (doc §5.4) shows the index unused, or the soft caps fire every heartbeat.
