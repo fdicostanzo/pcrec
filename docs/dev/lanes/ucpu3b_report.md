@@ -68,3 +68,47 @@ None blocks the build. Two choices this plan takes inside the charter, stated so
 overruled: (1) the conservative D134 row (false) because text class is not a compile-time fact;
 (2) lifting U1's wide-set refusal (ucp_design.md §6 U3 row), which makes `(*UCP)\w+` compile as
 `\p{Xwd}+` does today.
+
+## STATE AT HANDOFF (2026-11-10)
+
+### Units done (commits on lane/ucpu3b)
+
+| commit | unit |
+|---|---|
+| 2ad63a918 | step 0: this plan |
+| 1063f86d2 | B+C: island NFA (`N_WCHAR`, `pcrec_build_nfa_island`, decided by `pcrec_island_needed`) and DFA (character atoms over `iset[]`, `tr[]` = `ncls + nchr` cells, segment table, T5 kinds as data); byte-path readers (kset, width, land_char, span) DECLINE island NFAs (`decline:island-nfa`); the memo keys on `island`; minimization SKIPS island machines |
+| f5adcb004 | A+D: admission (UCP `\b`/`\B` under utf8 builds; U1's wide-set refusal lifted, `(*UCP)\w` builds as `\p{Xwd}`), the selection row `island` (last row of `analyses[]`, ENGM_DFA only) with refusals by name where the VM is needed (captures, `\K`, VM lookaround, `--engine=vm`) and for start anchors (ENG_ATTEMPT island not built); emitter: forward walk, reverse walk from the end, retry machine for nullable patterns, LOCATE row `island` first in `cand_rows[]`; `RX_DFA_SCAN "island"` |
+| 4089a059f | F: `tests/ucp/island.rxt` + `tests/utf8/island_illformed.rxt` (libpcre2 10.46, 933 cells, harness 933/933); refusals.rxt / reject table / ucp_compare moved; twin set re-run |
+| 4155cfb90 | E: spec hunks (cli §1.9¶7, limits §3.8/§3.9¶3a-c, pattern_language §7.1¶2/§7.8¶2, match_api `"island"` value + scan-table row, facts_listing `decline:island-nfa`); limits rows `PCREC_MAX_ISL_SETS`/`_ATOMS`; registry 41->43 checks, 82->84 rows; `PCREC_DFA_ISLAND` on the sentinel allowlist |
+
+### Correctness (measured, local libpcre2 10.46, UTF|UCP|MATCH_INVALID_UTF)
+
+- The twin's correctness set re-run against the REAL build, every twin case (`ucpu3b_evidence/twin_rerun.py`, result `twin_rerun_10.46.tsv`): 9 cases x 31,168 = 280,512 cells, **0 differing**, 0 §9.5 cells. x3/x3b take `"island"`; the seven others keep their all-byte route (D134 item 1, the island never competes).
+- Differential (scratch `diff.py`): ~60 patterns x 1,500-1,700 cases (views `$ \z \Z (?m)$`, nullable, lookbehind beside `\b`, caseless, wide/narrow/property sets, ill-formed subjects): 0 differing outside match_api.md §9.5's documented empty-match-beside-ill-formed family, which `(?aW)\b`'s byte machines share.
+- Local: `make strict` clean; reject table 669/0 (coverage 290/127/0/115); registry suite rc 0; ucp_compare 42/0 (32 sets compared, 9 wide).
+
+### abi
+
+98, NO bump. Identity probe main vs lane (60 patterns, same output names): 58 same, 2 differ — `(*UCP)\bfoo\b` and `(*UCP)\w+` under utf8, both previously REFUSED (the intended new compiles). No non-island artifact moved.
+
+### Gates queued (OWED; DO-THEN-FINISH)
+
+| job key | what | done line to read |
+|---|---|---|
+| 430-main-ucpu3b-maketest | make test via perfrun, log `$PCREC_TMPDIR/scratch/ucpu3b/maketest.log` | `scripts/boxqueue state 430-main-ucpu3b-maketest`; `scripts/verdict` on the log |
+| 431-main-ucpu3b-axes | make test-axes | `scripts/boxqueue state 431-main-ucpu3b-axes` |
+| 432-main-ucpu3b-ubsan | make ubsan (both axes) | `scripts/boxqueue state 432-main-ucpu3b-ubsan` |
+| 433-main-ucpu3b-asan | make asan (both axes) | `scripts/boxqueue state 433-main-ucpu3b-asan` |
+
+No `--ready` chain on another key; they run after the full suite in priority order.
+
+### OWED (not built by this lane)
+
+- **D134 row measurement**: island vs VM hybrid break-even by text class and prefilter strength on the COMPETING population (non-ASCII lookaround contexts, twin x1/x2). Not queued: the competing route is not built (those patterns stay on the VM hybrid), so there is nothing to time yet; the row is CONSERVATIVE = the island fires only where no byte form and no other DFA exists (T4 row 1).
+- **Measurement card** for the island scan method (memory: a new method adds its card): not written; it is visibly UNMEASURED.
+- **mech sabotage rows** (plan §: decoder accepting `C0 80`; ⊥ read as word; reverse skipping a truncated run; H7 accept): not written; no mech job queued for them.
+- Follow-ups: T5 fast path (DEAD/SELF/ISLAND kinds computed, unused by the walk); prefilter/skip/scan edges on island machines; minimization of island machines; ENG_ATTEMPT island (start anchors refused by name); captures (U4) and the VM reading wide sets (U4); a dedicated `RX_DFA_ISLAND` stamp was NOT added (the island is read from `RX_DFA_SCAN "island"`; the other DFA stamps take their absence values on it).
+
+### For the kit
+
+Nothing. No memfn/ edit and no kit-side change needed: the island emits its own walk and declines every kit site.
