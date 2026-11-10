@@ -509,7 +509,7 @@ EXTENDED_TEMPLATES = [
 # is defined as, written out (the family NAMES do not exist as --features
 # values until the default moves); recursion/verbs/callouts/vars are not in it.
 EXTENDED_FEATURES = ("classes,modifiers,quoting,named-groups,ucp,unicode-props,"
-                     "assertions,backrefs,lookaround,atomic-groups")
+                     "assertions,match-start-reset,backrefs,lookaround,atomic-groups")
 
 
 def gen_extended():
