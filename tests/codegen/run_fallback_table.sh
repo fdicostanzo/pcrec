@@ -288,7 +288,11 @@ fstate seq-pfcdrop 1 'restart=1'
 # (gate-sizecap below); the bit must keep it to drop-prefilter alone.
 fseq seq-pfdrop   trplain ok 'drop-prefilter@size'                             '(\p{Xwd}{1,3})' -e utf8 -fno-prefilter-collapse -fno-start-landing
 fseq seq-pfc      trplain ok 'prefilter-collapse@size'                         '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
-fseq seq-pfclow   trlowsize ok 'prefilter-collapse@size'                       '(?:a\K){2,}b'
+# [SPAN-ARMS] merge of R1 onto E1+E2 (lane mrgmt, 2026-11-10): was '(?:a\K){2,}b'. R1's repeat
+# rows and E2's zero-width rows compose to the necessary run `aab` (neither parent finds one), whose
+# window pre-check adds ~670 B and puts the collapsed artifact 57 B over the trlowsize cap. The `\d`
+# tail keeps the \K-in-repeat shape (run `aa`, ~700 B under after collapse on main and merged alike).
+fseq seq-pfclow   trlowsize ok 'prefilter-collapse@size'                       '(?:a\K){2,}\d'
 fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(\bcat\b)+' -e utf8
 # [OPT-REVEND] L2 (lane revbuild): was '(\bcat\b){2,}', whose hybrid body is `empty` and lost its
 # whole-window pre-check to the walk deference (REQ_WHY "dominated", -705 B), landing under
@@ -306,7 +310,11 @@ fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(
 # reqvm1rung's `drop-handoff` rung gives those rows up and the artifact fits again (the
 # caller's own -fno-req-handoff artifact, byte for byte): the third row is that rung
 # reached AFTER the prefilter drop, on the VM-only attempt loop that carries the rows.
-fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size > drop-handoff@size' '(\bcat\b){2,}[a-z]\d' -e utf8
+# [SPAN-ARMS] merge (lane mrgmt, 2026-11-10): `(\bcat\b){2,}` now carries the composed run
+# `catcat` (R1 repeat x E2 \b rows), +6 B of stamp on every attempt, past this window's margin;
+# `(\bcats\b){2,}[a-z]\d\d` was the one hit of a 224-pattern sweep (word x repeat x tail) on the
+# merged trlowsize, and reads the same three rows on main 3f46eba9b.
+fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size > drop-handoff@size' '(\bcats\b){2,}[a-z]\d\d' -e utf8
 fstate seq-pfcd2 2 'restart=1'
 fstate seq-pfcd2 3 'restart=1'
 # [REQRUN-VM] the `drop-handoff` rung BEFORE the prefilter drop, at the shipped caps: the
@@ -426,7 +434,7 @@ frec att-ovfcd    trplain attrib '-|overflowed-dfa from=sel1-drop'            "$
 # [REQRUN-VM] att-scpfd's last attempt is now the one after `drop-handoff` (prefilter-
 # collapse > drop-prefilter > drop-handoff, still over the cap): the giving row is the THIRD.
 frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-handoff'       '(\bcat\b){2,}\w\w' -e utf8
-frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}b'
+frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}\d'
 frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8 -fno-start-landing
 frec att-sclw     trlowsize attrib '-|size-cap-retry from=drop-landmark-walk' "$W_LWSIZE"
 frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
