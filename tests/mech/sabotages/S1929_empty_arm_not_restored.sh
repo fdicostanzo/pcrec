@@ -13,7 +13,7 @@ SAB_FILE="src/facts/req.c"
 SAB_SUITES="facts"
 SAB_DESC="the zero-width rows' E-1 row (the empty string) carries no restored arm, so the harness lever's old form (the cut) is never produced for it while the listing still names the arm"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/sae2_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1929."
-SAB_REACH='"$(dirname "$PCREC")/pcrec-harness" --features all --harness=restore=empty --emit-facts --pattern "abcd()efgh" | grep -qP "^byte\treq_whole_run\t.*\t65666768\tharness:empty\t" && echo REACH-EMPTY-ARM-RESTORES'
+SAB_REACH='"$(dirname "$PCREC")/pcrec-harness" --features all --harness=restore=empty --emit-facts --pattern "abcd()efgh" | grep -qP "^byte\treq_whole_run\t.*\t61626364\tharness:empty\t" && echo REACH-EMPTY-ARM-RESTORES'
 SAB_REACH_EXPECT="REACH-EMPTY-ARM-RESTORES"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
