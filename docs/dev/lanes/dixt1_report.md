@@ -59,7 +59,8 @@ the gestalt plants it is the pre-T1 gestalt run against the new test.
   claudemd 359 files within limits, plan_lint 341 rows 0 violations, selftest 38+6 plants, 18 rules covered).
 - `scripts/tests/gestalt.test`: 54 pass, 0 fail.
 - `scripts/entry --selftest`: 48 checks, 0 failures (via `make test-doc-lint`).
-- `make test-codegen testscripts`: ACCEPTANCE_PLACEHOLDER
+- `make test-codegen`: green (TT-9: 165 run_*.sh found incl. tests/doc_lint/run_doc_lint.sh, planted-defect control flagged all five; 336+41+23+40+7 checks passed, 0 failed).
+- `make testscripts`: OWED. Running in the background (it ends with the 600 s boxqueue.test); log /var/tmp/pcrec-pcrec/scratch/dixt1/accept.log, completion line `^rc=` at its end; verdict = make's `*** [...testscripts] Error` lines. gestalt.test (the only testscripts member this change touches) is green standalone, 54 pass 0 fail.
 - `make strict`: not run (no C touched).
 
 ### Deviations
