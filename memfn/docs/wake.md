@@ -19,9 +19,9 @@ Kit worktree: worktrees/memfn on branch lane/memfn-k1108 (ledger/journal commits
   S3008 (plant B) DETECTED. Seam: docs/dev/lanes/k382a_oracle_iface.md.
 - Review 2026-11-10 r2 k382a ruled and fixed (committed on the branch).
 
-- k382afix DELIVERED (review fixes; lane/memfn-k382a 37a6b36ed). NEXT: queue gates 550-559 (kit-k382b-*, /var/tmp/pcrec-pcrec/scratch/memfn/k382afix/jobs/, all dry-runs pass) Wed 11-11 AFTER main's full suite ends (~14:00);
+- k382afix DELIVERED (lane/memfn-k382a 37a6b36ed). Gates 550-559 (kit-k382b-*, scratch/memfn/k382afix/jobs) QUEUED 11-10 17:40 behind main's full suite (ends ~08:00 Wed; main frozen until its verdict);
   then watch with `scripts/monread kit --wait`; done line; main merges.
-- Main's full suite holds the box Wed 11-11 01:00 to ~14:00 on a frozen main: no kit jobs or merges to main in that window.
+- Main frozen until the full suite verdict (~08:00 Wed): a done line parks on its branch.
 - After K38-2a: 3.0b (main's go given: "3.0b stays after it"), then K38-2 (the seam event, L), K38-3.
 - Pending main: the master row over conditionals/predicates/intersection (Frank 11-10); main runs the survey and sends the
   design for kit comment. Doc-index ledger format agreed (doc_index_format.md §8.1): convert responses.md once main's kit profile exists.
