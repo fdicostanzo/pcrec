@@ -9,8 +9,19 @@
 # gh unavailable; a cancelled-latest prints as completed/cancelled), queue (box idle while a ready job waits),
 # idle-held (a hand `boxlock run` holder alive while load1 stayed < 1.5 across two readings >= 60 s apart),
 # docs (a pair-form tracker index over its soft cap, or the accessor unavailable: `scripts/entry --over-cap`, D192).
+# Plan-health rows (Frank 2026-11-10; thresholds are "default, unmeasured", declared as variables above the ROWS table):
+#   owner-waits  any row/stage has `waits: owner —` (count, oldest age = its status date, oldest tag)
+#   open         started + ready rows > 6 (started / ready / blocked counts)
+#   ready-idle   a STATE:ready row ready > 7 days (the commit that set it; count, oldest age + tag)
+#   stale        a STATE:started row untouched > 21 days (newer of its status date and last commit touching its tag); undated rows are counted
+#   questions    owner.md "Questions for you": an unanswered entry (not "(answered", not "FYI") older than 24 h, or undated (said so, never mtime)
+#   push-owed    main ahead of origin/main, oldest unpushed commit > 2 h (commit count)
+#   prune-owed   > 5 worktrees `scripts/wtprune` (dry run, cached 30 min in $PCREC_TMPDIR/gestalt/prune.cache and refreshed by a detached
+#                background run, because the dry run takes ~5 s) reports removable; no cache yet = `prune-owed: unknown`
+#   plan         `scripts/entry --work` failed (the plan rows above are then absent; K35: never silent)
+# Plan data comes only from `scripts/entry --work` (one parser); the git -S pickaxe dates rows (~1 s for ~25 rows, in parallel).
 # The gestalt/log.tsv line is written on every run either way.
-# At most ~12 plain-text lines, each external call under `timeout`, whole run well under 5 s:
+# At most ~19 plain-text lines (12 box lines + the plan-health rows), each external call under `timeout`, whole run well under 5 s:
 #   load      1/5/15-min load, nproc; when load1 > nproc/2 the top 3 CPU users (command name + %CPU, no args)
 #   box       scripts/boxlock status, first line
 #   queue     scripts/boxqueue status condensed: running job + age, pending count, last 3 ends + verdict
