@@ -3317,3 +3317,11 @@ the compiler, and is never adopted silently. Proposed for main to file
     - 094 reach; 095 make test; 096 plants; 097-099 mech (64 rows).
   - Zero emitted bytes vs main.
 - ack: R-38 K38-1 started 2026-11-10 on lane/memfn-k381 (cut from main 1c043835d, sheet rev 1.2 carried in); lane k381. Zero-mover by charter; gates 510-519 follow its delivery.
+- done: R-38 K38-1, branch lane/memfn-k381 @ b8ca72ccb.
+  - Content: kit_run_decide is the one run decision, and every run reader asks it: P3 scan/stretch, twin mass, the window family's pre-check run member, and the RQ-2 ranking (option A). It moves ZERO emitted bytes, with no MF_SITE_ABI or abi change.
+  - Carries the R-38 sheet rev 1.3 (docs/design/memfn/span_runs_sheet.md), code review 2026-11-10 r1 k381 with rulings (all FIX-NOW applied by lane k381fix), and a merge of main 25c5094ec (the differ-floor re-pin).
+  - Reports: docs/dev/lanes/k381_report.md, k381fix_report.md.
+  - Checks: decider_census section D counts every use of kit_run_member/kit_run_decide (bypass and alias plants red). The new tests/memfn/run_decide_check.c reads each reader's position and stretch.
+  - Sabotage: S1095/S1096 re-aimed onto the decision, S1107 kept, new S3005 (twin mass) and S3006 (ranking bypass).
+  - Gates, all GREEN on worktrees/k381 vs base main 25c5094ec; jobs in /var/tmp/pcrec-pcrec/scratch/memfn/k381g/jobs/: 530 strict, 531-533 identity (71 arms, a per-target arm each), 534 reach, 535 make test, 536 plants, 537-539 mech.
+  - Kit ruling carried to K38-2a: the plan's in-run stop becomes a counted reader of kit_run_decide before the run-tie-left lever.
