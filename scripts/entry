@@ -1,0 +1,756 @@
+#!/usr/bin/env -S python3 -I
+"""scripts/entry -- the levelled accessor for tracker files ([DOC-INDEX], D192; docs/dev/doc_format.md).
+
+    scripts/entry KEY [-l N] [--rev SHA]     one item; default level 2
+    scripts/entry -g REGEX [-in N] [-l N] [-p PROFILE] [-s SECTION] [--state S] [--rev SHA]
+                                             item grep: match each item at level -in (default 0), print it whole
+                                             at level -l (default 0). The archive is read only with -p completed.
+    scripts/entry --work [-p PROFILE] [-s SECTION] [-k WORD]
+                                             plan: every not-started and blocked row at level 1, by section
+    scripts/entry --levels [-p PROFILE]      the level and work-view rows of the profile table
+    scripts/entry --over-cap                 soft-cap line for scripts/gestalt (docs/dev/doc_format.md)
+    scripts/entry --selftest                 planted fixtures: one per routing row, dormant, over-cap, --rev
+    Levels: 0 the index line(s); 1 + the working fields; 2 + the full entry.
+    Output ends `entry: <n> items (profile <p>, level <l>)`; exit 0 found, 1 none, 2 ambiguous.
+
+The profile table is scripts/doc_profiles.py; the plan grammar is scripts/plan_lint.py's (imported, never a
+second parser). Read-only; the root is the repository this script lives in, so the cwd does not matter.
+"""
+import io
+import os
+import re
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)  # -I drops the script directory; emit_sweep.py does the same
+import doc_profiles  # noqa: E402
+import plan_lint  # noqa: E402
+
+ROOT = os.path.dirname(HERE)
+ARCH_HEAD = re.compile(r"^( *)- \[([^\]\n]+)\] STATE:(\S+)")  # the archive's states vary (completed, done, ...)
+L1_PLAN = ("next", "trigger", "status", "refs", "now")
+ALIAS = re.compile(
+    r"^(D[0-9]+) (?:add\.|addendum|ADDENDUM|Addendum)(?: (.+))?$"
+    r"|^(D[0-9]+) (first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth) (?:add\.|addendum|ADDENDUM)$")
+ORDINALS = {n: str(i) for i, n in enumerate("first second third fourth fifth sixth seventh eighth ninth tenth".split(), 1)}
+ADDENDUM_N = doc_profiles.ADDENDUM_N
+EXIT_NONE, EXIT_AMBIG = 1, 2
+
+
+class Source:
+    """Reads tracker files from the working tree, or from a commit (--rev, read-only `git show`)."""
+
+    def __init__(self, root, rev=None):
+        self.root, self.rev = root, rev
+
+    def read(self, path):
+        if self.rev is None:
+            try:
+                with open(os.path.join(self.root, path), encoding="utf-8") as fh:
+                    return fh.read()
+            except OSError:
+                return None
+        r = subprocess.run(["git", "-C", self.root, "show", "%s:%s" % (self.rev, path)],
+                           capture_output=True, text=True, encoding="utf-8")
+        return r.stdout if r.returncode == 0 else None
+
+    def size(self, path):
+        t = self.read(path)
+        return None if t is None else len(t.encode("utf-8"))
+
+
+class Item:
+    def __init__(self, profile, id_, head, section=None, state=None, indent=0):
+        self.profile, self.id, self.head, self.section, self.state, self.indent = profile, id_, head, section, state, indent
+        self.own, self.children, self.slug, self.index_line = [], [], None, head
+
+    def attr_lines(self, keys=None):
+        out = []
+        for s in self.own:
+            m = plan_lint.ATTR.match(s.strip())
+            if m and (keys is None or m.group(1).split(" ")[0] in keys):
+                out.append(s)
+        return out
+
+    def text(self, level):
+        """The item rendered at LEVEL (a list of lines)."""
+        form = self.profile["form"]
+        if form == "archive":
+            head = self.head if len(self.head) <= 160 else self.head[:160] + "…"
+            if level == 0:
+                return [head]
+            if level == 1:
+                return [head] + self.attr_lines()
+            return [self.head] + self.own
+        if form == "pair":
+            return pair_text(self, level)
+        kids = [c.head for c in self.children]
+        if level == 0:
+            return [self.head] + kids
+        if level == 1:
+            return [self.head] + self.attr_lines(L1_PLAN) + kids
+        return [self.head] + self.own + kids
+
+
+# ---------------------------------------------------------------- the single (plan) and archive forms
+
+def parse_single(text, profile):
+    """Plan: rows in the five item sections (Policy is not one). Archive: every `- [TAG] STATE:` line, any indent;
+    other `- [TAG]` lines are body text of the row above."""
+    archive = profile["form"] == "archive"
+    items, stack, cur, section = [], [], None, None
+    for raw in text.split("\n"):
+        if raw.startswith("## "):
+            section, cur, stack = raw[3:].strip(), None, []
+            continue
+        if not archive and (section is None or section == "Policy" or section not in plan_lint.SECTIONS):
+            continue
+        if archive:
+            m = ARCH_HEAD.match(raw)
+            mo = (m.group(1), m.group(2), m.group(3)) if m else None
+        else:
+            m = plan_lint.HEAD_OK.match(raw)
+            mo = (m.group(1), m.group(2), m.group(3)) if m else None
+        if mo:
+            it = Item(profile, mo[1], raw, section, mo[2], len(mo[0]))
+            while stack and stack[-1].indent >= it.indent:
+                stack.pop()
+            if stack and not archive:
+                stack[-1].children.append(it)
+            stack.append(it)
+            items.append(it)
+            cur = it
+            continue
+        if cur is None:
+            continue
+        if archive:
+            cur.own.append(raw)
+        elif raw.strip() == "" or plan_lint.HEAD.match(raw):
+            cur = None  # a blank line (or a malformed head) ends a plan row
+        else:
+            cur.own.append(raw)
+    if archive:
+        for it in items:
+            while it.own and it.own[-1].strip() == "":
+                it.own.pop()
+    return items
+
+
+# ---------------------------------------------------------------- the pair form
+
+def pair_index(text, profile):
+    """Index lines `- ID slug state[ aK] — statement` -> Items."""
+    rx = re.compile(r"^- (%s) (\S+) (\S+?)(?: a(\d+))? — (.*)$" % profile["id"])
+    out = []
+    for raw in text.split("\n"):
+        m = rx.match(raw)
+        if m:
+            it = Item(profile, m.group(1), raw, state=m.group(3))
+            it.slug = m.group(2)
+            out.append(it)
+    return out
+
+
+def pair_entries(text):
+    """details text -> {id: [lines]} cut at `## ` headings (an entry runs to the next `## `)."""
+    ents, cur = {}, None
+    for raw in text.split("\n"):
+        if raw.startswith("## "):
+            m = re.match(r"^## (\S+)", raw)
+            cur = m.group(1) if m else None
+            if cur is not None:
+                ents.setdefault(cur, [])
+        if cur is not None:
+            ents[cur].append(raw)
+    for lines in ents.values():
+        while lines and lines[-1].strip() == "":
+            lines.pop()
+    return ents
+
+
+def later_cites(it, ents):
+    """`later: D49* D58`: entries (other than IT) that mention IT's id; `*` = a line with a supersede/amend verb."""
+    verb = re.compile(r"supersed|amend|replac|revers|overrid|retir|struck|settl|re-open|withdraw", re.I)
+    mention = re.compile(r"\b%s\b" % re.escape(it.id))
+    out = []
+    for oid, lines in ents.items():
+        if oid == it.id:
+            continue
+        hit = [ln for ln in lines if mention.search(ln)]
+        if hit:
+            out.append(oid + ("*" if any(verb.search(ln) for ln in hit) else ""))
+    return out
+
+
+def pair_text(it, level):
+    ents = it.details_entries
+    body = ents.get(it.id, [])
+    if level == 0:
+        return [it.index_line]
+    if level == 2:
+        return [it.index_line] + body
+    out = [it.index_line]
+    for ln in body:
+        if ln.startswith("### ") or re.match(r"^r[0-9]+\*? ", ln):
+            out.append(ln)
+    later = later_cites(it, ents)
+    if later:
+        out.append("later: " + " ".join(later))
+    return out
+
+
+def addendum_block(it, n):
+    """The `### ID.aN` block of IT's details entry (heading to the next heading), or None."""
+    body = it.details_entries.get(it.id, [])
+    start = None
+    for i, ln in enumerate(body):
+        if re.match(r"^### %s\.a%s( |$)" % (re.escape(it.id), re.escape(n)), ln):
+            start = i
+        elif start is not None and (ln.startswith("### ") or ln.startswith("## ")):
+            return body[start:i]
+    return body[start:] if start is not None else None
+
+
+def addendum_rows(it):
+    """[(N, date, lines)] of the `### ID.aN` blocks of IT's entry, with each (was: "...") label."""
+    body = it.details_entries.get(it.id, [])
+    rows, i = [], 0
+    while i < len(body):
+        m = re.match(r"^### %s\.a(%s) — (\S+?)[,:]" % (re.escape(it.id), ADDENDUM_N), body[i])
+        if m:
+            j = i + 1
+            while j < len(body) and not body[j].startswith("### "):
+                j += 1
+            rows.append((m.group(1), m.group(2), body[i:j]))
+            i = j
+        else:
+            i += 1
+    return rows
+
+
+# ---------------------------------------------------------------- loading and routing
+
+class Ctx:
+    def __init__(self, root, profiles, rev=None):
+        self.root, self.profiles, self.src = root, profiles, Source(root, rev)
+        self._cache = {}
+
+    def items(self, p):
+        """All Items of profile P (None = unreadable)."""
+        if p["name"] in self._cache:
+            return self._cache[p["name"]]
+        text = self.src.read(p["index"])
+        if text is None:
+            res = None
+        elif p["form"] in ("single", "archive"):
+            res = parse_single(text, p)
+        else:
+            res = pair_index(text, p)
+            dt = self.src.read(p["details"]) if p["details"] else None
+            ents = pair_entries(dt or "")
+            for it in res:
+                it.details_entries = ents
+        self._cache[p["name"]] = res
+        return res
+
+    def live(self):
+        return [p for p in self.profiles if p["form"] not in ("dormant",)]
+
+
+class Result:
+    def __init__(self, items=None, rc=0, note=None, level=None):
+        self.items, self.rc, self.note, self.level = items or [], rc, note, level
+
+
+def dormant_result(p, note=None):
+    return Result(rc=EXIT_NONE, note="entry: profile %s dormant (%s)" % (p["name"], p["dormant"]))
+
+
+def lookup(ctx, p, key):
+    its = ctx.items(p)
+    if its is None:
+        return None
+    return [i for i in its if i.id == key]
+
+
+def route(ctx, key):
+    """The routing table (design §2.3), first match wins."""
+    k = key.strip()
+    # 1 alias spellings
+    m = ALIAS.match(k)
+    if m:
+        ap = [p for p in ctx.profiles if p.get("aliases")]
+        if ap:
+            p = ap[0]
+            if p["form"] == "dormant":
+                return dormant_result(p)
+            return resolve_alias(ctx, p, m, k)
+    # 2 a profile id, in full
+    for p in ctx.profiles:
+        if p["id"] and re.fullmatch(p["id"], k):
+            if p["form"] == "dormant":
+                return dormant_result(p)
+            r = lookup(ctx, p, k)
+            return Result(r or [], 0 if r else EXIT_NONE, None if r else "entry: %s not found in profile %s" % (k, p["name"]))
+    # 3 a ruling number D47.6
+    m = re.fullmatch(r"(D[0-9]+)\.([0-9]+)", k)
+    if m:
+        p = next((p for p in ctx.profiles if p["id"] and re.fullmatch(p["id"], m.group(1))), None)
+        if p is not None:
+            if p["form"] == "dormant":
+                return dormant_result(p)
+            r = lookup(ctx, p, m.group(1))
+            return Result(r or [], 0 if r else EXIT_NONE, "ruling %s is in the body" % m.group(2) if r else None, level=2)
+    # 4 an exact [TAG]: plan wins; the archive only on absence
+    tag = k[1:-1] if k.startswith("[") and k.endswith("]") else k
+    plan = [p for p in ctx.profiles if p["form"] == "single"]
+    arch = [p for p in ctx.profiles if p["form"] == "archive"]
+    for group in (plan, arch):
+        hits = []
+        for p in group:
+            hits += lookup(ctx, p, tag) or []
+        if hits:
+            return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0,
+                          "%d archive rows for [%s]" % (len(hits), tag) if len(hits) > 1 else None)
+    # 5 a decisions addendum Dn.aN
+    m = re.fullmatch(r"(D[0-9]+)\.a(%s)" % ADDENDUM_N, k)
+    if m:
+        p = next((p for p in ctx.profiles if p["id"] and re.fullmatch(p["id"], m.group(1))), None)
+        if p is not None:
+            if p["form"] == "dormant":
+                return dormant_result(p)
+            r = lookup(ctx, p, m.group(1))
+            blk = addendum_block(r[0], m.group(2)) if r else None
+            if blk is None:
+                return Result(rc=EXIT_NONE, note="entry: %s not found in profile %s" % (k, p["name"]))
+            it = Item(p, k, "\n".join(blk))
+            it.fixed = blk
+            return Result([it])
+    # 6 a lower-case kebab slug: every live pair profile's index
+    if re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", k):
+        hits = []
+        for p in ctx.profiles:
+            if p["form"] == "pair":
+                hits += [i for i in (ctx.items(p) or []) if i.slug == k]
+        if hits:
+            return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0,
+                          "slug %s names %s" % (k, ", ".join(i.id for i in hits)) if len(hits) > 1 else None)
+    # 7
+    return Result(rc=EXIT_NONE, note="entry: no item for %r" % key)
+
+
+def resolve_alias(ctx, p, m, key):
+    did = m.group(1) or m.group(3)
+    r = lookup(ctx, p, did)
+    if not r:
+        return Result(rc=EXIT_NONE, note="entry: %s not found in profile %s" % (did, p["name"]))
+    rows = addendum_rows(r[0])
+    tail = m.group(2) if m.group(1) else ORDINALS[m.group(4)]
+    pick = []
+    if tail is None:  # an unnumbered alias: every addendum whose old label carries no number
+        pick = [x for x in rows if not any(re.search(r'\(was: "[^"]*[0-9]', ln) for ln in x[2])]
+    elif re.fullmatch(r"\d{4}-\d{2}-\d{2}", tail):
+        pick = [x for x in rows if x[1] == tail]
+    else:
+        lab = re.compile(r'\(was: "[^"]*(?:add\.|addendum|ADDENDUM)\s*%s\b' % re.escape(tail))
+        pick = [x for x in rows if x[0] == tail or any(lab.search(ln) for ln in x[2])]
+    if not pick:
+        return Result(rc=EXIT_NONE, note="entry: no addendum matches %r" % key)
+    out = []
+    for n, _, blk in pick:
+        it = Item(p, "%s.a%s" % (did, n), "\n".join(blk))
+        it.fixed = blk
+        out.append(it)
+    return Result(out)
+
+
+# ---------------------------------------------------------------- output
+
+def render(items, level):
+    out = []
+    for i, it in enumerate(items):
+        if i and level >= 1:
+            out.append("")
+        out += getattr(it, "fixed", None) or it.text(level)
+    return out
+
+
+def trailer(items, level, name=None):
+    names = sorted({i.profile["name"] for i in items})
+    return "entry: %d items (profile %s, level %d)" % (len(items), name or ",".join(names) or "-", level)
+
+
+def emit(out, lines, items, level, name=None):
+    for ln in lines:
+        out.write(ln + "\n")
+    out.write(trailer(items, level, name) + "\n")
+
+
+def kb(b):
+    t = b * 10 // 1024
+    return "%d.%d" % (t // 10, t % 10)
+
+
+def over_cap(ctx, out):
+    """The gestalt `docs` line: pair-form indexes over their FILE cap (KB = 1024 B, one decimal, truncated)."""
+    n, over = 0, []
+    for p in ctx.profiles:
+        if p["form"] != "pair" or not p["caps"] or not p["caps"][2]:
+            continue
+        size = ctx.src.size(p["index"])
+        if size is None:
+            out.write("entry: cannot read %s\n" % p["index"])
+            return 1
+        n += 1
+        cap = p["caps"][2]
+        if size > cap:
+            over.append("%s %s KB over soft cap %s KB (+%s KB, %d%%)" % (
+                os.path.basename(p["index"]), kb(size), kb(cap).replace(".0", ""), kb(size - cap), 100 * size // cap))
+    if over:
+        out.write("docs: " + "; ".join(over) + "\n")
+    out.write("entry: over-cap checked %d pair %s, %d over\n" % (n, "index" if n == 1 else "indexes", len(over)))
+    return 0
+
+
+def sel_profiles(ctx, name):
+    if name:
+        ps = [p for p in ctx.profiles if p["name"] == name]
+        return ps
+    return [p for p in ctx.profiles if p["form"] in ("single", "pair")]
+
+
+def levels_table(ctx, name, out):
+    for p in ctx.profiles:
+        if name and p["name"] != name:
+            continue
+        out.write("%s [%s%s]: level 0 = the index line(s); level 1 = + %s; level 2 = + the full entry; work view: %s\n" % (
+            p["name"], p["form"], " until " + p["dormant"] if p["form"] == "dormant" else "", p["level1"] or "-", p["work"]))
+    return 0
+
+
+def run(argv, out, root=ROOT, profiles=None):
+    profiles = profiles or doc_profiles.PROFILES
+    a = parse_args(argv)
+    if a is None:
+        out.write(__doc__)
+        return 1
+    ctx = Ctx(root, profiles, a["rev"])
+    if a["levels"]:
+        return levels_table(ctx, a["p"], out)
+    if a["over_cap"]:
+        return over_cap(ctx, out)
+    if a["work"] or a["g"] is not None:
+        return list_items(ctx, a, out)
+    if not a["key"]:
+        out.write(__doc__)
+        return 1
+    res = route(ctx, a["key"])
+    level = a["l"] if a["l"] is not None else (res.level or 2)
+    if res.note and not res.items:
+        out.write(res.note + "\n")
+        return res.rc
+    lines = render(res.items, level)
+    if res.note:
+        lines.append("entry: " + res.note if not res.note.startswith("entry:") else res.note)
+    emit(out, lines, res.items, level)
+    return res.rc if res.items else EXIT_NONE
+
+
+def list_items(ctx, a, out):
+    ps = sel_profiles(ctx, a["p"])
+    if not ps:
+        out.write("entry: no such profile %r\n" % a["p"])
+        return 1
+    rx = re.compile(a["g"]) if a["g"] is not None else None
+    hits, level = [], (a["l"] if a["l"] is not None else (1 if a["work"] else 0))
+    for p in ps:
+        if p["form"] == "dormant":
+            out.write("entry: profile %s dormant (%s)\n" % (p["name"], p["dormant"]))
+            if a["p"]:
+                return 1
+            continue
+        its = ctx.items(p)
+        if its is None:
+            out.write("entry: cannot read %s\n" % p["index"])
+            return 1
+        for it in its:
+            if a["s"] and a["s"].lower() not in (it.section or "").lower():
+                continue
+            if a["state"] and it.state != a["state"]:
+                continue
+            if a["work"] and (p["form"] != "single" or it.state not in ("not-started", "blocked")):
+                continue
+            blob = "\n".join(it.text(a["in"] if a["in"] is not None else 0))
+            if rx is not None and not rx.search(blob):
+                continue
+            if a["k"] and a["k"].lower() not in "\n".join(it.text(1)).lower():
+                continue
+            hits.append(it)
+    lines, sect = [], object()
+    for i, it in enumerate(hits):
+        if a["work"] and it.section != sect:
+            sect = it.section
+            lines.append("## " + str(sect))
+        elif i and level >= 1:
+            lines.append("")
+        lines += it.text(level)
+    emit(out, lines, hits, level, a["p"])
+    return 0 if hits else EXIT_NONE
+
+
+def parse_args(argv):
+    a = dict(key=None, l=None, rev=None, g=None, **{"in": None}, p=None, s=None, state=None, k=None,
+             work=False, levels=False, over_cap=False)
+    flags = {"-l": ("l", int), "--rev": ("rev", str), "-g": ("g", str), "-in": ("in", int), "-p": ("p", str),
+             "-s": ("s", str), "--state": ("state", str), "-k": ("k", str)}
+    i = 0
+    while i < len(argv):
+        t = argv[i]
+        if t in flags:
+            if i + 1 >= len(argv):
+                return None
+            name, conv = flags[t]
+            try:
+                a[name] = conv(argv[i + 1])
+            except ValueError:
+                return None
+            i += 2
+            continue
+        if t == "--work":
+            a["work"] = True
+        elif t == "--levels":
+            a["levels"] = True
+        elif t == "--over-cap":
+            a["over_cap"] = True
+        elif t.startswith("-") and len(t) > 1:
+            return None
+        elif a["key"] is None:
+            a["key"] = t
+        else:
+            return None
+        i += 1
+    return a
+
+
+# ---------------------------------------------------------------- selftest
+
+PLAN_FIX = """# fixture plan
+
+## Policy
+
+    - [ID] STATE:<not-started|started|blocked|deferred> — <title>
+    - [CHILD-ID] STATE:<state> — <child>
+
+- [ID] STATE:not-started — a template-looking tag outside the Policy fence is not this row
+
+## Active
+- [AA-1] STATE:started — an active fixture row
+  filed: 2026-11-01 test
+  status (2026-11-02): going
+  next: finish
+  refs: D1
+  - [AA-1.1] STATE:not-started — a child row
+    filed: 2026-11-01 test
+    status (2026-11-02): waiting
+    trigger: the parent
+## Backlog
+- [BB-2] STATE:not-started — a backlog row
+  filed: 2026-11-01 test
+  status (2026-11-02): idle
+  next: later
+- [PC-3] STATE:not-started — also present in the archive; the plan wins
+  filed: 2026-11-01 test
+  status (2026-11-02): live
+  next: x
+- [CC-3] STATE:blocked — a blocked row
+  filed: 2026-11-01 test
+  status (2026-11-02): stuck
+  trigger: unblocked
+"""
+ARCH_FIX = """# fixture archive
+
+## 2026-08-10
+
+- [PC-3] STATE:completed 2026-08-10, WITH Q1 — first external check
+  filed: 2026-08-01 test
+  body of the first
+
+- [PC-3] STATE:completed — the second PC-3 row
+
+- [FIX-2] STATE:completed 2026-08-10 — K3 and K4 both fixed
+  status (2026-08-10): done
+  the shape: FIX-2 appears again below on a line that is not a row head
+
+- [FIX-2] as planned — a non-STATE line (FIX-2's shape) is body text of the row above
+
+- [OLD-9] STATE:completed — """ + "x" * 200 + """
+"""
+DEC_FIX = """# fixture decisions
+
+- D26 pcre2-compat-tiers live a2 — effort is tiered by distance from the core.
+- D47 two-kinds live — a second fixture entry.
+- D162 shared-label live a2 — two addenda share a label.
+"""
+DEC_DET = """## D26 pcre2-compat-tiers — Compatibility tiers
+r1* tier by distance
+body of D26, see also D47.
+### D26.a1 — 2026-10-24, Frank: first
+(was: "D26 addendum 1")
+first addendum body
+### D26.a2 — 2026-10-25, Frank: second
+second addendum body
+## D47 two-kinds — Two kinds
+body of D47 supersedes the D26 tier for case folding.
+## D162 shared-label — shared
+### D162.a4 — 2026-10-30: four
+(was: "D162 addendum 4")
+first four
+### D162.a5 — 2026-10-31: also four
+(was: "D162 addendum 4", second of two)
+second four
+"""
+KNOWN_FIX = "# fixture known\n\n- K9 stale-cache open — a cached answer goes stale.\n- K11 two-kinds open — the same slug as D47.\n"
+KNOWN_DET = "## K9 stale-cache — Stale cache\nbody of K9\n## K11 two-kinds — Same slug\nbody of K11\n"
+
+
+def selftest():
+    import shutil
+    import tempfile
+    base = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % (os.environ.get("USER") or os.getlogin())
+    os.makedirs(os.path.join(base, "scratch", "entry"), exist_ok=True)
+    tmp = tempfile.mkdtemp(prefix="selftest.", dir=os.path.join(base, "scratch", "entry"))
+    bad = []
+    n = [0]
+
+    def w(name, text):
+        with open(os.path.join(tmp, name), "w", encoding="utf-8") as fh:
+            fh.write(text)
+
+    def check(label, argv, rc, has=(), lacks=(), profiles=None, root=None, exact=None):
+        n[0] += 1
+        buf = io.StringIO()
+        got = run(argv, buf, root or tmp, profiles or doc_profiles.FIXTURE_PROFILES)
+        o = buf.getvalue()
+        why = []
+        if got != rc:
+            why.append("rc %d, want %d" % (got, rc))
+        why += ["missing %r" % s for s in has if s not in o]
+        why += ["unexpected %r" % s for s in lacks if s in o]
+        if exact is not None and o != exact:
+            why.append("output %r != %r" % (o, exact))
+        if why:
+            bad.append("%s: %s | output: %s" % (label, "; ".join(why), o[:300].replace("\n", " / ")))
+
+    w("fixplan.md", PLAN_FIX)
+    w("fixarch.md", ARCH_FIX)
+    w("fixdec.md", DEC_FIX)
+    w("fixdec_details.md", DEC_DET)
+    w("fixknown.md", KNOWN_FIX)
+    w("fixknown_details.md", KNOWN_DET)
+    # routing rows, one plant each (fixture profiles)
+    check("route1 alias, numbered", ["D26 addendum 2"], 0, has=["### D26.a2", "second addendum body"], lacks=["D26.a1"])
+    check("route1 alias shared label", ["D162 addendum 4"], 0, has=["D162.a4", "D162.a5", "entry: 2 items"])
+    check("route1 alias ordinal", ["D26 first addendum"], 0, has=["### D26.a1"])
+    check("route1 alias date", ["D26 addendum 2025-01-01"], 1)
+    check("route1 alias date hit", ["D26 addendum 2026-10-25"], 0, has=["D26.a2"])
+    check("route2 id", ["D26"], 0, has=["- D26 pcre2-compat-tiers", "body of D26", "### D26.a1", "entry: 1 items (profile fixdec, level 2)"])
+    check("route2 id level 0", ["D26", "-l", "0"], 0, exact="- D26 pcre2-compat-tiers live a2 — effort is tiered by distance from the core.\nentry: 1 items (profile fixdec, level 0)\n")
+    check("route2 id level 1 working fields", ["K9", "-l", "1"], 0, has=["- K9 stale-cache"], lacks=["body of K9"])
+    check("route2 level 1 later", ["D26", "-l", "1"], 0, has=["later: D47*", "r1* tier by distance", "### D26.a2"], lacks=["body of D26"])
+    check("route2 absent id", ["D999"], 1)
+    check("route3 ruling number", ["D26.6"], 0, has=["body of D26", "ruling 6 is in the body"])
+    check("route4 plan tag", ["BB-2"], 0, has=["[BB-2]", "entry: 1 items (profile fixplan"])
+    check("route4 bracketed", ["[BB-2]"], 0, has=["[BB-2]"])
+    check("route4 plan wins over archive", ["PC-3"], 0, has=["also present in the archive"], lacks=["first external check"])
+    check("route4 archive only", ["OLD-9", "-l", "0"], 0, has=["…"], lacks=["x" * 200])
+    check("route5 addendum id", ["D26.a1"], 0, has=["### D26.a1", "first addendum body"], lacks=["second addendum"])
+    check("route5 absent addendum", ["D26.a9"], 1)
+    check("route6 slug", ["stale-cache"], 0, has=["- K9 stale-cache"])
+    check("route6 slug in two profiles is ambiguous", ["two-kinds", "-l", "0"], 2, has=["- D47 two-kinds", "- K11 two-kinds", "names D47, K11"])
+    check("route7 nothing", ["no such thing at all"], 1)
+    # J5: the REAL profiles are dormant: a decisions / known KEY exits 1 with the dormant trailer
+    for key, prof, unit in (("D26", "decisions", "unit 1"), ("K139", "known", "unit 3"), ("D47.a2", "decisions", "unit 1"),
+                            ("D26 addendum 2", "decisions", "unit 1")):
+        check("J5 dormant %s" % key, [key], 1, has=["entry: profile %s dormant (%s)" % (prof, unit)], profiles=doc_profiles.PROFILES, root=ROOT)
+    # J6: an archive tag on a HEAD_OK-shaped line and on a non-STATE line is ONE row
+    check("J6 FIX-2 one row", ["FIX-2", "-l", "0"], 0, has=["entry: 1 items"], lacks=["as planned"])
+    # route 4: two archive rows print all, exit 2
+    arch_only = [p for p in doc_profiles.FIXTURE_PROFILES if p["name"] == "fixarch"]
+    check("route4 archive 2+ rows", ["PC-3"], 2, has=["first external check", "the second PC-3 row", "2 archive rows"], profiles=arch_only)
+    # item grep; J9 the Policy templates are not items
+    check("J9 -g ID skips Policy templates", ["-g", r"\[ID\]", "-p", "fixplan"], 1, lacks=["<not-started"])
+    check("J9 -g CHILD-ID", ["-g", "CHILD-ID", "-p", "fixplan"], 1)
+    check("grep level 0", ["-g", "backlog row", "-p", "fixplan"], 0, exact="- [BB-2] STATE:not-started — a backlog row\nentry: 1 items (profile fixplan, level 0)\n")
+    check("grep -in 2 content", ["-g", "stuck", "-p", "fixplan"], 1)
+    check("grep -in 2 content hit", ["-g", "stuck", "-in", "2", "-p", "fixplan", "-l", "1"], 0, has=["[CC-3]", "trigger: unblocked"])
+    check("grep archive only with -p", ["-g", "second PC-3"], 1, lacks=["second PC-3 row"])
+    check("grep archive -p", ["-g", "second PC-3", "-p", "fixarch"], 0, has=["the second PC-3 row"])
+    # work view: not-started + blocked at level 1, by section, never the archive
+    check("work view", ["--work", "-p", "fixplan"], 0, has=["## Backlog", "[BB-2]", "next: later", "[CC-3]", "[AA-1.1]"], lacks=["[AA-1] STATE:started"])
+    check("work view section filter", ["--work", "-p", "fixplan", "-s", "backlog"], 0, has=["[BB-2]"], lacks=["[AA-1.1]"])
+    check("work view keyword", ["--work", "-p", "fixplan", "-k", "unblocked"], 0, has=["[CC-3]"], lacks=["[BB-2]"])
+    check("levels table", ["--levels", "-p", "fixplan"], 0, has=["fixplan [single]"])
+    # J4: --over-cap on a FIXTURE pair profile, cap 48 KB
+    capprof = [dict(doc_profiles.FIXTURE_PROFILES[0], name="fixcap", index="fixcap.md", details=None)]
+    for size, want, lacks in ((52592, "(+3.3 KB, 106%)", ()), (52593, "107%", ()), (52633, "51.3 KB over soft cap 48 KB (+3.3 KB, 107%)", ("51.4",)),
+                              (49152, None, ("docs:",)), (49153, "docs: fixcap.md 48.0 KB over", ())):
+        w("fixcap.md", "x" * size)
+        o = io.StringIO()
+        rc = run(["--over-cap"], o, tmp, capprof)
+        s = o.getvalue()
+        n[0] += 1
+        ok = rc == 0 and s.rstrip().endswith("entry: over-cap checked 1 pair index, %d over" % (0 if want is None else 1))
+        ok = ok and (want is None or want in s) and all(x not in s for x in lacks)
+        if not ok:
+            bad.append("J4 size %d: rc %d output %r" % (size, rc, s))
+    o = io.StringIO()
+    rc = run(["--over-cap"], o, ROOT)
+    n[0] += 1
+    if rc != 0 or o.getvalue() != "entry: over-cap checked 0 pair indexes, 0 over\n":
+        bad.append("over-cap on the real table: %r" % o.getvalue())
+    # J8: --rev serves the form chosen by the files at that commit, with the working tree's table
+    g = lambda *c: subprocess.run(["git", "-C", tmp] + list(c), capture_output=True, text=True)
+    if g("init", "-q").returncode == 0:
+        g("config", "user.email", "t@t")
+        g("config", "user.name", "t")
+        g("add", "fixplan.md")
+        g("commit", "-qm", "c1")
+        c1 = g("rev-parse", "HEAD").stdout.strip()
+        w("fixplan.md", PLAN_FIX.replace("a backlog row", "the CHANGED backlog row"))
+        check("J8 --rev serves the plan row at that commit", ["BB-2", "--rev", c1, "-l", "0"], 0, has=["a backlog row"], lacks=["CHANGED"], profiles=[p for p in doc_profiles.FIXTURE_PROFILES if p["name"] == "fixplan"])
+        check("J8 working tree differs", ["BB-2", "-l", "0"], 0, has=["CHANGED"], profiles=[p for p in doc_profiles.FIXTURE_PROFILES if p["name"] == "fixplan"])
+        check("J8 --rev, no such commit", ["BB-2", "--rev", "0" * 40], 1, profiles=[p for p in doc_profiles.FIXTURE_PROFILES if p["name"] == "fixplan"])
+    else:
+        bad.append("J8: git init failed in the scratch dir")
+    # the real plan parses (non-vacuity: the plan_lint floor) and its Policy templates are not items
+    o = io.StringIO()
+    rc = run(["-g", r"^- \[ID\]", "-p", "plan"], o, ROOT)
+    n[0] += 1
+    if rc != 1:
+        bad.append("J9 on the real plan: Policy template rows appear as items: %r" % o.getvalue()[:200])
+    o = io.StringIO()
+    run(["--work", "-p", "plan"], o, ROOT)
+    m = re.search(r"entry: (\d+) items", o.getvalue())
+    n[0] += 1
+    if not m or int(m.group(1)) < plan_lint.ROW_FLOOR // 2:
+        bad.append("--work on the real plan parsed %s items (K35 floor %d)" % (m and m.group(1), plan_lint.ROW_FLOOR // 2))
+    shutil.rmtree(tmp, ignore_errors=True)
+    for b in bad:
+        print("FAIL: " + b)
+    print("entry selftest: %d checks, %d failures" % (n[0], len(bad)))
+    return 1 if bad else 0
+
+
+def main():
+    argv = sys.argv[1:]
+    if argv == ["--selftest"]:
+        return selftest()
+    if argv in (["-h"], ["--help"]):
+        sys.stdout.write(__doc__)
+        return 0
+    return run(argv, sys.stdout)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
