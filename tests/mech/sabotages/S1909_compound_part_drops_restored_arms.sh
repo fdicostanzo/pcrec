@@ -14,9 +14,11 @@ SAB_FILE="src/core/compound.c"
 SAB_SUITES="facts"
 SAB_DESC="a compound part's walk is compiled without the restored arms of the walking attempt, so the harness lever leaves split artifacts half-restored"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/sae1fix_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1909."
-SAB_REACH='"$(dirname "$PCREC")/pcrec-harness" --features all --harness=restore=empty -p rx --emit-main -o /dev/stdout --pattern "^a|abcd(?:\\b)*efgh\$" | grep -qF "RX__Q_REQ_RUN \"65666768@2\"" && echo REACH-PART-RESTORED'
+SAB_REACH='"$(dirname "$PCREC")/pcrec-harness" --features all --harness=restore=empty -p rx --emit-main -o /dev/stdout --pattern "^a|abcd(?:\\b)*efgh\$" | grep -qF "RX__Q_REQ_RUN \"61626364@1\"" && echo REACH-PART-RESTORED'
 SAB_REACH_EXPECT="REACH-PART-RESTORED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='                                            ? w->cx->emit_in->harness->walk_arms : 0 };'
 SAB_AFTER='                                            ? 0 : 0 };   /* SABOTAGE S1909 */'
+# RE-AIMED REACH (lane sar1fix, 2026-11-09, review r5): the restored part's
+# halves tie and go to the rarer scan byte: `abcd` at 1.

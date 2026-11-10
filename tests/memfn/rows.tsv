@@ -140,7 +140,7 @@ fd	D1w	pcrec:trace-only	pattern	-	(x[a-z]+)y\1	 row=D1w arm=pf_walk	-	([xy][a-z]
 fd	PAIR	pcrec	pattern	-	x[Q%]y	 row=PAIR arm=E-find	--memfn=no-window-search	=
 fd	R7w	pcrec:trace-only	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w arm=pf_walk	-	x+y
 fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
-fd	P2	pcrec	pattern	-	x+y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT phase=ask	--memfn=no-fd-pres-g1	=
+fd	P2	pcrec	pattern	-	x*y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT phase=ask	--memfn=no-fd-pres-g1	=
 fd	P3	pcrec	pattern	-	a.{1,5}z	 row=P3 link=v1p0m1o0	--memfn=no-fd-pres-pick	=
 fd	P4	pcrec	pattern	-	(?:user|USER)[ \t]*=	 row=P3+P4 link=v1p0m1o0	--memfn=no-pres-set-lead	=
 fd	P9	pcrec	pattern	--memfn=no-fd-pres-pick	a.{1,5}z	 row=P9 link=v1p0m0o0	-	=

@@ -13,7 +13,9 @@ SAB_REACH_EXPECT='REACH-RUN-CHOICE'
 SAB_REACH_POP='tests/codegen/run_prechecks.sh|78797a77|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    return rn_info(&b) > rn_info(&a) ? b : a;'
+SAB_BEFORE='    for (size_t i = 0; i < sizeof rn_choice_rows / sizeof rn_choice_rows[0]; i++) {'
 SAB_AFTER='    if ((a.off < PCREC_W_UNBOUNDED) != (b.off < PCREC_W_UNBOUNDED)) /* SABOTAGE S474 */
         return a.off < PCREC_W_UNBOUNDED ? a : b;
-    return rn_info(&b) > rn_info(&a) ? b : a;'
+    for (size_t i = 0; i < sizeof rn_choice_rows / sizeof rn_choice_rows[0]; i++) {'
+# RE-ANCHORED (lane sar1fix, 2026-11-09, review r5): `rn_better` is now the first-match
+# `rn_choice_rows` loop; the plant puts the bounded preference before row 1.

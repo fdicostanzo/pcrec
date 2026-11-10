@@ -109,6 +109,10 @@ CASES = [
  ("(ab)c?userpass", "byte", "auto",
   ["userpass userpass abuserpass", "abcuserpas abcuserpass", "xabuserpassabcuserpass"],
   "the hybrid's prefilter re-entry over dead landmark hits"),
+ # ---- the VM attempt loop's ENTRY-ONLY handoff (review 2026-11-09 r5 CHECK-2) ----
+ ("(ab)c?userpass", "byte", "vm",
+  ["abcuserpass", "userpass abcuserpass"],
+  "the attempt loop's entry-only handoff witness (tests/memfn/run_handoff_reach.sh): a K one short starts the loop past the match at 0 (S463)"),
 ]
 
 

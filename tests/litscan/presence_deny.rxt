@@ -343,43 +343,59 @@ ns 3 "qqa:"
 ns 4 "qqa:"
 
 # pcre2-only
-# \K: the necessary `a` lies below the REPORTED start (never below the attempt's)
-pattern a{2,4}\Kb
+# \K: the necessary `a` lies below the REPORTED start (never below the attempt's); `b.c`, not `bc`, since the span-arms merge (R1 repeat rows x E2 zero-width rows, lane mrgmt) makes `a{2,4}\Kbc` the whole run `aabc`, which the deny does not move; `b.c` keeps the run `aab` across the \K
+pattern a{2,4}\Kb.c
 features all
 encoding byte
-ms 0 "ab aab" 5 6
-ms 1 "ab aab" 5 6
-ms 2 "ab aab" 5 6
-ms 3 "ab aab" 5 6
-ns 4 "ab aab"
-ns 5 "ab aab"
-ns 6 "ab aab"
-ms 0 "aaaab" 4 5
-ms 1 "aaaab" 4 5
-ms 2 "aaaab" 4 5
-ns 3 "aaaab"
-ns 4 "aaaab"
-ns 5 "aaaab"
-ms 0 "b aab" 4 5
-ms 1 "b aab" 4 5
-ms 2 "b aab" 4 5
-ns 3 "b aab"
-ns 4 "b aab"
-ns 5 "b aab"
-ms 0 "aaaaab" 5 6
-ms 1 "aaaaab" 5 6
-ms 2 "aaaaab" 5 6
-ms 3 "aaaaab" 5 6
-ns 4 "aaaaab"
-ns 5 "aaaaab"
-ns 6 "aaaaab"
-ms 0 "aab" 2 3
-ns 1 "aab"
-ns 2 "aab"
-ns 3 "aab"
-ns 0 "ab"
-ns 1 "ab"
-ns 2 "ab"
+ms 0 "abxc aabxc" 7 10
+ms 1 "abxc aabxc" 7 10
+ms 2 "abxc aabxc" 7 10
+ms 3 "abxc aabxc" 7 10
+ms 4 "abxc aabxc" 7 10
+ms 5 "abxc aabxc" 7 10
+ns 6 "abxc aabxc"
+ns 7 "abxc aabxc"
+ns 8 "abxc aabxc"
+ns 9 "abxc aabxc"
+ns 10 "abxc aabxc"
+ms 0 "aaaabxc" 4 7
+ms 1 "aaaabxc" 4 7
+ms 2 "aaaabxc" 4 7
+ns 3 "aaaabxc"
+ns 4 "aaaabxc"
+ns 5 "aaaabxc"
+ns 6 "aaaabxc"
+ns 7 "aaaabxc"
+ms 0 "bxc aabxc" 6 9
+ms 1 "bxc aabxc" 6 9
+ms 2 "bxc aabxc" 6 9
+ms 3 "bxc aabxc" 6 9
+ms 4 "bxc aabxc" 6 9
+ns 5 "bxc aabxc"
+ns 6 "bxc aabxc"
+ns 7 "bxc aabxc"
+ns 8 "bxc aabxc"
+ns 9 "bxc aabxc"
+ms 0 "aaaaabxc" 5 8
+ms 1 "aaaaabxc" 5 8
+ms 2 "aaaaabxc" 5 8
+ms 3 "aaaaabxc" 5 8
+ns 4 "aaaaabxc"
+ns 5 "aaaaabxc"
+ns 6 "aaaaabxc"
+ns 7 "aaaaabxc"
+ns 8 "aaaaabxc"
+ms 0 "aabxc" 2 5
+ns 1 "aabxc"
+ns 2 "aabxc"
+ns 3 "aabxc"
+ns 4 "aabxc"
+ns 5 "aabxc"
+ns 0 "abxc"
+ns 1 "abxc"
+ns 2 "abxc"
+ns 3 "abxc"
+ns 4 "abxc"
 
 # a lookahead in the prefix, the set member `a` before the landmark `q`
 pattern (?:a(?!q)|aq)x{0,3}q

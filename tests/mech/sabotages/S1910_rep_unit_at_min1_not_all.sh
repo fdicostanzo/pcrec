@@ -16,4 +16,4 @@ SAB_REACH_EXPECT="REACH-M1-JOINS"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    v->runs.all = true;'
-SAB_AFTER='    v->runs.all = rmin == 0;   /* SABOTAGE S1910 */'
+SAB_AFTER='    v->runs.all = m == 0;   /* SABOTAGE S1910 */'

@@ -15,6 +15,8 @@
  *   cat   the PRODUCT: every left group before every right group, widths
  *         add, positions concatenate; groups of one total width hull-merge
  *   alt   the UNION of the two group lists; same-width groups hull-merge
+ *   pow   `k` copies: cat applied `k` times (span_arms §3.1 point 1, the
+ *         REP arm of an exact repeat `X{k}`)
  *   none  a wall: no description, and none for anything built on it
  *
  * A HULL MERGE of two groups of one width is the position-wise union of the
@@ -25,7 +27,9 @@
  * of the products (rule M's fact, §3.2).
  *
  * Bounds: over `max_groups` groups the description is dropped (`PD_OVER`):
- * sound, a reader then has today's single run. Each group stores at most
+ * sound, a reader then has today's single run. A width saturates at
+ * `PCREC_W_UNBOUNDED` (`pcrec_sat_add`/`pcrec_sat_mul`, the run walk's own
+ * width arithmetic) and a saturated width is a wall: it is no fixed length. Each group stores at most
  * `max_pos` positions, its LAST ones: the walk builds right to left, so a
  * full group is reused whole by every step to its left (no copy), and a
  * suffix of a piece is a piece.
@@ -72,7 +76,7 @@ PdDesc pcrec_pd_pos(Ctx *cx, const void *pos)
 static PdGroup pd_cat_group(Ctx *cx, const PdCfg *c, const PdGroup *l,
                             const PdGroup *r)
 {
-    PdGroup o = { l->w + r->w, r->n, false, r->pos };
+    PdGroup o = { pcrec_sat_add(l->w, r->w, PCREC_W_UNBOUNDED), r->n, false, r->pos };
     if (r->n == r->w && r->n < c->max_pos && l->n > 0) {
         int k = l->n < c->max_pos - r->n ? l->n : c->max_pos - r->n;
         const void **p = pcrec_arena_alloc(&cx->arena, (size_t)(k + r->n) * sizeof *p);
@@ -100,9 +104,11 @@ static PdGroup pd_hull(Ctx *cx, const PdCfg *c, const PdGroup *a,
 }
 
 /* `g[0..n)` sorted by width, equal widths hull-merged, into a description;
- * over the group bound, none. */
+ * over the group bound, none; a saturated width, a wall. */
 static PdDesc pd_norm(Ctx *cx, const PdCfg *c, PdGroup *g, int n)
 {
+    for (int i = 0; i < n; i++)
+        if (g[i].w >= PCREC_W_UNBOUNDED) return pcrec_pd_none();
     for (int i = 1; i < n; i++)
         for (int j = i; j > 0 && g[j - 1].w > g[j].w; j--) {
             PdGroup t = g[j]; g[j] = g[j - 1]; g[j - 1] = t;
@@ -116,12 +122,16 @@ static PdDesc pd_norm(Ctx *cx, const PdCfg *c, PdGroup *g, int n)
     return (PdDesc){ m, 0, g };
 }
 
-/* A description that reached either side's drop stays dropped, with the
- * first reason seen. */
+/* A description that reached either side's drop stays dropped. Its reason
+ * does not depend on which side dropped (review r5 CONTRACT-2): a WALL on
+ * either side wins, since no count of lengths makes a part without a fixed
+ * length describable, so one language lists one reason however it is
+ * spelled. */
 static bool pd_dropped(PdDesc l, PdDesc r, PdDesc *o)
 {
     if (l.ng >= 0 && r.ng >= 0) return false;
-    *o = (PdDesc){ -1, l.ng < 0 ? l.why : r.why, NULL };
+    bool wall = (l.ng < 0 && l.why == PD_WALL) || (r.ng < 0 && r.why == PD_WALL);
+    *o = (PdDesc){ -1, wall ? PD_WALL : PD_OVER, NULL };
     return true;
 }
 
@@ -151,6 +161,36 @@ PdDesc pcrec_pd_alt(Ctx *cx, const PdCfg *c, PdDesc l, PdDesc r)
     memcpy(g, l.g, (size_t)l.ng * sizeof *g);
     memcpy(g + l.ng, r.g, (size_t)r.ng * sizeof *g);
     return pd_norm(cx, c, g, l.ng + r.ng);
+}
+
+/* `d` repeated `k` times (`k >= 0`; 0 copies is the unit): cat applied once
+ * per copy, stopping where the rest is known without the walk. A dropped
+ * description stays dropped, and every power of one width-0 group is the
+ * unit at once (`pcrec_pd_cat` treats that group as its identity). A single group that stores no more than its
+ * LAST `max_pos` positions already (full, or truncated) keeps them under
+ * every further copy of a single-group `d` (`pd_cat_group` prepends only
+ * to a group stored whole and short of the bound), so the remaining copies
+ * add width alone, saturating as cat's widths do, and its strings are no
+ * longer its positions' product. A description of two or more widths gains
+ * a width per copy and reaches `max_groups` (`PD_OVER`) within that many
+ * copies. So the loop is bounded by the two bounds, never by `k`. */
+PdDesc pcrec_pd_pow(Ctx *cx, const PdCfg *c, PdDesc d, int k)
+{
+    PdDesc o = pcrec_pd_unit();
+    if (d.ng == 1 && d.g[0].w == 0) return o;
+    for (int i = 0; i < k; i++) {
+        if (o.ng < 0) return o;
+        if (d.ng == 1 && o.ng == 1 &&
+            (o.g[0].n == c->max_pos || o.g[0].n < o.g[0].w)) {
+            PdGroup *g = pcrec_arena_alloc(&cx->arena, sizeof *g);
+            *g = o.g[0];
+            g->w = pcrec_sat_add(g->w, pcrec_sat_mul(k - i, d.g[0].w, PCREC_W_UNBOUNDED), PCREC_W_UNBOUNDED);
+            g->exact = false;
+            return g->w >= PCREC_W_UNBOUNDED ? pcrec_pd_none() : (PdDesc){ 1, 0, g };
+        }
+        o = pcrec_pd_cat(cx, c, d, o);
+    }
+    return o;
 }
 
 /* ---- the adjacency head ---------------------------------------------- */
