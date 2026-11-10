@@ -22,10 +22,12 @@
  *           (mf_pres_ports `landmark` on an ASSIGN site)
  *   member  the window family's member of a pre-check run part (mf_wdecide
  *           on a verify-YES run: `run_member`)
+ *   stretch the same part's stretch (mf_wreply `run_lo`, `run_len`: the whole
+ *           run, the stretch the decision's WHOLE ask answers)
  *   rank    translate's RQ-2 ranking (wf_prepare's legacy predicate:
  *           `rank_pos[]`)
- * The whole-run keep (finder.c fd_pres, P0/P9) answers the whole run on every
- * witness; no tie moves it, and the RUN CALLERS census holds its call.
+ * P0/P9's whole-run keep asks no one (the route's constant, review
+ * 2026-11-10 r1 k381 K1); the RUN CALLERS census holds the reader set.
  *
  * THE CONTROL. Every expected value is a LITERAL written from the stated rule
  * (span_runs_sheet.md §2.3; presence.c's header: the scan the least position
@@ -176,17 +178,30 @@ static mf_site run_find_site(const char *run)
     return s;
 }
 
-static long member(const mf_analysis *a, const char *run)
+static int wreply(const mf_analysis *a, const char *run, mf_wreply *r)
 {
     mf_site s = run_find_site(run);
     mf_art *art = art_of(a);
-    mf_wreply r;
-    if (mf_wdecide(art, &s, &r) || !r.run_stated) {
+    if (mf_wdecide(art, &s, r) || !r->run_stated) {
         printf("FAIL: mf_wdecide names no run member for %s (%s)\n", run, mf_art_error(art));
         failed++;
         return -1;
     }
-    return r.run_member;
+    return 0;
+}
+
+static long member(const mf_analysis *a, const char *run)
+{
+    mf_wreply r;
+    return wreply(a, run, &r) ? -1 : r.run_member;
+}
+
+/* The verify-YES member's STRETCH, `[run_lo, run_lo + run_len)` as one
+   number lo * 1000 + len. */
+static long member_stretch(const mf_analysis *a, const char *run)
+{
+    mf_wreply r;
+    return wreply(a, run, &r) ? -1 : (long)r.run_lo * 1000 + r.run_len;
 }
 
 static const char *h_fn_name(void *u, uint32_t ref) { (void)u; (void)ref; return "rd_fn"; }
@@ -235,6 +250,7 @@ int main(void)
     expect("scan W1 (abcd, NONE: the tie to the higher position)", pk.run_scan, 3);
     expect("window W1 (four positions: one window, start 0)", pk.run_window, 0);
     expect("member W1 (verify YES: the run decision's scan)", member(NULL, "abcd"), 3);
+    expect("stretch W1 (verify YES: the whole run, [0,4))", member_stretch(NULL, "abcd"), 4);
     rank(NULL, "abcd", r);
     expect_str("rank W1 (higher positions first)", r, "3,2,1,0");
 
@@ -253,6 +269,8 @@ int main(void)
     expect("window W2 (the one window holding 11: start 4)", pk.run_window, 4);
     expect("twin W2 (h 48 over [4,12), K 30000: not admitted)", pk.landmark, 0);
     expect("member W2 (verify YES)", member(rated, "qzeeeeeeeeeq"), 11);
+    expect("stretch W2 (verify YES: the whole run, [0,12))",
+           member_stretch(rated, "qzeeeeeeeeeq"), 12);
     rank(rated, "qzeeeeeeeeeq", r);
     expect_str("rank W2 (q 11, q 0, z 1, then e from the highest)", r,
                "11,0,1,10,9,8,7,6,5,4,3,2");

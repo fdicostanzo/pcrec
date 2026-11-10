@@ -710,8 +710,9 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
  *       stated (a run's window is then the site's one check); of the run,
  *       the window (`member` 1 + its first position) is verified;
  *   P9  the total default: verified whole (`member` 0), every member.
- * The run's stretch under P3 (its window) and under P0/P9 (the whole-run
- * keep) is THE RUN DECISION's (presence.c kit_run_decide, R-38 K38-1).
+ * The run's stretch under P3 (its window) is THE RUN DECISION's (presence.c
+ * kit_run_decide, R-38 K38-1); under P0/P9 it is the whole run, the route's
+ * constant (K38-2 hands the route to the decision).
  * P4, set-leads ported, is an ORDER row: asked on its own after the
  * terminal (as the FIND slot asks its N-rows), on a member span it puts the
  * set's pick, verified, at the HEAD of the chain, ahead of the run. Its
@@ -794,19 +795,6 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
                 k.verify = run < 0 && (int)i == pk.set_pick;
             } else {
                 k.member = (uint8_t)(pk.run_window + 1);
-            }
-        } else if (!member && k.verify && k.member == 0) {
-            /* the whole-run keep (P0, P9): the run decision's stretch over
-               the whole run, `member` 0 where it verifies all of it */
-            kit_run_reply rr = kit_run_decide(kit_byte_rate(art), KIT_RUN_WHOLE, kit_run_at,
-                                              &sp->term[0], sp->term[0].run_len, NULL);
-            if (rr.ver_lo != 0 || rr.ver_len != sp->term[0].run_len) {
-                if (rr.ver_lo > 254) {
-                    *why = "a presence pick past mf_link.member's range (a run stretch beyond "
-                           "index 254)";
-                    return -1;
-                }
-                k.member = (uint8_t)(rr.ver_lo + 1);
             }
         }
         /* P4, the order row, asked on its own (deny, gate, predicate) */

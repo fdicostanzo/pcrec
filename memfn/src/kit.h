@@ -379,7 +379,7 @@ kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src,
 /* THE RUN DECISION (presence.c; R-38 K38-1, span_runs_sheet.md rev 1.2
  * §2.3): a pre-check run's scan position and the stretch its check
  * verifies, ONE decision every reader asks (P3's scan and window, the twin's
- * mass, P0/P9's whole-run keep, the window family's verify-YES member,
+ * mass, the window family's verify-YES member,
  * translate's ranking). `st` names the stretch the reader renders: the whole
  * run, or P3's window. `scan` is a run position (`has_scan` 0: none, only
  * past the last ranked position); `[ver_lo, ver_lo + ver_len)` the verified
@@ -391,6 +391,7 @@ typedef struct {
     uint32_t mass;
     unsigned ver_lo, ver_len;
 } kit_run_reply;
+#define KIT_RUN_NONE ((kit_run_reply){ 0, -1, 0, 0, 0 })   /* no scan, no stretch */
 #define kit_run_decide MF_NS(kit_run_decide)
 #define kit_run_at     MF_NS(kit_run_at)
 kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_stretch st, kit_pos_at *at,

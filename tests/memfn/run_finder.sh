@@ -105,9 +105,9 @@ else
     echo "FAIL: mass: ${mp:-0} cases passed < floor $MASS_FLOOR"; tf=$((tf + 1))
 fi
 # R-38 K38-1: the run decision's readers (scan, window, twin, member, rank).
-# RUNDEC_FLOOR is the driver's case count (11 at K38-1), a literal: a driver
-# that silently ran fewer reads red.
-RUNDEC_FLOOR=11
+# RUNDEC_FLOOR is the driver's case count (11 at K38-1, 13 with the verify-YES
+# member's stretch read), a literal: a driver that silently ran fewer reads red.
+RUNDEC_FLOOR=13
 "$WORK/rundecchk" > "$WORK/rundec.log" 2>&1
 rc=$?
 part rundec "$WORK/rundec.log"

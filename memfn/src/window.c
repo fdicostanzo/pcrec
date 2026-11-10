@@ -828,7 +828,9 @@ static void plan_drop(wf_dec *d, int32_t off)
 
 static const wf_alt *chosen(const wf_dec *d) { return &d->a[d->ch]; }
 
-/* PRECONDITION: row `tie` (T_MASS_STRETCH, from both callers) is a STRICT
+/* PRECONDITION: row `tie` (T_MASS_STRETCH at both callers today, kit_run_decide
+ * and the verify-NO member; the argument lets a lever move one without the
+ * other) is a STRICT
  * order over positions (HIGHER or LOWER) that is invariant under translation: the `after` walk skips every
  * equal-mass position the row does not rank after `after`, so a row answering
  * 0 (EXCHANGE, PARKED, RESEED) would skip them all and the walk would end at
@@ -1074,7 +1076,8 @@ static const struct {
       "Table A: not applied by this list)" },
     { 1, "C-member", c_always,     run_member,
       "THE RUN MEMBER first, an output of the plan (mf_wreply.run_member): R's least-mass "
-      "position and its stretch (kit_run_member, ties per T_MASS_STRETCH; wsc3 rulings 3-4)" },
+      "position and its stretch (kit_run_decide for a verify-YES run, kit_run_member for a "
+      "verify-NO one, ties per T_MASS_STRETCH; wsc3 rulings 3-4)" },
     { 2, "C-floor", c_floor_holds, c_floor,
       "the floor row (no stop): every position of the chosen alternative's spans" },
     { 2, "C-bound(floor)", c_floor_holds, c_bound_floor,
@@ -1514,10 +1517,10 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
        spans, the ranking the plan's sets). */
     if (p->plan_hint != MF_NO_PRED && p->term[p->plan_hint].kind == MF_T_RUN) {
         unsigned n = p->term[p->plan_hint].run_len;
-        kit_run_reply r = { 0, -1, 0, 0, 0 };
+        kit_run_reply r = KIT_RUN_NONE;
         for (unsigned k = 0; k < n; k++) {
             r = kit_run_decide(d->rate, KIT_RUN_WHOLE, sets_at, w->set[hint_at], n, k ? &r : NULL);
-            if (!r.has_scan) {          /* the tie row is no strict order (see kit_run_member) */
+            if (!r.has_scan) {          /* the tie row is no strict order (see kit_run_member; kit_run_decide asks it) */
                 kit_fail((mf_art *)d->art, "window family: the run ranking lost position %u of %u "
                          "(the T_MASS_STRETCH tie row must be a strict order)", k, n);
                 n = k;

@@ -118,8 +118,8 @@ const uint8_t *kit_run_at(const void *src, unsigned j, uint8_t buf[32])
  *
  * ONE function decides a pre-check run's scan position and the stretch its
  * check verifies; every reader asks it: P3's run scan and window (here,
- * kit_pres_picks, and through it the twin's mass, P4 and P2), the whole-run
- * keep of P0/P9 (finder.c fd_pres), the window family's member of a
+ * kit_pres_picks, and through it the twin's mass, P4 and P2), the window
+ * family's member of a
  * pre-check run part (window.c run_member, verify YES) and translate's RQ-2
  * ranking (window.c, asked once per ranked position with the previous answer
  * handed back as `after`). Its rule is the incumbent's, reproduced: the scan
@@ -196,7 +196,7 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     int q = best >= 0 ? one_byte(&s->pspans[best].term[0]) : -1;
 
     /* P3: the run's scan position and window, the run decision's */
-    kit_run_reply rr = { 0, -1, 0, 0, 0 };
+    kit_run_reply rr = KIT_RUN_NONE;
     if (run) {
         rr = kit_run_decide(rate, KIT_RUN_WINDOW, kit_run_at, &run->term[0], run->term[0].run_len,
                             NULL);
