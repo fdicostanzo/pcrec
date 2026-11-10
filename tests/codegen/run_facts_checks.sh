@@ -826,6 +826,36 @@ else
     ok "[facts-rep] $nrw cells: an exact repeat lists its copies (run and pieces), the storage bound's 32 positions at W-R5, and --harness=restore=rep the old form"
 fi
 
+# [REPEAT-RUN] the lever's REACH on a `.rxt` FILE compile (sar1mrg pairb,
+# 2026-11-10): `--harness=restore=` reached `--pattern` but not
+# `compile_sources`, so every file-path sweep under a restored arm ran the new
+# form (vacuous). `(a{3,5}){3,6}` is an R1 mover: by default the run is
+# emitted; restored (old form) it is `dominated`. The FILE compile must answer
+# as the `--pattern` compile does, under the arm and without it.
+if [ ! -x "$HBIN" ]; then
+    bad "[facts-rep-file] $HBIN is missing (make builds it)"
+else
+    fbad=""
+    printf 'pattern (a{3,5}){3,6}\nm "aaaaaaaaa" 0 9\n' > "$WORKDIR/fr.rxt"
+    for arm in "" "--harness=restore=rep"; do
+        mkdir -p "$WORKDIR/fr.d"; rm -f "$WORKDIR/fr.d"/*
+        "$TIMEOUT_BIN" 120 "$HBIN" --features all $arm "$WORKDIR/fr.rxt" -o "$WORKDIR/fr.d" > /dev/null 2>&1 || fbad="$fbad file compile ${arm:-default} refused;"
+        "$TIMEOUT_BIN" 120 "$HBIN" --features all $arm -p rx --emit-main -o "$WORKDIR/fr.p.c" --pattern '(a{3,5}){3,6}' > /dev/null 2>&1 || fbad="$fbad pattern compile ${arm:-default} refused;"
+        fl="$(grep -hE 'define RX_REQ_(RUN|WHY) ' "$WORKDIR/fr.d"/*.c | tr '\n' ' ')"
+        pl="$(grep -hE 'define RX_REQ_(RUN|WHY) ' "$WORKDIR/fr.p.c" | tr '\n' ' ')"
+        [ -n "$fl" ] && [ "$fl" = "$pl" ] || fbad="$fbad ${arm:-default}: file [$fl] pattern [$pl];"
+        case "$arm" in
+            "") case "$fl" in (*emitted*) ;; (*) fbad="$fbad default does not emit the run;" ;; esac ;;
+            *)  case "$fl" in (*dominated*) ;; (*) fbad="$fbad restore=rep did not restore the old form;" ;; esac ;;
+        esac
+    done
+    if [ -n "$fbad" ]; then
+        bad "[facts-rep-file] the harness lever does not reach a .rxt file compile like --pattern:$fbad"
+    else
+        ok "[facts-rep-file] --harness=restore=rep reaches a .rxt FILE compile as it reaches --pattern (R1 mover, default and restored)"
+    fi
+fi
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
