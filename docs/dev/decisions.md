@@ -10136,3 +10136,20 @@ Answered against docs/design/doc_index_format.md rev 0 §7 (six open questions, 
 7. **Which index is read when (Frank, 2026-11-10, at the re-check round r2-docfmt2):** "Decision should be read at wake but plan index can be read at first look for existing plans." The decisions index is read whole at wake; the plan index is read on first need, the first time a session looks for existing plans (through `scripts/entry`); the post-compact hook inlines neither (it prints a re-read line for the decisions index only). Supersedes the manager's earlier choice of reading the plan index at wake.
 
 Revisit-when: a unit's stop point (doc §5.4) shows the index unused, or the soft caps fire every heartbeat.
+
+## D193 — [COND-FAMILY]: the owner's six answers to the conditions-family survey, the ordering answer, and the group-0 rule (Frank, 2026-11-10)
+
+Answered against docs/design/cond_family.md rev 0 §7 (six questions, each with a leaning); recorded in its §7 as "Owner's answers (2026-11-10, D193)".
+
+1. **Speed leads.** Asked "speed but is this just an ordering question?", the owner chose speed. The shared checker-product piece comes first, for capture-free lookarounds ([ENG-LOOK]), after the lookaround censuses are re-counted (they predate [UCP] U2). The manager's answer to the owner's question: YES, it is an ordering question. The checker product (DFA side) and the condition node (VM side) are separate machinery, so neither order causes rework; the only shared piece both need is the label/name table, which whichever comes first builds. The cost of speed-first is only that the syntax members (conditionals, branch reset) stay refused longer.
+2. **The family's named core is one checker product with (start, read) rows** ("yes"). The condition node stays the VM's and the analyses' shape.
+3. **Script runs `(*sr:...)` are a member** ("agree"): a different SPELLING of predicates (the same evaluation as a where-clause), built on the predicate machinery, with no row of their own until a use appears.
+4. **`(*scan_substring:...)` is re-marked planned, a member of the family** ("agree"); no work until a use appears.
+5. **Honour-on-close**: the backtracking engine checks label predicates at a group's close when captures are present ("agree"), built with the first predicate build; the mix is not refused.
+6. **[COND-FAMILY] owns the order of the shared pieces** (node, name table, product) ("agree"); member rows keep their own triggers for their own front ends.
+
+**The group-0 rule (owner discussion, 2026-11-10; the survey's row X9):** no path through the pattern may pass a group 0 more than once (alternation: max over branches; sequence: sum; repeat: multiply; a count above 1 is refused at the second occurrence's offset). Each alternative may carry its own group 0; a path with none reports the whole match. Engine forms: the VM treats it as a capture whose span replaces the match (cheap). On the DFA, the fixed-context form (one occurrence, outside parts fixed per pattern) reduces to lookaround context, i.e. the checker product; inside an alternation it needs one capture's tracking (VM today). Its [ENGINE-WHY] reason text: "group 0 inside an alternation needs capture tracking; use one top-level group 0 to keep the DFA". It CONSUMES its outside context (find-all resumes after the whole match, as with `\K`), unlike lookaround.
+
+**Related:** D77 and D153 still gate the first build (a measured count; the remodel-overlap column is not empty); D26; plan rows [COND-FAMILY], [ENG-LOOK], [POSTFACT], [CONDITIONALS], [BRANCH-RESET], [ENGINE-WHY].
+
+**Revisit-when:** the lookaround re-count finds no mover (the speed-first leaning loses its measured population), or a caller asks for a refused syntax member.
