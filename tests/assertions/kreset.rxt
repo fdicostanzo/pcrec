@@ -69,7 +69,7 @@
 
 # pcre2-only
 pattern \K
-features assertions
+features assertions,match-start-reset
 m "" 0 0
 m "a" 0 0
 ms 1 "a" 1 1
@@ -83,7 +83,7 @@ ms 3 "abc" 3 3
 
 # pcre2-only
 pattern \Ka
-features assertions
+features assertions,match-start-reset
 m "a" 0 1
 ns 1 "a"
 m "ab" 0 1
@@ -99,7 +99,7 @@ ns 3 "xxa"
 
 # pcre2-only
 pattern a\K
-features assertions
+features assertions,match-start-reset
 m "a" 1 1
 ns 1 "a"
 m "ab" 1 1
@@ -124,7 +124,7 @@ ns 3 "xxa"
 
 # pcre2-only
 pattern a\Kb
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -147,7 +147,7 @@ ns 1 "b"
 
 # pcre2-only
 pattern \Kab
-features assertions
+features assertions,match-start-reset
 m "ab" 0 2
 ns 1 "ab"
 ns 2 "ab"
@@ -163,7 +163,7 @@ ns 4 "abab"
 
 # pcre2-only
 pattern ab\K
-features assertions
+features assertions,match-start-reset
 m "ab" 2 2
 ns 1 "ab"
 ns 2 "ab"
@@ -179,7 +179,7 @@ ns 4 "abab"
 
 # pcre2-only
 pattern a\Kb\Kc
-features assertions
+features assertions,match-start-reset
 m "abc" 2 3
 ns 1 "abc"
 ns 2 "abc"
@@ -192,7 +192,7 @@ ns 4 "xabc"
 
 # pcre2-only
 pattern \Ka\Kb
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -203,7 +203,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern a\K\Kb
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -230,7 +230,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern (?:a\K|ax)c
-features assertions
+features assertions,match-start-reset
 m "axc" 0 3
 ns 1 "axc"
 ns 2 "axc"
@@ -250,7 +250,7 @@ ns 3 "xac"
 
 # pcre2-only
 pattern (?:ab\K|a)b
-features assertions
+features assertions,match-start-reset
 m "ab" 0 2
 ns 1 "ab"
 ns 2 "ab"
@@ -265,7 +265,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern (?:a\K|b)c
-features assertions
+features assertions,match-start-reset
 m "bc" 0 2
 ns 1 "bc"
 ns 2 "bc"
@@ -283,7 +283,7 @@ ns 3 "xac"
 
 # pcre2-only
 pattern (?:a\Kb|ab\Kc)d
-features assertions
+features assertions,match-start-reset
 m "abd" 1 3
 ns 1 "abd"
 ns 2 "abd"
@@ -301,7 +301,7 @@ ns 4 "xabd"
 
 # pcre2-only
 pattern a\Kb|c
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -335,7 +335,7 @@ ns 2 "xc"
 
 # pcre2-only
 pattern (?:a\K)*ab
-features assertions
+features assertions,match-start-reset
 m "aaab" 2 4
 ms 1 "aaab" 2 4
 ms 2 "aaab" 2 4
@@ -357,7 +357,7 @@ ns 5 "xaaab"
 
 # pcre2-only
 pattern (?:a\K)*b
-features assertions
+features assertions,match-start-reset
 m "aaab" 3 4
 ms 1 "aaab" 3 4
 ms 2 "aaab" 3 4
@@ -377,7 +377,7 @@ ns 5 "xaaab"
 
 # pcre2-only
 pattern (?:a\Kb)*c
-features assertions
+features assertions,match-start-reset
 m "ababc" 3 5
 ms 1 "ababc" 3 5
 ms 2 "ababc" 3 5
@@ -400,7 +400,7 @@ ns 6 "xababc"
 
 # pcre2-only
 pattern (?:a\K){2,}b
-features assertions
+features assertions,match-start-reset
 m "aaab" 3 4
 ms 1 "aaab" 3 4
 ns 2 "aaab"
@@ -416,7 +416,7 @@ ns 2 "ab"
 
 # pcre2-only
 pattern (?:a\K){1,3}b
-features assertions
+features assertions,match-start-reset
 m "aaaab" 4 5
 ms 1 "aaaab" 4 5
 ms 2 "aaaab" 4 5
@@ -448,7 +448,7 @@ ns 3 "aab"
 
 # pcre2-only
 pattern (?:a\K)?b
-features assertions
+features assertions,match-start-reset
 m "b" 0 1
 ns 1 "b"
 m "ab" 1 2
@@ -464,7 +464,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern (?:\Ka)?b
-features assertions
+features assertions,match-start-reset
 m "b" 0 1
 ns 1 "b"
 m "ab" 0 2
@@ -473,7 +473,7 @@ ns 2 "ab"
 
 # pcre2-only
 pattern (?:a\K|b)+c
-features assertions
+features assertions,match-start-reset
 m "abc" 1 3
 ms 1 "abc" 1 3
 ns 2 "abc"
@@ -505,7 +505,7 @@ ns 3 "aac"
 
 # pcre2-only
 pattern ab\Kc?
-features assertions
+features assertions,match-start-reset
 m "ab" 2 2
 ns 1 "ab"
 ns 2 "ab"
@@ -525,7 +525,7 @@ ns 4 "abab"
 
 # pcre2-only
 pattern \Ka*
-features assertions
+features assertions,match-start-reset
 m "aaa" 0 3
 ms 1 "aaa" 1 3
 ms 2 "aaa" 2 3
@@ -539,7 +539,7 @@ ms 4 "xaaa" 4 4
 
 # pcre2-only
 pattern a*\K
-features assertions
+features assertions,match-start-reset
 m "aaa" 3 3
 ms 1 "aaa" 3 3
 ms 2 "aaa" 3 3
@@ -570,7 +570,7 @@ ms 4 "xaaa" 4 4
 
 # pcre2-only
 pattern (a)\K(b)
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 g 0 1 2
 g 1 0 1
@@ -590,7 +590,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern a\K(b)
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 g 0 1 2
 g 1 1 2
@@ -607,7 +607,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern (a\K)(b)
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 g 0 1 2
 g 1 0 1
@@ -627,7 +627,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern (a\K)*b
-features assertions
+features assertions,match-start-reset
 m "aaab" 3 4
 g 0 3 4
 g 1 2 3
@@ -655,7 +655,7 @@ ns 2 "ab"
 
 # pcre2-only
 pattern ((a)\K|(b))c
-features assertions
+features assertions,match-start-reset
 m "ac" 1 2
 g 0 1 2
 g 1 0 1
@@ -692,7 +692,7 @@ ns 2 "bc"
 
 # pcre2-only
 pattern \Aa\Kb
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -703,7 +703,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern a\Kb\z
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -718,7 +718,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern a\Kb\Z
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -733,7 +733,7 @@ ns 3 "abc"
 
 # pcre2-only
 pattern a\Kb$
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -748,7 +748,7 @@ ns 3 "abc"
 
 # pcre2-only
 pattern \ba\Kb\b
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -764,7 +764,7 @@ ns 3 "xab"
 
 # pcre2-only
 pattern a\K\bb
-features assertions
+features assertions,match-start-reset
 n "ab"
 ns 1 "ab"
 ns 2 "ab"
@@ -775,7 +775,7 @@ ns 3 "a b"
 
 # pcre2-only
 pattern \Ga\Kb
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -791,7 +791,7 @@ ns 4 "xxab"
 
 # pcre2-only
 pattern a\Kb|\Gc
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -807,7 +807,7 @@ ns 2 "xc"
 
 # pcre2-only
 pattern (?m)^a\Kb
-features assertions,modifiers
+features assertions,modifiers,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -825,7 +825,7 @@ ns 5 "x\nabc"
 
 # pcre2-only
 pattern a\Kb(?m)$
-features assertions,modifiers
+features assertions,modifiers,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -855,7 +855,7 @@ ns 4 "xab\n"
 
 # pcre2-only
 pattern a{2,4}\Kb
-features assertions
+features assertions,match-start-reset
 m "aab" 2 3
 ns 1 "aab"
 ns 2 "aab"
@@ -877,7 +877,7 @@ ns 2 "ab"
 
 # pcre2-only
 pattern a\Kb{1,3}
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 ns 1 "ab"
 ns 2 "ab"
@@ -894,7 +894,7 @@ ns 4 "xabb"
 
 # pcre2-only
 pattern [ab]*\K[bc]+
-features assertions
+features assertions,match-start-reset
 m "abc" 2 3
 ms 1 "abc" 2 3
 ms 2 "abc" 2 3
@@ -914,7 +914,7 @@ ns 1 "c"
 
 # pcre2-only
 pattern (?:ab)+\Kc
-features assertions
+features assertions,match-start-reset
 m "abc" 2 3
 ns 1 "abc"
 ns 2 "abc"
@@ -959,7 +959,7 @@ ns 6 "xababc"
 
 # pcre2-only
 pattern (?:a\K){0,10}ab
-features assertions
+features assertions,match-start-reset
 m "ab" 0 2
 m "aab" 1 3
 m "aaab" 2 4
@@ -970,7 +970,7 @@ m "aaaaaaaaaaaaaaaaaaaaab" 20 22
 
 # pcre2-only
 pattern (?:a\K){0,10}b
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 m "aaaaaaaaaaab" 11 12
 m "aaaaaaaaaaaaaaaab" 16 17
@@ -978,7 +978,7 @@ m "b" 0 1
 
 # pcre2-only
 pattern (?:a\Kb){0,8}c
-features assertions
+features assertions,match-start-reset
 m "abc" 1 3
 m "ababababababababc" 15 17
 m "c" 0 1
@@ -998,33 +998,33 @@ m "ababababababababababc" 19 21
 
 # pcre2-only
 pattern (\K)*
-features assertions
+features assertions,match-start-reset
 m "" 0 0
 m "a" 0 0
 m "ab" 0 0
 ms 1 "ab" 1 1
 
 pattern \K*
-features assertions
+features assertions,match-start-reset
 perr
 
 pattern \K+
-features assertions
+features assertions,match-start-reset
 perr
 
 pattern \K?
-features assertions
+features assertions,match-start-reset
 perr
 
 pattern \K{2}
-features assertions
+features assertions,match-start-reset
 perr
 
 pattern a\K*
-features assertions
+features assertions,match-start-reset
 perr
 
 pattern [\K]
-features assertions
+features assertions,match-start-reset
 perr
 

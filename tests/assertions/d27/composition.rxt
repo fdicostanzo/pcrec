@@ -18,17 +18,17 @@ ms 2 "x\nfoo\ny" 2 5
 
 # \G + \K together: \G pins the whole match's start to the call's startpos; \K then moves only what gets REPORTED.
 pattern \Gcat\Kdog
-features assertions
+features assertions,match-start-reset
 m "catdog" 3 6
 
 # \B + \K: reset placed right after a negative boundary check.
 pattern \B\Kcat
-features assertions
+features assertions,match-start-reset
 m "concatenate" 3 6
 
 # \A + \K-under-quantifier + \z, cross-checked against the single-construct file's own version of this pattern (kreset.rxt) -- included here for the composition axis explicitly.
 pattern \A(a\Kb)+\z
-features assertions
+features assertions,match-start-reset
 m "abab" 3 4
 g 1 2 4
 n "ababx"

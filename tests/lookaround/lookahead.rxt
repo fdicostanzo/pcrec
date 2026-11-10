@@ -240,7 +240,7 @@ n "acb"
 # python=('ERR', 'bad escape \\K at position 5') (2 cells in this block)
 # pcre2-only
 pattern (?=a)\Kb
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 n "ab"
 n "b"
 
@@ -248,7 +248,7 @@ n "b"
 # python=('ERR', 'bad escape \\K at position 6') (2 cells in this block)
 # pcre2-only
 pattern a(?=b)\Kc
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 n "abc"
 n "abd"
 
@@ -258,7 +258,7 @@ n "abd"
 # 2) python=('ERR', 'bad escape \\K at position 1') (1 cells in this block)
 # pcre2-only
 pattern a\Kb
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 m "ab" 1 2
 
 # A body whose iteration can end in TWO places, which is the shape
