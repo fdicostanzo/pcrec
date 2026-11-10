@@ -73,6 +73,10 @@ typedef struct {
      * tail build in progress, under which every new state is marked `tail`. */
     const EolLower *lower;
     int  in_tail;
+    /* [UCP] U3 an ISLAND machine's build (`pcrec_build_nfa_island`): an
+     * `A_WCLASS` is one `N_WCHAR` over its code points instead of its byte
+     * child, and an `A_CTX` keeps its non-ASCII members (ucp_design.md §3.1). */
+    bool island;
 } NB;
 
 /* [M4.5b] A_CAP IS INVISIBLE HERE, and that is load-bearing in two places at
@@ -96,9 +100,16 @@ typedef struct {
  * A_CAP). Missing one does not miscompile — the fallback is compile_ast's own
  * entry deref — but it does perturb trie ELIGIBILITY, which would show up as a
  * §5.4 byte-identity gate failure rather than as a wrong answer. */
-static const Ast *ast_bare(const Ast *a)
+static const Ast *ast_bare(const NB *b, const Ast *a)
 {
     for (;;) {
+        /* [UCP] U3 an island build keeps the wide class: it IS the
+         * character-level edge, and its byte child is the all-byte form. */
+        if (b->island) {
+            if (a->k != A_CAP) return a;
+            a = a->l;
+            continue;
+        }
         /* [CLS-TREE] S3: a wide class erases to its byte child here too, the
          * shared see-through, so a lowered class at a spine head still
          * unrolls INTO the spine and the machine is state-for-state what it
@@ -186,6 +197,31 @@ static void patch_to(NB *b, Patch *p, int target)
 }
 
 static Frag compile_ast(NB *b, const Ast *a);
+
+/* [UCP] U3 the ASCII members of code-point set `iv`/`n` as a byte image: the
+ * part of an island state that steps by bytes. */
+static void island_ascii_bits(const PcrecCpRange *iv, int n, uint8_t out[32])
+{
+    memset(out, 0, 32);
+    for (int i = 0; i < n && iv[i].lo <= 0x7F; i++) {
+        unsigned hi = iv[i].hi < 0x7F ? iv[i].hi : 0x7F;
+        for (unsigned c = iv[i].lo; c <= hi; c++)
+            out[c >> 3] |= (uint8_t)(1u << (c & 7));
+    }
+}
+
+/* [UCP] U3 an island machine consumes non-ASCII text only through
+ * `N_WCHAR`, so a byte class holding a byte >= 0x80 (a byte-level construct
+ * under utf8) has no character-level meaning there: the island declines the
+ * pattern by name rather than stepping a character's bytes one by one. */
+static void island_ascii_only(NB *b, const uint8_t cls[32])
+{
+    for (int k = 16; k < 32; k++)
+        if (cls[k])
+            pcrec_ctx_fail(b->cx, 0, "the character-stepped DFA ([UCP] U3) "
+                           "cannot build a byte-level class over bytes "
+                           ">= 0x80 under encoding 'utf8'");
+}
 
 /* A one-state fragment for kind `k`, with its single out-edge left dangling in
  * the returned Frag. */
@@ -551,9 +587,9 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
  * flipped, since rev(X.Y) = rev(Y).rev(X). */
 static bool trie_key(NB *b, const Ast *a, TItem *out)
 {
-    a = ast_bare(a);
+    a = ast_bare(b, a);
     int nsp = 0;
-    for (const Ast *t = a; ; t = ast_bare(t->l)) {
+    for (const Ast *t = a; ; t = ast_bare(b, t->l)) {
         nsp++;
         if (t->k != A_CAT) break;
     }
@@ -561,7 +597,7 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
     const Ast **leaf = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
     int i = nsp;
     const Ast *t = a;
-    while (t->k == A_CAT) { leaf[--i] = ast_bare(t->r); t = ast_bare(t->l); }
+    while (t->k == A_CAT) { leaf[--i] = ast_bare(b, t->r); t = ast_bare(b, t->l); }
     leaf[--i] = t;
     if (i != 0) return false;   /* defensive: spine walk must be exact */
 
@@ -626,7 +662,7 @@ static Frag frag_row(NB *b, const Ast *a)
  * sanctioned back edge, `u.call.body`. */
 static Frag compile_ast(NB *b, const Ast *a)
 {
-    a = ast_bare(a);   /* [M4.5b]: the group erasure, re-applied — see above */
+    a = ast_bare(b, a);   /* [M4.5b]: the group erasure, re-applied — see above */
     switch (a->k) {
     case A_CLASS: {
         Frag f = frag_single(b, N_CLASS);
@@ -638,6 +674,7 @@ static Frag compile_ast(NB *b, const Ast *a)
          * the 32 bytes are now RENDERED from a code-point interval list
          * instead of copied from one. */
         pcrec_cls_bits(b->cx, a, b->nfa->st[f.start].cls);
+        if (b->island) island_ascii_only(b, b->nfa->st[f.start].cls);
         return f;
     }
     case A_EMPTY: return frag_row(b, a);   /* [INLINE-C] 1a: its row (exact) */
@@ -684,6 +721,15 @@ static Frag compile_ast(NB *b, const Ast *a)
     case A_CTX: {
         Frag f = frag_single(b, N_CTX);
         NState *st = &b->nfa->st[f.start];
+        /* [UCP] U3 an island build keeps the non-ASCII members, which the
+         * character atoms read; the byte image is the ASCII part. */
+        if (b->island) {
+            st->wiv = a->u.ctx.iv;
+            st->wn  = a->u.ctx.n;
+            island_ascii_bits(st->wiv, st->wn, st->cls);
+            st->ctxfn = a->u.ctx.fn;
+            return f;
+        }
         if (!pcrec_enc_set_bytes(pcrec_enc_by_id(b->cx->opt->encoding),
                                  a->u.ctx.iv, a->u.ctx.n, st->cls))
             pcrec_ctx_fail(b->cx, 0, "internal error: a context assertion's "
@@ -762,11 +808,11 @@ static Frag compile_ast(NB *b, const Ast *a)
          * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */
         int nsp = 0;
         const Ast *t = a;
-        while (t->k == A_CAT) { nsp++; t = ast_bare(t->l); }
+        while (t->k == A_CAT) { nsp++; t = ast_bare(b, t->l); }
         const Ast **rs = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
         int i = nsp;
         t = a;
-        while (t->k == A_CAT) { rs[--i] = t->r; t = ast_bare(t->l); }
+        while (t->k == A_CAT) { rs[--i] = t->r; t = ast_bare(b, t->l); }
         /* forward order: t, rs[0], ..., rs[nsp-1] */
         Frag f;
         if (!b->rev) {
@@ -784,11 +830,11 @@ static Frag compile_ast(NB *b, const Ast *a)
     case A_ALT: {
         /* flatten, then chain splits so branch order = priority order */
         int nbr = 1;
-        for (const Ast *t2 = a; t2->k == A_ALT; t2 = ast_bare(t2->l)) nbr++;
+        for (const Ast *t2 = a; t2->k == A_ALT; t2 = ast_bare(b, t2->l)) nbr++;
         const Ast **br = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Ast *));
         int i = nbr;
         const Ast *t2 = a;
-        while (t2->k == A_ALT) { br[--i] = t2->r; t2 = ast_bare(t2->l); }
+        while (t2->k == A_ALT) { br[--i] = t2->r; t2 = ast_bare(b, t2->l); }
         br[0] = t2;
 
         /* M2.8: factor shared prefixes. Eligible branches are grouped into
@@ -910,7 +956,19 @@ static Frag compile_ast(NB *b, const Ast *a)
         }
         return f;
     }
-    case A_WCLASS:   /* [CLS-TREE] S3: stripped by ast_bare() too */
+    /* [UCP] U3 an island build's character-level edge: ONE `N_WCHAR` that
+     * consumes the set's ASCII members as bytes and its non-ASCII members as
+     * whole characters (the island decodes them). Reversal is identity, a
+     * character being one symbol. A byte-level build never reaches here. */
+    case A_WCLASS:
+        if (b->island) {
+            Frag f = frag_single(b, N_WCHAR);
+            NState *st = &b->nfa->st[f.start];
+            st->wiv = pcrec_wcls_set(b->cx, a, &st->wn);
+            island_ascii_bits(st->wiv, st->wn, st->cls);
+            return f;
+        }
+        break;   /* [CLS-TREE] S3: stripped by ast_bare() too */
     case A_CAP:
         break;   /* unreachable: ast_bare() above strips every A_CAP. Listed
                   * so -Wswitch keeps this exhaustive, and falling into the
@@ -1070,13 +1128,53 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
      * `nst` reuses it, so the second build costs no allocation. */
     nfa->n = 0;
     nfa->erased = 0;   /* [OPT-REVEND] L0: the record is this build's own */
-    NB b = { cx, nfa, reverse, 0, collapse, NULL, 0 };
+    nfa->island = false;
+    NB b = { cx, nfa, reverse, 0, collapse, NULL, 0, false };
     Frag f = compile_ast(&b, root);
     int acc = nst(&b, N_ACCEPT);
     patch_to(&b, &f.out, acc);
     nfa->start = f.start;
     /* [OPT-K] The anchored start IS the start until a wrap moves the latter. */
     nfa->anch_start = f.start;
+}
+
+/* [UCP] U3 every non-ASCII code point: the island wrap's loop set. */
+static const PcrecCpRange island_non_ascii = { 0x80u, 0x10FFFFu };
+
+/* [UCP] U3 `pcrec_build_nfa_island` (internal.h): the exact machine with
+ * every wide class one `N_WCHAR` and every context set whole, for a pattern
+ * T4 routes to the character-stepped DFA. Never collapsed: the island is the
+ * engine, so its language is exact. */
+void pcrec_build_nfa_island(Ctx *cx, Ast *root, Nfa *nfa, bool reverse)
+{
+    nfa->n = 0;
+    nfa->erased = 0;
+    nfa->island = true;
+    NB b = { cx, nfa, reverse, 0, false, NULL, 0, true };
+    Frag f = compile_ast(&b, root);
+    int acc = nst(&b, N_ACCEPT);
+    patch_to(&b, &f.out, acc);
+    nfa->start = f.start;
+    nfa->anch_start = f.start;
+}
+
+/* [UCP] U3 does `a`, an `A_CTX`, read a set this encoding cannot express
+ * byte by byte (ucp_design.md §2.3)? */
+static void island_ctx_visit(void *ud, const Ast *a)
+{
+    struct { const PcrecEnc *e; bool any; } *v = ud;
+    if (a->k != A_CTX) return;
+    for (int i = 0; i < a->u.ctx.n; i++)
+        if (a->u.ctx.iv[i].hi > v->e->onebyte_max) v->any = true;
+}
+
+/* [UCP] U3 `pcrec_island_needed` (internal.h): T4 row 1's fact. */
+bool pcrec_island_needed(Ctx *cx, const Ast *root)
+{
+    struct { const PcrecEnc *e; bool any; } v = {
+        pcrec_enc_by_id(cx->opt->encoding), false };
+    pcrec_ast_visit(root, island_ctx_visit, &v);
+    return v.any;
 }
 
 /* `pcrec_build_nfa_marked` (internal.h): `pcrec_build_nfa` with the end
@@ -1087,7 +1185,8 @@ void pcrec_build_nfa_marked(Ctx *cx, Ast *root, Nfa *nfa, bool reverse,
 {
     nfa->n = 0;
     nfa->erased = 0;
-    NB b = { cx, nfa, reverse, 0, false, lower, 0 };
+    nfa->island = false;
+    NB b = { cx, nfa, reverse, 0, false, lower, 0, false };
     Frag f = compile_ast(&b, root);
     int acc = nst(&b, N_ACCEPT);
     patch_to(&b, &f.out, acc);
@@ -1108,7 +1207,7 @@ int pcrec_nfa_mark_distances(Ctx *cx, Nfa *nfa, int maxd)
     int *map = pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * (size_t)w * sizeof *map);
     int *work = pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * (size_t)w * sizeof *work);
     int nwork = 0, head = 0;
-    NB b = { cx, nfa, false, 0, false, NULL, 0 };
+    NB b = { cx, nfa, false, 0, false, NULL, 0, false };
 
     if (n) memcpy(old, nfa->st, (size_t)n * sizeof *old);
     for (int i = 0; i < n * w; i++) map[i] = -1;
@@ -1251,6 +1350,9 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
                              "admit as a character start", (unsigned)c);
             continue;   /* consuming state: its successors are not first bytes */
         }
+        /* [UCP] U3 a character edge: its ASCII bytes all start a character,
+         * and a non-ASCII character is consumed whole from its lead. */
+        if (st->k == N_WCHAR) continue;
         if (st->k == N_ACCEPT)
             pcrec_ctx_fail(cx, 0,
                      "internal error: [K50-NULLGATE] omitted the "
@@ -1279,10 +1381,23 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
 void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 {
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
-    NB b = { cx, nfa, false, 0, false, NULL, 0 };
+    NB b = { cx, nfa, false, 0, false, NULL, 0, nfa->island };
     int sp = nst(&b, N_SPLIT);
-    int any = nst(&b, N_CLASS);
-    memset(nfa->st[any].cls, 0xff, 32);   /* every byte, including \n */
+    int any;
+    if (nfa->island) {
+        /* [UCP] U3 an island machine's loop steps one CHARACTER — an ASCII
+         * byte, a whole non-ASCII character or one ill-formed byte (⊥) — so
+         * its threads start at the positions the island segments the subject
+         * into (ucp_design.md §3.5: forward and backward segment alike). */
+        any = nst(&b, N_WCHAR);
+        memset(nfa->st[any].cls, 0xff, 16);
+        nfa->st[any].wiv = &island_non_ascii;
+        nfa->st[any].wn  = 1;
+        nfa->st[any].bot = 1;
+    } else {
+        any = nst(&b, N_CLASS);
+        memset(nfa->st[any].cls, 0xff, 32);   /* every byte, including \n */
+    }
     nfa->st[sp].t1 = nfa->start;
     nfa->st[sp].t2 = any;
     nfa->st[any].t1 = sp;

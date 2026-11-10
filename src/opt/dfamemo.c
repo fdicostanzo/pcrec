@@ -48,6 +48,7 @@ struct DfaMemoEnt {
     /* the key */
     NState     *nst;             /* the NFA's states, copied */
     int         nn;
+    bool        island;          /* [UCP] U3 the NFA's `island` record */
     int         root, maxstates;
     bool        prune, reverse, optional;
     bool        notempty;        /* the caller's Dfa.notempty input */
@@ -66,7 +67,10 @@ static bool nstate_same(const NState *a, const NState *b)
     return a->k == b->k && a->t1 == b->t1 && a->t2 == b->t2 &&
            a->loop == b->loop && a->exit_is_t2 == b->exit_is_t2 &&
            a->ctxfn == b->ctxfn && a->tail == b->tail && a->dist == b->dist &&
-           memcmp(a->cls, b->cls, sizeof a->cls) == 0;
+           memcmp(a->cls, b->cls, sizeof a->cls) == 0 &&
+           /* [UCP] U3 an island state's code points: the AST's own shared
+            * list, so the same list is the same pointer */
+           a->wiv == b->wiv && a->wn == b->wn && a->bot == b->bot;
 }
 
 /* True iff entry `e` was built from exactly these inputs (see THE KEY). */
@@ -74,7 +78,8 @@ static bool entry_matches(const DfaMemoEnt *e, const Ctx *cx, const Nfa *nfa,
                           bool prune, bool reverse, int maxstates, int root,
                           bool optional, bool notempty)
 {
-    if (e->nn != nfa->n || e->root != root || e->maxstates != maxstates ||
+    if (e->nn != nfa->n || e->island != nfa->island ||
+        e->root != root || e->maxstates != maxstates ||
         e->prune != prune || e->reverse != reverse || e->optional != optional ||
         e->notempty != notempty ||
         e->encoding != cx->opt->encoding || e->engine != cx->opt->engine ||
@@ -110,7 +115,8 @@ static void dfa_copy(Dfa *dst, DState *st, const Dfa *src, Arena *ar)
         const DState *o = &src->st[i];
         DState *s = &st[i];
         *s = *o;
-        s->tr = arena_dup(ar, o->tr, (size_t)src->ncls * sizeof(int));
+        s->tr = arena_dup(ar, o->tr, (size_t)(src->ncls + (src->island
+                                                  ? src->nchr : 0)) * sizeof(int));
         s->up = arena_dup(ar, o->up, (size_t)src->natoms * sizeof(DView));
         if (!s->up) continue;
         for (int u = 0; u < src->natoms; u++) {
@@ -141,7 +147,11 @@ void pcrec_build_min_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     const long long before = cx->subset_elems;
     pcrec_build_dfa(cx, nfa, d, prune, reverse, maxstates, root, optional);
     if (d->overflowed) return;   /* not minimized, and not memoized */
-    pcrec_minimize_dfa(cx, d);
+    /* [UCP] U3 an island machine is not minimized: minimize.c's partition
+     * refinement reads byte classes only, and an island state's character
+     * cells are columns it does not know (ucp_design.md §3.1 GEN-3, a
+     * follow-up). Unminimized is the same language, more states. */
+    if (!d->island) pcrec_minimize_dfa(cx, d);
     if (!m) return;
 
     /* The entry is linked only once it is whole, so an allocation failure
@@ -150,6 +160,7 @@ void pcrec_build_min_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     DfaMemoEnt *e = pcrec_arena_alloc(&m->arena, sizeof *e);
     e->nst = arena_dup(&m->arena, nfa->st, (size_t)nfa->n * sizeof(NState));
     e->nn = nfa->n;
+    e->island = nfa->island;
     e->root = root;
     e->maxstates = maxstates;
     e->prune = prune;

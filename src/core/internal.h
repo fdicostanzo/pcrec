@@ -2407,6 +2407,13 @@ typedef enum {
      * artifact is unmoved. A gate whose class were every byte would be a
      * tautology and the builder does not emit tautological assertions. */
     N_CSTART,
+    /* [UCP] U3 consume ONE CHARACTER, goto t1: an ASCII byte in `cls`, a
+     * whole non-ASCII character whose code point is in `wiv`/`wn`, or (when
+     * `bot`) one ill-formed byte, the ⊥ rule (ucp_design.md §3.5). Built only
+     * by an ISLAND machine's NFA (`pcrec_build_nfa_island`), whose every
+     * non-ASCII consumer is one of these and whose `N_CLASS` states are
+     * ASCII-only; no byte-level NFA holds one. */
+    N_WCHAR,
     N_ACCEPT
 } NKind;
 
@@ -2424,6 +2431,14 @@ typedef struct {
      * machine built without the mark (`pcrec_build_nfa_marked`). */
     uint8_t tail;
     uint8_t dist;
+    /* [UCP] U3 an island machine's NON-ASCII set: the code points an
+     * `N_WCHAR` consumes as whole characters, or the set an `N_CTX` reads
+     * (its ASCII part is `cls`). The interval list is the AST's own (shared,
+     * never copied); NULL/0 on every byte-level state. `bot`: an `N_WCHAR`
+     * also consumes one ill-formed byte (the unanchored wrap's loop only). */
+    const PcrecCpRange *wiv;
+    int     wn;
+    uint8_t bot;
 } NState;
 
 typedef struct {
@@ -2451,6 +2466,11 @@ typedef struct {
      * erasures a reader must keep in step with the lowering
      * (`pcrec_vm_prefilter_window`). Reset by each build. */
     unsigned erased;
+    /* [UCP] U3 built by `pcrec_build_nfa_island`: non-ASCII text is consumed
+     * only by `N_WCHAR` (whole characters) and context sets keep their
+     * non-ASCII members, so every DFA built from it is character-stepped.
+     * Reset by each build. */
+    bool island;
 } Nfa;
 
 /* [OPT-REVEND] L0 the erasure kinds `Nfa.erased` records (src/ir/nfa.c). A
@@ -2708,7 +2728,18 @@ typedef struct {
      * target is not scan-shaped and takes the ordinary walk. Every emitter
      * site asserts it is 1 rather than assuming it. */
     int      scan_period;
+    /* [UCP] U3 an island machine's T5 row for this state (`DFA_ISL_*`): what
+     * its non-ASCII byte cell `tr[isl_na]` is. 0 (`DFA_ISL_NONE`) on every
+     * state of every other machine. */
+    uint8_t  isl_kind;
 } DState;
+
+/* [UCP] U3 ucp_design.md §0.1 T5, a character-stepped state's non-ASCII
+ * cell. DEAD: every non-ASCII character and ⊥ lead to dead with one accept
+ * value; SELF: every one leads back to the state, which never accepts before
+ * one (so stepping the bytes through it is exact, §3.3); ISLAND: the cell is
+ * the island entry (`PCREC_DFA_ISLAND`). */
+enum { DFA_ISL_NONE = 0, DFA_ISL_DEAD = 1, DFA_ISL_SELF = 2, DFA_ISL_ISLAND = 3 };
 
 /* Is byte class `cls` one of the classes state `st`'s scan edge counts? */
 static inline bool pcrec_scan_has(const DState *st, int cls)
@@ -2735,6 +2766,10 @@ typedef struct {
     const char *desc;     /* one line: what this set is */
     int         row;      /* the contributor row that put this set here */
     uint8_t     bits[32]; /* the set's byte image */
+    /* [UCP] U3 an island machine's set in code points (NULL/0 elsewhere, and
+     * on the `nostart` row, whose non-ASCII membership is the ⊥ rule's) */
+    const PcrecCpRange *iv;
+    int         niv;
 } PcrecCtxSet;
 
 typedef struct {
@@ -2796,6 +2831,25 @@ typedef struct {
     int      natoms;
     uint32_t atomvec[PCREC_MAX_CTX_ATOMS];
     uint8_t  catom[256];
+    /* [UCP] U3 THE ISLAND (ucp_design.md §3, T4 row 1): set when the NFA
+     * holds an `N_WCHAR` or a context set with a non-ASCII member, i.e. when
+     * no all-byte form is exact. Then every byte >= 0x80 is ONE class
+     * (`isl_na`); a non-ASCII CHARACTER is one of `nchr` CHARACTER ATOMS, the
+     * realized membership vectors (`chrvec`, bit j = in `iset[j]`) over the
+     * machine's `niset` distinct non-ASCII sets, plus the two ⊥ atoms
+     * (`chr_bots`: an ill-formed byte this encoding may start a character
+     * at; `chr_botn`: one it may not). `chrctx[a]` is atom a's CONTEXT atom.
+     * Each state's `tr[]` then has `ncls + nchr` cells: the byte classes,
+     * then one target per character atom; `tr[isl_na]` is the state's T5
+     * cell (`isl_kind`). False and unread on every other machine. */
+    bool     island;
+    int      isl_na;
+    int      niset;
+    struct { const PcrecCpRange *iv; int n; } iset[PCREC_MAX_ISL_SETS];
+    int      nchr;
+    uint32_t chrvec[PCREC_MAX_ISL_ATOMS];
+    uint8_t  chrctx[PCREC_MAX_ISL_ATOMS];
+    int      chr_bots, chr_botn;
     int      maxstates;/* engine-dependent cap (R1 A-3): table-mode machines
                           afford far more states than computed-goto ones */
     /* [ENG-ABS] IS THIS MACHINE OPTIONAL, i.e. may the compile continue
@@ -7743,6 +7797,12 @@ Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
  * sole customer is the VM hybrid's prefilter (docs/design/
  * prefilter_count_independence.md §3). It also RESETS `nfa->n`, so the same
  * `Nfa` can be measured exact and then rebuilt collapsed in place. */
+/* [UCP] U3 the ISLAND build of `root` (`Nfa.island`): wide classes as
+ * `N_WCHAR` character edges, context sets whole (src/ir/nfa.c). */
+void pcrec_build_nfa_island(Ctx *cx, Ast *root, Nfa *nfa, bool reverse);
+/* [UCP] U3 T4 row 1's fact: does `root` hold a context set this encoding
+ * cannot express byte by byte, so that no all-byte DFA is exact? */
+bool pcrec_island_needed(Ctx *cx, const Ast *root);
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse, bool collapse);
 
@@ -7784,6 +7844,12 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
  * the value `DState.tr[]` already carries for "dead", so a partially built
  * optional machine is well-formed rather than corrupt on the way out. */
 enum { PCREC_DFA_DEAD = -1 };
+/* [UCP] U3 the value an island machine's non-ASCII byte cell `tr[isl_na]`
+ * carries on a `DFA_ISL_ISLAND` state: "the island entry for this state" —
+ * the emitter renders it as that state's island token. Below
+ * `PCREC_DFA_DEAD` and never a state id, and -2 is the builder's own
+ * "unfilled" sentinel, so it is -3. */
+enum { PCREC_DFA_ISLAND = -3 };
 
 
 /* ---- opt -- defined under src/opt/ ----------------------------------*/
