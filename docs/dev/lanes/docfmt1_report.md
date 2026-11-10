@@ -52,5 +52,6 @@ checks: 52 passed, 0 failed; check_claudemd_size within limits. No
   unit 2; gestalt prints `docs: unavailable` on accessor failure; tooling
   units stay sonnet, only statements are opus.
 - No rulings file named in the brief; none applied.
+- Housekeeping: committed rev 0's manager-written `docfmt_deliver.txt` unchanged (it was untracked in the worktree and lanecheck refused the dirty tree; my own deliver file does not list it under dirty-ok). Drop it at landing if deliver files stay untracked on main.
 - Next: the critic round on rev 1 (pcrec-critic, design); then unit K
   (send §8 to the kit) and, on a build go, T1.
