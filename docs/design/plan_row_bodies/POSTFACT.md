@@ -87,3 +87,17 @@ Frank: "a named group that becomes the match"; then "Can't we state group number
   4. The advance rule for an empty reported match with non-empty context must be stated.
   5. At most one per pattern (or compile error), with the interaction with `\K` stated (leaning: refuse both together).
 - **Why it fits pcrec:** the surface form IS the IR form, consumed text plus two report marks. A DFA takes it directly, and the lookaround rewrites above become the cases where the compiler builds the same thing itself. It is a pcrec extension (PCRE2 has none), so it needs Frank's go, a feature-family placement and a spec hunk.
+
+## 2026-11-09 — Frank: `&` as the surface spelling of span intersection; the middle layer between lookarounds and the DFA (recorded, not scheduled)
+
+Frank: a lookahead over a span that must be the same length is an AND relationship, akin to `|`; an extended syntax could use `&` ("the last match also had to match x"), binding tighter than `|`. Example `\w+&frank`. And: it is a MIDPOINT, lookaround -> `&` -> DFA; not every lookaround can be spelled with `&`, but `&` gives access to the middle step.
+
+Manager notes, not ruled:
+- **It is the 2026-11-08 span-intersection node, spelled.** `A&B` matches a span both A and B match exactly. Regular languages are closed under intersection: the DFA builds it as a product automaton (priced by the size ladder).
+- **Precedence:** looser than concatenation, tighter than `|`: `\w+&frank` = `(\w+)&(frank)`, `a|b&c` = `a|(b&c)`, `ab&cd` = `(ab)&(cd)`. Prior art to check before citing (manager's memory, unverified): Lucene RegExp `&`, Raku regex conjunction `&`, RE# (POPL 2025).
+- **Collision:** `&` is a literal in PCRE2 (`a&b` matches "a&b" today), so the spelling is OPT-IN (a compile option or a pcrec-only inline flag PCRE2 does not use), with `\&` the literal under it. A surface extension needs Frank's go and a spelling that cannot collide (the end-`\K` rule above).
+- **Which operand picks the span** (leftmost-first, not longest): leaning, the LEFT operand's priority order, the right operand a check on that exact span = a lookahead held to the same span, `(?=B, same span)A`.
+- **Captures inside an operand** keep it on the VM; without captures it is pure automaton work.
+- **Payoffs:** subset (`L(B) ⊆ L(A)` drops A: `\w+&frank` -> `frank`, free); disjoint -> a proven never-match ([NEVER-MATCH]); otherwise the product automaton.
+- **Sibling: complement** (`\w+&!(if|else|while)`, identifier but not keyword), which is also how a negative lookahead lowers onto the same node.
+- **The three layers (Frank's midpoint):** (1) lookarounds, positional and atomic, the PCRE2 surface; (2) span intersection/complement, the IR node and its `&`/`!` spelling; (3) automata, DFA product or VM. Lowering 1 -> 2: CONTAINED positive lookahead `(?=A)B` = `(AΣ*)&B`; fixed-length lookbehind via the `\K` rewrite above; EXTENDING lookahead `B(?=A)` = intersection over the wider span `BA` plus the END mark; NEGATIVE = complement then intersection. Not lowerable: captures or backreferences inside, and atomicity that a capture can observe. Users can write layer 2 directly where a lookaround would be clumsy, and every lookaround that lowers reaches the DFA through the same node.
