@@ -218,6 +218,14 @@ figures for S1095/S1096 (candoracle + memfnfinder) and S3005/S3006 are the shard
 OPEN for the kit manager: the A-mass stop finding in Summary. It decides what K38-2a's
 `run-tie-left` lever must also move. No byte moved and no STOP was needed in K38-1.
 
+The DELIVER file looks wrong on one line, so lanecheck ends rc 1. Its `owed:` line is free text,
+"gate jobs (queued by the kit manager)". lanecheck reads each word of it as a box-queue key
+(`gate`, `jobs`, `(queued`, `by`, `the`, `kit`, `manager)`) and asks the queue for each. Those
+ten issues are the only ones it prints. The brief forbids me queueing, so no key can be in the
+queue. The real keys, once the kit manager queues them, are kit-k381-strict, kit-k381-ident1,
+kit-k381-ident2, kit-k381-ident3, kit-k381-reach, kit-k381-test, kit-k381-plants,
+kit-k381-mech1, kit-k381-mech2 and kit-k381-mech3. I did not edit the DELIVER file.
+
 Not done: window.c's C-member rule text (`wf_crows[]`, "kit_run_member, ties per
 T_MASS_STRETCH") still names kit_run_member. It is a trace-visible string, and I left it so that
 no trace byte moves; K38-2a can respell it together with the lever.
