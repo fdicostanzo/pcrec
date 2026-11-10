@@ -380,3 +380,5 @@ Landing 2026-11-10 f7eb10528: lane/sar1mrg (22b7da3f0), span arms R1 merged onto
 Landing 2026-11-10 7658295b3: lane/memfn-k381 (b8ca72ccb), kit R-38 K38-1, one run decision kit_run_decide (kit-only plus tests/memfn; zero emitted bytes; no pcrec abi or MF_SITE_ABI event; kit gates 530-539 GREEN vs 25c5094ec; post-merge make strict green). MINOR: covered by the Wed 2026-11-11 01:00 full suite.
 
 Landing 2026-11-10 79440bf19: lane/sartie (e947f70c9), R1 tie rule test-only restore switch restore=tie (no abi or MF_SITE_ABI event; default emitted bytes unchanged; gates 231/233/234/235 GREEN; post-merge make strict green; critic round waived: test-only lever). MINOR: covered by the Wed 2026-11-11 01:00 full suite.
+
+Landing 2026-11-10 092516b60 + 2cc59b95e + 39da816d7: lane/dixcite and lane/dixt1b, [DOC-INDEX] tooling (doc_cites.py resolver + baselines; scripts/INDEX.md, entry scripts profile + --lint-scripts, discoverability lines). Docs/tooling only, no src/lib/cli. NONE (rides the 2026-11-10 evening full suite).
