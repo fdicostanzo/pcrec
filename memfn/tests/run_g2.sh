@@ -971,8 +971,9 @@ grep -E '^G2W (sites|paths|forms)' "$work/win.log" | sed 's/^/   /'
 # memfn/tests/run_g2_pres.sh: GENERATED pre-check sites on the P0/P2/P3/P9
 # routes, one pass per U2 target and per lever state (default, run-tie-left),
 # C2's text classifier, the lever witnesses, layouts U, L and ASan's A, and
-# the occurrence oracle's records (the oracle step OWED until
-# tests/memfn/occurrence_oracle.py lands; an OWED step counts no pass) (~65 s).
+# the occurrence oracle's records taken at the caller boundary, checked by
+# tests/memfn/occurrence_oracle.py (the oracle file absent is a FAIL, review
+# 2026-11-10 r2 k382a ORC-2) (~65 s).
 # It links the PLAIN library: its parts are not rows of section 4b's registry.
 echo "== presence: G2's presence family (run_g2_pres.sh)"
 if TMPDIR="$work" LIB="$plainlib" "$TO" 1800 bash "$here/run_g2_pres.sh" > "$work/pres.log" 2>&1; then

@@ -552,11 +552,13 @@
 #     memfn/tests/run_g2_pres.sh with G2P_NOASAN=1: G2's presence family
 #     (generated pre-check sites on the P0/P2/P3/P9 routes, every target of
 #     the U2 list, default and run-tie-left passes), C2's text classifier,
-#     the lever witnesses, layouts U and L, the oracle records and the oracle
-#     step (OWED while tests/memfn/occurrence_oracle.py is absent). Its own
-#     arm because the presence family has no pcrec observable before K38-2
-#     (the lever's tie compiles are refused until then). Registered before
-#     S3007-S3009.
+#     the lever witnesses, layouts U and L, the oracle records (taken at
+#     the caller boundary) and the oracle step (tests/memfn/
+#     occurrence_oracle.py; the file absent is a FAIL, review 2026-11-10 r2
+#     k382a ORC-2). Its own arm because the presence family has no pcrec
+#     observable before K38-2 (the lever's tie compiles are refused until
+#     then). Registered before S3007-S3009; S3010-S3012 (lane k382afix) ride
+#     it too.
 #   memfndeleg — added 2026-10-09 ([MEMFN] M6 follow-up, kit session);
 #     runs tests/memfn/run_deleg_sites.sh, C10: every DELEG_SITES row against
 #     D91's use ceiling, the vocabulary probe and the planted control. Its own

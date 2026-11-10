@@ -1565,7 +1565,7 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
                                w->set[hint_at], n, k ? &r : NULL);
             if (!r.has_scan) {          /* the tie row is no strict order (see kit_run_member; kit_run_decide asks it) */
                 kit_fail((mf_art *)d->art, "window family: the run ranking lost position %u of %u "
-                         "(the T_MASS_STRETCH tie row must be a strict order)", k, n);
+                         "(the run decision's tie row must be a strict order)", k, n);
                 n = k;
                 break;
             }

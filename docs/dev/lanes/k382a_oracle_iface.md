@@ -13,15 +13,20 @@ Tab-separated, one header line `#site\tcall\tsubject\torigin\tomin\tsets\tver_lo
 |---|---|
 | site | an opaque id for the generated site (string, no tabs) |
 | call | `entry` or `reentry` |
-| subject | the whole subject, lowercase hex, two digits per byte (may be empty) |
-| origin | the attempt start (entry: search_from; re-entry: the hook's lo), a decimal integer >= 0 |
+| subject | the whole subject, lowercase hex, two digits per byte (may be empty): the HOST's, as the caller handed it to the use |
+| origin | the attempt start (entry: search_from; re-entry: the hook's lo), a decimal integer >= 0: the HOST's, not the value the kit's text passed its run part |
 | omin | the run span's omin, a signed decimal integer (may be negative) |
 | sets | the run's position sets, comma-separated, position 0 first; each set is 64 lowercase hex digits = a 256-bit byte bitmap, bit b of the set (byte b member) at hex digit 63 - b/4, bit b%4 of that digit (i.e. the bitmap as one big-endian 256-bit number) |
 | ver_lo, ver_len | the verified extent the kit reported for this site (decimal, ver_lo + ver_len <= number of sets) |
 | result | the candidate c the run part yielded (decimal, the subject offset of the run's position 0), or `MISS` |
-| reads | every subject offset the run part read during this call, comma-separated decimals (may be empty) |
+| reads | every subject offset in the window [-64, n + 64) (n the subject's length) the run part read during this call, comma-separated decimals (may be empty); a read outside that window is not recorded (the family's guard-page layouts fault on it instead) |
 
 A run of n positions has its position j at subject offset c + j.
+
+Records are taken at the CALLER boundary (review 2026-11-10 r2 k382a ORC-1, lane k382afix): the
+writer takes subject, origin and omin from the host's attempt (the stated omin from the site's
+statement), never from the arguments the kit's rendered use passed its run part, and writes the
+result in the host's frame; a part's hit at or past the length the part was handed is `MISS`.
 
 ## What the oracle checks (from the contract text, not from this file)
 

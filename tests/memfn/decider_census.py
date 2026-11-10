@@ -54,7 +54,12 @@ question table or named exception, against the kit's sources:
      (`T_WINDOW` read as a pick row) in kit_run_decide only. Its plants
      (skipped by --no-plants): an unlisted function calling kit_run_member
      directly, one holding it as a non-call (an alias), and one asking the
-     window's row, each must turn D red.
+     window's row, each must turn D red. LIMIT: D counts the USE of
+     kit_run_decide, not what a caller does with it: a_mass_choose's in-run
+     filter (the `continue` that leaves R's positions to the decision's one
+     stop) can be deleted with D green, the call still standing. Its control
+     is behavioural, G2's presence family's run-tie-left pass (mech row S3012,
+     detector g2pres; review 2026-11-10 r2 k382a FAM-5).
 
 Independent control: the map is hand-written (a declaration), the backstop is
 a grep over the raw text and the definition finder a brace count over the

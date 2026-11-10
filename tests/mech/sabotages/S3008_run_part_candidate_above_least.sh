@@ -7,9 +7,8 @@
 # Detector: the ORACLE STEP of G2's presence family (memfn/tests/run_g2_pres.sh pipes its
 # records to tests/memfn/occurrence_oracle.py, written D27-blinded by lane k382o from §3.3).
 # The family's own classifier puts its occurrences ABOVE lo on purpose (the occurrence
-# contract is the oracle's, not a second copy of it), so until the oracle file lands the
-# family reports `ORACLE OWED` and this row reads its declared expectation; flip it to
-# DETECTED in the change that lands the oracle (K38-2a's oracle half, OWED at k382a).
+# contract is the oracle's, not a second copy of it). An absent oracle file is a FAIL of the
+# family (review 2026-11-10 r2 k382a ORC-2), never a green OWED.
 # The plant's reach, measured by hand (k382a_report.md "Plants"): over one generic pass's
 # records, 415 hold an occurrence at their origin; the clean kit yields the origin on all of
 # them, the planted kit on 93 (322 moved).
