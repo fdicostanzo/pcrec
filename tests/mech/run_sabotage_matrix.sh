@@ -548,6 +548,15 @@
 #     Its own arm because the R-15 row has no pcrec site until
 #     [REQ-HANDOFF-L1] lands and make test-memfn-g2's quick tier is a much
 #     longer run than these rows need. Registered before S800-S804.
+#   g2pres — added 2026-11-10 ([MEMFN] R-38 K38-2a, lane k382a); runs
+#     memfn/tests/run_g2_pres.sh with G2P_NOASAN=1: G2's presence family
+#     (generated pre-check sites on the P0/P2/P3/P9 routes, every target of
+#     the U2 list, default and run-tie-left passes), C2's text classifier,
+#     the lever witnesses, layouts U and L, the oracle records and the oracle
+#     step (OWED while tests/memfn/occurrence_oracle.py is absent). Its own
+#     arm because the presence family has no pcrec observable before K38-2
+#     (the lever's tie compiles are refused until then). Registered before
+#     S3007-S3009.
 #   memfndeleg — added 2026-10-09 ([MEMFN] M6 follow-up, kit session);
 #     runs tests/memfn/run_deleg_sites.sh, C10: every DELEG_SITES row against
 #     D91's use ceiling, the vocabulary probe and the planted control. Its own
@@ -3450,6 +3459,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/g2gate.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/g2gate.log" | grep -oE '[0-9]+')"
                 score_arm "$work/g2gate.log" "$f" "g2gate:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            g2pres)
+                # [MEMFN] R-38 K38-2a memfn/tests/run_g2_pres.sh — see the
+                # vocabulary entry above. Links the sabotaged tree's own
+                # build/libpcrec.a; no ASan build (no row plants a read).
+                LIB="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" G2P_NOASAN=1 \
+                    bash "$tree/memfn/tests/run_g2_pres.sh" > "$work/g2pres.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/g2pres.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/g2pres.log" | grep -oE '[0-9]+')"
+                score_arm "$work/g2pres.log" "$f" "g2pres:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfndeleg)
                 # [MEMFN] C10 tests/memfn/run_deleg_sites.sh — see the

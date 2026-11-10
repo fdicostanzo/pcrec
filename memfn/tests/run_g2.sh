@@ -967,6 +967,23 @@ else
 fi
 grep -E '^G2W (sites|paths|forms)' "$work/win.log" | sed 's/^/   /'
 
+# --- 4p. G2's PRESENCE family (R-38 K38-2a, lane k382a): its own runner ------
+# memfn/tests/run_g2_pres.sh: GENERATED pre-check sites on the P0/P2/P3/P9
+# routes, one pass per U2 target and per lever state (default, run-tie-left),
+# C2's text classifier, the lever witnesses, layouts U, L and ASan's A, and
+# the occurrence oracle's records (the oracle step OWED until
+# tests/memfn/occurrence_oracle.py lands; an OWED step counts no pass) (~65 s).
+# It links the PLAIN library: its parts are not rows of section 4b's registry.
+echo "== presence: G2's presence family (run_g2_pres.sh)"
+if TMPDIR="$work" LIB="$plainlib" "$TO" 1800 bash "$here/run_g2_pres.sh" > "$work/pres.log" 2>&1; then
+    passed=$((passed + 1))
+    echo "PASS: presence family ($(grep '^checks passed' "$work/pres.log"))"
+else
+    grep -E '^FAIL' "$work/pres.log" | head -20
+    note_fail 1 "presence family (run_g2_pres.sh): $(grep '^checks failed' "$work/pres.log")"
+fi
+grep -E '^(lever |ORACLE OWED|oracle: )' "$work/pres.log" | sed 's/^/   /'
+
 # --- 4y. G2's FIND-ANY family (lane simdset): its own runner ----------------
 # memfn/tests/run_g2_any.py: the STANDALONE kernel mf_kernel_find_any (find
 # any of 2-3 bytes, memfn/src/vany.c; not routed, so no other family reaches
