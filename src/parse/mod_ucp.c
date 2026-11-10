@@ -160,13 +160,15 @@ void pcrec_setdef_build(Ctx *cx, const PcrecSetDef *d, PcrecCpSet *s)
 
 /* ---- the ROUTE a built UCP set takes today (D130 Q3) ----------------------
  *
- * A first-match TABLE (§0.1's rule), rows as data. The WIDE sets are refused
- * by name until a kit-sized route exists ([CLS-TREE] S4 for the VM, [UCP] U3
- * for the DFA): accepting them is correct and costs a minute-long compile
- * (`\w+` under UCP utf8: 330 KB, 66 s). "Wide" is a measured fact of the
- * CLAMPED set, not a list of names — so every set under `byte` is narrow, and
- * the partition `tests/ucp` pins is what the limit reproduces. No deny flag:
- * a row whose denial changes whether a pattern compiles is not a form choice. */
+ * A first-match TABLE (§0.1's rule), rows as data. The WIDE sets were refused
+ * by name until a kit-sized route existed ([CLS-TREE] S4 for the VM, [UCP] U3
+ * for the DFA), the measured cost then a minute-long compile (`\w+` under UCP
+ * utf8: 330 KB, 66 s). [UCP] U3 LIFTS the refusal (ucp_design.md §6, the U3
+ * row): a wide set is the same class its `\p{..}` spelling already is —
+ * UCP `\w` is `\p{Xwd}`, which compiles all-byte in 0.25 s today
+ * (docs/dev/lanes/ucpu3b_report.md §0) — and inside a character-stepped
+ * machine it is one character edge. "Wide" stays a measured fact of the
+ * CLAMPED set, and the row stays: it names the population. No deny flag. */
 typedef struct {
     const char *name;
     const char *applies;
@@ -180,8 +182,8 @@ static bool rr_always(int n) { (void)n; return true; }
 static const UcpRouteRow route_rows[] = {
     { "narrow", "clamped set has <= PCREC_UCP_NARROW_MAX_INTERVALS intervals",
       rr_narrow, true },
-    { "wide",   "always: refused by name until a kit-sized route exists",
-      rr_always, false },
+    { "wide",   "always: built as the class its \\p{..} spelling is ([UCP] U3)",
+      rr_always, true },
 };
 
 Ast *pcrec_setdef_class(Ctx *cx, const PcrecSetDef *d, bool negate,

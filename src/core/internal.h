@@ -2850,6 +2850,12 @@ typedef struct {
     uint32_t chrvec[PCREC_MAX_ISL_ATOMS];
     uint8_t  chrctx[PCREC_MAX_ISL_ATOMS];
     int      chr_bots, chr_botn;
+    /* The non-ASCII code space as `nseg` segments: `seg_lo[t]` is segment
+     * t's first code point (ascending, `seg_lo[0] == 0x80`), `seg_atom[t]`
+     * its character atom (arena). The emitter's one atom lookup. */
+    int             nseg;
+    const unsigned *seg_lo;
+    const uint8_t  *seg_atom;
     int      maxstates;/* engine-dependent cap (R1 A-3): table-mode machines
                           afford far more states than computed-goto ones */
     /* [ENG-ABS] IS THIS MACHINE OPTIONAL, i.e. may the compile continue
@@ -7801,8 +7807,9 @@ Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
  * `N_WCHAR` character edges, context sets whole (src/ir/nfa.c). */
 void pcrec_build_nfa_island(Ctx *cx, Ast *root, Nfa *nfa, bool reverse);
 /* [UCP] U3 T4 row 1's fact: does `root` hold a context set this encoding
- * cannot express byte by byte, so that no all-byte DFA is exact? */
-bool pcrec_island_needed(Ctx *cx, const Ast *root);
+ * cannot express byte by byte, so that no all-byte DFA is exact? The first
+ * such `A_CTX` (its `reg_at` is the diagnostic's offset), or NULL. */
+const Ast *pcrec_island_needed(Ctx *cx, const Ast *root);
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse, bool collapse);
 

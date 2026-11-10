@@ -1160,21 +1160,22 @@ void pcrec_build_nfa_island(Ctx *cx, Ast *root, Nfa *nfa, bool reverse)
 
 /* [UCP] U3 does `a`, an `A_CTX`, read a set this encoding cannot express
  * byte by byte (ucp_design.md §2.3)? */
+typedef struct { const PcrecEnc *e; const Ast *first; } IslandVisit;
+
 static void island_ctx_visit(void *ud, const Ast *a)
 {
-    struct { const PcrecEnc *e; bool any; } *v = ud;
-    if (a->k != A_CTX) return;
+    IslandVisit *v = ud;
+    if (a->k != A_CTX || v->first) return;
     for (int i = 0; i < a->u.ctx.n; i++)
-        if (a->u.ctx.iv[i].hi > v->e->onebyte_max) v->any = true;
+        if (a->u.ctx.iv[i].hi > v->e->onebyte_max) v->first = a;
 }
 
 /* [UCP] U3 `pcrec_island_needed` (internal.h): T4 row 1's fact. */
-bool pcrec_island_needed(Ctx *cx, const Ast *root)
+const Ast *pcrec_island_needed(Ctx *cx, const Ast *root)
 {
-    struct { const PcrecEnc *e; bool any; } v = {
-        pcrec_enc_by_id(cx->opt->encoding), false };
+    IslandVisit v = { pcrec_enc_by_id(cx->opt->encoding), NULL };
     pcrec_ast_visit(root, island_ctx_visit, &v);
-    return v.any;
+    return v.first;
 }
 
 /* `pcrec_build_nfa_marked` (internal.h): `pcrec_build_nfa` with the end

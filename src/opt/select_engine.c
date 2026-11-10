@@ -407,6 +407,22 @@ static unsigned forces_dfa_overflow(Ctx *cx, const Ast *a, size_t *why_pos,
     return ENGM_VM;
 }
 
+/* [UCP] U3 (D134 item 1, ucp_design.md §0.1 T4 row 1): a pattern whose
+ * context set is not byte-expressible under the compile's encoding (UCP
+ * `\b`/`\B` under utf8) has ONE route, the character-stepped DFA (the
+ * island). The VM cannot read the set until it decodes ([UCP] U4), so the
+ * row says DFA only, and a request that also needs the VM (captures, a
+ * VM-only construct, `--engine=vm`) is refused by name below. */
+static unsigned forces_island(Ctx *cx, const Ast *a, size_t *why_pos,
+                              const char **why)
+{
+    const Ast *n = pcrec_island_needed(cx, a);
+    if (!n) return ENGM_DFA | ENGM_VM;
+    *why_pos = n->reg_at;
+    *why = "a word boundary over the Unicode word set";
+    return ENGM_DFA;
+}
+
 /* ORDER MATTERS ONLY FOR THE DIAGNOSTIC, and it is captures-first on purpose.
  * The pass ANDs every row's mask, so the verdict is order-independent; `why`
  * is taken from the FIRST row that excludes the DFA. A `\K` pattern that also
@@ -438,6 +454,9 @@ static const EngineAnalysis analyses[] = {
      * into the "%s requires the VM engine" template, which reads oddly for
      * a fact that is not a constructs's name. */
     { "dfa_overflow", forces_dfa_overflow, false },
+    /* [UCP] U3 the one row that EXCLUDES THE VM. Its `why` is read only by
+     * the two refusals below that name a VM-excluding row. */
+    { "island", forces_island, true },
 };
 
 /* ---- the pass ---- */
@@ -1396,10 +1415,16 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
      * deleted nothing can change the tree between rounds, so the loop that
      * used to wrap this provably ran exactly once. The file header has the
      * deletion's argument. */
+    /* [UCP] U3 the first row that excludes the VM, for the two refusals that
+     * name it (the VM-excluding rows never write `why`, which names a
+     * DFA-excluding one, so every shipped stamp is unchanged). */
+    const char *vm_why = NULL;
+    size_t vm_why_pos = 0;
     for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
         size_t p = 0;
         const char *w = NULL;
         unsigned m = analyses[i].forces(cx, root, &p, &w);
+        if (!(m & ENGM_VM) && !vm_why) { vm_why = w; vm_why_pos = p; }
         if (!(m & ENGM_DFA) && !why) { why = w; why_pos = p; }
         if (!(m & ENGM_DFA) && analyses[i].node_derived && !node_why) {
             node_why = w; node_why_pos = p;
@@ -1407,6 +1432,22 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
         mask &= m;
     }
 
+    /* [UCP] U3 a row that needs the VM and one that excludes it: no engine
+     * can honour both, so the compile refuses, naming both reasons and the
+     * way out where the VM's reason is a request (captures). */
+    if (mask == 0 && vm_why) {
+        if (!node_why && cx->want_caps && cx->ncap > 0)
+            pcrec_ctx_fail(cx, vm_why_pos,
+                     "%s needs the character-stepped DFA ([UCP] U3), which has "
+                     "no captures; pass --no-captures, or restrict the word set "
+                     "with (?aW) until the VM reads it ([UCP] U4)", vm_why);
+        pcrec_ctx_fail(cx, vm_why_pos,
+                 "%s needs the character-stepped DFA ([UCP] U3), and %s needs "
+                 "the VM engine, which cannot read it until [UCP] U4; restrict "
+                 "the word set with (?aW)", vm_why,
+                 why_text(cx, node_why ? node_why : why ? why : "this pattern",
+                          node_why ? node_why_pos : why_pos));
+    }
     if (mask == 0)
         pcrec_ctx_fail(cx, why_pos, "internal error: no engine can compile this pattern");
 
@@ -1458,6 +1499,12 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     case PCREC_ENGINE_VM:
         /* Always available: the VM can compile everything the DFA can. This
          * is the §3.7 GATE mode — see the prefilter line below. */
+        /* [UCP] U3 no longer ALWAYS: a VM-excluding row refuses it. */
+        if (!(mask & ENGM_VM))
+            pcrec_ctx_fail(cx, vm_why_pos,
+                     "%s needs the character-stepped DFA ([UCP] U3), which "
+                     "--engine=vm excludes until the VM reads it ([UCP] U4)",
+                     vm_why);
         fit.chosen = ENGM_VM;
         if (!fit.why) fit.why = "--engine=vm";
         break;

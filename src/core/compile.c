@@ -441,8 +441,10 @@ static void build_notempty_dfa(Ctx *cx)
     cx->job->nedfa.notempty = true;
     pcrec_build_min_dfa(cx, &cx->job->nfa, &cx->job->nedfa, true, false,
                         PCREC_MAX_DFA_STATES_TABLE, cx->job->nfa.anch_start, false);
-    pcrec_scanedge_dfa(cx, &cx->job->nedfa,
-                       pcrec_dfa_scan_state_written(cx, &cx->job->nedfa), true);
+    /* [UCP] U3 no scan edge on an island machine (hazard H2) */
+    if (!cx->job->nedfa.island)
+        pcrec_scanedge_dfa(cx, &cx->job->nedfa,
+                           pcrec_dfa_scan_state_written(cx, &cx->job->nedfa), true);
 }
 
 /* D164 B3 ONE OPTIONAL MACHINE of the `tagged` form, built from `nfa` and
@@ -3056,7 +3058,14 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * src/gen/emit_dfa.c (`pcrec_artifact_has_dfa_scan`): a DFA-shaped
          * body is emitted iff the DFA wins or the VM gets a prefilter. */
         if (pcrec_artifact_has_dfa_scan(&cx)) {
-            pcrec_build_nfa(&cx, root, &cx.job->nfa, false, false);
+            /* [UCP] U3 T4 row 1: a context set this encoding cannot express
+             * byte by byte has no all-byte machine, so both NFAs are ISLAND
+             * builds (character edges, `Nfa.island`). Selection made such a
+             * pattern DFA-only (src/opt/select_engine.c `island`), so there
+             * is no prefilter customer and the collapse below never fires. */
+            const bool island = pcrec_island_needed(&cx, root) != NULL;
+            if (island) pcrec_build_nfa_island(&cx, root, &cx.job->nfa, false);
+            else        pcrec_build_nfa(&cx, root, &cx.job->nfa, false, false);
             /* [OPT-4] THE PREFILTER'S LANGUAGE (K39; docs/design/
              * prefilter_count_independence.md §4, as re-ruled). The decision
              * sits HERE, between the exact build and everything downstream,
@@ -3184,7 +3193,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                  * nowhere else (design §3) — the ENG_ATTEMPT arm below never
                  * seals it. The first E3 ask is scanedge's, just below. */
                 pcrec_facts_seal_e3(&cx);
-                pcrec_build_nfa(&cx, root, &cx.job->rnfa, true, collapse);
+                if (island) pcrec_build_nfa_island(&cx, root, &cx.job->rnfa, true);
+                else        pcrec_build_nfa(&cx, root, &cx.job->rnfa, true, collapse);
                 pcrec_build_min_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
                                     false, PCREC_MAX_DFA_STATES_TABLE,
                                     cx.job->nfa.start, false);
@@ -3210,19 +3220,38 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 /* [OPT-VEDGE] the last argument is each walk's direction:
                  * the forward scan ends at `n`, the reverse one starts
                  * there (src/opt/scanedge.c, precondition (3)). */
-                pcrec_scanedge_dfa(&cx, &cx.job->dfa,
-                                   pcrec_dfa_scan_state_written(&cx, &cx.job->dfa), true);
-                pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
-                                   pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), false);
-                build_notempty_dfa(&cx);
-                build_anchored_dfa(&cx);
-                /* D164 B3 the `rev-end` walk's form, once the three machines
-                 * exist (endmark.md §R.2.1's order). */
-                if (pcrec_revend_form_asked(&cx)) revend_choose_form(&cx, root);
-                /* [LANDWALK] ML, once the three machines are final (a
-                 * `tagged` form may have swapped the forward one). */
-                lmwalk_build(&cx, root);
+                /* [UCP] U3 an island machine gets NO scan edge (hazard H2,
+                 * ucp_design.md §3.8: a skip would step a character's bytes
+                 * one at a time) and none of the optional machines below,
+                 * each of which steps bytes: its one walk is the `island`
+                 * LOCATE row's (src/gen/emit_dfa.c). The iterator's retry
+                 * machine is the one kept: built from the same island NFA,
+                 * it is an island machine, walked by the island retry. */
+                if (island) {
+                    build_notempty_dfa(&cx);
+                } else {
+                    pcrec_scanedge_dfa(&cx, &cx.job->dfa,
+                                       pcrec_dfa_scan_state_written(&cx, &cx.job->dfa), true);
+                    pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
+                                       pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), false);
+                    build_notempty_dfa(&cx);
+                    build_anchored_dfa(&cx);
+                    /* D164 B3 the `rev-end` walk's form, once the three machines
+                     * exist (endmark.md §R.2.1's order). */
+                    if (pcrec_revend_form_asked(&cx)) revend_choose_form(&cx, root);
+                    /* [LANDWALK] ML, once the three machines are final (a
+                     * `tagged` form may have swapped the forward one). */
+                    lmwalk_build(&cx, root);
+                }
             } else {
+                /* [UCP] U3 the attempt engine's island is a follow-up
+                 * (ucpu3b_report.md §0): refused by name, never built. */
+                if (island)
+                    pcrec_ctx_fail(&cx, 0, "a start anchor (^, \\A, \\G or "
+                                   "(?m)^) beside a word boundary over the Unicode "
+                                   "word set is not built yet ([UCP] U3: the "
+                                   "character-stepped attempt engine); restrict the "
+                                   "word set with (?aW)");
                 cx.job->engine = PCREC_ENG_ATTEMPT;
                 /* [LIM-2] N1: raise-only per-compile override (0 = the
                  * built-in default). `pcrec_build_dfa`'s `maxstates` is an
@@ -3301,7 +3330,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * whether this attempt emits a compound (the shell) or the plain
          * artifact. Every engine walks: a row's own conjuncts decide (split's
          * A1 declines a VM P), so the engine test is not a second gate. */
-        if (comp_state == COMP_WALK) {
+        /* [UCP] U3 a compound's parts are byte machines: none for an
+         * island artifact. */
+        if (comp_state == COMP_WALK && !cx.job->nfa.island) {
             pcrec_compound_walk(&cx, root);
             if (cx.job->comp_shell) cx.comp_stamp = cx.job->comp_shell->row;
         }

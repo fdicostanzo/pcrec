@@ -503,15 +503,26 @@ static bool island_atoms(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *wsi,
         }
     qsort(cut, (size_t)m, sizeof *cut, cmp_unsigned);
 
+    /* The SEGMENTS, kept for the emitter: `seg_lo[t]` the first code point
+     * of segment t, `seg_atom[t]` its atom, so a decoded character's atom is
+     * one search over `seg_lo`. The surrogate gap is a segment no decoded
+     * character reaches; it carries ⊥S's index. */
+    unsigned *slo = pcrec_arena_alloc(&cx->arena, (size_t)m * sizeof *slo);
+    uint8_t *sat = pcrec_arena_alloc(&cx->arena, (size_t)m);
+    int nseg = 0;
     d->nchr = 0;
     for (int t = 0; t + 1 < m; t++) {
         unsigned c = cut[t];
-        if (c == cut[t + 1] || (c >= 0xD800u && c < 0xE000u)) continue;
+        if (c == cut[t + 1]) continue;
+        slo[nseg] = c;
+        sat[nseg++] = 0xFFu;
+        if (c >= 0xD800u && c < 0xE000u) continue;
         uint32_t v = 0;
         for (int j = 0; j < d->niset; j++)
             if (cp_in(d->iset[j].iv, d->iset[j].n, c)) v |= 1u << j;
         int a = 0;
         while (a < d->nchr && d->chrvec[a] != v) a++;
+        sat[nseg - 1] = (uint8_t)a;
         if (a < d->nchr) continue;
         if (d->nchr + 2 >= PCREC_MAX_ISL_ATOMS) {
             ctx_decline(cx, d, "island atoms", PCREC_MAX_ISL_ATOMS);
@@ -521,6 +532,11 @@ static bool island_atoms(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *wsi,
     }
     d->chr_bots = d->nchr++;
     d->chr_botn = d->nchr++;
+    for (int t = 0; t < nseg; t++)
+        if (sat[t] == 0xFFu) sat[t] = (uint8_t)d->chr_bots;
+    d->nseg = nseg;
+    d->seg_lo = slo;
+    d->seg_atom = sat;
     d->chrvec[d->chr_bots] = d->chrvec[d->chr_botn] = 0;
 
     /* Each atom's context vector: a valid character's is its membership in
