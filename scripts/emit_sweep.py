@@ -591,16 +591,16 @@ DIFFER_PINS = {
     #   fd-pres-pick   187 (byte) / 262 (utf8) on c-default (188 / 263 once the manifest `a.{1,5}z` joined the corpus, pinfix), no stamp moves
     #     (the parts the pre-check tests, not its admission); c-vm an exact 0:
     #     every span there is REQUIRED (P0), which the pick's deny cannot reach.
-    ("byte", "--memfn=no-pres-set-lead", "c-default"): (14, 0, b"x{2,5}(?i:cat)"),    # S3 re-pin (was 16, "é{2}cat")
-    ("byte", "--memfn=no-pres-set-lead", "c-vm"): (18, 0, "é{2}cat".encode()),
-    ("utf8", "--memfn=no-pres-set-lead", "c-default"): (7, 0, b"x{2,5}(?i:cat)"),    # S3 re-pin (was 8, b"a{3}(?i:cat)")
-    ("utf8", "--memfn=no-pres-set-lead", "c-vm"): (8, 0, b"a{3}(?i:cat)"),
+    ("byte", "--memfn=no-pres-set-lead", "c-default"): (6, 0, b"(?i:select)\\d+x"),    # SAR1/R1 re-pin (was 14, b"x{2,5}(?i:cat)"): span arms R1 (f7eb10528) gives 9 patterns a longer required run, 2 joined; flr_report.md; S3 re-pin (was 16, "é{2}cat")
+    ("byte", "--memfn=no-pres-set-lead", "c-vm"): (11, 0, b"(?i:select)\\d+x"),    # SAR1/R1 re-pin (was 18, "é{2}cat"): R1 takes 11 patterns, 6 joined; flr_report.md
+    ("utf8", "--memfn=no-pres-set-lead", "c-default"): (3, 0, b"(?i:select)\\d+x"),    # SAR1/R1 re-pin (was 7, b"x{2,5}(?i:cat)"): R1 takes 4 patterns; flr_report.md; S3 re-pin (was 8, b"a{3}(?i:cat)")
+    ("utf8", "--memfn=no-pres-set-lead", "c-vm"): (3, 0, b"(?i:select)\\d+x"),    # SAR1/R1 re-pin (was 8, b"a{3}(?i:cat)"): R1 takes 5 patterns; flr_report.md
     ("byte", "--memfn=no-fd-pres-g1", "c-default"): (944, 944, b"a+"),    # S3 re-pin (was 1271/1271, b"ab")
     ("utf8", "--memfn=no-fd-pres-g1", "c-default"): (873, 873, b"a+"),    # S3 re-pin (was 1105/1105, b"ab")
     ("byte", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-g1", "c-vm"): (0, 0, None),
-    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (142, 0, b"a.{1,5}z"),    # P1 re-pin (was 167): the landmark walk (D184) takes 35 patterns the pick served (29 net of corpus growth), pinbis; S3 re-pin (was 188); was 187: the manifest joined the corpus (presence_deny.rxt), pinfix
-    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (224, 0, b"a.{1,5}z"),    # P1 re-pin (was 231): the landmark walk (D184) takes 18 patterns the pick served (11 net), pinbis; S3 re-pin (was 263); was 262: same
+    ("byte", "--memfn=no-fd-pres-pick", "c-default"): (87, 0, b"a.{1,5}z"),    # SAR1/R1 re-pin (was 142): span arms R1 (f7eb10528) gives 67 patterns a longer required run the pick cannot change, 14 joined (counted repeats now carry a run; 11 new corpus rows), flr_report.md; P1 re-pin (was 167): the landmark walk (D184) takes 35 patterns the pick served (29 net of corpus growth), pinbis; S3 re-pin (was 188); was 187: the manifest joined the corpus (presence_deny.rxt), pinfix
+    ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (139, 0, b"a.{1,5}z"),    # SAR1/R1 re-pin (was 224): R1 takes 90 patterns, 13 joined, flr_report.md; P1 re-pin (was 231): the landmark walk (D184) takes 18 patterns the pick served (11 net), pinbis; S3 re-pin (was 263); was 262: same
     ("byte", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
 }
