@@ -376,3 +376,5 @@ Landing 2026-11-09 df9f79996: lane/sae1 (b819993a4) + lane/sae2 (ce02a975d), spa
 Landing 2026-11-10 2d72849ed: lane/memfn-s30a (f5c2f416a), kit R-35 3.0a (kit-only; no src/lib/cli change, no pcrec abi or MF_SITE_ABI event; one docs conflict in the lanes archive resolved as a union). MAJOR; the Wednesday 01:00 full suite covers it. make + make strict green; test-codegen and the test-memfn sections queued under boxlock (kitland3 scratch), verdicts OWED.
 
 Landing 2026-11-10 f7eb10528: lane/sar1mrg (22b7da3f0), span arms R1 merged onto E1+E2 (no pcrec abi or MF_SITE_ABI move; one docs conflict in the lanes archive resolved as a union; post-merge make/strict/test-codegen/test-rxtsource/facts checks green). MAJOR; the Wednesday 2026-11-11 01:00 full suite covers it
+
+Landing 2026-11-10 7658295b3: lane/memfn-k381 (b8ca72ccb), kit R-38 K38-1, one run decision kit_run_decide (kit-only plus tests/memfn; zero emitted bytes; no pcrec abi or MF_SITE_ABI event; kit gates 530-539 GREEN vs 25c5094ec; post-merge make strict green). MINOR: covered by the Wed 2026-11-11 01:00 full suite.
