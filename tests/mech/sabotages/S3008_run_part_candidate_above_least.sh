@@ -16,9 +16,9 @@
 SAB_ID="S3008-run-part-candidate-above-least"
 SAB_FILE="memfn/src/ofsskip.c"
 SAB_SUITES="g2pres"
-SAB_DESC="the run part's memchr form skips a verified candidate at its origin: a candidate above the least occurrence, the occurrence oracle's plant (OWED until tests/memfn/occurrence_oracle.py lands)"
-SAB_DOC_FIGURE="HAND-MEASURED by lane k382a 2026-11-10 (docs/dev/lanes/k382a_report.md): memfn/tests/run_g2_pres.sh --plant S3008 reads OWED (the family green, its oracle step absent); its records move on 322 of 415 origin occurrences. Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3008."
-SAB_EXPECT=UNDETECTED
+SAB_DESC="the run part's memchr form skips a verified candidate at its origin: a candidate above the least occurrence, the occurrence oracle's plant"
+SAB_DOC_FIGURE="HAND-MEASURED by the kit manager 2026-11-10 with the oracle merged (k382o): memfn/tests/run_g2_pres.sh --plant S3008 reads RED on the oracle step (rows=50121 violations=1860); clean: rows=50178 violations=0. Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3008."
+SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    int maxk = x->maxk, k = x->k, a = x->a;
     kit_out(o, "    while (pos + %d < n) {\n", maxk);'
