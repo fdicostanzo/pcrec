@@ -400,7 +400,8 @@ const uint8_t *kit_run_at(const void *src, unsigned j, uint8_t buf[32]);
 
 /* THE TIE TABLE's rows (window.c `wf_ties[]`, window_site.md §2.1): the
  * kit's PICK ties (window.c's stop/mass choosers, the run member
- * kit_run_member, presence's set pick and run window) read their row through
+ * kit_run_member with its caller's row, presence's set pick and the run
+ * decision's window) read their row through
  * the answer below: whether a candidate keyed `c`, equal to the best keyed
  * `b` (met first in the walk), takes the tie. Keys are offsets (the run
  * member's are its run-relative indices, a translation of them), except
