@@ -834,10 +834,12 @@ fi
 # 39 -> 41 ([VLOOKBEHIND] stage 1, lane mttri): LA_LOOKBEHIND_BRANCH_MAX and
 # LA_LOOKBEHIND_VAR_MAX, two new anchored rows (limits.md §3.11), each one
 # [doc] check. Read from a run (41).
+# 41 -> 43 ([UCP] U3, lane ucpu3b): PCREC_MAX_ISL_SETS and PCREC_MAX_ISL_ATOMS,
+# two new anchored rows (limits.md §3.9¶3b/¶3c). Read from a run.
 limitsn="$(grep -c '^PASS: ' "$LIMITSOUT" || true)"
-if [ "$limitsn" -ne 41 ]; then
+if [ "$limitsn" -ne 43 ]; then
     if grep -q "^checks failed: 0" "$LIMITSOUT"; then
-        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 41." >&2
+        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 43." >&2
         echo "registry:   if you added/removed a limits.def row, an anchor or a part-3 arm" >&2
         echo "registry:   on purpose, update this number in the same commit; if not," >&2
         echo "registry:   coverage was removed" >&2

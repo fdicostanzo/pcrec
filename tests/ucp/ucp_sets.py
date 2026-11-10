@@ -11,9 +11,10 @@ Each entry is (construct, spelling, wide_utf8):
              spelling under utf8. Also captured under UCP|UTF: the store then
              carries libpcre2's own construct==spelling relation, and
              tests/registry/definitions_check.c ties spelling==producer.
-  wide_utf8  pcrec REFUSES the construct under -e utf8 at [UCP] U1 (D130 Q3;
-             limits.md §3.8), so its utf8 arm is checked through the spelling
-             chain above instead of by compiling it.
+  wide_utf8  the construct's utf8 set is WIDE (over
+             PCREC_UCP_NARROW_MAX_INTERVALS, limits.md §3.8): refused at
+             [UCP] U1/U2, built since U3 and compared like the narrow ones;
+             ucp_compare.py counts this population.
 """
 
 SETS = [

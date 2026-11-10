@@ -30,9 +30,15 @@ not checked: they are pcrec's capability refusals.
   U+212A), fold-closed narrow sets, per-contribution folding.
 - `byte.rxt` — the byte tier: Latin-1 UCP sets (all narrow), the Latin-1 fold
   (T2's `latin1` row), `[:lower:]`/`[:upper:]` fold-inert.
-- `refusals.rxt` — `perr` only: the wide sets under utf8, UCP `\b`/`\B` under
-  utf8 (the byte half builds since U2, `ctxnode.rxt`), `--ucp` without the
-  module, `(*UTF)` under byte, the position and repeat rules for the verbs.
+- `refusals.rxt` — `perr` only: `--ucp` without the module, `(*UTF)` under
+  byte, the position and repeat rules for the verbs (the wide sets and UCP
+  `\b`/`\B` under utf8 build since U3, `island.rxt`).
+- `island.rxt` — [UCP] U3: the CHARACTER-STEPPED DFA (`RX_DFA_SCAN "island"`),
+  UCP `\b`/`\B` under utf8 over well-formed subjects (views, nullable,
+  lookbehind beside `\b`, caseless, wide/narrow/property sets), match counts
+  by the PCRE2 global loop. Generated from libpcre2 10.46 by
+  `docs/dev/lanes/ucpu3b_evidence/gen_island_rxt.py`, which also writes
+  `tests/utf8/island_illformed.rxt`.
 - `ctxnode.rxt` — [UCP] U2: the CONTEXT NODE. The overlap witnesses
   (`(?<=\$)\d+(?:\.\d{2})?\b`, a V ⊂ W pair, a partial overlap, three sets on
   one machine), T3's rows over the LANGUAGE and its declines, startpos cells

@@ -424,7 +424,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `\K` | always true; sets the start of the reported match to `p` | vm | no |
 | `(?m)` | the option letter that changes `^` and `$` (§5.8) | any | — |
 
-1. <a id="s7-1-p2"></a>[7.1¶2] The word characters for `\b` and `\B` are `\w`'s set (§6.1): ASCII without UCP, so under `byte` `\b\xe9` on `a\xe9` → `[1, 2)`. Under UCP they are Unicode's word set under `byte` (Latin-1) and refused under `utf8` (`cli.md` §1.9¶7).
+1. <a id="s7-1-p2"></a>[7.1¶2] The word characters for `\b` and `\B` are `\w`'s set (§6.1): ASCII without UCP, so under `byte` `\b\xe9` on `a\xe9` → `[1, 2)`. Under UCP they are Unicode's word set: Latin-1 under `byte`, and under `utf8` all of it, read a character at a time (`cli.md` §1.9¶7, which also lists what such a pattern is refused beside).
 2. <a id="s7-1-p3"></a>[7.1¶3] `\K` changes only the reported start: `a\Kb` on `ab` → `[1, 2)`; `(a\Kb)` on `ab` → `[1, 2)`, group 1 `[0, 2)`. `\K` inside any lookaround is refused ("not allowed inside a lookaround").
 3. <a id="s7-1-p4"></a>[7.1¶4] Inside a class, `\b` is U+0008 (§5.5) and the others are refused.
 
@@ -536,7 +536,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `(*UTF)`, `(*UTF8)` at the start of the pattern | confirm `-e utf8`; refused under `byte` ("requires --encoding=utf8") | any |
 
 1. <a id="s7-8-p1"></a>[7.8¶1] Start-of-pattern options must precede every other item, in any order (`(*UCP)(*UTF)` and `(*UTF)(*UCP)` are both accepted); elsewhere they are refused ("(*VERB) not recognized or malformed").
-2. <a id="s7-8-p2"></a>[7.8¶2] What UCP changes — `\d \s \w`, the POSIX classes, `\b \B`, and the caseless fold of the POSIX case sets — and which UCP sets are refused under `utf8`, is `cli.md` §1.9 and `limits.md` §3.8. Under `byte`, UCP sets are their Unicode sets clamped to `0x00`-`0xFF`: `--ucp` `\w` matches `\xe9`, `[[:alpha:]]` matches `\xaa`, `\d` does not match `\xb2`.
+2. <a id="s7-8-p2"></a>[7.8¶2] What UCP changes — `\d \s \w`, the POSIX classes, `\b \B`, and the caseless fold of the POSIX case sets — and the routes UCP `\b \B` take under `utf8`, is `cli.md` §1.9 and `limits.md` §3.8. Under `byte`, UCP sets are their Unicode sets clamped to `0x00`-`0xFF`: `--ucp` `\w` matches `\xe9`, `[[:alpha:]]` matches `\xaa`, `\d` does not match `\xb2`.
 3. <a id="s7-8-p3"></a>[7.8¶3] `--ucp` and `(*UCP)` need module `ucp` enabled under `byte`; `-e utf8` enables it.
 
 <a id="s7-9"></a>

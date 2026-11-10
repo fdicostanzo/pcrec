@@ -189,9 +189,9 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 <a id="s3-8"></a>
 ### 3.8 Module `ucp`: which UCP sets compile
 
-<a id="s3-8-p1"></a>[3.8¶1] Under `(*UCP)`/`--ucp` a class escape or POSIX class means a Unicode set (`cli.md` `--ucp`). A UCP set with more than `PCREC_UCP_NARROW_MAX_INTERVALS` = 128 code-point intervals, counted after clamping to the encoding's universe, is refused by name. Under `-e utf8` that is `\w \W` and `[:alpha:] [:alnum:] [:word:] [:lower:] [:upper:] [:graph:] [:print:] [:punct:]` at both polarities; `\d \D \s \S` and `[:digit:] [:xdigit:] [:space:] [:blank:] [:cntrl:]` compile. Under `-e byte` every set clamps far below 128 and all compile. Restricting the family (`(?aW)`, `(?aP)`) makes the construct ASCII and it compiles.
+<a id="s3-8-p1"></a>[3.8¶1] Under `(*UCP)`/`--ucp` a class escape or POSIX class means a Unicode set (`cli.md` `--ucp`). Every UCP set compiles. A UCP set with more than `PCREC_UCP_NARROW_MAX_INTERVALS` = 128 code-point intervals, counted after clamping to the encoding's universe, is WIDE: under `-e utf8` that is `\w \W` and `[:alpha:] [:alnum:] [:word:] [:lower:] [:upper:] [:graph:] [:print:] [:punct:]` at both polarities, and each compiles as the class its `\p{..}` spelling is (UCP `\w` is `\p{Xwd}`); `\d \D \s \S` and `[:digit:] [:xdigit:] [:space:] [:blank:] [:cntrl:]` are narrow. Under `-e byte` every set clamps far below 128.
 
-<a id="s3-8-p2"></a>[3.8¶2] This is a selection knee, not a resource ceiling, and is not movable by a flag. UCP `\b` and `\B` under `-e utf8` are refused by name with no number involved (the Unicode word set is not byte-expressible there); under `-e byte` they compile.
+<a id="s3-8-p2"></a>[3.8¶2] The number names a population, not a ceiling, and is not movable by a flag. UCP `\b` and `\B` compile under both encodings; under `-e utf8` the Unicode word set is not byte-expressible, so such a pattern takes the character-stepped DFA (`match_api.md` §6.3.2's `"island"` scan; `cli.md` §1.9¶7).
 
 <a id="s3-9"></a>
 ### 3.9 The DFA's context sets and atoms
@@ -201,7 +201,12 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 - <a id="s3-9-p2"></a>[3.9¶2] `PCREC_MAX_CTX_SETS` = 32 distinct context sets on one machine;
 - <a id="s3-9-p3"></a>[3.9¶3] `PCREC_MAX_CTX_ATOMS` = 16 context atoms: the distinct membership vectors the machine's bytes realize over those sets, plus the empty one (an absent side).
 
-<a id="s3-9-p4"></a>[3.9¶4] Over either, the DFA build is declined as a state-cap overflow is (§3.3.3): `--engine=auto` compiles the pattern on the VM, `--engine=dfa` refuses ("more than 16 context atoms on one machine; try --engine=vm"). A truncated partition is never produced. Neither is movable by a flag.
+<a id="s3-9-p3a"></a>[3.9¶3a] A character-stepped (`"island"`) machine (`cli.md` §1.9¶7) also bounds its non-ASCII characters:
+
+- <a id="s3-9-p3b"></a>[3.9¶3b] `PCREC_MAX_ISL_SETS` = 8 distinct non-ASCII code-point sets on one machine (its consuming classes and context sets together);
+- <a id="s3-9-p3c"></a>[3.9¶3c] `PCREC_MAX_ISL_ATOMS` = 32 character atoms: the distinct membership vectors non-ASCII characters realize over those sets, plus the two ill-formed-byte atoms.
+
+<a id="s3-9-p4"></a>[3.9¶4] Over any of them, the DFA build is declined as a state-cap overflow is (§3.3.3): `--engine=auto` compiles the pattern on the VM, `--engine=dfa` refuses ("more than 16 context atoms on one machine; try --engine=vm"). A truncated partition is never produced. Neither is movable by a flag.
 
 <a id="s3-10"></a>
 ### 3.10 The compiler's C stack
