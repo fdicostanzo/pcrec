@@ -856,8 +856,8 @@ static void emit_predicate_axes(StrBuf *sb)
                        : "-fcomments: every comment the emitter has to offer (the orientation block, the table legends, the per-label role text). Changes no answer and no object byte — the C compiler discards comments — so it is a SOURCE-readability axis and never a performance one ([ART-SIZE]: comments vs .o size r=0.43)");
     }
     /* memfn-simd — the memory-function kit's ONE switch (D147 addenda 6-7).
-     * OFF by default and INERT until R4e': no SIMD form exists, so both rows
-     * render the same artifact. The stamp is the kit's own record of what it
+     * OFF by default; ON lets the kit render hardware-optimized forms for
+     * the compile's CPU target. The stamp is the kit's own record of what it
      * rendered; `none` is its value for an artifact identical to the
      * portable one. */
     {
@@ -867,7 +867,7 @@ static void emit_predicate_axes(StrBuf *sb)
                      "THE DEFAULT: the kit renders portable C only (plain C, SWAR, libc calls, loop-free forms); runs on any target. -fno-memfn-simd states it explicitly and overrides a config/target row that asked for the SIMD forms");
         emit_pred_row(sb, &p, 2, "simd", "",
                      0, PCREC_FORCE_MEMFN_SIMD, "",
-                     "-fmemfn-simd: the kit may render hardware-optimized forms that MAY NOT EXECUTE ON ANOTHER CPU. Inert until a SIMD form exists (R4e'): today both settings render the same artifact");
+                     "-fmemfn-simd: the kit may render hardware-optimized forms that MAY NOT EXECUTE ON ANOTHER CPU. An artifact differs from the default only where the kit has a form for the compile's CPU target");
     }
     /* atomic-discharge — §2.8, ENGINE-SELECTING; no dedicated stamp of its
      * own (its activity is folded into RX_VM_STRATS via vm_cuts(); RX_ENGINE

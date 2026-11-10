@@ -28,12 +28,11 @@ WHAT IT CHECKS, per artifact of a corpus-wide population:
             (the deny of the default restates it); (b) with -fmemfn-simd,
             the SIMD-ON layer, which must ALSO be byte-equal to the default
             while FORMS reads "none" everywhere (R4c' item (e): (a) alone
-            never compiled the ON side). Both reported "identical (no SIMD
-            form)": identical by construction while no SIMD form exists, so
-            they catch a non-inert switch and prove nothing about a SIMD
-            form. At the first SIMD-on form (Q55, R4e') (b) is replaced by
-            the movers half (FORMS names the forms an ON artifact differs
-            by), which stays UNREACHED until then. Since the target seam
+            never compiled the ON side). Before the first SIMD form (R-13)
+            both reported "identical (no SIMD form)" and proved nothing
+            about a SIMD form; now (b) is the
+            movers half (FORMS names the forms an ON artifact differs
+            by). Since the target seam
             (U2+U3, lane u3floor) the ON artifact carries its target's own
             text (TARGETS, guard, region, guarded bytes) on EVERY artifact,
             so (b) compares with that text set aside (target_text.aside,
@@ -297,7 +296,7 @@ def main():
         text = r.stdout.decode('utf-8', 'surrogateescape')
         # the FORMS identity half, both layers: the same compile with the
         # SIMD switch stated OFF (a deny of the default) and turned ON must
-        # each be byte-equal to the default while no SIMD form exists
+        # each be byte-equal to the default where FORMS reads "none"
         # (R-13: since the first SIMD rows, the ON half is the MOVERS half:
         # an ON artifact equals the default iff its FORMS reads "none")
         same, onforms = [], None

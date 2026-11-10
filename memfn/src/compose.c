@@ -891,6 +891,23 @@ static const char *measures_check(const mf_measures *ms)
     return NULL;
 }
 
+/* The analysis object's kinds as the host hands them, NULL iff they are, else
+ * why not: every kind STATES its presence (PRESENT or ABSENT), and a kind
+ * with a payload is PRESENT. kit_byte_rate reads `present`; an UNSTATED zero
+ * would be taken as "no table" and silently answer the NONE row, so it is
+ * refused where the object arrives (SEAM-2, r8 review of S2a). */
+static const char *analysis_check(const mf_analysis *an)
+{
+    if (an->nkinds && !an->kinds) return "kinds missing (nkinds > 0, kinds NULL)";
+    for (uint16_t i = 0; i < an->nkinds; i++) {
+        const mf_akind *k = &an->kinds[i];
+        if (k->present != MF_KIND_PRESENT && k->present != MF_KIND_ABSENT)
+            return "a kind whose presence is UNSTATED or unknown (every kind "
+                   "states PRESENT or ABSENT)";
+    }
+    return NULL;
+}
+
 mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint64_t denies,
                      const mf_measures *ms, const mf_analysis *an)
 {
@@ -915,6 +932,8 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint64_t denies,
     why = ms ? measures_check(ms) : NULL;
     if (why) kit_fail(art, "mf_art_begin: the measurement set `%s` is refused: %s",
                       ms->id ? ms->id : "(no id)", why);
+    why = an ? analysis_check(an) : NULL;
+    if (why) kit_fail(art, "mf_art_begin: the analysis object is refused: %s", why);
     return art;
 }
 
