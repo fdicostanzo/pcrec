@@ -110,3 +110,10 @@ the kit manager's call, not owed by this lane.
 | checks listed in the brief | yes | "Checks re-run" |
 | gate jobs copied, re-keyed 550-559, expectations moved, every --dry-run passes, NOT queued | yes | "Gate jobs" |
 | test-side only, zero emitted bytes | yes, apart from EMIT-2's message string (ruled) | identity sample 0 differ |
+
+## STATE AT HANDOFF
+
+OWED: none. Every check in the brief ran and its result is above. The gate jobs 550-559 are written
+and dry-run. Queueing them is the kit manager's call. No rulings file. The tree is clean apart from
+`k382a.done`, an untracked file in the worktree root that lane k382a's run left behind. It is not
+this lane's, and this lane did not touch it.
