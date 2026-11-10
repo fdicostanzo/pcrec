@@ -38,3 +38,7 @@ Dir /var/tmp/pcrec-pcrec/scratch/memfn/kclose/jobs/, numbers 560-569, keys kit-k
 - R-13 owed b: checked not emitted; wording fixed: committed.
 - Checks and gate jobs: as listed; gate jobs are scratch files, not committed.
 - Not done: the mech matrix run of S3015 (box lock), the ident/mech/test gates (not queued by charter).
+
+## STATE AT HANDOFF
+
+Branch lane/memfn-kclose, tip committed, tree clean. OWED (for the kit manager, no run in flight): (1) TRACE_VARIANT_RECORDS_FLOOR re-measure: `scripts/emit_sweep.py --variant all --bases byte --trace` on a free box, then a reviewed re-pin. (2) The queued gates 560-569 (mech shard 3 includes S3015's matrix run). Nothing else.
