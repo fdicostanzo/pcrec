@@ -316,6 +316,7 @@ static int route_of(const mf_class *c, unsigned run)
 
 typedef struct {
     int      rendered, route, assign, scan, member[G2P_MAXPART];
+    int32_t  omin;                      /* the run span's stated omin */
     unsigned ver_lo, ver_len, nparts, at[G2P_MAXPART], len[G2P_MAXPART], plo[G2P_MAXPART],
              plen[G2P_MAXPART], fnref[G2P_MAXPART], fnok[G2P_MAXPART];
     char     forms[48];
@@ -359,6 +360,7 @@ static void one_site(gsite *g, buf *fs, gout *o)
     s.pspans = g_ps;
     s.pres_proof = (mf_pres_proof){ -1, 0, 0, 1 };
     unsigned run = s.npspan - 1u;
+    o->omin = s.pspans[run].omin;
 
     /* P2: the proof stands for the leading check (its byte, the run proven) */
     mf_pres_picks pk;
@@ -647,8 +649,8 @@ int main(int argc, char **argv)
         const gsite *g = &gs[i];
         if (!o->rendered) continue;
         n++;
-        fprintf(c, "    { %d, \"%s\", %d, %d, %d, %d, %u, {", i, tag, o->route, o->assign,
-                g->witness, g_lever, g->L);
+        fprintf(c, "    { %d, \"%s\", %d, %d, %d, %d, %u, %d, {", i, tag, o->route, o->assign,
+                g->witness, g_lever, g->L, (int)o->omin);
         for (unsigned j = 0; j < g->L; j++) fprintf(c, "%s%u", j ? "," : "", g->run[j]);
         fputs("}, {", c);
         for (unsigned j = 0; j < g->L; j++) fprintf(c, "%s%u", j ? "," : "", g->mask[j]);

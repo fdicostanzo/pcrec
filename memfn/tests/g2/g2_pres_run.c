@@ -18,14 +18,20 @@
  *             verified stretch: an occurrence broken at a position inside
  *             it is not yielded, one broken outside it still is; the union
  *             of a site's parts' measured extents is the site's reply
- *             (P3's window, or the whole run);
+ *             (P3's window, or the whole run); and each compare is EXACT:
+ *             every member of a verified position with one bit flipped to
+ *             a byte outside the position's set (a NEAR-MISS) breaks the
+ *             occurrence (review 2026-11-10 r2 k382a FAM-3: the filler
+ *             differs from a member in the bits it happens to, so a
+ *             compare one bit looser still rejected it);
  *     SCAN    the text's find reads the reply's scan position first (the
  *             first subject read on a subject with no candidate, short
  *             enough for the scalar body: a SIMD arm may load an ANDed
  *             second position first, so it is held to COVER; part frame,
  *             then site frame);
  *     SOUND   a yielded candidate lies at or above `lo`, inside the subject,
- *             and holds every compared position.
+ *             and holds every compared position (subjects carry near-miss
+ *             occurrences too, FAM-3).
  *   (C2's third clause, no run part where the link is untested, is the
  *   generator's: its P2 control.)
  *   THE LEVER WITNESSES (plant C): the text's scan on an all-tie run of
@@ -33,11 +39,19 @@
  *   run-tie-left leftmost); `G2PW` lines let the runner show it moved.
  *   THE ORACLE SEAM (G2P_REC builds): every call of a run part through the
  *   site's ENTRY or RE-ENTRY use (g2p_rec) writes one record in exactly the
- *   format of docs/dev/lanes/k382a_oracle_iface.md; `reads` are the subject
- *   offsets the part read, from the compiler's own instrumentation of the
- *   kit's text (-fsanitize=kernel-address with every access an outlined
- *   call: the __asan_* callbacks below) and the libc reads (memchr, memcmp,
- *   memcpy, routed here by g2p_sites.c's G2P_REC block).
+ *   format of docs/dev/lanes/k382a_oracle_iface.md, taken at the CALLER
+ *   boundary (review 2026-11-10 r2 k382a ORC-1): subject, length and origin
+ *   are the host's, as uses() handed them to the use (the attempt start, the
+ *   stated omin off the site table), never the arguments the kit's text
+ *   passed its part, and the result is in the host's frame; so a use that
+ *   moves its part's floor or subject is checked against the attempt, not
+ *   against itself. `reads` are the subject offsets the part read in
+ *   [-PAD, n + PAD) of the host's subject (a read further out is not
+ *   recorded: layouts U and L fault on it), from the compiler's own
+ *   instrumentation of the kit's text (-fsanitize=kernel-address with every
+ *   access an outlined call: the __asan_* callbacks below) and the libc
+ *   reads (memchr, memcmp, memcpy, routed here by g2p_sites.c's G2P_REC
+ *   block).
  *   THE LAYOUTS (§3.5 W-K4): U, a guard page at s + n; L, the subject at a
  *   page start with a guard page below (W-K4a's); and, in the ASan build
  *   (G2P_ASAN), A, the subject at offset 1..W-1 from a W-aligned heap block
@@ -63,11 +77,18 @@
 #endif
 
 static long g_pass, g_fail;
-static unsigned long long g_rng = 0x67327072ull;
+static unsigned long long g_rng = 0x67327072ull, g_rng2 = 0x6e6d6973ull;
 static unsigned rnd(unsigned n)
 {
     g_rng = g_rng * 6364136223846793005ull + 1442695040888963407ull;
     return n ? (unsigned)((g_rng >> 33) % n) : 0;
+}
+/* the near-misses' own stream (FAM-3), so the probes before them draw what
+   they drew without it */
+static unsigned rnd2(unsigned n)
+{
+    g_rng2 = g_rng2 * 6364136223846793005ull + 1442695040888963407ull;
+    return n ? (unsigned)((g_rng2 >> 33) % n) : 0;
 }
 
 static void failf(const g2p_site *x, const char *what, const char *fmt, ...)
@@ -170,20 +191,24 @@ static FILE *g_rec;
 static const char *g_call;               /* "entry" / "reentry" while a use runs */
 static const g2p_site *g_site_of[1 << 12];
 static long g_reach[G2P_NROUTE][2], g_records;
+/* THE CALLER BOUNDARY (ORC-1): the host's subject, length and attempt start,
+   set by uses() before it calls the use */
+static const unsigned char *g_hs;
+static size_t g_hn, g_hlo;
 
 size_t g2p_rec(int site, int part, g2p_part_fn fn, const unsigned char *s, size_t n, size_t lo)
 {
     if (g_active || !g_call) return fn(s, n, lo);
     const g2p_site *x = g_site_of[site];
-    rd_begin(s, n);
+    rd_begin(g_hs, g_hn);                /* reads in the host's frame */
     size_t r = fn(s, n, lo);
     g_active = 0;
     g_reach[x->route][g_call[0] == 'r']++;
     if (!g_rec) return r;
     const g2p_part *pt = &x->parts[part];
     fprintf(g_rec, "%s.%d.p%d\t%s\t", x->tag, x->id, part, g_call);
-    for (size_t i = 0; i < n; i++) fprintf(g_rec, "%02x", s[i]);
-    fprintf(g_rec, "\t%zu\t0\t", lo);
+    for (size_t i = 0; i < g_hn; i++) fprintf(g_rec, "%02x", g_hs[i]);
+    fprintf(g_rec, "\t%zu\t%d\t", g_hlo, (int)x->omin);
     for (unsigned j = 0; j < pt->len; j++) {
         unsigned jj = pt->at + j;
         if (j) fputc(',', g_rec);
@@ -194,10 +219,11 @@ size_t g2p_rec(int site, int part, g2p_part_fn fn, const unsigned char *s, size_
         }
     }
     fprintf(g_rec, "\t%u\t%u\t", pt->ver_lo, pt->ver_len);
-    if (r < n) fprintf(g_rec, "%zu\t", r);
+    /* the part's hit is an offset from ITS `s`: the record's is the host's */
+    if (r < n) fprintf(g_rec, "%td\t", (s + r) - g_hs);
     else fputs("MISS\t", g_rec);
     int first = 1;
-    for (long o = -PAD; o < (long)n + PAD; o++)
+    for (long o = -PAD; o < (long)g_hn + PAD; o++)
         if (g_stamp[o + PAD] == g_gen) { fprintf(g_rec, "%s%ld", first ? "" : ",", o); first = 0; }
     fputc('\n', g_rec);
     g_records++;
@@ -227,6 +253,7 @@ static unsigned char *place(int lay, const unsigned char *src, size_t n)
 /* ---- the checks ------------------------------------------------------------------ */
 
 static long g_cover, g_extent, g_scan, g_sound, g_witness, g_lay_calls[LAY_N];
+static long g_nearmiss, g_nm_sound, g_nm_uses;   /* FAM-3's probes, counted */
 static long g_scan_route[G2P_NROUTE];
 
 /* one direct call of part `pt` at `lo` on `src` (layout U), measured */
@@ -241,12 +268,35 @@ static size_t measure(const g2p_part *pt, const unsigned char *src, size_t n, si
 }
 
 /* an occurrence of part `pt` at `c` in `buf`, each position a random member */
-static void occ(const g2p_site *x, const g2p_part *pt, unsigned char *buf, size_t c)
+static void occ_r(const g2p_site *x, const g2p_part *pt, unsigned char *buf, size_t c,
+                  unsigned (*r)(unsigned))
 {
     for (unsigned j = 0; j < pt->len; j++) {
         unsigned m[2], k = members(x, pt->at + j, m);
-        buf[c + j] = (unsigned char)m[rnd(k)];
+        buf[c + j] = (unsigned char)m[r(k)];
     }
+}
+static void occ(const g2p_site *x, const g2p_part *pt, unsigned char *buf, size_t c)
+{
+    occ_r(x, pt, buf, c, rnd);
+}
+
+/* A NEAR-MISS occurrence of part `pt` at `c` (FAM-3, rnd2's stream): an
+ * occurrence with one position of [vlo, vlo + vlen) a member with one bit
+ * flipped to a byte outside that position's set; 0 where the drawn
+ * position's every flip stays in its set (no near-miss there) */
+static int near_occ(const g2p_site *x, const g2p_part *pt, unsigned vlo, unsigned vlen,
+                    unsigned char *buf, size_t c)
+{
+    if (!vlen) return 0;
+    occ_r(x, pt, buf, c, rnd2);
+    unsigned j = vlo + rnd2(vlen), m[2], k = members(x, pt->at + j, m), b = m[rnd2(k)];
+    for (unsigned t = 0, bit = rnd2(8); t < 8; t++, bit = (bit + 1) & 7)
+        if (!in_set(x, pt->at + j, b ^ (1u << bit))) {
+            buf[c + j] = (unsigned char)(b ^ (1u << bit));
+            return 1;
+        }
+    return 0;
 }
 
 /* The classifier over one part; returns its measured extent [*lo, *hi) and
@@ -289,6 +339,26 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
               "reply's stretch is [%u, %u)", pt->at, len, j, compared ? "IS" : "is NOT",
               pt->ver_lo, pt->ver_lo + pt->ver_len);
     }
+    /* EXTENT, EXACT (FAM-3): each member of each verified position, each bit
+       flipped where that leaves the position's set (a flip of a masked bit is
+       still a member), placed in an otherwise whole occurrence: not yielded */
+    for (unsigned j = pt->ver_lo; j < pt->ver_lo + pt->ver_len; j++) {
+        unsigned m[2], k = members(x, pt->at + j, m);
+        for (unsigned i = 0; i < k; i++)
+            for (unsigned bit = 0; bit < 8; bit++) {
+                unsigned nm = m[i] ^ (1u << bit);
+                if (in_set(x, pt->at + j, nm)) continue;
+                size_t gap = 1 + rnd2(12), n = gap + len + rnd2(9), lo = rnd2((unsigned)gap);
+                memset(buf, (int)F, n);
+                occ_r(x, pt, buf, gap, rnd2);
+                buf[gap + j] = (unsigned char)nm;
+                size_t r = measure(pt, buf, n, lo, NULL);
+                g_nearmiss++;
+                CHECK(x, r != gap, "EXTENT", "part at %u len %u: a near-miss 0x%02x (member 0x%02x, "
+                      "bit %u) at verified position %u is yielded as an occurrence (lo %zu, n %zu)",
+                      pt->at, len, nm, m[i], bit, j, lo, n);
+            }
+    }
     /* SCAN: the text's first read on a subject with no candidate, short
        enough (len + 2) that the selector takes the scalar body: a SIMD arm's
        find may load an ANDed second position first (C2 allows the AND; its
@@ -310,6 +380,9 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
         }
         if (n > len && rnd(2)) occ(x, pt, buf, rnd((unsigned)(n - len + 1)));
         size_t lo = rnd((unsigned)n + 1);
+        if (n >= len && rnd2(2) &&                       /* FAM-3: a near-miss occurrence */
+            near_occ(x, pt, pt->ver_lo, pt->ver_len, buf, rnd2((unsigned)(n - len + 1))))
+            g_nm_sound++;
         size_t r = measure(pt, buf, n, lo, NULL);
         int ok = r >= n || (r >= lo && r + len <= n);
         for (unsigned j = (unsigned)pt->ver_lo; ok && r < n && j < pt->ver_lo + pt->ver_len; j++)
@@ -346,17 +419,24 @@ static void uses(const g2p_site *x, int lay)
         for (int o = 0; o < 2 && n > x->run_len; o++)
             if (rnd(3)) occ(x, &whole, buf, rnd((unsigned)(n - x->run_len + 1)));
         size_t lo = rnd((unsigned)n + 1), out;
+        if (n >= x->run_len && rnd2(2) &&                /* FAM-3: a near-miss occurrence */
+            near_occ(x, &whole, 0, x->run_len, buf, rnd2((unsigned)(n - x->run_len + 1))))
+            g_nm_uses++;
         unsigned char *s = place(lay, buf, n);
+        g_hs = s; g_hn = n; g_hlo = lo;                  /* the caller boundary (ORC-1) */
         g_call = lay == LAY_U ? "entry" : NULL;
         g_faulted = 0;
         if (!sigsetjmp(g_jb, 1)) x->entry(s, n, lo, &out);
+        else g_active = 0;                               /* a fault inside a recorded call (ORC-4) */
         g_lay_calls[lay]++;
         CHECK(x, !g_faulted, "LAYOUT", "%s: the entry faulted (n %zu, lo %zu)", lay_name[lay], n, lo);
         if (x->reentry) {
             size_t pv = rnd((unsigned)n + 1);
+            g_hlo = pv;
             g_call = lay == LAY_U ? "reentry" : NULL;
             g_faulted = 0;
             if (!sigsetjmp(g_jb, 1)) x->reentry(s, n, pv, &out);
+            else g_active = 0;
             g_lay_calls[lay]++;
             CHECK(x, !g_faulted, "LAYOUT", "%s: the re-entry faulted (n %zu, lo %zu)", lay_name[lay], n, pv);
         }
@@ -402,7 +482,10 @@ int main(int argc, char **argv)
     const char *recpath = NULL;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--records") && i + 1 < argc) recpath = argv[++i];
-        else if (!strcmp(argv[i], "--seed") && i + 1 < argc) g_rng ^= strtoull(argv[++i], NULL, 10);
+        else if (!strcmp(argv[i], "--seed") && i + 1 < argc) {
+            unsigned long long sd = strtoull(argv[++i], NULL, 10);
+            g_rng ^= sd; g_rng2 ^= sd;
+        }
         else { fprintf(stderr, "usage: g2p_run [--records FILE] [--seed N]\n"); return 2; }
     }
     g_page = sysconf(_SC_PAGESIZE);
@@ -486,9 +569,9 @@ int main(int argc, char **argv)
            g_reach[G2P_P9][0] + g_reach[G2P_P9][1], g_reach[G2P_P0][1], g_reach[G2P_P3][1],
            g_reach[G2P_P9][1]);
     printf("G2P checks cover=%ld extent=%ld scan=%ld sound=%ld scan_sites P0=%ld P3=%ld P9=%ld "
-           "layout_U=%ld layout_L=%ld records=%ld\n", g_cover, g_extent, g_scan, g_sound,
-           g_scan_route[G2P_P0], g_scan_route[G2P_P3], g_scan_route[G2P_P9], g_lay_calls[LAY_U],
-           g_lay_calls[LAY_L], g_records);
+           "layout_U=%ld layout_L=%ld records=%ld nearmiss=%ld nm_sound=%ld nm_uses=%ld\n", g_cover,
+           g_extent, g_scan, g_sound, g_scan_route[G2P_P0], g_scan_route[G2P_P3], g_scan_route[G2P_P9],
+           g_lay_calls[LAY_U], g_lay_calls[LAY_L], g_records, g_nearmiss, g_nm_sound, g_nm_uses);
 #ifdef G2P_ASAN
     printf("G2P layout_A=%ld\n", g_lay_a);
 #endif

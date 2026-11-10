@@ -46,6 +46,7 @@ typedef struct {
     int         witness;        /* 1: a lever witness site (all-tie, distinct) */
     int         lever;          /* rendered on an art under run-tie-left       */
     unsigned    run_len;
+    int32_t     omin;           /* the run span's STATED omin (the statement's) */
     uint8_t     run[G2P_MAXRUN], mask[G2P_MAXRUN];
     int         scan;           /* the site's reply: mf_pres_ports' run_scan   */
     unsigned    ver_lo, ver_len;/* the site's reply: P3's window, or the whole */

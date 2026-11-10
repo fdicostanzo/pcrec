@@ -20,9 +20,10 @@
 #      witnesses, layouts U and L, and writes the ORACLE RECORDS
 #      (docs/dev/lanes/k382a_oracle_iface.md); the ASan+UBSan build runs
 #      the classifier, layouts U and L and layout A (W-K4b);
-#   4. THE ORACLE STEP: the records piped to tests/memfn/occurrence_oracle.py
-#      where it exists; where it does not, the step prints `ORACLE OWED`
-#      (the records written, NOT checked) and counts no pass;
+#   4. THE ORACLE STEP: the records piped to tests/memfn/occurrence_oracle.py;
+#      the oracle file absent is a FAIL (`ORACLE OWED`, the records written,
+#      NOT checked: review 2026-11-10 r2 k382a ORC-2; the oracle landed with
+#      41ebc052b, and it is the family's only check of "least");
 #   5. the lever's reach: every witness's text scan MOVED between the
 #      default and the run-tie-left pass of the same target;
 #   6. the floors (K35): literals below, sharing no source with the family.
@@ -64,6 +65,11 @@ FLOOR_SCAN_SITES="P0:83 P3:158 P9:72"          # sites whose text scan was read 
 FLOOR_COVER=11450               # COVER probes (12729)
 FLOOR_EXTENT=5630               # EXTENT probes (6254)
 FLOOR_RECORDS=7500              # oracle records (8334)
+# FAM-3's near-misses (review 2026-11-10 r2 k382a), measured 2026-11-10 by
+# lane k382afix (same seed and sites; the least over the six passes):
+FLOOR_NEARMISS=28540            # EXTENT's per-bit near-miss probes (31712)
+FLOOR_NM_SOUND=3440             # near-miss occurrences in SOUND's subjects (3822)
+FLOOR_NM_USES=4120              # near-miss occurrences in the uses' subjects (4583)
 FLOOR_LAYOUT_A=14360            # layout A placements, ASan build (15962)
 FLOOR_WITNESSES=24              # lever witnesses, every one rendered (24)
 # THE LAYERS (D147; U2's admitted levels): per target, the sites whose run
@@ -76,8 +82,9 @@ SIMD_FLOORS="x86-64-v3:18:18:1180 x86-64:18:0:990 generic:0:0:0"   # (20 20 1314
 # THE PLANTS: id, then one line FILE@@FROM@@TO per edit (FILE under
 # memfn/src; FROM replaced by TO, `\n` a newline, `\\n` the C escape, `\&`
 # an ampersand), then the detector. Ids from the top of the mech free range
-# (S3005/S3006 the highest at K38-1): S3007-S3009. The mech rows
-# tests/mech/sabotages/S3007-S3009 plant the same text.
+# (S3005/S3006 the highest at K38-1): S3007-S3009, then S3010-S3012 (review
+# 2026-11-10 r2 k382a's fixes, lane k382afix). The mech rows
+# tests/mech/sabotages/S3007-S3012 plant the same text.
 plant_spec() {
     case "$1" in
     S3007) # A: the run part drops one compare of its extent (the words form never
@@ -93,11 +100,24 @@ plant_spec() {
     S3009) # C: the lever leaves the run decision's ties rightmost (kit_run_opts_of
         # ignores run-tie-left): the witnesses' text scan does not move
         echo 'presence.c@@    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH };@@    (void)left;\n    return (kit_run_opts){ st, T_MASS_STRETCH };' ;;
+    S3010) # ORC-1: every use passes its run part the attempt start + 1 (the
+        # position at the attempt start is never asked): the part's own call
+        # is honest in its own frame, so only a record taken at the CALLER
+        # boundary (the host's attempt start) sees the occurrence it skips
+        echo 'ofsskip.c@@    kit_out(o, "%s(%s, %s, %s", fn, h->s, h->n, h->lo);@@    kit_out(o, "%s(%s, %s, %s + 1", fn, h->s, h->n, h->lo);' ;;
+    S3011) # FAM-3: the words form's masked compare one bit looser (a mask byte of
+        # more than one bit loses its lowest): a near-miss on that bit is
+        # yielded as an occurrence; EXTENT's per-bit near-misses red
+        echo 'runcmp.c@@            t[i] = skip ? 0x00 : r->t[at + i];@@            t[i] = skip ? 0x00 : r->t[at + i];\n            if (k[i] != 0xFF \&\& (k[i] \& (k[i] - 1))) { k[i] \&= (uint8_t)(k[i] - 1); t[i] \&= k[i]; }' ;;
+    S3012) # FAM-5: a_mass_choose's in-run filter deleted (the in-run stop no longer
+        # the run decision's): the lever pass's layouts are refused by
+        # mf_define (decider_census D cannot see it: it counts the call)
+        echo 'window.c@@        if (r \&\& p->stretch \&\& o >= r->start \&\& o < r->start + r->len \&\& o != rs)\n            continue;                   /* inside R: the run decision'"'"'s one */@@        (void)o; (void)rs;' ;;
     *) return 1 ;;
     esac
 }
-plant_detector() { case "$1" in S3008) echo oracle ;; *) echo family ;; esac; }
-PLANTS="S3007 S3008 S3009"
+plant_detector() { case "$1" in S3008|S3010) echo oracle ;; *) echo family ;; esac; }
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -198,7 +218,10 @@ if [ "${1:-}" = "--reach" ]; then
     # B: the memchr form's loop (the plant starts it one above lo)
     m=$(grep -c 'const void \*q = memchr(subject + pos' "$f")
     [ "${m:-0}" -ge 50 ] && echo "REACH-G2P-MEMCHR-FORM n=$m"
-    # C: the lever witnesses rendered in the run-tie-left pass
+    # S3010: the uses' run-part calls at the attempt start (the plant adds 1)
+    m=$(grep -c '(subject, subject_length, \(search_from\|posvar\))' "$f")
+    [ "${m:-0}" -ge 50 ] && echo "REACH-G2P-USE-CALL n=$m"
+    # C (and S3012's in-run stop): the lever witnesses rendered in the run-tie-left pass
     m=$(grep -oE 'G2PGEN generic.lever sites=[0-9]+ rendered=[0-9]+' "$WORK/reach.1.log" | grep -oE '[0-9]+$')
     [ "${m:-0}" -ge 300 ] && grep -q '^g2_pres_gen failures: 0' "$WORK/reach.1.log" \
         && echo "REACH-G2P-LEVER-PASS rendered=$m"
@@ -214,7 +237,7 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     bad=0
     for id in $ids; do
         specs="$(plant_spec "$id")" || fail_setup "no plant $id"
-        rm -rf "$WORK/src"; cp -r "$ROOT/memfn/src" "$WORK/src"
+        rm -rf "$WORK/src"; cp -rL "$ROOT/memfn/src" "$WORK/src"   # -L: a symlinked src is copied, never planted in place
         while IFS= read -r spec; do
         file="${spec%%@@*}"; rest="${spec#*@@}"; from="${rest%%@@*}"; to="${rest#*@@}"
         python3 -I - "$WORK/src/$file" "$from" "$to" <<'EOF' || fail_setup "$id: the plant does not apply"
@@ -255,6 +278,7 @@ EOF
             echo "PLANT $id RED   ($(plant_detector "$id"); $ostate): $red"
         elif [ "$(plant_detector "$id")" = oracle ] && [ "$o" = OWED ]; then
             echo "PLANT $id OWED  (its detector is the oracle step, and the oracle is OWED: NOT DETECTED)"
+            bad=$((bad + 1))
         else
             echo "PLANT $id GREEN (NOT DETECTED; $ostate)"; bad=$((bad + 1))
         fi
@@ -315,6 +339,9 @@ for tgt in $TARGETS; do
         floor "$tag cover" "$(rv checks cover)" "$FLOOR_COVER"
         floor "$tag extent" "$(rv checks extent)" "$FLOOR_EXTENT"
         floor "$tag records" "$(rv checks records)" "$FLOOR_RECORDS"
+        floor "$tag nearmiss" "$(rv checks nearmiss)" "$FLOOR_NEARMISS"
+        floor "$tag nm_sound" "$(rv checks nm_sound)" "$FLOOR_NM_SOUND"
+        floor "$tag nm_uses" "$(rv checks nm_uses)" "$FLOOR_NM_USES"
         floor "$tag witnesses" "$(rv sites witnesses)" "$FLOOR_WITNESSES"
         for x in $SIMD_FLOORS; do
             [ "${x%%:*}" = "$tgt" ] || continue
@@ -349,7 +376,7 @@ if [ "$bad" = 0 ]; then tp=$((tp + 1)); else note "$bad oracle records break the
 o=$(oracle_step)
 nrec=$(($(wc -l < "$WORK/records.tsv") - 1))
 case "$o" in
-OWED) echo "ORACLE OWED: $ORACLE is absent; $nrec records written, NOT checked (not a pass)" ;;
+OWED) note "ORACLE OWED: $ORACLE is absent; $nrec records written, NOT checked" ;;
 0\ *) if echo "$o" | grep -q "rows=$nrec violations=0"; then tp=$((tp + 1)); echo "oracle: green over $nrec records ($o)"
       else note "the oracle's trailer does not count every record ($o; $nrec records)"; fi ;;
 *)    note "the oracle: $o (see its VIOLATION lines)"; grep -m 20 '^VIOLATION' "$WORK/oracle.log" ;;
