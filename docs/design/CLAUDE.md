@@ -114,7 +114,7 @@ Modules (design notes with `*_measurements/` siblings)
 - `subst_api_r4_draft.md` — [M4-SUBST] the DRAFT `docs/spec/subst_api.md` was generated from for `replace_design.md` §R4; RETIRED to a pointer: `subst_measurements/` — §R2 glue and §R4.13 `subst-extended` probes vs libpcre2.
 - `design_registry_selectors.md` — SR-9 selectors (superseded by R6); `registry_built_status_memo.md` — registry built-status memo.
 - `m6read_samples/` — [M6-READ] approved sample commented artifacts (style of record).
-- `plan_row_bodies/` — verbatim long-form text of plan.md rows moved out by [PLAN-LINT] step 2; the plan.md row is the status of record.
+- `plan_row_bodies/` — long-form plan.md rows ([PLAN-LINT] step 2; the row is the status of record). `doc_index_format.md` — index + details format (rev 0).
 
 ## Pointers
 
