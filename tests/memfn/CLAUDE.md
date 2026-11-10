@@ -32,9 +32,10 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 ### The row manifest, signatures and floors (lane n4, [MEMFN-ROWCON] N4)
 - **rows.tsv** — THE KIT'S ROW MANIFEST (row_contracts.md rev 4.1 §4), HAND-maintained: one line per row of the kit's selection tables (13 at N4: the composer's 9 arms, ...
 - **row_floors.tsv** — per-row CHOSEN floors: `pcrec_floor` over the full N2 census (`-` for a non-`pcrec` row), `g2_floor` over G2's quick tier.
-- **rows_check.py**, **run_rows.sh** — `make test-memfn-rows` (in TEST_SECTIONS; about 1.5 s).
+- **rows_check.py**, **run_rows.sh** — `make test-memfn-rows` (in TEST_SECTIONS; ~3 s; §P plants rows B, C, M).
 - **row_map.tsv**, **row_map.py** — the DECLARED row map (1e): rows moved across tables, and its ONE parser; rows_check M (pinned in run_rows.sh) and `reach_equal.py --map` (held to BASE's trace both ways).
-- **renderer_rows.tsv** — the declared (method row, renderer row) pairs of `MFTRACE FDROUTE ... ren=`; rows_check R holds every printed pair to it.
+- **renderer_rows.tsv** — the declared (frame, method row, renderer row) triples of `MFTRACE FDROUTE` (3.0a); rows_check R holds every traced triple to it.
+- **stream_support.tsv** — the support pin (3.0a §2.5.2); rows_check S, vs `arm_fixtures --streams`.
 - **decider_census.tsv**, **decider_census.py** — THE DECIDER CENSUS (span_pick.md rev 5.2 §The tables; unit 1a, lane sp1a): the declared map of every kit decider to its question table or named exception, its backstop grep and plants; run by `make test-memfn-rows`. A stage-1 unit that moves a decider edits its row.
 - **reach_equal.py** — REACH EQUALITY between two MF_TRACE builds, per pattern and arm; gone rows DERIVED, equal to `--gone`; failing sets compared; `--map` compares through row_map.tsv; `--limit`/`--no-corpus` are smoke runs (trailer LIMITED, exit 3) (span_pick stage 1's witness; opt-in, no make target, heavy).
 - **mk_mftrace_lib.sh** — builds `build/libpcrec_mftrace.a` (make rule of the same name): build/libpcrec.a with its kit members swapped for `-DMF_TRACE` builds, the ...

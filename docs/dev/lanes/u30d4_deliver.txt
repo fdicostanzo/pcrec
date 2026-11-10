@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u30d4_report.md
+sections: Summary; Fixes by id; R1 and R2 as ruled; Cites checked at the build tree; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

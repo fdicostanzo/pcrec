@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u30d2_report.md
+sections: Summary; Fixes by id; What changed from rev 1; Cites checked at the build tree; pcrec-side asks for main; Open questions; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

@@ -53,7 +53,7 @@ except where marked.
 | | SIMD: vrun w32 / w16 | vrun.c (`vrun_w16_decl` :437, `vrun_w32_decl` :444), guarded rungs over fn-pair's scalar text | the scanned cube KA plus KB = `rank_pos[1]` (w32); KA only (w16) | **hides a choice** (KB position, §3 N10) |
 | | SIMD: find any of 2-3 bytes | vany.c (stand-alone `mf_kernel_find_any`) | K = 2..3 bytes | pure; **no row reaches it** (§3 N12) |
 | **SKIP** after a miss (resume) | `c + 1` | window.c `resume_next` (formerly `wf_d_text`'s D-one; no row of its own since span_pick 1e) | always | pure |
-| | Horspool shift | window.c `wf_b_render` B-hors (`d_hors_head`/`_next`/`_define`), T-FIND's D-hors row (finder.c; formerly `wf_d_text`) | dense stop over the window's tested sets | pure (its admission is §2 Q7) |
+| | Horspool shift | window.c `wf_b_render` B-hors (`d_hors_head`/`_next`/`_define`; 2026-11-07, plan_frame.md 3.0a: now the search row B-hors and the stream row S-shift, `ren_search`/`ren_stream`), T-FIND's D-hors row (finder.c; formerly `wf_d_text`) | dense stop over the window's tested sets | pure (its admission is §2 Q7) |
 | **SET-MEMBERSHIP** test of one byte | range chain | generic.c `kit_set_test` :106 (ranges OR-ed, `==`, `<=`, `>=`) | any set; shared with window.c `wf_member_of` :2060 | pure |
 | | offered table `T[b]` | generic.c `member_test` :133 (pcrec's hook if offered, else `kit_set_test`); window.c C-table/C-own | a set pcrec offers a table for | **hides a choice** (hook first) |
 | | ofsskip's verify chain | ofsskip.c `verify_chain` :184 | the offset-skip function's verify | pure [I] |
@@ -108,7 +108,7 @@ priced and the RESEED by A-model), M-parked. Evidence: MATERIAL_NUM/DEN ARGUED (
 | asked by | `fd_route` :863 (PF sites; never PAIR), `fd_find` :922 (E-find; PAIR possible) | | |
 | compose arm walk | compose.c `arms[]` :134 via `select_arm` :263, when `fd_route` names no row | each arm's contract | per-arm |
 | fn-pair, fn-memchr | ofsskip.c `fn_rows` BODY :415-416 (`pair_holds` :377: a two-member cube in a RUN term, `ofs_fn_applies` :106) | the scanned position's cube | none stated |
-| B-fn, B-pair, B-memchr, B-walk | window.c `wf_brows` :1699 (`b_fn_holds` :1672) | the FIND pick + whether fn_rows agrees | renderer rows |
+| B-fn, B-pair, B-memchr, B-walk | window.c `wf_brows` :1699 (`b_fn_holds` :1672; 2026-11-07, plan_frame.md 3.0a: now `ren_fused` B-fn and `ren_search`) | the FIND pick + whether fn_rows agrees | renderer rows |
 
 **Q4 SIMD rung or not?** ofsskip.c `fn_rows` PREFIX :419-420 (vrun-w32, vrun-w16;
 `prefix_holds` :402: brackets, REACH, OVER fn-pair, APPLIES), OFF unless `-fmemfn-simd`.

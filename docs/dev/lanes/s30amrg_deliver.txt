@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s30amrg_report.md
+sections: Summary; The merge; Conflicts resolved; Ledger switch; Zero bytes at the new base; Gates refreshed; Checks run; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

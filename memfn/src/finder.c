@@ -34,8 +34,9 @@
  * RETIRED (D172 S2 commit 6) and RPT, the
  * REPORT row, RETIRED (D172 S3: a REPORT site is the window family's, its
  * E-find row; window_site.md §4), ids reserved; PAIR, the two-stream find of
- * a window site's two-byte stop, holds only for the asker that renders it
- * (the asker fact SF_ASKER_PAIR); F0, F1,
+ * a two-byte stop, holds only where the frame renders it (the asker's
+ * frame's renderable set, window.c wf_renders: E-find's; plan_frame.md
+ * §2.4); F0, F1,
  * F2 are designed and
  * BUILT at B5, after lockdown, as formal row additions). Slot PRES: P0 P2 P3
  * P4 P9 (P1 at B5). Each row's `basis` is mandatory; the self-check (`mf_finder_rows`'
@@ -102,8 +103,8 @@ enum {
     SF_REQUIRED     = 1u << 11, /* the span's need is REQUIRED (slot PRES)     */
     /* bits 12, 13: retired, never reused (memfn/docs/finder_history.md) */
     SF_TWO_MEMBER   = 1u << 14, /* the stop is two bytes, any two              */
-    SF_ASKER_PAIR   = 1u << 15, /* THE ASKER FACT: the asker renders PAIR (the
-                                   window family; SF_WINDOW_STOP until 1e)    */
+    /* bit 15: retired, never reused (the asker fact, plan_frame.md 3.0a:
+       the frame's renderable set replaced it; memfn/docs/finder_history.md) */
     SF_HORS_WINDOW  = 1u << 16, /* the stop states D-hors's window: two
                                    positions or more, the last at an offset
                                    >= 0 (span_pick 1e: Table D's predicate)   */
@@ -215,11 +216,11 @@ FD_CT(ct_d1,  "D1",  use_kind,    KD_STOP,           NEED_ALL,        MF_ANY,   
 FD_CT(ct_d1c, "D1c", use_kind,    CM(DFA_ATTEMPT) | CM(REPORT), NEED_ALL, MF_ANY,  LY_ALL)
 FD_CT(ct_d1w, "D1w", use_kind,    KD_STOP & ~CM(DFA_ATTEMPT), NEED_ALL, MF_ANY,    LY_ALL)
 /* PAIR: two memchr streams, one per member of the stop's two bytes. Its
-   renderers are the window family's alone (window.c: the offset-skip
-   function's fn-pair body where the plan is that function's predicate, else
-   the loop's two streams, the same text), so it reads the asker fact
-   SF_ASKER_PAIR and the composer never meets it; they serve every scalar
-   layer and every field below */
+   renderers are E-find's alone (window.c: the offset-skip function's fn-pair
+   body where the plan is that function's predicate, else the loop's two
+   streams, the same text), so the frame renders PAIR only there (the
+   renderable set, fd_holds) and the composer never meets it; they serve
+   every scalar layer and every field below */
 FD_CT(ct_pair, "PAIR", use_kind,  KD_STOP,           NEED_ALL,        MF_ANY,      LY_ALL)
 /* R7w's pick is the walk (pf_walk), which reads pcrec's offered table
    (walk_applies serves table_ref REF): a routed pick its arm does not serve is
@@ -286,7 +287,7 @@ static const fd_row fd_rows[] = {
        not one), so its place among them decides nothing; above R7w, which
        it narrows. No deny: within E-find it moves bytes under E-find's own
        (`window-search`), and fn-pair has none */
-    { "PAIR", FD_FIND, KN_P, SF_SPAN0 | SF_TWO_MEMBER | SF_ASKER_PAIR, 0,
+    { "PAIR", FD_FIND, KN_P, SF_SPAN0 | SF_TWO_MEMBER, 0,
       { { FL_NONE, NULL, 0, NULL, NULL } },
       FF_PAIR, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_UNMEASURED_DEFAULT, "S3",
       "a window site's stop of two bytes, any two, at or past the candidate: two memchr "
@@ -364,6 +365,7 @@ typedef struct {
     uint32_t        facts;
     unsigned        members;
     fd_facts        ff;         /* site_kind, layer, need (the gate's)        */
+    wf_frame_row    frame;      /* FIND: the asker's frame (its renderable set) */
 } fd_x;
 
 static int layer_ix(int layer_cls)
@@ -501,6 +503,11 @@ static int fd_holds(size_t i, const void *x)
     const fd_x *q = x;
     const fd_row *r = &fd_rows[i];
     if ((q->facts & r->facts) != r->facts || (q->facts & r->nofacts)) return 0;
+    /* slot FIND: the pick is one the asker's frame RENDERS (plan_frame.md
+       §2.4; window.c wf_renders: a search renderer row and a stream Table S
+       admits), so no row decides a find its asker cannot write. A PRES row
+       picks no form: the gate is FIND's alone */
+    if (r->slot == FD_FIND && wf_renders(q->frame, fd_pick_of(r, q), q->site) == WF_RENDERS_NOT) return 0;
     /* "where it is BUILT" (§1.3): the LINER form at a SIMD layer and every
        W64 pick */
     if (fd_pick_of(r, q) == FF_W64 && !fd_w64_built()) return 0;
@@ -594,14 +601,14 @@ static int fd_scope(const mf_site *s)
 /* ---- T-FIND, THE ONE WALK (span_pick.md rev 5.2 unit 1e) -------------------- *
  *
  * Slot FIND's decision, ONE first-match walk (D-hors, then today's order: D1,
- * D1c, D1w, PAIR, R7w) for both of its askers; until 1e two entries walked
- * it (the composer's fd_route, the window family's fd_find, after Table D's
- * own walk), and their difference is now a stated fact of the walk's input:
+ * D1c, D1w, PAIR, R7w) for both of its askers, whose difference is a stated
+ * fact of the walk's input:
  *
- *   the composer (`st` NULL; compose.c select_arm): a FIND site in slot
- *     FIND's scope, its stop span 0 of its own one term (find_facts), its
- *     need the span's; it renders the pick through its own renderer rows
- *     (compose.c `fd_renderers`: the prefilter finds), and renders no PAIR;
+ *   the composer (`st` NULL, frame E-stmt; compose.c select_arm): a FIND
+ *     site in slot FIND's scope, its stop span 0 of its own one term
+ *     (find_facts), its need the span's; it renders the pick through the
+ *     search renderer table's E-stmt rows (window.c, the prefilter finds),
+ *     which name no PAIR and no HORS;
  *   the window family (`st` the stop; window.c's E-find setup): the window
  *     site under its define hooks (its consumer kind, body, policy and
  *     options, so `fd-d1` and the VM seek's role keep their effect; a window
@@ -609,9 +616,15 @@ static int fd_scope(const mf_site *s)
  *     the stop's set and offset d* (below the candidate: a CONTEXT stop,
  *     D1c's re-keyed scope), D-hors's window and the stop set's mass
  *     (hors_facts), its need REQUIRED (B's find is the stop's test at every
- *     candidate it yields) and THE ASKER FACT: it renders PAIR (window.c's
- *     B-fn and B-pair; the SIMD forms over PAIR are the offset-skip
- *     function's PREFIX rows, which read the site's actual policy).
+ *     candidate it yields); its frame E-find renders PAIR (window.c's B-fn
+ *     and B-pair; the SIMD forms over PAIR are the offset-skip function's
+ *     PREFIX rows, which read the site's actual policy).
+ *
+ * Each asker states its FRAME; the rows hold only for a pick the frame
+ * renders (fd_holds). Where Table S answers ST-many for the decided pick on
+ * the frame, the decision is REFUSED after the gate (FD_REFUSED, *row
+ * WF_STREAM_REFUSAL): the asker's frame raises the refusal from its Table S
+ * row, where its frame is the one that renders the site.
  *
  * The decision is the OFF variant's (§1.5 rule 1: a proven fact is decided
  * once, and every layer inherits it), over the consumer kind pcrec STATES.
@@ -635,11 +648,11 @@ static void hors_facts(fd_x *q, const fd_stop *st)
 }
 
 int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_stop *st,
-            int quiet, fd_form *pick, const char **row)
+            wf_frame_row frame, int quiet, fd_form *pick, const char **row)
 {
     *pick = FF_UNSTATED;
     *row = NULL;
-    if (!st && !(fd_scope(s) & (1 << FD_FIND))) return 0;
+    if (!st && !(fd_scope(s) & (1 << FD_FIND))) return FD_NO_ROW;
     fd_x q;
     memset(&q, 0, sizeof q);
     q.art = art;
@@ -648,12 +661,12 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
     q.pred_ix = -1;
     q.ff.kind = kind_cl(s->site_kind);
     q.ff.layer = CL_L_OFF;
+    q.frame = frame;
     if (st) {
         q.ff.need = CL_N_REQUIRED;
         set_facts(&q, st->set, st->off);
         seek_facts(&q);
         hors_facts(&q, st);
-        if (st->renders_pair) q.facts |= SF_ASKER_PAIR;
     } else {
         find_facts(&q);
         /* An UNSTATED span need never reaches a decision: pred_kinds refuses
@@ -663,7 +676,7 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
            no pick is the composer's refusal. */
         if (q.span && q.span->need == MF_NEED_UNSTATED) {
             *row = "?need";
-            return 0;
+            return FD_REFUSED;
         }
         q.ff.need = q.span && q.span->need == MF_OPTIONAL ? CL_N_OPTIONAL : CL_N_REQUIRED;
     }
@@ -671,10 +684,14 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
     gate_tctx tc = { art, "fd", q.handle, MF_PH_DEFINE, &in, 1, quiet, 0 };
     fd_decision d;
     fd_decide(&q, FD_FIND, &in, &tc, &d);
-    if (d.terminal >= FD_NROWS) return 0;
+    if (d.terminal >= FD_NROWS) return FD_NO_ROW;
     *pick = d.pick;
+    if (wf_renders(frame, d.pick, s) == WF_RENDERS_MANY) {
+        *row = WF_STREAM_REFUSAL;
+        return FD_REFUSED;
+    }
     *row = fd_rows[d.terminal].id;
-    return 1;
+    return FD_DECIDED;
 }
 
 /* ---- THE ROUTED PRES DECISION (§1.4; R17-b' B3b) ------------------------------ *

@@ -1,0 +1,6 @@
+report=docs/dev/lanes/s30arev_report.md
+sections: Summary; Item by item; Zero bytes; Plants measured; Gates refreshed; Checks run; Deviations; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
+dirty-ok: docs/dev/artifact_size_log.tsv

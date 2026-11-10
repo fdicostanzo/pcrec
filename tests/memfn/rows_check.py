@@ -97,14 +97,39 @@ subject):
      reach_equal.py --map is the map's other reader (REACH equality through
      it, and the map held to BASE's own trace).
 
-  THE RENDERER ROWS (R; span_pick 1e review F4): the text of a FIND site is
-     keyed by (frame row, method row, renderer row), and `MFTRACE FDROUTE`
-     prints all three (`row=`, and `ren=` the renderer row: Table B's row for
-     E-find, the composer's arm otherwise). tests/memfn/renderer_rows.tsv
-     declares the pairs: every pair any traced compile of the run prints is a
-     declared one (a one-line plant that changes which renderer renders a pick
-     prints an undeclared pair), and a declared pair with a witness is
-     printed by it (without one: UNREACHED).
+  THE RENDERER ROWS (R; span_pick 1e review F4, re-keyed at plan_frame.md
+     3.0a): the text of a FIND site is keyed by (frame row, method row,
+     renderer row), and `MFTRACE FDROUTE` prints all three (`frame=`, `row=`,
+     and `ren=` the renderer row: E-find's search or fused row, the E-stmt
+     row's arm for the composer). tests/memfn/renderer_rows.tsv declares the
+     triples: every triple any traced compile of the run prints is a declared
+     one (a one-line plant that changes which renderer renders a pick prints
+     an undeclared triple), and a declared triple with a witness is printed
+     by it (without one: UNREACHED). A witness compile REFUSED with a T-FIND
+     row's routed pick or Table S's refusal named is red with its own message
+     (the refusal invariant, plan_frame.md §5 row R; it reads build/pcrec's
+     stderr, and the composer's ask path names no kit reason, so a refusal
+     there reads "does not compile"). Rows B and C are SILENT MOVES (review
+     2026-11-09 r1 s30a F8): the TRIPLE SET is their detector (§P).
+
+  THE SUPPORT PIN (S; plan_frame.md 3.0a §2.5.2): tests/memfn/stream_support.tsv
+     against `arm_fixtures --streams` (window.c's support table): every row and
+     cell equal, each search ONE line on each side (a duplicate is red wherever
+     it stands), and a RULING row's quoted sentence present in the WORKING-TREE
+     ledger file the row names, one of LEDGERS (the kit's ledger, the decision
+     log: never the pin itself or another table; read as a file; a sha is a
+     record, never looked up; a D-number narrows the read to that entry). Its
+     source names the decision record and whose words the line is: the LIBC
+     rows' line is the kit's, which D190 files (`RULING (D190, kit-stated
+     line)`), so the expectation is a ruled line, not the table read twice,
+     but it shares an author with the table (review 2026-11-09 r1 s30a F14).
+
+  THE PLANTS (P; review 2026-11-09 r1 s30a F9): plan_frame.md §5 rows B
+     (S2983: an (E-stmt, PAIR) search row with no arm), C (S2984: the
+     renderability gate removed from fd_holds) and M (S2988: LIBC admits
+     MASK), whose only detectors are §R's triples and §S, planted HERE (no
+     mech arm runs this script): the planted kit source recompiled, relinked,
+     and its detector run, which must go red; each witness's class printed.
 
 WHAT IT DOES NOT SEE: whether the floors hold (the full census does, in a
 slot: n2_report.py --floors); G2's per-row reach (G2 prints form ids, not
@@ -213,6 +238,9 @@ def ask_records(err):
     return out
 
 
+BUILT = {}     # build()'s traced kit objects and kit-less library (the plants relink them)
+
+
 def build(root, cc, tmp):
     """The traced kit objects, the traced fixture driver and a traced pcrec
     (build/libpcrec.a with its kit members swapped for traced ones). Returns
@@ -256,6 +284,7 @@ def build(root, cc, tmp):
     if r.returncode:
         bad("the traced pcrec does not link: " + r.stderr.decode()[:300])
         return fx, None
+    BUILT.update(objs=objs, lib=lc, cc=cc)
     return fx, tp
 
 
@@ -281,7 +310,16 @@ class Art:
         for ln in err.decode("utf-8", "replace").splitlines():
             if ln.startswith("MFTRACE FDROUTE "):
                 d = dict(t.partition("=")[::2] for t in ln.split()[2:])
-                self.routes.append((d.get("row"), d.get("ren")))
+                self.routes.append((d.get("frame"), d.get("row"), d.get("ren")))
+
+
+def refusal_named(msg):
+    """THE REFUSAL INVARIANT (plan_frame.md §5 row R): the T-FIND row or the
+    Table S refusal a compile's refusal text names, or None. (Rows B and C
+    are SILENT MOVES, review 2026-11-09 r1 s30a F8: the triple set sees
+    them, not this.)"""
+    m = re.search(r"the finder row (\S+)'s routed pick|Table S'?s? (?:answers )?ST-many", msg)
+    return (m.group(1) or "Table S's ST-many refusal") if m else None
 
 
 def compile_pattern(root, tp, flags, pat, label):
@@ -291,8 +329,15 @@ def compile_pattern(root, tp, flags, pat, label):
     rt = run([tp] + argv_tail)
     rp = run([os.path.join(root, "build/pcrec")] + argv_tail)
     if rt.returncode or rp.returncode or not rp.stdout:
+        # build/pcrec's stderr: both binaries come from one tree, so either names it
+        msg = rp.stderr.decode("utf-8", "replace")
+        named = refusal_named(msg)
+        if named:
+            bad("%s: REFUSED naming %s: a T-FIND pick its frame does not render (the "
+                "renderable set or Table S): %s" % (label, named, msg[:200]))
+            return None
         bad("%s: does not compile (traced rc %d, plain rc %d): %s"
-            % (label, rt.returncode, rp.returncode, rp.stderr.decode()[:200]))
+            % (label, rt.returncode, rp.returncode, msg[:200]))
         return None
     if rt.stdout != rp.stdout:
         bad("%s: the MF_TRACE pcrec's artifact differs from build/pcrec's" % label)
@@ -464,6 +509,185 @@ def judge_plants(root):
         else:
             bad("judge plant asked-without-record: %s/%s reads %r (%s)" % (k + (v.get(k), summ)))
     print("ask judge: %d row(s) decided at the ask: %s" % (len(at_ask), " ".join("%s/%s" % k for k in at_ask)))
+
+
+# The ledger files a RULING row may quote (review 2026-11-09 r1 s30a F12): the
+# kit's ledger and the decision log, never a pin or a table read twice.
+LEDGERS = ("memfn/docs/responses.md", "docs/dev/decisions.md")
+# A RULING row's source names its decision record and whose words the
+# sentence is (F14: a line the kit wrote is not the owner's text).
+RULING_SOURCE = re.compile(r"^RULING \((D[0-9]+), (owner's words|kit-stated line)\)$")
+
+
+def support_faults(root, pin, kit):
+    """§S's verdict: the faults of pin rows `pin` against the kit's printed
+    support rows `kit`, and the number of ledgers read. A search is ONE line
+    on each side (a duplicate is a fault, wherever it stands)."""
+    faults, ledgers = [], {}
+    for side, rows in (("stream_support.tsv", pin), ("the kit's support table", kit)):
+        names = [c[0] for c in rows]
+        for k in sorted(set(names)):
+            if names.count(k) > 1:
+                faults.append("%s declares search %s %d times" % (side, k, names.count(k)))
+    kmap = {c[0]: c[1:4] for c in kit if len(c) == 4}
+    pmap = {c[0]: c for c in pin}
+    for k in sorted(set(pmap) - set(kmap)):
+        faults.append("stream_support.tsv row %s: the kit's support table has no such search" % k)
+    for k in sorted(set(kmap) - set(pmap)):
+        faults.append("the kit's support table row %s is no stream_support.tsv row" % k)
+    for c in pin:
+        k = c[0]
+        if k in kmap and c[1:4] != kmap[k]:
+            faults.append("support row %s: the pin says RESTART/MASK/SHIFT %s, the kit's table %s"
+                          % (k, "/".join(c[1:4]), "/".join(kmap[k])))
+        if c[4] == "DERIVED":
+            continue
+        if not RULING_SOURCE.match(c[4]):
+            faults.append("support row %s: source %r is neither DERIVED nor `RULING (Dn, owner's words"
+                          "|kit-stated line)`" % (k, c[4]))
+            continue
+        m = re.match(r'^"([^"]+)" @ (\S+) (D[0-9]+|[0-9a-f]{7,40})$', c[5])
+        if not m:
+            faults.append("support row %s: a RULING basis is `\"SENTENCE\" @ LEDGER PROVENANCE`, not %r"
+                          % (k, c[5]))
+            continue
+        sent, key, prov = m.groups()
+        if key not in LEDGERS:
+            faults.append("support row %s: its ledger %s is not an allowed ledger %s" % (k, key, LEDGERS))
+            continue
+        if key not in ledgers:
+            try:
+                with open(os.path.join(root, key), encoding="utf-8", errors="replace") as lf:
+                    ledgers[key] = lf.read()
+            except OSError:
+                ledgers[key] = None
+        text = ledgers[key]
+        if text is not None and prov.startswith("D"):
+            # a decision id: the sentence must lie inside that entry
+            e = re.search(r"^## %s\b.*?(?=^## D[0-9]|\Z)" % prov, text, re.M | re.S)
+            text = e.group(0) if e else None
+        if text is None:
+            faults.append("support row %s: its ledger %s%s is not readable" % (k, key,
+                          " (entry %s)" % prov if prov.startswith("D") else ""))
+        elif sent not in text:
+            faults.append("support row %s: the ruling's sentence %r is absent from %s" % (k, sent, key))
+    return faults, len(ledgers)
+
+
+# THE PLANTS (§P): each a kit fault that only this script's §R triples or §S
+# see, planted in a copy of one kit source, the copy recompiled with the
+# traced flags and relinked; measured by hand at the r1 s30a fixes (lane
+# s30arev; docs/dev/lanes/s30arev_report.md "Plants measured"), the class per
+# witness printed here (SAME; SILENT-MOVE: rc 0 and the text differs; LOUD:
+# refused). Each anchor must occur exactly once.
+#   id, row, file, detector, [(before, after), ...]
+PLANTS = (
+    ("S2983", "B", "window.c", "triples", [
+        ("       RB_ST_WALK_B, RB_N };", "       RB_ST_WALK_B, RB_ST_PAIR, RB_N };"),
+        ('                         .arm = &pf_walk_bounded_arm, .basis = "WALK, end_back 1: the bounded walk" },',
+         '                         .arm = &pf_walk_bounded_arm, .basis = "WALK, end_back 1: the bounded walk" },\n'
+         '    [RB_ST_PAIR]     = { .k = { E_STMT, REN_PICK(FF_PAIR), "pf_pair", NULL },\n'
+         '                         .basis = "PLANT S2983: an (E-stmt, PAIR) search row with no arm" },'),
+    ]),
+    ("S2984", "C", "finder.c", "triples", [
+        ("    if (r->slot == FD_FIND && wf_renders(q->frame, fd_pick_of(r, q), q->site) == WF_RENDERS_NOT) return 0;",
+         "    /* PLANT S2984: the renderability gate removed */"),
+    ]),
+    ("S2988", "M", "window.c", "support", [
+        ('    { "LIBC",      FF_LIBC,      WF_ST_RESTART,',
+         '    { "LIBC",      FF_LIBC,      WF_ST_RESTART | WF_ST_MASK,'),
+    ]),
+)
+
+
+def traced(tp, root, flags, pat):
+    flags = [f.replace("@ROOT@", root) for f in flags]
+    return run([tp, "-p", "rx", "--features", "all"] + flags + ["-o", "-", "--pattern", pat])
+
+
+def routes_of(err):
+    out = []
+    for ln in err.decode("utf-8", "replace").splitlines():
+        if ln.startswith("MFTRACE FDROUTE "):
+            d = dict(x.partition("=")[::2] for x in ln.split()[2:])
+            out.append((d.get("frame"), d.get("row"), d.get("ren")))
+    return out
+
+
+def run_plants(root, tmp, tp, rr, declared, pin):
+    """§P: every PLANTS row planted, rebuilt and its detector run (red, or a
+    failure); each witness's class printed."""
+    if not BUILT:
+        bad("the plants have no build to relink (the reader is blind)")
+        return
+    cc, objs, lib = BUILT["cc"], BUILT["objs"], BUILT["lib"]
+    for pid, row, fname, det, edits in PLANTS:
+        with open(os.path.join(root, "memfn/src", fname)) as fh:
+            text = fh.read()
+        why = None
+        for before, after in edits:
+            if text.count(before) != 1:
+                why = "anchor occurs %d times (not 1): %r" % (text.count(before), before[:60])
+                break
+            text = text.replace(before, after)
+        if why:
+            bad("plant %s (row %s): %s" % (pid, row, why))
+            continue
+        d = os.path.join(tmp, "plant_" + pid)
+        os.makedirs(d, exist_ok=True)
+        psrc = os.path.join(d, fname)
+        with open(psrc, "w") as fh:
+            fh.write(text)
+        po = os.path.join(d, fname[:-2] + ".o")
+        # the copy compiled against the kit's own headers
+        r = run([cc, "-std=gnu11", "-O1", "-DMF_TRACE", "-iquote", os.path.join(root, "memfn/src"),
+                 "-c", "-o", po, psrc])
+        if r.returncode:
+            bad("plant %s (row %s): the planted %s does not compile: %s"
+                % (pid, row, fname, r.stderr.decode()[:200]))
+            continue
+        pobjs = [po if os.path.basename(o) == os.path.basename(po) else o for o in objs]
+        if det == "support":
+            pfx = os.path.join(d, "fx")
+            r = run([cc, "-std=gnu11", "-O1", "-I" + os.path.join(root, "memfn/include"),
+                     os.path.join(root, "tests/memfn/arm_fixtures.c")] + pobjs + ["-o", pfx])
+            if r.returncode:
+                bad("plant %s (row %s): the planted fixture driver does not build" % (pid, row))
+                continue
+            k = [ln.split("\t") for ln in run([pfx, "--streams"]).stdout.decode().splitlines()
+                 if ln and not ln.startswith("#")]
+            faults, _ = support_faults(root, pin, k)
+            (ok() if faults else bad("plant %s (row %s, %s): §S stayed green" % (pid, row, fname)))
+            print("plant %s (row %s): §S %s%s" % (pid, row, "RED" if faults else "green",
+                                                  (": " + faults[0]) if faults else ""))
+            continue
+        ptp = os.path.join(d, "pcrec_trace")
+        r = run([cc, "-std=gnu11", "-O1", "-I" + os.path.join(root, "lib"), "-I" + os.path.join(root, "src"),
+                 os.path.join(root, "cli/main.c")] + pobjs + [lib, "-o", ptp])
+        if r.returncode:
+            bad("plant %s (row %s): the planted pcrec does not link" % (pid, row))
+            continue
+        faults, classes = [], collections.Counter()
+        for rw, ren, frame, wf, wit, fused in rr:
+            if wit == "-":
+                continue
+            fl = [] if wf == "-" else wf.split()
+            c, q = traced(tp, root, fl, wit), traced(ptp, root, fl, wit)
+            cls = ("LOUD" if q.returncode or not q.stdout else
+                   "SAME" if q.stdout == c.stdout else "SILENT-MOVE")
+            classes[cls] += 1
+            got = routes_of(q.stderr)
+            if cls == "LOUD":
+                faults.append("%s refused (%s)" % (wit, refusal_named(q.stderr.decode("utf-8", "replace"))
+                                                   or "unnamed"))
+            elif (frame, rw, ren) not in got or any(x not in declared for x in got):
+                faults.append("witness %r printed %s, not (%s, %s, %s)"
+                              % (wit, sorted(set(got), key=str), frame, rw, ren))
+            if cls != "SAME":
+                print("plant %s (row %s): witness %r %s" % (pid, row, wit, cls))
+        (ok() if faults else bad("plant %s (row %s, %s): §R's triples stayed green" % (pid, row, fname)))
+        print("plant %s (row %s): §R %s, witnesses %s%s" % (pid, row, "RED" if faults else "green",
+              dict(sorted(classes.items())), (": " + faults[0]) if faults else ""))
 
 
 def main():
@@ -753,16 +977,18 @@ def main():
     # the trace's FDROUTE prints the third. Every (row, ren) pair any traced
     # compile of this run prints is a declared renderer pair; every declared
     # pair with a witness is printed by it (a pair with none is UNREACHED).
-    rr = read_tsv(os.path.join(root, os.environ.get("RENDERER_ROWS_TSV", "tests/memfn/renderer_rows.tsv")), 5)
+    rr = read_tsv(os.path.join(root, os.environ.get("RENDERER_ROWS_TSV", "tests/memfn/renderer_rows.tsv")), 6)
     if not rr:
         bad("renderer_rows.tsv declares no line (the reader is blind)")
-    declared = {(c[0], c[1]) for c in rr}
+    declared = {(c[2], c[0], c[1]) for c in rr}
     if len(declared) != len(rr):
-        bad("renderer_rows.tsv declares a (row, ren) pair twice")
+        bad("renderer_rows.tsv declares a (frame, row, ren) triple twice")
     wit_arts = []
-    for rw, ren, frame, wf, wit in rr:
-        if frame not in ("E-find", "composer"):
-            bad("renderer_rows.tsv %s/%s: frame %r is neither E-find nor composer" % (rw, ren, frame))
+    for rw, ren, frame, wf, wit, fused in rr:
+        if frame not in ("E-find", "E-stmt"):
+            bad("renderer_rows.tsv %s/%s: frame %r is neither E-find nor E-stmt" % (rw, ren, frame))
+        if fused not in ("YES", "NO") or (fused == "YES") != (frame == "E-find" and ren == "B-fn"):
+            bad("renderer_rows.tsv %s/%s: fused %r (B-fn on E-find is the one fused row)" % (rw, ren, fused))
         if wit == "-":
             unreached.append("renderer pair %s/%s (%s): no witness pattern is declared for it" % (rw, ren, frame))
             continue
@@ -770,27 +996,50 @@ def main():
         if art is None:
             continue
         wit_arts.append(art)
-        if (rw, ren) in art.routes:
+        if (frame, rw, ren) in art.routes:
             ok()
         else:
-            bad("renderer %s/%s: its witness %r printed FDROUTE pairs %s, not the declared one"
-                % (rw, ren, wit, sorted(set(art.routes), key=str)))
+            bad("renderer %s/%s/%s: its witness %r printed FDROUTE triples %s, not the declared one"
+                % (frame, rw, ren, wit, sorted(set(art.routes), key=str)))
     seen = collections.Counter()
     for art in arts + wit_arts:
         for rt in art.routes:
             seen[rt] += 1
-            if rt[1] is None:
-                bad("%s: a FDROUTE record for row %s carries no `ren=` (the renderer row is absent)"
-                    % (art.label, rt[0]))
+            if rt[2] is None or rt[0] is None:
+                bad("%s: a FDROUTE record for row %s carries no `ren=` or no `frame=`"
+                    % (art.label, rt[1]))
             elif rt not in declared:
-                bad("%s: FDROUTE pair (%s, %s) is no declared renderer row (renderer_rows.tsv)"
+                bad("%s: FDROUTE triple (%s, %s, %s) is no declared renderer row (renderer_rows.tsv)"
                     % ((art.label,) + rt))
     if not seen:
         bad("no traced compile printed a FDROUTE record (section R's trace control is vacuous)")
     else:
         ok()
-    print("renderer rows: %d declared pairs, %d witnessed, %d FDROUTE records over %d distinct pairs"
+    print("renderer rows: %d declared triples, %d witnessed, %d FDROUTE records over %d distinct triples"
           % (len(declared), len(wit_arts), sum(seen.values()), len(seen)))
+
+    # ---- S. the support pin (plan_frame.md 3.0a §2.5.2: tests/memfn/stream_support.tsv) ----
+    # Each pin row's cells against the kit's table as arm_fixtures prints it;
+    # a RULING row's quoted sentence must be in the allowed working-tree ledger
+    # file it names (support_faults).
+    pin = read_tsv(os.path.join(root, os.environ.get("STREAM_SUPPORT_TSV", "tests/memfn/stream_support.tsv")), 6)
+    r = run([fx, "--streams"])
+    kit = [ln.split("\t") for ln in r.stdout.decode().splitlines() if ln and not ln.startswith("#")]
+    if r.returncode or not kit:
+        bad("arm_fixtures --streams printed no support row (rc %d): the reader is blind" % r.returncode)
+    if not pin:
+        bad("stream_support.tsv declares no row (the reader is blind)")
+    faults, nled = support_faults(root, pin, kit)
+    for f in faults:
+        bad(f)
+    if not faults:
+        ok()
+    print("support pin: %d lines, %d rows in the kit's table, %d ruling ledger(s) read"
+          % (len(pin), len(kit), nled))
+
+    # ---- P. the plants of the rows only §R's triples and §S see (plan_frame.md
+    # §5 rows B, C, M; review 2026-11-09 r1 s30a F8, F9) ----
+    run_plants(root, a.tmp, tp, rr, declared, pin)
 
     # ---- D. the floor file -------------------------------------------------
     why = {(c[0], c[1]): c[2] for c in rows}
@@ -860,6 +1109,10 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+    except Exception:
+        # a crash is a failure, never a count of the checks that ran before it
+        failed += 1
+        raise
     finally:
         for u in unreached:
             print("UNREACHED: " + u)

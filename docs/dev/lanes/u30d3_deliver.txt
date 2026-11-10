@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u30d3_report.md
+sections: Summary; What was removed; Ids re-checked after the removal; Stated gap and plan row; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

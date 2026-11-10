@@ -1,0 +1,26 @@
+# tests/memfn/stream_support.tsv -- THE SUPPORT PIN (docs/design/memfn/plan_frame.md rev 2.2 §2.5.2,
+# [rev2 F8, F21, rev2.2 R7]; span_pick unit 3.0a, lane s30a): which candidate streams each BUILT search
+# feeds. HAND-WRITTEN, never generated from the kit's table. Reader: tests/memfn/rows_check.py section S,
+# against `arm_fixtures --streams` (window.c's wf_support): red on a missing, extra or duplicated row, a
+# cell that differs, or a RULING row whose quoted sentence is absent from the working-tree ledger file it
+# names, which must be an allowed ledger (rows_check.py LEDGERS: memfn/docs/responses.md,
+# docs/dev/decisions.md; a sha is provenance only, never looked up; a D-number reads that entry only). A
+# RULING row's cells are the ones its quoted sentence states, so the expectation is a ruled line, never the
+# table read twice. Its source names the decision record and whose words the line is: "libc memchr supplies
+# only one-shot" is a line of the KIT's notice (memfn/docs/responses.md at 067aca4df), which D190
+# (docs/dev/decisions.md) files among the owner's decision; it is not the owner's words, so this control
+# shares an author with the table (review 2026-11-09 r1 s30a F14). The LIBC rows name D190 as their
+# ledger (the kit manager's F14 ruling, lane s30amrg): section S requires the sentence inside that entry. DERIVED rows' basis witnesses are
+# landing-time witnesses of 3.0a over base's text (docs/dev/lanes/s30a_report.md).
+#
+# Columns: search (a T-FIND pick's name, or `floor`), RESTART, MASK, SHIFT (yes/no), source (`RULING (Dn,
+# owner's words|kit-stated line)` or DERIVED), basis (RULING: the sentence in double quotes, then
+# `@ LEDGER PROVENANCE`, a sha or the D-number; DERIVED: its basis).
+#
+# search	RESTART	MASK	SHIFT	source	basis
+LIBC	yes	no	no	RULING (D190, kit-stated line)	"libc memchr supplies only one-shot" @ docs/dev/decisions.md D190
+LIBC_BACK	yes	no	no	RULING (D190, kit-stated line)	"libc memchr supplies only one-shot" @ docs/dev/decisions.md D190
+WALK	yes	no	no	DERIVED	a byte loop stops at one position: base's B-walk and PF walk text resumes C++ and declares no mask
+PAIR	yes	no	no	DERIVED	the frontiers are the search's own state, kept across restarts; the restart is still c + 1 (base's B-pair and fn-pair text resumes C++)
+HORS	no	no	yes	DERIVED	the shift table over the window is its stream: _sh[256] iff the search is HORS
+floor	yes	no	no	DERIVED	the floor tests each position in turn (wf_floor_expr's C++)

@@ -1,0 +1,5 @@
+report=docs/dev/lanes/u30d1_report.md
+sections: Summary; The triple (search, stream, check); What changed from rev 0; Table B split; vrun and vany as compositions; Cites checked at the build tree; pcrec-side asks for main; Open questions; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

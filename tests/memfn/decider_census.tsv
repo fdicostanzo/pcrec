@@ -21,12 +21,11 @@
 #            §The tables' named exceptions), `-` for a table's own home
 #
 # file	member	kind	anchor	answers	retires
-finder.c	fd_find	fn	-	T-FIND	- (unit 1e: THE one walk, both askers, the asker fact; fd_route retired into it)
+finder.c	fd_find	fn	-	T-FIND	- (unit 1e: THE one walk, both askers; fd_route retired into it; 3.0a: the asker's frame and its renderable set replace the asker fact)
 finder.c	hors_facts	fn	-	T-FIND,EXC:HORS_MIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE (unit 1e: Table D's d_hors_holds, D-hors's facts)
 finder.c	fd_decide	fn	-	T-FIND,T-PRES	-
 finder.c	fd_pres	fn	-	EXC:fd_pres chain order (T-PRES)	[MEMFN-UNBOUNDED-SPANS]
 compose.c	select_arm	fn	-	EXC:compose arms[], the frame selector of non-plan sites	a kit request adds an arm
-compose.c	fd_renderer	fn	-	T-FRAME	- (unit 1e: the composer's renderer rows for a T-FIND pick)
 compose.c	kit_walk	excluded	-	the table walk's definition (no decision of its own)	-
 kit.h	kit_walk	excluded	-	the table walk's prototype	-
 kit.h	kit_tie_takes	excluded	-	the TIE table's answer, its prototype (presence.c reads TIE through it, unit 1b)	-
@@ -63,8 +62,21 @@ window.c	wf_tie_to	data	-	TIE	-
 window.c	find_groups	fn	-	T-VERIFY	-
 window.c	run_group_ok	fn	-	T-VERIFY	-
 window.c	translate:grouping	part	if (d->pterm[pj] != d->pterm[pi]) break;	EXC:translate's pterm grouping (T-VERIFY C-run)	a census shows its groups equal find_groups' on every B-fn site
-window.c	wf_find_decide	fn	-	T-FRAME	- (unit 1e: asks T-FIND once, then B's renderer row)
-window.c	wf_prepare	fn	-	T-FRAME	- (unit 1e: Table E, legacy first, at text time)
+window.c	wf_find_decide	fn	-	T-FRAME	- (unit 1e: asks T-FIND once; 3.0a: then the fused row, else the search renderer row)
+window.c	wf_plan_site	fn	-	T-FRAME,T-STREAM	- (plan_frame.md 3.0a: THE plan function, wf_prepare's selection moved in: Table E, then the pieces' rows and Table S)
+window.c	ren_find	fn	-	T-FRAME	- (3.0a: the renderer tables' ONE accessor)
+window.c	ren_search	data	-	T-FRAME	- (3.0a: THE search renderer table, its E-find rows and the composer's E-stmt rows)
+window.c	ren_stream	data	-	T-FRAME	- (3.0a: THE stream renderer table)
+window.c	ren_check	data	-	T-FRAME	- (3.0a: the check renderer rows)
+window.c	ren_skel	data	-	T-FRAME	- (3.0a: the skeleton rows)
+window.c	ren_fused	data	-	EXC:the fused rows (arms[] and fn_rows BODY render a whole triple)	a fused row's triple is rendered by its pieces' rows
+window.c	wf_support	data	-	T-STREAM	- (3.0a: THE support table, which streams each built search feeds)
+window.c	table_s	fn	-	T-STREAM	- (3.0a: TABLE S, the stream pick over the support table and the frame's streams)
+window.c	wf_renders	fn	-	T-FRAME,T-STREAM	- (3.0a commit 2: THE RENDERABLE SET, T-FIND's gate in fd_holds, slot FIND; the asker fact's successor)
+window.c	wf_stmt_row	fn	-	T-FRAME	- (3.0a: the composer's search renderer row, the search renderer table's E-stmt row; its arm renders the pick)
+window.c	wf_srows	data	-	T-STREAM	- (3.0a: TABLE S's rows, each with its refusal text)
+window.c	wf_stream_refusal	fn	-	T-STREAM	- (3.0a: Table S's ST-many row's text, the composer's refusal)
+window.c	wf_tables_check	excluded	-	the renderer tables' self-check (mf_art_begin refuses a broken table; it decides nothing)	-
 presence.c	kit_pres_picks:set-pick	part	kit_pick_takes(&bs,	T-PRES	- (asks kit_pick_takes since 1d)
 presence.c	kit_pres_picks:run-window	part	kit_pick_takes(&bw,	TIE	- (reads T_WINDOW since 1b; asks kit_pick_takes since 1d)
 presence.c	kit_pres_picks:landmark	part	the FIFTH: the landmark admission	EXC:U6, the kit's landmark shadow	pcrec states the landmark as a candidate

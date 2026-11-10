@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s30afix_report.md
+sections: Summary; The change; Plants (deleted and invented lines); Checks run; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

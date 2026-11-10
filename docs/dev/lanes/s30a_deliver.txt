@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s30a_report.md
+sections: Summary; Commits; Zero movers (evidence); Sabotage rows; Checks run; Validation jobs written (not queued); Deviations from plan_frame.md; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
