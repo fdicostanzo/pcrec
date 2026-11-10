@@ -41,4 +41,6 @@ Dir /var/tmp/pcrec-pcrec/scratch/memfn/kclose/jobs/, numbers 560-569, keys kit-k
 
 ## STATE AT HANDOFF
 
-Branch lane/memfn-kclose, tip committed, tree clean. OWED (for the kit manager, no run in flight): (1) TRACE_VARIANT_RECORDS_FLOOR re-measure: `scripts/emit_sweep.py --variant all --bases byte --trace` on a free box, then a reviewed re-pin. (2) The queued gates 560-569 (mech shard 3 includes S3015's matrix run). Nothing else.
+Branch lane/memfn-kclose, tip committed, tree clean.
+
+OWED: the R-13 floor re-measure and the queued gates below; no run of mine is in flight. Detail (for the kit manager): (1) TRACE_VARIANT_RECORDS_FLOOR re-measure: `scripts/emit_sweep.py --variant all --bases byte --trace` on a free box, then a reviewed re-pin. (2) The queued gates 560-569 (mech shard 3 includes S3015's matrix run). Nothing else.
