@@ -1,0 +1,5 @@
+report=docs/dev/lanes/famdef2_report.md
+sections: STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/famdef2_deliver.txt
