@@ -53,7 +53,9 @@ sweep --extra=-fno-scan-edge; rc=$?
 # COMPOSITION_EXTRA_PINS entry, never to the plain arm's (the `--engine=vm`
 # arm read 86 < 100, ref-vs-ref), and an arm with no entry says so. The
 # composition stream alone, FULL population (~13 s each), one binary.
-csweep() { "$TIMEOUT_BIN" 300 python3 "${ESX:-$ES}" --ref-bin "$PCREC" --bin "$PCREC" --no-self-check \
+# PYTHONPATH: the plant is a COPY outside scripts/, so emit_sweep's own
+# sys.path inserts (SCRIPT_DIR, tests/memfn for target_text) point nowhere.
+csweep() { PYTHONPATH="$here:$here/../tests/memfn" "$TIMEOUT_BIN" 300 python3 "${ESX:-$ES}" --ref-bin "$PCREC" --bin "$PCREC" --no-self-check \
     --streams composition --no-differ-floor --tree "$here/.." --out "$T/out" --jobs 4 "$@" > "$T/log" 2>&1; }
 csweep --extra=--engine=vm; rc=$?
 [ "$rc" = 0 ] && ok "composition floors: the --engine=vm arm is clean at its own floors" \
@@ -252,10 +254,11 @@ PY
 python3 - "$here" <<'PY' && ok "dumps declarations: selfcheck gate" || bad "dumps declarations gate control"
 import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
 dec = es.dumps_declarations
-assert dec("real", "f:a,f:b", "f:x") == (["f:a", "f:b"], ["f:x"])
-assert dec("plain-byte", "", "f:x") == ((), ["f:x"])
-assert dec("selfcheck", "f:a", "f:x") == ((), ())
-assert dec("selfcheck-plain", "f:a", "f:x") == ((), ())
+assert dec("real", "f:a,f:b", "f:x") == (["f:a", "f:b"], ["f:x"], ())
+assert dec("real", "", "", "f:n") == ((), (), ["f:n"])
+assert dec("plain-byte", "", "f:x") == ((), ["f:x"], ())
+assert dec("selfcheck", "f:a", "f:x", "f:n") == ((), (), ())
+assert dec("selfcheck-plain", "f:a", "f:x", "f:n") == ((), (), ())
 PY
 
 echo "checks passed: $pass"
