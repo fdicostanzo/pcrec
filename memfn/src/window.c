@@ -107,6 +107,11 @@ static const struct {
                          "kit_tie_member_key)", TIE_HIGHER,
                          "the member LAST in pattern order (an UNKNOWN order below every known "
                          "one), then the larger byte", "today's" },
+    [T_RUN_LEFT]     = { "the run decision's ties (kit_run_decide) on an art under the "
+                         "test-only lever run-tie-left (kit_run_opts_of; R-38 K38-2a)",
+                         TIE_LOWER, "none: no shipped compile reads it",
+                         "C4's reaching regime (span_runs_sheet.md §2.4): pcrec's index stays "
+                         "the higher position, so a reader fed it names a moved offset" },
 };
 
 /* 1 iff a candidate keyed `c` (an offset, or T_PRES_MEMBER's member key), of
@@ -616,19 +621,54 @@ static void a_model_choose(wf_x *x)
 
 /* A-mass: over the STOP candidates (`cands`: core, not the full set), the
  * least mass (PICK's position mass), ties per the TIE table (a stretch
- * position to the higher offset, a set position to the lower). */
+ * position to the higher offset, a set position to the lower).
+ * THE IN-RUN STOP (R-38 K38-2a, the kit ruling [r1.3 K7]): inside a stated
+ * verify-YES run R, the stretch candidates are THE RUN DECISION's to order
+ * (kit_run_decide over R's positions as C-meet left them, asked from each
+ * answer as translate's ranking asks it): only the first of them in its
+ * order is a candidate here, so a re-ruled run tie (the lever run-tie-left)
+ * moves the stop with the member C-pin holds it to. Under the incumbent tie
+ * that first one is the walk's own pick among them (the least mass, the
+ * higher offset), so the stop is today's. A verify-NO R keeps the stretch
+ * row: its member is that site's own decision (run_member). */
 static int a_mass_holds(const wf_x *x)
 {
     return x->d->a[x->ai].any_stop;
+}
+
+/* The run decision's reader of R's positions after C-meet (`src`, R's first
+ * wf_pos): position j's meet set. */
+static const uint8_t *meet_at(const void *src, unsigned j, uint8_t buf[32])
+{
+    (void)buf;
+    return ((const wf_pos *)src)[j].set;
 }
 
 static void a_mass_choose(wf_x *x)
 {
     wf_alt *m = &x->d->a[x->ai];
     kit_pick best = KIT_PICK_NONE;
+    /* R's one stop candidate `rs`: the first stretch STOP candidate in the
+       run decision's order (INT32_MIN: none, or R is no verify-YES run) */
+    const mf_wspan *r = m->run >= 0 && m->alt->spans[m->run].verify == MF_VERIFY_YES
+                      ? &m->alt->spans[m->run] : NULL;
+    int32_t rs = INT32_MIN;
+    if (r) {
+        const wf_pos *p0 = &m->p[r->start - WF_LO];
+        kit_run_reply rr = KIT_RUN_NONE;
+        for (unsigned k = 0; k < r->len && rs == INT32_MIN; k++) {
+            rr = kit_run_decide(x->d->rate, kit_run_opts_of(x->d->art, KIT_RUN_WHOLE), meet_at,
+                                p0, r->len, k ? &rr : NULL);
+            if (!rr.has_scan) break;
+            if (p0[rr.scan].stop_ok && p0[rr.scan].stretch) rs = r->start + rr.scan;
+        }
+    }
     for (unsigned k = 0; k < WF_NPOS; k++) {
         const wf_pos *p = &m->p[k];
         if (!p->stop_ok) continue;
+        int32_t o = (int32_t)k + WF_LO;
+        if (r && p->stretch && o >= r->start && o < r->start + r->len && o != rs)
+            continue;                   /* inside R: the run decision's one */
         int row = p->stretch ? T_MASS_STRETCH : T_MASS_SET;
         if (kit_pick_takes(&best, p->mass, row, (int32_t)k + WF_LO))
             best = (kit_pick){ (int)k, (int32_t)k + WF_LO, p->mass };
@@ -895,7 +935,8 @@ static void run_member(wf_dec *d)
         while (lo > 0 && count(r->set[lo - 1]) == 1) lo--;
         while (hi < r->len && count(r->set[hi]) == 1) hi++;
     } else {
-        kit_run_reply rr = kit_run_decide(d->rate, KIT_RUN_WHOLE, sets_at, r->set, r->len, NULL);
+        kit_run_reply rr = kit_run_decide(d->rate, kit_run_opts_of(d->art, KIT_RUN_WHOLE), sets_at,
+                                          r->set, r->len, NULL);
         if (!rr.has_scan) {
             d->run_stated = 0;
             return;
@@ -1076,7 +1117,8 @@ static const struct {
       "Table A: not applied by this list)" },
     { 1, "C-member", c_always,     run_member,
       "THE RUN MEMBER first, an output of the plan (mf_wreply.run_member): R's least-mass "
-      "position and its stretch (kit_run_decide for a verify-YES run, kit_run_member for a "
+      "position and its stretch (kit_run_decide for a verify-YES run, ties per its options "
+      "(T_MASS_STRETCH, T_RUN_LEFT under the lever run-tie-left); kit_run_member for a "
       "verify-NO one, ties per T_MASS_STRETCH; wsc3 rulings 3-4)" },
     { 2, "C-floor", c_floor_holds, c_floor,
       "the floor row (no stop): every position of the chosen alternative's spans" },
@@ -1519,7 +1561,8 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
         unsigned n = p->term[p->plan_hint].run_len;
         kit_run_reply r = KIT_RUN_NONE;
         for (unsigned k = 0; k < n; k++) {
-            r = kit_run_decide(d->rate, KIT_RUN_WHOLE, sets_at, w->set[hint_at], n, k ? &r : NULL);
+            r = kit_run_decide(d->rate, kit_run_opts_of(d->art, KIT_RUN_WHOLE), sets_at,
+                               w->set[hint_at], n, k ? &r : NULL);
             if (!r.has_scan) {          /* the tie row is no strict order (see kit_run_member; kit_run_decide asks it) */
                 kit_fail((mf_art *)d->art, "window family: the run ranking lost position %u of %u "
                          "(the T_MASS_STRETCH tie row must be a strict order)", k, n);

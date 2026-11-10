@@ -179,12 +179,20 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * keeps a pre-check's run WINDOW part beside the WHOLE run that implies it
  * (mf_lever(art, "pres-window")), the form before R-30, so the
  * answer-identity sweep can still produce it. Off on every shipped compile. */
+/* [MEMFN] R-38 K38-2a: the seventh, `--harness=run-tie-left`, the kit's PROBE
+ * lever (mf_lever(art, "run-tie-left")): the kit breaks a pre-check run's
+ * decision's ties LEFTMOST on every reader of it (span_runs_sheet.md §2.4
+ * C4's reaching regime, §5). pcrec's own run index stays rightmost, so
+ * before K38-2 `req_run_member`'s agreement check refuses any compile whose
+ * run decision ties; the lever is read in G2 until then. Off on every
+ * shipped compile. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
     unsigned kit_proof : 1;
     unsigned pres_window : 1;
+    unsigned run_tie_left : 1;
     /* [REQ-EMPTYCAT] span_arms E1 (§3.7): the sixth, `--harness=restore=`,
      * the necessary-run walk's RESTORED ARMS (`PCREC_WALK_ARM` bits,
      * src/facts/walk_arms.def), read once at the walk entry into its

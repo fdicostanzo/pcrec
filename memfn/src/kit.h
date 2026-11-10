@@ -319,7 +319,7 @@ struct mf_art {
 };
 
 /* The test-only levers (mf_lever, compose.c's table). */
-enum { KIT_LEVER_PRES_WINDOW = 1u << 0 };
+enum { KIT_LEVER_PRES_WINDOW = 1u << 0, KIT_LEVER_RUN_LEFT = 1u << 1 };
 
 #define kit_presence_check MF_NS(kit_presence_check)
 /* The presence class's rules (compose.c), NULL iff the site holds them: a
@@ -376,26 +376,34 @@ typedef const uint8_t *kit_pos_at(const void *src, unsigned j, uint8_t buf[32]);
 kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src, unsigned n,
                           int exact, const kit_member *after, int tie);
 
-/* THE RUN DECISION (presence.c; R-38 K38-1, span_runs_sheet.md rev 1.2
+/* THE RUN DECISION (presence.c; R-38 K38-1, span_runs_sheet.md rev 1.3
  * §2.3): a pre-check run's scan position and the stretch its check
  * verifies, ONE decision every reader asks (P3's scan and window, the twin's
- * mass, the window family's verify-YES member,
- * translate's ranking). `st` names the stretch the reader renders: the whole
- * run, or P3's window. `scan` is a run position (`has_scan` 0: none, only
- * past the last ranked position); `[ver_lo, ver_lo + ver_len)` the verified
- * stretch, run positions; `mass` the scan position's (KIT_MASS_SUM).
- * `after` non-NULL asks the next ranked position (translate's walk). */
+ * mass, the window family's verify-YES member, translate's ranking and,
+ * since K38-2a, Table A's in-run stop, a_mass_choose). Its options `o` (the
+ * sheet's `opts`): `st`, the stretch the reader renders (the whole run, or
+ * P3's window), and `tie`, the TIE row its ties read (T_MASS_STRETCH;
+ * T_RUN_LEFT on an art under the test-only lever `run-tie-left`), both from
+ * kit_run_opts_of so every reader on one art reads one tie. `scan` is a run
+ * position (`has_scan` 0: none, only past the last ranked position);
+ * `[ver_lo, ver_lo + ver_len)` the verified stretch, run positions; `mass`
+ * the scan position's (KIT_MASS_SUM). `after` non-NULL asks the next ranked
+ * position (translate's walk, the in-run stop's). */
 typedef enum { KIT_RUN_WHOLE, KIT_RUN_WINDOW } kit_run_stretch;
+typedef struct { kit_run_stretch st; int tie; } kit_run_opts;
 typedef struct {
     int      has_scan, scan;
     uint32_t mass;
     unsigned ver_lo, ver_len;
 } kit_run_reply;
 #define KIT_RUN_NONE ((kit_run_reply){ 0, -1, 0, 0, 0 })   /* no scan, no stretch */
-#define kit_run_decide MF_NS(kit_run_decide)
-#define kit_run_at     MF_NS(kit_run_at)
-kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_stretch st, kit_pos_at *at,
+#define kit_run_decide  MF_NS(kit_run_decide)
+#define kit_run_opts_of MF_NS(kit_run_opts_of)
+#define kit_run_at      MF_NS(kit_run_at)
+kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_opts o, kit_pos_at *at,
                              const void *src, unsigned n, const kit_run_reply *after);
+/* The decision's options on art `art` for a reader rendering stretch `st`. */
+kit_run_opts kit_run_opts_of(const mf_art *art, kit_run_stretch st);
 /* A RUN term's (`src`, an mf_term) position j as its set (kit_run_set). */
 const uint8_t *kit_run_at(const void *src, unsigned j, uint8_t buf[32]);
 
@@ -410,7 +418,8 @@ const uint8_t *kit_run_at(const void *src, unsigned j, uint8_t buf[32]);
  * pick asks it through kit_pick_takes below. NOT through it: window.c reads
  * `wf_ties[T_CMODEL/T_MARGIN].to` directly (an exchange sort and a
  * rejection, not a pick); P2 and P4 compare with no TIE row. */
-enum { T_MASS_STRETCH, T_MASS_SET, T_MODEL, T_CMODEL, T_MARGIN, T_WINDOW, T_PRES_MEMBER, T_N };
+enum { T_MASS_STRETCH, T_MASS_SET, T_MODEL, T_CMODEL, T_MARGIN, T_WINDOW, T_PRES_MEMBER,
+       T_RUN_LEFT, T_N };
 #define kit_tie_takes      MF_NS(kit_tie_takes)
 #define kit_tie_member_key MF_NS(kit_tie_member_key)
 int kit_tie_takes(int r, int32_t c, int32_t b);

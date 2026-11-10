@@ -114,33 +114,35 @@ const uint8_t *kit_run_at(const void *src, unsigned j, uint8_t buf[32])
     return buf;
 }
 
-/* ---- THE RUN DECISION (R-38 K38-1; span_runs_sheet.md rev 1.2 §2.3, §5) ------
+/* ---- THE RUN DECISION (R-38 K38-1; span_runs_sheet.md rev 1.3 §2.3, §5) ------
  *
  * ONE function decides a pre-check run's scan position and the stretch its
  * check verifies; every reader asks it: P3's run scan and window (here,
  * kit_pres_picks, and through it the twin's mass, P4 and P2), the window
  * family's member of a
- * pre-check run part (window.c run_member, verify YES) and translate's RQ-2
+ * pre-check run part (window.c run_member, verify YES), translate's RQ-2
  * ranking (window.c, asked once per ranked position with the previous answer
- * handed back as `after`). Its rule is the incumbent's, reproduced: the scan
- * is the run member (kit_run_member over every position, ties per the TIE
- * table's stretch row, the higher position); the stretch is the whole run
- * (KIT_RUN_WHOLE) or P3's window (KIT_RUN_WINDOW: the least window mass among
- * the MF_PRES_WINDOW-position windows holding the scan, ties per T_WINDOW,
- * the leftmost; the whole run where it is no longer than one window).
+ * handed back as `after`) and Table A's in-run stop (window.c a_mass_choose,
+ * K38-2a: the kit ruling [r1.3 K7]). Its rule is the incumbent's,
+ * reproduced: the scan is the run member (kit_run_member over every
+ * position, ties per `o.tie`: the TIE table's stretch row, the higher
+ * position); the stretch is the whole run (KIT_RUN_WHOLE) or P3's window
+ * (KIT_RUN_WINDOW: the least window mass among the MF_PRES_WINDOW-position
+ * windows holding the scan, ties per T_WINDOW, the leftmost; the whole run
+ * where it is no longer than one window).
  * `after` non-NULL: the next position the order ranks after it (the stretch
  * is then the whole run's); no candidate left, `has_scan` 0. The kit's
  * verify-NO prefilter member (window.c run_member, exact positions) is a
  * different site's decision and asks kit_run_member itself
- * (span_runs_sheet.md §2.5); tests/memfn/decider_census.py's RUN CALLERS
- * section holds both call sets. */
-kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_stretch st, kit_pos_at *at,
+ * (span_runs_sheet.md §2.5), so the lever leaves it behind on purpose;
+ * tests/memfn/decider_census.py's RUN CALLERS section holds both call sets. */
+kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_opts o, kit_pos_at *at,
                              const void *src, unsigned n, const kit_run_reply *after)
 {
     kit_member prev = after ? (kit_member){ after->scan, after->mass } : (kit_member){ -1, 0 };
-    kit_member sc = kit_run_member(rate, at, src, n, 0, after ? &prev : NULL, T_MASS_STRETCH);
+    kit_member sc = kit_run_member(rate, at, src, n, 0, after ? &prev : NULL, o.tie);
     kit_run_reply r = { sc.pos >= 0, sc.pos, sc.mass, 0, n };
-    if (!r.has_scan || after || st == KIT_RUN_WHOLE || n <= MF_PRES_WINDOW) return r;
+    if (!r.has_scan || after || o.st == KIT_RUN_WHOLE || n <= MF_PRES_WINDOW) return r;
     /* P3's window: the windows holding the scan, each start's mass */
     int lo_s = sc.pos - (MF_PRES_WINDOW - 1), hi_s = sc.pos;
     if (lo_s < 0) lo_s = 0;
@@ -158,6 +160,18 @@ kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_stretch st, kit_pos_a
     r.ver_lo = (unsigned)bw.pos;
     r.ver_len = MF_PRES_WINDOW;
     return r;
+}
+
+/* THE DECISION's OPTIONS on an art: the stretch its reader renders, and the
+ * tie its ties read, the TIE table's stretch row (the higher position) or,
+ * under the test-only lever `run-tie-left` (mf_lever, K38-2a; C4's reaching
+ * regime, span_runs_sheet.md §2.4), T_RUN_LEFT (the lower position). The
+ * lever moves every reader of the decision on the art together (scan,
+ * stretch, the twin's mass, the ranking, the in-run stop) and nothing else. */
+kit_run_opts kit_run_opts_of(const mf_art *art, kit_run_stretch st)
+{
+    int left = art && (art->levers & KIT_LEVER_RUN_LEFT);
+    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH };
 }
 
 /* ---- the ports ---------------------------------------------------------------- */
@@ -198,8 +212,8 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     /* P3: the run's scan position and window, the run decision's */
     kit_run_reply rr = KIT_RUN_NONE;
     if (run) {
-        rr = kit_run_decide(rate, KIT_RUN_WINDOW, kit_run_at, &run->term[0], run->term[0].run_len,
-                            NULL);
+        rr = kit_run_decide(rate, kit_run_opts_of(art, KIT_RUN_WINDOW), kit_run_at, &run->term[0],
+                            run->term[0].run_len, NULL);
         out->run_scan = (int16_t)rr.scan;
         out->run_window = (int16_t)rr.ver_lo;
     }

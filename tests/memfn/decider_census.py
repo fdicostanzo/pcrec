@@ -48,7 +48,9 @@ question table or named exception, against the kit's sources:
      against RUN_CALLERS, exactly: kit_run_member from kit_run_decide and the
      verify-NO prefilter member (run_member) only; kit_run_decide from P3's
      ports (kit_pres_picks: scan, window, the twin's mass), run_member
-     (verify YES) and translate (the RQ-2 ranking); and P3's window pick
+     (verify YES), translate (the RQ-2 ranking) and a_mass_choose (Table A's
+     in-run stop inside a verify-YES run, R-38 K38-2a: the kit ruling [r1.3
+     K7]); and P3's window pick
      (`T_WINDOW` read as a pick row) in kit_run_decide only. Its plants
      (skipped by --no-plants): an unlisted function calling kit_run_member
      directly, one holding it as a non-call (an alias), and one asking the
@@ -96,8 +98,9 @@ BACKSTOP = LIVE + BYPASS
 # renderable set's and the composer arm's ren_find( calls; fd_renderer's loop
 # held none of the shapes); 60 at the r1 s30a review's fixes (F13's shapes
 # `REN_ROWS(ren_`, `keys &`, `wf_support[`, `wf_srows[`; Table S's refusal text,
-# the composer's search row and the tables' self-check).
-HITS = 60
+# the composer's search row and the tables' self-check); 61 at R-38 K38-2a
+# (the TIE table's row T_RUN_LEFT, `TIE_LOWER`, inside wf_ties).
+HITS = 61
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
@@ -119,8 +122,9 @@ HITS = 60
 # wf_stream_refusal, and the excluded self-check wf_tables_check in); 65 at
 # R-38 K38-1 (kit_pres_picks:run-window gone into the run decision
 # kit_run_decide, which is in; translate:run-rank back in as the RQ-2 ranking's
-# reader of it, span_runs_sheet.md §5).
-MEMBER_COUNT = 65
+# reader of it, span_runs_sheet.md §5); 66 at R-38 K38-2a (kit_run_opts_of
+# in: the decision's TIE row, the test-only lever run-tie-left's one reader).
+MEMBER_COUNT = 66
 
 # D: THE RUN CALLERS, EXACT (a call site added or lost is red): callee ->
 # {enclosing definition: uses}: EVERY use of the identifier (a call, an alias, a
@@ -130,7 +134,8 @@ MEMBER_COUNT = 65
 # row are no calls).
 RUN_CALLERS = {
     r"\bkit_run_member\b": {"kit_run_decide": 1, "run_member": 1},
-    r"\bkit_run_decide\b": {"kit_pres_picks": 1, "run_member": 1, "translate": 1},
+    r"\bkit_run_decide\b": {"kit_pres_picks": 1, "run_member": 1, "translate": 1,
+                             "a_mass_choose": 1},
     r"\bT_WINDOW\s*,\s*\w+\s*\)": {"kit_run_decide": 1},
 }
 

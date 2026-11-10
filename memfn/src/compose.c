@@ -1383,13 +1383,17 @@ int mf_reach(mf_art *art, const char *stem)
 
 /* THE TEST-ONLY LEVERS (R-30), one row each: the name a harness passes and
  * the art bit it sets. A lever restores the OLD form of a kit change that
- * cannot make a caller slower and so has no options.def row. */
+ * cannot make a caller slower and so has no options.def row, or (R-38
+ * K38-2a) PROBES a decision no shipped compile varies. */
 static const struct {
     const char *name;
     unsigned    bit;
 } kit_levers[] = {
     /* precheck.c: a run part implied by a later one is still rendered */
     { "pres-window", KIT_LEVER_PRES_WINDOW },
+    /* presence.c kit_run_opts_of: the run decision's ties go LEFTMOST, for
+       every reader of it on the art (span_runs_sheet.md §2.4 C4, §5) */
+    { "run-tie-left", KIT_LEVER_RUN_LEFT },
 };
 
 int mf_lever(mf_art *art, const char *name)
