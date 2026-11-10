@@ -506,6 +506,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-09): UNSCHEDULED. Default never an error (D26). Optimize (constant matcher, dead branches dropped) + an --emit-facts fact + an opt-in caller policy allow|warn|error ('must be matchable', Frank) at [IFACE-PUSH]
   trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
   refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]
+- [BRANCH-RESET] STATE:not-started — `(?|...)`: alternatives reuse capture numbers (module `branch-reset`, registry row planned/unbuilt)
+  filed: 2026-11-09 Frank ("Yes"), after asking whether pcrec supports `(?|...)`; libpcre2 10.46 accepts it, pcrec refuses "requires module 'branch-reset'" (docs/pcre2_compliance.md, 2026-11-06 entry)
+  status (2026-11-09): UNSCHEDULED. Expected mostly front end: group numbering restarts per alternative, groups after the construct continue from the largest branch count; engines already treat captures as numbered slots
+  trigger: (D77) a caller or corpus pattern refused for it, or a compliance push that takes the unbuilt planned modules
+  refs: docs/pcre2_compliance.md (`(?|...)`); src registry row `branch-reset`; [ARRAY-CAPTURE] (another capture-numbering extension)
+  Scope: parser numbering; group-count and rx_info.groups facts; backreferences and subroutine calls into a reset group; NAMED groups (Frank 2026-11-09: names are bound by ORDER inside the construct: the k-th group of every branch is one number, so a name attaches to that number, and differing names for the same number are PCRE2's error case as the manager understands it; confirm every naming rule against libpcre2 as the oracle before building, and route any rule only its source shows through a pcre2-reader note, D181); an oracle-checked .rxt set (byte and utf8).
 - [ARRAY-CAPTURE] STATE:not-started — `(X){m,n}` with an opt-in syntax reports every iteration's span in n fixed slots; bounded only
   filed: 2026-11-09 manager (Frank: "array capture for (X){M, N} perhaps using special syntax. Cap N become N capture groups. No unbounded")
   status (2026-11-09): UNSCHEDULED. Opt-in syntax only (PCRE2's last-iteration default stays); one group with n entries via its own accessor, never renumbering other groups
