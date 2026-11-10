@@ -40,7 +40,7 @@ clean there and its plant (`--selftest`) is its only witness.
 | PL07 | id syntax; a dotted id's parent is a row in plan.md or plan_completed.md (an `Mx.y` milestone step is exempt) | 0 |
 | PL08 | indent is a multiple of 2, a child is exactly its parent's indent + 2, the first row of a section is at 0 | 0 (three wedges before plclean) |
 | PL09 | head line: balanced parentheses (backtick spans ignored), even backticks | 15 |
-| PL10 | attribute lines `filed:` (ISO date + who), `status (ISO date):` (real date, <= 300 chars), `why ongoing:` + `review:` (required on `ongoing`, only there), `ready:` (required on `ready`, only there), `waits:` (any row), `next:` xor `trigger:` (required unless `started`/`ongoing`/`ready`, <= 300 chars), `refs:`; in that order, once each, never after charter text | 356 (no row had them) |
+| PL10 | attribute lines `filed:` (ISO date + who), `status (ISO date):` (real date, <= 300 chars), `why ongoing:` + `review:` (required on `ongoing`, only there), `ready:` (required on `ready`, only there), `waits:` (any row; `waits: owner — <the question in plain words>` is the owner-waiting form, shape checked, listed first by `scripts/entry --work`), `next:` xor `trigger:` (required unless `started`/`ongoing`/`ready`, <= 300 chars), `refs:`; in that order, once each, never after charter text | 356 (no row had them) |
 | PL11 | no line over 1000 chars; charter <= 6 lines; a row's own text <= 12 lines and 6000 chars | 134 (lines over 1000 chars) |
 | PL12 | no bold in a head or attribute line | 30 |
 | PL13 | a top-level row carries its section's state (Active: started/blocked/ongoing/ready; Candidates, Backlog, Boonies: not-started; Deferred: deferred); started/blocked/ongoing/ready only in Active; deferred only in Deferred | 0 |

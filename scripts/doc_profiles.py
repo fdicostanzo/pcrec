@@ -43,7 +43,7 @@ PROFILES = [
     dict(name="plan", index=PLAN_PATH, details=None, id=None,
          states=("not-started", "started", "blocked", "deferred", "ongoing", "ready"), caps=(90, 300, 48 * 1024),
          level1="next: trigger: ready: waits: why ongoing: review: status (...): refs:",
-         work="ready, started, blocked, not-started, then ongoing, level 1, by state",
+         work="rows waiting on the owner first, then ready, started, blocked, not-started, ongoing; level 1, by state",
          form="single", dormant=None, linter="plan_lint", extra=("docs/design/plan_row_bodies/",), floor=150),
     dict(name="completed", index=COMPLETED_PATH, details=None, id=None,
          states=(), caps=None, level1="the row's attribute lines", work="-",

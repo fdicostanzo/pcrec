@@ -77,6 +77,14 @@ class Item:
                 out.append(s)
         return out
 
+    def owner_wait(self):
+        """The plain-words question of a `waits: owner — ...` field, else None (the work view's first section)."""
+        for s in self.own:
+            m = plan_lint.ATTR.match(s.strip())
+            if m and m.group(1) == "waits" and m.group(3).startswith(OWNER_WAIT):
+                return m.group(3)[len(OWNER_WAIT):]
+        return None
+
     def text(self, level):
         """The item rendered at LEVEL (a list of lines)."""
         form = self.profile["form"]
@@ -583,6 +591,8 @@ def run(argv, out, root=ROOT, profiles=None):
 
 
 WORK_ORDER = ("ready", "started", "blocked", "not-started", "ongoing")
+OWNER_WAIT = "owner — "      # a row waiting on the owner (Frank 2026-11-10): listed first, in its own section
+OWNER_SECTION = "waiting on the owner"
 
 
 def list_items(ctx, a, out):
@@ -615,12 +625,14 @@ def list_items(ctx, a, out):
             if a["k"] and a["k"].lower() not in "\n".join(it.text(1)).lower():
                 continue
             hits.append(it)
-    if a["work"]:  # ready first (Frank 2026-11-10: a ready stage outranks not-started work), ongoing last
-        hits.sort(key=lambda it: WORK_ORDER.index(it.state))
+    def work_group(it):
+        return OWNER_SECTION if it.owner_wait() is not None else it.state
+    if a["work"]:  # owner-waits first, then ready (Frank 2026-11-10: a ready stage outranks not-started work), ongoing last
+        hits.sort(key=lambda it: -1 if work_group(it) == OWNER_SECTION else WORK_ORDER.index(it.state))
     lines, sect = [], object()
     for i, it in enumerate(hits):
-        if a["work"] and it.state != sect:
-            sect = it.state
+        if a["work"] and work_group(it) != sect:
+            sect = work_group(it)
             lines.append("## " + str(sect))
         elif i and level >= 1:
             lines.append("")
@@ -708,6 +720,10 @@ PLAN_FIX = """# fixture plan
   status (2026-11-02): loops
   why ongoing: no end state
   review: yearly
+- [FF-6] STATE:started — an owner-waiting fixture row
+  filed: 2026-11-01 test
+  status (2026-11-02): designed
+  waits: owner — may stage 2 start?
 """
 ARCH_FIX = """# fixture archive
 
@@ -832,7 +848,8 @@ def selftest():
     check("grep archive -p", ["-g", "second PC-3", "-p", "fixarch"], 0, has=["the second PC-3 row"])
     # work view: ready, started, blocked, not-started, then ongoing at level 1, by state, never the archive
     check("work view", ["--work", "-p", "fixplan"], 0, has=["## not-started", "## started", "[BB-2]", "next: later", "[CC-3]", "[AA-1.1]", "[AA-1] STATE:started"])
-    check("work view order", ["--work", "-p", "fixplan"], 0, order=["## ready", "## started", "## blocked", "## not-started", "## ongoing"])
+    check("work view order", ["--work", "-p", "fixplan"], 0, order=["## waiting on the owner", "## ready", "## started", "## blocked", "## not-started", "## ongoing"])
+    check("work view owner section holds the row once", ["--work", "-p", "fixplan"], 0, has=["waits: owner — may stage 2 start?"], order=["## waiting on the owner", "[FF-6]", "## ready"])
     check("work view section filter", ["--work", "-p", "fixplan", "-s", "backlog"], 0, has=["[BB-2]"], lacks=["[AA-1.1]"])
     check("work view keyword", ["--work", "-p", "fixplan", "-k", "unblocked"], 0, has=["[CC-3]"], lacks=["[BB-2]"])
     check("levels table", ["--levels", "-p", "fixplan"], 0, has=["fixplan [single]"])

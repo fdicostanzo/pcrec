@@ -53,6 +53,7 @@ HEAD = re.compile(r"^( *)- \[([^\]\n]+)\] (.*)$")
 HEAD_OK = re.compile(r"^( *)- \[([^\]\n]+)\] STATE:(not-started|started|blocked|deferred|ongoing|ready) — (\S.*)$")
 ID_OK = re.compile(r"^[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*(?:\.[A-Za-z0-9]+)*$")
 MILESTONE_STEP = re.compile(r"^M[0-9]+\.[0-9]+$")
+OWNER_WAITS = re.compile(r"^owner — \S.{9,}$")   # a row waiting on the owner names the question (entry --work lists them first)
 ATTR = re.compile(r"^(filed|status \((\d{4}-\d{2}-\d{2})\)|why ongoing|review|ready|waits|next|trigger|refs): ?(.*)$")
 ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 CITE_ERE = r"(^|[^_a-z])plan\.md:[0-9]+"  # plan_completed.md is append-only: its line numbers do not rot
@@ -75,7 +76,7 @@ RULES = {
     "PL07": "id syntax; a dotted id's parent is a row in plan.md or plan_completed.md",
     "PL08": "nesting: a child is its parent's indent + 2, no jumps, first row at indent 0",
     "PL09": "head line: balanced parentheses, even backticks, no bold",
-    "PL10": "attribute lines: filed, status (date), [why ongoing, review | ready | waits], next|trigger (required unless started/ongoing/ready), refs; in order, once, valid; ongoing needs why ongoing: + review:, ready needs ready:",
+    "PL10": "attribute lines: filed, status (date), [why ongoing, review | ready | waits (owner — <question>)], next|trigger (required unless started/ongoing/ready), refs; in order, once, valid; ongoing needs why ongoing: + review:, ready needs ready:",
     "PL11": "sizes: line <= 1000 chars; charter <= 6 lines; row <= 12 own lines and 6000 chars",
     "PL12": "no bold blob in a head or attribute line",
     "PL13": "section membership: top-level rows carry their section's state; started/blocked only in Active",
@@ -280,6 +281,8 @@ def lint_plan(text, completed_text, body_names, cite_hits=None):
                 elif key in ("why", "review", "ready", "waits"):
                     if not val.strip():
                         err("PL10", ln, "[%s] empty %s:" % (r.id, key))
+                    if key == "waits" and val.startswith("owner") and not OWNER_WAITS.match(val):
+                        err("PL10", ln, "[%s] waits: owner needs the form 'owner — <the question in plain words>': %r" % (r.id, val[:50]))
                     if len(val) > NEXT_MAX:
                         err("PL10", ln, "[%s] %s: is %d chars (max %d)" % (r.id, key, len(val), NEXT_MAX))
                 elif key in ("next", "trigger"):
@@ -516,6 +519,9 @@ def planted(text):
     r = list(row); r[1], r[2] = r[2], r[1]
     out.append(("PL10", "attributes out of order", with_row(r), {}))
     out.append(("PL10", "repeated filed", with_row(row + [row[1]]), {}))
+    k = row_has_attr("status (")
+    for what, val in (("no question", "owner"), ("no dash", "owner: may we start"), ("empty question", "owner — "), ("question too short", "owner — ok?")):
+        out.append(("PL10", "waits: owner, " + what, with_row(row[:k + 1] + ["  waits: " + val] + row[k + 1:]), {}))
     for st, pre in (("ongoing", "why ongoing:"), ("ongoing", "review:"), ("ready", "ready:")):
         ls2, a2, b2 = _first_row_lines(text, st)
         row2 = ls2[a2:b2]
