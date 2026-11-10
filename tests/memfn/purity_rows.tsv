@@ -29,4 +29,4 @@ C-run	"C-run",   c_always,	"C-run",   pur_never_d,	REACH
 C-table	-	-	UNREACHED applied by `plan_of` (phase 2, the hooks name the table), not by the plan face
 C-own	-	-	UNREACHED applied by `plan_of` (phase 2), not by the plan face
 C-asc	"C-asc",   c_always,	"C-asc",   pur_never_d,	UNREACHED C-run orders the plan first (it calls c_asc, idempotent), and it always holds
-+C-member(verify-NO)	int exact = r->verify == MF_VERIFY_NO;	int exact = 0;	REACH
++C-member(verify-NO)	if (r->verify == MF_VERIFY_NO) {	if (0) {	REACH

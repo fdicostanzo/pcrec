@@ -48,6 +48,10 @@ done
 # white-box; hand-derived literals). -Werror as the other builds.
 "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror "$ROOT/tests/memfn/mass_check.c" "$LIB" \
     -o "$WORK/masschk" || { echo "FAIL: the mass golden-value check does not build"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
+# R-38 K38-1: THE RUN DECISION's readers, each read where it lands
+# (tests/memfn/run_decide_check.c, white-box; hand-derived literals).
+"$CC" -std=gnu11 -O1 -Wall -Wextra -Werror "$ROOT/tests/memfn/run_decide_check.c" "$LIB" \
+    -o "$WORK/rundecchk" || { echo "FAIL: the run-decision reader check does not build"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 echo "run_finder: $n kit sources traced"
 # ONE count for the whole section. Each part's own `checks passed/failed`
 # lines are re-labelled and summed into the totals printed LAST, which are the
@@ -100,6 +104,27 @@ if [ "${mp:-0}" -ge "$MASS_FLOOR" ]; then
 else
     echo "FAIL: mass: ${mp:-0} cases passed < floor $MASS_FLOOR"; tf=$((tf + 1))
 fi
+# R-38 K38-1: the run decision's readers (scan, window, twin, member, rank).
+# RUNDEC_FLOOR is the driver's case count (11 at K38-1), a literal: a driver
+# that silently ran fewer reads red.
+RUNDEC_FLOOR=11
+"$WORK/rundecchk" > "$WORK/rundec.log" 2>&1
+rc=$?
+part rundec "$WORK/rundec.log"
+[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/rundec.log")" -gt 0 ] || { echo "FAIL: rundecchk exited $rc with no failed check"; tf=$((tf + 1)); }
+rp=$(grep -m1 '^checks passed:' "$WORK/rundec.log" | grep -oE '[0-9]+')
+if [ "${rp:-0}" -ge "$RUNDEC_FLOOR" ]; then
+    echo "ok   rundec: ${rp} cases passed >= floor $RUNDEC_FLOOR"; tp=$((tp + 1))
+else
+    echo "FAIL: rundec: ${rp:-0} cases passed < floor $RUNDEC_FLOOR"; tf=$((tf + 1))
+fi
+# R-38 K38-1: the run decision's CALLERS (tests/memfn/decider_census.py's
+# section D, beside its A-B; its plants run under make test-memfn-rows), here
+# so a reader asking kit_run_member directly reds this mech arm too (S3006).
+python3 -I "$ROOT/tests/memfn/decider_census.py" --root "$ROOT" --no-plants > "$WORK/census.log" 2>&1
+rc=$?
+part census "$WORK/census.log"
+[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/census.log")" -gt 0 ] || { echo "FAIL: decider_census exited $rc with no failed check"; tf=$((tf + 1)); }
 # R17-b' B2 (lane fdb2): R-MS6, the harness-only arm-entry counter
 # (tests/memfn/run_arm_reach.sh; needs build/pcrec-harness)
 # R17-b' B2 (lane fdb2), F-B1-3's witness: on ENG_ATTEMPT, G1 reads the kit's
