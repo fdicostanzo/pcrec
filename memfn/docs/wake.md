@@ -17,9 +17,9 @@ Kit worktree: worktrees/memfn on branch lane/memfn-k1108 (ledger/journal commits
   the in-run stop reads kit_run_decide, lever run-tie-left (+ --harness= arm), G2 presence family run_g2_pres.sh, C2 classifier,
   W-K4 layouts, S3007/S3009 RED. The D27 oracle (lane k382o, branch k382o db3f0fb8e) is MERGED in: GREEN over 50,178 records;
   S3008 (plant B) DETECTED. Seam: docs/dev/lanes/k382a_oracle_iface.md.
-- IN FLIGHT: code critic round crit-k382a (opus coordinator, draft to /var/tmp/pcrec-pcrec/scratch/crit-k382a/). On hand-back:
-  commit it as docs/dev/reviews/2026-11-10-r2-k382a.md on lane/memfn-k382a, rule the dispositions, run a fix lane if needed.
-- THEN: gates 540-549 (kit-k382a-*, /var/tmp/pcrec-pcrec/scratch/memfn/k382a/jobs/, all dry-runs pass) - re-key if a fix lane
+- Review 2026-11-10 r2 k382a ruled and fixed (committed on the branch).
+
+- k382afix DELIVERED (review fixes; lane/memfn-k382a 37a6b36ed). NEXT: queue gates 550-559 (kit-k382b-*, /var/tmp/pcrec-pcrec/scratch/memfn/k382afix/jobs/, all dry-runs pass) Wed 11-11 AFTER main's full suite ends (~14:00);
   moves the tip after a cancel (key chains collapse); queue; watch with `scripts/monread kit --wait`; done line; main merges.
 - Main's full suite holds the box Wed 11-11 01:00 to ~14:00 on a frozen main: no kit jobs or merges to main in that window.
 - After K38-2a: 3.0b (main's go given: "3.0b stays after it"), then K38-2 (the seam event, L), K38-3.
