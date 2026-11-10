@@ -91,6 +91,7 @@ test-memfn-rank	2	33.2	ci-measured sections.tsv
 test-memfn-finder	1	203.7	ci-measured sections.tsv
 test-spec-history	3	11	ci-measured sections.tsv
 test-plan-lint	2	4	ci-measured sections.tsv
+test-doc-lint	2	2	ESTIMATED (lane dixt1: python selftest, no compile)
 test-claudemd-size	3	1.7	ci-measured sections.tsv
 test-compound	3	534.5	ci-measured sections.tsv
 test-endmark	2	55.6	ci-measured sections.tsv

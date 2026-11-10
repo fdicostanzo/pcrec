@@ -62,15 +62,27 @@ printf '#!/bin/sh\necho "running: /q/running/1-x 1 1"\necho "pending: 2-y :: not
 printf '#!/bin/sh\necho "runner: live"\necho "pending: 2-y :: ready"\n' > "$T/bq.idleready"
 printf '#!/bin/sh\necho "runner: live"\necho "pending: 2-y :: not-ready: waiting on x"\n' > "$T/bq.idlewait"
 printf '{"autoCompactWindow":150000}\n' > "$T/ch/settings.json"
+# the docs row's accessor, stubbed (python: gestalt runs `python3 -I $GESTALT_ENTRY --over-cap`)
+mkdir -p "$T/ent"
+printf 'print("entry: over-cap checked 1 pair index, 0 over")\n' > "$T/ent/under.py"
+printf 'print("docs: decisions.md 51.3 KB over soft cap 48 KB (+3.3 KB, 107%%)")\nprint("entry: over-cap checked 1 pair index, 1 over")\n' > "$T/ent/over.py"
+printf 'import sys\nprint("entry: over-cap checked 1 pair index, 0 over")\nsys.exit(3)\n' > "$T/ent/exit3.py"
+printf 'import time\ntime.sleep(5)\nprint("entry: over-cap checked 1 pair index, 0 over")\n' > "$T/ent/sleep.py"
+printf 'print("nothing useful")\n' > "$T/ent/notrailer.py"
+printf '\n' > "$T/ent/blank.py"
 # G [VAR=val ...]: run gestalt (default output) over the all-normal inputs, later VARs overriding earlier ones
 G2() { env GESTALT_ROLES_DIR="$T/emptyroles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/ch" GESTALT_STATUSLINE_DIR="$T/nosl" \
-    GESTALT_SOCKS_DIR="$T/socks" GESTALT_LOADAVG="$T/load.low" GESTALT_BOXQUEUE="$T/bq.busy" "$@" ; }
+    GESTALT_SOCKS_DIR="$T/socks" GESTALT_LOADAVG="$T/load.low" GESTALT_BOXQUEUE="$T/bq.busy" GESTALT_ENTRY="$T/ent/under.py" "$@" ; }
 run() { local pre=$1; shift; G2 "$@" PATH="$pre:$PATH" "$TO" 20 bash "$here/gestalt" $GARGS 2>&1; }
 GARGS=""
 q=$(run "$T/ghok"); rc=$?
 [ "$rc" = 0 ] && [ -z "$q" ] && ok "silent (no output, rc 0) when all normal" || bad "not silent rc=$rc: [$q]"
 GARGS=--all; qa=$(run "$T/ghok"); GARGS=""
 printf '%s\n' "$qa" | tail -1 | grep -qx 'gestalt: DONE rc=0' && printf '%s\n' "$qa" | grep -q '^load:' && ok "--all prints every line + DONE" || bad "--all on normal input"
+# J1: --all on a normal fixture with the accessor printing only its trailer: <= 12 lines, no empty line
+GARGS=--all; qj=$(run "$T/ghok"); GARGS=""
+[ "$(printf '%s\n' "$qj" | wc -l)" -le 12 ] && ok "--all <= 12 lines with a silent docs row" || bad "--all lines: $(printf '%s\n' "$qj" | wc -l)"
+printf '%s\n' "$qj" | grep -q '^$' && bad "--all printed an empty line" || ok "--all prints no empty line"
 kinds() { sed -n 's/^\([a-z]*\):.*/\1/p' | tr '\n' ' ' | sed 's/ $//'; }
 fires() { local what=$1 want=$2 pre=$3; shift 3; local o; o=$(run "$pre" "$@" | kinds)
     [ "$o" = "$want" ] && ok "row fires: $what" || bad "row $what: got [$o] want [$want]"; }
@@ -83,6 +95,19 @@ fires "queue idle, nothing ready: silent" "" "$T/ghok" GESTALT_BOXQUEUE="$T/bq.i
 fires "disk >= 85%" disk "$T/dffull:$T/ghok"
 fires "registered session not live" session "$T/ghok" GESTALT_ROLES_DIR="$T/roles" GESTALT_PROJECTS="$T/none"
 fires "context > 70% of compaction point" "session context" "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
+# J2: the docs row: silent under cap (the first test above); exactly the docs: line when over; J3: unavailable cases
+dq=$(run "$T/ghok" GESTALT_ENTRY="$T/ent/over.py")
+[ "$dq" = "docs: decisions.md 51.3 KB over soft cap 48 KB (+3.3 KB, 107%)" ] && ok "docs row prints exactly the docs: line when over cap" || bad "docs over: [$dq]"
+fires "docs over soft cap" docs "$T/ghok" GESTALT_ENTRY="$T/ent/over.py"
+fires "docs accessor exits non-zero" docs "$T/ghok" GESTALT_ENTRY="$T/ent/exit3.py"
+fires "docs accessor prints no trailer" docs "$T/ghok" GESTALT_ENTRY="$T/ent/notrailer.py"
+fires "docs accessor prints a blank line only" docs "$T/ghok" GESTALT_ENTRY="$T/ent/blank.py"
+fires "docs accessor missing" docs "$T/ghok" GESTALT_ENTRY="$T/ent/nonexistent.py"
+t0=$(date +%s); dq=$(run "$T/ghok" GESTALT_ENTRY="$T/ent/sleep.py"); t1=$(date +%s)
+[ "$dq" = "docs: unavailable" ] && [ $((t1 - t0)) -lt 5 ] && ok "docs accessor hangs: 'docs: unavailable' in $((t1 - t0)) s (< 5)" || bad "docs hang: [$dq] $((t1 - t0)) s"
+for u in exit3 notrailer blank; do
+    dq=$(run "$T/ghok" GESTALT_ENTRY="$T/ent/$u.py"); [ "$dq" = "docs: unavailable" ] && ok "docs: unavailable ($u)" || bad "docs $u: [$dq]"
+done
 mv "$T/ch/settings.json" "$T/ch/s.off"; printf '{"autoCompactWindow":1000000}\n' > "$T/ch/settings.json"
 fires "context 12% of compaction point: not hot" session "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
 # idle-held: a non-queue holder, alive, with load1 low in two readings >= 60 s apart

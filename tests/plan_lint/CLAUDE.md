@@ -48,8 +48,9 @@ clean there and its plant (`--selftest`) is its only witness.
 | PL15 | docs/design/plan_row_bodies/: every `plan_row_bodies/<file>.md` named in plan.md or plan_completed.md exists, and every body file is named by one of them | 0 |
 | PL16 | Policy carries no hand-typed state count | 0 |
 | PL17 | non-vacuity (K35): at least 150 rows parsed (162 at adoption) | 0 |
+| PL18 | a `[TAG]` is never shaped like another tracker's key (`D26`, `K50`, `U3b`, `D26.4`, `D26.a1`, a lower-case slug): `scripts/entry` routes those KEYs away from the plan row (design §2.3; shapes in `scripts/doc_profiles.py` `KEY_SHAPES`) | 0 (the ten id-shaped tags such as `K18-FIX` do not full-match) |
 
-`--staged` (the hook's mode) runs PL01-PL13, PL15-PL17 over the INDEX content
+`--staged` (the hook's mode) runs PL01-PL13, PL15-PL18 over the INDEX content
 and skips PL14; `make test-plan-lint` runs all of them over the working tree.
 
 ## Sabotage and the mech matrix

@@ -111,6 +111,7 @@ tests/memfn/run_wreply.sh	OWN-TIER	memfn kit table/text check (memfn/CLAUDE.md),
 tests/mrl/run_mrldiff.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
 tests/partlayout/run_partlayout_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/plan_lint/run_plan_lint.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/doc_lint/run_doc_lint.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
 tests/prefilter/run_prefilter_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
 tests/recursion/run_frame_buffer.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
 tests/recursion/run_specimen_identity.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest

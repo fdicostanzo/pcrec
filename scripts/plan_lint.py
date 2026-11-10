@@ -23,6 +23,9 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I drops the script directory
+import doc_profiles  # noqa: E402  (PL18: the id shapes scripts/entry routes on)
+
 PLAN = "docs/dev/plan.md"
 COMPLETED = "docs/dev/plan_completed.md"
 BODIES = "docs/design/plan_row_bodies"
@@ -80,7 +83,9 @@ RULES = {
     "PL15": "docs/design/plan_row_bodies: every pointer resolves, every body file is named by a row",
     "PL16": "Policy carries no hand-typed state counts",
     "PL17": "non-vacuity: the linter parsed at least the row floor",
+    "PL18": "a [TAG] is never shaped like another tracker's key (D26, K50, D26.1, D26.a1, a lower-case slug): scripts/entry would route it away",
 }
+KEY_SHAPE = re.compile("(?:%s)" % "|".join(doc_profiles.KEY_SHAPES))
 
 
 class Row:
@@ -328,6 +333,11 @@ def lint_plan(text, completed_text, body_names, cite_hits=None):
     for path, ln, s in (cite_hits or []):
         err("PL14", ln, "%s:%d cites a plan line number: %r" % (path, ln, s[:70]))
 
+    # PL18: an id-shaped tag is unreachable through scripts/entry (routing rows 2, 3, 5, 6 come before the tag row)
+    for r in rows:
+        if KEY_SHAPE.fullmatch(r.id):
+            err("PL18", r.line, "[%s] is shaped like a decisions/known/upstream key or a slug; scripts/entry would never reach it" % r.id)
+
     # PL17
     if len(rows) < ROW_FLOOR:
         err("PL17", 1, "parsed %d rows, floor %d: the linter is not reading the file it thinks it is" % (len(rows), ROW_FLOOR))
@@ -508,6 +518,10 @@ def planted(text):
     out.append(("PL15", "unnamed body file", text, {"bodies": {"ORPHAN-BODY.md"}}))
     # PL16
     out.append(("PL16", "hand-typed count", text.replace("\n## Active\n", "\nThere are 99 rows in this file.\n\n## Active\n", 1), {}))
+    # PL18 (design J10): id-shaped tags
+    for tag in ("K50", "D26.a1", "pcre2-compat-tiers", "D26", "U3b", "D26.4"):
+        r = list(row); r[0] = r[0].replace("[" + rid + "]", "[" + tag + "]", 1)
+        out.append(("PL18", "id-shaped tag [%s]" % tag, with_row(r), {}))
     # PL17
     out.append(("PL17", "empty parse", "# pcrec Project Plan\n\n## Policy\n\nx\n" + "".join("\n## %s\n" % s for s in SECTIONS[1:]), {}))
     return out
