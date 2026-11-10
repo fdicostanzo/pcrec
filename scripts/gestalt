@@ -3,11 +3,12 @@
 #   scripts/gestalt [--owner main|kit] [--all]
 # DEFAULT OUTPUT = only the lines whose THRESHOLD ROW holds (the table "ROWS" near the end; Frank 2026-11-10:
 # "only output items that pass threshold so that you're not considering noise"). When none holds it prints
-# NOTHING (not even the DONE line); exit 0 either way. `--all` prints every line, unchanged, then the DONE line.
+# NOTHING (not even the DONE line); exit 0 either way. `--all` prints every NON-EMPTY line (a row whose line is empty prints nothing), then the DONE line.
 # Threshold rows: load (load1 > nproc), session (a registered role with no live session), disk (a filesystem
 # >= 85%), context (a registered manager > 70% of its compaction point), ci (latest main run not success, or
 # gh unavailable; a cancelled-latest prints as completed/cancelled), queue (box idle while a ready job waits),
-# idle-held (a hand `boxlock run` holder alive while load1 stayed < 1.5 across two readings >= 60 s apart).
+# idle-held (a hand `boxlock run` holder alive while load1 stayed < 1.5 across two readings >= 60 s apart),
+# docs (a pair-form tracker index over its soft cap, or the accessor unavailable: `scripts/entry --over-cap`, D192).
 # The gestalt/log.tsv line is written on every run either way.
 # At most ~12 plain-text lines, each external call under `timeout`, whole run well under 5 s:
 #   load      1/5/15-min load, nproc; when load1 > nproc/2 the top 3 CPU users (command name + %CPU, no args)
@@ -27,6 +28,7 @@
 #   git       main tree: branch, +ahead/-behind, modified/untracked counts (names if <= 3), HEAD sha + age;
 #             pcrec-bench as a compact suffix
 #   unread    monitor lines waiting for main and kit (scripts/monread OWNER --peek: the cursor is NOT moved)
+#   docs      pair-form tracker indexes over their soft cap (`scripts/entry --over-cap`, one line, `timeout 2`); empty = no line
 # --owner puts that owner's unread count first, marked `*`. Never kills, never takes the box lock, writes
 # nothing. Exit 0 always; with --all the last line is `gestalt: DONE rc=0`.
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -301,6 +303,16 @@ case $boxraw in "HELD pid="*)
     esac ;;
 esac
 
+# --- docs: `entry --over-cap` prints at most ONE `docs:` line then its `entry: over-cap` trailer ([DOC-INDEX], D192).
+# Silent under every cap (L_docs empty); a non-zero exit, a timeout (2 s) or a missing trailer is `docs: unavailable` (K35).
+L_docs=""; docbad=""
+dout=$($TO 2 python3 -I "${GESTALT_ENTRY:-$here/entry}" --over-cap 2>/dev/null); drc=$?
+if [ "$drc" != 0 ] || ! printf '%s\n' "$dout" | grep -q '^entry: over-cap'; then
+    L_docs="docs: unavailable"; docbad=1
+else
+    L_docs=$(printf '%s\n' "$dout" | grep -m1 '^docs:'); [ -n "$L_docs" ] && docbad=1
+fi
+
 # --- THRESHOLD ROWS: kind | condition (shell test, evaluated) | the line it prints (a variable above).
 # Default output = the lines of the rows whose condition holds, in this order; --all prints every row's line.
 # A condition of `false` = no threshold: the line is --all only. Add a kind by adding a row (and its L_ line).
@@ -315,10 +327,10 @@ subscription | false                              | L_subscription
 git          | false                              | L_git
 ci           | [ "$ci_bad" = 1 ]                  | L_ci
 unread       | false                              | L_unread
-idle-held    | [ -n "$idleheld" ]                 | L_idleheld'
-# PLACEHOLDER (not built): docidx | doc-index soft cap exceeded | L_docidx -- see docs/design/doc_index_format.md (lane/docfmt)
+idle-held    | [ -n "$idleheld" ]                 | L_idleheld
+docs         | [ -n "$docbad" ]                   | L_docs'
 while IFS='|' read -r kind cond var; do
     kind=${kind%% *}; var=${var// /}
-    if [ "$all" = 1 ] && [ "$kind" = idle-held ] && [ -z "$idleheld" ]; then continue; fi
-    if [ "$all" = 1 ] || eval "$cond"; then printf '%s\n' "${!var}"; fi
+    # a row whose line is EMPTY prints nothing, even under --all (idle-held and docs are empty when they do not fire)
+    if [ "$all" = 1 ] || eval "$cond"; then [ -n "${!var}" ] && printf '%s\n' "${!var}"; fi
 done <<< "$ROWS"

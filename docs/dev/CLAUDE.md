@@ -7,6 +7,7 @@ Documents that track execution against the design, not the product. Memos live h
 
 - Update this file when files are added/removed or change role.
 - `dev_journal.md` is append-only (newest at bottom); append after every significant session; its TAIL is the session-start read.
+- `doc_format.md`: the tracker pair format ([DOC-INDEX], D192) and the `scripts/entry` accessor; plan rows today read by `scripts/entry`.
 - `decisions.md` (D1..): add an entry when a choice would surprise a future reader.
 - `plan.md`: update the STATE tag when starting/finishing a step. Row format is enforced by `scripts/plan_lint.sh`
   (`make test-plan-lint`); completed rows move verbatim to `plan_completed.md`; long bodies to `docs/design/plan_row_bodies/`.

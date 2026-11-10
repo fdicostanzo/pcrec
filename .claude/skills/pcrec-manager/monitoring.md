@@ -21,9 +21,12 @@ what you remember):
     HEARTBEAT (OWNER=main). Run these steps in order, then stop:
     0. Run `scripts/gestalt --owner main`. It prints ONLY the items past
        their threshold (load > nproc, a session gone, disk >= 85%, context
-       > 70% of compaction, CI not green, box idle with a ready job) and
-       nothing when all is normal. Silence = nothing to report; any line
-       it prints goes in the one-line reply (and gets acted on).
+       > 70% of compaction, CI not green, box idle with a ready job, a
+       tracker index over its soft cap) and nothing when all is normal.
+       Silence = nothing to report; any line it prints goes in the
+       one-line reply (and gets acted on). Exception: `docs: ... over soft
+       cap` is recorded, not acted on: it is the owner's revisit trigger
+       (D192 answer 4), no lane.
     1. `scripts/monread main`: act on each RED/PROBLEM line (a RED -> a
        triage lane, monitoring.md §2); GREEN/INFO lines -> refresh owner.md.
     2. Read docs/dev/owner.md "Waiting on": for every entry older than 60

@@ -951,6 +951,16 @@ non-vacuity floor (a linter that parsed fewer than 150 rows fails) and the
 self-test are in tests/plan_lint/CLAUDE.md. The section's verdict is read from
 make's `*** [...test-plan-lint] Error` line like every other section's.
 
+### Doc lint (`make test-doc-lint`)
+
+[DOC-INDEX] T1 (lane dixt1, 2026-11-10; D192, docs/design/doc_index_format.md §2.3-§2.4, appendix J). A LIGHT
+section (text only, no `all` dependency, well under a second): `scripts/entry --selftest` (a planted fixture per
+routing row, the REAL dormant profiles, `--over-cap` rounding edges, `--rev`, the work view, the Policy
+templates) and the real-tree `--over-cap` trailer. Its runner prints `checks passed:`/`checks failed:`. The
+section exists from T1 so the structural lists (TEST_SECTIONS, `.PHONY`, tests/ci/shards.tsv, the sanitizer
+exclusion list) move once; unit 1 adds doc_lint's decisions profile and T2 folds plan_lint in. The gestalt
+`docs` row's own cases are in scripts/tests/gestalt.test (`make testscripts`). Format: docs/dev/doc_format.md.
+
 ## Suite health log
 
 **Where testing knowledge lives** (Frank asked, 2026-09-26, whether we track
