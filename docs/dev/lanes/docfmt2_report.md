@@ -79,8 +79,10 @@ over main's decisions.md (scratch/docfmt2/inbound.py, not committed).
   wake and serves the rest by `entry --work`.
 - No rulings file named in the brief; none applied. The deliver file
   docs/dev/lanes/docfmt2_deliver.txt was manager-written and is left as is
-  (untracked, listed under dirty-ok); rev 1's docfmt1_deliver.txt is also
-  untracked in this worktree and was not touched.
+  (untracked, listed under dirty-ok). Rev 1's manager-written
+  docfmt1_deliver.txt was untracked here and lanecheck refused the dirty
+  tree, so it is committed unchanged (the precedent docfmt1 set for rev 0's
+  file); drop it at landing if deliver files stay untracked on main.
 - Next: the RE-CHECK critic round on rev 2 (fix-induced findings + readiness
   per unit); then the owner's build go for T1; unit K (send appendix G to the
   kit) after the re-check.
