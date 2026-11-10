@@ -2165,7 +2165,7 @@ fi
 # prefilter's span. Rule 1 below goes red on it.
 
 # --- rule 1: a \K artifact's caps[0][0] comes from the trailed slot --------
-if pcrec_run "$PCREC" -p rx --features assertions -o "$WORKDIR/kres.c" --pattern 'a\Kb' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --features assertions,match-start-reset -o "$WORKDIR/kres.c" --pattern 'a\Kb' >/dev/null 2>&1; then
     # The whole of the emitted caps_out, so both the presence of the \K form
     # and the ABSENCE of the plain one are read from the same text.
     # [CC-DIFF] STEP 1(a): on a FRAMELESS artifact (this one — 'a\Kb' pushes no
@@ -2251,7 +2251,7 @@ fi
 # because an entry that routed only ONE of its two spellings through the
 # search loop would reintroduce the filter for exactly the callers who used
 # that spelling.
-if pcrec_run "$PCREC" -p rx --features assertions -o "$WORKDIR/kent.c" --pattern 'a\Kb' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --features assertions,match-start-reset -o "$WORKDIR/kent.c" --pattern 'a\Kb' >/dev/null 2>&1; then
     awk '/^ptrdiff_t rx_match\(const rx_ctx \*ctx\)/,/^}/' "$WORKDIR/kent.c" > "$WORKDIR/kent.match"
     # [CC-DIFF] STEP 1(a): same optional-attribute-prefix anchor — 'a\Kb' is
     # frameless, so rx_match_run carries the always_inline prefix too.

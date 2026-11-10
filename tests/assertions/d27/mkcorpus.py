@@ -58,6 +58,8 @@ class Gen:
         self.raw(f"pattern {pattern}")
         if flags_i:
             self.raw("flags i")
+        if features and '\\K' in pattern and 'assertions' in features and 'match-start-reset' not in features:
+            features += ',match-start-reset'   # [FEAT-FAMILIES] `\K` is its own module
         if features:
             self.raw(f"features {features}")
         return pattern.encode('utf-8'), flags_i

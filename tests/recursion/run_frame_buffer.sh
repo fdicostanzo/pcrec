@@ -172,7 +172,7 @@ spread_row 'unbounded-vm'     '(a|aa)+b'            '--engine=vm'             'a
 spread_row 'recursion-match'  '^(a(?1)?b)$'         '--features recursion'    'aaabbb'
 spread_row 'recursion-giveup' '^(a(?1)?b)$'         '--features recursion'    "$giveup_subject"
 spread_row 'leftrec-runaway'  '^(a|(?1)a)$'         '--features recursion'    'aaaaaaaaaab'
-spread_row 'kreset'           'a\Kb'                '--features assertions'   'ab'
+spread_row 'kreset'           'a\Kb'                '--features assertions,match-start-reset'   'ab'
 spread_row 'backref'          '(a+)\1'              '--features backrefs'     'aaaa'
 
 if [ "$s1_run" -lt "$s1_want" ] || [ "$s1_want" -lt 12 ]; then
