@@ -365,18 +365,44 @@ void kit_run_set(const mf_term *t, unsigned j, uint8_t set[32]);
  * sets and a RUN term are asked alike. `exact` 1: only one-member positions
  * are candidates. `after` non-NULL: only positions the member order ranks
  * strictly AFTER it are candidates, so asking again from each answer walks
- * the whole order (translate's ranking). pos -1: no candidate. Every reader
- * of a run's member asks it: window.c's run_member, presence's run scan (P3)
- * and translate's ranking. */
+ * the whole order (translate's ranking). `tie`: the TIE row its ties read
+ * (a strict order, kit_pick_takes' precondition), its caller's. pos -1: no
+ * candidate. Its callers (K38-1, counted by tests/memfn/decider_census.py's
+ * RUN CALLERS): the run decision kit_run_decide and the verify-NO prefilter
+ * member (window.c run_member, `exact` 1), nothing else. */
 typedef struct { int pos; uint32_t mass; } kit_member;
 typedef const uint8_t *kit_pos_at(const void *src, unsigned j, uint8_t buf[32]);
 #define kit_run_member MF_NS(kit_run_member)
 kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src, unsigned n,
-                          int exact, const kit_member *after);
+                          int exact, const kit_member *after, int tie);
+
+/* THE RUN DECISION (presence.c; R-38 K38-1, span_runs_sheet.md rev 1.2
+ * §2.3): a pre-check run's scan position and the stretch its check
+ * verifies, ONE decision every reader asks (P3's scan and window, the twin's
+ * mass, the window family's verify-YES member,
+ * translate's ranking). `st` names the stretch the reader renders: the whole
+ * run, or P3's window. `scan` is a run position (`has_scan` 0: none, only
+ * past the last ranked position); `[ver_lo, ver_lo + ver_len)` the verified
+ * stretch, run positions; `mass` the scan position's (KIT_MASS_SUM).
+ * `after` non-NULL asks the next ranked position (translate's walk). */
+typedef enum { KIT_RUN_WHOLE, KIT_RUN_WINDOW } kit_run_stretch;
+typedef struct {
+    int      has_scan, scan;
+    uint32_t mass;
+    unsigned ver_lo, ver_len;
+} kit_run_reply;
+#define KIT_RUN_NONE ((kit_run_reply){ 0, -1, 0, 0, 0 })   /* no scan, no stretch */
+#define kit_run_decide MF_NS(kit_run_decide)
+#define kit_run_at     MF_NS(kit_run_at)
+kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_stretch st, kit_pos_at *at,
+                             const void *src, unsigned n, const kit_run_reply *after);
+/* A RUN term's (`src`, an mf_term) position j as its set (kit_run_set). */
+const uint8_t *kit_run_at(const void *src, unsigned j, uint8_t buf[32]);
 
 /* THE TIE TABLE's rows (window.c `wf_ties[]`, window_site.md §2.1): the
  * kit's PICK ties (window.c's stop/mass choosers, the run member
- * kit_run_member, presence's set pick and run window) read their row through
+ * kit_run_member with its caller's row, presence's set pick and the run
+ * decision's window) read their row through
  * the answer below: whether a candidate keyed `c`, equal to the best keyed
  * `b` (met first in the walk), takes the tie. Keys are offsets (the run
  * member's are its run-relative indices, a translation of them), except

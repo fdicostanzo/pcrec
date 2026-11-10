@@ -5,9 +5,15 @@
 # replaces the whole tie condition.
 # span_pick unit 1d (lane sp1d) RE-ANCHORED: the run window asks the one before-relation
 # kit_pick_takes; the same plant (`<=`: a tie goes to the rightmost window) replaces that call.
+# R-38 K38-1 (lane k381) RE-AIMED onto THE RUN DECISION's stretch choice: P3's window loop moved
+# from kit_pres_picks into presence.c kit_run_decide (the stretch the decision verifies under
+# KIT_RUN_WINDOW); the same plant (`<=`: a tie goes to the rightmost window) on its one line. Its
+# controls: pres_layout_check's run half (live until K38-2; S1107 keeps it), red on the named witness,
+# and the run decision's reader check (tests/memfn/run_decide_check.c W3, `eeeeeeqeeeeeee`: seven
+# equal windows, window 6 not 0).
 SAB_ID="S1096-window-tie-rightmost"
 SAB_FILE="memfn/src/presence.c"
-SAB_SUITES="candoracle"
+SAB_SUITES="candoracle memfnfinder"
 SAB_DESC="SN-6: the window port drops its tie rule (a tie goes to the rightmost window); caught by the (?i:x)abcdefg(?i:y) tie witness under -e utf8 --memfn=no-window-search"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
@@ -16,6 +22,6 @@ SAB_COUNT=1
 # window line; since D172 S3 the default build renders the pattern through the window search and never
 # enters the run-window loop). Probed there: the plant is LOUD (rc 1, "the pre-check's parts are not its
 # presence links' layout"), never a silent move; on the default, -e utf8, --engine=vm arms it is SAME.
-SAB_BEFORE='                if (kit_pick_takes(&bw, wm, T_WINDOW, w)) bw = (kit_pick){ w, w, wm };'
-SAB_AFTER='                if (bw.pos < 0 || wm <= bw.v) bw = (kit_pick){ w, w, wm };   /* SABOTAGE S1096 */'
-SAB_DOC_FIGURE="NOT RE-MEASURED by lane sp1dfix (the gate's mech shard re-measures it at the fix head; the figure below is from WIP commit 9eb7d7837, not the subject). HAND-MEASURED by lane sp1d (re-anchor on kit_pick_takes; docs/dev/lanes/sp1d_report.md): the row's plant applied by tests/mech/lib/replace.py to a git archive of 9eb7d7837, built, tests/codegen/run_cand_oracle.sh: candoracle:5fail/177pass DETECTED (clean 0fail/182pass). Earlier: lane sp1bfix after the span_pick 1b re-anchor: the sabotaged tree under tests/codegen/run_cand_oracle.sh, candoracle:5fail/173pass DETECTED (the solo mech run is left to the gate shard)."
+SAB_BEFORE='        if (kit_pick_takes(&bw, wm, T_WINDOW, w)) bw = (kit_pick){ w, w, wm };'
+SAB_AFTER='        if (bw.pos < 0 || wm <= bw.v) bw = (kit_pick){ w, w, wm };   /* SABOTAGE S1096 */'
+SAB_DOC_FIGURE="HAND-MEASURED by lane k381 (re-aim onto kit_run_decide's window; docs/dev/lanes/k381_report.md): the row's plant applied to a git archive of the lane's tip, built: tests/memfn/run_decide_check.c 1fail/10pass (window W3: 6, want 0); the witness (?i:x)abcdefg(?i:y) under -e utf8 --memfn=no-window-search is refused by pres_layout_check (rc 1, 'its run part is not the WINDOW its presence link verifies'). The candoracle and memfnfinder figures are the gate's mech shard's. Earlier: NOT RE-MEASURED by lane sp1dfix (the gate's mech shard re-measures it at the fix head; the figure below is from WIP commit 9eb7d7837, not the subject). HAND-MEASURED by lane sp1d (re-anchor on kit_pick_takes; docs/dev/lanes/sp1d_report.md): the row's plant applied by tests/mech/lib/replace.py to a git archive of 9eb7d7837, built, tests/codegen/run_cand_oracle.sh: candoracle:5fail/177pass DETECTED (clean 0fail/182pass). Earlier: lane sp1bfix after the span_pick 1b re-anchor: the sabotaged tree under tests/codegen/run_cand_oracle.sh, candoracle:5fail/173pass DETECTED (the solo mech run is left to the gate shard)."

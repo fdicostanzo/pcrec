@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k381_report.md
+sections: Summary; run_decide; Callers and counts; Identity and reach; Sabotage fates; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: kit-k381-strict kit-k381-ident1 kit-k381-ident2 kit-k381-ident3 kit-k381-reach kit-k381-test kit-k381-plants kit-k381-mech1 kit-k381-mech2 kit-k381-mech3

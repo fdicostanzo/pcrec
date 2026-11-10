@@ -52,8 +52,9 @@ window.c	m_one_holds	fn	-	M	-
 window.c	m_pair	fn	-	M	-
 window.c	m_margin_holds	fn	-	M,EXC:MARGIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE
 window.c	m_parked_holds	fn	-	M	-
-window.c	kit_run_member	fn	-	T-VERIFY,TIE	- (since 1c: run_member, P3's run scan and translate's ranking ask it)
-window.c	run_member	fn	-	T-VERIFY	-
+window.c	kit_run_member	fn	-	T-VERIFY,TIE	- (since 1c; K38-1: asked only by the run decision kit_run_decide and run_member's verify-NO prefilter member, decider_census.py D)
+window.c	run_member	fn	-	T-VERIFY	- (K38-1: verify YES asks kit_run_decide; verify NO, the prefilter window site's own member, asks kit_run_member, span_runs_sheet.md §2.5)
+window.c	translate:run-rank	part	kit_run_decide(d->rate, KIT_RUN_WHOLE, sets_at, w->set[hint_at]	T-VERIFY,TIE	- (K38-1: RQ-2's ranking asks the run decision once per ranked position, option A)
 window.c	kit_tie_takes	fn	-	TIE	-
 window.c	kit_pick_takes	fn	-	TIE	- (unit 1d: the pick's one before-relation; every argmin asks it)
 window.c	kit_tie_member_key	fn	-	TIE	-
@@ -78,7 +79,7 @@ window.c	wf_srows	data	-	T-STREAM	- (3.0a: TABLE S's rows, each with its refusal
 window.c	wf_stream_refusal	fn	-	T-STREAM	- (3.0a: Table S's ST-many row's text, the composer's refusal)
 window.c	wf_tables_check	excluded	-	the renderer tables' self-check (mf_art_begin refuses a broken table; it decides nothing)	-
 presence.c	kit_pres_picks:set-pick	part	kit_pick_takes(&bs,	T-PRES	- (asks kit_pick_takes since 1d)
-presence.c	kit_pres_picks:run-window	part	kit_pick_takes(&bw,	TIE	- (reads T_WINDOW since 1b; asks kit_pick_takes since 1d)
+presence.c	kit_run_decide	fn	-	T-VERIFY,TIE	- (K38-1: THE RUN DECISION, scan and stretch; kit_pres_picks:run-window moved in, reads T_WINDOW, asks kit_pick_takes)
 presence.c	kit_pres_picks:landmark	part	the FIFTH: the landmark admission	EXC:U6, the kit's landmark shadow	pcrec states the landmark as a candidate
 precheck.c	implied_by	fn	-	EXC:implied_by (T-PRES)	[MEMFN-UNBOUNDED-SPANS]
 runcmp.c	rc_row_of	fn	-	T-CMP	-

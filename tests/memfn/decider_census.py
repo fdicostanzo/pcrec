@@ -22,8 +22,8 @@ question table or named exception, against the kit's sources:
      two byte-identical copies of a member's decider loop, each pasted into
      an UNLISTED function of a scratch copy of the sources -- the first loop
      holding a_mass_choose's pick (window.c's `kit_pick_takes(&best,
-     p->mass`), kit_pres_picks' run-window loop (presence.c's
-     `kit_pick_takes(&bw, wm`) and kit_run_member's own (window.c's
+     p->mass`), the run decision's window loop (presence.c's
+     `kit_pick_takes(&bw, wm`, kit_pres_picks' until K38-1) and kit_run_member's own (window.c's
      `kit_pick_takes(&b, c.v`); since unit 1d every argmin asks the one
      before-relation kit_pick_takes, so its call `pick_takes(` is a LIVE
      backstop shape -- must each turn B red; and THREE BYPASS plants, each an
@@ -38,6 +38,21 @@ question table or named exception, against the kit's sources:
      uses), in unlisted functions, must turn B red too (review 2026-11-09 r1
      s30a F13: the earlier plant indexed `ren_search[i]`, a spelling no
      reader uses).
+
+  D  THE RUN CALLERS (R-38 K38-1, span_runs_sheet.md rev 1.2 §1 Goal 2, §5):
+     the map above lists deciders, not who CALLS them, so a reader that asked
+     kit_run_member directly would pass A-C. D counts every USE of the
+     identifiers of the run member and of the run decision in memfn/src, call
+     or not (comment- and string-stripped text, each use attributed to its
+     enclosing definition; a definition, prototype or `#define` is no use)
+     against RUN_CALLERS, exactly: kit_run_member from kit_run_decide and the
+     verify-NO prefilter member (run_member) only; kit_run_decide from P3's
+     ports (kit_pres_picks: scan, window, the twin's mass), run_member
+     (verify YES) and translate (the RQ-2 ranking); and P3's window pick
+     (`T_WINDOW` read as a pick row) in kit_run_decide only. Its plants
+     (skipped by --no-plants): an unlisted function calling kit_run_member
+     directly, one holding it as a non-call (an alias), and one asking the
+     window's row, each must turn D red.
 
 Independent control: the map is hand-written (a declaration), the backstop is
 a grep over the raw text and the definition finder a brace count over the
@@ -101,8 +116,23 @@ HITS = 60
 # expected 59 counted no function for either, plan_frame.md §2.4 "re-derives
 # both numbers from its map"); 64 at the r1 s30a review's fixes (wf_stmt_arm
 # now wf_stmt_row; Table S's rows wf_srows, its refusal text
-# wf_stream_refusal, and the excluded self-check wf_tables_check in).
-MEMBER_COUNT = 64
+# wf_stream_refusal, and the excluded self-check wf_tables_check in); 65 at
+# R-38 K38-1 (kit_pres_picks:run-window gone into the run decision
+# kit_run_decide, which is in; translate:run-rank back in as the RQ-2 ranking's
+# reader of it, span_runs_sheet.md §5).
+MEMBER_COUNT = 65
+
+# D: THE RUN CALLERS, EXACT (a call site added or lost is red): callee ->
+# {enclosing definition: uses}: EVERY use of the identifier (a call, an alias, a
+# function pointer), minus its definition, prototype and `#define` (review
+# 2026-11-10 r1 k381, K5). `T_WINDOW,` is P3's window pick asking its
+# TIE row, `T_WINDOW, key)` (kit.h's enum and window.c's `[T_WINDOW]` table
+# row are no calls).
+RUN_CALLERS = {
+    r"\bkit_run_member\b": {"kit_run_decide": 1, "run_member": 1},
+    r"\bkit_run_decide\b": {"kit_pres_picks": 1, "run_member": 1, "translate": 1},
+    r"\bT_WINDOW\s*,\s*\w+\s*\)": {"kit_run_decide": 1},
+}
 
 passed = failed = 0
 SHAPE_HITS = {}     # the last census()'s lines per BACKSTOP shape
@@ -260,6 +290,47 @@ def census(src, rows, count=True):
     return hits, stray, errs
 
 
+def run_callers(src):
+    """D: per RUN_CALLERS pattern, {enclosing definition: count} over the
+    stripped sources; a call outside every definition body is keyed '?'. A
+    match on the callee's own definition or prototype line is not a call."""
+    got = {}
+    for fn in sorted(os.listdir(src)):
+        if not fn.endswith((".c", ".h")):
+            continue
+        with open(os.path.join(src, fn)) as fh:
+            raw = fh.read()
+        text = strip_c(raw)
+        lines = text.split("\n")
+        defs = definitions(raw)
+        for pat in RUN_CALLERS:
+            callee = re.match(r"\\b(\w+)", pat).group(1)
+            for no, ln in enumerate(lines, 1):
+                if ln.lstrip().startswith("#"):
+                    continue            # #define / #include: no use
+                for _ in re.finditer(pat, ln):
+                    owner = [d for d in defs if d[1] <= no <= d[2]]
+                    if owner and owner[0][0] == callee and (not owner[0][3] or no == owner[0][1]
+                                                            or "{" not in "\n".join(lines[owner[0][1] - 1:no])):
+                        continue        # its own definition head or prototype
+                    key = owner[0][0] if owner and owner[0][3] else "?"
+                    got.setdefault(pat, {})
+                    got[pat][key] = got[pat].get(key, 0) + 1
+    return got
+
+
+def run_callers_check(src, quiet=False):
+    """Errors of D over `src` (empty: RUN_CALLERS holds exactly)."""
+    errs, got = [], run_callers(src)
+    for pat, want in RUN_CALLERS.items():
+        have = got.get(pat, {})
+        if have != want:
+            errs.append("run callers of %s: %s, not %s" % (pat, have, want))
+        elif not quiet:
+            print("run callers of %s: %s" % (pat, ", ".join("%s %d" % kv for kv in sorted(have.items()))))
+    return errs
+
+
 def plant(src, tmp, fname, anchor, opener):
     """A scratch copy of `src` whose `fname` gains an unlisted function
     holding a byte-identical copy of the loop that opens with `opener` and
@@ -309,7 +380,27 @@ def main():
         bad("a decider shape outside every census member: " + s)
     if not stray:
         ok()
+    # D: the run callers
+    derrs = run_callers_check(src)
+    for e in derrs:
+        bad(e)
+    if not derrs:
+        ok()
     if not a.no_plants:
+        # D's plants: a reader asking the run member directly; one asking the
+        # window's row beside the run decision
+        for label, body in (("kit_run_member", "    (void)kit_run_member(NULL, NULL, NULL, 0, 0, NULL, 0);\n"),
+                            ("kit_run_member alias", "    void *census_alias = (void *)kit_run_member;\n"),
+                            ("T_WINDOW", "    (void)kit_pick_takes(&b, 0, T_WINDOW, 0);\n")):
+            text = ("\nstatic void census_reader(void)\n{\n    kit_pick b = KIT_PICK_NONE;\n" + body + "}\n")
+            with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as t:
+                shutil.copytree(src, os.path.join(t, "src"))
+                with open(os.path.join(t, "src", "compose.c"), "a") as fh:
+                    fh.write(text)
+                perr = run_callers_check(os.path.join(t, "src"), quiet=True)
+                (ok() if any("census_reader" in e for e in perr) else
+                 bad("run-callers plant %s (a direct call in an unlisted function) did not turn D red" % label))
+                print("run-callers plant %s: %d error(s)" % (label, len(perr)))
         for fname, anchor, opener in (("window.c", "kit_pick_takes(&best, p->mass", "for ("),
                                       ("presence.c", "kit_pick_takes(&bw, wm", "for (int w"),
                                       ("window.c", "kit_pick_takes(&b, c.v", "for (")):

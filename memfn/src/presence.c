@@ -12,10 +12,10 @@
  * provenance, D162 ruling 2: these are the total default reproducing today):
  *   P3  the set's pick (the rarest member; a tie to the member LAST in
  *       pattern order, then to the larger byte), the run's scan position (the
- *       run member, kit_run_member: the rarest position by its set's mass; a
- *       tie to the rightmost) and the
- *       window start (the least window mass among the MF_PRES_WINDOW-position
- *       windows holding the scan position; a tie to the leftmost);
+ *       run member: the rarest position by its set's mass; a tie to the
+ *       rightmost) and the window start (the least window mass among the
+ *       MF_PRES_WINDOW-position windows holding the scan position; a tie to
+ *       the leftmost), both THE RUN DECISION's (kit_run_decide, below);
  *   P4  set-leads (the set's pick STRICTLY rarer than the run's scan member);
  *   P2  G1 (the start search's proof stands for the leading check: identity,
  *       the run verified, or a no-commoner stop byte);
@@ -108,10 +108,56 @@ static int32_t member_key(const mf_pred *p)
 }
 
 /* The run member's reader of a RUN term (`src`): position j as its set. */
-static const uint8_t *run_at(const void *src, unsigned j, uint8_t buf[32])
+const uint8_t *kit_run_at(const void *src, unsigned j, uint8_t buf[32])
 {
     kit_run_set(src, j, buf);
     return buf;
+}
+
+/* ---- THE RUN DECISION (R-38 K38-1; span_runs_sheet.md rev 1.2 §2.3, §5) ------
+ *
+ * ONE function decides a pre-check run's scan position and the stretch its
+ * check verifies; every reader asks it: P3's run scan and window (here,
+ * kit_pres_picks, and through it the twin's mass, P4 and P2), the window
+ * family's member of a
+ * pre-check run part (window.c run_member, verify YES) and translate's RQ-2
+ * ranking (window.c, asked once per ranked position with the previous answer
+ * handed back as `after`). Its rule is the incumbent's, reproduced: the scan
+ * is the run member (kit_run_member over every position, ties per the TIE
+ * table's stretch row, the higher position); the stretch is the whole run
+ * (KIT_RUN_WHOLE) or P3's window (KIT_RUN_WINDOW: the least window mass among
+ * the MF_PRES_WINDOW-position windows holding the scan, ties per T_WINDOW,
+ * the leftmost; the whole run where it is no longer than one window).
+ * `after` non-NULL: the next position the order ranks after it (the stretch
+ * is then the whole run's); no candidate left, `has_scan` 0. The kit's
+ * verify-NO prefilter member (window.c run_member, exact positions) is a
+ * different site's decision and asks kit_run_member itself
+ * (span_runs_sheet.md §2.5); tests/memfn/decider_census.py's RUN CALLERS
+ * section holds both call sets. */
+kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_stretch st, kit_pos_at *at,
+                             const void *src, unsigned n, const kit_run_reply *after)
+{
+    kit_member prev = after ? (kit_member){ after->scan, after->mass } : (kit_member){ -1, 0 };
+    kit_member sc = kit_run_member(rate, at, src, n, 0, after ? &prev : NULL, T_MASS_STRETCH);
+    kit_run_reply r = { sc.pos >= 0, sc.pos, sc.mass, 0, n };
+    if (!r.has_scan || after || st == KIT_RUN_WHOLE || n <= MF_PRES_WINDOW) return r;
+    /* P3's window: the windows holding the scan, each start's mass */
+    int lo_s = sc.pos - (MF_PRES_WINDOW - 1), hi_s = sc.pos;
+    if (lo_s < 0) lo_s = 0;
+    if (hi_s > (int)n - MF_PRES_WINDOW) hi_s = (int)n - MF_PRES_WINDOW;
+    kit_pick bw = KIT_PICK_NONE;
+    for (int w = lo_s; w <= hi_s; w++) {
+        uint8_t win[MF_PRES_WINDOW][32];
+        for (unsigned j = 0; j < MF_PRES_WINDOW; j++) {
+            const uint8_t *q = at(src, (unsigned)w + j, win[j]);
+            if (q != win[j]) memcpy(win[j], q, 32);
+        }
+        uint32_t wm = kit_mass(rate, win[0], MF_PRES_WINDOW, KIT_MASS_SUM);
+        if (kit_pick_takes(&bw, wm, T_WINDOW, w)) bw = (kit_pick){ w, w, wm };
+    }
+    r.ver_lo = (unsigned)bw.pos;
+    r.ver_len = MF_PRES_WINDOW;
+    return r;
 }
 
 /* ---- the ports ---------------------------------------------------------------- */
@@ -149,43 +195,27 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     out->set_pick = (int16_t)best;
     int q = best >= 0 ? one_byte(&s->pspans[best].term[0]) : -1;
 
-    /* P3: the run's scan position and window */
-    kit_member sc = { -1, 0 };
-    int at = 0;
+    /* P3: the run's scan position and window, the run decision's */
+    kit_run_reply rr = KIT_RUN_NONE;
     if (run) {
-        const mf_term *t = &run->term[0];
-        unsigned n = t->run_len;
-        sc = kit_run_member(rate, run_at, t, n, 0, NULL);
-        int scan = sc.pos;
-        if (n > MF_PRES_WINDOW) {
-            int lo_s = scan - (MF_PRES_WINDOW - 1), hi_s = scan;
-            if (lo_s < 0) lo_s = 0;
-            if (hi_s > (int)n - MF_PRES_WINDOW) hi_s = (int)n - MF_PRES_WINDOW;
-            kit_pick bw = KIT_PICK_NONE;
-            for (int w = lo_s; w <= hi_s; w++) {
-                uint8_t win[MF_PRES_WINDOW][32];
-                for (unsigned j = 0; j < MF_PRES_WINDOW; j++) kit_run_set(t, (unsigned)w + j, win[j]);
-                uint32_t wm = kit_mass(rate, win[0], MF_PRES_WINDOW, KIT_MASS_SUM);
-                if (kit_pick_takes(&bw, wm, T_WINDOW, w)) bw = (kit_pick){ w, w, wm };
-            }
-            at = bw.pos;
-        }
-        out->run_scan = (int16_t)sc.pos;
-        out->run_window = (int16_t)at;
+        rr = kit_run_decide(rate, KIT_RUN_WINDOW, kit_run_at, &run->term[0], run->term[0].run_len,
+                            NULL);
+        out->run_scan = (int16_t)rr.scan;
+        out->run_window = (int16_t)rr.ver_lo;
     }
 
     /* P4: set-leads, the set's pick against the run's scan member */
     unsigned scan_mask = 0xFFu;
     if (run) {
         const mf_term *t = &run->term[0];
-        scan_mask = t->mask ? t->mask[sc.pos] : 0xFFu;
+        scan_mask = t->mask ? t->mask[rr.scan] : 0xFFu;
         if (q >= 0)
-            out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) < sc.mass;
+            out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) < rr.mass;
     }
 
     /* P2 (G1): the proof against the leading check */
     {
-        int lead = run && scan_mask == 0xFFu ? run->term[0].run[sc.pos] : q;
+        int lead = run && scan_mask == 0xFFu ? run->term[0].run[rr.scan] : q;
         int dom;
         if (!proof || proof->byte < 0) dom = 0;
         else if (run && !proof->run) dom = 0;
@@ -201,11 +231,9 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
         unsigned long long h = 1000000u, m = 1000000u, k = s->head_max;
         if (!run) {             /* the set's pick alone (none picked: the empty set, 0) */
             h = q >= 0 ? kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_CAP) : 0;
-        } else {
+        } else {                /* the run decision's stretch (P3's window) */
             const mf_term *t = &run->term[0];
-            unsigned len = t->run_len - (unsigned)at < MF_PRES_WINDOW
-                         ? t->run_len - (unsigned)at : MF_PRES_WINDOW;
-            for (unsigned j = (unsigned)at; j < (unsigned)at + len; j++) {
+            for (unsigned j = rr.ver_lo; j < rr.ver_lo + rr.ver_len; j++) {
                 uint8_t set[32];
                 kit_run_set(t, j, set);
                 h = (h * kit_mass(rate, set, 1, KIT_MASS_CAP) + 999999u) / 1000000u;

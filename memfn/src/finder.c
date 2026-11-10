@@ -710,6 +710,9 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
  *       stated (a run's window is then the site's one check); of the run,
  *       the window (`member` 1 + its first position) is verified;
  *   P9  the total default: verified whole (`member` 0), every member.
+ * The run's stretch under P3 (its window) is THE RUN DECISION's (presence.c
+ * kit_run_decide, R-38 K38-1); under P0/P9 it is the whole run, the route's
+ * constant (K38-2 hands the route to the decision).
  * P4, set-leads ported, is an ORDER row: asked on its own after the
  * terminal (as the FIND slot asks its N-rows), on a member span it puts the
  * set's pick, verified, at the HEAD of the chain, ahead of the run. Its
