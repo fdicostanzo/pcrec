@@ -528,7 +528,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-11-09 Frank ("Yes"), after asking whether pcrec supports `(?|...)`; libpcre2 10.46 accepts it, pcrec refuses "requires module 'branch-reset'" (docs/pcre2_compliance.md, 2026-11-06 entry)
   status (2026-11-09): UNSCHEDULED. Expected mostly front end: group numbering restarts per alternative, groups after the construct continue from the largest branch count; engines already treat captures as numbered slots
   trigger: (D77) a caller or corpus pattern refused for it, or a compliance push that takes the unbuilt planned modules
-  refs: docs/pcre2_compliance.md (`(?|...)`); src registry row `branch-reset`; [ARRAY-CAPTURE] (another capture-numbering extension)
+  refs: docs/pcre2_compliance.md (`(?|...)`); src registry row `branch-reset`; [ARRAY-CAPTURE] (another capture-numbering extension); [COND-FAMILY] (umbrella)
   Scope: parser numbering; group-count and rx_info.groups facts; backreferences and subroutine calls into a reset group; NAMED groups (Frank 2026-11-09: names are bound by ORDER inside the construct: the k-th group of every branch is one number, so a name attaches to that number, so `(?|(?<a>x)|(y))` gives `a` for BOTH branches' group (the name is the NUMBER's; Frank 2026-11-09); differing names for the same number are PCRE2's error case as the manager understands it; confirm every naming rule against libpcre2 as the oracle before building, and route any rule only its source shows through a pcre2-reader note, D181); an oracle-checked .rxt set (byte and utf8). Build note (2026-11-09): Frank's explicit group numbering `(?<N>...)` ([POSTFACT] body, the group-0 entry) would make branch reset sugar for one general mechanism; if that is ruled in first, build this row on it.
 - [ARRAY-CAPTURE] STATE:not-started — `(X){m,n}` with an opt-in syntax reports every iteration's span in n fixed slots; bounded only
   filed: 2026-11-09 manager (Frank: "array capture for (X){M, N} perhaps using special syntax. Cap N become N capture groups. No unbounded")
@@ -658,7 +658,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-09-29 Frank
   status (2026-09-29): STEP 0 DELIVERED 2026-09-29 (lane lacens2, docs/dev/eng_look_census.md): 98 fixed-width k=2-4 occurrences (72 from one boundary-matrix file). Lookbehind grows 2-3 → 3-10 states; state count is NOT the blocker.…
   next: selected by measurement when an [OPTLOOP] cycle opens (D119/D137); no row-specific trigger recorded
-  refs: docs/dev/eng_look_census.md; decisions D6 D27 D137
+  refs: docs/dev/eng_look_census.md; decisions D6 D27 D137; [COND-FAMILY] (umbrella)
   (chartered by Frank, 2026-08-23 13:5x, on the manager's analysis; Frank's framing: "my concern is unnecessary special handling code and duplicate code paths. Ideally we implement this in such a way that it produces the 'best' possible code while not actually knowing about the special assertions it's implementing … is the one character optimization the best form, or merely one that works for the immediate need?" — it is the minimal instance, not the form). THE FORM: a lookaround over a regular body is a constraint on the SUBJECT, not the match — `(?<=L)` at p ⟺ subject[..p] ∈ Σ*·L, a property of text the forward scan has already consumed; `(?=L)` at p ⟺ subject[p..] ∈ L·Σ*, the same property for the REVERSE scan.
   MECHANISM: the PRODUCT of the main automaton with each assertion body's recognizer (Σ*·L forward; reverse(L)·Σ* in the reverse machine), folded in during determinization so an assertion is a predicate on the product state; bounded lookahead in the forward pass as a k-byte delayed acceptance; unbounded lookahead in the forward pass DROPPED (superset — sound for end-finding) and resolved in the reverse pass or by the VM; the context seeded from the bytes before startpos by running the component over the prefix (mechanism 4 generalized).
   TODAY'S assertions machinery (assertions_ design.md waves B/C: the previous-byte context bit in the state identity, the class-indexed accept table, mechanism 4) IS this construction for one-class bodies — it becomes an INSTANCE, then gets DELETED once DD-11 rebinds \b/(?m)^/(?m)$/\Z to their lookaround definitions and the identity gate proves the product's artifact byte- identical (or measured-equivalent) to the hand-built one; where it is not, that is the optimizer's next target, never a reason to keep the special code. REACH: every bounded-length regular-body lookaround becomes DFA-eligible — `(?<=foo)bar`, `(?<!\d)\d{4}(?!\d)` — not the four assertion spellings only. MEASUREMENT FIRST: state growth — wave B measured the one-bit context's composed worst case at 38,009 states against the 32,000 cap; the product with larger components is not free.
@@ -885,16 +885,23 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: the first build of facts.def's harness deny source (alt_normal_form stage 2a or span_arms E1/R1, whichever lands first)
   refs: docs/design/span_arms.md §3.7; docs/design/alt_normal_form.md §3.5 (r7 FIX-8), §11; docs/dev/reviews/2026-11-08-r1-spanarms.md F18; memfn/include/memfn.h (mf_lever)
   alt_normal_form FIX-8's general form, taken by span_arms rev 1: a fact's deny admits a harness source, the restorable arms are rows of one declared table. The cli levers are the family's other members; the kit's mf_lever list is a sibling to compare at that build.
+- [COND-FAMILY] STATE:not-started — umbrella: the conditions / predicates / intersection family, planned together
+  filed: 2026-11-10 Frank (to the kit, relayed by main); lane condsurv wrote the row and the survey
+  status (2026-11-10): survey delivered (docs/design/cond_family.md rev 0): 17 PCRE2 + 11 pcrec members; on no row before: script runs, scan_substring, pattern-variable and template set-tests; 12 machinery rows; first piece + 6 owner questions (§5, §7)
+  next: owner plans the family from the survey (its §7 questions first)
+  refs: docs/design/cond_family.md; docs/dev/lanes/condsurv_report.md; decisions D26 D62 D67 D77 D153 D168 D189; [ENGINE-WHY] (reads the survey's DFA-reason column)
+  Frank 2026-11-10: "Yes. Let's start or designate a master to all these. Perhaps others were missing? It should look at the machinery needed to satisfy and the common elements. Then we can plan them all together."
+  UMBRELLA ROW. Members (rows stay where they are): [CONDITIONALS], [POSTFACT], [ENG-LOOK], [BRANCH-RESET], [PCRE2-GAPS-TBD] (`(*FAIL)` `(*ACCEPT)`), [CLASS-SETOPS], [VLOOKBEHIND], [LB-EXIST]; readers: [REQ-LOOKAROUND], [CTX-PREFILTER], [LOOK-LOCATE], [DESC-DEAD], [NEVER-MATCH], [BREF-SPAN], [SPAN-HELPERS]; superset machinery: [ENG-TDFA]. Common elements (survey §4): the condition node, the name table (labels vs capture numbers), ONE checker product for every DFA member (start/read rows), and the VM-drives/DFA-checks piece (A-REV and its forward twin).
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
   status (2026-11-05): PARKED, a separate effort (Frank 2026-11-05); investigation done (docs/dev/lanes/condinv_report.md): no outside demand; one general condition node when designed
   next: Frank's word on a design lane (four plain-words questions at the end of docs/dev/lanes/condinv_report.md)
-  refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md
+  refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md; [COND-FAMILY] (umbrella)
 - [PCRE2-GAPS-TBD] STATE:not-started — PCRE2 gap rank 4 (catch-all, TBD): the remaining refused constructs, each 0-1 uses
   filed: 2026-11-05 Frank ("one rank 4 item as a catch all group rank 4 'tbd'"), from the completeness scoreboard
   status (2026-11-05): members `\R`, `(*ACCEPT)`, `(*FAIL)`, `\C`, `\cX`, `\o{}`, `\N{U+..}`, `(?#..)`, `(?|..)`, `[[:<:]]`; each 0 or 1 corpus/bench uses; unranked within the group
   next: Frank's word; a member leaves the group for its own row when a use or demand appears
-  refs: docs/dev/lanes/scoreboard_report.md (rows 5-16); docs/dev/lanes/scoreboard_evidence/gaps.tsv
+  refs: docs/dev/lanes/scoreboard_report.md (rows 5-16); docs/dev/lanes/scoreboard_evidence/gaps.tsv; [COND-FAMILY] (umbrella)
 - [HANDED-FACTS] STATE:not-started — the handed-fact resolution family: which analysis kinds a compile consults, and its consult mask
   filed: 2026-11-03 manager (span_pick rev 5.1 R12, review 2026-11-03-r2-memfn-spanpick5)
   status (2026-11-03): filed; nothing built. Row 0 (refuse when a consulted kind cannot be derived) is in span_pick rev 5.2; the consult side is SUSPECTED incomplete.
@@ -1376,7 +1383,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-24 manager (utfwant want 3; Frank 2026-10-24 "set these up")
   status (2026-11-05): PCRE2 gap rank 3 (completeness scoreboard; utf_wants rank 3); TR18 requires it; JavaScript's v flag and Perl/PCRE2 (?[...]) spell it; registry PLANNED
   next: starts on Frank's word
-  refs: docs/dev/utf_wants_2026-10-24.md
+  refs: docs/dev/utf_wants_2026-10-24.md; [COND-FAMILY] (umbrella)
   2026-11-06 (Frank "Yes"; manager): family (B) of the rewrite-free algebra: sets of CHARACTERS, closed, evaluated in the parser into one class node. Shares its OPERATOR VOCABULARY and semantics (intersect, subtract, nest) with [POSTFACT]'s string-level `~`/`!~`, so a user learns one model; the implementations stay separate.
 - [BOXQUEUE-GATEFAIR] STATE:not-started — A QUIET-GATED JOB LOSES EVERY HANDOFF TO A READY NON-GATED ONE
   filed: 2026-10-21 manager, from the kit's report (a new [WATCH-IDLE]-family shape; that row is completed)
@@ -1859,7 +1866,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-10-13 Frank (session 111)
   status (2026-11-08): idea stage; Frank proposed the WHERE operator `rx ## predicate` (`$` = the operand's text, one value only, no captures, DFA-lowerable), body file 2026-11-08; discuss before any design lane
   next: discussion with Frank: syntax/module (a non-PCRE extension, D26), placement semantics, the three tiers below
-  refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26; docs/design/plan_row_bodies/POSTFACT.md
+  refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26; docs/design/plan_row_bodies/POSTFACT.md; [COND-FAMILY] (umbrella)
   Frank: callouts can express it (by design), but lean into compilation: place the check INLINE, and check each \d as it arrives for a quicker bail. Three tiers by what the predicate is: (1) REGULAR predicates (numeric range over a digit span, length, set membership) LOWER INTO THE AUTOMATON (pcrec generates the range regex), so the DFA keeps its speed and bails per digit for free; (2) non-regular predicates as compiled inline assertions at their placement point (VM; callout semantics: fail = backtrack); (3) DFA candidate + post-verify only where the decomposition is unique (fixed widths, as [BREF-SPAN]).
   HOW GENERAL (2026-10-13): one-integer linear predicates (ranges, mod m, and/or/not) are ALWAYS regular over decimal digits (Presburger / Buchi-Bruyere) with small DFAs; relations between two sequential numbers (`$1<$2`) or length-vs-value counters are regular ONLY when bounded, with states ~ product of value ranges. Rule: lower when one-variable, or bounded and the priced state count fits the size ladder; else lower a NECESSARY approximation (digit count, leading digit) and check the rest inline.
   2026-11-06 (Frank "Yes"; manager): family (C), algebra over sets of STRINGS. Its result is an automaton (size-laddered product), not a node. It shares ONE product construction with [ENG-LOOK] (build it once for both) and its operator vocabulary with [CLASS-SETOPS].

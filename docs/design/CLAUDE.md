@@ -75,7 +75,7 @@ Memory functions, kit, compound, iterator
 - `memfn/` — [MEMFN] design record (requirements, ISA selection, survey, integration revisions through 4.9, twins, Linux results, later r17 notes); own CLAUDE.md; revision history in `memfn/CLAUDE.md`.
 - `compound.md` — [COMPOUND] compound artifact (rev 2.2), first client [MATCH-SPLIT]; `compound/` — twin; `compound_callout_alignment.md` — compound/callout seams (D163 add. 5); `compound_entries.md` — every entry as a compound controller; `compound_entries/` — probes.
 - `inline_c_requirements.md` — [INLINE-C] REQUIREMENTS (not a design, no build go): user C inside pattern `(?C{...})` and template `${{ }}`/`${( )}`; use cases and draft tests, R-P/R-T/R-S rows, post-match predicate analysis, prior art, trust gate, open questions (lane inlinecreq, rev 0).
-- `inline_c.md` — [INLINE-C] DESIGN, pattern side (PROPOSED rev 1, lane inlinecrev1, after panel r1): one `A_CALLOUT` node for `(?C`/`(?{`, one call-site emitter and the shared return table, firing classes + `once`, generated segment functions, `verify` as a D156 FINISH row, the `--allow-code` + `sha256` pin trust gate, stages 0/1a/1b/2-5.
+- `inline_c.md` — [INLINE-C] DESIGN, pattern side: one `A_CALLOUT` node, the trust gate, stages 0-5 (full entry in NOTES.md).
 - `match_split_requirements.md` — [MATCH-SPLIT] requirements; `match_split_pinonly.md` — SUPERSEDED (D163) by `compound.md`.
 - `findall_iter.md` — [FINDALL-NEXT] find-all iterator; `findall_iter/` — probes.
 - `kit_proof.md` — [KIT-VERIFY] U1 report without an engine; `kit_proof/` — evidence.
@@ -106,6 +106,7 @@ Modules (design notes with `*_measurements/` siblings)
 - `extension_design.md` — module/extension architecture (D34; Part II is the redesign of record); `design_notes_mod06.md` (`unicode-props`), `design_notes_mod07.md` (`--explain`).
 - `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/` + `la_d27_extract.md`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind, PROPOSED rev 4: the cursor-rung loop) + `vlookbehind_pieces.md` (its fixed/variable piece probe, rev 0); `subroutines_design.md` + `subroutines_measurements/` + `sr_d27_extract.md`; `frame_buffer_design.md` (D71 item 2).
 - `feature_families.md` — [FEAT-FAMILIES] basic/extended/pcre2 families over D37 (PROPOSED rev 0).
+- `cond_family.md` — [COND-FAMILY] survey: conditions/predicates/intersection members, machinery, common elements, first piece.
 - `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
 - `uprop_more.md` — [UPROP-MORE] `\p{}` binary properties + Bidi_Class (PCRE2 catch-up) and Block/Age (extension) design (PROPOSED).
 - `utf8_design.md` + `utf8_measurements/` + `utf8_d27_extract.md` ([M5.0]); `ucp_design.md` + `ucp_measurements/` ([UCP]); `utf_valid_design.md` + `utf_valid_evidence/` ([UTF-VALID], D133); `encoding_data_layout.md`.
