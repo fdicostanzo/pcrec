@@ -1,6 +1,6 @@
 # memfn kit — wake-up brief
 
-Rewritten 2026-11-10 06:20 by the kit session (pcrec-memfn). Committed docs win on any conflict.
+Rewritten 2026-11-10 06:20, CURRENT STATE updated 16:00, by the kit session (pcrec-memfn).
 
 ## Who you are
 The kit manager (`/pcrec-memfn-manager`). Main is the pcrec manager session `pcrec-main`. Frank rules, mostly via main.
@@ -11,15 +11,21 @@ Kit worktree: worktrees/memfn on branch lane/memfn-k1108 (ledger/journal commits
 4. docs/design/memfn/span_runs_sheet.md rev 1.2 (on lane/memfn-r38s @ 7e7d89a6c), the R-38 design of record.
 5. D190 (3.0a plan triple), D191 (span-arms build go), [REVIEW-GATE] (code critic round or written waiver before a major landing).
 
-## CURRENT STATE
-- U2+U3 LANDED on main (cf578177e). R-37 done.
-- R-35 3.0a: all gates GREEN (500, 501/502/093 identity, 094 reach, 095 make test, 096 plants, 097-099 mech) on
-  lane/memfn-s30a @ f5c2f416a vs cf578177e. done posted (0e2d3d157). Main ruled MERGE; landing lane kitland3 is merging.
-  WAITING (waiting_on.kit): kitland3's landing commit on main.
-- NEXT: K38-1 (R-38 unit 1, size M) on a fresh branch cut from main AFTER the 3.0a landing, carrying the sheet
-  (cherry-pick/merge lane/memfn-r38s 7e7d89a6c). Then K38-2a, K38-2, K38-3 (one abi event for parts A+B).
-  A major code landing needs a code critic round ([REVIEW-GATE]).
-- 3.0b waits for main's go, which comes after the 3.0a landing.
+## CURRENT STATE (2026-11-10 16:00)
+- Landed on main: U2+U3 (cf578177e), 3.0a (2d72849ed), K38-1 (7658295b3, kit_run_decide).
+- K38-2a: lane/memfn-k382a @ 41ebc052b (worktrees/k382a). Build lane k382a delivered (report docs/dev/lanes/k382a_report.md):
+  the in-run stop reads kit_run_decide, lever run-tie-left (+ --harness= arm), G2 presence family run_g2_pres.sh, C2 classifier,
+  W-K4 layouts, S3007/S3009 RED. The D27 oracle (lane k382o, branch k382o db3f0fb8e) is MERGED in: GREEN over 50,178 records;
+  S3008 (plant B) DETECTED. Seam: docs/dev/lanes/k382a_oracle_iface.md.
+- IN FLIGHT: code critic round crit-k382a (opus coordinator, draft to /var/tmp/pcrec-pcrec/scratch/crit-k382a/). On hand-back:
+  commit it as docs/dev/reviews/2026-11-10-r2-k382a.md on lane/memfn-k382a, rule the dispositions, run a fix lane if needed.
+- THEN: gates 540-549 (kit-k382a-*, /var/tmp/pcrec-pcrec/scratch/memfn/k382a/jobs/, all dry-runs pass) - re-key if a fix lane
+  moves the tip after a cancel (key chains collapse); queue; watch with `scripts/monread kit --wait`; done line; main merges.
+- Main's full suite holds the box Wed 11-11 01:00 to ~14:00 on a frozen main: no kit jobs or merges to main in that window.
+- After K38-2a: 3.0b (main's go given: "3.0b stays after it"), then K38-2 (the seam event, L), K38-3.
+- Pending main: the master row over conditionals/predicates/intersection (Frank 11-10); main runs the survey and sends the
+  design for kit comment. Doc-index ledger format agreed (doc_index_format.md §8.1): convert responses.md once main's kit profile exists.
+- Kit ruling on record: K38-2a made the in-run stop a counted reader (done).
 
 ## Box rules
 - Frank's evening hold 20:00-01:00; the kit's hold.sh (scratch/memfn/s2a/jobs/hold.sh) blocks starts 19:00-01:00
