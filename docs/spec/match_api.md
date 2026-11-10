@@ -578,7 +578,7 @@ all shared with PCRE2:
   `pos = 0` they return `2` while the span they report is `[2,2)`. That is
   what makes a callout's advance terminate.
 
-<a id="s3-1-p20"></a>[3.1¶20] A pattern with no `\K` is unaffected. `\K` is module-gated (`assertions`) and
+<a id="s3-1-p20"></a>[3.1¶20] A pattern with no `\K` is unaffected. `\K` is module-gated (`match-start-reset`) and
 forces the VM engine.
 
 <a id="s3-1-p21"></a>[3.1¶21] **A DFA search takes one of four forms to recover the match start,
