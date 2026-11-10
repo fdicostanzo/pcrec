@@ -6,7 +6,8 @@
 # NOTHING (not even the DONE line); exit 0 either way. `--all` prints every line, unchanged, then the DONE line.
 # Threshold rows: load (load1 > nproc), session (a registered role with no live session), disk (a filesystem
 # >= 85%), context (a registered manager > 70% of its compaction point), ci (latest main run not success, or
-# gh unavailable; a cancelled-latest prints as completed/cancelled), queue (box idle while a ready job waits).
+# gh unavailable; a cancelled-latest prints as completed/cancelled), queue (box idle while a ready job waits),
+# idle-held (a hand `boxlock run` holder alive while load1 stayed < 1.5 across two readings >= 60 s apart).
 # The gestalt/log.tsv line is written on every run either way.
 # At most ~12 plain-text lines, each external call under `timeout`, whole run well under 5 s:
 #   load      1/5/15-min load, nproc; when load1 > nproc/2 the top 3 CPU users (command name + %CPU, no args)
@@ -65,7 +66,8 @@ L_load="load: $l1 $l5 $l15 (nproc $np)$busy"
 l1c=$(awk -v l="$l1" 'BEGIN { printf "%d", l * 100 }'); npc=$((np * 100))
 
 # --- box
-L_box="box: $($TO 10 bash "$here/boxlock" status 2>&1 | head -1 | sed 's/ cwd=.*//' | cut -c1-160)"
+boxraw=$($TO 10 bash "${GESTALT_BOXLOCK:-$here/boxlock}" status 2>&1 | head -1)
+L_box="box: $(printf '%s' "$boxraw" | sed 's/ cwd=.*//' | cut -c1-160)"
 
 # --- queue
 qs=$($TO 15 bash "${GESTALT_BOXQUEUE:-$here/boxqueue}" status 2>&1)
@@ -219,6 +221,8 @@ L_context="context: ${cl:-no registered sessions}$([ -n "$cl" ] && echo "$win")"
 # Not printed (Frank 2026-11-07: "not actionable"); appended with a timestamp so the trend can be watched:
 # $PCREC_TMPDIR/gestalt/log.tsv = time, load1, context per role, transcript MB per role.
 gl="${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/gestalt"
+# idle-held input: the PREVIOUS sample, read before this run appends its own
+prev=$(tail -n 1 "$gl/log.tsv" 2>/dev/null); prev_t=$(printf '%s' "$prev" | cut -f1); prev_l=$(printf '%s' "$prev" | cut -f2)
 mkdir -p "$gl" 2>/dev/null && printf '%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$l1" "${cl:-}" "${ll:-}" >> "$gl/log.tsv" 2>/dev/null
 
 # --- subscription: the statusline snapshot (~/.claude/statusline/usage-latest.json, written by the user's
@@ -275,6 +279,28 @@ um=$($TO 10 bash "$here/monread" main --peek 2>/dev/null | wc -l)
 uk=$($TO 10 bash "$here/monread" kit --peek 2>/dev/null | wc -l)
 if [ "$owner" = kit ]; then L_unread="unread: *kit=$uk main=$um"; else L_unread="unread: *main=$um kit=$uk"; fi
 
+# --- idle-held: a NON-queue box-lock holder (a hand `boxlock run`; a queue job is boxqueue's IDLE-SUSPECT, a holder
+# blocking a waiting job is its HOLDER-IDLE-SUSPECT) that is alive while load1 stayed under IDLE_LOAD in two readings
+# at least IDLE_GAP s apart (a dead owner is boxlock's HELD-ORPHAN / "free (stale owner record)", never this row).
+# IDLE_LOAD 1.5: below every one of the 104 log.tsv samples taken while a queue job held the box (min 1.92: mech
+# single-thread phases; p10 3.65), above the held-less baseline (p25 0.96 of 30 samples). IDLE_GAP 60 = load1's own
+# averaging window, so the two readings do not share an interval. Evidence: scripts/NOTES.md "gestalt idle-held".
+IDLE_LOAD=150 IDLE_GAP=60
+idleheld=""; L_idleheld=""
+case $boxraw in "HELD pid="*)
+    hp=${boxraw#HELD pid=}; hp=${hp%% *}
+    hl=${boxraw#*label=}; hl=${hl%% *}
+    hd=$(printf '%s' "$boxraw" | sed -n 's/.* since=[^ ]* (\([^)]*\)).*/\1/p')
+    pt=$(date -d "$prev_t" +%s 2>/dev/null || echo "$now")
+    pc=$(awk -v l="${prev_l:-99}" 'BEGIN { printf "%d", l * 100 }')
+    case $hl in queue:*) ;; *)
+        if [ -d "/proc/$hp" ] && [ "$l1c" -lt "$IDLE_LOAD" ] && [ "$pc" -lt "$IDLE_LOAD" ] && [ $((now - pt)) -ge "$IDLE_GAP" ]; then
+            idleheld=1
+            L_idleheld="idle-held: $hl held ${hd:-?}, load1 $prev_l then $l1 (< $(awk -v t="$IDLE_LOAD" 'BEGIN { printf "%.1f", t / 100 }'))"
+        fi ;;
+    esac ;;
+esac
+
 # --- THRESHOLD ROWS: kind | condition (shell test, evaluated) | the line it prints (a variable above).
 # Default output = the lines of the rows whose condition holds, in this order; --all prints every row's line.
 # A condition of `false` = no threshold: the line is --all only. Add a kind by adding a row (and its L_ line).
@@ -288,9 +314,11 @@ context      | [ -n "$ctxhot" ]                   | L_context
 subscription | false                              | L_subscription
 git          | false                              | L_git
 ci           | [ "$ci_bad" = 1 ]                  | L_ci
-unread       | false                              | L_unread'
+unread       | false                              | L_unread
+idle-held    | [ -n "$idleheld" ]                 | L_idleheld'
 # PLACEHOLDER (not built): docidx | doc-index soft cap exceeded | L_docidx -- see docs/design/doc_index_format.md (lane/docfmt)
 while IFS='|' read -r kind cond var; do
     kind=${kind%% *}; var=${var// /}
+    if [ "$all" = 1 ] && [ "$kind" = idle-held ] && [ -z "$idleheld" ]; then continue; fi
     if [ "$all" = 1 ] || eval "$cond"; then printf '%s\n' "${!var}"; fi
 done <<< "$ROWS"
