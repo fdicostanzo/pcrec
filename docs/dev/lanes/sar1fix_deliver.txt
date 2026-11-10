@@ -1,0 +1,4 @@
+report=docs/dev/lanes/sar1fix_report.md
+sections: Merge of lane/sae1; Tie fix and measurements; Other fixes; Checks run; STATE AT HANDOFF
+nonempty: all
+commit: yes

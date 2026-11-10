@@ -12,8 +12,8 @@ SAB_SUITES="harness prechecks"
 SAB_HARNESS_TARGET="tests/litscan/handoff.rxt"
 SAB_DESC='the handoff subtracts K - 1, so the scan starts one byte too late: a match that begins exactly K bytes before its window is lost on the attempt and hybrid routes (the unanchored scan'\''s reverse pass, bounded by search_from, re-finds its start, so that route hides it)'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/k82hbuild_report.md §6); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S463.'
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?m)^x{2,5}(?i:cat)'\'' && grep -q '\''^#define RX_REQ_HANDOFF "5"'\'' "$REACH_TMP/o.c" && echo REACH-HANDOFF-K5'
-SAB_REACH_EXPECT='REACH-HANDOFF-K5'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?m)^x{2,5}(?i:cat)'\'' && grep -q '\''^#define RX_REQ_HANDOFF "3"'\'' "$REACH_TMP/o.c" && echo REACH-HANDOFF-K3'
+SAB_REACH_EXPECT='REACH-HANDOFF-K3'
 SAB_REACH_POP='tests/litscan/handoff.rxt|^pattern \(\?m\)\^x\{2,5\}|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
@@ -38,3 +38,8 @@ SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0); /* SAB
 # landmark's on the DFA-scan routes and the whole run's on the VM attempt
 # loop's rows; the anchor carries the next line so it stays the entry's.
 # Intent unchanged: the ENTRY starts one byte too late.
+# RE-AIMED 2026-11-09 (lane sar1, span_arms R1 [REPEAT-RUN]): a repeat is
+# its copies, so `x{2,5}`'s tail `xx` joins `(?i:cat)` and the run is `xxCAT`,
+# at most 3 bytes in (K 3, was 5 for `CAT`). The probe reads the new K. Intent
+# unchanged and re-checked by plant: the entry starts one byte too late and
+# handoff.rxt reads (1,8) where (0,8) is expected (185 cells).

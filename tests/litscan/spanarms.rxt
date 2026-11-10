@@ -9,6 +9,10 @@
 # two sabotage witnesses (rows S1906, S1905); a sabotaged run is absent from
 # the subject, clears the 16-bit floor, and is pinned by no k-set walk, so
 # the pre-check answers NOMATCH where libpcre2 matches.
+# Unit R1 ([REPEAT-RUN], T2 rows 2-3, §3) adds the power arm's witnesses: a
+# repeat of a consuming body is its copies (`xy(?:ab){2}zw` states
+# `xyababzw`); W-R1, W-R2, W-R3 and W-R6 are rows S1915, S1916, S1917 and
+# S1919's detectors (W-R5's, S1918, is the facts listing).
 
 # W-R4 (span_arms §3.6): T2 row 1 tests the body's MAXIMUM width; `(?:c?){2}` is not width 0, so the run stays `de` (or `ab`); S1906 reads the minimum width, claims `abde` and deletes every match that takes a `c`
 pattern ab(?:c?){2}de
@@ -30,6 +34,176 @@ m "abccde" 0 6
 n "abcccde"
 m "xxabcdexx" 2 7
 n "abce"
+
+# W-R1 (span_arms §3.6): `X{m,n}` with m < n is never `all` (T2 row 3), so the run is `xyab` or `abzw`; S1915 sets `all` and claims `xyabzw`, absent from every match that takes two copies
+pattern xy(?:ab){1,2}zw
+features all
+m "xyababzw" 0 8
+m "xyabzw" 0 6
+n "xyzw"
+n "xyabababzw"
+n "xyababz"
+
+# W-R1 (span_arms §3.6): `X{m,n}` with m < n is never `all` (T2 row 3), so the run is `xyab` or `abzw`; S1915 sets `all` and claims `xyabzw`, absent from every match that takes two copies [engine vm]
+pattern xy(?:ab){1,2}zw
+features all
+engine vm
+m "xyababzw" 0 8
+m "xyabzw" 0 6
+n "xyzw"
+n "xyabababzw"
+n "xyababz"
+
+# W-R2 (span_arms §3.6): the power unrolls the copies every match takes (m), never n; S1916 unrolls `rmax` copies and claims `xyababab`, absent from `xyabzw`
+pattern xy(?:ab){1,3}zw
+features all
+m "xyabzw" 0 6
+m "xyababzw" 0 8
+m "xyabababzw" 0 10
+n "xyzw"
+n "xyababababzw"
+
+# W-R2 (span_arms §3.6): the power unrolls the copies every match takes (m), never n; S1916 unrolls `rmax` copies and claims `xyababab`, absent from `xyabzw` [engine vm]
+pattern xy(?:ab){1,3}zw
+features all
+engine vm
+m "xyabzw" 0 6
+m "xyababzw" 0 8
+m "xyabababzw" 0 10
+n "xyzw"
+n "xyababababzw"
+
+# W-R3 (span_arms §3.6): at m = 0 the power has no copy (T2 row 3 at c = 0 is the gap), so the run is `ab` or `ef`; S1917 takes c from max(m, 1) and claims `abcd` or `cdef`, absent from `abef`
+pattern ab(?:cd){0,2}ef
+features all
+m "abef" 0 4
+m "abcdef" 0 6
+m "abcdcdef" 0 8
+n "abcdcdcdef"
+n "abcef"
+
+# W-R3 (span_arms §3.6): at m = 0 the power has no copy (T2 row 3 at c = 0 is the gap), so the run is `ab` or `ef`; S1917 takes c from max(m, 1) and claims `abcd` or `cdef`, absent from `abef` [engine vm]
+pattern ab(?:cd){0,2}ef
+features all
+engine vm
+m "abef" 0 4
+m "abcdef" 0 6
+m "abcdcdef" 0 8
+n "abcdcdcdef"
+n "abcef"
+
+# W-R5 (span_arms §3.6, a FACT witness): `(?:abc){20}` unrolls ceil(32/3) = 11 copies and lists 32 positions, truncated; S1918 stops one copy short (30 positions), sound, so its detector is the facts listing (run_facts_checks.sh [facts-rep]); these cells check the run's answers
+pattern (?:abc){20}
+features all
+m "abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc" 0 60
+n "abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc"
+m "xabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc" 1 61
+n "abcabcabcabcabcabcabcabcabcabcabdabcabcabcabcabcabcabcabcabc"
+
+# W-R5 (span_arms §3.6, a FACT witness): `(?:abc){20}` unrolls ceil(32/3) = 11 copies and lists 32 positions, truncated; S1918 stops one copy short (30 positions), sound, so its detector is the facts listing (run_facts_checks.sh [facts-rep]); these cells check the run's answers [engine vm]
+pattern (?:abc){20}
+features all
+engine vm
+m "abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc" 0 60
+n "abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc"
+m "xabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc" 1 61
+n "abcabcabcabcabcabcabcabcabcabcabdabcabcabcabcabcabcabcabcabc"
+
+# W-R6 (span_arms §3.6): the width is the repeat's exact one (`rr_rep_w`), never the unrolled copies'; `a.` is not `all`, so 2 copies are unrolled, and S1919 takes their width (4), so the handoff's K is 4 where it is 20 and the attempt at 0 is skipped
+pattern (a.){10}xyz
+features all
+m "a-a-a-a-a-a-a-a-a-a-xyz" 0 23
+n "a-a-a-a-a-a-a-a-a-xyz"
+m "-a-a-a-a-a-a-a-a-a-a-xyz" 1 24
+
+# W-R6 (span_arms §3.6): the width is the repeat's exact one (`rr_rep_w`), never the unrolled copies'; `a.` is not `all`, so 2 copies are unrolled, and S1919 takes their width (4), so the handoff's K is 4 where it is 20 and the attempt at 0 is skipped [engine vm]
+pattern (a.){10}xyz
+features all
+engine vm
+m "a-a-a-a-a-a-a-a-a-a-xyz" 0 23
+n "a-a-a-a-a-a-a-a-a-xyz"
+m "-a-a-a-a-a-a-a-a-a-a-xyz" 1 24
+
+# W-R6's DFA twin (span_arms §3.6): `.?` keeps the run off `dominated`, so K (21) is read; under S1919 it is 5
+pattern (?:a.){10}.?xyz
+features all
+m "a-a-a-a-a-a-a-a-a-a-xyz" 0 23
+m "a-a-a-a-a-a-a-a-a-a-qxyz" 0 24
+n "a-a-a-a-a-a-a-a-a-xyz"
+ns 2 "a-a-a-a-a-a-a-a-a-a-xyz"
+
+# W-R6's DFA twin (span_arms §3.6): `.?` keeps the run off `dominated`, so K (21) is read; under S1919 it is 5 [engine vm]
+pattern (?:a.){10}.?xyz
+features all
+engine vm
+m "a-a-a-a-a-a-a-a-a-a-xyz" 0 23
+m "a-a-a-a-a-a-a-a-a-a-qxyz" 0 24
+n "a-a-a-a-a-a-a-a-a-xyz"
+ns 2 "a-a-a-a-a-a-a-a-a-a-xyz"
+
+# R1 mover (span_arms §3.4): an exact repeat is its copies, the run `xyababzw`
+pattern xy(?:ab){2}zw
+features all
+m "xyababzw" 0 8
+n "xyabzw"
+n "xyabababzw"
+m "--xyababzw--" 2 10
+
+# R1 mover (span_arms §3.4): an exact repeat is its copies, the run `xyababzw` [engine vm]
+pattern xy(?:ab){2}zw
+features all
+engine vm
+m "xyababzw" 0 8
+n "xyabzw"
+n "xyabababzw"
+m "--xyababzw--" 2 10
+
+# R1 mover (span_arms §3.4, r1 F7): `X{0}` is the unit, the run `xyzw`
+pattern xy(?:ab){0}zw
+features all
+m "xyzw" 0 4
+n "xyabzw"
+
+# R1 mover (span_arms §3.4, r1 F7): `X{0}` is the unit, the run `xyzw` [engine vm]
+pattern xy(?:ab){0}zw
+features all
+engine vm
+m "xyzw" 0 4
+n "xyabzw"
+
+# R1 mover (span_arms §3.4): a cube position in each copy, the run `xa[bc]a[bc]y`
+pattern x(?:a[bc]){2}y
+features all
+m "xabacy" 0 6
+m "xacaby" 0 6
+n "xabay"
+n "xadaby"
+
+# R1 mover (span_arms §3.4): a cube position in each copy, the run `xa[bc]a[bc]y` [engine vm]
+pattern x(?:a[bc]){2}y
+features all
+engine vm
+m "xabacy" 0 6
+m "xacaby" 0 6
+n "xabay"
+n "xadaby"
+
+# R1 mover: a variable repeat's tail joins what follows it and its head what precedes it, the run `abcdef` across two repeats
+pattern (?:ab){1,2}cd(?:ef){1,2}
+features all
+m "abcdef" 0 6
+m "ababcdefef" 0 10
+n "abcef"
+n "bcdef"
+
+# R1 mover: a variable repeat's tail joins what follows it and its head what precedes it, the run `abcdef` across two repeats [engine vm]
+pattern (?:ab){1,2}cd(?:ef){1,2}
+features all
+engine vm
+m "abcdef" 0 6
+m "ababcdefef" 0 10
+n "abcef"
+n "bcdef"
 
 # S-g (alt_normal_form §9 S2, spelled for E1's site): a backreference CONSUMES; `\1*` is not width 0, so the run is `abx`; S1905 tests "carries no run" instead of width 0, sends the backreference to row 1 and claims `abxy`
 pattern (ab)x\1*y

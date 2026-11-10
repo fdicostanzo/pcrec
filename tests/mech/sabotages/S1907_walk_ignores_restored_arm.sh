@@ -13,9 +13,11 @@ SAB_FILE="src/facts/req.c"
 SAB_SUITES="facts"
 SAB_DESC="the necessary-run walk drops the restored arms its parameter record carries, so the harness lever's old form is never produced while the listing still names the arm"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/sae1_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1907."
-SAB_REACH='"$(dirname "$PCREC")/pcrec-harness" --features all --harness=restore=empty --emit-facts --pattern "abcd(?:\\b)*efgh" | grep -qP "^byte\treq_whole_run\t.*\t65666768\tharness:empty\t" && echo REACH-ARM-RESTORES'
+SAB_REACH='"$(dirname "$PCREC")/pcrec-harness" --features all --harness=restore=empty --emit-facts --pattern "abcd(?:\\b)*efgh" | grep -qP "^byte\treq_whole_run\t.*\t61626364\tharness:empty\t" && echo REACH-ARM-RESTORES'
 SAB_REACH_EXPECT="REACH-ARM-RESTORES"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    w->restored = p->restored;'
 SAB_AFTER='    w->restored = 0;   /* SABOTAGE S1907 */'
+# RE-AIMED REACH (lane sar1fix, 2026-11-09, review r5): the restored cut's two
+# halves tie and go to the rarer scan byte (`b` over `g`): `abcd`.

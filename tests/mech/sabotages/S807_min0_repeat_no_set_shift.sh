@@ -19,10 +19,16 @@ SAB_REACH='"$PCREC" --features all -e byte --emit-facts --pattern '\''\w*:'\'' |
 SAB_REACH_EXPECT='REACH-OPT-LANDMARK'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            rb_gap_into(acc, rr_rep_w(a->u.rep.rmax, t[0].runs.maxw));'
-SAB_AFTER='            acc->set  = rb_union(rb_empty(), acc->set, 0);   /* SABOTAGE S807 */
-            acc->runs = rr_cat(rr_none(rr_rep_w(a->u.rep.rmax, t[0].runs.maxw)), acc->runs);'
+SAB_BEFORE='    o.maxw = rr_rep_w(n, b.maxw);'
+SAB_AFTER='    o.maxw = m == 0 ? 0 : rr_rep_w(n, b.maxw);   /* SABOTAGE S807 */'
 # RE-ANCHORED (lane dd10tri, 2026-10-22, dd10 stack-depth branch): the min-0
 # repeat arm is now one rb_gap_into call (shared with the class and unbounded
 # arms, so the plant lands at THIS call site); intent unchanged: the runs keep
 # their width shift, the SET's offsets lose it.
+# RE-AIMED (lane sar1fix, 2026-11-09): since span arms R1 a min-0 repeat is
+# T2 row 3 (`rr_rep_split`) and builds a VALUE the arm concatenates
+# (review r5 SLOT-4), so the set's shift is the value's width, the same
+# number the runs read; the old anchor was reached only under
+# `--harness=restore=rep`. The plant drops the min-0 repeat's width at the
+# live site: the set's offsets lose it (the K the detector reads) and so do
+# the runs' (wider than the old set-only plant).

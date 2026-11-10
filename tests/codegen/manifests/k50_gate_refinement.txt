@@ -386,6 +386,23 @@ x*$
 #UNDECLARED ab|abc|ad
 
 # ---------------------------------------------------------------------
+# [sar1mt, 2026-11-09] (triage of 218-main-sar1-maketest-2, lane/sar1: span arms
+# R1). `\Gcat\Kdog`: `cat` and `dog` are equal-information runs (three bytes,
+# one value each), so R1's run choice (`rn_choice_rows`, req.c) breaks the tie
+# on the byte-rate it is handed, and the byte and utf8 rate tables differ: the
+# byte artifact stamps RX_REQ_RUN "646f67@2" (dog), the utf8 artifact
+# "636174@2" (cat). The difference is DATA (the stamp and the pre-check
+# literal it names), selected by a table lookup, not an encoding conditional in
+# the hot path; both pick a valid necessary run, the corpus's answers are equal
+# in both encodings, and lane/sae1's compiler (no rarity tie) stamps dog in
+# both. PREDICTED by the tie rule the unit adds (span_arms.md §12a-§12d),
+# listed here as the other UNDECLARED rows are: an EXACT exception list.
+# [sar1mrg, 2026-11-10] RETIRED at the merge of R1 onto E1+E2: E2's T3 rows
+# make `\G` and `\K` the width-0 run unit, so the run is `catdog` (RX_REQ_RUN
+# "636174646f67@5" in BOTH encodings, measured on the merged build): no tie,
+# no divergence, and the exact list must not keep an expired claim.
+
+# ---------------------------------------------------------------------
 # [alttri2, 2026-11-07] (the 210 altcatch-test triage). One pattern of the
 # merged-in tests/altcls/altnf_lookbehind.rxt (the alternation normal form
 # beside variable lookbehind, block at line 173) reaches the slice and

@@ -11,5 +11,8 @@ w-c2b	c2b	REQ_RUN	(a|b)+foobarbazquux	7262617a71757578@3	666f6f6261726261@0
 # w-c3: `a+c` until [LANDWALK] stage 1 (lane p1tri, 2026-10-30), whose default build takes the
 # landmark walk (REQ_WHY "dominated": the walk answers presence); `(?:a+c)+` keeps the same G1
 # identity flip on the unanchored scan, the walk declining it (the landmark recurs in the prefix).
-w-c3	c3	REQ_WHY	(?:a+c)+	emitted	dominated
+# Span arms R1 (lane sar1, T2 rows 2-3, span_arms.md): a repeat's copies join the run, so `(?:a+c)+`
+# emits its run under both tables; the witness is `a+c` again, whose flip now runs the other way
+# (default dominated, the 'a'-rarest table emitted: the longer run is chosen on the rate).
+w-c3	c3	REQ_WHY	a+c	dominated	emitted
 w-c4	c4	DFA_PREFILTER_OFFSETS	(a)\Q(b)\E(c)	0,1*	0*,1,2,3,4

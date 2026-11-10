@@ -547,37 +547,49 @@ tests/recursion/d27/sr_interactions.rxt:363	--features recursion	2861283f31293f6
 # alttri2 (2026-11-07, lane/altbuild, 210 altcatch-test triage): +1, the new tests/altcls/altnf_lookbehind.rxt (merged in from main's variable-lookbehind stage 1 at the altcatch catch-up) block 124, a correct VM-hat mover never pinned; vmhat_checks.py's own mover rule on lane/altbuild (the mttri precedent), no existing row moved, bench rows untouched.
 tests/altcls/altnf_lookbehind.rxt:124	--features all	283f3c2a28283f3a61627c616329633f7c612929645c31
 # sae2mt (2026-11-09, lane/sae2 make test triage): +34, the blocks of tests/litscan/spanarms.rxt (span arms E1/E2 witnesses, new corpus file), correct VM-hat movers never pinned; vmhat_checks.py's own mover rule (the mttri and alttri2 precedent), no existing row moved, bench rows untouched.
-tests/litscan/spanarms.rxt:106	--features all --engine=vm	61626364283f3a5e292a65666768
-tests/litscan/spanarms.rxt:120	--features all --engine=vm	61626364283f3a24293f65666768
-tests/litscan/spanarms.rxt:134	--features all --engine=vm	7879283f3a283f3d6129292a61627a77
-tests/litscan/spanarms.rxt:149	--features all --engine=vm	6162283f3a5c42297b337d6364
-tests/litscan/spanarms.rxt:170	--features all --engine=vm	78797a283f3c3d797a29616263
-tests/litscan/spanarms.rxt:187	--features all --engine=vm	283f3c3d666f6f29626172
-tests/litscan/spanarms.rxt:204	--features all --engine=vm	7879283f3c216162296364
-tests/litscan/spanarms.rxt:213	--features all	28616229785c3179
-tests/litscan/spanarms.rxt:221	--features all --engine=vm	28616229785c3179
-tests/litscan/spanarms.rxt:237	--features all --engine=vm	666f6f5c622d626172
-tests/litscan/spanarms.rxt:24	--features all --engine=vm	6162283f3a633f297b327d6465
-tests/litscan/spanarms.rxt:252	--features all --engine=vm	61625c426364
-tests/litscan/spanarms.rxt:267	--features all --engine=vm	6162245c6e
-tests/litscan/spanarms.rxt:282	--features all --engine=vm	283f6d296162245c6e6364
-tests/litscan/spanarms.rxt:297	--features all --engine=vm	283f6d2961625c6e5e6364
-tests/litscan/spanarms.rxt:312	--features all --engine=vm	61625c4b6364
-tests/litscan/spanarms.rxt:326	--features all --engine=vm	61625c476364
-tests/litscan/spanarms.rxt:338	--features all --engine=vm	61625c416364
-tests/litscan/spanarms.rxt:349	--features all --engine=vm	61625c7a6364
-tests/litscan/spanarms.rxt:35	--features all	28616229785c312a79
-tests/litscan/spanarms.rxt:362	--features all --engine=vm	78283f216162296163
-tests/litscan/spanarms.rxt:377	--features all --engine=vm	6162283f3d63296364
-tests/litscan/spanarms.rxt:392	--features all --engine=vm	6162283f3c3d62296364
-tests/litscan/spanarms.rxt:407	--features all --engine=vm	6162283f2178296364
-tests/litscan/spanarms.rxt:422	--features all --engine=vm	6162283f3c2178296364
-tests/litscan/spanarms.rxt:437	--features all --engine=vm	7879283f3d61622961627a77
-tests/litscan/spanarms.rxt:44	--features all --engine=vm	28616229785c312a79
-tests/litscan/spanarms.rxt:452	--features all --engine=vm	6162283f21636429283f3c217879296365
-tests/litscan/spanarms.rxt:469	--features all --engine=vm	61626364282965666768
-tests/litscan/spanarms.rxt:486	--features all --engine=vm	61626364283f3a7c2965666768
-tests/litscan/spanarms.rxt:501	--features all --engine=vm	6162283f3a7c78296364
-tests/litscan/spanarms.rxt:61	--features all --engine=vm	61626364283f3a292a65666768
-tests/litscan/spanarms.rxt:76	--features all --engine=vm	61626364283f3a5c62292a65666768
-tests/litscan/spanarms.rxt:91	--features all --engine=vm	61626364283f3a5c62292b65666768
+# sar1mt (2026-11-09, lane/sar1 triage of 218-main-sar1-maketest-2): the tests/litscan/spanarms.rxt rows re-measured on this branch (E1's sae1pin rows + R1's witness blocks; the file's lines moved with R1's header and blocks), 19 rows, correct VM-hat movers by vmhat_checks.py's own mover rule, no other row moved.
+# sar1mrg (2026-11-10, the semantic merge of lane/sar1 onto main's E1+E2): the tests/litscan/spanarms.rxt rows of the two sides above UNIONED by (options, pattern) and re-keyed to the merged file's lines (startset_lib.corpus_blocks ids), 44 rows; every row is one side's measured mover, none added or dropped.
+tests/litscan/spanarms.rxt:28	--features all --engine=vm	6162283f3a633f297b327d6465
+tests/litscan/spanarms.rxt:48	--features all --engine=vm	7879283f3a6162297b312c327d7a77
+tests/litscan/spanarms.rxt:67	--features all --engine=vm	7879283f3a6162297b312c337d7a77
+tests/litscan/spanarms.rxt:86	--features all --engine=vm	6162283f3a6364297b302c327d6566
+tests/litscan/spanarms.rxt:104	--features all --engine=vm	283f3a616263297b32307d
+tests/litscan/spanarms.rxt:120	--features all --engine=vm	28612e297b31307d78797a
+tests/litscan/spanarms.rxt:136	--features all --engine=vm	283f3a612e297b31307d2e3f78797a
+tests/litscan/spanarms.rxt:153	--features all --engine=vm	7879283f3a6162297b327d7a77
+tests/litscan/spanarms.rxt:168	--features all --engine=vm	7879283f3a6162297b307d7a77
+tests/litscan/spanarms.rxt:183	--features all --engine=vm	78283f3a615b62635d297b327d79
+tests/litscan/spanarms.rxt:200	--features all --engine=vm	283f3a6162297b312c327d6364283f3a6566297b312c327d
+tests/litscan/spanarms.rxt:209	--features all	28616229785c312a79
+tests/litscan/spanarms.rxt:218	--features all --engine=vm	28616229785c312a79
+tests/litscan/spanarms.rxt:235	--features all --engine=vm	61626364283f3a292a65666768
+tests/litscan/spanarms.rxt:250	--features all --engine=vm	61626364283f3a5c62292a65666768
+tests/litscan/spanarms.rxt:265	--features all --engine=vm	61626364283f3a5c62292b65666768
+tests/litscan/spanarms.rxt:280	--features all --engine=vm	61626364283f3a5e292a65666768
+tests/litscan/spanarms.rxt:294	--features all --engine=vm	61626364283f3a24293f65666768
+tests/litscan/spanarms.rxt:308	--features all --engine=vm	7879283f3a283f3d6129292a61627a77
+tests/litscan/spanarms.rxt:323	--features all --engine=vm	6162283f3a5c42297b337d6364
+tests/litscan/spanarms.rxt:344	--features all --engine=vm	78797a283f3c3d797a29616263
+tests/litscan/spanarms.rxt:361	--features all --engine=vm	283f3c3d666f6f29626172
+tests/litscan/spanarms.rxt:378	--features all --engine=vm	7879283f3c216162296364
+tests/litscan/spanarms.rxt:387	--features all	28616229785c3179
+tests/litscan/spanarms.rxt:395	--features all --engine=vm	28616229785c3179
+tests/litscan/spanarms.rxt:411	--features all --engine=vm	666f6f5c622d626172
+tests/litscan/spanarms.rxt:426	--features all --engine=vm	61625c426364
+tests/litscan/spanarms.rxt:441	--features all --engine=vm	6162245c6e
+tests/litscan/spanarms.rxt:456	--features all --engine=vm	283f6d296162245c6e6364
+tests/litscan/spanarms.rxt:471	--features all --engine=vm	283f6d2961625c6e5e6364
+tests/litscan/spanarms.rxt:486	--features all --engine=vm	61625c4b6364
+tests/litscan/spanarms.rxt:500	--features all --engine=vm	61625c476364
+tests/litscan/spanarms.rxt:512	--features all --engine=vm	61625c416364
+tests/litscan/spanarms.rxt:523	--features all --engine=vm	61625c7a6364
+tests/litscan/spanarms.rxt:536	--features all --engine=vm	78283f216162296163
+tests/litscan/spanarms.rxt:551	--features all --engine=vm	6162283f3d63296364
+tests/litscan/spanarms.rxt:566	--features all --engine=vm	6162283f3c3d62296364
+tests/litscan/spanarms.rxt:581	--features all --engine=vm	6162283f2178296364
+tests/litscan/spanarms.rxt:596	--features all --engine=vm	6162283f3c2178296364
+tests/litscan/spanarms.rxt:611	--features all --engine=vm	7879283f3d61622961627a77
+tests/litscan/spanarms.rxt:626	--features all --engine=vm	6162283f21636429283f3c217879296365
+tests/litscan/spanarms.rxt:643	--features all --engine=vm	61626364282965666768
+tests/litscan/spanarms.rxt:660	--features all --engine=vm	61626364283f3a7c2965666768
+tests/litscan/spanarms.rxt:675	--features all --engine=vm	6162283f3a7c78296364

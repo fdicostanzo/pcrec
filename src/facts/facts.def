@@ -14,8 +14,10 @@
  *            route that sealed E2 but not E3, which answers its empty value,
  *            `absent`, with the route's decline (E3 is per branch).
  *   kind     PF_CORE — a walk of the sealed IR, reading no prior and no other
- *            fact's choice; PF_DERIVED — a function of core facts (and, from
- *            [FINDINGS] B1, the byte-rate). Design §4.1.
+ *            fact's choice; PF_DERIVED — any fact whose value reads the
+ *            byte-rate ([FINDINGS] B1) or another fact's choice: a function
+ *            of core facts, or a walk whose choice the rate breaks ties in
+ *            (`req_whole_run`, span_arms §12d). Design §4.1.
  *   deny     the `lib/pcrec.h` bit(s) that make this a FACT DENY: the fact's
  *            empty value, stored without deriving, for EVERY consumer
  *            (design §7.1). `0` for none. `docs/spec/tuning.md`'s entry for
@@ -49,7 +51,7 @@ PF_FACT(END_WINDOW,    "end_window",    2, PF_CORE,    PCREC_NO_END_WINDOW,     
 PF_FACT(END_MARK,      "end_mark",      2, PF_DERIVED, 0,                                   "src/facts/endwin.c",  "end_pin")
 PF_FACT(REQ_SET,       "req_set",       2, PF_CORE,    PCREC_NO_REQ_BYTE,                   "src/facts/req.c",     "")
 PF_FACT(REQ_SET_MAXOFF, "req_set_maxoff", 2, PF_CORE,  PCREC_NO_REQ_BYTE,                   "src/facts/req.c",     "")
-PF_FACT(REQ_WHOLE_RUN, "req_whole_run", 2, PF_CORE,    PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "")
+PF_FACT(REQ_WHOLE_RUN, "req_whole_run", 2, PF_DERIVED, PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "")
 PF_FACT(REQ_PIECES,    "req_pieces",    2, PF_CORE,    PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "")
 PF_FACT(REQ_RUN,       "req_run",       2, PF_DERIVED, PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "req_whole_run")
 PF_FACT(REQ_RUN_MAXOFF, "req_run_maxoff", 2, PF_DERIVED, 0,                                  "src/facts/req.c",     "req_run")

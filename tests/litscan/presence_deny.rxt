@@ -343,43 +343,51 @@ ns 3 "qqa:"
 ns 4 "qqa:"
 
 # pcre2-only
-# \K: the necessary `a` lies below the REPORTED start (never below the attempt's)
-pattern a{2,4}\Kb
+# \K: the necessary `a` lies below the REPORTED start (never below the attempt's); `bc`, not `b`, since span arms R1 (lane sar1) makes `a{2,4}\Kb` an emitted run the deny does not move
+pattern a{2,4}\Kbc
 features all
 encoding byte
-ms 0 "ab aab" 5 6
-ms 1 "ab aab" 5 6
-ms 2 "ab aab" 5 6
-ms 3 "ab aab" 5 6
-ns 4 "ab aab"
-ns 5 "ab aab"
-ns 6 "ab aab"
-ms 0 "aaaab" 4 5
-ms 1 "aaaab" 4 5
-ms 2 "aaaab" 4 5
-ns 3 "aaaab"
-ns 4 "aaaab"
-ns 5 "aaaab"
-ms 0 "b aab" 4 5
-ms 1 "b aab" 4 5
-ms 2 "b aab" 4 5
-ns 3 "b aab"
-ns 4 "b aab"
-ns 5 "b aab"
-ms 0 "aaaaab" 5 6
-ms 1 "aaaaab" 5 6
-ms 2 "aaaaab" 5 6
-ms 3 "aaaaab" 5 6
-ns 4 "aaaaab"
-ns 5 "aaaaab"
-ns 6 "aaaaab"
-ms 0 "aab" 2 3
-ns 1 "aab"
-ns 2 "aab"
-ns 3 "aab"
-ns 0 "ab"
-ns 1 "ab"
-ns 2 "ab"
+ms 0 "abc aabc" 6 8
+ms 1 "abc aabc" 6 8
+ms 2 "abc aabc" 6 8
+ms 3 "abc aabc" 6 8
+ms 4 "abc aabc" 6 8
+ns 5 "abc aabc"
+ns 6 "abc aabc"
+ns 7 "abc aabc"
+ns 8 "abc aabc"
+ms 0 "aaaabc" 4 6
+ms 1 "aaaabc" 4 6
+ms 2 "aaaabc" 4 6
+ns 3 "aaaabc"
+ns 4 "aaaabc"
+ns 5 "aaaabc"
+ns 6 "aaaabc"
+ms 0 "bc aabc" 5 7
+ms 1 "bc aabc" 5 7
+ms 2 "bc aabc" 5 7
+ms 3 "bc aabc" 5 7
+ns 4 "bc aabc"
+ns 5 "bc aabc"
+ns 6 "bc aabc"
+ns 7 "bc aabc"
+ms 0 "aaaaabc" 5 7
+ms 1 "aaaaabc" 5 7
+ms 2 "aaaaabc" 5 7
+ms 3 "aaaaabc" 5 7
+ns 4 "aaaaabc"
+ns 5 "aaaaabc"
+ns 6 "aaaaabc"
+ns 7 "aaaaabc"
+ms 0 "aabc" 2 4
+ns 1 "aabc"
+ns 2 "aabc"
+ns 3 "aabc"
+ns 4 "aabc"
+ns 0 "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
 
 # a lookahead in the prefix, the set member `a` before the landmark `q`
 pattern (?:a(?!q)|aq)x{0,3}q

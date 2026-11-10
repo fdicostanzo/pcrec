@@ -1683,11 +1683,13 @@ done
 # [REQ-EMPTYCAT] span_arms E1 (§3.7): `--harness=restore=empty` runs the
 # necessary-run walk's width-0 repeat row in its old form (src/facts/
 # walk_arms.def); its answers must equal the default's. Span arms E2's
-# `restore=zero` runs T3's zero-width rows (E-4, E-5) as today's cut. A later
-# span arms unit adds its arm here (`restore=rep`, `restore=look`).
+# `restore=zero` runs T3's zero-width rows (E-4, E-5) as today's cut; span
+# arms R1's ([REPEAT-RUN]) `restore=rep` runs the power arm's rows (a repeat
+# of a consuming body as its copies) in their old form, under the same rule.
+# A later span arms unit adds its arm here (`restore=look`).
 # Selected by the empty AXES= or by its spelling.
 INTERNAL_ARMS=("--harness=no-compound" "--harness=pres-window" "--harness=restore=empty"
-               "--harness=restore=zero")
+               "--harness=restore=zero" "--harness=restore=rep")
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0
 for arm in "${INTERNAL_ARMS[@]}"; do
