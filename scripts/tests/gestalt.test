@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gestalt self-test: line bound, exit 0 with gh unavailable, DONE line last, monread cursors untouched,
+# gestalt self-test (--all = the full output; default = threshold rows only, silent when normal): line bound, exit 0 with gh unavailable, DONE line last, monread cursors untouched,
 # --owner marks the owner's unread count. Read-only toward the box; runs in a few seconds.
 set -u
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -17,7 +17,7 @@ cur() { cat "$main/worktrees/.mgr/monitor.cursor.$1" 2>/dev/null || echo none; }
 # gh replaced by a failing stub first on PATH
 mkdir "$T/bin"; printf '#!/bin/sh\nexit 1\n' > "$T/bin/gh"; chmod +x "$T/bin/gh"
 cm=$(cur main) ck=$(cur kit)
-out=$(PATH="$T/bin:$PATH" "$TO" 10 bash "$here/gestalt" --owner kit 2>&1); rc=$?
+out=$(PATH="$T/bin:$PATH" "$TO" 10 bash "$here/gestalt" --all --owner kit 2>&1); rc=$?
 [ "$rc" = 0 ] && ok "exit 0 with gh failing" || bad "rc=$rc"
 printf '%s\n' "$out" | grep -qx 'ci: unavailable' && ok "ci: unavailable" || bad "no 'ci: unavailable'"
 [ "$(printf '%s\n' "$out" | tail -1)" = "gestalt: DONE rc=0" ] && ok "DONE line last" || bad "last line: $(printf '%s\n' "$out" | tail -1)"
@@ -37,7 +37,7 @@ CAN=CANARY_SECRET_TEXT_9137
   printf '{"type":"user","message":{"content":"%s"}}\n' "$CAN"
   printf '{"type":"assistant","message":{"content":"%s","usage":{"input_tokens":5,"cache_creation_input_tokens":2000,"cache_read_input_tokens":123000}}}\n' "$CAN"
   printf '{"type":"user","message":{"content":"%s"}}\n' "$CAN"; } > "$T/proj/p/$sid.jsonl"
-out2=$(GESTALT_ROLES_DIR="$T/roles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/none" GESTALT_STATUSLINE_DIR="$T/nosl" PATH="$T/bin:$PATH" "$TO" 10 bash "$here/gestalt" 2>&1)
+out2=$(GESTALT_ROLES_DIR="$T/roles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/none" GESTALT_STATUSLINE_DIR="$T/nosl" PATH="$T/bin:$PATH" "$TO" 10 bash "$here/gestalt" --all 2>&1)
 printf '%s\n' "$out2" | grep -qE '^context: main 125k( \(.*\))?(; logs main [0-9]+M( LARGE)?)?$' && ok "context line from fake transcript" || bad "context: $(printf '%s\n' "$out2" | grep '^context:')"
 printf '%s\n' "$out2" | grep -q "$CAN" && bad "canary leaked" || ok "no transcript content in output"
 printf '%s\n' "$out2" | grep -qx 'subscription: unavailable (check /usage)' && ok "subscription unavailable without snapshot" || bad "subscription line"
@@ -46,11 +46,46 @@ mkdir -p "$T/sl"; nowt=$(date +%s)
 printf '{"captured_at":%s,"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":1,"cache_creation_input_tokens":500,"cache_read_input_tokens":299499}}}\n' "$nowt" > "$T/sl/session-$sid.json"
 printf '{"five_hour":{"used_percentage":12,"resets_at":%s},"seven_day":{"used_percentage":34,"resets_at":%s},"session_id":"x","captured_at":%s}\n' "$((nowt+3600))" "$((nowt+86400))" "$nowt" > "$T/sl/usage-latest.json"
 G="env GESTALT_ROLES_DIR=$T/roles GESTALT_PROJECTS=$T/proj GESTALT_CLAUDE_HOME=$T/none GESTALT_STATUSLINE_DIR=$T/sl PATH=$T/bin:$PATH"
-out3=$($G "$TO" 10 bash "$here/gestalt" 2>&1)
+out3=$($G "$TO" 10 bash "$here/gestalt" --all 2>&1)
 printf '%s\n' "$out3" | grep -qE '^context: main 300k( \(.*\))?(; logs main [0-9]+M( LARGE)?)?$' && ok "context from fresh session snapshot" || bad "snapshot context: $(printf '%s\n' "$out3" | grep '^context:')"
 printf '%s\n' "$out3" | grep -q '^subscription: 5h 12% .* 7d 34%' && ok "subscription from usage-latest.json" || bad "subscription: $(printf '%s\n' "$out3" | grep '^subscription:')"
 printf '{"captured_at":%s,"context_window":{"current_usage":{"input_tokens":1}}}\n' "$((nowt-3000))" > "$T/sl/session-$sid.json"
-out4=$($G "$TO" 10 bash "$here/gestalt" 2>&1)
+out4=$($G "$TO" 10 bash "$here/gestalt" --all 2>&1)
 printf '%s\n' "$out4" | grep -qE '^context: main 125k' && ok "stale snapshot falls back to transcript" || bad "stale fallback: $(printf '%s\n' "$out4" | grep '^context:')"
+# --- threshold rows (default output): silent when everything is normal, each row fires on a crafted input
+mkdir -p "$T/ch" "$T/socks" "$T/emptyroles" "$T/ghok" "$T/ghfail" "$T/ghcanc" "$T/dffull"
+ghstub() { printf '#!/bin/sh\necho "%s abc123456 2026-11-10T00:00:00Z"\n' "$2" > "$1/gh"; chmod +x "$1/gh"; }
+ghstub "$T/ghok" completed/success; ghstub "$T/ghfail" completed/failure; ghstub "$T/ghcanc" completed/cancelled
+printf '#!/bin/sh\necho "Filesystem Size Used Avail Use%% Mounted"\necho "x 100G 92G 8G 92%% /"\n' > "$T/dffull/df"; chmod +x "$T/dffull/df"
+printf '0.10 0.10 0.10 1/100 1\n' > "$T/load.low"; printf '99.00 50.00 20.00 1/100 1\n' > "$T/load.high"
+printf '#!/bin/sh\necho "running: /q/running/1-x 1 1"\necho "pending: 2-y :: not-ready: waiting on x"\n' > "$T/bq.busy"
+printf '#!/bin/sh\necho "runner: live"\necho "pending: 2-y :: ready"\n' > "$T/bq.idleready"
+printf '#!/bin/sh\necho "runner: live"\necho "pending: 2-y :: not-ready: waiting on x"\n' > "$T/bq.idlewait"
+printf '{"autoCompactWindow":150000}\n' > "$T/ch/settings.json"
+# G [VAR=val ...]: run gestalt (default output) over the all-normal inputs, later VARs overriding earlier ones
+G2() { env GESTALT_ROLES_DIR="$T/emptyroles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/ch" GESTALT_STATUSLINE_DIR="$T/nosl" \
+    GESTALT_SOCKS_DIR="$T/socks" GESTALT_LOADAVG="$T/load.low" GESTALT_BOXQUEUE="$T/bq.busy" "$@" ; }
+run() { local pre=$1; shift; G2 "$@" PATH="$pre:$PATH" "$TO" 20 bash "$here/gestalt" $GARGS 2>&1; }
+GARGS=""
+q=$(run "$T/ghok"); rc=$?
+[ "$rc" = 0 ] && [ -z "$q" ] && ok "silent (no output, rc 0) when all normal" || bad "not silent rc=$rc: [$q]"
+GARGS=--all; qa=$(run "$T/ghok"); GARGS=""
+printf '%s\n' "$qa" | tail -1 | grep -qx 'gestalt: DONE rc=0' && printf '%s\n' "$qa" | grep -q '^load:' && ok "--all prints every line + DONE" || bad "--all on normal input"
+kinds() { sed -n 's/^\([a-z]*\):.*/\1/p' | tr '\n' ' ' | sed 's/ $//'; }
+fires() { local what=$1 want=$2 pre=$3; shift 3; local o; o=$(run "$pre" "$@" | kinds)
+    [ "$o" = "$want" ] && ok "row fires: $what" || bad "row $what: got [$o] want [$want]"; }
+fires "load1 > nproc" load "$T/ghok" GESTALT_LOADAVG="$T/load.high"
+fires "ci failure" ci "$T/ghfail"
+fires "ci cancelled-latest" ci "$T/ghcanc"
+fires "ci unavailable" ci "$T/bin"
+fires "queue idle, ready job waits" queue "$T/ghok" GESTALT_BOXQUEUE="$T/bq.idleready"
+fires "queue idle, nothing ready: silent" "" "$T/ghok" GESTALT_BOXQUEUE="$T/bq.idlewait"
+fires "disk >= 85%" disk "$T/dffull:$T/ghok"
+fires "registered session not live" session "$T/ghok" GESTALT_ROLES_DIR="$T/roles" GESTALT_PROJECTS="$T/none"
+fires "context > 70% of compaction point" "session context" "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
+mv "$T/ch/settings.json" "$T/ch/s.off"; printf '{"autoCompactWindow":1000000}\n' > "$T/ch/settings.json"
+fires "context 12% of compaction point: not hot" session "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
+# the log line is written on a silent run too
+[ -s "$T/tmproot/gestalt/log.tsv" ] && ok "log.tsv written" || bad "log.tsv missing"
 echo "gestalt.test: $pass pass, $fail fail"
 [ "$fail" = 0 ]
