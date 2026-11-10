@@ -1,0 +1,61 @@
+file	line	form	cite	reason
+docs/design/alt_normal_form.md	1855	addendum	D187 addendum	no owner-table row for D187 a:-
+docs/design/doc_index_format.md	344	addendum	D155 addendum 6	no owner-table row for D155 a:6
+docs/design/doc_index_format.md	680	addendum	D155 addendum 6	no owner-table row for D155 a:6
+docs/design/doc_index_format_appendix.md	100	newid	D162.a13	no owner-table row for D162.a13
+docs/design/doc_index_format_appendix.md	148	newid	D2.a1	no owner-table row for D2.a1
+docs/design/doc_index_format_appendix.md	149	newid	D3.a3	no owner-table row for D3.a3
+docs/design/doc_index_format_appendix.md	201	addendum	D155 addendum 6	no owner-table row for D155 a:6
+docs/design/doc_index_format_appendix.md	202	addendum	D155 add. 6	no owner-table row for D155 a:6
+docs/design/memfn/CLAUDE.md	73	addendum	D146 addendum	no owner-table row for D146 a:-
+docs/design/memfn/integration.md	5187	addendum	D144 addendum	no owner-table row for D144 a:-
+docs/design/memfn/integration.md	5208	addendum	D144 addendum	no owner-table row for D144 a:-
+docs/design/memfn/regime_eval.md	237	addendum	D161 add.	no owner-table row for D161 a:-
+docs/design/memfn/setfind.md	13	addendum	D155 add.	no owner-table row for D155 a:-
+docs/design/memfn/setfind.md	2220	addendum	D155 addendum	no owner-table row for D155 a:-
+docs/design/memfn/setfind.md	2993	addendum	D155 addendum	no owner-table row for D155 a:-
+docs/design/memfn/span_pick.md	65	addendum	D186 add.	no owner-table row for D186 a:-
+docs/design/memfn/span_pick.md	542	addendum	D186 add.	no owner-table row for D186 a:-
+docs/design/memfn/target_seam.md	362	addendum	D155 addendum 6	no owner-table row for D155 a:6
+docs/design/memfn/target_seam.md	372	addendum	D146 addendum	no owner-table row for D146 a:-
+docs/design/memfn/target_seam.md	492	addendum	D155 add. 6	no owner-table row for D155 a:6
+docs/design/memfn/target_seam_units.md	10	addendum	D146 addendum	no owner-table row for D146 a:-
+docs/design/memfn/target_seam_units.md	125	addendum	D146 addendum	no owner-table row for D146 a:-
+docs/design/memfn/target_seam_units.md	127	addendum	D146 addendum	no owner-table row for D146 a:-
+docs/design/memfn/target_seam_units.md	133	addendum	D155 addendum 6	no owner-table row for D155 a:6
+docs/design/memfn/target_seam_units.md	166	addendum	D146 addendum	no owner-table row for D146 a:-
+docs/design/memfn/window_contract.md	2152	addendum	D161 add.	no owner-table row for D161 a:-
+docs/design/span_arms.md	15	addendum	D168 addendum	no owner-table row for D168 a:-
+docs/design/span_arms.md	104	addendum	D168 addendum	no owner-table row for D168 a:-
+docs/design/span_arms.md	121	addendum	D168 addendum	no owner-table row for D168 a:-
+docs/design/span_arms.md	680	addendum	D168 addendum	no owner-table row for D168 a:-
+docs/design/span_arms.md	705	addendum	D168 addendum	no owner-table row for D168 a:-
+docs/design/span_arms.md	990	addendum	D168 addendum	no owner-table row for D168 a:-
+docs/design/span_arms.md	1091	addendum	D168 addendum	no owner-table row for D168 a:-
+docs/design/span_arms.md	1141	addendum	D168 addendum	no owner-table row for D168 a:-
+docs/design/span_arms.md	1159	addendum	D168 addendum	no owner-table row for D168 a:-
+docs/dev/decisions.md	8842	addendum	D129 addendum	no owner-table row for D129 a:-
+docs/dev/plan.md	2253	addendum	D138 addendum	no owner-table row for D138 a:-
+memfn/docs/requests.md	438	addendum	D161 add.	no owner-table row for D161 a:-
+memfn/docs/requests.md	850	addendum	D146 addendum	no owner-table row for D146 a:-
+scripts/doc_census.py	666	addendum	D121 ADDENDUM 2	no owner-table row for D121 a:2
+scripts/doc_census.py	723	newid	D124.a1	no owner-table row for D124.a1
+scripts/doc_census.py	734	newid	D121.a2	no owner-table row for D121.a2
+scripts/doc_control.py	574	newid	D2.a3	no owner-table row for D2.a3
+scripts/doc_control.py	578	addendum	D3 addendum 2	no owner-table row for D3 a:2
+scripts/doc_control.py	578	addendum	D3 addendum 3	no owner-table row for D3 a:3
+scripts/doc_control.py	605	newid	D2.a2	no owner-table row for D2.a2
+scripts/doc_control.py	606	newid	D2.a1	no owner-table row for D2.a1
+scripts/doc_control.py	607	newid	D2.a1	no owner-table row for D2.a1
+scripts/doc_control.py	608	newid	D3.a4	no owner-table row for D3.a4
+scripts/doc_control.py	609	newid	D3.a4	no owner-table row for D3.a4
+scripts/doc_control.py	611	addendum	D3 addendum	no owner-table row for D3 a:-
+scripts/doc_control.py	611	newid	D3.a1	no owner-table row for D3.a1
+scripts/doc_control.py	615	addendum	D3 addendum 1	no owner-table row for D3 a:1
+scripts/doc_control.py	615	addendum	D3 addendum 2	no owner-table row for D3 a:2
+scripts/entry	655	addendum	D26 addendum 2025-01-01	no owner-table row for D26 a:2025-01-01
+scripts/entry	656	addendum	D26 addendum 2026-10-25	no owner-table row for D26 a:2026-10-25
+scripts/entry	668	newid	D26.a9	no owner-table row for D26.a9
+src/gen/clskit.c	635	addendum	D131 ADDENDUM	no owner-table row for D131 a:-
+src/gen/part_layout.c	16	addendum	D163 addendum	no owner-table row for D163 a:-
+tests/mech/sabotages/S690_fn_selector_does_work.sh	7	addendum	D155 addendum	no owner-table row for D155 a:-

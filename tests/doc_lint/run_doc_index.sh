@@ -11,6 +11,10 @@
 #   4. doc_control.py --witnesses-table: appendix B's named witnesses hold in
 #      the table.
 #   5. witness sabotage: the D89 rulings flipped to D94 make check 4 fail.
+#   6. doc_cites.py --selftest: renumbered addendum, new dangling cite, moved owner,
+#      shrunken baseline each caught.
+#   7. doc_cites.py --check: no new dangling cite and no changed resolution vs the
+#      committed dangling_before.tsv / resolution_before.tsv (G4, C13).
 # Not in `make test` yet (unit 1.0); T1's run_doc_lint.sh may chain it.
 # Reads text only; ROOT_DIR is overridable.
 set -u
@@ -19,6 +23,7 @@ ROOT_DIR="${ROOT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 PY="python3 -I"
 CENSUS="$ROOT_DIR/scripts/doc_census.py"
 CONTROL="$ROOT_DIR/scripts/doc_control.py"
+CITES="$ROOT_DIR/scripts/doc_cites.py"
 pass=0; fail=0
 check() { # name, expected rc, command...
     local name="$1" want="$2"; shift 2
@@ -37,6 +42,8 @@ awk -F'\t' 'BEGIN{OFS="\t"} $1=="D94" && $3=="D89" {$3="D94"} {print}' \
 $PY "$CENSUS" --emit --no-cites --rulings "$tmp/rulings.tsv" --table "$tmp/owners.tsv" >/dev/null 2>&1
 check "sabotage: D89's addenda ruled to D94 fail the witnesses" 1 $PY "$CONTROL" --witnesses-table --table "$tmp/owners.tsv"
 rm -rf "$tmp"
+check "cites selftest: every plant caught" 0 $PY "$CITES" --selftest
+check "cites --check: no new dangling cite, no changed resolution" 0 $PY "$CITES" --root "$ROOT_DIR" --check
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 rc=0; [ "$fail" -eq 0 ] || rc=1
