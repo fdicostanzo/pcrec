@@ -49,7 +49,8 @@ DEF_RESOLVED = INDEX_DIR + '/resolution_before.tsv'
 # appendix E's declared exemption set (C8/C13 share it)
 EXEMPT = ('docs/dev/dev_journal.md', 'docs/dev/plan_completed.md', 'docs/dev/reviews/',
           'docs/dev/lanes/', 'docs/dev/history/', 'studies/', 'memfn/', 'docs/dev/doc_index/',
-          'pcrec-bench/')
+          'pcrec-bench/',
+          'scripts/doc_cites.py')  # its own selftest plants are not cites
 EXEMPT_KEEP = ('memfn/docs/requests.md',)
 # the committed baselines and the fixture trees carry cites by design
 SKIP_PARTS = ('/fixtures/',)
