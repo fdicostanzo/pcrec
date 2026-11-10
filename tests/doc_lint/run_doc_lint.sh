@@ -30,7 +30,7 @@ printf '%s\n' "$out"
 if [ "$rc" -eq 0 ]; then pass=$((pass+1)); echo "PASS: entry --lint-scripts (real tree)"; else fail=$((fail+1)); echo "FAIL: entry --lint-scripts rc=$rc"; fi
 
 . "$ROOT_DIR/scripts/tmpdir.sh"
-tmp="$(mktemp -d -p "$PCREC_TMPDIR" doc_lint.XXXXXX)"
+tmp="$(mktemp -d -p "${PCREC_TMPDIR}" doc_lint.XXXXXX)"
 plant() { # label, expected text, shell snippet run in the scratch scripts/
     rm -rf "$tmp/scripts"; mkdir -p "$tmp/scripts"
     (cd "$ROOT_DIR/scripts" && find . -maxdepth 1 -type f -exec cp -p {} "$tmp/scripts/" \; && cp -rp hooks "$tmp/scripts/")
