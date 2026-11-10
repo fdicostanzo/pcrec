@@ -276,7 +276,11 @@ DFA". FIND-ALL RESUME (corrected 2026-11-10, D193 add. 5; OPEN): the trailing pa
 not consumed (find-all resumes at group 0's end, as after a lookahead). OPEN, decided by usefulness:
 may the next match's LEADING part reach back before the resume point? `\K`-style no (`b\Kb` on `bbb`
 finds (1,2) only; forward-only reading, no overlap) or lookbehind-style yes (`(?<=b)b` finds (1,2),
-(2,3); group 0 = pure lookaround sugar). Manager's leaning `\K`-style, owner finds it workable.
+(2,3); group 0 = pure lookaround sugar). Manager's leaning `\K`-style, owner finds it workable. Owner 2026-11-10: tokenizing (`key=(?<0>\w+)`) gives the same answers under both rules; the
+rules differ ONLY when a match's leading context overlaps the previous REPORTED text (`\d(?<0>\d)` on
+`123`: `\K`-style "2"; lookbehind-style "2","3"). Each rule already has its other spelling (`\K`,
+a lookbehind), so the use cases must come from that overlap case; the forces are cost (lookbehind-style
+reads backward for a variable leading part) vs symmetry (lookbehind-style makes BOTH sides lookaround).
 
 ## Evidence
 
