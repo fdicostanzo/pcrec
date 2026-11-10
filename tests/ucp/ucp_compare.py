@@ -10,14 +10,16 @@ For every construct in `ucp_sets.py` and both encodings:
     and the member intervals must EQUAL the store's
     `oracle_store/libpcre2-10.46-ucp/membership.tsv` row. The store is the
     true reference pin, so no drift budget exists here on any box.
-  * WIDE under utf8 (D130 Q3): pcrec must REFUSE it by name ("is a wide set"),
-    and the store must say libpcre2's construct EQUALS the spelling the
-    definitions table carries — so the chain construct == spelling (the store)
-    == producer (tests/registry/definitions_check.c) covers the set pcrec will
-    build the day the refusal lifts.
+  * WIDE under utf8 (D130 Q3): refused by name until [UCP] U3 lifted the
+    refusal (ucp_design.md §6, the U3 row); now compared EXACTLY like the
+    narrow ones, and the store must still say libpcre2's construct EQUALS the
+    spelling the definitions table carries — so the chain construct ==
+    spelling (the store) == producer (tests/registry/definitions_check.c)
+    stays pinned.
 
-The partition itself is pinned: the set of constructs pcrec refuses under
-utf8 must be exactly `ucp_sets.py`'s `wide_utf8` column (limits.md §3.8).
+The partition is still counted: `ucp_sets.py`'s `wide_utf8` column names the
+constructs whose clamped set is over PCREC_UCP_NARROW_MAX_INTERVALS
+(limits.md §3.8), and each must now compile.
 
 Usage: ucp_compare.py PCREC CC WORKDIR       exit 0 = all agree
 """
@@ -86,7 +88,7 @@ def main(argv):
         sys.stderr.write(__doc__)
         return 2
     pcrec, cc, work = argv[1:]
-    compared = refused = 0
+    compared = refused = 0   # `refused`: the wide utf8 population (the name predates U3)
     for construct, spelling, wide in SETS:
         for enc in ("byte", "utf8"):
             want = store(construct, enc)
@@ -96,13 +98,7 @@ def main(argv):
                 continue
             msg, got = compile_sweep(pcrec, cc, work, construct, enc)
             if enc == "utf8" and wide:
-                refused += 1
-                if msg is None or "is a wide set" not in msg:
-                    bad("%s utf8: a WIDE set (D130 Q3) was %s" % (construct,
-                        "ACCEPTED" if msg is None else "refused for another "
-                        "reason: " + msg))
-                else:
-                    ok("%s utf8: refused by name (wide)" % construct)
+                refused += 1   # counted as the wide population, now built
                 sp = store(spelling, "utf8")
                 if sp != want:
                     bad("%s utf8: libpcre2's construct and the table's "
@@ -111,7 +107,6 @@ def main(argv):
                 else:
                     ok("%s utf8: store construct == spelling %s" % (construct,
                                                                     spelling))
-                continue
             if msg is not None:
                 bad("%s %s: REFUSED (%s) — the ruling ships it" % (construct,
                                                                    enc, msg))
@@ -124,14 +119,15 @@ def main(argv):
             else:
                 ok("%s %s: pcrec == libpcre2 10.46 (%d intervals)"
                    % (construct, enc, len(want.split())))
-    # the POPULATION, counted (K35): 16 byte + 7 narrow utf8 compared, 9
-    # wide utf8 refused. A shrunken population is a failure, not a pass.
-    if compared != 23 or refused != 9:
-        bad("population moved: %d sets compared (23 expected), %d wide "
-            "refusals (9 expected) — ucp_sets.py or the ruling changed"
+    # the POPULATION, counted (K35): 16 byte + 7 narrow utf8 + 9 wide utf8
+    # compared ([UCP] U3: the wide ones built). A shrunken population is a
+    # failure, not a pass.
+    if compared != 32 or refused != 9:
+        bad("population moved: %d sets compared (32 expected), %d of them "
+            "wide utf8 (9 expected) — ucp_sets.py or the ruling changed"
             % (compared, refused))
     else:
-        ok("population: 23 sets compared exactly, 9 wide utf8 refusals")
+        ok("population: 32 sets compared exactly, 9 of them wide utf8")
     print("ucp_compare: %d passed, %d failed" % (npass, nfail))
     return 1 if nfail else 0
 
