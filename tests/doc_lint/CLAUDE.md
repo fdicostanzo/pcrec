@@ -7,7 +7,7 @@ docs/design/doc_index_format.md (§2.2-§2.4, §5.2, appendices B and J).
 ## Files
 
 - `run_doc_lint.sh` — the T1 section runner (`ROOT_DIR` overridable), `checks passed:`/`checks failed:` total.
-  Today: (1) `scripts/entry --selftest`; (2) `scripts/entry --over-cap` over the real tree.
+  Today: (1) `scripts/entry --selftest`; (2) `scripts/entry --over-cap` over the real tree; (3) `scripts/entry --lint-scripts` over the real tree (scripts/INDEX.md covers every script, every line names a file, live scripts have a header); (4) plants on a scratch copy of scripts/: a new script, a new hook, a dangling line, a header-less live script, each must fail naming it (the selftest also plants the list form's other shapes).
 - `run_doc_index.sh` — unit 1.0's checks (NOT in `make test` yet): `scripts/doc_census.py --selftest` (P20, gates a/b/c), `--check` (the committed owner table equals a fresh census of docs/dev/decisions.md), `scripts/doc_control.py --selftest` (appendix B's plants P1-P21 each RED by its clause, the correct toy GREEN), `--witnesses-table`, and a witness sabotage (D89's rulings flipped to D94 must fail). Ends `run_doc_index: DONE rc=N`.
 - `fixtures/doc_control/` — the control's toy: `toy_old.md`, `toy_rulings.tsv`, and its hand-written CORRECT conversion `toy_index.md` + `toy_details.md`. The plants are mutations of the correct details (doc_control.py PLANTS); the owner table is derived by doc_census.py at test time.
 - The accessor and its fixtures live in `scripts/entry`, the profile table in `scripts/doc_profiles.py` (the gestalt row's cases are `scripts/tests/gestalt.test`, run by `make testscripts`).

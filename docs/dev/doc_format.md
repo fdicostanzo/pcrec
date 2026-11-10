@@ -31,7 +31,7 @@ tag print all and exit 2.
 KEY routing, first match: (1) an alias spelling (`Dn addendum K`, `Dn add. K`, `Dn <ordinal> addendum`, `Dn
 addendum YYYY-MM-DD`) to decisions; (2) a full profile id (`D26`, `K139`, `U22`); (3) `D47.6` (a ruling
 number: entry Dn, trailer `ruling 6 is in the body`); (4) an exact `[TAG]` (brackets optional); (5) `Dn.aN` (one
-addendum); (6) a lower-case kebab slug (every live pair profile; 2+ hits exit 2); (7) anything else exits 1.
+addendum); (6) a lower-case kebab slug (every live pair profile; 2+ hits exit 2); (6b) a script name under `scripts/` (`boxqueue`, `plan_lint.py`, `hooks/pre-push`; an extension-less stem naming 2+ files exits 2); (7) anything else exits 1.
 Plan linting refuses a `[TAG]` shaped like rows 2, 3, 5 or 6 (PL18), so a tag is always reachable.
 
 `-g` searches each item at level `-in` (default 0 = index lines; 2 = full content) and prints every matching item
@@ -79,6 +79,13 @@ It is silent under every cap. The line is recorded, not acted on: it is the owne
 | completed | plan_completed.md | `[TAG]` | `archive` (read-only) | none |
 | known | known_issues.md / known_issues_details.md | `K[0-9]+` | dormant until unit 3 | 180 / 280 / 32 KB |
 | upstream | upstream_issues.md / upstream_issues_details.md | `U[0-9]+[a-z]?` | dormant until unit 4 | 180 / 280 / 12 KB |
+| scripts | scripts/INDEX.md (no details file) | file name under `scripts/` | `list` | none |
+
+The `scripts` profile: `- <name> <live\|retired> — when: <situation>; does: <what>. {keywords}`, one line per file under
+`scripts/` and `scripts/hooks/` (exempt: CLAUDE.md, NOTES.md, INDEX.md, `tests/`, `hooks/test_*`). Level 0/1 = the line;
+level 2 adds the script's own header comment (no second file). `scripts/entry --lint-scripts` (`make test-doc-lint`)
+fails on a script with no line, a live line naming no file, a missing `when:`/`does:`/`{keywords}`, a duplicate, or
+a live script with no header comment.
 
 Each row also names its linter, extra paths, C9 floor and exemptions in `scripts/doc_profiles.py`; a new file or
 level is a row there, not code.

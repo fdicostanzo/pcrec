@@ -12,10 +12,11 @@ A profile row is a dict; the keys are the columns of the design's table:
     caps       (statement, line, file_bytes) soft caps; None = none. Characters for lines, bytes for the file
     level1     the working fields printed at level 1 (documentation + --levels)
     work       the --work view (documentation + --levels)
-    form       'single' | 'pair' | 'archive' | 'dormant'
+    form       'single' | 'pair' | 'archive' | 'list' | 'dormant'  (list: `- NAME STATE — text` lines, level 2 = the file's header)
     dormant    for form 'dormant': the unit that wakes it
     linter     the script that lints it
     extra      extra paths the linter reads
+    exempt     (list form) path regexes under the profile's directory that need no index line
     floor      C9 non-vacuity floor (None until the unit that sets it)
 """
 
@@ -52,6 +53,12 @@ PROFILES = [
     dict(name="upstream", index="docs/dev/upstream_issues.md", details="docs/dev/upstream_issues_details.md",
          id=r"U[0-9]+[a-z]?", states=(), caps=(180, 280, 12 * 1024), level1="unit 4's", work="unit 4's",
          form="dormant", dormant="unit 4", linter="doc_lint", extra=(), floor=None),
+    # scripts/INDEX.md: one line per file under scripts/ (and scripts/hooks/); level 2 prints the script's own header
+    # comment, so there is no details file. `entry --lint-scripts` checks coverage, shape and headers.
+    dict(name="scripts", index="scripts/INDEX.md", details=None, id=r"[A-Za-z0-9_./-]+", states=("live", "retired"),
+         caps=None, level1="the index line (when:/does:/keywords)", work="-", form="list", dormant=None,
+         linter="entry --lint-scripts", extra=(), floor=None,
+         exempt=(r"CLAUDE\.md", r"NOTES\.md", r"INDEX\.md", r"tests/.*", r"hooks/test_[^/]*")),
 ]
 
 
@@ -76,6 +83,9 @@ FIXTURE_PROFILES = [
          floor=None),
     dict(name="fixarch", index="fixarch.md", details=None, id=None, states=(), caps=None, level1="", work="-",
          form="archive", dormant=None, linter="-", extra=(), floor=None),
+    dict(name="fixscripts", index="fixscripts/INDEX.md", details=None, id=r"[A-Za-z0-9_./-]+", states=("live", "retired"),
+         caps=None, level1="", work="-", form="list", dormant=None, linter="-", extra=(), floor=None,
+         exempt=(r"CLAUDE\.md", r"INDEX\.md", r"tests/.*", r"hooks/test_[^/]*")),
     dict(name="fixdorm", index="fixdorm.md", details="fixdorm_details.md", id=r"U[0-9]+[a-z]?", states=(),
          caps=None, level1="", work="-", form="dormant", dormant="unit 9", linter="-", extra=(), floor=None),
 ]
