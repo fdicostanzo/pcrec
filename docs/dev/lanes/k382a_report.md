@@ -329,5 +329,9 @@ drift witnesses, following K38-1's rule (every row planting in a changed file).
 - Not run by this lane (box rules): `make test`, the mech matrix, emit_sweep. They are gate jobs
   545, 547-549 and 541-543.
 
-Owed: none of this lane's. The occurrence oracle (`tests/memfn/occurrence_oracle.py`) is lane
-k382o's; this lane's seam is in place for it, and S3008's flip to DETECTED rides with it.
+## STATE AT HANDOFF
+
+- Branch `lane/memfn-k382a`, worktree clean; every change committed. Gate jobs 540-549 written and
+  dry-run, NOT queued: the kit manager queues them.
+- OWED: none (of this lane's). The occurrence oracle (`tests/memfn/occurrence_oracle.py`) is lane
+  k382o's. This lane's seam is in place for it, and S3008's flip to DETECTED rides with it.
