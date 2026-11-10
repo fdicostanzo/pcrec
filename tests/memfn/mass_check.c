@@ -197,22 +197,22 @@ int main(void)
         byte_of(r[2], 'b');                             /* 1098 */
         byte_of(r[3], 'a');                             /* 1097, ties position 1 */
         range_of(r[4], 0x00, 0x00);                     /* 1000: the least, one member */
-        kit_member m = kit_run_member(rate1, sets_at, r, 4, 0, NULL);
+        kit_member m = kit_run_member(rate1, sets_at, r, 4, 0, NULL, T_MASS_STRETCH);
         /* positions 1 and 3 tie at 1097: the HIGHER (3) takes the tie */
         expect("MEMBER the least mass, a tie to the higher position", (uint32_t)m.pos, 3);
         expect("MEMBER its mass", m.mass, 1097);
-        m = kit_run_member(NULL, sets_at, r, 4, 0, NULL);
+        m = kit_run_member(NULL, sets_at, r, 4, 0, NULL, T_MASS_STRETCH);
         /* NONE: every position 3906, so the highest position (3) */
         expect("MEMBER under NONE: the highest position", (uint32_t)m.pos, 3);
         range_of(r[4], 0x00, 0x01);                     /* 2001, but two members */
         range_of(r[3], 0x61, 0x62);                     /* 'a','b': 2195, two members */
-        m = kit_run_member(rate3, sets_at, r, 5, 0, NULL);
+        m = kit_run_member(rate3, sets_at, r, 5, 0, NULL, T_MASS_STRETCH);
         /* rate3: 0 1099, 1 1097, 2 1098, 3 2195, 4 {0x00,0x01} = 2: 4 */
         expect("MEMBER rate3 all positions: the two-member least", (uint32_t)m.pos, 4);
-        m = kit_run_member(rate3, sets_at, r, 5, 1, NULL);
+        m = kit_run_member(rate3, sets_at, r, 5, 1, NULL, T_MASS_STRETCH);
         /* exact: positions 3 and 4 are not candidates; 1 (1097) is least */
         expect("MEMBER exact keeps one-member positions only", (uint32_t)m.pos, 1);
-        m = kit_run_member(rate1, sets_at, r, 5, 0, NULL);
+        m = kit_run_member(rate1, sets_at, r, 5, 0, NULL, T_MASS_STRETCH);
         /* all: 0 1099, 1 1097, 2 1098, 3 2195, 4 2001 -> 1 */
         expect("MEMBER all positions", (uint32_t)m.pos, 1);
         /* the whole order from `after`: 1 (1097), 2 (1098), 0 (1099),
@@ -221,7 +221,7 @@ int main(void)
         kit_member a = { -1, 0 };
         int ok = 1;
         for (unsigned k = 0; k < 6; k++) {
-            a = kit_run_member(rate1, sets_at, r, 5, 0, k ? &a : NULL);
+            a = kit_run_member(rate1, sets_at, r, 5, 0, k ? &a : NULL, T_MASS_STRETCH);
             if (a.pos != order[k]) ok = 0;
             if (a.pos < 0) break;
         }
@@ -231,7 +231,7 @@ int main(void)
         ok = 1;
         a = (kit_member){ -1, 0 };
         for (unsigned k = 0; k < 4; k++) {
-            a = kit_run_member(rate1, sets_at, r, 4, 0, k ? &a : NULL);
+            a = kit_run_member(rate1, sets_at, r, 4, 0, k ? &a : NULL, T_MASS_STRETCH);
             if (a.pos != ties[k]) ok = 0;
         }
         expect("MEMBER `after` on equal masses: higher positions first", (uint32_t)ok, 1);

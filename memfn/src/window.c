@@ -828,8 +828,8 @@ static void plan_drop(wf_dec *d, int32_t off)
 
 static const wf_alt *chosen(const wf_dec *d) { return &d->a[d->ch]; }
 
-/* PRECONDITION: row T_MASS_STRETCH is a STRICT order over positions (HIGHER
- * or LOWER) that is invariant under translation: the `after` walk skips every
+/* PRECONDITION: row `tie` (T_MASS_STRETCH, from both callers) is a STRICT
+ * order over positions (HIGHER or LOWER) that is invariant under translation: the `after` walk skips every
  * equal-mass position the row does not rank after `after`, so a row answering
  * 0 (EXCHANGE, PARKED, RESEED) would skip them all and the walk would end at
  * pos -1 early. The caller refuses a -1 where it expected a position
@@ -837,7 +837,7 @@ static const wf_alt *chosen(const wf_dec *d) { return &d->a[d->ch]; }
  * run, a translation of a_mass_choose's offsets; the answers agree because
  * the row is such an order. */
 kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src, unsigned n,
-                          int exact, const kit_member *after)
+                          int exact, const kit_member *after, int tie)
 {
     kit_pick b = KIT_PICK_NONE;
     for (unsigned j = 0; j < n; j++) {
@@ -845,9 +845,9 @@ kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src,
         const uint8_t *set = at(src, j, buf);
         if (exact && count(set) != 1) continue;
         kit_pick c = { (int)j, (int32_t)j, kit_mass(rate, set, 1, KIT_MASS_SUM) };
-        if (after && !kit_pick_takes(&c, after->mass, T_MASS_STRETCH, after->pos))
+        if (after && !kit_pick_takes(&c, after->mass, tie, after->pos))
             continue;                   /* ranked at or before `after` */
-        if (kit_pick_takes(&b, c.v, T_MASS_STRETCH, (int32_t)j)) b = c;
+        if (kit_pick_takes(&b, c.v, tie, (int32_t)j)) b = c;
     }
     return (kit_member){ b.pos, (uint32_t)b.v };
 }
@@ -867,29 +867,40 @@ static const uint8_t *sets_at(const void *src, unsigned j, uint8_t buf[32])
  *               TIE table's stretch row, and the stretch the maximal run of
  *               exact positions around it (today's run-pinned compare); no
  *               exact position, no member;
- *   verify YES  R must hold whole (a pre-check part's run): the member is
- *               the least-mass position of all of R (PICK's position mass, the
- *               same tie: pcrec_find_run_scan_index's rule, the part's scan
- *               and `@idx`), and the stretch R whole (a masked part is one
- *               compare today). */
+ *   verify YES  R must hold whole (a pre-check part's run): the member and
+ *               the stretch are THE RUN DECISION's (kit_run_decide, R whole:
+ *               the least-mass position of all of R, PICK's position mass,
+ *               the same tie, pcrec_find_run_scan_index's rule, the part's
+ *               scan and `@idx`; a masked part is one compare today).
+ * The verify-NO member is this site's own decision (span_runs_sheet.md
+ * §2.5), so it asks kit_run_member itself. */
 static void run_member(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
     d->run_stated = m->run >= 0;
     if (!d->run_stated) return;
     const mf_wspan *r = &m->alt->spans[m->run];
-    int exact = r->verify == MF_VERIFY_NO;
-    int bj = kit_run_member(d->rate, sets_at, r->set, r->len, exact, NULL).pos;
-    if (bj < 0) {                       /* no exact position: no member */
-        d->run_stated = 0;
-        return;
-    }
-    unsigned lo = 0, hi = r->len;
-    if (exact) {
+    unsigned lo, hi;
+    int bj;
+    if (r->verify == MF_VERIFY_NO) {
+        bj = kit_run_member(d->rate, sets_at, r->set, r->len, 1, NULL, T_MASS_STRETCH).pos;
+        if (bj < 0) {                   /* no exact position: no member */
+            d->run_stated = 0;
+            return;
+        }
         lo = (unsigned)bj;
         hi = (unsigned)bj + 1;
         while (lo > 0 && count(r->set[lo - 1]) == 1) lo--;
         while (hi < r->len && count(r->set[hi]) == 1) hi++;
+    } else {
+        kit_run_reply rr = kit_run_decide(d->rate, KIT_RUN_WHOLE, sets_at, r->set, r->len, NULL);
+        if (!rr.has_scan) {
+            d->run_stated = 0;
+            return;
+        }
+        bj = rr.scan;
+        lo = rr.ver_lo;
+        hi = rr.ver_lo + rr.ver_len;
     }
     d->member = r->start + bj;
     d->run_lo = r->start + (int32_t)lo;
@@ -1492,26 +1503,27 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
         p->nterm++;
         i = j;
     }
-    /* the scanned RUN term's ranking (RQ-2): the run member's order over its
-       positions' sets (the plan's own, of which the term's run and mask are
-       the derived cube), each answer asked again from the last: least mass
-       first, ties to the higher position (T_MASS_STRETCH), as
+    /* the scanned RUN term's ranking (RQ-2): THE RUN DECISION's order over
+       its positions' sets (the plan's own, of which the term's run and mask
+       are the derived cube; K38-1: kit_run_decide, option A of
+       span_runs_sheet.md §5), each answer asked again from the last: least
+       mass first, ties to the higher position (T_MASS_STRETCH), as
        pcrec_find_run_rank. rank_pos[0] is the plan term's least-mass
        position; where C-pin fired the stop IS the run member, so it must be
        the member (a loud check, not an assumption: the member ranks R's own
        spans, the ranking the plan's sets). */
     if (p->plan_hint != MF_NO_PRED && p->term[p->plan_hint].kind == MF_T_RUN) {
         unsigned n = p->term[p->plan_hint].run_len;
-        kit_member r = { -1, 0 };
+        kit_run_reply r = { 0, -1, 0, 0, 0 };
         for (unsigned k = 0; k < n; k++) {
-            r = kit_run_member(d->rate, sets_at, w->set[hint_at], n, 0, k ? &r : NULL);
-            if (r.pos < 0) {            /* the tie row is no strict order (see kit_run_member) */
+            r = kit_run_decide(d->rate, KIT_RUN_WHOLE, sets_at, w->set[hint_at], n, k ? &r : NULL);
+            if (!r.has_scan) {          /* the tie row is no strict order (see kit_run_member) */
                 kit_fail((mf_art *)d->art, "window family: the run ranking lost position %u of %u "
                          "(the T_MASS_STRETCH tie row must be a strict order)", k, n);
                 n = k;
                 break;
             }
-            p->rank_pos[k] = (uint16_t)r.pos;
+            p->rank_pos[k] = (uint16_t)r.scan;
             p->rank_ppm[k] = r.mass;
         }
         p->rank_n = (uint8_t)n;
