@@ -114,8 +114,17 @@ site (sheet §2.5). `pcrec_run_pin`'s rate pick is pcrec's and was not touched.
 - The purity reach row `+C-member(verify-NO)` was re-anchored with the same intent: the verify-NO
   branch dropped, so a verify-NO site takes the verify-YES path. It moved from `int exact = ...` to
   the branch's `if (r->verify == MF_VERIFY_NO) {`.
-- G2 quick (`make test-memfn-g2`, under `taskset -c 0,1`) and `make test-codegen` (PROCS=2): see
-  STATE AT HANDOFF.
+- G2 quick (`make test-memfn-g2`, under `taskset -c 0,1`, so its `xargs -P nproc` ran on 2 CPUs):
+  70,358,660 checks passed, 0 failed. The window family's own run is in it: "PASS: window family
+  (checks passed: 10444)". Log: /var/tmp/pcrec-pcrec/scratch/memfn/k381/g2.log.
+- `make test-codegen` (PROCS=2, 2 CPUs): 20 of 21 scripts passed on the first run. The red was
+  tests/codegen/run_codegen_tests.sh's [K37] check, which read the "build/pcrec -e utf8 ..." text
+  of my new S1095/S1096 doc figures as an unbounded compiler call. I reworded both figures and
+  re-ran tests/codegen/run_codegen_tests.sh standalone: 336 passed, 0 failed. That file is the one
+  test-codegen's group runs for it; the other 20 scripts did not change. Log:
+  /var/tmp/pcrec-pcrec/scratch/memfn/k381/codegen.log.
+- `make test-memfn-rows test-memfn-link` (2 CPUs): rc 0, rows 239/0, census with plants 94/0,
+  link 11/0 (C15 holds for the new exported `pcrec_mf_kit_run_decide`/`pcrec_mf_kit_run_at`).
 - Anchors: `python3 -I scripts/m6read_check_sab_anchors.py`: 1215 sabotages, 1258 anchor sites,
   all resolve.
 - OWED (queue, the kit manager): emit_sweep on every arm (jobs 511-513, 71 arms) and REACH
@@ -142,10 +151,12 @@ each comment, never computed by a kit function):
 On W1 the window and twin are tie-blind (four positions), as the sheet notes. The P0/P9 keep is
 tie-blind on every witness: it is the whole run whatever the scan.
 
-REACH_ONLY on the moved rows: S1095, S1096 and S3005/S3006 carry no `SAB_REACH`. Their reach is
-the per-reader check's own witnesses, which run in every memfnfinder run. A `REACH_ONLY=1`
-single-row run is therefore an empty probe for them, and I did not run it as a multi-row sweep
-(it builds a clean tree; the box was at load 16). See STATE AT HANDOFF.
+REACH_ONLY: I ran `REACH_ONLY=1 JOBS=2 bash tests/mech/run_sabotage_matrix.sh S1095 S1096 S1107
+S3005 S3006` at 2117f335b. Result: `mech-reach-only: DONE rc=0 rows=5 ... no-probe=5`. None of
+the five rows declares a `SAB_REACH` probe (S1095, S1096 and S1107 had none before either), so
+their reach is shown by the hand-built plants above. The per-reader check's witnesses are pinned
+by its own case floor (RUNDEC_FLOOR 11), and each witness's reader lines are green on the clean
+tree. Log: /var/tmp/pcrec-pcrec/scratch/memfn/k381/reach/reach.log.
 
 ## Gate jobs
 
@@ -182,18 +193,31 @@ passes (rc 0, checked 2026-11-10).
 | SECOND witness for the twin, a tied stretch over 8 positions | run_decide_check.c W2; S3005 |
 | S1095 re-aimed onto the tie; S1096 onto the stretch choice; S1107 kept | row files; fates table |
 | new ids from the top of the free range | S3005, S3006 (highest before: S3004) |
-| REACH_ONLY=1 on every moved fate | OWED, kit manager (the rows carry no SAB_REACH; their reach is the per-reader witnesses, green in memfnfinder) |
+| REACH_ONLY=1 on every moved fate | run on S1095 S1096 S1107 S3005 S3006: rc 0, no-probe 5 (no row declares SAB_REACH; reach shown by the hand plants) |
 | zero bytes; MF_SITE_ABI and pcrec abi unchanged | 320-artifact sample identical; full sweep OWED (jobs 511-513, kit manager) |
 | `nice make -j2`, `make strict` | clean; strict rc 0 |
-| G2 window family + finder families (parallelism capped at 2) | finder 3417/0; G2 quick: STATE AT HANDOFF |
+| G2 window family + finder families (parallelism capped at 2) | finder 3417/0; G2 quick 70,358,660/0 (window family 10444) |
 | BASE-vs-SUBJECT hand sample | done, identical |
 | caller check and its plant | green, plants red |
 | anchors check | all resolve |
-| `make test-codegen` | STATE AT HANDOFF |
+| `make test-codegen` | 20/21 first run, the K37 red mine (doc text) and fixed; run_codegen_tests.sh re-run 336/0 |
 | gate jobs 510-519, dry-run, not queued | scratch/memfn/k381/jobs/, all dry-runs rc 0; QUEUE OWED by the kit manager |
 | kit docs (CLAUDE.md) | memfn/src/CLAUDE.md (presence.c), tests/memfn/CLAUDE.md (run_decide_check.c, census D) |
 | no seam move, no byte move found | none found; no STOP needed |
 
 ## STATE AT HANDOFF
 
-(filled at the end of the lane)
+Tip: the last commit on lane/memfn-k381 (this report). Everything the brief puts in the lane's own
+validation has run and is green; the numbers are above.
+
+OWED, kit manager (queue): jobs 510-519 under /var/tmp/pcrec-pcrec/scratch/memfn/k381/jobs/
+(dry-runs rc 0). The byte-identity witness over 71 arms, reach equality over 21 arms, make test
+(with the RUN CALLERS plants witnessed), the 26 G2 window plants, and the 75 mech rows. The mech
+figures for S1095/S1096 (candoracle + memfnfinder) and S3005/S3006 are the shards'.
+
+OPEN for the kit manager: the A-mass stop finding in Summary. It decides what K38-2a's
+`run-tie-left` lever must also move. No byte moved and no STOP was needed in K38-1.
+
+Not done: window.c's C-member rule text (`wf_crows[]`, "kit_run_member, ties per
+T_MASS_STRETCH") still names kit_run_member. It is a trace-visible string, and I left it so that
+no trace byte moves; K38-2a can respell it together with the lever.
