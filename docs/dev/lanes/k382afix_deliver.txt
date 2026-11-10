@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k382afix_report.md
+sections: Summary; Fix by fix; Checks re-run; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
