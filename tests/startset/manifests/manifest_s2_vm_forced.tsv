@@ -1627,12 +1627,12 @@ tests/litscan/reqcube.rxt:95	--engine=vm	283f3a283f693a616273297c283f693a6162295
 tests/litscan/presence_deny.rxt:261	--features all --encoding=byte	283f3c3d717a29783f613a
 tests/litscan/presence_deny.rxt:315	--features all --encoding=byte	283f3c3d7129613a
 tests/litscan/presence_deny.rxt:347	--features all --encoding=byte	617b322c347d5c4b62
-tests/litscan/presence_deny.rxt:393	--features all --encoding=byte	283f3a61283f2171297c617129787b302c337d71
-tests/litscan/presence_deny.rxt:434	--features all --encoding=byte	666f6f283f3a757365726e616d657c70617373776f72647c7061737370687261736529626172
-tests/litscan/presence_deny.rxt:509	--features all --encoding=byte	5b612d635d7b322c347d785b302d395d7b322c347d795b412d435d7b322c347d7a5b6a2d6c5d7b322c347d775b782d7a5d7b322c347d
-tests/litscan/presence_deny.rxt:585	--features all --encoding=utf8	782e79
-tests/litscan/presence_deny.rxt:617	--features all --encoding=byte	61623f63
-tests/litscan/presence_deny.rxt:651	--features all --encoding=byte	612e7b312c357d7a
+tests/litscan/presence_deny.rxt:401	--features all --encoding=byte	283f3a61283f2171297c617129787b302c337d71
+tests/litscan/presence_deny.rxt:442	--features all --encoding=byte	666f6f283f3a757365726e616d657c70617373776f72647c7061737370687261736529626172
+tests/litscan/presence_deny.rxt:517	--features all --encoding=byte	5b612d635d7b322c347d785b302d395d7b322c347d795b412d435d7b322c347d7a5b6a2d6c5d7b322c347d775b782d7a5d7b322c347d
+tests/litscan/presence_deny.rxt:593	--features all --encoding=utf8	782e79
+tests/litscan/presence_deny.rxt:625	--features all --encoding=byte	61623f63
+tests/litscan/presence_deny.rxt:659	--features all --encoding=byte	612e7b312c357d7a
 tests/lookaround/alpha_spellings.rxt:115	--features lookaround	282a706f7369746976655f6c6f6f6b626568696e643a612962
 tests/lookaround/alpha_spellings.rxt:129	--features lookaround	282a6e6c623a612962
 tests/lookaround/alpha_spellings.rxt:144	--features lookaround	282a6e656761746976655f6c6f6f6b626568696e643a612962
@@ -4267,3 +4267,4 @@ tests/litscan/spanarms.rxt:653	--features all	61626364283f3a7c2965666768
 tests/litscan/spanarms.rxt:660	--features all --engine=vm	61626364283f3a7c2965666768
 tests/litscan/spanarms.rxt:668	--features all	6162283f3a7c78296364
 tests/litscan/spanarms.rxt:675	--features all --engine=vm	6162283f3a7c78296364
+# mrgmt2 (2026-11-10): the six presence_deny.rxt rows below line 343 move +8 (rows only, no census re-run): mrgmt's 1d61f307e regenerated presence_deny.rxt with the a{2,4}\Kb.c witness (+8 case lines), shifting every later block; the six mover set is unchanged.
