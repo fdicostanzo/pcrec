@@ -5,6 +5,10 @@
     scripts/entry -g REGEX [-in N] [-l N] [-p PROFILE] [-s SECTION] [--state S] [--rev SHA]
                                              item grep: match each item at level -in (default 0), print it whole
                                              at level -l (default 0). The archive is read only with -p completed.
+                                             Hits come best first (doc_profiles.RELEVANCE: ID/slug, statement,
+                                             {keywords}, working fields, body; then more matches, then newer), at most
+                                             15 per call: `entry: N hits; showing 1-15; next: --page 2`. --page K
+                                             continues; --all lifts the cap. Over 15 hits -l 1/-l 2 is refused (rc 2).
     scripts/entry --work [-p PROFILE] [-s SECTION] [-k WORD]
                                              plan: every not-started and blocked row at level 1, by section
     scripts/entry --levels [-p PROFILE]      the level and work-view rows of the profile table
@@ -612,6 +616,28 @@ def list_items(ctx, a, out):
             if a["k"] and a["k"].lower() not in "\n".join(it.text(1)).lower():
                 continue
             hits.append(it)
+    n = len(hits)
+    ranked = a["g"] is not None and not a["work"]
+    if ranked:
+        hits = rank_hits(hits, rx)
+    size = doc_profiles.PAGE_SIZE
+    note = None
+    if ranked and n > size and not a["all"]:
+        if level >= 1:
+            out.write("entry: %d hits; -l %d refused above %d hits: narrow the regex, add -p/-s/--state, "
+                      "or name one ID (--all overrides)\n" % (n, level, size))
+            emit(out, [], hits, level, a["p"])
+            return 2
+        pages = (n + size - 1) // size
+        pg = a["page"] or 1
+        if pg < 1 or pg > pages:
+            out.write("entry: %d hits; no page %d (pages 1-%d)\n" % (n, pg, pages))
+            return 1
+        lo = (pg - 1) * size
+        hits = hits[lo:lo + size]
+        note = "entry: %d hits; showing %d-%d" % (n, lo + 1, lo + len(hits))
+        if pg < pages:
+            note += "; next: --page %d" % (pg + 1)
     lines, sect = [], object()
     for i, it in enumerate(hits):
         if a["work"] and it.section != sect:
@@ -620,15 +646,54 @@ def list_items(ctx, a, out):
         elif i and level >= 1:
             lines.append("")
         lines += it.text(level)
+    if note:
+        lines = [ln if len(ln) <= LINE_CLIP else ln[:LINE_CLIP] + "…" for ln in lines]  # a page stays small; KEY has the whole
+        lines.append(note)
+        out.write("".join(ln + "\n" for ln in lines))
+        out.write("entry: %d items (profile %s, level %d)\n" % (n, a["p"] or ",".join(sorted({p["name"] for p in ps if p["form"] != "dormant"})), level))
+        return 0
     emit(out, lines, hits, level, a["p"])
     return 0 if hits else EXIT_NONE
 
 
+# -g relevance: the table is doc_profiles.RELEVANCE; each row's field is cut from the item here.
+LINE_CLIP = 200
+KEYWORDS = re.compile(r"\{[^{}]*\}\s*$")
+
+
+def fields(it):
+    head = it.index_line
+    kw = KEYWORDS.search(head)
+    l0, l1, l2 = it.text(0), it.text(1), it.text(2)
+    return {
+        "id": "\n".join(x for x in (it.id, it.slug) if x),
+        "statement": head[:kw.start()] if kw else head,
+        "keywords": kw.group(0) if kw else "",
+        "working": "\n".join(l1[len(l0):]),
+        "body": "\n".join(l2[len(l1):]),
+    }
+
+
+def rank_hits(hits, rx):
+    """Order HITS by doc_profiles.RELEVANCE (first matching row), then more matches, then newer (higher numeric
+    id, else later in the file) first. Stable for equal keys."""
+    keyed = []
+    for pos, it in enumerate(hits):
+        f = fields(it)
+        rank = next((r for r, (name, _) in enumerate(doc_profiles.RELEVANCE) if rx.search(f[name])), len(doc_profiles.RELEVANCE))
+        count = len(rx.findall("\n".join(it.text(2))))
+        m = re.fullmatch(r"[DKU]([0-9]+)", it.id)
+        newer = int(m.group(1)) if m else -1  # D/K/U ids number by age; any other id: later in the file is newer
+        keyed.append((rank, -count, -newer, -pos, it))
+    keyed.sort(key=lambda k: k[:4])
+    return [k[4] for k in keyed]
+
+
 def parse_args(argv):
     a = dict(key=None, l=None, rev=None, g=None, **{"in": None}, p=None, s=None, state=None, k=None,
-             work=False, levels=False, over_cap=False, lint_scripts=False)
+             work=False, all=False, page=None, levels=False, over_cap=False, lint_scripts=False)
     flags = {"-l": ("l", int), "--rev": ("rev", str), "-g": ("g", str), "-in": ("in", int), "-p": ("p", str),
-             "-s": ("s", str), "--state": ("state", str), "-k": ("k", str)}
+             "-s": ("s", str), "--state": ("state", str), "-k": ("k", str), "--page": ("page", int)}
     i = 0
     while i < len(argv):
         t = argv[i]
@@ -644,6 +709,8 @@ def parse_args(argv):
             continue
         if t == "--work":
             a["work"] = True
+        elif t == "--all":
+            a["all"] = True
         elif t == "--levels":
             a["levels"] = True
         elif t == "--over-cap":
@@ -897,6 +964,33 @@ def selftest():
         check("J8 --rev, no such commit", ["BB-2", "--rev", "0" * 40], 1, profiles=[p for p in doc_profiles.FIXTURE_PROFILES if p["name"] == "fixplan"])
     else:
         bad.append("J8: git init failed in the scratch dir")
+    # -g relevance + pages: a body-only hit sorts after an ID hit and a statement hit; 40 rows page 15 at a time
+    rows = ["## Backlog", "- [ZZ-BODY] STATE:not-started — nothing here", "  next: has the word needle in a working field",
+            "- [AA-NOTE] STATE:not-started — a statement naming needle", "- [needle-id] STATE:not-started — plain"]
+    rows += ["- [PG-%d] STATE:not-started — page row needle %d" % (k, k) for k in range(1, 38)]
+    w("fixpage.md", "# fixture\n\n" + "\n".join(rows) + "\n")
+    pg = [p for p in doc_profiles.FIXTURE_PROFILES if p["name"] == "fixplan"]
+    pg = [dict(pg[0], name="fixpage", index="fixpage.md")]
+
+    def lines_of(argv):
+        b = io.StringIO()
+        run(argv, b, tmp, pg)
+        return b.getvalue().splitlines()
+
+    n[0] += 1
+    first = lines_of(["-g", "needle", "-in", "2"])
+    ids = [x for x in first if x.startswith("- [")]
+    if ids[:3] != ["- [needle-id] STATE:not-started — plain", "- [PG-37] STATE:not-started — page row needle 37", "- [PG-36] STATE:not-started — page row needle 36"] or not ids or "ZZ-BODY" in "".join(ids):
+        bad.append("relevance order: id, then statement (newer first), body last on the last page: %r" % ids[:4])
+    n[0] += 1
+    p2, p3 = [x for x in lines_of(["-g", "needle", "-in", "2", "--page", "2"]) if x.startswith("- [")], [x for x in lines_of(["-g", "needle", "-in", "2", "--page", "3"]) if x.startswith("- [")]
+    allids = [x for x in lines_of(["-g", "needle", "-in", "2", "--all"]) if x.startswith("- [")]
+    if len(ids) != 15 or first[-2] != "entry: 40 hits; showing 1-15; next: --page 2" or ids + p2 + p3 != allids or len(set(allids)) != 40 or "ZZ-BODY" not in allids[-1]:
+        bad.append("paging: pages 1-3 must tile the --all list (%d/%d/%d of %d)" % (len(ids), len(p2), len(p3), len(allids)))
+    check("page out of range", ["-g", "needle", "-in", "2", "--page", "4"], 1, profiles=pg, has=["no page 4"])
+    check("detail refused above the cap", ["-g", "needle", "-in", "2", "-l", "1"], 2, profiles=pg, has=["40 hits", "refused", "--all"])
+    check("detail allowed with --all", ["-g", "needle", "-in", "2", "-l", "1", "--all"], 0, profiles=pg, has=["ZZ-BODY"])
+    check("detail allowed under the cap", ["-g", "PG-1[0-3]\\]", "-l", "1"], 0, profiles=pg, has=["PG-12"])
     # the real plan parses (non-vacuity: the plan_lint floor) and its Policy templates are not items
     o = io.StringIO()
     rc = run(["-g", r"^- \[ID\]", "-p", "plan"], o, ROOT)
