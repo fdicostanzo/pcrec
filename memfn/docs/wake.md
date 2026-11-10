@@ -22,7 +22,7 @@ Kit worktree: worktrees/memfn on branch lane/memfn-k1108 (ledger/journal commits
 - k382afix DELIVERED (lane/memfn-k382a 37a6b36ed). Gates 550-559 (kit-k382b-*, scratch/memfn/k382afix/jobs) QUEUED 11-10 17:40 behind main's full suite (ends ~08:00 Wed; main frozen until its verdict);
   then watch with `scripts/monread kit --wait`; done line; main merges.
 - Main frozen until the full suite verdict (~08:00 Wed): a done line parks on its branch.
-- FRANK 11-10: close completable items first; NO 3.0b or new feature/opt. Main GO (journal 18:15): ledger closes (scratch/memfn/ledgerclose), lane kclose (SEAM-2 + R-13 owed, jobs 560-569), group 4: KIT = PIN-MSG-DEPTH + XARCH-NEEDSOK (the latter waits on Frank via main) in a follow-up lane on lane/memfn-kclose after kclose delivers, prune; responses index after [DOC-INDEX].
+- FRANK 11-10: close completable items first; NO 3.0b or new feature/opt. Main GO (journal 18:15): ledger closes (scratch/memfn/ledgerclose), lane kclose (SEAM-2 + R-13 owed, jobs 560-569), group 4: KIT = PIN-MSG-DEPTH + XARCH-NEEDSOK (Frank GO 11-10) in a follow-up lane on lane/memfn-kclose after kclose delivers, prune; responses index after [DOC-INDEX].
 - Pending main: the master row over conditionals/predicates/intersection (Frank 11-10); main runs the survey and sends the
   design for kit comment. Doc-index ledger format agreed (doc_index_format.md §8.1): convert responses.md once main's kit profile exists.
 - Kit ruling on record: K38-2a made the in-run stop a counted reader (done).
