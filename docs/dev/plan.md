@@ -1286,7 +1286,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   Charter: a support-unit flatten that checks §R4.8's overlap rule before writing and stages any piece it would overwrite in o->scratch, so a template can rewrite its subject in place.
 - [CLI-OUTKEEP] STATE:not-started — `-o` WRITES ONLY WHEN THE BYTES CHANGE (TEMP + RENAME), SO MAKEFILES DO NOT RECOMPILE
   filed: 2026-10-22 Frank (subst R4a discussion: "that's nice! Yes. Own row")
-  status (2026-10-22): filed; nothing built. Today every -o output is overwritten in place.
+  status (2026-11-10): built on lane/outkeep (cli write_file, cli.md 1.2 paragraphs 3-4, tests/cli, one mech row); make test OWED; the manager moves the row on merge. Was: filed 2026-10-22, every -o output overwritten in place.
   next: on Frank's build go, one sonnet lane: cli/ change, a cli.md spec hunk, tests (identical output keeps mtime; changed output replaces it atomically; a failed run leaves the old file intact).
   refs: docs/spec/cli.md; examples/makefile/ (D118); worktrees/subst/docs/dev/lanes/subst_rulings.md R10
   Charter: when `-o FILE` exists and its bytes equal the new output, pcrec leaves it untouched (bytes and timestamp), so `pcrec --emit-support -o support.h` and generated matchers can be re-run on every build without forcing recompiles. Otherwise it writes a temp file in the same directory and renames it over, so an interrupted run never leaves a half-written file. Applies to every file pcrec writes via -o (matchers, headers, stamps, the support unit); no new flag.

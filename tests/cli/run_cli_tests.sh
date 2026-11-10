@@ -2779,6 +2779,56 @@ xt_err="$(pcrec_run "$PCREC" -o "$WORKDIR/xt_out.c" "$WORKDIR/xt.rxt" 2>&1 >/dev
 assert_eq "cpu targets: a config's raw pcrec line with an unknown token is refused with the kit's text" "1:yes" \
     "$xt_rc:$(case "$xt_err" in *zz-notatoken*) echo yes;; *) echo no;; esac)"
 
+# ---------------------------------------------------------------------------
+# [CLI-OUTKEEP] -o writes only when the bytes change (temp + rename;
+# docs/spec/cli.md §1.2¶3). The mtime is aged into the past first, so "left
+# untouched" is tested as "still older than the reference", not by a sleep.
+# ---------------------------------------------------------------------------
+ok_dir="${WORKDIR}/outkeep"
+mkdir -p "${ok_dir}"
+ok_ref="${ok_dir}/ref"
+touch -t 200201010000 "${ok_ref}"
+"${PCREC}" -p rx -o "${ok_dir}/m.c" --pattern 'a(b|c)+d' >/dev/null 2>&1
+cp "${ok_dir}/m.c" "${ok_dir}/m.c.want"; cp "${ok_dir}/m.h" "${ok_dir}/m.h.want"
+touch -t 200101010000 "${ok_dir}/m.c" "${ok_dir}/m.h"
+"${PCREC}" -p rx -o "${ok_dir}/m.c" --pattern 'a(b|c)+d' >/dev/null 2>&1; ok_rc=$?
+assert_eq "outkeep: an identical rerun exits 0 and leaves the .c and .h untouched (mtime)" "0:" \
+    "${ok_rc}:$(find "${ok_dir}/m.c" "${ok_dir}/m.h" -newer "${ok_ref}")"
+assert_eq "outkeep: an identical rerun leaves the bytes unchanged" "same" \
+    "$(cmp -s "${ok_dir}/m.c" "${ok_dir}/m.c.want" && cmp -s "${ok_dir}/m.h" "${ok_dir}/m.h.want" && echo same || echo differ)"
+chmod 640 "${ok_dir}/m.c"
+"${PCREC}" -p rx -o "${ok_dir}/m.c" --pattern 'x+y' >/dev/null 2>&1; ok_rc=$?
+assert_eq "outkeep: changed output replaces the file (exit 0, new bytes, no temp file left)" "0:differ:" \
+    "${ok_rc}:$(cmp -s "${ok_dir}/m.c" "${ok_dir}/m.c.want" && echo same || echo differ):$(ls "${ok_dir}" | grep 'pcrec-tmp')"
+assert_eq "outkeep: a replaced file keeps its permission bits" "640" \
+    "$(ls -l "${ok_dir}/m.c" | cut -c2-10 | sed 's/rw-r-----/640/')"
+cp "${ok_dir}/m.c" "${ok_dir}/m.c.want"
+"${PCREC}" -p rx -o "${ok_dir}/m.c" --pattern '(' >/dev/null 2>&1; ok_rc=$?
+assert_eq "outkeep: a failed compile leaves the old file intact (exit 1, same bytes)" "1:same" \
+    "${ok_rc}:$(cmp -s "${ok_dir}/m.c" "${ok_dir}/m.c.want" && echo same || echo differ)"
+"${PCREC}" -p rx -o "${ok_dir}/nosuchdir/m.c" --pattern 'x' >/dev/null 2>&1; ok_rc=$?
+assert_eq "outkeep: a target in a missing directory is refused (exit 1)" "1" "${ok_rc}"
+if [ "$(id -u)" != 0 ]; then
+    mkdir -p "${ok_dir}/ro"; chmod 555 "${ok_dir}/ro"
+    ok_err="$("${PCREC}" -p rx -o "${ok_dir}/ro/m.c" --pattern 'x' 2>&1 >/dev/null)"; ok_rc=$?
+    assert_eq "outkeep: an unwritable directory is refused naming the temp file, nothing created (exit 1)" "1:yes:" \
+        "${ok_rc}:$(case "${ok_err}" in *"ro/m.c.pcrec-tmp"*) echo yes;; *) echo no;; esac):$(ls "${ok_dir}/ro")"
+    chmod 755 "${ok_dir}/ro"
+    printf 'old' > "${ok_dir}/u.c"; chmod 444 "${ok_dir}/u.c"
+    "${PCREC}" -p rx -o "${ok_dir}/u.c" --pattern 'x' >/dev/null 2>&1
+    assert_eq "outkeep: a read-only regular file in a writable directory is replaced (rename needs the directory)" "yes" \
+        "$(grep -q '#include' "${ok_dir}/u.c" && echo yes || echo no)"
+fi
+"${PCREC}" --emit-support -o "${ok_dir}/s.h" >/dev/null 2>&1
+touch -t 200101010000 "${ok_dir}/s.h"
+"${PCREC}" --emit-support -o "${ok_dir}/s.h" >/dev/null 2>&1; ok_rc=$?
+assert_eq "outkeep: --emit-support -o rerun leaves the support unit untouched" "0:" \
+    "${ok_rc}:$(find "${ok_dir}/s.h" -newer "${ok_ref}")"
+echo old > "${ok_dir}/real.c"; ln -s real.c "${ok_dir}/lnk.c"
+"${PCREC}" -p rx -o "${ok_dir}/lnk.c" --pattern 'x' >/dev/null 2>&1; ok_rc=$?
+assert_eq "outkeep: -o through a symlink writes the target in place and keeps the link (exit 0)" "0:yes:yes" \
+    "${ok_rc}:$([ -L "${ok_dir}/lnk.c" ] && echo yes):$(grep -q '#include' "${ok_dir}/real.c" && echo yes)"
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then
