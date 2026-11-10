@@ -34,8 +34,11 @@ number: entry Dn, trailer `ruling 6 is in the body`); (4) an exact `[TAG]` (brac
 addendum); (6) a lower-case kebab slug (every live pair profile; 2+ hits exit 2); (6b) a script name under `scripts/` (`boxqueue`, `plan_lint.py`, `hooks/pre-push`; an extension-less stem naming 2+ files exits 2); (7) anything else exits 1.
 Plan linting refuses a `[TAG]` shaped like rows 2, 3, 5 or 6 (PL18), so a tag is always reachable.
 
-`-g` searches each item at level `-in` (default 0 = index lines; 2 = full content) and prints every matching item
-whole at level `-l` (default 0). The archive is read only with `-p completed`. `--work` = every not-started and
+`-g` searches each item at level `-in` (default 0 = index lines; 2 = full content) and prints the matching items
+at level `-l` (default 0), RELEVANCE-ordered (the RELEVANCE table in scripts/doc_profiles.py: a hit in the ID or
+slug ranks above the statement, then keywords, working fields, details body; ties: more matches, then newer), at
+most 15 per call (`--page K` for the next, `--all` lifts the cap); with more than 15 hits `-l 1`/`-l 2` is
+refused (rc 2) unless `--all` (Frank 2026-11-10: a bad search must not load a bulk of tokens). The archive is read only with `-p completed`. `--work` = every not-started and
 blocked plan row at level 1, by section; it never reads the archive. `--rev SHA` reads the files at that commit
 (read-only `git show`) with the WORKING TREE's profile table, the form chosen by which files exist at SHA.
 Output ends `entry: <n> items (profile <p>, level <l>)`; exit 0 found, 1 none, 2 ambiguous. Without the tool:
