@@ -1,17 +1,31 @@
-# One format for ruling and tracker files: a tight index plus greppable details (rev 1)
+# One format for ruling and tracker files: a tight index plus greppable details (rev 2)
 
-**Rev 1 (lane docfmt1, 2026-11-10):** the owner's six answers applied (§7):
-opus statement writers and a fresh opus critic, no owner read-through; a
-LEVELED accessor (`scripts/entry`, §2.3) with item grep and a work-choosing
-view, levels declared in the profile table; SOFT size caps (linter warns,
-`scripts/gestalt` prints one line per index over its cap); known issues as
-the third file; a kit-facing proposal (§8) to send once this is vetted;
-accessor + gestalt line are the FIRST tooling unit; D47's four addenda are
-unit 1's acceptance test.
+**Rev 2 (lane docfmt2, 2026-11-10):** applies the manager's rulings on critic
+round `docs/dev/reviews/2026-11-10-r1-docfmt.md` (every proposed disposition
+accepted). Plan row [DOC-INDEX]; the owner's six answers are D192. Worked
+tables moved to `doc_index_format_appendix.md` (A-I). Changes by finding:
 
-Lane docfmt, 2026-11-10. DESIGN ONLY: nothing here converts a real file.
-Owner's ask (Frank, 2026-11-10): decisions and plan should each be a short
-"simple statement" file that covers most cases and is easy to recall, plus a
+| id | change |
+|---|---|
+| F1 | census corrected (appendix A); an OWNER TABLE from a script other than the converter, hand rulings for id-less markers, a per-owner multiset, numbering rules, witnesses; a<k> is no faithfulness control (§2.2, §5.2, appendix B) |
+| F2 | G4 gets an instrument: `scripts/doc_cites.py` before/after unit 1, then doc_lint C13; `entry` aliases for old spellings; old labels stay greppable; `Dn.k` defined (§0, §2.3, §5.2, appendix C) |
+| F3 | an inbound-cite pass for writer and critic; seven critic questions (state, n, keywords added); level 1 prints `later:` (§5.3, §2.3) |
+| F4 | "one ruling" defined; a RULINGS LIST beside any statement with `(+n)`, n checked mechanically (C11); the three examples rewritten (§2.1, appendix D) |
+| F5 | exclusion set, "already converted" test, idempotence, landing baseline recomputed from HEAD (§5.2) |
+| F6 | the lint section is born in T1; T2's structural readers, hooks fail instead of skip, glob from the profile table, re-install per box, T2 acceptance (§2.4, §5) |
+| F7 | C8's population, exemption set, per-profile waking, cite-to-id pass, path anchoring + bench-path plant, the critic recipe (§2.4, §5, appendix E) |
+| F8 | accessor routing by full match, slug lookup across profiles, `.aN` rules, plan wins over the archive, completed-row level 0 (§2.3) |
+| F9 | per-profile slug grammar; provisional slug `-` and its writers (§2.1, §2.4 C5); the plan `?` slot and `now` caps are PLAN for unit 2 (§10) |
+| F10 | sizes recomputed; the plan index's always-on status is the manager's choice (§3) |
+| F11 | G1 at wake and after compaction; `entry --rev`; freeze names details files; content greps (§0, §2.3, §5); unit 2/3 parts PLAN (§10) |
+| F12, F13 | PLAN, owned by unit 2 (§10) |
+| F14 | known/upstream census corrected now (§1.1); state mapping and sub-records PLAN for units 3/4 (§10) |
+| F15 | cost, trigger and stop-point table; order T1 → 1 → 1.S → T2 → 2; one big transform per quiet window; D153 check; 1.S3-S8 gated on batch 1; FIXED known issues shrink (§5, §5.4, §10) |
+| F16 | the family named; unlocks with triggers in §9 (no plan rows) |
+| F17 | census nits (§1.1, appendix A) |
+
+DESIGN ONLY: nothing here converts a real file. Owner's ask (Frank,
+2026-11-10): decisions and plan should each be a short "simple statement" file that covers most cases and is easy to recall, plus a
 details file from which one entry is easy to grep out by its slug; formalize
 the shared format; say which other files fit. The consumer is the AI manager
 session, which keeps the index in context, and its lanes, which read details
@@ -21,14 +35,17 @@ on demand through the accessor.
 
 | # | goal | who benefits | measurable form |
 |---|---|---|---|
-| G1 | the manager holds every ruling's CURRENT form in context | manager, owner | decisions index under its 48 KB soft cap (today the only whole-file form is 832 KB), every D-id present |
-| G2 | one command prints exactly one entry, at the level asked for | manager, lanes | `scripts/entry D47` prints D47 with all four addenda and nothing else; 0 addenda outside their entry (17 today, §1.1) |
-| G3 | one format, one linter, one accessor for every tracker that fits | maintainers | one linter (plan_lint folded in), one accessor; per-file differences are rows in ONE profile table (§2.4) |
-| G4 | no citation breaks | everyone | every `Dn`, `Dn add. k`, `[TAG]`, `Kn` cite resolves after migration; 0 ids renumbered |
-| G5 | an index statement never says more or other than its details | owner | 100% of statements pass a fresh opus critic (§5) |
+| G1 | the manager holds every ruling's CURRENT form in context | manager, owner | decisions index under its 48 KB soft cap, every D-id present, 0 `?` after 1.S8; read whole at wake (pcrec-manager skill) and re-read after a compaction (post_compact.sh prints the instruction); currency checked per statement (§5.3) |
+| G2 | one command prints exactly one entry, at the level asked for | manager, lanes | `scripts/entry D47` prints D47 with all four addenda and nothing else; every witness of appendix B holds; 0 owner-table rows outside their entry |
+| G3 | one format, one linter, one accessor for every tracker that fits | maintainers | one linter (plan_lint folded in at T2), one accessor; per-file differences are rows in ONE profile table (§2.4) |
+| G4 | no citation breaks | everyone | `doc_cites.py`: every cite that resolved before unit 1 resolves to the same owner-table rows after (appendix C); 0 ids renumbered; then C13 on every commit |
+| G5 | an index statement never says more or other than its details, and states the CURRENT ruling | owner | 100% of statements pass a fresh opus critic's seven questions with the inbound list (§5.3); every batch's planted lines caught |
 
 Priority on conflict: G4 > G5 > G1 > G2 > G3. Non-goals: rewriting details
 text; changing what a decision says; append-only journals and logs (§4).
+Known exception to the order, stated: unit 1 lands the index with `?` lines
+(old titles) before 1.S writes statements, so for that window G5 is unmet by
+design; a `?` line is not acted on (read `entry` first; §6).
 
 ## 1. Census
 
@@ -37,79 +54,71 @@ form. Size spread is per entry.
 
 ### 1.1 Candidate files
 
-| file | bytes | entries | entry heading | size median / p90 / max | parsed by |
-|---|---|---|---|---|---|
-| docs/dev/decisions.md | 832,382 | 191 ids, 198 `## D` headings | `## Dn — title (date, who)` | 2,834 / 9,279 / 36,010 (D29) | tests/memfn/rows_check.py (§1.2) |
-| docs/dev/plan.md | 467,976 | 339 rows (296 not-started, 36 started, 2 blocked, 5 deferred) | `- [TAG] STATE:s — title` + 2-space attribute lines (`filed:` 308, `refs:` 292, `next:` 161, `trigger:` 138, `status (date):`) | 1,090 / 2,490 / 4,969 | scripts/plan_lint.py (PL1-PL15), pre-commit |
-| docs/design/plan_row_bodies/ | 22 files, 177 KB | 1 file per row | file named `TAG.md` | 1.0-28 KB | plan_lint PL15 |
-| docs/dev/plan_completed.md | 1,212,690 | 380 `STATE:completed` rows under date headings | same as plan.md | archive | plan_lint (moved-row check) |
-| docs/dev/known_issues.md | 466,753 | 139 (`## Kn — STATE ... — title`; 71 FIXED, 42 OPEN, 7 CLOSED, 3 ACCEPTED, rest unmarked); bodies use `**Witness:**`, `**Fix:**` labels | `## Kn` | 2,443 / 6,655 / 19,008 | none (cited by K-number from ~70 tests) |
-| docs/dev/upstream_issues.md | 70,369 | 25 `## Un` | `## Un — engine: title` | small | none |
-| memfn/docs/requests.md | 92,851 | 38 `## R-n` (main's single-writer file) | `## R-n (date, who) — title` | — | post_compact.sh names it |
-| memfn/docs/responses.md | 300,327 | 16 `## R-n`/`## N-n` + `###` notices (kit's file) | `## R-n — title` | — | rows_check.py LEDGERS |
-| docs/dev/learnings.md | 41,996 | numbered sections §1-§6, §3.a-§3.ac | `## n.` / `### 3.x` | — | none |
-| docs/testing.md | 344,067 | ~50 topical sections | `## The ...` | — | none |
-| docs/dev/dev_journal.md | 1,886,739 | 448 dated entries, append-only | `## date` | tail-read | known_fail, test_trailer (append) |
-| docs/dev/full_suite_ledger.md | 50,678 | landing lines | prose lines | — | queuemon, fullsuite_job.sh |
-| memfn/docs/ideas.md | 54,470 | 28 dated raw notes, append-only | `## date — note` | — | none |
-| REFERENCES.md | 41,510 | 55 `### [Key]` | `### [Key] authors (year)` | small | none |
+Fourteen files were measured (sizes, entries, heading forms, parsers):
+appendix F. In short: decisions.md 832 KB, 191 ids under 198 headings in
+three heading forms; plan.md 468 KB, 339 rows (296 not-started, 36 started,
+2 blocked, 5 deferred), 31 child rows with 4-space attributes;
+plan_row_bodies/ 21 bodies (~146 KB); plan_completed.md 1.2 MB, 397 heads
+under 65 date headings, 297 of them prose, 6 tags also live in plan.md, 4
+twice; known_issues.md 467 KB, 134 ids under 139 headings, states that are
+not one set (FIXED 68, OPEN 35-37, CLOSED 6, ACCEPTED 1, other 24-27);
+upstream_issues.md 70 KB, 25 ids + 1 id-less heading, state in a body
+`**Status**:` bullet.
 
-Decisions shape, measured: 54 of 191 entries carry addenda, in SIX
-spellings (70 `### Dn addendum[ k]`, 17 `- **Addendum`, 15 `**Addendum`,
-6 `**ADDENDUM`, 6 separate `## Dn ADDENDUM` top-level headings, 1
-`## Dn SECOND ADDENDUM`); 61 are numbered, the rest are not. 17 addenda
-sit inside a LATER entry (D163's inside D167 five times, D94's inside D112,
-D161's inside D162, ...), and D47's two load-bearing addenda are top-level
-headings after D48, so reading `## D47` alone today misses part of D47's
-current ruling. Supersession is prose (10 "SUPERSEDED" marks, no field).
-Citations: ~4,800 `Dn` tokens in src/tests/scripts/lib/cli, 2,708
-`Dn add. k`/`Dn addendum k` cites tree-wide: ids AND addendum numbers are
-load-bearing.
+Decisions shape: 148 addendum markers by an open scan, about 40 outside their
+entry's `^## Dn` cut plus 3 id-less ones filed under a foreign entry, and
+seven numbering shapes the rev-1 rule could not keep (appendix A). D47's two
+load-bearing addenda are top-level headings after D48, so reading `## D47`
+alone today misses part of D47's current ruling. Supersession is prose (5
+`SUPERSEDED`, 47 "supersed*"; no field). Cites tree-wide: ~36k `Dn`, ~26k
+`Kn`, 2,494 `Dn add. k`/`Dn addendum k`, 1,011 dotted `Dn.k`: ids AND
+addendum numbers are load-bearing (appendix C).
 
-Plan shape: the head lines alone total 35,289 B (median 108 B); everything
-else in the row (filed, status, next/trigger, refs, charter) is 430 KB.
+Plan shape: head lines total 36.2 KB with child indents (35.8 KB without;
+median 110 B); everything else in the row is ~430 KB.
 
 ### 1.2 Who reads what, and how
 
-| reader | file | how |
-|---|---|---|
-| scripts/plan_lint.py (+ .sh, tests/plan_lint/, Makefile `test-plan-lint`, pre-commit) | plan.md, plan_completed.md, plan_row_bodies/ | full parse: row grammar, sections, caps (title 100, status/next 300, line 1000, row 12 lines / 6000 B), PL15 body pointers, PL14 no `plan.md:N` cites, row floor 150 (K35) |
-| tests/memfn/rows_check.py `support_faults` | decisions.md, memfn/docs/responses.md | cuts `^## Dn\b.*?(?=^## D[0-9]\|\Z)`, requires the quoted ruling sentence inside it |
-| tests/memfn/stream_support.tsv | decisions.md | rows carry `"sentence" @ docs/dev/decisions.md D190` |
-| scripts/boxqueue header | plan_row_bodies/BOXQUEUE.md | comment pointer |
-| scripts/hooks/post_compact.sh | owner.md, wake.md, memfn wake | injects owner.md + wake.md (≤5,000 chars); kit role told to read requests/responses |
-| .claude/skills pcrec-manager, q, pcrec-critic, pcrec-memfn-manager | plan.md, decisions.md, ledgers | `grep -n "STATE:started"`; write rulings; freeze commits; `grep -n '^- \[TAG\]'`; open items at wake |
-| root CLAUDE.md, docs/dev/CLAUDE.md, ~57 CLAUDE.md files | all | prose pointers ("decisions.md D26") |
-| tests, src comments | all | cite ids only; no parse |
+The reader table (grep-found; each row moved by a named unit in §5) is
+appendix H. Its classes: the parsers (plan_lint.py, rows_check.py +
+stream_support.tsv); the structural name lists a lint section sits in
+(shards.tsv, san lists, `.PHONY`); the hooks (a plan-only glob, a pre-push
+lint that skips SILENTLY if its runner moves, hooks.test pinning it,
+installed copies); pointers into plan_row_bodies/ (one an in-force
+vlookbehind.md step); post_compact.sh; the skills (STATE greps, the critic
+freeze of two files, `git show`/`^## Dn` recipes, the deny grep, `file:line`
+records); ~187 line cites (appendix E); content greps in the manager's
+memory (outside the repo: a manager step per unit); CLAUDE.md pointers; id
+cites in tests and src, one an emitted string (name-keeping saves an abi
+event).
 
-How the manager looks things up today: `grep -n` on STATE tags for the plan;
-for a ruling, a grep for `^## D26` and a Read of a line range, which misses
-misplaced addenda and costs 3-36 KB per entry. Nothing gives "the current
-ruling in one line", and nothing gives "every not-started row with its
-trigger" short of reading the 468 KB file.
+Today a ruling is a grep for `^## D26` plus a Read of a line range (3-36 KB,
+missing misplaced addenda); nothing gives the current ruling in one line or
+every not-started row with its trigger short of reading the 468 KB file.
 
 ### 1.3 Files a session loads at start
 
-root CLAUDE.md 17,876 B (auto, cap 20 KB); ~/.claude/CLAUDE.md 1,175;
-MEMORY.md 23,494 (manager and every lane); owner.md 5,430 (post_compact);
-wake.md 22,115 (5,000 injected, skill says read in full); pcrec-manager
-SKILL.md 14,919; journal tail and plan greps, variable; lanes add
-BOILERPLATE.md 10,872 (+ RUNS.md 15,564 on trigger). Today's always-on
-manager load is ~85 KB. The two proposed indexes add ~80 KB (§3): the price
-of G1, held by soft caps.
+Today's always-on manager load is ~85 KB (itemized in appendix F); §3 prices
+what the indexes add.
 
 ## 2. The format
 
 A file that adopts it is a PAIR:
 
 - the INDEX keeps the file's current name (decisions.md, plan.md,
-  known_issues.md), so every prose pointer ("decisions.md D26") still lands;
-- the DETAILS file is `<name>_details.md` beside it, ONE details file per
-  index. Why one (owner's answer 2: our call, since access goes through the
-  accessor): the accessor hides the split from readers either way, and one
-  file keeps whole-details grep, the bijection check and the converter to
-  one parse, instead of ~700 small files each listed in a directory guide.
-  Details are read one entry at a time, never whole.
+  known_issues.md), so every prose pointer ("decisions.md D26", 396 of them)
+  and the one emitted string still land;
+- the DETAILS file is `<name>_details.md` beside it, ONE per index (D192
+  answer 2): the accessor hides the split either way, and one file keeps
+  whole-details grep, the bijection check and the converter to one parse.
+
+The shape is one member of a family already in the tree: index tier +
+details tier (+ archive tier). MEMORY.md + fact files, CLAUDE.md + NOTES.md,
+plan.md + plan_row_bodies/ + plan_completed.md are the other instances. This
+design absorbs plan_row_bodies/ and keeps plan_completed.md as the archive
+tier; MEMORY.md (outside the repo, owned by the harness's memory rules) and
+CLAUDE.md/NOTES.md (own checker, check_claudemd_size.sh, a different
+consumer: auto-injection) stay out until a trigger in §9 fires.
 
 ### 2.1 Index entry
 
@@ -119,16 +128,29 @@ One line per entry (plan rows: one line, or two for started/blocked rows).
 
 | field | rule | why |
 |---|---|---|
-| ID | existing id, never renumbered (`D26`, `K139`, `U22`; plan keeps `[TAG]`) | G4: ~7,500 cites |
-| slug | kebab-case, 2-4 words, ≤ 28 chars, unique in the file; the plan's `[TAG]` IS its slug | a recall handle that survives a renamed title; `entry` takes it |
-| state | decisions: `live`, `sup>Dm` (wholly superseded), `part>Dm` (partly; the statement is the live remainder), `retired`, `absorbed>WHERE` (the rule now lives in CLAUDE.md/spec/skill). Known issues: `OPEN`, `FIXED`, `CLOSED`, `ACCEPTED`. Plan: `STATE:<s>` as today, so the skills' greps keep working | supersession becomes a field, not prose |
-| a<k> | number of addenda in the details entry; the linter checks it equals the count of `### ID.aN` headings | an addendum FORCES a touch of the index line, the moment to rewrite the statement (G5) |
-| statement | ONE sentence, ≤ 200 chars, present tense, the CURRENT ruling with every addendum applied. Shape: `<topic>: <rule>[; <rule>...].`, topic ≤ 4 words. No rationale, dates, history or lane names | what a session pattern-matches when about to act; 200 chars keeps 191 entries near 38 KB |
-| (+n more) | count of rulings the statement left out | compression allowed, silent omission not; the critic checks n |
-| keywords | optional, ≤ 40 chars, only words absent from slug and statement | grep recall for words the sentence did not need |
+| ID | existing id, never renumbered (`D26`, `K139`, `U22`; plan keeps `[TAG]`) | G4 |
+| slug | per profile (§2.4 C5): decisions/known/upstream `^[a-z0-9]+(-[a-z0-9]+){1,3}$`, ≤ 28 chars, unique in the profile; plan: the `[TAG]` itself (PL07's grammar). PROVISIONAL `-` until written | a recall handle; mechanical slugs collide (22 D, 23 K ids), so the 1.S writers write them, C5 checking uniqueness per batch |
+| state | decisions: `live`, `sup>Dm`, `part>Dm` (statement = the live remainder), `retired`, `absorbed>WHERE`, PROVISIONAL `?`. Known/upstream: set by units 3/4 (§10). Plan: `STATE:<s>` as today | supersession becomes a field; `?` = not yet written |
+| a<k> | count of `### ID.aN` headings in the details entry; the linter checks it | forces an index touch at every addendum. NOT a faithfulness control (it shares the converter's source; attribution is the owner table's job, §5.2) |
+| statement | ONE sentence, ≤ 200 chars, present tense, the CURRENT ruling with every addendum and every later entry's change applied (§5.3). Shape `<topic>: <rule>[; <rule>...].`, topic ≤ 4 words. No rationale, dates, history or lane names | what a session pattern-matches when about to act |
+| (+n more) | n = rulings the statement leaves out; REQUIRES a rulings list in the details, and n = its unstarred lines (C11) | compression allowed, silent omission not; n becomes mechanical |
+| keywords | optional, ≤ 40 chars, only words absent from slug and statement, each TRUE of the current ruling | grep recall; a false keyword misdirects recall |
+
+**One ruling** = one operative clause a session could act on by itself: a
+numbered or bulleted decision, a RULED paragraph, a consequence that changes
+what is built, tested or refused. Not rulings: rationale, provenance,
+revisit-when, measured facts, status or LANDED notes.
+
+**Rulings list** (written with the statement, checked with it): a block right
+under the details heading, one line per CURRENT ruling, `rK[*] <≤ 160 chars>`,
+`*` marking those the statement carries, `(aN)` naming an addendum's ruling.
+A ruling a later entry undid is not listed (the state says `part>`). Entries
+whose statement carries every ruling have no list and no `(+n)`. Worked
+examples (D26 8 rulings, D47 10, D191 15): appendix D. The list is the one
+non-verbatim text in a details entry, marked by its `rulings:` label.
 
 Superseded, retired and absorbed entries shrink to ≤ 80 chars naming what
-replaced them: the index then grows by live rulings, not by history.
+replaced them: the index grows by live rulings, not by history.
 
 Plan rows keep their head line (title cap 100 → 90) and gain ONE second line
 only when started or blocked:
@@ -137,388 +159,500 @@ only when started or blocked:
       now (<ISO date>): <≤ 160 chars: where it stands and the next step>
 
 `now` is the status of record, rewritten in place, REQUIRED on started and
-blocked rows and FORBIDDEN elsewhere, so the index cannot creep. A
-not-started row's next step or trigger stays OUT of the index (owner's
-answer 3) and the accessor supplies it on demand at level 1 (§2.3).
-Children stay nested by two spaces. Sections (Active, Candidates, Backlog,
-Boonies, Deferred) stay. The Policy section shrinks to a pointer at the
-format document (§2.6).
+blocked rows and FORBIDDEN elsewhere. A not-started row's next step or
+trigger stays OUT of the index (D192 answer 3); the accessor supplies it at
+level 1. Children stay nested by two spaces. Sections stay. The Policy
+section shrinks at unit 2 to a pointer at `docs/dev/doc_format.md` plus the
+plan-only rules (PL16 keeps checking what remains).
 
 ### 2.2 Details entry
 
-    ## <ID> <slug> — <original title, verbatim> (<original date, who>)
+    ## <ID> <slug> — <the old heading's text after the id and its separator, verbatim>
+    [rulings: block, when the statement has (+n)]
     <body, verbatim>
-    ### <ID>.a1 — <date, who>: <addendum title>
+    ### <ID>.a<N> — <date, who>: <addendum title>
+    [(was: "<old marker text>")   only for heading-form markers]
     <addendum body, verbatim>
 
-- An entry runs from its `## ` heading to the next `## ` heading. Body text
-  never uses a level-2 heading (today's six `## Dn ADDENDUM` headings become
-  `### Dn.ak`).
-- Addenda live INSIDE their entry, in date order. An addendum already
-  numbered keeps its number ("D163 add. 7" stays `D163.a7`); an unnumbered
-  one takes the lowest free number in date order and keeps its old label on
-  its first line (`(was: "D26 addendum (owner, 2026-11-06)")`) so a grep for
-  the old wording still lands.
+- An entry runs from its `## ` heading to the next `## ` heading; a body
+  never uses a level-2 heading (the seven `## Dn ADDENDUM` headings become
+  `### Dn.aN`; C10). The heading keeps the old text after the id verbatim
+  (all three heading forms; D98's wrapped continuation is joined, the one
+  declared exception), so no title is reformatted.
+- **Ownership** comes from the OWNER TABLE (§5.2, appendix B), never from
+  position alone: a marker naming its id belongs to that id; an id-less one is
+  ruled by hand (D89's "Addendum 2-4" inside D94 belong to D89).
+- **Numbering.** `N` grammar: `[0-9]+(\.[0-9]+)?[a-z]?` (`D155.a4.1`,
+  `D123.a3a`); C6 orders 4 < 4.1 < 5 and 3 < 3a < 4. A numbered addendum keeps
+  its number; an ordinal word is its number (second = 2); an unnumbered one
+  takes the owner table's ruled number (default: the lowest free number in
+  date order, checked against today's cites, appendix B). A DUPLICATE (D162
+  addendum 4 twice): the first keeps it, the second takes the next free number
+  and the line `(was: "<label>", second of two)`. A NOTE on an addendum (D168
+  "addendum 3 note" ×2) is a `####` sub-heading inside it, label verbatim,
+  unnumbered. Addenda sit in number order. An undated label inherits the
+  nearest earlier dated marker's date of the same owner. EXTENT: a marker to
+  the next marker or `## ` heading, unless the owner table rules `old_end`
+  (a marker inside a foreign entry, whose host text may resume after it).
+- **Old labels stay greppable on EVERY converted addendum**: a heading-form
+  marker (`##`, `###`) gets the `(was: "...")` line; an inline bold label
+  (`**Addendum (DOC-1, ...)**`, `**RULING-5 ADDENDUM**`) stays as the
+  unchanged first body line under its new heading. So `grep 'D163 addendum 7'`
+  still lands, and `entry` resolves the same spellings as aliases (§2.3).
 - Plan details hold what leaves the row: `filed:`, `next:`/`trigger:`
   (required for not-started, blocked, deferred), `refs:`, the charter, dated
-  history. These attribute lines keep today's spelling, so the accessor's
-  level-1 fields read the same names before and after the split.
-  plan_row_bodies/ files fold in verbatim as their row's details body.
+  history, children's 4-space attributes, in today's spelling, so level-1
+  fields read the same names before and after the split. plan_row_bodies/
+  files fold in as their row's details body (completed rows: §10 unit 2).
 - Cross-links are bare ids (`D26`, `[ANCH-AT]`, `K139`, `R-38`, `D163.a7`),
   never markdown links or line numbers.
 
 ### 2.3 The accessor: `scripts/entry`, by level
 
-python3 stdlib, run `-I`; it reads the profile table (§2.4), so a new file
-or a new level is a table row, not code. Three LEVELS, defined per profile
-in the table:
+python3 stdlib, run `-I`; it reads the profile table (§2.4), so a new file or
+a new level is a table row, not code.
 
 | level | content | decisions | plan | known issues |
 |---|---|---|---|---|
-| 0 | the index line(s) | the line | head line (+ `now`), with child head lines | the line |
-| 1 | level 0 + the WORKING FIELDS | + every `### Dn.ak` addendum heading (the addenda titles) | + `next:`, `trigger:`, `status (date):` / `now`, `refs:` lines | + the first line of each `**Witness:**` / `**Fix:**` paragraph, cut at 240 chars |
-| 2 | level 0 + the full details entry with all addenda | whole entry | whole entry (charter, history) | whole entry |
+| 0 | the index line(s) | the line | head line (+ `now`), child head lines | the line |
+| 1 | level 0 + the WORKING FIELDS | + rulings list, every `### Dn.aN` heading, and `later: D49* D58 ...` (later entries citing it, `*` = a supersede/amend verb; the §5.3 pass) | + `next:`, `trigger:`, `status (date):` / `now`, `refs:` lines | + first line of each `**Witness:**` / `**Fix:**` paragraph, cut at 240 chars |
+| 2 | level 0 + the full details entry | whole entry | whole entry | whole entry |
+
+A completed plan row (the archive tier) prints its head line cut at 160
+chars + `…` at level 0, its attribute lines at level 1, the whole row at 2.
 
 Commands:
 
-    scripts/entry ID|slug [-l N]          one item; default level 2
-    scripts/entry ID.aN                   index line + that one addendum
-    scripts/entry -g REGEX [-in N] [-l N] [-p PROFILE] [-s SECTION] [--state S]
+    scripts/entry KEY [-l N] [--rev SHA]  one item; default level 2
+    scripts/entry -g REGEX [-in N] [-l N] [-p PROFILE] [-s SECTION] [--state S] [--rev SHA]
     scripts/entry --work [-p PROFILE] [-s SECTION] [-k WORD]
     scripts/entry --levels [-p PROFILE]   print the level and work-view rows of the table
     scripts/entry --over-cap              soft-cap lines for scripts/gestalt (§2.4)
+    scripts/entry --selftest              one planted fixture per routing row
 
-- **Item grep** (`-g`): searches each item's text AT level `-in` (0 = index
-  lines only, the default; 1 = index + working fields; 2 = index + full
-  details) and prints every matching ITEM WHOLE at level `-l` (default:
-  the search level). Items, never raw lines: a hit deep in D47's third
-  addendum prints D47, not one stranded line. `-s` restricts to an index
-  section, `--state` to a state (`live`, `STATE:not-started`, `OPEN`).
-- **Work view** (`--work`): the profile's declared view (§2.4): plan = every
-  `STATE:not-started` and `STATE:blocked` row at level 1, i.e. its head line
-  with its trigger/next and refs, grouped by section; known = every `OPEN`
-  entry at level 1. `-s` and `-k` (a keyword, matched at level 1) narrow it.
-  This is the "choose the next piece of work" read the index alone cannot
-  give once triggers leave it.
-- Output ends with one trailer line, `entry: <n> items (profile <p>,
-  level <l>)`; exit 0 found, 1 none, 2 ambiguous slug. The id prefix picks
-  the profile (`D`, `K`, `U`, bracketless TAG = plan); a finished plan tag
-  falls through to plan_completed.md.
+**Routing of KEY** (first match; ids and tags case-sensitive, slugs
+lower-case; each row has a selftest plant, including the ten id-shaped plan
+tags K18-FIX, K38-FIX, K60-FIX, D105-BUILD, ..., and DD-14.A2, REVW.A1):
+
+| # | KEY shape | goes to |
+|---|---|---|
+| 1 | an alias spelling: `Dn add. K`, `Dn addendum K`, `Dn ADDENDUM[ K]`, `Dn <ordinal> addendum`/`ADDENDUM` | decisions, via the owner table's `old_label`/`old_number`; a label shared by two rows (D162 a4) prints both, exit 0, the trailer names both; an unnumbered alias prints every unnumbered-origin addendum of Dn |
+| 2 | FULL match of a profile id regex (`D[0-9]+`, `K[0-9]+`, `U[0-9]+[a-z]?`) | that profile |
+| 3 | FULL match `D[0-9]+\.[0-9]+` (a ruling number, D47.6) | decisions entry Dn at level 2, trailer `ruling 6 is in the body` |
+| 4 | an exact `[TAG]` of plan.md, else of plan_completed.md | plan wins; the archive only on absence; 2+ archive rows (PC-3, OPT-5, OPT-VMSEED, SR-8) print all, exit 2 |
+| 5 | FULL match `(D[0-9]+)\.a(<N grammar>)`, lower-case `a` | that decisions addendum (after row 4, so a tag shaped like it wins) |
+| 6 | a lower-case kebab slug | looked up in EVERY profile's index; 2+ hits exit 2 listing them |
+| 7 | anything else | exit 1 |
+
+- **Item grep** (`-g`): searches each item at level `-in` (0 = index lines,
+  the default; 1 = + working fields; 2 = + full details) and prints every
+  matching ITEM WHOLE at level `-l` (default: the search level). Items, never
+  raw lines. `-s` restricts to an index section, `--state` to a state. The
+  archive is read only with `-p completed`. CONTENT search (a topic word, a
+  claim to verify) is `-g WORD -in 2`, never a grep of the index.
+- **Work view** (`--work`): plan = every `STATE:not-started` and
+  `STATE:blocked` row at level 1, by section; known = the open states at
+  level 1 (§10 unit 3). It never reads plan_completed.md. `-s` and `-k` (a
+  keyword, matched at level 1) narrow it.
+- **`--rev SHA`** reads both files of the pair at that commit (`git show`,
+  read-only): the critic freeze and every "read the rulings at the frozen
+  commit" recipe use it.
+- Output ends with `entry: <n> items (profile <p>, level <l>)`; exit 0 found,
+  1 none, 2 ambiguous.
 - With no tool, one line still prints one entry:
 
       awk '/^## /{p=($2=="D26"||$3=="pcre2-compat-tiers")} p' docs/dev/decisions_details.md
 
-rows_check.py's existing cut (`^## D190\b ... (?=^## D[0-9]|\Z)`) works
-unchanged on the details file and becomes correct for the 17 misplaced
-addenda once they sit inside their entry.
+rows_check.py's cut works unchanged on the details file and becomes correct
+for every misplaced addendum once it sits inside its entry.
 
-### 2.4 One profile table, one linter: plan_lint becomes doc_lint
+### 2.4 One profile table, one linter, one test section
 
-The PROFILES table is one declared module, `scripts/doc_profiles.py`, read
-by both the accessor and the linter (one source; first-match rows per file
-pair):
+The PROFILES table is one declared module, `scripts/doc_profiles.py`, read by
+the accessor, the linter, the hooks (`--paths` prints each pair's files) and
+the selftests (one source; first-match rows per file pair):
 
 | profile | index / details | id | states | soft cap: statement / line / FILE | level-1 fields | work view | form |
 |---|---|---|---|---|---|---|---|
-| decisions | decisions.md / decisions_details.md | `D[0-9]+` | live sup part retired absorbed | 200 / 300 / 48 KB | `### ID.aN` headings | — | dormant until unit 1 |
-| plan | plan.md / plan_details.md | `[TAG]` | the four STATEs | title 90, now 160 / 2 lines / 48 KB | `next:` `trigger:` `status (…):` `now` `refs:` | not-started + blocked, L1, by section | `single` (today's file) until unit 2, then `pair` |
-| known | known_issues.md / known_issues_details.md | `K[0-9]+` | OPEN FIXED CLOSED ACCEPTED | 180 / 280 / 32 KB | `**Witness:**` `**Fix:**` first lines | OPEN, L1 | dormant until unit 3 |
-| upstream | upstream_issues.md / upstream_issues_details.md | `U[0-9]+[a-z]?` | OPEN FILED FIXED-UPSTREAM CLOSED | 180 / 280 / 12 KB | set by unit 4's census | OPEN, L1 | dormant until unit 4 |
+| decisions | decisions.md / decisions_details.md | `D[0-9]+` | live sup part retired absorbed `?` | 200 / 300 / 48 KB | rulings list, `### ID.aN` headings, `later:` | — | dormant until unit 1 |
+| plan | plan.md / plan_details.md | `[TAG]` | the four STATEs | title 90, now 160 / 2 lines / 48 KB | `next:` `trigger:` `status (…):` `now` `refs:` | not-started + blocked, L1, by section | `single` until unit 2, then `pair` |
+| completed | plan_completed.md (archive, no index) | `[TAG]` | as written | — | the row's attributes | — | `archive` (§10 unit 2) |
+| known | known_issues.md / known_issues_details.md | `K[0-9]+` | unit 3's mapping table | 180 / 280 / 32 KB | `**Witness:**` `**Fix:**` first lines | open states, L1 | dormant until unit 3 |
+| upstream | upstream_issues.md / upstream_issues_details.md | `U[0-9]+[a-z]?` | unit 4's census (the file's `**Status**:` values) | 180 / 280 / 12 KB | unit 4's census | unit 4 | dormant until unit 4 |
 
-The `single` form is the plan profile read in TODAY's shape: its level-1
-fields are already the row's own attribute lines, so the accessor and the
-work view are useful before any split. It is deleted at unit 2
-(implement-then-replace, not a second permanent mechanism).
+Each row also carries its C8 exemption prefixes (appendix E) and its section
+list. The `single` form is the plan profile read in TODAY's shape, so the
+accessor and work view serve before any split; unit 2 deletes it
+(implement-then-replace).
 
-**Soft caps (owner's answer 4: soft now, revisit later).** A FILE cap never
-fails anything: doc_lint prints `WARN C4 <file> ...` and exits 0, and
-`scripts/gestalt` (the heartbeat status) gets ONE line per index file that is
-over its cap, nothing otherwise. Gestalt runs `timeout 5 python3 -I
-scripts/entry --over-cap`, which prints, for `pair`-form profiles only:
+**Soft caps (D192 answer 4).** A FILE cap never fails anything: doc_lint
+prints `WARN C4 <file> ...` and exits 0, and `scripts/gestalt` gains one row
+in its declared ROWS table: threshold "a `pair`-form index over its cap, or
+the accessor unavailable". Gestalt runs `timeout 5 python3 -I scripts/entry
+--over-cap`, which prints one line per over-cap index:
 
-    docs: <index file> <size> KB over soft cap <cap> KB (+<excess> KB, <pct>%)
     docs: decisions.md 51.3 KB over soft cap 48 KB (+3.3 KB, 107%)
 
 KB = 1024 B, one decimal; pct = size / cap, rounded down. A non-zero exit or
 a timeout prints `docs: unavailable` (a check that cannot run must not read
-as "under cap", K35). Silent when every index is under its cap. The per-LINE
-caps (statement, title, now) are the open question in §7.
+as "under cap", K35). The per-LINE caps are the open question in §7.
 
 Common rules (each FAILS, except the file cap):
 
 - C1 ids unique in the index; C2 bijection: every index id has exactly one
-  details heading and every heading one index entry; C3 heading grammar
-  (§2.1, §2.2); C4 field caps (fail) and file cap (WARN only); C5 slug
-  kebab, ≤ 28, unique; C6 every `### ID.aN` lies inside `## ID`, numbers
-  unique and rising; C7 every id cited in an index line resolves; C8 no
-  `<file>.md:<line>` cite of any profile's file anywhere in the tree (PL14
-  generalized); C9 a parsed-entry floor per profile (K35); C10 no level-2
-  heading inside a details body.
+  details heading and every heading one index entry, slugs equal on both;
+  C3 heading grammar (§2.1, §2.2); C4 field caps (fail) and file cap (WARN);
+  C5 slug per the profile's grammar, unique, or `-`; C6 every `### ID.aN`
+  lies inside `## ID`, numbers unique and rising in the §2.2 order; C7 every
+  id in an index line resolves; C8 below; C9 a parsed-entry floor per profile
+  (K35); C10 no level-2 heading inside a details body; C11 `(+n)` equals the
+  rulings list's unstarred lines, and a list exists iff n > 0; C12 (from unit
+  2) no file under docs/design/plan_row_bodies/; C13 every `Dn.aN` and every
+  alias-spelled cite in the tree resolves (G4, §5.2).
+- **C8**, per profile, wakes when that profile becomes `pair`: no
+  `<file>.md:<line>` cite of the profile's file outside its declared
+  exemption prefixes. Anchored on the repo path: a cite counts when the
+  basename is preceded by a non-path character or by `docs/dev/` at a path
+  start, so `pcrec-bench/docs/dev/known_issues.md:N` (the bench's own file)
+  never matches. Selftest plants: one positive, one bench-path negative, one
+  exempt-prefix negative. The plan profile keeps PL14 as is; plan_completed
+  stays exempt (append-only).
 - `--selftest` plants one violation per rule per profile, plus one over-cap
-  file that must WARN and exit 0; `--staged` lints staged index content as
-  now; `--stale` (exit 0) prints headroom under each file cap and the count
-  of `?` statements left (§5).
-- Readers kept whole: `plan_lint.sh` becomes `doc_lint.sh [profile]`;
-  `test-plan-lint` becomes `test-doc-lint` with every reader (Makefile,
-  pre-commit glob, tests/plan_lint/ → tests/doc_lint/, docs/testing.md,
-  skills) moved in the same unit.
+  file that must WARN and exit 0; `--staged` lints staged content; `--stale`
+  (exit 0) prints headroom under each file cap and the count of `?` and `-`
+  left. The `?`+`-` count is a RATCHET: the linter refuses an increase.
+- **The section.** T1 creates `tests/doc_lint/` and the `make test-doc-lint`
+  section (entry's selftest; unit 1 adds doc_lint's decisions profile; T2
+  folds plan_lint in). Born in T1 so the structural lists move once: a
+  TEST_SECTIONS member + `.PHONY`, a tests/ci/shards.tsv row, a
+  tests/lib/san_excluded.txt (or san_scripts.txt) row for
+  `tests/doc_lint/run_doc_lint.sh`, tests/CLAUDE.md, docs/testing.md.
+- **Hooks.** pre-commit reads its trigger paths from `doc_profiles.py
+  --paths` (one source), so a commit staging only a details file is linted.
+  Both hooks FAIL (exit non-zero, one line naming the missing path) when a
+  linter path they expect is missing, never skip. Installed copies do not
+  update on merge: every landing that changes a hook re-runs `make hooks
+  HOOKS="pre-commit pre-push-light"` on each box that has them (dev box, Mac,
+  ubuntubudu), named in the landing brief.
 
-### 2.5 Worked examples (real entries; bytes measured)
+### 2.5 Worked examples
 
-**Decisions index** (statement bytes 198 / 189 / 173):
+Appendix D: the decisions index lines for D26, D47 and D191 with their
+rulings lists and inbound lists, each checked against §5.3's seven questions
+(rev 1's three all failed G5: D47 omitted 6 rulings against `(+3)` and
+carried stale "constant (8)"; D26 omitted 4 with no `(+n)`; D191 omitted 11
+against `(+3)`), and the plan examples. Lines measure 222-276 B.
 
-    - D26 pcre2-compat-tiers live a3 — PCRE2 compatibility: matching and syntax recognition are exact; accept all PCRE2 accepts (more allowed); follow the standard over an evidenced PCRE2 bug; never chase unimplemented-construct wording. {diagnostics floor 10.46}
-    - D47 brep-counterk live a4 — Bounded repeats: possessify, then rung select, then counter-K; K is one per-artifact named constant (8) in v1, never per quantifier; frameless forward work has its own bound and error code. (+3 more) {ENG-BREP}
-    - D191 span-arms-go live — Span arms: build E1 R1 E2 L1 L3 (L2 after kit R-38); a run crosses as one uncut span of byte sets at signed offsets; repeats count as copies; zero-width items do not cut it. (+3 more)
-
-Lines: 262, 243, 213 B (against 9,723 / 12,811 / 1,815 B of details).
-
-**Decisions details headings** (bodies verbatim, not shown):
-
-    ## D26 pcre2-compat-tiers — FUNCTIONAL compatibility with PCRE2, not bit-exact compatibility: effort tiers by distance from the core (2026-08-10)
-    ### D26.a1 — 2026-08-11, DOC-1: which PCRE2 (the pinned oracle, 10.46)
-    ### D26.a2 — Frank, 2026-10-24: compatible with PCRE2 unless PCRE2 has a bug
-    ### D26.a3 — owner, 2026-11-06: the accept set is a FLOOR, not a ceiling
-    (was: "D26 addendum (owner, 2026-11-06)")
-
-    ## D47 brep-counterk — the six [ENG-BREP] §9 rulings (Frank, 2026-08-16, twenty-fourth session continuation)
-    ### D47.a1 — Frank, 2026-08-16: F-1 ruled: K does NOT vary per-quantifier in v1; the clamp is DEFERRED to its own row
-    (was: the top-level heading "D47 ADDENDUM")
-    ### D47.a2 — Frank, 2026-08-17: F-2 ruled: the uncharged forward work gets its OWN bound (settlement 4); a pre-release ABI rider
-    (was: "D47 SECOND ADDENDUM")
-    ### D47.a3 — 2026-08-18: RULING-5 ADDENDUM (from the R30 ...)
-    ### D47.a4 — 2026-08-19: RULING-5 ADDENDUM, LANDED NOTE
-
-D47 is the hard case: two addenda that were top-level headings after D48
-(a `^## D47\b` cut today misses the two rulings that changed K and the work
-bound) and two unnumbered inline ones, all four numbered in date order.
-`scripts/entry D47 -l 1` prints the index line and these four `###` lines.
-
-**Plan index** (three states):
-
-    - [OPT-REVEND] STATE:started — reverse-from-end search for end-anchored patterns
-      now (2026-10-26): B3 match-end mark landed (abi 78); stage 3 waits for a bench cell in the anc-tail family
-    - [ANCH-AT] STATE:blocked — one anchored DFA run where the start is known (F-11: 328 _match bodies)
-      now (2026-11-06): scheduled by Frank; starts once lookbehind stage 1 and the alternation build land
-      - [XARCH-TOKERR] STATE:not-started — an unknown CPU token's refusal is cut at 256 bytes mid-text
-
-Index bytes: OPT-REVEND 192 (row today 4,224), ANCH-AT 204 (today 919),
-XARCH-TOKERR 101 (today 636).
-
-**Plan at level 1** (`scripts/entry --work -k token`, one item shown):
-
-    - [XARCH-TOKERR] STATE:not-started — an unknown CPU token's refusal is cut at 256 bytes mid-text
-      next: size the joined refusal (or show the kit's target and family refusals separately) so cli.md §1.24¶2's "the kit's text unchanged" holds for any token length
-      refs: src/gen/memfn_targets.c add_list; docs/spec/cli.md §1.24
-    entry: 1 items (profile plan, level 1)
-
-Level 2 adds its `filed:` line and body (575 B). ANCH-AT's details carry
-filed, trigger, refs and its charter; its old `status (2026-11-06)` line
-becomes the first dated history line.
+The D47 details headings (four addenda, two former top-level headings with
+their `(was:)` lines, two inline labels kept as first body lines) are in
+appendix D as well.
 
 ### 2.6 Where the format is defined
 
 The format (this section's rules, without census or migration) moves to
-`docs/dev/doc_format.md` in the first tooling unit: the one definition the
-profile module's docstring and every index header point at. plan.md's
-Policy section shrinks to that pointer plus the plan-only rules (sections,
-queue discipline).
+`docs/dev/doc_format.md` in T1: the one definition the profile module's
+docstring and every index header point at.
 
 ### 2.7 Writing an entry from now on
 
 A new ruling = the details entry + the index line, in one commit (C2 refuses
-one without the other). An addendum = the `### ID.aN` block + the `a<k>`
-bump, with the statement rewritten if the ruling moved. Statements are
-written by an opus session (owner's answer 1): the manager itself when it
-records a ruling, an opus lane in a batch. The q and pcrec-manager skills'
-"write the ruling" steps name both files.
+one without the other, at commit time because the hook globs the pair). An
+addendum = the `### ID.aN` block + the `a<k>` bump, with the statement and
+rulings list rewritten if the ruling moved. A ruling that changes an EARLIER
+entry's ruling also rewrites that entry's state and statement in the same
+commit (`part>Dn`/`sup>Dn`). Statements are written by an opus session (D192
+answer 1): the manager when it records a ruling, an opus lane in a batch. The
+q and pcrec-manager skills' "write the ruling" steps name both files.
 
 ## 3. Size targets
 
-Measured basis: the worked examples (decisions lines 213-262 B, all
-multi-ruling, so above typical); today's decisions headings average 155 B,
-plan head lines 104 B (all 191 / 339 measured).
+Measured basis: the worked lines (decisions 222-276 B, mean 252; all
+multi-ruling, so above typical, but the only sample); a `now` line is up to
+185 B (24 B of prefix + 160).
 
 | index | entries | per entry | projected | soft cap |
 |---|---|---|---|---|
-| decisions.md | 191 live today | 190-200 B typical, 240 B if all were like the examples; superseded ≤ 100 B | 36-46 KB, central 38 KB | 48 KB |
-| plan.md | 339 rows; 38 with a `now` line | head ~100 B; now ~120 B | ≈ 40 KB | 48 KB |
-| known_issues.md | 139 | ~180 B | 25 KB | 32 KB |
+| decisions.md | 191 | 252 B at the examples' mean; superseded ≤ 100 B; single-ruling entries shorter (unmeasured) | 40-48 KB; no sample supports a lower central figure; 1.S1 measures it | 48 KB |
+| plan.md | 339 rows; 38 `now` | heads 36.2 KB + now ≤ 6.7 KB | 42.9 KB (89% of cap) | 48 KB |
+| known_issues.md | 134 | open ~180 B; FIXED/CLOSED ≤ 80 B (unit 3) | ~17 KB | 32 KB |
 | upstream_issues.md | 25 | ~170 B | 4 KB | 12 KB |
 
-Why 48 KB: at ~4 bytes per token (an estimate, not a tokenizer count) the
-two main indexes are ~20k tokens beside ~21k already always-on (§1.3); the
-manager's reset rule fires at 35% context, so this leaves most of the window
-for the work. Decisions grew 45 entries in 34 days (D146 on 10-05 to D191 on
-11-08), about +8 KB a month, so the decisions soft cap is reached in roughly
-1-2 months unless superseded entries shrink. Then gestalt prints its line
-every heartbeat and the owner revisits the cap (answer 4). Lanes do NOT load
-the indexes; they call `scripts/entry`.
+Runway: decisions grows ~8.5 KB a month (45 ids in 34 days). Starting at
+40-48 KB, the soft cap is reached in weeks, possibly on day one; then the
+gestalt line fires every heartbeat, which is the owner's chosen revisit
+trigger (D192 answer 4). The levers inside this design, in order: shrink
+superseded/absorbed entries (built in), shorten single-ruling statements,
+move rulings detail into the lists (it is already there).
+
+**Always-on load.** ~4 B/token is an estimate, not a tokenizer count. The
+decisions index (~46 KB, ~12k tokens) is always-on for the manager (read at
+wake, re-read after a compaction; G1). Whether the PLAN index is also
+always-on is the manager's choice (same answers either way): the manager
+greps STATE:started at wake and 296 of 339 rows are not-started, so holding
+it out and serving it by `entry --work` halves the add. Recommendation: hold
+the plan index out. Lanes load neither index; they call `scripts/entry`.
 
 ## 4. Other files
 
-| file | verdict | reason |
-|---|---|---|
-| known_issues.md | APPLY, unit 3 | same shape as decisions; 467 KB nobody can hold; symptom-in-one-line recall prevents re-filing |
-| upstream_issues.md | APPLY (small, last) | same shape, 25 entries; nearly free once the tool exists |
-| plan_completed.md | PARTIAL | stays the archive: a finished row's index line(s) and details entry move there verbatim under the date heading; no index of its own; `entry` falls through to it |
-| docs/design/plan_row_bodies/ | ABSORBED | its 22 files become plan_details.md entries; the directory and PL15 retire |
-| memfn/docs/requests.md, responses.md | PROPOSAL TO THE KIT (§8) | the kit adopts it or not; main sends §8 once this design is vetted |
-| memfn/docs/ideas.md | DO NOT APPLY | append-only raw log, evaluated later by design |
-| docs/dev/learnings.md | DO NOT APPLY (now) | 42 KB of doctrine cited by section number; already the summary tier |
-| docs/testing.md | DO NOT APPLY | a handbook cited by section name, not a tracker of ids |
-| dev_journal.md, full_suite_ledger.md | DO NOT APPLY | append-only; value is order; scripts append and grep |
-| REFERENCES.md | DO NOT APPLY | one heading + one citation each; its own index |
-| wake.md, owner.md, memfn wake | DO NOT APPLY | rewritten whole each session |
-| MEMORY.md | already this format | one line per fact, detail in its own file: the model for this one |
+Verdicts with reasons: appendix I. APPLY: known_issues.md (unit 3),
+upstream_issues.md (unit 4, on its trigger). ARCHIVE TIER: plan_completed.md
+(its own `archive` profile, §10 unit 2). ABSORBED: plan_row_bodies/ (unit 2;
+C12 refuses new files). PROPOSAL: the kit ledgers (§8). SAME FAMILY, kept out:
+MEMORY.md, CLAUDE.md/NOTES.md (§2, §9). DO NOT APPLY: ideas.md, learnings.md,
+testing.md, the journal and ledger, REFERENCES.md, wake/owner files.
 
 ## 5. Migration plan
 
 Every split is a re-runnable TRANSFORM, not a hand-made diff: the lane
-delivers a converter plus its output, and the landing re-runs the converter
-on main HEAD before committing (decisions.md and plan.md are written by
-nearly every landing; a re-run never conflicts). The converter accepts a
-MIXED file (old-form entries appended after conversion are converted on the
-next run), so in-flight branches need only a re-run.
+delivers a converter plus its output, and the landing re-runs it on main HEAD
+(§5.2). Order: **T1 → 1.0 → 1 → 1.S → T2 → 2 → 2.S → 3 → 4**; K beside them
+once vetted. T2 moved after unit 1 (it serves unit 2; plan_lint stays
+untouched across the 2026-11-11 freeze).
 
 | unit | what | tier | readers moved in the same unit |
 |---|---|---|---|
-| T1 (first) | `scripts/doc_profiles.py` (the §2.4 table: ids, states, soft caps, levels, work views, form), `scripts/entry` (levels, item grep, work view, `--over-cap`), the gestalt `docs:` line, `docs/dev/doc_format.md`. Plan profile in `single` form, others dormant: `entry --work` works on today's plan.md | sonnet | scripts/CLAUDE.md, scripts/gestalt header; root CLAUDE.md situation row ("about to look up a ruling or row, or choose work → `scripts/entry`") |
-| T2 | `scripts/doc_lint.py`: plan_lint folded in as the plan profile (PL rules and plants unchanged in effect), C1-C10, file caps WARN only | sonnet | Makefile target rename, pre-commit, tests/plan_lint → tests/doc_lint, docs/testing.md |
-| 1 | decisions split by converter: details verbatim with new headings, addenda folded into their entries and numbered (§2.2), index with PROVISIONAL statements = the old title, state `?`. ACCEPTANCE: `scripts/entry D47` prints D47.a1-a4 and no D48 text; C6 finds 0 addenda outside their entry (17 before); the converter's counts match the original's (§5.1) | sonnet (mechanical) | rows_check.py LEDGERS + stream_support.tsv paths; skills q, pcrec-manager, pcrec-critic (freeze both files), pcrec-memfn-manager; root CLAUDE.md "Where things are"; docs/dev/CLAUDE.md |
-| 1.S1-S8 | decisions statements, 8 batches of 24 ids in id order | OPUS writer + fresh OPUS critic, 100% | none (index lines only) |
-| 2 | plan split by converter: details file, plan_row_bodies/ folded in, `now` provisional = today's status line, title cap 90 applied as `?`; plan profile flips to `pair`, the `single` form is deleted | sonnet (mechanical) | boxqueue comment; skills' plan recipes; plan_completed move rule |
-| 2.S | the 38 `now` lines and over-cap titles | OPUS writer + OPUS critic, 100% | none |
-| 3 | known_issues split, then 6 statement batches of 24 | converter sonnet; statements OPUS + OPUS critic | the known_fail instructions text |
-| 4 | upstream_issues, one unit | converter sonnet; statements OPUS + critic | none |
-| K | main sends §8 to the kit for feedback, once this design has passed its critic round | manager | none; the kit decides its own adoption |
+| T1 | `scripts/doc_profiles.py`, `scripts/entry` (levels, routing table, aliases dormant, item grep, `--work`, `--rev`, `--over-cap`, `--selftest`), the gestalt ROWS row, `docs/dev/doc_format.md`, the `test-doc-lint` section (entry's selftest). Plan profile `single`, others dormant | sonnet (+ optional D27 test cell, §10) | scripts/CLAUDE.md, gestalt header + scripts/tests/gestalt.test; root CLAUDE.md situation row ("look up a ruling or row, choose work, or search content → `scripts/entry`; content = `-g WORD -in 2`"); the section's lists (§2.4): Makefile TEST_SECTIONS + .PHONY, tests/ci/shards.tsv, tests/lib/san lists, tests/CLAUDE.md, docs/testing.md |
+| 1.0 | `scripts/doc_census.py` + the owner table with its hand rulings, `scripts/doc_control.py`, `scripts/doc_cites.py` (resolver + `--inbound`); BEFORE-run of the resolver committed | sonnet; the ruled rows reviewed by the manager; NOT the converter's author | docs/dev/doc_index/ (new, its CLAUDE.md) |
+| 1 | decisions split by converter (§2.2), index of `?` lines (old title, slug `-`); `entry`'s decisions profile wakes (aliases, `later:` via doc_cites); doc_lint.py with the decisions profile (C1-C13); the cite-to-id pass over the ~36 live line cites; AFTER-run of the resolver. ACCEPTANCE: appendix B's witnesses; control green (§5.2); idempotence; resolver before = after; `make test-doc-lint strict` green | sonnet (mechanical) | rows_check.py LEDGERS + stream_support.tsv paths; pre-commit (glob via `--paths`) + `make hooks` per box; post_compact.sh (one re-read line); skills: pcrec-manager (wake reads the index; `?` rule), q (writes both files), pcrec-critic (freeze diffs decisions.md AND decisions_details.md; COMMON recipes use `entry --rev`; rulings recorded by id, not `file:line`), pcrec-memfn-manager (main's file list names the details file); root CLAUDE.md "Where things are"; docs/dev/CLAUDE.md; MANAGER STEP: memory `pcrec-grep-plan-before-chartering` (decisions part) → `entry -g -in 2` |
+| 1.S1-S8 | decisions statements, slugs and rulings lists, 8 batches of 24 ids, by §5.3. S1 (and S2 beside it) first; S3-S8 only after S1 passes. ACCEPTANCE of S8: 0 `?`, 0 `-` | OPUS writer + fresh OPUS critic, 100% | none (index lines, details headings, rulings lists) |
+| T2 | plan_lint folded into doc_lint as the plan profile (PL01-PL17 unchanged in effect; PL16 keeps reading the Policy) | sonnet | Makefile (test-plan-lint out of TEST_SECTIONS and .PHONY); tests/ci/shards.tsv row; tests/lib/san_excluded.txt row; tests/plan_lint/ into tests/doc_lint/; pre-commit; pre-push-light:41 (fail, not skip); scripts/tests/hooks.test pins; the six `--stale` mentions (appendix H); docs/testing.md; skills. SHIMS at both old paths until every box re-ran `make hooks`. ACCEPTANCE: `make test-ci-shards test-codegen test-doc-lint testscripts` green + a plant that renames the linter and sees pre-push-light FAIL |
+| 2 | plan split by converter (§10 unit 2 must first fix F9's `now`/`?`, F12, F13); `single` deleted | sonnet (mechanical) | boxqueue comment; skills' plan recipes; pcrec-critic deny (names the plan_details entry, bans `entry -g -in 2`/`--work` over a denied row) and freeze (plan_details.md); vlookbehind.md hunk; the ~46 plan_row_bodies readers; MANAGER STEP: memory `pcrec-grep-plan-before-chartering` (plan part) |
+| 2.S | the 38 `now` lines and 36 over-cap titles | OPUS writer + OPUS critic, 100% | none |
+| 3 | known_issues split (§10 unit 3 first); statements for open entries only, FIXED/CLOSED shrink to ≤ 80 chars | converter sonnet; ~2 opus batches + critics | known_fail instructions; pcrec-critic freeze; MANAGER STEP: memory `pcrec-done-line-verify-claims` |
+| 4 | upstream_issues (§10 unit 4 first) | converter sonnet; statements OPUS + critic | pcrec-critic freeze |
+| K | main sends §8 to the kit, after the re-check round | manager | none; the kit decides |
 
-Faithfulness (G5; owner's answer 1). Every one-sentence statement (decisions,
-plan `now`, known/upstream) is written by an OPUS lane that reads the WHOLE
-details entry, addenda included, and never takes the old title as the source
-(titles state the first ruling, not the current one). A FRESH opus critic,
-one per batch, reads each details entry and its statement and answers four
-questions per entry: does the statement add a ruling the details do not
-make; contradict the current ruling; state a rule an addendum replaced; or
-omit a ruling without counting it in `(+n more)`? 100% of every batch (24
-entries × ~4 KB is one critic's reading). Disputes go to the manager. The
-owner's read-through is not required. The `?` count is a ratchet: `--stale`
-reports it and the linter refuses an increase once unit 1 lands.
-
-Order: T1 → T2 → 1 → 1.S (2-3 batches at a time; disjoint lines) → 2 → 2.S
-→ 3 → 4. K runs beside them once vetted.
-
-Freeze: NO merges to main from 2026-11-11 01:00 until the full suite ends
-(about 14:00). T1 may land before 01:00 only if ready and light; the two big
-transforms (1 and 2) land at a quiet point after the suite, with no other
-lane mid-landing on the same file, after `make test-doc-lint` (or
-`test-plan-lint` before T2) + `make strict` green.
+**Landing.** Freeze: no merges 2026-11-11 01:00 until the full suite ends
+(~14:00). T1 writes no ruling file and may land before 01:00 if ready and
+light. Units 1 and 2 are the BIG transforms: ONE per quiet window (the
+14:00-20:00 window on 2026-11-11 fits one; 20:00-01:00 is the owner's hold).
+Unit 1 lands with no open branch carrying a decisions.md hunk (the landing
+brief lists them by `git diff --stat main...BRANCH -- docs/dev/decisions.md`;
+each merges first or re-targets its hunk to the pair by §2.7). Unit 2 needs
+every lane merged (plan.md takes ~13 commits a day, and an edit to an
+existing row cannot be re-run, only re-applied). **D153 check:** before unit 1
+the manager confirms with the stream thread (the live writer of rows_check.py
+and stream_support.tsv) that no in-flight remodel branch edits them; if one
+does, unit 1 waits or carries its repoint.
 
 ### 5.1 Standing questions (docs/design/CLAUDE.md)
 
 1. Measurement regime: RELEVANT only for byte sizes (`wc -c`/python at
    6638e3679) and the token estimate (4 B/token; a 2x error moves the soft
    caps, not the design).
-2. Independent control: RELEVANT. The converter's output is checked against
-   counts taken from the ORIGINAL file by a different route: 191 distinct
-   ids (`grep -oE '^## D[0-9]+' | sort -u`), the §1.1 addendum census, and a
-   byte check (the multiset of non-heading body lines is identical before
-   and after); unit 1's D47 test is a hand-picked witness the converter's
-   author did not choose. A statement is checked by a critic independent of
-   its WRITER (fresh context, no access to the writer's reasoning); both
-   read the details, which is correct, since the claim checked is
-   faithfulness to the details, the record. Whether the details themselves
-   are right is outside this design. C9 floors count the population; the
-   `--selftest` over-cap plant proves the WARN path reaches its site.
+2. Independent control: RELEVANT, and §5.2 and §5.3 are its answer. The
+   census and owner table are produced by a script the converter's author
+   did not write, from an OPEN scan (never an enumerated spelling list), and
+   the control reads them, not the converter's output; the witnesses were
+   chosen by the review. a<k> is NOT a faithfulness control (it shares the
+   converter's source). A statement is checked by a critic independent of its
+   writer, against the details AND an inbound list neither of them wrote;
+   each batch carries planted wrong lines the critic must catch (its control).
+   C9 floors and C11 count populations; each `--selftest` plant reaches its
+   rule.
 3. What moves when regenerated: the indexes are hand-written; converters run
-   once per unit. No emitted byte, abi or spec moves (process docs only);
-   the readers that move are the §1.2 rows, each named in its unit.
+   once per unit and once per landing re-run; the owner table only appends.
+   No emitted byte, abi or spec moves (process docs only; the emitted
+   "known_issues.md K24" string lands unchanged because the name is kept);
+   the readers that move are §1.2's rows, each named in its unit.
+
+### 5.2 Converter, owner table, control and cite resolver (units 1.0 and 1)
+
+- **Census and owner table** (appendix B): `doc_census.py` scans every line
+  opening `**`, `- **`, `##` or `###` with "addend" in its first 120 chars,
+  any case, with a declared exclusion list (each excluded line and why); one
+  table row per marker; id-less rows get hand rulings with evidence. The
+  converter refuses a marker with no row.
+- **Control** (`doc_control.py`, from the census side): (i) the distinct id
+  set is equal; (ii) every owner-table row is exactly one `### new_id`
+  heading inside `## owner`, the marker's next non-blank line hashing to
+  `body_hash`, and
+  its old label survives (the `(was:)` text or the unchanged inline label
+  equals `old_label`); (iii) PER-OWNER multiset: the non-blank lines the
+  original assigns to an owner (its body plus every addendum the table gives
+  it) equal its details entry's non-blank lines minus the EXCLUSION SET:
+  heading lines on both sides, `(was: ...)` lines, the `rulings:` block, and
+  D98's joined continuation. Lines moving between entries now fail.
+- **Already converted** (declared test): in the index, `- <ID> ` lines are
+  converted and any `## ` heading is old form (a pre-split branch's appended
+  entry); in the details, a heading matching `^## <ID> (<slug>|-) — ` is
+  converted. The census asserts no old heading matches the new grammar.
+- **Idempotence:** `convert(convert(x)) == convert(x)` byte-identical on the
+  real file, and converting an index with appended old-form entries leaves
+  every converted byte unchanged (acceptance tests in unit 1).
+- **Landing baseline:** the lane converts at its commit C0; the landing
+  re-runs on HEAD H: census on H (new markers append rows; an id-less one
+  stops for a ruling), converter on H, control recomputed from H (never C0's
+  counts), idempotence, resolver before/after on H's tree. Post-landing
+  re-runs of a mixed file check the converted part byte-identical to the
+  previous output.
+- **Cite resolver** (`doc_cites.py`): the forms of appendix C; BEFORE
+  resolves through the owner table on the old file, AFTER through headings
+  and aliases; every cite's resolved row set must be equal. After unit 1 the
+  same code is C13.
+
+### 5.3 Statements: writer, critic, inbound list (1.S, 2.S, 3, 4)
+
+Before each batch, `doc_cites.py --inbound` lists for every id each line in
+a LATER entry (owner-table attribution, so addenda count for their owner)
+citing it in any form, with a flag where the line carries a verb from a
+declared list (supersed, amend, replac, revers, overrid, retir, struck,
+settl, re-open, withdraw). The writer (OPUS, D192 answer 1) reads the whole
+details entry, addenda included, plus its inbound lines, and writes slug,
+state, statement, rulings list, keywords; never from the old title (titles
+state the first ruling, not the current one). A FRESH opus critic, one per
+batch, reads the same entry and inbound lines and answers seven questions per
+entry:
+
+1. does the statement add a ruling the details do not make;
+2. contradict the current ruling;
+3. state a rule an addendum or a later entry replaced;
+4. is the rulings list complete and only current (every ruling of §2.1's
+   definition, none undone by a later entry, none extra);
+5. does each starred line appear in the statement (n itself is C11's);
+6. is the state right given the inbound list (`live`, `part>`, `sup>`);
+7. is every keyword true of the current ruling?
+
+The batch also carries three PLANTED lines the critic must flag (appendix D:
+D42 `live` keeping the −1 collapse, a wrong n, a false keyword); a batch
+whose critic misses one is re-run with a fresh critic. Disputes go to the
+manager; no owner read-through (D192 answer 1). Gate (F15, COST-2): 1.S1 runs
+first (S2 may run beside it); S3-S8 start only when S1's report shows every
+plant caught and 0 open disputes.
+
+### 5.4 Cost, triggers and stop points
+
+| unit | lanes | landing | trigger (D77) | if the work stops here, what stays |
+|---|---|---|---|---|
+| T1 | 1 sonnet (+ D27 cell, optional) | light; before 01:00 allowed | D192 answers 3, 4 | `entry --work` on today's plan, `--rev`, doc_format.md |
+| 1.0 | 1 sonnet | with unit 1 | D192 | the owner table: the first complete record of every addendum's owner |
+| 1 | 1 sonnet | quiet window A | D192 | every D entry whole with its addenda (G2), G4's resolver and C13, a title index |
+| 1.S1-S8 | 16 opus (8 + 8) | 8 light | D192 answer 1; S3-S8 gated on S1 | statements for the finished batches, `?` for the rest |
+| T2 | 1 sonnet | light + hook re-install on 3 boxes | unit 2's go | one linter |
+| 2 | 1 sonnet | quiet window B (all lanes merged) | D192; §10 unit 2's fixes | plan index + details + work view |
+| 2.S | 2 opus | light | with unit 2 | `now` lines under cap |
+| 3 | 1 sonnet + ~4 opus | light (19 commits in 14 days) | D192 answer 6 | known index |
+| 4 | 1 sonnet + 2 opus | light | a re-filed U-n, or upstream_issues.md past 100 KB | upstream index |
+
+Total: ~7 sonnet lanes, ~24 opus runs, ~9 landings (two in quiet windows).
+The cost centre is opus reading, ~1.5 MB for decisions. `grep '^## D'`
+already lists ids, titles and dates (30.7 KB); 1.S buys the current-ruling
+sentence and the rulings list, the owner's ask (D192), so it stays, with
+S1's gate as the stop point if the procedure fails.
 
 ## 6. Risks
 
-- The index drifts from the details. Mitigation: `a<k>` forces a touch at
-  every addendum; the statement shape bans rationale, so drift is a visible
-  wrong rule; the manager skill gains "act on the index, but read
-  `scripts/entry` before quoting, changing or building on a ruling's
-  specifics".
-- Big transforms collide with landings. Mitigation: re-run on HEAD,
-  mixed-file input, landing at quiet points.
-- A reader missed. The §1.2 list is grep-found; rows_check.py is the one
-  parser of decisions.md. D27 cell briefs that allowlist decisions.md must
-  add the details file (a brief-time miss, not a tool change).
-- Addendum renumbering breaks old cites. Numbered addenda keep numbers; only
-  unnumbered ones gain one, and their old label stays greppable.
-- Soft caps are ignored. Mitigation: the gestalt line repeats every
-  heartbeat while over, which is the owner's chosen revisit trigger.
-- The `single` plan form outlives unit 2. Mitigation: unit 2's delivery
-  deletes it; the linter refuses a `single` profile once its details file
-  exists.
+- The index drifts from the details: `a<k>` forces a touch per addendum;
+  §2.7 makes a later ruling rewrite the earlier entry's line; the manager
+  skill gains "act on the index, but read `scripts/entry` before quoting,
+  changing or building on a ruling's specifics; never act on a `?` line".
+- An addendum under the wrong owner: the owner table, its independent
+  control and appendix B's witnesses (§5.2).
+- Big transforms collide with landings: re-run on HEAD, one transform per
+  quiet window, the open-branch list (§5).
+- A reader missed: §1.2 is grep-found in the repo; manager memory recipes
+  get a named manager step per unit; D27 cell briefs that allowlist
+  decisions.md add the details file.
+- Old cites break: numbers kept, resolver before = after, old labels
+  greppable, `entry` aliases.
+- Soft caps ignored or full from day one (§3): the gestalt line repeats every
+  heartbeat while over, the owner's revisit trigger.
+- The `single` plan form outlives unit 2: unit 2 deletes it; the linter
+  refuses a `single` profile once its details file exists.
 
-## 7. Owner's answers (2026-11-10)
+## 7. Owner's answers (2026-11-10; recorded as D192)
 
 1. Statements written by OPUS lanes, checked by a fresh OPUS critic against
-   the details (no ruling added or dropped, `(+n more)` right); no owner
-   read-through. Applied: §2.7, §5.
-2. One details file vs one per entry is our call, since access goes through
-   the accessor. Kept one per index (§2 has the one-line reason).
-3. A LEVELED accessor that supplies different levels and greps for items.
-   Applied: §2.3 (levels 0/1/2, item grep, `--work`), levels and work views
-   declared in the profile table (§2.4); triggers stay out of the index.
+   the details; no owner read-through. Applied: §2.7, §5.3.
+2. One details file vs one per entry is our call. Kept one per index (§2).
+3. A LEVELED accessor with item grep and a work view. Applied: §2.3, §2.4;
+   triggers stay out of the index.
 4. Soft caps now, revisit later; gestalt prints only when over. Applied:
-   §2.4 (WARN, never fail; the `docs:` line format), §3.
-5. Kit ledger: yes, ask the kit for feedback once vetted. Applied: §8,
-   unit K.
-6. Known issues third, right after decisions and plan. Applied: unit 3.
+   §2.4, §3.
+5. Kit ledger: yes, send the proposal once vetted. Applied: §8, unit K.
+6. Known issues third. Applied: unit 3.
 
-New open question:
+Still open (from rev 1):
 
 1. **Should the per-LINE limits (statement 200 chars, plan title 90, `now`
-   160) also be soft, or only the file sizes?** Your answer named the caps
-   in general; the question you were answering was about file size. A soft
-   file cap with hard line limits means a single long statement is refused
-   at write time while the file as a whole is allowed to grow and is only
-   reported. Leaning: keep the line limits HARD. They are what keeps a
-   statement a statement, a writer can always fix one line on the spot,
-   and plan_lint already refuses over-long titles and status lines today,
-   so softening them would loosen a rule that works now. Only the file
-   sizes become soft.
+   160) also be soft, or only the file sizes?** Your answer named the caps in
+   general; the question was about file size. Leaning: keep line limits
+   HARD. They keep a statement a statement, a writer can always fix one line
+   on the spot, and plan_lint already refuses over-long titles and status
+   lines today. Rev 2 makes this easier to hold: what a sentence cannot carry
+   now goes into the counted rulings list, so the 200-char cap does not force
+   silent omission.
 
 ## 8. Proposal to the kit (sendable as is)
 
-*From the pcrec manager to the kit manager, for feedback; the kit decides
-whether and how its own files adopt any of it.*
+The proposal text, sendable as is, is appendix G: what pcrec is doing (the
+pair, the accessor, the profile table), why, the facts about the two ledgers
+(single-writer, read in order; an index block at the top of each would keep
+both), and the ask (feedback, and whether the kit wants index blocks, a split
+or neither). Unit K sends it after the re-check round; nothing changes in
+either ledger without the kit's answer.
 
-**What pcrec is doing.** pcrec is moving its long ruling and tracker files
-(decisions.md 832 KB, plan.md 468 KB, known_issues.md 467 KB) to a PAIR:
-a short INDEX with one line per entry (id, a short slug, a state, and ONE
-sentence stating the current ruling or status), and a DETAILS file holding
-each full entry verbatim under a `## <ID> <slug> — title` heading, with any
-later addenda INSIDE their entry as `### <ID>.aN`. Existing ids never
-change. One accessor, `scripts/entry ID`, prints an entry at a chosen level
-(0 the index line, 1 plus its working fields, 2 the full entry), greps by
-item, and lists open work; one profile table declares each file's ids,
-states, levels and soft size caps. Full design:
-docs/design/doc_index_format.md.
+## 9. Later: the general form and its unlocks (F16; NOTED, not built)
 
-**Why.** A session can hold the index (about 40 KB per file) in context and
-know every current ruling in one line, and fetch exactly one full entry
-when it needs specifics. Today an entry is found by grepping a heading and
-reading a line range, which costs 3-36 KB per entry and misses addenda
-filed under a later entry (17 such cases in decisions.md).
+General form: a TIERED-DOCUMENT profile table (index | details | archive tier
+per file, id grammar, states, per-tier caps, level-1 fields) read by one
+accessor and one linter. This design builds it for four files; each unlock
+is a new row, built only when its trigger fires (D77):
 
-**What it would look like in the ledgers (facts about the files, for the
-kit to weigh).** requests.md has 38 `## R-n (date, who) — title` items,
-written only by main; responses.md has 16 `## R-n`/`## N-n` items plus
-`###` notices, written only by the kit; they are read in order, as a
-dialogue. A shape that fits them: an index block at the top of each file,
-one line per item (`- R-38 <slug> <state> — the ask (or the answer) in one
-sentence`), with the bodies left where they are, so the ledgers stay
-single-writer and in order. Main would write the block in requests.md.
-Adding a `kit` row to the profile table would give the kit `scripts/entry
-R-38` and an open-items view from the same accessor. rows_check.py's LEDGERS
-reader reads the bodies, so an index block does not touch it.
+| unlock | trigger |
+|---|---|
+| fold the CLAUDE.md/NOTES.md size check into doc_lint | a third size-checker script appears, or check_claudemd_size.sh needs a second rule |
+| MEMORY.md over-cap line via `--over-cap` | MEMORY.md passes its cap or a brief reports it truncated |
+| a `kit` profile for the ledgers | the kit answers §8 with adoption |
+| cross-file `--work` (plan + open K + open U + open R) | the wake read needs more than two `entry --work` calls |
+| "rulings touched since DATE" view | a session acts on a superseded ruling |
+| an `entry --deny` list for blinded critics | a critic round's deny leaks through `entry` after unit 2 |
 
-**What we ask.** Feedback on the format itself (anything that would not fit
-the kit's files or its wake read), and whether the kit wants the ledger
-index blocks, a split, or neither. No change to either ledger happens
-without the kit's answer.
+## 10. Readiness and the PLAN items by unit
+
+**T1 — ready once a re-check confirms this text.** Gating findings and where
+rev 2 discharges them: F8 routing (§2.3 routing table, selftest plants per
+shape); F11's `--rev` (§2.3); F10's gestalt row (§2.4); F6's structural lists
+for the new section (§2.4 "The section", §5 T1 row); F15 order and landing
+(§5, §5.4). F9's slug grammar is not exercised (plan `single` form, no
+index written). D27 (the review's recommendation; the launcher decides): a
+spec-first author writes `entry`'s fixtures from §2.3 and appendices B/C in a
+cell denied the implementation.
+
+**Unit 1 (with 1.0) — ready once the re-check passes and T1 has landed.**
+F1 (§2.2 ownership and numbering, §5.2 owner table, control, appendix B
+witnesses); F2 (§5.2 resolver, C13, §2.3 aliases and row 3, appendix C); F5
+(§5.2 exclusion set, converted test, idempotence, landing baseline); F7 (§2.4
+C8, appendix E, the cite-to-id pass and the critic skill recipe in the unit-1
+row); F9's C5 and slug writer (§2.1 slug row, provisional `-`, 1.S writes,
+C5); F11's unit-1 parts (§0 G1, post_compact line, critic freeze both files,
+`entry --rev` in COMMONs, the content-grep row and memory step); F15 (quiet
+window A, the branch list, the D153 check); F17 (§1.1 heading forms; D98's
+join). **1.S additionally:** F3 (§5.3 inbound list, questions 3, 6, 7, `later:`
+at level 1) and F4 (§2.1 ruling definition and rulings list, C11, appendix D);
+the COST-2 gate (S3-S8 after S1).
+
+**PLAN items, each to be fixed in this doc before the named unit's go:**
+
+- **Unit 2 (plan):** F9: the plan profile's `?` slot (leaning: provisional
+  `now? (<date>): <today's status line>`, exempt from C4, counted by the
+  ratchet, cleared by 2.S) and the `now` caps for the 31 status lines over
+  160. F12: list the ~46 plan_row_bodies readers; rule where a COMPLETED row's
+  body goes (leaning: BOXQUEUE.md becomes a design doc beside the queue's
+  other docs, its archived pointer left as history); C12; a vlookbehind.md
+  hunk for the VMREC.md and IFACE-PUSH.md steps. F13: plan_completed gets the
+  `archive` profile (leaning: a moved row's details entry is demoted under its
+  row as `### [TAG] ...`, keeping the date headings the only `##` level), and
+  PL06/PL07/PL15/PL16/PL17 move with it. F11: the critic deny and freeze for
+  plan_details.md; the memory step.
+- **Unit 3 (known issues):** F14: a state-mapping table (INFRASTRUCTURE,
+  CHECK DESIGN, RULED ACCEPTABLE, RE-SCOPED, unmarked → the profile's states;
+  K24, K39, K58, K77 must land in the work view), a sub-record rule for the
+  five "original entry" headings (leaning `### Kn.o1`), 134 ids not 139;
+  COST-9: FIXED/CLOSED entries shrink to ≤ 80 chars, statements only for open
+  ones; F11: memory `pcrec-done-line-verify-claims` step.
+- **Unit 4 (upstream):** F14: the real states (the body `**Status**:` values)
+  and the id-less `##` heading's fate; the trigger in §5.4.
+
+A RE-CHECK critic round on rev 2 (fix-induced findings + readiness per unit)
+is recommended before T1's and unit 1's build go (review verdict).
