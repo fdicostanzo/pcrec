@@ -518,6 +518,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-09): UNSCHEDULED. Default never an error (D26). Optimize (constant matcher, dead branches dropped) + an --emit-facts fact + an opt-in caller policy allow|warn|error ('must be matchable', Frank) at [IFACE-PUSH]
   trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
   refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]
+- [ENGINE-WHY] STATE:not-started — every DFA-blocking construct, with its offset and the fix that keeps the DFA
+  filed: 2026-11-10 Frank ("Yes"): a user should be able to force the DFA, see the failure, read why, and adjust the pattern to stay on the DFA
+  status (2026-11-10): UNSCHEDULED. `--engine=dfa` is already do-or-die (docs/spec/cli.md §1.13) but names only the FIRST reason; `auto` never says it chose the VM or why
+  next: build after the conditions-family survey (lane condsurv, docs/design/cond_family.md) reports, so the reason list covers all its members at once
+  refs: docs/spec/cli.md §1.13; --facts decision stamps; [CONDITIONALS]; [POSTFACT]; [ENG-LOOK]; [IFACE-PUSH] (no new CLI option: the list goes in the refusal and a --facts section)
+  Shape (manager's leaning, owner agreed): the `--engine=dfa` refusal lists EVERY DFA-blocking construct (pattern offset, construct, the adjustment that would keep the DFA), not the first; the same list is a --facts engine section so `auto` users see it unforced; every conditions-family member states its reason text (a column in the survey's member table). Spec hunk in the same change (D80).
 - [BRANCH-RESET] STATE:not-started — `(?|...)`: alternatives reuse capture numbers (module `branch-reset`, registry row planned/unbuilt)
   filed: 2026-11-09 Frank ("Yes"), after asking whether pcrec supports `(?|...)`; libpcre2 10.46 accepts it, pcrec refuses "requires module 'branch-reset'" (docs/pcre2_compliance.md, 2026-11-06 entry)
   status (2026-11-09): UNSCHEDULED. Expected mostly front end: group numbering restarts per alternative, groups after the construct continue from the largest branch count; engines already treat captures as numbered slots
