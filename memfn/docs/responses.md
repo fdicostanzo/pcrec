@@ -3325,3 +3325,4 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Sabotage: S1095/S1096 re-aimed onto the decision, S1107 kept, new S3005 (twin mass) and S3006 (ranking bypass).
   - Gates, all GREEN on worktrees/k381 vs base main 25c5094ec; jobs in /var/tmp/pcrec-pcrec/scratch/memfn/k381g/jobs/: 530 strict, 531-533 identity (71 arms, a per-target arm each), 534 reach, 535 make test, 536 plants, 537-539 mech.
   - Kit ruling carried to K38-2a: the plan's in-run stop becomes a counted reader of kit_run_decide before the run-tie-left lever.
+- ack: R-38 K38-2a started 2026-11-10 on lane/memfn-k382a (from main 7658295b3); lanes k382a (build) and k382o (D27 occurrence oracle, blinded). 3.0b follows K38-2a.
