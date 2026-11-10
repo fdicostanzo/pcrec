@@ -1,7 +1,7 @@
 # The conditions family: every test-then-branch and intersection construct, the machinery each needs, and what they share
 
-**Status: SURVEY rev 0** (lane condsurv, opus, 2026-11-10; plan row [COND-FAMILY]). Design and
-survey only: no code, no build go, nothing ruled. Code cites are at main `568465ef7` (no change
+**Status: SURVEY rev 0, owner answers recorded in §7 (D193, lane condans, 2026-11-10; plan row
+[COND-FAMILY]).** Design and survey only: no code, no build go. Code cites are at main `568465ef7` (no change
 under `src/ cli/ lib/` since `956055581`). Engine facts are MEASURED by compiling with the
 main-tree `build/pcrec --features all` (`docs/dev/lanes/condsurv_evidence/engine_probe.txt`).
 PCRE2 facts come from the libpcre2-measured lane condinv (`docs/dev/lanes/condinv_report.md`, 164
@@ -79,8 +79,8 @@ probe is cited, else from the registry's engines column. "Possible" is INFERRED.
 | P11 | non-atomic lookarounds `(?*..)` `(?<*..)` | built (VM) | lookaround that backtracking may re-enter | LOOK | VM (registry) | capture-free: same language as the atomic form, so M4 applies (INFERRED: re-entry changes only captures) | "non-atomic lookaround with captures" |
 | P12 | `\K` | built (VM, `A_KRESET`) | resets the reported start | MARK / L3 | VM (`ab\Kcd`, MEASURED); PCRE2's DFA matcher refuses it (`dfa-matcher-conditions.md` §3) | DFA: M8 (a start mark; constant offset when the text before it is fixed width, as [ENG-TDFA] start tags in general) | "`\K` resets the start" |
 | P13 | `(*FAIL)` `(*F)`, and `(?!)` | [PCRE2-GAPS-TBD] (`(*FAIL)`); `(?!)` built | always fails | CONST false | `(*FAIL)` refused (verbs); `a(?!)b` -> VM (MEASURED) | fold to "dead" ([DESC-DEAD], [NEVER-MATCH]); PCRE2's DFA matcher supports `(*FAIL)` as a failing assertion (note §3) | "an empty negative lookahead"; keep DFA: delete the dead branch |
-| P14 | script runs `(*sr:..)` `(*asr:..)` | NEW (registry `(*ACCEPT)` row, verbs, unbuilt; compliance PLANNED; not in [PCRE2-GAPS-TBD]'s list) | the span the group matched must be one script; checked at the group's END, failure backtracks into the body (`script-run-evaluation.md` §1) | PRED / L2 | refused | VM: M7 exactly (honour on close). DFA: M4+M5 (a script-set checker automaton: the state is the running intersection of script sets plus the digit-set rule; finite, so regular; the compliance annotation already says "the assertion itself is regular"). PCRE2's own DFA matcher refuses it | "script run" |
-| P15 | `(*scan_substring:(1)A)` `(*scs:..)` | NEW (registry ROADMAP_NEVER, `src/parse/mod_verbs.c:226`) | assert A over the text a capture group matched | AND over a capture / L2 | refused, out of scope; its annotation says "(revisit post-M4) ... needs capture state at match time" and M4 has shipped | VM: an `&`-check over a slot's span (M7's shape, run at the point, not at close). DFA only when the referenced group is fixed-offset (as [BREF-SPAN]) | "scans a captured substring" |
+| P14 | script runs `(*sr:..)` `(*asr:..)` (RULED D193: a member, a different SPELLING of predicates, same evaluation as a where-clause, built on the predicate machinery, no row until a use appears) | NEW (registry `(*ACCEPT)` row, verbs, unbuilt; compliance PLANNED; not in [PCRE2-GAPS-TBD]'s list) | the span the group matched must be one script; checked at the group's END, failure backtracks into the body (`script-run-evaluation.md` §1) | PRED / L2 | refused | VM: M7 exactly (honour on close). DFA: M4+M5 (a script-set checker automaton: the state is the running intersection of script sets plus the digit-set rule; finite, so regular; the compliance annotation already says "the assertion itself is regular"). PCRE2's own DFA matcher refuses it | "script run" |
+| P15 | `(*scan_substring:(1)A)` `(*scs:..)` (RULED D193: re-marked planned, a member of the family, no work until a use appears) | NEW (registry ROADMAP_NEVER, `src/parse/mod_verbs.c:226`) | assert A over the text a capture group matched | AND over a capture / L2 | refused, out of scope; its annotation says "(revisit post-M4) ... needs capture state at match time" and M4 has shipped | VM: an `&`-check over a slot's span (M7's shape, run at the point, not at close). DFA only when the referenced group is fixed-offset (as [BREF-SPAN]) | "scans a captured substring" |
 | P16 | backreference unset test; `PCRE2_MATCH_UNSET_BACKREF` | built (`vm_bref`); option RIDES backrefs (`docs/pcre2_options.md`) | the SET test with a compare after it | SET | VM | the SET half is P1's machinery; the compare is not regular | "backreference" |
 | P17 | `(*ACCEPT)` | [PCRE2-GAPS-TBD] | ends the match at once | MARK (end) | refused | VM; it BYPASSES a script run's check (note §1) and P12's mark rules; PCRE2's DFA matcher refuses it | "(*ACCEPT)" |
 
@@ -96,7 +96,7 @@ probe is cited, else from the registry's engines column. "Possible" is INFERRED.
 | X6 | `&` and `&!` span intersection/complement | [POSTFACT] 2026-11-09, [ENG-LOOK] 2026-11-06 | both operands match the same span (or the left and not the right) | AND / L2 | proposed | DFA: M4 (complement needs the right operand determinized first). VM: M7's "run the check once per start, record its end set" (POSTFACT 2026-11-09 VM-cost note) | — |
 | X7 | `set(a)` `unset(a)` | [POSTFACT] 2026-11-09 | participation of a label | SET / L2 | proposed | as P1 (M3 for the DFA) | — |
 | X8 | typed predicates: integers (no width), fixed point, membership, `% k`, strings, user functions (`leap(y)`), finite-value splits across labels | [POSTFACT] 2026-10-27..11-09 | one-label predicates lower to automata; relations between two unbounded labels do not | PRED / L2 | proposed | M5 (predicate -> automaton), M4, M10 (size ladder) | — |
-| X9 | group-0 group `(?<0>B)`, end mark, explicit numbers `(?<N>..)` | [POSTFACT] 2026-11-08/09 | a group that IS the match; a group writing slot N | MARK + NAME | proposed | M8 + M2 | — |
+| X9 | group-0 group `(?<0>B)`, end mark, explicit numbers `(?<N>..)` | [POSTFACT] 2026-11-08/09 | a group that IS the match; a group writing slot N. RULED (D193): at most one group 0 on any path (alternation max, sequence sum, repeat multiply; a second is refused at its offset); a path with none reports the whole match; consumes its outside context | MARK + NAME | proposed, rule ruled | M8 + M2; VM: a capture whose span replaces the match; DFA: fixed-context form = lookaround context via C3, inside an alternation needs capture tracking (VM) | "group 0 inside an alternation needs capture tracking; use one top-level group 0 to keep the DFA" |
 | X10 | `(?\|...)` branch reset | [BRANCH-RESET] | alternatives reuse numbers | NAME / L1 | refused, unbuilt (MEASURED) | M2 only (front end); sugar over X9's `(?<N>)` if that is ruled in first ([BRANCH-RESET]'s own build note) | n/a (numbering only; captures decide the engine) |
 | X11 | class set operations `(?[...])` | [CLASS-SETOPS] | intersection/complement of one-character sets | AND at width 1 | refused, unbuilt | class algebra (already exists for classes); the width-1 instance of X6 and shares its operator vocabulary (POSTFACT 2026-11-06) | n/a (DFA once built) |
 
@@ -195,6 +195,10 @@ Cheapest piece: M1 with SET and LOOK tests on the VM (condinv's first slice, "me
 four corpus refusal pins and one bench syntax probe, but condinv found NO outside demand (zero wild
 or realistic patterns), so it unlocks the least that anyone uses.
 
+Owner ruling (D193): SPEED leads, so this is the first piece; the syntax-first alternative below
+is an ordering question only (the product and the node are separate machinery; the name table M2
+is the one shared piece).
+
 Piece that unlocks the most: **C3, the checker product, built for its first (start, read) row,
 with no new surface syntax.** First client: capture-free, bounded lookarounds that today send a
 pattern to the VM (P8), which is [ENG-LOOK] itself. Why first:
@@ -238,31 +242,38 @@ makes conditions, branch reset and the POSTFACT naming all resolve one way.
 | D189 ([VLOOKBEHIND] stage 1) | P9 built on the VM; M6 is its DFA-checked successor |
 | D192 | the master row is read through `scripts/entry` like any row |
 
-## 7. Questions for the owner (plain words, each with a leaning)
+## 7. Owner's answers (2026-11-10, D193)
 
-1. **Which goal leads: speed or accepting more PCRE2 syntax?** Speed means the shared product piece
-   first (lookarounds onto the DFA, then `&`, predicates and the rest ride on it). Syntax means the
-   name table and the condition node first (conditionals and branch reset on the backtracking
-   engine). Leaning: speed, because the lookaround population is measured and the conditional
-   population is zero.
-2. **Is "one product construction, many (start, read) rows" the shape you want named as the
-   family's core?** It replaces "one condition node" as the DFA-side answer; the node stays as the
-   backtracking engine's and the analyses' answer. Leaning: yes.
-3. **Should script runs `(*sr:...)` join the family as a PCRE2 member?** They are PCRE2's own
-   "match, then filter, backtrack" predicate, the same evaluation the where-clause needs, and they
-   need Unicode script data. Leaning: yes as a member, built after the predicate machinery exists,
-   with no row of their own until a use appears.
-4. **Should `(*scan_substring:...)` stay out of scope?** Its stated reason ("revisit after M4")
-   has expired; it is `&` against a captured span. Leaning: re-mark it "planned, member of this
-   family", no work until a use appears.
-5. **Where does a predicate that needs a capture's VALUE go?** The notes already say callouts. The
-   question is whether the backtracking engine should also check label predicates at a group's
-   close when captures are present (the honour-on-close piece) or simply refuse that mix. Leaning:
-   build honour-on-close when the first predicate build happens; refusing would make a capture
-   anywhere in the pattern disable predicates.
-6. **Should the master row own the order, with each member row starting only from it?** Leaning:
-   yes for the shared pieces (node, name table, product); member rows keep their own triggers for
-   their own front ends.
+Asked as six questions with leanings; answered by Frank 2026-11-10 and recorded as D193.
+
+1. **Speed leads.** ("speed but is this just an ordering question?") The shared checker-product
+   piece comes first, for capture-free lookarounds ([ENG-LOOK]), after the lookaround censuses are
+   re-counted. Answer to the question asked: YES, it is an ordering question. The checker product
+   (DFA side) and the condition node (VM side) are separate machinery, so neither order causes
+   rework; the only piece both need is the label/name table (M2), which whichever comes first
+   builds. The cost of speed-first is only that the syntax members (conditionals, branch reset)
+   stay refused longer.
+2. **The core is one product construction with (start, read) rows** ("yes"); the condition node
+   stays the VM's and the analyses' shape.
+3. **Script runs (P14) are a member** ("agree"): a different spelling of predicates (the same
+   evaluation as a where-clause), built on the predicate machinery, no row of their own until a use
+   appears.
+4. **`(*scan_substring:...)` (P15) is re-marked planned, a member of the family** ("agree"); no
+   work until a use appears.
+5. **Honour-on-close** ("agree"): the backtracking engine checks label predicates at a group's
+   close when captures are present, built with the first predicate build; the mix is not refused.
+6. **This family owns the order of the shared pieces** (node, name table, product) ("agree");
+   member rows keep their own triggers for their own front ends.
+
+**Group 0 (X9), owner discussion 2026-11-10:** no path through the pattern may pass a group 0 more
+than once (alternation: max over branches; sequence: sum; repeat: multiply; above 1 refused at the
+second occurrence's offset). Each alternative may carry its own; a path with none reports the whole
+match. VM: a capture whose span replaces the match (cheap). DFA: the fixed-context form (one
+occurrence, outside parts fixed per pattern) reduces to lookaround context, i.e. the checker
+product (C3); inside an alternation it needs one capture's tracking (VM today). [ENGINE-WHY] reason
+text: "group 0 inside an alternation needs capture tracking; use one top-level group 0 to keep the
+DFA". It CONSUMES its outside context (find-all resumes after the whole match, as with `\K`),
+unlike lookaround.
 
 ## Evidence
 
