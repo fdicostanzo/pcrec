@@ -225,7 +225,11 @@ static unsigned char pf_walk_arms_of(unsigned restored, PfFactId f)
  * the emission input (NULL on every shipped path), or, in a compound part,
  * off the walking attempt's inherited set (`PcrecMeasInherit.walk_arms`). No second path reaches the
  * walk, and `facts.def`'s deny column keeps its one meaning (it EMPTIES a
- * fact, `pf_enter`); a parameter changes how the walk derives it. */
+ * fact, `pf_enter`); a parameter changes how the walk derives it. The
+ * byte-rate is asked here, FIRST and whatever the pattern (findings design
+ * §6.4 rule 1): the run choice breaks its equal-information ties by it
+ * (req.c `rn_choice_rows`), which makes `req_whole_run` a DERIVED fact
+ * whose `why` names the rate rule. */
 static void pf_derive_req_walk(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
@@ -236,6 +240,7 @@ static void pf_derive_req_walk(Ctx *cx)
         .max_pieces = PCREC_MAX_REQ_PIECES,
         .restored   = h ? h->walk_arms
                     : cx->emit_in && cx->emit_in->meas ? cx->emit_in->meas->walk_arms : 0,
+        .rate       = pcrec_find_byte_rate(cx),
     };
     RbSet set;
     RbRun run;
@@ -268,7 +273,8 @@ static void pf_derive_req_walk(Ctx *cx)
             /* [K82] the walk's bound on where this run begins. */
             pf->req_run.whole_maxoff = run.off;
         }
-        pf_done(pf, PF_REQ_WHOLE_RUN);
+        pf_done_why(pf, PF_REQ_WHOLE_RUN, pf->req_run.whole_len
+                                          ? pcrec_req_rate_why(cx) : PF_WHY_NONE);
         pf->why[PF_REQ_WHOLE_RUN].arms = pf_walk_arms_of(p.restored, PF_REQ_WHOLE_RUN);
     }
     if (pf_enter(cx, PF_REQ_PIECES, false)) {

@@ -922,3 +922,42 @@ ns 19 "xabuserpassabcuserpass"
 ns 20 "xabuserpassabcuserpass"
 ns 21 "xabuserpassabcuserpass"
 ns 22 "xabuserpassabcuserpass"
+
+# the attempt loop's entry-only handoff witness (tests/memfn/run_handoff_reach.sh): a K one short starts the loop past the match at 0 (S463)
+pattern (ab)c?userpass
+features all
+encoding byte
+engine vm
+ms 0 "abcuserpass" 0 11
+ns 1 "abcuserpass"
+ns 2 "abcuserpass"
+ns 3 "abcuserpass"
+ns 4 "abcuserpass"
+ns 5 "abcuserpass"
+ns 6 "abcuserpass"
+ns 7 "abcuserpass"
+ns 8 "abcuserpass"
+ns 9 "abcuserpass"
+ns 10 "abcuserpass"
+ns 11 "abcuserpass"
+ms 0 "userpass abcuserpass" 9 20
+ms 1 "userpass abcuserpass" 9 20
+ms 2 "userpass abcuserpass" 9 20
+ms 3 "userpass abcuserpass" 9 20
+ms 4 "userpass abcuserpass" 9 20
+ms 5 "userpass abcuserpass" 9 20
+ms 6 "userpass abcuserpass" 9 20
+ms 7 "userpass abcuserpass" 9 20
+ms 8 "userpass abcuserpass" 9 20
+ms 9 "userpass abcuserpass" 9 20
+ns 10 "userpass abcuserpass"
+ns 11 "userpass abcuserpass"
+ns 12 "userpass abcuserpass"
+ns 13 "userpass abcuserpass"
+ns 14 "userpass abcuserpass"
+ns 15 "userpass abcuserpass"
+ns 16 "userpass abcuserpass"
+ns 17 "userpass abcuserpass"
+ns 18 "userpass abcuserpass"
+ns 19 "userpass abcuserpass"
+ns 20 "userpass abcuserpass"

@@ -328,8 +328,8 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
 
 - [REQ-EMPTYCAT] STATE:started — THE REQUIRED-RUN PASS RESETS ITS RUN ON AN EMPTY NODE MID-CONCATENATION
   filed: 2026-10-26 manager (the unfiled follow-up in [FLAG-SPELL]'s closure note)
-  status (2026-11-09): BUILD GO (D191, span arms); unit E1 (docs/design/span_arms.md §8) building in lane sae1, then R1/E2, then L1; L2/L3 after the kit's R-38. Earlier: the direct half is alt_normal_form.md stage 2a; the quantified half (REP of empty, anchor wrapper) is span_arms E1
-  next: land E1 (code round first); R1 and E2 lanes off it
+  status (2026-11-10): E1+E2+R1 LANDED (R1 merged f7eb10528; review r5-sar1); gates owed: 2026-11-11 01:00 full suite. BUILD GO D191; span_arms.md §8; L2/L3 after the kit's R-38
+  next: L1 (L2/L3 after the kit's R-38)
   refs: docs/dev/flag_spell_findings_2026-10-23.md; plan_completed.md [FLAG-SPELL]
   note (2026-10-26, lane rwsurvey): the stray A_EMPTY is NOT from `(?:)`/`(?i)`/`(?#)` (parse drops them; `a(?:)bc` gives req_run abc); it comes from pcrec_wrap_bare_anchor's `<anchor EMPTY>` wrapper under a quantifier and the derive hook's killed `\G`.
   note (2026-11-09, reviews r3 sae1 / r4 sae2 PLAN items): (1) an alternation whose every branch consumes nothing (`a(?:\b|$)b`) still cuts the run: trigger, a corpus count of such alternations with a run mover; (2) one row selector for T2/T3/T4 when L1 adds T4 (span_arms §6)

@@ -101,6 +101,10 @@ fi
 # admitted witness must also be a pattern of tests/litscan/handoff_vm.rxt,
 # whose answers the corpus checks on the route. VM_ATTEMPT_FLOOR counts the
 # admitted witnesses reached, a literal sharing no source with the list.
+# (Span arms R1, lane sar1: a repeat is its copies, so `x{2,5}(?i:cat)`'s run
+# is `xxCAT`, K 3, and it holds the set's `x`: that witness is re-entered now,
+# and `(ab)c?userpass`, whose set's `a`/`b` the run `userpass` lacks, is the
+# entry-only one.)
 VM_ATTEMPT_FLOOR=4
 vmcorpus="$root/tests/litscan/handoff_vm.rxt"
 echo "== VM attempt loop handoff rows: reach floor and declines =="
@@ -145,7 +149,8 @@ done <<'VMWITNESSES'
 (?:xx|y)abc	byte	1	re	-
 (a|aa){0,10}cxyz	byte	20	re	-
 .{1,3}cd	utf8	12	re	while (!(attempt_position >= subject_length || (subject[attempt_position] & 0xC0) != 0x80)) attempt_position++;
-x{2,5}(?i:cat)	byte	5	entry	-
+x{2,5}(?i:cat)	byte	3	re	-
+(ab)c?userpass	byte	3	entry	-
 ^abcd	byte	none	none	-
 ^(?:ab|x)cdef	byte	none	none	#define RX_REQ_WHY "emitted"
 \Gabcd	byte	none	none	-

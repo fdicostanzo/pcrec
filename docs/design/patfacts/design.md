@@ -61,12 +61,15 @@ Read §0, then §1's table. Everything after §1 argues a row of that table.
    internal-error refusal. That turns step 1's implicit `pcrec_minw`
    contract into a checked one.
 3. **Core vs derived is a field-level split, and the delta already shows
-   it** (§4). CORE facts come from a walk: the necessary SET, the WHOLE
-   run, the anchors, the root byte width and nullability, the kind mask, and
-   the k-set walk. A core fact reads no prior, which is why the k-set walk's
-   per-offset `ppm` moves into the selection half (§4.2, [r1 A2]). DERIVED
-   facts are functions of core facts plus a prior or a second core fact:
-   the pick, the run's scan member and window, and the pin. A derived fact
+   it** (§4). CORE facts come from a walk that reads no prior: the
+   necessary SET, the anchors, the root byte width and nullability, the kind
+   mask, and the k-set walk. A core fact reads no prior, which is why the
+   k-set walk's per-offset `ppm` moves into the selection half (§4.2, [r1
+   A2]). A fact whose value depends on a prior is DERIVED: the functions of
+   core facts plus a prior or a second core fact (the pick, the run's scan
+   member and window, and the pin), and the WHOLE run, which the set's own
+   walk chooses with the byte-rate breaking its equal-information ties
+   (`docs/design/span_arms.md` §12d; review 2026-11-09 r5). A derived fact
    never re-walks a tree. The one cross-derivation dependency that must
    survive migration unchanged is S1's pin, which is over the DERIVED
    window (`litscan_s1.md` R3-2), not the whole run.
@@ -179,7 +182,7 @@ consumer of a pattern fact [r1 A8, F2].
 | start anchor | P | core | E2 | `src/facts/startanch.c` ← `pcrec_start_anchor` (`startanch.c:143`) | `-fno-vm-anchor-bound` → `NONE` | VM attempt bound; DFA's one-directional assertion (`emit_dfa.c:7860-7867`, [r1 F3]); **G2** (`:5883-5890`, delta D.2) |
 | end window | P | core | E2 | `src/facts/endwin.c` ← `pcrec_end_window` (`endwin.c:154`). Declared input: the encoding DESCRIPTOR (§4.2.2 (d)). Its root `pcrec_cwmax` call (`:172`) is internal to this derivation and gated to single-byte encodings (`:164`) | `-fno-end-window` → `-1` | both emitters' window clamp; `END_WINDOW` (`emit_dfa.c:8567-8571`) |
 | necessary SET | P | core | E2 | `src/facts/req.c` ← `rb_walk` and its lattice (`reqbyte.c:164-498`) | `-fno-req-byte` → ∅ | K65 set-rest (no-DFA-scan VM only); the pick (below) |
-| necessary WHOLE run | P | core | E2 | `src/facts/req.c` ← `rb_walk`'s `runs.best` | `-fno-req-byte`, `-fno-req-run` → len 0 | K66 whole-run compare (no-DFA-scan VM only); the window (below) |
+| necessary WHOLE run | P | derived (2026-11-09: the byte-rate breaks its ties, item 3) | E2 | `src/facts/req.c` ← `rb_walk`'s `runs.best` | `-fno-req-byte`, `-fno-req-run` → len 0 | K66 whole-run compare (no-DFA-scan VM only); the window (below) |
 | necessary byte (pick) | P | derived | E2 | beside B1's rate primitives (§4.2.2 (b)) ← `rb_pick` (`reqbyte.c:517`), from set + byte-rate | as the set | `REQ_BYTE`, the one-byte pre-check, G1 |
 | run scan member + window | P | derived | E2 | beside B1's rate primitives ← `rn_scan_index`/`rn_window_start` (`reqbyte.c:539/559`), from whole run + byte-rate | as the run | `REQ_RUN`, the run pre-check, **S1's pin** |
 | k-set walk `k[0..nwalk)` | P | core | E3 (UNANCH branch only) | `src/facts/kset.c` ← `pcrec_prefix_ksets`' walk half (`prefix_k.c:185-248`, `:409-477`), WITHOUT its per-offset `ppm` (`:443`, `:475`), which moves to the selection [r1 A2] | — (it is a walk over the NFA; each USE has a row deny) | offset-k selection (stays in `prefix_k.c`, §4.2.2 (c)), the pin |
@@ -801,7 +804,7 @@ own row after K68 merges.
 | site after step 3.0 | reads | calls |
 |---|---|---|
 | the pick (`rb_pick`, inside `facts.c`'s derived `req_byte` accessor) | core `pcrec_fact_req_set` | `pcrec_find_pick` |
-| the run member + window (`rn_scan_index`/`rn_window_start`) | core whole run | `pcrec_find_pick`, `pcrec_find_seq_mass` |
+| the run member + window (`rn_scan_index`/`rn_window_start`) | whole run | `pcrec_find_pick`, `pcrec_find_seq_mass` |
 | G1's density conjunct (`req_byte_dominated_by`) | `CandScan` (an emission decision, unchanged) + derived `req_byte` | `pcrec_find_no_commoner` |
 | offset-k selection (`set_ppm`, moved beside the primitives) | E3 k-set walk (after 3.4; before 3.4 it is the same walk inline) | `pcrec_find_set_mass` |
 

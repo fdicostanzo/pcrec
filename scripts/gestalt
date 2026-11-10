@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # gestalt -- one-shot, read-only status of the box and its sessions, for the manager heartbeats.
-#   scripts/gestalt [--owner main|kit]
+#   scripts/gestalt [--owner main|kit] [--all]
+# DEFAULT OUTPUT = only the lines whose THRESHOLD ROW holds (the table "ROWS" near the end; Frank 2026-11-10:
+# "only output items that pass threshold so that you're not considering noise"). When none holds it prints
+# NOTHING (not even the DONE line); exit 0 either way. `--all` prints every line, unchanged, then the DONE line.
+# Threshold rows: load (load1 > nproc), session (a registered role with no live session), disk (a filesystem
+# >= 85%), context (a registered manager > 70% of its compaction point), ci (latest main run not success, or
+# gh unavailable; a cancelled-latest prints as completed/cancelled), queue (box idle while a ready job waits),
+# idle-held (a hand `boxlock run` holder alive while load1 stayed < 1.5 across two readings >= 60 s apart).
+# The gestalt/log.tsv line is written on every run either way.
 # At most ~12 plain-text lines, each external call under `timeout`, whole run well under 5 s:
 #   load      1/5/15-min load, nproc; when load1 > nproc/2 the top 3 CPU users (command name + %CPU, no args)
 #   box       scripts/boxlock status, first line
@@ -20,20 +28,22 @@
 #             pcrec-bench as a compact suffix
 #   unread    monitor lines waiting for main and kit (scripts/monread OWNER --peek: the cursor is NOT moved)
 # --owner puts that owner's unread count first, marked `*`. Never kills, never takes the box lock, writes
-# nothing. Exit 0 always; the last line is `gestalt: DONE rc=0`.
+# nothing. Exit 0 always; with --all the last line is `gestalt: DONE rc=0`.
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 main=$(dirname "$(git -C "$here" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)")
 [ -d "$main/worktrees" ] || main=$(cd "$here/.." && pwd)
 owner=main
+all=0
 while [ $# -gt 0 ]; do
     case $1 in
         --owner) owner=${2:-main}; shift ;;
         --owner=*) owner=${1#--owner=} ;;
+        --all) all=1 ;;
     esac
     shift
 done
 case $owner in main|kit) ;; *) owner=main ;; esac
-trap 'echo "gestalt: DONE rc=0"; exit 0' EXIT
+trap '[ "$all" = 1 ] && echo "gestalt: DONE rc=0"; exit 0' EXIT
 TO=timeout
 now=$(date +%s)
 
@@ -43,7 +53,7 @@ fmt_age() { # seconds -> 45s / 12m / 3h
 }
 
 # --- load
-read -r l1 l5 l15 _ < /proc/loadavg
+read -r l1 l5 l15 _ < "${GESTALT_LOADAVG:-/proc/loadavg}"   # GESTALT_* overrides: test hooks
 np=$(nproc 2>/dev/null || echo 1)
 busy=""
 if awk -v l="$l1" -v n="$np" 'BEGIN { exit !(l > n / 2) }'; then
@@ -52,13 +62,15 @@ if awk -v l="$l1" -v n="$np" 'BEGIN { exit !(l > n / 2) }'; then
         k == 2 && n < 3 && NF >= 12 { printf "%s%s %s%%", (n ? ", " : ""), $12, $9; n++ }')
     busy="; busiest: ${top3:-unavailable}"
 fi
-echo "load: $l1 $l5 $l15 (nproc $np)$busy"
+L_load="load: $l1 $l5 $l15 (nproc $np)$busy"
+l1c=$(awk -v l="$l1" 'BEGIN { printf "%d", l * 100 }'); npc=$((np * 100))
 
 # --- box
-echo "box: $($TO 10 bash "$here/boxlock" status 2>&1 | head -1 | sed 's/ cwd=.*//' | cut -c1-160)"
+boxraw=$($TO 10 bash "${GESTALT_BOXLOCK:-$here/boxlock}" status 2>&1 | head -1)
+L_box="box: $(printf '%s' "$boxraw" | sed 's/ cwd=.*//' | cut -c1-160)"
 
 # --- queue
-qs=$($TO 15 bash "$here/boxqueue" status 2>&1)
+qs=$($TO 15 bash "${GESTALT_BOXQUEUE:-$here/boxqueue}" status 2>&1)
 run=$(printf '%s\n' "$qs" | sed -n 's/^running: \([^ ]*\) .*/\1/p' | head -1)
 if [ -n "$run" ]; then
     mt=$(stat -c %Y "$run" 2>/dev/null || echo "$now")
@@ -66,7 +78,10 @@ if [ -n "$run" ]; then
 else runs="none"; fi
 pend=$(printf '%s\n' "$qs" | grep -c '^pending:')
 ends=$(printf '%s\n' "$qs" | sed -n 's/^ended: .*\/[0-9T.]*-[0-9]*-\([^ ]*\) :: .*verdict=\([A-Z]*\).*/\1:\2/p' | tail -3 | tr '\n' ' ')
-echo "queue: running $runs; pending $pend; last: ${ends:-none}"
+L_queue="queue: running $runs; pending $pend; last: ${ends:-none}"
+# ready = a pending job whose answer is neither "not-ready: ..." nor "not asked yet"
+qready=$(printf '%s\n' "$qs" | grep '^pending:' | grep -vc ' :: \(not-ready:\|not asked yet\)')
+qidle_ready=0; [ -z "$run" ] && qidle_ready=$qready
 
 # --- lanes / watchers
 w=$(ps -eo pid=,args= 2>/dev/null | awk -v me="$$" '
@@ -88,14 +103,15 @@ act=$(for d in "$main"/worktrees/*/; do
         [ $((now - best)) -lt 1800 ] && basename "$d"
         exit 0' _ {} "$now" | sort | tr '\n' ' ')
 nact=$(printf '%s\n' "$act" | wc -w)
-echo "lanes: watchers $w; active worktrees $nact${act:+ ($(printf '%s' "$act" | cut -c1-150))}"
+L_lanes="lanes: watchers $w; active worktrees $nact${act:+ ($(printf '%s' "$act" | cut -c1-150))}"
 
 # --- sessions (one line: pid, claude -n name, role from the role files keyed by session id)
-sd=/run/user/$(id -u)/cc-socks
+sd=${GESTALT_SOCKS_DIR:-/run/user/$(id -u)/cc-socks}
 roledir=${GESTALT_ROLES_DIR:-$main/worktrees/.mgr/roles}
 claude_home=${GESTALT_CLAUDE_HOME:-$HOME/.claude}
 sl=""
 ns=0
+liveroles=" "
 if [ -d "$sd" ]; then
     for s in "$sd"/*.sock; do
         [ -S "$s" ] || continue
@@ -107,25 +123,36 @@ if [ -d "$sd" ]; then
         role=""
         case $sid in ''|*[!A-Za-z0-9_-]*) ;; *) role=$(head -1 "$roledir/$sid" 2>/dev/null) ;; esac
         sl="$sl${sl:+, }$pid ${name:-?}${role:+ [$role]}"
+        liveroles="$liveroles$role "
     done
 fi
-echo "session: ${ns} live${sl:+ ($(printf '%s' "$sl" | cut -c1-150))}"
+L_session="session: ${ns} live${sl:+ ($(printf '%s' "$sl" | cut -c1-150))}"
+goneroles=""   # registered manager roles (worktrees/.mgr/roles) with no live session
+if [ -d "$roledir" ]; then
+    for rf in "$roledir"/*; do
+        [ -f "$rf" ] || continue
+        r=$(head -1 "$rf" 2>/dev/null)
+        case $r in main|kit) case $liveroles in *" $r "*) ;; *) goneroles="$goneroles $r" ;; esac ;; esac
+    done
+fi
+L_session="$L_session${goneroles:+; GONE:$goneroles}"
 
 # --- disk (use% and free for repo fs, $PCREC_TMPDIR fs, /tmp; ! at >= 85%; scratch size only when quick)
 . "$here/tmpdir.sh" 2>/dev/null
 dl=""
+diskhot=""
 for pair in "repo:$main" "tmp:${PCREC_TMPDIR:-/var/tmp}" "/tmp:/tmp"; do
     lab=${pair%%:*}; path=${pair#*:}
     [ "$lab" = "/tmp" ] && path=/tmp
     row=$($TO 3 df -P -h "$path" 2>/dev/null | awk 'NR == 2 { print $5, $4 }')
     [ -n "$row" ] || { dl="$dl${dl:+, }$lab ?"; continue; }
     u=${row%% *}; fr=${row#* }
-    flag=""; [ "${u%\%}" -ge 85 ] 2>/dev/null && flag="!"
+    flag=""; [ "${u%\%}" -ge 85 ] 2>/dev/null && { flag="!"; diskhot=1; }
     dl="$dl${dl:+, }$lab $u$flag ${fr} free"
 done
 sc=$($TO 1 du -sh "${PCREC_TMPDIR:-/var/tmp}/scratch" 2>/dev/null | cut -f1)
 sn=$($TO 1 du -sh "${PCREC_TMPDIR:-/var/tmp}/snap" 2>/dev/null | cut -f1)
-echo "disk: $dl${sc:+; scratch $sc}${sn:+, snap $sn}"
+L_disk="disk: $dl${sc:+; scratch $sc}${sn:+, snap $sn}"
 
 # --- context: last assistant usage line of each registered manager session's transcript (numbers only)
 projects=${GESTALT_PROJECTS:-$claude_home/projects}
@@ -134,6 +161,7 @@ snap=$sdir/usage-latest.json
 [ -f "$snap" ] || snap=$claude_home/statusline/usage-latest.json
 swin=""
 cl=""
+ctxn=""   # " role:tokens" for each registered manager whose count is known
 if [ -d "$roledir" ]; then
     for rf in "$roledir"/*; do
         [ -f "$rf" ] || continue
@@ -148,7 +176,7 @@ if [ -d "$roledir" ]; then
             case $scap in ''|*[!0-9]*) scap=0 ;; esac
             if [ "$((now - scap))" -lt 600 ]; then
                 case $sn in ''|*[!0-9]*) ;; *)
-                    cl="$cl${cl:+ / }$role $((sn / 1000))k"; swin=${swin:-$sw}; continue ;;
+                    ctxn="$ctxn $role:$sn"; cl="$cl${cl:+ / }$role $((sn / 1000))k"; swin=${swin:-$sw}; continue ;;
                 esac
             fi
         fi
@@ -156,16 +184,22 @@ if [ -d "$roledir" ]; then
         [ -n "$tf" ] || { cl="$cl${cl:+ / }$role ?"; continue; }
         n=$($TO 3 tail -c 1500000 "$tf" 2>/dev/null | $TO 3 jq -Rr 'fromjson? | select(type == "object" and .type == "assistant" and (.message.usage? != null))
             | .message.usage | (.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0)' 2>/dev/null | tail -1)
-        case $n in ''|*[!0-9]*) cl="$cl${cl:+ / }$role ?" ;; *) cl="$cl${cl:+ / }$role $((n / 1000))k" ;; esac
+        case $n in ''|*[!0-9]*) cl="$cl${cl:+ / }$role ?" ;; *) ctxn="$ctxn $role:$n"; cl="$cl${cl:+ / }$role $((n / 1000))k" ;; esac
     done
 fi
 win=$swin
 [ -n "$win" ] || win=$($TO 2 jq -r '.context_window.window_size // empty' "$snap" 2>/dev/null)
+winraw=$win
 # The effective ceiling is the owner's auto-compact window (~/.claude/settings.json `autoCompactWindow`,
 # Frank 2026-11-07: "the context max is somewhat illusory because I've set the auto compact"); read that one key.
-acw=$($TO 2 jq -r '.. | objects | .autoCompactWindow? // empty' "$HOME/.claude/settings.json" 2>/dev/null | head -1)
+acw=$($TO 2 jq -r '.. | objects | .autoCompactWindow? // empty' "$claude_home/settings.json" 2>/dev/null | head -1)
 case $acw in ''|*[!0-9]*) acw="" ;; esac
 wk=""; case $win in ''|*[!0-9]*) ;; *) wk="$((win / 1000))k" ;; esac
+# context threshold input: tokens at > 70% of the compaction point (else of the window)
+ceil=${acw:-$winraw}; ctxhot=""
+case $ceil in ''|*[!0-9]*) ;; *)
+    for e in $ctxn; do [ $((${e#*:} * 100)) -gt $((70 * ceil)) ] && ctxhot="$ctxhot ${e%%:*}"; done ;;
+esac
 if [ -n "$acw" ]; then win=" (compacts at $((acw / 1000))k${wk:+; window $wk})"
 elif [ -n "$wk" ]; then win=" (window $wk)"; else win=""; fi
 
@@ -183,10 +217,12 @@ if [ -d "$roledir" ]; then
         ll="$ll${ll:+ / }$role ${mb}M$([ "$mb" -ge 50 ] && echo ' LARGE')"
     done
 fi
-echo "context: ${cl:-no registered sessions}$([ -n "$cl" ] && echo "$win")"
+L_context="context: ${cl:-no registered sessions}$([ -n "$cl" ] && echo "$win")"
 # Not printed (Frank 2026-11-07: "not actionable"); appended with a timestamp so the trend can be watched:
 # $PCREC_TMPDIR/gestalt/log.tsv = time, load1, context per role, transcript MB per role.
 gl="${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/gestalt"
+# idle-held input: the PREVIOUS sample, read before this run appends its own
+prev=$(tail -n 1 "$gl/log.tsv" 2>/dev/null); prev_t=$(printf '%s' "$prev" | cut -f1); prev_l=$(printf '%s' "$prev" | cut -f2)
 mkdir -p "$gl" 2>/dev/null && printf '%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$l1" "${cl:-}" "${ll:-}" >> "$gl/log.tsv" 2>/dev/null
 
 # --- subscription: the statusline snapshot (~/.claude/statusline/usage-latest.json, written by the user's
@@ -207,7 +243,7 @@ if [ -f "$snap" ]; then
         fi
     fi
 fi
-echo "subscription: $sub"
+L_subscription="subscription: $sub"
 
 # --- git (main tree, then pcrec-bench as a compact suffix)
 git_one() { # DIR LABEL
@@ -226,7 +262,7 @@ git_one() { # DIR LABEL
 gl=$(git_one "$main" "")
 bd=$(dirname "$main")/pcrec-bench
 [ -d "$bd/.git" ] && gb=$(git_one "$bd" "bench") || gb=""
-echo "git: ${gl# }${gb:+ | $gb}"
+L_git="git: ${gl# }${gb:+ | $gb}"
 
 # --- CI
 ci=$($TO 20 gh run list --branch main --limit 1 --json status,conclusion,headSha,createdAt \
@@ -234,10 +270,55 @@ ci=$($TO 20 gh run list --branch main --limit 1 --json status,conclusion,headSha
 if [ -n "$ci" ]; then
     set -- $ci
     ts=$(date -d "$3" +%s 2>/dev/null || echo "$now")
-    echo "ci: ${1%/} $(fmt_age $((now - ts))) ago"
-else echo "ci: unavailable"; fi
+    L_ci="ci: ${1%/} $(fmt_age $((now - ts))) ago"
+    case ${1%/} in completed/success|completed/skipped|in_progress*|queued*|waiting*|pending*) ci_bad=0 ;; *) ci_bad=1 ;; esac
+else L_ci="ci: unavailable"; ci_bad=1; fi
 
 # --- unread monitor lines (peek: cursor untouched)
 um=$($TO 10 bash "$here/monread" main --peek 2>/dev/null | wc -l)
 uk=$($TO 10 bash "$here/monread" kit --peek 2>/dev/null | wc -l)
-if [ "$owner" = kit ]; then echo "unread: *kit=$uk main=$um"; else echo "unread: *main=$um kit=$uk"; fi
+if [ "$owner" = kit ]; then L_unread="unread: *kit=$uk main=$um"; else L_unread="unread: *main=$um kit=$uk"; fi
+
+# --- idle-held: a NON-queue box-lock holder (a hand `boxlock run`; a queue job is boxqueue's IDLE-SUSPECT, a holder
+# blocking a waiting job is its HOLDER-IDLE-SUSPECT) that is alive while load1 stayed under IDLE_LOAD in two readings
+# at least IDLE_GAP s apart (a dead owner is boxlock's HELD-ORPHAN / "free (stale owner record)", never this row).
+# IDLE_LOAD 1.5: below every one of the 104 log.tsv samples taken while a queue job held the box (min 1.92: mech
+# single-thread phases; p10 3.65), above the held-less baseline (p25 0.96 of 30 samples). IDLE_GAP 60 = load1's own
+# averaging window, so the two readings do not share an interval. Evidence: scripts/NOTES.md "gestalt idle-held".
+IDLE_LOAD=150 IDLE_GAP=60
+idleheld=""; L_idleheld=""
+case $boxraw in "HELD pid="*)
+    hp=${boxraw#HELD pid=}; hp=${hp%% *}
+    hl=${boxraw#*label=}; hl=${hl%% *}
+    hd=$(printf '%s' "$boxraw" | sed -n 's/.* since=[^ ]* (\([^)]*\)).*/\1/p')
+    pt=$(date -d "$prev_t" +%s 2>/dev/null || echo "$now")
+    pc=$(awk -v l="${prev_l:-99}" 'BEGIN { printf "%d", l * 100 }')
+    case $hl in queue:*) ;; *)
+        if [ -d "/proc/$hp" ] && [ "$l1c" -lt "$IDLE_LOAD" ] && [ "$pc" -lt "$IDLE_LOAD" ] && [ $((now - pt)) -ge "$IDLE_GAP" ]; then
+            idleheld=1
+            L_idleheld="idle-held: $hl held ${hd:-?}, load1 $prev_l then $l1 (< $(awk -v t="$IDLE_LOAD" 'BEGIN { printf "%.1f", t / 100 }'))"
+        fi ;;
+    esac ;;
+esac
+
+# --- THRESHOLD ROWS: kind | condition (shell test, evaluated) | the line it prints (a variable above).
+# Default output = the lines of the rows whose condition holds, in this order; --all prints every row's line.
+# A condition of `false` = no threshold: the line is --all only. Add a kind by adding a row (and its L_ line).
+ROWS='load         | [ "$l1c" -gt "$npc" ]            | L_load
+box          | false                              | L_box
+queue        | [ "$qidle_ready" -gt 0 ]           | L_queue
+lanes        | false                              | L_lanes
+session      | [ -n "$goneroles" ]                | L_session
+disk         | [ -n "$diskhot" ]                  | L_disk
+context      | [ -n "$ctxhot" ]                   | L_context
+subscription | false                              | L_subscription
+git          | false                              | L_git
+ci           | [ "$ci_bad" = 1 ]                  | L_ci
+unread       | false                              | L_unread
+idle-held    | [ -n "$idleheld" ]                 | L_idleheld'
+# PLACEHOLDER (not built): docidx | doc-index soft cap exceeded | L_docidx -- see docs/design/doc_index_format.md (lane/docfmt)
+while IFS='|' read -r kind cond var; do
+    kind=${kind%% *}; var=${var// /}
+    if [ "$all" = 1 ] && [ "$kind" = idle-held ] && [ -z "$idleheld" ]; then continue; fi
+    if [ "$all" = 1 ] || eval "$cond"; then printf '%s\n' "${!var}"; fi
+done <<< "$ROWS"

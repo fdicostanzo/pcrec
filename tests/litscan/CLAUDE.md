@@ -106,7 +106,10 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   and S-g are sabotage S1906's and S1905's detectors. Unit E2 (lane sae2,
   T3 E-4/E-5): the run joins across `\b`, `\B`, `$`, `^`, `\G`, `\K`,
   `\A`, `\z` and lookarounds of both lowerings; S-L, W-E3 and S-g (E2's
-  site) detect S1925, S1926, S1927. Later units (R1, L1) add theirs here.
+  site) detect S1925, S1926, S1927. Unit R1 (lane sar1, [REPEAT-RUN]) adds
+  the power arm's: a repeat of a consuming body is its copies
+  (`xy(?:ab){2}zw` states `xyababzw`); W-R1/W-R2/W-R3/W-R6 detect
+  S1915/S1916/S1917/S1919. A later unit (L1) adds its own here.
 - **gen_reqcube.py** — writes `reqcube.rxt` from python3 `re`; edit the case
   list there.
 - **presence_deny.rxt** — [MEMFN] R17-b' B3b (lane b3bfix, 2026-10-18;

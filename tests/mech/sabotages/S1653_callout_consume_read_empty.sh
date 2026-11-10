@@ -9,9 +9,11 @@ SAB_DESC='the required-run and start-set facts read a consume (W_ANY) callout si
 SAB_REACH='"$PCREC" -p rx --features all -o "$REACH_TMP/o.c" --pattern '\''a(?C"two,consume")b'\'' && grep -qF '\''rx_callout_two.fn(&'\'' "$REACH_TMP/o.c" && echo REACH-CALLOUT-CONSUME-FACTS'
 SAB_REACH_EXPECT='REACH-CALLOUT-CONSUME-FACTS'
 SAB_COUNT=1
-SAB_BEFORE='    case KTEXT_ANY:  rb_gap_into(acc, PCREC_W_UNBOUNDED); return;'
-SAB_AFTER='    case KTEXT_ANY:  if (a->k == A_CALLOUT) { rb_assert_into(acc); return; } /* [SABOTAGE S1653] */ rb_gap_into(acc, PCREC_W_UNBOUNDED); return;'
+SAB_BEFORE='    case KTEXT_ANY:  rb_gap_into(w, acc, PCREC_W_UNBOUNDED); return;'
+SAB_AFTER='    case KTEXT_ANY:  if (a->k == A_CALLOUT) { rb_assert_into(w, acc); return; } /* [SABOTAGE S1653] */ rb_gap_into(w, acc, PCREC_W_UNBOUNDED); return;'
 SAB_FILE2="src/facts/startset.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    case KTEXT_ANY:  return ss_all();'
 SAB_AFTER2='    case KTEXT_ANY:  return a->k == A_CALLOUT ? acc : ss_all(); /* [SABOTAGE S1653] */'
+# RE-ANCHORED (lane sar1fix, 2026-11-09, review r5): the run walk's helpers take the
+# walk `w` (the run choice reads its byte-rate); same site, same plant.

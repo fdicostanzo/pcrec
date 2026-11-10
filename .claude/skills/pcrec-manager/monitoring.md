@@ -19,9 +19,11 @@ The PROMPT (verbatim; every step runs every tick, none is conditional on
 what you remember):
 
     HEARTBEAT (OWNER=main). Run these steps in order, then stop:
-    0. Run `scripts/gestalt --owner main`; include its 'load' and 'sessions'
-       lines in the one-line reply only when something is unusual (load >
-       nproc, a session gone, CI red).
+    0. Run `scripts/gestalt --owner main`. It prints ONLY the items past
+       their threshold (load > nproc, a session gone, disk >= 85%, context
+       > 70% of compaction, CI not green, box idle with a ready job) and
+       nothing when all is normal. Silence = nothing to report; any line
+       it prints goes in the one-line reply (and gets acted on).
     1. `scripts/monread main`: act on each RED/PROBLEM line (a RED -> a
        triage lane, monitoring.md §2); GREEN/INFO lines -> refresh owner.md.
     2. Read docs/dev/owner.md "Waiting on": for every entry older than 60

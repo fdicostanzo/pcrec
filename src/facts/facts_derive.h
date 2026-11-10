@@ -134,6 +134,9 @@ typedef struct {
      * (`PCREC_WALK_ARM` bits, src/facts/walk_arms.def); 0 but under the
      * harness lever */
     unsigned restored;
+    /* the byte-rate (`pcrec_find_byte_rate`, NULL under NONE) that breaks the
+     * run choice's ties at equal information (req.c `rn_choice_rows`) */
+    const uint32_t *rate;
 } ReqWalkParams;
 
 /* THE CORE FACTS from ONE walk of the lowered tree: the whole necessary set
@@ -163,6 +166,9 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why);
                                                         /* src/facts/req.c */
 int  pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
                     PfWhyCode *why);                    /* src/facts/req.c */
+/* The rate rule a derived choice answered by: `PF_WHY_RATE_BUILTIN` or
+ * `PF_WHY_RATE_NONE`, asked of the accessor's answer, never of a pointer. */
+PfWhyCode pcrec_req_rate_why(Ctx *cx);                   /* src/facts/req.c */
 
 /* [OPT-K] THE K-SET WALK over the wrapped forward NFA from its anchored start
  * (src/facts/kset.c's header: why the anchored start, why it is sound). Reads

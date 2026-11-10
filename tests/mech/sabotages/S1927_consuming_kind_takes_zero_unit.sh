@@ -18,5 +18,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(ab)x\\1
 SAB_REACH_EXPECT="REACH-SG2-RUN-ABX"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    case KTEXT_ANY:  rb_gap_into(acc, PCREC_W_UNBOUNDED); return;'
+SAB_BEFORE='    case KTEXT_ANY:  rb_gap_into(w, acc, PCREC_W_UNBOUNDED); return;'
 SAB_AFTER='    case KTEXT_ANY:  rb_zero_into(w, acc, a); return;   /* SABOTAGE S1927 */'

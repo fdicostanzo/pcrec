@@ -2373,7 +2373,13 @@ static int compile_sources(const CliState *cli)
                                   .code_col = ot->t->pattern_col,
                                   .code_esc = ot->t->pattern_esc != NULL,
                                   .code_headers = hdrs,
-                                  .ncode_headers = nh };
+                                  .ncode_headers = nh
+#ifdef PCREC_HARNESS
+                                  /* the lever reaches a file's compile as it
+                                   * reaches `--pattern`'s (span_arms §3.7) */
+                                  , .harness = &cli->harness
+#endif
+                                  };
         int crc;
         if (listing) {
             char *rows = pcrec_list_callouts(ot->t->pattern, &topt,
@@ -2387,8 +2393,11 @@ static int compile_sources(const CliState *cli)
             if (crc == 0) continue;
         } else
             crc = pcrec_compile_defs(ot->t->pattern, &topt, ot->t->defs,
-                                     (ndecl || nh || topt.allow_code) ? &tin
-                                                                      : NULL,
+                                     (ndecl || nh || topt.allow_code
+#ifdef PCREC_HARNESS
+                                      || cli->harness.walk_arms
+#endif
+                                      ) ? &tin : NULL,
                                      &out, &cerr);
         if (!listing) {
             free(cbuf);

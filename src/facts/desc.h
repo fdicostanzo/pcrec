@@ -46,6 +46,7 @@ PdDesc pcrec_pd_none(void);
 PdDesc pcrec_pd_pos(Ctx *cx, const void *pos);
 PdDesc pcrec_pd_cat(Ctx *cx, const PdCfg *c, PdDesc l, PdDesc r);
 PdDesc pcrec_pd_alt(Ctx *cx, const PdCfg *c, PdDesc l, PdDesc r);
+PdDesc pcrec_pd_pow(Ctx *cx, const PdCfg *c, PdDesc d, int k);
 
 /* THE ADJACENCY HEAD, the module's second column (§3.5 r7 FIX-2; stage 2b,
  * the owner's, code-point level). Its rule at a zero-width node is the RUN's
