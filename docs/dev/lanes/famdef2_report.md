@@ -61,7 +61,7 @@ and compliance-index parts green after the fixes above (the registry section als
 reached to its end here); `make test-assertions`: after the script edits, `run_assertions_tests.sh`, `run_gstart_diff`,
 `run_mline_diff`, `run_kreset_diff` green in the second run (4/7 scripts; the three identity scripts of that run were
 confounded by my abi rebuild mid-run, so they were re-run alone: see the IDENTITY line below).
-IDENTITY (endvar/wordctx/gstart, re-run alone on the final build): IDENT_RESULT
+IDENTITY (endvar/wordctx/gstart): the re-run alone on the final build was still running at handoff (logs under the temp root, scratch/famdef2/run_*_identity.log); they are sections of `make test` (424) and are OWED there.
 
 ### 5. Drafts for the next lane (NOT applied)
 
