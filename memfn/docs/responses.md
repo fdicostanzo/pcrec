@@ -3308,3 +3308,11 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Job defects fixed on the way: 561's base (7b4e3cc7a -> 424ddc742), 567's time cap (3600 -> 7200 s).
   - Kit-side fixes on the way: simdskip (a target whose facts failed is not compiled, in g2simd and memfntargets), S722, S725, S2977 and S3002 re-measured.
   - MF_SITE_ABI 26; pcrec abi 98 (main's U3).
+- done: R-35 3.0a, re-delivered after code review r1 s30a and the post-U2+U3 merge: branch lane/memfn-s30a @ f5c2f416a.
+  - Content: the 3.0a build, s30arev (every FIX-NOW/DOC item of r1 s30a), and the merge of main cf578177e (ba3933ba4). The ledger cites decisions.md D190 (01a1bbc7c).
+  - Reports: docs/dev/lanes/s30a_report.md, s30afix_report.md, s30arev_report.md, s30amrg_report.md.
+  - Gates, all GREEN on worktrees/s30a at f5c2f416a vs base cf578177e; job files in /var/tmp/pcrec-pcrec/scratch/memfn/s30a/jobs/:
+    - 500 strict.
+    - 501, 502 and 093 identity (three shards; 71 arms, one per CPU target). 502 was a retry: the first run hit the generic-target arm's vacuous-arm refusal, a job defect, and that arm is now a direct generic == plain check.
+    - 094 reach; 095 make test; 096 plants; 097-099 mech (64 rows).
+  - Zero emitted bytes vs main.
