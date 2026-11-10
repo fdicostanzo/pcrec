@@ -638,11 +638,11 @@ def dup(d, prefix):
 
 
 def fence_swap(d):
+    # the opening fence dropped, the closing one duplicated: same multiset
     i = idx_of(d, '```')
     del d[i]
     j = idx_of(d, '```')
     d.insert(j, '```')
-    d.insert(idx_of(d, 'D2 body para.') + 1, '```')
     return d
 
 

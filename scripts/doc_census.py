@@ -48,7 +48,7 @@ COLUMNS = ['census_rev', 'old_line', 'old_end', 'extent_hash', 'old_label',
            'class', 'owner', 'owner_src', 'old_number', 'new_id', 'date',
            'who', 'title', 'cites', 'note']
 RULING_COLUMNS = ['host', 'old_label', 'owner', 'number', 'old_end', 'title',
-                  'reason']
+                  'date', 'reason']
 
 # --- the scan (§5.2, appendix A) -------------------------------------------
 
@@ -355,6 +355,15 @@ def derive(lines, rulings, rev, cites=None):
             date = p.group('dnum')
         elif gtext and DATE.search(gtext):
             date = DATE.search(gtext).group(0)
+        else:
+            # a date right after the label, outside any group (`D11 addendum — 2026-08-09 (...)`)
+            md = re.match(r'^\s*(?:—|--|,|:)?\s*([0-9]{4}-[0-9]{2}-[0-9]{2})\b', rem)
+            if md:
+                date = md.group(1)
+                rem = rem[md.end():]
+        ruled_date = bool(rul and rul['date'] not in ('', '-'))
+        if ruled_date:
+            date = rul['date']
         who = '-'
         if gtext:
             for it in [x.strip() for x in gtext.split(',')][:2]:
@@ -396,7 +405,7 @@ def derive(lines, rulings, rev, cites=None):
             trule = 'ruled'
         rows.append(dict(c=c, old_line=c['line'], old_end=end, label=lab, owner=owner, src=src,
                          old_number=old_number, note=note, date=date, who=who,
-                         title=cut120(title), trule=trule, rul=rul, host=hostid,
+                         title=cut120(title), trule=trule, rul=rul, host=hostid, ruled_date=ruled_date,
                          ruled_end=bool(rul and rul['old_end'] not in ('', '-'))))
     # dates: inherit the nearest earlier dated marker of the same owner
     by_owner = {}
@@ -465,6 +474,8 @@ def derive(lines, rulings, rev, cites=None):
             notes.append('second of two')
         if r['trule'] == 'ruled':
             notes.append('title ruled')
+        if r['ruled_date']:
+            notes.append('date ruled')
         new_id = '%s.a%s' % (r['owner'], r['num']) if r['owner'] and 'num' in r else '-'
         out.append({
             'census_rev': rev, 'old_line': str(r['old_line']), 'old_end': str(r['old_end']),
@@ -673,8 +684,8 @@ D122 ADDENDUM 4 (2026-10-05, same exchange): placed inside D123.
 **Addendum 2 (2026-10-06):** an id-less one, ruled to D122.
 """
 
-FIX_RULINGS = """host\told_label\towner\tnumber\told_end\ttitle\treason
-D123\tAddendum 2 (2026-10-06):\tD122\t3\t-\t-\tfixture ruling
+FIX_RULINGS = """host\told_label\towner\tnumber\told_end\ttitle\tdate\treason
+D123\tAddendum 2 (2026-10-06):\tD122\t3\t-\t-\t-\tfixture ruling
 """
 
 

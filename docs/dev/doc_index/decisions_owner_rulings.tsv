@@ -1,45 +1,46 @@
 # Hand rulings for id-less addendum markers in docs/dev/decisions.md ([DOC-INDEX] unit 1.0;
 # design docs/design/doc_index_format.md §5.2, appendix B). Read by scripts/doc_census.py.
 # Key: host (the `## Dn` entry the marker sits in) + old_label (exact). `-` = not ruled.
-# owner: the ruled owner; number/old_end (lines:N)/title: overrides; reason: one line with its evidence.
-host	old_label	owner	number	old_end	title	reason
-D26	Addendum (DOC-1, 2026-08-11) — which PCRE2.	D26	-	-	-	inside its own entry D26, after its body; 28 tree cite(s) of `D26 addendum`
-D26	Addendum (Frank, 2026-10-24): compatible with PCRE2 unless PCRE2 has a bug.	D26	-	-	-	inside its own entry D26, after its body; 28 tree cite(s) of `D26 addendum`
-D37	Addendum (2026-08-13, [STD1b] landing, found by the oracle re-baseline lane):	D37	-	-	-	inside its own entry D37, after its body; 17 tree cite(s) of `D37 addendum`
-D37	Addendum (owner, 2026-11-06, [FEAT-FAMILIES]; Frank: "do we need a rule like this at all ... we have the families"; rulings "1. yes. 2. sure. 3. document. 4. agree"):	D37	-	-	-	inside its own entry D37, after its body; 17 tree cite(s) of `D37 addendum`
-D47	RULING-5 ADDENDUM (2026-08-18, thirty-third session, from the R30 panel on the assertions design — manager-applied at merge per the design's Q7).	D47	-	-	-	inside its own entry D47; the text amends "Ruling 5", the fifth of D47's six [ENG-BREP] §9 rulings; 28 tree cites of `D47 addendum`
-D47	RULING-5 ADDENDUM, LANDED NOTE (2026-08-19, thirty-fourth session, merge e609a8c).	D47	-	-	-	inside its own entry D47; the landed note on the same Ruling 5 cure (D62's flag ruling), directly after D47's first RULING-5 addendum
-D60	ADDENDUM (Frank, same day): ENGINE constants join the set.	D60	-	-	-	inside its own entry D60, after its body; 8 tree cite(s) of `D60 addendum`
-D81	ADDENDUM 2026-08-28 (Frank, forty-fourth session): RULED YES — the abi number resets to 1 at the 1.0 release ("yes when we are at 1.0"). Recorded on [REL-META]; nothing changes before then.	D81	-	-	-	inside D81, continuing the D40 ADDENDUM paragraph above it, but the tree cites the abi reset at 1.0 as `D81 addendum` (plan_completed.md [REL-1.9], docs/dev/lanes/rel1pre_facts.md, dev_journal.md), never as a D40 addendum
-D83	Addendum (Frank, 2026-09-22, seventy-sixth session — on [OPT-FIRSTSET]'s profile failure and [ENG-PGO]).	D83	-	-	-	inside its own entry D83, after its body; 15 tree cite(s) of `D83 addendum`
-D84	ADDENDUM (Frank, 2026-08-28 ~23:3x, same session): "I'd rather it FAIL and document how to handle oversized results."	D84	-	-	-	inside its own entry D84, after its body; 10 tree cite(s) of `D84 addendum`
-D84	ADDENDUM 2 (Frank, 2026-08-28 ~23:4x): the code-bytes cap value.	D84	-	-	-	inside its own entry D84, after its body; 7 tree cite(s) of `D84 addendum 2`
-D84	ADDENDUM 3 (Frank, 2026-08-28 ~23:5x): the caps are an EMERGENCY FAILSAFE, not a tuning.	D84	-	-	-	inside its own entry D84, after its body; 10 tree cite(s) of `D84 addendum 3`
-D93	ADDENDUM (Frank, 2026-09-16, sixty-sixth session — the `tune` axis): the rule HOLDS for `--tune`, and the `--engine` exception stays unique.	D93	-	-	-	inside its own entry D93, after its body; 4 tree cite(s) of `D93 addendum`
-D94	Addendum 2 (same exchange, 18:3x EDT).	D89	-	-	-	inside D94 but continuing the `### D89 addendum` heading above it ("same exchange" as its 18:2x EDT); the tree cites these points as D89's (`D89 addendum point 2` in src/parse/rxt_compose.c, src/core/internal.h); 0 cites of `D94 addendum 2`
-D94	Addendum 3 (18:4x EDT, Frank): "your syntax of plain call doesn't import is a change in direction but i think its a good call. it doesn't do anything surprising. !.rxname is therefore not needed."	D89	-	-	-	inside D94 but the same D89 exchange (18:4x EDT, after D89 addendum's 18:2x and Addendum 2's 18:3x); the text rules D89's composition call syntax; 0 cites of `D94 addendum 3`
-D94	Addendum 4 (18:5x EDT, Frank).	D89	-	-	-	inside D94 but the same D89 exchange (18:5x EDT); src/parse/rxt_compose.c and src/gen/emit_vm.c cite it as `D89 addendum 4(1)`/`4(2)`; 0 cites of `D94 addendum 4`
-D114	Addendum (Frank, 2026-09-21, seventy-fifth session — the sequencing LIFTED for the small rows).	D114	-	-	-	inside its own entry D114, after its body; 3 tree cite(s) of `D114 addendum`
-D118	Addendum (manager, 2026-09-21, from lane clicensus's census — docs/dev/lanes/clicensus_report.md).	D118	-	-	-	inside its own entry D118, after its body; 9 tree cite(s) of `D118 addendum`
-D119	Addendum (Frank, 2026-09-22, seventy-sixth session — THE LOOP'S ITERATION POLICY: repeat, adaptive, searching).	D119	-	-	-	inside its own entry D119, after its body; 10 tree cite(s) of `D119 addendum`
-D119	Addendum (Frank, 2026-09-22, seventy-seventh session — THE THRESHOLD IS RATIFIED).	D119	-	-	-	inside its own entry D119, after its body; 10 tree cite(s) of `D119 addendum`
-D119	Addendum (Frank, 2026-09-23 ~08:5x, seventy-seventh session — THE POPULATION IS TWO CLASS-PURE LEDGERS).	D119	-	-	-	inside its own entry D119, after its body; 10 tree cite(s) of `D119 addendum`
-D120	Addendum (Frank, 2026-09-22 ~23:5x): "Patfacts scheduled after cycle 2 or 3 as you see."	D120	-	-	-	inside its own entry D120; the text schedules "Patfacts", D120's pattern-analysis record; no tree cite
-D136	Addendum 2026-10-29 ([RECID-A], manager ruling; lane recida): comparison (A) is RE-BASED, not given a ninth exception.	D136	-	-	-	inside its own entry D136; comparison (A) is the test-recursion-identity check D136 item 2 wires in; plan.md cites "decisions D136; [RECID-A]"
-D138	Addendum 2026-09-30 (Frank, eighty-seventh session): Q1 RULED, the fold STAYS the default.	D138	-	-	-	inside its own entry D138 ([CLS-TREE] S2 rulings Q1-Q4); the text rules "Q1"; no tree cite of the date label
-D146	Addendum 1 (target tokens; owner 2026-11-07, filed at K0's landing 2026-11-08, merge d9df92c0d; docs/design/memfn/target_seam_units.md §4, §6):	D146	-	-	-	inside its own entry D146, after its body; 10 tree cite(s) of `D146 addendum 1`
-D150	Addendum 1 (Frank, same evening): a reviewer NOTEBOOK.	D150	-	-	-	inside its own entry D150 ([ARTREV], a reviewer-driven review), before the D148 addenda; the text gives ARTREV's reviewers a notebook; no tree cite
-D155	Addendum 4.1 (Frank, 2026-10-12, to the kit; relayed, lane/memfn-r17 latest):	D155	-	-	-	inside its own entry D155, directly after `### D155 addendum 4` (primitives), whose idea it answers; 14 tree cites of `D155 addendum 4.1`
-D163	Addendum 1 (Frank, same day): the composite wrapper is a GENERAL TOOL, not split-specific.	D163	-	-	-	inside its own entry D163, after its body; 2 tree cite(s) of `D163 addendum 1`
-D163	Addendum 2 (Frank, 2026-10-12, after the tool's D6 panel r1, docs/dev/reviews/2026-10-12-r2-composite.md):	D163	-	-	-	inside its own entry D163, after its body; 27 tree cite(s) of `D163 addendum 2`
-D163	Addendum 3 (Frank, 2026-10-12): ONE CAPTURES ARRAY across a compound's parts.	D163	-	-	-	inside its own entry D163, after its body; 26 tree cite(s) of `D163 addendum 3`
-D166	Addendum 1.1 (Frank, same day):	D166	-	-	-	inside its own entry D166, directly after `### D166 addendum 1` (perf counters), which it extends; 13 tree cites of `D166 addendum 1.1`
-D169	Addendum (Frank, 2026-10-21, relayed by the kit; REVERSES the default above):	D169	-	-	-	inside its own entry D169, after its body; 18 tree cite(s) of `D169 addendum`
-D172	Addendum (build go, Frank 2026-10-21, given to the kit):	D172	-	-	-	inside its own entry D172, after its body; 7 tree cite(s) of `D172 addendum`
-D178	Addendum (manager, 2026-10-24, lane upropb):	D178	-	-	-	inside its own entry D178, after its body; 4 tree cite(s) of `D178 addendum`
-D185	Addendum 2026-11-04 (owner ruling):	D185	-	-	-	inside its own entry D185 (APPROACH.md becomes one stream); the text re-places the kit in that stream (planner / back end); no tree cite of the date label
-D186	Addendum 1 (owner, 2026-11-02, from the span_pick critic round 2026-11-02-r1-memfn-spanpick):	D186	-	-	-	inside its own entry D186, after its body; 17 tree cite(s) of `D186 addendum 1`
-D186	Addendum 2 (owner, 2026-11-02, span_pick rev 3 questions):	D186	-	-	-	inside its own entry D186, after its body; 120 tree cite(s) of `D186 addendum 2`
-D187	Addendum 1 (owner, 2026-11-06; "ok, that sounds good"): lossy cubes are a reader's method, never a second shape.	D187	-	-	-	inside its own entry D187, after its body; 15 tree cite(s) of `D187 addendum 1`
-D188	Addendum 1 (owner, 2026-11-06, same day; [XARCH-DEV] end state):	D188	-	-	-	inside its own entry D188, after its body; 49 tree cite(s) of `D188 addendum 1`
-D188	Addendum 2 (owner, 2026-11-07; target seam, docs/design/memfn/target_seam.md Q1):	D188	-	-	-	inside its own entry D188, after its body; 18 tree cite(s) of `D188 addendum 2`
+# owner: the ruled owner; number/old_end (lines:N)/title/date: overrides; reason: one line with its evidence.
+host	old_label	owner	number	old_end	title	date	reason
+D26	Addendum (DOC-1, 2026-08-11) — which PCRE2.	D26	-	-	-	-	inside its own entry D26, after its body; 28 tree cite(s) of `D26 addendum`
+D26	Addendum (Frank, 2026-10-24): compatible with PCRE2 unless PCRE2 has a bug.	D26	-	-	-	-	inside its own entry D26, after its body; 28 tree cite(s) of `D26 addendum`
+D37	Addendum (2026-08-13, [STD1b] landing, found by the oracle re-baseline lane):	D37	-	-	-	-	inside its own entry D37, after its body; 17 tree cite(s) of `D37 addendum`
+D37	Addendum (owner, 2026-11-06, [FEAT-FAMILIES]; Frank: "do we need a rule like this at all ... we have the families"; rulings "1. yes. 2. sure. 3. document. 4. agree"):	D37	-	-	-	-	inside its own entry D37, after its body; 17 tree cite(s) of `D37 addendum`
+D47	RULING-5 ADDENDUM (2026-08-18, thirty-third session, from the R30 panel on the assertions design — manager-applied at merge per the design's Q7).	D47	-	-	-	-	inside its own entry D47; the text amends "Ruling 5", the fifth of D47's six [ENG-BREP] §9 rulings; 28 tree cites of `D47 addendum`
+D47	RULING-5 ADDENDUM, LANDED NOTE (2026-08-19, thirty-fourth session, merge e609a8c).	D47	-	-	-	-	inside its own entry D47; the landed note on the same Ruling 5 cure (D62's flag ruling), directly after D47's first RULING-5 addendum
+D60	ADDENDUM (Frank, same day): ENGINE constants join the set.	D60	-	-	-	-	inside its own entry D60, after its body; 8 tree cite(s) of `D60 addendum`
+D81	ADDENDUM 2026-08-28 (Frank, forty-fourth session): RULED YES — the abi number resets to 1 at the 1.0 release ("yes when we are at 1.0"). Recorded on [REL-META]; nothing changes before then.	D81	-	-	-	-	inside D81, continuing the D40 ADDENDUM paragraph above it, but the tree cites the abi reset at 1.0 as `D81 addendum` (plan_completed.md [REL-1.9], docs/dev/lanes/rel1pre_facts.md, dev_journal.md), never as a D40 addendum
+D83	Addendum (Frank, 2026-09-22, seventy-sixth session — on [OPT-FIRSTSET]'s profile failure and [ENG-PGO]).	D83	-	-	-	-	inside its own entry D83, after its body; 15 tree cite(s) of `D83 addendum`
+D84	ADDENDUM (Frank, 2026-08-28 ~23:3x, same session): "I'd rather it FAIL and document how to handle oversized results."	D84	-	-	-	-	inside its own entry D84, after its body; 10 tree cite(s) of `D84 addendum`
+D84	ADDENDUM 2 (Frank, 2026-08-28 ~23:4x): the code-bytes cap value.	D84	-	-	-	-	inside its own entry D84, after its body; 7 tree cite(s) of `D84 addendum 2`
+D84	ADDENDUM 3 (Frank, 2026-08-28 ~23:5x): the caps are an EMERGENCY FAILSAFE, not a tuning.	D84	-	-	-	-	inside its own entry D84, after its body; 10 tree cite(s) of `D84 addendum 3`
+D93	ADDENDUM (Frank, 2026-09-16, sixty-sixth session — the `tune` axis): the rule HOLDS for `--tune`, and the `--engine` exception stays unique.	D93	-	-	-	-	inside its own entry D93, after its body; 4 tree cite(s) of `D93 addendum`
+D94	Addendum 2 (same exchange, 18:3x EDT).	D89	-	-	-	-	inside D94 but continuing the `### D89 addendum` heading above it ("same exchange" as its 18:2x EDT); the tree cites these points as D89's (`D89 addendum point 2` in src/parse/rxt_compose.c, src/core/internal.h); 0 cites of `D94 addendum 2`
+D94	Addendum 3 (18:4x EDT, Frank): "your syntax of plain call doesn't import is a change in direction but i think its a good call. it doesn't do anything surprising. !.rxname is therefore not needed."	D89	-	-	-	-	inside D94 but the same D89 exchange (18:4x EDT, after D89 addendum's 18:2x and Addendum 2's 18:3x); the text rules D89's composition call syntax; 0 cites of `D94 addendum 3`
+D94	Addendum 4 (18:5x EDT, Frank).	D89	-	-	-	-	inside D94 but the same D89 exchange (18:5x EDT); src/parse/rxt_compose.c and src/gen/emit_vm.c cite it as `D89 addendum 4(1)`/`4(2)`; 0 cites of `D94 addendum 4`
+D114	Addendum (Frank, 2026-09-21, seventy-fifth session — the sequencing LIFTED for the small rows).	D114	-	-	-	-	inside its own entry D114, after its body; 3 tree cite(s) of `D114 addendum`
+D118	Addendum (manager, 2026-09-21, from lane clicensus's census — docs/dev/lanes/clicensus_report.md).	D118	-	-	-	-	inside its own entry D118, after its body; 9 tree cite(s) of `D118 addendum`
+D119	Addendum (Frank, 2026-09-22, seventy-sixth session — THE LOOP'S ITERATION POLICY: repeat, adaptive, searching).	D119	-	-	-	-	inside its own entry D119, after its body; 10 tree cite(s) of `D119 addendum`
+D119	Addendum (Frank, 2026-09-22, seventy-seventh session — THE THRESHOLD IS RATIFIED).	D119	-	-	-	-	inside its own entry D119, after its body; 10 tree cite(s) of `D119 addendum`
+D119	Addendum (Frank, 2026-09-23 ~08:5x, seventy-seventh session — THE POPULATION IS TWO CLASS-PURE LEDGERS).	D119	-	-	-	-	inside its own entry D119, after its body; 10 tree cite(s) of `D119 addendum`
+D120	Addendum (Frank, 2026-09-22 ~23:5x): "Patfacts scheduled after cycle 2 or 3 as you see."	D120	-	-	-	-	inside its own entry D120; the text schedules "Patfacts", D120's pattern-analysis record; no tree cite
+D136	Addendum 2026-10-29 ([RECID-A], manager ruling; lane recida): comparison (A) is RE-BASED, not given a ninth exception.	D136	-	-	-	-	inside its own entry D136; comparison (A) is the test-recursion-identity check D136 item 2 wires in; plan.md cites "decisions D136; [RECID-A]"
+D138	Addendum 2026-09-30 (Frank, eighty-seventh session): Q1 RULED, the fold STAYS the default.	D138	-	-	-	-	inside its own entry D138 ([CLS-TREE] S2 rulings Q1-Q4); the text rules "Q1"; no tree cite of the date label
+D146	Addendum 1 (target tokens; owner 2026-11-07, filed at K0's landing 2026-11-08, merge d9df92c0d; docs/design/memfn/target_seam_units.md §4, §6):	D146	-	-	-	-	inside its own entry D146, after its body; 10 tree cite(s) of `D146 addendum 1`
+D150	Addendum 1 (Frank, same evening): a reviewer NOTEBOOK.	D150	-	-	-	-	inside its own entry D150 ([ARTREV], a reviewer-driven review), before the D148 addenda; the text gives ARTREV's reviewers a notebook; no tree cite
+D155	Addendum 4.1 (Frank, 2026-10-12, to the kit; relayed, lane/memfn-r17 latest):	D155	-	-	-	-	inside its own entry D155, directly after `### D155 addendum 4` (primitives), whose idea it answers; 14 tree cites of `D155 addendum 4.1`
+D163	Addendum 1 (Frank, same day): the composite wrapper is a GENERAL TOOL, not split-specific.	D163	-	-	-	-	inside its own entry D163, after its body; 2 tree cite(s) of `D163 addendum 1`
+D163	Addendum 2 (Frank, 2026-10-12, after the tool's D6 panel r1, docs/dev/reviews/2026-10-12-r2-composite.md):	D163	-	-	-	-	inside its own entry D163, after its body; 27 tree cite(s) of `D163 addendum 2`
+D163	Addendum 3 (Frank, 2026-10-12): ONE CAPTURES ARRAY across a compound's parts.	D163	-	-	-	-	inside its own entry D163, after its body; 26 tree cite(s) of `D163 addendum 3`
+D166	Addendum 1.1 (Frank, same day):	D166	-	-	-	-	inside its own entry D166, directly after `### D166 addendum 1` (perf counters), which it extends; 13 tree cites of `D166 addendum 1.1`
+D169	Addendum (Frank, 2026-10-21, relayed by the kit; REVERSES the default above):	D169	-	-	-	-	inside its own entry D169, after its body; 18 tree cite(s) of `D169 addendum`
+D172	Addendum (build go, Frank 2026-10-21, given to the kit):	D172	-	-	-	-	inside its own entry D172, after its body; 7 tree cite(s) of `D172 addendum`
+D178	Addendum (manager, 2026-10-24, lane upropb):	D178	-	-	-	-	inside its own entry D178, after its body; 4 tree cite(s) of `D178 addendum`
+D185	Addendum 2026-11-04 (owner ruling):	D185	-	-	-	-	inside its own entry D185 (APPROACH.md becomes one stream); the text re-places the kit in that stream (planner / back end); no tree cite of the date label
+D186	Addendum 1 (owner, 2026-11-02, from the span_pick critic round 2026-11-02-r1-memfn-spanpick):	D186	-	-	-	-	inside its own entry D186, after its body; 17 tree cite(s) of `D186 addendum 1`
+D186	Addendum 2 (owner, 2026-11-02, span_pick rev 3 questions):	D186	-	-	-	-	inside its own entry D186, after its body; 120 tree cite(s) of `D186 addendum 2`
+D187	Addendum 1 (owner, 2026-11-06; "ok, that sounds good"): lossy cubes are a reader's method, never a second shape.	D187	-	-	-	-	inside its own entry D187, after its body; 15 tree cite(s) of `D187 addendum 1`
+D188	Addendum 1 (owner, 2026-11-06, same day; [XARCH-DEV] end state):	D188	-	-	-	-	inside its own entry D188, after its body; 49 tree cite(s) of `D188 addendum 1`
+D188	Addendum 2 (owner, 2026-11-07; target seam, docs/design/memfn/target_seam.md Q1):	D188	-	-	-	-	inside its own entry D188, after its body; 18 tree cite(s) of `D188 addendum 2`
+D81	D76 ADDENDUM — abi 3→4, the first exercise of D76 by a change that is NOT a struct-layout event.	-	-	-	-	2026-08-25	undated, inside D81 (2026-08-25) between D81 body and the D40 ADDENDUM of 2026-08-25; the inherit rule would give D76 addendum 2's 2026-10-09, later than the text (abi 3->4 at 5991d4c); no numbered cite names it
