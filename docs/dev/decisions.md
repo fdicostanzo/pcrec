@@ -10133,5 +10133,6 @@ Answered against docs/design/doc_index_format.md rev 0 §7 (six open questions, 
 4. **Soft caps now, revisit later.** A file over its size cap is reported, never refused; `scripts/gestalt` prints one line per index over its cap and nothing otherwise. Whether the per-LINE limits are also soft is an open question (doc §7).
 5. **Kit ledgers: yes, as a proposal.** Send the kit the format (doc §8) for feedback once the design is vetted; the kit decides its own files.
 6. **Known issues third**, right after decisions and plan; upstream issues after it.
+7. **Which index is read when (Frank, 2026-11-10, at the re-check round r2-docfmt2):** "Decision should be read at wake but plan index can be read at first look for existing plans." The decisions index is read whole at wake; the plan index is read on first need, the first time a session looks for existing plans (through `scripts/entry`); the post-compact hook inlines neither (it prints a re-read line for the decisions index only). Supersedes the manager's earlier choice of reading the plan index at wake.
 
 Revisit-when: a unit's stop point (doc §5.4) shows the index unused, or the soft caps fire every heartbeat.

@@ -52,6 +52,7 @@ D6 (critic panels), D27 (blinded authors); `docs/dev/learnings.md` 3;
 
 History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__dev__reviews.md
 - `2026-11-10-r1-docfmt.md` (+ dir) — DESIGN round on docs/design/doc_index_format.md rev 1 (index + details format): NOT READY; addendum census/ownership (F1), no G4 instrument (F2), currency vs faithfulness (F3); all dispositions ruled as proposed, applied in rev 2.
+- `2026-11-10-r2-docfmt2.md` (+ dir) — RE-CHECK of doc_index_format.md rev 2: T1 ready with text fixes; 1.0 not ready (plain-line markers missed, per-owner multiset passes wrong splits); all ruled as proposed (R2-24 by the owner), applied in rev 3.
 - `2026-11-06-r4-vlookbehind-code.md` (+ dir) — CODE round on lookbehind stage 1 (lane/vlbbuild): no answer/speed finding; FIX-NOW refusal shape (F1), four broken sabotage rows, missing lblow guard (hang under plant), DD12a key.
 - `2026-11-06-r3-vlookbehind-ready.md` (+ dir) — LAST re-check of vlookbehind rev 4 (the $_fwd_step seam entry): READY WITH TEXT FIXES, applied by the stage-1 build lane.
 - `2026-11-06-r2-vlookbehind-recheck.md` (+ dir) — RE-CHECK of docs/design/vlookbehind.md rev 3: READY WITH TEXT FIXES (F1 the bounded step is a second encoding splice: seam entry ruled; F2-F7 text).
