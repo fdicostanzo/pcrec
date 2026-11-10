@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k381_report.md
+sections: Summary; run_decide; Callers and counts; Identity and reach; Sabotage fates; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: gate jobs (queued by the kit manager)
