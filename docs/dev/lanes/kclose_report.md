@@ -43,4 +43,4 @@ Dir /var/tmp/pcrec-pcrec/scratch/memfn/kclose/jobs/, numbers 560-569, keys kit-k
 
 Branch lane/memfn-kclose, tip committed, tree clean.
 
-OWED: kit-kclose-strict kit-kclose-ident1 kit-kclose-ident2 kit-kclose-ident3 kit-kclose-reach kit-kclose-test kit-kclose-plants kit-kclose-mech1 kit-kclose-mech2 kit-kclose-mech3 (jobs 560-569, dry-run clean, not queued; mech3 carries S3015's matrix run). Not mine: R-13 owed a (TRACE_VARIANT_RECORDS_FLOOR) needs the --trace variant sweep, which becomes a queue job in the follow-up lane. The K37 red in test-codegen (tests/doc_lint/run_doc_lint.sh:33) is pre-existing on main's tree, not this branch's.
+OWED: none from this lane. The gates 560-569 and R-13 owed a (the --trace variant sweep for TRACE_VARIANT_RECORDS_FLOOR) move to the kclose follow-up lane, which re-bases on main first (kit manager, 2026-11-10).
