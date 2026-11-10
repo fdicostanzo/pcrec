@@ -509,8 +509,8 @@ remodel branch edits rows_check.py or stream_support.tsv.
   output): (i) the distinct id set is equal; (ii) BIJECTION: per owner, the
   `### Dn.aN` headings == the table's `new_id`s (notes: `####` headings ==
   note rows); (iii) EXTENTS, byte-exact with blank lines: each row's extent
-  equals the text under its new heading after removing that heading and its
-  one `(was:)` line, and each entry's body (its old `^## Dn` cut minus every
+  (minus its marker line if heading-form) equals the text under its new
+  heading minus that heading and its `(was:)` line, and each entry's body (its old `^## Dn` cut minus every
   extent inside it) equals the text between its `## ` heading and its first
   `###`; only leading/trailing blank lines of a piece are trimmed; (iv)
   HEADINGS: a `## ` heading's text after the slug equals the old heading's
@@ -666,7 +666,7 @@ after (plant ids: appendix B for 1.0/1, appendix J for T1).
 
 | finding | discharged in | witness red before the fix |
 |---|---|---|
-| R2-17 | §5.2, E | the 16 cites whose line falls in the preceding entry map to their named id (e.g. "D46 (decisions.md:4005)" stays D46) |
+| R2-17 | §5.2, E | the 16 cites whose line falls in the preceding entry map to their named id (e.g. spec_survey.md's D46 cite stays D46) |
 | R2-18 | §2.1, §2.4 | `make test-doc-lint` on the `?` index (33 titles > 200 characters) |
 | R2-19 | §2.4 C13, C | C13 on today's tree without the baseline (D155 addendum 6); a resolved baseline row left in |
 | R2-20 | §2.4 C8, E | C8 plants `:~N`, comma list, `../dev/decisions.md:N` |
