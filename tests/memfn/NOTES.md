@@ -47,3 +47,7 @@ with that text set aside, so no check carries a second copy of the spellings.
 ## run_wreply.sh (moved verbatim from CLAUDE.md, lane u3d27, 2026-11-09)
 
 - **run_wreply.sh** — the window family's REPLY check (D172 S2; wsc4, inverted at commit 5, reduced at commit 6 when the planner's pick and the inverse harness lever were deleted): every witness stamps its NEXT row at the default flags and compiles at five flag sets (K35 floors on cases and keys); REACH through a perturbed tree copy (RESEED unstated: no offset-set row, at least five witnesses moved; R stated under `-fno-run-prefilter`: the RE-SEED refusal fires); `--plants` S1413-S1414 each red (S1412 retired with the pick). Opt-in, no make target; ~10 s plus a tree build; takes the box lock.
+
+## run_rank.sh / rank_check.py (full index entry, moved 2026-11-10 for the 12 KB limit)
+
+- **run_rank.sh**, **rank_check.py** — (R17-a, lane r17a: the same probe build also carries N4's door assertion, `find_door` in src/gen/emit_dfa.c: where a defined FIND's ... SINCE D172 S2 COMMIT 6 (lane wsc6, the kit manager's R1) THE CLAIM IS INVERTED: pcrec hands the kit NO ranking (the ranking and `plan_hint` are the kit's renderer interface, written by the window family's translation), so every predicate of every PRE/OFS site carries rank_n 0 and names no RUN term; pcrec's ranking (`ofs_pred_rank`, `pcrec_find_run_rank`) and its rows S731-S737 retired, and S1420 (a ranking stated on a pre-check part) is the claim's failing direction. N4's door stays.

@@ -39,6 +39,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - **decider_census.tsv**, **decider_census.py** — THE DECIDER CENSUS (span_pick.md rev 5.2 §The tables; unit 1a, lane sp1a): the declared map of every kit decider to its question table or named exception, its backstop grep and plants, and (K38-1, section D) the exact callers of `kit_run_member`/`kit_run_decide`; run by `make test-memfn-rows`. A stage-1 unit that moves a decider edits its row.
 - **reach_equal.py** — REACH EQUALITY between two MF_TRACE builds, per pattern and arm; gone rows DERIVED, equal to `--gone`; failing sets compared; `--map` compares through row_map.tsv; `--limit`/`--no-corpus` are smoke runs (trailer LIMITED, exit 3) (span_pick stage 1's witness; opt-in, no make target, heavy).
 - **mk_mftrace_lib.sh** — builds `build/libpcrec_mftrace.a` (make rule of the same name): build/libpcrec.a with its kit members swapped for `-DMF_TRACE` builds, the ...
+- `occurrence_oracle.py` (+ `_selftest.py`) — K38-2a occurrence oracle (D27-blind, sheet §3.3; k382o_report.md).
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a traced run's rows are that fixture's.
 - `arm_fixtures.c --site-text ID [CLS]` / `--site-parts ID [CLS]` / `--hash-text FILE|-` / `--facts ID [CLS]` (span_cards S2c, includes kit.h): an instance's hashed text (whole or FILE/BODY), any text's hash, the slot's facts; `--hash`: `FORMCLS` lines, per-instance R-MS3 fixtures (r9).
 - `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS (11 sites; replies on a fresh art vs between interleaved defines; the sticky-err fence). run_finder.sh floors it EXACTLY, plants `nsites`-keyed A-mass and M-parked rows (RED, control moved), and runs **run_purity_reach.sh** over **purity_rows.tsv**: each Table A/M/T-VERIFY row dropped must move a reply or be declared unreached (population = window.c's rows).
@@ -63,7 +64,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - **run_pres_picks.sh**, **pres_pick_witnesses.tsv** — KW-8's named witnesses (R17-b′ B3a, lane b3a): a `-DPCREC_CAND_TRACE` pcrec compiles each line (pick, nontrivial, ...
 - **run_pr11.sh**, **pr11_front.py**, **pr11_witnesses.tsv** — the PR-11 control (R17-b′ B3a): over count-collapsed VM hybrids (`RX_VM_PREFILTER_LANG "count-collapsed"`), ...
 ### The position ranking (lane rq2, [MEMFN] RQ-2, D157)
-- **run_rank.sh**, **rank_check.py** — (R17-a, lane r17a: the same probe build also carries N4's door assertion, `find_door` in src/gen/emit_dfa.c: where a defined FIND's ... SINCE D172 S2 COMMIT 6 (lane wsc6, the kit manager's R1) THE CLAIM IS INVERTED: pcrec hands the kit NO ranking (the ranking and `plan_hint` are the kit's renderer interface, written by the window family's translation), so every predicate of every PRE/OFS site carries rank_n 0 and names no RUN term; pcrec's ranking (`ofs_pred_rank`, `pcrec_find_run_rank`) and its rows S731-S737 retired, and S1420 (a ranking stated on a pre-check part) is the claim's failing direction. N4's door stays.
+- **run_rank.sh**, **rank_check.py** — the ranking claim, INVERTED since D172 S2 commit 6: pcrec hands the kit no ranking (every PRE/OFS predicate has rank_n 0); S1420 is the failing direction; N4's door (`find_door`) stays. History: NOTES.md.
 
 ## Maintaining it
 
