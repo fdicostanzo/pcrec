@@ -272,8 +272,11 @@ match. VM: a capture whose span replaces the match (cheap). DFA: the fixed-conte
 occurrence, outside parts fixed per pattern) reduces to lookaround context, i.e. the checker
 product (C3); inside an alternation it needs one capture's tracking (VM today). [ENGINE-WHY] reason
 text: "group 0 inside an alternation needs capture tracking; use one top-level group 0 to keep the
-DFA". It CONSUMES its outside context (find-all resumes after the whole match, as with `\K`),
-unlike lookaround.
+DFA". FIND-ALL RESUME (corrected 2026-11-10, D193 add. 5; OPEN): the trailing part is read but
+not consumed (find-all resumes at group 0's end, as after a lookahead). OPEN, decided by usefulness:
+may the next match's LEADING part reach back before the resume point? `\K`-style no (`b\Kb` on `bbb`
+finds (1,2) only; forward-only reading, no overlap) or lookbehind-style yes (`(?<=b)b` finds (1,2),
+(2,3); group 0 = pure lookaround sugar). Manager's leaning `\K`-style, owner finds it workable.
 
 ## Evidence
 
