@@ -31,7 +31,7 @@ check "census selftest" 0 $PY "$CENSUS" --selftest
 check "census --check: committed table == fresh census" 0 $PY "$CENSUS" --check
 check "control selftest: every plant red, toy green" 0 $PY "$CONTROL" --selftest
 check "named witnesses hold in the table" 0 $PY "$CONTROL" --witnesses-table
-tmp="$(mktemp -d -p "$PCREC_TMPDIR" doc_index.XXXXXX)"
+tmp="$(mktemp -d -p "${PCREC_TMPDIR}" doc_index.XXXXXX)"
 awk -F'\t' 'BEGIN{OFS="\t"} $1=="D94" && $3=="D89" {$3="D94"} {print}' \
     "$ROOT_DIR/docs/dev/doc_index/decisions_owner_rulings.tsv" > "$tmp/rulings.tsv"
 $PY "$CENSUS" --emit --no-cites --rulings "$tmp/rulings.tsv" --table "$tmp/owners.tsv" >/dev/null 2>&1
