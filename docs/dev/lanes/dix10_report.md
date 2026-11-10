@@ -9,7 +9,7 @@ Lane dix10 (opus), branch lane/dix10 off main ee25e11b3, 2026-11-10. BUILD GO qu
 STATE: delivered. Validation COMPLETE (all runs are seconds long). Nothing owed except the items in
 "Not built" below.
 
-**Commits on lane/dix10:** 82a0b0e11 (census + table + rulings), the control + toy fixtures commit,
+**Commits on lane/dix10:** 82a0b0e11 (census + table + rulings), 1944881ed (control + toy fixtures),
 8ce390a5f (runner, CLAUDE.md files, date rules, D76 ruling), and this report.
 
 **Files:**
