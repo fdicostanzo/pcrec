@@ -613,6 +613,10 @@ Appendix G: what pcrec is doing, why, the facts about the two ledgers, and
 the ask. Unit K sends it; nothing changes in either ledger without the kit's
 answer.
 
+
+### 8.1 Kit feedback (2026-11-10)
+
+The kit accepts INDEX BLOCKS IN PLACE for its ledger, with NO details split: bodies stay where they are, so the ledgers stay single-writer and in dialogue order. A `kit` profile: one index line per R-n, N-n and D-n carrying the item's LATEST state (not one line per ack/done bullet); states `new` (no ack), `ack`, `wip>lane/<branch>`, `done@<sha>`, `superseded>R-m`, `void`; the statement is the ask in one sentence for requests, and where it went or what was delivered for responses, with `(+n more)` for multi-part asks. `scripts/entry --work -p kit` lists every item not done, superseded or void (the kit's wake view). Order unchanged: after the accessor, decisions, plan and known issues; the kit converts responses.md in a quiet pass once the profile row exists; requests.md is main's.
 ## 9. Later: the general form and its unlocks (NOTED, not built)
 
 General form: a TIERED-DOCUMENT profile table (index | details | archive tier
