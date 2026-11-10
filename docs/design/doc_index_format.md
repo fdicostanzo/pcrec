@@ -617,6 +617,11 @@ answer.
 ### 8.1 Kit feedback (2026-11-10)
 
 The kit accepts INDEX BLOCKS IN PLACE for its ledger, with NO details split: bodies stay where they are, so the ledgers stay single-writer and in dialogue order. A `kit` profile: one index line per R-n, N-n and D-n carrying the item's LATEST state (not one line per ack/done bullet); states `new` (no ack), `ack`, `wip>lane/<branch>`, `done@<sha>`, `superseded>R-m`, `void`; the statement is the ask in one sentence for requests, and where it went or what was delivered for responses, with `(+n more)` for multi-part asks. `scripts/entry --work -p kit` lists every item not done, superseded or void (the kit's wake view). Order unchanged: after the accessor, decisions, plan and known issues; the kit converts responses.md in a quiet pass once the profile row exists; requests.md is main's.
+## 8.2 Owner's additions (Frank, 2026-11-10, after the build go)
+
+1. **How sessions learn the tools.** Every session must be TOLD about `scripts/entry` where it orients, not left to find it: one line in the manager skill's wake steps, one in docs/dev/lanes/BOILERPLATE.md (lanes), one row in the root CLAUDE.md situation index ("look up a ruling, plan row, bug or script -> `scripts/entry ID|slug`, `-g WORD`, `--work`"), and the accessor's own `--help` naming its levels with one example each. Built in unit T1b.
+2. **A scripts index, same layout, loaded at wake.** A `scripts` profile: index file `scripts/INDEX.md`, one line per script (live, retired), `- <name> <state> — when: <the situation that calls for it>; does: <what it does>. {keywords}`; the "when" field is the point (the decision to run a script is the recall need). Details are NOT a second file: level 2 prints the script's own header comment block (single source; a lint checks every live script has an index line and a header). The root CLAUDE.md situation-index rows that only point at a script become pointers into this index (one fact, one home); lesson rows stay. The DECISIONS index and the SCRIPTS index are read at wake; the plan index on first need. Built in unit T1b, after T1 lands.
+
 ## 9. Later: the general form and its unlocks (NOTED, not built)
 
 General form: a TIERED-DOCUMENT profile table (index | details | archive tier
