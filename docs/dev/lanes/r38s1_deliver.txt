@@ -1,0 +1,5 @@
+report=docs/dev/lanes/r38s1_report.md
+sections: Summary; Item by item; Rulings applied; Open questions; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
