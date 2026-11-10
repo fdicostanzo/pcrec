@@ -44,7 +44,7 @@ VERDICT (T1): ready with listed text fixes — READYT1-1 (scripts/CLAUDE.md head
 
 ### READYT1-9 SUSPECTED (design, minor) — T1's `single` plan parse is a second parser of plan.md beside plan_lint, unstated
 - Severity: maintenance (a parallel mechanism until T2; memory "general mechanisms, not special cases" allows implement-then-replace but it should be named); effort: one sentence; blast: T1 entry, T2.
-- scripts/plan_lint.py exposes no row parser (the `Row` class and parse live inside `lint_plan`, :86/:96); its grammar is the HEAD/HEAD_OK/ATTR regexes (:49-53) and SECTIONS (:33). The plan's Policy section carries template rows `- [ID]` (plan.md:9) and `- [CHILD-ID]` (:15) that a fresh parser would index unless it uses the section list. What would confirm: T1's text says whether `entry` imports plan_lint's regexes/SECTIONS (one grammar) or carries its own copy deleted at T2, and that Policy is not an item section.
+- scripts/plan_lint.py exposes no row parser (the `Row` class and parse live inside `lint_plan`, :86/:96); its grammar is the HEAD/HEAD_OK/ATTR regexes (:49-53) and SECTIONS (:33). The plan's Policy section carries template rows `- [ID]` (plan.md Policy) and `- [CHILD-ID]` (:15) that a fresh parser would index unless it uses the section list. What would confirm: T1's text says whether `entry` imports plan_lint's regexes/SECTIONS (one grammar) or carries its own copy deleted at T2, and that Policy is not an item section.
 
 ### READYT1-10 SUSPECTED (design, minor) — routing row 2 silently shadows any plan tag shaped like an id
 - Severity: answer (a future row unreachable by its tag); effort: one rule; blast: T1 routing. Round-1 F8 remnant.

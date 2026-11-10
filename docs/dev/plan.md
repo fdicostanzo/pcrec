@@ -338,10 +338,16 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   note (2026-11-09, lane sar1mt, ruled by main): R1's rate tie picks a run per ENCODING (byte and utf8 rate tables differ), so `\Gcat\Kdog` stamps RX_REQ_RUN dog (byte) vs cat (utf8): ACCEPTED as one more row of K50's EXACT `#UNDECLARED` list (tests/codegen/manifests/k50_gate_refinement.txt; answers equal, data not an encoding branch). If rate-tie rows grow past a handful, K50 should admit a run difference the artifact's own why stamp declares (the manifest's own 'a stamp, not a wider rule' doctrine), not grow the list.
 - [DOC-INDEX] STATE:started — ruling and tracker files as a short index plus greppable details, one accessor
   filed: 2026-11-10 Frank (the ask in the charter); manager wrote the row (review 2026-11-10-r1-docfmt FREEZE NOTE)
-  status (2026-11-10): design rev 2 (lane docfmt2) applies every ruled finding of review r1-docfmt; owner's six answers recorded as D192; no build go yet
-  next: a RE-CHECK critic round on rev 2 (readiness per unit), then the owner's build go for T1 (profile table, scripts/entry, gestalt line)
-  refs: docs/design/doc_index_format.md (+ doc_index_format_appendix.md); docs/dev/reviews/2026-11-10-r1-docfmt.md; decisions D192 D77 D153
+  status (2026-11-10): design rev 3 (lane docfmt3) applies every ruled finding of re-check r2-docfmt2; readiness tables per unit in §10; no build go yet
+  next: the manager reads rev 3 §5.2 + appendix B against the plant list, then the owner's build go for T1 (profile table, scripts/entry, gestalt row)
+  refs: docs/design/doc_index_format.md (+ doc_index_format_appendix.md); docs/dev/reviews/2026-11-10-r1-docfmt.md; docs/dev/reviews/2026-11-10-r2-docfmt2.md; decisions D192 D77 D153
   Charter (Frank, 2026-11-10): decisions and plan should each be a short "simple statement" file that covers most cases and is easy to recall, plus a details file from which one entry is easy to grep out by its slug; formalize the shared format and say which other files fit. Known issues third (D192).
+  - [CITE-FORMS] STATE:not-started — move tests/spec_history and plan_lint PL14 onto doc_lint's one cite-form table
+    filed: 2026-11-10 manager (review 2026-11-10-r2-docfmt2 R2-27, PLAN)
+    status (2026-11-10): filed; unit 1 builds C8 and C13 from one cite-form table in scripts/doc_profiles.py
+    trigger: T2 of [DOC-INDEX] (plan_lint folds into doc_lint), or the next cite rule proposed anywhere
+    refs: docs/design/doc_index_format.md §2.4, §9; tests/spec_history/spec_history.py; scripts/plan_lint.py PL14
+    Four cite checkers (spec_history, PL14, C8, C13) each carry their own regex, exemptions and baseline policy; the general form is one declared table (form, resolver, exemption prefixes, baseline, fail or warn) they all read.
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)

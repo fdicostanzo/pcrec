@@ -52,7 +52,7 @@ Read this whole file first. Then your own one-question prompt.
   checkout or `git -C /home/pcrec/projects/pcrec show e9687de27:docs/dev/decisions.md`),
   PLUS the two lane-only entries, copies:
   subject/D192.md (the owner's six answers; on lane/docfmt decisions.md:10126)
-  and plan row [DOC-INDEX] (lane/docfmt plan.md:339; read only via
+  and plan row [DOC-INDEX] (lane/docfmt plan.md, Active section; read only via
   `git -C /home/pcrec/projects/pcrec show lane/docfmt:docs/dev/plan.md | grep -n -A6 '^- \[DOC-INDEX\]'`).
   Never the live tree's ruling files.
 - MANAGER'S CHOICE ALREADY MADE (do not re-litigate; recorded by message
