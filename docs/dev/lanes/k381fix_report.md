@@ -89,6 +89,8 @@ tests/memfn paths lists 35 rows, all already in mech.sh's 75.
 
 ## STATE AT HANDOFF
 
-Tip: the last commit on lane/memfn-k381 (this report). OWED: none from this lane (the gate jobs are the kit manager's, written and dry-run, not queued): the kit manager's queue of jobs 520-529
+Tip: the last commit on lane/memfn-k381 (this report).
+OWED: none from this lane (the gate jobs are the kit manager's, written and dry-run, not queued).
+The kit manager's queue: jobs 520-529
 (byte-identity over 71 arms, reach, make test with the three RUN CALLERS plants, G2 plants, 75 mech
 rows). Not done: nothing else in the ruled set.
