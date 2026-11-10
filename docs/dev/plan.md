@@ -518,6 +518,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-09): UNSCHEDULED. Default never an error (D26). Optimize (constant matcher, dead branches dropped) + an --emit-facts fact + an opt-in caller policy allow|warn|error ('must be matchable', Frank) at [IFACE-PUSH]
   trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
   refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]; [COND-FAMILY] (D193: speed leads, so conditionals stay refused until the family order reaches the node; no rework either way)
+- [FIND-MINW] STATE:not-started — searches stop where too few bytes remain for any match (minimum width)
+  filed: 2026-11-10 Frank ("File"), after asking whether the kit's find window gets the minimum required bytes; it does not
+  status (2026-11-10): UNSCHEDULED. pcrec computes the minimum width but only the VM stops early on it; kit find sites end at n - end_back (0 or 1, D11's holdback) and the DFA scan loop ignores it (evidence in Today below)
+  trigger: (D77) a bench case where the search tail past the last possible match start shows in the profile: short subjects (lines/fields searched one at a time) with a minimum width that is a sizeable share of the subject, or find-all whose final failing search dominates
+  refs: memfn/include/memfn.h:751 (end_back); D157 (facts, not methods); D11; [ENGINE-WHY] (unrelated sibling filed the same day)
+  Today: `pcrec_minw`/`pcrec_cwmin` (src/opt/callgraph.c:333; facts row `width [7,inf)` for `abc[0-9]+xyz`); VM early stop src/gen/emit_vm.c:3804, 6709, 9651; `PcrecFind.holdback` src/gen/memfn_sites.h:282, emit_dfa.c:7141; sites trim only by their own term (`memchr(subject + pos + 1, 'b', n - pos - 1)`)
+  Shape (manager's leaning): a FACT, not a method: "no match starts within the last k bytes". General form: end_back widens from 0/1 to a proven distance per site (minimum width minus the term's offset inside the match, plus the holdback), filled for every site and for the DFA's match-start search; the kit only uses a tighter `hi`. A kit seam change (MF_SITE_ABI) and a measurement card (new-method rule) when built.
 - [ENGINE-WHY] STATE:not-started — every DFA-blocking construct, with its offset and the fix that keeps the DFA
   filed: 2026-11-10 Frank ("Yes"): a user should be able to force the DFA, see the failure, read why, and adjust the pattern to stay on the DFA
   status (2026-11-10): UNSCHEDULED. `--engine=dfa` is already do-or-die (docs/spec/cli.md §1.13) but names only the FIRST reason; `auto` never says it chose the VM or why
