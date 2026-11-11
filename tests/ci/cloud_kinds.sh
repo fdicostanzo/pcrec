@@ -16,7 +16,7 @@ set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 root=${ROOT:-$(cd "$here/../.." && pwd)}
 tsv=${KINDS_TSV:-$here/cloud_kinds.tsv}
-cols="kind command selector shards max_parallel limit_min needs owners population"
+cols="kind command selector shards max_parallel limit_min needs owners population measured reweight_margin setup_s reweigh"
 
 die() { echo "cloud_kinds: $*" >&2; exit 2; }
 row() { awk -F'\t' -v k="$1" '/^#/ || $1 == "kind" {next} $1 == k {print; found=1; exit} END {exit !found}' "$tsv"; }

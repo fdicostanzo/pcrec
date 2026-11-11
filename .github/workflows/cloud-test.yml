@@ -96,8 +96,13 @@ jobs:
         id: rec
         if: always()
         run: |
-          mkdir -p build/cloudout
-          bash tests/ci/cloud_gather.sh record "${{ matrix.shard }}" "$(cat build/cloudout/rc 2>/dev/null || echo none)" \
+          mkdir -p build/cloudout build/ci
+          # per-section walls from the stamped make --debug=j side file (same step as ci.yml's); record turns
+          # them and the log's per-job lines into build/cloudout/units.tsv (tests/ci/cloud_units.py)
+          if [ -s build/ci/sections.raw ]; then
+            python3 scripts/sectiontimes report build/ci/sections.raw --open > build/ci/sections.tsv || true
+          fi
+          CLOUD_SECTIONS_TSV=build/ci/sections.tsv bash tests/ci/cloud_gather.sh record "${{ matrix.shard }}" "$(cat build/cloudout/rc 2>/dev/null || echo none)" \
             build/ci/test.log build/cloudout/result.txt
           cp -f build/ci/test.log build/ci/sections.tsv build/watchdog.log build/cloudout/ 2>/dev/null || true
           echo "slug=$(bash tests/ci/cloud_gather.sh slug "${{ matrix.shard }}")" >> "$GITHUB_OUTPUT"

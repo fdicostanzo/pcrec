@@ -590,6 +590,12 @@ test-ci-shards:
 cloud-check: all
 	@bash tests/ci/cloud_check.sh $(TEST_SECTIONS)
 
+# [CLOUD-SUITE] reweigh: regenerate the cloud shard tables from MEASURED times (tests/ci/cloud_reweight.sh;
+# KIND = a row of tests/ci/cloud_kinds.tsv or `all`; MEASURE=1 first re-measures from the last runs on GitHub; DRY=1
+# prints the plan and writes nothing). The validator afterwards is `make cloud-check`.
+cloud-reweight: all
+	@bash tests/ci/cloud_reweight.sh $(or $(KIND),all) $(if $(MEASURE),--measure) $(if $(DRY),--dry)
+
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
 # section a change touches instead of paying for the whole suite. See
@@ -2310,7 +2316,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-d27region test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-targets test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards cloud-check \
+        test-startset test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards cloud-check cloud-reweight \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean
