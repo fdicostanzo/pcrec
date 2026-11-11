@@ -1,0 +1,47 @@
+# memfn/tests/g2_units.tsv -- the UNITS of run_g2.sh --quick (R-39) and their declared weights.
+#
+# A unit is a block of run_g2.sh that runs, judges and reports on its own: want UNIT / udone UNIT mark
+# its edges there, and `g2_parts.py assign` deals the units to the N parts of `--part K/N` by a
+# deterministic greedy rule over the weights below (heaviest first, to the lightest part so far; ties
+# to the lower part number, then to the table order). NO run-time state enters the assignment.
+# The generator stage (the prelude) is run by every part and is no unit.
+#
+# Columns (TAB-separated): unit, weight (seconds, a RELATIVE cost), weight_source.
+# SCALE (r39b, 2026-11-11): seconds a unit's wall took INSIDE its part in gate job 561 (the whole --quick g2 as N=4 on the
+# Linux dev box: 16 cores, a Ryzen 7 7700X, G2_JOBS at its default = online CPUs, not niced, the box loaded by other gate jobs);
+# the five simd-* units are this lane's own `--units NAME` runs (G2_JOBS=2, nice 10, one at a time) scaled by 221/251 so that
+# together they equal the 221 s job 561 measured for the unsplit simd unit. A 4-CORE CI RUNNER'S RATIOS MAY DIFFER (the compile
+# and driver legs here overlap on 16 cores; the single-threaded gcc driver and the sequential legs do not shrink). RE-MEASURE
+# from a CI split run: `python3 -I memfn/tests/g2_parts.py reweight --table memfn/tests/g2_units.tsv --source 'TEXT' gather.log`
+# rewrites the weight and source of every unit the gather.log (or any log with `G2UNIT name seconds` lines) measured, then
+# `g2_parts.py predict --table memfn/tests/g2_units.tsv 4 8` prints the dealt parts' summed weights.
+# Rule for the table: no unit may weigh more than total/N for the N in use (here total/8 = 103), else N parts cannot balance.
+# A weight is a balance input only; a wrong weight costs balance, never coverage (g2_parts.py gather proves coverage).
+gcc	81	job 561 wall in part
+simd-facts	45	own --units run x 221/251 (raw s: facts 51, answers 48, paths 17, plants-a 68, plants-b 67)
+simd-answers	42	own --units run x 221/251 (raw s: facts 51, answers 48, paths 17, plants-a 68, plants-b 67)
+simd-paths	15	own --units run x 221/251 (raw s: facts 51, answers 48, paths 17, plants-a 68, plants-b 67)
+simd-plants-a	60	own --units run x 221/251 (raw s: facts 51, answers 48, paths 17, plants-a 68, plants-b 67)
+simd-plants-b	59	own --units run x 221/251 (raw s: facts 51, answers 48, paths 17, plants-a 68, plants-b 67)
+asan	46	job 561 wall in part
+win	54	job 561 wall in part
+w1w3	41	job 561 wall in part
+any	22	job 561 wall in part
+k1	6	job 561 wall in part
+rows	5	job 561 wall in part
+w2-1	34	job 561 wall in part
+w2-2	35	job 561 wall in part
+w2-3	30	job 561 wall in part
+w2-4	40	job 561 wall in part
+w2-5	37	job 561 wall in part
+w2-6	30	job 561 wall in part
+w2-7	16	job 561 wall in part
+w2-8	11	job 561 wall in part
+w2-9	3	job 561 wall in part
+w2-10	4	job 561 wall in part
+w2-11	2	job 561 wall in part
+w2-12	20	job 561 wall in part
+w2-13	26	job 561 wall in part
+w2-14	15	job 561 wall in part
+w2-15	20	job 561 wall in part
+w2-16	23	job 561 wall in part
