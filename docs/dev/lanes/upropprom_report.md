@@ -32,7 +32,7 @@ No pcrec bug, no author error that survived to the promoted files.
 
 ### Wiring and pins
 
-`d27/` rides `test-corpus` (recursive) and `test-uprops` §8. `test-rxtsource` re-pinned by its own found values: CENSUS 336/7032/98198, RUNSH 312/7032/98198, C3_SKIP 75141, C3_SKIP_PCRE2ONLY 34885 (PASS and VERIFIABLE unchanged); passes (300 checks). Local sections run: see the last lines of this report for results.
+`d27/` rides `test-corpus` (recursive) and `test-uprops` §8. `test-rxtsource` re-pinned by its own found values: CENSUS 336/7032/98198, RUNSH 312/7032/98198, C3_SKIP 75141, C3_SKIP_PCRE2ONLY 34885 (PASS and VERIFIABLE unchanged); passes (300 checks). `test-startset`'s forced-VM mover manifest re-derived by `census_s1.py` (its documented regeneration): +443 d27 rows, -71 rows of `tests/utf8/uprop_more.rxt`/`uprop_blk_age.rxt` whose twins in d27 now take the dedup id; the check's own counts (443 / 71) and the census agree; `test-startset` green. Local sections green: test-corpus (size tripwire OK), test-uprops (54 passed), test-rxtsource (300), test-startset, test-claudemd-size, test-spec-history, test-doc-lint.
 
 ### OWED
-Full `make test` in the cloud (`cloudrun --owner main --kind test --name upropprom`); startset manifests, axes allowances and size tripwire are the sections that could move beyond rxtsource.
+Full `make test` in the cloud (`cloudrun --owner main --kind test --name upropprom`); `test-axes` (opt-in, hours) was not run locally; its allowances are the one pin family not checked.
