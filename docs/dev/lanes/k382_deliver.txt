@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k382_report.md
+sections: Summary; EMIT-3 first; Seam event (Parts A and B); abi package; PLAN items (c)-(e) and K7 U1/U3; Movers (5.1 populations); Sabotage fates; Checks; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
