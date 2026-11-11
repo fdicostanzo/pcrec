@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # tests/ci/cloud_check.sh -- the structural checks of the cloud-run machinery ([CLOUD-SUITE] B). `make cloud-check`
 # (opt-in; the Makefile passes $(TEST_SECTIONS) on argv, as for check_shards.sh).
-#   1. every declared kind's selector, when it is a shard table, holds TEST_SECTIONS EXACTLY (check_shards.sh on
-#      that table, no workflow matrix) and its `shards` column resolves; limits/parallelism are positive integers;
+#   1. every declared kind's POPULATION CHECK (its `population` column) passes -- for test, the table holds
+#      TEST_SECTIONS EXACTLY; for axes, the shards' plans sum to the unsplit sweep's jobs once each (needs the built
+#      compiler: `make cloud-check` builds first); for the sanitizers, the table is san_scripts.txt exactly -- and its
+#      `shards` column resolves; limits/parallelism are positive integers;
 #      `needs` names only what .github/actions/shard-setup provides.
 #   2. NO KIND IS NAMED IN CODE: for each declared kind, no non-comment line of cloud_gather.sh, cloud_kinds.sh,
 #      scripts/cloudrun, queuewatch's cloud source, cloud-test.yml or the shard-setup action spells it as a case
@@ -23,10 +25,13 @@ for k in $kinds; do
     sel=$(bash "$K" get "$k" selector); n=$(bash "$K" shards "$k" | wc -w)
     [ "$n" -ge 1 ] || bad "kind $k: no shards"
     if [ "$sel" != - ] && [ -f "$root/$sel" ]; then
-        out=$(TABLE=$root/$sel CI_YML=none bash "$here/check_shards.sh" "$@" 2>&1) \
-            && ok "kind $k: $sel holds TEST_SECTIONS exactly in its $n shards" || bad "kind $k: $sel: $out"
+        # the kind's own population check (its `population` column) COUNTS its selector's units; the generic part
+        # here is only that the shards column agrees with the table
         [ "$(sed -n 's/^# shards=//p' "$root/$sel")" = "$n" ] || bad "kind $k: shards column disagrees with $sel"
     fi
+    pc=$(bash "$K" population "$k"); pc=${pc//\{sections\}/$*}
+    if [ -z "$pc" ]; then bad "kind $k: no population check declared (a kind must count what its shards run)"
+    else out=$(cd "$root" && bash -c "$pc" 2>&1) && ok "kind $k: population check passes ($(echo "$out" | tail -1))" || bad "kind $k: population check: $out"; fi
     for f in max_parallel limit_min; do
         v=$(bash "$K" get "$k" $f); case $v in ''|*[!0-9]*|0) bad "kind $k: $f '$v' is not a positive integer" ;; esac
     done
