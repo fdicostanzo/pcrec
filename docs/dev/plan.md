@@ -354,6 +354,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-10): STARTED (Frank "Let's start it", an exception to close-before-start); research lane cloudres running; repo is PUBLIC (standard runners free, no minute cap); paid personal account (Pro: 40 concurrent jobs, 6 h per job, 256 jobs per matrix); local full suite ~12h45m, mech ~54 % and axes ~32 %
   next: STEP 0 = shard mech alone N ways on one commit, own concurrency group (no cancel-on-push), red shard never cancels others; compare verdict + wall time with the same commit's local run; timing runs stay on the box
   refs: .github/workflows/ci.yml ([CI-SHARD], tests/ci/shards.tsv); scripts/battery.sh; scripts/verdict; decisions D177
+  REQUIREMENTS (Frank 2026-11-10): (1) CPU-aware: runner CPUs vary, so each shard records its CPU flags and SIMD-needing rows declare the feature they need; a row the CPU cannot run is a LOUD skip listed in the verdict, never green by absence; (2) casual use: `make test` on any branch, one command, not only the full suite; (3) the kit dispatches and reads its own runs independently (owner-tagged runs, its own results)
 
 ## Candidates ([OPTLOOP])
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
