@@ -194,18 +194,67 @@ static const CtxContrib ctx_rows[] = {
 };
 enum { CTXROW_N = (int)(sizeof ctx_rows / sizeof ctx_rows[0]) };
 
-/* The machine has too many context sets or atoms: DECLINE it exactly as a
- * state-cap overflow does — recorded for [SEL-1]'s auto retry (which routes
- * the pattern to the VM), reported rather than refused on an optional
- * machine, refused otherwise. Never a truncated list or partition. */
+/* [UCP] U3 the non-ASCII part of code-point set `iv`/`n`: the index of its
+ * first interval reaching 0x80 (in `*from`), and that interval's low end
+ * clamped to 0x80 (`*lo0`). The part is empty when `*from == n`. */
+static void nonascii_part(const PcrecCpRange *iv, int n, int *from,
+                          unsigned *lo0)
+{
+    int i = 0;
+    while (i < n && iv[i].hi < 0x80u) i++;
+    *from = i;
+    *lo0 = i < n && iv[i].lo < 0x80u ? 0x80u : (i < n ? iv[i].lo : 0);
+}
+
+/* [UCP] U3 do two code-point sets have the same non-ASCII members? */
+static bool nonascii_same(const PcrecCpRange *a, int na,
+                          const PcrecCpRange *b, int nb)
+{
+    int fa, fb;
+    unsigned la, lb;
+    nonascii_part(a, na, &fa, &la);
+    nonascii_part(b, nb, &fb, &lb);
+    if (na - fa != nb - fb) return false;
+    if (fa == na) return true;
+    if (la != lb || a[fa].hi != b[fb].hi) return false;
+    for (int k = 1; k < na - fa; k++)
+        if (a[fa + k].lo != b[fb + k].lo || a[fa + k].hi != b[fb + k].hi)
+            return false;
+    return true;
+}
+
+/* Is list entry `cs` the set (`bits`, `iv`/`niv`) contributed by row `r`?
+ * Byte-level machines compare the byte image alone (iv NULL on both sides),
+ * exactly as before U3; an island machine also compares the non-ASCII
+ * members and never merges two rows' sets. */
+static bool ctx_same(const PcrecCtxSet *cs, const uint8_t bits[32],
+                     const PcrecCpRange *iv, int niv, int r)
+{
+    return cs->row == r && memcmp(cs->bits, bits, 32) == 0 &&
+           nonascii_same(cs->iv, cs->niv, iv, niv);
+}
+
+/* The way out a DFA over-limit refusal names: the VM, except for a
+ * character-stepped machine, which the VM cannot read yet (`Ctx.island_route`
+ * offers no [SEL-1] retry either): there the ASCII word set, `(?aW)`, which
+ * is byte-expressible. */
+static const char *dfa_way_out(const Dfa *d)
+{
+    return d->island ? "restrict the word set with (?aW)" : "try --engine=vm";
+}
+
+/* The machine has too many sets or atoms (`what` names which): DECLINE it
+ * exactly as a state-cap overflow does — recorded for [SEL-1]'s auto retry
+ * (which routes the pattern to the VM), reported rather than refused on an
+ * optional machine, refused otherwise. Never a truncated list or partition. */
 static void ctx_decline(Ctx *cx, Dfa *d, const char *what, int limit)
 {
     cx->dfa_overflowed = true;
     snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
-             "dfa overflowed: >%d context %s", limit, what);
+             "dfa overflowed: >%d %s", limit, what);
     if (d->optional) { d->overflowed = true; return; }
     pcrec_ctx_fail(cx, 0, "pattern too complex for the DFA engine (more than %d "
-                   "context %s on one machine; try --engine=vm)", limit, what);
+                   "%s on one machine; %s)", limit, what, dfa_way_out(d));
 }
 
 /* Fill `d->ctx[]` from the contributor table and write each N_CTX state's
@@ -222,12 +271,23 @@ static bool ctx_collect(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *cbit)
             uint8_t bits[32];
             if (!ctx_rows[r].reads(st) || !ctx_rows[r].set(st, e, bits))
                 continue;
+            /* [UCP] U3 an island machine's sets are their ASCII byte image
+             * plus their code points: every byte >= 0x80 is the one
+             * non-ASCII class, so no set may split it, and a non-ASCII
+             * character's membership is its atom's, read off `iv`. */
+            const PcrecCpRange *iv = NULL;
+            int niv = 0;
+            if (nfa->island) {
+                memset(bits + 16, 0, 16);
+                if (r == CTXROW_CTX) { iv = st->wiv; niv = st->wn; }
+            }
             int k = 0;
             while (k < d->nctx &&
-                   memcmp(d->ctx[k].bits, bits, 32) != 0) k++;
+                   !ctx_same(&d->ctx[k], bits, iv, niv,
+                             nfa->island ? r : d->ctx[k].row)) k++;
             if (k == d->nctx) {
                 if (d->nctx == PCREC_MAX_CTX_SETS) {
-                    ctx_decline(cx, d, "sets", PCREC_MAX_CTX_SETS);
+                    ctx_decline(cx, d, "context sets", PCREC_MAX_CTX_SETS);
                     return false;
                 }
                 PcrecCtxSet *cs = &d->ctx[d->nctx++];
@@ -235,6 +295,8 @@ static bool ctx_collect(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *cbit)
                 cs->desc = ctx_rows[r].desc;
                 cs->row  = r;
                 memcpy(cs->bits, bits, 32);
+                cs->iv   = iv;
+                cs->niv  = niv;
             }
             /* Two rows never share an entry (the table's header says why);
              * if they did, the knob and the gate's index would each read
@@ -286,11 +348,20 @@ static void eqclasses(Nfa *nfa, Dfa *d)
     int ncls = 1;
 
     for (int i = 0; i < nfa->n; i++) {
-        if (nfa->st[i].k != N_CLASS) continue;
+        if (nfa->st[i].k != N_CLASS && nfa->st[i].k != N_WCHAR) continue;
         ncls = refine_by(d, ncls, nfa->st[i].cls);
     }
     for (int k = 0; k < d->nctx; k++)
         if (ctx_entry_live(d, k)) ncls = refine_by(d, ncls, d->ctx[k].bits);
+    /* [UCP] U3 an island machine's every byte >= 0x80 is ONE class, the
+     * island's entry column: no set above split it (each is ASCII-only). */
+    if (d->island) {
+        uint8_t hi[32];
+        memset(hi, 0, 16);
+        memset(hi + 16, 0xff, 16);
+        ncls = refine_by(d, ncls, hi);
+        d->isl_na = d->clsmap[0x80];
+    }
     d->ncls = ncls;
     for (int c = 255; c >= 0; c--) d->rep[d->clsmap[c]] = (uint8_t)c;
 }
@@ -307,9 +378,9 @@ static uint32_t ctx_vec_of_byte(const Dfa *d, unsigned b)
 /* THE ATOMS: the realized membership vectors, plus the empty vector (the
  * absent side's), sorted ascending, and each class's atom. Returns false if
  * the machine was declined for too many atoms (optional machines only). */
-static bool ctx_atoms(Ctx *cx, Dfa *d)
+static bool ctx_atoms(Ctx *cx, Dfa *d, const uint32_t *chrv)
 {
-    uint32_t seen[257];
+    uint32_t seen[257 + PCREC_MAX_CHAR_STEP_ATOMS];
     int n = 0;
     seen[n++] = 0;
     for (int c = 0; c < d->ncls; c++) {
@@ -318,8 +389,15 @@ static bool ctx_atoms(Ctx *cx, Dfa *d)
         while (k < n && seen[k] != v) k++;
         if (k == n) seen[n++] = v;
     }
+    /* [UCP] U3 an island machine's character atoms realize context vectors
+     * of their own (a non-ASCII word character under UCP `\b`). */
+    for (int a = 0; d->island && a < d->nchr; a++) {
+        int k = 0;
+        while (k < n && seen[k] != chrv[a]) k++;
+        if (k == n) seen[n++] = chrv[a];
+    }
     if (n > PCREC_MAX_CTX_ATOMS) {
-        ctx_decline(cx, d, "atoms", PCREC_MAX_CTX_ATOMS);
+        ctx_decline(cx, d, "context atoms", PCREC_MAX_CTX_ATOMS);
         return false;
     }
     for (int a = 1; a < n; a++)          /* insertion sort: n <= 16 */
@@ -334,12 +412,191 @@ static bool ctx_atoms(Ctx *cx, Dfa *d)
         while (d->atomvec[a] != v) a++;
         d->catom[c] = (uint8_t)a;
     }
+    for (int c = 0; d->island && c < d->nchr; c++) {
+        int a = 0;
+        while (d->atomvec[a] != chrv[c]) a++;
+        d->chrctx[c] = (uint8_t)a;
+    }
     /* clsctx: some live entry is an A_CTX set (not the gate's). */
     d->clsctx = false;
     for (int k = 0; k < d->nctx; k++)
         if (ctx_entry_live(d, k) && d->ctx[k].row == CTXROW_CTX)
             d->clsctx = true;
     return true;
+}
+
+/* ---- [UCP] U3 the island's character atoms (ucp_design.md §3.1, §3.4) ----
+ *
+ * A character-stepped machine reads a non-ASCII character as ONE symbol:
+ * which of the machine's non-ASCII sets it is in. The ATOMS are those
+ * membership vectors that some code point realizes (the non-ASCII universe
+ * cut at every set boundary, surrogates excluded, since a decoder never
+ * yields one), plus the two ⊥ atoms of the ill-formed-byte rule (§3.5): in
+ * no set, not a word character, split by whether the byte is one this
+ * encoding may start a character at — the one fact K50's gate reads. */
+
+/* An island set index's two non-index values: the set has no non-ASCII
+ * member (`ISL_SET_NONE`), or holds every one (`ISL_SET_ALL`: every
+ * character is in it, so it splits no atom and takes no membership bit or
+ * `PCREC_MAX_CHAR_STEP_SETS` slot -- the unanchored wrap's loop set, `.`'s
+ * non-ASCII part; review r4 ucpu3 ADMIT-3). */
+enum { ISL_SET_NONE = -1, ISL_SET_ALL = -2 };
+
+/* Does set `iv`/`n` hold every non-ASCII code point (surrogates aside,
+ * which no decoded character is)? */
+static bool nonascii_all(const PcrecCpRange *iv, int n)
+{
+    unsigned next = 0x80u;
+    for (int i = 0; i < n; i++) {
+        if (iv[i].hi < next) continue;
+        if (iv[i].lo > next && !(next == 0xD800u && iv[i].lo <= 0xE000u))
+            return false;
+        next = iv[i].hi + 1u;
+    }
+    return next >= 0x110000u;
+}
+
+/* The index of the island set with `iv`/`n`'s non-ASCII members, added if
+ * new; `ISL_SET_NONE`/`ISL_SET_ALL` (above), or -1 (after a decline) when
+ * there is no room. */
+static int isl_set_index(Ctx *cx, Dfa *d, const PcrecCpRange *iv, int n)
+{
+    int from;
+    unsigned lo0;
+    nonascii_part(iv, n, &from, &lo0);
+    if (from == n) return ISL_SET_NONE;
+    if (nonascii_all(iv, n)) return ISL_SET_ALL;
+    for (int j = 0; j < d->niset; j++)
+        if (nonascii_same(d->iset[j].iv, d->iset[j].n, iv, n)) return j;
+    if (d->niset == PCREC_MAX_CHAR_STEP_SETS) {
+        ctx_decline(cx, d, "non-ASCII character sets", PCREC_MAX_CHAR_STEP_SETS);
+        return -1;
+    }
+    d->iset[d->niset].iv = iv;
+    d->iset[d->niset].n  = n;
+    return d->niset++;
+}
+
+/* Is code point `c` in set `iv`/`n` (sorted, disjoint intervals)? */
+static bool cp_in(const PcrecCpRange *iv, int n, unsigned c)
+{
+    int lo = 0, hi = n - 1;
+    while (lo <= hi) {
+        int m = (lo + hi) / 2;
+        if (c < iv[m].lo) hi = m - 1;
+        else if (c > iv[m].hi) lo = m + 1;
+        else return true;
+    }
+    return false;
+}
+
+/* Ascending order for the boundary sort. */
+static int cmp_unsigned(const void *a, const void *b)
+{
+    unsigned x = *(const unsigned *)a, y = *(const unsigned *)b;
+    return x < y ? -1 : x > y;
+}
+
+/* Fill the island sets (`wsi[i]`: NFA state i's set index, -1 if none),
+ * the character atoms and each atom's CONTEXT vector over the live context
+ * list (`chrv`, the input `ctx_atoms` adds to the context atoms). Returns
+ * false if the machine was declined (optional machines only). */
+static bool island_atoms(Ctx *cx, Nfa *nfa, Dfa *d, int8_t *wsi,
+                         uint32_t *chrv)
+{
+    int8_t ctxsi[PCREC_MAX_CTX_SETS];
+    d->niset = 0;
+    for (int i = 0; i < nfa->n; i++) {
+        wsi[i] = ISL_SET_NONE;
+        if (nfa->st[i].k == N_WCHAR)
+            wsi[i] = (int8_t)isl_set_index(cx, d, nfa->st[i].wiv, nfa->st[i].wn);
+        if (d->overflowed) return false;
+    }
+    for (int k = 0; k < d->nctx; k++) {
+        ctxsi[k] = ISL_SET_NONE;
+        if (ctx_entry_live(d, k) && d->ctx[k].row == CTXROW_CTX)
+            ctxsi[k] = (int8_t)isl_set_index(cx, d, d->ctx[k].iv, d->ctx[k].niv);
+        if (d->overflowed) return false;
+    }
+
+    /* The cut points: every set boundary, the surrogate gap's two ends and
+     * the universe's; between two consecutive cuts every code point has one
+     * membership vector. */
+    int nb = 4;
+    for (int j = 0; j < d->niset; j++) nb += 2 * d->iset[j].n;
+    unsigned *cut = pcrec_arena_alloc(&cx->arena, (size_t)nb * sizeof(unsigned));
+    int m = 0;
+    cut[m++] = 0x80u; cut[m++] = 0xD800u; cut[m++] = 0xE000u; cut[m++] = 0x110000u;
+    for (int j = 0; j < d->niset; j++)
+        for (int t = 0; t < d->iset[j].n; t++) {
+            unsigned lo = d->iset[j].iv[t].lo, hi1 = d->iset[j].iv[t].hi + 1u;
+            if (lo > 0x80u && lo < 0x110000u) cut[m++] = lo;
+            if (hi1 > 0x80u && hi1 < 0x110000u) cut[m++] = hi1;
+        }
+    qsort(cut, (size_t)m, sizeof *cut, cmp_unsigned);
+
+    /* The SEGMENTS, kept for the emitter: `seg_lo[t]` the first code point
+     * of segment t, `seg_atom[t]` its atom, so a decoded character's atom is
+     * one search over `seg_lo`. The surrogate gap is a segment no decoded
+     * character reaches; it carries ⊥S's index. */
+    unsigned *slo = pcrec_arena_alloc(&cx->arena, (size_t)m * sizeof *slo);
+    uint8_t *sat = pcrec_arena_alloc(&cx->arena, (size_t)m);
+    int nseg = 0;
+    d->nchr = 0;
+    for (int t = 0; t + 1 < m; t++) {
+        unsigned c = cut[t];
+        if (c == cut[t + 1]) continue;
+        slo[nseg] = c;
+        sat[nseg++] = 0xFFu;
+        if (c >= 0xD800u && c < 0xE000u) continue;
+        uint32_t v = 0;
+        for (int j = 0; j < d->niset; j++)
+            if (cp_in(d->iset[j].iv, d->iset[j].n, c)) v |= 1u << j;
+        int a = 0;
+        while (a < d->nchr && d->chrvec[a] != v) a++;
+        sat[nseg - 1] = (uint8_t)a;
+        if (a < d->nchr) continue;
+        if (d->nchr + 2 >= PCREC_MAX_CHAR_STEP_ATOMS) {
+            ctx_decline(cx, d, "non-ASCII character atoms", PCREC_MAX_CHAR_STEP_ATOMS);
+            return false;
+        }
+        d->chrvec[d->nchr++] = v;
+    }
+    d->chr_bots = d->nchr++;
+    d->chr_botn = d->nchr++;
+    for (int t = 0; t < nseg; t++)
+        if (sat[t] == 0xFFu) sat[t] = (uint8_t)d->chr_bots;
+    d->nseg = nseg;
+    d->seg_lo = slo;
+    d->seg_atom = sat;
+    d->chrvec[d->chr_bots] = d->chrvec[d->chr_botn] = 0;
+
+    /* Each atom's context vector: a valid character's is its membership in
+     * each context set's island set; ⊥ is in no context set, and ⊥ of a byte
+     * that may not start a character is in the non-start set. */
+    for (int a = 0; a < d->nchr; a++) {
+        bool bot = a == d->chr_bots || a == d->chr_botn;
+        uint32_t v = 0;
+        for (int k = 0; k < d->nctx; k++) {
+            if (!ctx_entry_live(d, k)) continue;
+            if (d->ctx[k].row == CTXROW_NOSTART) {
+                if (a == d->chr_botn) v |= 1u << k;
+            } else if (!bot && (ctxsi[k] == ISL_SET_ALL ||
+                                (ctxsi[k] >= 0 && (d->chrvec[a] >> ctxsi[k] & 1u)))) {
+                v |= 1u << k;
+            }
+        }
+        chrv[a] = v;
+    }
+    return true;
+}
+
+/* Does NFA state `st` (island set `si`) consume character atom `a`? */
+static bool isl_consumes(const Dfa *d, const NState *st, int si, int a)
+{
+    if (st->k != N_WCHAR) return false;
+    if (a == d->chr_bots || a == d->chr_botn) return st->bot != 0;
+    return si == ISL_SET_ALL || (si >= 0 && (d->chrvec[a] >> si & 1u));
 }
 
 /* ---- epsilon closure ---- */
@@ -682,6 +939,7 @@ static int eps_edge(const NState *st, int i)
 {
     switch (st->k) {
     case N_CLASS:
+    case N_WCHAR:
     case N_ACCEPT:  return -2;
     case N_SPLIT:   return i == 0 ? st->t1 : i == 1 ? st->t2 : -2;
     case N_EPS:
@@ -965,6 +1223,7 @@ static void clo_walk(Clo *cl, int s)
 
             switch (st->k) {
             case N_CLASS:
+            case N_WCHAR:   /* [UCP] U3 a character edge is a thread too */
                 /* A GLOBAL per-state dedup, deliberately not per-context: a
                  * thread's future depends only on its NFA state, so the first
                  * (highest-priority) occurrence is the only one that can
@@ -1242,7 +1501,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
          * restores that record around the build (src/core/compile.c). */
         if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
         pcrec_ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
-                 "try --engine=vm)", d->maxstates);
+                 "%s)", d->maxstates, dfa_way_out(d));
     }
     /* Which views need storage of their own, and which alias an earlier one.
      * Computed BEFORE anything is spent so the K7 charge below counts exactly
@@ -1322,8 +1581,8 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
         if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
         pcrec_ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
                  "construction exceeds %lld state-set elements; "
-                 "try --engine=vm, or raise with --max-subset-elems)",
-                 max_subset_elems);
+                 "%s, or raise with --max-subset-elems)",
+                 max_subset_elems, dfa_way_out(d));
     }
     if (d->n == d->cap) {
         int ncap = d->cap ? d->cap * 2 : 64;
@@ -1364,8 +1623,11 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
     }
     s->eolvar = eolvar;
     s->endvar = endvar;
-    s->tr = pcrec_arena_alloc(&cx->arena, (size_t)d->ncls * sizeof(int));
-    for (int c = 0; c < d->ncls; c++) s->tr[c] = -2; /* unfilled */
+    /* [UCP] U3 an island machine's row carries one more cell per character
+     * atom after its byte classes (`Dfa.island`). */
+    const int ncell = d->ncls + (d->island ? d->nchr : 0);
+    s->tr = pcrec_arena_alloc(&cx->arena, (size_t)ncell * sizeof(int));
+    for (int c = 0; c < ncell; c++) s->tr[c] = -2; /* unfilled */
     d->tab[i] = d->n;
     return d->n++;
 }
@@ -1525,6 +1787,37 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
     return intern(cx, d, vw[V_BASE], eolvar, endvar);
 }
 
+/* [UCP] U3 state `si`'s character cells (ucp_design.md §3.3). Each
+ * character atom is a symbol exactly as a byte class is: the source closure
+ * is the one its context atom selects, the threads that consume it advance,
+ * and the target is closed under that context one position later —
+ * make_state's own construction, over atoms. The non-ASCII byte cell
+ * `tr[isl_na]` is never stepped: the walk decodes every byte >= 0x80, so it
+ * is DEAD. Classifying it per state (T5's DEAD/SELF/entry row, which would
+ * let a state step a character's bytes through itself) is the T5 fast
+ * path's, a listed follow-up with no reader yet (D77; review r4 ucpu3
+ * EMIT-3). */
+static void island_cells(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m, int si,
+                         const int8_t *wsi, int *pre, CloScratch *sc,
+                         int *scratch)
+{
+    for (int a = 0; a < d->nchr; a++) {
+        if (d->st[si].tr[d->ncls + a] != -2) continue;
+        int cu = d->chrctx[a];
+        const int *src = d->st[si].up[cu].list;
+        int nsrc = d->st[si].up[cu].nlist, npre = 0;
+        for (int j = 0; j < nsrc; j++) {
+            int ns = src[j];
+            if (isl_consumes(d, &nfa->st[ns], wsi[ns], a))
+                pre[npre++] = nfa->st[ns].t1;
+        }
+        int tgt = make_state(cx, nfa, d, m, pre, npre, false, false, cu,
+                             sc, scratch);
+        d->st[si].tr[d->ncls + a] = tgt;
+    }
+    d->st[si].tr[d->isl_na] = PCREC_DFA_DEAD;
+}
+
 /* Priority subset construction over `nfa`, rooted at `root` — `nfa->start`
  * for the ordinary unanchored machine, `nfa->anch_start` for the anchored
  * MATCH-HERE machine (`[ENG-ABS]`) — writing the interned states into `d`.
@@ -1601,14 +1894,24 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * `startcls` — three hand-threaded facts with three consumers each — and
      * the fixed four-value partition they fed. */
     int8_t *cbit = pcrec_arena_alloc(&cx->arena, (size_t)(nfa->n ? nfa->n : 1));
+    /* [UCP] U3 T4 row 1 (ucp_design.md §0.1): an island NFA builds a
+     * character-stepped machine — the fact is the NFA's, recorded by its
+     * builder, so no caller can pair an island NFA with a byte machine. */
+    d->island = nfa->island;
+    d->nchr = 0;
+    d->niset = 0;
+    int8_t *wsi = pcrec_arena_alloc(&cx->arena, (size_t)(nfa->n ? nfa->n : 1));
+    uint32_t chrv[PCREC_MAX_CHAR_STEP_ATOMS];
     if (!ctx_collect(cx, nfa, d, cbit)) return;
     eqclasses(nfa, d);
-    if (!ctx_atoms(cx, d)) return;
+    if (d->island && !island_atoms(cx, nfa, d, wsi, chrv)) return;
+    if (!ctx_atoms(cx, d, chrv)) return;
     /* R1 A-3: the binding constraint for table machines is total emitted
      * table entries (gcc time is flat in data size), not state count alone */
+    const int ncell = d->ncls + (d->island ? d->nchr : 0);
     d->maxstates = maxstates;
-    if (d->maxstates > PCREC_MAX_TABLE_ENTRIES / d->ncls)
-        d->maxstates = PCREC_MAX_TABLE_ENTRIES / d->ncls;
+    if (d->maxstates > PCREC_MAX_TABLE_ENTRIES / ncell)
+        d->maxstates = PCREC_MAX_TABLE_ENTRIES / ncell;
 
     /* Per-compile closure scratch: an automatic local, every buffer from this
      * compile's arena, nothing shared between compiles (see CloScratch).
@@ -1722,6 +2025,9 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
         if (d->overflowed) return;
         for (int c = 0; c < d->ncls; c++) {
             if (d->st[si].tr[c] != -2) continue;
+            /* [UCP] U3 the non-ASCII byte column is never stepped
+             * (island_cells below fills it). */
+            if (d->island && c == d->isl_na) continue;
             uint8_t b = d->rep[c];
             /* [M6.2 wave B] The class decides BOTH halves of the context, and
              * this is the line that makes the class views free on the hot
@@ -1758,6 +2064,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                                  &sc, scratch);
             d->st[si].tr[c] = tgt;
         }
+        if (d->island) island_cells(cx, nfa, d, &m, si, wsi, pre, &sc, scratch);
     }
     /* D164 B3 (endmark.md §R.3): an untagged machine's accept values are the
      * set {0} or nothing, which is what lets the value compares stand for the

@@ -30,7 +30,7 @@ PATTERNS = {
     "x3b": (r"\b\p{Xwd}+\b", "UTF|UCP|MIU"),
 }
 
-ARMFILES = [("bb", "base.c"), ("bd", "bigcap.c"), ("bv", "vm.c"),
+ARMFILES = [("bb", "base.c"), ("bd", "bigcap.c"), ("bv", "vm.c"), ("cs", "charstep.c"),
             ("ia", "tw_kit4.c"), ("ib", "tw_page3w.c"), ("ic", "tw_bitmap1.c")]
 
 
