@@ -1,7 +1,9 @@
 # Variable-width (bounded) lookbehind — design
 
-**Status: stage 1 BUILT (c44649a69, D189); stage 2 PROPOSED rev 5** (lane vlbrev5, opus, 2026-11-10;
-plan row [VLOOKBEHIND]). Rev 5 applies the RULED re-check `docs/dev/reviews/2026-11-10-r3-vlb2.md`
+**Status: stage 1 BUILT (c44649a69, D189); stage 2 PROPOSED rev 5.1** (lane vlbrev51, opus,
+2026-11-10; plan row [VLOOKBEHIND]). Rev 5.1 applies the RULED re-check
+`docs/dev/reviews/2026-11-10-r5-vlb3.md`; read the REVISION 5.1 block first, then §6.2. Its evidence is
+`docs/dev/lanes/vlbrev51_evidence/`. Before it, rev 5 (lane vlbrev5, opus, 2026-11-10). Rev 5 applies the RULED re-check `docs/dev/reviews/2026-11-10-r3-vlb2.md`
 to stage 2 only; read the REVISION 5 block first, then §6.2. Rev 5's evidence is
 `docs/dev/lanes/vlbrev5_evidence/`. Before it: rev 4 + erratum r3-1106 (the stage-1 build lane vlbbuild applied review r3's text fixes; block below) (lane vlbrev4, opus, 2026-11-06). Rev 4 applies
 the RULED re-check `docs/dev/reviews/2026-11-06-r2-vlookbehind-recheck.md` (READY WITH LISTED TEXT
@@ -19,6 +21,71 @@ Starts from the investigation `docs/dev/lanes/vlbinv_report.md`
 libpcre2 10.46 library probe; `cells.out`, every cell rev 1 adds). PCRE2 facts come from the
 installed libpcre2-8 10.46 used as a library and from public docs. The pinned source copy was not
 opened (D181). One question for a pcre2-reader is in §12.
+
+## REVISION 5.1 (review 2026-11-10 r5 vlb3, ruled) — read first
+
+Stage 2 only. Changes are marked inline as `[vlb3 Gn]`. Review r5 vlb3 re-checked rev 5 and found
+no answer bug where stage 2 accepts. It found four new classes that rev 5's own fixes brought in:
+a dead rule (G2), an AST conflation libpcre2 does not share (G1), an untested sibling of a
+measured rule (G4), and a column that was a second loop (G11). The manager ruled G1, G4, G9, G11
+and G14 and took every other FIX-NOW as proposed (the review's RULINGS block). Rev 5.1's cells:
+`docs/dev/lanes/vlbrev51_evidence/` (libpcre2 10.46 with offsets; pcrec at main `3a190b8d7`'s
+source). In summary:
+
+- **G1, ruled: a DEFINE MARK** (§6.2.1). libpcre2 skips a `(?(DEFINE)...)` body in a lookbehind's
+  length and checks a `{0}` body. pcrec builds both as `A_REP{0,0}`. The DEFINE port now marks its
+  node "definition only", a fact on the node. Edge walks do not enter a marked node, and the
+  lexical bound counts it 0. Region searches still look inside it. Stage-1 patterns such as
+  `(?<=a(?(DEFINE)(?<g>b+)))x` keep compiling, and the HEAD divergence `((?<=x(?(DEFINE)(?1)))a)`
+  closes. atomic.c's "not a DEFINE rule" stays: its question has the same answer for both nodes.
+- **G2, G3: one rule table in HEAD's own control flow** (§6.2.2). Rev 5's rule 1 read `hb`, so
+  rule 0 could never fire. Rule 1 now reads `hs`, rules 2-3 read `hi` on finite-`hi` branches, and
+  rule 0 is "`hi` unbounded, `hs` finite". `hb` is dropped (three values per row, not four), and
+  `hs` is the lexical bound, at every timing (parse-time lookbehinds included).
+- **The emptiness drill** (the review's lesson 1). §6.2.2's table now gives, per row, a cell that
+  no earlier row takes. The latent branch-reset row is the one declared exception. §5.1b's and
+  §5.4's tables pass.
+- **G4, ruled: STATE the ceiling-under-`{0}` divergence** (§0 G1, §6.2.8). libpcre2's 65535 ceiling
+  is lexical per `{0}` body. pcrec's is not, and stage 2 adds one new pcrec-only accept,
+  `(a(?:b{40000}c{40000}){0})(?<=\1)x`.
+- **G5: which diagnostic wins, stated honestly** (§6.2.4). A deferred refusal loses to every
+  diagnostic raised before postresolve (a later parse error, the callout pass, engine selection),
+  where libpcre2 reports the first lookbehind's fault. Rev 5's "as libpcre2 does" is withdrawn.
+  The cells are pinned with pcrec's answers, and a K-row (calls and references together) is
+  drafted.
+- **G6:** rule 0 is worded by LENGTH ("depends on a variable or a consuming callout, directly or
+  through a backreference or a call"), and the 7 → 5 call-side moves are listed.
+- **G7: an inner lookbehind is judged before the one containing it** (§6.2.2). This is the parse
+  hook's own order, so the refusal lands at libpcre2's offset (`(a(?<=b(?<=\1)))x` @7). It also
+  closes HEAD's `(a(?<=b(?<=(?1))))x` offset divergence. The re-entry walk still follows nested
+  lookbehinds (K127's `((?<=(?2)))(a(?<=(?1)))` @1).
+- **G8:** re-entry is per lookbehind, from its own body, not over the union of rows.
+- **G9, ruled: re-entry gets its own sentence**, "a lookbehind's length may not depend on a group
+  that contains it", and K127's call arm takes it too.
+- **G10:** the table's finite values clamp at the ceiling + 1, so a finite length past 2^40 is not
+  read as unbounded (the 25-step chain is err 187, not "unbounded").
+- **G11, ruled: ONE table** (§6.2.1). It is callgraph's table keyed by group number and built at
+  `pcrec_callgraph_build`'s position, with ONE loop function whose reference treatment is a
+  parameter. The `cwmin` fixpoint, which has no reader left, is RETIRED with `cg_cwmin_publish`,
+  `u.call.cwmin` and sabotage S-U10. **That retirement is a simplification, and it is listed as
+  one.**
+- **G12:** the sabotage rows are re-aimed: SV4's witness has a lookbehind; SV8's witnesses move,
+  and SV8 joins S1455; SV2 names both reds. New rows SV12-SV16 cover the mark, the region search,
+  the round bound, the clamp and the order. The moving existing rows are S171, S-U10, S1454,
+  S1455, S1490, S170 and S1981.
+- **G13:** the `(?|` rule reads reached rows too. A PLAN row for duplicate-number rows is drafted.
+- **G14, ruled: `--count-groups` runs the checks** (§6.2.4). The describe path runs the compile's
+  passes through postresolve, so cli.md §2.13¶1's promise stays true and today's call hole
+  closes. The build lane measures the cost and reports it. cli.md gets a hunk.
+- **G15** (PLAN): `(*ACCEPT)` truncates a referenced group's width. A note for the verbs row is
+  drafted in the lane report.
+- **G16-G20 (doc):** the reader lists are corrected (`cx->callgraph`'s readers are emit_vm.c,
+  nfa.c and lower_enc.c, and not select_engine). `make test-recursion-lbsweep` is a run the build
+  owes BY NAME. Gate 3's `pcre2only` becomes 1, not 0. Gate 7 discriminates by four sentences.
+  The spec hunks gain the stage-1 lexical clause and duplicate name through a reference. The D27
+  extract is re-cut and carries the spec text itself, because its author works at stage 0.
+- **§6.2.9's units** now carry a readiness column. V1-V7 are READY once the one readiness critic
+  has checked this diff. **§16f** maps every finding.
 
 ## REVISION 5 (review 2026-11-10 r3 vlb2, ruled) — read first
 
@@ -373,6 +440,25 @@ Ranked: the higher goal wins a conflict.
      drafted in the lane report), and stage 2's lexical bound fixes both the call side and the
      direct side (§6.2.1). The fix refuses patterns that compile today: a G1-over-G2 exception,
      like the 65535 ceiling. The build counts them in the corpus (gate 2's manifest; 0 expected).
+   - **`[vlb3 G1]` The same class, more members, and one exception.** pcrec at HEAD also compiles
+     `((?<=x(?:\1){0})a)`, `(?J)(?<n>a)(?<n>b)?(?<=x(?:\k<n>){0})y` and `(?<=(?:\1+){0}x)(b)y`, which
+     libpcre2 refuses (err 125); stage 2's lexical rule refuses them too
+     (`vlbrev51_evidence/cells51.out`, `pcrec_head51.out`). The exception is `(?(DEFINE)...)`:
+     libpcre2 SKIPS a DEFINE body where it checks a `{0}` body (`(?<=a(?(DEFINE)(?<g>b+)))x` ACCEPT,
+     lb 1; `(?<=a(?:b+){0})x` REJECT 125). pcrec builds both as `A_REP{0,0}`, so stage 2 marks the
+     DEFINE node (§6.2.1) and keeps every DEFINE-bearing lookbehind that compiles today compiling.
+     The mark also closes a HEAD divergence the other way: pcrec refuses `((?<=x(?(DEFINE)(?1)))a)`,
+     which libpcre2 accepts (lb 1).
+   - **`[vlb3 G4]` A second STATED accept-set divergence (manager ruling G4: state it).** libpcre2
+     applies its 65535 ceiling to each `{0}` body on its own (lexically, per body, not summed:
+     `(?<=(?:a{30000}b{35536}){0}x)y` REJECT 187, `(?<=(?:a{30000}){0}(?:b{30000}){0}(?:c{30000}){0}x)y`
+     ACCEPT). pcrec's ceiling reads the length, where a `{0}` body counts 0. So pcrec accepts
+     `(?<=(?:a{30000}b{35536}){0}x)y` and `(a{40000}b{40000})(?<=\1{0}x)y` (both compile at HEAD)
+     and, after stage 2, `(a(?:b{40000}c{40000}){0})(?<=\1)x` (HEAD refuses it by rule 0, so this
+     one is a NEW pcrec-only accept). libpcre2 refuses all three (err 187). It needs a `{0}` body
+     longer than 65535 characters (memory pcrec-ninety-percent). Gate 3 counts the class on its own
+     line, and the spec states it (§6.2.8). Closing it would take a per-row "largest `{0}` body"
+     value (a max, not a sum): an unlock with its trigger in §16f.
 2. **G2 Stability (callers with today's artifacts).**
    - The promise: no pattern that compiles today changes bytes. The one exception is G1's ceiling.
      `[vlb2 F5]` Stage 2 adds a second refusal-only exception: the lexical-bound class of §0 G1
@@ -380,6 +466,8 @@ Ranked: the higher goal wins a conflict.
      bytes. `[vlb2 F3]` Stage 2 moves no byte of any artifact that compiles today, inside or
      outside a lookbehind, because the reference width is read only by the lookbehind rule
      (§6.2.3).
+     `[vlb3 G1, G11]` That includes artifacts with a DEFINE (the mark is not emitted) and artifacts
+     with calls (the published `minw`/`cwmax` keep their values when their loops fold into one).
    - Measurable: the identity gate over every corpus artifact containing a lookbehind shows 0 bytes
      differ.
    - This holds only if owner question 1 is answered "keep the bytes" (§13). That question must be
@@ -3453,3 +3541,36 @@ item was taken as proposed.
 | F16 (PREMISE-9/10) | NOTED / PLAN: the family named and joined (F1); unlock 1 = F2 (a); unlock 2 drafted as a PLAN row; unlocks 3 and 4 noted (a `${v}` with a declared maximum leaves rule 0 at [IFACE-PUSH]; stage 3 treats a fixed-group reference as a fixed wall); altcls.c's promise to this row goes in the plan row's refs (lane report) | §6.2.1, §6.2.3, lane report |
 | Not adopted | PREMISE-2's select_engine claim and READYW-5's check.py claim were refuted by the round; nothing to do | none |
 | Lessons 1-3 | for the guide; not this note's (the manager files them) | none |
+
+## 16f. Disposition table (review 2026-11-10 r5 vlb3) `[vlb3]`
+
+The manager ruled G1, G4, G9, G11 and G14 (the review's RULINGS block). Every other FIX-NOW
+(G2, G3, G5-G7, G10, G12, G13, G19, G20) was taken as proposed, and G15 is a PLAN note on the
+verbs row. The FREEZE NOTE items (the build go, F2's plan-row note, K140, [REF-WINDOW]) are
+main's, at the first plan pass after the suite.
+
+| finding | disposition | where in rev 5.1 |
+|---|---|---|
+| G1 (FIX-1, FIX-6, FIX-7) | FIX-NOW, RULED: the DEFINE port's node carries a definition-only mark; edge walks and the lexical bound treat it 0 and do not enter it; region searches still do; atomic.c's predicate unchanged; the HEAD divergence `((?<=x(?(DEFINE)(?1)))a)` closes; cells and controls in; SV12/SV13 | REVISION 5.1, §0 G1, §6.2.1, §6.2.2, §6.2.5, §6.2.7, §6.2.8 |
+| G2 (FIX-2, RDYW-3, RDYR-3) | FIX-NOW: order 4 reads `hs`, orders 6-7 read `hi` on finite-`hi` branches, rule 0 = `hi` unbounded and `hs` finite (HEAD's control flow); the emptiness drill on every rule table | §6.2.2 |
+| G3 (FIX-3, RDYW-4, RDYR-9) | FIX-NOW: `hb` dropped (three values); `hs` is the lexical bound at every timing, parse-time lookbehinds included; SV3 re-aimed to `hs` | §6.2.1, §6.2.3, §6.2.5, SV3 |
+| G4 (FIX-4) | FIX-NOW, RULED (state it): the ceiling-under-`{0}` class is §0 G1's second stated divergence, with five cells, gate 3's own line and the spec clause; closing it is an unlock (below) | §0 G1, §6.2.1, §6.2.5, §6.2.6 gate 3, §6.2.8 |
+| G5 (RDYR-1, RDYR-2, RDYR-5 addendum, FIX-5) | FIX-NOW: "as libpcre2 does" withdrawn; the four precedence classes stated with predicted pcrec answers and pinned in gate 7; the nested class fixed by G7's order. PLAN: one K-row for calls and references (drafted in the lane report) | §6.2.4, §6.2.5, §6.2.6 gate 7 |
+| G6 (RDYR-4) | FIX-NOW: rule 0 worded by length; the 7 → 5 call-side moves listed, with a gate-7 row; the words carried into §6.2.8's hunks | §6.2.4, §6.2.5, §6.2.8 |
+| G7 (RDYR-5) | FIX-NOW: post-order judging (inner first, the parse hook's order); nested lookbehinds off the outer's path for the bound and duplicate names and followed by re-entry; the cells, plus the reached-lookbehind cells; HEAD's call-twin offset divergence named as closed; SV16 | §6.2.1, §6.2.2, §6.2.5, §6.2.7 |
+| G8 (RDYW-7) | DOC: re-entry from THIS lookbehind's body; the union-refusing cells added | §6.2.2, §6.2.5 |
+| G9 (RDYR-8) | FIX-NOW, RULED: a new re-entry sentence, one more `la_width_refusal` arm, K127's call arm included | §6.2.2, §6.2.4, §6.2.5, §6.2.8 |
+| G10 (FIX-9) | FIX-NOW: finite values clamp at the ceiling + 1; the 3-, 25- and call-25-step cells; SV15 | §6.2.1, §6.2.5, §6.2.7 |
+| G11 (FIX-10, FIX-8 part, FIX-14) | FIX-NOW, RULED: ONE table keyed by group number at `pcrec_callgraph_build`'s position, one loop function with the reference treatment as a parameter, its own Ctx field; the `cwmin` fixpoint, `cg_cwmin_publish`, `u.call.cwmin` and S-U10 RETIRED (a simplification, listed); SV14 | REVISION 5.1, §6.2.1, §6.2.3, §6.2.7, §6.2.9 V1 |
+| G12 (RDYW-2/5/6, RDYT-1, RDYR-6, FIX-8) | FIX-NOW: SV4 re-aimed (`(a\|bc)(?<=\1)\1$`, window "5"); SV8's witnesses replaced and folded into S1455; SV2 names both reds; S171, S-U10, S1454, S1455, S1490, S170, S1981 and inlookaround_self's comment listed with re-anchor or retire | §6.2.6 gate 8, §6.2.7 |
+| G13 (FIX-11) | FIX-NOW: the `(?\|` rule reads reached rows; G13's two cells and the calls-only controls added. PLAN: duplicate-number rows on the branch-reset charter (drafted) | §6.2.2, §6.2.5 |
+| G14 (FIX-13) | FIX-NOW, RULED (run the checks): `pcrec_count_groups` runs the passes through postresolve; `want_caps` noted; the cost is measured by the build and reported, with the fallback the manager's call; the cli.md §2.13¶1 hunk | §6.2.4, §6.2.8, §6.2.9 V3/V4 |
+| G15 (FIX-12) | PLAN: the latent cell is in §6.2.5; the verbs row note is drafted in the lane report | §6.2.5, lane report |
+| G16 (RDYW-1/8, RDYT-9, RDYR-9) | DOC: `cx->callgraph`'s readers corrected; mrl.c's, mod_lookaround.c's, internal.h's, postresolve.c's, atomic.c's and src/opt/CLAUDE.md's readers added; `make test-recursion-lbsweep` owed by name; the testing.md reader corrected | §6.2.1, §6.2.6 gate 9, §6.2.9 |
+| G17 (RDYR-7) | DOC: stated in §6.2.2 with its cell; PLAN: K-row drafted in the lane report | §6.2.2, §6.2.5 |
+| G18 (RDYT-2, RDYT-8) | DOC: EXTRA minus the latent and pcrec-only rows; `pcre2only=1`; gate 7 discriminates by four sentences and by offset | §6.2.6 gates 3 and 7 |
+| G19 (RDYT-6, RDYT-7) | FIX-NOW: §7.4¶5 gains the stage-1 lexical clause and the DEFINE fact; ¶5c gains duplicate names through a referenced group; plus G1/G4/G6/G9/G14's words | §6.2.8 |
+| G20 (RDYT-3/4/5) | FIX-NOW: the extract is re-cut from rev 5.1, carries §6.2.8's text, promises LB as `max_lookbehind` (not the internal stamp), adds the dropped cells; the UTF caseless cells moved into §6.2.5 | `docs/design/vlb_d27_extract.md`, §6.2.5, §6.2.9 V7 |
+| G21 (FIX-10, FIX-14) | NOTED: the general form is one per-group fact table over typed {call, reference} edges, with each walk parameterised by the edges it follows (width path; `{0}` followed, DEFINE not; region search follows all). Unlocks and triggers: (1) the `cwmin` fixpoint retired, now (G11); (2) the reference-aware end/start window reads the table with references followed, trigger as filed ([REF-WINDOW]); (3) the DEFINE mark, now (G1); (4) a per-row largest `{0}` body closes G4, trigger: a decision to close G1's last `{0}` class; (5) duplicate-number rows, trigger: the branch-reset charter (G13); (6) `(*ACCEPT)`-truncated widths, trigger: module verbs builds `(*ACCEPT)` (G15); (7) possessify's `cap_build` takes its order from the table instead of C-stack recursion, trigger: a pattern measured at `PCREC_MAX_POSS_REF_DEPTH` | §6.2.1 (the family), this row |
+| HEAD divergences | the review's list goes to known_issues through main: the DEFINE call (closed by G1), the `{0}` re-entry and duplicate-name cells (F5's class, K140's draft widened in the lane report), the ceiling under `{0}` (G4, stated), the call doubling chain's reason (G10), the branch-order reason (G17), the nested call offset (G7, closed), the precedence cells (G5), `--count-groups` (G14, closed) | lane report |
+| Lessons 1-3 | for the guide (the manager files them). Lesson 1 (the emptiness drill) is applied to this note's own tables | §6.2.2 |
