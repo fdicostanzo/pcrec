@@ -74,7 +74,13 @@ limit, so it inherits the same exposure: a slow runner turns a green tree RED as
 existing branch refused, verdict mapping incl. gh failure -> NONE, queuewatch CLOUD-DONE once per run, silent
 when pending / no ledger / `--no-ci`, `--prune` incl. keep-without-verdict, dry-run, idempotence).
 `bash scripts/test_queuemon.sh`: 47 passed, 0 failed. `bash scripts/tests/queuewatch_ci.test`: 5 passed, 0 failed.
-`scripts/tests/queuewatch.test`: see the owed line below. `scripts/check_claudemd_size.sh --all`: 363 files within
+`scripts/tests/queuewatch.test`: 8 FAILs, all from its own scenario setup, not from this change: `boxqueue add`
+of its wrapper job is REFUSED ("the script has no '--ready' case"; reproduced by hand with the same wrapper
+shape, no queuewatch involved), so every scenario that queues a job reads "ADD FAILED"; the cases that queue
+nothing (restarted-job history, SIGKILLed watcher, `--max-sec`, second watcher refused, the QUIET-by-CPU cases and
+the plants) PASS. The test was already stale against boxqueue's `--ready` gate at the base; the wrapper in
+`wrapper()` needs a `--ready) exit 0 ;;` case. Not fixed here (outside the task); queuewatch's CLOUD-DONE path is
+covered by cloudrun.test. `scripts/check_claudemd_size.sh --all`: 363 files within
 limits. `scripts/entry --lint-scripts`: 65 index lines, 0 failures. The workflow YAML parses (PyYAML); it has
 NOT been seen by Actions until test (a).
 
@@ -87,7 +93,7 @@ After the verdict: `scripts/cloudrun --prune` deletes the branch.
 
 ### Owed
 
-- Test (a)'s verdict (manager reads it). `queuewatch.test` full run result if not appended below.
+- Test (a)'s verdict (manager reads it). queuewatch.test's wrapper needs `--ready) exit 0 ;;` (pre-existing).
 - A check keeping cloud-test.yml's shard steps equal to ci.yml's.
 - The "SIMD rows declare their feature" half of requirement 1 (flags are recorded; nothing enforces yet).
 - mech / axes kinds: `cloud_gather.sh shards KIND` is the place; their timeouts and sizes need the facts in
