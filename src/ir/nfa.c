@@ -218,7 +218,7 @@ static void island_ascii_only(NB *b, const uint8_t cls[32])
 {
     for (int k = 16; k < 32; k++)
         if (cls[k])
-            pcrec_ctx_fail(b->cx, 0, "the character-stepped DFA ([UCP] U3) "
+            pcrec_ctx_fail(b->cx, 0, "the character-stepped DFA "
                            "cannot build a byte-level class over bytes "
                            ">= 0x80 under encoding 'utf8'");
 }
@@ -1158,6 +1158,14 @@ void pcrec_build_nfa_island(Ctx *cx, Ast *root, Nfa *nfa, bool reverse)
     nfa->anch_start = f.start;
 }
 
+/* [UCP] U3 the leftmost node of a visit (`pcrec_ast_visit` walks a spine
+ * right to left, so its first hit is not the leftmost): `a` replaces
+ * `*first` where it sits earlier in the pattern. */
+static void keep_leftmost(const Ast **first, const Ast *a)
+{
+    if (!*first || a->reg_at < (*first)->reg_at) *first = a;
+}
+
 /* [UCP] U3 does `a`, an `A_CTX`, read a set this encoding cannot express
  * byte by byte (ucp_design.md §2.3)? */
 typedef struct { const PcrecEnc *e; const Ast *first; } IslandVisit;
@@ -1165,9 +1173,9 @@ typedef struct { const PcrecEnc *e; const Ast *first; } IslandVisit;
 static void island_ctx_visit(void *ud, const Ast *a)
 {
     IslandVisit *v = ud;
-    if (a->k != A_CTX || v->first) return;
+    if (a->k != A_CTX) return;
     for (int i = 0; i < a->u.ctx.n; i++)
-        if (a->u.ctx.iv[i].hi > v->e->onebyte_max) v->first = a;
+        if (a->u.ctx.iv[i].hi > v->e->onebyte_max) { keep_leftmost(&v->first, a); return; }
 }
 
 /* [UCP] U3 `pcrec_island_needed` (internal.h): T4 row 1's fact. */
@@ -1176,6 +1184,24 @@ const Ast *pcrec_island_needed(Ctx *cx, const Ast *root)
     IslandVisit v = { pcrec_enc_by_id(cx->opt->encoding), NULL };
     pcrec_ast_visit(root, island_ctx_visit, &v);
     return v.first;
+}
+
+/* Is `a` a start anchor: `\G`, or a context that reads "no previous
+ * character" (`^`, `\A`, `(?m)^`) -- `pcrec_nfa_has_bot`'s two kinds? */
+static void start_anchor_visit(void *ud, const Ast *a)
+{
+    if (a->k == A_GSTART ||
+        (a->k == A_CTX && ctxfn_reads_absent_prev(a->u.ctx.fn)))
+        keep_leftmost((const Ast **)ud, a);
+}
+
+/* `pcrec_start_anchor_of` (internal.h): the AST form of
+ * `pcrec_nfa_has_bot`, for selection, which runs before any NFA exists. */
+const Ast *pcrec_start_anchor_of(const Ast *root)
+{
+    const Ast *first = NULL;
+    pcrec_ast_visit(root, start_anchor_visit, &first);
+    return first;
 }
 
 /* `pcrec_build_nfa_marked` (internal.h): `pcrec_build_nfa` with the end

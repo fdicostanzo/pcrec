@@ -2728,18 +2728,7 @@ typedef struct {
      * target is not scan-shaped and takes the ordinary walk. Every emitter
      * site asserts it is 1 rather than assuming it. */
     int      scan_period;
-    /* [UCP] U3 an island machine's T5 row for this state (`DFA_ISL_*`): what
-     * its non-ASCII byte cell `tr[isl_na]` is. 0 (`DFA_ISL_NONE`) on every
-     * state of every other machine. */
-    uint8_t  isl_kind;
 } DState;
-
-/* [UCP] U3 ucp_design.md §0.1 T5, a character-stepped state's non-ASCII
- * cell. DEAD: every non-ASCII character and ⊥ lead to dead with one accept
- * value; SELF: every one leads back to the state, which never accepts before
- * one (so stepping the bytes through it is exact, §3.3); ISLAND: the cell is
- * the island entry (`PCREC_DFA_ISLAND`). */
-enum { DFA_ISL_NONE = 0, DFA_ISL_DEAD = 1, DFA_ISL_SELF = 2, DFA_ISL_ISLAND = 3 };
 
 /* Is byte class `cls` one of the classes state `st`'s scan edge counts? */
 static inline bool pcrec_scan_has(const DState *st, int cls)
@@ -2840,15 +2829,16 @@ typedef struct {
      * (`chr_bots`: an ill-formed byte this encoding may start a character
      * at; `chr_botn`: one it may not). `chrctx[a]` is atom a's CONTEXT atom.
      * Each state's `tr[]` then has `ncls + nchr` cells: the byte classes,
-     * then one target per character atom; `tr[isl_na]` is the state's T5
-     * cell (`isl_kind`). False and unread on every other machine. */
+     * then one target per character atom; `tr[isl_na]` is never stepped
+     * (the walk decodes every byte >= 0x80) and holds PCREC_DFA_DEAD.
+     * False and unread on every other machine. */
     bool     island;
     int      isl_na;
     int      niset;
-    struct { const PcrecCpRange *iv; int n; } iset[PCREC_MAX_ISL_SETS];
+    struct { const PcrecCpRange *iv; int n; } iset[PCREC_MAX_CHAR_STEP_SETS];
     int      nchr;
-    uint32_t chrvec[PCREC_MAX_ISL_ATOMS];
-    uint8_t  chrctx[PCREC_MAX_ISL_ATOMS];
+    uint32_t chrvec[PCREC_MAX_CHAR_STEP_ATOMS];
+    uint8_t  chrctx[PCREC_MAX_CHAR_STEP_ATOMS];
     int      chr_bots, chr_botn;
     /* The non-ASCII code space as `nseg` segments: `seg_lo[t]` is segment
      * t's first code point (ascending, `seg_lo[0] == 0x80`), `seg_atom[t]`
@@ -3791,7 +3781,30 @@ typedef struct {
     const char *memfn_forms;
     /* [ENTRY-TABLE] E1 the part-layout state (src/gen/part_layout.c). */
     PcrecPartLayout pl;
+    /* [UCP] U3 (review r4 ucpu3 EMIT-1) the artifact's FILE-SCOPE TABLE
+     * POOL (src/gen/tblpool.c): every table a machine reads by content, so
+     * an identical one is emitted once and shared. Arena entries; `tbl_out`
+     * counts those already emitted. */
+    struct PcrecTbl *tbl_head;
+    int tbl_n, tbl_out;
 } Job;
+
+/* [UCP] U3 THE TABLE POOL (src/gen/tblpool.c; review r4 ucpu3 EMIT-1): a
+ * table an artifact reads, by CONTENT -- C element type and values. Any
+ * machine's emitter asks `pcrec_tbl_ref` for its table under the name it
+ * would give it and gets back the pool's name for that content: its own on
+ * first sight, the first asker's when an identical table is already pooled.
+ * `pcrec_tbl_emit` writes every table pooled since its last call at file
+ * scope, so a table is defined once, before every function that reads it.
+ * `pcrec_tbl_done`, at the artifact's end, refuses one that pooled a table
+ * it never emitted (a reference nothing defines), never a silent copy. */
+const char *pcrec_tbl_ref(Ctx *cx, const char *name, const char *type,
+                          const int *v, int n);
+void pcrec_tbl_emit(Ctx *cx, StrBuf *c);
+void pcrec_tbl_done(Ctx *cx);
+/* The smallest C element type that holds every value of `v[0..n)`
+ * (`unsigned char`, `short` or `int`), for a pooled table's `type`. */
+const char *pcrec_tbl_type(const int *v, int n);
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
  * rationale. Arena-owned: `name` is a NUL-terminated copy made at
@@ -4127,6 +4140,12 @@ struct Ctx {
      * forbids. See PCREC_DFA_OVERFLOW_WHY_LEN (limits.h) for the buffer's
      * sizing. */
     bool                 dfa_disabled;
+    /* [UCP] U3 SELECTION'S VERDICT that this pattern takes the
+     * character-stepped DFA (the `island` row of src/opt/select_engine.c,
+     * T4 row 1): written by `pcrec_select_engine` on every attempt, read by
+     * the driver (src/core/compile.c builds island NFAs on it, and offers
+     * no [SEL-1] retry: the VM cannot read the set). */
+    bool                 island_route;
 
     /* [OPT-4] WHY THIS ATTEMPT IS BUILDING THE COLLAPSED PREFILTER, or
      * `CR_NONE` if it is not. Ruling B's whole selector: the collapse is never
@@ -6026,8 +6045,7 @@ ExtResult pcrec_ucpport_ucp(Ctx *cx, const RegRow *rw, ExtWant want,
                             size_t at, size_t from);
 /* [UCP] the composed UCP sets the definitions table's DEFK_SET entries name,
  * and their one producer: `pcrec_setdef_build` builds a set clamped to the
- * encoding's universe; `pcrec_setdef_class` routes it (the narrow/wide table)
- * and returns its A_CLASS, or NULL with `why` filled for a refused wide set. */
+ * encoding's universe; `pcrec_setdef_class` returns its A_CLASS. */
 extern const PcrecSetDef pcrec_ucp_set_digit, pcrec_ucp_set_space,
     pcrec_ucp_set_pspace, pcrec_ucp_set_word, pcrec_ucp_set_alpha,
     pcrec_ucp_set_alnum, pcrec_ucp_set_lower, pcrec_ucp_set_upper,
@@ -6035,8 +6053,7 @@ extern const PcrecSetDef pcrec_ucp_set_digit, pcrec_ucp_set_space,
     pcrec_ucp_set_punct, pcrec_ucp_set_graph, pcrec_ucp_set_print,
     pcrec_ucp_set_hspace, pcrec_ucp_set_vspace;
 void pcrec_setdef_build(Ctx *cx, const PcrecSetDef *d, PcrecCpSet *s);
-Ast *pcrec_setdef_class(Ctx *cx, const PcrecSetDef *d, bool negate,
-                        const char *construct, char *why, size_t whysz);
+Ast *pcrec_setdef_class(Ctx *cx, const PcrecSetDef *d, bool negate);
 /* [UCP] the POSIX row's per-NAME resolution: the first applicable entry
  * whose `operand` is `name` (definitions.c). */
 const RegDef *pcrec_def_resolve_operand(const Ctx *cx, const RegRow *rw,
@@ -7810,6 +7827,10 @@ void pcrec_build_nfa_island(Ctx *cx, Ast *root, Nfa *nfa, bool reverse);
  * cannot express byte by byte, so that no all-byte DFA is exact? The first
  * such `A_CTX` (its `reg_at` is the diagnostic's offset), or NULL. */
 const Ast *pcrec_island_needed(Ctx *cx, const Ast *root);
+/* [UCP] U3 the leftmost start anchor of `root` (`\G`, `^`, `\A`,
+ * `(?m)^`: what `pcrec_nfa_has_bot` finds in an NFA), or NULL. Selection's
+ * `island` row reads it (src/opt/select_engine.c). */
+const Ast *pcrec_start_anchor_of(const Ast *root);
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse, bool collapse);
 
@@ -7851,12 +7872,6 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
  * the value `DState.tr[]` already carries for "dead", so a partially built
  * optional machine is well-formed rather than corrupt on the way out. */
 enum { PCREC_DFA_DEAD = -1 };
-/* [UCP] U3 the value an island machine's non-ASCII byte cell `tr[isl_na]`
- * carries on a `DFA_ISL_ISLAND` state: "the island entry for this state" —
- * the emitter renders it as that state's island token. Below
- * `PCREC_DFA_DEAD` and never a state id, and -2 is the builder's own
- * "unfilled" sentinel, so it is -3. */
-enum { PCREC_DFA_ISLAND = -3 };
 
 
 /* ---- opt -- defined under src/opt/ ----------------------------------*/

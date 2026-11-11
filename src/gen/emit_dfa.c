@@ -4876,7 +4876,7 @@ static bool locate_landmark_walk_applies(const CandSel *s)
     return lw->why == NULL && s->cx->job->lm_built;
 }
 
-/* [UCP] U3 `island`'s predicate: the forward machine is character-stepped
+/* [UCP] U3 `char-step`'s predicate: the forward machine is character-stepped
  * (`Dfa.island`, T4 row 1). Its route mask is CAND_ROUTE_DFA. */
 static bool locate_island_applies(const CandSel *s)
 {
@@ -5595,6 +5595,13 @@ typedef struct CandLocate {
      * newline: compound A5's "Q is end-pinned", read as this field rather
      * than as the row's name. */
     bool         end_seeded;
+    /* [UCP] U3 the RECOVER row whose work the walk does ITSELF, on its own
+     * tables and asked of no slot, named so the start stamp says what runs
+     * (review r4 ucpu3 ADMIT-4): the character-stepped walk's reverse pass
+     * is `reverse-pass`. NULL elsewhere: a walk that asks RECOVER stamps the
+     * row it asked, and one that neither asks nor does it stamps RECOVER's
+     * absence. */
+    const char  *own_recover;
     /* [LANDWALK] the HANDS its walk gives FINISH on a DFA-hat route (E-LF),
      * each with its ASKER, a 0-terminated list (`.take`'s shape; was the
      * `fin` bits): SPAN, NOMATCH, ENDSET (a tie) asked by the body
@@ -9815,8 +9822,12 @@ static const CandRow *dfa_search_start_of(Ctx *cx)
 static const char *dfa_search_start_name(Ctx *cx)
 {
     /* [OPT-REVEND] L2.1 the generated rule: RECOVER's absence where the path
-     * asks none (an attempt loop, the empty engine). */
+     * asks none (an attempt loop, the empty engine) -- unless the LOCATE
+     * row's walk does a RECOVER row's work itself (`own_recover`). */
     const char *a = cand_stamp_absent(cx, CAND_SLOT_RECOVER, cand_route_of(cx));
+    if (a && cand_route_of(cx) == CAND_ROUTE_DFA &&
+        cand_locate_of(cx)->u.locate.own_recover)
+        return cand_locate_of(cx)->u.locate.own_recover;
     return a ? a : dfa_search_start_of(cx)->tok;
 }
 
@@ -10284,21 +10295,24 @@ static const CandRow cand_rows[] = {
      * lists it and the composite (`empty` is not a choice a flag can make:
      * it is the only body of a pattern that matches nothing, so it is not
      * listed). */
-    /* [UCP] U3 `island` (ucp_design.md §3, D134 item 1): the machine is
+    /* [UCP] U3 `char-step` (ucp_design.md §3, D134 item 1): the machine is
      * character-stepped, and every other row's walk steps bytes, so it is
      * FIRST and alone on its population (T4 row 1: no all-byte form exists).
      * Its walk is the forward pass to the last accept and the reverse pass
      * to the smallest accepting start, over characters (`emit_island`). It
      * answers presence itself (`whole`), asks no other slot, and names no
      * machine member: its tables are its own, so no byte-machine form or
-     * stamp reads the island machines. */
-    { .c = { "island", 0, locate_island_applies }, .slot = CAND_SLOT_LOCATE,
-      .routes = CR_DFA, .tok = "island", .map = CM_NONE,
+     * stamp reads the island machines. Its reverse pass is RECOVER's
+     * `reverse-pass` done on those tables (`own_recover`). The token says
+     * what the caller sees (D174: the walk steps characters), not the
+     * internal name. */
+    { .c = { "char-step", 0, locate_island_applies }, .slot = CAND_SLOT_LOCATE,
+      .routes = CR_DFA, .tok = "char-step", .map = CM_NONE,
       .hands = CT_START | CT_VERDICT,
       .needs = { [CAND_ROUTE_DFA] = { 0, 0, CN(CAND_SLOT_PRESENCE) } },
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_island },
-                    .scan = { [CAND_ROUTE_DFA] = "island" },
-                    .whole = true,
+                    .scan = { [CAND_ROUTE_DFA] = "char-step" },
+                    .whole = true, .own_recover = "reverse-pass",
                     .gives = { { CAND_HAND_SPAN, CAND_ASK_BODY },
                                { CAND_HAND_NOMATCH, CAND_ASK_BODY } } } },
     { .c = { "empty", 0, locate_empty_applies }, .slot = CAND_SLOT_LOCATE,
@@ -14265,41 +14279,24 @@ static void emit_cover(Ctx *cx, const char *fn, PcrecEntry ent)
  * (`up[chrctx[a]]`, hazard H7: never the byte column's). The search is the
  * forward pass to the last accept and the reverse pass back from it to the
  * smallest accepting position (the composite's reverse-pass recovery, over
- * characters: the step back is `<prefix>_isl_back`, §3.5's repaired back
- * step, where a lead byte that does not declare exactly the run walked is
- * ⊥); the iterator's retry is the forward pass alone over the notempty
- * machine.
+ * characters: the step back is the encoding's `<prefix>_decode_back`,
+ * PCREC_ENCE_DECODE_BACK, where bytes that do not end a well-formed
+ * character are ⊥); the iterator's retry is the forward pass alone over the
+ * notempty machine.
  *
  * WHAT IT DOES NOT HAVE, each a listed follow-up (ucpu3b_report.md): the
  * T5 fast path (the reserved-token single compare: here every byte pays one
  * `< 0x80` test), a candidate-start skip, a scan edge, minimized machines.
  * Correctness first; the measurement that ranks those is OWED. */
 
-/* `static const <type> <name>[n] = { ... };` at indent 4, 16 per line. */
-static void isl_arr(StrBuf *c, const char *type, const char *name,
-                    const int *v, int n)
-{
-    pcrec_sb_printf(c, "    static const %s %s[%d] = {", type, name, n > 0 ? n : 1);
-    for (int i = 0; i < n; i++) {
-        if (i % 16 == 0) pcrec_sb_puts(c, "\n       ");
-        pcrec_sb_printf(c, " %d,", v[i]);
-    }
-    if (n == 0) pcrec_sb_puts(c, " 0");
-    pcrec_sb_puts(c, "\n    };\n");
-}
-
-/* The smallest C type that holds every value of `v[0..n)`. */
-static const char *isl_type(const int *v, int n)
-{
-    int lo = 0, hi = 0;
-    for (int i = 0; i < n; i++) {
-        if (v[i] < lo) lo = v[i];
-        if (v[i] > hi) hi = v[i];
-    }
-    if (lo >= 0 && hi <= 255) return "unsigned char";
-    if (lo >= -32768 && hi <= 32767) return "short";
-    return "int";
-}
+/* One island machine's tables, by their names in the artifact's table pool
+ * (`pcrec_tbl_ref`): the forward, reverse and retry machines read identical
+ * class, seed, segment and ill-formed-byte tables, so each is defined once
+ * and every machine reads the one copy (review r4 ucpu3 EMIT-1). */
+typedef struct {
+    const char *cls, *nxt, *accn, *tgt, *acci, *aend, *eol, *end;
+    const char *seed, *seedi, *seglo, *segat, *bot;
+} IslTabs;
 
 /* Does some state of `d` have a position view (`eolvar`/`endvar`)? Its
  * walk then reads the two view tables. */
@@ -14310,89 +14307,115 @@ static bool isl_has_views(const Dfa *d)
     return false;
 }
 
-/* One machine's tables, named `<fn>_<tag>_*`: the byte classes, the ASCII
- * steps and accepts, the character-atom steps and accepts, the accept with
- * no character after (`aend`), the seeds by the character before, the
- * segment table, the ⊥ atom of each byte >= 0x80, and (where it has any)
- * the position views, -1 where a state has none. */
-static void isl_tables(Ctx *cx, StrBuf *c, const char *fn, const char *tag,
-                       const Dfa *d)
+/* Table `what` of machine `<fn>_<tag>`, `n` values of `v`, by its pool name. */
+static const char *isl_pool(Ctx *cx, const char *fn, const char *tag,
+                            const char *what, const char *type, const int *v,
+                            int n)
+{
+    return pcrec_tbl_ref(cx, dfa_fragf(cx, "%s_%s_%s", fn, tag, what), type, v, n);
+}
+
+/* One machine's tables into the pool, their names into `o`: the byte
+ * classes, the ASCII steps and accepts, the character-atom steps and
+ * accepts, the accept with no character after (`aend`), the seeds by the
+ * character before, the segment table, the ⊥ atom of each byte >= 0x80, and
+ * (where it has any) the position views, -1 where a state has none. Asking
+ * twice is free: the second ask finds every content pooled. */
+static void isl_tables(Ctx *cx, const char *fn, const char *tag, const Dfa *d,
+                       IslTabs *o)
 {
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
     int n = d->n, nc = d->ncls, na = d->nchr;
     int big = n * (nc > na ? nc : na) + 256 + d->nseg + 2 * n;
     int *v = pcrec_arena_alloc(&cx->arena, (size_t)big * sizeof(int));
     int k;
+    *o = (IslTabs){ 0 };
     for (k = 0; k < 256; k++) v[k] = d->clsmap[k];
-    isl_arr(c, "unsigned char", dfa_fragf(cx, "%s_%s_cls", fn, tag), v, 256);
+    o->cls = isl_pool(cx, fn, tag, "cls", "unsigned char", v, 256);
     for (k = 0; k < n * nc; k++) {
         int t = d->st[k / nc].tr[k % nc];
         v[k] = (k % nc) == d->isl_na || t < 0 ? -1 : t;
     }
-    isl_arr(c, isl_type(v, n * nc), dfa_fragf(cx, "%s_%s_nxt", fn, tag), v, n * nc);
+    o->nxt = isl_pool(cx, fn, tag, "nxt", pcrec_tbl_type(v, n * nc), v, n * nc);
     for (k = 0; k < n * nc; k++)
         v[k] = d->st[k / nc].up[upc_of_class(d, k % nc)].accept;
-    isl_arr(c, "unsigned char", dfa_fragf(cx, "%s_%s_accn", fn, tag), v, n * nc);
+    o->accn = isl_pool(cx, fn, tag, "accn", "unsigned char", v, n * nc);
     for (k = 0; k < n * na; k++) {
         int t = d->st[k / na].tr[nc + k % na];
         v[k] = t < 0 ? -1 : t;
     }
-    isl_arr(c, isl_type(v, n * na), dfa_fragf(cx, "%s_%s_tgt", fn, tag), v, n * na);
+    o->tgt = isl_pool(cx, fn, tag, "tgt", pcrec_tbl_type(v, n * na), v, n * na);
     for (k = 0; k < n * na; k++)
         v[k] = d->st[k / na].up[d->chrctx[k % na]].accept;
-    isl_arr(c, "unsigned char", dfa_fragf(cx, "%s_%s_acci", fn, tag), v, n * na);
+    o->acci = isl_pool(cx, fn, tag, "acci", "unsigned char", v, n * na);
     for (k = 0; k < n; k++) v[k] = d->st[k].up[UPC_PLAIN].accept;
-    isl_arr(c, "unsigned char", dfa_fragf(cx, "%s_%s_aend", fn, tag), v, n);
+    o->aend = isl_pool(cx, fn, tag, "aend", "unsigned char", v, n);
     if (isl_has_views(d)) {
         for (k = 0; k < n; k++) { v[k] = d->st[k].eolvar; v[n + k] = d->st[k].endvar; }
-        isl_arr(c, isl_type(v, n), dfa_fragf(cx, "%s_%s_eol", fn, tag), v, n);
-        isl_arr(c, isl_type(v + n, n), dfa_fragf(cx, "%s_%s_end", fn, tag), v + n, n);
+        o->eol = isl_pool(cx, fn, tag, "eol", pcrec_tbl_type(v, n), v, n);
+        o->end = isl_pool(cx, fn, tag, "end", pcrec_tbl_type(v + n, n), v + n, n);
     }
     for (k = 0; k < nc; k++) v[k] = d->s1u[upc_of_class(d, k)];
-    isl_arr(c, isl_type(v, nc), dfa_fragf(cx, "%s_%s_seed", fn, tag), v, nc);
+    o->seed = isl_pool(cx, fn, tag, "seed", pcrec_tbl_type(v, nc), v, nc);
     for (k = 0; k < na; k++) v[k] = d->s1u[d->chrctx[k]];
-    isl_arr(c, isl_type(v, na), dfa_fragf(cx, "%s_%s_seedi", fn, tag), v, na);
+    o->seedi = isl_pool(cx, fn, tag, "seedi", pcrec_tbl_type(v, na), v, na);
     for (k = 0; k < d->nseg; k++) v[k] = (int)d->seg_lo[k];
-    isl_arr(c, "unsigned", dfa_fragf(cx, "%s_%s_seglo", fn, tag), v, d->nseg);
+    o->seglo = isl_pool(cx, fn, tag, "seglo", "unsigned", v, d->nseg);
     for (k = 0; k < d->nseg; k++) v[k] = d->seg_atom[k];
-    isl_arr(c, "unsigned char", dfa_fragf(cx, "%s_%s_segat", fn, tag), v, d->nseg);
+    o->segat = isl_pool(cx, fn, tag, "segat", "unsigned char", v, d->nseg);
     for (k = 0; k < 128; k++)
         v[k] = cls_has(e->start_cls, (unsigned)(0x80 + k)) ? d->chr_bots : d->chr_botn;
-    isl_arr(c, "unsigned char", dfa_fragf(cx, "%s_%s_bot", fn, tag), v, 128);
+    o->bot = isl_pool(cx, fn, tag, "bot", "unsigned char", v, 128);
+}
+
+/* Is the island retry machine emitted (the find-all iterator's retry over
+ * the notempty machine, `pcrec_emit_dfa_retry`)? Its tables are pooled
+ * with the search machines' then. */
+static bool isl_retry_emitted(Ctx *cx)
+{
+    return cx->job->nedfa.island && pcrec_entry_emitted(cx, PCREC_ENTRY_NEXT) &&
+           (pcrec_iter_retry_of(cx)->needs & PCREC_ITER_NEEDS_NEDFA) != 0;
+}
+
+/* The search walk's two machines' tables, by name (`fn`: the search body). */
+static void isl_search_tables(Ctx *cx, const char *fn, IslTabs *f, IslTabs *r)
+{
+    isl_tables(cx, fn, "f", &cx->job->dfa, f);
+    isl_tables(cx, fn, "r", &cx->job->rdfa, r);
 }
 
 /* The atom of the character or ⊥ just read into `cp` (length `l`; 0 = ⊥ of
  * byte `b`). */
-static const char *isl_atom(Ctx *cx, const char *t, const Dfa *d)
+static const char *isl_atom(Ctx *cx, const IslTabs *t, const Dfa *d)
 {
-    return dfa_fragf(cx, "(l ? (unsigned)%s_segat[%s_isl_seg(%s_seglo, %d, cp)]"
-                     " : (unsigned)%s_bot[b - 0x80u])",
-                     t, cx->opt->prefix, t, d->nseg, t);
+    return dfa_fragf(cx, "(l ? (unsigned)%s[%s_isl_seg(%s, %d, cp)]"
+                     " : (unsigned)%s[b - 0x80u])",
+                     t->segat, cx->opt->prefix, t->seglo, d->nseg, t->bot);
 }
 
 /* The position views at `pos` (§ the composite's axis C, one rule for both
  * directions): at the subject's end the `\z` view, else the `$` one; one
  * before a final newline the `$` one. Into `v`, from `st`. */
-static void isl_views(Ctx *cx, StrBuf *c, const char *t, const Dfa *d,
-                      const char *pos, const char *ind)
+static void isl_views(StrBuf *c, const IslTabs *t, const char *pos,
+                      const char *ind)
 {
-    (void)cx;
     pcrec_sb_printf(c, "%sint v = st;\n", ind);
-    if (!isl_has_views(d)) return;
+    if (!t->eol) return;
     pcrec_sb_printf(c,
         "%sif (__builtin_expect(%s + 1 >= n, 0)) {\n"
         "%s    if (%s == n) {\n"
-        "%s        if (%s_end[v] >= 0) v = %s_end[v];\n"
-        "%s        else if (%s_eol[v] >= 0) v = %s_eol[v];\n"
-        "%s    } else if (subject[%s] == '\\n' && %s_eol[v] >= 0) v = %s_eol[v];\n"
+        "%s        if (%s[v] >= 0) v = %s[v];\n"
+        "%s        else if (%s[v] >= 0) v = %s[v];\n"
+        "%s    } else if (subject[%s] == '\\n' && %s[v] >= 0) v = %s[v];\n"
         "%s}\n",
-        ind, pos, ind, pos, ind, t, t, ind, t, t, ind, pos, t, t, ind);
+        ind, pos, ind, pos, ind, t->end, t->end, ind, t->eol, t->eol, ind, pos,
+        t->eol, t->eol, ind);
 }
 
 /* The FORWARD walk of machine `d` (tables `t`) from `search_from`, seeded by
  * the character before it: `last` is the last accepting position, or
  * (size_t)-1. Declares `n`, `pos`, `last`, `l`, `cp`, `b`, `st`. */
-static void isl_forward(Ctx *cx, StrBuf *c, const char *t, const Dfa *d)
+static void isl_forward(Ctx *cx, StrBuf *c, const IslTabs *t, const Dfa *d)
 {
     const char *p = cx->opt->prefix, *a = isl_atom(cx, t, d);
     pcrec_sb_printf(c,
@@ -14403,50 +14426,42 @@ static void isl_forward(Ctx *cx, StrBuf *c, const char *t, const Dfa *d)
         "    int st = %d;\n"
         "    if (pos > 0) {   /* the seed: the character before search_from */\n"
         "        b = subject[pos - 1];\n"
-        "        if (b < 0x80u) st = %s_seed[%s_cls[b]];\n"
-        "        else { l = %s_isl_back(subject, pos, &cp); st = %s_seedi[%s]; }\n"
+        "        if (b < 0x80u) st = %s[%s[b]];\n"
+        "        else { l = %s_decode_back(subject, pos, &cp); st = %s[%s]; }\n"
         "    }\n"
         "    while (st >= 0) {\n",
-        d->s0, t, t, p, t, a);
-    isl_views(cx, c, t, d, "pos", "        ");
+        d->s0, t->seed, t->cls, p, t->seedi, a);
+    isl_views(c, t, "pos", "        ");
     pcrec_sb_printf(c,
-        "        if (pos >= n) { if (%s_aend[v]) last = pos; break; }\n"
+        "        if (pos >= n) { if (%s[v]) last = pos; break; }\n"
         "        b = subject[pos];\n"
         "        if (b < 0x80u) {\n"
-        "            unsigned k = %s_cls[b];\n"
-        "            if (%s_accn[v * %d + k]) last = pos;\n"
-        "            st = %s_nxt[v * %d + k];\n"
+        "            unsigned k = %s[b];\n"
+        "            if (%s[v * %d + k]) last = pos;\n"
+        "            st = %s[v * %d + k];\n"
         "            pos++;\n"
         "            continue;\n"
         "        }\n"
         "        l = %s_decode(subject, n, pos, &cp);\n"
         "        {\n"
         "            unsigned a = %s;\n"
-        "            if (%s_acci[v * %d + a]) last = pos;\n"
-        "            st = %s_tgt[v * %d + a];\n"
+        "            if (%s[v * %d + a]) last = pos;\n"
+        "            st = %s[v * %d + a];\n"
         "        }\n"
         "        pos += l ? l : 1;\n"
         "    }\n",
-        t, t, t, d->ncls, t, d->ncls, p, a, t, d->nchr, t, d->nchr);
+        t->aend, t->cls, t->accn, d->ncls, t->nxt, d->ncls, p, a, t->acci,
+        d->nchr, t->tgt, d->nchr);
 }
 
-/* `<prefix>_isl_back` and `<prefix>_isl_seg`, once per island artifact,
- * after the encoding's inline entries (they call `<prefix>_decode`). */
-static void isl_helpers(Ctx *cx, StrBuf *c)
+/* `<prefix>_isl_seg`, once per island artifact, then every island machine's
+ * tables at file scope (the pool), beside the encoding's inline entries
+ * (the walks call `<prefix>_decode`/`_decode_back`, the encoding's two
+ * character steps). */
+static void isl_helpers(Ctx *cx, StrBuf *c, const char *fn)
 {
     const char *p = cx->opt->prefix;
     pcrec_sb_printf(c,
-        "/* [UCP] U3 the island's step back over one character ending at e:\n"
-        " * its length, or 0 where the byte before e is ill-formed (one byte\n"
-        " * of BOT: the lead byte must declare exactly the run walked). */\n"
-        "static inline size_t %s_isl_back(const unsigned char *s, size_t e, unsigned *cp)\n"
-        "{\n"
-        "    size_t q = e - 1, len;\n"
-        "    int k = 0;\n"
-        "    while (q > 0 && k < 3 && (s[q] & 0xC0u) == 0x80u) { q--; k++; }\n"
-        "    len = %s_decode(s, e, q, cp);\n"
-        "    return len && q + len == e ? len : 0;\n"
-        "}\n"
         "/* [UCP] U3 the segment holding code point cp (lo ascending). */\n"
         "static inline unsigned %s_isl_seg(const unsigned *lo, int n, unsigned cp)\n"
         "{\n"
@@ -14456,7 +14471,12 @@ static void isl_helpers(Ctx *cx, StrBuf *c)
         "        if (lo[m] <= cp) a = m; else b = m - 1;\n"
         "    }\n"
         "    return (unsigned)a;\n"
-        "}\n", p, p, p);
+        "}\n", p);
+    IslTabs f, r, nt;
+    isl_search_tables(cx, fn, &f, &r);
+    if (isl_retry_emitted(cx))
+        isl_tables(cx, dfa_fragf(cx, "%s__retry", p), "n", &cx->job->nedfa, &nt);
+    pcrec_tbl_emit(cx, c);
 }
 
 static void emit_island(Ctx *cx, const char *fn, PcrecEntry ent)
@@ -14475,11 +14495,10 @@ static void emit_island(Ctx *cx, const char *fn, PcrecEntry ent)
     pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
                           "subject_length", PCREC_START0_SEEK);
     pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
-    const char *tf = dfa_fragf(cx, "%s_f", fn), *tr = dfa_fragf(cx, "%s_r", fn);
-    isl_tables(cx, c, fn, "f", f);
-    isl_tables(cx, c, fn, "r", r);
-    isl_forward(cx, c, tf, f);
-    const char *ra = isl_atom(cx, tr, r);
+    IslTabs tf, tr;
+    isl_search_tables(cx, fn, &tf, &tr);
+    isl_forward(cx, c, &tf, f);
+    const char *ra = isl_atom(cx, &tr, r);
     pcrec_sb_printf(c,
         "    if (last == (size_t)-1) return 0;\n"
         "    /* REVERSE: from the end back to the smallest accepting position,\n"
@@ -14489,34 +14508,35 @@ static void emit_island(Ctx *cx, const char *fn, PcrecEntry ent)
         "    st = %d;\n"
         "    if (last < n) {\n"
         "        b = subject[last];\n"
-        "        if (b < 0x80u) st = %s_seed[%s_cls[b]];\n"
-        "        else { l = %s_decode(subject, n, last, &cp); st = %s_seedi[%s]; }\n"
+        "        if (b < 0x80u) st = %s[%s[b]];\n"
+        "        else { l = %s_decode(subject, n, last, &cp); st = %s[%s]; }\n"
         "    }\n"
         "    while (st >= 0) {\n",
-        r->s0, tr, tr, p, tr, ra);
-    isl_views(cx, c, tr, r, "pos", "        ");
+        r->s0, tr.seed, tr.cls, p, tr.seedi, ra);
+    isl_views(c, &tr, "pos", "        ");
     pcrec_sb_printf(c,
-        "        if (pos == 0) { if (%s_aend[v]) start = pos; break; }\n"
+        "        if (pos == 0) { if (%s[v]) start = pos; break; }\n"
         "        b = subject[pos - 1];\n"
         "        if (b < 0x80u) {\n"
-        "            unsigned k = %s_cls[b];\n"
-        "            if (%s_accn[v * %d + k]) start = pos;\n"
+        "            unsigned k = %s[b];\n"
+        "            if (%s[v * %d + k]) start = pos;\n"
         "            if (pos <= search_from) break;\n"
-        "            st = %s_nxt[v * %d + k];\n"
+        "            st = %s[v * %d + k];\n"
         "            pos--;\n"
         "            continue;\n"
         "        }\n"
-        "        l = %s_isl_back(subject, pos, &cp);\n"
+        "        l = %s_decode_back(subject, pos, &cp);\n"
         "        {\n"
         "            unsigned a = %s;\n"
-        "            if (%s_acci[v * %d + a]) start = pos;\n"
+        "            if (%s[v * %d + a]) start = pos;\n"
         "            if (pos <= search_from) break;\n"
-        "            st = %s_tgt[v * %d + a];\n"
+        "            st = %s[v * %d + a];\n"
         "        }\n"
         "        pos -= l ? l : 1;\n"
         "    }\n"
         "    if (start == (size_t)-1) return 0;\n",
-        tr, tr, tr, r->ncls, tr, r->ncls, p, ra, tr, r->nchr, tr, r->nchr);
+        tr.aend, tr.cls, tr.accn, r->ncls, tr.nxt, r->ncls, p, ra, tr.acci,
+        r->nchr, tr.tgt, r->nchr);
     emit_search_success(cx, c, "start", "last", "    ");
     pcrec_sb_puts(c, "}\n");
 }
@@ -14524,17 +14544,17 @@ static void emit_island(Ctx *cx, const char *fn, PcrecEntry ent)
 /* [UCP] U3 `<prefix>__retry` over an island notempty machine
  * (`pcrec_emit_dfa_retry`'s contract): the forward walk alone from
  * `search_from`, its last accept the end of the preferred non-empty match
- * beginning there. */
+ * beginning there. Its tables were pooled by `isl_helpers`. */
 static void emit_island_retry(Ctx *cx, StrBuf *c)
 {
     const char *p = cx->opt->prefix;
-    const char *t = dfa_fragf(cx, "%s__retry_n", p);
+    IslTabs t;
     pcrec_sb_printf(c,
         "static ptrdiff_t %s__retry(const unsigned char *subject, size_t subject_length,\n"
         "                          size_t search_from, ptrdiff_t (*capture_spans)[2])\n"
         "{\n", p);
-    isl_tables(cx, c, dfa_fragf(cx, "%s__retry", p), "n", &cx->job->nedfa);
-    isl_forward(cx, c, t, &cx->job->nedfa);
+    isl_tables(cx, dfa_fragf(cx, "%s__retry", p), "n", &cx->job->nedfa, &t);
+    isl_forward(cx, c, &t, &cx->job->nedfa);
     pcrec_sb_puts(c, "    if (last == (size_t)-1) return -1;\n"
                "    capture_spans[0][0] = (ptrdiff_t)search_from;\n"
                "    capture_spans[0][1] = (ptrdiff_t)last;\n");
@@ -16722,8 +16742,17 @@ void pcrec_emit_dfa(Ctx *cx)
      * (`pcrec_dfa_landing_guard`), a `static inline` entry defined ahead of
      * the search body below. */
     if (!shell && pcrec_dfa_landing_guard(cx)) cx->job->enc_mask |= PCREC_ENCE_DECODE;
-    /* [UCP] U3 the island walk decodes every non-ASCII character. */
-    if (!shell && cx->job->dfa.island) cx->job->enc_mask |= PCREC_ENCE_DECODE;
+    /* [UCP] U3 the island walk decodes every non-ASCII character, forward
+     * and back; an encoding with no such rows cannot reach it (the island
+     * exists only where a set is not byte-expressible). */
+    if (!shell && cx->job->dfa.island) {
+        const PcrecEnc *ie = pcrec_enc_by_id(cx->opt->encoding);
+        if (!pcrec_enc_has_entry(ie, PCREC_ENCE_DECODE) ||
+            !pcrec_enc_has_entry(ie, PCREC_ENCE_DECODE_BACK))
+            pcrec_ctx_fail(cx, 0, "internal error: encoding '%s' has no "
+                           "character step for the character-stepped DFA", ie->name);
+        cx->job->enc_mask |= PCREC_ENCE_DECODE | PCREC_ENCE_DECODE_BACK;
+    }
     {
         /* [EMIT-ENTRIES] the shape that decides which entry calls which,
          * stated before the first declaration: `_match` has its own body on
@@ -16779,7 +16808,7 @@ void pcrec_emit_dfa(Ctx *cx)
      * an artifact whose mask holds none. */
     pcrec_emit_residual_inline(cx, c);
     /* [UCP] U3 the island walks' two helpers, after the DECODE they call */
-    if (cx->job->dfa.island) isl_helpers(cx, c);
+    if (cx->job->dfa.island) isl_helpers(cx, c, g.searchfn);
     {
         const PcrecEntryText t = { .body = g.searchfn };
         pcrec_emit_entry(cx, &g, PCREC_ENTRY_SEARCH, &t);
@@ -16830,6 +16859,7 @@ in_entries:
         InfoStamp st = { 1, NULL, -1, -1, -1, 0, &bs };
         emit_info_def(cx, c, g.infoname, g.upper, &st);
     }
+    pcrec_tbl_done(cx);
     pcrec_emit_artifact_end(cx, &g);
 #ifdef PCREC_CAND_TRACE
     pcrec_cand_path_trace(cx);   /* [OPT-REVEND] L0's `CANDPATH` record */

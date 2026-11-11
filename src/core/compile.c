@@ -1294,10 +1294,14 @@ static bool fit_trial_applies(const FitSel *s) { return s->st_phase == ST_LADDER
  * today's artifact. */
 /* [SEL-1] a DFA overflow is a selection outcome only under `--engine=auto`
  * and without `-fprefilter` (both force forms stay do-or-die). */
+/* [UCP] U3 nor on a character-stepped machine (`Ctx.island_route`): the
+ * VM cannot read its set, so its over-limit refusal stands as
+ * `--engine=dfa`'s does (limits.md §3.9¶4). */
 static bool fit_sel1_eligible(const FitSel *s)
 {
     return s->cx->opt->engine == PCREC_ENGINE_AUTO &&
-           !pcrec_flags_has(s->flags, PCREC_FORCE_PREFILTER);
+           !pcrec_flags_has(s->flags, PCREC_FORCE_PREFILTER) &&
+           !s->cx->island_route;
 }
 
 /* [OPT-4] the [SEL-1] rung that keeps a count-collapsed prefilter: offered
@@ -3060,10 +3064,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         if (pcrec_artifact_has_dfa_scan(&cx)) {
             /* [UCP] U3 T4 row 1: a context set this encoding cannot express
              * byte by byte has no all-byte machine, so both NFAs are ISLAND
-             * builds (character edges, `Nfa.island`). Selection made such a
-             * pattern DFA-only (src/opt/select_engine.c `island`), so there
-             * is no prefilter customer and the collapse below never fires. */
-            const bool island = pcrec_island_needed(&cx, root) != NULL;
+             * builds (character edges, `Nfa.island`). Selection's `island`
+             * row decided it (`Ctx.island_route`, src/opt/select_engine.c)
+             * and made the pattern DFA-only, so there is no prefilter
+             * customer and the collapse below never fires. */
+            const bool island = cx.island_route;
             if (island) pcrec_build_nfa_island(&cx, root, &cx.job->nfa, false);
             else        pcrec_build_nfa(&cx, root, &cx.job->nfa, false, false);
             /* [OPT-4] THE PREFILTER'S LANGUAGE (K39; docs/design/
@@ -3245,13 +3250,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 }
             } else {
                 /* [UCP] U3 the attempt engine's island is a follow-up
-                 * (ucpu3b_report.md §0): refused by name, never built. */
+                 * (ucpu3b_report.md §0): selection's `island` row refuses a
+                 * start anchor beside the set (`pcrec_start_anchor_of`, the
+                 * AST form of the test just above), so none arrives here. */
                 if (island)
-                    pcrec_ctx_fail(&cx, 0, "a start anchor (^, \\A, \\G or "
-                                   "(?m)^) beside a word boundary over the Unicode "
-                                   "word set is not built yet ([UCP] U3: the "
-                                   "character-stepped attempt engine); restrict the "
-                                   "word set with (?aW)");
+                    pcrec_ctx_fail(&cx, 0, "internal error: a start anchor "
+                                   "reached the character-stepped DFA past "
+                                   "selection's `island` row");
                 cx.job->engine = PCREC_ENG_ATTEMPT;
                 /* [LIM-2] N1: raise-only per-compile override (0 = the
                  * built-in default). `pcrec_build_dfa`'s `maxstates` is an
