@@ -6561,3 +6561,29 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   refs: [REGIME-EVAL]; the kit's grid1 harness; docs/dev/lanes/slotarms_report.md
   Replay cannot see the dispatch compares' cost. A hand-built table arm (run-time rows as real emitted compares) timed in one slot against the fixed forms and the per-row best, on synthetic + [REGIME-CORPUS] subjects. The harness becomes [MEASURE-SET]'s formal method.
 
+
+## Completed 2026-11-11 (lane paper: close-out paperwork set; rows verbatim and de-indented, a `completed` line and a DONE status line added)
+
+- [CLI-OUTKEEP] STATE:started — `-o` WRITES ONLY WHEN THE BYTES CHANGE (TEMP + RENAME), SO MAKEFILES DO NOT RECOMPILE
+  completed: 2026-11-11 lane paper (landed 656690044 via lane/outkeep, merged 48eb5cbb0 via lane/outfix; row verbatim below, de-indented)
+  filed: 2026-10-22 Frank (subst R4a discussion: "that's nice! Yes. Own row")
+  status (2026-11-11): build go: Frank 2026-11-10. Built on lane/outkeep, landed via lane/outfix (cli write_file, cli.md 1.2 paragraphs 3-4, tests/cli, one mech row); make test OWED (cloud run). Was: every -o output overwritten in place.
+  status (2026-11-11): DONE: `-o` writes only when the bytes change (temp + rename): cli write_file, cli.md 1.2 paragraphs 3-4, tests/cli, one mech row; landed 656690044, merged 48eb5cbb0; its full make test verdict is outfix's cloud run (owed at closing, read by the standard watcher)
+  refs: docs/spec/cli.md; examples/makefile/ (D118); worktrees/subst/docs/dev/lanes/subst_rulings.md R10
+  Charter: when `-o FILE` exists and its bytes equal the new output, pcrec leaves it untouched (bytes and timestamp), so `pcrec --emit-support -o support.h` and generated matchers can be re-run on every build without forcing recompiles. Otherwise it writes a temp file in the same directory and renames it over, so an interrupted run never leaves a half-written file. Applies to every file pcrec writes via -o (matchers, headers, stamps, the support unit); no new flag.
+
+- [GATE-RUNS] STATE:started — CHECKS OUTSIDE make test HAVE NO REGULAR RUNNER AND NO RETAINED VERDICT
+  completed: 2026-11-11 lane paper (SUPERSEDED by [CLOUD-SUITE]: the sharded cloud suite is the regular runner of the checks outside make test; row verbatim below, de-indented)
+  filed: 2026-10-23 manager, from research lane gatecensus (docs/dev/gate_census_2026-10-23.md)
+  status (2026-10-26): first full run 2026-10-24 (job 300, 5596c3207): RED (axes, mech, recid known [RECID-A]); fsfix 1de780cb7 and [EMIT-BIDI] 7234c2e86 fixed the stale reds; 624 axes re-run validated them; ledger has the run line
+  status (2026-11-11): SUPERSEDED by [CLOUD-SUITE] (cloud kinds table: test, axes, ubsan, asan, mech; scripts/cloudrun; verdicts kept by the gather and queuewatch); the 2026-10-24/27/11-05 full runs are in the ledger; the seven runner-less checks are re-censused under [CLOUD-SUITE], not here
+  refs: scripts/battery.sh; decisions D136; [RECID-A]; docs/dev/gate_census_2026-10-23.md
+  The census: every check outside `make test` depends on a hand-launched scripts/battery.sh, which keeps no verdict on this box (battery verdicts survive only as journal prose), and pins inside those checks are re-pinned with nothing exercising them between launches. Seven checks have no runner: ksweep, memfn-g2-full, lbsweep, specimen, tiered-entry, uprops-utf8, spec. test-recursion-identity is the third gate to go silently red (D136 recorded the second).
+
+- [BENCH-UTF8] STATE:started — the `utf8` subbench, requested as I-90 (bench inbox)
+  completed: 2026-11-11 lane paper (pcrec's side closed; growth families (g)-(k) handed to the bench dev; row verbatim below, de-indented)
+  filed: 2026-09-22 Frank
+  status (2026-11-10): pcrec side built (utf8 cells in the bench sets since 2026-10); growth families (g)-(k) not verifiable from this repo; awaiting bench-dev confirmation (asked 2026-11-10)
+  status (2026-11-11): DONE for pcrec: utf8 cells are in the bench sets since 2026-10 (families a-f); growth families (g)-(k) (find-all, invalid UTF-8, start-inside-a-character, surrogates, the `-e byte` mirror arm) HANDED to the bench dev (pcrecdev2), who owns them in the bench repo; pcrec adds nothing here
+  refs: tests/utf8; decisions D78 D119
+  the bench BUILDS (D78), pcrec runs; UTF-8 text subjects in several scripts (Latin-1-Supplement-heavy, Cyrillic, CJK, mixed/emoji, one ASCII control); families (a) classes, (b) multi-byte literals/runs, (c) caseless over non-ASCII, (d) multi-byte alternation/quantifiers, (e) assertions (\b/lookbehind/multiline), (f) properties, in the first release; growth plan (g)-(k) named (find-all, invalid UTF-8, start-inside-a-character, surrogates, the `-e byte` mirror arm) — pcrec's tests/utf8 axis01-12 are the correctness axes the subbench measures SPEED on. MEASURED NEED: the shipped byte-frequency prior is inverted under utf8 (reqbyte_freq_pick.md §3), [OPT-OFSK] reads it under utf8 today unmeasured, the freq pick and 2b decline under utf8. First customers: offset-skip rows, high-byte required-byte rows, fold sets. Ledger → cycle 3's utf8 question.

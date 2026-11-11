@@ -2401,7 +2401,7 @@ against:
 | distinct CONSTRUCTS behind them | **6** | pos/neg × ahead/behind, plus non-atomic pos ahead/behind |
 | body shapes per construct | **9** | empty; a literal; a class; a fixed multi-character; same-length alternatives; different-length alternatives (lookbehind only); a capture; a nested lookaround; a backreference |
 | contexts | **7** | pattern start; pattern end; mid-pattern; inside an alternation branch; under `*`, `+`, `{n,m}`; inside a capture; inside an atomic group |
-| refusal cells | **8** | unbounded body; bounded-variable body; single-branch variable body; backref to a variable group (until [VLOOKBEHIND] stage 2; then `vlb_d27_extract.md`'s refusal classes); `\K` in each of the four polarities |
+| refusal cells | **6** | unbounded body; backref to a variable group (until [VLOOKBEHIND] stage 2; then `vlb_d27_extract.md`'s refusal classes); `\K` in each of the four polarities (the bounded-variable and single-branch variable bodies were refusal cells before [VLOOKBEHIND] stage 1; both are accepted now) |
 | oracle axis | **2** | python-verifiable vs `# pcre2-only` (§7) |
 
 **Corpus size: ≈ 6 × 9 × 7 ≈ 380 behavioural cells plus ≈ 40 refusal cells**,
