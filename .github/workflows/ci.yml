@@ -1,43 +1,35 @@
 name: CI
 
 # [REL-1.6] the per-PR/per-push tier ONLY. The full gate (make ubsan/asan/
-# lint, make mech's sabotage matrix, make test-axes) never runs here — see
-# docs/testing.md "CI" for the tier split and why. This workflow's own
-# `make test` step is also this row's first MEASUREMENT: whether the full
-# `make test` suite fits inside a hosted runner at all (docs/dev/plan.md
-# [REL-1.6], Frank: "curious to see if the test run fits in actions").
+# lint, make mech's sabotage matrix, make test-axes) never runs here -- see
+# docs/testing.md "CI" for the tier split and why.
 #
-# Runs on ubuntu-latest with GNU gcc as CC (D2: gcc is the target compiler;
-# CI needs no cc_resolve.sh dance the way the darwin dev box does, since
-# ubuntu-latest's `gcc` already IS GNU gcc). The pinned libpcre2 10.46 (D98)
-# is BUILT FROM SOURCE below, never taken from the distro package, so the
-# differential tiers (PC-3/PC-4, the definitions oracle, uprops) RUN against
-# the version this tree is actually measured against rather than SKIPping
-# (no oracle at all) or, worse, running against the wrong one -- run 1
-# (35675372280) installed `libpcre2-dev` (Ubuntu 22.04's package, 10.42,
-# four minor releases behind) and measured 60 PC-3 failures that were the
-# version gap restated once per row, not a real divergence. tests/registry/
-# pcre2_check.c now carries a version FLOOR (D98) that SKIPs loudly on
-# anything older than 10.46, so a stranger's box with an older distro
-# package gets a clean skip rather than that -- but CI is exactly the box
-# that should never take the skip path, which is why it pins its own copy.
+# [CLOUD-SUITE] ciswitch (2026-11-11): CI runs the cloud `test` machinery, not a
+# table of its own. The `test` job below CALLS .github/workflows/cloud-test.yml
+# (a reusable workflow) with kind=test: its plan job reads the kind from
+# tests/ci/cloud_kinds.tsv, N shards run `make test-shard` over the declared
+# table tests/ci/cloud_test_shards.tsv (17 shards, ~18 min wall against the old
+# 3 shards' 52-68 min), and its gather job builds the ONE verdict (green only if
+# every expected shard reported rc 0). Nothing in this file names a section, a
+# shard or a shard count. The runner setup (python 3.14, the PINNED libpcre2 10.46
+# built from source, never a distro package -- D98) is
+# .github/actions/shard-setup, shared with the shards.
 #
-# [CI-SHARD] (lane cishard, 2026-10-13): `make test` outgrew one hosted runner
-# (run 38345462196 was killed at its 90-minute step timeout with 15 sections
-# still to run; docs/dev/lanes/citime_report.md), so the job is a MATRIX of
-# `make test-shard CISHARD=K/N`, each shard a serial run of its own section list.
-# The split is the DECLARED TABLE tests/ci/shards.tsv, held to TEST_SECTIONS
-# exactly by `test-ci-shards` (inside every shard, as a member of the list) --
-# nothing in this file knows a section name. The `shard:` line below is read by
-# that check too: it must list exactly 1/N..N/N for the table's N. `make test`
-# stays the one-box local standard and is not what CI runs any more.
+# `make` + `make strict` stay a job of their own here: the first red a stranger's
+# PR shows is a build or a new-warning failure, in ~1-2 min, before the shards finish.
+#
+# Runs on ubuntu-latest with GNU gcc as CC (D2: gcc is the target compiler; generated
+# code uses GNU C extensions). `make strict` is the opt-in warnings-as-errors gate (R5-Q1:
+# not the default, so a stranger's build never breaks on a newer gcc's opinion); CI is
+# where it belongs. NOT built here, per D2: a clang job.
 on:
   pull_request:
   push:
     branches: [main]
 
 # Cancel a superseded run of the same PR (or the same branch on push) rather
-# than let two runs race to the same conclusion.
+# than let two runs race to the same conclusion. Cancelling this run cancels the
+# called workflow's jobs with it.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -46,163 +38,28 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: test (${{ matrix.shard }})
+  build:
+    name: make + make strict
     runs-on: ubuntu-latest
-    strategy:
-      # Every shard reports its own verdict AND its own per-section timings:
-      # the timings are the measurement the first sharded runs exist for, so a
-      # red shard must not cancel the others mid-measurement.
-      fail-fast: false
-      matrix:
-        shard: ["1/3", "2/3", "3/3"]
-    # Backstop for the whole job (checkout + deps + build + strict + shard).
-    # The shard step below carries its own, tighter timeout-minutes (basis
-    # there); this is only a ceiling in case some earlier step itself hangs:
-    # ~1 min of setup/build/strict (measured, cached libpcre2; a cache miss
-    # adds the libpcre2 build, a few min) + the 75-minute shard step + upload.
-    timeout-minutes: 90
+    timeout-minutes: 30
     steps:
-      # fetch-depth: 0 (full history), not actions/checkout@v4's shallow
-      # default: run 2 (2026-09-21/22) measured tests/codegen/
-      # run_cpset_structure.sh's CHECK 1R hard-failing because its pin
-      # (cb546b3a, a pre-stage-1 commit `git archive`s to build the
-      # failing-direction reference) does not resolve on a shallow clone.
-      # It is the only git-archive/rev-parse pin `make test`'s own section
-      # list (Makefile TEST_SECTIONS) reaches — the four codegen/run_*
-      # _identity.sh scripts with their own REFCOMMIT/FILEPIN pins
-      # (lookaround eacac76, recursion ac4917d/a70982c9, atomic e2f81d5,
-      # backref 5286265) are each their own opt-in `make test-*-identity`
-      # target, never in TEST_SECTIONS, so they neither ran nor were
-      # exercised by the shallow clone in run 2 — nothing to say passed
-      # "by luck" there, they simply did not run. `make mech`'s sabotage
-      # matrix `git archive`s HEAD itself (no ancestor pin) and is not
-      # part of `make test` either. The repo is small (this history costs
-      # nothing worth trimming for); see the `make test` step's own timing
-      # for the actual checkout-step cost next run.
+      # full history: some test pins resolve ancestor commits (kept from the shard days; cheap)
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      # The runner setup -- python 3.14 (the base-tier oracle's version: what `re` accepts moves between
-      # releases, `\z` is 3.14+, which moves the C3 populations in tests/rxtsource), pkg-config, the PINNED
-      # libpcre2 10.46 built from the release tarball and cached (D98: never a distro package; run 1,
-      # 35675372280, measured what trusting apt cost), PC-3's oracle pointed at it and verified, `gcc
-      # --version`, `make` -- lives in ONE place, .github/actions/shard-setup/action.yml, shared with
-      # cloud-test.yml ([CLOUD-SUITE] B). Its comments carry the history that used to sit here; the steps,
-      # their order and the cache key are the ones this file had.
       - uses: ./.github/actions/shard-setup
+      - run: make
+      - run: make strict
 
-      # Opt-in warnings-as-errors gate (R5-Q1: NOT the default `make`/`make
-      # test`, so a stranger's build never breaks on a newer gcc's new
-      # opinion) -- CI is exactly the place to run it anyway, on a pinned
-      # runner image, so a real new warning is caught before merge instead
-      # of waiting for someone to run `make strict` by hand. Writes nothing;
-      # safe to run before `make test` touches the same build/ tree.
-      #
-      # Once per run, not once per shard: it compiles the same tree whatever
-      # the shard, so shard 1 carries it (BEFORE its test sections, so a new
-      # warning fails that job fast; the other shards are unaffected, which
-      # fail-fast: false above makes visible rather than hiding).
-      - name: make strict
-        if: startsWith(matrix.shard, '1/')
-        run: make strict
+  test:
+    name: test
+    uses: ./.github/workflows/cloud-test.yml
+    with:
+      kind: test
+      owner: ci
 
-      # THE SHARD: `make test-shard CISHARD=K/N` runs exactly shard K's sections
-      # from tests/ci/shards.tsv with `make test`'s own accounting (same -k
-      # launch, same marker files, same "sections ran: N/M" trailer over THIS
-      # shard's list; verdict = make's `*** [...test-X] Error` lines).
-      #
-      # PER-SECTION TIMESTAMPS: `make --debug=j` prints a `Putting child ...
-      # (test-X)` line when a section's recipe starts and `Removing child`
-      # when it ends; scripts/sectiontimes (the mechanism scripts/perfrun
-      # already uses for its sections.tsv, [TT-JTUNE]) stamps each such line
-      # with its arrival time into build/ci/sections.raw (epoch seconds,
-      # flushed per line, so a step the timeout kills leaves every started
-      # section on disk) and passes every OTHER line through unchanged to the
-      # log. Nothing in the Makefile or the tests carries the instrumentation.
-      #
-      # timeout-minutes BASIS (cishard2, 2026-10-13, from run 38354147463): the
-      # table now holds runner-measured seconds and projects 37.1 min for the
-      # longest shard (the run's own shards took 25.7 / 37.6 / 37.1 min, the
-      # first short only because its SIMD family died at once on taskset).
-      # Stated spread factor 1.4 (the serial suite's same-tree runner spread
-      # was 1.5x, 56..85 min; one sharded run is too little data to go
-      # lower): 37.1 x 1.4 = 52, rounded up to 55. NOT headroom for growth.
-      # RAISED 55 -> 65 (cired4, 2026-10-29, run 40835409808): shard 3 of a
-      # tree whose shard 3 is unchanged ran every section ~1.3x slower than
-      # the run before (44.7 min -> killed at 55, no red section), a runner
-      # spread the other two shards also showed (50 min). 65 = ~1.3x on the
-      # slowest shard's ~50 min; the job backstop above moved 70 -> 80.
-      # RAISED 65 -> 75 (citri4, 2026-11-09, run 42542841971): shard 3 of a
-      # docs-only tree (green at 53.5 min on 550e23364) was killed at 65 inside
-      # its last section (test-subst-d27) with no red section: a slow runner,
-      # every shard-3 section ~1.2-1.25x its green wall while shard 1 of the
-      # same run ran 0.7x its green wall. Table re-balanced the same day from
-      # the green run 42535444227 (shards were 47/56/53 min, now ~52 each);
-      # 75 = ~1.45x on the balanced ~52 min, the spread seen so far being
-      # 1.3x (cired4) .. 1.25x (this run) per shard. Backstop moved 80 -> 90.
-      - name: make test-shard
-        timeout-minutes: 75
-        run: |
-          set -o pipefail
-          mkdir -p build/ci
-          { time make --debug=j test-shard CISHARD="${{ matrix.shard }}"; } 2>&1 \
-            | python3 scripts/sectiontimes stamp build/ci/sections.raw \
-            | tee build/ci/test.log
-
-      # Runs on success AND failure AND a step-timeout kill. `--open` adds the
-      # sections that STARTED and never finished (end = last stamp, marked
-      # `open`), which is exactly the row a killed run needs. sections.raw
-      # carries the absolute epoch stamp of every start/end.
-      - name: Per-section timings
-        if: always()
-        run: |
-          mkdir -p build/ci
-          if [ -s build/ci/sections.raw ]; then
-            python3 scripts/sectiontimes report build/ci/sections.raw --open | tee build/ci/sections.tsv
-          else
-            echo "no sections.raw: the shard step never started" | tee build/ci/sections.tsv
-          fi
-
-      - name: Upload per-section timings
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pcrec-ci-sections-${{ strategy.job-index }}
-          path: |
-            build/ci/sections.tsv
-            build/ci/sections.raw
-          if-no-files-found: warn
-          retention-days: 30
-
-      # build/watchdog.log accumulates one line per scripts/watchdog-wrapped
-      # call across the shard (compiler invocations under a CPU/RSS/wall
-      # budget) -- the single most useful artifact for a hung or budget-killed
-      # case. build/ci/test.log is this job's own captured stdout+stderr of
-      # the shard step. Both are gitignored (build/) so they only exist on the
-      # runner; upload them on failure only -- a green run has nothing here
-      # worth keeping.
-      - name: Upload logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pcrec-test-logs-${{ strategy.job-index }}
-          path: |
-            build/ci/test.log
-            build/watchdog.log
-          if-no-files-found: warn
-          retention-days: 14
-
-# NOT built here, per D2 (gcc is the target compiler; generated code uses
-# GNU C extensions) and Frank's charter for this row: a second `strict-clang`
-# job. clang is not what pcrec targets, `make strict` and `make test` both
-# resolve CC to gcc unconditionally on this image, and a clang-only warning
-# would be a false alarm this workflow has no business raising. See
-# docs/testing.md "CI" for the one-line version of this.
-#
-# Forks: pull_request events from a fork run this SAME job, unmodified. The
-# repo is public, this workflow uses no secrets, no repository dispatch and
-# no self-hosted runner, so there is nothing here a fork's PR could leak or
-# abuse by running it -- the usual pull_request_target dance (needed when a
-# workflow touches secrets or writes back to the base repo) does not apply.
+# Forks: pull_request events from a fork run this SAME workflow, unmodified. The
+# repo is public, and neither this file nor cloud-test.yml uses a secret, a
+# repository dispatch or a self-hosted runner (the called workflow needs only
+# contents: read and the default token for artifacts), so there is nothing a fork's PR
+# could leak or abuse -- the pull_request_target dance does not apply.

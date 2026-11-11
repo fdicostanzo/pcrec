@@ -470,7 +470,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-kitproof test-casemap test-findall test-subst test-subst-d27 test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
-# and tests/ci/shards.tsv, which must name every member of this list exactly once
+# and tests/ci/cloud_test_shards.tsv, which must name every member of this list exactly once
 # (adding a section here without a shard row turns `make test-ci-shards` red).
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
@@ -541,10 +541,10 @@ test:
 
 # [CI-SHARD] `test-shard`: CI's form of `test:` (lane cishard, 2026-10-13).
 # `make test` itself is unchanged and stays the local merge/close standard; CI
-# (.github/workflows/ci.yml) runs `make test-shard CISHARD=K/N` as a matrix of
-# N jobs because the serial suite outgrew the hosted 4-vCPU runner's 90 minutes
+# (.github/workflows/ci.yml -> cloud-test.yml, kind test) runs `make test-shard CISHARD=K/N`
+# as a matrix of N jobs because the serial suite outgrew the hosted 4-vCPU runner's 90 minutes
 # (docs/dev/lanes/citime_report.md). The split is the DECLARED TABLE
-# tests/ci/shards.tsv (section, shard, weight, weight source) -- never an
+# tests/ci/cloud_test_shards.tsv (section, shard, weight, weight source) -- never an
 # if-chain here or in YAML -- and `test-ci-shards` (a TEST_SECTIONS member)
 # holds that table to TEST_SECTIONS exactly. The recipe is `test:`'s own
 # accounting restated over the shard's list: the same `$(MAKE) -k` launch, the
@@ -554,7 +554,7 @@ test:
 # Error` lines; a shard is green only if every section in its list was
 # launched AND none failed.
 test-shard:
-	@secs="$$(bash tests/ci/check_shards.sh --list '$(CISHARD)')" || { echo "test-shard: usage: make test-shard CISHARD=K/N (see tests/ci/shards.tsv)" >&2; exit 2; }; \
+	@secs="$$(bash tests/ci/check_shards.sh --list '$(CISHARD)')" || { echo "test-shard: usage: make test-shard CISHARD=K/N (see tests/ci/cloud_test_shards.tsv)" >&2; exit 2; }; \
 	secs="$$(echo $$secs)"; \
 	dir="$$(mktemp -d "$${TMPDIR}/pcrec-test-trailer.XXXXXX")"; \
 	rc=0; \
@@ -575,8 +575,7 @@ test-shard:
 	exit $$rc
 
 # [CI-SHARD] the CONTROL on the table above: every TEST_SECTIONS member in
-# exactly one shard, no unknown names, a non-empty shard each, ci.yml's matrix
-# listing exactly the table's shards, then the planted self-test (one plant per
+# exactly one shard, no unknown names, a non-empty shard each, then the planted self-test (one plant per
 # check, each required red). $(TEST_SECTIONS) is passed on argv -- the list is
 # spelled once, here, and the table is what is checked against it.
 test-ci-shards:
@@ -586,7 +585,7 @@ test-ci-shards:
 
 # [CLOUD-SUITE] B: the structural checks of the cloud-run machinery (tests/ci/cloud_check.sh: the cloud shard
 # table holds TEST_SECTIONS exactly, no kind is named in code, one shard-setup copy, one artifact-name source).
-# Opt-in and NOT a TEST_SECTIONS member (tests/ci/shards.tsv is CI's and stays unchanged); run on change.
+# Opt-in and NOT a TEST_SECTIONS member (cloud_test_shards.tsv is the table CI runs); run on change.
 cloud-check: all
 	@bash tests/ci/cloud_check.sh $(TEST_SECTIONS)
 

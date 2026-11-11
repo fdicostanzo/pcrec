@@ -1,7 +1,7 @@
 # tests/doc_lint/ — the tracker-format section and the index checks ([DOC-INDEX], D192)
 
-`make test-doc-lint` (in `make test`, CI shard 2) is born in T1 so the structural lists (TEST_SECTIONS, `.PHONY`,
-tests/ci/shards.tsv, tests/lib/san_excluded.txt) move once. Format: docs/dev/doc_format.md; design:
+`make test-doc-lint` (in `make test`, a CI shard) is born in T1 so the structural lists (TEST_SECTIONS, `.PHONY`,
+tests/ci/cloud_test_shards.tsv, tests/lib/san_excluded.txt) move once. Format: docs/dev/doc_format.md; design:
 docs/design/doc_index_format.md (§2.2-§2.4, §5.2, appendices B and J).
 
 ## Files
