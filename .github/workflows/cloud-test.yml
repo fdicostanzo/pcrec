@@ -1,0 +1,181 @@
+name: Cloud
+
+# [CLOUD-SUITE] piece A: a casual `make test` on ANY branch, as the same sharded jobs CI runs, plus ONE
+# verdict. Trigger = a push of a `cloud/<owner>/<kind>/<name>` branch (scripts/cloudrun pushes it; no
+# default-branch dispatch needed). owner = main|kit|<lane> (who is told the verdict: queuewatch reads it
+# through `gh`, zero model calls); kind = test today -- tests/ci/cloud_gather.sh `shards KIND` is the one
+# place a kind (mech, axes) gets its shard list, and the plan job refuses a kind it does not define.
+#
+# ci.yml is UNCHANGED and the shard job below is a COPY of its steps, not a shared reusable workflow: moving
+# ci.yml's job behind `workflow_call` would rename its checks ("test / test (1/3)"), and ci.yml cannot be
+# exercised without triggering it (barred for this lane). The copy is the shard job ONLY; if ci.yml's shard
+# steps change (libpcre2 pin, timeout), change them here too (tests/ci/CLAUDE.md names the pairing).
+#
+# NOT cancelled by a later push (cancel-in-progress false, own group per branch): a verdict is wanted from
+# every run. fail-fast false: a red shard never cancels the others. Every shard uploads a result (log, rc,
+# CPU flags); `gather` (if: always()) builds the ONE verdict from them: GREEN only if every EXPECTED shard
+# reported rc 0, a missing/cancelled/timed-out shard is RED by name.
+on:
+  push:
+    branches: ['cloud/**']
+
+concurrency:
+  group: cloud-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      shards: ${{ steps.p.outputs.shards }}
+      matrix: ${{ steps.p.outputs.matrix }}
+      owner: ${{ steps.p.outputs.owner }}
+      kind: ${{ steps.p.outputs.kind }}
+      name: ${{ steps.p.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse cloud/OWNER/KIND/NAME and list the kind's shards
+        id: p
+        run: |
+          set -eu
+          IFS=/ read -r _ owner kind name <<<"$GITHUB_REF_NAME"
+          [ -n "${name:-}" ] || { echo "branch '$GITHUB_REF_NAME' is not cloud/OWNER/KIND/NAME" >&2; exit 1; }
+          shards=$(bash tests/ci/cloud_gather.sh shards "$kind")
+          matrix=$(printf '%s\n' $shards | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read().split()))')
+          { echo "shards=$shards"; echo "matrix=$matrix"; echo "owner=$owner"; echo "kind=$kind"; echo "name=$name"; } >> "$GITHUB_OUTPUT"
+          echo "owner=$owner kind=$kind name=$name shards=$shards"
+
+  shard:
+    needs: plan
+    name: shard (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    # Same ceiling as ci.yml's job (see its comments for the step-timeout history).
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Install build tools (pkg-config)
+        run: sudo apt-get update && sudo apt-get install -y pkg-config
+      # The libpcre2 10.46 cache is the one ci.yml uses (same path and key): a branch cache can read the
+      # default branch's, so a cloud/ branch hits what main's CI saved.
+      - name: Cache libpcre2 10.46 (D98 pin)
+        id: cache-pcre2-10-46
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/pcre2-10.46
+          key: pcre2-10.46-${{ runner.os }}-v2
+      - name: Build libpcre2 10.46 from source (D98 pin)
+        if: steps.cache-pcre2-10-46.outputs.cache-hit != 'true'
+        run: |
+          set -eu
+          curl -fsSL -o "$RUNNER_TEMP/pcre2-10.46.tar.bz2" \
+            https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.46/pcre2-10.46.tar.bz2
+          mkdir -p "$RUNNER_TEMP/pcre2-10.46-src"
+          tar xjf "$RUNNER_TEMP/pcre2-10.46.tar.bz2" -C "$RUNNER_TEMP/pcre2-10.46-src" --strip-components=1
+          cd "$RUNNER_TEMP/pcre2-10.46-src"
+          ./configure --prefix="$RUNNER_TEMP/pcre2-10.46"
+          make -j"$(nproc)"
+          make install
+      - name: Point PC-3's oracle at the pinned 10.46 build
+        run: |
+          echo "PKG_CONFIG_PATH=$RUNNER_TEMP/pcre2-10.46/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/pcre2-10.46/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
+      - name: Verify libpcre2 resolves to the pin, not a distro package
+        run: |
+          set -eu
+          ver="$(pkg-config --modversion libpcre2-8)"
+          echo "resolved libpcre2: $ver"
+          [ "$ver" = 10.46 ] || { echo "expected 10.46, pkg-config resolved '$ver'" >&2; exit 1; }
+      - name: Build (make)
+        run: make -j"$(nproc)"
+      - name: make strict
+        if: startsWith(matrix.shard, '1/')
+        run: make strict
+      # The shard step, as ci.yml's, except that its exit status is also written to build/cloud/rc so the
+      # record step can tell "rc=2" from "killed by the step timeout" (no rc file => rc=none => RED).
+      - name: make test-shard
+        timeout-minutes: 75
+        run: |
+          mkdir -p build/ci build/cloud
+          rm -f build/cloud/rc
+          set +e
+          set -o pipefail
+          { time make --debug=j test-shard CISHARD="${{ matrix.shard }}"; } 2>&1 \
+            | python3 scripts/sectiontimes stamp build/ci/sections.raw \
+            | tee build/ci/test.log
+          rc=${PIPESTATUS[0]}
+          echo "$rc" > build/cloud/rc
+          exit "$rc"
+      - name: Record the shard result (rc, CPU flags, SKIP lines)
+        if: always()
+        run: |
+          mkdir -p build/cloud
+          bash tests/ci/cloud_gather.sh record "${{ matrix.shard }}" "$(cat build/cloud/rc 2>/dev/null || echo none)" \
+            build/ci/test.log build/cloud/result.txt
+          cut -c1-300 build/cloud/result.txt
+      - name: Upload the shard result and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-shard-${{ strategy.job-index }}
+          path: |
+            build/cloud/result.txt
+            build/ci/test.log
+            build/ci/sections.tsv
+            build/watchdog.log
+          if-no-files-found: warn
+          retention-days: 14
+
+  gather:
+    needs: [plan, shard]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cloud-shard-*
+          path: results
+        continue-on-error: true
+      - name: One verdict
+        run: |
+          set -u
+          mkdir -p results out
+          # artifact names are cloud-shard-<job-index>; the shard identity lives in each result.txt, so
+          # re-file every result under the name the gather expects (cloud-shard-KofN)
+          for f in results/*/build/cloud/result.txt results/*/result.txt; do
+            [ -f "$f" ] || continue
+            s=$(sed -n 's/^shard=//p' "$f" | head -1)
+            [ -n "$s" ] || continue
+            mkdir -p "results/cloud-shard-${s%/*}of${s#*/}"
+            cp "$f" "results/cloud-shard-${s%/*}of${s#*/}/result.txt"
+          done
+          set +e
+          bash tests/ci/cloud_gather.sh gather "${{ needs.plan.outputs.shards }}" results out/verdict.txt \
+            branch="$GITHUB_REF_NAME" sha="$GITHUB_SHA" owner="${{ needs.plan.outputs.owner }}" \
+            kind="${{ needs.plan.outputs.kind }}" name="${{ needs.plan.outputs.name }}" run="$GITHUB_RUN_ID" \
+            plan_result="${{ needs.plan.result }}" shard_job_result="${{ needs.shard.result }}"
+          rc=$?
+          cat out/verdict.txt
+          exit "$rc"
+      - name: Upload the verdict
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-verdict
+          path: out/verdict.txt
+          if-no-files-found: warn
+          retention-days: 30

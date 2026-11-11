@@ -99,6 +99,9 @@ handle() { # handle LINE (queuewatch's line, `queuewatch: ` stripped): the first
         QUIET\ *) fields "$l"; say PROBLEM "$OWNER_" "$l" ;;                                                 # row 9
         PENDING-STUCK\ *) fields "$l"; say PROBLEM "$OWNER_" "$l" ;;                                         # row 10
         DISK-HIGH*) say PROBLEM main "$l" ;;
+        CLOUD-DONE\ *)                                                                                       # a cloud run ended ([CLOUD-SUITE]): to ITS owner
+            o=$(kv owner "$l")
+            if [[ $l == *" verdict=GREEN "* ]]; then say GREEN "${o:-main}" "$l"; else say RED "${o:-main}" "$l; owner triages"; fi ;;
         CI-RED\ *) say CI main "$l" ;;                                                                       # rows 11-13
         CI-CANCELLED\ *) say CI main "$l" ;;
         CI-UNAVAILABLE*) say CI main "$l" ;;

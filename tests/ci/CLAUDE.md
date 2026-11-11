@@ -27,6 +27,8 @@ merge/close standard.
   weights with measured runner seconds and re-balances (greedy LPT). Prints the
   proposal unless `--write`.
 
+- **cloud_gather.sh** / **cloud_gather.test** — [CLOUD-SUITE] A: the script `.github/workflows/cloud-test.yml` calls (`record` a shard's result, `gather` ONE verdict: GREEN only if every expected shard has rc 0; `shards KIND`); the test runs it on fabricated results (green, missing shard, rc!=0, rc=none, wrong shard, empty list). cloud-test.yml COPIES ci.yml's shard job (ci.yml must stay unchanged): when ci.yml's shard steps change, change both. Run: `bash tests/ci/cloud_gather.test` (on change, not in `make test`).
+
 Per-section timestamps in CI come from `scripts/sectiontimes` over
 `make --debug=j` (the mechanism `scripts/perfrun` already used), uploaded as
 `pcrec-ci-sections-*` on success and failure. Design record and the weights'
