@@ -23,7 +23,23 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `98` on every artifact today ([XARCH-DEV] units U2 + U3, 97 -> 98,
+- **`rx_info.abi` is `99` on every artifact today ([MEMFN] R-38 K38-2, 98 -> 99,
+  one event with the kit's MF_SITE_ABI 27 / MF_CLASS_V 9, lane k382
+  2026-11-11; `docs/design/memfn/span_runs_sheet.md` rev 1.3 §5.1).** pcrec
+  states the necessary run to the kit UNCUT as one presence span in set form
+  and the kit derives the pre-check's ONE run part from it and from its run
+  decision (`mf_class.run`); pcrec cuts no window (`PCREC_MAX_REQ_RUN_EMIT`
+  retired). The movers, each a counted population: (1) the handoff's K is the
+  whole run's position-0 offset on DFA routes whose run was cut at `at > 0`
+  (`<PREFIX>_REQ_HANDOFF` and the move constant); (2) `<PREFIX>_REQ_RUN`
+  names the whole run, its `@` the position the artifact's search reads (a
+  first-match table: the pre-check's run reply, else the `cover`/run-pinned
+  window site's member, else no `@`); (3) a pre-check that compared the
+  window AND the whole run ([K66]'s `<p>_reqrun_whole`) compares the kit's
+  one stretch in one `<p>_reqrun` block (R-30's led compare gone with it);
+  (4) the run pin reads the whole run (a longer exact stretch where the cut
+  had clipped it); (5) `-fcomments` text naming the run.
+- **`rx_info.abi` was `98` ([XARCH-DEV] units U2 + U3, 97 -> 98,
   one event for the kit's U2 and pcrec's U3, lane u3tgt 2026-11-08;
   `docs/design/memfn/target_seam_units.md` §2).** pcrec states the compile's
   one CPU target to the kit on every art (`mf_art_target`) instead of a policy

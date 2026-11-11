@@ -257,8 +257,9 @@
 /* Entries in a predicate's position ranking (mf_pred.rank_*, RQ-2, D157).
  * A SHAPE BOUND, not a tuning constant: the longest RUN term pcrec hands the
  * kit is its run analysis's own truncation bound, PCREC_MAX_REQ_RUN_SCAN
- * (32 positions; the PRE window is at most PCREC_MAX_REQ_RUN_EMIT = 8, the
- * K66 whole run at most 32, the OFS pinned stretch at most the window), and
+ * (32 positions: the pre-check's run, stated uncut since MF_SITE_ABI 27, at
+ * most 32, its derived part's stretch at most the run, the OFS pinned
+ * stretch at most the run), and
  * pcrec asserts MF_RANK_MAX >= that bound where it fills the ranking, so a
  * ranking is never truncated: rank_n is the run term's whole length. */
 #define MF_RANK_MAX 32

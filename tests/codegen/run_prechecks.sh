@@ -414,6 +414,12 @@ fi
 # necessary SET's own pick. A row asserting only one of the two could not tell
 # those apart, which is the population split the whole section turns on.
 #
+# THE `@` IS THE SEARCHING SITE'S (R-38 K38-2, span_runs_sheet.md §4.1's
+# first-match table): the pre-check's run reply where its run part renders,
+# else the `cover`/run-pinned window site's member, else no `@` -- so a
+# `dominated` VM artifact whose prefilter is not run-pinned (`(a)(b)`,
+# `(?<=xyz)ab`, utf8's `é` here) stamps the run with no `@`.
+#
 # THE EXPECTED VALUES ARE LITERALS, hand-derived from the shipped prior and
 # from the walk's stated arms, NEVER recomputed here from
 # the byte-rate (`pcrec_byte_freq_ppm` until [FINDINGS] B1; the shipped
@@ -513,7 +519,7 @@ abc%%98%616263@1
 \w+@\w+%%64%none
 x(?:yz)+%%122%78797a@2
 (ab|cd)e%%101%none
-(a)(b)%%98%6162@1
+(a)(b)%%98%6162
 [^x]c%%99%none
 a{2,4}b%%98%616162@2
 (a)\1?b%%98%none
@@ -521,7 +527,7 @@ foo|bar%%none%none
 (?i)abc%%none%414243@1/dfdfdf
 a*%%none%none
 (?:ab)*c%%99%none
-(?<=xyz)ab%%98%6162@1
+(?<=xyz)ab%%98%6162
 q%%113%none
 ROWS
 
@@ -687,7 +693,7 @@ while IFS='%' read -r pat _sep want wantrun; do
             || bad "[3.6b] -e utf8: $pat: stamps \"$got\" but no memchr for that byte is emitted"
     fi
 done <<'ROWS'
-é%%169%c3a9@1
+é%%169%c3a9
 (?i)é%%195%none
 x(é|è)y%%121%78c3a879@3/fffffeff
 a\x{1F600}b%%98%61f09f988062@5
@@ -894,7 +900,11 @@ if emit "$WORKDIR/d1/o.c" '\w+@\w+' && emit "$WORKDIR/d2/o.c" '\w+@\w+' -fno-req
         || bad "[4.4b] -fno-req-run moved bytes on an artifact that has no run — the axis reaches outside its own population"
 fi
 
-# §4.5 — TRUNCATION, and the expected window is computed FROM THE PRIOR BY HAND
+# §4.5 — (R-38 K38-2: pcrec no longer truncates; the run is stated uncut and
+# the kit's WINDOW mode picks the stretch on a DFA-scan route. The rows below
+# keep the witness: the stamp names the whole run, the scan at the rightmost
+# tie, the compare the one 8-position stretch holding it, `hub_pat_`, which
+# is the same window the prose below derived.) TRUNCATION, and the expected window is computed FROM THE PRIOR BY HAND
 # rather than by this check. `github_pat_` is eleven bytes; the rarest member
 # under the shipped table is `_` (2,492 ppm), and it occurs TWICE — index 6
 # and index 10 — so which one the pick names is [FIND-TIE]'s own question,
@@ -911,12 +921,12 @@ fi
 # window choice itself to move.
 if emit "$WORKDIR/s45.c" 'github_pat_[A-Za-z0-9]{4}' -fno-offset-skip; then   # §4.1's reason
     got="$(stamp "$WORKDIR/s45.c" REQ_RUN)"
-    [ "$got" = "6875625f7061745f@7" ] \
-        && ok "[4.5] an 11-byte run's tied rarest member (two '_'s) truncates to the SAME window either way, scanned at its rightmost tie (hub_pat_ @7)" \
-        || bad "[4.5] RX_REQ_RUN is \"${got:-<absent>}\", expected 6875625f7061745f@7 — the truncation window rule or [FIND-TIE]'s tie rule moved"
+    [ "$got" = "6769746875625f7061745f@10" ] \
+        && ok "[4.5] an 11-byte run is stated uncut (R-38 K38-2) and its tied rarest member (two '_'s) is scanned at its rightmost tie (github_pat_ @10)" \
+        || bad "[4.5] RX_REQ_RUN is \"${got:-<absent>}\", expected 6769746875625f7061745f@10 — the run was cut, or [FIND-TIE]'s tie rule moved"
     reqrun_fn "$WORKDIR/s45.c" | grep -qF '"hub_pat_", 8)) return cand;' \
-        && ok "[4.5b] the emitted compare carries the truncated 8-byte window and no more" \
-        || bad "[4.5b] the emitted compare does not carry the truncated window"
+        && ok "[4.5b] the emitted compare carries the kit's 8-position stretch around the scan (WINDOW mode on a DFA-scan route) and no more" \
+        || bad "[4.5b] the emitted compare does not carry the kit's 8-position stretch hub_pat_"
 fi
 # …and under an encoding the prior is not keyed to, the window still holds
 # the rightmost-scanned member (`rb_pick`'s own `!bytekey` fallback,
@@ -928,9 +938,9 @@ fi
 # run" are the same window here, not two competing rules.
 if emit "$WORKDIR/s45u.c" 'github_pat_[A-Za-z0-9]{4}' -e utf8; then
     got="$(stamp "$WORKDIR/s45u.c" REQ_RUN)"
-    [ "$got" = "6875625f7061745f@7" ] \
-        && ok "[4.5c] -e utf8: the truncation window is the run's own last eight bytes, scanned at its rightmost byte (hub_pat_ @7)" \
-        || bad "[4.5c] -e utf8: RX_REQ_RUN is \"${got:-<absent>}\", expected 6875625f7061745f@7 — the prior is being read under an encoding it is not keyed to"
+    [ "${got%@*}" = "6769746875625f7061745f" ] && { [ "$got" = "${got%@*}" ] || [ "${got#*@}" = 10 ]; } \
+        && ok "[4.5c] -e utf8: the run is stated uncut, any @ at its rightmost byte (github_pat_, $got)" \
+        || bad "[4.5c] -e utf8: RX_REQ_RUN is \"${got:-<absent>}\", expected 6769746875625f7061745f[@10] — the run was cut, or the prior is read under an encoding it is not keyed to"
 fi
 
 # §4.6 — BOTH ENGINES, from the one emitted text. A backreference declines the
@@ -1478,15 +1488,18 @@ fi
 # IS COMPARED WHOLE.
 # =========================================================================
 #
-# `RX_REQ_RUN` names the window the prior cut from the run, and with the
-# window alone compared a subject holding it but not another slice of the
-# run answered NOMATCH or gave up according to that pick. The whole run is a
-# second search block, `rx_reqrun_whole`, whose `memcmp` is longer than 8
-# bytes; each row's expected run and rq_set are derived BY HAND from the
-# pattern (never from a stamp).
+# With an 8-byte window alone compared, a subject holding it but not another
+# slice of the run answered NOMATCH or gave up according to that pick. Since
+# R-38 K38-2 pcrec states the run uncut and, on this route (no DFA scan
+# fronts the VM: the REQUIRED need), the kit's ONE run part `rx_reqrun`
+# compares the whole run, a `memcmp` longer than 8 bytes; each row's expected
+# run and rq_set are derived BY HAND from the pattern (never from a stamp).
 # The answer-level witness is tests/base/k66_precheck_whole_run.rxt.
 #   "none" = no memcmp longer than 8 bytes.
-wholerun() { reqrun_fn "$1" whole | sed -n 's/^.*!memcmp(subject + cand, "\(.*\)", \([0-9]*\))) return cand;$/\1 \2/p' | head -1; }
+# R-38 K38-2: the ONE run part `rx_reqrun` (no `_whole` block); the kit
+# verifies the whole run on this route (the REQUIRED need), so a compare
+# longer than 8 bytes in it is the whole run.
+wholerun() { reqrun_fn "$1" | sed -n 's/^.*!memcmp(subject + cand, "\(.*\)", \([0-9]*\))) return cand;$/\1 \2/p' | awk '$NF > 8' | head -1; }
 while IFS='%' read -r pat flags want wantrq why; do
     [ -n "$pat" ] || continue
     a="$WORKDIR/s59_$RANDOM$RANDOM.c"
@@ -1502,7 +1515,7 @@ while IFS='%' read -r pat flags want wantrq why; do
         || bad "[5.9] $pat [$flags]: whole run is { $got } / rq_set { $gotrq }, expected { $want } / { $wantrq } ($why)"
 done <<'ROWS'
 (x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e byte%eeeeeeee~#~#~#~# 16%none%K66's witness under byte: the window is ~#~#~#~#, the run is 16 bytes, and every set byte is in it
-(x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e utf8%eeeeeeee~#~#~#~# 16%none%the same under utf8, whose window is eeeeeeee: both encodings now compare the same run
+(x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e utf8%eeeeeeee~#~#~#~# 16%none%the same under utf8: both encodings compare the same run
 (x?)([a-z]+)+Q.abcdefghij\1%-e byte%abcdefghij 10%none%a 10-byte run beside a set member outside it: Q (81) is rarer than the run's scan byte, so it LEADS ([K82] set-leads) and nothing is left; never the two run bytes outside the window
 (x?)([a-z]+)+Q.abcdefghij\1%-e byte -fno-req-set-lead%abcdefghij 10%81%the same with the lead denied: the rest is Q (81) alone
 (x?)([a-z]+)+abcdefgh\1%-e byte%none%none%a run of exactly 8: the window IS the run, nothing more is emitted
@@ -1518,11 +1531,13 @@ if emit "$WORKDIR/s59r.c" '(x?)([a-z]+)+eeeeeeee~#~#~#~#\1' -e byte; then
     # that keeps it), but the SCAN INDEX inside it moved. The four '~'
     # occurrences in the window tie (positions 0/2/4/6); the pre-[FIND-TIE]
     # leftmost rule picked index 0, [FIND-TIE]'s rightmost rule picks 6.
+    # R-38 K38-2: REQ_RUN names the WHOLE 16-byte run, its @ the kit's run
+    # reply's scan (the run part renders), the rightmost '~' tie at 14.
     [ "$(stamp "$WORKDIR/s59r.c" VM_PREFILTER)" = "none" ] \
       && [ "$(stamp "$WORKDIR/s59r.c" REQ_WHY)" = "emitted" ] \
-      && [ "$(stamp "$WORKDIR/s59r.c" REQ_RUN)" = "7e237e237e237e23@6" ] \
-        && ok "[5.9r] the K66 witness is an unguarded VM artifact whose REQ_RUN names an 8-byte window of a longer run" \
-        || bad "[5.9r] the K66 witness is no longer an unguarded VM artifact with an 8-byte window — [5.9]'s rows test nothing"
+      && [ "$(stamp "$WORKDIR/s59r.c" REQ_RUN)" = "65656565656565657e237e237e237e23@14" ] \
+        && ok "[5.9r] the K66 witness is an unguarded VM artifact whose REQ_RUN names a 16-byte run, longer than 8, scanned at 14" \
+        || bad "[5.9r] the K66 witness is no longer an unguarded VM artifact with a run longer than 8 — [5.9]'s rows test nothing"
 fi
 
 # =========================================================================

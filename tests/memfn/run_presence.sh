@@ -33,18 +33,12 @@
 #     must pass. Its REACH (K35): at least 8 of presence_deny.rxt's patterns
 #     must MOVE under P9 (9 at the lane), or the file stops witnessing the
 #     parts it is about.
-#  D. R-30 (lane r30b): where the pre-check carries the run's WINDOW beside
-#     the WHOLE run that implies it (the route with no DFA scan in front), the
-#     window's search is NOT asked: on each witness, at both engines, the
-#     artifact calls `rx_reqrun_whole(` (the call at the entry, never only the
-#     definition) and never `rx_reqrun(`, and the whole
-#     run's candidate test is the pinned LED compare (the window's bytes
-#     first, then the rest of the run; read off the emitted text). The
-#     test-only lever `--harness=pres-window` (build/pcrec-harness) restores
-#     the old form: its artifact calls `rx_reqrun(` again and differs from the
-#     default's (K35: every witness moves). Its answers: the harness runs C's
-#     files under the lever, at the default engine and at --engine=vm, and all
-#     must pass.
+#  D. R-38 K38-2 (lane k382; R-30's section and its lever `pres-window`
+#     retired): the pre-check carries ONE run part. On each witness, at both
+#     engines, the artifact calls `rx_reqrun(` and defines no
+#     `rx_reqrun_whole`, and where the run is verified whole its compare
+#     literals cover the whole run (read off the emitted text). K35: at least
+#     8 witnesses reach the run part.
 #
 # Usage: bash tests/memfn/run_presence.sh [TREE]   (needs TREE/build/pcrec)
 set -u

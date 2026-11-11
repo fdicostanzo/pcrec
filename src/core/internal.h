@@ -7451,7 +7451,7 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
  * (src/gen/emit_vm.c). */
 bool pcrec_vm_prefilter_window(Ctx *cx);
 /* [OPT-LITSCAN] S1 step 6: the file-scope search blocks the run form of that
- * pre-check calls (`<prefix>_reqrun`, [K66] `<prefix>_reqrun_whole`). Every
+ * pre-check calls (`<prefix>_reqrun`, the one run part since R-38 K38-2). Every
  * search-entry emitter that calls `pcrec_emit_req_byte_check` calls this at
  * file scope above the entry; it emits nothing where no run pre-check is. */
 void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);

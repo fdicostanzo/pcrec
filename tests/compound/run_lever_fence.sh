@@ -44,10 +44,8 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # trace-build oracle (tests/codegen/run_cand_oracle.sh and its witness list),
 # whose `cover` witnesses are compiled by the trace build's pcrec-harness
 # through the lever and again without it, so a default build is shown to
-# decline the row; and the memfn presence check's R-30 section, whose witnesses
-# compile under the kit's test-only lever `pres-window` (lane r30b), and the
-# R-30 sabotage row S1548 (the lever ignored), whose reach probe must name the
-# lever to exercise it (lane r30bfix); and the necessary-run walk's restored
+# decline the row; (the memfn presence check's R-30 section and its lever
+# `pres-window` RETIRED at R-38 K38-2, lane k382); and the necessary-run walk's restored
 # arms (span_arms E1, lane sae1): the facts check's [facts-arm] section and
 # the three rows that plant its faults (S1907, S1908, S1909), whose reach probes name
 # the lever, and E2's rows S1928 and S1929 (an arm ignored, lane sae2), whose

@@ -16,9 +16,12 @@ coincide. Every expectation below is read from the `--emit-facts` listing
 never from the emitted C it checks:
 
   1. THE MASKED VERIFY SPELLS THE FACT: every word of the run pre-check's
-     compare, masked `(w(b + o) & w("K")) == w("T")` or unmasked, lies inside
-     the run (first at 0, last at exactly L - W, no byte uncovered), and the
-     words' T and K constants decode to the fact's bytes and mask position by
+     compare, masked `(w(b + o) & w("K")) == w("T")` or unmasked, covers ONE
+     contiguous stretch [lo, hi) of the whole run (R-38 K38-2: the kit's
+     verified extent; offsets are run positions, the candidate the
+     occurrence's position 0; no byte of the stretch uncovered, none outside
+     the run), the stretch holds the scan position, and the words' T and K
+     constants decode to the whole run's bytes and mask there position by
      position; every constant is a string literal (never a byte-order
      statement).
   2. THE DISPATCH: a block whose scan position is a pair carries exactly two
@@ -26,13 +29,19 @@ never from the emitted C it checks:
      raised to `pos + k*` (a hit below it is stale); a block whose scan
      position is exact carries one, on
      T[k*] (S453's shape is one memchr on an all-letter run).
-  2b. R-30's IMPLIED WINDOW (tuning.md §2.29¶4): where the facts put a whole
-     run longer than its window on a VM route with no prefilter, the window's
-     rx_reqrun block is ABSENT and rx_reqrun_whole present; elsewhere the
-     window block is required; both populations are counted (each >= 1).
+  2b. ONE RUN PART (R-38 K38-2; R-30's implied window and [K66]'s second
+     part retired): an emitted pre-check with a run carries ONE rx_reqrun
+     block and no rx_reqrun_whole; where the facts put the run on a VM route
+     with no prefilter (the route no DFA scan fronts, the need REQUIRED) its
+     compare covers the WHOLE run ([K66]'s promise, now the kit's WHOLE
+     mode), counted (>= 1, S448's witness among them).
+  2c. C4 (span_runs_sheet.md §2.4): `<PREFIX>_REQ_RUN`'s `@` names the
+     OFFSET the emitted run-part find scans (its `memchr(subject + pos + k`
+     or pair frontier), on every emitted witness with a run block, counted.
   3. NO SEARCH OUTSIDE THE LOOP: every `memchr(` of a run block sits after the
      block's `while (pos + ` line (S454's detector).
-  4. THE STAMPS: `<PREFIX>_REQ_RUN` equals the `req_run` fact; `REQ_BYTE` is a
+  4. THE STAMPS: `<PREFIX>_REQ_RUN`'s hex and mask equal the `req_whole_run`
+     fact's (the `@` is the searching site's, 2c); `REQ_BYTE` is a
      member of `req_set` or `"none"`, and equals `bytes[idx]` where
      `mask[idx]` is `ff` (S452); `REQ_WHY "none"` iff REQ_BYTE and REQ_RUN are
      both `"none"`; a masked run is never `REQ_WHY "none"` and is never pinned
@@ -169,7 +178,7 @@ def check_block(label, blk, t, k, scan_k):
     ml = [n for n, ln in enumerate(lines) if "memchr(" in ln]
     if not wl:
         bad(f"{label}: no `while (pos + ` guard line in the block")
-        return
+        return None
     if any(n < wl[0] for n in ml):
         bad(f"{label}: a memchr( sits ABOVE the block's `while (pos + ` guard -- a search outside the loop (S454)")
     else:
@@ -203,23 +212,27 @@ def check_block(label, blk, t, k, scan_k):
         bad(f"{label}: a word is compared or masked against an INTEGER literal -- a byte-order assumption")
     if not words:
         bad(f"{label}: no word compare in the verify (the masked run took no `words` row)")
-        return
+        return None
     w = words[0][1]
     offs = [o for o, _, _, _ in words]
-    if any(x[1] != w for x in words) or offs[0] != 0 or offs[-1] != L - w \
-            or any(o + w > L for o in offs) or any(b2 > a2 + w for a2, b2 in zip(offs, offs[1:])):
-        bad(f"{label}: word offsets {offs} (W={w}) for a {L}-position run -- first 0, last L - W = {L - w}, none outside")
-        return
-    st, sk = bytearray(L), bytearray(L)
+    lo, hi = offs[0], offs[-1] + w
+    if any(x[1] != w for x in words) or lo < 0 or hi > L or not lo <= scan_k < hi \
+            or any(b2 > a2 + w for a2, b2 in zip(offs, offs[1:])):
+        bad(f"{label}: word offsets {offs} (W={w}) for a {L}-position run -- one contiguous stretch "
+            f"inside the run, holding the scan position {scan_k}")
+        return None
+    st, sk = bytearray(hi - lo), bytearray(hi - lo)
     for o, ww, tb, kb in words:
-        st[o:o + ww] = tb
-        sk[o:o + ww] = kb
-    if bytes(st) != t or bytes(sk) != k:
-        bad(f"{label}: the words spell T={bytes(st).hex()} K={bytes(sk).hex()}, the fact is T={t.hex()} K={k.hex()}")
-        return
+        st[o - lo:o - lo + ww] = tb
+        sk[o - lo:o - lo + ww] = kb
+    if bytes(st) != t[lo:hi] or bytes(sk) != k[lo:hi]:
+        bad(f"{label}: the words spell T={bytes(st).hex()} K={bytes(sk).hex()}, the fact is "
+            f"T={t[lo:hi].hex()} K={k[lo:hi].hex()} over [{lo},{hi})")
+        return None
     nm = sum(1 for x in words if x[3] != b"\xff" * w)
-    ok(f"{label}: {len(words)} words of {w} at {offs} spell the fact's T and K exactly ({nm} masked, "
-       f"{len(words) - nm} unmasked), the last at L - W")
+    ok(f"{label}: {len(words)} words of {w} at {offs} spell the whole run's T and K over [{lo},{hi}) "
+       f"({nm} masked, {len(words) - nm} unmasked)")
+    return lo, hi
 
 
 # (tag, pattern, flags)
@@ -238,7 +251,8 @@ WIT = [
     ("gcon", "(?i)group_concat", ()),
 ]
 
-n_whole_part = {True: 0, False: 0}
+n_whole_route = 0
+n_c4 = 0
 for tag, pat, flags in WIT:
     got = emit(tag, pat, *flags)
     fx = facts(pat.encode(), *flags)
@@ -250,9 +264,10 @@ for tag, pat, flags in WIT:
     run, whole = parse_run(fx.get("req_run")), parse_run(fx.get("req_whole_run"))
     rset = set() if fx.get("req_set") in ("none", None) else {int(x) for x in fx["req_set"].split(",")}
     lbl = f"'{pat}'" + (" " + " ".join(flags) if flags else "")
-    # 4. the stamps
-    if st.get("REQ_RUN") != fx.get("req_run"):
-        bad(f"{lbl}: RX_REQ_RUN '{st.get('REQ_RUN')}' differs from the req_run fact '{fx.get('req_run')}'")
+    # 4. the stamps (the hex and mask are the whole run's; `@` is 2c's)
+    srun = parse_run(st.get("REQ_RUN"))
+    if (srun is None) != (whole is None) or (srun and (srun[0], srun[1]) != (whole[0], whole[1])):
+        bad(f"{lbl}: RX_REQ_RUN '{st.get('REQ_RUN')}' does not spell the req_whole_run fact '{fx.get('req_whole_run')}'")
     rb = st.get("REQ_BYTE", "none")
     if rb != "none" and int(rb) not in rset:
         bad(f"{lbl}: RX_REQ_BYTE {rb} is not a member of req_set {sorted(rset)} (S452's shape)")
@@ -268,42 +283,39 @@ for tag, pat, flags in WIT:
         bad(f"{lbl}: a masked run reads REQ_WHY '{why}' / run_pin '{fx.get('run_pin')}' (never none, never pinned whole)")
     else:
         ok(f"{lbl}: REQ_WHY '{why}' consistent with REQ_BYTE/REQ_RUN, run_pin '{fx.get('run_pin')}'")
-    # 1-3. the blocks
-    # [MEMFN] R-30 (tuning.md §2.29¶4): on a VM route with no prefilter a run
-    # longer than its window is searched WHOLE and the window is not searched
-    # for separately, so its rx_reqrun block is absent and rx_reqrun_whole
-    # carries the search (the dominated shape of run_prechecks.sh [5.10b]
-    # leaves no block either). The condition is read from the FACTS listing
-    # (the run lengths, the engine and VM_PREFILTER decisions), never from the
-    # text checked; anywhere else the window block is still required.
-    whole_part = bool(run and whole and len(whole[0]) > len(run[0])
-                      and fx.get("RX_ENGINE") == "vm" and fx.get("RX_VM_PREFILTER") == "none")
-    if why == "emitted":
-        n_whole_part[whole_part] += 1
-    if run and why == "emitted":
+    # 1-3, 2b, 2c. the one run block. The WHOLE-run route is read from the
+    # FACTS listing (the engine and VM_PREFILTER decisions), never from the
+    # text checked.
+    whole_route = bool(whole and fx.get("RX_ENGINE") == "vm" and fx.get("RX_VM_PREFILTER") == "none")
+    if whole and why == "emitted":
         b0 = block(text, "rx_reqrun")
-        b1 = block(text, "rx_reqrun_whole")
-        if whole_part:
-            if b0 is not None:
-                bad(f"{lbl}: a {len(whole[0])}-byte whole run on a VM route with no prefilter, yet the "
-                    f"{len(run[0])}-byte window's rx_reqrun block is still emitted (R-30: the whole run implies it)")
-            elif b1 is None:
-                bad(f"{lbl}: the window block is gone but no rx_reqrun_whole block carries the search")
-            else:
-                ok(f"{lbl}: the whole run implies its window: no rx_reqrun block, rx_reqrun_whole present")
-        elif b0 is None:
+        if block(text, "rx_reqrun_whole") is not None:
+            bad(f"{lbl}: a second run part (rx_reqrun_whole) is still emitted (K38-2: one run part)")
+        if b0 is None:
             bad(f"{lbl}: REQ_WHY emitted with a run, but no rx_reqrun block")
-        elif run[1] != b"\xff" * len(run[1]):
-            check_block(f"{lbl} rx_reqrun", b0, run[0], run[1], run[2])
-        if b1 is not None and whole:
+        else:
             # the scan offset: one stream's `memchr(subject + pos [+ k]`, or the pair arm's
             # frontier raise `if (ha < pos [+ k])`
-            m = re.search(r"memchr\(subject \+ pos(?: \+ (\d+))?,", b1) or \
-                re.search(r"if \(ha < pos(?: \+ (\d+))?\)", b1)
+            m = re.search(r"memchr\(subject \+ pos(?: \+ (\d+))?,", b0) or \
+                re.search(r"if \(ha < pos(?: \+ (\d+))?\)", b0)
             at = int(m.group(1) or 0) if m else -1
-            check_block(f"{lbl} rx_reqrun_whole", b1, whole[0], whole[1], at)
-        if tag == "k66" and (b1 is None or "&" not in b1):
-            bad(f"{lbl}: the K66 site's whole-run block is missing or compares unmasked (S448)")
+            # 2c, C4: the stamp's `@` is that offset
+            if srun is None or srun[2] != at:
+                bad(f"{lbl}: RX_REQ_RUN's @ {srun[2] if srun else None} is not the run block's scan offset {at} (C4)")
+            else:
+                n_c4 += 1
+                ok(f"{lbl}: RX_REQ_RUN's @{at} is the run block's scan offset (C4)")
+            if whole[1] != b"\xff" * len(whole[1]):
+                ext = check_block(f"{lbl} rx_reqrun", b0, whole[0], whole[1], at)
+                if whole_route:
+                    if ext != (0, len(whole[0])):
+                        bad(f"{lbl}: on the route no DFA scan fronts, the run part verifies {ext}, "
+                            f"not the whole run [0,{len(whole[0])}) (S448)")
+                    else:
+                        n_whole_route += 1
+                        ok(f"{lbl}: the route no DFA scan fronts verifies the whole run")
+        if tag == "k66" and (b0 is None or "&" not in b0 or not whole_route):
+            bad(f"{lbl}: the K66 site's run block is missing, compares unmasked, or is not on the whole-run route (S448)")
     # 5. K65's rest on the no-DFA-scan route
     # [K82] a member tested by the set-leads row's one-byte check (the first
     # `!memchr(..., B, ...)` above the run call) is tested too, and K65's
@@ -373,14 +385,47 @@ for tag, pat in (("ctl1", "[0-9]+abcdef"), ("ctl2", "/user|/users"), ("ctl3", "(
         ok(f"control '{pat}': byte-identical with and without -fno-req-run-fold (an exact run)")
 
 
-# R-30's two populations, counted from the facts: an emitted pre-check with a
-# whole part (k66) and one without (the rest). Either at zero means the branch
-# above went unread, so the check could not fail in that direction.
-if n_whole_part[True] < 1 or n_whole_part[False] < 1:
-    bad(f"R-30 populations: {n_whole_part[True]} emitted witness(es) with a whole part, "
-        f"{n_whole_part[False]} without -- each needs at least one")
+# 2c's REACHING regime (span_runs_sheet.md §2.4 C4 (b) under (a)): the probe
+# lever `run-tie-left` (the harness build only) breaks the kit's run-decision
+# ties LEFTMOST while pcrec's own index (`req_run`'s `@idx`, the facts
+# listing) stays rightmost, so a stamp fed pcrec's index names the wrong
+# offset there. Each witness ties on the SAME byte at two positions, so the
+# offset (not only the set) is what is checked; the reach is counted: the
+# lever's `@` must differ from the fact's index on at least one.
+HARNESS = os.path.join(os.path.dirname(PCREC), "pcrec-harness")
+n_reach = 0
+for tag, pat in (("c4t1", "a.*zqxzqx"), ("c4t2", "a.*(?i:selectselect)")):
+    out = os.path.join(WORK, "rq_" + tag + ".c")
+    r = subprocess.run([HARNESS, "--harness=run-tie-left", "--features", "all", "-p", "rx", COVER_DENY,
+                        "-o", out, "--pattern", pat], capture_output=True, timeout=120)
+    fx = facts(pat.encode())
+    if r.returncode != 0 or fx is None:
+        bad(f"C4 lever '{pat}': refused")
+        continue
+    text = open(out, encoding="latin-1").read()
+    st = dict(re.findall(r'^#define RX_(REQ_\w+) "(.*)"$', text, re.M))
+    srun, frun = parse_run(st.get("REQ_RUN")), parse_run(fx.get("req_run"))
+    b0 = block(text, "rx_reqrun")
+    m = b0 and (re.search(r"memchr\(subject \+ pos(?: \+ (\d+))?,", b0) or
+                re.search(r"if \(ha < pos(?: \+ (\d+))?\)", b0))
+    at = int(m.group(1) or 0) if m else -1
+    if st.get("REQ_WHY") != "emitted" or srun is None or srun[2] != at:
+        bad(f"C4 lever '{pat}': REQ_WHY {st.get('REQ_WHY')}, @ {srun[2] if srun else None}, "
+            f"the run block scans offset {at}")
+    else:
+        n_reach += srun[2] != frun[2]
+        ok(f"C4 lever '{pat}': @{at} is the run block's scan offset (pcrec's index {frun[2]})")
+(ok if n_reach >= 1 else bad)(f"C4 lever reach: {n_reach} witness(es) where the kit's offset is not "
+                              f"pcrec's index (floor 1)")
+
+
+# 2b/2c's populations: a masked whole-run witness on the route no DFA scan
+# fronts (k66), and the C4 witnesses. Either at zero means its branch went
+# unread, so the check could not fail in that direction.
+if n_whole_route < 1 or n_c4 < 3:
+    bad(f"populations: {n_whole_route} whole-route witness(es) (floor 1), {n_c4} C4 witness(es) (floor 3)")
 else:
-    ok(f"R-30 populations: {n_whole_part[True]} emitted witness(es) with a whole part, {n_whole_part[False]} without")
+    ok(f"populations: {n_whole_route} whole-route witness(es), {n_c4} C4 witness(es)")
 
 
 # 8. the canonical form over the whole corpus, as written
