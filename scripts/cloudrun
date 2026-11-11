@@ -10,7 +10,9 @@
 #       K     a kind declared in tests/ci/cloud_kinds.tsv (`bash tests/ci/cloud_kinds.sh kinds`); an undeclared
 #             kind, or an owner the row does not allow, is refused HERE (and again by the workflow's plan job)
 #       N     [A-Za-z0-9._-]+, default <REF with / -> -, or HEAD>-<7-char sha>
-#       REF   a ref or commit to push, default HEAD
+#       REF   a ref or commit to push, default HEAD. A --name with no --ref while the checkout is on branch main is
+#             refused (64): that pushes main's HEAD under a name meant for something else (cloud/main/axes/ucax,
+#             2026-11-11). Run from your worktree, or say --ref main to mean it.
 #       --dry-run   print what would be pushed and recorded; push nothing, write nothing
 #   scripts/cloudrun --prune [--dry-run]    delete the remote cloud/ branches whose run has a verdict
 #                   (completed, any conclusion); a run still pending/absent keeps its branch
@@ -48,11 +50,11 @@ print("%s %s %s %s" % ("GREEN" if r["conclusion"] == "success" else "RED", r["da
 ' "$2" 2>/dev/null || { echo "NONE - unreadable -"; return 1; }
 }
 
-mode=run owner="" kind="" name="" ref=HEAD dry=0
+mode=run owner="" kind="" name="" ref=HEAD dry=0 refgiven=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --owner) owner=${2-}; shift 2 || usage ;; --kind) kind=${2-}; shift 2 || usage ;; --name) name=${2-}; shift 2 || usage ;;
-        --ref) ref=${2-}; shift 2 || usage ;; --dry-run) dry=1; shift ;;
+        --ref) ref=${2-}; refgiven=1; shift 2 || usage ;; --dry-run) dry=1; shift ;;
         --prune) mode=prune; shift ;; --list) mode=list; shift ;;
         --verdict) [ $# -eq 3 ] || usage; verdict "$2" "$3"; exit $? ;;
         -h|--help) usage ;; *) die "unknown argument $1" ;;
@@ -89,6 +91,9 @@ case $owner$kind in *[!A-Za-z0-9._-]*) die "owner and kind must be [A-Za-z0-9._-
 kinds_sh=$root/tests/ci/cloud_kinds.sh
 bash "$kinds_sh" get "$kind" kind >/dev/null 2>&1 || die "kind '$kind' is not declared in tests/ci/cloud_kinds.tsv (declared: $(bash "$kinds_sh" kinds 2>/dev/null | tr '\n' ' '))"
 bash "$kinds_sh" owner-ok "$kind" "$owner" || die "owner '$owner' may not start kind '$kind' (owners: $(bash "$kinds_sh" get "$kind" owners))"
+if [ $refgiven = 0 ] && [ -n "$name" ] && [ "$(git -C "$root" symbolic-ref --short -q HEAD)" = main ]; then
+    die "--name '$name' with no --ref from a checkout on branch main would push main's HEAD under that name: run from your worktree, or pass --ref main to mean it"
+fi
 sha=$(git -C "$root" rev-parse --verify -q "$ref^{commit}") || die "cannot resolve '$ref' to a commit" 1
 if [ -z "$name" ]; then
     base=$(printf '%s' "$ref" | tr '/' '-' | tr -c 'A-Za-z0-9._\n-' '-')
