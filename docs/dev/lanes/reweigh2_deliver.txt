@@ -1,0 +1,5 @@
+report=docs/dev/lanes/reweigh2_report.md
+sections: STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/reweigh2_deliver.txt
