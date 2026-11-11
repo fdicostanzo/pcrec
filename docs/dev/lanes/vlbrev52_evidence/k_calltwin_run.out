@@ -1,0 +1,8 @@
+a	nomatch
+ rc=1
+aa	frames
+ rc=3
+ba	nomatch
+ rc=1
+aaa	frames
+ rc=3

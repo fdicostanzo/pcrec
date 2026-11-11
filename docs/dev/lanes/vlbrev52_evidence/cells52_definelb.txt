@@ -1,0 +1,3 @@
+(?<=a(?(DEFINE)(?<g>(?<=b+))))x(?&g)	ax	abx	bbax	axb
+(?<=a)x(?<=b+)	ax	bax
+(?<=a(?(DEFINE)(?<g>(?<=b{2}))))x(?&g)	bbax	ax
