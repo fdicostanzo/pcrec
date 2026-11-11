@@ -49,4 +49,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:/user
 SAB_REACH_EXPECT="REACH-REQ-RUN-ALT-COMMON-PREFIX"
 SAB_COUNT=1
 SAB_BEFORE='    o.head = rn_common_head(w, l.head, r.head);'
-SAB_AFTER='    o.head = rn_better(l.head, r.head);   /* SABOTAGE S268: one branch is not both */'
+SAB_AFTER='    o.head = rn_better(w, l.head, r.head);   /* SABOTAGE S268: one branch is not both */
+    (void)rn_common_head;'

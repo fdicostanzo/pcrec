@@ -22,7 +22,7 @@ SAB_BEFORE='        case A_CAP:
         case A_WCLASS:
             /* Transparent:'
 SAB_AFTER='        case A_WCLASS:
-            acc->runs = rr_cat(rr_none(1), acc->runs);  /* SABOTAGE S465 */
+            acc->runs = rr_cat(w, rr_none(1), acc->runs);  /* SABOTAGE S465 */
             return;
         case A_CAP:
         case A_ATOMIC:

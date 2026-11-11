@@ -192,3 +192,45 @@ n "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 m "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 0 203
 g 1 0 1
 g 2 201 202
+
+# Witnesses the necessary-run pre-check cannot see through (2026-11-11, lane
+# mechtri2). `(a)(?:ab){2,}?ac` and the other literal-block patterns above
+# are decided by the whole-pattern required-run test in front of the VM (even
+# under `engine vm`: it demands the 2 blocks outright), so a plant dropping
+# the reach test moved no answer there (S706/S708/S711 read UNDETECTED at
+# 7d74499bc). A class the run test cannot fold to a mask ([abc], [bcd]) leaves
+# the span scan + reach test as the only counter: stride 1 here, stride 2 below.
+
+pattern z[abc]{3,}?d?
+n "zabd"
+n "zab"
+m "zabc" 0 4
+m "zabcd" 0 5
+m "zabcabcd" 0 4
+m "zaabbd" 0 4
+
+pattern z[abc]{3,}?d?
+engine vm
+n "zabd"
+n "zab"
+m "zabc" 0 4
+m "zabcd" 0 5
+m "zabcabcd" 0 4
+m "zaabbd" 0 4
+
+pattern (a)(?:a[bcd]){2,}?ae
+n "aabae"
+n "aabaex"
+n "aabcae"
+m "aababae" 0 7
+g 1 0 1
+n "aabcadae"
+
+pattern (a)(?:a[bcd]){2,}?ae
+engine vm
+n "aabae"
+n "aabaex"
+n "aabcae"
+m "aababae" 0 7
+g 1 0 1
+n "aabcadae"
