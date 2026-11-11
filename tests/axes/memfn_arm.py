@@ -124,11 +124,18 @@ MEMFN_CLASS = {
     # Witnesses re-aimed (inert now; single compiles, both sides): fd-pres-g1 utf8
     # `abc+d` -> `ab+c`, pres-set-lead -> `(?i:select)\d+x` (flr2's emit_sweep pin,
     # 68089d755). The other floors still hold (measured above them) and are left as pinned.
+    # RE-PINNED again (lane axfix, 2026-11-11): fd-pres-pick byte c-default 88 -> 87. The
+    # 88 came from the 7d74499bc full-suite axes log, whose compile set also held the OLD
+    # witness-only patterns; axtri re-aimed the witnesses and the count differ= is over
+    # corpus + witness-only patterns, so one fewer differs. Job 450 (lane/axtri) and a rerun
+    # on main + axtri (5139 corpus patterns, +2 witness-only; MEMFN_REACH_ONLY=1
+    # AXES=--memfn=no-fd-pres-pick tests/axes/run_axes.sh) both measure 87 (utf8 140). No
+    # src/cli/lib commit since 7d74499bc moves it (only 656690044, -o write-if-changed).
     **{("fd-pres-g1", ly): ("DIFFER",
         {("byte", "c-default"): 949, ("byte", "c-vm"): 0, ("utf8", "c-default"): 878, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"abc+d"), ("utf8", "c-default", b"ab+c")]) for ly in ("default", "simd")},
     **{("fd-pres-pick", ly): ("DIFFER",
-        {("byte", "c-default"): 88, ("byte", "c-vm"): 0, ("utf8", "c-default"): 140, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 87, ("byte", "c-vm"): 0, ("utf8", "c-default"): 140, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"a.{1,5}z"), ("utf8", "c-default", b"a.{1,5}z")]) for ly in ("default", "simd")},
     **{("pres-set-lead", ly): ("DIFFER",
         {("byte", "c-default"): 6, ("byte", "c-vm"): 11, ("utf8", "c-default"): 3, ("utf8", "c-vm"): 3},
