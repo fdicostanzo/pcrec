@@ -69,7 +69,6 @@
 #include <string.h>
 
 #include "core/internal.h"
-#include "enc/enc.h"   /* [UCP] U2 pcrec_enc_set_bytes, `\b`'s precondition */
 
 /* Module assertions' single producer for the position/boundary escapes routed
  * to it (`\A`/`\Z`/`\z` position aliases; `\b`/`\B` word-boundary; `\G` -- see
@@ -113,10 +112,14 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
          * `byte`); otherwise it is `\w`'s own byte table, exactly the set
          * wave B's N_WORDB read, so every shipped `\b` artifact is unmoved.
          *
-         * §2.3's PRECONDITION DECIDES WHETHER IT BUILDS: under `byte` every
-         * set is byte-expressible; under utf8 the UCP word set is not, and
-         * that `\b` is refused by name until the island ([UCP] U3) / the VM
-         * decode ([UCP] U4) — never answered from its ASCII bytes. */
+         * §2.3's PRECONDITION DECIDES WHICH MACHINE READS IT: under `byte`
+         * every set is byte-expressible; under utf8 the UCP word set is not,
+         * and since [UCP] U3 that `\b` builds the same node and the
+         * pattern takes the character-stepped DFA (the island,
+         * `pcrec_island_needed`), which reads a non-ASCII character whole —
+         * never its ASCII bytes alone. Selection makes such a pattern
+         * DFA-only (the `island` row, src/opt/select_engine.c) until the VM
+         * decodes ([UCP] U4). */
         const RegDef *def = pcrec_def_resolve(cx, rw);
         PcrecCpSet w;
         pcrec_cpset_init(&w, &cx->arena);
@@ -124,14 +127,6 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
             pcrec_setdef_build(cx, &pcrec_ucp_set_word, &w);
         else
             pcrec_cpset_add_bits(&w, pcrec_cls_word_esc);
-        uint8_t bits[32];
-        if (!pcrec_enc_set_bytes(pcrec_enc_by_id(cx->opt->encoding),
-                                 w.iv, w.n, bits))
-            REFUSE(at, "UCP \\%c is not built yet under encoding '%s': it "
-                       "reads the Unicode word set, which is not "
-                       "byte-expressible, and needs [UCP] U3/U4; (?aW) "
-                       "restricts it to the ASCII word set, or use -e byte",
-                       rw->sel, pcrec_enc_by_id(cx->opt->encoding)->name);
         ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                           .answered_at = want };
         res.end = cx->pos;

@@ -254,7 +254,19 @@ enum {
      * representation, `$_back_step`'s case. `inline_def`, `$_back_step`'s
      * [LOSS-REVIEW] reason. Like `$_back_step` it is one enumerator and one
      * row per backend: no field, signature or recipe line changes. */
-    PCREC_ENCE_FWD_STEP       = 1u << 8
+    PCREC_ENCE_FWD_STEP       = 1u << 8,
+    /* [UCP] U3 DECODE THE CHARACTER ENDING AT A POSITION: `$_decode_back(s,
+     * e, &cp)`, its length, or 0 where the bytes before `e` do not end a
+     * well-formed character (the caller then steps back ONE byte, the ill-formed-byte
+     * rule: ucp_design.md §3.5). DECODE's backward twin, re-spelled on it:
+     * the run it walks back over must be the one the lead byte declares, and
+     * that run must decode, so a character it reads is one `$_decode` reads
+     * forward from the same lead. Not `$_back_step`, which answers NONE on a
+     * malformed run and validates length only, the lookbehind's contract.
+     * In the mask when the character-stepped DFA walks back; `requires`
+     * DECODE; `engine_callable` and `inline_def`. A backend whose characters
+     * are one unit (`byte`) has NO ROW (review r4 ucpu3 RULES-5). */
+    PCREC_ENCE_DECODE_BACK    = 1u << 9
 };
 
 /* [VLOOKBEHIND] THE ENTRIES THAT SPELL THE BOUNDARY RULE as a function, each

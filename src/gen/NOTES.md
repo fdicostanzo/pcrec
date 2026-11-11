@@ -157,3 +157,11 @@ prologue already has, then the kit's facts), and takes each mark out with its
 line. That replaced `PcrecPartFacts.string_h`. The part's own guarded count
 leaves the marks out (`pcrec_memfn_stamps_render`). A default or no-region
 artifact is byte-identical.
+
+## tblpool
+
+`tblpool.c` — the artifact's TABLE POOL (review r4 ucpu3 EMIT-1): `pcrec_tbl_ref` returns the name of a content-identical table already asked for, else pools a new one; `pcrec_tbl_emit` writes the pending ones at file scope; `pcrec_tbl_done` refuses an artifact that pooled a table it never emitted. Today read by the character-stepped DFA's machines; the byte machines' duplicate tables are a separate abi event (report).
+
+## Why ENG_UNANCH is table-driven (moved from CLAUDE.md, 2026-11-10)
+
+Tables because gcc compile time on huge computed-goto functions is superlinear (R1 A-3).

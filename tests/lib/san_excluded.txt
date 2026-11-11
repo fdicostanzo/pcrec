@@ -134,6 +134,7 @@ tests/subst/run_subst_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the
 tests/thread/run_compile_stack.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/thread/run_stackdepth_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from the manifest
 tests/thread/run_thread_tests.sh	OWN-TIER	runs under ThreadSanitizer, which cannot combine with ASan/UBSan
+tests/ucp/run_charstep_tests.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
 tests/ucp/run_ctxnode_tests.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
 tests/ucp/run_ucp_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/uprops/run_uprops_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)

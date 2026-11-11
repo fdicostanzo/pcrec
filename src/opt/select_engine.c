@@ -407,6 +407,31 @@ static unsigned forces_dfa_overflow(Ctx *cx, const Ast *a, size_t *why_pos,
     return ENGM_VM;
 }
 
+/* [UCP] U3 (D134 item 1, ucp_design.md §0.1 T4 row 1): a pattern whose
+ * context set is not byte-expressible under the compile's encoding (UCP
+ * `\b`/`\B` under utf8) has ONE route, the character-stepped DFA (the
+ * island). The VM cannot read the set until it decodes ([UCP] U4), so the
+ * row says DFA only, and a request that also needs the VM (captures, a
+ * VM-only construct, `--engine=vm`) is refused by name (`island_refuse`).
+ * The character-stepped machine has no attempt form yet, so a start anchor
+ * beside the set excludes the DFA too: the row then admits no engine and
+ * `why` names the anchor. */
+static const char ISLAND_WHY[] = "a word boundary over the Unicode word set";
+static const char ISLAND_ANCHOR_WHY[] =
+    "a start anchor (^, \\A, \\G or (?m)^) beside a word boundary over the "
+    "Unicode word set";
+
+static unsigned forces_island(Ctx *cx, const Ast *a, size_t *why_pos,
+                              const char **why)
+{
+    const Ast *n = pcrec_island_needed(cx, a);
+    if (!n) return ENGM_DFA | ENGM_VM;
+    const Ast *bot = pcrec_start_anchor_of(a);
+    *why_pos = bot ? bot->reg_at : n->reg_at;
+    *why = bot ? ISLAND_ANCHOR_WHY : ISLAND_WHY;
+    return bot ? 0u : ENGM_DFA;
+}
+
 /* ORDER MATTERS ONLY FOR THE DIAGNOSTIC, and it is captures-first on purpose.
  * The pass ANDs every row's mask, so the verdict is order-independent; `why`
  * is taken from the FIRST row that excludes the DFA. A `\K` pattern that also
@@ -438,9 +463,52 @@ static const EngineAnalysis analyses[] = {
      * into the "%s requires the VM engine" template, which reads oddly for
      * a fact that is not a constructs's name. */
     { "dfa_overflow", forces_dfa_overflow, false },
+    /* [UCP] U3 the one row that EXCLUDES THE VM. Its `why` is read only by
+     * the two refusals below that name a VM-excluding row. */
+    { "island", forces_island, true },
 };
 
 /* ---- the pass ---- */
+
+/* [UCP] U3 the `island` row's result: its mask, and its reason and offset. */
+typedef struct {
+    unsigned    mask;
+    const char *why;
+    size_t      pos;
+} IslandVerdict;
+
+static const char *why_text(Ctx *cx, const char *what, size_t pos);
+
+/* [UCP] U3 refuses a pattern the `island` row fired on when no engine can
+ * honour the request: a start anchor beside the set (the row admits no
+ * engine), a VM-only need from another row (captures, a VM-only construct),
+ * or `--engine=vm`. Each refusal names the reason and the way out, `(?aW)`
+ * (the ASCII word set is byte-expressible); returns where the DFA can run. */
+static void island_refuse(Ctx *cx, const IslandVerdict *iv, unsigned mask,
+                          const char *why, size_t why_pos,
+                          const char *node_why, size_t node_why_pos)
+{
+    if (!(iv->mask & ENGM_DFA))
+        pcrec_ctx_fail(cx, iv->pos, "%s is not supported yet; restrict the word "
+                       "set with (?aW)", iv->why);
+    if (!(mask & ENGM_DFA)) {
+        if (!node_why && cx->want_caps && cx->ncap > 0)
+            pcrec_ctx_fail(cx, iv->pos,
+                     "%s needs the character-stepped DFA, which has no "
+                     "captures; pass --no-captures, or restrict the word set "
+                     "with (?aW)", iv->why);
+        pcrec_ctx_fail(cx, iv->pos,
+                 "%s needs the character-stepped DFA, and %s needs the VM "
+                 "engine, which cannot read that word set yet; restrict the "
+                 "word set with (?aW)", iv->why,
+                 why_text(cx, node_why ? node_why : why ? why : "this pattern",
+                          node_why ? node_why_pos : why_pos));
+    }
+    if (cx->opt->engine == PCREC_ENGINE_VM)
+        pcrec_ctx_fail(cx, iv->pos, "%s needs the character-stepped DFA, which "
+                       "--engine=vm excludes: the VM cannot read that word set "
+                       "yet; restrict the word set with (?aW)", iv->why);
+}
 
 /* engine_why's text, arena-owned so it outlives this call and can be handed
  * straight to the emitter. §5.5's shape: "capture group at pattern offset 0". */
@@ -1396,10 +1464,21 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
      * deleted nothing can change the tree between rounds, so the loop that
      * used to wrap this provably ran exactly once. The file header has the
      * deletion's argument. */
+    /* [UCP] U3 the `island` row's own verdict, for `island_refuse` and the
+     * driver (`Ctx.island_route`). Read as the ROW's result, never by
+     * re-asking its predicate. Its `why` is not taken as the DFA-excluding
+     * one: that names a construct the VM reads, and every shipped stamp
+     * reads `why`. */
+    IslandVerdict iv = { ENGM_DFA | ENGM_VM, NULL, 0 };
     for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
         size_t p = 0;
         const char *w = NULL;
         unsigned m = analyses[i].forces(cx, root, &p, &w);
+        if (analyses[i].forces == forces_island) {
+            iv = (IslandVerdict){ m, w, p };
+            mask &= m;
+            continue;
+        }
         if (!(m & ENGM_DFA) && !why) { why = w; why_pos = p; }
         if (!(m & ENGM_DFA) && analyses[i].node_derived && !node_why) {
             node_why = w; node_why_pos = p;
@@ -1407,6 +1486,8 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
         mask &= m;
     }
 
+    cx->island_route = iv.mask != (ENGM_DFA | ENGM_VM);
+    if (cx->island_route) island_refuse(cx, &iv, mask, why, why_pos, node_why, node_why_pos);
     if (mask == 0)
         pcrec_ctx_fail(cx, why_pos, "internal error: no engine can compile this pattern");
 
@@ -1458,6 +1539,8 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     case PCREC_ENGINE_VM:
         /* Always available: the VM can compile everything the DFA can. This
          * is the §3.7 GATE mode — see the prefilter line below. */
+        /* [UCP] U3 no longer ALWAYS: `island_refuse` refused it where the
+         * `island` row excludes the VM. */
         fit.chosen = ENGM_VM;
         if (!fit.why) fit.why = "--engine=vm";
         break;

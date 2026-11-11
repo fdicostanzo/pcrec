@@ -119,7 +119,7 @@
 <a id="s3-3-3"></a>
 #### 3.3.3 The DFA-side exceptions
 
-<a id="s3-3-3-p1"></a>[3.3.3¶1] Under `--engine=auto`, crossing `PCREC_MAX_DFA_STATES_TABLE`, `PCREC_MAX_DFA_STATES_GOTO`, `PCREC_MAX_TABLE_ENTRIES` or `PCREC_MAX_SUBSET_ELEMS` fails the DFA build with the same diagnostic and cost, but the compile does not necessarily fail: the overflow is a selection outcome (fall back to the VM; drop an auto-selected prefilter), so a pattern may succeed on the VM. `PCREC_MAX_NFA_STATES` and `PCREC_MAX_VM_NODES` have no fallback engine and keep the ceiling unconditionally, and `--engine=dfa` and `-fprefilter` keep it for all six (`tuning.md` §2.11 states the mechanism and its cost bound).
+<a id="s3-3-3-p1"></a>[3.3.3¶1] Under `--engine=auto`, crossing `PCREC_MAX_DFA_STATES_TABLE`, `PCREC_MAX_DFA_STATES_GOTO`, `PCREC_MAX_TABLE_ENTRIES` or `PCREC_MAX_SUBSET_ELEMS` fails the DFA build with the same diagnostic and cost, but the compile does not necessarily fail: the overflow is a selection outcome (fall back to the VM; drop an auto-selected prefilter), so a pattern may succeed on the VM. `PCREC_MAX_NFA_STATES` and `PCREC_MAX_VM_NODES` have no fallback engine and keep the ceiling unconditionally, a character-stepped machine (§3.9¶4) has none either, and `--engine=dfa` and `-fprefilter` keep it for all six (`tuning.md` §2.11 states the mechanism and its cost bound).
 
 <a id="s3-3-3-p2"></a>[3.3.3¶2] A DFA artifact may carry an optional third machine, the anchored match-here automaton behind `<PREFIX>_DFA_MATCH "unwrapped"` (`tuning.md` §2.15). It is built after the two mandatory machines and charged against the same three DFA-side ceilings; crossing one produces no diagnostic and no fallback engine, and the artifact keeps the search-and-filter form and stamps it. The optional machine's bytes also count toward the emitted-size caps (§8); the driver drops it and re-emits before a size cap refuses (§8.4), so an optional machine never decides which patterns pcrec accepts, in either unit.
 
@@ -189,9 +189,9 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 <a id="s3-8"></a>
 ### 3.8 Module `ucp`: which UCP sets compile
 
-<a id="s3-8-p1"></a>[3.8¶1] Under `(*UCP)`/`--ucp` a class escape or POSIX class means a Unicode set (`cli.md` `--ucp`). A UCP set with more than `PCREC_UCP_NARROW_MAX_INTERVALS` = 128 code-point intervals, counted after clamping to the encoding's universe, is refused by name. Under `-e utf8` that is `\w \W` and `[:alpha:] [:alnum:] [:word:] [:lower:] [:upper:] [:graph:] [:print:] [:punct:]` at both polarities; `\d \D \s \S` and `[:digit:] [:xdigit:] [:space:] [:blank:] [:cntrl:]` compile. Under `-e byte` every set clamps far below 128 and all compile. Restricting the family (`(?aW)`, `(?aP)`) makes the construct ASCII and it compiles.
+<a id="s3-8-p1"></a>[3.8¶1] Under `(*UCP)`/`--ucp` a class escape or POSIX class means a Unicode set (`cli.md` `--ucp`). Every UCP set compiles, under both encodings and at both polarities, as the class its `\p{..}` spelling is (UCP `\w` is `\p{Xwd}`). No limit selects among them: a set with many intervals under `-e utf8` (`\w \W`, `[:alpha:] [:alnum:] [:word:] [:lower:] [:upper:] [:graph:] [:print:] [:punct:]`) costs emitted size and is held to the size caps (§8) like any class.
 
-<a id="s3-8-p2"></a>[3.8¶2] This is a selection knee, not a resource ceiling, and is not movable by a flag. UCP `\b` and `\B` under `-e utf8` are refused by name with no number involved (the Unicode word set is not byte-expressible there); under `-e byte` they compile.
+<a id="s3-8-p2"></a>[3.8¶2] UCP `\b` and `\B` compile under both encodings; under `-e utf8` the Unicode word set is not byte-expressible, so such a pattern takes the character-stepped DFA (`match_api.md` §6.3.2's `"char-step"` scan; `cli.md` §1.9¶7), bounded by §3.9¶3a.
 
 <a id="s3-9"></a>
 ### 3.9 The DFA's context sets and atoms
@@ -201,7 +201,12 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 - <a id="s3-9-p2"></a>[3.9¶2] `PCREC_MAX_CTX_SETS` = 32 distinct context sets on one machine;
 - <a id="s3-9-p3"></a>[3.9¶3] `PCREC_MAX_CTX_ATOMS` = 16 context atoms: the distinct membership vectors the machine's bytes realize over those sets, plus the empty one (an absent side).
 
-<a id="s3-9-p4"></a>[3.9¶4] Over either, the DFA build is declined as a state-cap overflow is (§3.3.3): `--engine=auto` compiles the pattern on the VM, `--engine=dfa` refuses ("more than 16 context atoms on one machine; try --engine=vm"). A truncated partition is never produced. Neither is movable by a flag.
+<a id="s3-9-p3a"></a>[3.9¶3a] A character-stepped machine (`<PREFIX>_DFA_SCAN "char-step"`, `cli.md` §1.9¶7) also bounds its non-ASCII characters:
+
+- <a id="s3-9-p3b"></a>[3.9¶3b] `PCREC_MAX_CHAR_STEP_SETS` = 8 distinct non-ASCII code-point sets on one machine, its consuming classes and context sets together. A set holding every non-ASCII character (the unanchored loop's, `.`'s) splits no character and is not counted: UCP `\b` beside seven script classes is 8 sets and compiles, beside eight it is refused;
+- <a id="s3-9-p3c"></a>[3.9¶3c] `PCREC_MAX_CHAR_STEP_ATOMS` = 32 character atoms: the distinct membership vectors non-ASCII characters realize over those sets, plus the two ill-formed-byte atoms.
+
+<a id="s3-9-p4"></a>[3.9¶4] Over `PCREC_MAX_CTX_SETS` or `PCREC_MAX_CTX_ATOMS`, the DFA build is declined as a state-cap overflow is (§3.3.3): `--engine=auto` compiles the pattern on the VM, `--engine=dfa` refuses ("more than 16 context atoms on one machine; try --engine=vm"). Over either character-stepped limit, or over a state cap on a character-stepped machine, the pattern is REFUSED under every `--engine`, because no VM route reads the Unicode word set yet: "pattern too complex for the DFA engine (more than 8 non-ASCII character sets on one machine; restrict the word set with (?aW))". A truncated partition is never produced. None is movable by a flag.
 
 <a id="s3-10"></a>
 ### 3.10 The compiler's C stack

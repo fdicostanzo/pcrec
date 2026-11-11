@@ -126,7 +126,15 @@ static void dfa_copy(Dfa *dst, DState *st, const Dfa *src, Arena *ar)
 void pcrec_build_min_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                          int maxstates, int root, bool optional)
 {
-    DfaMemo *m = cx->dfa_memo;
+    /* [UCP] U3 an ISLAND machine bypasses the memo, both ways: its states
+     * name code-point lists the attempt's AST owns (`NState.wiv`, keyed here
+     * only by pointer) and its segment tables live in the attempt's arena
+     * (`Dfa.seg_lo`/`seg_atom`), so an entry would outlive what it points
+     * at. A second attempt does rebuild both island machines (an oversized
+     * `(*UCP)\b\w{9000}\b`, review r4 ucpu3 EMIT-6); it pays the build
+     * instead of risking a restore into freed storage. Keying and copying
+     * those by content is the change that would earn the memo back. */
+    DfaMemo *m = nfa->island ? NULL : cx->dfa_memo;
     for (const DfaMemoEnt *e = m ? m->head : NULL; e; e = e->next) {
         if (!entry_matches(e, cx, nfa, prune, reverse, maxstates, root, optional,
                            d->notempty))
@@ -141,7 +149,11 @@ void pcrec_build_min_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     const long long before = cx->subset_elems;
     pcrec_build_dfa(cx, nfa, d, prune, reverse, maxstates, root, optional);
     if (d->overflowed) return;   /* not minimized, and not memoized */
-    pcrec_minimize_dfa(cx, d);
+    /* [UCP] U3 an island machine is not minimized: minimize.c's partition
+     * refinement reads byte classes only, and an island state's character
+     * cells are columns it does not know (ucp_design.md §3.1 GEN-3, a
+     * follow-up). Unminimized is the same language, more states. */
+    if (!d->island) pcrec_minimize_dfa(cx, d);
     if (!m) return;
 
     /* The entry is linked only once it is whole, so an allocation failure
