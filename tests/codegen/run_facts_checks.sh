@@ -864,7 +864,9 @@ fi
 # src/facts/walk_arms.def): `abcd.efgh` holds two required 4-byte runs of equal
 # information. By default the RARER one is stamped (`abcd` on the default
 # rate table); restored, the predecessor's choice (the later, `efgh`). Both the
-# --pattern compile and a .rxt FILE compile must answer so.
+# --pattern compile and a .rxt FILE compile must answer so. (R-38 K38-2: the
+# stamp's `@` is the searching site's; this `cover` artifact's window search
+# may read a position outside the stamped run, so the `@` is optional here.)
 if [ ! -x "$HBIN" ]; then
     bad "[facts-tie] $HBIN is missing (make builds it)"
 else
@@ -878,8 +880,8 @@ else
         pl="$(grep -hE 'define RX_REQ_RUN ' "$WORKDIR/ft.p.c" | tr '\n' ' ')"
         [ -n "$fl" ] && [ "$fl" = "$pl" ] || tbad="$tbad ${arm:-default}: file [$fl] pattern [$pl];"
         case "$arm" in
-            "") case "$fl" in (*'"61626364@'*) ;; (*) tbad="$tbad default does not stamp the rarer run;" ;; esac ;;
-            *)  case "$fl" in (*'"65666768@'*) ;; (*) tbad="$tbad restore=tie did not restore the predecessor's run;" ;; esac ;;
+            "") case "$fl" in (*'"61626364'[@\"]*) ;; (*) tbad="$tbad default does not stamp the rarer run;" ;; esac ;;
+            *)  case "$fl" in (*'"65666768'[@\"]*) ;; (*) tbad="$tbad restore=tie did not restore the predecessor's run;" ;; esac ;;
         esac
     done
     if [ -n "$tbad" ]; then
