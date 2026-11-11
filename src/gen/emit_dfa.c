@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 99
+#define PCREC_ARTIFACT_ABI 100
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -4235,6 +4235,23 @@ static bool state_acc_any(const Dfa *d, const DState *st)
     return false;
 }
 
+/* [PFFIX] Does NO state of the machine accept, in any view? Then nothing can
+ * match: every emitted loop's report is guarded by an accept it can never
+ * see. It is the EMPTY engine's test on both routes (`locate_empty_applies`,
+ * `unanch_start`) and the attempt prefilter's refusal (`attempt_cand`), one
+ * predicate for all three. `d->n == 0` (no live start state) is its vacuous
+ * case. The other case is a machine whose states all die before an accept:
+ * `ab\Gcd` under `--engine=vm -fprefilter`, where the hybrid's prefilter
+ * was a loop that never wrote its window and gcc's -Wmaybe-uninitialized
+ * read the caller's copy of it as unset (pflost_report.md). The views are
+ * states of `d` too, so the end and eol accepts are covered. */
+static bool dfa_accepts_nowhere(const Dfa *d)
+{
+    for (int s = 0; s < d->n; s++)
+        if (state_acc_any(d, &d->st[s])) return false;
+    return true;
+}
+
 /* Does mechanism 4's runtime start dispatch change any answer? With every
  * interior start state interned to the same state the seed table would be a
  * constant column, so the pre-wave compile-time constant start is emitted
@@ -4531,7 +4548,7 @@ static bool attempt_cand(const CandSel *s, CandSet *cs)
      * [START-TABLE] C5b that is BOUND's row on this route (`s->route` is
      * CAND_ROUTE_ATTEMPT, N12's), read through the walk: the bound the loop
      * is emitted from, never a second spelling of it. */
-    if (d->n == 0 || CAND_BOUND_ONE(CAND_SLOT_NEXT, s, "pred-memchr-bound")) {
+    if (dfa_accepts_nowhere(d) || CAND_BOUND_ONE(CAND_SLOT_NEXT, s, "pred-memchr-bound")) {
         PCREC_CAND_TRACE_REC("NEXT", "attempt", "none", "attempt-cand");
         return false;
     }
@@ -4691,7 +4708,7 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
      * dead while the seeds a match's own right-hand character selects are
      * live. `s0` alone was a sufficient emptiness test only while every
      * context the reverse machine read was satisfiable by an absent side. */
-    if (fs < 0 || (rd->s0 < 0 && dfa_interior_dead(rd, rd->s1u))) {
+    if (fs < 0 || dfa_accepts_nowhere(fd) || (rd->s0 < 0 && dfa_interior_dead(rd, rd->s1u))) {
         o->empty = true;
         return;
     }
@@ -4809,8 +4826,9 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
  * emits a search body that is one `return 0` — no table, no loop, no skip —
  * and BOTH emitters below take that exit: `emit_unanchored` on
  * `unanch_start`'s `empty` (its two causes are that function's), `emit_attempt`
- * on `d->n == 0` (no live start state at all). Corpus witnesses exist for both
- * (`\B\b` unanchored; `^\B\b` under ENG_ATTEMPT).
+ * on `dfa_accepts_nowhere` (no state accepts; no live start state at all is
+ * its vacuous case). Corpus witnesses exist for both (`\B\b` unanchored;
+ * `^\B\b` under ENG_ATTEMPT; [PFFIX] `ab\Gcd` the hybrid's prefilter).
  *
  * WHY IT EXISTS AT ALL. r37 finding #5: those artifacts used to stamp
  * `<PREFIX>_DFA_SCAN "unanchored"` — a loop they do not contain — because the
@@ -4821,7 +4839,7 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
  *
  * ONE DERIVATION, TWO READERS, this file's standing rule (`unanch_start` and
  * `attempt_cand` state it at length): `emit_attempt`'s early exit calls THIS
- * function rather than re-spelling `d->n == 0`, so the stamp cannot say
+ * function rather than re-spelling `dfa_accepts_nowhere`, so the stamp cannot say
  * "empty" about a body that has a loop in it, nor stay silent about one that
  * does not. `emit_unanchored` reads the SAME `UnanchStart` it emits from —
  * one call, both facts — which is the same guarantee spelled the other way.
@@ -4833,9 +4851,10 @@ static bool locate_empty_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
     if (s->route == CAND_ROUTE_ATTEMPT)
-        PCREC_CAND_TRACE_REC("ROUTE", "attempt", cx->job->dfa.n == 0 ? "empty" : "live",
+        PCREC_CAND_TRACE_REC("ROUTE", "attempt",
+                             dfa_accepts_nowhere(&cx->job->dfa) ? "empty" : "live",
                              "engine-empty");
-    if (s->route == CAND_ROUTE_ATTEMPT) return cx->job->dfa.n == 0;
+    if (s->route == CAND_ROUTE_ATTEMPT) return dfa_accepts_nowhere(&cx->job->dfa);
     UnanchStart us;
     unanch_start(cx, &us);
     PCREC_CAND_TRACE_REC("ROUTE", "dfa", us.empty ? "empty" : "live", "engine-empty");
@@ -15134,8 +15153,8 @@ static const char *attempt_entry(Ctx *cx, const char *fn, PcrecEntry ent)
     return first;
 }
 
-/* The search body `fn` of the EMPTY machine on CAND_ROUTE_ATTEMPT (no live
- * start state: the pattern matches nothing), the LOCATE row `empty`'s walk
+/* The search body `fn` of the EMPTY machine on CAND_ROUTE_ATTEMPT (no state
+ * accepts: the pattern matches nothing), the LOCATE row `empty`'s walk
  * ([OPT-REVEND] L0). [DD-13c] the condition was `d->n == 0` spelled inside
  * `emit_attempt`; it is the `empty` row's predicate now, the same derivation
  * `<PREFIX>_DFA_SCAN "empty"` reads. Its front is the attempt entry's, so the
@@ -16490,7 +16509,7 @@ static const char *dfa_scan_name(Ctx *cx)
 static const char *dfa_prefilter_name(Ctx *cx)
 {
     /* [DD-13c] THE EMPTY ENGINE HAS NO PREFILTER TO NAME, and it does not need
-     * a clause here to say so: `attempt_cand` refuses on `d->n == 0` and
+     * a clause here to say so: `attempt_cand` refuses on `dfa_accepts_nowhere` and
      * `unanch_start` returns with `kind == DFA_PF_NONE` on `empty`, so both
      * arms below already answer "none" for exactly the artifacts
      * `dfa_engine_is_empty` identifies. An `if` here would be a THIRD statement

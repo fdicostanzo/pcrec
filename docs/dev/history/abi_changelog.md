@@ -23,7 +23,15 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `99` on every artifact today ([FEAT-FAMILIES] module `match-start-reset`, 98 -> 99,
+- **`rx_info.abi` is `100` on every artifact today ([PFFIX] the empty engine on an accept-free machine, 99 -> 100,
+  lane pffix 2026-11-11).** A DFA machine in which NO state accepts in any view is now the EMPTY engine on
+  both routes (`dfa_accepts_nowhere`, src/gen/emit_dfa.c), where only `d->n == 0` (attempt route) and a dead
+  start (unanchored route) were before. The body that moves is the search body of a pattern that can match
+  nothing, which becomes one `return 0`; the witness is the VM hybrid's prefilter for `ab\Gcd`/`ab\Acd` under
+  `--engine=vm -fprefilter` (tests/litscan/spanarms.rxt), whose loop never wrote its window and failed the
+  harness's `-Werror` gcc (`'window' may be used uninitialized`, pflost_report.md). No struct offset moves,
+  no `rx_info` member is added or changed, and no answer moves; every other artifact moves only the number.
+- **`rx_info.abi` was `99` on every artifact ([FEAT-FAMILIES] module `match-start-reset`, 98 -> 99,
   lane famdef2 2026-11-10; ADDING A MODULE MOVES THE `--features all` SCAFFOLDING, the `ucp` precedent below).**
   `\K` is split out of module `assertions` into its own module `match-start-reset` before the first
   family freeze, so `PCREC_FEATURE_MODULES` gains `match-start-reset` under `--features all` and under
