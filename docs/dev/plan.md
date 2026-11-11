@@ -1253,6 +1253,15 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: the first in-place user.
   refs: lane/substuc docs/dev/reviews/2026-10-22-r3-subst-usecase-fit.md (G4); replace_design.md §R4.8; [M4-SUBST]
   Charter: a support-unit flatten that checks §R4.8's overlap rule before writing and stages any piece it would overwrite in o->scratch, so a template can rewrite its subject in place.
+<<<<<<< main
+=======
+- [CLI-OUTKEEP] STATE:not-started — `-o` WRITES ONLY WHEN THE BYTES CHANGE (TEMP + RENAME), SO MAKEFILES DO NOT RECOMPILE
+  filed: 2026-10-22 Frank (subst R4a discussion: "that's nice! Yes. Own row")
+  status (2026-11-10): built on lane/outkeep (cli write_file, cli.md 1.2 paragraphs 3-4, tests/cli, one mech row); make test OWED; the manager moves the row on merge. Was: filed 2026-10-22, every -o output overwritten in place.
+  next: on Frank's build go, one sonnet lane: cli/ change, a cli.md spec hunk, tests (identical output keeps mtime; changed output replaces it atomically; a failed run leaves the old file intact).
+  refs: docs/spec/cli.md; examples/makefile/ (D118); worktrees/subst/docs/dev/lanes/subst_rulings.md R10
+  Charter: when `-o FILE` exists and its bytes equal the new output, pcrec leaves it untouched (bytes and timestamp), so `pcrec --emit-support -o support.h` and generated matchers can be re-run on every build without forcing recompiles. Otherwise it writes a temp file in the same directory and renames it over, so an interrupted run never leaves a half-written file. Applies to every file pcrec writes via -o (matchers, headers, stamps, the support unit); no new flag.
+>>>>>>> lane/outkeep
 - [ITER-RETRY-ELIDE] STATE:not-started — SKIP THE NOTEMPTY RETRY WHERE IT CAN NEVER SUCCEED (find-all iterators)
   filed: 2026-10-23 manager, from review 2026-10-23-r2-iter-code (EMIT-2, EMIT-3)
   status (2026-10-23): filed; nothing built. `_next` retries after an empty match even for greedy patterns where the retry cannot succeed: 11-48% per match; `_next` costs 22 instructions/match over the hand loop and `_next_n(64)` is 11-15% slower on the DFA attempt route (a documented known loss until this row).

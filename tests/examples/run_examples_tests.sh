@@ -144,6 +144,21 @@ else
 $(diff "$SUB/expected.txt" "$WORKDIR/subst.out")"
 fi
 
+# ---------------------------------------------------------------------
+# (5) [CLI-OUTKEEP] a second `pcrec -o gen/ SRCS` over unchanged sources
+# rewrites nothing: every generated file stays older than a reference file
+# touched after the first build (the mtimes are aged first, so no sleep).
+ref="${WORKDIR}/ref"
+touch -t 200101010000 "${SCRATCH}"/gen/*.c "${SCRATCH}"/gen/*.h
+touch -t 200201010000 "${ref}"
+if ( cd "${SCRATCH}" && "${TIMEOUT_BIN}" 120 "${PCREC}" -o gen/ src/greeting.rxt src/numbers.rxt ) >"${WORKDIR}/rerun.log" 2>&1 \
+   && [ -z "$(find "${SCRATCH}"/gen -name '*.[ch]' -newer "${ref}")" ]; then
+    pass "examples/makefile: re-running pcrec -o gen/ over unchanged sources rewrites no file"
+else
+    fail "examples/makefile: a rerun of pcrec -o gen/ failed or rewrote a generated file:
+$(cat "${WORKDIR}/rerun.log")"
+fi
+
 echo
 echo "examples: $checks_passed passed, $checks_failed failed"
 [ "$checks_failed" -eq 0 ]
