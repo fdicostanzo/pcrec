@@ -8831,6 +8831,10 @@ disposition text — this entry is the index, not the substance.
 9. The oracle store's `OracleId.config` gains `UCP` at U1.
 Staging: U0 → U1 now (one lane); U2 after; U3 needs [CLS-TREE] S1+S3 plus the b-island trigger; U4 needs S4.
 
+**D130 addendum 1 (2026-11-11, lane ucpu3fix RULES-8, U3 complete via lane ucax3).** U3 lifts U1's wide-set refusal under `-e utf8` by PARITY: a wide UCP set compiles as the class its `\p{..}` spelling is, on the all-byte route. Example: `(*UCP)\w+` is byte-identical to `\p{Xwd}+` (613 KB).
+
+This is not the kit-sized DFA route item 3 conditioned the lift on: such patterns move from "refused by name" to "shipped large, degraded or refused by size", like any large `\p{..}` class. `PCREC_UCP_NARROW_MAX_INTERVALS` is retired with the route table (review r4 ucpu3 RULES-9). The kit-sized route stays OWED under [CLS-TREE] / the kit producer.
+
 ## D131 — [CLS-TREE] S0 calibration ruled; [OPT-CLSPACK] promoted; [FINDINGS] B115 dispositions (Frank, 2026-09-29, eighty-fifth session)
 
 Frank: "I agree with you on all" (on the manager's ten-item status list). Sources: docs/dev/lanes/clsfit_report.md, cls_tree_design.md §1.7 + addendum (O-76/O-77), bench O-74 (ledger 2026-09-29-b115-findings-tiers-f7f5a143).
@@ -8878,6 +8882,10 @@ Frank: "I agree with you on all" (on the manager's ten-item status list). Source
 1. U3 is built ONLY for patterns with no all-byte DFA form. Where an all-byte form exists, it stays the choice; the island never competes with it.
 2. The island is chosen over the VM hybrid by a ROW in the engine-selection first-match table (memory pcrec-decisions-as-first-match-tables). The row's predicate is MEASURED first: the lane locates the island-vs-hybrid break-even (text class, prefilter strength) before the row lands, so the island is selected only where it beats the VM.
 3. Sequencing: after [UTF-VALID] lands (both touch the utf8 entry scaffolding).
+
+**D134 addendum 1 (2026-11-11, lane ucpu3fix RULES-2, U3 complete via lane ucax3).** Item 2's MEASURED island-vs-hybrid row is met only vacuously at U3: no hybrid exists for UCP `\b` under utf8 until U4 lets the VM read the set, so the char-step DFA is a capability row (`ENGM_DFA` mask), not a priced one.
+
+The measured row is owed. Trigger: U4 or the D134 timing measurement, whichever comes first; it is due before the `island` row's mask changes. Evidence to start from: `u3_island_twin.md` has the island 1.35-2.8x slower than the hybrid on mixed and CJK subjects; the method card (arm `cs`) is UNMEASURED. U4 is PARKED as a new start under D194 (Frank's go starts it).
 
 ## D135 — the drop-the-prefilter size-ladder rung, and a FAST-OR-FAIL switch over every degrading rung (Frank, 2026-09-30, eighty-seventh session)
 
@@ -10163,3 +10171,10 @@ Answered against docs/design/cond_family.md rev 0 §7 (six questions, each with 
 **D193 addendum 4 (Frank, 2026-11-10): syntax is not settled.** The spellings in this entry and its addenda (`=~`, `&`, labels, `let`, `? :`) are placeholders from the owner's examples; D193 rules MEANINGS only (e.g. addendum 3: a predicate's regex test is an unanchored search with `^`/`$` bound to the label, whatever it ends up spelled). PCRE2's own constructs (`(*scan_substring:...)`, `(*sr:...)`) keep PCRE2's syntax. Our predicate/label syntax is a later design step of its own.
 
 **D193 addendum 5 (Frank, 2026-11-10): group 0's find-all resume, corrected and left OPEN.** The group-0 rule's sentence "it CONSUMES its outside context (find-all resumes after the whole match, as with `\K`), unlike lookaround" is WRONG on the trailing side: find-all resumes at the reported match's end, i.e. group 0's end, so the trailing part is read but not consumed, exactly like a lookahead (libpcre2: `b(?=b)` on `bbb` finds (0,1),(1,2)). The only real difference from lookaround is the LEADING part: may the next match's leading context reach back before the resume point? `\K`-style NO (`b\Kb` on `bbb` finds (1,2) only: forward-only reading, no reverse DFA for a variable leading part, no overlap) or lookbehind-style YES (`(?<=b)b` finds (1,2),(2,3): group 0 becomes pure lookaround sugar). OPEN: Frank wants it decided by what is most USEFUL; the manager's leaning (`\K`-style leading, lookahead-style trailing) "works", but this is uncharted territory, so no corpus can be grepped for usage. Decide when group 0 is designed for a build.
+
+## D194 — CLOSE BEFORE START, and WORK IN SETS (Frank, 2026-11-10/11)
+
+1. **Close before start (2026-11-10).** No new feature or optimization is STARTED until the completable open items are closed. Ongoing umbrellas ([OPTLOOP], the kit umbrellas) are excluded; work already in flight continues. Anything waiting on the owner (a charter, a go, an answer) is surfaced in `docs/dev/owner.md` the day it starts waiting, and a plan row records it as `waits: owner — ...`. Plan states `ongoing` and `ready` (a designed stage that needs only a go) carry the rest.
+2. **Work in sets (2026-11-11).** Work is organized into tight SETS, each a related cluster or a batch of small items, walked to completion before the next opens, with the kit kept busy on its coordinated piece in each set. The sets are ordered S0..S4 and each plan row names its set: S2 = [RUN-POS-SET] stage 3 with the kit's K38-2 and R-38 Part D; S3 = [COVER-CAP]; S4 = lookaround-as-run ([REQ-LOOKAROUND]) with [EARNED-SKIP] Part C and [MATCH-KNOWN].
+
+**Related:** D77 (measured need), D153 (remodel first), D192; memory notes pcrec-close-before-start and pcrec-surface-owner-waits.
