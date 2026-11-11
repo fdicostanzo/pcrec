@@ -381,5 +381,5 @@ n "cx"
 # (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK); python3 `re` refuses: nothing
 # to repeat at position 1
 pattern (*positive_lookahead:a\K)b
-features lookaround,assertions
+features lookaround,assertions,match-start-reset
 perr

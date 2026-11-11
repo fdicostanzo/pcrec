@@ -80,7 +80,7 @@ ms 1 "a/user b/user" 7 13
 
 # ---- a VM hybrid consuming the row: \K is VM-only -------------------------
 pattern a\K/user
-features assertions
+features assertions,match-start-reset
 m "a/user" 1 6
 m "ba/user" 2 7
 n "xxa/us"

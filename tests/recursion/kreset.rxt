@@ -42,19 +42,19 @@
 
 # the last `\K` on the successful path wins -- the OUTER level's, firing after the inner level's already has.
 pattern ^(a\Kb)(?1)$
-features recursion,assertions
+features recursion,assertions,match-start-reset
 m "abab" 3 4
 g 1 0 2
 
 # the {0}-callee form of the same fact.
 pattern ^(?:(?<g>a\Kb)){0}(?&g)$
-features recursion,assertions,named-groups
+features recursion,assertions,named-groups,match-start-reset
 m "ab" 1 2
 g 1 -1 -1
 
 # `\K` inside a body that ALSO recurses.
 pattern ^(a(?1)?\Kb)$
-features recursion,assertions
+features recursion,assertions,match-start-reset
 m "aabb" 3 4
 g 1 0 4
 
@@ -64,7 +64,7 @@ g 1 0 4
 
 # the positive lookahead. The `\K` is crossed inside the assertion THROUGH THE CALL and again lexically.
 pattern (?=(?1))(a\Kb)
-features recursion,assertions,lookaround
+features recursion,assertions,lookaround,match-start-reset
 m "ab" 1 2
 g 1 0 2
 m "xab" 2 3
@@ -74,24 +74,24 @@ g 1 0 2
 
 # with a follow, so the assertion is not the last thing that runs.
 pattern (?=(?1))(a\Kb)c
-features recursion,assertions,lookaround
+features recursion,assertions,lookaround,match-start-reset
 m "abc" 1 3
 g 1 0 2
 
 # with a prefix, so the reported start is not 0 either way.
 pattern x(?=(?1))(a\Kb)
-features recursion,assertions,lookaround
+features recursion,assertions,lookaround,match-start-reset
 m "xab" 2 3
 g 1 1 3
 
 # the NEGATIVE polarity, where an unsound prune or a leaked `\K` would be a FALSE MATCH rather than a missed one.
 pattern (?!(?1))(a\Kb)c
-features recursion,assertions,lookaround
+features recursion,assertions,lookaround,match-start-reset
 n "abc"
 n "zbc"
 
 # **THE ISOLATING CELL**: the `\K` is reachable ONLY through the call inside the lookahead, so it is the one cell where the assertion's own crossing is observable on its own. Every other row above has a LEXICAL `\K` that would give the same answer by itself.
 pattern ^(?:((?:a)\Kb)){0}(?=(?1))ab$
-features recursion,assertions,lookaround
+features recursion,assertions,lookaround,match-start-reset
 m "ab" 1 2
 g 1 -1 -1

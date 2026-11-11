@@ -421,12 +421,13 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `\Z` | `p` is the end of the subject, or `p` is before a `\n` that is the subject's last character | any | no |
 | `\z` | `p` is the end of the subject | any | no |
 | `\G` | `p` is `startpos` | any | no |
-| `\K` | always true; sets the start of the reported match to `p` | vm | no |
+| `\K` (module `match-start-reset`, ¶5) | always true; sets the start of the reported match to `p` | vm | no |
 | `(?m)` | the option letter that changes `^` and `$` (§5.8) | any | — |
 
 1. <a id="s7-1-p2"></a>[7.1¶2] The word characters for `\b` and `\B` are `\w`'s set (§6.1): ASCII without UCP, so under `byte` `\b\xe9` on `a\xe9` → `[1, 2)`. Under UCP they are Unicode's word set: Latin-1 under `byte`, and under `utf8` all of it, read a character at a time (`cli.md` §1.9¶7, which also lists what such a pattern is refused beside).
 2. <a id="s7-1-p3"></a>[7.1¶3] `\K` changes only the reported start: `a\Kb` on `ab` → `[1, 2)`; `(a\Kb)` on `ab` → `[1, 2)`, group 1 `[0, 2)`. `\K` inside any lookaround is refused ("not allowed inside a lookaround").
 3. <a id="s7-1-p4"></a>[7.1¶4] Inside a class, `\b` is U+0008 (§5.5) and the others are refused.
+4. <a id="s7-1-p5"></a>[7.1¶5] `\K` is the module `match-start-reset`, not part of `assertions`: it asks nothing of the position, it writes the reported start. Enabling `assertions` alone refuses `\K` with `\K requires module 'match-start-reset'`; `all` contains both. A `LIST` that names `assertions` to get `\K` also names `match-start-reset`.
 
 <a id="s7-2"></a>
 ### 7.2 Module `atomic-groups`
@@ -662,7 +663,7 @@ group        = "(" alternation ")"                            (* capturing, §5.
 | `\Z` | `assertions` | §7.1 |
 | `\z` | `assertions` | §7.1 |
 | `\G` | `assertions` | §7.1 |
-| `\K` | `assertions` | §7.1 |
+| `\K` | `match-start-reset` | §7.1 |
 | `\k<name>` | `backrefs` | §7.3 |
 | `\g{-1}` | `backrefs` | §7.3 |
 | `\g<1>` | `recursion` | §7.7 |

@@ -265,7 +265,7 @@ refuses() {
 for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y' \
          'a\Kb' 'a\Kb|c' '(?:a\K)*b'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    if pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" --pattern "$p" 2>"$WORKDIR/e.txt"; then
+    if pcrec_run "$PCREC" --features assertions,match-start-reset -p rx -o "$WORKDIR/out.c" --pattern "$p" 2>"$WORKDIR/e.txt"; then
         ok "[assertions] '$p' COMPILES — the module's built constructs are BUILT, so tests/reject's 'is not implemented yet' rows are about the unbuilt ones rather than about an empty module"
     else
         bad "[assertions] '$p' should compile with the module enabled: $(cat "$WORKDIR/e.txt")"
@@ -281,9 +281,14 @@ for p in '(?m)a$' '(?m:a$)' '(?-m)a$' '(?m)^a'; do
 done
 # ...and the same ones must still REFUSE with the gate closed, which is what
 # makes the line above a statement about the gate rather than about the build.
-for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y' \
-         'a\Kb' 'a\Kb|c' '(?:a\K)*b'; do
+for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y'; do
     refuses bare "$p" "requires module 'assertions'"
+done
+# [FEAT-FAMILIES] `\K` is module `match-start-reset` since 2026-11-10: it is
+# refused by THAT name bare, and `assertions` alone does not grant it.
+for p in 'a\Kb' 'a\Kb|c' '(?:a\K)*b'; do
+    refuses bare "$p" "requires module 'match-start-reset'"
+    refuses assertions "$p" "requires module 'match-start-reset'"
 done
 # `(?m)`'s gate-closed twin is `modifiers` WITHOUT `assertions`: bare would
 # refuse for the wrong module (`modifiers` is in std1, `assertions` is not),
@@ -319,7 +324,7 @@ done
 # capture modes, so a "fix" that widened the wrong way moves it.
 for p in '(?<n>\b)*' '(?<n>\B)*' '(?<n>\G)*' '(?<n>\K)*' '(?<n>\A)*'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    if pcrec_run "$PCREC" --features assertions,named-groups --no-captures -p rx \
+    if pcrec_run "$PCREC" --features assertions,match-start-reset,named-groups --no-captures -p rx \
                 -o "$WORKDIR/out.c" --pattern "$p" 2>"$WORKDIR/e.txt"; then
         ok "[assertions] '$p' COMPILES under --no-captures — the bare-anchor rule has ONE home, and this is the only path that reaches mod_named_groups.c's former copy of it"
     else
@@ -499,7 +504,7 @@ done
 # ---------------------------------------------------------------------------
 # 5. [M6.2 wave E] THE ENGINE STAMP ON A `\K` ARTIFACT
 # ---------------------------------------------------------------------------
-# `\K` is module `assertions`' only VM_ONLY construct, and D46's rule is that
+# `\K` (module `match-start-reset`) is the only VM_ONLY construct, and D46's rule is that
 # a selection point must be OBSERVABLE. Three surfaces carry the same fact and
 # all three are asserted here, because they are produced at different places
 # and a build could get one right while another says nothing:
@@ -519,7 +524,7 @@ done
 kstamp() { # kstamp <label> <pattern> <want-why-substring>
     local label="$1" pat="$2" want="$3"
     rm -f "$WORKDIR/out.c"
-    if ! pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" --pattern "$pat" 2>"$WORKDIR/e.txt"; then
+    if ! pcrec_run "$PCREC" --features assertions,match-start-reset -p rx -o "$WORKDIR/out.c" --pattern "$pat" 2>"$WORKDIR/e.txt"; then
         bad "[engine stamp] '$pat' should compile: $(cat "$WORKDIR/e.txt")"
         return
     fi

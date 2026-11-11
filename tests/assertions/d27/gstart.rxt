@@ -50,7 +50,7 @@ ns 2 "12 34 5x6"
 
 # \G composed with \K: \G still requires contiguity from the PREVIOUS match end, but \K still resets what gets REPORTED as this match's own start.
 pattern \Ga\Kb
-features assertions
+features assertions,match-start-reset
 # single call, not a loop: \G holds at startpos=0 (subject start), "a" consumes to 1, \K resets the report marker to 1, "b" consumes to 2 -- reported span is [1,2), not [0,2).
 m "ab" 1 2
 
