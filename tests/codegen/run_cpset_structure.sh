@@ -1105,6 +1105,12 @@ fi
 # +newline), verified by diffing an abi 97 build (550e23364) against this tree's
 # output on `a` and `a(b|c)+d`: that line, the abi number (same width) and the
 # header name are the whole diff.
+# RE-RECORDED 2026-11-11 at lane pffix (abi 99 -> 100, re-pinned by lane pffix2): every
+# EMITTED_BYTES row (all 12) moved by exactly +5 and no other stamp moved. The 5 bytes are the
+# abi number gaining a digit at its five places in a `--features all` artifact (the header
+# comment, the two guard lines, `#define PCREC_RX_ABI_H`, and `.abi =`; counted by grep of
+# the artifact for 100). None of the twelve sample patterns is
+# an accept-free machine, so the empty-engine change reaches none of them. Diff read, not bumped.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

@@ -30,7 +30,7 @@ R1	split-f	-	^\s+|\s+$	search	comp_a	rx__f_search(	1
 R1	split-np	-	^\s+|\s+$	search	next_pos	rx__next_pos(	1
 R2	hyb-entry	-	(a)b	search_run	prefilter	rx_prefilter(	1
 R2	split-q	-	^\s+|\s+$	search	comp_b	rx__q_search(	1
-R2	gfloor	-	a\Gb	search	comp_a	rx__f_search(	1
+R2	gfloor	-	a\Gb|\Gz	search	comp_a	rx__f_search(	1
 R2	utf	utf8,utfcheck	abc	search	valid_upto	rx__valid_upto(	1
 R3	hyb-clamp	-	(a+)bcd	search_run	prefilter	rx_prefilter(	2
 R3	hyb-adapt	-	(?>a\Kb)c	search_run	prefilter	rx_prefilter(	2
