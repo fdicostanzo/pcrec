@@ -1,0 +1,24 @@
+# pcrec at eb83f0902 (build/pcrec --features all -p rx), single compiles
+(a)(?<=\1)x	rc=1	pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 3)
+(a+)(?<=\1)x	rc=1	pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 4)
+(a(?1)?)(?<=\1)x	rc=1	pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 8)
+(a(?1){0})(?<=(?1))x	rc=0	compiles
+(a)(?(DEFINE)(?<g>\1b))(?<=(?&g))x	rc=1	pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 23)
+(a)(\1)(?<=(?2))x	rc=1	pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 7)
+(a|\2)(b|\1)x	rc=0	compiles
+(a(?=\1)|b)x	rc=0	compiles
+(a)(?<=a(?=\1))x	rc=0	compiles
+(a)(?<=(?=\1)b)x	rc=0	compiles
+(a)(?<=\1|b+)x	rc=1	pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+(a)(?<=\2)x	rc=1	pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 3)
+(a(?<=\1))x	rc=1	pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 2)
+((?<=\2)a)(b(?1))?x	rc=1	pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 1)
+(?J)(?:(?<n>a)|(?<n>b))(?<=\k<n>)x	rc=1	pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 23)
+(?|(a)|(b))(?<=\1)x	rc=1	pcrec: module 'branch-reset' is enabled but (?|...) is not implemented yet (pattern offset 0)
+(a)(?<=(?1))x	rc=0	compiles
+(?<=${v})x	rc=1	pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 0)
+# HEAD divergence witness: --emit-main, gcc -O0
+aax: match 1 3
+# F3 control: --emit-facts end_window
+(a|bc)\1$: byte RX_END_WINDOW "none"
+(a|bc)bc$: byte RX_END_WINDOW "5"
