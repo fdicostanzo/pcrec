@@ -1535,6 +1535,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
         else if (!strcmp(a, "--harness=kit-proof")) st->harness.kit_proof = 1;
         /* [MEMFN] R-30: the kit's old pre-check form, the window part kept */
         else if (!strcmp(a, "--harness=pres-window")) st->harness.pres_window = 1;
+        /* [MEMFN] R-38 K38-2a: the kit's probe lever, run ties leftmost */
+        else if (!strcmp(a, "--harness=run-tie-left")) st->harness.run_tie_left = 1;
         /* [REQ-EMPTYCAT] span_arms §3.7: the necessary-run walk's restored
            arms, names joined by '+' (src/facts/walk_arms.def) */
         else if (!strncmp(a, "--harness=restore=", 18)) {

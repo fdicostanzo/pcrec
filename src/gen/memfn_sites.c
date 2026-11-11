@@ -217,6 +217,12 @@ mf_art *pcrec_memfn_art(Ctx *cx)
             mf_lever(job->mf, "pres-window"))
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the lever "
                            "`pres-window`: %s", mf_art_error(job->mf));
+        /* R-38 K38-2a: the harness lever's probe of the run decision's tie;
+           never on a shipped compile */
+        if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->run_tie_left &&
+            mf_lever(job->mf, "run-tie-left"))
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the lever "
+                           "`run-tie-left`: %s", mf_art_error(job->mf));
     }
     return job->mf;
 }

@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k382a_report.md
+sections: Summary; The in-run stop as a reader; The probe lever; The presence family; The text classifier; Guard and ASan placements; Plants; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
