@@ -27,6 +27,6 @@ OK (0 mismatches); no wrong answer.
   fresh build at 7d74499bc: "memfn arm: OK, checks passed 59, failed 0"
   (witnesses applied, floors not applied under --every). Floors themselves are
   copied from the full-corpus log counts; their full-corpus proof is OWED.
-- OWED: queued `45x-main-axtri-axes` (docs/dev/lanes/axtri_axes_job): AXES= the
+- OWED: queued `450-main-axtri-axes` (docs/dev/lanes/axtri_axes_job): AXES= the
   four rows by spelling, both layers, AXES_FULL=1; green line `axes: DONE rc=0`
   in its job.log.axes.

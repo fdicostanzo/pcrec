@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 45x-main-axtri-axes: run_axes.sh on worktrees/axtri for the four memfn rows whose reach pins axtri re-pinned (fd-pres-g1 witness, fd-pres-pick, precheck-assign-byte, pres-set-lead), both layers, AXES= by spelling: answer identity plus the memfn arm's floors/witnesses.
+# 450-main-axtri-axes: run_axes.sh on worktrees/axtri for the four memfn rows whose reach pins axtri re-pinned (fd-pres-g1 witness, fd-pres-pick, precheck-assign-byte, pres-set-lead), both layers, AXES= by spelling: answer identity plus the memfn arm's floors/witnesses.
 # The expect is a FINAL trailer: the DONE line carrying run_axes.sh's rc.
 set -u
 TREE=/home/pcrec/projects/pcrec/worktrees/axtri
