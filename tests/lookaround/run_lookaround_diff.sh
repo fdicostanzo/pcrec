@@ -75,7 +75,7 @@ KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11}"
 ORACLE="$ROOT_DIR/tests/backrefs/bref_oracle.py"
 BATCH="$ROOT_DIR/tests/backrefs/bref_batch.c"
-FEATS="lookaround,backrefs,atomic-groups,assertions,classes,modifiers,named-groups"
+FEATS="lookaround,backrefs,atomic-groups,assertions,classes,modifiers,named-groups,match-start-reset"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
