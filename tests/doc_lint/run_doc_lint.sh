@@ -45,6 +45,21 @@ plant "dangling index line" "zz_ghost.sh names no file" 'printf -- "- zz_ghost.s
 plant "live script without a header" "live script has no header" 'printf "set -u\n" > tmpdir.sh'
 rm -rf "$tmp"
 
+# 5. the -g budget ([DOC-INDEX] dixpage): a broad search prints under 4 KB on every live profile unless --all; the
+#    ID/slug-before-body order and the page tiling are entry --selftest's planted fixtures.
+budget() { # label, args...
+    local label="$1"; shift
+    local bytes; bytes="$(python3 -I "$ENTRY" "$@" 2>&1 | wc -c)"
+    if [ "$bytes" -lt 4096 ]; then pass=$((pass+1)); echo "PASS: -g budget $label ($bytes B)"
+    else fail=$((fail+1)); echo "FAIL: -g budget $label printed $bytes B"; fi
+}
+for prof in plan completed scripts; do
+    budget "$prof -g ." -g . -p "$prof"
+    budget "$prof -g e -in 2 -l 2" -g e -in 2 -l 2 -p "$prof"
+done
+budget "all profiles -g span -in 2 -l 2" -g span -in 2 -l 2
+budget "all profiles -g ." -g .
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

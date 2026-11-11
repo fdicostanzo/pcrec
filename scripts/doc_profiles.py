@@ -63,6 +63,19 @@ PROFILES = [
 ]
 
 
+# The -g RELEVANCE table (entry -g): first-match, best row first. A hit is ranked by the FIRST row whose field
+# matches the regex; ties: more matches first, then the newer entry first. Field extraction is scripts/entry's
+# (FIELDS there), keyed by the row name; every profile uses this one table.
+PAGE_SIZE = 15
+RELEVANCE = (
+    ("id", "the ID or slug"),
+    ("statement", "the one-line statement / title"),
+    ("keywords", "the {keywords}"),
+    ("working", "the working fields (level 1)"),
+    ("body", "the details body (level 2)"),
+)
+
+
 def profile(name, profiles=None):
     for p in profiles or PROFILES:
         if p["name"] == name:
