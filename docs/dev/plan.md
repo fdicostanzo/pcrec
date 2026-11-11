@@ -844,7 +844,12 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   filed: 2026-11-07 Frank ("If we want to upgrade the oracle we should test that locally first"); manager wrote the row
   status (2026-11-07): not started; CI builds vanilla 10.46 (U25 tolerance carries its lookbehind bug), this box runs Ubuntu 10.46-1ubuntu0.1 (CVE-2026-89160 backport), upstream 10.48 fixed it
   next: when an upgrade is wanted: build the candidate (e.g. 10.48) under $PCREC_TMPDIR from the official tarball (source and checksum shown to Frank first), run make test against it locally, disposition every difference, THEN move the CI pin + amend D98 + retire U25's tolerance in one change
-  refs: .github/workflows/ci.yml (D98 pin); decisions D98; upstream_issues.md U25; tests/lookaround/vlb_one.sh; tests/lib/resolve_pcre2.sh
+  refs: .github/workflows/ci.yml (D98 pin); decisions D98; upstream_issues.md U25; tests/lookaround/vlb_one.sh; tests/lib/resolve_pcre2.sh; plan [PCRE2-DEFLB] (re-test on the candidate)
+- [PCRE2-DEFLB] STATE:not-started — suspected PCRE2 bug: a lookbehind in (?(DEFINE)) in a lookbehind is never length-checked
+  filed: 2026-11-10 Frank ("File the bug as a plan item to be revisited when we update the oracle"), found by lane vlbrev52
+  status (2026-11-10): seen on libpcre2 10.46 only; NOT re-tested on 10.48/10.49 or main; no upstream report sent. `(?<=a(?(DEFINE)(?<=b+)))x` compiles (expected error 125); `(?<=a(?(DEFINE)(?<g>(?<=b+))))x(?&g)` matches `axb` at offset 1 (wrong). pcrec refuses both and keeps refusing them
+  trigger: [ORACLE-UPGRADE]'s candidate build: run the four cells (two bug cells, two refused controls) on it and on PCRE2 main at that day's commit; still present -> the drafted report goes to Frank for a send decision; fixed -> record the fixing version in upstream_issues.md and close
+  refs: lane/vlbrev52 docs/dev/lanes/vlbrev52_report.md (the cells, the upstream draft, cells52_definelb.out in its evidence dir); docs/design/vlookbehind.md §0 G1
 - [ENC-SIDE-EMIT] STATE:not-started — a per-row side-emission hook on the encoding seam's entry table
   filed: 2026-11-06 lane vlbbuild ([VLOOKBEHIND] stage 1, design FIXIND-6)
   status (2026-11-06): one side emission exists (the UCP one); the emitter and `pcrec_enc_entry_symbols` call ONE shared predicate for it, so the condition has one spelling; no general hook built
