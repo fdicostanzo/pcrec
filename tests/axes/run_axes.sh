@@ -217,6 +217,8 @@ PROCS="${PROCS:-$PROCS_DEFAULT}"
 KEEP="${KEEP:-0}"
 SKIP_ORACLE="${SKIP_ORACLE:-0}"
 AXES="${AXES:-}"
+# axes_has WORD: AXES= names exactly WORD (a whole space-separated word).
+axes_has() { case " $AXES " in (*" $1 "*) return 0 ;; esac; return 1; }
 # [TT-4M] STEP 2c / axbatch — see the header comment above for why this is
 # INHERITED (default 0) rather than given its own axes-stage default here.
 HARNESS_BATCH="${HARNESS_BATCH:-0}"
@@ -1321,6 +1323,10 @@ fi
 # ============================================================================
 
 BASE_DUMP="$WORKDIR/base.tsv"
+if [ -n "${AXES_PLAN:-}" ]; then
+    # AXES_PLAN=1: list what this AXES= would run (below) and exit; no baseline, no passes ([CLOUD-SUITE]).
+    :
+else
 echo
 if [ "$HARNESS_BATCH" -ge 1 ]; then
     echo "axes: HARNESS_BATCH=$HARNESS_BATCH — baseline AND every axis run below compile the corpus through the batched dispatch path (docs/testing.md's \"HARNESS_BATCH\" section); unset/0 is the unbatched per-pattern path this sweep has always used"
@@ -1349,6 +1355,7 @@ if [ "$base_keys" -eq 0 ]; then
     exit 1
 fi
 echo "axes: baseline: $base_keys cases dumped, $((t1 - t0))s"
+fi
 
 # ============================================================================
 # THE TWELVE BIT-FLAG AXES
@@ -1806,6 +1813,8 @@ if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
     fi
     echo "axes: --vm-entry-shape tier = $_shape_tier"
     for _shape in $_shape_rungs; do
+        # [CLOUD-SUITE] one rung selectable alone: the bare token selects all rungs, `--vm-entry-shape=N` rung N
+        [ -z "$AXES" ] || axes_has --vm-entry-shape || axes_has "--vm-entry-shape=$_shape" || continue
         job_label+=("--vm-entry-shape=$_shape (§2.21)")
         job_flags+=("--vm-entry-shape=$_shape")
         job_lost_ok+=("0")
@@ -1858,6 +1867,8 @@ $(printf '%s\n' "$_pl_rows" | awk -F'\t' '$1 == "part-inline-rank" { print $3 }'
     echo "axes: part-layout tier = $_part_tier"
     while IFS= read -r _f; do
         [ -n "$_f" ] || continue
+        # [CLOUD-SUITE] one cell selectable alone by its own spelling; the bare token `--part-` selects all
+        [ -z "$AXES" ] || axes_has --part- || axes_has "$_f" || continue
         job_label+=("$_f (part layout, tuning.md §2.51)")
         job_flags+=("$_f")
         job_lost_ok+=("0")
@@ -1947,6 +1958,22 @@ for _i in "${!memfn_cell_name[@]}"; do
     job_flags+=("${memfn_cell_flags[$_i]}"); job_lost_ok+=("0")
     memfn_arm_ran=1
 done
+
+# [CLOUD-SUITE] AXES_PLAN=1: print what this AXES= (and AXES_FULL) would run, then exit before any baseline or
+# pass. `plan-job<TAB>label<TAB>flags` per job; `plan-pass<TAB>name` per run that is no job (the -futf-check arm,
+# the PC-4 oracle cross-check, each --memfn reach cell). tests/ci/cloud_axes_check.sh sums these over every shard
+# of the cloud axes table and holds the sum to the unsplit list, each line exactly once.
+if [ -n "${AXES_PLAN:-}" ]; then
+    for _i in "${!job_label[@]}"; do
+        printf 'plan-job\t%s\t%s\n' "${job_label[$_i]}" "${job_flags[$_i]}"
+    done
+    if [ -z "$AXES" ] || axes_has -futf-check; then printf 'plan-pass\t-futf-check arm\n'; fi
+    [ "$SKIP_ORACLE" = "1" ] || printf 'plan-pass\tPC-4 oracle cross-check\n'
+    for _i in "${!memfn_cell_name[@]}"; do
+        printf 'plan-pass\tmemfn reach cell %s %s\n' "${memfn_cell_name[$_i]}" "${memfn_cell_layer[$_i]}"
+    done
+    exit 0
+fi
 
 # ============================================================================
 # [TT-12 STEP 1] RUN THE JOB LIST PAIRWISE — two axes concurrently, each at

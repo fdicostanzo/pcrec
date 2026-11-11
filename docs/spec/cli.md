@@ -156,6 +156,10 @@ pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
 
 <a id="s1-2-p2"></a>[1.2¶2] `-o -` is a mode, not a filename: it prints one self-contained `.c` to stdout and writes no header, and the text contains no `#include` of a generated header. It is the form to use to compare two artifacts byte for byte.
 
+<a id="s1-2-p3"></a>[1.2¶3] **`-o` writes a file only when its bytes change.** Every file pcrec writes through `-o` (the `.c` and `.h` of each target, the files of a directory `-o`, the support unit of `--emit-support`) follows one rule. If the file exists, is a regular file and already holds exactly the new bytes, it is left untouched: bytes, modification time and every other attribute. A Makefile may therefore run pcrec on every build without forcing its users to recompile. Otherwise pcrec writes the new bytes to a temporary file in the same directory (`FILE.pcrec-tmp.PID`) and renames it over `FILE`, so an interrupted or failed run leaves the old file whole, never half written. A replacement keeps the old file's permission bits (owner and group are not preserved); a new file gets the umask default. A target that exists but is not a regular file (a symlink, a device, a FIFO) is written in place, because a rename would replace the thing named. There is no flag; `-o -` is unchanged.
+
+<a id="s1-2-p4"></a>[1.2¶4] A temporary file that cannot be created (the directory is not writable, even when the old file itself is), an existing file that cannot be read for the comparison, a write error and a failed rename are each refused with a diagnostic naming the file, exit 1, the old file intact. A compile that is refused writes nothing, so its old output is intact. The `.c` is written before the `.h`; a failure on the second leaves the first replaced.
+
 <a id="s1-3"></a>
 ### 1.3 `--pattern 'X'`: the literal pattern
 
