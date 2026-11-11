@@ -28,8 +28,8 @@ rc=${PIPESTATUS[0]}
 cp "$MECH_TIMES_OUT" "$units"; rm -f "$MECH_TIMES_OUT"
 # The rows the driver scored against their own definition, one failing line each (the matrix's tab rows carry the verdict
 # in the last column), so the shared extractor names them; a bare exit status gets one line of its own.
-nfail=$(awk -F'\t' 'NF >= 6 && $NF ~ /UNEXPECTED|ANOMALY|APPLY-FAILED|BUILD-FAILED|FATAL/ && !seen[$1]++ {printf "FAIL: mech row %s: %s\n", $1, substr($NF, 1, 160)}' "$log" \
-    | tee /dev/stderr | wc -l)
+awk -F'\t' 'NF >= 6 && $NF ~ /UNEXPECTED|ANOMALY|APPLY-FAILED|BUILD-FAILED|FATAL/ && !seen[$1]++ {printf "FAIL: mech row %s: %s\n", $1, substr($NF, 1, 160)}' "$log" > "$log.fail"
+nfail=$(wc -l < "$log.fail"); cat "$log.fail" >&2; rm -f "$log.fail"
 trailer=$(grep -E '^== mech run COMPLETE: [0-9]+ rows' "$log" | tail -1)
 got=$(printf '%s' "$trailer" | sed -n 's/^== mech run COMPLETE: \([0-9]*\) rows.*/\1/p')
 if [ -z "$trailer" ]; then
