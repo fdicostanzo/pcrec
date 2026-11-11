@@ -1,0 +1,15 @@
+# pcrec at 5a2595601 (src identical to main 3a190b8d7), build/pcrec --features all
+(a)x\2	pcrec: \2 refers to capture group 2, but this pattern has 1 (pattern offset 4)
+(a)(?<=(?1)|b+)(?<=c+)x	pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 15)
+(a)(?<=(?1)|b+)x\2	pcrec: \2 refers to capture group 2, but this pattern has 1 (pattern offset 16)
+(a)(?<=(?1)|b+(?C1))x	pcrec: a callout inside a lookbehind is not supported (pattern offset 14)
+(a)(?<=(?1)(?C"c,consume"))x	pcrec: a callout inside a lookbehind is not supported (pattern offset 11)
+(a)(?<=b(?<=(?1)+)c+)x	pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+--engine=dfa (a)(?<=(?1)|b+)x	pcrec: (?<=...) requires the VM engine, which --engine=dfa excludes (pattern offset 3)
+--engine=dfa (a)(?<=\1|b+)x	pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+--count-groups (a)(?<=\1|b+)x	pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+--count-groups (a)(?<=(?1)|b+)x	1
+--emit-facts (a|bc)\1$	byte	RX_END_WINDOW	"none"
+--emit-facts (a|bc)bc$	byte	RX_END_WINDOW	"5"
+--emit-facts (a|bc)bc\z	byte	RX_END_WINDOW	"4"
+call doubling chain (chain_call.txt)	pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 292)

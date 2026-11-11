@@ -1,0 +1,8 @@
+(a{65535})(\1\1)(?<=\2)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 16)
+(a{40000})(?<=\1\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 10)
+(?<=(?:a{40000}){2})x	REFUSED rc=1: pcrec: every alternative of a lookbehind must match at most 65535 characters (this one has 80000) (pattern offset 0)
+(?<=(?:(?:a{65535}){65535}){65535})x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 0)
+(?<=(?:(?:(?:a{65535}){65535}){65535}){2})x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 0)
+(a{65535})(\1\1)(\2\2)(?<=\3)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 22)
+(?<=(?:a+){0}x)y	COMPILES rx_VALID_LB 1
+(?<=(?:a{1,2}){0}(?:a+){0}x)y	COMPILES rx_VALID_LB 1

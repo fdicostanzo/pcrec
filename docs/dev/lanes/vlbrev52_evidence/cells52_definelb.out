@@ -1,0 +1,4 @@
+libpcre2 10.46 2025-08-27
+(?<=a(?(DEFINE)(?<g>(?<=b+))))x(?&g)	ACCEPT lb=1 ax=None abx=None bbax=None axb=((1, 2), ())
+(?<=a)x(?<=b+)	REJECT 125@7
+(?<=a(?(DEFINE)(?<g>(?<=b{2}))))x(?&g)	ACCEPT lb=1 bbax=None ax=None

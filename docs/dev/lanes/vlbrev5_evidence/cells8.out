@@ -1,0 +1,13 @@
+libpcre2 10.46 2025-08-27
+(a|bc)(?<!\1)x	ACCEPT lb=2 bcax=None
+(a|bc)(?<*\1)x	ACCEPT lb=2 bcbcx=((2, 5), ((2, 4),))
+(?i)(a|bc)(?<=\1)x	ACCEPT lb=2 BCx=((0, 3), ((0, 2),))
+(?<n>a|bc)(?<=\k<n>)x	ACCEPT lb=2 bcx=((0, 3), ((0, 2),))
+(?<n>a|bc)(?<=(?P=n))x	ACCEPT lb=2 
+(?<n>a|bc)(?<=\k{n})x	ACCEPT lb=2 
+(?<n>a|bc)(?<=\k'n')x	ACCEPT lb=2 
+(?<n>a|bc)(?<=\g{n})x	ACCEPT lb=2 
+(a|bc)(?<=\g{-1})x	ACCEPT lb=2 
+(a|bc)(?<=\g1)x	ACCEPT lb=2 
+(a|bc)(?<=\g{1})x	ACCEPT lb=2 
+(?i)(k)(?<=\1)x	ACCEPT lb=1 kKx=((1, 3), ((1, 2),))

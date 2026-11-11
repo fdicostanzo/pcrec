@@ -1,0 +1,12 @@
+(a|bc)(?<!\1)x	bcax
+(a|bc)(?<*\1)x	bcbcx
+(?i)(a|bc)(?<=\1)x	BCx
+(?<n>a|bc)(?<=\k<n>)x	bcx
+(?<n>a|bc)(?<=(?P=n))x
+(?<n>a|bc)(?<=\k{n})x
+(?<n>a|bc)(?<=\k'n')x
+(?<n>a|bc)(?<=\g{n})x
+(a|bc)(?<=\g{-1})x
+(a|bc)(?<=\g1)x
+(a|bc)(?<=\g{1})x
+u:(?i)(k)(?<=\1)x	kKx

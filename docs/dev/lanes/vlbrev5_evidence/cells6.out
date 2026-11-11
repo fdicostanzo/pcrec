@@ -1,0 +1,8 @@
+libpcre2 10.46 2025-08-27
+(?<=(?:a|b+){0}x)y	REJECT 125
+(?<=(?:(?:)*){0}x)y	REJECT 125
+(?<=(?:a{1,300}){0}x|b{1,2})y	ACCEPT lb=2 
+(?<=(?:a{70000}){0}x)y	REJECT 105
+(?<=x(?=a+){0})y	ACCEPT lb=1 
+(a{1,300})(?<=\1{0}x|b{1,2})y	ACCEPT lb=2 
+(?<=(?:a{0,2}){0}x)y	ACCEPT lb=1 

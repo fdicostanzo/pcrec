@@ -451,6 +451,13 @@ reason rather than for effort.
 > rows below that say **REFUSED** (`(?<=(a|bc))x`, `(?<=a{2,3})x`,
 > `(?<=a?)x`) now compile and answer as libpcre2 10.46 does. The unbounded
 > family (err 125 on both sides) and the backreference row stay refused.
+>
+> **SUPERSEDED IN PART AGAIN (2026-11-10, [VLOOKBEHIND] stage 2 DESIGN, rev 5;
+> not built yet).** At stage 2 a backreference inside a lookbehind counts its
+> group's length (`(a)(?<=\1)x`, `(a|bc)(?<=\1)x` compile and answer as
+> libpcre2 10.46 does), with refusals of their own. The stage-2 promise and
+> its cells are `docs/design/vlb_d27_extract.md`; until stage 2 lands, the
+> backreference row below is what pcrec does.
 
 > **A lookbehind body's every TOP-LEVEL BRANCH must have a fixed width:**
 > `minw(branch) == maxw(branch)`, both finite. Widths may DIFFER between
@@ -474,7 +481,8 @@ Consequences, each checkable against §2.3's table:
 - `(a)(?<=\1)x` — **REFUSED** in [M6.6.2]. A backreference's width is decided
   at MATCH time by which alternative the referenced group took. For a
   fixed-width referenced group it is computable and this refusal is
-  conservative; §11's follow-on row carries the refinement.
+  conservative; §11's follow-on row carries the refinement. **[VLOOKBEHIND]
+  stage 2 (designed, not built) ACCEPTS it: `vlb_d27_extract.md`.**
 - `(?<=(?=a)b)x`, `(?<=(?<=a)b)x`, `(?<=a(?!b))x` — **ship**: a nested
   lookaround is zero-width, so it contributes 0 to both `minw` and `maxw`.
 
@@ -2107,7 +2115,7 @@ expectation invites the author to write it in anyway.
 |---|---|---|
 | G1 | **A lookbehind whose branches have DIFFERENT fixed lengths is legal in PCRE2 and an ERROR in python.** | `(?<=a\|bc)x` — pcre2 ok, python "look-behind requires fixed-width pattern" |
 | G2 | **Any variable-width lookbehind body is legal in PCRE2 up to `max_varlookbehind` and an error in python** — `(?<=(a\|bc))x`, `(?<=a{2,3})x`, `(?<=a?)x`, `(?<=(?:a\|bc)d)x`. **pcrec REFUSES these too** (§2.5), so a cell here is a `perr` cell for pcrec and an `ok` cell for PCRE2, and the author must not write a match expectation for it | `(?<=a{2,3})x` — pcre2 ok, python error, pcrec `perr` |
-| G3 | **A backreference to a VARIABLE-width group inside a lookbehind is legal in PCRE2, error in python** — and pcrec refuses it (§2.5) | `(a\|bc)(?<=\1)x` — pcre2 ok (maxlb 2), python error |
+| G3 | **A backreference to a VARIABLE-width group inside a lookbehind is legal in PCRE2, error in python** — and pcrec refuses it (§2.5) until [VLOOKBEHIND] stage 2, which accepts it (`vlb_d27_extract.md`) | `(a\|bc)(?<=\1)x` — pcre2 ok (maxlb 2), python error |
 | G4 | **The alpha spellings do not exist in python at all.** All twelve produce "nothing to repeat at position 1", because python reads `(*` as a quantified `(` | `(*pla:a)b` |
 | G5 | **The non-atomic forms do not exist in python.** `(?*` and `(?<*` are "unknown extension" | `(?*a)b`, `(?<*a)b` |
 | G6 | **`\K` does not exist in python**, so every `\K` cell in this module (all of which are pcre2 COMPILE ERRORS, err 199) is a compile error in python for a **different reason** — "bad escape \K". The author must not treat the agreement as agreement | `(?=a\K)x` |
@@ -2393,7 +2401,7 @@ against:
 | distinct CONSTRUCTS behind them | **6** | pos/neg × ahead/behind, plus non-atomic pos ahead/behind |
 | body shapes per construct | **9** | empty; a literal; a class; a fixed multi-character; same-length alternatives; different-length alternatives (lookbehind only); a capture; a nested lookaround; a backreference |
 | contexts | **7** | pattern start; pattern end; mid-pattern; inside an alternation branch; under `*`, `+`, `{n,m}`; inside a capture; inside an atomic group |
-| refusal cells | **8** | unbounded body; bounded-variable body; single-branch variable body; backref to a variable group; `\K` in each of the four polarities |
+| refusal cells | **8** | unbounded body; bounded-variable body; single-branch variable body; backref to a variable group (until [VLOOKBEHIND] stage 2; then `vlb_d27_extract.md`'s refusal classes); `\K` in each of the four polarities |
 | oracle axis | **2** | python-verifiable vs `# pcre2-only` (§7) |
 
 **Corpus size: ≈ 6 × 9 × 7 ≈ 380 behavioural cells plus ≈ 40 refusal cells**,

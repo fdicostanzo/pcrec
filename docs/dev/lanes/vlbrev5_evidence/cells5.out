@@ -1,0 +1,5 @@
+libpcre2 10.46 2025-08-27
+(?<=(?:a+){0}x)y	xy	REJECT 125
+(?<=(a+){0}x)y	xy	REJECT 125
+(?<=(?:a*){0}x)y	REJECT 125
+(a+){0}(?<=\1x)y	REJECT 125
