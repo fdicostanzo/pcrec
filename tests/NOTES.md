@@ -7,3 +7,4 @@
   the `ITER_RETRY` stamp, ASan cells), and `global.rxt`, the `mg` corpus
   riding `test-corpus`. See its own CLAUDE.md.
 
+- `families/` — [FEAT-FAMILIES] pre-move libpcre2 differentials for `quoting` and `named-groups` (opt-in, box-queue jobs); see its CLAUDE.md.

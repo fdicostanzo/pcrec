@@ -58,6 +58,7 @@ Always on, whatever the situation:
    `grep -n "STATE:started" docs/dev/plan.md` (in-flight work) and
    `grep -n "STATE:not-started" docs/dev/plan.md` (queue). Format is documented
    at the top of that file.
+3a. **Read the indexes** (Frank 2026-11-10): the DECISIONS index (`docs/dev/decisions.md` once converted; `scripts/entry -g WORD -p decisions`) and `scripts/INDEX.md` (one "when:" line per script) at wake; the PLAN index on first need (`scripts/entry KEY`, `--work`, `-g WORD`; `scripts/entry --help` names the levels and profiles).
 4. Skim anything wake.md's "READ, IN THIS ORDER" section points at (usually
    the latest `docs/dev/reviews/` file).
 5. For architecture/context on demand: `APPROACH.md` (the approved design),

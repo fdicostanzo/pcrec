@@ -860,6 +860,35 @@ else
     fi
 fi
 
+# [facts-tie] span arms R1's tie rule has its own restore arm (`restore=tie`,
+# src/facts/walk_arms.def): `abcd.efgh` holds two required 4-byte runs of equal
+# information. By default the RARER one is stamped (`abcd` on the default
+# rate table); restored, the predecessor's choice (the later, `efgh`). Both the
+# --pattern compile and a .rxt FILE compile must answer so.
+if [ ! -x "$HBIN" ]; then
+    bad "[facts-tie] $HBIN is missing (make builds it)"
+else
+    tbad=""
+    printf 'pattern abcd.efgh\nm "abcdXefgh" 0 9\n' > "$WORKDIR/ft.rxt"
+    for arm in "" "--harness=restore=tie"; do
+        mkdir -p "$WORKDIR/ft.d"; rm -f "$WORKDIR/ft.d"/*
+        "$TIMEOUT_BIN" 120 "$HBIN" --features all $arm "$WORKDIR/ft.rxt" -o "$WORKDIR/ft.d" > /dev/null 2>&1 || tbad="$tbad file compile ${arm:-default} refused;"
+        "$TIMEOUT_BIN" 120 "$HBIN" --features all $arm -p rx --emit-main -o "$WORKDIR/ft.p.c" --pattern 'abcd.efgh' > /dev/null 2>&1 || tbad="$tbad pattern compile ${arm:-default} refused;"
+        fl="$(grep -hE 'define RX_REQ_RUN ' "$WORKDIR/ft.d"/*.c | tr '\n' ' ')"
+        pl="$(grep -hE 'define RX_REQ_RUN ' "$WORKDIR/ft.p.c" | tr '\n' ' ')"
+        [ -n "$fl" ] && [ "$fl" = "$pl" ] || tbad="$tbad ${arm:-default}: file [$fl] pattern [$pl];"
+        case "$arm" in
+            "") case "$fl" in (*'"61626364@'*) ;; (*) tbad="$tbad default does not stamp the rarer run;" ;; esac ;;
+            *)  case "$fl" in (*'"65666768@'*) ;; (*) tbad="$tbad restore=tie did not restore the predecessor's run;" ;; esac ;;
+        esac
+    done
+    if [ -n "$tbad" ]; then
+        bad "[facts-tie] the tie arm is wrong:$tbad"
+    else
+        ok "[facts-tie] --harness=restore=tie reaches --pattern and a .rxt FILE compile alike (abcd.efgh: rarer run by default, the predecessor's restored)"
+    fi
+fi
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]

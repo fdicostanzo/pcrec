@@ -1,0 +1,5 @@
+report=docs/dev/lanes/r39b_report.md
+sections: Summary; Measured walls; Unit split; New weights and balance; Checks; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

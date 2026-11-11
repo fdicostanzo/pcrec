@@ -376,3 +376,13 @@ Landing 2026-11-09 df9f79996: lane/sae1 (b819993a4) + lane/sae2 (ce02a975d), spa
 Landing 2026-11-10 2d72849ed: lane/memfn-s30a (f5c2f416a), kit R-35 3.0a (kit-only; no src/lib/cli change, no pcrec abi or MF_SITE_ABI event; one docs conflict in the lanes archive resolved as a union). MAJOR; the Wednesday 01:00 full suite covers it. make + make strict green; test-codegen and the test-memfn sections queued under boxlock (kitland3 scratch), verdicts OWED.
 
 Landing 2026-11-10 f7eb10528: lane/sar1mrg (22b7da3f0), span arms R1 merged onto E1+E2 (no pcrec abi or MF_SITE_ABI move; one docs conflict in the lanes archive resolved as a union; post-merge make/strict/test-codegen/test-rxtsource/facts checks green). MAJOR; the Wednesday 2026-11-11 01:00 full suite covers it
+
+Landing 2026-11-10 7658295b3: lane/memfn-k381 (b8ca72ccb), kit R-38 K38-1, one run decision kit_run_decide (kit-only plus tests/memfn; zero emitted bytes; no pcrec abi or MF_SITE_ABI event; kit gates 530-539 GREEN vs 25c5094ec; post-merge make strict green). MINOR: covered by the Wed 2026-11-11 01:00 full suite.
+
+Landing 2026-11-10 79440bf19: lane/sartie (e947f70c9), R1 tie rule test-only restore switch restore=tie (no abi or MF_SITE_ABI event; default emitted bytes unchanged; gates 231/233/234/235 GREEN; post-merge make strict green; critic round waived: test-only lever). MINOR: covered by the Wed 2026-11-11 01:00 full suite.
+
+Landing 2026-11-10 092516b60 + 2cc59b95e + 39da816d7: lane/dixcite and lane/dixt1b, [DOC-INDEX] tooling (doc_cites.py resolver + baselines; scripts/INDEX.md, entry scripts profile + --lint-scripts, discoverability lines). Docs/tooling only, no src/lib/cli. NONE (rides the 2026-11-10 evening full suite).
+
+RED: 2026-11-11 7d74499bc test=RED(rc=2) strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261110_7d74499bc duration=48971s
+
+Triage 2026-11-11 (run 7d74499bc): every red is TEST TOOLING, no product bug, no wrong answer. test + san = the K37 compiler-token check on tests/doc_lint/run_doc_lint.sh:33 (fixed on main dc1988069). axes = [RUNAXES] --memfn= arm reach floors stale after span arms R1 f7eb10528 (re-pinned, lane/axtri). recidentity = FILEPIN stale after 001c0faf5 moved the RX_REQ_RUN stamp value, abi unchanged, program region 0 diffs (re-pinned, lane/ridtri). mech = 4 check gaps (S1868, S706/S708/S711: tests added), 2 stale anchors (S268, S465: re-anchored), 1 declared COMPILE-CATCH (S1896) (lane/mechtri2). Each fix's gate queued; next full run covers all.

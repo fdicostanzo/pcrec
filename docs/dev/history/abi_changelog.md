@@ -23,7 +23,7 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `99` on every artifact today ([MEMFN] R-38 K38-2, 98 -> 99,
+- **`rx_info.abi` is `100` on every artifact today ([MEMFN] R-38 K38-2, 99 -> 100,
   one event with the kit's MF_SITE_ABI 27 / MF_CLASS_V 9, lane k382
   2026-11-11; `docs/design/memfn/span_runs_sheet.md` rev 1.3 §5.1).** pcrec
   states the necessary run to the kit UNCUT as one presence span in set form
@@ -39,7 +39,13 @@ the bump's own commit.**
   one stretch in one `<p>_reqrun` block (R-30's led compare gone with it);
   (4) the run pin reads the whole run (a longer exact stretch where the cut
   had clipped it); (5) `-fcomments` text naming the run.
-- **`rx_info.abi` was `98` ([XARCH-DEV] units U2 + U3, 97 -> 98,
+- **`rx_info.abi` was `99` on every artifact ([FEAT-FAMILIES] module `match-start-reset`, 98 -> 99,
+  lane famdef2 2026-11-10; ADDING A MODULE MOVES THE `--features all` SCAFFOLDING, the `ucp` precedent below).**
+  `\K` is split out of module `assertions` into its own module `match-start-reset` before the first
+  family freeze, so `PCREC_FEATURE_MODULES` gains `match-start-reset` under `--features all` and under
+  any list naming it. No struct offset moves, no `rx_info` member is added or changed, and no answer
+  moves; every other artifact moves only the number.
+- **`rx_info.abi` was `98` on every artifact ([XARCH-DEV] units U2 + U3, 97 -> 98,
   one event for the kit's U2 and pcrec's U3, lane u3tgt 2026-11-08;
   `docs/design/memfn/target_seam_units.md` §2).** pcrec states the compile's
   one CPU target to the kit on every art (`mf_art_target`) instead of a policy

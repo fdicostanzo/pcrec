@@ -19,7 +19,7 @@
 # undone by the return -- the reported start lands at 3, inside the
 # call's own text.
 pattern ^(a\Kb)(?1)$
-features recursion,assertions
+features recursion,assertions,match-start-reset
 m "abab" 3 4
 g 1 0 2
 n "ab"
@@ -27,7 +27,7 @@ n "ab"
 # extract 3.4(b) row 2: the \K fires in a body that has NO lexical run
 # at all, and still moves the start.
 pattern ^(?(DEFINE)(?<g>a\Kb))(?&g)$
-features recursion,named-groups,assertions
+features recursion,named-groups,assertions,match-start-reset
 m "ab" 1 2
 g 1 -1 -1
 n "a"
@@ -37,7 +37,7 @@ n "a"
 # restored TOO MUCH on return (undoing \K along with the captures)
 # reports 1 here.
 pattern ^(a(?1)?\Kb)$
-features recursion,assertions
+features recursion,assertions,match-start-reset
 m "aabb" 3 4
 g 1 0 4
 m "ab" 1 2
@@ -51,7 +51,7 @@ g 1 0 2
 # the lookahead itself is zero-width and rewinds. The extract asked for
 # this to be measured rather than assumed; this is the measurement.
 pattern ^(?(DEFINE)(?<g>a\Kb))(?=(?&g))ab$
-features recursion,named-groups,assertions,lookaround
+features recursion,named-groups,assertions,lookaround,match-start-reset
 m "ab" 1 2
 g 1 -1 -1
 n "ba"
@@ -60,7 +60,7 @@ n "ba"
 # inside a lookbehind compiles and moves the reported start out of the
 # assertion.
 pattern ^(?(DEFINE)(?<g>a\Kb))ab(?<=(?&g))$
-features recursion,named-groups,assertions,lookaround
+features recursion,named-groups,assertions,lookaround,match-start-reset
 m "ab" 1 2
 g 1 -1 -1
 
@@ -68,7 +68,7 @@ g 1 -1 -1
 # not an artefact of DEFINE or of by-name resolution.
 # perl-diverges
 pattern ^(?:(a\Kb)){0}(?=(?1))ab$
-features recursion,assertions,lookaround
+features recursion,assertions,lookaround,match-start-reset
 m "ab" 1 2
 g 1 -1 -1
 
@@ -76,13 +76,13 @@ g 1 -1 -1
 # surprising: written DIRECTLY inside the lookaround the same \K is
 # refused (PCRE2 error 199). Refusal tested for EXISTENCE only.
 pattern ^(?=a\Kb)ab$
-features recursion,assertions,lookaround
+features recursion,assertions,lookaround,match-start-reset
 perr
 
 # the mirror: the \K is outside, the CALL is inside the lookahead.
 # Ordinary, and here to keep the three refutation blocks honest.
 pattern ^(?(DEFINE)(?<g>b))a\K(?=(?&g))b$
-features recursion,named-groups,assertions,lookaround
+features recursion,named-groups,assertions,lookaround,match-start-reset
 m "ab" 1 2
 g 1 -1 -1
 
@@ -370,7 +370,7 @@ g 1 1 5
 # \K through a call from a non-zero startpos -- the reported start
 # moves relative to where the call actually ran, not to startpos.
 pattern (?(DEFINE)(?<g>a\Kb))(?&g)
-features recursion,named-groups,assertions
+features recursion,named-groups,assertions,match-start-reset
 ms 1 "xab" 2 3
 g 1 -1 -1
 

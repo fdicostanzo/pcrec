@@ -1,0 +1,12 @@
+2026-11-11T18:26:51.2819267Z   vrun-w16 @default byte/c-default               ASSERT_ZERO differ=0 refused=0 of 5141
+2026-11-11T18:26:51.2819838Z   vrun-w16 @default byte/c-vm                    ASSERT_ZERO differ=0 refused=0 of 5141
+2026-11-11T18:26:51.2820757Z   vrun-w16 @default utf8/c-default               ASSERT_ZERO differ=0 refused=0 of 5141
+2026-11-11T18:26:51.2821364Z   vrun-w16 @default utf8/c-vm                    ASSERT_ZERO differ=0 refused=0 of 5141
+2026-11-11T18:26:51.2824732Z checks failed: 0
+2026-11-11T18:26:51.2825334Z   OK — memfn arm: 12 kit rows, 2 cells, 5139 distinct corpus patterns (+2 witness-only), every=1
+2026-11-11T18:26:51.2862118Z   -fcomments (PCREC_FORCE_COMMENTS, bit 27)|OK|keys_base=67678 keys_axis=67678 agree=67678 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|754s
+2026-11-11T18:26:51.2863823Z   -fno-lit-run (PCREC_NO_LIT_RUN, bit 33)|OK|keys_base=67678 keys_axis=67678 agree=67678 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|777s
+2026-11-11T18:26:51.2865235Z   --analysis=random-20260927 (FINDINGS axis, findings design §11.1)|OK|keys_base=67678 keys_axis=67678 agree=67678 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|775s
+2026-11-11T18:26:51.2866445Z   --memfn=no-vrun-w16 (kit row vrun-w16, layer default, memfn arm)|OK|keys_base=67678 keys_axis=67678 agree=67678 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|770s
+2026-11-11T18:26:51.2867644Z   -fmemfn-simd=x86-64-v3 --memfn=no-vrun-w16 (kit row vrun-w16, layer simd, memfn arm)|OK|keys_base=67678 keys_axis=67678 agree=67678 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|785s
+2026-11-11T18:26:51.2868383Z oracle cross-check: SKIPPED

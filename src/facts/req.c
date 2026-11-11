@@ -420,15 +420,35 @@ static int rn_content(const RbWalk *w, const RbRun *a, const RbRun *b)
     return (int)b->trunc - (int)a->trunc;
 }
 
-static const RnChoiceRow rn_choice_rows[] = {
-    rn_more_info, rn_rarer, rn_nearer, rn_content,
+/* The last row of the restored tie form: at equal information, `a`. */
+static int rn_first(const RbWalk *w, const RbRun *a, const RbRun *b)
+{
+    (void)w;
+    (void)a;
+    (void)b;
+    return 1;
+}
+
+static const struct {
+    RnChoiceRow row;
+    unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
+} rn_choice_rows[] = {
+    { rn_more_info, 0 },
+    /* the tie rule (span_arms R1, D191): rarity, then offset, then content */
+    { rn_rarer,     PCREC_WALK_ARM(TIE) },
+    { rn_nearer,    PCREC_WALK_ARM(TIE) },
+    { rn_content,   PCREC_WALK_ARM(TIE) },
+    /* the replaced form, under the restored arm: `a` */
+    { rn_first,     0 },
 };
 
-/* The better of two runs by `rn_choice_rows`, first row that decides. */
+/* The better of two runs by `rn_choice_rows`, first row that decides and that
+ * the walk does not restore. */
 static RbRun rn_better(const RbWalk *w, RbRun a, RbRun b)
 {
     for (size_t i = 0; i < sizeof rn_choice_rows / sizeof rn_choice_rows[0]; i++) {
-        int c = rn_choice_rows[i](w, &a, &b);
+        if (rn_choice_rows[i].arm & w->restored) continue;
+        int c = rn_choice_rows[i].row(w, &a, &b);
         if (c) return c > 0 ? a : b;
     }
     return a;

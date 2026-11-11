@@ -45,6 +45,7 @@ Read-only critics work in the main tree and never run make.
 | write a design note | "Design lanes" below |
 
 ## Process rules (each has cost a lane before)
+- LOOK THINGS UP, DO NOT GREP FOR THEM: `scripts/entry ID|slug|script-name` (a ruling, plan row, bug, upstream issue or script; `-l 0/1/2` = line / working fields / whole), `scripts/entry -g WORD [-p scripts]`, `--work`; `scripts/INDEX.md` has one "when:" line per script (which tool a situation calls for); `scripts/entry --help`.
 - STOP RULE: a lane asked to build (edit `src/`, `cli/`, `lib/` or
   `memfn/src/`) without the owner's build go QUOTED in its brief stops
   and asks the manager; it does design/measure only (BRIEF_TEMPLATE.md).

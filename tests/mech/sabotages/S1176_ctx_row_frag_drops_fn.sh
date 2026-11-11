@@ -13,6 +13,7 @@ SAB_SUITES="harness assertions"
 SAB_DESC='the NFA lowers ^/\A/\z (the context rows that read no membership) to an N_CTX state with truth function 0'
 SAB_DOC_FIGURE='OWED (lane ctxp2e): by hand 2026-10-20, tests/assertions/absolute.rxt 193 failed / 676 passed'
 SAB_EXPECT='DETECTED'
-SAB_COUNT='1'
+# RE-ANCHORED 2026-11-11 (lane ucfix): [UCP] U3 added an island-build twin of the site; both are planted.
+SAB_COUNT='2'
 SAB_BEFORE='        st->ctxfn = a->u.ctx.fn;'
 SAB_AFTER='        st->ctxfn = ctxfn_reads_membership(a->u.ctx.fn) ? a->u.ctx.fn : 0;   /* SABOTAGE S1176 */'

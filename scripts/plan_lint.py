@@ -32,10 +32,10 @@ BODIES = "docs/design/plan_row_bodies"
 
 # K35: a linter that parsed nothing is green. 150 rows, against 162 at adoption.
 ROW_FLOOR = 150
-STATES = ("not-started", "started", "blocked", "deferred")
+STATES = ("not-started", "started", "blocked", "deferred", "ongoing", "ready")
 SECTIONS = ["Policy", "Active", "Candidates ([OPTLOOP])", "Backlog", "Boonies", "Deferred"]
 TOP_STATES = {  # the state a TOP-LEVEL row of each section must carry
-    "Active": ("started", "blocked"),
+    "Active": ("started", "blocked", "ongoing", "ready"),
     "Candidates ([OPTLOOP])": ("not-started",),
     "Backlog": ("not-started",),
     "Boonies": ("not-started",),
@@ -50,10 +50,11 @@ ROW_MAX_LINES = 12
 ROW_MAX_CHARS = 6000
 
 HEAD = re.compile(r"^( *)- \[([^\]\n]+)\] (.*)$")
-HEAD_OK = re.compile(r"^( *)- \[([^\]\n]+)\] STATE:(not-started|started|blocked|deferred) — (\S.*)$")
+HEAD_OK = re.compile(r"^( *)- \[([^\]\n]+)\] STATE:(not-started|started|blocked|deferred|ongoing|ready) — (\S.*)$")
 ID_OK = re.compile(r"^[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*(?:\.[A-Za-z0-9]+)*$")
 MILESTONE_STEP = re.compile(r"^M[0-9]+\.[0-9]+$")
-ATTR = re.compile(r"^(filed|status \((\d{4}-\d{2}-\d{2})\)|next|trigger|refs): ?(.*)$")
+OWNER_WAITS = re.compile(r"^owner — \S.{9,}$")   # a row waiting on the owner names the question (entry --work lists them first)
+ATTR = re.compile(r"^(filed|status \((\d{4}-\d{2}-\d{2})\)|why ongoing|review|ready|waits|next|trigger|refs): ?(.*)$")
 ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 CITE_ERE = r"(^|[^_a-z])plan\.md:[0-9]+"  # plan_completed.md is append-only: its line numbers do not rot
 CITE = re.compile(CITE_ERE)
@@ -68,14 +69,14 @@ CITE_EXEMPT = (
 RULES = {
     "PL01": "structure: title, then the six fixed sections in order, no other heading",
     "PL02": "no free text outside Policy: every line is a row head, a row's own line, or a heading",
-    "PL03": "row head: - [ID] STATE:<not-started|started|blocked|deferred> — <title 1-100 chars>",
+    "PL03": "row head: - [ID] STATE:<not-started|started|blocked|deferred|ongoing|ready> — <title 1-100 chars>",
     "PL04": "finished rows leave the file: no completed/done/HOLD/stub heads",
     "PL05": "ids unique within plan.md",
     "PL06": "a live id has no completed row in plan_completed.md",
     "PL07": "id syntax; a dotted id's parent is a row in plan.md or plan_completed.md",
     "PL08": "nesting: a child is its parent's indent + 2, no jumps, first row at indent 0",
     "PL09": "head line: balanced parentheses, even backticks, no bold",
-    "PL10": "attribute lines: filed, status (date), next|trigger (required unless started), refs; in order, once, valid",
+    "PL10": "attribute lines: filed, status (date), [why ongoing, review | ready | waits (owner — <question>)], next|trigger (required unless started/ongoing/ready), refs; in order, once, valid; ongoing needs why ongoing: + review:, ready needs ready:",
     "PL11": "sizes: line <= 1000 chars; charter <= 6 lines; row <= 12 own lines and 6000 chars",
     "PL12": "no bold blob in a head or attribute line",
     "PL13": "section membership: top-level rows carry their section's state; started/blocked only in Active",
@@ -239,14 +240,14 @@ def lint_plan(text, completed_text, body_names, cite_hits=None):
             err("PL09", r.line, "[%s] unbalanced parentheses in the head" % r.id)
         # PL13
         if r.state:
-            if r.state in ("started", "blocked") and r.section != "Active":
+            if r.state in ("started", "blocked", "ongoing", "ready") and r.section != "Active":
                 err("PL13", r.line, "[%s] STATE:%s outside Active" % (r.id, r.state))
             if r.state == "deferred" and r.section != "Deferred":
                 err("PL13", r.line, "[%s] STATE:deferred outside Deferred" % r.id)
             if r.indent == 0 and r.state not in TOP_STATES[r.section]:
                 err("PL13", r.line, "[%s] top-level STATE:%s in %s (expects %s)" % (r.id, r.state, r.section, "/".join(TOP_STATES[r.section])))
         # ---- own lines: attributes then charter
-        order = {"filed": 0, "status": 1, "next": 2, "trigger": 2, "refs": 3}
+        order = {"filed": 0, "status": 1, "why": 2, "review": 2, "ready": 2, "waits": 2, "next": 3, "trigger": 3, "refs": 4}
         last = -1
         seen = set()
         for ln, s in r.own:
@@ -259,7 +260,7 @@ def lint_plan(text, completed_text, body_names, cite_hits=None):
                     err("PL10", ln, "[%s] repeats %s:" % (r.id, key))
                 seen.add(key)
                 if order[key] < last:
-                    err("PL10", ln, "[%s] %s: out of order (filed, status, next|trigger, refs)" % (r.id, key))
+                    err("PL10", ln, "[%s] %s: out of order (filed, status, why ongoing|review|ready|waits, next|trigger, refs)" % (r.id, key))
                 last = max(last, order[key])
                 val = m.group(3)
                 if "**" in s:
@@ -277,6 +278,13 @@ def lint_plan(text, completed_text, body_names, cite_hits=None):
                         err("PL10", ln, "[%s] status is %d chars (max %d)" % (r.id, len(val), STATUS_MAX))
                     r.attrs["status_date"] = m.group(2)
                     r.attrs["status"] = val
+                elif key in ("why", "review", "ready", "waits"):
+                    if not val.strip():
+                        err("PL10", ln, "[%s] empty %s:" % (r.id, key))
+                    if key == "waits" and val.startswith("owner") and not OWNER_WAITS.match(val):
+                        err("PL10", ln, "[%s] waits: owner needs the form 'owner — <the question in plain words>': %r" % (r.id, val[:50]))
+                    if len(val) > NEXT_MAX:
+                        err("PL10", ln, "[%s] %s: is %d chars (max %d)" % (r.id, key, len(val), NEXT_MAX))
                 elif key in ("next", "trigger"):
                     if not val.strip():
                         err("PL10", ln, "[%s] empty %s:" % (r.id, key))
@@ -294,6 +302,16 @@ def lint_plan(text, completed_text, body_names, cite_hits=None):
                 err("PL10", r.line, "[%s] missing %s:" % (r.id, need))
         if r.state in ("not-started", "blocked", "deferred") and not ({"next", "trigger"} & seen):
             err("PL10", r.line, "[%s] STATE:%s needs next: or trigger:" % (r.id, r.state))
+        if r.state == "ongoing":
+            for need in ("why", "review"):
+                if need not in seen:
+                    err("PL10", r.line, "[%s] STATE:ongoing needs %s:" % (r.id, "why ongoing" if need == "why" else need))
+        elif {"why", "review"} & seen:
+            err("PL10", r.line, "[%s] why ongoing:/review: belong to STATE:ongoing rows only" % r.id)
+        if r.state == "ready" and "ready" not in seen:
+            err("PL10", r.line, "[%s] STATE:ready needs ready:" % r.id)
+        elif r.state != "ready" and "ready" in seen:
+            err("PL10", r.line, "[%s] ready: belongs to STATE:ready rows only" % r.id)
         if "next" in seen and "trigger" in seen:
             err("PL10", r.line, "[%s] has both next: and trigger:" % r.id)
         # PL11
@@ -501,6 +519,16 @@ def planted(text):
     r = list(row); r[1], r[2] = r[2], r[1]
     out.append(("PL10", "attributes out of order", with_row(r), {}))
     out.append(("PL10", "repeated filed", with_row(row + [row[1]]), {}))
+    k = row_has_attr("status (")
+    for what, val in (("no question", "owner"), ("no dash", "owner: may we start"), ("empty question", "owner — "), ("question too short", "owner — ok?")):
+        out.append(("PL10", "waits: owner, " + what, with_row(row[:k + 1] + ["  waits: " + val] + row[k + 1:]), {}))
+    for st, pre in (("ongoing", "why ongoing:"), ("ongoing", "review:"), ("ready", "ready:")):
+        ls2, a2, b2 = _first_row_lines(text, st)
+        row2 = ls2[a2:b2]
+        k2 = [j for j, s2 in enumerate(row2) if s2.lstrip().startswith(pre)][0]
+        x = list(ls2)
+        x[a2:b2] = row2[:k2] + row2[k2 + 1:]
+        out.append(("PL10", "STATE:%s missing %s" % (st, pre), "\n".join(x), {}))
     # PL11
     out.append(("PL11", "line over 1000", with_row(row + ["  " + "x" * 1001]), {}))
     out.append(("PL11", "charter over 6 lines", with_row(row + ["  charter line %d" % n for n in range(8)]), {}))

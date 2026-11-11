@@ -1,0 +1,4 @@
+2026-11-11T17:58:51.0903714Z AXIS FAIL: -fprefilter (PCREC_FORCE_PREFILTER, bit 9): 0 mismatch(es) (incl. 0 undocumented refusal(s), 0 unallowed one-sided give-up(s)), 3 lost-other, 0 gained
+2026-11-11T18:26:51.2860744Z   -fprefilter (PCREC_FORCE_PREFILTER, bit 9)|FAIL|keys_base=67678 keys_axis=67675 agree=21394 budget=0 giveup1=3 refused=46278 lost=3 gained=0 mismatches=0 refused_doc=46278 refused_undoc=0 giveup1_allowed=3 giveup1_unallowed=0|592s
+2026-11-11T18:26:51.2873050Z run_axes.sh: FAILED — see AXIS FAIL lines above
+2026-11-11T18:26:51.2971678Z ##[error]Process completed with exit code 1.

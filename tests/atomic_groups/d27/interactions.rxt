@@ -34,24 +34,24 @@
 # just reports starting at the \K reset point.
 # pcre2-only: python's re module has no \K ("bad escape \K")
 pattern (?>a\Kb)c
-features atomic-groups,assertions
+features atomic-groups,assertions,match-start-reset
 m "abc" 1 3
 
 # pcre2-only: python bad escape \K
 pattern (?>a\Kb|ab)c
-features atomic-groups,assertions
+features atomic-groups,assertions,match-start-reset
 m "abc" 1 3
 
 # pcre2-only: python bad escape \K
 pattern (?>a|a\Kb)b
-features atomic-groups,assertions
+features atomic-groups,assertions,match-start-reset
 m "abb" 0 2
 
 # \K outside the atomic group, atomic group after it: the reset still
 # applies to the whole match's reported start.
 # pcre2-only: python bad escape \K
 pattern a\K(?>b|bc)c
-features atomic-groups,assertions
+features atomic-groups,assertions,match-start-reset
 m "abcc" 1 3
 
 # \G ties the atomic group's first alternative to "contiguous with the
@@ -103,7 +103,7 @@ n "ABc"
 # it.
 # pcre2-only: python bad escape \K
 pattern (?>a+\K)b
-features atomic-groups,assertions
+features atomic-groups,assertions,match-start-reset
 m "aaab" 3 4
 
 # --- these agree with python re; no mark needed ---

@@ -470,7 +470,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-kitproof test-casemap test-findall test-subst test-subst-d27 test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
-# and tests/ci/shards.tsv, which must name every member of this list exactly once
+# and tests/ci/cloud_test_shards.tsv, which must name every member of this list exactly once
 # (adding a section here without a shard row turns `make test-ci-shards` red).
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
@@ -541,10 +541,10 @@ test:
 
 # [CI-SHARD] `test-shard`: CI's form of `test:` (lane cishard, 2026-10-13).
 # `make test` itself is unchanged and stays the local merge/close standard; CI
-# (.github/workflows/ci.yml) runs `make test-shard CISHARD=K/N` as a matrix of
-# N jobs because the serial suite outgrew the hosted 4-vCPU runner's 90 minutes
+# (.github/workflows/ci.yml -> cloud-test.yml, kind test) runs `make test-shard CISHARD=K/N`
+# as a matrix of N jobs because the serial suite outgrew the hosted 4-vCPU runner's 90 minutes
 # (docs/dev/lanes/citime_report.md). The split is the DECLARED TABLE
-# tests/ci/shards.tsv (section, shard, weight, weight source) -- never an
+# tests/ci/cloud_test_shards.tsv (section, shard, weight, weight source) -- never an
 # if-chain here or in YAML -- and `test-ci-shards` (a TEST_SECTIONS member)
 # holds that table to TEST_SECTIONS exactly. The recipe is `test:`'s own
 # accounting restated over the shard's list: the same `$(MAKE) -k` launch, the
@@ -554,7 +554,7 @@ test:
 # Error` lines; a shard is green only if every section in its list was
 # launched AND none failed.
 test-shard:
-	@secs="$$(bash tests/ci/check_shards.sh --list '$(CISHARD)')" || { echo "test-shard: usage: make test-shard CISHARD=K/N (see tests/ci/shards.tsv)" >&2; exit 2; }; \
+	@secs="$$(bash tests/ci/check_shards.sh --list '$(CISHARD)')" || { echo "test-shard: usage: make test-shard CISHARD=K/N (see tests/ci/cloud_test_shards.tsv)" >&2; exit 2; }; \
 	secs="$$(echo $$secs)"; \
 	dir="$$(mktemp -d "$${TMPDIR}/pcrec-test-trailer.XXXXXX")"; \
 	rc=0; \
@@ -575,14 +575,25 @@ test-shard:
 	exit $$rc
 
 # [CI-SHARD] the CONTROL on the table above: every TEST_SECTIONS member in
-# exactly one shard, no unknown names, a non-empty shard each, ci.yml's matrix
-# listing exactly the table's shards, then the planted self-test (one plant per
+# exactly one shard, no unknown names, a non-empty shard each, then the planted self-test (one plant per
 # check, each required red). $(TEST_SECTIONS) is passed on argv -- the list is
 # spelled once, here, and the table is what is checked against it.
 test-ci-shards:
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-ci-shards.ran"; fi
 	@bash tests/ci/check_shards.sh $(TEST_SECTIONS)
 	@bash tests/ci/check_shards.sh --selftest $(TEST_SECTIONS)
+
+# [CLOUD-SUITE] B: the structural checks of the cloud-run machinery (tests/ci/cloud_check.sh: the cloud shard
+# table holds TEST_SECTIONS exactly, no kind is named in code, one shard-setup copy, one artifact-name source).
+# Opt-in and NOT a TEST_SECTIONS member (cloud_test_shards.tsv is the table CI runs); run on change.
+cloud-check: all
+	@bash tests/ci/cloud_check.sh $(TEST_SECTIONS)
+
+# [CLOUD-SUITE] reweigh: regenerate the cloud shard tables from MEASURED times (tests/ci/cloud_reweight.sh;
+# KIND = a row of tests/ci/cloud_kinds.tsv or `all`; MEASURE=1 first re-measures from the last runs on GitHub; DRY=1
+# prints the plan and writes nothing). The validator afterwards is `make cloud-check`.
+cloud-reweight: all
+	@bash tests/ci/cloud_reweight.sh $(or $(KIND),all) $(if $(MEASURE),--measure) $(if $(DRY),--dry)
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -2304,7 +2315,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-d27region test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-targets test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards \
+        test-startset test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards cloud-check cloud-reweight \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean

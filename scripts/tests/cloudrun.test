@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# cloudrun self-test ([CLOUD-SUITE] A, test e): argument handling, the push, the ledger, --verdict, --prune,
+# --list, and queuewatch's CLOUD-DONE event. No network and no GitHub: a scratch repo with a local BARE
+# remote, a copy of scripts/cloudrun in it, and a shim `gh` on PATH that prints a scripted JSON answer.
+# queuewatch runs against an empty scratch queue with CLOUDRUN_LEDGER pointing at the scratch ledger.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+T=$(mktemp -d "${TMPDIR:-/var/tmp}/cloudrun.test.XXXXXX"); trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok() { echo "PASS: $*"; pass=$((pass+1)); }; bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+chk() { if [ "$2" = 0 ]; then ok "$1"; else bad "$1"; fi; }
+
+R=$T/repo; mkdir -p "$R/scripts" "$T/bin"
+cp "$here/cloudrun" "$R/scripts/cloudrun"
+mkdir -p "$R/tests/ci"; cp "$here/../tests/ci/cloud_kinds.sh" "$here/../tests/ci/cloud_kinds.tsv" "$R/tests/ci/"   # the kinds table cloudrun reads
+git init -q --bare "$T/remote.git"
+git -C "$R" init -q; git -C "$R" config user.email t@t; git -C "$R" config user.name t
+echo x > "$R/f"; git -C "$R" add -A; git -C "$R" commit -q -m one
+git -C "$R" remote add origin "$T/remote.git"
+SHA=$(git -C "$R" rev-parse HEAD)
+export CLOUDRUN_LEDGER=$T/ledger.tsv
+CR="timeout 60 bash $R/scripts/cloudrun"
+cat > "$T/bin/gh" <<SH
+#!/usr/bin/env bash
+case "\$1 \$2" in "run list") ;; *) echo "shim gh: unexpected \$*" >&2; exit 9 ;; esac
+echo "\$*" >> "$T/gh.calls"
+[ -f "$T/gh.fail" ] && { echo "gh: boom" >&2; exit 4; }
+cat "$T/answer.json"
+SH
+chmod +x "$T/bin/gh"; export PATH="$T/bin:$PATH"
+# run JSON for the run at SHA: status conclusion
+ans() { printf '[{"databaseId":77,"headSha":"%s","status":"%s","conclusion":"%s","url":"http://run/77"}]' "$1" "$2" "$3" > "$T/answer.json"; }
+branches() { git -C "$T/remote.git" for-each-ref --format='%(refname:short)' refs/heads/cloud | tr '\n' ' '; }
+
+# --- argument handling
+$CR --kind test >/dev/null 2>&1; chk "no --owner -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+$CR --owner main >/dev/null 2>&1; chk "no --kind -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+$CR --owner 'a/b' --kind test >/dev/null 2>&1; chk "owner with a slash -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+$CR --owner main --kind test --name 'x y' >/dev/null 2>&1; chk "name with a space -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+$CR --owner main --kind test --ref nosuchref >/dev/null 2>&1; chk "unresolvable ref -> rc 1" $([ $? = 1 ] && echo 0 || echo 1)
+$CR --bogus >/dev/null 2>&1; chk "unknown argument -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+out=$($CR --owner main --kind nosuchkind --dry-run 2>&1); rc=$?
+[ $rc = 64 ] && grep -q "kind 'nosuchkind' is not declared in tests/ci/cloud_kinds.tsv (declared: test" <<<"$out"; chk "an undeclared kind -> 64, names the declared kinds (from the table)" $?
+sed 's/\t\*\t/\tonlyme\t/' "$R/tests/ci/cloud_kinds.tsv" > "$T/k2.tsv"; cp "$T/k2.tsv" "$R/tests/ci/cloud_kinds.tsv"
+out=$($CR --owner main --kind test --dry-run 2>&1); rc=$?
+[ $rc = 64 ] && grep -q "owner 'main' may not start kind 'test' (owners: onlyme)" <<<"$out"; chk "an owner the row does not allow -> 64" $?
+cp "$here/../tests/ci/cloud_kinds.tsv" "$R/tests/ci/cloud_kinds.tsv"
+# a --name with no --ref from a checkout on branch main is refused (the 2026-11-11 slip); --ref main, or another branch, is fine
+orig=$(git -C "$R" symbolic-ref --short HEAD); git -C "$R" branch -q -m "$orig" main
+out=$($CR --owner main --kind test --name ucax --dry-run 2>&1); rc=$?
+[ $rc = 64 ] && grep -q "pass --ref main to mean it" <<<"$out"; chk "--name, no --ref, on branch main -> 64 with the way out" $?
+$CR --owner main --kind test --name ucax --ref main --dry-run >/dev/null 2>&1; chk "--name with an explicit --ref main is allowed" $?
+$CR --owner main --kind test --dry-run >/dev/null 2>&1; chk "no --name, no --ref, on branch main is allowed (the default name)" $?
+git -C "$R" branch -q -m main "$orig"
+$CR --owner main --kind test --name ucax --dry-run >/dev/null 2>&1; chk "--name, no --ref, on another branch is allowed" $?
+out=$($CR --owner main --kind test --dry-run 2>&1); rc=$?
+[ $rc = 0 ] && [ -z "$(branches)" ] && [ ! -e "$T/ledger.tsv" ] && grep -q "DRY-RUN would push ${SHA:0:9} -> origin cloud/main/test/HEAD-${SHA:0:7}" <<<"$out"; chk "--dry-run pushes nothing, writes no ledger" $?
+
+# --- the push and the ledger
+out=$($CR --owner main --kind test --name one 2>&1); rc=$?
+[ $rc = 0 ] && [ "$(branches)" = "cloud/main/test/one " ] && [ "$(git -C "$T/remote.git" rev-parse cloud/main/test/one)" = "$SHA" ]; chk "push lands cloud/main/test/one at HEAD" $?
+[ "$(wc -l <<<"$out")" = 1 ] && grep -q "^cloudrun: DONE rc=0 pushed ${SHA:0:9} -> cloud/main/test/one owner=main kind=test" <<<"$out"; chk "prints ONE line and exits" $?
+awk -F'\t' '$1=="R" && $3=="main" && $4=="test" && $5=="one" && $6=="cloud/main/test/one" && $7=="'"$SHA"'" && $2 ~ /^[0-9]+$/ { f=1 } END { exit !f }' "$T/ledger.tsv"; chk "ledger row: R epoch owner kind name branch sha" $?
+$CR --owner main --kind test --name one >/dev/null 2>&1; rc=$?
+[ $rc = 1 ] && [ "$(grep -c '^R' "$T/ledger.tsv")" = 1 ]; chk "same branch twice: refused (rc 1), no second ledger row" $?
+echo y > "$R/f"; git -C "$R" commit -qam two; SHA2=$(git -C "$R" rev-parse HEAD)
+$CR --owner lane-a --kind test --ref "$SHA2" >/dev/null 2>&1
+git -C "$T/remote.git" rev-parse "cloud/lane-a/test/$SHA2-${SHA2:0:7}" >/dev/null 2>&1; chk "default name = <ref>-<sha7> (a sha ref)" $?
+$CR --owner kit --kind test --name two --ref HEAD~1 >/dev/null 2>&1; [ "$(git -C "$T/remote.git" rev-parse cloud/kit/test/two)" = "$SHA" ]; chk "--ref HEAD~1 pushes that commit" $?
+[ -z "$(git -C "$T/remote.git" for-each-ref refs/heads/main refs/heads/master)" ]; chk "no non-cloud ref was written to the remote" $?
+
+# --- --verdict (what queuewatch and --prune ask)
+v() { timeout 60 bash "$R/scripts/cloudrun" --verdict cloud/main/test/one "$1"; }
+ans "$SHA" in_progress ""; [ "$(v "$SHA" | cut -d' ' -f1-2)" = "PENDING 77" ]; chk "verdict: in_progress -> PENDING" $?
+ans "$SHA" completed success; [ "$(v "$SHA")" = "GREEN 77 success http://run/77" ]; chk "verdict: success -> GREEN" $?
+ans "$SHA" completed failure; [ "$(v "$SHA" | cut -d' ' -f1,3)" = "RED failure" ]; chk "verdict: failure -> RED" $?
+ans "$SHA" completed cancelled; [ "$(v "$SHA" | cut -d' ' -f1,3)" = "RED cancelled" ]; chk "verdict: cancelled -> RED (a cancelled run is not green)" $?
+ans "$SHA2" completed success; [ "$(v "$SHA" | cut -d' ' -f1)" = NONE ]; chk "verdict: another commit's run -> NONE" $?
+touch "$T/gh.fail"; [ "$(v "$SHA" | cut -d' ' -f1)" = NONE ]; chk "verdict: gh failing -> NONE (never green)" $?; rm -f "$T/gh.fail"
+
+# --- queuewatch: CLOUD-DONE once, to its owner; pending and NONE silent
+Q=$T/q; mkdir -p "$Q/pending" "$Q/running" "$Q/done" "$Q/failed"
+qw() { timeout 60 bash "$here/queuewatch" --queue "$Q" --state "$T/qstate" --every 1 --max-sec 1 --disk-pct 101 --ci-every 0 2>&1; }
+ans "$SHA" in_progress ""; [ "$(qw | cut -d' ' -f2)" = "CAP" ] || [ "$(qw | cut -d' ' -f1-2)" = "queuewatch: CAP" ]; chk "queuewatch: a pending cloud run is silent" $?
+ans "$SHA" completed failure
+l=$(qw); grep -q '^queuewatch: CLOUD-DONE main-test-one owner=main kind=test verdict=RED conclusion=failure run=77 sha='"${SHA:0:9}"' branch=cloud/main/test/one :: http://run/77$' <<<"$l"; chk "queuewatch: CLOUD-DONE RED with owner, kind, run, url" $?
+l2=$(qw); grep -q 'CLOUD-DONE main-test-one' <<<"$l2" && bad "queuewatch: reported the same run twice" || ok "queuewatch: each run reported once"
+grep -q 'CLOUD-DONE kit-test-two owner=kit .*verdict=RED' <<<"$l2"; chk "queuewatch: the NEXT ledger row (same commit) is its own event, to its own owner" $?
+l3=$(qw); grep -q CLOUD-DONE <<<"$l3" && bad "queuewatch: a third launch should find nothing (lane-a's run is not this answer's)" || ok "queuewatch: nothing new after both reported; the unrelated row stays silent"
+unset CLOUDRUN_LEDGER; l4=$(CLOUDRUN_LEDGER=$T/none.tsv qw); grep -q CLOUD-DONE <<<"$l4" && bad "queuewatch: no ledger should be silent" || ok "queuewatch: a missing ledger is silent"; export CLOUDRUN_LEDGER=$T/ledger.tsv
+rm -f "$T/qstate"*; l5=$(QUEUEWATCH_NO_CI=1 qw); grep -q CLOUD-DONE <<<"$l5" && bad "queuewatch: --no-ci should silence the cloud source" || ok "queuewatch: QUEUEWATCH_NO_CI=1 silences the cloud source"
+
+# --- --list and --prune
+: > "$T/gh.calls"
+$CR --list | grep -q 'main test one cloud/main/test/one .* kept'; chk "--list shows the run as kept" $?
+ans "$SHA" in_progress ""; out=$($CR --prune 2>&1); [ -n "$(branches)" ] && grep -q 'pruned 0, kept' <<<"$out"; chk "--prune keeps a branch whose run has no verdict" $?
+ans "$SHA" completed success; out=$($CR --prune --dry-run 2>&1); grep -q 'would delete cloud/main/test/one' <<<"$out" && [ "$(branches | wc -w)" = 3 ]; chk "--prune --dry-run names the branch, deletes nothing" $?
+out=$($CR --prune 2>&1); rc=$?
+[ $rc = 0 ] && [ "$(branches)" = "cloud/lane-a/test/$SHA2-${SHA2:0:7} " ] && grep -q '^cloudrun: DONE rc=0 pruned 2, kept 1' <<<"$out"; chk "--prune deletes the 2 branches whose run has a verdict, keeps the third (its commit has no run in this answer)" $?
+grep -c '^P' "$T/ledger.tsv" | grep -qx 2; chk "ledger records 2 P rows" $?
+out=$($CR --prune 2>&1); grep -q 'pruned 0, kept 1' <<<"$out"; chk "a second --prune is a no-op" $?
+ans "$SHA2" completed failure; out=$($CR --prune 2>&1); [ -z "$(branches)" ] && grep -q 'pruned 1, kept 0' <<<"$out"; chk "a RED verdict also prunes (a verdict is a verdict)" $?
+$CR --list | grep -q ' pruned$'; chk "--list marks them pruned" $?
+
+echo "cloudrun.test: $pass passed, $fail failed"; [ $fail = 0 ]

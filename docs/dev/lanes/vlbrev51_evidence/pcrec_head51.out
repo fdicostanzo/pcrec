@@ -1,0 +1,66 @@
+(?<=a(?:b+){0})x	COMPILES rx_VALID_LB 1
+(?<=a(?(DEFINE)(?<g>b+)))x	COMPILES rx_VALID_LB 1
+(?<=a(?(DEFINE)b+))x	COMPILES rx_VALID_LB 1
+(?<=a(?(DEFINE)(?<g>(?&g)b)))x	COMPILES rx_VALID_LB 1
+(a(?(DEFINE)(?<g>b+)))(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 22)
+(?<=(?1))(a(?(DEFINE)(b+)))x	COMPILES rx_VALID_LB 1
+(a(?(DEFINE)(?<g>\1)))(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 22)
+(?J)(?<n>a)(?<n>b)?(?<=x(?(DEFINE)\k<n>))y	COMPILES rx_VALID_LB 1
+((?<=x(?(DEFINE)\1))a)	COMPILES rx_VALID_LB 1
+((?<=x(?(DEFINE)(?1)))a)	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 1)
+(a(?(DEFINE)(?<g>(?<=\1)b)))x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 17)
+((?<=x(?:\1){0})a)	COMPILES rx_VALID_LB 1
+(?J)(?<n>a)(?<n>b)?(?<=x(?:\k<n>){0})y	COMPILES rx_VALID_LB 1
+(?<=(?:\1+){0}x)(b)y	COMPILES rx_VALID_LB 1
+(?<=(?:a+){0}x)y	COMPILES rx_VALID_LB 1
+(?<=(?(DEFINE)a+)x)y	COMPILES rx_VALID_LB 1
+(?<=(?:a{30000}b{35536}){0}x)y	COMPILES rx_VALID_LB 1
+(?<=(?:a{30000}b{35535}){0}x)y	COMPILES rx_VALID_LB 1
+(?<=(?:a{30000}){0}(?:b{30000}){0}(?:c{30000}){0}x)y	COMPILES rx_VALID_LB 1
+(a{40000}b{40000})(?<=\1{0}x)y	COMPILES rx_VALID_LB 1
+(a(?:b{40000}c{40000}){0})(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 26)
+(a)(?<=\1|b+)(?<=c+)x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+(a)(?<=\1|b+)x\2	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+(a)(?<=\2|b+)x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+(a)(?<=\1|b+(?C1))x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+(a)(?<=b(?<=\1+)c+)x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 8)
+(a)(?<=\1|b+)x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+(a(?<=b(?<=\1)))x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 7)
+(?J)(?<n>a)(?<n>b)?(?<=c(?<=\k<n>))x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 24)
+(a(?<=b(?<=(?1))))x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 2)
+(a)(b(?<=\1))(?<=\2)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 5)
+(?<=\2)(a)(b(?<=\1))x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 0)
+(a(?<=\2))(b)(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 2)
+(a(?<=\1))x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 2)
+(a(?<=b(?=\1)))x	COMPILES rx_VALID_LB 1
+(?J)(?<n>a)(?<n>b)?(?<=x(?=\k<n>))y	COMPILES rx_VALID_LB 1
+(a(?=\1)|b)(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 11)
+(a{1,255})(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 10)
+(a{1,127})(?<=\1\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 10)
+(?|(a)|(bc))(?(DEFINE)(?<g>\1))(?<=(?&g))x	REFUSED rc=1: pcrec: module 'branch-reset' is enabled but (?|...) is not implemented yet (pattern offset 0)
+(?|(a)|(bc))(d\1)(?<=\2)x	REFUSED rc=1: pcrec: module 'branch-reset' is enabled but (?|...) is not implemented yet (pattern offset 0)
+(?|(a)|(bc))(?<=(?1))x	REFUSED rc=1: pcrec: module 'branch-reset' is enabled but (?|...) is not implemented yet (pattern offset 0)
+(?|(bc)|(a))(?<=(?1))x	REFUSED rc=1: pcrec: module 'branch-reset' is enabled but (?|...) is not implemented yet (pattern offset 0)
+(?=(a(*ACCEPT)bc))\w+(?<=\1)x	REFUSED rc=1: pcrec: (*...) REQ 'verbs' (pattern offset 5)
+(?<=(?:b{60000}){2}|c+)x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 0)
+(?J)(?<n>a)(?<n>b)?(c\k<n>)(?<=\3)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 27)
+(a+)(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 4)
+(a(?1){0})(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 10)
+(a(?1){0})(?<=(?1))x	COMPILES rx_VALID_LB 1
+(?<=a(?(DEFINE)(?<g>b+))c+)x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 0)
+(a(?(DEFINE)(?<g>b{40000}c{40000})))(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 36)
+(?<=(?(DEFINE)(?<g>a{30000}b{35536}))x)y	COMPILES rx_VALID_LB 1
+(a)(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 3)
+((?<=\1)a)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 1)
+((?<=(?1))a)x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 1)
+((?<=x(?:(?1)){0})a)	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 1)
+(?<=(?:${v}){0}x)y	COMPILES rx_VALID_LB 1
+(?<=(?(DEFINE)${v})x)y	COMPILES rx_VALID_LB 1
+(?<=${v})x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 0)
+(${v})(?<=\1)x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 6)
+(?<=a(?C"c,consume"))x	REFUSED rc=1: pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 0)
+(${v})(?<=(?1))x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 6)
+(?(DEFINE)(?<g>${v}))(?<=(?&g))x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 21)
+(a)(?<=(?1)|b+)x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 3)
+(?<=(?1)|b+)(a)x	REFUSED rc=1: pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 0)
+(a{65535})(?1)(?<=(?1)(?1))x	REFUSED rc=1: pcrec: every alternative of a lookbehind must match at most 65535 characters (this one has 131070) (pattern offset 14)

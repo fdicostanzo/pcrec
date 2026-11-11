@@ -411,7 +411,10 @@ typedef enum {
      * set). */
     PF_WHY_PIECES_WALL,
     PF_WHY_PIECES_OVER,
-    PF_WHY_PIECES_ONE
+    PF_WHY_PIECES_ONE,
+    /* [UCP] U3 a byte walk over an ISLAND NFA (`Nfa.island`): its character
+     * edges consume one to four bytes, so no byte position is stated. */
+    PF_WHY_ISLAND
 } PfWhyCode;
 
 typedef struct {

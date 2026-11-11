@@ -22,7 +22,7 @@ out=$(PATH="$T/bin:$PATH" "$TO" 10 bash "$here/gestalt" --all --owner kit 2>&1);
 printf '%s\n' "$out" | grep -qx 'ci: unavailable' && ok "ci: unavailable" || bad "no 'ci: unavailable'"
 [ "$(printf '%s\n' "$out" | tail -1)" = "gestalt: DONE rc=0" ] && ok "DONE line last" || bad "last line: $(printf '%s\n' "$out" | tail -1)"
 n=$(printf '%s\n' "$out" | wc -l)
-[ "$n" -le 12 ] && ok "$n lines (<= 12)" || bad "$n lines"
+[ "$n" -le 19 ] && ok "$n lines (<= 19)" || bad "$n lines"
 for k in load box queue lanes disk context subscription git unread; do
     printf '%s\n' "$out" | grep -q "^$k:" && ok "has $k line" || bad "missing $k line"
 done
@@ -52,6 +52,16 @@ printf '%s\n' "$out3" | grep -q '^subscription: 5h 12% .* 7d 34%' && ok "subscri
 printf '{"captured_at":%s,"context_window":{"current_usage":{"input_tokens":1}}}\n' "$((nowt-3000))" > "$T/sl/session-$sid.json"
 out4=$($G "$TO" 10 bash "$here/gestalt" --all 2>&1)
 printf '%s\n' "$out4" | grep -qE '^context: main 125k' && ok "stale snapshot falls back to transcript" || bad "stale fallback: $(printf '%s\n' "$out4" | grep '^context:')"
+# plan-health fixtures (defined early: G2 points the plan rows at the quiet ones)
+mkdir -p "$T/pw/nogit" "$T/pw/tmpq/gestalt"
+dago() { date -d "-$1 day" +%Y-%m-%d; }
+pwork() { # FILE ROW...: print a --work text file; each ROW is "TAG|STATE|STATUSDATE|waits(0/1)"
+    local f=$1; shift; { echo "## work"; local r tag st sd w
+    for r in "$@"; do IFS='|' read -r tag st sd w <<< "$r"
+        echo "- [$tag] STATE:$st — t"; [ -n "$sd" ] && echo "  status ($sd): s"; [ "$w" = 1 ] && echo "  waits: owner — go?"; done
+    echo "entry: $# items (profile plan, level 1)"; } > "$f.txt"
+    printf 'print(open("%s.txt").read(), end="")\n' "$f" > "$f.py"; }
+pwork "$T/pw/quiet"
 # --- threshold rows (default output): silent when everything is normal, each row fires on a crafted input
 mkdir -p "$T/ch" "$T/socks" "$T/emptyroles" "$T/ghok" "$T/ghfail" "$T/ghcanc" "$T/dffull"
 ghstub() { printf '#!/bin/sh\necho "%s abc123456 2026-11-10T00:00:00Z"\n' "$2" > "$1/gh"; chmod +x "$1/gh"; }
@@ -72,7 +82,9 @@ printf 'print("nothing useful")\n' > "$T/ent/notrailer.py"
 printf '\n' > "$T/ent/blank.py"
 # G [VAR=val ...]: run gestalt (default output) over the all-normal inputs, later VARs overriding earlier ones
 G2() { env GESTALT_ROLES_DIR="$T/emptyroles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/ch" GESTALT_STATUSLINE_DIR="$T/nosl" \
-    GESTALT_SOCKS_DIR="$T/socks" GESTALT_LOADAVG="$T/load.low" GESTALT_BOXQUEUE="$T/bq.busy" GESTALT_ENTRY="$T/ent/under.py" "$@" ; }
+    GESTALT_SOCKS_DIR="$T/socks" GESTALT_LOADAVG="$T/load.low" GESTALT_BOXQUEUE="$T/bq.busy" GESTALT_ENTRY="$T/ent/under.py" \
+    GESTALT_WORK_ENTRY="$T/pw/quiet.py" GESTALT_OWNER_MD="$T/pw/owner.quiet" GESTALT_PUSH_DIR="$T/pw/nogit" GESTALT_PLAN_GIT="$T/pw/repo" \
+    GESTALT_WTPRUNE="$T/pw/wtprune" PCREC_TMPDIR="$T/pw/tmpq" "$@" ; }
 run() { local pre=$1; shift; G2 "$@" PATH="$pre:$PATH" "$TO" 20 bash "$here/gestalt" $GARGS 2>&1; }
 GARGS=""
 q=$(run "$T/ghok"); rc=$?
@@ -81,9 +93,9 @@ GARGS=--all; qa=$(run "$T/ghok"); GARGS=""
 printf '%s\n' "$qa" | tail -1 | grep -qx 'gestalt: DONE rc=0' && printf '%s\n' "$qa" | grep -q '^load:' && ok "--all prints every line + DONE" || bad "--all on normal input"
 # J1: --all on a normal fixture with the accessor printing only its trailer: <= 12 lines, no empty line
 GARGS=--all; qj=$(run "$T/ghok"); GARGS=""
-[ "$(printf '%s\n' "$qj" | wc -l)" -le 12 ] && ok "--all <= 12 lines with a silent docs row" || bad "--all lines: $(printf '%s\n' "$qj" | wc -l)"
+[ "$(printf '%s\n' "$qj" | wc -l)" -le 19 ] && ok "--all <= 19 lines with a silent docs row" || bad "--all lines: $(printf '%s\n' "$qj" | wc -l)"
 printf '%s\n' "$qj" | grep -q '^$' && bad "--all printed an empty line" || ok "--all prints no empty line"
-kinds() { sed -n 's/^\([a-z]*\):.*/\1/p' | tr '\n' ' ' | sed 's/ $//'; }
+kinds() { sed -n 's/^\([a-z-]*\):.*/\1/p' | tr '\n' ' ' | sed 's/ $//'; }
 fires() { local what=$1 want=$2 pre=$3; shift 3; local o; o=$(run "$pre" "$@" | kinds)
     [ "$o" = "$want" ] && ok "row fires: $what" || bad "row $what: got [$o] want [$want]"; }
 fires "load1 > nproc" load "$T/ghok" GESTALT_LOADAVG="$T/load.high"
@@ -134,6 +146,73 @@ ih "silent: not held" "" "$T/bl.free" 0.40 600 "$T/load.low2"
 ih "silent: queue-job holder (boxqueue's IDLE-SUSPECT owns it)" "" "$T/bl.queue" 0.40 600 "$T/load.low2"
 ih "silent: dead holder pid (not this row)" "" "$T/bl.dead" 0.40 600 "$T/load.low2"
 ih "silent: HELD-ORPHAN (boxlock's own state)" "" "$T/bl.orphan" 0.40 600 "$T/load.low2"
+
+# --- plan-health rows (owner-waits, open, ready-idle, stale, questions, push-owed, prune-owed): fixtures for `entry --work` text,
+# a throwaway plan.md history (commit dates back-dated), an owner.md, an origin/main pair, and a fake wtprune + its count cache
+pwork "$T/pw/ow"  "AA|started|$(dago 2)|0" "OW1|not-started|$(dago 9)|1" "OW2|started|$(dago 3)|1"
+pwork "$T/pw/open7" "S1|started|$(dago 1)|0" "S2|started|$(dago 1)|0" "S3|started|$(dago 1)|0" "S4|started|$(dago 1)|0" "S5|ready|$(dago 1)|0" "S6|ready|$(dago 1)|0" "S7|blocked|$(dago 1)|0"
+pwork "$T/pw/open7b" "S1|started|$(dago 1)|0" "S2|started|$(dago 1)|0" "S3|started|$(dago 1)|0" "S4|started|$(dago 1)|0" "S5|ready|$(dago 1)|0" "S6|ready|$(dago 1)|0"
+pwork "$T/pw/open8" "S1|started|$(dago 1)|0" "S2|started|$(dago 1)|0" "S3|started|$(dago 1)|0" "S4|started|$(dago 1)|0" "S5|ready|$(dago 1)|0" "S6|ready|$(dago 1)|0" "S7|started|$(dago 1)|0"
+pwork "$T/pw/rdy"   "RA|ready|$(dago 1)|0" "RB|ready|$(dago 1)|0"
+pwork "$T/pw/stale" "OLD|started|$(dago 40)|0" "NEW|started|$(dago 2)|0"
+pwork "$T/pw/nodate" "NODATE|started||0"
+# plan.md history: RA set ready 10 days ago, RB 2 days ago, OLD touched 40 days ago, NEW 2 days ago
+git init -q "$T/pw/repo"; mkdir -p "$T/pw/repo/docs/dev"
+pc() { GIT_AUTHOR_DATE="$2" GIT_COMMITTER_DATE="$2" git -C "$T/pw/repo" -c user.name=t -c user.email=t@t commit -qam "$1"; }
+printf '%s\n' "- [RA] STATE:ready — a" "- [OLD] STATE:started — o" > "$T/pw/repo/docs/dev/plan.md"; git -C "$T/pw/repo" add -A; pc c1 "$(date -d '-40 day' -Iseconds)"
+printf '%s\n' "- [RA] STATE:ready — a" "- [OLD] STATE:started — o" "- [RB] STATE:ready — b" > "$T/pw/repo/docs/dev/plan.md"; pc c2 "$(date -d '-2 day' -Iseconds)"
+# RA was ready at c1 (40d); make it 10d: rewrite so the ready tag is introduced later
+printf '%s\n' "- [OLD] STATE:started — o" "- [RA] STATE:started — a" "- [RB] STATE:ready — b" > "$T/pw/repo/docs/dev/plan.md"; pc c3 "$(date -d '-11 day' -Iseconds)"
+printf '%s\n' "- [OLD] STATE:started — o" "- [RA] STATE:ready — a" "- [RB] STATE:ready — b" > "$T/pw/repo/docs/dev/plan.md"; pc c4 "$(date -d '-10 day' -Iseconds)"
+printf '%s\n' "- [OLD] STATE:started — o" "- [RA] STATE:ready — a" "- [RB] STATE:ready — b" "- [NEW] STATE:started — n" > "$T/pw/repo/docs/dev/plan.md"; pc c5 "$(date -d '-2 day' -Iseconds)"
+pq() { run "$T/ghok" "$@"; }
+fires "plan rows quiet on a quiet fixture" "" "$T/ghok"
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/ow.py")
+[ "$o" = "owner-waits: 2 (oldest 9d, OW1)" ] && ok "owner-waits: count, oldest age + tag" || bad "owner-waits: [$o]"
+fires "owner-waits" owner-waits "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/ow.py"
+fires "open: 6 started+ready (at threshold) silent" "" "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/open7b.py"
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/open8.py")
+[ "$o" = "open: started 5 / ready 2 / blocked 0 (started+ready > 6)" ] && ok "open: 7 fires with counts" || bad "open: [$o]"
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/open7.py" | kinds); [ "$o" = "" ] && ok "open: blocked rows do not count" || bad "open blocked: [$o]"
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/rdy.py")
+[ "$o" = "ready-idle: 1 (oldest 10d, RA; > 7d)" ] && ok "ready-idle: only the row ready > 7d" || bad "ready-idle: [$o]"
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/stale.py")
+case $o in "stale: 1 started untouched > 21d (oldest "*"d, OLD)") ok "stale: only the row untouched > 21d" ;; *) bad "stale: [$o]" ;; esac
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/nodate.py" GESTALT_PLAN_GIT="$T/pw/nogit")
+case $o in *"1 undated"*) ok "stale: an undated started row is counted and said" ;; *) bad "undated: [$o]" ;; esac
+# questions
+printf '## Questions for you\n\n- OPEN (%s, x): a?\n  1. cont\n- (answered %s: done)\n- FYI (%s): news\n\n## Next\n- OPEN (2000-01-01): not in the section\n' "$(date -d '-2 day' +%F)" "$(dago 3)" "$(dago 5)" > "$T/pw/owner.old"
+printf '## Questions for you\n\n- OPEN (%s 23:59): fresh?\n\n## Next\n' "$(date +%F)" > "$T/pw/owner.new"
+printf '## Questions for you\n\n- OPEN: no date here\n\n## Next\n' > "$T/pw/owner.undated"
+printf '## Questions for you\n\n- (answered 2026-11-10: x)\n- FYI (2026-01-01): y\n' > "$T/pw/owner.answered"
+o=$(pq GESTALT_OWNER_MD="$T/pw/owner.old"); case $o in "questions: 1 unanswered (1 over 24h, oldest "*"; 0 undated)") ok "questions: unanswered > 24h fires (answered/FYI/other sections ignored)" ;; *) bad "questions old: [$o]" ;; esac
+fires "questions fresh (< 24h): silent" "" "$T/ghok" GESTALT_OWNER_MD="$T/pw/owner.new"
+o=$(pq GESTALT_OWNER_MD="$T/pw/owner.undated"); [ "$o" = "questions: 1 unanswered (none over 24h; 1 undated)" ] && ok "questions: undated entry is counted and said (mtime not used)" || bad "questions undated: [$o]"
+fires "questions all answered/FYI: silent" "" "$T/ghok" GESTALT_OWNER_MD="$T/pw/owner.answered"
+# push-owed: a clone whose origin/main is behind main by commits aged 3 h / 1 h
+git init -q -b main "$T/pw/up"; git -C "$T/pw/up" -c user.name=t -c user.email=t@t commit -q --allow-empty -m base
+git clone -q "$T/pw/up" "$T/pw/cl" 2>/dev/null
+GIT_COMMITTER_DATE="$(date -d '-3 hour' -Iseconds)" git -C "$T/pw/cl" -c user.name=t -c user.email=t@t commit -q --allow-empty -m old
+git -C "$T/pw/cl" -c user.name=t -c user.email=t@t commit -q --allow-empty -m new
+o=$(pq GESTALT_PUSH_DIR="$T/pw/cl"); [ "$o" = "push-owed: 2 commit(s) ahead of origin/main, oldest 3h" ] && ok "push-owed: count + oldest age" || bad "push-owed: [$o]"
+git clone -q "$T/pw/up" "$T/pw/cl2" 2>/dev/null; git -C "$T/pw/cl2" -c user.name=t -c user.email=t@t commit -q --allow-empty -m young
+fires "push-owed: newest-only unpushed < 2 h: silent" "" "$T/ghok" GESTALT_PUSH_DIR="$T/pw/cl2"
+fires "push-owed: nothing unpushed: silent" "" "$T/ghok" GESTALT_PUSH_DIR="$T/pw/up"
+# prune-owed: the cache holds wtprune's count; a fresh cache is used as is, a stale/absent one spawns the (stub) wtprune
+printf '#!/bin/sh\necho "wtprune: 1 removable, 3 kept — dry run; re-run with --apply"\n' > "$T/pw/wtprune"; chmod +x "$T/pw/wtprune"
+printf '#!/bin/sh\necho "wtprune: 9 removable, 3 kept — dry run; re-run with --apply"\n' > "$T/pw/wtprune9"; chmod +x "$T/pw/wtprune9"
+pcache() { local d; d=$(mktemp -d "$T/pc.XXXXXX"); mkdir -p "$d/gestalt"; [ -n "$2" ] && echo "$(( $(date +%s) - $2 )) $1" > "$d/gestalt/prune.cache"; echo "$d"; }
+o=$(pq PCREC_TMPDIR="$(pcache 6 60)"); case $o in "prune-owed: 6 removable worktree(s) (> 5; count 6"[0-9]"s old)") true ;; *) false ;; esac && ok "prune-owed: 6 > 5 fires" || bad "prune-owed: [$o]"
+fires "prune-owed: 5 (at threshold) silent" "" "$T/ghok" PCREC_TMPDIR="$(pcache 5 60)"
+d=$(pcache 1 7200); pq PCREC_TMPDIR="$d" GESTALT_WTPRUNE="$T/pw/wtprune9" >/dev/null; sleep 2
+read -r _ n < "$d/gestalt/prune.cache"; [ "$n" = 9 ] && ok "prune-owed: stale cache refreshed in the background from wtprune" || bad "prune cache not refreshed: [$n]"
+d=$(pcache 1 ""); o=$(GARGS=--all; pq PCREC_TMPDIR="$d" | grep '^prune-owed:'); sleep 2
+case $o in "prune-owed: unknown"*) ok "prune-owed: no cache yet = unknown, not silent-green under --all" ;; *) bad "prune unknown: [$o]" ;; esac
+# --all shows the plan rows even when quiet
+GARGS=--all; qa=$(run "$T/ghok"); GARGS=""
+for k in open questions push-owed prune-owed; do printf '%s\n' "$qa" | grep -q "^$k:" && ok "--all shows $k" || bad "--all missing $k"; done
+# the work accessor failing is a row, not silence (K35)
+fires "plan accessor fails" plan "$T/ghok" GESTALT_WORK_ENTRY="$T/ent/exit3.py"
 # the log line is written on a silent run too
 [ -s "$T/tmproot/gestalt/log.tsv" ] && ok "log.tsv written" || bad "log.tsv missing"
 echo "gestalt.test: $pass pass, $fail fail"

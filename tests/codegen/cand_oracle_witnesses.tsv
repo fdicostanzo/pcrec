@@ -139,3 +139,4 @@ verify-at	-fno-rev-end-onewalk	\s+$
 # only by the harness lever `--harness=kit-proof`, so these lines carried it).
 cover	-	foobar
 cover	-	\bcat\b
+char-step	-e utf8 --features all	(*UCP)\b\w+\b

@@ -23,7 +23,7 @@
 #   --missed-window-sec 900   WINDOW-MISSED grace: a declared bench window (`not_before=` in its .window) whose start passed this long ago
 #                   (an UNMEASURED default, [QORDER] 2026-11-01) with the window never started and no job of its owner pending or running
 #   --disk-pct 95   DISK-HIGH when the queue's filesystem is at or over this use%
-#   --confirm S 5   a RUNNER-DEAD reading is re-read this long later before it is reported
+#   --confirm S 5   a RUNNER-DEAD or PENDING-STUCK reading is re-read this long later before it is reported
 #   --ci-every S 300  ask GitHub Actions (`gh run list`, main branch) at most this often, across
 #                   launches (env CI_EVERY); --no-ci (env QUEUEWATCH_NO_CI=1) turns the CI source off
 #
@@ -59,6 +59,21 @@
 #   CI-CANCELLED <sha> <run id> <subject>  the NEWEST completed main run was cancelled and no later run
 #                                          is still running or queued (a push cancels the running job; a
 #                                          cancel superseded by a later run is not an event). Green: silent.
+#   CLOUD-DONE NAME owner=O kind=K verdict=GREEN|RED conclusion=C run=ID sha=S branch=B :: URL
+#                                          a cloud run (scripts/cloudrun, [CLOUD-SUITE]) ENDED: one per ledger row, the same
+#                                          one-line shape as a queue job's JOB-DONE; NAME = OWNER-KIND-NAME. The verdict is the
+#                                          workflow's own (its gather job fails unless every expected shard reported rc 0). The
+#                                          ledger is CLOUDRUN_LEDGER else QUEUE/.cloudrun/ledger.tsv; each row asks `cloudrun
+#                                          --verdict` (a `gh run list`) at most every --ci-every s; --no-ci turns it off too.
+#   CLOUD-SHARD-RED OWNER KIND NAME shard K/N run=ID :: <first failing lines, ' || ' between>
+#                                          a shard of a cloud run still IN PROGRESS has already failed (conclusion failure/
+#                                          timed_out): once per run+shard (state id cloudred|RUN|K/N), routed to the run's OWNER
+#                                          like CLOUD-DONE. The lines come from tests/ci/cloud_failures.sh via `cloudrun --reds`;
+#                                          the shard's log is fetched once (cache state.cloudred.cache). gh calls per --ci-every
+#                                          tick: 1 `gh run list` per unreported ledger row + for each in-progress run 2 (run,
+#                                          jobs) = 3 per run; 3 concurrent runs at the default 300 s = 12 x 9 = 108 calls/hour
+#                                          (+ one log per newly red shard); a quiet queue with no ledger row pending costs none.
+#                                          `scripts/cloudrun --status` shows the same, on demand.
 #   CI-UNAVAILABLE <reason>                gh missing / not logged in / network / unreadable answer; once,
 #                                          re-armed when gh works again; never stops the queue events
 # Other exits: 6 CAP (nothing new in --max-sec: relaunch), 2 queue missing, 64 usage, 75 state in use.
@@ -282,6 +297,10 @@ conditions() {
         # whose KEY failed, a broken --ready) ages exactly as for any pending job: that silence is the miss this alarm exists to catch.
         nb=$(sed -n 's/^boxqueue: not-before //p' "$Q/.state/$k.decl" 2>/dev/null | head -1)
         if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null) && [ "$since" -lt "$nbe" ]; then since=$nbe; age=$((now - since)); fi
+        # The runner STARTs the next ready job a moment after the last one's END: re-read after --confirm, and report only if
+        # nothing is running and the same job still heads the pending list (false alarms, jobs 551/552, 2026-11-11).
+        if [ "$age" -ge "$stuck" ]; then sleep "$confirm" 9>&-; nrun=$(ls -A "$Q/running" 2>/dev/null | grep -c .)
+            [ "$nrun" = 0 ] && [ "$(ls -p "$Q/pending" 2>/dev/null | grep -v / | LC_ALL=C sort | head -1)" = "$n" ] || age=0; fi
         if [ "$age" -ge "$stuck" ]; then
             printf 'C|stuck|%s|%s\t0\tPENDING-STUCK %s pending for %ss, nothing running%s :: %s\n' "$n" "$since" "$n" "$age" \
                 "${rdy:+ (queued $((now - queued))s ago, ready for ${age}s)}" "${ans%%$'\n'*}"
@@ -362,9 +381,35 @@ ci() {
     return 0
 }
 
+# cloud: CLOUD-DONE for each ledger row (scripts/cloudrun) whose run has a verdict and is not yet reported.
+# Same cadence and replay as ci() (state.cloud.last / state.cloud.out); a pending run or a gh failure prints nothing.
+cloud() {
+    [ "$noci" = 1 ] && return 0
+    local lg=${CLOUDRUN_LEDGER:-$Q/.cloudrun/ledger.tsv} now last o k n br sha v rid concl url id line out=""
+    [ -f "$lg" ] || return 0
+    now=$(date +%s); last=$(cat "$state.cloud.last" 2>/dev/null || echo 0)
+    if [ $((now - last)) -ge "$ci_every" ]; then
+        echo "$now" > "$state.cloud.last"
+        while IFS=$'\t' read -r _ _ o k n br sha; do
+            seen "cloud|$br|$sha" && continue
+            read -r v rid concl url < <(bash "$here/cloudrun" --verdict "$br" "$sha" 9>&-)
+            if [ "$v" = PENDING ]; then    # in progress: any shard already RED is reported now (one fetch per shard, cached)
+                while IFS=$'\t' read -r id line; do
+                    [ -n "$id" ] && out="$out$(printf 'cloudred|%s\t0\tCLOUD-SHARD-RED %s' "$id" "$line")"$'\n'
+                done < <(bash "$here/cloudrun" --reds "$rid" "$state.cloudred.cache" 9>&- 2>/dev/null)
+            fi
+            case $v in GREEN|RED) out="$out$(printf 'cloud|%s|%s\t0\tCLOUD-DONE %s-%s-%s owner=%s kind=%s verdict=%s conclusion=%s run=%s sha=%s branch=%s :: %s' \
+                "$br" "$sha" "$o" "$k" "$n" "$o" "$k" "$v" "$concl" "$rid" "${sha:0:9}" "$br" "$url")"$'\n' ;; esac
+        done < <(awk -F'\t' '$1 == "R"' "$lg")
+        printf '%s' "$out" > "$state.cloud.out"
+    fi
+    cat "$state.cloud.out" 2>/dev/null
+    return 0
+}
+
 pick() { # pick: the first event not yet reported, as ID<TAB>LINE (nothing if none)
     local id closed line all
-    all=$(lifecycle; conditions; ci)    # fully evaluated first: a producer left running would hold the state lock (fd 9)
+    all=$(lifecycle; conditions; ci; cloud)    # fully evaluated first: a producer left running would hold the state lock (fd 9)
     while IFS=$'\t' read -r id closed line; do
         [ -n "$id" ] || continue
         seen "$id" && continue

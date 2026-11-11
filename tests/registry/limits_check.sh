@@ -163,9 +163,10 @@ PCREC_MIN_REQ_RUN_BITS
 PCREC_MAX_REQ_RUN_POS_SET
 PCREC_MAX_ALTNF_WORK
 PCREC_MAX_REQ_PIECES
-PCREC_UCP_NARROW_MAX_INTERVALS
 PCREC_MAX_CTX_SETS
 PCREC_MAX_CTX_ATOMS
+PCREC_MAX_CHAR_STEP_SETS
+PCREC_MAX_CHAR_STEP_ATOMS
 PCREC_MAX_VAR_NAME_LEN
 PCREC_MAX_VAR_NEST_DEPTH
 VM_INLINE_CHAIN_MAX_BYTES
@@ -179,8 +180,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 82 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then   # 82 at the [RUN-POS-SET] catch-up merge (lane altcatch): both sides took 78 -> 80 with different rows, git kept the shared LA_* pair once
-    ok "[count] --list-limits reports all 82 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 83 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then   # 82 at the [RUN-POS-SET] catch-up merge (lane altcatch): both sides took 78 -> 80 with different rows, git kept the shared LA_* pair once; 84 at [UCP] U3 (PCREC_MAX_CHAR_STEP_SETS, PCREC_MAX_CHAR_STEP_ATOMS); 83 at review r4 ucpu3 RULES-9 (PCREC_UCP_NARROW_MAX_INTERVALS retired: every UCP set compiles, the knee routed nothing)
+    ok "[count] --list-limits reports all 83 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true
@@ -343,7 +344,8 @@ done <<< "$anchored"
 # three kinds and the population needed a fourth:
 #   SENTINELS (a reserved value the surrounding type cannot otherwise mean):
 #     PREMUL_DEAD (emit_dfa.c, the pre-multiplied table's dead cell),
-#     REG_SEL_ANY (internal.h), PCREC_DFA_DEAD (internal.h),
+#     REG_SEL_ANY (internal.h), PCREC_DFA_DEAD (internal.h), ISL_SET_NONE and
+#     ISL_SET_ALL (dfa.c, a character set's index: none, and the universal set),
 #     PCREC_RXT_WAVE_RESERVED (internal.h, the reserved-wave marker)
 #   API ENUM VALUES (a value the public header PROMISES, so it is a contract
 #     rather than a policy): PCREC_ENGINE_DFA/PCREC_ENGINE_VM (lib/pcrec.h,
@@ -567,6 +569,8 @@ SELECT_MAX_ROUNDS"
 NONLIMIT_ALLOWLIST="PREMUL_DEAD
 REG_SEL_ANY
 PCREC_DFA_DEAD
+ISL_SET_NONE
+ISL_SET_ALL
 PCREC_RXT_WAVE_RESERVED
 PCREC_ENGINE_DFA
 PCREC_ENGINE_VM

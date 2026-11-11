@@ -217,6 +217,8 @@ PROCS="${PROCS:-$PROCS_DEFAULT}"
 KEEP="${KEEP:-0}"
 SKIP_ORACLE="${SKIP_ORACLE:-0}"
 AXES="${AXES:-}"
+# axes_has WORD: AXES= names exactly WORD (a whole space-separated word).
+axes_has() { case " $AXES " in (*" $1 "*) return 0 ;; esac; return 1; }
 # [TT-4M] STEP 2c / axbatch — see the header comment above for why this is
 # INHERITED (default 0) rather than given its own axes-stage default here.
 HARNESS_BATCH="${HARNESS_BATCH:-0}"
@@ -596,6 +598,23 @@ declare -A REFUSAL_PATTERN=(
     # reaches src/gen/emit_vm.c's own cap message directly ("pattern too
     # large (VM exceeds 131072 emitted nodes)").
     ["-fno-altcls-merge"]="pattern too large (VM exceeds"
+    # [UCP] U3 (lane ucax, 2026-11-11): under `-e utf8` a `\b`/`\B` over the
+    # Unicode word set is not byte-expressible and takes the character-stepped
+    # DFA, which is the ONLY engine that reads that word set (cli.md §1.9¶7:
+    # "no other engine reads the Unicode word set yet, so under `-e utf8` such
+    # a pattern is REFUSED ... `--engine=vm`"). So the two axes that take the
+    # DFA away reach that deliberate refusal, each by its own text
+    # (src/opt/select_engine.c `island_refuse`), measured on run 43053543333:
+    # `--engine=vm` 8728 cases, "... which --engine=vm excludes: the VM cannot
+    # read that word set yet; restrict the word set with (?aW)"; and
+    # `-fno-ctx-node` 87 cases (tests/utf8/island_illformed.rxt), where the
+    # denial makes the lookaround a VM need, "... needs the VM engine, which
+    # cannot read that word set yet". The substrings are the diagnostics' own
+    # tails, so any other refusal text stays UNDOCUMENTED. The product arm
+    # `--engine=vm -fno-start-set` inherits the first through its component
+    # flag, and its [START-SET] check below reads this same table.
+    ["--engine=vm"]="--engine=vm excludes: the VM cannot read that word set yet"
+    ["-fno-ctx-node"]="needs the VM engine, which cannot read that word set yet"
     # `-fno-size-term` denies the size term's own K-ladder (the mechanism
     # this whole file's r40 R1 witness exists to test), so on this tower
     # the emitted C reverts to its unchunked size and trips the emitted-
@@ -630,6 +649,8 @@ declare -A REFUSAL_FLOOR=(
     ["-fno-counter"]=180
     ["-fprefilter"]=12000
     ["--engine=dfa"]=8000
+    ["--engine=vm"]=4000       # half the 8728 measured (run 43053543333)
+    ["-fno-ctx-node"]=40       # under half the 87 measured
 )
 
 # ============================================================================
@@ -1302,6 +1323,10 @@ fi
 # ============================================================================
 
 BASE_DUMP="$WORKDIR/base.tsv"
+if [ -n "${AXES_PLAN:-}" ]; then
+    # AXES_PLAN=1: list what this AXES= would run (below) and exit; no baseline, no passes ([CLOUD-SUITE]).
+    :
+else
 echo
 if [ "$HARNESS_BATCH" -ge 1 ]; then
     echo "axes: HARNESS_BATCH=$HARNESS_BATCH — baseline AND every axis run below compile the corpus through the batched dispatch path (docs/testing.md's \"HARNESS_BATCH\" section); unset/0 is the unbatched per-pattern path this sweep has always used"
@@ -1330,6 +1355,7 @@ if [ "$base_keys" -eq 0 ]; then
     exit 1
 fi
 echo "axes: baseline: $base_keys cases dumped, $((t1 - t0))s"
+fi
 
 # ============================================================================
 # THE TWELVE BIT-FLAG AXES
@@ -1684,11 +1710,12 @@ done
 # walk_arms.def); its answers must equal the default's. Span arms E2's
 # `restore=zero` runs T3's zero-width rows (E-4, E-5) as today's cut; span
 # arms R1's ([REPEAT-RUN]) `restore=rep` runs the power arm's rows (a repeat
-# of a consuming body as its copies) in their old form, under the same rule.
+# of a consuming body as its copies) in their old form, under the same rule. `restore=tie` puts R1's rarity tie rule back to the
+# predecessor's choice (information, then the first run).
 # A later span arms unit adds its arm here (`restore=look`).
 # Selected by the empty AXES= or by its spelling.
 INTERNAL_ARMS=("--harness=no-compound" "--harness=restore=empty"
-               "--harness=restore=zero" "--harness=restore=rep")
+               "--harness=restore=zero" "--harness=restore=rep" "--harness=restore=tie")
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0
 for arm in "${INTERNAL_ARMS[@]}"; do
@@ -1785,6 +1812,8 @@ if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
     fi
     echo "axes: --vm-entry-shape tier = $_shape_tier"
     for _shape in $_shape_rungs; do
+        # [CLOUD-SUITE] one rung selectable alone: the bare token selects all rungs, `--vm-entry-shape=N` rung N
+        [ -z "$AXES" ] || axes_has --vm-entry-shape || axes_has "--vm-entry-shape=$_shape" || continue
         job_label+=("--vm-entry-shape=$_shape (§2.21)")
         job_flags+=("--vm-entry-shape=$_shape")
         job_lost_ok+=("0")
@@ -1837,6 +1866,8 @@ $(printf '%s\n' "$_pl_rows" | awk -F'\t' '$1 == "part-inline-rank" { print $3 }'
     echo "axes: part-layout tier = $_part_tier"
     while IFS= read -r _f; do
         [ -n "$_f" ] || continue
+        # [CLOUD-SUITE] one cell selectable alone by its own spelling; the bare token `--part-` selects all
+        [ -z "$AXES" ] || axes_has --part- || axes_has "$_f" || continue
         job_label+=("$_f (part layout, tuning.md §2.51)")
         job_flags+=("$_f")
         job_lost_ok+=("0")
@@ -1926,6 +1957,22 @@ for _i in "${!memfn_cell_name[@]}"; do
     job_flags+=("${memfn_cell_flags[$_i]}"); job_lost_ok+=("0")
     memfn_arm_ran=1
 done
+
+# [CLOUD-SUITE] AXES_PLAN=1: print what this AXES= (and AXES_FULL) would run, then exit before any baseline or
+# pass. `plan-job<TAB>label<TAB>flags` per job; `plan-pass<TAB>name` per run that is no job (the -futf-check arm,
+# the PC-4 oracle cross-check, each --memfn reach cell). tests/ci/cloud_axes_check.sh sums these over every shard
+# of the cloud axes table and holds the sum to the unsplit list, each line exactly once.
+if [ -n "${AXES_PLAN:-}" ]; then
+    for _i in "${!job_label[@]}"; do
+        printf 'plan-job\t%s\t%s\n' "${job_label[$_i]}" "${job_flags[$_i]}"
+    done
+    if [ -z "$AXES" ] || axes_has -futf-check; then printf 'plan-pass\t-futf-check arm\n'; fi
+    [ "$SKIP_ORACLE" = "1" ] || printf 'plan-pass\tPC-4 oracle cross-check\n'
+    for _i in "${!memfn_cell_name[@]}"; do
+        printf 'plan-pass\tmemfn reach cell %s %s\n' "${memfn_cell_name[$_i]}" "${memfn_cell_layer[$_i]}"
+    done
+    exit 0
+fi
 
 # ============================================================================
 # [TT-12 STEP 1] RUN THE JOB LIST PAIRWISE — two axes concurrently, each at
@@ -2225,10 +2272,24 @@ if [ -f "$WORKDIR/ss_vm_base.tsv" ] && [ -f "$WORKDIR/ss_vm_deny.tsv" ]; then
                    -f "$SCRIPT_DIR/dump_diff.awk" "$WORKDIR/ss_vm_deny.tsv" 2>/dev/null)"
     echo "  $ss_line"
     ss_bad=0; ss_allowed=0
-    for f_ in mismatches lost gained refused; do
+    for f_ in mismatches lost gained; do
         v_="$(echo "$ss_line" | grep -oE "$f_=[0-9]+" | cut -d= -f2)"
         [ "${v_:-1}" -gt 0 ] && { ss_bad=1; echo "AXIS FAIL: [START-SET] product arm: $f_=${v_:-?}" >&2; }
     done
+    # A REFUSED row passes only as `--engine=vm`'s own documented limit
+    # (REFUSAL_PATTERN, the one table) refused by BOTH sides: the deny must not
+    # move the refusal set, and any other refusal text is undocumented.
+    ss_refdoc=0; ss_refbad=0
+    while IFS=$'\t' read -r cls key btrc bout atrc aout; do
+        [ "$cls" = "REFUSED" ] || continue
+        if [ "$btrc" = "REFUSED" ] && printf '%s' "$aout" | grep -qF -- "${REFUSAL_PATTERN[--engine=vm]}"; then
+            ss_refdoc=$((ss_refdoc + 1))
+        else
+            ss_refbad=$((ss_refbad + 1)); ss_bad=1
+            [ "$ss_refbad" -le 20 ] && echo "AXIS FAIL: [START-SET] product arm: UNDOCUMENTED refusal at $key: \"$aout\" (base=$btrc)" >&2
+        fi
+    done < "$ss_rows"
+    echo "  product arm refusals: documented=$ss_refdoc undocumented=$ss_refbad"
     while IFS=$'\t' read -r cls key btrc bout atrc aout; do
         [ "$cls" = "GIVEUP1" ] || continue
         if giveup1_named "-fno-start-set" "$key"; then

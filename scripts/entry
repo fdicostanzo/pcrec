@@ -5,12 +5,20 @@
     scripts/entry -g REGEX [-in N] [-l N] [-p PROFILE] [-s SECTION] [--state S] [--rev SHA]
                                              item grep: match each item at level -in (default 0), print it whole
                                              at level -l (default 0). The archive is read only with -p completed.
+                                             Hits come best first (doc_profiles.RELEVANCE: ID/slug, statement,
+                                             {keywords}, working fields, body; then more matches, then newer), at most
+                                             15 per call: `entry: N hits; showing 1-15; next: --page 2`. --page K
+                                             continues; --all lifts the cap. Over 15 hits -l 1/-l 2 is refused (rc 2).
     scripts/entry --work [-p PROFILE] [-s SECTION] [-k WORD]
-                                             plan: every not-started and blocked row at level 1, by section
+                                             plan: every ready, started, blocked, not-started row (in that order), then ongoing, at level 1
     scripts/entry --levels [-p PROFILE]      the level and work-view rows of the profile table
     scripts/entry --over-cap                 soft-cap line for scripts/gestalt (docs/dev/doc_format.md)
+    scripts/entry --lint-scripts             scripts/INDEX.md covers every script, every line names a file (make test-doc-lint)
     scripts/entry --selftest                 planted fixtures: one per routing row, dormant, over-cap, --rev
-    Levels: 0 the index line(s); 1 + the working fields; 2 + the full entry.
+    Levels: 0 the index line(s); 1 + the working fields; 2 + the full entry (a script: its header comment).
+    Profiles (-p): plan, completed (the archive), decisions, known, upstream (dormant until their unit), scripts.
+    Examples:  entry D26 | entry D26 -l 0 | entry D47.a2 | entry LANECHECK -l 1 | entry boxqueue | entry hooks/pre-push
+               entry -g kill -p scripts | entry -g 'trigger.*gate' -in 2 | entry --work -s backlog
     Output ends `entry: <n> items (profile <p>, level <l>)`; exit 0 found, 1 none, 2 ambiguous.
 
 The profile table is scripts/doc_profiles.py; the plan grammar is scripts/plan_lint.py's (imported, never a
@@ -29,7 +37,7 @@ import plan_lint  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 ARCH_HEAD = re.compile(r"^( *)- \[([^\]\n]+)\] STATE:(\S+)")  # the archive's states vary (completed, done, ...)
-L1_PLAN = ("next", "trigger", "status", "refs", "now")
+L1_PLAN = ("next", "trigger", "status", "refs", "now", "ready", "waits", "why", "review")
 ALIAS = re.compile(
     r"^(D[0-9]+) (?:add\.|addendum|ADDENDUM|Addendum)(?: (.+))?$"
     r"|^(D[0-9]+) (first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth) (?:add\.|addendum|ADDENDUM)$")
@@ -73,6 +81,14 @@ class Item:
                 out.append(s)
         return out
 
+    def owner_wait(self):
+        """The plain-words question of a `waits: owner — ...` field, else None (the work view's first section)."""
+        for s in self.own:
+            m = plan_lint.ATTR.match(s.strip())
+            if m and m.group(1) == "waits" and m.group(3).startswith(OWNER_WAIT):
+                return m.group(3)[len(OWNER_WAIT):]
+        return None
+
     def text(self, level):
         """The item rendered at LEVEL (a list of lines)."""
         form = self.profile["form"]
@@ -85,6 +101,8 @@ class Item:
             return [self.head] + self.own
         if form == "pair":
             return pair_text(self, level)
+        if form == "list":
+            return [self.head] + (["    " + ln if ln else "" for ln in self.header()] if level >= 2 else [])
         kids = [c.head for c in self.children]
         if level == 0:
             return [self.head] + kids
@@ -135,6 +153,100 @@ def parse_single(text, profile):
             while it.own and it.own[-1].strip() == "":
                 it.own.pop()
     return items
+
+
+# ---------------------------------------------------------------- the list form (scripts/INDEX.md)
+
+LIST_LINE = re.compile(r"^- (\S+) (\S+) — (.*)$")
+LIST_SHAPE = re.compile(r"^when: .+?; does: .+\. \{[^{}]+\}$")
+
+
+def header_block(text):
+    """The file's own header comment (a list of lines): a `#` run, a leading docstring or a leading /* */ block,
+    after an optional shebang. [] when there is none."""
+    lines = text.split("\n")
+    i = 1 if lines and lines[0].startswith("#!") else 0
+    if i >= len(lines):
+        return []
+    first = lines[i].lstrip()
+    for opener, closer in (('"""', '"""'), ("/*", "*/")):
+        if first.startswith(opener):
+            out = []
+            for ln in lines[i:]:
+                out.append(ln)
+                if closer in (ln.lstrip()[len(opener):] if len(out) == 1 else ln):
+                    break
+            return out
+    out = []
+    while i < len(lines) and lines[i].startswith("#"):
+        out.append(lines[i])
+        i += 1
+    return out
+
+
+def list_index(text, profile, src):
+    out = []
+    for raw in text.split("\n"):
+        m = LIST_LINE.match(raw)
+        if m and re.fullmatch(profile["id"], m.group(1)):
+            it = Item(profile, m.group(1), raw, state=m.group(2))
+            it.header = (lambda path: lambda: header_block(src.read(path) or ""))(
+                os.path.join(os.path.dirname(profile["index"]), m.group(1)))
+            out.append(it)
+    return out
+
+
+def list_lookup(items, key):
+    """An exact name (with or without the `scripts/` prefix), else a unique extension-less stem."""
+    k = key[len("scripts/"):] if key.startswith("scripts/") else key
+    hit = [i for i in items if i.id == k]
+    if hit:
+        return hit
+    return [i for i in items if i.id.rsplit(".", 1)[0] == k] if "." not in k else []
+
+
+def lint_scripts(root, profile, out, src=None):
+    """Failures (a list of lines) of the scripts index against the tree under ROOT."""
+    src = src or Source(root)
+    d = os.path.dirname(profile["index"])
+    text = src.read(profile["index"])
+    if text is None:
+        return ["%s: cannot read" % profile["index"]]
+    exempt = [re.compile(x) for x in profile.get("exempt", ())]
+    bad, names, lines = [], {}, 0
+    for n, raw in enumerate(text.split("\n"), 1):
+        if not raw.startswith("- "):
+            continue
+        m = LIST_LINE.match(raw)
+        if not m or not re.fullmatch(profile["id"], m.group(1)):
+            bad.append("%s:%d: not an index line `- NAME STATE — when: ...; does: .... {keywords}`: %s" % (profile["index"], n, raw[:80]))
+            continue
+        lines += 1
+        name, state, rest = m.groups()
+        if name in names:
+            bad.append("%s:%d: %s listed twice (first at line %d)" % (profile["index"], n, name, names[name]))
+        names[name] = n
+        if state not in profile["states"]:
+            bad.append("%s:%d: %s has state %r (want one of %s)" % (profile["index"], n, name, state, "/".join(profile["states"])))
+        if not LIST_SHAPE.match(rest):
+            bad.append("%s:%d: %s: after the dash want `when: <situation>; does: <what>. {keywords}`" % (profile["index"], n, name))
+        path = os.path.join(root, d, name)
+        if state != "retired":
+            if not os.path.isfile(path):
+                bad.append("%s:%d: %s names no file %s/%s" % (profile["index"], n, name, d, name))
+            elif not [ln for ln in header_block(src.read(os.path.join(d, name)) or "") if ln.strip("#/* \t\"")]:
+                bad.append("%s/%s: live script has no header comment" % (d, name))
+    top = os.path.join(root, d)
+    for dp, dns, fns in os.walk(top):
+        dns[:] = sorted(x for x in dns if x != "__pycache__")
+        for fn in sorted(fns):
+            rel = os.path.relpath(os.path.join(dp, fn), top)
+            if any(x.fullmatch(rel) for x in exempt) or fn.endswith(".pyc"):
+                continue
+            if rel not in names:
+                bad.append("%s/%s has no line in %s" % (d, rel, profile["index"]))
+    out.append(lines)
+    return bad
 
 
 # ---------------------------------------------------------------- the pair form
@@ -245,6 +357,8 @@ class Ctx:
             res = None
         elif p["form"] in ("single", "archive"):
             res = parse_single(text, p)
+        elif p["form"] == "list":
+            res = list_index(text, p, self.src)
         else:
             res = pair_index(text, p)
             dt = self.src.read(p["details"]) if p["details"] else None
@@ -288,7 +402,7 @@ def route(ctx, key):
             return resolve_alias(ctx, p, m, k)
     # 2 a profile id, in full
     for p in ctx.profiles:
-        if p["id"] and re.fullmatch(p["id"], k):
+        if p["id"] and p["form"] != "list" and re.fullmatch(p["id"], k):
             if p["form"] == "dormant":
                 return dormant_result(p)
             r = lookup(ctx, p, k)
@@ -296,7 +410,7 @@ def route(ctx, key):
     # 3 a ruling number D47.6
     m = re.fullmatch(r"(D[0-9]+)\.([0-9]+)", k)
     if m:
-        p = next((p for p in ctx.profiles if p["id"] and re.fullmatch(p["id"], m.group(1))), None)
+        p = next((p for p in ctx.profiles if p["id"] and p["form"] != "list" and re.fullmatch(p["id"], m.group(1))), None)
         if p is not None:
             if p["form"] == "dormant":
                 return dormant_result(p)
@@ -316,7 +430,7 @@ def route(ctx, key):
     # 5 a decisions addendum Dn.aN
     m = re.fullmatch(r"(D[0-9]+)\.a(%s)" % ADDENDUM_N, k)
     if m:
-        p = next((p for p in ctx.profiles if p["id"] and re.fullmatch(p["id"], m.group(1))), None)
+        p = next((p for p in ctx.profiles if p["id"] and p["form"] != "list" and re.fullmatch(p["id"], m.group(1))), None)
         if p is not None:
             if p["form"] == "dormant":
                 return dormant_result(p)
@@ -336,6 +450,14 @@ def route(ctx, key):
         if hits:
             return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0,
                           "slug %s names %s" % (k, ", ".join(i.id for i in hits)) if len(hits) > 1 else None)
+    # 6b a script name (`boxqueue`, `plan_lint.py`, `hooks/pre-push`): every live list profile's index
+    hits = []
+    for p in ctx.profiles:
+        if p["form"] == "list":
+            hits += list_lookup(ctx.items(p) or [], k)
+    if hits:
+        return Result(hits, EXIT_AMBIG if len(hits) > 1 else 0,
+                      "name %s is ambiguous: %s" % (k, ", ".join(i.id for i in hits)) if len(hits) > 1 else None)
     # 7
     return Result(rc=EXIT_NONE, note="entry: no item for %r" % key)
 
@@ -413,6 +535,19 @@ def over_cap(ctx, out):
     return 0
 
 
+def lint_cmd(ctx, out):
+    p = next((p for p in ctx.profiles if p["form"] == "list"), None)
+    if p is None:
+        out.write("entry: no list profile\n")
+        return 1
+    cnt = []
+    bad = lint_scripts(ctx.root, p, cnt)
+    for b in bad:
+        out.write("FAIL: " + b + "\n")
+    out.write("entry: lint %s: %d index lines, %d failures\n" % (p["index"], cnt[0] if cnt else 0, len(bad)))
+    return 1 if bad else 0
+
+
 def sel_profiles(ctx, name):
     if name:
         ps = [p for p in ctx.profiles if p["name"] == name]
@@ -440,6 +575,8 @@ def run(argv, out, root=ROOT, profiles=None):
         return levels_table(ctx, a["p"], out)
     if a["over_cap"]:
         return over_cap(ctx, out)
+    if a["lint_scripts"]:
+        return lint_cmd(ctx, out)
     if a["work"] or a["g"] is not None:
         return list_items(ctx, a, out)
     if not a["key"]:
@@ -455,6 +592,11 @@ def run(argv, out, root=ROOT, profiles=None):
         lines.append("entry: " + res.note if not res.note.startswith("entry:") else res.note)
     emit(out, lines, res.items, level)
     return res.rc if res.items else EXIT_NONE
+
+
+WORK_ORDER = ("ready", "started", "blocked", "not-started", "ongoing")
+OWNER_WAIT = "owner — "      # a row waiting on the owner (Frank 2026-11-10): listed first, in its own section
+OWNER_SECTION = "waiting on the owner"
 
 
 def list_items(ctx, a, out):
@@ -479,7 +621,7 @@ def list_items(ctx, a, out):
                 continue
             if a["state"] and it.state != a["state"]:
                 continue
-            if a["work"] and (p["form"] != "single" or it.state not in ("not-started", "blocked")):
+            if a["work"] and (p["form"] != "single" or it.state not in WORK_ORDER):
                 continue
             blob = "\n".join(it.text(a["in"] if a["in"] is not None else 0))
             if rx is not None and not rx.search(blob):
@@ -487,23 +629,89 @@ def list_items(ctx, a, out):
             if a["k"] and a["k"].lower() not in "\n".join(it.text(1)).lower():
                 continue
             hits.append(it)
+    def work_group(it):
+        return OWNER_SECTION if it.owner_wait() is not None else it.state
+    if a["work"]:  # owner-waits first, then ready (Frank 2026-11-10: a ready stage outranks not-started work), ongoing last
+        hits.sort(key=lambda it: -1 if work_group(it) == OWNER_SECTION else WORK_ORDER.index(it.state))
+
+    n = len(hits)
+    ranked = a["g"] is not None and not a["work"]
+    if ranked:
+        hits = rank_hits(hits, rx)
+    size = doc_profiles.PAGE_SIZE
+    note = None
+    if ranked and n > size and not a["all"]:
+        if level >= 1:
+            out.write("entry: %d hits; -l %d refused above %d hits: narrow the regex, add -p/-s/--state, "
+                      "or name one ID (--all overrides)\n" % (n, level, size))
+            emit(out, [], hits, level, a["p"])
+            return 2
+        pages = (n + size - 1) // size
+        pg = a["page"] or 1
+        if pg < 1 or pg > pages:
+            out.write("entry: %d hits; no page %d (pages 1-%d)\n" % (n, pg, pages))
+            return 1
+        lo = (pg - 1) * size
+        hits = hits[lo:lo + size]
+        note = "entry: %d hits; showing %d-%d" % (n, lo + 1, lo + len(hits))
+        if pg < pages:
+            note += "; next: --page %d" % (pg + 1)
     lines, sect = [], object()
     for i, it in enumerate(hits):
-        if a["work"] and it.section != sect:
-            sect = it.section
+        if a["work"] and work_group(it) != sect:
+            sect = work_group(it)
             lines.append("## " + str(sect))
         elif i and level >= 1:
             lines.append("")
         lines += it.text(level)
+    if note:
+        lines = [ln if len(ln) <= LINE_CLIP else ln[:LINE_CLIP] + "…" for ln in lines]  # a page stays small; KEY has the whole
+        lines.append(note)
+        out.write("".join(ln + "\n" for ln in lines))
+        out.write("entry: %d items (profile %s, level %d)\n" % (n, a["p"] or ",".join(sorted({p["name"] for p in ps if p["form"] != "dormant"})), level))
+        return 0
     emit(out, lines, hits, level, a["p"])
     return 0 if hits else EXIT_NONE
 
 
+# -g relevance: the table is doc_profiles.RELEVANCE; each row's field is cut from the item here.
+LINE_CLIP = 200
+KEYWORDS = re.compile(r"\{[^{}]*\}\s*$")
+
+
+def fields(it):
+    head = it.index_line
+    kw = KEYWORDS.search(head)
+    l0, l1, l2 = it.text(0), it.text(1), it.text(2)
+    return {
+        "id": "\n".join(x for x in (it.id, it.slug) if x),
+        "statement": head[:kw.start()] if kw else head,
+        "keywords": kw.group(0) if kw else "",
+        "working": "\n".join(l1[len(l0):]),
+        "body": "\n".join(l2[len(l1):]),
+    }
+
+
+def rank_hits(hits, rx):
+    """Order HITS by doc_profiles.RELEVANCE (first matching row), then more matches, then newer (higher numeric
+    id, else later in the file) first. Stable for equal keys."""
+    keyed = []
+    for pos, it in enumerate(hits):
+        f = fields(it)
+        rank = next((r for r, (name, _) in enumerate(doc_profiles.RELEVANCE) if rx.search(f[name])), len(doc_profiles.RELEVANCE))
+        count = len(rx.findall("\n".join(it.text(2))))
+        m = re.fullmatch(r"[DKU]([0-9]+)", it.id)
+        newer = int(m.group(1)) if m else -1  # D/K/U ids number by age; any other id: later in the file is newer
+        keyed.append((rank, -count, -newer, -pos, it))
+    keyed.sort(key=lambda k: k[:4])
+    return [k[4] for k in keyed]
+
+
 def parse_args(argv):
     a = dict(key=None, l=None, rev=None, g=None, **{"in": None}, p=None, s=None, state=None, k=None,
-             work=False, levels=False, over_cap=False)
+             work=False, all=False, page=None, levels=False, over_cap=False, lint_scripts=False)
     flags = {"-l": ("l", int), "--rev": ("rev", str), "-g": ("g", str), "-in": ("in", int), "-p": ("p", str),
-             "-s": ("s", str), "--state": ("state", str), "-k": ("k", str)}
+             "-s": ("s", str), "--state": ("state", str), "-k": ("k", str), "--page": ("page", int)}
     i = 0
     while i < len(argv):
         t = argv[i]
@@ -519,10 +727,14 @@ def parse_args(argv):
             continue
         if t == "--work":
             a["work"] = True
+        elif t == "--all":
+            a["all"] = True
         elif t == "--levels":
             a["levels"] = True
         elif t == "--over-cap":
             a["over_cap"] = True
+        elif t == "--lint-scripts":
+            a["lint_scripts"] = True
         elif t.startswith("-") and len(t) > 1:
             return None
         elif a["key"] is None:
@@ -539,7 +751,7 @@ PLAN_FIX = """# fixture plan
 
 ## Policy
 
-    - [ID] STATE:<not-started|started|blocked|deferred> — <title>
+    - [ID] STATE:<not-started|started|blocked|deferred|ongoing|ready> — <title>
     - [CHILD-ID] STATE:<state> — <child>
 
 - [ID] STATE:not-started — a template-looking tag outside the Policy fence is not this row
@@ -567,6 +779,19 @@ PLAN_FIX = """# fixture plan
   filed: 2026-11-01 test
   status (2026-11-02): stuck
   trigger: unblocked
+- [DD-4] STATE:ready — a ready fixture row
+  filed: 2026-11-01 test
+  status (2026-11-02): stage 2 designed
+  ready: stage 2; stage 1 landed abc123
+- [EE-5] STATE:ongoing — an open-ended fixture row
+  filed: 2026-11-01 test
+  status (2026-11-02): loops
+  why ongoing: no end state
+  review: yearly
+- [FF-6] STATE:started — an owner-waiting fixture row
+  filed: 2026-11-01 test
+  status (2026-11-02): designed
+  waits: owner — may stage 2 start?
 """
 ARCH_FIX = """# fixture archive
 
@@ -627,7 +852,7 @@ def selftest():
         with open(os.path.join(tmp, name), "w", encoding="utf-8") as fh:
             fh.write(text)
 
-    def check(label, argv, rc, has=(), lacks=(), profiles=None, root=None, exact=None):
+    def check(label, argv, rc, has=(), lacks=(), profiles=None, root=None, exact=None, order=()):
         n[0] += 1
         buf = io.StringIO()
         got = run(argv, buf, root or tmp, profiles or doc_profiles.FIXTURE_PROFILES)
@@ -637,6 +862,9 @@ def selftest():
             why.append("rc %d, want %d" % (got, rc))
         why += ["missing %r" % s for s in has if s not in o]
         why += ["unexpected %r" % s for s in lacks if s in o]
+        pos = [o.find(t) for t in order]
+        if order and (min(pos) < 0 or pos != sorted(pos)):
+            why.append("order %r not in sequence" % (order,))
         if exact is not None and o != exact:
             why.append("output %r != %r" % (o, exact))
         if why:
@@ -686,8 +914,10 @@ def selftest():
     check("grep -in 2 content hit", ["-g", "stuck", "-in", "2", "-p", "fixplan", "-l", "1"], 0, has=["[CC-3]", "trigger: unblocked"])
     check("grep archive only with -p", ["-g", "second PC-3"], 1, lacks=["second PC-3 row"])
     check("grep archive -p", ["-g", "second PC-3", "-p", "fixarch"], 0, has=["the second PC-3 row"])
-    # work view: not-started + blocked at level 1, by section, never the archive
-    check("work view", ["--work", "-p", "fixplan"], 0, has=["## Backlog", "[BB-2]", "next: later", "[CC-3]", "[AA-1.1]"], lacks=["[AA-1] STATE:started"])
+    # work view: ready, started, blocked, not-started, then ongoing at level 1, by state, never the archive
+    check("work view", ["--work", "-p", "fixplan"], 0, has=["## not-started", "## started", "[BB-2]", "next: later", "[CC-3]", "[AA-1.1]", "[AA-1] STATE:started"])
+    check("work view order", ["--work", "-p", "fixplan"], 0, order=["## waiting on the owner", "## ready", "## started", "## blocked", "## not-started", "## ongoing"])
+    check("work view owner section holds the row once", ["--work", "-p", "fixplan"], 0, has=["waits: owner — may stage 2 start?"], order=["## waiting on the owner", "[FF-6]", "## ready"])
     check("work view section filter", ["--work", "-p", "fixplan", "-s", "backlog"], 0, has=["[BB-2]"], lacks=["[AA-1.1]"])
     check("work view keyword", ["--work", "-p", "fixplan", "-k", "unblocked"], 0, has=["[CC-3]"], lacks=["[BB-2]"])
     check("levels table", ["--levels", "-p", "fixplan"], 0, has=["fixplan [single]"])
@@ -709,6 +939,53 @@ def selftest():
     n[0] += 1
     if rc != 0 or o.getvalue() != "entry: over-cap checked 0 pair indexes, 0 over\n":
         bad.append("over-cap on the real table: %r" % o.getvalue())
+    # the scripts profile (list form): level 2 prints the header, the lint plants
+    fs = [p for p in doc_profiles.FIXTURE_PROFILES if p["name"] == "fixscripts"]
+    good = ("- alpha.sh live — when: you need alpha; does: alpha things. {alpha, first}\n"
+            "- beta.py live — when: you need beta; does: beta things. {beta}\n"
+            "- hooks/h.sh live — when: a hook fires; does: guards. {hook}\n"
+            "- gone.sh retired — when: never; does: was removed. {old}\n")
+    files = {"alpha.sh": "#!/usr/bin/env bash\n# alpha -- the alpha header\n# second line\nset -u\n",
+             "beta.py": '#!/usr/bin/env python3\n"""beta -- the beta docstring.\n\nmore.\n"""\nimport os\n',
+             "hooks/h.sh": "#!/bin/sh\n# h -- hook header\n", "hooks/test_h.sh": "#!/bin/sh\nexit 0\n",
+             "tests/x.test": "x\n", "CLAUDE.md": "c\n"}
+
+    def mkscripts(index, extra=None):
+        shutil.rmtree(os.path.join(tmp, "fixscripts"), ignore_errors=True)
+        for rel, body in dict(files, **(extra or {})).items():
+            os.makedirs(os.path.dirname(os.path.join(tmp, "fixscripts", rel)), exist_ok=True)
+            w("fixscripts/" + rel, body)
+        w("fixscripts/INDEX.md", "# fixture index\n\n" + index)
+
+    def lint(label, index, want, extra=None):
+        mkscripts(index, extra)
+        o = io.StringIO()
+        rc = run(["--lint-scripts"], o, tmp, fs)
+        s = o.getvalue()
+        n[0] += 1
+        if (rc == 0) != (not want) or not all(x in s for x in want):
+            bad.append("lint-scripts %s: rc %d, want %s | %s" % (label, rc, want or "clean", s[:300].replace("\n", " / ")))
+
+    lint("clean (retired line needs no file; tests/, hooks/test_*, CLAUDE.md exempt)", good, ())
+    lint("script with no index line", good.replace("- beta.py live", "- zeta.py live"), ("beta.py has no line", "zeta.py names no file"))
+    lint("new file without a line", good, ("gamma.sh has no line",), extra={"gamma.sh": "# gamma header\n"})
+    lint("new hook without a line", good, ("hooks/new.sh has no line",), extra={"hooks/new.sh": "# hook header\n"})
+    lint("dangling live line", good + "- ghost.sh live — when: never; does: nothing. {ghost}\n", ("ghost.sh names no file",))
+    lint("line without when/does", good.replace("when: you need beta; does: beta things", "beta things"), ("beta.py: after the dash want",))
+    lint("line without keywords", good.replace(" {beta}", ""), ("beta.py: after the dash want",))
+    lint("duplicate line", good + good.split("\n")[0] + "\n", ("alpha.sh listed twice",))
+    lint("bad state", good.replace("alpha.sh live", "alpha.sh maybe"), ("alpha.sh has state",))
+    lint("live script with no header", good, ("alpha.sh: live script has no header",), extra={"alpha.sh": "#!/usr/bin/env bash\nset -u\n"})
+    lint("malformed dash line", good + "- just prose\n", ("not an index line",))
+    mkscripts(good)
+    check("scripts L0", ["alpha.sh", "-l", "0"], 0, profiles=fs, exact="- alpha.sh live — when: you need alpha; does: alpha things. {alpha, first}\nentry: 1 items (profile fixscripts, level 0)\n")
+    check("scripts L2 header, shell", ["alpha.sh"], 0, profiles=fs, has=["    # alpha -- the alpha header", "    # second line"], lacks=["set -u"])
+    check("scripts L2 header, docstring (stem)", ["beta"], 0, profiles=fs, has=['"""beta -- the beta docstring.', "more."], lacks=["import os"])
+    check("scripts/ prefix", ["fixscripts/alpha.sh", "-l", "0"], 1, profiles=fs)
+    check("scripts hooks path", ["hooks/h.sh", "-l", "1"], 0, profiles=fs, has=["hooks/h.sh live"])
+    check("scripts grep -p", ["-g", "alpha", "-p", "fixscripts"], 0, profiles=fs, has=["alpha.sh"], lacks=["beta.py"])
+    check("scripts grep by keyword", ["-g", "first", "-p", "fixscripts"], 0, profiles=fs, has=["alpha.sh"])
+    check("a D key is not routed to the scripts profile", ["D26"], 1, profiles=fs)
     # J8: --rev serves the form chosen by the files at that commit, with the working tree's table
     g = lambda *c: subprocess.run(["git", "-C", tmp] + list(c), capture_output=True, text=True)
     if g("init", "-q").returncode == 0:
@@ -723,6 +1000,33 @@ def selftest():
         check("J8 --rev, no such commit", ["BB-2", "--rev", "0" * 40], 1, profiles=[p for p in doc_profiles.FIXTURE_PROFILES if p["name"] == "fixplan"])
     else:
         bad.append("J8: git init failed in the scratch dir")
+    # -g relevance + pages: a body-only hit sorts after an ID hit and a statement hit; 40 rows page 15 at a time
+    rows = ["## Backlog", "- [ZZ-BODY] STATE:not-started — nothing here", "  next: has the word needle in a working field",
+            "- [AA-NOTE] STATE:not-started — a statement naming needle", "- [needle-id] STATE:not-started — plain"]
+    rows += ["- [PG-%d] STATE:not-started — page row needle %d" % (k, k) for k in range(1, 38)]
+    w("fixpage.md", "# fixture\n\n" + "\n".join(rows) + "\n")
+    pg = [p for p in doc_profiles.FIXTURE_PROFILES if p["name"] == "fixplan"]
+    pg = [dict(pg[0], name="fixpage", index="fixpage.md")]
+
+    def lines_of(argv):
+        b = io.StringIO()
+        run(argv, b, tmp, pg)
+        return b.getvalue().splitlines()
+
+    n[0] += 1
+    first = lines_of(["-g", "needle", "-in", "2"])
+    ids = [x for x in first if x.startswith("- [")]
+    if ids[:3] != ["- [needle-id] STATE:not-started — plain", "- [PG-37] STATE:not-started — page row needle 37", "- [PG-36] STATE:not-started — page row needle 36"] or not ids or "ZZ-BODY" in "".join(ids):
+        bad.append("relevance order: id, then statement (newer first), body last on the last page: %r" % ids[:4])
+    n[0] += 1
+    p2, p3 = [x for x in lines_of(["-g", "needle", "-in", "2", "--page", "2"]) if x.startswith("- [")], [x for x in lines_of(["-g", "needle", "-in", "2", "--page", "3"]) if x.startswith("- [")]
+    allids = [x for x in lines_of(["-g", "needle", "-in", "2", "--all"]) if x.startswith("- [")]
+    if len(ids) != 15 or first[-2] != "entry: 40 hits; showing 1-15; next: --page 2" or ids + p2 + p3 != allids or len(set(allids)) != 40 or "ZZ-BODY" not in allids[-1]:
+        bad.append("paging: pages 1-3 must tile the --all list (%d/%d/%d of %d)" % (len(ids), len(p2), len(p3), len(allids)))
+    check("page out of range", ["-g", "needle", "-in", "2", "--page", "4"], 1, profiles=pg, has=["no page 4"])
+    check("detail refused above the cap", ["-g", "needle", "-in", "2", "-l", "1"], 2, profiles=pg, has=["40 hits", "refused", "--all"])
+    check("detail allowed with --all", ["-g", "needle", "-in", "2", "-l", "1", "--all"], 0, profiles=pg, has=["ZZ-BODY"])
+    check("detail allowed under the cap", ["-g", "PG-1[0-3]\\]", "-l", "1"], 0, profiles=pg, has=["PG-12"])
     # the real plan parses (non-vacuity: the plan_lint floor) and its Policy templates are not items
     o = io.StringIO()
     rc = run(["-g", r"^- \[ID\]", "-p", "plan"], o, ROOT)

@@ -1805,9 +1805,13 @@ static Ast *p_atom(Ctx *cx)
      * modifier past this line; the two nodes differ in their row, so their
      * CLASS differs (`pcrec_ctx_class`) and no analysis can read one as the
      * other. */
-    case '^':
-        if (cx->mods->multiline) return mline_ctx(cx, CTXFN_MLINE_BOL, apos);
-        return pcrec_ast_pin(cx, CTXFN_SUBJECT_START);
+    case '^': {
+        /* [UCP] U3 its offset rides the node (`Ast.reg_at`, no row), for a
+         * refusal that names the anchor (select_engine.c's `island` row). */
+        Ast *a = cx->mods->multiline ? mline_ctx(cx, CTXFN_MLINE_BOL, apos)
+                                     : pcrec_ast_pin(cx, CTXFN_SUBJECT_START);
+        a->reg_at = apos;
+        return a; }
     case '$': {
         /* [VAR] THE `${` DOORWAY, and it is an `if` here rather than a
          * registry lookup because `$` is base grammar with no doorway to hang

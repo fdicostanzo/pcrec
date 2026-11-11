@@ -25,10 +25,12 @@ OUT = os.path.join(HERE, "out")
 
 # arm name (also the C prefix) -> source file
 ARMFILES = [("bb", "base.c"), ("bc", "basec.c"), ("bd", "bigcap.c"), ("bv", "vm.c"),
-            ("ia", "tw_kit4.c"), ("ib", "tw_page3w.c"), ("ic", "tw_bitmap1.c")]
+            ("ia", "tw_kit4.c"), ("ib", "tw_page3w.c"), ("ic", "tw_bitmap1.c"),
+            ("cs", "charstep.c")]
 LABEL = {"bb": "all-byte/VM as emitted today", "bc": "null control (same source as bb, other prefix)",
          "bd": "all-byte, size cap raised", "bv": "forced VM",
-         "ia": "island + kit(lambda=4)", "ib": "island + page3w", "ic": "island + bitmap1"}
+         "ia": "island + kit(lambda=4)", "ib": "island + page3w", "ic": "island + bitmap1",
+         "cs": "char-step as BUILT (pcrec's own emission; UNMEASURED until a window runs it)"}
 
 
 def loadavg():

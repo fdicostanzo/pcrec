@@ -31,12 +31,15 @@ tag print all and exit 2.
 KEY routing, first match: (1) an alias spelling (`Dn addendum K`, `Dn add. K`, `Dn <ordinal> addendum`, `Dn
 addendum YYYY-MM-DD`) to decisions; (2) a full profile id (`D26`, `K139`, `U22`); (3) `D47.6` (a ruling
 number: entry Dn, trailer `ruling 6 is in the body`); (4) an exact `[TAG]` (brackets optional); (5) `Dn.aN` (one
-addendum); (6) a lower-case kebab slug (every live pair profile; 2+ hits exit 2); (7) anything else exits 1.
+addendum); (6) a lower-case kebab slug (every live pair profile; 2+ hits exit 2); (6b) a script name under `scripts/` (`boxqueue`, `plan_lint.py`, `hooks/pre-push`; an extension-less stem naming 2+ files exits 2); (7) anything else exits 1.
 Plan linting refuses a `[TAG]` shaped like rows 2, 3, 5 or 6 (PL18), so a tag is always reachable.
 
-`-g` searches each item at level `-in` (default 0 = index lines; 2 = full content) and prints every matching item
-whole at level `-l` (default 0). The archive is read only with `-p completed`. `--work` = every not-started and
-blocked plan row at level 1, by section; it never reads the archive. `--rev SHA` reads the files at that commit
+`-g` searches each item at level `-in` (default 0 = index lines; 2 = full content) and prints the matching items
+at level `-l` (default 0), RELEVANCE-ordered (the RELEVANCE table in scripts/doc_profiles.py: a hit in the ID or
+slug ranks above the statement, then keywords, working fields, details body; ties: more matches, then newer), at
+most 15 per call (`--page K` for the next, `--all` lifts the cap); with more than 15 hits `-l 1`/`-l 2` is refused (rc 2) unless `--all` (Frank 2026-11-10: a bad search must not load a bulk of tokens).
+The archive is read only with `-p completed`. `--work` = first the rows with `waits: owner — ...` (section "waiting on the owner"), then every ready, started,
+blocked and not-started plan row (sections in that order), then ongoing rows, at level 1, by state; it never reads the archive. `--rev SHA` reads the files at that commit
 (read-only `git show`) with the WORKING TREE's profile table, the form chosen by which files exist at SHA.
 Output ends `entry: <n> items (profile <p>, level <l>)`; exit 0 found, 1 none, 2 ambiguous. Without the tool:
 `awk '/^## /{p=($2=="D26")} p' docs/dev/decisions_details.md` prints one entry once a pair exists.
@@ -79,6 +82,13 @@ It is silent under every cap. The line is recorded, not acted on: it is the owne
 | completed | plan_completed.md | `[TAG]` | `archive` (read-only) | none |
 | known | known_issues.md / known_issues_details.md | `K[0-9]+` | dormant until unit 3 | 180 / 280 / 32 KB |
 | upstream | upstream_issues.md / upstream_issues_details.md | `U[0-9]+[a-z]?` | dormant until unit 4 | 180 / 280 / 12 KB |
+| scripts | scripts/INDEX.md (no details file) | file name under `scripts/` | `list` | none |
+
+The `scripts` profile: `- <name> <live\|retired> — when: <situation>; does: <what>. {keywords}`, one line per file under
+`scripts/` and `scripts/hooks/` (exempt: CLAUDE.md, NOTES.md, INDEX.md, `tests/`, `hooks/test_*`). Level 0/1 = the line;
+level 2 adds the script's own header comment (no second file). `scripts/entry --lint-scripts` (`make test-doc-lint`)
+fails on a script with no line, a live line naming no file, a missing `when:`/`does:`/`{keywords}`, a duplicate, or
+a live script with no header comment.
 
 Each row also names its linter, extra paths, C9 floor and exemptions in `scripts/doc_profiles.py`; a new file or
 level is a row there, not code.

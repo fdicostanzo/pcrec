@@ -86,12 +86,34 @@ def unquote(text):
         out.extend(c.encode("utf-8", "surrogateescape")); i += 1
     raise ValueError("unterminated subject")
 
+class Unplaceable(Exception):
+    """A dumped case line this reader cannot place: a LOUD failure naming
+    file:line, never assumed inert (that assumption hid island_illformed.rxt's
+    336 mg/space-subject cells, 2026-11-11)."""
+
+# every case-line kind rxt_format.md §1.5 defines (the dump's `kind` column);
+# value = what precedes the subject: None, a startpos (ms/ns), a code (gu)
+KINDS = {"m": None, "n": None, "ms": "pos", "ns": "pos", "mc": None, "mg": None, "gu": "code"}
+
+def read_subject(path, rest):
+    """The subject at the head of REST: quoted text (§1.5.1) or the
+    `@file:"path"` form (§1.6, bytes byte-exact, path against the .rxt's own
+    directory). Returns the bytes."""
+    if rest.startswith("@file:"):
+        p, _ = unquote(rest[len("@file:"):])
+        full = p.decode("utf-8", "surrogateescape")
+        if not os.path.isabs(full):
+            full = os.path.join(os.path.dirname(path), full)
+        with open(full, "rb") as f:
+            return f.read()
+    return unquote(rest)[0]
+
 _files = {}
 def cell(path, line):
     """(encoding, pattern, subject, startpos) for the case at path:line, from
-    the file itself: the block is the nearest `pattern` line above it, and its
-    `encoding` line (block-scoped) if any. None for a line this reader cannot
-    place (a named `@file:` subject, a pattern-esc block)."""
+    the file itself: the block is the nearest `pattern`/`pattern-esc` line
+    above it, and its `encoding` line (block-scoped) if any. Raises
+    Unplaceable for any line it cannot place."""
     if path not in _files:
         with open(path, encoding="utf-8", errors="surrogateescape") as f:
             _files[path] = f.read().split("\n")
@@ -102,24 +124,38 @@ def cell(path, line):
         if l.startswith("encoding ") and pat is None:
             enc = l.split()[1]
         if l.startswith("pattern-esc "):
-            return None
+            try:
+                pat = unquote(l[len("pattern-esc "):].lstrip())[0].decode("utf-8", "surrogateescape")
+            except (ValueError, KeyError, IndexError) as e:
+                raise Unplaceable(f"{path}:{i+1}: bad pattern-esc ({e!r})")
+            break
         if l.startswith("pattern "):
             pat = lines[i].lstrip()[len("pattern "):]
             break
     if pat is None:
-        return None
+        raise Unplaceable(f"{path}:{line}: no pattern line above")
     l = lines[line - 1].strip()
-    m = re.match(r'^(?:under\s+\S+\s+)?(m|n|ms|ns|mc|gu)\s+(?:(\d+)\s+|\S+\s+)?(".*)$', l)
-    if not m:
-        return None
-    kind, pos, rest = m.group(1), m.group(2), m.group(3)
-    if kind == "gu":
-        pos = None
+    m = re.match(r"under\s+\S+\s+(.*)$", l)
+    if m:
+        l = m.group(1)
+    parts = l.split(None, 1)
+    kind = parts[0] if parts else ""
+    if kind not in KINDS:
+        raise Unplaceable(f"{path}:{line}: unknown case-line kind {kind!r}: {l!r}")
+    rest = parts[1].lstrip() if len(parts) > 1 else ""
+    pos = 0
+    if KINDS[kind]:
+        w = rest.split(None, 1)
+        if len(w) < 2 or (KINDS[kind] == "pos" and not w[0].isdigit()):
+            raise Unplaceable(f"{path}:{line}: no {KINDS[kind]} operand: {l!r}")
+        if KINDS[kind] == "pos":
+            pos = int(w[0])
+        rest = w[1].lstrip()
     try:
-        subj, _ = unquote(rest)
-    except (ValueError, KeyError, IndexError):
-        return None
-    return enc, pat, subj, int(pos) if pos and kind in ("ms", "ns") else 0
+        subj = read_subject(path, rest)
+    except (ValueError, KeyError, IndexError, OSError) as e:
+        raise Unplaceable(f"{path}:{line}: bad subject ({e!r}): {l!r}")
+    return enc, pat, subj, pos
 
 def load(p):
     d = {}
@@ -139,11 +175,17 @@ for key, b in base.items():
     if u is None:
         n["lost"] += 1; fails.append(f"LOST {key[0]}:{key[1]}"); continue
     path = key[0] if os.path.isabs(key[0]) else os.path.join(root, key[0])
-    c = cell(path, key[1]) if b[2] != "REFUSED" else None
+    c = None
+    if b[2] != "REFUSED":
+        try:
+            c = cell(path, key[1])
+        except Unplaceable as e:
+            n["unplaced"] += 1; n["fail"] += 1
+            fails.append(f"UNPLACEABLE {e}")
+            continue
     if c is None or c[0] != "utf8":
-        # byte (inert), a compile refusal, or a line this reader cannot place
-        if c is None and b[2] != "REFUSED": n["unplaced"] += 1
-        else: n["byte"] += 1
+        # byte (inert) or a compile refusal
+        n["byte"] += 1
         if u != b:
             n["fail"] += 1
             fails.append(f"{key[0]}:{key[1]}: -futf-check moved an answer it cannot act on: {b} -> {u}")

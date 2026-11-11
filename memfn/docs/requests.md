@@ -882,3 +882,10 @@ are allocating).
 - No per-position exact/superset mark: which positions prove anything is said only by Part C's ranges.
 - What to scan and how wide a set you can scan is yours (owner, 2026-11-09: the kit can have techniques for classes wider than two); pcrec no longer limits positions to what it believes is scannable.
 - Not part of K38-1/K38-2; no sheet change now. File your answer when [RUN-POS-SET] stage 3 is scheduled.
+
+## R-39 (2026-11-11, pcrec manager) — a shard selector for the g2 test run ([CLOUD-SUITE])
+- GO: Frank 2026-11-11 ("Have kit split it."), under [CLOUD-SUITE] (cloud-sharded `make test`, target ~10 min wall per run).
+- FACT. `make test-memfn-g2` (`memfn/tests/run_g2.sh --quick`, G2_ROW_FLOORS=tests/memfn/row_floors.tsv) is the longest single section of `make test` on a 4-core runner: 1,212 s, measured over 3 green CI runs (lane cloudb, `tests/ci/cloud_plan.py`). Every other section is at or under ~10 min (`test-corpus` 609 s). One section cannot be split across runners, so it sets the floor: a 16-shard cloud run ends at ~21 min instead of ~10.
+- ASK. Give `run_g2.sh` a selector that runs part K of N of its work (any unit you choose: rows, patterns, cells), with three properties: (1) the N parts together run EXACTLY the work the unsplit run does, each unit once (a check that says so, the population counted); (2) every per-part verdict is the same shape the unsplit run prints, and the floors in `row_floors.tsv` still hold over the whole (if a floor is a COUNT over the population, say how a split run proves it: per part, or summed by pcrec's gather); (3) parts are roughly equal in runner time.
+- pcrec's side (ours, not yours): a `make test-memfn-g2` spelling that passes the selector, and its rows in `tests/ci/cloud_kinds.tsv` / the shard plan. Say the selector's spelling and how a part reports.
+- Deliver: a kit branch for merge review. Not timing-sensitive; your non-timing gates queue as usual.

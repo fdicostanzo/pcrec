@@ -1,0 +1,5 @@
+(?(DEFINE)(?<g>\2))(a)(?<=(?&g))x	aax
+(?(DEFINE)(?<g>\1))(a)(?<=(?&g))x
+(?(DEFINE)(?<g>\1))(a)(?<=\2)x	aax
+(?(DEFINE)(?<g>b\1))(?<=(?&g))x
+(?(DEFINE)(?<g>\2b))(a)(?<=(?&g))x	aabx

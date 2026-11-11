@@ -183,7 +183,7 @@ static void pf_done_why(PatFacts *pf, PfFactId f, PfWhyCode code)
                 code == PF_WHY_ASSERT_AFTER || code == PF_WHY_CALL ||
                 code == PF_WHY_ERASED || code == PF_WHY_MARKED ||
                 code == PF_WHY_PIECES_WALL || code == PF_WHY_PIECES_OVER ||
-                code == PF_WHY_PIECES_ONE;
+                code == PF_WHY_PIECES_ONE || code == PF_WHY_ISLAND;
     pf->have |= pf_bit(f);
     pf->why[f] = (PfWhy){ decl ? PF_ST_DECLINED : PF_ST_DERIVED,
                           (unsigned char)code, 0, 0 };

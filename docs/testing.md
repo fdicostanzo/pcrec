@@ -957,7 +957,7 @@ make's `*** [...test-plan-lint] Error` line like every other section's.
 section (text only, no `all` dependency, well under a second): `scripts/entry --selftest` (a planted fixture per
 routing row, the REAL dormant profiles, `--over-cap` rounding edges, `--rev`, the work view, the Policy
 templates) and the real-tree `--over-cap` trailer. Its runner prints `checks passed:`/`checks failed:`. The
-section exists from T1 so the structural lists (TEST_SECTIONS, `.PHONY`, tests/ci/shards.tsv, the sanitizer
+section exists from T1 so the structural lists (TEST_SECTIONS, `.PHONY`, tests/ci/cloud_test_shards.tsv, the sanitizer
 exclusion list) move once; unit 1 adds doc_lint's decisions profile and T2 folds plan_lint in. The gestalt
 `docs` row's own cases are in scripts/tests/gestalt.test (`make testscripts`). Format: docs/dev/doc_format.md.
 
@@ -1064,7 +1064,23 @@ it from plan.md; each is its own row there and not restated in full.
 
 ## CI ([REL-1.6], 2026-09-21)
 
-**[CI-SHARD] (2026-10-13, lane `cishard`): CI NO LONGER RUNS ONE SERIAL
+**[CLOUD-SUITE] ciswitch (2026-11-11): CI RUNS THE CLOUD `test` MACHINERY.**
+`.github/workflows/ci.yml` has two jobs: `build` (`make` + `make strict`, ~2 min, the fast first red) and `test`, which
+CALLS the reusable `.github/workflows/cloud-test.yml` with `kind: test` (a `workflow_call`; the same file still runs
+on a push of `cloud/OWNER/KIND/NAME`). Its plan job reads the kind from `tests/ci/cloud_kinds.tsv`; 17 shards each
+run `make test-shard CISHARD=K/17` over the declared table `tests/ci/cloud_test_shards.tsv`; its gather job builds
+the ONE verdict (green only if every expected shard reported rc 0; a missing/timed-out shard is red by name).
+Expected wall ~18 min per push (the old 3-shard form: 52-68 min); the per-shard limit is the kinds table's `limit_min`
+(35). The table is held to `TEST_SECTIONS` exactly by `make test-ci-shards` (a `TEST_SECTIONS` member; a new section
+with no row turns it red, so it can never silently not run in CI) and by `make cloud-check`. Per-run knobs come from
+the call's inputs (`kind`, `owner` default `ci`, `name`, `ref`). Forks: a `pull_request` from a fork runs the same
+workflows with no secrets (none are used; the default read-only token uploads artifacts). A superseded run of a PR/main
+is cancelled by ci.yml's `concurrency` group, which takes the called jobs with it; the called workflow's own group is
+unique per run so it never queues behind another. Per-shard logs and the verdict are artifacts
+(`cloud-shard-<K>of<N>`, `cloud-verdict`). `tests/ci/shards.tsv` (the old 3-shard table) and ci.yml's 3-shard
+matrix are gone; the history below describes them as they were.
+
+**[CI-SHARD] (2026-10-13, lane `cishard`; SUPERSEDED by the paragraph above, kept as history): CI NO LONGER RUNS ONE SERIAL
 `make test`.** Run 38345462196 was killed at its 90-minute step timeout with 15
 of 68 sections still to run (growth, not a hang: `docs/dev/lanes/
 citime_report.md`), so the workflow is now a matrix of three jobs, each
@@ -1231,6 +1247,16 @@ Full-gate stages (`make ubsan`/`asan`/`lint`/`test-axes`, `make mech`'s
 sabotage matrix) never run in CI — those are the manager's battery, run by
 hand on `ubuntubudu` per the box-concurrency rules above `CLAUDE.md`
 already states; CI is the per-PR/per-push TIER only, never the full gate.
+
+**[CLOUD-SUITE] reweigh (2026-11-11): the cloud shard tables are MEASURED and re-weighed periodically.** Every cloud
+shard records `units.tsv` (seconds per section / axes job / sanitizer script, plus `@wall`, `@baseline`, `@build`) in
+its `cloud-shard-*` artifact and `wall_s` in `result.txt`. `make cloud-reweight KIND=test|axes|ubsan|asan|all`
+[`MEASURE=1`] [`DRY=1`] (`tests/ci/cloud_reweight.sh`) re-measures from the last completed runs into the committed
+`tests/ci/measured_KIND.tsv` and regenerates the shard table through the kind's `reweigh` command (a table-driven
+column of `tests/ci/cloud_kinds.tsv`); the table header names the predicted shard/wall seconds and the indivisible
+floor. The trigger is a `REWEIGHT-DUE kind=K slowest=..s plan=..s` line in the run's verdict when the slowest shard
+runs more than the kind's `reweight_margin` (UNMEASURED default 25 %) over the plan; the manager runs the step then
+(and after a section, job or script is added). Process and the five steps: `tests/ci/CLAUDE.md` "Reweighting".
 
 ## The atomic landing gate ([M6.4.4], 2026-08-22) — OPT-IN, and its archived result
 

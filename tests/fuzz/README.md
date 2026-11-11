@@ -471,3 +471,15 @@ multi-thousand-pattern run with an uncaught `TimeoutExpired` traceback.
 the sentinel `"TIMEOUT"` instead, folded into the same "oracle
 inconclusive" bucket as a PCRE2 match-limit trip (both mean "the oracle
 produced no usable verdict").
+
+## `--set extended` ([FEAT-FAMILIES] pre-move widening)
+
+`fuzz.py --set extended` draws ~60% of its patterns from `EXTENDED_TEMPLATES`
+(lookaround, atomic groups, backreferences, named groups, `\Q..\E`, inline
+modifiers, assertions, and their pairwise nestings) and compiles with
+`EXTENDED_FEATURES` (the `extended` family's modules written out). The default
+`--set base` is unchanged seed for seed (the extra random draw is made only in
+the extended mode), so `run_capturediff_gate.sh` generates what it always did.
+Recommended campaign: seeds 1-4, `--patterns 1500`; zero content divergences or
+each triaged. Not part of `make test` yet (the D37 addendum asks for a
+fixed-seed slice there once the set exists as a name).

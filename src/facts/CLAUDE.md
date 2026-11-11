@@ -24,7 +24,7 @@ ONE organized record of what a pattern HAS (kind mask, nullability, necessary by
 ## Files
 
 - facts.def — THE TABLE of facts (also the OWNER-file list).
-- walk_arms.def — the req walk's RESTORED ARMS (span_arms §3.7, test-only): one row per arm (name, the walk facts it can change; `empty` E1, `zero` E2, `rep` R1); read into `ReqWalkParams.restored` at the one walk entry (`pf_derive_req_walk`) from `--harness=restore=` (build/pcrec-harness only), listed as `harness:<arm>` (facts_listing.md §4.1.3¶4a), inherited by derived facts through `pf_ask`.
+- walk_arms.def — the req walk's RESTORED ARMS (span_arms §3.7, test-only): one row per arm (name, the walk facts it can change; `empty` E1, `zero` E2, `rep` R1, `tie` R1's tie rule); read into `ReqWalkParams.restored` at the one walk entry (`pf_derive_req_walk`) from `--harness=restore=` (build/pcrec-harness only), listed as `harness:<arm>` (facts_listing.md §4.1.3¶4a), inherited by derived facts through `pf_ask`.
 - facts.h — consumer header: value types (`ReqRun`, `ReqSet`, `PCREC_SANCH_*`, `MkLang`), `PatFacts` (`Job.pf`), seals, accessors, renderers; no derivation; included by `core/internal.h`.
 - facts.c — the record: accessors, memo/deny/epoch, seals, `used` bit, renderers, force loop.
 - facts_derive.h — facts-private derivation declarations (`RbSet`, `RbRun`, `rb_has`).

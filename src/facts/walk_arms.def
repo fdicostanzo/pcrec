@@ -27,7 +27,7 @@
  * and E-5, a node other than the empty string that consumes nothing: an assertion, `\G`,
  * `\K`, a check callout, a lookaround of either lowering, back to the old
  * CUT). `rep` is unit R1's (T2 rows 2-3, a repeat of a body that consumes:
- * the old best-only copy and gap). A later unit adds its own row (L1 `look`). */
+ * the old best-only copy and gap). `tie` is R1's rarity tie rule (the run choice's rows 2-4). A later unit adds its own row (L1 `look`). */
 WALK_ARM(EMPTY, "empty", (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
 /* span_arms E2 (T3 E-4, E-5 as the plain unit) */
 WALK_ARM(ZERO,  "zero",  (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
@@ -36,4 +36,9 @@ WALK_ARM(ZERO,  "zero",  (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
  * a body that consumes, read as its copies. Restored: today's best-only copy
  * (`m >= 1`) and the gap (`m = 0`, `X{0}` included). */
 WALK_ARM(REP,   "rep",   (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
+
+/* span_arms unit R1's tie rule (`rn_choice_rows`, D191): at equal information
+ * the rarer run, then the nearer, then content order. Restored: the
+ * predecessor's choice, information and then the first run. */
+WALK_ARM(TIE,   "tie",   (1u << PF_REQ_WHOLE_RUN) | (1u << PF_REQ_PIECES))
 #undef WALK_ARM

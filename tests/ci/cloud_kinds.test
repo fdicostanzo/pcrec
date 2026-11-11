@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# cloud_kinds self-test ([CLOUD-SUITE] B, requirement 7): the kinds table reader on the real table and on planted copies.
+set -u
+here=$(cd "$(dirname "$0")" && pwd); K=$here/cloud_kinds.sh
+T=$(mktemp -d "${TMPDIR:-/var/tmp}/cloud_kinds.test.XXXXXX"); trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok() { echo "PASS: $*"; pass=$((pass+1)); }; bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+kind=$(bash "$K" kinds | head -1)
+[ -n "$kind" ] && ok "the table declares a kind ($kind)" || bad "no kinds"
+n=$(bash "$K" shards "$kind" | wc -w); tn=$(sed -n 's/^# shards=//p' "$here/../../$(bash "$K" get "$kind" selector)")
+[ "$n" = "$tn" ] && ok "shards = the selector table's # shards=$tn" || bad "shards $n vs $tn"
+c=$(bash "$K" command "$kind" 3/$n); case $c in *"CISHARD=3/$n"*) ok "command fills {shard}";; *) bad "command: $c";; esac
+case $c in *'{'*) bad "command left a placeholder: $c";; *) ok "command left no placeholder";; esac
+p=$(bash "$K" plan "$kind" someone); grep -q '^matrix=\["1/' <<<"$p" && grep -q '^max_parallel=[0-9]' <<<"$p" && grep -q '^limit_min=[0-9]' <<<"$p" \
+    && ok "plan prints shards, matrix JSON, max_parallel, limit_min, needs" || bad "plan: $p"
+bash "$K" plan nosuchkind x 2>"$T/e"; rc=$?; [ $rc = 2 ] && grep -q "kind 'nosuchkind' is not declared" "$T/e" && ok "an undeclared kind -> exit 2 naming the declared ones" || bad "undeclared: rc=$rc $(cat $T/e)"
+# planted table: a NEW kind is a row, with its own shard count, parallelism and owners -- no code change
+printf 'kind\tcommand\tselector\tshards\tmax_parallel\tlimit_min\tneeds\towners\nzed\techo {shard} {selector}\tsel.x\t5\t3\t9\t-\tmain,kit\n' > "$T/k.tsv"
+p=$(KINDS_TSV=$T/k.tsv bash "$K" plan zed main); grep -q '^shards=1/5 2/5 3/5 4/5 5/5$' <<<"$p" && grep -q '^max_parallel=3$' <<<"$p" && grep -q '^limit_min=9$' <<<"$p" \
+    && ok "a planted kind row is planned with its own numbers" || bad "planted: $p"
+KINDS_TSV=$T/k.tsv bash "$K" plan zed lane7 2>"$T/e"; rc=$?; [ $rc = 2 ] && grep -q "owner 'lane7' may not start kind 'zed'" "$T/e" && ok "an owner outside the row's list is refused" || bad "owner: rc=$rc"
+[ "$(KINDS_TSV=$T/k.tsv bash "$K" command zed 2/5)" = "echo 2/5 sel.x" ] && ok "command fills {shard} and {selector}" || bad "planted command"
+# every declared kind carries a population check and a resolvable selector (a new row without either is refused here)
+for k in $(bash "$K" kinds); do
+    [ -n "$(bash "$K" population "$k")" ] && [ -f "$here/../../$(bash "$K" get "$k" selector)" ] && [ "$(bash "$K" shards "$k" | wc -w)" -ge 1 ] \
+        && ok "kind $k: population check declared, selector exists, shards resolve" || bad "kind $k: population/selector/shards"
+done
+for k in axes ubsan asan; do bash "$K" get "$k" command >/dev/null 2>&1 || bad "the $k row is missing"; done
+# cloud_table.sh reads a planted table: N, a shard's items, the column-name line skipped
+printf '# shards=2\nunit\tshard\tweight_s\tweight_source\na b\t1\t1\tx\nc\t2\t1\tx\n' > "$T/t.tsv"
+[ "$(bash "$here/cloud_table.sh" count "$T/t.tsv")" = 2 ] && [ "$(bash "$here/cloud_table.sh" rows "$T/t.tsv" 1/2)" = "a b" ] \
+    && [ "$(bash "$here/cloud_table.sh" rows "$T/t.tsv" | wc -l)" = 2 ] && ok "cloud_table.sh: count, one shard's rows, all rows" || bad "cloud_table.sh"
+echo "cloud_kinds.test: $pass passed, $fail failed"; [ $fail = 0 ]

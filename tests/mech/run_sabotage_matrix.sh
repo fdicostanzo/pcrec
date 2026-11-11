@@ -349,6 +349,12 @@
 #     a T3 denial falling through to an unsound lowering (S342, the GEN-4
 #     shape): on the default path the denied row never fires, so `harness`
 #     is green on it by construction. Registered before S337-S343.
+#   charstep — added 2026-11-10 ([UCP] U3, review r4 ucpu3 checks-9, lane
+#     ucpu3fix); runs tests/ucp/run_charstep_tests.sh: the character-stepped
+#     DFA's corpus (island.rxt with its edge blocks and retry cells, the
+#     ill-formed file), its route pin and its libpcre2 re-check. Its own arm
+#     because no other arm both runs those files and is cheap. Registered
+#     before S3030-S3033.
 #   clskit — added 2026-09-29 ([CLS-TREE] S1, lane clss1); runs
 #     tests/clskit/run_clskit_tests.sh, the class-matcher kit's differential
 #     (emitted C against a reference on every code point), population census
@@ -3266,6 +3272,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/ctxnode.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/ctxnode.log" | grep -oE '[0-9]+')"
                 score_arm "$work/ctxnode.log" "$f" "ctxnode:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            charstep)
+                # [UCP] U3 tests/ucp/run_charstep_tests.sh — see the
+                # vocabulary entry above.
+                PCREC="$pcrec" CC="$CC" PROCS="$INNER_PROCS" \
+                    bash "$tree/tests/ucp/run_charstep_tests.sh" \
+                    > "$work/charstep.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/charstep.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/charstep.log" | grep -oE '[0-9]+')"
+                score_arm "$work/charstep.log" "$f" "charstep:${f:-ERR}fail/${p:-?}pass"
                 ;;
             clskit)
                 # [CLS-TREE] S1 tests/clskit/run_clskit_tests.sh — see the

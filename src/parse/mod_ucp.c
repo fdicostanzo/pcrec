@@ -158,49 +158,18 @@ void pcrec_setdef_build(Ctx *cx, const PcrecSetDef *d, PcrecCpSet *s)
     if (uni < 0x10FFFFu) pcrec_cpset_remove(s, uni + 1, 0x10FFFFu);
 }
 
-/* ---- the ROUTE a built UCP set takes today (D130 Q3) ----------------------
+/* ---- a built UCP set's class (D130 Q3) -------------------------------------
  *
- * A first-match TABLE (§0.1's rule), rows as data. The WIDE sets are refused
- * by name until a kit-sized route exists ([CLS-TREE] S4 for the VM, [UCP] U3
- * for the DFA): accepting them is correct and costs a minute-long compile
- * (`\w+` under UCP utf8: 330 KB, 66 s). "Wide" is a measured fact of the
- * CLAMPED set, not a list of names — so every set under `byte` is narrow, and
- * the partition `tests/ucp` pins is what the limit reproduces. No deny flag:
- * a row whose denial changes whether a pattern compiles is not a form choice. */
-typedef struct {
-    const char *name;
-    const char *applies;
-    bool (*pred)(int nintervals);
-    bool build;
-} UcpRouteRow;
-
-static bool rr_narrow(int n) { return n <= PCREC_UCP_NARROW_MAX_INTERVALS; }
-static bool rr_always(int n) { (void)n; return true; }
-
-static const UcpRouteRow route_rows[] = {
-    { "narrow", "clamped set has <= PCREC_UCP_NARROW_MAX_INTERVALS intervals",
-      rr_narrow, true },
-    { "wide",   "always: refused by name until a kit-sized route exists",
-      rr_always, false },
-};
-
-Ast *pcrec_setdef_class(Ctx *cx, const PcrecSetDef *d, bool negate,
-                        const char *construct, char *why, size_t whysz)
+ * Every UCP set is built, under every encoding. Until [UCP] U3 the WIDE ones
+ * (over 128 intervals after clamping) were refused by name under utf8 through
+ * a narrow/wide route table; U3 lifted that refusal by PARITY with the
+ * `\p{..}` spelling (UCP `\w` is `\p{Xwd}`, which compiled all-byte
+ * already; docs/dev/lanes/ucpu3b_report.md §0), which left the table one
+ * effective row, so it is gone with its knee (review r4 ucpu3 RULES-9). */
+Ast *pcrec_setdef_class(Ctx *cx, const PcrecSetDef *d, bool negate)
 {
     PcrecCpSet s;
     pcrec_setdef_build(cx, d, &s);
-    const UcpRouteRow *r = NULL;
-    for (size_t i = 0; i < sizeof route_rows / sizeof route_rows[0]; i++)
-        if (route_rows[i].pred(s.n)) { r = &route_rows[i]; break; }
-    if (!r || !r->build) {
-        snprintf(why, whysz,
-                 "UCP %s is a wide set (%d intervals) and is refused under "
-                 "encoding '%s' until a kit-sized class route exists "
-                 "([CLS-TREE] S4 / [UCP] U3); restrict it with (?a) or use "
-                 "-e byte", construct, s.n,
-                 pcrec_enc_by_id(cx->opt->encoding)->name);
-        return NULL;
-    }
     return pcrec_ast_class_from_cpset(cx, &s, d->fold_inert ? CLS_UCP_SET_INERT
                                                            : CLS_UCP_SET,
                                       negate);

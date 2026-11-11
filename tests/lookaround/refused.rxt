@@ -38,21 +38,21 @@
 # (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK); python3 `re` refuses: bad
 # escape \K at position 4
 pattern (?=a\K)x
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 perr
 
 # MEASURED: libpcre2 10.46 also refuses: \K is not allowed in lookarounds
 # (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK); python3 `re` refuses: bad
 # escape \K at position 4
 pattern (?!a\K)x
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 perr
 
 # MEASURED: libpcre2 10.46 also refuses: \K is not allowed in lookarounds
 # (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK); python3 `re` refuses: unknown
 # extension ?* at position 1
 pattern (?*a\K)x
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 perr
 
 # THE THREE CELLS AN IMMEDIATE-CHILDREN CHECK WOULD MISS (R33 C1-7), and they
@@ -63,28 +63,28 @@ perr
 # (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK); python3 `re` refuses: bad
 # escape \K at position 5
 pattern (?=(a\K))x
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 perr
 
 # MEASURED: libpcre2 10.46 also refuses: \K is not allowed in lookarounds
 # (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK); python3 `re` refuses: bad
 # escape \K at position 7
 pattern (?=a(?:\K))x
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 perr
 
 # MEASURED: libpcre2 10.46 also refuses: \K is not allowed in lookarounds
 # (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK); python3 `re` refuses: bad
 # escape \K at position 9
 pattern (?=(?:(?=\K)))x
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 perr
 
 # MEASURED: libpcre2 10.46 also refuses: \K is not allowed in lookarounds
 # (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK); python3 `re` refuses: bad
 # escape \K at position 3
 pattern (?=\Ka)x
-features assertions,lookaround
+features assertions,lookaround,match-start-reset
 perr
 
 # AND HERE pcrec AGREES WITH PCRE2, which is err 125 "length of lookbehind

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# cloud_failures.sh self-test: the shared failing-line extractor on REAL shard-log lines (tests/ci/fixtures/, taken
+# from `gh api .../actions/jobs/ID/logs` of run 43053543333 shard 8 and run 43069897443 shard 7) plus synthetic forms.
+set -u
+here=$(cd "$(dirname "$0")" && pwd); X=$here/cloud_failures.sh; F=$here/fixtures
+pass=0 fail=0
+ok() { echo "PASS: $*"; pass=$((pass+1)); }; bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+strip() { sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z //'; }
+for f in "$F"/run_*.red.txt; do
+    n=$(wc -l < "$f"); got=$(bash "$X" < "$f" | wc -l)
+    [ "$n" -gt 0 ] && [ "$got" = "$n" ] && ok "$(basename "$f"): all $n real failing lines caught" || bad "$(basename "$f"): $got of $n caught"
+done
+for f in "$F"/run_*.green.txt; do
+    got=$(bash "$X" < "$f"); [ -z "$got" ] && ok "$(basename "$f"): real OK/tally lines not flagged" || bad "$(basename "$f"): flagged: $got"
+done
+# the two shapes the old anchored grep missed, by name
+printf '%s\n' '2026-11-11T16:20:14.1234567Z   FAIL — utfcheck arm: fail=336' | bash "$X" | grep -q '^  FAIL — utfcheck' && ok "indented FAIL — caught, timestamp stripped" || bad "indented FAIL"
+printf '%s\n' '-futf-check arm (contract, own oracle): FAIL — x' | bash "$X" | grep -q . && ok "mid-line FAIL — caught" || bad "mid-line FAIL"
+# the forms the suites print (survey of echo/printf FAIL in tests/ scripts/ Makefile)
+while IFS= read -r l; do
+    printf '%s\n' "$l" | bash "$X" | grep -q . && ok "caught: $l" || bad "missed: $l"
+done <<'L'
+FAIL: something
+AXIS FAIL: -fx: 1 mismatch
+DIAL-S3 FAIL: x
+FAIL[checkN_modifier_semantics]: boom
+FAIL 12: want 1 got 2
+FAILED  suite_x  3
+ADD FAILED
+GCC-FAILED
+COMPILE-FAIL
+CC-FAIL
+x.rxt:3: HARNESS FAILURE: pcrec crashed
+test-kitproof: FAIL
+  name|FAIL|keys_base=1
+make: *** [Makefile:646: test-foo] Error 1
+make[1]: *** [test-bar] Error 2
+FATAL: out of memory
+##[error]Process completed with exit code 1.
+src/x.c:3:4: runtime error: signed integer overflow
+==1==ERROR: AddressSanitizer: heap-use-after-free
+SUMMARY: AddressSanitizer: heap-use-after-free x.c:1
+L
+while IFS= read -r l; do
+    [ -z "$(printf '%s\n' "$l" | bash "$X")" ] && ok "not flagged: $l" || bad "flagged: $l"
+done <<'L'
+PASS: all fine
+  OK — memfn arm: 12 kit rows
+checks failed: 0
+utfcheck arm: byte=1 fail=0 lost=0
+oracle cross-check: SKIPPED
+AXIS: 0 FAIL
+mismatches=0 failures: 0
+L
+n=$(seq 1 100 | sed 's/^/FAIL: /' | bash "$X" 5 | wc -l); [ "$n" = 5 ] && ok "MAX caps the output" || bad "MAX: $n"
+echo "cloud_failures.test: $pass passed, $fail failed"; [ $fail = 0 ]

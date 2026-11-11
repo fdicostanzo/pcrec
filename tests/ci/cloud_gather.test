@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# cloud_gather self-test ([CLOUD-SUITE] A, tests a-d): the gather on fabricated shard results, no GitHub.
+# Run 1 (42951967591) bugs: (1) the upload named shards cloud-shard-0/1/2 while the gather read cloud-shard-KofN, so
+# every shard read MISSING -- tested below on the REAL workflow text; (2) the CPU record spelled ISA names, which
+# test-memfn-arch refuses in tests/ -- the record carries the /proc/cpuinfo flags line verbatim, names nothing.
+# Also a red shard prints its make `*** [...] Error` lines.
+# (d) all green -> GREEN; (b) a missing shard -> RED naming it; (c) rc!=0 -> RED naming it; plus rc=none,
+# a result naming the wrong shard, an empty expected list; and `record` + `shards`.
+set -u
+here=$(cd "$(dirname "$0")" && pwd); G=$here/cloud_gather.sh
+T=$(mktemp -d "${TMPDIR:-/var/tmp}/cloud_gather.test.XXXXXX"); trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok() { echo "PASS: $*"; pass=$((pass+1)); }; bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+mk() { # mk DIR SHARD RC: a fabricated result for SHARD (K/N)
+    mkdir -p "$1/cloud-shard-${2%/*}of${2#*/}"
+    printf 'shard=%s\nrc=%s\ncpu_model=Fake\ncpu_flags=fpu vme de\nskip_lines=0\n' "$2" "$3" > "$1/cloud-shard-${2%/*}of${2#*/}/result.txt"
+}
+run() { bash "$G" gather "$1" "$2" "$3" branch=cloud/main/test/x sha=abc; }
+
+d=$T/green; mk $d 1/3 0; mk $d 2/3 0; mk $d 3/3 0
+run "1/3 2/3 3/3" $d $T/v1; rc=$?
+[ $rc = 0 ] && [ "$(head -1 $T/v1)" = "VERDICT GREEN" ] && ok "(d) all green -> GREEN rc=0" || bad "(d) green: rc=$rc $(head -1 $T/v1)"
+d=$T/miss; mk $d 1/3 0; mk $d 3/3 0
+run "1/3 2/3 3/3" $d $T/v2; rc=$?
+[ $rc = 1 ] && [ "$(head -1 $T/v2)" = "VERDICT RED" ] && grep -q '^RED: shard 2/3 MISSING' $T/v2 && ok "(b) missing shard 2/3 -> RED by name" || bad "(b) missing: rc=$rc"
+d=$T/rc; mk $d 1/3 0; mk $d 2/3 2; mk $d 3/3 0
+run "1/3 2/3 3/3" $d $T/v3; rc=$?
+[ $rc = 1 ] && grep -q '^RED: shard 2/3 rc=2' $T/v3 && ! grep -q 'RED: shard 1/3\|RED: shard 3/3' $T/v3 && ok "(c) rc!=0 shard 2/3 -> RED by name only" || bad "(c) rc: rc=$rc"
+d=$T/none; mk $d 1/2 0; mk $d 2/2 none
+run "1/2 2/2" $d $T/v4; rc=$?
+[ $rc = 1 ] && grep -q '^RED: shard 2/2 rc=none' $T/v4 && ok "rc=none (killed before the rc was written) -> RED" || bad "rc=none: rc=$rc"
+d=$T/wrong; mk $d 1/2 0; mkdir -p $d/cloud-shard-2of2; printf 'shard=1/2\nrc=0\n' > $d/cloud-shard-2of2/result.txt
+run "1/2 2/2" $d $T/v5; rc=$?
+[ $rc = 1 ] && grep -q "result names shard '1/2'" $T/v5 && ok "a result naming the wrong shard -> RED" || bad "wrong shard: rc=$rc"
+run "" $T/green $T/v6; rc=$?
+[ $rc = 1 ] && ok "empty expected list -> RED (green by absence refused)" || bad "empty expected: rc=$rc"
+bash "$G" record 2/3 0 /dev/null $T/rec/result.txt && grep -q '^shard=2/3$' $T/rec/result.txt && grep -q '^rc=0$' $T/rec/result.txt && grep -q '^cpu_flags=' $T/rec/result.txt && ok "record writes shard, rc, cpu_flags" || bad "record"
+printf 'a\nSKIP: x\nskipped y\nnot skipping\n' > $T/l.log
+bash "$G" record 1/3 1 $T/l.log $T/rec2/result.txt; grep -q '^skip_lines=2$' $T/rec2/result.txt && ok "record counts SKIP lines (2)" || bad "skip count: $(grep skip_lines $T/rec2/result.txt)"
+K=$(bash "$here/cloud_kinds.sh" kinds | head -1)
+[ "$(bash "$G" shards "$K")" = "$(bash "$here/cloud_kinds.sh" shards "$K")" ] && ok "shards KIND = the kinds table's list" || bad "shards KIND"
+bash "$G" shards nosuchkind 2>/dev/null; [ $? = 2 ] && ok "shards of an undeclared kind -> exit 2" || bad "shards nosuchkind"
+# bug 1: ONE naming source. The slug is KofN; the directory the gather reads is cloud-shard-<slug>; the workflow's
+# upload name is built from the same `slug` call (run 1: job-index 0/1/2).
+[ "$(bash "$G" slug 2/16)" = 2of16 ] && ok "slug 2/16 = 2of16" || bad "slug"
+W=$here/../../.github/workflows/cloud-test.yml
+grep -q 'name: cloud-shard-\${{ steps\.[a-z]*\.outputs\.slug }}' "$W" && grep -q 'cloud_gather.sh slug' "$W" && ! grep -q 'job-index' "$W" \
+    && ok "(1) cloud-test.yml's upload name comes from cloud_gather.sh slug, no job-index" || bad "(1) workflow artifact naming"
+# the gather finds what an upload of build/cloudout would download: results/cloud-shard-<slug>/result.txt, for every shard of the table (N follows a reweigh)
+N=$(bash "$G" shards test | wc -w); d=$T/n16; for i in $(seq 1 $N); do mk $d $i/$N 0; done; run "$(bash "$G" shards test)" $d $T/v8; rc=$?
+[ $rc = 0 ] && ok "(1) gather reads every shard of the table ($N) laid out as the workflow uploads them" || bad "(1) N shards: rc=$rc $(grep RED $T/v8 | head -2)"
+# bug 2: the verdict names no ISA; the CPU flags line is carried through
+grep -q 'cpu_flags=fpu vme de' $T/v1 && ok "(2) verdict carries the CPU flags line verbatim" || bad "(2) cpu flags in verdict"
+# requirement 8: a red shard's verdict lists its make error lines
+d=$T/err; mk $d 1/3 0; mk $d 2/3 2; mk $d 3/3 0
+printf '%s\n' 'make: *** [Makefile:646: test-foo] Error 1' 'make[1]: *** [test-bar] Error 2' > $d/cloud-shard-2of3/errors.txt
+run "1/3 2/3 3/3" $d $T/v9
+grep -q '^RED:   shard 2/3: make: \*\*\* \[Makefile:646: test-foo\] Error 1' $T/v9 && grep -q 'shard 2/3: make\[1\]: \*\*\* \[test-bar\] Error 2' $T/v9 \
+    && ok "(8) a red shard's verdict lists its make *** [...] Error lines" || bad "(8) error lines: $(cat $T/v9)"
+printf '%s\n' 'a' 'make: *** [Makefile:9: test-x] Error 1' 'FAIL: y' > $T/e.log
+bash "$G" record 1/3 2 $T/e.log $T/rec3/result.txt; [ "$(cat $T/rec3/errors.txt)" = "$(printf '%s\n' 'make: *** [Makefile:9: test-x] Error 1' 'FAIL: y')" ] && ok "(8) record keeps the make Error and FAIL: lines, not the rest" || bad "(8) record errors.txt"
+printf '%s\n' 'axes: ok' 'AXIS FAIL: -fno-x (PCREC_NO_X, bit 9): 3 mismatch(es)' 'DIAL-S3 FAIL: --tune=-1 now REFUSES 2' 'run_axes.sh: FATAL: baseline failed' \
+    'src/a.c:5:3: runtime error: signed integer overflow' '==1==ERROR: AddressSanitizer: heap-use-after-free' 'SUMMARY: AddressSanitizer: heap-use-after-free' 'PASS: z' > $T/s.log
+bash "$G" record 1/3 1 $T/s.log $T/rec4/result.txt; [ "$(wc -l < $T/rec4/errors.txt)" = 6 ] && ! grep -q 'PASS\|axes: ok' $T/rec4/errors.txt && ok "(9) record keeps AXIS FAIL / DIAL-S3 FAIL / FATAL / sanitizer lines (6 of 8)" || bad "(9) record failing lines: $(cat $T/rec4/errors.txt)"
+mkdir -p $T/gr/cloud-shard-1of1; cp $T/rec4/result.txt $T/rec4/errors.txt $T/gr/cloud-shard-1of1/
+bash "$G" gather "1/1" $T/gr $T/gv.txt; grep -q 'RED:   shard 1/1: AXIS FAIL: -fno-x' $T/gv.txt && grep -q 'RED:   shard 1/1: .*runtime error' $T/gv.txt && ok "(10) the verdict prints a red shard's failing lines" || bad "(10) verdict lines: $(cat $T/gv.txt)"
+# reweigh: wall_s is recorded; a slowest shard past the table's predicted shard by the margin adds ONE REWEIGHT-DUE line
+printf '%s\n' 'real	3m20.5s' > $T/w.log
+bash "$G" record 1/3 0 $T/w.log $T/rec5/result.txt; grep -q '^wall_s=200$' $T/rec5/result.txt && ok "(11) record writes wall_s from the log's time trailer (200)" || bad "(11) wall_s: $(grep wall_s $T/rec5/result.txt)"
+printf '%s\t%s\n' a 1 > $T/ux.tsv; [ -s $T/rec5/units.tsv ] || bad "(11) record wrote no units.tsv"
+grep -q '^@wall	200.5$' $T/rec5/units.tsv && ok "(11) record writes units.tsv (@wall)" || bad "(11) units.tsv: $(cat $T/rec5/units.tsv)"
+SEL=$(bash "$here/cloud_kinds.sh" get "$K" selector); MG=$(bash "$here/cloud_kinds.sh" get "$K" reweight_margin)
+mkdir -p $T/rt/$(dirname $SEL); { echo '# predicted_shard_s=100'; echo '# shards=1'; } > $T/rt/$SEL
+d=$T/due; mkdir -p $d/cloud-shard-1of1; printf 'shard=1/1\nrc=0\nwall_s=%s\n' $((100 * (100 + MG) / 100 + 5)) > $d/cloud-shard-1of1/result.txt
+ROOT=$T/rt bash "$G" gather "1/1" $d $T/vd kind=$K sha=abc; grep -q "^REWEIGHT-DUE kind=$K slowest=$((100 * (100 + MG) / 100 + 5))s plan=100s$" $T/vd && [ "$(head -1 $T/vd)" = "VERDICT GREEN" ] \
+    && ok "(12) slowest past plan by the margin -> one REWEIGHT-DUE line, verdict still GREEN" || bad "(12) due: $(cat $T/vd)"
+printf 'shard=1/1\nrc=0\nwall_s=%s\n' 110 > $d/cloud-shard-1of1/result.txt
+ROOT=$T/rt bash "$G" gather "1/1" $d $T/vd2 kind=$K sha=abc; grep -q REWEIGHT-DUE $T/vd2 && bad "(12) within the margin must not fire" || ok "(12) within the margin -> no REWEIGHT-DUE"
+echo "cloud_gather.test: $pass passed, $fail failed"; [ $fail = 0 ]

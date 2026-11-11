@@ -27,6 +27,7 @@
 # cpb4 (2026-10-12, [COMPOUND] B4): +1 row, a tests/compound/split.rxt block (a VM-hat mover the new corpus file brings); census_s1.py on lane/cpb4 (-fno-start-set arm), corpus rows only -- bench rows NOT refreshed (m7fix's note); 0 other rows moved.
 # lf3tri (2026-10-22): +15 rows, every one a block of a new language-fix corpus file (tests/atomic_groups/possessive_ungreedy.rxt, named_groups/utf8_names.rxt, recursion/inlookaround_self.rxt); correct VM-hat movers never pinned; census_s1.py on lane/langfix2 (-fno-start-set arm, bench rows NOT refreshed), 0 existing rows gone, 0 changed.
 # ic1btriage (2026-10-26): +29 rows, every one a tests/callouts/shapes.rxt block ([INLINE-C] stage 1b's callout corpus, a new file); no existing row moved. Rows taken from test-startset's own mover list.
+# cloudtri (2026-11-11): mechtri2 da685e9db added 4 witness blocks to tests/base/vm_lazy_rmin_prefix.rxt (S706/S708/S711, lines 204-229), correct movers never pinned; +2 rows (the --engine=vm blocks); no existing row moved.
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62
 bench/capability/dup-param-detect	--features all	5c62285c772b293d5b5e265d2a26283f3a5b5e265d2a26292a5c313d
@@ -91,6 +92,8 @@ tests/base/vm_lazy_rmin_prefix.rxt:148	--engine=vm	28617b322c337d3f297b322c337d
 tests/base/vm_lazy_rmin_prefix.rxt:167	--engine=vm	7a2861297b332c7d3f633f
 tests/base/vm_lazy_rmin_prefix.rxt:17	--engine=vm	286129283f3a6162297b322c7d3f6163
 tests/base/vm_lazy_rmin_prefix.rxt:186	--engine=vm	2862292861297b3230302c7d3f62
+tests/base/vm_lazy_rmin_prefix.rxt:212	--engine=vm	7a5b6162635d7b332c7d3f643f
+tests/base/vm_lazy_rmin_prefix.rxt:229	--engine=vm	286129283f3a615b6263645d297b322c7d3f6165
 tests/base/vm_lazy_rmin_prefix.rxt:35	--engine=vm	286129283f3a6162297b322c7d3f63
 tests/base/vm_lazy_rmin_prefix.rxt:53	--engine=vm	286129283f3a6162297b322c7d3f6162
 tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f6162

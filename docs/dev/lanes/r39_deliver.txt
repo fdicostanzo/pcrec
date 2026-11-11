@@ -1,0 +1,5 @@
+report=docs/dev/lanes/r39_report.md
+sections: Summary; Selector spelling; Unit and balance; Population check; Floors over a split run; Checks; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
