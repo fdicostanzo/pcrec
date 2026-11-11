@@ -9,7 +9,8 @@ Inputs: --units = the committed measured file tests/ci/cloud_measure.py writes (
 tests/ci/cloud_reweight.sh; a section with no measurement keeps its previous table weight, flagged ESTIMATE, or the
 default); or --measured = the `build/ci/sections.tsv` files of recent GREEN CI runs (`gh run download RUN -p 'pcrec-ci-sections-*'`;
 scripts/sectiontimes report output). Each section's weight is its MEDIAN complete wall over every file.
-The section names and order come from tests/ci/shards.tsv (CI's table, never changed here).
+The section names and order come from the table being regenerated (--out, cloud_test_shards.tsv); a new TEST_SECTIONS member
+is added there by hand first (make test-ci-shards names it), then this reweighs it.
 
 The FLOOR: every section whose own time plus setup exceeds the target cannot be helped by sharding -- no shard
 can finish before it does. Each floor section gets a shard of its own (the run's wall is then that section's wall,
@@ -19,7 +20,7 @@ first onto `slots` runners, each paying `setup` seconds (checkout, python, libpc
 target, so more shards than slots appear exactly when setup is small enough that waves still fit. If no count
 meets it the best count is used and the report says so.
 
-Output: the table (stdout, or tests/ci/cloud_test_shards.tsv with --write) in shards.tsv's format with an added
+Output: the table (stdout, or tests/ci/cloud_test_shards.tsv with --write) in the table's own format with an added
 `# plan ...` comment block; the report goes to stderr.
 """
 import argparse
@@ -78,7 +79,7 @@ def main():
     ap.add_argument("--note", default="", help="provenance line for the table header (e.g. the CI run ids)")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
-    head, rows = sr.load(os.path.join(here, "shards.tsv"))
+    head, rows = sr.load(a.out)
     names = {r[0] for r in rows}
     m = sr.measured(a.measured, names, True) if a.measured else {}
     if a.units:

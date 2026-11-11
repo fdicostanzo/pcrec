@@ -19,12 +19,35 @@ name: Cloud
 # CPU flags, make error lines) as `cloud-shard-<slug>`, <slug> from `cloud_gather.sh slug` -- the same
 # function the gather reads with; `gather` (if: always()) builds the ONE verdict from them: GREEN only if
 # every EXPECTED shard reported rc 0, a missing/cancelled/timed-out shard is RED by name.
+#
+# REUSABLE (workflow_call, [CLOUD-SUITE] ciswitch 2026-11-11): ci.yml calls this workflow with kind=test, so CI runs
+# the same plan/shard/gather machinery. Inputs: kind (required for a call), owner (default `ci`), name (default the
+# run id), ref (what to check out; empty = the caller's own ref, i.e. the PR merge commit or the pushed main). A push of
+# cloud/OWNER/KIND/NAME passes no inputs and the plan job parses the branch as before. A call needs no secrets.
 on:
   push:
     branches: ['cloud/**']
+  workflow_call:
+    inputs:
+      kind:
+        description: a row of tests/ci/cloud_kinds.tsv
+        type: string
+        required: true
+      owner:
+        type: string
+        default: ci
+      name:
+        type: string
+        default: ''
+      ref:
+        description: git ref to check out (empty = the caller's)
+        type: string
+        default: ''
 
+# A pushed cloud branch keeps its own group. A CALLED run gets a group unique to the run: the caller (ci.yml) owns
+# the cancel-in-progress of superseded PR/main runs, and a shared group here would queue or cancel its jobs.
 concurrency:
-  group: cloud-${{ github.ref }}
+  group: ${{ inputs.kind != '' && format('cloud-call-{0}-{1}', github.run_id, github.run_attempt) || format('cloud-{0}', github.ref) }}
   cancel-in-progress: false
 
 permissions:
@@ -45,12 +68,22 @@ jobs:
       name: ${{ steps.p.outputs.name }}
     steps:
       - uses: actions/checkout@v4
-      - name: Parse cloud/OWNER/KIND/NAME and plan the kind from the kinds table
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Take kind/owner/name from the call's inputs or parse cloud/OWNER/KIND/NAME, and plan the kind from the kinds table
         id: p
+        env:
+          IN_KIND: ${{ inputs.kind }}
+          IN_OWNER: ${{ inputs.owner }}
+          IN_NAME: ${{ inputs.name }}
         run: |
           set -eu
-          IFS=/ read -r _ owner kind name <<<"$GITHUB_REF_NAME"
-          [ -n "${name:-}" ] || { echo "branch '$GITHUB_REF_NAME' is not cloud/OWNER/KIND/NAME" >&2; exit 1; }
+          if [ -n "$IN_KIND" ]; then
+            kind=$IN_KIND owner=${IN_OWNER:-ci} name=${IN_NAME:-$GITHUB_RUN_ID}
+          else
+            IFS=/ read -r _ owner kind name <<<"$GITHUB_REF_NAME"
+            [ -n "${name:-}" ] || { echo "branch '$GITHUB_REF_NAME' is not cloud/OWNER/KIND/NAME" >&2; exit 1; }
+          fi
           bash tests/ci/cloud_kinds.sh plan "$kind" "$owner" > plan.txt
           { cat plan.txt; echo "job_limit_min=$(( $(sed -n 's/^limit_min=//p' plan.txt) + 15 ))"; echo "owner=$owner"; echo "kind=$kind"; echo "name=$name"; } >> "$GITHUB_OUTPUT"
           cat plan.txt; echo "owner=$owner kind=$kind name=$name"
@@ -70,6 +103,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/shard-setup
       - name: make strict
         if: startsWith(matrix.shard, '1/')
@@ -125,6 +159,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - uses: actions/download-artifact@v4
         with:
           pattern: cloud-shard-*

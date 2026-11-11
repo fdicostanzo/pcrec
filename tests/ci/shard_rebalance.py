@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""tests/ci/shard_rebalance.py -- replace tests/ci/shards.tsv's first-pass LOCAL
-weights with the runner's MEASURED section times, and re-balance ([CI-SHARD]).
+"""tests/ci/shard_rebalance.py -- re-weight a shard table (default tests/ci/cloud_test_shards.tsv) with
+the runner's MEASURED section times, and re-balance ([CI-SHARD]). The library half (load, measured, lpt)
+is what tests/ci/cloud_plan.py imports; CI's own 3-shard table (shards.tsv) is gone (ciswitch).
 
   python3 tests/ci/shard_rebalance.py --measured sections-1.tsv sections-2.tsv ...
   python3 tests/ci/shard_rebalance.py --assign-only      # keep weights, re-balance
@@ -27,7 +28,7 @@ shard rows keep table order (= TEST_SECTIONS order). The table's check
 import argparse
 import sys
 
-TABLE = __file__.rsplit("/", 1)[0] + "/shards.tsv"
+TABLE = __file__.rsplit("/", 1)[0] + "/cloud_test_shards.tsv"
 
 
 def load(path):
