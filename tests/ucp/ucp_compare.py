@@ -10,16 +10,15 @@ For every construct in `ucp_sets.py` and both encodings:
     and the member intervals must EQUAL the store's
     `oracle_store/libpcre2-10.46-ucp/membership.tsv` row. The store is the
     true reference pin, so no drift budget exists here on any box.
-  * WIDE under utf8 (D130 Q3): refused by name until [UCP] U3 lifted the
-    refusal (ucp_design.md §6, the U3 row); now compared EXACTLY like the
-    narrow ones, and the store must still say libpcre2's construct EQUALS the
-    spelling the definitions table carries — so the chain construct ==
-    spelling (the store) == producer (tests/registry/definitions_check.c)
-    stays pinned.
+  * construct == spelling (every utf8 entry): the store must say libpcre2's
+    construct EQUALS the spelling the definitions table carries, so the
+    chain construct == spelling (the store) == producer
+    (tests/registry/definitions_check.c) stays pinned.
 
-The partition is still counted: `ucp_sets.py`'s `wide_utf8` column names the
-constructs whose clamped set is over PCREC_UCP_NARROW_MAX_INTERVALS
-(limits.md §3.8), and each must now compile.
+Every set compiles under both encodings; the wide/narrow partition this
+script once counted (the PCREC_UCP_NARROW_MAX_INTERVALS knee) is retired with
+the knee (review 2026-11-10 r4 ucpu3 RULES-9/checks-8): it compared
+ucp_sets.py with itself.
 
 Usage: ucp_compare.py PCREC CC WORKDIR       exit 0 = all agree
 """
@@ -88,8 +87,8 @@ def main(argv):
         sys.stderr.write(__doc__)
         return 2
     pcrec, cc, work = argv[1:]
-    compared = refused = 0   # `refused`: the wide utf8 population (the name predates U3)
-    for construct, spelling, wide in SETS:
+    compared = 0
+    for construct, spelling in SETS:
         for enc in ("byte", "utf8"):
             want = store(construct, enc)
             if want is None:
@@ -97,8 +96,7 @@ def main(argv):
                     "tests/ucp/build_ucp_store.py)" % (construct, enc))
                 continue
             msg, got = compile_sweep(pcrec, cc, work, construct, enc)
-            if enc == "utf8" and wide:
-                refused += 1   # counted as the wide population, now built
+            if enc == "utf8":
                 sp = store(spelling, "utf8")
                 if sp != want:
                     bad("%s utf8: libpcre2's construct and the table's "
@@ -119,15 +117,13 @@ def main(argv):
             else:
                 ok("%s %s: pcrec == libpcre2 10.46 (%d intervals)"
                    % (construct, enc, len(want.split())))
-    # the POPULATION, counted (K35): 16 byte + 7 narrow utf8 + 9 wide utf8
-    # compared ([UCP] U3: the wide ones built). A shrunken population is a
-    # failure, not a pass.
-    if compared != 32 or refused != 9:
-        bad("population moved: %d sets compared (32 expected), %d of them "
-            "wide utf8 (9 expected) — ucp_sets.py or the ruling changed"
-            % (compared, refused))
+    # the POPULATION, counted (K35): 16 byte + 16 utf8 compared. A shrunken
+    # population is a failure, not a pass.
+    if compared != 32:
+        bad("population moved: %d sets compared (32 expected) — ucp_sets.py "
+            "changed" % compared)
     else:
-        ok("population: 32 sets compared exactly, 9 of them wide utf8")
+        ok("population: 32 sets compared exactly")
     print("ucp_compare: %d passed, %d failed" % (npass, nfail))
     return 1 if nfail else 0
 

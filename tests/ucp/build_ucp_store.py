@@ -28,7 +28,7 @@ from ucp_sets import SETS  # noqa: E402
 
 def questions():
     out = []
-    for cons, spell, _ in SETS:
+    for cons, spell in SETS:
         out.append({"property": cons, "encoding": "byte"})
         out.append({"property": cons, "encoding": "utf8"})
         q = {"property": spell, "encoding": "utf8"}

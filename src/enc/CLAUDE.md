@@ -105,7 +105,11 @@ header and calls nothing above `core`.
   inline half, never the `.h`). Span compares and `BACK_STEP` are `inline_def`
   ([LOSS-REVIEW] cand. 1, abi 76).
 - `PCREC_ENCE_DECODE` (`$_decode`, one decoder shared by utf8 caseless
-  compare, [CLS-TREE] S4); `entries_byte[]` has no row, so the VM keeps a
+  compare, [CLS-TREE] S4) and `PCREC_ENCE_DECODE_BACK` (`$_decode_back`,
+  re-spelled on `$_decode`: the character ENDING at a position, 0 = one
+  ill-formed byte; the character-stepped DFA's reverse walk and seed, review
+  r4 ucpu3 RULES-5 -- unlike `$_back_step`, an ill-formed byte is a
+  character, not NONE); `entries_byte[]` has no row, so the VM keeps a
   class's byte child. `$_var_valid` is present only where validity is a
   question (`pcrec_enc_has_entry(e, PCREC_ENCE_VAR_VALID)`), is NOT
   `engine_callable`, and is re-spelled on `$_valid_upto` (one validator, D133

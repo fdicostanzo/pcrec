@@ -898,13 +898,14 @@ no search loop.
   underlying search may skim the rest of the subject for a later match the
   filter then discards (the state-0 `memchr` skip keeps it a skim), so a
   caller issuing many expected-to-fail probes against long subjects is in
-  this form's worst case and can read the form off the artifact. Four
+  this form's worst case and can read the form off the artifact. Five
   populations take it: `<PREFIX>_DFA_SCAN "attempt"` (a `^`- or `\G`-bearing
-  pattern), an anchored machine
+  pattern), `<PREFIX>_DFA_SCAN "char-step"` (no anchored character-stepped
+  machine is built, and no skip runs in front of its walk), an anchored machine
   that exceeded a DFA cap (a selection outcome, never a refusal), any build
   under `-fno-anchored-dfa` (`tuning.md` §2.15), and an artifact whose anchored
   machine was dropped to fit an emitted-size cap (`limits.md` §8, "The
-  optional-contributor drop") — the only one of the four where a size limit
+  optional-contributor drop") — the only one of the five where a size limit
   rather than the pattern's shape cost the faster form. It is identified by
   `<PREFIX>_ENGINE_SEL "size-cap-retry"`, and raising `--max-emit-bytes` gets
   the anchored machine back.
@@ -1667,7 +1668,7 @@ compile time, where one exists.
 | 17 | `pattern_len` | `size_t` | the byte count `pcrec_compile()` saw and compiled (§7) | — |
 | 18 | `groups` | `const rx_group_entry *` | the named-group index, sorted; `NULL` when there is none (§5.4) | — |
 | 19 | `engine_why` | `const char *` | prose: the construct or build outcome that forced the VM, or `NULL`; on a hybrid-eligible artifact it can also carry a prefilter note | `<PREFIX>_ENGINE_WHY` |
-| 20 | `scan` | `const char *` | the DFA scan the artifact CONTAINS: `"unanchored"` / `"rev-end"` / `"cover"` / `"landmark-walk"` / `"island"` / `"attempt"` / `"empty"`; `"compound"` on a compound (§3.7); `NULL` when it contains none | `<PREFIX>_DFA_SCAN` |
+| 20 | `scan` | `const char *` | the DFA scan the artifact CONTAINS: `"unanchored"` / `"rev-end"` / `"cover"` / `"landmark-walk"` / `"char-step"` / `"attempt"` / `"empty"`; `"compound"` on a compound (§3.7); `NULL` when it contains none | `<PREFIX>_DFA_SCAN` |
 | 21 | `prefilter` | `const char *` | the artifact's candidate-start mechanism; never `NULL` ([scan and prefilter](#s6-p6)) | `<PREFIX>_DFA_PREFILTER` / `<PREFIX>_VM_PREFILTER` |
 | 22 | `match_form` | `const char *` | how `<prefix>_match` answers: `"unwrapped"` / `"search-filter"` / `"nomatch"`, `"compound"` on a compound; `NULL` on every artifact whose `_match` the DFA emitter did not write — every VM artifact, hybrids included | `<PREFIX>_DFA_MATCH` |
 | 23 | `name` | `const char *` | the artifact's own name; never `NULL` ([name](#s6-p12)) | — |
@@ -2130,7 +2131,7 @@ apart. Mirrored by `rx_info.scan`.
 | `"rev-end"` | every match ends at the subject's end or just before a final newline (`tuning.md` §2.46): the artifact's reverse machine walks back from each possible end, and the smallest accepting position is the match start; no forward scan runs unless a tie between the two ends needs one forward run from that start |
 | `"cover"` | every match is one fixed-width window of `k` bytes, and the compiler PROVES that testing every position of that window, plus the one context byte before and after it, decides a match exactly: the artifact's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. On by default (`tuning.md` §2.43¶3d); `--memfn=no-window-search` denies it, and the artifact is then the `"unanchored"` one |
 | `"landmark-walk"` | the pattern's one branch passes a byte class L whose bytes the part before it can never consume (`tuning.md` §2.54): the search finds each occurrence of L from `search_from` up, walks the artifact's reverse machine of that prefix and L back from it to the smallest possible start, and runs the anchored machine once from there; where that run already read past the next occurrence, it continues as the `"unanchored"` scan from that start |
-| `"island"` | the pattern needs a character set that is not byte-expressible under `-e utf8` (UCP `\b`/`\B`, `cli.md` §1.9¶7): the forward machine steps an ASCII byte through its table and a whole non-ASCII character (or one ill-formed byte) as one symbol, the end is found by that walk, and the start by the reverse machine stepping back the same way; no prefilter, skip or scan edge runs in front of it at this build |
+| `"char-step"` | the pattern needs a character set that is not byte-expressible under `-e utf8` (UCP `\b`/`\B`, `cli.md` §1.9¶7): the forward machine steps an ASCII byte through its table and a whole non-ASCII character (or one ill-formed byte) as one symbol, the end is found by that walk, and the start by the reverse machine stepping back the same way (`<PREFIX>_DFA_START "reverse-pass"`); no prefilter, skip or scan edge runs in front of it at this build, and a failing `<prefix>_match` runs the whole walk (`<PREFIX>_DFA_MATCH "search-filter"`, §3.2¶6) |
 | `"attempt"` | the per-start-position computed-goto loop a `^`/`\A`-bearing pattern takes |
 | `"empty"` | the start analysis proves the pattern matches nothing (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`, and their `^`-anchored spellings): the search body is one `return 0` with no table, loop or skip, on either engine |
 
@@ -2257,7 +2258,7 @@ the DFA-scan scope, not `_DFA_MATCH`'s.
 | `"pinned"` | the forward machine's start state accepts unconditionally — at every position, under every view, in every class context — so every accept the forward loop records belongs to a thread that began at `search_from`, and the post-loop block writes that offset. The artifact carries NO reverse machine: no transition, accept or byte-class table, no stay or scan-edge tables, no `<prefix>_reverse_*` accessors, no reverse loop |
 | `"end-minus-width"` | every match of the pattern has the same byte width `W` (the `width` fact, `facts_listing.md` §4.1.2¶7b), so the start is the verified end minus `W`. The artifact carries NO reverse machine. Not on a `"rev-end"` scan, whose ends are speculative (`tuning.md` §2.47) |
 | `"landing"` | every one-character path from the pattern's start ends dead or accepting (the `land_char` fact, `facts_listing.md` §4.1.2¶7a), so the start is the position the forward scan's candidate-start skip last landed on, stepped forward to the first character start where the character there does not decode (§9). The artifact carries NO reverse machine (`tuning.md` §2.48) |
-| `"reverse-pass"` | the artifact walks its reverse machine backwards from the match end to the furthest-back accepting position. Every `"unanchored"` artifact the three rows above decline (in particular every one whose start state does not accept and whose matches neither have one width nor end one character after their start), every `"rev-end"` artifact, and any such build under the deny flags |
+| `"reverse-pass"` | the artifact walks its reverse machine backwards from the match end to the furthest-back accepting position. Every `"unanchored"` artifact the three rows above decline (in particular every one whose start state does not accept and whose matches neither have one width nor end one character after their start), every `"rev-end"` artifact, every `"char-step"` artifact (its reverse machine steps back a character at a time), and any such build under the deny flags |
 | `"attempt-start"` | the search recovers no start: its scan is `"attempt"` (each attempt begins at a known position, and a match is reported from the attempt that found it), `"cover"` (the window search's candidate is the match start) or `"empty"` (nothing matches). No reverse pass runs (§6.3.1¶5a) |
 
 <a id="s6-3-4-p12"></a>[6.3.4¶12] The four forms are answer-identical (`docs/design/opt5_step2_twopass.md` and
@@ -3605,6 +3606,7 @@ any subject. The guard axis governs only where a CALLER may point an entry.
   `-e utf8` reports `(3,3)` against libpcre2's `(1,1) (3,3)`, and over
   `c3 a9 80 c3` reports nothing against libpcre2's `(2,2)`. The loop (§3.1.3)
   and `<prefix>_next` inherit this from `<prefix>_search`.
+- <a id="s9-5-p2a"></a>[9.5¶2a] **An empty match between two ill-formed units.** At a position whose units on both sides are ill-formed and neither is a stray continuation byte, libpcre2 can report an empty match from a search that starts AT that position and not from one that starts earlier; pcrec reports it from every start. `\B` over `61 c3 c3 61` under `-e utf8`: pcrec `(2,2)` from 0, 1 or 2; libpcre2 no match from 0 or 1, `(2,2)` from 2. Every engine and the character-stepped DFA alike (`docs/dev/known_issues.md`).
 - <a id="s9-5-p3"></a>[9.5¶3] **An ill-formed subject END** is a related divergence of the empty-match
   family (`$`, `\z`, `\Z`, `(?m)$`, `\B`, `(?<!.)`), recorded as
   `docs/dev/known_issues.md` K74 (which names `$` and `\B`): over `e3 81` pcrec reports `(2,2)` for `$`

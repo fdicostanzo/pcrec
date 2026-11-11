@@ -33,12 +33,17 @@ not checked: they are pcrec's capability refusals.
 - `refusals.rxt` — `perr` only: `--ucp` without the module, `(*UTF)` under
   byte, the position and repeat rules for the verbs (the wide sets and UCP
   `\b`/`\B` under utf8 build since U3, `island.rxt`).
-- `island.rxt` — [UCP] U3: the CHARACTER-STEPPED DFA (`RX_DFA_SCAN "island"`),
-  UCP `\b`/`\B` under utf8 over well-formed subjects (views, nullable,
-  lookbehind beside `\b`, caseless, wide/narrow/property sets), match counts
-  by the PCRE2 global loop. Generated from libpcre2 10.46 by
-  `docs/dev/lanes/ucpu3b_evidence/gen_island_rxt.py`, which also writes
-  `tests/utf8/island_illformed.rxt`.
+- `island.rxt` — [UCP] U3: the CHARACTER-STEPPED DFA (`RX_DFA_SCAN
+  "char-step"`), UCP `\b`/`\B` under utf8 over well-formed subjects (views,
+  nullable, lookbehind beside `\b`, caseless, wide/narrow/property sets),
+  `mg` counts (two patterns where the retry machine SUCCEEDS), and the EDGE
+  blocks: every interval edge of the word set (both sides), `\d` and
+  `\p{Greek}`, one cell each.
+- `gen_island_rxt.py` — generates `island.rxt` and
+  `tests/utf8/island_illformed.rxt` from libpcre2 (ctypes); `--verify`
+  re-checks both under the options their headers declare (the ill-formed
+  file's only oracle, `run_ucp_tests.sh` §5). `island_diverge.tsv` — the
+  ill-formed cells where pcrec differs (§9.5), left out and named.
 - `ctxnode.rxt` — [UCP] U2: the CONTEXT NODE. The overlap witnesses
   (`(?<=\$)\d+(?:\.\d{2})?\b`, a V ⊂ W pair, a partial overlap, three sets on
   one machine), T3's rows over the LANGUAGE and its declines, startpos cells
@@ -53,25 +58,25 @@ not checked: they are pcrec's capability refusals.
   (the GEN-4-shaped check: a denied row must reach the sound lookaround row),
   and the route manifest, with population floors.
 - `verify_ucp.py` — the oracle above.
-- `ucp_sets.py` — the UCP set POPULATION (construct, DEFK_SET spelling,
-  wide-under-utf8), the ONE list both the capture and the comparison read.
+- `ucp_sets.py` — the UCP set POPULATION (construct, DEFK_SET spelling),
+  the ONE list both the capture and the comparison read.
 - `build_ucp_store.py` — captures `oracle_store/libpcre2-10.46-ucp/` over one
   light ssh session (tests/oracle/remote_adapter.py, `ucp=True`).
 - `ucp_compare.py` — every UCP set pcrec builds, swept over every code point
-  (tests/uprops/uprops_sweep.c, reused), EXACT against the committed store;
-  the wide utf8 sets must be refused by name with construct==spelling in the
-  store standing in; the refusal partition and population (23 compared, 9
-  refused) pinned.
+  (tests/uprops/uprops_sweep.c, reused), EXACT against the committed store,
+  with construct==spelling in the store for every utf8 set; population (32)
+  pinned. The wide/narrow partition left with the knee (RULES-9).
 - `latin1_fold_check.c` + `latin1_fold_10.46.tsv` — `pcrec_fold_latin1`
   against 10.46's UCP|CASELESS relation over all 256×256 byte pairs (112
   partner pairs). Failing-direction controls measured at landing: the ASCII
   fold reads 60 disagreements, the utf8 fold 10.
 - `run_ucp_tests.sh` — the section driver (`make test-ucp`); §4 runs
-  `run_ctxnode_tests.sh`.
+  `run_ctxnode_tests.sh`; §5 the char-step route pin (every island pattern
+  stamps `"char-step"`, floor 40) and `gen_island_rxt.py --verify`.
 
 ## Maintenance
 
-When U2/U3/U4 lift a refusal, move the block out of `refusals.rxt` into a
-real-cells file (generated from libpcre2, re-verified on 10.46), and update
-`ucp_sets.py`'s `wide_utf8` column and `ucp_compare.py`'s population pin in
-the same change.
+When U4 lifts a refusal, move the block out of `refusals.rxt` into a
+real-cells file (generated from libpcre2, re-verified on 10.46). When the VM
+reads the Unicode word set (U4), §5's route pin goes red by design: decide
+which corpus tests which engine, then re-pin.

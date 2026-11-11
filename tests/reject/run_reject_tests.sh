@@ -1044,6 +1044,42 @@ reject_engine_dfa_bref_nocaptures() {
     done
 }
 reject_engine_dfa_bref_nocaptures
+# [UCP] U3 THE CHARACTER-STEPPED DFA'S OWN REFUSALS, which need a flag a
+# reject_gated row cannot carry (review 2026-11-10 r4 ucpu3 checks-1/7,
+# ADMIT-1/2/3/5/6): no VM route reads the Unicode word set yet, so every one
+# REFUSES under --engine=auto too, and its way out is (?aW), never
+# "try --engine=vm" (which is itself refused). The knees are exact: the last
+# admitted count compiles, one above refuses. Sets: seven scripts + the word
+# set = 8 (the unanchored loop's all-non-ASCII set is not counted, ADMIT-3).
+# Atoms: five bit-pattern sets over U+0100..U+0100+n-1 realize n vectors, plus
+# the non-word one and the two ill-formed-byte atoms: n=29 is 32, n=30 is 33.
+# Output is checked with no row id in it (D174).
+reject_char_step() {
+    callidx=$((callidx + 1))
+    [ $((callidx % SHARD_TOTAL)) -eq "$SHARD_INDEX" ] || return 0
+    local label="$1" want="$2" pat="$3" out rc; shift 3
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" -e utf8 --features all "$@" -p rx \
+           -o "$WORKDIR/out.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$?
+    case "$want:$rc:$out" in
+        *'[UCP]'*) bad "char-step $label: a refusal names a plan row: $out" ;;
+        ACCEPT:0:*) ok "char-step $label compiles" ;;
+        ACCEPT:*) bad "char-step $label: exit $rc, want a compile: $out" ;;
+        *) case "$rc:$out" in
+               1:*"${want#*:}"*) ok "char-step $label refuses: ${want#*:}" ;;
+               *) bad "char-step $label: exit $rc, want '${want#*:}', got: $out" ;;
+           esac ;;
+    esac
+}
+reject_char_step "8 sets (the last admitted)" ACCEPT '(*UCP)\b\p{Greek}\p{Cyrillic}\p{Han}\p{Arabic}\p{Hebrew}\p{Thai}\p{Armenian}\b'
+reject_char_step "9 sets" 'R:more than 8 non-ASCII character sets on one machine; restrict the word set with (?aW)' '(*UCP)\b\p{Greek}\p{Cyrillic}\p{Han}\p{Arabic}\p{Hebrew}\p{Thai}\p{Armenian}\p{Georgian}\b'
+reject_char_step "9 sets, --engine=dfa" 'R:more than 8 non-ASCII character sets on one machine; restrict the word set with (?aW)' '(*UCP)\b\p{Greek}\p{Cyrillic}\p{Han}\p{Arabic}\p{Hebrew}\p{Thai}\p{Armenian}\p{Georgian}\b' --engine=dfa
+reject_char_step "32 atoms (the last admitted)" ACCEPT '(*UCP)\b[\x{101}\x{103}\x{105}\x{107}\x{109}\x{10b}\x{10d}\x{10f}\x{111}\x{113}\x{115}\x{117}\x{119}\x{11b}][\x{102}\x{103}\x{106}\x{107}\x{10a}\x{10b}\x{10e}\x{10f}\x{112}\x{113}\x{116}\x{117}\x{11a}\x{11b}][\x{104}\x{105}\x{106}\x{107}\x{10c}\x{10d}\x{10e}\x{10f}\x{114}\x{115}\x{116}\x{117}\x{11c}][\x{108}\x{109}\x{10a}\x{10b}\x{10c}\x{10d}\x{10e}\x{10f}\x{118}\x{119}\x{11a}\x{11b}\x{11c}][\x{110}\x{111}\x{112}\x{113}\x{114}\x{115}\x{116}\x{117}\x{118}\x{119}\x{11a}\x{11b}\x{11c}]'
+reject_char_step "33 atoms" 'R:more than 32 non-ASCII character atoms on one machine; restrict the word set with (?aW)' '(*UCP)\b[\x{101}\x{103}\x{105}\x{107}\x{109}\x{10b}\x{10d}\x{10f}\x{111}\x{113}\x{115}\x{117}\x{119}\x{11b}\x{11d}][\x{102}\x{103}\x{106}\x{107}\x{10a}\x{10b}\x{10e}\x{10f}\x{112}\x{113}\x{116}\x{117}\x{11a}\x{11b}][\x{104}\x{105}\x{106}\x{107}\x{10c}\x{10d}\x{10e}\x{10f}\x{114}\x{115}\x{116}\x{117}\x{11c}\x{11d}][\x{108}\x{109}\x{10a}\x{10b}\x{10c}\x{10d}\x{10e}\x{10f}\x{118}\x{119}\x{11a}\x{11b}\x{11c}\x{11d}][\x{110}\x{111}\x{112}\x{113}\x{114}\x{115}\x{116}\x{117}\x{118}\x{119}\x{11a}\x{11b}\x{11c}\x{11d}]'
+reject_char_step "the state cap, --engine=dfa" 'R:>32000 states; restrict the word set with (?aW)' '(*UCP)\b\w*a\w{14}\b' --engine=dfa
+reject_char_step "the state cap, --engine=auto" 'R:>32000 states; restrict the word set with (?aW)' '(*UCP)\b\w*a\w{14}\b'
+reject_char_step "--engine=vm" 'R:which --engine=vm excludes: the VM cannot read that word set yet; restrict the word set with (?aW) (pattern offset 6)' '(*UCP)\bx' --engine=vm
+reject_char_step "a start anchor in a later branch, at its own offset" 'R:is not supported yet; restrict the word set with (?aW) (pattern offset 10)' '(*UCP)\bx|^y'
+reject_char_step "the leftmost Unicode word context named" 'R:needs the character-stepped DFA, which has no captures; pass --no-captures, or restrict the word set with (?aW) (pattern offset 6)' '(*UCP)\b(\w+)\B'
 
 echo
 echo "== unicode properties, quoting, misc escapes =="
@@ -1735,19 +1771,19 @@ reject_gated none '(*UCP)' "(*UCP) requires module 'ucp' (pattern offset 0)"
 accept '(*UCP)a' '(*UCP)a' none utf8
 # [UCP] U1: module `ucp` PRODUCES. [UCP] U3 lifted its two capability
 # refusals under `-e utf8`: the WIDE UCP sets build (the class their \p{..}
-# spelling is), and UCP `\b`/`\B` takes the character-stepped DFA, the
-# island (ucp_design.md §3). What U3 refuses BY NAME is what the island does
-# not reach yet: a VM-only need beside it (captures, a VM lookaround, \K,
-# --engine=vm: the VM reads the set at U4) and a start anchor (the attempt
-# engine's island is a follow-up).
+# spelling is), and UCP `\b`/`\B` takes the character-stepped DFA
+# (ucp_design.md §3). What is refused BY NAME is what that DFA does not reach
+# yet: a VM-only need beside it (captures, a VM lookaround, \K, --engine=vm:
+# the VM reads the set at U4) and a start anchor anywhere in the pattern
+# (cli.md §1.9¶7). No refusal names a plan row (review r4 ucpu3 ADMIT-6).
 accept '(*UCP)\w' '(*UCP)\w (U3: a wide set builds)' std1 utf8
 accept '(*UCP)[^[:alpha:]]' '(*UCP)[^[:alpha:]] (U3)' std1 utf8
-accept '(*UCP)\b' '(*UCP)\b (U3: the island)' all utf8
+accept '(*UCP)\b' '(*UCP)\b (U3: the character-stepped DFA)' all utf8
 accept '(*UCP)\b' '(*UCP)\b (U2: the byte tier builds UCP \b)' all byte
-accept '(*UCP)x\B' '(*UCP)x\B (U3: the island)' assertions utf8
-reject_gated all '(*UCP)\b(a)' "needs the character-stepped DFA ([UCP] U3), which has no captures" utf8
+accept '(*UCP)x\B' '(*UCP)x\B (U3: the character-stepped DFA)' assertions utf8
+reject_gated all '(*UCP)\b(a)' "needs the character-stepped DFA, which has no captures; pass --no-captures" utf8
 reject_gated all '(*UCP)\bx\Ky' "and \K at pattern offset 9 needs the VM engine" utf8
-reject_gated all '(*UCP)^\bfoo' "is not built yet ([UCP] U3: the character-stepped attempt engine)" utf8
+reject_gated all '(*UCP)^\bfoo' "a start anchor (^, \A, \G or (?m)^) beside a word boundary over the Unicode word set is not supported yet" utf8
 accept '(*UCP)\d[[:xdigit:]]\s' '(*UCP)\d[[:xdigit:]]\s' std1 utf8
 accept '(*UCP)(?aW)\w' '(*UCP)(?aW)\w' std1 utf8
 accept '(*UCP)(?aW:x\b)' '(*UCP)(?aW:x\b)' classes,modifiers,assertions utf8
