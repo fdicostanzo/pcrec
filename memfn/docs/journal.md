@@ -3806,3 +3806,4 @@ Main ruled on the four kit findings (D186 add. 2):
 - 11-11 09:00: 563 strict GREEN; 564-kit-r39b-g2split GREEN (1015 s): N=4 parts 110/148/150/144 s (max/min 1.36, under the 1.5 bound), union/same/gather green. 562 (r39 make test) GREEN. 565 (r39b make test) running.
 - 11-11 09:30: 565 (r39b make test) GREEN. R-39 done line posted (lane/memfn-r39b @ 119e1b6f5); main told.
 - 11-11: main acked R-39: merges lane/memfn-r39b after its job 460; a pcrec lane does the G2_PART make spelling, cloud_kinds rows and the first-cloud-run reweight.
+- 11-11 12:40: 551 (K38-2a ident1) GREEN. 571-kit-kclose2-ident1 RED (rc 1, 1819 s). Triage lane launched (read-only, scratch/memfn/triage571/triage.md). 572-580 left pending on the key, so a 'boxqueue retry kit-kclose2-ident1' keeps the chain if the fix is in the job.
