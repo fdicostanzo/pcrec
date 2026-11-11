@@ -132,7 +132,9 @@ each lookbehind's alternatives first to last and each alternative's items left t
 lookbehind met on the way is read at that point: one nested in it, one written inside a lookahead
 in it, or one inside a group that a reference or call in it reaches. The first fault met is
 reported, at the offset of the innermost lookbehind being read. A length over 65535 is met at the
-item that crosses it. The 255 limit is met only after every alternative.
+item that crosses it, where a group counts as one item whose length is added when the group is
+complete (`(?<=a{30000}(?:a{40000}(?<=c+)))x` is refused by the inner, @23). The 255 limit is met
+only after every alternative.
 - The inner fault is written first: `(a(?<=b(?<=\1)))x` @7, `(?J)(?<n>a)(?<n>b)?(?<=c(?<=\k<n>))x`
   @24, `(a(?<=b(?<=(?1))))x` @7, `(?<=x(a(?<=b(?<=\1))))y` @12, `(?<=b(?<=(a\1)))x` @5,
   `(?<=(?<=c+)a{1,300})x` @4.

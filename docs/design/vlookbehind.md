@@ -64,8 +64,13 @@ compiles). In summary:
 - **RDY-8:** the table's row for target t IS row t. `cg_index` stays only for `struct
   CallGraph`'s own arrays. The opaque columns keep publishing per round.
 - **RDY-9:** the D27 extract is re-cut. **RDY-10:** spec ¶5a is re-worded to the re-entry fact.
-  **RDY-11:** gate 3 pins `pcre2only=3` (every latent-accept row). SV9's second witness is
-  dropped.
+  **RDY-11:** gate 3 pins `pcre2only=4` (every latent-accept row; the diff check's DC-4 counted
+  the `(*ACCEPT)` row). SV9's second witness is dropped.
+- **The diff check** (one critic, `[vlb4 DC-n]` inline) found no design-level problem and nine text
+  fixes, all applied: the clamp covers `lo`/`hi`/`hs` in the lookbehind entries (DC-1), running
+  sums per branch at every level (DC-2), the hold's widening of G5's class (DC-3), the pin's
+  count and a declared PCRE2-bug class (DC-4), unmet lookbehinds at parse (DC-5), SV17's witness
+  (DC-6), G2's new refusal (DC-7), the stop mapping (DC-8), and the walk's one home (DC-9).
 - **Found here:** libpcre2 never measures a lookbehind written inside a `(?(DEFINE)...)` body
   inside another lookbehind. It accepts `(?<=a(?(DEFINE)(?<=b+)))x`, and through a call it
   answers wrongly (`(?<=a(?(DEFINE)(?<g>(?<=b+))))x(?&g)` matches `axb` at [1-2)). pcrec refuses
@@ -541,6 +546,9 @@ Ranked: the higher goal wins a conflict.
      (§6.2.3).
      `[vlb3 G1, G11]` That includes artifacts with a DEFINE (the mark is not emitted) and artifacts
      with calls (the published `minw`/`cwmax` keep their values when their loops fold into one).
+     `[vlb4 RDY-3, DC-7]` A third refusal-only exception: the lookahead-nested call cycle
+     (`((?=(?<=(?2))))(a(?=(?<=(?1))))`, the K-row's class) compiles at HEAD and is refused by
+     V1. The build counts it in the corpus with the lexical-bound class (gate 2; 0 expected).
    - Measurable: the identity gate over every corpus artifact containing a lookbehind shows 0 bytes
      differ.
    - This holds only if owner question 1 is answered "keep the bytes" (§13). That question must be
@@ -2191,7 +2199,8 @@ its only reader. The manager ruled ONE table (G11). Rev 5.1 specifies it:
   - `[vlb3 G1]` A DEFINITION-ONLY node (below) is NOT followed.
   - `[vlb3 G7]` `[vlb4 RDY-1, RDY-3]` **Lookbehinds met on the way.** A lookbehind body nested in
     the walked body, or `[vlb4 RDY-3]` written inside a LOOKAHEAD there (either polarity, at any
-    depth), is followed ONLY by the re-entry walk and the judging walk (§6.2.2). Inside a
+    depth), is followed ONLY by the judging walk (§6.2.2), which answers re-entry too (one walk,
+    `[vlb4 DC-9]`). Inside a
     lookahead the walk looks for lookbehinds at any depth and enters nothing else; a DEFINE body
     inside the lookahead is searched too, as libpcre2's pattern scan does
     (`((?<=\2))(a(?=(?(DEFINE)(?<=\1))))` is 125 @1, while `((?<=\2))(a(?(DEFINE)(?<=\1)))`
@@ -2264,11 +2273,16 @@ its only reader. The manager ruled ONE table (G11). Rev 5.1 specifies it:
     65536", a false figure. Branch sums were not clamped (`(a{40000})(?<=\1\1)x` prints 80000),
     so the figure would be honest for some cells and false for others.
   - **The clamp is `PCREC_W_UNBOUNDED − 1`, the largest finite value, and it lives in the
-    lookbehind walk's arithmetic** (§6.2.3), under the lexical flag. There, a sum or a product
-    of two finite values saturates at `PCREC_W_UNBOUNDED − 1`, and only an unbounded operand (a
-    `+`, `*` or `{n,}` repeat, a cycle, a match-time length) gives `PCREC_W_UNBOUNDED`. The table
-    is filled by that walk, so its values clamp too. It is ONE place for both timings: a
-    lookbehind settled at parse reads the same walk. The global `pcrec_cwmax` keeps
+    lookbehind ENTRIES' arithmetic** (§6.2.3), for every value they compute: `lo`, `hi` and `hs`,
+    with or without a table. (`[vlb4 DC-1]` Not "under the lexical flag": that flag makes only
+    `hs` lexical, and a clamp on `hs` alone would leave `hi` saturated, so order 5 would mark the
+    branch and print rule 0's false sentence.) There, a sum or a product of two finite values
+    saturates at `PCREC_W_UNBOUNDED − 1`, and only an unbounded operand (a `+`, `*` or `{n,}`
+    repeat, a cycle, a match-time length) gives `PCREC_W_UNBOUNDED`. `lo` clamps the same way, so
+    `lo ≤ hi` holds (today `pcrec_cwmin` saturates at `PCREC_MINW_MAX`, which equals
+    `PCREC_W_UNBOUNDED`; no reader is harmed, since order 6 refuses first, but it is now stated).
+    The table is filled by those entries, so its values clamp too. It is ONE place for both
+    timings: a lookbehind settled at parse calls the same entries. The global `pcrec_cwmax` keeps
     `pcrec_sat_add`/`pcrec_sat_mul` as they are, so endwin and startanch do not move.
   - **The ceiling sentence's figure.** Below the clamp it is the true length:
     `(a{65535})(\1\1)(?<=\2)x` prints "(this one has 131070)". At the clamp the arm prints "(this
@@ -2371,8 +2385,9 @@ order, as libpcre2 does.** Post-order is dropped.
     `(?<=\1)(b(?<=\2))(c(?<=\1))x` @19 (the THIRD lookbehind), `(a(?<=\2))(b\1)x` @2.
 
 **The judging walk.** Stage 2 reports by a walk in libpcre2's order. The walk decides WHICH
-lookbehind is reported. The rule table below decides WHY (its sentence). Widths come from the table
-(§6.2.1): the walk reads them and computes none.
+lookbehind is reported. The rule table below decides WHY (its sentence). Item widths come from the
+table and the lookbehind entries (§6.2.1, §6.2.3); the walk adds them into running sums and
+derives no width of its own.
 1. **The pass.** Every lookbehind is visited in ascending `u.look.at`. That is postresolve's sort,
    today's order, kept (S172's site). A lookbehind an earlier walk already judged is skipped. One
    that no walk met is judged at its own turn. That is how pcrec judges a lookbehind in a DEFINE
@@ -2393,6 +2408,15 @@ lookbehind is reported. The rule table below decides WHY (its sentence). Widths 
    - **an item that is a fault by itself:** its `hs` is unbounded; the branch's running `hi`
      passes 65535 at it; it is a reference by a duplicated name; or it is a reference under the
      latent `(?|` rule. Each is a fault of L.
+   - `[vlb4 DC-2]` **Running sums are per branch, at every level.** Every branch walked (L's, or a
+     group's, inline or entered by reference) has its own running sum. A group item adds its
+     maximum to the enclosing branch's sum after the group's walk returns, and the 65535 check
+     runs there. So `(?<=a{30000}(?:a{40000}(?<=c+)))x` is refused by the inner @23 (libpcre2 and
+     HEAD), not by the outer's ceiling, while `(?<=(?:a{40000}a{40000}(?<=c+)))x` is the ceiling
+     @0 (libpcre2 187 @0; HEAD @23). `[vlb4 DC-8]` The sum is checked only while it is finite: an
+     item with a match-time length (`hi` unbounded, `hs` finite) stops the check for that branch,
+     and it is met only after the branches, at rule 0. So `(?<=${v}(?<=c+))x` reports the inner
+     (pcrec-only; no oracle).
    After L's branches come L's cap (order 7) and rule 0 (order 8). A lookbehind whose walk ends
    with no fault is judged, and it passes.
 3. **The walk decides WHETHER and WHICH; the table decides WHY.** A lookbehind is refused when
@@ -2404,7 +2428,9 @@ lookbehind is reported. The rule table below decides WHY (its sentence). Widths 
      and its `hs` finite. A duplicate name maps to order 1. A reference or call to an enclosing
      group, or to a group on the path, maps to order 3 when the target or a group on the path
      contains L. Otherwise the groups form a width cycle, L's `hs` saturates, and it maps to
-     order 4.
+     order 4. `[vlb4 DC-8]` A latent `(?|` stop maps to order 2. A running sum over 65535 on a
+     branch whose `hs` is unbounded maps to order 4, which comes first. Each stop maps to the
+     FIRST row that holds, which may be an earlier row than its own kind (step 4).
    - **Order 3 is DEFINED by the walk** (`[vlb4 RDY-3]`), not by rev 5.1's closure. A closure that
      follows every lookbehind body it reaches, and asks whether a reached group's REGION contains
      L, refuses one cell libpcre2 accepts: `((?<=\2))(a(?(DEFINE)(?<=\1)))` (ACCEPT, lb 1). There
@@ -2428,14 +2454,27 @@ lookbehind is reported. The rule table below decides WHY (its sentence). Widths 
 5. **Both timings.** The parse hook settles a lookbehind whose subtree holds no reference and no
    call. It now judges it at the close of the OUTERMOST lookbehind (one inside no other
    lookbehind's body, lookaheads included), by the same walk. A nested lookbehind's refusal is
-   HELD until then, so `(?<=b+(?<=c+))x` reports @0, libpcre2's offset, not @6. A lookbehind
-   nested in a DEFERRED outermost is judged in that one's walk at postresolve, though its own
-   widths can be settled at parse. This is a stage-1 OFFSET move: D26 tier 2, refused patterns
+   HELD until then, so `(?<=b+(?<=c+))x` reports @0, libpcre2's offset, not @6. `[vlb4 DC-5]`
+   After that walk, every lookbehind in the outermost's subtree that the walk did not meet (one
+   in a DEFINE on the length path) is judged, ascending, as step 1 does at postresolve. So
+   `(?<=a(?(DEFINE)(?<=b+))c+)x` reports @0 (libpcre2 @0, HEAD @15), and
+   `(?<=a(?(DEFINE)(?<=b+)))x` is still refused @15. A lookbehind nested in a DEFERRED outermost
+   is judged in that one's walk at postresolve, though its own widths can be settled at parse. This is a stage-1 OFFSET move: D26 tier 2, refused patterns
    only, the stage-1 cells above, pinned in gate 7.
 6. **What the walk does not fix: diagnostics raised before postresolve** (G5's class, §6.2.4). A
    top-level lookbehind settled at parse is refused at parse, before an earlier deferred one is
    walked. `(?<=b+\1)(c(?<=d+))x` is libpcre2 125 @0 and pcrec @11. `(a)(?<=\1|b+)(?<=c+)x` is
    libpcre2 @3 and pcrec @13. Both belong to the same K-row.
+   - `[vlb4 DC-3]` **Step 5's hold WIDENS that class, and it is stated.** A nested lookbehind
+     settled at parse, inside a deferred outermost, now waits for postresolve. So its refusal
+     loses to every diagnostic raised before postresolve, on cells that AGREE at HEAD:
+     `(a)(?<=\1(?<=c+))x\2` and `(a)(?<=(?1)(?<=c+))x\2` (libpcre2 and HEAD: 125 @9, @11) give the
+     `\2` resolution error after stage 2; `(a)(?<=\1(?<=c+)(?C1))x` (125 @9) gives the callout
+     sentence; `(a)(?<=\1|(?<=c+))x\3` (125 @10) gives the resolution error. These are D26 tier 2
+     (which error) and go on the same K-row; gate 7 pins `(a)(?<=\1(?<=c+))x\2` with pcrec's
+     predicted answer and a comment naming the row. The row's own fix (record the first parse-time
+     fault, compare at postresolve) would restore them; it is not stage 2's work. The trade is
+     the ruling's: holding the nested refusal is what makes `(a)(?<=b+(?<=\1+))x` report @3.
 
 **Per lookbehind, the ordered rules** (the first that holds refuses, at the lookbehind's own
 offset). `[vlb3 G2]` Rev 5's table had rule 1 read `hb`, which a variable makes unbounded. Rule 0's
@@ -2582,6 +2621,11 @@ row and never through a value on the node:
   table.** A lookbehind settled at PARSE time (no call, no reference) reads `hs` too, so
   `(?<=(?:a+){0}x)y` is refused at parse, by the same `la_widths`, at whichever timing settles the
   lookbehind (review r5 vlb3 RDYR-9). That is the stage-1 half of §0 G1's lexical-bound fix;
+- `[vlb4 RDY-2, DC-1]` **The lookbehind entries clamp finite values at `PCREC_W_UNBOUNDED − 1`**
+  (§6.2.1), for `lo`, `hi` and `hs` alike, with or without a table. Their saturating sum and
+  product return `PCREC_W_UNBOUNDED` only for an unbounded operand. The entries without the
+  lookbehind's parameters (`pcrec_cwmax`, `pcrec_cwmin` as every other reader calls them) keep
+  `pcrec_sat_add`/`pcrec_sat_mul` unchanged;
 - **`A_BREF`'s kind row stays ANY**, so the row's other readers (the alternation owner, the NFA
   builder, the required-byte walk, the start set) see no change;
 - the lookbehind entries (names are the build's) are the walk with the table and the lexical
@@ -2746,7 +2790,9 @@ first block. `[vlb3]` marks rev 5.1's rows.
 | `[vlb3 G8]` per lookbehind, not the union | `(a)(b(?<=\1))(?<=\2)x`, `(?<=\2)(a)(b(?<=\1))x` | ACCEPT 1, 1 | one-length 1 each |
 | `[vlb3 G7]` `[vlb4 RDY-1]` nested, the inner's fault written first | `(a(?<=b(?<=\1)))x`, `(?J)(?<n>a)(?<n>b)?(?<=c(?<=\k<n>))x`, `(a(?<=b(?<=(?1))))x`, `(a)(?<=b(?<=\1+)c+)x`, `(?<=x(a(?<=b(?<=\1))))y`, `(?<=(a(?<=\1)))x`, `(?<=b(?<=(a\1)))x`; `(a(?<=b(?<=(?1))c+))x`, `(a(?<=(?<=(?1))\|c+))x` | REJECT 125 @7, @24, @7, @8, @12, @6, @5; @7, @6 | the inner's order (3, 1, 3, 4, 3, 3, 4; 3, 3), at the inner's offset, met first by the judging walk (HEAD gives @2 for the three `(?1)` cells) |
 | `[vlb4 RDY-1]` nested, the OUTER's fault written first (post-order's counter-cells) | `(a(?<=b+(?<=(?1))))x`, `(a(?<=c+\|(?<=(?1))))x` (both AGREE at HEAD), `(a(?<=b+(?<=\1)))x`, `(a)(?<=b+(?<=\1+))x`, `(?J)(?<n>a)(?<n>b)?(?<=c+(?<=\k<n>))x`, `(a(?<=b+(?=(?<=\1))))x` | REJECT 125 @2, @2, @2, @3, @19, @2 | the OUTER, at its offset (HEAD: @2, @2, @8, @9, @25, @11). Sentence: the outer's table row (K-row for the reason) |
-| `[vlb4 RDY-1]` stage 1, settled at parse (an OFFSET move) | `(?<=b+(?<=c+))x`, `(?<=b+(?<=c+)d)x`, `(?<=b+\|(?<=c+))x`, `(?<=b+(?=(?<=c+)))x`, `(?<=(?:b+\|(?<=c+)))x`; controls `(?<=b(?<=c+)d+)x`, `(?<=(?<=c+)\|b+)x`, `(?<=(?=(?<=c+))b+)x` | REJECT 125 @0 each; controls @5, @4, @7 | the outer @0 (HEAD: @6, @6, @7, @9, @10); the controls unmoved |
+| `[vlb4 RDY-1]` stage 1, settled at parse (an OFFSET move) | `(?<=b+(?<=c+))x`, `(?<=b+(?<=c+)d)x`, `(?<=b+\|(?<=c+))x`, `(?<=b+(?=(?<=c+)))x`, `(?<=(?:b+\|(?<=c+)))x`, `[vlb4 DC-5]` `(?<=a(?(DEFINE)(?<=b+))c+)x`; controls `(?<=b(?<=c+)d+)x`, `(?<=(?<=c+)\|b+)x`, `(?<=(?=(?<=c+))b+)x` | REJECT 125 @0 each; controls @5, @4, @7 | the outer @0 (HEAD: @6, @6, @7, @9, @10, @15); the controls unmoved |
+| `[vlb4 DC-2]` running sums per branch, at every level | `(?<=a{30000}(?:a{40000}(?<=c+)))x`, `(?<=b{30000}\1)(a{40000}(?<=c+))x`, `(a{40000}(?<=c+))(?<=a{30000}\1)x`, `(?<=a(?:b(?:c{40000}(?<=d+))c{30000}))x`; `(?<=(?:a{40000}a{40000}(?<=c+)))x` | REJECT 125 @23, @24, @9, @20; 187 @0 | the inner each (the group's sum is added when the group is complete); the ceiling @0 (HEAD @23) |
+| `[vlb4 DC-3]` the hold widens G5's class (cells that agree at HEAD) | `(a)(?<=\1(?<=c+))x\2`, `(a)(?<=(?1)(?<=c+))x\2`, `(a)(?<=\1(?<=c+)(?C1))x`, `(a)(?<=\1\|(?<=c+))x\3` | REJECT 125 @9, @11, @9, @10 (HEAD agrees) | PREDICTED: the `\2`/`\3` resolution error, or the callout sentence. K-row, D26 tier 2 |
 | `[vlb4 RDY-1]` the item-local ceiling and the waiting cap | `(?<=a{60000}b{6000}(?<=c+))x`, `(?<=(?:a{60000}\|b)c{6000}(?<=d+))x`; `(?<=a{1,300}(?<=c+))x`, `(?<=a{1,300}\|(?<=c+))x`, `(?<=a{1,300}(?<=c{1,300}))x` | REJECT 187 @0, 187 @0; 125 @12, 125 @13, 200 @12 | order 6 @0, @0 (HEAD: unbounded @19, @25); the inner @12, @13, @12 (unmoved) |
 | `[vlb3 G7]` `[vlb4 RDY-1]` met inside a reached group | `(?J)(?<=\3)(?<n>a)(?<n>b)?(c(?<=\k<n>))x`, `(?<=\1)(c(?<=\1))x`, `(?<=\1)(a(?<=\1))x`, `(?<=\1b+)(c(?<=\1))x`, `(?<=a(?1)b+)(c(?<=\1))x`; the innermost is blamed: `((?<=(?2)))(a(?<=(?1)))`, `((?<=\2))(a(?<=\1))`, `(?<=\1)(b(?<=\2))(c(?<=\1))x`, `(a(?<=\2))(b\1)x` | REJECT 125 @28, @9, @9, @11, @14; @1, @1, @19, @2 | order 1 @28, order 3 @9, @9, @11 (HEAD @0), @14; order 3 @1, @1, @19, @2 |
 | `[vlb4 RDY-3]` a lookbehind nested in a LOOKAHEAD closes the cycle | `((?<=\2))(a(?=(?<=\1)))`, `((?<=\2))(a(?!(?<=\1)))`, `((?<=\2))(a(?=(?=(?<=\1))))`, `((?<=\2))(a(?=x\|(?<=\1)))`, `((?<=\2))(a(?=(?(DEFINE)(?<=\1))))`; `((?<=(?2)))(a(?=(?<=(?1))))`; `(a(?=(?<=\1)))x`, `(a(?<=b(?=(?<=\1))))x`, `(?<=\1)(a(?=(?<=\1)))x` | REJECT 125 @1 each; @1; @5, @10, @12 | order 3 at the first lookbehind; order 3 @1 (HEAD @16); order 3 @5, @10, @12 |
@@ -2803,8 +2849,8 @@ first block. `[vlb3]` marks rev 5.1's rows.
    cells, 1 difference, the stated class).
 2. **Gate 2, identity** (`run_recursion_identity.sh`), stage 1's procedure. The flipped manifest
    is the corpus's reference-lookbehind `perr` rows, counted by the build (5 rows, 2 distinct at
-   rev 5's freeze, §8). The newly-refused set (the lexical-bound class) must be exactly the
-   build's own count of it (0 expected). Then the re-pin goes in the landing commit, with no abi
+   rev 5's freeze, §8). The newly-refused set (the lexical-bound class, and `[vlb4 DC-7]` the
+   lookahead-nested call cycle) must be exactly the build's own count of it (0 expected). Then the re-pin goes in the landing commit, with no abi
    number (§6.2.9). `[F3]` G2's population for stage 2 is every corpus artifact containing a
    backreference, inside a lookbehind or not, since the scoping (§6.2.3) is what keeps the
    non-lookbehind ones still. The build confirms that the gate's call-free arm already covers
@@ -2812,7 +2858,7 @@ first block. `[vlb3]` marks rev 5.1's rows.
    (the mark must move no byte) and every call-bearing artifact (the published `cwmax` and
    `minw` must not move when their loops fold into one function).
 3. **Gate 3, the accept set and the classification control** (`vlb_accept.py`):
-   - EXTRA gains §6.2.5's cells `[vlb3 G18]` minus the LATENT REFUSE rows (branch reset, `(*ACCEPT)`) and
+   - EXTRA gains §6.2.5's cells `[vlb3 G18]` minus the LATENT REFUSE rows (branch reset) and
      the pcrec-only rows (`${v}` is literal text to libpcre2, so `(${v})(?<=\1)x` would be
      pcre2-only if added mechanically). The two DECLARED divergent classes (a reference to a group
      containing an unbounded zero-width repeat; `[vlb3 G4]` a `{0}` body over the ceiling) are
@@ -2828,13 +2874,18 @@ first block. `[vlb3]` marks rev 5.1's rows.
      cap;
    - `run_lookaround_diff.sh`'s exact pin `VLB_ACC_EXPECT` is re-pinned. `[vlb3 G18]` `[vlb4 RDY-11]`
      `pcre2only=2` (today: `(a)(?<=\1)x` and `(a|bc)(?<=\1)x`, which stage 2 compiles) becomes
-     **3**: EXTRA carries EVERY latent-ACCEPT row, each declared LATENT by the generator, so the
-     branch-reset module's day moves the pin on purpose. They are `(?<=(?|(a)|(b)))\1x` (the
-     reference outside a branch-reset lookbehind) and G13's two calls-only cells
+     **4** `[vlb4 DC-4]`: EXTRA carries EVERY latent-ACCEPT row, each declared LATENT by the
+     generator, so a module's day moves the pin on purpose. They are `(?<=(?|(a)|(b)))\1x` (the
+     reference outside a branch-reset lookbehind), G13's two calls-only cells
      `(?|(a)|(bc))(?<=(?1))x` and `(?|(bc)|(a))(?<=(?1))x` (libpcre2 ACCEPT; pcrec refuses by
-     module). Rev 5.1's pin of 1 counted one latent row while excluding the others; the pin no
-     longer depends on a reading. The latent REFUSE rows stay out (they are refused by both, for
-     a reason gate 3 cannot see).
+     module `branch-reset`), and G15's `(?=(a(*ACCEPT)bc))\w+(?<=\1)x` (libpcre2 ACCEPT, lb 1;
+     pcrec refuses by module `verbs`). Rev 5.1's pin of 1 counted one latent row while excluding
+     the others; the pin no longer depends on a reading. The latent REFUSE rows (branch reset)
+     stay out: both refuse them, for a reason gate 3 cannot see.
+   - `[vlb4 DC-4]` **A third DECLARED class:** the PCRE2-bug cells `(?<=a(?(DEFINE)(?<=b+)))x` and
+     `(?<=a(?(DEFINE)(?<g>(?<=b+))))x(?&g)` (libpcre2 ACCEPT; pcrec refuses, §0 G1). The generator
+     declares them and counts them on their own line, beside the two divergent accept classes, so
+     they never enter `pcre2only`.
    - `[vlb4 RDY-3]` EXTRA gains the accept-set cell `((?=(?<=\2)))(a(?=(?<=\1)))` (both refuse)
      and its controls `((?<=\2))(a(?=\1))`, `((?<=(?2)))(a(?=(?1)))` and
      `((?<=\2))(a(?(DEFINE)(?<=\1)))` (both accept, lb 1). The call twin
@@ -2862,7 +2913,11 @@ first block. `[vlb3]` marks rev 5.1's rows.
      (`(?<=\1b+)(c(?<=\1))x` @11); the innermost blamed (`(?<=\1)(b(?<=\2))(c(?<=\1))x` @19); the
      stage-1 offset move (`(?<=b+(?<=c+))x` @0, `(?<=b+|(?<=c+))x` @0) and the item-local ceiling
      (`(?<=a{60000}b{6000}(?<=c+))x`, the ceiling sentence @0). One sabotage per direction
-     (SV16, SV18).
+     (SV16, SV18). `[vlb4 DC-2]` A group's own running sum: `(?<=a{30000}(?:a{40000}(?<=c+)))x`
+     @23 (the inner) and `(?<=(?:a{40000}a{40000}(?<=c+)))x` (the ceiling @0). `[vlb4 DC-5]` An
+     unmet lookbehind at parse: `(?<=a(?(DEFINE)(?<=b+))c+)x` @0. `[vlb4 DC-3]` The hold's G5
+     widening: `(a)(?<=\1(?<=c+))x\2`, pinned with pcrec's predicted answer (the `\2` resolution
+     error) and a comment naming the K-row.
    - `[vlb4 RDY-3]` The lookahead-nested cycle `((?=(?<=\2)))(a(?=(?<=\1)))` @4 with the re-entry
      sentence, its call twin @4, and the DEFINE-in-a-lookahead cell
      `((?<=\2))(a(?=(?(DEFINE)(?<=\1))))` @1.
@@ -2899,7 +2954,7 @@ cell. Each row names what makes it fail.
 | SV4 | scoping leak: the reference width published on `A_BREF` nodes and read by `pcrec_cwmax` with no table | `[vlb3 G12]` `(a\|bc)(?<=\1)\1$` gains `RX_END_WINDOW "5"` (honest: "none"). `(a\|bc)\1$` stays the plain no-lookbehind CONTROL: with no deferred lookbehind the table is not built, so the plant cannot reach it | gate 8's facts cells; gate 2's backreference population |
 | SV5 | the duplicate-name rule dropped | `(?J)(?:(?<n>a)\|(?<n>b))(?<=\k<n>)x` compiles | gate 3, gate 7 |
 | SV6 | the re-entry walk's `A_BREF` arm returns (today's) | `(a(?<=\1))x` compiles | gate 3, gate 7 |
-| SV17 | `[vlb4 RDY-3]` the walk skips lookahead bodies whole (K127's `A_LOOK` arm today), so it never meets a lookbehind nested in a lookahead | `((?=(?<=\2)))(a(?=(?<=\1)))` COMPILES (the accept-set cell), and `((?<=\2))(a(?=(?<=\1)))` moves from @1 to the second lookbehind's offset | gate 3 (accept set: a pcrec-only accept), gate 7. It is the opposite plant to S1455/SV8 (which follow a lookahead's OWN references), so the pair brackets the rule |
+| SV17 | `[vlb4 RDY-3]` the walk skips lookahead bodies whole (K127's `A_LOOK` arm today), so it never meets a lookbehind nested in a lookahead | `((?=(?<=\2)))(a(?=(?<=\1)))` COMPILES (the accept-set cell), and `[vlb4 DC-6]` so does `((?<=\2))(a(?=(?<=\1)))` (the first lookbehind passes, and the second meets it already judged) | gate 3 (accept set: a pcrec-only accept), gate 7. It is the opposite plant to S1455/SV8 (which follow a lookahead's OWN references), so the pair brackets the rule |
 | SV7 | the re-entry walk keeps its call-free early return | `(a(?<=\1))x` compiles while `((?<=\2)a)(b(?1))?x` stays refused | gate 7's call-free row (the pair discriminates) |
 | SV8 | the edge walk follows lookahead bodies | `[vlb3 G12]` `(a(?<=b(?=\1)))x` refused (re-entry fires) and `(?J)(?<n>a)(?<n>b)?(?<=x(?=\k<n>))y` refused (duplicate name fires); both ACCEPT lb 1 in libpcre2 and compile at HEAD. Rev 5's witness `(a(?=\1)\|b)(?<=\1)x` cannot go red: following a lookahead changes no VALUE (the scoped walk's `A_LOOK` arm is 0) | gate 3, gate 7. **Not a new id:** it is S1455's plant (`cg_length_calls` descends into every `A_LOOK`), so the two witnesses join S1455 |
 | SV9 | rule 0 keeps references | `(a+)(?<=\1)x` prints the rule-0 sentence. `[vlb4 RDY-11]` Rev 5.1's second witness (`(a)(?<=\1)x` refused) is dropped: rule 0 reads `hi`, which comes from the table and is finite there, so the plant does not refuse it | gate 7 (`[vlb3 G2]` it pins order 4's sentence) |
@@ -2931,8 +2986,8 @@ cell. Each row names what makes it fail.
   ([MECH-REACH]). S-U10 RETIRES with the fixpoint it plants (§6.2.1). S171 re-anchors to the
   one loop function (SV14's site), where the table's round bound and the published `cwmax`'s
   share one text.
-- **S1454** (postresolve.c's call of `pcrec_callgraph_lookbehind_recurses`) re-anchors to the
-  re-entry query.
+- **S1454** (postresolve.c's call of `pcrec_callgraph_lookbehind_recurses`) re-anchors to
+  postresolve's call of the judging walk (`[vlb4 DC-9]`: the re-entry query is that walk).
 - **S1455** and **S1490** (`cg_length_calls`' `A_LOOK` arm) re-anchor to the widened edge walk.
   S1455 gains SV8's two witnesses.
 - **S170** (the `la_widths` call in `pcrec_lookaround_fix_widths`) re-anchors to the lookbehind
@@ -3033,11 +3088,11 @@ main `d600e06fc`. The build re-greps them (K35).
 
 | unit | changes | readers that move with it | readiness after rev 5.2 |
 |---|---|---|---|
-| V1 the table (src/opt/callgraph.c) | `[vlb3 G11]` ONE table keyed by group number, built at `pcrec_callgraph_build`'s position, its early return widened to "no call and no deferred lookbehind"; storage on its own Ctx field (`cx->callgraph` still NULL for call-free patterns); ONE loop function parameterised by recurrence and reference treatment (`minw` and the published `cwmax` become calls of it, values unchanged); the references-followed column `lo`/`hi`/`hs` (its clamp is V2's walk arithmetic, `[vlb4 RDY-2]`); `[vlb4 RDY-8]` the opaque columns keep per-round publishing (the loop takes the publish step as a parameter), and the followed column passes the table; the width-path edge walk (`cg_length_calls` widened: references as edges, the duplicate-name flag, definition-only nodes not entered, met lookbehinds, `[vlb4 RDY-3]` those inside lookaheads included, walked only by the re-entry and judging walk); the row closure; `[vlb4 RDY-1, RDY-3]` the JUDGING WALK of §6.2.2 (written order, the path, met lookbehinds judged where met), which answers order 3 and replaces both `pcrec_callgraph_lookbehind_recurses`' walk and rev 5.1's per-lookbehind closure, and drops the call-free early return; RETIRED: the `cwmin` fixpoint, `cg_cwmin_publish`, `u.call.cwmin` | internal.h's declarations (K127's at the callgraph block; the `u.call.cwmin` field and its comment); callgraph.c's file header (what the graph answers), the cwmax fixpoint header's and `cg_cwmin_publish`'s "safe" sentences (F12); compile.c's comments at `pcrec_callgraph_build` ("a call-free pattern returns from it having allocated one array") and at `pcrec_select_engine` ("returns at its first scan with `cx.callgraph` NULL, having written nothing"); mrl.c's `pcrec_cwmin` `A_CALL` comment ("filled by src/opt/callgraph.c's third fixpoint"); src/opt/CLAUDE.md's callgraph, postresolve and mrl.c entries (the last says the width pair's "only caller is module `lookaround`'s width rule", false at HEAD already); `cx->callgraph`'s readers, unchanged and checked: `emit_vm.c` (`v->cg = cx->callgraph`), `nfa.c` (the splice bound), `lower_enc.c` (the assert) | READY once the rev 5.2 diff check passes: RDY-3 (the lookahead descent, the K-row's fix), RDY-8 (rows, publish) and RDY-1's walk are specified |
-| V2 the scoped walk (src/opt/mrl.c) and `[vlb3 G1]` the DEFINE mark (src/parse/mod_recursion.c, internal.h's `A_REP` payload) | `cwmax_walk`/`pcrec_cwmin` take the table and the lexical flag; `A_BREF`'s own arm; `A_CALL` reads the table when given one, and `pcrec_cwmin`'s reads 0 without one; the `A_REP` arm's lexical `{0}` and the definition-only mark; the lookbehind entries; `pcrec_cwmax_static` folded and deleted; `pcrec_rcport_define` sets the mark, and `[vlb4 RDY-6]` so does rxt_compose.c's definitions injection; `[vlb4 RDY-2]` under the lexical flag, finite sums and products clamp at `PCREC_W_UNBOUNDED − 1` (one place, both timings) | the `pcrec_cwmax` header's `A_BREF` paragraph ("unbounded, deliberately ... pcrec does not build that yet ([VLOOKBEHIND] stage 2)"); `[vlb3 G16]` `cwmax_walk`'s `A_BREF` label comment and the "[INLINE-C] 1a" shared-arm comment; `row_cwmax`'s header (names `pcrec_cwmax_static`); the file header's "WHY TWO UNITS ARE TWO FUNCTIONS AND NOT A PARAMETER" (gains §6.2.3's sentence); the `A_CALL` arm's "`A_BREF`'s arm one up stops there" sentence; `pcrec_cwmin`'s "0 EXACTLY" (gains "for the readers without a table"); internal.h's width-pair comment ("may UNDER-estimate for free ... may OVER-estimate for free", F12) and `pcrec_cwmax_static`'s declaration; `A_VAR`'s justification in internal.h, which leans on `A_BREF`'s arm; mod_recursion.c's port comment ("builds it as an A_REP `{0}` node") gains the mark; `[vlb4 RDY-6]` src/parse/rxt_compose.c's injection and its "Not a new shape ... structurally identical trees" comment (the mark is set there too); `pcrec_sat_add`/`pcrec_sat_mul` (re-read, unchanged: the clamp is the lookbehind entry's); atomic.c's "IT IS NOT A `DEFINE` RULE" (re-read, unchanged, §6.2.1); unchanged and checked: endwin.c, startanch.c, `tests/mrl/cwmax_check.c` (its entries take no table) | READY once the diff check passes (RDY-6: both builders; RDY-2: the clamp's one place) |
-| V3 the rule (src/parse/mod_lookaround.c, src/opt/postresolve.c) and `[vlb3 G14]` the describe path (src/core/compile.c) | the deferral predicate (call or backreference); `la_widths` on `lo`/`hi`/`hs` in HEAD's control flow (§6.2.2 orders 4-8); rule 0's sentence by length (`[vlb3 G6]`); the duplicate-name, branch-reset (body and reached rows, `[vlb3 G13]`) and re-entry (`[vlb3 G9]` its own sentence, K127's call arm included) verdicts in `la_width_refusal`; `pcrec_lookaround_fix_widths` takes the table; `[vlb4 RDY-1]` `pcrec_postresolve` keeps its ascending pass and runs the judging walk (§6.2.2) per lookbehind, skipping judged ones; the parse hook judges at the OUTERMOST lookbehind's close and holds a nested refusal until then (a stage-1 offset move); `[vlb4 RDY-5]` order 4 tests `hs` first; `[vlb4 RDY-2]` `la_width_refusal`'s ceiling arm prints "more than 65535" at the clamp; `pcrec_count_groups` runs the passes through `pcrec_postresolve` by driving `compile_driver`'s front half (`[vlb4 RDY-7]`: the obstacle is `cx->job`) | the hook's deferral comment ("`pcrec_has_call` IS THE TEST"); `la_widths`' header (rule 0's residual sentence); `la_width_refusal`'s header; `[vlb3 G16]` `pcrec_laport_group`'s "EVERY REFUSAL HERE BUT ONE" comment, and `pcrec_lookaround_fix_widths`' "`pcrec_cwmax` IS THE SAME FUNCTION" comment; src/parse/NOTES.md's lookaround line ("deferral test is `pcrec_has_call`"); internal.h's `u.look.widths` comment (pending "because the body carries an `A_CALL`"), `u.look.at`, `lb_max`, and `pcrec_has_bref`'s "Read by src/opt/select_engine.c" (it gains a second reader); postresolve.c's header (its customer list and "ORDER IS PART OF THE CONTRACT": `[vlb4 RDY-1]` ascending is kept, the in-walk judging is added); `[vlb4 RDY-4]` S172's header (the libpcre2 claim gains the in-walk clause; the anchor stays); the parse hook's settle comment (it judges at the outermost close) and `pcrec_postresolve`'s comment ("a lookbehind is only ever recorded when its body carries an `A_CALL`"); atomic.c's "BOTH ARE ASKED OF THE POST-DISCHARGE TREE" (`pcrec_has_bref` is now also asked at parse); compile.c's `pcrec_count_groups` comment ("Parse-only entry"); the describe path's callers, re-run with the cost measured: `tests/spec_mod0/check02_capture_count.c`, `tests/registry/axes_registry_check.sh` | READY once the diff check passes: RDY-1 is ruled (written order) and specified, RDY-5 and RDY-7 are stated |
+| V1 the table (src/opt/callgraph.c) | `[vlb3 G11]` ONE table keyed by group number, built at `pcrec_callgraph_build`'s position, its early return widened to "no call and no deferred lookbehind"; storage on its own Ctx field (`cx->callgraph` still NULL for call-free patterns); ONE loop function parameterised by recurrence and reference treatment (`minw` and the published `cwmax` become calls of it, values unchanged); the references-followed column `lo`/`hi`/`hs` (its clamp is V2's walk arithmetic, `[vlb4 RDY-2]`); `[vlb4 RDY-8]` the opaque columns keep per-round publishing (the loop takes the publish step as a parameter), and the followed column passes the table; the width-path edge walk (`cg_length_calls` widened: references as edges, the duplicate-name flag, definition-only nodes not entered, met lookbehinds, `[vlb4 RDY-3]` those inside lookaheads included, walked only by the judging walk); the row closure; the region-root lookup the judging walk reads (`groot`, by group number); `[vlb4 RDY-1, DC-9]` `pcrec_callgraph_lookbehind_recurses` RETIRES: its walk becomes V3's judging walk, which answers order 3 (rev 5.1's per-lookbehind closure is not built), and its call-free early return goes with it; RETIRED as well: the `cwmin` fixpoint, `cg_cwmin_publish`, `u.call.cwmin` | internal.h's declarations (K127's at the callgraph block; the `u.call.cwmin` field and its comment); callgraph.c's file header (what the graph answers), the cwmax fixpoint header's and `cg_cwmin_publish`'s "safe" sentences (F12); compile.c's comments at `pcrec_callgraph_build` ("a call-free pattern returns from it having allocated one array") and at `pcrec_select_engine` ("returns at its first scan with `cx.callgraph` NULL, having written nothing"); mrl.c's `pcrec_cwmin` `A_CALL` comment ("filled by src/opt/callgraph.c's third fixpoint"); src/opt/CLAUDE.md's callgraph, postresolve and mrl.c entries (the last says the width pair's "only caller is module `lookaround`'s width rule", false at HEAD already); `cx->callgraph`'s readers, unchanged and checked: `emit_vm.c` (`v->cg = cx->callgraph`), `nfa.c` (the splice bound), `lower_enc.c` (the assert) | READY once the rev 5.2 diff check passes: RDY-3 (the lookahead descent, the K-row's fix), RDY-8 (rows, publish) and RDY-1's walk are specified |
+| V2 the scoped walk (src/opt/mrl.c) and `[vlb3 G1]` the DEFINE mark (src/parse/mod_recursion.c, internal.h's `A_REP` payload) | `cwmax_walk`/`pcrec_cwmin` take the table and the lexical flag; `A_BREF`'s own arm; `A_CALL` reads the table when given one, and `pcrec_cwmin`'s reads 0 without one; the `A_REP` arm's lexical `{0}` and the definition-only mark; the lookbehind entries; `pcrec_cwmax_static` folded and deleted; `pcrec_rcport_define` sets the mark, and `[vlb4 RDY-6]` so does rxt_compose.c's definitions injection; `[vlb4 RDY-2, DC-1]` in the lookbehind entries, finite sums and products clamp at `PCREC_W_UNBOUNDED − 1` for `lo`, `hi` and `hs` (one place, both timings) | the `pcrec_cwmax` header's `A_BREF` paragraph ("unbounded, deliberately ... pcrec does not build that yet ([VLOOKBEHIND] stage 2)"); `[vlb3 G16]` `cwmax_walk`'s `A_BREF` label comment and the "[INLINE-C] 1a" shared-arm comment; `row_cwmax`'s header (names `pcrec_cwmax_static`); the file header's "WHY TWO UNITS ARE TWO FUNCTIONS AND NOT A PARAMETER" (gains §6.2.3's sentence); the `A_CALL` arm's "`A_BREF`'s arm one up stops there" sentence; `pcrec_cwmin`'s "0 EXACTLY" (gains "for the readers without a table"); internal.h's width-pair comment ("may UNDER-estimate for free ... may OVER-estimate for free", F12) and `pcrec_cwmax_static`'s declaration; `A_VAR`'s justification in internal.h, which leans on `A_BREF`'s arm; mod_recursion.c's port comment ("builds it as an A_REP `{0}` node") gains the mark; `[vlb4 RDY-6]` src/parse/rxt_compose.c's injection and its "Not a new shape ... structurally identical trees" comment (the mark is set there too); `pcrec_sat_add`/`pcrec_sat_mul` (re-read, unchanged: the clamp is the lookbehind entry's); atomic.c's "IT IS NOT A `DEFINE` RULE" (re-read, unchanged, §6.2.1); unchanged and checked: endwin.c, startanch.c, `tests/mrl/cwmax_check.c` (its entries take no table) | READY once the diff check passes (RDY-6: both builders; RDY-2: the clamp's one place) |
+| V3 the rule (src/parse/mod_lookaround.c, src/opt/postresolve.c) and `[vlb3 G14]` the describe path (src/core/compile.c) | the deferral predicate (call or backreference); `la_widths` on `lo`/`hi`/`hs` in HEAD's control flow (§6.2.2 orders 4-8); rule 0's sentence by length (`[vlb3 G6]`); the duplicate-name, branch-reset (body and reached rows, `[vlb3 G13]`) and re-entry (`[vlb3 G9]` its own sentence, K127's call arm included) verdicts in `la_width_refusal`; `pcrec_lookaround_fix_widths` takes the table; `[vlb4 RDY-1, DC-9]` the JUDGING WALK (§6.2.2: written order, the path, met lookbehinds judged where met) is ONE function in mod_lookaround.c, the rule's home. The parse hook calls it with no table (a subtree settled at parse holds no reference and no call, so there is no edge and no path), and `pcrec_postresolve` calls it with V1's table and region roots. `pcrec_postresolve` keeps its ascending pass and runs the walk per lookbehind, skipping judged ones; the parse hook judges at the OUTERMOST lookbehind's close and holds a nested refusal until then (a stage-1 offset move); `[vlb4 RDY-5]` order 4 tests `hs` first; `[vlb4 RDY-2]` `la_width_refusal`'s ceiling arm prints "more than 65535" at the clamp; `pcrec_count_groups` runs the passes through `pcrec_postresolve` by driving `compile_driver`'s front half (`[vlb4 RDY-7]`: the obstacle is `cx->job`) | the hook's deferral comment ("`pcrec_has_call` IS THE TEST"); `la_widths`' header (rule 0's residual sentence); `la_width_refusal`'s header; `[vlb3 G16]` `pcrec_laport_group`'s "EVERY REFUSAL HERE BUT ONE" comment, and `pcrec_lookaround_fix_widths`' "`pcrec_cwmax` IS THE SAME FUNCTION" comment; src/parse/NOTES.md's lookaround line ("deferral test is `pcrec_has_call`"); internal.h's `u.look.widths` comment (pending "because the body carries an `A_CALL`"), `u.look.at`, `lb_max`, and `pcrec_has_bref`'s "Read by src/opt/select_engine.c" (it gains a second reader); postresolve.c's header (its customer list and "ORDER IS PART OF THE CONTRACT": `[vlb4 RDY-1]` ascending is kept, the in-walk judging is added); `[vlb4 RDY-4]` S172's header (the libpcre2 claim gains the in-walk clause; the anchor stays); the parse hook's settle comment (it judges at the outermost close) and `pcrec_postresolve`'s comment ("a lookbehind is only ever recorded when its body carries an `A_CALL`"); atomic.c's "BOTH ARE ASKED OF THE POST-DISCHARGE TREE" (`pcrec_has_bref` is now also asked at parse); compile.c's `pcrec_count_groups` comment ("Parse-only entry"); the describe path's callers, re-run with the cost measured: `tests/spec_mod0/check02_capture_count.c`, `tests/registry/axes_registry_check.sh` | READY once the diff check passes: RDY-1 is ruled (written order) and specified, RDY-5 and RDY-7 are stated |
 | V4 spec | §6.2.8's hunks, `[vlb3]` including cli.md §2.13¶1 and the two stated divergences; `[vlb4 RDY-10, RDY-3]` ¶5a re-worded (the re-entry fact, the lookahead-nested lookbehind), ¶5c's lookahead clause, §9¶2a's refuse-side DEFINE clause | `make test-spec-history`; the spec's anchors | READY once the diff check passes |
-| V5 corpus and pins | `tests/lookaround/refused.rxt` ×2 and `gated.rxt` ×1 flipped to match cells (gated.rxt's row is its capability-tier holder: a replacement capability cell, a variable or a consuming callout in a lookbehind, keeps the file's three tiers); their generator `tests/lookaround/gen_corpus.py` (three cells); gate 2's manifest and re-pin | `tests/lookaround/d27/refusals.rxt` ×2 and `d27/gen_refusals.py` (the D27 author's, V7); `vlb_accept.py`'s EXTRA and its "stage-2 backreference rows" comment; `run_lookaround_diff.sh`'s `VLB_ACC_EXPECT` (`[vlb4 RDY-11]` `pcre2only=3`, every latent-accept row) and its ok text; `tests/recursion/run_lookbehind_call_sweep.py`'s population claim (no callee "holds a backreference (stage 2's one remaining refusal)"), and its population gains rev 5's call-through cells. `[vlb3 G16]` It is OPT-IN: the build lane runs `make test-recursion-lbsweep` by name. Also `tests/reject/run_reject_tests.sh` (the `LBN` sentence, the `(a)(?<=\1)x` row → an accept control, gate 7's new rows, the coverage count line); S1981; the compliance page and annotation store (skill); the start-set manifests, axes allowances and size tripwires a corpus change moves (`make test`); `[vlb4]` the RDY-1/RDY-3 cells (§6.2.5) in gate 3's EXTRA and gate 7 | READY once the diff check passes |
+| V5 corpus and pins | `tests/lookaround/refused.rxt` ×2 and `gated.rxt` ×1 flipped to match cells (gated.rxt's row is its capability-tier holder: a replacement capability cell, a variable or a consuming callout in a lookbehind, keeps the file's three tiers); their generator `tests/lookaround/gen_corpus.py` (three cells); gate 2's manifest and re-pin | `tests/lookaround/d27/refusals.rxt` ×2 and `d27/gen_refusals.py` (the D27 author's, V7); `vlb_accept.py`'s EXTRA and its "stage-2 backreference rows" comment; `run_lookaround_diff.sh`'s `VLB_ACC_EXPECT` (`[vlb4 RDY-11, DC-4]` `pcre2only=4`, every latent-accept row, and the declared PCRE2-bug line) and its ok text; `tests/recursion/run_lookbehind_call_sweep.py`'s population claim (no callee "holds a backreference (stage 2's one remaining refusal)"), and its population gains rev 5's call-through cells. `[vlb3 G16]` It is OPT-IN: the build lane runs `make test-recursion-lbsweep` by name. Also `tests/reject/run_reject_tests.sh` (the `LBN` sentence, the `(a)(?<=\1)x` row → an accept control, gate 7's new rows, the coverage count line); S1981; the compliance page and annotation store (skill); the start-set manifests, axes allowances and size tripwires a corpus change moves (`make test`); `[vlb4]` the RDY-1/RDY-3 cells (§6.2.5) in gate 3's EXTRA and gate 7 | READY once the diff check passes |
 | V6 checks | gate 1's stage-2 section and generator; gate 3's cells, VALID_LB compare and per-class counts; `pcre2_ctypes.py`'s `pattern_info`; gate 8's facts cells; SV1-SV19 (`[vlb4]` SV16 re-aimed, SV17-SV19 new) and the moved rows of §6.2.7, S172 included | tests/lookaround/CLAUDE.md, tests/reject's header comment, `[vlb3 G16]` `docs/testing.md`'s `test-recursion-lbsweep` paragraph (not a gate-3 paragraph: there is none); tests/mech row headers | READY once the diff check passes |
 | V7 D27 (stage 0) | the author's cells from `docs/design/vlb_d27_extract.md`, in `tests/lookaround/d27/`. `[vlb3 G20]` The extract is RE-CUT from rev 5.1 (G1's and G4's choices change the promise) and carries §6.2.8's hunk text itself, because the author works at stage 0, before V4's spec lands | the D27 corpora's flips of the two reference rows (their owner's, as §6 stage 1 states) | READY TO BRIEF: `[vlb4 RDY-9]` re-cut again from rev 5.2 |
 
@@ -3946,5 +4001,6 @@ call twin is a K-row whose fix rides V1). Every other item was taken as proposed
 | RDY-8 (rows, publish) | FIX-NOW: row t IS target t; `cg_index` only for `struct CallGraph`'s own arrays; the opaque columns keep per-round publishing (no `pcrec_minw` change); row sets stated | §6.2.1, §6.2.9 V1 |
 | RDY-9 (D27 extract) | FIX-NOW: re-cut from rev 5.2 (the written-order rule, two-fault nested cells under §6's rule, the finite-length fact with the clamp, the lookahead cells, ¶5a's text, the PCRE2 DEFINE divergence) | `docs/design/vlb_d27_extract.md`, §9, §6.2.9 V7 |
 | RDY-10 (¶5a "has no length") | FIX-NOW: re-worded to the re-entry fact, with RDY-3's clause | §6.2.8 |
-| RDY-11 (`pcre2only`, SV9) | FIX-NOW: pin 3 (every latent-accept row, declared); SV9's second witness dropped | §6.2.6 gate 3, §6.2.7, §6.2.9 V5 |
+| RDY-11 (`pcre2only`, SV9) | FIX-NOW: pin 4 (every latent-accept row, declared; DC-4 added the `(*ACCEPT)` row); SV9's second witness dropped | §6.2.6 gate 3, §6.2.7, §6.2.9 V5 |
 | Found by this lane: a lookbehind in a DEFINE in a lookbehind | STATED: libpcre2 never measures it (accepts `(?<=a(?(DEFINE)(?<=b+)))x`; through a call it matches `axb` wrongly). pcrec refuses, as at HEAD. A PCRE2 bug: follow the standard, upstream issue drafted in the lane report. §9¶2a hunk; gate 7 pins it | §0 G1, §6.2.2 step 1, §6.2.5, §6.2.6 gate 7, §6.2.8 |
+| Diff check DC-1..DC-9 (one critic, `/var/tmp/pcrec-pcrec/scratch/vlbrev52/diffcheck.md`) | FIX-NOW, all text, one round: DC-1 the clamp in the lookbehind entries for `lo`/`hi`/`hs` (§6.2.1, §6.2.3, V2); DC-2 per-branch running sums at every level, with cells (§6.2.2 step 2, §6.2.5, gate 7, extract §2); DC-3 the hold's widening of G5's class stated and pinned (§6.2.2 step 6, §6.2.5, gate 7); DC-4 `pcre2only=4` and the declared PCRE2-bug class (gate 3, V5); DC-5 unmet lookbehinds judged after the outermost's walk at parse (§6.2.2 step 5, §6.2.5, gate 7); DC-6 SV17's witness; DC-7 G2's third refusal-only exception and gate 2; DC-8 the stop mapping and rule 0's timing (§6.2.2 steps 2-3); DC-9 one walk, its home in mod_lookaround.c (V1, V3, S1454). No design-level problem | as listed |
