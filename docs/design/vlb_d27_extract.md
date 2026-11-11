@@ -1,10 +1,11 @@
 # vlb_d27_extract.md — the [VLOOKBEHIND] stage-2 blinded author's extract
 
-Cut from `docs/design/vlookbehind.md` rev 5.1 (§6.2.2's refusal table, §6.2.5's acceptance table,
-§6.2.8's spec text, §0 G1's divergences, §9's list) by lane vlbrev51, 2026-11-10, at main
-`3a190b8d7`. Rev 5's cut (lane vlbrev5) is superseded: review 2026-11-10 r5 vlb3 G20 asked for a
-re-cut after the DEFINE and ceiling choices, which change the promise. Re-cut it from that note;
-never edit it on its own (docs/design/CLAUDE.md).
+Cut from `docs/design/vlookbehind.md` rev 5.2 (§6.2.2's refusal table and judging order, §6.2.5's
+acceptance table, §6.2.8's spec text, §0 G1's divergences, §9's list) by lane vlbrev52, 2026-11-10,
+at main `d600e06fc`. Rev 5.1's cut (lane vlbrev51) is superseded: readiness review 2026-11-10 r6
+vlb4 RDY-9 found three false promises in it (the nested-offset rule, a finite length past 2^40,
+the lookahead-nested lookbehind). Re-cut it from that note; never edit it on its own
+(docs/design/CLAUDE.md).
 
 The blinded author (D27) gets THIS FILE. You work BEFORE stage 2 is built, so the spec in the tree
 still says a backreference in a lookbehind is refused. §0 below is the spec text stage 2 will
@@ -56,9 +57,24 @@ refusal's pattern offset.
   - A reference inside a nested lookahead, or inside a `(?(DEFINE)...)` body, is not part of the
     length (`(a(?=\1)|b)(?<=\1)x` and `((?<=x(?(DEFINE)\1))a)` compile). One under `{0}` is part
     of it (`((?<=x(?:\1){0})a)` is refused).
-- **§7.4¶5a.** The call twin of the `{0}` rule: `(a(?1){0})(?<=(?1))x` is refused.
+  - Lookbehinds met on the way count, including one written inside a LOOKAHEAD:
+    `((?=(?<=\2)))(a(?=(?<=\1)))` is refused. A reference written directly in a lookahead is not
+    followed (`((?<=\2))(a(?=\1))` compiles).
+- **§7.4¶5a.** A subroutine call inside a lookbehind is measured through the called group. A
+  lookbehind whose length depends, through a call, on a group containing that lookbehind is
+  refused, as libpcre2 refuses it: `(?<=(?R))x`, `((?<=(?1))a)`, `((?<=(?2))a)(b|(?1))`. A call
+  written directly inside a nested lookahead is not followed (`(?<=a(?=(?R)))x` and
+  `((?<=(?2)))(a(?=(?1)))` compile). A call inside a lookbehind nested in it, or nested in one of
+  its lookaheads, is followed (`((?<=(?2)))(a(?<=(?1)))` and `((?=(?<=(?2))))(a(?=(?<=(?1))))` are
+  refused). `(a)(?<=(?1))` compiles. The call twin of the `{0}` rule: `(a(?1){0})(?<=(?1))x` is
+  refused.
 - **§9¶2/¶2a.** Shape 5 for "a lookbehind whose length depends on a variable or a consuming
-  callout". The divergence clause names §5's classes 1 and 2.
+  callout". The divergence clause names §5's classes 1, 2 and 5.
+- **`cli.md` §2.13¶1 (`--count-groups`).** It runs the real parser and the compile's checks that
+  follow it, up to (not including) building and emitting the matcher, and prints the
+  capturing-group count. A pattern pcrec refuses is refused with the diagnostic a compile would
+  give, a lookbehind whose length is decided after parsing included: `--count-groups` on
+  `(a)(?<=(?1)|b+)x` refuses (the unbounded sentence), as a compile does.
 
 ## 1. The rule
 
@@ -98,10 +114,10 @@ refusal shape of §0's §2.4.
 | ... is part of a call-and-reference cycle | `(a(?2)?)(b\1)(?<=\2)x` | unbounded (7) |
 | ... any of the above, through a call | `(?(DEFINE)(?<g>a\2))(b+)(?<=(?&g))x`; `(?(DEFINE)(?<g>a\1))(?<=(?&g))x`; `(?(DEFINE)(?<g>\1))(a)(?<=(?&g))x` (`g` IS group 1); `(?<=(a(?2)))x(b\1)?` | unbounded (7) |
 | ... any of the above, even under `{0}` | `(a(?1){0})(?<=\1)x` @10, `(a\1{0})(?<=\1)x`, `(a(?1){0})(?<=(?1))x` @10, `(?(DEFINE)(?<g>a(?&g){0}))(?<=(?&g))x`, `(a(?1)?)(?<=(?1){0}x)y`, `(a+)(?<=\1{0}x)y`, `(?<=(?:\1+){0}x)(b)y` @0, and with no reference `(?<=(?:a+){0}x)y` @0, `(?<=a(?:b+){0})x` @0 | unbounded (7) |
-| the lookbehind's length reaches a group that CONTAINS the lookbehind | `(a(?<=\1))x` @2, `(a(?<=\1)\|b)x`, `(?<=(a(?<=\1)))x` @6, `((?<=\2)a)(b(?1))?x`, through a call `((?<=(?1))a)x` @1, under `{0}` `((?<=x(?:\1){0})a)` @1, from inside a DEFINE `(a(?(DEFINE)(?<g>(?<=\1)b)))x` @17 | "a lookbehind's length may not depend on a group that contains it" (7) |
+| the lookbehind's length reaches a group that CONTAINS the lookbehind | `(a(?<=\1))x` @2, `(a(?<=\1)\|b)x`, `(?<=(a(?<=\1)))x` @6, `((?<=\2)a)(b(?1))?x`, through a call `((?<=(?1))a)x` @1, under `{0}` `((?<=x(?:\1){0})a)` @1, from inside a DEFINE `(a(?(DEFINE)(?<g>(?<=\1)b)))x` @17; through a lookbehind written inside a LOOKAHEAD `(a(?=(?<=\1)))x` @5, `((?=(?<=\2)))(a(?=(?<=\1)))` @4, `((?=(?<=(?2))))(a(?=(?<=(?1))))` @4, `((?<=\2))(a(?=(?=(?<=\1))))` @1, `((?<=\2))(a(?=(?(DEFINE)(?<=\1))))` @1 | "a lookbehind's length may not depend on a group that contains it" (7) |
 | a by-NAME reference to a duplicated name | `(?J)(?:(?<n>a)\|(?<n>b))(?<=\k<n>)x`; same widths `(?J)(?<n>a)(?<n>a)?(?<=\k<n>)x`; through a call `(?J)(?<n>a)(?<n>b)?(?(DEFINE)(?<g>\k<n>))(?<=(?&g))x`; through a reference `(?J)(?<n>a)(?<n>b)?(c\k<n>)(?<=\3)x` @27; under `{0}` `(?J)(?<n>a)(?<n>b)?(?<=x(?:\k<n>){0})y` @19 | "a lookbehind may not contain a backreference by a duplicated group name" (7) |
 | a reference inside the lookbehind, in a pattern that uses `(?\|` anywhere | `(?\|(a)\|(b))(?<=\1)x`; written after it `(a)(?<=\1)(?\|b\|c)x`; reached through a call or a chain `(?\|(a)\|(bc))(?(DEFINE)(?<g>\1))(?<=(?&g))x` @31, `(?\|(a)\|(bc))(d\1)(?<=\2)x` @17 | today pcrec refuses every `(?\|` (module `branch-reset` is not implemented). This class is promised for the day it is |
-| over the cap or the ceiling | `(a{300})(?<=\1\|b{1,2})x` (err 200); `(a{1,256})(?<=\1)x` (err 200); through a call `(a)(?(DEFINE)(?<g>\1{1,300}))(?<=(?&g))x` (err 200); `(a{65535})(?<=\1b)x` (err 187); `(a{40000})(?<=\1\1)x` (err 187); a doubling chain `(a{65535})(\1\1)(\2\2)(?<=\3)x` (err 187 @22) | stage 1's cap and ceiling sentences (7), never "unbounded" for a finite length |
+| over the cap or the ceiling | `(a{300})(?<=\1\|b{1,2})x` (err 200); `(a{1,256})(?<=\1)x` (err 200); through a call `(a)(?(DEFINE)(?<g>\1{1,300}))(?<=(?&g))x` (err 200); `(a{65535})(?<=\1b)x` (err 187); `(a{40000})(?<=\1\1)x` (err 187); a doubling chain `(a{65535})(\1\1)(\2\2)(?<=\3)x` (err 187 @22); a finite length past 2^40 with no reference `(?<=(?:(?:a{65535}){65535}){65535})x` (err 187 @0) | stage 1's cap and ceiling sentences (7), never "unbounded" for a finite length. The ceiling sentence's figure is the true length (`(a{65535})(\1\1)(?<=\2)x`: 131070), or "more than 65535" for a length past 2^40 |
 | pcrec-only: a variable or a consuming callout | `(${v})(?<=\1)x`; `(a)(?<=\1${v})x`; through a call `(${v})(?<=(?1))x`, `(?(DEFINE)(?<g>${v}))(?<=(?&g))x` | "a lookbehind whose length depends on a variable or a consuming callout, directly or through a backreference or a call, is not implemented (its length is known only when matching)" (5) |
 | pcrec-only: an alternative unbounded without the variable | `(?<=a+\|${v})x` | the unbounded sentence (7) |
 
@@ -111,12 +127,24 @@ stage 1 every reference lookbehind printed that sentence.
 A reference to a group that does not exist reports the reference error, not a lookbehind
 refusal: `(a)(?<=\2)x` (libpcre2: err 115).
 
-**Nested lookbehinds: the inner one's fault is reported at the inner one's offset.**
-`(a(?<=b(?<=\1)))x` @7, `(?J)(?<n>a)(?<n>b)?(?<=c(?<=\k<n>))x` @24, `(a(?<=b(?<=(?1))))x` @7,
-`(a)(?<=b(?<=\1+)c+)x` @8, `(?<=x(a(?<=b(?<=\1))))y` @12, `(?<=b(?<=(a\1)))x` @5. A lookbehind
-reached through a group is judged at its own offset too: `(?J)(?<=\3)(?<n>a)(?<n>b)?(c(?<=\k<n>))x`
-@28, `(?<=\1)(c(?<=\1))x` @9. When the cycle runs through the FIRST lookbehind, the first is
-reported: `((?<=(?2)))(a(?<=(?1)))` @1, `((?<=\2))(a(?<=\1))` @1.
+**Which lookbehind is reported: the FIRST fault in WRITTEN order, as libpcre2 reports it.** Read
+each lookbehind's alternatives first to last and each alternative's items left to right. A
+lookbehind met on the way is read at that point: one nested in it, one written inside a lookahead
+in it, or one inside a group that a reference or call in it reaches. The first fault met is
+reported, at the offset of the innermost lookbehind being read. A length over 65535 is met at the
+item that crosses it. The 255 limit is met only after every alternative.
+- The inner fault is written first: `(a(?<=b(?<=\1)))x` @7, `(?J)(?<n>a)(?<n>b)?(?<=c(?<=\k<n>))x`
+  @24, `(a(?<=b(?<=(?1))))x` @7, `(?<=x(a(?<=b(?<=\1))))y` @12, `(?<=b(?<=(a\1)))x` @5,
+  `(?<=(?<=c+)a{1,300})x` @4.
+- The OUTER fault is written first: `(a(?<=b+(?<=(?1))))x` @2, `(a)(?<=b+(?<=\1+))x` @3,
+  `(?<=b+(?<=c+))x` @0, `(?<=b+|(?<=c+))x` @0, `(?<=a{60000}b{6000}(?<=c+))x` @0 (err 187).
+- The 255 limit waits for the alternatives: `(?<=a{1,300}(?<=c+))x` @12 (the inner).
+- Met in a reached group: `(?J)(?<=\3)(?<n>a)(?<n>b)?(c(?<=\k<n>))x` @28, `(?<=\1)(c(?<=\1))x` @9,
+  `(?<=\1b+)(c(?<=\1))x` @11.
+- A cycle is blamed on the innermost lookbehind being read: `((?<=(?2)))(a(?<=(?1)))` @1,
+  `((?<=\2))(a(?<=\1))` @1, `(?<=\1)(b(?<=\2))(c(?<=\1))x` @19 (the third).
+These cells promise the OFFSET. When one lookbehind has two faults of its own, the SHAPE it
+reports is not promised (§6).
 
 ## 3. What compiles (cells; each libpcre2 ACCEPT with the stated lb)
 
@@ -149,6 +177,8 @@ reported: `((?<=(?2)))(a(?<=(?1)))` @1, `((?<=\2))(a(?<=\1))` @1.
 | `(a\|bc)(?<=\1{2})x`, `(a\|bc)(?<=\1?)x` | 4, 2 | |
 | `()(?<=\1a)x`, `(a{0})(?<=\1)x`, `(a?)(?<=\1)x` | 1, 0, 1 | |
 | `(a)(?<=a(?=\1))x` | 1 | |
+| `((?<=\2))(a(?=\1))`, `((?<=(?2)))(a(?=(?1)))`, `((?=(?<=\2)))(a(?=\1))` (a reference or call written directly in a lookahead is not followed) | 1 each | |
+| `((?<=\2))(a(?(DEFINE)(?<=\1)))`, `((?<=(?2)))(a(?(DEFINE)(?<=(?1))))` (a lookbehind inside a DEFINE that a length passes over) | 1 each | |
 
 Refusals that keep their stage-1 reason: `(a)(?<=\1|b+)x` (unbounded, at offset 3) and
 `(a{1,128})(?<=\1\1)x` (cap).
@@ -186,15 +216,28 @@ Refusals that keep their stage-1 reason: `(a)(?<=\1|b+)x` (unbounded, at offset 
    one branch when the callee has different fixed lengths. Since stage 1 that compiles:
    `^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$` and `^(?:(?<g>a|ab)){0}ab(?<=(?&g))$` (lb 2, each [0-2)
    on `ab`). `sr_d27_extract.md`'s old cell for it is history.
+5. **A lookbehind inside a DEFINE inside another lookbehind (pcrec REFUSES; libpcre2 accepts).**
+   libpcre2 10.46 never checks such a lookbehind's length, so it compiles
+   `(?<=a(?(DEFINE)(?<=b+)))x`, and through a call it answers wrongly
+   (`(?<=a(?(DEFINE)(?<g>(?<=b+))))x(?&g)` matches `axb` at [1-2)). pcrec refuses both (shape 7,
+   unbounded, at the inner lookbehind's offset): it follows the rule, not that bug. Write these
+   cells as REFUSED.
 
 ## 6. Diagnostics: shape and offset, not wording
 
 Write refusal cells on the SHAPE (§0's §2.4) and the OFFSET, which is the refusing lookbehind's own
-(for nested lookbehinds, §2's last paragraph). D26 does not promise wording. The sentences in §2
+(which lookbehind: §2's last paragraph). D26 does not promise wording. The sentences in §2
 are pcrec's as designed, so a cell may quote them. The wording facts you can rely on: the
 unbounded, duplicate-name and contains-it sentences differ from one another, and a finite length
-over a limit never says "unbounded".
+over a limit never says "unbounded" when it is that lookbehind's only fault (`(?<=(?:(?:a{65535}){65535}){65535})x`
+included).
 
-**Write each refusal cell with ONE fault.** When a pattern has two faults (a lookbehind's and a
-later one, or a lookbehind's and a callout's), which one pcrec reports is a filed known issue, not
-part of the promise: libpcre2 reports the first lookbehind's, and pcrec may report another.
+**Write each refusal cell with ONE fault, with one exception.** When a pattern has two faults (a
+lookbehind's and a later one, or a lookbehind's and a callout's), which one pcrec reports is a
+filed known issue, not part of the promise: libpcre2 reports the first in written order, and pcrec
+may report another. The same holds for WHICH SHAPE one lookbehind reports when it has two faults
+of its own (`(?<=(?:b{60000}){2}|c+)x`: libpcre2 says 187, pcrec may say unbounded). **The
+exception:** faults in two LOOKBEHINDS, where the second is written inside the first (nested, or
+inside a lookahead in it) or both contain a backreference or a call. §2's last paragraph promises
+their OFFSET (not the shape). Other two-lookbehind cells (`(?<=b+\1)(c(?<=d+))x`: libpcre2 @0) fall
+under the known issue.
