@@ -1443,8 +1443,9 @@ run_one_axis() {
     diffline="$(awk -v BASEFILE="$BASE_DUMP" -v ROWSFILE="$rowsfile" -f "$SCRIPT_DIR/dump_diff.awk" "$dump" 2>"$diffe")"
     cat "$diffe" >&2
     echo "  $diffline"
-    local mismatches budget giveup1 refused lost gained agree_n keys_base_n keys_axis_n
+    local mismatches budget giveup1 refused lost gained agree_n keys_base_n keys_axis_n ccfail
     mismatches="$(echo "$diffline" | grep -oE 'mismatches=[0-9]+' | cut -d= -f2)"
+    ccfail="$(echo "$diffline" | grep -oE 'ccfail=[0-9]+' | cut -d= -f2)"
     budget="$(echo "$diffline" | grep -oE 'budget=[0-9]+' | cut -d= -f2)"
     giveup1="$(echo "$diffline" | grep -oE 'giveup1=[0-9]+' | cut -d= -f2)"
     refused="$(echo "$diffline" | grep -oE 'refused=[0-9]+' | cut -d= -f2)"
@@ -1575,6 +1576,28 @@ run_one_axis() {
         done < "$rowsfile"
     fi
     local total_mismatches=$((mismatches + refused_undocumented + giveup1_unallowed))
+    # [PFFIX] A GENERATED-C COMPILE FAILURE IS A NAMED RED: the .rxt key and
+    # the compiler's error line, one AXIS FAIL line per case (capped at 20,
+    # the count is uncapped). It was an unnamed `lost-other` until the harness
+    # dumped it (pflost_report.md: `ab\Gcd` under -fprefilter, gen.c failing
+    # -Werror). A missing count reads as a failure, never as zero.
+    ccfail="${ccfail:-}"
+    if [ -z "$ccfail" ]; then
+        echo "AXIS FAIL: $label: dump_diff.awk printed no ccfail= count" >&2
+        ccfail=1
+    elif [ "$ccfail" -gt 0 ]; then
+        local _cc_n=0
+        while IFS=$'\t' read -r cls key btrc bout atrc aout; do
+            [ "$cls" = "CCFAIL" ] || continue
+            _cc_n=$((_cc_n + 1))
+            [ "$_cc_n" -le 20 ] || continue
+            if [ "$atrc" = "CCFAIL" ]; then
+                echo "AXIS FAIL: $label: GENERATED C FAILED TO COMPILE at $key: $aout" >&2
+            else
+                echo "AXIS FAIL: $label: GENERATED C FAILED TO COMPILE at $key (default build): $bout" >&2
+            fi
+        done < "$rowsfile"
+    fi
     # K35 FLOOR: an axis with a documented refusal population must still be
     # REACHING it — a change that quietly stopped the cap/force refusal
     # from firing would otherwise read as "0 refused, cleaner!" instead of
@@ -1619,12 +1642,12 @@ run_one_axis() {
         co_floor_breach=1
     fi
     echo "  embedded-code cases reached: $cc_ran (floor 35)"
-    echo "  agree=$agree_n budget-bound=$budget giveup1-allowed=$giveup1_allowed giveup1-unallowed=$giveup1_unallowed refused-documented=$refused_documented (floor $([ -n "$floor" ] && echo "$floor" || echo "none")) lost-other=$lost mismatches=$total_mismatches gained=$gained"
+    echo "  agree=$agree_n budget-bound=$budget giveup1-allowed=$giveup1_allowed giveup1-unallowed=$giveup1_unallowed refused-documented=$refused_documented (floor $([ -n "$floor" ] && echo "$floor" || echo "none")) lost-other=$lost ccfail=$ccfail mismatches=$total_mismatches gained=$gained"
     local verdict="OK"
-    if [ "$total_mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || [ "$lost" -gt 0 ] || [ "$floor_breach" -eq 1 ] || [ "$co_floor_breach" -eq 1 ]; then
+    if [ "$total_mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || [ "$lost" -gt 0 ] || [ "$ccfail" -gt 0 ] || [ "$floor_breach" -eq 1 ] || [ "$co_floor_breach" -eq 1 ]; then
         verdict="FAIL"
         fail=1
-        echo "AXIS FAIL: $label: $total_mismatches mismatch(es) (incl. $refused_undocumented undocumented refusal(s), $giveup1_unallowed unallowed one-sided give-up(s)), $lost lost-other, $gained gained$([ "$floor_breach" -eq 1 ] && echo ", refused-documented floor breached")" >&2
+        echo "AXIS FAIL: $label: $total_mismatches mismatch(es) (incl. $refused_undocumented undocumented refusal(s), $giveup1_unallowed unallowed one-sided give-up(s)), $ccfail generated-C compile failure(s), $lost lost-other, $gained gained$([ "$floor_breach" -eq 1 ] && echo ", refused-documented floor breached")" >&2
     fi
     if [ "$budget" -gt 0 ]; then
         echo "  ($budget case(s) budget-bound — BOTH sides give up/time out, only the boundary moved, never a failure)"
@@ -2273,7 +2296,7 @@ if [ -f "$WORKDIR/ss_vm_base.tsv" ] && [ -f "$WORKDIR/ss_vm_deny.tsv" ]; then
                    -f "$SCRIPT_DIR/dump_diff.awk" "$WORKDIR/ss_vm_deny.tsv" 2>/dev/null)"
     echo "  $ss_line"
     ss_bad=0; ss_allowed=0
-    for f_ in mismatches lost gained; do
+    for f_ in mismatches lost gained ccfail; do
         v_="$(echo "$ss_line" | grep -oE "$f_=[0-9]+" | cut -d= -f2)"
         [ "${v_:-1}" -gt 0 ] && { ss_bad=1; echo "AXIS FAIL: [START-SET] product arm: $f_=${v_:-?}" >&2; }
     done

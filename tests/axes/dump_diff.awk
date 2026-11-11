@@ -21,6 +21,13 @@
 # tuning axis can legitimately produce landed in the failing ones). Per
 # BASE key, in this order:
 #
+#   CCFAIL           [PFFIX] EITHER side's generated C failed to compile or
+#                    link under $CC (tests/harness/run.sh's RXTDUMP CCFAIL
+#                    producer, `dump_ccfail`; `out` is the compiler's first
+#                    error line). Asked FIRST, so two sides failing alike
+#                    never read as AGREE, and never a LOST: it is pcrec's
+#                    emitted text that failed, and the row names the error.
+#                    run_axes.sh fails every one, naming key and error.
 #   AGREE            trc and out identical on both sides.
 #   REFUSED          the axis side is a compile-time refusal (tests/harness/
 #                    run.sh's RXTDUMP REFUSED producer: pcrec itself
@@ -81,7 +88,7 @@
 #   goes to stderr regardless of ROWSFILE.
 #
 # Prints one summary line to stdout:
-#   keys_base=N keys_axis=N agree=N budget=N giveup1=N refused=N lost=N gained=N mismatches=N
+#   keys_base=N keys_axis=N agree=N budget=N giveup1=N refused=N lost=N gained=N mismatches=N ccfail=N
 # Exit status is always 0 — classification is this script's whole job;
 # PASS/FAIL is run_axes.sh's call, made only after it has re-split REFUSED
 # into documented/undocumented.
@@ -135,6 +142,15 @@ END {
         }
         b_trc = base_trc[key]; b_out = base_out[key]
         a_trc = axis_trc[key]; a_out = axis_out[key]
+        if (a_trc == "CCFAIL" || b_trc == "CCFAIL") {
+            ccfail++
+            emit_row("CCFAIL", key, b_trc, b_out, a_trc, a_out)
+            if (ccfail <= 20)
+                print "CCFAIL " key " (" base_kind[key] "): generated C failed to" \
+                      " compile: " (a_trc == "CCFAIL" ? "axis: " a_out : "") \
+                      (b_trc == "CCFAIL" ? " default: " b_out : "") > "/dev/stderr"
+            continue
+        }
         if (a_trc == "REFUSED") {
             refused++
             emit_row("REFUSED", key, b_trc, b_out, a_trc, a_out)
@@ -176,6 +192,6 @@ END {
             print "MISMATCH " key " (" base_kind[key] "): default={trc=" b_trc \
                   " out=" b_out "} axis={trc=" a_trc " out=" a_out "}" > "/dev/stderr"
     }
-    printf "keys_base=%d keys_axis=%d agree=%d budget=%d giveup1=%d refused=%d lost=%d gained=%d mismatches=%d\n", \
-        n_base, n_axis, agree+0, budget+0, giveup1+0, refused+0, lost+0, gained+0, mismatches+0
+    printf "keys_base=%d keys_axis=%d agree=%d budget=%d giveup1=%d refused=%d lost=%d gained=%d mismatches=%d ccfail=%d\n", \
+        n_base, n_axis, agree+0, budget+0, giveup1+0, refused+0, lost+0, gained+0, mismatches+0, ccfail+0
 }
