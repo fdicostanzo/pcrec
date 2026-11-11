@@ -41,8 +41,8 @@ p="$(grep -m1 '^cases passed:' "$WORKDIR/harness.log" | grep -oE '[0-9]+')"
 f="$(grep -m1 '^cases failed:' "$WORKDIR/harness.log" | grep -oE '[0-9]+')"
 if [ -z "$p" ] || [ -z "$f" ]; then
     bad "corpus: the harness printed no counts"; tail -5 "$WORKDIR/harness.log"
-elif [ "$p" -lt 8000 ]; then
-    bad "corpus: only $p cases ran (floor 8000) — the corpus lost its population"
+elif [ $((p + f)) -lt 8000 ]; then
+    bad "corpus: only $((p + f)) cases ran (floor 8000) — the corpus lost its population"
 elif [ "$f" -ne 0 ]; then
     bad "corpus: $f of $((p + f)) cases disagree with the oracle"
     grep -m10 -E 'expected|GAVE UP' "$WORKDIR/harness.log"
