@@ -71,7 +71,7 @@
 #                                          like CLOUD-DONE. The lines come from tests/ci/cloud_failures.sh via `cloudrun --reds`;
 #                                          the shard's log is fetched once (cache state.cloudred.cache). gh calls per --ci-every
 #                                          tick: 1 `gh run list` per unreported ledger row + for each in-progress run 2 (run,
-#                                          jobs) = 3 per run; 3 concurrent runs at the default 300 s = 36 x 3 = 108 calls/hour
+#                                          jobs) = 3 per run; 3 concurrent runs at the default 300 s = 12 x 9 = 108 calls/hour
 #                                          (+ one log per newly red shard); a quiet queue with no ledger row pending costs none.
 #                                          `scripts/cloudrun --status` shows the same, on demand.
 #   CI-UNAVAILABLE <reason>                gh missing / not logged in / network / unreadable answer; once,
