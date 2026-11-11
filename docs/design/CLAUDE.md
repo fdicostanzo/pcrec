@@ -104,7 +104,7 @@ Engines, bounded repeat, budgets
 
 Modules (design notes with `*_measurements/` siblings)
 - `extension_design.md` — module/extension architecture (D34; Part II is the redesign of record); `design_notes_mod06.md` (`unicode-props`), `design_notes_mod07.md` (`--explain`).
-- `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/` + `la_d27_extract.md`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind; stage 1 built, stage 2 rev 5.1) + `vlb_d27_extract.md` + `vlookbehind_pieces.md` (its fixed/variable piece probe, rev 0); `subroutines_design.md` + `subroutines_measurements/` + `sr_d27_extract.md`; `frame_buffer_design.md` (D71 item 2).
+- `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/` + `la_d27_extract.md`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind; stage 1 built, stage 2 rev 5.2) + `vlb_d27_extract.md` + `vlookbehind_pieces.md` (its fixed/variable piece probe, rev 0); `subroutines_design.md` + `subroutines_measurements/` + `sr_d27_extract.md`; `frame_buffer_design.md` (D71 item 2).
 - `feature_families.md` — [FEAT-FAMILIES] basic/extended/pcre2 families over D37 (PROPOSED rev 0).
 - `cond_family.md` — [COND-FAMILY] survey: conditions/predicates/intersection members, machinery, common elements, first piece.
 - `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
