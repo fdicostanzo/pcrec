@@ -424,3 +424,4 @@ x*$
 # block passes in both encodings; the E2 restore lever (reach probes name it) returns
 # the branch point's text, its empty setting does not).
 (?:x\Kac|xab)
+(*UCP)\b\w+\b
