@@ -16,5 +16,6 @@ SAB_DESC='`(?m)^` is built with the MLINE_EOL context row instead of MLINE_BOL, 
 SAB_DOC_FIGURE='MEASURED 2026-10-20 (lane ctxbuild validation, solo mech row on the Linux dev box): corpus:237fail/71008pass,asrt:0fail/57pass -- DETECTED'
 SAB_EXPECT='DETECTED'
 SAB_COUNT='1'
-SAB_BEFORE='        if (cx->mods->multiline) return mline_ctx(cx, CTXFN_MLINE_BOL, apos);'
-SAB_AFTER='        if (cx->mods->multiline) return mline_ctx(cx, CTXFN_MLINE_EOL, apos);   /* SABOTAGE S1152: (?m)^ reads the line-end row */'
+# RE-ANCHORED 2026-11-11 (lane ucfix): [UCP] U3 made the site a ternary (`reg_at` rides the node).
+SAB_BEFORE='        Ast *a = cx->mods->multiline ? mline_ctx(cx, CTXFN_MLINE_BOL, apos)'
+SAB_AFTER='        Ast *a = cx->mods->multiline ? mline_ctx(cx, CTXFN_MLINE_EOL, apos)   /* SABOTAGE S1152: (?m)^ reads the line-end row */'
