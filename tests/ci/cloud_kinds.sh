@@ -7,6 +7,7 @@
 #   cloud_kinds.sh shards KIND            "1/N 2/N .. N/N" (N from the shards column; `table` = selector's `# shards=`)
 #   cloud_kinds.sh command KIND K/N       the shard command with {shard} and {selector} filled in
 #   cloud_kinds.sh owner-ok KIND OWNER    exit 0 if OWNER may start KIND, else 2
+#   cloud_kinds.sh population KIND       the kind's population-check command, {selector} filled in ({sections} left for the caller)
 #   cloud_kinds.sh plan KIND OWNER        key=value lines for the plan job: shards, matrix (JSON), max_parallel,
 #                                         limit_min, needs; exit 2 (message on stderr) for an undefined kind or a
 #                                         refused owner
@@ -15,7 +16,7 @@ set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 root=${ROOT:-$(cd "$here/../.." && pwd)}
 tsv=${KINDS_TSV:-$here/cloud_kinds.tsv}
-cols="kind command selector shards max_parallel limit_min needs owners"
+cols="kind command selector shards max_parallel limit_min needs owners population"
 
 die() { echo "cloud_kinds: $*" >&2; exit 2; }
 row() { awk -F'\t' -v k="$1" '/^#/ || $1 == "kind" {next} $1 == k {print; found=1; exit} END {exit !found}' "$tsv"; }
@@ -50,6 +51,7 @@ get) [ $# -eq 3 ] || die "usage: get KIND FIELD"; need_kind "$2"; field "$2" "$3
 shards) need_kind "${2:-}"; cmd_shards "$2" ;;
 command) need_kind "${2:-}"; c=$(field "$2" command); s=$(field "$2" selector)
     c=${c//\{selector\}/$s}; echo "${c//\{shard\}/${3:?shard K/N}}" ;;
+population) need_kind "${2:-}"; c=$(field "$2" population); echo "${c//\{selector\}/$(field "$2" selector)}" ;;
 owner-ok) need_kind "${2:-}"; cmd_owner_ok "$2" "${3:-}" ;;
 plan) need_kind "${2:-}"
     cmd_owner_ok "$2" "${3:-}" || die "owner '${3:-}' may not start kind '$2' (owners: $(field "$2" owners))"
