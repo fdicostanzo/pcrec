@@ -41,7 +41,7 @@ $CR --owner main --kind test --ref nosuchref >/dev/null 2>&1; chk "unresolvable 
 $CR --bogus >/dev/null 2>&1; chk "unknown argument -> 64" $([ $? = 64 ] && echo 0 || echo 1)
 out=$($CR --owner main --kind nosuchkind --dry-run 2>&1); rc=$?
 [ $rc = 64 ] && grep -q "kind 'nosuchkind' is not declared in tests/ci/cloud_kinds.tsv (declared: test" <<<"$out"; chk "an undeclared kind -> 64, names the declared kinds (from the table)" $?
-sed 's/\t\*$/\tonlyme/' "$R/tests/ci/cloud_kinds.tsv" > "$T/k2.tsv"; cp "$T/k2.tsv" "$R/tests/ci/cloud_kinds.tsv"
+sed 's/\t\*\t/\tonlyme\t/' "$R/tests/ci/cloud_kinds.tsv" > "$T/k2.tsv"; cp "$T/k2.tsv" "$R/tests/ci/cloud_kinds.tsv"
 out=$($CR --owner main --kind test --dry-run 2>&1); rc=$?
 [ $rc = 64 ] && grep -q "owner 'main' may not start kind 'test' (owners: onlyme)" <<<"$out"; chk "an owner the row does not allow -> 64" $?
 cp "$here/../tests/ci/cloud_kinds.tsv" "$R/tests/ci/cloud_kinds.tsv"
