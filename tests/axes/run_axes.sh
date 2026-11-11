@@ -598,6 +598,23 @@ declare -A REFUSAL_PATTERN=(
     # reaches src/gen/emit_vm.c's own cap message directly ("pattern too
     # large (VM exceeds 131072 emitted nodes)").
     ["-fno-altcls-merge"]="pattern too large (VM exceeds"
+    # [UCP] U3 (lane ucax, 2026-11-11): under `-e utf8` a `\b`/`\B` over the
+    # Unicode word set is not byte-expressible and takes the character-stepped
+    # DFA, which is the ONLY engine that reads that word set (cli.md §1.9¶7:
+    # "no other engine reads the Unicode word set yet, so under `-e utf8` such
+    # a pattern is REFUSED ... `--engine=vm`"). So the two axes that take the
+    # DFA away reach that deliberate refusal, each by its own text
+    # (src/opt/select_engine.c `island_refuse`), measured on run 43053543333:
+    # `--engine=vm` 8728 cases, "... which --engine=vm excludes: the VM cannot
+    # read that word set yet; restrict the word set with (?aW)"; and
+    # `-fno-ctx-node` 87 cases (tests/utf8/island_illformed.rxt), where the
+    # denial makes the lookaround a VM need, "... needs the VM engine, which
+    # cannot read that word set yet". The substrings are the diagnostics' own
+    # tails, so any other refusal text stays UNDOCUMENTED. The product arm
+    # `--engine=vm -fno-start-set` inherits the first through its component
+    # flag, and its [START-SET] check below reads this same table.
+    ["--engine=vm"]="--engine=vm excludes: the VM cannot read that word set yet"
+    ["-fno-ctx-node"]="needs the VM engine, which cannot read that word set yet"
     # `-fno-size-term` denies the size term's own K-ladder (the mechanism
     # this whole file's r40 R1 witness exists to test), so on this tower
     # the emitted C reverts to its unchunked size and trips the emitted-
@@ -632,6 +649,8 @@ declare -A REFUSAL_FLOOR=(
     ["-fno-counter"]=180
     ["-fprefilter"]=12000
     ["--engine=dfa"]=8000
+    ["--engine=vm"]=4000       # half the 8728 measured (run 43053543333)
+    ["-fno-ctx-node"]=40       # under half the 87 measured
 )
 
 # ============================================================================
@@ -2254,10 +2273,24 @@ if [ -f "$WORKDIR/ss_vm_base.tsv" ] && [ -f "$WORKDIR/ss_vm_deny.tsv" ]; then
                    -f "$SCRIPT_DIR/dump_diff.awk" "$WORKDIR/ss_vm_deny.tsv" 2>/dev/null)"
     echo "  $ss_line"
     ss_bad=0; ss_allowed=0
-    for f_ in mismatches lost gained refused; do
+    for f_ in mismatches lost gained; do
         v_="$(echo "$ss_line" | grep -oE "$f_=[0-9]+" | cut -d= -f2)"
         [ "${v_:-1}" -gt 0 ] && { ss_bad=1; echo "AXIS FAIL: [START-SET] product arm: $f_=${v_:-?}" >&2; }
     done
+    # A REFUSED row passes only as `--engine=vm`'s own documented limit
+    # (REFUSAL_PATTERN, the one table) refused by BOTH sides: the deny must not
+    # move the refusal set, and any other refusal text is undocumented.
+    ss_refdoc=0; ss_refbad=0
+    while IFS=$'\t' read -r cls key btrc bout atrc aout; do
+        [ "$cls" = "REFUSED" ] || continue
+        if [ "$btrc" = "REFUSED" ] && printf '%s' "$aout" | grep -qF -- "${REFUSAL_PATTERN[--engine=vm]}"; then
+            ss_refdoc=$((ss_refdoc + 1))
+        else
+            ss_refbad=$((ss_refbad + 1)); ss_bad=1
+            [ "$ss_refbad" -le 20 ] && echo "AXIS FAIL: [START-SET] product arm: UNDOCUMENTED refusal at $key: \"$aout\" (base=$btrc)" >&2
+        fi
+    done < "$ss_rows"
+    echo "  product arm refusals: documented=$ss_refdoc undocumented=$ss_refbad"
     while IFS=$'\t' read -r cls key btrc bout atrc aout; do
         [ "$cls" = "GIVEUP1" ] || continue
         if giveup1_named "-fno-start-set" "$key"; then

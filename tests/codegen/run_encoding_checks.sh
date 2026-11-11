@@ -1607,7 +1607,8 @@ def main():
     # the default slice holds no lookbehind block at all, so an
     # encoding-keyed splice there was green (S1988 is the plant).
     patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$', '(?i)(?<=ab)(b)\\1x',
-                 '(?<=a{1,2})x', '(*UCP)(?i)(a)\\1x', '(?<=a{1,2}|b)x', '(?<!a{1,2}|b)x']
+                 '(?<=a{1,2})x', '(*UCP)(?i)(a)\\1x', '(?<=a{1,2}|b)x', '(?<!a{1,2}|b)x',
+                 '(*UCP)\\b\\w+\\b']
 
     workdir = tempfile.mkdtemp(prefix="dd12ai_")
     agg = dict.fromkeys(ENTRY_KEYS, 0)

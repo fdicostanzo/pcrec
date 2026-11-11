@@ -252,6 +252,32 @@ static const char u8_defs_decode[] =
 "    return len;\n"
 "}\n";
 
+/* ---- the BACKWARD DECODE ([UCP] U3, enc.h's PCREC_ENCE_DECODE_BACK) -----
+ *
+ * The character-stepped DFA's step back (ucp_design.md §3.5): the character
+ * whose bytes end at `e`, or 0 -- one byte of the ill-formed atom -- where
+ * they do not end one. r54 E4's repaired back-step rule (below) applied to a
+ * DECODE: walk back over at most three continuation bytes, then the lead
+ * byte must declare exactly the run walked AND the run must decode. Re-spelled
+ * on `$_decode` (`requires`), so the forward and backward walks share one
+ * definition of a well-formed character. */
+static const char u8_defs_decode_back_doc[] =
+"/* Decode the character whose bytes end at s[e - 1] (e > 0). Returns its\n"
+" * length, or 0 when the bytes before e do not end a well-formed character:\n"
+" * the caller then reads s[e - 1] alone as one ill-formed byte. Re-spelled\n"
+" * on $_decode, so it reads exactly the characters the forward walk reads. */\n";
+
+static const char u8_defs_decode_back[] =
+"static inline size_t $_decode_back(const unsigned char *s, size_t e,\n"
+"                                    unsigned *cp)\n"
+"{\n"
+"    size_t q = e - 1, len;\n"
+"    int k = 0;\n"
+"    while (q > 0 && k < 3 && (s[q] & 0xC0u) == 0x80u) { q--; k++; }\n"
+"    len = $_decode(s, e, q, cp);\n"
+"    return len && q + len == e ? len : 0;\n"
+"}\n";
+
 /* ---- entry 4: the lookbehind back-step ----------------------------------
  *
  * THE BODY IS utf8_design.md §5.2.1's REPAIRED ONE, r54 E4, and the line the
@@ -556,6 +582,12 @@ static const PcrecEncEntry entries_utf8[] = {
       u8_decls_fwd_step_doc,  "",
       u8_defs_fwd_step_doc,   u8_defs_fwd_step,
       0, true },
+    /* [UCP] U3 the character-stepped DFA's step back: after DECODE, which it
+     * calls (inline entries precede their callers in table order). */
+    { PCREC_ENCE_DECODE_BACK,   true,
+      NULL,                   "",
+      u8_defs_decode_back_doc, u8_defs_decode_back,
+      PCREC_ENCE_DECODE, true },
     /* [VAR] NOT engine-callable: the entry wrapper's once-per-call
      * resolution calls it, never an engine body -- `next_pos`'s own status,
      * and the [M5-SEAM] check's rule applies to it on the same terms. */

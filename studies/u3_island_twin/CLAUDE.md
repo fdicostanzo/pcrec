@@ -27,6 +27,8 @@ proves it answer-identical, then times it against what pcrec emits today.
 - `check.py`    correctness (arms x libpcre2 x each other; `SAN=1` sanitizers;
                 `ORACLE=remote`). `controls.py` failing-direction controls.
                 `reach.py` island/ill-formed REACH of the correctness set.
+- METHOD CARD (review 2026-11-10 r4 ucpu3, D176): arm `cs` is the char-step DFA AS BUILT
+  (`gen_bases.py` cases x3/x3b); UNMEASURED until a timing window runs it.
 - `bench.c`, `run_bench.py`, `summarize.py`, `bundle.sh`  timing (house
                 protocol, load gate, null-control arm, answer checksums).
 - `results/`    committed TSVs (correctness, controls, reach) plus the

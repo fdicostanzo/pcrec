@@ -25,7 +25,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "[a-z]{2,4}(?:\\z|[a-z])
 SAB_REACH_EXPECT="2"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
-                                   pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), false);'
-SAB_AFTER='                pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
-                                   pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), true);   /* SABOTAGE S440 */'
+# RE-ANCHORED 2026-11-11 (lane ucfix): the call moved one nesting level deeper (indent 20).
+SAB_BEFORE='                    pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
+                                       pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), false);'
+SAB_AFTER='                    pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
+                                       pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), true);   /* SABOTAGE S440 */'

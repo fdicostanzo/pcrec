@@ -298,6 +298,8 @@
 
 <a id="s2-11-p7"></a>[2.11¶7] **Dial:** no cell, GATE 5 and GATE 2 (§5.4).
 
+<a id="s2-11-p8"></a>[2.11¶8] **`--engine=vm` refuses a Unicode `\b`/`\B`.** Under `-e utf8` a word boundary over the Unicode word set is read by the character-stepped DFA alone (`cli.md` §1.9¶7: "no other engine reads the Unicode word set yet"), so `--engine=vm` refuses it with `... needs the character-stepped DFA, which --engine=vm excludes: the VM cannot read that word set yet; restrict the word set with (?aW)`. This is a deliberate, documented limit, not a defect, and it is the whole of `--engine=vm`'s refusal population over the `.rxt` corpus. `make test-axes` records it as `--engine=vm`'s (and so `--engine=vm -fno-start-set`'s) documented refusal, matched on that diagnostic's tail only, with a floor, so any other refusal text under either spelling is RED.
+
 <a id="s2-12"></a>
 ### 2.12 `-fno-tiered-entry` — `PCREC_NO_TIERED_ENTRY` (bit 14)
 
@@ -750,6 +752,8 @@ A fact deny over the run: every consumer sees no run — the run pre-check and `
 <a id="s2-32-p3"></a>[2.32¶3] ANSWER-IDENTICAL, and ENGINE-MOVING without being kept in `rx_info.flags`. A pattern whose only DFA-excluding construct is such a lookaround compiles to the DFA with the node and to the VM under the denial; `--engine=dfa` with the denial refuses (`(?<=...) requires the VM engine, which --engine=dfa excludes`, on `(?<=a)b` with `--features lookaround`). The bit is masked: an artifact built under the flag reports the same `.flags` as one built without it, and `<PREFIX>_ENGINE` (`"vm"` under the denial, `"dfa"` without) is the observable consequence. No stamp of its own.
 
 <a id="s2-32-p4"></a>[2.32¶4] A DFA machine carries at most `PCREC_MAX_CTX_SETS` distinct context sets and `PCREC_MAX_CTX_ATOMS` atoms (`limits.md` §3.9); over either, the DFA is declined as for a state-cap overflow (§2.11). `tests/ucp/run_ctxnode_tests.sh` runs the context-node corpus both ways.
+
+<a id="s2-32-p5"></a>[2.32¶5] **The denial can reach the Unicode-`\b` refusal.** A lookaround the denial turns into a VM need, beside a Unicode `\b`/`\B` under `-e utf8`, leaves no engine for the pattern (§2.11¶8; `cli.md` §1.9¶7): the compile refuses with `... needs the character-stepped DFA, and (?<=...) at pattern offset N needs the VM engine, which cannot read that word set yet`, naming `(?aW)` as the way out. `make test-axes` documents that diagnostic's tail as this axis's only refusal (`tests/utf8/island_illformed.rxt`).
 
 <a id="s2-33"></a>
 ### 2.33 `-fno-cls-kit` — `PCREC_NO_CLS_KIT` (bit 36)

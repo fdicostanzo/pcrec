@@ -116,6 +116,10 @@ static void wdrain(Walk *w, bool pass, int *ndefer)
         const NState *st = &w->nfa->st[s];
         switch (st->k) {
         case N_CLASS:
+        /* [UCP] U3 unreachable: every entry below declines an island NFA,
+         * whose character edges are not one byte (`Nfa.island`). Listed for
+         * the absent `default:`'s reason above. */
+        case N_WCHAR:
             w->cur[w->ncur++] = s;
             break;
         case N_ACCEPT:
@@ -223,7 +227,10 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o)
 {
     memset(o, 0, sizeof *o);
 
-    if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n)
+    /* [UCP] U3 an island NFA's character edges are not one byte each, so it
+     * has no byte offsets to state: the walk says nothing (`nwalk == 0`). */
+    if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n ||
+        nfa->island)
         return;
 
     Walk w;
@@ -334,6 +341,13 @@ void pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax)
     *bmax = -1;
     if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n)
         return;
+    /* [UCP] U3 an island NFA counts characters, not bytes: the only byte
+     * bounds it proves are the trivial ones, [0, unbounded]. */
+    if (nfa->island) {
+        *bmin = 0;
+        *bmax = PCREC_W_UNBOUNDED;
+        return;
+    }
     Walk w;
     wstart(cx, &w, nfa);
     int *next = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
@@ -473,6 +487,7 @@ PfWhyCode pcrec_land_char(Ctx *cx, const Nfa *nfa, const PcrecEnc *e, bool *wide
     *wide = false;
     if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n)
         return PF_WHY_DEAD_START;
+    if (nfa->island) return PF_WHY_ISLAND;   /* [UCP] U3: not byte-stepped */
     LandWalk L;
     memset(&L, 0, sizeof L);
     L.scls = e->start_cls;
@@ -656,6 +671,7 @@ static void sw_close(SpanWalk *w, int prev, bool depth0)
         memcpy(r, w->R[i], 32);
         switch (st->k) {
         case N_CLASS:
+        case N_WCHAR:   /* [UCP] U3 unreachable: `pcrec_span_walk` declines an island NFA */
             if (!(f & SW_AT_END)) sw_out(w, node, (f & SW_ENDAFTER) != 0, r);
             break;
         case N_ACCEPT: {
@@ -831,6 +847,7 @@ PfWhyCode pcrec_span_walk(Ctx *cx, const Nfa *nfa, MkLang *o)
     if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n)
         return PF_WHY_DEAD_START;
     if (nfa->erased) return PF_WHY_ERASED;
+    if (nfa->island) return PF_WHY_ISLAND;   /* [UCP] U3: not byte-stepped */
     for (int i = 0; i < nfa->n; i++)
         if (nfa->st[i].k == N_ACCEPT && nfa->st[i].dist) return PF_WHY_MARKED;
 
