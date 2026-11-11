@@ -38,55 +38,45 @@ struct Ast;
 
 /* ---- the facts' value types -------------------------------------------- */
 
-/* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN, in the bounded form the
- * emitted compare needs: `len` contiguous bytes every match of the pattern
- * must contain, and the INDEX within them of the one the emitted `memchr`
- * scans for.
+/* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN: `whole_len` contiguous
+ * positions every match of the pattern must contain (`whole`, each position
+ * the cube (whole[i], whole_mask[i])), as the analysis stored it (at most
+ * `PCREC_MAX_REQ_RUN_SCAN` positions), with `whole_maxoff` the core walk's
+ * bound on where position 0 lies inside any match ([K82]; `PCREC_W_UNBOUNDED`
+ * where no static bound exists).
  *
- * `len == 0` is the decline and is the safe direction, exactly as
- * `req_byte`'s -1 is: no run, no compare, the artifact is the shape it
- * was before this mechanism. `len` is never 1 — a one-byte run is
- * `[OPT-REQBYTE]`'s own `L = 1` case and is carried by the
- * `req_byte` fact alone, so the two facts never describe the same emitted text.
+ * `whole_len == 0` is the decline and is the safe direction, exactly as
+ * `req_byte`'s -1 is. It is never 1 — a one-byte run is `[OPT-REQBYTE]`'s
+ * own `L = 1` case and is carried by the `req_byte` fact alone.
  *
- * `idx` is a position INSIDE the run and nothing else. It is not an offset
- * from the match start, not a `dmin`/`dmax`, and the mechanism reads no such
- * thing — a run is a statement about its own members' RELATIVE positions
- * (docs/design/reqpos_2b.md §0 finding 1).
- *
- * [K66] `whole` is the run the WINDOW `bytes` was cut from, as the analysis
- * stored it (at most `PCREC_MAX_REQ_RUN_SCAN` bytes), and `bytes` is exactly
- * `whole + at` for `len` bytes — one derivation, both halves published by it.
- * The window is the speed choice every route compares; the whole run is what
- * a VM route with no DFA scan in front ALSO compares, because there the
- * pre-check is the only linear no-match proof and a proof resting on one
- * window made NOMATCH-vs-give-up follow the prior's window pick. */
+ * THE `req_run` FACT (`len`, `idx`) is the run the pre-check SHIPS: `len` is
+ * `whole_len` where no deny removed it (0 under `-fno-req-run`), and `idx`
+ * the position pcrec's own pick reads (`pcrec_find_run_scan_index`: the
+ * `req_byte` fact's consumed-position pick, never the pre-check's scan,
+ * which is the memfn kit's reply). Since R-38 K38-2 nothing is CUT: the
+ * window `bytes`/`mask`/`at` and its `maxoff` retired with
+ * `PCREC_MAX_REQ_RUN_EMIT` (docs/design/memfn/span_runs_sheet.md §2.1, §4.3);
+ * the kit chooses what the pre-check verifies. `idx` is a position INSIDE the
+ * run, never an offset from the match start (docs/design/reqpos_2b.md §0
+ * finding 1). */
 typedef struct {
-    unsigned char bytes[PCREC_MAX_REQ_RUN_EMIT];
-    int len;   /* 0 = declined; otherwise 2..PCREC_MAX_REQ_RUN_EMIT */
-    int idx;   /* 0..len-1: which member the emitted memchr tests */
+    int len;   /* 0 = declined; otherwise whole_len */
+    int idx;   /* 0..len-1: pcrec's pick (the req_byte fact's input) */
     unsigned char whole[PCREC_MAX_REQ_RUN_SCAN];
-    int whole_len;   /* 0 exactly when `len` is; otherwise len..SCAN */
-    int at;          /* where the window starts inside `whole` */
+    int whole_len;   /* 0 exactly when the analysis found no run */
     /* [OPT-LITSCAN] S4 C3 THE MASKS, each position's K: `(x & mask[i]) ==
-     * bytes[i]` is the position's membership test, `0xFF` an exact byte, one
-     * clear bit a two-member cube (litscan_s4.md §2.3.2). `mask` is exactly
-     * `whole_mask + at`, as `bytes` is `whole + at`. All `0xFF` on an exact
-     * run, so a reader of `bytes`/`len` alone stays correct on every exact
-     * run; `pcrec_req_run_masked` is the one spelling of "is it masked". */
-    unsigned char mask[PCREC_MAX_REQ_RUN_EMIT];
+     * whole[i]` is the position's membership test, `0xFF` an exact byte, one
+     * clear bit a two-member cube (litscan_s4.md §2.3.2). All `0xFF` on an
+     * exact run; `pcrec_req_run_masked` is the one spelling of "is it
+     * masked". */
     unsigned char whole_mask[PCREC_MAX_REQ_RUN_SCAN];
-    /* [K82] THE RUN'S MAXIMUM BYTE OFFSET FROM THE ATTEMPT START, in its two
-     * halves, as `whole`/`bytes` are: `whole_maxoff` the core walk's bound on
-     * where `whole` begins inside any match (`req_whole_run`), and `maxoff`
-     * the window's, `whole_maxoff + at` (`req_run_maxoff`). Either is
-     * `PCREC_W_UNBOUNDED` where no static bound exists; meaningful only where
-     * the run itself is (`whole_len`/`len` >= 2). docs/design/litscan_k82h.md
-     * §1.3: every successful attempt at `p` holds the window at some `q` in
-     * `[p, p + maxoff]` (invariant F), which is what lets a search begin its
-     * scan `maxoff` bytes before the pre-check's first hit. */
+    /* [K82] THE RUN's position 0's MAXIMUM BYTE OFFSET FROM THE ATTEMPT
+     * START (`req_whole_run`): every successful attempt at `p` holds the run
+     * at some `q` in `[p, p + whole_maxoff]` (invariant F, litscan_k82h.md
+     * §1.3), which is what lets a search begin its scan `whole_maxoff`
+     * bytes before the pre-check's first hit. Since R-38 K38-2 it is K
+     * wherever a run is the landmark. */
     long long whole_maxoff;
-    long long maxoff;
 } ReqRun;
 
 /* [RUN-POS-SET] stage 2p THE PIECE DESCRIPTION's value types (its combinators
@@ -112,11 +102,11 @@ typedef struct {
     PdGroup *g;
 } PdDesc;
 
-/* Does the run's WINDOW carry a position that is not one exact byte? */
+/* Does the shipped run carry a position that is not one exact byte? */
 static inline bool pcrec_req_run_masked(const ReqRun *r)
 {
     for (int i = 0; i < r->len; i++)
-        if (r->mask[i] != 0xFF) return true;
+        if (r->whole_mask[i] != 0xFF) return true;
     return false;
 }
 

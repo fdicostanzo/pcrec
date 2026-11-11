@@ -7,11 +7,15 @@
  *
  * memfn/src/precheck.c — THE PRE-CHECK COMPOSITE, a scalar arm born at R4c
  * (integration.md §15.3-§15.5): one ALL_PRESENT site whose predicates are,
- * in pcrec's order, an optional one-byte gate, the necessary run's window,
- * an optional whole run, and the rest of the necessary set. Every predicate
- * must hold somewhere in [lo, n), else the site runs pcrec's `on_miss`;
- * where `ret_pred` names the window, its LEFTMOST position is assigned to
- * pcrec's `result` (the handoff).
+ * in pcrec's order, an optional one-byte gate, the necessary run's part
+ * (since MF_SITE_ABI 27 the kit's DERIVED part, window.c), and the rest of
+ * the necessary set. Every predicate must hold somewhere in [lo, n), else
+ * the site runs pcrec's `on_miss`; where `ret_pred` names the run part, the
+ * LEFTMOST candidate (the run occurrence's position 0) is assigned to
+ * pcrec's `result` (the handoff). THE RUN's FLOOR (span_runs_sheet.md §3.3):
+ * the run part's candidates lie at or after max(0, lo + omin), `omin` the
+ * run presence span's, spelled with no unsigned wrap (0 below `lo` only
+ * where `omin` is negative; `lo` itself where it is not).
  *
  * THE FORM, per predicate, in order:
  *   - a RUN predicate with a FUNC part is a call of the offset-skip function
@@ -62,12 +66,13 @@ static int single_byte(const mf_pred *p)
     return n == 1;
 }
 
-/* Is `p` a run with a FUNC part: one RUN term at offset 0, scanned on its
- * own bytes? */
+/* Is `p` a run with a FUNC part: one RUN term at an offset >= 0 (the derived
+ * run part's is its verified extent's first position, MF_SITE_ABI 27),
+ * scanned on its own bytes? */
 static int run_part(const mf_pred *p, const mf_hooks *def)
 {
     return p->fn_ref && p->nterm == 1 && p->term[0].kind == MF_T_RUN &&
-           p->term[0].offset == 0 && p->plan_hint == 0 && def->fn_name &&
+           p->term[0].offset >= 0 && p->plan_hint == 0 && def->fn_name &&
            ofs_fn_applies(p, def);
 }
 
@@ -131,68 +136,6 @@ static int precheck_assign_byte_applies(const mf_site *s, const mf_hooks *def)
     return s->handoff == MF_H_ASSIGN && precheck_parts(s, def) && byte_landmark(s);
 }
 
-/* ---- R-30: a run part another part implies ------------------------------
- *
- * Where a LATER run part's run holds part `i`'s run at offset `d`, byte for
- * byte under the same mask, and is scanned at the same subject byte (its scan
- * position is part `i`'s plus `d`), every position where the later run is
- * present holds part `i`'s run too, `d` bytes in, inside the same [lo, n):
- * part `i`'s answer is implied, so it is neither defined nor called. The
- * pre-check's run WINDOW beside its WHOLE run (compose.c pres_layout_check,
- * [K66]) is that shape. The later part's compare is LED by part `i`'s bytes
- * (run_cmp_render_lead), so a candidate part `i` would have rejected costs
- * the one compare it cost there; nothing is scanned twice. A part whose
- * position the site keeps (`ret_pred`) is rendered. The test-only lever
- * `pres-window` (mf_lever) keeps every part. */
-
-/* Is `p` a FUNC part's run, scanned on its own bytes (precheck_parts held
- * run_part at selection; this reads the predicate alone)? */
-static int func_run(const mf_pred *p)
-{
-    return p->fn_ref && p->nterm == 1 && p->term[0].kind == MF_T_RUN &&
-           p->term[0].offset == 0 && p->plan_hint == 0;
-}
-
-/* The later FUNC part implying part `i` (above), with the offset `*d` of
- * part `i`'s run inside its run; -1 where none does. */
-static int implied_by(const mf_art *art, const mf_site *s, uint32_t i, unsigned *d)
-{
-    const mf_pred *pi = &s->preds[i];
-    if ((art->levers & KIT_LEVER_PRES_WINDOW) || i == s->ret_pred || !func_run(pi))
-        return -1;
-    const mf_term *a = &pi->term[0];
-    for (uint32_t j = i + 1; j < s->npred; j++) {
-        const mf_pred *pj = &s->preds[j];
-        const mf_term *b = &pj->term[0];
-        if (!func_run(pj) || b->run_len < a->run_len) continue;
-        for (unsigned o = 0; o + a->run_len <= b->run_len; o++) {
-            if (pj->plan_pos != pi->plan_pos + o) continue;
-            unsigned k = 0;
-            while (k < a->run_len && a->run[k] == b->run[o + k] &&
-                   (a->mask ? a->mask[k] : 0xFFu) == (b->mask ? b->mask[o + k] : 0xFFu))
-                k++;
-            if (k == a->run_len) {
-                *d = o;
-                return (int)j;
-            }
-        }
-    }
-    return -1;
-}
-
-/* The lead of FUNC part `j`: the first part it implies, its run at `*at`
- * for `*len` bytes. 0 where it implies none. */
-static int lead_of(const mf_art *art, const mf_site *s, uint32_t j, unsigned *at,
-                   unsigned *len)
-{
-    for (uint32_t i = 0; i < j; i++)
-        if (implied_by(art, s, i, at) == (int)j) {
-            *len = s->preds[i].term[0].run_len;
-            return 1;
-        }
-    return 0;
-}
-
 /* ---- file scope: the FUNC parts ------------------------------------------ */
 
 /* The run search's comment: what the block finds and how, and the frozen
@@ -233,8 +176,9 @@ static void run_comment(const mf_hooks *h, const mf_pred *p, uint32_t i,
 }
 
 /* Each FUNC part, in predicate order: its run compare's helpers, pcrec's
- * file-scope note for it, its comment, its function, led by the part it
- * implies; an implied part has none (R-30). The names are kept on the record for the use. */
+ * file-scope note for it, its comment, its function. The names are kept on
+ * the record for the use. (R-30's implied part and led compare retired at
+ * R-38 K38-2: the host states one run part.) */
 static int precheck_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                            mf_sink *o)
 {
@@ -247,27 +191,17 @@ static int precheck_define(mf_art *art, uint32_t handle, const mf_hooks *h,
     int part = 0;
     for (uint32_t i = 0; i < s->npred; i++) {
         const mf_pred *p = &s->preds[i];
-        unsigned at, len;
         if (!p->fn_ref) continue;
-        if (implied_by(art, s, i, &at) >= 0) {
-            part++;         /* a later part's noun stays the whole run's */
-            continue;
-        }
-        int led = lead_of(art, s, i, &at, &len);
         if (!h || !h->fn_name)
             return kit_fail(art, "precheck: a FUNC part needs the fn_name hook");
         r->fns[i] = h->fn_name(h->u, p->fn_ref);
         if (!r->fns[i] || !*r->fns[i])
             return kit_fail(art, "precheck: fn_name gave no name for fn_ref %u",
                             p->fn_ref);
-        if ((led && run_cmp_prepare_lead(art, &p->term[0], at, len, o)) ||
-            run_cmp_prepare(art, p, o))
-            return -1;
+        if (run_cmp_prepare(art, p, o)) return -1;
         if (h->note) h->note(h->u, o, i);
         run_comment(h, p, i, part++ > 0, o);
-        if (led ? ofs_fn_define_lead(art, handle, h, p, r->fns[i], at, len, o)
-                : ofs_fn_define(art, handle, h, p, r->fns[i], o))
-            return -1;
+        if (ofs_fn_define(art, handle, h, p, r->fns[i], o)) return -1;
     }
     return 0;
 }
@@ -330,12 +264,32 @@ static void set_rest(const mf_hooks *h, const mf_site *s, uint32_t from,
         ind);
 }
 
-/* A run's call: ASSIGN where `ret_pred` names it (the handoff keeps the
- * position), else a presence gate comparing the result with `n`. */
-static int run_line(mf_art *art, const mf_hooks *h, const site_rec *r,
+/* The run part's floor (the header's THE RUN's FLOOR): `lo` where the run
+ * span's `omin` is >= 0 or no run span is stated, else max(0, lo + omin)
+ * spelled without an unsigned wrap. NULL after recording why. */
+static const char *run_floor(mf_art *art, const mf_hooks *h, const mf_site *s)
+{
+    int run = kit_pres_run(s);
+    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;
+    if (omin >= 0) return h->lo;
+    unsigned long long back = (unsigned long long)-(long long)omin;
+    kb f;
+    kb_init(&f, art->a);
+    kb_printf(&f, "(%s >= %llu ? %s - %llu : 0)", h->lo, back, h->lo, back);
+    if (f.oom) { kit_fail(art, "precheck: out of memory"); return NULL; }
+    return f.p;
+}
+
+/* A run's call, from the run's floor: ASSIGN where `ret_pred` names it (the
+ * handoff keeps the position), else a presence gate comparing the result
+ * with `n`. */
+static int run_line(mf_art *art, const mf_hooks *hk, const site_rec *r,
                     uint32_t i, mf_sink *o)
 {
     const mf_pred *p = &r->site.preds[i];
+    mf_hooks fh = *hk;
+    const mf_hooks *h = &fh;
+    if (!(fh.lo = run_floor(art, hk, &r->site))) return -1;
     const char *ind = h->indent;
     if (i == r->site.ret_pred) {
         if (!h->result)
@@ -363,8 +317,6 @@ static int precheck_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     art->includes |= MF_INC_STRING_H;   /* memchr */
     for (uint32_t i = 0; i < s->npred; i++) {
         const mf_pred *p = &s->preds[i];
-        unsigned at;
-        if (implied_by(art, s, i, &at) >= 0) continue;     /* R-30: not asked */
         if (h->note) h->note(h->u, o, i);
         if (p->fn_ref) {
             if (run_line(art, h, r, i, o)) return -1;
@@ -431,7 +383,7 @@ static const gate_use precheck_assign_uses[] = {
     [FLD_empty]           = CM(E_MISS),               /* :81; the gate's `n <= lo` misses, :210 */ \
     [FLD_end_back]        = CM(ZERO),                 /* :81 */ \
     [FLD_pred]            = MF_ANY,                   /* not read: ALL_PRESENT reads preds, :86 */ \
-    [FLD_preds]           = CM(NONNEG),               /* :58, :69: every part at offset 0 */ \
+    [FLD_preds]           = CM(NONNEG),               /* :58, run_part: every term at an offset >= 0 */ \
     [FLD_guard_by_caller] = MF_ANY,                   /* not read; 0 off EXPR VERIFY (site_check) */ \
     [FLD_on_miss_leaves]  = CM(YES),                  /* the miss_leaves column below (select_arm) */ \
     [FLD_span_hi]         = MF_ANY,                   /* not read: a proven fact the text needs not */ \

@@ -924,27 +924,20 @@ static void run_member(wf_dec *d)
     const mf_wspan *r = &m->alt->spans[m->run];
     unsigned lo, hi;
     int bj;
-    if (r->verify == MF_VERIFY_NO) {
-        bj = kit_run_member(d->rate, sets_at, r->set, r->len, 1, NULL, T_MASS_STRETCH).pos;
-        if (bj < 0) {                   /* no exact position: no member */
-            d->run_stated = 0;
-            return;
-        }
-        lo = (unsigned)bj;
-        hi = (unsigned)bj + 1;
-        while (lo > 0 && count(r->set[lo - 1]) == 1) lo--;
-        while (hi < r->len && count(r->set[hi]) == 1) hi++;
-    } else {
-        kit_run_reply rr = kit_run_decide(d->rate, kit_run_opts_of(d->art, KIT_RUN_WHOLE), sets_at,
-                                          r->set, r->len, NULL);
-        if (!rr.has_scan) {
-            d->run_stated = 0;
-            return;
-        }
-        bj = rr.scan;
-        lo = rr.ver_lo;
-        hi = rr.ver_lo + rr.ver_len;
+    /* verify NO: the EXACT_AROUND mode, its tie the stretch row stated here
+       (the lever leaves this site's decision behind, §2.5); verify YES: the
+       whole run, the art's tie */
+    kit_run_opts o = r->verify == MF_VERIFY_NO
+                   ? (kit_run_opts){ KIT_RUN_EXACT_AROUND, T_MASS_STRETCH }
+                   : kit_run_opts_of(d->art, KIT_RUN_WHOLE);
+    kit_run_reply rr = kit_run_decide(d->rate, o, sets_at, r->set, r->len, NULL);
+    if (!rr.has_scan) {                 /* no (exact) position: no member */
+        d->run_stated = 0;
+        return;
     }
+    bj = rr.scan;
+    lo = rr.ver_lo;
+    hi = (unsigned)rr.ver_lo + rr.ver_len;
     d->member = r->start + bj;
     d->run_lo = r->start + (int32_t)lo;
     d->run_len = (int)(hi - lo);
@@ -1570,7 +1563,7 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
                 break;
             }
             p->rank_pos[k] = (uint16_t)r.scan;
-            p->rank_ppm[k] = r.mass;
+            p->rank_ppm[k] = kit_mass(d->rate, w->set[hint_at + r.scan], 1, KIT_MASS_SUM);
         }
         p->rank_n = (uint8_t)n;
         if (n && d->pinned && p->rank_pos[0] != d->member - w->off[hint_at])
@@ -2450,11 +2443,20 @@ static int part_states(const mf_pred *p)
     return WF_STATES(p);
 }
 
-/* 1 iff a pre-check part of `s` states window facts (kit.h). */
+/* 1 iff part predicate `p` of `s` is THE DERIVED RUN PART (MF_SITE_ABI 27,
+ * span_runs_sheet.md §2.1): a FUNC part of an ALL_PRESENT site stating no
+ * window and no term; the kit derives its statement from the run's presence
+ * span and the run's reply (wf_parts_prepare). */
+static int part_derived(const mf_site *s, const mf_pred *p)
+{
+    return s->op == MF_OP_ALL_PRESENT && p->fn_ref && !part_states(p) && p->nterm == 0;
+}
+
+/* 1 iff a pre-check part of `s` states window facts, or is derived (kit.h). */
 int wf_has_parts(const mf_site *s)
 {
     for (unsigned i = 0; s->preds && i < s->npred; i++)
-        if (part_states(&s->preds[i])) return 1;
+        if (part_states(&s->preds[i]) || part_derived(s, &s->preds[i])) return 1;
     return 0;
 }
 
@@ -2491,8 +2493,26 @@ const char *wf_parts_check(const mf_site *s)
     if (part_states(&s->pred))
         return "`pred` states a part's window facts (mf_pred's `nalt`/`alts`/`wfloor` are a "
                "pre-check FUNC part's; a site states its own on mf_site)";
+    int run = kit_pres_run(s), nderived = 0;
     for (unsigned i = 0; s->preds && i < s->npred; i++) {
-        if (!part_states(&s->preds[i])) continue;
+        const mf_pred *p = &s->preds[i];
+        if (part_derived(s, p)) {
+            /* each field that would state a span is UNREAD here and must be 0
+               (memory pcrec-no-silent-defaults: 0 is "unread", never a default) */
+            if (run < 0)
+                return "a FUNC part states no window and no term (the derived run part) on a "
+                       "site stating no run presence span (MF_SITE_ABI 27)";
+            if (p->need || p->omin || p->plan_hint || p->plan_pos || p->rank_n)
+                return "the derived run part states a span fact (`need`, `omin`, `plan_hint`, "
+                       "`plan_pos`, `rank_n`): the run's span states them, once (MF_SITE_ABI 27)";
+            if (++nderived > 1) return "a second derived run part (one run, one part)";
+            continue;
+        }
+        if (run >= 0 && p->fn_ref)
+            return "a FUNC part stating its own run on a site stating a run presence span: "
+                   "the run part is DERIVED (state it with no window and no term, "
+                   "MF_SITE_ABI 27)";
+        if (!part_states(p)) continue;
         if (s->op != MF_OP_ALL_PRESENT || !s->preds[i].fn_ref)
             return "a `preds[]` entry states window facts but is no FUNC part (`fn_ref`) of "
                    "an ALL_PRESENT site";
@@ -2502,6 +2522,44 @@ const char *wf_parts_check(const mf_site *s)
         if (why) return why;
     }
     return NULL;
+}
+
+/* THE DERIVED RUN PART's statement (MF_SITE_ABI 27; span_runs_sheet.md
+ * §2.1-§2.3): part `p` (a copy, in the art's arena) of site `s` gains the
+ * window statement of the run's VERIFIED EXTENT, from the run's reply
+ * (`*rr`, fd_pres_run): one alternative with no entry fact, one span
+ * starting `ver_lo` positions past the candidate (the candidate is the
+ * occurrence's position 0), each position the run span's set, core all,
+ * verify YES (the part returns only where the extent holds); the floor
+ * SUBJECT. The family then decides and translates it as any part. Refused
+ * where the run's link is not tested (the host lays a run part out only
+ * where it is). */
+static int derive_run_part(const mf_art *art, const mf_site *s, mf_pred *p, mf_run_reply *rr,
+                           const char **why)
+{
+    if (fd_pres_run(art, s, rr, why)) return -1;
+    if (!rr->has_scan || !rr->ver_len) {
+        *why = "a derived run part where the run's presence link is not tested (or its "
+               "reply verifies nothing)";
+        return -1;
+    }
+    const mf_wspan *run = kit_pres_run_span(s, kit_pres_run(s));
+    mf_walt *a = art->a->alloc(art->a->u, sizeof *a);
+    mf_wspan *w = art->a->alloc(art->a->u, sizeof *w);
+    if (!a || !w) { *why = "out of memory"; return -1; }
+    memset(w, 0, sizeof *w);
+    w->start = rr->ver_lo;
+    w->len = rr->ver_len;
+    w->verify = MF_VERIFY_YES;
+    w->core = MF_CORE_STATED;
+    w->core_lo = 0;
+    w->core_len = rr->ver_len;
+    memcpy(w->set, run->set[rr->ver_lo], 32u * rr->ver_len);
+    *a = (mf_walt){ MF_ENTRY_NONE, 1, w };
+    p->nalt = 1;
+    p->alts = a;
+    p->wfloor = MF_WFLOOR_SUBJECT;
+    return 0;
 }
 
 /* `s` with each stating part's plan translated into today's part shape
@@ -2519,12 +2577,15 @@ int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, i
     mf_hooks hd = def ? *def : (mf_hooks){ 0 };
     if (!hd.miss) hd.miss = MF_MISS_N;
     for (unsigned i = 0; i < s->npred; i++) {
-        if (!part_states(&s->preds[i])) continue;
+        mf_run_reply rr = KIT_RUN_NONE;
+        if (part_derived(s, &s->preds[i]) && derive_run_part(art, s, &np[i], &rr, why))
+            return -1;
+        if (!part_states(&np[i])) continue;
         mf_site ps;
         const mf_site *leg;
         const struct wf_plan *plan;
         const char *pid;
-        wf_part_site(s, i, &ps);
+        wf_part_site(t, i, &ps);
         if (wf_prepare(art, &ps, &hd, MF_PH_DEFINE, quiet, &leg, &plan, &pid, why)) return -1;
         if (!leg) {
             *why = "a pre-check part's plan renders through no legacy row (the family's "
@@ -2543,6 +2604,14 @@ int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, i
         q->nalt = 0;
         q->alts = NULL;
         q->wfloor = 0;
+        /* the derived part's find reads the reply's scan (a loud check, not an
+           assumption: the family's member over the extent is the decision's
+           over the run, the same rule on a sub-stretch holding the scan) */
+        if (rr.ver_len && (q->nterm != 1 || q->term[0].kind != MF_T_RUN ||
+                           q->term[0].offset != rr.ver_lo || q->plan_pos != rr.scan - rr.ver_lo)) {
+            *why = "the derived run part's find is not at the run reply's scan position";
+            return -1;
+        }
     }
     *out = t;
     return 0;

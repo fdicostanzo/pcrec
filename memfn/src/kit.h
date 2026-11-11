@@ -318,8 +318,28 @@ struct mf_art {
     char        err[256];
 };
 
-/* The test-only levers (mf_lever, compose.c's table). */
-enum { KIT_LEVER_PRES_WINDOW = 1u << 0, KIT_LEVER_RUN_LEFT = 1u << 1 };
+/* The test-only levers (mf_lever, compose.c's table). Bit 0 was
+ * `pres-window` (R-30), retired at R-38 K38-2 with the two-part run; never
+ * reused. */
+enum { KIT_LEVER_RUN_LEFT = 1u << 1 };
+
+/* P3's run window, in run positions (R-30's and K38-1's): the stretch the
+ * run decision verifies on an OPTIONAL route (KIT_RUN_WINDOW). Kit-internal
+ * since R-38 K38-2 (no host reads it; the host cuts no window). UNMEASURED
+ * DEFAULT: the incumbent's, reproduced (span_runs_sheet.md §2.3). */
+#define MF_PRES_WINDOW 8
+
+/* THE RUN RECOGNIZER (MF_SITE_ABI 27, span_runs_sheet.md §4.3 [r1.1 F-M]):
+ * the index in s->pspans of THE RUN (the presence span stating `nalt` 1
+ * and `nterm` 0, LAST, at most one; kit_presence_check holds the shape), or
+ * -1 where the site states none. Its positions: kit_pres_run_span. */
+#define kit_pres_run      MF_NS(kit_pres_run)
+#define kit_pres_run_span MF_NS(kit_pres_run_span)
+#define kit_wspan_at      MF_NS(kit_wspan_at)
+int kit_pres_run(const mf_site *s);
+const mf_wspan *kit_pres_run_span(const mf_site *s, int run);
+/* A window span's (`src`, an mf_wspan) position j as its set. */
+const uint8_t *kit_wspan_at(const void *src, unsigned j, uint8_t buf[32]);
 
 #define kit_presence_check MF_NS(kit_presence_check)
 /* The presence class's rules (compose.c), NULL iff the site holds them: a
@@ -330,9 +350,17 @@ const char *kit_presence_check(const mf_site *s);
 #define kit_pres_picks MF_NS(kit_pres_picks)
 /* THE FIVE PICKS' ARITHMETIC (presence.c), over a site whose presence
  * statement holds (the caller has checked it): mf_pres_ports' answers, read
- * by the public port and by the routed PRES slot (finder.c fd_pres). */
+ * by the public port and by the routed PRES slot (finder.c fd_pres). `ext`
+ * is the run's decision as the site's rows took it (mf_class.run, read where
+ * the run's link is tested), the landmark's mass term; NULL: no landmark
+ * answer (-1), fd_pres's own call, which decides it. */
 void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
-                    const uint8_t *start_set, mf_pres_picks *out);
+                    const uint8_t *start_set, const mf_run_reply *ext, mf_pres_picks *out);
+/* THE RUN's REPLY of site `s` (finder.c): the run decision the routed PRES
+ * rows take for its run span (mf_class.run), asked quietly; all zero where
+ * the run's link is not tested or no run is stated. 0, or -1 with *why. */
+#define fd_pres_run MF_NS(fd_pres_run)
+int fd_pres_run(const mf_art *art, const mf_site *s, mf_run_reply *out, const char **why);
 
 /* THE BYTE-RATE and its ONE mass primitive (presence.c; span_pick.md rev
  * 5.2 U4, unit 1b; set-only since unit 1c, D187), read by the PRES ports and
@@ -367,9 +395,10 @@ void kit_run_set(const mf_term *t, unsigned j, uint8_t set[32]);
  * strictly AFTER it are candidates, so asking again from each answer walks
  * the whole order (translate's ranking). `tie`: the TIE row its ties read
  * (a strict order, kit_pick_takes' precondition), its caller's. pos -1: no
- * candidate. Its callers (K38-1, counted by tests/memfn/decider_census.py's
- * RUN CALLERS): the run decision kit_run_decide and the verify-NO prefilter
- * member (window.c run_member, `exact` 1), nothing else. */
+ * candidate. Its ONE caller (R-38 K38-2; counted by
+ * tests/memfn/decider_census.py's RUN CALLERS): the run decision
+ * kit_run_decide, whose EXACT_AROUND mode is the verify-NO prefilter member
+ * (`exact` 1). */
 typedef struct { int pos; uint32_t mass; } kit_member;
 typedef const uint8_t *kit_pos_at(const void *src, unsigned j, uint8_t buf[32]);
 #define kit_run_member MF_NS(kit_run_member)
@@ -377,26 +406,27 @@ kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src,
                           int exact, const kit_member *after, int tie);
 
 /* THE RUN DECISION (presence.c; R-38 K38-1, span_runs_sheet.md rev 1.3
- * §2.3): a pre-check run's scan position and the stretch its check
- * verifies, ONE decision every reader asks (P3's scan and window, the twin's
- * mass, the window family's verify-YES member, translate's ranking and,
- * since K38-2a, Table A's in-run stop, a_mass_choose). Its options `o` (the
- * sheet's `opts`): `st`, the stretch the reader renders (the whole run, or
- * P3's window), and `tie`, the TIE row its ties read (T_MASS_STRETCH;
- * T_RUN_LEFT on an art under the test-only lever `run-tie-left`), both from
- * kit_run_opts_of so every reader on one art reads one tie. `scan` is a run
- * position (`has_scan` 0: none, only past the last ranked position);
- * `[ver_lo, ver_lo + ver_len)` the verified stretch, run positions; `mass`
- * the scan position's (KIT_MASS_SUM). `after` non-NULL asks the next ranked
- * position (translate's walk, the in-run stop's). */
-typedef enum { KIT_RUN_WHOLE, KIT_RUN_WINDOW } kit_run_stretch;
+ * §2.3): a run's scan position and the stretch its check verifies, ONE
+ * decision every reader asks (the routed PRES slot's run reply, mf_class.run,
+ * and through it P4, P2 and the twin's mass; the window family's member of a
+ * run of either verify fact; translate's ranking; Table A's in-run stop,
+ * a_mass_choose). Its options `o` (the sheet's `opts`): `st`, the STRETCH
+ * MODE (KIT_RUN_WHOLE the whole run, KIT_RUN_WINDOW P3's window, the routed
+ * PRES rows choosing between them by the run's route, U3;
+ * KIT_RUN_EXACT_AROUND the window site's verify-NO stretch, exact positions
+ * only), and `tie`, the TIE row its ties read (T_MASS_STRETCH; T_RUN_LEFT
+ * on an art under the test-only lever `run-tie-left`, from kit_run_opts_of,
+ * so every reader on one art reads one tie; the verify-NO reader states
+ * T_MASS_STRETCH itself and the lever leaves it behind, §2.5). The reply
+ * is mf_run_reply (U1: one spelling, the class's): `scan` a run position
+ * (`has_scan` 0: none, only past the last ranked position, or no exact
+ * position under EXACT_AROUND), `[ver_lo, ver_lo + ver_len)` the verified
+ * stretch. `after` non-NULL asks the next ranked position (translate's walk,
+ * the in-run stop's; the stretch is then the whole run's). */
+typedef enum { KIT_RUN_WHOLE, KIT_RUN_WINDOW, KIT_RUN_EXACT_AROUND } kit_run_stretch;
 typedef struct { kit_run_stretch st; int tie; } kit_run_opts;
-typedef struct {
-    int      has_scan, scan;
-    uint32_t mass;
-    unsigned ver_lo, ver_len;
-} kit_run_reply;
-#define KIT_RUN_NONE ((kit_run_reply){ 0, -1, 0, 0, 0 })   /* no scan, no stretch */
+typedef mf_run_reply kit_run_reply;
+#define KIT_RUN_NONE ((kit_run_reply){ 0, 0, 0, 0 })   /* no scan, no stretch */
 #define kit_run_decide  MF_NS(kit_run_decide)
 #define kit_run_opts_of MF_NS(kit_run_opts_of)
 #define kit_run_at      MF_NS(kit_run_at)
@@ -773,9 +803,8 @@ typedef struct mf_formdecl {
  * test) and its helper's name `<fn>__body` (a helper's last fall-through,
  * called by NAME: D155; the row never sees the body's text); whether
  * the define sink offers the bracket ops (a host that cannot count guarded
- * bytes never receives them); and the LEAD (R-30): the run positions
- * [lead_at, lead_at + lead_len) the verify chain compares FIRST, before the
- * rest of the run (lead_len 0: none, the run in its row's own order). */
+ * bytes never receives them). (R-30's LEAD retired at R-38 K38-2 with the
+ * two-part run that was its one client.) */
 typedef struct fn_in {
     const mf_pred *p;
     int maxk, k, a, b;
@@ -783,7 +812,6 @@ typedef struct fn_in {
     const char *body_row;
     const char *body_fn;
     int brackets;
-    unsigned lead_at, lead_len;
 } fn_in;
 
 #define vrun_w16_decl MF_NS(vrun_w16_decl)
@@ -851,12 +879,6 @@ int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
 #define ofs_fn_define_at MF_NS(ofs_fn_define_at)
 int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
                      const mf_pred *p, const char *fn, mf_sink *o);
-/* The same as ofs_fn_define, with the verify chain's RUN compare led by run
- * positions [lead_at, lead_at + lead_len) (run_cmp_render_lead): the
- * pre-check's whole run, led by the window part it implies (R-30). */
-#define ofs_fn_define_lead MF_NS(ofs_fn_define_lead)
-int ofs_fn_define_lead(mf_art *art, uint32_t handle, const mf_hooks *h, const mf_pred *p,
-                       const char *fn, unsigned lead_at, unsigned lead_len, mf_sink *o);
 /* 1 iff the function serves predicate `p` of site `site` under the define
  * hooks `h`: ofs_fn_applies and the BODY slot's walk (the gate's verdict),
  * asked quietly; *two 1 iff the BODY row it takes is fn-pair (the two
@@ -949,19 +971,6 @@ int run_cmp_render_pad(mf_art *art, const mf_term *t, const char *base, int32_t 
 /* A FUNC definition's call before its own text: records the word widths the
  * RUN terms of `p` will load and declares every pending helper into `c`. */
 int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c);
-/* THE LED COMPARE (R-30): run `t` at `base + off` with its positions
- * [at, at + len) compared FIRST, as the run of those bytes alone is (the
- * row the walk picks for it, at `off + at`), then the rest: each word of
- * the whole run's own words form that does not lie inside the lead, whole;
- * the whole run's memcmp unchanged; its bytes form less the lead's
- * positions. A `&&` chain. run_cmp_prepare_lead declares the lead's helper
- * width before the function that uses it. */
-#define run_cmp_render_lead  MF_NS(run_cmp_render_lead)
-#define run_cmp_prepare_lead MF_NS(run_cmp_prepare_lead)
-int run_cmp_render_lead(mf_art *art, const mf_term *t, const char *base, int32_t off,
-                        unsigned at, unsigned len, mf_sink *c);
-int run_cmp_prepare_lead(mf_art *art, const mf_term *t, unsigned at, unsigned len,
-                         mf_sink *c);
 /* 1 iff every byte of RUN term `t` lies inside its mask (Q-G2-13's
  * unsatisfiable byte is the generic row's: `bytes` would spell a constant
  * compare `-Wtautological-compare` flags). THE NORMAL FORM's one spelling:

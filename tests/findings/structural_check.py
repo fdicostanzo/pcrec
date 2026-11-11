@@ -43,7 +43,7 @@ PRIMITIVES = {"pcrec_find_pick", "pcrec_find_no_commoner",
 # pcrec_find_* function, the scan has stopped seeing the population it exists
 # for (a witness that stopped reaching its site, [MECH-REACH]).
 KNOWN_READERS = {"pcrec_find_set_pick", "pcrec_find_run_scan_index",
-                 "pcrec_find_run_window_start", "pcrec_find_set_ppm",
+                 "pcrec_find_set_ppm",
                  "pcrec_req_window", "pcrec_req_pick", "req_byte_dominated_by"}
 RATE_TEST = re.compile(r"!\s*rate\b|\brate\s*[!=]=\s*NULL|NULL\s*[!=]=\s*rate\b"
                        r"|\bbytekey\b|PCREC_ENC_")

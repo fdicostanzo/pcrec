@@ -34,11 +34,11 @@
  * what stops two readers of one question spelling two NONE answers (R13:
  * rightmost against leftmost).
  *
- * A RUN LONGER THAN `PCREC_MAX_REQ_RUN_EMIT` IS TRUNCATED, NEVER SPLIT into
- * two compares (Frank's ruling of 2026-09-22): to the window of that length
- * containing the scan member with the lowest mass, ties leftmost. A second
- * compare would be a second mechanism with its own cost question and no
- * measured need (D77). */
+ * A NECESSARY RUN IS NO LONGER CUT here (R-38 K38-2,
+ * docs/design/memfn/span_runs_sheet.md §2.1): pcrec states the whole run to
+ * the memfn kit, whose run decision chooses what the pre-check verifies
+ * (the truncation window and its pick, `pcrec_find_run_window_start`,
+ * retired with `PCREC_MAX_REQ_RUN_EMIT`). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -762,45 +762,6 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
         care[i] = mask[n - 1 - i];
     }
     return n - 1 - pcrec_find_pick(rate, cand, care, n, 0);
-}
-
-/* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is TRUNCATED to: the start
- * of the window of that length containing `idx` with the lowest mass, ties
- * to the leftmost by the strict `<` — so on an exact run under NONE, where
- * every window's mass is equal, the leftmost.
- *
- * [OPT-LITSCAN] S4 C3: a window's mass is its MEMBERS' — T for an exact
- * position, every byte of the cube for a masked one (T and T | ~K for a
- * pair) — listed and handed to one SEQUENCE
- * MASS call, so MASS's own NONE answer (cardinality) applies with no branch
- * here: a window with more exact positions has fewer members and wins.
- *
- * The scan member is in every candidate window by construction, so its own
- * rate is a constant of the comparison and no term has to be excluded. */
-int pcrec_find_run_window_start(const uint32_t *rate,
-                                const unsigned char *bytes,
-                                const unsigned char *mask, int n, int idx)
-{
-    int lo_s = idx - (PCREC_MAX_REQ_RUN_EMIT - 1), hi_s = idx;
-    int s, best;
-    uint32_t lo = 0;
-    if (lo_s < 0) lo_s = 0;
-    if (hi_s > n - PCREC_MAX_REQ_RUN_EMIT) hi_s = n - PCREC_MAX_REQ_RUN_EMIT;
-    best = lo_s;
-    for (s = lo_s; s <= hi_s; s++) {
-        unsigned char mem[256 * PCREC_MAX_REQ_RUN_EMIT];
-        int nm = 0;
-        for (int j = s; j < s + PCREC_MAX_REQ_RUN_EMIT; j++) {
-            int f = ~mask[j] & 0xFF;
-            for (int b = f;; b = (b - 1) & f) {   /* every member of the cube */
-                mem[nm++] = (unsigned char)(bytes[j] | b);
-                if (!b) break;
-            }
-        }
-        uint32_t t = pcrec_find_seq_mass(rate, mem, nm);
-        if (s == lo_s || t < lo) { lo = t; best = s; }
-    }
-    return best;
 }
 
 /* A per-set cost input (the DFA candidate rate; the offset-k selection's

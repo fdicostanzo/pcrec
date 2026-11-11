@@ -515,10 +515,12 @@ static const char *window_check(const mf_site *s)
  * §4.1, window_contract C-1/C-2), NULL iff they hold. Every predicate the
  * site renders from (`pred`, `preds[]`) states no class, no `omin` and no
  * member order: those are a presence span's facts. A presence span (an entry
- * of `pspans`, an ALL_PRESENT site's only) is one term, PRESENCE, states no
- * window (C-1: no `omax`), an `omin` >= 0, a need, and a member order exactly
- * when it is one byte of a necessary set. `head_max` is an ALL_PRESENT
- * site's. */
+ * of `pspans`, an ALL_PRESENT site's only) is PRESENCE, states no `omax`
+ * (C-1), a need, and is either a MEMBER (one SET term of one byte, an `omin`
+ * >= 0, a member order) or, LAST and at most once, THE RUN (MF_SITE_ABI 27:
+ * its positions one window statement, `nterm` 0, an `omin` of either sign;
+ * memfn.h mf_pred's THE RUN paragraph; every constant a true fact, refused
+ * where it is not). `head_max` is an ALL_PRESENT site's. */
 static const char *pres_pred_clear(const mf_pred *p)
 {
     if (p->span_class || p->omin || p->member_order)
@@ -535,6 +537,50 @@ static const char *pres_span0_clear(const mf_pred *p)
     if (p->span_class == MF_SPAN_PRESENCE || p->omin || p->member_order)
         return "a rendered predicate states a presence class (`span_class`, `omin` "
                "or `member_order`): only an `pspans` entry is a presence span";
+    return NULL;
+}
+
+/* THE RUN's statement (MF_SITE_ABI 27; span_runs_sheet.md §2.1): pspans[i]
+ * of site `s`, NULL iff it is the run's set form. Each constant is a true
+ * fact the kit reads, refused where it is not. */
+static const char *pres_run_check(const mf_site *s, unsigned i)
+{
+    const mf_pred *p = &s->pspans[i];
+    if (i + 1 != s->npspan)
+        return "the run presence span (`nterm` 0 or a window statement) is the LAST of "
+               "`pspans`, at most one (MF_SITE_ABI 27)";
+    if (p->nterm)
+        return "the run presence span states no term (`nterm` 0: its positions are its "
+               "window statement, MF_SITE_ABI 27)";
+    if (!in_enum(p->need, MF_OPTIONAL) || p->need == MF_NEED_UNSTATED)
+        return "the run presence span's `need` UNSTATED or outside mf_need";
+    if (p->member_order) return "the run presence span states no `member_order`";
+    if (p->nalt != 1 || !p->alts)
+        return "the run presence span states ONE window statement (`nalt` 1, `alts`)";
+    if (p->wfloor != MF_WFLOOR_SUBJECT)
+        return "the run presence span's floor is the SUBJECT (`wfloor`)";
+    const mf_walt *a = &p->alts[0];
+    if (a->entry != MF_ENTRY_NONE || a->nspan != 1 || !a->spans)
+        return "the run presence span's statement is ONE span with no entry fact "
+               "(`entry` NONE, `nspan` 1)";
+    const mf_wspan *w = &a->spans[0];
+    if (w->start != 0)
+        return "the run presence span's positions are occurrence-relative (`start` 0)";
+    if (w->len < 2 || w->len > MF_WSPAN_POS)
+        return "the run presence span is 2..MF_WSPAN_POS positions (`len`)";
+    if (w->verify != MF_VERIFY_NO)
+        return "the run presence span's verify fact is NO (the host's exact finish follows)";
+    if (w->core != MF_CORE_STATED || w->core_lo != 0 || w->core_len != w->len)
+        return "the run presence span's core is STATED over every position (every "
+               "successful attempt holds the whole run inside the subject)";
+    for (unsigned j = 0; j < w->len; j++) {
+        if (w->table_ref[j]) return "a run presence position offers no table (`table_ref` 0)";
+        unsigned m = 0;
+        for (unsigned b = 0; b < 32; b++) m += (unsigned)__builtin_popcount(w->set[j][b]);
+        if (!m)
+            return "a run presence position states the EMPTY set (the span would never hold, "
+                   "D187)";
+    }
     return NULL;
 }
 
@@ -571,7 +617,6 @@ const char *kit_presence_check(const mf_site *s)
                "and 0 where no byte is proven)";
     if (s->head_max && s->handoff != MF_H_ASSIGN)
         return "`head_max` is stated only where the site ASSIGNs its landmark";
-    unsigned nrun = 0;
     for (unsigned i = 0; i < s->npspan; i++) {
         const mf_pred *p = &s->pspans[i];
         uint32_t kinds = 0;
@@ -580,37 +625,33 @@ const char *kit_presence_check(const mf_site *s)
                  ? "a `pspans` entry leaves `span_class` UNSTATED (0 is no class)"
                  : "a `pspans` entry states a class other than PRESENCE (`span_class`; "
                    "BOUNDED and CONTEXT are reserved)";
-        if (!pred_kinds(p, &kinds, &why)) return why;
-        if (p->nterm != 1) return "a presence span is ONE term (`pspans`, PR-5)";
-        if (p->omin < 0) return "a presence span's `omin` is below the match start";
         if (p->plan_hint != MF_NO_PRED || p->plan_pos || p->fn_ref || p->rank_n)
             return "a presence span carries no plan (`plan_hint`, `plan_pos`, `fn_ref`, "
                    "`rank_n`): the ports decide it";
+        if (p->nterm == 0 || p->nalt) {         /* THE RUN (MF_SITE_ABI 27) */
+            if ((why = pres_run_check(s, i))) return why;
+            continue;
+        }
+        if (!pred_kinds(p, &kinds, &why)) return why;
+        if (p->alts || p->wfloor)
+            return "a member presence span states no window (`alts`, `wfloor`: the run's "
+                   "set form only, MF_SITE_ABI 27)";
+        if (p->nterm != 1) return "a member presence span is ONE term (`pspans`, PR-5)";
+        if (p->omin < 0)
+            return "a member presence span's `omin` is below the attempt start (only the "
+                   "run's may be negative, MF_SITE_ABI 27)";
         const mf_term *t = &p->term[0];
         if (t->offset != 0) return "a presence span's term sits at offset 0";
-        if (t->kind == MF_T_RUN) {
-            if (p->member_order) return "a RUN presence span states no `member_order`";
-            if (t->run_len < 2) return "a RUN presence span is at least two positions";
-            /* NORMAL FORM, a checked fact here (D187, span_pick 1c): the ports
-               price each run position as its set, so a byte outside its mask
-               (Q-G2-13: never holds, fine on a rendered term) is refused on a
-               presence span, which states a fact about the match */
-            if (!run_cmp_sat(t))
-                return "a RUN presence span states a run byte outside its mask "
-                       "(`run[j] & ~mask[j]`: the span would never hold; a rendered term may state one, "
-                       "Q-G2-13, a presence fact may not, D187, MF_SITE_ABI 23)";
-            if (++nrun > 1) return "at most one RUN presence span (the whole run)";
-        } else if (t->kind == MF_T_SET) {
-            unsigned m = 0;
-            for (unsigned b = 0; b < 32; b++) m += (unsigned)__builtin_popcount(t->set[b]);
-            if (m != 1) return "a SET presence span is ONE member (PR-5: unpicked)";
-            if (p->member_order == 0)
-                return "a member presence span leaves `member_order` UNSTATED (0)";
-            if (p->member_order != MF_ORDER_UNKNOWN && p->member_order > 256)
-                return "`member_order` beyond 256 members";
-        } else {
-            return "a presence span is a SET or a RUN term";
-        }
+        if (t->kind != MF_T_SET)
+            return "a member presence span is ONE SET term (MF_SITE_ABI 27: the run is "
+                   "stated in set form, `nterm` 0, never as a RUN term)";
+        unsigned m = 0;
+        for (unsigned b = 0; b < 32; b++) m += (unsigned)__builtin_popcount(t->set[b]);
+        if (m != 1) return "a SET presence span is ONE member (PR-5: unpicked)";
+        if (p->member_order == 0)
+            return "a member presence span leaves `member_order` UNSTATED (0)";
+        if (p->member_order != MF_ORDER_UNKNOWN && p->member_order > 256)
+            return "`member_order` beyond 256 members";
     }
     return NULL;
 }
@@ -620,15 +661,16 @@ const char *kit_presence_check(const mf_site *s)
  *   the HEAD member, one SET term of its byte (REQUIRED, except a LEAD in
  *   front of a stated run, which carries its span's need: speed only on a
  *   DFA-scanned route, §14.5);
- *   the RUN, where verified: its WINDOW (P3's, at the ports' window start;
- *   FUNC part 1, its scan at the ports' scan position), then the WHOLE run
- *   where the link keeps it whole and it is longer than the window (FUNC
- *   part 2), each one RUN term, REQUIRED;
+ *   the RUN, where its link is tested: ONE FUNC part, the part the kit
+ *   DERIVES from the run's span and its reply (MF_SITE_ABI 27; the host
+ *   states it with no window and no term, wf_parts_check), and none where
+ *   the link is not tested;
  *   the REST, every other verified member, ascending byte, REQUIRED.
- * NULL iff `s->preds` is exactly that, else why not. A ROUTED row's pick is
- * what renders (§1.6): the host lays the parts out from the links it asked,
- * with its own text (the run blocks' names, notes and rankings), and this
- * holds its parts to the kit's decision. */
+ * NULL iff `s->preds` is exactly that, else why not. Since R-38 K38-2 the
+ * run half is a STATEMENT rule, not a pick agreement: the host lays out no
+ * window, so there is no pick of its own to hold equal (span_runs_sheet.md
+ * §2.4); its chain-order clause, the part's index against mf_link.order, is
+ * a duplicated slot kept by a check. */
 static int part_is_byte(const mf_pred *p, int b, mf_need need)
 {
     if (p->nterm != 1 || p->term[0].kind != MF_T_SET || p->term[0].offset || p->fn_ref ||
@@ -636,22 +678,6 @@ static int part_is_byte(const mf_pred *p, int b, mf_need need)
         return 0;
     for (unsigned x = 0; x < 256; x++)
         if ((p->term[0].set[x >> 3] >> (x & 7) & 1) != ((int)x == b)) return 0;
-    return 1;
-}
-
-static int part_is_run(const mf_pred *p, const mf_term *whole, unsigned from, unsigned len,
-                       unsigned scan, uint32_t fn_ref)
-{
-    const mf_term *t = &p->term[0];
-    if (p->nterm != 1 || t->kind != MF_T_RUN || t->offset || p->fn_ref != fn_ref ||
-        p->need != MF_REQUIRED || p->plan_hint != 0 || p->plan_pos != scan - from ||
-        t->run_len != len)
-        return 0;
-    for (unsigned j = 0; j < len; j++) {
-        unsigned m = t->mask ? t->mask[j] : 0xFFu;
-        unsigned wm = whole->mask ? whole->mask[from + j] : 0xFFu;
-        if (t->run[j] != whole->run[from + j] || m != wm) return 0;
-    }
     return 1;
 }
 
@@ -664,13 +690,10 @@ static int span_byte(const mf_pred *p)
 
 static const char *pres_layout_check(const mf_art *art, const mf_site *s, const mf_class *c)
 {
-    mf_pres_picks pk;
-    kit_pres_picks(art, s, &s->pres_proof, NULL, &pk);
-    int run = -1, head = -1;
-    for (unsigned i = 0; i < s->npspan; i++) {
-        if (s->pspans[i].term[0].kind == MF_T_RUN) run = (int)i;
-        else if (c->pres[i].verify && c->pres[i].order == 0) head = (int)i;
-    }
+    (void)art;
+    int run = kit_pres_run(s), head = -1;
+    for (unsigned i = 0; i < s->npspan; i++)
+        if ((int)i != run && c->pres[i].verify && c->pres[i].order == 0) head = (int)i;
     unsigned k = 0;
     if (head >= 0) {
         mf_need need = run >= 0 ? (mf_need)s->pspans[head].need : MF_REQUIRED;
@@ -679,21 +702,10 @@ static const char *pres_layout_check(const mf_art *art, const mf_site *s, const 
         k++;
     }
     if (run >= 0 && c->pres[run].verify) {
-        const mf_term *w = &s->pspans[run].term[0];
-        unsigned at = c->pres[run].member ? c->pres[run].member - 1u : (unsigned)pk.run_window;
-        unsigned len = w->run_len - at < MF_PRES_WINDOW ? w->run_len - at : MF_PRES_WINDOW;
-        if (pk.run_scan < (int)at || pk.run_scan >= (int)(at + len))
-            return "the run's scan position lies outside its window";
-        if (k >= s->npred || !part_is_run(&s->preds[k], w, at, len, (unsigned)pk.run_scan, 1))
-            return "its run part is not the WINDOW its presence link verifies (bytes, mask, "
-                   "the scan position or the FUNC part)";
+        if (k >= s->npred || !s->preds[k].fn_ref)
+            return "its run part (the FUNC part the kit derives) is not where the run's "
+                   "tested link orders it";
         k++;
-        if (c->pres[run].member == 0 && w->run_len > len) {
-            if (k >= s->npred ||
-                !part_is_run(&s->preds[k], w, 0, w->run_len, (unsigned)pk.run_scan, 2))
-                return "its whole-run part is not the WHOLE run its presence link verifies";
-            k++;
-        }
     }
     for (unsigned x = 0; x < 256; x++)
         for (unsigned i = 0; i < s->npspan; i++) {
@@ -706,7 +718,8 @@ static const char *pres_layout_check(const mf_art *art, const mf_site *s, const 
             k++;
         }
     if (k != s->npred)
-        return k ? "it renders a part no presence link verifies"
+        return k ? "it renders a part no presence link verifies (a run part where the "
+                   "run's link is not tested, or a second one)"
                  : "no presence link verifies a span (every span proven or dropped): the "
                    "host defines no pre-check there";
     return NULL;
@@ -1389,8 +1402,6 @@ static const struct {
     const char *name;
     unsigned    bit;
 } kit_levers[] = {
-    /* precheck.c: a run part implied by a later one is still rendered */
-    { "pres-window", KIT_LEVER_PRES_WINDOW },
     /* presence.c kit_run_opts_of: the run decision's ties go LEFTMOST, for
        every reader of it on the art (span_runs_sheet.md §2.4 C4, §5) */
     { "run-tie-left", KIT_LEVER_RUN_LEFT },

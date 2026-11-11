@@ -404,15 +404,6 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
 int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
                               const unsigned char *mask, int n);
 
-/* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` positions is truncated to.
- * MASS over each window of that many positions containing `idx`, a window's
- * mass being that of its MEMBERS (T for an exact position, T and T | ~K for
- * a pair): the lowest, ties to the leftmost — so on an exact run under NONE,
- * where every window ties, the leftmost. */
-int pcrec_find_run_window_start(const uint32_t *rate,
-                                const unsigned char *bytes,
-                                const unsigned char *mask, int n, int idx);
-
 /* MASS over `set` (`set[b]` nonzero for a member), in ppm, capped at
  * 1,000,000: a per-set cost input (the DFA candidate rate,
  * `pcrec_dfa_cand_ppm`; the offset-k selection's until D172 S2 commit 6). */

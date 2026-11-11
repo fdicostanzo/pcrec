@@ -1172,14 +1172,12 @@ PfWhyCode pcrec_req_rate_why(Ctx *cx)
     return pcrec_find_byte_rate_answers(cx) ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
 }
 
-/* THE WINDOW, the `req_run` fact's derived half, cut from the whole run the
- * core `req_whole_run` fact holds (`run->whole`/`whole_len`): which member of
- * the run the emitted `memchr` scans for (`idx`), and where a run longer than
- * `PCREC_MAX_REQ_RUN_EMIT` is truncated to (`at`, with `bytes` exactly
- * `whole + at` for `len` bytes). A whole run shorter than two bytes has no
- * window (`len == 0`). [K82] It also derives the window's `maxoff`, the
- * whole run's walk bound plus `at`. The two choices are the rate readers'
- * (`src/core/findings.c`); this composes them into the fact.
+/* THE SHIPPED RUN, the `req_run` fact's derived half: the whole run the core
+ * `req_whole_run` fact holds, uncut (R-38 K38-2: the window and its pick
+ * retired, docs/design/memfn/span_runs_sheet.md §2.1; the memfn kit's run
+ * decision chooses what the pre-check verifies), and pcrec's own pick over
+ * it (`idx`, `pcrec_find_run_scan_index`), the `req_byte` fact's input. A
+ * whole run shorter than two positions ships nothing (`len == 0`).
  *
  * The byte-rate is asked FIRST, before any branch, so whether the compile
  * consumed it does not depend on the pattern (findings design §6.4 rule 1). */
@@ -1188,37 +1186,21 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
     const uint32_t *rate = pcrec_find_byte_rate(cx);
     int n = run->whole_len;
 
-    memset(run->bytes, 0, sizeof run->bytes);
-    memset(run->mask, 0, sizeof run->mask);
     run->len = 0;
     run->idx = 0;
-    run->at = 0;
-    run->maxoff = 0;
     *why = PF_WHY_NONE;
     if (n < 2) return;
     *why = pcrec_req_rate_why(cx);
-    {
-        int i = pcrec_find_run_scan_index(rate, run->whole, run->whole_mask, n);
-        int s = n > PCREC_MAX_REQ_RUN_EMIT
-              ? pcrec_find_run_window_start(rate, run->whole, run->whole_mask,
-                                            n, i) : 0;
-        int len = n - s;
-        if (len > PCREC_MAX_REQ_RUN_EMIT) len = PCREC_MAX_REQ_RUN_EMIT;
-        memcpy(run->bytes, run->whole + s, (size_t)len);
-        memcpy(run->mask, run->whole_mask + s, (size_t)len);
-        run->len = len;
-        run->idx = i - s;
-        run->at = s;
-        /* [K82] the window begins `at` bytes into the whole run. */
-        run->maxoff = pcrec_sat_add(run->whole_maxoff, s, PCREC_W_UNBOUNDED);
-    }
+    run->len = n;
+    run->idx = pcrec_find_run_scan_index(rate, run->whole, run->whole_mask, n);
 }
 
-/* THE BYTE the emitted `memchr` tests — the `req_byte` fact — at ONE return:
- * the run's own scan member where a run window shipped and that member is
- * one EXACT byte (there is one emitted `memchr`, and `<PREFIX>_REQ_BYTE`
- * reports what it tests), and otherwise the set's pick
- * (`src/core/findings.c`). -1 exactly when the set is empty.
+/* THE NECESSARY BYTE — the `req_byte` fact — at ONE return: pcrec's own
+ * pick over the shipped run's positions (`idx`) where a run shipped and that
+ * position is one EXACT byte, and otherwise the set's pick
+ * (`src/core/findings.c`). -1 exactly when the set is empty. It STAYS
+ * pcrec's pick at R-38 K38-2 (span_runs_sheet.md §4.1): the pre-check's own
+ * scan position is the kit's reply, and may differ from it.
  *
  * [OPT-LITSCAN] S4 C3 A PAIR SCAN MEMBER IS NOT A BYTE ANY MATCH MUST
  * CONTAIN: at a cube position `bytes[idx]` is T, and a match may carry the
@@ -1230,7 +1212,7 @@ int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
 {
     const uint32_t *rate = pcrec_find_byte_rate(cx);
     *why = pcrec_req_rate_why(cx);
-    if (run->len >= 2 && run->mask[run->idx] == 0xFF) return run->bytes[run->idx];
+    if (run->len >= 2 && run->whole_mask[run->idx] == 0xFF) return run->whole[run->idx];
     if (set->rightmost < 0) *why = PF_WHY_NONE;
     return pcrec_find_set_pick(rate, set->bits, set->rightmost);
 }
