@@ -14,6 +14,15 @@
 #             refused (64): that pushes main's HEAD under a name meant for something else (cloud/main/axes/ucax,
 #             2026-11-11). Run from your worktree, or say --ref main to mean it.
 #       --dry-run   print what would be pushed and recorded; push nothing, write nothing
+#   scripts/cloudrun --suite --owner O [--name N] [--ref REF] [--dry-run]
+#                   the cloud FULL SUITE for one commit: dispatches every kind whose `suite` column is 1 in the kinds table
+#                   (today test, axes, ubsan, asan, mech, recidentity; `bash tests/ci/cloud_kinds.sh suite-kinds`) as one
+#                   run each, all on the SAME resolved commit, branches cloud/O/KIND/N (N default suite-<7-char sha>), one
+#                   ledger row each, and exits; each kind's verdict arrives separately (CLOUD-DONE per kind). A kind that
+#                   cannot be dispatched (branch exists, push failed) is reported and the rest still go (exit 1). It
+#                   replaces the local battery (scripts/fullsuite_job.sh) for correctness stages; the box-only stages
+#                   (timing, bench) stay local. Runner slots: each kind has its own max_parallel, so a full suite asks
+#                   for more than Actions' 40 concurrent jobs and GitHub queues the surplus.
 #   scripts/cloudrun --prune [--dry-run]    delete the remote cloud/ branches whose run has a verdict
 #                   (completed, any conclusion); a run still pending/absent keeps its branch
 #   scripts/cloudrun --list                 the ledger, one line per run, with the branch's current state
@@ -78,7 +87,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --owner) owner=${2-}; shift 2 || usage ;; --kind) kind=${2-}; shift 2 || usage ;; --name) name=${2-}; shift 2 || usage ;;
         --ref) ref=${2-}; refgiven=1; shift 2 || usage ;; --dry-run) dry=1; shift ;;
-        --prune) mode=prune; shift ;; --list) mode=list; shift ;;
+        --prune) mode=prune; shift ;; --suite) mode=suite; shift ;; --list) mode=list; shift ;;
         --status) mode=status; sarg=${2-}; shift $(( $# > 1 ? 2 : 1 )) ;;
         --reds) [ $# -eq 3 ] || usage; python3 -I "$here/../tests/ci/cloud_status.py" reds "$2" --cache "$3"; exit $? ;;
         --verdict) [ $# -eq 3 ] || usage; verdict "$2" "$3"; exit $? ;;
@@ -133,6 +142,26 @@ prune)
     done < <(awk -F'\t' '$1 == "P" { p[$3] = 1 } $1 == "R" { last[$6] = $0 } END { for (b in last) if (!(b in p)) print last[b] }' "$ledger")
     echo "cloudrun: DONE rc=$rc pruned $n, kept $kept (no verdict yet)"; exit $rc ;;
 esac
+
+if [ $mode = suite ]; then
+    [ -n "$owner" ] || die "--owner is required (main|kit|a lane name)"
+    kinds_sh=$root/tests/ci/cloud_kinds.sh
+    sha=$(git -C "$root" rev-parse --verify -q "$ref^{commit}") || die "cannot resolve '$ref' to a commit" 1
+    [ -n "$name" ] || name=suite-${sha:0:7}
+    if [ $refgiven = 0 ] && [ "$(git -C "$root" symbolic-ref --short -q HEAD)" = main ] && [ -n "$name" ] && [ "$name" != "suite-${sha:0:7}" ]; then
+        die "--name '$name' with no --ref from a checkout on branch main would push main's HEAD under that name: run from your worktree, or pass --ref main to mean it"
+    fi
+    kinds=$(bash "$kinds_sh" suite-kinds) || die "cannot read the kinds table" 1
+    [ -n "$kinds" ] || die "the kinds table has no suite kinds" 1
+    rc=0 n=0
+    for k in $kinds; do
+        n=$((n+1))
+        args=(--owner "$owner" --kind "$k" --name "$name" --ref "$sha"); [ $dry = 1 ] && args+=(--dry-run)
+        bash "$here/cloudrun" "${args[@]}" || rc=1
+    done
+    echo "cloudrun: SUITE rc=$rc $n kind(s) ($(echo $kinds)) for ${sha:0:9} as cloud/$owner/<kind>/$name"
+    exit $rc
+fi
 
 # run mode
 [ -n "$owner" ] || die "--owner is required (main|kit|a lane name)"
