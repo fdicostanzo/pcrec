@@ -932,6 +932,12 @@ fi
 # [UPROP-MORE] (lane upropb): the last 37 entries are patterns from tests/utf8/uprop_more.rxt
 # and uprop_blk_age.rxt whose property set is EMPTY in the byte universe (Latin-1), so the
 # byte compile is a proven-no-match artifact. Bucket 104 -> 141, re-measured from this check output.
+# [PFFIX] (lane pffix, 2026-11-11, abi 100): the last 18 entries are machines in which NO state
+# accepts (`dfa_accepts_nowhere`): a start assertion (`\A`, `\G`, non-multiline `^`) after a
+# consumed byte, a multiline `^` after a non-newline, or a `\b`/`\B` the adjacent bytes refute.
+# They had a live start state, so the old tests (`d->n == 0`, a dead start) missed them and they
+# emitted a loop that could never report; `ab\Gcd`'s, inlined as a hybrid's prefilter under
+# -fprefilter, failed -Werror (pflost_report.md). Each is a never-match pattern; bucket +18.
 EMPTY_MANIFEST='\B\b
 \b\B
 abcd(?:\b)+efgh
@@ -1036,7 +1042,25 @@ a{1,3}?(?=\w)\W
 \p{blk=Currency_Symbols}
 \p{blk=Emoticons}
 \p{blk=Greek}
-\p{blk=NB}'
+\p{blk=NB}
+(?m)^a(?-m)^b
+(?m)^a(?-m:^b)
+.{1,3}\Aa*
+.{1,3}^a*
+[a-]{1,2}\A-
+[a-]{2}^a*
+\s{2}^
+^\Bfoo
+^\Bo
+^a\bb
+a(?m)^b
+a\Gb
+ab\A
+ab\Acd
+ab\Gcd
+a{2}^-
+x\Ay
+x\G'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
 if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then
