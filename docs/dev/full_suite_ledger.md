@@ -382,3 +382,5 @@ Landing 2026-11-10 7658295b3: lane/memfn-k381 (b8ca72ccb), kit R-38 K38-1, one r
 Landing 2026-11-10 79440bf19: lane/sartie (e947f70c9), R1 tie rule test-only restore switch restore=tie (no abi or MF_SITE_ABI event; default emitted bytes unchanged; gates 231/233/234/235 GREEN; post-merge make strict green; critic round waived: test-only lever). MINOR: covered by the Wed 2026-11-11 01:00 full suite.
 
 Landing 2026-11-10 092516b60 + 2cc59b95e + 39da816d7: lane/dixcite and lane/dixt1b, [DOC-INDEX] tooling (doc_cites.py resolver + baselines; scripts/INDEX.md, entry scripts profile + --lint-scripts, discoverability lines). Docs/tooling only, no src/lib/cli. NONE (rides the 2026-11-10 evening full suite).
+
+RED: 2026-11-11 7d74499bc test=RED(rc=2) strict=green axes=RED(rc=2) san=RED(rc=2) alloc=green lint=green mech=RED(rc=2) recidentity=RED(rc=2) log=build/full_suite/20261110_7d74499bc duration=48971s
