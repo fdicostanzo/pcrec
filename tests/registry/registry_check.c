@@ -2173,7 +2173,7 @@ static void check_engine_capability(void)
     } WITNESS[] = {
         /* `\K` moves the REPORTED START, which a subset state (a set, not a
          * path) cannot carry. Nothing discharges it. */
-        { RK_ESC,         'K', NULL, "assertions",    "a\\Kb",           "\\K" },
+        { RK_ESC,         'K', NULL, "match-start-reset", "a\\Kb",           "\\K" },
         /* `(?>a|ab)c` on "abc" is (2,3) and `(?:a|ab)c` is (0,3): the cut
          * changes the LANGUAGE, so the discharge must decline it. */
         { RK_GROUP,       '>', NULL, "atomic-groups", "(?>a|ab)c",       "(?>...)" },

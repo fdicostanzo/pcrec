@@ -151,6 +151,9 @@ class B:
                  parked=None):
         self.pat = pat
         self.cells = cells
+        if (features and "\\K" in pat and "assertions" in features
+                and "match-start-reset" not in features):
+            features += ",match-start-reset"   # [FEAT-FAMILIES] `\K` is its own module
         self.features = features
         self.groups = groups
         self.note = note

@@ -43,7 +43,7 @@
 # python DIVERGES here, measured rather than assumed: "abc" @0 pcre2=('m', 1, 3) python=('ERR', 'bad escape \\K at position 4') (9 of 9 cells)
 # pcre2-only
 pattern (?>a\Kb)c
-features atomic-groups,assertions
+features atomic-groups,assertions,match-start-reset
 m "abc" 1 3
 ns 1 "abc"
 ns 2 "abc"
@@ -57,7 +57,7 @@ ns 4 "xabc"
 # python DIVERGES here, measured rather than assumed: "abb" @0 pcre2=('m', 0, 2) python=('ERR', 'bad escape \\K at position 6') (7 of 7 cells)
 # pcre2-only
 pattern (?>a|a\Kb)b
-features atomic-groups,assertions
+features atomic-groups,assertions,match-start-reset
 m "abb" 0 2
 ns 1 "abb"
 ns 2 "abb"
@@ -69,7 +69,7 @@ ns 2 "ab"
 # python DIVERGES here, measured rather than assumed: "abcc" @0 pcre2=('m', 1, 3) python=('ERR', 'bad escape \\K at position 1') (9 of 9 cells)
 # pcre2-only
 pattern a\K(?>b|bc)c
-features atomic-groups,assertions
+features atomic-groups,assertions,match-start-reset
 m "abcc" 1 3
 ns 1 "abcc"
 ns 2 "abcc"

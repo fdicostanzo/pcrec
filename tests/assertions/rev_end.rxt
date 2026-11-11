@@ -381,7 +381,7 @@ n "b"
 # G: `\K` moves the reported start; the walk's start bounds the attempt
 # pcre2-only
 pattern a\Kb$
-features assertions
+features assertions,match-start-reset
 m "ab" 1 2
 m "xab\n" 2 3
 m "abab" 3 4
