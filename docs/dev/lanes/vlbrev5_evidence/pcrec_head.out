@@ -22,3 +22,14 @@ aax: match 1 3
 # F3 control: --emit-facts end_window
 (a|bc)\1$: byte RX_END_WINDOW "none"
 (a|bc)bc$: byte RX_END_WINDOW "5"
+# more pcrec HEAD single compiles (rc 0 + empty = compiles)
+(a(?=(?1)))x	rc=0	compiles
+(?<=(?1))(a(?2){0})(b)x	rc=0	compiles
+(?(DEFINE)(?<g>a(?&g){0}))(?<=(?&g))x	rc=0	compiles
+(a(?1)?)(?<=(?1){0}x)y	rc=0	compiles
+(?<=(?:a+){0}x)y	rc=0	compiles
+(?<=(a+){0}x)y	rc=0	compiles
+(?<=(?:a|b+){0}x)y	rc=0	compiles
+(?<=(?:(?:)*){0}x)y	rc=0	compiles
+(${v})(?<=\1)x	rc=1	pcrec: a lookbehind containing a backreference, a variable or a consuming callout is not implemented (its length is known only when matching) (pattern offset 6)
+(?<=a+|${v})x	rc=1	pcrec: every alternative of a lookbehind must have a bounded length (this one is unbounded) (pattern offset 0)

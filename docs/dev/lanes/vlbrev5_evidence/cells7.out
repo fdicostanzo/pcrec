@@ -1,0 +1,6 @@
+libpcre2 10.46 2025-08-27
+(?J)(?<n>a)(?<n>b)?(?<=x(?=\k<n>))y	ACCEPT lb=1 
+(?J)(?<n>a)(?<n>b)?(?(DEFINE)(?<g>\k<n>))(?<=(?&g))x	REJECT 125
+(?J)(?<n>a)(?<n>b)?(?(DEFINE)(?<g>\k<n>))(?<=x)(?&g)	ACCEPT lb=1 
+(?J)(?<n>a)(?<n>b)?(c\k<n>)(?<=\3)x	REJECT 125
+(?(DEFINE)(?<g>\k<n>))(?<n>a)(?<=(?&g))x	ACCEPT lb=1 aax=((1, 3), (None, (1, 2)))
