@@ -8,8 +8,8 @@
 #       timed out).   LOGFILE the shard's test log (may be absent).   OUTFILE the result file written:
 #       `key=value` lines: shard, rc, cpu_model, cpu_flags (the /proc/cpuinfo `flags` line, one line),
 #       skip_lines (log lines naming SKIP: a skipped row is listed, never green by absence), sha, runner.
-#       Beside it, errors.txt: the log's make `*** [...] Error` lines (at most 40), which the verdict
-#       prints under a red shard.
+#       Beside it, errors.txt: the log's failing lines (make `*** [...] Error`, `FAIL:`, `AXIS FAIL:`, `FATAL:`,
+#       sanitizer reports; at most 60), which the verdict prints under a red shard.
 #   cloud_gather.sh gather EXPECTED RESULTS_DIR OUTFILE [KEY=VALUE..]
 #       EXPECTED   space-separated shards the run must have, e.g. "1/3 2/3 3/3".
 #       RESULTS_DIR holds one directory per downloaded artifact, `cloud-shard-<slug>/result.txt` (+ errors.txt),
@@ -36,7 +36,9 @@ record)
     flags=$(sed -n 's/^flags[[:space:]]*:[[:space:]]*//p' /proc/cpuinfo 2>/dev/null | head -1)
     skips=$(grep -ciE '(^|[^A-Za-z])SKIP(S|PED)?([^A-Za-z]|$)' "$log" 2>/dev/null); skips=${skips:-0}
     mkdir -p "$(dirname "$out")"
-    grep -E '\*\*\* \[.*\] Error' "$log" 2>/dev/null | head -40 > "$(dirname "$out")/errors.txt"
+    # the failing lines of any kind of shard: make's `*** [...] Error`, a suite's FAIL: / AXIS FAIL: / DIAL-S3 FAIL:
+    # line, a FATAL:, a sanitizer's runtime error / report summary (the lines that name WHICH unit went red)
+    grep -E '\*\*\* \[.*\] Error|^(AXIS |DIAL-S3 )?FAIL|FATAL:|runtime error:|ERROR: (Address|Leak)Sanitizer|SUMMARY: .*Sanitizer' "$log" 2>/dev/null | head -60 > "$(dirname "$out")/errors.txt"
     { echo "shard=$shard"; echo "rc=$rc"; echo "cpu_model=${model:-unknown}"; echo "cpu_flags=${flags:-unknown}"
       echo "skip_lines=$skips"; echo "sha=${GITHUB_SHA:-unknown}"; echo "runner=${RUNNER_NAME:-unknown}"; } > "$out" ;;
 gather)

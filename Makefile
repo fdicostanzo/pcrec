@@ -587,7 +587,7 @@ test-ci-shards:
 # [CLOUD-SUITE] B: the structural checks of the cloud-run machinery (tests/ci/cloud_check.sh: the cloud shard
 # table holds TEST_SECTIONS exactly, no kind is named in code, one shard-setup copy, one artifact-name source).
 # Opt-in and NOT a TEST_SECTIONS member (tests/ci/shards.tsv is CI's and stays unchanged); run on change.
-cloud-check:
+cloud-check: all
 	@bash tests/ci/cloud_check.sh $(TEST_SECTIONS)
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
