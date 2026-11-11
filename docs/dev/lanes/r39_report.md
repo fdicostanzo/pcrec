@@ -75,4 +75,8 @@ Prepared, dry-run clean, NOT queued, under `/var/tmp/pcrec-pcrec/scratch/memfn/r
 - [x] memfn/tests/CLAUDE.md (Files entry) and NOTES.md ("The part selector") updated.
 - [ ] Full-size wall per part, the re-weighting from it, and the unsplit-vs-split verdict comparison at full size: job 591.
 
+## STATE AT HANDOFF
+
+Committed on `lane/memfn-r39`; no rulings file. Nothing running. Scratch: `/var/tmp/pcrec-pcrec/scratch/memfn/r39/` (slice logs under `logs/`, jobs under `jobs/`).
+
 OWED: jobs 590, 591, 592 (prepared, not queued; the kit manager queues them). The numbers owed are job 591's `g2split wall unsplit|part1..part4` lines and its `== g2split step same rc=0` / `r39-g2split: DONE rc=0` trailer, and 592's `== r39 step test rc=0`; results land under `/var/tmp/pcrec-pcrec/scratch/memfn/r39/g2split/` and `/test/`. After 591, re-weight `g2_units.tsv` from the `G2UNIT` seconds if a part's wall differs from the others.
