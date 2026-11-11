@@ -12,6 +12,11 @@ so it skips anything already present.
   bigcap.c/.h  --max-emit-bytes raised so the premultiplied table survives
                where the default cap drops it     (prefix bd), when it differs
   vm.c/.h      --engine=vm, prefix bv             (the VM arm, F2 cases)
+  charstep.c/.h  default axes, prefix cs, on the UCP \\b cases: the
+               CHARACTER-STEPPED DFA AS BUILT (RX_DFA_SCAN "char-step"),
+               the method card for the real build (review 2026-11-10 r4
+               ucpu3; D176's standing rule). UNMEASURED until a timing
+               window runs run_bench.py with it.
 """
 import concurrent.futures as cf
 import os
@@ -32,6 +37,8 @@ CASES = {
     "xwd": (r"\p{Xwd}+", []),
     "x1":  (r"(?<=[\x{100}-\x{2000}])x", ["--features", "all"]),
     "x2":  (r"(?<![\w\x{C0}-\x{24F}\x{370}-\x{52F}])[\w\x{C0}-\x{24F}\x{370}-\x{52F}]+(?![\w\x{C0}-\x{24F}\x{370}-\x{52F}])", ["--features", "all"]),
+    "x3":  (r"(*UCP)\b\w+\b", ["--features", "all"]),
+    "x3b": (r"(*UCP)\b\p{Xwd}+\b", ["--features", "all"]),
 }
 
 
@@ -54,6 +61,7 @@ def gen(name, pat, extra, what):
         "bigcap": (["-p", "bd", "--max-emit-bytes=5000000", "--max-emit-code-bytes=5000000",
                     "-o", os.path.join(d, "bigcap.c"), "--pattern", pat], "bigcap.c"),
         "vm": (["-p", "bv", "--engine=vm", "-o", os.path.join(d, "vm.c"), "--pattern", pat], "vm.c"),
+        "charstep": (["-p", "cs", "-o", os.path.join(d, "charstep.c"), "--pattern", pat], "charstep.c"),
     }
     rcs = {}
     for w in what:
@@ -70,6 +78,7 @@ if __name__ == "__main__":
         "c1": ["base", "basec", "flat"], "c3": ["base", "flat"], "nd": ["base", "basec", "flat"],
         "l": ["base", "basec", "flat"], "xwd": ["base", "basec", "flat"],
         "x1": ["vm", "base"], "x2": ["vm", "base"],
+        "x3": ["charstep"], "x3b": ["charstep"],
     }
     extra_what = sys.argv[2].split(",") if len(sys.argv) > 2 else []
     with cf.ThreadPoolExecutor(4) as ex:
