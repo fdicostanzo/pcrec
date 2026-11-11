@@ -67,10 +67,10 @@ from concurrent.futures import ThreadPoolExecutor
 # report (docs/dev/lanes/runaxes_report.md).
 MEMFN_CLASS = {
     ("precheck-assign-byte", "default"): ("DIFFER",
-        {("byte", "c-default"): 153, ("byte", "c-vm"): 0, ("utf8", "c-default"): 220, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 131, ("byte", "c-vm"): 0, ("utf8", "c-default"): 189, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
     ("precheck-assign-byte", "simd"): ("DIFFER",
-        {("byte", "c-default"): 153, ("byte", "c-vm"): 0, ("utf8", "c-default"): 220, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 131, ("byte", "c-vm"): 0, ("utf8", "c-default"): 189, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
     # R17-b' B1's five finder-table denies (lane fdclass, 2026-10-17), MEASURED at
     # lane/b1fix f74bb0b7b (= the B1 tip): `taskset -c 0-7 python3 tests/axes/memfn_arm.py
@@ -116,15 +116,23 @@ MEMFN_CLASS = {
     # byte-identical with and without the deny), so fewer differ on the default engine:
     # fd-pres-pick 168/232 -> 144/225, precheck-assign-byte byte 155 -> 153 (utf8 219 -> 220,
     # measured). Same cause as ef179b9f4's emit_sweep re-pin (pinbis_report.md).
+    # RE-PINNED at span arms R1 (f7eb10528; lane axtri, 2026-11-10) from the full suite
+    # 20261110_7d74499bc axes log (5137 distinct patterns): R1 gives counted-repeat
+    # patterns a longer required run the pick / byte assign / set lead cannot change, so
+    # fewer differ on the default engine: fd-pres-pick 144/225 -> 88/140,
+    # precheck-assign-byte 153/220 -> 131/189, pres-set-lead 14/18/7/8 -> 6/11/3/3.
+    # Witnesses re-aimed (inert now; single compiles, both sides): fd-pres-g1 utf8
+    # `abc+d` -> `ab+c`, pres-set-lead -> `(?i:select)\d+x` (flr2's emit_sweep pin,
+    # 68089d755). The other floors still hold (measured above them) and are left as pinned.
     **{("fd-pres-g1", ly): ("DIFFER",
         {("byte", "c-default"): 949, ("byte", "c-vm"): 0, ("utf8", "c-default"): 878, ("utf8", "c-vm"): 0},
-        [("byte", "c-default", b"abc+d"), ("utf8", "c-default", b"abc+d")]) for ly in ("default", "simd")},
+        [("byte", "c-default", b"abc+d"), ("utf8", "c-default", b"ab+c")]) for ly in ("default", "simd")},
     **{("fd-pres-pick", ly): ("DIFFER",
-        {("byte", "c-default"): 144, ("byte", "c-vm"): 0, ("utf8", "c-default"): 225, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 88, ("byte", "c-vm"): 0, ("utf8", "c-default"): 140, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"a.{1,5}z"), ("utf8", "c-default", b"a.{1,5}z")]) for ly in ("default", "simd")},
     **{("pres-set-lead", ly): ("DIFFER",
-        {("byte", "c-default"): 14, ("byte", "c-vm"): 18, ("utf8", "c-default"): 7, ("utf8", "c-vm"): 8},
-        [("byte", "c-default", "é{2,}cat".encode()), ("utf8", "c-default", b"a{3,}(?i:cat)")]) for ly in ("default", "simd")},
+        {("byte", "c-default"): 6, ("byte", "c-vm"): 11, ("utf8", "c-default"): 3, ("utf8", "c-vm"): 3},
+        [("byte", "c-default", b"(?i:select)\\d+x"), ("utf8", "c-default", b"(?i:select)\\d+x")]) for ly in ("default", "simd")},
     # D172 S3's two window-search denies (window-search: the search itself, so `cover` declines;
     # window-skip: its skip for a common byte set), absent from this table since S3 while
     # `--list-axes` listed them (code review r2 R2-4: the population check above could only
