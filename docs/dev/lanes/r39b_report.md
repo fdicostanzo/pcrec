@@ -50,3 +50,5 @@ OWED: jobs 564 and 565 (full-size part walls vs the prediction, the unsplit-vs-s
 ## STATE AT HANDOFF
 
 committed on `lane/memfn-r39b`; nothing running; scratch `/var/tmp/pcrec-pcrec/scratch/memfn/r39b/`.
+
+OWED: gate jobs 564 (g2split, full-size balance and diffs) and 565 (make test), prepared and not queued; the manager queues them.
