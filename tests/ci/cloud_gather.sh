@@ -11,8 +11,8 @@
 #       wall_s (the shard step's `time` trailer, seconds; `?` if the log has none -- what REWEIGHT-DUE reads).
 #       Beside it, units.tsv: the shard's per-unit seconds (tests/ci/cloud_units.py; $CLOUD_SECTIONS_TSV, if set,
 #       is the sectiontimes report to read the sections from) -- what tests/ci/cloud_measure.py reads.
-#       Beside it, errors.txt: the log's failing lines (make `*** [...] Error`, `FAIL:`, `AXIS FAIL:`, `FATAL:`,
-#       sanitizer reports; at most 60), which the verdict prints under a red shard.
+#       Beside it, errors.txt: the log's failing lines (tests/ci/cloud_failures.sh: every FAIL form, make `*** [...] Error`,
+#       `FATAL:`, sanitizer reports; at most 60), which the verdict prints under a red shard.
 #   cloud_gather.sh gather EXPECTED RESULTS_DIR OUTFILE [KEY=VALUE..]
 #       EXPECTED   space-separated shards the run must have, e.g. "1/3 2/3 3/3".
 #       RESULTS_DIR holds one directory per downloaded artifact, `cloud-shard-<slug>/result.txt` (+ errors.txt),
@@ -44,9 +44,8 @@ record)
     mkdir -p "$(dirname "$out")"
     wall=$(awk '/^real[[:space:]]/ {s=$2; m=s; sub(/m.*/,"",m); sec=s; sub(/^[0-9]+m/,"",sec); sub(/s$/,"",sec); w=m*60+sec} END {if (w != "") printf "%d", w}' "$log" 2>/dev/null)
     python3 -I "$here/cloud_units.py" record "$log" "$(dirname "$out")/units.tsv" "${CLOUD_SECTIONS_TSV:-}" >/dev/null 2>&1 || true
-    # the failing lines of any kind of shard: make's `*** [...] Error`, a suite's FAIL: / AXIS FAIL: / DIAL-S3 FAIL:
-    # line, a FATAL:, a sanitizer's runtime error / report summary (the lines that name WHICH unit went red)
-    grep -E '\*\*\* \[.*\] Error|^(AXIS |DIAL-S3 )?FAIL|FATAL:|runtime error:|ERROR: (Address|Leak)Sanitizer|SUMMARY: .*Sanitizer' "$log" 2>/dev/null | head -60 > "$(dirname "$out")/errors.txt"
+    # the failing lines of any kind of shard: the ONE extractor (tests/ci/cloud_failures.sh), shared with the early alert and --status
+    bash "$here/cloud_failures.sh" 60 < "$log" > "$(dirname "$out")/errors.txt" 2>/dev/null
     { echo "shard=$shard"; echo "rc=$rc"; echo "cpu_model=${model:-unknown}"; echo "cpu_flags=${flags:-unknown}"
       echo "skip_lines=$skips"; echo "sha=${GITHUB_SHA:-unknown}"; echo "runner=${RUNNER_NAME:-unknown}"; echo "wall_s=${wall:-?}"; } > "$out" ;;
 gather)
