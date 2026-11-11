@@ -103,11 +103,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     refs: docs/dev/reviews/2026-10-12-r2-composite.md; decisions D88 D144 D151 D163 D164
     the COMPOUND ARTIFACT as a general tool: one exported call interface (a controller) over private sub-artifacts the unchanged compiler produces, linked via [EMIT-ENTRIES]' three categories (exported / kept static / omitted), one rx_info. First client [MATCH-SPLIT]. Other clients, each gated by its own trigger: DFA-locate + VM-finish captures (TRIGGER: a capture-heavy bench cell on the VM where a DFA locate is possible; check vs the hybrid first); per-branch locators (4c / D151 add. 6 F2); [ADAPTIVE-ARM]; arch-specific versions with run-time dispatch (TRIGGER: a SIMD form that must ship beside its scalar form, D144 add. 4). (2026-10-12, D163 add. 3) ONE captures array in the parent's numbering across all parts (parts declare written/read groups; standalone parts renumbered).
     Client 7 CONCATENATION SPLIT (DFA prefix A, VM suffix B; unique-end A; PARKED, trigger: a VM-routed bench cell dominated by a DFA-able unique-ended prefix). Client 8 LOOKAHEAD-AS-CHECK (D164 add. 2: unbounded trailing lookahead as X-DFA + anchored Y-check; unique-end X; monotone Y = Σ*·Z only; PARKED, trigger: a bench cell held on the VM by an unbounded trailing lookahead).
-- [U8-PICK] STATE:started — utf8 literal-pick cells trail re2/rust (lit-sharp-s worst)
-  filed: 2026-10-05 filer not recorded
-  status (2026-10-11): RULED 2026-10-11 by Frank, D160: AUTHORED and script-neutral (UTF-8 structure, not a corpus; "Chinese is different than Egyptian"); deployments generate a named analysis.…
-  refs: docs/dev/lanes/u8pick0_report.md; src/findings/default.rxt; decisions D83 D153 D159 D160
-  utf8 literal-pick cells: pcrec leads jit but trails re2/rust x1.2-x15.7 (lit-sharp-s worst), 10 utf8 cells. FIRST STEP: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect. ROUND 3 rank 3a-4 (D153): kept at rank 4; remodel overlap likely refactor A (landmark pick / [TIE-ALIGN]) — confirm at its twin step.
 - [UCP] STATE:started — PCRE2_UCP semantics (`\w \d \s \b` + POSIX classes over code points) under `-e utf8`
   filed: 2026-09-30 filer not recorded
   status (2026-10-12): the design is merged and Q1-Q9 were RULED YES 2026-09-28 (D130); U0+U1 MERGED 2026-09-29 (abi 44 -> 45); U2 — the A_CTX context node + per-machine context-set table — MERGED 2026-09-30 (u2land, abi 45 -> 46, with the anchored-entry dead-state fix of lane ucpu3)…
@@ -253,8 +248,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 - [VLOOKBEHIND] STATE:started — PCRE2 gap rank 1: variable-width (bounded) lookbehind, e.g. `(?<=a{1,3})b`, `(?<=(a|bc))b`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 1
   status (2026-11-07): stage 1 LANDED at c44649a69 (lane vlbland; bounded variable-width lookbehind, abi 96, D189); row stays started for stage 2
-  waits: owner — may stage 2 be built? (design §13 Q1 and Q2 were ANSWERED 2026-11-06; a re-check critic round runs first)
-  next: re-check critic round (fix-induced on F1/F12 + readiness), then the owner's build go for stage 2
+  waits: the re-check critic round on the stage 2 design (build go: Frank 2026-11-10)
+  next: re-check critic round (fix-induced on F1/F12 + readiness), then build stage 2 (build go: Frank 2026-11-10)
   refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (lookbehind removal by \K with an earlier scan + floor; exact for fixed-length A); docs/dev/lanes/scoreboard_report.md; docs/dev/lanes/vlbinv_report.md; docs/dev/lanes/vlbdesign_report.md; docs/dev/reviews/2026-11-05-r3-vlookbehind.md; docs/dev/lanes/vlbrev1_report.md; [LB-EXIST]; docs/pcre2_compliance.md; [ENG-LOOK]; [LANDWALK-ALLACC]; [LANDWALK-VM]
   Stage-2 note (2026-11-07, vlbbuild review F4a): a backreference reached THROUGH A CALL still reads "unbounded" in a lookbehind (wording tier, D26); `(a+)(?<=\1)x` is not-built in pcrec where libpcre2 gives err 125, so both refuse.
 - [RUN-POS-SET] STATE:started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
@@ -306,6 +301,13 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   REQUIREMENTS (Frank 2026-11-10): (1) CPU-aware: runner CPUs vary, so each shard records its CPU flags and SIMD-needing rows declare the feature they need; a row the CPU cannot run is a LOUD skip listed in the verdict, never green by absence; (2) casual use: `make test` on any branch, one command, not only the full suite; (3) the kit dispatches and reads its own runs independently (owner-tagged runs, its own results); (4) lane branches may be pushed (cloud/ prefix, deleted after the run); (5) NO model polling: a lane dispatches as its LAST act and ENDS (as with boxqueue add); the run's verdict reaches its owner through the zero-token watcher path (queuewatch/monread), never a lane or agent watching it; (6) SHARD BY LENGTH (Frank): casual use = sharded make test (frequent); in the full suite a stage runs WHOLE on one runner when its whole run is shorter than the target shard length, and only longer stages (mech, axes, likely san) are sharded
   REQUIREMENTS cont.: (7) TABLE-DRIVEN (Frank): one declared kinds table (kind, command, selector, shards, per-shard limit, needs, owners) read by the workflow, cloudrun and the gather; no kind named in code (a check); (8) FAILURE OUTPUT: every shard uploads its full log; the verdict file names each red shard with its make `*** [...] Error` lines (or the failing mech row ids); the watcher event carries the run URL; `gh run download` fetches the logs for triage
   REQUIREMENTS cont. 2: (9) CASUAL TARGET ~10 MIN WALL (Frank: else we are just waiting again; local make test ~28 min): shard count derived from CI's recorded per-section times, plus measured per-shard setup; every section whose own runner time exceeds the target is LISTED as the floor to split; (10) SHARD BUDGET (Frank): make test = 20 shards (two runs fit in Pro's 40); the full suite = 20 by default so a make test always fits beside it, a per-run override up to 40 for an overnight suite when nothing else needs runners; the budget is a kinds-table column; (11) MORE SHARDS THAN SLOTS (Frank): a kind declares shards (count) and max_parallel (the budget, Actions `strategy.max-parallel`) separately; extra shards queue inside the run and a freed slot takes the next one (dynamic balance at shard grain); the shard size is chosen against the measured per-shard setup cost (build once, pass the binary as an artifact, if setup dominates)
+- [CLI-OUTKEEP] STATE:ready — `-o` WRITES ONLY WHEN THE BYTES CHANGE (TEMP + RENAME), SO MAKEFILES DO NOT RECOMPILE
+  filed: 2026-10-22 Frank (subst R4a discussion: "that's nice! Yes. Own row")
+  status (2026-11-11): build go: Frank 2026-11-10; waits under the close-before-start ruling. Nothing built; today every -o output is overwritten in place.
+  ready: the cli/ change, spec hunk and tests below; nothing landed before it (no prerequisite); waits for the close-before-start freeze to lift (Frank 2026-11-10 go)
+  next: on Frank's build go, one sonnet lane: cli/ change, a cli.md spec hunk, tests (identical output keeps mtime; changed output replaces it atomically; a failed run leaves the old file intact).
+  refs: docs/spec/cli.md; examples/makefile/ (D118); worktrees/subst/docs/dev/lanes/subst_rulings.md R10
+  Charter: when `-o FILE` exists and its bytes equal the new output, pcrec leaves it untouched (bytes and timestamp), so `pcrec --emit-support -o support.h` and generated matchers can be re-run on every build without forcing recompiles. Otherwise it writes a temp file in the same directory and renames it over, so an interrupted run never leaves a half-written file. Applies to every file pcrec writes via -o (matchers, headers, stamps, the support unit); no new flag.
 
 ## Candidates ([OPTLOOP])
 - [LITSCAN-SIZEFLOOR] STATE:not-started — a size-aware F5 floor: chain 2-byte runs only where the collapsed form would not overflow the cap
@@ -872,7 +874,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
   status (2026-11-05): PARKED, a separate effort (Frank 2026-11-05); investigation done (docs/dev/lanes/condinv_report.md): no outside demand; one general condition node when designed
-  waits: owner — should a design lane open for conditional groups? (four plain-words questions at the end of docs/dev/lanes/condinv_report.md)
   next: Frank's word on a design lane (four plain-words questions at the end of docs/dev/lanes/condinv_report.md)
   refs: docs/dev/lanes/scoreboard_report.md; docs/pcre2_compliance.md; [COND-FAMILY] (umbrella)
 - [PCRE2-GAPS-TBD] STATE:not-started — PCRE2 gap rank 4 (catch-all, TBD): the remaining refused constructs, each 0-1 uses
@@ -1065,8 +1066,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 - [TRAIL-CKPT-PRUNE] STATE:not-started — NO TRAIL CHECKPOINT ON A LOOP THAT CAN NEVER COMPACT (K134 cost outside cscan)
   filed: 2026-10-29 manager, from review 2026-10-29-r2 F3/F4 (lane trailgc3)
   status (2026-10-29): not started. Never-full cost after the F1/F5 fixes, both entries: cscan +0.7-0.9 %; `^(a(?1)?b)$` +3.7/+3.8 %, a recursive-parens matcher +3.6/+4.0 %, `(\w+)(?:,(\w+))*;` +1.6/+1.7 % (-O3 +4.2 %). The fix kept every checkpoint.
-  waits: owner — is the +1.6 to +4 % never-full trail-checkpoint cost on non-cscan matchers above your ~3 % bar? (open question in docs/dev/lanes/trailgc3_report.md)
-  trigger: Frank rules the non-cscan cost above the ~3 % bar (open question in docs/dev/lanes/trailgc3_report.md), or a bench cell on such a shape.
+  trigger: a bench cell on such a shape (Frank accepted the +1.6 to +4 % cost 2026-11-10; see docs/dev/lanes/trailgc3_report.md).
   refs: docs/dev/reviews/2026-10-29-r2-trailgc.md F3 F4; docs/dev/lanes/trailgc3_report.md "F3 re-measure"; decisions D183; known_issues K134
   Mechanism (review r2 EMIT-1): the cold call's rejoin at a short loop's latch evicts the trail depth from its register. General form (EMIT-2): an `npush` clock beside `nset`; a back-edge whose cycle pushes a resume frame and is not cut inside writes each slot once per segment, so it can never compact and needs no checkpoint. Needs its own proof (the checker's cycle rule learns the exemption) and a sabotage row.
   Bench evidence (2026-11-02): bench O-117 (b149w2) is the trigger's bench cell: short-subject per-call +0.2..+1.2 ns, median +1.9 % caps / +3.8 % nocaps, to +11.4 % on 6-12 ns calls; large subjects free. Its cells are loop programs: a cycle-FREE skip would not move them, this row's cut would. Not scheduled (the ~3 % bar is the owner's).
@@ -1253,13 +1253,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: the first in-place user.
   refs: lane/substuc docs/dev/reviews/2026-10-22-r3-subst-usecase-fit.md (G4); replace_design.md §R4.8; [M4-SUBST]
   Charter: a support-unit flatten that checks §R4.8's overlap rule before writing and stages any piece it would overwrite in o->scratch, so a template can rewrite its subject in place.
-- [CLI-OUTKEEP] STATE:not-started — `-o` WRITES ONLY WHEN THE BYTES CHANGE (TEMP + RENAME), SO MAKEFILES DO NOT RECOMPILE
-  filed: 2026-10-22 Frank (subst R4a discussion: "that's nice! Yes. Own row")
-  status (2026-10-22): filed; nothing built. Today every -o output is overwritten in place.
-  waits: owner — build go for `-o` writing only when the bytes change (you said yes to the idea 2026-10-22; no build go yet)
-  next: on Frank's build go, one sonnet lane: cli/ change, a cli.md spec hunk, tests (identical output keeps mtime; changed output replaces it atomically; a failed run leaves the old file intact).
-  refs: docs/spec/cli.md; examples/makefile/ (D118); worktrees/subst/docs/dev/lanes/subst_rulings.md R10
-  Charter: when `-o FILE` exists and its bytes equal the new output, pcrec leaves it untouched (bytes and timestamp), so `pcrec --emit-support -o support.h` and generated matchers can be re-run on every build without forcing recompiles. Otherwise it writes a temp file in the same directory and renames it over, so an interrupted run never leaves a half-written file. Applies to every file pcrec writes via -o (matchers, headers, stamps, the support unit); no new flag.
 - [ITER-RETRY-ELIDE] STATE:not-started — SKIP THE NOTEMPTY RETRY WHERE IT CAN NEVER SUCCEED (find-all iterators)
   filed: 2026-10-23 manager, from review 2026-10-23-r2-iter-code (EMIT-2, EMIT-3)
   status (2026-10-23): filed; nothing built. `_next` retries after an empty match even for greedy patterns where the retry cannot succeed: 11-48% per match; `_next` costs 22 instructions/match over the hand loop and `_next_n(64)` is 11-15% slower on the DFA attempt route (a documented known loss until this row).
@@ -1507,9 +1500,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   an INTEGER SCAN-EDGE-COUNT STAMP (`#define <PREFIX>_SCAN_EDGES n` or an rx_info field, the design pass decides) so that the [OPT-5] "SCAN EDGE" comment marker stops being an instrument: customers are the bench's [B32] scan-edge covariate + one selfcheck control (they pass -fcomments as an inert protocol token today) and our own four structural checks that pass -fcomments for the same marker (run_scan_edge_census.sh, run_scan_edge_dispatch.sh, run_search_pinned.sh, run_specimen_identity.sh — evtriage2_report.md; "minting code-level markers would be new scaffolding for an unmeasured need" — the need is now measured twice). Emitted scaffolding ⇒ rides the NEXT abi event (D76/D94), never mints one; D80 spec hunk (match_api.md's stamp catalogue). Admin column, sonnet-sized once the bump is open.
 - [FINDINGS.B4] STATE:not-started — [FINDINGS] step B4, held: its data half lands with OPT-LITSCAN S4
   filed: 2026-09-30 (first appearance in plan.md, git; author unrecorded)
-  status (2026-11-10): trigger fired (OPT-LITSCAN closed 2026-11-10); held under the close-before-start ruling. HELD since Frank 2026-09-28 option (c); lane/findb4 (e054d1ce) parked, its data half lands with S4
-  waits: owner — may findings step B4 (the data half, parked on lane/findb4) land now that the literal scan's S4 has landed? (a build go)
-  next: on the owner's go, rebase lane/findb4 (e054d1ce) onto main and land B4's data half (C6 now has its reader; C3's cells are S1-dominated; C2 has only 16 synthetic movers)
+  status (2026-11-11): PARKED, trigger [SPAN-PICK-WINDOWMASS]; the parked commit lane/findb4 (e054d1ce) no longer exists, and S4 never read bigrams, so the data half has no reader yet
+  trigger: [SPAN-PICK-WINDOWMASS] lands a reader for B4's data half (C3's cells are S1-dominated; C2 has only 16 synthetic movers); rebuild it then, the old branch is gone
   HELD, split out of [FINDINGS] 2026-09-30 by lane retag: Frank's ruling 2026-09-28, eighty-fourth session, OPTION (c) — no reader has a trigger yet (C6 needs unbuilt S4, C3's cells are S1-dominated, C2 has only 16 synthetic movers); `lane/findb4` (`e054d1ce`) stays parked and its data half lands WITH [OPT-LITSCAN] S4, not on its own.
 - [FIND-DOMAIN-CHECK] STATE:not-started — A DECLARED FINDINGS BUNDLE IS RECOMMENDED ONLY AFTER A DOMAIN-MATCH CHECK
   filed: 2026-09-29 filer not recorded
@@ -1948,6 +1940,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: after lookbehind stage 1 lands; or a user hitting one of these limits
   refs: decisions D26 (+ 2026-11-06 addendum) D38; src/core/limits.def; docs/pcre2_compliance.md; [VLOOKBEHIND]; [IFACE-PUSH]
   Scope (Frank): (1) per limit, lift it where pcrec matches correctly, each with an ORACLE PLAN (libpcre2 cannot check it: python re, a brute-force checker, or a reduction to a checkable case). (2) A DOCUMENTS NOTE in the compliance file: a table of every place pcrec exceeds PCRE2 in numbers (limit, PCRE2's value, pcrec's, why safe). (3) A PCRE2 COMPATIBILITY MODE: an opt-in that refuses exactly what PCRE2 refuses, for callers who need the same accept set (shape TBD: a feature family member, an option, or a limits profile; rides [IFACE-PUSH]). (4) Tangent, same pass: a caller-declared MAX-SETTINGS PROMISE (e.g. max subject length, max budget), stamped in the artifact and checked at entry, letting generated code use NARROWER types for positions and budget/step counters (e.g. 32-bit). Manager could not find the earlier discussion of (4) in the committed record; this row is now its home. Each narrowing is measured (size, speed) before it ships.
+- [U8-PICK] STATE:not-started — utf8 literal-pick cells trail re2/rust (lit-sharp-s worst)
+  filed: 2026-10-05 filer not recorded
+  status (2026-11-11): PARKED, not started (ruled 2026-10-11, D160: authored and script-neutral); the twin step below is the first work
+  next: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect
+  refs: docs/dev/lanes/u8pick0_report.md; src/findings/default.rxt; decisions D83 D153 D159 D160
+  utf8 literal-pick cells: pcrec leads jit but trails re2/rust x1.2-x15.7 (lit-sharp-s worst), 10 utf8 cells. FIRST STEP: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect. ROUND 3 rank 3a-4 (D153): kept at rank 4; remodel overlap likely refactor A (landmark pick / [TIE-ALIGN]) — confirm at its twin step.
 
 ## Boonies
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind
