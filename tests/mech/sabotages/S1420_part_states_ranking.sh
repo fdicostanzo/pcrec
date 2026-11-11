@@ -13,6 +13,9 @@
 #
 # Arm `rank` (tests/memfn/run_rank.sh): the probe's RANK line for the part
 # reads rank_n 1, and rank_check.py's no-ranking claim goes red.
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2): pcrec states ONE run part, the derived one (`fn_ref` 1, no window,
+# no term); the plant states rank_n 1 on it, as before. The kit refuses it too, now
+# window.c wf_parts_check's derived-part rule (`rank_n` is a span fact).
 SAB_ID="S1420-part-states-ranking"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="rank"
@@ -20,6 +23,6 @@ SAB_DESC="pcrec's pre-check builder states rank_n 1 on each FUNC part (a rendere
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1420."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        p[np++].fn_ref = (uint32_t)i + 1;'
+SAB_BEFORE='        p[np++].fn_ref = 1;'
 SAB_AFTER='        p[np].rank_n = 1;   /* SABOTAGE S1420: a ranking stated */
-        p[np++].fn_ref = (uint32_t)i + 1;'
+        p[np++].fn_ref = 1;'

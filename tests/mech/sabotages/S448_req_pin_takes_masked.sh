@@ -28,7 +28,11 @@ SAB_COUNT=1
 # whole masked window instead, as before.
 SAB_BEFORE='        t->run_o = w->run_lo;
         t->run_len = w->run_len;
-        t->run_bytes = r->bytes + (w->run_lo - (pin.o - pin.at));'
+        t->run_bytes = r->whole + (w->run_lo - (pin.o - pin.at));'
 SAB_AFTER='        t->run_o = pin.o - pin.at;   /* SABOTAGE S448 */
         t->run_len = r->len;
-        t->run_bytes = r->bytes;'
+        t->run_bytes = r->whole;'
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2; span_runs_sheet.md §4.2): the run's bytes are the WHOLE run's
+# (`r->whole`; the cut window `r->bytes` retired); the plant takes the whole masked run
+# compared exactly at the run's position 0, as before. Probe unchanged (re-read: the stamp
+# is still 61626465@2/fffeffff, run-pinned).

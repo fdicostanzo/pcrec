@@ -29,7 +29,9 @@ SAB_COUNT=1
 # only in the PCREC_CAND_TRACE build as the five-pick shadow's expectation,
 # so the old plant landed on code no default artifact reads. The plant moves
 # to the same conjunct of the port; intent and detector unchanged.
-SAB_BEFORE='        else if (run && !proof->run) dom = 0;
+SAB_BEFORE='        else if (rs && !proof->run) dom = 0;
         else if (proof->byte == lead) dom = 1;'
 SAB_AFTER='        /* SABOTAGE S286: run_verified conjunct dropped */
         else if (proof->byte == lead) dom = 1;'
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2): the port reads the run from its set-form span (`rs`, no RUN
+# term); the same conjunct is dropped (intent and detector unchanged).

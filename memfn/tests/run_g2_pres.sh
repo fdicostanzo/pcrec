@@ -1,25 +1,33 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: 0BSD
 # Provenance: original pcrec-memory-functions text (G2's presence family,
-#   lane k382a, R-38 K38-2a).
+#   lane k382a, R-38 K38-2a; moved to the seam event's form at R-38 K38-2,
+#   lane k382).
 #
 # memfn/tests/run_g2_pres.sh — G2'S PRESENCE FAMILY (docs/design/memfn/
-# span_runs_sheet.md rev 1.3 §5's K38-2a row; §2.4 C2, §3.3, §3.5 W-K4).
+# span_runs_sheet.md rev 1.3 §5's K38-2a and K38-2 rows; §2.1-§2.4 C2, §3.3,
+# §3.5 W-L1, W-K1..W-K4b).
 # run_g2.sh's section 4p; runnable alone (~1-2 min, one process at a time).
 #
 #   1. g2/g2_pres_gen.c against the kit (LIB, default build/libpcrec.a):
-#      GENERATED pre-check sites in today's statement form (MF_SITE_ABI 26:
-#      omin 0, K >= 0) on the P0/P2/P3/P9 routes, laid out as a host lays
-#      them out, defined, their entry and re-entry uses rendered; ONE PASS
+#      GENERATED pre-check sites in the seam event's statement form
+#      (MF_SITE_ABI 27: the run one presence span in SET form, its omin of
+#      either sign, K signed; ONE run part the kit derives) on the
+#      P0/P2/P3/P9 routes, laid out as a host lays them out, the run's
+#      scan and verified extent read off the REPLY (mf_class.run, FAM-2),
+#      defined, their entry and re-entry uses rendered; W-K3 (the twin's
+#      admission bit at K < 0 equals K 0's) on every site; ONE PASS
 #      PER TARGET of the U2 list (x86-64-v3, x86-64, generic: every admitted
 #      level, both layers) and per lever state (default; run-tie-left);
 #   2. the text compiles -Wall -Wextra -Werror;
 #   3. g2/g2_pres_run.c over it, built twice: the RECORDING build (the kit's
 #      text -fsanitize=kernel-address with every access an outlined call, so
-#      the driver sees each read) runs the classifier (C2), the lever
-#      witnesses, layouts U and L, and writes the ORACLE RECORDS
-#      (docs/dev/lanes/k382a_oracle_iface.md); the ASan+UBSan build runs
-#      the classifier, layouts U and L and layout A (W-K4b);
+#      the driver sees each read) runs the §3.5 witnesses (W-L1 a/b, W-K1,
+#      W-K2), the classifier (C2), the lever witnesses, layouts U and L
+#      (W-K4a), and writes the ORACLE RECORDS (docs/dev/lanes/
+#      k382a_oracle_iface.md; run frame and the site's reply, ORC-3); the
+#      ASan+UBSan build runs the witnesses, the classifier, layouts U and L
+#      and layout A (W-K4b);
 #   4. THE ORACLE STEP: the records piped to tests/memfn/occurrence_oracle.py;
 #      the oracle file absent is a FAIL (`ORACLE OWED`, the records written,
 #      NOT checked: review 2026-11-10 r2 k382a ORC-2; the oracle landed with
@@ -52,32 +60,47 @@ TARGETS="x86-64-v3 x86-64 generic"
 ORACLE="$ROOT/tests/memfn/occurrence_oracle.py"
 RECFLAGS="-fsanitize=kernel-address --param asan-instrumentation-with-call-threshold=0 --param asan-stack=0 --param asan-globals=0"
 
-# --- the floors (K35): hand-written literals, measured 2026-11-10 on the
-# Linux dev box (seed 20261110, 400 sites + 24 witnesses per pass, lane k382a;
-# the measure, the least over the six passes, in parentheses), less ~10%. PER
-# PASS (each target, each lever state). Raise them when the space grows; never
-# lower one to make a run pass.
-FLOOR_ROUTE_SITES="P0:83 P2:70 P3:158 P9:72"   # the generator's routes (92 77 175 80)
-FLOOR_P2_REFUSED=70             # P2's control: a run part on an untested link refused (77)
-FLOOR_REACH="P0:1920 P3:3750 P9:1830"          # run-part calls per route, entry + re-entry (2132 4162 2032)
-FLOOR_REACH_RE="P0:670 P3:1390 P9:710"         # of them re-entry calls (744 1540 790)
-FLOOR_SCAN_SITES="P0:83 P3:158 P9:72"          # sites whose text scan was read (92 175 80)
-FLOOR_COVER=11450               # COVER probes (12729)
-FLOOR_EXTENT=5630               # EXTENT probes (6254)
-FLOOR_RECORDS=7500              # oracle records (8334)
-# FAM-3's near-misses (review 2026-11-10 r2 k382a), measured 2026-11-10 by
-# lane k382afix (same seed and sites; the least over the six passes):
-FLOOR_NEARMISS=28540            # EXTENT's per-bit near-miss probes (31712)
-FLOOR_NM_SOUND=3440             # near-miss occurrences in SOUND's subjects (3822)
-FLOOR_NM_USES=4120              # near-miss occurrences in the uses' subjects (4583)
-FLOOR_LAYOUT_A=14360            # layout A placements, ASan build (15962)
+# --- the floors (K35): hand-written literals, sharing no source with the
+# family. PER PASS (each target, each lever state). Raise them when the space
+# grows; never lower one to make a run pass.
+# RE-MEASURED 2026-11-11 by lane k382 (R-38 K38-2) on the Linux dev box, seed
+# 20261110, 400 sites + 24 lever witnesses + 4 §3.5 witness sites per pass;
+# the least over the six passes in parentheses, less ~10%. The space changed
+# FORM at K38-2 (one derived run part per site instead of the window and the
+# whole run, half the runs a negative omin), so every literal below is this
+# space's own measure; NEARMISS and the per-part probe floors fell with the
+# retired second part (K38-2a's were 28540 / 11450 / 5630 over two parts).
+FLOOR_ROUTE_SITES="P0:86 P2:67 P3:159 P9:72"   # the generator's routes (96 75 177 80)
+FLOOR_P2_REFUSED=67         # P2's control: the derived part on an untested link refused (75)
+FLOOR_REACH="P0:2190 P3:4010 P9:1820"          # run-part calls per route, entry + re-entry (2441 4460 2028)
+FLOOR_REACH_RE="P0:850 P3:1520 P9:730"       # of them re-entry calls (947 1697 816)
+FLOOR_SCAN_SITES="P0:86 P3:159 P9:72"        # sites whose text scan was read (96 177 80)
+FLOOR_COVER=12590              # COVER probes (13992)
+FLOOR_EXTENT=6240            # EXTENT probes (6944)
+FLOOR_RECORDS=8030          # oracle records (8932)
+FLOOR_NEARMISS=25600        # EXTENT's per-bit near-miss probes, FAM-3 (28450)
+FLOOR_NM_SOUND=3240         # near-miss occurrences in SOUND's subjects (3611)
+FLOOR_NM_USES=4250           # near-miss occurrences in the uses' subjects (4729)
+FLOOR_LAYOUT_A=14610            # layout A placements, ASan build (16238 = 353 sites x 46)
 FLOOR_WITNESSES=24              # lever witnesses, every one rendered (24)
+# K38-2's populations (span_runs_sheet.md §3, §5 K38-2 PLAN (d)):
+FLOOR_NEG_OMIN=153         # rendered sites whose run omin < 0 (171)
+FLOOR_WK4_OMIN=117         # of them omin in -8..-32, W-K4a's range (130)
+FLOOR_WK4_LOW=1550           # layout L calls on those with the origin below -omin (1727)
+FLOOR_K_SIGNED=106         # ASSIGN sites stating K with omin < 0 (118)
+FLOOR_K_NONPOS=64          # of them K <= 0 (72)
+FLOOR_PARTIAL=65           # sites whose reply's extent is partial (73)
+FLOOR_PARTIAL_HITS=539       # ORC-3: records hitting with a PARTIAL extent; 0 was right at K38-2a (599)
+FLOOR_NEG_RECORDS=4090       # records with a negative omin (4547)
+FLOOR_BELOW_HITS=1330        # hits below the attempt start, only a negative omin yields one (1480)
+FLOOR_ROOM=24                # sites the C2 decision plant reaches: the extent ends before the run (27)
+FLOOR_WK3_CASES=10160           # W-K3 checks: a K in -32..-1 on a site whose bit at K 0 is 1 (11296)
 # THE LAYERS (D147; U2's admitted levels): per target, the sites whose run
 # part has a w16 / w32 arm (the generator's census of the kit's own text), and
 # the vector loads of the subject the recording build saw (the arms RAN).
 # x86-64-v3 admits both levels, x86-64 w16 alone, generic (the OFF layer)
 # none: a level the target does not admit must render NOTHING (exactly 0).
-SIMD_FLOORS="x86-64-v3:18:18:1180 x86-64:18:0:990 generic:0:0:0"   # (20 20 1314; 20 0 1104; 0 0)
+SIMD_FLOORS="x86-64-v3:19:19:1600 x86-64:19:0:1340 generic:0:0:0"   # (22 22 1786; 22 0 1495; 0 0)
 
 # THE PLANTS: id, then one line FILE@@FROM@@TO per edit (FILE under
 # memfn/src; FROM replaced by TO, `\n` a newline, `\\n` the C escape, `\&`
@@ -113,11 +136,43 @@ plant_spec() {
         # the run decision's): the lever pass's layouts are refused by
         # mf_define (decider_census D cannot see it: it counts the call)
         echo 'window.c@@        if (r \&\& p->stretch \&\& o >= r->start \&\& o < r->start + r->len \&\& o != rs)\n            continue;                   /* inside R: the run decision'"'"'s one */@@        (void)o; (void)rs;' ;;
+    # R-38 K38-2 (lane k382; ids from the lane's range S3040-S3069): the
+    # §3.5 witnesses' plants, and C2's decision plant (§2.4)
+    S3060) # W-L1: the CANDIDATE floor is the origin `lo`, not max(0, lo + omin)
+        echo 'precheck.c@@    if (omin >= 0) return h->lo;@@    return h->lo;' ;;
+    S3061) # W-K1: the floor spelled `lo + omin` in size_t, no clamp (wraps where lo < -omin)
+        echo 'precheck.c@@    kb_printf(\&f, "(%s >= %llu ? %s - %llu : 0)", h->lo, back, h->lo, back);@@    kb_printf(\&f, "(%s - %llu)", h->lo, back);' ;;
+    S3062) # W-K2: the RE-ENTRY floor read from its `lo` (a use with no result
+        # declaration, the re-entry's shape here, floors at lo)
+        echo 'precheck.c@@    if (omin >= 0) return h->lo;@@    if (omin >= 0 || !h->result_decl) return h->lo;' ;;
+    S3063) # W-K3: the twin admission reads K unsigned (a negative K a huge step back)
+        echo 'presence.c@@        unsigned long long k = s->head_max > 0 ? (unsigned long long)s->head_max : 0;@@        unsigned long long k = (unsigned long long)s->head_max;' ;;
+    S3064) # C2's DECISION plant: the reply (mf_ask's and mf_defined's mf_class.run)
+        # says ver_len + 1 while the renderer (fd_pres_run's quiet ask) renders the
+        # old extent; reaches where the extent ends before the run does
+        echo 'compose.c@@        return fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, \&why) ? -1 : 0;@@        if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, \&why)) return -1;\n        { int r_ = kit_pres_run(s); if (r_ >= 0 \&\& out->pres[r_].verify \&\& out->run.ver_len \&\& out->run.ver_lo + out->run.ver_len < kit_pres_run_span(s, r_)->len) out->run.ver_len++; }\n        return 0;'
+        echo 'compose.c@@            return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);@@            return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);\n        { int r_ = kit_pres_run(s); if (r_ >= 0 \&\& r->cls.pres[r_].verify \&\& r->cls.run.ver_len \&\& r->cls.run.ver_lo + r->cls.run.ver_len < kit_pres_run_span(s, r_)->len) r->cls.run.ver_len++; }' ;;
     *) return 1 ;;
     esac
 }
 plant_detector() { case "$1" in S3008|S3010) echo oracle ;; *) echo family ;; esac; }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012"
+# plant_expect ID: the FAIL-line patterns (each grep -E, each required, `|`
+# between them NOT an alternation: split below) naming the detector the plant
+# is FOR; a plant red only by something else is not detected by its witness
+# (an oracle plant: the oracle step's own verdict)
+plant_expect() {
+    case "$1" in
+    S3007|S3011|S3064) echo ': EXTENT: ' ;;
+    S3009) echo ': LEVER: ' ;;
+    S3012) echo 'mf_define' ;;
+    S3060) echo ': W-L1: ;: W-L1b: ' ;;
+    S3061) echo ': W-K1: ' ;;
+    S3062) echo ': W-K2: ' ;;
+    S3063) echo 'W-K3: the admission bit' ;;
+    *) echo '' ;;
+    esac
+}
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3060 S3061 S3062 S3063 S3064"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -185,8 +240,8 @@ counts() {   # counts LOG: "P F" from its checks lines
 # moved TARGET: "M W", the witnesses whose text scan moved between the
 # default and the lever pass, and the witnesses read in both
 moved() {
-    join <(grep -h '^G2PW' "$WORK/$1.0.run.log" | awk '{print $3, $4}' | sort) \
-         <(grep -h '^G2PW' "$WORK/$1.1.run.log" | awk '{print $3, $4}' | sort) \
+    join <(grep -h '^G2PW ' "$WORK/$1.0.run.log" | awk '{print $3, $4}' | sort) \
+         <(grep -h '^G2PW ' "$WORK/$1.1.run.log" | awk '{print $3, $4}' | sort) \
         | awk '{ w++; if ($2 != $3) m++ } END { print m + 0, w + 0 }'
 }
 
@@ -221,6 +276,16 @@ if [ "${1:-}" = "--reach" ]; then
     # S3010: the uses' run-part calls at the attempt start (the plant adds 1)
     m=$(grep -c '(subject, subject_length, \(search_from\|posvar\))' "$f")
     [ "${m:-0}" -ge 50 ] && echo "REACH-G2P-USE-CALL n=$m"
+    # S3060-S3062: the run part's floor below the origin (a negative omin's
+    # `lo >= N ? lo - N : 0`), entry and re-entry
+    m=$(grep -cE 'subject_length, \((search_from|posvar) >= [0-9]+ \?' "$f")
+    [ "${m:-0}" -ge 50 ] && echo "REACH-G2P-NEG-FLOOR n=$m"
+    # S3063: the twin's admission at a negative K on sites whose bit at K 0 is 1
+    m=$(grep -oE ' wk3_cases=[0-9]+' "$WORK/reach.0.log" | grep -oE '[0-9]+$')
+    [ "${m:-0}" -ge 1000 ] && echo "REACH-G2P-TWIN-NEG-K n=$m"
+    # S3064: sites whose reply's extent ends before the run does (the plant's +1 shows)
+    m=$(grep -oE ' room=[0-9]+' "$WORK/reach.0.log" | grep -oE '[0-9]+$')
+    [ "${m:-0}" -ge 20 ] && echo "REACH-G2P-REPLY-ROOM n=$m"
     # C (and S3012's in-run stop): the lever witnesses rendered in the run-tie-left pass
     m=$(grep -oE 'G2PGEN generic.lever sites=[0-9]+ rendered=[0-9]+' "$WORK/reach.1.log" | grep -oE '[0-9]+$')
     [ "${m:-0}" -ge 300 ] && grep -q '^g2_pres_gen failures: 0' "$WORK/reach.1.log" \
@@ -255,12 +320,14 @@ EOF
         kit_objs "$WORK/src" "$WORK/pk_$id" || fail_setup "$id: the planted kit does not compile"
         build_gen "p$id" "$WORK/pk_$id"/*.o || fail_setup "$id: the generator does not build"
         red=""
-        rm -f "$WORK"/*.rec.tsv
+        rm -f "$WORK"/*.rec.tsv "$WORK/fails.$id"
         for tgt in $TARGETS; do
             host_has "$tgt" || continue
             for lev in 0 1; do
                 cp "$WORK/p$id.gen" "$WORK/$tgt.$lev.gen"
                 built=$(one_pass "$tgt.$lev" "$tgt" "$lev" | grep -m1 '^FAIL')
+                grep -h '^FAIL' "$WORK/$tgt.$lev.gen.log" "$WORK/$tgt.$lev.run.log" 2>/dev/null \
+                    >> "$WORK/fails.$id"
                 r=$(grep -h '^FAIL' "$WORK/$tgt.$lev.gen.log" "$WORK/$tgt.$lev.run.log" 2>/dev/null | head -1)
                 [ -n "$r" ] || r="$built"
                 [ -n "$red" ] || red="$r"
@@ -274,8 +341,24 @@ EOF
         0\ *) ostate="oracle green ($o)" ;;
         *)    ostate="oracle RED ($o)"; [ -n "$red" ] || red="the oracle: $o" ;;
         esac
-        if [ -n "$red" ]; then
-            echo "PLANT $id RED   ($(plant_detector "$id"); $ostate): $red"
+        # by its own detector: every expected pattern among the FAIL lines
+        # (an oracle plant: the oracle RED)
+        byown=1 shown=""
+        if [ "$(plant_detector "$id")" = oracle ]; then
+            case "$ostate" in "oracle RED"*) ;; *) byown=0 ;; esac
+        else
+            IFS=';' read -ra pats <<< "$(plant_expect "$id")"
+            for pat in "${pats[@]}"; do
+                [ -n "$pat" ] || continue
+                m=$(grep -E -m1 -- "$pat" "$WORK/fails.$id" 2>/dev/null)
+                if [ -n "$m" ]; then shown="$m"; else byown=0; fi
+            done
+        fi
+        if [ -n "$red" ] && [ "$byown" = 1 ]; then
+            echo "PLANT $id RED   ($(plant_detector "$id"); $ostate): ${shown:-$red}"
+        elif [ -n "$red" ]; then
+            echo "PLANT $id RED BUT NOT BY ITS DETECTOR ($(plant_detector "$id") $(plant_expect "$id"); $ostate): $red"
+            bad=$((bad + 1))
         elif [ "$(plant_detector "$id")" = oracle ] && [ "$o" = OWED ]; then
             echo "PLANT $id OWED  (its detector is the oracle step, and the oracle is OWED: NOT DETECTED)"
             bad=$((bad + 1))
@@ -343,6 +426,30 @@ for tgt in $TARGETS; do
         floor "$tag nm_sound" "$(rv checks nm_sound)" "$FLOOR_NM_SOUND"
         floor "$tag nm_uses" "$(rv checks nm_uses)" "$FLOOR_NM_USES"
         floor "$tag witnesses" "$(rv sites witnesses)" "$FLOOR_WITNESSES"
+        # K38-2's populations, the generator's census and the driver's
+        floor "$tag neg_omin" "$(gv neg_omin)" "$FLOOR_NEG_OMIN"
+        floor "$tag wk4_omin" "$(gv wk4_omin)" "$FLOOR_WK4_OMIN"
+        floor "$tag k_signed" "$(gv k_signed)" "$FLOOR_K_SIGNED"
+        floor "$tag k_nonpos" "$(gv k_nonpos)" "$FLOOR_K_NONPOS"
+        floor "$tag partial" "$(gv partial)" "$FLOOR_PARTIAL"
+        floor "$tag room" "$(gv room)" "$FLOOR_ROOM"
+        floor "$tag wk3_cases" "$(gv wk3_cases)" "$FLOOR_WK3_CASES"
+        floor "$tag partial_hits" "$(rv k382 partial_hits)" "$FLOOR_PARTIAL_HITS"
+        floor "$tag neg_records" "$(rv k382 neg_records)" "$FLOOR_NEG_RECORDS"
+        floor "$tag below_hits" "$(rv k382 below_hits)" "$FLOOR_BELOW_HITS"
+        floor "$tag wk4_low" "$(rv k382 wk4_low)" "$FLOOR_WK4_LOW"
+        # the §3.5 witnesses: each green AND reached, in the recording driver
+        # and the ASan+UBSan one; W-K3's own witness reached in the generator
+        wk=$(grep -h '^G2P wk ' "$WORK/$tag.run.log")
+        if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 (green/reached)" ]; then tp=$((tp + 1))
+        else note "$tag: the §3.5 witnesses are not all green and reached (${wk:-no line})"; fi
+        if [ -z "${G2P_NOASAN:-}" ]; then
+            wk=$(grep -h '^G2P wk ' "$WORK/$tag.asan.log")
+            if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 (green/reached)" ]; then tp=$((tp + 1))
+            else note "$tag: the §3.5 witnesses (ASan+UBSan) are not all green and reached (${wk:-no line})"; fi
+        fi
+        if grep -qE "^G2PWK3 $tgt\.(default|lever) site [0-9]+ reached" "$WORK/$tag.gen.log"; then tp=$((tp + 1))
+        else note "$tag: W-K3's witness (stated rates m > h) did not reach"; fi
         for x in $SIMD_FLOORS; do
             [ "${x%%:*}" = "$tgt" ] || continue
             IFS=: read -r _ f16 f32 fvec <<< "$x"

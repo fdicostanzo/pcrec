@@ -32,7 +32,7 @@ SAB_DOC_FIGURE="tests/base/k66_precheck_whole_run.rxt is the answer-level detect
 # @0 -> @6 at [FIND-TIE] (72e3ae41, 2026-09-28: a run-scan data tie follows
 # NONE order, the rightmost); the window, the whole-run block and its call
 # are unchanged. The probe read MISSING from then until this re-pin.
-SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"7e237e237e237e23@6\"" "$REACH_TMP/o.c" && grep -qF "!memcmp(subject + cand + 8, \"~#~#~#~#\", 8) && !memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && grep -qF "rx_reqrun_whole(subject, subject_length, search_from)" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
+SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"65656565656565657e237e237e237e23@14\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
 # RE-PINNED 2026-10-29 (lane r30b, [MEMFN] R-30): the window's own search is
 # no longer emitted beside the whole run's, and the whole run's compare is led
 # by the window's bytes (`~#~#~#~#` at +8); the probe reads the led compare.
@@ -44,5 +44,16 @@ SAB_REACH_EXPECT="REACH-K66-WHOLE-RUN-EMITTED"
 # after the window's test) removes the block and the call together. Intent
 # unchanged: the K66 whole-run compare is never emitted.
 SAB_COUNT=1
-SAB_BEFORE='        mf_link k = t->link;'
-SAB_AFTER='        mf_link k = t->link; if (!member && !k.member) k.member = (uint8_t)(pk.run_window + 1);   /* SABOTAGE S278 */'
+SAB_BEFORE='    { "P3", KIT_RUN_WINDOW },'
+SAB_AFTER='    { "P3", KIT_RUN_WINDOW },
+    { "P0", KIT_RUN_WINDOW },   /* SABOTAGE S278 */'
+# RE-AIMED 2026-11-11 (lane k382, R-38 K38-2): pcrec states the run once (set form) and the kit
+# DERIVES its one part from the run decision's reply; the link's `member` is 0 and unread on the
+# run, so the old plant (`k.member = pk.run_window + 1`) no longer compiles (pk.run_window
+# retired) although its anchor line survives. NOTE: span_runs_sheet.md rev 1.3 §5's K38-2 row
+# rules this row RETIRED (control: the statement rule's plant); kept here because the intent,
+# K66's whole run verified on the no-DFA route, is an ANSWER fact no other row now plants
+# (S1544 retired) and the decision moved to one declared row: finder.c fd_run_modes[], the
+# deciding row -> stretch mode table. The plant adds P0 -> WINDOW, so the REQUIRED span's
+# reply verifies P3's 8-position window and the derived part compares it alone. The probe
+# reads the whole 16-position compare (and the stamp's whole run, scan @14).

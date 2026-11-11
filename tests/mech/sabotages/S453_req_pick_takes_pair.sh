@@ -7,6 +7,8 @@
 # shipped. ANSWER-PRESERVING (no answer reads REQ_BYTE on a run route): the
 # detector is reqcube_check.py's "REQ_BYTE is a req_set member" check, and
 # `(?i:select)\d+x` must read 120. (Design's provisional S452.)
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2; span_runs_sheet.md §5's K38-2 row): the shipped run is the
+# whole run, uncut (`whole`/`whole_mask`); the same mask test is dropped (intent unchanged).
 SAB_ID="S453-req-pick-takes-pair"
 SAB_FILE="src/facts/req.c"
 SAB_SUITES="codegen"
@@ -16,5 +18,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i:sele
 SAB_REACH_EXPECT="REACH-PAIR-PICK"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (run->len >= 2 && run->mask[run->idx] == 0xFF) return run->bytes[run->idx];'
-SAB_AFTER='    if (run->len >= 2) return run->bytes[run->idx];   /* SABOTAGE S453 */'
+SAB_BEFORE='    if (run->len >= 2 && run->whole_mask[run->idx] == 0xFF) return run->whole[run->idx];'
+SAB_AFTER='    if (run->len >= 2) return run->whole[run->idx];   /* SABOTAGE S453 */'

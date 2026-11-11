@@ -1,12 +1,14 @@
 /* SPDX-License-Identifier: 0BSD
  * Provenance: original pcrec-memory-functions text (G2's presence family,
- *   lane k382a, R-38 K38-2a).
+ *   lane k382a, R-38 K38-2a; moved to the seam event's statement form at
+ *   R-38 K38-2, lane k382).
  *
  * memfn/tests/g2/g2_pres.h — G2'S PRESENCE FAMILY, the site table the
  * generator (g2_pres_gen.c) writes and the driver (g2_pres_run.c) reads. It
  * does not include memfn.h: every field is a FACT as G2 generated or laid it
- * out, or a reply the kit gave through its public ports (mf_pres_ports,
- * mf_wdecide, mf_class's links), copied as numbers.
+ * out, or a reply the kit gave through its public ports (the run's ONE
+ * decision, mf_class.run, as mf_ask and mf_defined answer it), copied as
+ * numbers.
  */
 #ifndef G2_PRES_H
 #define G2_PRES_H
@@ -15,27 +17,32 @@
 #include <stdint.h>
 
 #define G2P_MAXRUN  32          /* the longest generated run (MF_WSPAN_POS)   */
-#define G2P_MAXPART 2           /* the run parts a site may lay out: the
-                                   window and the whole run                  */
+#define G2P_MAXPART 1           /* the run parts a site lays out: ONE, the part
+                                   the kit derives from the run span (MF_SITE_ABI
+                                   27; no host-cut window, no second part)   */
 
 /* The routes (the PRES row that decided the run's link, read off
  * mf_class.pres_row through mf_finder_rows). */
 enum { G2P_P0, G2P_P2, G2P_P3, G2P_P9, G2P_NROUTE };
 
+/* The fixed witnesses of span_runs_sheet.md §3.5 the DRIVER runs (W-K3, the
+ * twin, is the generator's: it is a port answer, not text). */
+enum { G2P_W_NONE, G2P_W_L1A, G2P_W_L1B, G2P_W_K1, G2P_W_K2, G2P_W_N };
+
 typedef size_t (*g2p_part_fn)(const unsigned char *s, size_t n, size_t lo);
 typedef int (*g2p_use_fn)(const unsigned char *s, size_t n, size_t lo, size_t *out);
 
-/* One RUN PART the generator laid out: positions [at, at + len) of the
- * site's whole run, the part's own statement. `fn` is a direct call of the
- * kit's function (NULL where the kit implied the part and defined none,
- * R-30); the reply is the window family's for the part's statement
- * (mf_wdecide on the same art: run_member and [run_lo, run_lo + run_len),
- * part positions). */
+/* THE RUN PART, in the RUN frame (review 2026-11-10 r2 k382a ORC-3): the
+ * derived part's candidate is the run occurrence's position 0, so the part
+ * spans the whole run, positions [at, at + len) = [0, run_len). `fn` is a
+ * direct call of the kit's function; `member`, `ver_lo`, `ver_len` are the
+ * site's REPLY (mf_class.run: its scan and verified extent, run positions;
+ * FAM-2: read off the reply, never derived by G2). */
 typedef struct {
     unsigned    at, len;
     g2p_part_fn fn;
-    int         member;         /* the reply's scan position (part frame)     */
-    unsigned    ver_lo, ver_len;/* the reply's verified stretch (part frame)  */
+    int         member;         /* the reply's scan position                  */
+    unsigned    ver_lo, ver_len;/* the reply's verified extent                */
 } g2p_part;
 
 typedef struct {
@@ -45,11 +52,13 @@ typedef struct {
     int         assign;         /* the site ASSIGNs its landmark (re-entry use) */
     int         witness;        /* 1: a lever witness site (all-tie, distinct) */
     int         lever;          /* rendered on an art under run-tie-left       */
+    int         wk;             /* G2P_W_*: a §3.5 witness site                */
     unsigned    run_len;
-    int32_t     omin;           /* the run span's STATED omin (the statement's) */
+    int32_t     omin;           /* the run span's STATED omin (may be < 0)     */
+    int64_t     head_max;       /* K as stated (signed; 0 on an ON_MISS site)  */
     uint8_t     run[G2P_MAXRUN], mask[G2P_MAXRUN];
-    int         scan;           /* the site's reply: mf_pres_ports' run_scan   */
-    unsigned    ver_lo, ver_len;/* the site's reply: P3's window, or the whole */
+    int         has_scan, scan; /* the site's reply: mf_class.run              */
+    unsigned    ver_lo, ver_len;/* the site's reply: its verified extent       */
     unsigned    nparts;
     g2p_part    parts[G2P_MAXPART];
     g2p_use_fn  entry, reentry; /* reentry NULL on an ON_MISS site             */

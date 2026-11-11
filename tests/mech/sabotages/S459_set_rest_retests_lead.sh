@@ -15,6 +15,8 @@
 # lead) included, so the lead is laid out twice; the kit's layout check refuses
 # that define, so the pre-check suite fails loudly (intent unchanged: the same
 # byte memchr'd twice).
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2): a member span is any span but the run (`(int)i != run`, the
+# set-form run states no SET term); the same order test is planted (intent unchanged).
 SAB_ID="S459-set-rest-retests-lead"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks"
@@ -24,5 +26,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-
 SAB_REACH_EXPECT="REACH-LEAD-NOT-RETESTED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            if (t->kind == MF_T_SET && cls->pres[i].verify && cls->pres[i].order == 2 &&'
-SAB_AFTER='            if (t->kind == MF_T_SET && cls->pres[i].verify && cls->pres[i].order != 1 &&   /* SABOTAGE S459 */'
+SAB_BEFORE='            if ((int)i != run && cls->pres[i].verify && cls->pres[i].order == 2 &&'
+SAB_AFTER='            if ((int)i != run && cls->pres[i].verify && cls->pres[i].order != 1 &&   /* SABOTAGE S459 */'

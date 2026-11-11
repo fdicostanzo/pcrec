@@ -5,8 +5,13 @@
  * memfn/tests/g2/g2_pres_run.c — G2'S PRESENCE FAMILY, THE DRIVER, over the
  * text g2_pres_gen.c rendered (OUT/g2p_sites.c, linked in; g2_pres.h's
  * table). It never links the kit: its expectations are the run AS GENERATED
- * (the positions' sets) and the kit's replies AS NUMBERS; what it measures is
- * the RENDERED TEXT, by behaviour and by the reads it makes.
+ * (the positions' sets), its stated omin and K, and the kit's reply AS
+ * NUMBERS (mf_class.run: FAM-2, span_runs_sheet.md §5 K38-2 PLAN (c)); what
+ * it measures is the RENDERED TEXT, by behaviour and by the reads it makes.
+ * Since R-38 K38-2 a site lays out ONE run part, the one the kit derives; its
+ * candidate is the run occurrence's position 0, so the part is measured in
+ * the RUN frame (positions [0, run_len)), and the reply's extent may be
+ * partial (P3's).
  *
  *   THE TEXT CLASSIFIER (span_runs_sheet.md §2.4 C2), per run part, from its
  *   text alone (a direct call of the part, g2p_part_<id>_<k>):
@@ -15,10 +20,11 @@
  *             CONTAINS the scan's set: a superset, or an ANDed second
  *             position, still finds every occurrence);
  *     EXTENT  the positions the text COMPARES are exactly the reply's
- *             verified stretch: an occurrence broken at a position inside
- *             it is not yielded, one broken outside it still is; the union
- *             of a site's parts' measured extents is the site's reply
- *             (P3's window, or the whole run); and each compare is EXACT:
+ *             verified extent [ver_lo, ver_lo + ver_len): an occurrence
+ *             broken at a position inside it is not yielded, one broken
+ *             outside it still is (so a reply that claims a position the
+ *             text does not compare, C2's decision plant, reds here); and
+ *             each compare is EXACT:
  *             every member of a verified position with one bit flipped to
  *             a byte outside the position's set (a NEAR-MISS) breaks the
  *             occurrence (review 2026-11-10 r2 k382a FAM-3: the filler
@@ -29,9 +35,9 @@
  *             enough for the scalar body: a SIMD arm may load an ANDed
  *             second position first, so it is held to COVER; part frame,
  *             then site frame);
- *     SOUND   a yielded candidate lies at or above `lo`, inside the subject,
- *             and holds every compared position (subjects carry near-miss
- *             occurrences too, FAM-3).
+ *     SOUND   a yielded candidate lies at or above `lo`, its verified extent
+ *             inside the subject, and holds every compared position
+ *             (subjects carry near-miss occurrences too, FAM-3).
  *   (C2's third clause, no run part where the link is untested, is the
  *   generator's: its P2 control.)
  *   THE LEVER WITNESSES (plant C): the text's scan on an all-tie run of
@@ -52,11 +58,23 @@
  *   access an outlined call: the __asan_* callbacks below) and the libc
  *   reads (memchr, memcmp, memcpy, routed here by g2p_sites.c's G2P_REC
  *   block).
+ *   ORC-3 (§5 K38-2 PLAN (d)): the records are in the RUN frame (the part's
+ *   `at` is 0: the candidate is run position 0, so the floor asked is run
+ *   position 0's), carry the site's REPLY (its ver_lo/ver_len), and the
+ *   stated omin of either sign; the runner floors the hits whose verified
+ *   extent is PARTIAL (`partial_hits`), the records with a negative omin and
+ *   the hits BELOW the attempt start.
+ *   THE §3.5 WITNESSES (W-L1 a/b, W-K1, W-K2): fixed sites and subjects, the
+ *   expected candidate GENERATED from the stated rule (§3.3: floor = max(0,
+ *   origin + omin), the least whole-run occurrence at or after it, the
+ *   extent whole) and held equal to the sheet's literal; each states its
+ *   reach (the floor below the origin; W-L1b's scan byte below it).
  *   THE LAYOUTS (§3.5 W-K4): U, a guard page at s + n; L, the subject at a
- *   page start with a guard page below (W-K4a's); and, in the ASan build
- *   (G2P_ASAN), A, the subject at offset 1..W-1 from a W-aligned heap block
- *   (W 16 and 32), the block's bytes below the subject poisoned (W-K4b's).
- *   A fault is a failure.
+ *   page start with a guard page below (W-K4a's: every site, the negative
+ *   omin ones with the origin below -omin half the time, counted); and, in
+ *   the ASan build (G2P_ASAN), A, the subject at offset 1..W-1 from a
+ *   W-aligned heap block (W 16 and 32), the block's bytes below the subject
+ *   poisoned (W-K4b's). A fault is a failure.
  *
  *   g2p_run [--records FILE] [--seed N]
  */
@@ -191,6 +209,7 @@ static FILE *g_rec;
 static const char *g_call;               /* "entry" / "reentry" while a use runs */
 static const g2p_site *g_site_of[1 << 12];
 static long g_reach[G2P_NROUTE][2], g_records;
+static long g_partial_hits, g_neg_records, g_below_hits;   /* ORC-3's populations */
 /* THE CALLER BOUNDARY (ORC-1): the host's subject, length and attempt start,
    set by uses() before it calls the use */
 static const unsigned char *g_hs;
@@ -220,8 +239,13 @@ size_t g2p_rec(int site, int part, g2p_part_fn fn, const unsigned char *s, size_
     }
     fprintf(g_rec, "\t%u\t%u\t", pt->ver_lo, pt->ver_len);
     /* the part's hit is an offset from ITS `s`: the record's is the host's */
-    if (r < n) fprintf(g_rec, "%td\t", (s + r) - g_hs);
-    else fputs("MISS\t", g_rec);
+    if (r < n) {
+        ptrdiff_t c = (s + r) - g_hs;
+        fprintf(g_rec, "%td\t", c);
+        if (pt->ver_len < x->run_len) g_partial_hits++;
+        if (c < (ptrdiff_t)g_hlo) g_below_hits++;
+    } else fputs("MISS\t", g_rec);
+    if (x->omin < 0) g_neg_records++;
     int first = 1;
     for (long o = -PAD; o < (long)g_hn + PAD; o++)
         if (g_stamp[o + PAD] == g_gen) { fprintf(g_rec, "%s%ld", first ? "" : ",", o); first = 0; }
@@ -252,7 +276,7 @@ static unsigned char *place(int lay, const unsigned char *src, size_t n)
 
 /* ---- the checks ------------------------------------------------------------------ */
 
-static long g_cover, g_extent, g_scan, g_sound, g_witness, g_lay_calls[LAY_N];
+static long g_cover, g_extent, g_scan, g_sound, g_witness, g_lay_calls[LAY_N], g_wk4_low;
 static long g_nearmiss, g_nm_sound, g_nm_uses;   /* FAM-3's probes, counted */
 static long g_scan_route[G2P_NROUTE];
 
@@ -264,6 +288,40 @@ static size_t measure(const g2p_part *pt, const unsigned char *src, size_t n, si
     size_t r = pt->fn(s, n, lo);
     g_active = 0;
     if (first) *first = g_first;
+    return r;
+}
+
+/* 1 iff `buf` holds part `pt`'s verified extent with its position 0 at `c`
+ * (inside the subject of `n`) */
+static int holds_extent(const g2p_site *x, const g2p_part *pt, const unsigned char *buf, size_t n,
+                        size_t c)
+{
+    if (c + pt->ver_lo + pt->ver_len > n) return 0;
+    for (unsigned j = pt->ver_lo; j < pt->ver_lo + pt->ver_len; j++)
+        if (!in_set(x, pt->at + j, buf[c + j])) return 0;
+    return 1;
+}
+
+/* The part's first candidate at or after `gap` from `lo`: a PARTIAL extent
+ * may legally yield an earlier candidate (an occurrence's own stretch shifted
+ * onto repeated positions holds the extent), so each candidate below `gap`
+ * must hold the extent and the part is asked again past it. *bad 1: a
+ * candidate below `gap` that does not hold the extent (SOUND's matter). */
+static size_t first_from(const g2p_site *x, const g2p_part *pt, const unsigned char *buf, size_t n,
+                         size_t lo, size_t gap, int *bad)
+{
+    size_t r;
+    *bad = 0;
+    while ((r = measure(pt, buf, n, lo, NULL)) < gap) {
+        if (!holds_extent(x, pt, buf, n, r)) {
+            *bad = 1;
+            failf(x, "SOUND", "part at %u len %u: lo %zu n %zu yielded %zu, which does not hold "
+                  "the verified extent [%u, %u)", pt->at, pt->len, lo, n, r, pt->ver_lo,
+                  pt->ver_lo + pt->ver_len);
+            return r;
+        }
+        lo = r + 1;
+    }
     return r;
 }
 
@@ -316,7 +374,8 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
                 memset(buf, (int)F, n);
                 occ(x, pt, buf, gap);
                 buf[gap + j] = (unsigned char)m[i];
-                size_t r = measure(pt, buf, n, lo, NULL);
+                int bad;
+                size_t r = first_from(x, pt, buf, n, lo, gap, &bad);
                 g_cover++;
                 CHECK(x, r == gap, "COVER", "part at %u len %u: member 0x%02x at position %u "
                       "(occurrence at %zu, lo %zu, n %zu) yielded %zu", pt->at, len, m[i], j, gap, lo, n, r);
@@ -330,7 +389,8 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
         memset(buf, (int)F, n);
         occ(x, pt, buf, gap);
         buf[gap + j] = (unsigned char)F;
-        size_t r = measure(pt, buf, n, lo, NULL);
+        int bad;
+        size_t r = first_from(x, pt, buf, n, lo, gap, &bad);
         int compared = r != gap;
         if (compared) { if (*ext_lo < 0) *ext_lo = (int)j; *ext_hi = (int)j + 1; }
         int want = (int)j >= (int)pt->ver_lo && j < pt->ver_lo + pt->ver_len;
@@ -352,7 +412,8 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
                 memset(buf, (int)F, n);
                 occ_r(x, pt, buf, gap, rnd2);
                 buf[gap + j] = (unsigned char)nm;
-                size_t r = measure(pt, buf, n, lo, NULL);
+                int bad;
+                size_t r = first_from(x, pt, buf, n, lo, gap, &bad);
                 g_nearmiss++;
                 CHECK(x, r != gap, "EXTENT", "part at %u len %u: a near-miss 0x%02x (member 0x%02x, "
                       "bit %u) at verified position %u is yielded as an occurrence (lo %zu, n %zu)",
@@ -384,7 +445,7 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
             near_occ(x, pt, pt->ver_lo, pt->ver_len, buf, rnd2((unsigned)(n - len + 1))))
             g_nm_sound++;
         size_t r = measure(pt, buf, n, lo, NULL);
-        int ok = r >= n || (r >= lo && r + len <= n);
+        int ok = r >= n || (r >= lo && r + pt->ver_lo + pt->ver_len <= n);
         for (unsigned j = (unsigned)pt->ver_lo; ok && r < n && j < pt->ver_lo + pt->ver_len; j++)
             ok = in_set(x, pt->at + j, buf[r + j]);
         g_sound++;
@@ -404,6 +465,18 @@ static int classify_guarded(const g2p_site *x, const g2p_part *pt, int *lo, int 
     return 0;
 }
 
+/* one call of use `f`, a fault caught (g_faulted 1; a recorded call's
+ * g_active reset, ORC-4); its return, 0 on a fault. Its own frame, so no
+ * caller's variable lives across the sigsetjmp. */
+static __attribute__((noinline)) int call_use(g2p_use_fn f, const unsigned char *s, size_t n,
+                                              size_t lo, size_t *out)
+{
+    g_faulted = 0;
+    if (!sigsetjmp(g_jb, 1)) return f(s, n, lo, out);
+    g_active = 0;
+    return 0;
+}
+
 /* the entry and re-entry uses over generated subjects, in layout `lay` */
 static void uses(const g2p_site *x, int lay)
 {
@@ -419,24 +492,26 @@ static void uses(const g2p_site *x, int lay)
         for (int o = 0; o < 2 && n > x->run_len; o++)
             if (rnd(3)) occ(x, &whole, buf, rnd((unsigned)(n - x->run_len + 1)));
         size_t lo = rnd((unsigned)n + 1), out;
+        if (x->omin < 0 && rnd(2)) {            /* the origin below -omin: the floor clamps to 0 */
+            size_t back = (size_t)-(long long)x->omin;
+            lo = rnd((unsigned)(n < back ? n : back) + 1);
+        }
+        if (lay == LAY_L && x->omin <= -8 && x->omin >= -32 && lo < (size_t)-(long long)x->omin)
+            g_wk4_low++;
         if (n >= x->run_len && rnd2(2) &&                /* FAM-3: a near-miss occurrence */
             near_occ(x, &whole, 0, x->run_len, buf, rnd2((unsigned)(n - x->run_len + 1))))
             g_nm_uses++;
         unsigned char *s = place(lay, buf, n);
         g_hs = s; g_hn = n; g_hlo = lo;                  /* the caller boundary (ORC-1) */
         g_call = lay == LAY_U ? "entry" : NULL;
-        g_faulted = 0;
-        if (!sigsetjmp(g_jb, 1)) x->entry(s, n, lo, &out);
-        else g_active = 0;                               /* a fault inside a recorded call (ORC-4) */
+        call_use(x->entry, s, n, lo, &out);
         g_lay_calls[lay]++;
         CHECK(x, !g_faulted, "LAYOUT", "%s: the entry faulted (n %zu, lo %zu)", lay_name[lay], n, lo);
         if (x->reentry) {
             size_t pv = rnd((unsigned)n + 1);
             g_hlo = pv;
             g_call = lay == LAY_U ? "reentry" : NULL;
-            g_faulted = 0;
-            if (!sigsetjmp(g_jb, 1)) x->reentry(s, n, pv, &out);
-            else g_active = 0;
+            call_use(x->reentry, s, n, pv, &out);
             g_lay_calls[lay]++;
             CHECK(x, !g_faulted, "LAYOUT", "%s: the re-entry faulted (n %zu, lo %zu)", lay_name[lay], n, pv);
         }
@@ -477,6 +552,74 @@ static void lay_a(const g2p_site *x)
 }
 #endif
 
+/* ---- the §3.5 witnesses (W-L1 a/b, W-K1, W-K2) ---------------------------------- */
+
+/* The stated rule (span_runs_sheet.md §3.3 items 1-3, the extent whole): the
+ * least c >= max(0, origin + omin) at which the WHOLE run occurs inside the
+ * subject, or -1. Computed in signed integers: no wrap. */
+static long least_occ(const g2p_site *x, const unsigned char *s, size_t n, size_t origin)
+{
+    long floor = (long)origin + x->omin;
+    if (floor < 0) floor = 0;
+    for (long c = floor; c + (long)x->run_len <= (long)n; c++) {
+        unsigned j = 0;
+        while (j < x->run_len && in_set(x, j, s[c + j])) j++;
+        if (j == x->run_len) return c;
+    }
+    return -1;
+}
+
+static long g_wk_ok[G2P_W_N], g_wk_reach[G2P_W_N];
+static const struct {
+    int wk;
+    const char *name, *subject;
+    size_t origin;
+    int reentry;            /* 1: the call is the RE-ENTRY use */
+    long want;              /* the sheet's literal (§3.5)      */
+} wk_cases[] = {
+    { G2P_W_L1A, "W-L1",  "foobar",   3, 0, 0 },
+    { G2P_W_L1B, "W-L1b", "foobar",   3, 0, 0 },
+    { G2P_W_K1,  "W-K1",  "foobar",   1, 0, 0 },
+    { G2P_W_K2,  "W-K2",  "abababcc", 3, 1, 2 },
+};
+
+static void wk_run(const g2p_site *x)
+{
+    for (unsigned i = 0; i < sizeof wk_cases / sizeof wk_cases[0]; i++) {
+        if (wk_cases[i].wk != x->wk) continue;
+        const char *name = wk_cases[i].name;
+        size_t n = strlen(wk_cases[i].subject), origin = wk_cases[i].origin, out = 0;
+        const unsigned char *src = (const unsigned char *)wk_cases[i].subject;
+        long want = least_occ(x, src, n, origin);
+        CHECK(x, want == wk_cases[i].want, name, "the stated rule gives %ld, the sheet's literal "
+              "is %ld (the witness itself is wrong)", want, wk_cases[i].want);
+        /* reach: the floor lies below the origin (omin < 0, origin > 0), so a
+           kit flooring at the origin misses the answer; W-L1b: the answer's
+           scan byte lies below the origin too (has_scan, scan < origin - c) */
+        long floor = (long)origin + x->omin < 0 ? 0 : (long)origin + x->omin;
+        int reach = floor < (long)origin && want >= 0 && want < (long)origin;
+        if (x->wk == G2P_W_L1B)
+            reach = reach && x->has_scan && want + x->scan < (long)origin;
+        CHECK(x, reach, name, "does not reach (floor %ld, origin %zu, answer %ld, scan %d)", floor,
+              origin, want, x->has_scan ? x->scan : -1);
+        g_wk_reach[x->wk] += reach;
+        for (int lay = 0; lay < LAY_N; lay++) {
+            unsigned char *s = place(lay, src, n);
+            g_hs = s; g_hn = n; g_hlo = origin;
+            g_call = lay == LAY_U ? (wk_cases[i].reentry ? "reentry" : "entry") : NULL;
+            int hit = call_use(wk_cases[i].reentry ? x->reentry : x->entry, s, n, origin, &out);
+            g_call = NULL;
+            long got = hit ? (long)out : -1;
+            CHECK(x, !g_faulted, name, "%s: faulted", lay_name[lay]);
+            int ok = !g_faulted && got == want;
+            CHECK(x, ok, name, "%s: the %s from %zu on \"%s\" yields %ld, the stated rule %ld", lay_name[lay],
+                  wk_cases[i].reentry ? "re-entry" : "entry", origin, wk_cases[i].subject, got, want);
+            if (ok && lay == LAY_U) g_wk_ok[x->wk]++;
+        }
+        printf("G2PWK %s %s site %d: want %ld reach %d\n", x->tag, name, x->id, want, reach);
+    }
+}
+
 int main(int argc, char **argv)
 {
     const char *recpath = NULL;
@@ -513,33 +656,34 @@ int main(int argc, char **argv)
         }
         g_site_of[x->id] = x;
     }
+    /* the §3.5 witnesses FIRST, so their lines print ahead of any other
+       failure (failf prints the first 60) */
+    for (int i = 0; i < g2p_nsites; i++)
+        if (g2p_sites[i].wk) wk_run(&g2p_sites[i]);
     for (int i = 0; i < g2p_nsites; i++) {
         const g2p_site *x = &g2p_sites[i];
         nsite[x->route]++;
-        /* the classifier, part by part; the site's measured extent is the
-           union of its parts' (site frame) */
-        int slo = -1, shi = -1, sscan = INT32_MIN, primary = 0;
-        for (unsigned k = 0; k < x->nparts; k++) {
-            const g2p_part *pt = &x->parts[k];
-            if (!pt->fn) continue;
+        /* the classifier over the site's ONE run part (run frame): its
+           measured extent is the site's reply, and its scan the reply's */
+        int slo = -1, shi = -1, sscan = INT32_MIN, have = 0;
+        CHECK(x, x->nparts == 1 && x->parts[0].fn && x->parts[0].at == 0 &&
+              x->parts[0].len == x->run_len, "LAYOUT", "the site does not lay out ONE derived run "
+              "part in the run frame (%u parts)", x->nparts);
+        CHECK(x, x->has_scan, "SCAN", "the reply of a tested run states no scan position");
+        if (x->nparts == 1 && x->parts[0].fn) {
+            const g2p_part *pt = &x->parts[0];
             nparts++;
             int lo, hi, sc;
-            if (classify_guarded(x, pt, &lo, &hi, &sc)) continue;
-            if (lo >= 0) {
-                int a = (int)pt->at + lo, b = (int)pt->at + hi;
-                slo = slo < 0 || a < slo ? a : slo;
-                shi = b > shi ? b : shi;
+            if (!classify_guarded(x, pt, &lo, &hi, &sc)) {
+                slo = lo; shi = hi; sscan = sc; have = 1;
+                if (lo < 0) slo = shi = (int)x->ver_lo;     /* nothing compared: an empty extent */
             }
-            /* the part whose stretch is the site's carries the site's scan */
-            if (pt->at == x->ver_lo && pt->len == x->ver_len) { sscan = (int)pt->at + sc; primary = 1; }
         }
-        CHECK(x, primary, "EXTENT", "no rendered part states the site's stretch [%u, %u)", x->ver_lo,
-              x->ver_lo + x->ver_len);
-        CHECK(x, slo == (int)x->ver_lo && shi == (int)(x->ver_lo + x->ver_len), "EXTENT",
-              "the parts compare [%d, %d), the site's reply is [%u, %u)", slo, shi, x->ver_lo,
+        CHECK(x, have && slo == (int)x->ver_lo && shi == (int)(x->ver_lo + x->ver_len), "EXTENT",
+              "the part compares [%d, %d), the site's reply is [%u, %u)", slo, shi, x->ver_lo,
               x->ver_lo + x->ver_len);
 #ifdef G2P_REC   /* the reads exist only in the recording build */
-        if (primary) {
+        if (have) {
             g_scan_route[x->route]++;
             CHECK(x, sscan == x->scan, "SCAN", "the text's find reads run position %d first, the "
                   "site's reply scans %d", sscan, x->scan);
@@ -549,7 +693,7 @@ int main(int argc, char **argv)
             int want = x->lever ? 0 : (int)x->run_len - 1;
             nwit++;
             g_witness++;
-            CHECK(x, primary && sscan == want, "LEVER", "a tie witness's text scans %d, the stated rule "
+            CHECK(x, have && sscan == want, "LEVER", "a tie witness's text scans %d, the stated rule "
                   "(%s) is %d", sscan, x->lever ? "run-tie-left: leftmost" : "incumbent: rightmost", want);
             printf("G2PW %s %d scan=%d\n", x->tag, x->id, sscan);
         }
@@ -572,6 +716,11 @@ int main(int argc, char **argv)
            "layout_U=%ld layout_L=%ld records=%ld nearmiss=%ld nm_sound=%ld nm_uses=%ld\n", g_cover,
            g_extent, g_scan, g_sound, g_scan_route[G2P_P0], g_scan_route[G2P_P3], g_scan_route[G2P_P9],
            g_lay_calls[LAY_U], g_lay_calls[LAY_L], g_records, g_nearmiss, g_nm_sound, g_nm_uses);
+    printf("G2P k382 partial_hits=%ld neg_records=%ld below_hits=%ld wk4_low=%ld\n", g_partial_hits,
+           g_neg_records, g_below_hits, g_wk4_low);
+    printf("G2P wk L1=%ld/%ld L1b=%ld/%ld K1=%ld/%ld K2=%ld/%ld (green/reached)\n",
+           g_wk_ok[G2P_W_L1A], g_wk_reach[G2P_W_L1A], g_wk_ok[G2P_W_L1B], g_wk_reach[G2P_W_L1B],
+           g_wk_ok[G2P_W_K1], g_wk_reach[G2P_W_K1], g_wk_ok[G2P_W_K2], g_wk_reach[G2P_W_K2]);
 #ifdef G2P_ASAN
     printf("G2P layout_A=%ld\n", g_lay_a);
 #endif

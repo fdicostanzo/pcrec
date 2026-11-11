@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 98
-#error "pcrec: this artifact (abi 98) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 99
+#error "pcrec: this artifact (abi 99) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 98
+#define PCREC_RX_ABI_H 99
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1648,7 +1648,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `98` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `99` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1806,7 +1806,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `98` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `99` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -1926,7 +1926,7 @@ selection point must be observable".
   value. A stamp whose value can legitimately be `0` and also needs a
   "declined" answer is a STRING with a `"none"` member, not a number with a
   sentinel.
-- <a id="s6-3-1-p5a"></a>[6.3.1¶5a] **A start-table stamp names a selection the artifact RUNS.** The stamps that report a search-start choice (`<PREFIX>_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_VM_START_SCAN`, `_DFA_START`) carry that choice where the artifact's search path makes it, and the choice's ABSENCE value where it does not: `"none"` for the end window, the handoff and the prefilters, `"attempt-start"` for `_DFA_START`. `<PREFIX>_DFA_SCAN` names the path; the others never describe a pass the artifact does not run. Since D172 (S2), `_DFA_PREFILTER`'s offset values (`"offset-set"`, `"run-pinned"` and their `-bounded` forms), `_DFA_PREFILTER_OFFSETS`, and `_REQ_RUN`'s `@idx` with the `_REQ_BYTE` it implies are written from the memfn kit's window-family decision over the facts pcrec states (`docs/design/memfn/window_site.md` §3.4), never from a pcrec-side recomputation; their values are unchanged by the move.
+- <a id="s6-3-1-p5a"></a>[6.3.1¶5a] **A start-table stamp names a selection the artifact RUNS.** The stamps that report a search-start choice (`<PREFIX>_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_VM_START_SCAN`, `_DFA_START`) carry that choice where the artifact's search path makes it, and the choice's ABSENCE value where it does not: `"none"` for the end window, the handoff and the prefilters, `"attempt-start"` for `_DFA_START`. `<PREFIX>_DFA_SCAN` names the path; the others never describe a pass the artifact does not run. Since D172 (S2), `_DFA_PREFILTER`'s offset values (`"offset-set"`, `"run-pinned"` and their `-bounded` forms), `_DFA_PREFILTER_OFFSETS`, and `_REQ_RUN`'s `@idx` with the `_REQ_BYTE` it implies are written from the memfn kit's decisions over the facts pcrec states (`docs/design/memfn/window_site.md` §3.4), never from a pcrec-side recomputation; their values are unchanged by the move. `_REQ_RUN`'s `@idx` is the position the artifact's search reads (§6.3.7¶7's table), not the position `_REQ_BYTE` names.
 - <a id="s6-3-1-p6"></a>[6.3.1¶6] **`#if` on a stamp compiles only within its scope.** `#if`ing on
   `RX_ENGINE` is safe on every artifact; `#if`ing on a (b) macro such as
   `RX_VM_RUNGS` or a budget macro does not compile against a DFA artifact.
@@ -2151,7 +2151,7 @@ are the whole set:
 | `"run-pinned-bounded"` | the run-pinned form under a view or word context, bounded at `n - 1` |
 | `"first-memchr-bounded"` | on a SEEDED machine (a `\b`, a lookbehind, a `(?m)` context) whose plain skip would test the start state's escape set `E`, the skip tests the pattern's start set `T` (the `start_set` fact) where `T` is a proper subset of `E` — here one byte, searched for as one candidate byte; bounded at `n - 1`; a skip that moved re-seeds the scan state from the byte before its landing (`tuning.md` §2.42). Removed by `-fno-start-set` |
 | `"first-class-bounded"` | the same with several start-set bytes: a 256-entry `<prefix>_start_bytes` table walk, bounded at `n - 1`. There is no unbounded start-set form: a seeded machine always carries the D11 bound |
-| `"handoff"` | the pre-check's handoff RE-ENTERED (`tuning.md` §2.41): where `<PREFIX>_REQ_HANDOFF` is a number `K`, at each point the forward scan is back at its start state with nothing accepted, the pre-check's landmark (the run window, or the one byte `<PREFIX>_REQ_BYTE`) is found again from the scan position by the same gate (the hit the entry kept, while it is still ahead), no hit returns 0, and the scan moves to `hit - K` where that is ahead, rounded up to a character start and re-seeded where the machine seeds. Applies only where, under the byte-rate prior (`<PREFIX>_FINDINGS`), the landmark's mean gap less `K` exceeds the mean gap of the start-byte set the row would otherwise scan (`tuning.md` §2.41¶8a). Removed by `-fno-req-handoff`, with the handoff itself |
+| `"handoff"` | the pre-check's handoff RE-ENTERED (`tuning.md` §2.41): where `<PREFIX>_REQ_HANDOFF` is a number `K`, at each point the forward scan is back at its start state with nothing accepted, the pre-check's landmark (the run, or the one byte `<PREFIX>_REQ_BYTE`) is found again from the scan position by the same gate (the hit the entry kept, while it is still ahead), no hit returns 0, and the scan moves to `hit - K` where that is ahead, rounded up to a character start and re-seeded where the machine seeds. Applies only where, under the byte-rate prior (`<PREFIX>_FINDINGS`), the landmark's mean gap less `K` exceeds the mean gap of the start-byte set the row would otherwise scan (`tuning.md` §2.41¶8a). Removed by `-fno-req-handoff`, with the handoff itself |
 
 <a id="s6-3-4-p4"></a>[6.3.4¶4] The `-bounded` forms are a real difference in what the mechanism buys: under
 a view, a skip may not pass a position whose accept has not been evaluated,
@@ -2420,9 +2420,12 @@ of the necessary set a subject is least likely to contain, by the resolved
 analysis's `byte-rate` answer, with the rightmost rule as tiebreak and as the
 whole answer where the answer is NONE (`tuning.md` §2.27;
 `docs/spec/findings.md` §4 for which analysis answers). Where the necessary
-RUN's scan member is an exact byte it is that member; where the run's scan
-member is a two-member cube (`tuning.md` §2.39) it is the set's pick, or
-`"none"` for an empty set; every value is a member of the necessary set. A
+RUN has an exact position, it is pcrec's own pick: the least-mass exact
+position of the whole run, else the set's pick (`tuning.md` §2.28); where the
+run has no exact position (every position a two-member cube, `tuning.md`
+§2.39) it is the set's pick, or `"none"` for an empty set; every value is a
+member of the necessary set. It is pcrec's pick, not the position
+`<PREFIX>_REQ_RUN`'s `@` names (¶7). A
 non-`"none"` artifact rejects a whole subject in one pass when the byte is
 absent PROVIDED `<PREFIX>_REQ_WHY` reads `"emitted"`. `"none"` does not mean
 "no required literal": a caselessly folded literal, an alternation with no
@@ -2431,8 +2434,8 @@ common byte and `-fno-req-byte` all report it.
 <a id="s6-3-7-p6"></a>[6.3.7¶6] **`<PREFIX>_REQ_RUN`** — a literal run every successful attempt must contain. An attempt is the search's try at one start position; a successful attempt consumes the run, contiguous, between that position and the end of its match. The reported match can begin later than the attempt (`\K`), so the run can lie partly or wholly before the reported start: `ab\Kcd` states `abcd` while its match is (2,4). Where no `\K` moves the start, the attempt's span is the match's.
 
 ```c
-#define RX_REQ_RUN "2e746172@0"   /* every match contains ".tar"; the
-                                     memchr scans member 0, '.' */
+#define RX_REQ_RUN "2e746172@3"   /* every match contains ".tar"; the
+                                     search reads member 3, 'r' */
 #define RX_REQ_RUN "53454c454354@4/dfdfdfdfdfdf"
                                   /* (?i)select: every match contains a
                                      member of each position (x & K) == T;
@@ -2440,14 +2443,19 @@ common byte and `-fno-req-byte` all report it.
 #define RX_REQ_RUN "none"         /* no run of two or more bytes */
 ```
 
-<a id="s6-3-7-p7"></a>[6.3.7¶7] The run's bytes as lowercase hex (a run is arbitrary bytes inside a
-`#define`'s string body), `@`, and the index within them of the member the
-emitted `memchr` scans for (on a `<PREFIX>_DFA_SCAN "cover"` artifact, which
-runs no pre-check, the member the analysis picks: the window search chooses
-its own position); `"none"` at a length below 2
-(`<PREFIX>_REQ_BYTE`'s case). `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`
-wherever position `idx` is an exact byte, which makes the two checkable
-against each other. A run whose positions are not all exact bytes carries `/`
+<a id="s6-3-7-p7"></a>[6.3.7¶7] The WHOLE run's bytes as lowercase hex (a run is arbitrary bytes inside a
+`#define`'s string body), or `"none"` at a length below 2
+(`<PREFIX>_REQ_BYTE`'s case). Where an `@` follows the hex, the index after it
+is a first-match table naming the position THIS artifact's search reads:
+
+| row | when | `@idx` |
+|---|---|---|
+| 1 | the pre-check renders its run part | the scan position of the run decision the part was built from |
+| 2 | else a window-site search reads a run member (the `"cover"` window search, the `"run-pinned"` prefilter) | that search's member, an index into the whole run |
+| 3 | else (`"rev-end"`, `"one-attempt"`, `"landmark-walk"`, which scan `<PREFIX>_REQ_BYTE`) | no `@`: the value is the hex alone |
+
+<a id="s6-3-7-p7a"></a>[6.3.7¶7a] `<PREFIX>_REQ_BYTE` is pcrec's own pick (¶5), not `bytes[idx]`, so the two
+stamps are not checkable against each other through `@`. A run whose positions are not all exact bytes carries `/`
 and each position's mask `K` in hex: `T` (the bytes) is each position's lower
 member and `(x & K) == T` its membership test. `tuning.md` §2.28 carries the
 derivation.
@@ -2492,10 +2500,13 @@ finite `K`, whose landmark is that WHOLE run and whose `K` is its maximum
 byte offset (the attempt loop's first attempt begins at the hit less `K`, and
 re-enters after each failed attempt where every part of the pre-check is a
 byte or slice of the run). The pre-check's LANDMARK
-is the run's window where `_REQ_RUN` is not `"none"`, else the one byte
-`_REQ_BYTE`. Then every match begins at most `K` bytes before an occurrence of
-the landmark; the pre-check's search block returns the LEAST position
-`>= startpos` at which the landmark occurs (or `n` when none does — the
+is the run where `_REQ_RUN` is not `"none"`, else the one byte
+`_REQ_BYTE`; `K` is the landmark's position 0's maximum byte offset from the
+attempt start (the whole run's position-0 offset for a run). Then every match
+begins at most `K` bytes before an occurrence of the landmark's position 0; the pre-check's search block returns the LEAST CANDIDATE
+`c >= startpos`: no occurrence of the landmark has its position 0 in `[startpos, c)`, and `c` holds
+the stretch of the run the pre-check verifies (where that is the whole run, `c` is the least
+occurrence) — or `n` when there is no candidate, and then no occurrence (the
 position itself is meaningful, not only its comparison with `n`); and the body begins its scan
 at `max(startpos, that − K)`, rounded up to a character start under a
 multibyte encoding when it moved. The three bodies with a DFA scan read it at
@@ -2503,8 +2514,9 @@ their one start site; `\G` keeps reading `startpos`. `"none"` everywhere else,
 including any build under `-fno-req-handoff`. `K` is the `req_landmark_maxoff`
 fact `--emit-facts` lists (`facts_listing.md` §4.1.2), in BYTES: `(?i)straße`
 under `-e utf8` reads `"2"`, because `(?i)s` matches U+017F, two bytes, before
-the window `TRA`; `(?:\d{1,3}\.){3}\d{1,3}` reads `"3"`, the most digits
-before the first `.`. Where `_DFA_PREFILTER` is `"handoff"` the forward scan
+the run `TRA`; `(?:\d{1,3}\.){3}\d{1,3}` reads `"3"`, the most digits
+before the first `.`; `(?:ab|cd)xabcdefghijkq` reads `"2"` on a DFA artifact
+too, the whole 13-position run's position 0 (`x`) lying at most 2 bytes in. Where `_DFA_PREFILTER` is `"handoff"` the forward scan
 also re-enters the handoff at each restart (§6.3.4). A non-`"none"` value never
 changes an answer; on a DFA-scan route it never changes a give-up either, and
 on the attempt-loop rows a give-up may become the unbounded answer (§3.1¶15a).
