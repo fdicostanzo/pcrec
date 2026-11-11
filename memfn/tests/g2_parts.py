@@ -6,6 +6,8 @@
   g2_parts.py list   --table T
   g2_parts.py assign --table T [--units a,b,..] [--part K/N]
   g2_parts.py gather --table T [--units a,b,..] [--row-floors F] [--unsplit-units FILE] LOG...
+  g2_parts.py reweight --table T --source TEXT LOG...      (rewrites T's weights in place)
+  g2_parts.py predict  --table T [N ..]                    (the dealt parts' summed weights)
 
 `assign` prints the space-separated unit ids of part K of N (all units when --part is absent), in
 table order. The rule is declared and deterministic: units sorted by weight (heaviest first, table
@@ -260,13 +262,67 @@ def cmd_gather(a):
     return 0 if v.failed == 0 and tf == 0 else 1
 
 
+def measured_walls(paths):
+    """-> {unit: seconds} from `G2UNIT name seconds` lines (a part or slice log) and from gather's
+    `part K/N: wall Ws, ... units a:1s b:2s` lines (a gather.log); a later log wins."""
+    walls = {}
+    for path in paths:
+        with open(path, errors="replace") as f:
+            for ln in f:
+                m = re.match(r"G2UNIT (\S+) (\d+)$", ln)
+                if m:
+                    walls[m.group(1)] = int(m.group(2))
+                    continue
+                m = re.match(r"part \d+/\d+: wall .*, units (.*)$", ln)
+                if m:
+                    for u, sec in re.findall(r"(\S+):(\d+)s", m.group(1)):
+                        walls[u] = int(sec)
+    return walls
+
+
+def cmd_reweight(a):
+    """Rewrites the weight column (and the source column) of every table unit a log measured; the
+    other rows and every comment line stay as they are. A weight is at least 1."""
+    walls = measured_walls(a.logs)
+    with open(a.table) as f:
+        lines = f.read().split("\n")
+    out, hit = [], []
+    for ln in lines:
+        c = ln.split("\t")
+        if not ln.startswith("#") and len(c) >= 3 and c[0] in walls:
+            c[1], c[2] = str(max(1, walls[c[0]])), a.source
+            hit.append(c[0])
+            ln = "\t".join(c)
+        out.append(ln)
+    with open(a.table, "w") as f:
+        f.write("\n".join(out))
+    print("reweighted %d of %d units from %d measured; unmeasured, kept: %s" % (
+        len(hit), len(read_table(a.table)), len(walls),
+        " ".join(u for u, _ in read_table(a.table) if u not in hit) or "none"))
+
+
+def cmd_predict(a):
+    units = read_table(a.table)
+    total = sum(w for _, w in units)
+    big = max(units, key=lambda x: x[1])
+    print("total %d, largest unit %s %d" % (total, big[0], big[1]))
+    for n in a.ns or [4]:
+        sums = [sum(dict(units)[u] for u in p) for p in deal(units, n)]
+        print("N=%d: %s  max/min %.2f" % (n, " / ".join(map(str, sums)), max(sums) / max(1, min(sums))))
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("list", "assign", "gather"):
+    for name in ("list", "assign", "gather", "reweight", "predict"):
         sp = sub.add_parser(name)
         sp.add_argument("--table", required=True)
-        if name != "list":
+        if name == "reweight":
+            sp.add_argument("--source", required=True)
+            sp.add_argument("logs", nargs="+")
+        if name == "predict":
+            sp.add_argument("ns", nargs="*", type=int)
+        if name in ("assign", "gather"):
             sp.add_argument("--units")
         if name == "assign":
             sp.add_argument("--part")
@@ -279,6 +335,10 @@ def main():
         cmd_list(a)
     elif a.cmd == "assign":
         cmd_assign(a)
+    elif a.cmd == "reweight":
+        cmd_reweight(a)
+    elif a.cmd == "predict":
+        cmd_predict(a)
     else:
         sys.exit(cmd_gather(a))
 

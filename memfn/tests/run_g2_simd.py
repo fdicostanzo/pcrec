@@ -102,6 +102,7 @@ Prints `checks passed: N` / `checks failed: N`; exit 1 on any failure.
 """
 import argparse
 import concurrent.futures
+import io
 import os
 import platform
 import re
@@ -111,6 +112,10 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# R-39b: the arms of a run, each judged alone by `--arms`: the fact checks (sections 0-2 and 6), the
+# answers per level (3), the paths (4), the plants (5) in two halves (plants-a: the first three PLANTS,
+# plants-b: the rest)
+ARMS = ('facts', 'answers', 'paths', 'plants-a', 'plants-b')
 
 # --- the expectations and floors: literals, written here --------------------
 # The levels each class's FUNC must render (MEMFN_FORMS' token), given the
@@ -360,6 +365,11 @@ PLANTS = [
     # verify are not edited
     ('pad-margin', None, None, 'fault'),
 ]
+
+
+def plants_of(a):
+    """The PLANTS this run judges: the first three under `plants-a`, the rest under `plants-b`."""
+    return (PLANTS[:3] if 'plants-a' in a.arms else []) + (PLANTS[3:] if 'plants-b' in a.arms else [])
 
 
 def pad_margin(body, li, fn):
@@ -733,7 +743,15 @@ def main():
     ap.add_argument('--quick', action='store_true',
                     help='the plants at the x86-64 / x86-64-v3 / gpr-only builds only, '
                     'ASan at x86-64-v3 only (run_g2.sh --quick)')
+    ap.add_argument('--arms', default=','.join(ARMS),
+                    help='R-39b: the arms to JUDGE, of %s (default all; run_g2.sh runs them as '
+                    'the units simd-ARM). Every arm renders the space and runs the fact checks '
+                    'quietly (their state gates the compiles); only `facts` counts them.'
+                    % ','.join(ARMS))
     a = ap.parse_args()
+    a.arms = set(a.arms.split(','))
+    if not a.arms <= set(ARMS):
+        ap.error('--arms: unknown arm(s) %s' % sorted(a.arms - set(ARMS)))
     root = os.path.abspath(a.root)
     work = tempfile.mkdtemp(prefix='g2simd.', dir=os.environ.get('TMPDIR'))
     try:
@@ -767,6 +785,9 @@ def run(a, root, work):
     if r.returncode:
         bad('generator build failed: ' + r.stderr[-2000:])
         return
+    # R-39b: an arm that does not judge the facts still runs them (FACT_FAIL, HELPER_TEXT and SITE_RUN
+    # gate and feed its compiles) but counts and prints nothing of them: `facts` owns those lines
+    quiet = 'facts' not in a.arms
     # 0: one file per target (x86-64-v3's in `work`, sections 1-2 read it)
     tdir = {tg: work if tg == 'x86-64-v3' else os.path.join(work, 't-' + tg) for tg in TARGETS}
     for tg, d in tdir.items():
@@ -777,7 +798,11 @@ def run(a, root, work):
         if r.returncode:
             bad('generator failed at %s: %s' % (tg, r.stderr[-2000:]))
             return
-    ok()
+    if quiet:
+        out0, snap = sys.stdout, (passed, failed, len(notes))
+        sys.stdout = io.StringIO()
+    else:
+        ok()
     tfile = {tg: os.path.join(d, 'g2v_sites.c') for tg, d in tdir.items()}
     tforms = {}
     for tg, d in tdir.items():
@@ -813,10 +838,10 @@ def run(a, root, work):
         (fbad(tg, 'target %s: the kit text holds %d #include line(s): %s' % (tg, len(inc), inc[:3]))
          if inc else ok())
     # a target whose fact checks failed is not compiled (fact_skip), whatever the failure
-    if platform.machine() in ('x86_64', 'AMD64'):
+    if not quiet and platform.machine() in ('x86_64', 'AMD64'):
         if not fact_skip(V3, 'consumer TU'):
             consumer_cells(work, tfile[V3], V3)
-    else:
+    elif not quiet:
         SKIPPED['consumer TU'] = ('host is %s, not x86-64' % platform.machine(), 2)
     # the same sites at the narrower targets: x86-64's token is x86-64-v3's
     # less w32, generic's `none` with no guarded byte
@@ -991,13 +1016,19 @@ def run(a, root, work):
     for tok, g in sorted(maxg.items()):
         lim = bounds.get(tok[6:]) if tok.startswith('alone:') else token_bound(tok, bounds)
         print('guarded bytes: %s max %d (bound %s)' % (tok, g, lim))
+    if quiet:
+        sys.stdout = out0
+        globals().update(passed=snap[0], failed=snap[1])
+        del notes[snap[2]:]
+        for lst in (COMPILE_SKIPS,):
+            lst.clear()
     # every build of sections 3-5, prefetched concurrently (each driver run is
     # pinned to G2V_CPUS; the results are judged below in order). A build
     # compiles its TARGET's file; its live levels are that target's.
     ttext = {tg: open(f).read() for tg, f in tfile.items()}
     inst = {}
     for tg in TARGETS:
-        if not TARGETS[tg] or tg in FACT_FAIL:
+        if 'paths' not in a.arms or not TARGETS[tg] or tg in FACT_FAIL:
             continue
         pth = os.path.join(tdir[tg], 'g2v_sites_paths.c')
         try:
@@ -1008,14 +1039,16 @@ def run(a, root, work):
     host_skips(work)
     # a target whose facts failed has no build below: its jobs are not made and
     # its loops do not look (the skip is counted once, at the loop, by fact_skip)
-    jobs = [(n, tfile[tg], f, False, tg) for n, tg, f in BUILDS if tg not in FACT_FAIL]
-    jobs += [(n, tfile[tg], f, True, tg) for n, tg, f in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS)
-             if tg not in FACT_FAIL]
+    jobs = []
+    if 'answers' in a.arms:
+        jobs += [(n, tfile[tg], f, False, tg) for n, tg, f in BUILDS if tg not in FACT_FAIL]
+        jobs += [(n, tfile[tg], f, True, tg) for n, tg, f in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS)
+                 if tg not in FACT_FAIL]
     jobs += [('paths-' + n, inst[tg], f, False, tg) for n, tg, f in BUILDS
              if n != 'x86-64-v4' and tg in inst and tg not in FACT_FAIL]
     levels = sorted({lv for lvs in TARGETS.values() for lv in lvs})
     plant_files = {}
-    for plant in PLANTS:
+    for plant in plants_of(a):
         for lv in levels:
             for tg in TARGETS:
                 if lv not in TARGETS[tg] or tg in FACT_FAIL:
@@ -1032,7 +1065,7 @@ def run(a, root, work):
                         jobs.append(('plant-%s-%s-%s' % (plant[0], lv, n), pt, f, False, tg))
     prefetch(work, root, jobs, int(os.environ.get('G2V_JOBS', '4')))
     # 3: answers per level
-    for name, tg, flags in BUILDS:
+    for name, tg, flags in (BUILDS if 'answers' in a.arms else ()):
         if fact_skip(tg, 'build ' + name):
             continue
         r, err = build_run(work, root, name, tfile[tg], flags, target=tg)
@@ -1047,7 +1080,7 @@ def run(a, root, work):
             bad('%s: %d checks < floor %d' % (name, res[0], CHECK_FLOOR))
         else:
             ok()
-    for name, tg, flags in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS):
+    for name, tg, flags in ((ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS) if 'answers' in a.arms else ()):
         if fact_skip(tg, 'build ' + name):
             continue
         r, err = build_run(work, root, name, tfile[tg], flags, asan=True, target=tg)
@@ -1063,7 +1096,7 @@ def run(a, root, work):
         else:
             ok()
     # 4: paths
-    for name, tg, flags in BUILDS:
+    for name, tg, flags in (BUILDS if 'paths' in a.arms else ()):
         if name == 'x86-64-v4' or tg not in inst or fact_skip(tg, 'paths ' + name):
             continue
         live = TARGETS[tg]
@@ -1091,7 +1124,7 @@ def run(a, root, work):
             else:
                 ok()
     # 5: plants
-    for plant in PLANTS:
+    for plant in plants_of(a):
         for lv in levels:
             for name, tg, flags in BUILDS:
                 pt = plant_files.get((plant[0], lv, tg))
@@ -1115,8 +1148,8 @@ def run(a, root, work):
                     ok()
                 print('plant %-12s %s at %-14s -> %s' % (plant[0], lv, name,
                       'RED' if red else 'green'))
-    # 6: instruction classes
-    for name, tg, flags in BUILDS:
+    # 6: instruction classes (the facts arm's)
+    for name, tg, flags in (BUILDS if 'facts' in a.arms else ()):
         if fact_skip(tg, 'insn ' + name):
             continue
         obj = os.path.join(work, 'insn-%s.o' % name)

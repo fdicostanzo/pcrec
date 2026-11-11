@@ -1002,23 +1002,27 @@ done
 # REACH lines join the per-row sum below (the SIMD rows are reached only
 # there: G2's other sinks offer no bracket ops, so no other process renders
 # a SIMD row).
-if want simd; then
-ustart simd
-echo "== simd: G2's SIMD family (run_g2_simd.py)"
+# R-39b: one unit per ARM of the runner (--arms; each arm renders the space and runs the fact checks
+# quietly, and judges its own section): simd-facts (sections 0-2 and 6), simd-answers (3), simd-paths (4),
+# simd-plants-a and simd-plants-b (5, three plants each). An unsplit run runs the five in turn.
 mkdir -p "$work/reach"
-simd_args=(--root "$root" --lib "$lib")
-[ "$rows" = 1 ] && simd_args+=(--reach-err "$work/reach/gen-simd.err")
+for simd_arm in facts answers paths plants-a plants-b; do
+want "simd-$simd_arm" || continue
+ustart "simd-$simd_arm"
+echo "== simd-$simd_arm: G2's SIMD family (run_g2_simd.py --arms $simd_arm)"
+simd_args=(--root "$root" --lib "$lib" --arms "$simd_arm")
+[ "$rows" = 1 ] && [ "$simd_arm" = facts ] && simd_args+=(--reach-err "$work/reach/gen-simd.err")
 [ "$quick" = 1 ] && simd_args+=(--quick)
-if TMPDIR="$work" "$TO" 3000 python3 "$here/run_g2_simd.py" "${simd_args[@]}" > "$work/simd.log" 2>&1; then
+if TMPDIR="$work" "$TO" 3000 python3 "$here/run_g2_simd.py" "${simd_args[@]}" > "$work/simd-$simd_arm.log" 2>&1; then
     passed=$((passed + 1))
-    echo "PASS: SIMD family ($(grep '^checks passed' "$work/simd.log"))"
+    echo "PASS: SIMD family, $simd_arm ($(grep '^checks passed' "$work/simd-$simd_arm.log"))"
 else
-    grep -E '^FAIL' "$work/simd.log" | head -20
-    note_fail 1 "SIMD family (run_g2_simd.py): $(grep '^checks failed' "$work/simd.log")"
+    grep -E '^FAIL' "$work/simd-$simd_arm.log" | head -20
+    note_fail 1 "SIMD family, $simd_arm (run_g2_simd.py): $(grep '^checks failed' "$work/simd-$simd_arm.log")"
 fi
-grep -E '^(class|build|paths|guarded bytes)' "$work/simd.log" | sed 's/^/   /'
-udone simd
-fi
+grep -E '^(class|build|paths|guarded bytes)' "$work/simd-$simd_arm.log" | sed 's/^/   /'
+udone "simd-$simd_arm"
+done
 
 # --- 4w. G2's WINDOW family (D172 S2 commit 1): its own runner -------------
 # memfn/tests/run_g2_win.sh: GENERATED window sites (spans, cores, verify
