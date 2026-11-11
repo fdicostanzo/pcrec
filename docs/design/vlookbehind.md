@@ -2489,6 +2489,16 @@ Stage 1 covers 32 rows (24 distinct) and the bench pattern. Stage 2 brings 36. S
 the FIXED-width backreference lookbehinds, a population the corpus count does not separate
 (§6 stage 2).
 
+`[vlb2 F15]` **Recount at rev 5 (main `eb83f0902`), reproducible by grep.** "Stage 2 brings 36" is
+CUMULATIVE: stage 1's 32 rows plus vlbinv's 4 backreference rows (2 distinct, its population
+rows 24-25) make 36 of the 36 real rows. The source of "23 of the 29 shapes" (§6, rev 1-4) is
+vlbinv's `ruling.md`: pcrec refused 29 reference shapes and libpcre2 accepted 23. The tree holds
+5 reference-lookbehind `perr` rows today, 2 distinct (`(a)(?<=\1)x`, `(a|bc)(?<=\1)x`):
+`tests/lookaround/refused.rxt` ×2, `gated.rxt` ×1 (it predates vlbinv's count) and
+`d27/refusals.rxt` ×2. The command is `grep -n -F '(?<=\1' tests/lookaround/{refused,gated}.rxt
+tests/lookaround/d27/refusals.rxt`. Gate 2's manifest is those 5 rows (§6.2.6). §6.2.5's table
+has 47 rows, which replace rev 1-4's 25 cells. All 25 old cells were re-run and hold.
+
 ## 9. A D27 spec-first author: recommended
 
 - **Why.** The level-2 order (longest first) runs against the emitter's usual preference-first
@@ -2506,8 +2516,28 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
     [DD-14.LB]'s ruled refusal, which the re-cut `la_`/`sr_` extracts carry too (§6 stage 1).
 
   Without them, the author writes red cells for ruled divergences.
+- **`[vlb2 F13]` Stage 2: the author is CHARTERED (manager ruling 2026-11-10).** The extract is
+  `docs/design/vlb_d27_extract.md` (written at rev 5, the promise only). It is re-cut from §6.2.2,
+  §6.2.5 and §6.2.8 and never edited on its own. Beyond the list above, it carries the classes this
+  review found:
+  - F1: chained references, mutual reference cycles, a cycle through a call, a cycle not reached,
+    and the lexical bound under `{0}` (the stage-1 sibling `(?<=(?:a+){0}x)y` included);
+  - F2: references reached through a call, accepted and refused;
+  - F5: recursive groups, and re-entry through a reference (call-free);
+  - F6: a self-reference ON the width path versus one under a lookahead;
+  - the three new sentences' classes and the moved diagnostic timing.
+
+  The author's cells are V7 (§6.2.9), written BEFORE the build. The same revision re-cut the
+  backreference lines of `la_d27_extract.md` and its source, `lookaround_design.md` (§2.5's
+  banner and bullet, §7.1's G3 row, §10.1's refusal row).
 
 ## 10. Spec impact (D80; hunks the build owes) `[r3 F6: completed]`
+
+`[vlb2 F4]` **Stage 2's bullets below are SUPERSEDED by §6.2.8.** They were written against rev
+3's spec text. §6.2.8 re-cuts them from HEAD's text (stage 1 landed, plus review r4 F1's shape-5
+verdict). Two of them target clauses that do not exist at HEAD: §9¶2's "or containing a
+backreference", and a §7.3¶5 home for the duplicate-name sentence. The stage-1 bullets stand as
+built.
 
 - **`pattern_language.md` §7.4¶5.** The rule becomes: "each alternative may match a bounded number
   of characters, at most 65535; at most 255 once any alternative's length varies". Three sentences
@@ -2674,6 +2704,30 @@ the FIXED-width backreference lookbehinds, a population the corpus count does no
    - Stage 3's reverse machines are generated per artifact from the pattern, so a rebuilt machine
      moves only that artifact's bytes.
 
+**Stage 2 (rev 5) `[vlb2]`.**
+1. **Measurement regime: NOT RELEVANT.** No number selects anything. The column is a width fact,
+   the emission rows are stage 1's, and no find, scan, skip or verify method is added (§6.2.9: no
+   measurement card). The column's cost is a compile-time bound (O(n²·size), only for patterns
+   with a deferred lookbehind), not a measurement.
+2. **Independent control: RELEVANT.**
+   - Which patterns compile, and with what `lb`, is checked against libpcre2 10.46 (gate 3, the
+     VALID_LB compare, F10), which does not share the column's source.
+   - Which REASON a refusal gives is checked by the reject table's per-class rows (gate 7). Those
+     sentences are pcrec's, so their control is the class each row DECLARES (written from §6.2.2)
+     against the sentence the compiler prints. The pairing of rows to classes is checked by
+     sabotage (SV5-SV7, SV9), each of which turns a different class red.
+   - The scoping is checked against today's facts output (gate 8; SV4). The control is pcrec at
+     HEAD, a pinned value that predates the column, so the two share no source.
+   - Who counts: gate 1's generator counts per axis value and per declared refusal class (K35).
+     Gate 2's manifest is counted by the build (§8's grep, 5 rows).
+   - Witness reach: SV1-SV11 each name the cell that turns red and the gate that sees it. SV2 is
+     visible ONLY to the VALID_LB compare, and that is the reason the compare exists. SV7 states
+     its discriminating pair.
+   - The D27 author (§9) tests the promise from `vlb_d27_extract.md`, not from this note.
+3. **What moves when data is regenerated: NOT RELEVANT.** Stage 2 adds no table, calibration or
+   generated file. The column is computed per pattern at compile time. Text readers (the rule-0
+   sentence, the new sentences, the spec) move in the landing commit (§6.2.9).
+
 ## 12. The question for a pcre2-reader (D181)
 
 Kept from vlbinv §7. One question: "In PCRE2 10.46, when a lookbehind has at least one variable-length
@@ -2742,6 +2796,11 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
    - Backreferences inside a lookbehind follow the acceptance table of §6 stage 2: back, inside and
      forward are accepted; duplicate names, any `(?|`, unbounded or recursive groups and
      self-reference are refused.
+     `[vlb2]` Refined by the 2026-11-10 rulings, with nothing re-asked: §6.2.5's table is the
+     acceptance table. References through a call are accepted (F2 (a)). "Self-reference" means on
+     the width path (F6). `(?|` covers only references inside the lookbehind (F7). Unbounded,
+     recursive, self and cyclic groups are one rule (F1). Re-entry through a reference is refused.
+     The width is lookbehind-scoped (F3). A D27 author is chartered (F13).
    - The loop ships first. The reverse-DFA row stays HELD, with its home in the stream roadmap's
      A-REV area, and lookbehind is its first client.
    - Unbounded lookbehind, with the automaton filter that makes it cheap, is filed HELD as
@@ -2881,6 +2940,20 @@ needed: D's vetting rests on measured cells (§2), not on PCRE2's internals.
 
 Reproduce: `gcc -O1 -o $S/probe probe.c -lpcre2-8`; `(cd $S && python3 -I .../sweep_cursor.py
 $S/probe $S/out.tsv)`; `python3 -I candidates.py`; `python3 -I workdiff.py <evidence dir>`.
+
+**Rev 5's evidence `[vlb2]`, `docs/dev/lanes/vlbrev5_evidence/`.**
+
+| file | what |
+|---|---|
+| `ora.py` | libpcre2 10.46 through the repo's ctypes binding (`docs/design/eng_brep_measurements/probes/pcre2_ctypes.py`), plus `pcre2_pattern_info` code 15 (`PCRE2_INFO_MAXLOOKBEHIND`, the `lb` of §6.2.5) |
+| `cells.txt`/`.out`, `cells2`-`cells8` | every libpcre2 cell of §6.2.5 and REVISION 5, with answers on the stated subjects |
+| `pcrec_head.out` | pcrec at main `eb83f0902` (the worktree's own `build/pcrec`), single compiles: the refusal each cell prints today, the patterns that compile today (§0 G1's divergences), and the `(a\|bc)\1$` facts control |
+
+Reproduce: `PCREC_PCRE2_PATH= python3 -I ora.py docs/design/eng_brep_measurements/probes cells.txt`.
+MEASURED in rev 5: every libpcre2 cell, and pcrec's HEAD output. INFERRED: the column's
+behaviour, which is a design and not built. Its claims rest on the cells and on the existing
+fixpoints' arguments, read at main `eb83f0902`. The SOUND lens's 774,000+ answers (review
+`2026-11-10-r3-vlb2/`) are the evidence for "no new emission row".
 
 ## 16. Disposition table (review 2026-11-05 r3)
 
@@ -3027,3 +3100,29 @@ design choice made by the manager: a seam entry, and DD12a(i)/K49 derived from t
 | F9 (READY-7, FIXIND P&H) | DOC: the 160-byte claim deleted and the stale comment listed; rev 1's sentence marked history; G2's question closed | §0 G2, §5.1b |
 | F10 (sound P&H) | NOTED (out of delta; the compliance page check is the manager's) | none |
 | completeness ask (brief) | the stage-1 build units with every reader | §6 |
+
+## 16e. Disposition table (review 2026-11-10 r3 vlb2) `[vlb2]`
+
+The manager ruled F1, F2, F3, F5's plan item and F13 (the review's RULINGS block). Every other
+item was taken as proposed.
+
+| finding | disposition | where in rev 5 |
+|---|---|---|
+| F1 (READYR-2, SOUND-1/2, PREMISE-6/8/9) | FIX-NOW, RULED: one Kleene fixpoint over group numbers, with calls and references on the width path as edges, a column of callgraph's table, built at postresolve over the final tree; cycles saturate to UNBOUNDED with no cycle test, and the LEXICAL bound `hb` makes that hold under `{0}`; the separate rules collapse (G3) | REVISION 5, §6.2.1, §6.2.2, §6.2.5 |
+| F2 (READYR-1, READYW-2, SOUND-1, PREMISE-4) | FIX-NOW, RULED (a): references through a call read the callee's row; READYR-1's cells in; the "order-dependent" cell is CORRECTED to a self-reference (its `\2` twin accepts) and kept as a refusal control; the plan row's note replacement drafted in the lane report | REVISION 5, §6.2.1, §6.2.5 |
+| F3 (READYW-4, READYR-4, PREMISE-4) | FIX-NOW, RULED: a walk parameter (the column), the kind row stays ANY, `pcrec_cwmax`/`pcrec_cwmin` without a column unchanged; the `(a\|bc)\1$` control; unlock 2 drafted as a PLAN row in the lane report | §0 G2, §6.2.3, §6.2.6 gate 8, SV4 |
+| F4 (READYW-1, READYR-5, PREMISE-1) | FIX-NOW: stage 1's shipped shape-5 verdict stated; stage 2 splits it; shape moves 5 → 7 listed; diagnostic timing stated; spec hunks re-cut from HEAD | §5.2 note, §6.2.4, §6.2.8, §10 banner |
+| F5 (READYW-3, PREMISE-3) | FIX-NOW: the recursive group is the bound's (no K127 home needed); re-entry through a reference is K127's widened walk, call-free included; HEAD divergence stated with a second witness and a stage-1 sibling (`(?<=(?:a+){0}x)y`); known_issues row drafted in the lane report | §0 G1, §6.2.1, §6.2.2, §6.2.5 |
+| F6 (SOUND-3) | FIX-NOW: "self" = on the width path; a lookahead body is off it; the cells | §6.2.2, §6.2.5, SV8 |
+| F7 (READYR-7/8) | FIX-NOW: scope (inside only), timing (pattern-wide, deferred pass), LATENT and untested until module `branch-reset`; the cells go to that module | §6.2.2, §6.2.5 |
+| F8 (READYR-7) | FIX-NOW: two new sentences; one reject row per class (gate 7) | §6.2.2, §6.2.6 gate 7 |
+| F9 (READYR-3, SOUND-4) | FIX-NOW: cap and ceiling through summed references; quantified references; the zero-width class restated as "a group containing one" with its spec clause | §0 G1, §6.2.5, §6.2.8 |
+| F10 (READYW-5) | FIX-NOW: gate 3's `rx_VALID_LB == PCRE2_INFO_MAXLOOKBEHIND`; SV2 (`hi` + 1) visible only to it | §6.2.6 gate 3, §6.2.7 |
+| F11 (READYW-6, READYR-6, PREMISE-2/7) | FIX-NOW: the V1-V7 unit table with readers, abi/identity, spec hunks, tests, sabotage, measurement card (none) | §6.2.9 |
+| F12 (READYW-1, READYR-10, PREMISE-5) | DOC: retargeted to mrl.c's "does not build that yet" header and `pcrec_cwmax_static`'s fold; internal.h's "for free" comment and callgraph.c's "safe" headers listed as readers | §6 banner, §6.2.9 V1/V2 |
+| F13 (READYR-10) | FIX-NOW, RULED: the D27 author chartered; §9's list extended; `vlb_d27_extract.md` written; `la_d27_extract.md` and `lookaround_design.md` re-cut | §9, `docs/design/vlb_d27_extract.md` |
+| F14 (READYW-7) | DOC: V1-V3 land together; V7 first; only `(?\|` separable | §6.2.9 |
+| F15 (READYR-9) | FIX-NOW (axes + floors), DOC (counts): the generator's axes; counts reproduced by grep (5 rows, 2 distinct; "36" is cumulative) | §6.2.6 gate 1, §8 |
+| F16 (PREMISE-9/10) | NOTED / PLAN: the family named and joined (F1); unlock 1 = F2 (a); unlock 2 drafted as a PLAN row; unlocks 3 and 4 noted (a `${v}` with a declared maximum leaves rule 0 at [IFACE-PUSH]; stage 3 treats a fixed-group reference as a fixed wall); altcls.c's promise to this row goes in the plan row's refs (lane report) | §6.2.1, §6.2.3, lane report |
+| Not adopted | PREMISE-2's select_engine claim and READYW-5's check.py claim were refuted by the round; nothing to do | none |
+| Lessons 1-3 | for the guide; not this note's (the manager files them) | none |
