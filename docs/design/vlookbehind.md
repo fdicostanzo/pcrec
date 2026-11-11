@@ -2945,6 +2945,15 @@ has 47 rows, which replace rev 1-4's 25 cells. All 25 old cells were re-run and 
   The author's cells are V7 (§6.2.9), written BEFORE the build. The same revision re-cut the
   backreference lines of `la_d27_extract.md` and its source, `lookaround_design.md` (§2.5's
   banner and bullet, §7.1's G3 row, §10.1's refusal row).
+- **`[vlb3 G20]` Re-cut at rev 5.1, and briefed only after G1's and G4's choices** (they change the
+  promise). The extract now carries §6.2.8's hunk text itself, since the author works at stage 0,
+  before V4's spec lands, and the spec at that point still says a reference in a lookbehind is
+  refused. It promises LB as libpcre2's `max_lookbehind` (match_api.md §9.4¶2), observable through
+  `_valid_upto` under `-futf-check`, not the internal `<PREFIX>_VALID_LB` stamp (§6.3.1¶10). Its
+  classes gain the DEFINE skip against `{0}` (G1), the ceiling-under-`{0}` divergence (G4), the
+  re-entry sentence (G9), the nested-lookbehind offsets (G7) and the cells rev 5's cut dropped.
+  Both accept-set classes review r5 vlb3 found (DEFINE, the ceiling under `{0}`) are ones neither
+  the table nor the extract had listed, which is the D27 argument again.
 
 ## 10. Spec impact (D80; hunks the build owes) `[r3 F6: completed]`
 
@@ -3142,6 +3151,12 @@ built.
 3. **What moves when data is regenerated: NOT RELEVANT.** Stage 2 adds no table, calibration or
    generated file. The column is computed per pattern at compile time. Text readers (the rule-0
    sentence, the new sentences, the spec) move in the landing commit (§6.2.9).
+
+`[vlb3]` Rev 5.1 keeps all three answers. The table is still computed per pattern (G11 changes
+where it lives, not what it is). The independent control gains three things. The emptiness drill
+(§6.2.2) is checked against the design's own cells, not against the code. The new sabotage rows
+(SV12-SV16) each name their cell and gate. And SV2's detector is restated: the VALID_LB compare is
+the only red BELOW the cap, and `VLB_ACC_EXPECT` goes red too through EXTRA's cap cells (G12).
 
 ## 12. The question for a pcre2-reader (D181)
 
@@ -3369,6 +3384,22 @@ MEASURED in rev 5: every libpcre2 cell, and pcrec's HEAD output. INFERRED: the c
 behaviour, which is a design and not built. Its claims rest on the cells and on the existing
 fixpoints' arguments, read at main `eb83f0902`. The SOUND lens's 774,000+ answers (review
 `2026-11-10-r3-vlb2/`) are the evidence for "no new emission row".
+
+**Rev 5.1's evidence `[vlb3]`, `docs/dev/lanes/vlbrev51_evidence/`.**
+
+| file | what |
+|---|---|
+| `ora2.py` | `ora.py` with the refusal OFFSET (from the binding's error text) |
+| `cells51.txt`/`.out`, `cells51b`-`cells51e` | every rev 5.1 libpcre2 cell (G1, G4, G5, G7, G8, G10, G12, G13, G15, G17, G19), with offsets |
+| `cells51u.txt`/`.out` | the UTF caseless cells (through `vlbrev5_evidence/ora.py`'s `u:` prefix; spans in bytes) |
+| `chain_call.txt`/`.out` | the 25-step call doubling chain (G10) |
+| `head.sh`, `pcrec_head51.out`, `pcrec_head51c.out`, `pcrec_head51_misc.out` | pcrec built from main `3a190b8d7`'s source (`--features all`, single compiles): HEAD's verdicts, the call twins of G5's precedence cells, `--count-groups`, `--emit-facts` end windows |
+
+Reproduce: `python3 -I ora2.py docs/design/eng_brep_measurements/probes cells51.txt`;
+`bash head.sh build/pcrec cells51_pc.txt`. MEASURED in rev 5.1: every libpcre2 cell with its
+offset, and pcrec's HEAD output. PREDICTED (not measured): pcrec's post-stage-2 offsets in G5's
+precedence cells, derived from their call twins at HEAD. INFERRED: the table's behaviour, which is
+a design and not built.
 
 ## 16. Disposition table (review 2026-11-05 r3)
 
