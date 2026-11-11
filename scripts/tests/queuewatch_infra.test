@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# queuewatch CLOUD-INFRA self-test ([CLOUD-SUITE] D): a cloud run that failed ONLY because a shard's artifact upload failed
+# (test step passed; the REAL jobs of run 43093102021 attempt 1, tests/ci/fixtures) is rerun ONCE by queuewatch itself
+# (`gh run rerun --failed`, no event) and reported as CLOUD-INFRA, not CLOUD-DONE RED, if the second attempt is infra too.
+# A real red run stays CLOUD-DONE RED and is never rerun. Against a FAKE `gh` on PATH. No network.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+FIX=$here/../tests/ci/fixtures
+T=$(mktemp -d "${TMPDIR:-/tmp}/queuewatch_infra.test.XXXXXX"); trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+unset QUEUEWATCH_NO_CI CI_EVERY
+RID=900 SHA=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb BR=cloud/main/test/demo
+mkdir -p "$T/bin" "$T/q/pending" "$T/q/running" "$T/q/done" "$T/q/failed"
+cat > "$T/bin/gh" <<SH
+#!/usr/bin/env bash
+D=$T
+case "\$1 \$2" in
+  "run list") cat \$D/runlist.json ;;
+  "run rerun") echo "\$*" >> \$D/rerun.calls ;;
+  "api repos/{owner}/{repo}/actions/runs/$RID") cat \$D/run.json ;;
+  "api repos/{owner}/{repo}/actions/runs/$RID/jobs?per_page=100&filter=latest") cat \$D/jobs.json ;;
+  *) echo "shim gh: unexpected \$*" >&2; exit 9 ;;
+esac
+SH
+chmod +x "$T/bin/gh"
+printf '[{"databaseId":%s,"headSha":"%s","status":"completed","conclusion":"failure","createdAt":"2026-11-11T10:00:00Z","displayTitle":"t","url":"http://x/%s"}]' "$RID" "$SHA" "$RID" > "$T/runlist.json"
+run() { printf '{"head_branch":"%s","run_attempt":%s,"status":"completed","conclusion":"failure"}' "$BR" "$1" > "$T/run.json"; }
+cp "$FIX/run_43093102021.attempt1.jobs.json" "$T/jobs.json"
+printf 'R\t1\tmain\ttest\tdemo\t%s\t%s\n' "$BR" "$SHA" > "$T/ledger.tsv"
+export CLOUDRUN_LEDGER=$T/ledger.tsv
+watch() { PATH="$T/bin:$PATH" "$TO" 60 bash "$here/queuewatch" --queue "$T/q" --state "$T/state" --every 1 --max-sec 1 --disk-pct 101 --ci-every 0 2>&1; }
+nrerun() { if [ -f "$T/rerun.calls" ]; then wc -l < "$T/rerun.calls"; else echo 0; fi; }
+
+run 1
+v=$(PATH="$T/bin:$PATH" bash "$here/cloudrun" --verdict "$BR" "$SHA")
+case $v in "INFRA-RERUN $RID failure "*) ok "verdict of an upload-only failure on attempt 1 = INFRA-RERUN" ;; *) bad "verdict: $v" ;; esac
+r=$(watch)
+case $r in *CLOUD-*) bad "attempt 1 produced an event: $r" ;; *) ok "attempt 1: no CLOUD event (the rerun is not news)" ;; esac
+[ "$(nrerun)" = 1 ] && grep -q "run rerun $RID --failed" "$T/rerun.calls" && ok "queuewatch ran 'gh run rerun $RID --failed' once" || bad "rerun calls: $(cat "$T/rerun.calls" 2>/dev/null)"
+run 2
+v=$(PATH="$T/bin:$PATH" bash "$here/cloudrun" --verdict "$BR" "$SHA")
+case $v in "INFRA $RID failure "*) ok "verdict on attempt 2 = INFRA" ;; *) bad "verdict 2: $v" ;; esac
+r=$(watch)
+case $r in "queuewatch: CLOUD-INFRA main-test-demo owner=main kind=test verdict=INFRA conclusion=failure run=$RID "*) ok "attempt 2 still infra -> ONE CLOUD-INFRA line" ;; *) bad "infra line: $r" ;; esac
+[ "$(nrerun)" = 1 ] && ok "no second rerun" || bad "reran again: $(cat "$T/rerun.calls")"
+out=$(PATH="$T/bin:$PATH" bash "$here/cloudrun" --rerun-infra $RID); case $out in NOT-RERUN*"attempt 2"*) ok "--rerun-infra refuses attempt 2" ;; *) bad "rerun-infra a2: $out" ;; esac
+# a real red: the test step of shard 1/17 failed too
+python3 -I -c '
+import json, sys
+j = json.load(open(sys.argv[1]))
+for job in j["jobs"]:
+    if job["name"].startswith("shard (1/"):
+        for st in job["steps"]:
+            if st["name"] == "Run the shard": st["conclusion"] = "failure"
+json.dump(j, open(sys.argv[1], "w"))' "$T/jobs.json"
+run 1; rm -rf "$T/state"* "$T/rerun.calls"
+v=$(PATH="$T/bin:$PATH" bash "$here/cloudrun" --verdict "$BR" "$SHA")
+case $v in "RED $RID failure "*) ok "a real test failure stays RED" ;; *) bad "verdict real red: $v" ;; esac
+r=$(watch); case $r in "queuewatch: CLOUD-DONE main-test-demo owner=main kind=test verdict=RED"*) ok "a real red -> CLOUD-DONE RED" ;; *) bad "real red line: $r" ;; esac
+[ "$(nrerun)" = 0 ] && ok "a real red is never rerun" || bad "real red rerun"
+echo "queuewatch_infra.test: $pass passed, $fail failed"; [ "$fail" = 0 ]

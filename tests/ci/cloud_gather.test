@@ -76,4 +76,40 @@ ROOT=$T/rt bash "$G" gather "1/1" $d $T/vd kind=$K sha=abc; grep -q "^REWEIGHT-D
     && ok "(12) slowest past plan by the margin -> one REWEIGHT-DUE line, verdict still GREEN" || bad "(12) due: $(cat $T/vd)"
 printf 'shard=1/1\nrc=0\nwall_s=%s\n' 110 > $d/cloud-shard-1of1/result.txt
 ROOT=$T/rt bash "$G" gather "1/1" $d $T/vd2 kind=$K sha=abc; grep -q REWEIGHT-DUE $T/vd2 && bad "(12) within the margin must not fire" || ok "(12) within the margin -> no REWEIGHT-DUE"
+# INFRA vs RED ([CLOUD-SUITE] D): the two REAL upload failures. Run 43092896361 attempt 1 (shards 2/16 and 11/16: test step
+# success, "Upload the shard result and log" failure) and run 43093102021 attempt 1 (shard 1/17); the jobs answers are
+# tests/ci/fixtures/run_*.attempt1.jobs.json. cloud_infra.py names the shards; the gather calls them INFRA, not RED.
+I=$here/cloud_infra.py; F=$here/fixtures
+[ "$(python3 -I $I shards $F/run_43092896361.attempt1.jobs.json | tr '\n' ' ')" = "2/16 11/16 " ] && [ "$(python3 -I $I classify $F/run_43092896361.attempt1.jobs.json)" = infra ] \
+    && ok "(13) run 43092896361: shards 2/16 and 11/16 are INFRA (test step passed, upload failed)" || bad "(13) 43092896361"
+[ "$(python3 -I $I shards $F/run_43093102021.attempt1.jobs.json | tr '\n' ' ')" = "1/17 " ] && [ "$(python3 -I $I classify $F/run_43093102021.attempt1.jobs.json)" = infra ] \
+    && ok "(13) run 43093102021: shard 1/17 is INFRA" || bad "(13) 43093102021"
+# the same run with shard 2/16's TEST step failed instead is RED (a real failure is never hidden behind the infra shape)
+python3 -I -c '
+import json, sys
+j = json.load(open(sys.argv[1]))
+for job in j["jobs"]:
+    if job["name"] == "shard (2/16)":
+        for st in job["steps"]:
+            if st["name"] == "Run the shard": st["conclusion"] = "failure"
+json.dump(j, open(sys.argv[2], "w"))' $F/run_43092896361.attempt1.jobs.json $T/realred.json
+[ "$(python3 -I $I classify $T/realred.json)" = red ] && ok "(13) a shard whose TEST step failed keeps the run RED" || bad "(13) real red masked"
+# the gather: 16 shards, 2 and 11 with no result (their upload failed) -> VERDICT INFRA, naming them; a real RED beside them -> RED
+d=$T/infra16; for i in $(seq 1 16); do case $i in 2|11) ;; *) mk $d $i/16 0 ;; esac; done
+CLOUD_INFRA_SHARDS="2/16 11/16" run "$(for i in $(seq 1 16); do printf '%s/16 ' $i; done)" $d $T/vi; rc=$?
+[ $rc = 1 ] && [ "$(head -1 $T/vi)" = "VERDICT INFRA" ] && grep -q '^INFRA: shard 2/16' $T/vi && grep -q '^INFRA: shard 11/16' $T/vi && ! grep -q '^RED' $T/vi \
+    && ok "(13) gather: the two upload-failed shards -> VERDICT INFRA (rc 1 so the failed jobs can be rerun), no RED line" || bad "(13) infra gather: rc=$rc $(cat $T/vi)"
+mk $d 5/16 3
+CLOUD_INFRA_SHARDS="2/16 11/16" run "$(for i in $(seq 1 16); do printf '%s/16 ' $i; done)" $d $T/vi2
+[ "$(head -1 $T/vi2)" = "VERDICT RED" ] && grep -q '^RED: shard 5/16 rc=3' $T/vi2 && grep -q '^INFRA: shard 2/16' $T/vi2 \
+    && ok "(13) a real RED beside INFRA shards: VERDICT RED, both named" || bad "(13) mixed: $(cat $T/vi2)"
+run "1/16 2/16" $d $T/vi3; [ "$(head -1 $T/vi3)" = "VERDICT RED" ] && grep -q '^RED: shard 2/16 MISSING' $T/vi3 \
+    && ok "(13) without the infra list a missing shard is still RED (unchanged)" || bad "(13) missing without infra list"
+# the workflow's step names are the ones cloud_infra.py reads
+python3 -I -c '
+import re, sys
+sys.path.insert(0, sys.argv[1]); import cloud_infra as c
+w = open(sys.argv[2]).read()
+sys.exit(0 if ("- name: " + c.TEST_STEP) in w and ("- name: " + c.UPLOAD_STEP) in w else 1)' $here $W \
+    && ok "(13) cloud-test.yml's test and upload step names are the ones cloud_infra.py reads" || bad "(13) step names drifted from cloud_infra.py"
 echo "cloud_gather.test: $pass passed, $fail failed"; [ $fail = 0 ]

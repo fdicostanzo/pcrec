@@ -29,6 +29,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read     # the gather reads this run's job steps (INFRA vs RED, tests/ci/cloud_infra.py)
 
 jobs:
   plan:
@@ -127,7 +128,20 @@ jobs:
           pattern: cloud-shard-*
           path: results
         continue-on-error: true
+      # INFRA vs RED ([CLOUD-SUITE] D): a shard whose test step passed but whose artifact upload failed (GitHub 5xx) left
+      # no result; the jobs API says so. The gather names it INFRA, not RED. One page of jobs (100): a kind with more
+      # shards than that needs paging here.
+      - name: Which missing shards are infrastructure (test step passed, upload failed)
+        id: infra
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" > jobs.json
+          echo "shards=$(python3 -I tests/ci/cloud_infra.py shards jobs.json | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
       - name: One verdict
+        env:
+          CLOUD_INFRA_SHARDS: ${{ steps.infra.outputs.shards }}
         run: |
           set -u
           mkdir -p results out
