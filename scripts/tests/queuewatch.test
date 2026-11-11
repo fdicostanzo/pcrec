@@ -32,7 +32,7 @@ export QUEUEWATCH_NO_CI=1    # the CI source has its own test (queuewatch_ci.tes
 # env_for TAG: the scratch environment of one scenario (queue, lock, simulate dir, state)
 env_for() { Q=$T/q$1; export PCREC_BOXQUEUE_DIR=$Q PCREC_BOXLOCK_FILE=$T/box.$1 FULLSUITE_SIM_DIR=$T/sim$1; ST=$T/state.$1; }
 # wrapper TAG SCENARIO: the only job shape this file queues; echoes its path
-wrapper() { local f=$T/job_$1; printf '#!/usr/bin/env bash\nexec bash %s/fullsuite_job.sh --simulate %s "$@"\n' "$here" "$2" > "$f"; chmod +x "$f"; echo "$f"; }
+wrapper() { local f=$T/job_$1; printf '#!/usr/bin/env bash\n# --ready is answered by fullsuite_job.sh --simulate (always 0); boxqueue add wants the word in the text\nexec bash %s/fullsuite_job.sh --simulate %s "$@"\n' "$here" "$2" > "$f"; chmod +x "$f"; echo "$f"; }
 # collect OUT [watcher opts]: relaunch the watcher until a JOB-DONE line (or 150 s); one line per launch result
 collect() {
     local out=$1 end l rc; shift; : > "$out"; end=$(( $(date +%s) + ${BUDGET:-150} ))

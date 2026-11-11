@@ -19,6 +19,14 @@
 #   scripts/cloudrun --list                 the ledger, one line per run, with the branch's current state
 #   scripts/cloudrun --verdict BRANCH SHA   `GREEN|RED|PENDING|NONE RUNID CONCLUSION URL` for the run of
 #                   that branch at that commit, from `gh run list` (what queuewatch and --prune ask)
+#   scripts/cloudrun --status [RUN|BRANCH]  LIVE view, no waiting: per run its kind, name, shards done/total, elapsed, and
+#                   each RED shard (completed failure/timed_out) with its first failing lines, from the one extractor
+#                   tests/ci/cloud_failures.sh (the same lines the final verdict and the CLOUD-SHARD-RED alert show).
+#                   No argument = every ledger run not yet pruned whose run is still in progress. RUN = a numeric run
+#                   id (any run of the repo); BRANCH = cloud/OWNER/KIND/NAME (its newest run). 2-3 gh calls per run
+#                   + one log fetch per red shard (tests/ci/cloud_status.py).
+#   scripts/cloudrun --reds RUNID CACHE     machine form for queuewatch: `RUNID|K/N<TAB>owner kind name shard K/N run=ID
+#                   :: lines` per red shard; CACHE remembers fetched logs (a shard's log is fetched once)
 # Ledger: <box queue dir>/.cloudrun/ledger.tsv (env CLOUDRUN_LEDGER), TSV, append-only:
 #   `R epoch owner kind name branch sha` for a run, `P epoch branch` when pruned.
 # Env: CLOUDRUN_REMOTE (default origin). Pushing a cloud/ branch is the ONLY ref this ever writes;
@@ -50,12 +58,14 @@ print("%s %s %s %s" % ("GREEN" if r["conclusion"] == "success" else "RED", r["da
 ' "$2" 2>/dev/null || { echo "NONE - unreadable -"; return 1; }
 }
 
-mode=run owner="" kind="" name="" ref=HEAD dry=0 refgiven=0
+mode=run sarg="" owner="" kind="" name="" ref=HEAD dry=0 refgiven=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --owner) owner=${2-}; shift 2 || usage ;; --kind) kind=${2-}; shift 2 || usage ;; --name) name=${2-}; shift 2 || usage ;;
         --ref) ref=${2-}; refgiven=1; shift 2 || usage ;; --dry-run) dry=1; shift ;;
         --prune) mode=prune; shift ;; --list) mode=list; shift ;;
+        --status) mode=status; sarg=${2-}; shift $(( $# > 1 ? 2 : 1 )) ;;
+        --reds) [ $# -eq 3 ] || usage; python3 -I "$here/../tests/ci/cloud_status.py" reds "$2" --cache "$3"; exit $? ;;
         --verdict) [ $# -eq 3 ] || usage; verdict "$2" "$3"; exit $? ;;
         -h|--help) usage ;; *) die "unknown argument $1" ;;
     esac
@@ -63,6 +73,23 @@ done
 [ -n "$root" ] || die "not inside the pcrec tree" 1
 
 case $mode in
+status)
+    command -v gh >/dev/null 2>&1 || die "gh is not installed" 1
+    runs=""
+    case $sarg in
+        [0-9]*) runs=$sarg ;;
+        cloud/*) read -r v rid _ < <("$TO" 60 gh run list --workflow cloud-test.yml --branch "$sarg" --limit 1 --json databaseId,status --jq '.[]|"\(.status) \(.databaseId)"' 2>/dev/null | awk '{print $1, $2}'); runs=${rid:-} ;;
+        '')
+            [ -f "$ledger" ] || { echo "cloudrun: no ledger yet ($ledger)"; exit 0; }
+            while IFS=$'\t' read -r br sha; do
+                read -r v rid _ < <(verdict "$br" "$sha")
+                [ "$v" = PENDING ] && runs="$runs $rid"
+            done < <(awk -F'\t' '$1 == "P" { p[$3] = 1 } $1 == "R" { last[$6] = $7 } END { for (b in last) if (!(b in p)) print b "\t" last[b] }' "$ledger")
+            [ -n "$runs" ] || { echo "cloudrun: no cloud run in progress (ledger $ledger)"; exit 0; } ;;
+        *) die "--status takes a numeric run id or a cloud/OWNER/KIND/NAME branch" ;;
+    esac
+    [ -n "$runs" ] || die "no run found for '$sarg'" 1
+    rc=0; for r in $runs; do python3 -I "$root/tests/ci/cloud_status.py" status "$r" || rc=1; done; exit $rc ;;
 list)
     [ -f "$ledger" ] || { echo "cloudrun: no ledger yet ($ledger)"; exit 0; }
     awk -F'\t' '$1 == "P" { p[$3] = 1 } $1 == "R" { r[++n] = $0 } END { for (i = 1; i <= n; i++) { split(r[i], f, "\t"); print f[2], f[3], f[4], f[5], f[6], substr(f[7], 1, 9), (f[6] in p) ? "pruned" : "kept" } }' "$ledger"; exit 0 ;;
