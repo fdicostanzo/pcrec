@@ -16,6 +16,10 @@
 #      shard 1..N is non-empty;
 #   4. weight_s is a positive number and weight_source is non-empty;
 #   5. .github/workflows/ci.yml's `shard:` matrix line lists exactly 1/N..N/N.
+#   6. EXTRAS ([CLOUD-SUITE]): a table may carry a `# extras=NAME NAME..` header -- opt-in gates that are make targets but
+#      NOT TEST_SECTIONS members (cloudgate-strict, cloudgate-lint: a newer compiler's opinion must not fail a stranger's
+#      `make test`, R5-Q1). Each extra has exactly one row, is a target in the Makefile, and all extras sit in ONE shard
+#      that holds nothing else. A name in the table that is neither a section nor a declared extra is still unknown.
 # A section list of ZERO names is a hard failure (an empty list checks nothing).
 #
 # --selftest plants one defect per check into COPIES (the table and ci.yml),
@@ -31,6 +35,7 @@ TABLE=${TABLE:-$here/shards.tsv}
 CI_YML=${CI_YML:-$root/.github/workflows/ci.yml}
 
 table_rows() { grep -v '^#' "$TABLE" | awk -F'\t' 'NR > 1 && NF'; }
+table_extras() { sed -n 's/^# extras=//p' "$TABLE" | head -1; }
 
 if [ "${1:-}" = "--list" ]; then
     TABLE=${CISHARD_TABLE:-$TABLE}   # [CLOUD-SUITE] B: the cloud kind runs its own table through `make test-shard`
@@ -61,8 +66,21 @@ check() {
         [ "$c" = 1 ] || { echo "FAIL: section '$s' has $c shard rows (want exactly 1)"; bad=1; }
     done
     while IFS= read -r s; do
-        printf '%s\n' "${sections[@]}" | grep -qxF -- "$s" || { echo "FAIL: shard table names unknown section '$s' (not in TEST_SECTIONS)"; bad=1; }
+        printf '%s\n' "${sections[@]}" $(table_extras) | grep -qxF -- "$s" || { echo "FAIL: shard table names unknown section '$s' (not in TEST_SECTIONS)"; bad=1; }
     done < <(table_rows | cut -f1)
+    local x xs=""
+    for x in $(table_extras); do
+        c=$(table_rows | awk -F'\t' -v s="$x" '$1 == s' | wc -l | tr -d ' ')
+        [ "$c" = 1 ] || { echo "FAIL: extra '$x' has $c shard rows (want exactly 1)"; bad=1; }
+        grep -qE "^$x:" "$root/Makefile" || { echo "FAIL: extra '$x' is not a Makefile target"; bad=1; }
+        xs="$xs $(table_rows | awk -F'\t' -v s="$x" '$1 == s {print $2}')"
+    done
+    if [ -n "$xs" ]; then
+        [ "$(echo $xs | tr ' ' '\n' | sort -u | wc -l | tr -d ' ')" = 1 ] || { echo "FAIL: extras are not all in ONE shard (shards:$xs)"; bad=1; }
+        xk=$(echo $xs | cut -d' ' -f1)
+        [ "$(table_rows | awk -F'\t' -v k="$xk" '$2 == k' | wc -l | tr -d ' ')" = "$(echo $xs | wc -w | tr -d ' ')" ] \
+            || { echo "FAIL: the extras' shard $xk holds other rows too (it must hold only the extras)"; bad=1; }
+    fi
     # 3 + 4: columns
     while IFS=$'\t' read -r s k w src; do
         case "$k" in ''|*[!0-9]*) echo "FAIL: '$s' shard '$k' is not an integer"; bad=1 ;;

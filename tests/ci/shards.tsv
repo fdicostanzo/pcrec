@@ -101,4 +101,5 @@ test-casemap	2	0.5	ci-measured sections.tsv
 test-findall	3	47.9	ci-measured sections.tsv
 test-subst	3	58.3	ci-measured sections.tsv
 test-subst-d27	3	378.8	ci-measured sections.tsv
+test-alloc	3	61	ESTIMATE local battery alloc stage 61s (2026-11-10), not yet CI-measured
 test-ci-shards	2	7.5	ci-measured sections.tsv

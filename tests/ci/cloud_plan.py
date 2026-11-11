@@ -19,6 +19,10 @@ first onto `slots` runners, each paying `setup` seconds (checkout, python, libpc
 target, so more shards than slots appear exactly when setup is small enough that waves still fit. If no count
 meets it the best count is used and the report says so.
 
+EXTRAS: the existing table's `# extras=NAME..` header (opt-in gates that are make targets but not TEST_SECTIONS members:
+cloudgate-strict, cloudgate-lint) is carried over: they are weighed like sections (measured, else the previous row's weight)
+and placed together in ONE extra shard after the balanced ones (tests/ci/check_shards.sh holds that shape).
+
 Output: the table (stdout, or tests/ci/cloud_test_shards.tsv with --write) in shards.tsv's format with an added
 `# plan ...` comment block; the report goes to stderr.
 """
@@ -80,6 +84,12 @@ def main():
     a = ap.parse_args()
     head, rows = sr.load(os.path.join(here, "shards.tsv"))
     names = {r[0] for r in rows}
+    extras = []
+    if os.path.exists(a.out):
+        for line in open(a.out):
+            if line.startswith("# extras="):
+                extras = line.rstrip("\n").split("=", 1)[1].split()
+    names |= set(extras)
     m = sr.measured(a.measured, names, True) if a.measured else {}
     if a.units:
         for line in open(a.units):
@@ -93,7 +103,13 @@ def main():
     old = {}
     if os.path.exists(a.out):
         old = {x[0]: x[2] for x in sr.load(a.out)[1]}
-    missing = [r[0] for r in rows if r[0] not in m]
+    xrows = []
+    for x in extras:
+        if x in m:
+            xrows.append([x, 0, max(round(m[x][1], 1), 0.5), "ci-measured %s" % m[x][2]])
+        else:
+            xrows.append([x, 0, old.get(x, a.default_s), "ESTIMATE (no measurement; %s)" % ("previous table weight" if x in old else "default %gs" % a.default_s)])
+    missing = [r[0] for r in rows if r[0] not in m] + [x[0] for x in xrows if x[0] not in m]
     for r in rows:
         if r[0] in m:
             complete, wall, label = m[r[0]]
@@ -110,8 +126,16 @@ def main():
         nonfloor[k] = makespan(tt[len(floor_names):], a.slots, a.setup)
     meet = [k for k in est if nonfloor[k] <= a.target]
     n = min(meet) if meet else min(est, key=lambda k: (nonfloor[k], k))
+    n0 = n
     rows, tot = balanced(rows, n, floor_names)
     best = est[n]
+    if xrows:    # the extras' own shard, after the balanced ones; its work is one more shard in the wave estimate
+        for x in xrows:
+            x[1] = n + 1
+        rows += xrows
+        tot = tot + [sum(x[2] for x in xrows)]
+        best = makespan(tot, a.slots, a.setup)
+        n += 1
     total = sum(r[2] for r in rows)
     floor = sorted(((r[2], r[0]) for r in rows if r[0] in floor_names), reverse=True)
     if missing:
@@ -119,9 +143,9 @@ def main():
     big = max(rows, key=lambda r: r[2])
     rep = ["cloud_plan: %d sections, %.0f s of section time (%d unmeasured)" % (len(rows), total, len(missing)),
            "cloud_plan: N=%d shards on %d slots, setup %.0f s: estimated wall %.0f s (%.1f min); target %.0f s"
-           % (n, a.slots, a.setup, est[n], est[n] / 60, a.target),
+           % (n, a.slots, a.setup, best, best / 60, a.target),
            "cloud_plan: without the floor shards the run would end at %.0f s (%.1f min)%s"
-           % (nonfloor[n], nonfloor[n] / 60, "" if meet else " -- TARGET NOT MET at any N")]
+           % (nonfloor[n0], nonfloor[n0] / 60, "" if meet else " -- TARGET NOT MET at any N")]
     for k, t in enumerate(tot, 1):
         rep.append("cloud_plan: shard %d/%d work %.0f s (%.1f min)" % (k, n, t, t / 60))
     rep.append("cloud_plan: INDIVISIBLE FLOOR %.0f s = setup %.0f s + largest unit %s %.0f s" % (a.setup + big[2], a.setup, big[0], big[2]))
@@ -131,13 +155,13 @@ def main():
            "# tests/ci/cloud_plan.py from CI's recorded per-section times; same columns and `make test-shard` reader as",
            "# shards.tsv (CISHARD_TABLE=this file). tests/ci/cloud_check.sh holds it to TEST_SECTIONS exactly.",
            "# plan: target=%.0fs slots=%d setup=%.0fs estimated_wall=%.0fs sections_total=%.0fs"
-           % (a.target, a.slots, a.setup, est[n], total),
+           % (a.target, a.slots, a.setup, best, total),
            "# predicted_shard_s=%d" % round(max(tot)),
            "# indivisible_floor_s=%d (setup %.0fs + largest unit %s %.0fs)" % (round(a.setup + big[2]), a.setup, big[0], big[2]),
            "# unmeasured: %d section(s)%s" % (len(missing), (" -- " + " ".join(missing)) if missing else ""),
            "# measured from: " + (a.note or "(no --note given)"),
            "# floor: " + ("; ".join("%s %.0fs" % (nm, w) for w, nm in floor) or "none"),
-           "# ci_scale=1.0", "# shards=%d" % n, "section\tshard\tweight_s\tweight_source"]
+           "# ci_scale=1.0"] + (["# extras=" + " ".join(extras)] if extras else []) + ["# shards=%d" % n, "section\tshard\tweight_s\tweight_source"]
     out += ["%s\t%d\t%g\t%s" % tuple(r) for r in rows]
     text = "\n".join(out) + "\n"
     print("\n".join(rep), file=sys.stderr)

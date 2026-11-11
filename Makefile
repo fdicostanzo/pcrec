@@ -467,7 +467,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-simdfloor test-memfn-d27region \
       test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-endmark test-partlayout \
-      test-kitproof test-casemap test-findall test-subst test-subst-d27 test-ci-shards
+      test-kitproof test-casemap test-findall test-subst test-subst-d27 test-alloc test-ci-shards
 
 # CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
 # and tests/ci/shards.tsv, which must name every member of this list exactly once
@@ -2227,6 +2227,27 @@ alloc-locked:
 	LIBPCREC=$(CURDIR)/$(ALLOC_DIR)/libpcrec.a bash tests/core/run_alloc_tests.sh
 	@echo "alloc: every forced allocation failure was diagnosed, not aborted"
 
+# [CLOUD-SUITE] `test-alloc`: the allocation-failure injector as a `make test` section. It was opt-in (`make alloc`, a
+# battery stage) only because nothing ran it by default; what it checks is COMPILER-INDEPENDENT -- every forced
+# malloc/calloc/realloc/strdup failure inside pcrec_compile is diagnosed (rc -1 + a message), never an abort -- so a
+# newer gcc's opinion cannot move it (unlike `strict`/`lint`, whose subject IS the compiler's opinion and which stay
+# opt-in, R5-Q1). ~60 s, a library-only build in its own tree (`build-alloc/`). `make alloc` is unchanged (boxlocked).
+test-alloc:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-alloc.ran"; fi
+	$(MAKE) --no-print-directory alloc-locked
+
+# [CLOUD-SUITE] the compiler-opinion gates as cloud shard members, NOT TEST_SECTIONS members (R5-Q1: a stranger's
+# `make test` must not fail on a newer gcc's new opinion). tests/ci/cloud_test_shards.tsv's `# extras=` header names
+# them; tests/ci/check_shards.sh holds them to one shard of their own. `lint-locked` skips the box lock a cloud
+# runner has no use for.
+cloudgate-strict:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/cloudgate-strict.ran"; fi
+	$(MAKE) --no-print-directory strict
+
+cloudgate-lint:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/cloudgate-lint.ran"; fi
+	$(MAKE) --no-print-directory lint-locked
+
 # [CHK-2] THE ANSWER-IDENTITY SWEEP + FORM CENSUS: every optimization-axis
 # deny/force flag (docs/spec/tuning.md §2, bits 4-31 — DERIVED from
 # lib/pcrec.h with no upper bound, never a hard-coded range: a `4-15` here
@@ -2318,5 +2339,5 @@ clean:
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-targets test-memfn-rows \
         test-startset test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards cloud-check cloud-reweight \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
-        ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
+        ubsan-locked asan-locked san-locked lint-locked alloc-locked test-alloc cloudgate-strict cloudgate-lint test-recursion-identity-locked \
         fuzz clean

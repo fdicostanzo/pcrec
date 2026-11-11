@@ -40,6 +40,23 @@ for k in $kinds; do
     done
 done
 
+# 1b. the `test` table's EXTRAS (opt-in gates in their own shard) are held to their shape: a planted stray section in the
+#     extras' shard, a missing target and a split are each red by name (check_shards.sh, check 6).
+t=$(bash "$K" get test selector); ex=$(sed -n 's/^# extras=//p' "$root/$t" | head -1)
+if [ -n "$ex" ]; then
+    T6=$(mktemp -d "${TMPDIR:-/var/tmp}/cloud_check6.XXXXXX")
+    xk=$(awk -F'\t' -v x="${ex%% *}" '$1 == x {print $2}' "$root/$t")
+    sed "s/^test-ci-shards\t[0-9]*\t/test-ci-shards\t$xk\t/" "$root/$t" > "$T6/stray.tsv"
+    out=$(TABLE="$T6/stray.tsv" CI_YML=none bash "$here/check_shards.sh" "$@" 2>&1) \
+        && bad "extras plant 'stray section in the extras shard' stayed green" \
+        || { echo "$out" | grep -q 'holds other rows too' && ok "extras plant: a stray section in the extras' shard is named" || bad "extras plant not named: $out"; }
+    sed "s/^# extras=.*/# extras=$ex cloudgate-nosuch/" "$root/$t" > "$T6/ghost.tsv"; printf 'cloudgate-nosuch\t%s\t1\tplanted\n' "$xk" >> "$T6/ghost.tsv"
+    out=$(TABLE="$T6/ghost.tsv" CI_YML=none bash "$here/check_shards.sh" "$@" 2>&1) \
+        && bad "extras plant 'extra that is no Makefile target' stayed green" \
+        || { echo "$out" | grep -q 'is not a Makefile target' && ok "extras plant: an extra that is no Makefile target is named" || bad "extras plant not named: $out"; }
+    rm -rf "$T6"
+fi
+
 code="$here/cloud_gather.sh $here/cloud_kinds.sh $root/scripts/cloudrun $root/.github/workflows/cloud-test.yml $root/.github/actions/shard-setup/action.yml"
 strip() { sed -e 's/^[[:space:]]*#.*$//' "$@"; }
 named=0

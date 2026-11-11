@@ -3789,6 +3789,18 @@ run_one() {
 results_file="$(mktemp "$MECH_SCRATCH/results.XXXXXX")"
 : > "$results_file"
 
+# MECH_TIMES_OUT=FILE appends `ID<TAB>SECONDS` per finished row (ID = the S-id, as the id arguments spell it): the
+# per-row wall the cloud shard tables are weighted by (tests/ci/cloud_mech_shard.sh, tests/ci/cloud_units_plan.py mech).
+# Observation only: the row's stdout and verdict are run_one's own.
+run_one_timed() {
+    local f=$1 t0=$SECONDS b
+    run_one "$f"
+    if [ -n "${MECH_TIMES_OUT:-}" ]; then
+        b=$(basename "$f" .sh)
+        printf '%s\t%d\n' "${b%%_*}" $((SECONDS - t0)) >> "$MECH_TIMES_OUT"
+    fi
+}
+
 if [ "$PROCS" -gt 1 ] && [ "${#sab_files[@]}" -gt 1 ]; then
     rowdir="$(mktemp -d "$MECH_SCRATCH/rows.XXXXXX")"
     # [TT-MECHPAR] a SLOT POOL, not a FIFO: launch the next row the moment ANY
@@ -3804,7 +3816,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#sab_files[@]}" -gt 1 ]; then
             sleep 0.2
         done
         echo "-- running $(basename "$f") --" >&2
-        run_one "$f" > "$rowdir/$(basename "$f").row" &
+        run_one_timed "$f" > "$rowdir/$(basename "$f").row" &
     done
     wait
     for f in "${sab_files[@]}"; do
@@ -3814,7 +3826,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#sab_files[@]}" -gt 1 ]; then
 else
     for f in "${sab_files[@]}"; do
         echo "-- running $(basename "$f") --" >&2
-        run_one "$f" | tee -a "$results_file" >&2
+        run_one_timed "$f" | tee -a "$results_file" >&2
     done
 fi
 # run_one's stdout IS the tsv row; tee above sent it to stderr for a progress

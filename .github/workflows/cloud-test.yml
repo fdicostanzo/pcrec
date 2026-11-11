@@ -71,9 +71,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/shard-setup
-      - name: make strict
-        if: startsWith(matrix.shard, '1/')
-        run: make strict
       # The shard step: the kinds table's command for this shard. Its exit status is also written to
       # build/cloudout/rc so the record step can tell "rc=2" from "killed by the step timeout" (no rc file =>
       # rc=none => RED).
