@@ -845,6 +845,11 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-11-07): not started; CI builds vanilla 10.46 (U25 tolerance carries its lookbehind bug), this box runs Ubuntu 10.46-1ubuntu0.1 (CVE-2026-89160 backport), upstream 10.48 fixed it
   next: when an upgrade is wanted: build the candidate (e.g. 10.48) under $PCREC_TMPDIR from the official tarball (source and checksum shown to Frank first), run make test against it locally, disposition every difference, THEN move the CI pin + amend D98 + retire U25's tolerance in one change
   refs: .github/workflows/ci.yml (D98 pin); decisions D98; upstream_issues.md U25; tests/lookaround/vlb_one.sh; tests/lib/resolve_pcre2.sh; plan [PCRE2-DEFLB] (re-test on the candidate)
+- [CLOUD-SUITE] STATE:not-started — run the full suite's correctness stages as sharded GitHub Actions jobs on a frozen commit
+  filed: 2026-11-10 Frank (a test server that spins up cloud boxes, "Kind of like CI. Perhaps it exists?"); manager: it exists as Actions workflow_dispatch + a matrix, no separate project
+  status (2026-11-10): not started; repo is PUBLIC (standard runners free, no minute cap); paid personal account (Pro: 40 concurrent jobs, 6 h per job, 256 jobs per matrix); local full suite ~12h45m, mech ~54 % and axes ~32 %
+  next: STEP 0 = shard mech alone N ways on one commit, own concurrency group (no cancel-on-push), red shard never cancels others; compare verdict + wall time with the same commit's local run; timing runs stay on the box
+  refs: .github/workflows/ci.yml ([CI-SHARD], tests/ci/shards.tsv); scripts/battery.sh; scripts/verdict; decisions D177
 - [PCRE2-DEFLB] STATE:not-started — suspected PCRE2 bug: a lookbehind in (?(DEFINE)) in a lookbehind is never length-checked
   filed: 2026-11-10 Frank ("File the bug as a plan item to be revisited when we update the oracle"), found by lane vlbrev52
   status (2026-11-10): seen on libpcre2 10.46 only; NOT re-tested on 10.48/10.49 or main; no upstream report sent. `(?<=a(?(DEFINE)(?<=b+)))x` compiles (expected error 125); `(?<=a(?(DEFINE)(?<g>(?<=b+))))x(?&g)` matches `axb` at offset 1 (wrong). pcrec refuses both and keeps refusing them
