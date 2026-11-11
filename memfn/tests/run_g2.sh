@@ -5,8 +5,22 @@
 # memfn/tests/run_g2.sh — G2, the kit's own tests, in one command.
 #
 #   memfn/tests/run_g2.sh [--quick] [--rows|--no-rows] [--seed N] [--keep]
+#                         [--part K/N] [--units LIST] [--list-units]
 #
 # --rows: per-ROW floor from the kit's MFTRACE REACH lines (section 4b)
+# --part K/N (R-39, with --quick only): run part K of N of the quick tier. The
+#   UNITS of work are the rows of g2_units.tsv (the generator prelude runs in
+#   every part); g2_parts.py assigns them by a weight-balanced greedy rule over
+#   that table's declared weights (no run-time state). A part prints the
+#   unsplit run's lines for the units it ran, a `G2UNIT name seconds` manifest
+#   line per unit, and `G2PART` lines (partial counts); the verdicts that are
+#   COUNTS over the whole population (section 4b's (a)-(e)) are deferred to
+#   `g2_parts.py gather`, which also checks that the N parts ran every unit
+#   exactly once. --units LIST (comma-separated unit ids) restricts the
+#   population to those units: a diagnostic slice, judged like a part.
+#   --list-units prints the table. Without these options the run is unchanged
+#   (G2_UNITS_OUT=FILE additionally writes the manifest to FILE, no stdout).
+#   G2_JOBS=N overrides the build parallelism (default: online CPUs).
 #
 # Generates sites over the kit's vocabulary, renders them through the kit
 # (linked from build/libpcrec.a with only -I memfn/include), compiles the
@@ -46,8 +60,14 @@ keep=0
 quick=0
 rows=0
 norows=0
+part=""
+unitlist=""
+listunits=0
 while [ $# -gt 0 ]; do
     case "$1" in
+        --part) part=$2; shift 2 ;;
+        --units) unitlist=$2; shift 2 ;;
+        --list-units) listunits=1; shift ;;
         --quick) quick=1; shift ;;
         --rows) rows=1; shift ;;
         --no-rows) norows=1; shift ;;
@@ -56,6 +76,33 @@ while [ $# -gt 0 ]; do
         *) echo "run_g2.sh: unknown option $1" >&2; exit 2 ;;
     esac
 done
+
+# --- R-39: the unit selector (g2_parts.py owns the table g2_units.tsv and the assignment rule)
+partial=0
+sel_units=""
+if [ "$listunits" = 1 ]; then exec python3 -I "$here/g2_parts.py" list --table "$here/g2_units.tsv"; fi
+if [ -n "$part" ] || [ -n "$unitlist" ]; then
+    [ "$quick" = 1 ] || { echo "run_g2.sh: --part/--units need --quick (the units are the quick tier's)" >&2; exit 2; }
+    sel_units=$(python3 -I "$here/g2_parts.py" assign --table "$here/g2_units.tsv" \
+                    ${part:+--part "$part"} ${unitlist:+--units "$unitlist"}) || exit 2
+    partial=1
+fi
+# want UNIT: does this run execute the unit? (every unit, unless a selector narrowed the population)
+want() { [ "$partial" = 0 ] && return 0; case " $sel_units " in *" $1 "*) return 0 ;; esac; return 1; }
+# ustart UNIT / udone UNIT: the manifest. A unit is listed when its judge ran, so a unit that never
+# got there is MISSING from the population check, not silently counted. Start and end times live in files
+# ($work/ustart.UNIT, $work/uend.UNIT: a background launcher writes the end when its work ends; else now);
+# no associative array, the Mac's bash is 3.2.
+ustart() { date +%s > "$work/ustart.$1"; }
+udone() {
+    local t1 t0
+    t0=$(cat "$work/ustart.$1" 2>/dev/null || date +%s)
+    t1=$(cat "$work/uend.$1" 2>/dev/null || date +%s)
+    [ "$partial" = 1 ] && echo "G2UNIT $1 $((t1 - t0))"
+    [ -n "${G2_UNITS_OUT:-}" ] && echo "$1 $((t1 - t0))" >> "$G2_UNITS_OUT"
+    return 0
+}
+uend() { date +%s > "$work/uend.$1"; }
 
 # --- the floors (K35): hand-written literals, sharing no source with the
 # generator or the driver. Raise them when the space grows; never lower one
@@ -221,7 +268,7 @@ if ! "$TO" --version 2>/dev/null | grep -q GNU; then
     echo "run_g2.sh: need GNU timeout (bare timeout on the Mac, gnutimeout on ubuntubudu)" >&2
     exit 2
 fi
-nproc_=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
+nproc_=${G2_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}
 cc_list=""
 for c in gcc-16 gcc-15 gcc-14 gcc-13 gcc; do
     if command -v "$c" >/dev/null 2>&1 && "$c" --version 2>/dev/null | grep -qi 'free software\|gcc (GCC)\|gcc-'; then
@@ -244,6 +291,7 @@ plainlib="$lib"
 
 : "${TMPDIR:?run_g2.sh: set TMPDIR to a scratch directory}"
 work=$(mktemp -d "$TMPDIR/g2.XXXXXX") || exit 2
+[ -n "${G2_UNITS_OUT:-}" ] && : > "$G2_UNITS_OUT"
 [ "$keep" = 1 ] || trap 'rm -rf "$work"' EXIT
 echo "run_g2.sh: work $work; compilers: $cc_list${asan_cc:+; asan: $asan_cc}"
 
@@ -272,11 +320,6 @@ gen() {  # gen OUTDIR [--mutate K]
     "$TO" 600 "$work/g2_gen" "$@" --seed "$seed"
 }
 gen "$work/gen" > "$work/gen.log" 2>&1 || { cat "$work/gen.log"; echo "run_g2.sh: generator failed" >&2; exit 2; }
-# lane g2m7: a generator process of its OWN that makes only the MISMATCH sites, so the rows chosen
-# for them are countable apart from every other family's (section 4b prints them)
-[ "$rows" = 1 ] && { gen "$work/mmonly" --mm-only 1 > "$work/mmonly.log" 2>&1 || { cat "$work/mmonly.log"; echo "run_g2.sh: the MISMATCH-only generator failed" >&2; exit 2; }; }
-# lane g2m6: and one of its own for the STRIDED sites, so the rows chosen for them are countable apart too
-[ "$rows" = 1 ] && { gen "$work/stonly" --stride-only 1 > "$work/stonly.log" 2>&1 || { cat "$work/stonly.log"; echo "run_g2.sh: the STRIDE-only generator failed" >&2; exit 2; }; }
 cat "$work/gen.log"
 sum=$(grep '^SUMMARY' "$work/gen/gen_results.txt")
 [ -n "$sum" ] || { echo "run_g2.sh: no generator SUMMARY" >&2; exit 2; }
@@ -411,7 +454,9 @@ libc_check() {  # libc_check GENDIR
 is_pending_batch() {
     head -1 "$1" | grep -q 'batch [0-9]*, \([0-9]*\) sites, pending \1 \*/'
 }
-libc_check "$work/gen"
+# R-39: everything above is the PRELUDE (run by every part); its tallies are replicated, not summed
+prelude_passed=$passed; prelude_failed=$failed
+if want k1; then ustart k1; libc_check "$work/gen"; fi
 
 # --- 1b. K1: the kit's mf_ref_* reference functions against G2's loops ----
 k1() {  # k1 NAME CC [flags]
@@ -432,8 +477,11 @@ k1() {  # k1 NAME CC [flags]
         note_fail 1 "K1 ($name): did not build or run ($work/k1-$name.log)"
     fi
 }
-k1 plain "$gencc"
-[ -n "$asan_cc" ] && k1 asan "$asan_cc" -fsanitize=address,undefined -fno-sanitize-recover=undefined
+if want k1; then
+    k1 plain "$gencc"
+    [ -n "$asan_cc" ] && k1 asan "$asan_cc" -fsanitize=address,undefined -fno-sanitize-recover=undefined
+    udone k1
+fi
 
 # --- 2. compile + run, per compiler ---------------------------------------
 build() {  # build NAME CC GENDIR EXTRA_FLAGS...
@@ -535,6 +583,7 @@ asan_launch() {  # asan_launch GENDIR
     else
         echo build > "$work/asan.rc"
     fi
+    uend asan
 }
 w1_launch() {  # w1_launch BUILD K
     "$TO" 1800 "$work/build-$1/g2_run" --quick --ref-defect "$2" > "$work/w1-$2.log" 2>/dev/null
@@ -552,10 +601,12 @@ w2_launch() {  # w2_launch M CC
         if build "mut$m" "$2" "$gd"; then
             "$TO" 3600 "$work/build-mut$m/g2_run" --quick --mutants > "$work/mut$m.log" 2>/dev/null
             echo ok > "$work/mut$m.st"
+            uend "w2-$m"
             return
         fi
     fi
     echo fail > "$work/mut$m.st"
+    uend "w2-$m"
 }
 
 asan_judge() {
@@ -683,19 +734,27 @@ if [ "$quick" = 1 ]; then
     # the sampled legs, launched together; the gcc answer run below is the
     # foreground leg
     sample "$work/gen" "$work/genq"
-    [ -n "$asan_cc" ] && asan_launch "$work/genq" > "$work/asan.out" 2>&1 &
-    { if build wq "$wcc" "$work/genq"; then
-          for k in 1 2 3 4 5 6 7 8 9 10; do w1_launch wq "$k" & done
-          w3_launch wq
-          wait
-      fi; } > "$work/wq.out" 2>&1 &
-    for m in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do w2_launch "$m" "$wcc" > "$work/mut$m.out" 2>&1 & done
+    if [ -n "$asan_cc" ] && want asan; then ustart asan; asan_launch "$work/genq" > "$work/asan.out" 2>&1 & fi
+    if want w1w3; then
+        ustart w1w3
+        { if build wq "$wcc" "$work/genq"; then
+              for k in 1 2 3 4 5 6 7 8 9 10; do w1_launch wq "$k" & done
+              w3_launch wq
+              wait
+          fi; uend w1w3; } > "$work/wq.out" 2>&1 &
+    fi
+    for m in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do
+        want "w2-$m" || continue
+        ustart "w2-$m"; w2_launch "$m" "$wcc" > "$work/mut$m.out" 2>&1 &
+    done
 else
     floor_checks=$FLOOR_CHECKS; floor_asan=$FLOOR_ASAN_CHECKS; drv_tier=
     floor_m7neg=$FLOOR_MUT7_NEG; form_check_floors=$FULL_FORM_CHECK_FLOORS
 fi
 
 for cc in $cc_list; do
+    want gcc || continue
+    ustart gcc
     if ! build "$cc" "$cc" "$work/gen"; then
         note_fail 1 "$cc: the driver, the reference or the link does not build ($work/build-$cc)"
         continue
@@ -899,12 +958,13 @@ EOF_PF
         note_fail 1 "$cc: no 'G2 stride census' line in $log"
     fi
     grep -c . "$work/build-$cc/warnings.log" | sed "s/^/   compiler diagnostics lines ($cc): /"
+    udone gcc
 done
 
 # --- 3. ASan + UBSan (quick subjects) --------------------------------------
 if [ "$quick" = 1 ]; then
     wait
-    [ -n "$asan_cc" ] && asan_judge
+    [ -n "$asan_cc" ] && want asan && { asan_judge; udone asan; }
 elif [ -n "$asan_cc" ]; then
     asan_launch "$work/gen"
     asan_judge
@@ -914,17 +974,24 @@ fi
 wcc=${cc_list%% *}
 if [ "$quick" = 1 ]; then
     echo "== witnesses (W1 wrong reference, W2 mutated kit text, W3 planted reads), on $wcc, sampled batches"
-    [ -x "$work/build-wq/g2_run" ] || note_fail 1 "the sampled witness build failed ($work/wq.out)"
+    if want w1w3; then
+        [ -x "$work/build-wq/g2_run" ] || note_fail 1 "the sampled witness build failed ($work/wq.out)"
+    fi
 else
     echo "== witnesses (W1 wrong reference, W2 mutated kit text, W3 planted reads), on $wcc"
     for k in 1 2 3 4 5 6 7 8 9 10; do w1_launch "$wcc" "$k"; done
     w3_launch "$wcc"
 fi
-for k in 1 2 3 4 5 6 7 8 9 10; do w1_judge "$k"; done
-w3_judge
+if want w1w3; then
+    for k in 1 2 3 4 5 6 7 8 9 10; do w1_judge "$k"; done
+    w3_judge
+    udone w1w3
+fi
 for m in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do
+    want "w2-$m" || continue
     [ "$quick" = 1 ] || w2_launch "$m" "$wcc"
     w2_judge "$m"
+    udone "w2-$m"
 done
 
 # --- 4a. G2's SIMD family (R4e' batch 1, request R-13): its own runner ------
@@ -935,6 +1002,8 @@ done
 # REACH lines join the per-row sum below (the SIMD rows are reached only
 # there: G2's other sinks offer no bracket ops, so no other process renders
 # a SIMD row).
+if want simd; then
+ustart simd
 echo "== simd: G2's SIMD family (run_g2_simd.py)"
 mkdir -p "$work/reach"
 simd_args=(--root "$root" --lib "$lib")
@@ -948,6 +1017,8 @@ else
     note_fail 1 "SIMD family (run_g2_simd.py): $(grep '^checks failed' "$work/simd.log")"
 fi
 grep -E '^(class|build|paths|guarded bytes)' "$work/simd.log" | sed 's/^/   /'
+udone simd
+fi
 
 # --- 4w. G2's WINDOW family (D172 S2 commit 1): its own runner -------------
 # memfn/tests/run_g2_win.sh: GENERATED window sites (spans, cores, verify
@@ -957,6 +1028,8 @@ grep -E '^(class|build|paths|guarded bytes)' "$work/simd.log" | sed 's/^/   /'
 # the facts in guard-page and sentinel-padded layouts, its own floors and W1.
 # It links the PLAIN library: the family's walks are not rows of section 4b's
 # registry (their path ids are its own floors).
+if want win; then
+ustart win
 echo "== window: G2's window family (run_g2_win.sh)"
 if TMPDIR="$work" LIB="$plainlib" "$TO" 3000 bash "$here/run_g2_win.sh" > "$work/win.log" 2>&1; then
     passed=$((passed + 1))
@@ -966,6 +1039,8 @@ else
     note_fail 1 "window family (run_g2_win.sh): $(grep '^checks failed' "$work/win.log")"
 fi
 grep -E '^G2W (sites|paths|forms)' "$work/win.log" | sed 's/^/   /'
+udone win
+fi
 
 # --- 4y. G2's FIND-ANY family (lane simdset): its own runner ----------------
 # memfn/tests/run_g2_any.py: the STANDALONE kernel mf_kernel_find_any (find
@@ -973,6 +1048,8 @@ grep -E '^G2W (sites|paths|forms)' "$work/win.log" | sed 's/^/   /'
 # it) over a generated byte-set space, every level and ASan+UBSan, against
 # its own scalar byte loop with guard pages, plus per-level plants (~25 s).
 # It links the PLAIN library: the kernel is no row of section 4b's registry.
+if want any; then
+ustart any
 echo "== any: G2's find-any family (run_g2_any.py)"
 if TMPDIR="$work" "$TO" 900 python3 "$here/run_g2_any.py" --root "$root" --lib "$plainlib" > "$work/any.log" 2>&1; then
     passed=$((passed + 1))
@@ -982,6 +1059,8 @@ else
     note_fail 1 "find-any family (run_g2_any.py): $(grep '^checks failed' "$work/any.log")"
 fi
 grep -E '^(space|build|plants|SKIPPED|skipped)' "$work/any.log" | sed 's/^/   /'
+udone any
+fi
 
 # --- 4b. --rows: the per-ROW floor, from the kit's own REACH trace ----------
 # Sources: the `MFTRACE REACH table=T row=R chosen=N asked=A` lines of every G2
@@ -1003,14 +1082,28 @@ reach_has_lines() { [ -n "$(reach_lines "$1" | head -1)" ]; }
 # routed: its decisions are never counted as chosen, so its rows are exempt here
 # (tests/memfn/rows.tsv carries their reach as pending-site:<step>).
 rows_zero() { awk '$4 == 0 && $2 != "fd" {printf "%s/%s ", $2, $3}' "$1"; }
+want rows && ustart rows
 if [ "$rows" = 1 ]; then
+    # lane g2m7: a generator process of its OWN that makes only the MISMATCH sites, so the rows chosen
+    # for them are countable apart from every other family's (printed below). R-39: made here, in the
+    # rows unit, not at the top, so that a part without the unit does not pay for them
+    want rows && { gen "$work/mmonly" --mm-only 1 > "$work/mmonly.log" 2>&1 || { cat "$work/mmonly.log"; echo "run_g2.sh: the MISMATCH-only generator failed" >&2; exit 2; }; }
+    # lane g2m6: and one of its own for the STRIDED sites, so the rows chosen for them are countable apart too
+    want rows && { gen "$work/stonly" --stride-only 1 > "$work/stonly.log" 2>&1 || { cat "$work/stonly.log"; echo "run_g2.sh: the STRIDE-only generator failed" >&2; exit 2; }; }
     echo "== rows: kit selection-table rows chosen over the whole tier (MFTRACE REACH, summed)"
     nproc_files=0; noreach=""
     for f in "$work"/reach/*.err; do
         nproc_files=$((nproc_files + 1))
         reach_has_lines "$f" || noreach="$noreach $(basename "$f")"
     done
-    if [ -z "$noreach" ] && [ "$nproc_files" -gt 0 ]; then
+    if [ "$partial" = 1 ]; then
+        # R-39: (a)-(e) are counts over the whole population; the gather judges them from these lines.
+        # gen-gen.err is the PRELUDE generator, run by every part: its REACH lines are replicated, not summed
+        # (G2PART rowchosen-prelude vs rowchosen-other below), and it is one of the reach_procs.
+        echo "G2PART reach_procs $nproc_files"
+        for n_ in $noreach; do echo "G2PART reach_noreach $n_"; done
+        echo "G2PART floor_rows $FLOOR_ROWS"
+    elif [ -z "$noreach" ] && [ "$nproc_files" -gt 0 ]; then
         reach_pass "(d) all $nproc_files G2 kit processes printed REACH lines"
     else
         reach_fail "(d) G2 kit process(es) printed no REACH line (wrong library linked?):${noreach:- none found at all}"
@@ -1018,7 +1111,8 @@ if [ "$rows" = 1 ]; then
     # control: the generator linked against the PLAIN library must
     # trip the same (d) test
     ctl="$work/reach-control"; mkdir -p "$ctl"
-    if "$TO" 300 "$gencc" -std=gnu11 -O1 -I "$inc" "$g2/g2_gen.c" "$plainlib" -o "$ctl/gen_plain_lib" \
+    if ! want rows; then :
+    elif "$TO" 300 "$gencc" -std=gnu11 -O1 -I "$inc" "$g2/g2_gen.c" "$plainlib" -o "$ctl/gen_plain_lib" \
        && mkdir -p "$ctl/out" && "$TO" 600 "$ctl/gen_plain_lib" "$ctl/out" --seed "$seed" > /dev/null 2> "$ctl/out.err"; then
         if reach_has_lines "$ctl/out.err"; then
             reach_fail "(d) control: a generator linked against the plain library printed REACH lines (the test cannot tell)"
@@ -1033,6 +1127,17 @@ if [ "$rows" = 1 ]; then
       | awk '{ k = $1 " " $2; s[k] += $3 } END { for (k in s) print "row-chosen " k " " s[k] }' \
       | LC_ALL=C sort > "$work/row-chosen.txt"
     cat "$work/row-chosen.txt"
+    if [ "$partial" = 1 ]; then
+        # the prelude's rows and this part's other processes' rows, apart, for the gather
+        for k_ in prelude other; do
+            if [ "$k_" = prelude ]; then set -- "$work/reach/gen-gen.err"
+            else set -- $(ls "$work"/reach/*.err | grep -v '/gen-gen\.err$'); fi
+            [ $# -gt 0 ] && for f in "$@"; do reach_lines "$f"; done \
+              | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\) asked=[0-9]*$/\1 \2 \3/' \
+              | awk -v k="$k_" '{ s[$1 " " $2] += $3 } END { for (r in s) print "G2PART rowchosen-" k " " r " " s[r] }' | LC_ALL=C sort
+        done
+    fi
+    if want rows; then
     # lane g2m7: the rows the MISMATCH-only generator process chose (its own REACH lines), apart from the tier sum
     echo "== rows chosen by the MISMATCH-only generator process (MISMATCH sites alone)"
     reach_lines "$work/reach/gen-mmonly.err" | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\) asked=[0-9]*$/\1 \2 \3/' \
@@ -1054,28 +1159,34 @@ if [ "$rows" = 1 ]; then
         if [ "${c_:-0}" -ge "$v_" ]; then reach_pass "(g) STRIDED sites chose $t_/$r_ ${c_:-0} times >= floor $v_"
         else reach_fail "(g) STRIDED sites chose $t_/$r_ ${c_:-0} times < floor $v_"; fi
     done
+    fi   # want rows
     dropped=$(cat "$work"/reach/*.err | sed -n 's/^MFTRACE REACH_DROPPED n=\([0-9]*\)$/\1/p' | awk '{t += $1} END {print t + 0}')
     ndrop=$(cat "$work"/reach/*.err | grep -c '^MFTRACE REACH_DROPPED n=')
-    if [ "$dropped" = 0 ] && [ "$ndrop" -ge "$nproc_files" ]; then
+    if [ "$partial" = 1 ]; then
+        echo "G2PART reach_dropped $dropped $ndrop"
+    elif [ "$dropped" = 0 ] && [ "$ndrop" -ge "$nproc_files" ]; then
         reach_pass "(a) every REACH_DROPPED is 0 ($ndrop lines)"
     else
         reach_fail "(a) REACH_DROPPED total $dropped over $ndrop lines ($nproc_files processes)"
     fi
     zero=$(rows_zero "$work/row-chosen.txt")
-    if [ -z "$zero" ]; then
+    if [ "$partial" = 1 ]; then :
+    elif [ -z "$zero" ]; then
         reach_pass "(b) every row chosen >= 1 over the tier"
     else
         reach_fail "(b) rows never chosen: $zero"
     fi
     # control: a row-chosen file with one row zeroed must make (b) red
     awk 'NR == 1 {$4 = 0} {print}' "$work/row-chosen.txt" > "$work/row-chosen.ctl"
-    if [ -n "$(rows_zero "$work/row-chosen.ctl")" ]; then
+    if ! want rows; then :
+    elif [ -n "$(rows_zero "$work/row-chosen.ctl")" ]; then
         reach_pass "(b) control: a file with row $(rows_zero "$work/row-chosen.ctl")zeroed is red for (b)"
     else
         reach_fail "(b) control: a zeroed row was not named"
     fi
     nrows=$(wc -l < "$work/row-chosen.txt" | tr -d ' ')
-    if [ "$nrows" -ge "$FLOOR_ROWS" ]; then
+    if [ "$partial" = 1 ]; then :
+    elif [ "$nrows" -ge "$FLOOR_ROWS" ]; then
         reach_pass "(c) $nrows distinct (table,row) pairs >= floor $FLOOR_ROWS"
     else
         reach_fail "(c) $nrows distinct (table,row) pairs < floor $FLOOR_ROWS"
@@ -1085,7 +1196,9 @@ if [ "$rows" = 1 ]; then
     # PLACEHOLDER/`-` cells are skipped). Added by the kit manager at the
     # merge ([MEMFN-ROWCON] N4 follow-up); the floors are data, measured on
     # this tier, so this reads no source the generator shares.
-    if [ -n "${G2_ROW_FLOORS:-}" ]; then
+    if [ "$partial" = 1 ]; then
+        echo "rows: (a)-(e) over the whole population are judged by g2_parts.py gather (this run is a part or a slice)"
+    elif [ -n "${G2_ROW_FLOORS:-}" ]; then
         if [ ! -f "$G2_ROW_FLOORS" ]; then
             reach_fail "(e) G2_ROW_FLOORS=$G2_ROW_FLOORS is not a file"
         else
@@ -1102,8 +1215,10 @@ if [ "$rows" = 1 ]; then
         fi
     fi
 fi
+want rows && udone rows
 
 # --- 5. the verdict ------------------------------------------------------------
+s5_f0=$failed
 echo "population: generator sites $(field sites_generated) in $(field batches) batches;" \
      "refusal+API cases $nref (floor $FLOOR_REFUSALS)"
 [ "$nref" -ge "$FLOOR_REFUSALS" ] || note_fail 1 "refusal+API cases $nref < floor $FLOOR_REFUSALS"
@@ -1129,6 +1244,14 @@ cls_floor refusal-unnamed "$FLOOR_CLS_NAME"
 cls_floor fn_ref-unstated "$FLOOR_CLS_FNREF"
 cls_floor pf-edge "$FLOOR_CLS_EDGE"
 cls_floor loop-exit "$FLOOR_CLS_LOOPX"
+if [ "$partial" = 1 ]; then
+    # R-39: what the gather needs to total the parts. The prelude (generator stage) and section 5's
+    # tallies are run by every part, so they are replicated, not summed.
+    echo "G2PART part ${part:-slice} units $sel_units"
+    echo "G2PART prelude_passed $prelude_passed"
+    echo "G2PART replicated_failed $((prelude_failed + failed - s5_f0))"
+    echo "G2PART wall $SECONDS"
+fi
 echo "checks passed: $passed"
 echo "checks failed: $failed"
 if [ "$failed" -gt 0 ]; then

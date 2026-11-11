@@ -1,0 +1,39 @@
+# memfn/tests/g2_units.tsv -- the UNITS of run_g2.sh --quick (R-39) and their declared weights.
+#
+# A unit is a block of run_g2.sh that runs, judges and reports on its own: want UNIT / udone UNIT mark
+# its edges there, and `g2_parts.py assign` deals the units to the N parts of `--part K/N` by a
+# deterministic greedy rule over the weights below (heaviest first, to the lightest part so far; ties
+# to the lower part number, then to the table order). NO run-time state enters the assignment.
+# The generator stage (the prelude) is run by every part and is no unit.
+#
+# Columns (TAB-separated): unit, weight (seconds, a RELATIVE cost), weight_source.
+# SCALE: seconds a unit takes ALONE on the Linux dev box at G2_JOBS=2, nice 10 (lane r39's slice runs, 2026-11-10/11, each
+# `--units NAME`). Two units could not be run alone without being a full run's longest leg (gcc, simd): their weight is the
+# 2026-11-03 CI log's seconds divided by 1.4, the CI/box ratio of the units both measured (win 59/53, any 36/23, k1 19/13).
+# Re-weight from the `G2UNIT name seconds` lines of a split run (a part's units overlap in time, so these
+# are wall seconds inside the part, not CPU): scripts of the gate job 591 print them. A weight is a
+# balance input only; a wrong weight costs balance, never coverage (g2_parts.py gather proves coverage).
+gcc	250	ci-derived: 351 s (2026-11-03 CI log, 16:37:46 -> 16:43:38, the foreground gcc answer run, a single-threaded driver) / 1.4
+simd	140	ci-derived: 195 s (same log, run_g2_simd.py) / 1.4
+asan	103	measured alone: `--units asan` (sampled clang ASan+UBSan build and driver run)
+win	53	measured alone: `--units win`
+w1w3	50	measured alone: `--units w1w3` (the sampled gcc build, ten W1 driver runs, W3)
+any	23	measured alone: `--units any`
+k1	13	measured alone: `--units k1` (libc record + both K1 builds)
+rows	7	measured alone: `--units rows` (the MISMATCH-only and STRIDE-only generators, the plain-library control)
+w2-1	41	measured alone: `--units w2-1`
+w2-2	38	ESTIMATED: as w2-1 and w2-5 (sampled batches, a text mutation)
+w2-3	38	ESTIMATED: as w2-2
+w2-4	38	ESTIMATED: as w2-2
+w2-5	36	measured alone: `--units w2-5`
+w2-6	38	ESTIMATED: as w2-2
+w2-7	38	ESTIMATED: as w2-2
+w2-8	14	measured alone: `--units w2-8` (the pending-only batches)
+w2-9	2	measured alone: `--units w2-9` (the MISMATCH sites only)
+w2-10	2	ESTIMATED: as w2-9
+w2-11	2	ESTIMATED: as w2-9
+w2-12	16	measured alone: `--units w2-12` (the strided sites only)
+w2-13	16	ESTIMATED: as w2-12
+w2-14	16	ESTIMATED: as w2-12
+w2-15	16	ESTIMATED: as w2-12
+w2-16	16	ESTIMATED: as w2-12
