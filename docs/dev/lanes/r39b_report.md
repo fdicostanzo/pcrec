@@ -47,4 +47,6 @@ OWED: jobs 564 and 565 (full-size part walls vs the prediction, the unsplit-vs-s
 - [x] Gate jobs 563/564/565 prepared, dry-run, not queued; 564 checks max <= 1.5 x min.
 - [ ] Real N=4 balance at full size: job 564.
 
-STATE AT HANDOFF: committed on `lane/memfn-r39b`; nothing running; scratch `/var/tmp/pcrec-pcrec/scratch/memfn/r39b/`.
+## STATE AT HANDOFF
+
+committed on `lane/memfn-r39b`; nothing running; scratch `/var/tmp/pcrec-pcrec/scratch/memfn/r39b/`.
