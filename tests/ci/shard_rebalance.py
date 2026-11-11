@@ -5,6 +5,8 @@ weights with the runner's MEASURED section times, and re-balance ([CI-SHARD]).
   python3 tests/ci/shard_rebalance.py --measured sections-1.tsv sections-2.tsv ...
   python3 tests/ci/shard_rebalance.py --assign-only      # keep weights, re-balance
   ... add --write to rewrite the table (default: print the proposal, change nothing)
+  --table FILE --shards N : balance a COPY of the table (tests/ci/cloud_plan.py does, for the cloud kind)
+  --median : weight = median over every file that measured the section (several green runs)
 
 Each --measured file is a CI `build/ci/sections.tsv` (scripts/sectiontimes
 report output; the three `pcrec-ci-sections-*` artifacts of one run). A row
@@ -43,8 +45,9 @@ def load(path):
     return head, rows
 
 
-def measured(paths, names):
+def measured(paths, names, median=False):
     best = {}  # name -> (complete, wall, label)
+    walls = {}  # name -> [complete walls], for --median
     for p in paths:
         label = p.rsplit("/", 1)[-1]
         with open(p) as f:
@@ -58,8 +61,15 @@ def measured(paths, names):
                     continue
                 complete = not (len(c) > 4 and c[4] == "open")
                 old = best.get(c[0])
+                if complete:
+                    walls.setdefault(c[0], []).append(wall)
                 if old is None or (complete and not old[0]):
                     best[c[0]] = (complete, wall, label)
+    if median:
+        for n, w in walls.items():
+            w.sort()
+            m = w[len(w) // 2] if len(w) % 2 else (w[len(w) // 2 - 1] + w[len(w) // 2]) / 2
+            best[n] = (True, m, "median of %d files" % len(w))
     return best
 
 
@@ -78,6 +88,8 @@ def main():
     ap.add_argument("--assign-only", action="store_true")
     ap.add_argument("--shards", type=int)
     ap.add_argument("--table", default=TABLE)
+    ap.add_argument("--median", action="store_true",
+                    help="weight = median wall over the complete measurements in all --measured files")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
     if not a.measured and not a.assign_only:
@@ -92,7 +104,7 @@ def main():
     names = {r[0] for r in rows}
     unmeasured = []
     if a.measured:
-        m = measured(a.measured, names)
+        m = measured(a.measured, names, a.median)
         for r in rows:
             if r[0] in m:
                 complete, wall, label = m[r[0]]

@@ -59,6 +59,12 @@
 #   CI-CANCELLED <sha> <run id> <subject>  the NEWEST completed main run was cancelled and no later run
 #                                          is still running or queued (a push cancels the running job; a
 #                                          cancel superseded by a later run is not an event). Green: silent.
+#   CLOUD-DONE NAME owner=O kind=K verdict=GREEN|RED conclusion=C run=ID sha=S branch=B :: URL
+#                                          a cloud run (scripts/cloudrun, [CLOUD-SUITE]) ENDED: one per ledger row, the same
+#                                          one-line shape as a queue job's JOB-DONE; NAME = OWNER-KIND-NAME. The verdict is the
+#                                          workflow's own (its gather job fails unless every expected shard reported rc 0). The
+#                                          ledger is CLOUDRUN_LEDGER else QUEUE/.cloudrun/ledger.tsv; each row asks `cloudrun
+#                                          --verdict` (a `gh run list`) at most every --ci-every s; --no-ci turns it off too.
 #   CI-UNAVAILABLE <reason>                gh missing / not logged in / network / unreadable answer; once,
 #                                          re-armed when gh works again; never stops the queue events
 # Other exits: 6 CAP (nothing new in --max-sec: relaunch), 2 queue missing, 64 usage, 75 state in use.
@@ -362,9 +368,30 @@ ci() {
     return 0
 }
 
+# cloud: CLOUD-DONE for each ledger row (scripts/cloudrun) whose run has a verdict and is not yet reported.
+# Same cadence and replay as ci() (state.cloud.last / state.cloud.out); a pending run or a gh failure prints nothing.
+cloud() {
+    [ "$noci" = 1 ] && return 0
+    local lg=${CLOUDRUN_LEDGER:-$Q/.cloudrun/ledger.tsv} now last o k n br sha v rid concl url out=""
+    [ -f "$lg" ] || return 0
+    now=$(date +%s); last=$(cat "$state.cloud.last" 2>/dev/null || echo 0)
+    if [ $((now - last)) -ge "$ci_every" ]; then
+        echo "$now" > "$state.cloud.last"
+        while IFS=$'\t' read -r _ _ o k n br sha; do
+            seen "cloud|$br|$sha" && continue
+            read -r v rid concl url < <(bash "$here/cloudrun" --verdict "$br" "$sha" 9>&-)
+            case $v in GREEN|RED) out="$out$(printf 'cloud|%s|%s\t0\tCLOUD-DONE %s-%s-%s owner=%s kind=%s verdict=%s conclusion=%s run=%s sha=%s branch=%s :: %s' \
+                "$br" "$sha" "$o" "$k" "$n" "$o" "$k" "$v" "$concl" "$rid" "${sha:0:9}" "$br" "$url")"$'\n' ;; esac
+        done < <(awk -F'\t' '$1 == "R"' "$lg")
+        printf '%s' "$out" > "$state.cloud.out"
+    fi
+    cat "$state.cloud.out" 2>/dev/null
+    return 0
+}
+
 pick() { # pick: the first event not yet reported, as ID<TAB>LINE (nothing if none)
     local id closed line all
-    all=$(lifecycle; conditions; ci)    # fully evaluated first: a producer left running would hold the state lock (fd 9)
+    all=$(lifecycle; conditions; ci; cloud)    # fully evaluated first: a producer left running would hold the state lock (fd 9)
     while IFS=$'\t' read -r id closed line; do
         [ -n "$id" ] || continue
         seen "$id" && continue

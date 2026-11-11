@@ -1,0 +1,148 @@
+name: Cloud
+
+# [CLOUD-SUITE] piece A: a casual `make test` on ANY branch, as the same sharded jobs CI runs, plus ONE
+# verdict. Trigger = a push of a `cloud/<owner>/<kind>/<name>` branch (scripts/cloudrun pushes it; no
+# default-branch dispatch needed). owner = main|kit|<lane> (who is told the verdict: queuewatch reads it
+# through `gh`, zero model calls); kind = a row of the kinds table, and the plan job refuses a kind it does
+# not define or an owner the row does not allow.
+#
+# THE KINDS TABLE: tests/ci/cloud_kinds.tsv (kind, command, selector, shards, max_parallel, limit, needs,
+# owners) is read through tests/ci/cloud_kinds.sh by the plan job below, by scripts/cloudrun and by the gather;
+# nothing in this file names a kind (tests/ci/cloud_check.sh holds that). The shard list, the matrix width, the
+# per-shard limit and the command a shard runs all come from the plan job's outputs.
+#
+# SHARED SETUP: the runner setup (python, pinned libpcre2, make) is .github/actions/shard-setup, the same
+# composite ci.yml uses; the shard STEP itself stays here because its limit and result handling differ.
+#
+# NOT cancelled by a later push (cancel-in-progress false, own group per branch): a verdict is wanted from
+# every run. fail-fast false: a red shard never cancels the others. Every shard uploads a result (log, rc,
+# CPU flags, make error lines) as `cloud-shard-<slug>`, <slug> from `cloud_gather.sh slug` -- the same
+# function the gather reads with; `gather` (if: always()) builds the ONE verdict from them: GREEN only if
+# every EXPECTED shard reported rc 0, a missing/cancelled/timed-out shard is RED by name.
+on:
+  push:
+    branches: ['cloud/**']
+
+concurrency:
+  group: cloud-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      shards: ${{ steps.p.outputs.shards }}
+      matrix: ${{ steps.p.outputs.matrix }}
+      max_parallel: ${{ steps.p.outputs.max_parallel }}
+      limit_min: ${{ steps.p.outputs.limit_min }}
+      job_limit_min: ${{ steps.p.outputs.job_limit_min }}
+      owner: ${{ steps.p.outputs.owner }}
+      kind: ${{ steps.p.outputs.kind }}
+      name: ${{ steps.p.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse cloud/OWNER/KIND/NAME and plan the kind from the kinds table
+        id: p
+        run: |
+          set -eu
+          IFS=/ read -r _ owner kind name <<<"$GITHUB_REF_NAME"
+          [ -n "${name:-}" ] || { echo "branch '$GITHUB_REF_NAME' is not cloud/OWNER/KIND/NAME" >&2; exit 1; }
+          bash tests/ci/cloud_kinds.sh plan "$kind" "$owner" > plan.txt
+          { cat plan.txt; echo "job_limit_min=$(( $(sed -n 's/^limit_min=//p' plan.txt) + 15 ))"; echo "owner=$owner"; echo "kind=$kind"; echo "name=$name"; } >> "$GITHUB_OUTPUT"
+          cat plan.txt; echo "owner=$owner kind=$kind name=$name"
+
+  shard:
+    needs: plan
+    name: shard (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJSON(needs.plan.outputs.max_parallel) }}
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    # Backstop: setup + the kind's per-shard limit + the record/upload steps.
+    timeout-minutes: ${{ fromJSON(needs.plan.outputs.job_limit_min) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/shard-setup
+      - name: make strict
+        if: startsWith(matrix.shard, '1/')
+        run: make strict
+      # The shard step: the kinds table's command for this shard. Its exit status is also written to
+      # build/cloudout/rc so the record step can tell "rc=2" from "killed by the step timeout" (no rc file =>
+      # rc=none => RED).
+      - name: Run the shard
+        timeout-minutes: ${{ fromJSON(needs.plan.outputs.limit_min) }}
+        run: |
+          mkdir -p build/ci build/cloudout
+          rm -f build/cloudout/rc
+          cmd=$(bash tests/ci/cloud_kinds.sh command "${{ needs.plan.outputs.kind }}" "${{ matrix.shard }}")
+          echo "shard command: $cmd"
+          set +e
+          set -o pipefail
+          { time bash -c "$cmd"; } 2>&1 \
+            | python3 scripts/sectiontimes stamp build/ci/sections.raw \
+            | tee build/ci/test.log
+          rc=${PIPESTATUS[0]}
+          echo "$rc" > build/cloudout/rc
+          exit "$rc"
+      - name: Record the shard result (rc, CPU flags, SKIP lines, make error lines)
+        id: rec
+        if: always()
+        run: |
+          mkdir -p build/cloudout
+          bash tests/ci/cloud_gather.sh record "${{ matrix.shard }}" "$(cat build/cloudout/rc 2>/dev/null || echo none)" \
+            build/ci/test.log build/cloudout/result.txt
+          cp -f build/ci/test.log build/ci/sections.tsv build/watchdog.log build/cloudout/ 2>/dev/null || true
+          echo "slug=$(bash tests/ci/cloud_gather.sh slug "${{ matrix.shard }}")" >> "$GITHUB_OUTPUT"
+          cut -c1-300 build/cloudout/result.txt
+      # The artifact's root IS build/cloudout (one path), so the gather finds result.txt at
+      # results/cloud-shard-<slug>/result.txt.
+      - name: Upload the shard result and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-shard-${{ steps.rec.outputs.slug }}
+          path: build/cloudout
+          if-no-files-found: warn
+          retention-days: 14
+
+  gather:
+    needs: [plan, shard]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cloud-shard-*
+          path: results
+        continue-on-error: true
+      - name: One verdict
+        run: |
+          set -u
+          mkdir -p results out
+          set +e
+          bash tests/ci/cloud_gather.sh gather "${{ needs.plan.outputs.shards }}" results out/verdict.txt \
+            branch="$GITHUB_REF_NAME" sha="$GITHUB_SHA" owner="${{ needs.plan.outputs.owner }}" \
+            kind="${{ needs.plan.outputs.kind }}" name="${{ needs.plan.outputs.name }}" run="$GITHUB_RUN_ID" \
+            url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            plan_result="${{ needs.plan.result }}" shard_job_result="${{ needs.shard.result }}"
+          rc=$?
+          cat out/verdict.txt
+          exit "$rc"
+      - name: Upload the verdict
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-verdict
+          path: out/verdict.txt
+          if-no-files-found: warn
+          retention-days: 30

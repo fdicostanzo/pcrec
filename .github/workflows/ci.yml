@@ -84,96 +84,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      # python `re` is the base-tier oracle (tests/harness/verify_rxt.py) and
-      # what it accepts moves between releases (`\z` is python 3.14+), which
-      # moves the C3 populations in tests/rxtsource. The runner image's
-      # system python is whatever the image ships (3.12 at the time of run
-      # 40035626306); pin it to the dev box's and ubuntubudu's 3.14 so CI's
-      # oracle IS the reference oracle.
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-
-      # pkg-config itself ships on ubuntu-latest images already; named
-      # explicitly here so a future, leaner runner image doesn't silently
-      # fall back to resolve_pcre2.sh's slower header-probe leg. Nothing
-      # named `libpcre2` is installed via apt at all -- see below, the
-      # pinned 10.46 build is the ONLY libpcre2-8 pkg-config sees.
-      - name: Install build tools (pkg-config)
-        run: sudo apt-get update && sudo apt-get install -y pkg-config
-
-      # [REL-1.6]/D98: build the PINNED libpcre2 10.46 from the official
-      # release tarball rather than trusting a distro package (see the job
-      # header comment for run 1's measurement of what trusting apt cost).
-      # Cached by version+os so a cache hit — every run after the first —
-      # pays nothing for this step; bump the cache key's `v2` suffix if the
-      # pin ever moves or the configure flags change again. DEFAULT
-      # CONFIGURE (shared AND static), NOT
-      # `--disable-shared` — measured locally (darwin, this lane) before
-      # settling on this shape: a static-only build makes `pcre2_abi_path()`
-      # resolve to the TEST BINARY itself (there is no separate library file
-      # for `dladdr` to name), which is exactly what `pool_from_library`'s
-      # anti-circularity design (D98/[ORACLE-LINK]'s own header) depends on
-      # NOT happening — it reads the resolved path's ASCII runs to build the
-      # verb-name candidate pool INDEPENDENTLY of pcrec's own table, and
-      # reading the test binary instead pulls in pcrec's own strings too,
-      # moving the pinned probe count from 149804 to 234580 (measured, this
-      # session). A default (shared+static) build resolves the real,
-      # separate `.so`, matching the shape the 149804 pin was measured
-      # against.
-      - name: Cache libpcre2 10.46 (D98 pin)
-        id: cache-pcre2-10-46
-        uses: actions/cache@v4
-        with:
-          path: ${{ runner.temp }}/pcre2-10.46
-          key: pcre2-10.46-${{ runner.os }}-v2
-
-      - name: Build libpcre2 10.46 from source (D98 pin)
-        if: steps.cache-pcre2-10-46.outputs.cache-hit != 'true'
-        run: |
-          set -eu
-          curl -fsSL -o "$RUNNER_TEMP/pcre2-10.46.tar.bz2" \
-            https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.46/pcre2-10.46.tar.bz2
-          mkdir -p "$RUNNER_TEMP/pcre2-10.46-src"
-          tar xjf "$RUNNER_TEMP/pcre2-10.46.tar.bz2" -C "$RUNNER_TEMP/pcre2-10.46-src" --strip-components=1
-          cd "$RUNNER_TEMP/pcre2-10.46-src"
-          ./configure --prefix="$RUNNER_TEMP/pcre2-10.46"
-          make -j"$(nproc)"
-          make install
-
-      # PKG_CONFIG_PATH takes priority over pkg-config's own default search
-      # path, so putting the pinned build's .pc directory there is enough
-      # to make `pkg-config libpcre2-8` (tests/lib/resolve_pcre2.sh's own
-      # resolution point, used identically by every PC-3/PC-4/definitions-
-      # oracle/uprops consumer) resolve THIS copy — no distro libpcre2
-      # package is installed at all, so there is nothing else it could
-      # resolve to instead (verified below, not merely assumed).
-      # LD_LIBRARY_PATH is needed too, now that the build is shared-capable
-      # by default: every gcc-linked consumer of `-lpcre2-8` will prefer
-      # the pinned `.so` at LINK time (pkg-config's `-L` puts it first on
-      # the search path) but still needs the DYNAMIC LOADER to find it at
-      # RUN time, since it is not installed anywhere on the runner's
-      # default library search path.
-      - name: Point PC-3's oracle at the pinned 10.46 build
-        run: |
-          echo "PKG_CONFIG_PATH=$RUNNER_TEMP/pcre2-10.46/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
-          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/pcre2-10.46/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
-
-      - name: Verify libpcre2 resolves to the pin, not a distro package
-        run: |
-          set -eu
-          ver="$(pkg-config --modversion libpcre2-8)"
-          echo "resolved libpcre2: $ver"
-          case "$ver" in
-            10.46) ;;
-            *) echo "expected 10.46, pkg-config resolved '$ver' instead -- PKG_CONFIG_PATH ordering or the cache is wrong" >&2; exit 1 ;;
-          esac
-
-      - name: Compiler version
-        run: gcc --version
-
-      - name: Build (make)
-        run: make -j"$(nproc)"
+      # The runner setup -- python 3.14 (the base-tier oracle's version: what `re` accepts moves between
+      # releases, `\z` is 3.14+, which moves the C3 populations in tests/rxtsource), pkg-config, the PINNED
+      # libpcre2 10.46 built from the release tarball and cached (D98: never a distro package; run 1,
+      # 35675372280, measured what trusting apt cost), PC-3's oracle pointed at it and verified, `gcc
+      # --version`, `make` -- lives in ONE place, .github/actions/shard-setup/action.yml, shared with
+      # cloud-test.yml ([CLOUD-SUITE] B). Its comments carry the history that used to sit here; the steps,
+      # their order and the cache key are the ones this file had.
+      - uses: ./.github/actions/shard-setup
 
       # Opt-in warnings-as-errors gate (R5-Q1: NOT the default `make`/`make
       # test`, so a stranger's build never breaks on a newer gcc's new

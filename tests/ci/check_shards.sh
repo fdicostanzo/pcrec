@@ -21,7 +21,8 @@
 # --selftest plants one defect per check into COPIES (the table and ci.yml),
 # runs this script on each, and requires red AND the expected token in the
 # output -- a control that never fired in the failing direction is not a
-# control. TABLE= and CI_YML= override the two input paths.
+# control. TABLE= and CI_YML= override the two input paths (CI_YML=none skips check 5; CISHARD_TABLE= redirects
+# `--list` only, so `make test-shard` can run another table).
 
 set -u
 here=$(cd "$(dirname "$0")" && pwd)
@@ -32,6 +33,7 @@ CI_YML=${CI_YML:-$root/.github/workflows/ci.yml}
 table_rows() { grep -v '^#' "$TABLE" | awk -F'\t' 'NR > 1 && NF'; }
 
 if [ "${1:-}" = "--list" ]; then
+    TABLE=${CISHARD_TABLE:-$TABLE}   # [CLOUD-SUITE] B: the cloud kind runs its own table through `make test-shard`
     k=${2:-}; case "$k" in [0-9]*/[0-9]*) ;; *) echo "check_shards: --list wants K/N, got '$k'" >&2; exit 2 ;; esac
     n=$(sed -n 's/^# shards=\([0-9][0-9]*\)$/\1/p' "$TABLE")
     [ "${k#*/}" = "$n" ] || { echo "check_shards: SHARD '$k' does not match the table's shards=$n" >&2; exit 2; }
@@ -74,6 +76,10 @@ check() {
     done
     # 5: the workflow matrix
     local line want have
+    if [ "$CI_YML" = none ]; then   # [CLOUD-SUITE] B: a table that is not ci.yml's (cloud_check.sh) has no matrix line
+        [ "$bad" = 0 ] && echo "shards: ${#sections[@]} sections in exactly one of $n shards (no workflow matrix checked)"
+        return $bad
+    fi
     line=$(grep -E '^[[:space:]]*shard:' "$CI_YML" | head -1)
     have=$(printf '%s' "$line" | grep -oE '[0-9]+/[0-9]+' | sort | tr '\n' ' ')
     want=$(for k in $(seq 1 "$n"); do echo "$k/$n"; done | sort | tr '\n' ' ')

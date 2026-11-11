@@ -1,0 +1,16 @@
+# tests/ci/cloud_kinds.tsv -- the DECLARED kinds of a cloud run ([CLOUD-SUITE] B, requirement 7). ONE table, read by
+# the workflow's plan job, scripts/cloudrun and tests/ci/cloud_gather.sh through tests/ci/cloud_kinds.sh; no
+# code names a kind (tests/ci/cloud_check.sh holds that). A new kind is a new row.
+#
+# Columns (TAB-separated):
+#   kind        the KIND in the branch cloud/OWNER/KIND/NAME
+#   command     what one shard runs; {shard} = K/N, {selector} = the selector column
+#   selector    what picks a shard's work (for test: the declared shard table; `-` = none)
+#   shards      N, or `table` = the `# shards=N` line of the selector file
+#   max_parallel  shards that run at once (a shard count above it queues in waves)
+#   limit_min   per-shard step limit in minutes (a shard past it is RED by name, never green)
+#   needs       setup the shard needs: `pcre2` = the pinned libpcre2 10.46 build; `-` = none. shard-setup provides exactly this set today
+#               (cloud_check.sh refuses a value it cannot provide)
+#   owners      who may start it: `*` = any owner, else a comma list
+kind	command	selector	shards	max_parallel	limit_min	needs	owners
+test	CISHARD_TABLE={selector} make --debug=j test-shard CISHARD={shard}	tests/ci/cloud_test_shards.tsv	table	20	35	pcre2	*

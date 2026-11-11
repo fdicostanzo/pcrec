@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# cloudrun — start a cloud run of the suite and EXIT; never waits ([CLOUD-SUITE] piece A).
+# Pushes a commit to the branch cloud/OWNER/KIND/NAME, which triggers .github/workflows/cloud-test.yml
+# (the same shard jobs as CI, one verdict). Records the run in a small ledger and prints ONE line. The
+# verdict reaches OWNER through scripts/queuewatch (`gh run list`, zero model calls) as a CLOUD-DONE line;
+# no lane or agent polls the run. A lane runs this as its LAST act and ENDS (as with boxqueue add).
+#
+#   scripts/cloudrun --owner O --kind K [--name N] [--ref REF] [--dry-run]
+#       O     main | kit | a lane name (who is told the verdict)         REQUIRED (no presumed owner)
+#       K     a kind declared in tests/ci/cloud_kinds.tsv (`bash tests/ci/cloud_kinds.sh kinds`); an undeclared
+#             kind, or an owner the row does not allow, is refused HERE (and again by the workflow's plan job)
+#       N     [A-Za-z0-9._-]+, default <REF with / -> -, or HEAD>-<7-char sha>
+#       REF   a ref or commit to push, default HEAD
+#       --dry-run   print what would be pushed and recorded; push nothing, write nothing
+#   scripts/cloudrun --prune [--dry-run]    delete the remote cloud/ branches whose run has a verdict
+#                   (completed, any conclusion); a run still pending/absent keeps its branch
+#   scripts/cloudrun --list                 the ledger, one line per run, with the branch's current state
+#   scripts/cloudrun --verdict BRANCH SHA   `GREEN|RED|PENDING|NONE RUNID CONCLUSION URL` for the run of
+#                   that branch at that commit, from `gh run list` (what queuewatch and --prune ask)
+# Ledger: <box queue dir>/.cloudrun/ledger.tsv (env CLOUDRUN_LEDGER), TSV, append-only:
+#   `R epoch owner kind name branch sha` for a run, `P epoch branch` when pruned.
+# Env: CLOUDRUN_REMOTE (default origin). Pushing a cloud/ branch is the ONLY ref this ever writes;
+# it never pushes main or any other ref and never triggers ci.yml (ci.yml runs on PRs and main only).
+# Exit: 0 ok, 1 push/gh failed, 64 usage.
+set -u
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+root=$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)
+remote=${CLOUDRUN_REMOTE:-origin}
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null; TO=${TIMEOUT_BIN:-timeout}
+ledger=${CLOUDRUN_LEDGER:-}
+if [ -z "$ledger" ]; then q=$(bash "$here/boxqueue" path 2>/dev/null); ledger=${q:-${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}}/.cloudrun/ledger.tsv; fi
+usage() { sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//' >&2; exit 64; }
+die() { echo "cloudrun: $*" >&2; exit "${2:-64}"; }
+
+verdict() { # verdict BRANCH SHA -> `GREEN|RED|PENDING|NONE RUNID CONCLUSION URL`
+    local out
+    command -v gh >/dev/null 2>&1 || { echo "NONE - gh-missing -"; return 1; }
+    out=$(cd "$root" && "$TO" 60 gh run list --workflow cloud-test.yml --branch "$1" --limit 20 \
+        --json databaseId,headSha,status,conclusion,url 2>&1) || { echo "NONE - gh-failed -"; return 1; }
+    printf '%s' "$out" | python3 -I -c '
+import sys, json
+sha = sys.argv[1]
+runs = [r for r in json.load(sys.stdin) if r["headSha"] == sha]
+if not runs: print("NONE - - -"); sys.exit()
+r = runs[0]    # newest first
+if r["status"] != "completed": print("PENDING %s %s %s" % (r["databaseId"], r["status"], r["url"])); sys.exit()
+print("%s %s %s %s" % ("GREEN" if r["conclusion"] == "success" else "RED", r["databaseId"], r["conclusion"], r["url"]))
+' "$2" 2>/dev/null || { echo "NONE - unreadable -"; return 1; }
+}
+
+mode=run owner="" kind="" name="" ref=HEAD dry=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --owner) owner=${2-}; shift 2 || usage ;; --kind) kind=${2-}; shift 2 || usage ;; --name) name=${2-}; shift 2 || usage ;;
+        --ref) ref=${2-}; shift 2 || usage ;; --dry-run) dry=1; shift ;;
+        --prune) mode=prune; shift ;; --list) mode=list; shift ;;
+        --verdict) [ $# -eq 3 ] || usage; verdict "$2" "$3"; exit $? ;;
+        -h|--help) usage ;; *) die "unknown argument $1" ;;
+    esac
+done
+[ -n "$root" ] || die "not inside the pcrec tree" 1
+
+case $mode in
+list)
+    [ -f "$ledger" ] || { echo "cloudrun: no ledger yet ($ledger)"; exit 0; }
+    awk -F'\t' '$1 == "P" { p[$3] = 1 } $1 == "R" { r[++n] = $0 } END { for (i = 1; i <= n; i++) { split(r[i], f, "\t"); print f[2], f[3], f[4], f[5], f[6], substr(f[7], 1, 9), (f[6] in p) ? "pruned" : "kept" } }' "$ledger"; exit 0 ;;
+prune)
+    [ -f "$ledger" ] || { echo "cloudrun: DONE rc=0 pruned 0 (no ledger)"; exit 0; }
+    n=0 kept=0 rc=0
+    # the newest run row of each branch not yet pruned
+    while IFS=$'\t' read -r _ _ _ _ _ br sha; do
+        read -r v id concl _ < <(verdict "$br" "$sha")
+        case $v in
+            GREEN|RED)
+                if [ $dry = 1 ]; then echo "cloudrun: would delete $br ($v run $id $concl)"; n=$((n+1)); continue; fi
+                if "$TO" 60 git -C "$root" push -q "$remote" --delete "$br" 2>/dev/null; then
+                    printf 'P\t%s\t%s\n' "$(date +%s)" "$br" >> "$ledger"; n=$((n+1))
+                else echo "cloudrun: could not delete $br" >&2; rc=1; fi ;;
+            *) kept=$((kept+1)) ;;
+        esac
+    done < <(awk -F'\t' '$1 == "P" { p[$3] = 1 } $1 == "R" { last[$6] = $0 } END { for (b in last) if (!(b in p)) print last[b] }' "$ledger")
+    echo "cloudrun: DONE rc=$rc pruned $n, kept $kept (no verdict yet)"; exit $rc ;;
+esac
+
+# run mode
+[ -n "$owner" ] || die "--owner is required (main|kit|a lane name)"
+[ -n "$kind" ] || die "--kind is required (a kind declared in tests/ci/cloud_kinds.tsv)"
+case $owner$kind in *[!A-Za-z0-9._-]*) die "owner and kind must be [A-Za-z0-9._-]+" ;; esac
+kinds_sh=$root/tests/ci/cloud_kinds.sh
+bash "$kinds_sh" get "$kind" kind >/dev/null 2>&1 || die "kind '$kind' is not declared in tests/ci/cloud_kinds.tsv (declared: $(bash "$kinds_sh" kinds 2>/dev/null | tr '\n' ' '))"
+bash "$kinds_sh" owner-ok "$kind" "$owner" || die "owner '$owner' may not start kind '$kind' (owners: $(bash "$kinds_sh" get "$kind" owners))"
+sha=$(git -C "$root" rev-parse --verify -q "$ref^{commit}") || die "cannot resolve '$ref' to a commit" 1
+if [ -z "$name" ]; then
+    base=$(printf '%s' "$ref" | tr '/' '-' | tr -c 'A-Za-z0-9._\n-' '-')
+    name=$base-${sha:0:7}
+fi
+case $name in ''|*[!A-Za-z0-9._-]*) die "name must be [A-Za-z0-9._-]+ (got '$name')" ;; esac
+branch=cloud/$owner/$kind/$name
+if "$TO" 60 git -C "$root" ls-remote --exit-code --heads "$remote" "$branch" >/dev/null 2>&1; then
+    die "$branch already exists on $remote (a push to it starts no new run): pick another --name, or --prune" 1
+fi
+if [ $dry = 1 ]; then echo "cloudrun: DRY-RUN would push ${sha:0:9} -> $remote $branch and record owner=$owner kind=$kind in $ledger"; exit 0; fi
+"$TO" 120 git -C "$root" push -q "$remote" "$sha:refs/heads/$branch" || die "push of $branch to $remote failed" 1
+mkdir -p "$(dirname "$ledger")"
+printf 'R\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date +%s)" "$owner" "$kind" "$name" "$branch" "$sha" >> "$ledger"
+echo "cloudrun: DONE rc=0 pushed ${sha:0:9} -> $branch owner=$owner kind=$kind; verdict arrives as CLOUD-DONE via queuewatch (not waiting)"
