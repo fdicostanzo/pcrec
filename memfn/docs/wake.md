@@ -26,6 +26,7 @@ Kit worktree: worktrees/memfn on branch lane/memfn-k1108 (ledger/journal commits
 - R-39 (g2 shard selector, Frank GO 11-11, approved exception): r39 split CORRECT (561 green) but UNBALANCED (92/267/87/107 s; simd unit 221 s). R-39 DONE line posted 11-11 09:30 (lane/memfn-r39b @ 119e1b6f5); main merges (Frank 11-11: cloud make test first).
 - K38-2 GO (Frank 11-11 "finish it now"): lane k382 (opus) RUNNING on lane/memfn-k382 (worktrees/k382); then critic round, gates 600-609 + cloudrun; then K38-3. Main sequences the abi re-bump.
 - CLOUD: make test/axes/ubsan/asan stages go via scripts/cloudrun --owner kit --kind K, not the box queue.
+- FRANK SETS (11-11): S0 K38-2a/kclose/K38-2 -> S1 K38-3 (+ 3.0b proposed) beside S2 Part D (GO at K38-2 landing) -> S3 Part C (if the measurement pays). OWED: kit-only candidate list with triggers to main at K38-2 critic round.
 - Pending main: the master row over conditionals/predicates/intersection (Frank 11-10); main runs the survey and sends the
   design for kit comment. Doc-index ledger format agreed (doc_index_format.md §8.1): convert responses.md once main's kit profile exists.
 - Kit ruling on record: K38-2a made the in-run stop a counted reader (done).
