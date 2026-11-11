@@ -865,6 +865,34 @@ def is_known_pcre2_quirk(pattern):
     return bool(_ANCHOR_IN_ZERO_REP.search(pattern)) and ("^" in pattern or "$" in pattern)
 
 
+# KNOWN CLASS "vlookbehind-stage2": pcrec cleanly REFUSES a lookbehind whose
+# length is known only when matching (backreference, variable, consuming
+# callout) while libpcre2 accepts it. That is [VLOOKBEHIND] stage 2's
+# documented, not-yet-built scope (scripts/entry VLOOKBEHIND -l 1): a clean
+# refusal, never a miscompile. Keyed to the refusal's exact message family AND
+# the "pcrec REJECTS, pcre2 ACCEPTS" direction; every other mismatch stays a
+# divergence. THIS CLASS RETIRES when [VLOOKBEHIND] stage 2 lands: delete
+# _VLB_STAGE2_MSG, is_known_vlookbehind_stage2_refusal, its stats key, its
+# printed line and its self-test rows (the stage-2 brief is told to).
+_VLB_STAGE2_MSG = "a lookbehind containing a backreference, a variable or a consuming callout is not implemented"
+
+def is_known_vlookbehind_stage2_refusal(kind, pcrec_err):
+    return kind == "pcrec REJECTS, pcre2 ACCEPTS" and _VLB_STAGE2_MSG in (pcrec_err or "")
+
+
+def self_test():
+    """`fuzz.py --self-test`: the known-class predicates, no oracle needed."""
+    rej = "pcrec REJECTS, pcre2 ACCEPTS"
+    ok = is_known_vlookbehind_stage2_refusal
+    assert ok(rej, "pcrec: " + _VLB_STAGE2_MSG + " (its length is known only when matching)")
+    assert not ok(rej, "requires module 'atomic-groups'")
+    assert not ok(rej, "")
+    assert not ok(rej, None)
+    assert not ok("pcrec ACCEPTS, pcre2 REJECTS", _VLB_STAGE2_MSG)
+    print("fuzz self-test: ok")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description="PCRE2-oracle differential fuzzer for pcrec")
     ap.add_argument("--seed", type=int, default=1)
@@ -876,7 +904,10 @@ def main():
                     help="pattern alphabet: base (the default, unchanged) or extended "
                          "(adds EXTENDED_TEMPLATES, compiled with EXTENDED_FEATURES)")
     ap.add_argument("--features", default=None, help="pcrec --features text (default: pcrec's own default; --set extended implies EXTENDED_FEATURES)")
+    ap.add_argument("--self-test", action="store_true", help="run the known-class predicate checks and exit")
     args = ap.parse_args()
+    if args.self_test:
+        return self_test()
 
     global FEATURES
     FEATURES = args.features or (EXTENDED_FEATURES if args.set == "extended" else None)
@@ -904,7 +935,7 @@ def main():
     stats = {"patterns": 0, "both_accept": 0, "both_reject": 0,
              "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0, "size_cap": 0,
              "gcc_fail": 0, "oversize": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
-             "pcre2_quirk": 0, "engine_limit": 0, "oracle_probe_timeout": 0,
+             "pcre2_quirk": 0, "vlb_stage2": 0, "engine_limit": 0, "oracle_probe_timeout": 0,
              "engine_steps": 0, "engine_frames": 0, "pcrec_compile_timeout": 0,
              "module_construct": 0}
 
@@ -1179,6 +1210,9 @@ def main():
                 continue
             if result["accept_mismatch"]:
                 kind, pcrec_err, pcre2_probe = result["accept_mismatch"]
+                if is_known_vlookbehind_stage2_refusal(kind, pcrec_err):
+                    stats["vlb_stage2"] += 1
+                    continue
                 if "ACCEPTS, pcre2 REJECTS" in kind:
                     stats["pcre2_reject_only"] += 1
                 else:
@@ -1272,6 +1306,7 @@ def main():
     print(f"  oracle inconclusive (PCRE2 match-limit hit or oracle TIMEOUT): {stats['oracle_inconclusive']}  (see README.md)")
     print(f"  pcrec step-budget exhausted (PCREC_ERR_STEPS, --step-budget={STEP_BUDGET}): {stats['engine_steps']}  (DD-2/D22: robustness bound, not a divergence)")
     print(f"  pcrec frame-budget exhausted (PCREC_ERR_FRAMES): {stats['engine_frames']}  (DD-2/D22: robustness bound, not a divergence)")
+    print(f"  known [VLOOKBEHIND] stage-2 refusal (lookbehind with backref/variable/callout): {stats['vlb_stage2']}  (clean refusal, not a divergence; class retires when stage 2 lands)")
     print(f"  known PCRE2 optimizer quirk (anchor in {{0}} group): {stats['pcre2_quirk']}  (intentional divergence, see README.md)")
     print(f"content divergences: {len(content_divergences)}")
     print(f"accept/reject divergences: {len(accept_mismatches)}")
