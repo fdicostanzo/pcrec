@@ -584,6 +584,12 @@ test-ci-shards:
 	@bash tests/ci/check_shards.sh $(TEST_SECTIONS)
 	@bash tests/ci/check_shards.sh --selftest $(TEST_SECTIONS)
 
+# [CLOUD-SUITE] B: the structural checks of the cloud-run machinery (tests/ci/cloud_check.sh: the cloud shard
+# table holds TEST_SECTIONS exactly, no kind is named in code, one shard-setup copy, one artifact-name source).
+# Opt-in and NOT a TEST_SECTIONS member (tests/ci/shards.tsv is CI's and stays unchanged); run on change.
+cloud-check:
+	@bash tests/ci/cloud_check.sh $(TEST_SECTIONS)
+
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
 # section a change touches instead of paying for the whole suite. See
@@ -2304,7 +2310,7 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-d27region test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-targets test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards \
+        test-startset test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards cloud-check \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         ubsan-locked asan-locked san-locked lint-locked alloc-locked test-recursion-identity-locked \
         fuzz clean

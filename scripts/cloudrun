@@ -7,7 +7,8 @@
 #
 #   scripts/cloudrun --owner O --kind K [--name N] [--ref REF] [--dry-run]
 #       O     main | kit | a lane name (who is told the verdict)         REQUIRED (no presumed owner)
-#       K     test (make test, sharded); other kinds are refused by the workflow's plan job until defined
+#       K     a kind declared in tests/ci/cloud_kinds.tsv (`bash tests/ci/cloud_kinds.sh kinds`); an undeclared
+#             kind, or an owner the row does not allow, is refused HERE (and again by the workflow's plan job)
 #       N     [A-Za-z0-9._-]+, default <REF with / -> -, or HEAD>-<7-char sha>
 #       REF   a ref or commit to push, default HEAD
 #       --dry-run   print what would be pushed and recorded; push nothing, write nothing
@@ -83,8 +84,11 @@ esac
 
 # run mode
 [ -n "$owner" ] || die "--owner is required (main|kit|a lane name)"
-[ -n "$kind" ] || die "--kind is required (test)"
+[ -n "$kind" ] || die "--kind is required (a kind declared in tests/ci/cloud_kinds.tsv)"
 case $owner$kind in *[!A-Za-z0-9._-]*) die "owner and kind must be [A-Za-z0-9._-]+" ;; esac
+kinds_sh=$root/tests/ci/cloud_kinds.sh
+bash "$kinds_sh" get "$kind" kind >/dev/null 2>&1 || die "kind '$kind' is not declared in tests/ci/cloud_kinds.tsv (declared: $(bash "$kinds_sh" kinds 2>/dev/null | tr '\n' ' '))"
+bash "$kinds_sh" owner-ok "$kind" "$owner" || die "owner '$owner' may not start kind '$kind' (owners: $(bash "$kinds_sh" get "$kind" owners))"
 sha=$(git -C "$root" rev-parse --verify -q "$ref^{commit}") || die "cannot resolve '$ref' to a commit" 1
 if [ -z "$name" ]; then
     base=$(printf '%s' "$ref" | tr '/' '-' | tr -c 'A-Za-z0-9._\n-' '-')

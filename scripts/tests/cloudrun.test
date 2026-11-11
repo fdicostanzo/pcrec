@@ -12,6 +12,7 @@ chk() { if [ "$2" = 0 ]; then ok "$1"; else bad "$1"; fi; }
 
 R=$T/repo; mkdir -p "$R/scripts" "$T/bin"
 cp "$here/cloudrun" "$R/scripts/cloudrun"
+mkdir -p "$R/tests/ci"; cp "$here/../tests/ci/cloud_kinds.sh" "$here/../tests/ci/cloud_kinds.tsv" "$R/tests/ci/"   # the kinds table cloudrun reads
 git init -q --bare "$T/remote.git"
 git -C "$R" init -q; git -C "$R" config user.email t@t; git -C "$R" config user.name t
 echo x > "$R/f"; git -C "$R" add -A; git -C "$R" commit -q -m one
@@ -38,6 +39,12 @@ $CR --owner 'a/b' --kind test >/dev/null 2>&1; chk "owner with a slash -> 64" $(
 $CR --owner main --kind test --name 'x y' >/dev/null 2>&1; chk "name with a space -> 64" $([ $? = 64 ] && echo 0 || echo 1)
 $CR --owner main --kind test --ref nosuchref >/dev/null 2>&1; chk "unresolvable ref -> rc 1" $([ $? = 1 ] && echo 0 || echo 1)
 $CR --bogus >/dev/null 2>&1; chk "unknown argument -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+out=$($CR --owner main --kind nosuchkind --dry-run 2>&1); rc=$?
+[ $rc = 64 ] && grep -q "kind 'nosuchkind' is not declared in tests/ci/cloud_kinds.tsv (declared: test" <<<"$out"; chk "an undeclared kind -> 64, names the declared kinds (from the table)" $?
+sed 's/\t\*$/\tonlyme/' "$R/tests/ci/cloud_kinds.tsv" > "$T/k2.tsv"; cp "$T/k2.tsv" "$R/tests/ci/cloud_kinds.tsv"
+out=$($CR --owner main --kind test --dry-run 2>&1); rc=$?
+[ $rc = 64 ] && grep -q "owner 'main' may not start kind 'test' (owners: onlyme)" <<<"$out"; chk "an owner the row does not allow -> 64" $?
+cp "$here/../tests/ci/cloud_kinds.tsv" "$R/tests/ci/cloud_kinds.tsv"
 out=$($CR --owner main --kind test --dry-run 2>&1); rc=$?
 [ $rc = 0 ] && [ -z "$(branches)" ] && [ ! -e "$T/ledger.tsv" ] && grep -q "DRY-RUN would push ${SHA:0:9} -> origin cloud/main/test/HEAD-${SHA:0:7}" <<<"$out"; chk "--dry-run pushes nothing, writes no ledger" $?
 

@@ -1,0 +1,75 @@
+name: shard-setup
+description: >-
+  The ONE copy of a shard runner's setup ([CLOUD-SUITE] B, requirement 7): python 3.14, pkg-config, the pinned
+  libpcre2 10.46 (D98) built from the release tarball and cached, PC-3's oracle pointed at it and verified,
+  then `make`. Used by .github/workflows/ci.yml and cloud-test.yml; the caller checks the tree out first
+  (this action is read from it) and runs its own shard step, whose timeout and result handling differ.
+  Moved here from ci.yml unchanged: the steps, their order, their commands and the cache key (so main's
+  saved cache is still hit). See ci.yml's job comments for why each step is shaped as it is.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.14'
+
+    - name: Install build tools (pkg-config)
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y pkg-config
+
+    # [REL-1.6]/D98: build the PINNED libpcre2 10.46 from the official release tarball rather than trusting a
+    # distro package (run 1, 35675372280, installed Ubuntu 22.04's 10.42 and measured 60 PC-3 failures that were
+    # the version gap restated once per row). Cached by version+os so a cache hit pays nothing; bump the key's
+    # `v2` suffix if the pin or the configure flags move. DEFAULT CONFIGURE (shared AND static), NOT
+    # `--disable-shared`: a static-only build makes `pcre2_abi_path()` resolve to the TEST BINARY itself (no
+    # separate library file for `dladdr` to name), which the anti-circularity design of `pool_from_library`
+    # (D98/[ORACLE-LINK]) depends on NOT happening -- it moved the pinned probe count from 149804 to 234580.
+    - name: Cache libpcre2 10.46 (D98 pin)
+      id: cache-pcre2-10-46
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/pcre2-10.46
+        key: pcre2-10.46-${{ runner.os }}-v2
+
+    - name: Build libpcre2 10.46 from source (D98 pin)
+      if: steps.cache-pcre2-10-46.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -eu
+        curl -fsSL -o "$RUNNER_TEMP/pcre2-10.46.tar.bz2" \
+          https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.46/pcre2-10.46.tar.bz2
+        mkdir -p "$RUNNER_TEMP/pcre2-10.46-src"
+        tar xjf "$RUNNER_TEMP/pcre2-10.46.tar.bz2" -C "$RUNNER_TEMP/pcre2-10.46-src" --strip-components=1
+        cd "$RUNNER_TEMP/pcre2-10.46-src"
+        ./configure --prefix="$RUNNER_TEMP/pcre2-10.46"
+        make -j"$(nproc)"
+        make install
+
+    # PKG_CONFIG_PATH takes priority over pkg-config's own default search path, so putting the pinned build's
+    # .pc directory there makes `pkg-config libpcre2-8` (tests/lib/resolve_pcre2.sh) resolve THIS copy; no
+    # distro libpcre2 package is installed at all (verified below). LD_LIBRARY_PATH is needed too: the shared
+    # `.so` is preferred at LINK time but the dynamic loader must find it at RUN time.
+    - name: Point PC-3's oracle at the pinned 10.46 build
+      shell: bash
+      run: |
+        echo "PKG_CONFIG_PATH=$RUNNER_TEMP/pcre2-10.46/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=$RUNNER_TEMP/pcre2-10.46/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
+
+    - name: Verify libpcre2 resolves to the pin, not a distro package
+      shell: bash
+      run: |
+        set -eu
+        ver="$(pkg-config --modversion libpcre2-8)"
+        echo "resolved libpcre2: $ver"
+        case "$ver" in
+          10.46) ;;
+          *) echo "expected 10.46, pkg-config resolved '$ver' instead -- PKG_CONFIG_PATH ordering or the cache is wrong" >&2; exit 1 ;;
+        esac
+
+    - name: Compiler version
+      shell: bash
+      run: gcc --version
+
+    - name: Build (make)
+      shell: bash
+      run: make -j"$(nproc)"
