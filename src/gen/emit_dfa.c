@@ -14424,7 +14424,7 @@ static void isl_forward(Ctx *cx, StrBuf *c, const IslTabs *t, const Dfa *d)
         "    unsigned cp = 0;\n"
         "    unsigned char b;\n"
         "    int st = %d;\n"
-        "    if (pos > 0) {   /* the seed: the character before search_from */\n"
+        "    if (pos > 0) {\n"
         "        b = subject[pos - 1];\n"
         "        if (b < 0x80u) st = %s[%s[b]];\n"
         "        else { l = %s_decode_back(subject, pos, &cp); st = %s[%s]; }\n"
@@ -14461,8 +14461,10 @@ static void isl_forward(Ctx *cx, StrBuf *c, const IslTabs *t, const Dfa *d)
 static void isl_helpers(Ctx *cx, StrBuf *c, const char *fn)
 {
     const char *p = cx->opt->prefix;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "/* The segment holding code point cp (lo ascending). */\n");
+    pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
-        "/* [UCP] U3 the segment holding code point cp (lo ascending). */\n"
         "static inline unsigned %s_isl_seg(const unsigned *lo, int n, unsigned cp)\n"
         "{\n"
         "    int a = 0, b = n - 1;\n"
@@ -14499,10 +14501,12 @@ static void emit_island(Ctx *cx, const char *fn, PcrecEntry ent)
     isl_search_tables(cx, fn, &tf, &tr);
     isl_forward(cx, c, &tf, f);
     const char *ra = isl_atom(cx, &tr, r);
+    pcrec_sb_puts(c, "    if (last == (size_t)-1) return 0;\n");
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "    /* REVERSE: from the end back to the smallest accepting position,\n"
+                     "     * seeded by the character at the end */\n");
+    pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
-        "    if (last == (size_t)-1) return 0;\n"
-        "    /* REVERSE: from the end back to the smallest accepting position,\n"
-        "     * seeded by the character at the end */\n"
         "    size_t start = (size_t)-1;\n"
         "    pos = last;\n"
         "    st = %d;\n"
