@@ -23,7 +23,7 @@
 #   --missed-window-sec 900   WINDOW-MISSED grace: a declared bench window (`not_before=` in its .window) whose start passed this long ago
 #                   (an UNMEASURED default, [QORDER] 2026-11-01) with the window never started and no job of its owner pending or running
 #   --disk-pct 95   DISK-HIGH when the queue's filesystem is at or over this use%
-#   --confirm S 5   a RUNNER-DEAD reading is re-read this long later before it is reported
+#   --confirm S 5   a RUNNER-DEAD or PENDING-STUCK reading is re-read this long later before it is reported
 #   --ci-every S 300  ask GitHub Actions (`gh run list`, main branch) at most this often, across
 #                   launches (env CI_EVERY); --no-ci (env QUEUEWATCH_NO_CI=1) turns the CI source off
 #
@@ -288,6 +288,10 @@ conditions() {
         # whose KEY failed, a broken --ready) ages exactly as for any pending job: that silence is the miss this alarm exists to catch.
         nb=$(sed -n 's/^boxqueue: not-before //p' "$Q/.state/$k.decl" 2>/dev/null | head -1)
         if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null) && [ "$since" -lt "$nbe" ]; then since=$nbe; age=$((now - since)); fi
+        # The runner STARTs the next ready job a moment after the last one's END: re-read after --confirm, and report only if
+        # nothing is running and the same job still heads the pending list (false alarms, jobs 551/552, 2026-11-11).
+        if [ "$age" -ge "$stuck" ]; then sleep "$confirm" 9>&-; nrun=$(ls -A "$Q/running" 2>/dev/null | grep -c .)
+            [ "$nrun" = 0 ] && [ "$(ls -p "$Q/pending" 2>/dev/null | grep -v / | LC_ALL=C sort | head -1)" = "$n" ] || age=0; fi
         if [ "$age" -ge "$stuck" ]; then
             printf 'C|stuck|%s|%s\t0\tPENDING-STUCK %s pending for %ss, nothing running%s :: %s\n' "$n" "$since" "$n" "$age" \
                 "${rdy:+ (queued $((now - queued))s ago, ready for ${age}s)}" "${ans%%$'\n'*}"
