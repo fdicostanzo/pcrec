@@ -1,0 +1,7 @@
+libpcre2 10.46 2025-08-27
+(a)x\2	REJECT 115@5
+(a)(?<=(?1)|b+)(?<=c+)x	REJECT 125@3
+(a)(?<=(?1)|b+)x\2	REJECT 125@3
+(a)(?<=(?1)|b+(?C1))x	REJECT 125@3
+(a)(?<=b(?<=(?1)+)c+)x	REJECT 125@8
+(a)(?<=\1(?C1))x	ACCEPT lb=1 

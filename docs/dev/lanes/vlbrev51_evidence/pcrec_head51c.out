@@ -1,0 +1,8 @@
+((?<=(?2)))(a(?<=(?1)))	REFUSED rc=1: pcrec: UNBOUNDED (pattern offset 1)
+((?<=\2))(a(?<=\1))	REFUSED rc=1: pcrec: SHAPE5 (pattern offset 1)
+(?<=(a(?<=\1)))x	REFUSED rc=1: pcrec: SHAPE5 (pattern offset 6)
+(?<=b(?<=(a\1)))x	REFUSED rc=1: pcrec: SHAPE5 (pattern offset 5)
+(a)(?<=b(?<=\1+)c+)x	REFUSED rc=1: pcrec: UNBOUNDED (pattern offset 8)
+(a(?<=b(?<=\1)))x	REFUSED rc=1: pcrec: SHAPE5 (pattern offset 7)
+(?<=x(a(?<=b(?<=\1))))y	REFUSED rc=1: pcrec: SHAPE5 (pattern offset 12)
+(a(?<=b(?<=(?1))))x	REFUSED rc=1: pcrec: UNBOUNDED (pattern offset 2)
