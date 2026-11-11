@@ -1807,7 +1807,7 @@ n ""
 # N (\K): the reported match start moves past the first group; the groups keep their own spans
 # pcre2-only
 pattern (x)\K(\d+)$
-features classes,assertions
+features classes,assertions,match-start-reset
 m "x12" 1 3
 g 1 0 1
 g 2 1 3
@@ -1825,7 +1825,7 @@ g 2 2 4
 # N (\K): K with an optional trailing group at the pin
 # pcre2-only
 pattern (?:a|(b))\K(c)?$
-features assertions
+features assertions,match-start-reset
 m "ac" 1 2
 g 1 -1 -1
 g 2 1 2

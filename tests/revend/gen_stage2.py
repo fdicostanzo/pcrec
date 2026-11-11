@@ -354,6 +354,7 @@ def main():
         if any(t in pat for t in ("\\z", "\\Z", "\\b", "\\K", "(?m)")) and "assertions" not in fs: fs.append("assertions")
         if fs and any(t in pat for t in ("\\d", "\\D", "\\w", "\\W", "\\s", "\\S", "[")) and "classes" not in fs: fs.append("classes")
         if "(?m)" in pat and "modifiers" not in fs: fs.append("modifiers")
+        if "\\K" in pat and "match-start-reset" not in fs: fs.append("match-start-reset")   # [FEAT-FAMILIES]
         if "(?<" in pat and "lookaround" not in fs: fs.append("lookaround")
         if fs: print("features " + ",".join(fs))
         for sp, s in subs:

@@ -506,7 +506,8 @@ skill.
 section: match-point
 date: 2026-08-19
 Module `assertions` SHIPPED THIS 2026-08-19 ([M6.2] wave E, the module's
-last construct), behind the gate. **VM-ONLY, and the old `PLANNED-HARD`
+last construct), behind the gate; since 2026-11-10 ([FEAT-FAMILIES]) it is
+module `match-start-reset`, split out before the first family freeze. **VM-ONLY, and the old `PLANNED-HARD`
 reasoning on this row was RIGHT ABOUT THE OBSTRUCTION AND WRONG ABOUT THE
 SHAPE.** It said `\K` "interacts directly with the reverse machine". It
 does not: `\K` changes no LANGUAGE, so `src/ir/nfa.c` lowers it to an

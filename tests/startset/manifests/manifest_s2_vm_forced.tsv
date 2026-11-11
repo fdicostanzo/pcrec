@@ -338,23 +338,12 @@ tests/assertions/d27/anchors_abs.rxt:63	--features assertions	5c7a616263
 tests/assertions/d27/anchors_abs.rxt:68	--features assertions	6162635c7a
 tests/assertions/d27/anchors_abs.rxt:77	--features assertions	28615c7a292b
 tests/assertions/d27/composition.rxt:14	--features modifiers,assertions	283f6d295e5c62666f6f5c6224
-tests/assertions/d27/composition.rxt:25	--features assertions	5c425c4b636174
 tests/assertions/d27/composition.rxt:45	--features assertions	5c62283f3a6361747c646f67295c42
 tests/assertions/d27/gating.rxt:110	--features assertions	785c7a
 tests/assertions/d27/gating.rxt:115	--features assertions	785c5a
 tests/assertions/d27/gating.rxt:120	--features assertions	5c6278
 tests/assertions/d27/gating.rxt:125	--features assertions	785c4279
-tests/assertions/d27/gating.rxt:135	--features assertions	785c4b
 tests/assertions/d27/gating.rxt:165	--features modifiers,assertions	283f6d295e61
-tests/assertions/d27/kreset.rxt:13	--features assertions	615c4b62
-tests/assertions/d27/kreset.rxt:19	--features assertions	28615c4b2962
-tests/assertions/d27/kreset.rxt:25	--features assertions	2861295c4b62
-tests/assertions/d27/kreset.rxt:31	--features assertions	615c4b625c4b63
-tests/assertions/d27/kreset.rxt:36	--features assertions	28615c4b627c635c4b6429
-tests/assertions/d27/kreset.rxt:44	--features assertions	28615c4b292b62
-tests/assertions/d27/kreset.rxt:58	--features classes,assertions	5c625c4b5c772b
-tests/assertions/d27/kreset.rxt:63	--features modifiers,assertions	283f6d295e615c4b6224
-tests/assertions/d27/kreset.rxt:69	--features assertions	61625c4b
 tests/assertions/d27/multiline.rxt:101	--features modifiers,assertions	283f6d295e6124
 tests/assertions/d27/multiline.rxt:112	--features modifiers,assertions	283f6d29615c5a
 tests/assertions/d27/multiline.rxt:23	--features modifiers,assertions	283f6d295e62
@@ -402,45 +391,6 @@ tests/assertions/gpos.rxt:453	--features assertions,modifiers	283f6d295e617c5c47
 tests/assertions/gpos.rxt:470	--features assertions,modifiers	5c47617c283f6d295e62
 tests/assertions/gpos.rxt:625	--features assertions	2878293f617b302c347d5c4762
 tests/assertions/gpos.rxt:90	--features assertions	666f6f
-tests/assertions/kreset.rxt:101	--features assertions	615c4b
-tests/assertions/kreset.rxt:149	--features assertions	5c4b6162
-tests/assertions/kreset.rxt:194	--features assertions	5c4b615c4b62
-tests/assertions/kreset.rxt:205	--features assertions	615c4b5c4b62
-tests/assertions/kreset.rxt:232	--features assertions	283f3a615c4b7c61782963
-tests/assertions/kreset.rxt:252	--features assertions	283f3a61625c4b7c612962
-tests/assertions/kreset.rxt:267	--features assertions	283f3a615c4b7c622963
-tests/assertions/kreset.rxt:285	--features assertions	283f3a615c4b627c61625c4b632964
-tests/assertions/kreset.rxt:303	--features assertions	615c4b627c63
-tests/assertions/kreset.rxt:337	--features assertions	283f3a615c4b292a6162
-tests/assertions/kreset.rxt:359	--features assertions	283f3a615c4b292a62
-tests/assertions/kreset.rxt:379	--features assertions	283f3a615c4b62292a63
-tests/assertions/kreset.rxt:402	--features assertions	283f3a615c4b297b322c7d62
-tests/assertions/kreset.rxt:418	--features assertions	283f3a615c4b297b312c337d62
-tests/assertions/kreset.rxt:450	--features assertions	283f3a615c4b293f62
-tests/assertions/kreset.rxt:466	--features assertions	283f3a5c4b61293f62
-tests/assertions/kreset.rxt:475	--features assertions	283f3a615c4b7c62292b63
-tests/assertions/kreset.rxt:507	--features assertions	61625c4b633f
-tests/assertions/kreset.rxt:572	--features assertions	2861295c4b286229
-tests/assertions/kreset.rxt:592	--features assertions	615c4b286229
-tests/assertions/kreset.rxt:609	--features assertions	28615c4b29286229
-tests/assertions/kreset.rxt:629	--features assertions	28615c4b292a62
-tests/assertions/kreset.rxt:657	--features assertions	282861295c4b7c2862292963
-tests/assertions/kreset.rxt:705	--features assertions	615c4b625c7a
-tests/assertions/kreset.rxt:720	--features assertions	615c4b625c5a
-tests/assertions/kreset.rxt:735	--features assertions	615c4b6224
-tests/assertions/kreset.rxt:750	--features assertions	5c62615c4b625c62
-tests/assertions/kreset.rxt:766	--features assertions	615c4b5c6262
-tests/assertions/kreset.rxt:793	--features assertions	615c4b627c5c4763
-tests/assertions/kreset.rxt:809	--features assertions,modifiers	283f6d295e615c4b62
-tests/assertions/kreset.rxt:827	--features assertions,modifiers	615c4b62283f6d2924
-tests/assertions/kreset.rxt:85	--features assertions	5c4b61
-tests/assertions/kreset.rxt:857	--features assertions	617b322c347d5c4b62
-tests/assertions/kreset.rxt:879	--features assertions	615c4b627b312c337d
-tests/assertions/kreset.rxt:896	--features assertions	5b61625d2a5c4b5b62635d2b
-tests/assertions/kreset.rxt:916	--features assertions	283f3a6162292b5c4b63
-tests/assertions/kreset.rxt:961	--features assertions	283f3a615c4b297b302c31307d6162
-tests/assertions/kreset.rxt:972	--features assertions	283f3a615c4b297b302c31307d62
-tests/assertions/kreset.rxt:980	--features assertions	283f3a615c4b62297b302c387d63
 tests/assertions/multiline.rxt:1161	--features assertions,classes,modifiers	283f6d295e5c772b
 tests/assertions/multiline.rxt:1223	--features assertions,modifiers	283f6d295b5e635d7b312c337d24
 tests/assertions/multiline.rxt:123	--features assertions,modifiers	283f6d295e4552524f52
@@ -565,9 +515,6 @@ tests/atomic_groups/atomic_assert.rxt:139	--features atomic-groups,assertions	28
 tests/atomic_groups/atomic_assert.rxt:147	--features atomic-groups,assertions,modifiers	283f6d29283f3e61247c616229
 tests/atomic_groups/atomic_assert.rxt:157	--features atomic-groups,assertions,modifiers	283f6d29283f3e5e617c622963
 tests/atomic_groups/atomic_assert.rxt:166	--features atomic-groups,assertions	283f3e615c7a7c616229
-tests/atomic_groups/atomic_assert.rxt:45	--features atomic-groups,assertions	283f3e615c4b622963
-tests/atomic_groups/atomic_assert.rxt:59	--features atomic-groups,assertions	283f3e617c615c4b622962
-tests/atomic_groups/atomic_assert.rxt:71	--features atomic-groups,assertions	615c4b283f3e627c62632963
 tests/atomic_groups/atomic_assert.rxt:89	--features atomic-groups,assertions	283f3e5c47617c622963
 tests/atomic_groups/atomic_basic.rxt:105	--features atomic-groups	283f3e283f3e617c616229637c61626429
 tests/atomic_groups/atomic_basic.rxt:121	--features atomic-groups	283f3e61283f3e627c6263292963
@@ -641,10 +588,8 @@ tests/atomic_groups/d27/find_all_loop.rxt:56	--features atomic-groups	617b312c32
 tests/atomic_groups/d27/gating.rxt:54	--features atomic-groups	612b2b
 tests/atomic_groups/d27/gating.rxt:81	--features atomic-groups	617b322c337d2b
 tests/atomic_groups/d27/gating.rxt:99	--features atomic-groups	617b322c7d2b
-tests/atomic_groups/d27/interactions.rxt:105	--features atomic-groups,assertions	283f3e612b5c4b2962
 tests/atomic_groups/d27/interactions.rxt:113	--features atomic-groups,modifiers	283f6929283f3e61626329
 tests/atomic_groups/d27/interactions.rxt:120	--features atomic-groups,modifiers,assertions	283f6d295e283f3e612b2924
-tests/atomic_groups/d27/interactions.rxt:41	--features atomic-groups,assertions	283f3e615c4b627c61622963
 tests/atomic_groups/d27/possessive_spellings.rxt:101	--features atomic-groups	283f3a6162292a2b63
 tests/atomic_groups/d27/possessive_spellings.rxt:118	--features atomic-groups	283f3a617c6162292b2b
 tests/atomic_groups/d27/possessive_spellings.rxt:127	--features atomic-groups	283f3e612b29
@@ -1631,7 +1576,6 @@ tests/litscan/reqcube.rxt:86		283f3a283f693a616273297c283f693a6162295329
 tests/litscan/reqcube.rxt:95	--engine=vm	283f3a283f693a616273297c283f693a6162295329
 tests/litscan/presence_deny.rxt:261	--features all --encoding=byte	283f3c3d717a29783f613a
 tests/litscan/presence_deny.rxt:315	--features all --encoding=byte	283f3c3d7129613a
-tests/litscan/presence_deny.rxt:347	--features all --encoding=byte	617b322c347d5c4b62
 tests/litscan/presence_deny.rxt:401	--features all --encoding=byte	283f3a61283f2171297c617129787b302c337d71
 tests/litscan/presence_deny.rxt:442	--features all --encoding=byte	666f6f283f3a757365726e616d657c70617373776f72647c7061737370687261736529626172
 tests/litscan/presence_deny.rxt:517	--features all --encoding=byte	5b612d635d7b322c347d785b302d395d7b322c347d795b412d435d7b322c347d7a5b6a2d6c5d7b322c347d775b782d7a5d7b322c347d
@@ -2056,9 +2000,6 @@ tests/lookaround/lookahead.rxt:183	--features lookaround	283f3d62296263
 tests/lookaround/lookahead.rxt:189	--features lookaround	283f21612962
 tests/lookaround/lookahead.rxt:221	--features lookaround	283f3d616263296162
 tests/lookaround/lookahead.rxt:228	--features lookaround	283f3d6129283f3d616229616263
-tests/lookaround/lookahead.rxt:242	--features assertions,lookaround	283f3d61295c4b62
-tests/lookaround/lookahead.rxt:250	--features assertions,lookaround	61283f3d62295c4b63
-tests/lookaround/lookahead.rxt:260	--features assertions,lookaround	615c4b62
 tests/lookaround/lookahead.rxt:266	--features lookaround	283f3d283f3a61617c61296229612b62
 tests/lookaround/lookahead.rxt:32	--features lookaround	283f3d616229616263
 tests/lookaround/lookahead.rxt:41	--features lookaround	61283f3d62296263
@@ -2091,7 +2032,6 @@ tests/lookaround/lookbehind.rxt:288	--features lookaround	283f3c3d5c6e2978
 tests/lookaround/lookbehind.rxt:295	--features lookaround	283f3c3d5b5e615d2962
 tests/lookaround/lookbehind.rxt:303	--features lookaround	283f3c3d617b327d2962
 tests/lookaround/lookbehind.rxt:310	--features lookaround	283f3c21617b327d2962
-tests/lookaround/lookbehind.rxt:323	--features assertions,lookaround	283f3c3d61295c4b62
 tests/lookaround/lookbehind.rxt:334	--features assertions,lookaround	283f3c3d5c47612962
 tests/lookaround/lookbehind.rxt:35	--features lookaround	283f3c3d612962
 tests/lookaround/lookbehind.rxt:55	--features lookaround	283f3c3d5b61625d5b63645d2978
@@ -2266,7 +2206,6 @@ tests/offsetskip/run_pinned.rxt:23		2f757365727c2f7573657273
 tests/offsetskip/run_pinned.rxt:39	--features assertions	2f7573657224
 tests/offsetskip/run_pinned.rxt:48	--features assertions	2f757365725c7a
 tests/offsetskip/run_pinned.rxt:71	--features classes	5b61625d2f75736572
-tests/offsetskip/run_pinned.rxt:82	--features assertions	615c4b2f75736572
 tests/offsetskip/run_pinned.rxt:90	--features modifiers	283f69292f31323334
 tests/offsetskip/run_pinned.rxt:96	--features modifiers	283f6929782f31323334
 tests/possessify/composition_d27.rxt:10011	-i --features all	2861295c31
@@ -2924,10 +2863,6 @@ tests/recursion/k93.rxt:54	--features recursion	283f3a28612b29627c7829283f312961
 tests/recursion/k93.rxt:63	--features recursion,atomic-groups	28283f3e612b292962283f312961
 tests/recursion/k93.rxt:70	--features recursion,named-groups	283f503c6e3e612b2962283f503e6e2961
 tests/recursion/k93.rxt:78	--features recursion	28612b2962283f2d312961
-tests/recursion/kreset.rxt:66	--features recursion,assertions,lookaround	283f3d283f31292928615c4b6229
-tests/recursion/kreset.rxt:76	--features recursion,assertions,lookaround	283f3d283f31292928615c4b622963
-tests/recursion/kreset.rxt:82	--features recursion,assertions,lookaround	78283f3d283f31292928615c4b6229
-tests/recursion/kreset.rxt:88	--features recursion,assertions,lookaround	283f21283f31292928615c4b622963
 tests/recursion/prefilter.rxt:44	--features recursion	283f3a287829297b307d61283f312962
 tests/recursion/prefilter.rxt:54	--features recursion	283f3a287829297b307d615c673c313e62
 tests/recursion/prefilter.rxt:61	--features recursion,named-groups	283f3a283f3c773e7829297b307d61283f26772962
@@ -2989,9 +2924,7 @@ tests/revend/stage2_captures.rxt:1732		28612b3f2924
 tests/revend/stage2_captures.rxt:1767		285c647b322c347d2924
 tests/revend/stage2_captures.rxt:1781		28617b337d2924
 tests/revend/stage2_captures.rxt:1795	--features assertions,classes	285c777b312c337d295c7a
-tests/revend/stage2_captures.rxt:1809	--features classes,assertions	2878295c4b285c642b2924
 tests/revend/stage2_captures.rxt:181	--features assertions	2861295c6e3f5c7a
-tests/revend/stage2_captures.rxt:1827	--features assertions	283f3a617c286229295c4b2863293f24
 tests/revend/stage2_captures.rxt:192	--features assertions	2861295c6e3f5c5a
 tests/revend/stage2_captures.rxt:220		285c732b2924
 tests/revend/stage2_captures.rxt:238	--features assertions,classes	285c732b295c7a
@@ -4098,10 +4031,6 @@ tests/lookaround/d27/refusals.rxt:117	--features lookaround	283f3c3d2828617c6263
 tests/lookaround/d27/refusals.rxt:138	--features lookaround	283f3c3d617b312c3235357d2978
 tests/lookaround/d27/refusals.rxt:14	--features lookaround	283f3c3d28617c6263292978
 tests/lookaround/d27/refusals.rxt:170	--features lookaround	283f3c3d617b327d627b302c317d2978
-tests/lookaround/d27/refusals.rxt:267	--features lookaround,assertions	283f3d61295c4b62
-tests/lookaround/d27/refusals.rxt:277	--features lookaround,assertions	61283f3d62295c4b63
-tests/lookaround/d27/refusals.rxt:287	--features lookaround,assertions	283f3c3d61295c4b62
-tests/lookaround/d27/refusals.rxt:297	--features lookaround,assertions	615c4b62
 tests/lookaround/d27/refusals.rxt:36	--features lookaround	283f3c3d617b322c337d2978
 tests/lookaround/d27/refusals.rxt:53	--features lookaround	283f3c3d613f2978
 tests/lookaround/d27/spellings.rxt:140	--features lookaround	283f3c2a28617c6261292963
@@ -4273,3 +4202,75 @@ tests/litscan/spanarms.rxt:660	--features all --engine=vm	61626364283f3a7c296566
 tests/litscan/spanarms.rxt:668	--features all	6162283f3a7c78296364
 tests/litscan/spanarms.rxt:675	--features all --engine=vm	6162283f3a7c78296364
 # mrgmt2 (2026-11-10): the six presence_deny.rxt rows below line 343 move +8 (rows only, no census re-run): mrgmt's 1d61f307e regenerated presence_deny.rxt with the a{2,4}\Kb.c witness (+8 case lines), shifting every later block; the six mover set is unchanged.
+# famfix (2026-11-11, lane/famfix, [FEAT-FAMILIES] landing of famdef3): famdef2 makes \K module match-start-reset, so assertion blocks that use \K change option spelling, and famdef3's rxt edits shift line ids; -71/+71 rows, the set computed by census_s1.py on this branch (corpus rows only; bench rows untouched), no other row moved.
+tests/assertions/d27/composition.rxt:25	--features assertions,match-start-reset	5c425c4b636174
+tests/assertions/d27/gating.rxt:135	--features assertions,match-start-reset	785c4b
+tests/assertions/d27/kreset.rxt:13	--features assertions,match-start-reset	615c4b62
+tests/assertions/d27/kreset.rxt:19	--features assertions,match-start-reset	28615c4b2962
+tests/assertions/d27/kreset.rxt:25	--features assertions,match-start-reset	2861295c4b62
+tests/assertions/d27/kreset.rxt:31	--features assertions,match-start-reset	615c4b625c4b63
+tests/assertions/d27/kreset.rxt:36	--features assertions,match-start-reset	28615c4b627c635c4b6429
+tests/assertions/d27/kreset.rxt:44	--features assertions,match-start-reset	28615c4b292b62
+tests/assertions/d27/kreset.rxt:58	--features classes,assertions,match-start-reset	5c625c4b5c772b
+tests/assertions/d27/kreset.rxt:63	--features modifiers,assertions,match-start-reset	283f6d295e615c4b6224
+tests/assertions/d27/kreset.rxt:69	--features assertions,match-start-reset	61625c4b
+tests/assertions/kreset.rxt:101	--features assertions,match-start-reset	615c4b
+tests/assertions/kreset.rxt:149	--features assertions,match-start-reset	5c4b6162
+tests/assertions/kreset.rxt:194	--features assertions,match-start-reset	5c4b615c4b62
+tests/assertions/kreset.rxt:205	--features assertions,match-start-reset	615c4b5c4b62
+tests/assertions/kreset.rxt:232	--features assertions,match-start-reset	283f3a615c4b7c61782963
+tests/assertions/kreset.rxt:252	--features assertions,match-start-reset	283f3a61625c4b7c612962
+tests/assertions/kreset.rxt:267	--features assertions,match-start-reset	283f3a615c4b7c622963
+tests/assertions/kreset.rxt:285	--features assertions,match-start-reset	283f3a615c4b627c61625c4b632964
+tests/assertions/kreset.rxt:303	--features assertions,match-start-reset	615c4b627c63
+tests/assertions/kreset.rxt:337	--features assertions,match-start-reset	283f3a615c4b292a6162
+tests/assertions/kreset.rxt:359	--features assertions,match-start-reset	283f3a615c4b292a62
+tests/assertions/kreset.rxt:379	--features assertions,match-start-reset	283f3a615c4b62292a63
+tests/assertions/kreset.rxt:402	--features assertions,match-start-reset	283f3a615c4b297b322c7d62
+tests/assertions/kreset.rxt:418	--features assertions,match-start-reset	283f3a615c4b297b312c337d62
+tests/assertions/kreset.rxt:450	--features assertions,match-start-reset	283f3a615c4b293f62
+tests/assertions/kreset.rxt:466	--features assertions,match-start-reset	283f3a5c4b61293f62
+tests/assertions/kreset.rxt:475	--features assertions,match-start-reset	283f3a615c4b7c62292b63
+tests/assertions/kreset.rxt:507	--features assertions,match-start-reset	61625c4b633f
+tests/assertions/kreset.rxt:572	--features assertions,match-start-reset	2861295c4b286229
+tests/assertions/kreset.rxt:592	--features assertions,match-start-reset	615c4b286229
+tests/assertions/kreset.rxt:609	--features assertions,match-start-reset	28615c4b29286229
+tests/assertions/kreset.rxt:629	--features assertions,match-start-reset	28615c4b292a62
+tests/assertions/kreset.rxt:657	--features assertions,match-start-reset	282861295c4b7c2862292963
+tests/assertions/kreset.rxt:705	--features assertions,match-start-reset	615c4b625c7a
+tests/assertions/kreset.rxt:720	--features assertions,match-start-reset	615c4b625c5a
+tests/assertions/kreset.rxt:735	--features assertions,match-start-reset	615c4b6224
+tests/assertions/kreset.rxt:750	--features assertions,match-start-reset	5c62615c4b625c62
+tests/assertions/kreset.rxt:766	--features assertions,match-start-reset	615c4b5c6262
+tests/assertions/kreset.rxt:793	--features assertions,match-start-reset	615c4b627c5c4763
+tests/assertions/kreset.rxt:809	--features assertions,modifiers,match-start-reset	283f6d295e615c4b62
+tests/assertions/kreset.rxt:827	--features assertions,modifiers,match-start-reset	615c4b62283f6d2924
+tests/assertions/kreset.rxt:85	--features assertions,match-start-reset	5c4b61
+tests/assertions/kreset.rxt:857	--features assertions,match-start-reset	617b322c347d5c4b62
+tests/assertions/kreset.rxt:879	--features assertions,match-start-reset	615c4b627b312c337d
+tests/assertions/kreset.rxt:896	--features assertions,match-start-reset	5b61625d2a5c4b5b62635d2b
+tests/assertions/kreset.rxt:916	--features assertions,match-start-reset	283f3a6162292b5c4b63
+tests/assertions/kreset.rxt:961	--features assertions,match-start-reset	283f3a615c4b297b302c31307d6162
+tests/assertions/kreset.rxt:972	--features assertions,match-start-reset	283f3a615c4b297b302c31307d62
+tests/assertions/kreset.rxt:980	--features assertions,match-start-reset	283f3a615c4b62297b302c387d63
+tests/atomic_groups/atomic_assert.rxt:45	--features atomic-groups,assertions,match-start-reset	283f3e615c4b622963
+tests/atomic_groups/atomic_assert.rxt:59	--features atomic-groups,assertions,match-start-reset	283f3e617c615c4b622962
+tests/atomic_groups/atomic_assert.rxt:71	--features atomic-groups,assertions,match-start-reset	615c4b283f3e627c62632963
+tests/atomic_groups/d27/interactions.rxt:105	--features atomic-groups,assertions,match-start-reset	283f3e612b5c4b2962
+tests/atomic_groups/d27/interactions.rxt:41	--features atomic-groups,assertions,match-start-reset	283f3e615c4b627c61622963
+tests/litscan/presence_deny.rxt:347	--features all --encoding=byte	617b322c347d5c4b622e63
+tests/lookaround/d27/refusals.rxt:267	--features lookaround,assertions,match-start-reset	283f3d61295c4b62
+tests/lookaround/d27/refusals.rxt:277	--features lookaround,assertions,match-start-reset	61283f3d62295c4b63
+tests/lookaround/d27/refusals.rxt:287	--features lookaround,assertions,match-start-reset	283f3c3d61295c4b62
+tests/lookaround/d27/refusals.rxt:297	--features lookaround,assertions,match-start-reset	615c4b62
+tests/lookaround/lookahead.rxt:242	--features assertions,lookaround,match-start-reset	283f3d61295c4b62
+tests/lookaround/lookahead.rxt:250	--features assertions,lookaround,match-start-reset	61283f3d62295c4b63
+tests/lookaround/lookahead.rxt:260	--features assertions,lookaround,match-start-reset	615c4b62
+tests/lookaround/lookbehind.rxt:323	--features assertions,lookaround,match-start-reset	283f3c3d61295c4b62
+tests/offsetskip/run_pinned.rxt:82	--features assertions,match-start-reset	615c4b2f75736572
+tests/recursion/kreset.rxt:66	--features recursion,assertions,lookaround,match-start-reset	283f3d283f31292928615c4b6229
+tests/recursion/kreset.rxt:76	--features recursion,assertions,lookaround,match-start-reset	283f3d283f31292928615c4b622963
+tests/recursion/kreset.rxt:82	--features recursion,assertions,lookaround,match-start-reset	78283f3d283f31292928615c4b6229
+tests/recursion/kreset.rxt:88	--features recursion,assertions,lookaround,match-start-reset	283f21283f31292928615c4b622963
+tests/revend/stage2_captures.rxt:1809	--features classes,assertions,match-start-reset	2878295c4b285c642b2924
+tests/revend/stage2_captures.rxt:1827	--features assertions,match-start-reset	283f3a617c286229295c4b2863293f24

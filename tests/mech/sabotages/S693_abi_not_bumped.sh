@@ -91,6 +91,8 @@
 # number; same detector, same arm.
 # RE-AIMED 2026-11-08 (lane u3tgt, [XARCH-DEV] U2+U3 abi 97 -> 98): AFTER is
 # 97, the parent's number; same detector, same arm.
+# RE-AIMED 2026-11-10 (lane famdef2, [FEAT-FAMILIES] abi 98 -> 99): AFTER is
+# 98, the parent's number; same detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
@@ -98,5 +100,5 @@ SAB_DESC="PCREC_ARTIFACT_ABI stays at the parent's number while the emitted byte
 SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0b 2026-10-09 (one mech row, solo): see docs/dev/lanes/r4e0b_report.md §5. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S693."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='#define PCREC_ARTIFACT_ABI 98'
-SAB_AFTER='#define PCREC_ARTIFACT_ABI 97   /* SABOTAGE S693 */'
+SAB_BEFORE='#define PCREC_ARTIFACT_ABI 99'
+SAB_AFTER='#define PCREC_ARTIFACT_ABI 98   /* SABOTAGE S693 */'

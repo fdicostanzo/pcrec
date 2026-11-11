@@ -154,8 +154,8 @@ Of PCRE2's syntax surface:
   none` is the only invocation that still refuses them, with the module name.
 - Six further modules have shipped `OK-GATED` since — built and
   oracle-verified, but compiled ONLY under an explicit `--features` naming
-  them, and refused by name under the bare default: `assertions` (`\b \B \G`
-  and `\K`, [M6.2], complete 2026-08-19), `named-groups` ([M6.3],
+  them, and refused by name under the bare default: `assertions` (`\b \B \G`,
+  [M6.2], complete 2026-08-19) and `match-start-reset` (`\K`, split from `assertions` 2026-11-10), `named-groups` ([M6.3],
   2026-08-18), `atomic-groups` (`(?>...)` and the possessive quantifier
   suffixes, [M6.4.2], 2026-08-22), `backrefs` (every backreference
   spelling, PCRE2's octal disambiguation at the atom position, and
@@ -923,7 +923,8 @@ skill.
 **`\K`** (2026-08-19)
 
 Module `assertions` SHIPPED THIS 2026-08-19 ([M6.2] wave E, the module's
-last construct), behind the gate. **VM-ONLY, and the old `PLANNED-HARD`
+last construct), behind the gate; since 2026-11-10 ([FEAT-FAMILIES]) it is
+module `match-start-reset`, split out before the first family freeze. **VM-ONLY, and the old `PLANNED-HARD`
 reasoning on this row was RIGHT ABOUT THE OBSTRUCTION AND WRONG ABOUT THE
 SHAPE.** It said `\K` "interacts directly with the reverse machine". It
 does not: `\K` changes no LANGUAGE, so `src/ir/nfa.c` lowers it to an
@@ -2361,7 +2362,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 144 rows 
 | after `\` | `\Z` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | end of subject, or before a final newline |
 | after `\` | `\z` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | end of subject |
 | after `\` | `\G` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | first matching position in the subject |
-| after `\` | `\K` | `REJECTED` | `built` | planned | `assertions` | vm | reset the reported start of the match |
+| after `\` | `\K` | `REJECTED` | `built` | planned | `match-start-reset` | vm | reset the reported start of the match |
 | after `\` | `\k<name>` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference by name: \k<n> \k'n' \k{n} — literal 'k' inside a class |
 | after `\` | `\g{-1}` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class |
 | after `\` | `\g<1>` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group by number or name: \g<1> \g<name> — NOT a backreference (it re-runs the group's pattern) — also spelled `\g<0>`, `\g<01>` |

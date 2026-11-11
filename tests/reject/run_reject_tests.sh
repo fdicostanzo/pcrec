@@ -717,7 +717,9 @@ echo "== assertions =="
 # GATE CLOSED — the bare invocation, and the surface [M6.2] wave A must not
 # move. All six still name the module, including the three the wave BUILDS:
 # a construct whose module is off is refused exactly as it always was.
-for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
+for e in b A Z z G; do reject "\\$e" "\\$e requires module 'assertions'"; done
+# [FEAT-FAMILIES] `\K` is module `match-start-reset` since 2026-11-10.
+reject "\\K" "\\K requires module 'match-start-reset'"
 
 # GATE OPEN, and this is a DIFFERENT SENTENCE for a reason ([M6.2] wave A;
 # assertions_design.md §9.2). The module lands its eight constructs across

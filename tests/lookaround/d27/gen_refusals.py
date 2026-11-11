@@ -162,7 +162,7 @@ def main():
 
     for pat in KRESET_REFUSALS:
         fact = pcre2_fact(pat)
-        emit_perr(rf, pat, "lookaround,backrefs,assertions",
+        emit_perr(rf, pat, "lookaround,backrefs,assertions,match-start-reset",
                   "sec 2.7 \\K-inside-lookaround refusal (recursive scope -- "
                   "descends through nested groups/lookarounds, one of the "
                   "eleven S-LA10 witnesses). G6: pcre2's OWN refusal here "
@@ -181,7 +181,7 @@ def main():
         # just the refused ones.
         assert pcre2_ok(pat), "expected pcre2 to accept %r" % (pat,)
         assert not py_ok(pat), "expected python to REJECT \\K in %r (G6)" % (pat,)
-        b = Block(pat, "lookaround,assertions")
+        b = Block(pat, "lookaround,assertions,match-start-reset")
         # Subjects mined to actually exercise \K's start-shifting effect
         # where the pattern allows it (a\\Kb on 'ab' -> reported start
         # moves past the consumed 'a' -- the sec 2.7 negative-control

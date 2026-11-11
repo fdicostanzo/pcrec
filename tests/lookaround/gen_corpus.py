@@ -42,6 +42,8 @@ LA = "lookaround"
 
 def cell(pat, feats, cases, note=None, perr=False):
     """One .rxt block. `cases` is a list of (subject, startpos)."""
+    if "\\K" in pat and "assertions" in feats and "match-start-reset" not in feats:
+        feats += ",match-start-reset"   # [FEAT-FAMILIES] `\K` is its own module
     return {"pat": pat, "feats": feats, "cases": cases,
             "note": note, "perr": perr}
 

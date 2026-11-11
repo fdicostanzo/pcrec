@@ -209,63 +209,63 @@ perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 5
 pattern (?=(a\K))x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 7
 pattern (?=a(?:\K))x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 9
 pattern (?=(?:(?=\K)))x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: unknown extension ?* at position 1
 pattern (?*a\K)x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: unknown extension ?<* at position 1
 pattern (?<*\Ka)x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: nothing to repeat at position 1
 pattern (*pla:a\K)x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: nothing to repeat at position 1
 pattern (*nlb:\Ka)x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 4
 pattern (?<=\Ka)x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 4
 pattern (?=a\K)x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 4
 pattern (?!a\K)x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 4
 pattern (?<!\Ka)x
-features lookaround,backrefs,assertions
+features lookaround,backrefs,assertions,match-start-reset
 perr
 
 # pcre2-only
 # sec 2.7 negative control -- \K outside every lookaround body, must COMPILE (not refused). G6: \K does not exist in python, always pcre2-only.
 pattern (?=a)\Kb
-features lookaround,assertions
+features lookaround,assertions,match-start-reset
 n "ab"
 n "a"
 n "b"
@@ -275,7 +275,7 @@ n ""
 # pcre2-only
 # sec 2.7 negative control -- \K outside every lookaround body, must COMPILE (not refused). G6: \K does not exist in python, always pcre2-only.
 pattern a(?=b)\Kc
-features lookaround,assertions
+features lookaround,assertions,match-start-reset
 n "ab"
 n "a"
 n "b"
@@ -285,7 +285,7 @@ n ""
 # pcre2-only
 # sec 2.7 negative control -- \K outside every lookaround body, must COMPILE (not refused). G6: \K does not exist in python, always pcre2-only.
 pattern (?<=a)\Kb
-features lookaround,assertions
+features lookaround,assertions,match-start-reset
 m "ab" 1 2
 n "a"
 n "b"
@@ -295,7 +295,7 @@ n ""
 # pcre2-only
 # sec 2.7 negative control -- \K outside every lookaround body, must COMPILE (not refused). G6: \K does not exist in python, always pcre2-only.
 pattern a\Kb
-features lookaround,assertions
+features lookaround,assertions,match-start-reset
 m "ab" 1 2
 n "a"
 n "b"

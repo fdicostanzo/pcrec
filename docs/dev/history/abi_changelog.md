@@ -23,7 +23,13 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `98` on every artifact today ([XARCH-DEV] units U2 + U3, 97 -> 98,
+- **`rx_info.abi` is `99` on every artifact today ([FEAT-FAMILIES] module `match-start-reset`, 98 -> 99,
+  lane famdef2 2026-11-10; ADDING A MODULE MOVES THE `--features all` SCAFFOLDING, the `ucp` precedent below).**
+  `\K` is split out of module `assertions` into its own module `match-start-reset` before the first
+  family freeze, so `PCREC_FEATURE_MODULES` gains `match-start-reset` under `--features all` and under
+  any list naming it. No struct offset moves, no `rx_info` member is added or changed, and no answer
+  moves; every other artifact moves only the number.
+- **`rx_info.abi` was `98` on every artifact ([XARCH-DEV] units U2 + U3, 97 -> 98,
   one event for the kit's U2 and pcrec's U3, lane u3tgt 2026-11-08;
   `docs/design/memfn/target_seam_units.md` §2).** pcrec states the compile's
   one CPU target to the kit on every art (`mf_art_target`) instead of a policy
