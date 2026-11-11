@@ -19,7 +19,7 @@ Kit worktree: worktrees/memfn on branch lane/memfn-k1108 (ledger/journal commits
   S3008 (plant B) DETECTED. Seam: docs/dev/lanes/k382a_oracle_iface.md.
 - Review 2026-11-10 r2 k382a ruled and fixed (committed on the branch).
 
-- K38-2a DONE 11-11 18:00 (lane/memfn-k382a @ 37a6b36ed, gates 550-559 GREEN); main merges.
+- K38-2a LANDED on main d81ebd294 (11-11).
   then watch with `scripts/monread kit --wait`; done line; main merges.
 - Main frozen until the full suite verdict (~08:00 Wed): a done line parks on its branch.
 - FRANK 11-10: close completable items first; NO 3.0b or new feature/opt. Main GO (journal 18:15): ledger closes (scratch/memfn/ledgerclose), lane kclose (SEAM-2 + R-13 owed, jobs 560-569), group 4: KIT = PIN-MSG-DEPTH + XARCH-NEEDSOK (Frank GO 11-10) kclose2 DONE 19:05; gates 570-580 QUEUED behind 550-559 (on green: done lines; pin R-13a floor from job 580) (it will FIRST merge main >= dc1988069 for the K37 fix and re-base the gates; add a job for R-13a TRACE_VARIANT_RECORDS_FLOOR via emit_sweep --variant all --bases byte --trace), prune; responses index after [DOC-INDEX].
