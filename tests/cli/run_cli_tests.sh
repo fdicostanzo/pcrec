@@ -2689,6 +2689,10 @@ if [ -x "$LIBA" ] || [ -f "$LIBA" ]; then
         "$(case "$xt_api" in "rc=-1"*"$xt_kt"*) echo yes;; *) echo no;; esac)"
     assert_eq "cpu targets api: a list beside SIMD off is refused" "rc=-1" "$("$xt_dir/probe" api no "$xt_host_t" | sed -n 1p)"
     assert_eq "cpu targets api: a list with neither bit is refused" "rc=-1" "$("$xt_dir/probe" api none "$xt_host_t" | sed -n 1p)"
+    # the refusal comes from the early check, not from the per-attempt target
+    # derivation behind it (which refuses the same set as an INTERNAL error)
+    assert_eq "cpu targets api: the refusal is the early check's, not an internal error" "no:no" \
+        "$(case "$xt_api" in *"internal error"*) echo yes;; *) echo no;; esac):$(case "$("$xt_dir/probe" api no "$xt_host_t")" in *"internal error"*) echo yes;; *) echo no;; esac)"
     assert_eq "cpu targets api: force with the host target compiles" "rc=0" "$("$xt_dir/probe" api force "$xt_host_t" | sed -n 1p)"
     assert_eq "cpu targets api: force with no list compiles" "rc=0" "$("$xt_dir/probe" api force - | sed -n 1p)"
 
