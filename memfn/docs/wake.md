@@ -24,6 +24,8 @@ Kit worktree: worktrees/memfn on branch lane/memfn-k1108 (ledger/journal commits
 - Main frozen until the full suite verdict (~08:00 Wed): a done line parks on its branch.
 - FRANK 11-10: close completable items first; NO 3.0b or new feature/opt. Main GO (journal 18:15): ledger closes (scratch/memfn/ledgerclose), lane kclose (SEAM-2 + R-13 owed, jobs 560-569), group 4: KIT = PIN-MSG-DEPTH + XARCH-NEEDSOK (Frank GO 11-10) kclose2 DONE 19:05; gates 570-580 QUEUED behind 550-559 (on green: done lines; pin R-13a floor from job 580) (it will FIRST merge main >= dc1988069 for the K37 fix and re-base the gates; add a job for R-13a TRACE_VARIANT_RECORDS_FLOOR via emit_sweep --variant all --bases byte --trace), prune; responses index after [DOC-INDEX].
 - R-39 (g2 shard selector, Frank GO 11-11, approved exception): r39 split CORRECT (561 green) but UNBALANCED (92/267/87/107 s; simd unit 221 s). R-39 DONE line posted 11-11 09:30 (lane/memfn-r39b @ 119e1b6f5); main merges (Frank 11-11: cloud make test first).
+- OPEN Q (Frank via main, 11-11): does K38-2 continue now or wait under close-first? Lean continue.
+- CLOUD: make test/axes/ubsan/asan stages go via scripts/cloudrun --owner kit --kind K, not the box queue.
 - Pending main: the master row over conditionals/predicates/intersection (Frank 11-10); main runs the survey and sends the
   design for kit comment. Doc-index ledger format agreed (doc_index_format.md §8.1): convert responses.md once main's kit profile exists.
 - Kit ruling on record: K38-2a made the in-run stop a counted reader (done).
