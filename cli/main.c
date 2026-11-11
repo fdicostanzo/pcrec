@@ -8,6 +8,8 @@
  * never a pattern; --pattern is the only way to give a literal one.
  */
 
+#include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -15,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "pcrec.h"
 /* The syntax-query modes read the construct registry, which is internal: the
@@ -529,9 +532,11 @@ static const char *base_name(const char *path)
     return s ? s + 1 : path;
 }
 
-/* Writes `text` to `path`, checking fopen/ferror/fclose and diagnosing each
- * failure by name; returns -1 on any of them. */
-static int write_file(const char *path, const char *text)
+/* Writes `text` to `path` in place, checking fopen/ferror/fclose and
+ * diagnosing each failure by name; returns -1 on any of them. Used only for
+ * a target that is not a regular file (a device, a FIFO, a symlink), where a
+ * rename would replace the thing the caller named. */
+static int write_in_place(const char *path, const char *text)
 {
     FILE *f = fopen(path, "w");
     if (!f) { perror(path); return -1; }
@@ -539,6 +544,70 @@ static int write_file(const char *path, const char *text)
     if (ferror(f)) { fclose(f); fprintf(stderr, "%s: write error\n", path); return -1; }
     if (fclose(f) != 0) { perror(path); return -1; }
     return 0;
+}
+
+/* Sets *same to whether the existing file `path` holds exactly `text`
+ * (`n` bytes). Returns -1, diagnosed, when it cannot be read. */
+static int file_equals(const char *path, const char *text, size_t n, int *same)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) { perror(path); return -1; }
+    char buf[4096];
+    size_t off = 0;
+    *same = 1;
+    while (*same) {
+        size_t got = fread(buf, 1, sizeof buf, f);
+        if (got == 0) break;
+        if (got > n - off || memcmp(buf, text + off, got) != 0) *same = 0;
+        else off += got;
+    }
+    if (ferror(f)) { fclose(f); fprintf(stderr, "%s: read error\n", path); return -1; }
+    fclose(f);
+    if (*same && off != n) *same = 0;
+    return 0;
+}
+
+/* [CLI-OUTKEEP] Writes `text` to `path` ONLY WHEN THE BYTES CHANGE, so a
+ * Makefile may re-run pcrec on every build without forcing a recompile
+ * (docs/spec/cli.md §1.2¶3). An existing regular file that already holds the
+ * text is not touched (bytes and mtime). Otherwise the text goes to a temp
+ * file in the SAME directory, which is renamed over `path`: an interrupted or
+ * failed run leaves the old file whole. The replacement keeps the old file's
+ * permission bits (owner and group are not preserved); a new file gets the
+ * umask default. A target that is not a regular file is written in place.
+ * Returns -1, diagnosed, on any failure, the old file intact. */
+static int write_file(const char *path, const char *text)
+{
+    size_t n = strlen(text);
+    struct stat st;
+    int have = lstat(path, &st) == 0;
+    if (!have && errno != ENOENT) { perror(path); return -1; }
+    if (have && !S_ISREG(st.st_mode)) return write_in_place(path, text);
+    if (have) {
+        int same;
+        if (file_equals(path, text, n, &same) != 0) return -1;
+        if (same) return 0;
+    }
+
+    size_t tl = strlen(path) + 32;
+    char *tmp = malloc(tl);
+    if (!tmp) { perror("malloc"); return -1; }
+    snprintf(tmp, tl, "%s.pcrec-tmp.%ld", path, (long)getpid());
+    int fd = open(tmp, O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd < 0) { perror(tmp); free(tmp); return -1; }
+    int ok = 1;
+    for (size_t off = 0; ok && off < n;) {
+        ssize_t w = write(fd, text + off, n - off);
+        if (w < 0 && errno == EINTR) continue;
+        if (w <= 0) { fprintf(stderr, "%s: write error\n", tmp); ok = 0; }
+        else off += (size_t)w;
+    }
+    if (ok && have && fchmod(fd, st.st_mode & 07777) != 0) { perror(tmp); ok = 0; }
+    if (close(fd) != 0 && ok) { perror(tmp); ok = 0; }
+    if (ok && rename(tmp, path) != 0) { perror(path); ok = 0; }
+    if (!ok) unlink(tmp);
+    free(tmp);
+    return ok ? 0 : -1;
 }
 
 /* [DD-13b.W1.2] EVERY OPTION THIS CLI UNDERSTANDS, IN ONE PLACE.

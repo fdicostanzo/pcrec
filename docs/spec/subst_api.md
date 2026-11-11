@@ -982,9 +982,8 @@ PCREC_SUPPORT_IMPLEMENTATION`. A program includes it wherever it likes, and
 defines `PCREC_SUPPORT_IMPLEMENTATION` before including it in exactly one
 translation unit. Its text depends only on the pcrec build: two runs of one
 pcrec write identical files. A Makefile that regenerates it on every build
-would recompile its users each time; the plan row `[CLI-OUTKEEP]` (`-o` writes
-only when the bytes change) is the cure, and is a separate change from this
-design.
+does not force a recompile of its users: `-o` writes a file only when its bytes
+change (`cli.md` §1.2¶3).
 
 <a id="s10-p3"></a>[10¶3] **External names carry the abi.** The declarations map each
 function's name to a name ending in the abi number (`pcrec_subst_flatten` is a
