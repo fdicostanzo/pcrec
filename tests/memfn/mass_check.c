@@ -237,45 +237,66 @@ int main(void)
         expect("MEMBER `after` on equal masses: higher positions first", (uint32_t)ok, 1);
     }
 
-    /* ---- NORMAL: the presence run's normal form, refused at the boundary --- */
+    /* ---- RUNFORM: the presence run in SET FORM (R-38 K38-2, MF_SITE_ABI 27;
+       the RUN term's mask normal form retired with the RUN term: a set
+       position states its members directly), its refusals at the boundary
+       (compose.c pres_run_check), each a literal substring of its text --- */
     {
-        static const uint8_t folded[] = { 'A', 'B', 'C' }, mask[] = { 0xDF, 0xDF, 0xDF };
-        static const uint8_t lower[] = { 'a', 'B', 'C' };      /* 'a' & ~0xDF: outside */
-        static const uint8_t lastbad[] = { 'A', 'B', 'c' };    /* the LAST position outside */
-        mf_pred span;
-        memset(&span, 0, sizeof span);
-        span.nterm = 1;
-        span.need = MF_REQUIRED;
-        span.plan_hint = MF_NO_PRED;
-        span.span_class = MF_SPAN_PRESENCE;
-        span.term[0].kind = MF_T_RUN;
-        span.term[0].need = MF_REQUIRED;
-        span.term[0].run = folded;
-        span.term[0].mask = mask;
-        span.term[0].run_len = 3;
+        static mf_wspan w;
+        static mf_walt a;
+        mf_pred span[2];
+        memset(span, 0, sizeof span);
+        memset(&w, 0, sizeof w);
+        w.len = 3;
+        w.verify = MF_VERIFY_NO;
+        w.core = MF_CORE_STATED;
+        w.core_len = 3;
+        for (unsigned j = 0; j < 3; j++) {
+            w.set[j][('A' + j) >> 3] |= (uint8_t)(1u << (('A' + j) & 7));
+            w.set[j][('a' + j) >> 3] |= (uint8_t)(1u << (('a' + j) & 7));
+        }
+        a = (mf_walt){ MF_ENTRY_NONE, 1, &w };
+        span[0].need = MF_REQUIRED;
+        span[0].plan_hint = MF_NO_PRED;
+        span[0].span_class = MF_SPAN_PRESENCE;
+        span[0].nalt = 1;
+        span[0].alts = &a;
+        span[0].wfloor = MF_WFLOOR_SUBJECT;
         mf_site s;
         memset(&s, 0, sizeof s);
         s.abi = MF_SITE_ABI;
         s.op = MF_OP_ALL_PRESENT;
         s.npspan = 1;
-        s.pspans = &span;
+        s.pspans = span;
         s.pres_proof.stated = 1;
         s.pres_proof.byte = -1;
         const char *why = kit_presence_check(&s);
-        if (why) printf("note: the normal span is refused: %s\n", why);
-        expect("NORMAL a normal presence run is accepted (the control)", why == NULL, 1);
-        span.term[0].run = lower;
+        if (why) printf("note: the set-form run is refused: %s\n", why);
+        expect("RUNFORM a set-form presence run is accepted (the control)", why == NULL, 1);
+        span[0].omin = -3;                              /* the run's omin may be negative */
         why = kit_presence_check(&s);
-        expect("NORMAL a presence run byte outside its mask is refused",
-               why != NULL && strstr(why, "outside its mask") != NULL, 1);
-        span.term[0].run = lastbad;                     /* a loop that stops early passes it */
+        expect("RUNFORM a negative omin on the run is accepted", why == NULL, 1);
+        span[0].omin = 0;
+        w.verify = MF_VERIFY_YES;
         why = kit_presence_check(&s);
-        expect("NORMAL a violation at the LAST position is refused",
-               why != NULL && strstr(why, "outside its mask") != NULL, 1);
-        span.term[0].run = lower;
-        span.term[0].mask = NULL;                       /* exact: 'a' is normal */
+        expect("RUNFORM a verify-YES run is refused",
+               why != NULL && strstr(why, "verify fact is NO") != NULL, 1);
+        w.verify = MF_VERIFY_NO;
+        memset(w.set[2], 0, sizeof w.set[2]);           /* the LAST position empty */
         why = kit_presence_check(&s);
-        expect("NORMAL an exact presence run is accepted", why == NULL, 1);
+        expect("RUNFORM an empty set at the LAST position is refused",
+               why != NULL && strstr(why, "EMPTY set") != NULL, 1);
+        w.set[2]['C' >> 3] |= (uint8_t)(1u << ('C' & 7));
+        span[0].nterm = 1;                              /* a term beside the statement */
+        why = kit_presence_check(&s);
+        expect("RUNFORM a run stating a term is refused",
+               why != NULL && strstr(why, "states no term") != NULL, 1);
+        span[0].nterm = 0;
+        span[1] = span[0];                              /* a second run: not last */
+        s.npspan = 2;
+        why = kit_presence_check(&s);
+        expect("RUNFORM a run that is not the LAST span is refused",
+               why != NULL && strstr(why, "LAST") != NULL, 1);
     }
 
     printf("checks passed: %d\n", passed);

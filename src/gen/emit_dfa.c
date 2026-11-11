@@ -15530,11 +15530,31 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
  * `used` record stay the bodies' own):
  *   1  the pre-check renders its run part (`admit` emits, the run's link
  *      tested): the run reply's `scan` (`req_site_define` keeps the same);
- *   2  else the run-pinned prefilter's window site reads the run
- *      (`ofs_test_of`'s row): its `mf_wreply.run_member`, as a whole-run
- *      index (the member is an attempt offset; position 0 sits at the
+ *   2  else a window-site search reads a run member: the `cover` find
+ *      (its member inside the run's one placement in the cover's sets,
+ *      `req_run_in_cover`) or the run-pinned prefilter (`ofs_test_of`'s
+ *      row), each its `mf_wreply.run_member` as a whole-run index (the
+ *      member is an attempt offset; the prefilter's position 0 sits at the
  *      pin's `o - at`);
- *   3  else -1: no `@` (`rev-end`, `one-attempt`, `landmark-walk`). */
+ *   3  else -1: no `@` (`rev-end`, `one-attempt`, `landmark-walk`, and a
+ *      cover whose member is not a run position). */
+/* The whole-run index cover offset `m` holds: the run's positions must be
+ * the cover's sets at exactly one offset `o` (each position its cube's byte
+ * set), and `m` inside `[o, o + n)`; else -1. */
+static int req_run_in_cover(const ReqRun *r, const MkEnd *e, int m)
+{
+    int at = -1, nhit = 0;
+    for (int o = 0; o + r->whole_len <= e->k; o++) {
+        bool eq = true;
+        for (int j = 0; eq && j < r->whole_len; j++)
+            for (int b = 0; eq && b < 256; b++)
+                eq = ((e->set[o + j][b >> 3] >> (b & 7) & 1) != 0) ==
+                     ((b & r->whole_mask[j]) == r->whole[j]);
+        if (eq) { nhit++; at = o; }
+    }
+    return nhit == 1 && m >= at && m < at + r->whole_len ? m - at : -1;
+}
+
 static int req_run_at(Ctx *cx, ReqAdmit admit)
 {
     if (pcrec_fact_req_run_stated(cx)->len < 2) return -1;
@@ -15544,9 +15564,7 @@ static int req_run_at(Ctx *cx, ReqAdmit admit)
         int run = req_pres_run(ps);
         if (run >= 0 && cls->pres[run].verify && cls->run.has_scan) return cls->run.scan;
     }
-    if (!pcrec_artifact_has_dfa_scan(cx) || cand_route_of(cx) == CAND_ROUTE_ATTEMPT ||
-        cand_stamp_absent(cx, CAND_SLOT_NEXT, cand_route_of(cx)))
-        return -1;
+    if (!pcrec_artifact_has_dfa_scan(cx)) return -1;
     uint32_t used = cx->job->pf.used;
     int at = -1;
 #ifdef PCREC_CAND_TRACE
@@ -15555,6 +15573,20 @@ static int req_run_at(Ctx *cx, ReqAdmit admit)
     cand_eval_base = cand_eval_depth;
 #endif
     UnanchStart us;
+    if (cand_locate_route(cx) == CAND_ROUTE_DFA &&
+        cand_locate_of(cx)->u.locate.emit[CAND_ROUTE_DFA] == emit_cover) {
+        const PcrecCover *cv = pcrec_cover(cx);
+        mf_hooks h;
+        PcrecMfU u;
+        mf_wreply w;
+        mf_site *cs = pcrec_cover_site(cx, cv, NULL, NULL, &h, &u);
+        if (!mf_wdecide(pcrec_memfn_art(cx), cs, &w) && w.run_stated)
+            at = req_run_in_cover(pcrec_fact_req_whole_run_stated(cx), &cv->end, w.run_member);
+        goto done;
+    }
+    if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT ||
+        cand_stamp_absent(cx, CAND_SLOT_NEXT, cand_route_of(cx)))
+        goto done;
     unanch_start(cx, &us);
     if (!us.empty && us.kind != DFA_PF_NONE) {
         CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = &us, .forward = true, .st = -1,
@@ -15566,6 +15598,7 @@ static int req_run_at(Ctx *cx, ReqAdmit admit)
             at = us.wr.run_member - (pin.o - pin.at);
         }
     }
+done:
 #ifdef PCREC_CAND_TRACE
     cand_eval_base = base;
     pcrec_cand_trace_quiet--;

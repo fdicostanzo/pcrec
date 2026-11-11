@@ -16,8 +16,9 @@
  * agreement check, compose.c `pres_layout_check`) stop the compile at the
  * FIRST reader that disagrees, so they cannot count the rest. This check
  * reads each reader at its own output and counts them one line each:
- *   scan    P3's run scan (mf_pres_ports `run_scan`)
- *   window  P3's stretch (mf_pres_ports `run_window`)
+ *   scan    the class's run reply's scan (`mf_class.run`, K38-2; was
+ *           mf_pres_ports `run_scan`), on P3's route
+ *   window  its verified extent (`ver_lo`, `ver_len`; was `run_window`)
  *   twin    the twin admission's mass term, read as the landmark bit
  *           (mf_pres_ports `landmark` on an ASSIGN site)
  *   member  the window family's member of a pre-check run part (mf_wdecide
@@ -115,33 +116,54 @@ static mf_site base_site(void)
     return s;
 }
 
-/* The PRES ports on the run `run` stated as the site's one presence span
- * (an ASSIGN site where `k` >= 0, its head_max k). */
-static mf_pres_picks ports(const mf_analysis *a, const char *run, long k)
+/* The PRES ports on the run `run` stated as the site's one presence span in
+ * SET FORM (R-38 K38-2: one window alternative, one span uncut, verify NO,
+ * no term; the floor SUBJECT), OPTIONAL on a DFA-scan site (the route whose
+ * deciding row is P3, so the run decision's WINDOW mode answers), an ASSIGN
+ * site where `k` > INT64_MIN, its head_max k (signed). `rr` gets the run's
+ * reply as the class carries it (`mf_class.run`, fd_pres_run: the routed
+ * PRES rows' own ask). */
+static mf_wspan pwsp;
+static mf_walt pwalt;
+
+static mf_pres_picks ports_rr(const mf_analysis *a, const char *run, long long k,
+                              mf_run_reply *rr)
 {
     static mf_pred span;
+    unsigned n = (unsigned)strlen(run);
     memset(&span, 0, sizeof span);
-    span.nterm = 1;
-    span.need = MF_REQUIRED;
+    memset(&pwsp, 0, sizeof pwsp);
+    pwsp.len = (uint8_t)n;
+    pwsp.verify = MF_VERIFY_NO;
+    pwsp.core = MF_CORE_STATED;
+    pwsp.core_len = (uint8_t)n;
+    for (unsigned j = 0; j < n; j++)
+        pwsp.set[j][(unsigned char)run[j] >> 3] |= (uint8_t)(1u << ((unsigned char)run[j] & 7));
+    pwalt = (mf_walt){ MF_ENTRY_NONE, 1, &pwsp };
+    span.need = MF_OPTIONAL;
     span.plan_hint = MF_NO_PRED;
     span.span_class = MF_SPAN_PRESENCE;
-    span.term[0].kind = MF_T_RUN;
-    span.term[0].need = MF_REQUIRED;
-    span.term[0].run = (const uint8_t *)run;
-    span.term[0].run_len = (uint16_t)strlen(run);
+    span.nalt = 1;
+    span.alts = &pwalt;
+    span.wfloor = MF_WFLOOR_SUBJECT;
     mf_site s = base_site();
     s.op = MF_OP_ALL_PRESENT;
+    s.site_kind = MF_SK_DFA_SCAN;
     s.npspan = 1;
     s.pspans = &span;
     s.pres_proof.stated = 1;
     s.pres_proof.byte = -1;
-    if (k >= 0) {
+    if (k > INT64_MIN) {
         s.handoff = MF_H_ASSIGN;
-        s.head_max = (uint64_t)k;
+        s.head_max = (int64_t)k;
     }
     mf_pres_picks pk;
-    if (mf_pres_ports(art_of(a), &s, NULL, NULL, &pk)) {
-        printf("FAIL: the ports refuse the run %s\n", run);
+    const char *why = NULL;
+    mf_art *art = art_of(a);
+    memset(&pk, 0, sizeof pk);
+    if (mf_pres_ports(art, &s, NULL, NULL, &pk) || fd_pres_run(art, &s, rr, &why)) {
+        printf("FAIL: the ports refuse the run %s (%s; %s)\n", run, why ? why : "-",
+               mf_art_error(art) ? mf_art_error(art) : "-");
         failed++;
     }
     return pk;
@@ -246,9 +268,12 @@ int main(void)
 
     /* ---- W1: S1095's `abcd` under NONE: every position ties, the higher
        takes it (scan 3), and the order walks down (3,2,1,0) ------------- */
-    mf_pres_picks pk = ports(NULL, "abcd", -1);
-    expect("scan W1 (abcd, NONE: the tie to the higher position)", pk.run_scan, 3);
-    expect("window W1 (four positions: one window, start 0)", pk.run_window, 0);
+    mf_run_reply rr;
+    mf_pres_picks pk = ports_rr(NULL, "abcd", INT64_MIN, &rr);
+    (void)pk;
+    expect("scan W1 (abcd, NONE: the tie to the higher position)", rr.scan, 3);
+    expect("window W1 (four positions: one window, start 0, the whole run)",
+           rr.ver_lo * 1000 + rr.ver_len, 4);
     expect("member W1 (verify YES: the run decision's scan)", member(NULL, "abcd"), 3);
     expect("stretch W1 (verify YES: the whole run, [0,4))", member_stretch(NULL, "abcd"), 4);
     rank(NULL, "abcd", r);
@@ -264,10 +289,16 @@ int main(void)
        -> 18; 18 x 30001 < 1e6, bit 1: the plant moves the bit.) The rank
        walks q at 11 then 0, z at 1, then the e positions from the
        highest. ---------------------------------------------------------- */
-    pk = ports(rated, "qzeeeeeeeeeq", 30000);
-    expect("scan W2 (q at 0 and 11 tie: the higher)", pk.run_scan, 11);
-    expect("window W2 (the one window holding 11: start 4)", pk.run_window, 4);
+    pk = ports_rr(rated, "qzeeeeeeeeeq", 30000, &rr);
+    expect("scan W2 (q at 0 and 11 tie: the higher)", rr.scan, 11);
+    expect("window W2 (the one window holding 11: [4,12))", rr.ver_lo * 1000 + rr.ver_len, 4008);
     expect("twin W2 (h 48 over [4,12), K 30000: not admitted)", pk.landmark, 0);
+    /* W-K3's literal at the reader: K negative admits as K 0 (max(K, 0)):
+       h 48, K 0, m 1e6: (1e6 - 0) 1e6 > 1e6 x 48, the bit 1, at K -5 too */
+    pk = ports_rr(rated, "qzeeeeeeeeeq", 0, &rr);
+    expect("twin W2 at K 0 (admitted)", pk.landmark, 1);
+    pk = ports_rr(rated, "qzeeeeeeeeeq", -5, &rr);
+    expect("twin W2 at K -5 (max(K, 0): as K 0)", pk.landmark, 1);
     expect("member W2 (verify YES)", member(rated, "qzeeeeeeeeeq"), 11);
     expect("stretch W2 (verify YES: the whole run, [0,12))",
            member_stretch(rated, "qzeeeeeeeeeq"), 12);
@@ -278,9 +309,9 @@ int main(void)
     /* ---- W3: `eeeeeeqeeeeeee` (14) under RATES: the scan q at 6; windows
        holding it start at max(0, 6-7) = 0 .. min(6, 14-8) = 6, every one
        seven e and q, equal mass: the LEFTMOST, 0. ------------------------ */
-    pk = ports(rated, "eeeeeeqeeeeeee", -1);
-    expect("scan W3 (the one q)", pk.run_scan, 6);
-    expect("window W3 (seven equal windows: the leftmost)", pk.run_window, 0);
+    pk = ports_rr(rated, "eeeeeeqeeeeeee", INT64_MIN, &rr);
+    expect("scan W3 (the one q)", rr.scan, 6);
+    expect("window W3 (seven equal windows: the leftmost, [0,8))", rr.ver_lo * 1000 + rr.ver_len, 8);
 
     printf("checks passed: %d\n", passed);
     printf("checks failed: %d\n", failed);
