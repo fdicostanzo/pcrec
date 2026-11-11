@@ -14,8 +14,17 @@
 #   owners      who may start it: `*` = any owner, else a comma list
 #   population  a command (run from the repo root by tests/ci/cloud_check.sh) that COUNTS the selector's population: every unit of
 #               the unsplit run in exactly one shard. {selector} = the selector column; {sections} = TEST_SECTIONS (argv of cloud_check)
-kind	command	selector	shards	max_parallel	limit_min	needs	owners	population
-test	CISHARD_TABLE={selector} make --debug=j test-shard CISHARD={shard}	tests/ci/cloud_test_shards.tsv	table	20	35	pcre2	*	TABLE={selector} CI_YML=none bash tests/ci/check_shards.sh {sections}
-axes	bash tests/ci/cloud_axes_shard.sh {selector} {shard}	tests/ci/cloud_axes_shards.tsv	table	20	150	pcre2	*	bash tests/ci/cloud_axes_check.sh {selector}
-ubsan	bash tests/ci/cloud_san_shard.sh {selector} {shard} ubsan-locked	tests/ci/cloud_san_shards.tsv	table	20	90	pcre2	*	bash tests/ci/cloud_san_check.sh {selector}
-asan	bash tests/ci/cloud_san_shard.sh {selector} {shard} asan-locked	tests/ci/cloud_san_shards.tsv	table	20	90	pcre2	*	bash tests/ci/cloud_san_check.sh {selector}
+#   measured    the COMMITTED measured-times file of the kind (tests/ci/cloud_measure.py writes it: median seconds per unit over
+#               recent completed runs; tests/ci/cloud_reweight.sh reads it). Kinds sharing a selector table are averaged into it
+#   reweight_margin  percent: the slowest shard's wall past the table's `# predicted_shard_s=` by more than this puts a
+#               REWEIGHT-DUE line in the verdict (cloud_gather.sh). UNMEASURED default 25 -- no run has shown the natural spread
+#   reweigh     the command that regenerates the selector table from the measured file(s) (tests/ci/cloud_reweight.sh runs it
+#               from the repo root): {measured} = the measured files of every kind sharing this selector, {setup_s},
+#               {max_parallel}, {write} = `--write` (empty on --dry)
+#   setup_s     seconds a shard spends before its command (checkout, python, libpcre2, build): the plan's per-shard fixed cost.
+#               UNMEASURED default 70 (cloud_plan.py's); the job log's step times would measure it
+kind	command	selector	shards	max_parallel	limit_min	needs	owners	population	measured	reweight_margin	setup_s	reweigh
+test	CISHARD_TABLE={selector} make --debug=j test-shard CISHARD={shard}	tests/ci/cloud_test_shards.tsv	table	20	35	pcre2	*	TABLE={selector} CI_YML=none bash tests/ci/check_shards.sh {sections}	tests/ci/measured_test.tsv	25	70	python3 -I tests/ci/cloud_plan.py --units {measured} --setup {setup_s} --slots {max_parallel} {write}
+axes	bash tests/ci/cloud_axes_shard.sh {selector} {shard}	tests/ci/cloud_axes_shards.tsv	table	20	150	pcre2	*	bash tests/ci/cloud_axes_check.sh {selector}	tests/ci/measured_axes.tsv	25	70	python3 -I tests/ci/cloud_units_plan.py axes --measured {measured} --setup {setup_s} --slots {max_parallel} {write}
+ubsan	bash tests/ci/cloud_san_shard.sh {selector} {shard} ubsan-locked	tests/ci/cloud_san_shards.tsv	table	20	90	pcre2	*	bash tests/ci/cloud_san_check.sh {selector}	tests/ci/measured_ubsan.tsv	25	70	python3 -I tests/ci/cloud_units_plan.py san --measured {measured} --setup {setup_s} --slots {max_parallel} {write}
+asan	bash tests/ci/cloud_san_shard.sh {selector} {shard} asan-locked	tests/ci/cloud_san_shards.tsv	table	20	90	pcre2	*	bash tests/ci/cloud_san_check.sh {selector}	tests/ci/measured_asan.tsv	25	70	python3 -I tests/ci/cloud_units_plan.py san --measured {measured} --setup {setup_s} --slots {max_parallel} {write}

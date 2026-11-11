@@ -1,0 +1,4 @@
+2026-11-11T17:08:30.2028141Z   FAIL — utfcheck arm: byte=57331 utf8=15577 refused=1798 agree=15577 unplaced=3498 lb_unchecked=0 guard=0 fail=336 lost=0 gained=0
+2026-11-11T17:10:28.6383913Z -futf-check arm (contract, own oracle): FAIL — utfcheck arm: byte=57331 utf8=15577 refused=1798 agree=15577 unplaced=3498 lb_unchecked=0 guard=0 fail=336 lost=0 gained=0
+2026-11-11T17:10:28.6387438Z run_axes.sh: FAILED — see AXIS FAIL lines above
+2026-11-11T17:10:28.6485292Z ##[error]Process completed with exit code 1.

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# queuewatch CLOUD-SHARD-RED self-test ([CLOUD-SUITE], lane cloudmon): the early alert for a shard that failed in a
+# cloud run still IN PROGRESS, against a FAKE `gh` on PATH (scripted `run list`, `api runs/ID`, `api runs/ID/jobs`
+# and `api jobs/ID/logs`; the log is the REAL failing shard-7 lines of run 43069897443, tests/ci/fixtures). No network.
+# Cases: no red shard -> silent; shard 7 red -> ONE CLOUD-SHARD-RED naming owner/kind/name/shard/run and the real
+# failing lines; never again for the same run+shard, and its log fetched exactly once however often it polls; a
+# second shard red later -> only that one; the run's end -> CLOUD-DONE; `cloudrun --status` prints the red shard.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+FIX=$here/../tests/ci/fixtures
+T=$(mktemp -d "${TMPDIR:-/tmp}/queuewatch_cloud.test.XXXXXX"); trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+unset QUEUEWATCH_NO_CI CI_EVERY
+RID=900 SHA=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa BR=cloud/main/axes/demo
+mkdir -p "$T/bin" "$T/q/pending" "$T/q/running" "$T/q/done" "$T/q/failed"
+cat > "$T/bin/gh" <<SH
+#!/usr/bin/env bash
+D=$T
+case "\$1 \$2" in
+  "run list") echo x >> \$D/list.calls; cat \$D/runlist.json ;;
+  "api repos/{owner}/{repo}/actions/runs/$RID") echo x >> \$D/run.calls; cat \$D/run.json ;;
+  "api repos/{owner}/{repo}/actions/runs/$RID/jobs") echo x >> \$D/jobs.calls; cat \$D/jobs.json ;;
+  api\ repos/{owner}/{repo}/actions/jobs/*/logs) echo x >> \$D/log.calls; id=\${2%/logs}; id=\${id##*/}; cat \$D/log.\$id ;;
+  *) echo "shim gh: unexpected \$*" >&2; exit 9 ;;
+esac
+SH
+chmod +x "$T/bin/gh"
+cp "$FIX/run_s7.red.txt" "$T/log.71"; echo "all fine" > "$T/log.72"; cp "$FIX/run_s8.red.txt" "$T/log.73"
+runlist() { printf '[{"databaseId":%s,"headSha":"%s","status":"%s","conclusion":"%s","createdAt":"2026-11-11T10:00:00Z","displayTitle":"t","url":"http://x/%s"}]' "$RID" "$SHA" "$1" "$2" "$RID" > "$T/runlist.json"; }
+job() { printf '{"id":%s,"name":"shard (%s)","status":"%s","conclusion":%s}' "$1" "$2" "$3" "$4"; }
+jobs() { local o="" j; for j in "$@"; do o="${o:+$o,}$j"; done; printf '{"jobs":[{"id":1,"name":"plan","status":"completed","conclusion":"success"},%s]}' "$o" > "$T/jobs.json"; }
+runlist in_progress ""
+printf '{"head_branch":"%s","status":"in_progress","conclusion":null,"created_at":"2026-11-11T10:00:00Z","updated_at":"2026-11-11T10:05:00Z","html_url":"http://x/%s"}' "$BR" "$RID" > "$T/run.json"
+printf 'R\t1\tmain\taxes\tdemo\t%s\t%s\n' "$BR" "$SHA" > "$T/ledger.tsv"
+export CLOUDRUN_LEDGER=$T/ledger.tsv
+watch() { PATH="$T/bin:$PATH" "$TO" 60 bash "$here/queuewatch" --queue "$T/q" --state "$T/state" --every 1 --max-sec 1 --disk-pct 101 --ci-every 0 2>&1; }
+head1() { sed 's/^queuewatch: //; s/ .*//'; }
+nlog() { wc -l < "$T/log.calls" 2>/dev/null || echo 0; }
+
+jobs "$(job 70 1/20 completed '"success"')" "$(job 71 7/20 in_progress null)" "$(job 72 2/20 in_progress null)"
+r=$(watch | head1); [ "$r" = CAP ] && ok "no red shard -> no event" || bad "no red: $r"
+jobs "$(job 70 1/20 completed '"success"')" "$(job 71 7/20 completed '"failure"')" "$(job 72 2/20 in_progress null)"
+r=$(watch)
+case $r in "queuewatch: CLOUD-SHARD-RED main axes demo shard 7/20 run=$RID :: AXIS FAIL: -fprefilter"*"||"*"run_axes.sh: FAILED"*) ok "shard 7 red -> ONE CLOUD-SHARD-RED with owner kind name shard run and the real failing lines" ;; *) bad "alert line: $r" ;; esac
+for _ in 1 2 3; do r=$(watch | head1); [ "$r" = CAP ] || break; done
+[ "$r" = CAP ] && [ "$(nlog)" = 1 ] && ok "never twice for the same run+shard; its log fetched exactly once over 4 polls" || bad "dedupe: last=$r log fetches=$(nlog)"
+jobs "$(job 70 1/20 completed '"success"')" "$(job 71 7/20 completed '"failure"')" "$(job 73 8/20 completed '"failure"')"
+r=$(watch); case $r in "queuewatch: CLOUD-SHARD-RED main axes demo shard 8/20 run=$RID :: FAIL — utfcheck arm"*) ok "a second red shard -> only that one" ;; *) bad "second shard: $r" ;; esac
+[ "$(nlog)" = 2 ] && ok "two red shards, two log fetches in all" || bad "log fetches $(nlog)"
+st=$(PATH="$T/bin:$PATH" bash "$here/cloudrun" --status 2>&1)
+case $st in *"axes demo (owner main)"*"shards done 3/20 (2 red"*"RED shard 7/20"*"AXIS FAIL: -fprefilter"*"RED shard 8/20"*"FAIL — utfcheck"*) ok "cloudrun --status: kind, name, done/total, each red shard with its lines" ;; *) bad "status: $st" ;; esac
+runlist completed failure
+all=""; for _ in 1 2 3; do all="$all $(watch | head1)"; done   # the fake `main` list also shows the failed run: a CI-RED may come too
+case $all in *CLOUD-DONE*) case $all in *CLOUD-SHARD-RED*) bad "done: shard alerts repeated: $all" ;; *) ok "the run's end -> CLOUD-DONE (no repeat of the shard alerts)" ;; esac ;; *) bad "done: $all" ;; esac
+echo "queuewatch_cloud.test: $pass passed, $fail failed"; [ "$fail" = 0 ]

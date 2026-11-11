@@ -32,7 +32,7 @@ export QUEUEWATCH_NO_CI=1    # the CI source has its own test (queuewatch_ci.tes
 # env_for TAG: the scratch environment of one scenario (queue, lock, simulate dir, state)
 env_for() { Q=$T/q$1; export PCREC_BOXQUEUE_DIR=$Q PCREC_BOXLOCK_FILE=$T/box.$1 FULLSUITE_SIM_DIR=$T/sim$1; ST=$T/state.$1; }
 # wrapper TAG SCENARIO: the only job shape this file queues; echoes its path
-wrapper() { local f=$T/job_$1; printf '#!/usr/bin/env bash\nexec bash %s/fullsuite_job.sh --simulate %s "$@"\n' "$here" "$2" > "$f"; chmod +x "$f"; echo "$f"; }
+wrapper() { local f=$T/job_$1; printf '#!/usr/bin/env bash\n# --ready is answered by fullsuite_job.sh --simulate (always 0); boxqueue add wants the word in the text\nexec bash %s/fullsuite_job.sh --simulate %s "$@"\n' "$here" "$2" > "$f"; chmod +x "$f"; echo "$f"; }
 # collect OUT [watcher opts]: relaunch the watcher until a JOB-DONE line (or 150 s); one line per launch result
 collect() {
     local out=$1 end l rc; shift; : > "$out"; end=$(( $(date +%s) + ${BUDGET:-150} ))
@@ -258,6 +258,16 @@ stuck_case() { # stuck_case WATCHER TAG READY-AGO-SEC: queued 20000 s ago, not-r
     : > "$q/pending/700-dep"; touch -d "@$((now - 20000))" "$q/pending/700-dep"; echo "waiting on pid=1 label=h" > "$q/.state/dep.answer"
     fa_run "$1" "$q" "$T/sts$2" 2 --stuck-sec 600
 }
+# a job STARTing in the second after the one before it ended: the --confirm re-read sees running/ and stays silent (jobs 551/552, 2026-11-11)
+stuck_race() { # stuck_race WATCHER TAG: the stuck_case 1500 setup, a job appears in running/ 4 s in, inside the stuck re-read (after RUNNER-DEAD's own wait)
+    local q=$T/qs$2 r
+    stuck_case "$1" "$2" 1500 > /dev/null; rm -f "$T/sts$2"*
+    "$TO" 30 bash "$1" --queue "$q" --state "$T/sts$2" --no-ci --every 1 --confirm 1 --max-sec 1 --disk-pct 101 > /dev/null 2>&1   # seed
+    ( sleep 4; mkdir -p "$q/running/jobN" ) 9>&- > /dev/null 2>&1 &
+    r=$("$TO" 30 bash "$1" --queue "$q" --state "$T/sts$2" --no-ci --every 1 --confirm 3 --max-sec 12 --disk-pct 101 --stuck-sec 600 2>&1); wait
+    echo "${r//$'\n'/|}"
+}
+r=$(stuck_race "$QW" race); case $r in *PENDING-STUCK*) bad "a job STARTing during the confirm wait still alarmed: $r" ;; *) ok "PENDING-STUCK: a job that starts during the --confirm re-read is not stuck" ;; esac
 r=$(stuck_case "$QW" young 60); [ -z "$r" ] && ok "PENDING-STUCK: queued 20000 s ago but ready for 60 s (waited on a dependency) is not stuck" || bad "young-ready read as stuck: $r"
 r=$(stuck_case "$QW" old 1500)
 case $r in "queuewatch: PENDING-STUCK 700-dep pending for 15"??"s, nothing running (queued 200"??"s ago, ready for 15"??"s)|") ok "PENDING-STUCK: ready for 1500 s is stuck once, the line gives the ready age and the queued age" ;; *) bad "old-ready: $r" ;; esac
@@ -375,6 +385,8 @@ if [ -n "$P3" ]; then
 fi
 P7=$(plant nostarted 'name=${d##*/}; [ -e "$d/started" ] || continue' 'name=${d##*/}') || bad "plant nostarted did not land"
 P8=$(plant joblogonly 'for f in "$d"/*; do case' 'for f in "$d"/job.log; do case') || bad "plant joblogonly did not land"
+P15s=$(plant noconfirmstuck 'sleep "$confirm" 9>&-; nrun=$(ls -A "$Q/running" 2>/dev/null | grep -c .)' 'true') || bad "plant noconfirmstuck did not land"
+[ -n "$P15s" ] && { r=$(stuck_race "$P15s" p15); case $r in *PENDING-STUCK*) ok "PLANT stuck-without-reread: the start-race job reads stuck, so the race case catches it" ;; *) bad "PLANT noconfirmstuck not caught: $r" ;; esac; }
 P9=$(plant queuedage '[ -n "$rdy" ] && since=$rdy ;; esac' ': ;; esac') || bad "plant queuedage did not land"
 [ -n "$P7" ] && { r=$(fa_run "$P7" "$T/qfnostart" "$T/stfp7" 8 --quiet-sec 3); [ -n "$r" ] && ok "PLANT started-not-required: the lock-waiting job reads QUIET, so the unstarted case catches it" || bad "PLANT nostarted not caught"; }
 [ -n "$P8" ] && { r=$(logcase "$P8" p8 grow); [ -n "$r" ] && ok "PLANT job.log-only growth: the perfrun-shaped job reads QUIET, so the job.log.make case catches it" || bad "PLANT joblogonly not caught"; }
@@ -393,7 +405,7 @@ P12=$(plant resvnogrow '[ -n "$blog" ] && stat -c '"'"'%n %s %Y'"'"' "$blog" ${b
 P13=$(plant gatedrop 'if [ -n "$nb" ] && nbe=$(date -d "$nb" +%s 2>/dev/null) && [ "$since" -lt "$nbe" ]; then since=$nbe; age=$((now - since)); fi' ':') || bad "plant S1630 did not land"
 [ -n "$P13" ] && { r=$(gate_case "$P13" p13 3000 "not-ready: not before 2026-10-27T00:05 (since x)"); [ -n "$r" ] && ok "PLANT S1630 (declared gate ignored): the future-gated job reads stuck, the gate case goes red" || bad "PLANT S1630 not caught"; }
 # S1631: the REJECTED qscripts form (every not-ready answer is a wait): the failed-dependency job goes silent again
-P14=$(plant anywait '        if [ "$age" -ge "$stuck" ]; then' '        case $ans in not-ready:*|READY-HUNG*) age=0 ;; esac; if [ "$age" -ge "$stuck" ]; then') || bad "plant S1631 did not land"
+P14=$(plant anywait '        if [ "$age" -ge "$stuck" ]; then sleep' '        case $ans in not-ready:*|READY-HUNG*) age=0 ;; esac; if [ "$age" -ge "$stuck" ]; then sleep') || bad "plant S1631 did not land"
 [ -n "$P14" ] && { r=$(gate_case "$P14" p14 none "not-ready: waiting on main-build (failed) (since x)"); [ -z "$r" ] && ok "PLANT S1631 (any not-ready exempt): the failed-dependency job goes silent, the after-KEY-failed case goes red" || bad "PLANT S1631 not caught"; }
 # WAIT-LONG (lane lockwait): a real boxlock waiter on a SCRATCH lock, a scratch empty queue beside it; --wait-long-sec is seconds-scale
 WL=$T/wl; mkdir -p "$WL/q"; export PCREC_BOXLOCK_FILE=$WL/.box.lock

@@ -41,10 +41,18 @@ $CR --owner main --kind test --ref nosuchref >/dev/null 2>&1; chk "unresolvable 
 $CR --bogus >/dev/null 2>&1; chk "unknown argument -> 64" $([ $? = 64 ] && echo 0 || echo 1)
 out=$($CR --owner main --kind nosuchkind --dry-run 2>&1); rc=$?
 [ $rc = 64 ] && grep -q "kind 'nosuchkind' is not declared in tests/ci/cloud_kinds.tsv (declared: test" <<<"$out"; chk "an undeclared kind -> 64, names the declared kinds (from the table)" $?
-sed 's/\t\*$/\tonlyme/' "$R/tests/ci/cloud_kinds.tsv" > "$T/k2.tsv"; cp "$T/k2.tsv" "$R/tests/ci/cloud_kinds.tsv"
+sed 's/\t\*\t/\tonlyme\t/' "$R/tests/ci/cloud_kinds.tsv" > "$T/k2.tsv"; cp "$T/k2.tsv" "$R/tests/ci/cloud_kinds.tsv"
 out=$($CR --owner main --kind test --dry-run 2>&1); rc=$?
 [ $rc = 64 ] && grep -q "owner 'main' may not start kind 'test' (owners: onlyme)" <<<"$out"; chk "an owner the row does not allow -> 64" $?
 cp "$here/../tests/ci/cloud_kinds.tsv" "$R/tests/ci/cloud_kinds.tsv"
+# a --name with no --ref from a checkout on branch main is refused (the 2026-11-11 slip); --ref main, or another branch, is fine
+orig=$(git -C "$R" symbolic-ref --short HEAD); git -C "$R" branch -q -m "$orig" main
+out=$($CR --owner main --kind test --name ucax --dry-run 2>&1); rc=$?
+[ $rc = 64 ] && grep -q "pass --ref main to mean it" <<<"$out"; chk "--name, no --ref, on branch main -> 64 with the way out" $?
+$CR --owner main --kind test --name ucax --ref main --dry-run >/dev/null 2>&1; chk "--name with an explicit --ref main is allowed" $?
+$CR --owner main --kind test --dry-run >/dev/null 2>&1; chk "no --name, no --ref, on branch main is allowed (the default name)" $?
+git -C "$R" branch -q -m main "$orig"
+$CR --owner main --kind test --name ucax --dry-run >/dev/null 2>&1; chk "--name, no --ref, on another branch is allowed" $?
 out=$($CR --owner main --kind test --dry-run 2>&1); rc=$?
 [ $rc = 0 ] && [ -z "$(branches)" ] && [ ! -e "$T/ledger.tsv" ] && grep -q "DRY-RUN would push ${SHA:0:9} -> origin cloud/main/test/HEAD-${SHA:0:7}" <<<"$out"; chk "--dry-run pushes nothing, writes no ledger" $?
 

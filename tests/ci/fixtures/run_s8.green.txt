@@ -1,0 +1,12 @@
+2026-11-11T17:08:30.1985445Z utfcheck arm: byte=57331 utf8=15577 refused=1798 agree=15577 unplaced=3498 lb_unchecked=0 guard=0 fail=336 lost=0 gained=0
+2026-11-11T17:10:28.6335183Z   vrun-kb @default byte/c-default                ASSERT_ZERO differ=0 refused=0 of 5154
+2026-11-11T17:10:28.6335620Z   vrun-kb @default byte/c-vm                     ASSERT_ZERO differ=0 refused=0 of 5154
+2026-11-11T17:10:28.6336296Z   vrun-kb @default utf8/c-default                ASSERT_ZERO differ=0 refused=0 of 5154
+2026-11-11T17:10:28.6336810Z   vrun-kb @default utf8/c-vm                     ASSERT_ZERO differ=0 refused=0 of 5154
+2026-11-11T17:10:28.6340064Z checks failed: 0
+2026-11-11T17:10:28.6341015Z   OK — memfn arm: 12 kit rows, 2 cells, 5151 distinct corpus patterns (+3 witness-only), every=1
+2026-11-11T17:10:28.6375984Z   -fno-end-window (PCREC_NO_END_WINDOW, bit 29)|OK|keys_base=76406 keys_axis=76406 agree=76406 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|798s
+2026-11-11T17:10:28.6377378Z   -fstartpos-guard=align (PCREC_FORCE_STARTPOS_ALIGN, bit 40)|OK|keys_base=76406 keys_axis=76406 agree=76406 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|801s
+2026-11-11T17:10:28.6379724Z   --memfn=no-vrun-kb (kit row vrun-kb, layer default, memfn arm)|OK|keys_base=76406 keys_axis=76406 agree=76406 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|812s
+2026-11-11T17:10:28.6381338Z   -fmemfn-simd=x86-64-v3 --memfn=no-vrun-kb (kit row vrun-kb, layer simd, memfn arm)|OK|keys_base=76406 keys_axis=76406 agree=76406 budget=0 giveup1=0 refused=0 lost=0 gained=0 mismatches=0 refused_doc=0 refused_undoc=0 giveup1_allowed=0 giveup1_unallowed=0|825s
+2026-11-11T17:10:28.6382096Z oracle cross-check: SKIPPED

@@ -1232,6 +1232,16 @@ sabotage matrix) never run in CI — those are the manager's battery, run by
 hand on `ubuntubudu` per the box-concurrency rules above `CLAUDE.md`
 already states; CI is the per-PR/per-push TIER only, never the full gate.
 
+**[CLOUD-SUITE] reweigh (2026-11-11): the cloud shard tables are MEASURED and re-weighed periodically.** Every cloud
+shard records `units.tsv` (seconds per section / axes job / sanitizer script, plus `@wall`, `@baseline`, `@build`) in
+its `cloud-shard-*` artifact and `wall_s` in `result.txt`. `make cloud-reweight KIND=test|axes|ubsan|asan|all`
+[`MEASURE=1`] [`DRY=1`] (`tests/ci/cloud_reweight.sh`) re-measures from the last completed runs into the committed
+`tests/ci/measured_KIND.tsv` and regenerates the shard table through the kind's `reweigh` command (a table-driven
+column of `tests/ci/cloud_kinds.tsv`); the table header names the predicted shard/wall seconds and the indivisible
+floor. The trigger is a `REWEIGHT-DUE kind=K slowest=..s plan=..s` line in the run's verdict when the slowest shard
+runs more than the kind's `reweight_margin` (UNMEASURED default 25 %) over the plan; the manager runs the step then
+(and after a section, job or script is added). Process and the five steps: `tests/ci/CLAUDE.md` "Reweighting".
+
 ## The atomic landing gate ([M6.4.4], 2026-08-22) — OPT-IN, and its archived result
 
 `tests/codegen/run_atomic_identity.sh` is module `atomic-groups`' byte-identity

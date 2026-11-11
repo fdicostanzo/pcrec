@@ -8,7 +8,7 @@ weights with the runner's MEASURED section times, and re-balance ([CI-SHARD]).
   --table FILE --shards N : balance a COPY of the table (tests/ci/cloud_plan.py does, for the cloud kind)
   --median : weight = median over every file that measured the section (several green runs)
 
-Each --measured file is a CI `build/ci/sections.tsv` (scripts/sectiontimes
+Each --measured file is a CI `build/ci/sections.tsv` (or a committed tests/ci/measured_KIND.tsv, the reweigh process's file) (scripts/sectiontimes
 report output; the three `pcrec-ci-sections-*` artifacts of one run). A row
 with `state` open is a section a timeout killed: its wall is a LOWER bound, so
 it is used only if no complete measurement exists and is labeled as such. The
@@ -53,10 +53,12 @@ def measured(paths, names, median=False):
         with open(p) as f:
             for line in f:
                 c = line.rstrip("\n").split("\t")
+                # a committed measured file (tests/ci/measured_KIND.tsv, cloud_measure.py): unit median_s n min max basis
+                col = 1 if len(c) == 6 else 3
                 if len(c) < 4 or c[0] not in names:
                     continue
                 try:
-                    wall = float(c[3])
+                    wall = float(c[col])
                 except ValueError:
                     continue
                 complete = not (len(c) > 4 and c[4] == "open")

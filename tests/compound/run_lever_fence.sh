@@ -56,8 +56,9 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # restoring), whose reach probe names it; R1's `tie` arm row S1930 (lane sartie),
 # same shape; S446 and S807's re-aim comment
 # (sar1fix) names the lever as the old anchor's only way in. The cloud axes
-# shard table (tests/ci/cloud_axes_shards.tsv) names each axis it times.
-ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S192[1289]_|tests/mech/sabotages/S1930_|tests/mech/sabotages/S(446|807)_|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv|tests/ci/cloud_axes_shards\.tsv)'
+# shard table (tests/ci/cloud_axes_shards.tsv) names each axis it times; so
+# do all generated cloud timing tables (cloud_*_shards.tsv, measured_*.tsv).
+ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S192[1289]_|tests/mech/sabotages/S1930_|tests/mech/sabotages/S(446|807)_|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv|tests/ci/(cloud_[a-z]+_shards|measured_[a-z]+)\.tsv)'
 mentions() {
     (cd "$1" && grep -rnI -e '--harness=' -e "$PFX" docs/spec docs/guide README.md examples lib tests scripts cli 2>/dev/null) |
         grep -Ev "$ALLOW"
