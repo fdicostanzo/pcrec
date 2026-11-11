@@ -22,6 +22,11 @@
 #       GREEN only if EVERY expected shard has a result with rc=0. A shard with no result (cancelled,
 #       timed out before the record step, runner lost), a result with rc!=0 or rc=none, a result
 #       naming a different shard, or an empty EXPECTED is RED, by shard name. Exit 0 GREEN, 1 RED.
+#       INFRA ($CLOUD_INFRA_SHARDS, space-separated K/N, from tests/ci/cloud_infra.py shards): a shard with no result
+#       whose job's TEST step passed and whose artifact UPLOAD failed (GitHub 502s) is `INFRA: shard K/N ..`, not RED.
+#       Only INFRA lines and no RED line = `VERDICT INFRA` (still exit 1: the job must fail so `gh run rerun --failed` picks
+#       it up; scripts/queuewatch reruns such a run ONCE and reports CLOUD-INFRA if the second attempt is infra too).
+#       A real RED anywhere keeps the verdict RED.
 #       A kind whose slowest shard's wall_s exceeds the shard table's `# predicted_shard_s=` by the kinds table's
 #       `reweight_margin` percent adds ONE `REWEIGHT-DUE kind=K slowest=..s plan=..s` line to the verdict (and
 #       is NOT red: the run's answer is unaffected). The periodic step it asks for: tests/ci/CLAUDE.md "Reweighting".
@@ -50,11 +55,17 @@ record)
       echo "skip_lines=$skips"; echo "sha=${GITHUB_SHA:-unknown}"; echo "runner=${RUNNER_NAME:-unknown}"; echo "wall_s=${wall:-?}"; } > "$out" ;;
 gather)
     expected=${2-} dir=${3:?results dir} out=${4:?outfile}; shift 4
-    red=""; body=""; slowest=0
+    red=""; body=""; slowest=0; infra=""
     [ -n "$expected" ] || red="$red
 RED: no expected shard list (the plan job produced none)"
     for s in $expected; do
         d=$dir/cloud-shard-$(slug "$s"); f=$d/result.txt
+        if [ ! -f "$f" ] && case " ${CLOUD_INFRA_SHARDS:-} " in *" $s "*) true ;; *) false ;; esac; then
+            infra="$infra
+INFRA: shard $s: its test step passed but its artifact upload failed (GitHub infrastructure); no result to read"
+            body="$body
+shard $s: INFRA"; continue
+        fi
         if [ ! -f "$f" ]; then
             red="$red
 RED: shard $s MISSING: no result (cancelled, timed out, or the runner died before it recorded)"
@@ -92,12 +103,13 @@ RED:   shard $s: $l"; done < "$d/errors.txt"
             if [ $((slowest * 100)) -gt $((plan * (100 + margin))) ]; then
                 due="REWEIGHT-DUE kind=$kind slowest=${slowest}s plan=${plan}s"; fi ;; esac
     fi
-    { if [ -z "$red" ]; then echo "VERDICT GREEN"; else echo "VERDICT RED"; fi
+    { if [ -n "$red" ]; then echo "VERDICT RED"; elif [ -n "$infra" ]; then echo "VERDICT INFRA"; else echo "VERDICT GREEN"; fi
       for kv in "$@"; do echo "$kv"; done
       [ -z "$due" ] || echo "$due"
       echo "expected=$expected"
       printf '%s\n' "${body#$'\n'}"
+      [ -z "$infra" ] || printf '%s\n' "${infra#$'\n'}"
       [ -z "$red" ] || printf '%s\n' "${red#$'\n'}"; } > "$out"
-    [ -z "$red" ] ;;
+    [ -z "$red$infra" ] ;;
 *) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 64 ;;
 esac

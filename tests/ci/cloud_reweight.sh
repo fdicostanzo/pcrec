@@ -29,6 +29,7 @@ rc=0 done_sel=""
 cd "$root" || exit 2
 for k in $want; do
     sel=$(bash "$K" get "$k" selector)
+    [ "$sel" = - ] && { echo "REWEIGH $k: single shard, no table to regenerate"; continue; }
     case " $done_sel " in *" $sel "*) continue ;; esac
     done_sel="$done_sel $sel"
     peers=""; meas=""
