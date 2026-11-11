@@ -1,4 +1,6 @@
-# cloudmech report (sonnet, 2026-11-11) — STATE AT HANDOFF
+# cloudmech report (sonnet, 2026-11-11)
+
+## STATE AT HANDOFF
 
 Branch lane/cloudmech (worktree worktrees/cloudmech). Plan row [CLOUD-SUITE] piece D.
 
