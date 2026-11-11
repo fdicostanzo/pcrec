@@ -66,6 +66,7 @@ SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pat
 SAB_REACH_EXPECT="REACH-STAMP-AGREES-WITH-BODY"
 SAB_REACH_POP="docs/dev/opt5m2_m2_changed_patterns.txt|^\(\?m|12"
 SAB_COUNT=1
+# RE-ANCHORED 2026-11-11 (lane ucfix): the stamp now also honours the LOCATE row's `own_recover`; BEFORE carries it and the fork keeps it.
 # RE-AIMED 2026-10-07 (lane stc3, [START-TABLE] C3, start_table.md §3.5): the
 # selection is `cand_select(RECOVER)` over `cand_rows[]` since C3 and the
 # stamp projects the chosen row's spelling (`->tok`); `dfa_search_starts[]` is
@@ -77,8 +78,12 @@ SAB_COUNT=1
 SAB_BEFORE='static const char *dfa_search_start_name(Ctx *cx)
 {
     /* [OPT-REVEND] L2.1 the generated rule: RECOVER'\''s absence where the path
-     * asks none (an attempt loop, the empty engine). */
+     * asks none (an attempt loop, the empty engine) -- unless the LOCATE
+     * row'\''s walk does a RECOVER row'\''s work itself (`own_recover`). */
     const char *a = cand_stamp_absent(cx, CAND_SLOT_RECOVER, cand_route_of(cx));
+    if (a && cand_route_of(cx) == CAND_ROUTE_DFA &&
+        cand_locate_of(cx)->u.locate.own_recover)
+        return cand_locate_of(cx)->u.locate.own_recover;
     return a ? a : dfa_search_start_of(cx)->tok;
 }'
 SAB_AFTER='/* SABOTAGE S222: the stamp is a SECOND predicate, forked from the selection
@@ -88,6 +93,9 @@ SAB_AFTER='/* SABOTAGE S222: the stamp is a SECOND predicate, forked from the se
 static const char *dfa_search_start_name(Ctx *cx)
 {
     const char *a = cand_stamp_absent(cx, CAND_SLOT_RECOVER, cand_route_of(cx));
+    if (a && cand_route_of(cx) == CAND_ROUTE_DFA &&
+        cand_locate_of(cx)->u.locate.own_recover)
+        return cand_locate_of(cx)->u.locate.own_recover;
     if (a) return a;
     if (cx->job->engine != PCREC_ENG_UNANCH || dfa_engine_is_empty(cx))
         return "reverse-pass";

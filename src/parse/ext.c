@@ -329,19 +329,10 @@ static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
              * §0.1 T1, D85): a `DEFK_SET` entry that applies here — `\d` under
              * UCP unrestricted — is built by the one set producer; every other
              * resolution is the row's DEF_ALWAYS entry, which `p->set` IS (the
-             * self-oracle ties the two). A refused wide set is this port's
-             * refusal, at the escape. */
+             * self-oracle ties the two). */
             const RegDef *def = pcrec_def_resolve(cx, r);
             if (def && def->kind == DEFK_SET) {
-                char cons[3] = { '\\', (char)c, 0 };
-                char err[sizeof ((pcrec_error *)0)->msg];
-                res.node = pcrec_setdef_class(cx, def->set, p->scalar != 0,
-                                              cons, err, sizeof err);
-                if (!res.node) {
-                    res.what = EXT_REFUSAL;
-                    res.msg = pcrec_ext_msgf(cx, "%s", err);
-                    return res;
-                }
+                res.node = pcrec_setdef_class(cx, def->set, p->scalar != 0);
             } else {
                 res.node = pcrec_ast_class_from_bits(cx, p->set,
                                                      p->scalar != 0);

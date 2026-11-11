@@ -1,6 +1,6 @@
 # src/gen — C code generation
 
-Emits self-contained gcc-dialect C from the DFA machines and the VM program; the generated code has zero dependency on pcrec at build or run time. Two DFA engines (D7): ENG_UNANCH (patterns without `^`, `$`-bearing ones included, D8) = table-driven forward scan + reverse scan for the start, with a memchr/bitmap start prefilter; ENG_ATTEMPT (`^` patterns) = per-start computed-goto attempt loop with EOL-variant states. Tables because gcc compile time on huge computed-goto functions is superlinear (R1 A-3). `emit_vm.c` is the backtracking-VM emitter (one function per pattern, computed goto, one `goto *` at the fail label plus one per shared callee body).
+Emits self-contained gcc-dialect C from the DFA machines and the VM program; the generated code has zero dependency on pcrec at build or run time. Two DFA engines (D7): ENG_UNANCH (patterns without `^`, `$`-bearing ones included, D8) = table-driven forward scan + reverse scan for the start, with a memchr/bitmap start prefilter; ENG_ATTEMPT (`^` patterns) = per-start computed-goto attempt loop with EOL-variant states. `emit_vm.c` is the backtracking-VM emitter (one function per pattern, computed goto, one `goto *` at the fail label plus one per shared callee body).
 
 ## Standing rules
 
@@ -33,6 +33,7 @@ Emits self-contained gcc-dialect C from the DFA machines and the VM program; the
 ## Files
 
 - `emit_dfa.c` — both DFA engine emitters (`emit_unanchored`, `emit_attempt`), the six+ axis lists and `cand_rows[]`, naming helpers, shared prologue/ABI types/`rx_info`/`main`/info emission, stamps, `pcrec_emit_find`, start-set/landing/cover rows, the pre-check admission (`req_*`), scan edge, `emit_state_legend`, residual decls/defs, `PCREC_ARTIFACT_ABI`.
+- `tblpool.c` — the content-keyed TABLE POOL (`pcrec_tbl_ref`/`_emit`/`_done`); NOTES.md "tblpool".
 - `emit_code.c` — module `code-c`'s tail (match_api §11.9): `#undef` block, `code-header` includes, per-segment macro set + `#line` + function.
 - `emit_vm.c` — the backtracking VM emitter (rungs, MRL pruning, lookaround, atomic, backreferences, calls/splice, island, entry ladder, hybrid prefilter/re-seed, `--emit-ir` listing, VM stamps). Body text only via `vm_stmt`.
 - `vm_stmt.c` / `.h` — [VMREC] the VM body as typed records: ONE renderer per kind (`vm_kind_rows[]`), tiling, respell, the matcher frame. The only `vmsb` writer (ST check).

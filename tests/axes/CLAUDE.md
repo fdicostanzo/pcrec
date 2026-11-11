@@ -12,7 +12,7 @@ recorded transcript.
 ## Files
 
 - **run_axes.sh** — the orchestrator (`make test-axes`).
-- **utfcheck_arm.py** — [UTF-VALID] `-futf-check`'s OWN ARM (`docs/spec/tuning.md` §2.36).
+- **utfcheck_arm.py** — [UTF-VALID] `-futf-check`'s OWN ARM (`docs/spec/tuning.md` §2.36). Places every §1.5 case-line kind (m n ms ns mc mg gu, `under`-wrapped, `@file:` subjects, `pattern-esc`) by the format's own quoting; an unplaceable line is a LOUD `UNPLACEABLE file:line` failure, never assumed inert.
 - **memfn_arm.py** — [RUNAXES] the `--memfn=` ARM's reach (below, "The `--memfn=` arm").
 - **dump_diff.awk** — the comparator: two `RXTDUMP` files keyed by `<.rxt file>:<line>` (unique — one case per source line), classifying every case AGREE / REFUSED / ...
 - **startset_arm.py** — the product arm's mover count (above).

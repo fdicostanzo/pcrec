@@ -9,12 +9,16 @@
 #      libpcre2 (the PC-3 shape).
 #   2. THE SETS (ucp_compare.py): every UCP set pcrec ships, swept over every
 #      code point of both encodings, EXACTLY equal to the committed 10.46
-#      store (oracle_store/libpcre2-10.46-ucp/); the wide utf8 sets refused by
-#      name, with the store's construct==spelling relation standing in; the
-#      refusal PARTITION and the population pinned. Box-independent — the
-#      store is the reference, no live libpcre2 needed.
+#      store (oracle_store/libpcre2-10.46-ucp/), with the store's
+#      construct==spelling relation for every utf8 set and the population
+#      pinned. Box-independent — the store is the reference, no live
+#      libpcre2 needed.
 #   3. THE BYTE-TIER FOLD (latin1_fold_check.c): pcrec_fold_latin1 against
 #      10.46's UCP|CASELESS relation over all 256x256 byte pairs.
+#   4. U2's context node (run_ctxnode_tests.sh).
+#   5. U3's CHARACTER-STEPPED DFA (run_charstep_tests.sh, review 2026-11-10
+#      r4 ucpu3 checks-9): its corpus, the route pin and the ill-formed file's
+#      libpcre2 oracle.
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -43,6 +47,9 @@ else
 fi
 echo "== [UCP] 4. U2: the context node (run_ctxnode_tests.sh) =="
 PCREC="$PCREC" bash "$SCRIPT_DIR/run_ctxnode_tests.sh" || rc=1
+
+echo "== [UCP] 5. U3: the character-stepped DFA (run_charstep_tests.sh) =="
+PCREC="$PCREC" bash "$SCRIPT_DIR/run_charstep_tests.sh" || rc=1
 
 [ "$rc" -eq 0 ] && echo "ucp: all checks passed" || echo "ucp: FAILED"
 exit "$rc"

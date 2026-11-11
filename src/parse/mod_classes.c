@@ -78,17 +78,7 @@ ExtResult pcrec_clsport_posix(Ctx *cx, const RegRow *rw, ExtWant want,
          * name's DEF_ALWAYS entry. */
         const RegDef *def = pcrec_def_resolve_operand(cx, rw, name, len);
         if (def && def->kind == DEFK_SET) {
-            char cons[40];
-            snprintf(cons, sizeof cons, "[:%s%.*s:]", neg ? "^" : "",
-                     (int)len, name);
-            char err[sizeof ((pcrec_error *)0)->msg];
-            res.node = pcrec_setdef_class(cx, def->set, neg, cons, err,
-                                          sizeof err);
-            if (!res.node) {
-                res.what = EXT_REFUSAL;
-                res.msg = pcrec_ext_msgf(cx, "%s", err);
-                return res;
-            }
+            res.node = pcrec_setdef_class(cx, def->set, neg);
         } else {
             res.node = pcrec_ast_class_from_bits(cx,
                                                  pcrec_cls_posix_map[i].bits,
