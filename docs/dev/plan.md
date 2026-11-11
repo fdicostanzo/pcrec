@@ -106,8 +106,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 - [UCP] STATE:started — PCRE2_UCP semantics (`\w \d \s \b` + POSIX classes over code points) under `-e utf8`
   filed: 2026-09-30 filer not recorded
   status (2026-11-11): U3 COMPLETE (merge 9d2bb0011, lane ucax3: char-step Unicode word boundary under utf8, review fixes, census/witness/anchor re-pins; D130/D134 addenda 2026-11-11); U4 PARKED: a new start under close-before-start
-  waits: owner — start U4 (the VM reads the UCP set, lifting the hybrid-less island; it also brings the owed D134 island-vs-hybrid timing row)
-  trigger: Frank's go to start U4; the kit-sized UCP route stays owed under [CLS-TREE] (D130 addendum 2026-11-11)
+  trigger: U4 PARKED (Frank 2026-11-11 evening, "Park it"): first candidate after set S4 as its own set (U4 + the owed D134 island-vs-hybrid timing row), or sooner if a bench cell shows a Unicode `\b` pattern losing; the kit-sized UCP route stays owed under [CLS-TREE] (D130 addendum 2026-11-11)
   refs: docs/design/plan_row_bodies/UCP.md; docs/design/ucp_measurements/u3_island_twin.md; docs/design/ucp_design.md; docs/dev/ucp_study.md; docs/design/poss_arms_measurements/rev21/r21_claimmark.py; decisions D130 D134
   supersedes utf8_design.md §14 ASK 4's 'no axis at M5, door open'. Design docs/design/ucp_design.md; inputs docs/dev/ucp_study.md, lookaround_census.md, cls_tree_design.md §3.4/§9. TRIGGER for [ART-POSS-ARMS]'s re-sweep (archived row; poss_arms.md §8.3): when the kit-sized UCP `\w` route lands under `-e utf8 --ucp`, re-sweep the arms' `utf,ucp` rows — `docs/design/poss_arms_measurements/rev21/r21_claimmark.py` pins their REFUSED count (`UCP_PIN`) and exits 3 when it moves. FULL TEXT (long-form charter and history, moved 2026-10-12): docs/design/plan_row_bodies/UCP.md.
 - [VAR] STATE:ready — VARIABLES + SEARCH/REPLACE
