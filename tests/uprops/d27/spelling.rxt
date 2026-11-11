@@ -1,0 +1,551 @@
+# upropd27: name spelling rules and refusals (cli.md 1.17.1 paras 1-3)
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# case-insensitive binary property name \p{emoji} (UNSURE: spec para 2 states case-insensitivity for scripts; the design note says the body is normalised for all names)
+# pcre2-only
+pattern \p{emoji}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji
+m "\xf0\x9f\x98\x80" 0 4
+# A: not Emoji
+n "A"
+
+# case-insensitive binary property name \p{EMOJI} (UNSURE: spec para 2 states case-insensitivity for scripts; the design note says the body is normalised for all names)
+# pcre2-only
+pattern \p{EMOJI}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji
+m "\xf0\x9f\x98\x80" 0 4
+# A: not Emoji
+n "A"
+
+# case-insensitive binary property name \p{eMoJi} (UNSURE: spec para 2 states case-insensitivity for scripts; the design note says the body is normalised for all names)
+# pcre2-only
+pattern \p{eMoJi}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji
+m "\xf0\x9f\x98\x80" 0 4
+# A: not Emoji
+n "A"
+
+# UNSURE: loose matching of a long binary name \p{emoji_presentation}
+# pcre2-only
+pattern \p{emoji_presentation}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji_Presentation
+m "\xf0\x9f\x98\x80" 0 4
+# NUMBER SIGN: not Emoji_Presentation
+n "\x23"
+
+# UNSURE: loose matching of a long binary name \p{EmojiPresentation}
+# pcre2-only
+pattern \p{EmojiPresentation}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji_Presentation
+m "\xf0\x9f\x98\x80" 0 4
+# NUMBER SIGN: not Emoji_Presentation
+n "\x23"
+
+# UNSURE: loose matching of a long binary name \p{emoji-presentation}
+# pcre2-only
+pattern \p{emoji-presentation}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji_Presentation
+m "\xf0\x9f\x98\x80" 0 4
+# NUMBER SIGN: not Emoji_Presentation
+n "\x23"
+
+# UNSURE: loose matching of a long binary name \p{Emoji Presentation}
+# pcre2-only
+pattern \p{Emoji Presentation}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji_Presentation
+m "\xf0\x9f\x98\x80" 0 4
+# NUMBER SIGN: not Emoji_Presentation
+n "\x23"
+
+# UNSURE: loose matching of a long binary name \p{EMOJI_PRESENTATION}
+# pcre2-only
+pattern \p{EMOJI_PRESENTATION}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji_Presentation
+m "\xf0\x9f\x98\x80" 0 4
+# NUMBER SIGN: not Emoji_Presentation
+n "\x23"
+
+# UNSURE: case of Alphabetic/Alpha \p{alpha}
+# pcre2-only
+pattern \p{alpha}
+features unicode-props
+encoding utf8
+# a
+m "a" 0 1
+# 0
+n "0"
+
+# UNSURE: case of Alphabetic/Alpha \p{ALPHA}
+# pcre2-only
+pattern \p{ALPHA}
+features unicode-props
+encoding utf8
+# a
+m "a" 0 1
+# 0
+n "0"
+
+# UNSURE: case of Alphabetic/Alpha \p{alphabetic}
+# pcre2-only
+pattern \p{alphabetic}
+features unicode-props
+encoding utf8
+# a
+m "a" 0 1
+# 0
+n "0"
+
+# UNSURE: White_Space spelling \p{white_space}
+# pcre2-only
+pattern \p{white_space}
+features unicode-props
+encoding utf8
+# SPACE
+m "\x20" 0 1
+# NBSP
+m "\xc2\xa0" 0 2
+# a
+n "a"
+
+# UNSURE: White_Space spelling \p{WhiteSpace}
+# pcre2-only
+pattern \p{WhiteSpace}
+features unicode-props
+encoding utf8
+# SPACE
+m "\x20" 0 1
+# NBSP
+m "\xc2\xa0" 0 2
+# a
+n "a"
+
+# UNSURE: White_Space spelling \p{space}
+# pcre2-only
+pattern \p{space}
+features unicode-props
+encoding utf8
+# SPACE
+m "\x20" 0 1
+# NBSP
+m "\xc2\xa0" 0 2
+# a
+n "a"
+
+# UNSURE: White_Space spelling \p{WSpace}
+# pcre2-only
+pattern \p{WSpace}
+features unicode-props
+encoding utf8
+# SPACE
+m "\x20" 0 1
+# NBSP
+m "\xc2\xa0" 0 2
+# a
+n "a"
+
+# UNSURE: White_Space spelling \p{White-Space}
+# pcre2-only
+pattern \p{White-Space}
+features unicode-props
+encoding utf8
+# SPACE
+m "\x20" 0 1
+# NBSP
+m "\xc2\xa0" 0 2
+# a
+n "a"
+
+# negation composes: \P{^Emoji} is \p{Emoji} (spec cli.md 1.17.1 para 3, match_api 7.9 table)
+# pcre2-only
+pattern \P{^Emoji}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji
+m "\xf0\x9f\x98\x80" 0 4
+# A
+n "A"
+
+# negation: \p{^Emoji}
+# pcre2-only
+pattern \p{^Emoji}
+features unicode-props
+encoding utf8
+# GRINNING FACE: Emoji
+n "\xf0\x9f\x98\x80"
+# A
+m "A" 0 1
+
+# Any is the universe: \p{Any}
+# pcre2-only
+pattern \p{Any}
+features unicode-props
+encoding utf8
+# A
+m "A" 0 1
+# GRINNING FACE
+m "\xf0\x9f\x98\x80" 0 4
+# last code point
+m "\xf4\x8f\xbf\xbf" 0 4
+# unassigned
+m "\xcd\xb8" 0 2
+
+# ASCII (spec: binary properties plus ASCII)
+# pcre2-only
+pattern \p{ASCII}
+features unicode-props
+encoding utf8
+# A
+m "A" 0 1
+# DELETE
+m "\x7f" 0 1
+# first non-ASCII
+n "\xc2\x80"
+
+# negated ASCII
+# pcre2-only
+pattern \P{ASCII}
+features unicode-props
+encoding utf8
+# A
+n "A"
+# DELETE
+n "\x7f"
+# first non-ASCII
+m "\xc2\x80" 0 2
+# GRINNING FACE
+m "\xf0\x9f\x98\x80" 0 4
+
+# Assigned is NOT accepted (spec para 3)
+# pcre2-only
+pattern \p{Assigned}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: unknown name (spec para 3)
+# pcre2-only
+pattern \p{Foo}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: In prefix (spec para 3)
+# pcre2-only
+pattern \p{InGreek}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: Is prefix (spec para 3)
+# pcre2-only
+pattern \p{IsGreek}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: UCD property libpcre2 refuses (spec para 3)
+# pcre2-only
+pattern \p{Hyphen}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: Other_* refused (spec para 3)
+# pcre2-only
+pattern \p{Other_Alphabetic}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: Other_* refused
+# pcre2-only
+pattern \p{Other_Lowercase}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: Other_* refused
+# pcre2-only
+pattern \p{Other_Math}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: no gc= namespace (spec para 2/3)
+# pcre2-only
+pattern \p{gc=Lu}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: no gc namespace (spec para 2)
+# pcre2-only
+pattern \p{General_Category=Lu}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: no =Y form (spec para 1 table)
+# pcre2-only
+pattern \p{Alphabetic=Y}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: no =Yes form
+# pcre2-only
+pattern \p{Alpha=Yes}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: no =True form
+# pcre2-only
+pattern \p{Emoji=True}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: no =N form
+# pcre2-only
+pattern \p{Emoji=N}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: script value refused (spec para 1)
+# pcre2-only
+pattern \p{Katakana_Or_Hiragana}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: empty name
+# pcre2-only
+pattern \p{}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: negation of nothing
+# pcre2-only
+pattern \p{^}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: unterminated \p{
+# pcre2-only
+pattern \p{Emoji
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: malformed escape: \p with no name (spec 7.9)
+# pcre2-only
+pattern \p
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: malformed escape
+# pcre2-only
+pattern \P
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: unknown name inside a class
+# pcre2-only
+pattern [\p{Foo}]
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: ea= not a namespace (design note: not proposed)
+# pcre2-only
+pattern \p{East_Asian_Width=W}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: ccc= not a namespace
+# pcre2-only
+pattern \p{ccc=230}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: lb not a namespace
+# pcre2-only
+pattern \p{Line_Break=AL}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: nt not a namespace
+# pcre2-only
+pattern \p{nt=De}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: refused by libpcre2 (design note)
+# pcre2-only
+pattern \p{Full_Composition_Exclusion}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: not in libpcre2
+# pcre2-only
+pattern \p{Composition_Exclusion}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: UNSURE: probably not in libpcre2 10.46; if accepted this is a finding about the property list not a bug
+# pcre2-only
+pattern \p{Changes_When_NFKC_Casefolded}
+features unicode-props
+encoding utf8
+perr
+
+# no features line, byte encoding: \p{Emoji} needs module unicode-props (a construct outside the enabled set is refused, cli.md 1.17 para 1; only -e utf8 implies it)
+# pcre2-only
+pattern \p{Emoji}
+encoding byte
+perr
+
+# no features line, utf8: \p{Emoji} works because -e utf8 implies unicode-props (cli.md 1.7 para 3)
+# pcre2-only
+pattern \p{Emoji}
+encoding utf8
+# U+1F600 Emoji
+m "\xf0\x9f\x98\x80" 0 4
+# A
+n "A"
+
+# no features line, byte encoding: \p{Alphabetic} needs module unicode-props (a construct outside the enabled set is refused, cli.md 1.17 para 1; only -e utf8 implies it)
+# pcre2-only
+pattern \p{Alphabetic}
+encoding byte
+perr
+
+# no features line, utf8: \p{Alphabetic} works because -e utf8 implies unicode-props (cli.md 1.7 para 3)
+# pcre2-only
+pattern \p{Alphabetic}
+encoding utf8
+# a
+m "a" 0 1
+# 0
+n "0"
+
+# no features line, byte encoding: \p{Bidi_Class:L} needs module unicode-props (a construct outside the enabled set is refused, cli.md 1.17 para 1; only -e utf8 implies it)
+# pcre2-only
+pattern \p{Bidi_Class:L}
+encoding byte
+perr
+
+# no features line, utf8: \p{Bidi_Class:L} works because -e utf8 implies unicode-props (cli.md 1.7 para 3)
+# pcre2-only
+pattern \p{Bidi_Class:L}
+encoding utf8
+# A
+m "A" 0 1
+# 0
+n "0"
+
+# no features line, byte encoding: \p{bc=L} needs module unicode-props (a construct outside the enabled set is refused, cli.md 1.17 para 1; only -e utf8 implies it)
+# pcre2-only
+pattern \p{bc=L}
+encoding byte
+perr
+
+# no features line, utf8: \p{bc=L} works because -e utf8 implies unicode-props (cli.md 1.7 para 3)
+# pcre2-only
+pattern \p{bc=L}
+encoding utf8
+# A
+m "A" 0 1
+# 0
+n "0"
+
+# no features line, byte encoding: \p{White_Space} needs module unicode-props (a construct outside the enabled set is refused, cli.md 1.17 para 1; only -e utf8 implies it)
+# pcre2-only
+pattern \p{White_Space}
+encoding byte
+perr
+
+# no features line, utf8: \p{White_Space} works because -e utf8 implies unicode-props (cli.md 1.7 para 3)
+# pcre2-only
+pattern \p{White_Space}
+encoding utf8
+# SPACE
+m " " 0 1
+# a
+n "a"
+
+# no features line, byte encoding: \p{Default_Ignorable_Code_Point} needs module unicode-props (a construct outside the enabled set is refused, cli.md 1.17 para 1; only -e utf8 implies it)
+# pcre2-only
+pattern \p{Default_Ignorable_Code_Point}
+encoding byte
+perr
+
+# no features line, utf8: \p{Default_Ignorable_Code_Point} works because -e utf8 implies unicode-props (cli.md 1.7 para 3)
+# pcre2-only
+pattern \p{Default_Ignorable_Code_Point}
+encoding utf8
+# U+00AD
+m "\xc2\xad" 0 2
+# a
+n "a"
+
+# no features line, byte encoding: [\p{Dash}] needs module unicode-props (a construct outside the enabled set is refused, cli.md 1.17 para 1; only -e utf8 implies it)
+# pcre2-only
+pattern [\p{Dash}]
+encoding byte
+perr
+
+# no features line, utf8: [\p{Dash}] works because -e utf8 implies unicode-props (cli.md 1.7 para 3)
+# pcre2-only
+pattern [\p{Dash}]
+encoding utf8
+# hyphen
+m "-" 0 1
+# a
+n "a"
+
+# no features line, byte encoding: \P{Math} needs module unicode-props (a construct outside the enabled set is refused, cli.md 1.17 para 1; only -e utf8 implies it)
+# pcre2-only
+pattern \P{Math}
+encoding byte
+perr
+
+# no features line, utf8: \P{Math} works because -e utf8 implies unicode-props (cli.md 1.7 para 3)
+# pcre2-only
+pattern \P{Math}
+encoding utf8
+# a
+m "a" 0 1
+# plus
+n "+"

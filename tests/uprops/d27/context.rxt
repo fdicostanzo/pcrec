@@ -1,0 +1,270 @@
+# upropd27: properties in context: runs, captures, alternation, start positions, classes, Trojan-Source shapes
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# digit gotcha: Emoji matches ASCII digits, Emoji_Presentation and Extended_Pictographic do not
+# pcre2-only
+pattern \p{Emoji}
+features unicode-props
+encoding utf8
+# "5"
+m "5" 0 1
+# "#" 
+m "\x23" 0 1
+
+# digit gotcha: Emoji_Presentation does not match 5
+# pcre2-only
+pattern \p{Emoji_Presentation}
+features unicode-props
+encoding utf8
+# DIGIT FIVE: not Emoji_Presentation
+n "5"
+
+# digit gotcha: Extended_Pictographic does not match 5
+# pcre2-only
+pattern \p{Extended_Pictographic}
+features unicode-props
+encoding utf8
+# DIGIT FIVE: no
+n "5"
+
+# run of Alphabetic across multibyte letters: a b e-acute stops at the space
+# pcre2-only
+pattern \p{Alphabetic}+
+features unicode-props
+encoding utf8
+# "ab" U+00E9 " cd": greedy run is 4 bytes
+m "ab\xc3\xa9 cd" 0 4
+
+# anchored run
+# pcre2-only
+pattern ^\p{Alphabetic}+$
+features unicode-props
+encoding utf8
+# Greek letters alpha beta (4 bytes)
+m "\xce\xb1\xce\xb2" 0 4
+# with a digit inside -> no match
+n "ab1"
+
+# search finds the first Dash after a multibyte letter
+# pcre2-only
+pattern \p{Dash}
+features unicode-props
+encoding utf8
+# e-acute then HYPHEN-MINUS: dash at bytes 2..3
+m "\xc3\xa9-a" 2 3
+# EN DASH U+2013 is Dash (2010..2015) at 1..4
+m "a\xe2\x80\x93b" 1 4
+
+# two emoji presentations: exact count
+# pcre2-only
+pattern ^\p{Emoji_Presentation}{2}$
+features unicode-props
+encoding utf8
+# two GRINNING FACE (8 bytes)
+m "\xf0\x9f\x98\x80\xf0\x9f\x98\x80" 0 8
+# one face only
+n "\xf0\x9f\x98\x80"
+
+# keycap sequence shape: digit, VS16, keycap using three properties
+# pcre2-only
+pattern \p{Emoji}\x{FE0F}?\x{20E3}
+features unicode-props
+encoding utf8
+# 3 + U+FE0F + U+20E3 (1+3+3 bytes)
+m "3\xef\xb8\x8f\xe2\x83\xa3" 0 7
+# 3 + U+20E3 without VS16
+m "3\xe2\x83\xa3" 0 4
+# letter then keycap: A is not Emoji
+n "A\xe2\x83\xa3"
+
+# Trojan Source: Bidi_Control found inside a source line
+# pcre2-only
+pattern \p{Bidi_Control}
+features unicode-props
+encoding utf8
+# RLO U+202E between a and b, bytes 1..4
+m "a\xe2\x80\xaeb" 1 4
+# plain ASCII
+n "if (x) { y }"
+
+# Trojan Source: class of Bidi_Control plus Default_Ignorable
+# pcre2-only
+pattern [\p{Bidi_Control}\p{Default_Ignorable_Code_Point}]
+features unicode-props
+encoding utf8
+# ZWSP U+200B (Default_Ignorable) at 1..4
+m "a\xe2\x80\x8bb" 1 4
+# LRI U+2066 (Bidi_Control) at 1..4
+m "a\xe2\x81\xa6b" 1 4
+# letters only
+n "abc"
+
+# captures: lowercase run then one uppercase
+# pcre2-only
+pattern (\p{Lowercase}+)(\p{Uppercase})
+features unicode-props
+encoding utf8
+# abC: group 1 is ab, group 2 is C
+m "abC" 0 3
+g 1 0 2
+g 2 2 3
+
+# alternation of two properties
+# pcre2-only
+pattern \p{Dash}|\p{Sentence_Terminal}
+features unicode-props
+encoding utf8
+# "a.b": full stop is Sentence_Terminal at 1..2
+m "a.b" 1 2
+# "a-b": hyphen at 1..2
+m "a-b" 1 2
+# "a,b": comma is neither
+n "a,b"
+
+# lazy and greedy with a property
+# pcre2-only
+pattern \p{Alphabetic}+?\p{Nd}
+features unicode-props
+encoding utf8
+# "ab1": lazy run still ends at digit
+m "ab1" 0 3
+
+# class of property and range: [a-c\p{Dash}]
+# pcre2-only
+pattern [a-c\p{Dash}]
+features unicode-props
+encoding utf8
+# hyphen
+m "-" 0 1
+# b
+m "b" 0 1
+# d
+n "d"
+# EM DASH U+2014
+m "\xe2\x80\x94" 0 3
+
+# class of escape and property: [\d\p{Hex_Digit}] under utf8 (features list names classes too: an explicit list replaces the default std1)
+# pcre2-only
+pattern [\d\p{Hex_Digit}]
+features classes,unicode-props
+encoding utf8
+# f
+m "f" 0 1
+# FULLWIDTH F U+FF26 (Hex_Digit)
+m "\xef\xbc\xa6" 0 3
+# g
+n "g"
+
+# union with a negated property: [\p{Lowercase}\P{Alphabetic}]
+# pcre2-only
+pattern [\p{Lowercase}\P{Alphabetic}]
+features unicode-props
+encoding utf8
+# a lowercase
+m "a" 0 1
+# A is Alphabetic and not Lowercase
+n "A"
+# 1 is not Alphabetic
+m "1" 0 1
+# CJK U+4E00 Alphabetic, not Lowercase
+n "\xe4\xb8\x80"
+
+# double negation in class: [^\P{Alphabetic}] is Alphabetic
+# pcre2-only
+pattern [^\P{Alphabetic}]
+features unicode-props
+encoding utf8
+# a
+m "a" 0 1
+# 1
+n "1"
+
+# start-position cases: search from an offset inside the subject
+# pcre2-only
+pattern \p{Emoji_Presentation}
+features unicode-props
+encoding utf8
+# 1F600 1F600: from offset 4 the second face is found at 4..8
+ms 4 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80" 4 8
+# from offset 8 (end) nothing is left
+ns 8 "\xf0\x9f\x98\x80\xf0\x9f\x98\x80"
+
+# caseless contrast: \p{Ll} IS made caseless under flags i (spec para 3) but \p{Lowercase} is not
+# pcre2-only
+pattern \p{Ll}
+features unicode-props
+encoding utf8
+flags i
+# A matches \p{Ll} under -i (it becomes L&)
+m "A" 0 1
+
+# caseless contrast: \p{Lowercase} is NOT made caseless
+# pcre2-only
+pattern \p{Lowercase}
+features unicode-props
+encoding utf8
+flags i
+# A: not Lowercase, unchanged under -i
+n "A"
+# a
+m "a" 0 1
+
+# caseless contrast: \p{Uppercase} is NOT made caseless
+# pcre2-only
+pattern \p{Uppercase}
+features unicode-props
+encoding utf8
+flags i
+# a
+n "a"
+# A
+m "A" 0 1
+
+# caseless: negated class [^\p{Lowercase}] under -i keeps A (A is not Lowercase)
+# pcre2-only
+pattern [^\p{Lowercase}]
+features unicode-props
+encoding utf8
+flags i
+# A
+m "A" 0 1
+# a
+n "a"
+
+# caseless: literal beside a property is still folded, [a\p{Dash}] under -i matches A
+# pcre2-only
+pattern [a\p{Dash}]
+features unicode-props
+encoding utf8
+flags i
+# A folded literal
+m "A" 0 1
+# hyphen
+m "-" 0 1
+# B
+n "B"
+
+# caseless: \p{Cased} unchanged under -i; digit still not Cased
+# pcre2-only
+pattern \p{Cased}
+features unicode-props
+encoding utf8
+flags i
+# A
+m "A" 0 1
+# 1
+n "1"
+
+# caseless: \p{Emoji} unchanged under -i
+# pcre2-only
+pattern \p{Emoji}
+features unicode-props
+encoding utf8
+flags i
+# 5
+m "5" 0 1
+# A
+n "A"

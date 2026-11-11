@@ -1,0 +1,917 @@
+# upropd27: byte-encoding behaviour (property clamped to Latin-1)
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# Emoji: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Emoji}
+features unicode-props
+encoding byte
+# U+0023 NUMBER SIGN: Emoji=Yes (keycap base; the digit gotcha) -- MEMBER
+m "\x23" 0 1
+# U+002A ASTERISK: Emoji=Yes (keycap base) -- MEMBER
+m "\x2a" 0 1
+# U+0030 DIGIT ZERO: Emoji=Yes (keycap base) -- MEMBER
+m "0" 0 1
+# U+0039 DIGIT NINE: Emoji=Yes (last keycap base) -- MEMBER
+m "9" 0 1
+# U+00A9 COPYRIGHT SIGN: Emoji=Yes -- MEMBER
+m "\xa9" 0 1
+# U+00AE REGISTERED SIGN: Emoji=Yes -- MEMBER
+m "\xae" 0 1
+# U+0041 LATIN CAPITAL A: not Emoji -- non-member
+n "A"
+# U+002F SOLIDUS: just below the digits, not Emoji -- non-member
+n "\x2f"
+# U+003A COLON: just above the digits, not Emoji -- non-member
+n "\x3a"
+# U+0024 DOLLAR SIGN: not Emoji -- non-member
+n "\x24"
+# U+00A8 DIAERESIS: neighbour of A9, not Emoji -- non-member
+n "\xa8"
+
+# Emoji_Presentation: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Emoji_Presentation}
+features unicode-props
+encoding byte
+# U+0023 NUMBER SIGN: Emoji but text presentation by default -- non-member
+n "\x23"
+# U+0030 DIGIT ZERO: Emoji but not Emoji_Presentation -- non-member
+n "0"
+# U+00A9 COPYRIGHT SIGN: Emoji but text presentation by default -- non-member
+n "\xa9"
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+
+# Emoji_Modifier: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Emoji_Modifier}
+features unicode-props
+encoding byte
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# byte 0x41 (Latin-1 U+0041): the set has no Latin-1 member, so no match
+n "A"
+# byte 0x80 (Latin-1 U+0080): the set has no Latin-1 member, so no match
+n "\x80"
+# byte 0xE9 (Latin-1 U+00E9): the set has no Latin-1 member, so no match
+n "\xe9"
+# byte 0xFF (Latin-1 U+00FF): the set has no Latin-1 member, so no match
+n "\xff"
+
+# Emoji_Component: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Emoji_Component}
+features unicode-props
+encoding byte
+# U+0023 NUMBER SIGN: Emoji_Component=Yes (keycap) -- MEMBER
+m "\x23" 0 1
+# U+002A ASTERISK: Emoji_Component=Yes -- MEMBER
+m "\x2a" 0 1
+# U+0030 DIGIT ZERO: Emoji_Component=Yes -- MEMBER
+m "0" 0 1
+# U+0039 DIGIT NINE: Emoji_Component=Yes -- MEMBER
+m "9" 0 1
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# U+00A9 COPYRIGHT SIGN: Emoji but not Emoji_Component -- non-member
+n "\xa9"
+
+# Extended_Pictographic: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Extended_Pictographic}
+features unicode-props
+encoding byte
+# U+00A9 COPYRIGHT SIGN: Extended_Pictographic=Yes -- MEMBER
+m "\xa9" 0 1
+# U+00AE REGISTERED SIGN: Extended_Pictographic=Yes -- MEMBER
+m "\xae" 0 1
+# U+0023 NUMBER SIGN: Emoji but NOT Extended_Pictographic -- non-member
+n "\x23"
+# U+0030 DIGIT ZERO: Emoji but NOT Extended_Pictographic -- non-member
+n "0"
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# U+00A8 DIAERESIS: neighbour of A9, no -- non-member
+n "\xa8"
+
+# Alphabetic: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Alphabetic}
+features unicode-props
+encoding byte
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+m "A" 0 1
+# U+007A LATIN SMALL z: Ll -- MEMBER
+m "z" 0 1
+# U+00AA FEMININE ORDINAL INDICATOR: Lo -- MEMBER
+m "\xaa" 0 1
+# U+00E9 LATIN SMALL E WITH ACUTE: Ll -- MEMBER
+m "\xe9" 0 1
+# U+0030 DIGIT ZERO: Nd -- non-member
+n "0"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+00D7 MULTIPLICATION SIGN: Sm -- non-member
+n "\xd7"
+# U+00B2 SUPERSCRIPT TWO: No -- non-member
+n "\xb2"
+
+# Lowercase: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Lowercase}
+features unicode-props
+encoding byte
+# U+0061 LATIN SMALL a: Ll -- MEMBER
+m "a" 0 1
+# U+00AA FEMININE ORDINAL INDICATOR: Other_Lowercase -- MEMBER
+m "\xaa" 0 1
+# U+00DF LATIN SMALL SHARP S: Ll -- MEMBER
+m "\xdf" 0 1
+# U+0041 LATIN CAPITAL A: Lu -- non-member
+n "A"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+
+# Uppercase: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Uppercase}
+features unicode-props
+encoding byte
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+m "A" 0 1
+# U+005A LATIN CAPITAL Z: Lu -- MEMBER
+m "Z" 0 1
+# U+00C0 LATIN CAPITAL A WITH GRAVE: Lu -- MEMBER
+m "\xc0" 0 1
+# U+0061 LATIN SMALL a: Ll -- non-member
+n "a"
+# U+00DF LATIN SMALL SHARP S -- non-member
+n "\xdf"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+
+# Cased: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Cased}
+features unicode-props
+encoding byte
+# U+0041 Lu -- MEMBER
+m "A" 0 1
+# U+0061 Ll -- MEMBER
+m "a" 0 1
+# U+00AA Other_Lowercase hence Cased -- MEMBER
+m "\xaa" 0 1
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+
+# Case_Ignorable: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Case_Ignorable}
+features unicode-props
+encoding byte
+# U+0027 APOSTROPHE: Word_Break MidNumLet -> Case_Ignorable -- MEMBER
+m "\x27" 0 1
+# U+002E FULL STOP: MidNumLet -- MEMBER
+m "\x2e" 0 1
+# U+003A COLON: MidLetter -- MEMBER
+m "\x3a" 0 1
+# U+005E CIRCUMFLEX ACCENT: Sk -- MEMBER
+m "\x5e" 0 1
+# U+0060 GRAVE ACCENT: Sk -- MEMBER
+m "\x60" 0 1
+# U+00A8 DIAERESIS: Sk -- MEMBER
+m "\xa8" 0 1
+# U+00AD SOFT HYPHEN: Cf -- MEMBER
+m "\xad" 0 1
+# U+00B7 MIDDLE DOT: MidLetter -- MEMBER
+m "\xb7" 0 1
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+0041 LATIN CAPITAL A -- non-member
+n "A"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+002D HYPHEN-MINUS: Pd, not Case_Ignorable -- non-member
+n "\x2d"
+# U+0022 QUOTATION MARK: not Case_Ignorable -- non-member
+n "\x22"
+# U+0025 PERCENT SIGN: no -- non-member
+n "\x25"
+
+# Changes_When_Lowercased: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Changes_When_Lowercased}
+features unicode-props
+encoding byte
+# U+0041 A lowercases to a -- MEMBER
+m "A" 0 1
+# U+00C0 A WITH GRAVE lowercases -- MEMBER
+m "\xc0" 0 1
+# U+0061 a is already lowercase -- non-member
+n "a"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+00DF sharp s is lowercase -- non-member
+n "\xdf"
+
+# Changes_When_Uppercased: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Changes_When_Uppercased}
+features unicode-props
+encoding byte
+# U+0061 a uppercases -- MEMBER
+m "a" 0 1
+# U+00DF sharp s uppercases (full mapping SS) -- MEMBER
+m "\xdf" 0 1
+# U+00B5 MICRO SIGN uppercases to Greek capital MU -- MEMBER
+m "\xb5" 0 1
+# U+0041 A is already uppercase -- non-member
+n "A"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+0020 SPACE -- non-member
+n "\x20"
+
+# Changes_When_Titlecased: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Changes_When_Titlecased}
+features unicode-props
+encoding byte
+# U+0061 a titlecases to A -- MEMBER
+m "a" 0 1
+# U+00DF sharp s titlecases to Ss -- MEMBER
+m "\xdf" 0 1
+# U+0041 A already titlecase -- non-member
+n "A"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+
+# Changes_When_Casefolded: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Changes_When_Casefolded}
+features unicode-props
+encoding byte
+# U+0041 A folds to a -- MEMBER
+m "A" 0 1
+# U+00DF sharp s full-folds to ss -- MEMBER
+m "\xdf" 0 1
+# U+00B5 MICRO SIGN folds to Greek mu -- MEMBER
+m "\xb5" 0 1
+# U+0061 a is its own fold -- non-member
+n "a"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+0020 SPACE -- non-member
+n "\x20"
+
+# Changes_When_Casemapped: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Changes_When_Casemapped}
+features unicode-props
+encoding byte
+# U+0041 A maps to a -- MEMBER
+m "A" 0 1
+# U+0061 a maps to A -- MEMBER
+m "a" 0 1
+# U+00DF sharp s maps -- MEMBER
+m "\xdf" 0 1
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+
+# Default_Ignorable_Code_Point: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Default_Ignorable_Code_Point}
+features unicode-props
+encoding byte
+# U+00AD SOFT HYPHEN: DI -- MEMBER
+m "\xad" 0 1
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+00AC NOT SIGN: neighbour of AD -- non-member
+n "\xac"
+# U+00AE REGISTERED SIGN: neighbour of AD -- non-member
+n "\xae"
+
+# Bidi_Control: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Bidi_Control}
+features unicode-props
+encoding byte
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+
+# Bidi_Mirrored: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Bidi_Mirrored}
+features unicode-props
+encoding byte
+# U+0028 LEFT PARENTHESIS -- MEMBER
+m "\x28" 0 1
+# U+0029 RIGHT PARENTHESIS -- MEMBER
+m "\x29" 0 1
+# U+003C LESS-THAN SIGN -- MEMBER
+m "\x3c" 0 1
+# U+003E GREATER-THAN SIGN -- MEMBER
+m "\x3e" 0 1
+# U+005B LEFT SQUARE BRACKET -- MEMBER
+m "\x5b" 0 1
+# U+005D RIGHT SQUARE BRACKET -- MEMBER
+m "\x5d" 0 1
+# U+007B LEFT CURLY BRACKET -- MEMBER
+m "\x7b" 0 1
+# U+007D RIGHT CURLY BRACKET -- MEMBER
+m "\x7d" 0 1
+# U+00AB LEFT-POINTING DOUBLE ANGLE QUOTATION MARK -- MEMBER
+m "\xab" 0 1
+# U+00BB RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK -- MEMBER
+m "\xbb" 0 1
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+002F SOLIDUS: not mirrored -- non-member
+n "\x2f"
+# U+005C REVERSE SOLIDUS: not mirrored -- non-member
+n "\x5c"
+# U+0022 QUOTATION MARK: not mirrored -- non-member
+n "\x22"
+# U+0027 APOSTROPHE: no -- non-member
+n "\x27"
+# U+002B PLUS SIGN: Sm but not mirrored -- non-member
+n "\x2b"
+# U+003D EQUALS SIGN: not mirrored -- non-member
+n "\x3d"
+
+# Join_Control: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Join_Control}
+features unicode-props
+encoding byte
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# byte 0x41 (Latin-1 U+0041): the set has no Latin-1 member, so no match
+n "A"
+# byte 0x80 (Latin-1 U+0080): the set has no Latin-1 member, so no match
+n "\x80"
+# byte 0xE9 (Latin-1 U+00E9): the set has no Latin-1 member, so no match
+n "\xe9"
+# byte 0xFF (Latin-1 U+00FF): the set has no Latin-1 member, so no match
+n "\xff"
+
+# Variation_Selector: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Variation_Selector}
+features unicode-props
+encoding byte
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# byte 0x41 (Latin-1 U+0041): the set has no Latin-1 member, so no match
+n "A"
+# byte 0x80 (Latin-1 U+0080): the set has no Latin-1 member, so no match
+n "\x80"
+# byte 0xE9 (Latin-1 U+00E9): the set has no Latin-1 member, so no match
+n "\xe9"
+# byte 0xFF (Latin-1 U+00FF): the set has no Latin-1 member, so no match
+n "\xff"
+
+# Pattern_White_Space: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Pattern_White_Space}
+features unicode-props
+encoding byte
+# U+0009 TAB -- MEMBER
+m "\x09" 0 1
+# U+000A LF -- MEMBER
+m "\x0a" 0 1
+# U+000D CR -- MEMBER
+m "\x0d" 0 1
+# U+0020 SPACE -- MEMBER
+m "\x20" 0 1
+# U+0085 NEXT LINE -- MEMBER
+m "\x85" 0 1
+# U+00A0 NBSP: White_Space but NOT Pattern_White_Space -- non-member
+n "\xa0"
+# U+001C FILE SEPARATOR: no -- non-member
+n "\x1c"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+002A ASTERISK -- non-member
+n "\x2a"
+# U+0008 BACKSPACE: just below TAB -- non-member
+n "\x08"
+
+# White_Space: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{White_Space}
+features unicode-props
+encoding byte
+# U+0009 TAB -- MEMBER
+m "\x09" 0 1
+# U+000D CR -- MEMBER
+m "\x0d" 0 1
+# U+0020 SPACE -- MEMBER
+m "\x20" 0 1
+# U+0085 NEXT LINE -- MEMBER
+m "\x85" 0 1
+# U+00A0 NBSP -- MEMBER
+m "\xa0" 0 1
+# U+001C FILE SEPARATOR: no (control but not White_Space) -- non-member
+n "\x1c"
+# U+001F UNIT SEPARATOR: no -- non-member
+n "\x1f"
+# U+0008 BACKSPACE: just below TAB -- non-member
+n "\x08"
+# U+000E SHIFT OUT: just above CR -- non-member
+n "\x0e"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+
+# ASCII: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{ASCII}
+features unicode-props
+encoding byte
+# U+0001 SOH (the NUL code point cannot be passed in an argv subject) -- MEMBER
+m "\x01" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+007E TILDE -- MEMBER
+m "\x7e" 0 1
+# U+007F DELETE: last ASCII -- MEMBER
+m "\x7f" 0 1
+# U+0080 first non-ASCII: PAD control -- non-member
+n "\x80"
+# U+00A0 NBSP -- non-member
+n "\xa0"
+# U+00FF y WITH DIAERESIS -- non-member
+n "\xff"
+
+# ASCII_Hex_Digit: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{ASCII_Hex_Digit}
+features unicode-props
+encoding byte
+# U+0030 0 -- MEMBER
+m "0" 0 1
+# U+0039 9 -- MEMBER
+m "9" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+0046 F -- MEMBER
+m "F" 0 1
+# U+0061 a -- MEMBER
+m "a" 0 1
+# U+0066 f -- MEMBER
+m "f" 0 1
+# U+002F SOLIDUS: just below 0 -- non-member
+n "\x2f"
+# U+003A COLON: just above 9 -- non-member
+n "\x3a"
+# U+0040 COMMERCIAL AT: just below A -- non-member
+n "\x40"
+# U+0047 G -- non-member
+n "G"
+# U+0060 GRAVE: just below a -- non-member
+n "\x60"
+# U+0067 g -- non-member
+n "g"
+
+# Hex_Digit: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Hex_Digit}
+features unicode-props
+encoding byte
+# U+0030 0 -- MEMBER
+m "0" 0 1
+# U+0039 9 -- MEMBER
+m "9" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+0046 F -- MEMBER
+m "F" 0 1
+# U+0061 a -- MEMBER
+m "a" 0 1
+# U+0066 f -- MEMBER
+m "f" 0 1
+# U+0047 G -- non-member
+n "G"
+# U+0067 g -- non-member
+n "g"
+# U+002F SOLIDUS -- non-member
+n "\x2f"
+
+# ID_Start: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{ID_Start}
+features unicode-props
+encoding byte
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+007A z -- MEMBER
+m "z" 0 1
+# U+00AA FEMININE ORDINAL: Lo -- MEMBER
+m "\xaa" 0 1
+# U+00B5 MICRO SIGN: Ll -- MEMBER
+m "\xb5" 0 1
+# U+0030 DIGIT ZERO: ID_Continue only -- non-member
+n "0"
+# U+005F LOW LINE: ID_Continue only -- non-member
+n "\x5f"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+00B7 MIDDLE DOT: Other_ID_Continue only -- non-member
+n "\xb7"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+00D7 MULTIPLICATION SIGN -- non-member
+n "\xd7"
+
+# ID_Continue: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{ID_Continue}
+features unicode-props
+encoding byte
+# U+0030 DIGIT ZERO: Nd -- MEMBER
+m "0" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+005F LOW LINE: Pc -- MEMBER
+m "\x5f" 0 1
+# U+00B7 MIDDLE DOT: Other_ID_Continue -- MEMBER
+m "\xb7" 0 1
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+002E FULL STOP -- non-member
+n "\x2e"
+# U+00B6 PILCROW: neighbour of B7 -- non-member
+n "\xb6"
+
+# XID_Start: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{XID_Start}
+features unicode-props
+encoding byte
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+007A z -- MEMBER
+m "z" 0 1
+# U+00AA FEMININE ORDINAL -- MEMBER
+m "\xaa" 0 1
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+005F LOW LINE -- non-member
+n "\x5f"
+# U+0020 SPACE -- non-member
+n "\x20"
+
+# XID_Continue: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{XID_Continue}
+features unicode-props
+encoding byte
+# U+0030 DIGIT ZERO -- MEMBER
+m "0" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+005F LOW LINE -- MEMBER
+m "\x5f" 0 1
+# U+00B7 MIDDLE DOT -- MEMBER
+m "\xb7" 0 1
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+002E FULL STOP -- non-member
+n "\x2e"
+
+# Ideographic: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Ideographic}
+features unicode-props
+encoding byte
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+
+# Unified_Ideograph: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Unified_Ideograph}
+features unicode-props
+encoding byte
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+
+# Dash: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Dash}
+features unicode-props
+encoding byte
+# U+002D HYPHEN-MINUS -- MEMBER
+m "\x2d" 0 1
+# U+005F LOW LINE: not Dash -- non-member
+n "\x5f"
+# U+00AD SOFT HYPHEN: not Dash -- non-member
+n "\xad"
+# U+002B PLUS SIGN -- non-member
+n "\x2b"
+# U+0061 a -- non-member
+n "a"
+# U+002F SOLIDUS -- non-member
+n "\x2f"
+
+# Quotation_Mark: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Quotation_Mark}
+features unicode-props
+encoding byte
+# U+0022 QUOTATION MARK -- MEMBER
+m "\x22" 0 1
+# U+0027 APOSTROPHE -- MEMBER
+m "\x27" 0 1
+# U+00AB LEFT DOUBLE ANGLE QUOTATION -- MEMBER
+m "\xab" 0 1
+# U+00BB RIGHT DOUBLE ANGLE QUOTATION -- MEMBER
+m "\xbb" 0 1
+# U+0060 GRAVE ACCENT: not Quotation_Mark -- non-member
+n "\x60"
+# U+00B4 ACUTE ACCENT -- non-member
+n "\xb4"
+# U+0028 LEFT PARENTHESIS -- non-member
+n "\x28"
+# U+0061 a -- non-member
+n "a"
+
+# Terminal_Punctuation: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Terminal_Punctuation}
+features unicode-props
+encoding byte
+# U+0021 EXCLAMATION MARK -- MEMBER
+m "\x21" 0 1
+# U+002C COMMA -- MEMBER
+m "\x2c" 0 1
+# U+002E FULL STOP -- MEMBER
+m "\x2e" 0 1
+# U+003A COLON -- MEMBER
+m "\x3a" 0 1
+# U+003B SEMICOLON -- MEMBER
+m "\x3b" 0 1
+# U+003F QUESTION MARK -- MEMBER
+m "\x3f" 0 1
+# U+0028 LEFT PARENTHESIS -- non-member
+n "\x28"
+# U+0022 QUOTATION MARK -- non-member
+n "\x22"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+00BF INVERTED QUESTION MARK: not terminal -- non-member
+n "\xbf"
+# U+00A1 INVERTED EXCLAMATION MARK: not terminal -- non-member
+n "\xa1"
+# U+0061 a -- non-member
+n "a"
+
+# Sentence_Terminal: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Sentence_Terminal}
+features unicode-props
+encoding byte
+# U+0021 EXCLAMATION MARK -- MEMBER
+m "\x21" 0 1
+# U+002E FULL STOP -- MEMBER
+m "\x2e" 0 1
+# U+003F QUESTION MARK -- MEMBER
+m "\x3f" 0 1
+# U+002C COMMA: Terminal_Punctuation but not Sentence_Terminal -- non-member
+n "\x2c"
+# U+003A COLON: Terminal_Punctuation only -- non-member
+n "\x3a"
+# U+003B SEMICOLON: Terminal_Punctuation only -- non-member
+n "\x3b"
+# U+0028 LEFT PARENTHESIS -- non-member
+n "\x28"
+# U+0061 a -- non-member
+n "a"
+
+# Pattern_Syntax: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Pattern_Syntax}
+features unicode-props
+encoding byte
+# U+0021 EXCLAMATION MARK -- MEMBER
+m "\x21" 0 1
+# U+002F SOLIDUS -- MEMBER
+m "\x2f" 0 1
+# U+003A COLON -- MEMBER
+m "\x3a" 0 1
+# U+0040 COMMERCIAL AT -- MEMBER
+m "\x40" 0 1
+# U+005B LEFT SQUARE BRACKET -- MEMBER
+m "\x5b" 0 1
+# U+005E CIRCUMFLEX -- MEMBER
+m "\x5e" 0 1
+# U+0060 GRAVE -- MEMBER
+m "\x60" 0 1
+# U+007B LEFT CURLY -- MEMBER
+m "\x7b" 0 1
+# U+007E TILDE -- MEMBER
+m "\x7e" 0 1
+# U+00A1 INVERTED EXCLAMATION -- MEMBER
+m "\xa1" 0 1
+# U+00D7 MULTIPLICATION SIGN -- MEMBER
+m "\xd7" 0 1
+# U+005F LOW LINE: NOT Pattern_Syntax (it is ID_Continue) -- non-member
+n "\x5f"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+0041 A -- non-member
+n "A"
+# U+00A8 DIAERESIS: gap between A1..A7 and A9 -- non-member
+n "\xa8"
+# U+00AA FEMININE ORDINAL: gap -- non-member
+n "\xaa"
+# U+00B2 SUPERSCRIPT TWO: gap -- non-member
+n "\xb2"
+# U+0061 a -- non-member
+n "a"
+
+# Deprecated: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Deprecated}
+features unicode-props
+encoding byte
+# U+0061 a -- non-member
+n "a"
+
+# Soft_Dotted: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Soft_Dotted}
+features unicode-props
+encoding byte
+# U+0069 LATIN SMALL i -- MEMBER
+m "i" 0 1
+# U+006A LATIN SMALL j -- MEMBER
+m "j" 0 1
+# U+0049 LATIN CAPITAL I -- non-member
+n "I"
+# U+006C LATIN SMALL l -- non-member
+n "l"
+# U+00EF I WITH DIAERESIS precomposed: not Soft_Dotted -- non-member
+n "\xef"
+# U+0061 a -- non-member
+n "a"
+
+# Diacritic: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Diacritic}
+features unicode-props
+encoding byte
+# U+005E CIRCUMFLEX ACCENT -- MEMBER
+m "\x5e" 0 1
+# U+0060 GRAVE ACCENT -- MEMBER
+m "\x60" 0 1
+# U+00A8 DIAERESIS -- MEMBER
+m "\xa8" 0 1
+# U+00AF MACRON -- MEMBER
+m "\xaf" 0 1
+# U+00B4 ACUTE ACCENT -- MEMBER
+m "\xb4" 0 1
+# U+00B7 MIDDLE DOT -- MEMBER
+m "\xb7" 0 1
+# U+00B8 CEDILLA -- MEMBER
+m "\xb8" 0 1
+# U+0061 a -- non-member
+n "a"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+00A9 COPYRIGHT SIGN: neighbour of A8 -- non-member
+n "\xa9"
+# U+00B5 MICRO SIGN: neighbour of B4 -- non-member
+n "\xb5"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+
+# Extender: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Extender}
+features unicode-props
+encoding byte
+# U+00B7 MIDDLE DOT -- MEMBER
+m "\xb7" 0 1
+# U+00B8 CEDILLA -- non-member
+n "\xb8"
+# U+0061 a -- non-member
+n "a"
+
+# Math: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Math}
+features unicode-props
+encoding byte
+# U+002B PLUS SIGN: Sm -- MEMBER
+m "\x2b" 0 1
+# U+003C LESS-THAN SIGN -- MEMBER
+m "\x3c" 0 1
+# U+003D EQUALS SIGN -- MEMBER
+m "\x3d" 0 1
+# U+003E GREATER-THAN SIGN -- MEMBER
+m "\x3e" 0 1
+# U+005E CIRCUMFLEX ACCENT: Other_Math -- MEMBER
+m "\x5e" 0 1
+# U+007C VERTICAL LINE: Sm -- MEMBER
+m "\x7c" 0 1
+# U+007E TILDE: Sm -- MEMBER
+m "\x7e" 0 1
+# U+00AC NOT SIGN -- MEMBER
+m "\xac" 0 1
+# U+00D7 MULTIPLICATION SIGN -- MEMBER
+m "\xd7" 0 1
+# U+002D HYPHEN-MINUS: Pd, not Math -- non-member
+n "\x2d"
+# U+002A ASTERISK: Po, not Math -- non-member
+n "\x2a"
+# U+002F SOLIDUS: Po, not Math -- non-member
+n "\x2f"
+# U+0061 a -- non-member
+n "a"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+0025 PERCENT SIGN -- non-member
+n "\x25"
+# U+00A9 COPYRIGHT SIGN -- non-member
+n "\xa9"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+
+# Logical_Order_Exception: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Logical_Order_Exception}
+features unicode-props
+encoding byte
+# U+0061 a -- non-member
+n "a"
+
+# Regional_Indicator: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Regional_Indicator}
+features unicode-props
+encoding byte
+# U+0041 LATIN CAPITAL A -- non-member
+n "A"
+# byte 0x41 (Latin-1 U+0041): the set has no Latin-1 member, so no match
+n "A"
+# byte 0x80 (Latin-1 U+0080): the set has no Latin-1 member, so no match
+n "\x80"
+# byte 0xE9 (Latin-1 U+00E9): the set has no Latin-1 member, so no match
+n "\xe9"
+# byte 0xFF (Latin-1 U+00FF): the set has no Latin-1 member, so no match
+n "\xff"
+
+# Grapheme_Base: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Grapheme_Base}
+features unicode-props
+encoding byte
+# U+0061 a -- MEMBER
+m "a" 0 1
+# U+0020 SPACE: Zs is a base -- MEMBER
+m "\x20" 0 1
+# U+00A0 NBSP -- MEMBER
+m "\xa0" 0 1
+# U+0001 SOH: Cc -- non-member
+n "\x01"
+# U+007F DELETE: Cc -- non-member
+n "\x7f"
+# U+00AD SOFT HYPHEN: Cf -- non-member
+n "\xad"
+
+# Grapheme_Extend: under byte encoding the subject byte is the Latin-1 code point
+# pcre2-only
+pattern \p{Grapheme_Extend}
+features unicode-props
+encoding byte
+# U+0061 a -- non-member
+n "a"
+# U+0020 SPACE -- non-member
+n "\x20"

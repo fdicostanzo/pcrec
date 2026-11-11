@@ -1,0 +1,1050 @@
+# upropd27: case / letter binary properties
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# Alphabetic: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Alphabetic}
+features unicode-props
+encoding utf8
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+m "A" 0 1
+# U+007A LATIN SMALL z: Ll -- MEMBER
+m "z" 0 1
+# U+00AA FEMININE ORDINAL INDICATOR: Lo -- MEMBER
+m "\xc2\xaa" 0 2
+# U+00E9 LATIN SMALL E WITH ACUTE: Ll -- MEMBER
+m "\xc3\xa9" 0 2
+# U+0345 COMBINING GREEK YPOGEGRAMMENI: Mn but Other_Alphabetic -- MEMBER
+m "\xcd\x85" 0 2
+# U+2160 ROMAN NUMERAL ONE: Nl, Alphabetic -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+24B6 CIRCLED LATIN CAPITAL A: So but Other_Alphabetic -- MEMBER
+m "\xe2\x92\xb6" 0 3
+# U+3007 IDEOGRAPHIC NUMBER ZERO: Nl, Alphabetic -- MEMBER
+m "\xe3\x80\x87" 0 3
+# U+4E00 CJK ideograph one: Lo -- MEMBER
+m "\xe4\xb8\x80" 0 3
+# U+1D400 MATHEMATICAL BOLD CAPITAL A: Lu -- MEMBER
+m "\xf0\x9d\x90\x80" 0 4
+# U+2A6DF CJK EXT B last assigned: Lo -- MEMBER
+m "\xf0\xaa\x9b\x9f" 0 4
+# U+0030 DIGIT ZERO: Nd -- non-member
+n "0"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+00D7 MULTIPLICATION SIGN: Sm -- non-member
+n "\xc3\x97"
+# U+00B2 SUPERSCRIPT TWO: No -- non-member
+n "\xc2\xb2"
+# U+0300 COMBINING GRAVE ACCENT: Mn, not Other_Alphabetic -- non-member
+n "\xcc\x80"
+# U+2000 EN QUAD: Zs -- non-member
+n "\xe2\x80\x80"
+# U+0378 unassigned: Cn -- non-member
+n "\xcd\xb8"
+# U+1F600 GRINNING FACE: So -- non-member
+n "\xf0\x9f\x98\x80"
+
+# Alphabetic: negated spelling \p{^X}, utf8; membership flipped
+# pcre2-only
+pattern \p{^Alphabetic}
+features unicode-props
+encoding utf8
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+n "A"
+# U+007A LATIN SMALL z: Ll -- MEMBER
+n "z"
+# U+00AA FEMININE ORDINAL INDICATOR: Lo -- MEMBER
+n "\xc2\xaa"
+# U+00E9 LATIN SMALL E WITH ACUTE: Ll -- MEMBER
+n "\xc3\xa9"
+# U+0345 COMBINING GREEK YPOGEGRAMMENI: Mn but Other_Alphabetic -- MEMBER
+n "\xcd\x85"
+# U+2160 ROMAN NUMERAL ONE: Nl, Alphabetic -- MEMBER
+n "\xe2\x85\xa0"
+# U+24B6 CIRCLED LATIN CAPITAL A: So but Other_Alphabetic -- MEMBER
+n "\xe2\x92\xb6"
+# U+3007 IDEOGRAPHIC NUMBER ZERO: Nl, Alphabetic -- MEMBER
+n "\xe3\x80\x87"
+# U+4E00 CJK ideograph one: Lo -- MEMBER
+n "\xe4\xb8\x80"
+# U+1D400 MATHEMATICAL BOLD CAPITAL A: Lu -- MEMBER
+n "\xf0\x9d\x90\x80"
+# U+2A6DF CJK EXT B last assigned: Lo -- MEMBER
+n "\xf0\xaa\x9b\x9f"
+# U+0030 DIGIT ZERO: Nd -- non-member
+m "0" 0 1
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+# U+00D7 MULTIPLICATION SIGN: Sm -- non-member
+m "\xc3\x97" 0 2
+# U+00B2 SUPERSCRIPT TWO: No -- non-member
+m "\xc2\xb2" 0 2
+# U+0300 COMBINING GRAVE ACCENT: Mn, not Other_Alphabetic -- non-member
+m "\xcc\x80" 0 2
+# U+2000 EN QUAD: Zs -- non-member
+m "\xe2\x80\x80" 0 3
+# U+0378 unassigned: Cn -- non-member
+m "\xcd\xb8" 0 2
+# U+1F600 GRINNING FACE: So -- non-member
+m "\xf0\x9f\x98\x80" 0 4
+
+# Alphabetic: inside a class with another item (U+0030)
+# pcre2-only
+pattern [\x{30}\p{Alphabetic}]
+features unicode-props
+encoding utf8
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+m "A" 0 1
+# U+007A LATIN SMALL z: Ll -- MEMBER
+m "z" 0 1
+# U+00AA FEMININE ORDINAL INDICATOR: Lo -- MEMBER
+m "\xc2\xaa" 0 2
+# U+00E9 LATIN SMALL E WITH ACUTE: Ll -- MEMBER
+m "\xc3\xa9" 0 2
+# U+0345 COMBINING GREEK YPOGEGRAMMENI: Mn but Other_Alphabetic -- MEMBER
+m "\xcd\x85" 0 2
+# U+2160 ROMAN NUMERAL ONE: Nl, Alphabetic -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+24B6 CIRCLED LATIN CAPITAL A: So but Other_Alphabetic -- MEMBER
+m "\xe2\x92\xb6" 0 3
+# U+3007 IDEOGRAPHIC NUMBER ZERO: Nl, Alphabetic -- MEMBER
+m "\xe3\x80\x87" 0 3
+# U+4E00 CJK ideograph one: Lo -- MEMBER
+m "\xe4\xb8\x80" 0 3
+# U+1D400 MATHEMATICAL BOLD CAPITAL A: Lu -- MEMBER
+m "\xf0\x9d\x90\x80" 0 4
+# U+2A6DF CJK EXT B last assigned: Lo -- MEMBER
+m "\xf0\xaa\x9b\x9f" 0 4
+# U+0030 DIGIT ZERO: Nd -- non-member of the property but IS the extra class item
+m "0" 0 1
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+00D7 MULTIPLICATION SIGN: Sm -- non-member
+n "\xc3\x97"
+# U+00B2 SUPERSCRIPT TWO: No -- non-member
+n "\xc2\xb2"
+# U+0300 COMBINING GRAVE ACCENT: Mn, not Other_Alphabetic -- non-member
+n "\xcc\x80"
+# U+2000 EN QUAD: Zs -- non-member
+n "\xe2\x80\x80"
+# U+0378 unassigned: Cn -- non-member
+n "\xcd\xb8"
+# U+1F600 GRINNING FACE: So -- non-member
+n "\xf0\x9f\x98\x80"
+
+# Alphabetic: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Alphabetic}
+features unicode-props
+encoding utf8
+flags i
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+m "A" 0 1
+# U+007A LATIN SMALL z: Ll -- MEMBER
+m "z" 0 1
+# U+00AA FEMININE ORDINAL INDICATOR: Lo -- MEMBER
+m "\xc2\xaa" 0 2
+# U+00E9 LATIN SMALL E WITH ACUTE: Ll -- MEMBER
+m "\xc3\xa9" 0 2
+# U+0345 COMBINING GREEK YPOGEGRAMMENI: Mn but Other_Alphabetic -- MEMBER
+m "\xcd\x85" 0 2
+# U+2160 ROMAN NUMERAL ONE: Nl, Alphabetic -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+24B6 CIRCLED LATIN CAPITAL A: So but Other_Alphabetic -- MEMBER
+m "\xe2\x92\xb6" 0 3
+# U+3007 IDEOGRAPHIC NUMBER ZERO: Nl, Alphabetic -- MEMBER
+m "\xe3\x80\x87" 0 3
+# U+4E00 CJK ideograph one: Lo -- MEMBER
+m "\xe4\xb8\x80" 0 3
+# U+1D400 MATHEMATICAL BOLD CAPITAL A: Lu -- MEMBER
+m "\xf0\x9d\x90\x80" 0 4
+# U+2A6DF CJK EXT B last assigned: Lo -- MEMBER
+m "\xf0\xaa\x9b\x9f" 0 4
+# U+0030 DIGIT ZERO: Nd -- non-member
+n "0"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+00D7 MULTIPLICATION SIGN: Sm -- non-member
+n "\xc3\x97"
+# U+00B2 SUPERSCRIPT TWO: No -- non-member
+n "\xc2\xb2"
+# U+0300 COMBINING GRAVE ACCENT: Mn, not Other_Alphabetic -- non-member
+n "\xcc\x80"
+# U+2000 EN QUAD: Zs -- non-member
+n "\xe2\x80\x80"
+# U+0378 unassigned: Cn -- non-member
+n "\xcd\xb8"
+# U+1F600 GRINNING FACE: So -- non-member
+n "\xf0\x9f\x98\x80"
+
+# Lowercase: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Lowercase}
+features unicode-props
+encoding utf8
+# U+0061 LATIN SMALL a: Ll -- MEMBER
+m "a" 0 1
+# U+00AA FEMININE ORDINAL INDICATOR: Other_Lowercase -- MEMBER
+m "\xc2\xaa" 0 2
+# U+00DF LATIN SMALL SHARP S: Ll -- MEMBER
+m "\xc3\x9f" 0 2
+# U+02B0 MODIFIER LETTER SMALL H: Other_Lowercase -- MEMBER
+m "\xca\xb0" 0 2
+# U+0345 COMBINING GREEK YPOGEGRAMMENI: Other_Lowercase -- MEMBER
+m "\xcd\x85" 0 2
+# U+2170 SMALL ROMAN NUMERAL ONE: Other_Lowercase -- MEMBER
+m "\xe2\x85\xb0" 0 3
+# U+24D0 CIRCLED LATIN SMALL a: Other_Lowercase -- MEMBER
+m "\xe2\x93\x90" 0 3
+# U+0041 LATIN CAPITAL A: Lu -- non-member
+n "A"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+01C5 LATIN CAPITAL D WITH SMALL Z WITH CARON: Lt, not Lowercase -- non-member
+n "\xc7\x85"
+# U+0130 LATIN CAPITAL I WITH DOT ABOVE: Lu -- non-member
+n "\xc4\xb0"
+# U+2160 ROMAN NUMERAL ONE: Other_Uppercase, not Lowercase -- non-member
+n "\xe2\x85\xa0"
+# U+4E00 CJK ideograph: Lo, no case -- non-member
+n "\xe4\xb8\x80"
+
+# Lowercase: negated spelling [^\p{X}], utf8; membership flipped
+# pcre2-only
+pattern [^\p{Lowercase}]
+features unicode-props
+encoding utf8
+# U+0061 LATIN SMALL a: Ll -- MEMBER
+n "a"
+# U+00AA FEMININE ORDINAL INDICATOR: Other_Lowercase -- MEMBER
+n "\xc2\xaa"
+# U+00DF LATIN SMALL SHARP S: Ll -- MEMBER
+n "\xc3\x9f"
+# U+02B0 MODIFIER LETTER SMALL H: Other_Lowercase -- MEMBER
+n "\xca\xb0"
+# U+0345 COMBINING GREEK YPOGEGRAMMENI: Other_Lowercase -- MEMBER
+n "\xcd\x85"
+# U+2170 SMALL ROMAN NUMERAL ONE: Other_Lowercase -- MEMBER
+n "\xe2\x85\xb0"
+# U+24D0 CIRCLED LATIN SMALL a: Other_Lowercase -- MEMBER
+n "\xe2\x93\x90"
+# U+0041 LATIN CAPITAL A: Lu -- non-member
+m "A" 0 1
+# U+0031 DIGIT ONE -- non-member
+m "1" 0 1
+# U+01C5 LATIN CAPITAL D WITH SMALL Z WITH CARON: Lt, not Lowercase -- non-member
+m "\xc7\x85" 0 2
+# U+0130 LATIN CAPITAL I WITH DOT ABOVE: Lu -- non-member
+m "\xc4\xb0" 0 2
+# U+2160 ROMAN NUMERAL ONE: Other_Uppercase, not Lowercase -- non-member
+m "\xe2\x85\xa0" 0 3
+# U+4E00 CJK ideograph: Lo, no case -- non-member
+m "\xe4\xb8\x80" 0 3
+
+# Lowercase: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Lowercase}
+features unicode-props
+encoding utf8
+flags i
+# U+0061 LATIN SMALL a: Ll -- MEMBER
+m "a" 0 1
+# U+00AA FEMININE ORDINAL INDICATOR: Other_Lowercase -- MEMBER
+m "\xc2\xaa" 0 2
+# U+00DF LATIN SMALL SHARP S: Ll -- MEMBER
+m "\xc3\x9f" 0 2
+# U+02B0 MODIFIER LETTER SMALL H: Other_Lowercase -- MEMBER
+m "\xca\xb0" 0 2
+# U+0345 COMBINING GREEK YPOGEGRAMMENI: Other_Lowercase -- MEMBER
+m "\xcd\x85" 0 2
+# U+2170 SMALL ROMAN NUMERAL ONE: Other_Lowercase -- MEMBER
+m "\xe2\x85\xb0" 0 3
+# U+24D0 CIRCLED LATIN SMALL a: Other_Lowercase -- MEMBER
+m "\xe2\x93\x90" 0 3
+# U+0041 LATIN CAPITAL A: Lu -- non-member
+n "A"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+01C5 LATIN CAPITAL D WITH SMALL Z WITH CARON: Lt, not Lowercase -- non-member
+n "\xc7\x85"
+# U+0130 LATIN CAPITAL I WITH DOT ABOVE: Lu -- non-member
+n "\xc4\xb0"
+# U+2160 ROMAN NUMERAL ONE: Other_Uppercase, not Lowercase -- non-member
+n "\xe2\x85\xa0"
+# U+4E00 CJK ideograph: Lo, no case -- non-member
+n "\xe4\xb8\x80"
+
+# Uppercase: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Uppercase}
+features unicode-props
+encoding utf8
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+m "A" 0 1
+# U+005A LATIN CAPITAL Z: Lu -- MEMBER
+m "Z" 0 1
+# U+00C0 LATIN CAPITAL A WITH GRAVE: Lu -- MEMBER
+m "\xc3\x80" 0 2
+# U+0130 LATIN CAPITAL I WITH DOT ABOVE: Lu -- MEMBER
+m "\xc4\xb0" 0 2
+# U+2160 ROMAN NUMERAL ONE: Other_Uppercase -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+24B6 CIRCLED LATIN CAPITAL A: Other_Uppercase -- MEMBER
+m "\xe2\x92\xb6" 0 3
+# U+1F130 SQUARED LATIN CAPITAL LETTER A: Other_Uppercase -- MEMBER
+m "\xf0\x9f\x84\xb0" 0 4
+# U+0061 LATIN SMALL a: Ll -- non-member
+n "a"
+# U+00DF LATIN SMALL SHARP S -- non-member
+n "\xc3\x9f"
+# U+01C5 Lt titlecase DZ: not Uppercase -- non-member
+n "\xc7\x85"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+2170 SMALL ROMAN NUMERAL ONE -- non-member
+n "\xe2\x85\xb0"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+
+# Uppercase: negated spelling \P{^X} (is \p{X}), utf8; membership flipped
+# pcre2-only
+pattern \P{^Uppercase}
+features unicode-props
+encoding utf8
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+m "A" 0 1
+# U+005A LATIN CAPITAL Z: Lu -- MEMBER
+m "Z" 0 1
+# U+00C0 LATIN CAPITAL A WITH GRAVE: Lu -- MEMBER
+m "\xc3\x80" 0 2
+# U+0130 LATIN CAPITAL I WITH DOT ABOVE: Lu -- MEMBER
+m "\xc4\xb0" 0 2
+# U+2160 ROMAN NUMERAL ONE: Other_Uppercase -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+24B6 CIRCLED LATIN CAPITAL A: Other_Uppercase -- MEMBER
+m "\xe2\x92\xb6" 0 3
+# U+1F130 SQUARED LATIN CAPITAL LETTER A: Other_Uppercase -- MEMBER
+m "\xf0\x9f\x84\xb0" 0 4
+# U+0061 LATIN SMALL a: Ll -- non-member
+n "a"
+# U+00DF LATIN SMALL SHARP S -- non-member
+n "\xc3\x9f"
+# U+01C5 Lt titlecase DZ: not Uppercase -- non-member
+n "\xc7\x85"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+2170 SMALL ROMAN NUMERAL ONE -- non-member
+n "\xe2\x85\xb0"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+
+# Uppercase: inside a class with another item (U+0061)
+# pcre2-only
+pattern [\x{61}\p{Uppercase}]
+features unicode-props
+encoding utf8
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+m "A" 0 1
+# U+005A LATIN CAPITAL Z: Lu -- MEMBER
+m "Z" 0 1
+# U+00C0 LATIN CAPITAL A WITH GRAVE: Lu -- MEMBER
+m "\xc3\x80" 0 2
+# U+0130 LATIN CAPITAL I WITH DOT ABOVE: Lu -- MEMBER
+m "\xc4\xb0" 0 2
+# U+2160 ROMAN NUMERAL ONE: Other_Uppercase -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+24B6 CIRCLED LATIN CAPITAL A: Other_Uppercase -- MEMBER
+m "\xe2\x92\xb6" 0 3
+# U+1F130 SQUARED LATIN CAPITAL LETTER A: Other_Uppercase -- MEMBER
+m "\xf0\x9f\x84\xb0" 0 4
+# U+0061 LATIN SMALL a: Ll -- non-member of the property but IS the extra class item
+m "a" 0 1
+# U+00DF LATIN SMALL SHARP S -- non-member
+n "\xc3\x9f"
+# U+01C5 Lt titlecase DZ: not Uppercase -- non-member
+n "\xc7\x85"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+2170 SMALL ROMAN NUMERAL ONE -- non-member
+n "\xe2\x85\xb0"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+
+# Uppercase: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Uppercase}
+features unicode-props
+encoding utf8
+flags i
+# U+0041 LATIN CAPITAL A: Lu -- MEMBER
+m "A" 0 1
+# U+005A LATIN CAPITAL Z: Lu -- MEMBER
+m "Z" 0 1
+# U+00C0 LATIN CAPITAL A WITH GRAVE: Lu -- MEMBER
+m "\xc3\x80" 0 2
+# U+0130 LATIN CAPITAL I WITH DOT ABOVE: Lu -- MEMBER
+m "\xc4\xb0" 0 2
+# U+2160 ROMAN NUMERAL ONE: Other_Uppercase -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+24B6 CIRCLED LATIN CAPITAL A: Other_Uppercase -- MEMBER
+m "\xe2\x92\xb6" 0 3
+# U+1F130 SQUARED LATIN CAPITAL LETTER A: Other_Uppercase -- MEMBER
+m "\xf0\x9f\x84\xb0" 0 4
+# U+0061 LATIN SMALL a: Ll -- non-member
+n "a"
+# U+00DF LATIN SMALL SHARP S -- non-member
+n "\xc3\x9f"
+# U+01C5 Lt titlecase DZ: not Uppercase -- non-member
+n "\xc7\x85"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+2170 SMALL ROMAN NUMERAL ONE -- non-member
+n "\xe2\x85\xb0"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+
+# Cased: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Cased}
+features unicode-props
+encoding utf8
+# U+0041 Lu -- MEMBER
+m "A" 0 1
+# U+0061 Ll -- MEMBER
+m "a" 0 1
+# U+01C5 Lt: Cased includes titlecase -- MEMBER
+m "\xc7\x85" 0 2
+# U+00AA Other_Lowercase hence Cased -- MEMBER
+m "\xc2\xaa" 0 2
+# U+2160 Other_Uppercase hence Cased -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+24D0 CIRCLED a: Other_Lowercase hence Cased -- MEMBER
+m "\xe2\x93\x90" 0 3
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+4E00 CJK ideograph: caseless -- non-member
+n "\xe4\xb8\x80"
+# U+0300 COMBINING GRAVE: Case_Ignorable, not Cased -- non-member
+n "\xcc\x80"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+
+# Cased: negated spelling [\P{X}], utf8; membership flipped
+# pcre2-only
+pattern [\P{Cased}]
+features unicode-props
+encoding utf8
+# U+0041 Lu -- MEMBER
+n "A"
+# U+0061 Ll -- MEMBER
+n "a"
+# U+01C5 Lt: Cased includes titlecase -- MEMBER
+n "\xc7\x85"
+# U+00AA Other_Lowercase hence Cased -- MEMBER
+n "\xc2\xaa"
+# U+2160 Other_Uppercase hence Cased -- MEMBER
+n "\xe2\x85\xa0"
+# U+24D0 CIRCLED a: Other_Lowercase hence Cased -- MEMBER
+n "\xe2\x93\x90"
+# U+0030 DIGIT ZERO -- non-member
+m "0" 0 1
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+# U+4E00 CJK ideograph: caseless -- non-member
+m "\xe4\xb8\x80" 0 3
+# U+0300 COMBINING GRAVE: Case_Ignorable, not Cased -- non-member
+m "\xcc\x80" 0 2
+# U+002D HYPHEN-MINUS -- non-member
+m "\x2d" 0 1
+
+# Cased: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Cased}
+features unicode-props
+encoding utf8
+flags i
+# U+0041 Lu -- MEMBER
+m "A" 0 1
+# U+0061 Ll -- MEMBER
+m "a" 0 1
+# U+01C5 Lt: Cased includes titlecase -- MEMBER
+m "\xc7\x85" 0 2
+# U+00AA Other_Lowercase hence Cased -- MEMBER
+m "\xc2\xaa" 0 2
+# U+2160 Other_Uppercase hence Cased -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+24D0 CIRCLED a: Other_Lowercase hence Cased -- MEMBER
+m "\xe2\x93\x90" 0 3
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+4E00 CJK ideograph: caseless -- non-member
+n "\xe4\xb8\x80"
+# U+0300 COMBINING GRAVE: Case_Ignorable, not Cased -- non-member
+n "\xcc\x80"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+
+# Case_Ignorable: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Case_Ignorable}
+features unicode-props
+encoding utf8
+# U+0027 APOSTROPHE: Word_Break MidNumLet -> Case_Ignorable -- MEMBER
+m "\x27" 0 1
+# U+002E FULL STOP: MidNumLet -- MEMBER
+m "\x2e" 0 1
+# U+003A COLON: MidLetter -- MEMBER
+m "\x3a" 0 1
+# U+005E CIRCUMFLEX ACCENT: Sk -- MEMBER
+m "\x5e" 0 1
+# U+0060 GRAVE ACCENT: Sk -- MEMBER
+m "\x60" 0 1
+# U+00A8 DIAERESIS: Sk -- MEMBER
+m "\xc2\xa8" 0 2
+# U+00AD SOFT HYPHEN: Cf -- MEMBER
+m "\xc2\xad" 0 2
+# U+00B7 MIDDLE DOT: MidLetter -- MEMBER
+m "\xc2\xb7" 0 2
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+m "\xcc\x80" 0 2
+# U+02B0 MODIFIER LETTER SMALL H: Lm -- MEMBER
+m "\xca\xb0" 0 2
+# U+200B ZERO WIDTH SPACE: Cf -- MEMBER
+m "\xe2\x80\x8b" 0 3
+# U+FE00 VARIATION SELECTOR-1: Mn -- MEMBER
+m "\xef\xb8\x80" 0 3
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+0041 LATIN CAPITAL A -- non-member
+n "A"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+002D HYPHEN-MINUS: Pd, not Case_Ignorable -- non-member
+n "\x2d"
+# U+0022 QUOTATION MARK: not Case_Ignorable -- non-member
+n "\x22"
+# U+0025 PERCENT SIGN: no -- non-member
+n "\x25"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+
+# Case_Ignorable: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{Case_Ignorable}
+features unicode-props
+encoding utf8
+# U+0027 APOSTROPHE: Word_Break MidNumLet -> Case_Ignorable -- MEMBER
+n "\x27"
+# U+002E FULL STOP: MidNumLet -- MEMBER
+n "\x2e"
+# U+003A COLON: MidLetter -- MEMBER
+n "\x3a"
+# U+005E CIRCUMFLEX ACCENT: Sk -- MEMBER
+n "\x5e"
+# U+0060 GRAVE ACCENT: Sk -- MEMBER
+n "\x60"
+# U+00A8 DIAERESIS: Sk -- MEMBER
+n "\xc2\xa8"
+# U+00AD SOFT HYPHEN: Cf -- MEMBER
+n "\xc2\xad"
+# U+00B7 MIDDLE DOT: MidLetter -- MEMBER
+n "\xc2\xb7"
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+n "\xcc\x80"
+# U+02B0 MODIFIER LETTER SMALL H: Lm -- MEMBER
+n "\xca\xb0"
+# U+200B ZERO WIDTH SPACE: Cf -- MEMBER
+n "\xe2\x80\x8b"
+# U+FE00 VARIATION SELECTOR-1: Mn -- MEMBER
+n "\xef\xb8\x80"
+# U+0061 LATIN SMALL a -- non-member
+m "a" 0 1
+# U+0041 LATIN CAPITAL A -- non-member
+m "A" 0 1
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+# U+0030 DIGIT ZERO -- non-member
+m "0" 0 1
+# U+002D HYPHEN-MINUS: Pd, not Case_Ignorable -- non-member
+m "\x2d" 0 1
+# U+0022 QUOTATION MARK: not Case_Ignorable -- non-member
+m "\x22" 0 1
+# U+0025 PERCENT SIGN: no -- non-member
+m "\x25" 0 1
+# U+4E00 CJK ideograph -- non-member
+m "\xe4\xb8\x80" 0 3
+
+# Case_Ignorable: inside a class with another item (U+0061)
+# pcre2-only
+pattern [\x{61}\p{Case_Ignorable}]
+features unicode-props
+encoding utf8
+# U+0027 APOSTROPHE: Word_Break MidNumLet -> Case_Ignorable -- MEMBER
+m "\x27" 0 1
+# U+002E FULL STOP: MidNumLet -- MEMBER
+m "\x2e" 0 1
+# U+003A COLON: MidLetter -- MEMBER
+m "\x3a" 0 1
+# U+005E CIRCUMFLEX ACCENT: Sk -- MEMBER
+m "\x5e" 0 1
+# U+0060 GRAVE ACCENT: Sk -- MEMBER
+m "\x60" 0 1
+# U+00A8 DIAERESIS: Sk -- MEMBER
+m "\xc2\xa8" 0 2
+# U+00AD SOFT HYPHEN: Cf -- MEMBER
+m "\xc2\xad" 0 2
+# U+00B7 MIDDLE DOT: MidLetter -- MEMBER
+m "\xc2\xb7" 0 2
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+m "\xcc\x80" 0 2
+# U+02B0 MODIFIER LETTER SMALL H: Lm -- MEMBER
+m "\xca\xb0" 0 2
+# U+200B ZERO WIDTH SPACE: Cf -- MEMBER
+m "\xe2\x80\x8b" 0 3
+# U+FE00 VARIATION SELECTOR-1: Mn -- MEMBER
+m "\xef\xb8\x80" 0 3
+# U+0061 LATIN SMALL a -- non-member of the property but IS the extra class item
+m "a" 0 1
+# U+0041 LATIN CAPITAL A -- non-member
+n "A"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+002D HYPHEN-MINUS: Pd, not Case_Ignorable -- non-member
+n "\x2d"
+# U+0022 QUOTATION MARK: not Case_Ignorable -- non-member
+n "\x22"
+# U+0025 PERCENT SIGN: no -- non-member
+n "\x25"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+
+# Case_Ignorable: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Case_Ignorable}
+features unicode-props
+encoding utf8
+flags i
+# U+0027 APOSTROPHE: Word_Break MidNumLet -> Case_Ignorable -- MEMBER
+m "\x27" 0 1
+# U+002E FULL STOP: MidNumLet -- MEMBER
+m "\x2e" 0 1
+# U+003A COLON: MidLetter -- MEMBER
+m "\x3a" 0 1
+# U+005E CIRCUMFLEX ACCENT: Sk -- MEMBER
+m "\x5e" 0 1
+# U+0060 GRAVE ACCENT: Sk -- MEMBER
+m "\x60" 0 1
+# U+00A8 DIAERESIS: Sk -- MEMBER
+m "\xc2\xa8" 0 2
+# U+00AD SOFT HYPHEN: Cf -- MEMBER
+m "\xc2\xad" 0 2
+# U+00B7 MIDDLE DOT: MidLetter -- MEMBER
+m "\xc2\xb7" 0 2
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+m "\xcc\x80" 0 2
+# U+02B0 MODIFIER LETTER SMALL H: Lm -- MEMBER
+m "\xca\xb0" 0 2
+# U+200B ZERO WIDTH SPACE: Cf -- MEMBER
+m "\xe2\x80\x8b" 0 3
+# U+FE00 VARIATION SELECTOR-1: Mn -- MEMBER
+m "\xef\xb8\x80" 0 3
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+0041 LATIN CAPITAL A -- non-member
+n "A"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+002D HYPHEN-MINUS: Pd, not Case_Ignorable -- non-member
+n "\x2d"
+# U+0022 QUOTATION MARK: not Case_Ignorable -- non-member
+n "\x22"
+# U+0025 PERCENT SIGN: no -- non-member
+n "\x25"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+
+# Changes_When_Lowercased: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Changes_When_Lowercased}
+features unicode-props
+encoding utf8
+# U+0041 A lowercases to a -- MEMBER
+m "A" 0 1
+# U+00C0 A WITH GRAVE lowercases -- MEMBER
+m "\xc3\x80" 0 2
+# U+0130 I WITH DOT ABOVE lowercases (i + U+0307 full mapping) -- MEMBER
+m "\xc4\xb0" 0 2
+# U+01C5 Lt Dz lowercases to dz -- MEMBER
+m "\xc7\x85" 0 2
+# U+1E9E CAPITAL SHARP S lowercases to sharp s -- MEMBER
+m "\xe1\xba\x9e" 0 3
+# U+0061 a is already lowercase -- non-member
+n "a"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+00DF sharp s is lowercase -- non-member
+n "\xc3\x9f"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+01C6 dz already lowercase -- non-member
+n "\xc7\x86"
+
+# Changes_When_Lowercased: negated spelling \p{^X}, utf8; membership flipped
+# pcre2-only
+pattern \p{^Changes_When_Lowercased}
+features unicode-props
+encoding utf8
+# U+0041 A lowercases to a -- MEMBER
+n "A"
+# U+00C0 A WITH GRAVE lowercases -- MEMBER
+n "\xc3\x80"
+# U+0130 I WITH DOT ABOVE lowercases (i + U+0307 full mapping) -- MEMBER
+n "\xc4\xb0"
+# U+01C5 Lt Dz lowercases to dz -- MEMBER
+n "\xc7\x85"
+# U+1E9E CAPITAL SHARP S lowercases to sharp s -- MEMBER
+n "\xe1\xba\x9e"
+# U+0061 a is already lowercase -- non-member
+m "a" 0 1
+# U+0031 DIGIT ONE -- non-member
+m "1" 0 1
+# U+00DF sharp s is lowercase -- non-member
+m "\xc3\x9f" 0 2
+# U+4E00 CJK ideograph -- non-member
+m "\xe4\xb8\x80" 0 3
+# U+01C6 dz already lowercase -- non-member
+m "\xc7\x86" 0 2
+
+# Changes_When_Lowercased: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Changes_When_Lowercased}
+features unicode-props
+encoding utf8
+flags i
+# U+0041 A lowercases to a -- MEMBER
+m "A" 0 1
+# U+00C0 A WITH GRAVE lowercases -- MEMBER
+m "\xc3\x80" 0 2
+# U+0130 I WITH DOT ABOVE lowercases (i + U+0307 full mapping) -- MEMBER
+m "\xc4\xb0" 0 2
+# U+01C5 Lt Dz lowercases to dz -- MEMBER
+m "\xc7\x85" 0 2
+# U+1E9E CAPITAL SHARP S lowercases to sharp s -- MEMBER
+m "\xe1\xba\x9e" 0 3
+# U+0061 a is already lowercase -- non-member
+n "a"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+00DF sharp s is lowercase -- non-member
+n "\xc3\x9f"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+01C6 dz already lowercase -- non-member
+n "\xc7\x86"
+
+# Changes_When_Uppercased: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Changes_When_Uppercased}
+features unicode-props
+encoding utf8
+# U+0061 a uppercases -- MEMBER
+m "a" 0 1
+# U+00DF sharp s uppercases (full mapping SS) -- MEMBER
+m "\xc3\x9f" 0 2
+# U+00B5 MICRO SIGN uppercases to Greek capital MU -- MEMBER
+m "\xc2\xb5" 0 2
+# U+0131 DOTLESS I uppercases to I -- MEMBER
+m "\xc4\xb1" 0 2
+# U+01C5 Lt Dz uppercases to DZ -- MEMBER
+m "\xc7\x85" 0 2
+# U+FB00 LATIN SMALL LIGATURE FF uppercases to FF -- MEMBER
+m "\xef\xac\x80" 0 3
+# U+0041 A is already uppercase -- non-member
+n "A"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+01C4 DZ already uppercase -- non-member
+n "\xc7\x84"
+
+# Changes_When_Uppercased: negated spelling [^\p{X}], utf8; membership flipped
+# pcre2-only
+pattern [^\p{Changes_When_Uppercased}]
+features unicode-props
+encoding utf8
+# U+0061 a uppercases -- MEMBER
+n "a"
+# U+00DF sharp s uppercases (full mapping SS) -- MEMBER
+n "\xc3\x9f"
+# U+00B5 MICRO SIGN uppercases to Greek capital MU -- MEMBER
+n "\xc2\xb5"
+# U+0131 DOTLESS I uppercases to I -- MEMBER
+n "\xc4\xb1"
+# U+01C5 Lt Dz uppercases to DZ -- MEMBER
+n "\xc7\x85"
+# U+FB00 LATIN SMALL LIGATURE FF uppercases to FF -- MEMBER
+n "\xef\xac\x80"
+# U+0041 A is already uppercase -- non-member
+m "A" 0 1
+# U+0031 DIGIT ONE -- non-member
+m "1" 0 1
+# U+4E00 CJK ideograph -- non-member
+m "\xe4\xb8\x80" 0 3
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+# U+01C4 DZ already uppercase -- non-member
+m "\xc7\x84" 0 2
+
+# Changes_When_Uppercased: inside a class with another item (U+0041)
+# pcre2-only
+pattern [\x{41}\p{Changes_When_Uppercased}]
+features unicode-props
+encoding utf8
+# U+0061 a uppercases -- MEMBER
+m "a" 0 1
+# U+00DF sharp s uppercases (full mapping SS) -- MEMBER
+m "\xc3\x9f" 0 2
+# U+00B5 MICRO SIGN uppercases to Greek capital MU -- MEMBER
+m "\xc2\xb5" 0 2
+# U+0131 DOTLESS I uppercases to I -- MEMBER
+m "\xc4\xb1" 0 2
+# U+01C5 Lt Dz uppercases to DZ -- MEMBER
+m "\xc7\x85" 0 2
+# U+FB00 LATIN SMALL LIGATURE FF uppercases to FF -- MEMBER
+m "\xef\xac\x80" 0 3
+# U+0041 A is already uppercase -- non-member of the property but IS the extra class item
+m "A" 0 1
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+01C4 DZ already uppercase -- non-member
+n "\xc7\x84"
+
+# Changes_When_Titlecased: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Changes_When_Titlecased}
+features unicode-props
+encoding utf8
+# U+0061 a titlecases to A -- MEMBER
+m "a" 0 1
+# U+00DF sharp s titlecases to Ss -- MEMBER
+m "\xc3\x9f" 0 2
+# U+01C4 DZ (Lu) titlecases to Dz -- MEMBER
+m "\xc7\x84" 0 2
+# U+01C6 dz titlecases to Dz -- MEMBER
+m "\xc7\x86" 0 2
+# U+FB00 ligature ff titlecases to Ff -- MEMBER
+m "\xef\xac\x80" 0 3
+# U+0041 A already titlecase -- non-member
+n "A"
+# U+01C5 Dz IS titlecase: unchanged -- non-member
+n "\xc7\x85"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+
+# Changes_When_Titlecased: negated spelling \P{^X} (is \p{X}), utf8; membership flipped
+# pcre2-only
+pattern \P{^Changes_When_Titlecased}
+features unicode-props
+encoding utf8
+# U+0061 a titlecases to A -- MEMBER
+m "a" 0 1
+# U+00DF sharp s titlecases to Ss -- MEMBER
+m "\xc3\x9f" 0 2
+# U+01C4 DZ (Lu) titlecases to Dz -- MEMBER
+m "\xc7\x84" 0 2
+# U+01C6 dz titlecases to Dz -- MEMBER
+m "\xc7\x86" 0 2
+# U+FB00 ligature ff titlecases to Ff -- MEMBER
+m "\xef\xac\x80" 0 3
+# U+0041 A already titlecase -- non-member
+n "A"
+# U+01C5 Dz IS titlecase: unchanged -- non-member
+n "\xc7\x85"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+
+# Changes_When_Casefolded: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Changes_When_Casefolded}
+features unicode-props
+encoding utf8
+# U+0041 A folds to a -- MEMBER
+m "A" 0 1
+# U+00DF sharp s full-folds to ss -- MEMBER
+m "\xc3\x9f" 0 2
+# U+00B5 MICRO SIGN folds to Greek mu -- MEMBER
+m "\xc2\xb5" 0 2
+# U+0130 I WITH DOT ABOVE full-folds to i + U+0307 -- MEMBER
+m "\xc4\xb0" 0 2
+# U+0345 COMBINING YPOGEGRAMMENI folds to iota -- MEMBER
+m "\xcd\x85" 0 2
+# U+1E9E CAPITAL SHARP S folds to ss -- MEMBER
+m "\xe1\xba\x9e" 0 3
+# U+0061 a is its own fold -- non-member
+n "a"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+0020 SPACE -- non-member
+n "\x20"
+
+# Changes_When_Casefolded: negated spelling [\P{X}], utf8; membership flipped
+# pcre2-only
+pattern [\P{Changes_When_Casefolded}]
+features unicode-props
+encoding utf8
+# U+0041 A folds to a -- MEMBER
+n "A"
+# U+00DF sharp s full-folds to ss -- MEMBER
+n "\xc3\x9f"
+# U+00B5 MICRO SIGN folds to Greek mu -- MEMBER
+n "\xc2\xb5"
+# U+0130 I WITH DOT ABOVE full-folds to i + U+0307 -- MEMBER
+n "\xc4\xb0"
+# U+0345 COMBINING YPOGEGRAMMENI folds to iota -- MEMBER
+n "\xcd\x85"
+# U+1E9E CAPITAL SHARP S folds to ss -- MEMBER
+n "\xe1\xba\x9e"
+# U+0061 a is its own fold -- non-member
+m "a" 0 1
+# U+0031 DIGIT ONE -- non-member
+m "1" 0 1
+# U+4E00 CJK ideograph -- non-member
+m "\xe4\xb8\x80" 0 3
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+
+# Changes_When_Casefolded: inside a class with another item (U+0061)
+# pcre2-only
+pattern [\x{61}\p{Changes_When_Casefolded}]
+features unicode-props
+encoding utf8
+# U+0041 A folds to a -- MEMBER
+m "A" 0 1
+# U+00DF sharp s full-folds to ss -- MEMBER
+m "\xc3\x9f" 0 2
+# U+00B5 MICRO SIGN folds to Greek mu -- MEMBER
+m "\xc2\xb5" 0 2
+# U+0130 I WITH DOT ABOVE full-folds to i + U+0307 -- MEMBER
+m "\xc4\xb0" 0 2
+# U+0345 COMBINING YPOGEGRAMMENI folds to iota -- MEMBER
+m "\xcd\x85" 0 2
+# U+1E9E CAPITAL SHARP S folds to ss -- MEMBER
+m "\xe1\xba\x9e" 0 3
+# U+0061 a is its own fold -- non-member of the property but IS the extra class item
+m "a" 0 1
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+0020 SPACE -- non-member
+n "\x20"
+
+# Changes_When_Casefolded: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Changes_When_Casefolded}
+features unicode-props
+encoding utf8
+flags i
+# U+0041 A folds to a -- MEMBER
+m "A" 0 1
+# U+00DF sharp s full-folds to ss -- MEMBER
+m "\xc3\x9f" 0 2
+# U+00B5 MICRO SIGN folds to Greek mu -- MEMBER
+m "\xc2\xb5" 0 2
+# U+0130 I WITH DOT ABOVE full-folds to i + U+0307 -- MEMBER
+m "\xc4\xb0" 0 2
+# U+0345 COMBINING YPOGEGRAMMENI folds to iota -- MEMBER
+m "\xcd\x85" 0 2
+# U+1E9E CAPITAL SHARP S folds to ss -- MEMBER
+m "\xe1\xba\x9e" 0 3
+# U+0061 a is its own fold -- non-member
+n "a"
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+0020 SPACE -- non-member
+n "\x20"
+
+# Changes_When_Casemapped: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Changes_When_Casemapped}
+features unicode-props
+encoding utf8
+# U+0041 A maps to a -- MEMBER
+m "A" 0 1
+# U+0061 a maps to A -- MEMBER
+m "a" 0 1
+# U+00DF sharp s maps -- MEMBER
+m "\xc3\x9f" 0 2
+# U+0130 dotted capital I maps -- MEMBER
+m "\xc4\xb0" 0 2
+# U+01C5 Lt Dz maps -- MEMBER
+m "\xc7\x85" 0 2
+# U+FB00 ligature ff maps -- MEMBER
+m "\xef\xac\x80" 0 3
+# U+0031 DIGIT ONE -- non-member
+n "1"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+0300 COMBINING GRAVE -- non-member
+n "\xcc\x80"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+
+# Changes_When_Casemapped: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{Changes_When_Casemapped}
+features unicode-props
+encoding utf8
+# U+0041 A maps to a -- MEMBER
+n "A"
+# U+0061 a maps to A -- MEMBER
+n "a"
+# U+00DF sharp s maps -- MEMBER
+n "\xc3\x9f"
+# U+0130 dotted capital I maps -- MEMBER
+n "\xc4\xb0"
+# U+01C5 Lt Dz maps -- MEMBER
+n "\xc7\x85"
+# U+FB00 ligature ff maps -- MEMBER
+n "\xef\xac\x80"
+# U+0031 DIGIT ONE -- non-member
+m "1" 0 1
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+# U+4E00 CJK ideograph -- non-member
+m "\xe4\xb8\x80" 0 3
+# U+0300 COMBINING GRAVE -- non-member
+m "\xcc\x80" 0 2
+# U+002D HYPHEN-MINUS -- non-member
+m "\x2d" 0 1

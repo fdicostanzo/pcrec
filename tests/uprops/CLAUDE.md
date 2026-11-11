@@ -12,12 +12,13 @@ is everything those corpora structurally cannot express.
 
 ## Files
 
-- **run_uprops_tests.sh** — five sections, and the reason there are five is that each sees something none of the others can. §5 ([PF-DROP], D135, utf8 arm only) sweeps ...
+- **run_uprops_tests.sh** — eight sections (§8 is the d27 corpus's oracles), and the reason there are several is that each sees something none of the others can. §5 ([PF-DROP], D135, utf8 arm only) sweeps ...
 - **uprops_oracle.c** — the libpcre2 side, through the shared binding (`tests/fuzz/pcre2_abi.h`, direct-linked since [ORACLE-LINK]/D98, 2026-09-09), so a clone without ...
 - **uprops_sweep.c** — the pcrec side, compiled once per property against that property's own emitted artifact.
 - **size_ladder_prefilter_drop.rxt** — [PF-DROP] (D135): the witness `(\p{Xwd})` under `-e utf8`, a VM hybrid refused at default axes before the size-cap ladder gained its ...
 - **uprops_compare.py** — the comparator, and the ONE place the Unicode-version drift policy is written down.
 - **uprops_ucdref.py** — [UPROP-MORE]: independent references for what libpcre2 cannot arbitrate. `names`/`ext` re-read `Blocks.txt` and `DerivedAge.txt` themselves and compare every Block/Age sweep exactly, plus structure (Age is a function and `age=NA` completes it; blocks plus `blk=NB` tile the space); `pyuni` cross-checks `Bidi_Mirrored` and `Bidi_Class` against python `unicodedata` 16.0.0 on assigned code points (SKIPS loudly on another python). Run as §6 of the script.
+- **d27/** — the D27 blinded `\p` corpus (16 `.rxt` files, rides `test-corpus`) and `d27_check.py`, its UCD-file and libpcre2 oracles (run as §8 of the script). See d27/CLAUDE.md.
 - **uprops_names.py** — [M5.0] stage 5: §2's PROMISE SIDE, re-derived from the vendored UCD and compared against the shipped table's rows in BOTH directions.
 
 ## What is NOT here
