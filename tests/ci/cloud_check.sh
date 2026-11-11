@@ -56,4 +56,8 @@ w=$root/.github/workflows/cloud-test.yml
 grep -q 'name: cloud-shard-\${{ steps\.[a-z]*\.outputs\.slug }}' "$w" && grep -q 'cloud_gather.sh slug' "$w" \
     && ! grep -q 'job-index' "$w" && ok "cloud-test.yml names its shard artifact from cloud_gather.sh slug (no job-index)" \
     || bad "cloud-test.yml's shard artifact name is not from cloud_gather.sh slug"
+# 5. Actions expressions have no arithmetic: run 42959538483 died as "a workflow file issue" on `fromJSON(..) + 15`.
+grep -nE '^[[:space:]]*(timeout-minutes|max-parallel):.*\$\{\{[^}]*[-+*/][^}]*\}\}' "$w" | grep -v 'needs\.plan\.outputs\.[a-z_]*) *}}' >/dev/null \
+    && bad "cloud-test.yml: arithmetic inside a \${{ }} expression (Actions has none): compute it in the plan job" \
+    || ok "cloud-test.yml: no arithmetic in its limit/parallelism expressions"
 echo "cloud_check: $pass passed, $fail failed"; [ "$fail" = 0 ]

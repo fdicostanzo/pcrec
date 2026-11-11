@@ -39,6 +39,7 @@ jobs:
       matrix: ${{ steps.p.outputs.matrix }}
       max_parallel: ${{ steps.p.outputs.max_parallel }}
       limit_min: ${{ steps.p.outputs.limit_min }}
+      job_limit_min: ${{ steps.p.outputs.job_limit_min }}
       owner: ${{ steps.p.outputs.owner }}
       kind: ${{ steps.p.outputs.kind }}
       name: ${{ steps.p.outputs.name }}
@@ -51,7 +52,7 @@ jobs:
           IFS=/ read -r _ owner kind name <<<"$GITHUB_REF_NAME"
           [ -n "${name:-}" ] || { echo "branch '$GITHUB_REF_NAME' is not cloud/OWNER/KIND/NAME" >&2; exit 1; }
           bash tests/ci/cloud_kinds.sh plan "$kind" "$owner" > plan.txt
-          { cat plan.txt; echo "owner=$owner"; echo "kind=$kind"; echo "name=$name"; } >> "$GITHUB_OUTPUT"
+          { cat plan.txt; echo "job_limit_min=$(( $(sed -n 's/^limit_min=//p' plan.txt) + 15 ))"; echo "owner=$owner"; echo "kind=$kind"; echo "name=$name"; } >> "$GITHUB_OUTPUT"
           cat plan.txt; echo "owner=$owner kind=$kind name=$name"
 
   shard:
@@ -64,7 +65,7 @@ jobs:
       matrix:
         shard: ${{ fromJSON(needs.plan.outputs.matrix) }}
     # Backstop: setup + the kind's per-shard limit + the record/upload steps.
-    timeout-minutes: ${{ fromJSON(needs.plan.outputs.limit_min) + 15 }}
+    timeout-minutes: ${{ fromJSON(needs.plan.outputs.job_limit_min) }}
     steps:
       - uses: actions/checkout@v4
         with:
