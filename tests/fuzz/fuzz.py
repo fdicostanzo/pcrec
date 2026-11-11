@@ -462,6 +462,62 @@ def gen_capture():
         a=a, b=b, q=random.choice(TRAP_QUANTS))
 
 
+# [FEAT-FAMILIES] pre-move: the SET alphabet. The D37 addendum (2026-11-06)
+# owes "the fuzz generator widened to the set's constructs" before the first
+# default move: the base generator above draws no lookaround, backreference,
+# atomic group, named group, \Q..\E or inline modifier, so no generated
+# libpcre2 comparison ever saw a construct of one module INSIDE another
+# (gradthink_report G3). These raw-text templates (same {a}/{b}/{q} .format
+# mechanism as TRAP_TEMPLATES, literal braces doubled) draw each `extended`
+# module's constructs and their pairwise nestings. Used only under
+# `--set extended`; the default draw is untouched, so seed-for-seed the base
+# gate (run_capturediff_gate.sh) generates the same corpus it always did.
+EXTENDED_TEMPLATES = [
+    # lookaround (lookahead / lookbehind, positive and negative)
+    r"(?={a}{b}){a}", r"{a}(?!{b})", r"(?<={a}){b}", r"(?<!{a}){b}",
+    r"(?={a}*)({a}|{b})+", r"({a}(?={b}))+", r"(?<={a}{b}){a}",
+    r"(?<=({a})){b}", r"(?!{a}){b}{q}", r"(?<!{a}|{b}){a}{q}",
+    # atomic groups and possessives
+    r"(?>{a}|{a}{b}){b}", r"(?>{a}*){a}", r"(?>({a}|{b})*){a}",
+    r"({a}++){b}", r"{a}*+{a}", r"(?>(?={a}){a}){b}", r"(?>{a}|{b}){q}{a}",
+    # backreferences
+    r"({a}|{b})\1", r"({a}*)\1", r"({a})(?:{b}|\1)+", r"(?:({a})|{b})\1",
+    r"({a}+)({b}*)\2\1", r"({a})\g{{1}}", r"({a})\g{{-1}}{q}",
+    r"({a}|{b})+\1", r"(({a})|{b})\2", r"(?:({a})|({b}))+\1\2",
+    # named groups and references
+    r"(?<x>{a}|{b})\k<x>", r"(?<x>{a}*){b}\k<x>", r"(?P<x>{a})(?P=x)",
+    r"(?'x'{a}){q}\k'x'", r"(?<x>{a})(?<y>{b})?\k<x>", r"(?<x>{a}|{b})+",
+    # quoting
+    r"\Q{a}{b}\E{q}", r"\Q{a}.\E{b}", r"{a}\Q|\E{b}", r"[\Q{a}-\E]",
+    r"(?:\Q{a}\E|{b}){q}", r"\Q{a}\E\Q{b}\E", r"(\Q{a}*\E)\1",
+    # inline modifiers in groups and mid-pattern
+    r"({a}){b}?(?i:\1)", r"(?i:{a}){b}", r"{a}(?i){b}", r"({a})(?i)\1",
+    r"(?s).{q}{a}", r"(?m)^{a}$", r"(?x) {a} {b}", r"(?i)({a}|{b})\1",
+    r"(?:(?i){a}|{b}){q}", r"(?i)\Q{a}{b}\E",
+    # assertions
+    r"\b{a}", r"{a}\B", r"\A{a}|{b}\z", r"{a}\Z", r"(?m){a}$\n?",
+    # nestings across modules
+    r"(?>(?={a}{b})({a}|{b})+)\1", r"(?<x>(?={a}))\k<x>{a}",
+    r"(?:(?>{a}+)|(?<={b}){a})\Q{b}\E", r"(?=({a}+))\1{b}",
+    r"(?!(?>{a}*){b}){a}+", r"((?<={a}){b}|{a})+",
+    r"(?i)(?>\Q{a}{b}\E)+", r"(?<x>{a})(?=\k<x>|{b})",
+    r"(?:(?<x>{a})|{b}){q}",
+    r"((?>{a}|{b})(?<!{b}))+", r"(?=(?<x>{a}))(?<=\k<x>)?{a}",
+    r"(?>(\Q{a}\E|{b})\1)+", r"(?<x>{a}+)(?!\k<x>){b}",
+]
+# What `--set extended` compiles with: the module list the `extended` family
+# is defined as, written out (the family NAMES do not exist as --features
+# values until the default moves); recursion/verbs/callouts/vars are not in it.
+EXTENDED_FEATURES = ("classes,modifiers,quoting,named-groups,ucp,unicode-props,"
+                     "assertions,match-start-reset,backrefs,lookaround,atomic-groups")
+
+
+def gen_extended():
+    a, b = random.sample("abc01xy", 2)
+    return random.choice(EXTENDED_TEMPLATES).format(
+        a=a, b=b, q=random.choice(TRAP_QUANTS))
+
+
 def gen_pattern():
     return gen_alt(3)
 
@@ -691,6 +747,9 @@ def write_subject(path, data):
         f.write(data)
 
 
+FEATURES = None     # --features text for pcrec, None = pcrec's own default
+
+
 def compile_with_pcrec(pattern, tmp_dir):
     # --step-budget=STEP_BUDGET (harness policy fix, this session): only
     # takes effect on patterns the VM engine compiles (captures or other
@@ -710,8 +769,9 @@ def compile_with_pcrec(pattern, tmp_dir):
     # applied to the ONE compile call in this file that was missing it.
     gen_c = os.path.join(tmp_dir, "gen.c")
     try:
-        r = subprocess.run([PCREC, "-p", "rx", "--step-budget=%d" % STEP_BUDGET,
-                            "-o", gen_c, "--pattern", pattern],
+        r = subprocess.run([PCREC, "-p", "rx", "--step-budget=%d" % STEP_BUDGET]
+                           + (["--features", FEATURES] if FEATURES else [])
+                           + ["-o", gen_c, "--pattern", pattern],
                             capture_output=True, text=True, timeout=PCREC_TIMEOUT)
     except subprocess.TimeoutExpired:
         return False, "PCREC-TIMEOUT: compiling pattern exceeded %ds" % PCREC_TIMEOUT
@@ -805,6 +865,34 @@ def is_known_pcre2_quirk(pattern):
     return bool(_ANCHOR_IN_ZERO_REP.search(pattern)) and ("^" in pattern or "$" in pattern)
 
 
+# KNOWN CLASS "vlookbehind-stage2": pcrec cleanly REFUSES a lookbehind whose
+# length is known only when matching (backreference, variable, consuming
+# callout) while libpcre2 accepts it. That is [VLOOKBEHIND] stage 2's
+# documented, not-yet-built scope (scripts/entry VLOOKBEHIND -l 1): a clean
+# refusal, never a miscompile. Keyed to the refusal's exact message family AND
+# the "pcrec REJECTS, pcre2 ACCEPTS" direction; every other mismatch stays a
+# divergence. THIS CLASS RETIRES when [VLOOKBEHIND] stage 2 lands: delete
+# _VLB_STAGE2_MSG, is_known_vlookbehind_stage2_refusal, its stats key, its
+# printed line and its self-test rows (the stage-2 brief is told to).
+_VLB_STAGE2_MSG = "a lookbehind containing a backreference, a variable or a consuming callout is not implemented"
+
+def is_known_vlookbehind_stage2_refusal(kind, pcrec_err):
+    return kind == "pcrec REJECTS, pcre2 ACCEPTS" and _VLB_STAGE2_MSG in (pcrec_err or "")
+
+
+def self_test():
+    """`fuzz.py --self-test`: the known-class predicates, no oracle needed."""
+    rej = "pcrec REJECTS, pcre2 ACCEPTS"
+    ok = is_known_vlookbehind_stage2_refusal
+    assert ok(rej, "pcrec: " + _VLB_STAGE2_MSG + " (its length is known only when matching)")
+    assert not ok(rej, "requires module 'atomic-groups'")
+    assert not ok(rej, "")
+    assert not ok(rej, None)
+    assert not ok("pcrec ACCEPTS, pcre2 REJECTS", _VLB_STAGE2_MSG)
+    print("fuzz self-test: ok")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description="PCRE2-oracle differential fuzzer for pcrec")
     ap.add_argument("--seed", type=int, default=1)
@@ -812,8 +900,17 @@ def main():
     ap.add_argument("--subjects", type=int, default=15)
     ap.add_argument("--keep", action="store_true", help="keep the working directory (printed on exit)")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 4, help="parallel compile/run workers")
+    ap.add_argument("--set", choices=("base", "extended"), default="base",
+                    help="pattern alphabet: base (the default, unchanged) or extended "
+                         "(adds EXTENDED_TEMPLATES, compiled with EXTENDED_FEATURES)")
+    ap.add_argument("--features", default=None, help="pcrec --features text (default: pcrec's own default; --set extended implies EXTENDED_FEATURES)")
+    ap.add_argument("--self-test", action="store_true", help="run the known-class predicate checks and exit")
     args = ap.parse_args()
+    if args.self_test:
+        return self_test()
 
+    global FEATURES
+    FEATURES = args.features or (EXTENDED_FEATURES if args.set == "extended" else None)
     random.seed(args.seed)
 
     if not os.path.isfile(PCREC):
@@ -838,7 +935,7 @@ def main():
     stats = {"patterns": 0, "both_accept": 0, "both_reject": 0,
              "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0, "size_cap": 0,
              "gcc_fail": 0, "oversize": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
-             "pcre2_quirk": 0, "engine_limit": 0, "oracle_probe_timeout": 0,
+             "pcre2_quirk": 0, "vlb_stage2": 0, "engine_limit": 0, "oracle_probe_timeout": 0,
              "engine_steps": 0, "engine_frames": 0, "pcrec_compile_timeout": 0,
              "module_construct": 0}
 
@@ -861,7 +958,13 @@ def main():
         lane = random.random()
         is_trap = lane < 0.08
         is_capture = (not is_trap) and lane < 0.28
-        if is_trap:
+        # --set extended only: 60% of patterns are set templates. The extra
+        # draw is made ONLY in that mode, so the base stream is unperturbed.
+        is_ext = args.set == "extended" and random.random() < 0.60
+        if is_ext:
+            is_trap, is_capture = False, True    # capture-lane subjects: 0..8 long
+            pat = gen_extended()
+        elif is_trap:
             pat = gen_trap()
         elif is_capture:
             pat = gen_capture()
@@ -1107,6 +1210,9 @@ def main():
                 continue
             if result["accept_mismatch"]:
                 kind, pcrec_err, pcre2_probe = result["accept_mismatch"]
+                if is_known_vlookbehind_stage2_refusal(kind, pcrec_err):
+                    stats["vlb_stage2"] += 1
+                    continue
                 if "ACCEPTS, pcre2 REJECTS" in kind:
                     stats["pcre2_reject_only"] += 1
                 else:
@@ -1200,6 +1306,7 @@ def main():
     print(f"  oracle inconclusive (PCRE2 match-limit hit or oracle TIMEOUT): {stats['oracle_inconclusive']}  (see README.md)")
     print(f"  pcrec step-budget exhausted (PCREC_ERR_STEPS, --step-budget={STEP_BUDGET}): {stats['engine_steps']}  (DD-2/D22: robustness bound, not a divergence)")
     print(f"  pcrec frame-budget exhausted (PCREC_ERR_FRAMES): {stats['engine_frames']}  (DD-2/D22: robustness bound, not a divergence)")
+    print(f"  known [VLOOKBEHIND] stage-2 refusal (lookbehind with backref/variable/callout): {stats['vlb_stage2']}  (clean refusal, not a divergence; class retires when stage 2 lands)")
     print(f"  known PCRE2 optimizer quirk (anchor in {{0}} group): {stats['pcre2_quirk']}  (intentional divergence, see README.md)")
     print(f"content divergences: {len(content_divergences)}")
     print(f"accept/reject divergences: {len(accept_mismatches)}")

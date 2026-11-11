@@ -154,6 +154,7 @@
 #define M_extended_classes FEAT_EXTENDED_CLASSES, "extended-classes"
 #define M_vars           FEAT_VARS,          "vars"
 #define M_ucp            FEAT_UCP,           "ucp"
+#define M_match_start_reset FEAT_MATCH_START_RESET, "match-start-reset"
 /* THERE IS NO COMPOUND MODULE MACRO ANY MORE. `M_lookaround_named`
  * ("lookaround/named-groups") lived here for `(?<`, one byte meaning two
  * constructs, and SR-9's `tail` retired it: `(?<=`, `(?<!` and `(?<*` are
@@ -675,15 +676,16 @@ ESC_SET_D('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical w
  * byte-for-byte what ESC_CLASS_INVALID built, `RF_CLASS_INVALID` included
  * (`[\K]` is PCRE2 error 107, measured against libpcre2 10.46 by this wave).
  *
- * `VM_ONLY` IS THE ONE FIELD THAT MAKES THIS ROW DIFFERENT FROM EVERY OTHER
- * `assertions` ROW, and it has said so since before there was a producer.
+ * `VM_ONLY` IS THE ONE FIELD THAT MADE THIS ROW DIFFERENT FROM EVERY OTHER
+ * `assertions` ROW (it now has a module of its own, `match-start-reset`,
+ * [FEAT-FAMILIES], and its producer still lives in mod_assertions.c), and it has said so since before there was a producer.
  * Until this wave it was inert: `tests/registry/registry_check.c`'s
  * capability tripwire asserts that every VM_ONLY-masked RS_MODULE row has NO
  * wired producer, precisely so that the day a module wires the first one, THAT
  * check fails and names `src/opt/select_engine.c` as the thing to build BEFORE
  * the producer lands rather than after. This wave is that day; the second
  * `forces_*` row is what discharges it. */
-{RK_ESC, 'K', NULL, "\\K", M_assertions, FLAV_PCRE2, VM_ONLY, RS_MODULE,
+{RK_ESC, 'K', NULL, "\\K", M_match_start_reset, FLAV_PCRE2, VM_ONLY, RS_MODULE,
  RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
  "reset the reported start of the match",
  ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,

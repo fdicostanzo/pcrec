@@ -123,6 +123,9 @@ def B(pat, feats, note, cases=(), perr=None, gu=(), engine=None,
                          "(and vice versa) -- a parked cell without a "
                          "citation is an unexplained disagreement, not a "
                          "confirmed deferred bug" % pat)
+    feats = list(feats)
+    if "\\K" in pat and "assertions" in feats and "match-start-reset" not in feats:
+        feats.append("match-start-reset")   # [FEAT-FAMILIES] `\K` is its own module
     return dict(pat=pat, feats=list(feats), note=note, cases=list(cases),
                 perr=perr, gu=list(gu), engine=engine, budget=list(budget),
                 flags=flags, perl_skip=perl_skip, guclass=guclass,

@@ -140,3 +140,5 @@ tests/uprops/run_uprops_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFL
 tests/utfcheck/run_utfcheck.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
 tests/memfn/run_d27_region.sh	NO-C-RUN	no compiler invocation of its own: a thin wrapper that runs tests/memfn/d27_region/run.sh, which builds its own gcc/clang cells outside the sanitizer axes
 tests/doc_lint/run_doc_index.sh	NO-C-RUN	no compiler invocation: reads files, emitted text or CLI output
+tests/families/run_quoting_diff.sh	OWN-TIER	opt-in [FEAT-FAMILIES] pre-move differential run as a box-queue job, outside make test and make san
+tests/families/run_named_diff.sh	OWN-TIER	opt-in [FEAT-FAMILIES] pre-move differential run as a box-queue job, outside make test and make san

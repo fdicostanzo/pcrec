@@ -45,7 +45,7 @@ PCREC = os.path.join(CELL, "build", "pcrec")
 
 ALL = ("recursion,named-groups,backrefs,assertions,lookaround,atomic-groups,"
        "modifiers,classes,conditionals,branch-reset,comments,quoting,misc,"
-       "verbs,unicode-props,extended-classes")
+       "verbs,unicode-props,extended-classes,match-start-reset")
 
 
 # ---------------------------------------------------------------------------
@@ -104,7 +104,7 @@ def required(pat):
             elif e in "bBAzZG":
                 need.add("assertions")
             elif e == "K":
-                need.add("assertions")
+                need.add("match-start-reset")
             elif e == "k":
                 need.add("backrefs")
                 need.add("named-groups")

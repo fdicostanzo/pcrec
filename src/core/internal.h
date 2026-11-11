@@ -4529,7 +4529,13 @@ enum {
      * contain it; only `--allow-code=c` / `pcrec_options.allow_code` does
      * (`pcrec_code_grant_resolve`, src/parse/enabled.c). One bit per
      * registered language (src/parse/codelang.def). */
-    FEAT_CODE_C           = 1u << 19
+    FEAT_CODE_C           = 1u << 19,
+    /* [FEAT-FAMILIES] module `match-start-reset`: `\K`, split out of
+     * `assertions` (Frank 2026-11-06) before the first family freeze, so no
+     * frozen member's accepted language can lose `\K` to a later split.
+     * Every other `assertions` construct asks a question of the position;
+     * `\K` writes the reported start and is VM-only. */
+    FEAT_MATCH_START_RESET = 1u << 20
 };
 
 /* Flavour: which construct a byte MEANS. Exactly one today, by design — D18's

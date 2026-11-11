@@ -162,6 +162,7 @@ def main():
         if any(t in pat for t in ("\\z", "\\Z", "\\b", "\\B", "\\G", "\\K", "(?m)")): fs.append("assertions")
         if any(t in pat for t in ("\\d", "\\w", "\\s", "[")): fs.append("classes")
         if "(?m)" in pat: fs.append("modifiers")
+        if "\\K" in pat: fs.append("match-start-reset")   # [FEAT-FAMILIES]
         if fs: print("features " + ",".join(fs))
         for sp, s in subs:
             ans = oracle(binp, scratch, pat, utf8, s.encode("utf-8"), sp)
