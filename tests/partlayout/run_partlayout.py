@@ -471,6 +471,15 @@ def guarded_noipa(text):
     return True
 
 
+# The population's never-match patterns (an accept-free machine, the empty engine since abi 100):
+# a start assertion after a consumed byte, a non-multiline `^` after a byte, a refuted word boundary. Each
+# was read off the pattern by hand (12 of 387, MEASURED 2026-11-11), not off the compiler's stamp.
+NEVER_MATCH = {
+    r"(?m)^a(?-m)^b", r"(?m)^a(?-m:^b)", r".{1,3}\Aa*", r".{1,3}^a*", r"[a-]{1,2}\A-",
+    r"[a-]{2}^a*", r"\s{2}^", r"a\Gb", r"ab\A", r"a{2}^-", r"x\Ay", r"x\G",
+}
+
+
 def sec_census(pop):
     writers = load_writers()
     jobs = [(p, c, i, ci) for i, p in enumerate(pop) for ci, c in enumerate(CENSUS_CTLS)]
@@ -514,9 +523,18 @@ def sec_census(pop):
     check(not multi, "census: every subject reaches exactly one row (one record each)%s"
           % ("" if not multi else ": " + "; ".join(map(repr, multi[:3]))))
     lost = [pop[i] for i in range(len(pop)) if i not in reached]
-    check(not lost and len(pop) >= 380,
-          "census: all %d population patterns still carry a subject (floor 380)%s"
-          % (len(pop), "" if not lost else ": lost " + "; ".join(map(repr, lost[:3]))))
+    # An accept-free pattern is the EMPTY engine (abi 100, lane pffix): no scan, no parts, so no
+    # subject by construction. They are declared (NEVER_MATCH), not tolerated: the lost set must
+    # EQUAL the declaration, so a pattern that loses its subject unannounced fails, and so does a
+    # declared one that gains a subject back (the declaration went stale).
+    unexpected = [p for p in lost if p not in NEVER_MATCH]
+    stale = [p for p in NEVER_MATCH if p in pop and p not in lost]
+    check(not unexpected and not stale and len(pop) >= 380 and len(reached) >= 370,
+          "census: %d of %d population patterns carry a subject (floor 370 of 380), the other %d "
+          "are the declared never-match (empty-engine) set%s"
+          % (len(reached), len(pop), len(lost),
+             "" if not (unexpected or stale) else ": lost " + "; ".join(map(repr, unexpected[:3]))
+             + ("; stale declaration " + "; ".join(map(repr, stale[:3])) if stale else "")))
     line = ", ".join("%s %d" % (k, rowcount.get(k, 0))
                      for k in ("T0", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10"))
     low = [k for k, fl in ROW_FLOORS.items() if rowcount.get(k, 0) < fl]

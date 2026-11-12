@@ -5,6 +5,7 @@ SAB_FILE="src/gen/memfn_targets.c"
 SAB_SUITES="memfntargets"
 SAB_DESC="pcrec's own include lines inside the target region are written with no held mark, so they stay inside it"
 SAB_DOC_FIGURE="memfntargets: run_targets.sh's F1 checks read red. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1896."
+SAB_CATCH_OPTIONAL=1   # cloud run 43131030250 (Ubuntu 26.04, the SAME gcc 15.2.0-16 and glibc 2.43 as the dev box): the fortify cell compiles there, F1 still reads red -> DETECTED; mechtri4 (mechtri3's gcc-version premise was wrong)
 SAB_EXPECT=COMPILE-CATCH   # [MECH-NOCOMPILE] 2026-11-11 (mechtri2): the plant leaves <string.h> inside a target region, which gcc 15's always_inline memcpy refuses to compile in the check's cell (7d74499bc: memfntargets 4fail/38pass AND the cell's compile error); the F1 checks still read red
 SAB_COUNT=1
 SAB_BEFORE='        pcrec_sb_puts(c, PCREC_HELD_HEADER_MARK);'

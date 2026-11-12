@@ -5,3 +5,7 @@ Frank 2026-11-09: "Do we send an index into the span that says don't bother prov
 When a unit builds the skip: when a unit builds the skip: pcrec derives, per run, its PROOF EXTENT [lo, hi): the stretch over which the stated byte sets are EXACT (every admitted string is an attempt of that span: SUFFICIENT) and the outputs need no engine (no capture inside, no \K: OUTPUTS-DETERMINED); empty when nothing can be proved. A zero-width item whose pair condition the neighbouring sets do not decide (`\b` between [a-z] and [a-z]) ends the extent there; one the sets decide (`[a-z]\b[ ,.]`) does not. pcrec states the extent to the kit as a fact; the kit prices verifying up to hi as 'earns a skip' and beyond it as a filter only; pcrec reports the match when the kit's verified extent covers [lo, hi) = the whole attempt.
 
 Kit side: memfn/docs/requests.md, R-38 Part C (unscheduled).
+
+## Parked (Frank 2026-11-11 evening)
+
+Wanted eventually; a bigger piece than intended for now. Raise the caps first ([COVER-CAP], set S3). Not in S4. Part C becomes one PRODUCER feeding [MATCH-KNOWN]'s compile-time walk of the engine program, not its own mechanism. Notes (a)-(e): [MATCH-KNOWN] row in docs/dev/plan.md and D194's 2026-11-11 evening addendum.

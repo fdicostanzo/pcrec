@@ -897,6 +897,13 @@ A sabotage definition (tests/mech/sabotages/S<NN>_*.sh) sets:
                          fail to compile (a compiler error in the failing
                          arm's log); that = DETECTED-BUILD, none =
                          UNDETECTED ***UNEXPECTED***
+    SAB_CATCH_OPTIONAL   OPTIONAL, COMPILE-CATCH rows: set to 1 when the compile
+                         catch is environment-dependent (the plant's compile
+                         error is real on one box and absent on another with
+                         the SAME gcc, S1896 on the cloud runner, run
+                         43131030250). A row the checks detect but whose
+                         compile did not fail then reads DETECTED, not
+                         UNEXPECTED; a row nothing detects is still red
     SAB_EXPECT_REASON    REQUIRED when SAB_EXPECT=UNREACHED
 
   [MECH-REACH] THE WITNESS'S REACH -- a row whose detector is a construct
@@ -1368,6 +1375,7 @@ run_one() {
         SAB_REACH_POP=""
         SAB_REQUIRE=""
         SAB_EXPECT_REASON=""
+        SAB_CATCH_OPTIONAL=""
         # shellcheck disable=SC1090
         source "$sab_path"
         for v in SAB_ID SAB_FILE SAB_SUITES SAB_DESC SAB_BEFORE SAB_AFTER; do
@@ -3775,6 +3783,8 @@ run_one() {
             verdict="NOW DETECTED -- re-measure and flip the expectation ***UNEXPECTED***"
         elif [ "$actual" = "UNDETECTED" ] && [ "$expect" = "DETECTED" ]; then
             verdict="$verdict ***UNEXPECTED***"
+        elif [ "$expect" = "COMPILE-CATCH" ] && [ "$actual" = "DETECTED" ] && [ "$SAB_CATCH_OPTIONAL" = "1" ]; then
+            verdict="DETECTED (by the checks; the declared compile-time catch is environment-dependent and did not fire here)"
         elif [ "$expect" = "COMPILE-CATCH" ] && { [ "$actual" = "DETECTED" ] || [ "$actual" = "UNDETECTED" ]; }; then
             # the declared compile-time catch did not fire: no arm's artifact
             # failed to compile, whatever else did or did not fail
@@ -3810,6 +3820,18 @@ run_one() {
 results_file="$(mktemp "$MECH_SCRATCH/results.XXXXXX")"
 : > "$results_file"
 
+# MECH_TIMES_OUT=FILE appends `ID<TAB>SECONDS` per finished row (ID = the S-id, as the id arguments spell it): the
+# per-row wall the cloud shard tables are weighted by (tests/ci/cloud_mech_shard.sh, tests/ci/cloud_units_plan.py mech).
+# Observation only: the row's stdout and verdict are run_one's own.
+run_one_timed() {
+    local f=$1 t0=$SECONDS b
+    run_one "$f"
+    if [ -n "${MECH_TIMES_OUT:-}" ]; then
+        b=$(basename "$f" .sh)
+        printf '%s\t%d\n' "${b%%_*}" $((SECONDS - t0)) >> "$MECH_TIMES_OUT"
+    fi
+}
+
 if [ "$PROCS" -gt 1 ] && [ "${#sab_files[@]}" -gt 1 ]; then
     rowdir="$(mktemp -d "$MECH_SCRATCH/rows.XXXXXX")"
     # [TT-MECHPAR] a SLOT POOL, not a FIFO: launch the next row the moment ANY
@@ -3825,7 +3847,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#sab_files[@]}" -gt 1 ]; then
             sleep 0.2
         done
         echo "-- running $(basename "$f") --" >&2
-        run_one "$f" > "$rowdir/$(basename "$f").row" &
+        run_one_timed "$f" > "$rowdir/$(basename "$f").row" &
     done
     wait
     for f in "${sab_files[@]}"; do
@@ -3835,7 +3857,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#sab_files[@]}" -gt 1 ]; then
 else
     for f in "${sab_files[@]}"; do
         echo "-- running $(basename "$f") --" >&2
-        run_one "$f" | tee -a "$results_file" >&2
+        run_one_timed "$f" | tee -a "$results_file" >&2
     done
 fi
 # run_one's stdout IS the tsv row; tee above sent it to stderr for a progress

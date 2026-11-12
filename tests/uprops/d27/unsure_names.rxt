@@ -1,0 +1,95 @@
+# upropd27: binary property names the author is unsure the build accepts (spec says "the 55 binary properties libpcre2 accepts")
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# UNSURE-ACCEPT IDS_Unary_Operator: if the compiler refuses this NAME that is a finding candidate about the 55-property list, not a membership error
+# pcre2-only
+pattern \p{IDS_Unary_Operator}
+features unicode-props
+encoding utf8
+# U+2FFE HORIZONTAL REFLECTION (15.1) -- MEMBER
+m "\xe2\xbf\xbe" 0 3
+# U+2FFF ROTATION (15.1) -- MEMBER
+m "\xe2\xbf\xbf" 0 3
+# U+2FFD binary -- non-member
+n "\xe2\xbf\xbd"
+# U+2FF2 trinary -- non-member
+n "\xe2\xbf\xb2"
+# U+0061 a -- non-member
+n "a"
+
+# UNSURE-ACCEPT IDS_Unary_Operator: short alias IDSU
+# pcre2-only
+pattern \p{IDSU}
+features unicode-props
+encoding utf8
+# U+2FFE HORIZONTAL REFLECTION (15.1) -- MEMBER
+m "\xe2\xbf\xbe" 0 3
+# U+2FFF ROTATION (15.1) -- MEMBER
+m "\xe2\xbf\xbf" 0 3
+# U+2FFD binary -- non-member
+n "\xe2\xbf\xbd"
+# U+2FF2 trinary -- non-member
+n "\xe2\xbf\xb2"
+
+# UNSURE-ACCEPT Modifier_Combining_Mark: if the compiler refuses this NAME that is a finding candidate about the 55-property list, not a membership error
+# pcre2-only
+pattern \p{Modifier_Combining_Mark}
+features unicode-props
+encoding utf8
+# U+0654 ARABIC HAMZA ABOVE (MCM added 16.0) -- MEMBER
+m "\xd9\x94" 0 2
+# U+0655 ARABIC HAMZA BELOW -- MEMBER
+m "\xd9\x95" 0 2
+# U+06DC ARABIC SMALL HIGH SEEN -- MEMBER
+m "\xdb\x9c" 0 2
+# U+0653 ARABIC MADDAH ABOVE: not MCM -- non-member
+n "\xd9\x93"
+# U+064B ARABIC FATHATAN -- non-member
+n "\xd9\x8b"
+# U+0061 a -- non-member
+n "a"
+
+# UNSURE-ACCEPT Modifier_Combining_Mark: short alias MCM
+# pcre2-only
+pattern \p{MCM}
+features unicode-props
+encoding utf8
+# U+0654 ARABIC HAMZA ABOVE (MCM added 16.0) -- MEMBER
+m "\xd9\x94" 0 2
+# U+0655 ARABIC HAMZA BELOW -- MEMBER
+m "\xd9\x95" 0 2
+# U+0653 ARABIC MADDAH ABOVE: not MCM -- non-member
+n "\xd9\x93"
+# U+064B ARABIC FATHATAN -- non-member
+n "\xd9\x8b"
+
+# UNSURE-ACCEPT Grapheme_Link: if the compiler refuses this NAME that is a finding candidate about the 55-property list, not a membership error
+# pcre2-only
+pattern \p{Grapheme_Link}
+features unicode-props
+encoding utf8
+# U+094D DEVANAGARI SIGN VIRAMA (ccc=9): Grapheme_Link -- MEMBER
+m "\xe0\xa5\x8d" 0 3
+# U+09CD BENGALI SIGN VIRAMA -- MEMBER
+m "\xe0\xa7\x8d" 0 3
+# U+093E DEVANAGARI VOWEL SIGN AA -- non-member
+n "\xe0\xa4\xbe"
+# U+0061 a -- non-member
+n "a"
+
+# UNSURE-ACCEPT Grapheme_Link: short alias Gr_Link
+# pcre2-only
+pattern \p{Gr_Link}
+features unicode-props
+encoding utf8
+# U+094D DEVANAGARI SIGN VIRAMA (ccc=9): Grapheme_Link -- MEMBER
+m "\xe0\xa5\x8d" 0 3
+# U+09CD BENGALI SIGN VIRAMA -- MEMBER
+m "\xe0\xa7\x8d" 0 3
+# U+093E DEVANAGARI VOWEL SIGN AA -- non-member
+n "\xe0\xa4\xbe"
+# U+0061 a -- non-member
+n "a"

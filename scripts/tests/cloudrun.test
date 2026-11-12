@@ -51,6 +51,19 @@ out=$($CR --owner main --kind test --name ucax --dry-run 2>&1); rc=$?
 [ $rc = 64 ] && grep -q "pass --ref main to mean it" <<<"$out"; chk "--name, no --ref, on branch main -> 64 with the way out" $?
 $CR --owner main --kind test --name ucax --ref main --dry-run >/dev/null 2>&1; chk "--name with an explicit --ref main is allowed" $?
 $CR --owner main --kind test --dry-run >/dev/null 2>&1; chk "no --name, no --ref, on branch main is allowed (the default name)" $?
+# --suite: every kind whose `suite` column is 1, one run each, the same commit, one name
+want=$(bash "$R/tests/ci/cloud_kinds.sh" suite-kinds | tr '\n' ' ')
+out=$($CR --suite --owner main --dry-run 2>&1); rc=$?
+n=$(grep -c 'DRY-RUN would push' <<<"$out"); [ $rc = 0 ] && [ "$n" = "$(wc -w <<<"$want")" ] && [ "$n" -ge 6 ] && ok "--suite --dry-run plans one run per suite kind ($n: $want)" || bad "--suite dry: rc=$rc n=$n $out"
+for k in $want; do grep -q "would push ${SHA:0:9} -> origin cloud/main/$k/suite-${SHA:0:7} " <<<"$out" || bad "--suite: kind $k missing or on another commit/name"; done
+$CR --suite --dry-run >/dev/null 2>&1; [ $? = 64 ] && ok "--suite without --owner is refused (64)" || bad "--suite without owner"
+git init -q --bare "$T/remote2.git"; git -C "$R" remote add suiteremote "$T/remote2.git"   # its own remote and ledger: the later cases count rows and branches
+export CLOUDRUN_REMOTE=suiteremote; SAVED_LEDGER=$CLOUDRUN_LEDGER; export CLOUDRUN_LEDGER=$T/ledger_suite.tsv
+$CR --suite --owner main >/dev/null 2>&1; rc=$?
+heads=$(git -C "$T/remote2.git" for-each-ref --format='%(refname:short)' 'refs/heads/cloud/main/*/suite-*' | wc -l | tr -d ' ')
+[ $rc = 0 ] && [ "$heads" = "$(wc -w <<<"$want")" ] && ok "--suite pushes one cloud/main/KIND/suite-SHA branch per kind ($heads)" || bad "--suite push: rc=$rc heads=$heads"
+$CR --suite --owner main >/dev/null 2>&1; [ $? = 1 ] && ok "a second --suite on the same commit reports the existing branches (exit 1), pushes nothing new" || bad "--suite twice"
+unset CLOUDRUN_REMOTE; export CLOUDRUN_LEDGER=$SAVED_LEDGER
 git -C "$R" branch -q -m main "$orig"
 $CR --owner main --kind test --name ucax --dry-run >/dev/null 2>&1; chk "--name, no --ref, on another branch is allowed" $?
 out=$($CR --owner main --kind test --dry-run 2>&1); rc=$?

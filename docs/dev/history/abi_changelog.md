@@ -23,9 +23,9 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `100` on every artifact today ([MEMFN] R-38 K38-2, 99 -> 100,
+- **`rx_info.abi` is `101` on every artifact today ([MEMFN] R-38 K38-2, 100 -> 101,
   one event with the kit's MF_SITE_ABI 27 / MF_CLASS_V 9, lane k382
-  2026-11-11; `docs/design/memfn/span_runs_sheet.md` rev 1.3 §5.1).** pcrec
+  2026-11-11, re-bumped over main's [PFFIX] 99 -> 100 by lane k382m 2026-11-12; `docs/design/memfn/span_runs_sheet.md` rev 1.3 §5.1).** pcrec
   states the necessary run to the kit UNCUT as one presence span in set form
   and the kit derives the pre-check's ONE run part from it and from its run
   decision (`mf_class.run`); pcrec cuts no window (`PCREC_MAX_REQ_RUN_EMIT`
@@ -39,6 +39,14 @@ the bump's own commit.**
   one stretch in one `<p>_reqrun` block (R-30's led compare gone with it);
   (4) the run pin reads the whole run (a longer exact stretch where the cut
   had clipped it); (5) `-fcomments` text naming the run.
+- **`rx_info.abi` was `100` on every artifact ([PFFIX] the empty engine on an accept-free machine, 99 -> 100,
+  lane pffix 2026-11-11).** A DFA machine in which NO state accepts in any view is now the EMPTY engine on
+  both routes (`dfa_accepts_nowhere`, src/gen/emit_dfa.c), where only `d->n == 0` (attempt route) and a dead
+  start (unanchored route) were before. The body that moves is the search body of a pattern that can match
+  nothing, which becomes one `return 0`; the witness is the VM hybrid's prefilter for `ab\Gcd`/`ab\Acd` under
+  `--engine=vm -fprefilter` (tests/litscan/spanarms.rxt), whose loop never wrote its window and failed the
+  harness's `-Werror` gcc (`'window' may be used uninitialized`, pflost_report.md). No struct offset moves,
+  no `rx_info` member is added or changed, and no answer moves; every other artifact moves only the number.
 - **`rx_info.abi` was `99` on every artifact ([FEAT-FAMILIES] module `match-start-reset`, 98 -> 99,
   lane famdef2 2026-11-10; ADDING A MODULE MOVES THE `--features all` SCAFFOLDING, the `ucp` precedent below).**
   `\K` is split out of module `assertions` into its own module `match-start-reset` before the first

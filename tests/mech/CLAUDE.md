@@ -20,6 +20,8 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 
 ## Standing rules (kept from the Files notes)
 
+- `MECH_TIMES_OUT=FILE` appends `ID<TAB>SECONDS` per finished row ([CLOUD-SUITE] D: the cloud `mech` kind's shard weights, tests/ci/cloud_mech_shard.sh). Observation only.
+
 - THE RUNNER ARCHIVES HEAD PER ROW (`git archive HEAD` is re-read for EVERY sabotage): COMMIT BEFORE YOU START AND COMMIT NOTHING DURING THE RUN, or the matrix measures N trees.
 - A MISSING OR UNSCRAPEABLE SUITE LOG SCORES ANOMALY, NEVER A SYNTHESIZED COUNT: all arms route through `score_arm`; never default a missing failure count to a detection.
 - A DESIGNED COMPILE-TIME CATCH IS DECLARED, NEVER INFERRED ([MECH-NOCOMPILE]): `SAB_EXPECT=COMPILE-CATCH` on a row whose plant must make an arm's artifact fail to compile (S07 S1112 S1242 S184 S272 S403 S989); an arm log with a compiler error = `DETECTED-BUILD`, none = UNDETECTED `***UNEXPECTED***`. An undeclared compile failure stays ANOMALY, and `run_sabotage_matrix.sh` exits 1 when anomalies exceed `ANOMALY_CEILING_PIN` (override `MECH_ANOMALY_CEILING`; pinned 0).

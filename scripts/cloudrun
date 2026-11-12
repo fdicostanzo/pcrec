@@ -14,11 +14,26 @@
 #             refused (64): that pushes main's HEAD under a name meant for something else (cloud/main/axes/ucax,
 #             2026-11-11). Run from your worktree, or say --ref main to mean it.
 #       --dry-run   print what would be pushed and recorded; push nothing, write nothing
+#   scripts/cloudrun --suite --owner O [--name N] [--ref REF] [--dry-run]
+#                   the cloud FULL SUITE for one commit: dispatches every kind whose `suite` column is 1 in the kinds table
+#                   (today test, axes, ubsan, asan, mech, recidentity; `bash tests/ci/cloud_kinds.sh suite-kinds`) as one
+#                   run each, all on the SAME resolved commit, branches cloud/O/KIND/N (N default suite-<7-char sha>), one
+#                   ledger row each, and exits; each kind's verdict arrives separately (CLOUD-DONE per kind). A kind that
+#                   cannot be dispatched (branch exists, push failed) is reported and the rest still go (exit 1). It
+#                   replaces the local battery (scripts/fullsuite_job.sh) for correctness stages; the box-only stages
+#                   (timing, bench) stay local. Runner slots: each kind has its own max_parallel, so a full suite asks
+#                   for more than Actions' 40 concurrent jobs and GitHub queues the surplus.
 #   scripts/cloudrun --prune [--dry-run]    delete the remote cloud/ branches whose run has a verdict
 #                   (completed, any conclusion); a run still pending/absent keeps its branch
 #   scripts/cloudrun --list                 the ledger, one line per run, with the branch's current state
-#   scripts/cloudrun --verdict BRANCH SHA   `GREEN|RED|PENDING|NONE RUNID CONCLUSION URL` for the run of
-#                   that branch at that commit, from `gh run list` (what queuewatch and --prune ask)
+#   scripts/cloudrun --verdict BRANCH SHA   `GREEN|RED|INFRA|INFRA-RERUN|PENDING|NONE RUNID CONCLUSION URL` for the run of
+#                   that branch at that commit, from `gh run list` (what queuewatch and --prune ask). A failed run whose
+#                   every failed shard job passed its test step and failed only the artifact UPLOAD (GitHub 5xx;
+#                   tests/ci/cloud_infra.py) is INFRA, not RED: INFRA-RERUN on its first attempt (queuewatch reruns it
+#                   once, below), INFRA once the rerun was infrastructure too.
+#   scripts/cloudrun --rerun-infra RUNID    `gh run rerun --failed` ONCE: only if the run's latest attempt is 1 and the
+#                   failure is INFRA-shaped; prints RERAN | NOT-RERUN (reason). queuewatch calls it on INFRA-RERUN, so the
+#                   rerun costs no model tokens and no watcher.
 #   scripts/cloudrun --status [RUN|BRANCH]  LIVE view, no waiting: per run its kind, name, shards done/total, elapsed, and
 #                   each RED shard (completed failure/timed_out) with its first failing lines, from the one extractor
 #                   tests/ci/cloud_failures.sh (the same lines the final verdict and the CLOUD-SHARD-RED alert show).
@@ -42,12 +57,12 @@ if [ -z "$ledger" ]; then q=$(bash "$here/boxqueue" path 2>/dev/null); ledger=${
 usage() { sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//' >&2; exit 64; }
 die() { echo "cloudrun: $*" >&2; exit "${2:-64}"; }
 
-verdict() { # verdict BRANCH SHA -> `GREEN|RED|PENDING|NONE RUNID CONCLUSION URL`
-    local out
+verdict() { # verdict BRANCH SHA -> `GREEN|RED|INFRA|INFRA-RERUN|PENDING|NONE RUNID CONCLUSION URL`
+    local out v rest cls
     command -v gh >/dev/null 2>&1 || { echo "NONE - gh-missing -"; return 1; }
     out=$(cd "$root" && "$TO" 60 gh run list --workflow cloud-test.yml --branch "$1" --limit 20 \
         --json databaseId,headSha,status,conclusion,url 2>&1) || { echo "NONE - gh-failed -"; return 1; }
-    printf '%s' "$out" | python3 -I -c '
+    out=$(printf '%s' "$out" | python3 -I -c '
 import sys, json
 sha = sys.argv[1]
 runs = [r for r in json.load(sys.stdin) if r["headSha"] == sha]
@@ -55,7 +70,16 @@ if not runs: print("NONE - - -"); sys.exit()
 r = runs[0]    # newest first
 if r["status"] != "completed": print("PENDING %s %s %s" % (r["databaseId"], r["status"], r["url"])); sys.exit()
 print("%s %s %s %s" % ("GREEN" if r["conclusion"] == "success" else "RED", r["databaseId"], r["conclusion"], r["url"]))
-' "$2" 2>/dev/null || { echo "NONE - unreadable -"; return 1; }
+' "$2" 2>/dev/null) || { echo "NONE - unreadable -"; return 1; }
+    read -r v rest <<<"$out"
+    if [ "$v" = RED ]; then    # INFRA vs RED: one run call + one jobs call, only for a failed run
+        cls=$(python3 -I "$root/tests/ci/cloud_infra.py" run "${rest%% *}" 2>/dev/null)
+        case $cls in
+            "infra 1") v=INFRA-RERUN ;;
+            "infra "*) v=INFRA ;;
+        esac
+    fi
+    echo "$v $rest"
 }
 
 mode=run sarg="" owner="" kind="" name="" ref=HEAD dry=0 refgiven=0
@@ -63,10 +87,11 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --owner) owner=${2-}; shift 2 || usage ;; --kind) kind=${2-}; shift 2 || usage ;; --name) name=${2-}; shift 2 || usage ;;
         --ref) ref=${2-}; refgiven=1; shift 2 || usage ;; --dry-run) dry=1; shift ;;
-        --prune) mode=prune; shift ;; --list) mode=list; shift ;;
+        --prune) mode=prune; shift ;; --suite) mode=suite; shift ;; --list) mode=list; shift ;;
         --status) mode=status; sarg=${2-}; shift $(( $# > 1 ? 2 : 1 )) ;;
         --reds) [ $# -eq 3 ] || usage; python3 -I "$here/../tests/ci/cloud_status.py" reds "$2" --cache "$3"; exit $? ;;
         --verdict) [ $# -eq 3 ] || usage; verdict "$2" "$3"; exit $? ;;
+        --rerun-infra) [ $# -eq 2 ] || usage; mode=rerun; sarg=$2; shift 2 ;;
         -h|--help) usage ;; *) die "unknown argument $1" ;;
     esac
 done
@@ -90,6 +115,13 @@ status)
     esac
     [ -n "$runs" ] || die "no run found for '$sarg'" 1
     rc=0; for r in $runs; do python3 -I "$root/tests/ci/cloud_status.py" status "$r" || rc=1; done; exit $rc ;;
+rerun)
+    cls=$(python3 -I "$root/tests/ci/cloud_infra.py" run "$sarg" 2>/dev/null) || cls=""
+    case $cls in
+        "infra 1") if "$TO" 60 gh run rerun "$sarg" --failed >/dev/null 2>&1; then echo "RERAN run $sarg (infra failure, attempt 1)"; else echo "NOT-RERUN run $sarg (gh run rerun failed)"; exit 1; fi ;;
+        "infra "*) echo "NOT-RERUN run $sarg (already attempt ${cls#infra }: rerun once only)" ;;
+        *) echo "NOT-RERUN run $sarg (not an infra-only failure: '${cls:-unreadable}')" ;;
+    esac; exit 0 ;;
 list)
     [ -f "$ledger" ] || { echo "cloudrun: no ledger yet ($ledger)"; exit 0; }
     awk -F'\t' '$1 == "P" { p[$3] = 1 } $1 == "R" { r[++n] = $0 } END { for (i = 1; i <= n; i++) { split(r[i], f, "\t"); print f[2], f[3], f[4], f[5], f[6], substr(f[7], 1, 9), (f[6] in p) ? "pruned" : "kept" } }' "$ledger"; exit 0 ;;
@@ -100,7 +132,7 @@ prune)
     while IFS=$'\t' read -r _ _ _ _ _ br sha; do
         read -r v id concl _ < <(verdict "$br" "$sha")
         case $v in
-            GREEN|RED)
+            GREEN|RED|INFRA)
                 if [ $dry = 1 ]; then echo "cloudrun: would delete $br ($v run $id $concl)"; n=$((n+1)); continue; fi
                 if "$TO" 60 git -C "$root" push -q "$remote" --delete "$br" 2>/dev/null; then
                     printf 'P\t%s\t%s\n' "$(date +%s)" "$br" >> "$ledger"; n=$((n+1))
@@ -110,6 +142,26 @@ prune)
     done < <(awk -F'\t' '$1 == "P" { p[$3] = 1 } $1 == "R" { last[$6] = $0 } END { for (b in last) if (!(b in p)) print last[b] }' "$ledger")
     echo "cloudrun: DONE rc=$rc pruned $n, kept $kept (no verdict yet)"; exit $rc ;;
 esac
+
+if [ $mode = suite ]; then
+    [ -n "$owner" ] || die "--owner is required (main|kit|a lane name)"
+    kinds_sh=$root/tests/ci/cloud_kinds.sh
+    sha=$(git -C "$root" rev-parse --verify -q "$ref^{commit}") || die "cannot resolve '$ref' to a commit" 1
+    [ -n "$name" ] || name=suite-${sha:0:7}
+    if [ $refgiven = 0 ] && [ "$(git -C "$root" symbolic-ref --short -q HEAD)" = main ] && [ -n "$name" ] && [ "$name" != "suite-${sha:0:7}" ]; then
+        die "--name '$name' with no --ref from a checkout on branch main would push main's HEAD under that name: run from your worktree, or pass --ref main to mean it"
+    fi
+    kinds=$(bash "$kinds_sh" suite-kinds) || die "cannot read the kinds table" 1
+    [ -n "$kinds" ] || die "the kinds table has no suite kinds" 1
+    rc=0 n=0
+    for k in $kinds; do
+        n=$((n+1))
+        args=(--owner "$owner" --kind "$k" --name "$name" --ref "$sha"); [ $dry = 1 ] && args+=(--dry-run)
+        bash "$here/cloudrun" "${args[@]}" || rc=1
+    done
+    echo "cloudrun: SUITE rc=$rc $n kind(s) ($(echo $kinds)) for ${sha:0:9} as cloud/$owner/<kind>/$name"
+    exit $rc
+fi
 
 # run mode
 [ -n "$owner" ] || die "--owner is required (main|kit|a lane name)"

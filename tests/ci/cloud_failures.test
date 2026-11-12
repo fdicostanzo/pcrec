@@ -52,5 +52,13 @@ oracle cross-check: SKIPPED
 AXIS: 0 FAIL
 mismatches=0 failures: 0
 L
+# run 43108213213: DETECTED mech rows whose prose says FAILS / compliance-FAIL (tab form and the column -t form)
+t=$(printf '\t')
+for l in "S38-vm-empty-exit-fails${t}src/gen/emit_vm.c${t}an empty iteration FAILS the path${t}vm${t}vm:2fail/56pass${t}DETECTED" \
+         "S16-wrong-module-d${t}x${t}y${t}reject${t}registry:0fail/233pass+compliance-FAIL,pc3:0fail/217pass${t}DETECTED" \
+         "S38-vm-empty-exit-fails                 src/gen/emit_vm.c              an empty iteration FAILS the path"; do
+    [ -z "$(printf '%s\n' "$l" | bash "$X")" ] && ok "DETECTED mech row not flagged" || bad "DETECTED mech row flagged: $l"
+done
+printf '%s\n' 'FAIL: mech row S-U6-next-pos-byte-advance: NOW DETECTED -- re-measure' | bash "$X" | grep -q . && ok "FAIL: mech row line still caught" || bad "FAIL: mech row line missed"
 n=$(seq 1 100 | sed 's/^/FAIL: /' | bash "$X" 5 | wc -l); [ "$n" = 5 ] && ok "MAX caps the output" || bad "MAX: $n"
 echo "cloud_failures.test: $pass passed, $fail failed"; [ $fail = 0 ]

@@ -3,6 +3,7 @@
 # The workflow's plan job, scripts/cloudrun and tests/ci/cloud_gather.sh all go through here; none names a kind.
 #
 #   cloud_kinds.sh kinds                  the declared kinds, one per line
+#   cloud_kinds.sh suite-kinds            the kinds whose `suite` column is 1, one per line (scripts/cloudrun --suite)
 #   cloud_kinds.sh get KIND FIELD         one field of a kind's row (exit 2: undefined kind or field)
 #   cloud_kinds.sh shards KIND            "1/N 2/N .. N/N" (N from the shards column; `table` = selector's `# shards=`)
 #   cloud_kinds.sh command KIND K/N       the shard command with {shard} and {selector} filled in
@@ -16,7 +17,7 @@ set -u
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 root=${ROOT:-$(cd "$here/../.." && pwd)}
 tsv=${KINDS_TSV:-$here/cloud_kinds.tsv}
-cols="kind command selector shards max_parallel limit_min needs owners population measured reweight_margin setup_s reweigh"
+cols="kind command selector shards max_parallel limit_min needs owners population measured reweight_margin setup_s reweigh suite"
 
 die() { echo "cloud_kinds: $*" >&2; exit 2; }
 row() { awk -F'\t' -v k="$1" '/^#/ || $1 == "kind" {next} $1 == k {print; found=1; exit} END {exit !found}' "$tsv"; }
@@ -47,6 +48,7 @@ cmd_owner_ok() {
 
 case "${1:-}" in
 kinds) cmd_kinds ;;
+suite-kinds) for k in $(cmd_kinds); do [ "$(field "$k" suite)" = 1 ] && echo "$k"; done ;;
 get) [ $# -eq 3 ] || die "usage: get KIND FIELD"; need_kind "$2"; field "$2" "$3" ;;
 shards) need_kind "${2:-}"; cmd_shards "$2" ;;
 command) need_kind "${2:-}"; c=$(field "$2" command); s=$(field "$2" selector)

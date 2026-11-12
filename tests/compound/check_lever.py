@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "scripts"))
 import emit_sweep  # noqa: E402
 
 STAMP = re.compile(rb'^#define RX_COMPOUND "([^"]*)"$', re.M)
-FLOOR = 80               # pairs the default ships as a compound (97 at B4)
+FLOOR = 60               # pairs the default ships as a compound (97 at B4; 73 at abi 100, when 28 accept-free pairs became the empty engine)
 
 
 def one(job):

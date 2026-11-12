@@ -22,7 +22,7 @@ KINDS_TSV=$T/k.tsv bash "$K" plan zed lane7 2>"$T/e"; rc=$?; [ $rc = 2 ] && grep
 [ "$(KINDS_TSV=$T/k.tsv bash "$K" command zed 2/5)" = "echo 2/5 sel.x" ] && ok "command fills {shard} and {selector}" || bad "planted command"
 # every declared kind carries a population check and a resolvable selector (a new row without either is refused here)
 for k in $(bash "$K" kinds); do
-    [ -n "$(bash "$K" population "$k")" ] && [ -f "$here/../../$(bash "$K" get "$k" selector)" ] && [ "$(bash "$K" shards "$k" | wc -w)" -ge 1 ] \
+    [ -n "$(bash "$K" population "$k")" ] && { [ -f "$here/../../$(bash "$K" get "$k" selector)" ] || [ "$(bash "$K" get "$k" selector)" = - ]; } && [ "$(bash "$K" shards "$k" | wc -w)" -ge 1 ] \
         && ok "kind $k: population check declared, selector exists, shards resolve" || bad "kind $k: population/selector/shards"
 done
 for k in axes ubsan asan; do bash "$K" get "$k" command >/dev/null 2>&1 || bad "the $k row is missing"; done

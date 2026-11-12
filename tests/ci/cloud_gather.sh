@@ -22,6 +22,11 @@
 #       GREEN only if EVERY expected shard has a result with rc=0. A shard with no result (cancelled,
 #       timed out before the record step, runner lost), a result with rc!=0 or rc=none, a result
 #       naming a different shard, or an empty EXPECTED is RED, by shard name. Exit 0 GREEN, 1 RED.
+#       INFRA ($CLOUD_INFRA_SHARDS, space-separated K/N, from tests/ci/cloud_infra.py shards): a shard with no result
+#       whose job's TEST step passed and whose artifact UPLOAD failed (GitHub 502s) is `INFRA: shard K/N ..`, not RED.
+#       Only INFRA lines and no RED line = `VERDICT INFRA` (still exit 1: the job must fail so `gh run rerun --failed` picks
+#       it up; scripts/queuewatch reruns such a run ONCE and reports CLOUD-INFRA if the second attempt is infra too).
+#       A real RED anywhere keeps the verdict RED.
 #       A kind whose slowest shard's wall_s exceeds the shard table's `# predicted_shard_s=` by the kinds table's
 #       `reweight_margin` percent adds ONE `REWEIGHT-DUE kind=K slowest=..s plan=..s` line to the verdict (and
 #       is NOT red: the run's answer is unaffected). The periodic step it asks for: tests/ci/CLAUDE.md "Reweighting".
@@ -50,11 +55,18 @@ record)
       echo "skip_lines=$skips"; echo "sha=${GITHUB_SHA:-unknown}"; echo "runner=${RUNNER_NAME:-unknown}"; echo "wall_s=${wall:-?}"; } > "$out" ;;
 gather)
     expected=${2-} dir=${3:?results dir} out=${4:?outfile}; shift 4
-    red=""; body=""; slowest=0
+    red=""; body=""; slowest=0; infra=""
+    kind=""; for kv in "$@"; do case $kv in kind=*) kind=${kv#kind=} ;; esac; done
     [ -n "$expected" ] || red="$red
 RED: no expected shard list (the plan job produced none)"
     for s in $expected; do
         d=$dir/cloud-shard-$(slug "$s"); f=$d/result.txt
+        if [ ! -f "$f" ] && case " ${CLOUD_INFRA_SHARDS:-} " in *" $s "*) true ;; *) false ;; esac; then
+            infra="$infra
+INFRA: shard $s: its test step passed but its artifact upload failed (GitHub infrastructure); no result to read"
+            body="$body
+shard $s: INFRA"; continue
+        fi
         if [ ! -f "$f" ]; then
             red="$red
 RED: shard $s MISSING: no result (cancelled, timed out, or the runner died before it recorded)"
@@ -71,7 +83,18 @@ shard $s: rc=${rc:-?} skip_lines=${sk:-?} cpu=\"${model:-?}\"
 shard $s: cpu_flags=${flags:-?}"
         [ "$got" = "$s" ] || red="$red
 RED: shard $s result names shard '${got:-?}'"
-        if [ "${rc:-}" != 0 ]; then
+        if [ "${rc:-}" = none ]; then
+            # the test step never wrote an rc: killed at the step's time limit (or the runner died). Name the shard's units that
+            # did not finish (the table's rows minus the units.tsv the shard left) -- a timed-out shard is not a generic red.
+            unrun=""
+            sel=$(bash "$here/cloud_kinds.sh" get "$kind" selector 2>/dev/null)
+            if [ -n "$sel" ] && [ "$sel" != - ] && [ -f "${ROOT:-$here/../..}/$sel" ]; then
+                unrun=$(bash "$here/cloud_table.sh" rows "${ROOT:-$here/../..}/$sel" "$s" 2>/dev/null | while IFS= read -r u; do
+                    awk -F'\t' -v u="$u" '$1 == u {f=1} END {exit !f}' "$d/units.tsv" 2>/dev/null || printf '%s ' "$u"; done)
+            fi
+            red="$red
+RED: shard $s TIMEOUT: no rc recorded -- the shard's step hit its time limit (or the runner died) before the run finished; not a verdict on the code. Units not finished: ${unrun:-unknown (no table row list)}"
+        elif [ "${rc:-}" != 0 ]; then
             red="$red
 RED: shard $s rc=${rc:-?} (nonzero or never written)"
             # the make `*** [...] Error` lines the record step kept: which sections went red
@@ -82,8 +105,7 @@ RED:   shard $s: $l"; done < "$d/errors.txt"
         fi
     done
     # REWEIGHT-DUE: the slowest shard's wall past the table's predicted slowest shard by the kind's margin
-    due=""; kind=""
-    for kv in "$@"; do case $kv in kind=*) kind=${kv#kind=} ;; esac; done
+    due=""
     if [ -n "$kind" ] && [ "$slowest" -gt 0 ]; then
         sel=$(bash "$here/cloud_kinds.sh" get "$kind" selector 2>/dev/null)
         margin=$(bash "$here/cloud_kinds.sh" get "$kind" reweight_margin 2>/dev/null)
@@ -92,12 +114,13 @@ RED:   shard $s: $l"; done < "$d/errors.txt"
             if [ $((slowest * 100)) -gt $((plan * (100 + margin))) ]; then
                 due="REWEIGHT-DUE kind=$kind slowest=${slowest}s plan=${plan}s"; fi ;; esac
     fi
-    { if [ -z "$red" ]; then echo "VERDICT GREEN"; else echo "VERDICT RED"; fi
+    { if [ -n "$red" ]; then echo "VERDICT RED"; elif [ -n "$infra" ]; then echo "VERDICT INFRA"; else echo "VERDICT GREEN"; fi
       for kv in "$@"; do echo "$kv"; done
       [ -z "$due" ] || echo "$due"
       echo "expected=$expected"
       printf '%s\n' "${body#$'\n'}"
+      [ -z "$infra" ] || printf '%s\n' "${infra#$'\n'}"
       [ -z "$red" ] || printf '%s\n' "${red#$'\n'}"; } > "$out"
-    [ -z "$red" ] ;;
+    [ -z "$red$infra" ] ;;
 *) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 64 ;;
 esac

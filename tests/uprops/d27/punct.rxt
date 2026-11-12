@@ -1,0 +1,655 @@
+# upropd27: punctuation binary properties
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# Dash: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Dash}
+features unicode-props
+encoding utf8
+# U+002D HYPHEN-MINUS -- MEMBER
+m "\x2d" 0 1
+# U+058A ARMENIAN HYPHEN -- MEMBER
+m "\xd6\x8a" 0 2
+# U+05BE HEBREW PUNCTUATION MAQAF -- MEMBER
+m "\xd6\xbe" 0 2
+# U+2010 HYPHEN (2010..2015) -- MEMBER
+m "\xe2\x80\x90" 0 3
+# U+2015 HORIZONTAL BAR -- MEMBER
+m "\xe2\x80\x95" 0 3
+# U+2053 SWUNG DASH -- MEMBER
+m "\xe2\x81\x93" 0 3
+# U+207B SUPERSCRIPT MINUS -- MEMBER
+m "\xe2\x81\xbb" 0 3
+# U+2212 MINUS SIGN -- MEMBER
+m "\xe2\x88\x92" 0 3
+# U+301C WAVE DASH -- MEMBER
+m "\xe3\x80\x9c" 0 3
+# U+30A0 KATAKANA-HIRAGANA DOUBLE HYPHEN -- MEMBER
+m "\xe3\x82\xa0" 0 3
+# U+FF0D FULLWIDTH HYPHEN-MINUS -- MEMBER
+m "\xef\xbc\x8d" 0 3
+# U+10EAD YEZIDI HYPHENATION MARK -- MEMBER
+m "\xf0\x90\xba\xad" 0 4
+# U+005F LOW LINE: not Dash -- non-member
+n "\x5f"
+# U+2016 DOUBLE VERTICAL LINE: just above 2015 -- non-member
+n "\xe2\x80\x96"
+# U+200F RLM -- non-member
+n "\xe2\x80\x8f"
+# U+2009 THIN SPACE -- non-member
+n "\xe2\x80\x89"
+# U+00AD SOFT HYPHEN: not Dash -- non-member
+n "\xc2\xad"
+# U+002B PLUS SIGN -- non-member
+n "\x2b"
+# U+0061 a -- non-member
+n "a"
+# U+002F SOLIDUS -- non-member
+n "\x2f"
+
+# Dash: negated spelling \p{^X}, utf8; membership flipped
+# pcre2-only
+pattern \p{^Dash}
+features unicode-props
+encoding utf8
+# U+002D HYPHEN-MINUS -- MEMBER
+n "\x2d"
+# U+058A ARMENIAN HYPHEN -- MEMBER
+n "\xd6\x8a"
+# U+05BE HEBREW PUNCTUATION MAQAF -- MEMBER
+n "\xd6\xbe"
+# U+2010 HYPHEN (2010..2015) -- MEMBER
+n "\xe2\x80\x90"
+# U+2015 HORIZONTAL BAR -- MEMBER
+n "\xe2\x80\x95"
+# U+2053 SWUNG DASH -- MEMBER
+n "\xe2\x81\x93"
+# U+207B SUPERSCRIPT MINUS -- MEMBER
+n "\xe2\x81\xbb"
+# U+2212 MINUS SIGN -- MEMBER
+n "\xe2\x88\x92"
+# U+301C WAVE DASH -- MEMBER
+n "\xe3\x80\x9c"
+# U+30A0 KATAKANA-HIRAGANA DOUBLE HYPHEN -- MEMBER
+n "\xe3\x82\xa0"
+# U+FF0D FULLWIDTH HYPHEN-MINUS -- MEMBER
+n "\xef\xbc\x8d"
+# U+10EAD YEZIDI HYPHENATION MARK -- MEMBER
+n "\xf0\x90\xba\xad"
+# U+005F LOW LINE: not Dash -- non-member
+m "\x5f" 0 1
+# U+2016 DOUBLE VERTICAL LINE: just above 2015 -- non-member
+m "\xe2\x80\x96" 0 3
+# U+200F RLM -- non-member
+m "\xe2\x80\x8f" 0 3
+# U+2009 THIN SPACE -- non-member
+m "\xe2\x80\x89" 0 3
+# U+00AD SOFT HYPHEN: not Dash -- non-member
+m "\xc2\xad" 0 2
+# U+002B PLUS SIGN -- non-member
+m "\x2b" 0 1
+# U+0061 a -- non-member
+m "a" 0 1
+# U+002F SOLIDUS -- non-member
+m "\x2f" 0 1
+
+# Dash: inside a class with another item (U+005F)
+# pcre2-only
+pattern [\x{5F}\p{Dash}]
+features unicode-props
+encoding utf8
+# U+002D HYPHEN-MINUS -- MEMBER
+m "\x2d" 0 1
+# U+058A ARMENIAN HYPHEN -- MEMBER
+m "\xd6\x8a" 0 2
+# U+05BE HEBREW PUNCTUATION MAQAF -- MEMBER
+m "\xd6\xbe" 0 2
+# U+2010 HYPHEN (2010..2015) -- MEMBER
+m "\xe2\x80\x90" 0 3
+# U+2015 HORIZONTAL BAR -- MEMBER
+m "\xe2\x80\x95" 0 3
+# U+2053 SWUNG DASH -- MEMBER
+m "\xe2\x81\x93" 0 3
+# U+207B SUPERSCRIPT MINUS -- MEMBER
+m "\xe2\x81\xbb" 0 3
+# U+2212 MINUS SIGN -- MEMBER
+m "\xe2\x88\x92" 0 3
+# U+301C WAVE DASH -- MEMBER
+m "\xe3\x80\x9c" 0 3
+# U+30A0 KATAKANA-HIRAGANA DOUBLE HYPHEN -- MEMBER
+m "\xe3\x82\xa0" 0 3
+# U+FF0D FULLWIDTH HYPHEN-MINUS -- MEMBER
+m "\xef\xbc\x8d" 0 3
+# U+10EAD YEZIDI HYPHENATION MARK -- MEMBER
+m "\xf0\x90\xba\xad" 0 4
+# U+005F LOW LINE: not Dash -- non-member of the property but IS the extra class item
+m "\x5f" 0 1
+# U+2016 DOUBLE VERTICAL LINE: just above 2015 -- non-member
+n "\xe2\x80\x96"
+# U+200F RLM -- non-member
+n "\xe2\x80\x8f"
+# U+2009 THIN SPACE -- non-member
+n "\xe2\x80\x89"
+# U+00AD SOFT HYPHEN: not Dash -- non-member
+n "\xc2\xad"
+# U+002B PLUS SIGN -- non-member
+n "\x2b"
+# U+0061 a -- non-member
+n "a"
+# U+002F SOLIDUS -- non-member
+n "\x2f"
+
+# Quotation_Mark: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Quotation_Mark}
+features unicode-props
+encoding utf8
+# U+0022 QUOTATION MARK -- MEMBER
+m "\x22" 0 1
+# U+0027 APOSTROPHE -- MEMBER
+m "\x27" 0 1
+# U+00AB LEFT DOUBLE ANGLE QUOTATION -- MEMBER
+m "\xc2\xab" 0 2
+# U+00BB RIGHT DOUBLE ANGLE QUOTATION -- MEMBER
+m "\xc2\xbb" 0 2
+# U+2018 LEFT SINGLE QUOTATION MARK -- MEMBER
+m "\xe2\x80\x98" 0 3
+# U+201F DOUBLE HIGH-REVERSED-9 QUOTATION MARK -- MEMBER
+m "\xe2\x80\x9f" 0 3
+# U+2039 SINGLE LEFT-POINTING ANGLE QUOTATION -- MEMBER
+m "\xe2\x80\xb9" 0 3
+# U+300C LEFT CORNER BRACKET -- MEMBER
+m "\xe3\x80\x8c" 0 3
+# U+FF02 FULLWIDTH QUOTATION MARK -- MEMBER
+m "\xef\xbc\x82" 0 3
+# U+0060 GRAVE ACCENT: not Quotation_Mark -- non-member
+n "\x60"
+# U+00B4 ACUTE ACCENT -- non-member
+n "\xc2\xb4"
+# U+2017 DOUBLE LOW LINE: just below 2018 -- non-member
+n "\xe2\x80\x97"
+# U+2020 DAGGER: just above 201F -- non-member
+n "\xe2\x80\xa0"
+# U+3010 LEFT BLACK LENTICULAR BRACKET: not a quotation mark -- non-member
+n "\xe3\x80\x90"
+# U+0028 LEFT PARENTHESIS -- non-member
+n "\x28"
+# U+0061 a -- non-member
+n "a"
+
+# Quotation_Mark: negated spelling [^\p{X}], utf8; membership flipped
+# pcre2-only
+pattern [^\p{Quotation_Mark}]
+features unicode-props
+encoding utf8
+# U+0022 QUOTATION MARK -- MEMBER
+n "\x22"
+# U+0027 APOSTROPHE -- MEMBER
+n "\x27"
+# U+00AB LEFT DOUBLE ANGLE QUOTATION -- MEMBER
+n "\xc2\xab"
+# U+00BB RIGHT DOUBLE ANGLE QUOTATION -- MEMBER
+n "\xc2\xbb"
+# U+2018 LEFT SINGLE QUOTATION MARK -- MEMBER
+n "\xe2\x80\x98"
+# U+201F DOUBLE HIGH-REVERSED-9 QUOTATION MARK -- MEMBER
+n "\xe2\x80\x9f"
+# U+2039 SINGLE LEFT-POINTING ANGLE QUOTATION -- MEMBER
+n "\xe2\x80\xb9"
+# U+300C LEFT CORNER BRACKET -- MEMBER
+n "\xe3\x80\x8c"
+# U+FF02 FULLWIDTH QUOTATION MARK -- MEMBER
+n "\xef\xbc\x82"
+# U+0060 GRAVE ACCENT: not Quotation_Mark -- non-member
+m "\x60" 0 1
+# U+00B4 ACUTE ACCENT -- non-member
+m "\xc2\xb4" 0 2
+# U+2017 DOUBLE LOW LINE: just below 2018 -- non-member
+m "\xe2\x80\x97" 0 3
+# U+2020 DAGGER: just above 201F -- non-member
+m "\xe2\x80\xa0" 0 3
+# U+3010 LEFT BLACK LENTICULAR BRACKET: not a quotation mark -- non-member
+m "\xe3\x80\x90" 0 3
+# U+0028 LEFT PARENTHESIS -- non-member
+m "\x28" 0 1
+# U+0061 a -- non-member
+m "a" 0 1
+
+# Terminal_Punctuation: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Terminal_Punctuation}
+features unicode-props
+encoding utf8
+# U+0021 EXCLAMATION MARK -- MEMBER
+m "\x21" 0 1
+# U+002C COMMA -- MEMBER
+m "\x2c" 0 1
+# U+002E FULL STOP -- MEMBER
+m "\x2e" 0 1
+# U+003A COLON -- MEMBER
+m "\x3a" 0 1
+# U+003B SEMICOLON -- MEMBER
+m "\x3b" 0 1
+# U+003F QUESTION MARK -- MEMBER
+m "\x3f" 0 1
+# U+037E GREEK QUESTION MARK -- MEMBER
+m "\xcd\xbe" 0 2
+# U+203C DOUBLE EXCLAMATION MARK -- MEMBER
+m "\xe2\x80\xbc" 0 3
+# U+3001 IDEOGRAPHIC COMMA -- MEMBER
+m "\xe3\x80\x81" 0 3
+# U+3002 IDEOGRAPHIC FULL STOP -- MEMBER
+m "\xe3\x80\x82" 0 3
+# U+FF01 FULLWIDTH EXCLAMATION MARK -- MEMBER
+m "\xef\xbc\x81" 0 3
+# U+0028 LEFT PARENTHESIS -- non-member
+n "\x28"
+# U+0022 QUOTATION MARK -- non-member
+n "\x22"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+00BF INVERTED QUESTION MARK: not terminal -- non-member
+n "\xc2\xbf"
+# U+00A1 INVERTED EXCLAMATION MARK: not terminal -- non-member
+n "\xc2\xa1"
+# U+0061 a -- non-member
+n "a"
+
+# Terminal_Punctuation: negated spelling \P{^X} (is \p{X}), utf8; membership flipped
+# pcre2-only
+pattern \P{^Terminal_Punctuation}
+features unicode-props
+encoding utf8
+# U+0021 EXCLAMATION MARK -- MEMBER
+m "\x21" 0 1
+# U+002C COMMA -- MEMBER
+m "\x2c" 0 1
+# U+002E FULL STOP -- MEMBER
+m "\x2e" 0 1
+# U+003A COLON -- MEMBER
+m "\x3a" 0 1
+# U+003B SEMICOLON -- MEMBER
+m "\x3b" 0 1
+# U+003F QUESTION MARK -- MEMBER
+m "\x3f" 0 1
+# U+037E GREEK QUESTION MARK -- MEMBER
+m "\xcd\xbe" 0 2
+# U+203C DOUBLE EXCLAMATION MARK -- MEMBER
+m "\xe2\x80\xbc" 0 3
+# U+3001 IDEOGRAPHIC COMMA -- MEMBER
+m "\xe3\x80\x81" 0 3
+# U+3002 IDEOGRAPHIC FULL STOP -- MEMBER
+m "\xe3\x80\x82" 0 3
+# U+FF01 FULLWIDTH EXCLAMATION MARK -- MEMBER
+m "\xef\xbc\x81" 0 3
+# U+0028 LEFT PARENTHESIS -- non-member
+n "\x28"
+# U+0022 QUOTATION MARK -- non-member
+n "\x22"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+00BF INVERTED QUESTION MARK: not terminal -- non-member
+n "\xc2\xbf"
+# U+00A1 INVERTED EXCLAMATION MARK: not terminal -- non-member
+n "\xc2\xa1"
+# U+0061 a -- non-member
+n "a"
+
+# Terminal_Punctuation: inside a class with another item (U+0028)
+# pcre2-only
+pattern [\x{28}\p{Terminal_Punctuation}]
+features unicode-props
+encoding utf8
+# U+0021 EXCLAMATION MARK -- MEMBER
+m "\x21" 0 1
+# U+002C COMMA -- MEMBER
+m "\x2c" 0 1
+# U+002E FULL STOP -- MEMBER
+m "\x2e" 0 1
+# U+003A COLON -- MEMBER
+m "\x3a" 0 1
+# U+003B SEMICOLON -- MEMBER
+m "\x3b" 0 1
+# U+003F QUESTION MARK -- MEMBER
+m "\x3f" 0 1
+# U+037E GREEK QUESTION MARK -- MEMBER
+m "\xcd\xbe" 0 2
+# U+203C DOUBLE EXCLAMATION MARK -- MEMBER
+m "\xe2\x80\xbc" 0 3
+# U+3001 IDEOGRAPHIC COMMA -- MEMBER
+m "\xe3\x80\x81" 0 3
+# U+3002 IDEOGRAPHIC FULL STOP -- MEMBER
+m "\xe3\x80\x82" 0 3
+# U+FF01 FULLWIDTH EXCLAMATION MARK -- MEMBER
+m "\xef\xbc\x81" 0 3
+# U+0028 LEFT PARENTHESIS -- non-member of the property but IS the extra class item
+m "\x28" 0 1
+# U+0022 QUOTATION MARK -- non-member
+n "\x22"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+00BF INVERTED QUESTION MARK: not terminal -- non-member
+n "\xc2\xbf"
+# U+00A1 INVERTED EXCLAMATION MARK: not terminal -- non-member
+n "\xc2\xa1"
+# U+0061 a -- non-member
+n "a"
+
+# Sentence_Terminal: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Sentence_Terminal}
+features unicode-props
+encoding utf8
+# U+0021 EXCLAMATION MARK -- MEMBER
+m "\x21" 0 1
+# U+002E FULL STOP -- MEMBER
+m "\x2e" 0 1
+# U+003F QUESTION MARK -- MEMBER
+m "\x3f" 0 1
+# U+0589 ARMENIAN FULL STOP -- MEMBER
+m "\xd6\x89" 0 2
+# U+203C DOUBLE EXCLAMATION MARK -- MEMBER
+m "\xe2\x80\xbc" 0 3
+# U+3002 IDEOGRAPHIC FULL STOP -- MEMBER
+m "\xe3\x80\x82" 0 3
+# U+FF01 FULLWIDTH EXCLAMATION MARK -- MEMBER
+m "\xef\xbc\x81" 0 3
+# U+FF0E FULLWIDTH FULL STOP -- MEMBER
+m "\xef\xbc\x8e" 0 3
+# U+FF1F FULLWIDTH QUESTION MARK -- MEMBER
+m "\xef\xbc\x9f" 0 3
+# U+002C COMMA: Terminal_Punctuation but not Sentence_Terminal -- non-member
+n "\x2c"
+# U+003A COLON: Terminal_Punctuation only -- non-member
+n "\x3a"
+# U+003B SEMICOLON: Terminal_Punctuation only -- non-member
+n "\x3b"
+# U+3001 IDEOGRAPHIC COMMA: Terminal_Punctuation only -- non-member
+n "\xe3\x80\x81"
+# U+FF0C FULLWIDTH COMMA: Terminal_Punctuation only -- non-member
+n "\xef\xbc\x8c"
+# U+0028 LEFT PARENTHESIS -- non-member
+n "\x28"
+# U+0061 a -- non-member
+n "a"
+
+# Sentence_Terminal: negated spelling [\P{X}], utf8; membership flipped
+# pcre2-only
+pattern [\P{Sentence_Terminal}]
+features unicode-props
+encoding utf8
+# U+0021 EXCLAMATION MARK -- MEMBER
+n "\x21"
+# U+002E FULL STOP -- MEMBER
+n "\x2e"
+# U+003F QUESTION MARK -- MEMBER
+n "\x3f"
+# U+0589 ARMENIAN FULL STOP -- MEMBER
+n "\xd6\x89"
+# U+203C DOUBLE EXCLAMATION MARK -- MEMBER
+n "\xe2\x80\xbc"
+# U+3002 IDEOGRAPHIC FULL STOP -- MEMBER
+n "\xe3\x80\x82"
+# U+FF01 FULLWIDTH EXCLAMATION MARK -- MEMBER
+n "\xef\xbc\x81"
+# U+FF0E FULLWIDTH FULL STOP -- MEMBER
+n "\xef\xbc\x8e"
+# U+FF1F FULLWIDTH QUESTION MARK -- MEMBER
+n "\xef\xbc\x9f"
+# U+002C COMMA: Terminal_Punctuation but not Sentence_Terminal -- non-member
+m "\x2c" 0 1
+# U+003A COLON: Terminal_Punctuation only -- non-member
+m "\x3a" 0 1
+# U+003B SEMICOLON: Terminal_Punctuation only -- non-member
+m "\x3b" 0 1
+# U+3001 IDEOGRAPHIC COMMA: Terminal_Punctuation only -- non-member
+m "\xe3\x80\x81" 0 3
+# U+FF0C FULLWIDTH COMMA: Terminal_Punctuation only -- non-member
+m "\xef\xbc\x8c" 0 3
+# U+0028 LEFT PARENTHESIS -- non-member
+m "\x28" 0 1
+# U+0061 a -- non-member
+m "a" 0 1
+
+# Pattern_Syntax: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Pattern_Syntax}
+features unicode-props
+encoding utf8
+# U+0021 EXCLAMATION MARK -- MEMBER
+m "\x21" 0 1
+# U+002F SOLIDUS -- MEMBER
+m "\x2f" 0 1
+# U+003A COLON -- MEMBER
+m "\x3a" 0 1
+# U+0040 COMMERCIAL AT -- MEMBER
+m "\x40" 0 1
+# U+005B LEFT SQUARE BRACKET -- MEMBER
+m "\x5b" 0 1
+# U+005E CIRCUMFLEX -- MEMBER
+m "\x5e" 0 1
+# U+0060 GRAVE -- MEMBER
+m "\x60" 0 1
+# U+007B LEFT CURLY -- MEMBER
+m "\x7b" 0 1
+# U+007E TILDE -- MEMBER
+m "\x7e" 0 1
+# U+00A1 INVERTED EXCLAMATION -- MEMBER
+m "\xc2\xa1" 0 2
+# U+00D7 MULTIPLICATION SIGN -- MEMBER
+m "\xc3\x97" 0 2
+# U+2010 HYPHEN -- MEMBER
+m "\xe2\x80\x90" 0 3
+# U+2190 LEFTWARDS ARROW -- MEMBER
+m "\xe2\x86\x90" 0 3
+# U+2E00 RIGHT ANGLE SUBSTITUTION MARKER -- MEMBER
+m "\xe2\xb8\x80" 0 3
+# U+3008 LEFT ANGLE BRACKET -- MEMBER
+m "\xe3\x80\x88" 0 3
+# U+3030 WAVY DASH -- MEMBER
+m "\xe3\x80\xb0" 0 3
+# U+FD3E ORNATE LEFT PARENTHESIS -- MEMBER
+m "\xef\xb4\xbe" 0 3
+# U+005F LOW LINE: NOT Pattern_Syntax (it is ID_Continue) -- non-member
+n "\x5f"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+0041 A -- non-member
+n "A"
+# U+00A8 DIAERESIS: gap between A1..A7 and A9 -- non-member
+n "\xc2\xa8"
+# U+00AA FEMININE ORDINAL: gap -- non-member
+n "\xc2\xaa"
+# U+00B2 SUPERSCRIPT TWO: gap -- non-member
+n "\xc2\xb2"
+# U+2028 LINE SEPARATOR: not Pattern_Syntax (it is Pattern_White_Space) -- non-member
+n "\xe2\x80\xa8"
+# U+0061 a -- non-member
+n "a"
+
+# Pattern_Syntax: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{Pattern_Syntax}
+features unicode-props
+encoding utf8
+# U+0021 EXCLAMATION MARK -- MEMBER
+n "\x21"
+# U+002F SOLIDUS -- MEMBER
+n "\x2f"
+# U+003A COLON -- MEMBER
+n "\x3a"
+# U+0040 COMMERCIAL AT -- MEMBER
+n "\x40"
+# U+005B LEFT SQUARE BRACKET -- MEMBER
+n "\x5b"
+# U+005E CIRCUMFLEX -- MEMBER
+n "\x5e"
+# U+0060 GRAVE -- MEMBER
+n "\x60"
+# U+007B LEFT CURLY -- MEMBER
+n "\x7b"
+# U+007E TILDE -- MEMBER
+n "\x7e"
+# U+00A1 INVERTED EXCLAMATION -- MEMBER
+n "\xc2\xa1"
+# U+00D7 MULTIPLICATION SIGN -- MEMBER
+n "\xc3\x97"
+# U+2010 HYPHEN -- MEMBER
+n "\xe2\x80\x90"
+# U+2190 LEFTWARDS ARROW -- MEMBER
+n "\xe2\x86\x90"
+# U+2E00 RIGHT ANGLE SUBSTITUTION MARKER -- MEMBER
+n "\xe2\xb8\x80"
+# U+3008 LEFT ANGLE BRACKET -- MEMBER
+n "\xe3\x80\x88"
+# U+3030 WAVY DASH -- MEMBER
+n "\xe3\x80\xb0"
+# U+FD3E ORNATE LEFT PARENTHESIS -- MEMBER
+n "\xef\xb4\xbe"
+# U+005F LOW LINE: NOT Pattern_Syntax (it is ID_Continue) -- non-member
+m "\x5f" 0 1
+# U+0030 DIGIT ZERO -- non-member
+m "0" 0 1
+# U+0041 A -- non-member
+m "A" 0 1
+# U+00A8 DIAERESIS: gap between A1..A7 and A9 -- non-member
+m "\xc2\xa8" 0 2
+# U+00AA FEMININE ORDINAL: gap -- non-member
+m "\xc2\xaa" 0 2
+# U+00B2 SUPERSCRIPT TWO: gap -- non-member
+m "\xc2\xb2" 0 2
+# U+2028 LINE SEPARATOR: not Pattern_Syntax (it is Pattern_White_Space) -- non-member
+m "\xe2\x80\xa8" 0 3
+# U+0061 a -- non-member
+m "a" 0 1
+
+# Pattern_Syntax: inside a class with another item (U+005F)
+# pcre2-only
+pattern [\x{5F}\p{Pattern_Syntax}]
+features unicode-props
+encoding utf8
+# U+0021 EXCLAMATION MARK -- MEMBER
+m "\x21" 0 1
+# U+002F SOLIDUS -- MEMBER
+m "\x2f" 0 1
+# U+003A COLON -- MEMBER
+m "\x3a" 0 1
+# U+0040 COMMERCIAL AT -- MEMBER
+m "\x40" 0 1
+# U+005B LEFT SQUARE BRACKET -- MEMBER
+m "\x5b" 0 1
+# U+005E CIRCUMFLEX -- MEMBER
+m "\x5e" 0 1
+# U+0060 GRAVE -- MEMBER
+m "\x60" 0 1
+# U+007B LEFT CURLY -- MEMBER
+m "\x7b" 0 1
+# U+007E TILDE -- MEMBER
+m "\x7e" 0 1
+# U+00A1 INVERTED EXCLAMATION -- MEMBER
+m "\xc2\xa1" 0 2
+# U+00D7 MULTIPLICATION SIGN -- MEMBER
+m "\xc3\x97" 0 2
+# U+2010 HYPHEN -- MEMBER
+m "\xe2\x80\x90" 0 3
+# U+2190 LEFTWARDS ARROW -- MEMBER
+m "\xe2\x86\x90" 0 3
+# U+2E00 RIGHT ANGLE SUBSTITUTION MARKER -- MEMBER
+m "\xe2\xb8\x80" 0 3
+# U+3008 LEFT ANGLE BRACKET -- MEMBER
+m "\xe3\x80\x88" 0 3
+# U+3030 WAVY DASH -- MEMBER
+m "\xe3\x80\xb0" 0 3
+# U+FD3E ORNATE LEFT PARENTHESIS -- MEMBER
+m "\xef\xb4\xbe" 0 3
+# U+005F LOW LINE: NOT Pattern_Syntax (it is ID_Continue) -- non-member of the property but IS the extra class item
+m "\x5f" 0 1
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+0041 A -- non-member
+n "A"
+# U+00A8 DIAERESIS: gap between A1..A7 and A9 -- non-member
+n "\xc2\xa8"
+# U+00AA FEMININE ORDINAL: gap -- non-member
+n "\xc2\xaa"
+# U+00B2 SUPERSCRIPT TWO: gap -- non-member
+n "\xc2\xb2"
+# U+2028 LINE SEPARATOR: not Pattern_Syntax (it is Pattern_White_Space) -- non-member
+n "\xe2\x80\xa8"
+# U+0061 a -- non-member
+n "a"
+
+# Deprecated: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Deprecated}
+features unicode-props
+encoding utf8
+# U+0149 LATIN SMALL N PRECEDED BY APOSTROPHE -- MEMBER
+m "\xc5\x89" 0 2
+# U+0673 ARABIC LETTER ALEF WITH WAVY HAMZA BELOW -- MEMBER
+m "\xd9\xb3" 0 2
+# U+0F77 TIBETAN VOWEL SIGN VOCALIC RR -- MEMBER
+m "\xe0\xbd\xb7" 0 3
+# U+17A3 KHMER INDEPENDENT VOWEL QAQ -- MEMBER
+m "\xe1\x9e\xa3" 0 3
+# U+206A INHIBIT SYMMETRIC SWAPPING (206A..206F) -- MEMBER
+m "\xe2\x81\xaa" 0 3
+# U+206F NOMINAL DIGIT SHAPES -- MEMBER
+m "\xe2\x81\xaf" 0 3
+# U+2329 LEFT-POINTING ANGLE BRACKET -- MEMBER
+m "\xe2\x8c\xa9" 0 3
+# U+232A RIGHT-POINTING ANGLE BRACKET -- MEMBER
+m "\xe2\x8c\xaa" 0 3
+# U+E0001 LANGUAGE TAG -- MEMBER
+m "\xf3\xa0\x80\x81" 0 4
+# U+0148 LATIN SMALL N WITH CARON: neighbour -- non-member
+n "\xc5\x88"
+# U+232B ERASE TO THE LEFT: just above 232A -- non-member
+n "\xe2\x8c\xab"
+# U+2069 PDI: just below 206A -- non-member
+n "\xe2\x81\xa9"
+# U+E0020 TAG SPACE: not Deprecated -- non-member
+n "\xf3\xa0\x80\xa0"
+# U+0061 a -- non-member
+n "a"
+# U+3008 LEFT ANGLE BRACKET (the non-deprecated one) -- non-member
+n "\xe3\x80\x88"
+
+# Deprecated: negated spelling \p{^X}, utf8; membership flipped
+# pcre2-only
+pattern \p{^Deprecated}
+features unicode-props
+encoding utf8
+# U+0149 LATIN SMALL N PRECEDED BY APOSTROPHE -- MEMBER
+n "\xc5\x89"
+# U+0673 ARABIC LETTER ALEF WITH WAVY HAMZA BELOW -- MEMBER
+n "\xd9\xb3"
+# U+0F77 TIBETAN VOWEL SIGN VOCALIC RR -- MEMBER
+n "\xe0\xbd\xb7"
+# U+17A3 KHMER INDEPENDENT VOWEL QAQ -- MEMBER
+n "\xe1\x9e\xa3"
+# U+206A INHIBIT SYMMETRIC SWAPPING (206A..206F) -- MEMBER
+n "\xe2\x81\xaa"
+# U+206F NOMINAL DIGIT SHAPES -- MEMBER
+n "\xe2\x81\xaf"
+# U+2329 LEFT-POINTING ANGLE BRACKET -- MEMBER
+n "\xe2\x8c\xa9"
+# U+232A RIGHT-POINTING ANGLE BRACKET -- MEMBER
+n "\xe2\x8c\xaa"
+# U+E0001 LANGUAGE TAG -- MEMBER
+n "\xf3\xa0\x80\x81"
+# U+0148 LATIN SMALL N WITH CARON: neighbour -- non-member
+m "\xc5\x88" 0 2
+# U+232B ERASE TO THE LEFT: just above 232A -- non-member
+m "\xe2\x8c\xab" 0 3
+# U+2069 PDI: just below 206A -- non-member
+m "\xe2\x81\xa9" 0 3
+# U+E0020 TAG SPACE: not Deprecated -- non-member
+m "\xf3\xa0\x80\xa0" 0 4
+# U+0061 a -- non-member
+m "a" 0 1
+# U+3008 LEFT ANGLE BRACKET (the non-deprecated one) -- non-member
+m "\xe3\x80\x88" 0 3

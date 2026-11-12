@@ -1258,6 +1258,23 @@ floor. The trigger is a `REWEIGHT-DUE kind=K slowest=..s plan=..s` line in the r
 runs more than the kind's `reweight_margin` (UNMEASURED default 25 %) over the plan; the manager runs the step then
 (and after a section, job or script is added). Process and the five steps: `tests/ci/CLAUDE.md` "Reweighting".
 
+**[CLOUD-SUITE] D (2026-11-11, lane `cloudmech`): the cloud FULL SUITE, `scripts/cloudrun --suite`.** `scripts/cloudrun --suite --owner O
+[--ref R]` dispatches every kind whose `suite` column is 1 in `tests/ci/cloud_kinds.tsv` (today `test`, `axes`, `ubsan`, `asan`, `mech`,
+`recidentity`) on ONE resolved commit, one run each, branches `cloud/O/KIND/suite-<sha7>`; each kind's verdict arrives as its own
+CLOUD-DONE. It is the replacement for the correctness stages of the local battery (`scripts/fullsuite_job.sh` -> `scripts/battery.sh`:
+test, strict, axes, san, alloc, lint, mech, recidentity), which is NOT deleted: it stays the local, box-bound run (timing and bench
+stages never go to the cloud) and the cross-check while the cloud kinds are young. Stage -> cloud mapping: `test` = the `test` kind
+(its table now also holds `test-alloc`, below, and ONE extra shard, `cloudgate-strict` + `cloudgate-lint`, i.e. `make strict` and
+`make lint`); `axes` = `axes`; `san` = `ubsan` + `asan`; `mech` = the `mech` kind (the sabotage matrix, 20 shards of S-ids through the
+same `tests/mech/run_sabotage_matrix.sh`, each row still `git archive HEAD` of the pushed commit; per-row seconds in `units.tsv`;
+a shard is red unless the driver's `== mech run COMPLETE: N rows` trailer counts exactly its rows and the driver exited 0);
+`recidentity` = one shard, `make test-recursion-identity` (full-history checkout, so the pins resolve). `alloc` moved INTO
+`make test` as `test-alloc`: what it checks (every forced allocation failure in `pcrec_compile` is diagnosed, never an abort) does not
+depend on the compiler's opinion; `strict` and `lint` stay opt-in (R5-Q1: a newer gcc's opinion must not fail a stranger's `make test`)
+and run in the cloud `test` kind's extra shard only. INFRA vs RED: a shard whose test step passed and whose artifact upload failed
+(GitHub 5xx; runs 43092896361, 43093102021) is INFRA, not RED -- the verdict says `VERDICT INFRA`, `scripts/queuewatch` reruns the
+failed jobs ONCE (`scripts/cloudrun --rerun-infra`), and a second infra failure is reported as `CLOUD-INFRA`.
+
 ## The atomic landing gate ([M6.4.4], 2026-08-22) — OPT-IN, and its archived result
 
 `tests/codegen/run_atomic_identity.sh` is module `atomic-groups`' byte-identity
@@ -3999,9 +4016,14 @@ uses, so an axis with no entry treats any refusal as worth investigating.
 | `-fprefilter` | 13,242 LOST (the documented force-refusal on every DFA-selected pattern) + 2 MISMATCH in `tests/harness/giveup.rxt` (default gives up steps/frames, the forced prefilter answers nomatch) | REFUSED-DOCUMENTED + BUDGET |
 
 Per-axis output line: `agree=N budget-bound=N refused-documented=N
-(floor F) lost-other=N mismatches=N gained=N` — every bucket printed
+(floor F) lost-other=N ccfail=N mismatches=N gained=N` — every bucket printed
 beside the verdict, K35's "populations printed" convention extended from
 the census's stamp vocabulary to the sweep's own case buckets.
+`ccfail` ([PFFIX], 2026-11-11) counts cases whose GENERATED C failed to
+compile or link (the harness's RXTDUMP `CCFAIL` rows); each is its own
+`AXIS FAIL: ... GENERATED C FAILED TO COMPILE at <file>:<line>: <gcc error>`
+line. Before it such a case wrote no dump row and read as an unnamed
+`lost-other` (pflost_report.md: `ab\Gcd` under `-fprefilter`).
 
 **The oracle cross-check**: one DFA-side answer-identity axis
 (`-fno-premul-table`, bit 15) is additionally run through

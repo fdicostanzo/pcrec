@@ -36,6 +36,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read     # the called cloud-test.yml's gather reads this run's job steps (INFRA vs RED); a called workflow cannot exceed its caller's grant
 
 jobs:
   build:
