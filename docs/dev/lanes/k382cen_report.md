@@ -87,8 +87,11 @@ The run-pinned prefilter is byte-identical on both sides:
 The tip's `@` is §4.1's table row 2: the member the prefilter reads (starred offset - `o` + `at`).
 BASE's `@0` was pcrec's own index, which pointed at the masked first position. The census gains rule
 P2r (`pinned_at`): hex and mask unchanged, `@` on both sides, the tip run-pinned, and the tip's `@` equal
-to that member. `--control plant-p2r` (the tip's `@` one position off) turns every one UNEXPLAINED
-(few.py: `(?:cat|bat)..` P2r 74 -> 74 UNEXPLAINED; `(?i)x/1234` P2r 3 -> 3).
+to that member, and the emitted prefilter text identical BASE vs tip (`prefilter_text`: its stamps and
+ofsskip/prefilter functions; kit manager's condition 1). `--control plant-p2r` (the tip's `@` one position off) turns every one UNEXPLAINED
+(few.py: `(?:cat|bat)..` P2r 74 -> 74 UNEXPLAINED; `(?i)x/1234` P2r 3 -> 3). `--control plant-p2r-code`
+(a prefilter code move under the stamp move) turns `(?i)x/1234`'s 3 P2r rows UNEXPLAINED with
+`RX_REQ_RUN` among their reasons.
 
 The triage was right about the three patterns it named. Its "@6" for `/abcd[xy]/user` was the find's
 offset; BASE's `@` is `@0`.
