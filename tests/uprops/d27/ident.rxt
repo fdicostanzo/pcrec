@@ -1,0 +1,672 @@
+# upropd27: identifier / ASCII / hex binary properties
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# ASCII: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{ASCII}
+features unicode-props
+encoding utf8
+# U+0001 SOH (the NUL code point cannot be passed in an argv subject) -- MEMBER
+m "\x01" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+007E TILDE -- MEMBER
+m "\x7e" 0 1
+# U+007F DELETE: last ASCII -- MEMBER
+m "\x7f" 0 1
+# U+0080 first non-ASCII: PAD control -- non-member
+n "\xc2\x80"
+# U+00A0 NBSP -- non-member
+n "\xc2\xa0"
+# U+00FF y WITH DIAERESIS -- non-member
+n "\xc3\xbf"
+# U+0100 A WITH MACRON -- non-member
+n "\xc4\x80"
+# U+10FFFF last -- non-member
+n "\xf4\x8f\xbf\xbf"
+
+# ASCII: negated spelling [\P{X}], utf8; membership flipped
+# pcre2-only
+pattern [\P{ASCII}]
+features unicode-props
+encoding utf8
+# U+0001 SOH (the NUL code point cannot be passed in an argv subject) -- MEMBER
+n "\x01"
+# U+0041 A -- MEMBER
+n "A"
+# U+007E TILDE -- MEMBER
+n "\x7e"
+# U+007F DELETE: last ASCII -- MEMBER
+n "\x7f"
+# U+0080 first non-ASCII: PAD control -- non-member
+m "\xc2\x80" 0 2
+# U+00A0 NBSP -- non-member
+m "\xc2\xa0" 0 2
+# U+00FF y WITH DIAERESIS -- non-member
+m "\xc3\xbf" 0 2
+# U+0100 A WITH MACRON -- non-member
+m "\xc4\x80" 0 2
+# U+10FFFF last -- non-member
+m "\xf4\x8f\xbf\xbf" 0 4
+
+# ASCII: inside a class with another item (U+0080)
+# pcre2-only
+pattern [\x{80}\p{ASCII}]
+features unicode-props
+encoding utf8
+# U+0001 SOH (the NUL code point cannot be passed in an argv subject) -- MEMBER
+m "\x01" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+007E TILDE -- MEMBER
+m "\x7e" 0 1
+# U+007F DELETE: last ASCII -- MEMBER
+m "\x7f" 0 1
+# U+0080 first non-ASCII: PAD control -- non-member of the property but IS the extra class item
+m "\xc2\x80" 0 2
+# U+00A0 NBSP -- non-member
+n "\xc2\xa0"
+# U+00FF y WITH DIAERESIS -- non-member
+n "\xc3\xbf"
+# U+0100 A WITH MACRON -- non-member
+n "\xc4\x80"
+# U+10FFFF last -- non-member
+n "\xf4\x8f\xbf\xbf"
+
+# ASCII_Hex_Digit: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{ASCII_Hex_Digit}
+features unicode-props
+encoding utf8
+# U+0030 0 -- MEMBER
+m "0" 0 1
+# U+0039 9 -- MEMBER
+m "9" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+0046 F -- MEMBER
+m "F" 0 1
+# U+0061 a -- MEMBER
+m "a" 0 1
+# U+0066 f -- MEMBER
+m "f" 0 1
+# U+002F SOLIDUS: just below 0 -- non-member
+n "\x2f"
+# U+003A COLON: just above 9 -- non-member
+n "\x3a"
+# U+0040 COMMERCIAL AT: just below A -- non-member
+n "\x40"
+# U+0047 G -- non-member
+n "G"
+# U+0060 GRAVE: just below a -- non-member
+n "\x60"
+# U+0067 g -- non-member
+n "g"
+# U+FF10 FULLWIDTH DIGIT ZERO: Hex_Digit but not ASCII_Hex_Digit -- non-member
+n "\xef\xbc\x90"
+# U+FF21 FULLWIDTH A: not ASCII_Hex_Digit -- non-member
+n "\xef\xbc\xa1"
+
+# ASCII_Hex_Digit: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{ASCII_Hex_Digit}
+features unicode-props
+encoding utf8
+# U+0030 0 -- MEMBER
+n "0"
+# U+0039 9 -- MEMBER
+n "9"
+# U+0041 A -- MEMBER
+n "A"
+# U+0046 F -- MEMBER
+n "F"
+# U+0061 a -- MEMBER
+n "a"
+# U+0066 f -- MEMBER
+n "f"
+# U+002F SOLIDUS: just below 0 -- non-member
+m "\x2f" 0 1
+# U+003A COLON: just above 9 -- non-member
+m "\x3a" 0 1
+# U+0040 COMMERCIAL AT: just below A -- non-member
+m "\x40" 0 1
+# U+0047 G -- non-member
+m "G" 0 1
+# U+0060 GRAVE: just below a -- non-member
+m "\x60" 0 1
+# U+0067 g -- non-member
+m "g" 0 1
+# U+FF10 FULLWIDTH DIGIT ZERO: Hex_Digit but not ASCII_Hex_Digit -- non-member
+m "\xef\xbc\x90" 0 3
+# U+FF21 FULLWIDTH A: not ASCII_Hex_Digit -- non-member
+m "\xef\xbc\xa1" 0 3
+
+# Hex_Digit: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Hex_Digit}
+features unicode-props
+encoding utf8
+# U+0030 0 -- MEMBER
+m "0" 0 1
+# U+0039 9 -- MEMBER
+m "9" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+0046 F -- MEMBER
+m "F" 0 1
+# U+0061 a -- MEMBER
+m "a" 0 1
+# U+0066 f -- MEMBER
+m "f" 0 1
+# U+FF10 FULLWIDTH DIGIT ZERO -- MEMBER
+m "\xef\xbc\x90" 0 3
+# U+FF19 FULLWIDTH DIGIT NINE -- MEMBER
+m "\xef\xbc\x99" 0 3
+# U+FF21 FULLWIDTH A -- MEMBER
+m "\xef\xbc\xa1" 0 3
+# U+FF26 FULLWIDTH F -- MEMBER
+m "\xef\xbc\xa6" 0 3
+# U+FF41 FULLWIDTH a -- MEMBER
+m "\xef\xbd\x81" 0 3
+# U+FF46 FULLWIDTH f -- MEMBER
+m "\xef\xbd\x86" 0 3
+# U+0047 G -- non-member
+n "G"
+# U+0067 g -- non-member
+n "g"
+# U+FF27 FULLWIDTH G -- non-member
+n "\xef\xbc\xa7"
+# U+FF47 FULLWIDTH g -- non-member
+n "\xef\xbd\x87"
+# U+0660 ARABIC-INDIC ZERO: Nd but not Hex_Digit -- non-member
+n "\xd9\xa0"
+# U+002F SOLIDUS -- non-member
+n "\x2f"
+# U+FF0F FULLWIDTH SOLIDUS -- non-member
+n "\xef\xbc\x8f"
+# U+FF1A FULLWIDTH COLON -- non-member
+n "\xef\xbc\x9a"
+
+# Hex_Digit: negated spelling \p{^X}, utf8; membership flipped
+# pcre2-only
+pattern \p{^Hex_Digit}
+features unicode-props
+encoding utf8
+# U+0030 0 -- MEMBER
+n "0"
+# U+0039 9 -- MEMBER
+n "9"
+# U+0041 A -- MEMBER
+n "A"
+# U+0046 F -- MEMBER
+n "F"
+# U+0061 a -- MEMBER
+n "a"
+# U+0066 f -- MEMBER
+n "f"
+# U+FF10 FULLWIDTH DIGIT ZERO -- MEMBER
+n "\xef\xbc\x90"
+# U+FF19 FULLWIDTH DIGIT NINE -- MEMBER
+n "\xef\xbc\x99"
+# U+FF21 FULLWIDTH A -- MEMBER
+n "\xef\xbc\xa1"
+# U+FF26 FULLWIDTH F -- MEMBER
+n "\xef\xbc\xa6"
+# U+FF41 FULLWIDTH a -- MEMBER
+n "\xef\xbd\x81"
+# U+FF46 FULLWIDTH f -- MEMBER
+n "\xef\xbd\x86"
+# U+0047 G -- non-member
+m "G" 0 1
+# U+0067 g -- non-member
+m "g" 0 1
+# U+FF27 FULLWIDTH G -- non-member
+m "\xef\xbc\xa7" 0 3
+# U+FF47 FULLWIDTH g -- non-member
+m "\xef\xbd\x87" 0 3
+# U+0660 ARABIC-INDIC ZERO: Nd but not Hex_Digit -- non-member
+m "\xd9\xa0" 0 2
+# U+002F SOLIDUS -- non-member
+m "\x2f" 0 1
+# U+FF0F FULLWIDTH SOLIDUS -- non-member
+m "\xef\xbc\x8f" 0 3
+# U+FF1A FULLWIDTH COLON -- non-member
+m "\xef\xbc\x9a" 0 3
+
+# Hex_Digit: inside a class with another item (U+0047)
+# pcre2-only
+pattern [\x{47}\p{Hex_Digit}]
+features unicode-props
+encoding utf8
+# U+0030 0 -- MEMBER
+m "0" 0 1
+# U+0039 9 -- MEMBER
+m "9" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+0046 F -- MEMBER
+m "F" 0 1
+# U+0061 a -- MEMBER
+m "a" 0 1
+# U+0066 f -- MEMBER
+m "f" 0 1
+# U+FF10 FULLWIDTH DIGIT ZERO -- MEMBER
+m "\xef\xbc\x90" 0 3
+# U+FF19 FULLWIDTH DIGIT NINE -- MEMBER
+m "\xef\xbc\x99" 0 3
+# U+FF21 FULLWIDTH A -- MEMBER
+m "\xef\xbc\xa1" 0 3
+# U+FF26 FULLWIDTH F -- MEMBER
+m "\xef\xbc\xa6" 0 3
+# U+FF41 FULLWIDTH a -- MEMBER
+m "\xef\xbd\x81" 0 3
+# U+FF46 FULLWIDTH f -- MEMBER
+m "\xef\xbd\x86" 0 3
+# U+0047 G -- non-member of the property but IS the extra class item
+m "G" 0 1
+# U+0067 g -- non-member
+n "g"
+# U+FF27 FULLWIDTH G -- non-member
+n "\xef\xbc\xa7"
+# U+FF47 FULLWIDTH g -- non-member
+n "\xef\xbd\x87"
+# U+0660 ARABIC-INDIC ZERO: Nd but not Hex_Digit -- non-member
+n "\xd9\xa0"
+# U+002F SOLIDUS -- non-member
+n "\x2f"
+# U+FF0F FULLWIDTH SOLIDUS -- non-member
+n "\xef\xbc\x8f"
+# U+FF1A FULLWIDTH COLON -- non-member
+n "\xef\xbc\x9a"
+
+# Hex_Digit: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Hex_Digit}
+features unicode-props
+encoding utf8
+flags i
+# U+0030 0 -- MEMBER
+m "0" 0 1
+# U+0039 9 -- MEMBER
+m "9" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+0046 F -- MEMBER
+m "F" 0 1
+# U+0061 a -- MEMBER
+m "a" 0 1
+# U+0066 f -- MEMBER
+m "f" 0 1
+# U+FF10 FULLWIDTH DIGIT ZERO -- MEMBER
+m "\xef\xbc\x90" 0 3
+# U+FF19 FULLWIDTH DIGIT NINE -- MEMBER
+m "\xef\xbc\x99" 0 3
+# U+FF21 FULLWIDTH A -- MEMBER
+m "\xef\xbc\xa1" 0 3
+# U+FF26 FULLWIDTH F -- MEMBER
+m "\xef\xbc\xa6" 0 3
+# U+FF41 FULLWIDTH a -- MEMBER
+m "\xef\xbd\x81" 0 3
+# U+FF46 FULLWIDTH f -- MEMBER
+m "\xef\xbd\x86" 0 3
+# U+0047 G -- non-member
+n "G"
+# U+0067 g -- non-member
+n "g"
+# U+FF27 FULLWIDTH G -- non-member
+n "\xef\xbc\xa7"
+# U+FF47 FULLWIDTH g -- non-member
+n "\xef\xbd\x87"
+# U+0660 ARABIC-INDIC ZERO: Nd but not Hex_Digit -- non-member
+n "\xd9\xa0"
+# U+002F SOLIDUS -- non-member
+n "\x2f"
+# U+FF0F FULLWIDTH SOLIDUS -- non-member
+n "\xef\xbc\x8f"
+# U+FF1A FULLWIDTH COLON -- non-member
+n "\xef\xbc\x9a"
+
+# ID_Start: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{ID_Start}
+features unicode-props
+encoding utf8
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+007A z -- MEMBER
+m "z" 0 1
+# U+00AA FEMININE ORDINAL: Lo -- MEMBER
+m "\xc2\xaa" 0 2
+# U+00B5 MICRO SIGN: Ll -- MEMBER
+m "\xc2\xb5" 0 2
+# U+2118 SCRIPT CAPITAL P: Sm but Other_ID_Start -- MEMBER
+m "\xe2\x84\x98" 0 3
+# U+212E ESTIMATED SYMBOL: So but Other_ID_Start -- MEMBER
+m "\xe2\x84\xae" 0 3
+# U+309B KATAKANA-HIRAGANA VOICED SOUND MARK: Sk but Other_ID_Start -- MEMBER
+m "\xe3\x82\x9b" 0 3
+# U+1885 MONGOLIAN LETTER ALI GALI BALUDA: Mn but Other_ID_Start -- MEMBER
+m "\xe1\xa2\x85" 0 3
+# U+2160 ROMAN NUMERAL ONE: Nl -- MEMBER
+m "\xe2\x85\xa0" 0 3
+# U+4E00 CJK ideograph -- MEMBER
+m "\xe4\xb8\x80" 0 3
+# U+037A GREEK YPOGEGRAMMENI: Lm -- MEMBER
+m "\xcd\xba" 0 2
+# U+0030 DIGIT ZERO: ID_Continue only -- non-member
+n "0"
+# U+005F LOW LINE: ID_Continue only -- non-member
+n "\x5f"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+00B7 MIDDLE DOT: Other_ID_Continue only -- non-member
+n "\xc2\xb7"
+# U+0300 COMBINING GRAVE: Mn, ID_Continue only -- non-member
+n "\xcc\x80"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+2E2F VERTICAL TILDE: Lm but Pattern_Syntax, excluded from ID_Start -- non-member
+n "\xe2\xb8\xaf"
+# U+00D7 MULTIPLICATION SIGN -- non-member
+n "\xc3\x97"
+
+# ID_Start: negated spelling [^\p{X}], utf8; membership flipped
+# pcre2-only
+pattern [^\p{ID_Start}]
+features unicode-props
+encoding utf8
+# U+0041 A -- MEMBER
+n "A"
+# U+007A z -- MEMBER
+n "z"
+# U+00AA FEMININE ORDINAL: Lo -- MEMBER
+n "\xc2\xaa"
+# U+00B5 MICRO SIGN: Ll -- MEMBER
+n "\xc2\xb5"
+# U+2118 SCRIPT CAPITAL P: Sm but Other_ID_Start -- MEMBER
+n "\xe2\x84\x98"
+# U+212E ESTIMATED SYMBOL: So but Other_ID_Start -- MEMBER
+n "\xe2\x84\xae"
+# U+309B KATAKANA-HIRAGANA VOICED SOUND MARK: Sk but Other_ID_Start -- MEMBER
+n "\xe3\x82\x9b"
+# U+1885 MONGOLIAN LETTER ALI GALI BALUDA: Mn but Other_ID_Start -- MEMBER
+n "\xe1\xa2\x85"
+# U+2160 ROMAN NUMERAL ONE: Nl -- MEMBER
+n "\xe2\x85\xa0"
+# U+4E00 CJK ideograph -- MEMBER
+n "\xe4\xb8\x80"
+# U+037A GREEK YPOGEGRAMMENI: Lm -- MEMBER
+n "\xcd\xba"
+# U+0030 DIGIT ZERO: ID_Continue only -- non-member
+m "0" 0 1
+# U+005F LOW LINE: ID_Continue only -- non-member
+m "\x5f" 0 1
+# U+0024 DOLLAR SIGN -- non-member
+m "\x24" 0 1
+# U+00B7 MIDDLE DOT: Other_ID_Continue only -- non-member
+m "\xc2\xb7" 0 2
+# U+0300 COMBINING GRAVE: Mn, ID_Continue only -- non-member
+m "\xcc\x80" 0 2
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+# U+2E2F VERTICAL TILDE: Lm but Pattern_Syntax, excluded from ID_Start -- non-member
+m "\xe2\xb8\xaf" 0 3
+# U+00D7 MULTIPLICATION SIGN -- non-member
+m "\xc3\x97" 0 2
+
+# ID_Continue: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{ID_Continue}
+features unicode-props
+encoding utf8
+# U+0030 DIGIT ZERO: Nd -- MEMBER
+m "0" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+005F LOW LINE: Pc -- MEMBER
+m "\x5f" 0 1
+# U+00B7 MIDDLE DOT: Other_ID_Continue -- MEMBER
+m "\xc2\xb7" 0 2
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+m "\xcc\x80" 0 2
+# U+0387 GREEK ANO TELEIA: Other_ID_Continue -- MEMBER
+m "\xce\x87" 0 2
+# U+1369 ETHIOPIC DIGIT ONE: Other_ID_Continue -- MEMBER
+m "\xe1\x8d\xa9" 0 3
+# U+19DA NEW TAI LUE THAM DIGIT ONE: Other_ID_Continue -- MEMBER
+m "\xe1\xa7\x9a" 0 3
+# U+037A GREEK YPOGEGRAMMENI: Lm -- MEMBER
+m "\xcd\xba" 0 2
+# U+2118 SCRIPT CAPITAL P: Other_ID_Start -- MEMBER
+m "\xe2\x84\x98" 0 3
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+002E FULL STOP -- non-member
+n "\x2e"
+# U+00B6 PILCROW: neighbour of B7 -- non-member
+n "\xc2\xb6"
+# U+2E2F VERTICAL TILDE: Pattern_Syntax excluded -- non-member
+n "\xe2\xb8\xaf"
+# U+1F600 GRINNING FACE -- non-member
+n "\xf0\x9f\x98\x80"
+
+# ID_Continue: negated spelling \P{^X} (is \p{X}), utf8; membership flipped
+# pcre2-only
+pattern \P{^ID_Continue}
+features unicode-props
+encoding utf8
+# U+0030 DIGIT ZERO: Nd -- MEMBER
+m "0" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+005F LOW LINE: Pc -- MEMBER
+m "\x5f" 0 1
+# U+00B7 MIDDLE DOT: Other_ID_Continue -- MEMBER
+m "\xc2\xb7" 0 2
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+m "\xcc\x80" 0 2
+# U+0387 GREEK ANO TELEIA: Other_ID_Continue -- MEMBER
+m "\xce\x87" 0 2
+# U+1369 ETHIOPIC DIGIT ONE: Other_ID_Continue -- MEMBER
+m "\xe1\x8d\xa9" 0 3
+# U+19DA NEW TAI LUE THAM DIGIT ONE: Other_ID_Continue -- MEMBER
+m "\xe1\xa7\x9a" 0 3
+# U+037A GREEK YPOGEGRAMMENI: Lm -- MEMBER
+m "\xcd\xba" 0 2
+# U+2118 SCRIPT CAPITAL P: Other_ID_Start -- MEMBER
+m "\xe2\x84\x98" 0 3
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+002E FULL STOP -- non-member
+n "\x2e"
+# U+00B6 PILCROW: neighbour of B7 -- non-member
+n "\xc2\xb6"
+# U+2E2F VERTICAL TILDE: Pattern_Syntax excluded -- non-member
+n "\xe2\xb8\xaf"
+# U+1F600 GRINNING FACE -- non-member
+n "\xf0\x9f\x98\x80"
+
+# ID_Continue: inside a class with another item (U+002D)
+# pcre2-only
+pattern [\x{2D}\p{ID_Continue}]
+features unicode-props
+encoding utf8
+# U+0030 DIGIT ZERO: Nd -- MEMBER
+m "0" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+005F LOW LINE: Pc -- MEMBER
+m "\x5f" 0 1
+# U+00B7 MIDDLE DOT: Other_ID_Continue -- MEMBER
+m "\xc2\xb7" 0 2
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+m "\xcc\x80" 0 2
+# U+0387 GREEK ANO TELEIA: Other_ID_Continue -- MEMBER
+m "\xce\x87" 0 2
+# U+1369 ETHIOPIC DIGIT ONE: Other_ID_Continue -- MEMBER
+m "\xe1\x8d\xa9" 0 3
+# U+19DA NEW TAI LUE THAM DIGIT ONE: Other_ID_Continue -- MEMBER
+m "\xe1\xa7\x9a" 0 3
+# U+037A GREEK YPOGEGRAMMENI: Lm -- MEMBER
+m "\xcd\xba" 0 2
+# U+2118 SCRIPT CAPITAL P: Other_ID_Start -- MEMBER
+m "\xe2\x84\x98" 0 3
+# U+002D HYPHEN-MINUS -- non-member of the property but IS the extra class item
+m "\x2d" 0 1
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+002E FULL STOP -- non-member
+n "\x2e"
+# U+00B6 PILCROW: neighbour of B7 -- non-member
+n "\xc2\xb6"
+# U+2E2F VERTICAL TILDE: Pattern_Syntax excluded -- non-member
+n "\xe2\xb8\xaf"
+# U+1F600 GRINNING FACE -- non-member
+n "\xf0\x9f\x98\x80"
+
+# XID_Start: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{XID_Start}
+features unicode-props
+encoding utf8
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+007A z -- MEMBER
+m "z" 0 1
+# U+00AA FEMININE ORDINAL -- MEMBER
+m "\xc2\xaa" 0 2
+# U+2118 SCRIPT CAPITAL P -- MEMBER
+m "\xe2\x84\x98" 0 3
+# U+4E00 CJK ideograph -- MEMBER
+m "\xe4\xb8\x80" 0 3
+# U+037A GREEK YPOGEGRAMMENI: ID_Start but XID_Start excluded (NFKC is space+iota) -- non-member
+n "\xcd\xba"
+# U+309B KATAKANA-HIRAGANA VOICED SOUND MARK: ID_Start but not XID_Start (NFKC starts with space) -- non-member
+n "\xe3\x82\x9b"
+# U+0E33 THAI CHARACTER SARA AM: ID_Start but not XID_Start (NFKC closure) -- non-member
+n "\xe0\xb8\xb3"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+005F LOW LINE -- non-member
+n "\x5f"
+# U+0020 SPACE -- non-member
+n "\x20"
+
+# XID_Start: negated spelling [\P{X}], utf8; membership flipped
+# pcre2-only
+pattern [\P{XID_Start}]
+features unicode-props
+encoding utf8
+# U+0041 A -- MEMBER
+n "A"
+# U+007A z -- MEMBER
+n "z"
+# U+00AA FEMININE ORDINAL -- MEMBER
+n "\xc2\xaa"
+# U+2118 SCRIPT CAPITAL P -- MEMBER
+n "\xe2\x84\x98"
+# U+4E00 CJK ideograph -- MEMBER
+n "\xe4\xb8\x80"
+# U+037A GREEK YPOGEGRAMMENI: ID_Start but XID_Start excluded (NFKC is space+iota) -- non-member
+m "\xcd\xba" 0 2
+# U+309B KATAKANA-HIRAGANA VOICED SOUND MARK: ID_Start but not XID_Start (NFKC starts with space) -- non-member
+m "\xe3\x82\x9b" 0 3
+# U+0E33 THAI CHARACTER SARA AM: ID_Start but not XID_Start (NFKC closure) -- non-member
+m "\xe0\xb8\xb3" 0 3
+# U+0030 DIGIT ZERO -- non-member
+m "0" 0 1
+# U+005F LOW LINE -- non-member
+m "\x5f" 0 1
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+
+# XID_Continue: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{XID_Continue}
+features unicode-props
+encoding utf8
+# U+0030 DIGIT ZERO -- MEMBER
+m "0" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+005F LOW LINE -- MEMBER
+m "\x5f" 0 1
+# U+00B7 MIDDLE DOT -- MEMBER
+m "\xc2\xb7" 0 2
+# U+0300 COMBINING GRAVE -- MEMBER
+m "\xcc\x80" 0 2
+# U+037A GREEK YPOGEGRAMMENI: ID_Continue but not XID_Continue -- non-member
+n "\xcd\xba"
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+002E FULL STOP -- non-member
+n "\x2e"
+
+# XID_Continue: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{XID_Continue}
+features unicode-props
+encoding utf8
+# U+0030 DIGIT ZERO -- MEMBER
+n "0"
+# U+0041 A -- MEMBER
+n "A"
+# U+005F LOW LINE -- MEMBER
+n "\x5f"
+# U+00B7 MIDDLE DOT -- MEMBER
+n "\xc2\xb7"
+# U+0300 COMBINING GRAVE -- MEMBER
+n "\xcc\x80"
+# U+037A GREEK YPOGEGRAMMENI: ID_Continue but not XID_Continue -- non-member
+m "\xcd\xba" 0 2
+# U+002D HYPHEN-MINUS -- non-member
+m "\x2d" 0 1
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+# U+0024 DOLLAR SIGN -- non-member
+m "\x24" 0 1
+# U+002E FULL STOP -- non-member
+m "\x2e" 0 1
+
+# XID_Continue: inside a class with another item (U+037A)
+# pcre2-only
+pattern [\x{37A}\p{XID_Continue}]
+features unicode-props
+encoding utf8
+# U+0030 DIGIT ZERO -- MEMBER
+m "0" 0 1
+# U+0041 A -- MEMBER
+m "A" 0 1
+# U+005F LOW LINE -- MEMBER
+m "\x5f" 0 1
+# U+00B7 MIDDLE DOT -- MEMBER
+m "\xc2\xb7" 0 2
+# U+0300 COMBINING GRAVE -- MEMBER
+m "\xcc\x80" 0 2
+# U+037A GREEK YPOGEGRAMMENI: ID_Continue but not XID_Continue -- non-member of the property but IS the extra class item
+m "\xcd\xba" 0 2
+# U+002D HYPHEN-MINUS -- non-member
+n "\x2d"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0024 DOLLAR SIGN -- non-member
+n "\x24"
+# U+002E FULL STOP -- non-member
+n "\x2e"

@@ -1,0 +1,1084 @@
+# upropd27: Block extension (cli.md 1.17.1 para 5): Block=, blk=, Block:
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# Block=Basic_Latin (U+0000..U+007F), long name spelling
+# pcre2-only
+pattern \p{Block=Basic_Latin}
+features unicode-props
+encoding utf8
+# U+0000 first code point of the block -- inside
+m "\x00" 0 1
+# U+007F last code point of the block -- inside
+m "\x7f" 0 1
+# U+0080 one above the block -- outside
+n "\xc2\x80"
+# U+003F middle of the block -- inside
+m "\x3f" 0 1
+
+# Block short alias ASCII via blk=
+# pcre2-only
+pattern \p{blk=ASCII}
+features unicode-props
+encoding utf8
+# U+0000 first code point of the block -- inside
+m "\x00" 0 1
+# U+007F last code point of the block -- inside
+m "\x7f" 0 1
+# U+0080 one above the block -- outside
+n "\xc2\x80"
+# U+003F middle of the block -- inside
+m "\x3f" 0 1
+
+# Block=Latin-1_Supplement (U+0080..U+00FF), long name spelling
+# pcre2-only
+pattern \p{Block=Latin_1_Supplement}
+features unicode-props
+encoding utf8
+# U+0080 first code point of the block -- inside
+m "\xc2\x80" 0 2
+# U+00FF last code point of the block -- inside
+m "\xc3\xbf" 0 2
+# U+007F one below the block -- outside
+n "\x7f"
+# U+0100 one above the block -- outside
+n "\xc4\x80"
+# U+00BF middle of the block -- inside
+m "\xc2\xbf" 0 2
+
+# Block short alias Latin_1_Sup via blk=
+# pcre2-only
+pattern \p{blk=Latin_1_Sup}
+features unicode-props
+encoding utf8
+# U+0080 first code point of the block -- inside
+m "\xc2\x80" 0 2
+# U+00FF last code point of the block -- inside
+m "\xc3\xbf" 0 2
+# U+007F one below the block -- outside
+n "\x7f"
+# U+0100 one above the block -- outside
+n "\xc4\x80"
+# U+00BF middle of the block -- inside
+m "\xc2\xbf" 0 2
+
+# Block=Greek_and_Coptic (U+0370..U+03FF), long name spelling
+# pcre2-only
+pattern \p{Block=Greek_and_Coptic}
+features unicode-props
+encoding utf8
+# U+0370 first code point of the block -- inside
+m "\xcd\xb0" 0 2
+# U+03FF last code point of the block -- inside
+m "\xcf\xbf" 0 2
+# U+036F one below the block -- outside
+n "\xcd\xaf"
+# U+0400 one above the block -- outside
+n "\xd0\x80"
+# U+03B7 middle of the block -- inside
+m "\xce\xb7" 0 2
+
+# Block short alias Greek via blk=
+# pcre2-only
+pattern \p{blk=Greek}
+features unicode-props
+encoding utf8
+# U+0370 first code point of the block -- inside
+m "\xcd\xb0" 0 2
+# U+03FF last code point of the block -- inside
+m "\xcf\xbf" 0 2
+# U+036F one below the block -- outside
+n "\xcd\xaf"
+# U+0400 one above the block -- outside
+n "\xd0\x80"
+# U+03B7 middle of the block -- inside
+m "\xce\xb7" 0 2
+
+# Block=Cyrillic (U+0400..U+04FF), long name spelling
+# pcre2-only
+pattern \p{Block=Cyrillic}
+features unicode-props
+encoding utf8
+# U+0400 first code point of the block -- inside
+m "\xd0\x80" 0 2
+# U+04FF last code point of the block -- inside
+m "\xd3\xbf" 0 2
+# U+03FF one below the block -- outside
+n "\xcf\xbf"
+# U+0500 one above the block -- outside
+n "\xd4\x80"
+# U+047F middle of the block -- inside
+m "\xd1\xbf" 0 2
+
+# Block short alias Cyrillic via blk=
+# pcre2-only
+pattern \p{blk=Cyrillic}
+features unicode-props
+encoding utf8
+# U+0400 first code point of the block -- inside
+m "\xd0\x80" 0 2
+# U+04FF last code point of the block -- inside
+m "\xd3\xbf" 0 2
+# U+03FF one below the block -- outside
+n "\xcf\xbf"
+# U+0500 one above the block -- outside
+n "\xd4\x80"
+# U+047F middle of the block -- inside
+m "\xd1\xbf" 0 2
+
+# Block=Hebrew (U+0590..U+05FF), long name spelling
+# pcre2-only
+pattern \p{Block=Hebrew}
+features unicode-props
+encoding utf8
+# U+0590 first code point of the block -- inside
+m "\xd6\x90" 0 2
+# U+05FF last code point of the block -- inside
+m "\xd7\xbf" 0 2
+# U+058F one below the block -- outside
+n "\xd6\x8f"
+# U+0600 one above the block -- outside
+n "\xd8\x80"
+# U+05C7 middle of the block -- inside
+m "\xd7\x87" 0 2
+
+# Block short alias Hebrew via blk=
+# pcre2-only
+pattern \p{blk=Hebrew}
+features unicode-props
+encoding utf8
+# U+0590 first code point of the block -- inside
+m "\xd6\x90" 0 2
+# U+05FF last code point of the block -- inside
+m "\xd7\xbf" 0 2
+# U+058F one below the block -- outside
+n "\xd6\x8f"
+# U+0600 one above the block -- outside
+n "\xd8\x80"
+# U+05C7 middle of the block -- inside
+m "\xd7\x87" 0 2
+
+# Block=Arabic (U+0600..U+06FF), long name spelling
+# pcre2-only
+pattern \p{Block=Arabic}
+features unicode-props
+encoding utf8
+# U+0600 first code point of the block -- inside
+m "\xd8\x80" 0 2
+# U+06FF last code point of the block -- inside
+m "\xdb\xbf" 0 2
+# U+05FF one below the block -- outside
+n "\xd7\xbf"
+# U+0700 one above the block -- outside
+n "\xdc\x80"
+# U+067F middle of the block -- inside
+m "\xd9\xbf" 0 2
+
+# Block short alias Arabic via blk=
+# pcre2-only
+pattern \p{blk=Arabic}
+features unicode-props
+encoding utf8
+# U+0600 first code point of the block -- inside
+m "\xd8\x80" 0 2
+# U+06FF last code point of the block -- inside
+m "\xdb\xbf" 0 2
+# U+05FF one below the block -- outside
+n "\xd7\xbf"
+# U+0700 one above the block -- outside
+n "\xdc\x80"
+# U+067F middle of the block -- inside
+m "\xd9\xbf" 0 2
+
+# Block=General_Punctuation (U+2000..U+206F), long name spelling
+# pcre2-only
+pattern \p{Block=General_Punctuation}
+features unicode-props
+encoding utf8
+# U+2000 first code point of the block -- inside
+m "\xe2\x80\x80" 0 3
+# U+206F last code point of the block -- inside
+m "\xe2\x81\xaf" 0 3
+# U+1FFF one below the block -- outside
+n "\xe1\xbf\xbf"
+# U+2070 one above the block -- outside
+n "\xe2\x81\xb0"
+# U+2037 middle of the block -- inside
+m "\xe2\x80\xb7" 0 3
+
+# Block short alias Punctuation via blk=
+# pcre2-only
+pattern \p{blk=Punctuation}
+features unicode-props
+encoding utf8
+# U+2000 first code point of the block -- inside
+m "\xe2\x80\x80" 0 3
+# U+206F last code point of the block -- inside
+m "\xe2\x81\xaf" 0 3
+# U+1FFF one below the block -- outside
+n "\xe1\xbf\xbf"
+# U+2070 one above the block -- outside
+n "\xe2\x81\xb0"
+# U+2037 middle of the block -- inside
+m "\xe2\x80\xb7" 0 3
+
+# Block=Currency_Symbols (U+20A0..U+20CF), long name spelling
+# pcre2-only
+pattern \p{Block=Currency_Symbols}
+features unicode-props
+encoding utf8
+# U+20A0 first code point of the block -- inside
+m "\xe2\x82\xa0" 0 3
+# U+20CF last code point of the block -- inside
+m "\xe2\x83\x8f" 0 3
+# U+209F one below the block -- outside
+n "\xe2\x82\x9f"
+# U+20D0 one above the block -- outside
+n "\xe2\x83\x90"
+# U+20B7 middle of the block -- inside
+m "\xe2\x82\xb7" 0 3
+
+# Block short alias Currency_Symbols via blk=
+# pcre2-only
+pattern \p{blk=Currency_Symbols}
+features unicode-props
+encoding utf8
+# U+20A0 first code point of the block -- inside
+m "\xe2\x82\xa0" 0 3
+# U+20CF last code point of the block -- inside
+m "\xe2\x83\x8f" 0 3
+# U+209F one below the block -- outside
+n "\xe2\x82\x9f"
+# U+20D0 one above the block -- outside
+n "\xe2\x83\x90"
+# U+20B7 middle of the block -- inside
+m "\xe2\x82\xb7" 0 3
+
+# Block=Box_Drawing (U+2500..U+257F), long name spelling
+# pcre2-only
+pattern \p{Block=Box_Drawing}
+features unicode-props
+encoding utf8
+# U+2500 first code point of the block -- inside
+m "\xe2\x94\x80" 0 3
+# U+257F last code point of the block -- inside
+m "\xe2\x95\xbf" 0 3
+# U+24FF one below the block -- outside
+n "\xe2\x93\xbf"
+# U+2580 one above the block -- outside
+n "\xe2\x96\x80"
+# U+253F middle of the block -- inside
+m "\xe2\x94\xbf" 0 3
+
+# Block short alias Box_Drawing via blk=
+# pcre2-only
+pattern \p{blk=Box_Drawing}
+features unicode-props
+encoding utf8
+# U+2500 first code point of the block -- inside
+m "\xe2\x94\x80" 0 3
+# U+257F last code point of the block -- inside
+m "\xe2\x95\xbf" 0 3
+# U+24FF one below the block -- outside
+n "\xe2\x93\xbf"
+# U+2580 one above the block -- outside
+n "\xe2\x96\x80"
+# U+253F middle of the block -- inside
+m "\xe2\x94\xbf" 0 3
+
+# Block=Dingbats (U+2700..U+27BF), long name spelling
+# pcre2-only
+pattern \p{Block=Dingbats}
+features unicode-props
+encoding utf8
+# U+2700 first code point of the block -- inside
+m "\xe2\x9c\x80" 0 3
+# U+27BF last code point of the block -- inside
+m "\xe2\x9e\xbf" 0 3
+# U+26FF one below the block -- outside
+n "\xe2\x9b\xbf"
+# U+27C0 one above the block -- outside
+n "\xe2\x9f\x80"
+# U+275F middle of the block -- inside
+m "\xe2\x9d\x9f" 0 3
+
+# Block short alias Dingbats via blk=
+# pcre2-only
+pattern \p{blk=Dingbats}
+features unicode-props
+encoding utf8
+# U+2700 first code point of the block -- inside
+m "\xe2\x9c\x80" 0 3
+# U+27BF last code point of the block -- inside
+m "\xe2\x9e\xbf" 0 3
+# U+26FF one below the block -- outside
+n "\xe2\x9b\xbf"
+# U+27C0 one above the block -- outside
+n "\xe2\x9f\x80"
+# U+275F middle of the block -- inside
+m "\xe2\x9d\x9f" 0 3
+
+# Block=CJK_Unified_Ideographs_Extension_A (U+3400..U+4DBF), long name spelling
+# pcre2-only
+pattern \p{Block=CJK_Unified_Ideographs_Extension_A}
+features unicode-props
+encoding utf8
+# U+3400 first code point of the block -- inside
+m "\xe3\x90\x80" 0 3
+# U+4DBF last code point of the block -- inside
+m "\xe4\xb6\xbf" 0 3
+# U+33FF one below the block -- outside
+n "\xe3\x8f\xbf"
+# U+4DC0 one above the block -- outside
+n "\xe4\xb7\x80"
+# U+40DF middle of the block -- inside
+m "\xe4\x83\x9f" 0 3
+
+# Block short alias CJK_Ext_A via blk=
+# pcre2-only
+pattern \p{blk=CJK_Ext_A}
+features unicode-props
+encoding utf8
+# U+3400 first code point of the block -- inside
+m "\xe3\x90\x80" 0 3
+# U+4DBF last code point of the block -- inside
+m "\xe4\xb6\xbf" 0 3
+# U+33FF one below the block -- outside
+n "\xe3\x8f\xbf"
+# U+4DC0 one above the block -- outside
+n "\xe4\xb7\x80"
+# U+40DF middle of the block -- inside
+m "\xe4\x83\x9f" 0 3
+
+# Block=CJK_Unified_Ideographs (U+4E00..U+9FFF), long name spelling
+# pcre2-only
+pattern \p{Block=CJK_Unified_Ideographs}
+features unicode-props
+encoding utf8
+# U+4E00 first code point of the block -- inside
+m "\xe4\xb8\x80" 0 3
+# U+9FFF last code point of the block -- inside
+m "\xe9\xbf\xbf" 0 3
+# U+4DFF one below the block -- outside
+n "\xe4\xb7\xbf"
+# U+A000 one above the block -- outside
+n "\xea\x80\x80"
+# U+76FF middle of the block -- inside
+m "\xe7\x9b\xbf" 0 3
+
+# Block short alias CJK via blk=
+# pcre2-only
+pattern \p{blk=CJK}
+features unicode-props
+encoding utf8
+# U+4E00 first code point of the block -- inside
+m "\xe4\xb8\x80" 0 3
+# U+9FFF last code point of the block -- inside
+m "\xe9\xbf\xbf" 0 3
+# U+4DFF one below the block -- outside
+n "\xe4\xb7\xbf"
+# U+A000 one above the block -- outside
+n "\xea\x80\x80"
+# U+76FF middle of the block -- inside
+m "\xe7\x9b\xbf" 0 3
+
+# Block=Hiragana (U+3040..U+309F), long name spelling
+# pcre2-only
+pattern \p{Block=Hiragana}
+features unicode-props
+encoding utf8
+# U+3040 first code point of the block -- inside
+m "\xe3\x81\x80" 0 3
+# U+309F last code point of the block -- inside
+m "\xe3\x82\x9f" 0 3
+# U+303F one below the block -- outside
+n "\xe3\x80\xbf"
+# U+30A0 one above the block -- outside
+n "\xe3\x82\xa0"
+# U+306F middle of the block -- inside
+m "\xe3\x81\xaf" 0 3
+
+# Block short alias Hiragana via blk=
+# pcre2-only
+pattern \p{blk=Hiragana}
+features unicode-props
+encoding utf8
+# U+3040 first code point of the block -- inside
+m "\xe3\x81\x80" 0 3
+# U+309F last code point of the block -- inside
+m "\xe3\x82\x9f" 0 3
+# U+303F one below the block -- outside
+n "\xe3\x80\xbf"
+# U+30A0 one above the block -- outside
+n "\xe3\x82\xa0"
+# U+306F middle of the block -- inside
+m "\xe3\x81\xaf" 0 3
+
+# Block=Katakana (U+30A0..U+30FF), long name spelling
+# pcre2-only
+pattern \p{Block=Katakana}
+features unicode-props
+encoding utf8
+# U+30A0 first code point of the block -- inside
+m "\xe3\x82\xa0" 0 3
+# U+30FF last code point of the block -- inside
+m "\xe3\x83\xbf" 0 3
+# U+309F one below the block -- outside
+n "\xe3\x82\x9f"
+# U+3100 one above the block -- outside
+n "\xe3\x84\x80"
+# U+30CF middle of the block -- inside
+m "\xe3\x83\x8f" 0 3
+
+# Block short alias Katakana via blk=
+# pcre2-only
+pattern \p{blk=Katakana}
+features unicode-props
+encoding utf8
+# U+30A0 first code point of the block -- inside
+m "\xe3\x82\xa0" 0 3
+# U+30FF last code point of the block -- inside
+m "\xe3\x83\xbf" 0 3
+# U+309F one below the block -- outside
+n "\xe3\x82\x9f"
+# U+3100 one above the block -- outside
+n "\xe3\x84\x80"
+# U+30CF middle of the block -- inside
+m "\xe3\x83\x8f" 0 3
+
+# Block=Hangul_Syllables (U+AC00..U+D7AF), long name spelling
+# pcre2-only
+pattern \p{Block=Hangul_Syllables}
+features unicode-props
+encoding utf8
+# U+AC00 first code point of the block -- inside
+m "\xea\xb0\x80" 0 3
+# U+D7AF last code point of the block -- inside
+m "\xed\x9e\xaf" 0 3
+# U+ABFF one below the block -- outside
+n "\xea\xaf\xbf"
+# U+D7B0 one above the block -- outside
+n "\xed\x9e\xb0"
+# U+C1D7 middle of the block -- inside
+m "\xec\x87\x97" 0 3
+
+# Block short alias Hangul via blk=
+# pcre2-only
+pattern \p{blk=Hangul}
+features unicode-props
+encoding utf8
+# U+AC00 first code point of the block -- inside
+m "\xea\xb0\x80" 0 3
+# U+D7AF last code point of the block -- inside
+m "\xed\x9e\xaf" 0 3
+# U+ABFF one below the block -- outside
+n "\xea\xaf\xbf"
+# U+D7B0 one above the block -- outside
+n "\xed\x9e\xb0"
+# U+C1D7 middle of the block -- inside
+m "\xec\x87\x97" 0 3
+
+# Block=Private_Use_Area (U+E000..U+F8FF), long name spelling
+# pcre2-only
+pattern \p{Block=Private_Use_Area}
+features unicode-props
+encoding utf8
+# U+E000 first code point of the block -- inside
+m "\xee\x80\x80" 0 3
+# U+F8FF last code point of the block -- inside
+m "\xef\xa3\xbf" 0 3
+# U+F900 one above the block -- outside
+n "\xef\xa4\x80"
+# U+EC7F middle of the block -- inside
+m "\xee\xb1\xbf" 0 3
+
+# Block short alias PUA via blk=
+# pcre2-only
+pattern \p{blk=PUA}
+features unicode-props
+encoding utf8
+# U+E000 first code point of the block -- inside
+m "\xee\x80\x80" 0 3
+# U+F8FF last code point of the block -- inside
+m "\xef\xa3\xbf" 0 3
+# U+F900 one above the block -- outside
+n "\xef\xa4\x80"
+# U+EC7F middle of the block -- inside
+m "\xee\xb1\xbf" 0 3
+
+# Block=Variation_Selectors (U+FE00..U+FE0F), long name spelling
+# pcre2-only
+pattern \p{Block=Variation_Selectors}
+features unicode-props
+encoding utf8
+# U+FE00 first code point of the block -- inside
+m "\xef\xb8\x80" 0 3
+# U+FE0F last code point of the block -- inside
+m "\xef\xb8\x8f" 0 3
+# U+FDFF one below the block -- outside
+n "\xef\xb7\xbf"
+# U+FE10 one above the block -- outside
+n "\xef\xb8\x90"
+# U+FE07 middle of the block -- inside
+m "\xef\xb8\x87" 0 3
+
+# Block short alias VS via blk=
+# pcre2-only
+pattern \p{blk=VS}
+features unicode-props
+encoding utf8
+# U+FE00 first code point of the block -- inside
+m "\xef\xb8\x80" 0 3
+# U+FE0F last code point of the block -- inside
+m "\xef\xb8\x8f" 0 3
+# U+FDFF one below the block -- outside
+n "\xef\xb7\xbf"
+# U+FE10 one above the block -- outside
+n "\xef\xb8\x90"
+# U+FE07 middle of the block -- inside
+m "\xef\xb8\x87" 0 3
+
+# Block=Specials (U+FFF0..U+FFFF), long name spelling
+# pcre2-only
+pattern \p{Block=Specials}
+features unicode-props
+encoding utf8
+# U+FFF0 first code point of the block -- inside
+m "\xef\xbf\xb0" 0 3
+# U+FFFF last code point of the block -- inside
+m "\xef\xbf\xbf" 0 3
+# U+FFEF one below the block -- outside
+n "\xef\xbf\xaf"
+# U+10000 one above the block -- outside
+n "\xf0\x90\x80\x80"
+# U+FFF7 middle of the block -- inside
+m "\xef\xbf\xb7" 0 3
+
+# Block short alias Specials via blk=
+# pcre2-only
+pattern \p{blk=Specials}
+features unicode-props
+encoding utf8
+# U+FFF0 first code point of the block -- inside
+m "\xef\xbf\xb0" 0 3
+# U+FFFF last code point of the block -- inside
+m "\xef\xbf\xbf" 0 3
+# U+FFEF one below the block -- outside
+n "\xef\xbf\xaf"
+# U+10000 one above the block -- outside
+n "\xf0\x90\x80\x80"
+# U+FFF7 middle of the block -- inside
+m "\xef\xbf\xb7" 0 3
+
+# Block=Mathematical_Alphanumeric_Symbols (U+1D400..U+1D7FF), long name spelling
+# pcre2-only
+pattern \p{Block=Mathematical_Alphanumeric_Symbols}
+features unicode-props
+encoding utf8
+# U+1D400 first code point of the block -- inside
+m "\xf0\x9d\x90\x80" 0 4
+# U+1D7FF last code point of the block -- inside
+m "\xf0\x9d\x9f\xbf" 0 4
+# U+1D3FF one below the block -- outside
+n "\xf0\x9d\x8f\xbf"
+# U+1D800 one above the block -- outside
+n "\xf0\x9d\xa0\x80"
+# U+1D5FF middle of the block -- inside
+m "\xf0\x9d\x97\xbf" 0 4
+
+# Block short alias Math_Alphanum via blk=
+# pcre2-only
+pattern \p{blk=Math_Alphanum}
+features unicode-props
+encoding utf8
+# U+1D400 first code point of the block -- inside
+m "\xf0\x9d\x90\x80" 0 4
+# U+1D7FF last code point of the block -- inside
+m "\xf0\x9d\x9f\xbf" 0 4
+# U+1D3FF one below the block -- outside
+n "\xf0\x9d\x8f\xbf"
+# U+1D800 one above the block -- outside
+n "\xf0\x9d\xa0\x80"
+# U+1D5FF middle of the block -- inside
+m "\xf0\x9d\x97\xbf" 0 4
+
+# Block=Miscellaneous_Symbols_and_Pictographs (U+1F300..U+1F5FF), long name spelling
+# pcre2-only
+pattern \p{Block=Miscellaneous_Symbols_and_Pictographs}
+features unicode-props
+encoding utf8
+# U+1F300 first code point of the block -- inside
+m "\xf0\x9f\x8c\x80" 0 4
+# U+1F5FF last code point of the block -- inside
+m "\xf0\x9f\x97\xbf" 0 4
+# U+1F2FF one below the block -- outside
+n "\xf0\x9f\x8b\xbf"
+# U+1F600 one above the block -- outside
+n "\xf0\x9f\x98\x80"
+# U+1F47F middle of the block -- inside
+m "\xf0\x9f\x91\xbf" 0 4
+
+# Block short alias Misc_Pictographs via blk=
+# pcre2-only
+pattern \p{blk=Misc_Pictographs}
+features unicode-props
+encoding utf8
+# U+1F300 first code point of the block -- inside
+m "\xf0\x9f\x8c\x80" 0 4
+# U+1F5FF last code point of the block -- inside
+m "\xf0\x9f\x97\xbf" 0 4
+# U+1F2FF one below the block -- outside
+n "\xf0\x9f\x8b\xbf"
+# U+1F600 one above the block -- outside
+n "\xf0\x9f\x98\x80"
+# U+1F47F middle of the block -- inside
+m "\xf0\x9f\x91\xbf" 0 4
+
+# Block=Emoticons (U+1F600..U+1F64F), long name spelling
+# pcre2-only
+pattern \p{Block=Emoticons}
+features unicode-props
+encoding utf8
+# U+1F600 first code point of the block -- inside
+m "\xf0\x9f\x98\x80" 0 4
+# U+1F64F last code point of the block -- inside
+m "\xf0\x9f\x99\x8f" 0 4
+# U+1F5FF one below the block -- outside
+n "\xf0\x9f\x97\xbf"
+# U+1F650 one above the block -- outside
+n "\xf0\x9f\x99\x90"
+# U+1F627 middle of the block -- inside
+m "\xf0\x9f\x98\xa7" 0 4
+
+# Block short alias Emoticons via blk=
+# pcre2-only
+pattern \p{blk=Emoticons}
+features unicode-props
+encoding utf8
+# U+1F600 first code point of the block -- inside
+m "\xf0\x9f\x98\x80" 0 4
+# U+1F64F last code point of the block -- inside
+m "\xf0\x9f\x99\x8f" 0 4
+# U+1F5FF one below the block -- outside
+n "\xf0\x9f\x97\xbf"
+# U+1F650 one above the block -- outside
+n "\xf0\x9f\x99\x90"
+# U+1F627 middle of the block -- inside
+m "\xf0\x9f\x98\xa7" 0 4
+
+# Block=Supplemental_Symbols_and_Pictographs (U+1F900..U+1F9FF), long name spelling
+# pcre2-only
+pattern \p{Block=Supplemental_Symbols_and_Pictographs}
+features unicode-props
+encoding utf8
+# U+1F900 first code point of the block -- inside
+m "\xf0\x9f\xa4\x80" 0 4
+# U+1F9FF last code point of the block -- inside
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1F8FF one below the block -- outside
+n "\xf0\x9f\xa3\xbf"
+# U+1FA00 one above the block -- outside
+n "\xf0\x9f\xa8\x80"
+# U+1F97F middle of the block -- inside
+m "\xf0\x9f\xa5\xbf" 0 4
+
+# Block short alias Sup_Symbols_And_Pictographs via blk=
+# pcre2-only
+pattern \p{blk=Sup_Symbols_And_Pictographs}
+features unicode-props
+encoding utf8
+# U+1F900 first code point of the block -- inside
+m "\xf0\x9f\xa4\x80" 0 4
+# U+1F9FF last code point of the block -- inside
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1F8FF one below the block -- outside
+n "\xf0\x9f\xa3\xbf"
+# U+1FA00 one above the block -- outside
+n "\xf0\x9f\xa8\x80"
+# U+1F97F middle of the block -- inside
+m "\xf0\x9f\xa5\xbf" 0 4
+
+# Block=Tags (U+E0000..U+E007F), long name spelling
+# pcre2-only
+pattern \p{Block=Tags}
+features unicode-props
+encoding utf8
+# U+E0000 first code point of the block -- inside
+m "\xf3\xa0\x80\x80" 0 4
+# U+E007F last code point of the block -- inside
+m "\xf3\xa0\x81\xbf" 0 4
+# U+DFFFF one below the block -- outside
+n "\xf3\x9f\xbf\xbf"
+# U+E0080 one above the block -- outside
+n "\xf3\xa0\x82\x80"
+# U+E003F middle of the block -- inside
+m "\xf3\xa0\x80\xbf" 0 4
+
+# Block short alias Tags via blk=
+# pcre2-only
+pattern \p{blk=Tags}
+features unicode-props
+encoding utf8
+# U+E0000 first code point of the block -- inside
+m "\xf3\xa0\x80\x80" 0 4
+# U+E007F last code point of the block -- inside
+m "\xf3\xa0\x81\xbf" 0 4
+# U+DFFFF one below the block -- outside
+n "\xf3\x9f\xbf\xbf"
+# U+E0080 one above the block -- outside
+n "\xf3\xa0\x82\x80"
+# U+E003F middle of the block -- inside
+m "\xf3\xa0\x80\xbf" 0 4
+
+# Block=Supplementary_Private_Use_Area-A (U+F0000..U+FFFFF), long name spelling
+# pcre2-only
+pattern \p{Block=Supplementary_Private_Use_Area_A}
+features unicode-props
+encoding utf8
+# U+F0000 first code point of the block -- inside
+m "\xf3\xb0\x80\x80" 0 4
+# U+FFFFF last code point of the block -- inside
+m "\xf3\xbf\xbf\xbf" 0 4
+# U+EFFFF one below the block -- outside
+n "\xf3\xaf\xbf\xbf"
+# U+100000 one above the block -- outside
+n "\xf4\x80\x80\x80"
+# U+F7FFF middle of the block -- inside
+m "\xf3\xb7\xbf\xbf" 0 4
+
+# Block short alias Sup_PUA_A via blk=
+# pcre2-only
+pattern \p{blk=Sup_PUA_A}
+features unicode-props
+encoding utf8
+# U+F0000 first code point of the block -- inside
+m "\xf3\xb0\x80\x80" 0 4
+# U+FFFFF last code point of the block -- inside
+m "\xf3\xbf\xbf\xbf" 0 4
+# U+EFFFF one below the block -- outside
+n "\xf3\xaf\xbf\xbf"
+# U+100000 one above the block -- outside
+n "\xf4\x80\x80\x80"
+# U+F7FFF middle of the block -- inside
+m "\xf3\xb7\xbf\xbf" 0 4
+
+# Block=Supplementary_Private_Use_Area-B (U+100000..U+10FFFF), long name spelling
+# pcre2-only
+pattern \p{Block=Supplementary_Private_Use_Area_B}
+features unicode-props
+encoding utf8
+# U+100000 first code point of the block -- inside
+m "\xf4\x80\x80\x80" 0 4
+# U+10FFFF last code point of the block -- inside
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+FFFFF one below the block -- outside
+n "\xf3\xbf\xbf\xbf"
+# U+107FFF middle of the block -- inside
+m "\xf4\x87\xbf\xbf" 0 4
+
+# Block short alias Sup_PUA_B via blk=
+# pcre2-only
+pattern \p{blk=Sup_PUA_B}
+features unicode-props
+encoding utf8
+# U+100000 first code point of the block -- inside
+m "\xf4\x80\x80\x80" 0 4
+# U+10FFFF last code point of the block -- inside
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+FFFFF one below the block -- outside
+n "\xf3\xbf\xbf\xbf"
+# U+107FFF middle of the block -- inside
+m "\xf4\x87\xbf\xbf" 0 4
+
+# Block: unassigned code point U+0378 is still inside Greek and Coptic (block membership is not assignment)
+# pcre2-only
+pattern \p{Block=Greek}
+features unicode-props
+encoding utf8
+# U+0378 unassigned in Greek and Coptic -- inside
+m "\xcd\xb8" 0 2
+# U+03FF last of block -- inside
+m "\xcf\xbf" 0 2
+# U+0400 Cyrillic -- outside
+n "\xd0\x80"
+
+# Block: colon separator, Block:Cyrillic
+# pcre2-only
+pattern \p{Block:Cyrillic}
+features unicode-props
+encoding utf8
+# U+0400 first code point of the block -- inside
+m "\xd0\x80" 0 2
+# U+04FF last code point of the block -- inside
+m "\xd3\xbf" 0 2
+# U+03FF one below the block -- outside
+n "\xcf\xbf"
+# U+0500 one above the block -- outside
+n "\xd4\x80"
+# U+047F middle of the block -- inside
+m "\xd1\xbf" 0 2
+
+# Block: negation \P{Block=Cyrillic}
+# pcre2-only
+pattern \P{Block=Cyrillic}
+features unicode-props
+encoding utf8
+# U+0400 first code point of the block -- inside
+n "\xd0\x80"
+# U+04FF last code point of the block -- inside
+n "\xd3\xbf"
+# U+03FF one below the block -- outside
+m "\xcf\xbf" 0 2
+# U+0500 one above the block -- outside
+m "\xd4\x80" 0 2
+# U+047F middle of the block -- inside
+n "\xd1\xbf"
+
+# Block: \p{^Block=Cyrillic}
+# pcre2-only
+pattern \p{^Block=Cyrillic}
+features unicode-props
+encoding utf8
+# U+0400 first code point of the block -- inside
+n "\xd0\x80"
+# U+04FF last code point of the block -- inside
+n "\xd3\xbf"
+# U+03FF one below the block -- outside
+m "\xcf\xbf" 0 2
+# U+0500 one above the block -- outside
+m "\xd4\x80" 0 2
+# U+047F middle of the block -- inside
+n "\xd1\xbf"
+
+# Block: in a class, [\p{Block=Cyrillic}\p{Block=Hebrew}]
+# pcre2-only
+pattern [\p{Block=Cyrillic}\p{Block=Hebrew}]
+features unicode-props
+encoding utf8
+# U+0400 first code point of the block -- inside
+m "\xd0\x80" 0 2
+# U+04FF last code point of the block -- inside
+m "\xd3\xbf" 0 2
+# U+0590 first of Hebrew -- inside
+m "\xd6\x90" 0 2
+# U+05FF last of Hebrew -- inside
+m "\xd7\xbf" 0 2
+# U+0500 Cyrillic Supplement -- outside both
+n "\xd4\x80"
+# U+0041 -- outside
+n "A"
+
+# Block: caseless matching leaves it alone, flags i
+# pcre2-only
+pattern \p{Block=Basic_Latin}
+features unicode-props
+encoding utf8
+flags i
+# U+0041 -- inside
+m "A" 0 1
+# U+0061 -- inside
+m "a" 0 1
+# U+00E9 -- outside
+n "\xc3\xa9"
+
+# UNSURE: loose spelling (cli.md 1.17.1 para 2 states loose matching for scripts; Block says "long name or short alias") \p{BLK=Greek}
+# pcre2-only
+pattern \p{BLK=Greek}
+features unicode-props
+encoding utf8
+# U+0370 first of Greek and Coptic -- inside
+m "\xcd\xb0" 0 2
+# U+0400 -- outside
+n "\xd0\x80"
+
+# UNSURE: loose spelling (cli.md 1.17.1 para 2 states loose matching for scripts; Block says "long name or short alias") \p{block=greek}
+# pcre2-only
+pattern \p{block=greek}
+features unicode-props
+encoding utf8
+# U+0370 first of Greek and Coptic -- inside
+m "\xcd\xb0" 0 2
+# U+0400 -- outside
+n "\xd0\x80"
+
+# UNSURE: loose spelling (cli.md 1.17.1 para 2 states loose matching for scripts; Block says "long name or short alias") \p{Block=GREEK_AND_COPTIC}
+# pcre2-only
+pattern \p{Block=GREEK_AND_COPTIC}
+features unicode-props
+encoding utf8
+# U+0370 first of Greek and Coptic -- inside
+m "\xcd\xb0" 0 2
+# U+0400 -- outside
+n "\xd0\x80"
+
+# UNSURE: loose spelling (cli.md 1.17.1 para 2 states loose matching for scripts; Block says "long name or short alias") \p{Block=greekandcoptic}
+# pcre2-only
+pattern \p{Block=greekandcoptic}
+features unicode-props
+encoding utf8
+# U+0370 first of Greek and Coptic -- inside
+m "\xcd\xb0" 0 2
+# U+0400 -- outside
+n "\xd0\x80"
+
+# UNSURE: loose spelling (cli.md 1.17.1 para 2 states loose matching for scripts; Block says "long name or short alias") \p{Block=Greek-And-Coptic}
+# pcre2-only
+pattern \p{Block=Greek-And-Coptic}
+features unicode-props
+encoding utf8
+# U+0370 first of Greek and Coptic -- inside
+m "\xcd\xb0" 0 2
+# U+0400 -- outside
+n "\xd0\x80"
+
+# UNSURE: loose spelling (cli.md 1.17.1 para 2 states loose matching for scripts; Block says "long name or short alias") \p{Block=Greek And Coptic}
+# pcre2-only
+pattern \p{Block=Greek And Coptic}
+features unicode-props
+encoding utf8
+# U+0370 first of Greek and Coptic -- inside
+m "\xcd\xb0" 0 2
+# U+0400 -- outside
+n "\xd0\x80"
+
+# Block=No_Block: code points no block holds
+# pcre2-only
+pattern \p{Block=No_Block}
+features unicode-props
+encoding utf8
+# U+2FE0 gap between Kangxi Radicals (ends 2FDF) and Ideographic Description Characters (2FF0..) -- No_Block
+m "\xe2\xbf\xa0" 0 3
+# U+2FEF last of the 2FE0..2FEF gap -- No_Block
+m "\xe2\xbf\xaf" 0 3
+# U+E0080 gap between Tags (ends E007F) and Variation Selectors Supplement (E0100..) -- No_Block
+m "\xf3\xa0\x82\x80" 0 4
+# U+E00FF last of the E0080..E00FF gap -- No_Block
+m "\xf3\xa0\x83\xbf" 0 4
+# U+2FDF last of Kangxi Radicals -- in a block
+n "\xe2\xbf\x9f"
+# U+2FF0 first of Ideographic Description Characters -- in a block
+n "\xe2\xbf\xb0"
+# U+E007F last of Tags -- in a block
+n "\xf3\xa0\x81\xbf"
+# U+E0100 first of Variation Selectors Supplement -- in a block
+n "\xf3\xa0\x84\x80"
+# U+0041 -- in Basic Latin
+n "A"
+
+# Block=NB (short alias for No_Block, per the spec text)
+# pcre2-only
+pattern \p{blk=NB}
+features unicode-props
+encoding utf8
+# U+2FE0 -- No_Block
+m "\xe2\xbf\xa0" 0 3
+# U+0041 -- Basic Latin
+n "A"
+
+# byte encoding (clamped to Latin-1): \p{Block=Basic_Latin}
+# pcre2-only
+pattern \p{Block=Basic_Latin}
+features unicode-props
+encoding byte
+# byte 0x41 -- inside
+m "A" 0 1
+# byte 0x7F -- inside
+m "\x7f" 0 1
+# byte 0x80 -- outside
+n "\x80"
+# byte 0xE9 -- outside
+n "\xe9"
+
+# byte encoding (clamped to Latin-1): \p{Block=Latin_1_Sup}
+# pcre2-only
+pattern \p{Block=Latin_1_Sup}
+features unicode-props
+encoding byte
+# byte 0x41 -- outside
+n "A"
+# byte 0x7F -- outside
+n "\x7f"
+# byte 0x80 -- inside
+m "\x80" 0 1
+# byte 0xE9 -- inside
+m "\xe9" 0 1
+# byte 0xFF -- inside
+m "\xff" 0 1
+
+# byte encoding (clamped to Latin-1): \p{Block=Greek}
+# pcre2-only
+pattern \p{Block=Greek}
+features unicode-props
+encoding byte
+# byte 0x41 -- outside
+n "A"
+# byte 0xE9 -- outside
+n "\xe9"
+# byte 0xFF -- outside
+n "\xff"
+
+# REFUSED: Java-style In prefix is not accepted (spec para 5)
+# pcre2-only
+pattern \p{InGreek}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: Is prefix is not accepted (spec para 5)
+# pcre2-only
+pattern \p{IsGreek}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: unknown block name
+# pcre2-only
+pattern \p{Block=NoSuchBlock}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: empty value
+# pcre2-only
+pattern \p{Block=}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: unknown block name
+# pcre2-only
+pattern \p{Block=Greek_Extended_Extra}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: Java-style In prefix
+# pcre2-only
+pattern \p{InBasicLatin}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: prefix without value is not a property
+# pcre2-only
+pattern \p{Block}
+features unicode-props
+encoding utf8
+perr
+
+# no features line, byte encoding: Block needs unicode-props (only -e utf8 implies it, cli.md 1.7 para 3)
+# pcre2-only
+pattern \p{Block=Greek}
+encoding byte
+perr
+
+# no features line, utf8: unicode-props is implied by -e utf8 (cli.md 1.7 para 3), so Block works
+# pcre2-only
+pattern \p{Block=Greek}
+encoding utf8
+# U+03B1
+m "\xce\xb1" 0 2
+# A
+n "A"
