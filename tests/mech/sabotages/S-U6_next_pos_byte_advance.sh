@@ -41,7 +41,9 @@ SAB_REACH_POP='tests/utf8/axis09_nextpos_findall.rxt|^pattern|14'  # measured 20
 # tests/utf8 libpcre2 differential instrument (the corpus follow-up in the
 # admin queue) for its oracle. When that cell lands, this flips NOW
 # DETECTED and the expectation is re-measured and changed.
-SAB_EXPECT=UNDETECTED
+# [2026-11-11, lane mechtri3] FLIPPED: the cell above is in (tests/utf8 find-all cells via the vlbbuild U6 work); measured
+# locally AND in cloud run 43108213213: corpus 19fail/4975pass, NOW DETECTED.
+SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='"size_t $_next_pos(const unsigned char *s, size_t n, size_t pos)\n"
 "{\n"
