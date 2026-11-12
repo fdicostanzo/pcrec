@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """docs/dev/lanes/k382_evidence/census.py -- lane k382's MOVER CENSUS for [MEMFN] R-38 K38-2 (pcrec abi
-100 -> 101 since lane k382m merged main e889ba64c; 99 -> 100 over d81ebd294 before it; was 98 -> 99, "the seam event"), in r30b_evidence/census.py's shape (emit_sweep has no abi normalization):
+103 -> 104 since lane k382n merged main 51481d1b3; 100 -> 101 over e889ba64c (lane k382m) and 99 -> 100 over d81ebd294 before it; was 98 -> 99, "the seam event"), in r30b_evidence/census.py's shape (emit_sweep has no abi normalization):
 which corpus artifacts move, does each move lie in a DECLARED population
 (docs/design/memfn/span_runs_sheet.md rev 1.3 §5.1, the abi changelog's top entry), and did every
 artifact that SHOULD move (read off BASE, never off the tip) actually move?
@@ -8,9 +8,9 @@ artifact that SHOULD move (read off BASE, never off the tip) actually move?
     python3 -I census.py --base BIN --new BIN --tree DIR --out FILE [--jobs N] [--shard I/N]
                          [--sample N] [--patterns-file F]... [--control NAME]
 
-BASE is main e889ba64c's pcrec ([PFFIX] + the D27 \\p corpus + cloud mech/recid, abi 100), NEW the K38-2 tip's (abi 101). The corpus is every distinct
+BASE is main 51481d1b3's pcrec ([S1] never-match + min-width, abi 103; e889ba64c, abi 100, before lane k382n), NEW the K38-2 tip's (abi 104). The corpus is every distinct
 pattern scripts/emit_sweep.py enumerates (its `enumerate_corpus`, one implementation), each compiled
-`--features all` like emit_sweep's argv streams. NEW's output has the abi digits mapped back (101 -> 100, --abi)
+`--features all` like emit_sweep's argv streams. NEW's output has the abi digits mapped back (104 -> 103, --abi)
 in the five places they occur and nothing else is normalized; rc and stderr are compared too.
 
 ARMS (.c, `-p rx -o -`): c-default, c-utf8 (-e utf8), c-vm, c-vm-utf8, c-comments (-fcomments),
@@ -89,8 +89,8 @@ def abi_pairs(old, new):
             (b"    .abi = %d," % new, b"    .abi = %d," % old)]
 
 
-ABI = abi_pairs(100, 101)       # --abi OLD:NEW sets it (the lane's event: 100 -> 101 over BASE e889ba64c)
-BASE_REV = "e889ba64c"          # --base-rev: the identity gate's arm list is read against it
+ABI = abi_pairs(103, 104)       # --abi OLD:NEW sets it (the lane's event: 103 -> 104 over BASE 51481d1b3)
+BASE_REV = "51481d1b3"          # --base-rev: the identity gate's arm list is read against it
 WITNESS = None                  # --witness-bins BASE_W NEW_W: the -DPCREC_SIMD_WITNESS builds
 C = ["-p", "rx", "--features", "all", "-o", "-"]
 # (arm, extra argv, facts encoding)
@@ -749,8 +749,8 @@ def main():
     ap.add_argument("--control", default="", choices=["", "no-p3", "no-norm", "plant-in-run", "plant-p4-move", "plant-p2r", "plant-p2r-code"])
     ap.add_argument("--no-xarms", action="store_true", help="skip the identity gate's --extra arms")
     ap.add_argument("--no-composition", action="store_true", help="skip the composition stream")
-    ap.add_argument("--abi", default="100:101", help="OLD:NEW, the abi event (NEW's digits mapped back)")
-    ap.add_argument("--base-rev", default="e889ba64c", help="BASE's revision (the identity arm list)")
+    ap.add_argument("--abi", default="103:104", help="OLD:NEW, the abi event (NEW's digits mapped back)")
+    ap.add_argument("--base-rev", default="51481d1b3", help="BASE's revision (the identity arm list)")
     ap.add_argument("--witness-bins", nargs=2, metavar=("BASE_W", "NEW_W"),
                     help="the -DPCREC_SIMD_WITNESS builds of BASE and NEW (the identity arm `witness`)")
     a = ap.parse_args()

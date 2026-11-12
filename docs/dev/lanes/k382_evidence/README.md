@@ -1,6 +1,6 @@
-# k382_evidence — lane k382's mover census ([MEMFN] R-38 K38-2, pcrec abi 100 -> 101 over main e889ba64c since lane k382m; 99 -> 100 over d81ebd294 before)
+# k382_evidence — lane k382's mover census ([MEMFN] R-38 K38-2, pcrec abi 103 -> 104 over main 51481d1b3 since lane k382n; 100 -> 101 over e889ba64c (lane k382m) and 99 -> 100 over d81ebd294 before)
 
-`census.py` answers, over the whole corpus: which artifacts move between BASE (main e889ba64c, abi 100; d81ebd294, abi 99, before lane k382m) and the K38-2 tip, does every moved line lie in a population declared by
+`census.py` answers, over the whole corpus: which artifacts move between BASE (main 51481d1b3, abi 103; e889ba64c, abi 100, before lane k382n; d81ebd294, abi 99, before lane k382m) and the K38-2 tip, does every moved line lie in a population declared by
 `docs/design/memfn/span_runs_sheet.md` rev 1.3 §5.1, and did every artifact that SHOULD move (predicted from
 BASE's own facts listing and artifact, never from the tip) move as declared. emit_sweep has no abi
 normalization, so an abi event's identity witness is this census (shape: `r30b_evidence/census.py`).
@@ -10,7 +10,7 @@ normalization, so an abi event's identity witness is this census (shape: `r30b_e
         [--sample N [--sample-seed K]]   # a sample run (witnesses + long-run patterns + an even spread)
         [--patterns-file F]...           # extra raw patterns
         [--no-xarms] [--no-composition]  # skip the identity gate's --extra arms / the composition stream
-        [--abi 100:101] [--base-rev e889ba64c] # the event and BASE's revision (defaults)
+        [--abi 103:104] [--base-rev 51481d1b3] # the event and BASE's revision (defaults)
         [--witness-bins BASE_W TIP_W]    # -DPCREC_SIMD_WITNESS builds: the identity arm `witness`
         [--control no-p3|no-norm|plant-in-run|plant-p4-move]  # NEGATIVE controls: each must turn the verdict red
 
