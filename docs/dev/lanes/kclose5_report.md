@@ -45,4 +45,8 @@ comment cites job 597, ebcc10aa1 and D183. Script: /var/tmp/pcrec-pcrec/scratch/
 - Any utf8 mover: none (STOP not triggered).
 - strict / py_compile / self-test: done, all clean.
 
+## STATE AT HANDOFF
+
+Re-pin committed; strict rc=0; self-test 28/0; job 597 verdict read (mover-free).
+
 OWED: none
