@@ -202,3 +202,7 @@ Not run here: test-recursion-identity. The FILEPIN self-pin is to the merge, and
 - **Under (B):** retire c2b at every reader listed in "Cloud reds".
 - **Either way,** test-findings is the check to run. It is one harness section of a few minutes.
 - **The box.** Nothing queued, no run in flight.
+
+STATE: stopped (waiting on the c2b ruling; everything else delivered)
+
+OWED: test-findings §7/§8 only, which waits on main's ruling on c2b (see "Cloud reds").
