@@ -801,7 +801,9 @@ def main():
             ("EMPTY " + ",".join(floor_bad)) if floor_bad else ("held" if full else "not applied (sample run)")))
         rc = 1 if unexpected or floor_bad or not pats else 0
         f.write("== census COMPLETE: %d unexplained, verdict %s rc=%d\n" % (unexpected, "GREEN" if rc == 0 else "RED", rc))
-    os.system("grep -E '^(UNEXPECTED|== arm c-|== arm (ir|facts|composition) |== floor|== census|== NOT|== comp)' "
+    # the verdict lines (`== floor`, `== census COMPLETE`) live in --out ONLY: the gate jobs grep them from
+    # there and declare each once (k382cen: an echo here printed them twice, boxqueue POPULATION-OVER)
+    os.system("grep -E '^(UNEXPECTED|== arm c-|== arm (ir|facts|composition) |== NOT|== comp)' "
               + a.out + " | head -40; grep -c '^== arm x:' " + a.out + " | sed 's/^/== x-arms: /'; "
               "grep '^== arm x:' " + a.out + " | grep -v 'unexplained=0$' | head")
     return rc
