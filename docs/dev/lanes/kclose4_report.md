@@ -128,4 +128,6 @@ read utf8 TAG FLOOR lines too.
 - One queued BASE-vs-tip job: not queued, because the existing job 580 record
   is that comparison (reason above).
 
-STATE AT HANDOFF: re-pin committed (646a8c0be); make strict rc=0; self-test rc=0 (28/0); 580 dry-run rc=0, not queued. Nothing owed by this lane.
+## STATE AT HANDOFF
+
+Re-pin committed (646a8c0be); make strict rc=0; self-test rc=0 (28/0); 580 dry-run rc=0, not queued. Nothing owed by this lane.
