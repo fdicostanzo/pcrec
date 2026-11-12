@@ -713,8 +713,9 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
  * THE RUN's REPLY (mf_class.run, R-38 K38-2): where the run's link is
  * tested, THE RUN DECISION (presence.c kit_run_decide) with the ROUTE as its
  * input (U3): the deciding row names the stretch mode (`fd_run_modes[]`:
- * P3, the OPTIONAL route's pick, its window; every other row the whole
- * run); `member` on the run span is 0 and unread.
+ * P3, the OPTIONAL route's pick, its window; P0 and P9 the whole run; an
+ * unlisted row testing the run is refused); `member` on the run span is 0
+ * and unread (set so here: a row template's `member` is a MEMBER span's).
  * P4, set-leads ported, is an ORDER row: asked on its own after the
  * terminal (as the FIND slot asks its N-rows), on a member span it puts the
  * set's pick, verified, at the HEAD of the chain, ahead of the run. Its
@@ -734,18 +735,25 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
  * `quiet`: the query's (mf_ask) records nothing; a define's prints one
  * `MFTRACE FD ... slot=PRES` record per span, the deciding rows and the
  * final link. */
-/* The run decision's stretch mode by the run link's deciding row, first
- * match (the last row, no id, is every other row's). */
+/* The run decision's stretch mode by the run link's deciding row: every
+ * row that may TEST the run's link is listed, and an unlisted one is
+ * REFUSED, never handed a catch-all's stretch (a renamed P3 or a new
+ * run-verifying row would otherwise move the verified extent, the compare
+ * and both masses silently; review 2026-11-11 r1 k382 F12, memory
+ * pcrec-no-silent-defaults). PLAN: the stretch as a column of the PRES row
+ * itself (span_runs_sheet.md §5 K38-2 PLAN (a)). */
 static const struct { const char *row; kit_run_stretch st; } fd_run_modes[] = {
-    { "P3", KIT_RUN_WINDOW },
-    { NULL, KIT_RUN_WHOLE },
+    { "P0", KIT_RUN_WHOLE },    /* REQUIRED: the whole run (K66)            */
+    { "P3", KIT_RUN_WINDOW },   /* the OPTIONAL route's pick: its window    */
+    { "P9", KIT_RUN_WHOLE },    /* the total default: the whole run         */
 };
 
-static kit_run_stretch fd_run_mode(const char *row)
+/* 0 and *st set, or -1: `row` names no listed mode */
+static int fd_run_mode(const char *row, kit_run_stretch *st)
 {
-    unsigned i = 0;
-    while (fd_run_modes[i].row && strcmp(fd_run_modes[i].row, row)) i++;
-    return fd_run_modes[i].st;
+    for (unsigned i = 0; i < sizeof fd_run_modes / sizeof fd_run_modes[0]; i++)
+        if (!strcmp(fd_run_modes[i].row, row)) { *st = fd_run_modes[i].st; return 0; }
+    return -1;
 }
 
 int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
@@ -808,9 +816,17 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
             k.member = (uint8_t)(pk.set_pick + 1);
             k.verify = run < 0 && (int)i == pk.set_pick;
         }
-        if (!member && k.verify)    /* the run's reply, the route its row names */
-            cls->run = kit_run_decide(kit_byte_rate(art), kit_run_opts_of(art, fd_run_mode(t->id)),
+        if (!member) k.member = 0;  /* the run span's `member` is 0 and UNREAD (memfn.h
+                                       mf_link; F13): its stretch is `cls->run`'s */
+        if (!member && k.verify) {  /* the run's reply, the route its row names */
+            kit_run_stretch st;
+            if (fd_run_mode(t->id, &st)) {
+                *why = "a row tests the run's link but names no stretch mode (fd_run_modes[])";
+                return -1;
+            }
+            cls->run = kit_run_decide(kit_byte_rate(art), kit_run_opts_of(art, st),
                                       kit_wspan_at, rs, rs->len, NULL);
+        }
         /* P4, the order row, asked on its own (deny, gate, predicate) */
         led[i] = 0;
         if (member && !k.proven_by && p4 < FD_NROWS &&

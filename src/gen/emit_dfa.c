@@ -1102,10 +1102,13 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
 }
 
 /* [OPT-REQPOS] pcrec's NOTE on the run pre-check's part: the fact its call
- * rests on, over the run's VERIFIED EXTENT as the kit's reply `rr` names it
- * (R-38 K38-2; the whole run, or the stretch the kit chose), the bytes
- * escaped for the comment, with the mask where the extent carries one, and
- * the reply's scan position inside the extent.
+ * rests on, the WHOLE run the analysis found (every match contains it), the
+ * bytes escaped for the comment, with the mask where the run carries one;
+ * the kit's reply `rr` names the scan (a position from the run's position
+ * 0) and, where the run decision verifies a STRETCH of it rather than the
+ * whole run, the positions each hit compares (R-38 K38-2; review
+ * 2026-11-11 r1 k382 F4: the note once named the stretch as "the run" and
+ * its scan by its offset inside the stretch).
  *
  * [K66] WHY THE WHOLE RUN WHERE NO DFA SCAN FRONTS THE ROUTE. With one
  * window of the run compared, a subject holding the window but not another
@@ -1115,11 +1118,21 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
  * R-38 K38-2 that is the kit's run decision with the route as its input
  * (the REQUIRED span verifies the whole run, memfn/src/finder.c fd_pres);
  * `req_set_rest_members`' header says why that route and only that one. */
+static void req_note_stretch(StrBuf *c, const char *indent, const mf_run_reply *rr, int n)
+{
+    if (rr->ver_lo == 0 && rr->ver_len == n) {
+        pcrec_sb_printf(c, " */\n");
+        return;
+    }
+    pcrec_sb_printf(c, ";\n%s * each hit compares its positions %d..%d. */\n", indent,
+                    (int)rr->ver_lo, (int)rr->ver_lo + (int)rr->ver_len - 1);
+}
+
 static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, const mf_run_reply *rr)
 {
     const ReqRun *r = pcrec_fact_req_whole_run(cx);
-    const unsigned char *b = r->whole + rr->ver_lo, *mk = r->whole_mask + rr->ver_lo;
-    int n = rr->ver_len, m = rr->scan - rr->ver_lo, k;
+    const unsigned char *b = r->whole, *mk = r->whole_mask;
+    int n = r->whole_len, k;
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     if (run_mask_or_null(mk, n)) {
         /* [OPT-LITSCAN] S4 C3: a masked run names its mask, so a reader
@@ -1133,8 +1146,8 @@ static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, const mf_run_re
         pcrec_sb_printf(c,
             " (a byte matches where\n"
             "%s * byte & mask equals it), so a window without them holds no match\n"
-            "%s * at all; the scan is on position %d of the run. */\n",
-            indent, indent, m);
+            "%s * at all; the scan is on position %d of the run",
+            indent, indent, (int)rr->scan);
     } else {
         pcrec_sb_printf(c,
             "%s/* [OPT-REQPOS] every match of this pattern contains the %d bytes\n"
@@ -1142,9 +1155,10 @@ static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, const mf_run_re
         pcrec_sb_ctext(c, b, (size_t)n, PCREC_CTEXT_COMMENT);
         pcrec_sb_printf(c,
             "\", so a window without them holds no match at all;\n"
-            "%s * the scan is on byte %d at offset %d of the run. */\n",
-            indent, (int)r->whole[rr->scan], m);
+            "%s * the scan is on byte %d at offset %d of the run",
+            indent, (int)r->whole[rr->scan], (int)rr->scan);
     }
+    req_note_stretch(c, indent, rr, n);
     pcrec_sb_cmt_close(c);
 }
 
@@ -1452,7 +1466,7 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     unsigned char rest[256];
     bool handoff = false;
     mf_class *cls;
-    if (b < 0 && pcrec_fact_req_run(cx)->len < 2) {
+    if (b < 0 && pcrec_fact_req_whole_run(cx)->whole_len < 2) {
         PCREC_CAND_TRACE_REC("PRESENCE", "-", "nothing", "req-site");
         return NULL;
     }
@@ -6750,8 +6764,8 @@ static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
     RunPin pin = { false, 0, 0, 0, 0 };
     if (wk && us->kind != DFA_PF_NONE && !pcrec_opt_has(cx->opt, PCREC_NO_OFFSET_SKIP) &&
         !pcrec_opt_has(cx->opt, PCREC_NO_RUN_PREFILTER)) {
-        r = pcrec_fact_req_run_stated(cx);
-        if (r->len >= 2) pin = *pcrec_fact_run_pin_stated(cx);
+        r = pcrec_fact_req_whole_run_stated(cx);
+        if (r->whole_len >= 2) pin = *pcrec_fact_run_pin_stated(cx);
         if (!pin.pinned) r = NULL;
     }
     for (int i = 0; r && i < pin.len; i++)
@@ -6763,7 +6777,7 @@ static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
     int w = pin.o - pin.at, lo = pin.at, hi = pin.at + pin.len;   /* R: window [lo, hi) */
     while (r && lo > 0 && walk_proves(wk, w + lo - 1, r->whole[lo - 1], r->whole_mask[lo - 1]))
         lo--;
-    while (r && hi < r->len && walk_proves(wk, w + hi, r->whole[hi], r->whole_mask[hi])) hi++;
+    while (r && hi < r->whole_len && walk_proves(wk, w + hi, r->whole[hi], r->whole_mask[hi])) hi++;
     int z0 = -w;        /* the window position at offset 0 */
     bool parked_r = r && z0 >= lo && z0 < hi && r->whole_mask[z0] == 0xFF &&
                     us->kind == DFA_PF_ONE_BYTE && us->cand.count == 1 &&
@@ -7301,9 +7315,9 @@ static RunPin us_run_pin(Ctx *cx, const UnanchStart *us)
 static bool pf_run_applies_common(const CandSel *s)
 {
     const UnanchStart *u = s->us;
-    const ReqRun *r = pcrec_fact_req_run(s->cx);
+    const ReqRun *r = pcrec_fact_req_whole_run(s->cx);
     if (!s->forward || u->kind == DFA_PF_NONE) return false;
-    if (r->len < 2) return false;
+    if (r->whole_len < 2) return false;
     RunPin pin = us_run_pin(s->cx, u);
     if (!pin.pinned) return false;
     return next_key_holds(s, NK_RUN_PINNED);
@@ -7346,7 +7360,7 @@ static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const CandRow *pf, OfsTe
     t->scan_k = w->stop;
     t->scan_byte = nb == 1 ? b : -1;
     if (pf->u.pf.run_term) {
-        const ReqRun *r = pcrec_fact_req_run(cx);
+        const ReqRun *r = pcrec_fact_req_whole_run(cx);
         RunPin pin = us_run_pin(cx, us);
         t->run_o = w->run_lo;
         t->run_len = w->run_len;
@@ -7444,9 +7458,9 @@ static bool ofs_test_pos_in_cube(const OfsTest *t, int o, const ReqRun *r, int i
 static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *us,
                                   const mf_pres_proof *before)
 {
-    const ReqRun *r = pcrec_fact_req_run(cx);
+    const ReqRun *r = pcrec_fact_req_whole_run(cx);
     RunPin pin = us_run_pin(cx, us);
-    if (r->len < 2 || !pin.pinned || pin.o < pin.at) return false;
+    if (r->whole_len < 2 || !pin.pinned || pin.o < pin.at) return false;
     mf_class *cls = pcrec_arena_alloc(&cx->arena, sizeof *cls);
     const mf_site *ps = req_pres_ask(cx, before, cls);
     int run = req_pres_run(ps);
@@ -8539,9 +8553,9 @@ static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
 {
     int p = cs->byte;
     if (p < 0) return false;
-    if (pcrec_fact_req_run(cx)->len >= 2 && !cs->run_verified) return false;
+    if (pcrec_fact_req_whole_run(cx)->whole_len >= 2 && !cs->run_verified) return false;
     if (p == q) return true;
-    if (pcrec_fact_req_run(cx)->len >= 2) return false;
+    if (pcrec_fact_req_whole_run(cx)->whole_len >= 2) return false;
     if (!cs->one_byte) return false;
     return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);
 }
@@ -8560,7 +8574,7 @@ static int req_set_pick_of(Ctx *cx, const ReqSet *set)
  * the machine fields of the `CandSel` are unused). */
 static bool req_none_applies(const CandSel *s)
 {
-    return pcrec_fact_req_byte(s->cx) < 0 && pcrec_fact_req_run(s->cx)->len < 2;
+    return pcrec_fact_req_byte(s->cx) < 0 && pcrec_fact_req_whole_run(s->cx)->whole_len < 2;
 }
 static bool req_one_attempt_applies(const CandSel *s)
 {
@@ -8611,7 +8625,7 @@ static bool req_dominated_applies(const CandSel *s)
  * it where this row always asked it, Q-WR-12). */
 static bool req_set_leads_applies(const CandSel *s)
 {
-    if (pcrec_fact_req_run(s->cx)->len < 2) return false;
+    if (pcrec_fact_req_whole_run(s->cx)->whole_len < 2) return false;
     (void)pcrec_fact_req_set(s->cx);
     mf_class *cls = pcrec_arena_alloc(&s->cx->arena, sizeof *cls);
     const mf_site *ps = req_pres_ask(s->cx, NULL, cls);
@@ -8947,7 +8961,7 @@ static const CandUse *req_use_read(Ctx *cx, CandSlot reader)
 static unsigned long long req_landmark_hit_ppm(Ctx *cx, const uint32_t *rate)
 {
     /* the `req_run` fact, as before R-38 K38-2: uncut, it names the whole run */
-    const ReqRun *r = pcrec_fact_req_run(cx);
+    const ReqRun *r = pcrec_fact_req_whole_run(cx);
     unsigned long long hit = 1000000u;
     uint8_t set[256];
     if (r->whole_len < 2) {
@@ -11029,12 +11043,15 @@ static const CandRow *cand_select_quiet(CandSlot slot, const CandSel *s)
  * the row's predicate, verbatim. */
 static bool req_set_leads_own(Ctx *cx)
 {
-    const ReqRun *r = pcrec_fact_req_run(cx);
+    const ReqRun *r = pcrec_fact_req_whole_run(cx);
     unsigned char cand[2], care[2];
     int q;
-    if (r->len < 2) return false;
+    if (r->whole_len < 2) return false;
     if ((q = req_set_pick_of(cx, pcrec_fact_req_set_stated(cx))) < 0) return false;
-    int m = r->idx;     /* pcrec's own pick: the shadow's source is never the kit's */
+    /* pcrec's own pick (`req_byte`'s derivation, src/facts/req.c): the shadow's source
+       is never the kit's */
+    int m = pcrec_find_run_scan_index(pcrec_find_byte_rate(cx), r->whole, r->whole_mask,
+                                      r->whole_len);
     cand[0] = r->whole[m];
     care[0] = r->whole_mask[m];
     cand[1] = (unsigned char)q;
@@ -11056,7 +11073,7 @@ static int req_rest_own_sig(Ctx *cx, int lead, int *n)
     uint32_t h = 2166136261u;
     *n = 0;
     if (pcrec_artifact_has_dfa_scan(cx)) return 0;
-    if (r->len >= 2) {
+    if (r->whole_len >= 2) {
         for (int k = 0; k < r->whole_len; k++)
             if (r->whole_mask[k] == 0xFF) done[r->whole[k]] = true;
     } else if (pcrec_fact_req_byte_stated(cx) >= 0) done[pcrec_fact_req_byte_stated(cx)] = true;
@@ -15906,33 +15923,42 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
  *   1  the pre-check renders its run part (`admit` emits, the run's link
  *      tested): the run reply's `scan` (`req_site_define` keeps the same);
  *   2  else a window-site search reads a run member: the `cover` find
- *      (its member inside the run's one placement in the cover's sets,
- *      `req_run_in_cover`) or the run-pinned prefilter (`ofs_test_of`'s
- *      row), each its `mf_wreply.run_member` as a whole-run index (the
- *      member is an attempt offset; the prefilter's position 0 sits at the
- *      pin's `o - at`);
- *   3  else -1: no `@` (`rev-end`, `one-attempt`, `landmark-walk`, and a
- *      cover whose member is not a run position). */
-/* The whole-run index cover offset `m` holds: the run's positions must be
- * the cover's sets at exactly one offset `o` (each position its cube's byte
- * set), and `m` inside `[o, o + n)`; else -1. */
+ *      (its find's offset `stop`, inside the run's placements in the
+ *      cover's sets that contain it, where they agree: `req_run_in_cover`)
+ *      or the run-pinned prefilter (`ofs_test_of`'s row, its
+ *      `mf_wreply.run_member` as a whole-run index: the member is an
+ *      attempt offset, and the prefilter's position 0 sits at the pin's
+ *      `o - at`);
+ *   3  else -1: no `@` (`rev-end`, `one-attempt`, `landmark-walk`, a
+ *      dominated pre-check with no such search, and a cover whose find
+ *      reads no run position). */
+/* The whole-run index cover offset `m` holds, RESOLVED FROM THE FIND's
+ * OFFSET: over the placements `o` of the run in the cover's sets (each
+ * position its cube's byte set) that contain `m` (`o <= m < o + n`), `m - o`
+ * where they all agree, else -1 (none contains it, or two read different
+ * run positions). A run placed at several offsets is no obstacle where the
+ * find's own offset names one position (`abcd[0-9]abcd`: the find at 6
+ * reads position 1 of the placement at 5; review 2026-11-11 r1 k382 F3). */
 static int req_run_in_cover(const ReqRun *r, const MkEnd *e, int m)
 {
-    int at = -1, nhit = 0;
+    int idx = -1;
     for (int o = 0; o + r->whole_len <= e->k; o++) {
+        if (m < o || m >= o + r->whole_len) continue;
         bool eq = true;
         for (int j = 0; eq && j < r->whole_len; j++)
             for (int b = 0; eq && b < 256; b++)
                 eq = ((e->set[o + j][b >> 3] >> (b & 7) & 1) != 0) ==
                      ((b & r->whole_mask[j]) == r->whole[j]);
-        if (eq) { nhit++; at = o; }
+        if (!eq) continue;
+        if (idx >= 0 && idx != m - o) return -1;
+        idx = m - o;
     }
-    return nhit == 1 && m >= at && m < at + r->whole_len ? m - at : -1;
+    return idx;
 }
 
 static int req_run_at(Ctx *cx, ReqAdmit admit)
 {
-    if (pcrec_fact_req_run_stated(cx)->len < 2) return -1;
+    if (pcrec_fact_req_whole_run_stated(cx)->whole_len < 2) return -1;
     if (req_admit_emits(admit)) {
         mf_class *cls = pcrec_arena_alloc(&cx->arena, sizeof *cls);
         const mf_site *ps = req_pres_ask(cx, NULL, cls);
@@ -16163,9 +16189,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
          * declined. Two facts, two stamps, each checkable on its own.
          *
          * [PATFACTS] the value is the `req_byte` fact's ONE renderer
-         * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
-        pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE",
-                           pcrec_fact_stamp_req_byte(cx, pcrec_fact_req_run_stated(cx)->idx));
+         * (src/facts/facts.c), the spelling `--emit-facts` prints too: the
+         * fact itself, so its rule has ONE home (`pcrec_req_pick`; review
+         * 2026-11-11 r1 k382 F10). */
+        pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", pcrec_fact_stamp(cx, PF_REQ_BYTE));
     }
     /* [OPT-REQPOS] tier 2b `<PREFIX>_REQ_RUN` — THE NECESSARY LITERAL RUN,
      * beside `<PREFIX>_REQ_BYTE` and in the same family-(a) shape for the same
@@ -16177,10 +16204,12 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * halves are load-bearing. Hex because a run is arbitrary bytes and this
      * is a `#define`'s string body — escape-free, one spelling for all 256
      * values, the `%d`-not-a-character-literal argument one stamp up. The
-     * index because it is the one fact about the emitted check a reader cannot
-     * derive from the bytes: it says which member the `memchr` tests, and
-     * `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`, which is what makes the two
-     * stamps checkable against each other.
+     * index because it is the one fact about the emitted search a reader
+     * cannot derive from the bytes: the run position the artifact's search
+     * reads (`req_run_at`'s first-match table; no `@` where none does). Since
+     * R-38 K38-2 `<PREFIX>_REQ_BYTE` is NOT `bytes[idx]`: it names the
+     * analysis's `req_byte` fact (pcrec's own pick), the search position is
+     * the kit's (match_api.md §6.3.7¶7a).
      *
      * UNCONDITIONAL, INCLUDING `"none"`, on `RX_DFA_UNIFORM_FOLDS`'s ruling and
      * D108's: an absent population is a ROW with empty cells, never an absent
@@ -16189,8 +16218,9 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     /* [OPT-PRECHECK-ADMIT] unchanged by the admission, for
      * `<PREFIX>_REQ_BYTE`'s reason one stamp up: this names the run the
      * analysis found, and `<PREFIX>_REQ_WHY` names whether it was emitted.
-     * [PATFACTS] the value is the `req_run` fact's ONE renderer
-     * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
+     * [PATFACTS] the run is the `req_whole_run` fact's (src/facts/facts.c
+     * `pcrec_fact_stamp_req_run`, the hex `--emit-facts` prints for it); the
+     * `@` is the artifact's own, never the listing's. */
     pcrec_sb_stamp_str(c, g->upper, "REQ_RUN",
                        pcrec_fact_stamp_req_run(cx, req_run_at(cx, admit)));
     /* [OPT-PRECHECK-ADMIT] `<PREFIX>_REQ_WHY` — WHY THIS ARTIFACT DOES OR DOES
@@ -16226,7 +16256,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * artifact of both engines, beside the stamps it qualifies, for their
      * reason (Frank's Q3 ruling, 2026-10-05: a stamp varies by engine family,
      * never by presence within one, and "does not apply" is a value). It
-     * names what the EMITTER did; `req_run_maxoff` in `--emit-facts` names
+     * names what the EMITTER did; `req_landmark_maxoff` in `--emit-facts` names
      * what the analysis found, which a declined artifact still has. */
     pcrec_sb_stamp_str(c, g->upper, "REQ_HANDOFF", req_handoff_stamp(cx));
     /* [START-SET] `<PREFIX>_VM_START_SCAN` — THE VM HAT's ROW: the candidate

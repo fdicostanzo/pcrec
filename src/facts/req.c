@@ -1192,32 +1192,11 @@ PfWhyCode pcrec_req_rate_why(Ctx *cx)
     return pcrec_find_byte_rate_answers(cx) ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
 }
 
-/* THE SHIPPED RUN, the `req_run` fact's derived half: the whole run the core
- * `req_whole_run` fact holds, uncut (R-38 K38-2: the window and its pick
- * retired, docs/design/memfn/span_runs_sheet.md §2.1; the memfn kit's run
- * decision chooses what the pre-check verifies), and pcrec's own pick over
- * it (`idx`, `pcrec_find_run_scan_index`), the `req_byte` fact's input. A
- * whole run shorter than two positions ships nothing (`len == 0`).
- *
- * The byte-rate is asked FIRST, before any branch, so whether the compile
- * consumed it does not depend on the pattern (findings design §6.4 rule 1). */
-void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
-{
-    const uint32_t *rate = pcrec_find_byte_rate(cx);
-    int n = run->whole_len;
-
-    run->len = 0;
-    run->idx = 0;
-    *why = PF_WHY_NONE;
-    if (n < 2) return;
-    *why = pcrec_req_rate_why(cx);
-    run->len = n;
-    run->idx = pcrec_find_run_scan_index(rate, run->whole, run->whole_mask, n);
-}
-
 /* THE NECESSARY BYTE — the `req_byte` fact — at ONE return: pcrec's own
- * pick over the shipped run's positions (`idx`) where a run shipped and that
- * position is one EXACT byte, and otherwise the set's pick
+ * pick over the whole run's positions (`pcrec_find_run_scan_index`, asked
+ * here: the retired `req_run` row's `idx`, review 2026-11-11 r1 k382 F5)
+ * where a run of two or more positions is stored and that position is one
+ * EXACT byte, and otherwise the set's pick
  * (`src/core/findings.c`). -1 exactly when the set is empty. It STAYS
  * pcrec's pick at R-38 K38-2 (span_runs_sheet.md §4.1): the pre-check's own
  * scan position is the kit's reply, and may differ from it.
@@ -1226,13 +1205,17 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
  * CONTAIN: at a cube position `bytes[idx]` is T, and a match may carry the
  * other member there, so it falls to the set's pick (litscan_s4.md §2.3.3
  * case (ii)) and every value here stays a member of `req_set`. The byte-rate
- * is asked first, as the window's is. */
+ * is asked FIRST, before any branch, so whether the compile consumed it does
+ * not depend on the pattern (findings design §6.4 rule 1). */
 int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
                    PfWhyCode *why)
 {
     const uint32_t *rate = pcrec_find_byte_rate(cx);
     *why = pcrec_req_rate_why(cx);
-    if (run->len >= 2 && run->whole_mask[run->idx] == 0xFF) return run->whole[run->idx];
+    if (run->whole_len >= 2) {
+        int idx = pcrec_find_run_scan_index(rate, run->whole, run->whole_mask, run->whole_len);
+        if (run->whole_mask[idx] == 0xFF) return run->whole[idx];
+    }
     if (set->rightmost < 0) *why = PF_WHY_NONE;
     return pcrec_find_set_pick(rate, set->bits, set->rightmost);
 }

@@ -103,11 +103,6 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     case PF_REQ_PIECES:
         pf->req_pieces = (PdDesc){ -1, PD_WALL, NULL };
         break;
-    case PF_REQ_RUN:
-        pf->req_run.len = 0;
-        pf->req_run.idx = 0;
-        break;
-    case PF_REQ_RUN_MAXOFF: break;   /* the shipped run's own `whole_maxoff` */
     case PF_REQ_BYTE:     pf->req_byte = -1; break;
     case PF_REQ_LANDMARK_MAXOFF: pf->req_landmark_maxoff = -1; break;
     case PF_KSET_WALK:    memset(&pf->kset_walk, 0, sizeof pf->kset_walk); break;
@@ -347,30 +342,20 @@ static void pf_derive(Ctx *cx, PfFactId f)
         pf_derive_req_walk(cx);
         pf->arms_seen = seen;
         return;
-    case PF_REQ_RUN:
-        pf_ask(cx, PF_REQ_WHOLE_RUN, false);
-        pcrec_req_window(cx, &pf->req_run, &why);
-        break;
-    case PF_REQ_RUN_MAXOFF:
-        /* [K82] the shipped run's position-0 bound, the whole run's own
-         * (R-38 K38-2: no window, so no `at` to add); declined where no
-         * static bound exists. */
-        pf_ask(cx, PF_REQ_RUN, false);
-        if (pf->req_run.len >= 2 && pf->req_run.whole_maxoff >= PCREC_W_UNBOUNDED)
-            why = PF_WHY_UNBOUNDED;
-        break;
     case PF_REQ_BYTE:
         pf_ask(cx, PF_REQ_SET, false);
-        pf_ask(cx, PF_REQ_RUN, false);
+        pf_ask(cx, PF_REQ_WHOLE_RUN, false);
         pf->req_byte = pcrec_req_pick(cx, &pf->req_set, &pf->req_run, &why);
         break;
     case PF_REQ_LANDMARK_MAXOFF:
         /* [REQ-HANDOFF-L1] the gate's needle: the run where one shipped
-         * (K is its position 0's, R-38 K38-2), else the one byte. */
+         * (K is its position 0's, the whole run's own `whole_maxoff`, R-38
+         * K38-2; the retired `req_run_maxoff` row's value, review
+         * 2026-11-11 r1 k382 F5), else the one byte. */
         pf_ask(cx, PF_REQ_SET_MAXOFF, false);
-        pf_ask(cx, PF_REQ_RUN_MAXOFF, false);
+        pf_ask(cx, PF_REQ_WHOLE_RUN, false);
         pf_ask(cx, PF_REQ_BYTE, false);
-        pf->req_landmark_maxoff = pf->req_run.len >= 2 ? pf->req_run.whole_maxoff
+        pf->req_landmark_maxoff = pf->req_run.whole_len >= 2 ? pf->req_run.whole_maxoff
                                 : pf->req_byte >= 0 ? pf->req_set.maxoff[pf->req_byte] : -1;
         if (pf->req_landmark_maxoff >= PCREC_W_UNBOUNDED) why = PF_WHY_UNBOUNDED;
         break;
@@ -380,7 +365,7 @@ static void pf_derive(Ctx *cx, PfFactId f)
         break;
     case PF_RUN_PIN:
         pf_ask(cx, PF_KSET_WALK, false);
-        pf_ask(cx, PF_REQ_RUN, false);
+        pf_ask(cx, PF_REQ_WHOLE_RUN, false);
         pcrec_run_pin(&pf->kset_walk, &pf->req_run, pcrec_find_byte_rate(cx),
                       &pf->run_pin);
         break;
@@ -630,28 +615,10 @@ const ReqRun *pcrec_fact_req_whole_run_stated(Ctx *cx)
     return &cx->job->pf.req_run;
 }
 
-const ReqRun *pcrec_fact_req_run_stated(Ctx *cx)
-{
-    pf_ask(cx, PF_REQ_RUN, false);
-    return &cx->job->pf.req_run;
-}
-
 int pcrec_fact_req_byte_stated(Ctx *cx)
 {
     pf_ask(cx, PF_REQ_BYTE, false);
     return cx->job->pf.req_byte;
-}
-
-const ReqRun *pcrec_fact_req_run(Ctx *cx)
-{
-    pf_ask(cx, PF_REQ_RUN, true);
-    return &cx->job->pf.req_run;
-}
-
-long long pcrec_fact_req_run_maxoff(Ctx *cx)
-{
-    pf_ask(cx, PF_REQ_RUN_MAXOFF, true);
-    return cx->job->pf.req_run.len >= 2 ? cx->job->pf.req_run.whole_maxoff : -1;
 }
 
 int pcrec_fact_req_byte(Ctx *cx)
@@ -897,15 +864,6 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         pcrec_sb_free(&sb);
         return t;
     }
-    case PF_REQ_RUN:
-        if (pf->req_run.len < 2) return "none";
-        return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_mask, pf->req_run.len,
-                      pf->req_run.idx);
-    case PF_REQ_RUN_MAXOFF:
-        /* [K82] the shipped run's maximum byte offset from the attempt start. */
-        if (pf->req_run.len < 2) return "none";
-        if (pf->req_run.whole_maxoff >= PCREC_W_UNBOUNDED) return "unbounded";
-        return pcrec_sb_fragf(&cx->arena, "%lld", pf->req_run.whole_maxoff);
     case PF_REQ_BYTE:
         if (pf->req_byte < 0) return "none";
         return pcrec_sb_fragf(&cx->arena, "%d", pf->req_byte);
@@ -933,7 +891,7 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
          * before [OPT-LITSCAN] S4 C3); `o:at+len` for a pin on an exact
          * stretch inside a masked window. */
         if (!pf->run_pin.pinned) return "none";
-        if (pf->run_pin.at == 0 && pf->run_pin.len == pf->req_run.len)
+        if (pf->run_pin.at == 0 && pf->run_pin.len == pf->req_run.whole_len)
             return pcrec_sb_fragf(&cx->arena, "%d", pf->run_pin.o);
         return pcrec_sb_fragf(&cx->arena, "%d:%d+%d", pf->run_pin.o,
                               pf->run_pin.at, pf->run_pin.len);
@@ -983,18 +941,8 @@ const char *pcrec_fact_stamp(Ctx *cx, PfFactId f)
 
 const char *pcrec_fact_stamp_req_run(Ctx *cx, int member)
 {
-    pf_ask(cx, PF_REQ_RUN, true);
+    pf_ask(cx, PF_REQ_WHOLE_RUN, true);
     PatFacts *pf = &cx->job->pf;
-    if (pf->req_run.len < 2) return "none";
-    return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_mask, pf->req_run.len, member);
-}
-
-const char *pcrec_fact_stamp_req_byte(Ctx *cx, int member)
-{
-    pf_ask(cx, PF_REQ_BYTE, true);
-    PatFacts *pf = &cx->job->pf;
-    const ReqRun *r = &pf->req_run;
-    if (r->len >= 2 && member >= 0 && r->whole_mask[member] == 0xFF)
-        return pcrec_sb_fragf(&cx->arena, "%d", r->whole[member]);
-    return pcrec_fact_render(cx, PF_REQ_BYTE);
+    if (pf->req_run.whole_len < 2) return "none";
+    return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_mask, pf->req_run.whole_len, member);
 }

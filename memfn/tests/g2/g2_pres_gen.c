@@ -508,6 +508,13 @@ static void one_site(gsite *g, buf *fs, gout *o)
     int tested = c.pres[run].verify;
     const char *rb = reply_bad(&c.run, g->L, tested);
     if (rb) { fail(g->id, "the run's reply (mf_ask)", rb); return; }
+    /* memfn.h mf_link: on the run span `member` is 0 and UNREAD (the stretch
+       is the reply's), whatever row decided it (review 2026-11-11 r1 k382
+       F13: P3's row template once crossed as 1) */
+    if (c.pres[run].member) {
+        fail(g->id, "the run's link (mf_ask)", "`member` is not 0 on the run span");
+        return;
+    }
 
     /* W-K3, the twin, on every site (the port reads the reply's extent) */
     twin_check(g, art, &s);

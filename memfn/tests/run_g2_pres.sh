@@ -169,6 +169,12 @@ plant_spec() {
         # the run's floor max(0, lo + omin): the generic pass's PRESENCE rule and
         # its §3.5 witnesses red
         echo 'generic.c@@            const char *from = s->preds[i].fn_ref ? kit_run_floor(rc->art, rc->LO, s, "generic")\n                                                  : rc->LO;@@            const char *from = rc->LO;' ;;
+    S3044) # F13: the run span's link keeps its row template's `member` (P3's 1):
+        # the generator's link check reds on every P3 site
+        echo 'finder.c@@        if (!member) k.member = 0;@@        (void)0;' ;;
+    S3045) # F12: P3 drops out of the stretch-mode table (a renamed row): every
+        # P3 site's ask is REFUSED, never handed a catch-all's stretch
+        echo 'finder.c@@    { "P3", KIT_RUN_WINDOW },@@    { "P3-renamed", KIT_RUN_WINDOW },' ;;
     S3064) # C2's DECISION plant: the reply (mf_ask's and mf_defined's mf_class.run)
         # says ver_len + 1 while the renderer (fd_pres_run's quiet ask) renders the
         # old extent; reaches where the extent ends before the run does
@@ -191,11 +197,13 @@ plant_expect() {
     S3061) echo ': W-K1: ' ;;
     S3062) echo ': W-K2: ' ;;
     S3063) echo 'W-K3: the admission bit' ;;
+    S3044) echo "the run's link (mf_ask): .member. is not 0 on the run span" ;;
+    S3045) echo 'mf_ask \(the presence links\): refused' ;;
     S3043) echo 'default\.oml0 .*: PRESENCE: ;default\.oml0 .*: W-L1: ' ;;
     *) echo '' ;;
     esac
 }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3060 S3061 S3062 S3063 S3064"
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3060 S3061 S3062 S3063 S3064"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

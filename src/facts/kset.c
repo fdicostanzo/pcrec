@@ -305,13 +305,13 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
     int pos[PCREC_MAX_REQ_RUN_SCAN], nc = 0, x, s0, e0;
 
     *pin = (RunPin){ false, 0, 0, 0, 0 };
-    if (r->len < 2) return;
-    for (int i = r->len - 1; i >= 0; i--)
+    if (r->whole_len < 2) return;
+    for (int i = r->whole_len - 1; i >= 0; i--)
         if (r->whole_mask[i] == 0xFF) { cand[nc] = r->whole[i]; pos[nc] = i; nc++; }
     if (nc == 0) return;
     x = pos[pcrec_find_pick(rate, cand, NULL, nc, 0)];
     for (s0 = x; s0 > 0 && r->whole_mask[s0 - 1] == 0xFF; s0--) {}
-    for (e0 = x + 1; e0 < r->len && r->whole_mask[e0] == 0xFF; e0++) {}
+    for (e0 = x + 1; e0 < r->whole_len && r->whole_mask[e0] == 0xFF; e0++) {}
     if (e0 - s0 < 2) return;
     /* R-38 K38-2 (span_runs_sheet.md §4.2): the WHOLE run, CLIPPED per
        placement to the walk's reach, `l = min(e0 - s0, nwalk - ro)`; the

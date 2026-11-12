@@ -140,16 +140,35 @@ static int precheck_assign_byte_applies(const mf_site *s, const mf_hooks *def)
 /* ---- file scope: the FUNC parts ------------------------------------------ */
 
 /* The run search's comment: what the block finds and how, and the frozen
- * deny literals. `whole` picks the noun for a later part (the whole run). */
+ * deny literals. `whole` picks the noun for a later part (the whole run).
+ * `n` is the stated run's length: where the part verifies a STRETCH of it
+ * (the run decision's window, its term at offset `ver_lo` holding `ver_len`
+ * positions), the text says which positions each hit compares and that the
+ * candidate is run position 0, never "the whole run" (review 2026-11-11 r1
+ * k382 F4). */
 static void run_comment(const mf_hooks *h, const mf_pred *p, uint32_t i,
-                        int whole, mf_sink *o)
+                        int whole, unsigned n, mf_sink *o)
 {
     if (!o->cmt_open || !o->cmt_open(o->u, h->comment_tier)) return;
     const char *tag = h->note_tag ? h->note_tag(h->u, i) : NULL;
     const mf_term *t = &p->term[0];
     int k, a, b;
     ofs_fn_scan(p, &k, &a, &b);
-    if (!t->mask)
+    if (t->offset || t->run_len != n) {
+        kit_out(o,
+            "%s THE NECESSARY-RUN SEARCH: the first position >= `pos` at\n"
+            " * which the %u-position %s every match contains may begin inside\n"
+            " * [pos, n), or `n` when there is none --\n * ",
+            tag ? tag : "", n, whole ? "whole run" : "run");
+        if (b >= 0) kit_out(o, "two memchr streams for its bytes %d and %d", a, b);
+        else        kit_out(o, "one memchr for its byte %d", a);
+        kit_out(o,
+            " at offset %d, one %scompare of its\n"
+            " * positions %d..%d per hit. The search entry answers NOMATCH on `n`.\n"
+            " * -fno-req-run replaces it with the one-byte check, -fno-req-byte\n"
+            " * removes the pre-check.",
+            k, t->mask ? "masked " : "", (int)t->offset, (int)(t->offset + t->run_len - 1));
+    } else if (!t->mask)
         kit_out(o,
             "%s THE NECESSARY-RUN SEARCH: the first position >= `pos` at\n"
             " * which the %d-byte %s every match contains begins inside [pos, n),\n"
@@ -201,7 +220,9 @@ static int precheck_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                             p->fn_ref);
         if (run_cmp_prepare(art, p, o)) return -1;
         if (h->note) h->note(h->u, o, i);
-        run_comment(h, p, i, part++ > 0, o);
+        int run = kit_pres_run(s);
+        run_comment(h, p, i, part++ > 0,
+                    run >= 0 ? kit_pres_run_span(s, run)->len : p->term[0].run_len, o);
         if (ofs_fn_define(art, handle, h, p, r->fns[i], o)) return -1;
     }
     return 0;
