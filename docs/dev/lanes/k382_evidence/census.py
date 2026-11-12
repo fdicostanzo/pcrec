@@ -43,7 +43,10 @@ suffix so a sub-artifact's `RX__Q_*` stamps count, or the enclosing function -- 
       `rx_reqrun(`. P3v (c-simd only, with a P3 move): the one run part takes a kit SIMD form
       (`*MEMFN_FORMS`, `*SIMD_GUARDED_BYTES`, an intrinsics `#include`, the target guard/region).
   P4  the run pin: `*ofsskip*`/`*prefilter*` blocks, `*DFA_PREFILTER*`, `*REQ_WHY`, a `scan_position`
-      or `*_prefilter(` call line of a search entry (a FLIP starts it at the handoff). Allowed on CUT only. P4f counts the FLIPs.
+      or `*_prefilter(` call line of a search entry (a FLIP starts it at the handoff), rx_info's `.prefilter`.
+      Allowed on CUT, or (P4c, k382cen) on CLIP: an UNCUT run whose exact stretch reaches past BASE's
+      k-set walk from a placement where the walk spells it (§4.2's clip pins it; BASE refused it; read by
+      `clip_of` from BASE's facts, e.g. a count-collapsed prefilter machine). P4f counts the FLIPs.
   ADJ the `rx_w8` helper, blank and brace lines: allowed beside a P1, P3 or P4 move, never alone.
   P5  comment text: only on c-comments, beside a P1-P4 or P5k move. P5k: [K82]'s "before its run
       window" becomes "before its whole run" -- on EVERY artifact that carried it (MUST, two-sided),
@@ -60,6 +63,8 @@ artifact that did not move as declared, an empty task list, or (K35, a full run 
 --control NAME (a NEGATIVE control, never for a gate): `no-p3` stops classifying P3 lines (they become
 UNEXPLAINED); `no-norm` maps no abi digit back; `plant-in-run` (k382cen) rewrites every cover find on
 the tip to read the run's first position for its byte, so every P2so artifact must become UNEXPLAINED.
+`plant-p4-move` (k382cen) plants a -> run-pinned prefilter stamp move on every arm: off CUT and CLIP
+it must be UNEXPLAINED.
 Each must turn the verdict red.
 """
 import argparse
@@ -94,7 +99,7 @@ ARMS = [
 ]
 IR = ["--features", "all", "--engine=vm", "--emit-ir"]
 FACTS = ["--features", "all", "--emit-facts=byte,utf8"]
-POPS = ["P1", "P2", "P2a", "P2b", "P2s", "P2se", "P2sd", "P2so", "Aa_K", "Aa_noK", "P3", "P3v", "P4", "P4f", "P5", "P5k", "used",
+POPS = ["P1", "P2", "P2a", "P2b", "P2s", "P2se", "P2sd", "P2so", "Aa_K", "Aa_noK", "P3", "P3v", "P4", "P4c", "P4f", "P5", "P5k", "used",
         "Fret"]   # P2 (unsplit): the facts listing
 FLOOR_ARMS = ("c-default", "c-vm")
 FLOOR_POPS = ("P1", "P2a", "P2b", "P3")
@@ -224,6 +229,8 @@ def classify(name, com, line, comments_arm, simd_arm):
         return "ADJ"                 # the rx_w8 helper, a blank or brace line beside a moved block
     if "DFA_PREFILTER" in name or name.endswith("REQ_WHY") or "ofsskip" in name or "prefilter" in name:
         return "P4"
+    if re.match(rb'\s*\.prefilter = "', line):
+        return "P4"                  # k382cen: rx_info's `.prefilter` route field, RX_DFA_PREFILTER's mirror
     if re.search(r"_search|_match|_find|__", name):
         if re.search(rb"handoff_position|landmark", line):
             return "P1"
@@ -330,8 +337,42 @@ def moved_lines(b, n):
     return out
 
 
+def clip_of(f):
+    """1 iff BASE's facts admit a run pin that only the K38-2 CLIP can give (k382cen, sheet §4.2 r1.2 F-B):
+    a placement `ro` where the walk's singletons spell an exact stretch of the whole run for
+    `l = min(e0 - s0, nwalk - ro) >= 2` positions with `nwalk - ro < e0 - s0` (the stretch reaches past
+    the walk, which BASE's `ro + l <= nwalk` refused). Read over every exact stretch (the rate pick that
+    chooses one is not in the listing), so it is an ALLOWANCE, never a MUST."""
+    whole = f.get("req_whole_run", "")
+    hx = whole.split("/")[0]
+    if not re.fullmatch(r"(?:[0-9a-f]{2}){2,}", hx):
+        return False
+    run = bytes.fromhex(hx)
+    mask = bytes.fromhex(whole.split("/")[1]) if "/" in whole else b"\xff" * len(run)
+    kw = f.get("kset_walk", "")
+    walk = [int(x) if x.isdigit() else None for x in kw.split(",")] if kw and kw != "none" else []
+    nw, i = len(walk), 0
+    while i < len(run):
+        if mask[i] != 0xFF:
+            i += 1
+            continue
+        s0 = i
+        while i < len(run) and mask[i] == 0xFF:
+            i += 1
+        e0 = i
+        for ro in range(nw):
+            ln = min(e0 - s0, nw - ro)
+            if ln < 2 or nw - ro >= e0 - s0:
+                continue
+            if all(walk[ro + k] == run[s0 + k] for k in range(ln)):
+                return True
+    return False
+
+
 def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
     """(pops moved set, problem or '', must list, flags) for one .c arm of one pattern."""
+    if CONTROL == "plant-p4-move":    # k382cen: a run-pin route move planted on every arm (off-rule unless clip/cut)
+        rn = (rn[0], re.sub(rb'(_DFA_PREFILTER )"(?!run-pinned")[^"]*"', rb'\1"run-pinned"', rn[1])) + tuple(rn[2:])
     moved = rb[0] != rn[0] or norm_err(rb[2]) != norm_err(rn[2]) or rb[1] != norm(rn[1])
     b, n = rb[1], norm(rn[1])
     ri = run_of(f)
@@ -340,6 +381,7 @@ def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
     atpos = any(x > 0 for x in ats)
     whole = re.search(rb"\w_reqrun_whole\(", b) is not None
     flip = cut and stamp(b, b"REQ_WHY") == "dominated" and stamp(n, b"REQ_WHY") == "emitted"
+    clip = not cut and clip_of(f)      # k382cen: §4.2's clip pins an UNCUT run the walk does not reach
     must = []
     sb, sn = stamp(b, b"REQ_RUN"), stamp(n, b"REQ_RUN")
     if cut and sb is not None and sb.split("@")[0].split("/")[0] == ri[1]:
@@ -413,19 +455,21 @@ def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
             p = None
         elif p == "P3" and not (cut or whole or flip):
             p = None
-        elif p == "P4" and not cut:
+        elif p == "P4" and not (cut or clip):
             p = None
+        elif p == "P4" and clip:
+            p = "P4c"
         if p is None:
             unexp.append("%s%s: %s" % (name, " (comment)" if com else "", line[:100].decode("utf-8", "replace")))
         else:
             pops.add(p)
     if "ADJ" in pops:
         pops.discard("ADJ")
-        if not pops & {"P1", "P3", "P4"}:
+        if not pops & {"P1", "P3", "P4", "P4c"}:
             unexp.append("the rx_w8 helper / a blank or brace line moved alone")
     if "P3v" in pops and "P3" not in pops:
         unexp.append("SIMD scaffolding moved without a run-part (P3) move")
-    if "P5" in pops and not pops & {"P1", "P2a", "P2b", "P3", "P4", "P5k"}:
+    if "P5" in pops and not pops & {"P1", "P2a", "P2b", "P3", "P4", "P4c", "P5k"}:
         unexp.append("comment text moved alone")
     bad = ""
     if unexp:
@@ -664,7 +708,7 @@ def main():
     ap.add_argument("--sample", type=int, default=0, help="a SAMPLE run of N patterns (no K35 floor)")
     ap.add_argument("--sample-seed", type=int, default=0, help="the sample's offset (a different slice)")
     ap.add_argument("--patterns-file", action="append", default=[], help="raw patterns, one per line (added)")
-    ap.add_argument("--control", default="", choices=["", "no-p3", "no-norm", "plant-in-run"])
+    ap.add_argument("--control", default="", choices=["", "no-p3", "no-norm", "plant-in-run", "plant-p4-move"])
     ap.add_argument("--no-xarms", action="store_true", help="skip the identity gate's --extra arms")
     ap.add_argument("--no-composition", action="store_true", help="skip the composition stream")
     ap.add_argument("--abi", default="100:101", help="OLD:NEW, the abi event (NEW's digits mapped back)")
