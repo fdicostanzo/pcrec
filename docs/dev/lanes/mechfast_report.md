@@ -1,7 +1,7 @@
 # mechfast report -- faster cloud mech runs ([CLOUD-SUITE], Frank 2026-11-12)
 
 ## STATE AT HANDOFF
-Branch lane/mechfast (worktree /home/pcrec/projects/pcrec/worktrees/mechfast). Rulings file: no entries (none applied).
+Branch lane/mechfast (worktree /home/pcrec/projects/pcrec/worktrees/mechfast). Rulings file: last entry applied R1 (S3015 and the whole mech population are in the regenerated table: `make cloud-check` population check passes, 90 shards, S3015 an ESTIMATE row; see CHANGES (1)).
 Premise test: `make cloud-check` on the untouched worktree was 14 passed / 1 FAILED (`kind mech: population check: DROPPED S3015`:
 the committed table predates S3015); the mech row said 20 shards. Regenerating the table fixed it. After the change `make cloud-check`
 is 15/15 (one population check more: mechrows). `scripts/tests/cloudrun.test` 53/0 after the fix of its 31-id case; `make testscripts`
@@ -24,7 +24,7 @@ Run 43261368093 (kit, K38-2, mech, 20 shards, max_parallel 20; 15 green, 5 red b
 (1) RE-SPLIT. `cloud_measure.py mech --last 3 --write`: tests/ci/measured_mech.tsv now holds the median of runs 43261368093, 43149107439
 (mechtri4, 20 shards counted), 43131030250 (1247 units). Then `make cloud-reweight KIND=mech`. 4 rows keep an ESTIMATE (mean measured
 row 95.9 s): S3007, S3009, S3012, S3015, rows added after those runs (no run has recorded them). Every other row is runner-measured.
-Indivisible floor: S221 alone is 2551 s (42.5 min); it is the one shard that cannot shrink.
+R1: S3015 (dropped on main) and every row on disk is in the regenerated table; the population check passes. Indivisible floor: S221 alone is 2551 s (42.5 min); it is the one shard that cannot shrink.
 
 (2) OVER-SPLIT. Planner weights (shard seconds, 4-core runner), setup 35 s, greedy schedule over P slots (a shard starts when one frees),
 deterministic wall and a 2000-trial simulation with each shard time x lognormal(sigma 0.17; the run's 85-137 min spread), minutes:
