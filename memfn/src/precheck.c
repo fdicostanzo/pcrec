@@ -15,7 +15,8 @@
  * pcrec's `result` (the handoff). THE RUN's FLOOR (span_runs_sheet.md §3.3):
  * the run part's candidates lie at or after max(0, lo + omin), `omin` the
  * run presence span's, spelled with no unsigned wrap (0 below `lo` only
- * where `omin` is negative; `lo` itself where it is not).
+ * where `omin` is negative; `lo` itself where it is not): kit.h
+ * kit_run_floor, the one spelling generic.c's loop reads too.
  *
  * THE FORM, per predicate, in order:
  *   - a RUN predicate with a FUNC part is a call of the offset-skip function
@@ -264,22 +265,6 @@ static void set_rest(const mf_hooks *h, const mf_site *s, uint32_t from,
         ind);
 }
 
-/* The run part's floor (the header's THE RUN's FLOOR): `lo` where the run
- * span's `omin` is >= 0 or no run span is stated, else max(0, lo + omin)
- * spelled without an unsigned wrap. NULL after recording why. */
-static const char *run_floor(mf_art *art, const mf_hooks *h, const mf_site *s)
-{
-    int run = kit_pres_run(s);
-    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;
-    if (omin >= 0) return h->lo;
-    unsigned long long back = (unsigned long long)-(long long)omin;
-    kb f;
-    kb_init(&f, art->a);
-    kb_printf(&f, "(%s >= %llu ? %s - %llu : 0)", h->lo, back, h->lo, back);
-    if (f.oom) { kit_fail(art, "precheck: out of memory"); return NULL; }
-    return f.p;
-}
-
 /* A run's call, from the run's floor: ASSIGN where `ret_pred` names it (the
  * handoff keeps the position), else a presence gate comparing the result
  * with `n`. */
@@ -289,7 +274,7 @@ static int run_line(mf_art *art, const mf_hooks *hk, const site_rec *r,
     const mf_pred *p = &r->site.preds[i];
     mf_hooks fh = *hk;
     const mf_hooks *h = &fh;
-    if (!(fh.lo = run_floor(art, hk, &r->site))) return -1;
+    if (!(fh.lo = kit_run_floor(art, hk->lo, &r->site, "precheck"))) return -1;
     const char *ind = h->indent;
     if (i == r->site.ret_pred) {
         if (!h->result)

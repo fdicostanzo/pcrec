@@ -18,18 +18,18 @@ SAB_BEFORE='    int part = 0;
 SAB_AFTER='    { extern const char *s3062_origin; s3062_origin = h ? h->start : NULL; }   /* SABOTAGE S3062 */
     int part = 0;
     for (uint32_t i = 0; i < s->npred; i++) {'
-SAB_FILE2="memfn/src/precheck.c"
+SAB_FILE2="memfn/src/presence.c"
 SAB_COUNT2=1
-SAB_BEFORE2='static const char *run_floor(mf_art *art, const mf_hooks *h, const mf_site *s)
+SAB_BEFORE2='const char *kit_run_floor(mf_art *art, const char *lo, const mf_site *s, const char *who)
 {
     int run = kit_pres_run(s);
     int32_t omin = run >= 0 ? s->pspans[run].omin : 0;
-    if (omin >= 0) return h->lo;'
+    if (omin >= 0) return lo;'
 SAB_AFTER2='const char *s3062_origin;   /* SABOTAGE S3062 */
-static const char *run_floor(mf_art *art, const mf_hooks *h, const mf_site *s)
+const char *kit_run_floor(mf_art *art, const char *lo, const mf_site *s, const char *who)
 {
     int run = kit_pres_run(s);
     int32_t omin = run >= 0 ? s->pspans[run].omin : 0;
-    if (omin >= 0 || (s3062_origin && h->lo && strcmp(h->lo, s3062_origin))) return h->lo;'
+    if (omin >= 0 || (s3062_origin && lo && strcmp(lo, s3062_origin))) return lo;'
 SAB_REACH='TMPDIR="$REACH_TMP" bash "$TREE/memfn/tests/run_g2_pres.sh" --reach'
 SAB_REACH_EXPECT="REACH-G2P-NEG-FLOOR"

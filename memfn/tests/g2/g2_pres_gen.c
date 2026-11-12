@@ -340,6 +340,7 @@ static void site_base(mf_site *s)
 
 static const mf_target *g_target;
 static int g_lever;
+static int g_oml = 1;                   /* the sites' on_miss_leaves (argv[6]) */
 static const char *g_tag;
 static uint32_t g_inc;
 static int g_fails;
@@ -466,7 +467,7 @@ static void one_site(gsite *g, buf *fs, gout *o)
     s.use = MF_USE_ENTRY;
     static const uint8_t kinds[] = { MF_SK_DFA_SCAN, MF_SK_DFA_ATTEMPT, MF_SK_HYB_PF };
     s.site_kind = g->want == G2P_P0 ? MF_SK_VM_ATTEMPT : kinds[rnd(3)];
-    s.on_miss_leaves = 1;
+    s.on_miss_leaves = (uint8_t)g_oml;
     s.opts = g->want == G2P_P9 ? "no-fd-pres-pick" : NULL;
     s.npspan = (uint16_t)state_spans(g, need);
     s.pspans = g_ps;
@@ -662,8 +663,8 @@ static void one_site(gsite *g, buf *fs, gout *o)
 
 int main(int argc, char **argv)
 {
-    if (argc != 6) {
-        fprintf(stderr, "usage: g2_pres_gen SEED NSITES OUTDIR TARGET LEVER\n");
+    if (argc != 6 && argc != 7) {
+        fprintf(stderr, "usage: g2_pres_gen SEED NSITES OUTDIR TARGET LEVER [ON_MISS_LEAVES]\n");
         return 2;
     }
     g_rng = strtoull(argv[1], NULL, 10) * 2654435761ull + 0x7072657365ull;
@@ -672,8 +673,9 @@ int main(int argc, char **argv)
     g_target = mf_target_parse(argv[4], strlen(argv[4]), err, sizeof err);
     if (!g_target) { fprintf(stderr, "g2p: target %s: %s\n", argv[4], err); return 2; }
     g_lever = atoi(argv[5]);
+    if (argc == 7) g_oml = atoi(argv[6]);
     char tag[64];
-    snprintf(tag, sizeof tag, "%s.%s", argv[4], g_lever ? "lever" : "default");
+    snprintf(tag, sizeof tag, "%s.%s%s", argv[4], g_lever ? "lever" : "default", g_oml ? "" : ".oml0");
     g_tag = tag;
     mf_finder_rows(&g_rows);
 

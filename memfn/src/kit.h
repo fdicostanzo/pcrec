@@ -340,6 +340,15 @@ int kit_pres_run(const mf_site *s);
 const mf_wspan *kit_pres_run_span(const mf_site *s, int run);
 /* A window span's (`src`, an mf_wspan) position j as its set. */
 const uint8_t *kit_wspan_at(const void *src, unsigned j, uint8_t buf[32]);
+/* THE RUN's FLOOR (span_runs_sheet.md §3.3): the C text of the lowest
+ * candidate a site's RUN PART may start at, over the window floor text `lo`:
+ * `lo` itself where the site states no run or its run span's `omin` is >= 0,
+ * else max(0, lo + omin), spelled with no unsigned wrap. The ONE spelling:
+ * every renderer of a run part starts its candidates here (precheck.c's run
+ * call, generic.c's ALL_PRESENT loop; review 2026-11-11 r1 k382 F1). NULL
+ * after kit_fail (`who` names the renderer). */
+#define kit_run_floor     MF_NS(kit_run_floor)
+const char *kit_run_floor(mf_art *art, const char *lo, const mf_site *s, const char *who);
 
 #define kit_presence_check MF_NS(kit_presence_check)
 /* The presence class's rules (compose.c), NULL iff the site holds them: a

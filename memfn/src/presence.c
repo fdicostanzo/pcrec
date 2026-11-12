@@ -137,6 +137,19 @@ const mf_wspan *kit_pres_run_span(const mf_site *s, int run)
     return &s->pspans[run].alts[0].spans[0];
 }
 
+const char *kit_run_floor(mf_art *art, const char *lo, const mf_site *s, const char *who)
+{
+    int run = kit_pres_run(s);
+    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;
+    if (omin >= 0) return lo;
+    unsigned long long back = (unsigned long long)-(long long)omin;
+    kb f;
+    kb_init(&f, art->a);
+    kb_printf(&f, "(%s >= %llu ? %s - %llu : 0)", lo, back, lo, back);
+    if (f.oom) { kit_fail(art, "%s: out of memory", who); return NULL; }
+    return f.p;
+}
+
 /* ---- THE RUN DECISION (R-38 K38-1, K38-2; span_runs_sheet.md rev 1.3 §2.3, §5)
  *
  * ONE function decides a run's scan position and the stretch its check

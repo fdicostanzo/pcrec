@@ -142,14 +142,14 @@ plant_spec() {
     # R-38 K38-2 (lane k382; ids from the lane's range S3040-S3069): the
     # §3.5 witnesses' plants, and C2's decision plant (§2.4)
     S3060) # W-L1: the CANDIDATE floor is the origin `lo`, not max(0, lo + omin)
-        echo 'precheck.c@@    if (omin >= 0) return h->lo;@@    return h->lo;' ;;
+        echo 'presence.c@@    if (omin >= 0) return lo;@@    return lo;' ;;
     S3061) # W-K1: the floor spelled `lo + omin` in size_t, no clamp (wraps where lo < -omin)
-        echo 'precheck.c@@    kb_printf(\&f, "(%s >= %llu ? %s - %llu : 0)", h->lo, back, h->lo, back);@@    kb_printf(\&f, "(%s - %llu)", h->lo, back);' ;;
+        echo 'presence.c@@    kb_printf(\&f, "(%s >= %llu ? %s - %llu : 0)", lo, back, lo, back);@@    kb_printf(\&f, "(%s - %llu)", lo, back);' ;;
     S3062) # W-K2: the RE-ENTRY floor read from its `lo`: a use whose `lo` is not
         # the activation's origin (the define's `start` hook: a RE-ENTRY) floors
         # at lo; the entry keeps max(0, lo + omin)
         echo 'precheck.c@@    int part = 0;\n    for (uint32_t i = 0; i < s->npred; i++) {@@    { extern const char *s3062_origin; s3062_origin = h ? h->start : NULL; }\n    int part = 0;\n    for (uint32_t i = 0; i < s->npred; i++) {'
-        echo 'precheck.c@@static const char *run_floor(mf_art *art, const mf_hooks *h, const mf_site *s)\n{\n    int run = kit_pres_run(s);\n    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;\n    if (omin >= 0) return h->lo;@@const char *s3062_origin;\nstatic const char *run_floor(mf_art *art, const mf_hooks *h, const mf_site *s)\n{\n    int run = kit_pres_run(s);\n    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;\n    if (omin >= 0 || (s3062_origin \&\& h->lo \&\& strcmp(h->lo, s3062_origin))) return h->lo;' ;;
+        echo 'presence.c@@const char *kit_run_floor(mf_art *art, const char *lo, const mf_site *s, const char *who)\n{\n    int run = kit_pres_run(s);\n    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;\n    if (omin >= 0) return lo;@@const char *s3062_origin;\nconst char *kit_run_floor(mf_art *art, const char *lo, const mf_site *s, const char *who)\n{\n    int run = kit_pres_run(s);\n    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;\n    if (omin >= 0 || (s3062_origin \&\& lo \&\& strcmp(lo, s3062_origin))) return lo;' ;;
     S3063) # W-K3: the twin admission reads K unsigned (a negative K a huge step back)
         echo 'presence.c@@        unsigned long long k = s->head_max > 0 ? (unsigned long long)s->head_max : 0;@@        unsigned long long k = (unsigned long long)s->head_max;' ;;
     S3064) # C2's DECISION plant: the reply (mf_ask's and mf_defined's mf_class.run)
