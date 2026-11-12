@@ -2,7 +2,7 @@
 
 STATE: delivered, validation complete
 
-OWED: none (row job 589-kit-xarchfix-rows ran GREEN, wall 313 s).
+Row job 589-kit-xarchfix-rows ran GREEN (wall 313 s).
 
 ## Summary
 
@@ -72,3 +72,4 @@ The job is 589-kit-xarchfix-rows (script /var/tmp/pcrec-pcrec/scratch/memfn/xarc
 ## STATE AT HANDOFF
 
 Branch lane/memfn-xarchfix: code 0221b36d2, report on top. The row job is GREEN and nothing is owed. No rulings file was named.
+OWED: none
