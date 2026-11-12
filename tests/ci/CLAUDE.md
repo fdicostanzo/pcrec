@@ -7,6 +7,7 @@ not a hang). Since lane `ciswitch` (2026-11-11) `.github/workflows/ci.yml` CALLS
 one gather verdict, ~18 min wall (was 3 shards, 52-68 min). `make test` itself is unchanged and stays the
 local merge/close standard.
 
+- **workflow_perms_check.py** — `make cloud-check` check 6: every workflow a `uses: ./.github/workflows/X.yml` job calls has all of X's declared permissions (top-level and per-job) granted by the calling job or its caller's top-level block (unspecified = none); cloud_check.sh plants a missing `actions: read` in a scratch copy and requires it named.
 - **check_shards.sh** — the control (`make test-ci-shards`, a `TEST_SECTIONS` member): the table
   `cloud_test_shards.tsv` (passed as the default `TABLE`; `cloud_check.sh` points it at each kind's selector) holds every
   `TEST_SECTIONS` member (passed on argv by the Makefile — the list is spelled once, there) in exactly one shard, no
