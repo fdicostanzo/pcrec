@@ -17,7 +17,7 @@ make strict clean; `python3 -I -m py_compile scripts/emit_sweep.py` ok; scripts/
 
 ## Charter-vs-committed checklist
 1 VARIANTS cause shown, declared mover wired: done (job script in scratch/kclose2/jobs, not committed). 2 re-pin: committed. 3 regex: done. 4 checks: done.
-OWED: the 580 re-run (kit manager queues it); expect cells all `ok`.
 
 ## STATE AT HANDOFF
 Committed on lane/memfn-kclose: the floor re-pin and this report. Job script edits (declared-mover argument and text check, regex fix) are in /var/tmp/pcrec-pcrec/scratch/memfn/kclose2/jobs/580-kit-kclose2-r13a. Nothing owed from this lane; the 580 re-run is the kit manager's. Untracked kclose2.done is kclose2's, not touched.
+OWED: none (the 580 re-run is the kit manager's to queue; expect all ten cells ok)
