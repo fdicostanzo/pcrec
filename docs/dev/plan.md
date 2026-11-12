@@ -355,12 +355,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: the next counterfactual reader (stage 2's VM walk, a second deep `under` read) or the next toggle site
     refs: docs/dev/reviews/2026-10-29-r7-landwalk3.md; docs/dev/lanes/p1build_report.md; src/gen/emit_dfa.c (pcrec_cand_lmwalk_next_cf)
     Reentrant and longjmp-safe, lets `under` propagate as the static walk assumes, and unifies the ladder's shrink test, the memo and the facts hook (forest-for-trees: the family's third member, so proposed, not built).
-- [LOWERENC-SEAL] STATE:not-started — remove lower_enc.c's A_CAT(A_EMPTY, alt) seal (a simplification)
-  filed: 2026-10-22 lane landlang
-  status (2026-11-05): absorbed by alt_normal_form.md rev 1 stage 1 (seal deleted there; an abi event with the D94 grep and re-pins); the row closes when stage 1 lands
-  next: rides the next abi event (retirement is an abi bump plus identity re-pin, D76/D94)
-  refs: src/opt/lower_enc.c; docs/dev/lanes/langfix2_report.md; docs/dev/lanes/langfix3_report.md
-  The multi-branch wrapper exists only so an old recursion walk saw one node; the seal comment now says it is redundant. Simplify-only qualifies on that alone.
 - [LANG-DIAG-WORDING] STATE:not-started — refusal wording and blame offsets from the language fixes (D26 tier)
   filed: 2026-10-22 lane landlang
   status (2026-10-22): not started; collected from the langfix reports, all diagnostic position or wording, none a match answer

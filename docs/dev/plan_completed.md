@@ -6615,3 +6615,8 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   next: one sonnet lane runs the staged test after 624 and before the bench window; no full-suite use before it
   refs: docs/dev/lanes/queuemon_report.md (proposal 1; 300-main-fullsuite 36,878 s, a re-run needed 3 stages); scripts/fullsuite_job.sh; scripts/battery.sh
   Charter: never automatic. The owner queues a resume job naming the red run dir; it re-runs the red and not-yet-run stages at the SAME commit (refused if the tree moved) and writes a combined verdict citing both runs.
+- [LOWERENC-SEAL] STATE:done — remove lower_enc.c's A_CAT(A_EMPTY, alt) seal (a simplification)
+  filed: 2026-10-22 lane landlang
+  status (2026-11-12): DONE by [RUN-POS-SET] stage 1 (merge f77ed1130, lane altland): the seal is gone; src/opt/lower_enc.c now carries only a comment saying no seal is needed (verified by the manager 2026-11-12, set S1).
+  refs: src/opt/lower_enc.c; docs/dev/lanes/langfix2_report.md; docs/dev/lanes/langfix3_report.md
+  The multi-branch wrapper exists only so an old recursion walk saw one node; the seal comment now says it is redundant. Simplify-only qualifies on that alone.
