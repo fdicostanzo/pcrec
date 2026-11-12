@@ -1,0 +1,5 @@
+report=docs/dev/lanes/kclose3_report.md
+sections: Summary; VARIANTS FAILED cause; Floor re-pin; Job fix; Checks; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
