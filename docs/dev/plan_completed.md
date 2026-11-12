@@ -6620,3 +6620,8 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   status (2026-11-12): DONE by [RUN-POS-SET] stage 1 (merge f77ed1130, lane altland): the seal is gone; src/opt/lower_enc.c now carries only a comment saying no seal is needed (verified by the manager 2026-11-12, set S1).
   refs: src/opt/lower_enc.c; docs/dev/lanes/langfix2_report.md; docs/dev/lanes/langfix3_report.md
   The multi-branch wrapper exists only so an old recursion walk saw one node; the seal comment now says it is redundant. Simplify-only qualifies on that alone.
+- [XARCH-NEEDSOK] STATE:done — a check that each kit level's declared needs SUFFICE for its intrinsics (the S726 closer)
+  filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-7, PLAN; kit-side, relayed)
+  status (2026-11-12): DONE: delivered by the kit's close-out (merge of lane/memfn-kclose, 2026-11-12) and fixed by lane memfn-xarchfix (a failing level reports a clean MISMATCH, not a compiler error); S725, S726, S2981, S2994 read DETECTED.
+  refs: tests/mech/sabotages/S726_w32_under_weak_guard.sh; memfn/tests/check_targets.sh
+  check_targets.sh proves needs is a subset of features, never that the needs are enough: a level under-declaring (avx for avx2) is invisible while every target carrying the one carries the other.

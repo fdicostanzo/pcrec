@@ -58,12 +58,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     next: run tests/cli's xt_place over one artifact per listed target with a family (a guard-only target: guard once, no region); pick the two-target family by listing order, not awk hash order
     refs: tests/cli/run_cli_tests.sh xt_place; docs/spec/match_api.md §6.3.10¶15
     Today the cli placement case covers one target (the baseline amd64 one); the larger region and the arm64 guard-only artifact are placed by no check.
-  - [XARCH-NEEDSOK] STATE:not-started — a check that each kit level's declared needs SUFFICE for its intrinsics (the S726 closer)
-    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-7, PLAN; kit-side, relayed)
-    status (2026-11-08): filed; S726 stays declared UNDETECTED until it lands
-    next: the kit: compile each level's rendered helper at its family's baseline plus -m<need> for exactly its needs, one loop in memfn/tests/check_targets.sh; then S726 re-declared DETECTED
-    refs: tests/mech/sabotages/S726_w32_under_weak_guard.sh; memfn/tests/check_targets.sh
-    check_targets.sh proves needs is a subset of features, never that the needs are enough: a level under-declaring (avx for avx2) is invisible while every target carrying the one carries the other.
   - [XARCH-TOKERR] STATE:not-started — an unknown CPU token's refusal is cut at 256 bytes mid-text
     filed: 2026-11-08 manager (review 2026-11-08-r5-xarch CONTRACT-4, PLAN)
     status (2026-11-08): filed
