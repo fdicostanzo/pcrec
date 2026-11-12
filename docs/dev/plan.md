@@ -282,7 +282,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: plan_completed.md [OPT-LITSCAN]; decisions D127
 - [REQ-PAST-LAST] STATE:not-started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
   filed: 2026-10-29 manager (kit observation at Frank's request, memfn/docs/responses.md on lane/memfn-r30)
-  status (2026-10-29): filed, not scheduled; general and independent of [LANDWALK] (its cheap part, usable on every route that has a required run)
+  status (2026-11-12): set S1. Facts done (lane reqlast): no route stops past the last occurrence; 250/5,023 corpus patterns could. Build (pcrec-only, lazy re-find when attempts pass the last hit; no kit request) runs after lane minw lands (both edit emit_dfa.c).
   trigger: (D77) a bench or corpus cell where attempts after the last required-run occurrence are a measurable share (no-match tails on long subjects, RX_REQ_HANDOFF "none")
   refs: [LANDWALK]; [REQ-HANDOFF]; memfn/docs/responses.md (R-30 note); decisions D157
   Today, for a required run at an UNBOUNDED distance, the found position is only a yes/no gate. Every match contains the run at or after its start, so no attempt that starts after the run's LAST occurrence can match: one lazy re-find (or one reverse find) as attempts pass the last known occurrence lets the loop stop at the first position past it. pcrec states the fact (required run, unbounded); the kit owns the method (D157).
