@@ -60,7 +60,7 @@ Class: KEEP (can be slower / legit force or contract), DEMOTE (test-only lever),
 | 18 | -fno-size-term | [ART-SIZE] K ladder | KEEP | the ladder TRADES speed for size on big artifacts by design; at +1/+2 the dial has no cell, so this is the only way a caller declines it |
 | 19 | -fno-prefilter-collapse | exact prefilter language | KEEP | GATE 4; the collapse weakens the prefilter and loses the prune ceiling (tuning 2.17 "what the collapse costs") |
 | 20 | -fprefilter-collapse | force count collapse | KEEP | size vs speed choice at the caller's discretion (artifact stops scaling with the count) |
-| 21 | -fno-scan-edge | counted-run scan edge | UNSURE | 2.7-3.0x faster on letters, 1.08x SLOWER on digits (denied faster); walk's edge cost 1.9% instrs (plan.md:341). Measure: edge vs table on digit-class runs over the bench's log/number subjects, Zen 4 + Zen 1 + Mac |
+| 21 | -fno-scan-edge | counted-run scan edge | UNSURE | 2.7-3.0x faster on letters, 1.08x SLOWER on digits (denied faster); walk's edge cost 1.9% instrs (plan.md). Measure: edge vs table on digit-class runs over the bench's log/number subjects, Zen 4 + Zen 1 + Mac |
 | 22 | -fno-start-pinned | elide reverse pass | DEMOTE | "PURE WIN" (5.4); denied = bigger and slower; bench uses it as a sibling for size columns |
 | 23 | -fno-alt-island | trie for literal alternations | DEMOTE | "PURE WIN"; branch order cost x8.87 at width 256 without it. Ladder's drop-islands needs the internal channel |
 | 24 | -fno-cls-fold | ASCII fold compare | DEMOTE | "NOT A RUNG: absorbed into lambda"; compiler-evidence faster and -38% .text (form_char_step0) |
@@ -83,14 +83,14 @@ Class: KEEP (can be slower / legit force or contract), DEMOTE (test-only lever),
 | 43 | -fno-run-overlap | overlapping word compares | DEMOTE | "NOT A RUNG: within a word of memcmp in size"; deny is the kit row flag (MF_D_RUN_OVERLAP) already |
 | 44 | -fno-req-run-fold | caseless cube runs | KEEP (conditional) | K5: `(?i)cat` on lowercase text ~200x slower than the denial (walk_survey.md), 23-26x for `(?i)error`; a latent find-all quadratic, linear fix shape unbuilt. Reverts to DEMOTE the day K5 is fixed |
 | 45 | -fno-req-set-lead | retired alias | DROP | tuning 2.40: "RETIRED ... alias of --memfn=no-pres-set-lead"; carries a bit only so compile can strip it |
-| 46 | -fno-req-handoff | K82 handoff | KEEP | ~4.6 ns/call on back-to-back literal matches (plan.md:505), K88; "interim lever" |
+| 46 | -fno-req-handoff | K82 handoff | KEEP | ~4.6 ns/call on back-to-back literal matches (plan.md), K88; "interim lever" |
 | 47 | -fno-start-set | DFA/VM start-set hat | KEEP | L3: +14..+17 ns/call when the subject starts on a start byte (known_issues:410); "interim lever"; same loss family as 46 |
 | 48 | -fno-memfn-simd | SIMD kit rows off | UNSURE | the deny only restates the default and beats a config-block ON (2.43). A ruling, not a measurement: can `-fmemfn-simd=none` (the value form already exists) carry it? |
 | 49 | -fmemfn-simd | SIMD kit rows on | KEEP | default OFF; "each form must beat scalar or show a named benefit" (2026-10-08 ruling); a caller's hardware choice |
 | 50 | -fno-poss-ctx-follow | possessify arm A0/A1 | DEMOTE | engine-selecting arm of possessify; never faster denied |
 | 51 | -fno-poss-bref-first | possessify arm | DEMOTE | arm; answer-identical; VM-only either way |
 | 52 | -fno-rev-end | reverse-from-end locator | UNSURE | dev box (Zen4/gcc 15.2): rev-end 1.7-2.6x FASTER than denied on all O-96 cells (known_issues:222), but K104's floor was seen elsewhere. Measure: O-96 (c)2 litrun cells on Zen 1 (ubuntubudu) and Mac vs -fno-rev-end |
-| 53 | -fno-start-width | end-minus-width start | DEMOTE | "PURE WIN"; the only cost on record is COMPILE time (emit-c x2.53 on one pattern, plan.md:1976), not run time |
+| 53 | -fno-start-width | end-minus-width start | DEMOTE | "PURE WIN"; the only cost on record is COMPILE time (emit-c x2.53 on one pattern, plan.md), not run time |
 | 54 | -fno-start-landing | landing start | DEMOTE | same as 53 |
 | 56 | -fno-rev-end-onewalk | one-walk forms of rev-end | DEMOTE | sub-form of 52; answer-identical; never slower recorded |
 | 57 | -fno-landmark-walk | landmark walk locator | KEEP | spec 2.54 para 3: "the walk can be slower than the forward scan ... which is why the flag is public" |
