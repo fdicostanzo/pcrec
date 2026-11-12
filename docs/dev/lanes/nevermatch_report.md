@@ -132,11 +132,21 @@ answered by the DFA engine's empty artifact on every route `--engine=auto` reach
 
 ## OWED
 
-- Local pinned sections ran through chainrun, logdir `$PCREC_TMPDIR/scratch/nevermatch/chain1/`:
-  strict, test-codegen, test-rxtsource, test-startset, test-partlayout, test-compound,
-  test-resource and test-cpset-structure. VERDICTS below.
-- Cloud: `scripts/cloudrun --owner main --kind test --name nevermatch`, dispatched last; the run is
-  named in the handback. An axes run is owed only if test is green, because emission changed.
-- `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh`: the empty row fires in 16 new places.
-  Queued or owed, see the handback.
-- `make test-recursion-identity` on this worktree, through the box queue (pffix's precedent).
+- **Local pinned sections, run through chainrun** (logdir `$PCREC_TMPDIR/scratch/nevermatch/chain1/`,
+  head `018eff8aa`):
+  - GREEN: `make strict`, test-codegen (21/21 scripts, including run_dfa_stamps with the 270-pattern
+    empty manifest), test-rxtsource, test-startset, test-compound, test-resource and
+    test-cpset-structure.
+  - test-partlayout was RED on the census: 3 of the 16 moved hybrids are in its population and lost
+    their subject (`((?*a)z)`, `((?=[ab])z)`, `(?<g>\w\b)(?&g)?x`).
+  - Fix: the 16 are added to its declared `NEVER_MATCH` set, and the subject floor goes from 370 to
+    365 of 380. The reached count is now 368 of 387; the floor's ratio is kept under it.
+  - Re-run solo under `boxlock run` (`make test-partlayout`): `checks failed: 0`.
+    Log: `scratch/nevermatch/partlayout2.log`.
+- **Cloud: `scripts/cloudrun --owner main --kind test --name nevermatch`**, dispatched as the last act
+  (the run line is in the handback). The axes kind follows only if test is green, since emission
+  changed.
+- **Not run:**
+  - `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh`, owed because the empty row now fires in
+    16 new places;
+  - recidentity: the cloud kind `recidentity`, or `make test-recursion-identity` through the box queue.
