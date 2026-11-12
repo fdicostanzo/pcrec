@@ -110,7 +110,7 @@ read utf8 TAG FLOOR lines too.
 - `make strict` in worktrees/kclose: rc=0 ("whole tree compiles clean with
   -Werror -Wshadow"). Log: /var/tmp/pcrec-pcrec/scratch/memfn/kclose4/strict.log.
 - scripts/tests/emit_sweep.py.test (the file run, against worktrees/kclose
-  build/pcrec): result in STATE AT HANDOFF below. Log:
+  build/pcrec, rebuilt at the tip): rc=0, checks passed 28, failed 0. Log:
   /var/tmp/pcrec-pcrec/scratch/memfn/kclose4/selftest.log.
 - 580-kit-kclose2-r13a `--dry-run`: rc=0.
 
@@ -124,8 +124,8 @@ read utf8 TAG FLOOR lines too.
 - Re-point 580 if needed: not needed, and its dry-run passes.
 - Do not queue 580: not queued.
 - `make strict`: rc=0.
-- emit_sweep self-test: see STATE AT HANDOFF.
+- emit_sweep self-test: rc=0 (28 passed / 0 failed).
 - One queued BASE-vs-tip job: not queued, because the existing job 580 record
   is that comparison (reason above).
 
-STATE AT HANDOFF: re-pin committed; self-test result recorded below.
+STATE AT HANDOFF: re-pin committed (646a8c0be); make strict rc=0; self-test rc=0 (28/0); 580 dry-run rc=0, not queued. Nothing owed by this lane.
