@@ -82,4 +82,12 @@ grep -q 'name: cloud-shard-\${{ steps\.[a-z]*\.outputs\.slug }}' "$w" && grep -q
 grep -nE '^[[:space:]]*(timeout-minutes|max-parallel):.*\$\{\{[^}]*[-+*/][^}]*\}\}' "$w" | grep -v 'needs\.plan\.outputs\.[a-z_]*) *}}' >/dev/null \
     && bad "cloud-test.yml: arithmetic inside a \${{ }} expression (Actions has none): compute it in the plan job" \
     || ok "cloud-test.yml: no arithmetic in its limit/parallelism expressions"
+# 6. A called workflow cannot exceed its caller's grant (CI 43163694339: cloud-test.yml declared actions: read, ci.yml granted
+#    only contents: read -> "a workflow file issue"). workflow_perms_check.py; the sabotage drops ci.yml's actions: grant in a
+#    scratch copy and must go red naming the permission; the zero-call floor keeps a vanished call from passing silently.
+out=$(python3 -I "$here/workflow_perms_check.py" "$root" 2>&1) && echo "$out" | grep -q 'ok: [1-9]'     && ok "reusable workflows: every callee permission is granted by its caller ($out)" || bad "reusable-workflow permissions: $out"
+T7=$(mktemp -d "${TMPDIR:-/var/tmp}/cloud_check7.XXXXXX"); mkdir -p "$T7/.github"; cp -r "$root/.github/workflows" "$T7/.github/"
+sed -i '/^  actions: read/d' "$T7/.github/workflows/ci.yml"
+out=$(python3 -I "$here/workflow_perms_check.py" "$T7" 2>&1)     && bad "permissions plant 'ci.yml without actions: read' stayed green"     || { echo "$out" | grep -q 'declares actions: read but ci.yml' && ok "permissions plant: a missing caller grant is named (actions: read)" || bad "permissions plant not named: $out"; }
+rm -rf "$T7"
 echo "cloud_check: $pass passed, $fail failed"; [ "$fail" = 0 ]
