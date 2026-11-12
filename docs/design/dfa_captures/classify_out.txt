@@ -1,0 +1,59 @@
+===== all n 5769 dfa 2999 vm 2353 refused 417
+ capture-forced 1557
+     815 captures only -> dfa
+     369 captures + backref
+      98 captures + lookaround + other
+      88 captures + lookaround only (capture inside look)
+      60 captures + call/recursion
+      51 captures + atomic/possessive
+      37 captures + lookaround only
+      24 captures + callout/var
+      14 captures + \K
+       1 captures + dfa size cap
+ capture-free VM 796
+     394 lookaround
+     207 atomic/possessive
+      74 \K
+      46 callout/var
+      42 call/recursion
+      24 lookaround + other
+       9 dfa size cap
+ captures-only prefilter: Counter({'hybrid': 709, 'none': 106})  ncaps dist: [(2, 568), (3, 188), (4, 39), (5, 9), (9, 11)]
+===== corpus n 5487 dfa 2802 vm 2291 refused 394
+ capture-forced 1519
+     793 captures only -> dfa
+     359 captures + backref
+      97 captures + lookaround + other
+      88 captures + lookaround only (capture inside look)
+      57 captures + call/recursion
+      50 captures + atomic/possessive
+      36 captures + lookaround only
+      24 captures + callout/var
+      14 captures + \K
+       1 captures + dfa size cap
+ capture-free VM 772
+     382 lookaround
+     204 atomic/possessive
+      73 \K
+      45 callout/var
+      41 call/recursion
+      24 lookaround + other
+       3 dfa size cap
+ captures-only prefilter: Counter({'hybrid': 688, 'none': 105})  ncaps dist: [(2, 551), (3, 186), (4, 39), (5, 7), (9, 10)]
+===== bench n 282 dfa 197 vm 62 refused 23
+ capture-forced 38
+      22 captures only -> dfa
+      10 captures + backref
+       3 captures + call/recursion
+       1 captures + atomic/possessive
+       1 captures + lookaround only
+       1 captures + lookaround + other
+ capture-free VM 24
+      12 lookaround
+       6 dfa size cap
+       3 atomic/possessive
+       1 call/recursion
+       1 \K
+       1 callout/var
+ captures-only prefilter: Counter({'hybrid': 21, 'none': 1})  ncaps dist: [(2, 17), (3, 2), (5, 2), (9, 1)]
+REFUSED top: [('pcrec: quantifier does not follow a repeatable item ', 74), ("pcrec: module 'unicode-props' is enabled but \\p{...}: this Unicode pro", 59), ('pcrec: every alternative of a lookbehind must have a bounded length (t', 29), ('pcrec: \\p{...}: not a one-letter Unicode property code pcrec recognise', 21), ('pcrec: \\K is not allowed inside a lookaround ', 15), ('pcrec: a relative reference of zero is not allowed ', 14), ('pcrec: two named subpatterns have the same name (write (?J) before thi', 14), ('pcrec: missing closing ) for group ', 12)]

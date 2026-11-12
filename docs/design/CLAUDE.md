@@ -107,6 +107,7 @@ Modules (design notes with `*_measurements/` siblings)
 - `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/` + `la_d27_extract.md`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind; stage 1 built, stage 2 rev 5.2) + `vlb_d27_extract.md` + `vlookbehind_pieces.md` (its fixed/variable piece probe, rev 0); `subroutines_design.md` + `subroutines_measurements/` + `sr_d27_extract.md`; `frame_buffer_design.md` (D71 item 2).
 - `feature_families.md` — [FEAT-FAMILIES] basic/extended/pcre2 families over D37 (PROPOSED rev 0).
 - `cond_family.md` — [COND-FAMILY] survey: conditions/predicates/intersection members, machinery, common elements, first piece.
+- `dfa_captures_research.md` — [ENG-TDFA] captures without the VM.
 - `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
 - `uprop_more.md` — [UPROP-MORE] `\p{}` binary properties + Bidi_Class (PCRE2 catch-up) and Block/Age (extension) design (PROPOSED).
 - `utf8_design.md` + `utf8_measurements/` + `utf8_d27_extract.md` ([M5.0]); `ucp_design.md` + `ucp_measurements/` ([UCP]); `utf_valid_design.md` + `utf_valid_evidence/` ([UTF-VALID], D133); `encoding_data_layout.md`.
