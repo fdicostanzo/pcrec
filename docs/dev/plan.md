@@ -177,8 +177,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   LEADING SHAPE (Frank 2026-10-09: "could it return a boolean such that one could write while (wrapper(..)) ..."; manager): a whole-step boolean iterator — `rx_iter it = RX_ITER_INIT; while (<prefix>_next(&it, s, n, caps)) report(caps); if (it.rc < 0) /* gave up */` — `_next` = (p > n → 0) + `_search` + the [K75] aligned advance; the done-vs-gave-up distinction (§4's negative codes) rides in `it.rc`, never dropped; the iterator struct is where the NOTEMPTY_ATSTART retry bit and the xcall.md §5 cross-call hint would live later, with no caller change; `rx_iter` a fixed unprefixed ABI type (rx_ctx's family), `_next` a `static inline` in the artifact header.
 - [UPROP-MORE] STATE:started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
   filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
-  status (2026-10-26): part B landed 731228fb2 (upropb): 78 new names, Block/Age, U22; job 616 green; main make test after landing = job 622 GREEN 77/77; design uprop_more.md, D178
-  next: a D27 blinded test author on the spec; review; size follow-up under [DATA-PLAN] (none started)
+  status (2026-11-11): part B landed 731228fb2; D27 corpus promoted e2ff8c6a6 (tests/uprops/d27/, 520 blocks; UCD and libpcre2 arms 0 disagreements; no pcrec bug; cli.md §1.17.1 has the 55 names)
+  next: size follow-up under [DATA-PLAN] only (not started); the row closes when that is ruled not needed or done
   refs: docs/design/uprop_more.md; docs/dev/utf_wants_2026-10-24.md; D178; [UCD-RECORD]; [DATA-PLAN]
   Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Class, pcrec refused them. One mechanism: a ranged-property reader in third_party/ucd-16.0.0/generate.py; each property is an interval list like \p{Sc}.
 - [DATA-PLAN] STATE:blocked — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
