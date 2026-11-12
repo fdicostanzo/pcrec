@@ -1,8 +1,8 @@
 # Lane xarchfix: the target check reports a missed level as a check FAIL
 
-STATE: delivered (row job OWED)
+STATE: delivered, validation complete
 
-OWED: queue job `kit-xarchfix-rows` (queued as 589-kit-xarchfix-rows, still pending at handback): 18 memfntargets rows, each must end as declared. Script /var/tmp/pcrec-pcrec/scratch/memfn/xarchfix/jobs/rows.sh; log /var/tmp/pcrec-pcrec/scratch/memfn/xarchfix/run/mech/mech.log; done line `== mech run COMPLETE: 18 rows (unexpected: 0, ... anomalies: 0, ...`.
+OWED: none (row job 589-kit-xarchfix-rows ran GREEN, wall 313 s).
 
 ## Summary
 
@@ -43,7 +43,11 @@ All runs were by hand in the worktree, with `TMPDIR=/var/tmp/pcrec-pcrec`. Each 
 
 ## Row job
 
-Queue key `kit-xarchfix-rows`, queued as 589-kit-xarchfix-rows, against the committed HEAD 0221b36d2. It runs 18 rows: S725 S726 S2981 S2994 S2975 S2976 S2977 S2978 S2979 S2980 S2996 S3003 S3004 S1895 S1896 S1897 S1898 S1899. The job gates on `unexpected: 0` and `anomalies: 0`. It was still PENDING at handback, so its verdict is OWED. Record dir: /home/pcrec/projects/pcrec/worktrees/.boxqueue/{done,failed}/*-589-kit-xarchfix-rows.
+The job is 589-kit-xarchfix-rows (script /var/tmp/pcrec-pcrec/scratch/memfn/xarchfix/jobs/rows.sh, shaped like k382cm2's), and its outcome was GREEN: rc 0, wall 313 s. Record: /home/pcrec/projects/pcrec/worktrees/.boxqueue/done/20261112T151322.803231136-589-kit-xarchfix-rows. Log: /var/tmp/pcrec-pcrec/scratch/memfn/xarchfix/run/mech/mech.log.
+`== mech run COMPLETE: 18 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at 0221b36d256c15dd94fbbd6bee4b010de18cdf9d ==`.
+- S725, S726, S2981, S2994: DETECTED.
+- S2975 to S2980, S2996, S3003, S3004, S1897, S1898, S1899: DETECTED.
+- S1895, S1896: DETECTED-BUILD, as declared (COMPILE-CATCH, in run_targets.sh's cells; unchanged).
 
 ## Checks
 
@@ -61,6 +65,10 @@ Queue key `kit-xarchfix-rows`, queued as 589-kit-xarchfix-rows, against the comm
 - S725, S2981, S2994 and S726 are `SAB_EXPECT=DETECTED`, with S726 back from COMPILE-CATCH: done.
 - tests/mech/CLAUDE.md's COMPILE-CATCH list drops S726: done.
 - Other memfntargets rows grepped and checked: done (listed above, all in the job).
-- One row job queued: done; its verdict is OWED.
+- One row job queued: done, GREEN, all 18 rows as declared.
 - make strict, test-memfn-targets and the CLAUDE.md size check: done, all green.
 - Not done, for the manager: docs/dev/plan.md on this branch still shows [XARCH-NEEDSOK] `STATE:not-started`, with "S726 stays declared UNDETECTED". The plan is the manager's file, and this lane did not edit it.
+
+## STATE AT HANDOFF
+
+Branch lane/memfn-xarchfix: code 0221b36d2, report on top. The row job is GREEN and nothing is owed. No rulings file was named.
