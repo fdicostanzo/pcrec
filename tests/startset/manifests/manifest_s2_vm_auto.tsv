@@ -533,9 +533,6 @@ tests/litscan/handoff_vm.rxt:381	--features all --encoding=utf8 --engine=vm	2e7b
 tests/litscan/handoff_vm.rxt:400	--features all --encoding=utf8 --engine=vm	283f692973747261
 tests/litscan/handoff_vm.rxt:435	--features all --encoding=byte --engine=vm	283f692973747261
 tests/litscan/handoff_vm.rxt:460	--features all --encoding=byte --engine=vm	61625c4b6364
-tests/litscan/handoff_vm.rxt:485	--features all --encoding=byte --engine=vm	2861295c3178797a
-tests/litscan/handoff_vm.rxt:509	--features all --encoding=byte --engine=vm	612b78797a
-tests/litscan/handoff_vm.rxt:550	--features all --encoding=byte --engine=vm	2868747470733a2f2f7777775c2e283f3a61636d657c676c6f6265787c696e69746563687c756d6272656c6c617c686f6f6c69295c2e28636f6d7c64657c66727c6e6c7c6f7267292f5b5e223f5c735d2a29283f3a285c3f283f3a5b5e225c735d2a26293f746c643d29283f215c325c62295b612d7a5d2b7c283f215c3f283f3a5b5e225c735d2a26293f746c643d29285c3f5b5e225c735d2a293f283f3d222929
 # alttri (2026-11-07, 171 triage of the alternation branch): +6/-1 rows; every added row a block of tests/altcls/altnf_rules.rxt, tests/utf8/altnf_lowering.rxt, tests/counterk/counterk.rxt or tests/uprops/size_ladder_prefilter_drop.rxt (new files, shifted ids, a re-aimed block); rows taken from test-startset's own mover list (vmhat_checks.py).
 tests/altcls/altnf_rules.rxt:53	--features all	283f3a61627c286129647c6164295c313f
 tests/utf8/altnf_lowering.rxt:113	--features all --encoding=utf8 --engine=vm	5c707b4e647d2b
@@ -596,3 +593,12 @@ tests/litscan/spanarms.rxt:626	--features all --engine=vm	6162283f21636429283f3c
 tests/litscan/spanarms.rxt:643	--features all --engine=vm	61626364282965666768
 tests/litscan/spanarms.rxt:660	--features all --engine=vm	61626364283f3a7c2965666768
 tests/litscan/spanarms.rxt:675	--features all --engine=vm	6162283f3a7c78296364
+# reqpast (2026-11-12, [REQ-PAST-LAST]): tests/litscan/handoff_vm.rxt regenerated (six unbounded-K blocks inserted before the declines): rows 485, 509, 550 removed and the file's movers re-pinned under their new ids; the VM hat row read off each block's own compile on the lane build, no other file's row moved.
+tests/litscan/handoff_vm.rxt:485	--features all --encoding=byte --engine=vm	28617c61617c62292b6378797a
+tests/litscan/handoff_vm.rxt:549	--features all --encoding=byte --engine=vm	612b78797a
+tests/litscan/handoff_vm.rxt:596	--features all --encoding=byte --engine=vm	5b5e40205d2b4078
+tests/litscan/handoff_vm.rxt:648	--features all --encoding=utf8 --engine=vm	5b5e40205d2b4078
+tests/litscan/handoff_vm.rxt:674	--features all --encoding=byte --engine=vm	612b5c4b78797a
+tests/litscan/handoff_vm.rxt:706	--features all --encoding=byte --engine=vm	283f3c3d78797a29612b78797a
+tests/litscan/handoff_vm.rxt:749	--features all --encoding=byte --engine=vm	2861295c3178797a
+tests/litscan/handoff_vm.rxt:790	--features all --encoding=byte --engine=vm	2868747470733a2f2f7777775c2e283f3a61636d657c676c6f6265787c696e69746563687c756d6272656c6c617c686f6f6c69295c2e28636f6d7c64657c66727c6e6c7c6f7267292f5b5e223f5c735d2a29283f3a285c3f283f3a5b5e225c735d2a26293f746c643d29283f215c325c62295b612d7a5d2b7c283f215c3f283f3a5b5e225c735d2a26293f746c643d29285c3f5b5e225c735d2a293f283f3d222929
