@@ -25,7 +25,7 @@ AST -> priority Thompson NFA (nfa.c) -> DFA via priority subset construction (df
 ## Files
 
 - nfa.c — Thompson NFA construction; reverse compile (D7), `pcrec_nfa_wrap_unanchored`, iterative CAT/ALT spine flattening (R1 R-2), prefix trie for flat alternations (trie_build/trie_key; reverse mode factors suffixes), `A_CALL` splice.
-- dfa.c — priority subset construction, byte equivalence classes, closure walk, EOL/end variants, per-engine state caps (R1 A-3), `PCREC_MAX_SUBSET_ELEMS` charge in `intern()`.
+- dfa.c — priority subset construction, byte equivalence classes, closure walk, EOL/end variants, per-engine state caps (R1 A-3), `PCREC_MAX_SUBSET_ELEMS` charge in `intern()`; the machine-level empty tests `pcrec_dfa_accepts_nowhere` / `pcrec_dfa_pair_matches_nothing` ([NEVER-MATCH]: the empty LOCATE row's and the `never_matches` fact's one derivation).
 
 ## Pointers
 

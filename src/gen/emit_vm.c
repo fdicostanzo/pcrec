@@ -9962,7 +9962,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * the `pruning` section does not already say per quantifier.
      * [START-TABLE] C5 listed where WIDTH's row (H1 `ceiling`) is, the
      * selection the guard and the stamp read. */
-    if (pcrec_cand_width(vm_width_row(v))->check)
+    if (pcrec_cand_width(vm_width_row(v))->ceiling)
         vm_row3(o, "root-minw", vm_rolef(v, "%lld", st->root_minw),
                 "unbounded -- matches nothing: the search entry answers NOMATCH"
                 " before any frame is pushed (SS4.4b's fixpoint, SS12 P-12)");
@@ -11778,7 +11778,7 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * sentence a reader greps for ("matches nothing"). [START-TABLE] C5 the
      * condition is WIDTH's row, the selection the test reads; the value
      * stays its landmark's (`root_minw`). */
-    if (pcrec_cand_width(vm_width_row(v))->check) {
+    if (pcrec_cand_width(vm_width_row(v))->ceiling) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "/* [DD-14] root minw unbounded: matches nothing. This pattern's\n"
@@ -13563,6 +13563,18 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * this parameter by name. */
     pcrec_emit_end_window_clamp(v->cx, c, "    ", "search_from", "subject_length");
 
+    /* [FIND-MINW] WIDTH's row, read once for both of its texts: below the
+     * ceiling (`min-width`) the minimum-width check the DFA fronts write,
+     * here, ahead of the pre-check, because it is one comparison and the
+     * pre-check scans; at the ceiling (`ceiling`) the stamped spelling
+     * below. */
+    const CandRow *width = vm_width_row(v);
+    PCREC_CAND_TRACE_REC("WIDTH", "vm", pcrec_cand_tok(width), "root-minw");
+    VM_CAND_HIT(v, CAND_SLOT_WIDTH, width, "root-minw");
+    if (pcrec_cand_width(width)->check && !pcrec_cand_width(width)->ceiling)
+        pcrec_emit_min_width_check(c, "    ", "search_from", "subject_length",
+                                   v->root_minw);
+
     /* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK, the same text the DFA's
      * search entries write, from the same the `req_byte` fact and the same
      * emitter. AFTER the clamp for the clamp's own reason (a narrower window
@@ -13582,9 +13594,6 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * `attempt_position` (litscan_k82h.md Claim 2'). */
     const char *first = pcrec_emit_req_byte_check(v->cx, c, "    ", "search_from",
                                                   "subject", "subject_length");
-    const CandRow *width = vm_width_row(v);
-    PCREC_CAND_TRACE_REC("WIDTH", "vm", pcrec_cand_tok(width), "root-minw");
-    VM_CAND_HIT(v, CAND_SLOT_WIDTH, width, "root-minw");
 
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
      * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
@@ -13629,7 +13638,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * cycle, and mrl.rxt's `^(?:(?<g>a(?&g)b)){0}(?&g)$` -- and every one of
      * them is call-bearing, so no call-free artifact gains a byte.
      * [START-TABLE] C5 the condition is the WIDTH row (H1 `ceiling`). */
-    if (pcrec_cand_width(width)->check)
+    if (pcrec_cand_width(width)->ceiling)
         pcrec_sb_printf(c,
             "    /* The whole pattern's MINIMUM WIDTH is at the analysis\n"
             "     * ceiling (%s_VM_ROOT_MINW). Where the remaining subject\n"
@@ -13882,6 +13891,13 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             pcrec_start_anchor_name(pcrec_fact_start_anchor(v->cx)));
         pcrec_sb_cmt_close(c);
         pcrec_sb_puts(c, ub->attempt_max);
+    } else if (pcrec_cand_width(width)->check && !pcrec_cand_width(width)->ceiling) {
+        /* [FIND-MINW] no match starts with fewer than the minimum width
+         * left, and the entry's check above proved that many past
+         * `search_from`, so the bound does not wrap. */
+        att_max = "attempt_max";
+        pcrec_sb_printf(c, "    const size_t attempt_max = subject_length - %lluULL;\n",
+                        (unsigned long long)v->root_minw);
     }
 
     pcrec_sb_printf(c,

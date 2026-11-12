@@ -23,7 +23,24 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `100` on every artifact today ([PFFIX] the empty engine on an accept-free machine, 99 -> 100,
+- **`rx_info.abi` is `103` on every artifact today ([FIND-MINW] searches stop at the minimum width, 100 -> 103,
+  lane minw 2026-11-12; 101 and 102 were reserved for K38-2 and lane nevermatch).** A search entry whose every
+  match needs at least two bytes (the WIDTH row `min-width`: the `width` fact's `bmin` on the DFA routes, the
+  root's `pcrec_minw` on the VM) answers NOMATCH where fewer remain past `search_from`, ahead of the pre-check;
+  the forward DFA scan's start-state skip block ends the search where fewer remain past its landing; the
+  VM attempt loop's bound ends that many bytes before the subject's end.
+  The VM's ceiling row keeps its stamped check. No struct offset moves, no `rx_info` member is added or
+  changed, and no answer moves.
+
+- **`rx_info.abi` was `102` after ([NEVER-MATCH] a never-matching VM hybrid is the DFA
+  empty artifact, 100 -> 102, lane nevermatch 2026-11-12; 101 stays unused; landed with lane minw as s1land, 102 -> 103 above).** Under `--engine=auto`, a VM hybrid whose prefilter machines
+  admit no match (the empty LOCATE row's test, `pcrec_dfa_pair_matches_nothing` /
+  `pcrec_dfa_accepts_nowhere`, now in src/ir/dfa.c) is emitted by the DFA engine: its whole text is the empty
+  engine's (`RX_ENGINE "dfa"`, `RX_DFA_SCAN "empty"`), where it was a VM program behind a prefilter that
+  returned 0. Sixteen corpus patterns move (`(a)\b(b)`, `(?=a)\Kb`, `a\K\bb`, `(?<g>\w\b)(?&g)?x`, ...).
+  No struct offset moves, no `rx_info` member is added or changed, and no answer moves; every other artifact
+  moves only the number.
+- **`rx_info.abi` was `100` on every artifact ([PFFIX] the empty engine on an accept-free machine, 99 -> 100,
   lane pffix 2026-11-11).** A DFA machine in which NO state accepts in any view is now the EMPTY engine on
   both routes (`dfa_accepts_nowhere`, src/gen/emit_dfa.c), where only `d->n == 0` (attempt route) and a dead
   start (unanchored route) were before. The body that moves is the search body of a pattern that can match
