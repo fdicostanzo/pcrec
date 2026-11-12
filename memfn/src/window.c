@@ -88,9 +88,11 @@ static const struct {
                          "C-run's grouping), the run MEMBER and C-pin included", TIE_HIGHER,
                          "pcrec_find_run_scan_index / pcrec_find_run_rank ([n-1..0]), "
                          "pcrec_run_pin (exact positions highest first)",
-                         "equals pcrec_find_run_scan_index's tie until pcrec reads the kit's member; a "
-                         "change is a pcrec findings change in the same commit (req_run_member and "
-                         "pres_layout_check pin it); on REPORT literal stretches UNMEASURED DEFAULT" },
+                         "equals pcrec_find_run_scan_index's tie, which pcrec's own picks keep (the "
+                         "req_byte fact, rn_scan_mass); the pre-check's scan and the stamp's `@` read "
+                         "this decision's reply since R-38 K38-2 (req_run_member and "
+                         "pres_layout_check's pick agreement retired there); on REPORT literal "
+                         "stretches UNMEASURED DEFAULT" },
     [T_MASS_SET]     = { "A-mass at a set position", TIE_LOWER, "strict < over ascending offsets",
                          "MEASURED on REPORT (581: the rightmost loses 1.23-1.57x on year4)" },
     [T_MODEL]        = { "A-model, stop offsets of equal cost", TIE_LOWER,
@@ -100,9 +102,11 @@ static const struct {
                          "prefix_k's exchange sort over walk-index order (unstable)", "today's" },
     [T_MARGIN]       = { "MARGIN, best * NUM == base * DEN", TIE_PARKED,
                          "prefix_k's `>=` rejects", "today's" },
-    [T_WINDOW]       = { "the run truncation window (pcrec's, a limit of its statement): "
-                         "presence's run window (P3) over its candidate starts",
-                         TIE_LEFTMOST, "pcrec_find_run_window_start's strict <", "today's" },
+    [T_WINDOW]       = { "P3's run window, the run decision's KIT_RUN_WINDOW stretch "
+                         "(presence.c stretch_window), over its window starts",
+                         TIE_LEFTMOST, "stretch_window's kit_pick_takes over ascending starts",
+                         "the incumbent's (pcrec_find_run_window_start's strict <, deleted at "
+                         "R-38 K38-2), reproduced; UNMEASURED DEFAULT" },
     [T_PRES_MEMBER]  = { "P3's set pick, presence member spans of equal mass (keyed by "
                          "kit_tie_member_key)", TIE_HIGHER,
                          "the member LAST in pattern order (an UNKNOWN order below every known "
@@ -915,7 +919,9 @@ static const uint8_t *sets_at(const void *src, unsigned j, uint8_t buf[32])
  *               the same tie, pcrec_find_run_scan_index's rule, the part's
  *               scan and `@idx`; a masked part is one compare today).
  * The verify-NO member is this site's own decision (span_runs_sheet.md
- * §2.5), so it asks kit_run_member itself. */
+ * §2.5): it asks the run decision's EXACT_AROUND mode with the stretch
+ * row's tie stated here, so the lever leaves it behind (kit_run_member's one
+ * caller is kit_run_decide). */
 static void run_member(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
@@ -1111,8 +1117,8 @@ static const struct {
     { 1, "C-member", c_always,     run_member,
       "THE RUN MEMBER first, an output of the plan (mf_wreply.run_member): R's least-mass "
       "position and its stretch (kit_run_decide for a verify-YES run, ties per its options "
-      "(T_MASS_STRETCH, T_RUN_LEFT under the lever run-tie-left); kit_run_member for a "
-      "verify-NO one, ties per T_MASS_STRETCH; wsc3 rulings 3-4)" },
+      "(T_MASS_STRETCH, T_RUN_LEFT under the lever run-tie-left); its EXACT_AROUND mode "
+      "for a verify-NO one, ties per T_MASS_STRETCH; wsc3 rulings 3-4)" },
     { 2, "C-floor", c_floor_holds, c_floor,
       "the floor row (no stop): every position of the chosen alternative's spans" },
     { 2, "C-bound(floor)", c_floor_holds, c_bound_floor,

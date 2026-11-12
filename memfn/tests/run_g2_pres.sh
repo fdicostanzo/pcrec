@@ -197,7 +197,7 @@ plant_expect() {
     S3061) echo ': W-K1: ' ;;
     S3062) echo ': W-K2: ' ;;
     S3063) echo 'W-K3: the admission bit' ;;
-    S3044) echo "the run's link (mf_ask): .member. is not 0 on the run span" ;;
+    S3044) echo "the run's link \\(mf_ask\\): .member. is not 0 on the run span" ;;
     S3045) echo 'mf_ask \(the presence links\): refused' ;;
     S3043) echo 'default\.oml0 .*: PRESENCE: ;default\.oml0 .*: W-L1: ' ;;
     *) echo '' ;;

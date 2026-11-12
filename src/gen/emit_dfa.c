@@ -1246,15 +1246,20 @@ static void req_note_byte(StrBuf *c, const char *indent, int b)
  * Job (`mf_pre`). */
 
 /* The builder's record of the site it described: the site, its handle, and
- * THE RUN's REPLY (R-38 K38-2, span_runs_sheet.md §2.2): `run_tested` iff
- * the run's presence link is tested (a run part renders), and then `run` the
- * DEFINE's own `mf_class.run` (before the define, the pre-define ask's, the
- * same by the ask's purity; the trace build compares them), which every
- * reader of the run's scan and extent reads here. */
+ * THE RUN's REPLY (R-38 K38-2, span_runs_sheet.md §2.2): where the run's
+ * presence link is tested (a run part renders), `run` is the DEFINE's own
+ * `mf_class.run` (before the define, the pre-define ask's, the same by the
+ * ask's purity; the trace build compares them); else all zero, and unread
+ * (only the run part's note reads it, `req_site_note`). The run's other
+ * readers run before the site is defined or outside its define, and ASK
+ * the same pure question through `req_pres_ask`: the stamp's `@`
+ * (`req_run_at`), the landmark's mass (`req_landmark_hit_ppm`), the VM
+ * re-find's whole-run test (`req_parts_in_whole`) and the prefilter's
+ * dominance (`ofs_test_verifies_run`). (Review 2026-11-11 r1
+ * k382 F8: the write-only `run_tested` deleted.) */
 struct MemfnPre {
     const mf_site *site;
     uint32_t       handle;
-    bool           run_tested;
     mf_run_reply   run;
 };
 
@@ -1433,8 +1438,8 @@ static int req_pres_run(const mf_site *s)
  * layout (memfn/src/compose.c `pres_layout_check`). THE RUN PART (R-38
  * K38-2, span_runs_sheet.md §2.1-§2.2) is a FUNC part stating no window and
  * no term: the kit derives it from the run's presence span and its own run
- * decision (the reply, `mf_class.run`, kept on the record for every reader:
- * the note, the stamps, the landmark's mass); pcrec cuts no window and
+ * decision (the reply, `mf_class.run`, kept on the record for the run
+ * part's note; every other reader asks it, `struct MemfnPre`); pcrec cuts no window and
  * states no [K66] second part. The head's byte is REQUIRED except as [K82]'s
  * leading pick, which carries its span's need (speed only on a DFA-scan
  * route, §14.5); every other part is REQUIRED (the run part's need is the
@@ -1518,7 +1523,6 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
                        "reads the same links)");
 
     struct MemfnPre *pre = pcrec_arena_alloc(&cx->arena, sizeof *pre);
-    pre->run_tested = nrun;
     if (nrun) pre->run = cls->run;
     mf_pred *p = pcrec_memfn_preds(cx, (gate >= 0) + nrun + nrest);
     if (gate >= 0) {
