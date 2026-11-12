@@ -1,0 +1,3 @@
+# tests/ci/measured_recidentity.tsv -- MEASURED seconds of the single-shard `recidentity` kind (@wall only). NO RUN MEASURED YET.
+# runs (0): none
+unit	median_s	n	min_s	max_s	basis

@@ -60,6 +60,20 @@ local merge/close standard.
 - **cloud_units.py** / **cloud_measure.py** / **cloud_reweight.sh** / **measured_{test,axes,ubsan,asan}.tsv** — the reweigh
   process below: the per-unit record a shard leaves, the measurer, the one entry point, the committed measured times.
 
+- **cloud_mech_shard.sh** / **cloud_mech_check.sh** / **cloud_mech_shards.tsv** — [CLOUD-SUITE] D: the `mech` kind. A unit is one
+  S-id (the file name before its first `_`, as the driver's id arguments spell it); the wrapper runs the shard's ids through
+  `tests/mech/run_sabotage_matrix.sh` (`PCREC_BOXLOCK=0`, rows from the runner's checkout of the pushed commit), records per-row
+  seconds (`MECH_TIMES_OUT` -> `units.tsv`), names UNEXPECTED/ANOMALY rows as `FAIL:` lines for the extractor and refuses a missing
+  or short `== mech run COMPLETE` trailer. Table by `cloud_units_plan.py mech` from run 43108213213's measured rows (/2: a shard runs 2 rows at once; unmeasured rows take the mean, 185 of them). A shard killed at its step limit leaves the finished rows in `units.tsv`; the gather reads `rc=none` as `TIMEOUT` naming the unfinished ones. `SAB_CATCH_OPTIONAL=1` (a row field): a COMPILE-CATCH row whose checks detect it but whose compile catch did not fire reads DETECTED (S1896: the cloud runner has the same gcc 15.2 as the dev box yet compiles the fortify cell).
+  The `recidentity` kind is one shard (`selector -`): `make test-recursion-identity`, history from `fetch-depth: 0`.
+- **cloud_infra.py** — INFRA vs RED: a shard job whose test step passed and whose upload step failed. The gather names such
+  shards `INFRA` (`VERDICT INFRA`), `cloudrun --verdict` says INFRA-RERUN/INFRA, `queuewatch` reruns once, then `CLOUD-INFRA`.
+  Test: `cloud_gather.test` (13) on the real fixtures, `scripts/tests/queuewatch_infra.test`.
+- **`# extras=` in cloud_test_shards.tsv** — opt-in gates (`cloudgate-strict`, `cloudgate-lint`: Makefile targets, NOT
+  TEST_SECTIONS members) in ONE shard of their own; `check_shards.sh` check 6 and `cloud_check.sh` hold the shape.
+- **`suite` column** of cloud_kinds.tsv — `scripts/cloudrun --suite` dispatches every kind with 1 (the cloud full suite, one
+  commit); relation to the local battery: docs/testing.md "[CLOUD-SUITE] D".
+
 Per-section timestamps in CI come from `scripts/sectiontimes` over
 `make --debug=j` (the mechanism `scripts/perfrun` already used), uploaded as
 `pcrec-ci-sections-*` on success and failure. Design record and the weights'
