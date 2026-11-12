@@ -345,6 +345,7 @@ static const char *g_tag;
 static uint32_t g_inc;
 static int g_fails;
 static long g_generic;              /* sites mf_define rendered by the generic row */
+static long g_ctl_nopart, g_ctl_two;  /* F14's two layout controls, refused as ruled */
 static long g_route_sites[G2P_NROUTE], g_p2_untested, g_p2_refused, g_layout_ok, g_simd16, g_simd32;
 static long g_neg_omin, g_wk4_omin, g_k_nonpos, g_k_signed, g_partial, g_room, g_wk3_sites,
             g_wk3_cases, g_wk3_zero;
@@ -588,6 +589,40 @@ static void one_site(gsite *g, buf *fs, gout *o)
         return;
     }
 
+    /* THE STATEMENT RULE's other two refusals (review 2026-11-11 r1 k382
+       F14), each a control on a site whose run link IS tested, each refused
+       by ITS rule (the error names it, so another refusal is no pass):
+       (ii) the layout drops the derived run part (compose.c
+       pres_layout_check); (iii) the layout carries a SECOND derived part
+       (window.c wf_parts_check) */
+    {
+        static mf_pred cp[1 + 2 + 4];
+        const char *want[2] = { "its run part (the FUNC part the kit derives) is not where",
+                                "a second derived run part" };
+        for (int v = 0; v < 2; v++) {
+            unsigned n2 = 0;
+            for (unsigned i = 0; i < np; i++) {
+                if (preds[i].fn_ref && v == 0) continue;
+                cp[n2++] = preds[i];
+                if (preds[i].fn_ref) cp[n2++] = preds[i];   /* (iii): twice */
+            }
+            mf_art *ac = art_of(pfx, anp);
+            mf_site sc = s;
+            sc.npred = (uint16_t)n2;
+            sc.preds = cp;
+            sc.handoff = MF_H_ON_MISS;
+            sc.ret_pred = MF_NO_PRED;
+            buf t = { 0 };
+            mf_sink sk = mk_sink(&t);
+            uint32_t hd;
+            const char *err = ac && mf_define(ac, &sc, &h, &sk, &hd) ? mf_art_error(ac) : NULL;
+            if (err && strstr(err, want[v])) { if (v) g_ctl_two++; else g_ctl_nopart++; }
+            else fail(g->id, v ? "F14 (iii): a second derived run part" : "F14 (ii): no run part on a tested link",
+                      err ? err : "not refused");
+            free(t.p);
+        }
+    }
+
     s.npred = (uint16_t)np;
     s.preds = preds;
     s.handoff = keepi >= 0 ? MF_H_ASSIGN : MF_H_ON_MISS;
@@ -808,11 +843,11 @@ int main(int argc, char **argv)
     printf("G2PGEN %s sites=%d rendered=%d layout_ok=%ld P0=%ld P2=%ld P3=%ld P9=%ld "
            "p2_untested=%ld p2_refused=%ld simd16=%ld simd32=%ld neg_omin=%ld wk4_omin=%ld "
            "k_signed=%ld k_nonpos=%ld partial=%ld room=%ld wk3_sites=%ld wk3_zero=%ld wk3_cases=%ld "
-           "generic=%ld\n",
+           "generic=%ld ctl_nopart=%ld ctl_two=%ld\n",
            tag, total, n, g_layout_ok, g_route_sites[G2P_P0], g_route_sites[G2P_P2],
            g_route_sites[G2P_P3], g_route_sites[G2P_P9], g_p2_untested, g_p2_refused, g_simd16,
            g_simd32, g_neg_omin, g_wk4_omin, g_k_signed, g_k_nonpos, g_partial, g_room, g_wk3_sites,
-           g_wk3_zero, g_wk3_cases, g_generic);
+           g_wk3_zero, g_wk3_cases, g_generic, g_ctl_nopart, g_ctl_two);
     printf("g2_pres_gen failures: %d\n", g_fails);
     return g_fails ? 1 : 0;
 }

@@ -110,6 +110,8 @@ FLOOR_WK3_CASES=10160           # W-K3 checks: a K in -32..-1 on a site whose bi
 FLOOR_PRES_CHECKS=5380    # uses checked by the presence rule, per pass (5977)
 FLOOR_PRES_BELOW=2130     # of them the occurrence below the origin (2367)
 FLOOR_GENERIC=318         # the generic pass: sites the generic row rendered (353)
+FLOOR_CTL_NOPART=318      # F14 (ii): tested sites laid out with no run part, refused by its rule (353)
+FLOOR_CTL_TWO=318         # F14 (iii): tested sites laid out with two derived parts, refused (353)
 # THE LAYERS (D147; U2's admitted levels): per target, the sites whose run
 # part has a w16 / w32 arm (the generator's census of the kit's own text), and
 # the vector loads of the subject the recording build saw (the arms RAN).
@@ -175,6 +177,13 @@ plant_spec() {
     S3045) # F12: P3 drops out of the stretch-mode table (a renamed row): every
         # P3 site's ask is REFUSED, never handed a catch-all's stretch
         echo 'finder.c@@    { "P3", KIT_RUN_WINDOW },@@    { "P3-renamed", KIT_RUN_WINDOW },' ;;
+    S3046) # F14 (ii): the statement rule's "a tested link lays out its run part"
+        # refusal deleted (compose.c pres_layout_check skips the run part's slot):
+        # the generator's control (ii) is no longer refused by that rule
+        echo 'compose.c@@        if (k >= s->npred || !s->preds[k].fn_ref)\n            return "its run part@@        if (0 \&\& (k >= s->npred || !s->preds[k].fn_ref))\n            return "its run part' ;;
+    S3047) # F14 (iii): the "one run, one part" refusal deleted (window.c
+        # wf_parts_check counts derived parts but never refuses a second)
+        echo 'window.c@@            if (++nderived > 1) return "a second derived run part (one run, one part)";@@            ++nderived;' ;;
     S3064) # C2's DECISION plant: the reply (mf_ask's and mf_defined's mf_class.run)
         # says ver_len + 1 while the renderer (fd_pres_run's quiet ask) renders the
         # old extent; reaches where the extent ends before the run does
@@ -197,13 +206,15 @@ plant_expect() {
     S3061) echo ': W-K1: ' ;;
     S3062) echo ': W-K2: ' ;;
     S3063) echo 'W-K3: the admission bit' ;;
+    S3046) echo 'F14 \(ii\): no run part on a tested link' ;;
+    S3047) echo 'F14 \(iii\): a second derived run part' ;;
     S3044) echo "the run's link \\(mf_ask\\): .member. is not 0 on the run span" ;;
     S3045) echo 'mf_ask \(the presence links\): refused' ;;
     S3043) echo 'default\.oml0 .*: PRESENCE: ;default\.oml0 .*: W-L1: ' ;;
     *) echo '' ;;
     esac
 }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3060 S3061 S3062 S3063 S3064"
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -455,6 +466,8 @@ for tgt in $TARGETS; do
         rv() { grep -h "^G2P $1" "$WORK/$tag.run.log" | grep -oE " $2=[0-9]+" | head -1 | cut -d= -f2; }
         for x in $FLOOR_ROUTE_SITES; do floor "$tag sites ${x%%:*}" "$(gv "${x%%:*}")" "${x#*:}"; done
         floor "$tag p2_refused" "$(gv p2_refused)" "$FLOOR_P2_REFUSED"
+        floor "$tag ctl_nopart" "$(gv ctl_nopart)" "$FLOOR_CTL_NOPART"
+        floor "$tag ctl_two" "$(gv ctl_two)" "$FLOOR_CTL_TWO"
         for x in $FLOOR_REACH; do floor "$tag reach ${x%%:*}" "$(rv reach "${x%%:*}")" "${x#*:}"; done
         re=$(grep -h '^G2P reach' "$WORK/$tag.run.log" | sed 's/.*reentry//')
         for x in $FLOOR_REACH_RE; do
