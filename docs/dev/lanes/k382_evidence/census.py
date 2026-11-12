@@ -441,9 +441,9 @@ def one(task):
     # BASE artifact was compiled from, so `-fno-req-run-fold`'s unfolded run, `-i`'s folded one, etc. Was:
     # the default listing for every arm but `-i`, which predicted the FOLDED whole run under
     # utf8+-fno-req-run-fold and read `^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?-10)$` red. One listing per distinct
-    # flag list AND engine (`-fprefilter` is a VM-only flag); a listing BASE refuses under the arm while it
+    # flag list, engine (`-fprefilter` is a VM-only flag) and encoding; a listing BASE refuses under the arm while it
     # compiles the arm's artifact is a problem on the arm, never a silent fall back to the default.
-    fxs = {(): fb}
+    fxs = {}
     for arm, extra, stream in XARMS:
         if stream.startswith("w-"):          # the witness arm: the -DPCREC_SIMD_WITNESS builds
             eng = ["--engine=vm"] if stream == "w-c-vm" else []
@@ -464,9 +464,9 @@ def one(task):
         rn = run([new] + C + eng + extra + ["--pattern", pat])
         enc = "utf8" if "utf8" in extra else "byte"
         key = tuple(eng + [x for x in extra if x != "--engine=vm"])
-        if key not in fxs:
-            fxs[key] = run([base] + FACTS + list(key) + ["--pattern", pat])
-        fx = fxs[key]
+        if (key, enc) not in fxs:    # the arm's own encoding only: the other may refuse what this one compiles
+            fxs[key, enc] = run([base, "--features", "all", "--emit-facts=" + enc] + list(key) + ["--pattern", pat])
+        fx = fxs[key, enc]
         if fx[0] != 0 and rb[0] == 0:
             res.append((arm, True, set(), "BASE compiles the arm but refuses --emit-facts under %s" % " ".join(key),
                         [], (False, False, False)))
