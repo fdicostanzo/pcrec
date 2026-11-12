@@ -8919,7 +8919,8 @@ static const CandUse *req_use_read(Ctx *cx, CandSlot reader)
  * declining direction). */
 static unsigned long long req_landmark_hit_ppm(Ctx *cx, const uint32_t *rate)
 {
-    const ReqRun *r = pcrec_fact_req_whole_run(cx);
+    /* the `req_run` fact, as before R-38 K38-2: uncut, it names the whole run */
+    const ReqRun *r = pcrec_fact_req_run(cx);
     unsigned long long hit = 1000000u;
     uint8_t set[256];
     if (r->whole_len < 2) {
