@@ -31,15 +31,29 @@
 # because C14's FAIL line quoted gcc's raw file:L:C: error: text. The probe
 # is the check's instrument, not code under test; form_checks.py's c14_asserts
 # now prints only the assert message.
+#
+# [k382mech, 2026-11-12, R-38 K38-2] BUILD-REFUSED. K38-2 put a THIRD build-time
+# bound on MF_MAX_TERM: `_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_WSPAN_POS)`
+# above req_pres_spans in src/gen/emit_dfa.c (the stored run, 32 positions, is
+# stated uncut as one window span), and MF_WSPAN_POS = MF_MAX_SPAN_POS =
+# MF_MAX_TERM is memfn.h's own DERIVATION, so lowering MF_MAX_TERM lowers the
+# span bound by design and the build refuses it (mech 607 shard 1 read the
+# plant BUILD-FAILED; this matrix has one SAB_FILE2, and decoupling the
+# derived bound in the plant would plant a second fault). The row now
+# witnesses that assert: SAB_FILE2 still removes emit_vm.c's stride copy, so
+# emit_dfa.c's is the ONE refuser (checked on a scratch archive with both
+# edits: emit_vm.c compiles, emit_dfa.c fails at that assert, no other unit
+# naming these bounds fails). C14's stride clause keeps its own in-script
+# control (form_checks.py "C14 stride control"); it is no longer this row's
+# detector.
 SAB_ID="S526-c14-max-term-lowered"
 SAB_FILE="memfn/include/memfn.h"
 SAB_SUITES="memfnforms"
-SAB_DESC='MF_MAX_TERM is lowered from 32 to 31, below VM_MAX_STRIDE (and the build-time copy of the assert in src/gen/emit_vm.c removed, so the tree builds): the VM cursor rung'"'"'s widest strided span site no longer fits one conjunction'
-SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); RE-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied, tree rebuilt: it BUILDS): memfnforms 1 failed / 4 passed (C14: the stride assert fires on the real header). RE-AIMED by lane r32 2026-11-02 (R-32): since 7047b69e4 the scorer reads a gcc file:L:C: error: line in a failing arm'"'"'s log as a compile failure (ANOMALY), and C14 quoted the probe compile'"'"'s raw diagnostic in its FAIL line; C14 now prints only the tripped assert'"'"'s message, so the plant (applied by hand in a scratch copy) reads memfnforms 1 failed / 4 passed with no file:L:C: error: line. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S526.'
-SAB_REACH='CC="$CC" TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_form_checks.sh" "$TREE"'
-SAB_REACH_EXPECT='PASS: C14 stride control
-checks failed: 0'
-SAB_EXPECT=DETECTED
+SAB_DESC='MF_MAX_TERM is lowered from 32 to 31, below VM_MAX_STRIDE and, through MF_WSPAN_POS, below PCREC_MAX_REQ_RUN_SCAN (the build-time stride assert in src/gen/emit_vm.c removed): the stored run no longer fits one window span, and src/gen/emit_dfa.c'"'"'s K38-2 assert must refuse the build'
+SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/r4cchecks_report.md §3); RE-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied, tree rebuilt: it BUILDS): memfnforms 1 failed / 4 passed (C14: the stride assert fires on the real header). RE-AIMED by lane r32 2026-11-02 (R-32): since 7047b69e4 the scorer reads a gcc file:L:C: error: line in a failing arm'"'"'s log as a compile failure (ANOMALY), and C14 quoted the probe compile'"'"'s raw diagnostic in its FAIL line; C14 now prints only the tripped assert'"'"'s message, so the plant (applied by hand in a scratch copy) reads memfnforms 1 failed / 4 passed with no file:L:C: error: line. RE-AIMED by lane k382mech 2026-11-12 (R-38 K38-2): BUILD-REFUSED, emit_dfa.c'"'"'s run-span assert refuses the planted build (scratch archive: emit_dfa.c fails there, emit_vm.c compiles). Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S526.'
+SAB_REACH='grep -q "^_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_WSPAN_POS,\$" "$TREE/src/gen/emit_dfa.c" && grep -q "^PCREC_LIMIT(PCREC_MAX_REQ_RUN_SCAN, 32," "$TREE/src/core/limits.def" && grep -q "^#define MF_WSPAN_POS MF_MAX_SPAN_POS\$" "$TREE/memfn/include/memfn.h" && grep -q "^#define MF_MAX_SPAN_POS MF_MAX_TERM\$" "$TREE/memfn/include/memfn.h" && echo REACH-RUN-SPAN-BOUND'
+SAB_REACH_EXPECT='REACH-RUN-SPAN-BOUND'
+SAB_EXPECT=BUILD-REFUSED   # [k382mech] designed: emit_dfa.c's K38-2 _Static_assert (PCREC_MAX_REQ_RUN_SCAN <= MF_WSPAN_POS) refuses the build
 SAB_COUNT=1
 SAB_BEFORE='#define MF_MAX_TERM 32'
 SAB_AFTER='#define MF_MAX_TERM 31 /* SABOTAGE S526 */'

@@ -1631,6 +1631,27 @@ cat\s+sate%%99%73617465@0%an EXACT run under the byte-rate: c (18442) is rarer t
 x(?i:elect)%-e utf8%-%78454c454354@0/ffdfdfdfdfdf%(C) NONE: the one exact position wins over the five pairs to its right, and the set pick IS that byte
 (?i:elect)%-e utf8%-%454c454354@4/dfdfdfdfdf%(C) all pairs tie, so the rightmost, as before
 ROWS
+# (C) PCREC'S OWN PICK. Since R-38 K38-2 the `@` above is the kit's search
+# position (match_api.md §6.3.7¶7a), so the REQ_RUN rows no longer read
+# PICK; its one surviving reader is the `req_byte` fact (src/facts/req.c
+# `pcrec_req_pick`: the run's picked position where it is EXACT, else the
+# set's pick). `want` is derived BY HAND: under NONE the run's one exact
+# position is x (120), every other position a two-member pair, so PICK takes
+# x; pricing every cube as one member picks the rightmost pair instead, and
+# REQ_BYTE falls to the set's pick, the rightmost necessary byte z (122).
+# S461's detector (k382mech, 2026-11-12).
+while IFS='%' read -r pat flags want why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s511c_$RANDOM$RANDOM.c"
+    # shellcheck disable=SC2086  # $flags is a word list on purpose
+    if ! emit "$a" "$pat" $flags; then bad "[5.11c] $pat [$flags]: refused"; continue; fi
+    got="$(stamp "$a" REQ_BYTE)"
+    [ "$got" = "$want" ] \
+        && ok "[5.11c] $pat [$flags] -> REQ_BYTE \"$got\" ($why)" \
+        || bad "[5.11c] $pat [$flags]: REQ_BYTE \"${got:-<absent>}\", expected \"$want\" ($why)"
+done <<'ROWS'
+x(?i:elect)\d+z%-e utf8%120%(C) NONE: the run's one exact position x, not the set's rightmost z
+ROWS
 
 # =========================================================================
 # SECTION 5.12 — [K82] (B): THE HANDOFF (tuning.md §2.41; the `req-use`
