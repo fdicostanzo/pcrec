@@ -64,7 +64,7 @@ local merge/close standard.
   S-id (the file name before its first `_`, as the driver's id arguments spell it); the wrapper runs the shard's ids through
   `tests/mech/run_sabotage_matrix.sh` (`PCREC_BOXLOCK=0`, rows from the runner's checkout of the pushed commit), records per-row
   seconds (`MECH_TIMES_OUT` -> `units.tsv`), names UNEXPECTED/ANOMALY rows as `FAIL:` lines for the extractor and refuses a missing
-  or short `== mech run COMPLETE` trailer. Table by `cloud_units_plan.py mech` (equal ESTIMATE weights until a run measures rows).
+  or short `== mech run COMPLETE` trailer. Table by `cloud_units_plan.py mech` from run 43108213213's measured rows (/2: a shard runs 2 rows at once; unmeasured rows take the mean, 185 of them). A shard killed at its step limit leaves the finished rows in `units.tsv`; the gather reads `rc=none` as `TIMEOUT` naming the unfinished ones. `SAB_CATCH_GCC_MIN` (a row field): a COMPILE-CATCH row is DETECTED-by-checks on an older gcc (the runner's 13).
   The `recidentity` kind is one shard (`selector -`): `make test-recursion-identity`, history from `fetch-depth: 0`.
 - **cloud_infra.py** — INFRA vs RED: a shard job whose test step passed and whose upload step failed. The gather names such
   shards `INFRA` (`VERDICT INFRA`), `cloudrun --verdict` says INFRA-RERUN/INFRA, `queuewatch` reruns once, then `CLOUD-INFRA`.

@@ -183,6 +183,9 @@ def plan_san(a):
 
 
 MECH_DEFAULT_S = 45.0   # UNMEASURED: the local battery's 7 h 6 min at PROCS=6 over 1225 rows, per row, scaled to a 4-core runner at 2 rows at once
+# A mech shard runs MECH_CONC rows at once (cloud_mech_shard.sh: PROCS = cores/2), so a row's recorded wall is ~MECH_CONC
+# shard-seconds' worth of the shard's wall: run 43108213213, 17 finished shards: sum(row seconds)/shard wall = 1.76-1.95.
+MECH_CONC = 2.0
 
 
 def plan_mech(a):
@@ -190,9 +193,11 @@ def plan_mech(a):
                   for f in os.listdir(os.path.join(root, "tests/mech/sabotages")) if f.startswith("S") and f.endswith(".sh")})
     meas, mbasis = read_measured(a.measured) if a.measured else ({}, {})
     vals = [v for k, v in meas.items() if k in ids]
-    dflt = statistics.median(vals) if vals else MECH_DEFAULT_S
-    items = [[i, meas[i], 0, "runner %s" % mbasis[i]] if i in meas else
-             [i, dflt, 0, "ESTIMATE %s %gs" % ("median measured row" if vals else "unmeasured default", dflt)] for i in ids]
+    # the MEAN, not the median: the row times are heavy-tailed (median 92 s, mean ~290 s in run 43108213213), so a median
+    # default under-weights every unmeasured row (the failed shards' rows) by 3x and the unmeasured shards run long
+    dflt = statistics.mean(vals) / MECH_CONC if vals else MECH_DEFAULT_S
+    items = [[i, meas[i] / MECH_CONC, 0, "runner %s" % mbasis[i]] if i in meas else
+             [i, dflt, 0, "ESTIMATE %s %gs" % ("mean measured row" if vals else "unmeasured default", dflt)] for i in ids]
     tot = lpt(items, a.shards)
     n_def = sum(1 for i in items if "ESTIMATE" in i[3])
     return items, tot, ["%d row(s) have no measurement and carry %gs" % (n_def, dflt)] if n_def else []
