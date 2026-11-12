@@ -125,3 +125,8 @@ b675c1aca (S1917, S1906, S1930), 9140c067f (sheet §5), and this report.
 - OWED: cloud run 43239936557's shards 4, 6, 9, 11, 14, 15 and 18, still running. Any further red
   needs a fresh agent. A re-dispatch of the mech kind on this branch, which is the kit manager's,
   measures the skew shards' rows.
+- DELIVER FILE MISMATCH: k382cm_deliver.txt declares `owed: none`, but the brief says to name the
+  row job's key if it is still pending, and the cloud shards were still running. Writing
+  `OWED: none` would be false, so lanecheck ends rc=1 on that one issue only. Once the two OWED
+  items are read, the deliver file's `owed:` line should name `kit-k382cm-rows`, or a fresh agent
+  should record the verdicts and clear it.
