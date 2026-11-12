@@ -1,7 +1,6 @@
 # kclose4 report: the variant TAG-floor drops that turned R-13a's gate red
 
-STATE: delivered (branch lane/memfn-kclose, re-pin commit 646a8c0be)
-OWED: none
+STATE: delivered (branch lane/memfn-kclose, re-pin commit 646a8c0be); OWED line is in STATE AT HANDOFF
 
 ## Summary
 
@@ -130,4 +129,6 @@ read utf8 TAG FLOOR lines too.
 
 ## STATE AT HANDOFF
 
-Re-pin committed (646a8c0be); make strict rc=0; self-test rc=0 (28/0); 580 dry-run rc=0, not queued. Nothing owed by this lane.
+Re-pin committed (646a8c0be); make strict rc=0; self-test rc=0 (28/0); 580 dry-run rc=0, not queued.
+
+OWED: none
