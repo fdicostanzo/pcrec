@@ -126,9 +126,11 @@
 #              cause of absence, which is exactly what let a documented,
 #              expected refusal population (e.g. -fno-counter's replication
 #              cap) read as an undifferentiated, unexplained LOST count. A
-#              case whose block fails to LINK (gcc/driver build failure)
-#              still produces NO line — that failure is per-CC-invocation,
-#              not per-pattern, and is not this hook's concern. Empty (the
+#              THIRD producer ([PFFIX], `dump_ccfail`): a case whose block's
+#              GENERATED C fails to compile or link under $CC writes a line
+#              with the sentinel `trc` `CCFAIL` and `<out>` the compiler's
+#              first error line, flattened the same way; before it such a
+#              case wrote nothing and read as an unnamed LOST. Empty (the
 #              default) means no dump, so a plain run
 #              is byte-for-byte unchanged; this is the "ONE env var in the
 #              house style" tests/axes/CLAUDE.md's brief asked for rather
@@ -1017,6 +1019,25 @@ record_case_group_fail() {
     done
 }
 
+# [PFFIX] dump_ccfail <case-index> <compiler-log> — RXTDUMP's THIRD producer
+# (the header's RXTDUMP paragraph): a case whose block's GENERATED C failed to
+# compile or link under $CC writes a `trc=CCFAIL` line whose `<out>` is the
+# first `error` line of the log (else its first line), directories stripped so
+# two runs' rows compare. Until this the case wrote nothing and an axes run
+# filed it as an unnamed `lost-other` (pflost_report.md: three `-fprefilter`
+# rows whose gen.c failed `-Werror`). No-op when RXTDUMP is empty.
+dump_ccfail() {
+    [ -n "$RXTDUMP" ] || return 0
+    local ci="$1" log="$2" msg
+    msg="$(printf '%s\n' "$log" | grep -m1 'error' || true)"
+    [ -n "$msg" ] || msg="$(printf '%s\n' "$log" | sed -n '1p')"
+    msg="$(printf '%s' "$msg" | sed 's|^[^ :]*/||' | tr '\n\t' '  ')"
+    [ -n "$msg" ] || msg="(no compiler output)"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$cur_file" "${case_line[$ci]}" "${case_kind[$ci]}" "ccfail" "CCFAIL" "$msg" \
+        >> "$RXTDUMP"
+}
+
 # Compile and run the current pattern block (globals cur_file, cur_pattern,
 # cur_pattern_line, cur_is_perr) against its accumulated cases (parallel
 # arrays case_kind/case_line/case_subject/case_start/case_end/case_gspec/
@@ -1551,6 +1572,7 @@ flush_batch() {
             for ci in "${!case_kind[@]}"; do
                 record_fail "$cur_file" "${case_line[$ci]}" "compile failure (see above)"
                 record_case_group_fail "$cur_file" "$ci" "compile failure (see above)"
+                dump_ccfail "$ci" "$GEN_CC_LOG"
             done
         fi
     done
@@ -1580,6 +1602,7 @@ flush_batch() {
             for ci in "${!case_kind[@]}"; do
                 record_fail "$cur_file" "${case_line[$ci]}" "HARNESS FAILURE: batch dispatch.c failed to compile (see above)"
                 record_case_group_fail "$cur_file" "$ci" "batch dispatch.c failed to compile"
+                dump_ccfail "$ci" "batch dispatch.c: $GEN_CC_LOG"
             done
         done
         return 0
@@ -1627,6 +1650,7 @@ flush_batch() {
             for ci in "${!case_kind[@]}"; do
                 record_fail "$cur_file" "${case_line[$ci]}" "compile failure (see above; batch link failed, isolated to this member on a solo relink)"
                 record_case_group_fail "$cur_file" "$ci" "compile failure (see above)"
+                dump_ccfail "$ci" "$GEN_CC_LOG"
             done
         fi
     done
@@ -2220,6 +2244,7 @@ flush_block() {
         for i in "${!case_kind[@]}"; do
             record_fail "$cur_file" "${case_line[$i]}" "compile failure (see above)"
             record_case_group_fail "$cur_file" "$i" "compile failure (see above)"
+            dump_ccfail "$i" "$build_log"
         done
         return 0
     fi

@@ -174,6 +174,9 @@ for key, b in base.items():
     u = utf.get(key)
     if u is None:
         n["lost"] += 1; fails.append(f"LOST {key[0]}:{key[1]}"); continue
+    if "CCFAIL" in (b[2], u[2]):     # [PFFIX] generated C failed to compile
+        n["fail"] += 1; fails.append(f"CCFAIL {key[0]}:{key[1]}: {u[3] if u[2] == 'CCFAIL' else 'default: ' + b[3]}")
+        continue
     path = key[0] if os.path.isabs(key[0]) else os.path.join(root, key[0])
     c = None
     if b[2] != "REFUSED":

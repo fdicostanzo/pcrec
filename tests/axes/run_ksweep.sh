@@ -127,6 +127,14 @@ for k in $LADDER; do
     # silently narrow what this script already measured and documented.
     gu1="$(echo "$line" | grep -oE 'giveup1=[0-9]+' | cut -d= -f2)"
     rf="$(echo "$line" | grep -oE 'refused=[0-9]+' | cut -d= -f2)"
+    # [PFFIX] a generated-C compile failure is its own named red (dump_diff.awk's
+    # CCFAIL rows name the key and the compiler's error), never an exclusion.
+    cf="$(echo "$line" | grep -oE 'ccfail=[0-9]+' | cut -d= -f2)"
+    if [ "${cf:-1}" -ne 0 ]; then
+        echo "KSWEEP FAIL: --unroll=$k: ${cf:-?} case(s) whose generated C failed to compile:" >&2
+        awk -F'\t' '$1 == "CCFAIL" { print "  " $2 ": " ($5 == "CCFAIL" ? $6 : "default: " $4) }' "$rows" | head -20 >&2
+        fail=1
+    fi
     total_excluded=$((total_excluded + ${bd:-0} + ${gu1:-0}))
     if [ "${mm:-1}" -ne 0 ]; then
         echo "KSWEEP FAIL: --unroll=$k changed ${mm} ANSWER(s). K is the counter rung's chunking factor: it may move the give-up surface (excluded, see the header) but never a match result or a capture." >&2

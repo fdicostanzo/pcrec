@@ -3999,9 +3999,14 @@ uses, so an axis with no entry treats any refusal as worth investigating.
 | `-fprefilter` | 13,242 LOST (the documented force-refusal on every DFA-selected pattern) + 2 MISMATCH in `tests/harness/giveup.rxt` (default gives up steps/frames, the forced prefilter answers nomatch) | REFUSED-DOCUMENTED + BUDGET |
 
 Per-axis output line: `agree=N budget-bound=N refused-documented=N
-(floor F) lost-other=N mismatches=N gained=N` — every bucket printed
+(floor F) lost-other=N ccfail=N mismatches=N gained=N` — every bucket printed
 beside the verdict, K35's "populations printed" convention extended from
 the census's stamp vocabulary to the sweep's own case buckets.
+`ccfail` ([PFFIX], 2026-11-11) counts cases whose GENERATED C failed to
+compile or link (the harness's RXTDUMP `CCFAIL` rows); each is its own
+`AXIS FAIL: ... GENERATED C FAILED TO COMPILE at <file>:<line>: <gcc error>`
+line. Before it such a case wrote no dump row and read as an unnamed
+`lost-other` (pflost_report.md: `ab\Gcd` under `-fprefilter`).
 
 **The oracle cross-check**: one DFA-side answer-identity axis
 (`-fno-premul-table`, bit 15) is additionally run through
