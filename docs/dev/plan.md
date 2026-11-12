@@ -459,6 +459,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-09): UNSCHEDULED. Default never an error (D26). Optimize (constant matcher, dead branches dropped) + an --emit-facts fact + an opt-in caller policy allow|warn|error ('must be matchable', Frank) at [IFACE-PUSH]
   trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
   refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]; [COND-FAMILY] (D193: speed leads, so conditionals stay refused until the family order reaches the node; no rework either way)
+- [FLAG-DEMOTE] STATE:not-started — demote 20 public -f deny flags to test-only levers and drop one alias (~21 bits)
+  filed: 2026-11-12 manager, from the read-only audit docs/dev/flag_audit_2026-11-12.md; Frank 2026-11-12: "Let's do the 20 plus drop. Agree with plan"
+  status (2026-11-12): GO given; its own set after S1 and the kit's K38-2 land (same option table). The 3 medium and 6 unsure flags stay public; bit 55's dead reservation released if nothing reads it.
+  next: open as its own set when S1 and K38-2 have landed; one opus build lane, internal deny word first
+  refs: docs/dev/flag_audit_2026-11-12.md; D195; [IFACE-PUSH] (hard trigger <= 4 free bits; 6 free today); memory pcrec-flag-follows-caller-effect
+  First step: an internal deny word, so the size-cap ladder and the tune dial stop setting public bits; then each demotion moves its spelling to --harness=, the axes table gets a harness-spelling column, spec hunks, rx_info KEPT-set change (abi event), a pcrec-bench inbox item (configs.toml pins -fno-cls-fold, -fno-alt-island).
 - [FIND-MINW] STATE:not-started — searches stop where too few bytes remain for any match (minimum width)
   filed: 2026-11-10 Frank ("File"), after asking whether the kit's find window gets the minimum required bytes; it does not
   status (2026-11-10): UNSCHEDULED. pcrec computes the minimum width but only the VM stops early on it; kit find sites end at n - end_back (0 or 1, D11's holdback) and the DFA scan loop ignores it (evidence in Today below)
