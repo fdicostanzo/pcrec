@@ -68,18 +68,21 @@ RECFLAGS="-fsanitize=kernel-address --param asan-instrumentation-with-call-thres
 # the least over the six passes in parentheses, less ~10%. The space changed
 # FORM at K38-2 (one derived run part per site instead of the window and the
 # whole run, half the runs a negative omin), so every literal below is this
-# space's own measure; NEARMISS and the per-part probe floors fell with the
-# retired second part (K38-2a's were 28540 / 11450 / 5630 over two parts).
-FLOOR_ROUTE_SITES="P0:86 P2:67 P3:159 P9:72"   # the generator's routes (96 75 177 80)
-FLOOR_P2_REFUSED=67         # P2's control: the derived part on an untested link refused (75)
+# space's own measure, EXCEPT: (1) NEARMISS fell below K38-2a's floor with
+# the retired second part (K38-2a 28540 over 31712 probes; now 28450 probes),
+# so it and COVER/EXTENT are set to the MEASURED count with NO margin (kit
+# manager's ruling, 2026-11-11); (2) no floor is below K38-2a's where K38-2a's
+# still holds (P2 sites, P2_REFUSED, NM_SOUND keep K38-2a's literals).
+FLOOR_ROUTE_SITES="P0:86 P2:70 P3:159 P9:72"   # the generator's routes (96 75 177 80; P2 K38-2a's 70)
+FLOOR_P2_REFUSED=70         # P2's control: the derived part on an untested link refused (75; K38-2a's 70)
 FLOOR_REACH="P0:2190 P3:4010 P9:1820"          # run-part calls per route, entry + re-entry (2441 4460 2028)
 FLOOR_REACH_RE="P0:850 P3:1520 P9:730"       # of them re-entry calls (947 1697 816)
 FLOOR_SCAN_SITES="P0:86 P3:159 P9:72"        # sites whose text scan was read (96 177 80)
-FLOOR_COVER=12590              # COVER probes (13992)
-FLOOR_EXTENT=6240            # EXTENT probes (6944)
+FLOOR_COVER=13992              # COVER probes, measured, no margin (13992)
+FLOOR_EXTENT=6944            # EXTENT probes, measured, no margin (6944)
 FLOOR_RECORDS=8030          # oracle records (8932)
-FLOOR_NEARMISS=25600        # EXTENT's per-bit near-miss probes, FAM-3 (28450)
-FLOOR_NM_SOUND=3240         # near-miss occurrences in SOUND's subjects (3611)
+FLOOR_NEARMISS=28450        # EXTENT's per-bit near-miss probes, FAM-3, measured, no margin (28450)
+FLOOR_NM_SOUND=3440         # near-miss occurrences in SOUND's subjects (3611; K38-2a's 3440)
 FLOOR_NM_USES=4250           # near-miss occurrences in the uses' subjects (4729)
 FLOOR_LAYOUT_A=14610            # layout A placements, ASan build (16238 = 353 sites x 46)
 FLOOR_WITNESSES=24              # lever witnesses, every one rendered (24)
@@ -142,9 +145,11 @@ plant_spec() {
         echo 'precheck.c@@    if (omin >= 0) return h->lo;@@    return h->lo;' ;;
     S3061) # W-K1: the floor spelled `lo + omin` in size_t, no clamp (wraps where lo < -omin)
         echo 'precheck.c@@    kb_printf(\&f, "(%s >= %llu ? %s - %llu : 0)", h->lo, back, h->lo, back);@@    kb_printf(\&f, "(%s - %llu)", h->lo, back);' ;;
-    S3062) # W-K2: the RE-ENTRY floor read from its `lo` (a use with no result
-        # declaration, the re-entry's shape here, floors at lo)
-        echo 'precheck.c@@    if (omin >= 0) return h->lo;@@    if (omin >= 0 || !h->result_decl) return h->lo;' ;;
+    S3062) # W-K2: the RE-ENTRY floor read from its `lo`: a use whose `lo` is not
+        # the activation's origin (the define's `start` hook: a RE-ENTRY) floors
+        # at lo; the entry keeps max(0, lo + omin)
+        echo 'precheck.c@@    int part = 0;\n    for (uint32_t i = 0; i < s->npred; i++) {@@    { extern const char *s3062_origin; s3062_origin = h ? h->start : NULL; }\n    int part = 0;\n    for (uint32_t i = 0; i < s->npred; i++) {'
+        echo 'precheck.c@@static const char *run_floor(mf_art *art, const mf_hooks *h, const mf_site *s)\n{\n    int run = kit_pres_run(s);\n    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;\n    if (omin >= 0) return h->lo;@@const char *s3062_origin;\nstatic const char *run_floor(mf_art *art, const mf_hooks *h, const mf_site *s)\n{\n    int run = kit_pres_run(s);\n    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;\n    if (omin >= 0 || (s3062_origin \&\& h->lo \&\& strcmp(h->lo, s3062_origin))) return h->lo;' ;;
     S3063) # W-K3: the twin admission reads K unsigned (a negative K a huge step back)
         echo 'presence.c@@        unsigned long long k = s->head_max > 0 ? (unsigned long long)s->head_max : 0;@@        unsigned long long k = (unsigned long long)s->head_max;' ;;
     S3064) # C2's DECISION plant: the reply (mf_ask's and mf_defined's mf_class.run)
