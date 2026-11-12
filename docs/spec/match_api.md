@@ -2453,8 +2453,8 @@ is a first-match table naming the position THIS artifact's search reads:
 | row | when | `@idx` |
 |---|---|---|
 | 1 | the pre-check renders its run part | the scan position of the run decision the part was built from |
-| 2 | else a window-site search reads a run member (the `"cover"` window search, the `"run-pinned"` prefilter) | that search's member, an index into the whole run |
-| 3 | else (`"rev-end"`, `"one-attempt"`, `"landmark-walk"`, which scan `<PREFIX>_REQ_BYTE`) | no `@`: the value is the hex alone |
+| 2 | else a window-site search's find reads a run member (the `"cover"` window search, the `"run-pinned"` prefilter) | that member, an index into the whole run |
+| 3 | else (a window search whose find reads a position outside the run, as `abcdefg(?=x)`'s `x`; `"rev-end"`, `"one-attempt"`, `"landmark-walk"`, which scan `<PREFIX>_REQ_BYTE`) | no `@`: the value is the hex alone |
 
 <a id="s6-3-7-p7a"></a>[6.3.7¶7a] `<PREFIX>_REQ_BYTE` is pcrec's own pick (¶5), not `bytes[idx]`, so the two
 stamps are not checkable against each other through `@`. A run whose positions are not all exact bytes carries `/`

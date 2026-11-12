@@ -15927,8 +15927,10 @@ static int req_run_at(Ctx *cx, ReqAdmit admit)
         PcrecMfU u;
         mf_wreply w;
         mf_site *cs = pcrec_cover_site(cx, cv, NULL, NULL, &h, &u);
-        if (!mf_wdecide(pcrec_memfn_art(cx), cs, &w) && w.run_stated)
-            at = req_run_in_cover(pcrec_fact_req_whole_run_stated(cx), &cv->end, w.run_member);
+        /* the window offset the search's find reads (`stop`), mapped into
+         * the whole run where the run lies in the window once */
+        if (!mf_wdecide(pcrec_memfn_art(cx), cs, &w) && w.has_stop)
+            at = req_run_in_cover(pcrec_fact_req_whole_run_stated(cx), &cv->end, w.stop);
         goto done;
     }
     if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT ||
