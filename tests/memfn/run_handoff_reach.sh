@@ -96,7 +96,7 @@ fi
 # `landmark_position < attempt_position` re-ask). Each witness pins the row
 # the admission must reach: `re` (re-entered), `entry` (entry only: a
 # set-rest byte the run does not hold) or `none` (declined: one attempt, an
-# unbounded K). The declines move no answer (a skipped attempt on them would
+# unbounded K whose set holds a byte the run does not). The declines move no answer (a skipped attempt on them would
 # be sound or be no skip at all), so this pin is their only detector; an
 # admitted witness must also be a pattern of tests/litscan/handoff_vm.rxt,
 # whose answers the corpus checks on the route. VM_ATTEMPT_FLOOR counts the
@@ -105,7 +105,12 @@ fi
 # is `xxCAT`, K 3, and it holds the set's `x`: that witness is re-entered now,
 # and `(ab)c?userpass`, whose set's `a`/`b` the run `userpass` lacks, is the
 # entry-only one.)
-VM_ATTEMPT_FLOOR=4
+# ([REQ-PAST-LAST], lane reqpast: `a+xyz` and `[^@ ]+@x`, whose whole run
+# has an UNBOUNDED K, are the `handoff-attempts-unbounded` row now: stamp
+# "unbounded", the entry keeps the hit and starts at the startpos, the
+# re-entry stops past the last occurrence. `(a)\1xyz` stays declined: its
+# set's `a` is not a byte of the run `xyz`.)
+VM_ATTEMPT_FLOOR=6
 vmcorpus="$root/tests/litscan/handoff_vm.rxt"
 echo "== VM attempt loop handoff rows: reach floor and declines =="
 vmreached=0
@@ -154,7 +159,8 @@ x{2,5}(?i:cat)	byte	3	re	-
 ^abcd	byte	none	none	-
 ^(?:ab|x)cdef	byte	none	none	#define RX_REQ_WHY "emitted"
 \Gabcd	byte	none	none	-
-a+xyz	byte	none	none	-
+a+xyz	byte	unbounded	re	handoff_position = search_from;
+[^@ ]+@x	byte	unbounded	re	-
 (a)\1xyz	byte	none	none	-
 VMWITNESSES
 

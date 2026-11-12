@@ -24,6 +24,7 @@ basename in two directories so the `#include` line cannot differ.
 [vm-handoff] a mover's handoff is the VM attempt loop's ([REQRUN-VM],
     tuning.md §2.41¶8b): `RX_REQ_HANDOFF` is `"none"` or a decimal K, and
     the seek then starts at `attempt_position`, the whole run's hit less K,
+    or `"unbounded"` ([REQ-PAST-LAST], ¶8c), where it starts at the startpos,
     a lower bound on the first match start like `search_from` (§6.4.3 item
     7's structural check said `"none"` on every mover before the attempt
     loop could hand off). The movers that hand off are counted.
@@ -217,7 +218,7 @@ def corpus_checks():
             if st.get("VM_START") != "unanchored":
                 viol["anchor"].append("%s: VM_START %s" % (key, st.get("VM_START")))
             ho = st.get("REQ_HANDOFF")
-            if ho != "none" and not (ho or "").isdigit():
+            if ho != "none" and ho != "unbounded" and not (ho or "").isdigit():
                 viol["handoff"].append("%s: REQ_HANDOFF %s" % (key, ho))
             elif ho != "none":
                 nmov_ho += 1

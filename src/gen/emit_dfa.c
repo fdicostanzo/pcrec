@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 103
+#define PCREC_ARTIFACT_ABI 105
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -1202,7 +1202,17 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
         pcrec_sb_printf(c, "%ssize_t landmark_position = handoff_position;\n", indent);
     /* the whole run is the landmark only on the attempt loop's rows */
     if (whole) cx->job->req_handoff_vm = true;
-    if (k > 0 || round.len > 0) {
+    if (k >= PCREC_W_UNBOUNDED) {
+        /* [REQ-PAST-LAST] `c - K` is never ahead: the start stays. */
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_printf(c,
+            "%s/* [REQ-PAST-LAST] every match holds the whole run at or after\n"
+            "%s * its start, at no bound, so the attempts begin at the start;\n"
+            "%s * the hit is kept for the stop past the run's last occurrence. */\n",
+            indent, indent, indent);
+        pcrec_sb_cmt_close(c);
+        pcrec_sb_printf(c, "%shandoff_position = %s;\n", indent, posvar);
+    } else if (k > 0 || round.len > 0) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_printf(c,
             "%s/* [K82] every match begins at most %lld bytes before its %s\n"
@@ -7846,6 +7856,10 @@ static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
     pcrec_sb_printf(c, "%s    if (landmark_position < %s) {\n", ind, pos);
     emit_req_reentry_use(cx, c, dfa_fragf(cx, "%s        ", ind), pos);
     pcrec_sb_printf(c, "%s    }\n", ind);
+    if (k >= PCREC_W_UNBOUNDED) {       /* [REQ-PAST-LAST] no move to make */
+        pcrec_sb_free(&round);
+        return;
+    }
     pcrec_sb_printf(c, "%s    if (landmark_position - %s > %lld) {\n", ind, pos, k);
     if (k > 0)
         pcrec_sb_printf(c, "%s        %s = landmark_position - %lld;\n", ind, pos, k);
@@ -7867,11 +7881,17 @@ static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
  * it less K can succeed. `\G` keeps reading `search_from`. */
 void pcrec_emit_req_attempt_reentry(Ctx *cx, StrBuf *c, const char *ind)
 {
+    long long k = req_handoff_k(cx);
     if (!req_reentered(cx) || pcrec_artifact_has_dfa_scan(cx)) return;
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_printf(c, "%s    /* [REQRUN-VM] a fresh search from here: the whole run again,\n"
-                       "%s     * and no match begins more than %lld bytes before it. */\n",
-                    ind, ind, req_handoff_k(cx));
+    if (k >= PCREC_W_UNBOUNDED)
+        pcrec_sb_printf(c, "%s    /* [REQ-PAST-LAST] a fresh search from here: past the last\n"
+                           "%s     * occurrence of the whole run, no attempt can match. */\n",
+                        ind, ind);
+    else
+        pcrec_sb_printf(c, "%s    /* [REQRUN-VM] a fresh search from here: the whole run again,\n"
+                           "%s     * and no match begins more than %lld bytes before it. */\n",
+                        ind, ind, k);
     pcrec_sb_cmt_close(c);
     emit_req_landmark_move(cx, c, ind, "attempt_position", NULL);
 }
@@ -8925,6 +8945,24 @@ static bool req_parts_in_whole(Ctx *cx)
     return true;
 }
 
+/* The attempt-loop handoff rows' shared conjuncts, every one but the bound
+ * on K: the admission emitted a pre-check, the artifact is a VM with no DFA
+ * scan, more than one attempt runs, and a whole run of two or more
+ * positions is stated (each with its reason above). */
+static bool req_handoff_vm_run(const CandSel *s)
+{
+    Ctx *cx = s->cx;
+    CandSel vs = *s;
+    if (cx->req_handoff_dropped) return false;
+    if (!req_admit_emits(req_admit_read(cx, CAND_SLOT_FIRST)))
+        return false;
+    if (pcrec_artifact_has_dfa_scan(cx) || !(cand_path_members(cx) & CAND_MVM))
+        return false;
+    vs.route = CAND_ROUTE_VM;
+    if (CAND_BOUND_ONE(CAND_SLOT_FIRST, &vs, "handoff-attempts")) return false;
+    return pcrec_fact_req_whole_run(cx)->whole_len >= 2;
+}
+
 /* [REQRUN-VM] THE `handoff-attempts-entry` ROW's predicate, and the
  * `handoff-attempts` row's first conjunct (docs/dev/lanes/reqvm0_report.md,
  * the VM soundness rule): the handoff on a VM attempt loop with NO DFA scan
@@ -8949,22 +8987,14 @@ static bool req_parts_in_whole(Ctx *cx)
  * run state, with `\G` reading `search_from`. No callout conjunct: fires on
  * attempts the engine skips are unspecified (match_api.md §11.6¶1), and a
  * consumer's text is ANY on the lowered tree, so K bounds it. Declined on
- * the retry after the size-cap ladder's `drop-handoff` row fired. */
+ * the retry after the size-cap ladder's `drop-handoff` row fired.
+ *
+ * The bound is the one conjunct the unbounded row below does not share;
+ * the others are `req_handoff_vm_run`. */
 static bool req_handoff_entry_applies(const CandSel *s)
 {
-    Ctx *cx = s->cx;
-    const ReqRun *r = pcrec_fact_req_whole_run(cx);
-    CandSel vs = *s;
-    if (cx->req_handoff_dropped) return false;
-    if (!req_admit_emits(req_admit_read(cx, CAND_SLOT_FIRST)))
-        return false;
-    if (pcrec_artifact_has_dfa_scan(cx) || !(cand_path_members(cx) & CAND_MVM))
-        return false;
-    vs.route = CAND_ROUTE_VM;
-    if (CAND_BOUND_ONE(CAND_SLOT_FIRST, &vs, "handoff-attempts")) return false;
-    if (r->whole_len < 2 || r->whole_maxoff < 0 || r->whole_maxoff >= PCREC_W_UNBOUNDED)
-        return false;
-    return true;
+    long long k = pcrec_fact_req_whole_run(s->cx)->whole_maxoff;
+    return req_handoff_vm_run(s) && k >= 0 && k < PCREC_W_UNBOUNDED;
 }
 
 /* [REQRUN-VM] THE `handoff-attempts` ROW's predicate: the entry's row, and a
@@ -8974,6 +9004,26 @@ static bool req_handoff_entry_applies(const CandSel *s)
 static bool req_handoff_attempts_applies(const CandSel *s)
 {
     return req_handoff_entry_applies(s) && req_parts_in_whole(s->cx);
+}
+
+/* [REQ-PAST-LAST] THE `handoff-attempts-unbounded` ROW's predicate: the
+ * attempt-loop handoff with K UNBOUNDED, `handoff-attempts`' degenerate
+ * form. Every match still holds the whole run at or after its attempt start
+ * (the req.c soundness rule: no run byte lies before a match's start), only
+ * at no static distance, so the move `c - K` is never ahead and drops out;
+ * what is left is the re-entry: once the attempt position passes the kept
+ * hit, the pre-check re-asked from it answers whether the run occurs again,
+ * and a miss ends the search with no match, since no attempt past the run's
+ * LAST occurrence can match. The same linearity conjunct as the bounded row
+ * (`req_parts_in_whole`): an entry-only form would be the plain gate, so
+ * there is no unbounded `-entry` row. A skipped attempt spends no budget, so
+ * a give-up may become the unbounded answer, never the reverse (the bounded
+ * row's direction), and where it moves is a fact of the whole run. */
+static bool req_handoff_unbounded_applies(const CandSel *s)
+{
+    return req_handoff_vm_run(s) &&
+           pcrec_fact_req_whole_run(s->cx)->whole_maxoff >= PCREC_W_UNBOUNDED &&
+           req_parts_in_whole(s->cx);
 }
 
 /* [K82] THE PRE-CHECK'S USE (axis `req-use`): what the search body does
@@ -9180,6 +9230,7 @@ static const char *req_handoff_stamp(Ctx *cx)
     const char *a = cand_stamp_absent(cx, CAND_SLOT_FIRST, CAND_ROUTE_DFA);
     if (a) return a;                    /* [OPT-REVEND] L2.1: FIRST is off the path */
     if (req_use(cx) != REQ_USE_HANDOFF) return "none";
+    if (req_handoff_k(cx) >= PCREC_W_UNBOUNDED) return "unbounded";   /* [REQ-PAST-LAST] */
     return dfa_fragf(cx, "%lld", req_handoff_k(cx));
 }
 
@@ -10545,10 +10596,19 @@ static const CandRow cand_rows[] = {
       .list = { [CAND_ROUTE_DFA] = { "req-use", 3, "handoff-attempts-entry" } },
       .desc = "as handoff-attempts, where some part of the pre-check is a necessary byte the whole run does not hold (a re-find after each failed attempt would rescan to that byte's next occurrence): the first attempt starts at max(startpos, c - K), with no re-entry",
       .u.use = { REQ_USE_HANDOFF, .whole = true } },
+    /* [REQ-PAST-LAST] `handoff-attempts` with K unbounded: the move drops
+     * out and the re-entry is the search's stop past the run's last
+     * occurrence. Disjoint from the two rows above (their K is finite). */
+    { .c = { "handoff-attempts-unbounded", PCREC_NO_REQ_HANDOFF, req_handoff_unbounded_applies },
+      .slot = CAND_SLOT_FIRST, .routes = CAND_ALL_ROUTES, .tok = "handoff",
+      .map = CM_LOWERBOUND, .contract = CG_FIXED, .hands = CT_LOWER,
+      .list = { [CAND_ROUTE_DFA] = { "req-use", 4, "handoff-attempts-unbounded" } },
+      .desc = "as handoff-attempts, where the whole run's maximum byte offset K from the attempt start is unbounded (every match still holds the run at or after its start): the first attempt starts at startpos, and after each failed attempt that has passed the kept hit the whole run is re-found from the attempt position; none ends the search with no match (no attempt past the run's last occurrence can match), a hit leaves the attempt position where it is; a search that gives up on a budget may answer instead, never the reverse",
+      .u.use = { REQ_USE_HANDOFF, .whole = true, .reenter = true } },
     { .c = { "scan-from-startpos", 0, cand_always }, .slot = CAND_SLOT_FIRST,
       .routes = CAND_ALL_ROUTES, .tok = "scan-from-startpos", .map = CM_NONE,
       .hands = CT_LOWER,
-      .list = { [CAND_ROUTE_DFA] = { "req-use", 4, "scan-from-startpos" } },
+      .list = { [CAND_ROUTE_DFA] = { "req-use", 5, "scan-from-startpos" } },
       .desc = "always (fallback): the scan starts at the startpos; a run pre-check, where one is emitted, only discards",
       .u.use = { REQ_USE_FROM_STARTPOS } },
 

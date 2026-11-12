@@ -9,7 +9,7 @@
 # EVERY character-boundary start position. The rows are reqvm0's probes:
 # the give-up witness (its deny arm's give-ups are run_axes.sh's GIVEUP1
 # entries), \G before the run, a lookbehind, utf8 round-up, caseless K in
-# bytes, \K, the declines, and bench subst cases 7 and 2 on small subjects.
+# bytes, \K, the unbounded-K stop ([REQ-PAST-LAST]), the declines, subst 7, 2.
 
 # GIVE-UP WITNESS: under -fno-req-handoff startpos 0..7 of the first subject give up (steps); the handoff starts the loop at the whole run's hit less K = 20 and answers (one direction only)
 pattern (a|aa){0,10}cxyz
@@ -481,31 +481,71 @@ ns 5 "abxabcd"
 ns 6 "abxabcd"
 ns 7 "abxabcd"
 
-# decline: a backreference before the run (K unbounded)
-pattern (a)\1xyz
+# GIVE-UP WITNESS, K unbounded: under -fno-req-handoff startpos 0 of the first subject gives up (steps) on the a-run past the last cxyz; the stop answers no match there (one direction only)
+pattern (a|aa|b)+cxyz
 features all
+budget steps=3000
 encoding byte
 engine vm
-ms 0 "aaxyz" 0 5
-ns 1 "aaxyz"
-ns 2 "aaxyz"
-ns 3 "aaxyz"
-ns 4 "aaxyz"
-ns 5 "aaxyz"
-ms 0 "zaaxyz" 1 6
-ms 1 "zaaxyz" 1 6
-ns 2 "zaaxyz"
-ns 3 "zaaxyz"
-ns 4 "zaaxyz"
-ns 5 "zaaxyz"
-ns 6 "zaaxyz"
-ns 0 "axyz"
-ns 1 "axyz"
-ns 2 "axyz"
-ns 3 "axyz"
-ns 4 "axyz"
+ns 0 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 1 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 2 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 3 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 4 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 5 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 6 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 7 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 8 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 9 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 10 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 11 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 12 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 13 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 14 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 15 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 16 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 17 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 18 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 19 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 20 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 21 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 22 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 23 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 24 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 25 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 26 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 27 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 28 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 29 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 30 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ns 31 "cxyzaqaaaaaaaaaaaaaaaaaaaaaaaaq"
+ms 0 "aabcxyz" 0 7
+ms 1 "aabcxyz" 1 7
+ms 2 "aabcxyz" 2 7
+ns 3 "aabcxyz"
+ns 4 "aabcxyz"
+ns 5 "aabcxyz"
+ns 6 "aabcxyz"
+ns 7 "aabcxyz"
+ms 0 "bcxyzbcxyzab" 0 5
+ms 1 "bcxyzbcxyzab" 5 10
+ms 2 "bcxyzbcxyzab" 5 10
+ms 3 "bcxyzbcxyzab" 5 10
+ms 4 "bcxyzbcxyzab" 5 10
+ms 5 "bcxyzbcxyzab" 5 10
+ns 6 "bcxyzbcxyzab"
+ns 7 "bcxyzbcxyzab"
+ns 8 "bcxyzbcxyzab"
+ns 9 "bcxyzbcxyzab"
+ns 10 "bcxyzbcxyzab"
+ns 11 "bcxyzbcxyzab"
+ns 12 "bcxyzbcxyzab"
+ns 0 "abq"
+ns 1 "abq"
+ns 2 "abq"
+ns 3 "abq"
 
-# decline: an unbounded prefix (a+) before the run
+# K unbounded (a+ before the run): the attempts stop past the whole run's last occurrence
 pattern a+xyz
 features all
 encoding byte
@@ -528,6 +568,206 @@ ns 0 "xyz"
 ns 1 "xyz"
 ns 2 "xyz"
 ns 3 "xyz"
+ms 0 "axyzaaaa" 0 4
+ns 1 "axyzaaaa"
+ns 2 "axyzaaaa"
+ns 3 "axyzaaaa"
+ns 4 "axyzaaaa"
+ns 5 "axyzaaaa"
+ns 6 "axyzaaaa"
+ns 7 "axyzaaaa"
+ns 8 "axyzaaaa"
+ms 0 "axyzqaxyzqaaa" 0 4
+ms 1 "axyzqaxyzqaaa" 5 9
+ms 2 "axyzqaxyzqaaa" 5 9
+ms 3 "axyzqaxyzqaaa" 5 9
+ms 4 "axyzqaxyzqaaa" 5 9
+ms 5 "axyzqaxyzqaaa" 5 9
+ns 6 "axyzqaxyzqaaa"
+ns 7 "axyzqaxyzqaaa"
+ns 8 "axyzqaxyzqaaa"
+ns 9 "axyzqaxyzqaaa"
+ns 10 "axyzqaxyzqaaa"
+ns 11 "axyzqaxyzqaaa"
+ns 12 "axyzqaxyzqaaa"
+ns 13 "axyzqaxyzqaaa"
+
+# K unbounded, a two-byte run: dense hits re-ask once per passed occurrence
+pattern [^@ ]+@x
+features all
+encoding byte
+engine vm
+ms 0 "a@x b@x c@" 0 3
+ms 1 "a@x b@x c@" 4 7
+ms 2 "a@x b@x c@" 4 7
+ms 3 "a@x b@x c@" 4 7
+ms 4 "a@x b@x c@" 4 7
+ns 5 "a@x b@x c@"
+ns 6 "a@x b@x c@"
+ns 7 "a@x b@x c@"
+ns 8 "a@x b@x c@"
+ns 9 "a@x b@x c@"
+ns 10 "a@x b@x c@"
+ms 0 "ab@y cd@x" 5 9
+ms 1 "ab@y cd@x" 5 9
+ms 2 "ab@y cd@x" 5 9
+ms 3 "ab@y cd@x" 5 9
+ms 4 "ab@y cd@x" 5 9
+ms 5 "ab@y cd@x" 5 9
+ms 6 "ab@y cd@x" 6 9
+ns 7 "ab@y cd@x"
+ns 8 "ab@y cd@x"
+ns 9 "ab@y cd@x"
+ms 0 "@x@x" 1 4
+ms 1 "@x@x" 1 4
+ns 2 "@x@x"
+ns 3 "@x@x"
+ns 4 "@x@x"
+ms 0 "zz@xzz" 0 4
+ms 1 "zz@xzz" 1 4
+ns 2 "zz@xzz"
+ns 3 "zz@xzz"
+ns 4 "zz@xzz"
+ns 5 "zz@xzz"
+ns 6 "zz@xzz"
+ms 0 "a@ b@ c@x d" 6 9
+ms 1 "a@ b@ c@x d" 6 9
+ms 2 "a@ b@ c@x d" 6 9
+ms 3 "a@ b@ c@x d" 6 9
+ms 4 "a@ b@ c@x d" 6 9
+ms 5 "a@ b@ c@x d" 6 9
+ms 6 "a@ b@ c@x d" 6 9
+ns 7 "a@ b@ c@x d"
+ns 8 "a@ b@ c@x d"
+ns 9 "a@ b@ c@x d"
+ns 10 "a@ b@ c@x d"
+ns 11 "a@ b@ c@x d"
+
+# pcre2-only
+# K unbounded under utf8: the advance is one character, the re-ask starts at a character start
+pattern [^@ ]+@x
+features all
+encoding utf8
+engine vm
+ms 0 "\xe2\x82\xac@x \xc3\xa9@" 0 5
+ns 3 "\xe2\x82\xac@x \xc3\xa9@"
+ns 4 "\xe2\x82\xac@x \xc3\xa9@"
+ns 5 "\xe2\x82\xac@x \xc3\xa9@"
+ns 6 "\xe2\x82\xac@x \xc3\xa9@"
+ns 8 "\xe2\x82\xac@x \xc3\xa9@"
+ns 9 "\xe2\x82\xac@x \xc3\xa9@"
+ms 0 "\xf0\x9f\x98\x80@y\xf0\x9f\x98\x80@x" 5 12
+ms 4 "\xf0\x9f\x98\x80@y\xf0\x9f\x98\x80@x" 5 12
+ms 5 "\xf0\x9f\x98\x80@y\xf0\x9f\x98\x80@x" 5 12
+ms 6 "\xf0\x9f\x98\x80@y\xf0\x9f\x98\x80@x" 6 12
+ns 10 "\xf0\x9f\x98\x80@y\xf0\x9f\x98\x80@x"
+ns 11 "\xf0\x9f\x98\x80@y\xf0\x9f\x98\x80@x"
+ns 12 "\xf0\x9f\x98\x80@y\xf0\x9f\x98\x80@x"
+ms 0 "\xc3\xa9@x\xc3\xa9" 0 4
+ns 2 "\xc3\xa9@x\xc3\xa9"
+ns 3 "\xc3\xa9@x\xc3\xa9"
+ns 4 "\xc3\xa9@x\xc3\xa9"
+ns 6 "\xc3\xa9@x\xc3\xa9"
+
+# pcre2-only
+# K unbounded with \K: the run is counted from the attempt start, not the reported start
+pattern a+\Kxyz
+features all
+encoding byte
+engine vm
+ms 0 "aaxyz zaxyz q" 2 5
+ms 1 "aaxyz zaxyz q" 2 5
+ms 2 "aaxyz zaxyz q" 8 11
+ms 3 "aaxyz zaxyz q" 8 11
+ms 4 "aaxyz zaxyz q" 8 11
+ms 5 "aaxyz zaxyz q" 8 11
+ms 6 "aaxyz zaxyz q" 8 11
+ms 7 "aaxyz zaxyz q" 8 11
+ns 8 "aaxyz zaxyz q"
+ns 9 "aaxyz zaxyz q"
+ns 10 "aaxyz zaxyz q"
+ns 11 "aaxyz zaxyz q"
+ns 12 "aaxyz zaxyz q"
+ns 13 "aaxyz zaxyz q"
+ns 0 "axy"
+ns 1 "axy"
+ns 2 "axy"
+ns 3 "axy"
+ms 0 "xyzaxyz" 4 7
+ms 1 "xyzaxyz" 4 7
+ms 2 "xyzaxyz" 4 7
+ms 3 "xyzaxyz" 4 7
+ns 4 "xyzaxyz"
+ns 5 "xyzaxyz"
+ns 6 "xyzaxyz"
+ns 7 "xyzaxyz"
+
+# K unbounded after a lookbehind holding the run's own bytes: no run byte lies before the match start
+pattern (?<=xyz)a+xyz
+features all
+encoding byte
+engine vm
+ms 0 "xyzaxyz" 3 7
+ms 1 "xyzaxyz" 3 7
+ms 2 "xyzaxyz" 3 7
+ms 3 "xyzaxyz" 3 7
+ns 4 "xyzaxyz"
+ns 5 "xyzaxyz"
+ns 6 "xyzaxyz"
+ns 7 "xyzaxyz"
+ms 0 "xyzaaxyzq" 3 8
+ms 1 "xyzaaxyzq" 3 8
+ms 2 "xyzaaxyzq" 3 8
+ms 3 "xyzaaxyzq" 3 8
+ns 4 "xyzaaxyzq"
+ns 5 "xyzaaxyzq"
+ns 6 "xyzaaxyzq"
+ns 7 "xyzaaxyzq"
+ns 8 "xyzaaxyzq"
+ns 9 "xyzaaxyzq"
+ns 0 "axyzxyz"
+ns 1 "axyzxyz"
+ns 2 "axyzxyz"
+ns 3 "axyzxyz"
+ns 4 "axyzxyz"
+ns 5 "axyzxyz"
+ns 6 "axyzxyz"
+ns 7 "axyzxyz"
+ms 0 "zxyzaxyzaa" 4 8
+ms 1 "zxyzaxyzaa" 4 8
+ms 2 "zxyzaxyzaa" 4 8
+ms 3 "zxyzaxyzaa" 4 8
+ms 4 "zxyzaxyzaa" 4 8
+ns 5 "zxyzaxyzaa"
+ns 6 "zxyzaxyzaa"
+ns 7 "zxyzaxyzaa"
+ns 8 "zxyzaxyzaa"
+ns 9 "zxyzaxyzaa"
+ns 10 "zxyzaxyzaa"
+
+# decline: a backreference before the run (K unbounded) and a set-rest byte `a` the run does not hold
+pattern (a)\1xyz
+features all
+encoding byte
+engine vm
+ms 0 "aaxyz" 0 5
+ns 1 "aaxyz"
+ns 2 "aaxyz"
+ns 3 "aaxyz"
+ns 4 "aaxyz"
+ns 5 "aaxyz"
+ms 0 "zaaxyz" 1 6
+ms 1 "zaaxyz" 1 6
+ns 2 "zaaxyz"
+ns 3 "zaaxyz"
+ns 4 "zaaxyz"
+ns 5 "zaaxyz"
+ns 6 "zaaxyz"
+ns 0 "axyz"
+ns 1 "axyz"
+ns 2 "axyz"
+ns 3 "axyz"
+ns 4 "axyz"
 
 # decline: one attempt (^)
 pattern ^abcd

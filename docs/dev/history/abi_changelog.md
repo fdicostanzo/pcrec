@@ -23,7 +23,15 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `103` on every artifact today ([FIND-MINW] searches stop at the minimum width, 100 -> 103,
+- **`rx_info.abi` is `105` on every artifact today ([REQ-PAST-LAST] the VM attempt loop stops past the last
+  occurrence of an unbounded required run, 103 -> 105, lane reqpast 2026-11-12; 104 was reserved for K38-2).**
+  On a VM artifact with no DFA scan whose necessary whole run has an UNBOUNDED maximum offset (the `req-use` row
+  `handoff-attempts-unbounded`, `tuning.md` §2.41¶8c), the pre-check keeps its hit (`landmark_position`), the
+  attempts begin at `search_from` (`handoff_position = search_from;`), and after each failed attempt the
+  pre-check is re-asked once the attempt position has passed the kept hit, a miss answering NOMATCH; no move
+  follows. `<PREFIX>_REQ_HANDOFF` reads `"unbounded"` there (was `"none"`). No struct offset moves, no
+  `rx_info` member is added or changed, and no answer moves.
+- **`rx_info.abi` was `103` on every artifact ([FIND-MINW] searches stop at the minimum width, 100 -> 103,
   lane minw 2026-11-12; 101 and 102 were reserved for K38-2 and lane nevermatch).** A search entry whose every
   match needs at least two bytes (the WIDTH row `min-width`: the `width` fact's `bmin` on the DFA routes, the
   root's `pcrec_minw` on the VM) answers NOMATCH where fewer remain past `search_from`, ahead of the pre-check;

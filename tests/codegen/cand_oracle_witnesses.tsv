@@ -54,6 +54,8 @@ scan-from-startpos	-fno-req-handoff --memfn=no-window-search	\d\dxyz
 handoff-attempts	--engine=vm	(?:xx|y)abc
 handoff-attempts	--engine=vm	(a|aa){0,10}cxyz
 handoff-attempts-entry	--engine=vm	(?:é|ü){2,5}(?i:cat)
+# [REQ-PAST-LAST] the attempt-loop handoff with K unbounded (lane reqpast)
+handoff-attempts-unbounded	--engine=vm	a+xyz
 scan-from-startpos	--engine=vm -fno-req-handoff	(?:xx|y)abc
 run-pinned-bounded	--memfn=no-window-search	foo\b
 run-pinned	--memfn=no-window-search	ABCDE
