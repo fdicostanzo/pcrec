@@ -623,6 +623,31 @@ lands first, 3.0b's ASK-2 is void). K38-3 rides with K38-2 or follows it. K38-1 
   Each mover is counted per (artifact, population) with an overlap column: one artifact can move in
   populations 2 and 4 and so cross C4's population `[r1.1 NOTED]`.
 
+  **ADDENDUM `[k382]` (lane k382 at build, 2026-11-11, kit manager's rulings; no rev bump): the
+  populations the census measured that the list above did not predict, each ACCEPTED as a
+  declared population** (census `docs/dev/lanes/k382_evidence/census.py`, counts in
+  `docs/dev/lanes/k382_report.md` "Movers"):
+  - **2s, the `@` dropped on SHORT runs (<= 8 positions).** §4.1's table row 3 applies to runs of
+    any length: where no pre-check run part renders and no window-site find reads a run member,
+    the stamp is the hex alone (BASE stamped pcrec's own index). Accepted only where the member
+    has no scan position: no `<p>_reqrun` block, no run-pinned prefilter, and a `cover` find that
+    reads a position outside the run (`abcdefg(?=x)`'s `x`). Such artifacts are outside C4's
+    population.
+  - **5k, the `[K82]` comment on UNCUT runs.** "before its run window" becomes "whole run" on every
+    artifact carrying it, cut or not: the text is now true of the run it names (emitted
+    scaffolding, inside this abi event).
+  - **3v, a SIMD form under `-fmemfn-simd` only.** A BASE `<p>_reqrun_whole` artifact whose one run
+    part now admits the kit's `vrun@w16` form (`RX_MEMFN_FORMS`, `SIMD_GUARDED_BYTES`); opt-in,
+    answer-checked by the cloud axes run; a consequence of the one-part layout, not a new method.
+  - **The landmark mass reader** (`req_landmark_hit_ppm`, src/gen/emit_dfa.c; feeds
+    `req_landmark_admits` and the NEXT slot's `handoff` row, so it can move PICKS): §4.1's
+    `ver_lo`/`ver_len` reader, required by §3.2 `[r1 F6]` (pcrec's mass and the kit twin's read the
+    reply's verified extent in the same commit). It reads the `req_run` fact as before (uncut, the
+    whole run), so the facts listing's `used` column does not move; a build-time read of
+    `req_whole_run` there was reverted. The admissions/picks it moves are counted as population
+    **1m** (admission or NEXT pick moved with K unchanged) beside population 1 (K moved): counts in
+    `docs/dev/lanes/k382_report.md` "Movers"; the full count is the census gate's.
+
 ### 5.2 What the kit measures (memory `pcrec-new-method-needs-measurement-card`)
 
 R-38 adds no new find, scan or verify METHOD: the finds and compares are today's rows over cube

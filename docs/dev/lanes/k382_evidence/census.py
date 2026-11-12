@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """docs/dev/lanes/k382_evidence/census.py -- lane k382's MOVER CENSUS for [MEMFN] R-38 K38-2 (pcrec abi
-98 -> 99, "the seam event"), in r30b_evidence/census.py's shape (emit_sweep has no abi normalization):
+99 -> 100 since the lane merged main d81ebd294; was 98 -> 99, "the seam event"), in r30b_evidence/census.py's shape (emit_sweep has no abi normalization):
 which corpus artifacts move, does each move lie in a DECLARED population
 (docs/design/memfn/span_runs_sheet.md rev 1.3 §5.1, the abi changelog's top entry), and did every
 artifact that SHOULD move (read off BASE, never off the tip) actually move?
@@ -8,14 +8,17 @@ artifact that SHOULD move (read off BASE, never off the tip) actually move?
     python3 -I census.py --base BIN --new BIN --tree DIR --out FILE [--jobs N] [--shard I/N]
                          [--sample N] [--patterns-file F]... [--control NAME]
 
-BASE is 37a6b36ed's pcrec (lane/memfn-k382a tip), NEW the K38-2 tip's. The corpus is every distinct
+BASE is main d81ebd294's pcrec (K38-2a + [FEAT-FAMILIES], abi 99), NEW the K38-2 tip's (abi 100). The corpus is every distinct
 pattern scripts/emit_sweep.py enumerates (its `enumerate_corpus`, one implementation), each compiled
-`--features all` like emit_sweep's argv streams. NEW's output has the abi digits mapped back (99 -> 98)
+`--features all` like emit_sweep's argv streams. NEW's output has the abi digits mapped back (100 -> 99, --abi)
 in the five places they occur and nothing else is normalized; rc and stderr are compared too.
 
 ARMS (.c, `-p rx -o -`): c-default, c-utf8 (-e utf8), c-vm, c-vm-utf8, c-comments (-fcomments),
 c-simd (-fmemfn-simd); LISTINGS: ir (--engine=vm --emit-ir, may NOT move at all) and facts
-(--emit-facts=byte,utf8, rows classified like the .c stamps).
+(--emit-facts=byte,utf8, rows classified like the .c stamps). XARMS (`x:*`): every arm of the identity
+gate (emit_sweep.ident_arms against --base-rev): each `--extra` arm's c-default/c-vm/emit-ir streams, the
+`start` arm table (emit_sweep.arm_table, 42 rows) at c-default/c-vm, and `witness` (--witness-bins).
+COMPOSITION: every .rxt/.rxtin build (emit_sweep's stream 4).
 
 THE PREDICTION is read from BASE ALONE: BASE's own facts listing (per encoding: `req_whole_run`, the
 cut window `req_run` = hex@idx, its offset `at` in the whole run) and BASE's artifact on the arm.
@@ -30,7 +33,9 @@ suffix so a sub-artifact's `RX__Q_*` stamps count, or the enclosing function -- 
   P2  a `*REQ_RUN` stamp. Allowed on CUT (2a: the tip renders a `rx_reqrun(` pre-check run part;
       2b: not). MUST: CUT and BASE's stamp is the cut window -> the tip's hex is the whole run.
       P2s (counted APART, a possible open question): the hex unchanged, BASE's `@` lost (no `@` on the
-      tip), mask unchanged; allowed on any artifact; examples listed (`== P2s-example`).
+      tip), mask unchanged; examples listed (`== P2s-example`). Kit manager ruling 2 (2026-11-11): only
+      where the tip renders NO search that reads a run position (no reqrun block, no `cover` DFA scan, no
+      `run-pinned` prefilter: the @ table's row 3); a P2s member with any of those is UNEXPLAINED.
   P3  the reqrun blocks (`*reqrun*` functions and lines naming them), `*MEMFN_LIBC`, `*RUN_WORDS`.
       Allowed on CUT, WHOLE or FLIP. MUST: WHOLE -> the tip names no `_reqrun_whole` and calls
       `rx_reqrun(`. P3v (c-simd only, with a P3 move): the one run part takes a kit SIMD form
@@ -60,8 +65,17 @@ import re
 import subprocess
 import sys
 
-ABI = [(b"(abi 99)", b"(abi 98)"), (b"(PCREC_RX_ABI_H + 0) != 99", b"(PCREC_RX_ABI_H + 0) != 98"),
-       (b"#define PCREC_RX_ABI_H 99", b"#define PCREC_RX_ABI_H 98"), (b"    .abi = 99,", b"    .abi = 98,")]
+def abi_pairs(old, new):
+    """The four places the abi digits occur, NEW's spelling -> BASE's (nothing else is normalized)."""
+    return [(b"(abi %d)" % new, b"(abi %d)" % old),
+            (b"(PCREC_RX_ABI_H + 0) != %d" % new, b"(PCREC_RX_ABI_H + 0) != %d" % old),
+            (b"#define PCREC_RX_ABI_H %d" % new, b"#define PCREC_RX_ABI_H %d" % old),
+            (b"    .abi = %d," % new, b"    .abi = %d," % old)]
+
+
+ABI = abi_pairs(99, 100)        # --abi OLD:NEW sets it (the lane's event: 99 -> 100 over BASE d81ebd294)
+BASE_REV = "d81ebd294"          # --base-rev: the identity gate's arm list is read against it
+WITNESS = None                  # --witness-bins BASE_W NEW_W: the -DPCREC_SIMD_WITNESS builds
 C = ["-p", "rx", "--features", "all", "-o", "-"]
 # (arm, extra argv, facts encoding)
 ARMS = [
@@ -74,7 +88,7 @@ ARMS = [
 ]
 IR = ["--features", "all", "--engine=vm", "--emit-ir"]
 FACTS = ["--features", "all", "--emit-facts=byte,utf8"]
-POPS = ["P1", "P2", "P2a", "P2b", "P2s", "P3", "P3v", "P4", "P4f", "P5", "P5k", "used"]   # P2 (unsplit): the facts listing
+POPS = ["P1", "P2", "P2a", "P2b", "P2s", "P2se", "P2sd", "P2so", "Aa_K", "Aa_noK", "P3", "P3v", "P4", "P4f", "P5", "P5k", "used"]   # P2 (unsplit): the facts listing
 FLOOR_ARMS = ("c-default", "c-vm")
 FLOOR_POPS = ("P1", "P2a", "P2b", "P3")
 WITNESSES = [  # tests/codegen/run_prechecks.sh, reqcube_check.py, the sheet's §4.2/§5.1 examples
@@ -94,6 +108,21 @@ def norm(out):
     for a, b in ABI:
         out = out.replace(a, b)
     return out
+
+
+SIZE_ERR = re.compile(rb"(large artifact: |pattern too large: )(\d+)( bytes of emitted (?:C source \(|code))(\d+)?")
+
+
+def norm_err(err):
+    """Either side's stderr with the NUMBERS of pcrec's size diagnostics masked (the `large artifact: N
+    bytes of emitted C source (M of code)` warning, the `pattern too large: N bytes` refusal): they count the
+    artifact's bytes, so they move with the abi digits (+4 at 99 -> 100) AND with every real mover, and a
+    listing's sub-compiles print several (measured: one moved 4, one did not). The artifact's own text is
+    judged on its own arm; the diagnostic's wording, its presence and the exit status still must match.
+    Nothing else is masked."""
+    if CONTROL == "no-norm":
+        return err
+    return SIZE_ERR.sub(lambda m: m.group(1) + b"N" + m.group(3) + (b"N" if m.group(4) else b""), err)
 
 
 def run(argv, timeout=120):
@@ -196,6 +225,21 @@ def classify(name, com, line, comments_arm, simd_arm):
     return None
 
 
+COVER_FIND = re.compile(rb"memchr\(rx_mf\d+_s \+ rx_mf\d+_c \+ (\d+), (\d+),")
+
+
+def scan_search(text):
+    """What in an artifact reads a run position with a scan find (the REQ_RUN @ table's rows 1-2), or ''
+    (row 3): a reqrun pre-check block, a `cover` DFA scan, a `run-pinned` prefilter."""
+    if re.search(rb"\w_reqrun(__\w+)?\(", text):
+        return "a reqrun block"
+    if re.search(rb'^#define \w+_SCAN "cover"', text, re.M):
+        return "a cover window search"
+    if re.search(rb'^#define \w+_PREFILTER "run-pinned"', text, re.M):
+        return "a run-pinned prefilter"
+    return ""
+
+
 def moved_lines(b, n):
     a, c = b.split(b"\n"), n.split(b"\n")
     ra, rc = regions(a), regions(c)
@@ -210,7 +254,7 @@ def moved_lines(b, n):
 
 def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
     """(pops moved set, problem or '', must list, flags) for one .c arm of one pattern."""
-    moved = rb[0] != rn[0] or rb[2] != norm(rn[2]) or rb[1] != norm(rn[1])
+    moved = rb[0] != rn[0] or norm_err(rb[2]) != norm_err(rn[2]) or rb[1] != norm(rn[1])
     b, n = rb[1], norm(rn[1])
     ri = run_of(f)
     cut = bool(ri) and len(ri[0]) > len(ri[1])
@@ -233,7 +277,7 @@ def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
         b = K82_OLD.sub(K82_NEW, b)
         if b == n:
             return {"P5k"}, "", must, (cut, whole, flip)
-    if rb[0] != rn[0] or rb[2] != norm(rn[2]):
+    if rb[0] != rn[0] or norm_err(rb[2]) != norm_err(rn[2]):
         return set(), "rc/stderr moved", must, (cut, whole, flip)
     if not moved:
         bad = "a MUST artifact did not move (%s)" % ",".join(p for p, _ in must) if must else ""
@@ -247,7 +291,29 @@ def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
         if p == "P2":
             vb, vn = stb.get(name, ""), stn.get(name, "")
             if hexof(vb) == hexof(vn) and "@" in vb and "@" not in vn and vb.split("/")[1:] == vn.split("/")[1:]:
-                p = "P2s"
+                why = scan_search(n)
+                wm = re.search(rb'^#define \w+_REQ_WHY "(\w+)"', n, re.M)
+                p = "P2se" if wm and wm.group(1) == b"emitted" else "P2sd"   # emitted-no-scan / dominated or other WHY
+                if why == "a cover window search":
+                    # k382 2026-11-11 (match_api §6.3.7 para 7 row 3): a cover find that reads a position
+                    # OUTSIDE the run is P2so. The find is the tip's `memchr(rx_mfK_s + rx_mfK_c + N, B, ..)`;
+                    # the artifact does not name the run's offset in the find's frame, so "outside" is read
+                    # CONSERVATIVELY: no find byte B is any byte of the run (masked runs: B folded by the
+                    # mask too). A find byte that occurs in the run, or no readable find, is UNEXPLAINED.
+                    hx = bytes.fromhex(hexof(vb).decode() if isinstance(hexof(vb), bytes) else hexof(vb))
+                    mk = vb.split("/")[1] if "/" in vb else ""
+                    mb = bytes.fromhex(mk) if mk else b"\xff" * len(hx)
+                    runb = {c & m for c, m in zip(hx, mb)}
+                    finds = [(int(o), int(c)) for o, c in COVER_FIND.findall(n)]
+                    hit = [(o, c) for o, c in finds if any((c & m) in runb for m in set(mb))]
+                    if finds and not hit:
+                        p, why = "P2so", ""
+                    else:
+                        why = ("a cover find whose byte is in the run (+offset, byte: %s)" % hit
+                               if finds else "a cover window search with no readable memchr find")
+                if why:      # ruling 2: no @ only where NO search reads a run position (table row 3)
+                    unexp.append("P2s refused: %s lost its @ but the tip renders %s" % (name, why))
+                    continue
             elif not cut:
                 p = None
             else:
@@ -277,9 +343,15 @@ def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
         bad = "a MUST move is not the declared one (%s)" % ",".join(p for p, ok in must if not ok)
     if flip:
         pops.add("P4f")
+    # ADMISSION/PICK (k382 2026-11-11, COUNT-ONLY, never a verdict): a landmark admission or NEXT pick moved,
+    # i.e. a REQ_HANDOFF none<->number, DFA_PREFILTER, VM_START_SCAN or REQ_WHY stamp changed; split by
+    # whether K moved too (P1 in the artifact) or not (Aa_K / Aa_noK).
+    if any(stb.get(k) != stn.get(k) for k in set(stb) | set(stn) if ADM_STAMP.search(k)):
+        pops.add("Aa_K" if "P1" in pops else "Aa_noK")
     return pops, bad, must, (cut, whole, flip)
 
 
+ADM_STAMP = re.compile(r"_(REQ_HANDOFF|DFA_PREFILTER|VM_START_SCAN|REQ_WHY)$")
 FACT_POP = {"req_run": "P2", "req_run_maxoff": "P1", "req_landmark_maxoff": "P1", "run_pin": "P4",
             "RX_REQ_RUN": "P2", "RX_REQ_HANDOFF": "P1", "RX_REQ_WHY": "P4", "RX_MEMFN_LIBC": "P3",
             "RX_RUN_WORDS": "P3"}
@@ -304,7 +376,7 @@ def judge_facts(rb, rn):
     row's name must be a declared one (FACT_POP, an RX_DFA_PREFILTER* stamp, a part-layout row naming a
     reqrun or ofsskip function); a `req_*` fact row whose ONLY move is its `used` column is `used`,
     allowed where the same encoding's RX_REQ_WHY moved (a FLIP's new pre-check asks the fact)."""
-    if rb[0] != rn[0] or rb[2] != norm(rn[2]):
+    if rb[0] != rn[0] or norm_err(rb[2]) != norm_err(rn[2]):
         return set(), "rc/stderr moved"
     (ra, oa), (rc, oc) = facts_rows(rb[1]), facts_rows(norm(rn[1]))
     pops, unexp, used = set(), [], []
@@ -351,43 +423,64 @@ def one(task):
         rb = run([base] + C + extra + ["--pattern", pat])
         rn = run([new] + C + extra + ["--pattern", pat])
         pops, bad, must, flags = judge_c(arm, rb, rn, facts_of(fb[1], enc), arm == "c-comments", arm == "c-simd")
-        moved = rb[0] != rn[0] or rb[1] != norm(rn[1]) or rb[2] != norm(rn[2])
+        moved = rb[0] != rn[0] or rb[1] != norm(rn[1]) or norm_err(rb[2]) != norm_err(rn[2])
         res.append((arm, moved, pops, bad, must, flags))
     ib, inn = run([base] + IR + ["--pattern", pat]), run([new] + IR + ["--pattern", pat])
-    im = ib[0] != inn[0] or ib[1] != norm(inn[1]) or ib[2] != norm(inn[2])
+    im = ib[0] != inn[0] or ib[1] != norm(inn[1]) or norm_err(ib[2]) != norm_err(inn[2])
     res.append(("ir", im, set(), "the ir listing moved" if im else "", [], (False, False, False)))
-    fm = fb[0] != fn[0] or fb[1] != norm(fn[1]) or fb[2] != norm(fn[2])
+    fm = fb[0] != fn[0] or fb[1] != norm(fn[1]) or norm_err(fb[2]) != norm_err(fn[2])
     fp, fbad = judge_facts(fb, fn) if fm else (set(), "")
     res.append(("facts", fm, fp, fbad, [], (False, False, False)))
+    fbi = None                               # BASE's facts under -i (a pattern flag the start table carries)
     for arm, extra, stream in XARMS:
+        if "-i" in extra and fbi is None:
+            fbi = run([base] + FACTS + ["-i", "--pattern", pat])
+        fx = fbi if "-i" in extra else fb
+        if stream.startswith("w-"):          # the witness arm: the -DPCREC_SIMD_WITNESS builds
+            eng = ["--engine=vm"] if stream == "w-c-vm" else []
+            rb = run([WITNESS[0]] + C + eng + ["--pattern", pat])
+            rn = run([WITNESS[1]] + C + eng + ["--pattern", pat])
+            pops, bad, must, flags = judge_c(arm, rb, rn, facts_of(fb[1], "byte"), False, False)
+            moved = rb[0] != rn[0] or rb[1] != norm(rn[1]) or norm_err(rb[2]) != norm_err(rn[2])
+            res.append((arm, moved, pops, bad, must, flags))
+            continue
         if stream == "ir":
             ib = run([base] + IR[:-1] + extra + ["--emit-ir", "--pattern", pat])
             inn = run([new] + IR[:-1] + extra + ["--emit-ir", "--pattern", pat])
-            im = ib[0] != inn[0] or ib[1] != norm(inn[1]) or ib[2] != norm(inn[2])
+            im = ib[0] != inn[0] or ib[1] != norm(inn[1]) or norm_err(ib[2]) != norm_err(inn[2])
             res.append((arm, im, set(), "the ir listing moved" if im else "", [], (False, False, False)))
             continue
         eng = ["--engine=vm"] if stream == "c-vm" else []
         rb = run([base] + C + eng + extra + ["--pattern", pat])
         rn = run([new] + C + eng + extra + ["--pattern", pat])
         enc = "utf8" if "utf8" in extra else "byte"
-        pops, bad, must, flags = judge_c(arm, rb, rn, facts_of(fb[1], enc), "-fcomments" in extra,
+        pops, bad, must, flags = judge_c(arm, rb, rn, facts_of(fx[1], enc), "-fcomments" in extra,
                                          any(x.startswith("-fmemfn-simd") for x in extra))
-        moved = rb[0] != rn[0] or rb[1] != norm(rn[1]) or rb[2] != norm(rn[2])
+        moved = rb[0] != rn[0] or rb[1] != norm(rn[1]) or norm_err(rb[2]) != norm_err(rn[2])
         res.append((arm, moved, pops, bad, must, flags))
     return pat, res
 
 
 def xarms_of(emit_sweep, new_bin):
-    """The identity gate's declared `--extra` arms (emit_sweep.ident_arms, one implementation), each as
-    its c-default / c-vm / emit-ir streams: (name, extra argv, stream). `base` is this census's own arms;
-    `start` and `witness` carry no `--extra` and are NOT covered here (named in the output)."""
+    """The identity gate's declared arms (emit_sweep.ident_arms, one implementation), each as its
+    c-default / c-vm / emit-ir streams: (name, extra argv, stream). `base` is this census's own arms.
+    `start` is emit_sweep's arm table (`arm_table()`, (base, flag) rows: ARM_BASES[base] + the flag) at
+    c-default and c-vm, as `x:start:<flag>`. `witness` is BASE's and NEW's -DPCREC_SIMD_WITNESS builds
+    (--witness-bins) at c-default and c-vm, as `x:witness:*`; without --witness-bins it is NOT covered
+    and is named in the output (skipped)."""
     out, skipped = [], []
-    for name, args in emit_sweep.ident_arms(new_bin, "37a6b36ed"):
+    for b, flag in emit_sweep.arm_table():
+        extra = list(emit_sweep.ARM_BASES[b]) + shlex.split(flag)
+        for stream in ("c-default", "c-vm"):
+            out.append(("x:start:%s%s:%s" % ("utf8+" if b == "utf8" else "", flag or "null", stream), extra, stream))
+    if WITNESS:
+        out += [("x:witness:c-default", [], "w-c-default"), ("x:witness:c-vm", [], "w-c-vm")]
+    for name, args in emit_sweep.ident_arms(new_bin, BASE_REV):
         argv = shlex.split(args)
         ex = [x[len("--extra="):] for x in argv if x.startswith("--extra=")]
         st = next((x[len("--streams="):] if x.startswith("--streams=") else argv[i + 1]
                    for i, x in enumerate(argv) if x == "--streams" or x.startswith("--streams=")), "")
-        if name == "base":
+        if name in ("base", "start") or (name == "witness" and WITNESS):
             continue
         if not ex:
             skipped.append(name)
@@ -469,9 +562,15 @@ def main():
     ap.add_argument("--control", default="", choices=["", "no-p3", "no-norm"])
     ap.add_argument("--no-xarms", action="store_true", help="skip the identity gate's --extra arms")
     ap.add_argument("--no-composition", action="store_true", help="skip the composition stream")
+    ap.add_argument("--abi", default="99:100", help="OLD:NEW, the abi event (NEW's digits mapped back)")
+    ap.add_argument("--base-rev", default="d81ebd294", help="BASE's revision (the identity arm list)")
+    ap.add_argument("--witness-bins", nargs=2, metavar=("BASE_W", "NEW_W"),
+                    help="the -DPCREC_SIMD_WITNESS builds of BASE and NEW (the identity arm `witness`)")
     a = ap.parse_args()
     CONTROL = a.control
-    global XARMS
+    global XARMS, ABI, BASE_REV, WITNESS
+    o, nw = (int(x) for x in a.abi.split(":"))
+    ABI, BASE_REV, WITNESS = abi_pairs(o, nw), a.base_rev, a.witness_bins
     sys.path.insert(0, os.path.join(a.tree, "scripts"))
     import emit_sweep  # noqa: E402  (the corpus enumeration, one implementation)
     corpus = sorted({os.fsdecode(p) for _, _, p in emit_sweep.enumerate_corpus(a.new, a.tree, 60)})
@@ -508,7 +607,7 @@ def main():
                 if pops:
                     key = (arm, "+".join(sorted(pops)))
                     overlap[key] = overlap.get(key, 0) + 1
-                if "P2s" in pops and arm in FLOOR_ARMS:
+                if pops & {"P2se", "P2sd", "P2so"} and arm in FLOOR_ARMS:
                     p2s.append("%s\t%s" % (arm, ptxt))
                 if moved or bad:
                     lines.append("%s\t%s\t%s\t%s\t%s" % ("UNEXPECTED" if bad else "MOVED", arm,
