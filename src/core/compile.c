@@ -3292,11 +3292,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * LOCATE row writes the constant matcher off the same machines: one
          * empty mechanism, reached from a second route. Not under a forced
          * engine or `-fprefilter` (do-or-die: the caller named the VM or its
-         * prefilter), nor under `--emit-ir`, which lists the VM program. A
-         * callout pattern never has a prefilter, so no callout is skipped. */
+         * prefilter). `--emit-ir` runs this same compile, so it refuses here
+         * as on any DFA artifact. A callout pattern never has a prefilter, so
+         * no callout is skipped. */
         if (cx.job->fit.chosen != ENGM_DFA && cx.job->fit.prefilter &&
             cx.opt->engine == PCREC_ENGINE_AUTO &&
-            !pcrec_opt_has(cx.opt, PCREC_FORCE_PREFILTER) && !cx.want_ir &&
+            !pcrec_opt_has(cx.opt, PCREC_FORCE_PREFILTER) &&
             pcrec_fact_never_matches(&cx) == PF_NEVER_MACHINE) {
             cx.job->fit.chosen = ENGM_DFA;
             cx.job->fit.prefilter = false;
@@ -3332,8 +3333,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                       * sentence was cut mid-word at "the capture-recording eng". */
                      "--emit-ir lists a VM program; this pattern compiles to the "
                      "DFA engine because every capture slot it promises is "
-                     "permanently UNSET (under a zero-count repeat, or reached "
-                     "only through a call). Pass --engine=vm for the VM program");
+                     "permanently UNSET (a zero-count repeat, reached only "
+                     "through a call) or it matches nothing. Pass --engine=vm "
+                     "for the VM program");
 
         /* [ART-SIZE] The size term's verdict, for the artifact's own stamp
          * (D81). SEVEN values, because the first design's three hid four
