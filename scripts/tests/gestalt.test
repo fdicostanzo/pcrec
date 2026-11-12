@@ -83,10 +83,11 @@ printf 'import time\ntime.sleep(5)\nprint("entry: over-cap checked 1 pair index,
 printf 'print("nothing useful")\n' > "$T/ent/notrailer.py"
 printf '\n' > "$T/ent/blank.py"
 # G [VAR=val ...]: run gestalt (default output) over the all-normal inputs, later VARs overriding earlier ones
+mkdir -p "$T/proc0"   # an empty fake /proc: the pollers row sees no processes unless a case points GESTALT_PROC elsewhere
 G2() { env GESTALT_ROLES_DIR="$T/emptyroles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/ch" GESTALT_STATUSLINE_DIR="$T/nosl" \
     GESTALT_SOCKS_DIR="$T/socks" GESTALT_LOADAVG="$T/load.low" GESTALT_BOXQUEUE="$T/bq.busy" GESTALT_ENTRY="$T/ent/under.py" \
     GESTALT_WORK_ENTRY="$T/pw/quiet.py" GESTALT_OWNER_MD="$T/pw/owner.quiet" GESTALT_PUSH_DIR="$T/pw/nogit" GESTALT_PLAN_GIT="$T/pw/repo" \
-    GESTALT_WTPRUNE="$T/pw/wtprune" PCREC_TMPDIR="$T/pw/tmpq" "$@" ; }
+    GESTALT_PROC="$T/proc0" GESTALT_WTPRUNE="$T/pw/wtprune" PCREC_TMPDIR="$T/pw/tmpq" "$@" ; }
 run() { local pre=$1; shift; G2 "$@" PATH="$pre:$PATH" "$TO" 20 bash "$here/gestalt" $GARGS 2>&1; }
 GARGS=""
 q=$(run "$T/ghok"); rc=$?
@@ -261,6 +262,31 @@ rm -rf "$ud/gestalt/upstream.news"
 ud=$(mktemp -d "$T/up.XXXXXX")
 o=$(GARGS=--all; pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.none" | kinds | tr ' ' '\n' | grep -c '^upstream$'); sleep 1
 [ "$o" = 0 ] && [ -s "$T/uw.count2" ] && ok "upstream: a quiet watcher leaves the row empty (not even under --all)" || bad "upstream quiet: [$o]"
+# pollers: fake /proc (uptime, <pid>/{cmdline,stat}); the shell-snapshot prefix differs per copy and is not the identity
+fproc() { # DIR PID PPID STARTTICKS CMDLINE...: one fake process owned by the test user
+    local d=$1 pid=$2 ppid=$3 st=$4; shift 4; mkdir -p "$d/$pid"; printf '%s\0' "$@" > "$d/$pid/cmdline"
+    printf '%s (bash) S %s 1 1 0 -1 0 0 0 0 0 0 0 0 0 20 0 1 0 %s 0 0\n' "$pid" "$ppid" "$st" > "$d/$pid/stat"; }
+LOOPA='until ls /q/done | grep -q KEY1; do sleep 30; done'
+LOOPB='while [ ! -e /q/other ]; do sleep 5; done'
+pp="$T/pp3"; mkdir -p "$pp"; echo "60000.00 1" > "$pp/uptime"
+hz=$(getconf CLK_TCK)
+fproc "$pp" 101 1 $((hz * 100)) bash -c "source /snap/a.sh && eval '$LOOPA'"
+fproc "$pp" 102 1 $((hz * 200)) bash -c "source /snap/b.sh && eval '$LOOPA'"
+fproc "$pp" 103 1 $((hz * 300)) bash -c "source /snap/c.sh && eval '$LOOPA'"
+fproc "$pp" 104 102 $((hz * 200)) bash -c "source /snap/b.sh && eval '$LOOPA'"   # a pipeline fork of 102: not a copy
+fires "pollers: 3 identical loops" pollers "$T/ghok" GESTALT_PROC="$pp"
+o=$(pq GESTALT_PROC="$pp")
+case $o in "pollers: 3 copies of the same wait loop (oldest 998m, pids 101 102 103): until ls /q/done | grep -q KEY1; do sleep 30; done") ok "pollers: count, oldest age, all pids (no fork), loop text" ;; *) bad "pollers line: [$o]" ;; esac
+pd="$T/pp2"; mkdir -p "$pd"; echo "60000.00 1" > "$pd/uptime"
+fproc "$pd" 201 1 100 bash -c "$LOOPA"; fproc "$pd" 202 1 100 bash -c "$LOOPB"
+fires "pollers: 2 different loops: silent" "" "$T/ghok" GESTALT_PROC="$pd"
+po="$T/pp1"; mkdir -p "$po"; echo "60000.00 1" > "$po/uptime"; fproc "$po" 301 1 100 bash -c "$LOOPA"
+fires "pollers: 1 loop: silent" "" "$T/ghok" GESTALT_PROC="$po"
+# sabotage: a plant that drops the grouping (every loop shares one key) must turn the "2 different loops" case red
+plant="$here/gestalt.plant.$$"; sed 's/groups.setdefault(key,/groups.setdefault("x",/' "$here/gestalt" > "$plant"
+[ "$(cmp -s "$plant" "$here/gestalt"; echo $?)" = 1 ] || bad "pollers plant did not change the script"
+o=$(G2 GESTALT_PROC="$pd" PATH="$T/ghok:$PATH" "$TO" 20 bash "$plant" 2>&1 | kinds); rm -f "$plant"
+[ "$o" = pollers ] && ok "pollers: the plant without grouping goes red (fires on different loops)" || bad "pollers plant not caught: [$o]"
 # the log line is written on a silent run too
 [ -s "$T/tmproot/gestalt/log.tsv" ] && ok "log.tsv written" || bad "log.tsv missing"
 echo "gestalt.test: $pass pass, $fail fail"
