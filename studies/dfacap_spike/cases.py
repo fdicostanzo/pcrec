@@ -85,6 +85,7 @@ CASES = [
     ("ctx-la", rb"(a+)(?=b)(b*)", "", "abc"),
     ("ctx-nla", rb"(a+?)(?!a)", "", "ab"),
     ("ctx-lb", rb"(?<=a)(b+)", "", "abc"),
+    ("ctx-lb-word", rb"(?<=\w) *(a)", "", "xa -"),  # found by population.py: byte classes missed \w
     ("ctx-nlb", rb"(?<!a)(b)", "", "abc"),
     ("ctx-stack", rb"(a)\b(?=-)(-)?", "", "a -"),
     ("ctx-loop", rb"(?:\b(\w))+", "", "ab -"),

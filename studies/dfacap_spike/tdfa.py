@@ -881,7 +881,7 @@ def byte_classes(nfa):
     CHAR sets, \\n (for $), \\w, lookahead and lookbehind sets."""
     sets = [nd[1] for nd in nfa.n if nd[0] == CHAR]
     sets += list(nfa.prevsets[1:])
-    if any(nd[0] == ASSERT and nd[1] in ("wb", "nwb") for nd in nfa.n):
+    if any(nd[0] == ASSERT and (nd[1] in ("wb", "nwb") or (nd[1] == "lb" and nd[3] == 0)) for nd in nfa.n):
         sets.append(WORD)
     for nd in nfa.n:
         if nd[0] == ASSERT:
@@ -1222,6 +1222,7 @@ def analyze(dfa):
     fixed = sum(1 for sid in live for c in range(ncls[sid]) if isfixed((sid, c)))
     total = sum(ncls[sid] for sid in live)
     need = max([0] + [sum(1 for c in range(ncls[sid]) if not isfixed((sid, c))) for sid in live])
+    dfa.fixed_tables = (offp, offs)
     return dict(copyfree=conflicts == 0, conflicts=conflicts, copyfree_nf=conflicts_nf == 0,
                 conflicts_nf=conflicts_nf, fixed=fixed, classes=total,
                 allfixed=(fixed >= total), regs_after_fixed=need)
@@ -1230,3 +1231,37 @@ def analyze(dfa):
 def compile_pattern(pat, flags="", utf8=False, anchored=False):
     ast, ncap = parse(pat, flags, utf8)
     return TNFA(ast, ncap, anchored=anchored)
+
+
+def verify_fixed(dfa, subj, start=0):
+    """Control for analyze(): run the machine and check every class it called
+    fixed holds pos - k (or start + k) at every visited state. Returns the
+    number of violations."""
+    offp, offs = dfa.fixed_tables
+    regs = [-1] * max(dfa.nregs, 1)
+    bad = 0
+
+    def apply(ops, pos):
+        old = list(regs)
+        for d, s in ops.items():
+            regs[d] = pos if s == "P" else pos - 1 if s == "Q" else old[s]
+
+    def check(sid, pos):
+        n = 0
+        for c, r in enumerate(dfa.states[sid][1]):
+            kp, ks = offp.get((sid, c), "TOP"), offs.get((sid, c), "TOP")
+            if kp != "TOP" and regs[r] != pos - kp:
+                n += 1
+            if ks != "TOP" and regs[r] != start + ks:
+                n += 1
+        return n
+    s = dfa.init
+    apply(dfa.init_ops, 0)
+    bad += check(s, 0)
+    for i, b in enumerate(subj):
+        s, ops = dfa.step(s, dfa.cmap[b])
+        if not dfa.states[s][0][0]:
+            break
+        apply(ops, i + 1)
+        bad += check(s, i + 1)
+    return bad

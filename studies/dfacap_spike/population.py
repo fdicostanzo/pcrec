@@ -184,7 +184,7 @@ def main():
     idx = corpus_index()
     print("# index built %.0fs, %d patterns; rows %d" % (time.time() - t0, len(idx), len(rows)), file=sys.stderr)
     hdr = (["n", "src", "enc", "flags", "ncaps", "prefilter", "status", "why", "nsubs", "corpus_subs", "exh_len",
-            "pcre2_err", "mism_tdfa", "mism_pike", "mism_anch", "mism_vm"]
+            "pcre2_err", "mism_tdfa", "mism_pike", "mism_anch", "mism_vm", "fixed_viol"]
            + ["u_" + c for c in COSTCOLS] + ["a_" + c for c in COSTCOLS] + ["pattern_esc"])
     out.write("\t".join(hdr) + "\n")
     for n, r in enumerate(rows):
@@ -194,7 +194,7 @@ def main():
         utf8 = r["enc"] in ("utf8", "utf-8") or "u" in flags
         base = [str(n), r["src"], r["enc"], flags, r["ncaps"], r["prefilter"]]
         rec = {"status": "", "why": "", "nsubs": 0, "corpus_subs": 0, "exh_len": "", "pcre2_err": 0,
-               "mism_tdfa": "", "mism_pike": "", "mism_anch": "", "mism_vm": ""}
+               "mism_tdfa": "", "mism_pike": "", "mism_anch": "", "mism_vm": "", "fixed_viol": ""}
         ucost = acost = [""] * len(COSTCOLS)
         signal.alarm(ROWSECS)
         try:
@@ -235,11 +235,18 @@ def main():
                         bad[kind] += 1
                         if bad[kind] <= 3:
                             mm.write("%d\t%s\t%r\t%r\tpcre2=%s\tgot=%s\n" % (n, kind, pat, s, w, got))
+                for kind, m in (("fixu", dfa), ("fixa", adfa)):
+                    nv = tdfa.verify_fixed(m, s)
+                    if nv:
+                        bad[kind] = bad.get(kind, 0) + 1
+                        if bad[kind] <= 3:
+                            mm.write("%d\t%s\t%r\t%r\tfixed-offset claim violated %d\n" % (n, kind, pat, s, nv))
                 if vm is not None and vm[k] != want:
                     bad["vm"] += 1
                     if bad["vm"] <= 3:
                         mm.write("%d\tvm\t%r\t%r\tpcre2=%s\tgot=%s\n" % (n, pat, s, want, vm[k]))
-            rec.update(mism_tdfa=bad["tdfa"], mism_pike=bad["pike"], mism_anch=bad["anch"])
+            rec.update(mism_tdfa=bad["tdfa"], mism_pike=bad["pike"], mism_anch=bad["anch"],
+                       fixed_viol=bad.get("fixu", 0) + bad.get("fixa", 0))
             if vm is not None:
                 rec["mism_vm"] = bad["vm"]
             rec["status"] = "in"
@@ -250,7 +257,7 @@ def main():
         except RowTimeout:
             rec["status"], rec["why"] = "timeout", "row over %ds (spike's Python budget)" % ROWSECS
         signal.alarm(0)
-        out.write("\t".join(base + [str(rec[k]) for k in hdr[6:16]] + [str(x) for x in ucost]
+        out.write("\t".join(base + [str(rec[k]) for k in hdr[6:17]] + [str(x) for x in ucost]
                             + [str(x) for x in acost] + [r["pattern_esc"]]) + "\n")
         out.flush()
         mm.flush()
