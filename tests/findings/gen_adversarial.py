@@ -24,8 +24,16 @@ leaves at NONE.
 A reader's CHOICE is read from its own stamp in the artifact, never from
 anything the generator computes:
   c1   RX_REQ_BYTE                        the necessary set's scanned member
-  c2a  RX_REQ_RUN after '@'               the run's scanned member index
-  c2b  RX_REQ_RUN before '@'              the emitted 8-byte window
+  c2a  RX_REQ_RUN's '@', row 1            the pre-check run part's scanned
+                                          member (the artifact has a
+                                          `_reqrun` block)
+  c2b  RX_REQ_RUN's '@', row 2            the run member a window-site
+                                          search reads (the `cover` find,
+                                          the run-pinned prefilter): no
+                                          `_reqrun` block
+(`@` is a first-match table, match_api.md §6.3.7, span_runs_sheet.md §4.1;
+the hex before it is the whole run, which no rate chooses since K38-2; a
+row-3 artifact has no `@` and neither reader.)
   c3   RX_REQ_WHY                         G1's emitted/dominated decision
   c4   RX_DFA_PREFILTER_OFFSETS           the offset-k selection
 
@@ -125,9 +133,10 @@ def stamp(text, name):
 
 def choices(text):
     """Each reader's choice, read from its stamp."""
-    run = stamp(text, "REQ_RUN")
-    win, _, idx = run.partition("@")
-    return {"c1": stamp(text, "REQ_BYTE"), "c2a": idx, "c2b": win,
+    run, _, idx = stamp(text, "REQ_RUN").partition("@")
+    row1 = "_reqrun(" in text
+    return {"c1": stamp(text, "REQ_BYTE"),
+            "c2a": idx if row1 else "", "c2b": "" if row1 else idx, "run": run,
             "c3": stamp(text, "REQ_WHY"),
             "c4": stamp(text, "DFA_PREFILTER_OFFSETS")}
 
@@ -173,16 +182,16 @@ def anti_tables(base):
     picks under the default become the commonest, so its choice must move
     wherever it has an alternative. One per reader that picks a byte."""
     tabs = {}
-    for rd in ("c1", "c2a"):
+    for rd in ("c1", "c2a", "c2b"):
         hits = [1] * 256
         for (pat, enc), ch in base.items():
             if not ch:
                 continue
             if rd == "c1" and ch["c1"].lstrip("-").isdigit() and int(ch["c1"]) >= 0:
                 hits[int(ch["c1"])] += 1000
-            if rd == "c2a" and ch["c2a"].isdigit() and ch["c2b"]:
-                w = bytes.fromhex(ch["c2b"])
-                i = int(ch["c2a"])
+            if rd in ("c2a", "c2b") and ch[rd].isdigit() and ch["run"]:
+                w = bytes.fromhex(ch["run"])
+                i = int(ch[rd])
                 if i < len(w):
                     hits[w[i]] += 1000
         tabs[f"anti-{rd}"] = (hits, f"the bytes reader {rd} scans under the default made the commonest")
@@ -292,7 +301,14 @@ def witness():
             rc = subprocess.run([PCREC, "-p", "rx", "--features", "all", "-e", "byte",
                                  "-o", out] + extra + ["--pattern", pat],
                                 capture_output=True).returncode
-            got.append(stamp(open(out, "rb").read().decode("latin-1"), st) if rc == 0 else "REFUSED")
+            if rc != 0:
+                got.append("REFUSED")
+                continue
+            text = open(out, "rb").read().decode("latin-1")
+            # a c2a/c2b witness reads ITS row of the `@` table: the stamp
+            # under the other row is the other reader's, so it is marked
+            got.append(stamp(text, st) + ("" if r not in ("c2a", "c2b") or choices(text)[r]
+                                          else " (not row " + ("1" if r == "c2a" else "2") + ")"))
         ok = got == [want_d, want_m]
         print(f"{'PASS' if ok else 'FAIL'}\t{b}\t{r}\tRX_{st} default={got[0]!r} "
               f"(pinned {want_d!r}) under {b}={got[1]!r} (pinned {want_m!r})")
