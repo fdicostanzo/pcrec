@@ -106,7 +106,7 @@ fires "queue idle, ready job waits" queue "$T/ghok" GESTALT_BOXQUEUE="$T/bq.idle
 fires "queue idle, nothing ready: silent" "" "$T/ghok" GESTALT_BOXQUEUE="$T/bq.idlewait"
 fires "disk >= 85%" disk "$T/dffull:$T/ghok"
 fires "registered session not live" session "$T/ghok" GESTALT_ROLES_DIR="$T/roles" GESTALT_PROJECTS="$T/none"
-fires "context > 70% of compaction point" "session context" "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
+fires "context > 80% of compaction point (owner main)" "session context" "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
 # J2: the docs row: silent under cap (the first test above); exactly the docs: line when over; J3: unavailable cases
 dq=$(run "$T/ghok" GESTALT_ENTRY="$T/ent/over.py")
 [ "$dq" = "docs: decisions.md 51.3 KB over soft cap 48 KB (+3.3 KB, 107%)" ] && ok "docs row prints exactly the docs: line when over cap" || bad "docs over: [$dq]"
@@ -124,6 +124,21 @@ mv "$T/ch/settings.json" "$T/ch/s.off"; printf '{"autoCompactWindow":1000000}\n'
 fires "context 12% of compaction point: not hot" session "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
 # idle-held: a non-queue holder, alive, with load1 low in two readings >= 60 s apart
 mv "$T/ch/s.off" "$T/ch/settings.json"
+# context fires only for the OWNER's own session (default owner main) at > 80% of the compaction point (150k here: > 120k)
+ctxcase() { # NAME ROLE TOKENS [ROLE TOKENS]: a roles dir + fresh statusline snapshot(s) for those sessions
+    local n=$1; shift; mkdir -p "$T/cx/$n/roles" "$T/cx/$n/sl"; local role tok sid i=0
+    while [ $# -ge 2 ]; do role=$1; tok=$2; shift 2; i=$((i+1)); sid=cccc000$i-2222-3333-4444-555566667777
+        echo "$role" > "$T/cx/$n/roles/$sid"
+        printf '{"captured_at":%s,"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s}}}\n' "$(date +%s)" "$tok" > "$T/cx/$n/sl/session-$sid.json"; done; }
+cxk() { # NAME: the kinds fired for that fixture (GARGS carries --owner)
+    run "$T/ghok" GESTALT_ROLES_DIR="$T/cx/$1/roles" GESTALT_STATUSLINE_DIR="$T/cx/$1/sl" | kinds | tr ' ' '\n' | grep -x context; true; }   # (no live socket: `session` fires too, not under test)
+ctxcase m85 main 127600; ctxcase k85 kit 127600; ctxcase m75 main 112500; ctxcase both main 112500 kit 127600
+o=$(cxk m85); [ "$o" = context ] && ok "context: owner main at 85% fires" || bad "context m85: [$o]"
+o=$(cxk k85); [ "$o" = "" ] && ok "context: kit at 85% with owner main stays silent" || bad "context k85: [$o]"
+o=$(cxk m75); [ "$o" = "" ] && ok "context: owner main at 75% stays silent" || bad "context m75: [$o]"
+o=$(cxk both); [ "$o" = "" ] && ok "context: main 75% + kit 85%, owner main: silent" || bad "context both: [$o]"
+GARGS="--owner kit"; o=$(cxk both); GARGS=""
+[ "$o" = context ] && ok "context: same fixture with owner kit fires (kit 85%)" || bad "context both/kit: [$o]"
 bl() { printf '#!/bin/sh\necho "%s"\n' "$2" > "$1"; chmod +x "$1"; }   # bl FILE STATUS-LINE
 bl "$T/bl.hand" "HELD pid=$$ label=hand-mech since=2026-11-10T09:00:00-05:00 (42m) cwd=/x"
 bl "$T/bl.queue" "HELD pid=$$ label=queue:5-main-x since=2026-11-10T09:00:00-05:00 (42m) cwd=/x"
@@ -150,9 +165,9 @@ ih "silent: HELD-ORPHAN (boxlock's own state)" "" "$T/bl.orphan" 0.40 600 "$T/lo
 # --- plan-health rows (owner-waits, open, ready-idle, stale, questions, push-owed, prune-owed): fixtures for `entry --work` text,
 # a throwaway plan.md history (commit dates back-dated), an owner.md, an origin/main pair, and a fake wtprune + its count cache
 pwork "$T/pw/ow"  "AA|started|$(dago 2)|0" "OW1|not-started|$(dago 9)|1" "OW2|started|$(dago 3)|1"
-pwork "$T/pw/open7" "S1|started|$(dago 1)|0" "S2|started|$(dago 1)|0" "S3|started|$(dago 1)|0" "S4|started|$(dago 1)|0" "S5|ready|$(dago 1)|0" "S6|ready|$(dago 1)|0" "S7|blocked|$(dago 1)|0"
-pwork "$T/pw/open7b" "S1|started|$(dago 1)|0" "S2|started|$(dago 1)|0" "S3|started|$(dago 1)|0" "S4|started|$(dago 1)|0" "S5|ready|$(dago 1)|0" "S6|ready|$(dago 1)|0"
-pwork "$T/pw/open8" "S1|started|$(dago 1)|0" "S2|started|$(dago 1)|0" "S3|started|$(dago 1)|0" "S4|started|$(dago 1)|0" "S5|ready|$(dago 1)|0" "S6|ready|$(dago 1)|0" "S7|started|$(dago 1)|0"
+pwork "$T/pw/open_fresh" "S1|started|$(dago 6)|0" "S2|started|$(dago 1)|0" "S3|not-started|$(dago 40)|0" "S5|blocked|$(dago 40)|0"
+pwork "$T/pw/open_big" $(for i in $(seq 1 26); do echo "B$i|started|$(dago 1)|0"; done)
+pwork "$T/pw/open_ready25" $(for i in $(seq 1 13); do echo "A$i|started|$(dago 1)|0"; echo "R$i|ready|$(dago 1)|0"; done)
 pwork "$T/pw/rdy"   "RA|ready|$(dago 1)|0" "RB|ready|$(dago 1)|0"
 pwork "$T/pw/stale" "OLD|started|$(dago 40)|0" "NEW|started|$(dago 2)|0"
 pwork "$T/pw/nodate" "NODATE|started||0"
@@ -170,13 +185,17 @@ fires "plan rows quiet on a quiet fixture" "" "$T/ghok"
 o=$(pq GESTALT_WORK_ENTRY="$T/pw/ow.py")
 [ "$o" = "owner-waits: 2 (oldest 9d, OW1)" ] && ok "owner-waits: count, oldest age + tag" || bad "owner-waits: [$o]"
 fires "owner-waits" owner-waits "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/ow.py"
-fires "open: 6 started+ready (at threshold) silent" "" "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/open7b.py"
-o=$(pq GESTALT_WORK_ENTRY="$T/pw/open8.py")
-[ "$o" = "open: started 5 / ready 2 / blocked 0 (started+ready > 6)" ] && ok "open: 7 fires with counts" || bad "open: [$o]"
-o=$(pq GESTALT_WORK_ENTRY="$T/pw/open7.py" | kinds); [ "$o" = "" ] && ok "open: blocked rows do not count" || bad "open blocked: [$o]"
+# open (gestfix 2026-11-11): STARTED rows idle > 7d, oldest 3 named; not-started/ready/blocked rows and fresh started rows stay silent
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/stale.py" | grep '^open:')
+[ "$o" = "open: 1 started row(s) idle > 7d (oldest: OLD 40d)" ] && ok "open: a started row idle > 7d fires, oldest named" || bad "open stale: [$o]"
+fires "open: started idle <= 7d, and old not-started/blocked rows: silent" "" "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/open_fresh.py"
+fires "open: 26 fresh started rows (> 25 raw-count threshold) fires" open "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/open_big.py"
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/open_big.py"); [ "$o" = "open: started 26 / ready 0 / blocked 0 (started+ready > 25)" ] && ok "open: raw counts past the threshold" || bad "open big: [$o]"
+fires "open: 13 started + 13 ready = 26 fresh (> 25) fires" open "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/open_ready25.py"
 o=$(pq GESTALT_WORK_ENTRY="$T/pw/rdy.py")
 [ "$o" = "ready-idle: 1 (oldest 10d, RA; > 7d)" ] && ok "ready-idle: only the row ready > 7d" || bad "ready-idle: [$o]"
 o=$(pq GESTALT_WORK_ENTRY="$T/pw/stale.py")
+o=$(printf '%s\n' "$o" | grep '^stale:')   # (the same fixture also fires `open`)
 case $o in "stale: 1 started untouched > 21d (oldest "*"d, OLD)") ok "stale: only the row untouched > 21d" ;; *) bad "stale: [$o]" ;; esac
 o=$(pq GESTALT_WORK_ENTRY="$T/pw/nodate.py" GESTALT_PLAN_GIT="$T/pw/nogit")
 case $o in *"1 undated"*) ok "stale: an undated started row is counted and said" ;; *) bad "undated: [$o]" ;; esac
@@ -210,7 +229,12 @@ d=$(pcache 1 ""); o=$(GARGS=--all; pq PCREC_TMPDIR="$d" | grep '^prune-owed:'); 
 case $o in "prune-owed: unknown"*) ok "prune-owed: no cache yet = unknown, not silent-green under --all" ;; *) bad "prune unknown: [$o]" ;; esac
 # --all shows the plan rows even when quiet
 GARGS=--all; qa=$(run "$T/ghok"); GARGS=""
-for k in open questions push-owed prune-owed; do printf '%s\n' "$qa" | grep -q "^$k:" && ok "--all shows $k" || bad "--all missing $k"; done
+for k in questions push-owed prune-owed; do printf '%s\n' "$qa" | grep -q "^$k:" && ok "--all shows $k" || bad "--all missing $k"; done
+# open prints only when it has something to say, even under --all; a stale started row makes it appear
+GARGS=--all; qa=$(run "$T/ghok"); GARGS=""
+printf '%s\n' "$qa" | grep -q '^open:' && bad "--all printed an empty open row" || ok "--all: quiet open row prints nothing"
+GARGS=--all; qa=$(run "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/stale.py"); GARGS=""
+printf '%s\n' "$qa" | grep -q '^open: 1 started row' && ok "--all shows open when a started row is stale" || bad "--all missing open"
 # the work accessor failing is a row, not silence (K35)
 fires "plan accessor fails" plan "$T/ghok" GESTALT_WORK_ENTRY="$T/ent/exit3.py"
 # the log line is written on a silent run too
