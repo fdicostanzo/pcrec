@@ -108,5 +108,9 @@ run passed. It is `scratch/memfn/k382c2b/591-kit-k382c2b-gen`: gen, then reach, 
 | test-findings, strict, test-codegen, claudemd size | see Checks |
 | report + lanecheck | this file |
 
-STATE AT HANDOFF: branch committed; no rulings file. Owed: job 591-kit-k382c2b-gen2's verdict and
-the commit of its regenerated `tests/findings/adversarial/` files.
+## STATE AT HANDOFF
+
+- Branch lane/memfn-k382 committed and clean; no rulings file.
+- Owed: job 591-kit-k382c2b-gen2's verdict (queue key kit-k382c2b-gen2; its log carries the
+  `gen: <cand>: ... c2b=N` lines, the REACH lines and the test-findings summary), then the commit of
+  its regenerated `tests/findings/adversarial/` files and the c2b population number in this report.
