@@ -195,6 +195,9 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
  * input (carve-out (d)). Both over the wrapped `Job.nfa` from `anch_start`. */
 void      pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax);
 PfWhyCode pcrec_land_char(Ctx *cx, const Nfa *nfa, const PcrecEnc *e, bool *wide);
+/* [NEVER-MATCH] the never-match proof over the compile's final machines
+ * (src/facts/kset.c). */
+PfNever   pcrec_never_matches(Ctx *cx);
                                                         /* src/facts/kset.c */
 
 /* [KIT-VERIFY] U1 Z2 THE SPAN SLICE (kit_proof.md §5.2 UL-0): the k-set walk
