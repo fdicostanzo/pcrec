@@ -276,7 +276,7 @@ static unsigned char *place(int lay, const unsigned char *src, size_t n)
 
 /* ---- the checks ------------------------------------------------------------------ */
 
-static long g_cover, g_extent, g_scan, g_sound, g_witness, g_lay_calls[LAY_N], g_wk4_low;
+static long g_cover, g_extent, g_scan, g_sound, g_witness, g_lay_calls[LAY_N], g_wk4_low, g_generic;
 static long g_nearmiss, g_nm_sound, g_nm_uses;   /* FAM-3's probes, counted */
 static long g_scan_route[G2P_NROUTE];
 
@@ -477,6 +477,37 @@ static __attribute__((noinline)) int call_use(g2p_use_fn f, const unsigned char 
     return 0;
 }
 
+static long least_occ(const g2p_site *x, const unsigned char *s, size_t n, size_t origin);
+
+/* THE USES' PRESENCE RULE (review 2026-11-11 r1 k382 F1; span_runs_sheet.md
+ * §3.3 items 1-3, the SOUND direction): where the whole run occurs at a
+ * least c >= max(0, origin + omin) and every verified member occurs in
+ * [origin, n), the use must answer present, and an ASSIGN use's landmark
+ * lies in [max(0, origin + omin), c] (the run part's least candidate holds
+ * the extent, which the whole occurrence at c does). It reads the stated
+ * run, omin and members only, so it holds every row alike: the pre-check
+ * row's calls and the GENERIC row's inline loops (which the classifier,
+ * reading function calls, cannot see). `below`: the occurrence lies below
+ * the origin, the population a floor at `lo` misses. */
+static long g_pres_checks, g_pres_below;
+static void pres_check(const g2p_site *x, const unsigned char *s, size_t n, size_t origin,
+                       int hit, size_t out, int assign, const char *call, const char *lay)
+{
+    long want = least_occ(x, s, n, origin);
+    if (want < 0) return;
+    for (unsigned k = 0; k < x->nmem; k++)
+        if (origin >= n || !memchr(s + origin, x->mem[k], n - origin)) return;
+    long floor = (long)origin + x->omin < 0 ? 0 : (long)origin + x->omin;
+    g_pres_checks++;
+    g_pres_below += want < (long)origin;
+    CHECK(x, hit, "PRESENCE", "%s: the %s from %zu (n %zu) misses, the whole run occurs at %ld "
+          "and every member is present", lay, call, origin, n, want);
+    if (hit && assign)
+        CHECK(x, (long)out >= floor && (long)out <= want, "PRESENCE", "%s: the %s from %zu (n %zu) "
+              "yields %zu, outside [%ld, %ld] (the floor, the least whole occurrence)", lay, call,
+              origin, n, out, floor, want);
+}
+
 /* the entry and re-entry uses over generated subjects, in layout `lay` */
 static void uses(const g2p_site *x, int lay)
 {
@@ -504,16 +535,18 @@ static void uses(const g2p_site *x, int lay)
         unsigned char *s = place(lay, buf, n);
         g_hs = s; g_hn = n; g_hlo = lo;                  /* the caller boundary (ORC-1) */
         g_call = lay == LAY_U ? "entry" : NULL;
-        call_use(x->entry, s, n, lo, &out);
+        int hit = call_use(x->entry, s, n, lo, &out);
         g_lay_calls[lay]++;
         CHECK(x, !g_faulted, "LAYOUT", "%s: the entry faulted (n %zu, lo %zu)", lay_name[lay], n, lo);
+        if (!g_faulted) pres_check(x, s, n, lo, hit, out, x->assign, "entry", lay_name[lay]);
         if (x->reentry) {
             size_t pv = rnd((unsigned)n + 1);
             g_hlo = pv;
             g_call = lay == LAY_U ? "reentry" : NULL;
-            call_use(x->reentry, s, n, pv, &out);
+            hit = call_use(x->reentry, s, n, pv, &out);
             g_lay_calls[lay]++;
             CHECK(x, !g_faulted, "LAYOUT", "%s: the re-entry faulted (n %zu, lo %zu)", lay_name[lay], n, pv);
+            if (!g_faulted) pres_check(x, s, n, pv, hit, out, 1, "re-entry", lay_name[lay]);
         }
         g_call = NULL;
     }
@@ -666,6 +699,16 @@ int main(int argc, char **argv)
         /* the classifier over the site's ONE run part (run frame): its
            measured extent is the site's reply, and its scan the reply's */
         int slo = -1, shi = -1, sscan = INT32_MIN, have = 0;
+        if (!strcmp(x->forms, "generic")) {
+            /* THE GENERIC PASS: the run part is inline in the uses (no
+               function to classify); the uses' PRESENCE rule is its check */
+            g_generic++;
+            for (int lay = 0; lay < LAY_N; lay++) uses(x, lay);
+#ifdef G2P_ASAN
+            lay_a(x);
+#endif
+            continue;
+        }
         CHECK(x, x->nparts == 1 && x->parts[0].fn && x->parts[0].at == 0 &&
               x->parts[0].len == x->run_len, "LAYOUT", "the site does not lay out ONE derived run "
               "part in the run frame (%u parts)", x->nparts);
@@ -718,6 +761,7 @@ int main(int argc, char **argv)
            g_lay_calls[LAY_U], g_lay_calls[LAY_L], g_records, g_nearmiss, g_nm_sound, g_nm_uses);
     printf("G2P k382 partial_hits=%ld neg_records=%ld below_hits=%ld wk4_low=%ld\n", g_partial_hits,
            g_neg_records, g_below_hits, g_wk4_low);
+    printf("G2P presence checks=%ld below=%ld generic=%ld\n", g_pres_checks, g_pres_below, g_generic);
     printf("G2P wk L1=%ld/%ld L1b=%ld/%ld K1=%ld/%ld K2=%ld/%ld (green/reached)\n",
            g_wk_ok[G2P_W_L1A], g_wk_reach[G2P_W_L1A], g_wk_ok[G2P_W_L1B], g_wk_reach[G2P_W_L1B],
            g_wk_ok[G2P_W_K1], g_wk_reach[G2P_W_K1], g_wk_ok[G2P_W_K2], g_wk_reach[G2P_W_K2]);

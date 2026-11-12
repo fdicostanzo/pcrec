@@ -344,6 +344,7 @@ static int g_oml = 1;                   /* the sites' on_miss_leaves (argv[6]) *
 static const char *g_tag;
 static uint32_t g_inc;
 static int g_fails;
+static long g_generic;              /* sites mf_define rendered by the generic row */
 static long g_route_sites[G2P_NROUTE], g_p2_untested, g_p2_refused, g_layout_ok, g_simd16, g_simd32;
 static long g_neg_omin, g_wk4_omin, g_k_nonpos, g_k_signed, g_partial, g_room, g_wk3_sites,
             g_wk3_cases, g_wk3_zero;
@@ -377,6 +378,8 @@ typedef struct {
     int64_t  head_max;                  /* K as stated               */
     unsigned ver_lo, ver_len;
     char     forms[48];
+    unsigned nmem;                      /* the verified member parts' bytes */
+    uint8_t  mem[8];
 } gout;
 
 /* The reply's stated invariants (span_runs_sheet.md §2.2; memfn.h
@@ -523,6 +526,7 @@ static void one_site(gsite *g, buf *fs, gout *o)
         for (unsigned x = 0; x < 256; x++)
             if (g_ps[head].term[0].set[x >> 3] >> (x & 7) & 1) b = (int)x;
         mf_need gn = (mf_need)g_ps[head].need;
+        o->mem[o->nmem++] = (uint8_t)b;
         preds[np].nterm = 1;
         preds[np].need = gn;
         preds[np].term[0].kind = MF_T_SET;
@@ -542,6 +546,11 @@ static void one_site(gsite *g, buf *fs, gout *o)
             if (!c.pres[i].verify || c.pres[i].order != 2 ||
                 !(g_ps[i].term[0].set[x >> 3] >> (x & 7) & 1))
                 continue;
+            if (o->nmem == sizeof o->mem) {     /* an unlisted member: the driver's rule unsound */
+                fail(g->id, "the member table", "more verified members than g2p_site.mem holds");
+                return;
+            }
+            o->mem[o->nmem++] = (uint8_t)x;
             preds[np].nterm = 1;
             preds[np].need = MF_REQUIRED;
             preds[np].term[0].kind = MF_T_SET;
@@ -599,6 +608,17 @@ static void one_site(gsite *g, buf *fs, gout *o)
         return;
     }
     snprintf(o->forms, sizeof o->forms, "%s", dr.form_id);
+    /* THE GENERIC PASS (on_miss_leaves 0; review 2026-11-11 r1 k382 F1): no
+       pre-check row admits the site, so the generic row renders it, its run
+       part inline (no function); every site of the pass must be generic's,
+       and none of another pass may be */
+    int gen = !strcmp(dr.form_id, "generic");
+    g_generic += gen;
+    if (gen != !g_oml) {
+        fail(g->id, "the define's row", g_oml ? "the generic row rendered an on_miss_leaves 1 site"
+                                              : "an on_miss_leaves 0 site not rendered by the generic row");
+        return;
+    }
     o->has_scan = dr.cls.run.has_scan;
     o->scan = dr.cls.run.scan;
     o->ver_lo = dr.cls.run.ver_lo;
@@ -642,8 +662,8 @@ static void one_site(gsite *g, buf *fs, gout *o)
     char call[64];
     snprintf(call, sizeof call, "%s(", g->names[0]);
     o->fnok = def.p && strstr(def.p, call) != NULL;
-    if (!o->fnok) fail(g->id, "the derived run part", "the define rendered no function of its name");
-    else {
+    if (!o->fnok && g_oml) fail(g->id, "the derived run part", "the define rendered no function of its name");
+    else if (o->fnok) {
         bprintf(fs, "size_t g2p_part_%d_0(const unsigned char *s, size_t n, size_t lo)\n"
                     "{ return %s(s, n, lo); }\n", g->id, g->names[0]);
         bprintf(fs, "#define %s(s_, n_, lo_) g2p_rec(%d, 0, %s, (s_), (n_), (lo_))\n",
@@ -770,7 +790,9 @@ int main(int argc, char **argv)
         fprintf(c, ", %d, %u, %u }}, g2p_entry_%d, ", o->scan, o->ver_lo, o->ver_len, i);
         if (o->assign) fprintf(c, "g2p_reentry_%d", i);
         else fputs("NULL", c);
-        fprintf(c, ", \"%s\" },\n", o->forms);
+        fprintf(c, ", \"%s\", %u, {", o->forms, o->nmem);
+        for (unsigned j = 0; j < o->nmem; j++) fprintf(c, "%s%u", j ? "," : "", o->mem[j]);
+        fputs("} },\n", c);
     }
     fprintf(c, "};\nconst int g2p_nsites = %d;\n", n);
     fclose(c);
@@ -778,11 +800,12 @@ int main(int argc, char **argv)
     /* the generator's census (the runner's floors read it) */
     printf("G2PGEN %s sites=%d rendered=%d layout_ok=%ld P0=%ld P2=%ld P3=%ld P9=%ld "
            "p2_untested=%ld p2_refused=%ld simd16=%ld simd32=%ld neg_omin=%ld wk4_omin=%ld "
-           "k_signed=%ld k_nonpos=%ld partial=%ld room=%ld wk3_sites=%ld wk3_zero=%ld wk3_cases=%ld\n",
+           "k_signed=%ld k_nonpos=%ld partial=%ld room=%ld wk3_sites=%ld wk3_zero=%ld wk3_cases=%ld "
+           "generic=%ld\n",
            tag, total, n, g_layout_ok, g_route_sites[G2P_P0], g_route_sites[G2P_P2],
            g_route_sites[G2P_P3], g_route_sites[G2P_P9], g_p2_untested, g_p2_refused, g_simd16,
            g_simd32, g_neg_omin, g_wk4_omin, g_k_signed, g_k_nonpos, g_partial, g_room, g_wk3_sites,
-           g_wk3_zero, g_wk3_cases);
+           g_wk3_zero, g_wk3_cases, g_generic);
     printf("g2_pres_gen failures: %d\n", g_fails);
     return g_fails ? 1 : 0;
 }

@@ -34,6 +34,12 @@
 #      41ebc052b, and it is the family's only check of "least");
 #   5. the lever's reach: every witness's text scan MOVED between the
 #      default and the run-tie-left pass of the same target;
+#   5g. THE GENERIC PASS (review 2026-11-11 r1 k382 F1): the same sites with
+#      `on_miss_leaves` 0 (target generic, default lever), so no pre-check
+#      row admits them and the GENERIC row renders every one (its run part
+#      inline: no function for the classifier); its checks are the uses'
+#      PRESENCE rule (every pass runs it; g2_pres_run.c pres_check) and the
+#      §3.5 witnesses, both read off the stated rule, not the row;
 #   6. the floors (K35): literals below, sharing no source with the family.
 #
 #   --plant ID / --plants   the same passes (no ASan) over a COPY of memfn/src
@@ -98,6 +104,12 @@ FLOOR_NEG_RECORDS=4090       # records with a negative omin (4547)
 FLOOR_BELOW_HITS=1330        # hits below the attempt start, only a negative omin yields one (1480)
 FLOOR_ROOM=24                # sites the C2 decision plant reaches: the extent ends before the run (27)
 FLOOR_WK3_CASES=10160           # W-K3 checks: a K in -32..-1 on a site whose bit at K 0 is 1 (11296)
+# THE USES' PRESENCE RULE and THE GENERIC PASS (lane k382fix, review 2026-11-11
+# r1 k382 F1; measured 2026-11-11, seed 20261110, 400 sites; the least over the
+# passes in parentheses, less ~10%):
+FLOOR_PRES_CHECKS=5380    # uses checked by the presence rule, per pass (5977)
+FLOOR_PRES_BELOW=2130     # of them the occurrence below the origin (2367)
+FLOOR_GENERIC=318         # the generic pass: sites the generic row rendered (353)
 # THE LAYERS (D147; U2's admitted levels): per target, the sites whose run
 # part has a w16 / w32 arm (the generator's census of the kit's own text), and
 # the vector loads of the subject the recording build saw (the arms RAN).
@@ -152,6 +164,11 @@ plant_spec() {
         echo 'presence.c@@const char *kit_run_floor(mf_art *art, const char *lo, const mf_site *s, const char *who)\n{\n    int run = kit_pres_run(s);\n    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;\n    if (omin >= 0) return lo;@@const char *s3062_origin;\nconst char *kit_run_floor(mf_art *art, const char *lo, const mf_site *s, const char *who)\n{\n    int run = kit_pres_run(s);\n    int32_t omin = run >= 0 ? s->pspans[run].omin : 0;\n    if (omin >= 0 || (s3062_origin \&\& lo \&\& strcmp(lo, s3062_origin))) return lo;' ;;
     S3063) # W-K3: the twin admission reads K unsigned (a negative K a huge step back)
         echo 'presence.c@@        unsigned long long k = s->head_max > 0 ? (unsigned long long)s->head_max : 0;@@        unsigned long long k = (unsigned long long)s->head_max;' ;;
+    # lane k382fix (review 2026-11-11 r1 k382; ids S3043-S3059 of k382's range)
+    S3043) # F1: the GENERIC row's run part starts at the attempt start `lo`, not
+        # the run's floor max(0, lo + omin): the generic pass's PRESENCE rule and
+        # its §3.5 witnesses red
+        echo 'generic.c@@            const char *from = s->preds[i].fn_ref ? kit_run_floor(rc->art, rc->LO, s, "generic")\n                                                  : rc->LO;@@            const char *from = rc->LO;' ;;
     S3064) # C2's DECISION plant: the reply (mf_ask's and mf_defined's mf_class.run)
         # says ver_len + 1 while the renderer (fd_pres_run's quiet ask) renders the
         # old extent; reaches where the extent ends before the run does
@@ -174,10 +191,11 @@ plant_expect() {
     S3061) echo ': W-K1: ' ;;
     S3062) echo ': W-K2: ' ;;
     S3063) echo 'W-K3: the admission bit' ;;
+    S3043) echo 'default\.oml0 .*: PRESENCE: ;default\.oml0 .*: W-L1: ' ;;
     *) echo '' ;;
     esac
 }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3060 S3061 S3062 S3063 S3064"
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3060 S3061 S3062 S3063 S3064"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -205,12 +223,13 @@ build_gen() {
         || { echo "FAIL: $tag: the generator does not build"; head -20 "$WORK/$tag.genbuild"; return 1; }
 }
 
-# one_pass TAG TARGET LEVER: render, compile, run (recording; ASan unless
+# one_pass TAG TARGET LEVER [ON_MISS_LEAVES]: render, compile, run (recording; ASan unless
 # G2P_NOASAN). Logs in $WORK/TAG.*; records in $WORK/TAG.rec.tsv.
 one_pass() {
     local tag="$1" tgt="$2" lev="$3" o="$WORK/$1.out"
     mkdir -p "$o"
-    "$TIMEOUT_BIN" 300 "$WORK/$tag.gen" "$SEED" "$NSITES" "$o" "$tgt" "$lev" > "$WORK/$tag.gen.log" 2>&1
+    # shellcheck disable=SC2086
+    "$TIMEOUT_BIN" 300 "$WORK/$tag.gen" "$SEED" "$NSITES" "$o" "$tgt" "$lev" ${4:-} > "$WORK/$tag.gen.log" 2>&1
     local rc=$?
     "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror -I"$G2" -c "$o/g2p_sites.c" -o "$WORK/$tag.plain.o" \
         2> "$WORK/$tag.plainbuild" \
@@ -291,6 +310,13 @@ if [ "${1:-}" = "--reach" ]; then
     # S3064: sites whose reply's extent ends before the run does (the plant's +1 shows)
     m=$(grep -oE ' room=[0-9]+' "$WORK/reach.0.log" | grep -oE '[0-9]+$')
     [ "${m:-0}" -ge 20 ] && echo "REACH-G2P-REPLY-ROOM n=$m"
+    # S3043: the GENERIC row's inline run-part loop starting at the run's floor
+    # below the origin (the generic pass, on_miss_leaves 0)
+    mkdir -p "$WORK/reach.g"
+    "$TIMEOUT_BIN" 120 "$WORK/reach.gen" "$SEED" "$NSITES" "$WORK/reach.g" generic 0 0 \
+        > "$WORK/reach.g.log" 2>&1 || { echo "the generator failed (generic pass)"; exit 1; }
+    m=$(grep -cE '_c[0-9]+ = \(g2p[0-9]+_mf[0-9]+_lo >= [0-9]+ \?' "$WORK/reach.g/g2p_sites.c")
+    [ "${m:-0}" -ge 50 ] && echo "REACH-G2P-GENERIC-FLOOR n=$m"
     # C (and S3012's in-run stop): the lever witnesses rendered in the run-tie-left pass
     m=$(grep -oE 'G2PGEN generic.lever sites=[0-9]+ rendered=[0-9]+' "$WORK/reach.1.log" | grep -oE '[0-9]+$')
     [ "${m:-0}" -ge 300 ] && grep -q '^g2_pres_gen failures: 0' "$WORK/reach.1.log" \
@@ -340,6 +366,12 @@ EOF
             read -r mv nw < <(moved "$tgt")
             [ -n "$red" ] || [ "$mv" = "$nw" ] || red="LEVER: $mv of $nw witnesses moved on $tgt"
         done
+        cp "$WORK/p$id.gen" "$WORK/generic.oml0.gen"
+        built=$(one_pass generic.oml0 generic 0 0 | grep -m1 '^FAIL')
+        grep -h '^FAIL' "$WORK/generic.oml0.gen.log" "$WORK/generic.oml0.run.log" 2>/dev/null >> "$WORK/fails.$id"
+        r=$(grep -h '^FAIL' "$WORK/generic.oml0.gen.log" "$WORK/generic.oml0.run.log" 2>/dev/null | head -1)
+        [ -n "$r" ] || r="$built"
+        [ -n "$red" ] || red="$r"
         o=$(oracle_step)
         case "$o" in
         OWED) ostate="oracle OWED" ;;
@@ -443,6 +475,9 @@ for tgt in $TARGETS; do
         floor "$tag neg_records" "$(rv k382 neg_records)" "$FLOOR_NEG_RECORDS"
         floor "$tag below_hits" "$(rv k382 below_hits)" "$FLOOR_BELOW_HITS"
         floor "$tag wk4_low" "$(rv k382 wk4_low)" "$FLOOR_WK4_LOW"
+        floor "$tag presence checks" "$(rv presence checks)" "$FLOOR_PRES_CHECKS"
+        floor "$tag presence below" "$(rv presence below)" "$FLOOR_PRES_BELOW"
+        [ "$(rv presence generic)" = 0 ] && tp=$((tp + 1)) || note "$tag: $(rv presence generic) sites rendered by the generic row on an on_miss_leaves 1 pass"
         # the §3.5 witnesses: each green AND reached, in the recording driver
         # and the ASan+UBSan one; W-K3's own witness reached in the generator
         wk=$(grep -h '^G2P wk ' "$WORK/$tag.run.log")
@@ -475,6 +510,38 @@ for tgt in $TARGETS; do
     floor "$tgt lever witnesses read" "$nw" "$FLOOR_WITNESSES"
     if [ "$mv" = "$nw" ]; then tp=$((tp + 1)); else note "$tgt: only $mv of $nw witnesses' scan moved under run-tie-left"; fi
 done
+
+# 5g. THE GENERIC PASS: on_miss_leaves 0, every site the generic row's
+tag=generic.oml0
+cp "$WORK/main.gen" "$WORK/$tag.gen"
+one_pass "$tag" generic 0 0
+grep -h '^FAIL' "$WORK/$tag.gen.log" "$WORK/$tag.run.log" | head -20
+grep -h '^G2PGEN' "$WORK/$tag.gen.log"
+gf=$(grep -h '^g2_pres_gen failures:' "$WORK/$tag.gen.log" | grep -oE '[0-9]+$')
+if [ "${gf:-x}" != 0 ]; then note "$tag: the generator failed ${gf:-?} sites"; else tp=$((tp + 1)); fi
+read -r p f < <(counts "$WORK/$tag.run.log")
+if [ "$p" = x ] || [ "$f" = x ]; then note "$tag: the recording driver printed no counts"
+else tp=$((tp + p)); tf=$((tf + f)); echo "$tag recording driver: passed $p failed $f"; fi
+grep -h '^G2P ' "$WORK/$tag.run.log"
+if [ -z "${G2P_NOASAN:-}" ]; then
+    read -r p f < <(counts "$WORK/$tag.asan.log")
+    if [ "$p" = x ] || [ "$f" = x ]; then
+        note "$tag: the ASan+UBSan driver printed no counts ($(grep -m1 'ERROR\|runtime error' "$WORK/$tag.asan.log"))"
+    else
+        tp=$((tp + p)); tf=$((tf + f)); echo "$tag ASan+UBSan driver: passed $p failed $f"
+        grep -h '^FAIL' "$WORK/$tag.asan.log" | head -10
+    fi
+fi
+gv() { grep -h "^G2PGEN" "$WORK/$tag.gen.log" | grep -oE " $1=[0-9]+" | cut -d= -f2; }
+rv() { grep -h "^G2P $1" "$WORK/$tag.run.log" | grep -oE " $2=[0-9]+" | head -1 | cut -d= -f2; }
+floor "$tag generic sites (generator)" "$(gv generic)" "$FLOOR_GENERIC"
+floor "$tag generic sites (driver)" "$(rv presence generic)" "$FLOOR_GENERIC"
+floor "$tag presence checks" "$(rv presence checks)" "$FLOOR_PRES_CHECKS"
+floor "$tag presence below" "$(rv presence below)" "$FLOOR_PRES_BELOW"
+floor "$tag neg_omin" "$(gv neg_omin)" "$FLOOR_NEG_OMIN"
+wk=$(grep -h '^G2P wk ' "$WORK/$tag.run.log")
+if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 (green/reached)" ]; then tp=$((tp + 1))
+else note "$tag: the §3.5 witnesses are not all green and reached (${wk:-no line})"; fi
 
 # the records: the seam's format, held by the family before the oracle reads them
 ls "$WORK"/*.rec.tsv > /dev/null 2>&1 || fail_setup "no pass wrote records"

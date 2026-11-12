@@ -63,6 +63,9 @@ typedef struct {
     g2p_part    parts[G2P_MAXPART];
     g2p_use_fn  entry, reentry; /* reentry NULL on an ON_MISS site             */
     const char *forms;          /* mf_defined's form id                        */
+    unsigned    nmem;           /* the verified MEMBER parts' bytes (the head  */
+    uint8_t     mem[8];         /* and the rest), as laid out: each must occur */
+                                /* in [lo, n) for the site to answer present   */
 } g2p_site;
 
 extern const g2p_site g2p_sites[];
