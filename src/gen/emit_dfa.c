@@ -7278,7 +7278,8 @@ static bool pf_ofs_applies(const CandSel *s)
  * family's C-pin since D172 S2 (window_site.md §2.3), read off its reply
  * (`NK_RUN_PINNED`). It reads analysis output only — never which row a later
  * entry would pick, and never the pre-check's admission. */
-static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *us);
+static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *us,
+                                  const mf_pres_proof *before);
 
 /* The run PIN as this file's readers may see it: the `run_pin` fact where
  * `unanch_start` approved an offset-0 prefilter, and "not pinned" everywhere
@@ -7400,36 +7401,61 @@ static bool ofs_test_at(const OfsTest *t, int o, const PrefixK **kp, int *bytep)
     return false;
 }
 
-/* Does `t` refuse every candidate whose window lacks the WHOLE necessary run
- * at its pin — does it test each window position `i` at offset
- * `pin.o - pin.at + i` with a byte, or a term all of whose members lie in
- * the position's cube `(bytes[i], mask[i])`, as its scan, a singleton or set
- * term, or inside its run term? False where the run is not pinned
- * (litscan_s1.md §1.4 `verifies`).
+/* Does `t` test everything the run pre-check would verify — the run
+ * decision's reply (`mf_class.run`: its `scan` and the VERIFIED EXTENT
+ * `[ver_lo, ver_lo + ver_len)`), each run position `i` at window offset
+ * `pin.o - pin.at + i`, with a byte, or a term all of whose members lie in
+ * the position's cube `(whole[i], whole_mask[i])`, as its scan, a singleton
+ * or set term, or inside its run term? False where the run is not pinned
+ * (litscan_s1.md §1.4 `verifies`), or where the kit tests no run part.
+ *
+ * R-38 K38-2 fix round (review 2026-11-11 r1 k382 F2): THE REPLY, NOT THE
+ * WHOLE STORED RUN. Since K38-2 the stored run is uncut (up to
+ * PCREC_MAX_REQ_RUN_SCAN positions) while the walk's k-set reaches
+ * PCREC_PREFIX_K_MAX offsets; demanding every stored position flipped every long
+ * run-pinned literal to an emitted pre-check whose tests were a subset of
+ * the prefilter's (+8-13% cycles, EMIT-1). The question is the one the
+ * `dominated` row asks (`req_dominated_applies`), over the same ask: the
+ * presence site with the start search's proof as stated BEFORE this verdict
+ * (`before`, its `run` 0: the bit this function decides). That ask cannot
+ * cycle — a NULL proof would re-enter here through `req_pres_proof_quiet` —
+ * and under `run` 0 with a run stated the kit's G1 (P2) declines, so the
+ * run's link is decided by its route alone and the reply is the stretch an
+ * emitted pre-check verifies.
  *
  * [OPT-LITSCAN] S4 C3 THE SAME QUESTION, READ OVER CUBES (litscan_s4.md
- * §2.3.5, r2 R2-C3): on an exact run it is `b == bytes[i]` at every offset,
+ * §2.3.5, r2 R2-C3): on an exact run it is `b == whole[i]` at every offset,
  * as before. On a masked run the pin covers only an exact stretch, so the
  * masked positions must be tested by the selection's own terms — `(?i)x/1234`
  * is verified (offset 0's model term is exactly `{x, X}`), `a[bc]de` is not
  * (nothing tests offset 1), and G1 keeps its pre-check. */
-static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *us)
+static bool ofs_test_pos_in_cube(const OfsTest *t, int o, const ReqRun *r, int i)
+{
+    const PrefixK *k;
+    int b;
+    if (!ofs_test_at(t, o, &k, &b)) return false;
+    if (b >= 0) return (b & r->whole_mask[i]) == r->whole[i];
+    if (!k) return false;
+    for (int x = 0; x < 256; x++)
+        if (k->set[x] && (x & r->whole_mask[i]) != r->whole[i]) return false;
+    return true;
+}
+
+static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *us,
+                                  const mf_pres_proof *before)
 {
     const ReqRun *r = pcrec_fact_req_run(cx);
     RunPin pin = us_run_pin(cx, us);
     if (r->len < 2 || !pin.pinned || pin.o < pin.at) return false;
-    for (int i = 0; i < r->len; i++) {
-        const PrefixK *k;
-        int b;
-        if (!ofs_test_at(t, pin.o - pin.at + i, &k, &b)) return false;
-        if (b >= 0) {
-            if ((b & r->whole_mask[i]) != r->whole[i]) return false;
-        } else {
-            if (!k) return false;
-            for (int x = 0; x < 256; x++)
-                if (k->set[x] && (x & r->whole_mask[i]) != r->whole[i]) return false;
-        }
-    }
+    mf_class *cls = pcrec_arena_alloc(&cx->arena, sizeof *cls);
+    const mf_site *ps = req_pres_ask(cx, before, cls);
+    int run = req_pres_run(ps);
+    if (run < 0 || (unsigned)run >= cls->npres || !cls->pres[run].verify) return false;
+    const mf_run_reply *rr = &cls->run;
+    int base = pin.o - pin.at;
+    if (rr->has_scan && !ofs_test_pos_in_cube(t, base + rr->scan, r, rr->scan)) return false;
+    for (int i = rr->ver_lo; i < rr->ver_lo + rr->ver_len; i++)
+        if (!ofs_test_pos_in_cube(t, base + i, r, i)) return false;
     return true;
 }
 
@@ -8340,7 +8366,8 @@ static void cand_row_scan(Ctx *cx, CandSlot reader, const UnanchStart *us,
         /* the offset-set and run-pinned FUNCs are R-18's, outside this
          * delivery (r17b_prime.md §1.1): their own row is read */
         cs->byte = t.scan_byte;
-        cs->run_verified = ofs_test_verifies_run(cx, &t, us);
+        mf_pres_proof before = req_pres_proof_of(cs);
+        cs->run_verified = ofs_test_verifies_run(cx, &t, us, &before);
     } else if (pf->u.pf.scan == PF_SCAN_BYTE || pf->u.pf.scan == PF_SCAN_SET) {
         PcrecFind fd = cand_pf_site(cx, us, pf);
         cand_ask(cx, reader, cand_route_of(cx), &fd, cs);
