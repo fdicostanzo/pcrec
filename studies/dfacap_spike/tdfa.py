@@ -1265,3 +1265,137 @@ def verify_fixed(dfa, subj, start=0):
         apply(ops, i + 1)
         bad += check(s, i + 1)
     return bad
+
+
+class NotCopyFree(Exception):
+    pass
+
+
+class Realized:
+    """The Stage 1 machine, built from a TDFA + analyze(): fixed classes get
+    NO register (value = pos - k or start + k, read off the state); the other
+    classes get registers by colouring the union-find sets of analyze() (all
+    classes a value flows through share one register), so no transition
+    copies. Transition ops are only sets: r = pos - k. Raises NotCopyFree
+    when the colouring would need two classes of one state in one set."""
+
+    def __init__(self, dfa):
+        analyze(dfa)
+        self.dfa = dfa
+        offp, offs = dfa.fixed_tables
+        TOP = "TOP"
+        self.kind = {}  # (sid, class) -> ('p', k) | ('s', k) | ('r', reg)
+        parent = {}
+
+        def find(x):
+            while parent.setdefault(x, x) != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+        isfixed = lambda k: offp.get(k, TOP) != TOP or offs.get(k, TOP) != TOP
+        for (s, sym), (d, ops) in dfa.trans.items():
+            for c, f in enumerate(dfa.feeds[(s, sym)]):
+                if f[0] == "c" and not isfixed((d, c)) and not isfixed((s, f[1])):
+                    parent[find((d, c))] = find((s, f[1]))
+        # interference between sets that are live in one state
+        adj = {}
+        for sid, st in enumerate(dfa.states):
+            roots = [find((sid, c)) for c in range(len(st[1])) if not isfixed((sid, c))]
+            if len(set(roots)) != len(roots):
+                raise NotCopyFree()
+            for a in roots:
+                adj.setdefault(a, set()).update(x for x in roots if x != a)
+        color = {}
+        for a in sorted(adj, key=lambda x: -len(adj[x])):
+            used = {color[x] for x in adj[a] if x in color}
+            c = 0
+            while c in used:
+                c += 1
+            color[a] = c
+        self.nregs = max(color.values(), default=-1) + 1
+        for sid, st in enumerate(dfa.states):
+            for c in range(len(st[1])):
+                k = (sid, c)
+                if offp.get(k, TOP) != TOP:
+                    self.kind[k] = ("p", offp[k])
+                elif offs.get(k, TOP) != TOP:
+                    self.kind[k] = ("s", offs[k])
+                else:
+                    self.kind[k] = ("r", color[find(k)])
+        # per transition: the set ops only
+        self.ops = {}
+        self.nsets = 0
+        for (s, sym), (d, _) in dfa.trans.items():
+            ops = []
+            for c, f in enumerate(dfa.feeds[(s, sym)]):
+                kd = self.kind[(d, c)]
+                if kd[0] != "r":
+                    continue
+                if f[0] in ("P", "Q"):
+                    ops.append((kd[1], "pos", 1 if f[0] == "Q" else 0))
+                else:
+                    ks = self.kind[(s, f[1])]
+                    if ks[0] == "r":
+                        assert ks[1] == kd[1]
+                        continue
+                    # value carried from a fixed source: pos_before - k = pos - (k + 1); or start + k
+                    ops.append((kd[1], "pos", ks[1] + 1) if ks[0] == "p" else (kd[1], "start", ks[1]))
+            self.ops[(s, sym)] = ops
+            self.nsets += len(ops)
+        self.init_ops = []
+        for c in range(len(dfa.states[dfa.init][1])):
+            kd = self.kind[(dfa.init, c)]
+            if kd[0] == "r":
+                self.init_ops.append((kd[1], "pos", 0))
+
+    def value(self, sid, c, regs, pos, start):
+        k = self.kind[(sid, c)]
+        return pos - k[1] if k[0] == "p" else start + k[1] if k[0] == "s" else regs[k[1]]
+
+    def run(self, subj):
+        dfa = self.dfa
+        regs = [-1] * max(self.nregs, 1)
+        start = 0
+
+        def apply(ops, pos):
+            for r, base, k in ops:
+                regs[r] = pos - k if base == "pos" else start + k
+
+        def out(sid, ti, pos):
+            (keys, vecs), _ = dfa.states[sid]
+            tags = {}
+            for t, c in zip(dfa.livetags(keys[ti]), vecs[ti]):
+                tags[t] = -1 if c == "U" else self.value(sid, c, regs, pos, start)
+            return result_from_tags(dfa.nfa, tags)
+        s = dfa.init
+        apply(self.init_ops, 0)
+        best = None
+        keys = dfa.states[s][0][0]
+        if keys and keys[-1] == ("M", None):
+            best = out(s, len(keys) - 1, 0)
+        for i, b in enumerate(subj):
+            sym = dfa.cmap[b]
+            d, _ = dfa.step(s, sym)
+            if not dfa.states[d][0][0]:
+                return best
+            apply(self.ops[(s, sym)], i + 1)
+            s = d
+            keys = dfa.states[s][0][0]
+            if keys and keys[-1] == ("M", None):
+                best = out(s, len(keys) - 1, i + 1)
+        # EOF: reuse the TDFA's final-op choice, read values through this machine
+        keys = dfa.states[s][0][0]
+        n = len(subj)
+        for ti, key in enumerate(keys):
+            if isinstance(key, int):
+                continue
+            vals = dfa.eof(s)
+            if vals is None:
+                break
+            # map ('r', tdfa_reg) back to this state's class
+            regmap = dfa.states[s][1]
+            inv = {r: c for c, r in enumerate(regmap)}
+            tags = {t: (-1 if v == "U" else n if v == "P" else self.value(s, inv[v[1]], regs, n, start))
+                    for t, v in vals.items()}
+            return result_from_tags(dfa.nfa, tags)
+        return best

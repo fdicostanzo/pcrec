@@ -33,7 +33,7 @@ print("\nDIFFERENTIAL over %d admitted patterns" % len(IN))
 tot = sum(int(r["nsubs"]) for r in IN)
 print("  subjects: %d (corpus subjects %d), pcre2 errors (invalid UTF-8 subjects) %d"
       % (tot, sum(int(r["corpus_subs"]) for r in IN), sum(int(r["pcre2_err"]) for r in IN)))
-for k in ("mism_tdfa", "mism_pike", "mism_anch", "mism_vm"):
+for k in ("mism_tdfa", "mism_pike", "mism_anch", "mism_vm", "mism_real"):
     bad = [r for r in IN if r[k] not in ("0", "", "n/a")]
     na = sum(r[k] == "n/a" for r in IN)
     print("  %-10s patterns with a mismatch: %d (subjects %d)%s" % (
@@ -78,6 +78,11 @@ for pre, label in (("a_", "ANCHORED (Stage 1 shape: inside the hybrid window)"),
     print("  copy-free under SOME allocation       %d (%.0f%%)" % (cf, 100.0 * cf / len(IN)))
     print("  copy-free once fixed classes dropped  %d (%.0f%%)" % (cfn, 100.0 * cfn / len(IN)))
     print("  ALL classes fixed (no registers)      %d (%.0f%%)" % (af, 100.0 * af / len(IN)))
+    rz = [r for r in IN if num(r, pre + "rregs") >= 0]
+    print("  REALIZED copy-free machine (fixed classes + coloured unions): %d built" % len(rz))
+    print("    registers           ", dist([num(r, pre + "rregs") for r in rz]))
+    print("    set ops (whole DFA) ", dist([num(r, pre + "rsets") for r in rz]))
+    print("    zero registers      ", sum(1 for r in rz if num(r, pre + "rregs") == 0))
     for split, f in (("prefilter none", lambda r: r["prefilter"] == "none"),
                      ("bench", lambda r: r["src"] != "corpus")):
         S = [r for r in IN if f(r)]

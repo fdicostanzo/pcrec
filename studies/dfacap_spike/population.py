@@ -155,8 +155,17 @@ def costs(dfa, plain):
             an["fixed"], an["classes"], int(an["allfixed"]), an["regs_after_fixed"]]
 
 
+def realize(dfa):
+    try:
+        R = tdfa.Realized(dfa)
+    except tdfa.NotCopyFree:
+        return None, [-1, -1]
+    return R, [R.nregs, R.nsets]
+
+
 COSTCOLS = ["states", "ustates", "regs", "trans", "sets", "copies", "copy_trans", "tmp_trans", "maxops", "init_ops",
-            "copyfree", "conflicts", "copyfree_nf", "conflicts_nf", "fixed", "classes", "allfixed", "regs_nf"]
+            "copyfree", "conflicts", "copyfree_nf", "conflicts_nf", "fixed", "classes", "allfixed", "regs_nf",
+            "rregs", "rsets"]
 
 
 class RowTimeout(Exception):
@@ -184,7 +193,7 @@ def main():
     idx = corpus_index()
     print("# index built %.0fs, %d patterns; rows %d" % (time.time() - t0, len(idx), len(rows)), file=sys.stderr)
     hdr = (["n", "src", "enc", "flags", "ncaps", "prefilter", "status", "why", "nsubs", "corpus_subs", "exh_len",
-            "pcre2_err", "mism_tdfa", "mism_pike", "mism_anch", "mism_vm", "fixed_viol"]
+            "pcre2_err", "mism_tdfa", "mism_pike", "mism_anch", "mism_vm", "fixed_viol", "mism_real"]
            + ["u_" + c for c in COSTCOLS] + ["a_" + c for c in COSTCOLS] + ["pattern_esc"])
     out.write("\t".join(hdr) + "\n")
     for n, r in enumerate(rows):
@@ -194,7 +203,7 @@ def main():
         utf8 = r["enc"] in ("utf8", "utf-8") or "u" in flags
         base = [str(n), r["src"], r["enc"], flags, r["ncaps"], r["prefilter"]]
         rec = {"status": "", "why": "", "nsubs": 0, "corpus_subs": 0, "exh_len": "", "pcre2_err": 0,
-               "mism_tdfa": "", "mism_pike": "", "mism_anch": "", "mism_vm": "", "fixed_viol": ""}
+               "mism_tdfa": "", "mism_pike": "", "mism_anch": "", "mism_vm": "", "fixed_viol": "", "mism_real": ""}
         ucost = acost = [""] * len(COSTCOLS)
         signal.alarm(ROWSECS)
         try:
@@ -211,6 +220,10 @@ def main():
                 raise tdfa.Unsupported("TDFA over the spike's 4000-state cap")
             ucost = costs(dfa, plain)
             acost = costs(adfa, aplain)
+            ureal, x = realize(dfa)
+            ucost += x
+            areal, x = realize(adfa)
+            acost += x
             ref = oracle.Pcre2(pat, flags, utf8, nfa.ncap)
             aref = oracle.Pcre2(pat, flags, utf8, nfa.ncap, anchored=True)
             csubs = list(dict.fromkeys(e["subs"])) if e else []
@@ -228,11 +241,15 @@ def main():
                 if isinstance(want, tuple) and want[0] == "ERR":
                     rec["pcre2_err"] += 1
                     continue
-                for kind, got in (("tdfa", dfa.run(s)), ("pike", tdfa.pike(nfa, s)),
-                                  ("anch", adfa.run(s))):
-                    w = want if kind != "anch" else aref.search(s)
+                runs = [("tdfa", dfa.run(s)), ("pike", tdfa.pike(nfa, s)), ("anch", adfa.run(s))]
+                if ureal is not None:
+                    runs.append(("real", ureal.run(s)))
+                if areal is not None:
+                    runs.append(("areal", areal.run(s)))
+                for kind, got in runs:
+                    w = aref.search(s) if kind in ("anch", "areal") else want
                     if got != w:
-                        bad[kind] += 1
+                        bad[kind] = bad.get(kind, 0) + 1
                         if bad[kind] <= 3:
                             mm.write("%d\t%s\t%r\t%r\tpcre2=%s\tgot=%s\n" % (n, kind, pat, s, w, got))
                 for kind, m in (("fixu", dfa), ("fixa", adfa)):
@@ -246,6 +263,7 @@ def main():
                     if bad["vm"] <= 3:
                         mm.write("%d\tvm\t%r\t%r\tpcre2=%s\tgot=%s\n" % (n, pat, s, want, vm[k]))
             rec.update(mism_tdfa=bad["tdfa"], mism_pike=bad["pike"], mism_anch=bad["anch"],
+                       mism_real=bad.get("real", 0) + bad.get("areal", 0),
                        fixed_viol=bad.get("fixu", 0) + bad.get("fixa", 0))
             if vm is not None:
                 rec["mism_vm"] = bad["vm"]
@@ -257,7 +275,7 @@ def main():
         except RowTimeout:
             rec["status"], rec["why"] = "timeout", "row over %ds (spike's Python budget)" % ROWSECS
         signal.alarm(0)
-        out.write("\t".join(base + [str(rec[k]) for k in hdr[6:17]] + [str(x) for x in ucost]
+        out.write("\t".join(base + [str(rec[k]) for k in hdr[6:18]] + [str(x) for x in ucost]
                             + [str(x) for x in acost] + [r["pattern_esc"]]) + "\n")
         out.flush()
         mm.flush()

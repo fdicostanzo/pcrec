@@ -1,5 +1,5 @@
 == sabotage noempty
-# cases 69  fail 0
+# cases 70  fail 0
 == sabotage noctx
 empty-opt-star       (a?)*                      FAIL  subjec
 empty-alt-star2      (a|)*                      FAIL  subjec
@@ -9,14 +9,14 @@ empty-star-star-b    (a*)*b                     FAIL  subjec
 empty-nested         ((a*)*)*                   FAIL  subjec
 empty-twogroups      (a*)*(b*)*                 FAIL  subjec
 empty-alt-nested     (?:(a)|(b)|())*c           FAIL  subjec
-# cases 69  fail 8
+# cases 70  fail 8
 == sabotage fifo
 last-iter-opt        (?:(a)?b)+                 FAIL  subjec
 empty-star-star-b    (a*)*b                     FAIL  subjec
 empty-lazy-star      (a?)*?b                    FAIL  subjec
 empty-alt-nested     (?:(a)|(b)|())*c           FAIL  subjec
 nested-4             ((a|b)*c)+                 FAIL  subjec
-# cases 69  fail 5
+# cases 70  fail 5
 == sabotage nocopy
 lazy-alt-star        (?:(a)|(ab))*?b            FAIL  subjec
 last-iter-alt        (a|ab)*                    FAIL  subjec
@@ -46,4 +46,4 @@ ctx-wb-3             (a|\b)+(b)                 FAIL  subjec
 ctx-wb-4             (a*)\b$                    FAIL  subjec
 ctx-wb-6             (?:(a)|\b)*\B(b)?          FAIL  subjec
 ctx-stack            (a)\b(?=-)(-)?             FAIL  subjec
-# cases 69  fail 28
+# cases 70  fail 28
