@@ -58,6 +58,7 @@
   - [§2.52](#s2-52) `--part-inline-rank=R` — the parts' inline threshold
   - [§2.53](#s2-53) `--part-residual=V` — the layout of every other part
   - [§2.54](#s2-54) `-fno-landmark-walk` — `PCREC_NO_LANDMARK_WALK` (bit 57)
+  - [§2.55](#s2-55) The minimum-width stop (no flag)
 - [§3](#s3) The DFA scan's stamps
   - [§3.1](#s3-1) A VM hybrid carries the scan's stamps
   - [§3.2](#s3-2) `rx_info` carries the same facts at run time
@@ -161,6 +162,7 @@
 | 2.52 | `--part-inline-rank=R` | — | unset (`none`) | answer-identical | — | `<PREFIX>_PART_LAYOUT`, `<PREFIX>_PART_LAYOUT_WHY` |
 | 2.53 | `--part-residual=V` | — | unset (`auto`) | answer-identical | — | `<PREFIX>_PART_LAYOUT` |
 | 2.54 | `-fno-landmark-walk` | 57 | on | answer-identical | masked | `<PREFIX>_DFA_SCAN` |
+| 2.55 | (no flag: the minimum-width stop) | — | — | answer-identical | — | — |
 
 <a id="s2-1"></a>
 ### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
@@ -1153,6 +1155,13 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 <a id="s2-54-p5"></a>[2.54¶5] **Under the size caps.** The walk's machine and the anchored machine's second copy count toward the emitted-size caps. On a size-cap refusal of a `"landmark-walk"` artifact, the size-cap ladder's `drop-landmark-walk` rung (`limits.md` §8.4) re-emits the artifact this flag produces, plus `<PREFIX>_ENGINE_SEL "size-cap-retry"`; the `drop-anchored` rung follows if the cap still refuses.
 
 <a id="s2-54-p6"></a>[2.54¶6] **Dial:** no cell (§5.4). Design: `docs/dev/lanes/p1dsg3_report.md` rev 2 and `docs/dev/lanes/p1build_report.md` rev 3.
+
+<a id="s2-55"></a>
+### 2.55 The minimum-width stop (no flag)
+
+<a id="s2-55-p1"></a>[2.55¶1] Not an axis with a flag of its own: where every match of the pattern is at least two bytes long, the search stops where fewer bytes remain than every match needs. The width is the one pcrec proves: on a DFA artifact the `width` fact's minimum (`facts_listing.md` §4.1.2), on a VM artifact the root's minimum width, the bound its in-program pruning uses; both count the bytes a match consumes from its own start, so a lookbehind's context and a lookahead's reach do not count. The search entry answers no match where fewer than that many bytes lie past `search_from` (after §2.26's end-window clamp, before §2.29's pre-check); the forward DFA scan's candidate-start filter (§2.5) ends the search where fewer remain past the position it lands on; the per-start attempt loop (`<PREFIX>_DFA_SCAN "attempt"`) and the VM's attempt loop try no start past the subject's length less the width. A width of 0 or 1 adds nothing. ANSWER-IDENTICAL (it removes only positions no match can start at). It has no public flag because it only removes work (one comparison per search, and one per candidate the filter lands on); no stamp names it. A VM artifact whose width is at the analysis ceiling keeps its stamped check, `<PREFIX>_VM_ROOT_MINW` (`match_api.md` §6.3.8¶9).
+
+<a id="s2-55-p2"></a>[2.55¶2] **Where it does not reach.** The searches of the delegated search sites (the candidate-start filter's own find, the pre-check's scans) still run to the subject's end, less their own term's offset; the DFA search bodies other than the forward-then-reverse search and the per-start attempt loop (`<PREFIX>_DFA_SCAN` `"rev-end"`, `"cover"`, `"landmark-walk"`, `"char-step"`) check no width; the forward scan without a candidate-start filter stops only at its entry; and the VM hybrid's DFA prefilter checks none (the VM entry checks it once).
 
 <a id="s3"></a>
 ## 3. The DFA scan's stamps
