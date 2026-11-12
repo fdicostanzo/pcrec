@@ -1,0 +1,5 @@
+report=docs/dev/lanes/gesttest_report.md
+sections: STATE AT HANDOFF; CHANGES
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/gesttest_deliver.txt; docs/dev/lanes/gesttest_rulings.md

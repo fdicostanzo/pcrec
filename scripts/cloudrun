@@ -14,6 +14,13 @@
 #             refused (64): that pushes main's HEAD under a name meant for something else (cloud/main/axes/ucax,
 #             2026-11-11). Run from your worktree, or say --ref main to mean it.
 #       --dry-run   print what would be pushed and recorded; push nothing, write nothing
+#   scripts/cloudrun --owner O --kind K --rows ID,ID,.. [--name N] [--ref REF]
+#                   a run over NAMED ROWS only (a fix is re-checked in minutes; the full run is the last check before delivery,
+#                   docs/dev/lanes/RUNS.md "Cloud runs"). K must be a kind whose command takes rows (a `{rows}` placeholder in
+#                   the kinds table; `bash tests/ci/cloud_kinds.sh takes-rows K`; today mechrows: sabotage ids, e.g.
+#                   `--kind mechrows --rows S278,S517`). The ids ride in the branch NAME as `N.rows.ID_ID_..` (the run
+#                   needs no committed file and no workflow input); at most 30 ids, each [A-Za-z0-9-]+. The verdict
+#                   reaches OWNER as CLOUD-DONE like any run, naming the rows.
 #   scripts/cloudrun --suite --owner O [--name N] [--ref REF] [--dry-run]
 #                   the cloud FULL SUITE for one commit: dispatches every kind whose `suite` column is 1 in the kinds table
 #                   (today test, axes, ubsan, asan, mech, recidentity; `bash tests/ci/cloud_kinds.sh suite-kinds`) as one
@@ -82,11 +89,12 @@ print("%s %s %s %s" % ("GREEN" if r["conclusion"] == "success" else "RED", r["da
     echo "$v $rest"
 }
 
-mode=run sarg="" owner="" kind="" name="" ref=HEAD dry=0 refgiven=0
+mode=run sarg="" owner="" kind="" name="" ref=HEAD dry=0 refgiven=0 rows=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --owner) owner=${2-}; shift 2 || usage ;; --kind) kind=${2-}; shift 2 || usage ;; --name) name=${2-}; shift 2 || usage ;;
         --ref) ref=${2-}; refgiven=1; shift 2 || usage ;; --dry-run) dry=1; shift ;;
+        --rows) rows=${2-}; shift 2 || usage ;;
         --prune) mode=prune; shift ;; --suite) mode=suite; shift ;; --list) mode=list; shift ;;
         --status) mode=status; sarg=${2-}; shift $(( $# > 1 ? 2 : 1 )) ;;
         --reds) [ $# -eq 3 ] || usage; python3 -I "$here/../tests/ci/cloud_status.py" reds "$2" --cache "$3"; exit $? ;;
@@ -96,6 +104,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$root" ] || die "not inside the pcrec tree" 1
+[ -z "$rows" ] || [ "$mode" = run ] || die "--rows goes with a single --kind run, not --suite/--prune/--status"
 
 case $mode in
 status)
@@ -173,11 +182,17 @@ bash "$kinds_sh" owner-ok "$kind" "$owner" || die "owner '$owner' may not start 
 if [ $refgiven = 0 ] && [ -n "$name" ] && [ "$(git -C "$root" symbolic-ref --short -q HEAD)" = main ]; then
     die "--name '$name' with no --ref from a checkout on branch main would push main's HEAD under that name: run from your worktree, or pass --ref main to mean it"
 fi
+if [ -n "$rows" ]; then
+    bash "$kinds_sh" takes-rows "$kind" || die "kind '$kind' takes no --rows (its command has no {rows} placeholder; kinds that do: $(for k in $(bash "$kinds_sh" kinds); do bash "$kinds_sh" takes-rows "$k" && printf '%s ' "$k"; done))"
+    case $rows in ''|,*|*,|*,,*|*[!A-Za-z0-9,-]*) die "--rows takes comma-separated ids of [A-Za-z0-9-]+ (got '$rows')" ;; esac
+    [ "$(printf '%s,' "$rows" | tr ',' '\n' | grep -c .)" -le 30 ] || die "--rows takes at most 30 ids (they ride in the branch name)"
+fi
 sha=$(git -C "$root" rev-parse --verify -q "$ref^{commit}") || die "cannot resolve '$ref' to a commit" 1
 if [ -z "$name" ]; then
     base=$(printf '%s' "$ref" | tr '/' '-' | tr -c 'A-Za-z0-9._\n-' '-')
     name=$base-${sha:0:7}
 fi
+[ -z "$rows" ] || name=$name.rows.$(printf '%s' "$rows" | tr ',' '_')
 case $name in ''|*[!A-Za-z0-9._-]*) die "name must be [A-Za-z0-9._-]+ (got '$name')" ;; esac
 branch=cloud/$owner/$kind/$name
 if "$TO" 60 git -C "$root" ls-remote --exit-code --heads "$remote" "$branch" >/dev/null 2>&1; then

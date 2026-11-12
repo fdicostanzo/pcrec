@@ -170,9 +170,12 @@ while IFS='%' read -r pat _sep want; do
         grep -q 'if (attempt_position >= subject_length) return 0;' "$a" \
             && ok "[1.1b] $pat: unanchored artifact keeps the unbounded loop text" \
             || bad "[1.1b] $pat: stamps \"unanchored\" but its loop test is not the unbounded one"
-        grep -q 'attempt_max' "$a" \
-            && bad "[1.1b] $pat: stamps \"unanchored\" and still declares attempt_max" \
-            || ok "[1.1b] $pat: unanchored artifact declares no attempt_max"
+        # RE-AIMED 2026-11-12 (lane minw, [FIND-MINW] abi 103): an unanchored VM artifact now
+        # declares attempt_max as the minimum-width stop (subject_length - W); what it must
+        # never declare is the ANCHORED bound (= search_from).
+        grep -q 'const size_t attempt_max = search_from;' "$a" \
+            && bad "[1.1b] $pat: stamps \"unanchored\" and still declares the anchored attempt_max (= search_from)" \
+            || ok "[1.1b] $pat: unanchored artifact declares no anchored attempt_max"
     else
         grep -q 'const size_t attempt_max = search_from;' "$a" \
             && grep -q 'if (attempt_position >= attempt_max) return 0;' "$a" \
@@ -196,7 +199,7 @@ if emit "$WORKDIR/s1_deny.c" '^abc' --engine=vm -fno-vm-anchor-bound; then
     got="$(stamp "$WORKDIR/s1_deny.c" VM_START)"
     if [ "$got" = "unanchored" ] \
        && grep -q 'if (attempt_position >= subject_length) return 0;' "$WORKDIR/s1_deny.c" \
-       && ! grep -q 'attempt_max' "$WORKDIR/s1_deny.c"; then
+       && ! grep -q 'const size_t attempt_max = search_from;' "$WORKDIR/s1_deny.c"; then   # re-aimed, lane minw: the width stop may declare attempt_max
         ok "[1.2] -fno-vm-anchor-bound: ^abc stamps \"unanchored\" and emits the unbounded loop"
     else
         bad "[1.2] -fno-vm-anchor-bound: ^abc stamps \"${got:-<absent>}\" / bound text still present"

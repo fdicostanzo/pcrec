@@ -5,7 +5,7 @@
 # "only output items that pass threshold so that you're not considering noise"). When none holds it prints
 # NOTHING (not even the DONE line); exit 0 either way. `--all` prints every NON-EMPTY line (a row whose line is empty prints nothing), then the DONE line.
 # Threshold rows: load (load1 > nproc), session (a registered role with no live session), disk (a filesystem
-# >= 85%), context (a registered manager > 70% of its compaction point), ci (latest main run not success, or
+# >= 85%), context (the OWNER's own session > 80% of its compaction point; Frank 2026-11-12), ci (latest main run not success, or
 # gh unavailable; a cancelled-latest prints as completed/cancelled), queue (box idle while a ready job waits),
 # idle-held (a hand `boxlock run` holder alive while load1 stayed < 1.5 across two readings >= 60 s apart),
 # docs (a pair-form tracker index over its soft cap, or the accessor unavailable: `scripts/entry --over-cap`, D192).
@@ -208,10 +208,11 @@ winraw=$win
 acw=$($TO 2 jq -r '.. | objects | .autoCompactWindow? // empty' "$claude_home/settings.json" 2>/dev/null | head -1)
 case $acw in ''|*[!0-9]*) acw="" ;; esac
 wk=""; case $win in ''|*[!0-9]*) ;; *) wk="$((win / 1000))k" ;; esac
-# context threshold input: tokens at > 70% of the compaction point (else of the window)
+# context threshold input: the OWNER's own session at > 80% of the compaction point (else of the window).
+# Frank 2026-11-12: another session's context is that session's own gestalt line, not noise in this one.
 ceil=${acw:-$winraw}; ctxhot=""
 case $ceil in ''|*[!0-9]*) ;; *)
-    for e in $ctxn; do [ $((${e#*:} * 100)) -gt $((70 * ceil)) ] && ctxhot="$ctxhot ${e%%:*}"; done ;;
+    for e in $ctxn; do [ "${e%%:*}" = "$owner" ] && [ $((${e#*:} * 100)) -gt $((80 * ceil)) ] && ctxhot="$ctxhot ${e%%:*}"; done ;;
 esac
 if [ -n "$acw" ]; then win=" (compacts at $((acw / 1000))k${wk:+; window $wk})"
 elif [ -n "$wk" ]; then win=" (window $wk)"; else win=""; fi

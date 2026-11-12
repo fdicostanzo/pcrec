@@ -934,3 +934,24 @@ PfWhyCode pcrec_span_walk(Ctx *cx, const Nfa *nfa, MkLang *o)
     }
     return PF_WHY_NONE;
 }
+
+/* [NEVER-MATCH] Which proof shows the pattern matches nothing: `MACHINE`
+ * where the machines this compile built admit no match, by the empty LOCATE
+ * row's own test on this route (src/gen/emit_dfa.c `locate_empty_applies`):
+ * no state accepts on the attempt route, the unanchored pair admits nothing
+ * on the other. Reads `Job.fit` and the machines, not the tree; refuses to
+ * be asked before the driver marks the machines final, so the answer cannot
+ * depend on when it was asked. A compile with no DFA scan (a VM artifact
+ * with no prefilter) built no machine and has no proof here. */
+PfNever pcrec_never_matches(Ctx *cx)
+{
+    const Job *j = cx->job;
+    if (!j->machines_final)
+        pcrec_ctx_fail(cx, 0, "internal error: the never_matches fact was "
+                       "asked before the machines were final");
+    if (j->fit.chosen != ENGM_DFA && !j->fit.prefilter) return PF_NEVER_NO;
+    bool none = j->engine == PCREC_ENG_ATTEMPT
+              ? pcrec_dfa_accepts_nowhere(&j->dfa)
+              : pcrec_dfa_pair_matches_nothing(&j->dfa, &j->rdfa);
+    return none ? PF_NEVER_MACHINE : PF_NEVER_NO;
+}

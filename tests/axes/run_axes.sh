@@ -1735,10 +1735,13 @@ done
 # arms R1's ([REPEAT-RUN]) `restore=rep` runs the power arm's rows (a repeat
 # of a consuming body as its copies) in their old form, under the same rule. `restore=tie` puts R1's rarity tie rule back to the
 # predecessor's choice (information, then the first run).
-# A later span arms unit adds its arm here (`restore=look`).
+# A later span arms unit adds its arm here (`restore=look`). [FIND-MINW]
+# `--harness=no-min-width` declines the minimum-width stop (tuning.md §2.55),
+# a change with no public deny; its answers must equal the default's.
 # Selected by the empty AXES= or by its spelling.
 INTERNAL_ARMS=("--harness=no-compound" "--harness=restore=empty"
-               "--harness=restore=zero" "--harness=restore=rep" "--harness=restore=tie")
+               "--harness=restore=zero" "--harness=restore=rep" "--harness=restore=tie"
+               "--harness=no-min-width")
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0
 for arm in "${INTERNAL_ARMS[@]}"; do

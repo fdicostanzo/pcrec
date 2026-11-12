@@ -52,7 +52,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 101
+#define PCREC_ARTIFACT_ABI 104
 
 /* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
  *
@@ -975,6 +975,25 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
         indent, lenvar, (unsigned long long)w, posvar, lenvar,
         (unsigned long long)w,
         indent, posvar, lenvar, (unsigned long long)w);
+}
+
+/* [FIND-MINW] The search entry's minimum-width check: NOMATCH where fewer
+ * than `w` bytes lie between `posvar` and `lenvar`, `w` the WIDTH row's
+ * proven minimum match width (`cand_min_width`). Every match begins at or
+ * after the position and consumes at least `w` bytes before the end, so a
+ * shorter remainder holds no match. A position past the end wraps HIGH and
+ * passes, which leaves it to the entry's own range guard, as before. */
+void pcrec_emit_min_width_check(StrBuf *c, const char *indent, const char *posvar,
+                                const char *lenvar, long long w)
+{
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [FIND-MINW] every match is at least %lld bytes long, so\n"
+        "%s * none starts where fewer remain. */\n",
+        indent, w, indent);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c, "%sif (%s - %s < %lluULL) return 0;\n",
+                    indent, lenvar, posvar, (unsigned long long)w);
 }
 
 /* [OPT-REQPOS] tier 2b THE NECESSARY-RUN PRE-CHECK — the `L >= 2` sibling of
@@ -4167,23 +4186,6 @@ static bool state_acc_any(const Dfa *d, const DState *st)
     return false;
 }
 
-/* [PFFIX] Does NO state of the machine accept, in any view? Then nothing can
- * match: every emitted loop's report is guarded by an accept it can never
- * see. It is the EMPTY engine's test on both routes (`locate_empty_applies`,
- * `unanch_start`) and the attempt prefilter's refusal (`attempt_cand`), one
- * predicate for all three. `d->n == 0` (no live start state) is its vacuous
- * case. The other case is a machine whose states all die before an accept:
- * `ab\Gcd` under `--engine=vm -fprefilter`, where the hybrid's prefilter
- * was a loop that never wrote its window and gcc's -Wmaybe-uninitialized
- * read the caller's copy of it as unset (pflost_report.md). The views are
- * states of `d` too, so the end and eol accepts are covered. */
-static bool dfa_accepts_nowhere(const Dfa *d)
-{
-    for (int s = 0; s < d->n; s++)
-        if (state_acc_any(d, &d->st[s])) return false;
-    return true;
-}
-
 /* Does mechanism 4's runtime start dispatch change any answer? With every
  * interior start state interned to the same state the seed table would be a
  * constant column, so the pre-wave compile-time constant start is emitted
@@ -4480,7 +4482,7 @@ static bool attempt_cand(const CandSel *s, CandSet *cs)
      * [START-TABLE] C5b that is BOUND's row on this route (`s->route` is
      * CAND_ROUTE_ATTEMPT, N12's), read through the walk: the bound the loop
      * is emitted from, never a second spelling of it. */
-    if (dfa_accepts_nowhere(d) || CAND_BOUND_ONE(CAND_SLOT_NEXT, s, "pred-memchr-bound")) {
+    if (pcrec_dfa_accepts_nowhere(d) || CAND_BOUND_ONE(CAND_SLOT_NEXT, s, "pred-memchr-bound")) {
         PCREC_CAND_TRACE_REC("NEXT", "attempt", "none", "attempt-cand");
         return false;
     }
@@ -4640,7 +4642,7 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
      * dead while the seeds a match's own right-hand character selects are
      * live. `s0` alone was a sufficient emptiness test only while every
      * context the reverse machine read was satisfiable by an absent side. */
-    if (fs < 0 || dfa_accepts_nowhere(fd) || (rd->s0 < 0 && dfa_interior_dead(rd, rd->s1u))) {
+    if (pcrec_dfa_pair_matches_nothing(fd, rd)) {
         o->empty = true;
         return;
     }
@@ -4758,7 +4760,7 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
  * emits a search body that is one `return 0` — no table, no loop, no skip —
  * and BOTH emitters below take that exit: `emit_unanchored` on
  * `unanch_start`'s `empty` (its two causes are that function's), `emit_attempt`
- * on `dfa_accepts_nowhere` (no state accepts; no live start state at all is
+ * on `pcrec_dfa_accepts_nowhere` (no state accepts; no live start state at all is
  * its vacuous case). Corpus witnesses exist for both (`\B\b` unanchored;
  * `^\B\b` under ENG_ATTEMPT; [PFFIX] `ab\Gcd` the hybrid's prefilter).
  *
@@ -4771,7 +4773,7 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
  *
  * ONE DERIVATION, TWO READERS, this file's standing rule (`unanch_start` and
  * `attempt_cand` state it at length): `emit_attempt`'s early exit calls THIS
- * function rather than re-spelling `dfa_accepts_nowhere`, so the stamp cannot say
+ * function rather than re-spelling `pcrec_dfa_accepts_nowhere`, so the stamp cannot say
  * "empty" about a body that has a loop in it, nor stay silent about one that
  * does not. `emit_unanchored` reads the SAME `UnanchStart` it emits from —
  * one call, both facts — which is the same guarantee spelled the other way.
@@ -4784,9 +4786,9 @@ static bool locate_empty_applies(const CandSel *s)
     Ctx *cx = s->cx;
     if (s->route == CAND_ROUTE_ATTEMPT)
         PCREC_CAND_TRACE_REC("ROUTE", "attempt",
-                             dfa_accepts_nowhere(&cx->job->dfa) ? "empty" : "live",
+                             pcrec_dfa_accepts_nowhere(&cx->job->dfa) ? "empty" : "live",
                              "engine-empty");
-    if (s->route == CAND_ROUTE_ATTEMPT) return dfa_accepts_nowhere(&cx->job->dfa);
+    if (s->route == CAND_ROUTE_ATTEMPT) return pcrec_dfa_accepts_nowhere(&cx->job->dfa);
     UnanchStart us;
     unanch_start(cx, &us);
     PCREC_CAND_TRACE_REC("ROUTE", "dfa", us.empty ? "empty" : "live", "engine-empty");
@@ -5905,6 +5907,11 @@ struct DfaForm {
      * `dfa_form_derive`; `emit_unanchored`, which holds the RECOVER row,
      * sets it on its forward form. */
     bool           landing;
+    /* [FIND-MINW] the NEXT block ends the search where fewer than `minw`
+     * bytes remain after its landing (`pf_close`): the width the front's
+     * WIDTH row checked (`cand_front_min_width`), 0 for none. 0 from
+     * `dfa_form_derive`; `emit_unanchored` sets it on its forward form. */
+    long long      minw;
     /* D164 B3 FORM W (docs/design/endmark.md §R.4.6): the walk's caller
      * resolved the seed's position views before the loop and declared the
      * state variable itself (`entry_set`), so the loop emits no seed
@@ -6636,6 +6643,11 @@ static void pf_close(StrBuf *c, const DfaForm *f, bool inner)
 {
     const char *ind = f->dir->bind;
     if (inner) pcrec_sb_printf(c, "%s    }\n", ind);
+    /* [FIND-MINW] still nothing found, so every match starts at or after the
+     * landing, which every form leaves at or below the subject's end. */
+    if (f->minw)
+        pcrec_sb_printf(c, "%s    if (subject_length - %s < %lluULL) return 0;\n",
+                        ind, f->dir->posv, (unsigned long long)f->minw);
     if (f->landing)
         pcrec_sb_printf(c, "%s    landing_position = %s;\n", ind, f->dir->posv);
     pcrec_sb_printf(c, "%s}\n", ind);
@@ -10067,7 +10079,7 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                                                           CAND_ON(CAND_ROUTE_ATTEMPT) },
                              .kfields = CAND_ASKF_EXISTS | CAND_ASKF_PROVEN0 |
                                         CAND_ASKF_PROVEN_PREV },
-    [CAND_SLOT_WIDTH]    = { "WIDTH",    CT_LOWER, CAND_ON(CAND_ROUTE_VM),
+    [CAND_SLOT_WIDTH]    = { "WIDTH",    CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_NODE_CALLER) },
     /* [CAND-PATH-READS] `handoff` (F1) also reads the PATH (its members);
      * [REQRUN-VM] `handoff-attempts[-entry]` read BOUND (one attempt
@@ -10178,6 +10190,26 @@ static bool cand_window_applies(const CandSel *s)
 static bool cand_ceiling_applies(const CandSel *s)
 { return s->vm->root_minw >= PCREC_MINW_MAX; }
 
+/* [FIND-MINW] The proven minimum match width in bytes on the selection's
+ * route: the VM's `root_minw` (`pcrec_minw` of the root, the bound its MRL
+ * clamps prune by), else the `width` fact's `bmin` over the forward NFA
+ * (-1 where nothing is known). Both are lower bounds on the bytes a match
+ * consumes from its own start, lookbehind context excluded. */
+static long long cand_min_width(const CandSel *s)
+{
+    return s->route == CAND_ROUTE_VM ? s->vm->root_minw : pcrec_fact_width(s->cx)->bmin;
+}
+
+/* M1: does every match need at least two bytes? One byte is no check: a
+ * position with no byte left is already where every scan stops. Declined
+ * under the test build's inverse lever (`--harness=no-min-width`). */
+static bool cand_min_width_applies(const CandSel *s)
+{
+    const PcrecEmitIn *in = s->cx->emit_in;
+    if (in && in->harness && in->harness->no_min_width) return false;
+    return cand_min_width(s) >= 2;
+}
+
 /* N12: does the ENG_ATTEMPT machine `s->d` get the predecessor-byte
  * `memchr`? `attempt_cand` itself, its candidate set left in `s->cand` for
  * the reader that asked (discarded where that is NULL). */
@@ -10253,8 +10285,10 @@ static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent);
 static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent);
 
 /* The entry slots a body runs where it is the caller-facing entry (a LOCATE
- * row's `needs[route].front`): the clamp, the pre-check and its handoff. */
-#define CAND_FRONT_DFA (CN(CAND_SLOT_WINDOW) | CN(CAND_SLOT_PRESENCE) | CN(CAND_SLOT_FIRST))
+ * row's `needs[route].front`): the clamp, the minimum-width check, the
+ * pre-check and its handoff. */
+#define CAND_FRONT_DFA (CN(CAND_SLOT_WINDOW) | CN(CAND_SLOT_WIDTH) |              \
+                        CN(CAND_SLOT_PRESENCE) | CN(CAND_SLOT_FIRST))
 /* The cells the VM search entry asks (`search-from`'s VM hat): its front
  * (the code at the VM entry's head), its seek (NEXT on the VM route, the
  * start-set hat where no prefilter exists) and BOUND. Where a prefilter
@@ -10438,14 +10472,22 @@ static const CandRow cand_rows[] = {
       .desc = "always (fallback): the pre-check on the req_byte fact, or the run search where a run shipped",
       .u.admit = { REQ_ADMIT_EMITTED } },
 
-    /* WIDTH (read by the VM entry's root-minw test, its `<PREFIX>_VM_ROOT_MINW`
-     * stamp and `--emit-ir`'s `root-minw` row; no `--list-axes` listing) */
+    /* WIDTH (read by every search entry's minimum-width check, [FIND-MINW]:
+     * the DFA routes' front, `cand_front_min_width`, and the VM entry; on the
+     * VM at the ceiling also its `<PREFIX>_VM_ROOT_MINW` stamp and
+     * `--emit-ir`'s `root-minw` row; no `--list-axes` listing). `ceiling`
+     * keeps the VM's stamped spelling of the same check; `min-width` is the
+     * general row. */
     { .c = { "ceiling", 0, cand_ceiling_applies }, .slot = CAND_SLOT_WIDTH,
-      .u.width = { .check = true },
+      .u.width = { .check = true, .ceiling = true },
       .routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI,
       .hands = CT_VERDICT },
+    { .c = { "min-width", 0, cand_min_width_applies }, .slot = CAND_SLOT_WIDTH,
+      .u.width = { .check = true },
+      .routes = CAND_ALL_ROUTES, .tok = "min-width", .map = CM_WINDOWHI,
+      .hands = CT_VERDICT },
     { .c = { "width-none", 0, cand_always }, .slot = CAND_SLOT_WIDTH,
-      .routes = CR_VM, .tok = "none", .map = CM_NONE, .hands = CT_VERDICT },
+      .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_VERDICT },
 
     /* FIRST (`req_uses[]` until C4; `req_use` asks it) */
     { .c = { "handoff", PCREC_NO_REQ_HANDOFF, req_handoff_applies }, .slot = CAND_SLOT_FIRST,
@@ -12381,6 +12423,20 @@ static bool cand_window_clamps(Ctx *cx)
     return r->u.window.clamp;
 }
 
+/* [FIND-MINW] The minimum width a DFA body's caller-facing front checks:
+ * WIDTH's row on the body's route, recorded, and its width where the row
+ * emits the check, else 0. The body's forward scan stops on the same width
+ * (`DfaForm.minw`, `pf_close`). */
+static long long cand_front_min_width(Ctx *cx)
+{
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                  .route = cand_route_of(cx) };
+    const CandRow *r = cand_select(CAND_SLOT_WIDTH, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("WIDTH", CAND_ROUTE_NAME(s.route), r->tok, "front-minw");
+    CAND_HIT(CAND_SLOT_WIDTH, &s, r, "front-minw");
+    return r->u.width.check ? cand_min_width(&s) : 0;
+}
+
 /* The VM emitter's walk: `cand_select` on the VM route over the `Vm` facts
  * it holds (core/internal.h). */
 const CandRow *pcrec_cand_select_vm(Ctx *cx, CandSlot slot, const CandVmFacts *vm)
@@ -13696,6 +13752,11 @@ static void emit_unanchored(Ctx *cx, const char *fn, PcrecEntry ent)
      * caller-facing entry. */
     if (cand_finish_of(cx) != CAND_ROUTE_VM) {
         pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
+        /* [FIND-MINW] after the clamp, which only narrows the window, and
+         * before the pre-check, which scans it. */
+        fwd.minw = cand_front_min_width(cx);
+        if (fwd.minw)
+            pcrec_emit_min_width_check(c, "    ", "search_from", "subject_length", fwd.minw);
         /* AFTER the clamp, deliberately: the clamp can only narrow the
          * window, so scanning the narrowed one is both cheaper and still
          * sound — every match lies inside it. [K82] Where its candidate is
@@ -15071,6 +15132,13 @@ static const char *attempt_entry(Ctx *cx, const char *fn, PcrecEntry ent)
     const char *first = "search_from";
     if (cand_finish_of(cx) != CAND_ROUTE_VM) {
         pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
+        /* [FIND-MINW] `emit_unanchored`'s order: after the clamp, before
+         * the pre-check. No width is known on this route today (the `width`
+         * fact is sealed on the unanchored machine only), so WIDTH reads
+         * `none` here and nothing is emitted. */
+        long long minw = cand_front_min_width(cx);
+        if (minw)
+            pcrec_emit_min_width_check(c, "    ", "search_from", "subject_length", minw);
         first = pcrec_emit_req_byte_check(cx, c, "    ", "search_from",
                                           "subject", "subject_length");
     }
@@ -16531,7 +16599,7 @@ static const char *dfa_scan_name(Ctx *cx)
 static const char *dfa_prefilter_name(Ctx *cx)
 {
     /* [DD-13c] THE EMPTY ENGINE HAS NO PREFILTER TO NAME, and it does not need
-     * a clause here to say so: `attempt_cand` refuses on `dfa_accepts_nowhere` and
+     * a clause here to say so: `attempt_cand` refuses on `pcrec_dfa_accepts_nowhere` and
      * `unanch_start` returns with `kind == DFA_PF_NONE` on `empty`, so both
      * arms below already answer "none" for exactly the artifacts
      * `dfa_engine_is_empty` identifies. An `if` here would be a THIRD statement

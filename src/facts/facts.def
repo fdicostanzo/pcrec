@@ -60,4 +60,5 @@ PF_FACT(RUN_PIN,       "run_pin",       3, PF_DERIVED, 0,                       
 PF_FACT(LAND_CHAR,     "land_char",     3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
 PF_FACT(WIDTH,         "width",         3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
 PF_FACT(SPAN,          "span_facts",    3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
+PF_FACT(NEVER_MATCHES, "never_matches", 2, PF_CORE,    0,                                   "src/facts/kset.c",    "")
 #undef PF_FACT

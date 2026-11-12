@@ -245,6 +245,16 @@ typedef struct {
     long long bmin, bmax;
 } WidthIv;
 
+/* [NEVER-MATCH] THE NEVER-MATCH PROOF (fact `never_matches`, E2 core): which
+ * proof shows the pattern matches nothing, or none. `MACHINE`: the machines
+ * this compile built admit no match (`pcrec_dfa_accepts_nowhere` on the
+ * attempt route, `pcrec_dfa_pair_matches_nothing` on the unanchored one), the
+ * empty LOCATE row's own test. Best-guess: `NO` means no proof, never "it
+ * matches". NOT a proof: the VM's root minimum width at its ceiling
+ * (`RX_VM_ROOT_MINW`), which a recursion with no base case and a merely
+ * saturated finite minimum share (nevermatch_report.md). */
+typedef enum { PF_NEVER_NO = 0, PF_NEVER_MACHINE } PfNever;
+
 /* [KIT-VERIFY] U1 Z2 THE SPAN SLICE (fact `span_facts`, E3 core;
  * docs/design/kit_proof.md §5.1-§5.2 UL-0, docs/design/ctx_span.md §3.2-§3.4,
  * §3.8): span 0 at the MATCH-START origin, priority-free, on the lowered
@@ -493,6 +503,9 @@ typedef struct {
      * its readers (the `cover` row, the FIND sites' `exact_len` statement)
      * state what it gives. */
     MkLang    span;
+    /* [NEVER-MATCH] E2 core, asked only once the machines are final
+     * (`Job.machines_final`): `PfNever`. No deny. */
+    PfNever   never_matches;
     PfWhy     why[PF_NFACTS];
     /* The restored arms of every fact asked since the current derivation
      * began (`pf_ask` ORs each asked fact's `PfWhy.arms` in): what that
@@ -589,6 +602,9 @@ const WidthIv  *pcrec_fact_width(Ctx *cx);       /* E3 [START-LANDING] */
  * a check, not a pass: `used` stays the passes' record (facts_listing.md
  * §4.1¶2). */
 const MkLang   *pcrec_fact_span_stated(Ctx *cx);
+/* E2 [NEVER-MATCH], asked after the machine build: the proof that the
+ * pattern matches nothing, `PF_NEVER_NO` where there is none. */
+PfNever         pcrec_fact_never_matches(Ctx *cx);
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------
  *

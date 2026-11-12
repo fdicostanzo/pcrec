@@ -95,9 +95,14 @@
 # 98, the parent's number; same detector, same arm.
 # RE-AIMED 2026-11-11 (lane pffix, [PFFIX] abi 99 -> 100): AFTER is 99, the
 # parent's number; same detector, same arm.
-# RE-AIMED 2026-11-12 (lane k382m, [MEMFN] R-38 K38-2 re-bumped 100 -> 101
-# over main's [PFFIX] 100 at the catch-up merge; lane k382's 99 -> 100 aim
-# never landed): AFTER is 100, the parent's number; same detector, same arm.
+# RE-AIMED 2026-11-12 (lane nevermatch, [NEVER-MATCH] abi 100 -> 102): AFTER is
+# 100, the parent's number; same detector, same arm.
+# RE-AIMED 2026-11-12 (lane minw, [FIND-MINW] abi 100 -> 103): AFTER is 100,
+# main's number at the lane's base; same detector, same arm.
+# RE-AIMED 2026-11-12 (lane k382n, [MEMFN] R-38 K38-2 re-bumped 103 -> 104
+# over main's s1land 103 at the catch-up merge; lane k382m's 100 -> 101 aim
+# never landed): AFTER is 100, main's number at the lane's base; same
+# detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
@@ -105,5 +110,5 @@ SAB_DESC="PCREC_ARTIFACT_ABI stays at the parent's number while the emitted byte
 SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0b 2026-10-09 (one mech row, solo): see docs/dev/lanes/r4e0b_report.md §5. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S693."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='#define PCREC_ARTIFACT_ABI 101'
+SAB_BEFORE='#define PCREC_ARTIFACT_ABI 104'
 SAB_AFTER='#define PCREC_ARTIFACT_ABI 100   /* SABOTAGE S693 */'

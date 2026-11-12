@@ -99,6 +99,7 @@ unit	shard	weight_s	weight_source
 -fno-rev-end-onewalk	19	387	ESTIMATE-median-default (local x2 where ESTIMATE)
 --analysis=fire-c2b	20	248	runner measured
 --analysis=fire-c4	20	513	runner measured
+--harness=no-min-width	20	387	ESTIMATE-median-default (local x2 where ESTIMATE)
 --vm-entry-shape=2	20	363	runner measured
 -fno-altcls-merge	20	504.5	runner measured
 -fno-cls-kit	20	433.5	runner measured

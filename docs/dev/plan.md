@@ -58,12 +58,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     next: run tests/cli's xt_place over one artifact per listed target with a family (a guard-only target: guard once, no region); pick the two-target family by listing order, not awk hash order
     refs: tests/cli/run_cli_tests.sh xt_place; docs/spec/match_api.md §6.3.10¶15
     Today the cli placement case covers one target (the baseline amd64 one); the larger region and the arm64 guard-only artifact are placed by no check.
-  - [XARCH-NEEDSOK] STATE:not-started — a check that each kit level's declared needs SUFFICE for its intrinsics (the S726 closer)
-    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-7, PLAN; kit-side, relayed)
-    status (2026-11-08): filed; S726 stays declared UNDETECTED until it lands
-    next: the kit: compile each level's rendered helper at its family's baseline plus -m<need> for exactly its needs, one loop in memfn/tests/check_targets.sh; then S726 re-declared DETECTED
-    refs: tests/mech/sabotages/S726_w32_under_weak_guard.sh; memfn/tests/check_targets.sh
-    check_targets.sh proves needs is a subset of features, never that the needs are enough: a level under-declaring (avx for avx2) is invisible while every target carrying the one carries the other.
   - [XARCH-TOKERR] STATE:not-started — an unknown CPU token's refusal is cut at 256 bytes mid-text
     filed: 2026-11-08 manager (review 2026-11-08-r5-xarch CONTRACT-4, PLAN)
     status (2026-11-08): filed
@@ -456,12 +450,18 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   measurement (2026-11-11, lane skipmeas): exact fixed patterns <= 24 positions ALREADY skip the engine through the DFA cover route (bench 78 patterns, corpus ~890). Still finish-bearing in the bench: ~12 of 356 (long literals l31/l40, hex32/dig32/uuid, 4 lookaround, `$` tails). Instructions:u with the engine finish stubbed vs current: lit-l31 match 30.0M -> 4.4M, l40 28.6M -> 3.5M (the finish is 85-88%), l40 lbf 24.8M -> 2.45M; fbf is worse with the stub. Cause: the cover route's 24-position span cap, not a missing protocol; ~6 litrun cells move bench-wide. D77 fired narrowly; borderline for Part C. Lift the cap first ([COVER-CAP]); earned skip proper, Part C and [MATCH-KNOWN] are PARKED (Frank 2026-11-11 evening), not in S4.
 - [NEVER-MATCH] STATE:not-started — a pattern proved never to match compiles to a constant no-match matcher; a fact, never an error
   filed: 2026-11-09 manager (Frank: "I like your no match ideas. File")
-  status (2026-11-09): UNSCHEDULED. Default never an error (D26). Optimize (constant matcher, dead branches dropped) + an --emit-facts fact + an opt-in caller policy allow|warn|error ('must be matchable', Frank) at [IFACE-PUSH]
+  status (2026-11-12): lane nevermatch: a never-matching VM hybrid is the DFA empty artifact (16 corpus patterns, abi 102) + fact never_matches. Left: recursion with no base case (the MRL ceiling is no proof; needs a productivity fact), dead VM branches (0 found), policy at [IFACE-PUSH]
   trigger: (D77) a corpus count of provably dead patterns/branches that shows in size or compile time, or span_arms L1's landing (its DEAD bit makes the whole-pattern case nearly free)
   refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]; [COND-FAMILY] (D193: speed leads, so conditionals stay refused until the family order reaches the node; no rework either way)
+- [FLAG-DEMOTE] STATE:not-started — demote 20 public -f deny flags to test-only levers and drop one alias (~21 bits)
+  filed: 2026-11-12 manager, from the read-only audit docs/dev/flag_audit_2026-11-12.md; Frank 2026-11-12: "Let's do the 20 plus drop. Agree with plan"
+  status (2026-11-12): GO given; its own set after S1 and the kit's K38-2 land (same option table). The 3 medium and 6 unsure flags stay public; bit 55's dead reservation released if nothing reads it.
+  next: open as its own set when S1 and K38-2 have landed; one opus build lane, internal deny word first
+  refs: docs/dev/flag_audit_2026-11-12.md; D195; [IFACE-PUSH] (hard trigger <= 4 free bits; 6 free today); memory pcrec-flag-follows-caller-effect
+  First step: an internal deny word, so the size-cap ladder and the tune dial stop setting public bits; then each demotion moves its spelling to --harness=, the axes table gets a harness-spelling column, spec hunks, rx_info KEPT-set change (abi event), a pcrec-bench inbox item (configs.toml pins -fno-cls-fold, -fno-alt-island).
 - [FIND-MINW] STATE:not-started — searches stop where too few bytes remain for any match (minimum width)
   filed: 2026-11-10 Frank ("File"), after asking whether the kit's find window gets the minimum required bytes; it does not
-  status (2026-11-10): UNSCHEDULED. pcrec computes the minimum width but only the VM stops early on it; kit find sites end at n - end_back (0 or 1, D11's holdback) and the DFA scan loop ignores it (evidence in Today below)
+  status (2026-11-12): part A BUILT on lane/minw (abi 103): WIDTH row `min-width` on every route; DFA unanchored + VM entry, DFA skip landing, VM attempt bound stop at W; ATTEMPT/cover/rev-end/landmark/kit sites not reached; kit fact drafted for R-40 (minw_report.md)
   trigger: (D77) a bench case where the search tail past the last possible match start shows in the profile: short subjects (lines/fields searched one at a time) with a minimum width that is a sizeable share of the subject, or find-all whose final failing search dominates
   refs: memfn/include/memfn.h:751 (end_back); D157 (facts, not methods); D11; [ENGINE-WHY] (unrelated sibling filed the same day)
   Today: `pcrec_minw`/`pcrec_cwmin` (src/opt/callgraph.c:333; facts row `width [7,inf)` for `abc[0-9]+xyz`); VM early stop src/gen/emit_vm.c:3804, 6709, 9651; `PcrecFind.holdback` src/gen/memfn_sites.h:282, emit_dfa.c:7141; sites trim only by their own term (`memchr(subject + pos + 1, 'b', n - pos - 1)`)

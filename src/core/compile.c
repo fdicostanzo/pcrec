@@ -3282,6 +3282,26 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                  * byte-identical across this change. */
             }
         }
+        cx.job->machines_final = true;
+
+        /* [NEVER-MATCH] A VM HYBRID WHOSE MACHINES ADMIT NO MATCH IS THE DFA
+         * ENGINE'S EMPTY ARTIFACT. The prefilter's language is a superset of
+         * the pattern's (the hybrid's own soundness, which already answers
+         * every search "no match" here), so its empty machines prove the
+         * pattern matches nothing, and the DFA emitter's existing `empty`
+         * LOCATE row writes the constant matcher off the same machines: one
+         * empty mechanism, reached from a second route. Not under a forced
+         * engine or `-fprefilter` (do-or-die: the caller named the VM or its
+         * prefilter). `--emit-ir` runs this same compile, so it refuses here
+         * as on any DFA artifact. A callout pattern never has a prefilter, so
+         * no callout is skipped. */
+        if (cx.job->fit.chosen != ENGM_DFA && cx.job->fit.prefilter &&
+            cx.opt->engine == PCREC_ENGINE_AUTO &&
+            !pcrec_opt_has(cx.opt, PCREC_FORCE_PREFILTER) &&
+            pcrec_fact_never_matches(&cx) == PF_NEVER_MACHINE) {
+            cx.job->fit.chosen = ENGM_DFA;
+            cx.job->fit.prefilter = false;
+        }
 
         /* [M4.5c] DD-8's listing describes a VM PROGRAM, and a DFA artifact has
          * none — it has a transition table, which engine_m4.md S10 points out is
@@ -3313,8 +3333,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                       * sentence was cut mid-word at "the capture-recording eng". */
                      "--emit-ir lists a VM program; this pattern compiles to the "
                      "DFA engine because every capture slot it promises is "
-                     "permanently UNSET (under a zero-count repeat, or reached "
-                     "only through a call). Pass --engine=vm for the VM program");
+                     "permanently UNSET (a zero-count repeat, reached only "
+                     "through a call) or it matches nothing. Pass --engine=vm "
+                     "for the VM program");
 
         /* [ART-SIZE] The size term's verdict, for the artifact's own stamp
          * (D81). SEVEN values, because the first design's three hid four

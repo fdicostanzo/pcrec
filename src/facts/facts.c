@@ -110,6 +110,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     case PF_LAND_CHAR:    pf->land_char = (LandChar){ false, false }; break;
     case PF_WIDTH:        pf->width = (WidthIv){ -1, -1 }; break;
     case PF_SPAN:         memset(&pf->span, 0, sizeof pf->span); break;
+    case PF_NEVER_MATCHES: pf->never_matches = PF_NEVER_NO; break;
     case PF_NFACTS:       break;
     }
 }
@@ -417,6 +418,9 @@ static void pf_derive(Ctx *cx, PfFactId f)
         }
 #endif
         break;
+    case PF_NEVER_MATCHES:
+        pf->never_matches = pcrec_never_matches(cx);
+        break;
     case PF_NFACTS:
         pf->arms_seen = seen;
         return;
@@ -675,6 +679,12 @@ const MkLang *pcrec_fact_span_stated(Ctx *cx)
     return &cx->job->pf.span;
 }
 
+PfNever pcrec_fact_never_matches(Ctx *cx)
+{
+    pf_ask(cx, PF_NEVER_MATCHES, true);
+    return cx->job->pf.never_matches;
+}
+
 void pcrec_facts_force_all(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
@@ -927,6 +937,9 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         pcrec_sb_free(&sb);
         return t;
     }
+    case PF_NEVER_MATCHES:
+        /* The proof's name, or `no` where there is none. */
+        return pf->never_matches == PF_NEVER_MACHINE ? "empty-machine" : "no";
     case PF_NFACTS:
         break;
     }

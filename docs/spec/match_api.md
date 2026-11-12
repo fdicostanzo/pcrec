@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 101
-#error "pcrec: this artifact (abi 101) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 104
+#error "pcrec: this artifact (abi 104) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 101
+#define PCREC_RX_ABI_H 104
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1649,7 +1649,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `101` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `104` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1807,7 +1807,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `101` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `104` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -2065,7 +2065,7 @@ fit site; neither is parsed to produce the other. No `rx_info` mirror;
 <!-- value-set: RX_ENGINE_SEL -->
 | value | meaning |
 |---|---|
-| `"selected"` | `auto` chose on the AST and nothing overflowed — the common case on both engines |
+| `"selected"` | `auto` chose on the AST and nothing overflowed — the common case on both engines. It also stands on the DFA artifact of a VM hybrid whose prefilter machines show the pattern matches nothing (§6.3.4's `"empty"`), which the empty engine answers in place of the VM |
 | `"forced"` | the caller named `--engine=vm` or `--engine=dfa`, so `auto` selected nothing |
 | `"declined-nullable-default"` | `auto`, nothing overflowed, and the ordinary hybrid's own exact prefilter language admits the empty match on every path that matters (`empty_admits`), so its forward+reverse pair could never dismiss a position; no prefilter survives. A pattern whose every empty match crosses a non-multiline start AND end anchor (`^(\s+)*$`) is not declined, and a `${…}` pattern is never declined here (its variable turns the prefilter off first); both read `"selected"`. `-fprefilter` overrides the decline, and an explicit `--engine=vm` reads `"forced"` (`tuning.md` §2.17) |
 | `"overflowed-dfa"` | `auto`, the DFA was to be the engine, its build overflowed a cap, and no prefilter survived the fallback |
@@ -2133,7 +2133,7 @@ apart. Mirrored by `rx_info.scan`.
 | `"landmark-walk"` | the pattern's one branch passes a byte class L whose bytes the part before it can never consume (`tuning.md` §2.54): the search finds each occurrence of L from `search_from` up, walks the artifact's reverse machine of that prefix and L back from it to the smallest possible start, and runs the anchored machine once from there; where that run already read past the next occurrence, it continues as the `"unanchored"` scan from that start |
 | `"char-step"` | the pattern needs a character set that is not byte-expressible under `-e utf8` (UCP `\b`/`\B`, `cli.md` §1.9¶7): the forward machine steps an ASCII byte through its table and a whole non-ASCII character (or one ill-formed byte) as one symbol, the end is found by that walk, and the start by the reverse machine stepping back the same way (`<PREFIX>_DFA_START "reverse-pass"`); no prefilter, skip or scan edge runs in front of it at this build, and a failing `<prefix>_match` runs the whole walk (`<PREFIX>_DFA_MATCH "search-filter"`, §3.2¶6) |
 | `"attempt"` | the per-start-position computed-goto loop a `^`/`\A`-bearing pattern takes |
-| `"empty"` | the start analysis proves the pattern matches nothing (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`, and their `^`-anchored spellings), or no state of the machine accepts (`ab\Gcd`; abi 100): the search body is one `return 0` with no table, loop or skip, on either engine |
+| `"empty"` | the start analysis proves the pattern matches nothing (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`, and their `^`-anchored spellings), or no state of the machine accepts (`ab\Gcd`; abi 100): the search body is one `return 0` with no table, loop or skip, on either engine. A VM hybrid whose prefilter machines admit no match under `--engine=auto` is this DFA artifact (`RX_ENGINE "dfa"`), not a VM program behind an empty prefilter (`(a)\b(b)`, `(?=a)\Kb`; abi 102; the `never_matches` fact, `facts_listing.md` §4.1.2¶12) |
 
 <a id="s6-3-4-p3"></a>[6.3.4¶3] **`<PREFIX>_DFA_PREFILTER`** — the candidate-start mechanism of the scan.
 Mirrored by `rx_info.prefilter` on a DFA artifact and a hybrid. Its values
