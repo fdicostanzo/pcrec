@@ -3595,6 +3595,11 @@ typedef struct {
     struct Ast *lm_root;
     int    engine;   /* PCREC_ENG_*: which DFA SHAPE (unanch/attempt) */
     EngineFit fit;   /* [M4.5b] which ENGINE (dfa/vm), and why */
+    /* [NEVER-MATCH] Are this attempt's machines final? Set by the driver
+     * once the machine build is over (none built is final too); the
+     * `never_matches` fact reads the machines and refuses to be asked
+     * before. */
+    bool   machines_final;
     /* [OPT-ALTCLS] D46 stamp source, filled by src/opt/altcls.c BEFORE
      * select_engine/emission ever run (docs/dev/plan.md's interaction note:
      * the pass runs before possessify/MRL/counter). Counts, not booleans,
@@ -7881,6 +7886,11 @@ bool pcrec_nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT 
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
                      bool prune, bool reverse, int maxstates,
                      int root, bool optional);
+
+/* [NEVER-MATCH] the machine-level never-match proofs (src/ir/dfa.c): no
+ * state accepts; the unanchored pair admits no match. */
+bool pcrec_dfa_accepts_nowhere(const Dfa *d);
+bool pcrec_dfa_pair_matches_nothing(const Dfa *fd, const Dfa *rd);
 
 /* [ENG-ABS] What `intern` returns to an OPTIONAL machine that has overflowed:
  * the value `DState.tr[]` already carries for "dead", so a partially built

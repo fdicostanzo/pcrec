@@ -2076,3 +2076,33 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                               "an untagged DFA state carries an accept value "
                               "above 1 (endmark.md R.3)");
 }
+
+/* [NEVER-MATCH] True when no state of `d` accepts in any view: nothing the
+ * machine reads can end in a match. The end and eol views are states of `d`
+ * too, so their accepts are covered; `d->n == 0` (no live state at all) is
+ * the vacuous case. The empty engine's test on the attempt route and the
+ * forward half of `pcrec_dfa_pair_matches_nothing` ([PFFIX], pffix_report.md). */
+bool pcrec_dfa_accepts_nowhere(const Dfa *d)
+{
+    for (int s = 0; s < d->n; s++)
+        for (int u = 0; u < d->natoms; u++)
+            if (d->st[s].up[u].accept) return false;
+    return true;
+}
+
+/* [NEVER-MATCH] True when the unanchored pair (forward `fd`, reverse `rd`)
+ * proves the pattern matches nothing: no live forward start, no forward
+ * accept, or every reverse start dead. The reverse machine needs EVERY start
+ * dead, not `s0` alone: `s0` is "no character to the right of the match", and
+ * a pattern ending in a lookahead that needs one (`z(?=a)`) has a dead `s0`
+ * and live seeds ([UCP] U2). One derivation for the empty LOCATE row on the
+ * unanchored route (`unanch_start`, src/gen/emit_dfa.c) and the
+ * `never_matches` fact (src/facts/widths.c). */
+bool pcrec_dfa_pair_matches_nothing(const Dfa *fd, const Dfa *rd)
+{
+    if (fd->s0 < 0 || pcrec_dfa_accepts_nowhere(fd)) return true;
+    if (rd->s0 >= 0) return false;
+    for (int u = 0; u < rd->natoms; u++)
+        if (rd->s1u[u] >= 0) return false;
+    return true;
+}

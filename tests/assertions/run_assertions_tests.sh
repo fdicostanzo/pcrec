@@ -357,8 +357,11 @@ want_strat() { # want_strat <pattern> <expected> <why>
 want_strat '(x)a{0,4}\z' 0x1 "\\z in the follow is exempt: its satisfying set is the singleton {n}, so no retreat can reach it"
 want_strat '(x)a{0,4}\Z' 0x1 "\\Z is A_EOL, the same node \$ builds, so it takes the same exemption"
 want_strat '(x)a{0,4}$'  0x1 "the shipped non-multiline \$ exemption, unmoved by the parse-time refactor"
-want_strat '(x)a{0,4}\A' 0x2 "the FAILING DIRECTION: \\A is DOWNWARD-closed (a retreat CAN reach offset 0), so the analysis must decline"
-want_strat '(x)a{0,4}^'  0x2 "the same, spelled ^ — \\A and ^ are one node and must answer alike"
+# [NEVERMATCH] (lane nmfix): `(x)a{0,4}\A`/`^`/`\G` can never match (x consumed, so offset 0 / startpos
+# is behind it) and now compile to the DFA empty artifact, which stamps no STRATS; the `(x)?` form can
+# match, stays capture-bearing on the VM and reads the same declining verdict.
+want_strat '(x)?a{0,4}\A' 0x2 "the FAILING DIRECTION: \\A is DOWNWARD-closed (a retreat CAN reach offset 0), so the analysis must decline"
+want_strat '(x)?a{0,4}^'  0x2 "the same, spelled ^ — \\A and ^ are one node and must answer alike"
 # [M6.2 wave B] `\b`/`\B` MUST DECLINE, and this is the wave's own row in this
 # check rather than an inherited one. The exemption above rests on UPWARD
 # CLOSURE: if `$` fails at a quantifier's maximal exit it fails at every
@@ -384,7 +387,7 @@ want_strat '(x)a{0,4}\B' 0x2 "\\B is \\b's complement and equally unclosed — a
 # the maximal exit is 4 where `\G` is false, and the retreat to 0 is the only
 # route to the correct (0,0). Possessified, that pattern answers NO MATCH at
 # every start.
-want_strat '(x)a{0,4}\G' 0x2 "\\G is DOWNWARD-closed like \\A — every retreat moves TOWARD startpos, so a retreat CAN reach a position satisfying it and the analysis must decline"
+want_strat '(x)?a{0,4}\G' 0x2 "\\G is DOWNWARD-closed like \\A — every retreat moves TOWARD startpos, so a retreat CAN reach a position satisfying it and the analysis must decline"
 
 # ---------------------------------------------------------------------------
 # 4. [M6.2 wave B] THE COMPOSED STATE BUDGET REFUSES CLEANLY
