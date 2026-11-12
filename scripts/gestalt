@@ -11,7 +11,7 @@
 # docs (a pair-form tracker index over its soft cap, or the accessor unavailable: `scripts/entry --over-cap`, D192).
 # Plan-health rows (Frank 2026-11-10; thresholds are "default, unmeasured", declared as variables above the ROWS table):
 #   owner-waits  any row/stage has `waits: owner —` (count, oldest age = its status date, oldest tag)
-#   open         started + ready rows > 6 (started / ready / blocked counts)
+#   open         started rows idle > 7 days (count + the 3 oldest by tag and age); the raw started/ready/blocked count only when started+ready > 25
 #   ready-idle   a STATE:ready row ready > 7 days (the commit that set it; count, oldest age + tag)
 #   stale        a STATE:started row untouched > 21 days (newer of its status date and last commit touching its tag); undated rows are counted
 #   questions    owner.md "Questions for you": an unanswered entry (not "(answered", not "FYI") older than 24 h, or undated (said so, never mtime)
@@ -327,7 +327,9 @@ fi
 # --- plan health (Frank 2026-11-10: "waiting on me, open items count over 6, others?"). One parser: `scripts/entry --work`
 # (GESTALT_WORK_ENTRY overrides, a python script like GESTALT_ENTRY); its text is only SPLIT here into tag / state /
 # status date / waits-owner flag. Every threshold below is "default, unmeasured" (a first guess, tuned from what fires).
-OPEN_MAX=6         # started+ready rows above this print `open`                    (default, unmeasured)
+OPEN_MAX=25        # started+ready rows above this print `open` (raw count: only when unusually high) (default, unmeasured)
+OPEN_STALE_D=7     # a started row with no sign of life this many days prints `open`, naming the oldest (default, unmeasured)
+OPEN_NAMED=3       # how many of the oldest such rows `open` names
 READY_IDLE_D=7     # a ready row older than this many days prints `ready-idle`     (default, unmeasured)
 STALE_D=21         # a started row untouched this many days prints `stale`         (default, unmeasured)
 QUESTION_H=24      # an unanswered owner question older than this prints `questions` (default, unmeasured)
@@ -361,8 +363,7 @@ else
     [ -n "$r" ] && { set -- $r; L_ownerwaits="owner-waits: $1 (oldest $(fmt_d "$2"), $3)"; owbad=1; }
     ns=$(printf '%s\n' "$recs" | awk '$2 == "started"' | wc -l); nr=$(printf '%s\n' "$recs" | awk '$2 == "ready"' | wc -l)
     nb=$(printf '%s\n' "$recs" | awk '$2 == "blocked"' | wc -l)
-    L_open="open: started $ns / ready $nr / blocked $nb (started+ready > $OPEN_MAX)"
-    [ $((ns + nr)) -gt "$OPEN_MAX" ] && openbad=1
+    # `open` is set below, once the per-row ages are known (it names stale started rows; a raw count only past OPEN_MAX)
     # ready-idle / stale: one git pickaxe per ready/started row, in parallel. A ready row's age = the commit that set
     # `[TAG] STATE:ready` (its `ready:` line carries no date); a started row is as fresh as its newer sign of life
     # (status date or last commit touching its tag).
@@ -376,6 +377,15 @@ else
     rl=$(printf '%s\n' "$jo" | awk -v now="$now" -v lim=$((READY_IDLE_D * 86400)) '$1 == "ready" && $2 > 0 && now - $2 > lim { print $2, $3 }' | oldest)
     [ -n "$rl" ] && { set -- $rl; L_readyidle="ready-idle: $1 (oldest $(fmt_d "$2"), $3; > ${READY_IDLE_D}d)"; ribad=1; }
     sl=$(printf '%s\n' "$jo" | awk -v now="$now" -v lim=$((STALE_D * 86400)) '$1 == "started" && $2 > 0 && now - $2 > lim { print $2, $3 }' | oldest)
+    # open: actionable = started rows idle > OPEN_STALE_D days (oldest OPEN_NAMED by tag); the raw count joins only past OPEN_MAX
+    os=$(printf '%s\n' "$jo" | awk -v now="$now" -v lim=$((OPEN_STALE_D * 86400)) '$1 == "started" && $2 > 0 && now - $2 > lim { print $2, $3 }' | sort -n)
+    if [ -n "$os" ]; then
+        names=$(printf '%s\n' "$os" | head -n "$OPEN_NAMED" | awk -v now="$now" '{ printf "%s%s %dd", (NR > 1 ? ", " : ""), $2, int((now - $1) / 86400) }')
+        L_open="open: $(printf '%s\n' "$os" | wc -l) started row(s) idle > ${OPEN_STALE_D}d (oldest: $names)"; openbad=1
+    fi
+    if [ $((ns + nr)) -gt "$OPEN_MAX" ]; then
+        L_open="${L_open:+$L_open; }open: started $ns / ready $nr / blocked $nb (started+ready > $OPEN_MAX)"; openbad=1
+    fi
     nodate=$(printf '%s\n' "$jo" | awk '$2 == 0 { n++ } END { print n + 0 }')
     [ -n "$sl" ] && { set -- $sl; L_stale="stale: $1 started untouched > ${STALE_D}d (oldest $(fmt_d "$2"), $3)"; stalebad=1; }
     # a row whose date could not be found is counted and said, never hidden
