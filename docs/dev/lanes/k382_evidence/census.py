@@ -38,6 +38,8 @@ suffix so a sub-artifact's `RX__Q_*` stamps count, or the enclosing function -- 
       `run-pinned` prefilter: the @ table's row 3); a P2s member with any of those is UNEXPLAINED, except
       P2so: a cover find OUTSIDE the run by its offset against BASE's `req_run_maxoff` (k382cen) or
       reading no run byte; the find reader covers every E-find form the kit prints (cover_finds).
+      P2r (k382cen): an UNCUT run's `@` RE-POINTED (both sides carry one) to the member the tip's
+      run-pinned prefilter reads (the starred offset less BASE's pin `o`, plus its `at`; `pinned_at`).
   P3  the reqrun blocks (`*reqrun*` functions and lines naming them), `*MEMFN_LIBC`, `*RUN_WORDS`.
       Allowed on CUT, WHOLE or FLIP. MUST: WHOLE -> the tip names no `_reqrun_whole` and calls
       `rx_reqrun(`. P3v (c-simd only, with a P3 move): the one run part takes a kit SIMD form
@@ -63,6 +65,7 @@ artifact that did not move as declared, an empty task list, or (K35, a full run 
 --control NAME (a NEGATIVE control, never for a gate): `no-p3` stops classifying P3 lines (they become
 UNEXPLAINED); `no-norm` maps no abi digit back; `plant-in-run` (k382cen) rewrites every cover find on
 the tip to read the run's first position for its byte, so every P2so artifact must become UNEXPLAINED.
+`plant-p2r` (k382cen) moves the tip's `@` one position off the pinned member: every P2r must be UNEXPLAINED.
 `plant-p4-move` (k382cen) plants a -> run-pinned prefilter stamp move on every arm: off CUT and CLIP
 it must be UNEXPLAINED.
 Each must turn the verdict red.
@@ -99,7 +102,7 @@ ARMS = [
 ]
 IR = ["--features", "all", "--engine=vm", "--emit-ir"]
 FACTS = ["--features", "all", "--emit-facts=byte,utf8"]
-POPS = ["P1", "P2", "P2a", "P2b", "P2s", "P2se", "P2sd", "P2so", "Aa_K", "Aa_noK", "P3", "P3v", "P4", "P4c", "P4f", "P5", "P5k", "used",
+POPS = ["P1", "P2", "P2a", "P2b", "P2s", "P2se", "P2sd", "P2so", "P2r", "Aa_K", "Aa_noK", "P3", "P3v", "P4", "P4c", "P4f", "P5", "P5k", "used",
         "Fret"]   # P2 (unsplit): the facts listing
 FLOOR_ARMS = ("c-default", "c-vm")
 FLOOR_POPS = ("P1", "P2a", "P2b", "P3")
@@ -369,6 +372,26 @@ def clip_of(f):
     return False
 
 
+def pinned_at(vb, vn, n, f):
+    """1 iff an UNCUT run's REQ_RUN `@` moved to the run member the tip's run-pinned prefilter reads
+    (k382cen; §4.1's `@` table row 2 on a run of any length): hex and mask unchanged, `@` on both sides,
+    and the tip's `@` == the starred offset of `*_PREFILTER_OFFSETS` - BASE's pin `o` + its `at`
+    (the `run_pin` fact `o` or `o:at+len`). Any other reader (reqrun block, cover) is not credited."""
+    if hexof(vb) != hexof(vn) or vb.split("/")[1:] != vn.split("/")[1:] or "@" not in vb or "@" not in vn:
+        return False
+    if CONTROL == "plant-p2r":                       # k382cen: the tip's @ planted one position off
+        vn = re.sub(r"@(\d+)", lambda m: "@%d" % (int(m.group(1)) + 1), vn)
+    if not re.search(rb'^#define \w+_PREFILTER "run-pinned"', n, re.M):
+        return False
+    m = re.search(rb'^#define \w+_PREFILTER_OFFSETS "([^"]*)"', n, re.M)
+    star = [int(x[:-1]) for x in m.group(1).decode().split(",") if x.endswith("*") and x[:-1].isdigit()] if m else []
+    pin = re.fullmatch(r"(\d+)(?::(\d+)\+\d+)?", f.get("run_pin", ""))
+    at = re.match(r"\d+", vn.split("@")[1])
+    if len(star) != 1 or not pin or not at:
+        return False
+    return int(at.group(0)) == star[0] - int(pin.group(1)) + int(pin.group(2) or 0)
+
+
 def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
     """(pops moved set, problem or '', must list, flags) for one .c arm of one pattern."""
     if CONTROL == "plant-p4-move":    # k382cen: a run-pin route move planted on every arm (off-rule unless clip/cut)
@@ -447,6 +470,8 @@ def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
                 if why:      # ruling 2: no @ only where NO search reads a run position (table row 3)
                     unexp.append("P2s refused: %s lost its @ but the tip renders %s" % (name, why))
                     continue
+            elif not cut and pinned_at(vb, vn, n, f):
+                p = "P2r"
             elif not cut:
                 p = None
             else:
@@ -708,7 +733,7 @@ def main():
     ap.add_argument("--sample", type=int, default=0, help="a SAMPLE run of N patterns (no K35 floor)")
     ap.add_argument("--sample-seed", type=int, default=0, help="the sample's offset (a different slice)")
     ap.add_argument("--patterns-file", action="append", default=[], help="raw patterns, one per line (added)")
-    ap.add_argument("--control", default="", choices=["", "no-p3", "no-norm", "plant-in-run", "plant-p4-move"])
+    ap.add_argument("--control", default="", choices=["", "no-p3", "no-norm", "plant-in-run", "plant-p4-move", "plant-p2r"])
     ap.add_argument("--no-xarms", action="store_true", help="skip the identity gate's --extra arms")
     ap.add_argument("--no-composition", action="store_true", help="skip the composition stream")
     ap.add_argument("--abi", default="100:101", help="OLD:NEW, the abi event (NEW's digits mapped back)")
