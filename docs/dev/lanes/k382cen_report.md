@@ -217,4 +217,13 @@ These counts are in the sheet's §5.1 addendum `[k382cen]`.
 | ruling on `z(a){3,}?`: trace the cause; declared -> rule, addendum count over 3 shards, answers, plant | yes: §4.2 clip, P4c, all three shards queued (595/596 beside 594), 64 subjects 0 differ, plant-p4-move |
 | report sections per k382cen_deliver.txt, an `OWED:` line, lanecheck DONE rc=0 | yes |
 
+## STATE AT HANDOFF
+
+- Branch lane/memfn-k382 is committed. The census changes are in `docs/dev/lanes/k382_evidence/census.py`,
+  the README, the sheet's §5.1 addendum `[k382cen]`, this report, and the history index entry.
+- Gate jobs 593-596 are GREEN on this branch (table above). 604+ (reach, memfn, plants, mech) are the
+  kit manager's chain.
+- No rulings file. The kit manager's rulings were applied: z declared as P4c; P2r with its three
+  conditions.
+
 OWED: none
