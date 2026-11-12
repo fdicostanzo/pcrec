@@ -28,7 +28,7 @@ the bump's own commit.**
   match needs at least two bytes (the WIDTH row `min-width`: the `width` fact's `bmin` on the DFA routes, the
   root's `pcrec_minw` on the VM) answers NOMATCH where fewer remain past `search_from`, ahead of the pre-check;
   the forward DFA scan's start-state skip block ends the search where fewer remain past its landing; the
-  attempt loop's `start_max` and the VM attempt loop's bound end that many bytes before the subject's end.
+  VM attempt loop's bound ends that many bytes before the subject's end.
   The VM's ceiling row keeps its stamped check. No struct offset moves, no `rx_info` member is added or
   changed, and no answer moves.
 - **`rx_info.abi` was `100` on every artifact ([PFFIX] the empty engine on an accept-free machine, 99 -> 100,

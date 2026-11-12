@@ -15201,11 +15201,8 @@ static void emit_target(StrBuf *c, const char *p, int tgt)
  * captures, no frames and no trail of its own. [OPT-REVEND] L0: the front is
  * shared by the LOCATE rows' two walks on CAND_ROUTE_ATTEMPT, `composite`'s
  * (`emit_attempt`) and `empty`'s (`emit_empty_attempt`), so the empty body
- * keeps the text the old early exit wrote after it. [FIND-MINW] `*minw` is
- * the width the front checked (`cand_front_min_width`), 0 where it checked
- * none (the attempt loop's `start_max` stops on it). */
-static const char *attempt_entry(Ctx *cx, const char *fn, PcrecEntry ent,
-                                 long long *minw)
+ * keeps the text the old early exit wrote after it. */
+static const char *attempt_entry(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     StrBuf *c = &cx->job->csb;
 
@@ -15226,14 +15223,15 @@ static const char *attempt_entry(Ctx *cx, const char *fn, PcrecEntry ent,
      * kept candidate. The `\G` dispatch below keeps comparing `start` with
      * `search_from` itself (Claim 2'). */
     const char *first = "search_from";
-    *minw = 0;
     if (cand_finish_of(cx) != CAND_ROUTE_VM) {
         pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
         /* [FIND-MINW] `emit_unanchored`'s order: after the clamp, before
-         * the pre-check. */
-        *minw = cand_front_min_width(cx);
-        if (*minw)
-            pcrec_emit_min_width_check(c, "    ", "search_from", "subject_length", *minw);
+         * the pre-check. No width is known on this route today (the `width`
+         * fact is sealed on the unanchored machine only), so WIDTH reads
+         * `none` here and nothing is emitted. */
+        long long minw = cand_front_min_width(cx);
+        if (minw)
+            pcrec_emit_min_width_check(c, "    ", "search_from", "subject_length", minw);
         first = pcrec_emit_req_byte_check(cx, c, "    ", "search_from",
                                           "subject", "subject_length");
     }
@@ -15249,8 +15247,7 @@ static const char *attempt_entry(Ctx *cx, const char *fn, PcrecEntry ent,
 static void emit_empty_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
 {
     empty_finish_ask(cx);
-    long long minw;
-    (void)attempt_entry(cx, fn, ent, &minw);
+    (void)attempt_entry(cx, fn, ent);
     pcrec_sb_puts(&cx->job->csb,
                "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                "    return 0;\n}\n");
@@ -15264,8 +15261,7 @@ static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
     Dfa *d = &job->dfa;
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
-    long long minw;
-    const char *first = attempt_entry(cx, fn, ent, &minw);
+    const char *first = attempt_entry(cx, fn, ent);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    /* ---- STATE MACHINE: this engine tries the pattern at one start\n"
@@ -15480,16 +15476,8 @@ static void emit_attempt(Ctx *cx, const char *fn, PcrecEntry ent)
 
     PCREC_CAND_TRACE_REC("BOUND", CAND_ROUTE_NAME(bsel.route), bound->tok, "attempt-bound");
     CAND_HIT(CAND_SLOT_BOUND, &bsel, bound, "attempt-bound");
-    /* [FIND-MINW] no match starts with fewer than `minw` bytes left, and
-     * the front's check has proved `minw` of them past `search_from`, so
-     * the unbounded row's end moves back by it without wrapping. */
-    if (minw && bound->u.bound.one == CAND_ONE_NONE)
-        pcrec_sb_printf(c, "    size_t start;\n"
-                     "    const size_t start_max = %s - %lluULL;\n",
-                     bound->u.bound.start_max, (unsigned long long)minw);
-    else
-        pcrec_sb_printf(c, "    size_t start;\n"
-                     "    const size_t start_max = %s;\n", bound->u.bound.start_max);
+    pcrec_sb_printf(c, "    size_t start;\n"
+                 "    const size_t start_max = %s;\n", bound->u.bound.start_max);
     pcrec_sb_printf(c, "    for (start = %s; start <= start_max; start++) {\n", first);
 
     /* [K50] SITE 2 OF THE THREE "TRY THE NEXT START" MECHANISMS. K49 fixed the

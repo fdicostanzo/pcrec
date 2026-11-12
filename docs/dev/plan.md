@@ -467,7 +467,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: docs/design/plan_row_bodies/NEVER-MATCH.md; docs/design/span_arms.md §5.2; [REWRITE-ADJ] (2026-11-09 note); [IFACE-PUSH]; [COND-FAMILY] (D193: speed leads, so conditionals stay refused until the family order reaches the node; no rework either way)
 - [FIND-MINW] STATE:not-started — searches stop where too few bytes remain for any match (minimum width)
   filed: 2026-11-10 Frank ("File"), after asking whether the kit's find window gets the minimum required bytes; it does not
-  status (2026-11-10): UNSCHEDULED. pcrec computes the minimum width but only the VM stops early on it; kit find sites end at n - end_back (0 or 1, D11's holdback) and the DFA scan loop ignores it (evidence in Today below)
+  status (2026-11-12): part A BUILT on lane/minw (abi 103): WIDTH row `min-width` on every route; DFA unanchored + VM entry, DFA skip landing, VM attempt bound stop at W; ATTEMPT/cover/rev-end/landmark/kit sites not reached; kit fact drafted for R-40 (minw_report.md)
   trigger: (D77) a bench case where the search tail past the last possible match start shows in the profile: short subjects (lines/fields searched one at a time) with a minimum width that is a sizeable share of the subject, or find-all whose final failing search dominates
   refs: memfn/include/memfn.h:751 (end_back); D157 (facts, not methods); D11; [ENGINE-WHY] (unrelated sibling filed the same day)
   Today: `pcrec_minw`/`pcrec_cwmin` (src/opt/callgraph.c:333; facts row `width [7,inf)` for `abc[0-9]+xyz`); VM early stop src/gen/emit_vm.c:3804, 6709, 9651; `PcrecFind.holdback` src/gen/memfn_sites.h:282, emit_dfa.c:7141; sites trim only by their own term (`memchr(subject + pos + 1, 'b', n - pos - 1)`)
