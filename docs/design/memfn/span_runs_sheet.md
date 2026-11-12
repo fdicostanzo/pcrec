@@ -648,6 +648,34 @@ lands first, 3.0b's ASK-2 is void). K38-3 rides with K38-2 or follows it. K38-1 
     **1m** (admission or NEXT pick moved with K unchanged) beside population 1 (K moved): counts in
     `docs/dev/lanes/k382_report.md` "Movers"; the full count is the census gate's.
 
+  **ADDENDUM `[k382fix]` (fix lane k382fix, 2026-11-11, review 2026-11-11 r1 k382 as ruled; no rev
+  bump): what the fixes move, against BASE d81ebd294** (census `docs/dev/lanes/k382_evidence/census.py`
+  sample 300, 0 unexplained, GREEN; counts in `docs/dev/lanes/k382fix_report.md` "Movers re-count"):
+  - **P4f REVERTED (F2).** Dominance reads the kit's run reply (its scan and verified stretch,
+    asked through `req_pres_ask` with the proof before its run verdict), not the whole stored run,
+    so the run-pinned long runs §4.2 counted as `dominated` -> `emitted` flips stay `dominated`, as
+    at BASE (`Connection refused by remote host`, `error: segmentation fault at`,
+    `[a-z]abcdefghijklmnopqrstuvwx[0-9]`). P4f measured 0 on the sample (k382: 2); population 4 is
+    the clipped pin alone. A pinned stretch that does not cover the reply keeps its pre-check.
+  - **Fret, the `req_run` and `req_run_maxoff` listing rows RETIRED (F5, Q7 as RULED)** on every
+    facts listing; `@` has one meaning, the stamp's. **`used`**: the readers that asked `req_run`
+    ask `req_whole_run`, so its `used` reads `yes` wherever `req_run`'s did (the k382 addendum's
+    "the `used` column does not move" sentence is superseded: the landmark mass now reads
+    `req_whole_run`, the same value). Declared and counted (census `Fret`, `used`).
+  - **P2s narrowed (F3).** The cover row of §4.1's `@` table resolves the placement from the
+    find's offset: where every placement of the run containing the find agrees on the position,
+    `@` is that position (`abcd[0-9]abcd` stamps `61626364@1`, as BASE); only a find outside the
+    run, or placements that disagree, drop `@`. The 2s sentence above also covers the
+    `landmark-walk`, `rev-end` and `one-attempt` artifacts, which drop `@` by row 3 too (F19).
+  - **P5 (F4).** `req_note_run` and the kit's run-part comment name the WHOLE run and, where the
+    verified stretch is partial (WINDOW mode), add the compared positions ("each hit compares its
+    positions LO..HI"); a whole stretch keeps BASE's text. P5k unchanged.
+  - **F13, trace only.** `mf_link.member` on the run span is 0 (P3 wrote 1); no emitted byte moves.
+  - **F1, no pcrec mover.** The generic row's run floor is the shared `kit_run_floor`; pcrec renders
+    no `on_miss_leaves` 0 site, so only G2's generic pass reads it.
+  - **NOTED (F11).** The verify-NO prefilter member now asks `kit_run_decide` (`kit_run_member` has
+    one caller): an unrecorded step toward §6 Q6's general form (1), recorded here.
+
 ### 5.2 What the kit measures (memory `pcrec-new-method-needs-measurement-card`)
 
 R-38 adds no new find, scan or verify METHOD: the finds and compares are today's rows over cube
