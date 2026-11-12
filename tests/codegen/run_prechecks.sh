@@ -226,6 +226,35 @@ for pat in '^abc' '\Aab+c' '^(?:ab|cd)$'; do
     fi
 done
 
+# §1.3b — THE MINIMUM-WIDTH STOP's EMITTED TEXT ([FIND-MINW], tuning.md §2.55;
+# lane s1fix, review r1-s1 CHECKS-2). The positive replacement for what §1.1b
+# and §1.2 gave up when the unanchored VM artifact began declaring
+# `attempt_max`: each site's text is PRESENT by default and ABSENT under the
+# test-only lever `--harness=no-min-width` (build/pcrec-harness), so a
+# deleted emitter line and a lever that stopped reaching it both go red.
+# Sites: the VM entry check and the VM attempt loop's bound (`a(b|c)+d`, W=3),
+# and the DFA front check and `pf_close`'s block check (`cat|dog|...`, W=3).
+HBIN="${PCREC_HARNESS:-$(dirname "$PCREC")/pcrec-harness}"
+if [ ! -x "$HBIN" ]; then
+    bad "[1.3b] no pcrec-harness at $HBIN -- run \`make\` first"
+else
+    mw_row() {   # mw_row <label> <pattern> <ERE of the site> [engine arg]
+        local label="$1" pat="$2" re="$3" eng="${4:-}" on="$WORKDIR/mw_on.c" off="$WORKDIR/mw_off.c"
+        emit "$on" "$pat" $eng || { bad "[1.3b] $label: $pat refused"; return; }
+        pcrec_run "$HBIN" -p rx --features all $COVER_DENY $WALK_DENY $eng --harness=no-min-width \
+            -o "$off" --pattern "$pat" >/dev/null 2>&1 || { bad "[1.3b] $label: $pat refused under the lever"; return; }
+        if grep -Eq "$re" "$on" && ! grep -Eq "$re" "$off"; then
+            ok "[1.3b] $label: $pat emits the stop by default and not under --harness=no-min-width"
+        else
+            bad "[1.3b] $label: $pat -- the stop's text must be present by default and absent under the lever"
+        fi
+    }
+    mw_row "VM entry check"      'a(b|c)+d' '^    if \(subject_length - search_from < 3ULL\) return 0;$' --engine=vm
+    mw_row "VM attempt bound"    'a(b|c)+d' '^    const size_t attempt_max = subject_length - 3ULL;$' --engine=vm
+    mw_row "DFA front check"     'cat|dog|cow|calf|camel' '^    if \(subject_length - search_from < 3ULL\) return 0;$'
+    mw_row "DFA pf_close check"  'cat|dog|cow|calf|camel' '^ {8,}if \(subject_length - [a-z_]+ < 3ULL\) return 0;$'
+fi
+
 # §1.4 — THE POPULATION FLOOR over the shipped corpus, so §1.1's
 # biconditional is not a statement about seven hand-written patterns. Every
 # `pattern` line of one corpus file that leads with `^`, forced onto the VM.

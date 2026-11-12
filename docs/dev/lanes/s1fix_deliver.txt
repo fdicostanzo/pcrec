@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s1fix_report.md
+sections: STATE AT HANDOFF; CHANGES; OWED
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/s1fix_deliver.txt; docs/dev/lanes/s1fix_rulings.md

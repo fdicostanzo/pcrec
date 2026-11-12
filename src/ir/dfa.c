@@ -2097,7 +2097,7 @@ bool pcrec_dfa_accepts_nowhere(const Dfa *d)
  * a pattern ending in a lookahead that needs one (`z(?=a)`) has a dead `s0`
  * and live seeds ([UCP] U2). One derivation for the empty LOCATE row on the
  * unanchored route (`unanch_start`, src/gen/emit_dfa.c) and the
- * `never_matches` fact (src/facts/widths.c). */
+ * `never_matches` fact (src/facts/kset.c). */
 bool pcrec_dfa_pair_matches_nothing(const Dfa *fd, const Dfa *rd)
 {
     if (fd->s0 < 0 || pcrec_dfa_accepts_nowhere(fd)) return true;
