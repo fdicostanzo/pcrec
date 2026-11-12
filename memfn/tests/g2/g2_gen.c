@@ -2603,6 +2603,26 @@ static void refusal_table(void)
                        nc[i].ok ? "accepted expected" : "refusal expected", e ? e : "");
         }
     }
+    /* an analysis object's kinds (SEAM-2): every kind STATES its presence, so
+     * a zero-initialized mf_akind (UNSTATED) and a state 3 are refused at
+     * mf_art_begin; PRESENT and ABSENT are accepted */
+    {
+        static const uint32_t rates[256] = { 1 };
+        struct { const char *name; mf_akind k; int ok; } ac[] = {
+            { "zero-initialized (UNSTATED)", { "byte-rate", 1, 0, 0, NULL }, 0 },
+            { "state 3 (no such state)", { "byte-rate", 1, 3, 0, NULL }, 0 },
+            { "ABSENT", { "byte-rate", 1, MF_KIND_ABSENT, 0, NULL }, 1 },
+            { "PRESENT", { "byte-rate", 1, MF_KIND_PRESENT, 1, rates }, 1 },
+        };
+        for (size_t i = 0; i < sizeof ac / sizeof ac[0]; i++) {
+            mf_analysis an = { MF_ANALYSIS_LIST_V, 1, &ac[i].k };
+            mf_art *art = g2_art_begin(&g_arena, "g2k", 0, NULL, &an);
+            const char *e = mf_art_error(art);
+            int refused = e && *e;
+            api_result(refused != ac[i].ok, "analysis kind %s: %s (\"%s\")", ac[i].name,
+                       ac[i].ok ? "accepted expected" : "refusal expected", e ? e : "");
+        }
+    }
     /* the option registry: empty at R4a; NULL and "" valid; unknown names refused */
     {
         size_t n = 99;

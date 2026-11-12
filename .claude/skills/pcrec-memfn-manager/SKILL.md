@@ -114,8 +114,8 @@ Always on:
    `worktrees/.mgr/waiting_on.kit` (gitignored, one line per wait,
    `<since HH:MM> <session> <thing>`; you keep it current as main keeps
    owner.md's). Every tick first runs `scripts/gestalt --owner kit` (step 0;
-   its 'load' and 'sessions' lines go in the one-line reply only when
-   unusual: load > nproc, a session gone, CI red), then `scripts/monread kit` and checks
+   it prints only items past threshold, nothing when normal; any line it
+   prints goes in the one-line reply; `--all` is the full status), then `scripts/monread kit` and checks
    that list: the deadlock check (Frank, 2026-10-09) is a lookup, not a
    recollection. Never chase your own lanes this way; scripts watch them.
    Delete the cron at close (§7).

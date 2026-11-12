@@ -3280,3 +3280,77 @@ the compiler, and is never adopted silently. Proposed for main to file
     - A family token in a list = its default list (amd64 -> x86-64, arm64 -> armv8-a).
     - The listing's source is mf_targets / mf_families / mf_host_family, with each row's doc text the kit's.
     - units.md text spelling the family x86-64 or the target aarch64 predates this.
+- ack: R-37 (target seam U2, landing with pcrec's U3): taken on kit branch lane/memfn-u2, cut from main 7b4e3cc7a, one opus build lane.
+  - Its FIRST deliverable, before any code, is the U3 interface sheet, committed and relayed to main: the entry names, the token field on the art and site, the family-guard and region text entries, and the TARGETS stamp value.
+  - Expected starting points: K0's mf_target_parse / mf_target_c_of / mf_family_c_of. The sheet is binding once posted.
+  - Box: U2's gates queue after span_pick 3.0a's (running now). The joint landing and the abi re-pin are main's, per R-37.
+- done: R-35 span_pick stage 3, unit 3.0a: branch lane/memfn-s30a @ 6dc54e383. Reports docs/dev/lanes/s30a_report.md and s30afix_report.md.
+  - Gates, all GREEN on worktrees/s30a at that tip; job files in /var/tmp/pcrec-pcrec/scratch/memfn/s30a/jobs/; queue keys kit-s30a-*:
+    - 500 strict; 501-503 identity (three shards); 504 reach (a retry: the first run hit the basis.py tuple bug, a job defect).
+    - 505 make test (a retry: the first run hit PL14, a line-numbered plan cite, fixed in 6dc54e383).
+    - 506 plants, 26/26 RED as designed (a retry: the first run failed POPULATION-OVER 29>26 on the job's own tail reprint, a job defect).
+    - 507-509 mech (three parts).
+  - Unit 3.0b, the next build, waits for your go, as does the inline one-member finder (D190 row 1).
+- ack: R-38 (span_arms L2/L3: the run as one uncut span with signed offsets; Part B's negative omin and signed head_max). Taken.
+  - First deliverable: the interface sheet (what pcrec reads from the reply: fields, the entry at fact-derivation time, the verified-extent fact, the signed omin/head_max contract and the bound). Written NOW by a design lane cut from the joint U2+U3 tree (lane/u3mech 404cff6ea), because both touch memfn.h's art/site contract. It is posted for main and one readiness critic before code.
+  - Build: Parts A and B land TOGETHER on one kit branch with one MF_SITE_ABI event, after the 3.0a merge (both rewrite span_pick's pick and verify path).
+  - Order: U2 gates (running) -> U2+U3 landing (main) -> 3.0a re-merge and gates -> R-38 sheet -> build. 3.0b follows its own go.
+- done: R-37 target seam U2 (kit half; lands JOINTLY with pcrec's U3): branch lane/memfn-u2 @ edf78bcbf.
+  - It holds main's lane/u3mech, so u3mech fast-forwards to it.
+  - Reports: docs/dev/lanes/u2_report.md, u2rev_report.md (review r5 xarch FIX-NOW), u2house_report.md, s3002fix_report.md, simdskip_report.md, s2977fix_report.md.
+  - Gates, all GREEN in worktrees/u3mech, base 424ddc742 (U3 alone); job files in /var/tmp/pcrec-pcrec/scratch/memfn/u2/jobs/:
+    - 560 strict.
+    - 561-563 identity: 0 default movers vs U3 alone. 561 ran at 0fbbd1601; 562-563 at 404cff6ea, after u3aside's target set-aside.
+    - 564 SIMD movers (header lines only); 565 make test; 566 mech1.
+    - 090 and 091 (mech2, mech3) at e6829768b.
+    - 092 mech4 at e6829768b: 40 of 41 rows matched. The 41st, S2977, was re-declared DETECTED on targets_check.c's region-needs row and re-measured alone by job 089 at edf78bcbf: 1 row, DETECTED, 0 anomalies.
+    - S3002 measured DETECTED by main's 480-main-u3mech-mech at e09a4802f.
+  - Job defects fixed on the way: 561's base (7b4e3cc7a -> 424ddc742), 567's time cap (3600 -> 7200 s).
+  - Kit-side fixes on the way: simdskip (a target whose facts failed is not compiled, in g2simd and memfntargets), S722, S725, S2977 and S3002 re-measured.
+  - MF_SITE_ABI 26; pcrec abi 98 (main's U3).
+- done: R-35 3.0a, re-delivered after code review r1 s30a and the post-U2+U3 merge: branch lane/memfn-s30a @ f5c2f416a.
+  - Content: the 3.0a build, s30arev (every FIX-NOW/DOC item of r1 s30a), and the merge of main cf578177e (ba3933ba4). The ledger cites decisions.md D190 (01a1bbc7c).
+  - Reports: docs/dev/lanes/s30a_report.md, s30afix_report.md, s30arev_report.md, s30amrg_report.md.
+  - Gates, all GREEN on worktrees/s30a at f5c2f416a vs base cf578177e; job files in /var/tmp/pcrec-pcrec/scratch/memfn/s30a/jobs/:
+    - 500 strict.
+    - 501, 502 and 093 identity (three shards; 71 arms, one per CPU target). 502 was a retry: the first run hit the generic-target arm's vacuous-arm refusal, a job defect, and that arm is now a direct generic == plain check.
+    - 094 reach; 095 make test; 096 plants; 097-099 mech (64 rows).
+  - Zero emitted bytes vs main.
+- ack: R-38 K38-1 started 2026-11-10 on lane/memfn-k381 (cut from main 1c043835d, sheet rev 1.2 carried in); lane k381. Zero-mover by charter; gates 510-519 follow its delivery.
+- done: R-38 K38-1, branch lane/memfn-k381 @ b8ca72ccb.
+  - Content: kit_run_decide is the one run decision, and every run reader asks it: P3 scan/stretch, twin mass, the window family's pre-check run member, and the RQ-2 ranking (option A). It moves ZERO emitted bytes, with no MF_SITE_ABI or abi change.
+  - Carries the R-38 sheet rev 1.3 (docs/design/memfn/span_runs_sheet.md), code review 2026-11-10 r1 k381 with rulings (all FIX-NOW applied by lane k381fix), and a merge of main 25c5094ec (the differ-floor re-pin).
+  - Reports: docs/dev/lanes/k381_report.md, k381fix_report.md.
+  - Checks: decider_census section D counts every use of kit_run_member/kit_run_decide (bypass and alias plants red). The new tests/memfn/run_decide_check.c reads each reader's position and stretch.
+  - Sabotage: S1095/S1096 re-aimed onto the decision, S1107 kept, new S3005 (twin mass) and S3006 (ranking bypass).
+  - Gates, all GREEN on worktrees/k381 vs base main 25c5094ec; jobs in /var/tmp/pcrec-pcrec/scratch/memfn/k381g/jobs/: 530 strict, 531-533 identity (71 arms, a per-target arm each), 534 reach, 535 make test, 536 plants, 537-539 mech.
+  - Kit ruling carried to K38-2a: the plan's in-run stop becomes a counted reader of kit_run_decide before the run-tie-left lever.
+- ack: R-38 K38-2a started 2026-11-10 on lane/memfn-k382a (from main 7658295b3); lanes k382a (build) and k382o (D27 occurrence oracle, blinded). 3.0b follows K38-2a.
+- notice: 2026-11-10 — LEDGER CLOSING PASS (Frank's close-first ruling; each claim verified against main by a read-only lane, /var/tmp/pcrec-pcrec/scratch/memfn/ledgerclose/close_lines.md). Each request below is closed; any part still open is named with the row that now tracks it.
+  - done: R-17 (closing line, 2026-11-10) — set-FIND shapes served by the window family, not per-shape rows: R-17 interface superseded by R-18, landed via R17-b' B0..B4' (608dc8b44, 6800f833b, 0ec28bddd, 82e48e806, d18cee085, 5893e47dc) and D172 S2/S3 (c4164f15b, 0f425c2d0); (a) no separate row built, design in setfind.md; (b) F2, the VM hat at |S|=1, NOT built, waits [MEMFN-REGIME] (plan.md [MEMFN-REGIME], resp 2881).
+  - notice: R-17 — open: F2 (VM hat |S|=1 -> V1), tracked as [MEMFN-REGIME] STATE:not-started.
+  - done: R-18 (closing line, 2026-11-10) — the window search landed through R17-b' B1-B3b (0ec28bddd, 82e48e806, d18cee085) and D172 S2/S3 (c4164f15b, 0f425c2d0); the stream-of-origins reply form and the per-site facts were restated by R-29 (D172), which supersedes that part; presence span class and art_begin analysis slot per the 2026-10-16 amendment landed with B1-B3b; sabotage S871-S880 as used.
+  - done: R-19 (closing line, 2026-11-10) — call mode (`mf_site.body`) and start hook landed: B1 6800f833b (abi 12), R-23 3f04dff85 (UNSTATED refused, abi 14), B2 0ec28bddd; site_kind superseded by the consumer kind (Q-WR-8, abi 13); mf_measures via R-20; the iterator call mode (spelled MF_BODY_PARAM in code, ITER in the request) is RESERVED for R17-b'' and not stated by any builder.
+  - notice: R-19 — open: iterator call mode (R17-b''), tracked as plan.md [FINDALL-NEXT]/R17-b'' order item (6).
+  - done: R-20 (closing line, 2026-11-10) — R-MS1/2/3/5 and R-MS4's keys landed: B1 6800f833b (mf_measures, consulted, form hashes, reader declarations, cards), [MEASURE-SET] M0 813f43ec8, set digest fix 1f277f27f; R-MS4's safe directions are due at M2 and still `-` in kit-grid.tsv.
+  - notice: R-20 — open: R-MS4 safe directions (`env` column), tracked as [MEASURE-SET] M2.
+  - done: R-21 (closing line, 2026-11-10) — ST1-ST3 and PR-1..PR-7 landed through R17-b' B1-B3b (6800f833b, 0ec28bddd, 82e48e806, d18cee085) and D172 S2/S3 (c4164f15b, 0f425c2d0); superseded in form by R-29; ST5 libc deny is future work (Q-WR-7).
+  - notice: R-21 — open: ST4 (priced pre-scan mover) and ST6 (R17-b' dispatch rows), no landing found; tracked with [MEMFN-REGIME], not separately.
+  - done: R-31 (closing line, 2026-11-10) — the kit's part answered: no vector form for the two-byte window of two sets, so the cell records the gap on both layers (resp:3068; main c5fecdf89); the bench verdict run is main's, tracked as [COVER-PRICE-WITNESS].
+  - notice: R-31 — open: pre-registered cell in the vrun SIMD verdict run is not in vrun_bench_request.md; tracked as [COVER-PRICE-WITNESS], main's.
+  - done: R-33 (closing line, 2026-11-10) — all four parts delivered as a study (docs/dev/lanes/r33_report.md, r33_sim/): 90 % of 3,443 decision units agree, the cross-check found picks measured slower at 6 job-588 D-hors sites and 4 rule-pilot sites; merged to main 884996ef6; its design follow-up is span_pick (R-35). Nothing open.
+- ack: R-39 (g2 shard selector, Frank's go 2026-11-11, an approved exception to close-before-start). Taken 2026-11-10 23:35: lane r39 (sonnet) on lane/memfn-r39 from main 60bd68154; build now with light checks, the split-vs-unsplit equality run is a gate job queued behind the full suite and the kit's K38-2a/kclose gates.
+- done: R-39 (g2 shard selector) — branch lane/memfn-r39b @ 119e1b6f5 (carries lane/memfn-r39). `memfn/tests/run_g2.sh --quick --part K/N` (+ `--units`, `--list-units`) over the declared units in memfn/tests/g2_units.tsv (simd split into 5 arm units; weights measured from job 561 on the 16-core dev box at G2_JOBS default). `g2_parts.py gather` = the exact-population check (each unit exactly once, counted) + the row floors (a)-(e) summed over the parts; `g2_parts.py reweight`/`predict` rewrite the weights from any gather log. Validation: 563 strict, 564 g2split (unsplit vs N=4: union and verdicts identical, gather green, parts 110/148/150/144 s, max/min 1.36 under the job's 1.5 bound), 565 make test, all GREEN; 560-562 on the first cut also GREEN. Reports docs/dev/lanes/r39_report.md + r39b_report.md (Makefile spelling proposed there: G2_PART=K/N passes --part, plus a gather target; the Makefile and tests/ci/cloud_kinds.tsv are pcrec's). Note: cloud runners are 4-core; re-weight from the first cloud gather log.
+- done: R-38 K38-2a (the G2 presence family + probe lever + the D27 occurrence oracle; the in-run stop a counted reader of kit_run_decide) — branch lane/memfn-k382a @ 37a6b36ed. Reports docs/dev/lanes/k382a_report.md, k382o_report.md (oracle, D27 cell), k382afix_report.md; code review docs/dev/reviews/2026-11-10-r2-k382a.md (ruled; fixes ORC-1/2/4, FAM-1/3/4/5, EMIT-2; FAM-2, ORC-3, EMIT-3 carried into K38-2 as sheet §5 PLAN (c)-(e)). Validation, box queue 2026-11-11, base main 7658295b3: 550 strict, 551-553 identity (3 shards; 0 movers), 554 reach (21 arms, base = head; re-run after a job-script path fix), 555 make test, 556 plants (S3007-S3012 RED), 557-559 mech (3 shards); all GREEN. The only memfn/src change is window.c's kit_fail text (no emitted byte). K38-2 (lane/memfn-k382) builds on this branch.
+- done: kclose (S0 closes: SEAM-2, R-13 a+b, XARCH-NEEDSOK, PIN-MSG-DEPTH) — branch lane/memfn-kclose @ 2271eed10 (main dc1988069 merged in). What it delivers:
+  - SEAM-2: `mf_art_begin` refuses an analysis kind whose presence is UNSTATED (compose.c `analysis_check`; sabotage S3015, suite g2gate).
+  - R-13a: TRACE_VARIANT_RECORDS_FLOOR pinned in scripts/emit_sweep.py from job 580's counts (c-default/c-vm: plain 716435/359366, lowsize 908058/385834, lowdfa 717799/359366, lowthr 799133/385580, lowboth 878139/385834); 580's compare reads the definition (anchored).
+  - R-13b: the `--list-axes` memfn-simd wording; a declared dumps mover (row 2) in every identity arm that carries dumps.
+  - XARCH-NEEDSOK: memfn/tests/check_targets.sh compiles each level's rendered helpers under its declared needs; S726 is re-aimed from UNDETECTED to COMPILE-CATCH.
+  - Also: emit_sweep's per-variant TAG floors are re-pinned, byte and utf8. They were stale on MAIN since ebcc10aa1 (trail checkpoints, K134/D183; main ruled the growth wanted, 2026-11-12).
+  Reports: docs/dev/lanes/kclose_report.md, kclose2_report.md, kclose3_report.md, kclose4_report.md, kclose5_report.md. Validation, box queue 2026-11-11/12: 570 strict, 571-573 identity (3 shards), 574 reach, 575 make test, 576 plants, 577-579 mech (3 shards), 580 r13a; ALL GREEN, after these retries:
+  - 572: start-arm dumps mover declaration.
+  - 575: the S726 header named ISAs.
+  - 579: S726 COMPILE-CATCH.
+  - 580: the regex and the floors.
+  597 (utf8 sweep) movers 0. Commits after 575's make test touch only scripts/emit_sweep.py pins, tests/mech S726/CLAUDE.md and reports; the emit_sweep self-test passes (28/0).

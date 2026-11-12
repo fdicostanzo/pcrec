@@ -50,6 +50,12 @@
 # Every level's family token names a family, and its test_march is a target
 # token whose row admits it. LEVELS_DEF points at another levels table.
 #
+# THE NEEDS SUFFICE ([XARCH-NEEDSOK]): each level's RENDERED helpers (G2's
+# SIMD generator, at the widest level's test_march) must compile at the floor
+# plus -m<each need> alone, so a level that under-declares its needs (avx for
+# avx2: S726) is red. Needs build/libpcrec.a (LIBPCREC overrides); SKIPPED,
+# counted, where it is absent.
+#
 # THE HOST CHAIN (targets_c.def's MF_TARGET_HOST block, the kit's own #if) is
 # held to the guard column under several preprocessor targets (gcc as is,
 # -m32, -mx32; clang --target=aarch64-linux-gnu where clang exists): in each,
@@ -94,7 +100,7 @@ rows="$(printf '%s\n' \
     '#define MF_FAMILY_OF(id) id' '#define MF_NO_FAMILY NONE' \
     '#define MF_NEEDS(list) list' '#define MF_NO_NEEDS ""' \
     '#define MF_FAMILY_C(id, guard) C id|guard' \
-    '#define MF_LEVEL(id, family, needs, inc, vw, test_march, forbid, stamp) L id|family|needs|test_march|stamp|inc' \
+    '#define MF_LEVEL(id, family, needs, inc, vw, test_march, forbid, stamp) L id|family|needs|test_march|stamp|inc|vw' \
     '#define MF_INCLUDE_C(bit, line) I bit|line' \
     "#include \"$def\"" "#include \"$cdef\"" "#include \"$ldef\"" "#include \"$idef\"" |
     "$GCC" -E -P -x c - 2>/dev/null | grep -E '^[FTCLI] ')" || {
@@ -118,17 +124,17 @@ tokens() { [ -z "$2" ] || printf '%s' "$2" | grep -qxE '[a-z0-9][a-z0-9.-]*(,[a-
     mismatch "$1: '$2' is not a token list (emitter text in a facts row?)"; }
 
 declare -A fam_name fam_guard fam_defs tgt_name tgt_fam tgt_attr tgt_feat seen_tok
-declare -A lvl_fam lvl_needs lvl_march lvl_stamp lvl_inc inc_line
+declare -A lvl_fam lvl_needs lvl_march lvl_stamp lvl_inc lvl_vw inc_line
 fams=() tgts=() lvls=()
 while IFS= read -r line; do
     kind="${line%% *}"; body="${line#* }"
-    IFS='|' read -r a b c d e f <<<"$body"
+    IFS='|' read -r a b c d e f g <<<"$body"
     a="$(echo "$a" | tr -d ' ')"
     if [ "$kind" = L ]; then
         lvls+=("$a")
         lvl_fam[$a]="$(unq "$b")"; lvl_needs[$a]="$(unq "$c")"
         lvl_march[$a]="$(unq "$d")"; lvl_stamp[$a]="$(unq "$e")"
-        lvl_inc[$a]="$(echo "$f" | tr -d ' ')"
+        lvl_inc[$a]="$(echo "$f" | tr -d ' ')"; lvl_vw[$a]="$(echo "$g" | tr -d ' ')"
         tokens "level $a needs" "${lvl_needs[$a]}"
     elif [ "$kind" = I ]; then
         [ -z "${inc_line[$a]+x}" ] || mismatch "include bit $a: more than one spelling row"
@@ -359,5 +365,71 @@ case "$host" in
            mismatch "level admission compared $admitted admitted and $refused refused (both must be >= 1)" ;;
 esac
 
-[ "$bad" = 0 ] && say "ok: ${#fams[@]} families, ${#tgts[@]} targets, $ran compared against $GCC -march, $skipped skipped (another family or no needs), host ${host:-none}, $cells host cells ($cskip skipped), level admission $admitted admitted + $refused refused against $GCC, features complete at $fcomp targets over $nv vocabulary tokens"
+# THE NEEDS SUFFICE (review 2026-11-08 r5 checks-7, [XARCH-NEEDSOK]; the S726
+# closer): admission above proves the table agrees with the compiler about
+# which targets SUPPLY a level's needs; it cannot see a level whose needs are
+# too weak for its own intrinsics (avx declared for avx2 text), because every
+# target that carries the one carries the other. So the level's RENDERED
+# helpers are compiled at this check's floor plus -m<each need> and nothing
+# else (the floor of the controls above; the control is the compiler): they
+# must compile. The text is the kit's, rendered by G2's SIMD generator
+# (memfn/tests/g2/g2_simd_gen.c) at the last level's test_march (the widest
+# level, whose target admits every level), with G2's host region left out.
+# A level's compile keeps the helpers of its stamp and of every level of its
+# family of lesser width (a w32 helper falls through to w16) and the shared
+# bodies and loaders, never the selector or wrapper (host text calling the
+# higher levels). Needs libpcrec.a (LIBPCREC overrides); a missing library
+# or a host family without a floor SKIPS the cell, counted.
+NEEDS_FLOOR=2      # level cells compiled when the cell runs: w16 and w32
+needsok=0 needsskip=0
+if [ -n "${floor[$host]+x}" ]; then
+    lib="${LIBPCREC:-$here/../../build/libpcrec.a}"
+    inc="$here/../include"; g2d="$here/g2"
+    if [ ! -r "$lib" ] || [ ! -r "$g2d/g2_simd_gen.c" ]; then
+        needsskip=1; say "needs-suffice cell SKIPPED (cannot read $lib)"
+    else
+        nd="$(mktemp -d "${TMPDIR:-/var/tmp}/targets-needs.XXXXXX")" || { say "no scratch directory"; finish 2; }
+        top="${lvl_march[${lvls[${#lvls[@]}-1]}]}"
+        if ! "$GCC" -O0 -I "$inc" -o "$nd/gen" "$g2d/g2_simd_gen.c" "$lib" >"$nd/gen.log" 2>&1 ||
+           ! "$nd/gen" 1 24 "$nd" "$top" >>"$nd/gen.log" 2>&1; then
+            mismatch "needs-suffice: the G2 SIMD generator did not build or run at $top: $(head -c 300 "$nd/gen.log" | tr '\n' ' ')"
+        else
+            sites="$nd/g2v_sites.c"
+            head -n "$(( $(grep -n '^#if defined(__clang__)' "$sites" | head -1 | cut -d: -f1) - 1 ))" "$sites" > "$nd/head.c"
+            for l in "${lvls[@]}"; do
+                allowed=""
+                for k in "${lvls[@]}"; do
+                    [ "${lvl_fam[$k]}" = "${lvl_fam[$l]}" ] && [ "${lvl_vw[$k]}" -le "${lvl_vw[$l]}" ] && allowed="$allowed,${lvl_stamp[$k]}"
+                done
+                { cat "$nd/head.c"
+                  awk -v allowed="${allowed#,}" -v own="${lvl_stamp[$l]}" '
+                    BEGIN { n = split(allowed, a, ","); for (i = 1; i <= n; i++) ok[a[i]] = 1; ok["body"] = 1 }
+                    /^\/\* G2V KIT TEXT BEGIN/ { on = 1; next }
+                    /^\/\* G2V KIT TEXT END/ { on = 0 }
+                    !on { next }
+                    { if (!d) { if ($0 !~ /^static/) next; d = 1; buf = ""; nm = ""
+                          if (match($0, /[A-Za-z0-9_]+\(/)) nm = substr($0, RSTART, RLENGTH - 1)
+                          one = ($0 ~ /\{.*\}[ \t]*$/) }
+                      buf = buf $0 "\n"
+                      if (one || $0 ~ /^}/) { d = 0; keep = 1
+                          if (nm ~ /__[a-z0-9]+$/) { s = nm; sub(/.*__/, "", s); keep = (s in ok); if (s == own) own_n++ }
+                          else if (nm ~ /^g2v_[fc][0-9]+$/) keep = 0
+                          if (keep) printf "%s", buf } }
+                    END { if (!own_n) print "#error needs-suffice: no helper of stamp " own " was rendered" }' "$sites"
+                } > "$nd/lv_$l.c"
+                mflags="$(printf '%s' "${lvl_needs[$l]}" | sed 's/^/-m/; s/,/ -m/g')"
+                # shellcheck disable=SC2086
+                if err="$("$GCC" -I "$g2d" -O2 -fkeep-inline-functions -fkeep-static-functions -Wno-unused-function \
+                        ${floor[$host]} $mflags -c -o /dev/null "$nd/lv_$l.c" 2>&1)"; then needsok=$((needsok + 1))
+                else
+                    mismatch "level $l: its rendered helpers do not compile at ${floor[$host]} $mflags (needs '${lvl_needs[$l]}' too weak for its intrinsics?): $(printf '%s' "$err" | grep -m1 -E 'error' | head -c 200)"
+                fi
+            done
+        fi
+        rm -rf "$nd"
+        [ "$needsok" -ge "$NEEDS_FLOOR" ] || mismatch "the needs-suffice control compiled $needsok levels (floor $NEEDS_FLOOR)"
+    fi
+fi
+
+[ "$bad" = 0 ] && say "ok: ${#fams[@]} families, ${#tgts[@]} targets, $ran compared against $GCC -march, $skipped skipped (another family or no needs), host ${host:-none}, $cells host cells ($cskip skipped), level admission $admitted admitted + $refused refused against $GCC, features complete at $fcomp targets over $nv vocabulary tokens, needs suffice at $needsok levels ($needsskip skipped)"
 finish "$bad"
