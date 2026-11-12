@@ -44,9 +44,8 @@ SAB_REACH_EXPECT="REACH-K66-WHOLE-RUN-EMITTED"
 # after the window's test) removes the block and the call together. Intent
 # unchanged: the K66 whole-run compare is never emitted.
 SAB_COUNT=1
-SAB_BEFORE='    { "P3", KIT_RUN_WINDOW },'
-SAB_AFTER='    { "P3", KIT_RUN_WINDOW },
-    { "P0", KIT_RUN_WINDOW },   /* SABOTAGE S278 */'
+SAB_BEFORE='    { "P0", KIT_RUN_WHOLE },    /* REQUIRED: the whole run (K66)            */'
+SAB_AFTER='    { "P0", KIT_RUN_WINDOW },   /* SABOTAGE S278 */'
 # RE-AIMED 2026-11-11 (lane k382, R-38 K38-2): pcrec states the run once (set form) and the kit
 # DERIVES its one part from the run decision's reply; the link's `member` is 0 and unread on the
 # run, so the old plant (`k.member = pk.run_window + 1`) no longer compiles (pk.run_window
@@ -57,3 +56,13 @@ SAB_AFTER='    { "P3", KIT_RUN_WINDOW },
 # deciding row -> stretch mode table. The plant adds P0 -> WINDOW, so the REQUIRED span's
 # reply verifies P3's 8-position window and the derived part compares it alone. The probe
 # reads the whole 16-position compare (and the stamp's whole run, scan @14).
+# RE-AIMED 2026-11-12 (lane k382cm2, cloud mech run 43261368093 shard 1): the 11-11 plant was
+# DEAD. fd_run_mode() is first-match over fd_run_modes[], so an added P0 row AFTER the real
+# `{ "P0", KIT_RUN_WHOLE }` is never read: the cloud measured UNDETECTED (reach:ok(1/1),
+# prechecks:0fail/396pass, corpus:0fail/16pass at d1928a4c0); the box never ran it at K38-2
+# (607's shard 1 did not hold it, 608/609 were cancelled). The plant now flips P0's OWN row to
+# WINDOW, so the REQUIRED span's reply takes stretch_window's 8-position stretch of the
+# 16-position run and the derived part compares it alone: K66's defect, on the one row that
+# decides it. Kept, not retired as the sheet's K38-2 row ruled: that ruling retired the
+# `member` plant (unread on the run), and no other row plants the stretch mode of a REQUIRED
+# run (S3045 plants only an UNLISTED row, which is refused, never answered).
