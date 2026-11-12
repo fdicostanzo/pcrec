@@ -1,0 +1,5 @@
+report=docs/dev/lanes/xarchfix_report.md
+sections: Summary; Cause; The check's reporting change; Row fates (S725 S726 S2981 S2994); Non-vacuity; Row job; Checks; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

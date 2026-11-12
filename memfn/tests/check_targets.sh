@@ -380,8 +380,28 @@ esac
 # bodies and loaders, never the selector or wrapper (host text calling the
 # higher levels). Needs libpcrec.a (LIBPCREC overrides); a missing library
 # or a host family without a floor SKIPS the cell, counted.
+#
+# A CATCH IS A CHECK FAILURE, NEVER A COMPILER ERROR ON THIS CHECK'S OUTPUT
+# (lane xarchfix, 2026-11-12): each compile's output stays in its own file in
+# the cell's scratch directory (kept, and named, when the cell fails), and the
+# mismatch line carries the first diagnostic's SUMMARY in words, never the
+# compiler's own error line; a level the kit rendered no helper for is found
+# by the extraction itself and never compiled. A mech arm reads a compiler
+# error in its log as a plant that does not compile ([MECH-NOCOMPILE]).
 NEEDS_FLOOR=2      # level cells compiled when the cell runs: w16 and w32
-needsok=0 needsskip=0
+needsok=0 needsskip=0 needskeep=0
+# The first diagnostic of a compiler log, in words (first match wins).
+diag_summary() {
+    local d fn
+    d="$(grep -m1 -E '(error|warning): ' "$1")"
+    [ -n "$d" ] || { printf 'no diagnostic line (exit status only)'; return; }
+    fn="$(printf '%s' "$d" | sed -n "s/.*inlining failed in call to .always_inline. .\([A-Za-z0-9_]*\).: target specific option mismatch.*/\1/p")"
+    if [ -n "$fn" ]; then
+        printf 'the intrinsic %s needs an ISA feature these flags do not enable (always_inline target mismatch)' "$fn"
+    else
+        printf 'the compiler refused the text: %s' "$(printf '%s' "$d" | sed -E 's/^.*(error|warning): //; s/(error|warning):/\1 -/g' | head -c 160)"
+    fi
+}
 if [ -n "${floor[$host]+x}" ]; then
     lib="${LIBPCREC:-$here/../../build/libpcrec.a}"
     inc="$here/../include"; g2d="$here/g2"
@@ -392,7 +412,8 @@ if [ -n "${floor[$host]+x}" ]; then
         top="${lvl_march[${lvls[${#lvls[@]}-1]}]}"
         if ! "$GCC" -O0 -I "$inc" -o "$nd/gen" "$g2d/g2_simd_gen.c" "$lib" >"$nd/gen.log" 2>&1 ||
            ! "$nd/gen" 1 24 "$nd" "$top" >>"$nd/gen.log" 2>&1; then
-            mismatch "needs-suffice: the G2 SIMD generator did not build or run at $top: $(head -c 300 "$nd/gen.log" | tr '\n' ' ')"
+            needskeep=1
+            mismatch "needs-suffice: the G2 SIMD generator did not build or run at $top: $(diag_summary "$nd/gen.log") (output: $nd/gen.log)"
         else
             sites="$nd/g2v_sites.c"
             head -n "$(( $(grep -n '^#if defined(__clang__)' "$sites" | head -1 | cut -d: -f1) - 1 ))" "$sites" > "$nd/head.c"
@@ -402,7 +423,7 @@ if [ -n "${floor[$host]+x}" ]; then
                     [ "${lvl_fam[$k]}" = "${lvl_fam[$l]}" ] && [ "${lvl_vw[$k]}" -le "${lvl_vw[$l]}" ] && allowed="$allowed,${lvl_stamp[$k]}"
                 done
                 { cat "$nd/head.c"
-                  awk -v allowed="${allowed#,}" -v own="${lvl_stamp[$l]}" '
+                  awk -v allowed="${allowed#,}" -v own="${lvl_stamp[$l]}" -v miss="$nd/lv_$l.nohelper" '
                     BEGIN { n = split(allowed, a, ","); for (i = 1; i <= n; i++) ok[a[i]] = 1; ok["body"] = 1 }
                     /^\/\* G2V KIT TEXT BEGIN/ { on = 1; next }
                     /^\/\* G2V KIT TEXT END/ { on = 0 }
@@ -415,18 +436,24 @@ if [ -n "${floor[$host]+x}" ]; then
                           if (nm ~ /__[a-z0-9]+$/) { s = nm; sub(/.*__/, "", s); keep = (s in ok); if (s == own) own_n++ }
                           else if (nm ~ /^g2v_[fc][0-9]+$/) keep = 0
                           if (keep) printf "%s", buf } }
-                    END { if (!own_n) print "#error needs-suffice: no helper of stamp " own " was rendered" }' "$sites"
+                    END { if (!own_n) print own > miss }' "$sites"
                 } > "$nd/lv_$l.c"
+                if [ -e "$nd/lv_$l.nohelper" ]; then
+                    needskeep=1
+                    mismatch "level $l (stamp ${lvl_stamp[$l]}, needs '${lvl_needs[$l]}'): the kit rendered no helper of stamp ${lvl_stamp[$l]} at $top, so the level cannot be compiled (the kit refuses it at the widest level's target?)"
+                    continue
+                fi
                 mflags="$(printf '%s' "${lvl_needs[$l]}" | sed 's/^/-m/; s/,/ -m/g')"
                 # shellcheck disable=SC2086
-                if err="$("$GCC" -I "$g2d" -O2 -fkeep-inline-functions -fkeep-static-functions -Wno-unused-function \
-                        ${floor[$host]} $mflags -c -o /dev/null "$nd/lv_$l.c" 2>&1)"; then needsok=$((needsok + 1))
+                if "$GCC" -I "$g2d" -O2 -fkeep-inline-functions -fkeep-static-functions -Wno-unused-function \
+                        ${floor[$host]} $mflags -c -o /dev/null "$nd/lv_$l.c" >"$nd/lv_$l.log" 2>&1; then needsok=$((needsok + 1))
                 else
-                    mismatch "level $l: its rendered helpers do not compile at ${floor[$host]} $mflags (needs '${lvl_needs[$l]}' too weak for its intrinsics?): $(printf '%s' "$err" | grep -m1 -E 'error' | head -c 200)"
+                    needskeep=1
+                    mismatch "level $l (stamp ${lvl_stamp[$l]}, needs '${lvl_needs[$l]}'): its rendered helpers do not compile at ${floor[$host]} $mflags, so the needs are too weak for its intrinsics: $(diag_summary "$nd/lv_$l.log") (compiler output: $nd/lv_$l.log)"
                 fi
             done
         fi
-        rm -rf "$nd"
+        if [ "$needskeep" = 1 ]; then rm -f "$nd/gen"; say "needs-suffice scratch kept: $nd"; else rm -rf "$nd"; fi
         [ "$needsok" -ge "$NEEDS_FLOOR" ] || mismatch "the needs-suffice control compiled $needsok levels (floor $NEEDS_FLOOR)"
     fi
 fi
