@@ -2,4 +2,4 @@ report=docs/dev/lanes/k382cm2_report.md
 sections: Summary; S278 evidence; S278 fate; Remaining shards; Tables re-derived; Row job; Checks; Charter-vs-committed checklist
 nonempty: all
 commit: yes
-owed: none
+owed: kit-k382cm2-rows
