@@ -77,6 +77,20 @@ also referenced informally (no key, out of this lane's scope — see "To
 retrofit" below) in `docs/dev/plan.md`, `docs/dev/dev_journal.md` and
 `docs/dev/plan_completed.md`.
 
+### [BM17] Berglund, M. & van der Merwe, B. (2017)
+
+Martin Berglund, Brink van der Merwe — "On the semantics of regular
+expression parsing in the wild", *Theoretical Computer Science* (2017)
+(CIAA 2015 conference version). Prioritized NFAs (pNFA), and prioritized
+transducers obtained by adding output to them, as the formal model of
+backtracking matchers' (Java/PCRE-style) capture semantics; a pNFA has at
+most one accepting run per input.
+DOI: <https://doi.org/10.1016/j.tcs.2016.09.006>.
+`(unverified: NOT READ; known from search-result abstracts and a citing
+summary only; no claim beyond the model's definition is made.)`
+Accessed 2026-11-12.
+Cited by: `docs/design/dfa_captures_research.md` §2.1, §2.2.
+
 ### [BT21] Borsotti, A. & Trofimovich, U. (2021)
 
 Angelo Borsotti, Ulya Trofimovich — "Efficient POSIX submatch extraction on
@@ -84,7 +98,8 @@ nondeterministic finite automata", *Software: Practice and Experience*
 (2021). The NFA-side companion to the TDFA work below; adapts Okui and
 Suzuki's POSIX disambiguation [OS10] with correctness argument.
 DOI: <https://doi.org/10.1002/spe.2881>. Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4, §2.10.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4, §2.10;
+`docs/design/dfa_captures_research.md`.
 
 ### [BT22] Borsotti, A. & Trofimovich, U. (2022)
 
@@ -102,7 +117,8 @@ has no PDF text extractor. The abstract was confirmed against the arXiv
 abstract page. The paper's abstract makes NO complexity claim; the citing
 document says so rather than supplying one.)`
 Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4, §2.10, §2.12.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4, §2.10, §2.12;
+`docs/design/dfa_captures_research.md`.
 
 ### [Bro14+] Broda, S., Machiavelo, A., Moreira, N., Reis, R. (2014)
 
@@ -182,7 +198,8 @@ match bounds (forward for the end, a reversed program run backward for the
 start) and the OnePass / BitState / NFA engines that assign captures on the
 span it found.
 DOI/URL: <https://swtch.com/~rsc/regexp/regexp3.html>. Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.1, §2.12.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.1, §2.12;
+`docs/design/dfa_captures_research.md`.
 
 ### [Ragel] Ragel State Machine Compiler (software, not a paper)
 
@@ -265,6 +282,23 @@ supported, only the last one is" limitation.
 URL: <https://github.com/dotnet/runtime/pull/65129>. Accessed 2026-09-22.
 Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.6, §2.12.
 
+### [FC04] Frisch, A. & Cardelli, L. (2004)
+
+Alain Frisch, Luca Cardelli — "Greedy Regular Expression Matching",
+*Automata, Languages and Programming* (ICALP 2004), LNCS vol. 3142,
+pp. 618-629. Defines greedy matching as first-match alternation over the
+star's expansion (explicitly not longest match), and names the long-known
+"problematic" case: a star `t*` whose body accepts the empty word, which a
+naive expansion handles incorrectly.
+DOI: <https://doi.org/10.1007/978-3-540-27836-8_53> (from a Springer link in
+search results; a second helper recalled `_65` from memory, so the DOI
+suffix is unconfirmed).
+`(unverified: NOT READ; the algorithm's details and proofs; the citing document uses
+only the semantics definition and the empty-body problem, read from the
+introduction via search results.)`
+Accessed 2026-11-12.
+Cited by: `docs/design/dfa_captures_research.md` §2.1, §2.2.
+
 ### [Gal23] Gallant, A. (2023)
 
 Andrew Gallant ("BurntSushi") — "Regex engine internals as a library",
@@ -317,7 +351,19 @@ backtracking"*), the condition (*"at any `InstAlt`, there must be no
 ambiguity about what branch to take"*), the `NumCap` capture count, and the
 1,000-instruction abandonment threshold.
 URL: <https://go.dev/src/regexp/onepass.go>. Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.7, §2.11, §3.3.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.7, §2.11, §3.3;
+`docs/design/dfa_captures_research.md`.
+
+### [GoIssue46123] golang/go issue #46123 (issue tracker, not a paper)
+
+Cited for ONE fact: Go's `regexp` returned a non-empty match for `(|a)*`,
+where Perl and PCRE match the empty string (each iteration prefers the empty
+branch, so the loop never falls back to `a`); fixed to match Perl/PCRE. An
+instance of the empty-iteration rule a priority construction must encode.
+URL: <https://github.com/golang/go/issues/46123>.
+`(unverified: read from a search-result summary of the thread, not the full
+thread.)` Accessed 2026-11-12.
+Cited by: `docs/design/dfa_captures_research.md` §2.2.
 
 ### [HSdoc] Hyperscan developer reference, "Compiling Patterns" (software documentation, not a paper)
 
@@ -330,7 +376,8 @@ overhead), and the all-matches semantics that make a capture meaningless
 Vectorscan is a fork and inherits the model.
 URL: <https://intel.github.io/hyperscan/dev-reference/compilation.html>.
 Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.8, §2.11.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.8, §2.11;
+`docs/design/dfa_captures_research.md`.
 
 ### [HSserialize] Hyperscan developer reference, "Serialization" (software documentation, not a paper)
 
@@ -365,7 +412,8 @@ tagged NFAs, their determinization into TDFAs whose transitions carry
 register operations, and the termination proof.
 DOI: <https://doi.org/10.1109/SPIRE.2000.878194>; author's copy
 <http://laurikari.net/ville/spire2000-tnfa.pdf>. Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.3, §2.11.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.3, §2.11;
+`docs/design/dfa_captures_research.md`.
 
 ### [Lau01] Laurikari, V. (2001)
 
@@ -377,7 +425,8 @@ URL: <http://laurikari.net/ville/regex-submatch.pdf>.
 is identified from secondary references ([TDFAwiki], [RegexTDFA],
 [TREreadme]) and from [Tro19]'s own citation of it.)`
 Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.3.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.3;
+`docs/design/dfa_captures_research.md`.
 
 ### [Mos23+] Moseley, D., Nishio, M., Perez Rodriguez, J., Saarikivi, O., Toub, S., Veanes, M., Wan, T., Xu, E. (2023)
 
@@ -393,7 +442,8 @@ matcher.
 DOI: <https://doi.org/10.1145/3591262>; publisher record
 <https://www.microsoft.com/en-us/research/publication/derivative-based-nonbacktracking-real-world-regex-matching-with-backtracking-semantics/>.
 Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.6, §2.11, §2.12.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.6, §2.11, §2.12;
+`docs/design/dfa_captures_research.md`.
 
 ### [Myt09+] Mytkowicz, T., Diwan, A., Hauswirth, M., Sweeney, P. (2009)
 
@@ -428,7 +478,8 @@ position automaton that recognizes and translates input into a compact DAG
 of syntax trees in linear time under the POSIX leftmost-longest rule;
 upstream of the POSIX correctness work in [BT21]/[BT22].
 DOI: <https://doi.org/10.1007/978-3-642-18098-9_25>. Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4, §2.10.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4, §2.10;
+`docs/design/dfa_captures_research.md`.
 
 ### [OTF] `jn1z/OTF` — Nicol & Frohme's reference implementation (software, not a paper)
 
@@ -472,7 +523,8 @@ backreference conditionals, script runs, scan-substring assertions, `\K`,
 `PCRE2_MATCH_INVALID_UTF`, JIT).
 URL: <https://www.pcre.org/current/doc/html/pcre2matching.html>.
 Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.9, §2.11.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.9, §2.11;
+`docs/design/dfa_captures_research.md`.
 
 ### [PCRE2jit] PCRE2 `pcre2jit` documentation (software documentation, not a paper)
 
@@ -494,6 +546,17 @@ intended for trusted data within one application.
 URL: <https://www.pcre.org/current/doc/html/pcre2serialize.html>.
 Accessed 2026-09-30.
 Cited by: `docs/design/artifact_manager.md` §8.
+
+### [PCREdev2020] pcre-dev mailing list, "Inconsistent behavior of some quantified groups" (2020-05-04; mailing list, not a paper)
+
+Cited for ONE fact: for `(?:(a)?)+`-shaped patterns, Perl CLEARS the
+capture when the empty case is selected while PCRE2 RESTORES its previous
+value; and PCRE2's documented rule that an iteration of a group matching no
+characters moves on to the next item. D26: pcrec follows PCRE2.
+URL: <https://lists.exim.org/lurker/message/20200504.084330.2352ea95.es.html>.
+`(unverified: read from a search-result summary of the post.)`
+Accessed 2026-11-12.
+Cited by: `docs/design/dfa_captures_research.md` §2.2.
 
 ### [RAhyb] Rust `regex-automata::hybrid` (software documentation, not a paper)
 
@@ -518,7 +581,8 @@ DFA.
 URL:
 <https://docs.rs/regex-automata/latest/regex_automata/dfa/onepass/struct.DFA.html>.
 Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.2, §2.11, §3.3.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.2, §2.11, §3.3;
+`docs/design/dfa_captures_research.md`.
 
 ### [RArevinner] Rust `regex-automata` reverse-inner strategy and its leftmost fix (source, not a paper)
 
@@ -554,7 +618,8 @@ PCRE speed on a one-pass regexp while this code runs at about the same speed
 performance bottleneck in the NFA implementation."*
 URL: <https://github.com/google/re2/blob/main/re2/onepass.cc>.
 Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.1, §2.11, §3.3.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.1, §2.11, §3.3;
+`docs/design/dfa_captures_research.md`.
 
 ### [RegexTDFA] Haskell `regex-tdfa` package (software documentation, not a paper)
 
@@ -566,7 +631,8 @@ and its own caveat that *"regexes with large character classes combined with
 {m,n} are very slow and memory-hungry"*. Historically the implementation
 that answered whether a TDFA can do POSIX disambiguation correctly.
 URL: <https://hackage.haskell.org/package/regex-tdfa>. Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.5, §2.11.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.5, §2.11;
+`docs/design/dfa_captures_research.md`.
 
 ### [re2cman] re2c manual (software documentation, not a paper)
 
@@ -577,7 +643,8 @@ POSIX — for the s-tag/m-tag distinction, and for the regular-expression
 syntax section, which documents `*`, `+`, `?` and `{n,m}` and NO lazy
 operator.
 URL: <https://re2c.org/manual/manual_c.html>. Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4, §2.11, §3.2.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4, §2.11, §3.2;
+`docs/design/dfa_captures_research.md`.
 
 ### [re2cIssue208] re2c issue #208, "Is there a way to support Non-greedy match?" (issue tracker, not a paper)
 
@@ -590,8 +657,16 @@ page and the rendered content carried only the opening request, not the
 thread's replies; the issue is closed. The citing document therefore rests
 the "no lazy operator" claim on the MANUAL, and uses this issue only as
 corroboration.)`
+**Resolution, read 2026-11-12** (a web-fetch helper's report relayed by the
+manager to lane dfacap): the maintainer (2018-06-19), *"no, re2c currently
+has no support for non-greedy match"* (non-greedy SUBMATCHES are possible via
+tags, but the whole match cannot be non-greedy); and (2022-12-12), *"I'm not
+sure if non-greedy operators can be implemented in DFA-based engines like
+re2c. The fundamental problem is, a DFA may fuse non-greedy and greedy paths
+into one"*, with the example `(a*)|(a*?)`.
 URL: <https://github.com/skvadrik/re2c/issues/208>. Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4;
+`docs/design/dfa_captures_research.md`.
 
 ### [SL14] Sulzmann, M. & Lu, K. Z. M. (2014)
 
@@ -608,7 +683,8 @@ easily" and supplies simpler Isabelle/HOL-formalized definitions and
 proofs. The citing lane read this from the later work's own abstract, not
 from a line-by-line comparison.)`
 Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.10.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.10;
+`docs/design/dfa_captures_research.md`.
 
 ### [TDFAwiki] Wikipedia, "Tagged Deterministic Finite Automaton" (tertiary source)
 
@@ -665,7 +741,8 @@ URL: <https://arxiv.org/abs/1907.08837>; re2c.org copy
 <https://re2c.org/2017_trofimovich_tagged_deterministic_finite_automata_with_lookahead.pdf>.
 Accessed 2026-09-22.
 Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4, §2.5, §2.11,
-§3.2.
+§3.2;
+`docs/design/dfa_captures_research.md`.
 
 ### [Tro20] Trofimovich, U. (2020)
 
@@ -675,7 +752,8 @@ Ulya Trofimovich — "RE2C: A lexer generator based on lookahead-TDFA",
 DOI: <https://doi.org/10.1016/j.scico.2020.102510>; author's copy
 <https://re2c.org/2020_trofimovich_re2c_a_lexer_generator_based_on_lookahead_tdfa.pdf>.
 Accessed 2026-09-22.
-Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4.
+Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4;
+`docs/design/dfa_captures_research.md`.
 
 ### [Walnut] Walnut theorem prover (software documentation, not a paper)
 
