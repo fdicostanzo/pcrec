@@ -189,3 +189,16 @@ Not run here: test-recursion-identity. The FILEPIN self-pin is to the merge, and
 | 4. jobs 600-609 re-pointed, every --dry-run passes, not queued | done (scratch, not committed) |
 | CHECKS list | all run, all green, except test-findings §7/§8 |
 | report with the deliver file's sections and an `OWED:` line; lanecheck DONE | this file |
+
+## STATE AT HANDOFF
+
+- **Branch.** lane/memfn-k382 is committed and clean, with no rulings file. Every item is done
+  except test-findings §7/§8, which waits on main's ruling on the reader c2b.
+- **Under (A)** (my leaning):
+  - In `gen_adversarial.py`, `choices()` reads c2a as the `@` when the artifact has a `_reqrun(`
+    block (row 1), and c2b as the `@` otherwise (row 2).
+  - Re-derive fire-c2b's rows in reach.tsv.
+  - Re-pin w-c2a and w-c2b in witness.tsv to the values in "Cloud reds".
+- **Under (B):** retire c2b at every reader listed in "Cloud reds".
+- **Either way,** test-findings is the check to run. It is one harness section of a few minutes.
+- **The box.** Nothing queued, no run in flight.
