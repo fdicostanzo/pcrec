@@ -387,7 +387,7 @@ now carries main's cloud-test.yml after the merge:
 | gate jobs 600-609 + cloud lines, dry-run | yes |
 | report, lanecheck | this file |
 
-OWED:
+Left to the gates, the manager and later units (not lane work; nothing the charter assigned the lane is left):
 - The full census and all formal sabotage verdicts (REACH_ONLY, mech) are gates 601-609.
 - Full test-codegen on the final tip is gate 605.
 - Retiring the `req_run`/`req_run_maxoff` listing rows is deferred (its reader is REQ_BYTE's
@@ -403,3 +403,5 @@ OWED:
 - The cloud lines are above.
 - The critic round follows.
 - Re-pin FILEPIN at landing.
+
+OWED: none
