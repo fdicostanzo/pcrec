@@ -4,8 +4,6 @@ Branch lane/memfn-k382, worktree worktrees/k382. Inputs: the triage
 /var/tmp/pcrec-pcrec/scratch/memfn/triagecm3/triage.md and cloud run 43261368093 (K38-2 at
 d1928a4c0). Commits: 76903be81 (S278 re-planted), then this report with the sheet's §5 FATE note.
 
-STATE: delivered. The row job and seven shard verdicts are still owed (see OWED below).
-
 ## Summary
 
 - S278's K38-2 plant was DEAD. It added `{ "P0", KIT_RUN_WINDOW }` AFTER the real
@@ -125,3 +123,9 @@ because the runner archives HEAD per row. Verdict OWED.
 | one row job over S278 and S517 | Queued as `kit-k382cm2-rows`, verdict OWED |
 | `make strict`, CLAUDE.md size | Both green |
 | report + lanecheck | This file; lanecheck DONE before the hand-back |
+
+## STATE AT HANDOFF
+
+Delivered at 29c8bf28a plus this section's commit. Queued after it: `kit-k382cm2-rows` (S278, S517;
+log /var/tmp/pcrec-pcrec/scratch/memfn/k382cm2/run/mech/mech.log). Owed: that job's verdict and run
+43261368093 shards 5, 6, 8, 9, 10, 12, 13. No rulings file was named.
