@@ -15,6 +15,7 @@
 #   ready-idle   a STATE:ready row ready > 7 days (the commit that set it; count, oldest age + tag)
 #   stale        a STATE:started row untouched > 21 days (newer of its status date and last commit touching its tag); undated rows are counted
 #   questions    owner.md "Questions for you": an unanswered entry (not "(answered", not "FYI") older than 24 h, or undated (said so, never mtime)
+#   upstream     news on an upstream issue we filed (scripts/upstream_watch; runs at most once a day; shown once)
 #   push-owed    main ahead of origin/main, oldest unpushed commit > 2 h (commit count)
 #   prune-owed   > 5 worktrees `scripts/wtprune` (dry run, cached 30 min in $PCREC_TMPDIR/gestalt/prune.cache and refreshed by a detached
 #                background run, because the dry run takes ~5 s) reports removable; no cache yet = `prune-owed: unknown`
@@ -436,6 +437,22 @@ case $pcn in
        prunebad=""; [ "$pcn" -gt "$PRUNE_OWED_N" ] && prunebad=1 ;;
 esac
 
+# upstream: news on the upstream issues WE filed (scripts/upstream_watch, docs/dev/upstream_tracked.tsv). The watcher runs AT MOST
+# once a day (UPSTREAM_EVERY_H), detached, so gestalt never waits on gh; its lines land in $PCREC_TMPDIR/gestalt/upstream.news and are
+# shown (and consumed) by the next gestalt run. Quiet days leave the row empty.
+UPSTREAM_EVERY_H=24   # hours between upstream_watch runs (default, unmeasured)
+ud=${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/gestalt
+L_upstream=""; upbad=""
+if [ -s "$ud/upstream.news" ]; then
+    L_upstream=$(cat "$ud/upstream.news"); upbad=1; rm -f "$ud/upstream.news"
+fi
+ul=$(cat "$ud/upstream.last" 2>/dev/null); case $ul in ''|*[!0-9]*) ul=0 ;; esac
+if [ $((now - ul)) -ge $((UPSTREAM_EVERY_H * 3600)) ]; then
+    mkdir -p "$ud" 2>/dev/null && echo "$now" > "$ud/upstream.last"
+    setsid bash -c 'o=$(timeout 120 "$1" 2>/dev/null)
+        [ -n "$o" ] && { printf "%s\n" "$o" >> "$2/upstream.news"; }' _ "${GESTALT_UPSTREAM_WATCH:-$here/upstream_watch}" "$ud" </dev/null >/dev/null 2>&1 &
+fi
+
 # --- THRESHOLD ROWS: kind | condition (shell test, evaluated) | the line it prints (a variable above).
 # Default output = the lines of the rows whose condition holds, in this order; --all prints every row's line.
 # A condition of `false` = no threshold: the line is --all only. Add a kind by adding a row (and its L_ line).
@@ -459,7 +476,8 @@ ready-idle   | [ -n "$ribad" ]                    | L_readyidle
 stale        | [ -n "$stalebad" ]                 | L_stale
 questions    | [ -n "$qbad" ]                     | L_questions
 push-owed    | [ -n "$pushbad" ]                  | L_pushowed
-prune-owed   | [ -n "$prunebad" ]                 | L_pruneowed'
+prune-owed   | [ -n "$prunebad" ]                 | L_pruneowed
+upstream     | [ -n "$upbad" ]                   | L_upstream'
 while IFS='|' read -r kind cond var; do
     kind=${kind%% *}; var=${var// /}
     # a row whose line is EMPTY prints nothing, even under --all (idle-held and docs are empty when they do not fire)

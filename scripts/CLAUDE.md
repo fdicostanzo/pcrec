@@ -24,7 +24,7 @@ entries (verbatim): NOTES.md here.
 - `lanecheck`/`lanewatch` — [LANECHECK] DELIVER self-check / the manager's watcher; `lanewatch --follow NAME` reports one lane's state; NOTES.md.
 - `INDEX.md` — one `when:`/`does:` line per script (`scripts/entry NAME -l 2` adds its header). A new script needs its line in the same change (`entry --lint-scripts`, in `make test-doc-lint`).
 - Checkers: `plan_lint.*`, `entry` + `doc_profiles.py` ([DOC-INDEX] D192: one item at a level, item grep, `--work`, `--over-cap`; the profile table; docs/dev/doc_format.md), `check_claudemd_size.sh`, `spec_toc.py`, `measure.sh`, `tmpdir.sh`, `doc_census.py`/`doc_control.py`/`doc_cites.py`
-- Instruments: `statusline.sh` (NOTES.md), `gestalt`, `emit_sweep.py`, `trace_diff.py`, `cls_identity.py`, `compile_time_census.py`, `alt_census.py`, `size_diff`.
+- Instruments: `statusline.sh` (NOTES.md), `gestalt`, `upstream_watch`, `emit_sweep.py`, `trace_diff.py`, `cls_identity.py`, `compile_time_census.py`, `alt_census.py`, `size_diff`.
 - Generators: `embed_text.sh`, `ksgen.c`.
 - `hooks/` — pre-commit, pre-push(-light), `no_cd_worktree.sh`, `no_commit_all.sh` (`git commit -a`), `lane_writes_in_worktree.sh` (subagent writes only in worktrees/; escape worktrees/.mgr/main_write_ok), `no_stale_claudemd.sh`, `post_compact.sh`, `pcre2_ref_guard.sh` (D181), `check_pcre2_note.sh`; tests `hooks/test_*.sh`.
 - `tests/` — self-tests (own CLAUDE.md).

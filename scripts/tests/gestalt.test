@@ -8,6 +8,8 @@ TO=${TIMEOUT_BIN:-timeout}
 T=$(mktemp -d "${TMPDIR:-/var/tmp}/gestalt.test.XXXXXX")
 trap 'rm -rf "$T"' EXIT
 export PCREC_TMPDIR="$T/tmproot"   # gestalt appends gestalt/log.tsv; keep fake rows out of the real log
+printf '#!/bin/sh\nexit 0\n' > "$T/uw.quiet"; chmod +x "$T/uw.quiet"
+export GESTALT_UPSTREAM_WATCH="$T/uw.quiet"   # never the real upstream_watch (it would call gh); the upstream cases below override it
 pass=0 fail=0
 ok()  { echo "PASS: $*"; pass=$((pass+1)); }
 bad() { echo "FAIL: $*"; fail=$((fail+1)); }
@@ -237,6 +239,28 @@ GARGS=--all; qa=$(run "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/stale.py"); GARGS=""
 printf '%s\n' "$qa" | grep -q '^open: 1 started row' && ok "--all shows open when a started row is stale" || bad "--all missing open"
 # the work accessor failing is a row, not silence (K35)
 fires "plan accessor fails" plan "$T/ghok" GESTALT_WORK_ENTRY="$T/ent/exit3.py"
+# upstream: the daily upstream_watch row. A counting stub prints news; the row fires only on news, runs once a day, shows news once
+cat > "$T/uw.news" <<SH
+#!/bin/sh
+echo run >> "$T/uw.count"
+echo "upstream: #1072 new comment by X 2026-11-13: hello"
+SH
+chmod +x "$T/uw.news"
+printf '#!/bin/sh\necho run >> "%s"\n' "$T/uw.count2" > "$T/uw.none"; chmod +x "$T/uw.none"
+ud=$(mktemp -d "$T/up.XXXXXX")
+o=$(pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.news"); sleep 2
+[ -z "$o" ] && [ "$(wc -l < "$T/uw.count")" = 1 ] && ok "upstream: first call runs the watcher (detached), prints nothing yet" || bad "upstream first call: [$o] runs=$(cat "$T/uw.count" 2>/dev/null | wc -l)"
+o=$(pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.news")
+[ "$o" = "upstream: #1072 new comment by X 2026-11-13: hello" ] && ok "upstream: the next call shows the news" || bad "upstream news: [$o]"
+sleep 1; [ "$(wc -l < "$T/uw.count")" = 1 ] && ok "upstream: at most once a day (no second run within 24 h)" || bad "upstream reran: $(wc -l < "$T/uw.count")"
+o=$(pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.news"); [ -z "$o" ] && ok "upstream: news is shown once, then silent" || bad "upstream repeated: [$o]"
+echo $(( $(date +%s) - 90000 )) > "$ud/gestalt/upstream.last"
+pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.news" >/dev/null; sleep 2
+[ "$(wc -l < "$T/uw.count")" = 2 ] && ok "upstream: runs again once the last run is over 24 h old" || bad "upstream day-old rerun: $(wc -l < "$T/uw.count")"
+rm -rf "$ud/gestalt/upstream.news"
+ud=$(mktemp -d "$T/up.XXXXXX")
+o=$(GARGS=--all; pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.none" | kinds | tr ' ' '\n' | grep -c '^upstream$'); sleep 1
+[ "$o" = 0 ] && [ -s "$T/uw.count2" ] && ok "upstream: a quiet watcher leaves the row empty (not even under --all)" || bad "upstream quiet: [$o]"
 # the log line is written on a silent run too
 [ -s "$T/tmproot/gestalt/log.tsv" ] && ok "log.tsv written" || bad "log.tsv missing"
 echo "gestalt.test: $pass pass, $fail fail"
