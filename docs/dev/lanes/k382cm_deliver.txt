@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k382cm_report.md
+sections: Summary; Shard table vs retired rows; S446; S3006; Remaining shards; Checks; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
