@@ -12,7 +12,7 @@ normalization, so an abi event's identity witness is this census (shape: `r30b_e
         [--no-xarms] [--no-composition]  # skip the identity gate's --extra arms / the composition stream
         [--abi 100:101] [--base-rev e889ba64c] # the event and BASE's revision (defaults)
         [--witness-bins BASE_W TIP_W]    # -DPCREC_SIMD_WITNESS builds: the identity arm `witness`
-        [--control no-p3|no-norm]        # NEGATIVE controls: each must turn the verdict red
+        [--control no-p3|no-norm|plant-in-run]  # NEGATIVE controls: each must turn the verdict red
 
 Arms: c-default, c-utf8, c-vm, c-vm-utf8, c-comments (`-fcomments`), c-simd (`-fmemfn-simd`), ir
 (`--engine=vm --emit-ir`, may not move), facts (`--emit-facts=byte,utf8`), every `--extra` arm of the
@@ -22,7 +22,9 @@ NEW's abi digits are mapped back; the numbers in pcrec's size diagnostics are ma
 
 Populations (the docstring is the definition): P1 K, P2a/P2b the REQ_RUN stamp (tested link or not), P2s the
 short-run stamp that only loses its `@`, only where the tip renders no reqrun block, `cover` DFA scan or
-`run-pinned` prefilter (else UNEXPLAINED; counted apart, 10 examples listed), P3 the reqrun block (P3v: the one
+`run-pinned` prefilter (else UNEXPLAINED; counted apart, 10 examples listed), except P2so: a `cover` find
+OUTSIDE the run by its OFFSET against BASE's `req_run_maxoff`, or reading no run byte (lane k382cen; the
+reader `cover_finds` covers every E-find form the kit prints, an unreadable site refuses), P3 the reqrun block (P3v: the one
 run part takes a SIMD form on the simd arm), P4 the run pin (P4f: the dominated -> emitted flips), P5/P5k
 comment text, `used` facts rows. Output: one `MOVED`/`UNEXPECTED` line per (arm, artifact), `== overlap`,
 `== P2s-example`, one `== arm` line per arm, the K35 floor line, and `== census COMPLETE: N unexplained,
