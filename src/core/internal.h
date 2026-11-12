@@ -193,6 +193,12 @@ typedef struct {
     unsigned kit_proof : 1;
     unsigned pres_window : 1;
     unsigned run_tie_left : 1;
+    /* [FIND-MINW] the eighth, `--harness=no-min-width`, the INVERSE lever
+     * of a change with no public deny (it only removes work; its risk is a
+     * wrong answer): WIDTH's `min-width` row declines, so no search stops
+     * at the minimum width and the answer-identity sweep can still produce
+     * the form before it. Off on every shipped compile. */
+    unsigned no_min_width : 1;
     /* [REQ-EMPTYCAT] span_arms E1 (§3.7): the sixth, `--harness=restore=`,
      * the necessary-run walk's RESTORED ARMS (`PCREC_WALK_ARM` bits,
      * src/facts/walk_arms.def), read once at the walk entry into its
@@ -7523,6 +7529,11 @@ static inline bool pcrec_startgate_needed(Ctx *cx)
  * carries the underflow guard's argument and the soundness sentence. */
 void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
                                  const char *posvar, const char *lenvar);
+/* [FIND-MINW] Answers NOMATCH when fewer than `w` bytes lie in
+ * `[posvar, lenvar)`, `w` being the WIDTH row's proven minimum match width.
+ * ONE text for both engines' search entries (src/gen/emit_dfa.c). */
+void pcrec_emit_min_width_check(StrBuf *c, const char *indent, const char *posvar,
+                                const char *lenvar, long long w);
 /* [OPT-REQBYTE] Answers NOMATCH when `[posvar, lenvar)` does not contain the
  * byte the analysis proved every match must carry; emits nothing where it
  * found none. ONE text for both engines' search entries — src/gen/emit_dfa.c
@@ -9542,10 +9553,14 @@ typedef struct CandBound {
                                  * NULL where the loop runs to `subject_length` */
 } CandBound;
 
-/* THE WIDTH SLOT's PAYLOAD, `CandRow.u.width`: whether the VM entry emits
- * the root minimum-width check (and its stamp and listing row). */
+/* THE WIDTH SLOT's PAYLOAD, `CandRow.u.width`: whether the search entry
+ * emits the minimum-width check ([FIND-MINW]: fewer bytes left than every
+ * match needs, so no match starts), and whether the width is the analysis
+ * CEILING, where the VM entry spells the check with its stamp and listing
+ * row (`<PREFIX>_VM_ROOT_MINW`, `--emit-ir`'s `root-minw`). */
 typedef struct CandWidth {
     bool check;
+    bool ceiling;
 } CandWidth;
 
 /* The first row of `slot` routed on the VM route that the compile's deny

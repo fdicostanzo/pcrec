@@ -23,9 +23,17 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `102` on every artifact today ([NEVER-MATCH] a never-matching VM hybrid is the DFA
-  empty artifact, 100 -> 102, lane nevermatch 2026-11-12; 101 is reserved for the kit's K38-2, which lands
-  first: re-pin at landing if the order differs).** Under `--engine=auto`, a VM hybrid whose prefilter machines
+- **`rx_info.abi` is `103` on every artifact today ([FIND-MINW] searches stop at the minimum width, 100 -> 103,
+  lane minw 2026-11-12; 101 and 102 were reserved for K38-2 and lane nevermatch).** A search entry whose every
+  match needs at least two bytes (the WIDTH row `min-width`: the `width` fact's `bmin` on the DFA routes, the
+  root's `pcrec_minw` on the VM) answers NOMATCH where fewer remain past `search_from`, ahead of the pre-check;
+  the forward DFA scan's start-state skip block ends the search where fewer remain past its landing; the
+  VM attempt loop's bound ends that many bytes before the subject's end.
+  The VM's ceiling row keeps its stamped check. No struct offset moves, no `rx_info` member is added or
+  changed, and no answer moves.
+
+- **`rx_info.abi` was `102` after ([NEVER-MATCH] a never-matching VM hybrid is the DFA
+  empty artifact, 100 -> 102, lane nevermatch 2026-11-12; 101 stays unused; landed with lane minw as s1land, 102 -> 103 above).** Under `--engine=auto`, a VM hybrid whose prefilter machines
   admit no match (the empty LOCATE row's test, `pcrec_dfa_pair_matches_nothing` /
   `pcrec_dfa_accepts_nowhere`, now in src/ir/dfa.c) is emitted by the DFA engine: its whole text is the empty
   engine's (`RX_ENGINE "dfa"`, `RX_DFA_SCAN "empty"`), where it was a VM program behind a prefilter that

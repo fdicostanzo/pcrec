@@ -38,6 +38,9 @@
 # 2^40 bytes, which `size_t` can represent. Sabotaging the emission (rather
 # than the comparison) is therefore the honest cut: it removes the SITE, which
 # is what the row is about.
+# RE-AIMED 2026-11-12 (lane minw, [FIND-MINW]): the ceiling's stamped check reads
+# WIDTH's `ceiling` field since the general `min-width` row joined the slot; same
+# site, same signature (the min-width check below the ceiling is not this row's).
 SAB_ID="S556-root-minw-unchecked"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
@@ -47,6 +50,6 @@ SAB_DESC="the search entry stops emitting the ROOT minimum-width check, so an em
 SAB_DOC_FIGURE="PREDICTED: leftrec.rxt's DIRECT cell (^((?1)a)\$ on \"a\") and its INDIRECT cell (the p/q two-node cycle on \"ab\") revert from a ruled NOMATCH to PCREC_ERR_FRAMES -- their wave-B+C expectation, which wave E replaced. The NULLABLE-PREFIX cell (^(a?(?1)b)\$ on \"ab\") stays GREEN under the same sabotage, because its \`a?\` emits an MRL clamp and it never depended on this site. TWO RED, ONE GREEN is the signature; three red means the MRL machinery was cut instead. MEASURED on the landed build: all three roots report pcrec_minw = 1099511627776 (PCREC_MINW_MAX) once pcrec_callgraph_build has run, and exactly four of the corpus's 2,568 distinct patterns reach that ceiling -- all four call-bearing."
 SAB_COUNT=1
 SAB_BEFORE='     * [START-TABLE] C5 the condition is the WIDTH row (H1 `ceiling`). */
-    if (pcrec_cand_width(width)->check)'
+    if (pcrec_cand_width(width)->ceiling)'
 SAB_AFTER='     * [START-TABLE] C5 the condition is the WIDTH row (H1 `ceiling`). */
     if (0) /* SABOTAGE S556: the root minw check is never emitted */'

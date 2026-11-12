@@ -41,7 +41,11 @@ set-leads	-	(?:é|ü){2,5}((?i:cat))
 emitted	-fno-req-set-lead	(?:é|ü){2,5}((?i:cat))
 emitted	-	a(b|c)+d
 ceiling	-	^((?1)a)$
-width-none	-	a(b|c)+d
+# [FIND-MINW] (lane minw): every match of a(b|c)+d is at least 3 bytes, so it is
+# `min-width` since abi 103; a(b|c)* (width 1) and the inverse lever keep `width-none`
+min-width	-	a(b|c)+d
+width-none	-	a(b|c)*
+width-none	--harness=no-min-width	a(b|c)+d
 handoff	--memfn=no-window-search	\d\dxyz
 scan-from-startpos	-fno-req-handoff --memfn=no-window-search	\d\dxyz
 # [REQRUN-VM] the VM attempt loop's rows (tuning.md §2.41¶8b): the whole run
