@@ -1,0 +1,139 @@
+rows 815
+status {'out': 85, 'in': 730}
+  corpus: 793 rows, in 709
+  bench: 22 rows, in 21
+
+OUT reasons:
+    10  multiline $
+     8  code point > 0x7f
+     8  escape \G
+     8  escape \1
+     6  escape \p
+     6  NFA over the spike's 3000-node cap 
+     5  multiline ^
+     5  possessive quantifier
+     5  consuming after end assertion
+     4  utf8 dot
+     2  escape \P
+     2  utf8 negated class
+     2  group (?(
+     2  group (?n
+     2  TDFA over the spike's 4000-state cap
+     2  group (?>
+     2  group (?*
+     2  spike parser: subsection not found
+     1  escape \4
+     1  utf8 non-ASCII literal
+     1  group (?U
+     1  quantified assertion
+
+DIFFERENTIAL over 730 admitted patterns
+  subjects: 751945 (corpus subjects 6284), pcre2 errors (invalid UTF-8 subjects) 52
+  mism_tdfa  patterns with a mismatch: 0 (subjects 0)
+  mism_pike  patterns with a mismatch: 0 (subjects 0)
+  mism_anch  patterns with a mismatch: 0 (subjects 0)
+  mism_vm    patterns with a mismatch: 0 (subjects 0)
+  mism_real  patterns with a mismatch: 0 (subjects 0)
+  exhaustive length distribution: [('1', 2), ('2', 13), ('3', 28), ('4', 94), ('5', 215), ('6', 248), ('8', 130)]
+
+COSTS, ANCHORED (Stage 1 shape: inside the hybrid window), 730 patterns
+  tagged states           median 5  p90 16  p99 196  max 1001  mean 15.84
+  untagged states         median 4  p90 12  p99 110  max 1001  mean 10.96
+  tagged/untagged ratio   median 1.00  p90 2.00  max 46.64  (== 1.0: 454)
+  registers (as built)    median 3  p90 5  p99 11  max 12  mean 3.19
+  registers after fixed   median 0  p90 1  p99 3  max 6  mean 0.26
+  sets per transition     total sets 13230 over 19624 transitions
+  copies (as built)       median 0  p90 3  p99 181  max 640  mean 5.73
+  max ops on one trans    median 1  p90 2  p99 4  max 5  mean 1.28
+  copy-free as built (this allocator)   574 (79%)
+  copy-free under SOME allocation       580 (79%)
+  copy-free once fixed classes dropped  730 (100%)
+  ALL classes fixed (no registers)      616 (84%)
+  REALIZED copy-free machine (fixed classes + coloured unions): 730 built
+    registers            median 0  p90 1  p99 3  max 6  mean 0.26
+    set ops (whole DFA)  median 0  p90 2  p99 34  max 216  mean 2.31
+    zero registers       616
+    prefilter none: 93 admitted; copy-free(nf) 93, all-fixed 88
+    bench: 21 admitted; copy-free(nf) 21, all-fixed 13
+  worst tagged/untagged state ratio:
+       513/11   regs 11  copies 0     (a)(b)?(c)?(d)?(e)?(f)?(g)?(h)?(i)?(j)?
+       186/12   regs 9   copies 180   ((a)|b){0,3}c(?:(p)q|(r)){0,3}d
+        26/2    regs 5   copies 17    ((a)|(b))*$
+        13/1    regs 5   copies 17    ((a)|(b))*
+        13/1    regs 5   copies 17    ((?<a1>a)|(?<b1>b))*
+        18/2    regs 6   copies 9     ((a)|b)*c
+        18/2    regs 6   copies 9     ((a)|b)*[cd]
+        25/3    regs 5   copies 17    (?:(a)|(b))+$
+  most copies:
+      copies 640   states 324  regs 6   ((a)|b){0,64}c
+      copies 241   states 134  regs 6   ((a)|ab){0,17}c
+      copies 241   states 134  regs 6   ((a)|ab){0,17}?c
+      copies 222   states 126  regs 6   ((a)|ab){0,16}c
+      copies 207   states 118  regs 6   ((a)|ab){0,15}c
+      copies 193   states 139  regs 6   ((a)|ab){11,19}c
+      copies 181   states 125  regs 6   ((a)|ab){9,17}c
+      copies 181   states 125  regs 6   ((a)|ab){9,17}?c
+
+COSTS, UNANCHORED (start tag in the machine: Stage 4 shape), 730 patterns
+  tagged states           median 5  p90 17  p99 513  max 2520  mean 27.86
+  untagged states         median 4  p90 12  p99 203  max 2420  mean 16.61
+  tagged/untagged ratio   median 1.00  p90 2.25  max 46.64  (== 1.0: 452)
+  registers (as built)    median 3  p90 6  p99 21  max 301  mean 4.80
+  registers after fixed   median 0  p90 2  p99 14  max 19  mean 0.98
+  sets per transition     total sets 221779 over 228545 transitions
+  copies (as built)       median 1  p90 19  p99 1511  max 118247  mean 468.97
+  max ops on one trans    median 2  p90 4  p99 18  max 65  mean 2.53
+  copy-free as built (this allocator)   309 (42%)
+  copy-free under SOME allocation       309 (42%)
+  copy-free once fixed classes dropped  695 (95%)
+  ALL classes fixed (no registers)      421 (58%)
+  REALIZED copy-free machine (fixed classes + coloured unions): 695 built
+    registers            median 0  p90 2  p99 3  max 8  mean 0.61
+    set ops (whole DFA)  median 0  p90 6  p99 132  max 5985  mean 13.07
+    zero registers       421
+    prefilter none: 93 admitted; copy-free(nf) 92, all-fixed 68
+    bench: 21 admitted; copy-free(nf) 19, all-fixed 11
+  worst tagged/untagged state ratio:
+       513/11   regs 11  copies 0     (a)(b)?(c)?(d)?(e)?(f)?(g)?(h)?(i)?(j)?
+      2154/66   regs 65  copies 18384 ((a)|b){0,64}c
+       194/12   regs 9   copies 636   ((a)|b){0,3}c(?:(p)q|(r)){0,3}d
+        26/2    regs 6   copies 56    ((a)|(b))*$
+        13/1    regs 5   copies 17    ((a)|(b))*
+        13/1    regs 5   copies 17    ((?<a1>a)|(?<b1>b))*
+       446/42   regs 21  copies 2041  ((a)|bc){9,20}d
+       386/40   regs 20  copies 1560  ((a)|ab){11,19}c
+  most copies:
+      copies 118247 states 668  regs 11  ([\\x23\\x25\\x27\\x29\\x2b\\x2d\\x2f\\x31\\x33\\x35\\x37\\x39\\x3b\\x3d\\x3f\\x41\\x43\\x45\\x47\\x49\\x4b\\x4d\\x4f\\x51\\x53\\x55\\x57\\x59\\x5b\\x5e\\x60\\x62])[\\x21\\x23\\x26\\x27\\x2a\\x2b\\x2e\\x2f\\x32\\x33\\x36\\x37\\x3a\\x3b\\x3e\\x3f\\x42\\x43\\x46\\x47\\x4a\\x4b\\x4e\\x4f\\x52\\x53\\x56\\x57\\x5a\\x5b\\x5f\\x60][\\x21\\x25\\x27\\x28\\x2a\\x2d\\x2f\\x30\\x32\\x35\\x37\\x38\\x3a\\x3d\\x3f\\x40\\x42\\x45\\x47\\x48\\x4a\\x4d\\x4f\\x50\\x52\\x55\\x57\\x58\\x5a\\x5e\\x60\\x61][\\x21\\x23\\x24\\x27\\x28\\x29\\x2d\\x2e\\x32\\x33\\x34\\x37\\x38\\x39\\x3d\\x3e\\x42\\x43\\x44\\x47\\x48\\x49\\x4d\\x4e\\x52\\x53\\x54\\x57\\x58\\x59\\x5e\\x5f][\\x21\\x23\\x24\\x25\\x26\\x2d\\x2e\\x2f\\x30\\x31\\x37\\x38\\x39\\x3a\\x3b\\x3c\\x42\\x43\\x44\\x45\\x46\\x4d\\x4e\\x4f\\x50\\x51\\x57\\x58\\x59\\x5a\\x5b\\x5d][\\x23\\x25\\x27\\x29\\x2b\\x2e\\x30\\x32\\x34\\x36\\x37\\x39\\x3b\\x3d\\x3f\\x41\\x42\\x44\\x46\\x48\\x4a\\x4c\\x4d\\x4f\\x51\\x53\\x55\\x58\\x5a\\x5d\\x5f\\x61][\\x24\\x25\\x28\\x29\\x2c\\x2d\\x2e\\x31\\x32\\x35\\x36\\x37\\x3a\\x3b\\x3e\\x3f\\x43\\x44\\x47\\x48\\x4b\\x4c\\x4d\\x50\\x51\\x54\\x55\\x59\\x5a\\x5e\\x5f\\x62][\\x26\\x27\\x28\\x29\\x2f\\x30\\x31\\x32\\x38\\x39\\x3a\\x3b\\x40\\x41\\x42\\x43\\x44\\x49\\x4a\\x4b\\x4c\\x4d\\x52\\x53\\x54\\x55\\x5b\\x5d\\x5e\\x5f][\\x2a\\x2b\\x2c\\x2d\\x2e\\x2f\\x30\\x31\\x32\\x3c\\x3d\\x3e\\x3f\\x40\\x41\\x42\\x43\\x44\\x4e\\x4f\\x50\\x51\\x52\\x53\\x54\\x55\\x60\\x61\\x62][\\x33\\x34\\x35\\x36\\x37\\x38\\x39\\x3a\\x3b\\x3c\\x3d\\x3e\\x3f\\x40\\x41\\x42\\x43\\x44\\x56\\x57\\x58\\x59\\x5a\\x5b\\x5d\\x5e\\x5f\\x60\\x61\\x62][\\x45\\x46\\x47\\x48\\x49\\x4a\\x4b\\x4c\\x4d\\x4e\\x4f\\x50\\x51\\x52\\x53\\x54\\x55\\x56\\x57\\x58\\x59\\x5a\\x5b\\x5d\\x5e\\x5f\\x60\\x61\\x62]
+      copies 116709 states 668  regs 11  ([\\x23\\x25\\x27\\x29\\x2b\\x2d\\x2f\\x31\\x33\\x35\\x37\\x39\\x3b\\x3d\\x3f\\x41\\x43\\x45\\x47\\x49\\x4b\\x4d\\x4f\\x51\\x53\\x55\\x57\\x59\\x5b\\x5e\\x60])[\\x21\\x23\\x26\\x27\\x2a\\x2b\\x2e\\x2f\\x32\\x33\\x36\\x37\\x3a\\x3b\\x3e\\x3f\\x42\\x43\\x46\\x47\\x4a\\x4b\\x4e\\x4f\\x52\\x53\\x56\\x57\\x5a\\x5b\\x5f\\x60][\\x21\\x25\\x27\\x28\\x2a\\x2d\\x2f\\x30\\x32\\x35\\x37\\x38\\x3a\\x3d\\x3f\\x40\\x42\\x45\\x47\\x48\\x4a\\x4d\\x4f\\x50\\x52\\x55\\x57\\x58\\x5a\\x5e\\x60\\x61][\\x21\\x23\\x24\\x27\\x28\\x29\\x2d\\x2e\\x32\\x33\\x34\\x37\\x38\\x39\\x3d\\x3e\\x42\\x43\\x44\\x47\\x48\\x49\\x4d\\x4e\\x52\\x53\\x54\\x57\\x58\\x59\\x5e\\x5f][\\x21\\x23\\x24\\x25\\x26\\x2d\\x2e\\x2f\\x30\\x31\\x37\\x38\\x39\\x3a\\x3b\\x3c\\x42\\x43\\x44\\x45\\x46\\x4d\\x4e\\x4f\\x50\\x51\\x57\\x58\\x59\\x5a\\x5b\\x5d][\\x23\\x25\\x27\\x29\\x2b\\x2e\\x30\\x32\\x34\\x36\\x37\\x39\\x3b\\x3d\\x3f\\x41\\x42\\x44\\x46\\x48\\x4a\\x4c\\x4d\\x4f\\x51\\x53\\x55\\x58\\x5a\\x5d\\x5f\\x61][\\x24\\x25\\x28\\x29\\x2c\\x2d\\x2e\\x31\\x32\\x35\\x36\\x37\\x3a\\x3b\\x3e\\x3f\\x43\\x44\\x47\\x48\\x4b\\x4c\\x4d\\x50\\x51\\x54\\x55\\x59\\x5a\\x5e\\x5f][\\x26\\x27\\x28\\x29\\x2f\\x30\\x31\\x32\\x38\\x39\\x3a\\x3b\\x40\\x41\\x42\\x43\\x44\\x49\\x4a\\x4b\\x4c\\x4d\\x52\\x53\\x54\\x55\\x5b\\x5d\\x5e\\x5f][\\x2a\\x2b\\x2c\\x2d\\x2e\\x2f\\x30\\x31\\x32\\x3c\\x3d\\x3e\\x3f\\x40\\x41\\x42\\x43\\x44\\x4e\\x4f\\x50\\x51\\x52\\x53\\x54\\x55\\x60\\x61][\\x33\\x34\\x35\\x36\\x37\\x38\\x39\\x3a\\x3b\\x3c\\x3d\\x3e\\x3f\\x40\\x41\\x42\\x43\\x44\\x56\\x57\\x58\\x59\\x5a\\x5b\\x5d\\x5e\\x5f\\x60\\x61][\\x45\\x46\\x47\\x48\\x49\\x4a\\x4b\\x4c\\x4d\\x4e\\x4f\\x50\\x51\\x52\\x53\\x54\\x55\\x56\\x57\\x58\\x59\\x5a\\x5b\\x5d\\x5e\\x5f\\x60\\x61]
+      copies 62928 states 2520 regs 9   (?:username|USERNAME|user|USER)[ \\t]*=[ \\t]*["']([a-zA-Z0-9.@_\\-+]{3,30})["']\\s*[,;]?\\s*(?:\\s*(?:\\#|//)[^\\n\\r]*[\\n\\r])*(?:password|pass|PASSWORD|PASS)[ \\t]*=[ \\t]*["']([^"']{5,30})["']
+      copies 18384 states 2154 regs 65  ((a)|b){0,64}c
+      copies 2205  states 134  regs 21  (a.){10}xyz
+      copies 2041  states 446  regs 21  ((a)|bc){9,20}d
+      copies 1560  states 386  regs 20  ((a)|ab){11,19}c
+      copies 1511  states 316  regs 18  ((a)|ab){0,17}c
+
+FIXED-OFFSET CONTROL (verify_fixed over every subject, both machines): patterns with a violation 0
+
+BENCH rows:
+  in   hybrid   a:states 29  /29   regs_nf 6  allfixed 0  cf_nf 1   ^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0
+  in   hybrid   a:states 13  /12   regs_nf 0  allfixed 1  cf_nf 1   ^\\d{5}(-\\d{4})?$
+  in   hybrid   a:states 64  /62   regs_nf 1  allfixed 0  cf_nf 1   ^(?:(?:kern|user|mail|daemon|auth|syslog|cron)\\.(?:emerg|alert|crit|e
+  in   hybrid   a:states 36  /36   regs_nf 0  allfixed 1  cf_nf 1   \\b((?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16
+  in   hybrid   a:states 95  /95   regs_nf 0  allfixed 1  cf_nf 1   \\b(github_pat_[0-9a-zA-Z_]{82})\\b
+  in   hybrid   a:states 82  /82   regs_nf 0  allfixed 1  cf_nf 1   (?i)https://hooks.slack.com/services/(T[a-z0-9_]{8}/B[a-z0-9_]{8,12}/[
+  in   hybrid   a:states 102 /102  regs_nf 3  allfixed 0  cf_nf 1   (?:username|USERNAME|user|USER)[ \\t]*=[ \\t]*["']([a-zA-Z0-9.@_\\-+]{
+  out  none     a:states     /     regs_nf    allfixed    cf_nf     NFA over the spike's 3000-node cap (4408)
+  in   hybrid   a:states 84  /41   regs_nf 4  allfixed 0  cf_nf 1   ^\\s*((?:[+-]\\d{6}|\\d{4})-(?:\\d\\d-\\d\\d|W\\d\\d-\\d|W\\d\\d|\\d\\
+  in   hybrid   a:states 4   /4    regs_nf 1  allfixed 0  cf_nf 1   ([^\\\\]+)"\\s*:\\s*
+  in   hybrid   a:states 5   /5    regs_nf 1  allfixed 0  cf_nf 1   (?x)\n  "                     # opening quote\n  (?<key> [^"\\\\]+ )  
+  in   hybrid   a:states 7   /4    regs_nf 1  allfixed 0  cf_nf 1   ^(([0-9]+[-/])+)+$
+  in   hybrid   a:states 3   /3    regs_nf 0  allfixed 1  cf_nf 1   ^(\\d+)+$
+  in   hybrid   a:states 7   /4    regs_nf 1  allfixed 0  cf_nf 1   ^(\\d+\\s*)+$
+  in   hybrid   a:states 4   /2    regs_nf 0  allfixed 1  cf_nf 1   (a|)*\\d
+  in   hybrid   a:states 4   /4    regs_nf 0  allfixed 1  cf_nf 1   (cat)
+  in   hybrid   a:states 4   /4    regs_nf 0  allfixed 1  cf_nf 1   (?'w'cat)
+  in   hybrid   a:states 4   /4    regs_nf 0  allfixed 1  cf_nf 1   (?<w>cat)
+  in   hybrid   a:states 5   /5    regs_nf 0  allfixed 1  cf_nf 1   (\\d{2})(?-1)
+  in   hybrid   a:states 5   /5    regs_nf 0  allfixed 1  cf_nf 1   (?+1)(\\d{2})
+  in   hybrid   a:states 5   /5    regs_nf 0  allfixed 1  cf_nf 1   (\\d{2})\\g<1>
+  in   hybrid   a:states 5   /5    regs_nf 0  allfixed 1  cf_nf 1   (?P<d>\\d{2})(?P>d)
