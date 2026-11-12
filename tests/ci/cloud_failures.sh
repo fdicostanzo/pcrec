@@ -11,11 +11,13 @@
 #         - make's `*** [...] Error N`;   - `FATAL:`;   - `##[error]` (the runner's own step failure);
 #         - a sanitizer's `runtime error:` / `ERROR: AddressSanitizer|LeakSanitizer` / `SUMMARY: ... Sanitizer`.
 #       NOT failing: a PASS:/OK line (they may mention a count of failures), lower-case `fail=N` / `checks failed: 0`
-#       tallies, `SKIPPED`, and a `0 FAIL` / `FAIL=0` / `FAIL: 0` count. Derived from the FAIL forms our suites print
+#       tallies, `SKIPPED`, and a `0 FAIL` / `FAIL=0` / `FAIL: 0` count; nor a mech matrix ROW (a line opening with a
+#       sabotage id then a tab or two spaces: its description/tally prose says FAIL/`compliance-FAIL` on a row that was
+#       DETECTED -- run 43108213213 read four DETECTED rows red; a row that is wrong gets its own `FAIL: mech row` line). Derived from the FAIL forms our suites print
 #       (survey in tests/ci/cloud_failures.test) and the real shards of runs 43053543333 (s8) and 43069897443 (s7).
 set -u
 max=${1:-60}
 sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z //' \
   | grep -E '(^|[^A-Za-z])FAIL(ED|URES?)?([^a-z]|$)|\*\*\* \[.*\] Error|FATAL:|^##\[error\]|runtime error:|ERROR: (Address|Leak)Sanitizer|SUMMARY: .*Sanitizer' \
-  | grep -vE '^[[:space:]]*(PASS|OK)([^A-Za-z]|$)|(^|[^0-9])0 FAIL|FAIL(ED|URES?)?[:= ]+0([^0-9]|$)' \
+  | grep -vE '^S[-0-9A-Za-z_]+([[:space:]]{2,}|'"$(printf '\t')"')|^[[:space:]]*(PASS|OK)([^A-Za-z]|$)|(^|[^0-9])0 FAIL|FAIL(ED|URES?)?[:= ]+0([^0-9]|$)' \
   | head -"$max"

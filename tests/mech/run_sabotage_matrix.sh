@@ -886,6 +886,13 @@ A sabotage definition (tests/mech/sabotages/S<NN>_*.sh) sets:
                          fail to compile (a compiler error in the failing
                          arm's log); that = DETECTED-BUILD, none =
                          UNDETECTED ***UNEXPECTED***
+    SAB_CATCH_GCC_MIN    OPTIONAL, COMPILE-CATCH rows: the lowest gcc major
+                         whose compiler refuses the plant. Below it (the
+                         cloud runner's gcc 13 against a plant gcc 15's
+                         always_inline check refuses) the compile catch is
+                         not expected and a row the checks detect reads
+                         DETECTED, not UNEXPECTED (MECH_CC_MAJOR overrides
+                         the probe, for the selftest)
     SAB_EXPECT_REASON    REQUIRED when SAB_EXPECT=UNREACHED
 
   [MECH-REACH] THE WITNESS'S REACH -- a row whose detector is a construct
@@ -1357,6 +1364,7 @@ run_one() {
         SAB_REACH_POP=""
         SAB_REQUIRE=""
         SAB_EXPECT_REASON=""
+        SAB_CATCH_GCC_MIN=""
         # shellcheck disable=SC1090
         source "$sab_path"
         for v in SAB_ID SAB_FILE SAB_SUITES SAB_DESC SAB_BEFORE SAB_AFTER; do
@@ -3754,6 +3762,9 @@ run_one() {
             verdict="NOW DETECTED -- re-measure and flip the expectation ***UNEXPECTED***"
         elif [ "$actual" = "UNDETECTED" ] && [ "$expect" = "DETECTED" ]; then
             verdict="$verdict ***UNEXPECTED***"
+        elif [ "$expect" = "COMPILE-CATCH" ] && [ "$actual" = "DETECTED" ] && [ -n "$SAB_CATCH_GCC_MIN" ] \
+             && [ "${MECH_CC_MAJOR:-$("$CC" -dumpversion 2>/dev/null | cut -d. -f1)}" -lt "$SAB_CATCH_GCC_MIN" ] 2>/dev/null; then
+            verdict="DETECTED (by the checks; this compiler is older than gcc $SAB_CATCH_GCC_MIN, so the declared compile-time catch is not expected)"
         elif [ "$expect" = "COMPILE-CATCH" ] && { [ "$actual" = "DETECTED" ] || [ "$actual" = "UNDETECTED" ]; }; then
             # the declared compile-time catch did not fire: no arm's artifact
             # failed to compile, whatever else did or did not fail
