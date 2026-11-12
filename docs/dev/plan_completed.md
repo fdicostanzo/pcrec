@@ -6587,3 +6587,31 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   status (2026-11-11): DONE for pcrec: utf8 cells are in the bench sets since 2026-10 (families a-f); growth families (g)-(k) (find-all, invalid UTF-8, start-inside-a-character, surrogates, the `-e byte` mirror arm) HANDED to the bench dev (pcrecdev2), who owns them in the bench repo; pcrec adds nothing here
   refs: tests/utf8; decisions D78 D119
   the bench BUILDS (D78), pcrec runs; UTF-8 text subjects in several scripts (Latin-1-Supplement-heavy, Cyrillic, CJK, mixed/emoji, one ASCII control); families (a) classes, (b) multi-byte literals/runs, (c) caseless over non-ASCII, (d) multi-byte alternation/quantifiers, (e) assertions (\b/lookbehind/multiline), (f) properties, in the first release; growth plan (g)-(k) named (find-all, invalid UTF-8, start-inside-a-character, surrogates, the `-e byte` mirror arm) — pcrec's tests/utf8 axis01-12 are the correctness axes the subbench measures SPEED on. MEASURED NEED: the shipped byte-frequency prior is inverted under utf8 (reqbyte_freq_pick.md §3), [OPT-OFSK] reads it under utf8 today unmeasured, the freq pick and 2b decline under utf8. First customers: offset-skip rows, high-byte required-byte rows, fold sets. Ledger → cycle 3's utf8 question.
+
+## Completed 2026-11-12 (lane procfix: stale queue rows closed with evidence; rows verbatim and de-indented)
+
+- [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
+  completed: 2026-11-12 lane procfix (DEPLOYED: scripts/boxqueue on main carries the order code (19594f8c4, merged 2026-11-01); the live runner (pid 10503, started 2026-11-03 11:31) is newer and prints ORDER lines (484 in queue.log); bench inbox entry OWED to the manager; row verbatim below, de-indented)
+  filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
+  status (2026-11-01): BUILT on lane/qorder (order table, est/run-total, window not_before, WINDOW-MISSED, cap kill), branch tests green; NOT DEPLOYED: the manager switches the live runner in an idle gap (qorder_report.md DEPLOY)
+  status (2026-11-12): DONE 2026-11-12: deployed and live; 484 ORDER lines in queue.log, runner started after the merge. The bench inbox entry (qorder_bench_inbox_draft.md) is the manager's to send; tuning the unmeasured numbers waits for a first WINDOW-MISSED miss (none in queue.log).
+  next: manager deploys in an idle gap (report DEPLOY), then sends the bench inbox entry (qorder_bench_inbox_draft.md); watch the first ORDER lines in queue.log; tune the unmeasured numbers (100, 14400 s, 900 s) from the first miss
+  refs: scripts/boxqueue; scripts/boxlock; [QUEUE-CAPKILL]; [B146]; docs/design/plan_row_bodies/BOXQUEUE.md; memory pcrec-bench-status
+  Scope: (1) order by the UNSHARDED run length, across sessions, so shorter overall runs go first; (2) [QUEUE-CAPKILL] folds in; (3) `.window` gains `not_before=`; (4) the queue notices a peer's planned window that never starts (2026-10-31: W1 never ran and the box sat idle about 9 h); (5) the [B146] bench contract is revised through the bench inbox (single-file [inbox] commit); (6) NEVER swap the live runner while a timing job runs or is queued next.
+
+- [QUEUE-CAPKILL] STATE:started — boxqueue's cap kill must take the whole job tree and release the box lock
+  completed: 2026-11-12 lane procfix (DONE: two real cap fires showed a clean CAP-KILL line (480-main-u3crit-axesmemfn 2026-11-09 00:47, 567-kit-u2-mech2 2026-11-09 10:41); row verbatim below, de-indented)
+  filed: 2026-10-31 manager
+  status (2026-11-01): built with [QORDER] on lane/qorder, not deployed: the runner's watcher enforces the cap (safekill group+tree, then any other box-lock holder); planted test. Origin: 745-vmrecm-test, 64 min over cap, 2026-10-31
+  status (2026-11-12): DONE 2026-11-12: closing trigger met; two real CAP-KILL lines in queue.log (2026-11-09), job tree killed by safekill group+tree, box lock released.
+  next: deploys with [QORDER]; close both rows after one real cap fire shows a clean CAP-KILL line
+  refs: scripts/boxqueue; scripts/boxlock; scripts/safekill; job 745-vmrecm-test
+
+- [SUITE-RESUME] STATE:started — A RED FULL SUITE RE-RUNS ONLY ITS RED AND UNRUN STAGES, ON THE OWNER'S COMMAND
+  completed: 2026-11-12 lane procfix (SUPERSEDED by [CLOUD-SUITE]: the sharded cloud suite is the regular full-suite runner and a red shard reruns alone (gh run rerun --failed, cloudrun --rerun-infra); the local fullsuite_job.sh --resume stays landed, its staged real test was never run and is no longer owed; row verbatim below, de-indented)
+  filed: 2026-10-25 Frank ("1. yes" to queuemon proposal 1; "lets test it in stages. auto-restart can go bad")
+  status (2026-10-25): LANDED 4dd8af50b (offline test 33/33); staged real test OWED (report recipe: reduced battery killed after strict, then resume; ~4 min); resume reruns the SAME code (flakes, not fixes)
+  status (2026-11-12): SUPERSEDED 2026-11-12 by [CLOUD-SUITE]: per-shard reruns replace stage-level resume of the local 12h45m battery; no remainder.
+  next: one sonnet lane runs the staged test after 624 and before the bench window; no full-suite use before it
+  refs: docs/dev/lanes/queuemon_report.md (proposal 1; 300-main-fullsuite 36,878 s, a re-run needed 3 stages); scripts/fullsuite_job.sh; scripts/battery.sh
+  Charter: never automatic. The owner queues a resume job naming the red run dir; it re-runs the red and not-yet-run stages at the SAME commit (refused if the tree moved) and writes a combined verdict citing both runs.

@@ -211,6 +211,10 @@ failed; a 75 from the WORK is a bug (readiness belongs in `--ready`). A
 whole queue's plan before a night is committed to it.
 
 
+## Cloud dispatch ([CLOUD-SUITE], manager rulings 2026-11-12)
+- WHICH KIND FIRST: a lane dispatches the cloud TEST kind first (`scripts/cloudrun`, as its last act). The AXES kind is dispatched only for a change touching emitted code (src/gen, src/opt, memfn emit) or the axis flags/harness, and only AFTER its test run is green (a follow-up dispatch by the manager or a fresh lane). A docs, test-data or tooling change dispatches test only.
+- PIN SECTIONS LOCALLY BEFORE DISPATCH: a change that moves emitted bytes (an abi event), the empty-engine set, a census population or a size rung runs the sections that pin them on the box FIRST and reviews or re-derives their drift by each check's own rule: `test-codegen` (its `run_dfa_stamps.sh`), `test-compound`, `test-partlayout`, `test-resource`, `test-cpset-structure`, `test-startset` (the start-set census) and `test-rxtsource` (names verified against the Makefile, 2026-11-12). A cloud red is the expensive way to find a stale pin: pffix's five cloud reds and upropprom's one were all such pins (docs/dev/lanes/pffix2_report.md, docs/dev/lanes/upropfix_report.md).
+
 ## Other boxes
 ubuntubudu (the bench's box, a second 10.46 oracle) is reachable by
 `ssh duxevents@192.168.1.100` on the home LAN, or `duxevents@100.69.121.107`
