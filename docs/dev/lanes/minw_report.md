@@ -11,8 +11,11 @@ manager's LANE minw message; build go Frank 2026-11-12 "ok proceed with S1".
   does not fit this stop (FINDINGS F5).
 - Rulings file `docs/dev/lanes/minw_rulings.md`: empty at every checkpoint; no
   entry applied.
-- Local validation: `make strict` clean; `make test-codegen` (nice, -j8) result
-  in OWED below; a 529-case differential (13 patterns x 23 edge subjects x
+- Local validation (nice): `make strict` clean; `make test-codegen` green
+  (21/21); `make test-cand-oracle` green (187/0, after the witness rows
+  below); test-compound, test-partlayout, test-startset, test-rxtsource green;
+  test-resource and test-cpset-structure green after re-pins (byte drift
+  only, read; CHANGES); `make cloud-check` 15/0; a 529-case differential (13 patterns x 23 edge subjects x
   both engines, default build against the `--harness=no-min-width` stock form,
   script `$PCREC_TMPDIR/scratch/minw/diff/run.sh`, not committed): 0 diffs.
 - The sabotage anchors of every row whose SAB_FILE this change touches (247
@@ -179,6 +182,15 @@ Commits on `lane/minw` (all `src/`, spec and test edits in the same series):
   `tests/mech/sabotages/S693_abi_not_bumped.sh` and
   `S556_root_minw_unchecked.sh` re-aimed; `docs/dev/plan.md` [FIND-MINW]
   status line.
+- `tests/codegen/cand_oracle_witnesses.tsv`: `min-width` witness
+  `a(b|c)+d`; `width-none` now `a(b|c)*` and the lever form of `a(b|c)+d`.
+- `tests/ci/cloud_axes_shards.tsv`: regenerated (`cloud_reweight.sh axes`)
+  with the new arm (ESTIMATE weight).
+- Re-pins, diffs read: `tests/resource/run_resource_tests.sh` cap witness
+  767075 -> 767195 (+120: entry + skip-landing checks, width 5);
+  `tests/codegen/manifests/m5_stage1_stamps.tsv` six EMITTED_BYTES rows (five
+  VM rows +106: entry check + `attempt_max`; one DFA row +120), no stamp
+  moved; notes beside each pin.
 
 Emitted text (the premise pattern, DFA): one line after the head,
 `if (subject_length - search_from < 7ULL) return 0;`, ahead of the pre-check;
@@ -198,9 +210,4 @@ differ).
   `tests/ci/cloud_axes_shards.tsv` is GENERATED (`tests/ci/cloud_units_plan.py
   axes`) and has no row for the new arm yet; regenerate it if the planner
   requires every arm to be listed.
-- Local pinned sections named by RUNS.md beyond test-codegen (test-compound,
-  test-partlayout, test-resource, test-cpset-structure, test-startset,
-  test-rxtsource): see the handoff message for which ran; the abi digits move
-  every artifact by one byte, so size pins (test-resource's 767075-byte cap
-  witness) are the likely movers.
 - Mech rows S556, S693 (re-aimed): not run here.
