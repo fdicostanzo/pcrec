@@ -24,4 +24,4 @@ Validated locally (nice -n 10, own worktree): `make test-prefilter` rc=0; `make 
 
 ## OWED
 
-- Cloud test run re-dispatched on lane/minw as the last act (run id in the SendMessage to main). Shard 1 of 43251014331 unread.
+- Cloud test run re-dispatched on lane/minw as the last act branch cloud/main/test/minw2 at 31f4e6191 (the name minw was taken). Shard 1 of 43251014331 unread.
