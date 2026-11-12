@@ -646,7 +646,6 @@ else
     printf '%s\n' \
         'ad	req_whole_run	6162636465666768	rate:builtin-prior' \
         'ar	req_whole_run	61626364	harness:empty' \
-        'ar	req_run	61626364@1	harness:empty' \
         'ar	req_byte	-	harness:empty' \
         'ar	req_pieces	-	harness:empty' \
         'ar	req_set	-	' > "$WORKDIR/aw"
@@ -722,7 +721,6 @@ if [ -x "$HBIN" ] && [ -z "$abad" ]; then
         printf '%s\n' \
             'zd	req_whole_run	78797a61626364	rate:builtin-prior' \
             'zr	req_whole_run	78797a	harness:zero' \
-            'zr	req_run	78797a@2	harness:zero' \
             'zr	req_byte	-	harness:zero' \
             'zr	req_pieces	-	harness:zero' \
             'zr	req_set	-	' > "$WORKDIR/zw"

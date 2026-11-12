@@ -1649,12 +1649,13 @@ ROWS
 #
 #   (a) THE HAND K PIN TABLE: K derived BY HAND from the pattern TEXT (the
 #       bytes each construct may consume before the window) against the
-#       `req_run_maxoff` fact and the stamp. Detects S465 (a multibyte class
+#       `req_landmark_maxoff` fact and the stamp (the `req_run_maxoff` row
+#       retired into it, review 2026-11-11 r1 k382 F5). Detects S465 (a multibyte class
 #       counted as one byte, `(?i)straße`'s U+017F) and S466 (an alternation
 #       taking its left branch's width).
 #   (b) PRESENCE: `handoff_position` is declared iff the stamp is not "none",
 #       and the subtraction and the comparison carry the stamp's K.
-#   (c) BOUNDED: no artifact whose `req_run_maxoff` reads `unbounded` hands
+#   (c) BOUNDED: no artifact whose `req_landmark_maxoff` reads `unbounded` hands
 #       off (S467: answer-equivalent, so only this can see it), on the
 #       witnesses and on a corpus population with a floor (K35).
 #   (d) THE RUN CHOICE: `req_whole_run` is the walk's MOST INFORMATIVE run,

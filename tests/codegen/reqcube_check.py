@@ -261,7 +261,7 @@ for tag, pat, flags in WIT:
         continue
     path, text = got
     st = dict(re.findall(r'^#define RX_(REQ_\w+|DFA_PREFILTER) "(.*)"$', text, re.M))
-    run, whole = parse_run(fx.get("req_run")), parse_run(fx.get("req_whole_run"))
+    whole = parse_run(fx.get("req_whole_run"))   # the `req_run` row retired (F5)
     rset = set() if fx.get("req_set") in ("none", None) else {int(x) for x in fx["req_set"].split(",")}
     lbl = f"'{pat}'" + (" " + " ".join(flags) if flags else "")
     # 4. the stamps (the hex and mask are the whole run's; `@` is 2c's)
@@ -271,14 +271,14 @@ for tag, pat, flags in WIT:
     rb = st.get("REQ_BYTE", "none")
     if rb != "none" and int(rb) not in rset:
         bad(f"{lbl}: RX_REQ_BYTE {rb} is not a member of req_set {sorted(rset)} (S452's shape)")
-    elif run and run[1][run[2]] == 0xFF and rb != str(run[0][run[2]]):
-        bad(f"{lbl}: the run's scan member is exact, yet RX_REQ_BYTE {rb} is not bytes[idx] = {run[0][run[2]]}")
+    elif rb != fx.get("req_byte", "none"):
+        bad(f"{lbl}: RX_REQ_BYTE {rb} is not the req_byte fact {fx.get('req_byte')} (one home, F10)")
     else:
-        ok(f"{lbl}: RX_REQ_BYTE {rb} is a req_set member (or none), bytes[idx] only at an exact scan member")
+        ok(f"{lbl}: RX_REQ_BYTE {rb} is a req_set member (or none), and the req_byte fact")
     why = st.get("REQ_WHY")
     if (why == "none") != (rb == "none" and st.get("REQ_RUN") == "none"):
         bad(f"{lbl}: RX_REQ_WHY '{why}' against REQ_BYTE '{rb}' / REQ_RUN '{st.get('REQ_RUN')}' -- 'none' must hold iff both are none")
-    elif run and run[1] != b"\xff" * len(run[1]) and (why == "none" or fx.get("run_pin") not in ("none", "", None)
+    elif whole and whole[1] != b"\xff" * len(whole[1]) and (why == "none" or fx.get("run_pin") not in ("none", "", None)
                                                       and ":" not in fx.get("run_pin", "")):
         bad(f"{lbl}: a masked run reads REQ_WHY '{why}' / run_pin '{fx.get('run_pin')}' (never none, never pinned whole)")
     else:
@@ -387,24 +387,27 @@ for tag, pat in (("ctl1", "[0-9]+abcdef"), ("ctl2", "/user|/users"), ("ctl3", "(
 
 # 2c's REACHING regime (span_runs_sheet.md §2.4 C4 (b) under (a)): the probe
 # lever `run-tie-left` (the harness build only) breaks the kit's run-decision
-# ties LEFTMOST while pcrec's own index (`req_run`'s `@idx`, the facts
-# listing) stays rightmost, so a stamp fed pcrec's index names the wrong
-# offset there. Each witness ties on the SAME byte at two positions, so the
-# offset (not only the set) is what is checked; the reach is counted: the
-# lever's `@` must differ from the fact's index on at least one.
+# ties LEFTMOST while pcrec's own index (its pick over the run, the
+# `req_byte` fact's input: the DEFAULT build's `@`, both tying rightmost
+# there; the listing's `req_run` row and its `@idx` retired, F5) stays
+# rightmost, so a stamp fed pcrec's index names the wrong offset there. Each
+# witness ties on the SAME byte at two positions, so the offset (not only
+# the set) is what is checked; the reach is counted: the lever's `@` must
+# differ from the default build's on at least one.
 HARNESS = os.path.join(os.path.dirname(PCREC), "pcrec-harness")
 n_reach = 0
 for tag, pat in (("c4t1", "a.*zqxzqx"), ("c4t2", "a.*(?i:selectselect)")):
     out = os.path.join(WORK, "rq_" + tag + ".c")
     r = subprocess.run([HARNESS, "--harness=run-tie-left", "--features", "all", "-p", "rx", COVER_DENY,
                         "-o", out, "--pattern", pat], capture_output=True, timeout=120)
-    fx = facts(pat.encode())
-    if r.returncode != 0 or fx is None:
+    dflt = emit("d" + tag, pat)
+    if r.returncode != 0 or dflt is None:
         bad(f"C4 lever '{pat}': refused")
         continue
     text = open(out, encoding="latin-1").read()
     st = dict(re.findall(r'^#define RX_(REQ_\w+) "(.*)"$', text, re.M))
-    srun, frun = parse_run(st.get("REQ_RUN")), parse_run(fx.get("req_run"))
+    dst = dict(re.findall(r'^#define RX_(REQ_\w+) "(.*)"$', dflt[1], re.M))
+    srun, frun = parse_run(st.get("REQ_RUN")), parse_run(dst.get("REQ_RUN"))
     b0 = block(text, "rx_reqrun")
     m = b0 and (re.search(r"memchr\(subject \+ pos(?: \+ (\d+))?,", b0) or
                 re.search(r"if \(ha < pos(?: \+ (\d+))?\)", b0))
@@ -413,8 +416,8 @@ for tag, pat in (("c4t1", "a.*zqxzqx"), ("c4t2", "a.*(?i:selectselect)")):
         bad(f"C4 lever '{pat}': REQ_WHY {st.get('REQ_WHY')}, @ {srun[2] if srun else None}, "
             f"the run block scans offset {at}")
     else:
-        n_reach += srun[2] != frun[2]
-        ok(f"C4 lever '{pat}': @{at} is the run block's scan offset (pcrec's index {frun[2]})")
+        n_reach += frun is None or srun[2] != frun[2]
+        ok(f"C4 lever '{pat}': @{at} is the run block's scan offset (the default build's {frun[2] if frun else None})")
 (ok if n_reach >= 1 else bad)(f"C4 lever reach: {n_reach} witness(es) where the kit's offset is not "
                               f"pcrec's index (floor 1)")
 
@@ -473,7 +476,7 @@ nmask = nbadc = 0
 for (pat, args), fx in zip(sorted(rows), res):
     if fx is None:
         continue
-    for key in ("req_run", "req_whole_run"):
+    for key in ("req_whole_run",):     # the `req_run` row retired (F5)
         pr = parse_run(fx.get(key))
         if not pr or pr[1] == b"\xff" * len(pr[1]):
             continue
@@ -486,7 +489,7 @@ for (pat, args), fx in zip(sorted(rows), res):
                 break
 FLOOR = 46
 if nbadc == 0 and nmask >= FLOOR:
-    ok(f"canonical form: {nmask} masked req_run/req_whole_run rows over {len(rows)} corpus patterns, "
+    ok(f"canonical form: {nmask} masked req_whole_run rows over {len(rows)} corpus patterns, "
        f"every position T & ~K == 0 and popcount(K) 7 or 8 (floor {FLOOR})")
 elif nmask < FLOOR:
     bad(f"canonical form: only {nmask} masked rows read over {len(rows)} corpus patterns, under the floor "
