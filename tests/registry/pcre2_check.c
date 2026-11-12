@@ -1862,9 +1862,13 @@ static void check_posix_names(void)
     } else if (g_lib_major == 10 && g_lib_minor == 48) {
         want_floor = 187872;
         want_recorded = "187872 darwin (Homebrew 10.48)";
+    } else if (g_lib_major == 10 && g_lib_minor == 49) {
+        want_floor = 155338;
+        want_recorded = "155338 Linux dev box (gcc, hand-built 10.49 from "
+                         "the release tarball, [ORACLE-UPGRADE] 2026-11-12)";
     } else
         bad("POSIX class names: no probe-count floor for libpcre2 %d.%d — "
-            "measure it and add one beside the 10.46/10.48 floors "
+            "measure it and add one beside the 10.46/10.48/10.49 floors "
             "(docs/dev/decisions.md D98)", g_lib_major, g_lib_minor);
     if (want_floor)
         expect_probes_floor("POSIX class names", probed, want_floor, want_recorded);
