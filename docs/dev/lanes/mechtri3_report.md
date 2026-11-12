@@ -46,7 +46,7 @@ shard runs 2 rows at once; recorded sum(row)/shard wall was 1.76-1.95). Result: 
 the equal weights); indivisible floor 860 s (largest row S220, 26 min of row-wall, ~13% of the limit, safe). Limit raised
 150 -> 180 min (cloud_kinds.tsv), because runner CPU spread (EPYC 7763 vs 9V74) is ~1.4x and 100 x 1.4 = 140 was too close to 150.
 If the second run shows a slowest shard past ~150 min, go to 28+ shards (a second wave on 20 slots, more total wall) rather than
-a longer limit. Total mech cost is ~110 runner-hours-equivalent per run: this is a nightly/weekly kind, not a per-push one.
+a longer limit. Total mech cost is ~33 runner-hours (20 x ~100 min) per run: this is a nightly/weekly kind, not a per-push one.
 
 ### OWED
 Second cloud mech run from this branch: `scripts/cloudrun --owner main --kind mech --name mechtri3` (the last act). Expect GREEN;
