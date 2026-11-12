@@ -33,6 +33,12 @@ row Sy1 '"    if (sl == -2) return 0;\n"'
 row Sy2 '"    if (sl == -2) return (flags & PCREC_SUBST_STRICT) ? 0 : 0;\n"'
 row Sy3 '"    if (sl == -2) return 0;\n"' COMPILE-CATCH
 row Sy4 '"    if (sl == -2) return (flags & PCREC_SUBST_STRICT) ? 0 : 0;\n"' COMPILE-CATCH
+# Sy5 is Sy4 plus SAB_CATCH_OPTIONAL=1 (a compile catch that is environment-
+# dependent, S1896 on the cloud runner): the build succeeds and the cells
+# detect it, so it must read DETECTED (by the checks), exit 0, and not UNEXPECTED.
+row Sy5 '"    if (sl == -2) return (flags & PCREC_SUBST_STRICT) ? 0 : 0;\n"' COMPILE-CATCH
+echo "SAB_CATCH_OPTIONAL=1" >> "$T/defs/Sy5_selftest.sh"
+mkdir -p "$T/defs5"; mv "$T/defs/Sy5_selftest.sh" "$T/defs5/"
 bad=0
 chk() { if eval "$2"; then echo "ok   $1"; else echo "FAIL $1"; bad=1; fi; }
 MECH_ANOMALY_CEILING=0 MECH_SAB_DIR="$T/defs" bash "$HERE/run_sabotage_matrix.sh" Sy1 Sy2 Sy3 > "$T/out" 2>"$T/err"
@@ -46,5 +52,8 @@ chk "Sy3 (declared) reads DETECTED-BUILD" 'grep -qE "^Sy3-selftest..* DETECTED-B
 MECH_ANOMALY_CEILING=0 MECH_SAB_DIR="$T/defs" bash "$HERE/run_sabotage_matrix.sh" Sy4 > "$T/out4" 2>"$T/err4"
 rc4=$?
 chk "Sy4 (declared, builds) reads UNEXPECTED and exits 1 (rc=$rc4)" '[ "$rc4" = 1 ] && grep -qE "^Sy4-selftest.*NO ARM.S ARTIFACT FAILED TO COMPILE.*UNEXPECTED" "$T/out4" && grep -qE "unexpected: 1," "$T/out4"'
-[ "$bad" = 0 ] && echo "nocompile_selftest: DONE rc=0" || { echo "nocompile_selftest: DONE rc=1"; cat "$T/out" "$T/err" "$T/out4" | tail -40; }
+MECH_SAB_DIR="$T/defs5" bash "$HERE/run_sabotage_matrix.sh" Sy5 > "$T/out5" 2>"$T/err5"
+rc5=$?
+chk "Sy5 (optional catch, builds, detected) reads DETECTED by the checks, exit 0 (rc=$rc5)" '[ "$rc5" = 0 ] && grep -qE "^Sy5-selftest.*DETECTED \(by the checks; the declared compile-time catch is environment-dependent" "$T/out5" && grep -qE "unexpected: 0," "$T/out5"'
+[ "$bad" = 0 ] && echo "nocompile_selftest: DONE rc=0" || { echo "nocompile_selftest: DONE rc=1"; cat "$T/out" "$T/err" "$T/out4" "$T/out5" | tail -40; }
 exit "$bad"
