@@ -659,7 +659,7 @@ A fact deny: the end-window fact reads `none` for every consumer of it — both 
 
 <a id="s2-27-p4"></a>[2.27¶4] **The stamp** is `<PREFIX>_REQ_BYTE` on every artifact of both engines: the byte as a decimal string, or `"none"` (a string with a `"none"` member, because `0` is a legal byte). Where §2.28's run shipped and its scan member is one exact byte, the stamp is that member, because there is one emitted `memchr` and the stamp reports what it tests. Where the run's scan member is a two-member cube (§2.39), the stamp is the set's pick, or `"none"` where the set is empty (`(?i)union.*?select.*?from`), so every value it carries is a member of the necessary set. The stamp names the ANALYSIS, not the emission: whether anything is emitted is `<PREFIX>_REQ_WHY` (§2.29).
 
-<a id="s2-27-p5"></a>[2.27¶5] **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_set`, `req_set_maxoff`, `req_whole_run`, `req_pieces`, `req_run`, `req_byte`.
+<a id="s2-27-p5"></a>[2.27¶5] **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_set`, `req_set_maxoff`, `req_whole_run`, `req_pieces`, `req_byte`.
 A fact deny over the whole necessary-byte family: every consumer sees a pattern with nothing necessary — the one-byte and run pre-checks and their stamps, the no-DFA-scan route's whole-set and whole-run compares, the admission (`<PREFIX>_REQ_WHY "none"`), the dominance test, and the run PIN §2.30's run-pinned prefilter rows read, so this flag removes those rows' pin too (`docs/design/litscan_s1.md` §1.1).
 
 <a id="s2-28"></a>
@@ -679,7 +679,7 @@ A fact deny over the whole necessary-byte family: every consumer sees a pattern 
 
 <a id="s2-28-p7"></a>[2.28¶7] **The stamp** is `<PREFIX>_REQ_RUN` on every artifact of both engines: the run's bytes as lowercase hex, `@`, the scanned member's index — `2e746172@0` for `.tar` — then, only where some position is not an exact byte, `/` and each position's `K` in hex — `53454c454354@4/dfdfdfdfdfdf` for `(?i)select` — or `"none"`. The hex is the WHOLE run; `@idx` is the position the artifact's search reads (`match_api.md` §6.3.7¶7 carries the table), so it is not necessarily the position `<PREFIX>_REQ_BYTE` names: `<PREFIX>_REQ_BYTE` is pcrec's own pick, the least-mass exact position of the whole run (`pcrec_find_run_scan_index`) else the necessary set's pick, and the two stamps are not checkable against each other through `@`. It names the analysis, not the emission (§2.29).
 
-<a id="s2-28-p8"></a>[2.28¶8] **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run`, `req_pieces`, `req_run`.
+<a id="s2-28-p8"></a>[2.28¶8] **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run`, `req_pieces`.
 A fact deny over the run: every consumer sees no run — the run pre-check and `<PREFIX>_REQ_RUN`, the no-DFA-scan route's whole-run compare, the dominance test's run conjuncts, and the run pin §2.30's rows read. The necessary set and the one-byte pick are untouched.
 
 <a id="s2-29"></a>
@@ -911,7 +911,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 <a id="s2-39-p3"></a>[2.39¶3] **What it changes for each consumer.** On a DFA artifact and a VM hybrid, a pre-check that does not run, or a one-pass proof of absence: no answer moves. On a VM route with no DFA scan it can only turn a step give-up into a no-match, by running fewer attempts, never the reverse: §2.29's whole-set half keeps testing every set member the run does not prove. `<PREFIX>_REQ_BYTE` stays a set member or `"none"` (§2.27); `<PREFIX>_REQ_WHY "none"` requires no run as well (§2.29); the pin stays a fact about exact positions (§2.30). The activity record is `<PREFIX>_REQ_RUN`'s `/mask` suffix, which only a masked run carries.
 
-<a id="s2-39-p4"></a>[2.39¶4] **Facts narrowed, not emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run`, `req_run` (and through them `req_byte` and `run_pin`). A fact-level deny (D126 Q3): the walk's position bound drops to one member, so the analysis is the exact-byte one — single bytes ranked by length, an alternation's affixes by byte equality — for every consumer at once.
+<a id="s2-39-p4"></a>[2.39¶4] **Facts narrowed, not emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run` (and through it `req_byte` and `run_pin`). A fact-level deny (D126 Q3): the walk's position bound drops to one member, so the analysis is the exact-byte one — single bytes ranked by length, an alternation's affixes by byte equality — for every consumer at once.
 
 <a id="s2-39-p5"></a>[2.39¶5] **Dial:** no cell, NOT A RUNG (§5.4).
 

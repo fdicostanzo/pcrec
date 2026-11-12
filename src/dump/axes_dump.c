@@ -750,10 +750,10 @@ static void emit_predicate_axes(StrBuf *sb)
                      "always (fallback) — no byte is necessary on every path (an alternation with no common literal, a caselessly folded literal, a nullable quantifier), or the deny flag");
     }
     /* [OPT-REQPOS] tier 2b req-run — §2.28. The NECESSARY literal RUN, the
-     * same fact at word grain, from the `req_run` fact's second accumulator on the
-     * same walk. `req-byte` above is its `L = 1` case, which is why the two
-     * rows read as one mechanism at two grains and why the run's own stamp
-     * carries the scan member's INDEX as well as the bytes. */
+     * same fact at word grain, the `req_whole_run` fact from the second
+     * accumulator on the same walk. `req-byte` above is its `L = 1` case,
+     * which is why the two rows read as one mechanism at two grains; the
+     * run's stamp `@` is the searching site's scan offset (§4.1). */
     {
         PredAxis p = { "req-run", NULL, "RX_REQ_RUN", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "run", "",

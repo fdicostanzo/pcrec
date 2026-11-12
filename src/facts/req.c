@@ -4,7 +4,7 @@
  *
  * One AST-level analysis, read by BOTH emitters through the pattern-facts
  * record (the `req_set`/`req_whole_run` facts it derives, and the
- * `req_run`/`req_byte` facts derived at the foot of this file). With it,
+ * `req_byte` fact derived at the foot of this file). With it,
  * a search over a window that does not contain the byte (or the run) answers
  * NOMATCH in ONE `memchr`-class pass instead of running an attempt at every
  * start position. PCRE2 calls the one-byte fact `PCRE2_INFO_LASTCODETYPE`/
@@ -241,8 +241,8 @@ static RbSet rb_intersect(RbSet l, RbSet r)
  * Seven operations, of which only the two append helpers have a precondition
  * and both state it. Only the run choice reads the prior, through the rate
  * primitives, to break an equal-information tie (`rn_choice_rows`); WHICH
- * member of the run the scan tests is decided once, by the derived `req_run`
- * fact below, through `src/core/findings.c`. */
+ * member of the run pcrec's own pick tests is decided once, by
+ * `pcrec_req_pick` below, through `src/core/findings.c`. */
 
 /* What every run operation needs besides its operands: the compile (for the
  * position constructor's refusal), and from the walk parameters
@@ -375,7 +375,7 @@ static int rn_more_info(const RbWalk *w, const RbRun *a, const RbRun *b)
 
 /* What the emitted scan of run `r` costs: the byte-rate mass of the members
  * of its scan position, the one `pcrec_find_run_scan_index` picks (the same
- * estimate the `req_run` pick reads). 0 for the empty run, which has none. */
+ * estimate the `req_byte` pick reads). 0 for the empty run, which has none. */
 static uint32_t rn_scan_mass(const RbWalk *w, const RbRun *r)
 {
     if (r->n == 0) return 0;

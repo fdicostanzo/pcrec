@@ -114,7 +114,7 @@
 | the pre-check's lead (`set-leads`, `tuning.md` §2.40) | PICK over `[the run's scan cube, the necessary set's pick]`, the run first | whether the set pick's one-byte `memchr` is tested before the run search | both are necessary, so either's absence proves NOMATCH; on a VM route with no DFA in front every set member is tested anyway |
 | the offset-k selection (`<PREFIX>_DFA_PREFILTER_OFFSETS`) | MASS over each offset's byte set; since D172 the memfn kit's (window family, `window_site.md` §3.2), over the walk's sets pcrec states and the same byte-rate, its ties as that design's TIE table declares | which necessary offset sets the skip scans and verifies | every tested (offset, set) is necessary for every match |
 
-<a id="s4-p2"></a>[4¶2] The handoff (`tuning.md` §2.41) never re-picks: its `K` is a walk fact about the whole run (`req_run_maxoff`, position 0's offset), independent of any rate. `tuning.md` §2.27–§2.30 and §2.40 carry each mechanism; `docs/design/findings/design.md` §6.2a carries the arguments.
+<a id="s4-p2"></a>[4¶2] The handoff (`tuning.md` §2.41) never re-picks: its `K` is a walk fact about the whole run (position 0's offset, the `req_landmark_maxoff` fact), independent of any rate. `tuning.md` §2.27–§2.30 and §2.40 carry each mechanism; `docs/design/findings/design.md` §6.2a carries the arguments.
 
 <a id="s5"></a>
 ## 5. The stamp: `<PREFIX>_FINDINGS` and `rx_info.findings`
