@@ -115,3 +115,13 @@ b675c1aca (S1917, S1906, S1930), 9140c067f (sheet §5), and this report.
 | 4 remaining shards read, further reds fixed or reported | partial: shard 17 fixed (S1917), S1906/S1930 fixed ahead; 7 shards still running, OWED | b675c1aca |
 | 5 one row job, make strict, claudemd check | job queued (owed); strict rc=0; claudemd ok | queue key kit-k382cm-rows |
 | report + lanecheck | this file | — |
+
+## STATE AT HANDOFF
+
+- Branch lane/memfn-k382 is committed. No rulings file was named.
+- OWED: queue key kit-k382cm-rows (599). It was running at handoff, and S1906 had already read
+  DETECTED. Read its record under worktrees/.boxqueue/{done,failed}/*-599-kit-k382cm-rows.
+  Log: /var/tmp/pcrec-pcrec/scratch/memfn/k382cm/run/mech/mech.log.
+- OWED: cloud run 43239936557's shards 4, 6, 9, 11, 14, 15 and 18, still running. Any further red
+  needs a fresh agent. A re-dispatch of the mech kind on this branch, which is the kit manager's,
+  measures the skew shards' rows.
