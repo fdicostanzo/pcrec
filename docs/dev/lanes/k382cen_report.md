@@ -75,6 +75,21 @@ ruling path 2).** BASE has `RX_DFA_PREFILTER "memchr"`, OFFSETS `"none"`, facts 
   - `z(a){3,}?`: 31 arms UNEXPLAINED; the 3 CLIP arms are admitted, as the rule says.
   - `q(?:zaaa)+`: 110 arms UNEXPLAINED.
 
+**The shard re-runs found one more shape: P2r, the `@` RE-POINTED on an uncut run** (595, `(?i)x/1234`, 3
+rows; 596, `(?:cat|bat)(?<=[cb]at|a{1,3}t)s`, 75 rows). In each case the only moved line is the stamp:
+- `"582f31323334@0/dfffffffffff"` -> `@1`;
+- `"62617473@0/feffffff"` -> `@3`.
+
+The run-pinned prefilter is byte-identical on both sides:
+- `memchr(subject + pos + 1, 47, ..)`, OFFSETS `0,1*,2,3,4,5`, BASE `run_pin 1:1+5`;
+- `memchr(subject + pos + 3, 115, ..)`, `0,1,2,3*`, `1:1+3`.
+
+The tip's `@` is §4.1's table row 2: the member the prefilter reads (starred offset - `o` + `at`).
+BASE's `@0` was pcrec's own index, which pointed at the masked first position. The census gains rule
+P2r (`pinned_at`): hex and mask unchanged, `@` on both sides, the tip run-pinned, and the tip's `@` equal
+to that member. `--control plant-p2r` (the tip's `@` one position off) turns every one UNEXPLAINED
+(few.py: `(?:cat|bat)..` P2r 74 -> 74 UNEXPLAINED; `(?i)x/1234` P2r 3 -> 3).
+
 The triage was right about the three patterns it named. Its "@6" for `/abcd[xy]/user` was the find's
 offset; BASE's `@` is `@0`.
 
@@ -155,6 +170,7 @@ B-walk reader are each shown live.
 | three red patterns, every arm | `few.py` over the three patterns (census.one, 283 arms each) | 0 unexplained (P2so 80 / 4 / 2) |
 | the triage's two missed patterns | `few.py 'a{2}(?:(?<!\w)\|)b' 'z(a){3,}?'` | P2so 98, 0 unexplained / P4c 2, 0 unexplained (after P4c) |
 | P4c plant | `CONTROL=plant-p4-move few.py 'z(a){3,}?' 'q(?:zaaa)+'` | 31 / 110 UNEXPLAINED |
+| P2r and its plant | `few.py` / `CONTROL=plant-p2r few.py` on `(?i)x/1234`, `(?:cat\|bat)(?<=[cb]at\|a{1,3}t)s` | P2r 3 / 74, 0 unexplained; plant 3 / 74 UNEXPLAINED |
 | z witness answers | `zwit.sh` (scratch), BASE vs tip `--emit-main` under `-fprefilter-collapse` | 64 subjects, 0 differ |
 | plant | `CONTROL=plant-in-run few.py` (four patterns) | every P2so turned UNEXPLAINED (table above) |
 | census sample 300 + the three patterns | queue job 593-kit-k382cen-census | see Gate jobs |

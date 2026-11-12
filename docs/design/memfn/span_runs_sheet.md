@@ -676,6 +676,33 @@ lands first, 3.0b's ASK-2 is void). K38-3 rides with K38-2 or follows it. K38-1 
   - **NOTED (F11).** The verify-NO prefilter member now asks `kit_run_decide` (`kit_run_member` has
     one caller): an unrecorded step toward §6 Q6's general form (1), recorded here.
 
+  **ADDENDUM `[k382cen]` (lane k382cen, 2026-11-12, kit manager's rulings; no rev bump): the census
+  read of two populations above, after identity gate 601 went red on 91 rows** (census
+  `docs/dev/lanes/k382_evidence/census.py`; evidence and counts in `docs/dev/lanes/k382cen_report.md`):
+  - **2s, the cover row, read by OFFSET.** The census counts a dropped `@` under a `cover` find as
+    explained (P2so) where every find lies outside the run: the find's offset from the candidate start
+    is past `req_run_maxoff` + len - 1 (BASE's facts), or none of its bytes is a run byte. Byte value
+    alone no longer refuses. Every E-find form the kit prints is read: B-memchr, B-pair, B-walk, and B-fn's
+    ofsskip bodies. A site with no readable find, and the placements-disagree case of the F3 addendum
+    (the census cannot read the run's least offset), are refused. Population 2s itself does not move. 90 of the 91 rows
+    (`[a[.b]c]d.]`, `/abcd[xy]/user`, `a{3}(?i:cat)`, `a{2}(?:(?<!\w)|)b`) were this census defect.
+  - **4c, the run pin on walks shorter than the run.** Population 4's "runs over 8 positions" missed
+    one case of §4.2's clip: an UNCUT run whose exact stretch reaches past the k-set walk. BASE's
+    `ro + l <= nwalk` refused that pin, and the clip now gives it. The case arises where the
+    count-collapsed prefilter machine (`-fprefilter-collapse`) walks fewer positions than the run:
+    `z(a){3,}?` walks `za` (2) against the run `zaaa`. BASE had the `memchr` prefilter (`run_pin`
+    none); the tip has `run-pinned` `0:0+2`, through the existing run-pinned row. Answers are
+    identical (64 subjects). This is DECLARED as a consequence of the ruled clip. The census allows
+    it as P4c by a rule over that cause (`clip_of`, BASE's facts). Count over the three identity
+    shards: COUNT_P4C.
+  - **2r, the `@` RE-POINTED on short runs.** §4.1's table row 2 applies to runs of any length, as the
+    `[k382]` addendum's 2s already says for row 3. Where a run-pinned prefilter reads a run member, the
+    stamp's `@` names that member (the pin's starred offset less its walk offset `o`, plus its `at`),
+    where BASE stamped pcrec's own index. Only the stamp moves; the prefilter is byte-identical:
+    `(?i)x/1234` `@0` -> `@1` (the find reads `/`), `(?:cat|bat)(?<=[cb]at|a{1,3}t)s` `@0` -> `@3`.
+    The census credits it as P2r (`pinned_at`), only against the tip's run-pinned prefilter. Count
+    over the three identity shards: COUNT_P2R.
+
 ### 5.2 What the kit measures (memory `pcrec-new-method-needs-measurement-card`)
 
 R-38 adds no new find, scan or verify METHOD: the finds and compares are today's rows over cube
