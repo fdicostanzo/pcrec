@@ -2900,11 +2900,13 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
 # e1e387b9, every variant's SET gate clean; the fall and rise are
 # TRACE_RECORDS_FLOOR's note above, per variant, and each arm pins
 # min(base, tip) because the floor binds both sides.
-TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 293099, 'c-vm': 128394},
- 'lowdfa': {'c-default': 269989, 'c-vm': 120691},
- 'lowsize': {'c-default': 300582, 'c-vm': 128394},
- 'lowthr': {'c-default': 286811, 'c-vm': 128419},
- 'plain': {'c-default': 270131, 'c-vm': 120691}}
+# [R-13a] re-pin (job 580, 2026-11-12, lane/memfn-kclose tip against dc1988069,
+# 6479-row corpus): the working side's min(base, tip), measured, no margin.
+TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 878139, 'c-vm': 385834},
+ 'lowdfa': {'c-default': 717799, 'c-vm': 359366},
+ 'lowsize': {'c-default': 908058, 'c-vm': 385834},
+ 'lowthr': {'c-default': 799133, 'c-vm': 385580},
+ 'plain': {'c-default': 716435, 'c-vm': 359366}}
 
 
 # ---------------------------------------------------------------------------
