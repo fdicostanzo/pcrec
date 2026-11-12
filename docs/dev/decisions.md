@@ -10182,6 +10182,8 @@ Answered against docs/design/cond_family.md rev 0 §7 (six questions, each with 
 
 **Related:** D77 (measured need), D153 (remodel first), D192; memory notes pcrec-close-before-start and pcrec-surface-owner-waits.
 
+**Addendum (2026-11-12, Frank): the lookaround/predicate family and DFA captures are ONE future body of work.** After the current sets (S1's remainder, S2, S3, S4, and [FLAG-DEMOTE]), the manager writes one plan for [COND-FAMILY] (lookaround as intersection, the checker product) together with captures in the DFA ([ENG-TDFA]), chained so the checker product's state identity carries tags. Evidence: the research memo docs/design/dfa_captures_research.md and the capture spike studies/dfacap_spike/ (PCRE2-exact on 70 hard cases and 730 census patterns; copy-free after fixed offsets). Frank: "Let's chain that to the look around/predicate set of work ... That would be cutting edge stuff."
+
 ## D195 — public option bits follow caller effect: 20 deny flags become test-only levers (Frank, 2026-11-12)
 
 - **Context:** 58 of the 64 bits of the public flags word were used (6 free; [IFACE-PUSH] opens at <= 4). Frank asked for an audit of every -f option against the 2026-10-29 rule (a public deny flag only for a mechanism that can be SLOWER on real input; a work-removing change whose risk is a wrong answer gets a test-only lever; refactors and bug fixes get none). Audit: docs/dev/flag_audit_2026-11-12.md (read-only lane flagaudit): 21 keep, 20 demote (confident), 3 demote (medium), 6 unsure, 1 drop.
