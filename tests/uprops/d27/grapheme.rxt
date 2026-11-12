@@ -1,0 +1,195 @@
+# upropd27: grapheme binary properties
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# Grapheme_Base: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Grapheme_Base}
+features unicode-props
+encoding utf8
+# U+0061 a -- MEMBER
+m "a" 0 1
+# U+0020 SPACE: Zs is a base -- MEMBER
+m "\x20" 0 1
+# U+00A0 NBSP -- MEMBER
+m "\xc2\xa0" 0 2
+# U+0903 DEVANAGARI SIGN VISARGA: Mc is a base -- MEMBER
+m "\xe0\xa4\x83" 0 3
+# U+093E DEVANAGARI VOWEL SIGN AA: Mc, not Other_Grapheme_Extend, so a base -- MEMBER
+m "\xe0\xa4\xbe" 0 3
+# U+4E00 CJK ideograph -- MEMBER
+m "\xe4\xb8\x80" 0 3
+# U+1F600 GRINNING FACE -- MEMBER
+m "\xf0\x9f\x98\x80" 0 4
+# U+0001 SOH: Cc -- non-member
+n "\x01"
+# U+007F DELETE: Cc -- non-member
+n "\x7f"
+# U+0300 COMBINING GRAVE: Grapheme_Extend -- non-member
+n "\xcc\x80"
+# U+00AD SOFT HYPHEN: Cf -- non-member
+n "\xc2\xad"
+# U+200B ZWSP: Cf -- non-member
+n "\xe2\x80\x8b"
+# U+2028 LINE SEPARATOR: Zl -- non-member
+n "\xe2\x80\xa8"
+# U+2029 PARAGRAPH SEPARATOR: Zp -- non-member
+n "\xe2\x80\xa9"
+# U+E000 PRIVATE USE: Co -- non-member
+n "\xee\x80\x80"
+# U+0378 unassigned: Cn -- non-member
+n "\xcd\xb8"
+
+# Grapheme_Base: negated spelling [\P{X}], utf8; membership flipped
+# pcre2-only
+pattern [\P{Grapheme_Base}]
+features unicode-props
+encoding utf8
+# U+0061 a -- MEMBER
+n "a"
+# U+0020 SPACE: Zs is a base -- MEMBER
+n "\x20"
+# U+00A0 NBSP -- MEMBER
+n "\xc2\xa0"
+# U+0903 DEVANAGARI SIGN VISARGA: Mc is a base -- MEMBER
+n "\xe0\xa4\x83"
+# U+093E DEVANAGARI VOWEL SIGN AA: Mc, not Other_Grapheme_Extend, so a base -- MEMBER
+n "\xe0\xa4\xbe"
+# U+4E00 CJK ideograph -- MEMBER
+n "\xe4\xb8\x80"
+# U+1F600 GRINNING FACE -- MEMBER
+n "\xf0\x9f\x98\x80"
+# U+0001 SOH: Cc -- non-member
+m "\x01" 0 1
+# U+007F DELETE: Cc -- non-member
+m "\x7f" 0 1
+# U+0300 COMBINING GRAVE: Grapheme_Extend -- non-member
+m "\xcc\x80" 0 2
+# U+00AD SOFT HYPHEN: Cf -- non-member
+m "\xc2\xad" 0 2
+# U+200B ZWSP: Cf -- non-member
+m "\xe2\x80\x8b" 0 3
+# U+2028 LINE SEPARATOR: Zl -- non-member
+m "\xe2\x80\xa8" 0 3
+# U+2029 PARAGRAPH SEPARATOR: Zp -- non-member
+m "\xe2\x80\xa9" 0 3
+# U+E000 PRIVATE USE: Co -- non-member
+m "\xee\x80\x80" 0 3
+# U+0378 unassigned: Cn -- non-member
+m "\xcd\xb8" 0 2
+
+# Grapheme_Extend: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Grapheme_Extend}
+features unicode-props
+encoding utf8
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+m "\xcc\x80" 0 2
+# U+036F COMBINING LATIN SMALL LETTER X: Mn -- MEMBER
+m "\xcd\xaf" 0 2
+# U+0488 COMBINING CYRILLIC HUNDRED THOUSANDS SIGN: Me -- MEMBER
+m "\xd2\x88" 0 2
+# U+09BE BENGALI VOWEL SIGN AA: Mc but Other_Grapheme_Extend -- MEMBER
+m "\xe0\xa6\xbe" 0 3
+# U+0BBE TAMIL VOWEL SIGN AA: Other_Grapheme_Extend -- MEMBER
+m "\xe0\xae\xbe" 0 3
+# U+200C ZWNJ: Other_Grapheme_Extend -- MEMBER
+m "\xe2\x80\x8c" 0 3
+# U+302E HANGUL SINGLE DOT TONE MARK: Other_Grapheme_Extend -- MEMBER
+m "\xe3\x80\xae" 0 3
+# U+FE0F VS16: Mn -- MEMBER
+m "\xef\xb8\x8f" 0 3
+# U+FF9E HALFWIDTH KATAKANA VOICED SOUND MARK: Other_Grapheme_Extend -- MEMBER
+m "\xef\xbe\x9e" 0 3
+# U+E0020 TAG SPACE: Other_Grapheme_Extend -- MEMBER
+m "\xf3\xa0\x80\xa0" 0 4
+# U+0061 a -- non-member
+n "a"
+# U+0903 DEVANAGARI SIGN VISARGA: Mc, not extend -- non-member
+n "\xe0\xa4\x83"
+# U+093E DEVANAGARI VOWEL SIGN AA: Mc, not extend -- non-member
+n "\xe0\xa4\xbe"
+# U+200B ZWSP: Cf -- non-member
+n "\xe2\x80\x8b"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+1F600 GRINNING FACE -- non-member
+n "\xf0\x9f\x98\x80"
+
+# Grapheme_Extend: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{Grapheme_Extend}
+features unicode-props
+encoding utf8
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+n "\xcc\x80"
+# U+036F COMBINING LATIN SMALL LETTER X: Mn -- MEMBER
+n "\xcd\xaf"
+# U+0488 COMBINING CYRILLIC HUNDRED THOUSANDS SIGN: Me -- MEMBER
+n "\xd2\x88"
+# U+09BE BENGALI VOWEL SIGN AA: Mc but Other_Grapheme_Extend -- MEMBER
+n "\xe0\xa6\xbe"
+# U+0BBE TAMIL VOWEL SIGN AA: Other_Grapheme_Extend -- MEMBER
+n "\xe0\xae\xbe"
+# U+200C ZWNJ: Other_Grapheme_Extend -- MEMBER
+n "\xe2\x80\x8c"
+# U+302E HANGUL SINGLE DOT TONE MARK: Other_Grapheme_Extend -- MEMBER
+n "\xe3\x80\xae"
+# U+FE0F VS16: Mn -- MEMBER
+n "\xef\xb8\x8f"
+# U+FF9E HALFWIDTH KATAKANA VOICED SOUND MARK: Other_Grapheme_Extend -- MEMBER
+n "\xef\xbe\x9e"
+# U+E0020 TAG SPACE: Other_Grapheme_Extend -- MEMBER
+n "\xf3\xa0\x80\xa0"
+# U+0061 a -- non-member
+m "a" 0 1
+# U+0903 DEVANAGARI SIGN VISARGA: Mc, not extend -- non-member
+m "\xe0\xa4\x83" 0 3
+# U+093E DEVANAGARI VOWEL SIGN AA: Mc, not extend -- non-member
+m "\xe0\xa4\xbe" 0 3
+# U+200B ZWSP: Cf -- non-member
+m "\xe2\x80\x8b" 0 3
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+# U+1F600 GRINNING FACE -- non-member
+m "\xf0\x9f\x98\x80" 0 4
+
+# Grapheme_Extend: inside a class with another item (U+0061)
+# pcre2-only
+pattern [\x{61}\p{Grapheme_Extend}]
+features unicode-props
+encoding utf8
+# U+0300 COMBINING GRAVE: Mn -- MEMBER
+m "\xcc\x80" 0 2
+# U+036F COMBINING LATIN SMALL LETTER X: Mn -- MEMBER
+m "\xcd\xaf" 0 2
+# U+0488 COMBINING CYRILLIC HUNDRED THOUSANDS SIGN: Me -- MEMBER
+m "\xd2\x88" 0 2
+# U+09BE BENGALI VOWEL SIGN AA: Mc but Other_Grapheme_Extend -- MEMBER
+m "\xe0\xa6\xbe" 0 3
+# U+0BBE TAMIL VOWEL SIGN AA: Other_Grapheme_Extend -- MEMBER
+m "\xe0\xae\xbe" 0 3
+# U+200C ZWNJ: Other_Grapheme_Extend -- MEMBER
+m "\xe2\x80\x8c" 0 3
+# U+302E HANGUL SINGLE DOT TONE MARK: Other_Grapheme_Extend -- MEMBER
+m "\xe3\x80\xae" 0 3
+# U+FE0F VS16: Mn -- MEMBER
+m "\xef\xb8\x8f" 0 3
+# U+FF9E HALFWIDTH KATAKANA VOICED SOUND MARK: Other_Grapheme_Extend -- MEMBER
+m "\xef\xbe\x9e" 0 3
+# U+E0020 TAG SPACE: Other_Grapheme_Extend -- MEMBER
+m "\xf3\xa0\x80\xa0" 0 4
+# U+0061 a -- non-member of the property but IS the extra class item
+m "a" 0 1
+# U+0903 DEVANAGARI SIGN VISARGA: Mc, not extend -- non-member
+n "\xe0\xa4\x83"
+# U+093E DEVANAGARI VOWEL SIGN AA: Mc, not extend -- non-member
+n "\xe0\xa4\xbe"
+# U+200B ZWSP: Cf -- non-member
+n "\xe2\x80\x8b"
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+1F600 GRINNING FACE -- non-member
+n "\xf0\x9f\x98\x80"

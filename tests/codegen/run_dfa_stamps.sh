@@ -938,6 +938,11 @@ fi
 # They had a live start state, so the old tests (`d->n == 0`, a dead start) missed them and they
 # emitted a loop that could never report; `ab\Gcd`'s, inlined as a hybrid's prefilter under
 # -fprefilter, failed -Werror (pflost_report.md). Each is a never-match pattern; bucket +18.
+# [UPROP-D27] (lane upropfix, cloud run 43112766175): 130 entries are patterns of the adopted D27
+# corpus (tests/uprops/d27) whose property set is EMPTY in the byte universe -- each checked: Age=1.1 holds all
+# 256 bytes in DerivedAge.txt (so every other Age value, Age=Unassigned and [^\p{Age=1.1}] are empty), only
+# Basic Latin/Latin-1 Supplement have a Block member < 256, and the non-Age/Block ones were matched against
+# libpcre2 10.46 non-UTF over all 256 bytes (zero hits). Bucket re-measured: 235 on upropd27 alone; 254 merged with the 18 PFFIX entries above (the +1 vs 253: ^\p{Emoji_Presentation}{2}$, a d27 pattern the pffix empty-engine test now also proves never-match, byte-mode set empty).
 EMPTY_MANIFEST='\B\b
 \b\B
 abcd(?:\b)+efgh
@@ -1060,7 +1065,138 @@ ab\Acd
 ab\Gcd
 a{2}^-
 x\Ay
-x\G'
+x\G
+^\p{Emoji_Presentation}{2}$
+[\p{Age=6.0}\p{Age=6.1}]
+[\p{Block=Cyrillic}\p{Block=Hebrew}]
+[^\p{Age=1.1}]
+\P{^Emoji_Modifier_Base}
+\P{^Prepended_Concatenation_Mark}
+\P{^Radical}
+\p{AGE=6.1}
+\p{Age=10.0}
+\p{Age=11.0}
+\p{Age=12.0}
+\p{Age=13.0}
+\p{Age=14.0}
+\p{Age=15.0}
+\p{Age=2.0}
+\p{Age=3.1}
+\p{Age=5.1}
+\p{Age=6.0}
+\p{Age=6.2}
+\p{Age=8.0}
+\p{Age=Unassigned}
+\p{Age=V6_1}
+\p{BC=AL}
+\p{BIDI_CLASS=AL}
+\p{BLK=Greek}
+\p{Bc:al}
+\p{Bidi_Class:AL}
+\p{Bidi_Class:AN}
+\p{Bidi_Class:FSI}
+\p{Bidi_Class:LRE}
+\p{Bidi_Class:LRI}
+\p{Bidi_Class:LRO}
+\p{Bidi_Class:NSM}
+\p{Bidi_Class:PDF}
+\p{Bidi_Class:PDI}
+\p{Bidi_Class:RLE}
+\p{Bidi_Class:RLI}
+\p{Bidi_Class:RLO}
+\p{Bidi_Class:R}
+\p{Block:Cyrillic}
+\p{Block=Arabic}
+\p{Block=Box_Drawing}
+\p{Block=CJK_Unified_Ideographs_Extension_A}
+\p{Block=CJK_Unified_Ideographs}
+\p{Block=Currency_Symbols}
+\p{Block=Cyrillic}
+\p{Block=Dingbats}
+\p{Block=Emoticons}
+\p{Block=GREEK_AND_COPTIC}
+\p{Block=General_Punctuation}
+\p{Block=Greek And Coptic}
+\p{Block=Greek-And-Coptic}
+\p{Block=Greek_and_Coptic}
+\p{Block=Hangul_Syllables}
+\p{Block=Hebrew}
+\p{Block=Hiragana}
+\p{Block=Katakana}
+\p{Block=Mathematical_Alphanumeric_Symbols}
+\p{Block=Miscellaneous_Symbols_and_Pictographs}
+\p{Block=No_Block}
+\p{Block=Private_Use_Area}
+\p{Block=Specials}
+\p{Block=Supplemental_Symbols_and_Pictographs}
+\p{Block=Supplementary_Private_Use_Area_A}
+\p{Block=Supplementary_Private_Use_Area_B}
+\p{Block=Tags}
+\p{Block=Variation_Selectors}
+\p{Block=greekandcoptic}
+\p{Deprecated}
+\p{Dep}
+\p{EMOJI_PRESENTATION}
+\p{EMod}
+\p{EPres}
+\p{Emoji Presentation}
+\p{EmojiPresentation}
+\p{Emoji_Modifier_Base}
+\p{Gr_Link}
+\p{Grapheme_Extend}
+\p{Grapheme_Link}
+\p{IDSB}
+\p{IDST}
+\p{IDSU}
+\p{IDS_Binary_Operator}
+\p{IDS_Trinary_Operator}
+\p{IDS_Unary_Operator}
+\p{Ideo}
+\p{Join_Control}
+\p{LOE}
+\p{Logical_Order_Exception}
+\p{Modifier_Combining_Mark}
+\p{Noncharacter_Code_Point}
+\p{PCM}
+\p{Prepended_Concatenation_Mark}
+\p{Radical}
+\p{Regional_Indicator}
+\p{Unified_Ideograph}
+\p{Variation_Selector}
+\p{age:6.1}
+\p{bc=LRE}
+\p{bc=LRI}
+\p{bc=LRO}
+\p{bc=PDF}
+\p{bc=PDI}
+\p{bc=RLE}
+\p{bc=RLI}
+\p{bc=RLO}
+\p{bidi_class:aL}
+\p{bidiclass=AL}
+\p{blk=Arabic}
+\p{blk=Box_Drawing}
+\p{blk=CJK_Ext_A}
+\p{blk=CJK}
+\p{blk=Cyrillic}
+\p{blk=Dingbats}
+\p{blk=Hangul}
+\p{blk=Hebrew}
+\p{blk=Hiragana}
+\p{blk=Katakana}
+\p{blk=Math_Alphanum}
+\p{blk=Misc_Pictographs}
+\p{blk=PUA}
+\p{blk=Punctuation}
+\p{blk=Specials}
+\p{blk=Sup_PUA_A}
+\p{blk=Sup_PUA_B}
+\p{blk=Sup_Symbols_And_Pictographs}
+\p{blk=Tags}
+\p{blk=VS}
+\p{block=greek}
+\p{emoji-presentation}
+\p{emoji_presentation}'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
 if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then

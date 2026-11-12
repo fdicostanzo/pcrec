@@ -1,0 +1,644 @@
+# upropd27: Emoji family
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# Emoji: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Emoji}
+features unicode-props
+encoding utf8
+# U+0023 NUMBER SIGN: Emoji=Yes (keycap base; the digit gotcha) -- MEMBER
+m "\x23" 0 1
+# U+002A ASTERISK: Emoji=Yes (keycap base) -- MEMBER
+m "\x2a" 0 1
+# U+0030 DIGIT ZERO: Emoji=Yes (keycap base) -- MEMBER
+m "0" 0 1
+# U+0039 DIGIT NINE: Emoji=Yes (last keycap base) -- MEMBER
+m "9" 0 1
+# U+00A9 COPYRIGHT SIGN: Emoji=Yes -- MEMBER
+m "\xc2\xa9" 0 2
+# U+00AE REGISTERED SIGN: Emoji=Yes -- MEMBER
+m "\xc2\xae" 0 2
+# U+203C DOUBLE EXCLAMATION MARK: Emoji=Yes -- MEMBER
+m "\xe2\x80\xbc" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON: Emoji=Yes (the one emoji in the Mahjong block) -- MEMBER
+m "\xf0\x9f\x80\x84" 0 4
+# U+1F0CF PLAYING CARD BLACK JOKER: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x83\x8f" 0 4
+# U+1F1E6 REGIONAL INDICATOR SYMBOL LETTER A: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x98\x80" 0 4
+# U+1F9FF NAZAR AMULET: Emoji=Yes (end of the 1F900 block's emoji) -- MEMBER
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES: Emoji=Yes (Emoji 16.0 / Unicode 16.0) -- MEMBER
+m "\xf0\x9f\xab\xa9" 0 4
+# U+1F3FA AMPHORA: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x8f\xba" 0 4
+# U+0041 LATIN CAPITAL A: not Emoji -- non-member
+n "A"
+# U+002F SOLIDUS: just below the digits, not Emoji -- non-member
+n "\x2f"
+# U+003A COLON: just above the digits, not Emoji -- non-member
+n "\x3a"
+# U+0024 DOLLAR SIGN: not Emoji -- non-member
+n "\x24"
+# U+00A8 DIAERESIS: neighbour of A9, not Emoji -- non-member
+n "\xc2\xa8"
+# U+1F000 MAHJONG TILE EAST WIND: Extended_Pictographic but not Emoji -- non-member
+n "\xf0\x9f\x80\x80"
+# U+200D ZERO WIDTH JOINER: Emoji_Component only, not Emoji -- non-member
+n "\xe2\x80\x8d"
+# U+FE0F VARIATION SELECTOR-16: Emoji_Component only, not Emoji -- non-member
+n "\xef\xb8\x8f"
+# U+1F8FF unassigned just below 1F900: not Emoji -- non-member
+n "\xf0\x9f\xa3\xbf"
+# U+10FFFF last code point (noncharacter): not Emoji -- non-member
+n "\xf4\x8f\xbf\xbf"
+# U+E0020 TAG SPACE: Emoji_Component only, not Emoji -- non-member
+n "\xf3\xa0\x80\xa0"
+
+# Emoji: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{Emoji}
+features unicode-props
+encoding utf8
+# U+0023 NUMBER SIGN: Emoji=Yes (keycap base; the digit gotcha) -- MEMBER
+n "\x23"
+# U+002A ASTERISK: Emoji=Yes (keycap base) -- MEMBER
+n "\x2a"
+# U+0030 DIGIT ZERO: Emoji=Yes (keycap base) -- MEMBER
+n "0"
+# U+0039 DIGIT NINE: Emoji=Yes (last keycap base) -- MEMBER
+n "9"
+# U+00A9 COPYRIGHT SIGN: Emoji=Yes -- MEMBER
+n "\xc2\xa9"
+# U+00AE REGISTERED SIGN: Emoji=Yes -- MEMBER
+n "\xc2\xae"
+# U+203C DOUBLE EXCLAMATION MARK: Emoji=Yes -- MEMBER
+n "\xe2\x80\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON: Emoji=Yes (the one emoji in the Mahjong block) -- MEMBER
+n "\xf0\x9f\x80\x84"
+# U+1F0CF PLAYING CARD BLACK JOKER: Emoji=Yes -- MEMBER
+n "\xf0\x9f\x83\x8f"
+# U+1F1E6 REGIONAL INDICATOR SYMBOL LETTER A: Emoji=Yes -- MEMBER
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE: Emoji=Yes -- MEMBER
+n "\xf0\x9f\x98\x80"
+# U+1F9FF NAZAR AMULET: Emoji=Yes (end of the 1F900 block's emoji) -- MEMBER
+n "\xf0\x9f\xa7\xbf"
+# U+1FAE9 FACE WITH BAGS UNDER EYES: Emoji=Yes (Emoji 16.0 / Unicode 16.0) -- MEMBER
+n "\xf0\x9f\xab\xa9"
+# U+1F3FA AMPHORA: Emoji=Yes -- MEMBER
+n "\xf0\x9f\x8f\xba"
+# U+0041 LATIN CAPITAL A: not Emoji -- non-member
+m "A" 0 1
+# U+002F SOLIDUS: just below the digits, not Emoji -- non-member
+m "\x2f" 0 1
+# U+003A COLON: just above the digits, not Emoji -- non-member
+m "\x3a" 0 1
+# U+0024 DOLLAR SIGN: not Emoji -- non-member
+m "\x24" 0 1
+# U+00A8 DIAERESIS: neighbour of A9, not Emoji -- non-member
+m "\xc2\xa8" 0 2
+# U+1F000 MAHJONG TILE EAST WIND: Extended_Pictographic but not Emoji -- non-member
+m "\xf0\x9f\x80\x80" 0 4
+# U+200D ZERO WIDTH JOINER: Emoji_Component only, not Emoji -- non-member
+m "\xe2\x80\x8d" 0 3
+# U+FE0F VARIATION SELECTOR-16: Emoji_Component only, not Emoji -- non-member
+m "\xef\xb8\x8f" 0 3
+# U+1F8FF unassigned just below 1F900: not Emoji -- non-member
+m "\xf0\x9f\xa3\xbf" 0 4
+# U+10FFFF last code point (noncharacter): not Emoji -- non-member
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+E0020 TAG SPACE: Emoji_Component only, not Emoji -- non-member
+m "\xf3\xa0\x80\xa0" 0 4
+
+# Emoji: inside a class with another item (U+0041)
+# pcre2-only
+pattern [\x{41}\p{Emoji}]
+features unicode-props
+encoding utf8
+# U+0023 NUMBER SIGN: Emoji=Yes (keycap base; the digit gotcha) -- MEMBER
+m "\x23" 0 1
+# U+002A ASTERISK: Emoji=Yes (keycap base) -- MEMBER
+m "\x2a" 0 1
+# U+0030 DIGIT ZERO: Emoji=Yes (keycap base) -- MEMBER
+m "0" 0 1
+# U+0039 DIGIT NINE: Emoji=Yes (last keycap base) -- MEMBER
+m "9" 0 1
+# U+00A9 COPYRIGHT SIGN: Emoji=Yes -- MEMBER
+m "\xc2\xa9" 0 2
+# U+00AE REGISTERED SIGN: Emoji=Yes -- MEMBER
+m "\xc2\xae" 0 2
+# U+203C DOUBLE EXCLAMATION MARK: Emoji=Yes -- MEMBER
+m "\xe2\x80\xbc" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON: Emoji=Yes (the one emoji in the Mahjong block) -- MEMBER
+m "\xf0\x9f\x80\x84" 0 4
+# U+1F0CF PLAYING CARD BLACK JOKER: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x83\x8f" 0 4
+# U+1F1E6 REGIONAL INDICATOR SYMBOL LETTER A: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x98\x80" 0 4
+# U+1F9FF NAZAR AMULET: Emoji=Yes (end of the 1F900 block's emoji) -- MEMBER
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES: Emoji=Yes (Emoji 16.0 / Unicode 16.0) -- MEMBER
+m "\xf0\x9f\xab\xa9" 0 4
+# U+1F3FA AMPHORA: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x8f\xba" 0 4
+# U+0041 LATIN CAPITAL A: not Emoji -- non-member of the property but IS the extra class item
+m "A" 0 1
+# U+002F SOLIDUS: just below the digits, not Emoji -- non-member
+n "\x2f"
+# U+003A COLON: just above the digits, not Emoji -- non-member
+n "\x3a"
+# U+0024 DOLLAR SIGN: not Emoji -- non-member
+n "\x24"
+# U+00A8 DIAERESIS: neighbour of A9, not Emoji -- non-member
+n "\xc2\xa8"
+# U+1F000 MAHJONG TILE EAST WIND: Extended_Pictographic but not Emoji -- non-member
+n "\xf0\x9f\x80\x80"
+# U+200D ZERO WIDTH JOINER: Emoji_Component only, not Emoji -- non-member
+n "\xe2\x80\x8d"
+# U+FE0F VARIATION SELECTOR-16: Emoji_Component only, not Emoji -- non-member
+n "\xef\xb8\x8f"
+# U+1F8FF unassigned just below 1F900: not Emoji -- non-member
+n "\xf0\x9f\xa3\xbf"
+# U+10FFFF last code point (noncharacter): not Emoji -- non-member
+n "\xf4\x8f\xbf\xbf"
+# U+E0020 TAG SPACE: Emoji_Component only, not Emoji -- non-member
+n "\xf3\xa0\x80\xa0"
+
+# Emoji: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Emoji}
+features unicode-props
+encoding utf8
+flags i
+# U+0023 NUMBER SIGN: Emoji=Yes (keycap base; the digit gotcha) -- MEMBER
+m "\x23" 0 1
+# U+002A ASTERISK: Emoji=Yes (keycap base) -- MEMBER
+m "\x2a" 0 1
+# U+0030 DIGIT ZERO: Emoji=Yes (keycap base) -- MEMBER
+m "0" 0 1
+# U+0039 DIGIT NINE: Emoji=Yes (last keycap base) -- MEMBER
+m "9" 0 1
+# U+00A9 COPYRIGHT SIGN: Emoji=Yes -- MEMBER
+m "\xc2\xa9" 0 2
+# U+00AE REGISTERED SIGN: Emoji=Yes -- MEMBER
+m "\xc2\xae" 0 2
+# U+203C DOUBLE EXCLAMATION MARK: Emoji=Yes -- MEMBER
+m "\xe2\x80\xbc" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON: Emoji=Yes (the one emoji in the Mahjong block) -- MEMBER
+m "\xf0\x9f\x80\x84" 0 4
+# U+1F0CF PLAYING CARD BLACK JOKER: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x83\x8f" 0 4
+# U+1F1E6 REGIONAL INDICATOR SYMBOL LETTER A: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x98\x80" 0 4
+# U+1F9FF NAZAR AMULET: Emoji=Yes (end of the 1F900 block's emoji) -- MEMBER
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES: Emoji=Yes (Emoji 16.0 / Unicode 16.0) -- MEMBER
+m "\xf0\x9f\xab\xa9" 0 4
+# U+1F3FA AMPHORA: Emoji=Yes -- MEMBER
+m "\xf0\x9f\x8f\xba" 0 4
+# U+0041 LATIN CAPITAL A: not Emoji -- non-member
+n "A"
+# U+002F SOLIDUS: just below the digits, not Emoji -- non-member
+n "\x2f"
+# U+003A COLON: just above the digits, not Emoji -- non-member
+n "\x3a"
+# U+0024 DOLLAR SIGN: not Emoji -- non-member
+n "\x24"
+# U+00A8 DIAERESIS: neighbour of A9, not Emoji -- non-member
+n "\xc2\xa8"
+# U+1F000 MAHJONG TILE EAST WIND: Extended_Pictographic but not Emoji -- non-member
+n "\xf0\x9f\x80\x80"
+# U+200D ZERO WIDTH JOINER: Emoji_Component only, not Emoji -- non-member
+n "\xe2\x80\x8d"
+# U+FE0F VARIATION SELECTOR-16: Emoji_Component only, not Emoji -- non-member
+n "\xef\xb8\x8f"
+# U+1F8FF unassigned just below 1F900: not Emoji -- non-member
+n "\xf0\x9f\xa3\xbf"
+# U+10FFFF last code point (noncharacter): not Emoji -- non-member
+n "\xf4\x8f\xbf\xbf"
+# U+E0020 TAG SPACE: Emoji_Component only, not Emoji -- non-member
+n "\xf3\xa0\x80\xa0"
+
+# Emoji_Presentation: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Emoji_Presentation}
+features unicode-props
+encoding utf8
+# U+231A WATCH: Emoji_Presentation=Yes -- MEMBER
+m "\xe2\x8c\x9a" 0 3
+# U+231B HOURGLASS: Emoji_Presentation=Yes -- MEMBER
+m "\xe2\x8c\x9b" 0 3
+# U+2614 UMBRELLA WITH RAIN DROPS: Emoji_Presentation=Yes -- MEMBER
+m "\xe2\x98\x94" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON: Emoji_Presentation=Yes -- MEMBER
+m "\xf0\x9f\x80\x84" 0 4
+# U+1F1E6 REGIONAL INDICATOR A: Emoji_Presentation=Yes -- MEMBER
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F3FB EMOJI MODIFIER FITZPATRICK TYPE-1-2: Emoji_Presentation=Yes -- MEMBER
+m "\xf0\x9f\x8f\xbb" 0 4
+# U+1F600 GRINNING FACE: Emoji_Presentation=Yes -- MEMBER
+m "\xf0\x9f\x98\x80" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES: Emoji_Presentation=Yes (16.0) -- MEMBER
+m "\xf0\x9f\xab\xa9" 0 4
+# U+0023 NUMBER SIGN: Emoji but text presentation by default -- non-member
+n "\x23"
+# U+0030 DIGIT ZERO: Emoji but not Emoji_Presentation -- non-member
+n "0"
+# U+00A9 COPYRIGHT SIGN: Emoji but text presentation by default -- non-member
+n "\xc2\xa9"
+# U+2328 KEYBOARD: Emoji but not Emoji_Presentation (neighbour of 231A/231B region) -- non-member
+n "\xe2\x8c\xa8"
+# U+2600 BLACK SUN WITH RAYS: Emoji but not Emoji_Presentation -- non-member
+n "\xe2\x98\x80"
+# U+1F000 MAHJONG TILE EAST WIND: not Emoji at all -- non-member
+n "\xf0\x9f\x80\x80"
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# U+200D ZWJ: no -- non-member
+n "\xe2\x80\x8d"
+
+# Emoji_Presentation: negated spelling \p{^X}, utf8; membership flipped
+# pcre2-only
+pattern \p{^Emoji_Presentation}
+features unicode-props
+encoding utf8
+# U+231A WATCH: Emoji_Presentation=Yes -- MEMBER
+n "\xe2\x8c\x9a"
+# U+231B HOURGLASS: Emoji_Presentation=Yes -- MEMBER
+n "\xe2\x8c\x9b"
+# U+2614 UMBRELLA WITH RAIN DROPS: Emoji_Presentation=Yes -- MEMBER
+n "\xe2\x98\x94"
+# U+1F004 MAHJONG TILE RED DRAGON: Emoji_Presentation=Yes -- MEMBER
+n "\xf0\x9f\x80\x84"
+# U+1F1E6 REGIONAL INDICATOR A: Emoji_Presentation=Yes -- MEMBER
+n "\xf0\x9f\x87\xa6"
+# U+1F3FB EMOJI MODIFIER FITZPATRICK TYPE-1-2: Emoji_Presentation=Yes -- MEMBER
+n "\xf0\x9f\x8f\xbb"
+# U+1F600 GRINNING FACE: Emoji_Presentation=Yes -- MEMBER
+n "\xf0\x9f\x98\x80"
+# U+1FAE9 FACE WITH BAGS UNDER EYES: Emoji_Presentation=Yes (16.0) -- MEMBER
+n "\xf0\x9f\xab\xa9"
+# U+0023 NUMBER SIGN: Emoji but text presentation by default -- non-member
+m "\x23" 0 1
+# U+0030 DIGIT ZERO: Emoji but not Emoji_Presentation -- non-member
+m "0" 0 1
+# U+00A9 COPYRIGHT SIGN: Emoji but text presentation by default -- non-member
+m "\xc2\xa9" 0 2
+# U+2328 KEYBOARD: Emoji but not Emoji_Presentation (neighbour of 231A/231B region) -- non-member
+m "\xe2\x8c\xa8" 0 3
+# U+2600 BLACK SUN WITH RAYS: Emoji but not Emoji_Presentation -- non-member
+m "\xe2\x98\x80" 0 3
+# U+1F000 MAHJONG TILE EAST WIND: not Emoji at all -- non-member
+m "\xf0\x9f\x80\x80" 0 4
+# U+0041 LATIN CAPITAL A: no -- non-member
+m "A" 0 1
+# U+200D ZWJ: no -- non-member
+m "\xe2\x80\x8d" 0 3
+
+# Emoji_Modifier: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Emoji_Modifier}
+features unicode-props
+encoding utf8
+# U+1F3FB FITZPATRICK TYPE-1-2: Emoji_Modifier (first of 5) -- MEMBER
+m "\xf0\x9f\x8f\xbb" 0 4
+# U+1F3FC FITZPATRICK TYPE-3 -- MEMBER
+m "\xf0\x9f\x8f\xbc" 0 4
+# U+1F3FF FITZPATRICK TYPE-6: last of the 5 -- MEMBER
+m "\xf0\x9f\x8f\xbf" 0 4
+# U+1F3FA AMPHORA: just below the range -- non-member
+n "\xf0\x9f\x8f\xba"
+# U+1F400 RAT: just above the range -- non-member
+n "\xf0\x9f\x90\x80"
+# U+1F466 BOY: Emoji_Modifier_Base, not a modifier -- non-member
+n "\xf0\x9f\x91\xa6"
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# U+1F600 GRINNING FACE: no -- non-member
+n "\xf0\x9f\x98\x80"
+
+# Emoji_Modifier: negated spelling [^\p{X}], utf8; membership flipped
+# pcre2-only
+pattern [^\p{Emoji_Modifier}]
+features unicode-props
+encoding utf8
+# U+1F3FB FITZPATRICK TYPE-1-2: Emoji_Modifier (first of 5) -- MEMBER
+n "\xf0\x9f\x8f\xbb"
+# U+1F3FC FITZPATRICK TYPE-3 -- MEMBER
+n "\xf0\x9f\x8f\xbc"
+# U+1F3FF FITZPATRICK TYPE-6: last of the 5 -- MEMBER
+n "\xf0\x9f\x8f\xbf"
+# U+1F3FA AMPHORA: just below the range -- non-member
+m "\xf0\x9f\x8f\xba" 0 4
+# U+1F400 RAT: just above the range -- non-member
+m "\xf0\x9f\x90\x80" 0 4
+# U+1F466 BOY: Emoji_Modifier_Base, not a modifier -- non-member
+m "\xf0\x9f\x91\xa6" 0 4
+# U+0041 LATIN CAPITAL A: no -- non-member
+m "A" 0 1
+# U+1F600 GRINNING FACE: no -- non-member
+m "\xf0\x9f\x98\x80" 0 4
+
+# Emoji_Modifier: inside a class with another item (U+1F3FA)
+# pcre2-only
+pattern [\x{1F3FA}\p{Emoji_Modifier}]
+features unicode-props
+encoding utf8
+# U+1F3FB FITZPATRICK TYPE-1-2: Emoji_Modifier (first of 5) -- MEMBER
+m "\xf0\x9f\x8f\xbb" 0 4
+# U+1F3FC FITZPATRICK TYPE-3 -- MEMBER
+m "\xf0\x9f\x8f\xbc" 0 4
+# U+1F3FF FITZPATRICK TYPE-6: last of the 5 -- MEMBER
+m "\xf0\x9f\x8f\xbf" 0 4
+# U+1F3FA AMPHORA: just below the range -- non-member of the property but IS the extra class item
+m "\xf0\x9f\x8f\xba" 0 4
+# U+1F400 RAT: just above the range -- non-member
+n "\xf0\x9f\x90\x80"
+# U+1F466 BOY: Emoji_Modifier_Base, not a modifier -- non-member
+n "\xf0\x9f\x91\xa6"
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# U+1F600 GRINNING FACE: no -- non-member
+n "\xf0\x9f\x98\x80"
+
+# Emoji_Modifier_Base: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Emoji_Modifier_Base}
+features unicode-props
+encoding utf8
+# U+261D WHITE UP POINTING INDEX: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xe2\x98\x9d" 0 3
+# U+26F9 PERSON WITH BALL: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xe2\x9b\xb9" 0 3
+# U+270A RAISED FIST: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xe2\x9c\x8a" 0 3
+# U+1F466 BOY: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xf0\x9f\x91\xa6" 0 4
+# U+1F44D THUMBS UP SIGN: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xf0\x9f\x91\x8d" 0 4
+# U+1F9D1 ADULT: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xf0\x9f\xa7\x91" 0 4
+# U+1FAF0 HAND WITH INDEX FINGER AND THUMB CROSSED: Emoji_Modifier_Base=Yes (14.0) -- MEMBER
+m "\xf0\x9f\xab\xb0" 0 4
+# U+1F600 GRINNING FACE: Emoji, not a modifier base -- non-member
+n "\xf0\x9f\x98\x80"
+# U+1F3FB FITZPATRICK modifier itself: not a base -- non-member
+n "\xf0\x9f\x8f\xbb"
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# U+263A WHITE SMILING FACE: Emoji, not a modifier base -- non-member
+n "\xe2\x98\xba"
+# U+1F004 MAHJONG RED DRAGON: no -- non-member
+n "\xf0\x9f\x80\x84"
+
+# Emoji_Modifier_Base: negated spelling \P{^X} (is \p{X}), utf8; membership flipped
+# pcre2-only
+pattern \P{^Emoji_Modifier_Base}
+features unicode-props
+encoding utf8
+# U+261D WHITE UP POINTING INDEX: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xe2\x98\x9d" 0 3
+# U+26F9 PERSON WITH BALL: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xe2\x9b\xb9" 0 3
+# U+270A RAISED FIST: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xe2\x9c\x8a" 0 3
+# U+1F466 BOY: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xf0\x9f\x91\xa6" 0 4
+# U+1F44D THUMBS UP SIGN: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xf0\x9f\x91\x8d" 0 4
+# U+1F9D1 ADULT: Emoji_Modifier_Base=Yes -- MEMBER
+m "\xf0\x9f\xa7\x91" 0 4
+# U+1FAF0 HAND WITH INDEX FINGER AND THUMB CROSSED: Emoji_Modifier_Base=Yes (14.0) -- MEMBER
+m "\xf0\x9f\xab\xb0" 0 4
+# U+1F600 GRINNING FACE: Emoji, not a modifier base -- non-member
+n "\xf0\x9f\x98\x80"
+# U+1F3FB FITZPATRICK modifier itself: not a base -- non-member
+n "\xf0\x9f\x8f\xbb"
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# U+263A WHITE SMILING FACE: Emoji, not a modifier base -- non-member
+n "\xe2\x98\xba"
+# U+1F004 MAHJONG RED DRAGON: no -- non-member
+n "\xf0\x9f\x80\x84"
+
+# Emoji_Component: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Emoji_Component}
+features unicode-props
+encoding utf8
+# U+0023 NUMBER SIGN: Emoji_Component=Yes (keycap) -- MEMBER
+m "\x23" 0 1
+# U+002A ASTERISK: Emoji_Component=Yes -- MEMBER
+m "\x2a" 0 1
+# U+0030 DIGIT ZERO: Emoji_Component=Yes -- MEMBER
+m "0" 0 1
+# U+0039 DIGIT NINE: Emoji_Component=Yes -- MEMBER
+m "9" 0 1
+# U+200D ZERO WIDTH JOINER: Emoji_Component=Yes -- MEMBER
+m "\xe2\x80\x8d" 0 3
+# U+20E3 COMBINING ENCLOSING KEYCAP: Emoji_Component=Yes -- MEMBER
+m "\xe2\x83\xa3" 0 3
+# U+FE0F VARIATION SELECTOR-16: Emoji_Component=Yes -- MEMBER
+m "\xef\xb8\x8f" 0 3
+# U+1F1E6 REGIONAL INDICATOR A: Emoji_Component=Yes -- MEMBER
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F3FB FITZPATRICK modifier: Emoji_Component=Yes -- MEMBER
+m "\xf0\x9f\x8f\xbb" 0 4
+# U+1F9B0 EMOJI COMPONENT RED HAIR: Emoji_Component=Yes -- MEMBER
+m "\xf0\x9f\xa6\xb0" 0 4
+# U+E0020 TAG SPACE: Emoji_Component=Yes -- MEMBER
+m "\xf3\xa0\x80\xa0" 0 4
+# U+E007F CANCEL TAG: Emoji_Component=Yes (last) -- MEMBER
+m "\xf3\xa0\x81\xbf" 0 4
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# U+200C ZWNJ: neighbour of ZWJ, not Emoji_Component -- non-member
+n "\xe2\x80\x8c"
+# U+FE0E VARIATION SELECTOR-15: not Emoji_Component -- non-member
+n "\xef\xb8\x8e"
+# U+00A9 COPYRIGHT SIGN: Emoji but not Emoji_Component -- non-member
+n "\xc2\xa9"
+# U+1F600 GRINNING FACE: Emoji but not Emoji_Component -- non-member
+n "\xf0\x9f\x98\x80"
+# U+E001F just below TAG SPACE: not Emoji_Component -- non-member
+n "\xf3\xa0\x80\x9f"
+# U+E0080 just above CANCEL TAG: not Emoji_Component -- non-member
+n "\xf3\xa0\x82\x80"
+
+# Emoji_Component: negated spelling [\P{X}], utf8; membership flipped
+# pcre2-only
+pattern [\P{Emoji_Component}]
+features unicode-props
+encoding utf8
+# U+0023 NUMBER SIGN: Emoji_Component=Yes (keycap) -- MEMBER
+n "\x23"
+# U+002A ASTERISK: Emoji_Component=Yes -- MEMBER
+n "\x2a"
+# U+0030 DIGIT ZERO: Emoji_Component=Yes -- MEMBER
+n "0"
+# U+0039 DIGIT NINE: Emoji_Component=Yes -- MEMBER
+n "9"
+# U+200D ZERO WIDTH JOINER: Emoji_Component=Yes -- MEMBER
+n "\xe2\x80\x8d"
+# U+20E3 COMBINING ENCLOSING KEYCAP: Emoji_Component=Yes -- MEMBER
+n "\xe2\x83\xa3"
+# U+FE0F VARIATION SELECTOR-16: Emoji_Component=Yes -- MEMBER
+n "\xef\xb8\x8f"
+# U+1F1E6 REGIONAL INDICATOR A: Emoji_Component=Yes -- MEMBER
+n "\xf0\x9f\x87\xa6"
+# U+1F3FB FITZPATRICK modifier: Emoji_Component=Yes -- MEMBER
+n "\xf0\x9f\x8f\xbb"
+# U+1F9B0 EMOJI COMPONENT RED HAIR: Emoji_Component=Yes -- MEMBER
+n "\xf0\x9f\xa6\xb0"
+# U+E0020 TAG SPACE: Emoji_Component=Yes -- MEMBER
+n "\xf3\xa0\x80\xa0"
+# U+E007F CANCEL TAG: Emoji_Component=Yes (last) -- MEMBER
+n "\xf3\xa0\x81\xbf"
+# U+0041 LATIN CAPITAL A: no -- non-member
+m "A" 0 1
+# U+200C ZWNJ: neighbour of ZWJ, not Emoji_Component -- non-member
+m "\xe2\x80\x8c" 0 3
+# U+FE0E VARIATION SELECTOR-15: not Emoji_Component -- non-member
+m "\xef\xb8\x8e" 0 3
+# U+00A9 COPYRIGHT SIGN: Emoji but not Emoji_Component -- non-member
+m "\xc2\xa9" 0 2
+# U+1F600 GRINNING FACE: Emoji but not Emoji_Component -- non-member
+m "\xf0\x9f\x98\x80" 0 4
+# U+E001F just below TAG SPACE: not Emoji_Component -- non-member
+m "\xf3\xa0\x80\x9f" 0 4
+# U+E0080 just above CANCEL TAG: not Emoji_Component -- non-member
+m "\xf3\xa0\x82\x80" 0 4
+
+# Emoji_Component: inside a class with another item (U+0041)
+# pcre2-only
+pattern [\x{41}\p{Emoji_Component}]
+features unicode-props
+encoding utf8
+# U+0023 NUMBER SIGN: Emoji_Component=Yes (keycap) -- MEMBER
+m "\x23" 0 1
+# U+002A ASTERISK: Emoji_Component=Yes -- MEMBER
+m "\x2a" 0 1
+# U+0030 DIGIT ZERO: Emoji_Component=Yes -- MEMBER
+m "0" 0 1
+# U+0039 DIGIT NINE: Emoji_Component=Yes -- MEMBER
+m "9" 0 1
+# U+200D ZERO WIDTH JOINER: Emoji_Component=Yes -- MEMBER
+m "\xe2\x80\x8d" 0 3
+# U+20E3 COMBINING ENCLOSING KEYCAP: Emoji_Component=Yes -- MEMBER
+m "\xe2\x83\xa3" 0 3
+# U+FE0F VARIATION SELECTOR-16: Emoji_Component=Yes -- MEMBER
+m "\xef\xb8\x8f" 0 3
+# U+1F1E6 REGIONAL INDICATOR A: Emoji_Component=Yes -- MEMBER
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F3FB FITZPATRICK modifier: Emoji_Component=Yes -- MEMBER
+m "\xf0\x9f\x8f\xbb" 0 4
+# U+1F9B0 EMOJI COMPONENT RED HAIR: Emoji_Component=Yes -- MEMBER
+m "\xf0\x9f\xa6\xb0" 0 4
+# U+E0020 TAG SPACE: Emoji_Component=Yes -- MEMBER
+m "\xf3\xa0\x80\xa0" 0 4
+# U+E007F CANCEL TAG: Emoji_Component=Yes (last) -- MEMBER
+m "\xf3\xa0\x81\xbf" 0 4
+# U+0041 LATIN CAPITAL A: no -- non-member of the property but IS the extra class item
+m "A" 0 1
+# U+200C ZWNJ: neighbour of ZWJ, not Emoji_Component -- non-member
+n "\xe2\x80\x8c"
+# U+FE0E VARIATION SELECTOR-15: not Emoji_Component -- non-member
+n "\xef\xb8\x8e"
+# U+00A9 COPYRIGHT SIGN: Emoji but not Emoji_Component -- non-member
+n "\xc2\xa9"
+# U+1F600 GRINNING FACE: Emoji but not Emoji_Component -- non-member
+n "\xf0\x9f\x98\x80"
+# U+E001F just below TAG SPACE: not Emoji_Component -- non-member
+n "\xf3\xa0\x80\x9f"
+# U+E0080 just above CANCEL TAG: not Emoji_Component -- non-member
+n "\xf3\xa0\x82\x80"
+
+# Extended_Pictographic: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Extended_Pictographic}
+features unicode-props
+encoding utf8
+# U+00A9 COPYRIGHT SIGN: Extended_Pictographic=Yes -- MEMBER
+m "\xc2\xa9" 0 2
+# U+00AE REGISTERED SIGN: Extended_Pictographic=Yes -- MEMBER
+m "\xc2\xae" 0 2
+# U+203C DOUBLE EXCLAMATION MARK: ExtPict=Yes -- MEMBER
+m "\xe2\x80\xbc" 0 3
+# U+2122 TRADE MARK SIGN: ExtPict=Yes -- MEMBER
+m "\xe2\x84\xa2" 0 3
+# U+2B50 WHITE MEDIUM STAR: ExtPict=Yes -- MEMBER
+m "\xe2\xad\x90" 0 3
+# U+1F000 MAHJONG TILE EAST WIND: ExtPict=Yes (all of 1F000..1F0FF, even unassigned) -- MEMBER
+m "\xf0\x9f\x80\x80" 0 4
+# U+1F0FF unassigned end of Playing Cards block: ExtPict=Yes (reserved pictographic range) -- MEMBER
+m "\xf0\x9f\x83\xbf" 0 4
+# U+1F600 GRINNING FACE: ExtPict=Yes -- MEMBER
+m "\xf0\x9f\x98\x80" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES: ExtPict=Yes -- MEMBER
+m "\xf0\x9f\xab\xa9" 0 4
+# U+1FFFD last reserved pictographic code point 1FC00..1FFFD: ExtPict=Yes -- MEMBER
+m "\xf0\x9f\xbf\xbd" 0 4
+# U+0023 NUMBER SIGN: Emoji but NOT Extended_Pictographic -- non-member
+n "\x23"
+# U+0030 DIGIT ZERO: Emoji but NOT Extended_Pictographic -- non-member
+n "0"
+# U+0041 LATIN CAPITAL A: no -- non-member
+n "A"
+# U+1F1E6 REGIONAL INDICATOR A: Emoji but NOT Extended_Pictographic -- non-member
+n "\xf0\x9f\x87\xa6"
+# U+200D ZWJ: no -- non-member
+n "\xe2\x80\x8d"
+# U+1FFFE noncharacter right after 1FFFD: no -- non-member
+n "\xf0\x9f\xbf\xbe"
+# U+00A8 DIAERESIS: neighbour of A9, no -- non-member
+n "\xc2\xa8"
+
+# Extended_Pictographic: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{Extended_Pictographic}
+features unicode-props
+encoding utf8
+# U+00A9 COPYRIGHT SIGN: Extended_Pictographic=Yes -- MEMBER
+n "\xc2\xa9"
+# U+00AE REGISTERED SIGN: Extended_Pictographic=Yes -- MEMBER
+n "\xc2\xae"
+# U+203C DOUBLE EXCLAMATION MARK: ExtPict=Yes -- MEMBER
+n "\xe2\x80\xbc"
+# U+2122 TRADE MARK SIGN: ExtPict=Yes -- MEMBER
+n "\xe2\x84\xa2"
+# U+2B50 WHITE MEDIUM STAR: ExtPict=Yes -- MEMBER
+n "\xe2\xad\x90"
+# U+1F000 MAHJONG TILE EAST WIND: ExtPict=Yes (all of 1F000..1F0FF, even unassigned) -- MEMBER
+n "\xf0\x9f\x80\x80"
+# U+1F0FF unassigned end of Playing Cards block: ExtPict=Yes (reserved pictographic range) -- MEMBER
+n "\xf0\x9f\x83\xbf"
+# U+1F600 GRINNING FACE: ExtPict=Yes -- MEMBER
+n "\xf0\x9f\x98\x80"
+# U+1FAE9 FACE WITH BAGS UNDER EYES: ExtPict=Yes -- MEMBER
+n "\xf0\x9f\xab\xa9"
+# U+1FFFD last reserved pictographic code point 1FC00..1FFFD: ExtPict=Yes -- MEMBER
+n "\xf0\x9f\xbf\xbd"
+# U+0023 NUMBER SIGN: Emoji but NOT Extended_Pictographic -- non-member
+m "\x23" 0 1
+# U+0030 DIGIT ZERO: Emoji but NOT Extended_Pictographic -- non-member
+m "0" 0 1
+# U+0041 LATIN CAPITAL A: no -- non-member
+m "A" 0 1
+# U+1F1E6 REGIONAL INDICATOR A: Emoji but NOT Extended_Pictographic -- non-member
+m "\xf0\x9f\x87\xa6" 0 4
+# U+200D ZWJ: no -- non-member
+m "\xe2\x80\x8d" 0 3
+# U+1FFFE noncharacter right after 1FFFD: no -- non-member
+m "\xf0\x9f\xbf\xbe" 0 4
+# U+00A8 DIAERESIS: neighbour of A9, no -- non-member
+m "\xc2\xa8" 0 2

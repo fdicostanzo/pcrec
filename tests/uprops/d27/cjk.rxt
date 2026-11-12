@@ -1,0 +1,393 @@
+# upropd27: CJK binary properties
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# Ideographic: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Ideographic}
+features unicode-props
+encoding utf8
+# U+3006 IDEOGRAPHIC CLOSING MARK: Lo, Ideographic -- MEMBER
+m "\xe3\x80\x86" 0 3
+# U+3007 IDEOGRAPHIC NUMBER ZERO -- MEMBER
+m "\xe3\x80\x87" 0 3
+# U+3021 HANGZHOU NUMERAL ONE -- MEMBER
+m "\xe3\x80\xa1" 0 3
+# U+3400 CJK EXT A first -- MEMBER
+m "\xe3\x90\x80" 0 3
+# U+4DBF CJK EXT A last -- MEMBER
+m "\xe4\xb6\xbf" 0 3
+# U+4E00 CJK first -- MEMBER
+m "\xe4\xb8\x80" 0 3
+# U+9FFF CJK last (14.0) -- MEMBER
+m "\xe9\xbf\xbf" 0 3
+# U+F900 CJK COMPATIBILITY IDEOGRAPH-F900 -- MEMBER
+m "\xef\xa4\x80" 0 3
+# U+20000 CJK EXT B first -- MEMBER
+m "\xf0\xa0\x80\x80" 0 4
+# U+30000 CJK EXT G first -- MEMBER
+m "\xf0\xb0\x80\x80" 0 4
+# U+323AF CJK EXT H last -- MEMBER
+m "\xf0\xb2\x8e\xaf" 0 4
+# U+2EBF0 CJK EXT I first (15.1) -- MEMBER
+m "\xf0\xae\xaf\xb0" 0 4
+# U+17000 TANGUT IDEOGRAPH-17000 -- MEMBER
+m "\xf0\x97\x80\x80" 0 4
+# U+1B170 NUSHU CHARACTER-1B170 -- MEMBER
+m "\xf0\x9b\x85\xb0" 0 4
+# U+3005 IDEOGRAPHIC ITERATION MARK: Lm, not Ideographic -- non-member
+n "\xe3\x80\x85"
+# U+3008 LEFT ANGLE BRACKET -- non-member
+n "\xe3\x80\x88"
+# U+33FF just below CJK EXT A -- non-member
+n "\xe3\x8f\xbf"
+# U+4DC0 HEXAGRAM FOR THE CREATIVE HEAVEN: between ext A and URO -- non-member
+n "\xe4\xb7\x80"
+# U+A000 YI SYLLABLE IT: just above CJK -- non-member
+n "\xea\x80\x80"
+# U+3040 unassigned HIRAGANA block start -- non-member
+n "\xe3\x81\x80"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+
+# Ideographic: negated spelling \p{^X}, utf8; membership flipped
+# pcre2-only
+pattern \p{^Ideographic}
+features unicode-props
+encoding utf8
+# U+3006 IDEOGRAPHIC CLOSING MARK: Lo, Ideographic -- MEMBER
+n "\xe3\x80\x86"
+# U+3007 IDEOGRAPHIC NUMBER ZERO -- MEMBER
+n "\xe3\x80\x87"
+# U+3021 HANGZHOU NUMERAL ONE -- MEMBER
+n "\xe3\x80\xa1"
+# U+3400 CJK EXT A first -- MEMBER
+n "\xe3\x90\x80"
+# U+4DBF CJK EXT A last -- MEMBER
+n "\xe4\xb6\xbf"
+# U+4E00 CJK first -- MEMBER
+n "\xe4\xb8\x80"
+# U+9FFF CJK last (14.0) -- MEMBER
+n "\xe9\xbf\xbf"
+# U+F900 CJK COMPATIBILITY IDEOGRAPH-F900 -- MEMBER
+n "\xef\xa4\x80"
+# U+20000 CJK EXT B first -- MEMBER
+n "\xf0\xa0\x80\x80"
+# U+30000 CJK EXT G first -- MEMBER
+n "\xf0\xb0\x80\x80"
+# U+323AF CJK EXT H last -- MEMBER
+n "\xf0\xb2\x8e\xaf"
+# U+2EBF0 CJK EXT I first (15.1) -- MEMBER
+n "\xf0\xae\xaf\xb0"
+# U+17000 TANGUT IDEOGRAPH-17000 -- MEMBER
+n "\xf0\x97\x80\x80"
+# U+1B170 NUSHU CHARACTER-1B170 -- MEMBER
+n "\xf0\x9b\x85\xb0"
+# U+3005 IDEOGRAPHIC ITERATION MARK: Lm, not Ideographic -- non-member
+m "\xe3\x80\x85" 0 3
+# U+3008 LEFT ANGLE BRACKET -- non-member
+m "\xe3\x80\x88" 0 3
+# U+33FF just below CJK EXT A -- non-member
+m "\xe3\x8f\xbf" 0 3
+# U+4DC0 HEXAGRAM FOR THE CREATIVE HEAVEN: between ext A and URO -- non-member
+m "\xe4\xb7\x80" 0 3
+# U+A000 YI SYLLABLE IT: just above CJK -- non-member
+m "\xea\x80\x80" 0 3
+# U+3040 unassigned HIRAGANA block start -- non-member
+m "\xe3\x81\x80" 0 3
+# U+0061 LATIN SMALL a -- non-member
+m "a" 0 1
+
+# Unified_Ideograph: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Unified_Ideograph}
+features unicode-props
+encoding utf8
+# U+3400 EXT A first -- MEMBER
+m "\xe3\x90\x80" 0 3
+# U+4DBF EXT A last -- MEMBER
+m "\xe4\xb6\xbf" 0 3
+# U+4E00 first -- MEMBER
+m "\xe4\xb8\x80" 0 3
+# U+9FFF last of the URO -- MEMBER
+m "\xe9\xbf\xbf" 0 3
+# U+FA0E CJK COMPATIBILITY IDEOGRAPH-FA0E: one of the 12 unified-ideograph compatibility code points -- MEMBER
+m "\xef\xa8\x8e" 0 3
+# U+FA11 FA11: unified -- MEMBER
+m "\xef\xa8\x91" 0 3
+# U+20000 EXT B first -- MEMBER
+m "\xf0\xa0\x80\x80" 0 4
+# U+31350 EXT H first -- MEMBER
+m "\xf0\xb1\x8d\x90" 0 4
+# U+2EBF0 EXT I first -- MEMBER
+m "\xf0\xae\xaf\xb0" 0 4
+# U+F900 COMPATIBILITY IDEOGRAPH-F900: Ideographic but NOT Unified_Ideograph -- non-member
+n "\xef\xa4\x80"
+# U+FA10 COMPATIBILITY IDEOGRAPH-FA10: not unified -- non-member
+n "\xef\xa8\x90"
+# U+3006 IDEOGRAPHIC CLOSING MARK: no -- non-member
+n "\xe3\x80\x86"
+# U+3007 IDEOGRAPHIC NUMBER ZERO: Ideographic but not Unified_Ideograph -- non-member
+n "\xe3\x80\x87"
+# U+4DC0 HEXAGRAM: gap between ext A and URO -- non-member
+n "\xe4\xb7\x80"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+33FF just below EXT A -- non-member
+n "\xe3\x8f\xbf"
+
+# Unified_Ideograph: negated spelling [^\p{X}], utf8; membership flipped
+# pcre2-only
+pattern [^\p{Unified_Ideograph}]
+features unicode-props
+encoding utf8
+# U+3400 EXT A first -- MEMBER
+n "\xe3\x90\x80"
+# U+4DBF EXT A last -- MEMBER
+n "\xe4\xb6\xbf"
+# U+4E00 first -- MEMBER
+n "\xe4\xb8\x80"
+# U+9FFF last of the URO -- MEMBER
+n "\xe9\xbf\xbf"
+# U+FA0E CJK COMPATIBILITY IDEOGRAPH-FA0E: one of the 12 unified-ideograph compatibility code points -- MEMBER
+n "\xef\xa8\x8e"
+# U+FA11 FA11: unified -- MEMBER
+n "\xef\xa8\x91"
+# U+20000 EXT B first -- MEMBER
+n "\xf0\xa0\x80\x80"
+# U+31350 EXT H first -- MEMBER
+n "\xf0\xb1\x8d\x90"
+# U+2EBF0 EXT I first -- MEMBER
+n "\xf0\xae\xaf\xb0"
+# U+F900 COMPATIBILITY IDEOGRAPH-F900: Ideographic but NOT Unified_Ideograph -- non-member
+m "\xef\xa4\x80" 0 3
+# U+FA10 COMPATIBILITY IDEOGRAPH-FA10: not unified -- non-member
+m "\xef\xa8\x90" 0 3
+# U+3006 IDEOGRAPHIC CLOSING MARK: no -- non-member
+m "\xe3\x80\x86" 0 3
+# U+3007 IDEOGRAPHIC NUMBER ZERO: Ideographic but not Unified_Ideograph -- non-member
+m "\xe3\x80\x87" 0 3
+# U+4DC0 HEXAGRAM: gap between ext A and URO -- non-member
+m "\xe4\xb7\x80" 0 3
+# U+0061 LATIN SMALL a -- non-member
+m "a" 0 1
+# U+33FF just below EXT A -- non-member
+m "\xe3\x8f\xbf" 0 3
+
+# Unified_Ideograph: inside a class with another item (U+F900)
+# pcre2-only
+pattern [\x{F900}\p{Unified_Ideograph}]
+features unicode-props
+encoding utf8
+# U+3400 EXT A first -- MEMBER
+m "\xe3\x90\x80" 0 3
+# U+4DBF EXT A last -- MEMBER
+m "\xe4\xb6\xbf" 0 3
+# U+4E00 first -- MEMBER
+m "\xe4\xb8\x80" 0 3
+# U+9FFF last of the URO -- MEMBER
+m "\xe9\xbf\xbf" 0 3
+# U+FA0E CJK COMPATIBILITY IDEOGRAPH-FA0E: one of the 12 unified-ideograph compatibility code points -- MEMBER
+m "\xef\xa8\x8e" 0 3
+# U+FA11 FA11: unified -- MEMBER
+m "\xef\xa8\x91" 0 3
+# U+20000 EXT B first -- MEMBER
+m "\xf0\xa0\x80\x80" 0 4
+# U+31350 EXT H first -- MEMBER
+m "\xf0\xb1\x8d\x90" 0 4
+# U+2EBF0 EXT I first -- MEMBER
+m "\xf0\xae\xaf\xb0" 0 4
+# U+F900 COMPATIBILITY IDEOGRAPH-F900: Ideographic but NOT Unified_Ideograph -- non-member of the property but IS the extra class item
+m "\xef\xa4\x80" 0 3
+# U+FA10 COMPATIBILITY IDEOGRAPH-FA10: not unified -- non-member
+n "\xef\xa8\x90"
+# U+3006 IDEOGRAPHIC CLOSING MARK: no -- non-member
+n "\xe3\x80\x86"
+# U+3007 IDEOGRAPHIC NUMBER ZERO: Ideographic but not Unified_Ideograph -- non-member
+n "\xe3\x80\x87"
+# U+4DC0 HEXAGRAM: gap between ext A and URO -- non-member
+n "\xe4\xb7\x80"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+33FF just below EXT A -- non-member
+n "\xe3\x8f\xbf"
+
+# Radical: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Radical}
+features unicode-props
+encoding utf8
+# U+2E80 CJK RADICAL REPEAT -- MEMBER
+m "\xe2\xba\x80" 0 3
+# U+2E99 CJK RADICAL RIGHT HAND -- MEMBER
+m "\xe2\xba\x99" 0 3
+# U+2E9B CJK RADICAL CHOKE -- MEMBER
+m "\xe2\xba\x9b" 0 3
+# U+2EF3 CJK RADICAL C-SIMPLIFIED TURTLE -- MEMBER
+m "\xe2\xbb\xb3" 0 3
+# U+2F00 KANGXI RADICAL ONE -- MEMBER
+m "\xe2\xbc\x80" 0 3
+# U+2FD5 KANGXI RADICAL FLUTE -- MEMBER
+m "\xe2\xbf\x95" 0 3
+# U+2E9A unassigned gap inside the supplement -- non-member
+n "\xe2\xba\x9a"
+# U+2EF4 just above CJK Radicals Supplement assigned -- non-member
+n "\xe2\xbb\xb4"
+# U+2E7F just below -- non-member
+n "\xe2\xb9\xbf"
+# U+2FD6 just above Kangxi -- non-member
+n "\xe2\xbf\x96"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+0061 a -- non-member
+n "a"
+
+# Radical: negated spelling \P{^X} (is \p{X}), utf8; membership flipped
+# pcre2-only
+pattern \P{^Radical}
+features unicode-props
+encoding utf8
+# U+2E80 CJK RADICAL REPEAT -- MEMBER
+m "\xe2\xba\x80" 0 3
+# U+2E99 CJK RADICAL RIGHT HAND -- MEMBER
+m "\xe2\xba\x99" 0 3
+# U+2E9B CJK RADICAL CHOKE -- MEMBER
+m "\xe2\xba\x9b" 0 3
+# U+2EF3 CJK RADICAL C-SIMPLIFIED TURTLE -- MEMBER
+m "\xe2\xbb\xb3" 0 3
+# U+2F00 KANGXI RADICAL ONE -- MEMBER
+m "\xe2\xbc\x80" 0 3
+# U+2FD5 KANGXI RADICAL FLUTE -- MEMBER
+m "\xe2\xbf\x95" 0 3
+# U+2E9A unassigned gap inside the supplement -- non-member
+n "\xe2\xba\x9a"
+# U+2EF4 just above CJK Radicals Supplement assigned -- non-member
+n "\xe2\xbb\xb4"
+# U+2E7F just below -- non-member
+n "\xe2\xb9\xbf"
+# U+2FD6 just above Kangxi -- non-member
+n "\xe2\xbf\x96"
+# U+4E00 CJK ideograph -- non-member
+n "\xe4\xb8\x80"
+# U+0061 a -- non-member
+n "a"
+
+# IDS_Binary_Operator: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{IDS_Binary_Operator}
+features unicode-props
+encoding utf8
+# U+2FF0 LEFT TO RIGHT -- MEMBER
+m "\xe2\xbf\xb0" 0 3
+# U+2FF1 ABOVE TO BELOW -- MEMBER
+m "\xe2\xbf\xb1" 0 3
+# U+2FF4 FULL SURROUND -- MEMBER
+m "\xe2\xbf\xb4" 0 3
+# U+2FFD SURROUND FROM LOWER RIGHT -- MEMBER
+m "\xe2\xbf\xbd" 0 3
+# U+31EF IDEOGRAPHIC DESCRIPTION CHARACTER SUBTRACTION (15.1) -- MEMBER
+m "\xe3\x87\xaf" 0 3
+# U+2FF2 LEFT TO MIDDLE AND RIGHT: trinary -- non-member
+n "\xe2\xbf\xb2"
+# U+2FF3 ABOVE TO MIDDLE AND BELOW: trinary -- non-member
+n "\xe2\xbf\xb3"
+# U+2FFE HORIZONTAL REFLECTION: unary (15.1) -- non-member
+n "\xe2\xbf\xbe"
+# U+2FEF just below -- non-member
+n "\xe2\xbf\xaf"
+# U+0061 a -- non-member
+n "a"
+
+# IDS_Binary_Operator: negated spelling [\P{X}], utf8; membership flipped
+# pcre2-only
+pattern [\P{IDS_Binary_Operator}]
+features unicode-props
+encoding utf8
+# U+2FF0 LEFT TO RIGHT -- MEMBER
+n "\xe2\xbf\xb0"
+# U+2FF1 ABOVE TO BELOW -- MEMBER
+n "\xe2\xbf\xb1"
+# U+2FF4 FULL SURROUND -- MEMBER
+n "\xe2\xbf\xb4"
+# U+2FFD SURROUND FROM LOWER RIGHT -- MEMBER
+n "\xe2\xbf\xbd"
+# U+31EF IDEOGRAPHIC DESCRIPTION CHARACTER SUBTRACTION (15.1) -- MEMBER
+n "\xe3\x87\xaf"
+# U+2FF2 LEFT TO MIDDLE AND RIGHT: trinary -- non-member
+m "\xe2\xbf\xb2" 0 3
+# U+2FF3 ABOVE TO MIDDLE AND BELOW: trinary -- non-member
+m "\xe2\xbf\xb3" 0 3
+# U+2FFE HORIZONTAL REFLECTION: unary (15.1) -- non-member
+m "\xe2\xbf\xbe" 0 3
+# U+2FEF just below -- non-member
+m "\xe2\xbf\xaf" 0 3
+# U+0061 a -- non-member
+m "a" 0 1
+
+# IDS_Binary_Operator: inside a class with another item (U+2FF2)
+# pcre2-only
+pattern [\x{2FF2}\p{IDS_Binary_Operator}]
+features unicode-props
+encoding utf8
+# U+2FF0 LEFT TO RIGHT -- MEMBER
+m "\xe2\xbf\xb0" 0 3
+# U+2FF1 ABOVE TO BELOW -- MEMBER
+m "\xe2\xbf\xb1" 0 3
+# U+2FF4 FULL SURROUND -- MEMBER
+m "\xe2\xbf\xb4" 0 3
+# U+2FFD SURROUND FROM LOWER RIGHT -- MEMBER
+m "\xe2\xbf\xbd" 0 3
+# U+31EF IDEOGRAPHIC DESCRIPTION CHARACTER SUBTRACTION (15.1) -- MEMBER
+m "\xe3\x87\xaf" 0 3
+# U+2FF2 LEFT TO MIDDLE AND RIGHT: trinary -- non-member of the property but IS the extra class item
+m "\xe2\xbf\xb2" 0 3
+# U+2FF3 ABOVE TO MIDDLE AND BELOW: trinary -- non-member
+n "\xe2\xbf\xb3"
+# U+2FFE HORIZONTAL REFLECTION: unary (15.1) -- non-member
+n "\xe2\xbf\xbe"
+# U+2FEF just below -- non-member
+n "\xe2\xbf\xaf"
+# U+0061 a -- non-member
+n "a"
+
+# IDS_Trinary_Operator: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{IDS_Trinary_Operator}
+features unicode-props
+encoding utf8
+# U+2FF2 LEFT TO MIDDLE AND RIGHT -- MEMBER
+m "\xe2\xbf\xb2" 0 3
+# U+2FF3 ABOVE TO MIDDLE AND BELOW -- MEMBER
+m "\xe2\xbf\xb3" 0 3
+# U+2FF0 binary -- non-member
+n "\xe2\xbf\xb0"
+# U+2FF1 binary -- non-member
+n "\xe2\xbf\xb1"
+# U+2FF4 binary -- non-member
+n "\xe2\xbf\xb4"
+# U+2FFE unary -- non-member
+n "\xe2\xbf\xbe"
+# U+0061 a -- non-member
+n "a"
+
+# IDS_Trinary_Operator: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{IDS_Trinary_Operator}
+features unicode-props
+encoding utf8
+# U+2FF2 LEFT TO MIDDLE AND RIGHT -- MEMBER
+n "\xe2\xbf\xb2"
+# U+2FF3 ABOVE TO MIDDLE AND BELOW -- MEMBER
+n "\xe2\xbf\xb3"
+# U+2FF0 binary -- non-member
+m "\xe2\xbf\xb0" 0 3
+# U+2FF1 binary -- non-member
+m "\xe2\xbf\xb1" 0 3
+# U+2FF4 binary -- non-member
+m "\xe2\xbf\xb4" 0 3
+# U+2FFE unary -- non-member
+m "\xe2\xbf\xbe" 0 3
+# U+0061 a -- non-member
+m "a" 0 1

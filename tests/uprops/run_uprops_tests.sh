@@ -513,6 +513,27 @@ if [ "$rc" != "0" ] && printf '%s' "$out" | grep -q "STALE"; then
     ok "sabotage: a planted wrong alias (Alpha -> Alfa) makes the committed table STALE"
 else bad "sabotage: a planted wrong alias was not detected -- rc=$rc"; fi
 restore PropertyAliases.txt
+echo "== §8 the D27 blinded corpus's two independent oracles (tests/uprops/d27) =="
+# d27/*.rxt rides test-corpus for pcrec's answers; `d27_check.py` re-derives
+# each expectation WITHOUT pcrec: `ucd` from the vendored UCD files (single
+# code point blocks, incl. the Age/Block extensions libpcre2 refuses), `pcre2`
+# from libpcre2 (every block it can compile).  Each arm is shown live by a
+# planted wrong expectation.
+d27="$SCRIPT_DIR/d27"
+if python3 -I "$d27/d27_check.py" ucd; then pass=$((pass+1)); else bad "d27 corpus disagrees with the UCD files"; fi
+if pkg-config --exists libpcre2-8 2>/dev/null; then
+    if python3 -I "$d27/d27_check.py" pcre2 --list >"$WORKDIR/d27p2.log" 2>&1
+    then pass=$((pass+1)); tail -1 "$WORKDIR/d27p2.log"
+    else bad "d27 corpus disagrees with libpcre2"; tail -5 "$WORKDIR/d27p2.log"; fi
+else echo "SKIP: libpcre2-8 absent -- the d27 libpcre2 arm did not run"; fi
+mkdir -p "$WORKDIR/d27sab"
+sed '0,/^n "A"/s//m "A" 0 1/' "$d27/emoji.rxt" > "$WORKDIR/d27sab/emoji.rxt"
+for arm in ucd pcre2; do
+    [ "$arm" = pcre2 ] && ! pkg-config --exists libpcre2-8 2>/dev/null && continue
+    if python3 -I "$d27/d27_check.py" $arm "$WORKDIR/d27sab/emoji.rxt" >/dev/null
+    then bad "sabotage: a planted wrong d27 expectation passed the $arm arm"
+    else ok "sabotage: a planted wrong d27 expectation fails the $arm arm"; fi
+done
 echo
 echo "uprops: $pass passed, $fail failed"
 [ "$fail" = "0" ] || exit 1

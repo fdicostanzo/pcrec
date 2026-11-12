@@ -1,0 +1,1071 @@
+# upropd27: invisible, bidi and white-space binary properties
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# Default_Ignorable_Code_Point: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Default_Ignorable_Code_Point}
+features unicode-props
+encoding utf8
+# U+00AD SOFT HYPHEN: DI -- MEMBER
+m "\xc2\xad" 0 2
+# U+034F COMBINING GRAPHEME JOINER: DI -- MEMBER
+m "\xcd\x8f" 0 2
+# U+061C ARABIC LETTER MARK: DI -- MEMBER
+m "\xd8\x9c" 0 2
+# U+115F HANGUL CHOSEONG FILLER: DI -- MEMBER
+m "\xe1\x85\x9f" 0 3
+# U+180B MONGOLIAN FREE VARIATION SELECTOR ONE: DI -- MEMBER
+m "\xe1\xa0\x8b" 0 3
+# U+180E MONGOLIAN VOWEL SEPARATOR: DI -- MEMBER
+m "\xe1\xa0\x8e" 0 3
+# U+200B ZERO WIDTH SPACE: DI (200B..200F) -- MEMBER
+m "\xe2\x80\x8b" 0 3
+# U+200F RIGHT-TO-LEFT MARK: DI -- MEMBER
+m "\xe2\x80\x8f" 0 3
+# U+202A LEFT-TO-RIGHT EMBEDDING: DI (202A..202E) -- MEMBER
+m "\xe2\x80\xaa" 0 3
+# U+2060 WORD JOINER: DI (2060..206F) -- MEMBER
+m "\xe2\x81\xa0" 0 3
+# U+2065 UNASSIGNED inside 2060..206F: DI (DI covers unassigned code points in its ranges) -- MEMBER
+m "\xe2\x81\xa5" 0 3
+# U+206F NOMINAL DIGIT SHAPES: DI, last of 2060..206F -- MEMBER
+m "\xe2\x81\xaf" 0 3
+# U+3164 HANGUL FILLER: DI -- MEMBER
+m "\xe3\x85\xa4" 0 3
+# U+FE00 VARIATION SELECTOR-1: DI -- MEMBER
+m "\xef\xb8\x80" 0 3
+# U+FEFF BOM / ZWNBSP: DI -- MEMBER
+m "\xef\xbb\xbf" 0 3
+# U+FFA0 HALFWIDTH HANGUL FILLER: DI -- MEMBER
+m "\xef\xbe\xa0" 0 3
+# U+FFF0 unassigned FFF0: DI (FFF0..FFF8) -- MEMBER
+m "\xef\xbf\xb0" 0 3
+# U+FFF8 unassigned FFF8: DI -- MEMBER
+m "\xef\xbf\xb8" 0 3
+# U+1D173 MUSICAL SYMBOL BEGIN BEAM: DI (1D173..1D17A) -- MEMBER
+m "\xf0\x9d\x85\xb3" 0 4
+# U+E0000 unassigned E0000: DI (E0000..E0FFF) -- MEMBER
+m "\xf3\xa0\x80\x80" 0 4
+# U+E0001 LANGUAGE TAG: DI -- MEMBER
+m "\xf3\xa0\x80\x81" 0 4
+# U+E0FFF last of E0000..E0FFF: DI -- MEMBER
+m "\xf3\xa0\xbf\xbf" 0 4
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+00AC NOT SIGN: neighbour of AD -- non-member
+n "\xc2\xac"
+# U+00AE REGISTERED SIGN: neighbour of AD -- non-member
+n "\xc2\xae"
+# U+200A HAIR SPACE: just below 200B -- non-member
+n "\xe2\x80\x8a"
+# U+2010 HYPHEN: just above 200F-ish, not DI -- non-member
+n "\xe2\x80\x90"
+# U+2029 PARAGRAPH SEPARATOR: just below 202A... not DI -- non-member
+n "\xe2\x80\xa9"
+# U+2070 SUPERSCRIPT ZERO: just above 206F -- non-member
+n "\xe2\x81\xb0"
+# U+FFF9 INTERLINEAR ANNOTATION ANCHOR: just above FFF8, not DI -- non-member
+n "\xef\xbf\xb9"
+# U+FFFD REPLACEMENT CHARACTER: not DI -- non-member
+n "\xef\xbf\xbd"
+# U+E1000 just above E0FFF: not DI -- non-member
+n "\xf3\xa1\x80\x80"
+# U+1D172 just below 1D173: not DI -- non-member
+n "\xf0\x9d\x85\xb2"
+
+# Default_Ignorable_Code_Point: negated spelling \p{^X}, utf8; membership flipped
+# pcre2-only
+pattern \p{^Default_Ignorable_Code_Point}
+features unicode-props
+encoding utf8
+# U+00AD SOFT HYPHEN: DI -- MEMBER
+n "\xc2\xad"
+# U+034F COMBINING GRAPHEME JOINER: DI -- MEMBER
+n "\xcd\x8f"
+# U+061C ARABIC LETTER MARK: DI -- MEMBER
+n "\xd8\x9c"
+# U+115F HANGUL CHOSEONG FILLER: DI -- MEMBER
+n "\xe1\x85\x9f"
+# U+180B MONGOLIAN FREE VARIATION SELECTOR ONE: DI -- MEMBER
+n "\xe1\xa0\x8b"
+# U+180E MONGOLIAN VOWEL SEPARATOR: DI -- MEMBER
+n "\xe1\xa0\x8e"
+# U+200B ZERO WIDTH SPACE: DI (200B..200F) -- MEMBER
+n "\xe2\x80\x8b"
+# U+200F RIGHT-TO-LEFT MARK: DI -- MEMBER
+n "\xe2\x80\x8f"
+# U+202A LEFT-TO-RIGHT EMBEDDING: DI (202A..202E) -- MEMBER
+n "\xe2\x80\xaa"
+# U+2060 WORD JOINER: DI (2060..206F) -- MEMBER
+n "\xe2\x81\xa0"
+# U+2065 UNASSIGNED inside 2060..206F: DI (DI covers unassigned code points in its ranges) -- MEMBER
+n "\xe2\x81\xa5"
+# U+206F NOMINAL DIGIT SHAPES: DI, last of 2060..206F -- MEMBER
+n "\xe2\x81\xaf"
+# U+3164 HANGUL FILLER: DI -- MEMBER
+n "\xe3\x85\xa4"
+# U+FE00 VARIATION SELECTOR-1: DI -- MEMBER
+n "\xef\xb8\x80"
+# U+FEFF BOM / ZWNBSP: DI -- MEMBER
+n "\xef\xbb\xbf"
+# U+FFA0 HALFWIDTH HANGUL FILLER: DI -- MEMBER
+n "\xef\xbe\xa0"
+# U+FFF0 unassigned FFF0: DI (FFF0..FFF8) -- MEMBER
+n "\xef\xbf\xb0"
+# U+FFF8 unassigned FFF8: DI -- MEMBER
+n "\xef\xbf\xb8"
+# U+1D173 MUSICAL SYMBOL BEGIN BEAM: DI (1D173..1D17A) -- MEMBER
+n "\xf0\x9d\x85\xb3"
+# U+E0000 unassigned E0000: DI (E0000..E0FFF) -- MEMBER
+n "\xf3\xa0\x80\x80"
+# U+E0001 LANGUAGE TAG: DI -- MEMBER
+n "\xf3\xa0\x80\x81"
+# U+E0FFF last of E0000..E0FFF: DI -- MEMBER
+n "\xf3\xa0\xbf\xbf"
+# U+0020 SPACE -- non-member
+m "\x20" 0 1
+# U+0061 LATIN SMALL a -- non-member
+m "a" 0 1
+# U+00AC NOT SIGN: neighbour of AD -- non-member
+m "\xc2\xac" 0 2
+# U+00AE REGISTERED SIGN: neighbour of AD -- non-member
+m "\xc2\xae" 0 2
+# U+200A HAIR SPACE: just below 200B -- non-member
+m "\xe2\x80\x8a" 0 3
+# U+2010 HYPHEN: just above 200F-ish, not DI -- non-member
+m "\xe2\x80\x90" 0 3
+# U+2029 PARAGRAPH SEPARATOR: just below 202A... not DI -- non-member
+m "\xe2\x80\xa9" 0 3
+# U+2070 SUPERSCRIPT ZERO: just above 206F -- non-member
+m "\xe2\x81\xb0" 0 3
+# U+FFF9 INTERLINEAR ANNOTATION ANCHOR: just above FFF8, not DI -- non-member
+m "\xef\xbf\xb9" 0 3
+# U+FFFD REPLACEMENT CHARACTER: not DI -- non-member
+m "\xef\xbf\xbd" 0 3
+# U+E1000 just above E0FFF: not DI -- non-member
+m "\xf3\xa1\x80\x80" 0 4
+# U+1D172 just below 1D173: not DI -- non-member
+m "\xf0\x9d\x85\xb2" 0 4
+
+# Default_Ignorable_Code_Point: inside a class with another item (U+0020)
+# pcre2-only
+pattern [\x{20}\p{Default_Ignorable_Code_Point}]
+features unicode-props
+encoding utf8
+# U+00AD SOFT HYPHEN: DI -- MEMBER
+m "\xc2\xad" 0 2
+# U+034F COMBINING GRAPHEME JOINER: DI -- MEMBER
+m "\xcd\x8f" 0 2
+# U+061C ARABIC LETTER MARK: DI -- MEMBER
+m "\xd8\x9c" 0 2
+# U+115F HANGUL CHOSEONG FILLER: DI -- MEMBER
+m "\xe1\x85\x9f" 0 3
+# U+180B MONGOLIAN FREE VARIATION SELECTOR ONE: DI -- MEMBER
+m "\xe1\xa0\x8b" 0 3
+# U+180E MONGOLIAN VOWEL SEPARATOR: DI -- MEMBER
+m "\xe1\xa0\x8e" 0 3
+# U+200B ZERO WIDTH SPACE: DI (200B..200F) -- MEMBER
+m "\xe2\x80\x8b" 0 3
+# U+200F RIGHT-TO-LEFT MARK: DI -- MEMBER
+m "\xe2\x80\x8f" 0 3
+# U+202A LEFT-TO-RIGHT EMBEDDING: DI (202A..202E) -- MEMBER
+m "\xe2\x80\xaa" 0 3
+# U+2060 WORD JOINER: DI (2060..206F) -- MEMBER
+m "\xe2\x81\xa0" 0 3
+# U+2065 UNASSIGNED inside 2060..206F: DI (DI covers unassigned code points in its ranges) -- MEMBER
+m "\xe2\x81\xa5" 0 3
+# U+206F NOMINAL DIGIT SHAPES: DI, last of 2060..206F -- MEMBER
+m "\xe2\x81\xaf" 0 3
+# U+3164 HANGUL FILLER: DI -- MEMBER
+m "\xe3\x85\xa4" 0 3
+# U+FE00 VARIATION SELECTOR-1: DI -- MEMBER
+m "\xef\xb8\x80" 0 3
+# U+FEFF BOM / ZWNBSP: DI -- MEMBER
+m "\xef\xbb\xbf" 0 3
+# U+FFA0 HALFWIDTH HANGUL FILLER: DI -- MEMBER
+m "\xef\xbe\xa0" 0 3
+# U+FFF0 unassigned FFF0: DI (FFF0..FFF8) -- MEMBER
+m "\xef\xbf\xb0" 0 3
+# U+FFF8 unassigned FFF8: DI -- MEMBER
+m "\xef\xbf\xb8" 0 3
+# U+1D173 MUSICAL SYMBOL BEGIN BEAM: DI (1D173..1D17A) -- MEMBER
+m "\xf0\x9d\x85\xb3" 0 4
+# U+E0000 unassigned E0000: DI (E0000..E0FFF) -- MEMBER
+m "\xf3\xa0\x80\x80" 0 4
+# U+E0001 LANGUAGE TAG: DI -- MEMBER
+m "\xf3\xa0\x80\x81" 0 4
+# U+E0FFF last of E0000..E0FFF: DI -- MEMBER
+m "\xf3\xa0\xbf\xbf" 0 4
+# U+0020 SPACE -- non-member of the property but IS the extra class item
+m "\x20" 0 1
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+00AC NOT SIGN: neighbour of AD -- non-member
+n "\xc2\xac"
+# U+00AE REGISTERED SIGN: neighbour of AD -- non-member
+n "\xc2\xae"
+# U+200A HAIR SPACE: just below 200B -- non-member
+n "\xe2\x80\x8a"
+# U+2010 HYPHEN: just above 200F-ish, not DI -- non-member
+n "\xe2\x80\x90"
+# U+2029 PARAGRAPH SEPARATOR: just below 202A... not DI -- non-member
+n "\xe2\x80\xa9"
+# U+2070 SUPERSCRIPT ZERO: just above 206F -- non-member
+n "\xe2\x81\xb0"
+# U+FFF9 INTERLINEAR ANNOTATION ANCHOR: just above FFF8, not DI -- non-member
+n "\xef\xbf\xb9"
+# U+FFFD REPLACEMENT CHARACTER: not DI -- non-member
+n "\xef\xbf\xbd"
+# U+E1000 just above E0FFF: not DI -- non-member
+n "\xf3\xa1\x80\x80"
+# U+1D172 just below 1D173: not DI -- non-member
+n "\xf0\x9d\x85\xb2"
+
+# Default_Ignorable_Code_Point: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{Default_Ignorable_Code_Point}
+features unicode-props
+encoding utf8
+flags i
+# U+00AD SOFT HYPHEN: DI -- MEMBER
+m "\xc2\xad" 0 2
+# U+034F COMBINING GRAPHEME JOINER: DI -- MEMBER
+m "\xcd\x8f" 0 2
+# U+061C ARABIC LETTER MARK: DI -- MEMBER
+m "\xd8\x9c" 0 2
+# U+115F HANGUL CHOSEONG FILLER: DI -- MEMBER
+m "\xe1\x85\x9f" 0 3
+# U+180B MONGOLIAN FREE VARIATION SELECTOR ONE: DI -- MEMBER
+m "\xe1\xa0\x8b" 0 3
+# U+180E MONGOLIAN VOWEL SEPARATOR: DI -- MEMBER
+m "\xe1\xa0\x8e" 0 3
+# U+200B ZERO WIDTH SPACE: DI (200B..200F) -- MEMBER
+m "\xe2\x80\x8b" 0 3
+# U+200F RIGHT-TO-LEFT MARK: DI -- MEMBER
+m "\xe2\x80\x8f" 0 3
+# U+202A LEFT-TO-RIGHT EMBEDDING: DI (202A..202E) -- MEMBER
+m "\xe2\x80\xaa" 0 3
+# U+2060 WORD JOINER: DI (2060..206F) -- MEMBER
+m "\xe2\x81\xa0" 0 3
+# U+2065 UNASSIGNED inside 2060..206F: DI (DI covers unassigned code points in its ranges) -- MEMBER
+m "\xe2\x81\xa5" 0 3
+# U+206F NOMINAL DIGIT SHAPES: DI, last of 2060..206F -- MEMBER
+m "\xe2\x81\xaf" 0 3
+# U+3164 HANGUL FILLER: DI -- MEMBER
+m "\xe3\x85\xa4" 0 3
+# U+FE00 VARIATION SELECTOR-1: DI -- MEMBER
+m "\xef\xb8\x80" 0 3
+# U+FEFF BOM / ZWNBSP: DI -- MEMBER
+m "\xef\xbb\xbf" 0 3
+# U+FFA0 HALFWIDTH HANGUL FILLER: DI -- MEMBER
+m "\xef\xbe\xa0" 0 3
+# U+FFF0 unassigned FFF0: DI (FFF0..FFF8) -- MEMBER
+m "\xef\xbf\xb0" 0 3
+# U+FFF8 unassigned FFF8: DI -- MEMBER
+m "\xef\xbf\xb8" 0 3
+# U+1D173 MUSICAL SYMBOL BEGIN BEAM: DI (1D173..1D17A) -- MEMBER
+m "\xf0\x9d\x85\xb3" 0 4
+# U+E0000 unassigned E0000: DI (E0000..E0FFF) -- MEMBER
+m "\xf3\xa0\x80\x80" 0 4
+# U+E0001 LANGUAGE TAG: DI -- MEMBER
+m "\xf3\xa0\x80\x81" 0 4
+# U+E0FFF last of E0000..E0FFF: DI -- MEMBER
+m "\xf3\xa0\xbf\xbf" 0 4
+# U+0020 SPACE -- non-member
+n "\x20"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+00AC NOT SIGN: neighbour of AD -- non-member
+n "\xc2\xac"
+# U+00AE REGISTERED SIGN: neighbour of AD -- non-member
+n "\xc2\xae"
+# U+200A HAIR SPACE: just below 200B -- non-member
+n "\xe2\x80\x8a"
+# U+2010 HYPHEN: just above 200F-ish, not DI -- non-member
+n "\xe2\x80\x90"
+# U+2029 PARAGRAPH SEPARATOR: just below 202A... not DI -- non-member
+n "\xe2\x80\xa9"
+# U+2070 SUPERSCRIPT ZERO: just above 206F -- non-member
+n "\xe2\x81\xb0"
+# U+FFF9 INTERLINEAR ANNOTATION ANCHOR: just above FFF8, not DI -- non-member
+n "\xef\xbf\xb9"
+# U+FFFD REPLACEMENT CHARACTER: not DI -- non-member
+n "\xef\xbf\xbd"
+# U+E1000 just above E0FFF: not DI -- non-member
+n "\xf3\xa1\x80\x80"
+# U+1D172 just below 1D173: not DI -- non-member
+n "\xf0\x9d\x85\xb2"
+
+# Bidi_Control: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Bidi_Control}
+features unicode-props
+encoding utf8
+# U+061C ARABIC LETTER MARK -- MEMBER
+m "\xd8\x9c" 0 2
+# U+200E LEFT-TO-RIGHT MARK -- MEMBER
+m "\xe2\x80\x8e" 0 3
+# U+200F RIGHT-TO-LEFT MARK -- MEMBER
+m "\xe2\x80\x8f" 0 3
+# U+202A LRE -- MEMBER
+m "\xe2\x80\xaa" 0 3
+# U+202B RLE -- MEMBER
+m "\xe2\x80\xab" 0 3
+# U+202C PDF -- MEMBER
+m "\xe2\x80\xac" 0 3
+# U+202D LRO -- MEMBER
+m "\xe2\x80\xad" 0 3
+# U+202E RLO -- MEMBER
+m "\xe2\x80\xae" 0 3
+# U+2066 LEFT-TO-RIGHT ISOLATE -- MEMBER
+m "\xe2\x81\xa6" 0 3
+# U+2067 RLI -- MEMBER
+m "\xe2\x81\xa7" 0 3
+# U+2068 FSI -- MEMBER
+m "\xe2\x81\xa8" 0 3
+# U+2069 PDI -- MEMBER
+m "\xe2\x81\xa9" 0 3
+# U+200B ZWSP: DI but not Bidi_Control -- non-member
+n "\xe2\x80\x8b"
+# U+200D ZWJ -- non-member
+n "\xe2\x80\x8d"
+# U+2065 unassigned just below LRI -- non-member
+n "\xe2\x81\xa5"
+# U+206A INHIBIT SYMMETRIC SWAPPING: just above PDI, not Bidi_Control -- non-member
+n "\xe2\x81\xaa"
+# U+2029 PARAGRAPH SEPARATOR: just below 202A -- non-member
+n "\xe2\x80\xa9"
+# U+202F NNBSP: just above 202E -- non-member
+n "\xe2\x80\xaf"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+061B ARABIC SEMICOLON: just below 061C -- non-member
+n "\xd8\x9b"
+# U+061D ARABIC END OF TEXT MARK: just above 061C -- non-member
+n "\xd8\x9d"
+
+# Bidi_Control: negated spelling [^\p{X}], utf8; membership flipped
+# pcre2-only
+pattern [^\p{Bidi_Control}]
+features unicode-props
+encoding utf8
+# U+061C ARABIC LETTER MARK -- MEMBER
+n "\xd8\x9c"
+# U+200E LEFT-TO-RIGHT MARK -- MEMBER
+n "\xe2\x80\x8e"
+# U+200F RIGHT-TO-LEFT MARK -- MEMBER
+n "\xe2\x80\x8f"
+# U+202A LRE -- MEMBER
+n "\xe2\x80\xaa"
+# U+202B RLE -- MEMBER
+n "\xe2\x80\xab"
+# U+202C PDF -- MEMBER
+n "\xe2\x80\xac"
+# U+202D LRO -- MEMBER
+n "\xe2\x80\xad"
+# U+202E RLO -- MEMBER
+n "\xe2\x80\xae"
+# U+2066 LEFT-TO-RIGHT ISOLATE -- MEMBER
+n "\xe2\x81\xa6"
+# U+2067 RLI -- MEMBER
+n "\xe2\x81\xa7"
+# U+2068 FSI -- MEMBER
+n "\xe2\x81\xa8"
+# U+2069 PDI -- MEMBER
+n "\xe2\x81\xa9"
+# U+200B ZWSP: DI but not Bidi_Control -- non-member
+m "\xe2\x80\x8b" 0 3
+# U+200D ZWJ -- non-member
+m "\xe2\x80\x8d" 0 3
+# U+2065 unassigned just below LRI -- non-member
+m "\xe2\x81\xa5" 0 3
+# U+206A INHIBIT SYMMETRIC SWAPPING: just above PDI, not Bidi_Control -- non-member
+m "\xe2\x81\xaa" 0 3
+# U+2029 PARAGRAPH SEPARATOR: just below 202A -- non-member
+m "\xe2\x80\xa9" 0 3
+# U+202F NNBSP: just above 202E -- non-member
+m "\xe2\x80\xaf" 0 3
+# U+0061 LATIN SMALL a -- non-member
+m "a" 0 1
+# U+061B ARABIC SEMICOLON: just below 061C -- non-member
+m "\xd8\x9b" 0 2
+# U+061D ARABIC END OF TEXT MARK: just above 061C -- non-member
+m "\xd8\x9d" 0 2
+
+# Bidi_Mirrored: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Bidi_Mirrored}
+features unicode-props
+encoding utf8
+# U+0028 LEFT PARENTHESIS -- MEMBER
+m "\x28" 0 1
+# U+0029 RIGHT PARENTHESIS -- MEMBER
+m "\x29" 0 1
+# U+003C LESS-THAN SIGN -- MEMBER
+m "\x3c" 0 1
+# U+003E GREATER-THAN SIGN -- MEMBER
+m "\x3e" 0 1
+# U+005B LEFT SQUARE BRACKET -- MEMBER
+m "\x5b" 0 1
+# U+005D RIGHT SQUARE BRACKET -- MEMBER
+m "\x5d" 0 1
+# U+007B LEFT CURLY BRACKET -- MEMBER
+m "\x7b" 0 1
+# U+007D RIGHT CURLY BRACKET -- MEMBER
+m "\x7d" 0 1
+# U+00AB LEFT-POINTING DOUBLE ANGLE QUOTATION MARK -- MEMBER
+m "\xc2\xab" 0 2
+# U+00BB RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK -- MEMBER
+m "\xc2\xbb" 0 2
+# U+2208 ELEMENT OF -- MEMBER
+m "\xe2\x88\x88" 0 3
+# U+2264 LESS-THAN OR EQUAL TO -- MEMBER
+m "\xe2\x89\xa4" 0 3
+# U+3008 LEFT ANGLE BRACKET -- MEMBER
+m "\xe3\x80\x88" 0 3
+# U+FF08 FULLWIDTH LEFT PARENTHESIS -- MEMBER
+m "\xef\xbc\x88" 0 3
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+002F SOLIDUS: not mirrored -- non-member
+n "\x2f"
+# U+005C REVERSE SOLIDUS: not mirrored -- non-member
+n "\x5c"
+# U+0022 QUOTATION MARK: not mirrored -- non-member
+n "\x22"
+# U+2018 LEFT SINGLE QUOTATION MARK: not Bidi_Mirrored -- non-member
+n "\xe2\x80\x98"
+# U+0027 APOSTROPHE: no -- non-member
+n "\x27"
+# U+002B PLUS SIGN: Sm but not mirrored -- non-member
+n "\x2b"
+# U+003D EQUALS SIGN: not mirrored -- non-member
+n "\x3d"
+# U+2015 HORIZONTAL BAR: no -- non-member
+n "\xe2\x80\x95"
+
+# Bidi_Mirrored: negated spelling \P{^X} (is \p{X}), utf8; membership flipped
+# pcre2-only
+pattern \P{^Bidi_Mirrored}
+features unicode-props
+encoding utf8
+# U+0028 LEFT PARENTHESIS -- MEMBER
+m "\x28" 0 1
+# U+0029 RIGHT PARENTHESIS -- MEMBER
+m "\x29" 0 1
+# U+003C LESS-THAN SIGN -- MEMBER
+m "\x3c" 0 1
+# U+003E GREATER-THAN SIGN -- MEMBER
+m "\x3e" 0 1
+# U+005B LEFT SQUARE BRACKET -- MEMBER
+m "\x5b" 0 1
+# U+005D RIGHT SQUARE BRACKET -- MEMBER
+m "\x5d" 0 1
+# U+007B LEFT CURLY BRACKET -- MEMBER
+m "\x7b" 0 1
+# U+007D RIGHT CURLY BRACKET -- MEMBER
+m "\x7d" 0 1
+# U+00AB LEFT-POINTING DOUBLE ANGLE QUOTATION MARK -- MEMBER
+m "\xc2\xab" 0 2
+# U+00BB RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK -- MEMBER
+m "\xc2\xbb" 0 2
+# U+2208 ELEMENT OF -- MEMBER
+m "\xe2\x88\x88" 0 3
+# U+2264 LESS-THAN OR EQUAL TO -- MEMBER
+m "\xe2\x89\xa4" 0 3
+# U+3008 LEFT ANGLE BRACKET -- MEMBER
+m "\xe3\x80\x88" 0 3
+# U+FF08 FULLWIDTH LEFT PARENTHESIS -- MEMBER
+m "\xef\xbc\x88" 0 3
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+002F SOLIDUS: not mirrored -- non-member
+n "\x2f"
+# U+005C REVERSE SOLIDUS: not mirrored -- non-member
+n "\x5c"
+# U+0022 QUOTATION MARK: not mirrored -- non-member
+n "\x22"
+# U+2018 LEFT SINGLE QUOTATION MARK: not Bidi_Mirrored -- non-member
+n "\xe2\x80\x98"
+# U+0027 APOSTROPHE: no -- non-member
+n "\x27"
+# U+002B PLUS SIGN: Sm but not mirrored -- non-member
+n "\x2b"
+# U+003D EQUALS SIGN: not mirrored -- non-member
+n "\x3d"
+# U+2015 HORIZONTAL BAR: no -- non-member
+n "\xe2\x80\x95"
+
+# Bidi_Mirrored: inside a class with another item (U+0061)
+# pcre2-only
+pattern [\x{61}\p{Bidi_Mirrored}]
+features unicode-props
+encoding utf8
+# U+0028 LEFT PARENTHESIS -- MEMBER
+m "\x28" 0 1
+# U+0029 RIGHT PARENTHESIS -- MEMBER
+m "\x29" 0 1
+# U+003C LESS-THAN SIGN -- MEMBER
+m "\x3c" 0 1
+# U+003E GREATER-THAN SIGN -- MEMBER
+m "\x3e" 0 1
+# U+005B LEFT SQUARE BRACKET -- MEMBER
+m "\x5b" 0 1
+# U+005D RIGHT SQUARE BRACKET -- MEMBER
+m "\x5d" 0 1
+# U+007B LEFT CURLY BRACKET -- MEMBER
+m "\x7b" 0 1
+# U+007D RIGHT CURLY BRACKET -- MEMBER
+m "\x7d" 0 1
+# U+00AB LEFT-POINTING DOUBLE ANGLE QUOTATION MARK -- MEMBER
+m "\xc2\xab" 0 2
+# U+00BB RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK -- MEMBER
+m "\xc2\xbb" 0 2
+# U+2208 ELEMENT OF -- MEMBER
+m "\xe2\x88\x88" 0 3
+# U+2264 LESS-THAN OR EQUAL TO -- MEMBER
+m "\xe2\x89\xa4" 0 3
+# U+3008 LEFT ANGLE BRACKET -- MEMBER
+m "\xe3\x80\x88" 0 3
+# U+FF08 FULLWIDTH LEFT PARENTHESIS -- MEMBER
+m "\xef\xbc\x88" 0 3
+# U+0061 LATIN SMALL a -- non-member of the property but IS the extra class item
+m "a" 0 1
+# U+0030 DIGIT ZERO -- non-member
+n "0"
+# U+002F SOLIDUS: not mirrored -- non-member
+n "\x2f"
+# U+005C REVERSE SOLIDUS: not mirrored -- non-member
+n "\x5c"
+# U+0022 QUOTATION MARK: not mirrored -- non-member
+n "\x22"
+# U+2018 LEFT SINGLE QUOTATION MARK: not Bidi_Mirrored -- non-member
+n "\xe2\x80\x98"
+# U+0027 APOSTROPHE: no -- non-member
+n "\x27"
+# U+002B PLUS SIGN: Sm but not mirrored -- non-member
+n "\x2b"
+# U+003D EQUALS SIGN: not mirrored -- non-member
+n "\x3d"
+# U+2015 HORIZONTAL BAR: no -- non-member
+n "\xe2\x80\x95"
+
+# Join_Control: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Join_Control}
+features unicode-props
+encoding utf8
+# U+200C ZERO WIDTH NON-JOINER -- MEMBER
+m "\xe2\x80\x8c" 0 3
+# U+200D ZERO WIDTH JOINER -- MEMBER
+m "\xe2\x80\x8d" 0 3
+# U+200B ZWSP: just below -- non-member
+n "\xe2\x80\x8b"
+# U+200E LRM: just above -- non-member
+n "\xe2\x80\x8e"
+# U+034F CGJ: not Join_Control -- non-member
+n "\xcd\x8f"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+FEFF BOM -- non-member
+n "\xef\xbb\xbf"
+
+# Join_Control: negated spelling [\P{X}], utf8; membership flipped
+# pcre2-only
+pattern [\P{Join_Control}]
+features unicode-props
+encoding utf8
+# U+200C ZERO WIDTH NON-JOINER -- MEMBER
+n "\xe2\x80\x8c"
+# U+200D ZERO WIDTH JOINER -- MEMBER
+n "\xe2\x80\x8d"
+# U+200B ZWSP: just below -- non-member
+m "\xe2\x80\x8b" 0 3
+# U+200E LRM: just above -- non-member
+m "\xe2\x80\x8e" 0 3
+# U+034F CGJ: not Join_Control -- non-member
+m "\xcd\x8f" 0 2
+# U+0061 LATIN SMALL a -- non-member
+m "a" 0 1
+# U+FEFF BOM -- non-member
+m "\xef\xbb\xbf" 0 3
+
+# Variation_Selector: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Variation_Selector}
+features unicode-props
+encoding utf8
+# U+180B MONGOLIAN FVS1 -- MEMBER
+m "\xe1\xa0\x8b" 0 3
+# U+180C MONGOLIAN FVS2 -- MEMBER
+m "\xe1\xa0\x8c" 0 3
+# U+180D MONGOLIAN FVS3 -- MEMBER
+m "\xe1\xa0\x8d" 0 3
+# U+180F MONGOLIAN FVS4 (added 14.0) -- MEMBER
+m "\xe1\xa0\x8f" 0 3
+# U+FE00 VS1 -- MEMBER
+m "\xef\xb8\x80" 0 3
+# U+FE0F VS16 -- MEMBER
+m "\xef\xb8\x8f" 0 3
+# U+E0100 VS17 -- MEMBER
+m "\xf3\xa0\x84\x80" 0 4
+# U+E01EF VS256 -- MEMBER
+m "\xf3\xa0\x87\xaf" 0 4
+# U+180E MONGOLIAN VOWEL SEPARATOR: between FVS3 and FVS4 but NOT a variation selector -- non-member
+n "\xe1\xa0\x8e"
+# U+180A MONGOLIAN NIRUGU: no -- non-member
+n "\xe1\xa0\x8a"
+# U+FDFF just below VS1: no -- non-member
+n "\xef\xb7\xbf"
+# U+FE10 just above VS16: no -- non-member
+n "\xef\xb8\x90"
+# U+E00FF just below VS17: no -- non-member
+n "\xf3\xa0\x83\xbf"
+# U+E01F0 just above VS256: no -- non-member
+n "\xf3\xa0\x87\xb0"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+200D ZWJ -- non-member
+n "\xe2\x80\x8d"
+
+# Variation_Selector: negated spelling \P{X}, utf8; membership flipped
+# pcre2-only
+pattern \P{Variation_Selector}
+features unicode-props
+encoding utf8
+# U+180B MONGOLIAN FVS1 -- MEMBER
+n "\xe1\xa0\x8b"
+# U+180C MONGOLIAN FVS2 -- MEMBER
+n "\xe1\xa0\x8c"
+# U+180D MONGOLIAN FVS3 -- MEMBER
+n "\xe1\xa0\x8d"
+# U+180F MONGOLIAN FVS4 (added 14.0) -- MEMBER
+n "\xe1\xa0\x8f"
+# U+FE00 VS1 -- MEMBER
+n "\xef\xb8\x80"
+# U+FE0F VS16 -- MEMBER
+n "\xef\xb8\x8f"
+# U+E0100 VS17 -- MEMBER
+n "\xf3\xa0\x84\x80"
+# U+E01EF VS256 -- MEMBER
+n "\xf3\xa0\x87\xaf"
+# U+180E MONGOLIAN VOWEL SEPARATOR: between FVS3 and FVS4 but NOT a variation selector -- non-member
+m "\xe1\xa0\x8e" 0 3
+# U+180A MONGOLIAN NIRUGU: no -- non-member
+m "\xe1\xa0\x8a" 0 3
+# U+FDFF just below VS1: no -- non-member
+m "\xef\xb7\xbf" 0 3
+# U+FE10 just above VS16: no -- non-member
+m "\xef\xb8\x90" 0 3
+# U+E00FF just below VS17: no -- non-member
+m "\xf3\xa0\x83\xbf" 0 4
+# U+E01F0 just above VS256: no -- non-member
+m "\xf3\xa0\x87\xb0" 0 4
+# U+0061 LATIN SMALL a -- non-member
+m "a" 0 1
+# U+200D ZWJ -- non-member
+m "\xe2\x80\x8d" 0 3
+
+# Variation_Selector: inside a class with another item (U+180E)
+# pcre2-only
+pattern [\x{180E}\p{Variation_Selector}]
+features unicode-props
+encoding utf8
+# U+180B MONGOLIAN FVS1 -- MEMBER
+m "\xe1\xa0\x8b" 0 3
+# U+180C MONGOLIAN FVS2 -- MEMBER
+m "\xe1\xa0\x8c" 0 3
+# U+180D MONGOLIAN FVS3 -- MEMBER
+m "\xe1\xa0\x8d" 0 3
+# U+180F MONGOLIAN FVS4 (added 14.0) -- MEMBER
+m "\xe1\xa0\x8f" 0 3
+# U+FE00 VS1 -- MEMBER
+m "\xef\xb8\x80" 0 3
+# U+FE0F VS16 -- MEMBER
+m "\xef\xb8\x8f" 0 3
+# U+E0100 VS17 -- MEMBER
+m "\xf3\xa0\x84\x80" 0 4
+# U+E01EF VS256 -- MEMBER
+m "\xf3\xa0\x87\xaf" 0 4
+# U+180E MONGOLIAN VOWEL SEPARATOR: between FVS3 and FVS4 but NOT a variation selector -- non-member of the property but IS the extra class item
+m "\xe1\xa0\x8e" 0 3
+# U+180A MONGOLIAN NIRUGU: no -- non-member
+n "\xe1\xa0\x8a"
+# U+FDFF just below VS1: no -- non-member
+n "\xef\xb7\xbf"
+# U+FE10 just above VS16: no -- non-member
+n "\xef\xb8\x90"
+# U+E00FF just below VS17: no -- non-member
+n "\xf3\xa0\x83\xbf"
+# U+E01F0 just above VS256: no -- non-member
+n "\xf3\xa0\x87\xb0"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+200D ZWJ -- non-member
+n "\xe2\x80\x8d"
+
+# Noncharacter_Code_Point: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Noncharacter_Code_Point}
+features unicode-props
+encoding utf8
+# U+FDD0 first of FDD0..FDEF -- MEMBER
+m "\xef\xb7\x90" 0 3
+# U+FDEF last of FDD0..FDEF -- MEMBER
+m "\xef\xb7\xaf" 0 3
+# U+FFFE plane 0 FFFE -- MEMBER
+m "\xef\xbf\xbe" 0 3
+# U+FFFF plane 0 FFFF -- MEMBER
+m "\xef\xbf\xbf" 0 3
+# U+1FFFE plane 1 FFFE -- MEMBER
+m "\xf0\x9f\xbf\xbe" 0 4
+# U+10FFFE plane 16 FFFE -- MEMBER
+m "\xf4\x8f\xbf\xbe" 0 4
+# U+10FFFF last code point -- MEMBER
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+FDCF just below FDD0: unassigned but NOT a noncharacter -- non-member
+n "\xef\xb7\x8f"
+# U+FDF0 just above FDEF: ARABIC LIGATURE SALLA USED AS KORANIC STOP SIGN ISOLATED FORM -- non-member
+n "\xef\xb7\xb0"
+# U+FFFD REPLACEMENT CHARACTER -- non-member
+n "\xef\xbf\xbd"
+# U+10000 LINEAR B SYLLABLE B008 A -- non-member
+n "\xf0\x90\x80\x80"
+# U+10FFFD plane 16 private use -- non-member
+n "\xf4\x8f\xbf\xbd"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+2FFFD plane 2 FFFD: not noncharacter -- non-member
+n "\xf0\xaf\xbf\xbd"
+
+# Noncharacter_Code_Point: negated spelling \p{^X}, utf8; membership flipped
+# pcre2-only
+pattern \p{^Noncharacter_Code_Point}
+features unicode-props
+encoding utf8
+# U+FDD0 first of FDD0..FDEF -- MEMBER
+n "\xef\xb7\x90"
+# U+FDEF last of FDD0..FDEF -- MEMBER
+n "\xef\xb7\xaf"
+# U+FFFE plane 0 FFFE -- MEMBER
+n "\xef\xbf\xbe"
+# U+FFFF plane 0 FFFF -- MEMBER
+n "\xef\xbf\xbf"
+# U+1FFFE plane 1 FFFE -- MEMBER
+n "\xf0\x9f\xbf\xbe"
+# U+10FFFE plane 16 FFFE -- MEMBER
+n "\xf4\x8f\xbf\xbe"
+# U+10FFFF last code point -- MEMBER
+n "\xf4\x8f\xbf\xbf"
+# U+FDCF just below FDD0: unassigned but NOT a noncharacter -- non-member
+m "\xef\xb7\x8f" 0 3
+# U+FDF0 just above FDEF: ARABIC LIGATURE SALLA USED AS KORANIC STOP SIGN ISOLATED FORM -- non-member
+m "\xef\xb7\xb0" 0 3
+# U+FFFD REPLACEMENT CHARACTER -- non-member
+m "\xef\xbf\xbd" 0 3
+# U+10000 LINEAR B SYLLABLE B008 A -- non-member
+m "\xf0\x90\x80\x80" 0 4
+# U+10FFFD plane 16 private use -- non-member
+m "\xf4\x8f\xbf\xbd" 0 4
+# U+0061 LATIN SMALL a -- non-member
+m "a" 0 1
+# U+2FFFD plane 2 FFFD: not noncharacter -- non-member
+m "\xf0\xaf\xbf\xbd" 0 4
+
+# Pattern_White_Space: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{Pattern_White_Space}
+features unicode-props
+encoding utf8
+# U+0009 TAB -- MEMBER
+m "\x09" 0 1
+# U+000A LF -- MEMBER
+m "\x0a" 0 1
+# U+000D CR -- MEMBER
+m "\x0d" 0 1
+# U+0020 SPACE -- MEMBER
+m "\x20" 0 1
+# U+0085 NEXT LINE -- MEMBER
+m "\xc2\x85" 0 2
+# U+200E LRM -- MEMBER
+m "\xe2\x80\x8e" 0 3
+# U+200F RLM -- MEMBER
+m "\xe2\x80\x8f" 0 3
+# U+2028 LINE SEPARATOR -- MEMBER
+m "\xe2\x80\xa8" 0 3
+# U+2029 PARAGRAPH SEPARATOR -- MEMBER
+m "\xe2\x80\xa9" 0 3
+# U+00A0 NBSP: White_Space but NOT Pattern_White_Space -- non-member
+n "\xc2\xa0"
+# U+2000 EN QUAD: not Pattern_White_Space -- non-member
+n "\xe2\x80\x80"
+# U+1680 OGHAM SPACE MARK: no -- non-member
+n "\xe1\x9a\x80"
+# U+3000 IDEOGRAPHIC SPACE: no -- non-member
+n "\xe3\x80\x80"
+# U+200B ZWSP: no -- non-member
+n "\xe2\x80\x8b"
+# U+001C FILE SEPARATOR: no -- non-member
+n "\x1c"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+002A ASTERISK -- non-member
+n "\x2a"
+# U+0008 BACKSPACE: just below TAB -- non-member
+n "\x08"
+
+# Pattern_White_Space: negated spelling [^\p{X}], utf8; membership flipped
+# pcre2-only
+pattern [^\p{Pattern_White_Space}]
+features unicode-props
+encoding utf8
+# U+0009 TAB -- MEMBER
+n "\x09"
+# U+000A LF -- MEMBER
+n "\x0a"
+# U+000D CR -- MEMBER
+n "\x0d"
+# U+0020 SPACE -- MEMBER
+n "\x20"
+# U+0085 NEXT LINE -- MEMBER
+n "\xc2\x85"
+# U+200E LRM -- MEMBER
+n "\xe2\x80\x8e"
+# U+200F RLM -- MEMBER
+n "\xe2\x80\x8f"
+# U+2028 LINE SEPARATOR -- MEMBER
+n "\xe2\x80\xa8"
+# U+2029 PARAGRAPH SEPARATOR -- MEMBER
+n "\xe2\x80\xa9"
+# U+00A0 NBSP: White_Space but NOT Pattern_White_Space -- non-member
+m "\xc2\xa0" 0 2
+# U+2000 EN QUAD: not Pattern_White_Space -- non-member
+m "\xe2\x80\x80" 0 3
+# U+1680 OGHAM SPACE MARK: no -- non-member
+m "\xe1\x9a\x80" 0 3
+# U+3000 IDEOGRAPHIC SPACE: no -- non-member
+m "\xe3\x80\x80" 0 3
+# U+200B ZWSP: no -- non-member
+m "\xe2\x80\x8b" 0 3
+# U+001C FILE SEPARATOR: no -- non-member
+m "\x1c" 0 1
+# U+0061 LATIN SMALL a -- non-member
+m "a" 0 1
+# U+002A ASTERISK -- non-member
+m "\x2a" 0 1
+# U+0008 BACKSPACE: just below TAB -- non-member
+m "\x08" 0 1
+
+# Pattern_White_Space: inside a class with another item (U+00A0)
+# pcre2-only
+pattern [\x{A0}\p{Pattern_White_Space}]
+features unicode-props
+encoding utf8
+# U+0009 TAB -- MEMBER
+m "\x09" 0 1
+# U+000A LF -- MEMBER
+m "\x0a" 0 1
+# U+000D CR -- MEMBER
+m "\x0d" 0 1
+# U+0020 SPACE -- MEMBER
+m "\x20" 0 1
+# U+0085 NEXT LINE -- MEMBER
+m "\xc2\x85" 0 2
+# U+200E LRM -- MEMBER
+m "\xe2\x80\x8e" 0 3
+# U+200F RLM -- MEMBER
+m "\xe2\x80\x8f" 0 3
+# U+2028 LINE SEPARATOR -- MEMBER
+m "\xe2\x80\xa8" 0 3
+# U+2029 PARAGRAPH SEPARATOR -- MEMBER
+m "\xe2\x80\xa9" 0 3
+# U+00A0 NBSP: White_Space but NOT Pattern_White_Space -- non-member of the property but IS the extra class item
+m "\xc2\xa0" 0 2
+# U+2000 EN QUAD: not Pattern_White_Space -- non-member
+n "\xe2\x80\x80"
+# U+1680 OGHAM SPACE MARK: no -- non-member
+n "\xe1\x9a\x80"
+# U+3000 IDEOGRAPHIC SPACE: no -- non-member
+n "\xe3\x80\x80"
+# U+200B ZWSP: no -- non-member
+n "\xe2\x80\x8b"
+# U+001C FILE SEPARATOR: no -- non-member
+n "\x1c"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+002A ASTERISK -- non-member
+n "\x2a"
+# U+0008 BACKSPACE: just below TAB -- non-member
+n "\x08"
+
+# White_Space: positive form, utf8; one code point per subject
+# pcre2-only
+pattern \p{White_Space}
+features unicode-props
+encoding utf8
+# U+0009 TAB -- MEMBER
+m "\x09" 0 1
+# U+000D CR -- MEMBER
+m "\x0d" 0 1
+# U+0020 SPACE -- MEMBER
+m "\x20" 0 1
+# U+0085 NEXT LINE -- MEMBER
+m "\xc2\x85" 0 2
+# U+00A0 NBSP -- MEMBER
+m "\xc2\xa0" 0 2
+# U+1680 OGHAM SPACE MARK -- MEMBER
+m "\xe1\x9a\x80" 0 3
+# U+2000 EN QUAD (2000..200A) -- MEMBER
+m "\xe2\x80\x80" 0 3
+# U+200A HAIR SPACE -- MEMBER
+m "\xe2\x80\x8a" 0 3
+# U+2028 LINE SEPARATOR -- MEMBER
+m "\xe2\x80\xa8" 0 3
+# U+2029 PARAGRAPH SEPARATOR -- MEMBER
+m "\xe2\x80\xa9" 0 3
+# U+202F NARROW NO-BREAK SPACE -- MEMBER
+m "\xe2\x80\xaf" 0 3
+# U+205F MEDIUM MATHEMATICAL SPACE -- MEMBER
+m "\xe2\x81\x9f" 0 3
+# U+3000 IDEOGRAPHIC SPACE -- MEMBER
+m "\xe3\x80\x80" 0 3
+# U+180E MONGOLIAN VOWEL SEPARATOR: was White_Space before 6.3, no longer -- non-member
+n "\xe1\xa0\x8e"
+# U+200B ZWSP: not White_Space -- non-member
+n "\xe2\x80\x8b"
+# U+200C ZWNJ: no -- non-member
+n "\xe2\x80\x8c"
+# U+FEFF BOM: no -- non-member
+n "\xef\xbb\xbf"
+# U+001C FILE SEPARATOR: no (control but not White_Space) -- non-member
+n "\x1c"
+# U+001F UNIT SEPARATOR: no -- non-member
+n "\x1f"
+# U+0008 BACKSPACE: just below TAB -- non-member
+n "\x08"
+# U+000E SHIFT OUT: just above CR -- non-member
+n "\x0e"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+2060 WORD JOINER: no -- non-member
+n "\xe2\x81\xa0"
+# U+3001 IDEOGRAPHIC COMMA: neighbour of 3000, no -- non-member
+n "\xe3\x80\x81"
+
+# White_Space: negated spelling \P{^X} (is \p{X}), utf8; membership flipped
+# pcre2-only
+pattern \P{^White_Space}
+features unicode-props
+encoding utf8
+# U+0009 TAB -- MEMBER
+m "\x09" 0 1
+# U+000D CR -- MEMBER
+m "\x0d" 0 1
+# U+0020 SPACE -- MEMBER
+m "\x20" 0 1
+# U+0085 NEXT LINE -- MEMBER
+m "\xc2\x85" 0 2
+# U+00A0 NBSP -- MEMBER
+m "\xc2\xa0" 0 2
+# U+1680 OGHAM SPACE MARK -- MEMBER
+m "\xe1\x9a\x80" 0 3
+# U+2000 EN QUAD (2000..200A) -- MEMBER
+m "\xe2\x80\x80" 0 3
+# U+200A HAIR SPACE -- MEMBER
+m "\xe2\x80\x8a" 0 3
+# U+2028 LINE SEPARATOR -- MEMBER
+m "\xe2\x80\xa8" 0 3
+# U+2029 PARAGRAPH SEPARATOR -- MEMBER
+m "\xe2\x80\xa9" 0 3
+# U+202F NARROW NO-BREAK SPACE -- MEMBER
+m "\xe2\x80\xaf" 0 3
+# U+205F MEDIUM MATHEMATICAL SPACE -- MEMBER
+m "\xe2\x81\x9f" 0 3
+# U+3000 IDEOGRAPHIC SPACE -- MEMBER
+m "\xe3\x80\x80" 0 3
+# U+180E MONGOLIAN VOWEL SEPARATOR: was White_Space before 6.3, no longer -- non-member
+n "\xe1\xa0\x8e"
+# U+200B ZWSP: not White_Space -- non-member
+n "\xe2\x80\x8b"
+# U+200C ZWNJ: no -- non-member
+n "\xe2\x80\x8c"
+# U+FEFF BOM: no -- non-member
+n "\xef\xbb\xbf"
+# U+001C FILE SEPARATOR: no (control but not White_Space) -- non-member
+n "\x1c"
+# U+001F UNIT SEPARATOR: no -- non-member
+n "\x1f"
+# U+0008 BACKSPACE: just below TAB -- non-member
+n "\x08"
+# U+000E SHIFT OUT: just above CR -- non-member
+n "\x0e"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+2060 WORD JOINER: no -- non-member
+n "\xe2\x81\xa0"
+# U+3001 IDEOGRAPHIC COMMA: neighbour of 3000, no -- non-member
+n "\xe3\x80\x81"
+
+# White_Space: under flags i the set is UNCHANGED (spec cli.md 1.17.1 para 3: only Lu Ll Lt change)
+# pcre2-only
+pattern \p{White_Space}
+features unicode-props
+encoding utf8
+flags i
+# U+0009 TAB -- MEMBER
+m "\x09" 0 1
+# U+000D CR -- MEMBER
+m "\x0d" 0 1
+# U+0020 SPACE -- MEMBER
+m "\x20" 0 1
+# U+0085 NEXT LINE -- MEMBER
+m "\xc2\x85" 0 2
+# U+00A0 NBSP -- MEMBER
+m "\xc2\xa0" 0 2
+# U+1680 OGHAM SPACE MARK -- MEMBER
+m "\xe1\x9a\x80" 0 3
+# U+2000 EN QUAD (2000..200A) -- MEMBER
+m "\xe2\x80\x80" 0 3
+# U+200A HAIR SPACE -- MEMBER
+m "\xe2\x80\x8a" 0 3
+# U+2028 LINE SEPARATOR -- MEMBER
+m "\xe2\x80\xa8" 0 3
+# U+2029 PARAGRAPH SEPARATOR -- MEMBER
+m "\xe2\x80\xa9" 0 3
+# U+202F NARROW NO-BREAK SPACE -- MEMBER
+m "\xe2\x80\xaf" 0 3
+# U+205F MEDIUM MATHEMATICAL SPACE -- MEMBER
+m "\xe2\x81\x9f" 0 3
+# U+3000 IDEOGRAPHIC SPACE -- MEMBER
+m "\xe3\x80\x80" 0 3
+# U+180E MONGOLIAN VOWEL SEPARATOR: was White_Space before 6.3, no longer -- non-member
+n "\xe1\xa0\x8e"
+# U+200B ZWSP: not White_Space -- non-member
+n "\xe2\x80\x8b"
+# U+200C ZWNJ: no -- non-member
+n "\xe2\x80\x8c"
+# U+FEFF BOM: no -- non-member
+n "\xef\xbb\xbf"
+# U+001C FILE SEPARATOR: no (control but not White_Space) -- non-member
+n "\x1c"
+# U+001F UNIT SEPARATOR: no -- non-member
+n "\x1f"
+# U+0008 BACKSPACE: just below TAB -- non-member
+n "\x08"
+# U+000E SHIFT OUT: just above CR -- non-member
+n "\x0e"
+# U+0061 LATIN SMALL a -- non-member
+n "a"
+# U+2060 WORD JOINER: no -- non-member
+n "\xe2\x81\xa0"
+# U+3001 IDEOGRAPHIC COMMA: neighbour of 3000, no -- non-member
+n "\xe3\x80\x81"

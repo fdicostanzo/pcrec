@@ -1,0 +1,2709 @@
+# upropd27: Age extension (cli.md 1.17.1 para 5): Age=V is EXACTLY version V, Age=NA is Unassigned
+# Written spec-first by a D27 blind author from the promise (docs/spec/cli.md 1.17.1,
+# docs/design/uprop_more.md) and the Unicode Character Database 16.0 as the author
+# knows it.  Every case comment names the code point and the property value claimed.
+# "UNSURE:" marks a claim the author is not certain of.
+
+# Age=1.1: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=1.1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+m "\xef\xbf\xbf" 0 3
+# U+0041 LATIN CAPITAL A -- Age=1.1
+m "A" 0 1
+# U+0020 SPACE -- Age=1.1
+m "\x20" 0 1
+# U+00A0 NBSP -- Age=1.1
+m "\xc2\xa0" 0 2
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+m "\xce\xb1" 0 2
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+m "\xe2\x82\xa0" 0 3
+# U+2122 TRADE MARK SIGN -- Age=1.1
+m "\xe2\x84\xa2" 0 3
+# U+4E00 CJK ideograph one -- Age=1.1
+m "\xe4\xb8\x80" 0 3
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+m "\xef\xbf\xbd" 0 3
+# U+E000 private use BMP -- Age=1.1
+m "\xee\x80\x80" 0 3
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=2.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=2.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+m "\xea\xb0\x80" 0 3
+# U+20AB DONG SIGN -- Age=2.0
+m "\xe2\x82\xab" 0 3
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbd" 0 4
+# U+F0000 plane-15 private use first -- Age=2.0
+m "\xf3\xb0\x80\x80" 0 4
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=2.1: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=2.1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+m "\xe2\x82\xac" 0 3
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+m "\xef\xbf\xbc" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=5.1: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=5.1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+m "\xf0\x9f\x80\x84" 0 4
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+m "\xe2\xad\x90" 0 3
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=6.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=6.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+m "\xe2\x82\xb9" 0 3
+# U+1F4A9 PILE OF POO -- Age=6.0
+m "\xf0\x9f\x92\xa9" 0 4
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=6.1: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=6.1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=6.2: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=6.2}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+m "\xe2\x82\xba" 0 3
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=8.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=8.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+m "\xe2\x82\xbe" 0 3
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=10.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=10.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+m "\xe2\x82\xbf" 0 3
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=11.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=11.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+m "\xf0\x9f\xa7\xa7" 0 4
+# U+1F9FF NAZAR AMULET -- Age=11.0
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=12.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=12.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+m "\xf0\x9f\xa9\xb0" 0 4
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=13.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=13.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+m "\xf0\x9f\xaa\xa0" 0 4
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=14.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=14.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+m "\xe2\x83\x80" 0 3
+# U+1FAE0 MELTING FACE -- Age=14.0
+m "\xf0\x9f\xab\xa0" 0 4
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+m "\xf0\x9f\xa5\xb9" 0 4
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=15.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=15.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+m "\xf0\x9f\xab\xa8" 0 4
+# U+1F6DC WIRELESS -- Age=15.0
+m "\xf0\x9f\x9b\x9c" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=16.0: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=16.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+m "\xf0\x9f\xab\xa9" 0 4
+# U+1FAC6 FINGERPRINT -- Age=16.0
+m "\xf0\x9f\xab\x86" 0 4
+# U+1FA89 HARP -- Age=16.0
+m "\xf0\x9f\xaa\x89" 0 4
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=3.1: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=3.1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+m "\xef\xb7\x90" 0 3
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=NA: exactly that version, NOT "that version or earlier"
+# pcre2-only
+pattern \p{Age=NA}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+m "\xcd\xb8" 0 2
+# U+E0080 unassigned -- Age=NA
+m "\xf3\xa0\x82\x80" 0 4
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+m "\xef\xbf\xb0" 0 3
+
+# negated \P{Age=1.1}
+# pcre2-only
+pattern \P{Age=1.1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+m "\xea\xb0\x80" 0 3
+# U+20AB DONG SIGN -- Age=2.0
+m "\xe2\x82\xab" 0 3
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbd" 0 4
+# U+F0000 plane-15 private use first -- Age=2.0
+m "\xf3\xb0\x80\x80" 0 4
+# U+20AC EURO SIGN -- Age=2.1
+m "\xe2\x82\xac" 0 3
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+m "\xef\xbf\xbc" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+m "\xf0\x9f\x80\x84" 0 4
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+m "\xe2\xad\x90" 0 3
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+m "\xe2\x82\xb9" 0 3
+# U+1F4A9 PILE OF POO -- Age=6.0
+m "\xf0\x9f\x92\xa9" 0 4
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE -- Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+m "\xe2\x82\xba" 0 3
+# U+20BE LARI SIGN -- Age=8.0
+m "\xe2\x82\xbe" 0 3
+# U+20BF BITCOIN SIGN -- Age=10.0
+m "\xe2\x82\xbf" 0 3
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+m "\xf0\x9f\xa7\xa7" 0 4
+# U+1F9FF NAZAR AMULET -- Age=11.0
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1FA70 BALLET SHOES -- Age=12.0
+m "\xf0\x9f\xa9\xb0" 0 4
+# U+1FAA0 PLUNGER -- Age=13.0
+m "\xf0\x9f\xaa\xa0" 0 4
+# U+20C0 SOM SIGN -- Age=14.0
+m "\xe2\x83\x80" 0 3
+# U+1FAE0 MELTING FACE -- Age=14.0
+m "\xf0\x9f\xab\xa0" 0 4
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+m "\xf0\x9f\xa5\xb9" 0 4
+# U+1FAE8 SHAKING FACE -- Age=15.0
+m "\xf0\x9f\xab\xa8" 0 4
+# U+1F6DC WIRELESS -- Age=15.0
+m "\xf0\x9f\x9b\x9c" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+m "\xf0\x9f\xab\xa9" 0 4
+# U+1FAC6 FINGERPRINT -- Age=16.0
+m "\xf0\x9f\xab\x86" 0 4
+# U+1FA89 HARP -- Age=16.0
+m "\xf0\x9f\xaa\x89" 0 4
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+m "\xef\xb7\x90" 0 3
+# U+0378 unassigned Greek -- Age=NA
+m "\xcd\xb8" 0 2
+# U+E0080 unassigned -- Age=NA
+m "\xf3\xa0\x82\x80" 0 4
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+m "\xef\xbf\xb0" 0 3
+
+# negated \P{Age=6.1}
+# pcre2-only
+pattern \P{Age=6.1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+m "\xef\xbf\xbf" 0 3
+# U+0041 LATIN CAPITAL A -- Age=1.1
+m "A" 0 1
+# U+0020 SPACE -- Age=1.1
+m "\x20" 0 1
+# U+00A0 NBSP -- Age=1.1
+m "\xc2\xa0" 0 2
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+m "\xce\xb1" 0 2
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+m "\xe2\x82\xa0" 0 3
+# U+2122 TRADE MARK SIGN -- Age=1.1
+m "\xe2\x84\xa2" 0 3
+# U+4E00 CJK ideograph one -- Age=1.1
+m "\xe4\xb8\x80" 0 3
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+m "\xef\xbf\xbd" 0 3
+# U+E000 private use BMP -- Age=1.1
+m "\xee\x80\x80" 0 3
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+m "\xea\xb0\x80" 0 3
+# U+20AB DONG SIGN -- Age=2.0
+m "\xe2\x82\xab" 0 3
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbd" 0 4
+# U+F0000 plane-15 private use first -- Age=2.0
+m "\xf3\xb0\x80\x80" 0 4
+# U+20AC EURO SIGN -- Age=2.1
+m "\xe2\x82\xac" 0 3
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+m "\xef\xbf\xbc" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+m "\xf0\x9f\x80\x84" 0 4
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+m "\xe2\xad\x90" 0 3
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+m "\xe2\x82\xb9" 0 3
+# U+1F4A9 PILE OF POO -- Age=6.0
+m "\xf0\x9f\x92\xa9" 0 4
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+m "\xe2\x82\xba" 0 3
+# U+20BE LARI SIGN -- Age=8.0
+m "\xe2\x82\xbe" 0 3
+# U+20BF BITCOIN SIGN -- Age=10.0
+m "\xe2\x82\xbf" 0 3
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+m "\xf0\x9f\xa7\xa7" 0 4
+# U+1F9FF NAZAR AMULET -- Age=11.0
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1FA70 BALLET SHOES -- Age=12.0
+m "\xf0\x9f\xa9\xb0" 0 4
+# U+1FAA0 PLUNGER -- Age=13.0
+m "\xf0\x9f\xaa\xa0" 0 4
+# U+20C0 SOM SIGN -- Age=14.0
+m "\xe2\x83\x80" 0 3
+# U+1FAE0 MELTING FACE -- Age=14.0
+m "\xf0\x9f\xab\xa0" 0 4
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+m "\xf0\x9f\xa5\xb9" 0 4
+# U+1FAE8 SHAKING FACE -- Age=15.0
+m "\xf0\x9f\xab\xa8" 0 4
+# U+1F6DC WIRELESS -- Age=15.0
+m "\xf0\x9f\x9b\x9c" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+m "\xf0\x9f\xab\xa9" 0 4
+# U+1FAC6 FINGERPRINT -- Age=16.0
+m "\xf0\x9f\xab\x86" 0 4
+# U+1FA89 HARP -- Age=16.0
+m "\xf0\x9f\xaa\x89" 0 4
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+m "\xef\xb7\x90" 0 3
+# U+0378 unassigned Greek -- Age=NA
+m "\xcd\xb8" 0 2
+# U+E0080 unassigned -- Age=NA
+m "\xf3\xa0\x82\x80" 0 4
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+m "\xef\xbf\xb0" 0 3
+
+# negated \P{Age=16.0}
+# pcre2-only
+pattern \P{Age=16.0}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+m "\xef\xbf\xbf" 0 3
+# U+0041 LATIN CAPITAL A -- Age=1.1
+m "A" 0 1
+# U+0020 SPACE -- Age=1.1
+m "\x20" 0 1
+# U+00A0 NBSP -- Age=1.1
+m "\xc2\xa0" 0 2
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+m "\xce\xb1" 0 2
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+m "\xe2\x82\xa0" 0 3
+# U+2122 TRADE MARK SIGN -- Age=1.1
+m "\xe2\x84\xa2" 0 3
+# U+4E00 CJK ideograph one -- Age=1.1
+m "\xe4\xb8\x80" 0 3
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+m "\xef\xbf\xbd" 0 3
+# U+E000 private use BMP -- Age=1.1
+m "\xee\x80\x80" 0 3
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+m "\xea\xb0\x80" 0 3
+# U+20AB DONG SIGN -- Age=2.0
+m "\xe2\x82\xab" 0 3
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbd" 0 4
+# U+F0000 plane-15 private use first -- Age=2.0
+m "\xf3\xb0\x80\x80" 0 4
+# U+20AC EURO SIGN -- Age=2.1
+m "\xe2\x82\xac" 0 3
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+m "\xef\xbf\xbc" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+m "\xf0\x9f\x80\x84" 0 4
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+m "\xe2\xad\x90" 0 3
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+m "\xe2\x82\xb9" 0 3
+# U+1F4A9 PILE OF POO -- Age=6.0
+m "\xf0\x9f\x92\xa9" 0 4
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE -- Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+m "\xe2\x82\xba" 0 3
+# U+20BE LARI SIGN -- Age=8.0
+m "\xe2\x82\xbe" 0 3
+# U+20BF BITCOIN SIGN -- Age=10.0
+m "\xe2\x82\xbf" 0 3
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+m "\xf0\x9f\xa7\xa7" 0 4
+# U+1F9FF NAZAR AMULET -- Age=11.0
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1FA70 BALLET SHOES -- Age=12.0
+m "\xf0\x9f\xa9\xb0" 0 4
+# U+1FAA0 PLUNGER -- Age=13.0
+m "\xf0\x9f\xaa\xa0" 0 4
+# U+20C0 SOM SIGN -- Age=14.0
+m "\xe2\x83\x80" 0 3
+# U+1FAE0 MELTING FACE -- Age=14.0
+m "\xf0\x9f\xab\xa0" 0 4
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+m "\xf0\x9f\xa5\xb9" 0 4
+# U+1FAE8 SHAKING FACE -- Age=15.0
+m "\xf0\x9f\xab\xa8" 0 4
+# U+1F6DC WIRELESS -- Age=15.0
+m "\xf0\x9f\x9b\x9c" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+m "\xef\xb7\x90" 0 3
+# U+0378 unassigned Greek -- Age=NA
+m "\xcd\xb8" 0 2
+# U+E0080 unassigned -- Age=NA
+m "\xf3\xa0\x82\x80" 0 4
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+m "\xef\xbf\xb0" 0 3
+
+# negated \P{Age=NA}
+# pcre2-only
+pattern \P{Age=NA}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+m "\xef\xbf\xbf" 0 3
+# U+0041 LATIN CAPITAL A -- Age=1.1
+m "A" 0 1
+# U+0020 SPACE -- Age=1.1
+m "\x20" 0 1
+# U+00A0 NBSP -- Age=1.1
+m "\xc2\xa0" 0 2
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+m "\xce\xb1" 0 2
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+m "\xe2\x82\xa0" 0 3
+# U+2122 TRADE MARK SIGN -- Age=1.1
+m "\xe2\x84\xa2" 0 3
+# U+4E00 CJK ideograph one -- Age=1.1
+m "\xe4\xb8\x80" 0 3
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+m "\xef\xbf\xbd" 0 3
+# U+E000 private use BMP -- Age=1.1
+m "\xee\x80\x80" 0 3
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+m "\xea\xb0\x80" 0 3
+# U+20AB DONG SIGN -- Age=2.0
+m "\xe2\x82\xab" 0 3
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbd" 0 4
+# U+F0000 plane-15 private use first -- Age=2.0
+m "\xf3\xb0\x80\x80" 0 4
+# U+20AC EURO SIGN -- Age=2.1
+m "\xe2\x82\xac" 0 3
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+m "\xef\xbf\xbc" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+m "\xf0\x9f\x80\x84" 0 4
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+m "\xe2\xad\x90" 0 3
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+m "\xe2\x82\xb9" 0 3
+# U+1F4A9 PILE OF POO -- Age=6.0
+m "\xf0\x9f\x92\xa9" 0 4
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE -- Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+m "\xe2\x82\xba" 0 3
+# U+20BE LARI SIGN -- Age=8.0
+m "\xe2\x82\xbe" 0 3
+# U+20BF BITCOIN SIGN -- Age=10.0
+m "\xe2\x82\xbf" 0 3
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+m "\xf0\x9f\xa7\xa7" 0 4
+# U+1F9FF NAZAR AMULET -- Age=11.0
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1FA70 BALLET SHOES -- Age=12.0
+m "\xf0\x9f\xa9\xb0" 0 4
+# U+1FAA0 PLUNGER -- Age=13.0
+m "\xf0\x9f\xaa\xa0" 0 4
+# U+20C0 SOM SIGN -- Age=14.0
+m "\xe2\x83\x80" 0 3
+# U+1FAE0 MELTING FACE -- Age=14.0
+m "\xf0\x9f\xab\xa0" 0 4
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+m "\xf0\x9f\xa5\xb9" 0 4
+# U+1FAE8 SHAKING FACE -- Age=15.0
+m "\xf0\x9f\xab\xa8" 0 4
+# U+1F6DC WIRELESS -- Age=15.0
+m "\xf0\x9f\x9b\x9c" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+m "\xf0\x9f\xab\xa9" 0 4
+# U+1FAC6 FINGERPRINT -- Age=16.0
+m "\xf0\x9f\xab\x86" 0 4
+# U+1FA89 HARP -- Age=16.0
+m "\xf0\x9f\xaa\x89" 0 4
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+m "\xef\xb7\x90" 0 3
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# colon separator, lowercase prefix: \p{age:6.1}
+# pcre2-only
+pattern \p{age:6.1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# \p{AGE=6.1}
+# pcre2-only
+pattern \p{AGE=6.1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# class union of two versions: [\p{Age=6.0}\p{Age=6.1}]
+# pcre2-only
+pattern [\p{Age=6.0}\p{Age=6.1}]
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+m "\xe2\x82\xb9" 0 3
+# U+1F4A9 PILE OF POO -- Age=6.0
+m "\xf0\x9f\x92\xa9" 0 4
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE -- Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# class complement: [^\p{Age=1.1}]
+# pcre2-only
+pattern [^\p{Age=1.1}]
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbf" 0 4
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+m "\xea\xb0\x80" 0 3
+# U+20AB DONG SIGN -- Age=2.0
+m "\xe2\x82\xab" 0 3
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+m "\xf4\x8f\xbf\xbd" 0 4
+# U+F0000 plane-15 private use first -- Age=2.0
+m "\xf3\xb0\x80\x80" 0 4
+# U+20AC EURO SIGN -- Age=2.1
+m "\xe2\x82\xac" 0 3
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+m "\xef\xbf\xbc" 0 3
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+m "\xf0\x9f\x80\x84" 0 4
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+m "\xe2\xad\x90" 0 3
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+m "\xe2\x82\xb9" 0 3
+# U+1F4A9 PILE OF POO -- Age=6.0
+m "\xf0\x9f\x92\xa9" 0 4
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+m "\xf0\x9f\x87\xa6" 0 4
+# U+1F600 GRINNING FACE -- Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+m "\xe2\x82\xba" 0 3
+# U+20BE LARI SIGN -- Age=8.0
+m "\xe2\x82\xbe" 0 3
+# U+20BF BITCOIN SIGN -- Age=10.0
+m "\xe2\x82\xbf" 0 3
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+m "\xf0\x9f\xa7\xa7" 0 4
+# U+1F9FF NAZAR AMULET -- Age=11.0
+m "\xf0\x9f\xa7\xbf" 0 4
+# U+1FA70 BALLET SHOES -- Age=12.0
+m "\xf0\x9f\xa9\xb0" 0 4
+# U+1FAA0 PLUNGER -- Age=13.0
+m "\xf0\x9f\xaa\xa0" 0 4
+# U+20C0 SOM SIGN -- Age=14.0
+m "\xe2\x83\x80" 0 3
+# U+1FAE0 MELTING FACE -- Age=14.0
+m "\xf0\x9f\xab\xa0" 0 4
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+m "\xf0\x9f\xa5\xb9" 0 4
+# U+1FAE8 SHAKING FACE -- Age=15.0
+m "\xf0\x9f\xab\xa8" 0 4
+# U+1F6DC WIRELESS -- Age=15.0
+m "\xf0\x9f\x9b\x9c" 0 4
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+m "\xf0\x9f\xab\xa9" 0 4
+# U+1FAC6 FINGERPRINT -- Age=16.0
+m "\xf0\x9f\xab\x86" 0 4
+# U+1FA89 HARP -- Age=16.0
+m "\xf0\x9f\xaa\x89" 0 4
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+m "\xef\xb7\x90" 0 3
+# U+0378 unassigned Greek -- Age=NA
+m "\xcd\xb8" 0 2
+# U+E0080 unassigned -- Age=NA
+m "\xf3\xa0\x82\x80" 0 4
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+m "\xef\xbf\xb0" 0 3
+
+# Age=NA is Unassigned: spelled Age=Unassigned
+# pcre2-only
+pattern \p{Age=Unassigned}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+m "\xcd\xb8" 0 2
+# U+E0080 unassigned -- Age=NA
+m "\xf3\xa0\x82\x80" 0 4
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+m "\xef\xbf\xb0" 0 3
+
+# Age=V6_1 spells 6.1 (spec para 5)
+# pcre2-only
+pattern \p{Age=V6_1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+n "\xef\xbf\xbf"
+# U+0041 LATIN CAPITAL A -- Age=1.1
+n "A"
+# U+0020 SPACE -- Age=1.1
+n "\x20"
+# U+00A0 NBSP -- Age=1.1
+n "\xc2\xa0"
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+n "\xce\xb1"
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+n "\xe2\x82\xa0"
+# U+2122 TRADE MARK SIGN -- Age=1.1
+n "\xe2\x84\xa2"
+# U+4E00 CJK ideograph one -- Age=1.1
+n "\xe4\xb8\x80"
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+n "\xef\xbf\xbd"
+# U+E000 private use BMP -- Age=1.1
+n "\xee\x80\x80"
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# Age=V1_1 spells 1.1
+# pcre2-only
+pattern \p{Age=V1_1}
+features unicode-props
+encoding utf8
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+m "\xef\xbf\xbf" 0 3
+# U+0041 LATIN CAPITAL A -- Age=1.1
+m "A" 0 1
+# U+0020 SPACE -- Age=1.1
+m "\x20" 0 1
+# U+00A0 NBSP -- Age=1.1
+m "\xc2\xa0" 0 2
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+m "\xce\xb1" 0 2
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+m "\xe2\x82\xa0" 0 3
+# U+2122 TRADE MARK SIGN -- Age=1.1
+m "\xe2\x84\xa2" 0 3
+# U+4E00 CJK ideograph one -- Age=1.1
+m "\xe4\xb8\x80" 0 3
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+m "\xef\xbf\xbd" 0 3
+# U+E000 private use BMP -- Age=1.1
+m "\xee\x80\x80" 0 3
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# flags i leaves Age unchanged
+# pcre2-only
+pattern \p{Age=1.1}
+features unicode-props
+encoding utf8
+flags i
+# U+FFFF NONCHARACTER U+FFFF: DerivedAge lists FFFE..FFFF as 1.1 (noncharacters have an Age) -- Age=1.1
+m "\xef\xbf\xbf" 0 3
+# U+0041 LATIN CAPITAL A -- Age=1.1
+m "A" 0 1
+# U+0020 SPACE -- Age=1.1
+m "\x20" 0 1
+# U+00A0 NBSP -- Age=1.1
+m "\xc2\xa0" 0 2
+# U+03B1 GREEK SMALL ALPHA -- Age=1.1
+m "\xce\xb1" 0 2
+# U+20A0 EURO-CURRENCY SIGN -- Age=1.1
+m "\xe2\x82\xa0" 0 3
+# U+2122 TRADE MARK SIGN -- Age=1.1
+m "\xe2\x84\xa2" 0 3
+# U+4E00 CJK ideograph one -- Age=1.1
+m "\xe4\xb8\x80" 0 3
+# U+FFFD REPLACEMENT CHARACTER -- Age=1.1
+m "\xef\xbf\xbd" 0 3
+# U+E000 private use BMP -- Age=1.1
+m "\xee\x80\x80" 0 3
+# U+10FFFF NONCHARACTER U+10FFFF: DerivedAge 2.0 (planes 1-16 FFFE/FFFF are age 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbf"
+# U+AC00 HANGUL SYLLABLE GA (Hangul syllables re-encoded at AC00 in 2.0) -- Age=2.0
+n "\xea\xb0\x80"
+# U+20AB DONG SIGN -- Age=2.0
+n "\xe2\x82\xab"
+# U+10FFFD plane-16 private use (planes 15/16 added in 2.0) -- Age=2.0
+n "\xf4\x8f\xbf\xbd"
+# U+F0000 plane-15 private use first -- Age=2.0
+n "\xf3\xb0\x80\x80"
+# U+20AC EURO SIGN -- Age=2.1
+n "\xe2\x82\xac"
+# U+FFFC OBJECT REPLACEMENT CHARACTER -- Age=2.1
+n "\xef\xbf\xbc"
+# U+1F004 MAHJONG TILE RED DRAGON (Mahjong tiles added 5.1) -- Age=5.1
+n "\xf0\x9f\x80\x84"
+# U+2B50 WHITE MEDIUM STAR -- Age=5.1
+n "\xe2\xad\x90"
+# U+20B9 INDIAN RUPEE SIGN -- Age=6.0
+n "\xe2\x82\xb9"
+# U+1F4A9 PILE OF POO -- Age=6.0
+n "\xf0\x9f\x92\xa9"
+# U+1F1E6 REGIONAL INDICATOR A -- Age=6.0
+n "\xf0\x9f\x87\xa6"
+# U+1F600 GRINNING FACE -- Age=6.1
+n "\xf0\x9f\x98\x80"
+# U+20BA TURKISH LIRA SIGN -- Age=6.2
+n "\xe2\x82\xba"
+# U+20BE LARI SIGN -- Age=8.0
+n "\xe2\x82\xbe"
+# U+20BF BITCOIN SIGN -- Age=10.0
+n "\xe2\x82\xbf"
+# U+1F9E7 RED GIFT ENVELOPE -- Age=11.0
+n "\xf0\x9f\xa7\xa7"
+# U+1F9FF NAZAR AMULET -- Age=11.0
+n "\xf0\x9f\xa7\xbf"
+# U+1FA70 BALLET SHOES -- Age=12.0
+n "\xf0\x9f\xa9\xb0"
+# U+1FAA0 PLUNGER -- Age=13.0
+n "\xf0\x9f\xaa\xa0"
+# U+20C0 SOM SIGN -- Age=14.0
+n "\xe2\x83\x80"
+# U+1FAE0 MELTING FACE -- Age=14.0
+n "\xf0\x9f\xab\xa0"
+# U+1F979 FACE HOLDING BACK TEARS -- Age=14.0
+n "\xf0\x9f\xa5\xb9"
+# U+1FAE8 SHAKING FACE -- Age=15.0
+n "\xf0\x9f\xab\xa8"
+# U+1F6DC WIRELESS -- Age=15.0
+n "\xf0\x9f\x9b\x9c"
+# U+1FAE9 FACE WITH BAGS UNDER EYES -- Age=16.0
+n "\xf0\x9f\xab\xa9"
+# U+1FAC6 FINGERPRINT -- Age=16.0
+n "\xf0\x9f\xab\x86"
+# U+1FA89 HARP -- Age=16.0
+n "\xf0\x9f\xaa\x89"
+# U+FDD0 NONCHARACTER U+FDD0: DerivedAge lists FDD0..FDEF as 3.1 -- Age=3.1
+n "\xef\xb7\x90"
+# U+0378 unassigned Greek -- Age=NA
+n "\xcd\xb8"
+# U+E0080 unassigned -- Age=NA
+n "\xf3\xa0\x82\x80"
+# U+FFF0 UNASSIGNED U+FFF0 (Specials block gap): Age=NA (FFF0..FFF8 unassigned) -- Age=NA
+n "\xef\xbf\xb0"
+
+# byte encoding (Latin-1 clamp): \p{Age=1.1}
+# pcre2-only
+pattern \p{Age=1.1}
+features unicode-props
+encoding byte
+# byte 0x41 -- Age=1.1 of its Latin-1 code point
+m "A" 0 1
+# byte 0x20 -- Age=1.1 of its Latin-1 code point
+m "\x20" 0 1
+# byte 0xA0 -- Age=1.1 of its Latin-1 code point
+m "\xa0" 0 1
+
+# byte encoding (Latin-1 clamp): \p{Age=2.1}
+# pcre2-only
+pattern \p{Age=2.1}
+features unicode-props
+encoding byte
+# byte 0x41 -- Age=1.1 of its Latin-1 code point
+n "A"
+# byte 0x20 -- Age=1.1 of its Latin-1 code point
+n "\x20"
+# byte 0xA0 -- Age=1.1 of its Latin-1 code point
+n "\xa0"
+
+# byte encoding (Latin-1 clamp): \p{Age=6.0}
+# pcre2-only
+pattern \p{Age=6.0}
+features unicode-props
+encoding byte
+# byte 0x41 -- Age=1.1 of its Latin-1 code point
+n "A"
+# byte 0x20 -- Age=1.1 of its Latin-1 code point
+n "\x20"
+# byte 0xA0 -- Age=1.1 of its Latin-1 code point
+n "\xa0"
+
+# REFUSED: no such Unicode version
+# pcre2-only
+pattern \p{Age=99.0}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: empty value
+# pcre2-only
+pattern \p{Age=}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: not a version
+# pcre2-only
+pattern \p{Age=six}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: not a version
+# pcre2-only
+pattern \p{Age=6.1.1}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: prefix with no value
+# pcre2-only
+pattern \p{Age}
+features unicode-props
+encoding utf8
+perr
+
+# REFUSED: there was no Unicode 1.2 age value
+# pcre2-only
+pattern \p{Age=1.2}
+features unicode-props
+encoding utf8
+perr
+
+# no features line, byte encoding: Age needs unicode-props
+# pcre2-only
+pattern \p{Age=6.1}
+encoding byte
+perr
+
+# no features line, utf8: unicode-props implied by -e utf8, so Age works
+# pcre2-only
+pattern \p{Age=6.1}
+encoding utf8
+# U+1F600 Age=6.1
+m "\xf0\x9f\x98\x80" 0 4
+# A Age=1.1
+n "A"
