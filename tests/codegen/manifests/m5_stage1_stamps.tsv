@@ -35,7 +35,7 @@ a(b|c)+d	EMITTED_BYTES	40726
 ^foo$	RX_ENGINE_SEL	"selected"
 ^foo$	RX_DFA_TABLE	"none"
 ^foo$	RX_DFA_PREFILTER	"none"
-^foo$	EMITTED_BYTES	26497
+^foo$	EMITTED_BYTES	26495
 \bword\b	RX_ENGINE	"dfa"
 \bword\b	RX_ENGINE_SEL	"selected"
 \bword\b	RX_DFA_TABLE	"premultiplied"

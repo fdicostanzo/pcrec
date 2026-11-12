@@ -441,17 +441,10 @@ def one(task):
     # BASE artifact was compiled from, so `-fno-req-run-fold`'s unfolded run, `-i`'s folded one, etc. Was:
     # the default listing for every arm but `-i`, which predicted the FOLDED whole run under
     # utf8+-fno-req-run-fold and read `^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?-10)$` red. One listing per distinct
-    # flag list; a listing BASE refuses under the arm (but not by default) is a problem on the arm, never a
-    # silent fall back to the default.
+    # flag list AND engine (`-fprefilter` is a VM-only flag); a listing BASE refuses under the arm while it
+    # compiles the arm's artifact is a problem on the arm, never a silent fall back to the default.
     fxs = {(): fb}
     for arm, extra, stream in XARMS:
-        key = tuple(x for x in extra if x != "--engine=vm")
-        if key not in fxs:
-            fxs[key] = run([base] + FACTS + list(key) + ["--pattern", pat])
-        fx = fxs[key]
-        if fx[0] != 0 and fb[0] == 0 and stream != "ir" and not stream.startswith("w-"):
-            res.append((arm, True, set(), "BASE refuses --emit-facts under %s" % " ".join(key), [], (False, False, False)))
-            continue
         if stream.startswith("w-"):          # the witness arm: the -DPCREC_SIMD_WITNESS builds
             eng = ["--engine=vm"] if stream == "w-c-vm" else []
             rb = run([WITNESS[0]] + C + eng + ["--pattern", pat])
@@ -470,6 +463,14 @@ def one(task):
         rb = run([base] + C + eng + extra + ["--pattern", pat])
         rn = run([new] + C + eng + extra + ["--pattern", pat])
         enc = "utf8" if "utf8" in extra else "byte"
+        key = tuple(eng + [x for x in extra if x != "--engine=vm"])
+        if key not in fxs:
+            fxs[key] = run([base] + FACTS + list(key) + ["--pattern", pat])
+        fx = fxs[key]
+        if fx[0] != 0 and rb[0] == 0:
+            res.append((arm, True, set(), "BASE compiles the arm but refuses --emit-facts under %s" % " ".join(key),
+                        [], (False, False, False)))
+            continue
         pops, bad, must, flags = judge_c(arm, rb, rn, facts_of(fx[1], enc), "-fcomments" in extra,
                                          any(x.startswith("-fmemfn-simd") for x in extra))
         moved = rb[0] != rn[0] or rb[1] != norm(rn[1]) or norm_err(rb[2]) != norm_err(rn[2])

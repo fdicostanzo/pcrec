@@ -680,7 +680,11 @@ PAIR_TEST_RE = re.compile(r'^(\s*if \((?:e == h[ab] \|\| )?subject\[h[ab]\] == )
 PAIR_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ h[ab]), \d+, (e - h[ab]\);)$')
 PAIR_BACKOFF_RE = re.compile(r'^\s*cand -= \d+;$')
 REQBYTE_STAMP_RE = re.compile(r'^(#define RX_REQ_BYTE ")\d+(")$')
-REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+@)\d+((?:/[0-9a-f]+)?")$')
+# R-38 K38-2 (lane k382m): the `@K` is OPTIONAL. `<PREFIX>_REQ_RUN` carries an `@` only where a search
+# reads a run position (match_api.md §6.3.7¶7's table), and the pre-check's row follows REQ_WHY, which (iii)
+# below already lets differ by encoding and holds to its stamp: `fra(n|m)k|frost` is byte "emitted" (`@0`)
+# and utf8 "dominated" (no `@`). The hex and the mask are still compared.
+REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+)(?:@\d+)?((?:/[0-9a-f]+)?")$')
 REQBYTE_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_BYTE "([^"]*)"$', re.M)
 REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ (?:pos(?: \+ \d+)?|h[ab]), (\d+),')
 REQRUN_FN_BODY_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?(?:__body)?\(.*?^}$', re.M | re.S)
@@ -1506,7 +1510,7 @@ def excise(text, backend, label, drop_run=False):
                 out.append("%s - K;\n" % mc.group(1))
                 i += 1
                 continue
-        for rx_, repl in ((REQBYTE_STAMP_RE, r'\1B\2'), (REQRUN_STAMP_RE, r'\1K\2')):
+        for rx_, repl in ((REQBYTE_STAMP_RE, r'\1B\2'), (REQRUN_STAMP_RE, r'\1@K\2')):
             if rx_.match(line.rstrip('\n')):
                 out.append(rx_.sub(repl, line.rstrip('\n')) + "\n")
                 counts['req_pick'] += 1

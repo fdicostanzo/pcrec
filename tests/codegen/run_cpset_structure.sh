@@ -1111,6 +1111,10 @@ fi
 # comment, the two guard lines, `#define PCREC_RX_ABI_H`, and `.abi =`; counted by grep of
 # the artifact for 100). None of the twelve sample patterns is
 # an accept-free machine, so the empty-engine change reaches none of them. Diff read, not bumped.
+# RE-RECORDED 2026-11-12 at lane k382m ([MEMFN] R-38 K38-2, abi 100 -> 101 over main e889ba64c): ONE
+# row moved, `^foo$` EMITTED_BYTES 26497 -> 26495, and no stamp. The 2 bytes are RX_REQ_RUN's `@0`
+# ("666f6f@0" -> "666f6f"): the run is uncut and no search reads a run position (match_api.md §6.3.7¶7's
+# @ table, row 3); the abi number keeps its width. Read by diffing BASE e889ba64c's artifact. Diff read, not bumped.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
