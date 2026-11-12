@@ -114,3 +114,11 @@ run passed. It is `scratch/memfn/k382c2b/591-kit-k382c2b-gen`: gen, then reach, 
 - Owed: job 591-kit-k382c2b-gen2's verdict (queue key kit-k382c2b-gen2; its log carries the
   `gen: <cand>: ... c2b=N` lines, the REACH lines and the test-findings summary), then the commit of
   its regenerated `tests/findings/adversarial/` files and the c2b population number in this report.
+- The deliver file declares `owed: none`, but the brief's box rule makes the census regeneration a
+  queued job, and that job waits behind kclose2's mech chain. So this lane stops honestly instead
+  of idle-waiting.
+
+OWED: job 591-kit-k382c2b-gen2 (census/fire/reach regeneration + test-findings over it), then the
+commit of `tests/findings/adversarial/`.
+
+STATE: stopped (everything else delivered; the queued census regeneration is the one owed item)
