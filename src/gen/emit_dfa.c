@@ -1121,7 +1121,7 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
 static void req_note_stretch(StrBuf *c, const char *indent, const mf_run_reply *rr, int n)
 {
     if (rr->ver_lo == 0 && rr->ver_len == n) {
-        pcrec_sb_printf(c, " */\n");
+        pcrec_sb_printf(c, ". */\n");
         return;
     }
     pcrec_sb_printf(c, ";\n%s * each hit compares its positions %d..%d. */\n", indent,
