@@ -694,7 +694,7 @@ lands first, 3.0b's ASK-2 is void). K38-3 rides with K38-2 or follows it. K38-1 
     none); the tip has `run-pinned` `0:0+2`, through the existing run-pinned row. Answers are
     identical (64 subjects). This is DECLARED as a consequence of the ruled clip. The census allows
     it as P4c by a rule over that cause (`clip_of`, BASE's facts). Count over the three identity
-    shards: COUNT_P4C.
+    shards: 4 artifacts (shard 1: 2, shard 2: 2, shard 3: 0; queue jobs 594-596 GREEN).
   - **2r, short runs: @ re-pointed to the read member.** §4.1's table row 2 applies to runs of any length, as the
     `[k382]` addendum's 2s already says for row 3. Where a run-pinned prefilter reads a run member, the
     stamp's `@` names that member (the pin's starred offset less its walk offset `o`, plus its `at`),
@@ -703,7 +703,8 @@ lands first, 3.0b's ASK-2 is void). K38-3 rides with K38-2 or follows it. K38-1 
     The census credits it as P2r (`pinned_at`), only against the tip's run-pinned prefilter and only
     where the emitted prefilter text is identical BASE vs tip; a stamp move riding on a code move stays
     unexplained. Count
-    over the three identity shards: COUNT_P2R.
+    over the three identity shards: 78 artifacts (0 / 3 / 75). P2so (2s by offset) over the three
+    shards: 288 (187 / 81 / 20).
 
 ### 5.2 What the kit measures (memory `pcrec-new-method-needs-measurement-card`)
 

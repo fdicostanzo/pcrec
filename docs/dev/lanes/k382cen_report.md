@@ -26,7 +26,8 @@ Lane k382cen (opus), branch lane/memfn-k382, 2026-11-12. Brief: the kit manager'
   position. It turns all 86 P2so artifacts of the three patterns (and `abcdefg(?=x)`'s 79) UNEXPLAINED.
 - **The scan_search order changed:** a run-pinned prefilter now refuses before the cover row. Before,
   a cover find outside the run explained an artifact whose run-pinned prefilter reads a run member.
-- Gate results: see "Gate jobs".
+- **Gate results: 593 (sample 300 + named), 594, 595 and 596 (all three identity shards) are GREEN.**
+  Over the three shards: P2so 288, P4c 4, P2r 78, 0 unexplained.
 
 ## The 91 rows by pattern
 
@@ -182,7 +183,26 @@ B-walk reader are each shown live.
 
 ## Gate jobs
 
-PENDING (filled when the jobs end).
+All four are GREEN. Logs are under `worktrees/.boxqueue/done/`; census outputs are
+`$PCREC_TMPDIR/scratch/memfn/k382/gate/ident/census.{1,2,3}.tsv` and
+`$PCREC_TMPDIR/scratch/memfn/k382cen/census.tsv`.
+
+| job | what | census commit | verdict | P2so | P4c | P2r |
+|---|---|---|---|---|---|---|
+| 593-kit-k382cen-census | sample 300 + the three named patterns (303 tasks) | 1723277c5 | GREEN, 0 unexplained (181 s) | 87 | 0 | n/a |
+| 594-kit-k382cen-ident1 | 601's shard 1, all arms + dumps | 1723277c5 (before P2r; P2r only narrows) | GREEN, 0 unexplained, floor held, dumps 2/2 (697 s) | 187 | 2 | 0 |
+| 595-kit-k382cen-ident2 | shard 2 | 6369424df (started 05:15:41, after its 05:13:27 commit) | GREEN, 0 unexplained, floor held (1032 s) | 81 | 2 | 3 |
+| 596-kit-k382cen-ident3 | shard 3 | 6369424df (started 05:32:54) | GREEN, 0 unexplained, floor held (751 s) | 20 | 0 | 75 |
+| three shards | | | GREEN | 288 | 4 | 78 |
+
+The earlier failures were mine to triage:
+- **593 (first run) and 594 (first run): POPULATION-OVER.** census.py echoed `== census COMPLETE`/`== floor`
+  and the jobs grep them from the tsv again, so each line printed twice. The fix (1723277c5) leaves the
+  verdict lines in `--out` only.
+- **595 (cancelled by me):** it started on the pre-fix census.
+- **595 and 596 RED:** P2r, as above. Both were re-run green.
+
+These counts are in the sheet's §5.1 addendum `[k382cen]`.
 
 ## Charter-vs-committed checklist
 
@@ -191,8 +211,9 @@ PENDING (filled when the jobs end).
 | 1. the P2s rule tests the find's OFFSET against the run's range; not byte value alone; the reader widened to every emitter find form, found by grep | yes: `cover_finds`, the P2s cover branch, the forms listed above from window.c/ofsskip.c |
 | 2. `/abcd[xy]/user` BASE vs tip C, ruled (i) or (ii) | yes: (i), evidence above |
 | 3. non-vacuity plant refused | yes: `--control plant-in-run`, 86/86 on the three patterns |
-| 4. ONE census job (three patterns + sample 300), then 601's shard re-run as a queued copy, GREEN | see Gate jobs |
-| population count changes in the sheet's §5.1 addendum, same change | yes, addendum `[k382cen]` (counts from the gate jobs) |
+| 4. ONE census job (three patterns + sample 300), then 601's shard re-run as a queued copy, GREEN | yes: 593 GREEN, 594 GREEN; 595/596 also GREEN (the three-shard count) |
+| population count changes in the sheet's §5.1 addendum, same change | yes, addendum `[k382cen]` with the three-shard counts |
+| P2r ruling: prefilter text identical, shifted-@ plant, addendum line | yes: `prefilter_text`, `plant-p2r` + `plant-p2r-code`, "2r, short runs: @ re-pointed to the read member" |
 | ruling on `z(a){3,}?`: trace the cause; declared -> rule, addendum count over 3 shards, answers, plant | yes: §4.2 clip, P4c, all three shards queued (595/596 beside 594), 64 subjects 0 differ, plant-p4-move |
 | report sections per k382cen_deliver.txt, an `OWED:` line, lanecheck DONE rc=0 | yes |
 
