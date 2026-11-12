@@ -88,6 +88,8 @@ class Parser:
         self.ncap = 0
         self.utf8 = utf8
         self.names = {}
+        self.groups = {}
+        self.dupnames = False
         self.f = {"i": "i" in flags, "s": "s" in flags, "x": "x" in flags, "m": "m" in flags}
 
     def peek(self, k=0):
@@ -152,7 +154,7 @@ class Parser:
                 lo, hi = r
             else:
                 return atom
-            if atom[0] in ("bos", "eos", "eosnl"):
+            if atom[0] in ("bos", "eos", "eosnl", "wb", "nwb", "la", "lb"):
                 raise Unsupported("quantified assertion")
             greedy = True
             if self.peek() == 0x3f:
@@ -287,6 +289,19 @@ class Parser:
                 return lits[0] if len(lits) == 1 else ("cat", lits)
             if c == 0x45:
                 return None
+            if c == 0x67 and self.i < len(p) and p[self.i] in (0x3c, 0x27):  # \g<n> \g'n' calls
+                close = 0x3e if p[self.i] == 0x3c else 0x27
+                j = p.index(bytes([close]), self.i + 1)
+                ref = p[self.i + 1:j]
+                self.i = j + 1
+                try:
+                    return ("call", self.relref(ref.decode()))
+                except ValueError:
+                    return ("call", ref)
+            if c == 0x62:
+                return ("wb",)
+            if c == 0x42:
+                return ("nwb",)
         else:
             if c == 0x62:
                 return 8
@@ -371,8 +386,41 @@ class Parser:
         if self.peek() == 0x3f:
             self.i += 1
             c = self.peek()
+            if c in (0x3d, 0x21) or (c == 0x3c and self.peek(1) in (0x3d, 0x21)):
+                behind = c == 0x3c
+                if behind:
+                    self.i += 1
+                neg = p[self.i] == 0x21
+                self.i += 1
+                ncap0 = self.ncap
+                body = self.alt()
+                if self.peek() != 0x29:
+                    raise Unsupported("missing )")
+                self.i += 1
+                self.f = save
+                if self.ncap != ncap0:
+                    raise Unsupported("capture inside lookaround")
+                arms = body[1] if body[0] == "alt" else [body]
+                if not all(x[0] == "set" for x in arms):
+                    raise Unsupported("lookaround body wider than one character")
+                u = frozenset().union(*[x[1] for x in arms])
+                return ("lb" if behind else "la", u, neg)
             if c == 0x3a:
                 self.i += 1
+            elif (c is not None and 48 <= c <= 57) or (c in (0x2b, 0x2d) and self.peek(1) is not None
+                                                      and 48 <= self.peek(1) <= 57):
+                j = p.index(b")", self.i)
+                ref = p[self.i:j].decode()
+                self.i = j + 1
+                return ("call", self.relref(ref))
+            elif c == 0x26 or (c == 0x50 and self.peek(1) == 0x3e):  # (?&name) (?P>name)
+                self.i += 1 if c == 0x26 else 2
+                j = p.index(b")", self.i)
+                name = p[self.i:j]
+                self.i = j + 1
+                return ("call", name)
+            elif c == 0x52:
+                raise Unsupported("recursion (?R)")
             elif c == 0x23:  # comment
                 j = p.index(b")", self.i)
                 self.i = j + 1
@@ -387,8 +435,8 @@ class Parser:
                 self.ncap += 1
                 cap = self.ncap
                 if name in self.names:
-                    raise Unsupported("duplicate name")
-                self.names[name] = cap
+                    self.dupnames = True
+                self.names.setdefault(name, cap)
             else:
                 # flag setting (?imsx-imsx) or (?flags:...)
                 on = True
@@ -402,6 +450,8 @@ class Parser:
                         newf = {k: False for k in newf}
                     elif ch in "isxm":
                         newf[ch] = on
+                    elif ch == "J":
+                        pass  # duplicate names allowed: numbering only
                     else:
                         raise Unsupported("group (?%s" % chr(p[self.i]))
                     j += 1
@@ -421,12 +471,57 @@ class Parser:
             raise Unsupported("missing )")
         self.i += 1
         self.f = save
-        return ("cap", cap, body) if cap else body
+        if cap:
+            self.groups[cap] = body
+            return ("cap", cap, body)
+        return body
+
+    def relref(self, ref):
+        if ref[0] in "+-":
+            n = int(ref[1:])
+            return self.ncap + n if ref[0] == "+" else self.ncap - n + 1
+        return int(ref)
+
+    def resolve(self, a, stack=()):
+        """Splice subroutine calls: the called group's body with its capture
+        nodes stripped (PCRE2: captures set inside a call revert when it
+        returns). A call reaching a group already being expanded is recursion."""
+        k = a[0]
+        if k == "call":
+            ref = a[1]
+            num = self.names.get(ref) if isinstance(ref, bytes) else ref
+            if num is None or num not in self.groups:
+                raise Unsupported("unresolved call")
+            if num in stack:
+                raise Unsupported("recursive call")
+            return self.resolve(strip_caps(self.groups[num]), stack + (num,))
+        if k in ("cat", "alt"):
+            return (k, [self.resolve(x, stack) for x in a[1]])
+        if k == "cap":
+            return ("cap", a[1], self.resolve(a[2], stack + (a[1],)))
+        if k == "rep":
+            return ("rep", self.resolve(a[1], stack)) + a[2:]
+        return a
+
+
+def strip_caps(a):
+    k = a[0]
+    if k == "cap":
+        return strip_caps(a[2])
+    if k in ("cat", "alt"):
+        return (k, [strip_caps(x) for x in a[1]])
+    if k == "rep":
+        return ("rep", strip_caps(a[1])) + a[2:]
+    return a
 
 
 def parse(pat, flags="", utf8=False):
     pr = Parser(pat, flags, utf8)
-    ast = pr.parse()
+    try:
+        ast = pr.parse()
+    except (ValueError, IndexError) as e:
+        raise Unsupported("spike parser: %s" % e)
+    ast = pr.resolve(ast)
     return ast, pr.ncap
 
 
@@ -443,7 +538,8 @@ class TNFA:
     TAG    [TAG, t, out]
     ENTER  [ENTER, loop, out]            an iteration of `loop` starts here
     BACK   [BACK, loop, enter, exit, greedy]  end of an iteration
-    ASSERT [ASSERT, kind, out]           kind: 'bos' | 'eos' | 'eosnl'
+    ASSERT [ASSERT, kind, out, ...]      kind: 'bos' | 'eos' | 'eosnl' | 'wb' | 'nwb'
+                                         | 'la' (+ set, negated) | 'lb' (+ prevsets index, negated)
     MATCH  [MATCH]
     """
 
@@ -453,6 +549,7 @@ class TNFA:
         self.ntags = 2 * (ncap + 1)
         self.nloops = 0
         self.opts = opts or {}
+        self.prevsets = [WORD]
         self.match = self.add([MATCH])
         body = self.comp(ast, self.add([TAG, 1, self.match]))
         main = self.add([TAG, 0, body])
@@ -485,8 +582,14 @@ class TNFA:
         if k == "cap":
             close = self.add([TAG, 2 * a[1] + 1, nxt])
             return self.add([TAG, 2 * a[1], self.comp(a[2], close)])
-        if k in ("bos", "eos", "eosnl"):
+        if k in ("bos", "eos", "eosnl", "wb", "nwb"):
             return self.add([ASSERT, k, nxt])
+        if k == "la":
+            return self.add([ASSERT, "la", nxt, a[1], a[2]])
+        if k == "lb":
+            if a[1] not in self.prevsets:
+                self.prevsets.append(a[1])
+            return self.add([ASSERT, "lb", nxt, self.prevsets.index(a[1]), a[2]])
         if k == "rep":
             _, sub, lo, hi, greedy = a
             if hi is None:
@@ -581,25 +684,38 @@ def cond_and(a, b):
     return "z" if "z" in (a, b) else "Z"
 
 
-def closure(nfa, seeds, at_bos):
-    """seeds: ordered list of ('node', i, payload) or ('direct', key, payload).
-    Returns ordered list of (key, payload, written) where key is a CHAR node id
-    or ('M', cond); `written` is the set of tags crossed on the path. Stops at
-    the first unconditional accept (lower-priority threads are pruned).
-    Priority DFS; visited keyed by (node, loops-entered-in-this-closure): the
-    empty-iteration rule (an iteration that consumed nothing ends its loop,
-    PCRE's KETRMAX check) makes the path's context part of the node's future."""
+def sigof(nfa, b):
+    """What the closure may ask about the PREVIOUS byte: membership in each of
+    nfa.prevsets (index 0 is \\w). None = start of subject."""
+    return None if b is None else tuple(b in s for s in nfa.prevsets)
+
+
+def closure(nfa, seeds, sig, nxt):
+    """seeds: ordered ('node', i, payload, ctx, cond) or ('direct', key, payload).
+    sig: the previous byte's signature (None at the subject start). nxt: the
+    NEXT input -- None (unknown: the normal closure), a byte, or 'EOF' (the
+    delayed closure of a pending assertion, run once the next input is known).
+    Returns ordered (key, payload, written): key is a CHAR node id, ('M', cond),
+    or ('A', node, ctx, sig, cond) -- an assertion on the next byte, pending.
+    Stops at the first unconditional accept (lower priorities are pruned).
+    Priority DFS; visited keyed by (node, loops-entered-in-this-closure, cond):
+    the empty-iteration rule (an iteration that consumed nothing ends its
+    loop, PCRE's KETRMAX check) makes that context part of the node's future."""
     N = nfa.n
     out = []
     claimed = set()
     visited = set()
-    for kind, x, payload in seeds:
-        if kind == "direct":
+    for sd in seeds:
+        if sd[0] == "direct":
+            _, x, payload = sd
             if x not in claimed:
                 claimed.add(x)
                 out.append((x, payload, frozenset()))
+                if x == ("M", None):
+                    return out
             continue
-        stack = [(x, frozenset(), frozenset(), None)]
+        _, x, payload, ctx0, cond0 = sd
+        stack = [(x, ctx0, frozenset(), cond0)]
         while stack:
             i, ctx, wr, cond = stack.pop()
             vk = (i, cond) if "noctx" in SABOTAGE else (i, ctx, cond)
@@ -643,12 +759,44 @@ def closure(nfa, seeds, at_bos):
                     stack.append((ex, ctx, wr, cond))
             elif k == ASSERT:
                 a = nd[1]
+                ok = None  # True / False / 'pending' / a new cond
                 if a == "bos":
-                    if at_bos:
-                        stack.append((nd[2], ctx, wr, cond))
-                else:
-                    stack.append((nd[2], ctx, wr, cond_and(cond, "z" if a == "eos" else "Z")))
+                    ok = sig is None
+                elif a == "lb":
+                    ok = (sig is not None and sig[nd[3]]) != nd[4]
+                elif a in ("eos", "eosnl"):
+                    if nxt is None:
+                        stack.append((nd[2], ctx, wr, cond_and(cond, "z" if a == "eos" else "Z")))
+                        continue
+                    if nxt == "EOF":
+                        ok = True
+                    elif a == "eosnl" and nxt == 10:
+                        stack.append((nd[2], ctx, wr, cond_and(cond, "z")))
+                        continue
+                    else:
+                        ok = False
+                else:  # wb, nwb, la: need the next byte
+                    if nxt is None:
+                        key = ("A", i, ctx, sig, cond)
+                        if key not in claimed:
+                            claimed.add(key)
+                            out.append((key, payload, wr))
+                        continue
+                    nw = nxt != "EOF" and nxt in WORD
+                    if a in ("wb", "nwb"):
+                        pw = sig is not None and sig[0]
+                        ok = (pw != nw) == (a == "wb")
+                    else:  # la
+                        ok = (nxt != "EOF" and nxt in nd[3]) != nd[4]
+                if ok:
+                    stack.append((nd[2], ctx, wr, cond))
     return out
+
+
+def delayed(nfa, key, payload, nxt):
+    """Resume a pending assertion thread now that the next input is known."""
+    _, node, ctx, sig, cond = key
+    return closure(nfa, [("node", node, payload, ctx, cond)], sig, nxt)
 
 
 # --------------------------------------------------------------------------
@@ -662,48 +810,61 @@ def result_from_tags(nfa, tags):
     return g
 
 
+def _write(tags, wr, v):
+    if not wr:
+        return tags
+    tags = dict(tags)
+    for t in wr:
+        tags[t] = v
+    return tags
+
+
 def pike(nfa, subj):
-    def step_closure(seeds, pos):
-        res = closure(nfa, seeds, pos == 0)
-        th = []
-        for key, tags, wr in res:
-            if wr:
-                tags = dict(tags)
-                for t in wr:
-                    tags[t] = pos
-            th.append((key, tags))
-        return th
-
-    threads = step_closure([("node", nfa.start, {})], 0)
-    best = None
-
     def accept(th):
         for key, tags in th:
             if key == ("M", None):
                 return tags
         return None
 
-    best = accept(threads) or best
+    res = closure(nfa, [("node", nfa.start, {}, frozenset(), None)], None, None)
+    threads = [(k, _write(t, wr, 0)) for k, t, wr in res]
+    best = accept(threads)
     for i, b in enumerate(subj):
-        seeds = []
+        items = []
         for key, tags in threads:
-            if isinstance(key, tuple):
+            if isinstance(key, int):
+                nd = nfa.n[key]
+                if b in nd[1]:
+                    items.append(("node", nd[2], tags, frozenset(), None))
+            elif key[0] == "M":
                 if key[1] == "Z" and b == 10:
-                    seeds.append(("direct", ("M", "z"), tags))
-                continue
-            nd = nfa.n[key]
-            if b in nd[1]:
-                seeds.append(("node", nd[2], tags))
-        if not seeds:
+                    items.append(("direct", ("M", "z"), tags))
+            else:  # pending assertion: resume at position i with next = b
+                for k2, t2, wr in delayed(nfa, key, tags, b):
+                    t2 = _write(t2, wr, i)
+                    if isinstance(k2, int):
+                        if b in nfa.n[k2][1]:
+                            items.append(("node", nfa.n[k2][2], t2, frozenset(), None))
+                    else:
+                        items.append(("direct", k2, t2))
+        if not items:
             threads = []
             break
-        threads = step_closure(seeds, i + 1)
+        res = closure(nfa, items, sigof(nfa, b), None)
+        threads = [(k, _write(t, wr, i + 1)) for k, t, wr in res]
         a = accept(threads)
         if a is not None:
             best = a
+    n = len(subj)
     for key, tags in threads:  # EOF: first accepting thread in priority order
-        if isinstance(key, tuple):
+        if isinstance(key, int):
+            continue
+        if key[0] == "M":
             best = tags
+            break
+        hit = [(k2, _write(t2, wr, n)) for k2, t2, wr in delayed(nfa, key, tags, "EOF") if not isinstance(k2, int)]
+        if hit:
+            best = hit[0][1]
             break
     return None if best is None else result_from_tags(nfa, best)
 
@@ -716,11 +877,18 @@ class TooBig(Exception):
 
 
 def byte_classes(nfa):
-    """Partition 0..255 by the CHAR sets of the NFA (plus \\n alone when any
-    $-assertion exists)."""
+    """Partition 0..255 by every byte predicate the closure or a step asks:
+    CHAR sets, \\n (for $), \\w, lookahead and lookbehind sets."""
     sets = [nd[1] for nd in nfa.n if nd[0] == CHAR]
-    if any(nd[0] == ASSERT and nd[1] == "eosnl" for nd in nfa.n):
-        sets.append(frozenset([10]))
+    sets += list(nfa.prevsets[1:])
+    if any(nd[0] == ASSERT and nd[1] in ("wb", "nwb") for nd in nfa.n):
+        sets.append(WORD)
+    for nd in nfa.n:
+        if nd[0] == ASSERT:
+            if nd[1] == "eosnl":
+                sets.append(frozenset([10]))
+            elif nd[1] == "la":
+                sets.append(nd[3])
     sig = {}
     for b in range(256):
         key = tuple(b in s for s in sets)
@@ -739,8 +907,9 @@ class TDFA:
     (unset, a compile-time constant) or an int (canonical, numbered by first
     appearance). Each state binds its classes to registers (regmap). A
     transition = (dest, ops) with ops a parallel assignment {dst: src}, src
-    'P' (the current position) or a register. tagged=False builds the
-    untagged DFA over the same NFA (same thread lists, no tag identity)."""
+    'P' (the current position), 'Q' (the position before this byte: tags a
+    resumed pending assertion crossed) or a register. tagged=False builds
+    the untagged DFA over the same NFA (same thread lists, no tag identity)."""
 
     def __init__(self, nfa, tagged=True, max_states=4000):
         self.nfa = nfa
@@ -749,18 +918,21 @@ class TDFA:
         self.states = []
         self.index = {}
         self.trans = {}  # (state, symbol class) -> (dest, ops)
+        self.feeds = {}  # (state, symbol class) -> per dest class: ('P',) | ('Q',) | ('c', source class)
+        self.eofs = {}
         self.max_states = max_states
         self.nregs = 0
-        # initial state
-        seeds = [("node", nfa.start, {t: "U" for t in range(nfa.ntags)})]
-        res = closure(nfa, seeds, True)
-        self.init, self.init_ops = self.intern(res, {})
+        seeds = [("node", nfa.start, {t: "U" for t in range(nfa.ntags)}, frozenset(), None)]
+        res = closure(nfa, seeds, None, None)
+        self.init, self.init_ops = self.intern(res, [])
         self.build()
 
     def livetags(self, key):
-        if isinstance(key, tuple):
+        if isinstance(key, int):
+            return sorted(self.nfa.live[key])
+        if key[0] == "M":
             return range(self.nfa.ntags)
-        return sorted(self.nfa.live[key])
+        return sorted(self.nfa.live[key[1]])
 
     def intern(self, res, srcmap):
         """res: closure output (key, vals, written) with vals {tag: 'U' | ('r', reg)}.
@@ -793,7 +965,7 @@ class TDFA:
             regmap = [None] * len(srcs)
             used = set()
             for c, v in enumerate(srcs):
-                if v != "P" and v[1] not in used:
+                if v not in ("P", "Q") and v[1] not in used:
                     regmap[c] = v[1]
                     used.add(v[1])
             for c, v in enumerate(srcs):
@@ -808,11 +980,13 @@ class TDFA:
             self.states.append((sk, regmap))
             self.index[sk] = sid
         regmap = self.states[sid][1]
+        inv = {r: c for c, r in enumerate(srcmap)} if srcmap else {}
+        self.last_feeds = [(v,) if v in ("P", "Q") else ("c", inv[v[1]]) for v in srcs]
         ops = {}
         for c, v in enumerate(srcs):
             dst = regmap[c]
-            src = "P" if v == "P" else v[1]
-            if src != dst and not ("nocopy" in SABOTAGE and src != "P"):
+            src = v if v in ("P", "Q") else v[1]
+            if src != dst and not ("nocopy" in SABOTAGE and src not in ("P", "Q")):
                 ops[dst] = src
         return sid, ops
 
@@ -830,20 +1004,50 @@ class TDFA:
         if k in self.trans:
             return self.trans[k]
         (keys, vecs), regmap = self.states[sid]
-        rep = self.classes[sym][0]
-        seeds = []
+        b = self.classes[sym][0]
+        items = []
         for ti, key in enumerate(keys):
             vals = self.thread_vals(sid, ti) if self.tagged else {}
-            if isinstance(key, tuple):
-                if key[1] == "Z" and rep == 10:
-                    seeds.append(("direct", ("M", "z"), vals))
-                continue
-            nd = self.nfa.n[key]
-            if rep in nd[1]:
-                seeds.append(("node", nd[2], vals))
-        res = closure(self.nfa, seeds, False)
+            if isinstance(key, int):
+                nd = self.nfa.n[key]
+                if b in nd[1]:
+                    items.append(("node", nd[2], vals, frozenset(), None))
+            elif key[0] == "M":
+                if key[1] == "Z" and b == 10:
+                    items.append(("direct", ("M", "z"), vals))
+            else:
+                for k2, v2, wr in delayed(self.nfa, key, vals, b):
+                    v2 = _write(v2, wr, "Q")
+                    if isinstance(k2, int):
+                        if b in self.nfa.n[k2][1]:
+                            items.append(("node", self.nfa.n[k2][2], v2, frozenset(), None))
+                    else:
+                        items.append(("direct", k2, v2))
+        res = closure(self.nfa, items, sigof(self.nfa, b), None)
         r = self.intern(res, regmap)
         self.trans[k] = r
+        self.feeds[k] = self.last_feeds
+        return r
+
+    def eof(self, sid):
+        """Final ops at end of input: (vals) of the first thread that accepts."""
+        if sid in self.eofs:
+            return self.eofs[sid]
+        keys = self.states[sid][0][0]
+        r = None
+        for ti, key in enumerate(keys):
+            if isinstance(key, int):
+                continue
+            vals = self.thread_vals(sid, ti)
+            if key[0] == "M":
+                r = vals
+                break
+            hit = [_write(v2, wr, "P") for k2, v2, wr in delayed(self.nfa, key, vals, "EOF")
+                   if not isinstance(k2, int)]
+            if hit:
+                r = hit[0]
+                break
+        self.eofs[sid] = r
         return r
 
     def build(self):
@@ -858,7 +1062,7 @@ class TDFA:
                     todo.append(d)
 
     # ---- running -------------------------------------------------------
-    def out_of(self, sid, ti, regs, pos_known=None):
+    def out_of(self, sid, ti, regs):
         (keys, vecs), regmap = self.states[sid]
         tags = {}
         for t, c in zip(self.livetags(keys[ti]), vecs[ti]):
@@ -871,7 +1075,7 @@ class TDFA:
         def apply(ops, pos):
             old = list(regs)
             for d, s in ops.items():
-                regs[d] = pos if s == "P" else old[s]
+                regs[d] = pos if s == "P" else pos - 1 if s == "Q" else old[s]
 
         def uncond(sid):
             keys = self.states[sid][0][0]
@@ -893,10 +1097,11 @@ class TDFA:
             a = uncond(s)
             if a is not None:
                 best = self.out_of(s, a, regs)
-        keys = self.states[s][0][0]
-        for ti, key in enumerate(keys):
-            if isinstance(key, tuple):
-                return self.out_of(s, ti, regs)
+        vals = self.eof(s)
+        if vals is not None:
+            n = len(subj)
+            tags = {t: (-1 if v == "U" else n if v == "P" else regs[v[1]]) for t, v in vals.items()}
+            return result_from_tags(self.nfa, tags)
         return best
 
     # ---- costs ---------------------------------------------------------
@@ -909,19 +1114,117 @@ class TDFA:
             if not self.states[d][0][0]:
                 continue
             ntr += 1
-            ns = sum(1 for v in ops.values() if v == "P")
+            ns = sum(1 for v in ops.values() if v in ("P", "Q"))
             nc = len(ops) - ns
             sets += ns
             copies += nc
             copy_tr += nc > 0
             maxops = max(maxops, len(ops))
             # a copy whose source is also a destination needs a temporary in C
-            if any(v != "P" and v in ops for v in ops.values()):
+            if any(v not in ("P", "Q") and v in ops for v in ops.values()):
                 cyc += 1
         live_states = sum(1 for st in self.states if st[0][0])
         return dict(states=live_states, regs=self.nregs, trans=ntr, sets=sets, copies=copies,
                     copy_trans=copy_tr, maxops=maxops, tmp_trans=cyc,
                     init_ops=len(self.init_ops), classes=len(self.classes))
+
+
+def analyze(dfa):
+    """Allocation-independent facts about the register program.
+    copyfree: is there ANY class->register assignment under which no
+      transition needs a copy?  Union every dest class with the source class
+      that feeds it; copy-free iff no union set holds two classes of one state.
+    conflicts: the number of states with such a clash (a lower bound on the
+      states that need copies on some incoming transition).
+    fixed: classes whose value is a compile-time constant offset from the
+      current position (pos - k on every path) or from the match start
+      (anchored machines: start + k), so need no register at all."""
+    states = dfa.states
+    ncls = [len(st[1]) for st in states]
+    parent = {}
+
+    def find(x):
+        while parent.setdefault(x, x) != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for (s, sym), (d, ops) in dfa.trans.items():
+        for c, f in enumerate(dfa.feeds[(s, sym)]):
+            if f[0] == "c":
+                parent[find((d, c))] = find((s, f[1]))
+    conflicts = 0
+    for sid, n in enumerate(ncls):
+        roots = [find((sid, c)) for c in range(n)]
+        if len(set(roots)) != len(roots):
+            conflicts += 1
+    # depth of each state from the start (pos - start), if unique
+    TOP = "TOP"
+    depth = {dfa.init: 0}
+    changed = True
+    while changed:
+        changed = False
+        for (s, sym), (d, ops) in dfa.trans.items():
+            if s not in depth or not states[d][0][0]:
+                continue
+            nd = TOP if depth[s] == TOP else depth[s] + 1
+            if d not in depth:
+                depth[d] = nd; changed = True
+            elif depth[d] != TOP and depth[d] != nd:
+                depth[d] = TOP; changed = True
+    # value lattices per (state, class): offp (value = pos - k), offs (value = start + k)
+    offp, offs = {}, {}
+    for c in range(ncls[dfa.init]):
+        offp[(dfa.init, c)] = 0
+        offs[(dfa.init, c)] = 0
+
+    def meet(tab, key, v):
+        if key not in tab:
+            tab[key] = v
+            return True
+        if tab[key] != TOP and tab[key] != v:
+            tab[key] = TOP
+            return True
+        return False
+    changed = True
+    while changed:
+        changed = False
+        for (s, sym), (d, ops) in dfa.trans.items():
+            if not states[d][0][0]:
+                continue
+            for c, f in enumerate(dfa.feeds[(s, sym)]):
+                if f[0] in ("P", "Q"):
+                    q = 1 if f[0] == "Q" else 0
+                    vp = q
+                    vs = depth.get(d, TOP)
+                    vs = TOP if vs == TOP else vs - q
+                else:
+                    src = (s, f[1])
+                    if src not in offp:
+                        continue
+                    vp = TOP if offp[src] == TOP else offp[src] + 1
+                    vs = offs[src]
+                changed |= meet(offp, (d, c), vp)
+                changed |= meet(offs, (d, c), vs)
+    live = [sid for sid in range(len(states)) if states[sid][0][0]]
+    isfixed = lambda k: offp.get(k, TOP) != TOP or offs.get(k, TOP) != TOP
+    # copy-freedom once fixed classes need no register (a non-fixed class fed
+    # from a fixed one is a set "r = pos - k" / "r = start + k", not a copy)
+    parent = {}
+    for (s, sym), (d, ops) in dfa.trans.items():
+        for c, f in enumerate(dfa.feeds[(s, sym)]):
+            if f[0] == "c" and not isfixed((d, c)) and not isfixed((s, f[1])):
+                parent[find((d, c))] = find((s, f[1]))
+    conflicts_nf = 0
+    for sid in live:
+        roots = [find((sid, c)) for c in range(ncls[sid]) if not isfixed((sid, c))]
+        if len(set(roots)) != len(roots):
+            conflicts_nf += 1
+    fixed = sum(1 for sid in live for c in range(ncls[sid]) if isfixed((sid, c)))
+    total = sum(ncls[sid] for sid in live)
+    need = max([0] + [sum(1 for c in range(ncls[sid]) if not isfixed((sid, c))) for sid in live])
+    return dict(copyfree=conflicts == 0, conflicts=conflicts, copyfree_nf=conflicts_nf == 0,
+                conflicts_nf=conflicts_nf, fixed=fixed, classes=total,
+                allfixed=(fixed >= total), regs_after_fixed=need)
 
 
 def compile_pattern(pat, flags="", utf8=False, anchored=False):

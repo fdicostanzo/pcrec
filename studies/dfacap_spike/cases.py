@@ -74,6 +74,21 @@ CASES = [
     ("search-3", rb"x*(a|b)", "", "abx"),
     # flags
     ("caseless", rb"(a+)(B)", "i", "aAbB"),
+    # one-character context assertions: pending on the next byte, tags at pos-1
+    ("ctx-wb-1", rb"\b(a+)\b", "", "a -"),
+    ("ctx-wb-2", rb"(\w*?)\b(\w*)", "", "a -"),
+    ("ctx-wb-3", rb"(a|\b)+(b)", "", "ab -"),
+    ("ctx-wb-4", rb"(a*)\b$", "", "a -\n"),
+    ("ctx-wb-5", rb"\b(a*?)\b", "", "a -"),
+    ("ctx-wb-6", rb"(?:(a)|\b)*\B(b)?", "", "ab -"),
+    ("ctx-nwb", rb"\B(a|b){1,3}", "", "ab -"),
+    ("ctx-la", rb"(a+)(?=b)(b*)", "", "abc"),
+    ("ctx-nla", rb"(a+?)(?!a)", "", "ab"),
+    ("ctx-lb", rb"(?<=a)(b+)", "", "abc"),
+    ("ctx-nlb", rb"(?<!a)(b)", "", "abc"),
+    ("ctx-stack", rb"(a)\b(?=-)(-)?", "", "a -"),
+    ("ctx-loop", rb"(?:\b(\w))+", "", "ab -"),
+    ("ctx-end", rb"(a+)(?!b)\z", "", "ab"),
 ]
 
 

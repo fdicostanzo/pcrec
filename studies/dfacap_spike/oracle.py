@@ -35,8 +35,8 @@ def pcre2_version():
 
 
 class Pcre2:
-    def __init__(self, pat, flags, utf8, ncap):
-        opts = 0
+    def __init__(self, pat, flags, utf8, ncap, anchored=False):
+        opts = 0x80000000 if anchored else 0  # PCRE2_ANCHORED
         if "i" in flags:
             opts |= PCRE2_CASELESS
         if "s" in flags:
