@@ -16,7 +16,7 @@
 SAB_ID="S3042-req-run-at-is-pcrec-index"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
-SAB_DESC="the REQ_RUN stamp's @ is pcrec's req_run index instead of the searching site's (the kit's run reply scan), so under a kit tie rule that differs from pcrec's the stamp names an offset the artifact's search does not read (C4)"
+SAB_DESC="the REQ_RUN stamp's @ is pcrec's own pick over the run (the retired req_run row's index) instead of the searching site's (the kit's run reply scan), so under a kit tie rule that differs from pcrec's the stamp names an offset the artifact's search does not read (C4)"
 SAB_DOC_FIGURE="Validated by plant at K38-2 (docs/dev/lanes/k382_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3042."
 # Reach: the lever witness's kit scan (@0) differs from pcrec's index (@3,
 # the default build's scan: both tie rightmost there).

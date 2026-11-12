@@ -50,6 +50,8 @@ suffix so a sub-artifact's `RX__Q_*` stamps count, or the enclosing function -- 
       decisions stamps as above, part-layout rows naming a reqrun/ofsskip function; `used`: a `req_*`
       row whose ONLY move is its `used` column, allowed where that encoding's REQ_WHY moved (a FLIP)
       or, for `req_whole_run` no -> yes, where BASE's `req_run` was used (the reader moved, §4.3).
+      Fret (k382fix, review 2026-11-11 r1 k382 F5): the `req_run` and `req_run_maxoff` rows RETIRED
+      (present at BASE, absent on the tip); a retired row that moves but stays is still P2/P1.
 Anything else that moved is UNEXPLAINED. The verdict is red on any UNEXPLAINED artifact, any MUST
 artifact that did not move as declared, an empty task list, or (K35, a full run only, not --sample /
 --patterns-file / --shard) an empty P1, P2a, P2b or P3 summed over c-default + c-vm.
@@ -88,7 +90,8 @@ ARMS = [
 ]
 IR = ["--features", "all", "--engine=vm", "--emit-ir"]
 FACTS = ["--features", "all", "--emit-facts=byte,utf8"]
-POPS = ["P1", "P2", "P2a", "P2b", "P2s", "P2se", "P2sd", "P2so", "Aa_K", "Aa_noK", "P3", "P3v", "P4", "P4f", "P5", "P5k", "used"]   # P2 (unsplit): the facts listing
+POPS = ["P1", "P2", "P2a", "P2b", "P2s", "P2se", "P2sd", "P2so", "Aa_K", "Aa_noK", "P3", "P3v", "P4", "P4f", "P5", "P5k", "used",
+        "Fret"]   # P2 (unsplit): the facts listing
 FLOOR_ARMS = ("c-default", "c-vm")
 FLOOR_POPS = ("P1", "P2a", "P2b", "P3")
 WITNESSES = [  # tests/codegen/run_prechecks.sh, reqcube_check.py, the sheet's §4.2/§5.1 examples
@@ -391,6 +394,9 @@ def judge_facts(rb, rn):
         if sec == "facts" and x and y and len(x) == len(y) and len(x) > 5 and key.startswith("req_") \
                 and [v for i, v in enumerate(x) if i != 5] == [v for i, v in enumerate(y) if i != 5]:
             used.append(k)
+            continue
+        if sec == "facts" and y is None and key in ("req_run", "req_run_maxoff"):
+            pops.add("Fret")    # k382fix (review r1 k382 F5): the two rows RETIRED, gone from every listing
             continue
         if sec.startswith("part-layout"):
             p = "P3" if "reqrun" in key else "P4" if "ofsskip" in key or "prefilter" in key else None
