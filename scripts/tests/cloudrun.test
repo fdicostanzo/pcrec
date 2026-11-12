@@ -69,6 +69,18 @@ $CR --owner main --kind test --name ucax --dry-run >/dev/null 2>&1; chk "--name,
 out=$($CR --owner main --kind test --dry-run 2>&1); rc=$?
 [ $rc = 0 ] && [ -z "$(branches)" ] && [ ! -e "$T/ledger.tsv" ] && grep -q "DRY-RUN would push ${SHA:0:9} -> origin cloud/main/test/HEAD-${SHA:0:7}" <<<"$out"; chk "--dry-run pushes nothing, writes no ledger" $?
 
+# --- --rows: named rows ride in the branch name; only a kind with a {rows} placeholder takes them
+out=$($CR --owner main --kind test --rows S1 --dry-run 2>&1); rc=$?
+[ $rc = 64 ] && grep -q "takes no --rows" <<<"$out"; chk "--rows on a kind whose command has no {rows} -> 64" $?
+$CR --owner main --kind mechrows --rows 'S1,,S2' --dry-run >/dev/null 2>&1; chk "--rows with an empty id -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+$CR --owner main --kind mechrows --rows 'S1;S2' --dry-run >/dev/null 2>&1; chk "--rows with a shell character -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+$CR --owner main --kind mechrows --rows "$(for i in $(seq 1 31); do printf 'S%s,' $i; done | sed 's/,$//')" --dry-run >/dev/null 2>&1; chk "--rows with 31 ids -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+$CR --suite --owner main --rows S1 --dry-run >/dev/null 2>&1; chk "--suite --rows -> 64" $([ $? = 64 ] && echo 0 || echo 1)
+out=$($CR --owner main --kind mechrows --rows S278,S-U11 --name fixrows --dry-run 2>&1); rc=$?
+[ $rc = 0 ] && grep -q "origin cloud/main/mechrows/fixrows.rows.S278_S-U11 " <<<"$out"; chk "--rows names the branch NAME.rows.ID_ID" $?
+[ "$(CLOUD_BRANCH=cloud/main/mechrows/fixrows.rows.S278_S-U11 bash "$R/tests/ci/cloud_kinds.sh" command mechrows 2/10)" = "CLOUD_MECH_ROWS='S278,S-U11' bash tests/ci/cloud_mech_shard.sh - 2/10" ]; chk "the kinds table hands the shard those ids back ({rows})" $?
+[ "$(CLOUD_BRANCH='cloud/main/mechrows/x.rows.S1_$(id)' bash "$R/tests/ci/cloud_kinds.sh" command mechrows 1/10)" = "CLOUD_MECH_ROWS='S1,??id?' bash tests/ci/cloud_mech_shard.sh - 1/10" ]; chk "a hostile branch name cannot put a shell word into the command" $?
+
 # --- the push and the ledger
 out=$($CR --owner main --kind test --name one 2>&1); rc=$?
 [ $rc = 0 ] && [ "$(branches)" = "cloud/main/test/one " ] && [ "$(git -C "$T/remote.git" rev-parse cloud/main/test/one)" = "$SHA" ]; chk "push lands cloud/main/test/one at HEAD" $?
