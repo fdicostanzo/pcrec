@@ -614,6 +614,7 @@ static const struct {
     { G2P_W_L1B, "W-L1b", "foobar",   3, 0, 0 },
     { G2P_W_K1,  "W-K1",  "foobar",   1, 0, 0 },
     { G2P_W_K2,  "W-K2",  "abababcc", 3, 1, 2 },
+    { G2P_W_K1B, "W-K1b", "foobar",   1, 0, 0 },
 };
 
 static void wk_run(const g2p_site *x)
@@ -633,6 +634,10 @@ static void wk_run(const g2p_site *x)
         int reach = floor < (long)origin && want >= 0 && want < (long)origin;
         if (x->wk == G2P_W_L1B)
             reach = reach && x->has_scan && want + x->scan < (long)origin;
+        /* W-K1b (F16): the scan offset lies below N - origin, so a wrapped
+           floor's first compare is not the clamped floor's */
+        if (x->wk == G2P_W_K1B)
+            reach = reach && x->has_scan && x->scan < -x->omin - (long)origin;
         CHECK(x, reach, name, "does not reach (floor %ld, origin %zu, answer %ld, scan %d)", floor,
               origin, want, x->has_scan ? x->scan : -1);
         g_wk_reach[x->wk] += reach;
@@ -762,9 +767,10 @@ int main(int argc, char **argv)
     printf("G2P k382 partial_hits=%ld neg_records=%ld below_hits=%ld wk4_low=%ld\n", g_partial_hits,
            g_neg_records, g_below_hits, g_wk4_low);
     printf("G2P presence checks=%ld below=%ld generic=%ld\n", g_pres_checks, g_pres_below, g_generic);
-    printf("G2P wk L1=%ld/%ld L1b=%ld/%ld K1=%ld/%ld K2=%ld/%ld (green/reached)\n",
+    printf("G2P wk L1=%ld/%ld L1b=%ld/%ld K1=%ld/%ld K2=%ld/%ld K1b=%ld/%ld (green/reached)\n",
            g_wk_ok[G2P_W_L1A], g_wk_reach[G2P_W_L1A], g_wk_ok[G2P_W_L1B], g_wk_reach[G2P_W_L1B],
-           g_wk_ok[G2P_W_K1], g_wk_reach[G2P_W_K1], g_wk_ok[G2P_W_K2], g_wk_reach[G2P_W_K2]);
+           g_wk_ok[G2P_W_K1], g_wk_reach[G2P_W_K1], g_wk_ok[G2P_W_K2], g_wk_reach[G2P_W_K2],
+           g_wk_ok[G2P_W_K1B], g_wk_reach[G2P_W_K1B]);
 #ifdef G2P_ASAN
     printf("G2P layout_A=%ld\n", g_lay_a);
 #endif

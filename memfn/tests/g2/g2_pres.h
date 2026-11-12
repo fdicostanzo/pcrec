@@ -27,7 +27,7 @@ enum { G2P_P0, G2P_P2, G2P_P3, G2P_P9, G2P_NROUTE };
 
 /* The fixed witnesses of span_runs_sheet.md §3.5 the DRIVER runs (W-K3, the
  * twin, is the generator's: it is a port answer, not text). */
-enum { G2P_W_NONE, G2P_W_L1A, G2P_W_L1B, G2P_W_K1, G2P_W_K2, G2P_W_N };
+enum { G2P_W_NONE, G2P_W_L1A, G2P_W_L1B, G2P_W_K1, G2P_W_K2, G2P_W_K1B, G2P_W_N };
 
 typedef size_t (*g2p_part_fn)(const unsigned char *s, size_t n, size_t lo);
 typedef int (*g2p_use_fn)(const unsigned char *s, size_t n, size_t lo, size_t *out);

@@ -79,6 +79,16 @@ RECFLAGS="-fsanitize=kernel-address --param asan-instrumentation-with-call-thres
 # so it and COVER/EXTENT are set to the MEASURED count with NO margin (kit
 # manager's ruling, 2026-11-11); (2) no floor is below K38-2a's where K38-2a's
 # still holds (P2 sites, P2_REFUSED, NM_SOUND keep K38-2a's literals).
+# RE-PIN PROCEDURE (review 2026-11-11 r1 k382 F17): the seed is fixed, so a
+# legitimate change to the space can shrink a count by one probe and red a
+# no-margin floor. Lowering a floor is then a RE-PIN, never a fix: (a) name
+# the change that moved the space and show the new count is that change's
+# (the passes' own count lines, before and after); (b) get the kit
+# manager's ruling; (c) record it here as a dated RE-MEASURED/RE-PINNED line
+# naming the ruling, the old and new literal and the count. A floor lowered
+# without (a)-(c) is a check made to pass. The 2026-11-11 F16 witness
+# W-K1b (5 §3.5 witness sites per pass since) moved no floor; F14's
+# controls (CTL_NOPART/CTL_TWO) are set like GENERIC (the least, less ~10%).
 FLOOR_ROUTE_SITES="P0:86 P2:70 P3:159 P9:72"   # the generator's routes (96 75 177 80; P2 K38-2a's 70)
 FLOOR_P2_REFUSED=70         # P2's control: the derived part on an untested link refused (75; K38-2a's 70)
 FLOOR_REACH="P0:2190 P3:4010 P9:1820"          # run-part calls per route, entry + re-entry (2441 4460 2028)
@@ -203,7 +213,11 @@ plant_expect() {
     S3009) echo ': LEVER: ' ;;
     S3012) echo 'mf_define' ;;
     S3060) echo ': W-L1: ;: W-L1b: ' ;;
-    S3061) echo ': W-K1: ' ;;
+    S3061) # F16: W-K1b (scan k 0 < N - origin) moves its ANSWER: on the generic
+        # pass in layout U, on the precheck pass in layout L (in U the wrapped
+        # floor reads 2 bytes below the subject and the whole-run verify
+        # rejects them: the answer holds, the read is the defect)
+        echo ': W-K1b: U \(guard at s \+ n\): the entry from 1 on "foobar" yields -1;default site [0-9]+ \(precheck\): W-K1b: L [^:]*: the entry from 1 on "foobar" yields -1' ;;
     S3062) echo ': W-K2: ' ;;
     S3063) echo 'W-K3: the admission bit' ;;
     S3046) echo 'F14 \(ii\): no run part on a tested link' ;;
@@ -502,11 +516,11 @@ for tgt in $TARGETS; do
         # the §3.5 witnesses: each green AND reached, in the recording driver
         # and the ASan+UBSan one; W-K3's own witness reached in the generator
         wk=$(grep -h '^G2P wk ' "$WORK/$tag.run.log")
-        if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 (green/reached)" ]; then tp=$((tp + 1))
+        if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 K1b=1/1 (green/reached)" ]; then tp=$((tp + 1))
         else note "$tag: the §3.5 witnesses are not all green and reached (${wk:-no line})"; fi
         if [ -z "${G2P_NOASAN:-}" ]; then
             wk=$(grep -h '^G2P wk ' "$WORK/$tag.asan.log")
-            if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 (green/reached)" ]; then tp=$((tp + 1))
+            if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 K1b=1/1 (green/reached)" ]; then tp=$((tp + 1))
             else note "$tag: the §3.5 witnesses (ASan+UBSan) are not all green and reached (${wk:-no line})"; fi
         fi
         if grep -qE "^G2PWK3 $tgt\.(default|lever) site [0-9]+ reached" "$WORK/$tag.gen.log"; then tp=$((tp + 1))
@@ -561,7 +575,7 @@ floor "$tag presence checks" "$(rv presence checks)" "$FLOOR_PRES_CHECKS"
 floor "$tag presence below" "$(rv presence below)" "$FLOOR_PRES_BELOW"
 floor "$tag neg_omin" "$(gv neg_omin)" "$FLOOR_NEG_OMIN"
 wk=$(grep -h '^G2P wk ' "$WORK/$tag.run.log")
-if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 (green/reached)" ]; then tp=$((tp + 1))
+if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 K1b=1/1 (green/reached)" ]; then tp=$((tp + 1))
 else note "$tag: the §3.5 witnesses are not all green and reached (${wk:-no line})"; fi
 
 # the records: the seam's format, held by the family before the oracle reads them

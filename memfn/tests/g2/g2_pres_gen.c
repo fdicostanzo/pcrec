@@ -225,8 +225,13 @@ static void gen_wk(gsite *g, int wk)
     g->assign = 1;
     g->nm = 0;
     g->rates = RATE_NONE;
-    if (wk == G2P_W_L1B) {
-        /* the scan on position 0 ('f', the rarest), whose byte lies BELOW the
+    if (wk == G2P_W_L1B || wk == G2P_W_K1B) {
+        /* W-K1b (review 2026-11-11 r1 k382 F16): W-K1 with the SAME rates,
+           so its scan offset k = 0 < N - origin (3 - 1): a wrapped floor
+           `lo - N` then does not land on the clamped floor's candidate
+           (W-K1's k = 5 >= N - origin reaches the same candidate either way,
+           modulo 2^64, so it reds only through layout L's faults).
+           W-L1b: the scan on position 0 ('f', the rarest), whose byte lies BELOW the
            origin 3 (span_runs_sheet.md §3.5 W-L1's second case); every run
            byte rarer than the rest of the alphabet, so the full start set's
            mass m exceeds the run's hit mass h (W-K3's reaching rates) */
@@ -419,7 +424,7 @@ static void twin_check(gsite *g, const mf_art *art, const mf_site *s)
     }
     g_wk3_sites++;
     if (pk.landmark < 0) { fail(g->id, "W-K3", "no landmark bit on an ASSIGN site"); return; }
-    if (g->wk == G2P_W_L1B && pk.landmark != 1)
+    if ((g->wk == G2P_W_L1B || g->wk == G2P_W_K1B) && pk.landmark != 1)
         fail(g->id, "W-K3", "the witness's stated rates (m > h) do not reach: the bit at K 0 is 0");
     if (pk.landmark != 1) { g_wk3_zero++; return; }
     if (g->wk) printf("G2PWK3 %s site %d reached: bit 1 at K 0, checked at K -1..-32\n", g_tag, g->id);
