@@ -63,13 +63,14 @@ RELEVANT; if not, say why in one line.
 Option sets, selection, cost
 - `option_sets.md` — [OPT-SETS] named bundles of options (rev 2 applies panel r1); `option_sets_measurements/` — its cross-source probes.
 - `sel_cost.md` — [SEL-COST] step 1 / [SEL-SIZE] (refuted); admission rule for compile-time selection terms; `sel_cost/` — census and drivers.
-- `opt_dial_inventory.md` — [OPT-DIAL] step 0 inventory; `opt_dial_design.md` — [OPT-DIAL] step 1 design (paneled r60, revised, governance ruling).
+- `opt_dial_inventory.md` — [OPT-DIAL] step 0 inventory; `opt_dial_design.md` — [OPT-DIAL] step 1 design (paneled r60).
 - `regime_tables.md` — search-form selection by regime (draft rev 0).
 - `prior_cost_unify.md` — [PRIOR-COST-UNIFY] one priced scan decision; `prior_cost_unify/` — instruments.
 - `measure_sets.md` — [MEASURE-SET] measurement-set format/store/loading (rev 3); store lives in `measure_store/`.
-- `decision_families_survey.md` — survey of if/else decision families; `decision_families/` — raw stamp inventory and `decfb0/` census.
+- `decision_families_survey.md` — survey of if/else decision families; `decision_families/` — stamp inventory, `decfb0/` census.
 - `dec_fallback.md` — [DEC-FALLBACK] one fallback ladder; `dec_fallback/` — edit set, anchor map, reach prototype.
-- `pricing_rulepilot.md` — [PRICE-BAKEOFF] the rule-list pilot: can <= 3 rules over stated facts reach 95 % of the measured best strategy (pre-registered; evidence `docs/dev/lanes/rulepilot_evidence/`).
+- `pricing_rulepilot.md` — [PRICE-BAKEOFF] rule-list pilot: <= 3 rules reach 95 % of best (`docs/dev/lanes/rulepilot_evidence/`).
+- `flag_demote_map.md` — [FLAG-DEMOTE] internal deny word + flag map.
 
 Memory functions, kit, compound, iterator
 - `memfn/` — [MEMFN] design record (requirements, ISA selection, survey, integration revisions through 4.9, twins, Linux results, later r17 notes); own CLAUDE.md; revision history in `memfn/CLAUDE.md`.
