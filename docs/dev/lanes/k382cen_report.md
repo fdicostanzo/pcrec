@@ -15,9 +15,11 @@ Lane k382cen (opus), branch lane/memfn-k382, 2026-11-12. Brief: the kit manager'
 - **The reader covers every E-find form the kit prints,** found by grep of `memfn/src/window.c`
   (B-memchr, B-pair, B-walk, B-fn) and `memfn/src/ofsskip.c` (fn-memchr, fn-pair bodies). A window
   site with no readable find (B-hors, a SIMD row) is refused.
-- **Four of the five red patterns are explained; the fifth is a REAL undeclared mover.** It is
-  `z(a){3,}?` under `-fprefilter-collapse`: a run pin on an UNCUT run (2 rows). It is reported to the
-  kit manager for a ruling (see "The 91 rows by pattern").
+- **Four of the five red patterns were census defects. The fifth was an undeclared mover.** It is
+  `z(a){3,}?` under `-fprefilter-collapse`: a run pin on an UNCUT run (2 rows). The trace shows the
+  cause is §4.2's ruled clip meeting a count-collapsed walk shorter than the run. Per the kit
+  manager's ruling it is declared as population P4c: a census rule over that cause, a §5.1 addendum,
+  answer identity on the witness, and a plant.
 - **`/abcd[xy]/user` is explained (i), not a mover.** Its find reads offset 6, the second `/`; the run
   `/abcd` is at offsets 0..4. The find did not move; only the `@0` was dropped.
 - **Non-vacuity:** a new `--control plant-in-run` rewrites every cover find to read the run's first
@@ -39,20 +41,39 @@ output (`$PCREC_TMPDIR/scratch/memfn/k382cen/census.1.before.tsv`, a copy of
 | `/abcd[xy]/user` | 3 | `x:axis-fno-req-run-fold`, `x:start:-fno-req-run-fold`, `x:start:-i` (c-default) | `2f61626364@0` / `2f61626364` | +6, 47 (the second `/`) | maxoff 0, len 5: 0..4 | outside; the same byte-value refusal | P2so, 0 unexplained |
 | `a{3}(?i:cat)` | 2 | `x:axis-fno-req-run-fold`, `x:start:-fno-req-run-fold` | `616161@2` / `616161` | B-fn `rx_mf1_ofsskip`, fn-pair at +3, bytes 67/99 (`C`/`c`) | maxoff 0, len 3: 0..2 | outside; the old regex could not read the `memchr(subject + ha, ..)` form | P2so, 0 unexplained |
 | `a{2}(?:(?<!\w)\|)b` | 3 | `x:memfn-fd-d1`, `x:start:--memfn=no-fd-d1`, `x:start:utf8+--memfn=no-fd-d1` | P2s | a form the old regex could not read | | "no readable memchr find" | P2so, 0 unexplained (98 P2so arms) |
-| `z(a){3,}?` | 2 | `x:axis-fprefilter-collapse`, `x:start:-fprefilter-collapse` | NOT P2s: see below | | | **a real undeclared mover** | still UNEXPLAINED (correctly) |
+| `z(a){3,}?` | 2 | `x:axis-fprefilter-collapse`, `x:start:-fprefilter-collapse` | NOT P2s: a run-pin move, see below | | | an undeclared mover; traced to §4.2's clip, so declared | P4c, 0 unexplained |
 
-**`z(a){3,}?` under `-fprefilter-collapse` is NOT a census defect.** Its BASE artifact has these facts and stamps:
-- `RX_DFA_PREFILTER "memchr"`, `RX_DFA_PREFILTER_OFFSETS "none"`;
-- the facts `run_pin=none` and `req_run=7a616161@0`.
+**`z(a){3,}?` under `-fprefilter-collapse`: traced to §4.2's ruled clip, so DECLARED (kit manager's
+ruling path 2).** BASE has `RX_DFA_PREFILTER "memchr"`, OFFSETS `"none"`, facts `run_pin=none` and
+`req_run=7a616161@0`. The tip has `"run-pinned"`, `"0*,1"`, `run_pin=0:0+2`, a new `rx_ofsskip` (memchr
+`z`, memcmp `"za"`) and rx_info `.prefilter = "run-pinned"`.
 
-The tip has:
-- `RX_DFA_PREFILTER "run-pinned"`, OFFSETS `"0*,1"`, and the fact `run_pin=0:0+2`;
-- a new `rx_ofsskip` that memchrs `z` (122) and memcmps `"za"`; the rx_info `.prefilter` field moves too.
-
-The run (4 positions) is UNCUT. The sheet's population 4 (§4.2, the run pin) is declared on runs over
-8 positions only, and the census allows P4 on CUT only. This is a mover outside every declared
-population. It was reported to the kit manager for a ruling: declare it, or fix it as a defect. The
-census refuses it as it should, so it was not widened to admit it.
+- **The path.** `pcrec_run_pin` (`src/facts/kset.c`) at the tip clips the stretch per placement:
+  `l = min(e0 - s0, nwalk - ro)`. The pin needs `l >= 2` and the pick inside it. BASE's same function
+  pinned only where the whole window fit: `ro + l <= o->nwalk`. This is §4.2's RULED clip (r1.1/r1.2
+  F-B, main's Q8), "so no pin is lost by length".
+- **Why only on `-fprefilter-collapse`.** The count-collapsed prefilter machine's k-set walk is
+  `122,97` (nwalk 2): `(a){3,}?` is collapsed, so the walk proves only `za`. The default machine's walk
+  is `122,97,97,97`, and there BASE and the tip both pin `0`. With nwalk 2, BASE could not fit the
+  4-position run (no pin, so the plain memchr prefilter). The tip clips it to the 2 positions the walk
+  proves.
+- **The route.** Given the pin, the existing [OPT-LITSCAN] run-pinned prefilter row takes it, as it
+  does for any 2-position pin at BASE. The route choice is that row's, unchanged. Only the pin fact
+  is new.
+- **The miss.** The sheet predicted §4.2's movers "on runs over 8 positions". It missed walks shorter
+  than the run, which the count collapse produces.
+- **Census rule P4c** (`clip_of`, from BASE's facts, never a pattern list). It holds on an UNCUT run
+  with an exact stretch of the whole run that the walk's singletons spell from some placement `ro`
+  for `min(e0 - s0, nwalk - ro) >= 2` positions, where `nwalk - ro < e0 - s0` (the stretch reaches
+  past the walk). It is an allowance, not a MUST, because the rate pick is not in the listing. rx_info's
+  `.prefilter` line is classified P4 (RX_DFA_PREFILTER's mirror). The fixed census gives
+  `z(a){3,}?` P4c 2, 0 unexplained.
+- **Answers.** `zwit.sh` (scratch) builds BASE's and the tip's `--emit-main` matchers under
+  `-fprefilter-collapse` and runs 64 subjects. 0 differ.
+- **Non-vacuity.** `--control plant-p4-move` plants a `-> run-pinned` prefilter stamp move on every
+  arm. Off CUT and CLIP it must be refused:
+  - `z(a){3,}?`: 31 arms UNEXPLAINED; the 3 CLIP arms are admitted, as the rule says.
+  - `q(?:zaaa)+`: 110 arms UNEXPLAINED.
 
 The triage was right about the three patterns it named. Its "@6" for `/abcd[xy]/user` was the find's
 offset; BASE's `@` is `@0`.
@@ -132,7 +153,9 @@ B-walk reader are each shown live.
 |---|---|---|
 | census parses | `python3 -I docs/dev/lanes/k382_evidence/census.py --help` | ok |
 | three red patterns, every arm | `few.py` over the three patterns (census.one, 283 arms each) | 0 unexplained (P2so 80 / 4 / 2) |
-| the triage's two missed patterns | `few.py 'a{2}(?:(?<!\w)\|)b' 'z(a){3,}?'` | P2so 98, 0 unexplained / 2 UNEXPLAINED (the real mover, by design) |
+| the triage's two missed patterns | `few.py 'a{2}(?:(?<!\w)\|)b' 'z(a){3,}?'` | P2so 98, 0 unexplained / P4c 2, 0 unexplained (after P4c) |
+| P4c plant | `CONTROL=plant-p4-move few.py 'z(a){3,}?' 'q(?:zaaa)+'` | 31 / 110 UNEXPLAINED |
+| z witness answers | `zwit.sh` (scratch), BASE vs tip `--emit-main` under `-fprefilter-collapse` | 64 subjects, 0 differ |
 | plant | `CONTROL=plant-in-run few.py` (four patterns) | every P2so turned UNEXPLAINED (table above) |
 | census sample 300 + the three patterns | queue job 593-kit-k382cen-census | see Gate jobs |
 | 601's shard re-run | queue job 594-kit-k382cen-ident1 (a copy of 601) | see Gate jobs |
@@ -150,7 +173,8 @@ PENDING (filled when the jobs end).
 | 2. `/abcd[xy]/user` BASE vs tip C, ruled (i) or (ii) | yes: (i), evidence above |
 | 3. non-vacuity plant refused | yes: `--control plant-in-run`, 86/86 on the three patterns |
 | 4. ONE census job (three patterns + sample 300), then 601's shard re-run as a queued copy, GREEN | see Gate jobs |
-| population count changes in the sheet's §5.1 addendum, same change | see Gate jobs |
+| population count changes in the sheet's §5.1 addendum, same change | yes, addendum `[k382cen]` (counts from the gate jobs) |
+| ruling on `z(a){3,}?`: trace the cause; declared -> rule, addendum count over 3 shards, answers, plant | yes: §4.2 clip, P4c, all three shards queued (595/596 beside 594), 64 subjects 0 differ, plant-p4-move |
 | report sections per k382cen_deliver.txt, an `OWED:` line, lanecheck DONE rc=0 | yes |
 
 OWED: none
