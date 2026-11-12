@@ -14,7 +14,9 @@ with census instruments in `docs/design/dfa_captures/`.
   cited-by lines updated on 18 existing keys, and `docs/design/CLAUDE.md`
   indexed.
 - Rulings file `docs/dev/lanes/dfacap_rulings.md`: empty at every read, so
-  no ruling was applied.
+  no ruling was applied. Revision 2 folds in the manager's two relayed
+  literature reports (BT22 sections 1-3.3, and the re2c manual and issue
+  #208 resolution).
 - No `src/` or `memfn/` edit. No owed runs. No pcre2-reader was used (no
   PCRE2-source fact was needed; PCRE2 capture-update behaviour is cited from
   the pcre-dev list and left to a future differential).
@@ -40,6 +42,15 @@ inside it, and PCRE's empty-iteration rule is already in the closure (K18).
 The open part is capture UPDATE under repetition (last iteration, PCRE2's
 restore-on-empty versus Perl's clear, publish-at-close). Those are
 tag-placement rules, testable exactly against the VM.
+**The counter-statement (added after the manager relayed two misrouted
+web-fetch reports):** re2c's maintainer wrote in 2022 that non-greedy
+operators may not fit a DFA, because "a DFA may fuse non-greedy and greedy
+paths into one" (`(a*)|(a*?)`). The memo (§2.2) records this first and
+argues that it belongs to re2c's longest-match lexer setting: pcrec's DFA
+already gets lazy group-0 spans exact. That makes `(a*)|(a*?)` and its
+relatives Stage 0's first differential cases. [BT22] confirms that
+precedence enters state identity, and says nothing about lazy operators.
+[FC04] and [BM17] are marked NOT READ.
 
 **New 2, census by cause (memo §3.1, compiler stamps):**
 

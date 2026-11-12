@@ -67,7 +67,10 @@ redo that survey. It adds four things.
    and testable: how PCRE2 *updates* captures under repetition (last
    iteration, empty iterations, restore versus clear). That is a property of
    where tags sit in the NFA, and the VM already defines it (publish-at-close,
-   [M6.5.2]).
+   [M6.5.2]). Against it: re2c's maintainer doubts that lazy operators fit a
+   DFA at all ("a DFA may fuse non-greedy and greedy paths", §2.2). The memo
+   argues that doubt belongs to re2c's longest-match setting, but it makes
+   `(a*)|(a*?)` Stage 0's first test.
 2. **The census by cause (§3), corpus + bench, 5,769 unique patterns:**
    2,353 are on the VM; **815 (corpus 793, bench 22) are there ONLY because of
    captures**, which is 35% of the VM population on both the corpus and the
@@ -138,8 +141,8 @@ cause (§3), and the staged cost (§5).
 | Trofimovich TDFA(1) [Tro19], re2c [Tro20] | one-symbol lookahead defers tag writes, so fewer registers and ops; re2c ships both policies (`--leftmost-captures`, `--posix-captures`) | leftmost-greedy or POSIX |
 | Borsotti-Trofimovich [BT21] [BT22] | full pseudocode, register optimizations (liveness, interference, allocation), AOT and lazy determinization; the claim that runtime overhead is constant per transition and independent of input | both |
 | Okui-Suzuki [OS10]; Sulzmann-Lu [SL14] | POSIX disambiguation (positions, derivatives) | POSIX only, so not pcrec's |
-| Frisch-Cardelli [FC04] | defines GREEDY matching as first-match alternation over the star's expansion, and names the "problematic" case: a star whose body accepts the empty word | greedy (= Perl/PCRE order for regular constructs) |
-| Berglund-van der Merwe [BM17] | prioritized NFA (pNFA) and prioritized transducers as the formal model of backtracking matchers' capture semantics; a pNFA has at most one accepting run per input | backtracking (PCRE/Java) |
+| Frisch-Cardelli [FC04] (NOT READ: search summaries only) | defines GREEDY matching as first-match alternation over the star's expansion, and names the "problematic" case: a star whose body accepts the empty word | greedy (= Perl/PCRE order for regular constructs) |
+| Berglund-van der Merwe [BM17] (NOT READ: search summaries only) | prioritized NFA (pNFA) and prioritized transducers as the formal model of backtracking matchers' capture semantics; a pNFA has at most one accepting run per input | backtracking (PCRE/Java) |
 | RE2 OnePass / BitState / NFA [RE2onepass] [Cox10]; rust `regex-automata` onepass + PikeVM [RAonepass]; Go onepass [GoOnepass] | the two-pass shape pcrec already ships; one-pass as the cheap deterministic capture engine (caps: RE2 65k states and 5 groups, Go 1,000 instructions) | leftmost-first |
 | .NET NonBacktracking [Mos23+] | captures from a third phase (an NFA simulation with effects) on a span the first two bound; backtracking semantics formally proved | leftmost-first |
 | Hyperscan [HSdoc], PCRE2 `dfa_match` [PCRE2matching] | no captures: their automata keep no per-path bookkeeping, and all-matches semantics has no single chosen path | none |
@@ -152,15 +155,44 @@ first path to succeed wins. For a REGULAR pattern (no backreference, atomic
 group, lookaround or recursion) that is exactly "the first accepting path in
 the prioritized NFA's order" ([BM17]'s pNFA, [FC04]'s greedy semantics).
 
-**What the published TDFAs deliver.** re2c's `--leftmost-captures` [re2cman] is
-leftmost-greedy in that same sense: configurations in a TDFA state are kept
-in priority order, and for the leftmost-greedy policy, [Tro19] notes that
-"ordinals coincide with row indices": the order of the list IS the priority
-(SOURCED, from the paper's text via search; the survey's [BT22] quotations
-were read from the HTML mirror). re2c has no lazy operator because it is a
-lexer generator. Its overall match is the longest match (maximal munch) and
-only the submatch choice follows the priority order. [re2cIssue208]
-corroborates the missing syntax; the maintainers' reason is unconfirmed.
+**What the published TDFAs deliver.** re2c's `--leftmost-captures` [re2cman]
+(*"submatch extraction with leftmost greedy capturing groups"*) is
+leftmost-greedy in the priority-order sense. [BT22] (read through the ar5iv
+HTML, sections 1-3.3; relayed by the manager 2026-11-12): TNFA epsilon
+transitions carry priorities, the closure is a left-to-right depth-first walk,
+a TDFA state carries a PRECEDENCE vector, and two states merge only when the
+configuration set AND the precedence coincide. Negative tags mark bypass
+paths (an alternative not taken, a zero lower bound). Bounded repetition is
+built directly rather than desugared, because desugaring duplicates tags.
+Final register operations run once at match end, and a match ending
+mid-input falls back to the last final state. [Tro19]: for leftmost-greedy,
+"ordinals coincide with row indices". The paper says NOTHING about lazy
+quantifiers, PCRE/RE2 equivalence or empty-iteration semantics. re2c's
+"longest match takes precedence" is LEXER RULE selection, not submatch
+choice [re2cman].
+
+**The counter-statement, recorded first.** re2c's maintainer, on lazy
+operators ([re2cIssue208], 2022-12-12): *"I'm not sure if non-greedy
+operators can be implemented in DFA-based engines like re2c. The fundamental
+problem is, a DFA may fuse non-greedy and greedy paths into one"*, with
+`(a*)|(a*?)` as the example. Earlier (2018): non-greedy SUBMATCHES are
+possible via tags, but the whole match cannot be non-greedy. This is the
+strongest evidence against §2.2's claim, and it comes from the person who
+built the construction.
+
+**Why this memo still reads it as answered for pcrec (INFERRED).** The
+"whole match cannot be non-greedy" part belongs to re2c's lexer setting,
+where the overall end is longest-match. In pcrec, the overall end is the
+first accepting thread in priority order, and D3's prune-at-ACCEPT already
+computes it, lazy included. The shipped DFA answers lazy patterns' group-0
+spans exactly today, checked against libpcre2 and python `re`. On "fusing":
+in a precedence-ordered state, two paths are merged only when they reach the
+same NFA state with the same future. The lower-priority path is then dropped,
+which is exactly what a backtracker's priority does. For `(a*)|(a*?)`, the
+two arms enter different NFA states, so they stay separate configurations
+with separate tag versions. **`(a*)|(a*?)` and its relatives are Stage 0's
+first differential cases**, because a respected practitioner believes they
+can fail.
 
 **Why that is close to pcrec's case (INFERRED, the main new claim):**
 
@@ -205,7 +237,8 @@ All three are tag-placement questions inside the tagged NFA, and pcrec has a
 complete oracle for them: the VM (§5.3). So the blocker the survey recorded,
 "a research contribution, not an implementation", reduces to "an
 implementation with an exact differential gate". **This claim is INFERRED.**
-No paper read here proves a TDFA correct for PCRE2's capture-update rules,
+No paper read here proves a TDFA correct for lazy operators or for PCRE2's
+capture-update rules, re2c's maintainer doubts the lazy half (above),
 and K17/K18 show that this territory has produced real priority bugs in
 pcrec before. Stage 0 (§5.4) exists to test the claim before anything is
 built.

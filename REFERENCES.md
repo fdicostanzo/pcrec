@@ -86,8 +86,8 @@ transducers obtained by adding output to them, as the formal model of
 backtracking matchers' (Java/PCRE-style) capture semantics; a pNFA has at
 most one accepting run per input.
 DOI: <https://doi.org/10.1016/j.tcs.2016.09.006>.
-`(unverified: read from search-result abstracts and a citing summary, not
-from the full text; no claim beyond the model's definition is made.)`
+`(unverified: NOT READ; known from search-result abstracts and a citing
+summary only; no claim beyond the model's definition is made.)`
 Accessed 2026-11-12.
 Cited by: `docs/design/dfa_captures_research.md` §2.1, §2.2.
 
@@ -290,8 +290,10 @@ pp. 618-629. Defines greedy matching as first-match alternation over the
 star's expansion (explicitly not longest match), and names the long-known
 "problematic" case: a star `t*` whose body accepts the empty word, which a
 naive expansion handles incorrectly.
-DOI: <https://doi.org/10.1007/978-3-540-27836-8_53>.
-`(unverified: the algorithm's details and proofs; the citing document uses
+DOI: <https://doi.org/10.1007/978-3-540-27836-8_53> (from a Springer link in
+search results; a second helper recalled `_65` from memory, so the DOI
+suffix is unconfirmed).
+`(unverified: NOT READ; the algorithm's details and proofs; the citing document uses
 only the semantics definition and the empty-body problem, read from the
 introduction via search results.)`
 Accessed 2026-11-12.
@@ -655,6 +657,13 @@ page and the rendered content carried only the opening request, not the
 thread's replies; the issue is closed. The citing document therefore rests
 the "no lazy operator" claim on the MANUAL, and uses this issue only as
 corroboration.)`
+**Resolution, read 2026-11-12** (a web-fetch helper's report relayed by the
+manager to lane dfacap): the maintainer (2018-06-19), *"no, re2c currently
+has no support for non-greedy match"* (non-greedy SUBMATCHES are possible via
+tags, but the whole match cannot be non-greedy); and (2022-12-12), *"I'm not
+sure if non-greedy operators can be implemented in DFA-based engines like
+re2c. The fundamental problem is, a DFA may fuse non-greedy and greedy paths
+into one"*, with the example `(a*)|(a*?)`.
 URL: <https://github.com/skvadrik/re2c/issues/208>. Accessed 2026-09-22.
 Cited by: `docs/dev/optloop/captures_via_dfa_survey.md` §2.4;
 `docs/design/dfa_captures_research.md`.
