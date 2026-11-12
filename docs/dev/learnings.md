@@ -425,6 +425,14 @@ distilled forms:
 Kit S3 moved 884 patterns to `cover` and left the form-census floors OWED. Job 624 joined its stages with `&&`, so the census never ran after an earlier stage failed, and the stale floors surfaced only in job 758 (full-suite axes red, 2026-10-31; docs/dev/lanes/axtri1031_report.md).
 Rule: a job's stages are separate jobs, or the job reports EVERY stage's verdict (ran, skipped-because-earlier-failed, passed). A green or red job that cannot say which stages ran is the K35 shape.
 
+### 3.ad (2026-11-12, the night's process lessons) — five classes, one line of rule each
+
+- (a) `git merge-tree --write-tree` prints a tree even on a CONFLICT: check its EXIT CODE, not its output (two cloud runs tested conflict-marker trees, 2026-11-11).
+- (b) A verdict extractor that matches FAIL lines anchors to the check's OWN failure shape, never a bare word: row prose contains "FAIL" (4 false mech alerts) and indented or prefixed FAIL lines were missed (utfcheck fail=336 unseen).
+- (c) A reusable workflow cannot exceed its caller's permissions (CI 43163694339 failed to start as a workflow-file issue); cloud-check check 6 now guards it.
+- (d) A new kind's first shard weights are a GUESS: read the first run as a MEASURING run (mech's 45 s/row was 4x low).
+- (e) Do not filter a noisy report by hand: the manager dropped gestalt lines it found noisy and hid actionable ones. Fix the noise at the source (Frank 2026-11-12).
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three

@@ -196,13 +196,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md; notes and rulings: docs/design/plan_row_bodies/INLINE-C.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
 
-- [SUITE-RESUME] STATE:started — A RED FULL SUITE RE-RUNS ONLY ITS RED AND UNRUN STAGES, ON THE OWNER'S COMMAND
-  filed: 2026-10-25 Frank ("1. yes" to queuemon proposal 1; "lets test it in stages. auto-restart can go bad")
-  status (2026-10-25): LANDED 4dd8af50b (offline test 33/33); staged real test OWED (report recipe: reduced battery killed after strict, then resume; ~4 min); resume reruns the SAME code (flakes, not fixes)
-  next: one sonnet lane runs the staged test after 624 and before the bench window; no full-suite use before it
-  refs: docs/dev/lanes/queuemon_report.md (proposal 1; 300-main-fullsuite 36,878 s, a re-run needed 3 stages); scripts/fullsuite_job.sh; scripts/battery.sh
-  Charter: never automatic. The owner queues a resume job naming the red run dir; it re-runs the red and not-yet-run stages at the SAME commit (refused if the tree moved) and writes a combined verdict citing both runs.
-
 - [VMREC] STATE:started — VM emitter record-first: typed records are the only writers of the VM body
   filed: 2026-10-29 vmcons3 (manager)
   status (2026-10-31): step (a) DONE, merged 3bc599c92 (byte-identical, no abi bump, D182); steps (b) and (c) not started
@@ -218,17 +211,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   next: keep the member list current; add the kit planning/emitting member as a row when the kit split is proposed
   refs: [STREAM] (the end state this serves); docs/design/stream/manifesto.md; docs/design/stream/roadmap.md (areas A-REC, A-DFATOP, A-REV); decisions D182; memory pcrec-plan-as-text-seam
   MEMBERS: (1) VM body: [VMREC], started, (a) done 3bc599c92. (2) DFA reverse walks: [STREAM] A-REV S1, one direction-neutral automaton-run record, no bytes; next after alternation lands. Frank 2026-11-07: YES, pull A-REV's whole chain forward (record, machine table, row-conjunct cleanup, then the reverse-DFA proof step); the trailing-byte pre-check is skipped (the reverse DFA supersedes it). (3) DFA emitter, everything else (start table, forward match, top level, report): [DFAREC]. (4) Kit, planning vs emitting (a plan record a back end renders; other target languages are other emitters): no row yet; [SP1D-KITSPLIT-SEAMS] waits on it; Frank 2026-11-06: design seams in split terms, do not split now, write new SIMD forms emitter-shaped. Test for each member: could the record be written to text and reread by another process (manifesto principle 9)?
-- [QORDER] STATE:started — queue-ordering lane: order by unsharded run length, not-before windows, idle-window notice
-  filed: 2026-11-01 manager (Frank GO 2026-11-01 for a BUILD, not yet started)
-  status (2026-11-01): BUILT on lane/qorder (order table, est/run-total, window not_before, WINDOW-MISSED, cap kill), branch tests green; NOT DEPLOYED: the manager switches the live runner in an idle gap (qorder_report.md DEPLOY)
-  next: manager deploys in an idle gap (report DEPLOY), then sends the bench inbox entry (qorder_bench_inbox_draft.md); watch the first ORDER lines in queue.log; tune the unmeasured numbers (100, 14400 s, 900 s) from the first miss
-  refs: scripts/boxqueue; scripts/boxlock; [QUEUE-CAPKILL]; [B146]; docs/design/plan_row_bodies/BOXQUEUE.md; memory pcrec-bench-status
-  Scope: (1) order by the UNSHARDED run length, across sessions, so shorter overall runs go first; (2) [QUEUE-CAPKILL] folds in; (3) `.window` gains `not_before=`; (4) the queue notices a peer's planned window that never starts (2026-10-31: W1 never ran and the box sat idle about 9 h); (5) the [B146] bench contract is revised through the bench inbox (single-file [inbox] commit); (6) NEVER swap the live runner while a timing job runs or is queued next.
-- [QUEUE-CAPKILL] STATE:started — boxqueue's cap kill must take the whole job tree and release the box lock
-  filed: 2026-10-31 manager
-  status (2026-11-01): built with [QORDER] on lane/qorder, not deployed: the runner's watcher enforces the cap (safekill group+tree, then any other box-lock holder); planted test. Origin: 745-vmrecm-test, 64 min over cap, 2026-10-31
-  next: deploys with [QORDER]; close both rows after one real cap fire shows a clean CAP-KILL line
-  refs: scripts/boxqueue; scripts/boxlock; scripts/safekill; job 745-vmrecm-test
 - [FEAT-FAMILIES] STATE:started — NAMED MODULE FAMILIES: basic, extended, pcre2 (versioned, frozen per version)
   filed: 2026-10-27 Frank ("Basic ... pcre2 for compatibility, extended for a reasonable set beyond basic but not crazier stuff like callouts"); definitions agreed same day
   status (2026-11-06): design merged. Frank RULED: \K own module; frozen = BUILT modules; names move at boundaries; D37 graduation rule RETIRED for a release checklist per move (D37 addendum); K74 documented; quoting/named-groups diffs + wider fuzz before move 1
