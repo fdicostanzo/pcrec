@@ -3,9 +3,9 @@
 SAB_ID='S726-w32-under-weak-guard'
 SAB_FILE='memfn/src/levels.def'
 SAB_SUITES='memfntargets'
-SAB_DESC='the widest level needs only the next-lower feature: admitted at the same targets, but its rendered helpers do not compile under the weaker need'
+SAB_DESC='the widest level needs only the next-lower feature: admitted at the same targets, but its rendered helpers do not compile under the weaker need (a designed compile-time catch, [MECH-NOCOMPILE] COMPILE-CATCH: memfntargets compiles each level under its declared needs)'
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S726. docs/dev/lanes/kclose2_report.md carries the hand-plant run.'
-SAB_EXPECT=DETECTED
+SAB_EXPECT=COMPILE-CATCH
 SAB_COUNT=1
 SAB_BEFORE='"avx2", MF_INC_LEVEL_W32'
 SAB_AFTER='"avx", /* SABOTAGE S726 */ MF_INC_LEVEL_W32'
