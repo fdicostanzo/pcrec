@@ -132,3 +132,21 @@ stability; the harness is ours and can change any time. **Source:** Frank
 
 ## Caller-facing names describe behaviour
 See `style.md` (Naming). **Source:** D174.
+
+## Consider a directory of parts and one runner for a growing set (a choice, not a rule)
+When a tool or record is a SET of independent items that grows over time (checks, monitors, test
+sections, log entries, recorded lists), consider making each item its own file in a directory,
+with one runner that finds them, runs them (in parallel, each under a time limit), and gathers,
+logs and displays their results under one output contract (e.g. `name: message` lines, printed
+only when actionable; a part that hangs or crashes is its own "unavailable" line). Adding an item
+is then adding a file: two branches that each add one never conflict, each part is a small unit
+with its own test, and slow parts overlap. Precedents: `scripts/tests/*.test` (found by name,
+no Makefile edit) and `tests/mech/sabotages/S*.sh`.
+It fits only when ORDER DOES NOT CHANGE THE ANSWER. It does not fit a first-match decision table
+(row order is the meaning; keep the one declared table above), one value with many readers (give
+it one source instead), or a generated file (regenerate after a merge, never hand-merge).
+Not retroactive: existing single-file tools stay as they are until a real change to them makes
+the move worthwhile. **Why:** shared append-only files (the lanes history index, manifests, the
+cloud shard tables) were the day's merge conflicts; each cost a delay or a re-run, not a wrong
+answer. **Source:** Frank 2026-11-12 ("a tool going forward if we think it works"; to be
+considered, not prescribed).
