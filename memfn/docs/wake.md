@@ -1,43 +1,47 @@
 # memfn kit — wake-up brief
 
-Rewritten 2026-11-05 ~23:55, updated 11-06 01:35 by a fresh kit session (pcrec-memfn [174c0c]). Committed docs win on any conflict.
+Rewritten 2026-11-10 06:20, CURRENT STATE updated 16:00, by the kit session (pcrec-memfn).
 
 ## Who you are
-The kit manager (`/pcrec-memfn-manager`). Main is the pcrec manager session `pcrec-main`. Frank rules, sometimes directly to the kit.
-Kit worktree: worktrees/memfn on branch lane/memfn-k1102 (main 20fb73159 merged + kit journal/review commits).
+The kit manager (`/pcrec-memfn-manager`). Main is the pcrec manager session `pcrec-main`. Frank rules, mostly via main.
+Kit worktree: worktrees/memfn on branch lane/memfn-k1108 (ledger/journal commits; tip 0e2d3d157 + journal).
 
 ## Read in order
-1. This file.
-2. The memfn/docs/journal.md tail (11-05 15:20 onward: 1d landed, 1e built, reviewed, fixed).
-3. docs/design/memfn/span_pick.md REV 5.2, the design of record.
-4. Review docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (rulings), and r1 (1d) before it.
-5. D186 + addenda, D187, manifesto principle 9.
+1. This file. 2. memfn/docs/journal.md tail (11-09 onward). 3. requests.md / responses.md open items.
+4. docs/design/memfn/span_runs_sheet.md rev 1.2 (on lane/memfn-r38s @ 7e7d89a6c), the R-38 design of record.
+5. D190 (3.0a plan triple), D191 (span-arms build go), [REVIEW-GATE] (code critic round or written waiver before a major landing).
 
-## CURRENT STATE: SPAN_PICK STAGE 1 COMPLETE (1e landed 11-06, main a65debe9d)
-There is no open kit work. Stages 2-3 wait for Frank's GO via main; do not cut them without it.
-Todo on a quiet pass: `scripts/wtprune --apply --force sp1efix` (it was kept only for build/ age plus the test-written artifact_size_log.tsv), then `scripts/branchprune --kit` for lane/memfn-sp1e and sp1efix.
-The history below is kept for context.
-Landed on main: 1a, 1f, 1g, 1b, 1c, 1d (20fb73159).
-- **1e:** lane/memfn-sp1e @ 9cf199ed3 (sp1e accc55eeb + fix lane sp1efix, fast-forwarded). Reports: docs/dev/lanes/sp1e_report.md and sp1efix_report.md.
-  - Zero movers. MF_SITE_ABI 23. MF_CLASS_V 7 -> 8 (D-hors joins ahead of PRES rows). Ratchet R20 3 -> 2; stage-1 kit-row total 4 -> 3.
-- **Gates 430-439** (keys kit-sp1e2-*, TREE=worktrees/sp1efix; job files in /var/tmp/pcrec-pcrec/scratch/memfn/sp1efix/). Frank lifted tonight's 20:00-01:00 hold via main ("Box is free for you to schedule tonight"), so they run now.
-  - 430-434 GREEN. 435 ident3 started 23:24, then 436 make test, then 437-439 mech.
-  - Watcher: scratch/memfn/kitmgr/watch_sp1e2.sh (polls queue.log END lines after its baseline; exits on the first non-green or on 439's END).
-  - Open: S1079's hand figure 6/3155 vs the review's 3/3160. Job 437's mech is the figure of record; read it there.
-  - Three renderer pairs have no witness (UNREACHED in rows_check); say so in the done line.
-- On all green: post `done:` for 1e in responses.md (branch lane/memfn-sp1e @ 9cf199ed3, reports, job logs + verdicts) and message main. On a red: launch a triage lane before reading the log.
-- Do not touch worktrees/sp1e or sp1efix until the gates are read.
+## CURRENT STATE (2026-11-10 16:00)
+- Landed on main: U2+U3 (cf578177e), 3.0a (2d72849ed), K38-1 (7658295b3, kit_run_decide).
+- K38-2a: lane/memfn-k382a @ 41ebc052b (worktrees/k382a). Build lane k382a delivered (report docs/dev/lanes/k382a_report.md):
+  the in-run stop reads kit_run_decide, lever run-tie-left (+ --harness= arm), G2 presence family run_g2_pres.sh, C2 classifier,
+  W-K4 layouts, S3007/S3009 RED. The D27 oracle (lane k382o, branch k382o db3f0fb8e) is MERGED in: GREEN over 50,178 records;
+  S3008 (plant B) DETECTED. Seam: docs/dev/lanes/k382a_oracle_iface.md.
+- Review 2026-11-10 r2 k382a ruled and fixed (committed on the branch).
 
-## After 1e merges
-Stage 1 is complete. Stages 2-3 need Frank's GO via main; do not cut them without it. PLAN items for later units: 1d review's F4/F9/F10/F12 (filed by main as [SP1D-*]); 1e review's F5+F6+F9 renderer table (unit 3.0), F10 D-hors floor measurement, F11 anchor check over run_g2_win.sh.
+- K38-2a LANDED on main d81ebd294 (11-11).
+  then watch with `scripts/monread kit --wait`; done line; main merges.
+- Main frozen until the full suite verdict (~08:00 Wed): a done line parks on its branch.
+- FRANK 11-10: close completable items first; NO 3.0b or new feature/opt. Main GO (journal 18:15): ledger closes (scratch/memfn/ledgerclose), lane kclose (SEAM-2 + R-13 owed, jobs 560-569), group 4: KIT = PIN-MSG-DEPTH + XARCH-NEEDSOK (Frank GO 11-10) kclose DONE LINE POSTED 11-12 10:10 (lane/memfn-kclose @ 2271eed10; 570-580 all green); main merges (on green: done lines; pin R-13a floor from job 580) (it will FIRST merge main >= dc1988069 for the K37 fix and re-base the gates; add a job for R-13a TRACE_VARIANT_RECORDS_FLOOR via emit_sweep --variant all --bases byte --trace), prune; responses index after [DOC-INDEX].
+- R-39 (g2 shard selector, Frank GO 11-11, approved exception): r39 split CORRECT (561 green) but UNBALANCED (92/267/87/107 s; simd unit 221 s). R-39 DONE line posted 11-11 09:30 (lane/memfn-r39b @ 119e1b6f5); main merges (Frank 11-11: cloud make test first).
+- K38-2 GO (Frank 11-11 "finish it now"): k382 DONE 20:40; review r1 k382 FIXED by k382fix (01:10 11-12); cloud run 1 RED on the stale base; merged main (abi 101), c2b re-aimed, census fixed (k382cen); CLOUD run 2 ALL GREEN; box 600/605 green, 601-603 green as 594-596, 604 read as a measurement (rows equal, gone none); 606 plants GREEN; 607 mech1 RED (3 K38-2 rows, lane k382mech fixing); 608/609 CANCELLED -> cloud mech kind after k382mech (main 11-12); on green: done line, main merges (re-bump abi if needed, re-pin FILEPIN); gates 600-609 (box) + cloudrun test/axes/ubsan/asan (lines in k382_report.md); FILEPIN re-pin at landing; then K38-3. Main sequences the abi re-bump.
+- CLOUD: make test/axes/ubsan/asan stages go via scripts/cloudrun --owner kit --kind K, not the box queue.
+- FRANK SETS (11-11): S0 K38-2a/kclose/K38-2 -> S1 K38-3 + 3.0b (main accepted 11-11) beside S2 Part D (GO at K38-2 landing) -> S3 COVER-CAP (request from main when S3 opens); Part C/EARNED-SKIP/MATCH-KNOWN PARKED (Frank 11-11; Part C returns as a fact producer for match-known). OWED: kit-only candidate list with triggers to main at K38-2 critic round.
+- Pending main: the master row over conditionals/predicates/intersection (Frank 11-10); main runs the survey and sends the
+  design for kit comment. Doc-index ledger format agreed (doc_index_format.md §8.1): convert responses.md once main's kit profile exists.
+- Kit ruling on record: K38-2a made the in-run stop a counted reader (done).
 
 ## Box rules
-- Frank holds 20:00-01:00 daily unless he says otherwise (lifted for 11-05 only). Main's ruled holds win.
-- Jobs only through scripts/boxqueue. Kill only with scripts/safekill. Never use /tmp.
-- Never commit a header or ABI change while a run is in flight.
+- Frank's evening hold 20:00-01:00; the kit's hold.sh (scratch/memfn/s2a/jobs/hold.sh) blocks starts 19:00-01:00
+  unless the dated lift file /var/tmp/pcrec-pcrec/hold_lifted_YYYYMMDD exists (shared with main; 00:xx reads the previous day).
+- Jobs only through scripts/boxqueue; prio <100 overrides row-length order (rename your own jobs only). Watch with
+  `scripts/monread kit --wait`. Kill only with scripts/safekill. Never /tmp. Name each harness's parallelism cap in briefs.
+
+## Quiet-pass todo
+scripts/wtprune (dry run, then --apply) for landed lanes: k0, s2e, u30d, u2, sp1efix, s30a (after landing), r38s (after
+K38-1 carries the sheet); then scripts/branchprune --kit.
 
 ## Lessons (recent)
-- A watcher must read queue.log END lines for the current run only; cancelled jobs in done/ false-fire.
-- A scratch-queue `boxqueue add` needs `--no-start`, or it arms a runner.
-- A new tests/**/run_*.sh must pass K35 (LC_ALL=C) and TT-9 (san_scripts or san_excluded); run `make test-codegen` before delivering one.
-- The queue monitor relays to the job owner's session; after a session change, tell main the new session name.
+- An identity arm for a target that writes no target text is refused as vacuous; check generic == plain directly.
+- A busy lane misses mid-run rulings; verify them in the deliverable.
+- A compile failure is not a catch (ANOMALY); skips must be counted, and a skip without a fact failure is a FAIL.
