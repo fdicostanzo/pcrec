@@ -19,7 +19,7 @@ Two conflicts, both resolved; no other file conflicted.
      (`--features assertions` vs `assertions,match-start-reset`; famdef2's c2900df4b split `\K` into a module and
      upropd27 predates it). The re-derived file carries main's spelling, so those rows are main's; no mover appeared or left.
    - vs main's manifest: -71 rows, all `tests/utf8/uprop_more.rxt` (59) and `uprop_blk_age.rxt` (12): upropd27's
-     admission of these blocks as proven-no-match (empty engine) means they are no longer VM-hat movers. +~330 rows,
+     admission of these blocks as proven-no-match (empty engine) means they are no longer VM-hat movers. +443 rows,
      all `tests/uprops/d27/*.rxt` (the new corpus's VM-hat movers under `--engine=vm`).
    - The census on the current bench checkout also produced 12 bench rows (and, for `s2_vm_auto`/`s3_dfa`, rows and
      removals) absent from the committed manifests: bench drift, counted not taken, per the m7fix policy in
