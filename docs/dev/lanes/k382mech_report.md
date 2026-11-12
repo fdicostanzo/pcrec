@@ -133,3 +133,15 @@ EXPECTED).
 | queue the three-row job, all three as declared | queued 598-kit-k382mech-rows; verdict OWED |
 | `make strict`, check_claudemd_size --all | both rc 0 |
 | report with the deliver file's sections and an `OWED:` line; lanecheck DONE | this file |
+
+## STATE AT HANDOFF
+
+Done: the three rows are re-aimed, the sheet §5 fates are written, the `[5.11c]` detector is in
+place, `make strict` and the CLAUDE.md size check are green, and everything is committed
+(89eb397f5 rows, then the report). OWED: job 598-kit-k382mech-rows, which was queued behind
+597-kit-kclose5-utf8 when the lane ended. A fresh reader takes its verdict from its record dir
+and from /var/tmp/pcrec-pcrec/scratch/memfn/k382mech/run/mech/mech.log, using the pass line in
+Summary. If S461 reads UNDETECTED, check the `[5.11c]` line in the prechecks arm's log. If S526
+reads BUILD-FAILED or UNEXPECTED, read the row's build.log for which assert fired. The deliver
+file says `owed: none`, but this verdict cannot finish inside the lane (DO-THEN-FINISH), so it is
+named here. No rulings file was used.
