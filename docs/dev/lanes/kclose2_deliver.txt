@@ -1,0 +1,5 @@
+report=docs/dev/lanes/kclose2_report.md
+sections: Summary; Main merge; PIN-MSG-DEPTH; XARCH-NEEDSOK; R-13 owed a job; Checks; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

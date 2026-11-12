@@ -1,0 +1,5 @@
+report=docs/dev/lanes/kclose_report.md
+sections: Summary; SEAM-2; R-13 owed items; Checks; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

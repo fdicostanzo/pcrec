@@ -1,0 +1,5 @@
+report=docs/dev/lanes/kclose4_report.md
+sections: Summary; Tag drops BASE vs tip; Cause; Re-pin or fix; Checks; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
