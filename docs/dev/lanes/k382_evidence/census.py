@@ -35,7 +35,9 @@ suffix so a sub-artifact's `RX__Q_*` stamps count, or the enclosing function -- 
       P2s (counted APART, a possible open question): the hex unchanged, BASE's `@` lost (no `@` on the
       tip), mask unchanged; examples listed (`== P2s-example`). Kit manager ruling 2 (2026-11-11): only
       where the tip renders NO search that reads a run position (no reqrun block, no `cover` DFA scan, no
-      `run-pinned` prefilter: the @ table's row 3); a P2s member with any of those is UNEXPLAINED.
+      `run-pinned` prefilter: the @ table's row 3); a P2s member with any of those is UNEXPLAINED, except
+      P2so: a cover find OUTSIDE the run by its offset against BASE's `req_run_maxoff` (k382cen) or
+      reading no run byte; the find reader covers every E-find form the kit prints (cover_finds).
   P3  the reqrun blocks (`*reqrun*` functions and lines naming them), `*MEMFN_LIBC`, `*RUN_WORDS`.
       Allowed on CUT, WHOLE or FLIP. MUST: WHOLE -> the tip names no `_reqrun_whole` and calls
       `rx_reqrun(`. P3v (c-simd only, with a P3 move): the one run part takes a kit SIMD form
@@ -56,7 +58,9 @@ Anything else that moved is UNEXPLAINED. The verdict is red on any UNEXPLAINED a
 artifact that did not move as declared, an empty task list, or (K35, a full run only, not --sample /
 --patterns-file / --shard) an empty P1, P2a, P2b or P3 summed over c-default + c-vm.
 --control NAME (a NEGATIVE control, never for a gate): `no-p3` stops classifying P3 lines (they become
-UNEXPLAINED); `no-norm` maps no abi digit back. Either must turn the verdict red.
+UNEXPLAINED); `no-norm` maps no abi digit back; `plant-in-run` (k382cen) rewrites every cover find on
+the tip to read the run's first position for its byte, so every P2so artifact must become UNEXPLAINED.
+Each must turn the verdict red.
 """
 import argparse
 import concurrent.futures
@@ -228,18 +232,89 @@ def classify(name, com, line, comments_arm, simd_arm):
     return None
 
 
-COVER_FIND = re.compile(rb"memchr\(rx_mf\d+_s \+ rx_mf\d+_c \+ (\d+), (\d+),")
+# THE COVER FIND READER (lane k382cen, 2026-11-12): every find form the kit prints for a window site's
+# E-find, found by grep of the renderers (memfn/src/window.c's ren_search/ren_fused rows, ofsskip.c's
+# fn_rows bodies), each read as (the OFFSET it reads from the candidate start C, its bytes or None):
+#   B-memchr  `memchr(H_s + H_c[ +|- d], B,`                          (window.c wf_b_search, wf_at)
+#   B-pair    `if (H_ha < H_c[ +|- d]) H_ha = ..` + `memchr(H_s + H_ha|H_hb, B,` (ofs_pair_text)
+#   B-walk    `while (H_c[ +|- d] < H_n && !(` (a set test: bytes None)  (wf_b_walk)
+#   B-fn      `H_c = F(H_s, H_n, H_lo)`, F's body (ofsskip.c): memchr_body `memchr(subject + pos[ + k], B,`
+#             or pair_body `if (ha < pos[ + k]) ha = ..` + `memchr(subject + ha|hb, B,`
+# B-hors (no find, a probe) and the SIMD PREFIX rows print none of these: such a site is UNREADABLE.
+# H is a window site's handle, `<prefix>_mf<n>` (window.c wf_nm), read off `const unsigned char *H_s = `.
+SITE_H = re.compile(rb"const unsigned char \*(\w+_mf\d+)_s = ")
+_D = rb"(?: ([+-]) (\d+))?"
+
+
+def _off(sign, num):
+    return 0 if not num else (-int(num) if sign == b"-" else int(num))
+
+
+def _fn_body(text, fn):
+    """The text of function `fn` and of its `__body` (the ofsskip wrapper calls it)."""
+    out = b""
+    for name in (fn + b"__body", fn):
+        m = re.search(rb"^static inline size_t " + re.escape(name) + rb"\(.*?^}$", text, re.M | re.S)
+        out += m.group(0) if m else b""
+    return out
+
+
+def cover_finds(text):
+    """[(offset, bytes or None)] over every window site's find, or None when a site prints no readable
+    find (B-hors, a SIMD row, a form this reader does not know): the caller refuses then."""
+    out = []
+    for h in dict.fromkeys(SITE_H.findall(text)):
+        e, got = re.escape(h), []
+        got += [(_off(sg, d), {int(b)}) for sg, d, b in
+                re.findall(rb"memchr\(" + e + rb"_s \+ " + e + rb"_c" + _D + rb", (\d+),", text)]
+        pair = re.findall(rb"if \(" + e + rb"_ha < " + e + rb"_c" + _D + rb"\) " + e + rb"_ha = ", text)
+        if pair:
+            bs = {int(b) for b in re.findall(rb"memchr\(" + e + rb"_s \+ " + e + rb"_h[ab], (\d+),", text)}
+            got += [(_off(sg, d), bs or None) for sg, d in pair]
+        got += [(_off(sg, d), None) for sg, d in
+                re.findall(rb"while \(" + e + rb"_c" + _D + rb" < " + e + rb"_n && !\(", text)]
+        for fn in dict.fromkeys(re.findall(e + rb"_c = (\w+)\(" + e + rb"_s, " + e + rb"_n, " + e + rb"_lo\)", text)):
+            body = _fn_body(text, fn)
+            got += [(_off(sg, d), {int(b)}) for sg, d, b in
+                    re.findall(rb"memchr\(subject \+ pos" + _D + rb", (\d+),", body)]
+            fpair = re.findall(rb"if \(ha < pos" + _D + rb"\) ha = ", body)
+            if fpair:
+                bs = {int(b) for b in re.findall(rb"memchr\(subject \+ h[ab], (\d+),", body)}
+                got += [(_off(sg, d), bs or None) for sg, d in fpair]
+        if not got:
+            return None
+        out += got
+    return out or None
+
+
+def plant_in_run(text, at, b0):
+    """--control plant-in-run: every find form above rewritten to read offset `at` (a run position)
+    for the run's byte `b0` there. The judgment must then refuse the artifact."""
+    pos = (b" + %d" % at) if at else b""
+    text = re.sub(rb"(memchr\(\w+_mf\d+_s \+ \w+_mf\d+_c)" + _D + rb", \d+,",
+                  lambda m: m.group(1) + pos + b", %d," % b0, text)
+    text = re.sub(rb"(if \((\w+_mf\d+)_ha < \2_c)" + _D + rb"\) \2_ha = \2_c" + _D + rb";",
+                  lambda m: m.group(1) + pos + b") " + m.group(2) + b"_ha = " + m.group(2) + b"_c" + pos + b";", text)
+    text = re.sub(rb"(memchr\(\w+_mf\d+_s \+ \w+_mf\d+_h[ab]), \d+,", lambda m: m.group(1) + b", %d," % b0, text)
+    text = re.sub(rb"(while \(\w+_mf\d+_c)" + _D + rb"( < )", lambda m: m.group(1) + pos + m.group(4), text)
+    ppos = (b"pos + %d" % at) if at else b"pos"
+    text = re.sub(rb"memchr\(subject \+ pos" + _D + rb", \d+,", lambda m: b"memchr(subject + " + ppos + b", %d," % b0, text)
+    text = re.sub(rb"if \(ha < pos" + _D + rb"\) ha = pos" + _D + rb";",
+                  lambda m: b"if (ha < " + ppos + b") ha = " + ppos + b";", text)
+    text = re.sub(rb"(memchr\(subject \+ h[ab]), \d+,", lambda m: m.group(1) + b", %d," % b0, text)
+    return text
 
 
 def scan_search(text):
     """What in an artifact reads a run position with a scan find (the REQ_RUN @ table's rows 1-2), or ''
-    (row 3): a reqrun pre-check block, a `cover` DFA scan, a `run-pinned` prefilter."""
+    (row 3): a reqrun pre-check block, a `run-pinned` prefilter, a `cover` DFA scan. First match; the
+    cover row last (k382cen): a run-pinned prefilter reads a run member whatever the cover find reads."""
     if re.search(rb"\w_reqrun(__\w+)?\(", text):
         return "a reqrun block"
-    if re.search(rb'^#define \w+_SCAN "cover"', text, re.M):
-        return "a cover window search"
     if re.search(rb'^#define \w+_PREFILTER "run-pinned"', text, re.M):
         return "a run-pinned prefilter"
+    if re.search(rb'^#define \w+_SCAN "cover"', text, re.M):
+        return "a cover window search"
     return ""
 
 
@@ -298,22 +373,35 @@ def judge_c(arm, rb, rn, f, comments_arm, simd_arm):
                 wm = re.search(rb'^#define \w+_REQ_WHY "(\w+)"', n, re.M)
                 p = "P2se" if wm and wm.group(1) == b"emitted" else "P2sd"   # emitted-no-scan / dominated or other WHY
                 if why == "a cover window search":
-                    # k382 2026-11-11 (match_api §6.3.7 para 7 row 3): a cover find that reads a position
-                    # OUTSIDE the run is P2so. The find is the tip's `memchr(rx_mfK_s + rx_mfK_c + N, B, ..)`;
-                    # the artifact does not name the run's offset in the find's frame, so "outside" is read
-                    # CONSERVATIVELY: no find byte B is any byte of the run (masked runs: B folded by the
-                    # mask too). A find byte that occurs in the run, or no readable find, is UNEXPLAINED.
-                    hx = bytes.fromhex(hexof(vb).decode() if isinstance(hexof(vb), bytes) else hexof(vb))
+                    # k382cen 2026-11-12 (the sheet's §5.1 [k382fix] F3 addendum, match_api §6.3.7 para 7 row 2):
+                    # the cover row drops `@` only where the find lies OUTSIDE the run, or where the run's
+                    # placements disagree. Placements, read off BASE's facts: the run starts at an offset
+                    # s in [smin, smax] from the candidate start, smax = `req_run_maxoff` (P2s: BASE's
+                    # window IS the whole run), smin unknown (>= 0). A find at offset N is OUTSIDE iff
+                    # (a) N > smax + len - 1 (past the run in every placement), or (b) none of its bytes
+                    # is any byte of the run (masked runs: folded by the mask), which no placement can
+                    # put at N. Anything else (a find that may read a run position, disagreeing
+                    # placements included: smin is not read) or no readable find is UNEXPLAINED.
+                    hx = bytes.fromhex(hexof(vb))
                     mk = vb.split("/")[1] if "/" in vb else ""
                     mb = bytes.fromhex(mk) if mk else b"\xff" * len(hx)
                     runb = {c & m for c, m in zip(hx, mb)}
-                    finds = [(int(o), int(c)) for o, c in COVER_FIND.findall(n)]
-                    hit = [(o, c) for o, c in finds if any((c & m) in runb for m in set(mb))]
-                    if finds and not hit:
-                        p, why = "P2so", ""
+                    mo = f.get("req_run_maxoff", "")
+                    smax = int(mo) if mo.isdigit() else None
+                    nt = plant_in_run(n, smax or 0, hx[0]) if CONTROL == "plant-in-run" else n
+                    finds = cover_finds(nt)
+                    if smax is None:
+                        why = "a cover window search and no BASE req_run_maxoff"
+                    elif finds is None:
+                        why = "a cover window search with no readable find"
                     else:
-                        why = ("a cover find whose byte is in the run (+offset, byte: %s)" % hit
-                               if finds else "a cover window search with no readable memchr find")
+                        hit = [(o, sorted(bs) if bs else "set") for o, bs in finds if o <= smax + len(hx) - 1
+                               and (bs is None or any((c & m) in runb for c in bs for m in set(mb)))]
+                        if hit:
+                            why = ("a cover find that may read the run at offsets %d..%d (offset, bytes: %s)"
+                                   % (0, smax + len(hx) - 1, hit))
+                        else:
+                            p, why = "P2so", ""
                 if why:      # ruling 2: no @ only where NO search reads a run position (table row 3)
                     unexp.append("P2s refused: %s lost its @ but the tip renders %s" % (name, why))
                     continue
@@ -576,7 +664,7 @@ def main():
     ap.add_argument("--sample", type=int, default=0, help="a SAMPLE run of N patterns (no K35 floor)")
     ap.add_argument("--sample-seed", type=int, default=0, help="the sample's offset (a different slice)")
     ap.add_argument("--patterns-file", action="append", default=[], help="raw patterns, one per line (added)")
-    ap.add_argument("--control", default="", choices=["", "no-p3", "no-norm"])
+    ap.add_argument("--control", default="", choices=["", "no-p3", "no-norm", "plant-in-run"])
     ap.add_argument("--no-xarms", action="store_true", help="skip the identity gate's --extra arms")
     ap.add_argument("--no-composition", action="store_true", help="skip the composition stream")
     ap.add_argument("--abi", default="100:101", help="OLD:NEW, the abi event (NEW's digits mapped back)")
