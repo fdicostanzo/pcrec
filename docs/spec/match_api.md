@@ -2149,7 +2149,7 @@ are the whole set:
 | `"byte-class-bounded"` | the bitmap form under the same, bounded at `n - 1` |
 | `"offset-set"` | a SET of (offset, byte-set) tests, one scanned for and the rest verified on each candidate (`<PREFIX>_DFA_PREFILTER_OFFSETS`) |
 | `"offset-set-bounded"` | the offset-set form under a view or word context, bounded at `n - 1` |
-| `"run-pinned"` | the necessary run (`<PREFIX>_REQ_RUN`) sits at a fixed offset from every match's start and the scan already runs on its scan member there, so the candidate test verifies the whole run as one compare — the offset-set block with the run as one term; the run pre-check is then not emitted (`<PREFIX>_REQ_WHY "dominated"`). Removed by `-fno-run-prefilter` or `-fno-offset-skip` |
+| `"run-pinned"` | the necessary run (`<PREFIX>_REQ_RUN`) sits at a fixed offset from every match's start and the scan already runs on its scan member there, so the candidate test verifies the pinned run as one compare — the offset-set block with the run (or its pinned stretch, `tuning.md` §2.30¶4) as one term; where that compare tests the run pre-check's scan position and verified stretch (the kit's run reply), the pre-check is not emitted (`<PREFIX>_REQ_WHY "dominated"`), else it stays (`tuning.md` §2.30¶1). Removed by `-fno-run-prefilter` or `-fno-offset-skip` |
 | `"run-pinned-bounded"` | the run-pinned form under a view or word context, bounded at `n - 1` |
 | `"first-memchr-bounded"` | on a SEEDED machine (a `\b`, a lookbehind, a `(?m)` context) whose plain skip would test the start state's escape set `E`, the skip tests the pattern's start set `T` (the `start_set` fact) where `T` is a proper subset of `E` — here one byte, searched for as one candidate byte; bounded at `n - 1`; a skip that moved re-seeds the scan state from the byte before its landing (`tuning.md` §2.42). Removed by `-fno-start-set` |
 | `"first-class-bounded"` | the same with several start-set bytes: a 256-entry `<prefix>_start_bytes` table walk, bounded at `n - 1`. There is no unbounded start-set form: a seeded machine always carries the D11 bound |
@@ -2436,8 +2436,9 @@ common byte and `-fno-req-byte` all report it.
 <a id="s6-3-7-p6"></a>[6.3.7¶6] **`<PREFIX>_REQ_RUN`** — a literal run every successful attempt must contain. An attempt is the search's try at one start position; a successful attempt consumes the run, contiguous, between that position and the end of its match. The reported match can begin later than the attempt (`\K`), so the run can lie partly or wholly before the reported start: `ab\Kcd` states `abcd` while its match is (2,4). Where no `\K` moves the start, the attempt's span is the match's.
 
 ```c
-#define RX_REQ_RUN "2e746172@3"   /* every match contains ".tar"; the
-                                     search reads member 3, 'r' */
+#define RX_REQ_RUN "2e746172@0"   /* every match contains ".tar"; the
+                                     search reads member 0, '.' (the
+                                     "cover" search's find, ¶7 row 2) */
 #define RX_REQ_RUN "53454c454354@4/dfdfdfdfdfdf"
                                   /* (?i)select: every match contains a
                                      member of each position (x & K) == T;
