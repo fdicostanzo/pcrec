@@ -12,9 +12,14 @@ SAB_FILE="src/facts/req.c"
 SAB_SUITES="facts"
 SAB_DESC="the run choice's rarity row carries no restored arm, so the harness lever's predecessor choice at an equal-information tie is never produced"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/sartie_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1930."
-SAB_REACH='"$(dirname "$PCREC")/pcrec-harness" --features all --harness=restore=tie -p rx --emit-main -o /dev/stdout --pattern "abcd.efgh" | grep -q "RX_REQ_RUN \"65666768@" && echo REACH-TIE-ARM-RESTORES'
+SAB_REACH='"$(dirname "$PCREC")/pcrec-harness" --features all --harness=restore=tie -p rx --emit-main -o /dev/stdout --pattern "abcd.efgh" | grep -qE "RX_REQ_RUN \"65666768(@[0-9]+)?\"" && echo REACH-TIE-ARM-RESTORES'
 SAB_REACH_EXPECT="REACH-TIE-ARM-RESTORES"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    { rn_rarer,     PCREC_WALK_ARM(TIE) },'
 SAB_AFTER='    { rn_rarer,     0 },   /* SABOTAGE S1930 */'
+# RE-AIMED REACH (lane k382cm, 2026-11-12, R-38 K38-2): `<PREFIX>_REQ_RUN` now carries `@idx` only where
+# this artifact's search reads a run position (match_api.md §6.3.7¶7 rows 1-2); this witness is row 3
+# (`RX_REQ_WHY "dominated"`, no run part rendered) and emits the hex alone, so the old reach, which
+# required an `@`, read UNREACHED (found by lane k382cm's clean-tree reach probe; its cloud shard 2 of run 43239936557 died before running it). The `@` is now optional; the run it asserts, the site and
+# the intent are unchanged.
