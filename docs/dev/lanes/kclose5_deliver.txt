@@ -1,0 +1,5 @@
+report=docs/dev/lanes/kclose5_report.md
+sections: Summary; The utf8 job; Measured vs old pins; Re-pin; Checks; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
