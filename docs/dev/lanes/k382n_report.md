@@ -202,3 +202,5 @@ after it. It is a cloud kind (`recidentity`).
   - Queue gate jobs 600-606.
   - Run `cloudrun --kind mechrows --rows S278,S517,S1909`.
   - Run cloud test/axes on the merged branch.
+
+OWED: S278, S517, S1909 (cloudrun --kind mechrows; row ids touched since the last full cloud mech, the kit manager dispatches)
