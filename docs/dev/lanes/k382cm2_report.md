@@ -129,3 +129,5 @@ because the runner archives HEAD per row. Verdict OWED.
 Delivered at 29c8bf28a plus this section's commit. Queued after it: `kit-k382cm2-rows` (S278, S517;
 log /var/tmp/pcrec-pcrec/scratch/memfn/k382cm2/run/mech/mech.log). Owed: that job's verdict and run
 43261368093 shards 5, 6, 8, 9, 10, 12, 13. No rulings file was named.
+
+OWED: kit-k382cm2-rows (the deliver file says `owed: none`; the kit manager amends it), and run 43261368093 shards 5, 6, 8, 9, 10, 12, 13.
