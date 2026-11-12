@@ -28,7 +28,13 @@ run "1/3 2/3 3/3" $d $T/v3; rc=$?
 [ $rc = 1 ] && grep -q '^RED: shard 2/3 rc=2' $T/v3 && ! grep -q 'RED: shard 1/3\|RED: shard 3/3' $T/v3 && ok "(c) rc!=0 shard 2/3 -> RED by name only" || bad "(c) rc: rc=$rc"
 d=$T/none; mk $d 1/2 0; mk $d 2/2 none
 run "1/2 2/2" $d $T/v4; rc=$?
-[ $rc = 1 ] && grep -q '^RED: shard 2/2 rc=none' $T/v4 && ok "rc=none (killed before the rc was written) -> RED" || bad "rc=none: rc=$rc"
+[ $rc = 1 ] && grep -q '^RED: shard 2/2 TIMEOUT: no rc recorded' $T/v4 && ok "rc=none (killed before the rc was written) -> RED, read as TIMEOUT" || bad "rc=none: rc=$rc"
+# a timed-out mech shard names the rows it did not finish (run 43108213213 shard 19: a bare "rc=none")
+MT=$here/cloud_mech_shards.tsv; r=$(bash "$here/cloud_table.sh" rows "$MT" 19/20)
+r1=$(echo "$r" | sed -n 1p); r2=$(echo "$r" | sed -n 2p); r3=$(echo "$r" | sed -n 3p)
+d=$T/mto; mk $d 19/20 none; printf '%s\t5\n%s\t7\n' "$r1" "$r2" > $d/cloud-shard-19of20/units.tsv
+bash "$G" gather "19/20" $d $T/v4b branch=x kind=mech >/dev/null; l=$(grep '^RED: shard 19/20 TIMEOUT' $T/v4b)
+case $l in *" $r3 "*) case $l in *" $r1 "*|*" $r2 "*) bad "mech TIMEOUT lists finished rows: $l" ;; *) ok "mech TIMEOUT names the unfinished rows, not the finished ones" ;; esac ;; *) bad "mech TIMEOUT: $l" ;; esac
 d=$T/wrong; mk $d 1/2 0; mkdir -p $d/cloud-shard-2of2; printf 'shard=1/2\nrc=0\n' > $d/cloud-shard-2of2/result.txt
 run "1/2 2/2" $d $T/v5; rc=$?
 [ $rc = 1 ] && grep -q "result names shard '1/2'" $T/v5 && ok "a result naming the wrong shard -> RED" || bad "wrong shard: rc=$rc"

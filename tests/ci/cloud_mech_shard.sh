@@ -7,7 +7,7 @@
 # shard's row count: a shard whose trailer is absent, or counts other than the rows assigned, is RED by name (FATAL),
 # never green on an exit status alone. The failing lines (UNEXPECTED, UNDETECTED, ANOMALY) reach the verdict through the
 # shared extractor tests/ci/cloud_failures.sh.
-# Per-row wall seconds go to units.tsv (MECH_TIMES_OUT; tests/ci/cloud_measure.py reads them), which the next
+# Per-row wall seconds go to units.tsv (MECH_TIMES_OUT, appended as each row finishes; tests/ci/cloud_measure.py reads them), which the next
 # `make cloud-reweight` weights the table by.
 set -u
 here=$(cd "$(dirname "$0")" && pwd); root=$(cd "$here/../.." && pwd)
@@ -21,11 +21,10 @@ log=$(mktemp "${TMPDIR:-/var/tmp}/cloud_mech.XXXXXX"); trap 'rm -f "$log"' EXIT
 echo "cloud_mech_shard: shard $shard, $want row(s): $ids"
 # One runner, no queue, no other tenant: the box lock has nothing to protect here. PROCS = the runner's cores / 2 rows at
 # once (the driver divides JOBS by PROCS itself); MECH_SCRATCH under TMPDIR so the runner's disk, not a tmpfs, holds the trees.
-export MECH_TIMES_OUT="$units.rows"; : > "$MECH_TIMES_OUT"
+export MECH_TIMES_OUT="$units"   # the artifact's own file, appended row by row: a shard killed at its step limit still leaves the finished rows (cloud_gather.sh names the rest)
 PCREC_BOXLOCK=0 PROCS=${MECH_SHARD_PROCS:-$(( $(nproc) > 3 ? $(nproc) / 2 : 1 ))} \
     bash "$root/tests/mech/run_sabotage_matrix.sh" $ids 2>&1 | tee "$log"
 rc=${PIPESTATUS[0]}
-cp "$MECH_TIMES_OUT" "$units"; rm -f "$MECH_TIMES_OUT"
 # The rows the driver scored against their own definition, one failing line each (the matrix's tab rows carry the verdict
 # in the last column), so the shared extractor names them; a bare exit status gets one line of its own.
 awk -F'\t' 'NF >= 6 && $NF ~ /UNEXPECTED|ANOMALY|APPLY-FAILED|BUILD-FAILED|FATAL/ && !seen[$1]++ {printf "FAIL: mech row %s: %s\n", $1, substr($NF, 1, 160)}' "$log" > "$log.fail"

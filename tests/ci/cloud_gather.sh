@@ -56,6 +56,7 @@ record)
 gather)
     expected=${2-} dir=${3:?results dir} out=${4:?outfile}; shift 4
     red=""; body=""; slowest=0; infra=""
+    kind=""; for kv in "$@"; do case $kv in kind=*) kind=${kv#kind=} ;; esac; done
     [ -n "$expected" ] || red="$red
 RED: no expected shard list (the plan job produced none)"
     for s in $expected; do
@@ -82,7 +83,18 @@ shard $s: rc=${rc:-?} skip_lines=${sk:-?} cpu=\"${model:-?}\"
 shard $s: cpu_flags=${flags:-?}"
         [ "$got" = "$s" ] || red="$red
 RED: shard $s result names shard '${got:-?}'"
-        if [ "${rc:-}" != 0 ]; then
+        if [ "${rc:-}" = none ]; then
+            # the test step never wrote an rc: killed at the step's time limit (or the runner died). Name the shard's units that
+            # did not finish (the table's rows minus the units.tsv the shard left) -- a timed-out shard is not a generic red.
+            unrun=""
+            sel=$(bash "$here/cloud_kinds.sh" get "$kind" selector 2>/dev/null)
+            if [ -n "$sel" ] && [ "$sel" != - ] && [ -f "${ROOT:-$here/../..}/$sel" ]; then
+                unrun=$(bash "$here/cloud_table.sh" rows "${ROOT:-$here/../..}/$sel" "$s" 2>/dev/null | while IFS= read -r u; do
+                    awk -F'\t' -v u="$u" '$1 == u {f=1} END {exit !f}' "$d/units.tsv" 2>/dev/null || printf '%s ' "$u"; done)
+            fi
+            red="$red
+RED: shard $s TIMEOUT: no rc recorded -- the shard's step hit its time limit (or the runner died) before the run finished; not a verdict on the code. Units not finished: ${unrun:-unknown (no table row list)}"
+        elif [ "${rc:-}" != 0 ]; then
             red="$red
 RED: shard $s rc=${rc:-?} (nonzero or never written)"
             # the make `*** [...] Error` lines the record step kept: which sections went red
@@ -93,8 +105,7 @@ RED:   shard $s: $l"; done < "$d/errors.txt"
         fi
     done
     # REWEIGHT-DUE: the slowest shard's wall past the table's predicted slowest shard by the kind's margin
-    due=""; kind=""
-    for kv in "$@"; do case $kv in kind=*) kind=${kv#kind=} ;; esac; done
+    due=""
     if [ -n "$kind" ] && [ "$slowest" -gt 0 ]; then
         sel=$(bash "$here/cloud_kinds.sh" get "$kind" selector 2>/dev/null)
         margin=$(bash "$here/cloud_kinds.sh" get "$kind" reweight_margin 2>/dev/null)
