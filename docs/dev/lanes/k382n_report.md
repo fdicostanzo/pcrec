@@ -203,4 +203,5 @@ after it. It is a cloud kind (`recidentity`).
   - Run `cloudrun --kind mechrows --rows S278,S517,S1909`.
   - Run cloud test/axes on the merged branch.
 
-OWED: S278, S517, S1909 (cloudrun --kind mechrows; row ids touched since the last full cloud mech, the kit manager dispatches)
+OWED: none as a box job (the deliver file's `owed: none`). The cloud rows S278, S517, S1909 in the Summary's OWED
+line are the kit manager's `cloudrun --kind mechrows` dispatch.
