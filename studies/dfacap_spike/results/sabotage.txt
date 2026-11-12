@@ -1,0 +1,45 @@
+== sabotage noempty
+# cases 55  fail 0
+== sabotage noctx
+empty-opt-star       (a?)*                      FAIL  subjec
+empty-alt-star2      (a|)*                      FAIL  subjec
+empty-star-plus      (a*)+                      FAIL  subjec
+empty-star-star      (a*)*                      FAIL  subjec
+empty-star-star-b    (a*)*b                     FAIL  subjec
+empty-nested         ((a*)*)*                   FAIL  subjec
+empty-twogroups      (a*)*(b*)*                 FAIL  subjec
+empty-alt-nested     (?:(a)|(b)|())*c           FAIL  subjec
+# cases 55  fail 8
+== sabotage fifo
+last-iter-opt        (?:(a)?b)+                 FAIL  subjec
+empty-star-star-b    (a*)*b                     FAIL  subjec
+empty-lazy-star      (a?)*?b                    FAIL  subjec
+empty-alt-nested     (?:(a)|(b)|())*c           FAIL  subjec
+nested-4             ((a|b)*c)+                 FAIL  subjec
+# cases 55  fail 5
+== sabotage nocopy
+lazy-alt-star        (?:(a)|(ab))*?b            FAIL  subjec
+last-iter-alt        (a|ab)*                    FAIL  subjec
+last-iter-nested     ((a)|b)+                   FAIL  subjec
+last-iter-nested2    (?:(a)|b)*                 FAIL  subjec
+last-iter-two        (?:(a)|(b))*               FAIL  subjec
+last-iter-opt        (?:(a)?b)+                 FAIL  subjec
+restore-opt          (?:(a)?)+                  FAIL  subjec
+restore-cls          (?:(a)|b|)*c               FAIL  subjec
+empty-lazy-star      (a?)*?b                    FAIL  subjec
+empty-alt-nested     (?:(a)|(b)|())*c           FAIL  subjec
+empty-count-lazy     (a?){2,3}?b                FAIL  subjec
+posix-classic        (a|ab)(c|bcd)(d*)          FAIL  subjec
+posix-classic3       (a|ab)(bc|c)               FAIL  subjec
+nested-2             ((a)(b)?)+                 FAIL  subjec
+nested-3             (a(b(c)?)*)+               FAIL  subjec
+nested-4             ((a|b)*c)+                 FAIL  subjec
+nested-5             (?:(a)(?:(b)|c))*          FAIL  subjec
+bounded-2            (a|b){1,3}c                FAIL  subjec
+bounded-4            (a(b)?){2,4}               FAIL  subjec
+bounded-5            (?:(a)|b){0,2}?a           FAIL  subjec
+anchor-2             (a|b)*?\z                  FAIL  subjec
+anchor-3             (a*)$                      FAIL  subjec
+anchor-4             (a|\n)*?$                  FAIL  subjec
+anchor-5             ^(?:(a)|b)*\Z              FAIL  subjec
+# cases 55  fail 24
