@@ -1149,3 +1149,20 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   (wrapped) start as "earlier", every other condition unchanged. Not
   reproducible on this box (patched 10.46); verify on the next CI run.
 
+
+## U26 — PCRE2 10.46 and 10.49: a lookbehind inside `(?(DEFINE)...)` inside a lookbehind is not length-checked; calling it matches wrongly (lane vlbrev52, [PCRE2-DEFLB], reported 2026-11-12)
+
+- **Status**: reported-upstream — https://github.com/PCRE2Project/pcre2/issues/1072
+  (filed 2026-11-12, after Frank's approval to send it if it still existed on
+  10.49; awaiting maintainers). Followed daily by `scripts/upstream_watch`
+  (list: `docs/dev/upstream_tracked.tsv`).
+- **Found**: 2026-11-10, lane vlbrev52; re-tested on the official 10.49 tarball
+  build 2026-11-12: still present. Seen on 10.46 and 10.49.
+- **Repro** (interpreter, no JIT), two bug cells:
+  - `(?<=a(?(DEFINE)(?<=b+)))x` compiles (`Max lookbehind = 1`); PCRE2
+    gives error 125 for the same inner lookbehind everywhere else (outside the
+    outer lookbehind, or inside `(?=...)`).
+  - `(?<=a(?(DEFINE)(?<g>(?<=b+))))x(?&g)` vs `axb` matches `x` at 1; the
+    `(?&g)` call runs at offset 2 where `(?<=b+)` should fail.
+- **Impact on pcrec**: none on correctness; pcrec refuses both cells.
+  Body of the report: lane vlbrev52 report (docs/dev/lanes/vlbrev52_report.md).

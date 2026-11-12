@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# upstream_watch self-test: a shim `gh` (no network) serving canned JSON. Cases: new comment (format, author, date,
+# 80-char cut), several new comments, no change = silent, closed (+ reason), reopened, labels, gh unavailable (one
+# line, state untouched so the news is not lost), a first-seen issue, and a PLANT (a copy with the comment branch
+# disabled) that the same check must catch.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+. "$here/../tests/lib/timeout_bin.sh" 2>/dev/null
+TO=${TIMEOUT_BIN:-timeout}
+T=$(mktemp -d "${TMPDIR:-/var/tmp}/upstream_watch.test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+mkdir -p "$T/bin" "$T/dead"
+# shim gh: `gh issue view N -R REPO --json FIELDS`; serves $SHIM_JSON, or only stateReason when asked for it
+cat > "$T/bin/gh" <<'SH'
+#!/bin/sh
+[ -n "${SHIM_FAIL:-}" ] && exit 1
+case "$*" in
+    *"--json stateReason") echo '{"stateReason":"COMPLETED"}' ;;
+    *) cat "$SHIM_JSON" ;;
+esac
+SH
+chmod +x "$T/bin/gh"
+printf '# c\nhttps://github.com/PCRE2Project/pcre2/issues/1072\tPCRE2-DEFLB\t2026-11-12\n' > "$T/tracked.tsv"
+export PCREC_TMPDIR="$T/tmproot" SHIM_JSON="$T/j.json"
+S="$T/state.json"
+w() { PATH="$T/bin:$PATH" "$TO" 30 python3 -I "${1:-$here/upstream_watch}" --tracked "$T/tracked.tsv" --state "$S" 2>&1; }
+LONG=$(printf 'x%.0s' $(seq 1 120))
+open0='{"state":"OPEN","comments":[],"labels":[]}'
+open1='{"state":"OPEN","labels":[],"comments":[{"author":{"login":"NWilson"},"createdAt":"2026-11-13T09:00:00Z","body":"Thanks,\n   confirmed '$LONG'"}]}'
+open3='{"state":"OPEN","labels":[],"comments":[{"author":{"login":"a"},"createdAt":"2026-11-14T09:00:00Z","body":"b"},{"author":{"login":"b"},"createdAt":"2026-11-14T10:00:00Z","body":"c"},{"author":{"login":"carol"},"createdAt":"2026-11-15T10:00:00Z","body":"fixed in 10.50"}]}'
+want1='upstream: #1072 new comment by NWilson 2026-11-13: Thanks, confirmed '$(printf 'x%.0s' $(seq 1 62))
+chk_comment() { # SCRIPT: first run on a quiet issue is silent; a comment appears; the line is exact
+    local s=$1 o
+    echo "$open0" > "$SHIM_JSON"; rm -f "$S"; o=$(w "$s"); [ -z "$o" ] || return 1
+    echo "$open1" > "$SHIM_JSON"; o=$(w "$s"); [ "$o" = "$want1" ]
+}
+chk_comment "$here/upstream_watch" && ok "new comment: exact line (author, date, whitespace collapsed, cut at 80)" || bad "new comment line: [$(w)]"
+o=$(w); [ -z "$o" ] && ok "no change = silent" || bad "no-change output: [$o]"
+echo "$open3" > "$SHIM_JSON"; o=$(w)
+[ "$o" = "upstream: #1072 new comment by carol 2026-11-15 (2 new): fixed in 10.50" ] && ok "several new comments: last one, count" || bad "several: [$o]"
+echo '{"state":"CLOSED","labels":[],"comments":[{},{},{}]}' > "$SHIM_JSON"; o=$(w)
+[ "$o" = "upstream: #1072 CLOSED (completed)" ] && ok "closed: reason shown" || bad "closed: [$o]"
+o=$(w); [ -z "$o" ] && ok "closed is reported once" || bad "closed repeated: [$o]"
+echo '{"state":"OPEN","labels":[{"name":"bug"},{"name":"accepted"}],"comments":[{},{},{}]}' > "$SHIM_JSON"; o=$(w)
+[ "$o" = $'upstream: #1072 REOPENED\nupstream: #1072 labels now: accepted, bug' ] && ok "reopened + labels" || bad "reopened/labels: [$o]"
+# unavailable: gh failing, and gh missing; one line, state untouched so the news survives
+echo "$open3" > "$SHIM_JSON"; cp "$S" "$T/state.before"
+o=$(SHIM_FAIL=1 w); [ "$o" = "upstream: unavailable" ] && ok "gh failing: one unavailable line" || bad "unavailable: [$o]"
+cmp -s "$S" "$T/state.before" && ok "unavailable leaves the state alone" || bad "state changed while unavailable"
+o=$(PATH="$T/dead" "$TO" 30 "$(command -v python3)" -I "$here/upstream_watch" --tracked "$T/tracked.tsv" --state "$S" 2>&1)
+[ "$o" = "upstream: unavailable" ] && ok "gh absent: one unavailable line" || bad "gh absent: [$o]"
+# first-seen issue that already has comments reports them (no state entry = nothing seen yet)
+rm -f "$S"; echo "$open1" > "$SHIM_JSON"; o=$(w); [ "$o" = "$want1" ] && ok "first-seen issue with a comment reports it" || bad "first seen: [$o]"
+# PLANT: the comment branch disabled must FAIL the same check (K35: the check can go red)
+sed 's/if len(cs) > prev\["n"\]:/if False:/' "$here/upstream_watch" > "$T/plant"
+grep -q 'if False:' "$T/plant" || bad "plant not applied"
+chk_comment "$T/plant" && bad "PLANT NOT CAUGHT: the comment check passed with the branch disabled" || ok "plant (comment branch disabled) is caught"
+echo "upstream_watch.test: $pass pass, $fail fail"
+[ "$fail" = 0 ]
