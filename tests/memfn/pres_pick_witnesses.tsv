@@ -20,16 +20,13 @@
 # so no pick is made), so those lines carry the cover row's deny
 # `--memfn=no-window-search`, the default build before S3.
 #
+# R-38 K38-2 (span_runs_sheet.md rev 1.3 §4.3; restored by lane k382m 2026-11-12): the `scan`,
+# `window`, `rwin` and `rwhole` records RETIRED with the cut window, and their 10 witness lines
+# with them (scan 4, window 3, rwin 1, rwhole 2); their successor controls are C2 and C4 (§2.4).
+#
 # pick	nontrivial	pcrec	flags	pattern
 set	1	97	-e utf8 --memfn=no-window-search	ba
 set	1	-	-	zq.*the
-scan	1	3	-e utf8 --memfn=no-window-search	abcd
-scan	1	-	--memfn=no-window-search	(?i)hello world
-scan	1	2	-	x.*(?i)ab1def
-scan	1	2	-e utf8	x.*(?i)ab1def
-window	1	2	-e utf8 --memfn=no-window-search	abcdefghij(?i:mnopqr)
-window	1	-	--memfn=no-window-search	abcdefghijklmnop
-window	1	0	-e utf8 --memfn=no-window-search	(?i:x)abcdefg(?i:y)
 leads	1	1	-	zq.*the
 leads	1	0	-e utf8	x.*abc
 dominated	1	1	-	x*y
@@ -53,7 +50,4 @@ rdom	1	0	-	foo.*bar
 rlead	1	1	-	zq.*the
 rlead	1	0	-e utf8	x.*abc
 rhead	1	-	-	a.{1,5}z
-rwin	1	0	-e utf8 --memfn=no-window-search	(?i:x)abcdefg(?i:y)
-rwhole	1	1	-	(x?)([a-z]+)+eeeeeeee~#~#~#~#\1
-rwhole	1	0	-	x.*abcdefghijk
 rrest	1	-	-	(x?)([a-z]+)+Z.@\1

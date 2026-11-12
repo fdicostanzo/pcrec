@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """docs/dev/lanes/k382_evidence/census.py -- lane k382's MOVER CENSUS for [MEMFN] R-38 K38-2 (pcrec abi
-99 -> 100 since the lane merged main d81ebd294; was 98 -> 99, "the seam event"), in r30b_evidence/census.py's shape (emit_sweep has no abi normalization):
+100 -> 101 since lane k382m merged main e889ba64c; 99 -> 100 over d81ebd294 before it; was 98 -> 99, "the seam event"), in r30b_evidence/census.py's shape (emit_sweep has no abi normalization):
 which corpus artifacts move, does each move lie in a DECLARED population
 (docs/design/memfn/span_runs_sheet.md rev 1.3 §5.1, the abi changelog's top entry), and did every
 artifact that SHOULD move (read off BASE, never off the tip) actually move?
@@ -8,9 +8,9 @@ artifact that SHOULD move (read off BASE, never off the tip) actually move?
     python3 -I census.py --base BIN --new BIN --tree DIR --out FILE [--jobs N] [--shard I/N]
                          [--sample N] [--patterns-file F]... [--control NAME]
 
-BASE is main d81ebd294's pcrec (K38-2a + [FEAT-FAMILIES], abi 99), NEW the K38-2 tip's (abi 100). The corpus is every distinct
+BASE is main e889ba64c's pcrec ([PFFIX] + the D27 \\p corpus + cloud mech/recid, abi 100), NEW the K38-2 tip's (abi 101). The corpus is every distinct
 pattern scripts/emit_sweep.py enumerates (its `enumerate_corpus`, one implementation), each compiled
-`--features all` like emit_sweep's argv streams. NEW's output has the abi digits mapped back (100 -> 99, --abi)
+`--features all` like emit_sweep's argv streams. NEW's output has the abi digits mapped back (101 -> 100, --abi)
 in the five places they occur and nothing else is normalized; rc and stderr are compared too.
 
 ARMS (.c, `-p rx -o -`): c-default, c-utf8 (-e utf8), c-vm, c-vm-utf8, c-comments (-fcomments),
@@ -75,8 +75,8 @@ def abi_pairs(old, new):
             (b"    .abi = %d," % new, b"    .abi = %d," % old)]
 
 
-ABI = abi_pairs(99, 100)        # --abi OLD:NEW sets it (the lane's event: 99 -> 100 over BASE d81ebd294)
-BASE_REV = "d81ebd294"          # --base-rev: the identity gate's arm list is read against it
+ABI = abi_pairs(100, 101)       # --abi OLD:NEW sets it (the lane's event: 100 -> 101 over BASE e889ba64c)
+BASE_REV = "e889ba64c"          # --base-rev: the identity gate's arm list is read against it
 WITNESS = None                  # --witness-bins BASE_W NEW_W: the -DPCREC_SIMD_WITNESS builds
 C = ["-p", "rx", "--features", "all", "-o", "-"]
 # (arm, extra argv, facts encoding)
@@ -437,11 +437,21 @@ def one(task):
     fm = fb[0] != fn[0] or fb[1] != norm(fn[1]) or norm_err(fb[2]) != norm_err(fn[2])
     fp, fbad = judge_facts(fb, fn) if fm else (set(), "")
     res.append(("facts", fm, fp, fbad, [], (False, False, False)))
-    fbi = None                               # BASE's facts under -i (a pattern flag the start table carries)
+    # BASE's facts UNDER THE ARM'S OWN FLAGS (lane k382m, 2026-11-12): the prediction is the run the arm's
+    # BASE artifact was compiled from, so `-fno-req-run-fold`'s unfolded run, `-i`'s folded one, etc. Was:
+    # the default listing for every arm but `-i`, which predicted the FOLDED whole run under
+    # utf8+-fno-req-run-fold and read `^(a)(b)(c)(d)(e)(f)(g)(h)(i)(j|k)(?-10)$` red. One listing per distinct
+    # flag list; a listing BASE refuses under the arm (but not by default) is a problem on the arm, never a
+    # silent fall back to the default.
+    fxs = {(): fb}
     for arm, extra, stream in XARMS:
-        if "-i" in extra and fbi is None:
-            fbi = run([base] + FACTS + ["-i", "--pattern", pat])
-        fx = fbi if "-i" in extra else fb
+        key = tuple(x for x in extra if x != "--engine=vm")
+        if key not in fxs:
+            fxs[key] = run([base] + FACTS + list(key) + ["--pattern", pat])
+        fx = fxs[key]
+        if fx[0] != 0 and fb[0] == 0 and stream != "ir" and not stream.startswith("w-"):
+            res.append((arm, True, set(), "BASE refuses --emit-facts under %s" % " ".join(key), [], (False, False, False)))
+            continue
         if stream.startswith("w-"):          # the witness arm: the -DPCREC_SIMD_WITNESS builds
             eng = ["--engine=vm"] if stream == "w-c-vm" else []
             rb = run([WITNESS[0]] + C + eng + ["--pattern", pat])
@@ -568,8 +578,8 @@ def main():
     ap.add_argument("--control", default="", choices=["", "no-p3", "no-norm"])
     ap.add_argument("--no-xarms", action="store_true", help="skip the identity gate's --extra arms")
     ap.add_argument("--no-composition", action="store_true", help="skip the composition stream")
-    ap.add_argument("--abi", default="99:100", help="OLD:NEW, the abi event (NEW's digits mapped back)")
-    ap.add_argument("--base-rev", default="d81ebd294", help="BASE's revision (the identity arm list)")
+    ap.add_argument("--abi", default="100:101", help="OLD:NEW, the abi event (NEW's digits mapped back)")
+    ap.add_argument("--base-rev", default="e889ba64c", help="BASE's revision (the identity arm list)")
     ap.add_argument("--witness-bins", nargs=2, metavar=("BASE_W", "NEW_W"),
                     help="the -DPCREC_SIMD_WITNESS builds of BASE and NEW (the identity arm `witness`)")
     a = ap.parse_args()
