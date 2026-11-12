@@ -182,13 +182,14 @@ FD_SITES = ["set10", "set2r", "byte1", "run3", "pre-req", "pre-opt",
             "byte1t", "byte1vm", "hat1", "mline"]
 # M: fixture -> [(pred, the deciding row(s), the span's link)], from §1.4's
 # table (link = v<verify>p<proven_by>m<member>o<order>; member 1 + the
-# chosen index, order 0 the head, 1 the run, 2 the rest)
+# chosen index, order 0 the head, 1 the run, 2 the rest; on the RUN span
+# (order 1) member is 0, unread: memfn.h mf_link, review 2026-11-11 r1 k382 F13)
 B3B_PRES = {
     "fd-P0":     [("0", "P0", "v1p0m0o0")],
     "fd-P3":     [("0", "P3", "v1p0m1o0")],
     "fd-P9":     [("0", "P9", "v1p0m0o0")],
-    "fd-P4":     [("0", "P3+P4", "v1p0m1o0"), ("1", "P3", "v1p0m1o1")],
-    "fd-P4-den": [("0", "P3", "v0p0m1o0"), ("1", "P3", "v1p0m1o1")],
+    "fd-P4":     [("0", "P3+P4", "v1p0m1o0"), ("1", "P3", "v1p0m0o1")],
+    "fd-P4-den": [("0", "P3", "v0p0m1o0"), ("1", "P3", "v1p0m0o1")],
     "fd-P2":     [("0", "P2", "v0p1m0o0")],
     "fd-P2-den": [("0", "P3", "v1p0m1o0")],
 }
