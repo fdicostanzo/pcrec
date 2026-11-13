@@ -66,6 +66,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT/build/libpcrec.a}"
 G2="$ROOT/memfn/tests/g2"
 NSITES="${G2P_SITES:-400}"
+NWIDE="${G2P_WIDE:-300}"   # R-38 Part D: the WIDE stream's sites, after today's (their own rng)
 SEED="${G2P_SEED:-20261110}"
 WORK="$(mktemp -d "${TMPDIR:-/var/tmp}/g2pres.XXXXXX")"
 if [ -n "${G2P_KEEP:-}" ]; then echo "work directory: $WORK"; else trap 'rm -rf "$WORK"' EXIT; fi
@@ -151,6 +152,33 @@ SIMD_FLOORS="x86-64-v3:19:19:1600 x86-64:19:0:1340 generic:0:0:0"   # (22 22 178
 # Linux dev box (main a9fc6dbd8, seed 20261110, 400 sites; the least over the
 # admitting passes in parentheses):
 CELL_FLOORS="w16:163:75:158 w32:100:72:455"   # level:U:L:A  (w16 181 84 176; w32 111 80 506)
+# R-38 PART D (docs/design/memfn/part_d.md rev 4 §5.1.1, §5.2; lane partd):
+# THE SITE FILE'S HASH ([r3pd FIX-3]): today's stream (NWIDE 0) renders the
+# SAME site file as the base did, byte for byte, per pass. sha-256 of
+# g2p_sites.c written by the BASE's generator against the BASE's kit (lane
+# partd's base a6054c124, built fresh from `git archive`, seed 20261110, 400
+# sites), one literal per pass tag; the plant "the rate rule on cubes too"
+# moves the main rng's draws and reds it. A change that legitimately moves
+# today's site file re-pins these with its own named run, as a floor re-pin.
+SITE_HASHES="x86-64-v3.0.1:991f06252c6c74704e30076ae144c911e5757622ec935cd5b54964bd92296ca7
+x86-64-v3.1.1:bce52ce0346c152c028b4982005387cac605df5f2688e2b34fddbcd17bffea0b
+x86-64.0.1:7e3cfc6cffd0753967e1a2fda1d7aa2d5f0d982b20cde570478587a912306cfc
+x86-64.1.1:7346e225fb723d93cdeda5ccd33eb8272b20ab84df1fc68012ac54affdbb0696
+generic.0.1:c38f81972d41c9bd32557d4a786ed6c9d9b24f76ee30534aae751b4f431598c8
+generic.1.1:c95e82f9cfc3462ca6c92a803f603fb961d30b6411d113e6cdca53ae483ce3ec
+generic.0.0:21cde5415e8e8c159577afdc778e31d184de8a97b804996b32c33e098e6d8040"
+# THE WIDE STREAM's populations, per pass (the generator's G2PWIDE census
+# and the driver's `G2P partd` line). MEASURED 2026-11-13 by lane partd on the
+# Linux dev box (seed 20261110, 400 + 300 wide sites): each floor is the
+# least over the six target passes less ~10% (a count under 10 keeps its
+# measure). Measured: 300 197 61 13 32 27 194 45 18 29 18 45 18 27 9 7;
+# driver 18 9 151 10 399844; deny pass 576 81 (wide_ver 9 under the deny).
+FLOOR_WIDE="wide_sites:270 wide_ver:177 nofind:54 nobg:11 f24:28 f24_3:24 scan_findable:174 declines:40 dec_member:16 dec_assign:26 dec_twin:16 dec_refused:40 dec_rendered:16 dec_noprecheck:24 scanless_req:9 dom_noscan:7"
+FLOOR_WIDE_RUN="declined:16 scanless:9 scanless_match:135 nobg:9 exact_wide:359859"
+# THE DENY PASS (the run-verify-wide deny, [r1pd F6, F7]): generic target, every
+# site under no-run-verify-wide; every verified extent findable-only (the
+# generator's check), one-position stretches and deny-pass sites floored
+FLOOR_DENY="deny_sites:518 deny_one:72"
 
 # THE PLANTS: id, then one line FILE@@FROM@@TO per edit (FILE under
 # memfn/src; FROM replaced by TO, `\n` a newline, `\\n` the C escape, `\&`
@@ -168,11 +196,11 @@ plant_spec() {
         # least is yielded (§3.3 item 2, "least"). The ORACLE's plant: the text's reads
         # are unchanged until a candidate verifies, and the classifier's probes put the
         # occurrence above `lo` (the occurrence contract is the oracle's, not a copy)
-        echo 'ofsskip.c@@    int maxk = x->maxk, k = x->k, a = x->a;\n    kit_out(o, "    while (pos + %d < n) {\\n", maxk);@@    int maxk = x->maxk, k = x->k, a = x->a;\n    o->puts(o->u, "    size_t lo0 = pos;\\n");\n    kit_out(o, "    while (pos + %d < n) {\\n", maxk);'
+        echo 'ofsskip.c@@    int maxk = x->maxk, k = x->k, a = x->a;\n    if (note_memchr(art)) return -1;\n    kit_out(o, "    while (pos + %d < n) {\\n", maxk);@@    int maxk = x->maxk, k = x->k, a = x->a;\n    if (note_memchr(art)) return -1;\n    o->puts(o->u, "    size_t lo0 = pos;\\n");\n    kit_out(o, "    while (pos + %d < n) {\\n", maxk);'
         echo 'ofsskip.c@@    o->puts(o->u,   ") return cand;\\n");@@    o->puts(o->u,   ") { if (cand == lo0) { pos = cand + 1; continue; } return cand; }\\n");' ;;
     S3009) # C: the lever leaves the run decision's ties rightmost (kit_run_opts_of
         # ignores run-tie-left): the witnesses' text scan does not move
-        echo 'presence.c@@    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH };@@    (void)left;\n    return (kit_run_opts){ st, T_MASS_STRETCH };' ;;
+        echo 'presence.c@@    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH, clip };@@    (void)left;\n    return (kit_run_opts){ st, T_MASS_STRETCH, clip };' ;;
     S3010) # ORC-1: every use passes its run part the attempt start + 1 (the
         # position at the attempt start is never asked): the part's own call
         # is honest in its own frame, so only a record taken at the CALLER
@@ -209,7 +237,7 @@ plant_spec() {
         echo 'finder.c@@        if (!member) k.member = 0;@@        (void)0;' ;;
     S3045) # F12: P3 drops out of the stretch-mode table (a renamed row): every
         # P3 site's ask is REFUSED, never handed a catch-all's stretch
-        echo 'finder.c@@    { "P3", KIT_RUN_WINDOW },@@    { "P3-renamed", KIT_RUN_WINDOW },' ;;
+        echo 'finder.c@@    { "P3", KIT_RUN_WINDOW, FD_NOSCAN_REFUSE },@@    { "P3-renamed", KIT_RUN_WINDOW, FD_NOSCAN_REFUSE },' ;;
     S3046) # F14 (ii): the statement rule's "a tested link lays out its run part"
         # refusal deleted (compose.c pres_layout_check skips the run part's slot):
         # the generator's control (ii) is no longer refused by that rule
@@ -318,13 +346,14 @@ build_gen() {
         || { echo "FAIL: $tag: the generator does not build"; head -20 "$WORK/$tag.genbuild"; return 1; }
 }
 
-# one_pass TAG TARGET LEVER [ON_MISS_LEAVES]: render, compile, run (recording; ASan unless
+# one_pass TAG TARGET LEVER [ON_MISS_LEAVES [DENY]]: render, compile, run (recording; ASan unless
 # G2P_NOASAN). Logs in $WORK/TAG.*; records in $WORK/TAG.rec.tsv.
 one_pass() {
     local tag="$1" tgt="$2" lev="$3" o="$WORK/$1.out"
     mkdir -p "$o"
     # shellcheck disable=SC2086
-    "$TIMEOUT_BIN" 300 "$WORK/$tag.gen" "$SEED" "$NSITES" "$o" "$tgt" "$lev" ${4:-} > "$WORK/$tag.gen.log" 2>&1
+    "$TIMEOUT_BIN" 300 "$WORK/$tag.gen" "$SEED" "$NSITES" "$o" "$tgt" "$lev" "${4:-1}" "$NWIDE" "${5:-0}" \
+        > "$WORK/$tag.gen.log" 2>&1
     local rc=$?
     "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror -I"$G2" -c "$o/g2p_sites.c" -o "$WORK/$tag.plain.o" \
         2> "$WORK/$tag.plainbuild" \
@@ -488,6 +517,47 @@ if [ "${1:-}" = "--reach" ]; then
     exit 0
 fi
 
+tp=0 tf=0
+note() { tf=$((tf + 1)); echo "FAIL: $1"; }
+floor() { if [ "${2:-0}" -ge "$3" ]; then tp=$((tp + 1)); else note "floor $1: ${2:-0} < $3"; fi; }
+
+# site_hashes GEN: THE SITE FILE'S HASH (R-38 Part D, [r3pd FIX-3]): today's
+# stream, per pass, written by generator GEN (main, or a plant's p<ID>)
+site_hashes() {
+    local hp htgt hlev homl hd got
+    while read -r hp; do
+        [ -n "$hp" ] || continue
+        IFS=. read -r htgt hlev homl <<< "${hp%%:*}"
+        hd="$WORK/hash.$1.${hp%%:*}"; mkdir -p "$hd"
+        "$TIMEOUT_BIN" 300 "$WORK/$1.gen" "$SEED" "$NSITES" "$hd" "$htgt" "$hlev" "$homl" 0 0 > "$hd.log" 2>&1
+        got=$(sha256sum < "$hd/g2p_sites.c" | cut -c1-64)
+        if [ "$got" = "${hp#*:}" ]; then tp=$((tp + 1))
+        else note "the site file of today's stream moved (${hp%%:*}: $got, the base's ${hp#*:})"; fi
+    done <<< "$SITE_HASHES"
+}
+
+# wide_floors TAG: R-38 Part D's populations of one pass, and the P2 pair's
+# equality ([r3pd FIX-7]: every P2 untested link's laid-out run part refused)
+wide_floors() {
+    local tag="$1" x
+    wv() { grep -h "^G2PWIDE" "$WORK/$tag.gen.log" | grep -oE " $1=[0-9]+" | cut -d= -f2; }
+    pv() { grep -h "^G2P partd" "$WORK/$tag.run.log" | grep -oE " $1=[0-9]+" | cut -d= -f2; }
+    grep -h '^G2PWIDE\|^G2P partd' "$WORK/$tag.gen.log" "$WORK/$tag.run.log"
+    for x in $FLOOR_WIDE; do floor "$tag ${x%%:*}" "$(wv "${x%%:*}")" "${x#*:}"; done
+    for x in $FLOOR_WIDE_RUN; do floor "$tag driver ${x%%:*}" "$(pv "${x%%:*}")" "${x#*:}"; done
+    local u r
+    u=$(grep -h "^G2PGEN" "$WORK/$tag.gen.log" | grep -oE " p2_untested=[0-9]+" | cut -d= -f2)
+    r=$(grep -h "^G2PGEN" "$WORK/$tag.gen.log" | grep -oE " p2_refused=[0-9]+" | cut -d= -f2)
+    if [ -n "$u" ] && [ "$u" = "$r" ]; then tp=$((tp + 1))
+    else note "$tag: p2_untested ${u:-?} != p2_refused ${r:-?} (a refusal counted on another route)"; fi
+    u=$(wv dec_untested); r=$(wv dec_refused)
+    if [ -n "$u" ] && [ "$u" = "$r" ]; then tp=$((tp + 1))
+    else note "$tag: dec_untested ${u:-?} != dec_refused ${r:-?}"; fi
+    u=$(wv declines); r=$(wv PD)
+    if [ -n "$u" ] && [ "$u" = "$r" ]; then tp=$((tp + 1))
+    else note "$tag: declines ${u:-?} != PD route sites ${r:-?}"; fi
+}
+
 # --- --plant / --plants -------------------------------------------------------
 if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     ids="${2:-}"
@@ -517,6 +587,10 @@ EOF
         build_gen "p$id" "$WORK/pk_$id"/*.o || fail_setup "$id: the generator does not build"
         red=""
         rm -f "$WORK"/*.rec.tsv "$WORK/fails.$id"
+        # the site file's hash and the wide floors are checks of the family
+        # (R-38 Part D): a plant may red them alone (S3114's floor, S3115's hash)
+        site_hashes "p$id" | sed -n 's/^FAIL: /FAIL: HASH: /p' >> "$WORK/fails.$id"
+        red=$(grep -m1 '^FAIL: HASH: ' "$WORK/fails.$id")
         for tgt in $TARGETS; do
             host_has "$tgt" || continue
             for lev in 0 1; do
@@ -527,10 +601,11 @@ EOF
                 # the per-level cells (K38-3) and, on an ASan plant, the ASan
                 # report: each a FAIL line of the pass
                 cell_checks "$tgt.$lev" "$tgt" | sed -n 's/^CELLFAIL: /FAIL: CELL: /p' >> "$WORK/fails.$id"
+                wide_floors "$tgt.$lev" | sed -n "s/^FAIL: /FAIL: FLOOR: $tgt.$lev: /p" >> "$WORK/fails.$id"
                 plant_asan "$id" && grep -h -m1 'ERROR: AddressSanitizer' "$WORK/$tgt.$lev.asan.log" 2>/dev/null \
                     | sed "s/^/FAIL: $tgt.$lev ASan: /" >> "$WORK/fails.$id"
                 r=$(grep -h '^FAIL' "$WORK/$tgt.$lev.gen.log" "$WORK/$tgt.$lev.run.log" 2>/dev/null | head -1)
-                [ -n "$r" ] || r=$(grep -m1 -E "^FAIL: (CELL: )?$tgt\.$lev[: ]" "$WORK/fails.$id")
+                [ -n "$r" ] || r=$(grep -m1 -E "^FAIL: (CELL: |FLOOR: )?$tgt\.$lev[: ]" "$WORK/fails.$id")
                 [ -n "$r" ] || r="$built"
                 [ -n "$red" ] || red="$r"
             done
@@ -586,9 +661,8 @@ fi
 # --- the run ----------------------------------------------------------------------
 [ -f "$LIB" ] || fail_setup "$LIB not built (make all first)"
 tp=0 tf=0 skipped=0
-note() { tf=$((tf + 1)); echo "FAIL: $1"; }
-floor() { if [ "${2:-0}" -ge "$3" ]; then tp=$((tp + 1)); else note "floor $1: ${2:-0} < $3"; fi; }
 build_gen main "$LIB" || fail_setup "the generator does not build"
+site_hashes main
 level_table || fail_setup "the kit's level listing (tests/memfn/simd_levels.c, target_text.py) could not be read"
 # THE LEVEL-LIST COVERAGE (K38-3, [r1s1 S1-15]): every level the kit lists is
 # admitted by a target this run's pass list runs on this host, else its
@@ -670,6 +744,7 @@ for tgt in $TARGETS; do
         floor "$tag presence checks" "$(rv presence checks)" "$FLOOR_PRES_CHECKS"
         floor "$tag presence below" "$(rv presence below)" "$FLOOR_PRES_BELOW"
         [ "$(rv presence generic)" = 0 ] && tp=$((tp + 1)) || note "$tag: $(rv presence generic) sites rendered by the generic row on an on_miss_leaves 1 pass"
+        wide_floors "$tag"
         # the §3.5 witnesses: each green AND reached, in the recording driver
         # and the ASan+UBSan one; W-K3's own witness reached in the generator
         wk=$(grep -h '^G2P wk ' "$WORK/$tag.run.log")
@@ -739,6 +814,27 @@ floor "$tag neg_omin" "$(gv neg_omin)" "$FLOOR_NEG_OMIN"
 wk=$(grep -h '^G2P wk ' "$WORK/$tag.run.log")
 if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 K1b=1/1 (green/reached)" ]; then tp=$((tp + 1))
 else note "$tag: the §3.5 witnesses are not all green and reached (${wk:-no line})"; fi
+
+# THE DENY PASS (R-38 Part D, [r1pd F6, F7]): every site under the
+# run-verify-wide deny; the generator holds every verified extent to the
+# findable stretch; a refusal is a generator failure (floor 0)
+tag=generic.deny
+cp "$WORK/main.gen" "$WORK/$tag.gen"
+one_pass "$tag" generic 0 1 1
+grep -h '^FAIL' "$WORK/$tag.gen.log" "$WORK/$tag.run.log" | head -20
+gf=$(grep -h '^g2_pres_gen failures:' "$WORK/$tag.gen.log" | grep -oE '[0-9]+$')
+if [ "${gf:-x}" != 0 ]; then note "$tag: the generator failed ${gf:-?} sites"; else tp=$((tp + 1)); fi
+read -r p f < <(counts "$WORK/$tag.run.log")
+if [ "$p" = x ] || [ "$f" = x ]; then note "$tag: the recording driver printed no counts"
+else tp=$((tp + p)); tf=$((tf + f)); echo "$tag recording driver: passed $p failed $f"; fi
+if [ -z "${G2P_NOASAN:-}" ]; then
+    read -r p f < <(counts "$WORK/$tag.asan.log")
+    if [ "$p" = x ] || [ "$f" = x ]; then note "$tag: the ASan+UBSan driver printed no counts"
+    else tp=$((tp + p)); tf=$((tf + f)); echo "$tag ASan+UBSan driver: passed $p failed $f"; fi
+fi
+for x in $FLOOR_DENY; do
+    floor "$tag ${x%%:*}" "$(grep -h '^G2PWIDE' "$WORK/$tag.gen.log" | grep -oE " ${x%%:*}=[0-9]+" | cut -d= -f2)" "${x#*:}"
+done
 
 # the records: the seam's format, held by the family before the oracle reads them
 ls "$WORK"/*.rec.tsv > /dev/null 2>&1 || fail_setup "no pass wrote records"

@@ -283,6 +283,9 @@ struct mf_art {
     unsigned    levels;
     uint64_t    denies;
     site_rec   *sites;          /* handle h is sites[h - 1]; 0 is no handle   */
+    const char *fn_body;        /* the offset-skip BODY row the last define
+                                   chose (ofsskip.c fn_define); formhash's
+                                   RUNPART shape asserts it (R-38 Part D) */
     uint32_t    nsites, cap;
     uint32_t    includes;       /* MF_INC_* the rendered text needs           */
     /* the run compare's record (runcmp.c, §14.8): compares written through
@@ -1285,7 +1288,7 @@ static inline void gate_trace_cand(const gate_tctx *t, const gate_cand *c)
  * mf_form_hash folds (every instance of the id, one text) AND what a
  * span_cards cell times. TEST entries (no
  * memfn.h change): the slot harness and tests/memfn/arm_fixtures.c read them. */
-typedef enum { MF_FH_FIND = 0, MF_FH_WINDOW, MF_FH_RUNCMP, MF_FH_SETTEST } mf_form_shape_id;
+typedef enum { MF_FH_FIND = 0, MF_FH_WINDOW, MF_FH_RUNCMP, MF_FH_SETTEST, MF_FH_RUNPART } mf_form_shape_id;
 typedef struct {
     const char *id;
     const char *cls;        /* the class token; "-" for an id with one instance */

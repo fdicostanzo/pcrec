@@ -170,12 +170,15 @@ FORM_IDS = {
     "settest":   ("-",         {"c1": 1, "c2": 2, "cn": 3}, "c2"),
     "rc-words":  ("words",     {"w1": 1, "w2": 2, "w3": 3}, "w2"),
     "rc-memcmp": ("memcmp",    {"l1": None}, "l1"),
+    # R-38 Part D (part_d.md §5.3 [r3pd FIX-5]): the scan-less BODY, its row
+    # the fn walk's (the define's own record), its card kit-grid@5 UNMEASURED
+    "every-pos": ("fn-every-pos", {"-": None}, "-"),
 }
 FORM_INSTANCE_FLOOR = 10
 # span_cards.md §2.4 [rev1.2 READY-2; rev1.3 r9-CHECKS-3]: the card guard's
 # population, EXACT (kit-grid@1 9, kit-kernels@1 5, kit-synthetic 0, kit-grid@3
 # 3): a card added with a kit:form. dep bumps it in the same change
-CARD_FORMDEP_COUNT = 17
+CARD_FORMDEP_COUNT = 18     # 18 at R-38 Part D: kit-grid@5's every_pos
 # span_cards.md §2.4 (S2e): the measure_store pass's population floor, pinned
 # at landing as zen4-grid3@1's form-bearing row count (38 rows, 5 `enter`)
 STORE_FORMROW_FLOOR = 33

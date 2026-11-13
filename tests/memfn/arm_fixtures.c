@@ -1795,7 +1795,7 @@ static char *edit_once(const char *t, const char *from, const char *to)
 static int hash_mode(void)
 {
     static const char *const ids[] = { "walk", "libc", "pair", "settest", "rc-words", "rc-memcmp",
-                                       "V1", "W64", "NONE", "dispatch-twin", NULL };
+                                       "every-pos", "V1", "W64", "NONE", "dispatch-twin", NULL };
     for (unsigned i = 0; ids[i]; i++) {
         char h[17] = "-";
         int rc = mf_form_hash(ids[i], h);

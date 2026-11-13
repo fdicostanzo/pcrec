@@ -359,6 +359,16 @@ for fl_ in $FORM_FLOORS; do
     r_=$(grep "^FORMID [0-9]* $fn_ " "$gres" | sed 's/.* rendered=\([0-9]*\).*/\1/')
     [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "form $fn_: ${r_:-0} hard sites rendered < floor $fv_"
 done
+# R-38 Part D's TWO-SIDED PIN (part_d.md §5.1 D2 (p9), [r2pd P12]): the
+# sites ofsskip renders with a tableless multi-member SET term or no scan
+# are EXACTLY 0 here (the scoped admission is the derived run part's alone);
+# a one-sided floor could not red when the scope is dropped. Its population
+# (the sites ofsskip renders) is floored too, so the 0 is not vacuous.
+ofs_r_=$(grep '^OFSSCOPE ' "$gres" | sed 's/.* rendered=\([0-9]*\).*/\1/')
+ofs_s_=$(grep '^OFSSCOPE ' "$gres" | sed 's/.* scoped=\([0-9]*\).*/\1/')
+echo "== ofsskip's scope (R-38 Part D): rendered ${ofs_r_:-?}, of them tableless/scan-less ${ofs_s_:-?} (must be 0)"
+[ "${ofs_s_:-x}" = 0 ] || note_fail 1 "ofsskip rendered ${ofs_s_:-?} sites with a tableless multi-member SET term or no scan (its scoped admission is the derived run part's alone)"
+[ "${ofs_r_:-0}" -ge 1 ] || note_fail 1 "ofsskip rendered no site: the two-sided pin's 0 is vacuous"
 echo "== LOOP_EXIT (Q-R7-3) rendered sites by form id: $(grep '^LOOPX forms=' "$gres" | sed 's/^LOOPX forms=//')"
 if grep '^LOOPX forms=' "$gres" | grep -q 'generic'; then
     note_fail 1 "LOOP_EXIT: the generic row rendered a site (Q-R7-3: it serves none)"

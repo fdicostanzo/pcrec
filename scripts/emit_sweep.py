@@ -603,6 +603,16 @@ DIFFER_PINS = {
     ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (139, 0, b"a.{1,5}z"),    # SAR1/R1 re-pin (was 224): R1 takes 90 patterns, 13 joined, flr_report.md; P1 re-pin (was 231): the landmark walk (D184) takes 18 patterns the pick served (11 net), pinbis; S3 re-pin (was 263); was 262: same
     ("byte", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
+    # [MEMFN] R-38 Part D (lane partd; part_d.md rev 4 §5.1.1 D2 [r2pd P13c]):
+    # `run-verify-wide`'s deny clips every run stretch to its findable
+    # positions, the identity on every run pcrec states today (each position
+    # one member or a cube), so its four cells are ASSERT_ZERO (below) until
+    # pcrec's [RUN-POS-SET] stage 3 states runs with wide positions; at that
+    # joint landing they become floors with a stage-3 manifest.
+    ("byte", "--memfn=no-run-verify-wide", "c-default"): (0, 0, None),
+    ("utf8", "--memfn=no-run-verify-wide", "c-default"): (0, 0, None),
+    ("byte", "--memfn=no-run-verify-wide", "c-vm"): (0, 0, None),
+    ("utf8", "--memfn=no-run-verify-wide", "c-vm"): (0, 0, None),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
@@ -617,7 +627,10 @@ ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
     # R17-b' B3b: G1 and the pick act on the DFA-scanned routes only; under
     # --engine=vm no pre-check is dominated and every span is REQUIRED
     (base, "--memfn=no-" + row, "c-vm")
-    for base in ("byte", "utf8") for row in ("fd-pres-g1", "fd-pres-pick")}
+    for base in ("byte", "utf8") for row in ("fd-pres-g1", "fd-pres-pick")} | {
+    # R-38 Part D: run-verify-wide is the identity on today's runs (DIFFER_PINS)
+    (base, "--memfn=no-run-verify-wide", st)
+    for base in ("byte", "utf8") for st in ("c-default", "c-vm")}
 
 # The NULL arm: the flag is empty, so BASE+FLAG is BASE's argv and the
 # DIFFER count must be exactly 0 (a deterministic compiler). It proves the

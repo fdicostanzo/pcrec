@@ -119,7 +119,9 @@ plant_spec() {
     S1407) # an untested offset claimed: the class proves one past each tested position
         echo 'window.c@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];\n        if (d + 1 < MF_MAX_FWD) for (unsigned x = 0; x < 32; x++) out->proven[d + 1 - MF_PROOF_LO][x] \&= w->set[i][x];' ;;
     S1409) # two spans of R's shape in one alternative not refused (the F-8 ruling: R is unique)
-        echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two spans@@        if (0)\n            return "an alternative states two spans' ;;
+        echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two verify-NO spans@@        if (0)\n            return "an alternative states two verify-NO spans' ;;
+        # RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D [r3pd FIX-9]): R is identified by ROLE
+        # (verify NO, two or more positions), the refusal's words name it
     S1422) # D172 S3: E-find denied but rendering (`--memfn=no-window-search` ignored): the
         # control's REPORT site renders where it must be refused (window_site.md §5.2)
         # (re-anchored at code review r1 C17: E-find's id is spelled once, WF_FIND_ID)

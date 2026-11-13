@@ -133,24 +133,74 @@ static void failf(const g2p_site *x, const char *what, const char *fmt, ...)
 
 /* ---- the run as generated ---------------------------------------------------- */
 
+/* A position's set: today's stream as (b & mask) == run; the WIDE stream's
+ * (R-38 Part D, part_d.md §5.1 D0 [r1pd F16]) as its stated set */
+static const uint8_t (*g_wsets[1 << 12])[32];   /* by site id; NULL on today's stream */
+#define SETS(x) g_wsets[(x)->id]
 static int in_set(const g2p_site *x, unsigned j, unsigned b)
 {
+    if (SETS(x)) return SETS(x)[j][b >> 3] >> (b & 7) & 1;
     return (b & x->mask[j]) == x->run[j];
 }
-static unsigned members(const g2p_site *x, unsigned j, unsigned m[2])
+/* position j's members into m (up to 256): today's stream in its order
+   (the byte, then its cube partner), the wide stream ascending */
+static unsigned members(const g2p_site *x, unsigned j, unsigned m[256])
 {
     unsigned k = 0;
+    if (SETS(x)) {
+        for (unsigned b = 0; b < 256; b++) if (in_set(x, j, b)) m[k++] = b;
+        return k;
+    }
     m[k++] = x->run[j];
     if (x->mask[j] != 0xFF) m[k++] = x->run[j] | (~x->mask[j] & 0xFF);
     return k;
 }
-/* a byte in no position's set (the filler) */
+/* a byte in no position's set (the filler, the BACKGROUND), 0 where none:
+   a wide site whose sets' union covers every byte has none (§5.2: "no
+   background", counted, its probes that need one skipped) */
 static unsigned filler(const g2p_site *x)
 {
     for (unsigned b = 1; b < 256; b++) {
         int any = 0;
         for (unsigned j = 0; j < x->run_len && !any; j++) any = in_set(x, j, b);
         if (!any) return b;
+    }
+    return 0;
+}
+static int has_background(const g2p_site *x)
+{
+    if (!SETS(x)) return 1;
+    for (unsigned b = 0; b < 256; b++) {
+        int any = 0;
+        for (unsigned j = 0; j < x->run_len && !any; j++) any = in_set(x, j, b);
+        if (!any) return 1;
+    }
+    return 0;
+}
+/* THE BREAKER (§5.2 [r1pd F17]): a byte outside position j's own set (one
+   always exists, at most 128 members); today's stream keeps the filler */
+static unsigned breaker(const g2p_site *x, unsigned j, unsigned F)
+{
+    if (!SETS(x) || !in_set(x, j, F)) return F;
+    for (unsigned b = 0; b < 256; b++) if (!in_set(x, j, b)) return b;
+    return F;
+}
+/* a subject byte drawn from the run: today's stream one draw of run[j]; the
+   wide stream a member of a random position's set (two draws, its sites
+   last, so today's sites draw what they drew) */
+static unsigned char run_byte(const g2p_site *x, unsigned (*r)(unsigned))
+{
+    if (!SETS(x)) return x->run[r(x->run_len)];
+    unsigned m[256], j = r(x->run_len), k = members(x, j, m);
+    return (unsigned char)m[r(k)];
+}
+/* 1 iff some position of x is findable (one member or a one-bit cube; G2's
+   own reading): a tested run with none is verified scan-less (K66) */
+static int any_findable(const g2p_site *x)
+{
+    for (unsigned j = 0; j < x->run_len; j++) {
+        unsigned m[256], k = members(x, j, m);
+        if (k == 1 || (k == 2 && __builtin_popcount(m[0] ^ m[1]) == 1)) return 1;
     }
     return 0;
 }
@@ -295,6 +345,11 @@ static unsigned char *place(int lay, const unsigned char *src, size_t n)
 
 static long g_cover, g_extent, g_scan, g_sound, g_witness, g_lay_calls[LAY_N], g_wk4_low, g_generic;
 static long g_nearmiss, g_nm_sound, g_nm_uses;   /* FAM-3's probes, counted */
+/* R-38 Part D's populations: sites with no background, the wide stream's
+   per-byte EXACT probes, scan-less parts classified, declined sites (no run
+   part) checked by their uses, and scan-less sites' uses on a MATCHING
+   subject (a whole occurrence above the floor, every member present) */
+static long g_nobg, g_exact_wide, g_scanless, g_declined, g_scanless_match;
 static long g_scan_route[G2P_NROUTE];
 
 /* one direct call of part `pt` at `lo` on `src` (layout U), measured */
@@ -347,7 +402,7 @@ static void occ_r(const g2p_site *x, const g2p_part *pt, unsigned char *buf, siz
                   unsigned (*r)(unsigned))
 {
     for (unsigned j = 0; j < pt->len; j++) {
-        unsigned m[2], k = members(x, pt->at + j, m);
+        unsigned m[256], k = members(x, pt->at + j, m);
         buf[c + j] = (unsigned char)m[r(k)];
     }
 }
@@ -365,7 +420,7 @@ static int near_occ(const g2p_site *x, const g2p_part *pt, unsigned vlo, unsigne
 {
     if (!vlen) return 0;
     occ_r(x, pt, buf, c, rnd2);
-    unsigned j = vlo + rnd2(vlen), m[2], k = members(x, pt->at + j, m), b = m[rnd2(k)];
+    unsigned j = vlo + rnd2(vlen), m[256], k = members(x, pt->at + j, m), b = m[rnd2(k)];
     for (unsigned t = 0, bit = rnd2(8); t < 8; t++, bit = (bit + 1) & 7)
         if (!in_set(x, pt->at + j, b ^ (1u << bit))) {
             buf[c + j] = (unsigned char)(b ^ (1u << bit));
@@ -381,9 +436,15 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
     unsigned char buf[256];
     unsigned F = filler(x), len = pt->len;
     *ext_lo = -1; *ext_hi = -1;
+    if (!has_background(x)) {           /* §5.2: no background byte, counted, probes skipped */
+        g_nobg++;
+        *ext_lo = (int)pt->ver_lo; *ext_hi = (int)(pt->ver_lo + pt->ver_len);
+        *scan = pt->member;
+        return;
+    }
     /* COVER: every member of every position, the occurrence strictly above lo */
     for (unsigned j = 0; j < len; j++) {
-        unsigned m[2], k = members(x, pt->at + j, m);
+        unsigned m[256], k = members(x, pt->at + j, m);
         for (unsigned i = 0; i < k; i++)
             for (int v = 0; v < 3; v++) {     /* ending at n; short; long (a SIMD arm's) */
                 size_t gap = 1 + rnd(v == 2 ? 70 : 12), lo = rnd((unsigned)gap);
@@ -405,7 +466,7 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
                lo = rnd((unsigned)gap);
         memset(buf, (int)F, n);
         occ(x, pt, buf, gap);
-        buf[gap + j] = (unsigned char)F;
+        buf[gap + j] = (unsigned char)breaker(x, pt->at + j, F);
         int bad;
         size_t r = first_from(x, pt, buf, n, lo, gap, &bad);
         int compared = r != gap;
@@ -416,11 +477,28 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
               "reply's stretch is [%u, %u)", pt->at, len, j, compared ? "IS" : "is NOT",
               pt->ver_lo, pt->ver_lo + pt->ver_len);
     }
+    /* EXTENT, EXACT on the WIDE stream (R-38 Part D, §5.2 [r1pd F17]): EVERY
+       byte outside each verified position's set, placed in an otherwise
+       whole occurrence: not yielded (with COVER: the admitted bytes of a
+       verified position ARE its stated set) */
+    for (unsigned j = pt->ver_lo; SETS(x) && j < pt->ver_lo + pt->ver_len; j++)
+        for (unsigned nm = 0; nm < 256; nm++) {
+            if (in_set(x, pt->at + j, nm)) continue;
+            size_t gap = 1 + rnd2(12), n = gap + len + rnd2(9), lo = rnd2((unsigned)gap);
+            memset(buf, (int)F, n);
+            occ_r(x, pt, buf, gap, rnd2);
+            buf[gap + j] = (unsigned char)nm;
+            int bad;
+            size_t r = first_from(x, pt, buf, n, lo, gap, &bad);
+            g_exact_wide++;
+            CHECK(x, r != gap, "EXTENT", "part at %u len %u: the non-member 0x%02x at verified "
+                  "position %u is yielded as an occurrence (lo %zu, n %zu)", pt->at, len, nm, j, lo, n);
+        }
     /* EXTENT, EXACT (FAM-3): each member of each verified position, each bit
        flipped where that leaves the position's set (a flip of a masked bit is
        still a member), placed in an otherwise whole occurrence: not yielded */
-    for (unsigned j = pt->ver_lo; j < pt->ver_lo + pt->ver_len; j++) {
-        unsigned m[2], k = members(x, pt->at + j, m);
+    for (unsigned j = pt->ver_lo; !SETS(x) && j < pt->ver_lo + pt->ver_len; j++) {
+        unsigned m[256], k = members(x, pt->at + j, m);
         for (unsigned i = 0; i < k; i++)
             for (unsigned bit = 0; bit < 8; bit++) {
                 unsigned nm = m[i] ^ (1u << bit);
@@ -445,15 +523,19 @@ static void classify(const g2p_site *x, const g2p_part *pt, int *ext_lo, int *ex
     memset(buf, (int)F, n);
     measure(pt, buf, n, 0, scan);
 #ifdef G2P_REC
+    if (!x->has_scan) { *scan = pt->member; g_scanless++; goto sound; }   /* scan-less: no find */
     g_scan++;
     CHECK(x, *scan == pt->member, "SCAN", "part at %u len %u: the text's find reads position "
           "%d first, the reply's scan is %d", pt->at, len, *scan, pt->member);
+#endif
+#ifdef G2P_REC
+sound:
 #endif
     /* SOUND: random subjects over the run's own bytes and the filler */
     for (int t = 0; t < 24; t++) {
         n = rnd(len + (t & 1 ? 120 : 30));
         for (size_t i = 0; i < n; i++) {
-            unsigned j = rnd(len), m[2], k = members(x, pt->at + j, m);
+            unsigned j = rnd(len), m[256], k = members(x, pt->at + j, m);
             buf[i] = rnd(5) ? (unsigned char)m[rnd(k)] : (unsigned char)F;
         }
         if (n > len && rnd(2)) occ(x, pt, buf, rnd((unsigned)(n - len + 1)));
@@ -546,6 +628,7 @@ static void pres_check(const g2p_site *x, const unsigned char *s, size_t n, size
     long floor = (long)origin + x->omin < 0 ? 0 : (long)origin + x->omin;
     g_pres_checks++;
     g_pres_below += want < (long)origin;
+    g_scanless_match += !x->has_scan && x->route == G2P_P0;
     CHECK(x, hit, "PRESENCE", "%s: the %s from %zu (n %zu) misses, the whole run occurs at %ld "
           "and every member is present", lay, call, origin, n, want);
     if (hit && assign)
@@ -563,7 +646,7 @@ static void uses(const g2p_site *x, int lay)
     for (int t = 0; t < 16; t++) {
         size_t n = rnd(x->run_len + 48);
         for (size_t i = 0; i < n; i++) {
-            unsigned j = rnd(x->run_len), m[2], k = members(x, j, m);
+            unsigned j = rnd(x->run_len), m[256], k = members(x, j, m);
             buf[i] = rnd(3) ? (unsigned char)m[rnd(k)] : rnd(4) ? (unsigned char)F : (unsigned char)rnd(256);
         }
         for (int o = 0; o < 2 && n > x->run_len; o++)
@@ -615,7 +698,7 @@ static void lay_a(const g2p_site *x)
     for (unsigned wi = 0; wi < 2; wi++)
         for (unsigned off = 1; off < ws[wi]; off++) {
             size_t n = x->run_len + rnd(2 * ws[wi] + 24);    /* K38-3: W's arm can be entered */
-            for (size_t i = 0; i < n; i++) buf[i] = rnd(3) ? x->run[rnd(x->run_len)] : (unsigned char)F;
+            for (size_t i = 0; i < n; i++) buf[i] = rnd(3) ? run_byte(x, rnd) : (unsigned char)F;
             void *blk;
             if (posix_memalign(&blk, ws[wi], off + n + (n == 0))) { perror("posix_memalign"); exit(2); }
             unsigned char *s = (unsigned char *)blk + off;
@@ -655,7 +738,7 @@ static void lay_a_count(const g2p_site *x)
     for (unsigned wi = 0; wi < 2; wi++)
         for (unsigned off = 1; off < ws[wi]; off++) {
             size_t n = x->run_len + rnd3(2 * ws[wi] + 24), out;
-            for (size_t i = 0; i < n; i++) buf[i] = rnd3(3) ? x->run[rnd3(x->run_len)] : (unsigned char)F;
+            for (size_t i = 0; i < n; i++) buf[i] = rnd3(3) ? run_byte(x, rnd3) : (unsigned char)F;
             void *blk;
             if (posix_memalign(&blk, ws[wi], off + n + (n == 0))) { perror("posix_memalign"); exit(2); }
             unsigned char *s = (unsigned char *)blk + off;
@@ -780,6 +863,10 @@ int main(int argc, char **argv)
         }
         g_site_of[x->id] = x;
     }
+    if (&g2p_nwides)                    /* the WIDE stream's sets, by site id */
+        for (int i = 0; i < g2p_nwides; i++)
+            if (g2p_wides[i].id >= 0 && g2p_wides[i].id < (int)(sizeof g_wsets / sizeof g_wsets[0]))
+                g_wsets[g2p_wides[i].id] = g2p_wides[i].sets;
     /* the §3.5 witnesses FIRST, so their lines print ahead of any other
        failure (failf prints the first 60) */
     for (int i = 0; i < g2p_nsites; i++)
@@ -800,10 +887,23 @@ int main(int argc, char **argv)
 #endif
             continue;
         }
+        if (x->route == G2P_PD) {
+            /* A DECLINED run (R-38 Part D, [r2pd P6]): no run part; the
+               members' pre-check, checked by the uses' PRESENCE rule */
+            CHECK(x, x->nparts == 0, "LAYOUT", "a declined site lays out %u run parts", x->nparts);
+            g_declined++;
+            for (int lay = 0; lay < LAY_N; lay++) uses(x, lay);
+#ifdef G2P_ASAN
+            lay_a(x);
+#endif
+            continue;
+        }
         CHECK(x, x->nparts == 1 && x->parts[0].fn && x->parts[0].at == 0 &&
               x->parts[0].len == x->run_len, "LAYOUT", "the site does not lay out ONE derived run "
               "part in the run frame (%u parts)", x->nparts);
-        CHECK(x, x->has_scan, "SCAN", "the reply of a tested run states no scan position");
+        CHECK(x, x->has_scan == any_findable(x), "SCAN", "the reply of a tested run %s a scan "
+              "position, and G2's own sets %s a findable one", x->has_scan ? "states" : "states no",
+              any_findable(x) ? "hold" : "hold no");
         if (x->nparts == 1 && x->parts[0].fn) {
             const g2p_part *pt = &x->parts[0];
             nparts++;
@@ -817,7 +917,7 @@ int main(int argc, char **argv)
               "the part compares [%d, %d), the site's reply is [%u, %u)", slo, shi, x->ver_lo,
               x->ver_lo + x->ver_len);
 #ifdef G2P_REC   /* the reads exist only in the recording build */
-        if (have) {
+        if (have && x->has_scan) {
             g_scan_route[x->route]++;
             CHECK(x, sscan == x->scan, "SCAN", "the text's find reads run position %d first, the "
                   "site's reply scans %d", sscan, x->scan);
@@ -856,6 +956,8 @@ int main(int argc, char **argv)
     printf("G2P k382 partial_hits=%ld neg_records=%ld below_hits=%ld wk4_low=%ld\n", g_partial_hits,
            g_neg_records, g_below_hits, g_wk4_low);
     printf("G2P presence checks=%ld below=%ld generic=%ld\n", g_pres_checks, g_pres_below, g_generic);
+    printf("G2P partd declined=%ld scanless=%ld scanless_match=%ld nobg=%ld exact_wide=%ld PD=%ld\n",
+           g_declined, g_scanless, g_scanless_match, g_nobg, g_exact_wide, nsite[G2P_PD]);
     printf("G2P wk L1=%ld/%ld L1b=%ld/%ld K1=%ld/%ld K2=%ld/%ld K1b=%ld/%ld (green/reached)\n",
            g_wk_ok[G2P_W_L1A], g_wk_reach[G2P_W_L1A], g_wk_ok[G2P_W_L1B], g_wk_reach[G2P_W_L1B],
            g_wk_ok[G2P_W_K1], g_wk_reach[G2P_W_K1], g_wk_ok[G2P_W_K2], g_wk_reach[G2P_W_K2],

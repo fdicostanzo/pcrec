@@ -705,6 +705,7 @@ static int fn_define(mf_art *art, uint32_t handle, const mf_site *site, const mf
     const fn_row *body = fn_select(art, handle, h, &x, FN_BODY);
     if (!body) return -1;
     x.body_row = body->ct->row;
+    art->fn_body = body->ct->row;
     const fn_row *prefix = fn_select(art, handle, h, &x, FN_PREFIX);
     const fn_row *rung[MF_NLEVEL];
     const char *names[MF_NLEVEL];
