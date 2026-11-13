@@ -36,3 +36,12 @@ Each idea gets a census line and a trigger (D77), not a build:
 ## Order
 
 Census first; the compile-time anomaly is measured within it. Waits for the current set (S2) to land.
+
+## The delegated form (Frank 2026-11-13: "a kit call might be faster that asks [ab]+ how long?")
+
+A single-byte-class body is a SPAN question: the longest run of bytes in the class from here, capped at the
+max count. One kit call (the kit's shared "find the span" unit; D157: pcrec states the fact, the kit picks
+the method) replaces the loop; then min-count check, give-back = p -= 1, last capture = [end-1, end).
+Generalizes to fixed-width bodies that are a sequence of classes (a span of w-byte units). Span work is
+UNSCHEDULED under [SPAN-ISEL] (Frank 2026-10-11, memory pcrec-memfn-span-unscheduled): record the census
+count of corpus loops of this shape, no kit request until that row is scheduled.
