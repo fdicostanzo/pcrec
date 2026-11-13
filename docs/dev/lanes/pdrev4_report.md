@@ -8,6 +8,8 @@ I re-read the cites at main `5d41c1f2d` (later than `a8ae73be0`).
 `memfn/tests/`, `tests/mech/`, `docs/spec/`, `scripts/emit_sweep.py` and `docs/design/memfn/`.
 plan.md gained [SHADOW-TABLE]. I read every new code cite by function at `main` (`git show main:`).
 
+## STATE AT HANDOFF
+
 STATE: done. Rev 4, the CLAUDE.md line and this report are committed. No rulings file was named. I
 applied the review's Rulings section through its last entry ("FIX-1 RULED (2026-11-12, kit + main
 jointly)").
