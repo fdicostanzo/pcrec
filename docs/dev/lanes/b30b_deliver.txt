@@ -1,0 +1,5 @@
+report=docs/dev/lanes/b30b_report.md
+sections: Summary; Built vs designed; MF_SITE_ABI 28; The pcrec hunk; Sabotage rows; Identity and movers; Checks; Owed runs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
