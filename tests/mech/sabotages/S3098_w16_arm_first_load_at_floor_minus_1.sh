@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # S3098 -- R-38 K38-3 (docs/design/memfn/span_runs_sheet.md §5's K38-3 row; §3.5 W-K4a/W-K4b;
-# lane k383). THE w16 ARM'S FIRST LOAD STARTS AT floor - 1 (W-K4a, UNALIGNED): vrun_render starts the block loop at pos - (KA + 1), so the KA load reads subject + pos - 1, one byte below the run's floor.
-# Detector: G2's presence family (memfn/tests/run_g2_pres.sh), layout L (the subject at a page start, a guard page below): the entry faults on the w16 targets' passes (x86-64, x86-64-v3); the generic passes are unchanged. Second detector: the occurrence oracle (a read at offset -1 in layout U).
+# lane k383). THE VECTOR ARM'S FIRST LOAD STARTS ONE BYTE BELOW THE FLOOR (W-K4a, UNALIGNED): vrun_render starts the block loop at pos - (KA + 1), so the KA load reads subject + pos - 1, one byte below the run's floor.
+# Detector: G2's presence family (memfn/tests/run_g2_pres.sh), layout L (the subject at a page start, a guard page below): the entry faults on the passes whose target admits the narrowest vector level; the generic pass is unchanged. Second detector: the occurrence oracle (a read at offset -1 in layout U).
 SAB_ID="S3098-w16-arm-first-load-at-floor-minus-1"
 SAB_FILE="memfn/src/vrun.c"
 SAB_SUITES="g2pres"
-SAB_DESC="the w16 arm's first load at floor - 1: layout L's guard page (W-K4a) must fault"
+SAB_DESC="the narrowest vector level's first load one byte below the floor: layout L's guard page (W-K4a) must fault"
 SAB_DOC_FIGURE="HAND-MEASURED by lane k383 2026-11-12 (docs/dev/lanes/k383_report.md): memfn/tests/run_g2_pres.sh --plant S3098 RED (LAYOUT: L ...: the entry faulted; oracle RED violations=796). Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3098."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
