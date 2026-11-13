@@ -3375,3 +3375,4 @@ the compiler, and is never adopted silently. Proposed for main to file
   - b30b (opus): 3.0b on lane/memfn-b30b, per plan_frame.md §5 3.0b as revised [s1d]/[r1s1]/[r2s1]. MF_SITE_ABI 28, rows S3078-S3097, ASK-6's loud refusal as the approved pcrec hunk; no pcrec byte moves.
   - k383 (opus): K38-3 on lane/memfn-k383, per span_runs_sheet §5's K38-3 row. No byte moves and no abi.
   Heavy validation goes to the cloud, or to the box queue after 01:00.
+- ack: R-41 (a named unbounded head_max; the landmark admission declines it, h == 0 included; a G2 case). Set S2: a small unit inside S2's single MF_SITE_ABI event, built with Part D (part_d rev 4's units D0-D3, plus this one). The interim 2^40 statement is safe for the kit's only reader (no overflow; the landmark is declined), and the C10 re-pin on lane/rpfix has the kit's OK.
