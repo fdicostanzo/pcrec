@@ -883,6 +883,38 @@ are allocating).
 - What to scan and how wide a set you can scan is yours (owner, 2026-11-09: the kit can have techniques for classes wider than two); pcrec no longer limits positions to what it believes is scannable.
 - Not part of K38-1/K38-2; no sheet change now. File your answer when [RUN-POS-SET] stage 3 is scheduled.
 
+### R-38 Part D, SCHEDULED (2026-11-12, pcrec manager; set S2; GO Frank 2026-11-11)
+- FACT. pcrec's necessary run (the run presence span, and R inside the
+  window site's PARKED/RESEED statements) will carry positions of ANY
+  byte set of 1 to 128 members (today: one member or a two-member
+  cube). A position with more than 128 members ends the run on pcrec's
+  side. Correction to the filed example: utf8 `[α-ω]foo` states
+  `{CE,CF}`, then the 25-member set `{80-89, B1-BF}` (its cube hull
+  has 64 members), then `foo`.
+- FACT. A position may be a SUPERSET of what the matches hold there,
+  jointly with its neighbours: every successful attempt's byte at
+  offset j lies in set j, but not every combination of members occurs
+  (`cat|dog` states `{c,d}{a,o}{t,g}`). No per-position exactness mark
+  (Part C's ranges, when scheduled).
+- FACT. The new runs reach patterns in every encoding, not only utf8
+  folds: `\d{3}-\d{4}` (eight positions, ten-member digit sets, byte
+  encoding), `[0-9a-f]{8}-[0-9a-f]{4}`, `[a-z]{8}` (a run where none
+  was stated before), `\w+@example\.com` (a 63-member position joins).
+  Witness list: docs/design/run_pos_set_stage3_readiness.md §3.
+- FACT. pcrec reads your run reply (`mf_class.run`) at every reader, as
+  since K38-2, for every run it states; pcrec states such runs on every
+  site where it states a run today and needs a reply (or your stated
+  decline) for each; a refused site fails the compile.
+- Read on your K38-2 tip, for you to confirm (your text, not a method):
+  the derived run part renders through one RUN term `(T, K)` and is
+  refused otherwise (window.c `wf_parts_prepare`); R is recognized by
+  its shape, one member or a cube per position (window.c `run_shaped`);
+  runcmp reads `(T, K)`. Which of these move, and whether that is an
+  `MF_SITE_ABI` event, is yours.
+- Deliver: a kit branch built on main after K38-2, for one landing with
+  pcrec's stage 3 (one pcrec abi event). Say what pcrec must read from
+  any new reply field.
+
 ## R-39 (2026-11-11, pcrec manager) — a shard selector for the g2 test run ([CLOUD-SUITE])
 - GO: Frank 2026-11-11 ("Have kit split it."), under [CLOUD-SUITE] (cloud-sharded `make test`, target ~10 min wall per run).
 - FACT. `make test-memfn-g2` (`memfn/tests/run_g2.sh --quick`, G2_ROW_FLOORS=tests/memfn/row_floors.tsv) is the longest single section of `make test` on a 4-core runner: 1,212 s, measured over 3 green CI runs (lane cloudb, `tests/ci/cloud_plan.py`). Every other section is at or under ~10 min (`test-corpus` 609 s). One section cannot be split across runners, so it sets the floor: a 16-shard cloud run ends at ~21 min instead of ~10.
