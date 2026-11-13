@@ -73,6 +73,16 @@ All 15 ids are applied: 14 FIX-NOW and 1 PLAN.
 - [x] R30B-7: §7 Q16 reworded over the ask kinds, plus the plan-row note for main (ASK-DEFINE-FRAME restated).
 - [x] Cites verified at main 0f1d54089 (522faf600 or later); spec/plan cited by section or tag, no line cites.
 - [x] No code under memfn/src or src/; part_d.md untouched; no merge, no push; named-path commits only.
-- [x] Report committed with the deliver file's sections; lanecheck run.
+- [x] Report committed with the deliver file's sections; lanecheck run; the history index
+  (`docs/dev/history/claude_md/docs__dev__lanes.md`) has the report's entry.
+
+## STATE AT HANDOFF
+
+Done: three commits on lane/memfn-s1design after 50e586be8 (plan_frame, span_runs_sheet, report). No rulings file
+was named. For main at 3.0b's GO: approve ASK-6's hunk (the review's precondition); choose R30B-3's plant form
+(row (AG), recommended, or a once-run control); rule Q16 as reworded and file ASK-DEFINE-FRAME over both ask
+kinds; optionally, the R30B-5 general fix (reset `pcrec_cand_trace_quiet` in `pcrec_cand_eval_reset`). Per the
+kit manager's ruling the design goes to main for the GO without a third round. A fresh agent resumes from the
+per-finding table above.
 
 OWED: none.
