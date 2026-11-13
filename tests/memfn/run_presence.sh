@@ -239,10 +239,12 @@ for i, (pat, enc) in enumerate(pats):
 # expected compare lines are LITERALS written from the run's bytes (a
 # compare of all of `eeeeeeee~#~#~#~#` at the candidate; two word loads over
 # `abcdefghi`), never read from a kit function.
+# The K66 witness carries `.` before its run (s2tri, 2026-11-13): since the
+# [RUN-POS-SET] flip `[a-z]` is a run position and the run would be 17 wide.
 ASK = "rx_reqrun(subject, subject_length, search_from)"   # the CALL, not the definition
-LED = [([], "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1",
+LED = [([], "(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1",
         'if (!memcmp(subject + cand, "eeeeeeee~#~#~#~#", 16)) return cand;'),
-       (["-e", "utf8"], "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1",
+       (["-e", "utf8"], "(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1",
         'if (!memcmp(subject + cand, "eeeeeeee~#~#~#~#", 16)) return cand;'),
        ([], "(a)(b)(c)(d)(e)(f)(g)(h)(i)\\9",
         'if (rx_w8(subject + cand) == rx_w8("abcdefgh") && '

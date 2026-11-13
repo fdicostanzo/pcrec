@@ -33,7 +33,10 @@ SAB_DOC_FIGURE="tests/base/k66_precheck_whole_run.rxt is the answer-level detect
 # @0 -> @6 at [FIND-TIE] (72e3ae41, 2026-09-28: a run-scan data tie follows
 # NONE order, the rightmost); the window, the whole-run block and its call
 # are unchanged. The probe read MISSING from then until this re-pin.
-SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"65656565656565657e237e237e237e23@14\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
+# RE-AIMED 2026-11-13 (lane s2tri, [RUN-POS-SET] flip 2 -> 128): the witness
+# carries `.` before its run; `[a-z]` became a run position, which made the run
+# 17 wide with a set part. Pins unchanged (same 16-byte compare, scan @14).
+SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"65656565656565657e237e237e237e23@14\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
 # RE-PINNED 2026-10-29 (lane r30b, [MEMFN] R-30): the window's own search is
 # no longer emitted beside the whole run's, and the whole run's compare is led
 # by the window's bytes (`~#~#~#~#` at +8); the probe reads the led compare.

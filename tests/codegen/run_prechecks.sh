@@ -1570,8 +1570,8 @@ while IFS='%' read -r pat flags want wantrq why; do
         && ok "[5.9] $pat [$flags] -> whole run { $got }, rq_set { $gotrq } ($why)" \
         || bad "[5.9] $pat [$flags]: whole run is { $got } / rq_set { $gotrq }, expected { $want } / { $wantrq } ($why)"
 done <<'ROWS'
-(x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e byte%eeeeeeee~#~#~#~# 16%none%K66's witness under byte: the window is ~#~#~#~#, the run is 16 bytes, and every set byte is in it
-(x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e utf8%eeeeeeee~#~#~#~# 16%none%the same under utf8: both encodings compare the same run
+(x?)([a-z]+)+.eeeeeeee~#~#~#~#\1%-e byte%eeeeeeee~#~#~#~# 16%none%K66's witness under byte: the window is ~#~#~#~#, the run is 16 bytes, and every set byte is in it
+(x?)([a-z]+)+.eeeeeeee~#~#~#~#\1%-e utf8%eeeeeeee~#~#~#~# 16%none%the same under utf8: both encodings compare the same run
 (x?)([a-z]+)+Q.abcdefghij\1%-e byte%abcdefghij 10%none%a 10-byte run beside a set member outside it: Q (81) is rarer than the run's scan byte, so it LEADS ([K82] set-leads) and nothing is left; never the two run bytes outside the window
 (x?)([a-z]+)+Q.abcdefghij\1%-e byte -fno-req-set-lead%abcdefghij 10%81%the same with the lead denied: the rest is Q (81) alone
 (x?)([a-z]+)+abcdefgh\1%-e byte%none%none%a run of exactly 8: the window IS the run, nothing more is emitted
@@ -1580,7 +1580,11 @@ done <<'ROWS'
 ROWS
 # ... and the witness really is the route the rule reads, with a run longer
 # than its window — or the whole-run rows test nothing.
-if emit "$WORKDIR/s59r.c" '(x?)([a-z]+)+eeeeeeee~#~#~#~#\1' -e byte; then
+# The K66 witness carries `.` before its run (s2tri, 2026-11-13): since the
+# [RUN-POS-SET] flip `[a-z]` is a run position, and without the `.` the run is
+# [a-z]eeeeeeee~#~#~#~# (17 positions, a set-tested part plus the memcmp)
+# rather than the 16-byte compare these rows pin; `.` carries no information.
+if emit "$WORKDIR/s59r.c" '(x?)([a-z]+)+.eeeeeeee~#~#~#~#\1' -e byte; then
     # [FIND-TIE]: the window content is unchanged ("~#~#~#~#", the lowest-
     # mass 8-byte window either tie rule finds — an 'e' costs more than a
     # '~'/'#', so any window that drops the run's leading 'e's beats one

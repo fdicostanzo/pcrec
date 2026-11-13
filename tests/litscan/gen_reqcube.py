@@ -67,7 +67,11 @@ cases = [
 ]
 
 # ---- S2b: done[] marks only EXACT positions (S451); NOMATCH -> give-up is the DEFECT ----
-S2B = "(x?)([a-z]+)+S\\d(?i:select)\\1"
+# The byte between S and the run is `.` (no information), not `\d`: since the
+# [RUN-POS-SET] flip (PCREC_MAX_REQ_RUN_POS_SET 2 -> 128) a `\d` is a run POSITION,
+# the run became S[0-9]select and proved the n cells by itself, so S451/S452
+# went unreachable. `.` keeps the run select and S outside it (s2tri, 2026-11-13).
+S2B = "(x?)([a-z]+)+S.(?i:select)\\1"
 S2B_WHY = ("S2b: K65's second half must still memchr every set member the run does not prove; "
            "select's first position's T is 'S', the set's one member, so marking T done (S451) "
            "turns these n cells into step give-ups")
@@ -78,7 +82,7 @@ S2B_GU = "a" * 18 + "Sx1select"
 # reachable: its run [sS]qz scans the exact 'z' (498 ppm) and 'S' (4203) is
 # commoner, so 'S' leads nothing and only K65's rest memchrs it -- the pair
 # position's T that S451/S452 would mark done.
-S2C = "(x?)([a-z]+)+S\\d(?i:s)qz\\1"
+S2C = "(x?)([a-z]+)+S.(?i:s)qz\\1"
 S2C_WHY = ("S2c ([K82]): S2b's shape with 'S' commoner than the run's exact scan byte 'z', "
            "so no set-leads row fires and K65's rest alone memchrs 'S', the T of the run's "
            "pair position; marking T done (S452) turns these n cells into step give-ups")
