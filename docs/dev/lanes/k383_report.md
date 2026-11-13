@@ -121,8 +121,9 @@ measured seconds re-weigh the g2pres-asan rows), and the per-PR `test` kind.
 
 ## STATE AT HANDOFF
 
-All work committed on lane/memfn-k383. OWED: none in this tree beyond the queued verdict named under Owed runs
-(the deliver file says `owed: none`, while the brief asks for the queue key: both are stated here).
+All work committed on lane/memfn-k383.
+OWED: none in this tree beyond the queued verdict named under Owed runs (kit-k383-gate; the deliver file says
+`owed: none`, while the brief asks for the queue key: both are stated here).
 
 ## Charter-vs-committed checklist
 
