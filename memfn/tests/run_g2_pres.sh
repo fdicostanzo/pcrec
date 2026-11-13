@@ -317,15 +317,15 @@ plant_spec() {
     S3119) # R-41: a stated unbounded K (MF_HEAD_MAX_UNBOUNDED) no longer declines the
         # landmark: the bit is read as at K 0
         echo 'presence.c@@        if (s->head_max == MF_HEAD_MAX_UNBOUNDED) out->landmark = 0;@@        if (0) out->landmark = 0;   /* SABOTAGE S3119 */' ;;
-    S3120) # D3 p12: run_part_terms not printed for a scan-less part: the census's
+    S3125) # D3 p12: run_part_terms not printed for a scan-less part: the census's
         # every-pos count falls below G2's own scan-less count
-        echo 'window.c@@    if (!quiet) {\n        fprintf(stderr, "MFTRACE run_part_terms@@    if (!quiet \&\& q->plan_hint != MF_NO_PRED) {   /* SABOTAGE S3120 */\n        fprintf(stderr, "MFTRACE run_part_terms' ;;
-    S3121) # D3 p15: the record printed on the quiet path too (the trace build's
+        echo 'window.c@@    if (!quiet) {\n        fprintf(stderr, "MFTRACE run_part_terms@@    if (!quiet \&\& q->plan_hint != MF_NO_PRED) {   /* SABOTAGE S3125 */\n        fprintf(stderr, "MFTRACE run_part_terms' ;;
+    S3126) # D3 p15: the record printed on the quiet path too (the trace build's
         # define re-asks its own site quietly, ask_sel): every site's records double
-        echo 'window.c@@    if (!quiet) {\n        fprintf(stderr, "MFTRACE run_part_terms@@    if (1) {   /* SABOTAGE S3121 */\n        fprintf(stderr, "MFTRACE run_part_terms' ;;
-    S3122) # D3 p11: the census's parser skips the record's SET terms: its
+        echo 'window.c@@    if (!quiet) {\n        fprintf(stderr, "MFTRACE run_part_terms@@    if (1) {   /* SABOTAGE S3126 */\n        fprintf(stderr, "MFTRACE run_part_terms' ;;
+    S3127) # D3 p11: the census's parser skips the record's SET terms: its
         # unspelled count falls to 0 against G2's (a census0.py plant: @c0/)
-        echo '@c0/census0.py@@        off, kind, val = t.split(":", 2)\n@@        off, kind, val = t.split(":", 2)\n        if kind == "SET":   # SABOTAGE S3122\n            continue\n' ;;
+        echo '@c0/census0.py@@        off, kind, val = t.split(":", 2)\n@@        off, kind, val = t.split(":", 2)\n        if kind == "SET":   # SABOTAGE S3127\n            continue\n' ;;
     S3114) # p13: P2 keeps `rs && !proof->run` on a no-scan run: a dominated site
         # whose run has no findable position is no longer dominated
         echo 'presence.c@@        else if (rsc && !proof->run) dom = 0;@@        else if (rs && !proof->run) dom = 0;   /* SABOTAGE S3114 */' ;;
@@ -381,13 +381,13 @@ plant_expect() {
     S3113) echo 'FLOOR: .*scanless_match|: SOUND: |: EXTENT: ' ;;
     S3114) echo 'FLOOR: .*dom_noscan' ;;
     S3119) echo ': R-41: ' ;;
-    S3120) echo 'D3 EVERY-POS: ' ;;
-    S3121) echo 'D3 RECORDS: ' ;;
-    S3122) echo 'D3 UNSPELLED: ' ;;
+    S3125) echo 'D3 EVERY-POS: ' ;;
+    S3126) echo 'D3 RECORDS: ' ;;
+    S3127) echo 'D3 UNSPELLED: ' ;;
     *) echo '' ;;
     esac
 }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3119 S3120 S3121 S3122"
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3119 S3125 S3126 S3127"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 

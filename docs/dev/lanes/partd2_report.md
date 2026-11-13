@@ -17,7 +17,7 @@ rev 4. Starting state: `partd_report.md` (D0-D2 and R-41 built, D3 not).
   - the `G2SITE` join and G2's own counts (`G2PRP`);
   - the check `memfn/tests/g2/run_part_census.py`, run per target in `run_g2_pres.sh`, with floors;
   - the production-path check `runpart_prod.py`;
-  - plants p11/p12/p15 (S3120-S3122, each RED by its own detector) and p14 (RED, run in the gate).
+  - plants p11/p12/p15 (S3125-S3127, each RED by its own detector) and p14 (RED, run in the gate).
 - **d27fix's F1 is honoured.** `run_rank` takes its caller's run options. `translate` ranks a pinned R's term under
   its member's tie (`member_opts`, d27fix's form).
   - Probe (partd + d27fix, scratch worktree): `make test-memfn-d27frame` passes 6,937,301 checks, 0 failed.
@@ -43,7 +43,7 @@ rev 4. Starting state: `partd_report.md` (D0-D2 and R-41 built, D3 not).
 | `tests/memfn/decider_census.py` | main's `MEMBER_COUNT = 70` with Part D's run_rank comment (Part D renamed a member and added none) |
 
 - `tests/ci/cloud_mech_shards.tsv`: main's version taken, then regenerated with `cloud_units_plan.py mech --measured
-  ... --shards 90 --write`. It was regenerated again after rows S3120-S3122: 50 rows unmeasured.
+  ... --shards 90 --write`. It was regenerated again after rows S3125-S3127: 50 rows unmeasured.
 - `memfn/src/CLAUDE.md` came out of the merge at 12,341 bytes, over its 12,288 limit. E-find's renderer detail moved
   to `memfn/NOTES.md` (not `memfn/src/`: C16 holds every file there), and the file is now 12,162 bytes.
 - `make strict` was green after the merge (commit 737715f5a).
@@ -138,14 +138,14 @@ Plants. Each was run with `run_g2_pres.sh --plant ID`; the logs are in `/var/tmp
 
 | id | plant | detector | measured |
 |---|---|---|---|
-| S3120 | p12: no record for a scan-less part (`!quiet && q->plan_hint != MF_NO_PRED`) | D3 EVERY-POS | RED: `x86-64-v3.0: D3 EVERY-POS: site 440: the census counts 0 every-pos part(s), G2 rendered 1` |
-| S3121 | p15: the record printed on the quiet path too (`if (1)`) | D3 RECORDS | RED: `site 0 (fn row fn-memchr) carries 2 run_part_terms records, not 1` |
-| S3122 | p11: the census parser skips SET terms (a census0.py plant, `@c0/` in plant_spec) | D3 UNSPELLED | RED: `site 430: the census counts 0 unspelled SET terms, G2's measured extent holds 3` |
+| S3125 | p12: no record for a scan-less part (`!quiet && q->plan_hint != MF_NO_PRED`) | D3 EVERY-POS | RED: `x86-64-v3.0: D3 EVERY-POS: site 440: the census counts 0 every-pos part(s), G2 rendered 1` |
+| S3126 | p15: the record printed on the quiet path too (`if (1)`) | D3 RECORDS | RED: `site 0 (fn row fn-memchr) carries 2 run_part_terms records, not 1` |
+| S3127 | p11: the census parser skips SET terms (a census0.py plant, `@c0/` in plant_spec) | D3 UNSPELLED | RED: `site 430: the census counts 0 unspelled SET terms, G2's measured extent holds 3` |
 | p14 | collect.py's `summarize` drops the record | runpart_prod.py | RED by hand (16 fails over 300); in the gate over 600. No mech row: no suite runs collect.py |
 
 - p15's REACH: the trace build's `mf_define` re-asks its own site quietly (compose.c `ask_sel`, rule 2), so the plant
   reaches every site carrying the part. No re-aim was needed.
-- S3120-S3122 are also mech rows (suite `g2pres`). The main run's D3 step reads the planted tree's `memfn/src` and
+- S3125-S3127 are also mech rows (suite `g2pres`). The main run's D3 step reads the planted tree's `memfn/src` and
   `census0.py`. The anchor check resolves (1,289 rows).
 
 ## Part D overlap with d27fix
@@ -184,7 +184,7 @@ Plants. Each was run with `run_g2_pres.sh --plant ID`; the logs are in `/var/tmp
     so 71 arms run.
   - (2) the deny's ASSERT_ZERO cells (`--memfn=no-run-verify-wide`, byte and utf8 bases, c-default/c-vm) on the
     tip alone.
-  - (3) every G2 plant: presence S3106-S3114, S3119-S3122; window S3116-S3118, S1409.
+  - (3) every G2 plant: presence S3106-S3114, S3119, S3125-S3127; window S3116-S3118, S1409.
   - (4) D3's production path: whole corpus GREEN, then p14 RED.
 - The old partd gate (597-kit-partd-gate) shows `cancelled_by_hand` in the queue; it never ran.
 
@@ -196,7 +196,7 @@ In-tree, on the lane tip:
 |---|---|
 | make strict | after the merge: green; after the rename: green; after F1: green |
 | run_g2_pres.sh (the presence family with D3) | 8,051,517 passed / 0 failed; RPCENSUS equal on all 3 targets; EXIT 0 |
-| run_g2_pres.sh --plant S3120 / S3121 / S3122 | RED / RED / RED, each by its own detector (rc 0) |
+| run_g2_pres.sh --plant S3125 / S3126 / S3127 | RED / RED / RED, each by its own detector (rc 0) |
 | runpart_prod.py over 600 corpus compiles | green (37 emitted, 37 exactly one); p14 RED |
 | d27frame on partd + d27fix (probe) | 6,937,301 / 0; control red (160) |
 | anchors (scripts/m6read_check_sab_anchors.py) | 1,289 rows, 1,339 sites, all resolve |
@@ -233,9 +233,9 @@ In-tree, on the lane tip:
 ## Owed runs
 
 OWED: kit-partd2-gate (box job 597-kit-partd2-gate: identity vs fresh BASE c5b3c2c22, the deny's ASSERT_ZERO
-cells, the G2 plants S3106-S3114 S3119-S3122 S3116-S3118 S1409, D3's production path and p14); the cloud kinds test,
+cells, the G2 plants S3106-S3114 S3119, S3125-S3127 S3116-S3118 S1409, D3's production path and p14); the cloud kinds test,
 axes, ubsan, asan on the lane tip; cloud mechrows over S3006 S1095 S1107 S278 S286 S288 S3008 S3009 S3045 S454
-S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3115 S3119 S3120 S3121 S3122 (each exists as a file under
+S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3115 S3119 S3125 S3126 S3127 (each exists as a file under
 tests/mech/sabotages; S1409 and S3116-S3118 are window-family plants with no row file); the `every_pos` card's timing
 (kit-grid@5, UNMEASURED: an owner-cleared window).
 
@@ -245,7 +245,7 @@ tests/mech/sabotages; S1409 and S3116-S3118 are window-family plants with no row
 |---|---|
 | 1. merge main alone, keep MF_SITE_ABI 29, readers by grep, indexes both sides, shard table regenerated, make strict | yes (737715f5a; strict green) |
 | 2. rename to MF_HEAD_MAX_UNBOUNDED, readers by grep, history text unchanged | yes (9cd4f451e) |
-| 3. D3: summarize keeps the record, the parser, settest cn+ bounds (both copies), G2SITE, the check and floors, p11/p12/p14/p15 able to fail | yes; S3120-S3122 RED, p14 RED (by hand; in the gate) |
+| 3. D3: summarize keeps the record, the parser, settest cn+ bounds (both copies), G2SITE, the check and floors, p11/p12/p14/p15 able to fail | yes; S3125-S3127 RED, p14 RED (by hand; in the gate) |
 | 4. F1 overlap: Part D's ranking honours the member's tie; probe merge in a scratch worktree, d27frame result, removed by wtprune | yes: green, control red; probe removed |
 | 5. validation: make, strict, codegen, memfn quick families, G2 quick tier, anchors, claudemd size | all green (Checks), after three fixes found by it: purity row re-anchor, NOTES.md out of memfn/src (C16), G2 window offer vs meet (site 878) |
 | 6. ONE box gate, dry run first, then END | queued as 597-kit-partd2-gate |
