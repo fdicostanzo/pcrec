@@ -18,4 +18,5 @@ make test-memfn-arch green; anchors check passes; make strict passes. Other new 
 OWED: none
 
 ## STATE AT HANDOFF
-Committed; nothing owed. No rulings file.
+Committed. No rulings file.
+OWED: none
