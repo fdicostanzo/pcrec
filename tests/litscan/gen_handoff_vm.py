@@ -93,6 +93,14 @@ CASES = [
   "GIVE-UP WITNESS, K unbounded: under -fno-req-handoff startpos 0 of the first subject gives up (steps) "
   "on the a-run past the last cxyz; the stop answers no match there (one direction only)",
   ["budget steps=3000"]),
+ ("b*xx(?=q)", "byte", "vm",
+  ["xxxq", "bxxqxxxq"],
+  "K unbounded, a lookahead after the run (review 2026-11-12 r2-reqpast CHK-2): a re-ask from attempt_position + 1 "
+  "instead of attempt_position stops one attempt early and loses the match at 1"),
+ ("a+xyz", "byte", "vm",
+  ["axyqaxyz", "axyqaxyqaxyz"],
+  "K unbounded, a match AFTER a failed attempt that has not passed the last occurrence (CHK-3): "
+  "a stop that fires on any failed attempt loses it"),
  ("a+xyz", "byte", "vm",
   ["aaaaxyz", "zaxyz", "xyz", "axyzaaaa", "axyzqaxyzqaaa"],
   "K unbounded (a+ before the run): the attempts stop past the whole run's last occurrence"),

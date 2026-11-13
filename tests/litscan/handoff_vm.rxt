@@ -545,6 +545,54 @@ ns 1 "abq"
 ns 2 "abq"
 ns 3 "abq"
 
+# K unbounded, a lookahead after the run (review 2026-11-12 r2-reqpast CHK-2): a re-ask from attempt_position + 1 instead of attempt_position stops one attempt early and loses the match at 1
+pattern b*xx(?=q)
+features all
+encoding byte
+engine vm
+ms 0 "xxxq" 1 3
+ms 1 "xxxq" 1 3
+ns 2 "xxxq"
+ns 3 "xxxq"
+ns 4 "xxxq"
+ms 0 "bxxqxxxq" 0 3
+ms 1 "bxxqxxxq" 1 3
+ms 2 "bxxqxxxq" 5 7
+ms 3 "bxxqxxxq" 5 7
+ms 4 "bxxqxxxq" 5 7
+ms 5 "bxxqxxxq" 5 7
+ns 6 "bxxqxxxq"
+ns 7 "bxxqxxxq"
+ns 8 "bxxqxxxq"
+
+# K unbounded, a match AFTER a failed attempt that has not passed the last occurrence (CHK-3): a stop that fires on any failed attempt loses it
+pattern a+xyz
+features all
+encoding byte
+engine vm
+ms 0 "axyqaxyz" 4 8
+ms 1 "axyqaxyz" 4 8
+ms 2 "axyqaxyz" 4 8
+ms 3 "axyqaxyz" 4 8
+ms 4 "axyqaxyz" 4 8
+ns 5 "axyqaxyz"
+ns 6 "axyqaxyz"
+ns 7 "axyqaxyz"
+ns 8 "axyqaxyz"
+ms 0 "axyqaxyqaxyz" 8 12
+ms 1 "axyqaxyqaxyz" 8 12
+ms 2 "axyqaxyqaxyz" 8 12
+ms 3 "axyqaxyqaxyz" 8 12
+ms 4 "axyqaxyqaxyz" 8 12
+ms 5 "axyqaxyqaxyz" 8 12
+ms 6 "axyqaxyqaxyz" 8 12
+ms 7 "axyqaxyqaxyz" 8 12
+ms 8 "axyqaxyqaxyz" 8 12
+ns 9 "axyqaxyqaxyz"
+ns 10 "axyqaxyqaxyz"
+ns 11 "axyqaxyqaxyz"
+ns 12 "axyqaxyqaxyz"
+
 # K unbounded (a+ before the run): the attempts stop past the whole run's last occurrence
 pattern a+xyz
 features all

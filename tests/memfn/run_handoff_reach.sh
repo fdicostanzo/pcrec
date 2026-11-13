@@ -89,6 +89,31 @@ else
     ok "reach floor: $reached >= $HANDOFF_REACH_FLOOR"
 fi
 
+# [REQ-PAST-LAST] (lane rpfix, review r2-reqpast CHK-5) A HYBRID WITH AN
+# UNBOUNDED-K WHOLE RUN STAYS DECLINED. The unbounded row's `has_dfa_scan`
+# conjunct is the only thing that keeps `([^@ ]+)@x` (a VM hybrid, its
+# prefilter a DFA scan) off the attempt-loop row; planted away, the artifact
+# stamps "unbounded" with no answer moved, so this pin is its detector.
+while IFS=$'\t' read -r pat; do
+    [ -z "$pat" ] && continue
+    out="$work/hu.c"
+    rm -f "$out"
+    if ! "$pcrec" --features all -p rx -o "$out" --pattern "$pat" 2>"$work/err"; then
+        bad "$pat: compile failed: $(head -c 200 "$work/err")"
+        continue
+    fi
+    if grep -qF '#define RX_VM_PREFILTER "hybrid"' "$out" \
+       && grep -qF '#define RX_REQ_HANDOFF "none"' "$out" \
+       && ! grep -qF 'attempt_position = handoff_position;' "$out"; then
+        ok "$pat (hybrid, unbounded K): declined (RX_REQ_HANDOFF none)"
+    else
+        bad "$pat (hybrid, unbounded K): not a declined hybrid (RX_REQ_HANDOFF $(sed -n 's/^#define RX_REQ_HANDOFF "\(.*\)"$/\1/p' "$out"), VM_PREFILTER $(sed -n 's/^#define RX_VM_PREFILTER "\(.*\)"$/\1/p' "$out"))"
+    fi
+done <<'HYBUNB'
+([^@ ]+)@x
+(\w+)@x
+HYBUNB
+
 # [REQRUN-VM] (lane reqvm1; tuning.md §2.41¶8b) THE VM ATTEMPT LOOP's ROWS.
 # A VM artifact with no DFA scan (`--engine=vm`) hands off to the whole run's
 # first hit less K (`attempt_position = handoff_position`) and, on

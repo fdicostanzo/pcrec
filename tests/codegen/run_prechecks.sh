@@ -1911,6 +1911,12 @@ s512_reentry() {
         if grep -q '^ *if (landmark_position < attempt_position) {$' "$a"; then
             [ "$(stamp "$a" VM_PREFILTER)" = "none" ] && [ "$nd" -eq 1 ] \
                 || bad "[5.12l] $lbl: an attempt-loop re-entry on VM_PREFILTER \"$(stamp "$a" VM_PREFILTER)\" with $nd landmark declarations"
+            # [REQ-PAST-LAST] the re-ask's hit must be KEPT (written to
+            # landmark_position): a re-ask whose result is dropped answers the
+            # same and rescans at every attempt (review r2-reqpast CHK-1, S3074)
+            grep -A3 '^ *if (landmark_position < attempt_position) {$' "$a" \
+                | grep -qE '^ *landmark_position = ' \
+                || bad "[5.12l] $lbl: the attempt-loop re-ask does not keep its hit in landmark_position (quadratic rescans, same answers)"
             return 0
         fi
         [ "$nd" -eq 0 ] && ! grep -q landmark_position "$a" \
@@ -1956,6 +1962,16 @@ for w in 'a.?b' '(?:\d{1,3}\.){3}\d{1,3}' '(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}'
     [ "$(stamp "$a" DFA_PREFILTER)" = "handoff" ] \
         && ok "[5.12l] $w re-enters the handoff" \
         || bad "[5.12l] $w: DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\", expected \"handoff\""
+    s512_reentry "$a" "$w"
+done
+# [REQ-PAST-LAST] the unbounded attempt-loop row's re-ask is held by the same
+# presence check, and the check must REACH it (review r2-reqpast CHK-1, S3074)
+for w in 'a+xyz' '[^@ ]+@x'; do
+    a="$WORKDIR/s512_lu.c"; emit "$a" "$w" --engine=vm
+    [ "$(stamp "$a" REQ_HANDOFF)" = "unbounded" ] \
+        && grep -q '^ *if (landmark_position < attempt_position) {$' "$a" \
+        && ok "[5.12l] $w re-asks the unbounded attempt-loop pre-check" \
+        || bad "[5.12l] $w: REQ_HANDOFF \"$(stamp "$a" REQ_HANDOFF)\" or no attempt-loop re-ask (S3074)"
     s512_reentry "$a" "$w"
 done
 
