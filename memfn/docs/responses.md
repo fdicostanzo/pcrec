@@ -3387,3 +3387,20 @@ the compiler, and is never adopted silently. Proposed for main to file
   - box gate 590 on the merged tip, BASE d05ffcd23: GREEN (zero movers; G2 presence 1,124,582/0; plants as designed);
   - cloud on the merged tip: test and mechrows S3098-S3104 GREEN;
   - cloud on the pre-merge tip: axes, ubsan and asan GREEN, with only C4 comments and allowlist rows changed since.
+- ack: S2 BUILD (Frank's GO 2026-11-12 23:45; started 07:00 2026-11-13 after the token hold). Build lane partd (opus) on lane/memfn-partd, from main f066e84ee with the design branch lane/memfn-pdesign merged in. It builds part_d.md rev 4's units D0-D3 plus R-41 (the declared unbounded head_max) inside one MF_SITE_ABI event. It is delivered for ONE landing with pcrec's [RUN-POS-SET] stage 3. The MF_SITE_ABI number is taken at landing (next after main's).
+- done: 3.0b (plan_frame.md §5 3.0b; set S1; Frank's build GO 2026-11-12) — branch lane/memfn-b30b @ 2668def0c, main d05ffcd23 merged in.
+  What it builds:
+  - MF_SITE_ABI 27 -> 28 (readers by grep); MF_CLASS_V stays 9. No pcrec emitted byte moves.
+  - The ONE pcrec-side hunk is ASK-6's NONE refusal on pcrec's cover site, made loud (approved by main), with plant row AG.
+  - Sabotage rows S3078-S3083, S3085-S3088, S3094, S3095 and S3097 (the other ids in S3078-S3097 are G2 plants); S686 re-aimed.
+  - The R-33 successor probe repaired: mf_art_begin's arity, plus a compile-only prototype check.
+  - The traced window-family purity pass.
+  Report docs/dev/lanes/b30b_report.md. Reviews: 2026-11-12-r1-memfn-s1 and r2-memfn-s1b.
+  Validation:
+  - box gate 591 on the merged tip, BASE d05ffcd23: GREEN (zero movers on all 71 arms, 6942 s);
+  - cloud on the merged tip: test and mechrows (the 14 ids above) GREEN;
+  - cloud on the pre-merge tip e5be7ca12: axes, ubsan and asan GREEN, with only main merged since.
+  OWED (kit, after delivery, not blocking the merge unless main says so):
+  - the D27 spec-first author for 3.0b's contract;
+  - the reach_equal.py agreement run under MF_TRACE on both layers (R19 / Q15, a boxqueue job).
+  NOTE: MF_SITE_ABI 28 is also provisionally held by the S2 Part D build (lane/memfn-partd), which re-bumps to 29 by grep if 3.0b lands first.
