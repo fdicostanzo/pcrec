@@ -160,7 +160,7 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
             /* The key copy and compare are plain int loops, not libc
              * memcpy/memcmp, and that is a measured cost decision (lane
              * rps3c, 2026-11-13): a signature is a handful of ints, and
-             * glibc's AVX-512 memcmp reads it with a masked 32-byte load
+             * the C library's wide-vector memcmp reads it with a masked wide load
              * whose cost here depended on where malloc happened to place
              * `keys` — `(a|b){1,30000}` ran the SAME 220e9 instructions in
              * 12 s or 31-41 s (92M dTLB misses against 1M) depending only on
