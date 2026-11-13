@@ -105,4 +105,10 @@ line. The cells are planned into the next owner-cleared window.
 | no code under `memfn/src` or `src/`; no suites, queue jobs or make; `part_d.md` untouched; `monread` not run | yes |
 | report sections per `s1fix_deliver.txt`; lanecheck ends DONE rc=0 | yes |
 
+## STATE AT HANDOFF
+
+Done. Commits 126b47917 (plan_frame), 641913ef6 (span_runs_sheet), then this report on lane/memfn-s1design. No
+rulings file was named. Open for others: §7 Q16 (main, kit manager), main's PLAN item on the census sweeps since
+U2, and main's approval of ASK-6's loud refusal at 3.0b's GO. Nothing runs or waits.
+
 OWED: none.
