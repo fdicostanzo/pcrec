@@ -114,3 +114,10 @@ S3106-S3114, S3119, S3125-S3127, S3116-S3118, S1409; D3's production path + p14)
 `mechrows` on the branch tip (the merge f9528e943 plus the three fixes; tip at handoff named in the handback). The kit manager runs those. The mechrows set is Part D's
 24 rows (S3106-S3115, S3119, S3125-S3127 + the re-anchored rows) plus d27fix's S3120-S3124 and S3006,
 whose anchor is partd's here.
+
+## STATE AT HANDOFF
+
+Branch lane/memfn-partd at 13cebb40f (the merge is f9528e943; G2 fix d51ff0980; axes + pins 41cb0f4c5; then report
+commits). Every check in Checks is green on this tip's code. OWED: kit-partdland-gate (queued as 597-kit-partdland-gate, job
+script /var/tmp/pcrec-pcrec/scratch/memfn/partdland/jobs/gate.sh, completion line `partdland-gate: DONE ...`), and
+cloud test + mechrows on this tip (the kit manager's).
