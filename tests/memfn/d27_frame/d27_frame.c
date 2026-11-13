@@ -1141,6 +1141,12 @@ static void run_case(kase *k, int idx)
     art_open(&C, k);
     do_render(&C, S, def, MF_WCALL_EMIT, &dE);
     art_close(&C);
+    /* RULING F1 (kit manager, d27fix): the fenced defect path (§2.2 Purity,
+       R30B-8: translate's run-ranking invariants) is reached by no green
+       input, so no define or emit of a generated site refuses through it */
+    chk("no_fenced_defect_refusal", CITE_PUR " R30B-8 (no green input reaches the fenced defect path; ruling F1)",
+        !strstr(dB.err, "run ranking") && !strstr(dE.err, "run ranking"),
+        "the define or emit refused through the run ranking's invariant: %s", *dB.err ? dB.err : dE.err);
 
     /* ---- art U: an unrelated define first, then the ask ---- */
     {
