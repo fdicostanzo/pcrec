@@ -24,4 +24,4 @@ is written from the installed pcre2.h and the man pages only.
 - `cost.py` — enumeration cost on catastrophic patterns, and the bounds.
 - `results/` — committed outputs. `Makefile` reruns them (niced).
 
-Run: `make -C studies/andspike` (about a minute or two on the Linux dev box).
+Run: `make -C studies/andspike` (about three minutes on the Linux dev box; `cross` is most of it).

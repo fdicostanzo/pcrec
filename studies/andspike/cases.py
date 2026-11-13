@@ -114,7 +114,15 @@ check("non-UTF .+ byte ends", len(o.ends(".+", "é€a".encode(), 0)["ends"]), 6
 opt = so.Oracle(no_opt=False)
 for x, s in (("a+", "aaa"), ("a*b?", "aab"), ("(?:a|b)+", "ab"), ("[ab]*", "ab")):
     probe("default opts %s on %r" % (x, s), (opt.ends(x, s, 0)["ends"], o.ends(x, s, 0)["ends"]),
-          "(default-options ends, NO_OPT ends)")
+          "(default-options ends, NO_OPT ends), GUARDED wrapper")
+# The brief's plain form `(?:X)(?C1)`, no (?(R)...) guard: at default options
+# PCRE2 auto-possessifies a repeat that the end callout follows.
+bare_opt = so.Oracle(no_opt=False, recursion_guard=False)
+bare = so.Oracle(recursion_guard=False)
+for x, s in (("a+", "aaa"), (r"(\d+)", "1234"), ("(?:a|b)+", "ab"), ("[ab]*", "ab")):
+    probe("plain (?:X)(?C1) default opts %s on %r" % (x, s),
+          (bare_opt.ends(x, s, 0)["ends"], bare.ends(x, s, 0)["ends"]),
+          "(default-options ends, NO_OPT ends), UNGUARDED wrapper")
 
 if __name__ == "__main__":
     nfail = 0

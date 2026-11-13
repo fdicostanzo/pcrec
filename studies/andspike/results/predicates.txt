@@ -1,0 +1,12 @@
+PASS (\d+)          int($1) <= 255           '1234'           at=0    got=[(0, 3), (0, 3)] want=[(0, 3), (0, 3)]  order 1234,123,...: 1234 > 255, 123 holds
+PASS (\d+)          int($1) <= 255           '999 1234'       at=None got=[(0, 2), (0, 2)] want=[(0, 2), (0, 2)]  leftmost start 0: 999 fails, 99 holds -- the predicate does not imply a token boundary
+PASS \b(\d+)\b      int($1) <= 255           '999 12 300 255' at=None got=[(4, 6), (4, 6)] want=[(4, 6), (4, 6)]  \b forbids shrinking: 999 fails, 12 holds
+PASS (\w+)=(\w+)    $1 == $2                 'a=b x=x'        at=None got=[(4, 7), (4, 5), (6, 7)] want=[(4, 7), (4, 5), (6, 7)]  
+PASS (a+)(a+)       len($1) == 2*len($2)     'aaaaaa'         at=0    got=[(0, 6), (0, 4), (4, 6)] want=[(0, 6), (0, 4), (4, 6)]  (5,1) fails; (4,2) holds
+PASS (a+?)(a*)      len($1) == len($2)       'aaaa'           at=0    got=[(0, 2), (0, 1), (1, 2)] want=[(0, 2), (0, 1), (1, 2)]  lazy $1=a, $2 greedy aaa,aa,a: a==a at $2=a
+PASS (?:(a)|b)+     $1 is None               'ab'             at=0    got=None want=None  every path from 0 starts with (a); $1 persists into the b iteration
+PASS (?:(a)|b)+     $1 is None               'ba'             at=None got=[(0, 1), None] want=[(0, 1), None]  from 0: ba sets $1, b alone leaves it unset
+predicate demos: 8  fail 0
+predicate sweep N=200 L=4 seed=1 pcre2=10.49 2026-09-28: agree 12400 differ 0 (matches found 5045)
+## control ANDSPIKE_SABOTAGE=pred
+predicate sweep N=50 L=4 seed=1 pcre2=10.49 2026-09-28: agree 1897 differ 1203 (matches found 1986)

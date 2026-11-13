@@ -51,9 +51,13 @@ PASS  UTF .+ & (?:€a|é)                          got=(0, 2)  want=(0, 2)
 PASS  UTF inline agrees                          got=(0, 2)  want=(0, 2)  
 PASS  UTF lookahead_order                        got=[6, 5, 2]  want=[6, 5, 2]  remaining counted in chars
 PASS  non-UTF .+ byte ends                       got=6  want=6  every byte is a char
-PROBE default opts a+ on 'aaa'                   got=([3, 2, 1], [3, 2, 1])  (default-options ends, NO_OPT ends)
-PROBE default opts a*b? on 'aab'                 got=([3, 2, 1, 0], [3, 2, 1, 0])  (default-options ends, NO_OPT ends)
-PROBE default opts (?:a|b)+ on 'ab'              got=([2, 1], [2, 1])  (default-options ends, NO_OPT ends)
-PROBE default opts [ab]* on 'ab'                 got=([2, 1, 0], [2, 1, 0])  (default-options ends, NO_OPT ends)
-cases: 57  pass 51  fail 0  probe 6
+PROBE default opts a+ on 'aaa'                   got=([3, 2, 1], [3, 2, 1])  (default-options ends, NO_OPT ends), GUARDED wrapper
+PROBE default opts a*b? on 'aab'                 got=([3, 2, 1, 0], [3, 2, 1, 0])  (default-options ends, NO_OPT ends), GUARDED wrapper
+PROBE default opts (?:a|b)+ on 'ab'              got=([2, 1], [2, 1])  (default-options ends, NO_OPT ends), GUARDED wrapper
+PROBE default opts [ab]* on 'ab'                 got=([2, 1, 0], [2, 1, 0])  (default-options ends, NO_OPT ends), GUARDED wrapper
+PROBE plain (?:X)(?C1) default opts a+ on 'aaa'  got=([3], [3, 2, 1])  (default-options ends, NO_OPT ends), UNGUARDED wrapper
+PROBE plain (?:X)(?C1) default opts (\d+) on '1234' got=([4], [4, 3, 2, 1])  (default-options ends, NO_OPT ends), UNGUARDED wrapper
+PROBE plain (?:X)(?C1) default opts (?:a|b)+ on 'ab' got=([2, 1], [2, 1])  (default-options ends, NO_OPT ends), UNGUARDED wrapper
+PROBE plain (?:X)(?C1) default opts [ab]* on 'ab' got=([2], [2, 1, 0])  (default-options ends, NO_OPT ends), UNGUARDED wrapper
+cases: 61  pass 51  fail 0  probe 10
 pcre2 10.49 2026-09-28
