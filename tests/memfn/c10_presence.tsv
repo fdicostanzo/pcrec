@@ -20,4 +20,7 @@
 # TH-5 / R-41 (S2 joint landing): an unbounded handoff K states the kit's named MF_HEAD_MAX_UNBOUNDED, which memfn.h defines as 2^40 (the interim number, unchanged).
 --engine=vm	(a+)+zq	VM_ATTEMPT	3	3	REQUIRED	1099511627776
 -	(?m)^abc	DFA_ATTEMPT	3	3	OPTIONAL	0
---memfn=no-window-search	x\d{3}abcde	DFA_SCAN	6	5	OPTIONAL	4
+# [RUN-POS-SET] S2 (set positions up to 128 members): the handoff witness was
+# x\d{3}abcde, whose `\d`s are run positions now (run x[30-39]{3}abcde, 9, K 0:
+# no handoff left). RE-AIMED with `.`, no run position: the run is abcde at 4.
+--memfn=no-window-search	x.{3}abcde	DFA_SCAN	6	5	OPTIONAL	4
