@@ -2,7 +2,7 @@
 # S3072 ([FIND-MINW], lane s1fix, review r1-s1 CHECKS-2) -- the DFA forward scan's candidate-start filter block (`pf_close`) never ends the search where fewer than W bytes remain past its landing.
 # The plant removes answers nothing (the stop only removes work), so the corpus
 # stays green; the detector is run_prechecks.sh §1.3b, which holds the emitted
-# text to "present by default, absent under --harness=no-min-width".
+# text to "present by default, absent under the minimum-width test lever".
 SAB_ID='S3072-dfa-pf-close-minw-dropped'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='prechecks'

@@ -29,3 +29,6 @@ Cloud test run 43331915793 went red on test-codegen's K37 lint: run_prechecks.sh
 
 ## Follow-up (s1fix3)
 emit_sweep (sweep.log) showed 365 `facts`-stream movers: `--emit-facts` row `width` on attempt-route patterns (`\A`) flipped `asked` yes -> no. Cause: CHECKS-4 (removing the dead ATTEMPT branch also removed its `cand_front_min_width` call, which is what ASKS the fact). The listing is caller-visible, so CHECKS-4 is REVERTED (the ask and the dead branch are back, with a comment saying why); CHECKS-4 is therefore left out and listed here; the plan trigger stands. After the revert `--emit-facts=byte --pattern '\A'` reads `width ... yes` again. No spec change (listing unchanged). Re-run sweep: `scratch/s1fix/sweep2.log` (box-lock waiter), OWED, expect 0 movers in every stream. Cloud test s1fix3 dispatched.
+
+## Follow-up (s1fix4)
+Cloud s1fix2 red on G7 lever fence (c): run_prechecks.sh genuinely invokes `--harness=no-min-width` ([1.3b]), so tests/codegen/run_prechecks.sh is added to the fence's allowlist with its reason; the S3070-S3073 header comments no longer spell the lever. `bash tests/compound/run_lever_fence.sh` PASS alone. Cloud test s1fix4 dispatched.

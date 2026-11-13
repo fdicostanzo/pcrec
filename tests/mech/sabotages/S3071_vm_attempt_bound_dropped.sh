@@ -2,7 +2,7 @@
 # S3071 ([FIND-MINW], lane s1fix, review r1-s1 CHECKS-2) -- the VM attempt loop's minimum-width bound (`const size_t attempt_max = subject_length - W;`) is never declared, so the loop runs to the subject's end.
 # The plant removes answers nothing (the stop only removes work), so the corpus
 # stays green; the detector is run_prechecks.sh §1.3b, which holds the emitted
-# text to "present by default, absent under --harness=no-min-width".
+# text to "present by default, absent under the minimum-width test lever".
 SAB_ID='S3071-vm-attempt-bound-dropped'
 SAB_FILE='src/gen/emit_vm.c'
 SAB_SUITES='prechecks'

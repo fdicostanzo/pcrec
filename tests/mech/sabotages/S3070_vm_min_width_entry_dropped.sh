@@ -2,7 +2,7 @@
 # S3070 ([FIND-MINW], lane s1fix, review r1-s1 CHECKS-2) -- the VM search entry's general minimum-width check (`if (subject_length - search_from < W) return 0;`) is never emitted.
 # The plant removes answers nothing (the stop only removes work), so the corpus
 # stays green; the detector is run_prechecks.sh §1.3b, which holds the emitted
-# text to "present by default, absent under --harness=no-min-width".
+# text to "present by default, absent under the minimum-width test lever".
 SAB_ID='S3070-vm-min-width-entry-dropped'
 SAB_FILE='src/gen/emit_vm.c'
 SAB_SUITES='prechecks'
