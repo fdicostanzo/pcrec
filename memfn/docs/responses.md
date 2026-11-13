@@ -3355,3 +3355,17 @@ the compiler, and is never adopted silently. Proposed for main to file
   - 580: the regex and the floors.
   597 (utf8 sweep) movers 0. Commits after 575's make test touch only scripts/emit_sweep.py pins, tests/mech S726/CLAUDE.md and reports; the emit_sweep self-test passes (28/0).
 - done: xarchfix (a kit defect in kclose's XARCH-NEEDSOK, on main since a134ade6b) — branch lane/memfn-xarchfix @ 6f9f988fe (from main 3b52b096d). memfn/tests/check_targets.sh's needs-suffice cell now reports a failing level as its own MISMATCH: it names the level, the stamp, the needs, and a summary in words. The compiler output is kept in a scratch file; a no-helper level is flagged by a marker, not a generated #error. No `error:` text reaches the check's output, so the sabotage matrix scores its catches DETECTED, not ANOMALY. S725, S2981, S2994 and S726 (back from COMPILE-CATCH) are DETECTED; tests/mech/CLAUDE.md's COMPILE-CATCH list drops S726. Non-vacuity: the clean tree passes; an always_inline plant (S726) and a no-helper plant (S2994) each FAIL cleanly. Validation: box job 589 (18 memfntargets rows: 0 unexpected, 0 anomalies), make strict, test-memfn-targets 42/0, CLAUDE.md size. Report docs/dev/lanes/xarchfix_report.md. Note for main: plan.md still shows [XARCH-NEEDSOK] not-started; kclose delivered it.
+- done: R-38 K38-2 (the seam event, Parts A and B: the run handed to the kit uncut in set form, `mf_class.run` answered by kit_run_decide, `omin < 0` admitted on the run span, `head_max` int64_t; the pcrec-side window cut and scan pick deleted) — branch lane/memfn-k382 @ f95739f5f, on main 51481d1b3 at artifact ABI 104 (readers re-bumped by grep; FILEPIN self-pinned to the merge ff1885b16, re-pin at landing).
+  Design of record: docs/design/memfn/span_runs_sheet.md rev 1.3, §5.1 and its addendum. Census populations P1-P5, P2so, P4c (the §4.2 clip on walks shorter than the run), P2r (the '@' re-pointed to the read member on short runs), the Fret and `used` movers; 0 unexplained.
+  Code review docs/dev/reviews/2026-11-11-r1-k382.md: 19 findings, all ruled; F1-F16 fixed (lane k382fix). Notable fixes:
+  - F1: generic ALL_PRESENT applies the run floor (a latent answer defect), with a G2 on_miss_leaves=0 pass added.
+  - F2: dominance reads the kit's reply (no dominated->emitted flips).
+  - F5: req_run and req_run_maxoff retired.
+  Reports docs/dev/lanes/: k382, k382fix, k382m, k382c2b, k382cen, k382mech, k382cm, k382cm2, k382n.
+  Validation on f95739f5f:
+  - box 600 strict, 601-603 identity (3 shards vs BASE 51481d1b3, abi 103->104), 605 memfn, 606 plants: all GREEN;
+  - box 604 reach: a measurement by ruling. Rows base 31 = head 31 on all 21 arms, no row gone, basis rc=0; the count moves are §4.3's declared decision moves;
+  - cloud test, axes, ubsan and asan: all GREEN;
+  - cloud mechrows S278/S517/S1909: GREEN;
+  - cloud mech (90 shards, run 43315914363): 89/90 GREEN. The one red row is S708-vmlazy-reach-in-iterations, UNDETECTED, and it is MAIN's: S1's min-width search stop (51481d1b3) returns 0 for subjects under 7 bytes, and S708's subjects ("aabae", "aabaex", "aabcae") are 5-6 bytes. K38-2 code is not involved; main's own mech after S1 should show the same red. Triage: /var/tmp/pcrec-pcrec/scratch/memfn/triagecm5/triage.md.
+  Also delivered: the c2a/c2b findings readers re-aimed per §4.3 (findings.md §4), the cloud mech shard table re-derived, and several sabotage rows re-aimed, re-planted or declared (S278, S446, S448, S461, S517, S526, S1906, S1909, S1917, S1930, S3006, S3043-S3048).
