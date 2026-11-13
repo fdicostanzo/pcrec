@@ -230,19 +230,18 @@ done
 # lane s1fix, review r1-s1 CHECKS-2). The positive replacement for what §1.1b
 # and §1.2 gave up when the unanchored VM artifact began declaring
 # `attempt_max`: each site's text is PRESENT by default and ABSENT under the
-# test-only lever `--harness=no-min-width` (build/pcrec-harness), so a
+# test-only lever `--harness=no-min-width` (the built pcrec-harness), so a
 # deleted emitter line and a lever that stopped reaching it both go red.
 # Sites: the VM entry check and the VM attempt loop's bound (`a(b|c)+d`, W=3),
 # and the DFA front check and `pf_close`'s block check (`cat|dog|...`, W=3).
-HBIN="${PCREC_HARNESS:-$(dirname "$PCREC")/pcrec-harness}"
+HBIN="${PCREC_HARNESS:-$ROOT_DIR/build/pcrec-harness}"   # the built harness beside the compiler under test
 if [ ! -x "$HBIN" ]; then
     bad "[1.3b] no pcrec-harness at $HBIN -- run \`make\` first"
 else
     mw_row() {   # mw_row <label> <pattern> <ERE of the site> [engine arg]
         local label="$1" pat="$2" re="$3" eng="${4:-}" on="$WORKDIR/mw_on.c" off="$WORKDIR/mw_off.c"
         emit "$on" "$pat" $eng || { bad "[1.3b] $label: $pat refused"; return; }
-        pcrec_run "$HBIN" -p rx --features all $COVER_DENY $WALK_DENY $eng --harness=no-min-width \
-            -o "$off" --pattern "$pat" >/dev/null 2>&1 || { bad "[1.3b] $label: $pat refused under the lever"; return; }
+        pcrec_run "$HBIN" -p rx --features all $COVER_DENY $WALK_DENY $eng --harness=no-min-width -o "$off" --pattern "$pat" >/dev/null 2>&1 || { bad "[1.3b] $label: $pat refused under the lever"; return; }
         if grep -Eq "$re" "$on" && ! grep -Eq "$re" "$off"; then
             ok "[1.3b] $label: $pat emits the stop by default and not under --harness=no-min-width"
         else

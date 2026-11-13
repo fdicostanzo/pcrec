@@ -23,3 +23,6 @@
 
 ## OWED
 See STATE AT HANDOFF: emit_sweep 0-mover proof, test-codegen, cloud test + mechrows S3070-S3073.
+
+## Follow-up (s1fix2)
+Cloud test run 43331915793 went red on test-codegen's K37 lint: run_prechecks.sh `HBIN=` line named `"$PCREC"` with no bound token. Fixed: HBIN derives from `$ROOT_DIR/build/pcrec-harness`; the grep of the K37 site regex over the file finds no unguarded line; prechecks 399/0. REACH_ONLY matrix S3070-S3073 later finished: 4 of 4 REACHED. Re-dispatched cloud test as s1fix2.
