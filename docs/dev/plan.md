@@ -281,6 +281,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-12, Frank: blocks instead of doubling, "also helps with streaming"): leading candidate = BLOCKED look-ahead: one presence question per block of B bytes ahead of the loop (yes: the block's attempts run unasked; no: scan forward to the next occurrence, end of subject stops); forward-only, at most one block ahead (stream- and readahead-friendly; doubling can demand unbounded look-ahead a stream cannot supply). B is a tuning constant: derive it from a SYSTEM constant (Frank): the stream's chunk when streaming, else the page size (sysconf(_SC_PAGESIZE), POSIX libc, or a build-time page constant if the measurement shows insensitivity; not the per-device /sys readahead window, not glibc-only cache sizes) and show insensitivity across that range in the measurement.
 
 ## Candidates ([OPTLOOP])
+- [LOOP-FIXW] STATE:not-started — fixed-width loops by pointer arithmetic; survey of related loop ideas
+  filed: 2026-11-13 manager (Frank: "for long counts like that in vm: 1. pointer arithmetic instead of frames ... fixed width 2. set the capture after the loop runs and on fallback"; "Have the item look at other general loop ideas related")
+  status (2026-11-13): filed; context = (a|b){1,30000} (S2 cloud red, ~12.5 s compile on main at BOTH engines, so the time is pre-engine analysis, a separate anomaly)
+  next: (1) census: corpus loops with a fixed-width body, the rung each takes today, VM frames/size; (2) design the fixed-width step as a SPECIAL CASE of the reverse-deterministic rung (no parallel mechanism); (3) survey related general loop ideas with triggers
+  refs: [ENG-BREP], RUNG-SELECT (plan_completed: src/opt/revdet.c, vm_revdet_rep: O(1) frames, last-iteration capture walk); [REPEAT-RUN]; D47.1; memory pcrec-general-mechanisms-not-special-cases
+  Body: docs/design/plan_row_bodies/LOOP-FIXW.md
 - [LITSCAN-SIZEFLOOR] STATE:not-started — a size-aware F5 floor: chain 2-byte runs only where the collapsed form would not overflow the cap
   filed: 2026-11-10 closea (the residual witness of the closed [OPT-LITSCAN], bench O-78 filed 2026-09-30)
   status (2026-11-10): filed, nothing scheduled; D127's floor of 3 re-refuses wild-datetime-datefinder-alternation at --engine=vm under the default 500,000-byte code cap (vm_program_bytes 508,413 -> 605,083); not a bug
