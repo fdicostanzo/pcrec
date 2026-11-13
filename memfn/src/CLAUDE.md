@@ -18,7 +18,7 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 - SIMD rows (`vrun.c`): deny-able, read the art's target (U2), no CPU `#if`; `policy` (INLOOP/SIZE/NONE) a row must serve fully; scalar contracts serve MF_ANY; each SIMD form must beat scalar or show a named benefit (memory pcrec-post-spine-direction).
 - STACK (R-28): no function over a 4 KB frame (`tests/memfn/run_link_checks.sh` holds it; the peak is stated in `../CLAUDE.md` "Compile-time stack"). A table that would pass it goes on the heap with a refusal path (`formhash.c`), or a narrower type.
 - Keep `mf_options()` (`--list-axes`) and `mf_opts_check()` (`--memfn=` acceptance) one table (`options.def`).
-- THE WINDOW FAMILY (`window.c`, `docs/design/memfn/window_site.md` rev 3.3) is the route of EVERY site stating window facts (`WF_STATES`: `mf_site.nalt`/`alts`/`wfloor`) on every art. Its fields.def fields classify only through `gate_in.wf` (unstated in every other walk, so no older row can be declined by them). Every cost row reads `plan_cost.def`; every tie reads `wf_ties[]` (the TIE table). Table E, first match: E-func/E-stmt render the plan TRANSLATED into today's row's site (so their text is today's; never a REPORT site); E-find (D172 S3, deny `window-search`) is the family's own find-then-verify text on a STMT/ASSIGN site with a stop (its B/C renderer rows: NOTES.md "E-find"); E-generic is the floor (`wf_floor_arm`), serving no REPORT site (so `no-window-search` refuses one and pcrec keeps its default). Its G2 family is `memfn/tests/run_g2_win.sh` (plants `--plants`).
+- THE WINDOW FAMILY (`window.c`, `docs/design/memfn/window_site.md` rev 3.3) is the route of EVERY site stating window facts (`WF_STATES`: `mf_site.nalt`/`alts`/`wfloor`) on every art. Its fields.def fields classify only through `gate_in.wf` (unstated in every other walk, so no older row can be declined by them). Every cost row reads `plan_cost.def`; every tie reads `wf_ties[]` (the TIE table). Table E, first match: E-func/E-stmt render the plan TRANSLATED into today's row's site (so their text is today's; never a REPORT site); E-find (D172 S3, deny `window-search`) is the family's own find-then-verify text on a STMT/ASSIGN site with a stop (its B/C renderer rows: ../NOTES.md "memfn/src: E-find"); E-generic is the floor (`wf_floor_arm`), serving no REPORT site (so `no-window-search` refuses one and pcrec keeps its default). Its G2 family is `memfn/tests/run_g2_win.sh` (plants `--plants`).
 
 ## Files
 
@@ -45,7 +45,7 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with `KITFLAGS`
 
 ## Pointers
 
-NOTES.md (this directory): detail moved out of the orientation text.
+../NOTES.md: detail moved out of the orientation text (no notes file here: C16 holds every file in this directory).
 
 `docs/design/memfn/integration.md` (§R4.7, §R4.9, §14-15), `row_contracts.md`, `r17b_prime.md`, `setfind.md`, `window_contract.md`; `../docs/trace_format.md`; D145, D147, D149, D155, D157.
 
