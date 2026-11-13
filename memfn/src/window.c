@@ -2638,7 +2638,8 @@ static int framed_refused(const mf_art *art, const mf_site *s)
 static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks *def,
                           unsigned gphases, int use, mf_wreply *out)
 {
-    if (framed_refused(art, site) || (use && site->decl_point)) return -1;
+    if (framed_refused(art, site)) return -1;
+    if (use && site->decl_point) return -1;
     wd_blk *blks = NULL;
     mf_arena heap = { &blks, wd_alloc };
     wf_dec *d = wd_alloc(&blks, sizeof *d);
