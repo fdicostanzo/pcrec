@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s1design_report.md
+sections: Summary; What K38-2 moved under 3.0b; 3.0b re-based; K38-3 re-based; Sabotage fates and numbers; MF_SITE_ABI; Open questions; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
