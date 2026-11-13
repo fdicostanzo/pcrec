@@ -565,6 +565,14 @@
 #     observable before K38-2 (the lever's tie compiles are refused until
 #     then). Registered before S3007-S3009; S3010-S3012 (lane k382afix) ride
 #     it too.
+#   g2pres-asan — added 2026-11-12 ([MEMFN] R-38 K38-3, lane k383); runs
+#     memfn/tests/run_g2_pres.sh WITH its ASan+UBSan build (G2P_NOASAN
+#     unset): layout A, the subject at offset 1..W-1 from a W-aligned heap
+#     block, is W-K4b's detector (an aligned-down load never leaves its
+#     page, so layout L's guard cannot see it). Its own arm because the
+#     whole family under ASan costs ~1.8x g2pres (measured by lane k383:
+#     the --plant ASan path 80 s vs 44 s per plant on the dev box). Rows:
+#     S3100, S3101.
 #   memfndeleg — added 2026-10-09 ([MEMFN] M6 follow-up, kit session);
 #     runs tests/memfn/run_deleg_sites.sh, C10: every DELEG_SITES row against
 #     D91's use ceiling, the vocabulary probe and the planted control. Its own
@@ -3495,6 +3503,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/g2pres.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/g2pres.log" | grep -oE '[0-9]+')"
                 score_arm "$work/g2pres.log" "$f" "g2pres:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            g2pres-asan)
+                # [MEMFN] R-38 K38-3 memfn/tests/run_g2_pres.sh WITH the
+                # ASan+UBSan build (layout A, W-K4b) — see the vocabulary
+                # entry above. Links the sabotaged tree's own build/libpcrec.a.
+                LIB="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/memfn/tests/run_g2_pres.sh" > "$work/g2presasan.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/g2presasan.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/g2presasan.log" | grep -oE '[0-9]+')"
+                score_arm "$work/g2presasan.log" "$f" "g2pres-asan:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfndeleg)
                 # [MEMFN] C10 tests/memfn/run_deleg_sites.sh — see the
