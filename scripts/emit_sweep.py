@@ -3324,7 +3324,8 @@ IDENT_STREAMS = "c-default,c-vm,emit-ir,composition"
 IDENT_NOCOMP = "c-default,c-vm,emit-ir"
 IDENT_MEMFN = ("vrun-w32", "vrun-w16", "vrun-kb", "vrun-trim", "vrun-pad",
                "precheck-assign-byte", "fd-d1", "fd-pres-g1",
-               "fd-pres-pick", "pres-set-lead", "window-search", "window-skip")
+               "fd-pres-pick", "pres-set-lead", "window-search", "window-skip",
+               "run-verify-wide")  # R-38 Part D: a gate whose REF predates it skips it
 # EXEMPT from the DELIVER witness: the arm removes the composition artifacts
 # the witness needs (no composition stream, so no cross-group SET pair). Its
 # byte identity is checked on IDENT_NOCOMP; the composition stream rides the
