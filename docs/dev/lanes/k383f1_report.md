@@ -36,3 +36,4 @@ OWED: none
 
 ## STATE AT HANDOFF
 All committed on lane/memfn-k383; nothing owed. J5B waits for its card to be scheduled for measurement (artifact form and F2 designed then).
+OWED: none
