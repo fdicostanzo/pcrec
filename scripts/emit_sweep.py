@@ -2523,6 +2523,8 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
 #       pffix (e41ac3534, src diff is emit_dfa.c only) moves `((?:a|){0,4}c)` yes -> yes-collapsed; both are
 #       cap-edge artifacts, bisected to those merges by the same probe. (Inferred, not separately rebuilt:
 #       that the +bytes are the stamp/abi text; the commit step is measured.)
+#   The lowsize/lowboth UTF8 `stderr-vm` manifest witness `(a{2,4})+` (no-size-cap -> refused by (2)) becomes
+#   `(a)(?!\1)*z`, the pick `--emit-pins` measures; the tag's population (14) is unchanged.
 #   No answer changed in any cell (0 movers, 0 asymmetric); no optimisation lost at the shipped caps.
 VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-callout': b'a(?C)b',
                                                      'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
@@ -2590,7 +2592,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-callout'
                                                                      'no-nullable-collapsed': b'[^c]{0,4}$',
                                                                      'no-variable': b'${v}x'},
                                     'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a){2,4}'},
-                                    'stderr': {'stderr-vm': b'(a{2,4})+'}},
+                                    'stderr': {'stderr-vm': b'(a)(?!\\1)*z'}},
                        'reach': {'c-default': 5685, 'c-vm': 5625, 'emit-ir-vm': 5638, 'facts': 5598},
                        'tags': {'emit-ir-auto': {'no-backreference': 419,
                                                  'no-callout': 39,
@@ -2787,7 +2789,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-callout'
                                                                      'no-nullable-collapsed': b'(?:ab){0,16000}',
                                                                      'no-variable': b'${v}x'},
                                     'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a){2,4}'},
-                                    'stderr': {'stderr-vm': b'(a{2,4})+'}},
+                                    'stderr': {'stderr-vm': b'(a)(?!\\1)*z'}},
                        'reach': {'c-default': 5645, 'c-vm': 5625, 'emit-ir-vm': 5638, 'facts': 5558},
                        'tags': {'emit-ir-auto': {'no-backreference': 419,
                                                  'no-callout': 39,
