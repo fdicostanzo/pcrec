@@ -50,3 +50,9 @@ count of corpus loops of this shape, no kit request until that row is scheduled.
   site with a new caller, so no dependency on the unscheduled [SPAN-ISEL]. pcrec states "first position not
   in {a,b}, within this bound"; whether the kit scans the wide complement or turns it into a run of the
   narrow set is the kit's method (D157).
+- COMPILE-TIME ANOMALY LOCATED (lane rps3c, 2026-11-13): (a|b){1,30000} spends 99.9% of its ~12.5 s in
+  pcrec_minimize_dfa (220e9 instructions, same on main and the S2 branch); the branch's extra time was glibc
+  AVX-512 memcmp dTLB misses from heap layout (fixed on lane/rps3 with int loops). The real question for this
+  row: minimization by repeated signature refinement over a ~30000-state counted DFA is superlinear; a
+  counted repeat should not be built as 30000 states and then minimized (counter states / data tables, or
+  the loop forms above), or minimization should be Hopcroft-class. Census the corpus's largest minimize costs.
