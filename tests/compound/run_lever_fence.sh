@@ -58,8 +58,11 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # do all generated cloud timing tables (cloud_*_shards.tsv, measured_*.tsv); and
 # R-38 K38-2's row S3042 (the REQ_RUN stamp's `@` fed pcrec's index, lane
 # k382), whose reach probe names `run-tie-left` (the C4 witness's only way in),
-# and tests/codegen/reqcube_check.py's C4 lever rows (its reaching regime).
-ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S192[1289]_|tests/mech/sabotages/S1930_|tests/mech/sabotages/S(446|807)_|tests/mech/sabotages/S3042_|tests/codegen/reqcube_check\.py|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv|tests/ci/(cloud_[a-z]+_shards|measured_[a-z]+)\.tsv)'
+# and tests/codegen/reqcube_check.py's C4 lever rows (its reaching regime); and
+# tests/codegen/run_prechecks.sh's [1.3b] rows, which compile each minimum-width
+# site once with the `no-min-width` lever to show the text is absent there
+# (lane s1fix, review r1-s1 CHECKS-2).
+ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S192[1289]_|tests/mech/sabotages/S1930_|tests/mech/sabotages/S(446|807)_|tests/mech/sabotages/S3042_|tests/codegen/reqcube_check\.py|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/run_prechecks\.sh|tests/codegen/cand_oracle_witnesses\.tsv|tests/ci/(cloud_[a-z]+_shards|measured_[a-z]+)\.tsv)'
 mentions() {
     (cd "$1" && grep -rnI -e '--harness=' -e "$PFX" docs/spec docs/guide README.md examples lib tests scripts cli 2>/dev/null) |
         grep -Ev "$ALLOW"
