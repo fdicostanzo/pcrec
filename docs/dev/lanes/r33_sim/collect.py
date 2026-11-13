@@ -103,18 +103,22 @@ def src_rp(tree):
 
 
 def summarize(trace):
-    """The kit's selections for one define: each END's chosen row by table (phase define/run)."""
-    ends, fdroute, wpath = [], None, None
+    """The kit's selections for one define: each END's chosen row by table (phase define/run), and (R-38 Part D,
+    part_d.md §5.1 D3) each derived run part's `run_part_terms` record kept RAW in `parts`, for the census's one
+    parser (span_pick/census0.py run_part_record)."""
+    ends, fdroute, wpath, parts = [], None, None, []
     for t in trace:
         f = t.split()
         kv = dict(x.split("=", 1) for x in f[2:] if "=" in x)
-        if f[1] == "END" and kv.get("phase") in ("define", "run"):
+        if f[1] == "run_part_terms":
+            parts.append(t)
+        elif f[1] == "END" and kv.get("phase") in ("define", "run"):
             ends.append([kv.get("table"), kv.get("chosen")])
         elif f[1] == "FDROUTE":
             fdroute = kv.get("row")
         elif f[1] == "WPATH":
             wpath = {"path": kv.get("path"), "arm": kv.get("arm"), "fd": kv.get("fd")}
-    return {"ends": ends, "fdroute": fdroute, "wpath": wpath}
+    return {"ends": ends, "fdroute": fdroute, "wpath": wpath, "parts": parts}
 
 
 def parse(stderr, rates):
@@ -144,19 +148,33 @@ def parse(stderr, rates):
     return sites
 
 
+def req_stamps(text):
+    """pcrec's own `<PREFIX>_REQ_RUN` / `_REQ_WHY` stamps, read off the emitted artifact (stdout), every prefix:
+    {"run": [...], "why": [...]} (D3's production-path check reads them; it shares no source with the kit trace)"""
+    out = {"run": [], "why": []}
+    for ln in text.decode("latin-1").splitlines():
+        f = ln.split(None, 2)
+        if len(f) == 3 and f[0] == "#define" and f[2].startswith('"'):
+            if f[1].endswith("_REQ_RUN"):
+                out["run"].append(f[2].strip('"'))
+            elif f[1].endswith("_REQ_WHY"):
+                out["why"].append(f[2].strip('"'))
+    return out
+
+
 def run_one(task):
     probe, src, pid, pat, note, arm, flags = task
     env = dict(os.environ, PCREC_MF_ROUTE_TRACE="1")
     try:
         r = subprocess.run([probe, "--features", "all", "-p", "rx", *flags, "-o", "-", "--pattern", pat],
                            capture_output=True, timeout=120, env=env)
-        rc, err = r.returncode, r.stderr
+        rc, err, req = r.returncode, r.stderr, req_stamps(r.stdout)
     except subprocess.TimeoutExpired:
-        rc, err = "timeout", b""
+        rc, err, req = "timeout", b"", None
     rates = {}
     sites = parse(err, rates)
     return {"src": src, "id": pid, "arm": arm, "note": note, "pat_hex": pat.hex(),
-            "pat": pat.decode("latin-1"), "rc": rc, "sites": sites}, rates
+            "pat": pat.decode("latin-1"), "rc": rc, "req": req, "sites": sites}, rates
 
 
 def main():

@@ -544,6 +544,7 @@ static const mf_target *g_target;
 static int g_lever;
 static int g_deny;                      /* the deny pass: every site under no-run-verify-wide */
 static int g_oml = 1;                   /* the sites' on_miss_leaves (argv[6]) */
+static int g_g2site;                    /* env G2P_G2SITE: print D3's join line */
 static const char *g_tag;
 static uint32_t g_inc;
 static int g_fails;
@@ -963,6 +964,12 @@ static void one_site(gsite *g, buf *fs, gout *o)
         fail(g->id, "mf_define", mf_art_error(art));
         return;
     }
+    /* R-38 Part D D3's JOIN (part_d.md §5.1 D3 [r3pd RDY-4]): under
+       G2P_G2SITE (the run against the trace kit) each site's define is
+       closed by `G2SITE id=N` on stderr, the stream the kit's MFTRACE
+       records share, so every `run_part_terms` record between two G2SITE
+       lines is site N's (the kit's art= is its own trace id) */
+    if (g_g2site) fprintf(stderr, "G2SITE id=%d\n", g->id);
     g_layout_ok++;
     g_dec_rendered += dec;
     g_deny_sites += g_deny;
@@ -1066,6 +1073,7 @@ int main(int argc, char **argv)
     if (!g_target) { fprintf(stderr, "g2p: target %s: %s\n", argv[4], err); return 2; }
     g_lever = atoi(argv[5]);
     if (argc >= 7) g_oml = atoi(argv[6]);
+    g_g2site = getenv("G2P_G2SITE") != NULL;
     char tag[64];
     snprintf(tag, sizeof tag, "%s.%s%s%s", argv[4], g_lever ? "lever" : "default", g_oml ? "" : ".oml0",
              g_deny ? ".deny" : "");

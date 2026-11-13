@@ -552,6 +552,27 @@ sound:
     }
 }
 
+/* R-38 Part D D3's G2 side (part_d.md §5.1 D3 [r3pd RDY-4]): per classified
+ * part, G2's OWN counts, read from its own sets and C2's MEASURED extent
+ * [lo, hi) (the EXTENT probe on the rendered text; a site with no
+ * background byte has no measured extent, `measured=0`): `unspelled` the
+ * extent's positions whose set no RUN term can spell (neither one member
+ * nor two members one bit apart), `scanless` 1 where the reply states no
+ * scan. run_part_census.py joins them to the kit's `run_part_terms` record
+ * by site id (K35: no source shared with the trace record). */
+#ifdef G2P_REC
+static void rp_line(const g2p_site *x, int lo, int hi)
+{
+    unsigned un = 0;
+    for (int j = lo; j < hi; j++) {
+        unsigned m[256], k = members(x, x->parts[0].at + (unsigned)j, m);
+        if (!(k == 1 || (k == 2 && __builtin_popcount(m[0] ^ m[1]) == 1))) un++;
+    }
+    printf("G2PRP id=%d unspelled=%u scanless=%d measured=%d\n", x->id, un, !x->has_scan,
+           has_background(x));
+}
+#endif
+
 /* classify, a fault in a direct part call (layout U) a failure: -1 */
 static int classify_guarded(const g2p_site *x, const g2p_part *pt, int *lo, int *hi, int *sc)
 {
@@ -917,6 +938,7 @@ int main(int argc, char **argv)
               "the part compares [%d, %d), the site's reply is [%u, %u)", slo, shi, x->ver_lo,
               x->ver_lo + x->ver_len);
 #ifdef G2P_REC   /* the reads exist only in the recording build */
+        if (have) rp_line(x, slo, shi);
         if (have && x->has_scan) {
             g_scan_route[x->route]++;
             CHECK(x, sscan == x->scan, "SCAN", "the text's find reads run position %d first, the "
