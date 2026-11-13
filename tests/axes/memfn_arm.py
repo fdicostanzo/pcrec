@@ -157,10 +157,15 @@ MEMFN_CLASS = {
     **{("window-skip", ly): ("DIFFER",
         {("byte", "c-default"): 7, ("byte", "c-vm"): 0, ("utf8", "c-default"): 2, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"\\b[0-9a-f]{8}\\b"), ("utf8", "c-default", b"\\w\\B\\w")]) for ly in ("default", "simd")},
-    # run-verify-wide (R-38 Part D, memfn/src/options.def): the deny is the identity on every run
-    # stated before Part D, so it is inert on today's pcrec at both layers (partdland, 2026-11-13).
-    # The stage 3 joint landing ([RUN-POS-SET]) re-measures it, and a moved cell is that landing's red.
-    **{("run-verify-wide", ly): ("ASSERT_ZERO", {}, []) for ly in ("default", "simd")},
+    # run-verify-wide (R-38 Part D, memfn/src/options.def): the identity on every run stated before
+    # Part D (ASSERT_ZERO at partdland, 2026-11-13). Since [RUN-POS-SET] stage 3's S2 joint landing
+    # (lane s2land) runs carry wide positions and the deny clips them: DIFFER, the corpus witness
+    # `(?i:select)\d+x` MEASURED to differ in all four cells at both layers by single compiles.
+    # PROVISIONAL FLOOR 1 (the corpus counts were not measured inside the owner's box hold): the
+    # landing's queued axes run measures them and a follow-up re-pins at the measured value.
+    **{("run-verify-wide", ly): ("DIFFER",
+        {("byte", "c-default"): 1, ("byte", "c-vm"): 1, ("utf8", "c-default"): 1, ("utf8", "c-vm"): 1},
+        [(e, st, b"(?i:select)\\d+x") for e in ("byte", "utf8") for st in ("c-default", "c-vm")]) for ly in ("default", "simd")},
     ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-kb", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},

@@ -612,14 +612,18 @@ DIFFER_PINS = {
     ("utf8", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
     # [MEMFN] R-38 Part D (lane partd; part_d.md rev 4 §5.1.1 D2 [r2pd P13c]):
     # `run-verify-wide`'s deny clips every run stretch to its findable
-    # positions, the identity on every run pcrec states today (each position
-    # one member or a cube), so its four cells are ASSERT_ZERO (below) until
-    # pcrec's [RUN-POS-SET] stage 3 states runs with wide positions; at that
-    # joint landing they become floors with a stage-3 manifest.
-    ("byte", "--memfn=no-run-verify-wide", "c-default"): (0, 0, None),
-    ("utf8", "--memfn=no-run-verify-wide", "c-default"): (0, 0, None),
-    ("byte", "--memfn=no-run-verify-wide", "c-vm"): (0, 0, None),
-    ("utf8", "--memfn=no-run-verify-wide", "c-vm"): (0, 0, None),
+    # positions. ASSERT_ZERO until [RUN-POS-SET] stage 3 stated runs with
+    # wide positions; at the S2 joint landing (lane s2land, 2026-11-13) each
+    # cell is a DIFFER cell with a stage-3 manifest, the corpus pattern
+    # `(?i:select)\d+x`, MEASURED to differ in all four cells by single
+    # compiles on the landing build. PROVISIONAL FLOOR 1:
+    # the corpus counts were not measured inside the owner's box hold; the
+    # landing's queued `--arms start --emit-pins` run measures them and a
+    # follow-up re-pins AT the measured value (s2land_report.md OWED).
+    ("byte", "--memfn=no-run-verify-wide", "c-default"): (1, 0, b"(?i:select)\\d+x"),
+    ("utf8", "--memfn=no-run-verify-wide", "c-default"): (1, 0, b"(?i:select)\\d+x"),
+    ("byte", "--memfn=no-run-verify-wide", "c-vm"): (1, 0, b"(?i:select)\\d+x"),
+    ("utf8", "--memfn=no-run-verify-wide", "c-vm"): (1, 0, b"(?i:select)\\d+x"),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
@@ -634,10 +638,7 @@ ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
     # R17-b' B3b: G1 and the pick act on the DFA-scanned routes only; under
     # --engine=vm no pre-check is dominated and every span is REQUIRED
     (base, "--memfn=no-" + row, "c-vm")
-    for base in ("byte", "utf8") for row in ("fd-pres-g1", "fd-pres-pick")} | {
-    # R-38 Part D: run-verify-wide is the identity on today's runs (DIFFER_PINS)
-    (base, "--memfn=no-run-verify-wide", st)
-    for base in ("byte", "utf8") for st in ("c-default", "c-vm")}
+    for base in ("byte", "utf8") for row in ("fd-pres-g1", "fd-pres-pick")}
 
 # The NULL arm: the flag is empty, so BASE+FLAG is BASE's argv and the
 # DIFFER count must be exactly 0 (a deterministic compiler). It proves the
