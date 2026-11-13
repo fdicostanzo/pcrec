@@ -182,6 +182,13 @@ OPTIONS
                         `-fcomments` ([SWEEPARM]: S981/S982), the null arm),
                         streams 1-2, over the DISTINCT patterns. Exclusive
                         with --extra.
+  --arms-ref-predates FLAG
+                        repeatable, with --arms start: REF predates FLAG (it
+                        refuses the option), so every table arm of FLAG is
+                        SKIPPED and named on one `arms: REF predates` line
+                        with its count; a FLAG naming no table arm fails the
+                        run (a stale declaration). The flag's own cells are
+                        then a one-binary run's (lane partdfix).
   --patterns-file FILE   constructed witnesses (one per line, --list-source
                         escapes \\t \\n \\r \\\\ \\xNN; `#` and blank lines
                         skipped) ADDED to streams 1-3, 6, the arms and the
@@ -603,6 +610,16 @@ DIFFER_PINS = {
     ("utf8", "--memfn=no-fd-pres-pick", "c-default"): (139, 0, b"a.{1,5}z"),    # SAR1/R1 re-pin (was 224): R1 takes 90 patterns, 13 joined, flr_report.md; P1 re-pin (was 231): the landmark walk (D184) takes 18 patterns the pick served (11 net), pinbis; S3 re-pin (was 263); was 262: same
     ("byte", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
     ("utf8", "--memfn=no-fd-pres-pick", "c-vm"): (0, 0, None),
+    # [MEMFN] R-38 Part D (lane partd; part_d.md rev 4 §5.1.1 D2 [r2pd P13c]):
+    # `run-verify-wide`'s deny clips every run stretch to its findable
+    # positions, the identity on every run pcrec states today (each position
+    # one member or a cube), so its four cells are ASSERT_ZERO (below) until
+    # pcrec's [RUN-POS-SET] stage 3 states runs with wide positions; at that
+    # joint landing they become floors with a stage-3 manifest.
+    ("byte", "--memfn=no-run-verify-wide", "c-default"): (0, 0, None),
+    ("utf8", "--memfn=no-run-verify-wide", "c-default"): (0, 0, None),
+    ("byte", "--memfn=no-run-verify-wide", "c-vm"): (0, 0, None),
+    ("utf8", "--memfn=no-run-verify-wide", "c-vm"): (0, 0, None),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any
@@ -617,7 +634,10 @@ ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
     # R17-b' B3b: G1 and the pick act on the DFA-scanned routes only; under
     # --engine=vm no pre-check is dominated and every span is REQUIRED
     (base, "--memfn=no-" + row, "c-vm")
-    for base in ("byte", "utf8") for row in ("fd-pres-g1", "fd-pres-pick")}
+    for base in ("byte", "utf8") for row in ("fd-pres-g1", "fd-pres-pick")} | {
+    # R-38 Part D: run-verify-wide is the identity on today's runs (DIFFER_PINS)
+    (base, "--memfn=no-run-verify-wide", st)
+    for base in ("byte", "utf8") for st in ("c-default", "c-vm")}
 
 # The NULL arm: the flag is empty, so BASE+FLAG is BASE's argv and the
 # DIFFER count must be exactly 0 (a deterministic compiler). It proves the
@@ -3311,7 +3331,8 @@ IDENT_STREAMS = "c-default,c-vm,emit-ir,composition"
 IDENT_NOCOMP = "c-default,c-vm,emit-ir"
 IDENT_MEMFN = ("vrun-w32", "vrun-w16", "vrun-kb", "vrun-trim", "vrun-pad",
                "precheck-assign-byte", "fd-d1", "fd-pres-g1",
-               "fd-pres-pick", "pres-set-lead", "window-search", "window-skip")
+               "fd-pres-pick", "pres-set-lead", "window-search", "window-skip",
+               "run-verify-wide")  # R-38 Part D: a gate whose REF predates it skips it
 # EXEMPT from the DELIVER witness: the arm removes the composition artifacts
 # the witness needs (no composition stream, so no cross-group SET pair). Its
 # byte identity is checked on IDENT_NOCOMP; the composition stream rides the
@@ -3465,6 +3486,7 @@ def main():
     ap.add_argument("--extra-base", default="")
     ap.add_argument("--no-differ-floor", action="store_true")
     ap.add_argument("--arms", choices=("start",))
+    ap.add_argument("--arms-ref-predates", metavar="FLAG", action="append", default=[])
     ap.add_argument("--patterns-file", action="append", default=[])
     ap.add_argument("--no-corpus", action="store_true")
     ap.add_argument("--every", type=int, default=1)
@@ -3860,6 +3882,16 @@ def main():
     arms = []
     if args.arms == "start":
         arms = [(b, ARM_BASES[b], f) for b, f in arm_table()]
+        for flag in args.arms_ref_predates:
+            gone = [a for a in arms if a[2] == flag]
+            arms = [a for a in arms if a[2] != flag]
+            print(f"arms: REF predates {flag}: {len(gone)} table arms skipped "
+                  f"({', '.join(a[0] for a in gone) or 'NONE'})")
+            if not gone:
+                run_ok = False
+                print(f"arms: --arms-ref-predates {flag} names no table arm (a stale declaration)")
+    elif args.arms_ref_predates:
+        sys.exit("[emit_sweep] --arms-ref-predates needs --arms start")
     elif flag_args:
         inv = {v: k for k, v in ARM_BASES.items()}
         arms = [(inv.get(tuple(base_args), " ".join(base_args)), tuple(base_args),

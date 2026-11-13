@@ -549,11 +549,20 @@ static void gen_facts(int fam, gfacts *x)
                 x->wfloor = G2W_F_SUBJECT;
 }
 
-/* 1 iff span `g` has the run R's shape: two or more positions, each one
- * member or a one-bit cube (G2's own reading, written from the F-8 ruling). */
-static int g_run_shaped(const gspan *g)
+/* 1 iff span `g` is the run R BY ROLE (R-38 Part D, part_d.md §2.2; F-8's
+ * shape rule retired for R): two or more positions stated verify NO, any
+ * sets. */
+static int g_run_role(const gspan *g)
 {
-    if (g->len < 2) return 0;
+    return g->len >= 2 && g->verify == G2W_NO;
+}
+
+/* 1 iff span `g` is a verify-YES span the kit compares whole: two or more
+ * positions stated verify YES, each one member or a one-bit cube (G2's own
+ * reading, written from part_d.md §2.2). */
+static int g_pinned_yes(const gspan *g)
+{
+    if (g->len < 2 || g->verify != G2W_YES) return 0;
     for (int j = 0; j < g->len; j++) {
         int m[3], k = 0;
         for (int b = 0; b < 256 && k < 3; b++)
@@ -563,21 +572,28 @@ static int g_run_shaped(const gspan *g)
     return 1;
 }
 
-/* The run R is identified by its SHAPE and is UNIQUE per alternative (the
- * kit manager's F-8 ruling): 1 iff some alternative of `x` states two such
- * spans. fix: give every such span after an alternative's first a
- * three-member position 0, so the statement states one R. */
+/* R is UNIQUE per alternative, and so is the verify-YES span compared whole
+ * (part_d.md §2.2; wf_check): 1 iff some alternative of `x` states two of
+ * either. fix (§5.1 D2, [r1pd F22]): every verify-NO multi-position span
+ * after an alternative's first becomes verify YES; then every spelled
+ * verify-YES one after the first gets a three-member position 0 (today's
+ * fix), so the statement states one of each. */
 static int two_runs(gfacts *x, int fix)
 {
     int any = 0;
     for (int ai = 0; ai < x->nalt; ai++) {
-        int n = 0;
+        int n = 0, y = 0;
         for (int i = 0; i < x->alt[ai].nspan; i++) {
             gspan *g = &x->alt[ai].span[i];
-            if (!g_run_shaped(g)) continue;
-            if (n++ && fix) { set_add(g->set[0], 'b'); set_add(g->set[0], 'c'); set_add(g->set[0], 'x'); }
+            if (!g_run_role(g)) continue;
+            if (n++ && fix) g->verify = G2W_YES;
         }
-        if (n > 1) any = 1;
+        for (int i = 0; i < x->alt[ai].nspan; i++) {
+            gspan *g = &x->alt[ai].span[i];
+            if (!g_pinned_yes(g)) continue;
+            if (y++ && fix) { set_add(g->set[0], 'b'); set_add(g->set[0], 'c'); set_add(g->set[0], 'x'); }
+        }
+        if (n > 1 || y > 1) any = 1;
     }
     return any;
 }
@@ -671,16 +687,25 @@ static const char *const st_names[4] = { "none", "restart", "mask", "shift" };
 static const char *const se_names[6] = { "", "LIBC", "LIBC_BACK", "WALK", "PAIR", "HORS" };
 static long fcell[4][4];
 static long fc_fn, fc_pair, fc_hors, fc_libc, fc_walk, fc_method;
-static long tn_table, tn_own, tn_noffer, tn_term, tn_below, tn_stop_own, af_walk, af_other;
+static long tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below, tn_stop_own, tn_stop_run, af_walk, af_other;
 static mf_finder_listing g_rows;
 
-/* The ref G2 offered at offset `off` of alternative `alt` (0: none). */
-static uint32_t offer_at(const g2w_site *x, int alt, int off)
+/* The ref G2 offered at offset `off` of alternative `alt` that the text may
+   take there (0: none): a covering span's offer whose own set is the set
+   G2's decision `d` tests at `off` (its tset). Where spans overlap, the
+   tested set is their meet, which an offering span's set need not equal:
+   that offer is withheld (counted, `tn_meet`) and the position is OWN */
+static uint32_t offer_at(const g2w_site *x, const g2w_dec *d, int alt, int off)
 {
     const g2w_alt *a = &x->alt[alt];
+    const uint8_t *ts = NULL;
+    for (int k = 0; k < d->ntest; k++)
+        if (d->toff[k] == off) ts = d->tset[k];
     for (int i = 0; i < a->nspan; i++) {
         const g2w_span *g = &a->span[i];
-        if (off >= g->start && off < g->start + g->len) return g->table[off - g->start];
+        if (off < g->start || off >= g->start + g->len || !g->table[off - g->start]) continue;
+        if (ts && !memcmp(g->set[off - g->start], ts, 32)) return g->table[off - g->start];
+        tn_meet++;
     }
     return 0;
 }
@@ -693,8 +718,8 @@ static int marker_read(int id, uint32_t ref, const char *t, const char *ft)
 }
 
 /* Site `id`'s framed reply `w` against its rendered text and mf_result. */
-static void frame_classes(int id, const g2w_site *x, const mf_wreply *w, const mf_result *res,
-                          const char *t, const char *ft)
+static void frame_classes(int id, const g2w_site *x, const g2w_dec *d, const mf_wreply *w,
+                          const mf_result *res, const char *t, const char *ft)
 {
     char m[160];
     int fr = -1, efind = !strcmp(res->form_id, "window-search");
@@ -762,10 +787,19 @@ static void frame_classes(int id, const g2w_site *x, const mf_wreply *w, const m
        plan_test and stop_test are NONE there (plan_frame.md §4.1) */
     int composed = w->fused == MF_WFUSED_NO, maxtab = -1000;
     for (int i = 0; i < w->nplan; i++) {
-        uint32_t ref = offer_at(x, w->alt, w->plan[i]);
+        uint32_t ref = offer_at(x, d, w->alt, w->plan[i]);
         int rd = marker_read(id, ref, t, ft), alone = 1;
         for (int k = 0; k < w->nplan; k++)
             if (k != i && w->plan_term[k] == w->plan_term[i]) alone = 0;
+        /* a plan position that IS the stop, inside a run compare: B-walk's
+           find reads the stop's marker (stop_test, checked below), the
+           compare reads none, so that read is not the position's (d27fix
+           F4: plan_tests answers the stop by C-table alone; counted) */
+        if (rd && !alone && composed && w->plan_test[i] == MF_WTEST_OWN && w->has_stop &&
+            w->plan[i] == w->stop && w->search == MF_WSEARCH_WALK && w->stop_test == MF_WTEST_TABLE) {
+            rd = 0;
+            tn_stop_run++;
+        }
         if (!composed) {
             if (w->plan_test[i]) { fail(id, "table_name", "plan_test stated on a fused row"); break; }
             continue;
@@ -799,7 +833,7 @@ static void frame_classes(int id, const g2w_site *x, const mf_wreply *w, const m
         if (w->stop_test) fail(id, "table_name", "stop_test stated on a fused row");
         return;
     }
-    uint32_t sref = offer_at(x, w->alt, w->stop);
+    uint32_t sref = offer_at(x, d, w->alt, w->stop);
     int srd = marker_read(id, sref, t, ft);
     tn_below += w->stop < maxtab;
     if (w->stop_test != (sref ? MF_WTEST_TABLE : MF_WTEST_OWN)) {
@@ -1039,7 +1073,7 @@ int main(int argc, char **argv)
             mf_art *ar = g2_art_begin(&g_arena, "g2w", 0, NULL, NULL);
             mf_wreply tr;
             if (!mf_wdecide(ar, &t, NULL, MF_WCALL_NONE, &tr))
-                fail(id, "two runs", "an alternative stating two spans of R's shape was decided");
+                fail(id, "two runs", "an alternative stating two R spans or two whole-compared verify-YES spans was decided");
             else { refused_ok++; two_run_refused++; }
             two_runs(&gf, 1);
         }
@@ -1102,7 +1136,7 @@ int main(int argc, char **argv)
                                    x.rate_kind ? &an : NULL);
         if (art && x.run_left && mf_lever(art, "run-tie-left")) { fail(id, "mf_lever", mf_art_error(art)); continue; }
         mf_wreply r;
-        if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, &r)) { fail(id, "mf_wdecide refused", NULL); continue; }
+        if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, &r)) { fail(id, "mf_wdecide refused", art ? mf_art_error(art) : NULL); continue; }
         /* the reply, field by field */
         x.reply.alt = r.alt; x.reply.reseed = r.reseed; x.reply.has_stop = r.has_stop;
         x.reply.stop = r.stop; memcpy(x.reply.stop_set, r.stop_set, 32);
@@ -1247,7 +1281,7 @@ int main(int argc, char **argv)
             fail(id, "render refused", mf_art_error(art));
             continue;
         }
-        frame_classes(id, &x, &fw, &res, body.p ? body.p : "", file.p ? file.p : "");
+        frame_classes(id, &x, &ref, &fw, &res, body.p ? body.p : "", file.p ? file.p : "");
         x.reply.framed = fw.framed;
         memcpy(x.reply.frame_row, fw.frame_row, sizeof x.reply.frame_row);
         memcpy(x.reply.method, fw.method, sizeof x.reply.method);
@@ -1452,9 +1486,9 @@ int main(int argc, char **argv)
         for (int j = 0; j < 4; j++) printf(" %s/%s %ld", fr_names[i], st_names[j], fcell[i][j]);
     printf("\n");
     printf("g2_win_gen: classes fn %ld pair %ld hors %ld libc %ld walk %ld method %ld; table_name "
-           "table %ld own %ld noffer %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld\n", fc_fn,
-           fc_pair, fc_hors, fc_libc, fc_walk, fc_method, tn_table, tn_own, tn_noffer, tn_term, tn_below,
-           tn_stop_own, af_walk, af_other);
+           "table %ld own %ld noffer %ld meet %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld stop_run %ld\n", fc_fn,
+           fc_pair, fc_hors, fc_libc, fc_walk, fc_method, tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below,
+           tn_stop_own, af_walk, af_other, tn_stop_run);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }

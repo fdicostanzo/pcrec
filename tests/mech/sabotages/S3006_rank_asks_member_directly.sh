@@ -15,12 +15,18 @@ SAB_DESC="translate's ranking asks kit_run_member directly, bypassing the run de
 SAB_DOC_FIGURE="HAND-MEASURED by lane k381 2026-11-10 (docs/dev/lanes/k381_report.md): the row's plant applied by hand to a git archive of the lane's tip, decider_census.py --no-plants: 3fail (run callers of kit_run_member and of kit_run_decide; translate:run-rank's anchor). Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3006."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            r = kit_run_decide(d->rate, ro, sets_at, w->set[hint_at], n, k ? &r : NULL);'
-SAB_AFTER='            { kit_member m0 = { r.scan, kit_mass(d->rate, w->set[hint_at + r.scan], 1, KIT_MASS_SUM) }, m = kit_run_member(d->rate, sets_at, w->set[hint_at], n, 0, k ? &m0 : NULL, T_MASS_STRETCH); r = (kit_run_reply){ m.pos >= 0, (uint8_t)m.pos, 0, (uint8_t)n }; }   /* SABOTAGE S3006 */'
+SAB_BEFORE='        r = kit_run_decide(rate, o, sets_at, sets, n, k ? &r : NULL);'
+SAB_AFTER='        { kit_member m0 = { r.scan, k ? kit_mass(rate, sets + 32u * r.scan, 1, KIT_MASS_SUM) : 0 }, m = kit_run_member(rate, sets_at, sets, n, KIT_CAND_FINDABLE, k ? &m0 : NULL, T_MASS_STRETCH); r = (kit_run_reply){ m.pos >= 0, (uint8_t)(m.pos >= 0 ? m.pos : 0), 0, (uint8_t)n }; }   /* SABOTAGE S3006 */'
 # RE-PLANTED (lane k382cm, 2026-11-12), the same plant: K38-2's reply is mf_run_reply's four fields
 # (has_scan, scan, ver_lo, ver_len; no mass), so the previous answer's mass is read from its set as
 # kit_run_decide does, and the reply is built from four fields (scan the member, the whole run verified,
 # as the decision's `after` answer). The old 5-field AFTER did not compile (cloud run 43239936557
 # shard 7: BUILD-FAILED, ANOMALY).
-# RE-ANCHORED (lane d27fix, 2026-11-13), the same plant: the ranking's options are now `ro` (the art's
-# tie, or a pinned R's member tie; d27fix F1), and the call is one line.
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md §2.1 item 3): the ranking moved into
+# run_rank, ONE function shared by translate and run_part_terms; the call reads run_rank's own
+# variables (rate, sets, n), and the member's candidates are named (KIT_CAND_FINDABLE, the run
+# decision's column), the same plant.
+# RE-ANCHORED (lane partd2, 2026-11-13), the same plant: run_rank takes its caller's options `o` (the
+# art's tie, or a pinned R's member tie in translate; d27fix F1), and the call is one line.
+# (lane d27fix's re-anchor of the same date, to translate's loop with `ro`, is superseded by
+# partd's: that loop is run_rank now, and translate passes it the same `ro`; partdland, 2026-11-13.)

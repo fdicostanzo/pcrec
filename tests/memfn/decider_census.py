@@ -136,6 +136,8 @@ HITS = 67
 # fd_run_modes in: K7 (b)'s mode table and U3's route as the input); 70 at
 # plan_frame.md 3.0b (the frame part's wf_frame_of and wf_arm_pick in, the
 # MF_TRACE agreement wf_agree excluded).
+# R-38 Part D: translate:run-rank became the shared function run_rank (one
+# member for one, part_d.md §2.1 item 3; RUN_CALLERS' `translate` with it).
 MEMBER_COUNT = 70
 
 # D: THE RUN CALLERS, EXACT (a call site added or lost is red): callee ->
@@ -151,7 +153,7 @@ MEMBER_COUNT = 70
 RUN_CALLERS = {
     r"\bkit_run_member\b": {"kit_run_decide": 1},
     r"\bkit_run_decide\b": {"fd_pres": 1, "kit_pres_picks": 1, "run_member": 1,
-                             "translate": 1, "a_mass_choose": 1},
+                             "run_rank": 1, "a_mass_choose": 1},
     r"\bT_WINDOW\s*,\s*\w+\s*\)": {"stretch_window": 1},
 }
 

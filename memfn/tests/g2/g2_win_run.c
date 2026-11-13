@@ -320,6 +320,7 @@ int main(int argc, char **argv)
     long npaths[8] = { 0 }, pinned = 0, reseeded = 0, margin_ties = 0, mass_ties = 0, model_ties = 0;
     long margin_rs = 0, margin_pk = 0, nlong = 0;
     long in_lever = 0, in_set = 0, in_set_won = 0, in_meet = 0;  /* under run-tie-left */
+    long r_yes = 0, r_wide = 0;     /* R-38 Part D's moved populations (g2_win.h) */
     static const char *const pathn[] = { "empty", "parked", "reseed", "mass", "floor" };
     char forms[32][24];
     long formn[32];
@@ -333,6 +334,8 @@ int main(int argc, char **argv)
         if (!site_failed) passed++;
         for (int p = 0; p < 5; p++) if (!strcmp(d.arow, pathn[p])) npaths[p]++;
         pinned += d.pinned;
+        r_yes += d.r_yes;
+        r_wide += d.r_wide;
         if (x->nalt == 2) {
             if (x->alt[d.alt].entry == G2W_E_RESEED) margin_rs++;
             else margin_pk++;
@@ -410,6 +413,7 @@ int main(int argc, char **argv)
     printf("G2W cells edge_rejects=%ld core_off=%ld noncore_off=%ld neg_reads=%ld nop_empty=%ld\n",
            edge_rejects, core_off, noncore_off, neg_reads, nop_empty);
     printf("G2W long pair=%ld\n", nlong);
+    printf("G2W partd r_yes=%ld r_wide=%ld\n", r_yes, r_wide);
     printf("G2W inrun lever=%ld set=%ld set_won=%ld meet=%ld\n", in_lever, in_set, in_set_won, in_meet);
     printf("G2W forms");
     for (int f = 0; f < nforms; f++) printf(" %s=%ld", forms[f], formn[f]);

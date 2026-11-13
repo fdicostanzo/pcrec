@@ -210,20 +210,37 @@ static void stretch_exact(const uint32_t *rate, kit_pos_at *at, const void *src,
 }
 
 /* THE MODE TABLE, first match on (mode, the run's length): each row's
- * candidates (`exact`: one-member positions only) and stretch (NULL: the
- * whole run). */
+ * candidates (`cand`, kit.h kit_cand: EXACT one-member positions only;
+ * FINDABLE the positions the kit's finds read, one member or a cube, part_d
+ * §2.4 item 1, the identity on every run stated before R-38 Part D) and
+ * stretch (NULL: the whole run). */
 static const struct {
     kit_run_stretch st;
     unsigned        longer_than;    /* the row applies to runs longer than this */
-    int             exact;
+    kit_cand        cand;
     void          (*stretch)(const uint32_t *, kit_pos_at *, const void *, unsigned,
                              kit_run_reply *);
 } run_modes[] = {
-    { KIT_RUN_WINDOW,       MF_PRES_WINDOW, 0, stretch_window },
-    { KIT_RUN_WINDOW,       0,              0, NULL },   /* fits one window: whole */
-    { KIT_RUN_WHOLE,        0,              0, NULL },
-    { KIT_RUN_EXACT_AROUND, 0,              1, stretch_exact },
+    { KIT_RUN_WINDOW,       MF_PRES_WINDOW, KIT_CAND_FINDABLE, stretch_window },
+    { KIT_RUN_WINDOW,       0,              KIT_CAND_FINDABLE, NULL },   /* fits one window: whole */
+    { KIT_RUN_WHOLE,        0,              KIT_CAND_FINDABLE, NULL },
+    { KIT_RUN_EXACT_AROUND, 0,              KIT_CAND_EXACT,    stretch_exact },
 };
+
+/* THE DENY's CLIP (`run-verify-wide`, part_d.md §5.1 D2): the stretch cut
+ * to the maximal FINDABLE stretch holding the scan (positions with a (T, K)
+ * spelling, kit_pos_spelled), the identity where every position is one. */
+static void clip_findable(kit_pos_at *at, const void *src, unsigned n, kit_run_reply *r)
+{
+    uint8_t buf[32];
+    unsigned lo = r->scan, hi = (unsigned)r->scan + 1;
+    while (lo > 0 && kit_pos_spelled(at(src, lo - 1, buf))) lo--;
+    while (hi < n && kit_pos_spelled(at(src, hi, buf))) hi++;
+    unsigned vlo = r->ver_lo > lo ? r->ver_lo : lo;
+    unsigned vhi = (unsigned)r->ver_lo + r->ver_len < hi ? (unsigned)r->ver_lo + r->ver_len : hi;
+    r->ver_lo = (uint8_t)vlo;
+    r->ver_len = (uint8_t)(vhi - vlo);
+}
 
 kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_opts o, kit_pos_at *at,
                              const void *src, unsigned n, const kit_run_reply *after)
@@ -237,13 +254,14 @@ kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_opts o, kit_pos_at *a
         uint8_t buf[32];
         prev = (kit_member){ after->scan, kit_mass(rate, at(src, after->scan, buf), 1, KIT_MASS_SUM) };
     }
-    kit_member sc = kit_run_member(rate, at, src, n, run_modes[m].exact, after ? &prev : NULL, o.tie);
+    kit_member sc = kit_run_member(rate, at, src, n, run_modes[m].cand, after ? &prev : NULL, o.tie);
     kit_run_reply r = KIT_RUN_NONE;
     if (sc.pos < 0) return r;
     r.has_scan = 1;
     r.scan = (uint8_t)sc.pos;
     r.ver_len = (uint8_t)n;
     if (!after && run_modes[m].stretch) run_modes[m].stretch(rate, at, src, n, &r);
+    if (!after && o.clip) clip_findable(at, src, n, &r);
     return r;
 }
 
@@ -253,10 +271,11 @@ kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_opts o, kit_pos_at *a
  * regime, span_runs_sheet.md §2.4), T_RUN_LEFT (the lower position). The
  * lever moves every reader of the decision on the art together (scan,
  * stretch, the twin's mass, the ranking, the in-run stop) and nothing else. */
-kit_run_opts kit_run_opts_of(const mf_art *art, kit_run_stretch st)
+kit_run_opts kit_run_opts_of(const mf_art *art, const mf_site *s, kit_run_stretch st)
 {
     int left = art && (art->levers & KIT_LEVER_RUN_LEFT);
-    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH };
+    int clip = s && kit_opt_denied(s->opts, "run-verify-wide");
+    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH, clip };
 }
 
 /* ---- the ports ---------------------------------------------------------------- */
@@ -271,15 +290,17 @@ int mf_pres_ports(const mf_art *art, const mf_site *s, const mf_pres_proof *proo
     if (s->abi != MF_SITE_ABI || s->op != MF_OP_ALL_PRESENT || kit_presence_check(s) ||
         fd_pres_run(art, s, &ext, &why))
         return -1;
-    kit_pres_picks(art, s, proof, start_set, &ext, out);
+    kit_pres_picks(art, s, proof, start_set, &ext, out, NULL);
     return 0;
 }
 
 void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
-                    const uint8_t *start_set, const mf_run_reply *ext, mf_pres_picks *out)
+                    const uint8_t *start_set, const mf_run_reply *ext, mf_pres_picks *out,
+                    int *run_noscan)
 {
     out->set_pick = -1;
     out->set_leads = out->dominated = out->landmark = -1;
+    if (run_noscan) *run_noscan = 0;
     if (!s->npspan) return;
     const uint32_t *rate = kit_byte_rate(art);
     int run = kit_pres_run(s);
@@ -299,28 +320,34 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     int q = best >= 0 ? one_byte(&s->pspans[best].term[0]) : -1;
 
     /* the run's scan, the run decision's (the scan is every mode's member:
-       the stretch alone reads the route) */
+       the stretch alone reads the route). `rsc`: a run WITH a scan; a run
+       with no position the kit finds (part_d.md §2.4 items 2, 4) is read as
+       absent by P4 and P2, and its fact is handed back (`run_noscan`) */
     kit_run_reply rr = KIT_RUN_NONE;
     uint32_t scan_mass = 0;
     if (rs) {
-        rr = kit_run_decide(rate, kit_run_opts_of(art, KIT_RUN_WHOLE), kit_wspan_at, rs,
+        rr = kit_run_decide(rate, kit_run_opts_of(art, s, KIT_RUN_WHOLE), kit_wspan_at, rs,
                             rs->len, NULL);
-        scan_mass = kit_mass(rate, rs->set[rr.scan], 1, KIT_MASS_SUM);
+        if (rr.has_scan) scan_mass = kit_mass(rate, rs->set[rr.scan], 1, KIT_MASS_SUM);
+        else if (run_noscan) *run_noscan = 1;
     }
+    int rsc = rs && rr.has_scan;
 
     /* P4: set-leads, the set's pick against the run's scan member */
-    if (rs && q >= 0)
+    if (rsc && q >= 0)
         out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) < scan_mass;
 
     /* P2 (G1): the proof against the leading check (an exact scan position's
-       byte, else the set's pick) */
+       byte, else the set's pick); a run with no scan is RUN-LESS here (the
+       set's pick leads, the proof's `run` not required: part_d.md §2.4
+       item 2 [r2pd P3]) */
     {
-        int lead = rs && one_member(rs->set[rr.scan]) ? set_first_member(rs->set[rr.scan]) : q;
+        int lead = rsc && one_member(rs->set[rr.scan]) ? set_first_member(rs->set[rr.scan]) : q;
         int dom;
         if (!proof || proof->byte < 0) dom = 0;
-        else if (rs && !proof->run) dom = 0;
+        else if (rsc && !proof->run) dom = 0;
         else if (proof->byte == lead) dom = 1;
-        else if (rs) dom = 0;
+        else if (rsc) dom = 0;
         else if (!proof->stop) dom = 0;
         else dom = rate && lead >= 0 && rate[proof->byte] <= rate[lead];
         out->dominated = (int8_t)dom;
@@ -329,18 +356,24 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
     /* the FIFTH: the landmark admission, where the site ASSIGNs its landmark,
        at max(K, 0) (a landmark at or before the attempt start costs no step
        back; span_runs_sheet.md §3.2); a run's hit mass over the reply's
-       VERIFIED EXTENT (`ext`, the define's own decision) */
+       VERIFIED EXTENT (`ext`, the define's own decision). Where the run is
+       not tested (a declined run: `ext` verifies nothing) the landmark is
+       the head member, so the mass is the set pick's (part_d.md §2.4 item
+       5 [r1pd F1]); a scan-less tested run keeps the run branch (its part
+       ships). THE UNBOUNDED K (R-41): a stated MF_HEAD_MAX_UNBOUNDED declines,
+       whatever the mass, a never-hit landmark (h 0) included */
     if (s->handoff == MF_H_ASSIGN && ext) {
         unsigned long long h = 1000000u, m = 1000000u;
         unsigned long long k = s->head_max > 0 ? (unsigned long long)s->head_max : 0;
-        if (!rs) {              /* the set's pick alone (none picked: the empty set, 0) */
+        if (!rs || !ext->ver_len) { /* the set's pick alone (none picked: the empty set, 0) */
             h = q >= 0 ? kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_CAP) : 0;
         } else {
             for (unsigned j = ext->ver_lo; j < (unsigned)ext->ver_lo + ext->ver_len; j++)
                 h = (h * kit_mass(rate, rs->set[j], 1, KIT_MASS_CAP) + 999999u) / 1000000u;
         }
         if (start_set) m = kit_mass(rate, start_set, 1, KIT_MASS_CAP);
-        if (h == 0) out->landmark = 1;
+        if (s->head_max == MF_HEAD_MAX_UNBOUNDED) out->landmark = 0;
+        else if (h == 0) out->landmark = 1;
         else if (k * h >= 1000000u) out->landmark = 0;
         else out->landmark = (int8_t)((1000000u - k * h) * m > 1000000u * h);
     }

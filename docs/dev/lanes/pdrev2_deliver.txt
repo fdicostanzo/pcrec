@@ -1,0 +1,5 @@
+report=docs/dev/lanes/pdrev2_report.md
+sections: Summary; Per-finding changes; R by role; The direct translation; Build units; Open questions; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

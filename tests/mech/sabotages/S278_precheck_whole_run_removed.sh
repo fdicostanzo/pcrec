@@ -19,6 +19,7 @@
 # Here: P0's run link narrowed to its window (`member` 1 + the window start,
 # never 0 = WHOLE), so pcrec lays out the window alone (intent unchanged: the
 # whole-run compare never emitted; SW-2's K66-window).
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md rev 4 §5.1 [r3pd FIX-6]): fd_run_modes[] rows gained the `no_scan` column (P0's scan-less reply); the same plant, P0's stretch narrowed to its window.
 SAB_ID="S278-precheck-whole-run-removed"
 SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="prechecks harness"
@@ -44,8 +45,8 @@ SAB_REACH_EXPECT="REACH-K66-WHOLE-RUN-EMITTED"
 # after the window's test) removes the block and the call together. Intent
 # unchanged: the K66 whole-run compare is never emitted.
 SAB_COUNT=1
-SAB_BEFORE='    { "P0", KIT_RUN_WHOLE },    /* REQUIRED: the whole run (K66)            */'
-SAB_AFTER='    { "P0", KIT_RUN_WINDOW },   /* SABOTAGE S278 */'
+SAB_BEFORE='    { "P0", KIT_RUN_WHOLE,  FD_NOSCAN_WHOLE },  /* REQUIRED: the whole run (K66) */'
+SAB_AFTER='    { "P0", KIT_RUN_WINDOW, FD_NOSCAN_WHOLE },  /* SABOTAGE S278 */'
 # RE-AIMED 2026-11-11 (lane k382, R-38 K38-2): pcrec states the run once (set form) and the kit
 # DERIVES its one part from the run decision's reply; the link's `member` is 0 and unread on the
 # run, so the old plant (`k.member = pk.run_window + 1`) no longer compiles (pk.run_window

@@ -10,12 +10,14 @@
 #              (lv), a 2-4 piece chain elsewhere (lc, reached only under MF_D_RUN_OVERLAP).
 #   rc-overlap two overlapping words at L in {3,5-7,9-15} (class o2).  rc-bytes: one test per position (bL).
 #   settest    kit_set_test's COMPARE count: one per singleton or edge-touching range, two per inner range
-#              (c1, c2, cn = three or more). Member count is not the cost: [0-9] (10 members) is two
+#              (c1, c2, cn = three to seven, cn+ = more than seven: UNMEASURED, R-38 Part D D3). Member count is not the cost: [0-9] (10 members) is two
 #              compares, the same as {X,x}.
 # Population: every row-1-class window site (census0.row1_class) of every record, per arm; rc compares are
 # read from the trace's `runcmp` row, L from the reply's stated run (run_len) or the plan's term (a pinned
 # run absent: the plan's consecutive positions of one term); settest from each NONE alternative's span
-# positions. Counts are SITES (census0 counts units; the two differ by repeats of one unit).
+# positions. Counts are SITES (census0 counts units; the two differ by repeats of one unit). R-38 Part D (D3): every
+# site's derived run parts too, from their `run_part_terms` records (census0's ONE parser, `runpart_pop`): each
+# multi-member SET term (settest, cls), the RUN term (rc-<row>, cls), a scan-less part (every-pos, -).
 # LOWERING SHAPES (r9 EMIT-3, [rev1.3 r9fc-FIX-5]): a two-compare set test is classed by what gcc 15.2 -O2
 # -march=x86-64 -mtune=generic (the declared target, §2.7) lowers it to, never by its spelling. `alu1`: ONE ALU op
 # and ONE compare, i.e. any pair of singletons one bit apart ({X,x} `andl $-33; cmpb`, and {@,`} the same) or an
@@ -48,7 +50,9 @@ def settest_cls(ms):
         else:
             rg.append([x, x])
     n = sum(1 if (lo == hi or lo == 0 or hi == 255) else 2 for lo, hi in rg)
-    return "c1" if n == 1 else "c2" if n == 2 else "cn"
+    # R-38 Part D (part_d.md §5.1 D3 [r1pd F20]): cn is 3 to 7 compares (the measured `\w` instance's range);
+    # above 7 is cn+, UNMEASURED, never priced by cn's row. census0.py's settest_cls holds the same bounds.
+    return "c1" if n == 1 else "c2" if n == 2 else "cn" if n <= 7 else "cn+"
 
 def shape(ms):
     """the lowering shape of a TWO-compare set test (members ms): `alu1` (one ALU op + one compare: a single-bit
@@ -98,6 +102,8 @@ def main():
     for line in open(sys.argv[2]):
         rec = json.loads(line)
         for s in rec.get("sites", []):
+            for k in c0.runpart_pop(s):
+                pop[(rec["arm"],) + k] += 1
             alts = s.get("alts")
             if not alts or not any(c0.row1_class(a) for a in alts):
                 continue

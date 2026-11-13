@@ -149,7 +149,8 @@ RETIRED_DENIES = ["fd-r0", "fd-r5", "fd-r8", "fd-ndisp"]
 # a MEASURED row that reads no key: R7w, MEASURED by the walk ruling's real-text
 # verdict (walk_vs_v1_record.md §5), not by a set key
 KEYLESS_MEASURED = {"R7w"}
-PRES_ROWS = ["P0", "P2", "P3", "P4", "P9"]
+# R-38 Part D (part_d.md §2.4 item 2): PD, the decline, between P2 and P3
+PRES_ROWS = ["P0", "P2", "PD", "P3", "P4", "P9"]
 DERIVED_Q = {"saving", "xover", "block", "dom", "lstar", "g8"}
 B1_DENIES = ["fd-d1"]
 B3B_DENIES = ["fd-pres-g1", "fd-pres-pick", "pres-set-lead"]
@@ -169,12 +170,15 @@ FORM_IDS = {
     "settest":   ("-",         {"c1": 1, "c2": 2, "cn": 3}, "c2"),
     "rc-words":  ("words",     {"w1": 1, "w2": 2, "w3": 3}, "w2"),
     "rc-memcmp": ("memcmp",    {"l1": None}, "l1"),
+    # R-38 Part D (part_d.md §5.3 [r3pd FIX-5]): the scan-less BODY, its row
+    # the fn walk's (the define's own record), its card kit-grid@5 UNMEASURED
+    "every-pos": ("fn-every-pos", {"-": None}, "-"),
 }
 FORM_INSTANCE_FLOOR = 10
 # span_cards.md §2.4 [rev1.2 READY-2; rev1.3 r9-CHECKS-3]: the card guard's
 # population, EXACT (kit-grid@1 9, kit-kernels@1 5, kit-synthetic 0, kit-grid@3
 # 3): a card added with a kit:form. dep bumps it in the same change
-CARD_FORMDEP_COUNT = 17
+CARD_FORMDEP_COUNT = 18     # 18 at R-38 Part D: kit-grid@5's every_pos
 # span_cards.md §2.4 (S2e): the measure_store pass's population floor, pinned
 # at landing as zen4-grid3@1's form-bearing row count (38 rows, 5 `enter`)
 STORE_FORMROW_FLOOR = 33
@@ -192,6 +196,9 @@ B3B_PRES = {
     "fd-P4-den": [("0", "P3", "v0p0m1o0"), ("1", "P3", "v1p0m0o1")],
     "fd-P2":     [("0", "P2", "v0p1m0o0")],
     "fd-P2-den": [("0", "P3", "v1p0m1o0")],
+    # R-38 Part D [r2pd P13a]: a declined run (no findable position) with one
+    # member: the run untested by PD, the member the set's pick at the HEAD
+    "fd-PD":     [("0", "P3", "v1p0m1o0"), ("1", "PD", "v0p0m0o0")],
 }
 # K: site -> (the deciding row, a text signature regex the row's pick writes)
 B2_ROUTES = {

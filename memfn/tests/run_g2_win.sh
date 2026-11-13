@@ -69,6 +69,12 @@ FLOOR_HITS=550000               # (622264)
 PATH_FLOORS="empty:175 parked:285 reseed:105 mass:670 floor:110"
 MARGIN_FLOORS="reseed:105 parked:135"
 FLOOR_PINNED=34                 # (39)
+# R-38 Part D's moved populations ([r3pd FIX-9]; g2_win.h r_yes/r_wide), of the
+# chosen alternative, by the reference's decision: R beside a spelled verify-YES
+# span with R the member (plant p16 reds DECIDE on it), and R holding a wide
+# position with an exact member (plant p8 reds DECIDE on it)
+FLOOR_R_YES=94                  # (105; lane partd 2026-11-13, less ~10%)
+FLOOR_R_WIDE=116                # (129)
 FLOOR_RESEED_BIT=230            # (257)
 TIE_FLOORS="mass:230 model:55"
 CELL_FLOORS="edge_rejects:22000 core_off:1600000 noncore_off:490000 neg_reads:920000 nop_empty:130000"
@@ -99,13 +105,16 @@ FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
 # TABLE plan position), stop_own 1264, af_walk 24 (row AF's population: B-walk
 # sites whose stop marker is read). The impossible cells (MASK anywhere, SHIFT
 # off E-find, E-generic off RESTART, E-func/E-stmt off RESTART/NONE, NONE not
-# exactly ARM) are the generator's own failures, never a floor.
+# exactly ARM) are the generator's own failures, never a floor. meet 2 (lane partd2,
+# 2026-11-13: offers withheld where overlapping spans' meet is not the
+# offering span's own set, so the position tests OWN; the merge of R-38 Part D
+# with 3.0b first generated one, site 878) keeps its measure.
 FRAME_CELL_FLOORS="E-func/none:210 E-func/restart:34 E-stmt/none:320 E-stmt/restart:231 E-find/restart:1097 E-find/shift:118 E-generic/restart:510"
 # the TRACED pass's window defines per Table E row (G2W_TRACE=1; measured
 # E-func 542, E-stmt 1227, E-find 2702, E-generic 1135), less ~10%: the
 # agreement holds over each frame's sites, never over nothing
 TRACED_FLOORS="E-func:487 E-stmt:1104 E-find:2431 E-generic:1021"
-FRAME_CLASS_FLOORS="fn:48 pair:368 hors:118 libc:615 walk:113 method:1446 table:55 noffer:4178 below:36 stop_own:1138 af_walk:21"
+FRAME_CLASS_FLOORS="fn:48 pair:368 hors:118 libc:615 walk:113 method:1446 table:55 noffer:4178 meet:2 below:36 stop_own:1138 af_walk:21"
 # R-38 K38-2 PLAN (e) (EMIT-3 of code review 2026-11-10 r2 k382a; lane k382, 2026-11-11): 200
 # IN-RUN sites appended from their own stream (G2W_K3_SITES; the 2700 before them unchanged),
 # three in four on an art carrying the lever run-tie-left. Under the lever, the reference's own
@@ -142,7 +151,19 @@ plant_spec() {
     S1407) # an untested offset claimed: the class proves one past each tested position
         echo 'window.c@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];\n        if (d + 1 < MF_MAX_FWD) for (unsigned x = 0; x < 32; x++) out->proven[d + 1 - MF_PROOF_LO][x] \&= w->set[i][x];' ;;
     S1409) # two spans of R's shape in one alternative not refused (the F-8 ruling: R is unique)
-        echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two spans@@        if (0)\n            return "an alternative states two spans' ;;
+        echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two verify-NO spans@@        if (0)\n            return "an alternative states two verify-NO spans' ;;
+        # RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D [r3pd FIX-9]): R is identified by ROLE
+        # (verify NO, two or more positions), the refusal's words name it
+    # R-38 Part D (lane partd; part_d.md rev 4 §5.1 D2, §5.1.1 [r3pd FIX-9], [r2pd P13d]):
+    S3116) # p8: `run_shaped` restored for verify-NO spans: R must be all spelled
+        # positions, so an R holding a wide position loses its member (DECIDE)
+        echo 'window.c@@        if (run_role(&alt->spans[i])) m->run = (int)i;@@        if (run_role(&alt->spans[i]) && ({ int ok_ = 1; for (unsigned j_ = 0; j_ < alt->spans[i].len; j_++) ok_ &= kit_pos_spelled(alt->spans[i].set[j_]); ok_; })) m->run = (int)i;   /* SABOTAGE S3116 */' ;;
+    S3117) # p16: merge takes the verify-YES pinned span as the member before R
+        # (R's role lost to the YES span): DECIDE reds where both are stated
+        echo 'window.c@@        if (run_role(&alt->spans[i])) m->run = (int)i;\n    for (unsigned i = 0; i < alt->nspan && m->run < 0; i++)\n        if (pinned_yes(&alt->spans[i])) m->run = (int)i;@@        if (pinned_yes(&alt->spans[i])) m->run = (int)i;   /* SABOTAGE S3117 */\n    for (unsigned i = 0; i < alt->nspan && m->run < 0; i++)\n        if (run_role(&alt->spans[i])) m->run = (int)i;' ;;
+    S3118) # the verify-YES pinned span's uniqueness rule dropped: an alternative
+        # stating two spelled verify-YES spans is decided (the two-runs control)
+        echo 'window.c@@        if (nyes > 1)@@        if (0)   /* SABOTAGE S3118 */' ;;
     S1422) # D172 S3: E-find denied but rendering (`--memfn=no-window-search` ignored): the
         # control's REPORT site renders where it must be refused (window_site.md §5.2)
         # (re-anchored at code review r1 C17: E-find's id is spelled once, WF_FIND_ID)
@@ -244,7 +265,7 @@ plant_spec() {
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041 S3084 S3089 S3090 S3091 S3092 S3093 S3096"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041 S3084 S3089 S3090 S3091 S3092 S3093 S3096 S3116 S3117 S3118"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -380,6 +401,8 @@ floor calls "$(grep -h '^G2W sites' "$WORK/plain.run.log" | awk '{print $5}')" "
 floor hits "$(grep -h '^G2W sites' "$WORK/plain.run.log" | awk '{print $7}')" "$FLOOR_HITS"
 for pf in $PATH_FLOORS; do floor "path ${pf%%:*}" "$(val paths "${pf%%:*}")" "${pf#*:}"; done
 floor pinned "$(val paths pinned)" "$FLOOR_PINNED"
+floor r_yes "$(val partd r_yes)" "$FLOOR_R_YES"
+floor r_wide "$(val partd r_wide)" "$FLOOR_R_WIDE"
 floor reseed_bit "$(val paths reseed_bit)" "$FLOOR_RESEED_BIT"
 for mf in $MARGIN_FLOORS; do floor "margin ${mf%%:*}" "$(val margin "${mf%%:*}")" "${mf#*:}"; done
 for tf_ in $TIE_FLOORS; do floor "tie ${tf_%%:*}" "$(val ties "${tf_%%:*}")" "${tf_#*:}"; done

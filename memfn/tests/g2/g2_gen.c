@@ -992,6 +992,7 @@ static int mutate(buf *b)
 /* ---- results ---------------------------------------------------------------- */
 
 static FILE *g_res;
+static long n_ofs_scoped, n_ofs_rendered;   /* the two-sided pin's census (R-38 Part D) */
 static int g_batch_tag;     /* lane g2pf: the PF cell the batch being filled holds (0 = none) */
 static long n_render_ok, n_render_fail, n_refusal_pass, n_refusal_fail,
             n_vocab_pass, n_vocab_fail, n_api_pass, n_api_fail;
@@ -1937,6 +1938,22 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
         n_sitefn_checked++;
     }
     int fid = form_index(res.form_id);
+    /* R-38 Part D's TWO-SIDED PIN ([r2pd P12]): ofsskip admits a tableless
+       multi-member SET term, or no scan, ONLY on the derived run part (its
+       SCOPE, ofs_fn_applies `derived`); this family's own sites are never
+       derived parts, so the count of its sites ofsskip renders with such a
+       predicate is EXACTLY 0 while the scope stands (run_g2.sh pins it) */
+    if (!strcmp(res.form_id, "ofsskip")) {
+        int scoped = site.pred.plan_hint == MF_NO_PRED;
+        for (unsigned t = 0; t < site.pred.nterm; t++) {
+            const mf_term *T = &site.pred.term[t];
+            unsigned c = 0;
+            for (unsigned x = 0; x < 32; x++) c += (unsigned)__builtin_popcount(T->set[x]);
+            if (T->kind == MF_T_SET && !T->table_ref && c > 1) scoped = 1;
+        }
+        n_ofs_scoped += scoped;
+        n_ofs_rendered++;
+    }
     /* Q-R7-3: the generic row serves NO LOOP_EXIT site (its loops are its own
      * business); rendering one through it is a contract failure whatever the
      * answers say */
@@ -5043,6 +5060,7 @@ int main(int argc, char **argv)
     else mf_art_end(g_art, NULL);
     int bi = g_bi, nsites = g_nsites;
 
+    fprintf(g_res, "OFSSCOPE rendered=%ld scoped=%ld\n", n_ofs_rendered, n_ofs_scoped);
     /* the K35 witnesses (run_g2.sh holds each to a floor): per family, per
      * form id, the PENDING-ENFORCE bucket, the poison differential */
     for (int k = 0; k < NFORMS && form_ids[k][0]; k++) {

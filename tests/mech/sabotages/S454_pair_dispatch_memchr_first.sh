@@ -21,6 +21,7 @@
 # plant makes fn-pair's predicate never hold, so the walk falls to the floor:
 # the same defect (a masked scan position takes the one-stream memchr body on
 # T) at its new home. Intent and detectors unchanged.
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md rev 4 §5.1 [r3pd FIX-6]): the BODY rows' holds facts are DISJOINT (§2.1 [r2pd P2]: fn-every-pos a < 0, fn-pair a, b >= 0, fn-memchr a >= 0, b < 0), so `pair_holds` false alone leaves a pair site no row; the plant keeps its intent (a masked scan position takes the one-stream memchr body) with a second edit widening memchr_holds to every scan.
 SAB_ID="S454-pair-dispatch-memchr-first"
 SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="harness codegen"
@@ -34,5 +35,9 @@ SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP
 SAB_REACH_EXPECT="REACH-PAIR-ARM"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    return x->b >= 0;'
-SAB_AFTER='    return 0 && x->b >= 0;   /* SABOTAGE S454 */'
+SAB_BEFORE='    return x->a >= 0 && x->b >= 0;'
+SAB_AFTER='    return 0 && x->a >= 0 && x->b >= 0;   /* SABOTAGE S454 */'
+SAB_FILE2='memfn/src/ofsskip.c'
+SAB_COUNT2=1
+SAB_BEFORE2='    return x->a >= 0 && x->b < 0;'
+SAB_AFTER2='    return x->a >= 0;   /* SABOTAGE S454 */'

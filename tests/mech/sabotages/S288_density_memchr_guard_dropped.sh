@@ -12,6 +12,7 @@
 # §5.10's own witness -- a one-byte check on 0x81 beside an offset-set
 # scanning 0x80 of equal ppm -- whose `REQ_WHY` must stay "emitted" and
 # reads "dominated" under the plant.
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md rev 4 §5.1 [r3pd FIX-6]): P2 reads `rsc` (a run WITH a scan); the same guard dropped, intent and detector unchanged.
 SAB_ID="S288-density-memchr-guard-dropped"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="prechecks"
@@ -37,10 +38,10 @@ SAB_COUNT=1
 # only in the PCREC_CAND_TRACE build as the five-pick shadow's expectation,
 # so the old plant landed on code no default artifact reads. The plant moves
 # to the same conjunct of the port; intent and detector unchanged.
-SAB_BEFORE='        else if (rs) dom = 0;
+SAB_BEFORE='        else if (rsc) dom = 0;
         else if (!proof->stop) dom = 0;
         else dom = rate && lead >= 0 && rate[proof->byte] <= rate[lead];'
-SAB_AFTER='        else if (rs) dom = 0;
+SAB_AFTER='        else if (rsc) dom = 0;
         /* SABOTAGE S288: memchr-form guard dropped */
         else dom = rate && lead >= 0 && rate[proof->byte] <= rate[lead];'
 # RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2): the context line reads the set-form run span (`rs`); the same

@@ -279,6 +279,16 @@ static const char *fh_fn(void *u, uint32_t ref) { (void)u; (void)ref; return "mf
  *                w2 two (L 3: two 2-byte words), w3 three (L 18: 8-byte words)
  *   rc-memcmp    T-CMP `memcmp` (an exact run at L 4, where `overlap` does not
  *                take it)
+ *   every-pos    the offset-skip function's scan-less BODY (R-38 Part D,
+ *                part_d.md §5.3 [r2pd P9], [r3pd FIX-5]): a FIFTH shape, an
+ *                ALL_PRESENT site whose only span is a REQUIRED run presence
+ *                span of two WIDE positions ({0-9}{0-9}, no member), which the
+ *                kit's own selection takes through P0's scan-less reply and
+ *                precheck's run_part to ofsskip's FUNC body. TWO set terms is
+ *                the minimum (a run span holds 2..MF_WSPAN_POS positions).
+ *                Its `row` is the BODY row the define chose (fn-every-pos,
+ *                read off the art's own record); the ARM is asserted too
+ *                (precheck). No timing has run: its card is UNMEASURED
  * A caseless run states its letters' upper case under mask 0xDF (T & ~K must
  * be 0: run_pos_sat).
  *
@@ -303,6 +313,7 @@ static const mf_form_entry entries[] = {
     { "rc-words",  "w2", 1, MF_FH_RUNCMP,  "words",     "ABC",                1, 0, 0,                 0, NULL,        "generic",          NULL },
     { "rc-words",  "w3", 0, MF_FH_RUNCMP,  "words",     "ABCDEFGHIJKLMNOPQR", 1, 0, 0,                 0, NULL,        "generic",          NULL },
     { "rc-memcmp", "l1", 1, MF_FH_RUNCMP,  "memcmp",    "/use",               0, 0, 0,                 0, NULL,        "generic",          NULL },
+    { "every-pos", "-",  1, MF_FH_RUNPART, "fn-every-pos", DIGITS,            0, 0, 0,                 0, NULL,        "generic",          NULL },
 };
 #define NENTRIES (sizeof entries / sizeof entries[0])
 
@@ -318,6 +329,8 @@ static const mf_form_shape shapes[] = {
                         "subject", NULL, "pos", NULL, "pos" },
     [MF_FH_SETTEST] = { "cmp-expr",    "kit_set_test",
                         "subject", NULL, NULL, NULL, "pos" },
+    [MF_FH_RUNPART] = { "pres-stmt",   "mf_emit (presence STMT/ALL_PRESENT, precheck; P0's scan-less run, ofsskip's BODY)",
+                        "subject", "n", "pos", NULL, NULL },
 };
 
 /* kit.h: the i-th instance, NULL past the last. */
@@ -375,6 +388,7 @@ typedef struct {
     mf_walt  al;
     mf_result res;                  /* its class alone is ~3 KB */
     uint8_t  mask[64];              /* a RUN entry's mask (fh_run) */
+    mf_pred  ps, part;              /* RUNPART: the run presence span, the derived part */
 } fh_work;
 
 /* The common site facts every shape states. */
@@ -495,6 +509,51 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
         if (art->sites[res->handle - 1].arm != &runcmp_arm) goto out;
         *row = run_cmp_row(art, &s->pred.term[0]);
         break;
+    case MF_FH_RUNPART: {
+        /* R-38 Part D's every-pos instance ([r3pd FIX-5]): ALL_PRESENT, the
+           one span a REQUIRED run presence span of two positions, each the
+           entry's set (no member), its derived run part laid out; the arm
+           must be precheck and the BODY row the entry's */
+        fh_site(e, s);
+        s->form = MF_FORM_STMT;
+        s->op = MF_OP_ALL_PRESENT;
+        s->handoff = MF_H_ON_MISS;
+        s->empty = MF_EMPTY_MISS;
+        s->use = MF_USE_DISCARD;
+        s->site_kind = MF_SK_VM_ATTEMPT;
+        s->on_miss_leaves = 1;
+        s->pres_proof = (mf_pres_proof){ -1, 0, 0, 1 };
+        w->sp.start = 0;
+        w->sp.len = 2;
+        w->sp.verify = MF_VERIFY_NO;
+        w->sp.core = MF_CORE_STATED;
+        w->sp.core_lo = 0;
+        w->sp.core_len = 2;
+        fh_set(e, w->sp.set[0]);
+        fh_set(e, w->sp.set[1]);
+        w->al.entry = MF_ENTRY_NONE;
+        w->al.nspan = 1;
+        w->al.spans = &w->sp;
+        w->ps.nalt = 1;
+        w->ps.alts = &w->al;
+        w->ps.wfloor = MF_WFLOOR_SUBJECT;
+        w->ps.need = MF_REQUIRED;
+        w->ps.plan_hint = MF_NO_PRED;
+        w->ps.span_class = MF_SPAN_PRESENCE;
+        s->npspan = 1;
+        s->pspans = &w->ps;
+        w->part.fn_ref = 1;             /* the derived run part: its name only */
+        s->npred = 1;
+        s->preds = &w->part;
+        h->on_miss = "return 0;";
+        h->start = sh->lo;
+        h->fn_name = fh_fn;
+        art->fn_body = NULL;
+        if (mf_emit(art, s, h, &sb, &sf, res) || mf_art_end(art, NULL)) goto out;
+        if (strcmp(art->sites[res->handle - 1].arm->id, "precheck")) goto out;
+        *row = art->fn_body;
+        break;
+    }
     case MF_FH_SETTEST: {
         /* the kit's own membership test of the candidate's byte: a LEAF
            render, no site and no selection (row NULL: no row to reach) */
