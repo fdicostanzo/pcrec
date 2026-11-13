@@ -16,3 +16,6 @@ make test-memfn-arch green; anchors check passes; make strict passes. Other new 
 - Arch-free prose: done. Allowlist rows only for must-name text, each justified: done. No plant/detector change: done.
 
 OWED: none
+
+## STATE AT HANDOFF
+Committed; nothing owed. No rulings file.
