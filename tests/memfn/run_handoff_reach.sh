@@ -89,6 +89,31 @@ else
     ok "reach floor: $reached >= $HANDOFF_REACH_FLOOR"
 fi
 
+# [REQ-PAST-LAST] (lane rpfix, review r2-reqpast CHK-5) A HYBRID WITH AN
+# UNBOUNDED-K WHOLE RUN STAYS DECLINED. The unbounded row's `has_dfa_scan`
+# conjunct is the only thing that keeps `([^@ ]+)@x` (a VM hybrid, its
+# prefilter a DFA scan) off the attempt-loop row; planted away, the artifact
+# stamps "unbounded" with no answer moved, so this pin is its detector.
+while IFS=$'\t' read -r pat; do
+    [ -z "$pat" ] && continue
+    out="$work/hu.c"
+    rm -f "$out"
+    if ! "$pcrec" --features all -p rx -o "$out" --pattern "$pat" 2>"$work/err"; then
+        bad "$pat: compile failed: $(head -c 200 "$work/err")"
+        continue
+    fi
+    if grep -qF '#define RX_VM_PREFILTER "hybrid"' "$out" \
+       && grep -qF '#define RX_REQ_HANDOFF "none"' "$out" \
+       && ! grep -qF 'attempt_position = handoff_position;' "$out"; then
+        ok "$pat (hybrid, unbounded K): declined (RX_REQ_HANDOFF none)"
+    else
+        bad "$pat (hybrid, unbounded K): not a declined hybrid (RX_REQ_HANDOFF $(sed -n 's/^#define RX_REQ_HANDOFF "\(.*\)"$/\1/p' "$out"), VM_PREFILTER $(sed -n 's/^#define RX_VM_PREFILTER "\(.*\)"$/\1/p' "$out"))"
+    fi
+done <<'HYBUNB'
+([^@ ]+)@x
+(\w+)@x
+HYBUNB
+
 # [REQRUN-VM] (lane reqvm1; tuning.md §2.41¶8b) THE VM ATTEMPT LOOP's ROWS.
 # A VM artifact with no DFA scan (`--engine=vm`) hands off to the whole run's
 # first hit less K (`attempt_position = handoff_position`) and, on
@@ -96,7 +121,7 @@ fi
 # `landmark_position < attempt_position` re-ask). Each witness pins the row
 # the admission must reach: `re` (re-entered), `entry` (entry only: a
 # set-rest byte the run does not hold) or `none` (declined: one attempt, an
-# unbounded K). The declines move no answer (a skipped attempt on them would
+# unbounded K whose set holds a byte the run does not). The declines move no answer (a skipped attempt on them would
 # be sound or be no skip at all), so this pin is their only detector; an
 # admitted witness must also be a pattern of tests/litscan/handoff_vm.rxt,
 # whose answers the corpus checks on the route. VM_ATTEMPT_FLOOR counts the
@@ -105,7 +130,12 @@ fi
 # is `xxCAT`, K 3, and it holds the set's `x`: that witness is re-entered now,
 # and `(ab)c?userpass`, whose set's `a`/`b` the run `userpass` lacks, is the
 # entry-only one.)
-VM_ATTEMPT_FLOOR=4
+# ([REQ-PAST-LAST], lane reqpast: `a+xyz` and `[^@ ]+@x`, whose whole run
+# has an UNBOUNDED K, are the `handoff-attempts-unbounded` row now: stamp
+# "unbounded", the entry keeps the hit and starts at the startpos, the
+# re-entry stops past the last occurrence. `(a)\1xyz` stays declined: its
+# set's `a` is not a byte of the run `xyz`.)
+VM_ATTEMPT_FLOOR=6
 vmcorpus="$root/tests/litscan/handoff_vm.rxt"
 echo "== VM attempt loop handoff rows: reach floor and declines =="
 vmreached=0
@@ -154,7 +184,8 @@ x{2,5}(?i:cat)	byte	3	re	-
 ^abcd	byte	none	none	-
 ^(?:ab|x)cdef	byte	none	none	#define RX_REQ_WHY "emitted"
 \Gabcd	byte	none	none	-
-a+xyz	byte	none	none	-
+a+xyz	byte	unbounded	re	handoff_position = search_from;
+[^@ ]+@x	byte	unbounded	re	-
 (a)\1xyz	byte	none	none	-
 VMWITNESSES
 

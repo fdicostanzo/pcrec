@@ -17,6 +17,7 @@
 # flags	pattern	kind	members	runlen	need	head_max
 -	foo.*bar	DFA_SCAN	5	3	OPTIONAL	0
 -	(x+)abcd	HYB_PF	5	5	OPTIONAL	0
---engine=vm	(a+)+zq	VM_ATTEMPT	3	3	REQUIRED	0
+# TH-5 interim (kit OK 2026-11-12): an unbounded handoff K states 2^40 until R-41 declares a named "unbounded" head_max in S2.
+--engine=vm	(a+)+zq	VM_ATTEMPT	3	3	REQUIRED	1099511627776
 -	(?m)^abc	DFA_ATTEMPT	3	3	OPTIONAL	0
 --memfn=no-window-search	x\d{3}abcde	DFA_SCAN	6	5	OPTIONAL	4

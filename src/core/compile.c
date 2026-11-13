@@ -1212,7 +1212,7 @@ static bool fit_premul_applies(const FitSel *s)
 
 /* [REQRUN-VM] `drop-handoff`: give up the VM-side handoff rows the attempt
  * emitted (`Job.req_handoff_vm`: the attempt loop's `handoff-attempts[-entry]`
- * or the hybrid prefilter's re-entry). The retry declines those rows
+ * or, [REQ-PAST-LAST], `handoff-attempts-unbounded`, or the hybrid prefilter's re-entry). The retry declines those rows
  * (`Ctx.req_handoff_dropped`) and is the VM artifact without them; a hybrid
  * keeps its entry, which has no rung. Ordered by measured cost: the rows
  * gained at most x2.53 in instructions on their witnesses
