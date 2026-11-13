@@ -43,5 +43,6 @@ re-measure before load-bearing use.
 - `selflip/` — auto-vs-forced-VM flip facts (lane selflip, 2026-10-26; facts only): the 219-pattern sweep (`sweep.tsv`); report docs/dev/lanes/selflip_report.md.
 - `rwsurvey/` — neighbour-rewrite + scan-set survey (lane rwsurvey, 2026-10-26; facts only): probe hooks, a class-SET copy of scanedge's rule, sweep and analysis scripts; report docs/dev/lanes/rwsurvey_report.md.
 - `dfacap_spike/` — tagged-DFA captures spike (lane capspike, 2026-11-12; study only): a Python leftmost-first TDFA differenced against libpcre2 and pcrec's VM; report docs/dev/lanes/capspike_report.md.
+- `andspike/` — PCRE2-callout exact-span oracle spike for X & Y and predicates (lane andspike, 2026-11-12; study only): ends/spans via an end callout, two X & Y implementations, callout-free cross-checks, laws, predicates; report docs/dev/lanes/andspike_report.md.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/studies.md`.
