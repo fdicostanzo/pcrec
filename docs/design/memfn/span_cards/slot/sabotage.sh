@@ -5,7 +5,7 @@
 # expects the named refusal (precedent: docs/design/r17b_prime/b3a/sabotage/run_skb3a.sh). A control run of
 # the unplanted copy must be green first. Each row scores DETECTED (the dry run refused with the expected
 # text) or MISSED; exit 0 iff the control is green and every row is DETECTED.
-#   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3
+#   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 d1
 #                                         y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
@@ -84,9 +84,13 @@
 #        VEX load of the subject" goes WRONG (a mismatch)
 #   (y11) S2963 [r11-REV15-7] a path no NON_TIMED row names read as NOT timed (an inclusion list again): the gate case
 #        "timed code (src/) moved since code_commit" goes WRONG
+#   K38-3 (span_runs_sheet.md §5.2, [r1s1 S1-13], [r2s1 RK383-4]):
+#   (d1) S3105 the DIM_FIELD line for `back` removed with the kit-grid@4 `enter_back` rows still planned: plan.py's
+#        build()-time dim check refuses (`plan.py report` is the dry run here: no compile, no render). Without the
+#        check the planner runs on (the refusal was link time only, and a card with no planned row loaded silently)
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
 # rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
-# r11's (§R1.5's r11 table); they
+# r11's (§R1.5's r11 table), S3105 K38-3's; they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
@@ -94,7 +98,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=$(cd "$here/../../../../.." && pwd)
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -120,7 +124,9 @@ dry() {    # COPY JOB [NAME]: the job's dry run in the copy COPY (a fresh RUNDIR
            # self-test instead
     local n=${3:-$1}
     rm -rf "$SCR/run.$n"
-    if [ "$2" = est ]; then
+    if [ "$2" = plan ]; then          # JOB `plan`: the planner's report (build() and its checks), no render
+        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/plan.py" report > "$SCR/$n.out" 2>&1
+    elif [ "$2" = est ]; then
         SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/est.py" selftest "$SCR/run.$n" > "$SCR/$n.out" 2>&1
     else
         SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/run.py" dry "$2" "$SCR/run.$n" s2c-dry > "$SCR/$n.out" 2>&1
@@ -253,6 +259,9 @@ for row in $ROWS; do
         patch "$SCR/$row/est.py" '            return t
     return True' '            return t
     return False   # SABOTAGE S2963' ;;
+    d1) job=plan want='plan: card enter_back@4 dim back has no DIM_FIELD line'
+        patch "$SCR/$row/plan.py" '    ("back",    lambda a: None if a.back is None else str(a.back)),    # kit-grid@4: the step-back t
+' '' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
     [ $? -eq 0 ] || { echo "$row  PLANT FAILED"; fail=$((fail + 1)); continue; }
