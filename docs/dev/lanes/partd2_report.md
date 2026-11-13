@@ -22,6 +22,8 @@ rev 4. Starting state: `partd_report.md` (D0-D2 and R-41 built, D3 not).
   its member's tie (`member_opts`, d27fix's form).
   - Probe (partd + d27fix, scratch worktree): `make test-memfn-d27frame` passes 6,937,301 checks, 0 failed.
   - Control (the tie line removed): RED, 160 failures, F1's own message.
+- **One semantic conflict from the merge, fixed in G2:** 3.0b's window `table_name` check against Part D's sites
+  (site 878, Checks). In-tree validation is all green.
 - **Expected pcrec movers: zero.** No pcrec emitter was edited. The proof is the box gate, `597-kit-partd2-gate`
   (OWED).
 
@@ -198,7 +200,28 @@ In-tree, on the lane tip:
 | runpart_prod.py over 600 corpus compiles | green (37 emitted, 37 exactly one); p14 RED |
 | d27frame on partd + d27fix (probe) | 6,937,301 / 0; control red (160) |
 | anchors (scripts/m6read_check_sab_anchors.py) | 1,289 rows, 1,339 sites, all resolve |
-| validation chain (val.sh) | VALIDATION_TABLE |
+| nice make -j8 | rc 0 |
+| make strict | rc 0 (again after the G2 fix) |
+| make test-codegen | rc 0 |
+| test-memfn-finder | first run RED: purity row `+C-member(verify-NO)` no longer matched once (member_opts took d27fix's `return ... ?` form); re-anchored to d27fix's own text; rerun rc 0 |
+| test-memfn-link | first run RED: C16 flagged `memfn/src/NOTES.md` (every file there needs SPDX + a PROVENANCE row); moved to `memfn/NOTES.md`; rerun rc 0 |
+| test-memfn-rows / targets / arch / forms | rc 0 each |
+| test-memfn-g2 (the quick tier: window plain + traced, presence with D3, the rest) | first run RED at window site 878 (below); after the fix rc 0: 70,358,671 passed / 0 failed |
+| anchors | rc 0 |
+| `CLAUDEMD_ROOT=... check_claudemd_size.sh --all` | rc 0 |
+
+**The merge's one semantic conflict: window site 878.**
+- Both parents were run in scratch archives: main c5b3c2c22 passes 11,266 / 0, and partd before the merge
+  (f345966f9) passes 11,250 / 0. The merge commit fails: `site 878: table_name: plan[5] (offset 4, offer 1):
+  plan_test 1`.
+- Three spans cover offset 4: span0 (3 members, offers table 1), span1 (verify NO) and span3 (1 member each).
+  The tested set is their MEET. The kit takes a covering span's offer only where that span's own set IS the set
+  tested (C-table), so OWN is correct.
+- 3.0b's G2 check took the first covering span's offer. 3.0b's generator never made such an overlap; Part D's
+  generator, which changes the rng stream, made one.
+- Fix (G2 only, `g2_win_gen.c`): `offer_at` reads G2's OWN decision's tested set (`g2w_dec.tset`, from the
+  reference, never the kit). Withheld offers are counted (`meet`) and floored at their measure (`meet:2`).
+- CONTROL: a kit planted to take any covering offer (the set compare dropped) reds sites 642 and 878.
 
 ## Owed runs
 
@@ -217,6 +240,6 @@ tests/mech/sabotages; S1409 and S3116-S3118 are window-family plants with no row
 | 2. rename to MF_HEAD_MAX_UNBOUNDED, readers by grep, history text unchanged | yes (9cd4f451e) |
 | 3. D3: summarize keeps the record, the parser, settest cn+ bounds (both copies), G2SITE, the check and floors, p11/p12/p14/p15 able to fail | yes; S3120-S3122 RED, p14 RED (by hand; in the gate) |
 | 4. F1 overlap: Part D's ranking honours the member's tie; probe merge in a scratch worktree, d27frame result, removed by wtprune | yes: green, control red; probe removed |
-| 5. validation: make, strict, codegen, memfn quick families, G2 quick tier, anchors, claudemd size | see Checks |
+| 5. validation: make, strict, codegen, memfn quick families, G2 quick tier, anchors, claudemd size | all green (Checks), after three fixes found by it: purity row re-anchor, NOTES.md out of memfn/src (C16), G2 window offer vs meet (site 878) |
 | 6. ONE box gate, dry run first, then END | queued as 597-kit-partd2-gate |
 | report with the deliver file's sections; OWED line; CLAUDE.md files | yes: memfn/tests, memfn/src (+ NOTES.md), r33_sim, span_pick, slot |
