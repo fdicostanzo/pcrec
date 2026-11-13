@@ -1745,6 +1745,7 @@ static const struct { const char *id, *cls, *from, *to; } hash_edits[] = {
     { "rc-words",  "w2", " && ",       " || " },
     { "rc-words",  "w3", "pos + 10",   "pos + 9" },
     { "rc-memcmp", "l1", ", 4)",       ", 3)" },
+    { "every-pos", "-",  "pos++",      "pos += 2" },
 };
 static const struct { const char *from, *to; } hash_renames[] = {
     { "subject", "buf" }, { "pos", "cursor" }, { "n", "len" },

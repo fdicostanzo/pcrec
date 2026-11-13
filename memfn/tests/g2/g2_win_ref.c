@@ -369,6 +369,16 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
             }
             d->run_stated = 1;
             d->run_member = sp->start + bj;
+            if (exact) {
+                for (int i = 0; i < a->nspan; i++)
+                    if (i != R && a->span[i].len >= 2 && a->span[i].verify == G2W_YES) {
+                        int ok = 1;
+                        for (int j = 0; j < a->span[i].len; j++)
+                            if (!kind_of(a->span[i].set[j])) ok = 0;
+                        d->r_yes |= ok;
+                    }
+                for (int j = 0; j < sp->len; j++) d->r_wide |= !kind_of(sp->set[j]);
+            }
             d->run_lo = sp->start + lo;
             d->run_len = hi - lo;
         }

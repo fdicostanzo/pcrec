@@ -272,6 +272,39 @@ plant_spec() {
     # read nonzero
     S3103) echo 'levels.c@@        if (admits(t, \&level_table[lv])) m |= 1u << lv;@@        if (admits(t, \&level_table[lv]) || (lv == LV_X86_W32 \&\& !strcmp(t->name, "x86-64"))) m |= 1u << lv;'
         echo 'targets.def@@MF_NEEDS("sse2"), "fxsr,mmx,sse,sse2",@@MF_NEEDS("sse2,avx2"), "fxsr,mmx,sse,sse2",' ;;
+    # R-38 Part D (lane partd; part_d.md rev 4 §5.1's plant column, §5.1.1):
+    S3106) # p1: the `findable` column ignored (kit_run_member's FINDABLE candidates
+        # read as every position): the scan lands on a WIDE position where one is
+        # lighter than every findable one (F24's sites)
+        echo 'window.c@@        if (cand == KIT_CAND_EXACT ? count(set) != 1 : !kit_pos_spelled(set)) continue;@@        if (cand == KIT_CAND_EXACT && count(set) != 1) continue;   /* SABOTAGE S3106 */' ;;
+    S3107) # p2: the decline row PD deleted: a no-findable run on an OPTIONAL route
+        # reaches P3, which names no scan-less reply
+        echo 'finder.c@@    { "PD", FD_PRES, KN_P, SF_RUN_NOSCAN, 0,@@#if 0   /* SABOTAGE S3107 */\n    { "PD", FD_PRES, KN_P, SF_RUN_NOSCAN, 0,'
+        echo 'finder.c@@"none: derived from the reply contract (no find tests the run)", &ct_pd },@@"none: derived from the reply contract (no find tests the run)", &ct_pd },\n#endif' ;;
+    S3108) # p3: "decline when the scan is a cube" (F21): a run whose scan is a
+        # two-member cube is handed back as having no scan
+        echo 'presence.c@@        else if (run_noscan) *run_noscan = 1;@@        else if (run_noscan) *run_noscan = 1;\n        if (rr.has_scan && run_noscan && kit_pos_class_of(rs->set[rr.scan]) == KIT_POS_CUBE) *run_noscan = 1;   /* SABOTAGE S3108 */' ;;
+    S3109) # p4: the head rule back to `run >= 0`: a declined (untested) run's layout
+        # reads the run span's need for the HEAD member instead of REQUIRED
+        echo 'compose.c@@        mf_need need = trun ? (mf_need)s->pspans[head].need : MF_REQUIRED;@@        mf_need need = run >= 0 ? (mf_need)s->pspans[head].need : MF_REQUIRED;   /* SABOTAGE S3109 */' ;;
+    S3110) # p5: a wide verified position rendered by its cube HULL (the least
+        # cube holding its members): non-members pass the verify
+        echo 'window.c@@            memcpy(t->set, run->set[j], 32);@@            memcpy(t->set, run->set[j], 32);\n            { int a0 = 255, o0 = 0; for (int z = 0; z < 256; z++) if (run->set[j][z >> 3] >> (z & 7) & 1) { a0 &= z; o0 |= z; } int k0 = ~(a0 ^ o0) & 255; for (int z = 0; z < 256; z++) if ((z & k0) == (a0 & k0)) t->set[z >> 3] |= (uint8_t)(1u << (z & 7)); }   /* SABOTAGE S3110 */' ;;
+    S3111) # p6': one member dropped from the verify chain's set test (the lowest):
+        # an occurrence holding it is missed (the occurrence oracle's plant)
+        echo 'ofsskip.c@@            kit_set_test(&test, t->set, byte.p);@@            { uint8_t s2[32]; memcpy(s2, t->set, 32); for (int z = 0; z < 256; z++) if (s2[z >> 3] >> (z & 7) & 1) { s2[z >> 3] &= (uint8_t)~(1u << (z & 7)); break; } kit_set_test(&test, s2, byte.p); }   /* SABOTAGE S3111 */' ;;
+    S3112) # p7: the direct translation's stretch widened past a wide position:
+        # the RUN term reaches a position with no (T, K) spelling
+        echo 'window.c@@        while (b < hi && kit_pos_spelled(run->set[b])) b++;@@        while (b < hi) b++;   /* SABOTAGE S3112 */' ;;
+    S3113) # p10: the no-scan fact read as a scan of byte 0 (fn-every-pos no longer
+        # holds) and pair_holds left as `b >= 0`: fn-pair takes every scan-less
+        # part and searches for byte 0 (the design's row swap is implied: pair
+        # holds where every-pos stopped holding)
+        echo 'ofsskip.c@@        *k = *a = *b = -1;@@        *k = *a = *b = 0;   /* SABOTAGE S3113 */'
+        echo 'ofsskip.c@@    return x->a >= 0 && x->b >= 0;@@    return x->b >= 0;' ;;
+    S3114) # p13: P2 keeps `rs && !proof->run` on a no-scan run: a dominated site
+        # whose run has no findable position is no longer dominated
+        echo 'presence.c@@        else if (rsc && !proof->run) dom = 0;@@        else if (rs && !proof->run) dom = 0;   /* SABOTAGE S3114 */' ;;
     *) return 1 ;;
     esac
 }
@@ -288,7 +321,7 @@ plant_absent() {
     *) echo '' ;;
     esac
 }
-plant_detector() { case "$1" in S3008|S3010) echo oracle ;; *) echo family ;; esac; }
+plant_detector() { case "$1" in S3008|S3010|S3111) echo oracle ;; *) echo family ;; esac; }
 # plant_expect ID: the FAIL-line patterns (each grep -E, each required, `|`
 # between them NOT an alternation: split below) naming the detector the plant
 # is FOR; a plant red only by something else is not detected by its witness
@@ -315,10 +348,18 @@ plant_expect() {
     S3100|S3101) echo 'ERROR: AddressSanitizer' ;;
     S3102) echo 'CELL: x86-64-v3\.[01]: w32 U: 0 arm entries;CELL: x86-64-v3\.[01]: w32 L: 0 arm entries;CELL: x86-64-v3\.[01]: w32 A: 0 arm entries' ;;
     S3103) echo 'CELL: x86-64\.[01]: w32 U: [0-9]+ arm entries where the target admits none' ;;
+    S3106) echo "the run.s reply: its scan is a WIDE position" ;;
+    S3107) echo 'mf_ask \(the presence links\): refused|: the decline: ' ;;
+    S3108) echo ': the decline: PD declined' ;;
+    S3109) echo 'its first part is not the HEAD' ;;
+    S3110) echo ': EXTENT: ' ;;
+    S3112) echo 'no \(T, K\) spelling' ;;
+    S3113) echo 'FLOOR: .*scanless_match|: SOUND: |: EXTENT: ' ;;
+    S3114) echo 'FLOOR: .*dom_noscan' ;;
     *) echo '' ;;
     esac
 }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103"
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
