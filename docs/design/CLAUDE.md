@@ -63,13 +63,14 @@ RELEVANT; if not, say why in one line.
 Option sets, selection, cost
 - `option_sets.md` — [OPT-SETS] named bundles of options (rev 2 applies panel r1); `option_sets_measurements/` — its cross-source probes.
 - `sel_cost.md` — [SEL-COST] step 1 / [SEL-SIZE] (refuted); admission rule for compile-time selection terms; `sel_cost/` — census and drivers.
-- `opt_dial_inventory.md` — [OPT-DIAL] step 0 inventory; `opt_dial_design.md` — [OPT-DIAL] step 1 design (paneled r60, revised, governance ruling).
+- `opt_dial_inventory.md` — [OPT-DIAL] step 0 inventory; `opt_dial_design.md` — [OPT-DIAL] step 1 design (paneled r60).
 - `regime_tables.md` — search-form selection by regime (draft rev 0).
 - `prior_cost_unify.md` — [PRIOR-COST-UNIFY] one priced scan decision; `prior_cost_unify/` — instruments.
 - `measure_sets.md` — [MEASURE-SET] measurement-set format/store/loading (rev 3); store lives in `measure_store/`.
-- `decision_families_survey.md` — survey of if/else decision families; `decision_families/` — raw stamp inventory and `decfb0/` census.
+- `decision_families_survey.md` — survey of if/else decision families; `decision_families/` — stamp inventory, `decfb0/` census.
 - `dec_fallback.md` — [DEC-FALLBACK] one fallback ladder; `dec_fallback/` — edit set, anchor map, reach prototype.
-- `pricing_rulepilot.md` — [PRICE-BAKEOFF] the rule-list pilot: can <= 3 rules over stated facts reach 95 % of the measured best strategy (pre-registered; evidence `docs/dev/lanes/rulepilot_evidence/`).
+- `pricing_rulepilot.md` — [PRICE-BAKEOFF] rule-list pilot: <= 3 rules reach 95 % of best (`docs/dev/lanes/rulepilot_evidence/`).
+- `flag_demote_map.md` — [FLAG-DEMOTE] internal deny word + flag map.
 
 Memory functions, kit, compound, iterator
 - `memfn/` — [MEMFN] design record (requirements, ISA selection, survey, integration revisions through 4.9, twins, Linux results, later r17 notes); own CLAUDE.md; revision history in `memfn/CLAUDE.md`.
@@ -90,7 +91,7 @@ Search, start, scan and engine optimization notes
 - `reqbyte_freq_pick.md`, `reqpos_2b.md` — [OPTLOOP.2] cycle-2 notes.
 - `premultiplied_dfa_table.md` [OPT-3], `offset_k_skip.md` [OPT-K], `artifact_size_term.md` [ART-SIZE] (+ `artsize_impl/`), `prefilter_count_independence.md` [OPT-4] (+ `opt4_impl/`), `opt5_step2_twopass.md` [OPT-5], `two_tier_entry.md` [OPT-1] step 2, `emitter_form.md` [ENG-FORM] (D82).
 - `alt_dispatch_study.md` — [ENG-ISL.S0] alternation-dispatch study (`studies/alt_dispatch/`).
-- `alt_normal_form.md` — [RUN-POS-SET] one rewrite owner for alternations (lowering + altcls callers, one adjacency test) and one description per fixed-width piece for facts; positions as sets at the seam (PROPOSED rev 2); `span_arms.md` — its REP, EMPTY, LOOKAROUND arms (rev 2.2).
+- `alt_normal_form.md` — [RUN-POS-SET] one rewrite owner for alternations and one description per fixed-width piece for facts; positions as sets at the seam; `run_pos_set_stage3_readiness.md` — its stage 3 + R-38 Part D readiness (S2); `span_arms.md` — its REP, EMPTY, LOOKAROUND arms.
 - `stream/` — "one instruction stream" end state: `manifesto.md` (STABLE: goals, end state, principles; changes only with the owner), `roadmap.md` (LIVING: migration areas by code, hubs, provisional admission table, the ratchet), `approach.md` (rev 3, the design record of rounds 1-3), `arev.md` (A-REV: one automaton-run record, PROPOSED rev 2; first client the lookbehind hand-off as a proof step); `round1/` keeps the round-1 drafts.
 - `emit_backends_notes.md` — FORWARD NOTES only (Frank 2026-10-30, nothing scheduled): record-level cleanups, other code targets, a bytecode VM, a matcher IR with backend libraries, memfn on the backend side.
 - `cls_tree_design.md` — [CLS-TREE]; `poss_arms.md` — [ART-POSS-ARMS] (+ `poss_arms_measurements/`); `altcls_pinned_impl/` — [OPT-ALTCLS] pinned instrument.
@@ -106,7 +107,8 @@ Modules (design notes with `*_measurements/` siblings)
 - `extension_design.md` — module/extension architecture (D34; Part II is the redesign of record); `design_notes_mod06.md` (`unicode-props`), `design_notes_mod07.md` (`--explain`).
 - `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/` + `la_d27_extract.md`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind; stage 1 built, stage 2 rev 5.2) + `vlb_d27_extract.md` + `vlookbehind_pieces.md` (its fixed/variable piece probe, rev 0); `subroutines_design.md` + `subroutines_measurements/` + `sr_d27_extract.md`; `frame_buffer_design.md` (D71 item 2).
 - `feature_families.md` — [FEAT-FAMILIES] basic/extended/pcre2 families over D37 (PROPOSED rev 0).
-- `cond_family.md` — [COND-FAMILY] survey: conditions/predicates/intersection members, machinery, common elements, first piece.
+- `cond_family.md` — [COND-FAMILY] survey: members, machinery, first piece; `fact_consumers_inventory.md` — [FACT-READS] fact consumers, orderings, checks.
+- `dfa_captures_research.md` — [ENG-TDFA] captures without the VM.
 - `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
 - `uprop_more.md` — [UPROP-MORE] `\p{}` binary properties + Bidi_Class (PCRE2 catch-up) and Block/Age (extension) design (PROPOSED).
 - `utf8_design.md` + `utf8_measurements/` + `utf8_d27_extract.md` ([M5.0]); `ucp_design.md` + `ucp_measurements/` ([UCP]); `utf_valid_design.md` + `utf_valid_evidence/` ([UTF-VALID], D133); `encoding_data_layout.md`.

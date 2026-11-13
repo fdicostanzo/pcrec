@@ -211,12 +211,6 @@ mf_art *pcrec_memfn_art(Ctx *cx)
                                              PCREC_HARNESS_PREFIX, cx->opt->prefix)))
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the arm-entry "
                            "counter: %s", mf_art_error(job->mf));
-        /* R-30: the harness lever's old pre-check form; never on a shipped
-           compile */
-        if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->pres_window &&
-            mf_lever(job->mf, "pres-window"))
-            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the lever "
-                           "`pres-window`: %s", mf_art_error(job->mf));
         /* R-38 K38-2a: the harness lever's probe of the run decision's tie;
            never on a shipped compile */
         if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->run_tie_left &&
@@ -746,7 +740,7 @@ static void routed_record(DelegSite id, const mf_site *s, const char *row)
  * defines (`mf_site.pspans`), under the same switch:
  * `MFPRES<TAB>site<TAB>kind<TAB>members<TAB>runlen<TAB>need<TAB>head_max`,
  * one per defined site that states any (`members` the one-byte spans,
- * `runlen` the run span's length or 0, `need` REQUIRED/OPTIONAL, every span's
+ * `runlen` the run span's length or 0, `head_max` signed since R-38 K38-2, `need` REQUIRED/OPTIONAL, every span's
  * one need). C10's presence fixtures read it. */
 static void pres_record(DelegSite id, const mf_site *s)
 {
@@ -754,13 +748,15 @@ static void pres_record(DelegSite id, const mf_site *s)
     unsigned members = 0, runlen = 0;
     if (!getenv("PCREC_MF_ROUTE_TRACE") || !s->npspan) return;
     for (unsigned i = 0; i < s->npspan; i++) {
-        if (s->pspans[i].term[0].kind == MF_T_RUN) runlen = s->pspans[i].term[0].run_len;
+        const mf_pred *p = &s->pspans[i];
+        /* the run in set form (R-38 K38-2): one window alternative, no term */
+        if (p->nalt == 1 && p->nterm == 0) runlen = p->alts[0].spans[0].len;
         else members++;
     }
-    fprintf(stderr, "MFPRES\t%s\t%s\t%u\t%u\t%s\t%llu\n", pcrec_deleg_sites[id].id,
+    fprintf(stderr, "MFPRES\t%s\t%s\t%u\t%u\t%s\t%lld\n", pcrec_deleg_sites[id].id,
             s->site_kind < sizeof routed_kind_name / sizeof kn[0] ? kn[s->site_kind] : "?",
             members, runlen, s->pspans[0].need == MF_REQUIRED ? "REQUIRED" : "OPTIONAL",
-            (unsigned long long)s->head_max);
+            (long long)s->head_max);
 }
 #endif
 

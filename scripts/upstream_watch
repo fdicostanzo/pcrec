@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+# upstream_watch — new activity on the upstream issues WE filed ([PCRE2-DEFLB], U26; Frank 2026-11-12:
+# "Use scripts and check for follow-ups daily"). READ-ONLY toward GitHub (`gh issue view`, timeout 60 each);
+# it never comments, labels or closes anything.
+#
+#   scripts/upstream_watch [--tracked FILE] [--state FILE]
+#
+# The tracked list is the one declared table docs/dev/upstream_tracked.tsv (url, our row id, filed date).
+# For each issue it reads state, state reason, comment count, the last comment (author, time, text) and the
+# labels, compares them with the state file ($PCREC_TMPDIR/upstream_watch/state.json, never committed; no entry
+# yet = a quiet OPEN issue with no comments and no labels) and prints ONE line per issue with NEW activity:
+#   upstream: #1072 new comment by X 2026-11-13: <first 80 chars>     (a count "(3 new)" when several)
+#   upstream: #1072 CLOSED (completed)  |  REOPENED  |  labels now: a, b
+# Nothing otherwise. `gh` missing or failing for any issue: ONE final `upstream: unavailable` line, and that
+# issue's state is left untouched (its news is not lost). Exit 0 always.
+# No `TOOL: DONE` line: it is a few-second tool whose stdout is the news itself (scripts/gestalt reads it
+# silent-when-quiet); scripts/gestalt runs it at most once a day.
+import json, os, re, subprocess, sys
+
+here = os.path.dirname(os.path.abspath(__file__))
+tmp = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-" + (os.environ.get("USER") or "user")
+tracked = os.path.join(here, "..", "docs", "dev", "upstream_tracked.tsv")
+state = os.path.join(tmp, "upstream_watch", "state.json")
+a = sys.argv[1:]
+while a:
+    if a[0] == "--tracked" and len(a) > 1: tracked = a[1]; a = a[2:]
+    elif a[0] == "--state" and len(a) > 1: state = a[1]; a = a[2:]
+    else: sys.exit("usage: upstream_watch [--tracked FILE] [--state FILE]")
+
+def rows():
+    for ln in open(tracked):
+        ln = ln.rstrip("\n")
+        if not ln.strip() or ln.startswith("#"): continue
+        url = ln.split("\t")[0].strip()
+        m = re.match(r"https://github\.com/([^/]+/[^/]+)/issues/(\d+)$", url)
+        if m: yield url, m.group(1), m.group(2)
+
+def view(repo, num, fields):
+    r = subprocess.run(["timeout", "60", "gh", "issue", "view", num, "-R", repo, "--json", fields],
+                       capture_output=True, text=True)
+    if r.returncode != 0: return None
+    try: return json.loads(r.stdout)
+    except ValueError: return None
+
+try: old = json.load(open(state))
+except (OSError, ValueError): old = {}
+new = dict(old)
+out, unavailable = [], False
+try: rs = list(rows())
+except OSError: rs = []; unavailable = True
+for url, repo, num in rs:
+    try: d = view(repo, num, "state,comments,labels")
+    except OSError: d = None            # no gh at all
+    if d is None: unavailable = True; continue
+    if d.get("state") == "CLOSED" and old.get(url, {}).get("state") != "CLOSED":
+        # stateReason is best effort: an older gh does not know the field
+        d.update(view(repo, num, "stateReason") or {})
+    prev = old.get(url, {"state": "OPEN", "n": 0, "labels": []})
+    cs = d.get("comments") or []
+    labels = sorted(l.get("name", "") for l in d.get("labels") or [])
+    st = d.get("state", "")
+    tag = "upstream: #" + num
+    if len(cs) > prev["n"]:
+        c = cs[-1]
+        who = (c.get("author") or {}).get("login", "?")
+        when = (c.get("createdAt") or "")[:10]
+        body = " ".join((c.get("body") or "").split())[:80]
+        k = len(cs) - prev["n"]
+        out.append("%s new comment by %s %s%s: %s" % (tag, who, when, " (%d new)" % k if k > 1 else "", body))
+    if st != prev["state"]:
+        if st == "CLOSED":
+            out.append("%s CLOSED (%s)" % (tag, (d.get("stateReason") or "unknown").lower().replace("_", " ")))
+        else:
+            out.append("%s %s" % (tag, "REOPENED" if st == "OPEN" else st))
+    if labels != prev["labels"]:
+        out.append("%s labels now: %s" % (tag, ", ".join(labels) or "(none)"))
+    new[url] = {"state": st, "n": len(cs), "labels": labels}
+if unavailable: out.append("upstream: unavailable")
+print("\n".join(out)) if out else None
+if new != old:
+    os.makedirs(os.path.dirname(state), exist_ok=True)
+    with open(state + ".tmp", "w") as f: json.dump(new, f)
+    os.replace(state + ".tmp", state)

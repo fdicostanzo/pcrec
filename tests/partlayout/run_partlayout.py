@@ -477,6 +477,25 @@ def guarded_noipa(text):
 NEVER_MATCH = {
     r"(?m)^a(?-m)^b", r"(?m)^a(?-m:^b)", r".{1,3}\Aa*", r".{1,3}^a*", r"[a-]{1,2}\A-",
     r"[a-]{2}^a*", r"\s{2}^", r"a\Gb", r"ab\A", r"a{2}^-", r"x\Ay", r"x\G",
+    # [NEVER-MATCH] (lane nevermatch, 2026-11-12, abi 102): the VM hybrids whose prefilter machines
+    # admit no match are the DFA empty artifact now; each ran green in its .rxt file (those not in this
+    # population are inert here).
+    r"((?*[ab])z)",
+    r"((?*a)z)",
+    r"((?=[ab])z)",
+    r"((?=a)z)",
+    r"(?<g>\w\b)(?&g)?x",
+    r"(?=a)\Kb",
+    r"(?>(?*[ab])z)",
+    r"(?>(?*a)z)",
+    r"(?>(?=[ab])z)",
+    r"(?>(?=a)z)",
+    r"(?>a\b)c",
+    r"(?>a|ab)\bc",
+    r"(a)\b(b)",
+    r"(a+)\b(?1)",
+    r"a(?=b)\Kc",
+    r"a\K\bb",
 }
 
 
@@ -529,8 +548,8 @@ def sec_census(pop):
     # declared one that gains a subject back (the declaration went stale).
     unexpected = [p for p in lost if p not in NEVER_MATCH]
     stale = [p for p in NEVER_MATCH if p in pop and p not in lost]
-    check(not unexpected and not stale and len(pop) >= 380 and len(reached) >= 370,
-          "census: %d of %d population patterns carry a subject (floor 370 of 380), the other %d "
+    check(not unexpected and not stale and len(pop) >= 380 and len(reached) >= 365,
+          "census: %d of %d population patterns carry a subject (floor 365 of 380), the other %d "
           "are the declared never-match (empty-engine) set%s"
           % (len(reached), len(pop), len(lost),
              "" if not (unexpected or stale) else ": lost " + "; ".join(map(repr, unexpected[:3]))

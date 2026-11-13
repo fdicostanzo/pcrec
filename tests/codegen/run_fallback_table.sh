@@ -71,7 +71,7 @@
 # hard-fail on an empty list). Three, because three witnesses have a natural
 # population of ZERO at the shipped limits:
 #   lowdfa   -DPCREC_MAX_AUTO_DFA_ELEMS=3000      overflowed-prefilter
-#   lowsize  -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 -DPCREC_MAX_EMIT_BYTES=60000
+#   lowsize  -DPCREC_MAX_VM_EMIT_CODE_BYTES=31920 -DPCREC_MAX_EMIT_BYTES=60000
 #            -DPCREC_SIZE_TERM_THRESHOLD=10000    cap-rescue,
 #                                                 size-model-declined
 #   lowthr   -DPCREC_SIZE_TERM_THRESHOLD=1000     capacity-declined
@@ -119,7 +119,7 @@ build_ref() {   # build_ref NAME CFLAGS...  -> $WORK/pcrec_NAME
 }
 if [ -n "$lsrcs" ]; then
     build_ref lowdfa  -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
-    build_ref lowsize -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 -DPCREC_MAX_EMIT_BYTES=60000 \
+    build_ref lowsize -DPCREC_MAX_VM_EMIT_CODE_BYTES=31920 -DPCREC_MAX_EMIT_BYTES=60000 \
                       -DPCREC_SIZE_TERM_THRESHOLD=10000 &
     build_ref lowthr  -DPCREC_SIZE_TERM_THRESHOLD=1000 &
     wait
@@ -142,9 +142,9 @@ REF_lowdfa="$WORK/pcrec_lowdfa"; REF_lowsize="$WORK/pcrec_lowsize"; REF_lowthr="
 if [ -n "$lsrcs" ]; then
     build_ref trplain   -DPCREC_CAND_TRACE &
     build_ref trlowdfa  -DPCREC_CAND_TRACE -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
-    build_ref trlowsize -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 \
+    build_ref trlowsize -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=31920 \
                         -DPCREC_MAX_EMIT_BYTES=60000 -DPCREC_SIZE_TERM_THRESHOLD=10000 &
-    build_ref trlowboth -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=31815 \
+    build_ref trlowboth -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=31920 \
                         -DPCREC_MAX_EMIT_BYTES=60000 -DPCREC_SIZE_TERM_THRESHOLD=10000 \
                         -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
     wait
@@ -314,7 +314,11 @@ fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(
 # `catcat` (R1 repeat x E2 \b rows), +6 B of stamp on every attempt, past this window's margin;
 # `(\bcats\b){2,}[a-z]\d\d` was the one hit of a 224-pattern sweep (word x repeat x tail) on the
 # merged trlowsize, and reads the same three rows on main 3f46eba9b.
-fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size > drop-handoff@size' '(\bcats\b){2,}[a-z]\d\d' -e utf8
+# [NEVERMATCH] (lane nmfix, 2026-11-12): the former witness `(\bcats\b){2,}[a-z]\d\d` can never
+# match (no \b between `s` and `c`), so it now compiles to the DFA empty artifact and reads no
+# rows. `\W` between the words can match and keeps the shape (VM-only attempt loop over the
+# cap); `{2,4}` is the measured form (`{2,}` with a separator lands on `refuse@size`).
+fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size > drop-handoff@size' '(\bcats\b\W){2,4}[a-z]\d\d' -e utf8
 fstate seq-pfcd2 2 'restart=1'
 fstate seq-pfcd2 3 'restart=1'
 # [REQRUN-VM] the `drop-handoff` rung BEFORE the prefilter drop, at the shipped caps: the
@@ -417,7 +421,7 @@ frec adm-ovf      trplain admit 'none|overflow-drop pf=0'      "$W_OVF"
 frec adm-ovfsel1  trplain admit 'sel1|overflow-drop pf=0'      "$W_OVFNN" -fno-prefilter
 frec adm-fon      trplain admit 'none|forced-on pf=1'          '(a)b' --engine=vm -fprefilter
 frec adm-sizedrop trplain admit 'none|size-dropped pf=0'       '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
-frec adm-sizedcol trlowsize admit 'sizecap|size-dropped pf=0'  '(\bcat\b){2,}\w\w' -e utf8
+frec adm-sizedcol trlowsize admit 'sizecap|size-dropped pf=0'  '(\bcats\b\W){2,4}[a-z]\d\d' -e utf8
 frec adm-fonsc    trplain admit 'sizecap|forced-on pf=1'       '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 frec att-forced   trplain attrib '-|forced from=forced'                       '(a)b' --engine=vm
 frec att-sel      trplain attrib '-|selected from=none'                       '(a)b'
@@ -433,7 +437,7 @@ frec att-ovfpf    trlowdfa attrib '-|overflowed-prefilter from=sel1-drop'     "$
 frec att-ovfcd    trplain attrib '-|overflowed-dfa from=sel1-drop'            "$W_LOOKR"
 # [REQRUN-VM] att-scpfd's last attempt is now the one after `drop-handoff` (prefilter-
 # collapse > drop-prefilter > drop-handoff, still over the cap): the giving row is the THIRD.
-frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-handoff'       '(\bcat\b){2,}\w\w' -e utf8
+frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-handoff'       '(\bcats\b\W){2,4}[a-z]\d\d' -e utf8
 frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}\d'
 frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8 -fno-start-landing
 frec att-sclw     trlowsize attrib '-|size-cap-retry from=drop-landmark-walk' "$W_LWSIZE"

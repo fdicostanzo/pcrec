@@ -940,6 +940,12 @@ which is K64's and K65's class). Per reader:
 | C3 `req_byte_dominated_by` (G1) | whether the byte pre-check is EMITTED or ELIDED as dominated by the candidate scan | G1 can only elide where `dfa_cand_scan_byte` returns `p ≥ 0`, which requires `pcrec_artifact_has_dfa_scan` (`emit_dfa.c:5507`, `dfa_cand_scan_byte` just above it): a DFA route, or the VM hybrid's inlined DFA prefilter. On the DFA the search is linear. On the hybrid, every reqbyte-necessary byte is necessary to the prefilter's language as well — the r1 S1 panel's argument (`../../dev/reviews/2026-09-25-r1-litscan-s1.md` S1-2: `A_LOOK`/`A_BREF`/`A_VAR`/`A_CALL` decline, `A_ATOMIC` is transparent on both sides, count-collapse keeps `rmin ≥ 1`) — so a subject lacking `q` is rejected by a linear machine before any VM attempt. Hence for every rate table the elided and the emitted forms answer and give up identically; the rate chooses cost only. On a VM route with NO DFA scan, `p = -1` and the pre-check is always kept | the `p < 0 → false` guard and the "every necessary byte is prefilter-necessary" property. Sabotage F-13 breaks the first |
 | C4 `set_ppm` (offset-k) | which offset SETS the `ofsskip` filter scans and verifies | offset-k is a DFA prefilter: every (offset, set) it tests is necessary for every match, so any selection is a sound filter in front of a linear machine | the derivation, not the rate, decides necessity (the rate only ranks sets) |
 
+**[K38-2, 2026-11-12, lane k382c2b]** C2b's window is gone: pcrec cuts no window (span_runs_sheet.md
+§4.3). The test ids keep their names with new meanings (`tests/findings/gen_adversarial.py`): C2a is
+`<PREFIX>_REQ_RUN`'s `@` where the pre-check's run part renders it (row 1 of `match_api.md`
+§6.3.7¶7's table), C2b the `@` a window-site search reads (row 2: the `cover` find, the run-pinned
+prefilter). Both are one PICK, the run decision's; the rows above stand as the record.
+
 **What this does NOT cover.** A future reader on a VM route with no DFA
 front must bring its own row here before it reads a rate. That is the
 place the next K65 would enter.

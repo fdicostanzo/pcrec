@@ -14,7 +14,7 @@ SAB_ID="S448-req-pin-takes-masked"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness codegen"
 SAB_HARNESS_TARGET="tests/litscan/reqcube.rxt"
-SAB_DESC="the run-pinned prefilter row's run term takes the whole masked window compared exactly instead of the pin's exact stretch, so a pair position is tested against T alone and matches carrying the other member are deleted"
+SAB_DESC="the run-pinned prefilter row's run term takes the whole masked run compared exactly instead of the pin's exact stretch, so pcrec's record of the candidate test claims a pair position is tested against T alone: the run pre-check reads as dominated and is dropped (REQ_WHY dominated, OFFSETS 0,1,2*,3 on a[bc]de)"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/c3build_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S448."
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
@@ -28,7 +28,21 @@ SAB_COUNT=1
 # whole masked window instead, as before.
 SAB_BEFORE='        t->run_o = w->run_lo;
         t->run_len = w->run_len;
-        t->run_bytes = r->bytes + (w->run_lo - (pin.o - pin.at));'
+        t->run_bytes = r->whole + (w->run_lo - (pin.o - pin.at));'
 SAB_AFTER='        t->run_o = pin.o - pin.at;   /* SABOTAGE S448 */
-        t->run_len = r->len;
-        t->run_bytes = r->bytes;'
+        t->run_len = r->whole_len;
+        t->run_bytes = r->whole;'
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2; span_runs_sheet.md §4.2): the run's bytes are the WHOLE run's
+# (`r->whole`; the cut window `r->bytes` retired); the plant takes the whole masked run
+# compared exactly at the run's position 0, as before. Probe unchanged (re-read: the stamp
+# is still 61626465@2/fffeffff, run-pinned).
+# RE-ANCHORED 2026-11-12 (lane k382mech): K38-2's ReqRun has no `len` (the cut window's
+# length retired with it; mech 607 shard 1 read the plant BUILD-FAILED), so the plant takes
+# `r->whole_len`, the whole run's, the length that goes with `r->whole`: the same fault. Its
+# REACH moved: since K38-2 the OfsTest record no longer feeds the kit's window statement
+# (main's `pcrec_memfn_wpos_cube` reader retired), so the emitted rx_ofsskip text is the
+# kit's and unchanged under the plant, and answers hold (acde, zzacdezz still match on a
+# scratch build with the plant). What moves is the record's readers: the run pre-check's
+# `dominated` verdict (`ofs_test_verifies_run`) and the OFFSETS stamp, so a[bc]de reads
+# REQ_WHY "dominated" and OFFSETS "0,1,2*,3" (clean: "emitted", "0,2*,3"). Detector:
+# reqcube_check.py check 6 (the kept pin's REQ_WHY "emitted"), the codegen arm.

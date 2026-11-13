@@ -319,6 +319,7 @@ int main(int argc, char **argv)
     unsigned long long rng = 0x2545F4914F6CDD1Dull;
     long npaths[8] = { 0 }, pinned = 0, reseeded = 0, margin_ties = 0, mass_ties = 0, model_ties = 0;
     long margin_rs = 0, margin_pk = 0, nlong = 0;
+    long in_lever = 0, in_set = 0, in_set_won = 0, in_meet = 0;  /* under run-tie-left */
     static const char *const pathn[] = { "empty", "parked", "reseed", "mass", "floor" };
     char forms[32][24];
     long formn[32];
@@ -340,6 +341,12 @@ int main(int argc, char **argv)
         margin_ties += d.margin_tie;
         mass_ties += d.tie_mass;
         model_ties += d.tie_model;
+        if (x->run_left) {
+            in_lever++;
+            in_set += d.inrun_set;
+            in_set_won += d.inrun_set_won;
+            in_meet += d.inrun_meet;
+        }
         int f;
         for (f = 0; f < nforms && strcmp(forms[f], x->form_id); f++) {}
         if (f == nforms && nforms < 32) { snprintf(forms[nforms], 24, "%s", x->form_id); formn[nforms++] = 0; }
@@ -403,6 +410,7 @@ int main(int argc, char **argv)
     printf("G2W cells edge_rejects=%ld core_off=%ld noncore_off=%ld neg_reads=%ld nop_empty=%ld\n",
            edge_rejects, core_off, noncore_off, neg_reads, nop_empty);
     printf("G2W long pair=%ld\n", nlong);
+    printf("G2W inrun lever=%ld set=%ld set_won=%ld meet=%ld\n", in_lever, in_set, in_set_won, in_meet);
     printf("G2W forms");
     for (int f = 0; f < nforms; f++) printf(" %s=%ld", forms[f], formn[f]);
     printf("\n");

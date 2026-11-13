@@ -25,7 +25,9 @@
 #                  defect (the table below): the run must go red. --plants
 #                  runs them all. Writes only the work directory.
 #
-# Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR, G2W_SITES, G2W_SEED.
+# Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR, G2W_SITES, G2W_SEED (and the
+# appended streams' sizes: G2W_S3_SITES, G2W_C1_SITES, G2W_R2_SITES, G2W_H2_SITES,
+# G2W_K3_SITES, the in-run sites under the lever run-tie-left).
 set -u
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -81,6 +83,13 @@ FORM_FLOORS="window-search:630 wf-floor:486 generic:380 pf_memchr:215 ofsskip:27
 # two-stream sites' LONG SUBJECTS (`long pair`, measured 406), each floor the measure less ~10%.
 EFIND_FLOORS="libc:320 walk:103 hors:110 run:115 below:95 report:370 refused:17 pair:316 fn:48 hwin:146"
 FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
+# R-38 K38-2 PLAN (e) (EMIT-3 of code review 2026-11-10 r2 k382a; lane k382, 2026-11-11): 200
+# IN-RUN sites appended from their own stream (G2W_K3_SITES; the 2700 before them unchanged),
+# three in four on an art carrying the lever run-tie-left. Under the lever, the reference's own
+# census of the in-run stop's branches: a candidate outside the run decision's own competing
+# with R's stop at no greater mass (and winning), and a meet that moves R's stop (measured
+# lever 159 set 60 set_won 15 meet 67), each floor the measure less ~10%.
+INRUN_FLOORS="lever:143 set:54 set_won:13 meet:60"
 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
@@ -181,10 +190,18 @@ plant_spec() {
         # answers ST-none for HORS on E-find, the renderable set drops it and T-FIND never
         # picks it (the hors census falls below its floor; no dense window gets a D-hors table)
         echo 'window.c@@    { "HORS",      FF_HORS,      WF_ST_SHIFT,@@    { "HORS",      FF_HORS,      0,' ;;
+    S3040) # R-38 K38-2 PLAN (e) (EMIT-3 of code review 2026-11-10 r2 k382a): the in-run stop
+        # OVERRIDES a set candidate: where R has one, it is the stop, so a set position cheaper
+        # than every position of R loses (the in-run sites' `set` witnesses)
+        echo 'window.c@@    m->has_stop = 1;\n    m->stop = best.key;\n}\n\nstatic int a_floor_holds@@    m->has_stop = 1;\n    m->stop = rs != INT32_MIN ? rs : best.key;\n}\n\nstatic int a_floor_holds' ;;
+    S3041) # R-38 K38-2 PLAN (e): the in-run order reads R's OWN stated sets, not the meet C-meet
+        # left at each offset, so a position a set span narrows is not R's stop (the in-run
+        # sites' `meet` witnesses)
+        echo 'window.c@@        const wf_pos *p0 = \&m->p[r->start - WF_LO];\n        kit_run_reply rr = KIT_RUN_NONE;@@        const wf_pos *p00 = \&m->p[r->start - WF_LO];\n        static wf_pos pl[MF_WSPAN_POS];\n        for (unsigned j = 0; j < r->len; j++) { pl[j] = p00[j]; memcpy(pl[j].set, r->set[j], 32); }\n        const wf_pos *p0 = pl;\n        kit_run_reply rr = KIT_RUN_NONE;' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -328,6 +345,7 @@ for ff in $FORM_FLOORS; do floor "form ${ff%%:*}" "$(val forms "${ff%%:*}")" "${
 efv() { grep -h '^g2_win_gen: e-find' "$WORK/plain.gen.log" | grep -oE "$1 [0-9]+" | head -1 | grep -oE '[0-9]+$'; }
 for ef in $EFIND_FLOORS; do floor "e-find ${ef%%:*}" "$(efv "${ef%%:*}")" "${ef#*:}"; done
 floor "long pair" "$(val long pair)" "$FLOOR_LONG_PAIR"
+for inf in $INRUN_FLOORS; do floor "inrun ${inf%%:*}" "$(val inrun "${inf%%:*}")" "${inf#*:}"; done
 
 echo "checks passed: $tp"
 echo "checks failed: $tf"

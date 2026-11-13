@@ -340,7 +340,7 @@ static const fd_row fd_rows[] = {
 /* THE CHAIN ORDER of a link (mf_link.order; r17b_prime.md §1.4's LEAD), set
  * by fd_pres after the rows decide, over the spans it VERIFIES: the HEAD
  * member first (P4's leading pick where a run is stated; the set's pick
- * where none is), then the RUN (its window, then the whole run where the
+ * where none is), then the RUN (its one derived part, MF_SITE_ABI 27; the
  * link keeps it whole), then the REST of the verified members, among
  * themselves in ascending byte order. An unverified link's order is HEAD's
  * value and is read by no one. P4's link template states HEAD. */
@@ -710,9 +710,12 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
  *       stated (a run's window is then the site's one check); of the run,
  *       the window (`member` 1 + its first position) is verified;
  *   P9  the total default: verified whole (`member` 0), every member.
- * The run's stretch under P3 (its window) is THE RUN DECISION's (presence.c
- * kit_run_decide, R-38 K38-1); under P0/P9 it is the whole run, the route's
- * constant (K38-2 hands the route to the decision).
+ * THE RUN's REPLY (mf_class.run, R-38 K38-2): where the run's link is
+ * tested, THE RUN DECISION (presence.c kit_run_decide) with the ROUTE as its
+ * input (U3): the deciding row names the stretch mode (`fd_run_modes[]`:
+ * P3, the OPTIONAL route's pick, its window; P0 and P9 the whole run; an
+ * unlisted row testing the run is refused); `member` on the run span is 0
+ * and unread (set so here: a row template's `member` is a MEMBER span's).
  * P4, set-leads ported, is an ORDER row: asked on its own after the
  * terminal (as the FIND slot asks its N-rows), on a member span it puts the
  * set's pick, verified, at the HEAD of the chain, ahead of the run. Its
@@ -732,34 +735,54 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
  * `quiet`: the query's (mf_ask) records nothing; a define's prints one
  * `MFTRACE FD ... slot=PRES` record per span, the deciding rows and the
  * final link. */
+/* The run decision's stretch mode by the run link's deciding row: every
+ * row that may TEST the run's link is listed, and an unlisted one is
+ * REFUSED, never handed a catch-all's stretch (a renamed P3 or a new
+ * run-verifying row would otherwise move the verified extent, the compare
+ * and both masses silently; review 2026-11-11 r1 k382 F12, memory
+ * pcrec-no-silent-defaults). PLAN: the stretch as a column of the PRES row
+ * itself (span_runs_sheet.md §5 K38-2 PLAN (a)). */
+static const struct { const char *row; kit_run_stretch st; } fd_run_modes[] = {
+    { "P0", KIT_RUN_WHOLE },    /* REQUIRED: the whole run (K66)            */
+    { "P3", KIT_RUN_WINDOW },   /* the OPTIONAL route's pick: its window    */
+    { "P9", KIT_RUN_WHOLE },    /* the total default: the whole run         */
+};
+
+/* 0 and *st set, or -1: `row` names no listed mode */
+static int fd_run_mode(const char *row, kit_run_stretch *st)
+{
+    for (unsigned i = 0; i < sizeof fd_run_modes / sizeof fd_run_modes[0]; i++)
+        if (!strcmp(fd_run_modes[i].row, row)) { *st = fd_run_modes[i].st; return 0; }
+    return -1;
+}
+
 int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
             mf_class *cls, const char **why)
 {
     int quiet = mode == FD_PRES_QUIET;
     *why = NULL;
     cls->npres = 0;
+    cls->run = KIT_RUN_NONE;
     if (!(fd_scope(s) & (1 << FD_PRES))) return 0;
     if (s->npspan > MF_MAX_PRES) { *why = "npspan > MF_MAX_PRES"; return -1; }
     mf_pres_picks pk;
-    kit_pres_picks(art, s, &s->pres_proof, NULL, &pk);
-    int run = -1;
-    for (unsigned i = 0; i < s->npspan; i++)
-        if (s->pspans[i].term[0].kind == MF_T_RUN) run = (int)i;
+    kit_pres_picks(art, s, &s->pres_proof, NULL, NULL, &pk);
+    int run = kit_pres_run(s);
+    const mf_wspan *rs = run >= 0 ? kit_pres_run_span(s, run) : NULL;
     size_t p4 = FD_NROWS;
     for (size_t i = 0; i < FD_NROWS; i++)
         if (!strcmp(fd_rows[i].id, "P4")) p4 = i;
     const fd_row *rows[MF_MAX_PRES];
     int led[MF_MAX_PRES];
-    /* `member` is 1 + an index (uint8_t): a set pick or a window start past
-       254 has no spelling, and is refused rather than wrapped */
-    if (pk.set_pick > 254 || pk.run_window > 254) {
-        *why = "a presence pick past mf_link.member's range (a set member or a run "
-               "window beyond index 254)";
+    /* `member` is 1 + an index (uint8_t): a set pick past 254 has no
+       spelling, and is refused rather than wrapped */
+    if (pk.set_pick > 254) {
+        *why = "a presence pick past mf_link.member's range (a set member beyond index 254)";
         return -1;
     }
     for (unsigned i = 0; i < s->npspan; i++) {
         const mf_pred *sp = &s->pspans[i];
-        int member = sp->term[0].kind == MF_T_SET;
+        int member = (int)i != run;
         fd_x q;
         memset(&q, 0, sizeof q);
         q.art = art;
@@ -789,13 +812,20 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         }
         const fd_row *t = &fd_rows[d.terminal];
         mf_link k = t->link;
-        if (!strcmp(t->id, "P3")) {
-            if (member) {
-                k.member = (uint8_t)(pk.set_pick + 1);
-                k.verify = run < 0 && (int)i == pk.set_pick;
-            } else {
-                k.member = (uint8_t)(pk.run_window + 1);
+        if (!strcmp(t->id, "P3") && member) {
+            k.member = (uint8_t)(pk.set_pick + 1);
+            k.verify = run < 0 && (int)i == pk.set_pick;
+        }
+        if (!member) k.member = 0;  /* the run span's `member` is 0 and UNREAD (memfn.h
+                                       mf_link; F13): its stretch is `cls->run`'s */
+        if (!member && k.verify) {  /* the run's reply, the route its row names */
+            kit_run_stretch st;
+            if (fd_run_mode(t->id, &st)) {
+                *why = "a row tests the run's link but names no stretch mode (fd_run_modes[])";
+                return -1;
             }
+            cls->run = kit_run_decide(kit_byte_rate(art), kit_run_opts_of(art, st),
+                                      kit_wspan_at, rs, rs->len, NULL);
         }
         /* P4, the order row, asked on its own (deny, gate, predicate) */
         led[i] = 0;
@@ -818,14 +848,17 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         if (led[i] && run >= 0) head = (int)i;
     if (head < 0 && run < 0 && pk.set_pick >= 0 && cls->pres[pk.set_pick].verify)
         head = pk.set_pick;
+    /* the coverage rule reads the reply's VERIFIED EXTENT, its exact
+       (one-member) positions */
     uint8_t covered[32];
     memset(covered, 0, sizeof covered);
-    if (run >= 0 && cls->pres[run].verify && cls->pres[run].member == 0) {
-        const mf_term *t = &s->pspans[run].term[0];
-        for (unsigned j = 0; j < t->run_len; j++)
-            if (!t->mask || t->mask[j] == 0xFFu)
-                covered[t->run[j] >> 3] |= (uint8_t)(1u << (t->run[j] & 7));
-    }
+    if (run >= 0 && cls->pres[run].verify)
+        for (unsigned j = cls->run.ver_lo; j < (unsigned)cls->run.ver_lo + cls->run.ver_len; j++) {
+            unsigned m = 0;
+            for (unsigned x = 0; x < 32; x++) m += (unsigned)__builtin_popcount(rs->set[j][x]);
+            if (m == 1)
+                for (unsigned x = 0; x < 32; x++) covered[x] |= rs->set[j][x];
+        }
     for (unsigned i = 0; i < s->npspan; i++) {
         mf_link *k = &cls->pres[i];
         k->order = FD_ORDER_HEAD;
@@ -849,13 +882,24 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
                     art->trace_id, handle, i,
                     kind_name(kind_cl(s->site_kind)) ? kind_name(kind_cl(s->site_kind)) : "UNSTATED",
                     sp->need == MF_OPTIONAL ? "OPTIONAL" : "REQUIRED",
-                    sp->term[0].kind == MF_T_SET ? popcount256(sp->term[0].set) : 0u,
+                    (int)i != run ? popcount256(sp->term[0].set) : 0u,
                     rows[i]->id, led[i] ? "+P4" : "", k->verify, k->proven_by, k->member,
                     k->order, fb_name[rows[i]->basis], mode == FD_PRES_ASK ? "ask" : "define");
         }
 #else
     (void)rows;
 #endif
+    return 0;
+}
+
+int fd_pres_run(const mf_art *art, const mf_site *s, mf_run_reply *out, const char **why)
+{
+    *out = KIT_RUN_NONE;
+    if (kit_pres_run(s) < 0) return 0;
+    mf_class *c = art->a->alloc(art->a->u, sizeof *c);
+    if (!c) { *why = "out of memory"; return -1; }
+    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, c, why)) return -1;
+    *out = c->run;
     return 0;
 }
 

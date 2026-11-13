@@ -8,6 +8,8 @@ TO=${TIMEOUT_BIN:-timeout}
 T=$(mktemp -d "${TMPDIR:-/var/tmp}/gestalt.test.XXXXXX")
 trap 'rm -rf "$T"' EXIT
 export PCREC_TMPDIR="$T/tmproot"   # gestalt appends gestalt/log.tsv; keep fake rows out of the real log
+printf '#!/bin/sh\nexit 0\n' > "$T/uw.quiet"; chmod +x "$T/uw.quiet"
+export GESTALT_UPSTREAM_WATCH="$T/uw.quiet"   # never the real upstream_watch (it would call gh); the upstream cases below override it
 pass=0 fail=0
 ok()  { echo "PASS: $*"; pass=$((pass+1)); }
 bad() { echo "FAIL: $*"; fail=$((fail+1)); }
@@ -81,10 +83,11 @@ printf 'import time\ntime.sleep(5)\nprint("entry: over-cap checked 1 pair index,
 printf 'print("nothing useful")\n' > "$T/ent/notrailer.py"
 printf '\n' > "$T/ent/blank.py"
 # G [VAR=val ...]: run gestalt (default output) over the all-normal inputs, later VARs overriding earlier ones
+mkdir -p "$T/proc0"   # an empty fake /proc: the pollers row sees no processes unless a case points GESTALT_PROC elsewhere
 G2() { env GESTALT_ROLES_DIR="$T/emptyroles" GESTALT_PROJECTS="$T/proj" GESTALT_CLAUDE_HOME="$T/ch" GESTALT_STATUSLINE_DIR="$T/nosl" \
     GESTALT_SOCKS_DIR="$T/socks" GESTALT_LOADAVG="$T/load.low" GESTALT_BOXQUEUE="$T/bq.busy" GESTALT_ENTRY="$T/ent/under.py" \
     GESTALT_WORK_ENTRY="$T/pw/quiet.py" GESTALT_OWNER_MD="$T/pw/owner.quiet" GESTALT_PUSH_DIR="$T/pw/nogit" GESTALT_PLAN_GIT="$T/pw/repo" \
-    GESTALT_WTPRUNE="$T/pw/wtprune" PCREC_TMPDIR="$T/pw/tmpq" "$@" ; }
+    GESTALT_PROC="$T/proc0" GESTALT_WTPRUNE="$T/pw/wtprune" PCREC_TMPDIR="$T/pw/tmpq" "$@" ; }
 run() { local pre=$1; shift; G2 "$@" PATH="$pre:$PATH" "$TO" 20 bash "$here/gestalt" $GARGS 2>&1; }
 GARGS=""
 q=$(run "$T/ghok"); rc=$?
@@ -106,7 +109,7 @@ fires "queue idle, ready job waits" queue "$T/ghok" GESTALT_BOXQUEUE="$T/bq.idle
 fires "queue idle, nothing ready: silent" "" "$T/ghok" GESTALT_BOXQUEUE="$T/bq.idlewait"
 fires "disk >= 85%" disk "$T/dffull:$T/ghok"
 fires "registered session not live" session "$T/ghok" GESTALT_ROLES_DIR="$T/roles" GESTALT_PROJECTS="$T/none"
-fires "context > 70% of compaction point" "session context" "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
+fires "context > 80% of compaction point (owner main)" "session context" "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
 # J2: the docs row: silent under cap (the first test above); exactly the docs: line when over; J3: unavailable cases
 dq=$(run "$T/ghok" GESTALT_ENTRY="$T/ent/over.py")
 [ "$dq" = "docs: decisions.md 51.3 KB over soft cap 48 KB (+3.3 KB, 107%)" ] && ok "docs row prints exactly the docs: line when over cap" || bad "docs over: [$dq]"
@@ -124,6 +127,21 @@ mv "$T/ch/settings.json" "$T/ch/s.off"; printf '{"autoCompactWindow":1000000}\n'
 fires "context 12% of compaction point: not hot" session "$T/ghok" GESTALT_ROLES_DIR="$T/roles"
 # idle-held: a non-queue holder, alive, with load1 low in two readings >= 60 s apart
 mv "$T/ch/s.off" "$T/ch/settings.json"
+# context fires only for the OWNER's own session (default owner main) at > 80% of the compaction point (150k here: > 120k)
+ctxcase() { # NAME ROLE TOKENS [ROLE TOKENS]: a roles dir + fresh statusline snapshot(s) for those sessions
+    local n=$1; shift; mkdir -p "$T/cx/$n/roles" "$T/cx/$n/sl"; local role tok sid i=0
+    while [ $# -ge 2 ]; do role=$1; tok=$2; shift 2; i=$((i+1)); sid=cccc000$i-2222-3333-4444-555566667777
+        echo "$role" > "$T/cx/$n/roles/$sid"
+        printf '{"captured_at":%s,"context_window":{"context_window_size":1000000,"current_usage":{"input_tokens":%s}}}\n' "$(date +%s)" "$tok" > "$T/cx/$n/sl/session-$sid.json"; done; }
+cxk() { # NAME: the kinds fired for that fixture (GARGS carries --owner)
+    run "$T/ghok" GESTALT_ROLES_DIR="$T/cx/$1/roles" GESTALT_STATUSLINE_DIR="$T/cx/$1/sl" | kinds | tr ' ' '\n' | grep -x context; true; }   # (no live socket: `session` fires too, not under test)
+ctxcase m85 main 127600; ctxcase k85 kit 127600; ctxcase m75 main 112500; ctxcase both main 112500 kit 127600
+o=$(cxk m85); [ "$o" = context ] && ok "context: owner main at 85% fires" || bad "context m85: [$o]"
+o=$(cxk k85); [ "$o" = "" ] && ok "context: kit at 85% with owner main stays silent" || bad "context k85: [$o]"
+o=$(cxk m75); [ "$o" = "" ] && ok "context: owner main at 75% stays silent" || bad "context m75: [$o]"
+o=$(cxk both); [ "$o" = "" ] && ok "context: main 75% + kit 85%, owner main: silent" || bad "context both: [$o]"
+GARGS="--owner kit"; o=$(cxk both); GARGS=""
+[ "$o" = context ] && ok "context: same fixture with owner kit fires (kit 85%)" || bad "context both/kit: [$o]"
 bl() { printf '#!/bin/sh\necho "%s"\n' "$2" > "$1"; chmod +x "$1"; }   # bl FILE STATUS-LINE
 bl "$T/bl.hand" "HELD pid=$$ label=hand-mech since=2026-11-10T09:00:00-05:00 (42m) cwd=/x"
 bl "$T/bl.queue" "HELD pid=$$ label=queue:5-main-x since=2026-11-10T09:00:00-05:00 (42m) cwd=/x"
@@ -150,9 +168,9 @@ ih "silent: HELD-ORPHAN (boxlock's own state)" "" "$T/bl.orphan" 0.40 600 "$T/lo
 # --- plan-health rows (owner-waits, open, ready-idle, stale, questions, push-owed, prune-owed): fixtures for `entry --work` text,
 # a throwaway plan.md history (commit dates back-dated), an owner.md, an origin/main pair, and a fake wtprune + its count cache
 pwork "$T/pw/ow"  "AA|started|$(dago 2)|0" "OW1|not-started|$(dago 9)|1" "OW2|started|$(dago 3)|1"
-pwork "$T/pw/open7" "S1|started|$(dago 1)|0" "S2|started|$(dago 1)|0" "S3|started|$(dago 1)|0" "S4|started|$(dago 1)|0" "S5|ready|$(dago 1)|0" "S6|ready|$(dago 1)|0" "S7|blocked|$(dago 1)|0"
-pwork "$T/pw/open7b" "S1|started|$(dago 1)|0" "S2|started|$(dago 1)|0" "S3|started|$(dago 1)|0" "S4|started|$(dago 1)|0" "S5|ready|$(dago 1)|0" "S6|ready|$(dago 1)|0"
-pwork "$T/pw/open8" "S1|started|$(dago 1)|0" "S2|started|$(dago 1)|0" "S3|started|$(dago 1)|0" "S4|started|$(dago 1)|0" "S5|ready|$(dago 1)|0" "S6|ready|$(dago 1)|0" "S7|started|$(dago 1)|0"
+pwork "$T/pw/open_fresh" "S1|started|$(dago 6)|0" "S2|started|$(dago 1)|0" "S3|not-started|$(dago 40)|0" "S5|blocked|$(dago 40)|0"
+pwork "$T/pw/open_big" $(for i in $(seq 1 26); do echo "B$i|started|$(dago 1)|0"; done)
+pwork "$T/pw/open_ready25" $(for i in $(seq 1 13); do echo "A$i|started|$(dago 1)|0"; echo "R$i|ready|$(dago 1)|0"; done)
 pwork "$T/pw/rdy"   "RA|ready|$(dago 1)|0" "RB|ready|$(dago 1)|0"
 pwork "$T/pw/stale" "OLD|started|$(dago 40)|0" "NEW|started|$(dago 2)|0"
 pwork "$T/pw/nodate" "NODATE|started||0"
@@ -170,13 +188,17 @@ fires "plan rows quiet on a quiet fixture" "" "$T/ghok"
 o=$(pq GESTALT_WORK_ENTRY="$T/pw/ow.py")
 [ "$o" = "owner-waits: 2 (oldest 9d, OW1)" ] && ok "owner-waits: count, oldest age + tag" || bad "owner-waits: [$o]"
 fires "owner-waits" owner-waits "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/ow.py"
-fires "open: 6 started+ready (at threshold) silent" "" "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/open7b.py"
-o=$(pq GESTALT_WORK_ENTRY="$T/pw/open8.py")
-[ "$o" = "open: started 5 / ready 2 / blocked 0 (started+ready > 6)" ] && ok "open: 7 fires with counts" || bad "open: [$o]"
-o=$(pq GESTALT_WORK_ENTRY="$T/pw/open7.py" | kinds); [ "$o" = "" ] && ok "open: blocked rows do not count" || bad "open blocked: [$o]"
+# open (gestfix 2026-11-11): STARTED rows idle > 7d, oldest 3 named; not-started/ready/blocked rows and fresh started rows stay silent
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/stale.py" | grep '^open:')
+[ "$o" = "open: 1 started row(s) idle > 7d (oldest: OLD 40d)" ] && ok "open: a started row idle > 7d fires, oldest named" || bad "open stale: [$o]"
+fires "open: started idle <= 7d, and old not-started/blocked rows: silent" "" "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/open_fresh.py"
+fires "open: 26 fresh started rows (> 25 raw-count threshold) fires" open "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/open_big.py"
+o=$(pq GESTALT_WORK_ENTRY="$T/pw/open_big.py"); [ "$o" = "open: started 26 / ready 0 / blocked 0 (started+ready > 25)" ] && ok "open: raw counts past the threshold" || bad "open big: [$o]"
+fires "open: 13 started + 13 ready = 26 fresh (> 25) fires" open "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/open_ready25.py"
 o=$(pq GESTALT_WORK_ENTRY="$T/pw/rdy.py")
 [ "$o" = "ready-idle: 1 (oldest 10d, RA; > 7d)" ] && ok "ready-idle: only the row ready > 7d" || bad "ready-idle: [$o]"
 o=$(pq GESTALT_WORK_ENTRY="$T/pw/stale.py")
+o=$(printf '%s\n' "$o" | grep '^stale:')   # (the same fixture also fires `open`)
 case $o in "stale: 1 started untouched > 21d (oldest "*"d, OLD)") ok "stale: only the row untouched > 21d" ;; *) bad "stale: [$o]" ;; esac
 o=$(pq GESTALT_WORK_ENTRY="$T/pw/nodate.py" GESTALT_PLAN_GIT="$T/pw/nogit")
 case $o in *"1 undated"*) ok "stale: an undated started row is counted and said" ;; *) bad "undated: [$o]" ;; esac
@@ -210,9 +232,61 @@ d=$(pcache 1 ""); o=$(GARGS=--all; pq PCREC_TMPDIR="$d" | grep '^prune-owed:'); 
 case $o in "prune-owed: unknown"*) ok "prune-owed: no cache yet = unknown, not silent-green under --all" ;; *) bad "prune unknown: [$o]" ;; esac
 # --all shows the plan rows even when quiet
 GARGS=--all; qa=$(run "$T/ghok"); GARGS=""
-for k in open questions push-owed prune-owed; do printf '%s\n' "$qa" | grep -q "^$k:" && ok "--all shows $k" || bad "--all missing $k"; done
+for k in questions push-owed prune-owed; do printf '%s\n' "$qa" | grep -q "^$k:" && ok "--all shows $k" || bad "--all missing $k"; done
+# open prints only when it has something to say, even under --all; a stale started row makes it appear
+GARGS=--all; qa=$(run "$T/ghok"); GARGS=""
+printf '%s\n' "$qa" | grep -q '^open:' && bad "--all printed an empty open row" || ok "--all: quiet open row prints nothing"
+GARGS=--all; qa=$(run "$T/ghok" GESTALT_WORK_ENTRY="$T/pw/stale.py"); GARGS=""
+printf '%s\n' "$qa" | grep -q '^open: 1 started row' && ok "--all shows open when a started row is stale" || bad "--all missing open"
 # the work accessor failing is a row, not silence (K35)
 fires "plan accessor fails" plan "$T/ghok" GESTALT_WORK_ENTRY="$T/ent/exit3.py"
+# upstream: the daily upstream_watch row. A counting stub prints news; the row fires only on news, runs once a day, shows news once
+cat > "$T/uw.news" <<SH
+#!/bin/sh
+echo run >> "$T/uw.count"
+echo "upstream: #1072 new comment by X 2026-11-13: hello"
+SH
+chmod +x "$T/uw.news"
+printf '#!/bin/sh\necho run >> "%s"\n' "$T/uw.count2" > "$T/uw.none"; chmod +x "$T/uw.none"
+ud=$(mktemp -d "$T/up.XXXXXX")
+o=$(pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.news"); sleep 2
+[ -z "$o" ] && [ "$(wc -l < "$T/uw.count")" = 1 ] && ok "upstream: first call runs the watcher (detached), prints nothing yet" || bad "upstream first call: [$o] runs=$(cat "$T/uw.count" 2>/dev/null | wc -l)"
+o=$(pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.news")
+[ "$o" = "upstream: #1072 new comment by X 2026-11-13: hello" ] && ok "upstream: the next call shows the news" || bad "upstream news: [$o]"
+sleep 1; [ "$(wc -l < "$T/uw.count")" = 1 ] && ok "upstream: at most once a day (no second run within 24 h)" || bad "upstream reran: $(wc -l < "$T/uw.count")"
+o=$(pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.news"); [ -z "$o" ] && ok "upstream: news is shown once, then silent" || bad "upstream repeated: [$o]"
+echo $(( $(date +%s) - 90000 )) > "$ud/gestalt/upstream.last"
+pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.news" >/dev/null; sleep 2
+[ "$(wc -l < "$T/uw.count")" = 2 ] && ok "upstream: runs again once the last run is over 24 h old" || bad "upstream day-old rerun: $(wc -l < "$T/uw.count")"
+rm -rf "$ud/gestalt/upstream.news"
+ud=$(mktemp -d "$T/up.XXXXXX")
+o=$(GARGS=--all; pq PCREC_TMPDIR="$ud" GESTALT_UPSTREAM_WATCH="$T/uw.none" | kinds | tr ' ' '\n' | grep -c '^upstream$'); sleep 1
+[ "$o" = 0 ] && [ -s "$T/uw.count2" ] && ok "upstream: a quiet watcher leaves the row empty (not even under --all)" || bad "upstream quiet: [$o]"
+# pollers: fake /proc (uptime, <pid>/{cmdline,stat}); the shell-snapshot prefix differs per copy and is not the identity
+fproc() { # DIR PID PPID STARTTICKS CMDLINE...: one fake process owned by the test user
+    local d=$1 pid=$2 ppid=$3 st=$4; shift 4; mkdir -p "$d/$pid"; printf '%s\0' "$@" > "$d/$pid/cmdline"
+    printf '%s (bash) S %s 1 1 0 -1 0 0 0 0 0 0 0 0 0 20 0 1 0 %s 0 0\n' "$pid" "$ppid" "$st" > "$d/$pid/stat"; }
+LOOPA='until ls /q/done | grep -q KEY1; do sleep 30; done'
+LOOPB='while [ ! -e /q/other ]; do sleep 5; done'
+pp="$T/pp3"; mkdir -p "$pp"; echo "60000.00 1" > "$pp/uptime"
+hz=$(getconf CLK_TCK)
+fproc "$pp" 101 1 $((hz * 100)) bash -c "source /snap/a.sh && eval '$LOOPA'"
+fproc "$pp" 102 1 $((hz * 200)) bash -c "source /snap/b.sh && eval '$LOOPA'"
+fproc "$pp" 103 1 $((hz * 300)) bash -c "source /snap/c.sh && eval '$LOOPA'"
+fproc "$pp" 104 102 $((hz * 200)) bash -c "source /snap/b.sh && eval '$LOOPA'"   # a pipeline fork of 102: not a copy
+fires "pollers: 3 identical loops" pollers "$T/ghok" GESTALT_PROC="$pp"
+o=$(pq GESTALT_PROC="$pp")
+case $o in "pollers: 3 copies of the same wait loop (oldest 998m, pids 101 102 103): until ls /q/done | grep -q KEY1; do sleep 30; done") ok "pollers: count, oldest age, all pids (no fork), loop text" ;; *) bad "pollers line: [$o]" ;; esac
+pd="$T/pp2"; mkdir -p "$pd"; echo "60000.00 1" > "$pd/uptime"
+fproc "$pd" 201 1 100 bash -c "$LOOPA"; fproc "$pd" 202 1 100 bash -c "$LOOPB"
+fires "pollers: 2 different loops: silent" "" "$T/ghok" GESTALT_PROC="$pd"
+po="$T/pp1"; mkdir -p "$po"; echo "60000.00 1" > "$po/uptime"; fproc "$po" 301 1 100 bash -c "$LOOPA"
+fires "pollers: 1 loop: silent" "" "$T/ghok" GESTALT_PROC="$po"
+# sabotage: a plant that drops the grouping (every loop shares one key) must turn the "2 different loops" case red
+plant="$here/gestalt.plant.$$"; sed 's/groups.setdefault(key,/groups.setdefault("x",/' "$here/gestalt" > "$plant"
+[ "$(cmp -s "$plant" "$here/gestalt"; echo $?)" = 1 ] || bad "pollers plant did not change the script"
+o=$(G2 GESTALT_PROC="$pd" PATH="$T/ghok:$PATH" "$TO" 20 bash "$plant" 2>&1 | kinds); rm -f "$plant"
+[ "$o" = pollers ] && ok "pollers: the plant without grouping goes red (fires on different loops)" || bad "pollers plant not caught: [$o]"
 # the log line is written on a silent run too
 [ -s "$T/tmproot/gestalt/log.tsv" ] && ok "log.tsv written" || bad "log.tsv missing"
 echo "gestalt.test: $pass pass, $fail fail"

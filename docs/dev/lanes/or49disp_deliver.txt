@@ -1,0 +1,5 @@
+report=docs/dev/lanes/or49disp_report.md
+sections: STATE AT HANDOFF; FINDINGS; OWED
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/or49disp_deliver.txt; docs/dev/lanes/or49disp_rulings.md

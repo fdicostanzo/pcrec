@@ -234,3 +234,30 @@ n "aabcae"
 m "aababae" 0 7
 g 1 0 1
 n "aabcadae"
+
+# Short subjects with a width-1 alternative: the pattern's minimum width is 1,
+# so the min-width search stop does not apply and a short run IS reached by
+# the lazy prefix (S708's witness, after [S1]'s stop made aabae/aabcae under
+# 7 bytes unreachable); python re.
+pattern (a)(?:ab){2,}?ac|q
+n "aabac"
+m "aababac" 0 7
+g 1 0 1
+m "xaababacy" 1 8
+g 1 1 2
+n "aab"
+n "aabab"
+m "aabacq" 5 6
+g 1 -1 -1
+
+pattern (a)(?:ab){2,}?ac|q
+engine vm
+n "aabac"
+m "aababac" 0 7
+g 1 0 1
+m "xaababacy" 1 8
+g 1 1 2
+n "aab"
+n "aabab"
+m "aabacq" 5 6
+g 1 -1 -1

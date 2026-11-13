@@ -9,7 +9,9 @@ REWEIGH ([CLOUD-SUITE]; tests/ci/cloud_reweight.sh runs this): --measured = the 
 (tests/ci/measured_KIND.tsv, written by tests/ci/cloud_measure.py; several files = kinds sharing the table, a unit's
 weight is their mean). A measured unit carries its runner seconds; a unit with no measurement keeps the old local/proxy
 ESTIMATE and says so in weight_source. --slots S (the kind's max_parallel) picks the smallest shard count within 5 % of
-the best the largest unit and total allow, never above S; --shards N pins it. The header gets `# predicted_shard_s=`
+the best the largest unit and total allow, never above S; --shards N pins it; --slots S --waves K pins N = S x K
+(OVER-SPLIT: K waves of S shards, so an early finisher picks up a queued shard and the slow tail shrinks; the choice and its
+simulation are in docs/dev/lanes/mechfast_report.md). The header gets `# predicted_shard_s=`
 (heaviest shard's step, what cloud_gather.sh compares), `# predicted_wall_s=` (+ setup_s) and `# indivisible_floor_s=`.
 
 axes: PLAN.txt is `AXES_PLAN=1 AXES_FULL=1 bash tests/axes/run_axes.sh` stdout (the plan-job / plan-pass lines);
@@ -209,6 +211,7 @@ def main():
     ap.add_argument("--plan"); ap.add_argument("--log")
     ap.add_argument("--shards", type=int)
     ap.add_argument("--slots", type=int, help="max shards (the kind's max_parallel); picks the smallest count near the best")
+    ap.add_argument("--waves", type=int, help="with --slots S: pin the shard count to S x WAVES (over-split)")
     ap.add_argument("--measured", nargs="*", default=[], help="committed measured files (tests/ci/measured_KIND.tsv)")
     ap.add_argument("--setup", type=float, default=70, help="per-shard setup seconds (cloud_kinds.tsv setup_s)")
     ap.add_argument("--write", action="store_true")
@@ -223,8 +226,9 @@ def main():
         if "plan-job" not in r.stdout:
             sys.exit("cloud_units_plan: run_axes.sh listed no jobs (is build/pcrec built? `make`): " + r.stderr[-200:])
     plan = {"axes": plan_axes, "san": plan_san, "mech": plan_mech}[a.mode]
+    if a.waves and a.slots and not a.shards:
+        a.shards = a.slots * a.waves
     if a.shards:
-        a.shards = a.shards
         items, tot, notes = plan(a)
     else:    # smallest shard count within 5 % of the best the largest unit and the total allow
         a.shards = a.slots or (12 if a.mode == "san" else 20)

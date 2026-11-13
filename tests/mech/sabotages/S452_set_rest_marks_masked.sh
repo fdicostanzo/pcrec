@@ -20,6 +20,10 @@
 # links, so the plant moves to the kit's line that makes the same choice.
 # Here: the chain's coverage rule marks every whole-run position as proved,
 # a pair position included (intent unchanged).
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2): the coverage rule reads the run REPLY's verified extent
+# (mf_class.run) over the set-form span, a position covered where its set is one member;
+# the plant covers every position, a pair position's both members included (intent
+# unchanged).
 SAB_ID="S452-set-rest-marks-masked"
 SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="harness codegen"
@@ -30,5 +34,7 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-
 SAB_REACH_EXPECT="REACH-K65-REST"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            if (!t->mask || t->mask[j] == 0xFFu)'
-SAB_AFTER='            if (1)   /* SABOTAGE S452: a pair position marked proved */'
+SAB_BEFORE='            if (m == 1)
+                for (unsigned x = 0; x < 32; x++) covered[x] |= rs->set[j][x];'
+SAB_AFTER='            if (1)   /* SABOTAGE S452: a pair position marked proved */
+                for (unsigned x = 0; x < 32; x++) covered[x] |= rs->set[j][x];'

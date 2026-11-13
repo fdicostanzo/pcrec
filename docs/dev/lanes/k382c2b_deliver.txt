@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k382c2b_report.md
+sections: Summary; Ruling applied (A or fallback B, with why); Disjointness plants; Rate population; Checks; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

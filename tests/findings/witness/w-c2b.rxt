@@ -1,5 +1,5 @@
 # tests/findings/witness/w-c2b.rxt — [FINDINGS] B2 witness bundle (design §11.9):
-# 'f' the rarest byte: the 8-byte WINDOW of a longer run moves to the one holding 'f'.
+# 'f' the rarest byte: the run member a window-site search reads (REQ_RUN's '@', row 2) moves to 'f'.
 # Every byte 1000, the one byte 1: constructed, never measured.
 analysis w-c2b
     freq

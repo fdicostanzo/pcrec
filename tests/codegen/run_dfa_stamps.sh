@@ -943,6 +943,11 @@ fi
 # 256 bytes in DerivedAge.txt (so every other Age value, Age=Unassigned and [^\p{Age=1.1}] are empty), only
 # Basic Latin/Latin-1 Supplement have a Block member < 256, and the non-Age/Block ones were matched against
 # libpcre2 10.46 non-UTF over all 256 bytes (zero hits). Bucket re-measured: 235 on upropd27 alone; 254 merged with the 18 PFFIX entries above (the +1 vs 253: ^\p{Emoji_Presentation}{2}$, a d27 pattern the pffix empty-engine test now also proves never-match, byte-mode set empty).
+# [NEVER-MATCH] (lane nevermatch, 2026-11-12, abi 102): the last 16 entries were VM hybrids whose
+# prefilter machines admit no match (the empty LOCATE row's own test, `pcrec_dfa_pair_matches_nothing`);
+# under --engine=auto they are now the DFA engine's empty artifact rather than a VM program behind a
+# prefilter that returned 0. Each is a never-match pattern (all ran green in their .rxt files); bucket
+# 254 + 16 = 270, the census's count of `RX_DFA_SCAN "empty"` artifacts before and after (270 both).
 EMPTY_MANIFEST='\B\b
 \b\B
 abcd(?:\b)+efgh
@@ -1196,7 +1201,23 @@ x\G
 \p{blk=VS}
 \p{block=greek}
 \p{emoji-presentation}
-\p{emoji_presentation}'
+\p{emoji_presentation}
+((?*[ab])z)
+((?*a)z)
+((?=[ab])z)
+((?=a)z)
+(?<g>\w\b)(?&g)?x
+(?=a)\Kb
+(?>(?*[ab])z)
+(?>(?*a)z)
+(?>(?=[ab])z)
+(?>(?=a)z)
+(?>a\b)c
+(?>a|ab)\bc
+(a)\b(b)
+(a+)\b(?1)
+a(?=b)\Kc
+a\K\bb'
 sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
 printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
 if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then

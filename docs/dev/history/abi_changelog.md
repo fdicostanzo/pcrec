@@ -23,7 +23,41 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `100` on every artifact today ([PFFIX] the empty engine on an accept-free machine, 99 -> 100,
+- **`rx_info.abi` is `104` on every artifact today ([MEMFN] R-38 K38-2, 103 -> 104,
+  one event with the kit's MF_SITE_ABI 27 / MF_CLASS_V 9, lane k382
+  2026-11-11, re-bumped over main's [PFFIX] 99 -> 100 by lane k382m 2026-11-12 and over main's s1land 100 -> 103 by lane k382n 2026-11-12, so the reserved 101 stays unused; `docs/design/memfn/span_runs_sheet.md` rev 1.3 §5.1).** pcrec
+  states the necessary run to the kit UNCUT as one presence span in set form
+  and the kit derives the pre-check's ONE run part from it and from its run
+  decision (`mf_class.run`); pcrec cuts no window (`PCREC_MAX_REQ_RUN_EMIT`
+  retired). The movers, each a counted population: (1) the handoff's K is the
+  whole run's position-0 offset on DFA routes whose run was cut at `at > 0`
+  (`<PREFIX>_REQ_HANDOFF` and the move constant); (2) `<PREFIX>_REQ_RUN`
+  names the whole run, its `@` the position the artifact's search reads (a
+  first-match table: the pre-check's run reply, else the `cover`/run-pinned
+  window site's member, else no `@`); (3) a pre-check that compared the
+  window AND the whole run ([K66]'s `<p>_reqrun_whole`) compares the kit's
+  one stretch in one `<p>_reqrun` block (R-30's led compare gone with it);
+  (4) the run pin reads the whole run (a longer exact stretch where the cut
+  had clipped it); (5) `-fcomments` text naming the run.
+
+- **`rx_info.abi` was `103` on every artifact ([FIND-MINW] searches stop at the minimum width, 100 -> 103,
+  lane minw 2026-11-12; 101 and 102 were reserved for K38-2 and lane nevermatch).** A search entry whose every
+  match needs at least two bytes (the WIDTH row `min-width`: the `width` fact's `bmin` on the DFA routes, the
+  root's `pcrec_minw` on the VM) answers NOMATCH where fewer remain past `search_from`, ahead of the pre-check;
+  the forward DFA scan's start-state skip block ends the search where fewer remain past its landing; the
+  VM attempt loop's bound ends that many bytes before the subject's end.
+  The VM's ceiling row keeps its stamped check. No struct offset moves, no `rx_info` member is added or
+  changed, and no answer moves.
+
+- **`rx_info.abi` was `102` after ([NEVER-MATCH] a never-matching VM hybrid is the DFA
+  empty artifact, 100 -> 102, lane nevermatch 2026-11-12; 101 stays unused; landed with lane minw as s1land, 102 -> 103 above).** Under `--engine=auto`, a VM hybrid whose prefilter machines
+  admit no match (the empty LOCATE row's test, `pcrec_dfa_pair_matches_nothing` /
+  `pcrec_dfa_accepts_nowhere`, now in src/ir/dfa.c) is emitted by the DFA engine: its whole text is the empty
+  engine's (`RX_ENGINE "dfa"`, `RX_DFA_SCAN "empty"`), where it was a VM program behind a prefilter that
+  returned 0. Sixteen corpus patterns move (`(a)\b(b)`, `(?=a)\Kb`, `a\K\bb`, `(?<g>\w\b)(?&g)?x`, ...).
+  No struct offset moves, no `rx_info` member is added or changed, and no answer moves; every other artifact
+  moves only the number.
+- **`rx_info.abi` was `100` on every artifact ([PFFIX] the empty engine on an accept-free machine, 99 -> 100,
   lane pffix 2026-11-11).** A DFA machine in which NO state accepts in any view is now the EMPTY engine on
   both routes (`dfa_accepts_nowhere`, src/gen/emit_dfa.c), where only `d->n == 0` (attempt route) and a dead
   start (unanchored route) were before. The body that moves is the search body of a pattern that can match

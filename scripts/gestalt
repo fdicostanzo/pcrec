@@ -5,7 +5,7 @@
 # "only output items that pass threshold so that you're not considering noise"). When none holds it prints
 # NOTHING (not even the DONE line); exit 0 either way. `--all` prints every NON-EMPTY line (a row whose line is empty prints nothing), then the DONE line.
 # Threshold rows: load (load1 > nproc), session (a registered role with no live session), disk (a filesystem
-# >= 85%), context (a registered manager > 70% of its compaction point), ci (latest main run not success, or
+# >= 85%), context (the OWNER's own session > 80% of its compaction point; Frank 2026-11-12), ci (latest main run not success, or
 # gh unavailable; a cancelled-latest prints as completed/cancelled), queue (box idle while a ready job waits),
 # idle-held (a hand `boxlock run` holder alive while load1 stayed < 1.5 across two readings >= 60 s apart),
 # docs (a pair-form tracker index over its soft cap, or the accessor unavailable: `scripts/entry --over-cap`, D192).
@@ -15,9 +15,12 @@
 #   ready-idle   a STATE:ready row ready > 7 days (the commit that set it; count, oldest age + tag)
 #   stale        a STATE:started row untouched > 21 days (newer of its status date and last commit touching its tag); undated rows are counted
 #   questions    owner.md "Questions for you": an unanswered entry (not "(answered", not "FYI") older than 24 h, or undated (said so, never mtime)
+#   upstream     news on an upstream issue we filed (scripts/upstream_watch; runs at most once a day; shown once)
 #   push-owed    main ahead of origin/main, oldest unpushed commit > 2 h (commit count)
 #   prune-owed   > 5 worktrees `scripts/wtprune` (dry run, cached 30 min in $PCREC_TMPDIR/gestalt/prune.cache and refreshed by a detached
 #                background run, because the dry run takes ~5 s) reports removable; no cache yet = `prune-owed: unknown`
+#   pollers      >= 2 live copies of the same background shell wait loop (`until`/`while` ... `sleep`) owned by this user: count, oldest age,
+#                pids, first 80 chars (so the extras can be `scripts/safekill`ed by PID); /proc scan under `timeout 3`, GESTALT_PROC overrides /proc
 #   plan         `scripts/entry --work` failed (the plan rows above are then absent; K35: never silent)
 # Plan data comes only from `scripts/entry --work` (one parser); the git -S pickaxe dates rows (~1 s for ~25 rows, in parallel).
 # The gestalt/log.tsv line is written on every run either way.
@@ -208,10 +211,11 @@ winraw=$win
 acw=$($TO 2 jq -r '.. | objects | .autoCompactWindow? // empty' "$claude_home/settings.json" 2>/dev/null | head -1)
 case $acw in ''|*[!0-9]*) acw="" ;; esac
 wk=""; case $win in ''|*[!0-9]*) ;; *) wk="$((win / 1000))k" ;; esac
-# context threshold input: tokens at > 70% of the compaction point (else of the window)
+# context threshold input: the OWNER's own session at > 80% of the compaction point (else of the window).
+# Frank 2026-11-12: another session's context is that session's own gestalt line, not noise in this one.
 ceil=${acw:-$winraw}; ctxhot=""
 case $ceil in ''|*[!0-9]*) ;; *)
-    for e in $ctxn; do [ $((${e#*:} * 100)) -gt $((70 * ceil)) ] && ctxhot="$ctxhot ${e%%:*}"; done ;;
+    for e in $ctxn; do [ "${e%%:*}" = "$owner" ] && [ $((${e#*:} * 100)) -gt $((80 * ceil)) ] && ctxhot="$ctxhot ${e%%:*}"; done ;;
 esac
 if [ -n "$acw" ]; then win=" (compacts at $((acw / 1000))k${wk:+; window $wk})"
 elif [ -n "$wk" ]; then win=" (window $wk)"; else win=""; fi
@@ -435,6 +439,59 @@ case $pcn in
        prunebad=""; [ "$pcn" -gt "$PRUNE_OWED_N" ] && prunebad=1 ;;
 esac
 
+# upstream: news on the upstream issues WE filed (scripts/upstream_watch, docs/dev/upstream_tracked.tsv). The watcher runs AT MOST
+# once a day (UPSTREAM_EVERY_H), detached, so gestalt never waits on gh; its lines land in $PCREC_TMPDIR/gestalt/upstream.news and are
+# shown (and consumed) by the next gestalt run. Quiet days leave the row empty.
+UPSTREAM_EVERY_H=24   # hours between upstream_watch runs (default, unmeasured)
+ud=${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}/gestalt
+L_upstream=""; upbad=""
+if [ -s "$ud/upstream.news" ]; then
+    L_upstream=$(cat "$ud/upstream.news"); upbad=1; rm -f "$ud/upstream.news"
+fi
+ul=$(cat "$ud/upstream.last" 2>/dev/null); case $ul in ''|*[!0-9]*) ul=0 ;; esac
+if [ $((now - ul)) -ge $((UPSTREAM_EVERY_H * 3600)) ]; then
+    mkdir -p "$ud" 2>/dev/null && echo "$now" > "$ud/upstream.last"
+    setsid bash -c 'o=$(timeout 120 "$1" 2>/dev/null)
+        [ -n "$o" ] && { printf "%s\n" "$o" >> "$2/upstream.news"; }' _ "${GESTALT_UPSTREAM_WATCH:-$here/upstream_watch}" "$ud" </dev/null >/dev/null 2>&1 &
+fi
+
+# --- pollers: stacked duplicate background wait loops (a lane re-armed `until ... sleep` shells without stopping the old ones, 2026-11-12).
+# Identity = the loop text from its first `until`/`while` on (the shell-snapshot `source ...` prefix is common to all), digit runs >= 3
+# collapsed (pids, timestamps). A subshell fork of a loop (same cmdline, parent in the same group) is not a copy. /proc/*/cmdline + stat only.
+pbad=
+pr=$($TO 3 python3 -I -c '
+import os, re, sys
+proc, me = sys.argv[1], os.getuid()
+try: up = float(open(proc + "/uptime").read().split()[0])
+except Exception: up = 0.0
+hz = os.sysconf("SC_CLK_TCK")
+info = {}
+for d in os.listdir(proc):
+    if not d.isdigit(): continue
+    try:
+        if os.stat(proc + "/" + d).st_uid != me: continue
+        args = open(proc + "/" + d + "/cmdline", "rb").read().decode("utf-8", "replace").split("\0")
+        st = open(proc + "/" + d + "/stat").read()
+    except Exception: continue
+    if not args or os.path.basename(args[0]) not in ("bash", "sh", "zsh", "dash"): continue
+    txt = " ".join(a for a in args if a)
+    m = re.search(r"\b(until|while)\b.*\bsleep\b", txt, re.S)
+    if not m: continue
+    f = st[st.rindex(")") + 2:].split()
+    key = re.sub(r"\d{3,}", "N", re.sub(r"\s+", " ", txt[m.start():])).strip().rstrip("\x27\"")
+    info[int(d)] = (key, int(f[1]), (up - int(f[19]) / hz) if up else 0.0)
+groups = {}
+for pid, (key, ppid, age) in info.items():
+    if ppid in info and info[ppid][0] == key: continue
+    groups.setdefault(key, []).append((pid, age))
+for key, v in sorted(groups.items()):
+    if len(v) < 2: continue
+    a = int(max(x[1] for x in v) // 60)
+    print("pollers: %d copies of the same wait loop (oldest %dm, pids %s): %s" % (len(v), a, " ".join(str(p) for p, _ in sorted(v)), key[:80]))
+' "${GESTALT_PROC:-/proc}" 2>/dev/null)
+[ -n "$pr" ] && pbad=1
+L_pollers=$pr
+
 # --- THRESHOLD ROWS: kind | condition (shell test, evaluated) | the line it prints (a variable above).
 # Default output = the lines of the rows whose condition holds, in this order; --all prints every row's line.
 # A condition of `false` = no threshold: the line is --all only. Add a kind by adding a row (and its L_ line).
@@ -458,7 +515,9 @@ ready-idle   | [ -n "$ribad" ]                    | L_readyidle
 stale        | [ -n "$stalebad" ]                 | L_stale
 questions    | [ -n "$qbad" ]                     | L_questions
 push-owed    | [ -n "$pushbad" ]                  | L_pushowed
-prune-owed   | [ -n "$prunebad" ]                 | L_pruneowed'
+pollers      | [ -n "$pbad" ]                    | L_pollers
+prune-owed   | [ -n "$prunebad" ]                 | L_pruneowed
+upstream     | [ -n "$upbad" ]                   | L_upstream'
 while IFS='|' read -r kind cond var; do
     kind=${kind%% *}; var=${var// /}
     # a row whose line is EMPTY prints nothing, even under --all (idle-held and docs are empty when they do not fire)

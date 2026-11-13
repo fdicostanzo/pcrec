@@ -291,6 +291,29 @@ static mf_site run_site(const char *run, const uint8_t *mask, int off,
     return s;
 }
 
+/* THE RUN's presence span in SET FORM (R-38 K38-2, MF_SITE_ABI 27): one
+ * window alternative with no entry fact, one span uncut at `start` 0, each
+ * position its cube's byte set (`mask` NULL: exact), core all, verify NO,
+ * the floor SUBJECT, no term. `a` and `w` are the caller's storage. */
+static void ps_run(mf_pred *p, mf_walt *a, mf_wspan *w, const char *run, const uint8_t *mask)
+{
+    unsigned n = (unsigned)strlen(run);
+    memset(p, 0, sizeof *p);
+    memset(w, 0, sizeof *w);
+    w->len = (uint8_t)n;
+    w->verify = MF_VERIFY_NO;
+    w->core = MF_CORE_STATED;
+    w->core_len = (uint8_t)n;
+    for (unsigned j = 0; j < n; j++)
+        for (unsigned b = 0; b < 256; b++)
+            if ((b & (mask ? mask[j] : 0xFFu)) == (unsigned char)run[j])
+                w->set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
+    *a = (mf_walt){ MF_ENTRY_NONE, 1, w };
+    p->nalt = 1;
+    p->alts = a;
+    p->wfloor = MF_WFLOOR_SUBJECT;
+}
+
 static mf_site pre_site(mf_pred *p, int n, int ret)
 {
     mf_site s = base_site();
@@ -1462,6 +1485,8 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
            `pre-dom` the OPTIONAL member the start search proves (identity:
            P2 drops every span, so it has no part and is only ASKED) */
         static mf_pred sp[2];
+        static mf_walt sa;
+        static mf_wspan sw;
         static const uint8_t cube[3] = { 0xDF, 0xDF, 0xDF };
         int noproof = !strcmp(name, "pre-noproof");   /* pre-opt, its proof UNSTATED */
         int omin = !strcmp(name, "pre-omin");          /* pre-opt, omin below the start */
@@ -1477,12 +1502,9 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
         t_byte(&sp[0].term[0], 0, 'q');
         sp[0].term[0].need = need;
         sp[0].member_order = 1;
-        if (lead) {
-            t_run(&sp[1].term[0], 0, "ABC", cube);
-            sp[1].term[0].need = need;
-        }
+        if (lead) ps_run(&sp[1], &sa, &sw, "ABC", cube);   /* the run, LAST, nterm 0 */
         for (int i = 0; i < 1 + lead; i++) {
-            sp[i].nterm = 1;
+            sp[i].nterm = i == 0;
             sp[i].need = need;
             sp[i].plan_hint = MF_NO_PRED;
             sp[i].span_class = MF_SPAN_PRESENCE;
@@ -1498,9 +1520,9 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
                 p[nparts].need = lead ? MF_OPTIONAL : MF_REQUIRED;
                 p[nparts++].term[0].need = lead ? MF_OPTIONAL : MF_REQUIRED;
             }
-            if (lead) {
-                p_run(&p[nparts], "ABC", cube, 2, 1);
-                p[nparts++].plan_hint = 0;
+            if (lead) {     /* the run part: its name only, the kit derives it (K38-2) */
+                memset(&p[nparts], 0, sizeof p[nparts]);
+                p[nparts++].fn_ref = 1;
             }
             *s = pre_site(p, nparts, -1);
         }

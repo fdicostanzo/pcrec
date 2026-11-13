@@ -154,16 +154,15 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
 /* THE DERIVED FACTS, speed choices over the core ones, composed in
  * src/facts/req.c from the rate readers in src/core/findings.c (whose header
  * says why each member choice is the argmin of a frequency prior under the
- * `byte` encoding and the rightmost elsewhere). `pcrec_req_window` fills
- * `run`'s window (`bytes`/`len`/`idx`/`at`) from its whole run;
- * `pcrec_req_pick` answers the byte the emitted `memchr` tests. Each asks
+ * `byte` encoding and the rightmost elsewhere). `pcrec_req_pick`
+ * answers the `req_byte` fact (pcrec's pick over the whole run, else the
+ * set's; the `req_run` row and its window retired, review 2026-11-11 r1 k382
+ * F5). Each asks
  * the byte-rate accessor (`pcrec_find_byte_rate`) once, first, and hands its
  * answer to the readers untested. `*why` receives the rate rule that answered —
  * `PF_WHY_RATE_BUILTIN` (the shipped prior) or `PF_WHY_RATE_NONE` (its NONE
  * answer, the rightmost member) — or `PF_WHY_NONE` where no member was
- * chosen (no window; an empty set). */
-void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why);
-                                                        /* src/facts/req.c */
+ * chosen (an empty set). */
 int  pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
                     PfWhyCode *why);                    /* src/facts/req.c */
 /* The rate rule a derived choice answered by: `PF_WHY_RATE_BUILTIN` or
@@ -195,6 +194,9 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
  * input (carve-out (d)). Both over the wrapped `Job.nfa` from `anch_start`. */
 void      pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax);
 PfWhyCode pcrec_land_char(Ctx *cx, const Nfa *nfa, const PcrecEnc *e, bool *wide);
+/* [NEVER-MATCH] the never-match proof over the compile's final machines
+ * (src/facts/kset.c). */
+PfNever   pcrec_never_matches(Ctx *cx);
                                                         /* src/facts/kset.c */
 
 /* [KIT-VERIFY] U1 Z2 THE SPAN SLICE (kit_proof.md §5.2 UL-0): the k-set walk

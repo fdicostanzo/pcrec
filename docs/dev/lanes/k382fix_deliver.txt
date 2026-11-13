@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k382fix_report.md
+sections: Summary; Findings F1-F19 (one line each: done or why not); F2 dominance trace; F5 retirement; Movers re-count (5.1 addendum); New controls and sabotage rows; Checks; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

@@ -33,9 +33,14 @@ SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED --
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
 # compile takes the cover row's deny --memfn=no-window-search, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "/abcd[xy]/user" && grep -q "^#define RX_REQ_RUN \"2f61626364782f75@6/fffffffffffeffff\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"handoff\"" "$REACH_TMP/o.c" && echo REACH-C0-PIN-WITNESS'
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "/abcd[xy]/user" && grep -q "^#define RX_REQ_RUN \"2f61626364782f75736572@6/fffffffffffeffffffffff\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"handoff\"" "$REACH_TMP/o.c" && echo REACH-C0-PIN-WITNESS'
 SAB_REACH_EXPECT="REACH-C0-PIN-WITNESS"
 SAB_COUNT=1
 SAB_BEFORE='        while (i < l && o->k[ro + i].count == 1 &&
-               o->k[ro + i].byte == r->bytes[s0 + i])'
+               o->k[ro + i].byte == r->whole[s0 + i])'
 SAB_AFTER='        while (i < l && o->k[ro + i].count == 1)   /* SABOTAGE S280 */'
+# RE-AIMED 2026-11-11 (lane k382, R-38 K38-2; span_runs_sheet.md §4.2): pcrec_run_pin reads the WHOLE run with
+# a per-placement CLIP (`l = min(e0 - s0, nwalk - ro)`, the stretch still holding the pick);
+# the plant drops the same byte test inside the clipped placement loop, so the first
+# placement whose clipped stretch is all singletons (`/abcd` at 0) pins. The witness's
+# REQ_RUN is now the whole 11-position run (`/abcd[xy]/user`, scan @6); the probe reads it.

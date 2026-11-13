@@ -27593,3 +27593,15 @@ Next
 **Issues/lessons:** expected re-pins cost a full cloud round each (pffix 5 reds, upropprom 1) -> in-lane pin check before dispatch + test-before-axes (lane procfix writes them); first-run shard weights are guesses; parallel tooling branches conflicted (ciswitch vs cloudmech); my heartbeat filtered gestalt lines and hid actionable ones (Frank: fix noise at the source); queuewatch routes the kit's shard reds to main as UNEXPECTED (noise: routing fix owed); I used `rm -rf` on just-created empty dirs (no harm; rule says never).
 
 **Next:** procfix lands (process rules, learnings, the three stale queue rows); kit K38-2 (fix lane, then merge main, abi -> 101) and kclose2 jobs overnight; then S1 beside S2 per D194.
+
+## 2026-11-12 (session 130, cont.) — S1 landed; kit close-out; mech speed-up; DFA-captures spike
+
+- Kit close-out merged (SEAM-2, R-13 a+b, XARCH-NEEDSOK, emit_sweep byte+utf8 re-pins per D183 add. 1); xarchfix merged (clean MISMATCH; 4 rows DETECTED, confirmed by the first mechrows run in ~7 min).
+- Set S1: reqlast facts (no route stops past the last unbounded required run; 250/5,023 patterns could); nevermatch (16 VM never-match hybrids -> DFA empty artifact, never_matches fact) and minw (searches stop at the minimum width), each red once in the cloud on witnesses/pins only (nmfix, minwfix), then test+axes green; landed together by s1land at abi 103 (51481d1b3; 101/102 unused; K38-2 takes 104). LOWERENC-SEAL closed (done by RUN-POS-SET stage 1). reqpast (build, abi 105) in flight.
+- Flag audit (D195): 58/64 bits used; Frank: demote 20 -f flags to test levers + drop one alias ([FLAG-DEMOTE], after S1 + K38-2).
+- gestalt: context row owner-only >80% (Frank); self-test brought current (gesttest, 93/0 after upwatch).
+- mechfast (Frank: all three + over-splitting): mech re-split by measured times, 90 shards x 30 parallel (simulated ~83 min vs 137), `cloudrun --kind mechrows --rows`; RUNS.md re-run rule. Also fixed S3015's missing cloud row.
+- Architecture guide: "a directory of parts and one runner" recorded as a considered choice, not prescribed.
+- DFA captures: research memo (dfacap) then the spike (capspike): a priority-ordered tagged DFA is PCRE2-exact on 70 hard cases (incl. (a*)|(a*?)) and 730 census patterns over ~752k subjects; copy-free after fixed-offset tags + union-find colouring. Frank: chain it to the lookaround/predicate family, one plan after the current sets (D194 addendum).
+- PCRE2 10.49 downloaded and built (Frank approved; sha256 checked); DEFLB bug still present -> filed upstream as PCRE2 #1072 (approved); daily follow-up via gestalt's upstream row (upwatch). make test vs 10.49 queued for 01:00.
+- Issues: lanes twice idled on Monitors with nothing running (nudged); nested web-fetch helpers' reports reached main (relayed); the lanes history index conflicts on nearly every merge (union resolve).

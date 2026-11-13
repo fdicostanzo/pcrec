@@ -174,25 +174,28 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * routes `cover` itself. It sets only the KITPROOF trace record's `routed`
  * field, and its callers (tests/kitproof/, site_census.py) still pass it;
  * its retirement is filed under [KIT-VERIFY] (docs/dev/plan.md). */
-/* [MEMFN] R-30: the fifth, `--harness=pres-window`, the INVERSE lever of a
- * kit change with no public deny (it cannot make a caller slower): the kit
- * keeps a pre-check's run WINDOW part beside the WHOLE run that implies it
- * (mf_lever(art, "pres-window")), the form before R-30, so the
- * answer-identity sweep can still produce it. Off on every shipped compile. */
+/* [MEMFN] R-30's fifth, `--harness=pres-window` (the kit's lever restoring
+ * the run window beside the whole run), RETIRED at R-38 K38-2 with the
+ * two-part run it restored; its bit is gone, never reused. */
 /* [MEMFN] R-38 K38-2a: the seventh, `--harness=run-tie-left`, the kit's PROBE
  * lever (mf_lever(art, "run-tie-left")): the kit breaks a pre-check run's
  * decision's ties LEFTMOST on every reader of it (span_runs_sheet.md §2.4
- * C4's reaching regime, §5). pcrec's own run index stays rightmost, so
- * before K38-2 `req_run_member`'s agreement check refuses any compile whose
- * run decision ties; the lever is read in G2 until then. Off on every
+ * C4's reaching regime, §5). Since K38-2 pcrec reads the kit's reply at
+ * every reader (no run index of its own to disagree), so the lever compiles
+ * every pattern; pcrec's own pick (`req_byte`) stays rightmost. Off on every
  * shipped compile. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
     unsigned kit_proof : 1;
-    unsigned pres_window : 1;
     unsigned run_tie_left : 1;
+    /* [FIND-MINW] the eighth, `--harness=no-min-width`, the INVERSE lever
+     * of a change with no public deny (it only removes work; its risk is a
+     * wrong answer): WIDTH's `min-width` row declines, so no search stops
+     * at the minimum width and the answer-identity sweep can still produce
+     * the form before it. Off on every shipped compile. */
+    unsigned no_min_width : 1;
     /* [REQ-EMPTYCAT] span_arms E1 (§3.7): the sixth, `--harness=restore=`,
      * the necessary-run walk's RESTORED ARMS (`PCREC_WALK_ARM` bits,
      * src/facts/walk_arms.def), read once at the walk entry into its
@@ -3595,6 +3598,11 @@ typedef struct {
     struct Ast *lm_root;
     int    engine;   /* PCREC_ENG_*: which DFA SHAPE (unanch/attempt) */
     EngineFit fit;   /* [M4.5b] which ENGINE (dfa/vm), and why */
+    /* [NEVER-MATCH] Are this attempt's machines final? Set by the driver
+     * once the machine build is over (none built is final too); the
+     * `never_matches` fact reads the machines and refuses to be asked
+     * before. */
+    bool   machines_final;
     /* [OPT-ALTCLS] D46 stamp source, filled by src/opt/altcls.c BEFORE
      * select_engine/emission ever run (docs/dev/plan.md's interaction note:
      * the pass runs before possessify/MRL/counter). Counts, not booleans,
@@ -7518,6 +7526,11 @@ static inline bool pcrec_startgate_needed(Ctx *cx)
  * carries the underflow guard's argument and the soundness sentence. */
 void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
                                  const char *posvar, const char *lenvar);
+/* [FIND-MINW] Answers NOMATCH when fewer than `w` bytes lie in
+ * `[posvar, lenvar)`, `w` being the WIDTH row's proven minimum match width.
+ * ONE text for both engines' search entries (src/gen/emit_dfa.c). */
+void pcrec_emit_min_width_check(StrBuf *c, const char *indent, const char *posvar,
+                                const char *lenvar, long long w);
 /* [OPT-REQBYTE] Answers NOMATCH when `[posvar, lenvar)` does not contain the
  * byte the analysis proved every match must carry; emits nothing where it
  * found none. ONE text for both engines' search entries — src/gen/emit_dfa.c
@@ -7537,7 +7550,7 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
  * (src/gen/emit_vm.c). */
 bool pcrec_vm_prefilter_window(Ctx *cx);
 /* [OPT-LITSCAN] S1 step 6: the file-scope search blocks the run form of that
- * pre-check calls (`<prefix>_reqrun`, [K66] `<prefix>_reqrun_whole`). Every
+ * pre-check calls (`<prefix>_reqrun`, the one run part since R-38 K38-2). Every
  * search-entry emitter that calls `pcrec_emit_req_byte_check` calls this at
  * file scope above the entry; it emits nothing where no run pre-check is. */
 void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
@@ -7881,6 +7894,11 @@ bool pcrec_nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT 
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
                      bool prune, bool reverse, int maxstates,
                      int root, bool optional);
+
+/* [NEVER-MATCH] the machine-level never-match proofs (src/ir/dfa.c): no
+ * state accepts; the unanchored pair admits no match. */
+bool pcrec_dfa_accepts_nowhere(const Dfa *d);
+bool pcrec_dfa_pair_matches_nothing(const Dfa *fd, const Dfa *rd);
 
 /* [ENG-ABS] What `intern` returns to an OPTIONAL machine that has overflowed:
  * the value `DState.tr[]` already carries for "dead", so a partially built
@@ -9532,10 +9550,14 @@ typedef struct CandBound {
                                  * NULL where the loop runs to `subject_length` */
 } CandBound;
 
-/* THE WIDTH SLOT's PAYLOAD, `CandRow.u.width`: whether the VM entry emits
- * the root minimum-width check (and its stamp and listing row). */
+/* THE WIDTH SLOT's PAYLOAD, `CandRow.u.width`: whether the search entry
+ * emits the minimum-width check ([FIND-MINW]: fewer bytes left than every
+ * match needs, so no match starts), and whether the width is the analysis
+ * CEILING, where the VM entry spells the check with its stamp and listing
+ * row (`<PREFIX>_VM_ROOT_MINW`, `--emit-ir`'s `root-minw`). */
 typedef struct CandWidth {
     bool check;
+    bool ceiling;
 } CandWidth;
 
 /* The first row of `slot` routed on the VM route that the compile's deny

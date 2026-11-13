@@ -17,4 +17,9 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='            r = kit_run_decide(d->rate, kit_run_opts_of(d->art, KIT_RUN_WHOLE), sets_at,
                                w->set[hint_at], n, k ? &r : NULL);'
-SAB_AFTER='            { kit_member m0 = { r.scan, r.mass }, m = kit_run_member(d->rate, sets_at, w->set[hint_at], n, 0, k ? &m0 : NULL, T_MASS_STRETCH); r = (kit_run_reply){ m.pos >= 0, m.pos, m.mass, 0, n }; }   /* SABOTAGE S3006 */'
+SAB_AFTER='            { kit_member m0 = { r.scan, kit_mass(d->rate, w->set[hint_at + r.scan], 1, KIT_MASS_SUM) }, m = kit_run_member(d->rate, sets_at, w->set[hint_at], n, 0, k ? &m0 : NULL, T_MASS_STRETCH); r = (kit_run_reply){ m.pos >= 0, (uint8_t)m.pos, 0, (uint8_t)n }; }   /* SABOTAGE S3006 */'
+# RE-PLANTED (lane k382cm, 2026-11-12), the same plant: K38-2's reply is mf_run_reply's four fields
+# (has_scan, scan, ver_lo, ver_len; no mass), so the previous answer's mass is read from its set as
+# kit_run_decide does, and the reply is built from four fields (scan the member, the whole run verified,
+# as the decision's `after` answer). The old 5-field AFTER did not compile (cloud run 43239936557
+# shard 7: BUILD-FAILED, ANOMALY).

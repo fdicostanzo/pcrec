@@ -1,0 +1,4 @@
+# Upstream issues WE filed, followed daily by scripts/upstream_watch (read-only: it never comments, labels or closes).
+# Columns (tab-separated): issue URL, our row id (plan tag or U-number), filed date. One line per issue; `#` lines are comments.
+https://github.com/PCRE2Project/pcre2/issues/1072	PCRE2-DEFLB	2026-11-12
+https://github.com/PCRE2Project/pcre2/issues/1074	U27	2026-11-12

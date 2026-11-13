@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k382mech_report.md
+sections: Summary; S448; S526; S461; Row-run job and verdicts; Checks; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: kit-k382mech-rows
