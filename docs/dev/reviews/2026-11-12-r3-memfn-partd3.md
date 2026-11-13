@@ -233,3 +233,4 @@ Overall: READY WITH LISTED TEXT FIXES, as proposed.
 Decisions:
 - **FIX-1: JOINT with main, PENDING.** Kit leaning: extend P8's retirement to `dominated`/`rdom` on non-cube runs, and drop §9 item 5's "rdom stays". The alternative would teach `req_byte_dominated_by` which runs have no scan, and that is the kit's findability (D157), the same bind as P8.
 - **FIX-S1 (PLAN, for main):** this is the third member of the shadow-retirement family (K38-2's scan/rwin, P8's leads/rlead, now dominated/rdom). It calls for a declared shadow table: which pcrec expectations shadow which kit reply fields, each one live, retired or replaced by a named successor control.
+- **FIX-1 RULED (2026-11-12, kit + main jointly):** P8's retirement extends to `dominated`/`rdom` on non-cube runs, and §9's "rdom stays" is dropped (D157). This is pcrec-side, in S2's landing. FIX-S1 is filed by main as plan row [SHADOW-TABLE], a sibling of [FACT-READS] and [ASK-DEFINE-FRAME].
