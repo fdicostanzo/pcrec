@@ -774,7 +774,11 @@ fi
 #     the new run); the same for T2 row 3, `xy(?:ab){1,2}zw` (`abzw` by
 #     default, the `xyab`/`abzw` tie to the rarer `z`; `zw` restored; S1922);
 #   - a body that is not `all` saturates at TWO copies (`rr_pow_count`):
-#     `(?:ab[0-9]cd){3}` is the join `cdab` (S1923 stops at one copy: `ab`);
+#     `(?:ab.cd){3}` is the join `cdab` (S1923 stops at one copy: `ab`);
+#     `.` (255 members) carries no information, so it is outside the run
+#     domain at any bound. Before the S2 joint landing this cell was
+#     `(?:ab[0-9]cd){3}`; since stage 3 `[0-9]` is a run position, that
+#     body is `all` and the repeat is the whole pattern (its own cell);
 #   - W-R5: `(?:abc){20}` unrolls ceil(32/3) = 11 copies, so the run is the
 #     storage bound's 32 positions, (abc)^10 ab (S1918 stops one copy short:
 #     30 positions, sound, seen only here);
@@ -814,7 +818,8 @@ h	rep	$RP	req_set	97,98,119,120,121,122	-
 p	-	(?:abc){20}	req_whole_run	6162636162636162636162636162636162636162636162636162636162636162	rate:builtin-prior
 p	-	xy(?:ab){1,2}zw	req_whole_run	61627a77	rate:builtin-prior
 h	rep	xy(?:ab){1,2}zw	req_whole_run	7a77	harness:rep
-p	-	(?:ab[0-9]cd){3}	req_whole_run	63646162	rate:builtin-prior
+p	-	(?:ab.cd){3}	req_whole_run	63646162	rate:builtin-prior
+p	-	(?:ab[0-9]cd){3}	req_whole_run	6162[30-39]63646162[30-39]63646162[30-39]6364	rate:builtin-prior
 p	-	(?:a|bc){2}	req_pieces	2:[97][97]|3:[97,98][98,99][97,99]|4:[98][99][98][99]	-
 h	rep	(?:a|bc){2}	req_pieces	none	harness:rep
 p	-	(?:ab){20}(?:c|de)	req_pieces	41@9:[98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][99]|42@10:[97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][100][101]	-
