@@ -4,7 +4,8 @@
 and rev 0 (lane u30d), all 2026-11-07. Design only: no build go, no code, no make, no timing.** Rev 2.2 applies
 re-check review `docs/dev/reviews/2026-11-07-r13-memfn-planframe2.md` (r13) as the kit manager ruled it (its
 "## Rulings" section); its text is marked `[rev2.2 Rn]` and replaces any older text it contradicts. **Read §R2.2
-first.** Rev 2.1 applies ONE ruling, the kit manager's on rev 2's Q13 (last section of review r12), and is marked `[rev2.1 Q13]`; see R2.1. Rev 2 applies review
+first.** `[s1d]` Lane s1design (2026-11-12) re-based §5 3.0b on main 35bee4da9, after K38-2 landed: read §5 3.0b's
+re-base block before 3.0b's text (ASK-2 void, ASK-6 new, MF_SITE_ABI 28, 3.0b's sabotage ids renumbered). Rev 2.1 applies ONE ruling, the kit manager's on rev 2's Q13 (last section of review r12), and is marked `[rev2.1 Q13]`; see R2.1. Rev 2 applies review
 `docs/dev/reviews/2026-11-07-r12-memfn-planframe1.md` (r12) as the kit manager ruled it (its "## Rulings"
 section). Text changed in rev 2 is marked `[rev2 Fn]` and replaces any `[rev1]` or unmarked text it
 contradicts. Rev 1's changes are marked `[rev1]` (§R1). After §R2.2, read §R2, then §0, §2.3 (the reply), §2.5
@@ -180,7 +181,7 @@ for them.
 |---|---|---|---|
 | the DFA prefilter, `window_reply_ask` (`emit_dfa.c` :7604-7616, asked at :4792) | `run-pinned-bounded`, `run-pinned`, `offset-set-bounded`, `offset-set` (:10471-10500), by the key map `next_keys` (:7298-7306, :7317-7321); also `ofs_test_of` (:7402-7412) and `dfa_form_derive`'s RE-SEED refusal (:13002) | the offset-skip block, `ofs_site_define` (:7622-7642) | **form** FUNC, **op** FIND, **handoff** RETURN, **empty** MISS, **use** POSITION, **body** ONESHOT, **site_kind** UNSTATED (0: OFS sites state no kind, `span_pick.md` :131's named exception; `[rev2 F22]` §4.2), **decl_point** 0, **on_miss_leaves** 0, **pred.fn_ref** 1; the window statement `ofs_window_of` with floor SUBJECT (unchanged); **def** = {`fn_name` stated, `table_name` stated, `miss` MF_MISS_N, `comment_tier` NONESSENTIAL}; **call** DEFINE. These are exactly the values the block's define states |
 | the same ask | the rows below the offset rows (`handoff-reentry`, `first-*`, `memchr*`, `byte-class*`), reached where no key holds | each defines its OWN PF site (`pf_site_of`, :7131-7146) | nothing: these rows read no reply field. Their define is their plan call. §7 Q2 |
-| the run window, `req_run_member` (`emit_dfa.c` :1058-1076) | none: the reply's reader is the run member | the pre-check's FUNC part, whose frame the KIT derives (`wf_part_site`, `window.c` :1984-2007, inside `wf_parts_prepare` :2031) | **call** NONE (decision only); `def` NULL |
+| `[s1d]` VOID at 35bee4da9 (ASK-2; its successor in pcrec's caller list is `req_run_at`, ASK-6, §4.2). Was: the run window, `req_run_member` (`emit_dfa.c` :1058-1076) | none: the reply's reader is the run member | the pre-check's FUNC part, whose frame the KIT derives (`wf_part_site`, `window.c` :1984-2007, inside `wf_parts_prepare` :2031) | **call** NONE (decision only); `def` NULL |
 
 (The `body` value ONESHOT above is `mf_site.body`, the site's call shape (`memfn.h` :413). `[rev2 F24]` The
 candidate stream's value is `MF_WSTREAM_RESTART`, so the two vocabularies no longer share a spelling.)
@@ -729,7 +730,8 @@ read the class. Build trigger: [IR-FORM].
 
 ## 3. The number events and their same-commit package (readers by grep, D76/D94)
 
-**MF_SITE_ABI**: 24 -> the next free number at landing of 3.0b (25 at this tree). The target seam's
+**MF_SITE_ABI**: 24 -> the next free number at landing of 3.0b (25 at this tree). `[s1d]` 27 at 35bee4da9, so 28
+if 3.0b lands next; every cite in this section that 3.0b reads is re-based in §5 3.0b's re-base table. The target seam's
 U2/U3 is also a kit seam event, and whichever lands second takes the next number and re-baselines (§5).
 Readers (`git grep -n MF_SITE_ABI`, re-run at a678d0a4e), by class `[rev2 F25]`:
 
@@ -851,9 +853,10 @@ of them in 3.0.
 | # | ask | the exact facts |
 |---|---|---|
 | ASK-1 | the DFA prefilter's phase-1 ask states the frame of the site its offset rows define | on the ask's site: form FUNC, op FIND, handoff RETURN, empty MISS, use POSITION, body ONESHOT, site_kind UNSTATED (0), decl_point 0, on_miss_leaves 0, `pred.fn_ref` 1; the window statement `ofs_window_of` and floor SUBJECT, as today; define hooks `fn_name` and `table_name` STATED, `miss` MF_MISS_N, `comment_tier` NONESSENTIAL (other members unstated, as at the define); call DEFINE. Each value equals `ofs_site_define`'s (`emit_dfa.c` :7622-7642), and ASK-3 checks it. `[rev2 F22]` **`site_kind` is NOT stated in 3.0**, although R-35 (a) names "form, handoff and site_kind stated per frame at phase 1": OFS sites state no kind today (`span_pick.md` :131's named exception), and stating one is a decision-moving fact (it lets T-FIND decide OFS sites, which moves bytes), row 1's or later. This narrows ruling (a); main confirms (§7 Q12) |
-| ASK-2 | the run window's ask states no frame | call NONE, `def` NULL (`req_run_member`, `emit_dfa.c` :1058-1076); otherwise unchanged |
+| ASK-2 | `[s1d]` **VOID** (K38-2 deleted `req_run_member`; §5 3.0b's re-base block). Was: the run window's ask states no frame | call NONE, `def` NULL (`req_run_member`, `emit_dfa.c` :1058-1076); otherwise unchanged |
 | ASK-3 | the offset-skip block's define holds the reply it was planned by | in a pcrec trace build (the `PCREC_CAND_TRACE` precedent `cand_asked_hold`, `emit_dfa.c` :7066-7085): at `ofs_site_define`, re-ask `mf_wdecide` with the define's own site, hooks, and call DEFINE. `[rev2 F32]` The WHOLE reply must equal `UnanchStart.wr`, byte for byte (`memcmp`; the kit zeroes every reply before it fills it). A difference fails the compile as a named invariant ("asked-plan-differs"). pcrec interprets no field |
 | ASK-4 | ASK-3 runs and reaches its site | name the suite whose trace build runs over DFA prefilter sites (candidates: `tests/codegen/run_cand_oracle.sh` :90, `run_fallback_table.sh` :143), and prove reach with a pcrec-side sabotage row (§5 row F). |
+| ASK-6 `[s1d]` | the `@` table's cover-row ask states no frame (K38-2's new caller) | call NONE, `def` NULL (`req_run_at`, `emit_dfa.c` :16077; it reads `has_stop` and `stop` only); otherwise unchanged |
 | ASK-5 | the comments that teach the frame-free ask are restated | `emit_dfa.c` :7598-7603 ("the decision reads no frame fact, so one ask serves every NEXT row"), and `UnanchStart`'s `wr` comment (:4630-4636): the ask states the offset rows' frame, and the rows below define their own site |
 
 **Not asked**: a consumer kind on OFS sites (`[rev2 F22]` above); a frame for pre-check parts (§7 Q1); any
@@ -872,7 +875,10 @@ highest kit id on any local branch at a678d0a4e is **S2981** (lane k0's S2975-S2
 grep` over every local branch finds no S2982 or above, so the next free is S2982. `[rev2]` `[rev2.2 R22]` There
 are 30 rows; if 3.0a lands first they are expected as S2982-S2993 for 3.0a's 12 rows (A-D, K-R), then
 S2994-S3011 for 3.0b's 18 (E, E2, F-J, S-V, X-AD; W and AE retired `[rev2.1 Q13]`, letters not reused; rev 2 and
-rev 2.1 never counted E2). §7 Q14 may add one row (AF) to 3.0b. Rows below are lettered. Heavy runs are boxqueue jobs, with no timing and
+rev 2.1 never counted E2). §7 Q14 may add one row (AF) to 3.0b. Rows below are lettered. `[s1d]` 3.0a
+took its rows in the S2982-S2993 range as expected, but S2994-S3012 are now all taken on main (the target
+seam's U2 lanes S2994-S3004, K38-1 S3005-S3006, K38-2a S3007-S3012), so 3.0b's 19 rows (Q14 RULED: AF
+added) are renumbered: §5 3.0b's re-base block gives the expected ids. Heavy runs are boxqueue jobs, with no timing and
 no window.
 
 **3.0a** — the triple's tables, Table B's split and the plan's frame part, kit-internal.
@@ -981,15 +987,90 @@ no window.
 
 **3.0b** — the seam, with pcrec's asks, ONE commit.
 
+- `[s1d]` **Re-base on main 35bee4da9** (lane s1design, 2026-11-12; design only). K38-1, K38-2a and K38-2 (main
+  7c16349d7) landed after this note's tree, a678d0a4e. Every cite in 3.0b's text was re-read at 35bee4da9; a cite
+  that moved is rewritten in place and marked `[s1d]`, and the cites 3.0b reads in §3, §4.1 and §4.2 are in the
+  table below. Every prior ruling stands. What moved under 3.0b:
+  - **ASK-2 is VOID.** K38-2 deleted its subject: `req_run_member` and its loud check (a678d0a4e's `emit_dfa.c`
+    :1058-1076 and :1071-1074) are gone. pcrec no longer cuts a run window. The kit derives the pre-check's one
+    run part itself (`window.c` `derive_run_part`) and answers the run decision in `mf_class.run`
+    (span_runs_sheet.md §2.2-§2.3). No pcrec ask states a run window, so there is nothing to frame. §2.1's third
+    row, §4.2's ASK-2 row and §7 Q1 have no subject left. §6's "ASK-2's existing loud check" no longer exists:
+    the unframed-ask rule for row 1 now applies to ASK-6 below.
+  - **ASK-6 (new; the letter-style rule: ASK-2 is not reused): the `@` table's cover-row ask states no frame.**
+    K38-2 added a pcrec phase-1 caller. `req_run_at` (`emit_dfa.c` :16077, the `<PREFIX>_REQ_RUN` `@` table's
+    cover row, commit 2c3b2097e) asks `mf_wdecide` on the cover site (`pcrec_cover_site`) and reads `has_stop`
+    and `stop`, the decision group only. Under 3.0b it asks with call NONE and `def` NULL. §2.3's NONE-vs-framed
+    equality of the decision group (`[rev2.2 R27]`) leaves `stop` unchanged, so no pcrec byte moves. The same
+    function's second reader (`us.wr.run_stated`/`run_member`, :16089-16092) and `ofs_test_of`'s
+    `run_lo`/`run_len` (:7400-7402) read ASK-1's reply's decision group and are untouched. pcrec's phase-1
+    callers are therefore `window_reply_ask` (:7614, ASK-1) and `req_run_at` (:16077, ASK-6). The signature
+    change breaks both, so ASK-6 is in the one commit, as ASK-2 was.
+  - **Kit-side callers the signature change breaks** (same commit; NONE unless the test asks framed):
+    `arm_fixtures.c` :2313, :2320, :2347, :2365; `g2_win_gen.c` :817, :877, :941; NEW since a678d0a4e:
+    `tests/memfn/run_decide_check.c` :207 (`wreply`, K38-1; it reads the run fields only, so NONE).
+    `docs/dev/lanes/r33_sim/probe.c` :94 is unchanged; see the probe item below. Readers that copy the
+    reply (no call): `g2_win_gen.c` :947-948, `g2_win_run.c` :99-103, and `g2_win.h` :44-53, the copy that grows.
+  - **`mf_wreply`'s layout did not move.** K38-2's PLAN item K7 (b) gave the RUN reply one spelling,
+    `mf_run_reply`, which is `mf_class.run`'s type. `mf_wreply` keeps `run_stated`..`run_len` and has `path`
+    last (`memfn.h` :1583-1598). The frame part is still appended after `path`, and `[rev2.2 R27]`'s
+    `offsetof(mf_wreply, framed)` stands.
+  - **The decision reads one art fact now.** K38-2a's test-only lever `run-tie-left` is read inside
+    `decide` (`kit_run_opts_of(d->art, ...)`, `window.c` :938, :1563). `mf_wdecide` stays pure on a given art.
+    The agreement's two halves read the same art, so it holds under the lever. The purity harness's arts
+    state no lever, so its "a function of the facts only" now reads "of the facts and the art's lever set".
+    Open question (report): add `--harness=run-tie-left` to `reach_equal.py`'s `--arms`.
+  - **MF_SITE_ABI is 27** (25 U2, 26 review r5 X-1, 27 K38-2). If 3.0b lands next it takes **28**. The number is
+    the next one at landing, never a literal. **MF_CLASS_V is 9** (K38-2 added `mf_class.run`). 3.0b still does
+    not move it.
+  - **Sabotage ids** (19 rows: the 18 below plus (AF), §7 Q14 RULED by the kit manager in r13's
+    "Rulings on rev 2.2's Q14 and Q15"). The expected S2994-S3012 are taken, see §5's header. K38-2 itself
+    took S3040-S3042 and S3060-S3064 from its reserved S3040-S3069. The highest id on any local branch is S3077
+    (lane/rpfix, S3074-S3077, unmerged), and S3070-S3073 are s1fix's reservation. So the 19 rows are
+    expected as **S3078-S3096**, in letter order E, E2, F, G, H, I, J, S, T, U, V, X, Y, Z, AA, AB, AC, AD, AF.
+    The build re-takes them from the top of the free range (the manager's reservation ledger first) and records
+    them in its first commit.
+  - **3.0a's landing moved cites that 3.0b reads.** `fd_renderers` is gone into `window.c`'s search renderer
+    table. `site_rec` already stores the E-stmt search renderer row (`fd_ren`, `kit.h` :242-273), and `select_arm`
+    already returns it (`*ren`, `compose.c` :264-297; `kit_legacy_serves` :310-316). So §4.1's E-stmt `search`
+    reads `r->fd_ren`'s pick, and the "E-stmt's arm-to-pick map" below needs no second walk.
+    `struct wf_plan` (`window.c` :1299-1331) stores `srch`/`fused`/`strm`/`chk`, and the field map's "NEW `wf_plan`
+    member, 3.0a" is `strm`. The plan function is `wf_plan_site` (:2321), called from `wf_prepare` (:2403, :2420).
+  - **No `wf_part_site`/`wf_parts_prepare` edit.** span_runs_sheet.md §5 Order's contact was ASK-2's row (§2.1)
+    only. K38-1 has landed, so 3.0b is the second lander and this re-base is its rebase. The one remaining
+    touch is `wf_parts_prepare`'s call of `wf_prepare` (`window.c` :2595). It is unchanged if the allocator
+    parameter (`[rev2 F26]`) stays on `wf_plan_site`, with `wf_prepare` passing the art's arena (recommended).
+  - **The probe (§7 Q15 (3), RULED in r13: "left to break" REJECTED).** 3.0b adds a successor probe beside the
+    census instrument under `docs/design/memfn/span_pick/`, built by its own `build.sh` on the new signature,
+    and points the census jobs at it. §3's "LEFT TO BREAK" sentence is superseded by that ruling.
+  - **The §3 / §4 cites 3.0b reads, at 35bee4da9:**
+
+    | where | a678d0a4e | 35bee4da9 |
+    |---|---|---|
+    | §3 the definition | `memfn.h` :39-204 | :39-243 (entries 25-27 added) |
+    | §3 current-number prose | `memfn/include/CLAUDE.md` :4 "24" | :4 still reads `MF_SITE_ABI` 25 and `MF_CLASS_V` 8: STALE (the values are 27 and 9). 3.0b's line rewrites it to the new number and 9 |
+    | §3 symbolic readers | as listed | `memfn_sites.c` :459; `compose.c` :1036, :1093-1095; `window.c` :1283, :1483; `presence.c` :271; `formhash.c` :383; `g2_gen.c` :935, :2271, :2306, :3806, :3842, :3886, :4252, :4482-4483; `g2_simd_gen.c` :340; `g2_win_gen.c` :702, :812, :873, :922; `arm_fixtures.c` :247; `mass_check.c` :267; `proof_check.c` :164; `proven_check.c` :63; NEW files `g2_pres_gen.c`, `tests/memfn/policy_check.c`, `tests/memfn/run_decide_check.c` (recompile only) |
+    | §3 historical class | 304 lines, 71 files | 354 lines in 79 files (same grep, ledgers, `docs/design`, history, lanes and reviews excluded). S2903's anchor (`compose.c` :898's text) and S1089's are unchanged |
+    | §3 MF_CLASS_V readers | `memfn.h` :1080 ... | `memfn.h` :1155, `window.c` :3352, `compose.c` :367, :1054, `proof_check.c` :415, `arm_fixtures.c` :417, plus the two CLAUDE.md lines |
+    | §3 `pur_diff`, control print | `arm_fixtures.c` :2204-2220, :2328-2336 | :2246-2262, :2370-2378 |
+    | §3 `PURITY_FLOOR` | `run_finder.sh` :132 (read :138), header :121-131 | :158 (read :164), header :147-157; still 1157 |
+    | §3 harness description | `tests/memfn/CLAUDE.md` :43 | :45 (`run_purity_reach.sh` :27-37, :41-74, `g2_win.h` :44-53, `trace_format.md` :102-113 unchanged) |
+    | §3 comments restated | `memfn.h` :556-558, :1435-1441, :1483-1486; `window.c` :49, :1225; `emit_dfa.c` :7598-7603 | `memfn.h` :605-607, :1551-1557, :1599-1602; `window.c` :51, :1282; `emit_dfa.c` :7602-7607 |
+    | §3 [SEAM-READER-CENSUS] | `plan.md` :1844 | the row [SEAM-READER-CENSUS], unchanged (STATE:not-started) |
+    | §4.1 stored members | `kit.h` :239-270; `window.c` :1242-1274, `wf_prepare` :1892, stores :1947-1950 | `kit.h` :242-273; `window.c` :1299-1331, :2403, :2424-2427 |
+    | §4.1 rule 2's re-ask; the arm walk | `compose.c` :1180-1200; :295-327, :333-339; :277-283 | :1221-1241 (it re-asks through `ask_sel`); `select_arm` :264-297, `kit_legacy_serves` :310-316; `fd_renderers` deleted (3.0a) |
+    | §4.2 ASK-1, ASK-3, ASK-5 | `ofs_site_define` :7622-7642; `cand_asked_hold` :7066-7085; `wr` comment :4630-4636 | :7626-7646; :7044-7063; :4582-4588. ASK-5's restatement of the `wr` comment also names `req_run_at` among its readers (K38-2) |
+    | §4.2 ASK-4 suites | `run_cand_oracle.sh` :90, `run_fallback_table.sh` :143 | unchanged |
+
 - **Content**: §2.2-§2.3; `reply_of`'s frame part; the define's record of what it rendered (§4.1); the kit's
   MF_TRACE agreement at every window-site define: the plan re-asked with the define's site, hooks and
   call, every field compared (`memcmp` of the whole reply) `[rev2 F29]` `[rev2.2 R1]` against a define-side reply
   whose FRAME part is built from what the define STORED by §4.1's field map (never through `reply_of` or the
   plan function) and whose decision group is re-derived through `decide` (§4.1, "The agreement's two halves"),
-  as rule 2's re-ask re-runs `select_arm` against the stored `r->cls` (`compose.c` :1180-1186); `[rev2.2 R8]` the
+  as rule 2's re-ask re-runs `select_arm` against the stored `r->cls` (`compose.c` :1180-1186; `[s1d]` :1221-1227, through `ask_sel`); `[rev2.2 R8]` the
   frame-part outputs moved from 3.0a (`fused`, `plan_test`, `stop_test`, the reply ids, E-func's `search` with
   the `fn_rows` pick column, E-stmt's arm-to-pick map, the allocator) and S686's re-aim onto the BODY lines' new
-  text `[rev2.2 R9]`; ASK-1..ASK-5; the purity harness (framed
+  text `[rev2.2 R9]`; ASK-1..ASK-5 (`[s1d]` ASK-2 VOID; ASK-6 added, see the re-base block); the purity harness (framed
   asks interleaved with defines, the whole-reply `memcmp`, the hex-dump control print, the counting hook over
   six stated callbacks, the counting arena, the same-class-different-text fixture,
   `PURITY_FLOOR` re-pinned, `purity_rows.tsv`'s rows); the `mf_wcall` fixtures `[rev2 F33]`; G2's window
@@ -1002,7 +1083,7 @@ no window.
   frontiers, HORS iff `_sh[256]`, LIBC/LIBC_BACK iff one `memchr`, WALK iff a walk; `frame_row` E-find iff
   `form_id` "window-search", E-generic iff "wf-floor"), `[rev2.2 R2]` the `table_name` population for
   `plan_test` and `stop_test`: the marker is the hook's OWN spelling, `g2w_t<id>_<ref>[` (`h_table_name`,
-  `g2_win_gen.c` :569-574; G2 already searches it, :1065), matched to each tested OFFSET through the ref G2
+  `g2_win_gen.c` :569-574; G2 already searches it, :1065; `[s1d]` :641-646 and :1152), matched to each tested OFFSET through the ref G2
   itself offered there (TABLE iff that ref's marker is read, OWN iff not, with §2.3's exceptions); the
   population includes a site whose stop lies BELOW a TABLE plan position (where the define's `off[]` and
   `plan[]` indices differ) and a stated hook with NO offer (OWN expected); the reply-id resolution check with
@@ -1011,7 +1092,8 @@ no window.
   (accepted in r12's rulings) writes the seam-contract tests (`mf_wdecide`, `mf_wcall`, `mf_wreply`'s frame
   part) from §2.2-§2.3 alone, in a cell, at 3.0b's build; the build lane's tests do not replace them.
 - **Witnesses**: as 3.0a, plus the two agreement checks green on the corpus and on G2 `[rev2.2 R19]` (OFF layer
-  only: G2's window generator is MF_P_PORTABLE_ONLY throughout, `g2_win_gen.c` :639 .. :1042, and `g2_simd_gen.c`
+  only: G2's window generator is MF_P_PORTABLE_ONLY throughout, `g2_win_gen.c` :639 .. :1042 (`[s1d]` U2 retired that
+  bit: every G2 window art now states the portable target, `g2_art_begin`, `g2_win_gen.c` :111-118), and `g2_simd_gen.c`
   states no window facts, so G2 has no SIMD window population). The kit agreement's CORPUS carrier is named:
   `make test` builds the kit without MF_TRACE, so it is `tests/memfn/reach_equal.py` (the one corpus compile
   through an `-DMF_TRACE` pcrec) with `--arms` including the default and `-fmemfn-simd`, a boxqueue job; its red is
@@ -1034,7 +1116,7 @@ no window.
     prefilter site the ASK-4 suite compiles (`[rev2.2 R19]` held: `run_cand_oracle.sh`'s witness lines cover all
     four offset rows). `[rev2.2 R17]` The row asserts the failure TEXT names ASK-3's invariant
     ("asked-plan-differs"), not "the suite is red": a STMT/ASSIGN framed ask may instead be refused at phase 1,
-    which `window_reply_ask` turns into its own internal error (`emit_dfa.c` :7610-7613, "refused the window
+    which `window_reply_ask` turns into its own internal error (`emit_dfa.c` :7610-7613, `[s1d]` :7614-7617, "refused the window
     family's phase-1 ask"), and that red proves nothing about ASK-3's reach.
   - (G) the plan face calls `table_name` once: the counting hook reads 1 (`arm_fixtures --purity`).
   - (H) `[rev2 F32]` the reply's `fused` keyed on `art->nsites` (FN iff `nsites > 0`, 1d's plant pattern):
@@ -1045,7 +1127,7 @@ no window.
     art's denies" planted nothing): the fixture "framed ask on a REPORT site under `no-window-search` answers -1,
     as `mf_define` refuses" is red (`arm_fixtures`). The same plant reddens a second fixture on a T-FIND deny,
     `--memfn=no-fd-d1`: the framed ask's `method`/`search` equal the define's (T-FIND's table reads `fd-*` from
-    the same `opts`, `fd_opt`, `finder.c` :514-516).
+    the same `opts`, `fd_opt`, `finder.c` :514-516, `[s1d]` :521-523).
   - (J) a reply's `method` filled from `search`'s spelling (e.g. `PAIR` where T-FIND's row was `R7w`'s walk):
     the id-resolution and text-class checks are red.
   - (S) `[rev2 F33]` UNSTATED treated as NONE: the fixture "call 0 answers -1" is red.
@@ -1053,7 +1135,7 @@ no window.
     (`memcmp`) is red.
   - (U) `[rev2 F33]` EMIT walks Table E under DEFINE only: the fixture on a site where `mf_emit` and
     `mf_define` select different rows (the gate's DEFINE|USE declining a row whose use-time fields the hooks
-    fail, `compose.c` :255-258) answers `mf_define`'s row and is red.
+    fail, `compose.c` :255-258, `[s1d]` :255-261, `select_arm`'s comment) answers `mf_define`'s row and is red.
   - (V) `[rev2 F34]` the plan face calls `member` (or `on_cand`): the counting hook, now stating all six, reads
     1.
   - (X) `[rev2 F30]` `reply_of` writes MASK `[rev2.2 R24]` for one frame: G2's impossible-cell assertion (MASK 0) is
@@ -1065,20 +1147,24 @@ no window.
   - (AB) `[rev2 F12]` `plan_test` always OWN: G2's `table_name` population `[rev2.2 R2]` (the hook's own marker
     `g2w_t<id>_<ref>[` matched by offset; the stop-below-a-TABLE-position site and the stated-hook-no-offer site
     included) is red. `stop_test` has no plant of its own among the 18 (§7 Q14).
+  - (AF) `[s1d]` (§7 Q14, RULED in r13: "add sabotage row AF (3.0b becomes 19 rows)"; the row text is Q14's)
+    `stop_test` always OWN while `plan_test` is right: G2's `table_name` class is red on its B-walk sites whose
+    stop alone is offered (the one search that member-tests the stop through the table, §7 Q14).
   - (AC) `[rev2 F26]` `mf_wdecide` hands the plan function the art's arena: the counting arena reads > 0.
   - (AD) `[rev2 F16]` a gate reads a hook's text beyond its class (e.g. compares `n`'s spelling): the
     same-class-different-text fixture is red. `[rev2.2 R21]` Its POPULATION is STMT/ASSIGN and STMT/ON_MISS sites
     asked with call EMIT (the window rows read the text hooks at USE only, `wf_floor_uses`, `window.c`
-    :2838-2846; the purity harness's 11 FUNC/RETURN DEFINE sites state no text hook, so they vary nothing), with
+    :2838-2846, `[s1d]` :3409-3417; the purity harness's 11 FUNC/RETURN DEFINE sites state no text hook, so they vary nothing), with
     every text hook stated (`s`, `n`, `lo`, `floor`, `result`, `on_miss`, `miss`), each replaced by a same-class
     text RELATION-PRESERVINGLY (`n` -> `len` renames any `miss` equal to it too; `result` -> `r2`; a `miss` token
-    vs a `((size_t)-1)` text), plus the `MF_MISS_N` by-address case (`gate.c` :648-653) and ONE case where the
+    vs a `((size_t)-1)` text), plus the `MF_MISS_N` by-address case (`gate.c` :648-653, `[s1d]` :673-678) and ONE case where the
     rename breaks the `miss`/`n` relation and the class DOES move (asserted as a class move, where the fixture
     then permits the reply to differ), so a correct build is not red on a legitimate class change.
 
 **Separability.** 3.0a lands and reverts alone: it moves no seam and touches no pcrec file. 3.0b needs
 3.0a, because the frame part comes from 3.0a's plan function, so reverting 3.0a after 3.0b takes 3.0b
-with it. 3.0b cannot be split: the signature change breaks pcrec's build without ASK-1/ASK-2. The
+with it. 3.0b cannot be split: the signature change breaks pcrec's build without ASK-1/ASK-2 (`[s1d]`
+ASK-1/ASK-6: ASK-2's caller is gone, `req_run_at` is the new one). The
 MF_SITE_ABI event, its callers and its checks are one commit (memfn/CLAUDE.md's same-commit rule).
 `[rev2.2 R8]` The separability is exact because 3.0a ships no computed-but-unread output: everything its plan
 function computes, the define renders. Inside 3.0a, the split (§2.6) and the asker's retirement (§2.4) can be
@@ -1096,13 +1182,18 @@ macro (a 3.0a file: one extra contact, r12 PROBED). 3.0a edits `finder.c`, `wind
 and `kit.h` (`[rev2.2 R8]` `ofsskip.c`'s `fn_rows` fact column is now 3.0b's), and only comments in `formhash.c`. The overlap is low:
 the later lander re-merges and re-runs the hash witness. `[rev2.1 Q13]` The rung list is not in 3.0b, so it adds no overlap; plan row RUNG-LIST (§7) names U2+U3 as the place its admission fact will come from. Either way the second lander takes the next MF_SITE_ABI number and
 re-baselines. Opt rows on `window.c`, `finder.c`, `compose.c` or `ofsskip.c` wait for 3.0b, as stage 1's did.
+`[s1d]` Both seam events have now landed ahead of 3.0b: U2 (MF_SITE_ABI 25, then 26) and K38-2 (27). 3.0b is the
+second lander against each, so it takes the next number (28 at 35bee4da9) and its base is main's tip at
+branch time. With 3.0a landed, the next lander after 3.0b on these files is span_runs_sheet.md's K38-3, which
+touches none of them.
 3.0a does not touch `vrun.c` (§2.7).
 
 **Size.** 3.0a: M (one table rekeyed, Table B split into skeleton, search, stream and check rows plus fused
 rows, one new fact table and Table S, one function split; no text moves; `[rev2.2 R8]` smaller than rev 2.1's:
 the `fn_rows` column and the reply-only outputs moved to 3.0b). 3.0b: `[rev2]` L (the seam with `plan_test`
 `[rev2.2]` and `stop_test`, the reply-only plan outputs and the `fn_rows` fact column, about 14 readers, two
-checks with §4.1's field map, the harness growth, `[rev2.2 R22]` 18 sabotage rows, the D27 author's tests).
+checks with §4.1's field map, the harness growth, `[rev2.2 R22]` 18 sabotage rows (`[s1d]` 19 with (AF), Q14 RULED), the D27 author's tests; `[s1d]` plus ASK-6 and the
+successor probe, minus ASK-2).
 
 ## 6. What 3.0 leaves to row 1 `[rev2 F15]` `[rev2.1 Q13]`
 
