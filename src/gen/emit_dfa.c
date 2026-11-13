@@ -289,6 +289,7 @@ typedef enum {
     REQ_ADMIT_NONE,         /* there is no necessary byte to check */
     REQ_ADMIT_ONE_ATTEMPT,  /* G2: the route answers in ONE attempt */
     REQ_ADMIT_DOMINATED,    /* G1: an equally rare byte is already scanned */
+    REQ_ADMIT_UNTESTABLE,   /* the kit declines the run and verifies no member */
     REQ_ADMIT_SET_LEADS     /* [K82] emitted, the set pick's memchr first */
 } ReqAdmit;
 static ReqAdmit req_admit(Ctx *cx);
@@ -8745,6 +8746,21 @@ static bool req_dominated_applies(const CandSel *s)
         return true;
     }
 }
+/* NOTHING TO RENDER (part_d.md §9 item 3, [RUN-POS-SET] stage 3): a run is
+ * stated, the kit declines it on the pre-check (its link untested,
+ * `req_run_tested`), and no member leads either, so the pre-check would have
+ * no part to emit. Read off the quiet presence ask, the builder's own
+ * (`req_site_define`, whose "verifies nothing" stop this row keeps from
+ * being reached). */
+static bool req_untestable_applies(const CandSel *s)
+{
+    Ctx *cx = s->cx;
+    if (pcrec_fact_req_whole_run_stated(cx)->whole_len < 2) return false;
+    mf_class *cls = pcrec_arena_alloc(&cx->arena, sizeof *cls);
+    const mf_site *ps = req_pres_ask(cx, NULL, cls);
+    return !req_run_tested(ps, cls) && req_pres_head(ps, cls, false) < 0;
+}
+
 /* [K82] (A) Does the necessary set's pick LEAD the run? Since R17-b' B3b
  * the kit's PRES row P4 decides (set-leads, ported: the pick strictly rarer
  * than the run's scan member, one PICK over the two guards, the run's scan
@@ -8878,6 +8894,7 @@ static const char *req_why_name(ReqAdmit a)
     case REQ_ADMIT_NONE:        return "none";
     case REQ_ADMIT_ONE_ATTEMPT: return "one-attempt";
     case REQ_ADMIT_DOMINATED:   return "dominated";
+    case REQ_ADMIT_UNTESTABLE:  return "untestable";
     case REQ_ADMIT_SET_LEADS:   return "emitted";
     }
     return "none";
@@ -10616,16 +10633,21 @@ static const CandRow cand_rows[] = {
       .list = { [CAND_ROUTE_DFA] = { "req-admit", 3, "dominated" } },
       .desc = "the body's LOCATE row answers presence itself (a LOCATE row with `whole`: rev-end, the cover window search, the landmark walk, the empty engine); or G1, the memfn kit's PRES row P2 (`--memfn=no-fd-pres-g1`): the candidate-start scan already tests the same byte (and, for a run, verifies the run), or under a byte-rate a one-byte memchr scan of a byte no commoner than the necessary byte",
       .u.admit = { REQ_ADMIT_DOMINATED } },
+    { .c = { "untestable", 0, req_untestable_applies }, .slot = CAND_SLOT_PRESENCE,
+      .routes = CAND_ALL_ROUTES, .tok = "untestable", .map = CM_NONE, .hands = CT_VERDICT,
+      .list = { [CAND_ROUTE_DFA] = { "req-admit", 4, "untestable" } },
+      .desc = "a run is stated, the memfn kit's run decision declines it on the pre-check (its presence link untested), and no necessary-set member leads: the pre-check would test nothing",
+      .u.admit = { REQ_ADMIT_UNTESTABLE } },
     { .c = { "set-leads", 0, req_set_leads_applies },
       .slot = CAND_SLOT_PRESENCE, .routes = CAND_ALL_ROUTES, .tok = "set-leads",
       .map = CM_PRESENCE, .hands = CT_VERDICT | CT_HIT,
-      .list = { [CAND_ROUTE_DFA] = { "req-admit", 4, "set-leads" } },
+      .list = { [CAND_ROUTE_DFA] = { "req-admit", 5, "set-leads" } },
       .desc = "a run pre-check is admitted and the memfn kit's PRES row P4 (`--memfn=no-pres-set-lead`, the retired -fno-req-set-lead) leads with the necessary set's pick: it is strictly rarer than the run's scan member (one PICK over the two guards, the run first, so a tie keeps the run alone; under no byte-rate a byte against a two-member pair): the set pick's memchr first, then the run search",
       .u.admit = { REQ_ADMIT_SET_LEADS } },
     { .c = { "emitted", 0, cand_always }, .slot = CAND_SLOT_PRESENCE,
       .routes = CAND_ALL_ROUTES, .tok = "emitted", .map = CM_PRESENCE,
       .hands = CT_VERDICT | CT_HIT,
-      .list = { [CAND_ROUTE_DFA] = { "req-admit", 5, "emitted" } },
+      .list = { [CAND_ROUTE_DFA] = { "req-admit", 6, "emitted" } },
       .desc = "always (fallback): the pre-check on the req_byte fact, or the run search where a run shipped",
       .u.admit = { REQ_ADMIT_EMITTED } },
 
@@ -11375,6 +11397,24 @@ static const char *const pick_kind_name[] = {
     "UNSTATED", "DFA_SCAN", "DFA_HAT", "HYB_PF", "VM_ATTEMPT", "DFA_ATTEMPT",
 };
 
+/* Does the stated run hold a position that is not one cube ([RUN-POS-SET]
+ * stage 3)? On such a run the shadow's `leads`/`rlead` and `dominated`/`rdom`
+ * are RETIRED as independent expectations (part_d.md §9 item 6, P8 + FIX-1,
+ * as K38-2 retired `scan`/`rwin`): pcrec's own answers rank by its scan index
+ * and require `run_verified`, which cannot follow the kit's private findable
+ * rule (D157) without reading the reply itself (K35). Successor controls: the
+ * kit's C2 text classifier and G2 decline equality, P3's floor on pcrec's
+ * real proof, and the artifact witness `x.(?:cat|dog)` (`_REQ_WHY
+ * "dominated"`). The family is plan row [SHADOW-TABLE]'s. */
+static bool req_run_wide(Ctx *cx)
+{
+    const ReqRun *r = pcrec_fact_req_whole_run_stated(cx);
+    int t, k;
+    for (int i = 0; i < r->whole_len; i++)
+        if (!pcrec_req_cube(r->pos[i], &t, &k)) return true;
+    return false;
+}
+
 static void req_pick_shadow(Ctx *cx, const mf_site *site)
 {
     ReqAdmit adm = req_admit(cx);
@@ -11460,14 +11500,14 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         {
             int pl = req_set_leads_own(cx), kl = k.set_leads < 0 ? 0 : k.set_leads;
             if (pick_plant("leads")) kl = !kl;
-            if (k.set_leads >= 0 || pl) pick_rec("leads", pl, kl, 1, pl, kind);
+            if ((k.set_leads >= 0 || pl) && !req_run_wide(cx)) pick_rec("leads", pl, kl, 1, pl, kind);
         }
         /* G1 */
         {
             int pd = req_byte_dominated_by(cx, &cs, pcrec_fact_req_byte_stated(cx));
             int kd = k.dominated < 0 ? 0 : k.dominated;
             if (pick_plant("dominated")) kd = !kd;
-            pick_rec("dominated", pd, kd, cs.byte >= 0, pd, kind);
+            if (!req_run_wide(cx)) pick_rec("dominated", pd, kd, cs.byte >= 0, pd, kind);
         }
         /* the fifth, where NEXT prices it */
         if (priced) {
@@ -11507,13 +11547,13 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
             int kd = rc->npres > 0;
             for (unsigned i = 0; i < rc->npres; i++) kd &= rc->pres[i].proven_by;
             if (pick_plant("rdom")) kd = !kd;
-            pick_rec("rdom", pd, kd, cs.byte >= 0, pd, kind);
+            if (!req_run_wide(cx)) pick_rec("rdom", pd, kd, cs.byte >= 0, pd, kind);
             if (!pd && !kd) {
                 int runi = req_pres_run(ps);
                 int pl = req_set_leads_own(cx);
                 int kl = req_pres_head(ps, rc, true) >= 0;
                 if (pick_plant("rlead")) kl = !kl;
-                if (runi >= 0) pick_rec("rlead", pl, kl, 1, pl, kind);
+                if (runi >= 0 && !req_run_wide(cx)) pick_rec("rlead", pl, kl, 1, pl, kind);
                 int hd = req_pres_head(ps, rc, false);
                 if (runi < 0) {
                     int kh = hd >= 0 ? mf_term_byte(&ps->pspans[hd].term[0]) : -1;
