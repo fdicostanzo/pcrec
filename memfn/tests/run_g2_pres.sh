@@ -378,7 +378,14 @@ plant_expect() {
     S3109) echo 'its first part is not the HEAD' ;;
     S3110) echo ': EXTENT: ' ;;
     S3112) echo 'no \(T, K\) spelling' ;;
-    S3113) echo 'FLOOR: .*scanless_match|: SOUND: |: EXTENT: ' ;;
+    S3113) # COVER, the family's positive check (a whole occurrence IS yielded):
+        # a scan-less part searching byte 0 misses every occurrence without it.
+        # Measured (lane partdfix, seed 20261110): COVER reds 60 sites on each of
+        # the six passes and nothing else of the family does; the scanless_match
+        # FLOOR counts generator facts the plant leaves alone, SOUND/EXTENT check
+        # that nothing FALSE is yielded, and PRESENCE stayed green (the oracle
+        # reds too: the backstop, not this row's catch)
+        echo ': COVER: part at [0-9]+ len [0-9]+: member ' ;;
     S3114) echo 'FLOOR: .*dom_noscan' ;;
     S3119) echo ': R-41: ' ;;
     S3125) echo 'D3 EVERY-POS: ' ;;
