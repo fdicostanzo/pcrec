@@ -46,6 +46,12 @@
 #              another pattern, or another fixture. In the control artifact
 #              the row must NOT be chosen and the signature must be ABSENT.
 #
+# R-38 Part D (part_d.md rev 4 §5.1.1 D1/D2): `fd PD` (the decline) and
+# `fn fn-every-pos` (the scan-less BODY) are pending-site until pcrec's
+# [RUN-POS-SET] stage 3 states runs with wide positions; their witnesses are
+# arm_fixtures fixtures (fd-PD against fd-P3; pre-wide-every-pos against
+# pre-wide-findable, the same run with one findable position: fn-memchr).
+#
 # [REQ-HANDOFF-L1] (abi 75): the two bounded start-scan rows' witnesses add
 # `-fno-req-handoff`; their pattern's pre-check handoff otherwise re-enters
 # (NEXT's `handoff` row ranks above the start-byte rows).
@@ -133,6 +139,7 @@ fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0, wa	-fno-req-run-fold -
 fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=
 fn	vrun-w16	pcrec	pattern	-fmemfn-simd=x86-64	(?i)cat	_ofsskip__w16(const unsigned char	-fmemfn-simd=x86-64 --memfn=no-vrun-w16	=
 fn	vrun-w32	pcrec	pattern	-fmemfn-simd=x86-64-v3	(?i)cat	_ofsskip__w32(const unsigned char	-fmemfn-simd=x86-64-v3 --memfn=no-vrun-w32	=
+fn	fn-every-pos	pending-site:[RUN-POS-SET]-stage-3	fixture	-	pre-wide-every-pos	size_t cand = pos;	-	pre-wide-findable
 fd	D-hors	pcrec	pattern	-	[0-9a-f]{8}	 row=D-hors arm=E-find	--memfn=no-window-skip	=
 fd	D1	pcrec	pattern	-	x+y	 row=D1 arm=pf_memchr	--memfn=no-fd-d1	=
 fd	D1c	pcrec:trace-only	pattern	-	(?m)^ab	 row=D1c arm=pf_memchr_back	-	ab
@@ -141,6 +148,7 @@ fd	PAIR	pcrec	pattern	-	x[Q%]y	 row=PAIR arm=E-find	--memfn=no-window-search	=
 fd	R7w	pcrec:trace-only	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	 row=R7w arm=pf_walk	-	x+y
 fd	P0	pcrec	pattern	-	(x?)([a-z]+)+Z.@\1	 row=P0 link=v1p0m0o0	-	a.{1,5}z
 fd	P2	pcrec	pattern	-	x*y	 row=P2 link=v0p1m0o0 basis=UNMEASURED-DEFAULT phase=ask	--memfn=no-fd-pres-g1	=
+fd	PD	pending-site:[RUN-POS-SET]-stage-3	fixture	-	fd-PD	 row=PD link=v0p0m0o0	-	fd-P3
 fd	P3	pcrec	pattern	-	a.{1,5}z	 row=P3 link=v1p0m1o0	--memfn=no-fd-pres-pick	=
 fd	P4	pcrec	pattern	-	(?:user|USER)[ \t]*=	 row=P3+P4 link=v1p0m1o0	--memfn=no-pres-set-lead	=
 fd	P9	pcrec	pattern	--memfn=no-fd-pres-pick	a.{1,5}z	 row=P9 link=v1p0m0o0	-	=

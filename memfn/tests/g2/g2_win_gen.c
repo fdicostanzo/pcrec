@@ -548,11 +548,20 @@ static void gen_facts(int fam, gfacts *x)
                 x->wfloor = G2W_F_SUBJECT;
 }
 
-/* 1 iff span `g` has the run R's shape: two or more positions, each one
- * member or a one-bit cube (G2's own reading, written from the F-8 ruling). */
-static int g_run_shaped(const gspan *g)
+/* 1 iff span `g` is the run R BY ROLE (R-38 Part D, part_d.md §2.2; F-8's
+ * shape rule retired for R): two or more positions stated verify NO, any
+ * sets. */
+static int g_run_role(const gspan *g)
 {
-    if (g->len < 2) return 0;
+    return g->len >= 2 && g->verify == G2W_NO;
+}
+
+/* 1 iff span `g` is a verify-YES span the kit compares whole: two or more
+ * positions stated verify YES, each one member or a one-bit cube (G2's own
+ * reading, written from part_d.md §2.2). */
+static int g_pinned_yes(const gspan *g)
+{
+    if (g->len < 2 || g->verify != G2W_YES) return 0;
     for (int j = 0; j < g->len; j++) {
         int m[3], k = 0;
         for (int b = 0; b < 256 && k < 3; b++)
@@ -562,21 +571,28 @@ static int g_run_shaped(const gspan *g)
     return 1;
 }
 
-/* The run R is identified by its SHAPE and is UNIQUE per alternative (the
- * kit manager's F-8 ruling): 1 iff some alternative of `x` states two such
- * spans. fix: give every such span after an alternative's first a
- * three-member position 0, so the statement states one R. */
+/* R is UNIQUE per alternative, and so is the verify-YES span compared whole
+ * (part_d.md §2.2; wf_check): 1 iff some alternative of `x` states two of
+ * either. fix (§5.1 D2, [r1pd F22]): every verify-NO multi-position span
+ * after an alternative's first becomes verify YES; then every spelled
+ * verify-YES one after the first gets a three-member position 0 (today's
+ * fix), so the statement states one of each. */
 static int two_runs(gfacts *x, int fix)
 {
     int any = 0;
     for (int ai = 0; ai < x->nalt; ai++) {
-        int n = 0;
+        int n = 0, y = 0;
         for (int i = 0; i < x->alt[ai].nspan; i++) {
             gspan *g = &x->alt[ai].span[i];
-            if (!g_run_shaped(g)) continue;
-            if (n++ && fix) { set_add(g->set[0], 'b'); set_add(g->set[0], 'c'); set_add(g->set[0], 'x'); }
+            if (!g_run_role(g)) continue;
+            if (n++ && fix) g->verify = G2W_YES;
         }
-        if (n > 1) any = 1;
+        for (int i = 0; i < x->alt[ai].nspan; i++) {
+            gspan *g = &x->alt[ai].span[i];
+            if (!g_pinned_yes(g)) continue;
+            if (y++ && fix) { set_add(g->set[0], 'b'); set_add(g->set[0], 'c'); set_add(g->set[0], 'x'); }
+        }
+        if (n > 1 || y > 1) any = 1;
     }
     return any;
 }
@@ -875,7 +891,7 @@ int main(int argc, char **argv)
             mf_art *ar = g2_art_begin(&g_arena, "g2w", 0, NULL, NULL);
             mf_wreply tr;
             if (!mf_wdecide(ar, &t, &tr))
-                fail(id, "two runs", "an alternative stating two spans of R's shape was decided");
+                fail(id, "two runs", "an alternative stating two R spans or two whole-compared verify-YES spans was decided");
             else { refused_ok++; two_run_refused++; }
             two_runs(&gf, 1);
         }
@@ -938,7 +954,7 @@ int main(int argc, char **argv)
                                    x.rate_kind ? &an : NULL);
         if (art && x.run_left && mf_lever(art, "run-tie-left")) { fail(id, "mf_lever", mf_art_error(art)); continue; }
         mf_wreply r;
-        if (mf_wdecide(art, &s, &r)) { fail(id, "mf_wdecide refused", NULL); continue; }
+        if (mf_wdecide(art, &s, &r)) { fail(id, "mf_wdecide refused", art ? mf_art_error(art) : NULL); continue; }
         /* the reply, field by field */
         x.reply.alt = r.alt; x.reply.reseed = r.reseed; x.reply.has_stop = r.has_stop;
         x.reply.stop = r.stop; memcpy(x.reply.stop_set, r.stop_set, 32);

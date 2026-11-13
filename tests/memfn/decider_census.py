@@ -132,6 +132,8 @@ HITS = 61
 # 67 at R-38 K38-2 (precheck.c's implied_by out with the R-30 implied parts;
 # the run decision's WINDOW stretch stretch_window and the route's mode table
 # fd_run_modes in: K7 (b)'s mode table and U3's route as the input).
+# R-38 Part D: translate:run-rank became the shared function run_rank (one
+# member for one, part_d.md §2.1 item 3; RUN_CALLERS' `translate` with it).
 MEMBER_COUNT = 67
 
 # D: THE RUN CALLERS, EXACT (a call site added or lost is red): callee ->
@@ -147,7 +149,7 @@ MEMBER_COUNT = 67
 RUN_CALLERS = {
     r"\bkit_run_member\b": {"kit_run_decide": 1},
     r"\bkit_run_decide\b": {"fd_pres": 1, "kit_pres_picks": 1, "run_member": 1,
-                             "translate": 1, "a_mass_choose": 1},
+                             "run_rank": 1, "a_mass_choose": 1},
     r"\bT_WINDOW\s*,\s*\w+\s*\)": {"stretch_window": 1},
 }
 

@@ -124,12 +124,17 @@ static int long_cover(const g2w_alt *a, int off)  /* covered by a span of >= 2 *
     return 0;
 }
 
-/* R: the first span of two or more positions each one member or a cube. */
+/* The member span (R-38 Part D, part_d.md §2.2, R BY ROLE): R, the span of
+ * two or more positions stated verify NO (any sets); where none is stated,
+ * the verify-YES span of two or more positions each one member or a cube
+ * (the span compared whole). */
 static int run_of(const g2w_alt *a)
 {
+    for (int i = 0; i < a->nspan; i++)
+        if (a->span[i].len >= 2 && a->span[i].verify == G2W_NO) return i;
     for (int i = 0; i < a->nspan; i++) {
         const g2w_span *sp = &a->span[i];
-        if (sp->len < 2) continue;
+        if (sp->len < 2 || sp->verify != G2W_YES) continue;
         int ok = 1;
         for (int j = 0; j < sp->len; j++) if (!kind_of(sp->set[j])) ok = 0;
         if (ok) return i;

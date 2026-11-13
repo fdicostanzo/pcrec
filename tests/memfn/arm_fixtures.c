@@ -418,7 +418,8 @@ static void q_check(const char *name, const mf_site *s, int ask_rc, const mf_cla
         else if (memcmp(qa->proven0, p0, 32)) why = "PROVEN0";
         else if (!qa->exists) why = "EXISTS";
         else if (qa->libc_free && calls) why = "LIBC_FREE";
-        else if (qa->npres) why = "NPRES";
+        else if (qa->npres != s->npspan) why = "NPRES";   /* one link per presence span
+                                                                  (R-38 Part D's pre-wide-* state them) */
     }
     fprintf(stderr, "QUERY\t%s\t%s\n", name, why ? why : "agree");
 }
@@ -1488,6 +1489,8 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
         static mf_walt sa;
         static mf_wspan sw;
         static const uint8_t cube[3] = { 0xDF, 0xDF, 0xDF };
+        int decl = !strcmp(name, "pre-decl");          /* pre-lead's member, a WIDE run */
+        if (decl) name = "pre-lead";
         int noproof = !strcmp(name, "pre-noproof");   /* pre-opt, its proof UNSTATED */
         int omin = !strcmp(name, "pre-omin");          /* pre-opt, omin below the start */
         if (noproof || omin) name = "pre-opt";
@@ -1503,6 +1506,15 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
         sp[0].term[0].need = need;
         sp[0].member_order = 1;
         if (lead) ps_run(&sp[1], &sa, &sw, "ABC", cube);   /* the run, LAST, nterm 0 */
+        /* `pre-decl` (R-38 Part D, part_d.md §2.4 item 2): the run's every
+           position the digits (WIDE, no findable position), so on the
+           OPTIONAL route the decline row PD leaves it untested and the
+           member `q` is the set's pick, verified at the HEAD; only ASKED */
+        if (decl)
+            for (unsigned j = 0; j < 3; j++) {
+                memset(sw.set[j], 0, 32);
+                for (unsigned b = '0'; b <= '9'; b++) sw.set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
+            }
         for (int i = 0; i < 1 + lead; i++) {
             sp[i].nterm = i == 0;
             sp[i].need = need;
@@ -1511,7 +1523,7 @@ static int fd_site_of(const char *name, mf_site *s, mf_pred *p)
         }
         if (omin) sp[0].omin = -1;
         int nparts = 0;
-        if (!strcmp(name, "pre-dom")) {
+        if (!strcmp(name, "pre-dom") || decl) {
             *s = pre_site(p, 0, -1);
             s->preds = NULL;
         } else {
@@ -1556,6 +1568,7 @@ static int fd_fixture(const char *dir, const char *name)
         { "fd-P4-den",  "pre-lead-run", NULL, "no-pres-set-lead" }, /* P4 denied: the run alone */
         { "fd-P2",      "pre-dom", NULL, NULL },      /* the proof stands: P2 (asked) */
         { "fd-P2-den",  "pre-dom", NULL, "no-fd-pres-g1" }, /* P2 denied: P3 (asked) */
+        { "fd-PD",      "pre-decl", NULL, NULL },     /* no findable run position: PD (asked) */
         { "fd-nobody",  "set10-nobody", NULL, NULL }, /* body UNSTATED: refused (R-23, S1089's witness) */
     };
     for (size_t i = 0; i < sizeof fx / sizeof fx[0]; i++) {
@@ -2542,6 +2555,43 @@ int main(int argc, char **argv)
     p_byte(&lm[1], 46);
     s = pre_site(lm, 2, 1);
     bad |= render(dir, "pre-landmark-later", &s, "rx_reqrun");
+
+    /* R-38 Part D (part_d.md §5.1.1 D2 [r2pd P10]): fn-every-pos's witness,
+     * a REQUIRED run with NO findable position (two positions of the digits,
+     * each WIDE): P0 verifies it scan-less (K66), its derived part has no
+     * RUN term, and the offset-skip function's BODY is every-pos; and its
+     * CONTROL, the same run with position 1 the one byte 'a' (findable): the
+     * scan is 'a', the part a RUN term and a tableless SET term, fn-memchr */
+    for (int findable = 0; findable < 2; findable++) {
+        static mf_pred wp[1], wr[1];
+        static mf_walt wa;
+        static mf_wspan ww;
+        memset(wr, 0, sizeof wr);
+        memset(&ww, 0, sizeof ww);
+        ww.len = 2;
+        ww.verify = MF_VERIFY_NO;
+        ww.core = MF_CORE_STATED;
+        ww.core_len = 2;
+        for (unsigned b = '0'; b <= '9'; b++) set_add(ww.set[0], b);
+        if (findable) set_add(ww.set[1], 'a');
+        else for (unsigned b = '0'; b <= '9'; b++) set_add(ww.set[1], b);
+        wa = (mf_walt){ MF_ENTRY_NONE, 1, &ww };
+        wr[0].nalt = 1;
+        wr[0].alts = &wa;
+        wr[0].wfloor = MF_WFLOOR_SUBJECT;
+        wr[0].need = MF_REQUIRED;
+        wr[0].plan_hint = MF_NO_PRED;
+        wr[0].span_class = MF_SPAN_PRESENCE;
+        memset(wp, 0, sizeof wp);
+        wp[0].fn_ref = 1;               /* the derived run part: its name only */
+        s = pre_site(wp, 1, -1);
+        s.body = MF_BODY_ONESHOT;
+        s.site_kind = MF_SK_VM_ATTEMPT;
+        s.pspans = wr;
+        s.npspan = 1;
+        s.pres_proof = (mf_pres_proof){ .byte = -1, .stated = 1 };
+        bad |= render(dir, findable ? "pre-wide-findable" : "pre-wide-every-pos", &s, "rx_reqrun");
+    }
 
     /* runcmp (M1b): the four rows and the deny, one fixture each */
     static const uint8_t ci4[] = { 0xDF, 0xFF, 0xDF, 0x00 };      /* cube, exact, cube, don't-care */
