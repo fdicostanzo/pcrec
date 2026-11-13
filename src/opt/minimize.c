@@ -157,17 +157,28 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
             for (int k = 0; k < siglen; k++)
                 h = fnv1a_32_mix(h, (uint32_t)sig[k]);
             size_t hi = h & (hcap - 1);
+            /* The key copy and compare are plain int loops, not libc
+             * memcpy/memcmp, and that is a measured cost decision (lane
+             * rps3c, 2026-11-13): a signature is a handful of ints, and
+             * glibc's AVX-512 memcmp reads it with a masked 32-byte load
+             * whose cost here depended on where malloc happened to place
+             * `keys` — `(a|b){1,30000}` ran the SAME 220e9 instructions in
+             * 12 s or 31-41 s (92M dTLB misses against 1M) depending only on
+             * an unrelated earlier allocation, which pushed it past
+             * tests/resource's CPU budget. */
             for (;;) {
                 int rep = htab[hi];
                 if (rep < 0) {
                     htab[hi] = i;
-                    memcpy(keys + (size_t)i * siglen, sig,
-                           (size_t)siglen * sizeof(int));
+                    int *key = keys + (size_t)i * siglen;
+                    for (int k = 0; k < siglen; k++) key[k] = sig[k];
                     newpart[i] = next++;
                     break;
                 }
-                if (memcmp(keys + (size_t)rep * siglen, sig,
-                           (size_t)siglen * sizeof(int)) == 0) {
+                const int *key = keys + (size_t)rep * siglen;
+                int k = 0;
+                while (k < siglen && key[k] == sig[k]) k++;
+                if (k == siglen) {
                     newpart[i] = newpart[rep];
                     break;
                 }
