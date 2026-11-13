@@ -131,7 +131,7 @@ run part's find is not at the run reply's scan position`. utf8: `[α-ω]foo`,
 
 ## OWED
 
-- QUEUED batch (owner `rps3b`, stages file `worktrees/rps3/build/STAGES.rps3b`,
+- QUEUED batch `b202611130737592123450`, jobs 200-208 (owner `rps3b`, stages file `worktrees/rps3/build/STAGES.rps3b`,
   each stage waits for the one before it to go green; verdicts by
   `scripts/monread rps3b`): `make strict`; `make test-codegen test-registry
   test-rxtsource test-memfn-deleg test-startset test-compound`, verdict by
