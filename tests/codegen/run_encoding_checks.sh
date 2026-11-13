@@ -684,7 +684,9 @@ REQBYTE_STAMP_RE = re.compile(r'^(#define RX_REQ_BYTE ")\d+(")$')
 # reads a run position (match_api.md §6.3.7¶7's table), and the pre-check's row follows REQ_WHY, which (iii)
 # below already lets differ by encoding and holds to its stamp: `fra(n|m)k|frost` is byte "emitted" (`@0`)
 # and utf8 "dominated" (no `@`). The hex and the mask are still compared.
-REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+)(?:@\d+)?((?:/[0-9a-f]+)?")$')
+# [RUN-POS-SET] stage 3: a position may be a bracketed hex class (`[30-39]`,
+# tuning.md §2.28¶7); the run body is still compared, only the `@K` is normalized.
+REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "(?:[0-9a-f]{2}|\[[0-9a-f-]+\])+)(?:@\d+)?((?:/[0-9a-f]+)?")$')
 REQBYTE_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_BYTE "([^"]*)"$', re.M)
 REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ (?:pos(?: \+ \d+)?|h[ab]), (\d+),')
 REQRUN_FN_BODY_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?(?:__body)?\(.*?^}$', re.M | re.S)
@@ -763,6 +765,17 @@ def prior_form(tb, tu, moved):
     # mass), so `handoff` on one side and a start-byte form on the other is
     # the same declared, prior-keyed selection, in either orientation.
     if (pb == 'handoff') != (pu == 'handoff') and START_BYTE_RE.match(pu if pb == 'handoff' else pb):
+        return True
+    # [RUN-POS-SET] stage 3 (abi 106): a set position extends the run past
+    # the offset set (`(?:foo|fob|fox)` -> `666f[626f78]`), so BOTH sides
+    # take the run-pinned row pair and the same prior moves only the PINNED
+    # member, which `_DFA_PREFILTER_OFFSETS`' `*` (and REQ_RUN's `@`)
+    # declares: byte argmin `0*,1` (`f`), utf8 NONE rightmost exact `0,1*`
+    # (`o`). Admitted only when the form itself is the same run-pinned row
+    # and nothing but the offsets' pin moved.
+    if (RUNPIN_RE.match(pb) and pb == pu and moved == ['DFA_PREFILTER_OFFSETS']
+            and (a.get('DFA_PREFILTER_OFFSETS') or '').replace('*', '')
+                == (b.get('DFA_PREFILTER_OFFSETS') or '').replace('*', '')):
         return True
     return bool((PF_BYTE_RE.match(pb) and PF_UTF8_RE.match(pu)) or
                 (PF_UTF8_RE.match(pb) and RUNPIN_RE.match(pu)))
@@ -1757,7 +1770,33 @@ def main():
                            for b in REQRUN_MEMCHR_VAL_RE.findall(body)]
                 scanned += REQCHK_MEMCHR_VAL_RE.findall(text)
                 pair = None
-                if m and '@' in rstamp:
+                setwide = False
+                if m and '@' in rstamp and '[' in rstamp:
+                    # [RUN-POS-SET] stage 3 set form (tuning.md §2.28¶7): the
+                    # scanned position is a member SET; a one-byte position is
+                    # REQ_BYTE's member as before, a two-member cube takes the
+                    # pair arm, a wider set holds every scanned byte to it
+                    hx, k = rstamp.split('@')
+                    k = int(k)
+                    poss = []
+                    for tok in re.findall(r'\[[^\]]*\]|[0-9a-f]{2}', hx):
+                        mem = set()
+                        for lo, hi in re.findall(r'([0-9a-f]{2})(?:-([0-9a-f]{2}))?', tok):
+                            mem |= set(range(int(lo, 16), int(hi or lo, 16) + 1))
+                        poss.append(mem)
+                    pset = poss[k] if k < len(poss) else set()
+                    if len(pset) == 2 and bin(min(pset) ^ max(pset)).count('1') == 1:
+                        pair = {str(b) for b in pset}
+                    elif len(pset) == 1:
+                        if rbyte != str(min(pset)):
+                            bad_sel.append("%s REQ_BYTE \"%s\" is not REQ_RUN \"%s\"'s member"
+                                           % (side, rbyte, m.group(1)))
+                    else:
+                        setwide = True
+                    if setwide and (not pset or any(int(b) not in pset for b in scanned)):
+                        bad_sel.append("%s pre-check scans %s outside REQ_RUN \"%s\"'s position %d"
+                                       % (side, ",".join(scanned), m.group(1), k))
+                elif m and '@' in rstamp:
                     hx, k = rstamp.split('@')
                     k = int(k)
                     member = int(hx[2 * k:2 * k + 2], 16) if 2 * k + 2 <= len(hx) else -1
@@ -1778,7 +1817,7 @@ def main():
                         bad_sel.append("%s pair arm scans %s, not REQ_RUN \"%s\"'s cube {%s}"
                                        % (side, ",".join(scanned), m.group(1),
                                           ",".join(sorted(pair))))
-                elif any(b != rbyte for b in scanned):
+                elif not setwide and any(b != rbyte for b in scanned):
                     bad_sel.append("%s pre-check scans %s but REQ_BYTE is \"%s\""
                                    % (side, ",".join(scanned), rbyte))
             why = {}
