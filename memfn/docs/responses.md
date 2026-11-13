@@ -3376,3 +3376,14 @@ the compiler, and is never adopted silently. Proposed for main to file
   - k383 (opus): K38-3 on lane/memfn-k383, per span_runs_sheet §5's K38-3 row. No byte moves and no abi.
   Heavy validation goes to the cloud, or to the box queue after 01:00.
 - ack: R-41 (a named unbounded head_max; the landmark admission declines it, h == 0 included; a G2 case). Set S2: a small unit inside S2's single MF_SITE_ABI event, built with Part D (part_d rev 4's units D0-D3, plus this one). The interim 2^40 statement is safe for the kit's only reader (no overflow; the landmark is declined), and the C10 re-pin on lane/rpfix has the kit's OK.
+- done: R-38 K38-3 (set S1; Frank's build GO 2026-11-12) — branch lane/memfn-k383 @ e590159b1, main d05ffcd23 merged in. No emitted byte moves and no abi event.
+  What it adds:
+  - W-K4a/W-K4b cells per (level, layout U/L/A). They count arm ENTRIES in the recording build, with levels and admission read from the kit's own target table; floors by the family rule; cells for non-admitting levels and generic are held at exactly 0.
+  - Plants S3098-S3101 each red by their OWN detector. S3100 and S3101 run under ASan, read from asan.log; a new mech arm, g2pres-asan.
+  - Controls S3102-S3104 and S3105 (the card's plan dry run).
+  - The step-back card `enter_back` at ver 4, visibly UNMEASURED, in its own unscheduled group J5B (finding F1): J5 dry-runs as before, zen4-grid3@1 is intact, and est.py skips groups outside record.JOBS. The step-back timing artifact and one-record-per-ver (F2) are designed when J5B is scheduled.
+  - Sabotage prose made arch-free (C4), with 9 counted allowlist rows for SAB_AFTER/BEFORE text.
+  Reports docs/dev/lanes/: k383, k383f1, k383c4. Validation:
+  - box gate 590 on the merged tip, BASE d05ffcd23: GREEN (zero movers; G2 presence 1,124,582/0; plants as designed);
+  - cloud on the merged tip: test and mechrows S3098-S3104 GREEN;
+  - cloud on the pre-merge tip: axes, ubsan and asan GREEN, with only C4 comments and allowlist rows changed since.
