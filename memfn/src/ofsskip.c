@@ -105,11 +105,15 @@ static int scan_only(const mf_pred *p, unsigned i)
 /* The function bounds its reads by `pos` and `n` only, so it serves no
  * stated `floor` (§14.7): the row contracts of its two customers say so
  * (ofsskip's, precheck's), and the gate declines such a site before this
- * predicate is asked (N3). pcrec states none at OFS/PRE. */
-int ofs_fn_applies(const mf_pred *p, const mf_hooks *def)
+ * predicate is asked (N3). pcrec states none at OFS/PRE. `derived` (kit.h):
+ * the derived run part's SCOPED admissions, a tableless multi-member SET
+ * term (the kit's own set test) and no scan (fn-every-pos), part_d.md §2.1;
+ * every other caller passes 0 and keeps the refusals. */
+int ofs_fn_applies(const mf_pred *p, const mf_hooks *def, int derived)
 {
+    int scanless = derived && p->plan_hint == MF_NO_PRED;
     if (!def || p->nterm == 0 || p->nterm > MF_MAX_TERM ||
-        p->plan_hint >= p->nterm)
+        (p->plan_hint >= p->nterm && !scanless))
         return 0;
     int runs = 0, checked = 0;
     for (unsigned i = 0; i < p->nterm; i++) {
@@ -120,10 +124,13 @@ int ofs_fn_applies(const mf_pred *p, const mf_hooks *def)
             runs++;
         } else {
             int c = set_count(t->set);
-            if (c == 0 || (c > 1 && (!t->table_ref || !def->table_name))) return 0;
+            if (c == 0 || (c > 1 && !(derived && !t->table_ref) &&
+                           (!t->table_ref || !def->table_name)))
+                return 0;
         }
         if (!scan_only(p, i)) checked++;
     }
+    if (scanless) return runs <= 1 && checked > 0;
     const mf_term *sc = &p->term[p->plan_hint];
     if (sc->kind == MF_T_SET && set_count(sc->set) != 1) return 0;
     if (sc->kind == MF_T_RUN) {
@@ -140,6 +147,10 @@ int ofs_fn_applies(const mf_pred *p, const mf_hooks *def)
 
 void ofs_fn_scan(const mf_pred *p, int *k, int *a, int *b)
 {
+    if (p->plan_hint == MF_NO_PRED) {   /* no scan: fn-every-pos's fact */
+        *k = *a = *b = -1;
+        return;
+    }
     const mf_term *sc = &p->term[p->plan_hint];
     if (sc->kind == MF_T_SET) {
         *k = sc->offset;
@@ -164,13 +175,16 @@ static const char *table_of(mf_art *art, const mf_hooks *h, const mf_term *t)
 }
 
 /* The tables the function takes, in the verify chain's order: `, const
- * unsigned char *<table>` in the definition, `, <table>` in a call. */
+ * unsigned char *<table>` in the definition, `, <table>` in a call. A
+ * tableless multi-member SET term (`table_ref` 0, the derived run part's)
+ * takes none: it is the kit's own set test. */
 static int table_params(mf_art *art, const mf_hooks *h, const mf_pred *p,
                         int decl, mf_sink *o)
 {
     for (unsigned i = 0; i < p->nterm; i++) {
         const mf_term *t = &p->term[i];
-        if (scan_only(p, i) || t->kind != MF_T_SET || set_count(t->set) <= 1)
+        if (scan_only(p, i) || t->kind != MF_T_SET || set_count(t->set) <= 1 ||
+            !t->table_ref)
             continue;
         const char *tbl = table_of(art, h, t);
         if (!tbl) return -1;
@@ -182,8 +196,10 @@ static int table_params(mf_art *art, const mf_hooks *h, const mf_pred *p,
 /* The `if (...)` a candidate must pass: every term but the scanned SET, in
  * the predicate's order (pcrec sends them ascending by offset, so a reader
  * of the artifact sees the pattern's own order). A singleton set is a byte
- * compare, a wider one a probe of pcrec's table, a run the kit's run compare
- * (runcmp.c) at the term's offset from the candidate. */
+ * compare, a wider one a probe of pcrec's table (or, with no table, the
+ * kit's own exact membership test, kit_set_test: the derived run part's
+ * wide positions, part_d.md §3.3), a run the kit's run compare (runcmp.c)
+ * at the term's offset from the candidate. */
 static int verify_chain(mf_art *art, const mf_hooks *h, const fn_in *x,
                         mf_sink *o)
 {
@@ -200,6 +216,16 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const fn_in *x,
         } else if (set_count(t->set) == 1) {
             if (t->offset == 0) kit_out(o, "subject[cand] == %d", set_first(t->set));
             else kit_out(o, "subject[cand + %d] == %d", t->offset, set_first(t->set));
+        } else if (!t->table_ref) {
+            kb byte, test;
+            kb_init(&byte, art->a);
+            kb_init(&test, art->a);
+            if (t->offset == 0) kb_puts(&byte, "subject[cand]");
+            else kb_printf(&byte, "subject[cand + %d]", t->offset);
+            if (byte.oom || !byte.p) return kit_fail(art, "ofsskip: out of memory");
+            kit_set_test(&test, t->set, byte.p);
+            if (test.oom || !test.p) return kit_fail(art, "ofsskip: out of memory");
+            o->puts(o->u, test.p);
         } else {
             const char *tbl = table_of(art, h, t);
             if (!tbl) return -1;
@@ -216,10 +242,14 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const fn_in *x,
  * ONE first-match table, `fn_rows[]`, walked by the kit's shared walk
  * (kit_walk) over the calling site, its define hooks and the predicate. Each
  * row has a SLOT, the question it answers:
- *   BODY    which scalar loop is the function's body: `fn-pair` (the scanned
- *           position is a two-member cube: the PAIR leapfrog) above
- *           `fn-memchr` (otherwise: one `memchr` stream), the slot's floor,
- *           reached only where `fn-pair` did not hold;
+ *   BODY    which scalar loop is the function's body, by three DISJOINT
+ *           facts of the scan (ofs_fn_scan), so the rows' order moves no
+ *           pick (part_d.md §2.1 [r2pd P2, P9]): `fn-every-pos` (no scan is
+ *           stated: every candidate position runs the verify chain, the
+ *           derived run part's scan-less REQUIRED run), `fn-pair` (the
+ *           scanned position is a two-member cube: the PAIR leapfrog) and
+ *           `fn-memchr` (the scanned position is one byte: one `memchr`
+ *           stream). A BODY no row holds is the walk's error;
  *   PREFIX  which per-level helper DEFINITIONS sit at file scope
  *           beside the body (D155). BORN EMPTY: an empty slot renders zero
  *           bytes, and SIMD rows arrive as its rows (batch 1).
@@ -308,11 +338,21 @@ void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k)
     if (k) kb_printf(o, "%s%s -= %d;%s", I, t->cand, k, L);
 }
 
+/* The `memchr` a scanning body writes: its header bit and its libc note (a
+ * BODY row's own, so a body that writes none notes none, part_d.md §2.1
+ * [r2pd P2]); an error from here on is sticky. */
+static int note_memchr(mf_art *art)
+{
+    art->includes |= MF_INC_STRING_H;
+    return mf_art_note_libc(art, "memchr");
+}
+
 /* fn-pair's body: the PAIR leapfrog (ofs_pair_text) over members `a` and
  * `b` of the cube at offset `k`, inside the function's guarded loop. */
 static int pair_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
 {
     int maxk = x->maxk, k = x->k, a = x->a, b = x->b;
+    if (note_memchr(art)) return -1;
     kb at, decl, lf;
     kb_init(&at, art->a);
     kb_init(&decl, art->a);
@@ -347,6 +387,7 @@ static int pair_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
 static int memchr_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
 {
     int maxk = x->maxk, k = x->k, a = x->a;
+    if (note_memchr(art)) return -1;
     kit_out(o, "    while (pos + %d < n) {\n", maxk);
     o->puts(o->u,   "        size_t cand;\n");
     /* THE memchr FORM. `pos + maxk < n` above implies `pos + k < n`, so the
@@ -372,22 +413,45 @@ static int memchr_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *
     return 0;
 }
 
-/* The scanned position is a two-member cube (today's `b >= 0`). */
+/* fn-every-pos's body (R-38 Part D, part_d.md §2.1 [r2pd P9]; D174's
+ * name: "verify every candidate position", never `walk`, which is a find
+ * over a TABLE): NO find; every candidate position in [pos, n - maxk) runs
+ * the verify chain, every term checked. The derived run part's scan-less
+ * REQUIRED run (P0's, K66's linear no-match proof); the only renderable
+ * body for it, so no deny (D158). Its card is its own, UNMEASURED
+ * (formhash.c `every-pos`). Writes no `memchr`, so notes none. */
+static int every_pos_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
+{
+    kit_out(o, "    for (; pos + %d < n; pos++) {\n", x->maxk);
+    o->puts(o->u,   "        size_t cand = pos;\n"
+                    "        if (");
+    if (verify_chain(art, h, x, o)) return -1;
+    o->puts(o->u,   ") return cand;\n"
+                    "    }\n"
+                    "    return n;\n}\n\n");
+    return 0;
+}
+
+/* No scan is stated (ofs_fn_scan's -1s): the derived run part's scan-less
+ * predicate, which no other BODY row holds. */
+static int every_pos_holds(const fn_in *x)
+{
+    return x->a < 0;
+}
+
+/* A scan is stated and its position is a two-member cube. */
 static int pair_holds(const fn_in *x)
 {
-    return x->b >= 0;
+    return x->a >= 0 && x->b >= 0;
 }
 
-/* The slot's floor: every predicate ofs_fn_applies admits scans one byte
- * where fn-pair did not hold (ofs_fn_scan), and first-match order puts this
- * row below it. */
+/* A scan is stated and its position is one byte. */
 static int memchr_holds(const fn_in *x)
 {
-    (void)x;
-    return 1;
+    return x->a >= 0 && x->b < 0;
 }
 
-static const gate_contract fn_pair_ct, fn_memchr_ct;
+static const gate_contract fn_every_pos_ct, fn_pair_ct, fn_memchr_ct;
 
 /* A PREFIX row's predicate, walk tests 3-5 of §R4.9.2.3 over its
  * declaration (tests 1-2, the deny and the gate, are kit_walk's): REACH,
@@ -411,6 +475,7 @@ static int prefix_holds(const mf_formdecl *d, const fn_in *x)
 }
 
 static const fn_row fn_rows[] = {
+    { FN_BODY, every_pos_holds, every_pos_body, &fn_every_pos_ct, NULL },
     { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL },
     { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL },
     /* FN_PREFIX (R4e' batch 1, §R4.9.2.4): the SIMD rows, first match, the
@@ -478,7 +543,7 @@ int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
                   const mf_pred *p, int *two)
 {
     *two = 0;
-    if (!ofs_fn_applies(p, h)) return 0;
+    if (!ofs_fn_applies(p, h, 0)) return 0;
     fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0 };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     gate_in in = { .s = site, .h = h, .art = art };
@@ -629,9 +694,7 @@ static int fn_define(mf_art *art, uint32_t handle, const mf_site *site, const mf
 {
     fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, o->simd_open && o->simd_close };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
-    art->includes |= MF_INC_STRING_H;   /* memchr */
-    /* both bodies write `memchr(`; an error from here on is sticky */
-    if (mf_art_note_libc(art, "memchr")) return -1;
+    /* the libc note and include are the chosen BODY row's own (note_memchr) */
 
     kb body_fn;
     kb_init(&body_fn, art->a);
@@ -744,13 +807,19 @@ static void legend(const mf_hooks *h, const mf_pred *p, mf_sink *o)
         if (inrun) o->puts(o->u, "   (the run, one compare)");
         o->puts(o->u, "\n");
     }
-    o->puts(o->u,
-        " *\n"
+    o->puts(o->u, k < 0
+        ? " *\n"
+          " * No offset is scanned: every position from `pos` is tested, each\n"
+          " * offset above checked on each candidate before the loop is entered.\n"
+          " * Returns the first position >= `pos` that satisfies every test, or\n"
+          " * `n` when there is none.\n"
+        : " *\n"
         " * The scan is one pass for the offset marked above; the others are\n"
         " * checked on each candidate before the loop is entered, and a failed\n"
         " * candidate resumes the scan one position later, so no position is\n"
         " * examined twice and none is skipped. Returns the first position >=\n"
-        " * `pos` that satisfies every test, or `n` when there is none.\n"
+        " * `pos` that satisfies every test, or `n` when there is none.\n");
+    o->puts(o->u,
         " *\n"
         " * SPEED ONLY: it refuses exactly the starts the stepped scan would\n"
         " * refuse, so no answer depends on it. Compile with -fno-offset-skip\n");
@@ -768,7 +837,7 @@ static int ofsskip_applies(const mf_site *s, const mf_hooks *def)
     return s->form == MF_FORM_FUNC && s->op == MF_OP_FIND &&
            s->handoff == MF_H_RETURN && s->empty == MF_EMPTY_MISS &&
            s->end_back == 0 && !s->reverse && !s->guard_by_caller &&
-           ofs_fn_applies(&s->pred, def);
+           ofs_fn_applies(&s->pred, def, 0);
 }
 
 /* The word-load helpers the predicate's run compare needs (runcmp.c), pcrec's
@@ -957,6 +1026,11 @@ const arm ofsskip_arm = {
     MF_SERVES_WINDOW_TODAY \
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */ \
     [FLD_target]          = MF_ANY,                   /* scalar: right at every target (unit U2) */
+
+static const gate_contract fn_every_pos_ct = {
+    "fn", "fn-every-pos", NULL, 0, {
+    FN_BODY_SERVES
+}};
 
 static const gate_contract fn_pair_ct = {
     "fn", "fn-pair", NULL, 0, {

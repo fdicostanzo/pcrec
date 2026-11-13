@@ -243,6 +243,23 @@ static int shape(const uint8_t s[32], int *a, int *b)
     return 0;
 }
 
+/* THE ONE SPELLING ACCESSOR (kit.h): the position's class by shape(). */
+kit_pos_class kit_pos_class_of(const uint8_t set[32])
+{
+    int a, b;
+    switch (shape(set, &a, &b)) {
+    case 1:  return KIT_POS_ONE;
+    case 2:  return KIT_POS_CUBE;
+    default: return KIT_POS_WIDE;
+    }
+}
+
+/* 1 iff the position has a (T, K) spelling: one member or a cube (kit.h). */
+int kit_pos_spelled(const uint8_t set[32])
+{
+    return kit_pos_class_of(set) != KIT_POS_WIDE;
+}
+
 /* The two members of a two-byte set, ascending (any two: PAIR's stop). */
 static void two(const uint8_t s[32], int m[2])
 {
@@ -267,16 +284,26 @@ static int span_in_core(const mf_wspan *sp, unsigned j)
     return j >= sp->core_lo && j < (unsigned)sp->core_lo + sp->core_len;
 }
 
-/* 1 iff span `sp` has the run R's SHAPE: two or more positions, each one
- * member or a cube. R is identified by this shape alone (the facts carry no
- * R label), so an alternative states at most one such span (wf_check; the
- * kit manager's F-8 ruling: alternatives and spans are unordered, D172). */
-static int run_shaped(const mf_wspan *sp)
+/* 1 iff span `sp` IS THE RUN R, by its ROLE (MF_SITE_ABI 28; part_d.md
+ * §2.2, the joint F11 ruling): a verify-NO span of two or more positions,
+ * whatever its sets. pcrec decides how far R reaches; the kit never infers
+ * R from shape. At most one per alternative (wf_check). F-8's "R is
+ * identified by its shape alone" is retired for R. */
+static int run_role(const mf_wspan *sp)
 {
-    int a, b;
-    if (sp->len < 2) return 0;
+    return sp->verify == MF_VERIFY_NO && sp->len >= 2;
+}
+
+/* 1 iff span `sp` is THE VERIFY-YES PINNED SPAN's kind: verify YES, two or
+ * more positions, each with a (T, K) spelling (kit_pos_spelled). Its
+ * positions are verified anyway; that they are ONE compare with the stop
+ * inside is the kit's spelling choice (part_d.md §2.2), today's rule kept
+ * for verify-YES spans only. At most one per alternative (wf_check). */
+static int pinned_yes(const mf_wspan *sp)
+{
+    if (sp->verify != MF_VERIFY_YES || sp->len < 2) return 0;
     for (unsigned j = 0; j < sp->len; j++)
-        if (!shape(sp->set[j], &a, &b)) return 0;
+        if (!kit_pos_spelled(sp->set[j])) return 0;
     return 1;
 }
 
@@ -306,8 +333,12 @@ static void merge(const mf_walt *alt, wf_alt *m)
             if (sp->len == 1) p->one_pos = 1;
             else p->multi = 1;
         }
-        if (run_shaped(sp)) m->run = (int)i;
     }
+    /* the member span: R first (by role), else the verify-YES pinned span */
+    for (unsigned i = 0; i < alt->nspan && m->run < 0; i++)
+        if (run_role(&alt->spans[i])) m->run = (int)i;
+    for (unsigned i = 0; i < alt->nspan && m->run < 0; i++)
+        if (pinned_yes(&alt->spans[i])) m->run = (int)i;
 }
 
 /* ---- THE CANDIDATE LIST (span_pick.md §The shape step 2; unit 1d) ---------
@@ -442,7 +473,7 @@ const char *wf_check(const mf_site *s, int frame)
         reseed += al->entry == MF_ENTRY_RESEED;
         if (!al->nspan || !al->spans) return "an alternative states no span (`nspan`, `spans`)";
         if (al->nspan > MF_WMAX_SPAN) return "`nspan` > MF_WMAX_SPAN";
-        unsigned nrun = 0;
+        unsigned nrun = 0, nyes = 0;
         for (unsigned i = 0; i < al->nspan; i++) {
             const mf_wspan *sp = &al->spans[i];
             if (!sp->len || sp->len > MF_WSPAN_POS) return "a span's `len` is not 1..MF_WSPAN_POS";
@@ -460,11 +491,15 @@ const char *wf_check(const mf_site *s, int frame)
             if (!sp->core_len && sp->core_lo)
                 return "an empty core states `core_lo` 0 (one spelling of no core)";
             if (sp->start < 0) below = 1;
-            nrun += (unsigned)run_shaped(sp);
+            nrun += (unsigned)run_role(sp);
+            nyes += (unsigned)pinned_yes(sp);
         }
         if (nrun > 1)
-            return "an alternative states two spans of the run R's shape (two or more positions, "
-                   "each one member or a cube): R is identified by its shape, so it is unique";
+            return "an alternative states two verify-NO spans of two or more positions: R is "
+                   "identified by its role, so it is unique";
+        if (nyes > 1)
+            return "an alternative states two verify-YES spans of two or more positions, each "
+                   "position one member or a cube: the span the kit compares whole is unique";
     }
     if (below && s->wfloor == MF_WFLOOR_UNSTATED)
         return "a span reaches below the candidate and `wfloor` is UNSTATED (SUBJECT or EXPR "
@@ -661,7 +696,7 @@ static void a_mass_choose(wf_x *x)
         const wf_pos *p0 = &m->p[r->start - WF_LO];
         kit_run_reply rr = KIT_RUN_NONE;
         for (unsigned k = 0; k < r->len && rs == INT32_MIN; k++) {
-            rr = kit_run_decide(x->d->rate, kit_run_opts_of(x->d->art, KIT_RUN_WHOLE), meet_at,
+            rr = kit_run_decide(x->d->rate, kit_run_opts_of(x->d->art, x->d->s, KIT_RUN_WHOLE), meet_at,
                                 p0, r->len, k ? &rr : NULL);
             if (!rr.has_scan) break;
             if (p0[rr.scan].stop_ok && p0[rr.scan].stretch) rs = r->start + rr.scan;
@@ -883,13 +918,13 @@ static const wf_alt *chosen(const wf_dec *d) { return &d->a[d->ch]; }
  * run, a translation of a_mass_choose's offsets; the answers agree because
  * the row is such an order. */
 kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src, unsigned n,
-                          int exact, const kit_member *after, int tie)
+                          kit_cand cand, const kit_member *after, int tie)
 {
     kit_pick b = KIT_PICK_NONE;
     for (unsigned j = 0; j < n; j++) {
         uint8_t buf[32];
         const uint8_t *set = at(src, j, buf);
-        if (exact && count(set) != 1) continue;
+        if (cand == KIT_CAND_EXACT ? count(set) != 1 : !kit_pos_spelled(set)) continue;
         kit_pick c = { (int)j, (int32_t)j, kit_mass(rate, set, 1, KIT_MASS_SUM) };
         if (after && !kit_pick_takes(&c, after->mass, tie, after->pos))
             continue;                   /* ranked at or before `after` */
@@ -934,8 +969,8 @@ static void run_member(wf_dec *d)
        (the lever leaves this site's decision behind, §2.5); verify YES: the
        whole run, the art's tie */
     kit_run_opts o = r->verify == MF_VERIFY_NO
-                   ? (kit_run_opts){ KIT_RUN_EXACT_AROUND, T_MASS_STRETCH }
-                   : kit_run_opts_of(d->art, KIT_RUN_WHOLE);
+                   ? (kit_run_opts){ KIT_RUN_EXACT_AROUND, T_MASS_STRETCH, 0 }
+                   : kit_run_opts_of(d->art, d->s, KIT_RUN_WHOLE);
     kit_run_reply rr = kit_run_decide(d->rate, o, sets_at, r->set, r->len, NULL);
     if (!rr.has_scan) {                 /* no (exact) position: no member */
         d->run_stated = 0;
@@ -1455,14 +1490,23 @@ static int legacy_ok(const wf_dec *d, const struct wf_plan *w, unsigned *eb)
     return 1;
 }
 
-/* The bytes and mask of the RUN term over plan positions [from, to). */
-static void run_bytes(const struct wf_plan *w, unsigned from, unsigned to,
-                      uint8_t *run, uint8_t *mask, int *exact)
+/* The bytes and mask (T, K) of the RUN term over positions [from, to) of
+ * `src`, read through `at`. Its two callers (translate, run_part_terms)
+ * hand it only positions with a (T, K) spelling; one without (kit.h
+ * kit_pos_spelled) is REFUSED, so (T, K) stays a complete spelling of every
+ * RUN term (part_d.md §2.1 item 5, §2.3). 0, or -1 after kit_fail. */
+static int run_bytes(const mf_art *art, kit_pos_at *at, const void *src, unsigned from,
+                     unsigned to, uint8_t *run, uint8_t *mask, int *exact)
 {
     *exact = 1;
     for (unsigned i = from; i < to; i++) {
+        uint8_t buf[32];
+        const uint8_t *set = at(src, i, buf);
         int a, b;
-        if (shape(w->set[i], &a, &b) == 2) {
+        if (!kit_pos_spelled(set))
+            return kit_fail((mf_art *)art, "window family: a RUN term's position %u has no "
+                            "(T, K) spelling (one member or a two-member cube)", i);
+        if (shape(set, &a, &b) == 2) {
             run[i - from] = (uint8_t)a;
             mask[i - from] = (uint8_t)~(a ^ b);
             *exact = 0;
@@ -1471,6 +1515,33 @@ static void run_bytes(const struct wf_plan *w, unsigned from, unsigned to,
             mask[i - from] = 0xFF;
         }
     }
+    return 0;
+}
+
+/* THE RUN TERM's RANKING (RQ-2): the run decision's order over the term's
+ * `n` positions (consecutive 32-byte sets at `sets`), each answer asked again
+ * from the last: least mass first, ties per the art's run options, as
+ * pcrec_find_run_rank. ONE function, its two callers translate and
+ * run_part_terms (part_d.md §2.1 item 3), so S3006's target is one place.
+ * Fills rank_pos/rank_ppm/rank_n of `p`; 0, or -1 after kit_fail (the tie
+ * row is no strict order). */
+static int run_rank(const mf_art *art, const mf_site *s, const uint32_t *rate,
+                    const uint8_t *sets, unsigned n, mf_pred *p)
+{
+    kit_run_reply r = KIT_RUN_NONE;
+    for (unsigned k = 0; k < n; k++) {
+        r = kit_run_decide(rate, kit_run_opts_of(art, s, KIT_RUN_WHOLE), sets_at, sets, n,
+                           k ? &r : NULL);
+        if (!r.has_scan) {          /* the tie row is no strict order (see kit_run_member; kit_run_decide asks it) */
+            p->rank_n = (uint8_t)k;
+            return kit_fail((mf_art *)art, "window family: the run ranking lost position %u of "
+                            "%u (the run decision's tie row must be a strict order)", k, n);
+        }
+        p->rank_pos[k] = (uint16_t)r.scan;
+        p->rank_ppm[k] = kit_mass(rate, sets + 32u * r.scan, 1, KIT_MASS_SUM);
+    }
+    p->rank_n = (uint8_t)n;
+    return 0;
 }
 
 static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_legacy *L)
@@ -1530,7 +1601,9 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
             int exact;
             tm->kind = MF_T_RUN;
             tm->run_len = j - i;
-            run_bytes(w, i, j, L->run[p->nterm], L->mask[p->nterm], &exact);
+            if (run_bytes(d->art, sets_at, w->set, i, j, L->run[p->nterm], L->mask[p->nterm],
+                          &exact))
+                return;
             tm->run = L->run[p->nterm];
             tm->mask = exact ? NULL : L->mask[p->nterm];
         } else {
@@ -1558,20 +1631,8 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
        spans, the ranking the plan's sets). */
     if (p->plan_hint != MF_NO_PRED && p->term[p->plan_hint].kind == MF_T_RUN) {
         unsigned n = p->term[p->plan_hint].run_len;
-        kit_run_reply r = KIT_RUN_NONE;
-        for (unsigned k = 0; k < n; k++) {
-            r = kit_run_decide(d->rate, kit_run_opts_of(d->art, KIT_RUN_WHOLE), sets_at,
-                               w->set[hint_at], n, k ? &r : NULL);
-            if (!r.has_scan) {          /* the tie row is no strict order (see kit_run_member; kit_run_decide asks it) */
-                kit_fail((mf_art *)d->art, "window family: the run ranking lost position %u of %u "
-                         "(the run decision's tie row must be a strict order)", k, n);
-                n = k;
-                break;
-            }
-            p->rank_pos[k] = (uint16_t)r.scan;
-            p->rank_ppm[k] = kit_mass(d->rate, w->set[hint_at + r.scan], 1, KIT_MASS_SUM);
-        }
-        p->rank_n = (uint8_t)n;
+        run_rank(d->art, d->s, d->rate, w->set[hint_at], n, p);
+        n = p->rank_n;
         if (n && d->pinned && p->rank_pos[0] != d->member - w->off[hint_at])
             kit_fail((mf_art *)d->art, "window family: the run ranking's first position %u is not the "
                      "run member (offset %d, term at %d)", (unsigned)p->rank_pos[0],
@@ -1738,7 +1799,9 @@ static void find_groups(const wf_dec *d, struct wf_plan *w)
 }
 
 /* C-run's RUN terms (w->runs, runcmp.c's input), one per group find_groups
- * formed, in the art's arena: the define's alone. 0, or -1 out of memory. */
+ * formed, in the art's arena: the define's alone. 0, or -1 out of memory
+ * (or, after kit_fail, a grouped position with no (T, K) spelling, which
+ * C-run's grouping never forms). */
 static int build_runs(const mf_art *art, struct wf_plan *w)
 {
     w->runs = art->a->alloc(art->a->u, sizeof *w->runs);
@@ -1754,7 +1817,7 @@ static int build_runs(const mf_art *art, struct wf_plan *w)
         uint8_t *mask = art->a->alloc(art->a->u, j - i);
         if (!run || !mask) return -1;
         int exact;
-        run_bytes(w, i, j, run, mask, &exact);
+        if (run_bytes(art, sets_at, w->set, i, j, run, mask, &exact)) return -1;
         t->kind = MF_T_RUN;
         t->offset = w->off[i];
         t->need = MF_REQUIRED;
@@ -2530,46 +2593,116 @@ const char *wf_parts_check(const mf_site *s)
     return NULL;
 }
 
-/* THE DERIVED RUN PART's statement (MF_SITE_ABI 27; span_runs_sheet.md
- * §2.1-§2.3): part `p` (a copy, in the art's arena) of site `s` gains the
- * window statement of the run's VERIFIED EXTENT, from the run's reply
- * (`*rr`, fd_pres_run): one alternative with no entry fact, one span
- * starting `ver_lo` positions past the candidate (the candidate is the
- * occurrence's position 0), each position the run span's set, core all,
- * verify YES (the part returns only where the extent holds); the floor
- * SUBJECT. The family then decides and translates it as any part. Refused
+/* THE DERIVED RUN PART's TERMS, a DIRECT TRANSLATION of the run's reply
+ * (R-38 Part D; part_d.md rev 4 §2.1 [r1pd F26]): part `q` (a copy, in the
+ * art's arena) of site `s` gets its terms from the run span's sets and the
+ * reply `(has_scan, scan, ver_lo, ver_len)` (fd_pres_run), with no second
+ * decision. THE SCAN STRETCH [a, b) is the maximal stretch of positions
+ * inside the extent holding `scan`, each with a (T, K) spelling
+ * (kit_pos_spelled); it is ONE RUN term of `run_len` b - a (1 included),
+ * the scanned one (`plan_hint` its index, `plan_pos` scan - a, the ranking
+ * run_rank's over its positions, its first answer the scan: a loud check);
+ * every other extent position is its own SET term (its FULL set, `table_ref`
+ * 0: the kit's own set test, never a cover). Scan-less (`has_scan` 0, P0's
+ * REQUIRED run with no position the kit finds): every extent position is a
+ * SET term, `plan_hint` MF_NO_PRED, no ranking. Terms ascending by offset,
+ * each REQUIRED with the full ppm range, `need` REQUIRED, as translate
+ * writes them. Where every extent position is spelled (every run stated
+ * before Part D) the part is one RUN term at `ver_lo`: today's. Refused
  * where the run's link is not tested (the host lays a run part out only
- * where it is). */
-static int derive_run_part(const mf_art *art, const mf_site *s, mf_pred *p, mf_run_reply *rr,
-                           const char **why)
+ * where it is). In the trace build a define (`quiet` 0) prints ONE record
+ * per part, `MFTRACE run_part_terms` (§5.1 D3's), for the census. */
+static int run_part_terms(const mf_art *art, const mf_site *s, unsigned part, int quiet,
+                          mf_pred *q, const char **why)
 {
-    if (fd_pres_run(art, s, rr, why)) return -1;
-    if (!rr->has_scan || !rr->ver_len) {
+    mf_run_reply rr;
+    if (fd_pres_run(art, s, &rr, why)) return -1;
+    if (!rr.ver_len) {
         *why = "a derived run part where the run's presence link is not tested (or its "
                "reply verifies nothing)";
         return -1;
     }
     const mf_wspan *run = kit_pres_run_span(s, kit_pres_run(s));
-    mf_walt *a = art->a->alloc(art->a->u, sizeof *a);
-    mf_wspan *w = art->a->alloc(art->a->u, sizeof *w);
-    if (!a || !w) { *why = "out of memory"; return -1; }
-    memset(w, 0, sizeof *w);
-    w->start = rr->ver_lo;
-    w->len = rr->ver_len;
-    w->verify = MF_VERIFY_YES;
-    w->core = MF_CORE_STATED;
-    w->core_lo = 0;
-    w->core_len = rr->ver_len;
-    memcpy(w->set, run->set[rr->ver_lo], 32u * rr->ver_len);
-    *a = (mf_walt){ MF_ENTRY_NONE, 1, w };
-    p->nalt = 1;
-    p->alts = a;
-    p->wfloor = MF_WFLOOR_SUBJECT;
+    unsigned lo = rr.ver_lo, hi = (unsigned)rr.ver_lo + rr.ver_len, a = hi, b = hi;
+    if (rr.has_scan) {
+        if (rr.scan < lo || rr.scan >= hi) {
+            *why = "the run reply's scan lies outside its verified extent";
+            return -1;
+        }
+        a = rr.scan;
+        b = (unsigned)rr.scan + 1;
+        while (a > lo && kit_pos_spelled(run->set[a - 1])) a--;
+        while (b < hi && kit_pos_spelled(run->set[b])) b++;
+    }
+    q->nterm = 0;
+    memset(q->term, 0, sizeof q->term);
+    q->need = MF_REQUIRED;
+    q->plan_hint = MF_NO_PRED;
+    q->plan_pos = 0;
+    q->rank_n = 0;
+    for (unsigned j = lo; j < hi;) {
+        mf_term *t = &q->term[q->nterm];
+        t->offset = (int32_t)j;
+        t->need = MF_REQUIRED;
+        t->ppm_lo = 0;
+        t->ppm_hi = MF_PPM_FULL;
+        if (j == a) {                   /* the scan stretch: ONE RUN term */
+            uint8_t *rb = art->a->alloc(art->a->u, 2u * MF_WSPAN_POS);
+            int exact;
+            if (!rb) { *why = "out of memory"; return -1; }
+            t->kind = MF_T_RUN;
+            t->run_len = (uint8_t)(b - a);
+            if (run_bytes(art, kit_wspan_at, run, a, b, rb, rb + MF_WSPAN_POS, &exact)) {
+                *why = art->err;
+                return -1;
+            }
+            t->run = rb;
+            t->mask = exact ? NULL : rb + MF_WSPAN_POS;
+            q->plan_hint = q->nterm;
+            q->plan_pos = (uint16_t)(rr.scan - a);
+            if (run_rank(art, s, kit_byte_rate(art), run->set[a], b - a, q)) {
+                *why = art->err;
+                return -1;
+            }
+            if (q->rank_pos[0] != q->plan_pos) {
+                *why = "the derived run part's ranking does not lead with the run reply's scan";
+                return -1;
+            }
+            j = b;
+        } else {                        /* a position outside the stretch: its own SET */
+            t->kind = MF_T_SET;
+            memcpy(t->set, run->set[j], 32);
+            t->table_ref = 0;
+            j++;
+        }
+        q->nterm++;
+    }
+#ifdef MF_TRACE
+    if (!quiet) {
+        fprintf(stderr, "MFTRACE run_part_terms art=%u site=%u part=%u hint=", art->trace_id,
+                art->nsites + 1, part);
+        if (q->plan_hint == MF_NO_PRED) fputs("-", stderr);
+        else fprintf(stderr, "%u", (unsigned)q->plan_hint);
+        fputs(" terms=", stderr);
+        for (unsigned i = 0; i < q->nterm; i++) {
+            const mf_term *t = &q->term[i];
+            fprintf(stderr, "%s%d:%s:", i ? "," : "", (int)t->offset,
+                    t->kind == MF_T_RUN ? "RUN" : "SET");
+            if (t->kind == MF_T_RUN) fprintf(stderr, "%u", (unsigned)t->run_len);
+            else for (unsigned x = 0; x < 32; x++) fprintf(stderr, "%02x", t->set[x]);
+        }
+        fputc('\n', stderr);
+    }
+#else
+    (void)part;
+    (void)quiet;
+#endif
     return 0;
 }
 
 /* `s` with each stating part's plan translated into today's part shape
- * (kit.h). */
+ * (kit.h); the derived run part's terms written from the run's reply
+ * (run_part_terms: no family decision). */
 int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, int quiet,
                      const mf_site **out, const char **why)
 {
@@ -2583,9 +2716,10 @@ int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, i
     mf_hooks hd = def ? *def : (mf_hooks){ 0 };
     if (!hd.miss) hd.miss = MF_MISS_N;
     for (unsigned i = 0; i < s->npred; i++) {
-        mf_run_reply rr = KIT_RUN_NONE;
-        if (part_derived(s, &s->preds[i]) && derive_run_part(art, s, &np[i], &rr, why))
-            return -1;
+        if (part_derived(s, &s->preds[i])) {
+            if (run_part_terms(art, s, i, quiet, &np[i], why)) return -1;
+            continue;
+        }
         if (!part_states(&np[i])) continue;
         mf_site ps;
         const mf_site *leg;
@@ -2610,14 +2744,6 @@ int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, i
         q->nalt = 0;
         q->alts = NULL;
         q->wfloor = 0;
-        /* the derived part's find reads the reply's scan (a loud check, not an
-           assumption: the family's member over the extent is the decision's
-           over the run, the same rule on a sub-stretch holding the scan) */
-        if (rr.ver_len && (q->nterm != 1 || q->term[0].kind != MF_T_RUN ||
-                           q->term[0].offset != rr.ver_lo || q->plan_pos != rr.scan - rr.ver_lo)) {
-            *why = "the derived run part's find is not at the run reply's scan position";
-            return -1;
-        }
     }
     *out = t;
     return 0;
