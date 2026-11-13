@@ -360,15 +360,16 @@ def build():
             row("J5", Arm(key, "J5.enter", "enter", "artifact", fixture=fx[(k, e)], base=base_of(key),
                           events=LEN // ENTER_GAP), base_of(key))
     # J5 kit-grid@4 (K38-3): the step-back cell, `enter_back` per (kind, entry) with a fixture and t in BACK_STEPS,
-    # its own group; the arm carries t (Arm.back) and shares the (kind, entry)'s fail base. UNMEASURED: art.py
-    # specifies no artifact for t yet (it refuses an arm with `back` set), so the dry run stops there
+    # its own job and group, J5B ([k383 F1]); the arm carries t (Arm.back) and shares the (kind, entry)'s fail
+    # base. UNMEASURED and UNSCHEDULED: no window job runs J5B (common.sh, record.py JOBS name J5 only); art.py
+    # specifies no artifact for t yet (it refuses an arm with `back` set), so J5B's dry run stops there
     for k in census_enter_kinds():
         for e in ENTRIES:
             if (k, e) not in fx or fx[(k, e)][2] == "-":
                 continue
             for t in BACK_STEPS:
                 key = "kit.enter_back.%d.%s.%d" % (k, e, t)
-                row("J5", Arm(key, "J5.back", "enter", "artifact", fixture=fx[(k, e)], base=base_of(key),
+                row("J5B", Arm(key, "J5B", "enter", "artifact", fixture=fx[(k, e)], base=base_of(key),
                               events=LEN // ENTER_GAP, back=t), base_of(key))
     # J1 (§3.6, art.py, j1/): per cell (pattern, subject, regime) one group, a whole-artifact arm per PAIR width
     # and the twin 128#b; no rows (J1's cells go to the run record, never the set)
