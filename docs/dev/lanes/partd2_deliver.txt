@@ -1,0 +1,5 @@
+report=docs/dev/lanes/partd2_report.md
+sections: Summary; Merge; Rename; D3 built; Part D overlap with d27fix; Identity and movers; Checks; Owed runs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: kit-partd2-gate
