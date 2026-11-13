@@ -20,8 +20,18 @@ int  __real_pcrec_mf_define(mf_art *, const mf_site *, const mf_hooks *, mf_sink
                             uint32_t *);
 int  __real_pcrec_mf_emit(mf_art *, const mf_site *, const mf_hooks *, mf_sink *,
                           mf_sink *, mf_result *);
-mf_art *__real_pcrec_mf_art_begin(mf_arena *, const char *, uint32_t, uint64_t,
+mf_art *__real_pcrec_mf_art_begin(mf_arena *, const char *, uint64_t,
                                   const mf_measures *, const mf_analysis *);
+/* Each wrapper's prototype IS memfn.h's: a seam change that leaves one stale
+   fails the build here (a stale art_begin, still carrying the retired policy
+   word, shifted every argument after `prefix` from u2rev on: denies cut to 32
+   bits, `an` read from a garbage register, R33RATE junk; lane partdfix). */
+_Static_assert(__builtin_types_compatible_p(__typeof__(&__real_pcrec_mf_define),
+                                            __typeof__(&mf_define)), "stale mf_define wrapper");
+_Static_assert(__builtin_types_compatible_p(__typeof__(&__real_pcrec_mf_emit),
+                                            __typeof__(&mf_emit)), "stale mf_emit wrapper");
+_Static_assert(__builtin_types_compatible_p(__typeof__(&__real_pcrec_mf_art_begin),
+                                            __typeof__(&mf_art_begin)), "stale mf_art_begin wrapper");
 
 static unsigned n_art;
 static const mf_art *arts[64];
@@ -33,11 +43,11 @@ static unsigned art_no(const mf_art *a)
     return 0;
 }
 
-mf_art *__wrap_pcrec_mf_art_begin(mf_arena *ar, const char *prefix, uint32_t policy,
+mf_art *__wrap_pcrec_mf_art_begin(mf_arena *ar, const char *prefix,
                                   uint64_t denies, const mf_measures *ms,
                                   const mf_analysis *an)
 {
-    mf_art *a = __real_pcrec_mf_art_begin(ar, prefix, policy, denies, ms, an);
+    mf_art *a = __real_pcrec_mf_art_begin(ar, prefix, denies, ms, an);
     if (n_art < 64) arts[n_art] = a;
     n_art++;
     const uint32_t *rate = NULL;

@@ -5,7 +5,8 @@ The simulation of the inner-first "find the span" pick against the kit's answer 
 
 ## Files
 
-- `probe.c` — wraps the kit's `pcrec_mf_define`/`pcrec_mf_emit`/`pcrec_mf_art_begin` (`-Wl,--wrap`). It prints
+- `probe.c` — wraps the kit's `pcrec_mf_define`/`pcrec_mf_emit`/`pcrec_mf_art_begin` (`-Wl,--wrap`; each wrapper
+  `_Static_assert`ed against memfn.h's prototype). It prints
   each site's stated facts and the kit's `mf_wdecide` reply (`R33 {json}`), plus each art's byte-rate table (`R33RATE`).
 - `build.sh TREE OUTDIR` — builds a traced libpcrec (`-DMF_TRACE -DPCREC_CAND_TRACE`, no source edit) and links
   the probe compiler `OUTDIR/pcrec-r33`.
@@ -14,7 +15,10 @@ The simulation of the inner-first "find the span" pick against the kit's answer 
   R-38 Part D D3: `summarize` keeps each `run_part_terms` record raw (`trace.parts`); each line carries pcrec's
   `_REQ_RUN`/`_REQ_WHY` stamps (`req`, read off the emitted text).
 - `runpart_prod.py SWEEP.jsonl [--floor N]` — D3's production-path check: every compile stamping an emitted run
-  carries exactly one `run_part_terms` record (plant p14, summarize dropping it, reds; run by lane partd2's gate).
+  carries exactly one `run_part_terms` record ON ITS SHIPPED (last) art, collect.py's `arts` (plant p14, summarize
+  dropping it, reds). `--self-test fixtures/runpart_c01877.jsonl`: the join's own control (lane partdfix).
+- `fixtures/runpart_c01877.jsonl` — one real collect.py line: a record on a declined compound part's art and one on
+  the shipped art.
 - `sim.py IN.jsonl OUTDIR --key A|B [--h-hit N] [--tag T]` — the simulation and today-vs-sim
   classification. Writes `units_<tag>.tsv` and `summary_<tag>.tsv`.
 - `xcheck.py` — the cross-check against timings on file: job 588's bar, the rule-list pilot dataset and the

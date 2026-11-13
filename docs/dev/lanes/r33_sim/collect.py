@@ -122,6 +122,9 @@ def summarize(trace):
 
 
 def parse(stderr, rates):
+    """(sites, arts): the site records and the number of arts the compile began (probe.c numbers each
+    `R33RATE` line, 1..arts). The compile's SHIPPED art is the last one: compound trial parts and failed
+    attempts begin theirs earlier (compile_driver walks, then emits; retries are sequential)."""
     sites, pending, art_rate = [], [], {}
     for raw in stderr.decode("utf-8", "replace").splitlines():
         if raw.startswith("R33RATE "):
@@ -145,7 +148,7 @@ def parse(stderr, rates):
                 sites[-1]["routed_row"] = f[3] if len(f) > 3 else "-"
             elif sites:
                 sites[-1].setdefault("pres", []).append(f[1:])
-    return sites
+    return sites, max(art_rate, default=0)
 
 
 def req_stamps(text):
@@ -172,9 +175,9 @@ def run_one(task):
     except subprocess.TimeoutExpired:
         rc, err, req = "timeout", b"", None
     rates = {}
-    sites = parse(err, rates)
+    sites, arts = parse(err, rates)
     return {"src": src, "id": pid, "arm": arm, "note": note, "pat_hex": pat.hex(),
-            "pat": pat.decode("latin-1"), "rc": rc, "req": req, "sites": sites}, rates
+            "pat": pat.decode("latin-1"), "rc": rc, "req": req, "arts": arts, "sites": sites}, rates
 
 
 def main():
