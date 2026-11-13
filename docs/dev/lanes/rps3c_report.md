@@ -79,7 +79,7 @@ line" + the line's own reach failure (2 fails). The clean run reads
 
 ## OWED
 
-- QUEUED batch (owner `rps3c`, stages file `worktrees/rps3/build/STAGES.rps3c`,
+- QUEUED batch `b202611130843282545155`, jobs 200-207 (owner `rps3c`, stages file `worktrees/rps3/build/STAGES.rps3c`,
   each stage waits for the one before it to go green; verdicts by
   `scripts/monread rps3c`): `make strict`; `make test-resource`;
   `make test-cand-oracle`; `make test-codegen`; `make test-rxtsource` (verdict by
