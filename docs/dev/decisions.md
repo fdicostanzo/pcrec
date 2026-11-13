@@ -10191,3 +10191,22 @@ Answered against docs/design/cond_family.md rev 0 §7 (six questions, each with 
 - **Consequences:** about 21 bits freed (about 27 free afterwards); a caller-visible contract change (pre-1.0, deliberate, spec hunks); an abi event where rx_info's kept-flag set changes; the bench is told through its inbox. Built as its own set ([FLAG-DEMOTE]) after S1 and K38-2.
 - **Revisit when:** a demoted mechanism is measured slower on some real input (it returns as a public flag), or an unsure flag's settling measurement is run.
 
+
+## D196 — intersection semantics: the left operand chooses, the right filters; it binds tighter than alternation (Frank, 2026-11-12)
+
+Context: [COND-FAMILY]; spike studies/andspike (lane andspike, report F7): under "leftmost start, then X's
+preference order among the ends Y also accepts", `X & Y` and `Y & X` always agree on the start but report a
+different end in 10.2% of generated pairs.
+
+Decision (Frank: "I was thinking it was option 1. RX is a practical tool more than academic and I think the
+filter understanding makes intuitive sense"):
+1. **Asymmetric.** The left operand keeps PCRE's priority order (first alternative wins, greedy prefers
+   longer, lazy shorter); the right operand only FILTERS which of its ends are admitted. The match reported is
+   the leftmost start, then the left operand's first-preferred end the right operand accepts exactly. Order of
+   operands is meaningful and documented; the span SET is commutative.
+2. **Precedence: intersection binds tighter than alternation**: `C|A&B` is `C|(A&B)` (and `A&B|C` is
+   `(A&B)|C`). Proposed, NOT yet ruled: concatenation binds tighter than intersection (`ab&cd` is `(ab)&(cd)`),
+   as in other Boolean-regex designs; the manager raises it with the syntax.
+3. The `&` spelling is a placeholder (D193 add. 4: owner examples are not syntax); the semantics above are
+   what is ruled. The remaining F7 recommendations (in-context lookaround, \K refused, verbs, cross-operand
+   backrefs, recursion) go to the [COND-FAMILY] spec section for review.
