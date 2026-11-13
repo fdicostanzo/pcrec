@@ -123,7 +123,18 @@ Dry run: `would run ... production path over 5489 corpus compiles`, rc=0.
 Validation chain `/var/tmp/pcrec-pcrec/scratch/memfn/partdfix/val/chain.sh` (box lock, one step at a time,
 index `val/val.log`, a log per step):
 
-VALIDATION_TABLE
+| check | result |
+|---|---|
+| make -j16 | rc 0 |
+| make strict | rc 0 (20 s) |
+| make test-codegen | rc 0, run_group 21/21 scripts passed (207 s) |
+| make test-memfn-finder / rows / link / targets / arch / forms | rc 0 each |
+| anchors (scripts/m6read_check_sab_anchors.py) | 1,294 sabotages, 1,345 anchor sites, all resolve |
+| run_g2_pres.sh --plant S3113 (the file the gate runs) | `PLANT S3113 RED   (family; oracle RED ...)`: red by its own detector, COVER; rc 0 (96 s) |
+| make test-memfn-d27frame | PASS: 6,937,301 checks passed, 0 failed (floor 6,500,000) |
+| make test-memfn-g2 (the quick tier) | rc 0: 70,358,671 passed / 0 failed (712 s) |
+| runpart_prod.py --self-test fixtures/runpart_c01877.jsonl | cases=4 wrong=0 |
+| runpart_prod.py over the 9 multi-art record compiles, re-collected with the fixed probe | emitted=9 one_record=9 failed=0 |
 
 ## Owed runs
 
