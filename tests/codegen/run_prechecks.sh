@@ -1754,7 +1754,12 @@ s512_presence() {
         return
     fi
     if [ "$nd" -ne 1 ]; then bad "[5.12b] $lbl: REQ_HANDOFF \"$st\" but $nd handoff declarations"; return; fi
-    if [ "$st" -gt 0 ]; then
+    if [ "$st" = "unbounded" ]; then
+        # [REQ-PAST-LAST] no subtraction: the attempts begin at the start
+        handoff_block "$a" | grep -qx " *handoff_position = search_from;" \
+            && ! handoff_block "$a" | grep -q 'handoff_position -= ' \
+            || bad "[5.12b] $lbl: REQ_HANDOFF \"unbounded\" but the block subtracts or does not start at search_from"
+    elif [ "$st" -gt 0 ]; then
         handoff_block "$a" | grep -qx " *handoff_position -= $st;" \
             && handoff_block "$a" | grep -qx " *if (handoff_position - search_from > $st) {" \
             || bad "[5.12b] $lbl: REQ_HANDOFF \"$st\" but the block does not subtract and compare $st"
@@ -1898,13 +1903,14 @@ while IFS= read -r pat; do
     st="$(stamp "$a" REQ_HANDOFF)"; k="$(fact req_landmark_maxoff "$pat")"
     s512_presence "$a" "$pat"
     if [ "$st" != "none" ]; then
-        s512_mov=$((s512_mov + 1)); [ "$st" -gt 0 ] && s512_kpos=$((s512_kpos + 1))
+        s512_mov=$((s512_mov + 1)); [ "$st" != "unbounded" ] && [ "$st" -gt 0 ] && s512_kpos=$((s512_kpos + 1))
         { [ "$(stamp "$a" REQ_WHY)" = "emitted" ] && { [ "$(stamp "$a" REQ_RUN)" != "none" ] || [ "$(stamp "$a" REQ_BYTE)" != "none" ]; }; } \
             || bad "[5.12e] $pat: REQ_HANDOFF \"$st\" with REQ_WHY \"$(stamp "$a" REQ_WHY)\" / REQ_RUN \"$(stamp "$a" REQ_RUN)\" / REQ_BYTE \"$(stamp "$a" REQ_BYTE)\" — the two tables disagree"
         # [REQRUN-VM] the VM attempt loop's rows subtract the WHOLE run's K,
         # an unlisted fact never above the landmark's (tuning.md §2.41¶8b).
         if grep -q '^ *attempt_position = handoff_position;$' "$a"; then
-            [ "$k" != "unbounded" ] && [ "$st" -le "$k" ] \
+            { [ "$st" = "unbounded" ] && [ "$k" = "unbounded" ]; } \
+                || { [ "$st" != "unbounded" ] && [ "$k" != "unbounded" ] && [ "$st" -le "$k" ]; } \
                 || bad "[5.12b] $pat: attempt-loop REQ_HANDOFF \"$st\" above req_landmark_maxoff $k"
         else
             [ "$k" = "$st" ] || bad "[5.12b] $pat: REQ_HANDOFF \"$st\" but req_landmark_maxoff $k"
@@ -1912,7 +1918,10 @@ while IFS= read -r pat; do
     fi
     if [ "$k" = "unbounded" ] && [ "$(stamp "$a" REQ_WHY)" = "emitted" ]; then
         s512_unb=$((s512_unb + 1))
-        [ "$st" = "none" ] || bad "[5.12c] $pat: req_landmark_maxoff unbounded but REQ_HANDOFF \"$st\" (S467)"
+        # [REQ-PAST-LAST] only the VM attempt loop's unbounded row may hand off
+        [ "$st" = "none" ] \
+            || { [ "$st" = "unbounded" ] && grep -q '^ *attempt_position = handoff_position;$' "$a"; } \
+            || bad "[5.12c] $pat: req_landmark_maxoff unbounded but REQ_HANDOFF \"$st\" (S467)"
     fi
 done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/litscan/handoff.rxt" \
                                  "$ROOT_DIR/tests/litscan/reqcube.rxt" \
@@ -1926,7 +1935,7 @@ echo "INFO: [5.12] population $s512_tot patterns: movers $s512_mov (K > 0: $s512
     && ok "[5.12b] $s512_mov movers ($s512_kpos with K > 0) hold the presence biconditional and the cross-table check (floors $S512_MOV_FLOOR/$S512_KPOS_FLOOR)" \
     || bad "[5.12b] only $s512_mov movers ($s512_kpos with K > 0), floors $S512_MOV_FLOOR/$S512_KPOS_FLOOR — the presence and cross-table checks may be vacuous"
 [ "$s512_unb" -ge "$S512_UNB_FLOOR" ] \
-    && ok "[5.12c] $s512_unb unbounded-run artifacts with an emitted pre-check, none handed off (floor $S512_UNB_FLOOR)" \
+    && ok "[5.12c] $s512_unb unbounded-run artifacts with an emitted pre-check, none handed off but the VM attempt loop's unbounded row (floor $S512_UNB_FLOOR)" \
     || bad "[5.12c] only $s512_unb unbounded-run artifacts, floor $S512_UNB_FLOOR — the bounded check may be vacuous (S467)"
 
 # (l)-(q) [REQ-HANDOFF-L1] THE RE-ENTRY (tuning.md §2.41¶8a): the forward
@@ -1967,6 +1976,12 @@ s512_reentry() {
         if grep -q '^ *if (landmark_position < attempt_position) {$' "$a"; then
             [ "$(stamp "$a" VM_PREFILTER)" = "none" ] && [ "$nd" -eq 1 ] \
                 || bad "[5.12l] $lbl: an attempt-loop re-entry on VM_PREFILTER \"$(stamp "$a" VM_PREFILTER)\" with $nd landmark declarations"
+            # [REQ-PAST-LAST] the re-ask's hit must be KEPT (written to
+            # landmark_position): a re-ask whose result is dropped answers the
+            # same and rescans at every attempt (review r2-reqpast CHK-1, S3074)
+            grep -A3 '^ *if (landmark_position < attempt_position) {$' "$a" \
+                | grep -qE '^ *landmark_position = ' \
+                || bad "[5.12l] $lbl: the attempt-loop re-ask does not keep its hit in landmark_position (quadratic rescans, same answers)"
             return 0
         fi
         [ "$nd" -eq 0 ] && ! grep -q landmark_position "$a" \
@@ -2012,6 +2027,16 @@ for w in 'a.?b' '(?:\d{1,3}\.){3}\d{1,3}' '(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}'
     [ "$(stamp "$a" DFA_PREFILTER)" = "handoff" ] \
         && ok "[5.12l] $w re-enters the handoff" \
         || bad "[5.12l] $w: DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\", expected \"handoff\""
+    s512_reentry "$a" "$w"
+done
+# [REQ-PAST-LAST] the unbounded attempt-loop row's re-ask is held by the same
+# presence check, and the check must REACH it (review r2-reqpast CHK-1, S3074)
+for w in 'a+xyz' '[^@ ]+@x'; do
+    a="$WORKDIR/s512_lu.c"; emit "$a" "$w" --engine=vm
+    [ "$(stamp "$a" REQ_HANDOFF)" = "unbounded" ] \
+        && grep -q '^ *if (landmark_position < attempt_position) {$' "$a" \
+        && ok "[5.12l] $w re-asks the unbounded attempt-loop pre-check" \
+        || bad "[5.12l] $w: REQ_HANDOFF \"$(stamp "$a" REQ_HANDOFF)\" or no attempt-loop re-ask (S3074)"
     s512_reentry "$a" "$w"
 done
 
