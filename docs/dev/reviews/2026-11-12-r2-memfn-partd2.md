@@ -320,3 +320,4 @@ Decisions:
 Process notes, proposed to main for the critic skill:
 - send contradicting critic pairs to the verifier as one item;
 - the seam lens's new-STATE reader clause extends to trace shadows and emitted comments.
+- **P8 RULED (2026-11-12, kit + main jointly):** retire `leads`/`rlead` as independent expectations on runs with any non-cube position, on K38-2's scan/rwin precedent (D157: pcrec must not predict the kit's findability). The successor controls are C2 and G2's decline equality. The edit is pcrec-side, in S2's landing. Main has also put P1 in its stage 3 brief (gate_need keyed on a TESTED run) and re-scoped the [RUN-POS-SET] note (P14: R by role = a multi-position verify-NO span in a window site's alternative; the run presence span is not R).
