@@ -182,6 +182,13 @@ OPTIONS
                         `-fcomments` ([SWEEPARM]: S981/S982), the null arm),
                         streams 1-2, over the DISTINCT patterns. Exclusive
                         with --extra.
+  --arms-ref-predates FLAG
+                        repeatable, with --arms start: REF predates FLAG (it
+                        refuses the option), so every table arm of FLAG is
+                        SKIPPED and named on one `arms: REF predates` line
+                        with its count; a FLAG naming no table arm fails the
+                        run (a stale declaration). The flag's own cells are
+                        then a one-binary run's (lane partdfix).
   --patterns-file FILE   constructed witnesses (one per line, --list-source
                         escapes \\t \\n \\r \\\\ \\xNN; `#` and blank lines
                         skipped) ADDED to streams 1-3, 6, the arms and the
@@ -3479,6 +3486,7 @@ def main():
     ap.add_argument("--extra-base", default="")
     ap.add_argument("--no-differ-floor", action="store_true")
     ap.add_argument("--arms", choices=("start",))
+    ap.add_argument("--arms-ref-predates", metavar="FLAG", action="append", default=[])
     ap.add_argument("--patterns-file", action="append", default=[])
     ap.add_argument("--no-corpus", action="store_true")
     ap.add_argument("--every", type=int, default=1)
@@ -3874,6 +3882,16 @@ def main():
     arms = []
     if args.arms == "start":
         arms = [(b, ARM_BASES[b], f) for b, f in arm_table()]
+        for flag in args.arms_ref_predates:
+            gone = [a for a in arms if a[2] == flag]
+            arms = [a for a in arms if a[2] != flag]
+            print(f"arms: REF predates {flag}: {len(gone)} table arms skipped "
+                  f"({', '.join(a[0] for a in gone) or 'NONE'})")
+            if not gone:
+                run_ok = False
+                print(f"arms: --arms-ref-predates {flag} names no table arm (a stale declaration)")
+    elif args.arms_ref_predates:
+        sys.exit("[emit_sweep] --arms-ref-predates needs --arms start")
     elif flag_args:
         inv = {v: k for k, v in ARM_BASES.items()}
         arms = [(inv.get(tuple(base_args), " ".join(base_args)), tuple(base_args),
