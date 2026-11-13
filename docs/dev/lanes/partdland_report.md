@@ -111,6 +111,6 @@ suggested fn-every-pos / fn-memchr, but check 1 compares against the printed id.
 OWED: kit-partdland-gate (box job 597-kit-partdland-gate: zero-mover proof against BASE dd5143e8d, built
 fresh by the job, 71 identity arms plus the skipped new deny; the deny's ASSERT_ZERO cells; G2 plants
 S3106-S3114, S3119, S3125-S3127, S3116-S3118, S1409; D3's production path + p14), plus cloud `test` and
-`mechrows` on the merged tip f9528e943. The kit manager runs those. The mechrows set is Part D's
+`mechrows` on the branch tip (the merge f9528e943 plus the three fixes; tip at handoff named in the handback). The kit manager runs those. The mechrows set is Part D's
 24 rows (S3106-S3115, S3119, S3125-S3127 + the re-anchored rows) plus d27fix's S3120-S3124 and S3006,
 whose anchor is partd's here.
