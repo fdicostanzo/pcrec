@@ -23,7 +23,17 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `104` on every artifact today ([MEMFN] R-38 K38-2, 103 -> 104,
+- **`rx_info.abi` is `105` on every artifact today ([REQ-PAST-LAST] the VM attempt loop stops past the last
+  occurrence of an unbounded required run, 104 -> 105, lane reqpast 2026-11-12, ported onto K38-2 by lane
+  rpport 2026-11-13).**
+  On a VM artifact with no DFA scan whose necessary whole run has an UNBOUNDED maximum offset (the `req-use` row
+  `handoff-attempts-unbounded`, `tuning.md` §2.41¶8c), the pre-check keeps its candidate (`landmark_position`), the
+  attempts begin at `search_from` (`handoff_position = search_from;`), and after each failed attempt the
+  pre-check is re-asked once the attempt position has passed the kept candidate, a miss answering NOMATCH; no move
+  follows. `<PREFIX>_REQ_HANDOFF` reads `"unbounded"` there (was `"none"`). No struct offset moves, no
+  `rx_info` member is added or changed, and no answer moves.
+
+- **`rx_info.abi` was `104` on every artifact ([MEMFN] R-38 K38-2, 103 -> 104,
   one event with the kit's MF_SITE_ABI 27 / MF_CLASS_V 9, lane k382
   2026-11-11, re-bumped over main's [PFFIX] 99 -> 100 by lane k382m 2026-11-12 and over main's s1land 100 -> 103 by lane k382n 2026-11-12, so the reserved 101 stays unused; `docs/design/memfn/span_runs_sheet.md` rev 1.3 §5.1).** pcrec
   states the necessary run to the kit UNCUT as one presence span in set form

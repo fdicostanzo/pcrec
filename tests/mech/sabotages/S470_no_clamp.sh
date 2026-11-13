@@ -15,11 +15,13 @@ SAB_REACH_EXPECT='REACH-CLAMP-K3'
 SAB_REACH_POP='tests/litscan/handoff.rxt|^ms 3 "xxxxxCaT" |1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        pcrec_sb_printf(c, "%sif (handoff_position - %s > %lld) {\n",
-                        indent, posvar, k);'
-SAB_AFTER='        pcrec_sb_printf(c, "%sif (1 || handoff_position - %s > %lld) { /* SABOTAGE S470 */\n",
-                        indent, posvar, k);'
+SAB_BEFORE='            pcrec_sb_printf(c, "%sif (handoff_position - %s > %lld) {\n",
+                            indent, posvar, k);'
+SAB_AFTER='            pcrec_sb_printf(c, "%sif (1 || handoff_position - %s > %lld) { /* SABOTAGE S470 */\n",
+                            indent, posvar, k);'
 # RE-AIMED REACH (lane sar1fix, 2026-11-09): since span arms R1 the run is
 # `xxCAT` (the two required x copies join), so K is 3, not 5; the detector
 # (handoff.rxt's `ms 3 "xxxxxCaT"`: the run's hit at 3 minus K is 0, below the
 # startpos) is unchanged.
+# RE-AIMED 2026-11-12 (lane rpfix2, [REQ-PAST-LAST]): the clamp's printf moved
+# one level deeper (the bounded branch); same site, same fault.
