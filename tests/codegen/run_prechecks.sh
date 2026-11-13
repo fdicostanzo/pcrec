@@ -116,12 +116,30 @@ PRECHK_RE='memchr(subject + search_from,\|rx_reqrun(subject, subject_length, sea
 reqrun_scans() { reqrun_fn "$1" | grep -q "memchr(subject + pos[ +0-9]*, $2, n - pos"; }
 # [OPT-LITSCAN] S4 C3: a REQ_RUN stamp `hex@idx[/mask]`'s scan position as
 # its member bytes -- `T[idx]` alone for an exact position, `T[idx]` and
-# `T[idx] | ~K[idx]` for a pair (the block's two streams).
+# `T[idx] | ~K[idx]` for a pair (the block's two streams). [RUN-POS-SET]
+# (S2, PCREC_MAX_REQ_RUN_POS_SET 2 -> 128): a set-form stamp (tuning.md
+# §2.28¶7, `[6163][6264]65@0`) names position idx's members itself, each
+# bracketed `hh` or `hh-hh` range expanded in ascending order -- a
+# two-member set is scanned as the same two streams as a pair.
 run_scan_members() {
-    local hex="${1%%@*}" rest="${1#*@}" idx t k=255
+    local hex="${1%%@*}" rest="${1#*@}" idx t k=255 i=0 tok m lo hi out=""
     idx="${rest%%/*}"
+    if [ "$hex" != "${hex#*[}" ]; then
+        while [ -n "$hex" ]; do
+            if [ "${hex:0:1}" = "[" ]; then tok="${hex%%]*}"; tok="${tok#[}"; hex="${hex#*]}"
+            else tok="${hex:0:2}"; hex="${hex:2}"; fi
+            [ "$i" -eq "$idx" ] && break
+            i=$((i + 1))
+        done
+        while [ -n "$tok" ]; do
+            if [ "${tok:2:1}" = "-" ]; then lo=$((16#${tok:0:2})); hi=$((16#${tok:3:2})); tok="${tok:5}"
+            else lo=$((16#${tok:0:2})); hi=$lo; tok="${tok:2}"; fi
+            while [ "$lo" -le "$hi" ]; do out="$out $lo"; lo=$((lo + 1)); done
+        done
+        echo $out; return
+    fi
     t=$((16#${hex:$((idx * 2)):2}))
-    [ "$rest" != "${rest#*/}" ] && { local m="${rest#*/}"; k=$((16#${m:$((idx * 2)):2})); }
+    [ "$rest" != "${rest#*/}" ] && { m="${rest#*/}"; k=$((16#${m:$((idx * 2)):2})); }
     if [ "$k" -eq 255 ]; then echo "$t"; else echo "$t $(( t | (~k & 255) ))"; fi
 }
 # reqrun_scans_run FILE RUNSTAMP: the window block scans every member of the
@@ -134,6 +152,7 @@ run_scan_members() {
 reqrun_scans_run() {
     set -- "$1" $(run_scan_members "$2")
     [ $# -eq 2 ] && { reqrun_scans "$1" "$2"; return; }
+    [ $# -eq 3 ] || return 1   # a wider set position: not a two-stream scan
     reqrun_fn "$1" | grep -q "memchr(subject + ha, $2, e - ha)" &&
         reqrun_fn "$1" | grep -q "memchr(subject + hb, $3, e - hb)"
 }
@@ -549,12 +568,12 @@ a=b%%61%613d62@1
 abc%%98%616263@1
 \w+@\w+%%64%none
 x(?:yz)+%%122%78797a@2
-(ab|cd)e%%101%none
+(ab|cd)e%%101%[6163][6264]65@0
 (a)(b)%%98%6162
 [^x]c%%99%none
 a{2,4}b%%98%616162@2
 (a)\1?b%%98%none
-foo|bar%%none%none
+foo|bar%%none%[6266][616f][6f72]@0
 (?i)abc%%none%414243@1/dfdfdf
 a*%%none%none
 (?:ab)*c%%99%none
@@ -753,6 +772,10 @@ ROWS
 #
 # EVERY ROW IS RUN-FREE (each necessary byte sits between non-literals), so the
 # arm reads the one-byte pick and never the run's own scan index — §4 owns that.
+# [RUN-POS-SET] S2 (PCREC_MAX_REQ_RUN_POS_SET 2 -> 128) re-aimed the fillers
+# from `[0-9]+`/`[a-z]+` to `.+`: a 10- or 26-member class is now a run
+# POSITION, so `[0-9]+<[0-9]+>` carried the run `[30-39]3c[30-39]` and the
+# arm read the run's pick; `.` (255 members) stays outside every run.
 s37_run=0
 while IFS='%' read -r pat _sep want why; do
     [ -n "$pat" ] || continue
@@ -764,14 +787,14 @@ while IFS='%' read -r pat _sep want why; do
         && ok "[3.7] $pat -> RX_REQ_BYTE \"$got\" ($why)" \
         || bad "[3.7] $pat: RX_REQ_BYTE is \"${got:-<absent>}\", expected \"$want\" ($why)"
 done <<'ROWS'
-[0-9]+x[0-9]+e[0-9]+%%120%x 997 ppm beats e 84235 — the rightmost rule would pick e
-[0-9]+a[0-9]+z[0-9]+%%122%z 498 beats a 54163 — rightmost agrees here by luck, kept as the pair to the row below
-[0-9]+z[0-9]+a[0-9]+%%122%z 498 beats a 54163 and z is NOT rightmost — the discriminating direction
-[a-z]+Q[a-z]+t[a-z]+%%81%Q 66 beats t 60061 — an upper-case letter is a tenth of its lower-case twin
-[0-9]+a[0-9]+J[0-9]+%%74%J 108 beats a 54163 and J IS rightmost — a rule that ignored the table would also pass
-[a-z]+\$[a-z]+%%36%a singleton set: nothing to choose, any rule agrees
-[0-9]+Z[0-9]+%%90%Z 50 is the table's rarest printable letter and the only member
-[0-9]+<[0-9]+>[0-9]+%%62%< and > BOTH read 332 ppm — the tie goes to the threaded rightmost pick, so >
+.+x.+e.+%%120%x 997 ppm beats e 84235 — the rightmost rule would pick e
+.+a.+z.+%%122%z 498 beats a 54163 — rightmost agrees here by luck, kept as the pair to the row below
+.+z.+a.+%%122%z 498 beats a 54163 and z is NOT rightmost — the discriminating direction
+.+Q.+t.+%%81%Q 66 beats t 60061 — an upper-case letter is a tenth of its lower-case twin
+.+a.+J.+%%74%J 108 beats a 54163 and J IS rightmost — a rule that ignored the table would also pass
+.+\$.+%%36%a singleton set: nothing to choose, any rule agrees
+.+Z.+%%90%Z 50 is the table's rarest printable letter and the only member
+.+<.+>.+%%62%< and > BOTH read 332 ppm — the tie goes to the threaded rightmost pick, so >
 ROWS
 [ "$s37_run" -eq 0 ] \
     && ok "[3.7b] all §3.7 witnesses are run-free, so the arm reads the one-byte pick" \
@@ -950,7 +973,9 @@ fi
 # mass comparison this row's prose used to discriminate is therefore moot on
 # this witness now; K66's own §5.9r witness above is where a tie forces the
 # window choice itself to move.
-if emit "$WORKDIR/s45.c" 'github_pat_[A-Za-z0-9]{4}' -fno-offset-skip; then   # §4.1's reason
+# [RUN-POS-SET] S2 re-aim: the tail was `[A-Za-z0-9]{4}`, which the 2 -> 128
+# set domain made four more run positions; `.{4}` keeps the run github_pat_.
+if emit "$WORKDIR/s45.c" 'github_pat_.{4}' -fno-offset-skip; then   # §4.1's reason
     got="$(stamp "$WORKDIR/s45.c" REQ_RUN)"
     [ "$got" = "6769746875625f7061745f@10" ] \
         && ok "[4.5] an 11-byte run is stated uncut (R-38 K38-2) and its tied rarest member (two '_'s) is scanned at its rightmost tie (github_pat_ @10)" \
@@ -967,7 +992,7 @@ fi
 # admissible window range collapses to one candidate (`lo_s == hi_s ==
 # r->n - 8`), so "leftmost of the range" and "rightmost eight bytes of the
 # run" are the same window here, not two competing rules.
-if emit "$WORKDIR/s45u.c" 'github_pat_[A-Za-z0-9]{4}' -e utf8; then
+if emit "$WORKDIR/s45u.c" 'github_pat_.{4}' -e utf8; then
     got="$(stamp "$WORKDIR/s45u.c" REQ_RUN)"
     [ "${got%@*}" = "6769746875625f7061745f" ] && { [ "$got" = "${got%@*}" ] || [ "${got#*@}" = 10 ]; } \
         && ok "[4.5c] -e utf8: the run is stated uncut, any @ at its rightmost byte (github_pat_, $got)" \
@@ -1006,10 +1031,10 @@ while IFS='%' read -r pat _sep why; do
     fi
 done <<'ROWS'
 a(?:bc)?d%%an optional copy is a gap, so the a and d around it are not joined (since span_arms R1 a repeat's REQUIRED copies join: a{2,4}b is the run aab, §3.1)
-(?:xabcy|wabcv)q%%an alternation contributes only its common affixes, so abc is not claimed (x/w and y/v differ in more than one bit, so not even their cube hull is a position: S4 C3)
+(?:x.abcy|wabc.v)q%%an alternation contributes only its branches' position-aligned ends, so abc, common to both but at different offsets, is not claimed ([RUN-POS-SET] S2 re-aim: since the set domain went 2 -> 128 the aligned hull of (?:xabcy|wabcv) is a run, [7778]616263[7679]; the `.`s here break both alignments and [vy]q alone is under the floor)
 a(?i)b%%a followed by one caseless letter is 15 bits, under the 16-bit floor (S4 C3); a(?i)bc is no longer a decline: the option run is dropped from the concatenation, so it reads as a(?i:bc), a live run ([FLAG-SPELL])
 (?:ab)*c%%a min-0 repeat breaks contiguity in the one direction that would delete a match
-a[0-9]b[0-9]=%%a multi-member class breaks contiguity around it
+a.b.=%%a class wider than the set domain breaks contiguity around it ([RUN-POS-SET] S2 re-aim from a[0-9]b[0-9]=: a 10-member class is now a run position, `.`'s 255 members are not)
 ROWS
 
 # §4.8 — THE POPULATION FLOOR (K35), over the corpus rather than over §4.1's
@@ -1653,12 +1678,12 @@ done <<'ROWS'
 (?:user|USER)[ \t]*=%%61%55534552@0/dfdfdfdf%userpass's shape: '=' (3323 ppm) is rarer than the scan pair u/U, so it leads (k82diag twin T1)
 (?:user|USER)[ \t]*=%--engine=vm%61%55534552@0/dfdfdfdf%the same on the VM route
 (?:user|USER)[ \t]*=%-fno-req-set-lead%-%55534552@0/dfdfdfdf%the deny: the run search alone, the abi-59 program
-cat\s+sate%%99%73617465@0%an EXACT run under the byte-rate: c (18442) is rarer than the scan byte s (42034), so the row is not caseless-only (cat\s+sat no longer serves: its two 3-byte runs tie, and the run choice takes the rarer cat, review r5)
-(?i:xqz)\d+e%%-%58515a@2/dfdfdf%the rate decides, not the shape: e (84235) is commoner than the z/Z pair (548), so the run stays alone
+cat.+sate%%99%73617465@0%an EXACT run under the byte-rate: c (18442) is rarer than the scan byte s (42034), so the row is not caseless-only (cat\s+sat no longer serves: its two 3-byte runs tie, and the run choice takes the rarer cat, review r5; [RUN-POS-SET] S2 re-aim from cat\s+sate, whose \s became a run position, [09-0d20]sate)
+(?i:xqz).+e%%-%58515a@2/dfdfdf%the rate decides, not the shape: e (84235) is commoner than the z/Z pair (548), so the run stays alone ([RUN-POS-SET] S2 re-aim from \d+, now a run position)
 (?i)union.*?select%%-%*%an empty necessary set: nothing can lead (union-select keeps its win)
-(?i:elect)\d+=%-e utf8%61%454c454354@4/dfdfdfdfdf%NONE: a byte against a two-member pair, so the byte leads (S is not a pair under utf8: it folds with U+017F too)
+(?i:elect).+=%-e utf8%61%454c454354@4/dfdfdfdfdf%NONE: a byte against a two-member pair, so the byte leads (S is not a pair under utf8: it folds with U+017F too; [RUN-POS-SET] S2 re-aim from \d+, now a run position)
 é@%-e utf8%-%c3a940@2%NONE: a byte against an exact byte ties, and a tie keeps the run alone
-日本|日曜|日付%-e utf8%-%e697a5e4@2/fffffffd%(C) alt-shared: NONE scans the exact continuation byte 0xA5, not the lead-byte pair {E4,E6} at 3
+日本|日曜|日付%-e utf8%-%e697a5[e4e6][9b9cbb][989cac]@2%(C) alt-shared: NONE scans the exact continuation byte 0xA5, not the lead-byte pair {E4,E6} at 3 ([RUN-POS-SET] S2: the run now carries the branches' aligned hull to the end; the scan position is unchanged)
 x(?i:elect)%-e utf8%-%78454c454354@0/ffdfdfdfdfdf%(C) NONE: the one exact position wins over the five pairs to its right, and the set pick IS that byte
 (?i:elect)%-e utf8%-%454c454354@4/dfdfdfdfdf%(C) all pairs tie, so the rightmost, as before
 ROWS
@@ -1681,7 +1706,7 @@ while IFS='%' read -r pat flags want why; do
         && ok "[5.11c] $pat [$flags] -> REQ_BYTE \"$got\" ($why)" \
         || bad "[5.11c] $pat [$flags]: REQ_BYTE \"${got:-<absent>}\", expected \"$want\" ($why)"
 done <<'ROWS'
-x(?i:elect)\d+z%-e utf8%120%(C) NONE: the run's one exact position x, not the set's rightmost z
+x(?i:elect).+z%-e utf8%120%(C) NONE: the run's one exact position x, not the set's rightmost z ([RUN-POS-SET] S2 re-aim from \d+, which joined the run as [30-39] and took the run out of the cube form this row's S461 site reads)
 ROWS
 
 # =========================================================================
@@ -1785,21 +1810,21 @@ while IFS='%' read -r pat flags handk wantst why; do
     s512_n=$((s512_n + 1))
 done <<'ROWS'
 (?i)cat%-e byte%0%0%the run is the whole match's head
-(?i)straße%-e utf8%2%2%the run TRA follows (?i)s, which matches s, S or U+017F (TWO bytes) (r1 C-C11; ci-strasse)
+(?i)straße%-e utf8%1%1%(?i)s matches s, S or U+017F (TWO bytes, c5 bf) (r1 C-C11; ci-strasse); [RUN-POS-SET] S2 re-derivation: the run now begins AT (?i)s's last byte, the set {S, s, 0xBF}, so only U+017F's lead 0xC5 precedes it (1; counting U+017F as one byte gives 0)
 x{2,5}(?i)cat%-e utf8%3%3%the run is the two x copies every match takes and (?i)cat, after at most three more x bytes (span_arms R1)
 .{3}cat%-e utf8%12%12%three characters of up to four bytes
 é{2}cat%-e utf8%0%0%the two é copies join the run, which is the whole match's head (span_arms R1)
-ab(?:cdef|xyzdef)g%-e utf8%5%5%the run defg after ab and the wider branch's xyz
+ab(?:cdef|xyzdef)g%-e utf8%4%4%the wider branch's prefix sets the bound (S466 takes the left branch's width); [RUN-POS-SET] S2 re-derivation: the run is [cz]defg, the branches' aligned c/z joining it, after ab and the wider branch's xy (4; the left branch's width gives 2)
 (?:a|bb)?catdog%-e byte%2%2%the WIDER branch bb (S466 takes a's width)
-(?:ab|c)(?i)select%-e utf8%4%4%ab (2), then (?i)s (U+017F under utf8, 2 bytes): the run is ELECT
-(?:\Gab|x)(cat)(?=dog)%-e byte%2%2%\G is zero-width, ab is 2 (a \G hybrid with no prefilter-window ceiling)
+(?:ab|c)(?i)select%-e utf8%3%3%ab (2), then (?i)s (U+017F under utf8, 2 bytes); [RUN-POS-SET] S2 re-derivation: the run begins at (?i)s's last byte {S, s, 0xBF}, so ab and U+017F's lead 0xC5 precede it (3)
+(?:\Gab|x)(cat)(?=dog)%-e byte%1%1%\G is zero-width (a \G hybrid with no prefilter-window ceiling); [RUN-POS-SET] S2 re-derivation: the branches' aligned last bytes [bx] join the run, so only ab's a precedes it (1)
 (?:\G|x)cat%-e byte%1%1%the attempt route: \G consumes nothing, x one byte
-(?:\Gab|x)(cat)dog%-e byte%2%none%the same K, declined: the hybrid's prefilter window is its ceiling ((d'), Q9)
+(?:\Gab|x)(cat)dog%-e byte%1%none%the same K, declined: the hybrid's prefilter window is its ceiling ((d'), Q9)
 a.*?(?i)select%-e byte%unbounded%none%.*? (S467)
 ab.*xyzw%-e byte%unbounded%none%.* (S467)
 a.?b%-e byte%2%2%[REQ-HANDOFF-L1] a BYTE landmark b, after a and an optional byte
-(?:\d{1,3}\.){3}\d{1,3}%-e byte%3%3%[REQ-HANDOFF-L1] dotted4: three digits before the first dot (the repeat's FIRST iteration)
-(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}%-e byte%4%4%[REQ-HANDOFF-L1] ipv6-shaped: four hex digits before the first colon
+(?:.{1,3}\.){3}.{1,3}%-e byte%3%3%[REQ-HANDOFF-L1] dotted4's shape: three characters before the first dot (the repeat's FIRST iteration) ([RUN-POS-SET] S2 re-aim from \d{1,3}: a digit class is now a run position, so dotted4 itself hands off on the run [30-39]2e[30-39] at K 2 and no longer reaches the BYTE landmark this row (and S805) is about; `.` keeps the byte)
+(?:.{1,4}:){4,7}.{1,4}%-e byte%4%4%[REQ-HANDOFF-L1] ipv6's shape: four characters before the first colon ([RUN-POS-SET] S2 re-aim from [0-9a-f]{1,4}, now a run position: ipv6 itself hands off on the run [30-3961-66]3a[30-3961-66] at K 3)
 (?:ab|c):%-e byte%2%2%[REQ-HANDOFF-L1] the colon after the WIDER branch ab (the alternation's maximum width shifts it)
 (?:ab:|c:)%-e byte%2%2%[REQ-HANDOFF-L1] a member BOTH branches carry takes the FARTHER bound, ab's colon at 2 not c's at 1 (S806)
 (?:ab:y|c:)%-e byte%2%2%[REQ-HANDOFF-L1] S806's witness since the [ALT-NF] folds: `(?:ab:|c:)` factors to `(?:ab|c):` and no longer carries the member through rb_intersect; the unequal tails keep the alternation, both branches carry ':', the FARTHER bound is ab's 2
@@ -1850,9 +1875,11 @@ grep -q '_match_anchored(&ctx, run, search_from)' "$a" \
     || bad "[5.12g] the \\G hybrid: the VM's \\G anchor moved, or the prefilter's first call does not read the handoff (S469)"
 
 # (h) THE ROUND-UP
+# [RUN-POS-SET] S2: the moving branch's K is 1 (was 2), the hand pin of (a)'s
+# (?i)straße row: the run now begins at (?i)s's last byte {S, s, 0xBF}.
 a="$WORKDIR/s512_h1.c"; emit "$a" '(?i)straße' -e utf8
 hb="$(handoff_block "$a")"
-printf '%s\n' "$hb" | awk '/> 2\) \{$/ { inb = 1; next } /^ *\} else$/ { inb = 0 }
+printf '%s\n' "$hb" | awk '/> 1\) \{$/ { inb = 1; next } /^ *\} else$/ { inb = 0 }
         /while \(!\(handoff_position >= subject_length \|\| \(subject\[handoff_position\] & 0xC0\) != 0x80\)\) handoff_position\+\+;/ { if (inb) good++; else badw++ }
         /while|for \(/ { loops++ }
         END { exit !(good == 1 && badw == 0 && loops == 1) }' \
@@ -2057,8 +2084,10 @@ a="$WORKDIR/s512_m3.c"; emit "$a" 'a.{1,50000}z'
     || bad "[5.12m] a.{1,50000}z: DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\" / REQ_HANDOFF \"$(stamp "$a" REQ_HANDOFF)\", expected memchr / none"
 
 # (n) THE RESEED, inside the moving branch only
+# [RUN-POS-SET] S2: K is 2 (was 3): the landmark is now the run
+# [30-39]2e[30-39], whose first position is the third digit (as (a)'s dotted4).
 a="$WORKDIR/s512_n.c"; emit "$a" '\b\d{1,3}\.\d'
-reentry_block "$a" | awk '/if \(landmark_position - scan_position > 3\) \{$/ { inb = 1; next }
+reentry_block "$a" | awk '/if \(landmark_position - scan_position > 2\) \{$/ { inb = 1; next }
         inb && /^ *\}$/ { inb = 0 }
         /forward_state = scan_position \? rx_forward_seed_state\[/ { if (inb) good++; else badr++ }
         END { exit !(good == 1 && badr == 0) }' \
