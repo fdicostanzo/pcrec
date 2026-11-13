@@ -2,4 +2,4 @@ report=docs/dev/lanes/k382land_report.md
 sections: STATE AT HANDOFF; CHANGES; OWED
 nonempty: all
 commit: yes
-dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/k382land_deliver.txt
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/; land1101.done
