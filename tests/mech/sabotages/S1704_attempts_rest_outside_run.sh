@@ -8,13 +8,15 @@
 # so `x{2,5}(?i:cat)`'s run `xxCAT` holds `x` and is a re-entry row unplanted.) NO ANSWER MOVES (the re-ask is sound, only its cost is not bounded),
 # so the attempt-loop section of tests/memfn/run_handoff_reach.sh, which pins
 # that witness to the entry-only row, is the detector (arm memfnreach).
+# RE-AIMED 2026-11-12 (lane reqpast, [REQ-PAST-LAST]): the reach floor reads
+# 7 >= 6 (`a+xyz` and `[^@ ]+@x` are the unbounded row's witnesses now).
 SAB_ID='S1704-attempts-rest-outside-run'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='memfnreach'
 SAB_DESC='the VM attempt loop re-enters the handoff where a pre-check part is not a byte of the whole run, so each re-find may rescan the subject'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/reqvm1_report.md, Tests and sabotage); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1704.'
 SAB_REACH='TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_handoff_reach.sh" "$TREE"'
-SAB_REACH_EXPECT='attempt-loop reach floor: 5 >= 4
+SAB_REACH_EXPECT='attempt-loop reach floor: 7 >= 6
 (ab)c?userpass (byte): reaches the attempt loop'\''s entry row'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

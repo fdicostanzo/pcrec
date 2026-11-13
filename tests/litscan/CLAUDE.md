@@ -87,10 +87,13 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   `(a|aa){0,10}cxyz` (`budget steps=3000`; its deny-arm give-ups are
   run_axes.sh's GIVEUP1 entries for `-fno-req-handoff`, `-fno-req-byte`,
   `-fno-req-run`), `\G` before the run, a lookbehind, utf8 round-up and
-  ill-formed text, caseless K in bytes, `\K`, the declines, bench subst case
+  ill-formed text, caseless K in bytes, `\K`, the unbounded-K stop past the
+  run's last occurrence (`handoff-attempts-unbounded`, [REQ-PAST-LAST], its own
+  give-up witness `(a|aa|b)+cxyz`), the declines, bench subst case
   7's pattern; default-route blocks for the VM HYBRID's prefilter re-entry
-  (bench subst case 2's pattern). Detector of S1700, S1702, S1703; the
-  admission's pins are tests/memfn/run_handoff_reach.sh's (S1701, S1704-S1707).
+  (bench subst case 2's pattern). Detector of S1700, S1702, S1703, S1955; the
+  admission's pins are tests/memfn/run_handoff_reach.sh's (S1701, S1704-S1707,
+  S1956, S1957).
 - **gen_handoff_vm.py** — writes `handoff_vm.rxt` with `gen_handoff.py`'s
   oracles and writer, imported; `--check-pcrec BIN` runs the result.
 - **gen_handoff.py** — writes `handoff.rxt`: a byte block's cells from

@@ -13,7 +13,9 @@ SAB_REACH_EXPECT='REACH-ROUNDUP'
 SAB_REACH_POP='tests/codegen/run_prechecks.sh|emit "\$a" .\(\?i\)straße. -e utf8|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
-                          "handoff_position", subjvar, lenvar,
-                          PCREC_START0_ROUNDUP);'
-SAB_AFTER='    (void)subjvar; /* SABOTAGE S471: no round-up */'
+SAB_BEFORE='        pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
+                              "handoff_position", subjvar, lenvar,
+                              PCREC_START0_ROUNDUP);'
+SAB_AFTER='        (void)subjvar; /* SABOTAGE S471: no round-up */'
+# RE-AIMED 2026-11-12 (lane rpfix2, [REQ-PAST-LAST]): the round-up call moved
+# into the bounded branch (one level deeper); same site, same fault.

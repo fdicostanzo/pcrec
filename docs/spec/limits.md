@@ -319,7 +319,7 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 | 2a | `drop-landmark-walk`: the landmark walk's reverse machine and its copy of the anchored machine (`tuning.md` §2.54) | DFA | the backward walk from each landmark; the forward-then-reverse search runs instead | `-fno-landmark-walk` (the whole form) |
 | 3 | `drop-anchored`: the optional anchored match-here machine | DFA | `<prefix>_match`'s one-pass form | none |
 | 4 | `drop-premul`: the premultiplied DFA transition table | DFA | one add per step | none |
-| 4a | `drop-handoff`: the VM's required-run handoff rows, the attempt loop's (`tuning.md` §2.41¶8b) and the hybrid prefilter's re-entry (§2.41¶8a) | VM | the jump to the necessary run's next occurrence; a hybrid keeps its first-start handoff | `-fno-req-handoff` (the whole form) |
+| 4a | `drop-handoff`: the VM's required-run handoff rows, the attempt loop's (`tuning.md` §2.41¶8b, ¶8c) and the hybrid prefilter's re-entry (§2.41¶8a) | VM | the jump to the necessary run's next occurrence; a hybrid keeps its first-start handoff | `-fno-req-handoff` (the whole form) |
 | 5 | `drop-prefilter`: the VM hybrid's prefilter | VM hybrid | candidate skipping; the VM tries every start | none |
 | 6 | `drop-islands`: the VM's alternation islands (`tuning.md` §2.20) | VM | the trie dispatch; each alternation tries its branches through the serial chain | `-fno-alt-island` (the whole form) |
 

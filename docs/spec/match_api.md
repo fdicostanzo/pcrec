@@ -208,11 +208,11 @@ own guard `PCREC_RX_SPAN_H`, on the same condition.
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 104
-#error "pcrec: this artifact (abi 104) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 105
+#error "pcrec: this artifact (abi 105) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 104
+#define PCREC_RX_ABI_H 105
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -561,7 +561,8 @@ is the one a scan from `startpos` gives.**
   reverse: an answer under `-fno-start-set` is the answer with the skip.
 - <a id="s3-1-p15a"></a>[3.1¶15a] Likewise under `-fno-req-handoff` on a VM artifact with no DFA
   scan, where the handoff skips the attempts before a necessary run's whole
-  run (`tuning.md` §2.41¶8b, ¶9a): a search that gives up denied may return
+  run, or those past its last occurrence (`tuning.md` §2.41¶8b, ¶8c, ¶9a):
+  a search that gives up denied may return
   the unbounded answer with the handoff, never the reverse.
 
 <a id="s3-1-p16"></a>[3.1¶16] **`caps[0][0]` is where REPORTING begins, which is not always where matching
@@ -1649,7 +1650,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `104` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `105` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1807,7 +1808,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `104` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `105` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -2489,6 +2490,10 @@ the value.
 ```c
 #define RX_REQ_HANDOFF "2"     /* the scan begins 2 bytes before the
                                   pre-check's first landmark hit */
+#define RX_REQ_HANDOFF "unbounded" /* the attempts begin at startpos; a
+                                  re-ask after a failed attempt past the
+                                  run's occurrence last found ends the
+                                  search where none is left */
 #define RX_REQ_HANDOFF "none"  /* the scan begins at startpos */
 ```
 
@@ -2502,7 +2507,15 @@ scan (`_VM_PREFILTER "none"`), an unanchored pattern, and a whole run with a
 finite `K`, whose landmark is that WHOLE run and whose `K` is its maximum
 byte offset (the attempt loop's first attempt begins at the hit less `K`, and
 re-enters after each failed attempt where every part of the pre-check is a
-byte or slice of the run). The pre-check's LANDMARK
+byte or slice of the run). `"unbounded"` where the attempt-loop row
+`handoff-attempts-unbounded` applies (`tuning.md` §2.41¶8c): the same
+conditions with the whole run's maximum offset unbounded; the attempts begin
+at `startpos`, and once an attempt position passes the candidate last found
+(on that row the pre-check verifies the whole run, so a candidate is an
+occurrence) the pre-check is asked again from there, none ending the search
+with no match (no attempt past the run's last occurrence can match; the
+re-ask sits after a failed attempt, so one attempt past the last occurrence
+may still run before it is asked). The pre-check's LANDMARK
 is the run where `_REQ_RUN` is not `"none"`, else the one byte
 `_REQ_BYTE`; `K` is the landmark's position 0's maximum byte offset from the
 attempt start (the whole run's position-0 offset for a run). Then every match

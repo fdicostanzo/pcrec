@@ -86,13 +86,40 @@ CASES = [
  ("ab\\Kcd", "byte", "vm",
   ["abcd", "zabcd", "abxabcd"],
   "\\K: the reported start may exceed the moved start"),
- # ---- declines: an unbounded K, one attempt ----
+ # ---- [REQ-PAST-LAST] K unbounded: the stop past the whole run's last
+ # occurrence (`handoff-attempts-unbounded`, tuning.md §2.41¶8c) ----
+ ("(a|aa|b)+cxyz", "byte", "vm",
+  ["cxyzaq" + "a" * 24 + "q", "aabcxyz", "bcxyzbcxyzab", "abq"],
+  "GIVE-UP WITNESS, K unbounded: under -fno-req-handoff startpos 0 of the first subject gives up (steps) "
+  "on the a-run past the last cxyz; the stop answers no match there (one direction only)",
+  ["budget steps=3000"]),
+ ("b*xx(?=q)", "byte", "vm",
+  ["xxxq", "bxxqxxxq"],
+  "K unbounded, a lookahead after the run (review 2026-11-12 r2-reqpast CHK-2): a re-ask from attempt_position + 1 "
+  "instead of attempt_position stops one attempt early and loses the match at 1"),
+ ("a+xyz", "byte", "vm",
+  ["axyqaxyz", "axyqaxyqaxyz"],
+  "K unbounded, a match AFTER a failed attempt that has not passed the last occurrence (CHK-3): "
+  "a stop that fires on any failed attempt loses it"),
+ ("a+xyz", "byte", "vm",
+  ["aaaaxyz", "zaxyz", "xyz", "axyzaaaa", "axyzqaxyzqaaa"],
+  "K unbounded (a+ before the run): the attempts stop past the whole run's last occurrence"),
+ ("[^@ ]+@x", "byte", "vm",
+  ["a@x b@x c@", "ab@y cd@x", "@x@x", "zz@xzz", "a@ b@ c@x d"],
+  "K unbounded, a two-byte run: dense hits re-ask once per passed occurrence"),
+ ("[^@ ]+@x", "utf8", "vm",
+  ["\u20ac@x \u00e9@", X + "@y" + X + "@x", "\u00e9@x\u00e9"],
+  "K unbounded under utf8: the advance is one character, the re-ask starts at a character start"),
+ ("a+\\Kxyz", "byte", "vm",
+  ["aaxyz zaxyz q", "axy", "xyzaxyz"],
+  "K unbounded with \\K: the run is counted from the attempt start, not the reported start"),
+ ("(?<=xyz)a+xyz", "byte", "vm",
+  ["xyzaxyz", "xyzaaxyzq", "axyzxyz", "zxyzaxyzaa"],
+  "K unbounded after a lookbehind holding the run's own bytes: no run byte lies before the match start"),
+ # ---- declines: a set-rest byte the run does not hold, one attempt ----
  ("(a)\\1xyz", "byte", "vm",
   ["aaxyz", "zaaxyz", "axyz"],
-  "decline: a backreference before the run (K unbounded)"),
- ("a+xyz", "byte", "vm",
-  ["aaaaxyz", "zaxyz", "xyz"],
-  "decline: an unbounded prefix (a+) before the run"),
+  "decline: a backreference before the run (K unbounded) and a set-rest byte `a` the run does not hold"),
  ("^abcd", "byte", "vm",
   ["abcd", "zabcd"],
   "decline: one attempt (^)"),
@@ -132,7 +159,7 @@ def main():
         "# EVERY character-boundary start position. The rows are reqvm0's probes:",
         "# the give-up witness (its deny arm's give-ups are run_axes.sh's GIVEUP1",
         "# entries), \\G before the run, a lookbehind, utf8 round-up, caseless K in",
-        "# bytes, \\K, the declines, and bench subst cases 7 and 2 on small subjects.",
+        "# bytes, \\K, the unbounded-K stop ([REQ-PAST-LAST]), the declines, subst 7, 2.",
         ""]
     for case in CASES:
         pat, enc, route, subjects, why = case[:5]
