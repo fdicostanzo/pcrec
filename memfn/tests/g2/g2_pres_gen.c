@@ -556,7 +556,8 @@ static mf_finder_listing g_rows;
 /* R-38 Part D's populations (part_d.md §5.1.1 D0-D2 floors; K35) */
 static long g_wide_sites, g_wide_ver, g_nofind, g_nobg, g_f24, g_f24_3, g_scan_findable,
             g_declines, g_dec_member, g_dec_assign, g_dec_twin, g_dec_untested, g_dec_refused,
-            g_dec_rendered, g_dec_noprecheck, g_scanless_req, g_dom_noscan, g_deny_sites, g_deny_one;
+            g_dec_rendered, g_dec_noprecheck, g_scanless_req, g_dom_noscan, g_deny_sites, g_deny_one,
+            g_r41, g_r41_flip;
 
 static void fail(int id, const char *what, const char *why)
 {
@@ -626,6 +627,25 @@ static void twin_check(gsite *g, const mf_art *art, const mf_site *s, int dec, i
     }
     g_wk3_sites++;
     if (pk.landmark < 0) { fail(g->id, "W-K3", "no landmark bit on an ASSIGN site"); return; }
+    /* R-41 (MF_SITE_ABI 28): a STATED unbounded K (MF_HEAD_UNBOUNDED)
+       declines the landmark on every ASSIGN site, whatever the bit at K 0
+       (an h == 0 member's admission included); r41_flip counts the sites
+       whose K 0 bit was 1, the ones the decline moves */
+    {
+        mf_site u = t;
+        mf_pres_picks pu;
+        u.head_max = MF_HEAD_UNBOUNDED;
+        if (mf_pres_ports(art, &u, &u.pres_proof, all, &pu)) {
+            fail(g->id, "R-41", "mf_pres_ports refused a stated unbounded K");
+            return;
+        }
+        if (pu.landmark != 0) {
+            fail(g->id, "R-41", "a stated unbounded K (MF_HEAD_UNBOUNDED) did not decline the landmark");
+            return;
+        }
+        g_r41++;
+        g_r41_flip += pk.landmark == 1;
+    }
     /* F1 (part_d.md §2.4 item 5): on a DECLINED run the landmark is the head
        member, so the bit at K 0 is G2's own byte rule: the member's mass h
        (its rate capped at 1e6; under no rates the uniform floor(1e6 / 256))
@@ -1222,10 +1242,10 @@ int main(int argc, char **argv)
     printf("G2PWIDE %s wide_sites=%ld wide_ver=%ld nofind=%ld nobg=%ld f24=%ld f24_3=%ld "
            "scan_findable=%ld PD=%ld declines=%ld dec_member=%ld dec_assign=%ld dec_twin=%ld "
            "dec_untested=%ld dec_refused=%ld dec_rendered=%ld dec_noprecheck=%ld scanless_req=%ld "
-           "dom_noscan=%ld deny_sites=%ld deny_one=%ld\n", tag, g_wide_sites, g_wide_ver, g_nofind,
+           "dom_noscan=%ld deny_sites=%ld deny_one=%ld r41=%ld r41_flip=%ld\n", tag, g_wide_sites, g_wide_ver, g_nofind,
            g_nobg, g_f24, g_f24_3, g_scan_findable, g_route_sites[G2P_PD], g_declines, g_dec_member,
            g_dec_assign, g_dec_twin, g_dec_untested, g_dec_refused, g_dec_rendered, g_dec_noprecheck,
-           g_scanless_req, g_dom_noscan, g_deny_sites, g_deny_one);
+           g_scanless_req, g_dom_noscan, g_deny_sites, g_deny_one, g_r41, g_r41_flip);
     printf("g2_pres_gen failures: %d\n", g_fails);
     return g_fails ? 1 : 0;
 }

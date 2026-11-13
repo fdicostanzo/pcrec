@@ -172,8 +172,9 @@ generic.0.0:21cde5415e8e8c159577afdc778e31d184de8a97b804996b32c33e098e6d8040"
 # Linux dev box (seed 20261110, 400 + 300 wide sites): each floor is the
 # least over the six target passes less ~10% (a count under 10 keeps its
 # measure). Measured: 300 197 61 13 32 27 194 45 18 29 18 45 18 27 9 7;
+# R-41's stated unbounded K, declined on every ASSIGN site: 729 729;
 # driver 18 9 151 10 399844; deny pass 576 81 (wide_ver 9 under the deny).
-FLOOR_WIDE="wide_sites:270 wide_ver:177 nofind:54 nobg:11 f24:28 f24_3:24 scan_findable:174 declines:40 dec_member:16 dec_assign:26 dec_twin:16 dec_refused:40 dec_rendered:16 dec_noprecheck:24 scanless_req:9 dom_noscan:7"
+FLOOR_WIDE="wide_sites:270 wide_ver:177 nofind:54 nobg:11 f24:28 f24_3:24 scan_findable:174 declines:40 dec_member:16 dec_assign:26 dec_twin:16 dec_refused:40 dec_rendered:16 dec_noprecheck:24 scanless_req:9 dom_noscan:7 r41:656 r41_flip:656"
 FLOOR_WIDE_RUN="declined:16 scanless:9 scanless_match:135 nobg:9 exact_wide:359859"
 # THE DENY PASS (the run-verify-wide deny, [r1pd F6, F7]): generic target, every
 # site under no-run-verify-wide; every verified extent findable-only (the
@@ -302,6 +303,9 @@ plant_spec() {
         # holds where every-pos stopped holding)
         echo 'ofsskip.c@@        *k = *a = *b = -1;@@        *k = *a = *b = 0;   /* SABOTAGE S3113 */'
         echo 'ofsskip.c@@    return x->a >= 0 && x->b >= 0;@@    return x->b >= 0;' ;;
+    S3119) # R-41: a stated unbounded K (MF_HEAD_UNBOUNDED) no longer declines the
+        # landmark: the bit is read as at K 0
+        echo 'presence.c@@        if (s->head_max == MF_HEAD_UNBOUNDED) out->landmark = 0;@@        if (0) out->landmark = 0;   /* SABOTAGE S3119 */' ;;
     S3114) # p13: P2 keeps `rs && !proof->run` on a no-scan run: a dominated site
         # whose run has no findable position is no longer dominated
         echo 'presence.c@@        else if (rsc && !proof->run) dom = 0;@@        else if (rs && !proof->run) dom = 0;   /* SABOTAGE S3114 */' ;;
@@ -356,10 +360,11 @@ plant_expect() {
     S3112) echo 'no \(T, K\) spelling' ;;
     S3113) echo 'FLOOR: .*scanless_match|: SOUND: |: EXTENT: ' ;;
     S3114) echo 'FLOOR: .*dom_noscan' ;;
+    S3119) echo ': R-41: ' ;;
     *) echo '' ;;
     esac
 }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114"
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3119"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
