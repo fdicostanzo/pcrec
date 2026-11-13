@@ -1,0 +1,20 @@
+# k382land: landing of the kit's K38-2 and the S708 witness fix
+
+## STATE AT HANDOFF
+- STATE: delivered locally; pushed to origin/main only if the final handback says so; a make test is OWED.
+- lane/memfn-k382 (f95739f5f, artifact abi 104, MF_SITE_ABI 27) merged into main as 7c16349d7 with no conflict at all (the docs/dev/history/claude_md/docs__dev__lanes.md union was not needed). The kit's done-line commit 2c59de844 (R-38 K38-2, on lane/memfn-k1108) was not an ancestor of main; merged as its own commit (three memfn/docs files only). lane/memfn-k1108's tip af7c5f34d (two later kit journal commits) was NOT merged: the brief named 2c59de844.
+- `make strict`: green. First run was RED for a reason that is not the code: memfn/tests/check_targets.sh links build/libpcrec.a, which was stale (site abi 27 vs kit abi 26 in its gen.log); `make -j8` rebuilt it and `make strict` then printed "whole tree compiles clean ... the kit's target table check passes".
+- S708 now DETECTED (see CHANGES). Cloud mechrows dispatch and the push are step 3 (see OWED).
+
+## CHANGES
+- Identity gate: tests/codegen/run_recursion_identity.sh FILEPIN re-pinned from the kit's self-pin ff1885b16 to the landing merge 7c16349d7 (abi 104). ABASEPIN left at 06699f615: the kit's note pinned only FILEPIN and moved no call-free region claim for (A); the recidentity chain job on main (200-main-b...recid) was GREEN at 20:23 before this re-pin, the make test below re-checks it.
+- docs/dev/full_suite_ledger.md: landing line (MAJOR, abi 103 -> 104).
+- Plan: there is no [K38] row in docs/dev/plan.md (`scripts/entry K38-2` finds nothing); the kit's done line is in memfn/docs/responses.md. The run-pos-set rows that "wait on K38-2" (plan.md lines 223-224, 462-463) are the manager's to flip.
+- S708 witness (tests/base/vm_lazy_rmin_prefix.rxt): padding the 5-byte subjects to 7+ bytes does NOT help. The [S1] min-width stop skips every start with fewer than the pattern's minimum width (7 here) left, and that width already covers the rmin*stride reach, so the planted reach test can never be the deciding check for `(a)(?:ab){2,}?ac`. Fix: two new blocks appended (no existing line moved, the start-set manifests and start_landing_movers key on file:line): `(a)(?:ab){2,}?ac|q`, default route and `engine vm`. The `|q` alternative drops the minimum width to 1, so the stop does not apply and a short run reaches the lazy prefix. Expectations: python `re` for every subject (aabac no match, aababac 0-7, xaababacy 1-8, aab and aabab no match, aabacq 5-6 with group 1 unset). Old subjects kept.
+- Evidence: `bash tests/harness/run.sh tests/base/vm_lazy_rmin_prefix.rxt` 0 failed (188 cases when padded variant was tried; final file 177 + 18 new); `bash tests/mech/run_sabotage_matrix.sh S708` at 07c49b9f9 and again after the final rxt commit: reach:ok(1/1), corpus 3fail/177pass, DETECTED, "mech run COMPLETE: 1 rows (unexpected: 0 ...)". The matrix measures committed HEAD only, so the rxt had to be committed first.
+- tests/rxtsource/run_rxtsource_tests.sh: census and C3 pins moved by the two blocks (found by that script, re-pinned and re-run green, rc 0): CENSUS/RUNSH_BLOCKS 7032 -> 7034, CENSUS/RUNSH_LINES 98198 -> 98216, C3_PASS 22964 -> 22982, C3_VERIFIABLE 25377 -> 25395.
+
+## OWED
+- Start-set manifest rows: tests/startset/manifests/manifest_s2_vm_auto.tsv (and possibly vm_forced) likely need +2 rows for the two new blocks (the cloudtri precedent: "correct movers never pinned"), plus any axes allowance (tests/axes/start_landing_movers.tsv). Not run (evening hold: no suites). The make test below shows it as a test-startset red if so; the row text comes from that section's own mover list.
+- `make test` on main: queued as box job 450-main-k382-maketest (not-before 2026-11-13T01:00, perfrun label main-k382-maketest, log /var/tmp/pcrec-pcrec/scratch/k382land/maketest.log, cap 9000 s). Verdict by `scripts/verdict` on that log; a red `test-startset` or `test-axes` would be the manifest rows above.
+- Cloud mechrows dispatch (`scripts/cloudrun --owner main --kind mechrows --name s708 --rows S708`): after the push, see the final handback.
