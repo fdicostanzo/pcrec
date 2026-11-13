@@ -281,6 +281,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-12, Frank: blocks instead of doubling, "also helps with streaming"): leading candidate = BLOCKED look-ahead: one presence question per block of B bytes ahead of the loop (yes: the block's attempts run unasked; no: scan forward to the next occurrence, end of subject stops); forward-only, at most one block ahead (stream- and readahead-friendly; doubling can demand unbounded look-ahead a stream cannot supply). B is a tuning constant: derive it from a SYSTEM constant (Frank): the stream's chunk when streaming, else the page size (sysconf(_SC_PAGESIZE), POSIX libc, or a build-time page constant if the measurement shows insensitivity; not the per-device /sys readahead window, not glibc-only cache sizes) and show insensitivity across that range in the measurement.
 
 ## Candidates ([OPTLOOP])
+- [COST-EXPLAIN] STATE:not-started — a regex cost explainer: per-construct marginal cost by ablation (swap a node, recompile)
+  filed: 2026-11-13 manager (Frank: "That suggests a tool for looking at regex dfa cost by repeated modify/compile")
+  status (2026-11-13): filed, unscheduled; idea from the predicate cost-surfacing discussion ([COND-FAMILY] row body)
+  next: when scheduled: a driver over existing compiles; per node a stand-in variant ({n,m} -> +, class -> ., drop lookaround/alternative, capture -> non-capturing, predicate -> its type); report delta bytes/states/compile ms/engine route, ranked; bounded by the compile timeout
+  refs: [DFA-MIN-FAST] (its long-compile census can use it); [COND-FAMILY] (predicate marginal cost is one node kind); [LOOP-FIXW]
+  A stand-in changes meaning: the report says what a part COSTS, never 'rewrite it so'; equivalent cheaper forms are a separate, harder feature. Users get 'why is my matcher huge/slow' pointed at the construct.
 - [DFA-MIN-FAST] STATE:not-started — DFA minimization is quadratic on large counted repeats; make it n log n
   filed: 2026-11-13 manager (Frank: "It should be microseconds or at least under a second ... running some check nonlinearly"; "Agree" to filing it separately)
   status (2026-11-13): MEASURED on main: (?:a|b){1,n} compiles in 0.08/0.31/0.80/3.10/12.2 s at n = 1875/3750/7500/15000/30000 (x4 per doubling), 99.9% in pcrec_minimize_dfa; n = 60000 skips the DFA (VM) in 0.04 s
