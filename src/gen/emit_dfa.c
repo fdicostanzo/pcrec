@@ -367,11 +367,11 @@ typedef struct {
     int nterm;
     struct { const PrefixK *k; } term[PCREC_OFSK_MAX_SET]; /* k == NULL: the run */
     int run_o, run_len;               /* run_len == 0: no run term */
-    const unsigned char *run_bytes;   /* the req_run fact's `whole`, never a copy */
-    /* [OPT-LITSCAN] S4 C3: the run's per-position K, or NULL where every
-     * position is exact: a prefilter row's run term is a PIN, which is exact
-     * by definition (litscan_s4.md §2.3.4). */
-    const unsigned char *run_mask;
+    /* the req_run fact, never a copy, and the run position at `run_o`: a
+     * prefilter row's run term is a PIN, exact by definition (litscan_s4.md
+     * §2.3.4), so each of its positions is one byte */
+    const ReqRun *run;
+    int run_at;
     int maxk;                         /* the loop guard: the largest tested offset */
     int noffsets;                     /* distinct offsets tested */
 } OfsTest;
@@ -1031,14 +1031,6 @@ void pcrec_emit_min_width_check(StrBuf *c, const char *indent, const char *posva
  * SLASH, which would close this very comment if spelled here. In the C
  * STRING LITERAL they go through `pcrec_sb_ctext` (string frame), whose octal numeric escape
  * is what keeps a non-printable byte from swallowing the byte after it. */
-/* `mask[0..n)` where some position of it is not `0xFF`, else NULL: the
- * `OfsTest.run_mask` spelling of "this run is exact". */
-static const unsigned char *run_mask_or_null(const unsigned char *mask, int n)
-{
-    for (int i = 0; i < n; i++)
-        if (mask[i] != 0xFF) return mask;
-    return NULL;
-}
 
 /* The emitted name of the run pre-check's block, `<p>_reqrun` (R-38 K38-2:
  * one run part, the kit's derived part; [K66]'s `<p>_reqrun_whole` retired
@@ -1159,13 +1151,45 @@ static void req_note_stretch(StrBuf *c, const char *indent, const mf_run_reply *
                     (int)rr->ver_lo, (int)rr->ver_lo + (int)rr->ver_len - 1);
 }
 
+/* The note's last clause: where the kit's run part SCANS, the position (and
+ * on an exact run the byte) its find reads; where it verifies with no scan
+ * position ([RUN-POS-SET] stage 3, part_d.md §9 item 4: `has_scan` 0), that
+ * every candidate is verified — `scan` is unread there. */
+static void req_note_scan(StrBuf *c, const char *indent, bool brk, const mf_run_reply *rr,
+                          int exact)
+{
+    if (brk) pcrec_sb_printf(c, "\n%s *", indent);
+    if (!rr->has_scan)
+        pcrec_sb_printf(c, " the run has no scan position: each candidate is verified");
+    else if (exact >= 0)
+        pcrec_sb_printf(c, " the scan is on byte %d at offset %d of the run", exact, (int)rr->scan);
+    else
+        pcrec_sb_printf(c, " the scan is on position %d of the run", (int)rr->scan);
+}
+
 static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, const mf_run_reply *rr)
 {
     const ReqRun *r = pcrec_fact_req_whole_run(cx);
-    const unsigned char *b = r->whole, *mk = r->whole_mask;
-    int n = r->whole_len, k;
+    int n = r->whole_len, k, t[PCREC_MAX_REQ_RUN_SCAN], mk[PCREC_MAX_REQ_RUN_SCAN];
+    bool cubes = true, exact = true;
+    unsigned char b[PCREC_MAX_REQ_RUN_SCAN];
+    for (k = 0; k < n; k++) {
+        if (!pcrec_req_cube(r->pos[k], &t[k], &mk[k])) cubes = false;
+        if (mk[k] != 0xFF) exact = false;
+        b[k] = (unsigned char)t[k];
+    }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    if (run_mask_or_null(mk, n)) {
+    if (!cubes) {
+        /* [RUN-POS-SET] stage 3: a position that is not one cube names its
+         * members, in the fact's own spelling (hex and brackets only, so
+         * nothing in it can close this comment). */
+        pcrec_sb_printf(c,
+            "%s/* [OPT-REQPOS] every match of this pattern contains the %d positions\n"
+            "%s * %s (a bracketed position takes any one of its members), so a\n"
+            "%s * window without them holds no match at all;",
+            indent, n, indent, pcrec_fact_stamp_req_run(cx, -1), indent);
+        req_note_scan(c, indent, true, rr, -1);
+    } else if (!exact) {
         /* [OPT-LITSCAN] S4 C3: a masked run names its mask, so a reader
          * sees which positions take either member. */
         pcrec_sb_printf(c,
@@ -1177,17 +1201,15 @@ static void req_note_run(Ctx *cx, StrBuf *c, const char *indent, const mf_run_re
         pcrec_sb_printf(c,
             " (a byte matches where\n"
             "%s * byte & mask equals it), so a window without them holds no match\n"
-            "%s * at all; the scan is on position %d of the run",
-            indent, indent, (int)rr->scan);
+            "%s * at all;", indent, indent);
+        req_note_scan(c, indent, false, rr, -1);
     } else {
         pcrec_sb_printf(c,
             "%s/* [OPT-REQPOS] every match of this pattern contains the %d bytes\n"
             "%s * \"", indent, n, indent);
         pcrec_sb_ctext(c, b, (size_t)n, PCREC_CTEXT_COMMENT);
-        pcrec_sb_printf(c,
-            "\", so a window without them holds no match at all;\n"
-            "%s * the scan is on byte %d at offset %d of the run",
-            indent, (int)r->whole[rr->scan], (int)rr->scan);
+        pcrec_sb_printf(c, "\", so a window without them holds no match at all;");
+        req_note_scan(c, indent, true, rr, rr->has_scan ? b[rr->scan] : -1);
     }
     req_note_stretch(c, indent, rr, n);
     pcrec_sb_cmt_close(c);
@@ -1437,7 +1459,7 @@ static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
         mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
         pcrec_memfn_wspan(sp, 0, run->whole_len, MF_VERIFY_NO);
         for (int j = 0; j < run->whole_len; j++)
-            pcrec_memfn_wpos_cube(sp, j, run->whole[j], run->whole_mask[j]);
+            pcrec_memfn_wpos_bits(sp, j, run->pos[j]);
         pcrec_memfn_part_window_stated(cx, &p[k], a, 1, MF_WFLOOR_SUBJECT);
         k++;    /* nterm 0: the run states no term */
     }
@@ -6797,14 +6819,15 @@ static const char *find_fn_name(void *u, uint32_t fn_ref)
  * and only where the builder already asked the walk (`us->walk`), so
  * neither the facts' `used` record nor the byte-rate's consulted population
  * moves. No rank, pick or plan is computed here (D157). */
-/* Does the walk prove window position (`byte`, `mask`) at offset `d`: every
- * byte its k-set holds there lies in the position's cube? False past the
- * walk (no offset there says anything). */
-static bool walk_proves(const KsetWalk *wk, int d, unsigned byte, unsigned mask)
+/* Does the walk prove the run's position `i` at offset `d`: every byte its
+ * k-set holds there lies in the position's set (a subset-of-set test, any
+ * set: R grows by ROLE, never stopping at a position for its shape, part_d.md
+ * §9 item 1)? False past the walk (no offset there says anything). */
+static bool walk_proves(const KsetWalk *wk, int d, const ReqRun *r, int i)
 {
     if (d < 0 || d >= wk->nwalk) return false;
     for (int x = 0; x < 256; x++)
-        if (wk->k[d].set[x] && (x & mask) != (byte & mask)) return false;
+        if (wk->k[d].set[x] && !pcrec_run_has(r, i, x)) return false;
     return true;
 }
 
@@ -6824,19 +6847,19 @@ static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
     }
     for (int i = 0; r && i < pin.len; i++)
         if (pin.o + i >= wk->nwalk || wk->k[pin.o + i].count != 1 ||
-            wk->k[pin.o + i].byte != r->whole[pin.at + i])
+            wk->k[pin.o + i].byte != pcrec_run_byte(r, pin.at + i))
             pcrec_ctx_fail(cx, 0, "internal error: the run pin's stretch is not the walk's "
                            "singletons at offset %d (src/gen/emit_dfa.c, pf_window_of)",
                            pin.o + i);
     int w = pin.o - pin.at, lo = pin.at, hi = pin.at + pin.len;   /* R: window [lo, hi) */
-    while (r && lo > 0 && walk_proves(wk, w + lo - 1, r->whole[lo - 1], r->whole_mask[lo - 1]))
-        lo--;
-    while (r && hi < r->whole_len && walk_proves(wk, w + hi, r->whole[hi], r->whole_mask[hi])) hi++;
+    while (r && lo > 0 && walk_proves(wk, w + lo - 1, r, lo - 1)) lo--;
+    while (r && hi < r->whole_len && walk_proves(wk, w + hi, r, hi)) hi++;
     int z0 = -w;        /* the window position at offset 0 */
-    bool parked_r = r && z0 >= lo && z0 < hi && r->whole_mask[z0] == 0xFF &&
+    int x0 = r && z0 >= lo && z0 < hi ? pcrec_run_byte(r, z0) : -1;
+    bool parked_r = x0 >= 0 &&
                     us->kind == DFA_PF_ONE_BYTE && us->cand.count == 1 &&
-                    us->cand.byte == r->whole[z0] && wk->k[0].count == 1 &&
-                    wk->k[0].byte == r->whole[z0];
+                    us->cand.byte == x0 && wk->k[0].count == 1 &&
+                    wk->k[0].byte == x0;
     int n = reseed ? 2 : 1, z = bounded ? 2 : 1;
     mf_walt *a = pcrec_memfn_walts(cx, n);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, &a[0], MF_ENTRY_PARKED, 1 + parked_r);
@@ -6863,7 +6886,7 @@ static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
         if (!rsp[i]) continue;
         pcrec_memfn_wspan(rsp[i], w + lo, hi - lo, MF_VERIFY_NO);
         for (int j = lo; j < hi; j++)
-            pcrec_memfn_wpos_cube(rsp[i], j - lo, r->whole[j], r->whole_mask[j]);
+            pcrec_memfn_wpos_bits(rsp[i], j - lo, r->pos[j]);
     }
     *out = a;
     return n;
@@ -7418,7 +7441,8 @@ static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const CandRow *pf, OfsTe
         RunPin pin = us_run_pin(cx, us);
         t->run_o = w->run_lo;
         t->run_len = w->run_len;
-        t->run_bytes = r->whole + (w->run_lo - (pin.o - pin.at));
+        t->run = r;
+        t->run_at = w->run_lo - (pin.o - pin.at);
     }
     int maxk = w->stop, n = 1;
     bool placed = false;
@@ -7450,12 +7474,11 @@ static bool ofs_test_at(const OfsTest *t, int o, const PrefixK **kp, int *bytep)
     *kp = NULL;
     *bytep = -1;
     if (o == t->scan_k) {
-        *bytep = t->run_mask && t->run_mask[o - t->run_o] != 0xFF ? -1 : t->scan_byte;
+        *bytep = t->scan_byte;
         return true;
     }
     if (t->run_len > 0 && o >= t->run_o && o < t->run_o + t->run_len) {
-        *bytep = t->run_mask && t->run_mask[o - t->run_o] != 0xFF
-               ? -1 : t->run_bytes[o - t->run_o];
+        *bytep = pcrec_run_byte(t->run, t->run_at + o - t->run_o);
         return true;
     }
     for (int i = 0; i < t->nterm; i++) {
@@ -7491,21 +7514,22 @@ static bool ofs_test_at(const OfsTest *t, int o, const PrefixK **kp, int *bytep)
  * run's link is decided by its route alone and the reply is the stretch an
  * emitted pre-check verifies.
  *
- * [OPT-LITSCAN] S4 C3 THE SAME QUESTION, READ OVER CUBES (litscan_s4.md
- * §2.3.5, r2 R2-C3): on an exact run it is `b == whole[i]` at every offset,
- * as before. On a masked run the pin covers only an exact stretch, so the
- * masked positions must be tested by the selection's own terms — `(?i)x/1234`
- * is verified (offset 0's model term is exactly `{x, X}`), `a[bc]de` is not
- * (nothing tests offset 1), and G1 keeps its pre-check. */
-static bool ofs_test_pos_in_cube(const OfsTest *t, int o, const ReqRun *r, int i)
+ * [OPT-LITSCAN] S4 C3 THE SAME QUESTION, READ OVER SETS (litscan_s4.md
+ * §2.3.5, r2 R2-C3; [RUN-POS-SET] stage 3): on an exact run it is the one
+ * member at every offset, as before. On a wider run the pin covers only an
+ * exact stretch, so the wider positions must be tested by the selection's
+ * own terms — `(?i)x/1234` is verified (offset 0's model term is exactly
+ * `{x, X}`), `a[bc]de` is not (nothing tests offset 1), and G1 keeps its
+ * pre-check. */
+static bool ofs_test_pos_in_set(const OfsTest *t, int o, const ReqRun *r, int i)
 {
     const PrefixK *k;
     int b;
     if (!ofs_test_at(t, o, &k, &b)) return false;
-    if (b >= 0) return (b & r->whole_mask[i]) == r->whole[i];
+    if (b >= 0) return pcrec_run_has(r, i, b);
     if (!k) return false;
     for (int x = 0; x < 256; x++)
-        if (k->set[x] && (x & r->whole_mask[i]) != r->whole[i]) return false;
+        if (k->set[x] && !pcrec_run_has(r, i, x)) return false;
     return true;
 }
 
@@ -7521,9 +7545,9 @@ static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *
     if (run < 0 || (unsigned)run >= cls->npres || !cls->pres[run].verify) return false;
     const mf_run_reply *rr = &cls->run;
     int base = pin.o - pin.at;
-    if (rr->has_scan && !ofs_test_pos_in_cube(t, base + rr->scan, r, rr->scan)) return false;
+    if (rr->has_scan && !ofs_test_pos_in_set(t, base + rr->scan, r, rr->scan)) return false;
     for (int i = rr->ver_lo; i < rr->ver_lo + rr->ver_len; i++)
-        if (!ofs_test_pos_in_cube(t, base + i, r, i)) return false;
+        if (!ofs_test_pos_in_set(t, base + i, r, i)) return false;
     return true;
 }
 
@@ -8883,7 +8907,7 @@ static bool req_handoff_applies(const CandSel *s)
 static bool req_whole_holds_byte(const ReqRun *r, int b)
 {
     for (int j = 0; j < r->whole_len; j++)
-        if (r->whole_mask[j] == 0xFF && r->whole[j] == b) return true;
+        if (pcrec_run_byte(r, j) == b) return true;
     return false;
 }
 
@@ -9074,7 +9098,7 @@ static unsigned long long req_landmark_hit_ppm(Ctx *cx, const uint32_t *rate)
     int run = req_pres_run(ps), lo = 0, n = r->whole_len;
     if (run >= 0 && cls->pres[run].verify) { lo = cls->run.ver_lo; n = cls->run.ver_len; }
     for (int i = lo; i < lo + n; i++) {
-        for (int b = 0; b < 256; b++) set[b] = (b & r->whole_mask[i]) == r->whole[i];
+        for (int b = 0; b < 256; b++) set[b] = pcrec_run_has(r, i, b);
         hit = (hit * pcrec_find_set_mass(rate, set) + 999999u) / 1000000u;
     }
     return hit;
@@ -11184,19 +11208,17 @@ static const CandRow *cand_select_quiet(CandSlot slot, const CandSel *s)
 static bool req_set_leads_own(Ctx *cx)
 {
     const ReqRun *r = pcrec_fact_req_whole_run(cx);
-    unsigned char cand[2], care[2];
+    const unsigned char *cand[2];
+    uint8_t qs[32] = { 0 };
     int q;
     if (r->whole_len < 2) return false;
     if ((q = req_set_pick_of(cx, pcrec_fact_req_set_stated(cx))) < 0) return false;
     /* pcrec's own pick (`req_byte`'s derivation, src/facts/req.c): the shadow's source
        is never the kit's */
-    int m = pcrec_find_run_scan_index(pcrec_find_byte_rate(cx), r->whole, r->whole_mask,
-                                      r->whole_len);
-    cand[0] = r->whole[m];
-    care[0] = r->whole_mask[m];
-    cand[1] = (unsigned char)q;
-    care[1] = 0xFF;
-    return pcrec_find_pick(pcrec_find_byte_rate(cx), cand, care, 2, 0) == 1;
+    cand[0] = r->pos[pcrec_find_run_scan_index(pcrec_find_byte_rate(cx), r->pos, r->whole_len)];
+    qs[q >> 3] = (uint8_t)(1u << (q & 7));
+    cand[1] = qs;
+    return pcrec_find_pos_pick(pcrec_find_byte_rate(cx), cand, 2, 0) == 1;
 }
 
 /* [MEMFN] R17-b' B3b the [K65] set rest pcrec's builder tested before B3b
@@ -11215,7 +11237,7 @@ static int req_rest_own_sig(Ctx *cx, int lead, int *n)
     if (pcrec_artifact_has_dfa_scan(cx)) return 0;
     if (r->whole_len >= 2) {
         for (int k = 0; k < r->whole_len; k++)
-            if (r->whole_mask[k] == 0xFF) done[r->whole[k]] = true;
+            if (pcrec_run_byte(r, k) >= 0) done[pcrec_run_byte(r, k)] = true;
     } else if (pcrec_fact_req_byte_stated(cx) >= 0) done[pcrec_fact_req_byte_stated(cx)] = true;
     if (lead >= 0) done[lead] = true;
     for (int b = 0; b < 256; b++)
@@ -16103,7 +16125,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
  *      reads no run position). */
 /* The whole-run index cover offset `m` holds, RESOLVED FROM THE FIND's
  * OFFSET: over the placements `o` of the run in the cover's sets (each
- * position its cube's byte set) that contain `m` (`o <= m < o + n`), `m - o`
+ * position its byte set) that contain `m` (`o <= m < o + n`), `m - o`
  * where they all agree, else -1 (none contains it, or two read different
  * run positions). A run placed at several offsets is no obstacle where the
  * find's own offset names one position (`abcd[0-9]abcd`: the find at 6
@@ -16116,8 +16138,7 @@ static int req_run_in_cover(const ReqRun *r, const MkEnd *e, int m)
         bool eq = true;
         for (int j = 0; eq && j < r->whole_len; j++)
             for (int b = 0; eq && b < 256; b++)
-                eq = ((e->set[o + j][b >> 3] >> (b & 7) & 1) != 0) ==
-                     ((b & r->whole_mask[j]) == r->whole[j]);
+                eq = ((e->set[o + j][b >> 3] >> (b & 7) & 1) != 0) == pcrec_run_has(r, j, b);
         if (!eq) continue;
         if (idx >= 0 && idx != m - o) return -1;
         idx = m - o;

@@ -20,5 +20,12 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "frank|fr
 SAB_REACH_EXPECT="REACH-HULL-CANON"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        rn_put(w, &o, a.bytes[o.n] & k, k);'
-SAB_AFTER='        rn_put(w, &o, (a.bytes[o.n] | ~k) & 0xFF, k);   /* SABOTAGE S456: the upper member */'
+SAB_BEFORE='        if (!rn_admits(w, u)) break;
+        rn_put(w, &o, u);'
+SAB_AFTER='        if (!rn_admits(w, u)) break;
+        { unsigned char *x_ = pcrec_arena_alloc(&w->cx->arena, 32); for (int i_ = 0; i_ < 32; i_++) x_[i_] = a.pos[o.n][i_] & b.pos[o.n][i_]; rn_put(w, &o, x_); }   /* SABOTAGE S456: the intersection */'
+# RE-ANCHORED 2026-11-13 (lane rps3, [RUN-POS-SET] stage 3): positions are sets, so no
+# member is "canonical"; the constructor now refuses a set outside the walk's domain (the
+# empty set among it). The plant stores the branches' INTERSECTION, empty wherever they
+# differ (`frank|fred`'s third position), which the constructor refuses loudly, as the
+# upper member was.
