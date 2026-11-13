@@ -997,7 +997,7 @@ def _synth(d, run_id="selftest"):
     record.pin(rec, fr)
     record.write(os.path.join(d, "run_record.tsv"), rec)
     for j, arms in jobs.items():
-        if j == "J1":
+        if j == "J1" or j not in record.JOBS:       # J5B ([k383 F1]) is planned, not scheduled: no cells
             continue
         lines = []
         for a in arms:

@@ -13,7 +13,7 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   unreached pairs, from `../../span_pick/census0.out`, `vcls.out`, `enter/fixtures.tsv`, the ver-3 and ver-4 cards
   (`memfn/data/cards/kit-grid.tsv`) and the kit policy table (`memfn/data/policy.tsv`); `key_form`, `base_of`,
   `shape_majority`; `plan.py report | groups JOB | freeze OUT`. `[K38-3]` The producer plans a SET of card vers (`METHOD_VERS` 3, 4), each
-  card read at its own ver; kit-grid@4's `enter_back` (dim `back`, t in `BACK_STEPS`) is J5's group `J5.back`, UNMEASURED; `check_card_dims`
+  card read at its own ver; kit-grid@4's `enter_back` (dim `back`, t in `BACK_STEPS`) is its OWN job and group `J5B` `[k383 F1]` (not J5's: `dry J5` keeps its 16 arms), UNMEASURED and UNSCHEDULED (no window job runs it; `record.JOBS`/`common.sh` omit it; est.py's selftest skips jobs outside `record.JOBS`); `check_card_dims`
   (build time) refuses a planned-ver card dim with no `DIM_FIELD` line. Env `SLOT_TREE`: the tree when slot/ runs from a copy.
 - `vcls.py`, `vcls.out` — the verify-class census (T-CMP / T-SETTEST classes of the S2b corpus's row-1 sites):
   settest c1/c2/cn by compare count, rc-words w1/w2/w3 by word count, rc-memcmp l1; c2's `shape`
