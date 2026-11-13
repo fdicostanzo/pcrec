@@ -3387,3 +3387,4 @@ the compiler, and is never adopted silently. Proposed for main to file
   - box gate 590 on the merged tip, BASE d05ffcd23: GREEN (zero movers; G2 presence 1,124,582/0; plants as designed);
   - cloud on the merged tip: test and mechrows S3098-S3104 GREEN;
   - cloud on the pre-merge tip: axes, ubsan and asan GREEN, with only C4 comments and allowlist rows changed since.
+- ack: S2 BUILD (Frank's GO 2026-11-12 23:45; started 07:00 2026-11-13 after the token hold). Build lane partd (opus) on lane/memfn-partd, from main f066e84ee with the design branch lane/memfn-pdesign merged in. It builds part_d.md rev 4's units D0-D3 plus R-41 (the declared unbounded head_max) inside one MF_SITE_ABI event. It is delivered for ONE landing with pcrec's [RUN-POS-SET] stage 3. The MF_SITE_ABI number is taken at landing (next after main's).
