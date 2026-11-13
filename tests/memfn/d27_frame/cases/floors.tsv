@@ -1,0 +1,65 @@
+# D27 d27_frame population floors (K35): each the least count measured over
+# seeds 1-3 x 20000 cases (traced: seed 1), less ~10%. A population below its floor,
+# or empty, turns the run red. Prefix traced: / plain: limits a row to that library.
+# d27fix (ruling F4, 2026-11-13): plan_test_TABLE_shared_term (was _in_run_compare),
+# plan_test_OWN_offered_in_run_compare (new) and the two stop_below rows re-measured the same way.
+# name<TAB>floor
+bad_frame_both_refuse	4142
+bad_frame_cases	4444
+call_bad_values	37807
+cases	18000
+cell E-find/HORS/NO	438
+cell E-find/LIBC/NO	1891
+cell E-find/LIBC_BACK/NO	72
+cell E-find/PAIR/FN	184
+cell E-find/PAIR/NO	512
+cell E-find/WALK/NO	484
+cell E-func/LIBC/FN	371
+cell E-func/NONE/ARM	2389
+cell E-func/PAIR/FN	154
+cell E-generic/NONE/NO	6565
+cell E-stmt/LIBC/NO	18
+cell E-stmt/NONE/ARM	4304
+counting_fixture_asks	17425
+counting_fixture_pair_pick	499
+counting_fixture_refused	7881
+def_null_cases	519
+efunc_fn_without_ofsskip_spelling	529
+egeneric_has_stop0_stop_test0	4364
+egeneric_has_stop1_stop_test0	2201
+framed_DEFINE	8555
+framed_EMIT	9216
+framed_simd_target	11756
+framed_with_lever	2593
+framed_with_opts	6079
+method E-find/D-hors	438
+method E-find/D1	1891
+method E-find/D1c	72
+method E-find/D1w	187
+method E-find/PAIR	713
+method E-find/R7w	297
+method E-stmt/D1	3
+miss_token_vs_text	13986
+none_invariance	18000
+none_ok	17779
+parity_define_both_ok	10470
+parity_define_both_refuse	7494
+parity_emit_both_ok	9216
+parity_emit_both_refuse	8442
+plan_test_OWN	20881
+plan_test_OWN_offered	7827
+plan_test_OWN_offered_in_run_compare	1420
+plan_test_TABLE_shared_term	3400
+plan_test_TABLE_single	8091
+purity_arts	18000
+same_class_asks	17425
+simd_bracketed_text	238
+stop_below_TABLE_plan_OWN	110
+stop_below_TABLE_plan_TABLE	340
+stop_test_OWN	2172
+stop_test_TABLE	1257
+table_hook_flips	2457
+traced:traced_defines	10500
+unrelated_define_asks	18000
+traced:wpath_records	17861
+layer_pairs	11934

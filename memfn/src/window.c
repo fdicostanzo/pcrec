@@ -924,6 +924,17 @@ static const uint8_t *sets_at(const void *src, unsigned j, uint8_t buf[32])
  * §2.5): it asks the run decision's EXACT_AROUND mode with the stretch
  * row's tie stated here, so the lever leaves it behind (kit_run_member's one
  * caller is kit_run_decide). */
+/* R's MEMBER OPTIONS, the one home of the member's tie (run_member asks
+ * them; translate ranks a pinned R's term under the same tie, so the
+ * ranking's first answer is the member): verify NO, the EXACT_AROUND mode,
+ * its tie the stretch row stated here (the lever leaves this site's decision
+ * behind, §2.5); verify YES, the whole run, the art's tie. */
+static kit_run_opts member_opts(const wf_dec *d, const mf_wspan *r)
+{
+    return r->verify == MF_VERIFY_NO ? (kit_run_opts){ KIT_RUN_EXACT_AROUND, T_MASS_STRETCH }
+                                     : kit_run_opts_of(d->art, KIT_RUN_WHOLE);
+}
+
 static void run_member(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
@@ -932,13 +943,7 @@ static void run_member(wf_dec *d)
     const mf_wspan *r = &m->alt->spans[m->run];
     unsigned lo, hi;
     int bj;
-    /* verify NO: the EXACT_AROUND mode, its tie the stretch row stated here
-       (the lever leaves this site's decision behind, §2.5); verify YES: the
-       whole run, the art's tie */
-    kit_run_opts o = r->verify == MF_VERIFY_NO
-                   ? (kit_run_opts){ KIT_RUN_EXACT_AROUND, T_MASS_STRETCH }
-                   : kit_run_opts_of(d->art, KIT_RUN_WHOLE);
-    kit_run_reply rr = kit_run_decide(d->rate, o, sets_at, r->set, r->len, NULL);
+    kit_run_reply rr = kit_run_decide(d->rate, member_opts(d, r), sets_at, r->set, r->len, NULL);
     if (!rr.has_scan) {                 /* no (exact) position: no member */
         d->run_stated = 0;
         return;
@@ -1541,9 +1546,14 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
     if (p->plan_hint != MF_NO_PRED && p->term[p->plan_hint].kind == MF_T_RUN) {
         unsigned n = p->term[p->plan_hint].run_len;
         kit_run_reply r = KIT_RUN_NONE;
+        /* the art's tie; a pinned R's term ranks under its member's tie
+           (member_opts: a verify-NO R's is the stretch row's whatever the
+           lever, so the lever moves the ranking exactly where it moves the
+           member; d27fix F1) */
+        kit_run_opts ro = kit_run_opts_of(d->art, KIT_RUN_WHOLE);
+        if (d->pinned) ro.tie = member_opts(d, &m->alt->spans[m->run]).tie;
         for (unsigned k = 0; k < n; k++) {
-            r = kit_run_decide(d->rate, kit_run_opts_of(d->art, KIT_RUN_WHOLE), sets_at,
-                               w->set[hint_at], n, k ? &r : NULL);
+            r = kit_run_decide(d->rate, ro, sets_at, w->set[hint_at], n, k ? &r : NULL);
             if (!r.has_scan) {          /* the tie row is no strict order (see kit_run_member; kit_run_decide asks it) */
                 kit_fail((mf_art *)d->art, "window family: the run ranking lost position %u of %u "
                          "(the run decision's tie row must be a strict order)", k, n);
@@ -2475,25 +2485,32 @@ typedef struct {
     uint8_t      search, stream, fused;
     uint8_t      plan_test[MF_WPLAN_MAX];
     uint8_t      stop_test;
+    const arm   *ren;       /* the row whose use renders the site (the
+                               family's, or E-func/E-stmt's composer arm) */
 } wf_fpart;
 
 /* The test kind of tested position `k` of plan `w`: TABLE where the define's
- * hooks took the covering span's offered table (C-table), OWN otherwise. */
+ * hooks took the covering span's offered table (C-table) and the text tests
+ * the position alone; OWN otherwise, a position inside a C-run compare
+ * included (one compare of the stretch's bytes reads no table; d27fix F4:
+ * the reply follows the text). */
 static uint8_t test_of(const struct wf_plan *w, unsigned k)
 {
-    return w->table[k] ? MF_WTEST_TABLE : MF_WTEST_OWN;
+    return w->table[k] && w->grp[k] < 0 ? MF_WTEST_TABLE : MF_WTEST_OWN;
 }
 
 /* The composing frames' check test kinds into `fp` (E-find's composed rows,
  * E-generic): per plan position, the define's entry at the same OFFSET
  * (`w->off[]` lists the stop too, so its indices are not plan[]'s), and on
- * E-find the stop's. */
+ * E-find the stop's, by C-table alone (the find tests the stop, not a run
+ * compare it may share). */
 static void plan_tests(const wf_dec *d, const struct wf_plan *w, int stop, wf_fpart *fp)
 {
     for (unsigned i = 0; i < d->np; i++)
         for (unsigned k = 0; k < w->n; k++)
             if (w->off[k] == d->poff[i]) fp->plan_test[i] = test_of(w, k);
-    if (stop && w->stop_ix >= 0) fp->stop_test = test_of(w, (unsigned)w->stop_ix);
+    if (stop && w->stop_ix >= 0)
+        fp->stop_test = w->table[w->stop_ix] ? MF_WTEST_TABLE : MF_WTEST_OWN;
 }
 
 /* The plan function's FRAME PART for Table E's row `r` over decision `d`,
@@ -2507,6 +2524,7 @@ static int wf_frame_of(const mf_art *art, const mf_hooks *def, unsigned gphases,
     memset(fp, 0, sizeof *fp);
     fp->erow = (wf_frame_row)r;
     fp->method = "";
+    fp->ren = w->row;
     if (r == E_FIND && fx->fused) {
         fp->method = fx->brow;
         fp->fused = MF_WFUSED_FN;
@@ -2525,6 +2543,7 @@ static int wf_frame_of(const mf_art *art, const mf_hooks *def, unsigned gphases,
     const char *rid = NULL;
     const arm *a = kit_legacy_arm(art, &L->site, def, gphases, &rid);
     if (!a) return -1;
+    fp->ren = a;
     fp->fused = MF_WFUSED_ARM;
     if (r == E_FUNC && a == &ofsskip_arm) {
         fd_form pick;
@@ -2583,6 +2602,23 @@ static void wd_free(wd_blk *b)
     }
 }
 
+/* The rows whose use refuses a NOP ASSIGN that declares its result
+ * (kit_nop_decl): the family's statement frame (wf_frame: E-find, the
+ * floor) and the generic row's (stmt_value). */
+static const arm *const nop_decl_rows[] = { &wf_find_arm, &wf_floor_arm, &generic_arm };
+
+/* 1 iff the use of a site rendered by `ren` under the one-call hooks `h`
+ * refuses at its own text (mf_emit's use half), beyond the gate's re-check
+ * the walk under DEFINE|USE already applied: a NOP ASSIGN declaring its
+ * result on a row that refuses one. */
+static int emit_use_refused(const arm *ren, const mf_site *s, const mf_hooks *h)
+{
+    if (!kit_nop_decl(s, h)) return 0;
+    for (size_t i = 0; i < sizeof nop_decl_rows / sizeof *nop_decl_rows; i++)
+        if (ren == nop_decl_rows[i]) return 1;
+    return 0;
+}
+
 /* 1 iff mf_define would refuse window site `s` before its selection: an
  * unstated target, a policy bit outside the kit's named set, a part or frame
  * statement the family does not describe (window_route's checks), or denies
@@ -2595,11 +2631,15 @@ static int framed_refused(const mf_art *art, const mf_site *s)
 
 /* The FRAMED ask's body (`gphases` the define's: DEFINE, or DEFINE|USE for
  * EMIT): the plan function over `def` on the heap allocator, then the reply,
- * decision group and frame part. 0, or -1 where the define would refuse. */
+ * decision group and frame part. 0, or -1 where the define would refuse, or
+ * under `use` (an EMIT ask) where mf_emit's use half would: a `decl_point` 1
+ * site (mf_emit places no mf_locals before its use) or emit_use_refused.
+ * The agreement asks with `use` 0: it holds the define's half. */
 static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks *def,
-                          unsigned gphases, mf_wreply *out)
+                          unsigned gphases, int use, mf_wreply *out)
 {
     if (framed_refused(art, site)) return -1;
+    if (use && site->decl_point) return -1;
     wd_blk *blks = NULL;
     mf_arena heap = { &blks, wd_alloc };
     wf_dec *d = wd_alloc(&blks, sizeof *d);
@@ -2618,13 +2658,20 @@ static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks
             legacy_ok(d, w, &eb);
             translate(d, w, eb, L);
         }
-        if (!wf_frame_of(art, def, gphases, r, d, w, fx, L, fp)) {
+        if (!wf_frame_of(art, def, gphases, r, d, w, fx, L, fp) &&
+            !(use && emit_use_refused(fp->ren, site, def))) {
             reply_of(d, out);
             reply_frame(fp, out);
             rc = 0;
         }
     }
     wd_free(blks);
+    /* the fenced defect path (§2.2 Purity) set the art's error: the define
+       refuses there, so the ask does too, never 0 with the error set */
+    if (art->err[0]) {
+        memset(out, 0, sizeof *out);
+        rc = -1;
+    }
     return rc;
 }
 
@@ -2641,7 +2688,7 @@ int mf_wdecide(const mf_art *art, const mf_site *site, const mf_hooks *def, uint
     if (call != MF_WCALL_NONE)
         return wdecide_framed(art, site, def,
                               call == MF_WCALL_EMIT ? MF_PH_DEFINE | MF_PH_USE : MF_PH_DEFINE,
-                              out);
+                              call == MF_WCALL_EMIT, out);
     /* NONE: the decision reads no frame fact (§0), so only the window facts
        are held, and `def` is not read */
     if (wf_check(site, 0)) return -1;
@@ -2681,9 +2728,10 @@ static const char *wr_first_diff(const mf_wreply *a, const mf_wreply *b)
 
 /* THE AGREEMENT (MF_TRACE; plan_frame.md §4.1 "The agreement's two
  * halves"): window site `ws`, just defined as record `r` under the hooks
- * `def` and the define's phases `gphases`, re-asked through mf_wdecide with
- * the define's call, equals byte for byte a reply whose DECISION GROUP is
- * re-derived (`decide` on `ws`) and whose FRAME PART is read off what the
+ * `def` and the define's phases `gphases`, re-asked through mf_wdecide's
+ * framed body with those phases (its define half: mf_emit's use half
+ * refuses after this, at its own text), equals byte for byte a reply whose
+ * DECISION GROUP is re-derived (`decide` on `ws`) and whose FRAME PART is read off what the
  * define STORED (`r`'s plan, arm, finder row and BODY row; the field map),
  * never through the plan function. NULL, or the first reply member that
  * differs (a static name; "the framed ask's refusal" where the re-ask
@@ -2692,8 +2740,8 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
                      unsigned gphases, const site_rec *r)
 {
     mf_wreply asked, held;
-    uint8_t call = gphases & MF_PH_USE ? MF_WCALL_EMIT : MF_WCALL_DEFINE;
-    if (mf_wdecide(art, ws, def, call, &asked))
+    memset(&asked, 0, sizeof asked);
+    if (wdecide_framed(art, ws, def, gphases, 0, &asked))
         return "the framed ask's refusal";
     wf_dec *d = calloc(1, sizeof *d);
     if (!d) return "(out of memory)";
@@ -2719,7 +2767,8 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
         for (unsigned i = 0; i < d->np; i++)
             for (unsigned k = 0; k < w->n; k++)
                 if (w->off[k] == d->poff[i])
-                    held.plan_test[i] = w->table[k] ? MF_WTEST_TABLE : MF_WTEST_OWN;
+                    held.plan_test[i] = w->table[k] && w->grp[k] < 0 ? MF_WTEST_TABLE
+                                                                      : MF_WTEST_OWN;
         if (erow == E_FIND && w->stop_ix >= 0)
             held.stop_test = w->table[w->stop_ix] ? MF_WTEST_TABLE : MF_WTEST_OWN;
     } else if (erow == E_FUNC && r->arm == &ofsskip_arm) {
@@ -3252,7 +3301,7 @@ static int wf_frame(wf_rc *rc, const mf_site *s, const char *who,
     }
     if (!h->result || !kit_miss(h))
         return kit_fail(art, "%s: ASSIGN needs the `result` and `miss` hooks", who);
-    if (nop && h->result_decl)
+    if (kit_nop_decl(s, h))
         return kit_fail(art, "%s: a NOP ASSIGN cannot declare its result", who);
     const char *in = ind;
     if (nop) {
