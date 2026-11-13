@@ -10211,3 +10211,5 @@ filter understanding makes intuitive sense"):
 3. The `&` spelling is a placeholder (D193 add. 4: owner examples are not syntax); the semantics above are
    what is ruled. The remaining F7 recommendations (in-context lookaround, \K refused, verbs, cross-operand
    backrefs, recursion) go to the [COND-FAMILY] spec section for review.
+
+D196 addendum (2026-11-12, Frank): the SPELLING is decided for the whole operator family at once, not `&` alone: "understand the whole spelling before deciding. Symmetry suggests |! ... whether to do so is a choice." Family under study: `&` (and), `&!` (and-not, X & ~Y), `|` (or), `|!` (or-not, X | ~Y; low practical value, a footgun under leftmost search), and whether a general unary complement `~` is the underlying form with the others as sugar. Constraint: `&` and `!` are literal characters in PCRE today and `(?&name)` is PCRE's named call, so the spelling needs an opt-in or syntax PCRE leaves free.
