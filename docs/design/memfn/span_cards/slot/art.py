@@ -109,7 +109,18 @@ def j1_pattern_text(pid):
                          % (path, got, sha))
     return b.rstrip(b"\n").decode("latin-1")
 
+def no_back(a):
+    """kit-grid@4's step-back arms (Arm.back = t) are PLANNED, not yet rendered: span_runs_sheet.md §5.2 states the
+    dimension t and its estimator, not how t enters the artifact (what is stepped back from, and the subject that
+    makes the consumer enter t bytes early). Rendering the plain `enter` artifact for them would time the WRONG thing
+    under the step-back key, so the dry run stops here until that is specified (K38-3 finding)"""
+    if getattr(a, "back", None) is not None:
+        raise SystemExit("art: REFUSED: %s: the step-back arm (t = %d) has no artifact specification yet "
+                         "(span_runs_sheet.md §5.2 names t, not how it enters the artifact)" % (a.name, a.back))
+
+
 def pattern_of(a):
+    no_back(a)
     if a.kind == "enter":
         return Fixture(a.fixture).pattern
     return j1_pattern_text(a.fixture[0])
@@ -308,6 +319,7 @@ def subject(a, rundir):
     """the arm's (subj, expect) C string literals; files under RUNDIR/art/ (an arm and its twin share them),
     named by their INPUTS (the generators, the fixture row or the pattern's sha), so a changed input is a new
     file, never a reused one"""
+    no_back(a)
     d = os.path.join(rundir, "art")
     os.makedirs(d, exist_ok=True)
     g = gen_key()

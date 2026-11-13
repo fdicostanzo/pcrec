@@ -581,10 +581,14 @@ def read_record(rundir):
     except (SystemExit, KeyError, ValueError) as e:
         raise InputError("%s's pinned cards or policy do not parse: %s" % (p, e))
     if len(rec["card"]) != len(rec["cards"]):
-        raise InputError("%s pins %d card rows, %d of them ver-%s cards" % (p, len(rec["cards"]), len(rec["card"]), plan.METHOD_VER))
-    if rec["run"].get("rules") != "kit-grid@" + plan.METHOD_VER:
-        raise InputError("the record's rules owner %r is not this producer's kit-grid@%s (measures.md §3.5¶8a)"
-                         % (rec["run"].get("rules"), plan.METHOD_VER))
+        raise InputError("%s pins %d card rows, %d of them ver-%s cards" % (p, len(rec["cards"]), len(rec["card"]),
+                                                                          "/".join(plan.METHOD_VERS)))
+    import record
+    for v in sorted({c["ver"] for c in rec["card"].values()}):     # the rules owner PER VER the record pins cards at
+        got = rec["run"].get(record.rules_key(v))
+        if got != record.RULES[v]:
+            raise InputError("the record's rules owner %r (%s) is not this producer's %s for ver %s (measures.md §3.5¶8a)"
+                             % (got, record.rules_key(v), record.RULES[v], v))
     return rec
 
 def compute(rundir):
@@ -827,7 +831,8 @@ def write_draft(rundir, path, out, drift, outcome):
     rsha = hashlib.sha256(open(os.path.join(rundir, "run_record.tsv"), "rb").read()).hexdigest()
     # the ver-3 cards as the record pins them, VERBATIM: each states its declared gate_e6 (`-`), so check C's
     # set-vs-card-table equality holds; the value a `-` took is the record's pinned policy ([rev1.3 r9fc-FIX-8])
-    cards = ["\t".join(f) for f in rec["cards"]]
+    # [r2s1 RK383-3] THE WRITER SPLITS BY VER: one set per method, each with that ver's cards section and rows only
+    # (kit-grid@3 keeps zen4-grid3; a ver with no timed row writes no set, so an unmeasured cell stays unmeasured)
     n = str(rec["facts"][2] * rec["facts"][3])
     rows = []
     rec_rmax = r_max(rec)[0]
@@ -838,7 +843,7 @@ def write_draft(rundir, path, out, drift, outcome):
         q = k.split(".")
         unit = rec["card"][q[1]]["unit"]
         deps, tags = "-", "-"
-        if q[1] != "enter":
+        if q[1] not in ("enter", "enter_back"):
             if k not in texts:
                 raise InputError("row %s has no cell text in its job's cell_text.tsv" % k)
             form, fh, tags = texts[k]
@@ -855,37 +860,55 @@ def write_draft(rundir, path, out, drift, outcome):
         else:
             rows.append([k, unit, str(r["value"]), str(r["abs"]), str(r["noise"]), n, "measured", "-", "-", deps,
                          tags, "slot %s%s" % (r["job"], " sub-resolution r %d" % r["sub"] if r.get("sub") else "")])
-    hdr = [("format", "2"), ("id", "zen4-grid3"), ("rev", "1"), ("class", "x86_64/zen4"),
-           ("isa", rec["run"]["isa"]), ("tier", "scratch"), ("composite", "0"), ("members", ""),
-           ("unit_key", plan.UNIT_KEY), ("method", "kit-grid@%s" % plan.METHOD_VER),
-           ("run", "%s record:%s" % (rec["run"]["run_id"], rsha)),
-           ("box", rec["run"]["box"]), ("compiler", "gcc %s -O2 -march=x86-64 -mtune=generic" % rec["run"]["gcc"]),
-           ("libc", rec["run"]["libc"]), ("code_commit", rec["run"]["code_commit"]),
-           ("counters", "skipped:not-taken"), ("partial", "1" if outcome[0] == "PARTIAL" else "0"),
-           ("rows", str(len(rows))), ("values_digest", "0000000000000000")]
-    cells = ["\t".join([c[k] if isinstance(c[k], str) else str(c[k]) for k in CELL_COLS]) for c in read_cells(rundir, rec)]
-    def text(h):
-        t = ["# pcrec measurement set (spec: docs/spec/measures.md)"]
-        t += ["# note %s: %s" % kv for kv in notes(rundir, out)]       # [rev1.4 R14-3, R14-4]
-        t += ["# note r_max_e6: %d, %s" % r_max(rec)]                   # [rev1.4 r10-REV14-2]
-        t += ["# note est_commit: %s, the estimator that scored the record (code_commit %s; the timed code unchanged "
-              "between them)" % (commit, rec["run"]["code_commit"])]      # [rev1.5 R15-2]
-        t += ["#section header", "#key\tvalue"]
-        t += ["%s\t%s" % kv for kv in h]
-        t += ["#section cards", "#" + "\t".join(["owner", "quantity", "ver", "dims", "unit", "subject", "lengths",
-              "launches", "rounds", "aa_rule", "gate_e6", "env", "deps"])] + cards
-        t += ["#section rows", "#" + "\t".join(["key", "unit", "value_e6", "abs_ns_e6", "noise_e6", "n", "status",
-              "derivation", "inputs", "deps", "tags", "source"])] + ["\t".join(r) for r in rows]
-        t += ["#section members", "#member\tunit_key\tunit_abs_ns_e6\tbox"]
-        t += ["#section cells", "#" + "\t".join(CELL_COLS)] + cells
-        return "\n".join(t) + "\n"
-    open(path, "w").write(text(hdr))
-    d = subprocess.run([sys.executable, "-I", os.path.join(TREE, "tests", "knowledge", "ks_ref.py"), "digest", path],
-                       capture_output=True, text=True, check=True).stdout.strip()
-    hdr[-1] = ("values_digest", d)
-    open(path, "w").write(text(hdr))
-    print("draft %s: %d rows, %d cells, digest %s, outcome %s" % (path, len(rows), len(cells), d, outcome[0]))
-    return outcome[1]
+    import record
+    allcells = read_cells(rundir, rec)
+    ver_of = lambda key: rec["card"][key.split(".")[1]]["ver"]
+    def mine(v, c):          # a cell belongs to ver v's set: its row's arm (any ver), and a base or the ctl (ver 3's
+        a = c["arm"][:-2] if c["arm"].endswith("#b") else c["arm"]   # always; ver v's when one of its rows names it)
+        if a.startswith("kit."):
+            return ver_of(a) == v
+        return v == "3" or a == "ctl" or any(plan.base_of(r[0]) == a for r in rows if ver_of(r[0]) == v)
+    msgs, rc = [], outcome[1]
+    for v in sorted({c["ver"] for c in rec["card"].values()}):
+        vrows = [r for r in rows if ver_of(r[0]) == v]
+        if not vrows:
+            print("draft: ver %s: no timed row, no set written (its cards stay UNMEASURED)" % v)
+            continue
+        vpath = path if v == "3" else "%s.v%s%s" % (os.path.splitext(path)[0], v, os.path.splitext(path)[1])
+        vcards = ["\t".join(f) for f in rec["cards"] if f[2] == v]
+        sid, srev = record.SETS[v].split("@")
+        hdr = [("format", "2"), ("id", sid), ("rev", srev), ("class", "x86_64/zen4"),
+               ("isa", rec["run"]["isa"]), ("tier", "scratch"), ("composite", "0"), ("members", ""),
+               ("unit_key", plan.UNIT_KEY), ("method", "kit-grid@%s" % v),
+               ("run", "%s record:%s" % (rec["run"]["run_id"], rsha)),
+               ("box", rec["run"]["box"]), ("compiler", "gcc %s -O2 -march=x86-64 -mtune=generic" % rec["run"]["gcc"]),
+               ("libc", rec["run"]["libc"]), ("code_commit", rec["run"]["code_commit"]),
+               ("counters", "skipped:not-taken"), ("partial", "1" if outcome[0] == "PARTIAL" else "0"),
+               ("rows", str(len(vrows))), ("values_digest", "0000000000000000")]
+        cells = ["\t".join([c[k] if isinstance(c[k], str) else str(c[k]) for k in CELL_COLS])
+                 for c in allcells if mine(v, c)]
+        def text(h):
+            t = ["# pcrec measurement set (spec: docs/spec/measures.md)"]
+            t += ["# note %s: %s" % kv for kv in notes(rundir, out)]       # [rev1.4 R14-3, R14-4]
+            t += ["# note r_max_e6: %d, %s" % r_max(rec)]                   # [rev1.4 r10-REV14-2]
+            t += ["# note est_commit: %s, the estimator that scored the record (code_commit %s; the timed code unchanged "
+                  "between them)" % (commit, rec["run"]["code_commit"])]      # [rev1.5 R15-2]
+            t += ["#section header", "#key\tvalue"]
+            t += ["%s\t%s" % kv for kv in h]
+            t += ["#section cards", "#" + "\t".join(["owner", "quantity", "ver", "dims", "unit", "subject", "lengths",
+                  "launches", "rounds", "aa_rule", "gate_e6", "env", "deps"])] + vcards
+            t += ["#section rows", "#" + "\t".join(["key", "unit", "value_e6", "abs_ns_e6", "noise_e6", "n", "status",
+                  "derivation", "inputs", "deps", "tags", "source"])] + ["\t".join(r) for r in vrows]
+            t += ["#section members", "#member\tunit_key\tunit_abs_ns_e6\tbox"]
+            t += ["#section cells", "#" + "\t".join(CELL_COLS)] + cells
+            return "\n".join(t) + "\n"
+        open(vpath, "w").write(text(hdr))
+        d = subprocess.run([sys.executable, "-I", os.path.join(TREE, "tests", "knowledge", "ks_ref.py"), "digest", vpath],
+                           capture_output=True, text=True, check=True).stdout.strip()
+        hdr[-1] = ("values_digest", d)
+        open(vpath, "w").write(text(hdr))
+        print("draft %s: ver %s, %d rows, %d cells, digest %s, outcome %s" % (vpath, v, len(vrows), len(cells), d, outcome[0]))
+    return rc
 
 # ---- the self-test (r9 G3): the cross-checks above, each case a refusal or an outcome ---------------------------
 SYNTH_FUSED = ("l1", "c1")      # [rev1.5 R15-1] the classes the synthetic timed code compiles fused, as gcc does today
@@ -968,7 +991,7 @@ def _synth(d, run_id="selftest"):
     fr = plan.read_frozen(os.path.join(d, "plan.tsv"))
     jobs, _rows, _f, _u = plan.build()
     rec = {name: [] for name, _ in record.SECTIONS}
-    rec["run"] = [["set", record.SET], ["rules", record.RULES], ["run_id", run_id], ["code_commit", "0000000"],
+    rec["run"] = [["set", record.SET], ["rules", record.RULES["3"]], ["rules.4", record.RULES["4"]], ["run_id", run_id], ["code_commit", "0000000"],
                   ["j1_verdict", "a"]]
     rec["jobs"] = [[j, "ran", "-"] for j in record.JOBS]
     record.pin(rec, fr)

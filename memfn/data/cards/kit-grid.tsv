@@ -46,6 +46,15 @@
 #            naming a kit:form. dep has `form` as its FIRST dim
 #            (finder_check.py check C)
 #
+# `ver 4` is K38-3's step-back cell (docs/design/memfn/span_runs_sheet.md §5.2):
+# the one card `enter_back` (dims kind;entry;back), the `enter` quantity timed
+# with the consumer entered t bytes before the window, t in {0, 3, 8, 16, 32}
+# (the `back` dim). A NEW ver, not a ver-3 row: ver 3 is CLOSED (measure_store/
+# zen4-grid3/1 pins kit-grid@3's whole card list, check C's check_store compares
+# it). The cell is PLANNED (span_cards/slot/plan.py, J5) and visibly UNMEASURED:
+# no set exists under ver 4; its measurement is a timing run in an owner-cleared
+# window. Subject, estimator, launches, rounds and A/A are `enter`'s.
+#
 # Divergence recorded (fdb1_report.md F-B1-6): r17b_prime.md §5.2's card table
 # lists `gstar` with dims form;kind;shape, while §1.3's reader R5 reads
 # `kit.gstar.<liner>.<kind>` (two tokens). The card follows the READER; a
@@ -66,3 +75,4 @@ kit	find_byte	3	form	ratio	streamed-fresh pool16Mi miss-only	slope 65536,262144,
 kit	find_hit	3	form;landing;split;gap	walkbytes	streamed-fresh pool16Mi landed:periodic|random	delta 1048576	7	7	twin-per-arm	-	-	kit:form.walk;kit:form.libc;kit:form.pair
 kit	verify_cmp	3	form;cls;pass	walkbytes	candidate-array pass:0|1/2	delta 1048576	7	7	twin-per-arm	-	-	kit:form.settest;kit:form.rc-words;kit:form.rc-memcmp
 kit	enter	3	kind;entry	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-arm	-	-	-
+kit	enter_back	4	kind;entry;back	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-arm	-	-	-

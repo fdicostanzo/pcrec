@@ -30,7 +30,9 @@ VCLS = os.path.join(HERE, "vcls.out")
 ENTER_FIX = os.path.join(HERE, "enter", "fixtures.tsv")
 CARDS = os.path.join(TREE, "memfn", "data", "cards", "kit-grid.tsv")
 POLICY = os.path.join(TREE, "memfn", "data", "policy.tsv")
-METHOD_VER = "3"                       # kit-grid@3 (span_cards.md §2.1)
+METHOD_VERS = ("3", "4")               # the vers this producer plans, each card read at ITS OWN ver: kit-grid@3
+                                       # (span_cards.md §2.1) and kit-grid@4 (K38-3's step-back cell, span_runs_sheet.md §5.2)
+BACK_STEPS = (0, 3, 8, 16, 32)         # kit-grid@4's `back` dim: the step-back t (bytes) on the `enter` quantity
 UNIT_KEY = "kit.find_byte.walk"        # the set's unit row (§2.2): the walk's find_byte
 
 
@@ -45,8 +47,9 @@ def table_rows(path):
 
 
 def card_rows(rows):
-    """the ver-METHOD_VER rows of a card table (the rows the frozen plan and the run record pin, verbatim)"""
-    return [f for f in rows if len(f) == len(CARD_COLS) and f[2] == METHOD_VER]
+    """the rows of a card table at the vers the producer plans (METHOD_VERS; the rows the frozen plan and the run
+    record pin, verbatim); any other ver's rows (ver 1's) are not this producer's"""
+    return [f for f in rows if len(f) == len(CARD_COLS) and f[2] in METHOD_VERS]
 
 
 def parse_policy(rows):
@@ -59,7 +62,7 @@ def parse_policy(rows):
 
 
 def parse_cards(rows, pol):
-    """{quantity: card} for the kit-grid@3 card rows; `est` the estimator (`lengths`), `gate` the gate_e6 the card
+    """{quantity: card} for the card rows at the planned vers (kit-grid@3 and @4); `est` the estimator (`lengths`), `gate` the gate_e6 the card
     states or, for `-`, the policy's gate_default_e6. One parser for the live tables (the dry run) and the run
     record's pinned copies (est.py, [rev1.3 r9fc-FIX-1])"""
     cards = {}
@@ -67,9 +70,12 @@ def parse_cards(rows, pol):
         c = dict(zip(CARD_COLS, f))
         c["gate"] = pol["gate_default_e6"] if c["gate_e6"] == "-" else int(c["gate_e6"])
         c["est"] = c["lengths"]
+        if c["quantity"] in cards:
+            raise SystemExit("plan: quantity %s has cards at two planned vers (%s, %s): its rows would key one card"
+                             % (c["quantity"], cards[c["quantity"]]["ver"], c["ver"]))
         cards[c["quantity"]] = c
     if not cards:
-        raise SystemExit("plan: the card rows hold no ver-%s card" % METHOD_VER)
+        raise SystemExit("plan: the card rows hold no ver-%s card" % "/".join(METHOD_VERS))
     return cards
 
 
@@ -79,7 +85,7 @@ CARD = parse_cards(table_rows(CARDS), parse_policy(table_rows(POLICY)))
 def _one(cards, field):
     v = {c[field] for c in cards.values()}
     if len(v) != 1:
-        raise SystemExit("plan: the ver-3 cards disagree on %s (%s): one window times one L x R" % (field, sorted(v)))
+        raise SystemExit("plan: the planned cards disagree on %s (%s): one window times one L x R" % (field, sorted(v)))
     return int(v.pop())
 
 
@@ -98,7 +104,7 @@ def card_facts(cards):
         raise SystemExit("plan: the delta cards name %s, not one LEN" % sorted(delta))
     L = _one(cards, "launches")
     if L != 7:                         # measures.md §3.4¶2a: the estimator's constants are seven launches'
-        raise SystemExit("plan: the ver-3 cards state %d launches; the spec's estimator is written for 7" % L)
+        raise SystemExit("plan: the planned cards state %d launches; the spec's estimator is written for 7" % L)
     return (_est_parse(cards["find_byte"]["est"])[1], next(iter(delta))[0], L, _one(cards, "rounds"),
             cards["find_byte"]["gate"])
 
@@ -189,7 +195,21 @@ DIM_FIELD = (
     ("pass",    lambda a: a.pas),
     ("kind",    lambda a: a.fixture[0] if a.fixture else None),
     ("entry",   lambda a: a.fixture[1] if a.fixture else None),
+    ("back",    lambda a: None if a.back is None else str(a.back)),    # kit-grid@4: the step-back t
 )
+
+
+def check_card_dims(cards=None):
+    """[r1s1 S1-13, r2s1 RK383-4] the build()-time dim check: every dim of every card AT THE VERS THE PRODUCER PLANS
+    (`cards`, default CARD: the set parse_cards builds from METHOD_VERS) has a DIM_FIELD line, else the plan
+    refuses (so the dry run does, before any render). NEVER the whole card table: ver 1's cards carry dims (shape,
+    vs, subject, lenclass) with no line here and must not refuse"""
+    field = {d for d, _f in DIM_FIELD}
+    for q, c in sorted((cards or CARD).items()):
+        for dim in c["dims"].split(";"):
+            if dim not in field:
+                raise SystemExit("plan: card %s@%s dim %s has no DIM_FIELD line (no Arm field carries it)"
+                                 % (q, c["ver"], dim))
 
 
 def key_dims(name):
@@ -200,7 +220,7 @@ def key_dims(name):
     if q[0] != "kit":
         return None
     if q[1] not in CARD:
-        raise SystemExit("plan: key %s names quantity %s, which has no ver-%s card" % (name, q[1], METHOD_VER))
+        raise SystemExit("plan: key %s names quantity %s, which has no ver-%s card" % (name, q[1], "/".join(METHOD_VERS)))
     dims = CARD[q[1]]["dims"].split(";")
     if len(q) - 2 != len(dims):
         raise SystemExit("plan: key %s has %d tokens, its card's dims %s are %d" % (name, len(q) - 2, dims, len(dims)))
@@ -242,6 +262,8 @@ def base_of(key):
         return "base.null.%s" % q[3]
     if q[1] == "enter":
         return "base.fail.%s.%s" % (q[2], q[3])
+    if q[1] == "enter_back":           # the step-back arms share their (kind, entry)'s fail base, whatever t
+        return "base.fail.%s.%s" % (q[2], q[3])
     return None
 
 
@@ -249,14 +271,15 @@ class Arm:
     """One timed arm: its name (a row key, KEY#b, base.<name> or ctl), the job group, its shape and lengths.
     `of` names a null base's paired verify instance (form, cls): its run/mask/members are the base's."""
     def __init__(self, name, group, kind, form, cls=None, lengths=(LEN,), landing=None, split=None, gap=None,
-                 pas=None, base=None, events=None, fixture=None, of=None):
+                 pas=None, base=None, events=None, fixture=None, of=None, back=None):
         self.name, self.group, self.kind, self.form, self.cls = name, group, kind, form, cls
         self.lengths, self.landing, self.split, self.gap = lengths, landing, split, gap
         self.pas, self.base, self.events, self.fixture, self.of = pas, base, events, fixture, of
+        self.back = back               # kit-grid@4: the step-back t (bytes) of an enter_back arm, else None
 
     def twin(self):
         return Arm(self.name + "#b", self.group, self.kind, self.form, self.cls, self.lengths, self.landing,
-                   self.split, self.gap, self.pas, self.base, self.events, self.fixture, self.of)
+                   self.split, self.gap, self.pas, self.base, self.events, self.fixture, self.of, self.back)
 
 
 def find_hit_rows(form, splits):
@@ -270,12 +293,15 @@ FLOOR = (
     ("find_hit",   lambda q: q[3] == "random",  lambda q: "hit.%s" % q[2]),
     ("verify_cmp", lambda q: True,              lambda q: "verify.%s.%s" % (q[2], q[3])),
     ("enter",      lambda q: q[3] == "NONE",    lambda q: "enter.%s" % q[2]),
+    # EXEMPT: no decision reads the step-back cell in R-38 (span_runs_sheet.md §5.2); it joins no floor clause
+    ("enter_back", lambda q: False,             lambda q: "enter_back.%s" % q[2]),
 )
 
 
 def build():
     """The plan: jobs -> groups -> arms (twins included), the rows (key, group, job, estimator, base),
     the floor's clauses (clause, key, when), and what the plan could not reach."""
+    check_card_dims()
     jobs, rows, floor, unreached = {}, [], [], []
 
     def add(job, arm):
@@ -333,6 +359,17 @@ def build():
             add("J5", Arm(base_of(key), "J5.base", "enter", "artifact", fixture=fx[(k, e)], events=0))
             row("J5", Arm(key, "J5.enter", "enter", "artifact", fixture=fx[(k, e)], base=base_of(key),
                           events=LEN // ENTER_GAP), base_of(key))
+    # J5 kit-grid@4 (K38-3): the step-back cell, `enter_back` per (kind, entry) with a fixture and t in BACK_STEPS,
+    # its own group; the arm carries t (Arm.back) and shares the (kind, entry)'s fail base. UNMEASURED: art.py
+    # specifies no artifact for t yet (it refuses an arm with `back` set), so the dry run stops there
+    for k in census_enter_kinds():
+        for e in ENTRIES:
+            if (k, e) not in fx or fx[(k, e)][2] == "-":
+                continue
+            for t in BACK_STEPS:
+                key = "kit.enter_back.%d.%s.%d" % (k, e, t)
+                row("J5", Arm(key, "J5.back", "enter", "artifact", fixture=fx[(k, e)], base=base_of(key),
+                              events=LEN // ENTER_GAP, back=t), base_of(key))
     # J1 (§3.6, art.py, j1/): per cell (pattern, subject, regime) one group, a whole-artifact arm per PAIR width
     # and the twin 128#b; no rows (J1's cells go to the run record, never the set)
     for pid in j1_pattern_ids():
