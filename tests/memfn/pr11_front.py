@@ -125,9 +125,48 @@ def compile_front(pcrec, flags, pat, work, timeout=120):
     return c
 
 
+def parse_run(v):
+    """A `req_whole_run` value (tuning.md §2.28¶7's spelling) as a list of
+    per-position byte SETS: lowercase hex bytes, `@idx`, then either `/` and
+    each position's cube mask (`(x & K) == b`), or bracketed hex classes
+    (`[30-39]`, `[6266]`, `[80-89b1-bf]`) at the wider positions
+    ([RUN-POS-SET] S2: a position may be a set of up to 128 members)."""
+    mask = None
+    if "/" in v:
+        v, mk = v.split("/", 1)
+        mask = bytes.fromhex(mk)
+    v = v.split("@", 1)[0]
+    pos, i = [], 0
+    while i < len(v):
+        if v[i] == "[":
+            j = v.index("]", i)
+            body, k, st = v[i + 1:j], 0, set()
+            while k < len(body):
+                lo = int(body[k:k + 2], 16)
+                if body[k + 2:k + 3] == "-":
+                    hi = int(body[k + 3:k + 5], 16)
+                    k += 5
+                else:
+                    hi = lo
+                    k += 2
+                st.update(range(lo, hi + 1))
+            pos.append(frozenset(st))
+            i = j + 1
+        else:
+            pos.append(frozenset([int(v[i:i + 2], 16)]))
+            i += 2
+    if mask is not None:
+        if len(mask) != len(pos):
+            raise ValueError("run %r: mask length differs from the run's" % v)
+        pos = [frozenset(x for x in range(256) if (x & k) == min(p))
+               for p, k in zip(pos, mask)]
+    return pos
+
+
 def claims(pcrec, flags, pat, timeout=120):
     """The req walk's claims: the necessary set's members (bytes) and the
-    whole run (bytes, mask or None), read from `--emit-facts`."""
+    whole run (a list of per-position byte sets, or None), read from
+    `--emit-facts`."""
     r = subprocess.run([pcrec, "--features", "all"] + flags + ["--emit-facts", "--pattern", pat],
                        capture_output=True, timeout=timeout)
     members, run = [], None
@@ -138,32 +177,15 @@ def claims(pcrec, flags, pat, timeout=120):
         if c[1] == "req_set" and c[4] == "derived" and c[6] not in ("", "none"):
             members = [int(x) for x in c[6].split(",") if x]
         if c[1] == "req_whole_run" and c[4] == "derived" and c[6] not in ("", "none"):
-            v = c[6]
-            m = None
-            if "/" in v:
-                v, mk = v.split("/", 1)
-                m = bytes.fromhex(mk)
-            if "@" in v:
-                v = v.split("@", 1)[0]
-            run = (bytes.fromhex(v), m)
+            run = parse_run(c[6])
     return members, run
 
 
 def _run_hits(s, run):
-    """Start offsets where the (possibly masked) run occurs in s."""
-    bts, mask = run
-    L = len(bts)
-    out = []
-    for i in range(len(s) - L + 1):
-        ok = True
-        for j in range(L):
-            k = mask[j] if mask else 0xFF
-            if (s[i + j] & k) != bts[j]:
-                ok = False
-                break
-        if ok:
-            out.append(i)
-    return out
+    """Start offsets where the run (per-position byte sets) occurs in s."""
+    L = len(run)
+    return [i for i in range(len(s) - L + 1)
+            if all(s[i + j] in run[j] for j in range(L))]
 
 
 def derive(subject, members, run):
