@@ -39,7 +39,7 @@ Not auto-injected. CLAUDE.md is the orientation guide; text moved here verbatim 
 
 - reqbyte.c — DELETED ([FINDINGS] B1 = [PATFACTS] 3.1, D126): walk -> `src/facts/req.c`,
   picks -> `src/core/findings.c` (`pcrec_find_set_pick`, `pcrec_find_run_scan_index`,
-  `pcrec_find_run_window_start`), compositions `pcrec_req_window`/`pcrec_req_pick`
+  `pcrec_find_run_window_start`), composition `pcrec_req_pick` (`pcrec_req_window` deleted with the `req_run` row, K38-2 F5)
   -> src/facts/req.c. Its rules, still binding on those homes: the analysis produces
   a SET and the emitter picks one member (ALT intersects); the pick is the ARGMIN of
   the byte-rate prior (rightmost tiebreak) and the prior is read ONLY under `byte`

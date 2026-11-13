@@ -437,7 +437,9 @@ fi
 # is narrower than the run window (C3, docs/spec/facts_listing.md). Since C3
 # (abi 59) `/abcd[xy]/user`'s run is the 8-byte masked window `/abcd[xy]/u`
 # (the {x,y} cube joins it), so its pin at 6 keeps the exact stretch `/u`
-# (6:6+2) where abi 58's exact run `/user` read `6`. `\zabc` is the widened-
+# (6:6+2) where abi 58's exact run `/user` read `6`; since R-38 K38-2 the pin
+# reads the WHOLE run `/abcd[xy]/user` (no cut window), so its exact stretch
+# at 6 is `/user` again, 6:6+5. `\zabc` is the widened-
 # domain witness (a pin on an artifact whose NEXT row is `none`); since
 # [REQ-HANDOFF-L1] (abi 75) its run handoff re-enters (`handoff`), so it is
 # compiled under `-fno-req-handoff` to stay on that domain. Since D172 S3 the
@@ -450,7 +452,7 @@ fi
 # §2.54), to stay on the widened domain's unanchored route.
 printf '%s\n' \
     'E3W	--memfn=no-window-search	abc	unanchored	97,98,99	0' \
-    'E3W	--memfn=no-window-search	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6:6+2' \
+    'E3W	--memfn=no-window-search	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6:6+5' \
     'E3W	-fno-req-run --memfn=no-window-search	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	none' \
     'E3W	--engine=vm -fprefilter	abc+d	unanchored	97,98,99,[2]	0' \
     'E3W	-fno-req-handoff -fno-landmark-walk	\zabc	unanchored	97,98,99	0' \
@@ -644,7 +646,6 @@ else
     printf '%s\n' \
         'ad	req_whole_run	6162636465666768	rate:builtin-prior' \
         'ar	req_whole_run	61626364	harness:empty' \
-        'ar	req_run	61626364@1	harness:empty' \
         'ar	req_byte	-	harness:empty' \
         'ar	req_pieces	-	harness:empty' \
         'ar	req_set	-	' > "$WORKDIR/aw"
@@ -677,27 +678,29 @@ else
     # equal halves go to the rarer scan byte, `abcd`.
     # tag, encoding, pattern, arm?, RX_REQ_RUN-line prefix (RX_ top, RX__Q_ part)
     printf '%s\n' \
-        'RX_REQ_RUN	byte	abcd(?:\b)*efgh	empty	61626364@1' \
-        'RX_REQ_RUN	byte	abcd(?:\b)*efgh	-	6162636465666768@1' \
-        'RX_REQ_RUN	utf8	abcd(?:\b)*efgh	empty	61626364@3' \
-        'RX_REQ_RUN	utf8	abcd(?:\b)*efgh	-	6162636465666768@7' \
-        'RX_REQ_RUN	byte	ab(?:\B){3}cd	-	61626364@1' \
-        'RX_REQ_RUN	byte	ab(?:\B){3}cd	empty	6162@1' \
-        'RX_REQ_RUN	byte	abcd(?:)+efgh	-	6162636465666768@1' \
-        'RX_REQ_RUN	byte	abcd(?:)+efgh	empty	61626364@1' \
-        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	-	6162636465666768@1' \
-        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	empty	61626364@1' \
-        'RX__Q_REQ_RUN	byte	^a|abcd\Befgh$	-	6162636465666768@1' \
-        'RX__Q_REQ_RUN	byte	^a|abcd\Befgh$	zero	61626364@1' \
-        'RX__Q_REQ_RUN	byte	^a|xy(?:ab){2}zw$	-	7879616261627a77@6' \
-        'RX__Q_REQ_RUN	byte	^a|xy(?:ab){2}zw$	rep	7a77@0' > "$WORKDIR/ac"
+        'RX_REQ_RUN	byte	abcd(?:\b)*efgh	empty	61626364' \
+        'RX_REQ_RUN	byte	abcd(?:\b)*efgh	-	6162636465666768' \
+        'RX_REQ_RUN	utf8	abcd(?:\b)*efgh	empty	61626364' \
+        'RX_REQ_RUN	utf8	abcd(?:\b)*efgh	-	6162636465666768' \
+        'RX_REQ_RUN	byte	ab(?:\B){3}cd	-	61626364' \
+        'RX_REQ_RUN	byte	ab(?:\B){3}cd	empty	6162' \
+        'RX_REQ_RUN	byte	abcd(?:)+efgh	-	6162636465666768' \
+        'RX_REQ_RUN	byte	abcd(?:)+efgh	empty	61626364' \
+        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	-	6162636465666768' \
+        'RX__Q_REQ_RUN	byte	^a|abcd(?:\b)*efgh$	empty	61626364' \
+        'RX__Q_REQ_RUN	byte	^a|abcd\Befgh$	-	6162636465666768' \
+        'RX__Q_REQ_RUN	byte	^a|abcd\Befgh$	zero	61626364' \
+        'RX__Q_REQ_RUN	byte	^a|xy(?:ab){2}zw$	-	7879616261627a77' \
+        'RX__Q_REQ_RUN	byte	^a|xy(?:ab){2}zw$	rep	7a77' > "$WORKDIR/ac"
     nac=0
     while IFS=$'\t' read -r mac enc pat arm want; do
         nac=$((nac + 1)); larm=(); [ "$arm" = "-" ] || larm=("--harness=restore=$arm")
         if ! "$TIMEOUT_BIN" 120 "$HBIN" --features all -e "$enc" "${larm[@]}" -p rx --emit-main -o "$WORKDIR/ac.c" --pattern "$pat" > /dev/null 2> "$WORKDIR/ac.err"; then
             abad="$abad '$pat' [$enc/$arm] refused ($(head -1 "$WORKDIR/ac.err"));"; continue
         fi
-        got="$(sed -n "s/^#define $mac \"\(.*\)\"\$/\1/p" "$WORKDIR/ac.c" | head -1)"
+        # the run's bytes only: since R-38 K38-2 the `@` is the searching
+        # site's (span_runs_sheet.md §4.1's table), not the arm's to move
+        got="$(sed -n "s/^#define $mac \"\(.*\)\"\$/\1/p" "$WORKDIR/ac.c" | head -1 | sed 's/@[0-9]*//')"
         [ "$got" = "$want" ] || abad="$abad '$pat' [$enc/$arm] $mac [$got], want [$want];"
     done < "$WORKDIR/ac"
     echo "REACH: $nac restored-arm artifact cells (top, utf8, m>=1, split part under empty and rep)"
@@ -718,7 +721,6 @@ if [ -x "$HBIN" ] && [ -z "$abad" ]; then
         printf '%s\n' \
             'zd	req_whole_run	78797a61626364	rate:builtin-prior' \
             'zr	req_whole_run	78797a	harness:zero' \
-            'zr	req_run	78797a@2	harness:zero' \
             'zr	req_byte	-	harness:zero' \
             'zr	req_pieces	-	harness:zero' \
             'zr	req_set	-	' > "$WORKDIR/zw"
@@ -860,7 +862,9 @@ fi
 # src/facts/walk_arms.def): `abcd.efgh` holds two required 4-byte runs of equal
 # information. By default the RARER one is stamped (`abcd` on the default
 # rate table); restored, the predecessor's choice (the later, `efgh`). Both the
-# --pattern compile and a .rxt FILE compile must answer so.
+# --pattern compile and a .rxt FILE compile must answer so. (R-38 K38-2: the
+# stamp's `@` is the searching site's; this `cover` artifact's window search
+# may read a position outside the stamped run, so the `@` is optional here.)
 if [ ! -x "$HBIN" ]; then
     bad "[facts-tie] $HBIN is missing (make builds it)"
 else
@@ -874,8 +878,8 @@ else
         pl="$(grep -hE 'define RX_REQ_RUN ' "$WORKDIR/ft.p.c" | tr '\n' ' ')"
         [ -n "$fl" ] && [ "$fl" = "$pl" ] || tbad="$tbad ${arm:-default}: file [$fl] pattern [$pl];"
         case "$arm" in
-            "") case "$fl" in (*'"61626364@'*) ;; (*) tbad="$tbad default does not stamp the rarer run;" ;; esac ;;
-            *)  case "$fl" in (*'"65666768@'*) ;; (*) tbad="$tbad restore=tie did not restore the predecessor's run;" ;; esac ;;
+            "") case "$fl" in (*'"61626364'[@\"]*) ;; (*) tbad="$tbad default does not stamp the rarer run;" ;; esac ;;
+            *)  case "$fl" in (*'"65666768'[@\"]*) ;; (*) tbad="$tbad restore=tie did not restore the predecessor's run;" ;; esac ;;
         esac
     done
     if [ -n "$tbad" ]; then

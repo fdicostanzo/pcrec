@@ -23,13 +23,13 @@ SAB_BEFORE='    if (gate >= 0) {
         pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
         p[np++].nterm = 1;
     }
-    for (int i = 0; i < nrun; i++) {    /* a FUNC part: its name and window only */
-        if (i == keep && handoff) s->ret_pred = (uint8_t)np;
-        p[np++].fn_ref = (uint32_t)i + 1;
+    if (nrun) {     /* the derived run part: its name only (no window, no term, no need) */
+        if (handoff) s->ret_pred = (uint8_t)np;
+        p[np++].fn_ref = 1;
     }'
-SAB_AFTER='    for (int i = 0; i < nrun; i++) {   /* SABOTAGE S460: lead after */
-        if (i == keep && handoff) s->ret_pred = (uint8_t)np;
-        p[np++].fn_ref = (uint32_t)i + 1;
+SAB_AFTER='    if (nrun) {   /* SABOTAGE S460: lead after */
+        if (handoff) s->ret_pred = (uint8_t)np;
+        p[np++].fn_ref = 1;
     }
     if (gate >= 0) {
         if (handoff && !nrun) s->ret_pred = (uint8_t)np;   /* the byte IS the landmark */
@@ -47,3 +47,5 @@ SAB_AFTER='    for (int i = 0; i < nrun; i++) {   /* SABOTAGE S460: lead after *
 # RE-AIMED 2026-10-27 (lane reqvm1, [REQRUN-VM]): the kept FUNC part is
 # `keep` (the whole run's part on the VM attempt loop's `handoff-attempts`
 # rows, else 0); both texts carry it. Intent unchanged: the lead after the run.
+# RE-AIMED 2026-11-11 (lane k382, R-38 K38-2): the run is ONE derived part (`nrun` a bool, `fn_ref` 1, no
+# `keep`); both texts carry it. Intent unchanged: the lead after the run.

@@ -16,7 +16,8 @@ SAB_DOC_FIGURE="RE-ANCHORED and HAND-MEASURED by lane m7 2026-10-08 (plant appli
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
 # compile takes the cover row's deny --memfn=no-window-search, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-window-search -p rx -o - --pattern "abcdefghq" | grep -o "RX_MEMFN_LIBC \"memchr,memcmp\""'
+SAB_REACH='"$PCREC" --memfn=no-window-search -p rx -o - --pattern "abcdefghijklmnopq" | grep -o "RX_MEMFN_LIBC \"memchr,memcmp\""'
+# Witness re-aimed by K38-2 (2026-11-12): abcdefghq (9 positions) is now dominated by its run-pinned prefilter and calls no memcmp; a 17-position run still renders a memcmp verify.
 SAB_REACH_EXPECT='RX_MEMFN_LIBC "memchr,memcmp"'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

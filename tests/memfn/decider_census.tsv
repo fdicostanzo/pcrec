@@ -52,8 +52,8 @@ window.c	m_one_holds	fn	-	M	-
 window.c	m_pair	fn	-	M	-
 window.c	m_margin_holds	fn	-	M,EXC:MARGIN reading NONE's uniform mass	[SPAN-PICK-UTF8] or a priced row on NONE
 window.c	m_parked_holds	fn	-	M	-
-window.c	kit_run_member	fn	-	T-VERIFY,TIE	- (since 1c; K38-1: asked only by the run decision kit_run_decide and run_member's verify-NO prefilter member, decider_census.py D)
-window.c	run_member	fn	-	T-VERIFY	- (K38-1: verify YES asks kit_run_decide; verify NO, the prefilter window site's own member, asks kit_run_member, span_runs_sheet.md §2.5)
+window.c	kit_run_member	fn	-	T-VERIFY,TIE	- (since 1c; K38-2: asked only by the run decision kit_run_decide, whose EXACT_AROUND mode run_member's verify-NO prefilter member asks; decider_census.py D)
+window.c	run_member	fn	-	T-VERIFY	- (K38-2: both verifies ask kit_run_decide, verify YES its WHOLE mode and verify NO, the prefilter window site's own member, its EXACT_AROUND mode; span_runs_sheet.md §2.5)
 window.c	translate:run-rank	part	w->set[hint_at], n, k ? &r : NULL	T-VERIFY,TIE	- (K38-1: RQ-2's ranking asks the run decision once per ranked position, option A)
 window.c	kit_tie_takes	fn	-	TIE	-
 window.c	kit_pick_takes	fn	-	TIE	- (unit 1d: the pick's one before-relation; every argmin asks it)
@@ -81,8 +81,9 @@ window.c	wf_tables_check	excluded	-	the renderer tables' self-check (mf_art_begi
 presence.c	kit_pres_picks:set-pick	part	kit_pick_takes(&bs,	T-PRES	- (asks kit_pick_takes since 1d)
 presence.c	kit_run_decide	fn	-	T-VERIFY,TIE	- (K38-1: THE RUN DECISION, scan and stretch; kit_pres_picks:run-window moved in, reads T_WINDOW, asks kit_pick_takes)
 presence.c	kit_run_opts_of	fn	-	T-VERIFY,TIE	- (K38-2a: the run decision's options on an art, its TIE row T_MASS_STRETCH or, under the test-only lever run-tie-left, T_RUN_LEFT)
+presence.c	stretch_window	fn	-	T-VERIFY,TIE	- (K38-2: the run decision's WINDOW mode stretch, a row of its mode table run_modes; reads T_WINDOW, asks kit_pick_takes)
+finder.c	fd_run_modes	data	-	T-VERIFY	- (K38-2, K7 U3: the ROUTE as the run decision's input, the run link's deciding row to its mode; first match)
 presence.c	kit_pres_picks:landmark	part	the FIFTH: the landmark admission	EXC:U6, the kit's landmark shadow	pcrec states the landmark as a candidate
-precheck.c	implied_by	fn	-	EXC:implied_by (T-PRES)	[MEMFN-UNBOUNDED-SPANS]
 runcmp.c	rc_row_of	fn	-	T-CMP	-
 generic.c	kit_set_test	fn	-	T-SETTEST	-
 generic.c	member_test	fn	-	T-SETTEST	-

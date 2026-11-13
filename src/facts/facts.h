@@ -38,55 +38,40 @@ struct Ast;
 
 /* ---- the facts' value types -------------------------------------------- */
 
-/* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN, in the bounded form the
- * emitted compare needs: `len` contiguous bytes every match of the pattern
- * must contain, and the INDEX within them of the one the emitted `memchr`
- * scans for.
+/* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN: `whole_len` contiguous
+ * positions every match of the pattern must contain (`whole`, each position
+ * the cube (whole[i], whole_mask[i])), as the analysis stored it (at most
+ * `PCREC_MAX_REQ_RUN_SCAN` positions), with `whole_maxoff` the core walk's
+ * bound on where position 0 lies inside any match ([K82]; `PCREC_W_UNBOUNDED`
+ * where no static bound exists).
  *
- * `len == 0` is the decline and is the safe direction, exactly as
- * `req_byte`'s -1 is: no run, no compare, the artifact is the shape it
- * was before this mechanism. `len` is never 1 — a one-byte run is
- * `[OPT-REQBYTE]`'s own `L = 1` case and is carried by the
- * `req_byte` fact alone, so the two facts never describe the same emitted text.
+ * `whole_len == 0` is the decline and is the safe direction, exactly as
+ * `req_byte`'s -1 is. It is never 1 — a one-byte run is `[OPT-REQBYTE]`'s
+ * own `L = 1` case and is carried by the `req_byte` fact alone.
  *
- * `idx` is a position INSIDE the run and nothing else. It is not an offset
- * from the match start, not a `dmin`/`dmax`, and the mechanism reads no such
- * thing — a run is a statement about its own members' RELATIVE positions
- * (docs/design/reqpos_2b.md §0 finding 1).
- *
- * [K66] `whole` is the run the WINDOW `bytes` was cut from, as the analysis
- * stored it (at most `PCREC_MAX_REQ_RUN_SCAN` bytes), and `bytes` is exactly
- * `whole + at` for `len` bytes — one derivation, both halves published by it.
- * The window is the speed choice every route compares; the whole run is what
- * a VM route with no DFA scan in front ALSO compares, because there the
- * pre-check is the only linear no-match proof and a proof resting on one
- * window made NOMATCH-vs-give-up follow the prior's window pick. */
+ * Since R-38 K38-2 nothing is CUT: the window `bytes`/`mask`/`at` and its
+ * `maxoff` retired with `PCREC_MAX_REQ_RUN_EMIT` (docs/design/memfn/
+ * span_runs_sheet.md §2.1, §4.3), and the derived `req_run` row (`len`,
+ * `idx`) retired into this fact (§6 Q7, review 2026-11-11 r1 k382 F5): the
+ * pre-check ships the whole run, a deny that removes it removes this fact
+ * (`-fno-req-run`, `-fno-req-byte`), and pcrec's own pick over it is
+ * `req_byte`'s derivation's (src/facts/req.c `pcrec_req_pick`); the kit
+ * chooses what the pre-check verifies. */
 typedef struct {
-    unsigned char bytes[PCREC_MAX_REQ_RUN_EMIT];
-    int len;   /* 0 = declined; otherwise 2..PCREC_MAX_REQ_RUN_EMIT */
-    int idx;   /* 0..len-1: which member the emitted memchr tests */
     unsigned char whole[PCREC_MAX_REQ_RUN_SCAN];
-    int whole_len;   /* 0 exactly when `len` is; otherwise len..SCAN */
-    int at;          /* where the window starts inside `whole` */
+    int whole_len;   /* 0 exactly when the analysis found no run */
     /* [OPT-LITSCAN] S4 C3 THE MASKS, each position's K: `(x & mask[i]) ==
-     * bytes[i]` is the position's membership test, `0xFF` an exact byte, one
-     * clear bit a two-member cube (litscan_s4.md §2.3.2). `mask` is exactly
-     * `whole_mask + at`, as `bytes` is `whole + at`. All `0xFF` on an exact
-     * run, so a reader of `bytes`/`len` alone stays correct on every exact
-     * run; `pcrec_req_run_masked` is the one spelling of "is it masked". */
-    unsigned char mask[PCREC_MAX_REQ_RUN_EMIT];
+     * whole[i]` is the position's membership test, `0xFF` an exact byte, one
+     * clear bit a two-member cube (litscan_s4.md §2.3.2). All `0xFF` on an
+     * exact run. */
     unsigned char whole_mask[PCREC_MAX_REQ_RUN_SCAN];
-    /* [K82] THE RUN'S MAXIMUM BYTE OFFSET FROM THE ATTEMPT START, in its two
-     * halves, as `whole`/`bytes` are: `whole_maxoff` the core walk's bound on
-     * where `whole` begins inside any match (`req_whole_run`), and `maxoff`
-     * the window's, `whole_maxoff + at` (`req_run_maxoff`). Either is
-     * `PCREC_W_UNBOUNDED` where no static bound exists; meaningful only where
-     * the run itself is (`whole_len`/`len` >= 2). docs/design/litscan_k82h.md
-     * §1.3: every successful attempt at `p` holds the window at some `q` in
-     * `[p, p + maxoff]` (invariant F), which is what lets a search begin its
-     * scan `maxoff` bytes before the pre-check's first hit. */
+    /* [K82] THE RUN's position 0's MAXIMUM BYTE OFFSET FROM THE ATTEMPT
+     * START (`req_whole_run`): every successful attempt at `p` holds the run
+     * at some `q` in `[p, p + whole_maxoff]` (invariant F, litscan_k82h.md
+     * §1.3), which is what lets a search begin its scan `whole_maxoff`
+     * bytes before the pre-check's first hit. Since R-38 K38-2 it is K
+     * wherever a run is the landmark. */
     long long whole_maxoff;
-    long long maxoff;
 } ReqRun;
 
 /* [RUN-POS-SET] stage 2p THE PIECE DESCRIPTION's value types (its combinators
@@ -111,14 +96,6 @@ typedef struct {
     int why;
     PdGroup *g;
 } PdDesc;
-
-/* Does the run's WINDOW carry a position that is not one exact byte? */
-static inline bool pcrec_req_run_masked(const ReqRun *r)
-{
-    for (int i = 0; i < r->len; i++)
-        if (r->mask[i] != 0xFF) return true;
-    return false;
-}
 
 /* [K65] THE WHOLE NECESSARY SET, as a 256-bit membership table: every byte
  * every match of the pattern must contain, of which the `req_byte` fact is the
@@ -208,10 +185,10 @@ typedef struct {
 } KsetWalk;
 
 /* [OPT-LITSCAN] S1 THE RUN PIN (fact `run_pin`, E3 derived): an EXACT
- * stretch of the necessary run's window (`req_run`'s `bytes[at .. at+len)`)
+ * stretch of the necessary run (`req_whole_run`'s `whole[at .. at+len)`)
  * sits at offset `o` of EVERY match — the walk's `k[o + i]` is the singleton
  * `bytes[at + i]` for every i < len. On an exact run the stretch is the whole
- * window (`at == 0`, `len == req_run.len`, `idx == req_run.idx`); on a
+ * window (`at == 0`, `len == whole_len`, `idx` pcrec's pick); on a
  * masked one ([OPT-LITSCAN] S4 C3, litscan_s4.md §2.3.5) it is the maximal
  * exact stretch around the window's rarest exact position `at + idx`, so a
  * pin is a fact about EXACT positions only. A pure NFA+window fact: it may
@@ -586,10 +563,10 @@ int            pcrec_fact_end_pin(Ctx *cx);        /* E2: PCREC_EPIN_* */
 long long      pcrec_fact_end_window(Ctx *cx);
 const EndMark *pcrec_fact_end_mark(Ctx *cx);      /* E2 */
 const ReqSet  *pcrec_fact_req_set(Ctx *cx);
-/* Both return `PatFacts.req_run`: the whole run is its core half, the
- * window its derived half, and each accessor answers for its own. */
+/* `PatFacts.req_run`, the `req_whole_run` fact: the necessary run uncut
+ * (the derived `req_run` row and its window retired into it, review
+ * 2026-11-11 r1 k382 F5; span_runs_sheet.md §4.3, §6 Q7). */
 const ReqRun  *pcrec_fact_req_whole_run(Ctx *cx);
-const ReqRun  *pcrec_fact_req_run(Ctx *cx);
 /* [MEMFN] R17-b' B3a THE PRESENCE STATEMENT's two reads (r17b_prime.md §4.1,
  * PR-5): the same facts and derivation as `pcrec_fact_req_set` and
  * `pcrec_fact_req_whole_run`, NOT a pass's ask, so `--emit-facts`' `used`
@@ -599,19 +576,15 @@ const ReqRun  *pcrec_fact_req_run(Ctx *cx);
  * the kit; no selection and no rendering reads what it states before B3b. */
 const ReqSet  *pcrec_fact_req_set_stated(Ctx *cx);
 const ReqRun  *pcrec_fact_req_whole_run_stated(Ctx *cx);
-/* The same non-pass reads of the window and of `req_byte`, for the trace
- * build's pick shadow (`req_pick_shadow`): a check, not a pass, so the
- * trace build's `used` column is the default build's. */
-const ReqRun  *pcrec_fact_req_run_stated(Ctx *cx);
+/* The same non-pass read of `req_byte`, for the trace build's pick shadow
+ * (`req_pick_shadow`): a check, not a pass, so the trace build's `used`
+ * column is the default build's. */
 int            pcrec_fact_req_byte_stated(Ctx *cx);
 /* The same non-pass read of `run_pin`, for the window statement's run R
  * (D172 S2 commit 2, src/gen/emit_dfa.c `pf_window_of`): R's offsets are
  * stated beside the old fields and read by no pass before commit 4, so
  * `used` stays today's. Its reader owes the kind gate, as the pass read's. */
 const RunPin  *pcrec_fact_run_pin_stated(Ctx *cx);
-/* E2 derived: the window's `maxoff` where a run shipped, -1 where none
- * did ([K82]). `PCREC_W_UNBOUNDED` reads as "no bound". */
-long long      pcrec_fact_req_run_maxoff(Ctx *cx);
 int            pcrec_fact_req_byte(Ctx *cx);
 /* E2 core: `ReqSet.maxoff` ([REQ-HANDOFF-L1]); the set it annotates. */
 const ReqSet  *pcrec_fact_req_set_maxoff(Ctx *cx);
@@ -657,14 +630,14 @@ void pcrec_facts_force_failed(Ctx *cx);
  * one call. `pcrec_fact_render` reads the memo only and asks nothing: it is
  * the listing's, which must never change what the passes asked. */
 const char *pcrec_fact_stamp(Ctx *cx, PfFactId f);
-/* D172 S2 commit 6 (window_site.md §3.4): the `req_run` and `req_byte`
- * stamps' text with the run's MEMBER `member` (a window position), the one
- * the memfn kit's window family's reply names, asked as `pcrec_fact_stamp`
- * asks: `req_run`'s `@idx`, and `req_byte`'s run byte where that position is
- * exact (else the set's pick, the fact's own). The listing keeps the fact's
- * own index, the run window's statement (`req_run.idx`). */
+/* `<PREFIX>_REQ_RUN`'s text: the whole run (`req_whole_run`, asked as
+ * `pcrec_fact_stamp` asks) with `@member`, the run position the artifact's
+ * search reads (the first-match table in src/gen/emit_dfa.c `req_run_at`),
+ * no `@` where `member` is -1. The listing carries no `@` (the `req_run`
+ * row and its `@idx` retired, review 2026-11-11 r1 k382 F5), so `@` has the
+ * one meaning. `<PREFIX>_REQ_BYTE` is `pcrec_fact_stamp(cx, PF_REQ_BYTE)`:
+ * the fact, rendered by its one arm (F10). */
 const char *pcrec_fact_stamp_req_run(Ctx *cx, int member);
-const char *pcrec_fact_stamp_req_byte(Ctx *cx, int member);
 const char *pcrec_fact_render(Ctx *cx, PfFactId f);
 
 #endif /* PCREC_FACTS_H */

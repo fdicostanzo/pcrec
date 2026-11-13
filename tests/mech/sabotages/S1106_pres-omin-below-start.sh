@@ -8,12 +8,18 @@
 # builder states one (every omin is 0 through B4), so no artifact moves: the
 # detector is the kit's contract check (finder_check M: `pre-omin` refused
 # naming omin).
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2): since MF_SITE_ABI 27 the RUN span may state omin < 0 (its floor
+# max(0, lo + omin), precheck.c run_floor); the refusal is a MEMBER span's only, and the
+# detector's fixture (pre-omin) states omin -1 on its member span. The same refusal is
+# dropped (intent narrowed to member spans, as the contract now is).
 SAB_ID="S1106-pres-omin-below-start"
 SAB_FILE="memfn/src/compose.c"
 SAB_SUITES="memfnfinder"
-SAB_DESC="the presence statement's omin >= 0 refusal is dropped, so a span beginning below the match start is accepted (a re-asked range below the activation's start; KW-10)"
+SAB_DESC='the presence statement'"'"'s member-span omin >= 0 refusal is dropped, so a member span beginning below the attempt start is accepted (a re-asked range below the activation'"'"'s start; KW-10; only the run span may state omin < 0 since MF_SITE_ABI 27)'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (p->omin < 0) return "a presence span'"'"'s `omin` is below the match start";'
-SAB_AFTER='        if (0 && p->omin < 0) return "a presence span'"'"'s `omin` is below the match start";   /* SABOTAGE S1106 */'
+SAB_BEFORE='        if (p->omin < 0)
+            return "a member presence span'"'"'s `omin` is below the attempt start (only the "'
+SAB_AFTER='        if (0 && p->omin < 0)   /* SABOTAGE S1106 */
+            return "a member presence span'"'"'s `omin` is below the attempt start (only the "'
 SAB_DOC_FIGURE="HAND-MEASURED by lane b3b: see docs/dev/lanes/b3b_report.md (the solo mech run of this row)."

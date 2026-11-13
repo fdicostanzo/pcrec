@@ -37,9 +37,11 @@ SAB_COUNT=1
 # only in the PCREC_CAND_TRACE build as the five-pick shadow's expectation,
 # so the old plant landed on code no default artifact reads. The plant moves
 # to the same conjunct of the port; intent and detector unchanged.
-SAB_BEFORE='        else if (run) dom = 0;
+SAB_BEFORE='        else if (rs) dom = 0;
         else if (!proof->stop) dom = 0;
         else dom = rate && lead >= 0 && rate[proof->byte] <= rate[lead];'
-SAB_AFTER='        else if (run) dom = 0;
+SAB_AFTER='        else if (rs) dom = 0;
         /* SABOTAGE S288: memchr-form guard dropped */
         else dom = rate && lead >= 0 && rate[proof->byte] <= rate[lead];'
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2): the context line reads the set-form run span (`rs`); the same
+# guard is dropped (intent and detector unchanged).

@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k382cen_report.md
+sections: Summary; The 91 rows by pattern; Census rule fixes; /abcd[xy]/user ruling evidence; Non-vacuity plants; Checks; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

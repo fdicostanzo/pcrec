@@ -174,24 +174,21 @@ typedef struct PcrecMeasInherit PcrecMeasInherit;
  * routes `cover` itself. It sets only the KITPROOF trace record's `routed`
  * field, and its callers (tests/kitproof/, site_census.py) still pass it;
  * its retirement is filed under [KIT-VERIFY] (docs/dev/plan.md). */
-/* [MEMFN] R-30: the fifth, `--harness=pres-window`, the INVERSE lever of a
- * kit change with no public deny (it cannot make a caller slower): the kit
- * keeps a pre-check's run WINDOW part beside the WHOLE run that implies it
- * (mf_lever(art, "pres-window")), the form before R-30, so the
- * answer-identity sweep can still produce it. Off on every shipped compile. */
+/* [MEMFN] R-30's fifth, `--harness=pres-window` (the kit's lever restoring
+ * the run window beside the whole run), RETIRED at R-38 K38-2 with the
+ * two-part run it restored; its bit is gone, never reused. */
 /* [MEMFN] R-38 K38-2a: the seventh, `--harness=run-tie-left`, the kit's PROBE
  * lever (mf_lever(art, "run-tie-left")): the kit breaks a pre-check run's
  * decision's ties LEFTMOST on every reader of it (span_runs_sheet.md §2.4
- * C4's reaching regime, §5). pcrec's own run index stays rightmost, so
- * before K38-2 `req_run_member`'s agreement check refuses any compile whose
- * run decision ties; the lever is read in G2 until then. Off on every
+ * C4's reaching regime, §5). Since K38-2 pcrec reads the kit's reply at
+ * every reader (no run index of its own to disagree), so the lever compiles
+ * every pattern; pcrec's own pick (`req_byte`) stays rightmost. Off on every
  * shipped compile. */
 struct mf_measures;
 typedef struct {
     unsigned compound_off : 1;
     unsigned arm_reach : 1;
     unsigned kit_proof : 1;
-    unsigned pres_window : 1;
     unsigned run_tie_left : 1;
     /* [FIND-MINW] the eighth, `--harness=no-min-width`, the INVERSE lever
      * of a change with no public deny (it only removes work; its risk is a
@@ -7553,7 +7550,7 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
  * (src/gen/emit_vm.c). */
 bool pcrec_vm_prefilter_window(Ctx *cx);
 /* [OPT-LITSCAN] S1 step 6: the file-scope search blocks the run form of that
- * pre-check calls (`<prefix>_reqrun`, [K66] `<prefix>_reqrun_whole`). Every
+ * pre-check calls (`<prefix>_reqrun`, the one run part since R-38 K38-2). Every
  * search-entry emitter that calls `pcrec_emit_req_byte_check` calls this at
  * file scope above the entry; it emits nothing where no run pre-check is. */
 void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);

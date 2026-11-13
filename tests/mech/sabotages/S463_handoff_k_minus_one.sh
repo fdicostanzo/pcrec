@@ -18,13 +18,13 @@ SAB_REACH_POP='tests/litscan/handoff.rxt|^pattern \(\?m\)\^x\{2,5\}|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    long long k = req_handoff_k(cx);
-    bool whole = req_use_whole(cx), run = pcrec_fact_req_run(cx)->len >= 2;
+    bool whole = req_use_whole(cx), run = pcrec_fact_req_whole_run(cx)->whole_len >= 2;
     StrBuf round = { 0 };
     round.cx = cx;
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
                           "handoff_position",'
 SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0); /* SABOTAGE S463 */
-    bool whole = req_use_whole(cx), run = pcrec_fact_req_run(cx)->len >= 2;
+    bool whole = req_use_whole(cx), run = pcrec_fact_req_whole_run(cx)->whole_len >= 2;
     StrBuf round = { 0 };
     round.cx = cx;
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
@@ -43,3 +43,6 @@ SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0); /* SAB
 # at most 3 bytes in (K 3, was 5 for `CAT`). The probe reads the new K. Intent
 # unchanged and re-checked by plant: the entry starts one byte too late and
 # handoff.rxt reads (1,8) where (0,8) is expected (185 cells).
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2): the context line's `run` reads the whole run (the cut window
+# retired); K is the whole run's wherever a run is the landmark. Probe unchanged (re-read:
+# REQ_HANDOFF "3"). Intent unchanged: the ENTRY starts one byte too late.

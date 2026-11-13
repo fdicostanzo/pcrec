@@ -44,10 +44,8 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # trace-build oracle (tests/codegen/run_cand_oracle.sh and its witness list),
 # whose `cover` witnesses are compiled by the trace build's pcrec-harness
 # through the lever and again without it, so a default build is shown to
-# decline the row; and the memfn presence check's R-30 section, whose witnesses
-# compile under the kit's test-only lever `pres-window` (lane r30b), and the
-# R-30 sabotage row S1548 (the lever ignored), whose reach probe must name the
-# lever to exercise it (lane r30bfix); and the necessary-run walk's restored
+# decline the row; (the memfn presence check's R-30 section and its lever
+# `pres-window` RETIRED at R-38 K38-2, lane k382); and the necessary-run walk's restored
 # arms (span_arms E1, lane sae1): the facts check's [facts-arm] section and
 # the three rows that plant its faults (S1907, S1908, S1909), whose reach probes name
 # the lever, and E2's rows S1928 and S1929 (an arm ignored, lane sae2), whose
@@ -57,8 +55,11 @@ decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # same shape; S446 and S807's re-aim comment
 # (sar1fix) names the lever as the old anchor's only way in. The cloud axes
 # shard table (tests/ci/cloud_axes_shards.tsv) names each axis it times; so
-# do all generated cloud timing tables (cloud_*_shards.tsv, measured_*.tsv).
-ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S1548_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S192[1289]_|tests/mech/sabotages/S1930_|tests/mech/sabotages/S(446|807)_|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv|tests/ci/(cloud_[a-z]+_shards|measured_[a-z]+)\.tsv)'
+# do all generated cloud timing tables (cloud_*_shards.tsv, measured_*.tsv); and
+# R-38 K38-2's row S3042 (the REQ_RUN stamp's `@` fed pcrec's index, lane
+# k382), whose reach probe names `run-tie-left` (the C4 witness's only way in),
+# and tests/codegen/reqcube_check.py's C4 lever rows (its reaching regime).
+ALLOW='^(cli/main\.c|tests/memfn/run_presence\.sh|cli/CLAUDE\.md|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_|tests/mech/sabotages/S190[789]_|tests/mech/sabotages/S192[1289]_|tests/mech/sabotages/S1930_|tests/mech/sabotages/S(446|807)_|tests/mech/sabotages/S3042_|tests/codegen/reqcube_check\.py|tests/codegen/run_facts_checks\.sh|tests/memfn/run_arm_reach\.sh|tests/memfn/site_census\.py|tests/kitproof/|tests/codegen/run_cand_oracle\.sh|tests/codegen/cand_oracle_witnesses\.tsv|tests/ci/(cloud_[a-z]+_shards|measured_[a-z]+)\.tsv)'
 mentions() {
     (cd "$1" && grep -rnI -e '--harness=' -e "$PFX" docs/spec docs/guide README.md examples lib tests scripts cli 2>/dev/null) |
         grep -Ev "$ALLOW"

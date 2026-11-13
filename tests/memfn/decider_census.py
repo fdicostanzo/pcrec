@@ -128,8 +128,11 @@ HITS = 61
 # R-38 K38-1 (kit_pres_picks:run-window gone into the run decision
 # kit_run_decide, which is in; translate:run-rank back in as the RQ-2 ranking's
 # reader of it, span_runs_sheet.md §5); 66 at R-38 K38-2a (kit_run_opts_of
-# in: the decision's TIE row, the test-only lever run-tie-left's one reader).
-MEMBER_COUNT = 66
+# in: the decision's TIE row, the test-only lever run-tie-left's one reader);
+# 67 at R-38 K38-2 (precheck.c's implied_by out with the R-30 implied parts;
+# the run decision's WINDOW stretch stretch_window and the route's mode table
+# fd_run_modes in: K7 (b)'s mode table and U3's route as the input).
+MEMBER_COUNT = 67
 
 # D: THE RUN CALLERS, EXACT (a call site added or lost is red): callee ->
 # {enclosing definition: uses}: EVERY use of the identifier (a call, an alias, a
@@ -137,11 +140,15 @@ MEMBER_COUNT = 66
 # 2026-11-10 r1 k381, K5). `T_WINDOW,` is P3's window pick asking its
 # TIE row, `T_WINDOW, key)` (kit.h's enum and window.c's `[T_WINDOW]` table
 # row are no calls).
+# K38-2: the verify-NO prefilter member asks the decision too (its
+# EXACT_AROUND mode), so kit_run_member's one caller is the decision; fd_pres
+# asks it for the class's run reply (mf_class.run); the window pick moved into
+# the WINDOW mode's stretch, stretch_window.
 RUN_CALLERS = {
-    r"\bkit_run_member\b": {"kit_run_decide": 1, "run_member": 1},
-    r"\bkit_run_decide\b": {"kit_pres_picks": 1, "run_member": 1, "translate": 1,
-                             "a_mass_choose": 1},
-    r"\bT_WINDOW\s*,\s*\w+\s*\)": {"kit_run_decide": 1},
+    r"\bkit_run_member\b": {"kit_run_decide": 1},
+    r"\bkit_run_decide\b": {"fd_pres": 1, "kit_pres_picks": 1, "run_member": 1,
+                             "translate": 1, "a_mass_choose": 1},
+    r"\bT_WINDOW\s*,\s*\w+\s*\)": {"stretch_window": 1},
 }
 
 passed = failed = 0

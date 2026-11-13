@@ -183,8 +183,7 @@ static int table_params(mf_art *art, const mf_hooks *h, const mf_pred *p,
  * the predicate's order (pcrec sends them ascending by offset, so a reader
  * of the artifact sees the pattern's own order). A singleton set is a byte
  * compare, a wider one a probe of pcrec's table, a run the kit's run compare
- * (runcmp.c) at the term's offset from the candidate, led by `x`'s lead
- * where it states one (R-30: the pre-check's whole run, its window first). */
+ * (runcmp.c) at the term's offset from the candidate. */
 static int verify_chain(mf_art *art, const mf_hooks *h, const fn_in *x,
                         mf_sink *o)
 {
@@ -195,11 +194,7 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const fn_in *x,
         if (scan_only(p, i)) continue;
         o->puts(o->u, first ? "" : " &&\n            ");
         first = 0;
-        if (t->kind == MF_T_RUN && x->lead_len) {
-            if (run_cmp_render_lead(art, t, "subject + cand", t->offset, x->lead_at,
-                                    x->lead_len, o))
-                return -1;
-        } else if (t->kind == MF_T_RUN) {
+        if (t->kind == MF_T_RUN) {
             if (run_cmp_render(art, t, "subject + cand", t->offset, o))
                 return -1;
         } else if (set_count(t->set) == 1) {
@@ -484,7 +479,7 @@ int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
 {
     *two = 0;
     if (!ofs_fn_applies(p, h)) return 0;
-    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0, 0, 0 };
+    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0 };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     gate_in in = { .s = site, .h = h, .art = art };
     gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
@@ -615,8 +610,7 @@ static void fn_note_form(mf_art *art, const fn_row *const *rung, unsigned nr)
  * function's head and loop byte for byte, renamed; the selector forwards
  * the same arguments. */
 static int fn_define(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
-                     const mf_pred *p, const char *fn, unsigned lead_at, unsigned lead_len,
-                     mf_sink *o);
+                     const mf_pred *p, const char *fn, mf_sink *o);
 
 int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                   const mf_pred *p, const char *fn, mf_sink *o)
@@ -627,24 +621,13 @@ int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
 int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
                      const mf_pred *p, const char *fn, mf_sink *o)
 {
-    return fn_define(art, handle, site, h, p, fn, 0, 0, o);
-}
-
-int ofs_fn_define_lead(mf_art *art, uint32_t handle, const mf_hooks *h, const mf_pred *p,
-                       const char *fn, unsigned lead_at, unsigned lead_len, mf_sink *o)
-{
-    if (p->nterm != 1 || p->term[0].kind != MF_T_RUN)
-        return kit_fail(art, "ofsskip: a lead needs a predicate of one RUN term");
-    return fn_define(art, handle, &art->sites[handle - 1].site, h, p, fn, lead_at, lead_len,
-                     o);
+    return fn_define(art, handle, site, h, p, fn, o);
 }
 
 static int fn_define(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
-                     const mf_pred *p, const char *fn, unsigned lead_at, unsigned lead_len,
-                     mf_sink *o)
+                     const mf_pred *p, const char *fn, mf_sink *o)
 {
-    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL,
-                o->simd_open && o->simd_close, lead_at, lead_len };
+    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, o->simd_open && o->simd_close };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     art->includes |= MF_INC_STRING_H;   /* memchr */
     /* both bodies write `memchr(`; an error from here on is sticky */

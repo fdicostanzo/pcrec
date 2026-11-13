@@ -21,6 +21,9 @@
 # flags the plant leaves the bytes identical (the window-search row renders the pick), so the probe was vacuous.
 # span_pick unit 1c (lane sp1c) RE-ANCHORED: the set pick's position is its own span's set and the
 # run's side the run member's mass (`sc.mass`); the same `<` is planted `<=` (intent unchanged).
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2): the run's side is the run decision's scan mass (`scan_mass`, the
+# run read from its set-form span); the line lost one indent level. The same `<` is planted
+# `<=` (intent unchanged).
 SAB_ID="S458-set-leads-tie-leads"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="prechecks"
@@ -30,5 +33,5 @@ SAB_REACH='"$PCREC" --features all -p rx -e utf8 --memfn=no-window-search -o "$R
 SAB_REACH_EXPECT="REACH-TIE-NO-LEAD"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) <'
-SAB_AFTER='            out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) <=   /* SABOTAGE S458 */'
+SAB_BEFORE='        out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) <'
+SAB_AFTER='        out->set_leads = kit_mass(rate, s->pspans[best].term[0].set, 1, KIT_MASS_SUM) <=   /* SABOTAGE S458 */'

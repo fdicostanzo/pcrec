@@ -146,7 +146,32 @@ typedef struct {
     unsigned long long cost;
     int npick, pick[2];
     int tie_mass, tie_model;
+    int inrun_set, inrun_set_won, inrun_meet;
 } arow;
+
+/* THE IN-RUN STOP (span_runs_sheet.md §5 K38-2a's kit ruling [r1.3 K7], its
+ * witness PLAN (e)): inside a verify-YES run R, the run decision orders R's
+ * positions by the mass of each position's set (`own` 0: the MEET at its
+ * offset, as C-meet left it; 1: R's own stated set, the reach census's
+ * contrast only), ties to the HIGHER offset, or to the LOWER under the lever
+ * run-tie-left (`left`); the stop candidate inside R is the first, in that
+ * order, of the positions that are stop candidates (core, not full) and
+ * stretch positions. Its offset, or G2W_REACH where none is. */
+static int in_run_stop(const g2w_alt *a, int R, const uint32_t *rate, int left, int own)
+{
+    const g2w_span *sp = &a->span[R];
+    int bo = G2W_REACH;
+    unsigned long long bm = 0;
+    for (int j = 0; j < sp->len; j++) {
+        int off = sp->start + j, core;
+        uint8_t set[32];
+        if (!meet(a, off, 0, set, &core) || !core || is_full(set)) continue;
+        if (!(long_cover(a, off) && kind_of(set))) continue;
+        unsigned long long m = mass(rate, own ? sp->set[j] : set, 0);
+        if (bo == G2W_REACH || m < bm || (m == bm && !left)) { bo = off; bm = m; }
+    }
+    return bo;
+}
 
 static unsigned long long vcost(unsigned long long p)
 {
@@ -160,7 +185,7 @@ static unsigned long long mcost(unsigned long long scan, unsigned long long m,
     return scan + m * vc / 1000000ull + m * vr / 1000000ull * 2000ull / 1000000ull;  /* C_ENTER */
 }
 
-static void table_a(const g2w_alt *a, const uint32_t *rate, arow *r)
+static void table_a(const g2w_alt *a, const uint32_t *rate, int left, arow *r)
 {
     memset(r, 0, sizeof *r);
     uint8_t set[32];
@@ -239,11 +264,24 @@ static void table_a(const g2w_alt *a, const uint32_t *rate, arow *r)
     } else {
         int bk = 1 << 30;
         unsigned long long bm = 0;
+        /* R's one stop candidate (the in-run stop, above), where R states YES */
+        int R = run_of(a), rs = G2W_REACH;
+        int yr = R >= 0 && a->span[R].verify == G2W_YES;
+        if (yr) {
+            rs = in_run_stop(a, R, rate, left, 0);
+            r->inrun_meet = rs != in_run_stop(a, R, rate, left, 1);
+        }
+        unsigned long long rsm = 0;
+        if (rs != G2W_REACH) { meet(a, rs, 0, set, &core); rsm = mass(rate, set, 0); }
         for (int off = G2W_LO; off < G2W_REACH; off++) {
             /* a full-set position is no stop: the bound alone (wsc3 ruling 1) */
             if (!meet(a, off, 0, set, &core) || !core || is_full(set)) continue;
             unsigned long long m = mass(rate, set, 0);
             int stretch = long_cover(a, off) && kind_of(set);
+            if (yr && stretch && off >= a->span[R].start &&
+                off < a->span[R].start + a->span[R].len && off != rs)
+                continue;                       /* inside R: the run decision's one */
+            if (rs != G2W_REACH && off != rs && m <= rsm) r->inrun_set = 1;
             if (bk == 1 << 30 || m < bm) { bk = off; bm = m; continue; }
             if (m == bm) {
                 r->tie_mass = 1;
@@ -251,6 +289,7 @@ static void table_a(const g2w_alt *a, const uint32_t *rate, arow *r)
             }
         }
         if (bk != 1 << 30) {
+            r->inrun_set_won = r->inrun_set && bk != rs;
             r->row = "mass";
             r->has_stop = 1;
             r->stop = bk;
@@ -277,7 +316,7 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
 {
     memset(d, 0, sizeof *d);
     arow r[2];
-    for (int i = 0; i < x->nalt; i++) table_a(&x->alt[i], rate, &r[i]);
+    for (int i = 0; i < x->nalt; i++) table_a(&x->alt[i], rate, x->run_left, &r[i]);
     d->alt = 0;
     if (x->nalt == 2) {
         int pk = x->alt[0].entry == G2W_E_PARKED ? 0 : 1, rs = 1 - pk;
@@ -293,6 +332,9 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
     d->arow = ra->row;
     d->tie_mass = ra->tie_mass;
     d->tie_model = ra->tie_model;
+    d->inrun_set = ra->inrun_set;
+    d->inrun_set_won = ra->inrun_set_won;
+    d->inrun_meet = ra->inrun_meet;
     d->has_stop = ra->has_stop;
     d->stop = ra->stop;
     d->reseed = a->entry == G2W_E_RESEED;
@@ -300,7 +342,8 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
     /* R's member and stretch, by R's verify (the kit manager's wsc3 rulings
        3-4): NO, the least PICK mass over its exact positions (ties to the
        higher) and the exact run around it; YES, over all of R (cube mass)
-       and R whole */
+       and R whole, its ties to the LOWER under the lever run-tie-left (the
+       run decision's; the verify-NO member stays behind on purpose) */
     if (R >= 0) {
         const g2w_span *sp = &a->span[R];
         int exact = sp->verify == G2W_NO;
@@ -309,7 +352,7 @@ void g2w_decide(const g2w_site *x, const uint32_t *rate, g2w_dec *d)
         for (int j = 0; j < sp->len; j++) {
             if (exact && card(sp->set[j]) != 1) continue;
             unsigned long long m = mass(rate, sp->set[j], 0);
-            if (bj < 0 || m <= bm) { bj = j; bm = m; }
+            if (bj < 0 || m < bm || (m == bm && !(x->run_left && !exact))) { bj = j; bm = m; }
         }
         if (bj >= 0) {
             int lo = 0, hi = sp->len;

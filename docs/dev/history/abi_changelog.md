@@ -23,7 +23,24 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `103` on every artifact today ([FIND-MINW] searches stop at the minimum width, 100 -> 103,
+- **`rx_info.abi` is `104` on every artifact today ([MEMFN] R-38 K38-2, 103 -> 104,
+  one event with the kit's MF_SITE_ABI 27 / MF_CLASS_V 9, lane k382
+  2026-11-11, re-bumped over main's [PFFIX] 99 -> 100 by lane k382m 2026-11-12 and over main's s1land 100 -> 103 by lane k382n 2026-11-12, so the reserved 101 stays unused; `docs/design/memfn/span_runs_sheet.md` rev 1.3 §5.1).** pcrec
+  states the necessary run to the kit UNCUT as one presence span in set form
+  and the kit derives the pre-check's ONE run part from it and from its run
+  decision (`mf_class.run`); pcrec cuts no window (`PCREC_MAX_REQ_RUN_EMIT`
+  retired). The movers, each a counted population: (1) the handoff's K is the
+  whole run's position-0 offset on DFA routes whose run was cut at `at > 0`
+  (`<PREFIX>_REQ_HANDOFF` and the move constant); (2) `<PREFIX>_REQ_RUN`
+  names the whole run, its `@` the position the artifact's search reads (a
+  first-match table: the pre-check's run reply, else the `cover`/run-pinned
+  window site's member, else no `@`); (3) a pre-check that compared the
+  window AND the whole run ([K66]'s `<p>_reqrun_whole`) compares the kit's
+  one stretch in one `<p>_reqrun` block (R-30's led compare gone with it);
+  (4) the run pin reads the whole run (a longer exact stretch where the cut
+  had clipped it); (5) `-fcomments` text naming the run.
+
+- **`rx_info.abi` was `103` on every artifact ([FIND-MINW] searches stop at the minimum width, 100 -> 103,
   lane minw 2026-11-12; 101 and 102 were reserved for K38-2 and lane nevermatch).** A search entry whose every
   match needs at least two bytes (the WIDTH row `min-width`: the `width` fact's `bmin` on the DFA routes, the
   root's `pcrec_minw` on the VM) answers NOMATCH where fewer remain past `search_from`, ahead of the pre-check;

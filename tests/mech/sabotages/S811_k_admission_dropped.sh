@@ -14,7 +14,7 @@ SAB_REACH='"$PCREC" --features all --memfn=no-window-search -fno-landmark-walk -
 SAB_REACH_EXPECT='REACH-ADMISSION-DECLINES'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    return pcrec_landmark_margin(landmark_ppm, start_ppm, k) > 0;'
+SAB_BEFORE='    return pcrec_landmark_margin(landmark_ppm, start_ppm, k > 0 ? k : 0) > 0;'
 SAB_AFTER='    return (void)landmark_ppm, (void)start_ppm, (void)k, true;   /* SABOTAGE S811 */'
 # RE-AIMED 2026-10-29 (lane p1build, [LANDWALK] stage 1, r5 SLOT-5): the margin
 # arithmetic moved into `pcrec_landmark_margin`, which the landmark walk's
@@ -26,3 +26,5 @@ SAB_AFTER='    return (void)landmark_ppm, (void)start_ppm, (void)k, true;   /* S
 # (COVER_DENY + WALK_DENY, lane p1tri): there the entry still hands off at 151
 # and the re-entry declines, the site this row plants. Under the plant the
 # re-entry is taken with and without the deny (measured, p1mech_report.md).
+# RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2; span_runs_sheet.md §3.2): the admission reads max(K, 0)
+# (`k > 0 ? k : 0`, K signed since head_max is int64_t); the plant still admits every K.

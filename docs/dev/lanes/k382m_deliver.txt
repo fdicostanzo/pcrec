@@ -1,0 +1,5 @@
+report=docs/dev/lanes/k382m_report.md
+sections: Summary; Merge and conflicts; abi 101 re-bump (readers by grep); Census against the new BASE; Cloud reds; Checks; Gate jobs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

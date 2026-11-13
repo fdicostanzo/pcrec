@@ -1726,9 +1726,8 @@ done
 # `--harness=no-compound` force-declines the compound family, through
 # build/pcrec-harness only; its answers must equal the default's exactly as an
 # axis's do, and tests/compound/check_lever.py holds its two-directional
-# property after the job loop. [MEMFN] R-30: `--harness=pres-window` keeps a
-# pre-check's run window beside the whole run that implies it (the kit's old
-# form, a change with no public deny); its answers must equal the default's.
+# property after the job loop. ([MEMFN] R-30's `--harness=pres-window` arm
+# RETIRED at R-38 K38-2 with the two-part run it restored.)
 # [REQ-EMPTYCAT] span_arms E1 (§3.7): `--harness=restore=empty` runs the
 # necessary-run walk's width-0 repeat row in its old form (src/facts/
 # walk_arms.def); its answers must equal the default's. Span arms E2's
@@ -1740,7 +1739,7 @@ done
 # `--harness=no-min-width` declines the minimum-width stop (tuning.md §2.55),
 # a change with no public deny; its answers must equal the default's.
 # Selected by the empty AXES= or by its spelling.
-INTERNAL_ARMS=("--harness=no-compound" "--harness=pres-window" "--harness=restore=empty"
+INTERNAL_ARMS=("--harness=no-compound" "--harness=restore=empty"
                "--harness=restore=zero" "--harness=restore=rep" "--harness=restore=tie"
                "--harness=no-min-width")
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"

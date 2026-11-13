@@ -1,7 +1,8 @@
 # tests/findings/witness/ — the reader WITNESSES ([FINDINGS] B2, design §11.9)
 
 One constructed pattern + one named bundle per rate reader C1-C4 (C2 split
-into its scan member C2a and its window C2b), whose choice MOVES against the
+by `REQ_RUN`'s `@` row: C2a the pre-check run part's scan member, C2b the
+member a window-site search reads; since K38-2 there is no window), whose choice MOVES against the
 default. `C6` is B4's.
 
 ## Files

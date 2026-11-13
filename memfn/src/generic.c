@@ -238,7 +238,8 @@ static int reads_below_d(const mf_site *s)
  * negates the predicate: its hit is the first position NOT in the set. A
  * reads-below FIND's loop runs to `cand + d <= n` (reads_below_d). */
 static void find_loop(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
-                      int rev, int negate, const char *cand, const char *found)
+                      int rev, int negate, const char *cand, const char *found,
+                      const char *from)
 {
     unsigned eb = rc->s->end_back;
     int rd = p == &rc->s->pred ? reads_below_d(rc->s) : -1;
@@ -259,7 +260,7 @@ static void find_loop(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
         kb_printf(b, "while (%s > %s) { %s--; if (%s%s) { %s = 1; break; } } ",
                   cand, rc->LO, cand, negate ? "!" : "", t, found);
     } else if (!rev) {
-        kb_printf(b, "size_t %s = %s; int %s = 0; ", cand, rc->LO, found);
+        kb_printf(b, "size_t %s = %s; int %s = 0; ", cand, from, found);
         kb_printf(b, "for (; %s%s < %s; %s++) if (%s%s) { %s = 1; break; } ",
                   cand, eb ? " + 1" : "", rc->N, cand, negate ? "!" : "", t,
                   found);
@@ -283,7 +284,7 @@ static const char *core(rctx *rc, kb *b, int want_value)
     switch (s->op) {
     case MF_OP_FIND:
     case MF_OP_SKIP:
-        find_loop(rc, b, &s->pred, 0, s->reverse, s->op == MF_OP_SKIP, C, F);
+        find_loop(rc, b, &s->pred, 0, s->reverse, s->op == MF_OP_SKIP, C, F, rc->LO);
         if (want_value) kb_printf(&fin, "%s ? %s : %s", F, C, rc->miss);
         else            kb_puts(&fin, F);
         break;
@@ -308,8 +309,15 @@ static const char *core(rctx *rc, kb *b, int want_value)
         for (unsigned i = 0; i < s->npred; i++) {
             int ret = i == s->ret_pred;
             const char *Ci = nm(rc, "_c%u", i), *Fi = nm(rc, "_f%u", i);
+            /* a RUN PART (the presence layout's one FUNC part) starts at the
+               run's floor, max(0, lo + omin): its candidate is the run's
+               position 0, which may lie below the attempt start (MF_SITE_ABI
+               27; review 2026-11-11 r1 k382 F1) */
+            const char *from = s->preds[i].fn_ref ? kit_run_floor(rc->art, rc->LO, s, "generic")
+                                                  : rc->LO;
+            if (!from) from = rc->LO;   /* kit_fail recorded: the define refuses */
             kb_printf(b, "if (%s) { ", A);
-            find_loop(rc, b, &s->preds[i], i, 0, 0, Ci, Fi);
+            find_loop(rc, b, &s->preds[i], i, 0, 0, Ci, Fi, from);
             kb_printf(b, "if (!%s) %s = 0; ", Fi, A);
             if (ret && want_value) kb_printf(b, "%s = %s; ", R, Ci);
             kb_puts(b, "} ");

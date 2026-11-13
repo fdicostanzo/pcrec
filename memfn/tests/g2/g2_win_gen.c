@@ -157,7 +157,7 @@ static void view(const gfacts *f, g2w_site *x, g2w_span (*v)[G2W_MAXSPAN])
  * stream of their own, so every site the space generated before S3 is
  * generated unchanged (S2's floors were measured on it). */
 static unsigned long long rng, rng3 = 0xD172535ull, rng4 = 0xC1CA5E1E55ull,
-                          rng5 = 0x2B1A1250ull, rng6 = 0x40B5EB1ull;
+                          rng5 = 0x2B1A1250ull, rng6 = 0x40B5EB1ull, rng7 = 0x3822E3ull;
 static unsigned long long *rngp = &rng;
 static int s3_dense;                    /* generating S3's dense sites */
 /* THE CASELESS SITES (code review r1 C1/C13, after the dense ones, from a
@@ -184,6 +184,16 @@ static int r2_two;
  * the population of D-hors's `whi >= 0` scope (no D-hors there; the census
  * below holds it). */
 static int h2_below;
+/* THE IN-RUN SITES (span_runs_sheet.md §5 K38-2 PLAN (e), EMIT-3 of code
+ * review 2026-11-10 r2 k382a; after the below-window ones, from a stream of
+ * their own): one NONE alternative, a verify-YES run R beside one-position
+ * SET spans, three in four on an art carrying the lever run-tie-left, so the
+ * in-run stop's two branches are reached: a set candidate competing with R's
+ * stop (`set`: outside R, one member, cheaper than R's cubes, or several,
+ * dearer), and a position of R the meet narrows (`meet`: R all cubes, one
+ * narrowed to a member, so the run decision over the meet differs from one
+ * over R's own sets). */
+static int k3_inrun;
 static const uint8_t TWOB[] = { 'a', 'b', 'c', '0', '1', '\n', 'x', 0xC4 };
 #define NTWOB (sizeof TWOB / sizeof TWOB[0])
 static unsigned rnd(unsigned n)
@@ -312,12 +322,63 @@ static void reseed_alt(galt *a)
     if (rnd(2)) run_span(&a->span[a->nspan++], (int)rnd(4), 2 + (int)rnd(6), -1);
 }
 
+/* An in-run site's alternative (k3_inrun, above). */
+static void inrun_alt(galt *a)
+{
+    memset(a, 0, sizeof *a);
+    a->entry = G2W_E_NONE;
+    gspan *r = &a->span[a->nspan++];
+    int len = 3 + (int)rnd(5), meetw = (int)rnd(2);
+    r->start = (int)rnd(4);
+    r->len = len;
+    r->verify = G2W_YES;
+    r->core_lo = 0;
+    r->core_len = len;
+    for (int j = 0; j < len; j++) {
+        if (meetw || rnd(3)) {
+            const uint8_t *c = CUBES[rnd(2)];   /* 'A'/'a', '0'/'1': one-bit cubes */
+            set_add(r->set[j], c[0]);
+            set_add(r->set[j], c[1]);
+        } else {
+            set_add(r->set[j], ALPHA[rnd(NALPHA)]);
+        }
+    }
+    if (meetw) {            /* narrow one inner position to one of its members */
+        int j = 1 + (int)rnd((unsigned)(len - 2));
+        gspan *q = &a->span[a->nspan++];
+        q->start = r->start + j;
+        q->len = 1;
+        q->verify = G2W_YES;
+        q->core_lo = 0;
+        q->core_len = 1;
+        int m[2], k = 0;
+        for (int b = 0; b < 256 && k < 2; b++) if (r->set[j][b >> 3] >> (b & 7) & 1) m[k++] = b;
+        set_add(q->set[0], m[rnd(2)]);
+    }
+    if (!meetw || rnd(3) == 0) {    /* a set candidate outside R, below or above */
+        gspan *q = &a->span[a->nspan++];
+        q->start = rnd(2) ? r->start - 1 - (int)rnd(3) : r->start + len + (int)rnd(3);
+        q->len = 1;
+        q->verify = G2W_YES;
+        q->core_lo = 0;
+        q->core_len = 1;
+        if (rnd(2)) set_add(q->set[0], ALPHA[rnd(NALPHA)]);
+        else for (unsigned m = 2 + rnd(2), i = 0; i < m; i++) set_add(q->set[0], TWOB[rnd(NTWOB)]);
+    }
+}
+
 static void gen_facts(int fam, gfacts *x)
 {
     memset(x, 0, sizeof *x);
     x->nalt = 1;
     x->wfloor = rnd(2) ? G2W_F_SUBJECT : G2W_F_UNSTATED;
+    if (k3_inrun) {
+        inrun_alt(&x->alt[0]);
+        fam = -1;
+    }
     switch (fam) {
+    case -1:
+        break;
     case FAM_PARKED: {
         int k0;
         parked_alt(&x->alt[0], &k0);
@@ -731,6 +792,9 @@ int main(int argc, char **argv)
     int n5 = r2n ? atoi(r2n) : 300;
     const char *h2n = getenv("G2W_H2_SITES");
     int n6 = h2n ? atoi(h2n) : 100;
+    const char *k3n = getenv("G2W_K3_SITES");
+    int n7 = k3n ? atoi(k3n) : 200;
+    long k3_lever = 0;
     buf defs = { 0 }, table = { 0 }, data = { 0 };
     long famn[FAM_N] = { 0 }, frames[4] = { 0 };
 
@@ -768,7 +832,7 @@ int main(int argc, char **argv)
 
     bputs(&defs, "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
                  "#include \"g2_win.h\"\n#define G2W_UNWRITTEN ((size_t)-2)\n\n");
-    for (int id = 0; id < nsites + n3 + n4 + n5 + n6; id++) {
+    for (int id = 0; id < nsites + n3 + n4 + n5 + n6 + n7; id++) {
         if (id == nsites) {             /* D172 S3's dense sites: their own stream */
             rngp = &rng3;
             s3_dense = 1;
@@ -788,11 +852,16 @@ int main(int argc, char **argv)
             r2_two = 0;
             h2_below = 1;
         }
-        int fam = s3_dense || c1_caseless || r2_two || h2_below ? FAM_REPORT
+        if (id == nsites + n3 + n4 + n5 + n6) {  /* the in-run sites: theirs */
+            rngp = &rng7;
+            h2_below = 0;
+            k3_inrun = 1;
+        }
+        int fam = k3_inrun ? FAM_MASS : s3_dense || c1_caseless || r2_two || h2_below ? FAM_REPORT
                 : id < FAM_N * 4 ? id % FAM_N : (int)rnd(FAM_N);
         gfacts gf;
         gen_facts(fam, &gf);
-        famn[fam]++;
+        if (!k3_inrun) famn[fam]++;
         /* TWO SPANS OF R'S SHAPE in one alternative are REFUSED (F-8 ruling;
            wf_check): count it on a preview art, then state one R */
         if (two_runs(&gf, 0)) {
@@ -823,6 +892,11 @@ int main(int argc, char **argv)
         /* the rate: NONE, skewed, or tie-heavy (every alphabet byte equal) */
         x.rate_kind = (int)rnd(3);
         if (gf.dense) x.rate_kind = 2;
+        if (k3_inrun) {
+            x.rate_kind = rnd(4) ? (int)rnd(2) * 2 : 1;     /* mostly NONE or the ties */
+            x.run_left = rnd(4) != 0;
+            k3_lever += x.run_left;
+        }
         if (x.rate_kind == 1) {
             for (int b = 0; b < 256; b++) rate[b] = 1 + rnd(40);
             for (unsigned i = 0; i < NALPHA; i++) rate[ALPHA[i]] = 1000 + rnd(120000);
@@ -862,6 +936,7 @@ int main(int argc, char **argv)
         snprintf(pfx, sizeof pfx, "g2w%d", id);
         mf_art *art = g2_art_begin(&g_arena, pfx, 0, NULL,
                                    x.rate_kind ? &an : NULL);
+        if (art && x.run_left && mf_lever(art, "run-tie-left")) { fail(id, "mf_lever", mf_art_error(art)); continue; }
         mf_wreply r;
         if (mf_wdecide(art, &s, &r)) { fail(id, "mf_wdecide refused", NULL); continue; }
         /* the reply, field by field */
@@ -1052,6 +1127,7 @@ int main(int argc, char **argv)
                                       x.rate_kind ? &an : NULL);
             mf_art *ad = g2_art_begin(&g_arena, pfx, 0, NULL,
                                       x.rate_kind ? &an : NULL);
+            if (x.run_left) { mf_lever(aq, "run-tie-left"); mf_lever(ad, "run-tie-left"); }
             buf b3 = { 0 };
             mf_sink s3 = mk_sink(&b3);
             uint32_t hd;
@@ -1143,7 +1219,7 @@ int main(int argc, char **argv)
             for (int b = 0; b < 256; b++) bprintf(&defs, "%s%u", b ? "," : "", rate[b]);
             bputs(&defs, "};\n");
         }
-        bprintf(&data, "    { \"%s#%d\", %d, {", fam_name[fam], id, x.nalt);
+        bprintf(&data, "    { \"%s#%d\", %d, {", k3_inrun ? "inrun" : fam_name[fam], id, x.nalt);
         for (int ai = 0; ai < x.nalt; ai++)
             bprintf(&data, "%s{ %d, %d, g2w_p%d_%d }", ai ? "," : "", x.alt[ai].entry,
                     x.alt[ai].nspan, id, ai);
@@ -1159,9 +1235,9 @@ int main(int argc, char **argv)
         bputs(&data, "}, {");
         for (int i = 0; i < r.nplan; i++) bprintf(&data, "%s%d", i ? "," : "", r.plan_term[i]);
         if (!r.nplan) bputs(&data, "0");
-        bprintf(&data, "}, %d, %d, %d, %d, %d, \"%s\" }, g2w_pv%d, \"%s\", \"%s\", %d },\n",
+        bprintf(&data, "}, %d, %d, %d, %d, %d, \"%s\" }, g2w_pv%d, \"%s\", \"%s\", %d, %d },\n",
                 r.pinned, r.run_stated, r.run_member, r.run_lo, r.run_len, r.path, id,
-                res.form_id, res.row, x.pair);
+                res.form_id, res.row, x.pair, x.run_left);
         bprintf(&table, "    g2w_call%d,\n", id);
         free(body.p);
         free(file.p);
@@ -1176,7 +1252,8 @@ int main(int argc, char **argv)
     fprintf(f, "const unsigned g2w_nsites = %ld;\n", rendered);
     fclose(f);
     printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d, two-byte %d, "
-           "below-window %d); families:", rendered, nsites + n3 + n4 + n5 + n6, n3, n4, n5, n6);
+           "below-window %d, in-run %d, %ld of them under run-tie-left); families:", rendered,
+           nsites + n3 + n4 + n5 + n6 + n7, n3, n4, n5, n6, n7, k3_lever);
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], famn[i]);
     printf("; frames: func=%ld assign=%ld assign_lo=%ld onmiss=%ld; controls refused %ld; "
            "queries agreeing %ld; two runs refused %ld\n", frames[0], frames[1], frames[2],

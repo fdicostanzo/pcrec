@@ -79,6 +79,7 @@ typedef struct {
     const char *row;            /* mf_result.row                              */
     int         pair;           /* the text keeps two memchr streams (PAIR):
                                    the driver's long subjects                 */
+    int         run_left;       /* the art carries the lever run-tie-left    */
 } g2w_site;
 
 /* One wrapper per site: the rendered text called on (s, n, lo, fl).
@@ -108,6 +109,10 @@ typedef struct {
     int     hy_set, hy;             /* the empty range                        */
     /* which tie rows decided something (the floors count them) */
     int     tie_mass, tie_model, margin_tie;
+    /* the in-run stop's branches (span_runs_sheet.md §5 K38-2 PLAN (e)): a
+       candidate outside the run decision's own competed with R's stop at a
+       mass no greater (and won), and the meet moved R's stop */
+    int     inrun_set, inrun_set_won, inrun_meet;
     const char *arow;               /* "empty" "parked" "reseed" "mass" "floor" */
 } g2w_dec;
 
