@@ -48,6 +48,11 @@ SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary de
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:/user|/users)" && grep -q "^#define RX_REQ_RUN \"2f75736572@0\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/p.c" --pattern "(?:xabcy|wabcv)q" && grep -q "^#define RX_REQ_RUN \"none\"" "$REACH_TMP/p.c" && echo REACH-REQ-RUN-ALT-COMMON-PREFIX'
 SAB_REACH_EXPECT="REACH-REQ-RUN-ALT-COMMON-PREFIX"
 SAB_COUNT=1
-SAB_BEFORE='    o.head = rn_common_head(w, l.head, r.head);'
-SAB_AFTER='    o.head = rn_better(w, l.head, r.head);   /* SABOTAGE S268: one branch is not both */
-    (void)rn_common_head;'
+SAB_BEFORE='    o->head = rn_common_head(w, l->head, r->head);'
+SAB_AFTER='    o->head = rn_better(w, l->head, r->head);   /* SABOTAGE S268: one branch is not both */'
+# RE-ANCHORED 2026-11-13 (lane rps3b, [RUN-POS-SET] stage 2a rule (1)):
+# `rr_alt` became a first-match row table (`rr_alt_rows`); today's rule is row
+# 2, `rr_alt_affix`, which reads its operands through pointers. Same fault on
+# the same line (the head becomes one branch's); the `(void)` guard is gone
+# because row 1 still calls `rn_common_head`. Probe re-read on the branch
+# (default build, row 1 off).

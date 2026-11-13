@@ -708,7 +708,7 @@ REQCHK_MEMCHR_VAL_RE = re.compile(r'!memchr\(subject \+ search_from, (\d+),')
 REQCHK_IF_RE = re.compile(r'^\s*if \(subject_length <= search_from \|\|$')
 REQCHK_MEMCHR_RE = re.compile(r'^\s*!memchr\(subject \+ search_from, \d+, subject_length - search_from\)\)$')
 REQCHK_RET_RE = re.compile(r'^\s*return 0;$')
-REQWHY_STAMP_RE = re.compile(r'^(#define RX_REQ_WHY ")(?:emitted|none|one-attempt|dominated)(")$')
+REQWHY_STAMP_RE = re.compile(r'^(#define RX_REQ_WHY ")(?:emitted|none|one-attempt|dominated|untestable)(")$')
 MEMFN_LIBC_RE = re.compile(r'^#define RX_MEMFN_LIBC "[^"]*"$')
 REQWHY_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_WHY "([^"]*)"$', re.M)
 # [silentred] `<PREFIX>_FINDINGS` ([FINDINGS] B1, abi 40) and its `rx_info.findings`

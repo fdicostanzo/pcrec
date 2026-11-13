@@ -84,13 +84,13 @@ typedef struct { unsigned char bits[32]; int pick; uint32_t off[256]; } RbSet;
  * state cannot grow with the pattern (`PCREC_MAX_REQ_RUN_SCAN`'s limits.def
  * row says why).
  *
- * [OPT-LITSCAN] S4 C3: a position is the CUBE `(bytes[i], mask[i])` — the
- * bytes `x` with `(x & mask[i]) == bytes[i]` — and every match carries a
- * member of it there. An exact byte is `mask[i] == 0xFF`; a two-member cube
- * (a caseless letter) has one free bit. CANONICAL: `bytes[i] & ~mask[i] == 0`
- * at every position, i.e. `bytes` holds the LOWER member, the one with every
- * free bit clear (src/facts/req.c's one position constructor refuses any
- * other pair).
+ * [RUN-POS-SET] stage 3 (D187): a position is the BYTE SET every match
+ * carries there, `pos[i]` (32 bytes, `rb_has`'s layout, arena-owned and
+ * shared, never written after the walk builds it), one member for an exact
+ * byte. A position is admitted by the walk's DOMAIN (`ReqWalkParams`), and
+ * its information is `8 - ceil(log2 |S|)` (src/facts/req.c `pcrec_req_info`).
+ * A covering cube is a READER's private spelling, rebuilt from the set (D187
+ * addendum 1), never a second shape stored here.
  *
  * `trunc` means the real run is LONGER than the `n` bytes stored, and every
  * truncation is sound in the only direction that matters: a contiguous
@@ -101,8 +101,7 @@ typedef struct { unsigned char bits[32]; int pick; uint32_t off[256]; } RbSet;
  * (so its last byte is still the match's last), and `best` keeps whichever
  * the operation that built it produced. */
 typedef struct {
-    unsigned char bytes[PCREC_MAX_REQ_RUN_SCAN];   /* T: each position's lower member */
-    unsigned char mask[PCREC_MAX_REQ_RUN_SCAN];    /* K: 0xFF where exact */
+    const unsigned char *pos[PCREC_MAX_REQ_RUN_SCAN];   /* each position's member set */
     int n;
     bool trunc;
     /* [K82] the run's MAXIMUM BYTE OFFSET from the start of the subtree that
@@ -125,9 +124,17 @@ static inline bool rb_has(const RbSet *s, int b)
  * harness lever, so the walk itself reads no option. One field per row of
  * the table; a later unit adds its row (L1's reach, L3's `lb_bytes`). */
 typedef struct {
-    /* the run's cube domain: the largest member set one run position may
-     * have, `PCREC_MAX_REQ_RUN_POS_SET`, or 1 under `-fno-req-run-fold` */
+    /* the run's position DOMAIN ([RUN-POS-SET] stage 3): the largest member
+     * set one run position may have (`PCREC_MAX_REQ_RUN_POS_SET`, or 1 under
+     * `-fno-req-run-fold`), and whether a position must also be one CUBE
+     * (src/facts/facts.c `PF_WALK_POS_CUBE` says when; the harness lever
+     * `run-pos-sets` walks in the landing's domain instead) */
     int pos_set;
+    bool pos_cube;
+    /* the alternation's equal-width row (alt_normal_form.md §6 row 1,
+     * req.c `rr_alt_rows`): false but under the harness lever
+     * `alt-union-run` until the landing */
+    bool alt_union;
     /* the piece description's group bound, `PCREC_MAX_REQ_PIECES` */
     int max_pieces;
     /* the arms run in their form before the unit that changed them

@@ -335,6 +335,10 @@ done <<< "$anchored"
 #   SELECT_MAX_ROUNDS (select_engine.c) — a bounded-loop iteration cap with a
 #     from-day-one-bound argument at the loop itself (src/core/CLAUDE.md's
 #     [SEL-1] section), not a value a pattern can be measured against
+#   PF_WALK_POS_SET_AHEAD (src/facts/facts.c, [RUN-POS-SET] stage 3) — the
+#     test build's lever `run-pos-sets` only: the value the landing writes
+#     into PCREC_MAX_REQ_RUN_POS_SET's row, held beside the lever until then
+#     and deleted with it; no shipped compile reads it
 #   (C_MEMCHR, C_BITMAP, C_VERIFY, C_ENTER, C_MISPRED, MATERIAL_NUM and
 #     MATERIAL_DEN, src/opt/prefix_k.c's cost model, left this list with that
 #     file at D172 S2 commit 6: the selection is the memfn kit's, its
@@ -564,7 +568,8 @@ VM_MAX_STRIDE
 VM_FAST_TIER_BYTES
 VM_FAST_TIER_MIN
 VM_MRL_DYN_MAX
-SELECT_MAX_ROUNDS"
+SELECT_MAX_ROUNDS
+PF_WALK_POS_SET_AHEAD"
 
 NONLIMIT_ALLOWLIST="PREMUL_DEAD
 REG_SEL_ANY

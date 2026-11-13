@@ -59,6 +59,11 @@ else
 fi
 
 PICKS="set leads dominated landmark rdom rlead rhead rrest"   # r*: R17-b' B3b's routed decision; scan, window, rwin and rwhole RETIRED at R-38 K38-2 (span_runs_sheet.md §4.3)
+# [RUN-POS-SET] stage 3 (part_d.md §9 item 6): on a run holding a position that is not
+# one cube, the trace build writes no leads/rlead/dominated/rdom record (pcrec's own
+# answers cannot follow the kit's findable rule, D157; successors: C2, G2's decline
+# equality, P3's floor, the x.(?:cat|dog) artifact witness); the PICKS stay, every
+# witness line below states a cube run (emit_dfa.c `req_run_wide`).
 
 # AN EXTRA ARM (lane b3afix, review MINOR-5): PRES_PICKS_EXTRA="FLAGS" appends
 # FLAGS to every witness compile and checks AGREEMENT only. The table's
