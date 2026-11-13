@@ -1122,6 +1122,17 @@ if [ "$rows" = 1 ]; then
     want rows && { gen "$work/mmonly" --mm-only 1 > "$work/mmonly.log" 2>&1 || { cat "$work/mmonly.log"; echo "run_g2.sh: the MISMATCH-only generator failed" >&2; exit 2; }; }
     # lane g2m6: and one of its own for the STRIDED sites, so the rows chosen for them are countable apart too
     want rows && { gen "$work/stonly" --stride-only 1 > "$work/stonly.log" 2>&1 || { cat "$work/stonly.log"; echo "run_g2.sh: the STRIDE-only generator failed" >&2; exit 2; }; }
+    # R-38 Part D (lane partd): the PRESENCE generator (g2_pres_gen.c), traced. Its sites are the only
+    # G2 sites stating a run presence span, so the derived run part's rows (ofsskip's scan-less BODY
+    # fn-every-pos among them) are reached here alone; the presence family itself (section 4p) links
+    # the plain library. One pass: generic target, default lever, today's 400 sites + 300 wide.
+    want rows && {
+        "$TO" 300 "$gencc" -std=gnu11 -O1 -I "$inc" -I "$g2" "$g2/g2_pres_gen.c" "$lib" -o "$work/g2_pres_gen_tr" \
+            && mkdir -p "$work/prestr" \
+            && "$TO" 600 "$work/g2_pres_gen_tr" 20261110 400 "$work/prestr" generic 0 1 300 0 \
+                > "$work/prestr.log" 2> "$work/reach/gen-prestr.err" \
+            || { tail -5 "$work/prestr.log" "$work/reach/gen-prestr.err"; echo "run_g2.sh: the traced PRESENCE generator failed" >&2; exit 2; }
+    }
     echo "== rows: kit selection-table rows chosen over the whole tier (MFTRACE REACH, summed)"
     nproc_files=0; noreach=""
     for f in "$work"/reach/*.err; do
