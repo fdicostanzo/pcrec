@@ -223,6 +223,13 @@ In-tree, on the lane tip:
   reference, never the kit). Withheld offers are counted (`meet`) and floored at their measure (`meet:2`).
 - CONTROL: a kit planted to take any covering offer (the set compare dropped) reds sites 642 and 878.
 
+## STATE AT HANDOFF
+
+- Branch `lane/memfn-partd` at the commit carrying this report, merged with main c5b3c2c22. In-tree validation is
+  all green. No rulings file.
+- OWED: kit-partd2-gate (queued as 597-kit-partd2-gate, pending behind 593-kit-d27fix-gate); cloud test, axes,
+  ubsan, asan; cloud mechrows (list below); the every_pos card's timing (an owner-cleared window).
+
 ## Owed runs
 
 OWED: kit-partd2-gate (box job 597-kit-partd2-gate: identity vs fresh BASE c5b3c2c22, the deny's ASSERT_ZERO
