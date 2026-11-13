@@ -1,0 +1,22 @@
+# dfaminw findings
+
+## Findings
+
+### DFAMINW-1 CONFIRMED (premise false, check still sound) - `pf_close`'s stated invariant does not hold; the real soundness argument is unstated
+- Severity: doc/maintenance (no wrong answer found). Effort: comment rewrite (~5 lines) plus optionally one sentence in tuning.md §2.55. Blast radius: every future NEXT form / forward-machine change that trusts the comment.
+- Site: src/gen/emit_dfa.c:6714-6715 (`pf_close`), and the `DfaForm.minw` field comment at :5978-5981.
+- The comment claims "every match starts at or after the landing". False for the shipped `memchr` form: `a*bcd` (default flags, `RX_DFA_SCAN "unanchored"`, `RX_DFA_PREFILTER "memchr"`) emits `memchr(subject + scan_position, 98 /* b */, ...)` then `if (subject_length - scan_position < 3ULL) return 0;`. On subject `aaabcd` startpos 0 the landing is 3 and the match is [0,6): the match starts BEFORE the landing (leading `a*` keeps the forward machine at s0; the reverse pass recovers the start). Likewise `(?<=a)b+c` (memchr-bounded, on byte 97) lands on the LOOKBEHIND byte, one before the start (that one does satisfy the premise).
+- Oracle: P == PH == libpcre2 on all probed subjects/startpos (a2: 5 subjects; see PROBED-AND-HELD), so the check is sound today, but for a different reason: the block runs only when the forward machine is AT A START STATE (s0, or a reseed state, a subset of the start closure) with no accept pending, so any accept still reachable needs at least dist(start) >= bmin more bytes after the landing, whatever earlier position the match starts at (an in-flight thread whose DFA state equals s0 has s0's future). That argument additionally needs: the forward machine's shortest accepting path from its start state is >= the `width` fact's bmin over `Job.nfa` (true for the shipped machines: leading-nullable strips, a consumed lookbehind byte and tagged lookahead tails only lengthen it; a future forward machine truncated to a non-nullable PREFIX of the pattern, or one built from a different NFA, would break it silently).
+- Fix: restate the comment as the start-state argument and name the machine-vs-`width` premise; tuning.md §2.55 can cite it.
+
+## PROBED-AND-HELD
+
+Method: per pattern, `$P` and `$PH --harness=no-min-width` artifacts driven through `rx_search` at EVERY startpos 0..n of each subject (driver drv.c, probe.py in this dir), compared to libpcre2-8 `pcre2_match` at the same offsets (UTF|MATCH_INVALID_UTF under -e utf8). Subjects place the filter's landing within 0-3 bytes of the end. pcrec's mid-character-start refusal (-7, match_api §3.1) normalised to no-match before comparing. ~100 pcrec runs total.
+
+(a) forms reaching `pf_close` with minw set (unanchored route), P == PH == oracle, all startpos:
+- memchr `a*bcd` (5 subjects; landing interior, see DFAMINW-1); first-memchr-bounded `(?<!a)b+cd`, `\Bb+cd` (4+4); offset-set-bounded `\bab+\b`, `\b[xyz]q+r` (4+4); offset-set `(?:a|b)c+d`, `[aeiou]x+y` (4+4); handoff `[a-z]{1,3}@exam+` (5; landing c-K below start); byte-class `(?i)\x{212A}+\x{2126}+`, `(?i)k+\x{3c9}+` -e utf8 (6+3).
+- Off-lens but checked: memchr-bounded landing on a lookbehind byte `(?<=a)b+c` (landmark-walk, 6, forced: no min-width row on that body); VM hybrids `a\Kb+c`, `a+b(?=cd)`, `a+\Kbc` (3 each); char-step `\bé+x\b` --ucp (6, width [0,inf) so no check).
+- Total: 17 built patterns, 75 subjects, ~520 (subject,startpos) triples, 0 P-vs-PH divergences, 0 min-width-attributable oracle divergences.
+(b) `width` bmin from the attempt start, read from --emit-facts and confirmed by runs:
+- lookbehind not counted (`(?<=ab)cd` [2,2], `(?<=a)b+c` [2,inf)); lookahead not counted (`a+b(?=cd)` [2,inf)); \K counts from the attempt (`a\Kb+c` [3,inf), routed VM); \b/\B pass (`\bab+\b` [2,inf)); `$`/(?m) patterns land on rev-end/landmark-walk, no check emitted (`ab+$`, `(?m)a+b$`, `(?m)(?<=\d)[xy]a*b$`); utf8 caseless folds take the SHORTER partner (`(?i)\x{212A}+\x{2126}+` -> [3,inf): k + 2-byte omega; `(?i)ſ+t` -> [2,inf)); ill-formed bytes match nothing by default (§6.3.6¶3), so no shorter match exists (k1 subject with \xff: held); UCP island machines report bmin 0 (no check); `\R`, `\C`, `\X` refused ("not implemented"), so not admitted. End-window clamp: no probe reached a body with both a clamp and a minw (rev-end takes the end-anchored shapes) - not exercised.
+- 15 patterns' width facts checked, 0 cases with bmin above the shortest PCRE2 match from the attempt start.

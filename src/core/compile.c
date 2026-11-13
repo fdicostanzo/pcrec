@@ -3325,17 +3325,24 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * advice that does not work (adding another dead group changes nothing),
          * on a population that is now the whole specimen family. It names the real
          * cause and an action that works instead. */
-        if (cx.want_ir && cx.job->fit.chosen != ENGM_VM)
+        if (cx.want_ir && cx.job->fit.chosen != ENGM_VM) {
+            const bool never =
+                pcrec_fact_never_matches(&cx) == PF_NEVER_MACHINE;
             pcrec_ctx_fail(&cx, 0,
                      /* INSIDE pcrec_error.msg's 256 bytes, this file's own
                       * standing rule: a diagnostic that names the fix and is then
                       * TRUNCATED has not named it — the first draft of this
                       * sentence was cut mid-word at "the capture-recording eng". */
-                     "--emit-ir lists a VM program; this pattern compiles to the "
-                     "DFA engine because every capture slot it promises is "
-                     "permanently UNSET (a zero-count repeat, reached only "
-                     "through a call) or it matches nothing. Pass --engine=vm "
-                     "for the VM program");
+                     never
+                     ? "--emit-ir lists a VM program; this pattern compiles to "
+                       "the DFA engine because it matches nothing. Pass "
+                       "--engine=vm for the VM program"
+                     : "--emit-ir lists a VM program; this pattern compiles to "
+                       "the DFA engine because every capture slot it promises "
+                       "is permanently UNSET (a zero-count repeat, reached "
+                       "only through a call). Pass --engine=vm for the VM "
+                       "program");
+        }
 
         /* [ART-SIZE] The size term's verdict, for the artifact's own stamp
          * (D81). SEVEN values, because the first design's three hid four

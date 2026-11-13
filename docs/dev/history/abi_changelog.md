@@ -56,7 +56,9 @@ the bump's own commit.**
   engine's (`RX_ENGINE "dfa"`, `RX_DFA_SCAN "empty"`), where it was a VM program behind a prefilter that
   returned 0. Sixteen corpus patterns move (`(a)\b(b)`, `(?=a)\Kb`, `a\K\bb`, `(?<g>\w\b)(?&g)?x`, ...).
   No struct offset moves, no `rx_info` member is added or changed, and no answer moves; every other artifact
-  moves only the number.
+  moves only the number. (Review r1-s1, 2026-11-12: the anchored entries of such a pattern now answer `-1` where the VM
+  could give up with `-3`/a step budget; and the switch keeps the rung's `RX_ENGINE_SEL`, so a hybrid built on a retry
+  rung reads `"collapsed-prefilter"` on the empty artifact. Spec: `match_api.md` §6.3.3, §6.3.4. No stamp text moved.)
 - **`rx_info.abi` was `100` on every artifact ([PFFIX] the empty engine on an accept-free machine, 99 -> 100,
   lane pffix 2026-11-11).** A DFA machine in which NO state accepts in any view is now the EMPTY engine on
   both routes (`dfa_accepts_nowhere`, src/gen/emit_dfa.c), where only `d->n == 0` (attempt route) and a dead

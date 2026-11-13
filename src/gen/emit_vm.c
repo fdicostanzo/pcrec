@@ -11430,6 +11430,14 @@ static const CandRow *vm_width_row(const Vm *v)
     return pcrec_cand_select_vm(v->cx, CAND_SLOT_WIDTH, &f);
 }
 
+/* Is WIDTH's row the general [FIND-MINW] check (`min-width`), not the
+ * ceiling's stamped spelling? The one condition the entry's check and the
+ * attempt loop's `attempt_max` both read. */
+static bool vm_general_min_width(const CandRow *width)
+{
+    return pcrec_cand_width(width)->check && !pcrec_cand_width(width)->ceiling;
+}
+
 /* BOUND's row on the VM route (B3 `anchored`, B4 `gstart` under the
  * `start_anchor` fact, else B5 `all`): the one selection the attempt loop's
  * `attempt_max` and the `<PREFIX>_VM_START` stamp read. No trace record (the
@@ -13571,7 +13579,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     const CandRow *width = vm_width_row(v);
     PCREC_CAND_TRACE_REC("WIDTH", "vm", pcrec_cand_tok(width), "root-minw");
     VM_CAND_HIT(v, CAND_SLOT_WIDTH, width, "root-minw");
-    if (pcrec_cand_width(width)->check && !pcrec_cand_width(width)->ceiling)
+    if (vm_general_min_width(width))
         pcrec_emit_min_width_check(c, "    ", "search_from", "subject_length",
                                    v->root_minw);
 
@@ -13595,8 +13603,10 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     const char *first = pcrec_emit_req_byte_check(v->cx, c, "    ", "search_from",
                                                   "subject", "subject_length");
 
-    /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
-     * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
+    /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK, AS THE CEILING'S STAMPED
+     * SPELLING (the general [FIND-MINW] check is `pcrec_emit_min_width_check`;
+     * this is its saturated case, which also stamps `VM_ROOT_MINW`): the
+     * search entry answers NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
      * width cannot fit in what is left of the subject.
      *
      * WHAT IT FIXES. Design SS12 P-12 rules that a callee whose language is
@@ -13891,7 +13901,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             pcrec_start_anchor_name(pcrec_fact_start_anchor(v->cx)));
         pcrec_sb_cmt_close(c);
         pcrec_sb_puts(c, ub->attempt_max);
-    } else if (pcrec_cand_width(width)->check && !pcrec_cand_width(width)->ceiling) {
+    } else if (vm_general_min_width(width)) {
         /* [FIND-MINW] no match starts with fewer than the minimum width
          * left, and the entry's check above proved that many past
          * `search_from`, so the bound does not wrap. */

@@ -6647,8 +6647,15 @@ static void pf_close(StrBuf *c, const DfaForm *f, bool inner)
 {
     const char *ind = f->dir->bind;
     if (inner) pcrec_sb_printf(c, "%s    }\n", ind);
-    /* [FIND-MINW] still nothing found, so every match starts at or after the
-     * landing, which every form leaves at or below the subject's end. */
+    /* [FIND-MINW] still nothing found, and this block runs only at the
+     * forward machine's START state, so any accept it can still reach needs
+     * at least `minw` more bytes from the position stepped from here: `minw`
+     * is `width.bmin`, the shortest accepting path of the forward machine
+     * over the same NFA. NOT "every match starts at or after the landing":
+     * a match may start BEFORE it (`a*bcd` under `memchr`: on `aaabcd` the
+     * landing is 3 and the match is [0,6)); it is the machine's remaining
+     * path that is bounded. A forward machine that was truncated or rebuilt
+     * from another NFA would break this argument. */
     if (f->minw)
         pcrec_sb_printf(c, "%s    if (subject_length - %s < %lluULL) return 0;\n",
                         ind, f->dir->posv, (unsigned long long)f->minw);
@@ -15169,7 +15176,10 @@ static const char *attempt_entry(Ctx *cx, const char *fn, PcrecEntry ent)
         /* [FIND-MINW] `emit_unanchored`'s order: after the clamp, before
          * the pre-check. No width is known on this route today (the `width`
          * fact is sealed on the unanchored machine only), so WIDTH reads
-         * `none` here and nothing is emitted. */
+         * `none` here and nothing is emitted. The ASK is kept although the
+         * branch is dead: it is what makes `--emit-facts` list `width` as
+         * asked (`yes`) on this route; dropping it moves that listing
+         * (review r1-s1 CHECKS-4, left out for that reason). */
         long long minw = cand_front_min_width(cx);
         if (minw)
             pcrec_emit_min_width_check(c, "    ", "search_from", "subject_length", minw);
