@@ -153,7 +153,9 @@ the kit's merge alone (zero pcrec movers, partdfix gate 598).
 ## OWED
 
 - QUEUED (owner s2land, every stage held until 2026-11-14T01:00 by the time-gated job
-  GATE_KEY, which creates `worktrees/s2land/.lift`; batch BATCH_ID, each stage waits for the
+  `200-s2land-gate` (`boxqueue: not-before 2026-11-14T01:00`), which creates `worktrees/s2land/.lift`; batch `b202611131817543656953`, jobs 201-206 (`.strict`, `.sections`, `.reach`,
+  `.test`, `.sweep`, `.arms`; `boxqueue batch` has no time-gate declaration, so the stages wait
+  on the lift the gate job writes), each stage waits for the
   one before it to go green; verdicts by `scripts/monread s2land`; stages file
   `worktrees/s2land/build/STAGES.s2land`):
   1. `make strict`;
@@ -172,8 +174,9 @@ the kit's merge alone (zero pcrec movers, partdfix gate 598).
   ORDER CHANGED from the brief (sweep after `make test`, not before): the sweep against main
   is red by design (every artifact moves in the abi digits), and a red stage cancels the
   rest of a batch.
-- CLOUD: `scripts/cloudrun --kind test --name s2land` and `--kind axes --name s2land-axes`
-  on lane/s2land (dispatched as this lane's last act; run ids in the handback).
+- CLOUD (dispatched, not waited for): `cloud/main/test/s2land` and
+  `cloud/main/axes/s2land-axes`, both at `f80e45a92` (owner main; verdicts as CLOUD-DONE
+  via queuewatch).
   test-axes reads `memfn_arm.py`'s provisional floors.
 - RE-PIN from the measurements: `DIFFER_PINS` / `memfn_arm.py` run-verify-wide floors AT the
   measured value (stage 6's pins file; the axes run), and any other arm floor stage 6 reds.
