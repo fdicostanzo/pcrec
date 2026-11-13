@@ -257,7 +257,7 @@
                            ROLE, in a window site's alternative a
                            verify-NO span of two or more positions IS the
                            run R whatever its sets (the presence site's
-                           run span is not R); head_max MF_HEAD_UNBOUNDED
+                           run span is not R); head_max MF_HEAD_MAX_UNBOUNDED
                            is a stated "unbounded" K. Kit bytes move only
                            on runs holding a position of three or more
                            members (pcrec's [RUN-POS-SET] stage 3, which
@@ -319,7 +319,7 @@
 /* mf_site.head_max's stated "unbounded" K (R-41, MF_SITE_ABI 29): equal to
  * pcrec's PCREC_W_UNBOUNDED, 2^40, a width no subject reaches. A sentinel of
  * the seam, stated by NAME (never the number) wherever a host states it. */
-#define MF_HEAD_UNBOUNDED ((int64_t)1 << 40)
+#define MF_HEAD_MAX_UNBOUNDED ((int64_t)1 << 40)
 
 /* ---- the operation vocabulary (§8.2, §14.0, §14.3) ----------------------- */
 
@@ -927,7 +927,7 @@ typedef struct {
                   may be negative or 0, and a 0 on an ASSIGN site is a STATED
                   K of 0. Read only where the site ASSIGNs its landmark (0
                   elsewhere, refused otherwise). An ALL_PRESENT site only.
-                  MF_HEAD_UNBOUNDED (MF_SITE_ABI 29, R-41) is the stated
+                  MF_HEAD_MAX_UNBOUNDED (MF_SITE_ABI 29, R-41) is the stated
                   value "K unbounded" (a landmark at no bounded offset from
                   the attempt start): the twin's admission declines it
                   whatever the landmark's mass, 0 included.
@@ -938,7 +938,7 @@ typedef struct {
        layout (compose.c `kit_pres_layout_check`). pcrec lays the parts out
        from the links it asked, with its own text (the run blocks' names,
        notes and rankings are its facts) */
-    int64_t         head_max;           /* MF_HEAD_UNBOUNDED: K unbounded */
+    int64_t         head_max;           /* MF_HEAD_MAX_UNBOUNDED: K unbounded */
     uint16_t        npspan;
     const mf_pred  *pspans;
     /* THE START SEARCH'S PROOF (MF_SITE_ABI 17, R17-b' B3b; appended LAST):
@@ -1869,7 +1869,7 @@ void mf_finder_rows(mf_finder_listing *out);
  *               decision's VERIFIED EXTENT, mf_class.run's; where the run
  *               verifies nothing, a declined run among them, the set's
  *               pick's, the head member being the landmark there), 0 iff
- *               not, and 0 where K is MF_HEAD_UNBOUNDED; -1 where the site
+ *               not, and 0 where K is MF_HEAD_MAX_UNBOUNDED; -1 where the site
  *               does not ASSIGN its landmark. */
 #define mf_pres_ports MF_NS(pres_ports)
 typedef struct {

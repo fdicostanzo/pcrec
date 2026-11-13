@@ -360,7 +360,7 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
        not tested (a declined run: `ext` verifies nothing) the landmark is
        the head member, so the mass is the set pick's (part_d.md §2.4 item
        5 [r1pd F1]); a scan-less tested run keeps the run branch (its part
-       ships). THE UNBOUNDED K (R-41): a stated MF_HEAD_UNBOUNDED declines,
+       ships). THE UNBOUNDED K (R-41): a stated MF_HEAD_MAX_UNBOUNDED declines,
        whatever the mass, a never-hit landmark (h 0) included */
     if (s->handoff == MF_H_ASSIGN && ext) {
         unsigned long long h = 1000000u, m = 1000000u;
@@ -372,7 +372,7 @@ void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *pr
                 h = (h * kit_mass(rate, rs->set[j], 1, KIT_MASS_CAP) + 999999u) / 1000000u;
         }
         if (start_set) m = kit_mass(rate, start_set, 1, KIT_MASS_CAP);
-        if (s->head_max == MF_HEAD_UNBOUNDED) out->landmark = 0;
+        if (s->head_max == MF_HEAD_MAX_UNBOUNDED) out->landmark = 0;
         else if (h == 0) out->landmark = 1;
         else if (k * h >= 1000000u) out->landmark = 0;
         else out->landmark = (int8_t)((1000000u - k * h) * m > 1000000u * h);

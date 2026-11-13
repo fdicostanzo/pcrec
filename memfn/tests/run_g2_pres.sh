@@ -303,9 +303,9 @@ plant_spec() {
         # holds where every-pos stopped holding)
         echo 'ofsskip.c@@        *k = *a = *b = -1;@@        *k = *a = *b = 0;   /* SABOTAGE S3113 */'
         echo 'ofsskip.c@@    return x->a >= 0 && x->b >= 0;@@    return x->b >= 0;' ;;
-    S3119) # R-41: a stated unbounded K (MF_HEAD_UNBOUNDED) no longer declines the
+    S3119) # R-41: a stated unbounded K (MF_HEAD_MAX_UNBOUNDED) no longer declines the
         # landmark: the bit is read as at K 0
-        echo 'presence.c@@        if (s->head_max == MF_HEAD_UNBOUNDED) out->landmark = 0;@@        if (0) out->landmark = 0;   /* SABOTAGE S3119 */' ;;
+        echo 'presence.c@@        if (s->head_max == MF_HEAD_MAX_UNBOUNDED) out->landmark = 0;@@        if (0) out->landmark = 0;   /* SABOTAGE S3119 */' ;;
     S3114) # p13: P2 keeps `rs && !proof->run` on a no-scan run: a dominated site
         # whose run has no findable position is no longer dominated
         echo 'presence.c@@        else if (rsc && !proof->run) dom = 0;@@        else if (rs && !proof->run) dom = 0;   /* SABOTAGE S3114 */' ;;
