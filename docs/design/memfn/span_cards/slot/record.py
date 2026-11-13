@@ -36,8 +36,16 @@ SECTIONS = [("run", ["key", "value"]), ("jobs", ["job", "state", "cause"]), ("pl
             ("j1_cells", ["cell", "pattern", "subject", "regime", "width", "launch", "ns_e6"]),
             ("quiet", ["job", "check", "load1", "corunners"])]
 JOBS = ("J1", "J2", "J2p", "J3", "J4", "J5")
-SET = "zen4-grid3@1"
-RULES = "kit-grid@" + plan.METHOD_VER     # the owner of the producer's rules (measures.md §3.5¶8a): span_cards
+# PER VER ([r2s1 RK383-3]): the set a ver's rows are written to and the owner of the rules that ver is scored by
+# (measures.md §3.5¶8a: span_cards). Ver 3's keys stay `set` / `rules`; any other ver's are `rules.<ver>` (rules_key)
+SETS = {"3": "zen4-grid3@1", "4": "zen4-grid4@1"}
+RULES = {v: "kit-grid@" + v for v in plan.METHOD_VERS}
+SET = SETS["3"]
+assert set(SETS) == set(RULES)
+
+
+def rules_key(ver):
+    return "rules" if ver == "3" else "rules.%s" % ver
 
 # THE CAUSE TABLE (first match; r9 G6): a job's queue end state (boxqueue's `state`, J9's `wait-timeout` read
 # from the transcript, `none` for a job never queued) -> its record state and cause. A state no line names
@@ -148,7 +156,8 @@ def window(rec, run_id, commit):
         if getrun(rec, k) not in (None, v):
             refuse("the record names %s %s, this step %s" % (k, getrun(rec, k), v))
     setrun(rec, "set", SET)
-    setrun(rec, "rules", RULES)
+    for v in sorted(RULES):
+        setrun(rec, rules_key(v), RULES[v])
     setrun(rec, "run_id", run_id)
     setrun(rec, "code_commit", commit)
     for k, v in box_facts():

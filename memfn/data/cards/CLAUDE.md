@@ -9,6 +9,8 @@ Hand-written, append-only by version (a committed row never changes):
   the `aa_rule` tokens. `kit-grid@2` (grid2's cards) is grid2's prep lane's,
   not written here. `kit-grid@3` (span_pick stage 2, `span_cards.md` §2.4,
   unit S2c): find_byte, find_hit, verify_cmp, enter, zen4-grid3's method;
+  `kit-grid@4` (K38-3, `span_runs_sheet.md` §5.2): `enter_back` (kind;entry;back,
+  the step-back t in {0,3,8,16,32}), PLANNED by the slot, UNMEASURED, no set under it;
   their `deps` name formhash.c's entry-table ids (`walk-set` folded into
   `walk`), `enter` none.
 - `kit-synthetic.tsv` — `kit-synthetic@1` and `@2`: the cards of the synthetic sets

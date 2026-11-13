@@ -74,7 +74,14 @@
  *   omin ones with the origin below -omin half the time, counted); and, in
  *   the ASan build (G2P_ASAN), A, the subject at offset 1..W-1 from a
  *   W-aligned heap block (W 16 and 32), the block's bytes below the subject
- *   poisoned (W-K4b's). A fault is a failure.
+ *   poisoned (W-K4b's), its length run_len + rnd(2W + 24) so W's arm can be
+ *   entered (K38-3). A fault is a failure.
+ *   THE PER-LEVEL CELLS (R-38 K38-3, G2P_REC builds): per (width, layout),
+ *   the use calls that ENTER the arm of width W (execute a W-byte load),
+ *   counted inside entry and re-entry calls only; layouts L and A are
+ *   COUNT-ONLY calls (no record), A as its own placement loop on its own
+ *   stream (lay_a_count), so the records and every rnd-drawn pin stay
+ *   K38-2's. `G2P cells` prints them; the runner holds the family rule.
  *
  *   g2p_run [--records FILE] [--seed N]
  */
@@ -176,15 +183,24 @@ static void rd_begin(const unsigned char *s, size_t n)
     g_active = 1;
 }
 
+/* A COUNT-ONLY use call (R-38 K38-3, layouts L and A of the recording
+   build): its run part's loads are live, so its arm entries are counted, and
+   it writes no record (the oracle's population is layout U's alone) */
+static int g_count;
+static unsigned g_wseen;                 /* this use call's loads by width: bit 0 W 16, bit 1 W 32
+                                            (set by the recording build's hooks; 0 elsewhere) */
+
 #ifdef G2P_REC
 /* the compiler's outlined access checks (-fsanitize=kernel-address,
    asan-instrumentation-with-call-threshold=0): the kit text's every load */
-static long g_vec;                       /* vector loads (>= 16 bytes) of the subject */
+static long g_vec;                       /* vector loads (>= 16 bytes) of the subject, layout U */
 static void rdv(const void *p, size_t n)
 {
-    if (g_active && n >= 16 && (const unsigned char *)p >= g_sb - PAD &&
-        (const unsigned char *)p < g_sb + g_sn + PAD)
-        g_vec++;
+    if (g_active && (const unsigned char *)p >= g_sb - PAD && (const unsigned char *)p < g_sb + g_sn + PAD) {
+        if (n >= 16 && !g_count) g_vec++;
+        if (n == 16) g_wseen |= 1;
+        if (n == 32) g_wseen |= 2;
+    }
     rd(p, n);
 }
 #define LD(N) void __asan_load##N##_noabort(void *p) { rdv(p, N); } \
@@ -217,11 +233,12 @@ static size_t g_hn, g_hlo;
 
 size_t g2p_rec(int site, int part, g2p_part_fn fn, const unsigned char *s, size_t n, size_t lo)
 {
-    if (g_active || !g_call) return fn(s, n, lo);
+    if (g_active || (!g_call && !g_count)) return fn(s, n, lo);
     const g2p_site *x = g_site_of[site];
     rd_begin(g_hs, g_hn);                /* reads in the host's frame */
     size_t r = fn(s, n, lo);
     g_active = 0;
+    if (!g_call) return r;               /* count-only: the loads counted, no record */
     g_reach[x->route][g_call[0] == 'r']++;
     if (!g_rec) return r;
     const g2p_part *pt = &x->parts[part];
@@ -477,6 +494,35 @@ static __attribute__((noinline)) int call_use(g2p_use_fn f, const unsigned char 
     return 0;
 }
 
+/* THE PER-LEVEL CELLS (R-38 K38-3; span_runs_sheet.md §5 K38-3 (1), [r1s1
+ * S1-10], [r2s1 RK383-1]): per (width, layout), the use calls that ENTER a
+ * level's arm, i.e. execute a load of its width W (the recording build's
+ * hooks, by size), counted only inside an entry or re-entry call, so the
+ * classifier's direct part calls are not. Populations: U, every layout-U use
+ * call; L, W-K4a's (omin in -8..-32 and the origin below -omin); A, the
+ * count-only placements at W (lay_a_count). The runner floors each cell a
+ * target admits and holds every other at exactly 0. */
+enum { CELL_U, CELL_L, CELL_A, CELL_N };
+static long g_cell[2][CELL_N], g_cpop[CELL_N + 1];  /* pop: U, L, A at W 16, A at W 32 */
+
+/* one use call (call_use), its arm entries counted into `cell` when `pop`:
+ * every width, or (wi >= 0, layout A) the placement's width alone; a call
+ * outside layout U is count-only (no record) */
+static int use_call(g2p_use_fn f, const unsigned char *s, size_t n, size_t lo, size_t *out, int cell,
+                    int wi, int pop)
+{
+    g_wseen = 0;
+    g_count = cell != CELL_U;
+    int hit = call_use(f, s, n, lo, out);
+    g_count = 0;
+    if (pop && !g_faulted) {
+        g_cpop[cell + (wi > 0)]++;
+        for (int w = 0; w < 2; w++)
+            if ((wi < 0 || wi == w) && (g_wseen >> w & 1)) g_cell[w][cell]++;
+    }
+    return hit;
+}
+
 static long least_occ(const g2p_site *x, const unsigned char *s, size_t n, size_t origin);
 
 /* THE USES' PRESENCE RULE (review 2026-11-11 r1 k382 F1; span_runs_sheet.md
@@ -527,7 +573,8 @@ static void uses(const g2p_site *x, int lay)
             size_t back = (size_t)-(long long)x->omin;
             lo = rnd((unsigned)(n < back ? n : back) + 1);
         }
-        if (lay == LAY_L && x->omin <= -8 && x->omin >= -32 && lo < (size_t)-(long long)x->omin)
+        int wk4 = x->omin <= -8 && x->omin >= -32;        /* W-K4a's omin range */
+        if (lay == LAY_L && wk4 && lo < (size_t)-(long long)x->omin)
             g_wk4_low++;
         if (n >= x->run_len && rnd2(2) &&                /* FAM-3: a near-miss occurrence */
             near_occ(x, &whole, 0, x->run_len, buf, rnd2((unsigned)(n - x->run_len + 1))))
@@ -535,7 +582,8 @@ static void uses(const g2p_site *x, int lay)
         unsigned char *s = place(lay, buf, n);
         g_hs = s; g_hn = n; g_hlo = lo;                  /* the caller boundary (ORC-1) */
         g_call = lay == LAY_U ? "entry" : NULL;
-        int hit = call_use(x->entry, s, n, lo, &out);
+        int hit = use_call(x->entry, s, n, lo, &out, lay, -1,
+                           lay == LAY_U || (wk4 && lo < (size_t)-(long long)x->omin));
         g_lay_calls[lay]++;
         CHECK(x, !g_faulted, "LAYOUT", "%s: the entry faulted (n %zu, lo %zu)", lay_name[lay], n, lo);
         if (!g_faulted) pres_check(x, s, n, lo, hit, out, x->assign, "entry", lay_name[lay]);
@@ -543,7 +591,8 @@ static void uses(const g2p_site *x, int lay)
             size_t pv = rnd((unsigned)n + 1);
             g_hlo = pv;
             g_call = lay == LAY_U ? "reentry" : NULL;
-            hit = call_use(x->reentry, s, n, pv, &out);
+            hit = use_call(x->reentry, s, n, pv, &out, lay, -1,
+                           lay == LAY_U || (wk4 && pv < (size_t)-(long long)x->omin));
             g_lay_calls[lay]++;
             CHECK(x, !g_faulted, "LAYOUT", "%s: the re-entry faulted (n %zu, lo %zu)", lay_name[lay], n, pv);
             if (!g_faulted) pres_check(x, s, n, pv, hit, out, 1, "re-entry", lay_name[lay]);
@@ -565,7 +614,7 @@ static void lay_a(const g2p_site *x)
     unsigned F = filler(x);
     for (unsigned wi = 0; wi < 2; wi++)
         for (unsigned off = 1; off < ws[wi]; off++) {
-            size_t n = x->run_len + rnd(24);
+            size_t n = x->run_len + rnd(2 * ws[wi] + 24);    /* K38-3: W's arm can be entered */
             for (size_t i = 0; i < n; i++) buf[i] = rnd(3) ? x->run[rnd(x->run_len)] : (unsigned char)F;
             void *blk;
             if (posix_memalign(&blk, ws[wi], off + n + (n == 0))) { perror("posix_memalign"); exit(2); }
@@ -581,6 +630,40 @@ static void lay_a(const g2p_site *x)
             if (pz) ASAN_UNPOISON_MEMORY_REGION(blk, pz);
             free(blk);
             g_lay_a++;
+        }
+}
+#endif
+
+#ifdef G2P_REC
+/* layout A's COUNT-ONLY placements (K38-3, [r2s1 RK383-1] (c)): the subject
+ * at offset 1..W-1 from a W-aligned heap block, as lay_a places it, no
+ * poisoning (the ASan build is the detector; this build counts), the entry
+ * and re-entry uses called, the W-wide arm entries counted. Its OWN stream
+ * ([r2s1 RK383-6]): a draw from `rnd` would move every later site's draws
+ * and K38-2's rnd-dependent recording pins. */
+static unsigned long long g_rng3 = 0x6c617961ull;
+static unsigned rnd3(unsigned n)
+{
+    g_rng3 = g_rng3 * 6364136223846793005ull + 1442695040888963407ull;
+    return n ? (unsigned)((g_rng3 >> 33) % n) : 0;
+}
+static void lay_a_count(const g2p_site *x)
+{
+    static const unsigned ws[] = { 16, 32 };
+    unsigned char buf[256];
+    unsigned F = filler(x);
+    for (unsigned wi = 0; wi < 2; wi++)
+        for (unsigned off = 1; off < ws[wi]; off++) {
+            size_t n = x->run_len + rnd3(2 * ws[wi] + 24), out;
+            for (size_t i = 0; i < n; i++) buf[i] = rnd3(3) ? x->run[rnd3(x->run_len)] : (unsigned char)F;
+            void *blk;
+            if (posix_memalign(&blk, ws[wi], off + n + (n == 0))) { perror("posix_memalign"); exit(2); }
+            unsigned char *s = (unsigned char *)blk + off;
+            memcpy(s, buf, n);
+            g_hs = s; g_hn = n;
+            use_call(x->entry, s, n, g_hlo = rnd3((unsigned)n + 1), &out, CELL_A, (int)wi, 1);
+            if (x->reentry) use_call(x->reentry, s, n, g_hlo = rnd3((unsigned)n + 1), &out, CELL_A, (int)wi, 1);
+            free(blk);
         }
 }
 #endif
@@ -666,6 +749,9 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i], "--seed") && i + 1 < argc) {
             unsigned long long sd = strtoull(argv[++i], NULL, 10);
             g_rng ^= sd; g_rng2 ^= sd;
+#ifdef G2P_REC
+            g_rng3 ^= sd;
+#endif
         }
         else { fprintf(stderr, "usage: g2p_run [--records FILE] [--seed N]\n"); return 2; }
     }
@@ -752,6 +838,9 @@ int main(int argc, char **argv)
 #ifdef G2P_ASAN
         lay_a(x);
 #endif
+#ifdef G2P_REC
+        lay_a_count(x);
+#endif
     }
     if (g_rec) fclose(g_rec);
     printf("G2P sites P0=%ld P2=%ld P3=%ld P9=%ld parts=%ld witnesses=%ld\n", nsite[G2P_P0],
@@ -776,6 +865,10 @@ int main(int argc, char **argv)
 #endif
 #ifdef G2P_REC
     printf("G2P vec_reads=%ld\n", g_vec);
+    printf("G2P cells vw16=%ld,%ld,%ld vw32=%ld,%ld,%ld pop=%ld,%ld,%ld,%ld (arm entries U,L,A; "
+           "populations U,L,A16,A32)\n", g_cell[0][CELL_U], g_cell[0][CELL_L], g_cell[0][CELL_A],
+           g_cell[1][CELL_U], g_cell[1][CELL_L], g_cell[1][CELL_A], g_cpop[CELL_U], g_cpop[CELL_L],
+           g_cpop[CELL_A], g_cpop[CELL_A + 1]);
 #endif
     printf("checks passed: %ld\nchecks failed: %ld\n", g_pass, g_fail);
     return g_fail ? 1 : 0;
