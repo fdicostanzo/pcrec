@@ -284,8 +284,9 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 - [DFA-MIN-FAST] STATE:not-started — DFA minimization is quadratic on large counted repeats; make it n log n
   filed: 2026-11-13 manager (Frank: "It should be microseconds or at least under a second ... running some check nonlinearly"; "Agree" to filing it separately)
   status (2026-11-13): MEASURED on main: (?:a|b){1,n} compiles in 0.08/0.31/0.80/3.10/12.2 s at n = 1875/3750/7500/15000/30000 (x4 per doubling), 99.9% in pcrec_minimize_dfa; n = 60000 skips the DFA (VM) in 0.04 s
-  next: after S2 lands: replace the repeated signature refinement with a Hopcroft-class partition refinement (or skip minimization where construction is provably minimal); answer-identity by emit_sweep (zero movers); a compile-time witness in tests/resource
+  next: after S2: (1) census EVERY long compile (compile_time_census.py, corpus + stress shapes): per-phase profile and growth vs size, naming each nonlinear phase; (2) fix minimization; others filed per cause; zero movers
   refs: [LOOP-FIXW] (the counted-repeat shape itself); src/ir (pcrec_minimize_dfa); lane rps3c report (the dTLB/memcmp finding)
+  Frank 2026-11-13: "Have the row look at other long compiles as well". Compile time should be microseconds, at worst under a second; each slow phase gets a compile-time witness in tests/resource.
 - [LOOP-FIXW] STATE:not-started — fixed-width loops by pointer arithmetic; survey of related loop ideas
   filed: 2026-11-13 manager (Frank: "for long counts like that in vm: 1. pointer arithmetic instead of frames ... fixed width 2. set the capture after the loop runs and on fallback"; "Have the item look at other general loop ideas related")
   status (2026-11-13): filed; context = (a|b){1,30000} (S2 cloud red, ~12.5 s compile on main at BOTH engines, so the time is pre-engine analysis, a separate anomaly)
