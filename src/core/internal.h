@@ -3554,7 +3554,8 @@ typedef struct {
      * this predicate; false selects the search-and-filter fallback. */
     bool   anchored_ok;
     /* [REQRUN-VM] Did this attempt EMIT a VM-side handoff row: the attempt
-     * loop's (`handoff-attempts[-entry]`) or the hybrid prefilter's re-entry?
+     * loop's (`handoff-attempts[-entry]`, `handoff-attempts-unbounded`) or the
+     * hybrid prefilter's re-entry?
      * Written by the emitter at the text it writes; the size-cap ladder's
      * `drop-handoff` row applies only where it is true. */
     bool   req_handoff_vm;
@@ -4215,7 +4216,7 @@ struct Ctx {
      * machines: the `rev-end` walk keeps today's form (endmark.md §R.5). */
     bool                 end_mark_dropped;
     /* [REQRUN-VM] did the ladder's `drop-handoff` row FIRE on this compile?
-     * The VM-side handoff rows read it and decline: the attempt loop's two
+     * The VM-side handoff rows read it and decline: the attempt loop's three
      * `req-use` rows and the hybrid prefilter's re-entry (`Job.req_handoff_vm`
      * names what they emit). A DFA artifact's handoff is untouched. */
     bool                 req_handoff_dropped;

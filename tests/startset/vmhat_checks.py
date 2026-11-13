@@ -239,7 +239,7 @@ def corpus_checks():
     names = {"iff": "[vm-iff] the stamp names the emitted seek",
              "route": "[vm-route] every mover is a prefilter-less VM artifact",
              "anchor": "[vm-anchor] every mover is unanchored",
-             "handoff": "[vm-handoff] a mover's handoff is the attempt loop's (none or a decimal K)",
+             "handoff": "[vm-handoff] a mover's handoff is the attempt loop's (none, a decimal K or 'unbounded')",
              "deny": "[vm-deny] the deny arm is today's emitter (non-movers identical; movers identical once the seek is removed)",
              "table": "[vm-table] every mover's table equals its start_set fact"}
     for k, label in names.items():

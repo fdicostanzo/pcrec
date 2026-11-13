@@ -1189,11 +1189,6 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
 {
     long long k = req_handoff_k(cx);
     bool whole = req_use_whole(cx), run = pcrec_fact_req_run(cx)->len >= 2;
-    StrBuf round = { 0 };
-    round.cx = cx;
-    pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
-                          "handoff_position", subjvar, lenvar,
-                          PCREC_START0_ROUNDUP);
     /* [REQ-HANDOFF-L1] the hit itself, kept for the forward scan's re-entry
      * (`pf_emit_handoff`) or, [REQRUN-VM], the attempt loop's
      * (`pcrec_emit_req_attempt_reentry`), which reuses it while it is still
@@ -1212,24 +1207,31 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
             indent, indent, indent);
         pcrec_sb_cmt_close(c);
         pcrec_sb_printf(c, "%shandoff_position = %s;\n", indent, posvar);
-    } else if (k > 0 || round.len > 0) {
-        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_printf(c,
-            "%s/* [K82] every match begins at most %lld bytes before its %s\n"
-            "%s * %s, so no match begins before this. */\n",
-            indent, k, whole ? "whole" : run ? "run" : "landmark",
-            indent, whole ? "run" : run ? "window" : "byte");
-        pcrec_sb_cmt_close(c);
-        pcrec_sb_printf(c, "%sif (handoff_position - %s > %lld) {\n",
-                        indent, posvar, k);
-        if (k > 0)
-            pcrec_sb_printf(c, "%s    handoff_position -= %lld;\n", indent, k);
-        if (round.len > 0) pcrec_sb_splice(c, &round);
-        pcrec_sb_printf(c, "%s} else\n"
-                           "%s    handoff_position = %s;\n",
-                        indent, indent, posvar);
+    } else {
+        StrBuf round = { 0 };
+        round.cx = cx;
+        pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
+                              "handoff_position", subjvar, lenvar,
+                              PCREC_START0_ROUNDUP);
+        if (k > 0 || round.len > 0) {
+            pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+            pcrec_sb_printf(c,
+                "%s/* [K82] every match begins at most %lld bytes before its %s\n"
+                "%s * %s, so no match begins before this. */\n",
+                indent, k, whole ? "whole" : run ? "run" : "landmark",
+                indent, whole ? "run" : run ? "window" : "byte");
+            pcrec_sb_cmt_close(c);
+            pcrec_sb_printf(c, "%sif (handoff_position - %s > %lld) {\n",
+                            indent, posvar, k);
+            if (k > 0)
+                pcrec_sb_printf(c, "%s    handoff_position -= %lld;\n", indent, k);
+            if (round.len > 0) pcrec_sb_splice(c, &round);
+            pcrec_sb_printf(c, "%s} else\n"
+                               "%s    handoff_position = %s;\n",
+                            indent, indent, posvar);
+        }
+        pcrec_sb_free(&round);
     }
-    pcrec_sb_free(&round);
 }
 
 /* [OPT-REQPOS] / [K66] pcrec's NOTE on run pre-check test `i` (0 the
@@ -7844,22 +7846,23 @@ static void pf_emit_handoff(StrBuf *c, const DfaForm *f)
  * `pos` (a miss is NOMATCH); then `pos` moved to the hit less K where that
  * is ahead, rounded up to a character start, and re-seeded where the form's
  * machine seeds (a VM attempt carries no seed). Every position it leaves
- * `pos` at is one no skipped position could begin a match before. */
+ * `pos` at is one no skipped position could begin a match before.
+ * [REQ-PAST-LAST] At no bound (`k >= PCREC_W_UNBOUNDED`) there is no move:
+ * the re-ask alone is the stop (a miss is NOMATCH), and its hit is kept in
+ * `landmark_position`, which is what keeps the attempts linear. */
 static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
                                    const char *pos, const DfaForm *f)
 {
     long long k = req_handoff_k(cx);
+    pcrec_sb_printf(c, "%s    if (landmark_position < %s) {\n", ind, pos);
+    emit_req_reentry_use(cx, c, dfa_fragf(cx, "%s        ", ind), pos);
+    pcrec_sb_printf(c, "%s    }\n", ind);
+    if (k >= PCREC_W_UNBOUNDED)         /* [REQ-PAST-LAST] no move to make */
+        return;
     StrBuf round = { 0 };
     round.cx = cx;
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s        ", ind), pos,
                           "subject", "subject_length", PCREC_START0_ROUNDUP);
-    pcrec_sb_printf(c, "%s    if (landmark_position < %s) {\n", ind, pos);
-    emit_req_reentry_use(cx, c, dfa_fragf(cx, "%s        ", ind), pos);
-    pcrec_sb_printf(c, "%s    }\n", ind);
-    if (k >= PCREC_W_UNBOUNDED) {       /* [REQ-PAST-LAST] no move to make */
-        pcrec_sb_free(&round);
-        return;
-    }
     pcrec_sb_printf(c, "%s    if (landmark_position - %s > %lld) {\n", ind, pos, k);
     if (k > 0)
         pcrec_sb_printf(c, "%s        %s = landmark_position - %lld;\n", ind, pos, k);
@@ -7878,7 +7881,11 @@ static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
  * (each attempt starts from a reset run state), so the entry's proof applies
  * again with `f` the attempt position: the whole run's least hit at or after
  * it (the kept one while still ahead, else re-asked), and no attempt below
- * it less K can succeed. `\G` keeps reading `search_from`. */
+ * it less K can succeed. `\G` keeps reading `search_from`. At no bound
+ * ([REQ-PAST-LAST]) there is no move, only the stop; it sits before the
+ * start-set seek and nothing is checked after the entry seek, so one attempt
+ * past the last occurrence can still run (and give up on the step budget,
+ * as before the row; never an answer change). */
 void pcrec_emit_req_attempt_reentry(Ctx *cx, StrBuf *c, const char *ind)
 {
     long long k = req_handoff_k(cx);
