@@ -4,9 +4,16 @@
 # and 2), exactly rmin, past rmin, and rmin = 200. Each pattern twice: the
 # default route and `engine vm` (no prefilter in front, so the prefix is the
 # only thing that can refuse a short run). Every expectation is python's re.
+# The "aabac" refusals also appear padded to 7+ bytes (aabacxyz...): the
+# min-width search stop returns 0 for a subject under 7 bytes, so the short
+# subjects never reach the lazy prefix (S708); the padded ones do.
 
 pattern (a)(?:ab){2,}?ac
 n "aabac"
+n "aabacxyz"
+n "aabacxyzw"
+n "xyzwaabac"
+n "aabacaabac"
 m "aababac" 0 7
 g 1 0 1
 m "xaababacy" 1 8
@@ -17,6 +24,10 @@ n "aabab"
 pattern (a)(?:ab){2,}?ac
 engine vm
 n "aabac"
+n "aabacxyz"
+n "aabacxyzw"
+n "xyzwaabac"
+n "aabacaabac"
 m "aababac" 0 7
 g 1 0 1
 m "xaababacy" 1 8
@@ -234,3 +245,29 @@ n "aabcae"
 m "aababae" 0 7
 g 1 0 1
 n "aabcadae"
+
+# Short subjects with a width-1 alternative: the pattern's minimum width is 1,
+# so the min-width search stop does not apply and a short run IS reached by
+# the lazy prefix (S708's witness); python re.
+pattern (a)(?:ab){2,}?ac|q
+n "aabac"
+m "aababac" 0 7
+g 1 0 1
+m "xaababacy" 1 8
+g 1 1 2
+n "aab"
+n "aabab"
+m "aabacq" 5 6
+g 1 -1 -1
+
+pattern (a)(?:ab){2,}?ac|q
+engine vm
+n "aabac"
+m "aababac" 0 7
+g 1 0 1
+m "xaababacy" 1 8
+g 1 1 2
+n "aab"
+n "aabab"
+m "aabacq" 5 6
+g 1 -1 -1
