@@ -644,7 +644,13 @@ static int is_arm_form(const char *f)
 
 /* The chosen alternative's tested set at offset d (C-meet) and whether a
  * covering span offers a table for exactly that set; refs[] the offers. */
-static int facts_at(const kase *k, int alt, int d, uint8_t meet[32], uint32_t *refs, int *nrefs, int *offer_eq)
+/* d27fix N1 (adopting lane, not a kit-manager ruling): on a PARKED
+ * alternative the reply did not re-seed, the plan tests the verify-YES
+ * facts alone (verify-NO spans are filters the parked scan may skip,
+ * window_site.md §1), so under `yes_only` the tested set is the verify-YES
+ * spans' meet; an offer is any covering span's whose set equals it. */
+static int facts_at(const kase *k, int alt, int d, int yes_only, uint8_t meet[32], uint32_t *refs,
+                    int *nrefs, int *offer_eq)
 {
     int cov = 0;
     memset(meet, 0xff, 32);
@@ -653,6 +659,7 @@ static int facts_at(const kase *k, int alt, int d, uint8_t meet[32], uint32_t *r
     const mf_walt *A = &k->alt[alt];
     for (int i = 0; i < A->nspan; i++) {
         const mf_wspan *w = &A->spans[i];
+        if (yes_only && w->verify != MF_VERIFY_YES) continue;
         if (d < w->start || d >= w->start + w->len) continue;
         cov = 1;
         for (int b = 0; b < 32; b++) meet[b] &= w->set[d - w->start][b];
@@ -801,27 +808,41 @@ static void hold_reply(const kase *k, const mf_wreply *r, const render *d, const
     int composing = (fr_find && r->fused == MF_WFUSED_NO) || fr_gen;
     int stated = k->tab && !k->defnull;
     if (r->alt >= k->site.nalt) { chk("alt_range", "memfn.h mf_wreply.alt", 0, "alt %d", r->alt); return; }
-    int miss_table_text = 0, tables = 0, miss_g = 0, tables_g = 0;
+    int miss_table_text = 0, tables = 0, miss_g = 0, tables_g = 0, own_read = 0;
+    int parked_yes = k->alt[r->alt].entry == MF_ENTRY_PARKED && !r->reseed;
     for (int i = 0; i < r->nplan && i < MF_WPLAN_MAX; i++) {
         uint8_t meet[32];
         uint32_t refs[MAXSP];
         int nref, eq;
-        facts_at(k, r->alt, r->plan[i], meet, refs, &nref, &eq);
+        facts_at(k, r->alt, r->plan[i], parked_yes, meet, refs, &nref, &eq);
         if (!composing) {
             chk("plan_test_off_frame", CITE_TAB ": NONE on fused, E-stmt and ARM frames",
                 r->plan_test[i] == MF_WTEST_NONE, "%s plan_test[%d]=%d on %s fused %d", callnm, i, r->plan_test[i], r->frame_row, r->fused);
             continue;
         }
-        int want = stated && eq ? MF_WTEST_TABLE : MF_WTEST_OWN;
-        chk("rule_plan_test", CITE_TAB " (R2: TABLE iff table_name stated AND an offer of the tested set)",
-            r->plan_test[i] == want, "%s plan[%d]=%d plan_test %d want %d (offers %d, eq %d, tab %d)",
-            callnm, i, r->plan[i], r->plan_test[i], want, nref, eq, stated);
-        int reads = text_reads_table(t, refs, nref);
         int grouped = 0;    /* C-run / C-pin: one compare over 2+ positions */
         for (int j = 0; j < r->nplan; j++)
             if (j != i && r->plan_term[j] == r->plan_term[i]) grouped = 1;
+        /* RULING F4 (kit manager, d27fix): the reply follows the text, so a
+           position E-find tests inside a run compare answers OWN. A shared
+           plan_term is only a CANDIDATE run compare (C-run also needs the
+           stretch adjacent, core and one byte or a one-bit cube per
+           position; the floor, E-generic, tests every position alone), so
+           on E-find a shared-term position may answer either, and the TEXT
+           checks below hold which (TABLE iff the text reads the offer) */
+        int want = stated && eq ? MF_WTEST_TABLE : MF_WTEST_OWN;
+        int either = grouped && fr_find;
+        chk("rule_plan_test", CITE_TAB " (R2: TABLE iff table_name stated AND an offer of the tested set AND not inside a run compare, ruling F4)",
+            r->plan_test[i] == want || (either && r->plan_test[i] == MF_WTEST_OWN),
+            "%s plan[%d]=%d plan_test %d want %d (offers %d, eq %d, tab %d, shared term %d)",
+            callnm, i, r->plan[i], r->plan_test[i], want, nref, eq, stated, grouped);
+        if (want == MF_WTEST_TABLE && either && r->plan_test[i] == MF_WTEST_OWN)
+            pop("plan_test_OWN_offered_in_run_compare");
+        int reads = text_reads_table(t, refs, nref);
         if (r->plan_test[i] == MF_WTEST_TABLE) {
-            pop("plan_test_TABLE%s", grouped ? "_in_run_compare" : "_single");
+            /* ruling F4: a shared-term TABLE position is one the text tests
+               alone (no run compare), so its population is renamed */
+            pop("plan_test_TABLE%s", grouped ? "_shared_term" : "_single");
             if (grouped) {
                 tables_g++;
                 if (!reads) miss_g++;
@@ -831,7 +852,14 @@ static void hold_reply(const kase *k, const mf_wreply *r, const render *d, const
             }
         } else if (r->plan_test[i] == MF_WTEST_OWN) {
             pop(nref ? "plan_test_OWN_offered" : "plan_test_OWN");
-            chk("obs_plan_test_own_text", CITE_OBS " plan_test row (OWN: the kit's own set)", !reads,
+            /* RULING F4: the stop's offset inside a pinned run compare is
+               the check's OWN; a find that member-tests the stop reads its
+               offer, and that read is stop_test's */
+            int stop_read = r->has_stop && r->plan[i] == r->stop && r->stop_test == MF_WTEST_TABLE;
+            /* ... and so is D-hors's probe (one position: the search's read,
+               the residue's mirror, the same allowance as TABLE's below) */
+            int probe = reads && !stop_read && r->search == MF_WSEARCH_HORS && grouped && !own_read++;
+            chk("obs_plan_test_own_text", CITE_OBS " plan_test row (OWN: the kit's own set)", !reads || stop_read || probe,
                 "%s plan[%d]=%d OWN but the text reads an offered table", callnm, i, r->plan[i]);
         }
     }
@@ -851,7 +879,7 @@ static void hold_reply(const kase *k, const mf_wreply *r, const render *d, const
         uint8_t meet[32];
         uint32_t refs[MAXSP];
         int nref, eq;
-        facts_at(k, r->alt, r->stop, meet, refs, &nref, &eq);
+        facts_at(k, r->alt, r->stop, parked_yes, meet, refs, &nref, &eq);
         int want = stated && eq ? MF_WTEST_TABLE : MF_WTEST_OWN;
         chk("rule_stop_test", CITE_TAB " stop_test (same rule, matched by the stop's OFFSET)",
             r->stop_test == want, "%s stop %d stop_test %d want %d", callnm, r->stop, r->stop_test, want);

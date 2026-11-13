@@ -199,6 +199,17 @@ static inline const char *kit_miss(const mf_hooks *h)
     return h->miss == MF_MISS_N ? h->n : h->miss;
 }
 
+/* 1 iff site `s` used under hooks `h` is a NOP ASSIGN that declares its
+ * result (`result_decl` inside NOP's nonempty guard would scope the result
+ * to the guard). The one home of the rule: the statement frames that refuse
+ * it at their use (window.c's wf_frame, generic.c's stmt_value) and
+ * mf_wdecide's EMIT ask, which refuses where those rows render (plan_frame.md
+ * §2.2 contract line 2; d27fix F2). */
+static inline int kit_nop_decl(const mf_site *s, const mf_hooks *h)
+{
+    return s->handoff == MF_H_ASSIGN && s->empty == MF_EMPTY_NOP && h && h->result_decl;
+}
+
 /* ---- the forward FIND ---------------------------------------------------- */
 
 /* 1 iff site `s` is a FORWARD FIND: the one op whose `pred` is span 0 or a

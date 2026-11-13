@@ -424,7 +424,7 @@ static int stmt_value(rctx *rc, kb *b)
     /* ASSIGN */
     if (need(rc->art, "ASSIGN", "result", h->result, "miss", kit_miss(h), (char *)NULL))
         return -1;
-    if (nop && h->result_decl)
+    if (kit_nop_decl(s, h))
         return kit_fail(rc->art, "generic: a NOP ASSIGN cannot declare its result");
     const char *in = ind;
     if (nop) {
