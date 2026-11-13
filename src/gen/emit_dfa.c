@@ -4581,10 +4581,14 @@ typedef struct {
     const KsetWalk *walk;
     /* D172 S2 commit 4 THE WINDOW FAMILY's PHASE-1 REPLY (window_site.md rev
      * 3.2 §0, §2.4) for this machine's DFA prefilter statement, asked wherever
-     * `kind` is not NONE (`wr_stated`; `window_reply_ask`). The NEXT rows'
-     * key clauses read it (`next_keys[]`), and so does every reader of the
-     * offset rows' candidate test (`ofs_test_of`); `wr_entry` is the
-     * chosen alternative's ENTRY fact, read off the statement it answers. */
+     * `kind` is not NONE (`wr_stated`; `window_reply_ask`). Since memfn unit
+     * 3.0b (plan_frame.md §4.2 ASK-1, ASK-5) the ask states the frame of the
+     * site the offset rows define (`ofs_site_define`'s), with call DEFINE;
+     * the rows below them define their own site and read no reply field.
+     * The NEXT rows' key clauses read it (`next_keys[]`), and so does every
+     * reader of the offset rows' candidate test (`ofs_test_of`) and the `@`
+     * table's run row (`req_run_at`); `wr_entry` is the chosen alternative's
+     * ENTRY fact, read off the statement it answers. */
     bool      wr_stated;
     uint8_t   wr_entry;
     mf_wreply wr;
@@ -7600,18 +7604,34 @@ static int ofs_window_of(Ctx *cx, const UnanchStart *us, mf_walt **walts)
 }
 
 /* D172 S2 commit 4 THE PHASE-1 ASK (window_site.md rev 3.2 §0, §2.4): the
- * window family's decision over `us`'s DFA prefilter statement
- * (`ofs_window_of`), into `us->wr`, with the chosen alternative's ENTRY. The
- * decision reads no frame fact, so one ask serves every NEXT row and every
- * selection of this machine. Asked on every art; a refusal is pcrec's
- * defect (the statement is the one the block defines). */
+ * window family's reply over `us`'s DFA prefilter statement
+ * (`ofs_window_of`), into `us->wr`, with the chosen alternative's ENTRY.
+ * It states the frame of the site the offset rows define, the values
+ * `ofs_site_define` states (FUNC / FIND / RETURN, its hooks' stated-ness,
+ * call DEFINE; memfn plan_frame.md §4.2 ASK-1, held to the define by
+ * ASK-3 in a trace build). The decision reads no frame fact, so one ask
+ * serves every NEXT row and every selection of this machine; the rows below
+ * the offset rows define their own site. Asked on every art; a refusal is
+ * pcrec's defect (the statement is the one the block defines). The hooks'
+ * callbacks are never called at phase 1, so their `u` is not the define's. */
 static void window_reply_ask(Ctx *cx, UnanchStart *us)
 {
     mf_walt *walts;
     int n = ofs_window_of(cx, us, &walts);
     mf_site *s = pcrec_memfn_site(cx, DELEG_OFS);
+    s->body = MF_BODY_ONESHOT;
+    s->form = MF_FORM_FUNC;
+    s->op = MF_OP_FIND;
+    s->handoff = MF_H_RETURN;
+    s->empty = MF_EMPTY_MISS;
+    s->use = MF_USE_POSITION;
+    s->pred.fn_ref = 1;
     pcrec_memfn_window_stated(cx, s, walts, n, MF_WFLOOR_SUBJECT);
-    if (mf_wdecide(pcrec_memfn_art(cx), s, &us->wr))
+    mf_hooks h = {
+        .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
+        .miss = MF_MISS_N, .comment_tier = PCREC_CMT_NONESSENTIAL, .u = NULL,
+    };
+    if (mf_wdecide(pcrec_memfn_art(cx), s, &h, MF_WCALL_DEFINE, &us->wr))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the window family's "
                        "phase-1 ask on the DFA prefilter (src/gen/emit_dfa.c, "
                        "window_reply_ask)");
@@ -7643,6 +7663,20 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
         .miss = MF_MISS_N, .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
     };
+#ifdef PCREC_CAND_TRACE
+    /* memfn plan_frame.md §4.2 ASK-3: the block's define is the one the
+     * phase-1 ask planned (`window_reply_ask`): re-asked with the define's
+     * own site, hooks and call, the WHOLE reply equals `us->wr` byte for
+     * byte (the kit zeroes every reply first). pcrec reads no field of it. */
+    if (f->us->wr_stated) {
+        mf_wreply again;
+        if (mf_wdecide(pcrec_memfn_art(f->cx), s, &h, MF_WCALL_DEFINE, &again) ||
+            memcmp(&again, &f->us->wr, sizeof again))
+            pcrec_fit_invariant_fail("asked-plan-differs", "the define's re-asked reply",
+                                     "the phase-1 reply the NEXT rows read",
+                                     pcrec_deleg_sites[DELEG_OFS].id);
+    }
+#endif
     return pcrec_memfn_define(f->cx, DELEG_OFS, s, &h, c);
 }
 
@@ -16059,6 +16093,7 @@ static int req_run_at(Ctx *cx, ReqAdmit admit)
     if (!pcrec_artifact_has_dfa_scan(cx)) return -1;
     uint32_t used = cx->job->pf.used;
     int at = -1;
+    bool refused = false;
 #ifdef PCREC_CAND_TRACE
     int base = cand_eval_base;
     pcrec_cand_trace_quiet++;
@@ -16073,8 +16108,13 @@ static int req_run_at(Ctx *cx, ReqAdmit admit)
         mf_wreply w;
         mf_site *cs = pcrec_cover_site(cx, cv, NULL, NULL, &h, &u);
         /* the window offset the search's find reads (`stop`), mapped into
-         * the whole run where the run lies in the window once */
-        if (!mf_wdecide(pcrec_memfn_art(cx), cs, &w) && w.has_stop)
+         * the whole run where the run lies in the window once. The ask is the
+         * decision only (call NONE: memfn plan_frame.md §4.2 ASK-6), and a
+         * refusal is pcrec's defect, failed after `done:` restores the trace
+         * state (a fail inside would leave the thread's trace quiet) */
+        if (mf_wdecide(pcrec_memfn_art(cx), cs, NULL, MF_WCALL_NONE, &w))
+            refused = true;
+        else if (w.has_stop)
             at = req_run_in_cover(pcrec_fact_req_whole_run_stated(cx), &cv->end, w.stop);
         goto done;
     }
@@ -16098,6 +16138,9 @@ done:
     pcrec_cand_trace_quiet--;
 #endif
     cx->job->pf.used = used;
+    if (refused)
+        pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the `@` table's "
+                       "cover-row phase-1 ask (src/gen/emit_dfa.c, req_run_at)");
     return at;
 }
 
