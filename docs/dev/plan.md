@@ -590,7 +590,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   SURVEY LEAD for the capture question: re2c's TDFA (tagged-DFA submatch extraction, Trofimovich) is the literature for captures in direct-coded DFAs — the road by which direct-DFA could someday serve capture-bearing patterns without the VM; survey by measurement per OPT-A's rule when this opens.
 - [SHADOW-TABLE] STATE:not-started — one declared table of pcrec expectations that shadow kit reply fields: live, retired, or replaced
   filed: 2026-11-12 manager (kit review partd3 FIX-S1; third member of a family)
-  status (2026-11-12): three retirements so far, each ad hoc: K38-2's scan/rwin, S2's leads/rlead (P8) and dominated/rdom (FIX-1), all because the shadow would have to predict the kit's findability (D157)
+  status (2026-11-13): four ad hoc retirements: K38-2 scan/rwin; S2 leads/rlead (P8), dominated/rdom (FIX-1), head-vs-req_byte on a decline (successor: K from the head member, req_landmark_k); each because the check would predict the kit's pick (D157)
   next: trigger: the next shadow retirement or a new shadow; a sibling of [FACT-READS] and [ASK-DEFINE-FRAME] (declared, checked consumers): fold into [FACT-READS] if it builds first
   refs: lane/memfn-pdesign part_d §9; review 2026-11-12-r3-memfn-partd3
   Rule: each row names the shadowed reply field, its state (live / retired / replaced) and the named successor control; a retired shadow with no successor is a check finding.
