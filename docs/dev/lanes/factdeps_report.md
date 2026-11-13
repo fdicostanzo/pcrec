@@ -8,7 +8,7 @@ Deliverable: `docs/design/fact_consumers_inventory.md` (PROPOSED rev 0), indexed
 
 - Branch `lane/factdeps` from main `8184f6fb6`. The memo, this report, the `docs/design/CLAUDE.md`
   line and the lanes history index entry are committed.
-- Rulings file `docs/dev/lanes/factdeps_rulings.md`: empty at every read. No entry was applied.
+- Rulings file `docs/dev/lanes/factdeps_rulings.md`: last entry applied **R1** (failure modes per incident and layer, memo §6.6; two debug run times, memo §6.7; units R9-R10, memo §7.1).
 - Validation: none owed. No suite or build was needed (docs only). `scripts/check_claudemd_size.sh
   --all` is clean (`docs/design/CLAUDE.md` is 12,282 of 12,288 bytes; the cond_family line was
   shortened to fit the new entry).
@@ -62,14 +62,30 @@ Deliverable: `docs/design/fact_consumers_inventory.md` (PROPOSED rev 0), indexed
    (catches incident 3 at compile time). TRACE: `pf_enter` checks the innermost open reader in the
    existing `PCREC_CAND_TRACE` build; the move/re-check stream checker catches incident 1. Coverage
    per incident is in memo §6.5.
-9. **Size (memo §7.1): 9 units, R0-R8,** one commit each under the zero-movers gate. R0-R4 are the
+9. **Size (memo §7.1): 11 units, R0-R10,** one commit each under the zero-movers gate. R0-R4 are the
    core (declarations, trace trap, `used` re-sourced). R7 is the seam domain plus a kit request. R8 is
-   the emitted-order axis. The VM `root_minw` double definition is a separate fact change and is
-   kept out of these units (`[FIND-MINW]`'s trigger already names it).
+   the emitted-order axis. R9-R10 are the two debug run times (R1). The VM `root_minw` double
+   definition is a separate fact change and is kept out of these units (`[FIND-MINW]`'s trigger
+   already names it).
 10. **The [COND-FAMILY]/[ENG-TDFA] plan (memo §7.2)** adds an `A_COND` arm to every no-`default:`
     derivation, new facts (`tag_shape`, a condition kind bit, M12 guards), new consumers (the
     tagged-DFA engine row and entry, PRESENCE guard rows, M10 ladder rows, [ENGINE-WHY]), a new E3
     route, and new emitted orderings (M7 honour-on-close, the tagged entry inside the window
     protocol). The last is why R8 belongs in the foundation.
+
+11. **Failure modes (R1, memo §6.6).** Today: incident 1 is a silent missed optimization, observable
+    as a give-up (found by a human critic); incident 2 is a silent observable change (the listing,
+    found after the fact by `emit_sweep`); incident 3 is silent and latent (it becomes a missed
+    optimization or a wrong pick once the kit's verdict is routed, and `k*h` on 2^40 can overflow).
+    Under the design each one is LOUD in at least one layer that runs at commit or in `make test`.
+12. **Two debug run times (R1, memo §6.7).** (a) The COMPILER: in test builds `pf_enter` refuses with
+    an internal error (the epoch guard's shape) on a read outside the innermost reader's declaration,
+    before its stage, or off `depends`; the force loop is exempt. (b) The GENERATED MATCHER: a
+    harness-only emit mode (proposed `--harness=verify-proofs`, a `PcrecHarness` lever, never default
+    output) emits a check at each fact-justified removal. A cheap FACT tier re-verifies the claim with
+    a naive loop: the stop's "no occurrence remains", the REQ-PAST-LAST obligation "no attempt starts
+    past the last occurrence" (this catches incident 1 on C10's subject), the remaining length below
+    min-width, skipped bytes outside the start set. An expensive PROOF tier, `proof_skip(a,b,why)`,
+    runs a removal-free reference attempt at every skipped position. Opt-in sweep `make test-proofs`.
 
 Proposed plan tag: `[FACT-READS]` (free per `scripts/entry`). The row is the manager's to file.

@@ -448,6 +448,83 @@ shapes, in order of cost:
 | 2 a dead branch was the ask | no (nothing undeclared) | partly: an ATTEMPT-route `width` declaration is refused as a read of an unsealed-route fact | **yes, by construction**: §3's declared `used` makes the deletion a 0-mover; the shadow diff finds the ballast |
 | 3 2^40 into `head_max` | partly (a text pattern at the builder) | **yes**: typed `PfW` plus the one converter | yes: the seam `site_check` refusal |
 
+### 6.6 Failure modes, today and under the design (rulings R1)
+
+The vocabulary: **loud refusal** (a check, a build or a compile stops and names the cause);
+**crash** (an abort without a cause named); **silent wrong answer**; **silent missed optimization**
+(work that should have been removed runs, and the answer is right); **silent observable change**
+(a listing, a stamp or a give-up moves, and no answer is wrong).
+
+| incident | today | WRITE (lint) | COMPILE | TRACE (compiler debug run, §6.7 a) | MATCHER debug run (§6.7 b) |
+|---|---|---|---|---|---|
+| 1 stop before the seek | **silent missed optimization**, observable as a give-up: one attempt past the run's last occurrence runs and can hit the step budget (`(a\|aa\|b)+cxyz`, steps=3000: err −2 where PCRE2 says nomatch; inside the allowed direction). Found by a human critic | silent (no text pattern) | silent (an emitted order, not a read) | **loud refusal** on the corpus, with the move column (R8): "a MOVE of `attempt_position` with no re-check after it" | **loud refusal** at run time: the obligation check "no attempt starts past the stop's bound" fires on the first subject that reaches it (C10) |
+| 2 a dead branch was the ask | **silent observable change** (the `--emit-facts` `used` column moved on 365 patterns). Caught after the fact by `emit_sweep`'s facts stream | silent | **loud refusal** of the ATTEMPT-route `width` declaration (an E3 read on a route that never seals E3) | **cannot happen**: `used` comes from declarations, so the deletion moves nothing. The R3 shadow diff is loud while the ballast still exists | not applicable (no matcher bytes move) |
+| 3 2^40 into `head_max` | **silent**, latent: no answer or pick moves today, because only the trace shadow reads the kit's verdict (TH-5). Once the verdict is routed it becomes a **silent missed optimization** or a wrong pick, and the arithmetic `k*h` on 2^40 can overflow `uint64` | partly loud (the builder's text pattern) | **loud refusal**: the build does not compile without the converter | **loud refusal**: the seam check refuses `head_max ≥ 2^40` | not applicable (a compile-time seam value) |
+
+The target property: every row's design column is LOUD in at least one layer that runs in `make test`
+or at commit. No incident stays silent under the design.
+
+### 6.7 Two debug run times (rulings R1, Frank: "If the trace knew the dependencies, it could (in debug mode probably) be used to note errors during run time")
+
+**(a) The COMPILER's own run.** This is §6.3's TRACE layer, made a refusal. In the test builds
+(`PCREC_CAND_TRACE`, which `build/pcrec-harness` and the start-table section already use), every
+`pf_enter` checks three things against the declarations: the fact is in the innermost open reader's
+`reads` for its route; the reader's declared stage is at or after the fact's epoch; and, for a
+derived fact, the asked fact is on `depends`'s closure. A miss is `pcrec_ctx_fail(cx, 0, "internal
+error: ...")` naming the reader, the fact and the stage. It is the same refusal shape as the epoch
+guard (`facts.c` `pf_enter`), so it fails a compile, not the process. `--emit-facts` keeps its rule
+that the listing never refuses a compile that succeeded: the force loop is not a reader and is
+exempt. The default `build/pcrec` and the library carry none of it.
+- *Catches:* every undeclared or early read, transitive ones included; with R8, incident 1's
+  emitted-order obligation, checked over the trace stream at the end of the compile.
+- *Cost:* one mask test per ask in test builds only. Corpus overhead is UNMEASURED and expected to
+  be small (asks are memoized; the slot predicate stack already exists).
+- *Lives in:* `src/facts/facts.c` (`pf_enter`, under `#ifdef PCREC_CAND_TRACE`), with the reader
+  stack beside `cand_eval_slot[]` in `emit_dfa.c`.
+
+**(b) The GENERATED MATCHER's run.** A debug EMIT MODE in which every work removal that a fact
+justifies also emits, at its point of use, a check of the claim it relies on. The corpus and the
+fuzzers then verify the PROOFS, not only the answers. Two tiers:
+- **Fact checks (cheap).** Re-verify the runtime claim with a naive, independent loop at the point
+  where the removal acts:
+  - the required-run STOP: when it ends the search, scan the rest of the subject with a byte loop
+    (not the kit's scan) and assert no occurrence of the run remains;
+  - the REQ-PAST-LAST OBLIGATION: at the top of each attempt, assert the attempt position is not past
+    the last occurrence of the run (computed once, naively). **This is the check that catches incident
+    1**: it fires on an attempt the missing re-check let through;
+  - MIN-WIDTH: when it stops, assert `subject_length − pos < minw`, and assert that no position in the
+    stopped range is accepted by the shadow attempt (next tier);
+  - the START-SET seek: assert that every skipped byte is outside the start set (a 256-bit table the
+    debug mode emits from the fact);
+  - the END-WINDOW clamp and the ANCHOR bound: assert that the shadow attempt rejects every position
+    the clamp or the bound removes.
+- **Proof checks (expensive).** One shared helper, `proof_skip(a, b, why)`: for every start position
+  in `[a, b)` that a removal skipped, run the REFERENCE attempt (the anchored attempt function with
+  every work removal denied, emitted beside the optimized one) and abort, naming `why`, if any
+  position matches. Every removal that moves a position (clamp, min-width, pre-check NOMATCH, handoff
+  jump, start-set seek, offset skip, landing, the stop, the anchor bound) calls it with its own
+  token. Cost: quadratic in the subject length. That is acceptable on corpus subjects and fuzzer
+  inputs, and never acceptable in shipped output.
+- *Independent control:* the reference attempt shares pcrec's parser and IR with the optimized one.
+  So it verifies that a REMOVAL is sound relative to pcrec's own attempt semantics, which is exactly
+  the property in question. The attempt's own semantics stay checked by the PCRE2 answer oracle, as
+  today. The naive loops in the fact tier share no code with the kit's scans.
+- *Lives in:* a harness lever beside the existing ones (`PcrecHarness` bitfield in
+  `src/core/internal.h`, read only by `build/pcrec-harness`; name proposed: `--harness=verify-proofs`).
+  The harness's `.rxt` driver turns it on for an opt-in sweep (`make test-proofs`, the `test-axes`
+  shape). It is never in default output, and `build/pcrec` refuses the lever. Each emitted check
+  carries the removal's row token, so a refusal names the row (the stamp vocabulary already names
+  rows).
+- *Catches:* incident 1 (the obligation check, at run time, on C10's subject). Any unsound removal
+  the answer oracle misses because the removed attempts would not have matched on that subject anyway
+  (the proof check sees every skipped position, the answer check sees only the result). It does not
+  catch incidents 2 or 3, which never reach matcher bytes.
+- *Cost:* an emit path per removal (about 10 sites, each a few lines beside the existing emitter
+  call), the reference-attempt emission (the `-fno-*` denies already produce it; the debug mode emits
+  both in one artifact), and one opt-in corpus plus fuzzer run per landing that touches a removal.
+  No abi event, since default output is unchanged. The debug output's own shape is test-only and has
+  no spec entry beyond the lever's line in the harness documentation.
+
 ---
 
 ## 7. Size of the build, and what the coming plan adds
@@ -466,8 +543,13 @@ shapes, in order of cost:
 | R7 | `PfW` at the seam builders plus the converter; kit request for a reserved `head_max` UNBOUNDED (the kit's ABI event, the kit's lane) | kit ABI; no pcrec emitted byte (the trace shadow only reads `head_max` today) |
 | R8 | the position-move column on `cand_rows[]` plus the trace stream checker (emitted-order axis) | nothing |
 
-That is 9 units. R0 to R4 are the core (G1, G2). R7 is G3. R8 is G4's emitted half. R1, R3 and R8
-each need a corpus run of the trace build. The others need `make test-codegen` only. The VM's
+| R9 | the compiler debug run's refusal (§6.7 a): `pf_enter`'s three tests as `pcrec_ctx_fail` in test builds | nothing (test builds) |
+| R10 | the matcher debug emit mode (§6.7 b): the fact tier first (the stop, the REQ-PAST-LAST obligation, min-width, start-set); the proof tier's `proof_skip` plus the reference attempt second; `make test-proofs` | nothing in default output |
+
+That is 11 units. R0 to R4 are the core (G1, G2). R7 is G3. R8 is G4's emitted half. R9 and R10 are
+the two debug run times. R10's fact tier is the cheapest way to catch incident 1's class and could go
+first if the emitted-order axis waits. R1, R3, R8 and R9 each need a corpus run of the trace build.
+R10 needs its own opt-in sweep. The others need `make test-codegen` only. The VM's
 `root_minw` (§1.2 row 1) is not in these units. It is one fact question with two definitions, and the
 fix (one `width` fact the VM route also reads, or a declared `root_minw` fact at E2) is a fact
 change, filed separately (`[FIND-MINW]` already names "a width fact sealed on the attempt machine" as
