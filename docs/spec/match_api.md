@@ -2425,8 +2425,8 @@ whole answer where the answer is NONE (`tuning.md` §2.27;
 `docs/spec/findings.md` §4 for which analysis answers). Where the necessary
 RUN has an exact position, it is pcrec's own pick: the least-mass exact
 position of the whole run, else the set's pick (`tuning.md` §2.28); where the
-run has no exact position (every position a two-member cube, `tuning.md`
-§2.39) it is the set's pick, or `"none"` for an empty set; every value is a
+run has no exact position (every position a set of two or more members,
+`tuning.md` §2.28, §2.39) it is the set's pick, or `"none"` for an empty set; every value is a
 member of the necessary set. It is pcrec's pick, not the position
 `<PREFIX>_REQ_RUN`'s `@` names (¶7). A
 non-`"none"` artifact rejects a whole subject in one pass when the byte is
@@ -2444,6 +2444,9 @@ common byte and `-fno-req-byte` all report it.
                                   /* (?i)select: every match contains a
                                      member of each position (x & K) == T;
                                      the scan is the pair at position 4 */
+#define RX_REQ_RUN "[cecf][80-89b1-bf]666f6f@4"
+                                  /* -e utf8 [α-ω]foo: a bracketed position
+                                     takes any one of its members */
 #define RX_REQ_RUN "none"         /* no run of two or more bytes */
 ```
 
@@ -2454,21 +2457,26 @@ is a first-match table naming the position THIS artifact's search reads:
 
 | row | when | `@idx` |
 |---|---|---|
-| 1 | the pre-check renders its run part | the scan position of the run decision the part was built from |
+| 1 | the pre-check renders its run part and that part has a scan position | the scan position of the run decision the part was built from |
 | 2 | else a window-site search's find reads a run member (the `"cover"` window search, the `"run-pinned"` prefilter) | that member, an index into the whole run |
-| 3 | else (a window search whose find reads a position outside the run, as `abcdefg(?=x)`'s `x`; `"rev-end"`, `"one-attempt"`, `"landmark-walk"`, which scan `<PREFIX>_REQ_BYTE`) | no `@`: the value is the hex alone |
+| 3 | else (a window search whose find reads a position outside the run, as `abcdefg(?=x)`'s `x`; `"rev-end"`, `"one-attempt"`, `"landmark-walk"`, which scan `<PREFIX>_REQ_BYTE`; a run the memfn kit declines on the pre-check; a REQUIRED run the kit verifies at every candidate with no scan position) | no `@`: the value is the hex alone |
 
 <a id="s6-3-7-p7a"></a>[6.3.7¶7a] `<PREFIX>_REQ_BYTE` is pcrec's own pick (¶5), not `bytes[idx]`, so the two
-stamps are not checkable against each other through `@`. A run whose positions are not all exact bytes carries `/`
-and each position's mask `K` in hex: `T` (the bytes) is each position's lower
-member and `(x & K) == T` its membership test. `tuning.md` §2.28 carries the
-derivation.
+stamps are not checkable against each other through `@`. A position is a byte SET
+every successful attempt holds there (a joint superset is allowed: `cat|dog`
+states `{c,d}{a,o}{t,g}`). Where every position is one CUBE, a run whose
+positions are not all exact bytes carries `/` and each position's mask `K` in
+hex: `T` (the bytes) is each position's lower member and `(x & K) == T` its
+membership test. Where some position is a set that is not one cube, every
+position that is not one byte is spelled at its place as a bracketed hex class
+(members ascending, a stretch of three or more consecutive bytes as `lo-hi`),
+and no `/` follows. `tuning.md` §2.28 carries the derivation.
 
 <a id="s6-3-7-p8"></a>[6.3.7¶8] **`<PREFIX>_REQ_WHY`** — whether the artifact acted on either fact, and why
 not; a closed token set (`tuning.md` §2.29).
 
 ```c
-#define RX_REQ_WHY "emitted"      /* or "none", "one-attempt", "dominated" */
+#define RX_REQ_WHY "emitted"      /* or "none", "one-attempt", "dominated", "untestable" */
 ```
 
 <!-- value-set: RX_REQ_WHY -->
@@ -2478,6 +2486,7 @@ not; a closed token set (`tuning.md` §2.29).
 | `"none"` | nothing is necessary: no byte and no run (none found, or `-fno-req-byte`) |
 | `"one-attempt"` | declined: the search route tries ONE start position, so a whole-window pass in front of it only adds work |
 | `"dominated"` | declined: the artifact's own candidate-start `memchr` (or run-pinned test) already scans a byte at least as rare, or its locator decides presence itself (`<PREFIX>_DFA_SCAN "rev-end"`, `"cover"`, `"landmark-walk"` or `"empty"`): a `"cover"` window search finds the match or proves there is none, whatever form its jump takes (`memchr`, two streams, a byte walk, a skip table) |
+| `"untestable"` | declined: a run is stated, the memfn kit's run decision declines it on the pre-check, and no necessary-set member leads, so the pre-check would test nothing |
 
 <a id="s6-3-7-p9"></a>[6.3.7¶9] `"none"` holds if and only if `<PREFIX>_REQ_BYTE` and `<PREFIX>_REQ_RUN` are
 both `"none"`. Any other value asserts that a byte or run was derived, and only
@@ -2516,8 +2525,10 @@ occurrence) the pre-check is asked again from there, none ending the search
 with no match (no attempt past the run's last occurrence can match; the
 re-ask sits after a failed attempt, so one attempt past the last occurrence
 may still run before it is asked). The pre-check's LANDMARK
-is the run where `_REQ_RUN` is not `"none"`, else the one byte
-`_REQ_BYTE`; `K` is the landmark's position 0's maximum byte offset from the
+is the run where the pre-check TESTS it (`_REQ_RUN` is not `"none"` and the
+memfn kit's run decision did not decline it), else its leading byte: the one
+byte `_REQ_BYTE` where no run is stated, the necessary-set member the kit's
+links lead with where it declined the run; `K` is the landmark's position 0's maximum byte offset from the
 attempt start (the whole run's position-0 offset for a run). Then every match
 begins at most `K` bytes before an occurrence of the landmark's position 0; the pre-check's search block returns the LEAST CANDIDATE
 `c >= startpos`: no occurrence of the landmark has its position 0 in `[startpos, c)`, and `c` holds

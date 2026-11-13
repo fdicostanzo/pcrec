@@ -53,8 +53,8 @@
  * THE SAFE DIRECTION IS THE EMPTY SET AND THE EMPTY RUN, which DISABLE the
  * check. Every arm that cannot decide takes it: a class with more than one
  * member for the SET (which is every caselessly-folded literal, since D23
- * folds `(?i)a` to `[aA]` at parse time) and for the RUN a class that is not
- * one small cube (below), a quantifier that admits zero iterations (of a
+ * folds `(?i)a` to `[aA]` at parse time) and for the RUN a class outside the
+ * position domain (below), a quantifier that admits zero iterations (of a
  * body that consumes something: a width-0 body is CAT's unit, span_arms T2
  * row 1), a backreference and a linked call. A node that consumes nothing
  * (the empty string, an assertion, `\G`, `\K`, a check callout, a
@@ -80,28 +80,32 @@
  * one (`rr_rep_w`).
  *
  * [OPT-LITSCAN] S4 C3 A RUN IS A RUN OF POSITIONS, NOT OF BYTES
- * (docs/design/litscan_s4.md §2.3.1). A position is a byte or a CUBE of at
- * most `pos_set` members (`PCREC_MAX_REQ_RUN_POS_SET` = 2: a caseless letter
- * `[Ss]`, `[jk]`), stored as `(T, K)` with `(x & K) == T` its membership
- * test, so a caseless word is a run where it used to contribute nothing.
- * Three rules make that one mechanism rather than a second one beside the
- * byte run:
- *   - ONE RANKING: a run's worth is its INFORMATION, `Σ popcount(K)` over
- *     its positions (8 for a byte, 7 for a pair), so among exact runs the
- *     order is exactly length's (`rn_choice_rows`, whose later rows break an
+ * (docs/design/litscan_s4.md §2.3.1), and since [RUN-POS-SET] stage 3 a
+ * position is the BYTE SET every match holds there (D187;
+ * docs/design/alt_normal_form.md §5 stage 3), admitted by the walk's DOMAIN
+ * (`rn_admits`: at most `pos_set` members, and, while the domain's cube
+ * clause holds, one cube), so a caseless word, a digit class or a UTF-8
+ * continuation set is a run where it used to cut one. Three rules make that
+ * one mechanism rather than a second one beside the byte run:
+ *   - ONE RANKING: a run's worth is its INFORMATION, `8 - ceil(log2 |S|)`
+ *     summed over its positions (`pcrec_req_info`: 8 for a byte, 7 for a
+ *     pair, 0 past 128 members), so among exact runs the order is exactly
+ *     length's (`rn_choice_rows`, whose later rows break an
  *     equal-information tie by the byte-rate, never by argument order);
- *   - ONE CONSTRUCTOR, `rn_put`, refuses a non-canonical position (`T & ~K`
- *     must be 0: T is the LOWER member, which the pair scan and the masked
- *     compare both read) as an internal error rather than normalizing it;
- *   - an alternation's common head and tail are the CUBE HULL of the two
- *     branches' positions, `K' = Ka & Kb & ~(Ta ^ Tb)`, `T' = Ta & K'`,
- *     symmetric in the branches and stopping at the first position whose
- *     hull leaves the domain — so `frank|fred` reports `fr[ae]` and
- *     `(?:S(?i:ab)|(?i:sab))` reports `[Ss][Aa][Bb]`, never the left
- *     branch's exact `S`.
- * Under `-fno-req-run-fold` `pos_set` is 1, the domain is the single byte,
- * the hull is byte equality and the walk is the pre-row one exactly. The SET
- * is unchanged by all of this: only an exact position is a set member.
+ *   - ONE CONSTRUCTOR, `rn_put`, refuses a set outside the domain (the
+ *     empty set among it) as an internal error rather than dropping it;
+ *   - an alternation's common head and tail are the per-position UNION of
+ *     the two branches' sets (the smallest set holding both), symmetric in
+ *     the branches and stopping at the first position whose union leaves
+ *     the domain — so `frank|fred` reports `fr[ae]`, `(?:S(?i:ab)|(?i:sab))`
+ *     reports `[Ss][Aa][Bb]`, never the left branch's exact `S`, and `cat|dog`
+ *     (outside the cube clause) `[cd][ao][tg]`, a joint superset: each
+ *     position holds, the run need not be one of the matches' strings.
+ * A covering cube is a reader's private spelling, rebuilt from the set
+ * (`pcrec_req_cube`, D187 addendum 1), never stored. Under
+ * `-fno-req-run-fold` `pos_set` is 1, the domain is the single byte, the
+ * union is byte equality and the walk is the pre-row one exactly. The SET is
+ * unchanged by all of this: only an exact position is a set member.
  *
  * [K82] THE RUN CARRIES ITS MAXIMUM BYTE OFFSET FROM THE ATTEMPT START
  * (`RbRun.off`, docs/design/litscan_k82h.md §1.3), and only this walk can
@@ -276,6 +280,7 @@ static int rn_count(const unsigned char *p)
     return c;
 }
 
+/* The covering cube of position set `p` (facts.h says what it is for). */
 bool pcrec_req_cube(const unsigned char *p, int *t, int *k)
 {
     int a = 0xFF, o = 0;
@@ -296,6 +301,7 @@ static bool rn_admits(const RbWalk *w, const unsigned char *p)
     return !w->pos_cube || pcrec_req_cube(p, &t, &k);
 }
 
+/* A position's information, 8 - ceil(log2 |p|) (0 for the empty set). */
 int pcrec_req_info(const unsigned char *p)
 {
     int c = rn_count(p), lg = 0;
@@ -783,7 +789,7 @@ static PCREC_OWN_FRAME void rb_class_into(RbWalk *w, RbVal *acc,
         acc->desc = desc;
         return;
     }
-    /* Only a single byte is a member of the necessary SET; a cube position is
+    /* Only a single byte is a member of the necessary SET; a wider position is
      * one the RUN carries (litscan_s4.md §2.3.1). */
     acc->set = rb_union(b >= 0 ? rb_single(b) : rb_empty(), acc->set, 1);
     acc->runs = rr_cat(w, rr_pos(w, ps), acc->runs);
@@ -1165,7 +1171,7 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
 /* THE WALK'S FACTS, from ONE walk: the whole necessary SET (with its threaded
  * rightmost member, `RbSet.pick`) and the most informative guaranteed
  * contiguous RUN (`RbRun`, at most `PCREC_MAX_REQ_RUN_SCAN` positions
- * stored), its positions single bytes or cubes of at most `pos_set` members.
+ * stored), its positions byte sets inside the walk's domain.
  * Both are the EMPTY answer where nothing is necessary, which disables every
  * check built on them and is always sound. Reads no option and asks for no
  * prior: the parameters `p` are its caller's reading of the fact-level deny,
@@ -1209,9 +1215,9 @@ PfWhyCode pcrec_req_rate_why(Ctx *cx)
  * pcrec's pick at R-38 K38-2 (span_runs_sheet.md §4.1): the pre-check's own
  * scan position is the kit's reply, and may differ from it.
  *
- * [OPT-LITSCAN] S4 C3 A PAIR SCAN MEMBER IS NOT A BYTE ANY MATCH MUST
- * CONTAIN: at a cube position `bytes[idx]` is T, and a match may carry the
- * other member there, so it falls to the set's pick (litscan_s4.md §2.3.3
+ * [OPT-LITSCAN] S4 C3 A WIDER POSITION IS NOT A BYTE ANY MATCH MUST
+ * CONTAIN: a match may carry any of its members there, so it falls to the
+ * set's pick (litscan_s4.md §2.3.3
  * case (ii)) and every value here stays a member of `req_set`. The byte-rate
  * is asked FIRST, before any branch, so whether the compile consumed it does
  * not depend on the pattern (findings design §6.4 rule 1). */

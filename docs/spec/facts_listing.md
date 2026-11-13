@@ -80,7 +80,7 @@
 <a id="s4-1-2"></a>
 #### 4.1.2 `value`
 
-- <a id="s4-1-2-p1"></a>[4.1.2¶1] A byte is a decimal number. A run is lowercase hex (the listing's run, `req_whole_run`, carries no `@`: the one `@` is the `<PREFIX>_REQ_RUN` stamp's, `match_api.md` §6.3.7¶7), and, only where some position is not an exact byte, by `/` and each position's mask in hex (`tuning.md` §2.28).
+- <a id="s4-1-2-p1"></a>[4.1.2¶1] A byte is a decimal number. A run is lowercase hex (the listing's run, `req_whole_run`, carries no `@`: the one `@` is the `<PREFIX>_REQ_RUN` stamp's, `match_api.md` §6.3.7¶7), followed, only where every position is one cube and some position is not an exact byte, by `/` and each position's mask in hex; where some position is a set that is not one cube, each position of two or more members is a bracketed hex class at its place and no `/` follows (`tuning.md` §2.28, `match_api.md` §6.3.7¶7a).
 - <a id="s4-1-2-p2"></a>[4.1.2¶2] A set is a comma-joined ascending byte list.
 - <a id="s4-1-2-p3"></a>[4.1.2¶3] `start_anchor` is `<PREFIX>_VM_START`'s token.
 - <a id="s4-1-2-p4"></a>[4.1.2¶4] `kinds` is a comma-joined list of kind names in a fixed order (`bref`, `linked_call`, `var`, `atomic`, `lookaround`, `live_capture`, `collapsible_rep`, `callout`), or `none`. `lookaround` counts only lookarounds that stay sub-matches: a one-character lookaround is a context node (`tuning.md` §2.32) and is not in it.
