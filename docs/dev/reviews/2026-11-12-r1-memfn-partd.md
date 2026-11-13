@@ -300,3 +300,4 @@ Decisions:
     - pcrec stopping R at the first non-shape position makes pcrec read the kit's scan capability (D157: facts, not methods), and the boundary moves whenever the kit learns a new scan.
     - Accepting the movers fires C6's trigger on day one, with no measurement behind it.
   - Then both documents state it, and §4's "no MF_SITE_ABI event" becomes a stated choice.
+- **F11 RULED (2026-11-12, kit manager + main jointly): option (b).** R is identified by its ROLE: any multi-position verify-NO span that pcrec states is R. pcrec decides how far R reaches (`pf_window_of` grows it over walk-proven positions, readiness memo §2.1). The kit never infers R from shape, and pcrec never reads the kit's scan capability (D157). This is an `MF_SITE_ABI` meaning event inside S2's single landing. main's stage 3 brief says "R by role, not shape". Main also agreed F26 and F9.
