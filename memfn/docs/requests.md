@@ -921,3 +921,9 @@ are allocating).
 - ASK. Give `run_g2.sh` a selector that runs part K of N of its work (any unit you choose: rows, patterns, cells), with three properties: (1) the N parts together run EXACTLY the work the unsplit run does, each unit once (a check that says so, the population counted); (2) every per-part verdict is the same shape the unsplit run prints, and the floors in `row_floors.tsv` still hold over the whole (if a floor is a COUNT over the population, say how a split run proves it: per part, or summed by pcrec's gather); (3) parts are roughly equal in runner time.
 - pcrec's side (ours, not yours): a `make test-memfn-g2` spelling that passes the selector, and its rows in `tests/ci/cloud_kinds.tsv` / the shard plan. Say the selector's spelling and how a part reports.
 - Deliver: a kit branch for merge review. Not timing-sensitive; your non-timing gates queue as usual.
+
+## R-41 (2026-11-12, pcrec manager) — a declared "unbounded" head_max (TH-5), in S2
+- GO: rides S2 (R-38 Part D, Frank's go 2026-11-11) as a Part D unit; kit agreed 2026-11-12 ("(c) NOW, (b) in S2").
+- FACT. [REQ-PAST-LAST] (lane/rpfix) states sites whose handoff K is unbounded as ASSIGN with head_max = PCREC_W_UNBOUNDED = 2^40 (1099511627776); main declined them (ON_MISS, head_max 0). memfn.h declares head_max as "the handoff's K where the site ASSIGNs, else 0": 2^40 is undeclared on the seam (review 2026-11-12-r2-reqpast TH-5).
+- INTERIM (in reqpast's landing, kit OK 2026-11-12): C10 `(a+)+zq` re-pins to 1099511627776; safe because presence.c's admission computes k*h in u64 (no overflow, h <= 1e6) and declines it as far, except h == 0 (a never-hit landmark, harmless).
+- ASK. Declare a named head_max value meaning "unbounded" (equal to PCREC_W_UNBOUNDED), an explicit admission branch that declines it (h == 0 included), and a G2 case; an MF_SITE_ABI meaning event in S2's single landing. pcrec's side: state that name (no number) where it states head_max.
