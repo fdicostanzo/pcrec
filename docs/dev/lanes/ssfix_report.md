@@ -6,7 +6,7 @@
 - Cause as predicted by k382land: the `(a)(?:ab){2,}?ac|q` blocks appended to `tests/base/vm_lazy_rmin_prefix.rxt` (mech row S708's witness) are new VM-hat movers.
 - Census: `docs/design/startset/s1/census_s1.py` run on this build (bench checkout read-only). Compared as (options, pattern) multisets over corpus rows: the ONLY difference is that one pattern, +1 in `s2_vm_auto`, +2 in `s2_vm_forced`. `s3_dfa` unchanged for corpus rows. No other mover appeared (stop rule not hit).
 - Bench rows and line-shifted ids of other files in the census output were NOT taken (bench checkout drift, counted never checked).
-- Push to main: see the deliver commit/merge note below.
+- Merged ff-only into main (623afcb3d) and pushed; CI result owed.
 
 ## CHANGES
 - `tests/startset/manifests/manifest_s2_vm_auto.tsv`: +1 row (`vm_lazy_rmin_prefix.rxt:253`, `--engine=vm`) and a history comment line.
