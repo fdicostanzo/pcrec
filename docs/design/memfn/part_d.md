@@ -1,4 +1,14 @@
-# part_d — the kit's answer to R-38 Part D: run positions of 1 to 128 members (design, rev 3)
+# part_d — the kit's answer to R-38 Part D: run positions of 1 to 128 members (design, rev 4)
+
+**rev 4 (2026-11-12, lane pdrev4, opus):** applies the RULED narrow re-check review
+`docs/dev/reviews/2026-11-12-r3-memfn-partd3.md` (FIX-NOW RDY-1..6 and FIX-2..9; the JOINT ruling
+FIX-1: P8's retirement extends to `dominated`/`rdom` on non-cube runs, main's plan row
+[SHADOW-TABLE]; DOC FIX-S2, FIX-S3). Each change is marked `[r3pd ID]`; every check a fix adds or
+changes names its control (the plant or input that reds without it). §9 is re-stated whole as the
+final list for main's stage-3 brief. Cites re-read at main `5d41c1f2d` (later than `a8ae73be0`):
+`git diff --stat a8ae73be0 5d41c1f2d` over `memfn/`, `src/gen/`, `tests/memfn/`, `memfn/tests/`,
+`tests/mech/`, `docs/spec/`, `scripts/emit_sweep.py` and `docs/design/memfn/` is empty; plan.md gained
+[SHADOW-TABLE]. Code is cited by function, the spec and plan by section or [TAG].
 
 **rev 3 (2026-11-12, lane pdrev3, opus):** applies the RULED re-check review
 `docs/dev/reviews/2026-11-12-r2-memfn-partd2.md` (FIX-NOW P1-P19, P22, P23; DOC P20, P21; NOTED P24;
@@ -101,9 +111,20 @@ derived part. From the run span's sets and the reply `(has_scan, scan, ver_lo, v
    The build writes ONE kit accessor (name the builder's; here `kit_pos_spelled`) and all four read
    it; `in_stretch` (the TIE table's first row) keeps its own meaning (a meet of one member or a
    cube inside R's stretch) and is not folded. One plant covers the four: the accessor answering
-   "spelled" for a three-member set reds D2's p7 (`run_bytes`' refusal in G2) and D1's p1
-   (the scan on a wide position) together. pcrec's side has the same family for "the pre-check
-   tests the run" (§9 item 2).
+   "spelled" for a three-member set. **Its detectors** `[r3pd FIX-2]`: NOT `run_bytes`' refusal
+   (p7's), which reads the same accessor and so cannot fire under the plant; the planted position
+   becomes part of a RUN term whose `(T, K)` admits bytes outside its set (or misses a member), so
+   **C2's classifier** reds at D2 (the rendered test's admitted bytes differ from the stated set),
+   with the occurrence oracle as the second detector; at D1 the reply puts the scan on a three-member
+   position, which D1's "the scan is never a wide position" floor reds only where such a position is
+   the lightest: so F24's floor is STRATIFIED, with its own literal for sites where a position of
+   THREE or more members is lighter than every findable one (> 0 at the base, D0), the plant's D1
+   reach. pcrec's side has the same family for "the pre-check tests the run" (§9 item 2).
+   **The rest of the spelling family** `[r3pd FIX-S2]` (DOC): `in_stretch` (above) and presence.c's
+   `one_member` (P2's lead byte) also classify a position's members. Their general form is ONE
+   accessor returning the position's class {one, cube, wide}; `kit_pos_spelled` is "not wide". The
+   build may write the class accessor and read all six through it; unlock: C2's classifier becomes
+   one row per class.
 
 **Identity today (G3).** Every today extent is all findable, so `[a, b)` = the extent: one RUN term
 at `ver_lo` of length `ver_len`, `plan_hint` 0, `plan_pos` scan - `ver_lo`, `need` REQUIRED, the
@@ -313,6 +334,23 @@ their meaning.
    dismisses every start the set's pick would", which is the run-less meaning. On REQUIRED, P0
    precedes P2 (contracts `N_REQUIRED` vs `N_OPTIONAL`), so the K66 scan-less run is never dropped
    by this rule.
+   **The row literal** `[r3pd FIX-8]` (every mandatory column of `fd_rows[]`; the id is the
+   builder's, here `PD`; the basis is the kit's choice, `FB_DERIVED` as P0's, since the row follows
+   from the reply contract and prices nothing):
+
+       { "PD", FD_PRES, KN_P, SF_RUN_NOSCAN, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
+         FF_UNSTATED, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_DERIVED, "Part D",
+         "a run with no findable position on an OPTIONAL route: declined, the run untested "
+         "(part_d §2.4 item 2)",
+         "none: derived from the reply contract (no find tests the run)", &ct_pd },
+       FD_CT(ct_pd, "PD", use_none, KD_ALL, CM(N_OPTIONAL), MF_ANY, LY_ALL)
+
+   Knowledge key `KN_P` only (findability reads no rate); link `{0, 0, 0, 0}` (verify 0, `proven_by`
+   0); `opt` NULL (no deny, above); `step` the R-38 Part D unit; `FD_CT` kinds `KD_ALL` and layers
+   `LY_ALL` as every PRES row. The FD record prints `basis=derived`, which `tests/memfn/rows.tsv`'s
+   line for the row matches (D1's row obligations, §5.1). Control: `rows_check.py` reds a row whose
+   printed basis or link differs from its `rows.tsv` line (the existing row check; the plant is the
+   row's basis left `FB_UNSTATED`, which `mf_finder_rows`' self-check refuses).
 
 3. **REQUIRED: no decline; P0 verifies the whole run SCAN-LESS** `[r1pd F4]`. A REQUIRED span's run
    keeps K66's linear no-match proof: P0's reply on a run with no findable position is
@@ -343,7 +381,11 @@ their meaning.
      it, which made `dominated` unreachable on a decline). `rr.scan` is read only where `has_scan`
      is 1. memfn.h's `set_leads`/`dominated` text says both; pcrec's readers are
      `req_set_leads_applies` (through its lead reader, §9 item 5) and the pick shadow, whose
-     `leads`/`rlead` records RETIRE on runs with a non-cube position (§9 item 5, `[r2pd P8]`).
+     `leads`/`rlead` records RETIRE on runs with a non-cube position (§9 item 6, `[r2pd P8]`), and
+     so do its `dominated`/`rdom` records `[r3pd FIX-1]`: pcrec's `req_byte_dominated_by`
+     (emit_dfa.c) still requires `run_verified` on a stated run, so after P3 the shadow's `rdom` is 0
+     where the kit's `dominated` is 1 on every dominated no-scan run (`x.(?:cat|dog)`); following
+     the kit would need its findability (D157) or the reply itself (K35), the bind P8 ruled on.
 
 5. **The twin's landmark is the head member where the run is not tested** `[r1pd F1]`. The FIFTH's
    mass in `kit_pres_picks` takes its byte branch where `!rs || !ext->ver_len` (a declined run has
@@ -497,15 +539,25 @@ job; existing sabotages are checked with `REACH_ONLY=1`.
 | unit | size | content | check (passes AT THIS UNIT) | the plant that makes it fail | existing sabotages |
 |---|---|---|---|---|---|
 | D0 | M | **G2 FIRST.** `g2_pres_gen.c`, `g2_pres.h` (`run`/`mask` arrays) and `g2_pres_run.c` (`in_set`, `members(..., m[2])`, `filler`) take positions as SETS `[r1pd F16]`; the wide strata are an ADDED stream on their own rng, so today's 354 sites stay byte-identical `[r1pd F18]`; C2's classifier probes every non-member byte of every verified position, with a per-position breaker (§5.2) `[r1pd F17]`; G2 computes "no findable position" from its own sets `[r1pd F21]`. The G2 window family's R model (`g_run_shaped`, `two_runs`' fix rule) is NOT changed here (D2 changes it with R by role) `[r1pd F22]`. COUNTS at the base: K-1 refusals, with the K-1 message only; G2 window alternatives with a verify-NO multi-position span holding a wide position (they become R at D2); the OFS/STMT tableless multi-member SET terms (Q3's population, `[r1pd F9]`) | the family runs; any refusal OTHER than the K-1 message FAILS; the base counts recorded as literals (K35: the script's, sharing no source with the kit); the K-1 count becomes D2's must-be-0 population | n/a (measures the base) | none |
-| D1 | M | **THE DECISION.** `findable` column in `run_modes[]`; the decline row after P2 with `SF_RUN_NOSCAN` and its contract; P0's scan-less `no_scan` column; the run span decided first; P3's member rule, the head rule and `pres_layout_check` read `trun` (+ its headless-layout clause); `kit_pres_picks`' `has_scan` guards, `set_leads`/`dominated` on a run with no scan, the twin's byte branch. `MF_CLASS_V` moves; memfn.h text for `mf_link` (run span), `mf_run_reply`, `mf_pres_picks`. A new row's obligations `[r1pd F15]`: `tests/memfn/rows.tsv` and `row_floors.tsv` lines, `ROWS_FLOOR` +1 in `run_rows.sh`, `memfn/docs/finder_history.md` entry, an `FD_CT` contract, G2's `G2P_NROUTE`/`route_of` gain the route, its reach class `pending-site:` while stage 3 is absent, `decider_census.tsv` row + `MEMBER_COUNT`, `RUN_CALLERS` unchanged (no second `kit_run_decide`) | `emit_sweep`: zero movers on today's corpus, every arm, both layers (G3). G2 presence family, REPLY level `[r1pd F14]`: the scan is never a wide position (count = wide-position count); each decline equals G2's own "no findable position" on an OPTIONAL non-dominated route, per site (F21); REQUIRED no-findable runs come back scan-less tested; a dominated decline witness keeps `proven_by` on every span (F3); a declined run with a member has a HEAD (F2); the twin's landmark on a declined handoff site is the byte's (F1). Refusals are NOT gated here: the K-1 count may only fall | (p1) the `findable` column ignored: the scan lands on a wide position on the floored sites where a wide position is lighter than every findable one (F24's floor, moved here: p6 is deleted with its piece) `[r1pd F24]`. (p2) the decline row deleted: G2's decline equality reds. (p3) "decline when the scan is a cube" (F21's plant): per-site equality reds. (p4) the head rule back to `run >= 0`: `pres_layout_check`'s new clause reds | S3005 (twin mass: re-aimed if the byte branch moves its witness), S3008, S1122 (re-pin `pres_row`), S1104: REACH re-run |
-| D2 | L | **THE RENDERING.** The direct translation (§2.1: `run_part_terms`, the shared ranking function, `run_bytes` over a set accessor); `derive_run_part`'s family call and `wf_parts_prepare`'s check deleted; precheck's `run_part`/`run_comment`/row-contract comments; ofsskip's SCOPED admissions (tableless SET terms through `kit_set_test`; the scan-less `fn-every-pos` BODY row, FIRST, with disjoint `holds` facts and its own card, its row-table obligations in §5.1.1 D2 `[r2pd P2, P9, P10]`); **R by role** (§2.2: `merge`, `wf_check`, the verify-YES pinned span's spelling test, memfn.h `mf_wspan.verify`/`run_stated` text, `MF_SITE_ABI` moves); G2's window R model `g_run_shaped` AND its reference `run_of` (g2_win_ref.c) to R by role, and `two_runs`' fix rule (a second verify-NO multi-position span becomes verify YES; a second SPELLED verify-YES span keeps today's three-member fix) `[r1pd F22]` `[r2pd P11]`. Its DENY row in `options.def` (D174 name, e.g. `run-verify-wide`): denied, EVERY mode's stretch is clipped to the maximal findable stretch holding the scan, a decision option read by every reader of the decision on the art (reply extent, the twin, the part) `[r1pd F6]`; identity today (every position findable). A scan-less P0 run is not clipped (nothing to clip around; the K66 proof is undeniable, D158) | `emit_sweep` zero movers on today's corpus, every arm INCLUDING `--memfn=no-run-verify-wide` (G3, F6). G2 presence family on every target/level, both layers: refusals 0 (D0's K-1 population, `[r1pd F14]`), C2 (256-byte non-member probes), the occurrence oracle (`tests/memfn/occurrence_oracle.py`), the deny pass with its one-position-stretch layouts and a deny-arm refusal floor of 0 (F7). G2 window family: R-by-role alternatives (member exact, pinned stretch exact). `make test-memfn-g2`, `test-memfn-finder`, `test-axes` | (p5) a wide verified position rendered by its cube hull: C2 reds. (p6') one range dropped from `kit_set_test` in `verify_chain`: the occurrence oracle reds. (p7) the direct translation's stretch rule widened past a wide position: `run_bytes`' refusal reds G2's refusal floor. (p8) `run_shaped` restored for verify-NO spans: the G2 window family's wide-R alternatives lose their member (and the stage-3 `xy/users\d+` witness loses `run-pinned`). (p9) the scope dropped from `ofs_fn_applies`: G2's two-sided pin (OFS/STMT sites rendered by ofsskip with a tableless multi-member SET term or no scan: exactly 0) reds `[r2pd P12]` (rev 2's `emit_sweep`/`FORM_FLOORS` cannot: pcrec's population is 0 by C7's premise, and `FORM_FLOORS` are one-sided minimums). (p10) `fn-every-pos` placed after `fn-pair` with `pair_holds` left as `x->b >= 0` and `ofs_fn_scan` zeroing `x`: the P2/P9 witness layout (G2's "scan-less REQUIRED runs on a MATCHING subject" floor) answers NOMATCH and the occurrence oracle reds `[r2pd P2]` | S3006 (rank: re-targeted to the shared ranking function), S3012 (in-run filter: its detector, the derived part's refusal, is deleted with the family route; RE-AIM to a G2 window witness of a verify-YES pinned span under `run-tie-left`, or retire with that role if none detects it, decided by REACH), S3047 (second derived part, `wf_parts_check`: kept), S3007, S3011, S285, S279 (runcmp/ofsskip: kept, RUN terms spelled-only), S1104: REACH re-run on every window.c, ofsskip.c and precheck.c row; a row whose only reacher was the derived part's family route is re-aimed or its reach class re-stated (`rows_check.py`) |
-| D3 | M (was S) | **THE MEASUREMENT'S FLOOR** `[r2pd P9, P15]`. One new form, `fn-every-pos`, whose card D2 adds (§5.3); D3 adds no card. THE RECORD: D2's `run_part_terms` prints, in the trace build (`MF_TRACE`), ONE line per derived part where it hands the terms to ofsskip: `MFTRACE run_part_terms art=A site=S part=I hint=H terms=OFF:KIND:VAL,...` (KIND `RUN` with VAL `run_len`, or `SET` with VAL the 32-byte set in hex; `hint` the RUN term's index or `-` scan-less). collect.py already keeps every non-REACH `MFTRACE` line in a site's `trace`; the census gains ONE parser of this record (`vcls.py`'s population and `census0.py forecast`'s `class_measure`, which today read only window statements `alts` and the family reply `wr`, both of which F26's direct translation no longer writes for a derived part). From each record the census counts: every multi-member `SET` term as (`settest`, `settest_cls(members)`); the `RUN` term as (`rc-*`, its row's class); a scan-less part as (`every-pos`, `-`). `settest`'s classes get a bound: `c1`, `c2`, `cn` = 3 to 7 compares (the measured `\w` instance), above 7 `cn+` UNMEASURED (or `lower-bound`), never priced by the 7-compare row `[r1pd F20]`. Golden files and readers named at the build `[r1pd F19]` | THE CHECK, its POPULATION and FLOOR (pre-landing, on the kit branch): the trace-build G2 presence family (its wide strata, every target) is run with its `run_part_terms` records captured, and the census's parser counts them. Per site, the census's count of unspelled `SET` terms (members not one byte and not a cube) EQUALS G2's own count of that site's verified positions whose RENDERED test (C2's classifier, reading the text) admits a set G2 knows from its own generator to be unspelled; and the census's `every-pos` count equals G2's own count of scan-less REQUIRED runs it rendered. Both totals are at least LITERAL floors in the D3 script, recorded from G2's counts at D2 (K35: the floors are G2's counts, from its own sets and the rendered text, sharing no source with the trace record). AT THE JOINT LANDING the pcrec-artifact floor is ARMED: the census over the stage-3 corpus sweep counts at least pcrec's own count of stage-3 run parts with a wide verified position (from pcrec's artifact diff, `emit_sweep`), a literal raised in the landing commit (0 on the kit branch, where stage 3 is absent) | (p11) the census's parser skips `SET` terms of `run_part_terms` records (rev 2's "drops the derived parts' settest terms"): census unspelled count 0, G2's count > 0 on the witness below: the per-site equality reds. (p12) `run_part_terms` not printed for a scan-less part: the `every-pos` equality reds | none (D3's ids taken at build) |
+| D1 | M | **THE DECISION.** `findable` column in `run_modes[]`; the decline row after P2 with `SF_RUN_NOSCAN` and its contract; P0's scan-less `no_scan` column; the run span decided first; P3's member rule, the head rule and `pres_layout_check` read `trun` (+ its headless-layout clause); `kit_pres_picks`' `has_scan` guards, `set_leads`/`dominated` on a run with no scan, the twin's byte branch. `MF_CLASS_V` moves; memfn.h text for `mf_link` (run span), `mf_run_reply`, `mf_pres_picks`. A new row's obligations `[r1pd F15]`: `tests/memfn/rows.tsv` and `row_floors.tsv` lines, `ROWS_FLOOR` +1 in `run_rows.sh`, `memfn/docs/finder_history.md` entry, an `FD_CT` contract, G2's `G2P_NROUTE`/`route_of` gain the route, its reach class `pending-site:` while stage 3 is absent, `decider_census.tsv` row + `MEMBER_COUNT`, `RUN_CALLERS` unchanged (no second `kit_run_decide`) | `emit_sweep`: zero movers on today's corpus, every arm, both layers (G3). G2 presence family, REPLY level `[r1pd F14]`: the scan is never a wide position (count = wide-position count); each decline equals G2's own "no findable position" on an OPTIONAL non-dominated route, per site (F21); REQUIRED no-findable runs come back scan-less tested; a dominated decline witness keeps `proven_by` on every span (F3); a declined run with a member has a HEAD (F2); the twin's landmark on a declined handoff site is the byte's (F1). Refusals are NOT gated here: the K-1 count may only fall | (p1) the `findable` column ignored: the scan lands on a wide position on the floored sites where a wide position is lighter than every findable one (F24's floor, moved here: p6 is deleted with its piece) `[r1pd F24]`. (p2) the decline row deleted: G2's decline equality reds. (p3) "decline when the scan is a cube" (F21's plant): per-site equality reds. (p4) the head rule back to `run >= 0`: `pres_layout_check`'s new clause reds | S3005 (twin mass: re-aimed if the byte branch moves its witness), S3008, S1122 (re-pin `pres_row`), S1104: REACH re-run. `[r3pd FIX-6]`: REACH re-run on EVERY presence.c and finder.c row (not only these); S286 and S288 (the P2 lines P3 rewrites, `else if (rs && !proof->run) dom = 0;` among them) and S1098 re-aimed to the rewritten lines; S278 and S3045 (anchored on the `fd_run_modes[]` rows that gain the `findable`/`no_scan` columns) re-anchored; a NEW plant (p13) on P3's run-less branch: P2 keeps `rs && !proof->run` on a no-scan run, which reds FIX-4's floor (§5.1.1 D1) |
+| D2 | L | **THE RENDERING.** The direct translation (§2.1: `run_part_terms` with its `MF_TRACE` print on the define path, the record D3 reads `[r3pd RDY-4]`, the shared ranking function, `run_bytes` over a set accessor); `derive_run_part`'s family call and `wf_parts_prepare`'s check deleted; precheck's `run_part`/`run_comment`/row-contract comments; ofsskip's SCOPED admissions (tableless SET terms through `kit_set_test`; the scan-less `fn-every-pos` BODY row, FIRST, with disjoint `holds` facts and its own card, its row-table obligations in §5.1.1 D2 `[r2pd P2, P9, P10]`); **R by role** (§2.2: `merge`, `wf_check`, the verify-YES pinned span's spelling test, memfn.h `mf_wspan.verify`/`run_stated` text, `MF_SITE_ABI` moves); G2's window R model `g_run_shaped` AND its reference `run_of` (g2_win_ref.c) to R by role, and `two_runs`' fix rule (a second verify-NO multi-position span becomes verify YES; a second SPELLED verify-YES span keeps today's three-member fix) `[r1pd F22]` `[r2pd P11]`. Its DENY row in `options.def` (D174 name, e.g. `run-verify-wide`): denied, EVERY mode's stretch is clipped to the maximal findable stretch holding the scan, a decision option read by every reader of the decision on the art (reply extent, the twin, the part) `[r1pd F6]`; identity today (every position findable). A scan-less P0 run is not clipped (nothing to clip around; the K66 proof is undeniable, D158) | `emit_sweep` zero movers on today's corpus, every arm INCLUDING `--memfn=no-run-verify-wide` (G3, F6). G2 presence family on every target/level, both layers: refusals 0 (D0's K-1 population, `[r1pd F14]`), C2 (256-byte non-member probes), the occurrence oracle (`tests/memfn/occurrence_oracle.py`), the deny pass with its one-position-stretch layouts and a deny-arm refusal floor of 0 (F7). G2 window family: R-by-role alternatives (member exact, pinned stretch exact). `make test-memfn-g2`, `test-memfn-finder`, `test-axes` | (p5) a wide verified position rendered by its cube hull: C2 reds. (p6') one range dropped from `kit_set_test` in `verify_chain`: the occurrence oracle reds. (p7) the direct translation's stretch rule widened past a wide position: `run_bytes`' refusal reds G2's refusal floor. (p8) `run_shaped` restored for verify-NO spans: the G2 window family's wide-R alternatives lose their member (and the stage-3 `xy/users\d+` witness loses `run-pinned`). (p9) the scope dropped from `ofs_fn_applies`: G2's two-sided pin (OFS/STMT sites rendered by ofsskip with a tableless multi-member SET term or no scan: exactly 0) reds `[r2pd P12]` (rev 2's `emit_sweep`/`FORM_FLOORS` cannot: pcrec's population is 0 by C7's premise, and `FORM_FLOORS` are one-sided minimums). (p10) `fn-every-pos` placed after `fn-pair` with `pair_holds` left as `x->b >= 0` and `ofs_fn_scan` zeroing `x`: the P2/P9 witness layout (G2's "scan-less REQUIRED runs on a MATCHING subject" floor) answers NOMATCH and the occurrence oracle reds `[r2pd P2]` | S3006 (rank: re-targeted to the shared ranking function), S3012 (in-run filter: its detector, the derived part's refusal, is deleted with the family route; RE-AIM to a G2 window witness of a verify-YES pinned span under `run-tie-left`, or retire with that role if none detects it, decided by REACH), S3047 (second derived part, `wf_parts_check`: kept), S3007, S3011, S285, S279 (runcmp/ofsskip: kept, RUN terms spelled-only), S1104: REACH re-run on every window.c, ofsskip.c and precheck.c row; a row whose only reacher was the derived part's family route is re-aimed or its reach class re-stated (`rows_check.py`) |
+| D3 | M (was S) | **THE MEASUREMENT'S FLOOR** `[r2pd P9, P15]`. One new form, `fn-every-pos`, whose card D2 adds (§5.3); D3 adds no card. THE RECORD: D2's `run_part_terms` prints, in the trace build (`MF_TRACE`), ONE line per derived part, on the DEFINE path only `[r3pd RDY-2]`: inside `wf_parts_prepare` where `quiet` is 0, after the direct translation writes the terms (the define-time query `ask_sel` walks with `quiet` 1 and writes no trace record, compose.c's house rule, so pcrec's `mf_ask` and the shadow ask print nothing): `MFTRACE run_part_terms art=A site=S part=I hint=H terms=OFF:KIND:VAL,...` (KIND `RUN` with VAL `run_len`, or `SET` with VAL the 32-byte set in hex; `hint` the RUN term's index or `-` scan-less). The print is D2's (listed in its cell, `[r3pd RDY-4]`); D3 writes the parser and the checks. **The production collector** `[r3pd RDY-1]`: `docs/dev/lanes/r33_sim/collect.py`'s `parse` gathers non-REACH `MFTRACE` lines, but `summarize` keeps only `END` (phase define/run), `FDROUTE` and `WPATH`, so the record is DROPPED today; D3 changes `summarize` to keep each `run_part_terms` record raw (a `parts` list beside `ends`), re-collects the sweep, and re-pins the goldens it moves (RDY-6's list). **The census never saw a derived part** `[r3pd RDY-3]`: r33_sim's `probe.c` writes a part's `alts` only `if (p->nalt)`, and a derived part is `nalt` 0 in the host's preds, so `census0.py`'s `units()` and `vcls.py` have never had a unit for it; D3 adds a NEW population branch (a `deleg:runpart` unit per record), it replaces nothing. The census's ONE parser of the record serves `vcls.py`'s population and `census0.py forecast`'s `class_measure`; r33_sim's `sim.py` (`today_method`, units by `alts` as census0's) skips a derived part the same way; it was not traced by the review, and the build reads it before calling the list complete. From each record the census counts: every multi-member `SET` term as (`settest`, `settest_cls(members)`); the `RUN` term as (`rc-*`, its row's class); a scan-less part as (`every-pos`, `-`). `settest`'s classes get a bound: `c1`, `c2`, `cn` = 3 to 7 compares (the measured `\w` instance), above 7 `cn+` UNMEASURED (or `lower-bound`), never priced by the 7-compare row `[r1pd F20]`. **Readers and goldens** `[r1pd F19]` `[r3pd RDY-6]`: readers `docs/design/memfn/span_cards/slot/vcls.py`, `docs/design/memfn/span_pick/census0.py`, `slot/link.py` (prices a class by its majority shape), `slot/plan.py` (plans TIMED cells from `vcls.out`: it does NOT plan `cn+`, an UNMEASURED class is listed and never scheduled), `slot/est.py` (regenerates `vcls.out`); goldens `vcls.out`, `census0_cards.out` (its data lines byte-equal to `vcls.out`'s) and `census0.out`. `settest_cls` exists twice (`vcls.py` and `census0.py`): both copies change in ONE commit, and the byte-equality of `census0_cards.out`'s data lines with `vcls.out`'s is the control (plant: one copy's `cn` bound changed alone: the two goldens differ) | THE CHECK, its POPULATION and FLOOR (pre-landing, on the kit branch): the trace-build G2 presence family (its wide strata, every target) is run with its `run_part_terms` records captured, and the census's parser counts them. **The join** `[r3pd RDY-4]`: the record's `art=` is the kit-internal trace id (1-3 arts per G2 site), so the G2 driver prints `G2SITE id=N` after each site's define in the trace build, and every record between two `G2SITE` lines is site N's. **The population** `[r3pd RDY-2]`: sites whose define CHOSE ofsskip's FUNC row for the derived part (read from the same define's `END`/`FDROUTE` records); G2's generic-pass sites (`forms == generic`, which C2's classifier skips) are counted SEPARATELY (records and G2 sites both, a reported line, outside the equality), so a correct build's generic-pass records cannot red it. Per site in the population, the census's count of unspelled `SET` terms (members not one byte and not a cube) EQUALS G2's own count of that site's positions inside C2's MEASURED extent (EXTENT's probe, reading the rendered text) whose set G2 knows from its own generator to be unspelled; and the census's `every-pos` count equals G2's own count of scan-less REQUIRED runs it rendered. Both totals are at least LITERAL floors in the D3 script, **recorded at D3's first green run** `[r3pd RDY-4]` (K35: G2's counts come from its own sets and the text C2 measured, sharing no source with the trace record). **The production path** `[r3pd RDY-1]`: in the re-collected sweep (`collect.py`, kit branch), every site whose ARTIFACT stamps a run (`_REQ_RUN` other than `none`, read from pcrec's emitted text) carries exactly one `run_part_terms` record; a count of 0 records with a non-zero stamped count reds. AT THE JOINT LANDING the pcrec-artifact floor is ARMED `[r3pd RDY-5]`: the cell is `emit_sweep`'s `DIFFER_PINS` entry for `--memfn=no-run-verify-wide` at the landing (its count of DISTINCT corpus patterns whose artifact differs from the default arm, per (base, flag, stream)); the census quantity is, over `collect.py --sources corpus` at the same base and stream, the count of distinct patterns with at least one `run_part_terms` record holding an unspelled `SET` term inside the extent; the check is census >= movers, a literal raised in the landing commit (0 on the kit branch). Why >=: the deny clips every extent to the findable stretch and is the identity where every position is findable (§5.1 D2), so a pattern moves under the deny only if its part holds an unspelled verified position, which prints such a record; a pattern with such a record may still not move (two arms rendering equal text), so equality is not claimed (INFERRED direction, the review's) | (p11) the census's parser skips `SET` terms of `run_part_terms` records (rev 2's "drops the derived parts' settest terms"): census unspelled count 0, G2's count > 0 on the witness below: the per-site equality reds. (p12) `run_part_terms` not printed for a scan-less part: the `every-pos` equality reds. (p14) `summarize` drops the record again `[r3pd RDY-1]`: the production-path check reds (0 records against the stamped count) while p11/p12's G2-fed checks stay green, which is why both feeds are checked. (p15) the record printed on the quiet path too `[r3pd RDY-2]`: G2 asks every site with `mf_ask` before its define (`g2_pres_gen.c`), so wherever the asked site carries the derived part a quiet print doubles that site's records and the per-site equality reds; its reach (that the ask's site carries the part) is the build's REACH run to confirm, and if it does not reach, the plant is re-aimed to a G2 fixture that asks a site with the part attached | none (D3's ids taken at build) |
 
 ### 5.1.1 Rev 3's per-unit additions (the table's cells plus these)
 
 **D0** (text fixes only):
+- **The rate rule's SCOPE** `[r3pd FIX-3]`. P18's rule below applies ONLY to positions of THREE or
+  more members, and only on the wide stream (its own rng). Today there is one `rnd(200000)` per
+  position, on `run[j]` only; rating a cube's two members would take a second draw on the MAIN rng
+  (shifting every later site) and make the RATE_TIES cube mass exactly 50000, tying one-member
+  positions. So positions of one or two members (a cube or not), on either stream, keep today's one
+  draw on `run[j]` (the scope the review proposed: 3+ members).
+  **Byte identity of today's sites is a D0 CHECK**, not a claim: the sha-256 of the generated site
+  file for today's stream (the 354 sites, `g2_pres_gen.c`'s output at the base, before D0's
+  change) is a literal in `run_g2_pres.sh`, and D0's generator must reproduce it. Control: the plant
+  "P18 applied to cubes too" changes the main rng's draw count and reds the hash.
 - **The rate rule for a SET position** `[r2pd P18]`. `gen_rates` rates every MEMBER of each run
-  position: RATE_SKEW draws each member of a position of `|S|` members from `rnd(200000 / |S|)`
+  position (of three or more members, above): RATE_SKEW draws each member of a position of `|S|` members from `rnd(200000 / |S|)`
   (so a position's summed mass is in a one-member position's range, and a wide position is lighter
   than every findable one on a counted share of sites); RATE_TIES gives each member `50000 / |S|`
   (the summed masses tie, the TIE rows' case); RATE_UNIFORM and RATE_FIXED unchanged. The other
@@ -518,9 +570,17 @@ job; existing sabotages are checked with `REACH_ONLY=1`.
 - **The base counts split by verify** `[r2pd P11]`: G2 window alternatives with a multi-position
   span holding a wide position, counted verify NO (they become R at D2) and verify YES (they stay
   C-yes) separately.
+- **The second moved window population** `[r3pd FIX-9]`: alternatives that state a SPELLED
+  verify-NO multi-position span (R) AND a spelled verify-YES multi-position span. Today
+  `two_runs` sees two R-shaped spans and mutates one; from D2 (R by role) the verify-YES span is no
+  longer R and is left intact, which puts the kit on a path (R the member, the YES span verified by
+  C-yes) no check has seen. The population exists in `g2_win_gen.c` (FAM_MASS and FAM_REPORT draw
+  both verify values); D0 COUNTS it at the base (as generated, before `two_runs`), a literal, and
+  D2 floors it (§5.1.1 D2).
 - **Floors armed AT D0** (the rest arm later, below): sites stating >= 1 wide position, "no
-  background" sites, F24's count, per target, the K-1 refusal count (the base, any other message
-  FAILS).
+  background" sites, F24's count and its stratum of positions with THREE or more members
+  `[r3pd FIX-2]`, per target, the K-1 refusal count (the base, any other message FAILS), and the
+  site-file hash (above).
 
 **D1**:
 - **P7's message move** `[r2pd P7]`. `derive_run_part`'s refusal `!rr->has_scan || !rr->ver_len`
@@ -549,6 +609,23 @@ job; existing sabotages are checked with `REACH_ONLY=1`.
   computation; declines WITH a verified member (p4's reach: the head rule); declines on ASSIGN sites
   (F1's twin check's reach); scan-less REQUIRED replies; wide positions never the scan; dominated
   no-scan sites with every span `proven_by` (P3).
+- **P3's floor on pcrec's real proof** `[r3pd FIX-4]`. Today every G2 P2 site states
+  `pres_proof = {lead, 0, 1, 1}` (`run` 1); under that proof the rev-2 rule (`proof->run` required)
+  and P3's rule agree, so reverting P3 keeps the floor's count and the floor cannot red. G2 states
+  `run` 0 (pcrec's real proof: `run_verified` is never set on a run the kit cannot scan) on its
+  no-findable-position sites, and the floor "dominated no-scan sites with every span `proven_by`"
+  counts ONLY those `run` 0 sites. Control: plant p13 (P2 keeps `rs && !proof->run` on a no-scan
+  run) makes `dominated` 0 on every such site: the floor reds. Sites with a findable position keep
+  today's `run` 1 proof (their count is unchanged).
+- **The decline's own G2 counters** `[r3pd FIX-7]` (P6 split the untested counter; the refused
+  counter stayed shared). `g_p2_refused++` is route-unconditional today, so decline-route refusals
+  would satisfy `FLOOR_P2_REFUSED=70`. Each route gets its own pair: `g_p2_untested`/`g_p2_refused`
+  count route P2 only; `g_dec_untested`/`g_dec_refused` count the decline route, with a floor of their
+  own (`FLOOR_DEC_REFUSED`, recorded at D1's first green run); and the script asserts
+  `p2_untested == p2_refused` (every P2 untested link's laid-out run part is refused). Control:
+  restoring the route-unconditional increment makes `p2_refused` exceed `p2_untested` on any run
+  with a decline: the equality reds. (FIX-S4's general form, one counter array indexed by
+  `route_of`, is NOTED; the build may write it instead.)
 
 **D2**:
 - **`fn-every-pos`'s row obligations** `[r2pd P10]`. rows_check exempts only `fd` rows from a
@@ -557,7 +634,13 @@ job; existing sabotages are checked with `REACH_ONLY=1`.
   `FIXTURE_FLOOR` in `run_rows.sh` +2; `rows.tsv`/`row_floors.tsv` lines; `ROWS_FLOOR` +1; its
   `gate_contract` (the derived part's facts: tableless SET terms, no scan).
 - **Its card** `[r2pd P9]` (§5.3): a formhash.c entry (id `every-pos`) and its card row,
-  UNMEASURED; `finder_check.py`'s `CARD_FORMDEP_COUNT` +1.
+  UNMEASURED; `finder_check.py`'s `CARD_FORMDEP_COUNT` +1. The instance's construction is §5.3's
+  `[r3pd FIX-5]` (a fifth site shape, two SET terms minimum, the BODY row asserted).
+- **The second moved window population's floor** `[r3pd FIX-9]`: chosen alternatives with R and a
+  spelled verify-YES span, R the member (D0's count, §5.1.1 D0), a literal > 0 recorded at D2's first
+  green run, checked against `run_of`'s reference decision. Control: plant p16, `merge` taking the
+  verify-YES span as `m->run` (R's role lost to the YES span): the member is no longer R's, DECIDE
+  reds against the reference on that population, and the floor's "R the member" count falls to 0.
 - **Pins the shared ranking function moves** `[r2pd P13b]`: `decider_census.tsv`'s
   `translate:run-rank` row (its caller becomes the shared function, called from `translate` and
   `run_part_terms`), `decider_census.py`'s `RUN_CALLERS` (exact) and `MEMBER_COUNT`, S3006's anchor.
@@ -578,7 +661,8 @@ job; existing sabotages are checked with `REACH_ONLY=1`.
 - **Floors armed AT D2**: sites with >= 1 wide VERIFIED position rendered; declined sites rendered
   and oracle-checked, and declined sites with no verified member: no pre-check `[r2pd P6]`;
   scan-less REQUIRED runs on a MATCHING subject `[r2pd P2]`; one-position stretches and deny-pass
-  sites on the deny arm; chosen wide-R alternatives with an exact member `[r2pd P11]`; and the
+  sites on the deny arm; chosen wide-R alternatives with an exact member `[r2pd P11]`; R plus a
+  spelled verify-YES span with R the member `[r3pd FIX-9]`; and the
   TWO-SIDED pin `[r2pd P12]`: OFS/STMT sites rendered by ofsskip with a tableless multi-member SET
   term or no scan, EXACTLY 0 while the scope stands (C7's retirement re-pins it).
 
@@ -591,8 +675,11 @@ prints that record. C2 reads the rendered text: position 2 admits exactly `0-9`;
 `{0-9}` is unspelled (10 members), so G2's count for the site is 1. The census, parsing the record,
 counts one unspelled SET term (`settest`, `c2`: one inner range, two compares); the equality holds.
 Under p11 (the parser skips SET terms) the census counts 0 against G2's 1: RED. Without D3's check
-nothing reds under p11: the census's only other reader, the card's forecast, would price the site
-from its RUN term alone, silently (the gap F19 named). A scan-less site (G2's REQUIRED all-wide
+nothing reds under p11: the census has never had a unit for a derived part (`probe.c` writes no
+`alts` for a `nalt` 0 part, `[r3pd RDY-3]`), so the card's forecast would simply not see the site,
+silently (the gap F19 named). G2's count of 1 is joined to the site by its `G2SITE` line and read
+from C2's MEASURED extent `[r3pd RDY-4]`; the site's define chose ofsskip's FUNC row, so it is in the
+population `[r3pd RDY-2]`. A scan-less site (G2's REQUIRED all-wide
 run, e.g. `\d\d\d`) prints `hint=-` and counts once as `every-pos` against G2's own scan-less
 count; p12 reds that equality the same way.
 
@@ -615,6 +702,22 @@ whenever stage 3 lands `[r1pd F14]`. One kit branch, one landing with stage 3.
   §5.1.1), and the pcrec-artifact floor armed at the joint landing. P9: the census counts the new
   form.
 - **pcrec side** (stage 3's lane, not a kit unit): P1, P4, P8, P16, P17 are §9's facts.
+
+**Readiness after rev 4** (the r3 review's verdict: READY WITH LISTED TEXT FIXES, all applied):
+- **D0: READY.** FIX-3 (P18 scoped to 3+ members on the wide stream; the site-file hash check),
+  FIX-9 (the second moved window population counted), FIX-2 (F24's 3+ stratum floor).
+- **D1: READY.** FIX-4 (G2 states `run` 0 on no-findable sites; plant p13), FIX-6 (REACH on every
+  presence.c/finder.c row; S286/S288/S1098 re-aimed; S278/S3045 re-anchored), FIX-7 (the decline's
+  own counters, `p2_untested == p2_refused`), FIX-8 (the row literal, §2.4 item 2).
+- **D2: READY.** FIX-5 (the `every-pos` instance: fifth shape, two SET terms, BODY row asserted,
+  fold rule), FIX-9 (floor and plant p16), FIX-2 (P23's detectors are C2 and the occurrence oracle),
+  RDY-4 (the print listed in D2).
+- **D3: READY.** RDY-1 (`collect.py`'s `summarize` keeps the record; production-path check, p14),
+  RDY-2 (define-path print; the population by chosen row; generic-pass counted apart; p15), RDY-3
+  (a new population branch), RDY-4 (`G2SITE` join, C2's measured extent, floors at D3's first green
+  run), RDY-5 (the `DIFFER_PINS` cell and the census quantity, census >= movers), RDY-6 (readers,
+  goldens, both `settest_cls` copies, `plan.py` does not plan `cn+`).
+- **pcrec side**: FIX-1 (the shadow's `dominated`/`rdom` retire on non-cube runs) joins §9.
 
 **The D27 author (ruled YES, at build).** A spec-first author in a D27 cell (`scripts/mk_d27_cell.sh`),
 denied `src/`, `tests/`, `memfn/src/` and `memfn/tests/`, writes decline and R-by-role witnesses from
@@ -673,8 +776,22 @@ D2 adds no find, scan or skip form. The per-candidate tests on new sites are `ki
 rows. **The scan-less body is a NEW form with its OWN card** `[r2pd P9]`: rev 2 called it the
 `walk` loop, but card `walk` measures `pf_walk` over a TABLE (`MF_FH_FIND`), and formhash.c says
 the tableless loop "is not the walk". D2 adds, in the same change: a formhash.c entry, id
-`every-pos` (shape: the ofsskip FUNC body over a scan-less derived part, one tableless SET term;
-the build names its `MF_FH_*` shape), and a card row in `memfn/data/cards/kit-grid.tsv` at the next
+`every-pos`, and a card row. **Its instance, constructible** `[r3pd FIX-5]` (a small kit design
+step): formhash.c's four shapes (`MF_FH_FIND`, `MF_FH_WINDOW`, `MF_FH_SETTEST`, `MF_FH_RUNCMP`)
+cannot build an ALL_PRESENT site with a derived FUNC part, so the entry takes a FIFTH shape (name
+the builder's; here `MF_FH_RUNPART`): an ALL_PRESENT site whose only span is a REQUIRED run presence
+span of TWO wide positions (`{0-9}{0-9}`, no member), which the kit's own selection takes through
+P0's scan-less reply and precheck's `run_part` to ofsskip's FUNC body. TWO SET terms is the minimum,
+not one: a run presence span has 2..`MF_WSPAN_POS` positions (`pres_run_check`), and scan-less
+means every extent position is a term. **The row source**: `fh_render` asserts the site's ARM id
+(for a presence site, `precheck`), not the fn walk's BODY row, so the entry gains a second asserted
+row, the BODY row the define chose (`fn-every-pos`), read from the define's own record; an instance
+reaching another BODY row is REFUSED (-1), as today's rule for an arm. **On a fold**: if the
+rendered text hashes equal to an existing id's (the `walk-set` precedent in formhash.c's entry
+comment, "the hash decides"), `every-pos` is not an id: no card row is added, the D2 report records
+the fold, and D3 counts scan-less parts under the id it folds into; if it folds into the tableless
+generic loop, which has no id, the entry is refused and the build stops for a kit ruling (a form no
+card can name). The card row sits in `memfn/data/cards/kit-grid.tsv` at the next
 `kit-grid` version (a new version: committed rows never change), one quantity in `walkbytes` over
 `form` with `deps` `kit:form.every-pos`, its header saying **UNMEASURED: no set holds a
 `kit.*.every-pos` row and no box has run this card; every reader skips an absent key** (the
@@ -693,7 +810,7 @@ included. Each §6 candidate that is built adds its card in the same change.
 | C5 | a covering prefilter (cube hull, vector range test) ahead of the exact `settest`, counted unverified | a SIMD measurement of the hull test against `settest` on the census's classes |
 | C6 | RETIRED by F11 `[r1pd F11]`: rev 1's "stated R label" is what R by role gives, with no field | — |
 | C7 | RETIRE the scoped ofsskip admission (§2.1) for the general rule (a tableless set is the kit's own test everywhere; scan-less bodies wherever stated), with its OWN deny (behavioural name) and G3 checked with it denied `[r1pd F9]` | D0's base count of today's refused tableless OFS/STMT predicates (pcrec's population, expected 0: its one tableless writer, `cover_window`, is REPORT and never translated; and G2's) is non-zero on pcrec's side, OR a second kit writer of tableless SET terms appears; the retirement re-pins `run_g2.sh`'s `FORM_FLOORS` and G2's two-sided pin (§5.1.1 D2, `[r2pd P12]`) |
-| C8 | NOTED `[r2pd P24]`: the GENERAL FORM. A presence link's TEST KIND is a function of (need, findability), per span, not per run: findable: find + verify; not findable and REQUIRED: verify every candidate (`fn-every-pos`); not findable and OPTIONAL: untested (the decline). Unlocks: C1/C2 drop in as new find methods with no new state; P2's run-less reading (§2.4 item 2) reads the same table. A declared row table over the two facts, replacing the decline row + P0's `no_scan` column + P2's no-scan clause | C1's trigger, or the first MEMBER span stated with no find form (today every member is one byte) |
+| C8 | NOTED `[r2pd P24]`; threshold recorded `[r3pd FIX-S3]` (DOC): there are now three to four per-run special cases (the decline row, P0's `no_scan` column, P2's no-scan clause, the `findable` column), so the unification point is met; the deferral is CHOSEN, not missed: C8 builds at its trigger below, or at a fourth per-run special case added after this rev. The GENERAL FORM. A presence link's TEST KIND is a function of (need, findability), per span, not per run: findable: find + verify; not findable and REQUIRED: verify every candidate (`fn-every-pos`); not findable and OPTIONAL: untested (the decline). Unlocks: C1/C2 drop in as new find methods with no new state; P2's run-less reading (§2.4 item 2) reads the same table. A declared row table over the two facts, replacing the decline row + P0's `no_scan` column + P2's no-scan clause | C1's trigger, or the first MEMBER span stated with no find form (today every member is one byte) |
 
 ## 7. Open questions (each with a leaning)
 
@@ -714,7 +831,10 @@ included. Each §6 candidate that is built adds its card in the same change.
 7. **ANSWERED by the r2 rulings** `[r2pd]`: P3 (a no-scan run is run-less in P2, §2.4 item 2); P9
    (`fn-every-pos`, its own UNMEASURED card, first by fact, §2.1, §5.3); P15 (D3's record
    `run_part_terms`, its G2 pre-landing floor, the pcrec floor at the joint landing, §5.1); P8
-   (`leads`/`rlead` retired on non-cube runs, pcrec-side, §9 item 5); P14 (R scoped, §2.2).
+   (`leads`/`rlead` retired on non-cube runs, pcrec-side, §9 item 6); P14 (R scoped, §2.2).
+8. **ANSWERED by the r3 joint ruling** `[r3pd FIX-1]`: P8's retirement extends to the shadow's
+   `dominated`/`rdom` on non-cube runs (pcrec-side, in S2's landing); "`rdom` stays" is dropped; the
+   family is main's plan row [SHADOW-TABLE] (§9 item 6).
 
 ## 8. The three standing questions (`docs/design/CLAUDE.md`)
 
@@ -729,7 +849,11 @@ included. Each §6 candidate that is built adds its card in the same change.
    zero-mover gate is pcrec's artifact diff (never the kit's `moved`); D3's census is checked
    against G2's own counts (its generated sets and C2's reading of the rendered text, never the
    `run_part_terms` record it parses) before the landing, and against pcrec's artifact count of
-   stage-3 run parts from the joint landing (F19, `[r2pd P15]`). Each plant in §5.1 names the check that reds, and each existing row is
+   stage-3 run parts from the joint landing (F19, `[r2pd P15]`); the record is checked on BOTH its
+   feeds, G2's capture and the production collector `collect.py` (`[r3pd RDY-1]`), against pcrec's
+   stamped `_REQ_RUN` and `emit_sweep`'s `DIFFER_PINS` (`[r3pd RDY-5]`). The pick shadow's
+   retired records (`leads`/`rlead`, `dominated`/`rdom` on non-cube runs) are replaced by named
+   successor controls (§9 item 6, `[r3pd FIX-1]`). Each plant in §5.1 names the check that reds, and each existing row is
    REACH-rerun.
 3. **What moves when data is regenerated: RELEVANT.** The byte-rate payload decides the scan
    (findable positions only), P3's window and the twin, so a rate regeneration can move a pick on a
@@ -737,12 +861,16 @@ included. Each §6 candidate that is built adds its card in the same change.
    `verify_cmp` card's regeneration moves no byte (no pricing reads it yet); neither does the new
    `every-pos` card's first measurement (`[r2pd P9]`).
 
-## 9. For main: the pcrec-side facts stage 3 must state or read
+## 9. For main: the pcrec-side facts stage 3 must state or read (COMPLETE AND FINAL, rev 4)
 
-Facts only (D157); the how is stage 3's. Each is a reader of the reply or a statement pcrec makes.
+Re-stated whole in rev 4 `[r3pd FIX-1]` so main's stage-3 brief can quote it; items 1-9 are the
+complete list (nothing elsewhere in this note adds a pcrec-side obligation). Facts only (D157); the
+how is stage 3's. Each is a statement pcrec makes, a reader of the reply, or a pcrec-side check or
+pin the joint landing moves.
+
 **One pcrec predicate** `[r2pd P23]`: "the pre-check TESTS the run" (`run >= 0 &&
 cls->pres[run].verify`, the kit's `trun`) is written ONCE on pcrec's side and read by every reader
-below that today reads "a run is stated" (`run >= 0`) or "a run shipped" (`whole_len >= 2`); one
+below that today reads "a run is stated" (`run >= 0`) or "a run shipped" (`whole_len >= 2`). One
 plant (the predicate answering "stated") reds F1's, F2's and P1's witnesses together.
 
 1. **R by role, in a window site's alternative** `[r1pd F11]` `[r2pd P14]`. pcrec states R as a
@@ -750,52 +878,79 @@ plant (the predicate answering "stated") reds F1's, F2's and P1's witnesses toge
    subset-of-set test, `pcrec_memfn_wpos_bits`), and NEVER stops R at a non-shape position; it reads
    `pinned`/`run_stated` as today. The run PRESENCE span (`req_pres_spans`) is a multi-position
    verify-NO span too and is NOT R (a presence site, never merged); the [RUN-POS-SET] note is
-   re-scoped the same way (main, 2026-11-12). The stage-3 brief says "R by role, not shape, in a
-   window site's alternative". Witness: `xy/users\d+` keeps `run-pinned`, offsets `0*,1,..,7`, and
-   `_REQ_RUN`'s `@` (today `_REQ_RUN "78792f7573657273@0"`, MEASURED this rev).
+   re-scoped the same way. The brief says "R by role, not shape, in a window site's alternative".
+   Witness: `xy/users\d+` keeps `run-pinned`, offsets `0*,1,..,7`, and `_REQ_RUN`'s `@` (today
+   `_REQ_RUN "78792f7573657273@0"`, MEASURED rev 3).
+
 2. **The decline** `[r1pd F1, F2, F3]`. `pres[run].verify` 0, `proven_by` 0, `pres_row[run]` = the
-   decline row; `cls.run` unread. Every pcrec reader of "a run shipped" reads the one predicate
-   above, never `whole_len`: `PF_REQ_LANDMARK_MAXOFF` (facts.c; computed before the kit replies, so
-   stage 3 moves or re-reads it), `req_handoff_k`, `req_handoff_entry_applies`,
-   `req_handoff_applies`, `req_landmark_hit_ppm`, and `req_site_define`'s head-vs-`req_byte` check
-   (today skipped whenever `run >= 0`). **And `req_site_define`'s head-part `gate_need`**
-   `[r2pd P1]`: today `if (run >= 0) gate_need = s->pspans[head].need;` (OPTIONAL on every
-   non-VM-attempt route); on a decline the kit's `pres_layout_check` expects the head part's need by
-   `trun` and `part_is_byte` compares `need` exactly, so keyed on a STATED run every declined run
-   with a verified member fails `mf_define`. Both it and the head check read the TESTED run (main has
-   put this in the stage-3 brief). These rows join the readiness memo §2.1 table. Witnesses F1, F2
-   (§2.4).
+   decline row (resolved by id through `mf_finder_rows`, never by index); `cls.run` unread. Every
+   pcrec reader of "a run shipped" reads the one predicate above, never `whole_len`:
+   `PF_REQ_LANDMARK_MAXOFF` (facts.c; computed before the kit replies, so stage 3 moves or re-reads
+   it), `req_handoff_k`, `req_handoff_entry_applies`, `req_handoff_applies`,
+   `req_landmark_hit_ppm`, and `req_site_define`'s head-vs-`req_byte` check (today skipped whenever
+   `run >= 0`). **`req_site_define`'s head-part `gate_need`** `[r2pd P1]`: today
+   `if (run >= 0) gate_need = s->pspans[head].need;`; the kit's `pres_layout_check` expects the head
+   part's need by `trun` and `part_is_byte` compares `need` exactly, so it reads the TESTED run. On
+   a decline the landmark is the head member (P3's set pick), never the run. These rows join the
+   readiness memo §2.1 table. Witnesses F1, F2 (§2.4).
+
 3. **Nothing to render.** A declined run with no verified member: pcrec's admission declines the
    pre-check (today `req_site_define`'s "verify nothing" internal error) and names its `_REQ_WHY`
-   value (§6.3.7¶8, `tuning.md` §2.29).
+   value (`match_api.md` §6.3.7¶8, `tuning.md` §2.29).
+
 4. **The scan-less REQUIRED run** `[r1pd F4]`. `pres[run].verify` 1, `has_scan` 0, extent the whole
-   run: the run part ships (landmark and K are the run's), `_REQ_RUN` carries no `@`
-   (§6.3.7¶7 row 1 needs a scan). Witnesses F4 and P2/P9.
-   **Two emitted comments read the wrong field** `[r2pd P17]` (emitted text, so abi-carried, stage
-   3's event): `req_note_run` prints "the scan is on byte ... at offset 0" from `rr->scan` without
-   reading `has_scan` (a scan-less run has no scan: it says every candidate is verified), and
-   `emit_req_handoff_rest` names the whole run as the landmark on a decline (it names the head
-   member there, by the predicate above).
-5. **`mf_pres_picks` on a run with no scan** `[r1pd F5]` `[r2pd P3, P4, P8]`: `set_leads` -1;
-   `dominated` treats the no-scan run as absent (the set's pick leads, `proof->run` NOT required:
+   run: the run part ships (landmark and K are the run's), `_REQ_RUN` carries no `@` (§6.3.7¶7 row 1
+   needs a scan). Witnesses F4 and P2/P9 (§2.4). **Two emitted comments read the wrong field**
+   `[r2pd P17]` (emitted text, so abi-carried, stage 3's event): `req_note_run` prints "the scan is
+   on byte ... at offset 0" from `rr->scan` without reading `has_scan` (scan-less: it says every
+   candidate is verified), and `emit_req_handoff_rest` names the whole run as the landmark on a
+   decline (it names the head member there, by the predicate above).
+
+5. **`mf_pres_picks` on a run with no scan** `[r1pd F5]` `[r2pd P3, P4]`. `set_leads` -1;
+   `dominated` treats the no-scan run as absent (the set's pick leads, `proof->run` NOT required,
    §2.4 item 2), so a dominated no-scan site has every span `proven_by` and pcrec's dominated
-   admission holds as today (`x.(?:cat|dog)` keeps `dominated`).
+   admission holds as today (`x.(?:cat|dog)` keeps `_REQ_WHY "dominated"`, witness F3).
    **The lead reader** `[r2pd P4]`: `req_pres_head(lead=true)` returns the verified order-0 member
    whenever `run >= 0`, and `req_set_leads_applies` never reads `set_leads`; on a decline that makes
-   `set-leads` admit (its text "the set pick's memchr first, then the run search" false, the
-   CT_HIT census attributing the site to it). The lead reader reads the TESTED run (the predicate
-   above): a declined run has no run search to lead.
-   **The pick shadow's `leads`/`rlead` RETIRE** `[r2pd P8]` (ruled jointly, kit + main,
-   2026-11-12): on runs with ANY non-cube position, `leads` and `rlead` are no longer independent
-   expectations (`req_set_leads_own` ranks every position by pcrec's own scan index, which cannot
-   follow the kit's private "findable" rule without sharing the reply's source, K35, or
-   re-implementing it, D157), as K38-2 retired `scan`/`rwin`. The edit is pcrec-side, in S2's
-   landing (the shadow skips the two records there, and `run_pres_picks.sh`'s `PICKS` comment names
-   the retirement). Successor controls: C2 (the rendered text classifier) and G2's decline equality
-   (§5.1 D1). `rdom` stays: dominance is pcrec's own fact either way.
-6. **Version events** at landing: `MF_SITE_ABI` (R by role) and `MF_CLASS_V` (the row index shift,
-   the decline's place, the scan-less state), the next numbers, readers by grep; pcrec's abi event is
-   stage 3's own.
-7. **Spec hunks** `[r1pd F25]` `[r2pd P16]`: §4's list (`match_api.md` §6.3.7¶7 rows 1 and 3,
-   §6.3.7¶8, §6.3.7¶11, `tuning.md` §2.28¶1, §2.29 (¶4 among it), §2.30, §2.41¶1 and ¶7a, the
-   `--list-axes` floor), in the readiness memo §2.3's list.
+   `set-leads` admit (its text "the set pick's memchr first, then the run search" false). The lead
+   reader reads the TESTED run (the predicate above): a declined run has no run search to lead.
+
+6. **The pick shadow's retirements on runs with ANY non-cube position** `[r2pd P8]` `[r3pd FIX-1]`
+   (both ruled jointly, kit + main, 2026-11-12; pcrec-side, in S2's landing). The KW-8 shadow
+   (`tests/memfn/run_pres_picks.sh`'s `PICKS`, `tests/codegen/run_cand_oracle.sh`) skips FOUR
+   records on such runs, as K38-2 retired `scan`/`rwin`:
+   - `leads`/`rlead`: `req_set_leads_own` ranks every position by pcrec's own scan index, which
+     cannot follow the kit's private "findable" rule;
+   - `dominated`/`rdom`: pcrec's `req_byte_dominated_by` (emit_dfa.c) requires `run_verified` on a
+     stated run, which is 0 on every route of a run the kit cannot scan, while P3 makes the kit's
+     `dominated` 1 there (`x.(?:cat|dog)`: pcrec `pd` 0, kit `dominated` 1). "`rdom` stays" (rev 3)
+     is DROPPED: dominance on a no-scan run is the kit's run-less reading, not pcrec's own fact.
+   Following the kit in either pair would need its findability (D157) or the reply itself (K35).
+   `PICKS`' comment names the retirement. **Successor controls**: C2 (the rendered-text classifier,
+   §5.2); G2's decline equality (D1, per site against G2's own "no findable position"); P3's floor on
+   pcrec's REAL proof (G2 states `pres_proof.run` 0 on its no-findable sites, `[r3pd FIX-4]`, plant
+   p13); and pcrec's artifact witness F3 (`_REQ_WHY "dominated"` kept). The family (scan/rwin,
+   leads/rlead, dominated/rdom) is main's plan row [SHADOW-TABLE]: one declared table of the shadow's
+   expectations, each live, retired or replaced by a named successor; S2's landing may write these
+   two retirements as its first rows if [SHADOW-TABLE] builds first.
+
+7. **Version events** at landing: `MF_SITE_ABI` (R by role) and `MF_CLASS_V` (the row index shift,
+   the decline's place, the scan-less state), the next numbers, readers by grep; pcrec's abi event
+   is stage 3's own, and every kit byte move rides it (memfn/CLAUDE.md, Q36).
+
+8. **Spec hunks** `[r1pd F25]` `[r2pd P16]` (D80, in the landing commit): `match_api.md` §6.3.7¶7
+   rows 1 and 3, §6.3.7¶8, §6.3.7¶11; `tuning.md` §2.28¶1, §2.29 (¶4 among it), §2.30, §2.41¶1 and
+   ¶7a; the `--list-axes` memfn-section floor literal (+1 for the deny row). The list is §4's, in the
+   readiness memo §2.3's list.
+
+9. **Pins and floors the joint landing raises on pcrec's side** `[r2pd P13c]` `[r3pd RDY-1, RDY-5]`:
+   - `emit_sweep`'s deny arm `--memfn=no-run-verify-wide`: its `ASSERT_ZERO` cells (kit branch)
+     become `DIFFER_PINS` entries with a floor and a stage-3 manifest (else "NO DIFFER FLOOR
+     PINNED" for an arm that cannot fail);
+   - D3's pcrec-artifact floor: census over `collect.py --sources corpus` (patterns with an
+     unspelled SET term in a `run_part_terms` record) >= that `DIFFER_PINS` cell's movers, at the
+     same base and stream, a literal raised from 0 in the landing commit (§5.1 D3);
+   - D3's production-path check stays armed: every artifact stamping a run (`_REQ_RUN` not `none`)
+     carries one `run_part_terms` record in the re-collected sweep;
+   - the D27 author's decline and R-by-role witnesses land with the merge (§5.1.1, "The D27
+     author"), each recording its `_REQ_WHY`/`_REQ_HANDOFF`.
