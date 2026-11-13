@@ -18,9 +18,9 @@ utf8}: 28 compiles, 0 differ. Local, on the final tree: `make strict` GREEN,
 new 5.12l pins), `tests/startset/run_vmhat_checks.sh` GREEN (22/22),
 `tests/rxtsource/run_rxtsource_tests.sh` GREEN (300/0 after the re-pin),
 `tests/memfn/run_handoff_reach.sh` GREEN (19/0 with the hybrid decline pin),
-`REACH_ONLY=1` on S3074-S3077 all REACHED, S3074 DETECTED by a real plant
-(prechecks: 3 fail / 397 pass). The other three rows' plants are in the
-matrix log named under OWED.
+`tests/mech/run_sabotage_matrix.sh S3074 S3075 S3076 S3077` at f9e264c2e:
+all four REACHED and DETECTED (4 rows, 0 undetected, 0 unreached, 0 anomalies;
+log `/var/tmp/pcrec-pcrec/scratch/rpfix/matrix.log`).
 
 ## CHANGES
 
@@ -83,8 +83,6 @@ memfn presence.c's `k*h`; "unbounded" should be a fact the seam can state.
 - Cloud: `scripts/cloudrun --kind test --name rpfix --ref lane/rpfix` and
   `--kind mechrows --name rpfix-rows --rows S3074,S3075,S3076,S3077` (the
   lane's last act; their verdicts reach main as CLOUD-DONE).
-- Local matrix plants for S3075, S3076, S3077 (S3074 detected): the log is
-  `/var/tmp/pcrec-pcrec/scratch/rpfix/matrix.log`, final line `matrix rc=`.
 - Queued box jobs (not waited on): the identity gate
   (`make test-recursion-identity`, the new FILEPIN/ABASEPIN), `test-cand-oracle`
   (the CHK-6 witness), `test-codegen`, `test-startset`; keys in the handback.
