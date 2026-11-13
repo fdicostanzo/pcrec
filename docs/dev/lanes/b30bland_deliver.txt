@@ -1,0 +1,5 @@
+report=docs/dev/lanes/b30bland_report.md
+sections: Summary; Merge and conflicts; CLAUDE.md trim; Shard table; Checks
+nonempty: all
+commit: yes
+owed: none
