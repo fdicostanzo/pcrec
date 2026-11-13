@@ -15,7 +15,7 @@ a6054c124 (main f066e84ee plus the design branch, docs only). Design of record: 
   tableless SET term, tested by `kit_set_test`. ofsskip admits both only through a scoped admission.
 - **Window sites now identify R by role** (verify NO, two or more positions). The deny is `run-verify-wide`.
 - **R-41 is built**: `MF_HEAD_UNBOUNDED` (2^40) declines the landmark on every ASSIGN site.
-- **One MF_SITE_ABI event (27 to 28) and one MF_CLASS_V event (9 to 10).** No pcrec emitter was edited. Expected
+- **One MF_SITE_ABI event (to 29: 3.0b took 28 on main; the bump re-done by grep on the kit manager's word) and one MF_CLASS_V event (9 to 10).** No pcrec emitter was edited. Expected
   pcrec byte movers: zero (the box gate proves it, below).
 - **G2's presence family gains a WIDE stream on its own rng.** Today's site file stays byte-identical: seven
   sha-256 literals, reproduced.
@@ -52,19 +52,21 @@ decline dropped) is detected by `: R-41: `.
 
 ## MF_SITE_ABI and MF_CLASS_V
 
-MF_SITE_ABI 27 to 28 (R by role on window spans; `MF_HEAD_UNBOUNDED`). MF_CLASS_V 9 to 10 (`mf_class.run` with `has_scan` 0
+MF_SITE_ABI to 29 (28 is 3.0b's on main, not in this branch's base; R by role on window spans; `MF_HEAD_UNBOUNDED`). MF_CLASS_V 9 to 10 (`mf_class.run` with `has_scan` 0
 and `ver_len` > 0: the scan-less whole-run reply). I grepped every reader of both numbers across memfn/, tests/, scripts/,
 docs/spec/, src/, cli/ and requests.md (`MF_SITE_ABI ... 27|28`, `MF_CLASS_V ... 9|10`, `.abi = 27`, `== 27`). Every hit
 is a historical citation ("since MF_SITE_ABI 27"); none pins the value. All tests read the symbol. The pcrec abi number
-is unchanged: no emitted byte moves (the gate proves it).
+is unchanged: no emitted byte moves (the gate proves it). The re-bump to 29 (at the kit manager's word: 3.0b took 28 on main) was re-checked after the fact: make
+strict, test-memfn-finder and test-codegen are green, and today's G2 site file still hashes 7e3cfc6c... (the site
+files name the ABI by symbol). The g2 quick tier and the presence family ran at 28.
 
 D27 contract excerpt (memfn.h, for a spec-first author):
 
 ```
 #define MF_HEAD_UNBOUNDED ((int64_t)1 << 40)   /* mf_site.head_max's stated "unbounded" K (R-41,
-   MF_SITE_ABI 28): equal to pcrec's PCREC_W_UNBOUNDED, 2^40, a width no subject reaches; stated by NAME */
+   MF_SITE_ABI 29): equal to pcrec's PCREC_W_UNBOUNDED, 2^40, a width no subject reaches; stated by NAME */
 mf_wspan.verify: In a window site's alternative a verify-NO span of two or more positions IS the run R
-   (any sets; at most one per alternative, MF_SITE_ABI 28); a presence site's run span is not R.
+   (any sets; at most one per alternative, MF_SITE_ABI 29); a presence site's run span is not R.
 mf_class.run.has_scan: 0: no single find position (since MF_CLASS_V 10, with ver_len > 0: every
    candidate position is tested, no find; P0's REQUIRED run with no position the kit finds, whose
    extent is the whole run)
@@ -139,7 +141,7 @@ Re-anchored, same plants:
 | make test-codegen | green |
 | test-memfn-finder | green: finder_check, proven, mass, rundec, census, purity, reach all 0 failed |
 | test-memfn-rows / link / targets / arch / forms | green (arch 17/0) |
-| test-memfn-g2 (quick tier: run_g2.sh, window, presence) | G2LINE |
+| test-memfn-g2 (quick tier: run_g2.sh, window, presence) | 70,358,670 / 0 after the fix below (first run RED: fn-every-pos never chosen by a traced process; run_g2.sh now traces the presence generator in its rows unit, chosen 9) |
 | run_g2_pres.sh (wide stream, deny pass, hashes, floors) | 8,051,492 / 0 |
 | run_g2_win.sh | 11,250 / 0; plants S3116, S3117, S3118, S1409 RED |
 | registry (axes_registry_check.sh) | 248 / 0 (memfn section floor 12 to 13, `run-verify-wide` row in registry.md §6¶8a) |
@@ -165,7 +167,7 @@ deliver file's line predates that and conflicts with it.
 |---|---|
 | D0-D3 per the content/check/plant/sabotage columns | D0, D1, D2 yes; D3 NO (STATE: stopped) |
 | R-41 (define, decline incl. h == 0, G2 case, same ABI event) | yes |
-| MF_SITE_ABI 27 to 28, MF_CLASS_V 9 to 10; readers by grep | yes; no value-pinning reader |
+| MF_SITE_ABI to 29 (re-bumped), MF_CLASS_V 9 to 10; readers by grep | yes; no value-pinning reader |
 | zero emit_sweep movers; no pcrec emitter edits | no emitter edits; proof = the queued gate |
 | every-pos card UNMEASURED | yes, kit-grid@5 |
 | sabotage rows at S3106+, arch-free prose, `make test-memfn-arch` | S3106-S3119; arch 17/0 |

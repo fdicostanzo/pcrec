@@ -284,7 +284,7 @@ static int span_in_core(const mf_wspan *sp, unsigned j)
     return j >= sp->core_lo && j < (unsigned)sp->core_lo + sp->core_len;
 }
 
-/* 1 iff span `sp` IS THE RUN R, by its ROLE (MF_SITE_ABI 28; part_d.md
+/* 1 iff span `sp` IS THE RUN R, by its ROLE (MF_SITE_ABI 29; part_d.md
  * §2.2, the joint F11 ruling): a verify-NO span of two or more positions,
  * whatever its sets. pcrec decides how far R reaches; the kit never infers
  * R from shape. At most one per alternative (wf_check). F-8's "R is

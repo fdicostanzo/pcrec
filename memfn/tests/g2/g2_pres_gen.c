@@ -627,7 +627,7 @@ static void twin_check(gsite *g, const mf_art *art, const mf_site *s, int dec, i
     }
     g_wk3_sites++;
     if (pk.landmark < 0) { fail(g->id, "W-K3", "no landmark bit on an ASSIGN site"); return; }
-    /* R-41 (MF_SITE_ABI 28): a STATED unbounded K (MF_HEAD_UNBOUNDED)
+    /* R-41 (MF_SITE_ABI 29): a STATED unbounded K (MF_HEAD_UNBOUNDED)
        declines the landmark on every ASSIGN site, whatever the bit at K 0
        (an h == 0 member's admission included); r41_flip counts the sites
        whose K 0 bit was 1, the ones the decline moves */

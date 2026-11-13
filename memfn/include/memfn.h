@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 28  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 29  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -240,7 +240,8 @@
                            max(K, 0); mf_pres_picks' run pair and
                            MF_PRES_WINDOW leave the header; the lever
                            pres-window retires. pcrec bytes move (a pcrec
-                           abi event in the same commit). 28 (R-38 Part D
+                           abi event in the same commit). 28: plan_frame.md
+                           3.0b's (on main, lane b30b). 29 (R-38 Part D
                            + R-41, docs/design/memfn/part_d.md rev 4 §2.2,
                            §4; one meaning event, no layout move): R BY
                            ROLE, in a window site's alternative a
@@ -305,7 +306,7 @@
 #define MF_SPAN_UNBOUNDED UINT64_MAX  /* span_hi when nothing is proven        */
 #define MF_PPM_FULL       1000000u    /* density hint default: [0, 1e6]        */
 #define MF_NO_PRED        0xFFu       /* ret_pred / plan_hint: none            */
-/* mf_site.head_max's stated "unbounded" K (R-41, MF_SITE_ABI 28): equal to
+/* mf_site.head_max's stated "unbounded" K (R-41, MF_SITE_ABI 29): equal to
  * pcrec's PCREC_W_UNBOUNDED, 2^40, a width no subject reaches. A sentinel of
  * the seam, stated by NAME (never the number) wherever a host states it. */
 #define MF_HEAD_UNBOUNDED ((int64_t)1 << 40)
@@ -660,7 +661,7 @@ typedef struct {
                                            alternative a verify-NO span of
                                            two or more positions IS the run
                                            R (any sets; at most one per
-                                           alternative, MF_SITE_ABI 28); a
+                                           alternative, MF_SITE_ABI 29); a
                                            presence site's run span is not R */
     uint8_t  core;                      /* mf_core                            */
     uint8_t  core_lo, core_len;         /* the core: positions [core_lo,
@@ -914,7 +915,7 @@ typedef struct {
                   may be negative or 0, and a 0 on an ASSIGN site is a STATED
                   K of 0. Read only where the site ASSIGNs its landmark (0
                   elsewhere, refused otherwise). An ALL_PRESENT site only.
-                  MF_HEAD_UNBOUNDED (MF_SITE_ABI 28, R-41) is the stated
+                  MF_HEAD_UNBOUNDED (MF_SITE_ABI 29, R-41) is the stated
                   value "K unbounded" (a landmark at no bounded offset from
                   the attempt start): the twin's admission declines it
                   whatever the landmark's mass, 0 included.
@@ -1198,7 +1199,7 @@ extern const char mf_miss_n[];
                           (MF_SITE_ABI 27, R-38 K38-2): `run`, the run's
                           one decision (mf_run_reply), appended LAST;
                           mf_link.member unread on the run span. 10
-                          (MF_SITE_ABI 28, R-38 Part D; part_d.md §4): the
+                          (MF_SITE_ABI 29, R-38 Part D; part_d.md §4): the
                           decline row PD joins the PRES slot between P2
                           and P3, so pres_row/pres_led's indices move for
                           P3, P4 and P9; a stated run's link may be
@@ -1623,7 +1624,7 @@ int      mf_lever(mf_art *, const char *name);
  *               stretch the span whole); 0 where R has no one-member
  *               position. Then run_member is the MEMBER and [run_lo,
  *               run_lo + run_len) its stretch. The reply is the ONE owner
- *               of both (MF_SITE_ABI 28: R by role, part_d.md §2.2)
+ *               of both (MF_SITE_ABI 29: R by role, part_d.md §2.2)
  *   path        the decision's path id: "parked", "reseed", "mass", "floor",
  *               "empty", each with "+pin" where C-pin fired
  * MF_WPLAN_MAX is a SHAPE BOUND, DERIVED: every offset a span may state. */
