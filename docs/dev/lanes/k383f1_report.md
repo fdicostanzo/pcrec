@@ -33,3 +33,6 @@ OWED: none
 - [x] `[k383 F1]` note in span_runs_sheet.md K38-3 row and slot/CLAUDE.md
 - [x] plan report, est selftest, check C, S3105 shown
 - [x] no suites, no monread, job 590 untouched, nothing merged or pushed
+
+## STATE AT HANDOFF
+All committed on lane/memfn-k383; nothing owed. J5B waits for its card to be scheduled for measurement (artifact form and F2 designed then).
