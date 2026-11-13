@@ -261,7 +261,6 @@ static RbSet rb_intersect(RbSet l, RbSet r)
 typedef struct {
     Ctx *cx;
     int pos_set;     /* the domain: a position's largest member count */
-    bool pos_cube;   /* ... and whether it must be one cube */
     bool alt_union;  /* `rr_alt_rows`' equal-width row is on */
     unsigned restored;
     const uint32_t *rate;   /* the byte-rate, for the run choice's tie row */
@@ -292,14 +291,12 @@ bool pcrec_req_cube(const unsigned char *p, int *t, int *k)
     return rn_count(p) == 1 << (8 - __builtin_popcount((unsigned)*k));
 }
 
-/* Is the position set `p` inside the walk's DOMAIN: at most `pos_set`
- * members, and, where the domain asks it, exactly the members of its
- * covering cube? */
+/* Is the position set `p` inside the walk's DOMAIN: at least one and at
+ * most `pos_set` members? */
 static bool rn_admits(const RbWalk *w, const unsigned char *p)
 {
-    int c = rn_count(p), t, k;
-    if (c < 1 || c > w->pos_set) return false;
-    return !w->pos_cube || pcrec_req_cube(p, &t, &k);
+    int c = rn_count(p);
+    return c >= 1 && c <= w->pos_set;
 }
 
 /* A position's information, 8 - ceil(log2 |p|) (0 for the empty set). */
@@ -1217,7 +1214,6 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
     RbWalk *w = pcrec_arena_alloc(&cx->arena, sizeof *w);
     w->cx = cx;
     w->pos_set = p->pos_set;
-    w->pos_cube = p->pos_cube;
     w->alt_union = p->alt_union;
     w->restored = p->restored;
     w->rate = p->rate;

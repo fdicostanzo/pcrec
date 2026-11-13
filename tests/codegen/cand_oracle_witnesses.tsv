@@ -40,6 +40,9 @@ dominated	--memfn=no-window-search	foo\b
 set-leads	-	(?:é|ü){2,5}((?i:cat))
 emitted	-fno-req-set-lead	(?:é|ü){2,5}((?i:cat))
 emitted	-	a(b|c)+d
+# [RUN-POS-SET] stage 3 + memfn Part D (S2 joint landing, lane s2land): the kit
+# DECLINES {c,d}{a,o}{t,g} (no position findable), so the stated run is untested
+untestable	-	cat|dog
 ceiling	-	^((?1)a)$
 # [FIND-MINW] (lane minw): every match of a(b|c)+d is at least 3 bytes, so it is
 # `min-width` since abi 103; a(b|c)* (width 1) and the inverse lever keep `width-none`

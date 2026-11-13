@@ -221,27 +221,13 @@ static unsigned char pf_walk_arms_of(unsigned restored, PfFactId f)
  * §6.4 rule 1): the run choice breaks its equal-information ties by it
  * (req.c `rn_choice_rows`), which makes `req_whole_run` a DERIVED fact
  * whose `why` names the rate rule. */
-/* [RUN-POS-SET] stage 3 THE DOMAIN'S CUBE CLAUSE: true while every run
- * position must also be one cube. Today's kit renders a run position only as
- * one byte or a cube (memfn Part D lifts that, docs/design/memfn/part_d.md
- * §2.1); the clause leaves with the landing that brings Part D. */
-#define PF_WALK_POS_CUBE true
-/* The landing's DOMAIN, ahead of it: what the test build's lever
- * `run-pos-sets` walks in (a position any set that still carries
- * information, `pcrec_req_info` > 0, so at most 128 members; no cube
- * clause). The landing writes this value into `PCREC_MAX_REQ_RUN_POS_SET`,
- * sets the clause false, and deletes this constant with the lever. */
-#define PF_WALK_POS_SET_AHEAD 128
-
 static void pf_derive_req_walk(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
     const PcrecHarnessOptions *h = cx->emit_in ? cx->emit_in->harness : NULL;
-    const bool ahead = h && h->run_pos_sets;
     const ReqWalkParams p = {
         .pos_set    = pcrec_opt_has(cx->opt, PCREC_NO_REQ_RUN_FOLD) ? 1
-                    : ahead ? PF_WALK_POS_SET_AHEAD : PCREC_MAX_REQ_RUN_POS_SET,
-        .pos_cube   = PF_WALK_POS_CUBE && !ahead,
+                    : PCREC_MAX_REQ_RUN_POS_SET,
         .alt_union  = h && h->alt_union_run,
         .max_pieces = PCREC_MAX_REQ_PIECES,
         .restored   = h ? h->walk_arms

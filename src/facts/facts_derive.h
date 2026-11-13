@@ -126,11 +126,8 @@ static inline bool rb_has(const RbSet *s, int b)
 typedef struct {
     /* the run's position DOMAIN ([RUN-POS-SET] stage 3): the largest member
      * set one run position may have (`PCREC_MAX_REQ_RUN_POS_SET`, or 1 under
-     * `-fno-req-run-fold`), and whether a position must also be one CUBE
-     * (src/facts/facts.c `PF_WALK_POS_CUBE` says when; the harness lever
-     * `run-pos-sets` walks in the landing's domain instead) */
+     * `-fno-req-run-fold`) */
     int pos_set;
-    bool pos_cube;
     /* the alternation's equal-width row (alt_normal_form.md §6 row 1,
      * req.c `rr_alt_rows`): false but under the harness lever
      * `alt-union-run` until the landing */
