@@ -271,7 +271,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 - [REQ-PAST-LAST] STATE:started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
   filed: 2026-10-29 manager (kit observation at Frank's request, memfn/docs/responses.md on lane/memfn-r30)
   status (2026-11-13): BUILT on lane/reqpast (abi 105), review r2-reqpast FIX-NOW applied by lane rpfix, PORTED onto main's K38-2 (abi 104 -> 105) by lane rpport; row handoff-attempts-unbounded stops the VM attempt loop past the run's last occurrence; cloud test + axes + mechrows OWED on lane/rpport, awaits landing.
-  waits: landing (the manager's merge of lane/rpport); the queued dense-hit remedy rewrites the same stop
+  waits: (LANDED 2026-11-13 f6365477c, abi 105) the queued dense-hit remedy (rewrites the same stop) and a re-measure of tuning.md §2.41¶8c's timings, which predate K38-2
   trigger: (D77) a bench or corpus cell where attempts after the last required-run occurrence are a measurable share (no-match tails on long subjects, RX_REQ_HANDOFF "none")
   refs: [LANDWALK]; [REQ-HANDOFF]; memfn/docs/responses.md (R-30 note); decisions D157
   Today, for a required run at an UNBOUNDED distance, the found position is only a yes/no gate. Every match contains the run at or after its start, so no attempt that starts after the run's LAST occurrence can match: one lazy re-find (or one reverse find) as attempts pass the last known occurrence lets the loop stop at the first position past it. pcrec states the fact (required run, unbounded); the method is pcrec-only in this build (the kit is not asked for it, D157 stays the rule for any later kit method).
