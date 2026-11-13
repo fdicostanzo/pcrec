@@ -1,0 +1,5 @@
+report=docs/dev/lanes/d27fix_report.md
+sections: Summary; Findings and fixes; Spec text; The adopted family; Part D overlap; Identity and movers; Checks; Owed runs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: any
