@@ -103,11 +103,11 @@ and a verify read leaves the block); still layout A's ASan detector.
   53790 records; skipped arms 0.
 - `run_g2_pres.sh --reach`: new tokens REACH-G2P-W16-ARM n=22, REACH-G2P-W32-ARM n=22, REACH-G2P-LEVELS n=2.
 - `make strict`: clean. `make test-memfn-targets`: 42 passed, 0 failed.
-- `make test-memfn-g2` (the quick tier, incl. 4p and 4w): see Owed runs if not in by handoff.
+- `make test-memfn-g2` (the quick tier, incl. 4p and 4w): rc 0, checks passed 70358669, failed 0 (10 m 51 s).
 - `scripts/m6read_check_sab_anchors.py`: 1251 sabotages, all anchors resolve. `VALIDATE_ONLY=1
   tests/mech/run_sabotage_matrix.sh S3098..S3104`: 7 definitions valid. `tests/ci/cloud_mech_check.sh`: PASS, 90
   shards hold the 1251 ids exactly once.
-- `CLAUDEMD_ROOT=worktree scripts/check_claudemd_size.sh --all`: see final commit.
+- `CLAUDEMD_ROOT=worktree scripts/check_claudemd_size.sh --all`: 368 CLAUDE.md files within limits.
 
 ## Owed runs
 
