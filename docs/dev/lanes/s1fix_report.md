@@ -26,3 +26,6 @@ See STATE AT HANDOFF: emit_sweep 0-mover proof, test-codegen, cloud test + mechr
 
 ## Follow-up (s1fix2)
 Cloud test run 43331915793 went red on test-codegen's K37 lint: run_prechecks.sh `HBIN=` line named `"$PCREC"` with no bound token. Fixed: HBIN derives from `$ROOT_DIR/build/pcrec-harness`; the grep of the K37 site regex over the file finds no unguarded line; prechecks 399/0. REACH_ONLY matrix S3070-S3073 later finished: 4 of 4 REACHED. Re-dispatched cloud test as s1fix2.
+
+## Follow-up (s1fix3)
+emit_sweep (sweep.log) showed 365 `facts`-stream movers: `--emit-facts` row `width` on attempt-route patterns (`\A`) flipped `asked` yes -> no. Cause: CHECKS-4 (removing the dead ATTEMPT branch also removed its `cand_front_min_width` call, which is what ASKS the fact). The listing is caller-visible, so CHECKS-4 is REVERTED (the ask and the dead branch are back, with a comment saying why); CHECKS-4 is therefore left out and listed here; the plan trigger stands. After the revert `--emit-facts=byte --pattern '\A'` reads `width ... yes` again. No spec change (listing unchanged). Re-run sweep: `scratch/s1fix/sweep2.log` (box-lock waiter), OWED, expect 0 movers in every stream. Cloud test s1fix3 dispatched.
