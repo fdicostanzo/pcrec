@@ -687,7 +687,7 @@ static const char *const st_names[4] = { "none", "restart", "mask", "shift" };
 static const char *const se_names[6] = { "", "LIBC", "LIBC_BACK", "WALK", "PAIR", "HORS" };
 static long fcell[4][4];
 static long fc_fn, fc_pair, fc_hors, fc_libc, fc_walk, fc_method;
-static long tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below, tn_stop_own, af_walk, af_other;
+static long tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below, tn_stop_own, tn_stop_run, af_walk, af_other;
 static mf_finder_listing g_rows;
 
 /* The ref G2 offered at offset `off` of alternative `alt` that the text may
@@ -791,6 +791,15 @@ static void frame_classes(int id, const g2w_site *x, const g2w_dec *d, const mf_
         int rd = marker_read(id, ref, t, ft), alone = 1;
         for (int k = 0; k < w->nplan; k++)
             if (k != i && w->plan_term[k] == w->plan_term[i]) alone = 0;
+        /* a plan position that IS the stop, inside a run compare: B-walk's
+           find reads the stop's marker (stop_test, checked below), the
+           compare reads none, so that read is not the position's (d27fix
+           F4: plan_tests answers the stop by C-table alone; counted) */
+        if (rd && !alone && composed && w->plan_test[i] == MF_WTEST_OWN && w->has_stop &&
+            w->plan[i] == w->stop && w->search == MF_WSEARCH_WALK && w->stop_test == MF_WTEST_TABLE) {
+            rd = 0;
+            tn_stop_run++;
+        }
         if (!composed) {
             if (w->plan_test[i]) { fail(id, "table_name", "plan_test stated on a fused row"); break; }
             continue;
@@ -1477,9 +1486,9 @@ int main(int argc, char **argv)
         for (int j = 0; j < 4; j++) printf(" %s/%s %ld", fr_names[i], st_names[j], fcell[i][j]);
     printf("\n");
     printf("g2_win_gen: classes fn %ld pair %ld hors %ld libc %ld walk %ld method %ld; table_name "
-           "table %ld own %ld noffer %ld meet %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld\n", fc_fn,
+           "table %ld own %ld noffer %ld meet %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld stop_run %ld\n", fc_fn,
            fc_pair, fc_hors, fc_libc, fc_walk, fc_method, tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below,
-           tn_stop_own, af_walk, af_other);
+           tn_stop_own, af_walk, af_other, tn_stop_run);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }
