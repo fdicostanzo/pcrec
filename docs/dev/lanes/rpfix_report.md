@@ -85,5 +85,7 @@ memfn presence.c's `k*h`; "unbounded" should be a fact the seam can state.
   lane's last act; their verdicts reach main as CLOUD-DONE).
 - Queued box jobs (not waited on): the identity gate
   (`make test-recursion-identity`, the new FILEPIN/ABASEPIN), `test-cand-oracle`
-  (the CHK-6 witness), `test-codegen`, `test-startset`; keys in the handback.
+  (the CHK-6 witness), `test-codegen`, `test-startset`; batch b20261112193516722240, keys
+  200-main-b20261112193516722240.recid, .candoracle (201), .codegen (202), .startset (203);
+  the queue holds new starts until 01:00 (evening hold). Each waits for the one before it to go green.
 - Not run: the full suite and axes (cloud and the manager's, per RUNS.md).
