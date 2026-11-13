@@ -5,7 +5,9 @@ make, no suites, no queue jobs. The changed text is marked `[s1d]` in `docs/desi
 (§5 3.0b, plus one-line pointers in the header, §2.1, §3 and §4.2) and in
 `docs/design/memfn/span_runs_sheet.md` (the K38-3 row and the §5 Order paragraph only).
 
-STATE: DONE
+## STATE AT HANDOFF
+
+STATE: DONE. Branch lane/memfn-s1design, three commits on 35bee4da9 (plan_frame, span_runs_sheet, this report). No rulings file named.
 
 OWED: none.
 
