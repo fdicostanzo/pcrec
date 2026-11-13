@@ -10205,8 +10205,9 @@ filter understanding makes intuitive sense"):
    the leftmost start, then the left operand's first-preferred end the right operand accepts exactly. Order of
    operands is meaningful and documented; the span SET is commutative.
 2. **Precedence: intersection binds tighter than alternation**: `C|A&B` is `C|(A&B)` (and `A&B|C` is
-   `(A&B)|C`). Proposed, NOT yet ruled: concatenation binds tighter than intersection (`ab&cd` is `(ab)&(cd)`),
-   as in other Boolean-regex designs; the manager raises it with the syntax.
+   `(A&B)|C`). Concatenation binds tighter than intersection (`ab&cd` is `(ab)&(cd)`), as in other
+   Boolean-regex designs (Frank, same day: "I agree about position relative to concatenation"). Order,
+   tightest first: concatenation, intersection, alternation.
 3. The `&` spelling is a placeholder (D193 add. 4: owner examples are not syntax); the semantics above are
    what is ruled. The remaining F7 recommendations (in-context lookaround, \K refused, verbs, cross-operand
    backrefs, recursion) go to the [COND-FAMILY] spec section for review.
