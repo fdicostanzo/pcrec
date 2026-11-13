@@ -1638,6 +1638,13 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     /* [MEMFN] R17-b' B3a K as `head_max` where the site hands its landmark
        on (PR-6); since R-38 K38-2 signed, the landmark's position-0 offset */
     s->head_max = handoff ? (int64_t)req_handoff_k(cx) : 0;
+#ifdef MF_HEAD_MAX_UNBOUNDED
+    /* R-41 (TH-5, S2): an unbounded K ([REQ-PAST-LAST]) is stated by the
+       kit's declared "unbounded" name, never the interim PCREC_W_UNBOUNDED
+       number. Guarded so this branch builds against the kit before Part D;
+       the landing confirms the name the kit declared (lane rps3 report). */
+    if (handoff && req_handoff_k(cx) >= PCREC_W_UNBOUNDED) s->head_max = MF_HEAD_MAX_UNBOUNDED;
+#endif
 #ifdef PCREC_CAND_TRACE
     req_pick_shadow(cx, s);
 #endif
