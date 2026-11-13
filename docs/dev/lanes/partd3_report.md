@@ -19,3 +19,6 @@ All run in the background with logs under /var/tmp/pcrec-pcrec/scratch/memfn/par
 
 ## Owed runs
 OWED: kit-partd3-gate (queued, 597-kit-partd3-gate, script scratch/memfn/partd3/jobs/gate.sh) and partd2's mechrows list with the new ids: S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3115 S3119 S3125 S3126 S3127.
+
+## STATE AT HANDOFF
+Branch lane/memfn-partd, all renumbering committed. Job 597-kit-partd3-gate is queued (OWED: kit-partd3-gate); its verdict is read by a fresh agent from the queue result. Nothing else owed.
