@@ -31,7 +31,7 @@ travels as FILES, and a missing file gets one SendMessage asking for it.
 
 ## 2. Launch (manager)
 
-Launch one agent: `model: opus`, background, name `crit-<topic>`, prompt =
+Topic names are unique per DAY across main and the kit (prefix the kit's with `memfn-`; 2026-11-12 the kit's crit-s1 collided with main's). Launch one agent: `model: opus`, background, name `crit-<topic>`, prompt =
 "COORDINATOR critic round <topic> (<mode>). Read
 /home/pcrec/projects/pcrec/.claude/skills/pcrec-critic/SKILL.md sections 3-8
 and follow them as the coordinator." plus: mode, subject, topic, the scope
@@ -130,6 +130,8 @@ tests/, in a `scripts/mk_d27_cell.sh` cell) is not a critic: for a design with
 a contract, RECOMMEND one in the draft; the launcher decides.
 
 ## 5. Brief and launch the critics (coordinator)
+
+First check the round dir `$PCREC_TMPDIR/scratch/crit-<topic>/` is EMPTY or absent; if not, stop and ask the launcher for a new topic (2026-11-12 collision). In code mode, write ONE shared run kit into the round dir BEFORE briefing (a driver that builds/runs a pattern on BASE and SUBJECT side by side, and a libpcre2 oracle call) and name it in COMMON: every critic of round r2-reqpast finished in 3-10 min with no time spent building tools (2026-11-12). Under a box hold, check-adequacy plants become mutations of the EMITTED C, not rebuilds.
 
 When the subject's evidence includes a sweep with committed or scratch RAW data, copy it read-only into the round dir and name it in COMMON as the population (2026-11-02 spanpick: three lenses counted populations the report alone would not show). COMMON has critics read every ruling file (decisions.md, plan.md) via `git show <freeze>:path`, never the live tree (2026-11-03 r2: a ruling landed mid-round). For a rate-sensitive subject COMMON names each rate regime and how to reach it (default prior; `-e utf8` = NONE; `-I tests/findings/adversarial --analysis=uniform` = all-tie, run from the review tree; `-I DIR --analysis NAME` = a real bundle), and in code mode tells critics to compare BASE/SUBJECT emitted C under the SAME basename in two dirs (the C names its basename; r1 sp1b). Check every regime spelling with one compile before briefing (2026-11-05 r1 sp1d: the documented spelling was refused); a BASE/SUBJECT compare pair counts as 2 compiles in the budget. Write one COMMON brief file under `$PCREC_TMPDIR/scratch/crit-<topic>/` (scope
 mandate, read-only rules, subject and paths, the guide files, design docs and
