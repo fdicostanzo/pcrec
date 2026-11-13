@@ -15215,11 +15215,16 @@ static const char *attempt_entry(Ctx *cx, const char *fn, PcrecEntry ent)
     const char *first = "search_from";
     if (cand_finish_of(cx) != CAND_ROUTE_VM) {
         pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
-        /* [FIND-MINW] No check here: the `width` fact is sealed on the
-         * unanchored machine only, so this route knows no minimum width.
-         * Trigger to add one: a width fact sealed on the attempt machine
-         * (plan row [FIND-MINW]); it goes after the clamp, before the
-         * pre-check, as in `emit_unanchored`. */
+        /* [FIND-MINW] `emit_unanchored`'s order: after the clamp, before
+         * the pre-check. No width is known on this route today (the `width`
+         * fact is sealed on the unanchored machine only), so WIDTH reads
+         * `none` here and nothing is emitted. The ASK is kept although the
+         * branch is dead: it is what makes `--emit-facts` list `width` as
+         * asked (`yes`) on this route; dropping it moves that listing
+         * (review r1-s1 CHECKS-4, left out for that reason). */
+        long long minw = cand_front_min_width(cx);
+        if (minw)
+            pcrec_emit_min_width_check(c, "    ", "search_from", "subject_length", minw);
         first = pcrec_emit_req_byte_check(cx, c, "    ", "search_from",
                                           "subject", "subject_length");
     }
