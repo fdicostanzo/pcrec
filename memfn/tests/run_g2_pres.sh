@@ -40,10 +40,17 @@
 #      inline: no function for the classifier); its checks are the uses'
 #      PRESENCE rule (every pass runs it; g2_pres_run.c pres_check) and the
 #      §3.5 witnesses, both read off the stated rule, not the row;
-#   6. the floors (K35): literals below, sharing no source with the family.
+#   6. the floors (K35): literals below, sharing no source with the family;
+#   7. (R-38 K38-3) THE PER-LEVEL CELLS: per (level, layout U/L/A), the use
+#      calls that ENTER the level's arm, floored where the pass's target
+#      admits the level and exactly 0 where it does not (the kit's level
+#      list and admission, read through tests/memfn/simd_levels.c and
+#      target_text.py), and the level-list coverage (every kit level run by
+#      a pass target on this host).
 #
-#   --plant ID / --plants   the same passes (no ASan) over a COPY of memfn/src
-#                           with one planted defect (the table below).
+#   --plant ID / --plants   the same passes over a COPY of memfn/src with one
+#                           planted defect (the table below); no ASan, except
+#                           a plant plant_asan names (its asan.log is read).
 #   --reach                 the mech rows' witness probe: renders the default
 #                           and lever generic passes and prints one REACH
 #                           token per plant site the text reaches.

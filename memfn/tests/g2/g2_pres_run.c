@@ -74,7 +74,14 @@
  *   omin ones with the origin below -omin half the time, counted); and, in
  *   the ASan build (G2P_ASAN), A, the subject at offset 1..W-1 from a
  *   W-aligned heap block (W 16 and 32), the block's bytes below the subject
- *   poisoned (W-K4b's). A fault is a failure.
+ *   poisoned (W-K4b's), its length run_len + rnd(2W + 24) so W's arm can be
+ *   entered (K38-3). A fault is a failure.
+ *   THE PER-LEVEL CELLS (R-38 K38-3, G2P_REC builds): per (width, layout),
+ *   the use calls that ENTER the arm of width W (execute a W-byte load),
+ *   counted inside entry and re-entry calls only; layouts L and A are
+ *   COUNT-ONLY calls (no record), A as its own placement loop on its own
+ *   stream (lay_a_count), so the records and every rnd-drawn pin stay
+ *   K38-2's. `G2P cells` prints them; the runner holds the family rule.
  *
  *   g2p_run [--records FILE] [--seed N]
  */
