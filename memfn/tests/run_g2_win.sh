@@ -105,13 +105,16 @@ FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
 # TABLE plan position), stop_own 1264, af_walk 24 (row AF's population: B-walk
 # sites whose stop marker is read). The impossible cells (MASK anywhere, SHIFT
 # off E-find, E-generic off RESTART, E-func/E-stmt off RESTART/NONE, NONE not
-# exactly ARM) are the generator's own failures, never a floor.
+# exactly ARM) are the generator's own failures, never a floor. meet 2 (lane partd2,
+# 2026-11-13: offers withheld where overlapping spans' meet is not the
+# offering span's own set, so the position tests OWN; the merge of R-38 Part D
+# with 3.0b first generated one, site 878) keeps its measure.
 FRAME_CELL_FLOORS="E-func/none:210 E-func/restart:34 E-stmt/none:320 E-stmt/restart:231 E-find/restart:1097 E-find/shift:118 E-generic/restart:510"
 # the TRACED pass's window defines per Table E row (G2W_TRACE=1; measured
 # E-func 542, E-stmt 1227, E-find 2702, E-generic 1135), less ~10%: the
 # agreement holds over each frame's sites, never over nothing
 TRACED_FLOORS="E-func:487 E-stmt:1104 E-find:2431 E-generic:1021"
-FRAME_CLASS_FLOORS="fn:48 pair:368 hors:118 libc:615 walk:113 method:1446 table:55 noffer:4178 below:36 stop_own:1138 af_walk:21"
+FRAME_CLASS_FLOORS="fn:48 pair:368 hors:118 libc:615 walk:113 method:1446 table:55 noffer:4178 meet:2 below:36 stop_own:1138 af_walk:21"
 # R-38 K38-2 PLAN (e) (EMIT-3 of code review 2026-11-10 r2 k382a; lane k382, 2026-11-11): 200
 # IN-RUN sites appended from their own stream (G2W_K3_SITES; the 2700 before them unchanged),
 # three in four on an art carrying the lever run-tie-left. Under the lever, the reference's own

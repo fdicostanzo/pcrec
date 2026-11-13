@@ -687,16 +687,25 @@ static const char *const st_names[4] = { "none", "restart", "mask", "shift" };
 static const char *const se_names[6] = { "", "LIBC", "LIBC_BACK", "WALK", "PAIR", "HORS" };
 static long fcell[4][4];
 static long fc_fn, fc_pair, fc_hors, fc_libc, fc_walk, fc_method;
-static long tn_table, tn_own, tn_noffer, tn_term, tn_below, tn_stop_own, af_walk, af_other;
+static long tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below, tn_stop_own, af_walk, af_other;
 static mf_finder_listing g_rows;
 
-/* The ref G2 offered at offset `off` of alternative `alt` (0: none). */
-static uint32_t offer_at(const g2w_site *x, int alt, int off)
+/* The ref G2 offered at offset `off` of alternative `alt` that the text may
+   take there (0: none): a covering span's offer whose own set is the set
+   G2's decision `d` tests at `off` (its tset). Where spans overlap, the
+   tested set is their meet, which an offering span's set need not equal:
+   that offer is withheld (counted, `tn_meet`) and the position is OWN */
+static uint32_t offer_at(const g2w_site *x, const g2w_dec *d, int alt, int off)
 {
     const g2w_alt *a = &x->alt[alt];
+    const uint8_t *ts = NULL;
+    for (int k = 0; k < d->ntest; k++)
+        if (d->toff[k] == off) ts = d->tset[k];
     for (int i = 0; i < a->nspan; i++) {
         const g2w_span *g = &a->span[i];
-        if (off >= g->start && off < g->start + g->len) return g->table[off - g->start];
+        if (off < g->start || off >= g->start + g->len || !g->table[off - g->start]) continue;
+        if (ts && !memcmp(g->set[off - g->start], ts, 32)) return g->table[off - g->start];
+        tn_meet++;
     }
     return 0;
 }
@@ -709,8 +718,8 @@ static int marker_read(int id, uint32_t ref, const char *t, const char *ft)
 }
 
 /* Site `id`'s framed reply `w` against its rendered text and mf_result. */
-static void frame_classes(int id, const g2w_site *x, const mf_wreply *w, const mf_result *res,
-                          const char *t, const char *ft)
+static void frame_classes(int id, const g2w_site *x, const g2w_dec *d, const mf_wreply *w,
+                          const mf_result *res, const char *t, const char *ft)
 {
     char m[160];
     int fr = -1, efind = !strcmp(res->form_id, "window-search");
@@ -778,7 +787,7 @@ static void frame_classes(int id, const g2w_site *x, const mf_wreply *w, const m
        plan_test and stop_test are NONE there (plan_frame.md §4.1) */
     int composed = w->fused == MF_WFUSED_NO, maxtab = -1000;
     for (int i = 0; i < w->nplan; i++) {
-        uint32_t ref = offer_at(x, w->alt, w->plan[i]);
+        uint32_t ref = offer_at(x, d, w->alt, w->plan[i]);
         int rd = marker_read(id, ref, t, ft), alone = 1;
         for (int k = 0; k < w->nplan; k++)
             if (k != i && w->plan_term[k] == w->plan_term[i]) alone = 0;
@@ -810,7 +819,7 @@ static void frame_classes(int id, const g2w_site *x, const mf_wreply *w, const m
         if (w->stop_test) fail(id, "table_name", "stop_test stated on a fused row");
         return;
     }
-    uint32_t sref = offer_at(x, w->alt, w->stop);
+    uint32_t sref = offer_at(x, d, w->alt, w->stop);
     int srd = marker_read(id, sref, t, ft);
     tn_below += w->stop < maxtab;
     if (w->stop_test != (sref ? MF_WTEST_TABLE : MF_WTEST_OWN)) {
@@ -1258,7 +1267,7 @@ int main(int argc, char **argv)
             fail(id, "render refused", mf_art_error(art));
             continue;
         }
-        frame_classes(id, &x, &fw, &res, body.p ? body.p : "", file.p ? file.p : "");
+        frame_classes(id, &x, &ref, &fw, &res, body.p ? body.p : "", file.p ? file.p : "");
         x.reply.framed = fw.framed;
         memcpy(x.reply.frame_row, fw.frame_row, sizeof x.reply.frame_row);
         memcpy(x.reply.method, fw.method, sizeof x.reply.method);
@@ -1463,8 +1472,8 @@ int main(int argc, char **argv)
         for (int j = 0; j < 4; j++) printf(" %s/%s %ld", fr_names[i], st_names[j], fcell[i][j]);
     printf("\n");
     printf("g2_win_gen: classes fn %ld pair %ld hors %ld libc %ld walk %ld method %ld; table_name "
-           "table %ld own %ld noffer %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld\n", fc_fn,
-           fc_pair, fc_hors, fc_libc, fc_walk, fc_method, tn_table, tn_own, tn_noffer, tn_term, tn_below,
+           "table %ld own %ld noffer %ld meet %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld\n", fc_fn,
+           fc_pair, fc_hors, fc_libc, fc_walk, fc_method, tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below,
            tn_stop_own, af_walk, af_other);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
