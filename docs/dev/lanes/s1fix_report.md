@@ -32,3 +32,6 @@ emit_sweep (sweep.log) showed 365 `facts`-stream movers: `--emit-facts` row `wid
 
 ## Follow-up (s1fix4)
 Cloud s1fix2 red on G7 lever fence (c): run_prechecks.sh genuinely invokes `--harness=no-min-width` ([1.3b]), so tests/codegen/run_prechecks.sh is added to the fence's allowlist with its reason; the S3070-S3073 header comments no longer spell the lever. `bash tests/compound/run_lever_fence.sh` PASS alone. Cloud test s1fix4 dispatched.
+
+## Follow-up (sweep triage)
+sweep2 compared against a MOVED main (eb2196ee3; merge-base is e066d8ef5), so it was not a clean base. sweep3 (--ref e066d8ef5, log scratch/s1fix/sweep3.log): every artifact stream, facts, composition and dumps are 0 movers. The only movers are emit-ir-auto (3839; 3821 under -fno-prefilter; 3839 under -fno-prefilter-collapse): the --emit-ir refusal STDERR text, which CONTRACT-3 deliberately rewords (the unset-capture sentence loses its trailing "or it matches nothing"; a never-matching pattern gets "because it matches nothing"). Diagnostic wording only (D26), no spec or test pins it. Cloud s1fix4 (5782a7395) already carries this code.
