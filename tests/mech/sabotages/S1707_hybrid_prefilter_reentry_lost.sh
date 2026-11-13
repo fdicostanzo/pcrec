@@ -11,7 +11,7 @@ SAB_SUITES='memfnreach'
 SAB_DESC='the VM hybrid'\''s prefilter forward scan no longer re-enters the handoff'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/reqvm1_report.md, Tests and sabotage); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1707.'
 SAB_REACH='TMPDIR="$REACH_TMP" bash "$TREE/tests/memfn/run_handoff_reach.sh" "$TREE"'
-SAB_REACH_EXPECT='PASS: /(phpmyadmin|wp-admin)/[a-z]+\.php: reaches the VM hybrid handoff (RX_REQ_HANDOFF 6)'
+SAB_REACH_EXPECT='PASS: /(phpmyadmin|wp-admin)/[a-z]+\.php: reaches the VM hybrid handoff (RX_REQ_HANDOFF 3)'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (!s->forward) return false;

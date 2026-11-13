@@ -78,9 +78,13 @@ while IFS=$'\t' read -r pat want extra; do
 done <<'WITNESSES'
 (ab)c?userpass	3	-
 (x)?userz	1	#define RX_DFA_PREFILTER "handoff"
-/(phpmyadmin|wp-admin)/[a-z]+\.php	6	#define RX_DFA_PREFILTER "handoff"
+/(phpmyadmin|wp-admin)/[a-z]+\.php	3	#define RX_DFA_PREFILTER "handoff"
 (?i)(cat)s?dog	4	size_t ha = 0, hb = 0, wa
 WITNESSES
+# ([RUN-POS-SET] S2, PCREC_MAX_REQ_RUN_POS_SET 2 -> 128) the php witness's
+# run is now the set run [7077][6d70][2d79]admin/[a-z] (the alternation's
+# aligned tails are positions), so its handoff K re-derives 6 -> 3: the
+# run's first position sits 3 bytes in on the `/php` arm. Same route.
 
 echo "witnesses reached: $reached (floor $HANDOFF_REACH_FLOOR)"
 if [ "$reached" -lt "$HANDOFF_REACH_FLOOR" ]; then
