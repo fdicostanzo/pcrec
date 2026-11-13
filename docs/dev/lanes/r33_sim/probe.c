@@ -91,7 +91,7 @@ static void wr_json(FILE *f, const mf_art *art, const mf_site *s)
 {
     mf_wreply r;
     memset(&r, 0, sizeof r);
-    int rc = pcrec_mf_wdecide(art, s, &r);
+    int rc = pcrec_mf_wdecide(art, s, NULL, MF_WCALL_NONE, &r);   /* the decision alone (plan_frame.md 3.0b) */
     fprintf(f, "\"wr\":{\"rc\":%d", rc);
     if (!rc) {
         fprintf(f, ",\"alt\":%u,\"reseed\":%u,\"has_stop\":%u,\"stop\":%d,\"stop_set\":",

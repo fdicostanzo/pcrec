@@ -11,6 +11,10 @@ The simulation of the inner-first "find the span" pick against the kit's answer 
   the probe compiler `OUTDIR/pcrec-r33`.
 - `collect.py` — compiles every source pattern with the probe and writes one JSON line per (source, id, arm).
   Sources: the corpus, the bench patterns, job 588's patterns (RTE and DEF arms) and the rule-pilot census arms.
+  R-38 Part D D3: `summarize` keeps each `run_part_terms` record raw (`trace.parts`); each line carries pcrec's
+  `_REQ_RUN`/`_REQ_WHY` stamps (`req`, read off the emitted text).
+- `runpart_prod.py SWEEP.jsonl [--floor N]` — D3's production-path check: every compile stamping an emitted run
+  carries exactly one `run_part_terms` record (plant p14, summarize dropping it, reds; run by lane partd2's gate).
 - `sim.py IN.jsonl OUTDIR --key A|B [--h-hit N] [--tag T]` — the simulation and today-vs-sim
   classification. Writes `units_<tag>.tsv` and `summary_<tag>.tsv`.
 - `xcheck.py` — the cross-check against timings on file: job 588's bar, the rule-list pilot dataset and the

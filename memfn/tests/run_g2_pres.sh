@@ -185,8 +185,12 @@ FLOOR_DENY="deny_sites:518 deny_one:72"
 # (memfn/tests/g2/run_part_census.py): the population (sites whose define
 # chose an ofsskip FUNC row), the census's unspelled SET terms and every-pos
 # parts (each EQUAL to G2's own, per site). Literals recorded at D3's first
-# green run (lane partd2 2026-11-13, seed 20261110, 400 + 300 wide): FLOOR_D3_TBD
-FLOOR_D3="pop:1 unspelled:1 everypos:1"
+# green run (lane partd2 2026-11-13, seed 20261110, 400 + 300 wide), the least
+# over the three targets less about 10% (a count under 10 keeps its measure):
+# measured pop 558, unspelled 833 (G2's own 833), everypos 9 (G2's 9) on each
+# of x86-64-v3, x86-64 and generic; the generic pass's 558 records over 576
+# sites are counted apart (reported, outside the equalities)
+FLOOR_D3="pop:502 unspelled:750 everypos:9"
 
 # THE PLANTS: id, then one line FILE@@FROM@@TO per edit (FILE under
 # memfn/src; FROM replaced by TO, `\n` a newline, `\\n` the C escape, `\&`
