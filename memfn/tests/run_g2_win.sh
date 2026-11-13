@@ -25,6 +25,13 @@
 #                  defect (the table below): the run must go red. --plants
 #                  runs them all. Writes only the work directory.
 #
+# G2W_TRACE=1 (plan_frame.md 3.0b, run by run_g2.sh against
+# libpcrec_mftrace.a): the TRACED pass. LIB is an MF_TRACE kit, the plant
+# path's kit_objs compile -DMF_TRACE, and the kit's agreement at every window
+# define (compose.c define_sel) runs on G2's sites; a disagreement refuses the
+# render (a generator FAIL). Its populations, the window defines per Table E
+# row read off the generator's MFTRACE END records, are floored.
+#
 # Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR, G2W_SITES, G2W_SEED (and the
 # appended streams' sizes: G2W_S3_SITES, G2W_C1_SITES, G2W_R2_SITES, G2W_H2_SITES,
 # G2W_K3_SITES, the in-run sites under the lever run-tie-left).
@@ -94,6 +101,10 @@ FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
 # off E-find, E-generic off RESTART, E-func/E-stmt off RESTART/NONE, NONE not
 # exactly ARM) are the generator's own failures, never a floor.
 FRAME_CELL_FLOORS="E-func/none:210 E-func/restart:34 E-stmt/none:320 E-stmt/restart:231 E-find/restart:1097 E-find/shift:118 E-generic/restart:510"
+# the TRACED pass's window defines per Table E row (G2W_TRACE=1; measured
+# E-func 542, E-stmt 1227, E-find 2702, E-generic 1135), less ~10%: the
+# agreement holds over each frame's sites, never over nothing
+TRACED_FLOORS="E-func:487 E-stmt:1104 E-find:2431 E-generic:1021"
 FRAME_CLASS_FLOORS="fn:48 pair:368 hors:118 libc:615 walk:113 method:1446 table:55 noffer:4178 below:36 stop_own:1138 af_walk:21"
 # R-38 K38-2 PLAN (e) (EMIT-3 of code review 2026-11-10 r2 k382a; lane k382, 2026-11-11): 200
 # IN-RUN sites appended from their own stream (G2W_K3_SITES; the 2700 before them unchanged),
@@ -241,8 +252,8 @@ kit_objs() {
     local src="$1" out="$2"
     mkdir -p "$out"
     for s in "$src"/*.c; do
-        "$CC" -std=gnu11 -O1 -I"$ROOT/memfn/include" -c -o "$out/$(basename "${s%.c}").o" "$s" \
-            || return 1
+        "$CC" -std=gnu11 -O1 ${G2W_TRACE:+-DMF_TRACE} -I"$ROOT/memfn/include" \
+            -c -o "$out/$(basename "${s%.c}").o" "$s" || return 1
     done
 }
 
@@ -379,6 +390,11 @@ floor "long pair" "$(val long pair)" "$FLOOR_LONG_PAIR"
 fcv() { grep -h "^g2_win_gen: $1" "$WORK/plain.gen.log" | grep -oE " $2 [0-9]+" | head -1 | grep -oE '[0-9]+$'; }
 for cf in $FRAME_CELL_FLOORS; do floor "frame cell ${cf%%:*}" "$(fcv cells "${cf%%:*}")" "${cf#*:}"; done
 for cf in $FRAME_CLASS_FLOORS; do floor "frame class ${cf%%:*}" "$(fcv classes "${cf%%:*}")" "${cf#*:}"; done
+if [ -n "${G2W_TRACE:-}" ]; then
+    for tr in $TRACED_FLOORS; do
+        floor "traced defines ${tr%%:*}" "$(grep -cE "^MFTRACE END table=wfE art=[0-9]+ site=[0-9]+ phase=define chosen=${tr%%:*} " "$WORK/plain.gen.log")" "${tr#*:}"
+    done
+fi
 for inf in $INRUN_FLOORS; do floor "inrun ${inf%%:*}" "$(val inrun "${inf%%:*}")" "${inf#*:}"; done
 
 echo "checks passed: $tp"

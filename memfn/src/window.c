@@ -48,7 +48,8 @@
  * T-FIND's fd_rows) or a declared row list read in order (C, TIE, and B's
  * renderers, keyed on the FIND slot's pick); every cost row reads ONE cost
  * table, plan_cost.def (HORS_MIN in finder.c's D-hors facts).
- * The decision reads no frame fact.
+ * The decision reads no frame fact; a FRAMED phase-1 ask's frame part
+ * (mf_wdecide DEFINE/EMIT, plan_frame.md 3.0b) does, through the plan function.
  *
  * THE TIE TABLE (window_site.md §2.1) is `wf_ties[]`: every tie rule of the
  * family lives there and every comparison that can tie reads its row.

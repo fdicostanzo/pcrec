@@ -2753,7 +2753,27 @@ static int purity_control_mode(void)
             printf(" framed=");
             pur_hex(&f);
             printf(" (%s %s)\n", f.frame_row, r.path);
+            /* 3.0b: the STMT frames' one-call (EMIT) replies, so Table E's
+               E-stmt row and the composer's search rows print too */
+            static const uint8_t kinds[2] = { MF_SK_DFA_SCAN, MF_SK_REPORT };
+            for (int k = 0; k < 2; k++) {
+                mf_site st = pur_stmt(i, 0, kinds[k], NULL);
+                mf_hooks th = pur_text_hooks(0);
+                mf_wreply e;
+                printf("%s site %u stmt%d: ", rated ? "rated" : "none", i, k);
+                if (mf_wdecide(art, &st, &th, MF_WCALL_EMIT, &e)) printf("refused\n");
+                else { pur_hex(&e); printf(" (%s)\n", e.frame_row); }
+            }
         }
+    {
+        mf_art *art = art_begin(&ar, "pur", 0, NULL, NULL);
+        mf_site st = pur_pf_site();
+        mf_hooks th = pur_pf_hooks();
+        mf_wreply e;
+        printf("pf site: ");
+        if (mf_wdecide(art, &st, &th, MF_WCALL_EMIT, &e)) printf("refused\n");
+        else { pur_hex(&e); printf(" (%s)\n", e.frame_row); }
+    }
     return 0;
 }
 
