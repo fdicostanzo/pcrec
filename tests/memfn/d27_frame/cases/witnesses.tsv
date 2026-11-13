@@ -1,0 +1,11 @@
+# The minimal witnesses d27_frame.c runs first (fixed_case, in this order), one
+# per finding in REPORT.md. Each is a window site in plain words; the driver
+# builds it with the same hooks as the generated population (s, n, lo, miss
+# MF_MISS_N, fn_name, table_name; STMT/ASSIGN: result r, result_decl "size_t ",
+# on_miss "return 0;", on_miss_leaves 1), portable target, no options.
+# id<TAB>finding<TAB>site<TAB>what breaks
+W1	F1	FUNC/RETURN; one alternative, entry NONE; one span start 0, len 2, verify NO, core [0,2), sets {'q'},{' '}, no offers; art lever run-tie-left	DEFINE ask answers 0 AND sets the art's error ("the run ranking's first position 0 is not the run member"); mf_define on a fresh art refuses with that text
+W2	F2	STMT/ASSIGN, site_kind REPORT, empty NOP; span start 0, len 2, verify YES, core all, sets {'a'},{'b'}, offers 1,2	EMIT ask answers 0; mf_emit refuses ("window-search: a NOP ASSIGN cannot declare its result")
+W3	F3	as W2 but empty MISS and decl_point 1	EMIT ask answers 0; mf_emit refuses ("mf_use: handle 1 is used before its mf_locals")
+W4	F4	STMT/ASSIGN, site_kind REPORT; span start 0, len 3, verify YES, core all, sets {'a'},{'b'},{'c'}, offers 1,2,3; table_name stated	plan_test TABLE at every plan position; the text compares the three bytes as one run (memcmp/word compare) and reads no offered table
+W5	F5	FUNC/RETURN; span start 0, len 2, verify YES, core all, sets {'a'},{'b'}	fused FN on E-func; the text defines and calls <fn_name>/<fn_name>__body and never spells <prefix>_mf<handle>_ofsskip (held under the reading in REPORT.md)
