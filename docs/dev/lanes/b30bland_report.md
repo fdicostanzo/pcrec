@@ -15,7 +15,9 @@ memfn/tests/CLAUDE.md was 12320 bytes (limit 12288); now 11121. The SIMD family 
 ## Checks
 make -j8 rc=0; make strict rc=0; make test-codegen rc=0; test-memfn-link, test-memfn-finder, test-memfn-rows rc=0; m6read_check_sab_anchors.py: all anchors resolve (1275 sabotages, 1322 sites). Logs in /var/tmp/pcrec-pcrec/scratch/memfn/b30bland/.
 
+## STATE AT HANDOFF
+Complete. No queued jobs.
+
 OWED: none
 
-## STATE AT HANDOFF
-Complete. Nothing owed; no queued jobs. Branch lane/memfn-b30b is ready for main's merge.
+Nothing else owed. Branch lane/memfn-b30b is ready for main's merge.
