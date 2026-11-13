@@ -312,6 +312,12 @@ static int req_pres_run(const mf_site *s);
  * set's leading member), or -1; `lead` 1 asks for it only in front of a
  * stated run (`set-leads`'s shape). */
 static int req_pres_head(const mf_site *s, const mf_class *cls, bool lead);
+/* THE ONE PREDICATE (docs/design/memfn/part_d.md §9, `trun`): does the
+ * pre-check TEST the run — a run stated and its presence link verified? */
+static bool req_run_tested(const mf_site *s, const mf_class *cls);
+static bool req_run_tested_cx(Ctx *cx);
+/* the LANDMARK's K, read through the predicate (defined beside the handoff) */
+static long long req_landmark_k(Ctx *cx);
 /* [K82] (B) WHAT THE BODY DOES WITH AN EMITTED RUN PRE-CHECK'S ANSWER — the
  * `req-use` table, defined beside the admission it reads: keep its candidate
  * as the scan start (the HANDOFF), or start at the startpos. Read by the gate
@@ -1078,7 +1084,9 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
                                   const char *lenvar)
 {
     long long k = req_handoff_k(cx);
-    bool whole = req_use_whole(cx), run = pcrec_fact_req_whole_run(cx)->whole_len >= 2;
+    /* the run is the landmark only where the pre-check TESTS it (part_d.md
+     * §9 item 4): a declined run's landmark is the head member */
+    bool whole = req_use_whole(cx), run = req_run_tested_cx(cx);
     /* [REQ-HANDOFF-L1] the hit itself, kept for the forward scan's re-entry
      * (`pf_emit_handoff`) or, [REQRUN-VM], the attempt loop's
      * (`pcrec_emit_req_attempt_reentry`), which reuses it while it is still
@@ -1481,6 +1489,30 @@ static int req_pres_run(const mf_site *s)
     return p->nalt == 1 && p->nterm == 0 ? (int)s->npspan - 1 : -1;
 }
 
+/* THE ONE PREDICATE every reader of "a run shipped" reads (part_d.md §9,
+ * [RUN-POS-SET] stage 3): the pre-check TESTS the run, a run stated (its
+ * presence span, `req_pres_run`) AND its link verified by the kit's links
+ * (`cls->pres[run].verify`, the kit's `trun`). A stated run the kit declines
+ * (its link untested, `proven_by` 0) ships no run part: the landmark is the
+ * head member, never the run, whatever `whole_len` says. Written once; one
+ * plant here (answering "stated") reds the decline's witnesses together. */
+static bool req_run_tested(const mf_site *s, const mf_class *cls)
+{
+    int run = req_pres_run(s);
+    return run >= 0 && cls->pres[run].verify;
+}
+
+/* The predicate over the pre-check's own quiet ask (no run stated: false,
+ * and no ask). The run is read without a pass (`_stated`): asking whether
+ * it is tested moves no fact's `used` record. */
+static bool req_run_tested_cx(Ctx *cx)
+{
+    if (pcrec_fact_req_whole_run_stated(cx)->whole_len < 2) return false;
+    mf_class *cls = pcrec_arena_alloc(&cx->arena, sizeof *cls);
+    const mf_site *ps = req_pres_ask(cx, NULL, cls);
+    return req_run_tested(ps, cls);
+}
+
 /* Describes the pre-check to the kit and defines it at file scope (`c`):
  * NULL, and nothing defined, where no pre-check is emitted. Since R17-b' B3b
  * the PARTS are laid out from the kit's presence links (`req_pres_ask`: the
@@ -1539,15 +1571,20 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     mf_site *s = req_pres_ask(cx, NULL, cls);
     run = req_pres_run(s);
     head = req_pres_head(s, cls, false);
+    nrun = req_run_tested(s, cls);
     if (head >= 0) {
         gate = mf_term_byte(&s->pspans[head].term[0]);
-        if (run >= 0) gate_need = (mf_need)s->pspans[head].need;
-        else if (gate != b)
+        /* part_d.md §9 item 2 (P1): the head part's need is keyed on the
+         * TESTED run (the kit's `pres_layout_check` expects it so). Where
+         * no run is stated the head is the `req_byte` landmark; where a
+         * stated run is declined the landmark is the head member itself and
+         * its K is read from it (`req_landmark_k`), so no fact names it. */
+        if (nrun) gate_need = (mf_need)s->pspans[head].need;
+        else if (run < 0 && gate != b)
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit's presence links lead "
                            "with byte %d where the req_byte fact (the landmark the "
                            "handoff's K is read from) is %d", gate, b);
     }
-    nrun = run >= 0 && cls->pres[run].verify;
     /* [REQ-HANDOFF-L1] the landmark is the run part where a run shipped,
      * else the one byte: either is kept where the body reads it. */
     handoff = req_use(cx) == REQ_USE_HANDOFF;
@@ -8820,7 +8857,9 @@ static mf_site *req_pres_ask(Ctx *cx, const mf_pres_proof *proof, mf_class *cls)
 static int req_pres_head(const mf_site *s, const mf_class *cls, bool lead)
 {
     int run = req_pres_run(s);
-    if (lead && run < 0) return -1;
+    /* part_d.md §9 item 5 (P4): a lead is a lead in front of a TESTED run; a
+     * declined run has no run search to lead */
+    if (lead && !req_run_tested(s, cls)) return -1;
     for (unsigned i = 0; i < s->npspan && i < cls->npres; i++)
         if ((int)i != run && cls->pres[i].verify && cls->pres[i].order == 0)
             return (int)i;
@@ -8892,7 +8931,7 @@ static bool req_handoff_applies(const CandSel *s)
         return false;
     if (!(cand_path_members(cx) & (CAND_MF | CAND_MATT)))
         return false;
-    k = pcrec_fact_req_landmark_maxoff(cx);
+    k = req_landmark_k(cx);
     if (k < 0 || k >= PCREC_W_UNBOUNDED) return false;
     if (cx->job->fit.prefilter_collapsed) return false;
     if (cx->job->fit.chosen == ENGM_VM && dfa_needs_gseed(&cx->job->dfa) &&
@@ -8954,7 +8993,7 @@ static bool req_handoff_vm_run(const CandSel *s)
         return false;
     vs.route = CAND_ROUTE_VM;
     if (CAND_BOUND_ONE(CAND_SLOT_FIRST, &vs, "handoff-attempts")) return false;
-    return pcrec_fact_req_whole_run(cx)->whole_len >= 2;
+    return req_run_tested_cx(cx);
 }
 
 /* [REQRUN-VM] THE `handoff-attempts-entry` ROW's predicate, and the
@@ -9060,7 +9099,25 @@ static bool req_use_whole(Ctx *cx)
 static long long req_handoff_k(Ctx *cx)
 {
     return req_use_whole(cx) ? pcrec_fact_req_whole_run(cx)->whole_maxoff
-                             : pcrec_fact_req_landmark_maxoff(cx);
+                             : req_landmark_k(cx);
+}
+
+/* THE LANDMARK's K read through the one predicate (part_d.md §9 item 2):
+ * the `req_landmark_maxoff` fact (the run's where one is stated, else the
+ * one byte's), except where a stated run is NOT tested — the kit declined
+ * it, so the landmark is the head member and K is that member's own bound
+ * (`req_set_maxoff`), -1 where no member is verified either. The fact is
+ * derived before the kit replies, so it cannot know the decline. */
+static long long req_landmark_k(Ctx *cx)
+{
+    if (pcrec_fact_req_whole_run_stated(cx)->whole_len < 2)
+        return pcrec_fact_req_landmark_maxoff(cx);
+    mf_class *cls = pcrec_arena_alloc(&cx->arena, sizeof *cls);
+    const mf_site *ps = req_pres_ask(cx, NULL, cls);
+    if (req_run_tested(ps, cls)) return pcrec_fact_req_landmark_maxoff(cx);
+    int head = req_pres_head(ps, cls, false);
+    return head < 0 ? -1
+         : pcrec_fact_req_set_maxoff(cx)->maxoff[mf_term_byte(&ps->pspans[head].term[0])];
 }
 
 /* [START-TABLE] C6 `req_use`'s selection READ by another slot's predicate,
@@ -9088,15 +9145,25 @@ static unsigned long long req_landmark_hit_ppm(Ctx *cx, const uint32_t *rate)
     const ReqRun *r = pcrec_fact_req_whole_run(cx);
     unsigned long long hit = 1000000u;
     uint8_t set[256];
-    if (r->whole_len < 2) {
+    mf_class *cls = NULL;
+    const mf_site *ps = NULL;
+    int lb = -1;
+    if (r->whole_len >= 2) {
+        cls = pcrec_arena_alloc(&cx->arena, sizeof *cls);
+        ps = req_pres_ask(cx, NULL, cls);
+    }
+    /* the one byte where no run is stated; where the kit declines a stated
+     * run (part_d.md §9 item 2) the head member, the landmark there */
+    if (!ps) lb = pcrec_fact_req_byte(cx);
+    else if (!req_run_tested(ps, cls) && req_pres_head(ps, cls, false) >= 0)
+        lb = mf_term_byte(&ps->pspans[req_pres_head(ps, cls, false)].term[0]);
+    if (lb >= 0) {
         memset(set, 0, sizeof set);
-        set[pcrec_fact_req_byte(cx)] = 1;
+        set[lb] = 1;
         return pcrec_find_set_mass(rate, set);
     }
-    mf_class *cls = pcrec_arena_alloc(&cx->arena, sizeof *cls);
-    const mf_site *ps = req_pres_ask(cx, NULL, cls);
-    int run = req_pres_run(ps), lo = 0, n = r->whole_len;
-    if (run >= 0 && cls->pres[run].verify) { lo = cls->run.ver_lo; n = cls->run.ver_len; }
+    int lo = 0, n = r->whole_len;
+    if (req_run_tested(ps, cls)) { lo = cls->run.ver_lo; n = cls->run.ver_len; }
     for (int i = lo; i < lo + n; i++) {
         for (int b = 0; b < 256; b++) set[b] = pcrec_run_has(r, i, b);
         hit = (hit * pcrec_find_set_mass(rate, set) + 999999u) / 1000000u;
@@ -9192,7 +9259,7 @@ static bool pf_handoff_applies(const CandSel *s)
     u = req_use_read(cx, CAND_SLOT_NEXT);
     if (cx->req_handoff_dropped && cand_finish_of(cx) == CAND_ROUTE_VM) return false;
     if (u->use != REQ_USE_HANDOFF || u->whole) return false;
-    return req_landmark_admits(s, pcrec_fact_req_landmark_maxoff(cx));
+    return req_landmark_admits(s, req_landmark_k(cx));
 }
 
 /* NEXT's selection for the artifact's forward DFA machine (the body's, or
@@ -11404,7 +11471,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
         }
         /* the fifth, where NEXT prices it */
         if (priced) {
-            int pl = req_landmark_admits(&ns, pcrec_fact_req_landmark_maxoff(cx));
+            int pl = req_landmark_admits(&ns, req_landmark_k(cx));
             int kl = k.landmark < 0 ? 0 : k.landmark;
             if (pick_plant("landmark")) kl = !kl;
             pick_rec("landmark", pl, kl, 1, pl, kind);
