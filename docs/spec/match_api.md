@@ -2481,8 +2481,10 @@ the value.
 ```c
 #define RX_REQ_HANDOFF "2"     /* the scan begins 2 bytes before the
                                   pre-check's first landmark hit */
-#define RX_REQ_HANDOFF "unbounded" /* the attempts begin at startpos and
-                                  stop past the whole run's last occurrence */
+#define RX_REQ_HANDOFF "unbounded" /* the attempts begin at startpos; a
+                                  re-ask after a failed attempt past the
+                                  run's occurrence last found ends the
+                                  search where none is left */
 #define RX_REQ_HANDOFF "none"  /* the scan begins at startpos */
 ```
 
@@ -2500,8 +2502,10 @@ byte or slice of the run). `"unbounded"` where the attempt-loop row
 `handoff-attempts-unbounded` applies (`tuning.md` §2.41¶8c): the same
 conditions with the whole run's maximum offset unbounded; the attempts begin
 at `startpos`, and once an attempt position passes the run's occurrence last
-found the run is found again from there, none returning 0 (no attempt past
-the run's last occurrence can match). The pre-check's LANDMARK
+found the run is found again from there, none ending the search with no
+match (no attempt past the run's last occurrence can match; the re-ask sits
+after a failed attempt, so one attempt past the last occurrence may still run
+before it is asked). The pre-check's LANDMARK
 is the run's window where `_REQ_RUN` is not `"none"`, else the one byte
 `_REQ_BYTE`. Then every match begins at most `K` bytes before an occurrence of
 the landmark; the pre-check's search block returns the LEAST position
