@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s1fix_report.md
+sections: Summary; Per-finding fixes; The probe; The card at ver 4; Checks; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none
