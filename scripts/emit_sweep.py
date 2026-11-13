@@ -2495,6 +2495,14 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
 # (cost accepted 2026-11-10), so more artifacts cross the LOWERED size caps (no-size-cap rises, e.g.
 # lowboth no-size-cap 256 -> 410, lowsize 279 -> 439; lowered-cap no-linked-call 100 -> 16, others fall), plus
 # corpus growth. Pasted through pprint (width 120) from the job's pins.py.
+# RE-PINNED 2026-11-13 (lane yespin; plain/lowthr BYTE emit-ir-auto and -fno-prefilter-collapse 'yes' only,
+# 1740 -> 1727): `--ref 233e0af5d --tree-rev 233e0af5d --variant plain --variant lowthr --bases byte
+# --emit-pins` (corpus 7,034 rows, 0 movers / 0 asymmetric, a == b) read those four floors high; every
+# other floor held. CAUSE, bisected over the 16 distinct corpus patterns that read 'yes' at 646a8c0be and
+# not at the tip (13 corpus rows): a60681ae2 (lane nevermatch, abi 100 -> 102; 004a7849e merges it) turns a
+# never-matching VM hybrid into the DFA empty artifact, and a DFA winner refuses --emit-ir, so yes -> refused:
+# `(?=a)z`, `((?*a)z)`, `(?>a\b)c`, `(a)\b(b)`, `a\K\bb`, `(?=a)\Kb` and their siblings. Intended effect
+# (nevermatch's own +16 hybrids in the partlayout never-match set), no answer changes.
 VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-callout': b'a(?C)b',
                                                      'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
                                                                         b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
@@ -2817,7 +2825,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-callout'
                                                 'no-nullable-exact': 166,
                                                 'no-variable': 45,
                                                 'refused': 3821,
-                                                'yes': 1740,
+                                                'yes': 1727,
                                                 'yes-collapsed': 3},
                                'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 513,
                                                                          'no-callout': 57,
@@ -2826,7 +2834,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-callout'
                                                                          'no-nullable-exact': 166,
                                                                          'no-variable': 45,
                                                                          'refused': 3821,
-                                                                         'yes': 1740},
+                                                                         'yes': 1727},
                                'emit-ir-auto[-fno-prefilter]': {'no-backreference': 513,
                                                                 'no-callout': 57,
                                                                 'no-dfa-overflow': 3,
@@ -2913,7 +2921,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-callout'
                                                'no-nullable-exact': 166,
                                                'no-variable': 45,
                                                'refused': 3821,
-                                               'yes': 1740,
+                                               'yes': 1727,
                                                'yes-collapsed': 3},
                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 513,
                                                                         'no-callout': 57,
@@ -2922,7 +2930,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-callout'
                                                                         'no-nullable-exact': 166,
                                                                         'no-variable': 45,
                                                                         'refused': 3821,
-                                                                        'yes': 1740},
+                                                                        'yes': 1727},
                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 513,
                                                                'no-callout': 57,
                                                                'no-dfa-overflow': 3,

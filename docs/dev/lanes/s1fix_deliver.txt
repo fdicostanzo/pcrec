@@ -1,5 +1,5 @@
 report=docs/dev/lanes/s1fix_report.md
-sections: Summary; Per-finding fixes; The probe; The card at ver 4; Checks; Charter-vs-committed checklist
+sections: STATE AT HANDOFF; CHANGES; OWED
 nonempty: all
 commit: yes
-owed: none
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/s1fix_deliver.txt; docs/dev/lanes/s1fix_rulings.md
