@@ -94,6 +94,7 @@ tests/base/vm_lazy_rmin_prefix.rxt:17	--engine=vm	286129283f3a6162297b322c7d3f61
 tests/base/vm_lazy_rmin_prefix.rxt:186	--engine=vm	2862292861297b3230302c7d3f62
 tests/base/vm_lazy_rmin_prefix.rxt:212	--engine=vm	7a5b6162635d7b332c7d3f643f
 tests/base/vm_lazy_rmin_prefix.rxt:229	--engine=vm	286129283f3a615b6263645d297b322c7d3f6165
+tests/base/vm_lazy_rmin_prefix.rxt:253	--engine=vm	286129283f3a6162297b322c7d3f61637c71
 tests/base/vm_lazy_rmin_prefix.rxt:35	--engine=vm	286129283f3a6162297b322c7d3f63
 tests/base/vm_lazy_rmin_prefix.rxt:53	--engine=vm	286129283f3a6162297b322c7d3f6162
 tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f6162
@@ -552,6 +553,7 @@ tests/altcls/altnf_lookbehind.rxt:124	--features all	283f3c2a28283f3a61627c61632
 # sae2mt (2026-11-09, lane/sae2 make test triage): +34, the blocks of tests/litscan/spanarms.rxt (span arms E1/E2 witnesses, new corpus file), correct VM-hat movers never pinned; vmhat_checks.py's own mover rule (the mttri and alttri2 precedent), no existing row moved, bench rows untouched.
 # sar1mt (2026-11-09, lane/sar1 triage of 218-main-sar1-maketest-2): the tests/litscan/spanarms.rxt rows re-measured on this branch (E1's sae1pin rows + R1's witness blocks; the file's lines moved with R1's header and blocks), 19 rows, correct VM-hat movers by vmhat_checks.py's own mover rule, no other row moved.
 # sar1mrg (2026-11-10, the semantic merge of lane/sar1 onto main's E1+E2): the tests/litscan/spanarms.rxt rows of the two sides above UNIONED by (options, pattern) and re-keyed to the merged file's lines (startset_lib.corpus_blocks ids), 44 rows; every row is one side's measured mover, none added or dropped.
+# ssfix (2026-11-12): +1 rows, every one the S708 witness blocks appended to tests/base/vm_lazy_rmin_prefix.rxt (pattern (a)(?:ab){2,}?ac|q); census_s1.py on the current build, no existing row moved.
 tests/litscan/spanarms.rxt:28	--features all --engine=vm	6162283f3a633f297b327d6465
 tests/litscan/spanarms.rxt:48	--features all --engine=vm	7879283f3a6162297b312c327d7a77
 tests/litscan/spanarms.rxt:67	--features all --engine=vm	7879283f3a6162297b312c337d7a77

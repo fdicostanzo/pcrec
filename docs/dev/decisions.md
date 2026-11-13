@@ -10191,3 +10191,27 @@ Answered against docs/design/cond_family.md rev 0 §7 (six questions, each with 
 - **Consequences:** about 21 bits freed (about 27 free afterwards); a caller-visible contract change (pre-1.0, deliberate, spec hunks); an abi event where rx_info's kept-flag set changes; the bench is told through its inbox. Built as its own set ([FLAG-DEMOTE]) after S1 and K38-2.
 - **Revisit when:** a demoted mechanism is measured slower on some real input (it returns as a public flag), or an unsure flag's settling measurement is run.
 
+
+## D196 — intersection semantics: the left operand chooses, the right filters; it binds tighter than alternation (Frank, 2026-11-12)
+
+Context: [COND-FAMILY]; spike studies/andspike (lane andspike, report F7): under "leftmost start, then X's
+preference order among the ends Y also accepts", `X & Y` and `Y & X` always agree on the start but report a
+different end in 10.2% of generated pairs.
+
+Decision (Frank: "I was thinking it was option 1. RX is a practical tool more than academic and I think the
+filter understanding makes intuitive sense"):
+1. **Asymmetric.** The left operand keeps PCRE's priority order (first alternative wins, greedy prefers
+   longer, lazy shorter); the right operand only FILTERS which of its ends are admitted. The match reported is
+   the leftmost start, then the left operand's first-preferred end the right operand accepts exactly. Order of
+   operands is meaningful and documented; the span SET is commutative.
+2. **Precedence: intersection binds tighter than alternation**: `C|A&B` is `C|(A&B)` (and `A&B|C` is
+   `(A&B)|C`). Concatenation binds tighter than intersection (`ab&cd` is `(ab)&(cd)`), as in other
+   Boolean-regex designs (Frank, same day: "I agree about position relative to concatenation"). Order,
+   tightest first: concatenation, intersection, alternation.
+3. The `&` spelling is a placeholder (D193 add. 4: owner examples are not syntax); the semantics above are
+   what is ruled. The remaining F7 recommendations (in-context lookaround, \K refused, verbs, cross-operand
+   backrefs, recursion) go to the [COND-FAMILY] spec section for review.
+
+D196 addendum (2026-11-12, Frank): the SPELLING is decided for the whole operator family at once, not `&` alone: "understand the whole spelling before deciding. Symmetry suggests |! ... whether to do so is a choice." Family under study: `&` (and), `&!` (and-not, X & ~Y), `|` (or), `|!` (or-not, X | ~Y; low practical value, a footgun under leftmost search), and whether a general unary complement `~` is the underlying form with the others as sugar. Constraint: `&` and `!` are literal characters in PCRE today and `(?&name)` is PCRE's named call, so the spelling needs an opt-in or syntax PCRE leaves free.
+
+D196 addendum 2 (2026-11-12, Frank): MECHANISM AND SYNTAX ARE UNTETHERED. "The & for instance, mechanism should be present so that we can optimize lookarounds even if the syntax isn't used. EOR should be available similarly so that it can be used as a tool if not a syntax (might have some option)." The Boolean operators (intersection, difference `&!`, symmetric difference/XOR) are INTERNAL IR operators with the semantics above, the callout oracle (studies/andspike) and the fact checks ([FACT-READS]); their first clients need no syntax: (1) regular lookarounds lowered to intersection-family nodes so they leave the VM (declared variants of ONE mechanism: exact span, lookahead's prefix form, lookbehind's backward form, each oracle-tested); (2) XOR as the pattern-EQUIVALENCE tool (a CLI option, e.g. `--compare X Y`: X^Y never matches iff equivalent, via the never-match fact), also usable to prove an optimizer rewrite. Surface syntax is a separate, optional front-end unit, decided later (addendum 1), possibly behind an opt-in, possibly never.

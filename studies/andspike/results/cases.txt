@@ -1,0 +1,63 @@
+PASS  premise (?:a|ab) @0 'abc'                  got=[1, 2]  want=[1, 2]  brief's PREMISE TEST
+PASS  greedy a* 'aaa'                            got=[3, 2, 1, 0]  want=[3, 2, 1, 0]  longest first, down to empty
+PASS  lazy a*? 'aaa'                             got=[0, 1, 2, 3]  want=[0, 1, 2, 3]  empty first
+PASS  (a|ab)(c|bcd) 'abcd'                       got=[4, 3]  want=[4, 3]  a+bcd=4 first (arm1 then its 2nd inner arm), then ab+c=3
+PASS  first end == PCRE2's own match             got=4  want=4  callout-free route
+PASS  empty pattern @1                           got=[1]  want=[1]  only the empty span [1,1)
+PASS  (?:)|a 'a'                                 got=[0, 1]  want=[0, 1]  empty arm first
+PASS  a? & b* on 'a'                             got=(0, 0)  want=(0, 0)  X ends [1,0]; b* rejects [0,1), accepts [0,0)
+PASS  a? & b* inline                             got=(0, 0)  want=(0, 0)  same, PCRE2 owns the loop
+PASS  (?<=a)b @1 'ab'                            got=[2]  want=[2]  lookbehind sees s[0] outside the span
+PASS  (?<=a)b & b on 'ab'                        got=(1, 2)  want=(1, 2)  
+PASS  (?<=a)b isolated [1,2)                     got=False  want=False  isolated semantics: the substring 'b' has nothing behind it
+PASS  a(?=b) & a on 'ab'                         got=(0, 1)  want=(0, 1)  lookahead sees s[1] past j
+PASS  a(?=b) & a on 'ac'                         got=None  want=None  
+PASS  a\b spans [0,1) of 'ab'                    got=False  want=False  no word boundary at 1 in context
+PASS  a\b isolated [0,1) of 'ab'                 got=True  want=True  
+PASS  a$ spans [0,1) of 'ab'                     got=False  want=False  $ sees the real end
+PASS  a$ isolated [0,1) of 'ab'                  got=True  want=True  
+PASS  (a+)\1 'aaaaaa'                            got=[6, 4, 2]  want=[6, 4, 2]  a+ = aaa, aa, a; \1 doubles
+PASS  (a+)\1 & a{4}                              got=(0, 4)  want=(0, 4)  
+PASS  (a|aa)\1* 'aaaa'                           got=[4, 3, 2, 1]  want=[4, 3, 2, 1]  a-run greedy 4..1; aa-run adds nothing new
+PASS  Y's own group numbering                    got=(0, 1)  want=(0, 1)  each operand compiles alone: Y's \1 is Y's group, not X's
+PASS  foo\Kbar ends                              got=[6]  want=[6]  
+PROBE foo\Kbar callout start_match               got=[0]  pcre2callout says \K changes start_match (would be 3); 10.49 reports 0 here and in pcre2test
+PASS  foo\Kbar & .* inline (attempt span)        got=(1, 7)  want=(1, 7)  the leading (?C2) records the attempt start; \K only moves the REPORTED start
+PASS  foo\Kbar & bar                             got=None  want=None  attempt-span semantics: Y must match [0,6), not the reported [3,6)
+PASS  (?>a|ab) 'abc'                             got=[1]  want=[1]  atomic: 'ab' is never reached
+PASS  (?>a|ab) & ab                              got=None  want=None  although 'ab' is in L(a|ab)
+PASS  a|ab & ab                                  got=(0, 2)  want=(0, 2)  the non-atomic control
+PASS  a*+ 'aaa'                                  got=[3]  want=[3]  possessive: only the maximal end
+PASS  a*+ & aa on 'aaa'                          got=(1, 3)  want=(1, 3)  start 0 fails, start 1 reaches 3
+PASS  (?=(a|ab))\1 'ab'                          got=[1]  want=[1]  a lookahead is atomic: its capture is fixed at 'a'
+PASS  a(*ACCEPT)b|ab                             got='accept-bypass'  want='accept-bypass'  (*ACCEPT) ends the match without reaching the end callout: detected, not enumerable
+PASS  (?=a(*ACCEPT)b)a                           got=[1]  want=[1]  inside a lookahead ACCEPT only ends the assertion
+PASS  a(*COMMIT)|ab ends                         got=[1]  want=[1]  truncated: the language view is {1,2}
+PASS  a(*COMMIT)|b & b sets                      got=(1, 2)  want=(1, 2)  A: our start loop ignores COMMIT
+PASS  a(*COMMIT)|b & b inline                    got=None  want=None  B: PCRE2 semantics, COMMIT forbids later starts
+PASS  aa(*SKIP)b|a & a sets                      got=(1, 2)  want=(1, 2)  A ignores SKIP's bump target
+PASS  aa(*SKIP)b|a & a inline                    got=None  want=None  B: SKIP bumps the next start to 2
+PASS  a(*PRUNE)|a. & .. sets                     got=None  want=None  PRUNE at a fixed start: same as B
+PASS  a(*PRUNE)|a. & .. inline                   got=None  want=None  
+PASS  a(*THEN)|ab & ab                           got=((0, 2), (0, 2))  want=((0, 2), (0, 2))  THEN only skips to the next arm: enumeration intact
+PASS  balanced parens '(a(b))'                   got=[6]  want=[6]  only the outer close
+PROBE balanced parens UNGUARDED (?C1)            got=[5]  without (?(R)|...) the callout fires at the inner recursion's end too
+PASS  balanced '(a)(b)' @0                       got=[3]  want=[3]  
+PASS  subroutine (a|b)(?1) 'ab'                  got=[2]  want=[2]  
+PASS  lookahead_order agrees on recursion        got=[6]  want=[6]  callout-free route
+PASS  UTF .+ on 'é€a'                            got=[6, 5, 2]  want=[6, 5, 2]  byte offsets of char ends
+PASS  UTF starts                                 got=[0, 2, 5, 6]  want=[0, 2, 5, 6]  char boundaries only
+PASS  UTF .+ & (?:€a|é)                          got=(0, 2)  want=(0, 2)  
+PASS  UTF inline agrees                          got=(0, 2)  want=(0, 2)  
+PASS  UTF lookahead_order                        got=[6, 5, 2]  want=[6, 5, 2]  remaining counted in chars
+PASS  non-UTF .+ byte ends                       got=6  want=6  every byte is a char
+PROBE default opts a+ on 'aaa'                   got=([3, 2, 1], [3, 2, 1])  (default-options ends, NO_OPT ends), GUARDED wrapper
+PROBE default opts a*b? on 'aab'                 got=([3, 2, 1, 0], [3, 2, 1, 0])  (default-options ends, NO_OPT ends), GUARDED wrapper
+PROBE default opts (?:a|b)+ on 'ab'              got=([2, 1], [2, 1])  (default-options ends, NO_OPT ends), GUARDED wrapper
+PROBE default opts [ab]* on 'ab'                 got=([2, 1, 0], [2, 1, 0])  (default-options ends, NO_OPT ends), GUARDED wrapper
+PROBE plain (?:X)(?C1) default opts a+ on 'aaa'  got=([3], [3, 2, 1])  (default-options ends, NO_OPT ends), UNGUARDED wrapper
+PROBE plain (?:X)(?C1) default opts (\d+) on '1234' got=([4], [4, 3, 2, 1])  (default-options ends, NO_OPT ends), UNGUARDED wrapper
+PROBE plain (?:X)(?C1) default opts (?:a|b)+ on 'ab' got=([2, 1], [2, 1])  (default-options ends, NO_OPT ends), UNGUARDED wrapper
+PROBE plain (?:X)(?C1) default opts [ab]* on 'ab' got=([2], [2, 1, 0])  (default-options ends, NO_OPT ends), UNGUARDED wrapper
+cases: 61  pass 51  fail 0  probe 10
+pcre2 10.49 2026-09-28

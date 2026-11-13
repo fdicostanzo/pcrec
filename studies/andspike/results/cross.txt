@@ -1,0 +1,26 @@
+sweep cross N=200 L=5 seed=1 pcre2=10.49 2026-09-28  136.2s
+  re          agree   64200  differ     0
+  ref         agree   64200  differ     0
+  la          agree   64200  differ     0
+  spans       agree   64200  differ     0
+  laspans     agree   64200  differ     0
+  opt         agree   64200  differ     0
+  DIFF ('slowest 0.55s', '(?:(?:a)*?.{0,2}(.)*)(?:(?:a*?[ab]*?|a*?a{2})[ab]+(?:b*b??.|.{0,2}[ab]??|[ab]?){0,2}?)')
+  DIFF ('slowest 0.69s', '(?:a{0,2}(?:b?|a{0,2}?a*?.{2})*)+?')
+  DIFF ('slowest 127.09s', '(?:(?:b??b[ab]*?|.b+?.|.b?b+){2})*?(?:(?:b+[ab][ab]|[ab]{0,2}.?.{0,2}?|bb{1,2}){0,2})*(?:(?:.{0,2}?)a(?:.[ab])*|(?:[ab]a??)b)|(?:(?:[ab]??b.*|.|a??[ab]b{0,2})[ab]){1,2}')
+## control ANDSPIKE_SABOTAGE=order
+sweep cross N=50 L=5 seed=1 pcre2=10.49 2026-09-28  2.6s
+  re          agree   16050  differ     0
+  ref         agree    9908  differ  6142
+  la          agree    9908  differ  6142
+  spans       agree   16050  differ     0
+  laspans     agree   16050  differ     0
+  opt         agree   16050  differ     0
+## control ANDSPIKE_SABOTAGE=drop
+sweep cross N=50 L=5 seed=1 pcre2=10.49 2026-09-28  2.5s
+  re          agree    5912  differ 10138
+  ref         agree    5912  differ 10138
+  la          agree    5912  differ 10138
+  spans       agree    5912  differ 10138
+  laspans     agree    5912  differ 10138
+  opt         agree   16050  differ     0
