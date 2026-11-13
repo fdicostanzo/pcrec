@@ -89,3 +89,10 @@ memfn presence.c's `k*h`; "unbounded" should be a fact the seam can state.
   200-main-b20261112193516722240.recid, .candoracle (201), .codegen (202), .startset (203);
   the queue holds new starts until 01:00 (evening hold). Each waits for the one before it to go green.
 - Not run: the full suite and axes (cloud and the manager's, per RUNS.md).
+
+## rpfix2 follow-up (2026-11-12, lane rpfix2, sonnet)
+
+Cloud test rpfix went red on [SABANCHOR]: S463, S470, S471 anchored on
+`emit_req_handoff_rest` text the EMIT-4 round (`round` built only on the
+bounded branch) moved. Re-derived the three anchors; same sites, same
+faults; 0 stale anchors. Details: `rpfix2_report.md`.

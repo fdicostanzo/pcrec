@@ -19,16 +19,10 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    long long k = req_handoff_k(cx);
     bool whole = req_use_whole(cx), run = pcrec_fact_req_run(cx)->len >= 2;
-    StrBuf round = { 0 };
-    round.cx = cx;
-    pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
-                          "handoff_position",'
-SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0); /* SABOTAGE S463 */
+    /* [REQ-HANDOFF-L1] the hit itself,'
+SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0 && req_handoff_k(cx) < PCREC_W_UNBOUNDED); /* SABOTAGE S463 */
     bool whole = req_use_whole(cx), run = pcrec_fact_req_run(cx)->len >= 2;
-    StrBuf round = { 0 };
-    round.cx = cx;
-    pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
-                          "handoff_position",'
+    /* [REQ-HANDOFF-L1] the hit itself,'
 # RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): K is the LANDMARK's
 # (`req_landmark_maxoff`, the run window's where a run ships, so every run
 # witness reads the same K); the anchor carries the entry's round-up target
@@ -43,3 +37,7 @@ SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0); /* SAB
 # at most 3 bytes in (K 3, was 5 for `CAT`). The probe reads the new K. Intent
 # unchanged and re-checked by plant: the entry starts one byte too late and
 # handoff.rxt reads (1,8) where (0,8) is expected (185 cells).
+# RE-AIMED 2026-11-12 (lane rpfix2, [REQ-PAST-LAST]): the round buffer moved
+# into the bounded branch, so the anchor is the k/whole/run lines plus the
+# next comment; K is lowered only where it is bounded and positive (an
+# unbounded K - 1 would leave the unbounded branch). Intent unchanged.
