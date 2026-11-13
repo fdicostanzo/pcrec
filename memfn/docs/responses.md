@@ -3419,3 +3419,19 @@ the compiler, and is never adopted silently. Proposed for main to file
   - cloud mechrows S3120-S3124 plus S3006;
   - reach_equal under MF_TRACE on both layers (job 592, 5812 patterns x 6 arms, differ 0): 3.0b's other OWED item, now CLOSED.
   ORDER: land this BEFORE S2's Part D. That branch carries the F1 tie in its rewritten ranking, proven against this branch in a scratch probe, and takes partd's side in window.c and S3006 when it merges main.
+- done: R-38 Part D + R-41 (set S2; Frank's build GO 2026-11-12 23:45) — branch lane/memfn-partd @ 5c90af24e. It has main dd5143e8d merged in; main's later commits are plan/doc and queuemon only.
+  For the JOINT LANDING with pcrec's [RUN-POS-SET] stage 3 (lane/rps3).
+  Reports: docs/dev/lanes/partd_report.md, partd2_report.md, partd3_report.md, partdland_report.md, partdfix_report.md. Design of record: docs/design/memfn/part_d.md rev 4 (lane/memfn-pdesign, merged in).
+  What it builds:
+  - D0-D3 per part_d.md: run positions of 1-128 members; R by role; the decline row PD; the scan-less fn-every-pos body (card kit-grid@5, UNMEASURED); D3's run_part_terms record and its checks.
+  - R-41: MF_HEAD_MAX_UNBOUNDED (2^40) declines the landmark, the name agreed with main.
+  - MF_SITE_ABI 28 -> 29 (readers by grep); MF_CLASS_V 9 -> 10.
+  - New deny run-verify-wide: inert on today's pcrec, ASSERT_ZERO in emit_sweep and MEMFN_CLASS. Stage 3 re-measures it.
+  - No pcrec emitter edits; zero pcrec movers.
+  - d27fix's F1 tie is honoured by Part D's run_rank, and d27frame is green on the merged tip.
+  Sabotage rows: S3106-S3115, S3119, S3125-S3127 (renumbered from S3120-S3122, which collided with d27fix), plus 10 re-anchored rows.
+  Validation, all GREEN:
+  - box gate 597 (merged tip, BASE dd5143e8d): zero movers and the deny cells green. Its four reds were the gate script's two arms, S3113's detector, and a D3 check counting a declined trial art; partdfix fixed them, and re-run 598 on 5c90af24e passed 785 s.
+  - cloud test GREEN on 5c90af24e and on e33ab2de8; cloud axes GREEN on e33ab2de8 (only checks changed since); cloud mechrows GREEN: 29 rows on e33ab2de8, S3113 on 5c90af24e; cloud ubsan and asan GREEN on ea1ddd78b (pre-merge).
+  OWED (after landing): the every_pos card's timing (an owner-cleared window); stage 3's re-measure of run-verify-wide's reach once pcrec states wide runs.
+  FINDING for main: docs/dev/lanes/r33_sim/probe.c's mf_art_begin wrapper was stale since u2rev (rate=none in every run). It is fixed here with _Static_asserts.
