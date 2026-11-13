@@ -141,3 +141,10 @@ index `val/val.log`, a log per step):
 OWED: kit-partdfix-gate (598-kit-partdfix-gate, script /var/tmp/pcrec-pcrec/scratch/memfn/partdfix/jobs/gate.sh,
 completion line `partdfix-gate: DONE bad=0`); cloud test on the lane tip; mechrows S3113 (its detector
 expectation changed). No other row id changed.
+
+## STATE AT HANDOFF
+
+Branch lane/memfn-partd at 246164125 + this section's commit (fix commits a063ff454, 3c838a0e0, e9bc192e8). Every
+check in Checks is green on this tip's code. No rulings file. OWED: kit-partdfix-gate (queued as
+598-kit-partdfix-gate, cap 7200, script /var/tmp/pcrec-pcrec/scratch/memfn/partdfix/jobs/gate.sh, completion line
+`partdfix-gate: DONE bad=0`), cloud test on this tip, mechrows S3113.
