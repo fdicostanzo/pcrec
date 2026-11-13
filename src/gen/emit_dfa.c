@@ -7854,8 +7854,9 @@ static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
  * as before the row; never an answer change). */
 void pcrec_emit_req_attempt_reentry(Ctx *cx, StrBuf *c, const char *ind)
 {
-    long long k = req_handoff_k(cx);
+    long long k;
     if (!req_reentered(cx) || pcrec_artifact_has_dfa_scan(cx)) return;
+    k = req_handoff_k(cx);              /* after the gate: an ask is a `used` fact */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     if (k >= PCREC_W_UNBOUNDED)
         pcrec_sb_printf(c, "%s    /* [REQ-PAST-LAST] a fresh search from here: past the last\n"
