@@ -45,3 +45,8 @@ the method) replaces the loop; then min-count check, give-back = p -= 1, last ca
 Generalizes to fixed-width bodies that are a sequence of classes (a span of w-byte units). Span work is
 UNSCHEDULED under [SPAN-ISEL] (Frank 2026-10-11, memory pcrec-memfn-span-unscheduled): record the census
 count of corpus loops of this shape, no kit request until that row is scheduled.
+- PREFERRED ROUTE (Frank 2026-11-13: "It might be find [^ab] as well which we have"): the run end is a FIND
+  of the complement class ([^ab]) from p, bounded by min(subject end, p + max*w): an EXISTING kind of kit
+  site with a new caller, so no dependency on the unscheduled [SPAN-ISEL]. pcrec states "first position not
+  in {a,b}, within this bound"; whether the kit scans the wide complement or turns it into a run of the
+  narrow set is the kit's method (D157).
