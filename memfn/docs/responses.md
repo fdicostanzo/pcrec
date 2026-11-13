@@ -3404,3 +3404,18 @@ the compiler, and is never adopted silently. Proposed for main to file
   - the D27 spec-first author for 3.0b's contract;
   - the reach_equal.py agreement run under MF_TRACE on both layers (R19 / Q15, a boxqueue job).
   NOTE: MF_SITE_ABI 28 is also provisionally held by the S2 Part D build (lane/memfn-partd), which re-bumps to 29 by grep if 3.0b lands first.
+- done: 3.0b D27 fixes (3.0b's OWED D27 spec-first author; a kit-found defect, fixed) — branch lane/memfn-d27fix @ 2940a4d7d, cut from main 32514791a. Report docs/dev/lanes/d27fix_report.md. Findings and rulings: scratch/memfn/s1owed/d27author/findings_and_rulings.txt.
+  What it fixes, in the ask (window.c, kit.h):
+  - F1-F3: the ask now refuses exactly where the define or emit refuses, and never answers 0 with the art's error set.
+    F1 was the lever run-tie-left on a verify-NO run, which tripped the run ranking's check: lawful input, 3-7 per 20000 generated cases.
+  - F4: plan_test answers OWN at positions tested inside a run compare.
+  - F5 and A1-A7: spec text in plan_frame.md and memfn.h.
+  - N1, a kit ruling: a PARKED alternative with reseed 0 meets verify-YES spans only, as the define renders it. One plan_frame §2.3 sentence is OWED at the next kit doc touch.
+  Interface: MF_SITE_ABI stays 28 (plan_test has no reader outside the kit's tests). No pcrec byte moves.
+  Tests: the author's tests are adopted as make test-memfn-d27frame (about 1 min, cap 1; its control and empty modes go red). Sabotage rows S3120-S3124.
+  Validation, all GREEN:
+  - box gate 593: zero movers on all 71 arms, 6299 s;
+  - cloud test, axes, ubsan and asan;
+  - cloud mechrows S3120-S3124 plus S3006;
+  - reach_equal under MF_TRACE on both layers (job 592, 5812 patterns x 6 arms, differ 0): 3.0b's other OWED item, now CLOSED.
+  ORDER: land this BEFORE S2's Part D. That branch carries the F1 tie in its rewritten ranking, proven against this branch in a scratch probe, and takes partd's side in window.c and S3006 when it merges main.

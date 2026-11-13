@@ -234,8 +234,9 @@ plant_spec() {
         # g2w_t<id>_<ref>[ matched by offset) is red
         echo 'window.c@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = test_of(w, k);@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = MF_WTEST_OWN;' ;;
     S3096) # 3.0b (AF): stop_test always OWN while plan_test is right: red on G2's B-walk sites
-        # whose stop alone is offered (the counted af_walk population)
-        echo 'window.c@@    if (stop \&\& w->stop_ix >= 0) fp->stop_test = test_of(w, (unsigned)w->stop_ix);@@    if (stop \&\& w->stop_ix >= 0) fp->stop_test = MF_WTEST_OWN;' ;;
+        # whose stop alone is offered (the counted af_walk population). Re-aimed (lane d27fix):
+        # the stop's kind is C-table's alone, written out, no longer test_of's
+        echo 'window.c@@        fp->stop_test = w->table[w->stop_ix] ? MF_WTEST_TABLE : MF_WTEST_OWN;@@        fp->stop_test = MF_WTEST_OWN;' ;;
     S3084) # 3.0b (J): a reply's method filled from search's spelling: the id-resolution check
         # (method names a FIND row whose pick is search) is red
         echo 'window.c@@    snprintf(out->method, sizeof out->method, "%s", fp->method ? fp->method : "");@@    snprintf(out->method, sizeof out->method, "%s", fp->method \&\& *fp->method ? (const char *[]){ "", "LIBC", "LIBC_BACK", "WALK", "PAIR", "HORS" }[fp->search] : "");' ;;

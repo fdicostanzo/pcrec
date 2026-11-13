@@ -281,6 +281,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-12, Frank: blocks instead of doubling, "also helps with streaming"): leading candidate = BLOCKED look-ahead: one presence question per block of B bytes ahead of the loop (yes: the block's attempts run unasked; no: scan forward to the next occurrence, end of subject stops); forward-only, at most one block ahead (stream- and readahead-friendly; doubling can demand unbounded look-ahead a stream cannot supply). B is a tuning constant: derive it from a SYSTEM constant (Frank): the stream's chunk when streaming, else the page size (sysconf(_SC_PAGESIZE), POSIX libc, or a build-time page constant if the measurement shows insensitivity; not the per-device /sys readahead window, not glibc-only cache sizes) and show insensitivity across that range in the measurement.
 
 ## Candidates ([OPTLOOP])
+- [PRED-SPLIT] STATE:not-started — automatically demote an exploding predicate to a verify step; DFA keeps the rest
+  filed: 2026-11-13 manager (Frank: "isolate expensive operations ... DFA for most of it but this one check is VM ... a non-manual method?"; "file away for later optimization")
+  status (2026-11-13): filed, unscheduled; waits for the predicate base ([COND-FAMILY])
+  next: when scheduled: product build under a state budget, growth attributed per operand; the culprit is relaxed in the DFA (dropped: an over-approximation) and checked by a verify step (prefilter + verify, FINISH verify); left-chooses fallback to the VM per match
+  refs: [COND-FAMILY] row body ("AUTOMATIC SPLIT"); [COST-EXPLAIN] (the manual tool); D196 (left chooses)
 - [COST-EXPLAIN] STATE:not-started — a regex cost explainer: per-construct marginal cost by ablation (swap a node, recompile)
   filed: 2026-11-13 manager (Frank: "That suggests a tool for looking at regex dfa cost by repeated modify/compile")
   status (2026-11-13): filed, unscheduled; idea from the predicate cost-surfacing discussion ([COND-FAMILY] row body)
@@ -2063,7 +2068,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-08-24 Frank
   status (2026-08-24): not started
   next: starts only on Frank's word; no row-specific trigger recorded
-  refs: decisions D27
+  refs: decisions D27; [COND-FAMILY] row body ("IMPORT", 2026-11-13: import(name) as the predicate-language alias; [LIB] delivers the standard library)
   (RULED 2026-08-28, Frank: "depends on rxt format" — the row BLOCKED on [DD-13b], the .rxt format half — [DD-13b] COMPLETED 2026-08-29 (archived), so that blocker is GONE (struck 2026-10-12, Frank's ruling session 111: keep the row, in Boonies); the spine question has still not been asked.
   Frank, 2026-08-24, thirty-ninth session; PLANNED — its place relative to the spine is NOT ruled (Frank ~22:0x: "planned but I don't know that I'd put them on the spine"); to be discussed at [DD-14]'s close): (1) the .rxt format grows so a file can carry MULTIPLE patterns that reference each other through SUBROUTINE CALLS (definitions + patterns in one file, the way [DD-14] is being built); (2) the same mechanism user-facing — a user INCLUDES a library of named subpatterns and calls them from a pattern by name; (3) pcrec SHIPS a LIBRARY STORE of tested subpatterns (email address, IP address, quoted string, HTML pieces, …).
   Relations: [DD-11] (scope-resolved definitions whose values are inserted — this row is that architecture's user-facing form; a library is a definitions scope), [V-E] (multi-pattern compilation units — the unit boundary), [DD-14.G] (splice + dead-capture elision is what makes a library subpattern cost NOTHING: the artifact byte-identical to the hand-inlined pattern — the email specimen's bar), [DD-14.F] (the DEFINE row is the in-pattern spelling of a definition).

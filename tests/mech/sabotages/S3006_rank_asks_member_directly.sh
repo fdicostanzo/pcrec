@@ -28,3 +28,5 @@ SAB_AFTER='        { kit_member m0 = { r.scan, k ? kit_mass(rate, sets + 32u * r
 # decision's column), the same plant.
 # RE-ANCHORED (lane partd2, 2026-11-13), the same plant: run_rank takes its caller's options `o` (the
 # art's tie, or a pinned R's member tie in translate; d27fix F1), and the call is one line.
+# (lane d27fix's re-anchor of the same date, to translate's loop with `ro`, is superseded by
+# partd's: that loop is run_rank now, and translate passes it the same `ro`; partdland, 2026-11-13.)

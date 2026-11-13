@@ -797,7 +797,12 @@ static void frame_classes(int id, const g2w_site *x, const g2w_dec *d, const mf_
         }
         if (!ref) tn_noffer++;
         if (ref && !alone) tn_term++;
-        if (w->plan_test[i] != (ref ? MF_WTEST_TABLE : MF_WTEST_OWN)) {
+        /* d27fix F4 (the reply follows the text): a position E-find tests
+           inside a run compare answers OWN; a shared term is only a
+           candidate compare, so there either answer, and the marker check
+           below holds which */
+        if (w->plan_test[i] != (ref ? MF_WTEST_TABLE : MF_WTEST_OWN) &&
+            !(!alone && w->plan_test[i] == MF_WTEST_OWN)) {
             snprintf(m, sizeof m, "plan[%d] (offset %d, offer %u): plan_test %u (fused %u search %u)", i, w->plan[i], ref,
                      w->plan_test[i], w->fused, w->search);
             fail(id, "table_name", m);

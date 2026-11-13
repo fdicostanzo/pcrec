@@ -1660,11 +1660,14 @@ int      mf_lever(mf_art *, const char *name);
  *               and check (the offset-skip function), ARM where a composer
  *               arm the triple does not describe renders the site
  *   plan_test[] the CHECK's test kind at plan[i] (mf_wtest): TABLE iff the
- *               define hooks state `table_name` and the span covering
- *               plan[i] offers a table whose set is the set tested there,
- *               else OWN; NONE past nplan and off the composing frames
- *   stop_test   the stop's test kind by the same rule, on E-find's composed
- *               rows where the window has a stop; NONE elsewhere
+ *               define hooks state `table_name`, the span covering plan[i]
+ *               offers a table whose set is the set tested there, and the
+ *               text tests plan[i] alone; else OWN, a position E-find tests
+ *               inside a run compare included (the compare reads no table);
+ *               NONE past nplan and off the composing frames
+ *   stop_test   the stop's test kind by C-table's rule alone (the find tests
+ *               the stop), on E-find's composed rows where the window has a
+ *               stop; NONE elsewhere (E-generic included)
  * search, stream and fused describe the OFF (scalar) variant: under
  * -fmemfn-simd the artifact may run a vector block the reply does not name.
  * MF_WPLAN_MAX is a SHAPE BOUND, DERIVED: every offset a span may state. */
@@ -1710,10 +1713,16 @@ typedef struct {
  * only; neither the site's frame fields nor `def` is read. DEFINE / EMIT:
  * the frame is the site's own fields and `def` the hooks mf_define /
  * mf_emit would take; the reply adds the frame part, and the ask answers
- * -1 exactly where that define would refuse. PURE: no text, no handle, no
- * art state, no error set, no hook callback called. Returns 0, or -1 (an
- * UNSTATED or unknown `call`, a site the family does not describe, a frame
- * the define refuses, out of memory). */
+ * -1 exactly where that define (for EMIT, mf_emit: its define and its use)
+ * would refuse, a refusal a sink capability causes excepted (the ask takes
+ * no sink: it assumes a full one). PURE: no text, no handle, no art state,
+ * no error set, no hook callback called, but for one fenced defect path
+ * (plan_frame.md §2.2 Purity), reached by no green input. Returns 0, or -1
+ * (an UNSTATED or unknown `call`; an art whose sticky error is set, on entry
+ * or by that defect path, which POISONS the art as the define would; a site
+ * the family does not describe; a frame the define refuses; under EMIT a
+ * `decl_point` 1 site or a use mf_emit refuses at its text; out of
+ * memory). */
 #define mf_wdecide MF_NS(wdecide)
 int      mf_wdecide(const mf_art *, const mf_site *site, const mf_hooks *def, uint8_t call,
                     mf_wreply *out);
