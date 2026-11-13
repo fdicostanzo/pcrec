@@ -79,7 +79,11 @@ def art(tag, flags, pat):
 # (Span arms R1, lane sar1: a repeat of a literal is its copies in the run, so
 # `é{2,3}cat` states `éécat` and no set lead precedes it; the witnesses are
 # the same count shapes over an alternation body, whose copies are not a run)
-WIT = [([], "(?:é|ü){2,3}cat"), (["--engine=vm"], "(?:é|ü){2,3}cat"), (["-e", "utf8"], "(?:é|ü){2,3}(?i:cat)"),
+# ([RUN-POS-SET] S2, set positions up to 128 members: the alternation's
+# copies ARE a run now, `(?:é|ü){2,3}cat` states c3[a9bc]c3[a9bc]cat and no set
+# lead precedes it; RE-AIMED with a `.` after each member, no run position, so
+# the run is `cat` again and the necessary c3 leads it)
+WIT = [([], "(?:é.|ü.){2,3}cat"), (["--engine=vm"], "(?:é.|ü.){2,3}cat"), (["-e", "utf8"], "(?:é.|ü.){2,3}(?i:cat)"),
        ([], "(?:user|USER)[ \\t]*="), (["-e", "byte"], "(x?)([a-z]+)+Z.@#\\1")]
 na = 0
 for i, (fl, pat) in enumerate(WIT):
