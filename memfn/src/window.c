@@ -959,6 +959,17 @@ static const uint8_t *sets_at(const void *src, unsigned j, uint8_t buf[32])
  * §2.5): it asks the run decision's EXACT_AROUND mode with the stretch
  * row's tie stated here, so the lever leaves it behind (kit_run_member's one
  * caller is kit_run_decide). */
+/* R's MEMBER OPTIONS, the one home of the member's tie (run_member asks
+ * them; translate ranks a pinned R's term under the same tie, so the
+ * ranking's first answer is the member): verify NO, the EXACT_AROUND mode,
+ * its tie the stretch row stated here (the lever leaves this site's decision
+ * behind, §2.5); verify YES, the whole run, the art's tie. */
+static kit_run_opts member_opts(const wf_dec *d, const mf_wspan *r)
+{
+    return r->verify == MF_VERIFY_NO ? (kit_run_opts){ KIT_RUN_EXACT_AROUND, T_MASS_STRETCH, 0 }
+                                     : kit_run_opts_of(d->art, d->s, KIT_RUN_WHOLE);
+}
+
 static void run_member(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
@@ -967,13 +978,7 @@ static void run_member(wf_dec *d)
     const mf_wspan *r = &m->alt->spans[m->run];
     unsigned lo, hi;
     int bj;
-    /* verify NO: the EXACT_AROUND mode, its tie the stretch row stated here
-       (the lever leaves this site's decision behind, §2.5); verify YES: the
-       whole run, the art's tie */
-    kit_run_opts o = r->verify == MF_VERIFY_NO
-                   ? (kit_run_opts){ KIT_RUN_EXACT_AROUND, T_MASS_STRETCH, 0 }
-                   : kit_run_opts_of(d->art, d->s, KIT_RUN_WHOLE);
-    kit_run_reply rr = kit_run_decide(d->rate, o, sets_at, r->set, r->len, NULL);
+    kit_run_reply rr = kit_run_decide(d->rate, member_opts(d, r), sets_at, r->set, r->len, NULL);
     if (!rr.has_scan) {                 /* no (exact) position: no member */
         d->run_stated = 0;
         return;
@@ -1502,18 +1507,18 @@ static int run_bytes(const mf_art *art, kit_pos_at *at, const void *src, unsigne
 
 /* THE RUN TERM's RANKING (RQ-2): the run decision's order over the term's
  * `n` positions (consecutive 32-byte sets at `sets`), each answer asked again
- * from the last: least mass first, ties per the art's run options, as
- * pcrec_find_run_rank. ONE function, its two callers translate and
- * run_part_terms (part_d.md §2.1 item 3), so S3006's target is one place.
- * Fills rank_pos/rank_ppm/rank_n of `p`; 0, or -1 after kit_fail (the tie
- * row is no strict order). */
-static int run_rank(const mf_art *art, const mf_site *s, const uint32_t *rate,
+ * from the last: least mass first, ties per the options `o` its caller
+ * states (the art's run options; a pinned R's term its member's tie,
+ * translate), as pcrec_find_run_rank. ONE function, its two callers
+ * translate and run_part_terms (part_d.md §2.1 item 3), so S3006's target is
+ * one place. Fills rank_pos/rank_ppm/rank_n of `p`; 0, or -1 after kit_fail
+ * (the tie row is no strict order). */
+static int run_rank(const mf_art *art, kit_run_opts o, const uint32_t *rate,
                     const uint8_t *sets, unsigned n, mf_pred *p)
 {
     kit_run_reply r = KIT_RUN_NONE;
     for (unsigned k = 0; k < n; k++) {
-        r = kit_run_decide(rate, kit_run_opts_of(art, s, KIT_RUN_WHOLE), sets_at, sets, n,
-                           k ? &r : NULL);
+        r = kit_run_decide(rate, o, sets_at, sets, n, k ? &r : NULL);
         if (!r.has_scan) {          /* the tie row is no strict order (see kit_run_member; kit_run_decide asks it) */
             p->rank_n = (uint8_t)k;
             return kit_fail((mf_art *)art, "window family: the run ranking lost position %u of "
@@ -1613,7 +1618,13 @@ static void translate(const wf_dec *d, const struct wf_plan *w, unsigned eb, wf_
        spans, the ranking the plan's sets). */
     if (p->plan_hint != MF_NO_PRED && p->term[p->plan_hint].kind == MF_T_RUN) {
         unsigned n = p->term[p->plan_hint].run_len;
-        run_rank(d->art, d->s, d->rate, w->set[hint_at], n, p);
+        /* the art's tie; a pinned R's term ranks under its member's tie
+           (member_opts: a verify-NO R's is the stretch row's whatever the
+           lever, so the lever moves the ranking exactly where it moves the
+           member; d27fix F1) */
+        kit_run_opts ro = kit_run_opts_of(d->art, d->s, KIT_RUN_WHOLE);
+        if (d->pinned) ro.tie = member_opts(d, &m->alt->spans[m->run]).tie;
+        run_rank(d->art, ro, d->rate, w->set[hint_at], n, p);
         n = p->rank_n;
         if (n && d->pinned && p->rank_pos[0] != d->member - w->off[hint_at])
             kit_fail((mf_art *)d->art, "window family: the run ranking's first position %u is not the "
@@ -2966,7 +2977,8 @@ static int run_part_terms(const mf_art *art, const mf_site *s, unsigned part, in
             t->mask = exact ? NULL : rb + MF_WSPAN_POS;
             q->plan_hint = q->nterm;
             q->plan_pos = (uint16_t)(rr.scan - a);
-            if (run_rank(art, s, kit_byte_rate(art), run->set[a], b - a, q)) {
+            if (run_rank(art, kit_run_opts_of(art, s, KIT_RUN_WHOLE), kit_byte_rate(art),
+                         run->set[a], b - a, q)) {
                 *why = art->err;
                 return -1;
             }
