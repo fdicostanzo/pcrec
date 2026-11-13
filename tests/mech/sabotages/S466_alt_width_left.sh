@@ -14,7 +14,8 @@ SAB_REACH_EXPECT='REACH-ALT-K2'
 SAB_REACH_POP='tests/codegen/run_prechecks.sh|^\(\?:a\|bb\)\?catdog%|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    RbRuns o;
-    o.maxw = l.maxw > r.maxw ? l.maxw : r.maxw;'
-SAB_AFTER='    RbRuns o;
-    o.maxw = l.maxw; /* SABOTAGE S466 */'
+SAB_BEFORE='    o->maxw = l->maxw > r->maxw ? l->maxw : r->maxw;'
+SAB_AFTER='    o->maxw = l->maxw; /* SABOTAGE S466 */'
+# RE-ANCHORED 2026-11-13 (lane rps3b, [RUN-POS-SET] stage 2a rule (1)):
+# `rr_alt`'s body moved into its row 2, `rr_alt_affix` (operands by pointer).
+# Same fault, same line: the alternation's width is the left branch's.

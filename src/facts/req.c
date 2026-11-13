@@ -262,6 +262,7 @@ typedef struct {
     Ctx *cx;
     int pos_set;     /* the domain: a position's largest member count */
     bool pos_cube;   /* ... and whether it must be one cube */
+    bool alt_union;  /* `rr_alt_rows`' equal-width row is on */
     unsigned restored;
     const uint32_t *rate;   /* the byte-rate, for the run choice's tie row */
     int depth, nslot;
@@ -591,22 +592,55 @@ static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
     return o;
 }
 
-/* ALTERNATION of runs: only what every branch guarantees, which at the
- * contiguity grain is the common prefix and the common suffix and nothing
- * between them. `all` is false even when both branches are the same literal:
- * the general fact an alternation licenses is "these bytes are common", and a
- * same-literal special case would buy a population this analysis has never
- * measured (D77). */
+/* ALTERNATION of runs: only what every branch guarantees. The outcome is a
+ * declared first-match table (`rr_alt_rows`, alt_normal_form.md §6); each row
+ * answers whether it applies and, if so, fills `*o`. */
+typedef bool (*RrAltRow)(const RbWalk *w, const RbRuns *l, const RbRuns *r,
+                         RbRuns *o);
+
+/* Row 1 ([RUN-POS-SET] stage 2a rule (1)): both branches `all`, of the same
+ * untruncated width, and their per-position UNION inside the walk's domain at
+ * every position: the alternation is `all` and its run is that union. Sound
+ * because every match of either branch is exactly `n` bytes, each in its
+ * branch's set at that position, so in the union. On under the test build's
+ * lever `alt-union-run` until the landing (`ReqWalkParams.alt_union`). */
+static bool rr_alt_union(const RbWalk *w, const RbRuns *l, const RbRuns *r,
+                         RbRuns *o)
+{
+    int n = l->head.n;
+    if (!w->alt_union || !l->all || !r->all || l->head.trunc || r->head.trunc ||
+        r->head.n != n || l->maxw != n || r->maxw != n)
+        return false;
+    RbRun u = rn_common_head(w, l->head, r->head);
+    if (u.n != n) return false;
+    o->maxw = n;
+    o->head = o->tail = o->best = u;
+    o->all = true;
+    return true;
+}
+
+/* Row 2, every other alternation: the common prefix and the common suffix
+ * and nothing between them, `all` false. */
+static bool rr_alt_affix(const RbWalk *w, const RbRuns *l, const RbRuns *r,
+                         RbRuns *o)
+{
+    o->maxw = l->maxw > r->maxw ? l->maxw : r->maxw;
+    o->head = rn_common_head(w, l->head, r->head);
+    o->head.off = 0;
+    o->tail = rn_common_tail(w, l->tail, r->tail);
+    o->tail.off = rn_tail_off(o->maxw, o->tail.n);
+    o->best = rn_better(w, o->head, o->tail);
+    o->all  = false;
+    return true;
+}
+
+static const RrAltRow rr_alt_rows[] = { rr_alt_union, rr_alt_affix };
+
 static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
 {
     RbRuns o;
-    o.maxw = l.maxw > r.maxw ? l.maxw : r.maxw;
-    o.head = rn_common_head(w, l.head, r.head);
-    o.head.off = 0;
-    o.tail = rn_common_tail(w, l.tail, r.tail);
-    o.tail.off = rn_tail_off(o.maxw, o.tail.n);
-    o.best = rn_better(w, o.head, o.tail);
-    o.all  = false;
+    for (size_t i = 0; !rr_alt_rows[i](w, &l, &r, &o); i++)
+        ;
     return o;
 }
 
@@ -1184,6 +1218,7 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
     w->cx = cx;
     w->pos_set = p->pos_set;
     w->pos_cube = p->pos_cube;
+    w->alt_union = p->alt_union;
     w->restored = p->restored;
     w->rate = p->rate;
     w->pd = (PdCfg){ &rb_pd_bytes, p->max_pieces, PCREC_MAX_REQ_RUN_SCAN };
