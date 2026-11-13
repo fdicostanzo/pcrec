@@ -131,7 +131,18 @@ none. Its verdict is owed (below).
 
 All validation ran in the worktree on the dev box, under `nice`.
 
-CHECKS_TABLE
+| check | verdict |
+|---|---|
+| `nice make -j8` | green |
+| `make strict` | green (20 s) |
+| `make test-codegen` | first run RED, TT-9: the new `tests/memfn/run_d27_frame.sh` was in neither sanitizer list. Fixed: added to `tests/lib/san_excluded.txt` as NO-C-RUN, the same shape as `run_d27_region.sh`. Rerun green: 0 failed, 21/21 scripts, 211 s |
+| `make test-memfn-arch` | green (9 s) |
+| memfn quick families: finder (purity reach with the re-anchored row), arms, rows, rank, forms, reach, stamps, link, deleg, manifest, targets, d27region | all green |
+| `make test-memfn-d27frame` (new) | green, 57 s |
+| `make test-ci-shards`, `test-claudemd-size` | green |
+| `python3 -I scripts/m6read_check_sab_anchors.py` | green, all 1280 rows' anchors resolve |
+| `CLAUDEMD_ROOT=<worktree> scripts/check_claudemd_size.sh --all` | green |
+| G2 window family (`memfn/tests/run_g2_win.sh`) | plain 11,266/0, traced 5,670/0; plants S3093, S3096 RED |
 
 Sabotage rows S3120-S3124 (`SAB_SUITES="memfnd27frame"`), each planted by hand and run through the quick tier
 (`scratch/memfn/d27fix/plants.sh`), all red:
