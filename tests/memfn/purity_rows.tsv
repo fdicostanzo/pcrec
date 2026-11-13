@@ -5,7 +5,10 @@
 # (status REACH), or equal it (status UNREACHED, with its reason: a row that cannot move a reply by
 # construction). A row that moves though declared UNREACHED, and a REACH row that does not, is RED.
 # tests/memfn/run_purity_reach.sh also checks that this table's ids are exactly window.c's row ids.
-# `pur_never_d`/`pur_never_x` (injected by the runner) are the never-holding predicates.
+# `pur_never_d`/`pur_never_x`/`pur_never_v`/`pur_never_u` (injected by the runner) are the never-holding predicates.
+# memfn plan_frame.md 3.0b added Table E (E_*: its holds never), the renderer tables' rows (RK_/RB_/RS_/RC_/RF_:
+# their key emptied, so ren_find never matches), the search support rows (support:PICK: no stream) and Table S
+# (ST_*: its holds never); the control print now also prints each site's STMT EMIT replies and the PF site's.
 # Fields: id <TAB> old <TAB> new <TAB> status (REACH | UNREACHED reason). `-` : nothing to drop.
 A-empty	return x->d->a[x->ai].any_empty;	return 0;	REACH
 A-parked	return p->present && p->yes && p->ycore;	return 0;	REACH
@@ -30,3 +33,33 @@ C-table	-	-	UNREACHED applied by `plan_of` (phase 2, the hooks name the table), 
 C-own	-	-	UNREACHED applied by `plan_of` (phase 2), not by the plan face
 C-asc	"C-asc",   c_always,	"C-asc",   pur_never_d,	UNREACHED C-run orders the plan first (it calls c_asc, idempotent), and it always holds
 +C-member(verify-NO)	kit_run_opts o = r->verify == MF_VERIFY_NO	kit_run_opts o = 0	REACH
+E_FUNC	[E_FUNC]    = { e_legacy_holds,	[E_FUNC]    = { pur_never_v,	REACH
+E_STMT	[E_STMT]    = { e_legacy_holds,	[E_STMT]    = { pur_never_v,	REACH
+E_FIND	[E_FIND]    = { e_find_holds,	[E_FIND]    = { pur_never_v,	REACH
+E_GENERIC	[E_GENERIC] = { e_generic_holds,	[E_GENERIC] = { pur_never_v,	REACH
+RK_FIND	{ E_FIND, REN_FRAME, "E-find", NULL }	{ E_FIND, 0, "E-find", NULL }	REACH
+RK_GENERIC	{ E_GENERIC, REN_FRAME, "E-generic", NULL }	{ E_GENERIC, 0, "E-generic", NULL }	REACH
+RB_PAIR	{ E_FIND, REN_PICK(FF_PAIR), "B-pair", NULL }	{ E_FIND, 0, "B-pair", NULL }	REACH
+RB_MEMCHR	{ E_FIND, REN_PICK(FF_LIBC) | REN_PICK(FF_LIBC_BACK), "B-memchr", NULL }	{ E_FIND, 0, "B-memchr", NULL }	REACH
+RB_WALK	{ E_FIND, REN_PICK(FF_WALK), "B-walk", NULL }	{ E_FIND, 0, "B-walk", NULL }	UNREACHED no purity site picks WALK on E-find (no stop byte set is offered as a table): G2's window family carries B-walk (classes walk, af_walk)
+RB_HORS	{ E_FIND, REN_PICK(FF_HORS), "B-hors", NULL }	{ E_FIND, 0, "B-hors", NULL }	UNREACHED no purity site is a dense REPORT window D-hors picks: G2's window family carries B-hors (classes hors, cell E-find/shift)
+RB_ST_MEMCHR	{ E_STMT, REN_PICK(FF_LIBC), "pf_memchr", stmt_end0_holds }	{ E_STMT, 0, "pf_memchr", stmt_end0_holds }	REACH
+RB_ST_MEMCHR_B	{ E_STMT, REN_PICK(FF_LIBC), "pf_memchr_bounded", stmt_end1_holds }	{ E_STMT, 0, "pf_memchr_bounded", stmt_end1_holds }	UNREACHED no purity STMT site states end_back 1: G2's window family carries the bounded PF rows (its n - 1 miss)
+RB_ST_BACK	{ E_STMT, REN_PICK(FF_LIBC_BACK), "pf_memchr_back", NULL }	{ E_STMT, 0, "pf_memchr_back", NULL }	UNREACHED no purity STMT site's stop lies below the candidate (LIBC_BACK): G2's below-window stream carries it
+RB_ST_WALK	{ E_STMT, REN_PICK(FF_WALK), "pf_walk", stmt_end0_holds }	{ E_STMT, 0, "pf_walk", stmt_end0_holds }	UNREACHED no purity STMT site names its set by table with result equal to lo: G2's ASSIGN_LO frame carries pf_walk
+RB_ST_WALK_B	{ E_STMT, REN_PICK(FF_WALK), "pf_walk_bounded", stmt_end1_holds }	{ E_STMT, 0, "pf_walk_bounded", stmt_end1_holds }	UNREACHED no purity STMT site states end_back 1 with a table: G2's window family carries pf_walk_bounded
+RS_FIND_RESTART	{ E_FIND, WF_ST_RESTART, "S-restart", NULL }	{ E_FIND, 0, "S-restart", NULL }	REACH
+RS_GENERIC_RESTART	{ E_GENERIC, WF_ST_RESTART, "S-restart", NULL }	{ E_GENERIC, 0, "S-restart", NULL }	REACH
+RS_SHIFT	{ E_FIND, WF_ST_SHIFT, "S-shift", NULL }	{ E_FIND, 0, "S-shift", NULL }	UNREACHED SHIFT is HORS's stream only, and no purity site picks HORS (RB_HORS): G2's cell E-find/shift carries it
+RS_CALLER	{ E_STMT, WF_ST_RESTART, "S-caller", NULL }	{ E_STMT, 0, "S-caller", NULL }	REACH
+RC_FIND	{ E_FIND, REN_FRAME, "C-find", NULL }	{ E_FIND, 0, "C-find", NULL }	REACH
+RC_FLOOR	{ E_GENERIC, REN_FRAME, "C-floor", NULL }	{ E_GENERIC, 0, "C-floor", NULL }	REACH
+RF_FN	{ E_FIND, REN_PICK(FF_PAIR), "B-fn", b_fn_holds }	{ E_FIND, 0, "B-fn", b_fn_holds }	REACH
+support:LIBC	{ "LIBC",      FF_LIBC,      WF_ST_RESTART,	{ "LIBC",      FF_LIBC,      0,	REACH
+support:LIBC_BACK	{ "LIBC_BACK", FF_LIBC_BACK, WF_ST_RESTART,	{ "LIBC_BACK", FF_LIBC_BACK, 0,	UNREACHED no purity site picks LIBC_BACK (RB_ST_BACK's reason)
+support:WALK	{ "WALK",      FF_WALK,      WF_ST_RESTART,	{ "WALK",      FF_WALK,      0,	UNREACHED no purity site picks WALK (RB_WALK's reason)
+support:PAIR	{ "PAIR",      FF_PAIR,      WF_ST_RESTART,	{ "PAIR",      FF_PAIR,      0,	REACH
+support:HORS	{ "HORS",      FF_HORS,      WF_ST_SHIFT,	{ "HORS",      FF_HORS,      0,	UNREACHED no purity site picks HORS (RB_HORS's reason)
+ST_ONE	{ "ST-one",  st_one_holds,	{ "ST-one",  pur_never_u,	REACH
+ST_NONE	{ "ST-none", st_none_holds,	{ "ST-none", pur_never_u,	UNREACHED every pick a purity site makes is renderable on its frame, so S is never empty there (ST-none answers only a pick its frame cannot render)
+ST_MANY	{ "ST-many", st_many_holds,	{ "ST-many", pur_never_u,	UNREACHED by construction: every built search feeds one stream (wf_support), so S never holds two and ST-many never holds

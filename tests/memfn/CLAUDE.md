@@ -19,7 +19,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 ### C11's routing leg (lane r4e0b, R4e'.0b)
 - **routing_shape.py** — C18's ROUTING leg (D155 item 6 and addendum 1): every offset-skip/pre-check function in an artifact (a `static inline size_t` named by pcrec's ...
 ### C15 and C16 (lane memfnskel)
-- **run_link_checks.sh** — [MEMFN] R4a: `make test-memfn-link`, a `make test` section; C15, C16 and R-28's frame check (no kit function over a 4 KB stack frame, `-O2 -fstack-usage`, with a planted-fat-frame witness).
+- **run_link_checks.sh** — [MEMFN] R4a: `make test-memfn-link`, a `make test` section; C15, C16 and R-28's frame check (no kit function over a 4 KB stack frame, `-O2 -fstack-usage`, with a planted-fat-frame witness); the census probe's compile (3.0b).
 - **c15_allowlist.txt** — C15's exceptions, one undecorated symbol per line, each with its reason.
 ### C5 and C10 (lane r4ccore, R4c)
 - **arm_fixtures.c** — (R17-a, MF_SITE_ABI 11, lane r17a: every kit call states a forward FIND's window as pcrec's builders do, `fx_win`/`FXW`, applied after the fixture's ... Since D172 S2 commit 6 (lane wsc6) `fx_win` states span 0's class only (the renderer interface): W0-W2 and the R-26 prefix/context facts left with their fields, and the nine window gate cases with them (`GATE_CASE_FLOOR` 98 -> 89).
@@ -42,7 +42,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - `occurrence_oracle.py` (+ `_selftest.py`) — K38-2a occurrence oracle (D27-blind, sheet §3.3; k382o_report.md).
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a traced run's rows are that fixture's.
 - `arm_fixtures.c --site-text ID [CLS]` / `--site-parts ID [CLS]` / `--hash-text FILE|-` / `--facts ID [CLS]` (span_cards S2c, includes kit.h): an instance's hashed text (whole or FILE/BODY), any text's hash, the slot's facts; `--hash`: `FORMCLS` lines, per-instance R-MS3 fixtures (r9).
-- `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS (11 sites; replies on a fresh art vs between interleaved defines; the sticky-err fence). run_finder.sh floors it EXACTLY, plants `nsites`-keyed A-mass and M-parked rows (RED, control moved), and runs **run_purity_reach.sh** over **purity_rows.tsv**: each Table A/M/T-VERIFY row dropped must move a reply or be declared unreached (population = window.c's rows).
+- `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS (11 sites; NONE and framed replies, fresh art vs interleaved defines, whole-reply memcmp; the sticky-err fence; 3.0b's fixtures: NOTES.md "Purity harness"). run_finder.sh floors it EXACTLY, runs it plain and on the MF_TRACE driver `fxt` (E-func/E-generic define counts EXACT), plants `nsites`-keyed A-mass and M-parked rows (RED, control moved), and runs **run_purity_reach.sh** over **purity_rows.tsv**: each window.c table row dropped must move a reply or be declared unreached.
 - **run_n2_sample.sh**, **n2_sample_patterns.txt** — [MEMFN-ROWCON] N2's zero rules on a SAMPLE (lane m7fix, 2026-10-08; opt-in, no make target; mech arm `n2sample`).
 ### The finder table's B1 checks (lane fdb1, [MEMFN] R17-b′ B1)
 - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Check C reads every `memfn/data/cards/*.tsv` by listing (floor 3), holds each card row's shape and the `kit:form.`-dep guard (named deps resolve; count EXACT 17); check B: an id's hash = its instances' fold (S2933).

@@ -14,6 +14,9 @@
 #
 # WHERE IT IS SEEN. The answers (reqcube.rxt's lowercase dispatch block, the
 # S454 detector), and C5's pin of the `ofs-pair` fixture (arm memfnarms).
+# Re-aimed at memfn plan_frame.md 3.0b (lane b30b, [rev2.2 R9]): the BODY rows
+# gained the pick column (FF_PAIR / FF_LIBC, the reply's E-func search); the
+# swap is unchanged.
 SAB_ID="S686-fn-rows-body-order-swapped"
 SAB_FILE="memfn/src/ofsskip.c"
 SAB_SUITES="harness memfnarms"
@@ -29,7 +32,7 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 # Re-aimed by lane r13 (R-13, 2026-10-09): its anchor moved with the R4e' batch 1 seam
 # (kit_walk's per-row step / fn_rows[]'s decl column / the seam's level blocks); same intent.
-SAB_BEFORE='    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL },
-    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL },'
-SAB_AFTER='    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL },   /* SABOTAGE S686 */
-    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL },'
+SAB_BEFORE='    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },
+    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },'
+SAB_AFTER='    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },   /* SABOTAGE S686 */
+    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },'

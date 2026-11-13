@@ -33,12 +33,18 @@ design's own formula). A study only: never built or run by `make`. Run python wi
   `weblog` on four arms (default, `--engine=vm`, `-fmemfn-simd`, the DEF deny). 16 compiles (rev 5;
   8 before). Output `witness.out`.
 
+- `probe/` — the census's SITE PROBE, the successor of R-33's `docs/dev/lanes/r33_sim/probe.c` (left as that lane
+  wrote it; it no longer compiles against MF_SITE_ABI 28), written by memfn plan_frame.md 3.0b: `probe.c`, its
+  `build.sh`, `collect.py` and `sim.py` (copies), and the two sweep jobs `sweep.sh`/`rp.sh` (copies of jobs 240/241
+  with `SIM` this directory and the tree stated as `PROBE_TREE`). See `probe/CLAUDE.md`.
+
 Rev 2's `onestream.py`/`.out` (the census of the deleted hand row ONE-STREAM) are retired with the
 row (git history, 5b3bc376a).
 
 ## Re-run
 
-    SWEEP=/var/tmp/pcrec-pcrec/scratch/memfn/r33/sweep/sweep.jsonl   # R-33's, re-made by its job 240
+    SWEEP=/var/tmp/pcrec-pcrec/scratch/memfn/r33/sweep/sweep.jsonl   # re-made by probe/sweep.sh (PROBE_TREE=a built
+                                                                      # tree; job 240's successor, plan_frame.md 3.0b)
     S=/var/tmp/pcrec-pcrec/scratch/memfn/spanpick5
     python3 -I counts.py "$SWEEP"
     bash witness.sh build/pcrec build/pcrec-analyze "$S" > witness.out
@@ -46,3 +52,4 @@ row (git history, 5b3bc376a).
     python3 -I census0.py sweep "$SWEEP" -o census0.out   # J0 does this on the re-made sweep
     python3 -I census0.py forecast "$SWEEP" --measures ../../../../measure_store/zen4-grid3/1/set.tsv \
         --swept-at 71cad723e -o census0_cards.out   # S2f; job 488 re-makes the sweep and compares byte for byte
+                                                    # (re-queue 440/488 from probe/sweep.sh)

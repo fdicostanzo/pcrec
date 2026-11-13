@@ -25,6 +25,13 @@
 #                  defect (the table below): the run must go red. --plants
 #                  runs them all. Writes only the work directory.
 #
+# G2W_TRACE=1 (plan_frame.md 3.0b, run by run_g2.sh against
+# libpcrec_mftrace.a): the TRACED pass. LIB is an MF_TRACE kit, the plant
+# path's kit_objs compile -DMF_TRACE, and the kit's agreement at every window
+# define (compose.c define_sel) runs on G2's sites; a disagreement refuses the
+# render (a generator FAIL). Its populations, the window defines per Table E
+# row read off the generator's MFTRACE END records, are floored.
+#
 # Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR, G2W_SITES, G2W_SEED (and the
 # appended streams' sizes: G2W_S3_SITES, G2W_C1_SITES, G2W_R2_SITES, G2W_H2_SITES,
 # G2W_K3_SITES, the in-run sites under the lever run-tie-left).
@@ -83,6 +90,22 @@ FORM_FLOORS="window-search:630 wf-floor:486 generic:380 pf_memchr:215 ofsskip:27
 # two-stream sites' LONG SUBJECTS (`long pair`, measured 406), each floor the measure less ~10%.
 EFIND_FLOORS="libc:320 walk:103 hors:110 run:115 below:95 report:370 refused:17 pair:316 fn:48 hwin:146"
 FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
+# plan_frame.md 3.0b: the framed EMIT ask's (frame_row, stream) cells and the
+# frame part's classes, each at the measured count less ~10% (seed 20261022,
+# 1500 sites: E-func/none 233, E-func/restart 38, E-stmt/none 355,
+# E-stmt/restart 257, E-find/restart 1219, E-find/shift 131, E-generic/restart
+# 567; fn 54, pair 409, hors 131, libc 684, walk 126, method 1607; table 61,
+# noffer 4642 (a stated hook with no offer: OWN), below 40 (the stop below a
+# TABLE plan position), stop_own 1264, af_walk 24 (row AF's population: B-walk
+# sites whose stop marker is read). The impossible cells (MASK anywhere, SHIFT
+# off E-find, E-generic off RESTART, E-func/E-stmt off RESTART/NONE, NONE not
+# exactly ARM) are the generator's own failures, never a floor.
+FRAME_CELL_FLOORS="E-func/none:210 E-func/restart:34 E-stmt/none:320 E-stmt/restart:231 E-find/restart:1097 E-find/shift:118 E-generic/restart:510"
+# the TRACED pass's window defines per Table E row (G2W_TRACE=1; measured
+# E-func 542, E-stmt 1227, E-find 2702, E-generic 1135), less ~10%: the
+# agreement holds over each frame's sites, never over nothing
+TRACED_FLOORS="E-func:487 E-stmt:1104 E-find:2431 E-generic:1021"
+FRAME_CLASS_FLOORS="fn:48 pair:368 hors:118 libc:615 walk:113 method:1446 table:55 noffer:4178 below:36 stop_own:1138 af_walk:21"
 # R-38 K38-2 PLAN (e) (EMIT-3 of code review 2026-11-10 r2 k382a; lane k382, 2026-11-11): 200
 # IN-RUN sites appended from their own stream (G2W_K3_SITES; the 2700 before them unchanged),
 # three in four on an art carrying the lever run-tie-left. Under the lever, the reference's own
@@ -176,6 +199,25 @@ plant_spec() {
         # refuses every E-find stop, whose core the alternative states, so no site resumes by
         # the shift table (the generator's hors census goes red)
         echo 'finder.c@@        MF_ANY, CM(CORED))@@        MF_ANY, CM(NOCORE))' ;;
+    S3089) # plan_frame.md 3.0b (X): the reply writes MASK for one frame (E-generic): G2's
+        # impossible-cell assertion (MASK 0 anywhere) is red, so the tally reads the field
+        echo 'window.c@@    out->stream = fp->stream;@@    out->stream = fp->erow == E_GENERIC ? MF_WSTREAM_MASK : fp->stream;' ;;
+    S3090) # 3.0b (Y): E-find's method reported R7w for a PAIR pick: the ids resolve, the bytes
+        # are SAME, and G2's class (method's row picks WALK, the text's two memchr frontiers) is red
+        echo 'window.c@@        if (r == E_FIND) fp->method = fx->brow;@@        if (r == E_FIND) fp->method = fx->pick == FF_PAIR ? "R7w" : fx->brow;' ;;
+    S3091) # 3.0b (Z): fused left NO on B-fn: G2's class (the text calls _ofsskip) is red
+        echo 'window.c@@        fp->fused = MF_WFUSED_FN;\n        fp->search = wsearch_of(fx->fused->search);@@        fp->fused = MF_WFUSED_NO;\n        fp->search = wsearch_of(fx->fused->search);' ;;
+    S3092) # 3.0b (AA): frame_row swapped E-find <-> E-generic on REPORT sites: G2's form class is red
+        echo 'window.c@@            reply_frame(fp, out);@@            reply_frame(fp, out);\n            if (site->site_kind == MF_SK_REPORT \&\& (r == E_FIND || r == E_GENERIC)) snprintf(out->frame_row, sizeof out->frame_row, "%s", r == E_FIND ? "E-generic" : "E-find");' ;;
+    S3093) # 3.0b (AB): plan_test always OWN: G2's table_name population (the hook's own marker
+        # g2w_t<id>_<ref>[ matched by offset) is red
+        echo 'window.c@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = test_of(w, k);@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = MF_WTEST_OWN;' ;;
+    S3096) # 3.0b (AF): stop_test always OWN while plan_test is right: red on G2's B-walk sites
+        # whose stop alone is offered (the counted af_walk population)
+        echo 'window.c@@    if (stop \&\& w->stop_ix >= 0) fp->stop_test = test_of(w, (unsigned)w->stop_ix);@@    if (stop \&\& w->stop_ix >= 0) fp->stop_test = MF_WTEST_OWN;' ;;
+    S3084) # 3.0b (J): a reply's method filled from search's spelling: the id-resolution check
+        # (method names a FIND row whose pick is search) is red
+        echo 'window.c@@    snprintf(out->method, sizeof out->method, "%s", fp->method ? fp->method : "");@@    snprintf(out->method, sizeof out->method, "%s", fp->method \&\& *fp->method ? (const char *[]){ "", "LIBC", "LIBC_BACK", "WALK", "PAIR", "HORS" }[fp->search] : "");' ;;
     S2987) # plan_frame.md 3.0a (L): S-restart's text resumes C += 2, so E-find (every non-HORS,
         # non-B-fn site: B-fn is fused, its function's own loop) and the floor (it reads its
         # stream row) skip candidates; the plant is the shared text, so both S-restart rows carry it
@@ -201,7 +243,7 @@ plant_spec() {
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041 S3084 S3089 S3090 S3091 S3092 S3093 S3096"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -210,8 +252,8 @@ kit_objs() {
     local src="$1" out="$2"
     mkdir -p "$out"
     for s in "$src"/*.c; do
-        "$CC" -std=gnu11 -O1 -I"$ROOT/memfn/include" -c -o "$out/$(basename "${s%.c}").o" "$s" \
-            || return 1
+        "$CC" -std=gnu11 -O1 ${G2W_TRACE:+-DMF_TRACE} -I"$ROOT/memfn/include" \
+            -c -o "$out/$(basename "${s%.c}").o" "$s" || return 1
     done
 }
 
@@ -345,6 +387,14 @@ for ff in $FORM_FLOORS; do floor "form ${ff%%:*}" "$(val forms "${ff%%:*}")" "${
 efv() { grep -h '^g2_win_gen: e-find' "$WORK/plain.gen.log" | grep -oE "$1 [0-9]+" | head -1 | grep -oE '[0-9]+$'; }
 for ef in $EFIND_FLOORS; do floor "e-find ${ef%%:*}" "$(efv "${ef%%:*}")" "${ef#*:}"; done
 floor "long pair" "$(val long pair)" "$FLOOR_LONG_PAIR"
+fcv() { grep -h "^g2_win_gen: $1" "$WORK/plain.gen.log" | grep -oE " $2 [0-9]+" | head -1 | grep -oE '[0-9]+$'; }
+for cf in $FRAME_CELL_FLOORS; do floor "frame cell ${cf%%:*}" "$(fcv cells "${cf%%:*}")" "${cf#*:}"; done
+for cf in $FRAME_CLASS_FLOORS; do floor "frame class ${cf%%:*}" "$(fcv classes "${cf%%:*}")" "${cf#*:}"; done
+if [ -n "${G2W_TRACE:-}" ]; then
+    for tr in $TRACED_FLOORS; do
+        floor "traced defines ${tr%%:*}" "$(grep -cE "^MFTRACE END table=wfE art=[0-9]+ site=[0-9]+ phase=define chosen=${tr%%:*} " "$WORK/plain.gen.log")" "${tr#*:}"
+    done
+fi
 for inf in $INRUN_FLOORS; do floor "inrun ${inf%%:*}" "$(val inrun "${inf%%:*}")" "${inf#*:}"; done
 
 echo "checks passed: $tp"

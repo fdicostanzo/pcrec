@@ -145,7 +145,8 @@ fi
 echo "run_finder: the arm-entry counter (R-MS6)"
 # span_pick unit 1d: THE PURITY HARNESS (arm_fixtures --purity; its header
 # says what it holds and why the defines are interleaved). PURITY_FLOOR is its
-# EXACT check count (1157 since sp1dfix), a literal. ITS PLANTS: a COPY of
+# EXACT check count (7874 since 3.0b: the framed asks, the counting hooks and
+# arena, the call/opts/same-class fixtures), a literal. ITS PLANTS: a COPY of
 # memfn/src whose A-mass row, then whose M-parked row, is keyed on the art's
 # site count (one line each, awk; the row holds only on an art that has
 # defined nothing): the planted --purity must go RED. ITS CONTROL: the planted
@@ -155,7 +156,7 @@ echo "run_finder: the arm-entry counter (R-MS6)"
 # (tests/memfn/run_purity_reach.sh, purity_rows.tsv): every Table A, M and
 # T-VERIFY row, dropped unconditionally, moves some harness reply or is
 # declared unreached with a reason.
-PURITY_FLOOR=1157
+PURITY_FLOOR=7874
 "$WORK/fx" --purity > "$WORK/purity.log" 2>&1
 rc=$?
 part purity "$WORK/purity.log"
@@ -166,6 +167,26 @@ if [ "${pu:-0}" -eq "$PURITY_FLOOR" ]; then
 else
     echo "FAIL: purity: ${pu:-0} checks passed != $PURITY_FLOOR"; tf=$((tf + 1))
 fi
+# 3.0b (plan_frame.md §4.1, the agreement; §5 rows E, E2): the SAME harness
+# against the MF_TRACE kit, whose every window-family define re-derives its
+# phase-1 reply and compares it with the define's record (compose.c
+# define_sel). Green, and its populations pinned EXACT from the trace: the
+# defines rendered on E-func and on E-generic (each a literal; a count of 0,
+# or any move, is a named failure: the agreement holds over nothing there).
+PURITY_TRACED_EFUNC=81
+PURITY_TRACED_EGENERIC=8
+"$WORK/fxt" --purity > "$WORK/purity_traced.log" 2> "$WORK/purity_traced.trace"
+rc=$?
+part purity_traced "$WORK/purity_traced.log"
+[ "$rc" -eq 0 ] || [ "$(grep -c '^FAIL' "$WORK/purity_traced.log")" -gt 0 ] || { echo "FAIL: the traced --purity exited $rc with no failed check"; tf=$((tf + 1)); }
+for row in E-func:$PURITY_TRACED_EFUNC E-generic:$PURITY_TRACED_EGENERIC; do
+    rn=$(grep -cE "^MFTRACE END table=wfE art=[0-9]+ site=[0-9]+ phase=define chosen=${row%%:*} " "$WORK/purity_traced.trace")
+    if [ "$rn" -eq "${row##*:}" ] && [ "$rn" -gt 0 ]; then
+        echo "ok   purity traced: ${row%%:*} defines agreed: $rn == ${row##*:}"; tp=$((tp + 1))
+    else
+        echo "FAIL: purity traced: ${row%%:*} defines: $rn != ${row##*:} (0 holds the agreement over nothing)"; tf=$((tf + 1))
+    fi
+done
 "$WORK/fx" --purity-control > "$WORK/control.log" 2>&1
 purity_plant() {   # purity_plant NAME OLD NEW: one-line plant, RED + control moved
     local name=$1 old=$2 new=$3 pd="$WORK/plant_$1" pn pbuilt=1

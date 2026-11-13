@@ -99,7 +99,7 @@ Table E chose E-find (D172 S3), the finder's own `table=fd` walk for the stop
 `table=wfD` walk, Table D, came first, its D-hors now `fd`'s row and its
 D-one every other row's resume: tests/memfn/row_map.tsv), each at
 `phase=define`, `site=` the handle the define will take; a query (`mf_ask`,
-`mf_wdecide`, and the family's own quiet ask of today's rows) writes none.
+`mf_wdecide`, NONE or framed, and the family's own quiet ask of today's rows) writes none; under MF_TRACE every window define also re-asks its phase-1 reply and compares it with the define's record (plan_frame.md §4.1, the agreement), writing nothing when they agree and refusing the define (`mf_define: the window family's phase-1 reply differs ...`) when not.
 Its own tables' rows (wfA, wfM, wfE) are not in the reach registry's printed
 tables (the family's floors are G2's, `memfn/tests/run_g2_win.sh`); D-hors,
 an `fd` row since 1e, is. Each window site a define renders
