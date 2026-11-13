@@ -49,6 +49,7 @@
  * cases for the caller-owned counter's rules and for the ADVANCE hooks'
  * shape classes (CONJ `more`, POSTFIX `peek`, EXPR_STMT `step`). */
 #include <errno.h>
+#include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2096,7 +2097,19 @@ static int facts_mode(const char *id, const char *cls)
  * The plan face (mf_wdecide) is a PURE FUNCTION of the site's facts, the
  * frame, the measurement set and the handed rates (D186 add. 2): the same
  * site gets the same reply on a fresh art and on an art that has defined
- * any number of other sites, in any order.
+ * any number of other sites, in any order. Since unit 3.0b (MF_SITE_ABI 28,
+ * plan_frame.md §2.2-§2.3, §5) every site is asked twice, NONE and FRAMED
+ * (call DEFINE with the define's own hooks), each reply compared WHOLE
+ * (memcmp, so a member added later is compared too); a site's NONE and
+ * framed replies agree on the decision group (the prefix up to `framed`).
+ * Every ask states COUNTING callbacks (no hook callback is called: the
+ * count stays 0) on an art whose COUNTING ARENA does not grow across an
+ * ask; their populations (a framed ask whose T-FIND picks PAIR, a refused
+ * framed ask) are counted, a count of 0 a named failure. Then the call's
+ * own fixtures (mf_wcall: UNSTATED and out-of-range calls refused, NONE's
+ * frame part zero and blind to the frame, EMIT walking DEFINE|USE), the
+ * site's `--memfn=` options reaching a framed ask, and the same-class-
+ * different-text fixture (a renamed hook of the same class moves no reply).
  *
  * WHY THE DEFINES ARE INTERLEAVED: `art->nsites`' one writer is mf_define
  * and the plan face takes a `const mf_art *`, so plan calls alone see one
@@ -2112,10 +2125,11 @@ static int facts_mode(const char *id, const char *cls)
  *       FENCED: pcrec fails the compile on any refusal, so no such reply
  *       reaches an artifact; asserted as the fence, not as purity). One
  *       `FAIL:` line per difference; `checks passed/failed` counts.
- *   arm_fixtures --purity-control  THE CONTROL: each site's reply after ONE
- *       define of the next site, printed; run_finder.sh compares a planted
- *       build's print (a KEY row keyed on nsites) with this build's, so the
- *       plant is shown REACHED on the unharnessed fixture.
+ *   arm_fixtures --purity-control  THE CONTROL: each site's NONE and framed
+ *       replies after ONE define of the next site, printed as a hex dump of
+ *       the whole struct; run_finder.sh compares a planted build's print (a
+ *       KEY row keyed on nsites) with this build's, so the plant is shown
+ *       REACHED on the unharnessed fixture.
  *
  * The sites reach every Table A row but A-empty and A-floor's floor-only
  * path (A-mass, A-parked, A-model, MARGIN's two alternatives) and the run
@@ -2255,24 +2269,35 @@ static const mf_analysis *pur_rated(void)
     return an_make(1, pur_rates);
 }
 
-/* NULL iff replies `a` and `b` are equal field by field, else the first
- * field that differs. */
+/* The reply members by offset, for naming where two replies differ. */
+#define PUR_M(m) { #m, offsetof(mf_wreply, m), sizeof ((mf_wreply *)0)->m }
+static const struct { const char *name; size_t off, size; } pur_members[] = {
+    PUR_M(alt), PUR_M(reseed), PUR_M(has_stop), PUR_M(stop), PUR_M(stop_set), PUR_M(nplan),
+    PUR_M(plan), PUR_M(plan_term), PUR_M(pinned), PUR_M(run_stated), PUR_M(run_member),
+    PUR_M(run_lo), PUR_M(run_len), PUR_M(path), PUR_M(framed), PUR_M(frame_row),
+    PUR_M(method), PUR_M(search), PUR_M(stream), PUR_M(fused), PUR_M(plan_test),
+    PUR_M(stop_test),
+};
+#undef PUR_M
+
+/* NULL iff replies `a` and `b` are equal byte for byte over their first
+ * `n` bytes (the whole struct, or the decision group's prefix), else the
+ * first member that differs ("padding" where only padding does). The kit
+ * zeroes every reply whole first (contract line 3), so memcmp is exact. */
+static const char *pur_diff_n(const mf_wreply *a, const mf_wreply *b, size_t n)
+{
+    if (!memcmp(a, b, n)) return NULL;
+    for (size_t i = 0; i < sizeof pur_members / sizeof *pur_members; i++)
+        if (pur_members[i].off < n &&
+            memcmp((const char *)a + pur_members[i].off, (const char *)b + pur_members[i].off,
+                   pur_members[i].size))
+            return pur_members[i].name;
+    return "padding";
+}
+
 static const char *pur_diff(const mf_wreply *a, const mf_wreply *b)
 {
-    if (a->alt != b->alt) return "alt";
-    if (a->reseed != b->reseed) return "reseed";
-    if (a->has_stop != b->has_stop) return "has_stop";
-    if (a->stop != b->stop) return "stop";
-    if (memcmp(a->stop_set, b->stop_set, 32)) return "stop_set";
-    if (a->nplan != b->nplan) return "nplan";
-    for (unsigned i = 0; i < a->nplan; i++)
-        if (a->plan[i] != b->plan[i] || a->plan_term[i] != b->plan_term[i]) return "plan";
-    if (a->pinned != b->pinned) return "pinned";
-    if (a->run_stated != b->run_stated) return "run_stated";
-    if (a->run_member != b->run_member) return "run_member";
-    if (a->run_lo != b->run_lo || a->run_len != b->run_len) return "run stretch";
-    if (strcmp(a->path, b->path)) return "path";
-    return NULL;
+    return pur_diff_n(a, b, sizeof *a);
 }
 
 static long pur_pass, pur_fail;
@@ -2282,6 +2307,65 @@ static void pur_ok(int ok, const char *what)
     if (ok) { pur_pass++; return; }
     pur_fail++;
     printf("FAIL: %s\n", what);
+}
+
+/* THE COUNTING HOOKS (plan_frame.md Goal 3, §5 rows G and V): every
+ * callback an mf_hooks can state, each counting its calls into
+ * `pur_hook_calls`. The plan face calls none, so the count stays 0 across
+ * every ask (a define may call them: the count is read around asks only). */
+static long pur_hook_calls;
+
+static const char *pc_fn_name(void *u, uint32_t ref) { (void)u; (void)ref; pur_hook_calls++; return "rx_pur"; }
+static const char *pc_table_name(void *u, uint32_t ref) { (void)u; (void)ref; pur_hook_calls++; return "rx_t"; }
+static void pc_note(void *u, mf_sink *c, uint32_t part) { (void)u; (void)c; (void)part; pur_hook_calls++; }
+static const char *pc_note_tag(void *u, uint32_t part) { (void)u; (void)part; pur_hook_calls++; return "t"; }
+static const char *pc_member(void *u, uint32_t term, const char *byte_expr)
+{
+    (void)u; (void)term; (void)byte_expr; pur_hook_calls++;
+    return "1";
+}
+static void pc_on_cand(void *u, mf_sink *c, const char *cand) { (void)u; (void)c; (void)cand; pur_hook_calls++; }
+
+/* The define's hooks (pur_define's stated-ness: fn_name, table_name, note,
+ * note_tag, miss N) with counting callbacks; `all` adds `member` and
+ * `on_cand`, the six stated callbacks. */
+static mf_hooks pur_hooks(int all)
+{
+    mf_hooks h = { .fn_name = pc_fn_name, .table_name = pc_table_name, .note = pc_note,
+                   .note_tag = pc_note_tag, .miss = MF_MISS_N };
+    if (all) {
+        h.member = pc_member;
+        h.on_cand = pc_on_cand;
+    }
+    return h;
+}
+
+/* THE COUNTING ARENA (plan_frame.md §2.2 "Allocation", §5 row AC): every
+ * purity art allocates through it; an ask must not grow it. */
+static long pur_arena_n;
+
+static void *pur_alloc(void *u, size_t n)
+{
+    (void)u;
+    pur_arena_n++;
+    return calloc(1, n);
+}
+
+/* One ask through mf_wdecide on `art`, held to the plan face's purity: no
+ * hook callback called, no arena allocation. Its rc. */
+static int pur_ask(const mf_art *art, const mf_site *s, const mf_hooks *h, uint8_t call,
+                   mf_wreply *out, const char *what)
+{
+    char m[200];
+    long a0 = pur_arena_n, h0 = pur_hook_calls;
+    int rc = mf_wdecide(art, s, h, call, out);
+    snprintf(m, sizeof m, "%s: the ask grew the art's arena by %ld (plan_frame.md §2.2: a "
+             "phase-1 ask allocates on the heap only)", what, pur_arena_n - a0);
+    pur_ok(pur_arena_n == a0, m);
+    snprintf(m, sizeof m, "%s: the ask called %ld hook callback(s) (Goal 3: the plan face "
+             "calls none)", what, pur_hook_calls - h0);
+    pur_ok(pur_hook_calls == h0, m);
+    return rc;
 }
 
 /* Site `i`'s define on `art` (FUNC/RETURN, the fixture hooks): 0 or the
@@ -2299,9 +2383,287 @@ static int pur_define(mf_art *art, const mf_site *s)
     return rc;
 }
 
-static int purity_mode(void)
+/* A STMT window site over purity site `i`'s facts: ASSIGN (ON_MISS where
+ * `onmiss`), kind `kind`, the site's `--memfn=` options `opts`. */
+static mf_site pur_stmt(unsigned i, int onmiss, uint8_t kind, const char *opts)
+{
+    mf_site s = pur_site(i);
+    s.form = MF_FORM_STMT;
+    s.handoff = onmiss ? MF_H_ON_MISS : MF_H_ASSIGN;
+    s.site_kind = kind;
+    s.pred.fn_ref = 0;
+    s.opts = opts;
+    return s;
+}
+
+/* The one-call (EMIT) hooks of a STMT site: every text hook stated, the
+ * counting callbacks too. */
+static mf_hooks pur_text_hooks(int onmiss)
+{
+    mf_hooks h = pur_hooks(0);
+    h.fn_name = NULL;
+    h.s = "s"; h.n = "n"; h.lo = "lo"; h.floor = "fl"; h.result = "r";
+    h.miss = "((size_t)-1)";
+    h.on_miss = onmiss ? "{ m = 1; }" : NULL;
+    return h;
+}
+
+/* `site`'s one-call render on a fresh art under `h`: 0 and the rendered
+ * text's body+file in *text (caller frees), or the refusal. */
+static int pur_emit(const mf_site *site, const mf_hooks *h, char **text, mf_result *res)
 {
     static mf_arena ar = { NULL, a_alloc };
+    Text b = { 0 }, f = { 0 };
+    mf_sink sb = sink_of(&b), sf = sink_of(&f);
+    mf_art *art = art_begin(&ar, "pur", 0, NULL, NULL);
+    int rc = mf_emit(art, site, h, &sb, &sf, res);
+    size_t nb = b.p ? strlen(b.p) : 0, nf = f.p ? strlen(f.p) : 0;
+    *text = calloc(1, nb + nf + 2);
+    if (nb) memcpy(*text, b.p, nb);
+    if (nf) memcpy(*text + nb + 1, f.p, nf), (*text)[nb] = '\n';
+    free(b.p);
+    free(f.p);
+    return rc;
+}
+
+/* A STMT/ASSIGN site with one stated one-byte span whose miss leaves: the
+ * PF memchr row renders it on E-stmt under pur_pf_hooks (a leaving `on_miss`,
+ * every hook the row reads an identifier). */
+static mf_site pur_pf_site(void)
+{
+    static mf_wspan sp[1];
+    static mf_walt al[1];
+    mf_site site = pur_stmt(0, 0, MF_SK_DFA_SCAN, NULL);
+    pur_span(&sp[0], 0, (const char *const[]){ "q" }, 1, MF_VERIFY_NO, 0, 1);
+    al[0] = (mf_walt){ MF_ENTRY_NONE, 1, sp };
+    site.alts = al;
+    site.nalt = 1;
+    site.on_miss_leaves = 1;
+    return site;
+}
+
+static mf_hooks pur_pf_hooks(void)
+{
+    mf_hooks h = pur_text_hooks(0);
+    h.floor = NULL;
+    h.note = NULL;
+    h.note_tag = NULL;
+    h.on_miss = "goto o;";
+    return h;
+}
+
+/* THE CALL's fixtures (plan_frame.md §2.2 contract lines 1-4, §5 rows S, T,
+ * U, I, AD) and the counted asks the counting arena must reach (row AC). */
+static void pur_call_fixtures(mf_arena *ar)
+{
+    char m[200];
+    mf_wreply r, q;
+    mf_hooks h = pur_hooks(1);
+    static const uint8_t zero[sizeof(mf_wreply)];
+    for (unsigned i = 0; i < PUR_N; i++) {
+        mf_site site = pur_site(i);
+        mf_art *art = art_begin(ar, "pur", 0, NULL, NULL);
+        /* (S) UNSTATED is refused, never read as NONE; (line 1) every call
+           above EMIT too */
+        snprintf(m, sizeof m, "call: site %u: call 0 (UNSTATED) did not answer -1", i);
+        pur_ok(pur_ask(art, &site, &h, MF_WCALL_UNSTATED, &r, m) == -1, m);
+        int above = 0;
+        for (unsigned c = MF_WCALL_EMIT + 1; c < 256; c++)
+            above += mf_wdecide(art, &site, &h, (uint8_t)c, &r) != -1;
+        snprintf(m, sizeof m, "call: site %u: %d call value(s) above EMIT were not refused", i,
+                 above);
+        pur_ok(!above, m);
+        /* (T) NONE's frame part is zero; (line 4) NONE reads no frame field
+           and no `def`: a site differing in every frame field asks equal */
+        snprintf(m, sizeof m, "call: site %u: the NONE ask refused", i);
+        pur_ok(pur_ask(art, &site, NULL, MF_WCALL_NONE, &r, m) == 0, m);
+        snprintf(m, sizeof m, "call: site %u: NONE's frame part is not zero (framed %u)", i,
+                 r.framed);
+        pur_ok(!memcmp((const char *)&r + offsetof(mf_wreply, framed),
+                       zero + offsetof(mf_wreply, framed),
+                       sizeof r - offsetof(mf_wreply, framed)), m);
+        mf_site other = site;
+        other.form = MF_FORM_STMT;
+        other.handoff = MF_H_ON_MISS;
+        other.empty = MF_EMPTY_AT_N;
+        other.use = MF_USE_ENTRY;
+        other.site_kind = MF_SK_REPORT;
+        other.decl_point = 1;
+        other.on_miss_leaves = 1;
+        other.pred.fn_ref = 0;
+        other.reverse = 1;
+        pur_ask(art, &other, &h, MF_WCALL_NONE, &q, "call: NONE over another frame");
+        const char *d = pur_diff(&r, &q);
+        snprintf(m, sizeof m, "call: site %u: two NONE asks differing only in frame fields "
+                 "and def differ at %s", i, d ? d : "-");
+        pur_ok(!d, m);
+        /* a framed ask and the NONE ask agree on the decision group */
+        snprintf(m, sizeof m, "call: site %u: the framed ask refused", i);
+        pur_ok(pur_ask(art, &site, &h, MF_WCALL_DEFINE, &q, m) == 0, m);
+        d = pur_diff_n(&r, &q, offsetof(mf_wreply, framed));
+        snprintf(m, sizeof m, "call: site %u: NONE and DEFINE differ in the decision group at "
+                 "%s", i, d ? d : "-");
+        pur_ok(!d, m);
+        snprintf(m, sizeof m, "call: site %u: a framed reply is not `framed` 1 (%u)", i, q.framed);
+        pur_ok(q.framed == 1, m);
+    }
+
+    /* (U) EMIT walks Table E under DEFINE|USE, as mf_emit: a STMT/ASSIGN
+       site with one stated one-byte span, whose `on_miss` (an expression
+       statement, on a site whose miss leaves) the PF memchr row serves at
+       DEFINE and declines at USE (its contract: a jump or a braced block),
+       so mf_define renders it on E-stmt and mf_emit on E-find */
+    {
+        mf_site site = pur_pf_site();
+        mf_hooks th = pur_pf_hooks();
+        th.on_miss = "x = 1;";
+        mf_art *art = art_begin(ar, "pur", 0, NULL, NULL);
+        mf_wreply rd, re;
+        int cd = pur_ask(art, &site, &th, MF_WCALL_DEFINE, &rd, "emit: DEFINE");
+        int ce = pur_ask(art, &site, &th, MF_WCALL_EMIT, &re, "emit: EMIT");
+        char *text;
+        mf_result res;
+        memset(&res, 0, sizeof res);
+        int ee = pur_emit(&site, &th, &text, &res);
+        free(text);
+        snprintf(m, sizeof m, "emit: the EMIT ask answers %d where mf_emit answers %d", ce, ee);
+        pur_ok(ce == ee, m);
+        snprintf(m, sizeof m, "emit: the EMIT ask's frame row %s is not mf_emit's (%s: E-find iff "
+                 "window-search)", re.frame_row, res.form_id);
+        pur_ok(!ce && !strcmp(re.frame_row, "E-find") == !strcmp(res.form_id, "window-search"), m);
+        snprintf(m, sizeof m, "emit: DEFINE (%d, %s) and EMIT (%d, %s) answer one frame row on "
+                 "the population site: the fixture reaches no difference", cd, rd.frame_row, ce,
+                 re.frame_row);
+        pur_ok(!cd && !ce && strcmp(rd.frame_row, re.frame_row), m);
+    }
+
+    /* (I) the site's `--memfn=` options reach a framed ask's walks: a REPORT
+       site under no-window-search is refused as mf_define refuses it (and
+       that refusal is wf_plan_site's own, reaching why_room: AC's counted
+       refused ask); under a T-FIND deny the framed search is the text's */
+    long refused_n = 0, pair_n = 0;
+    {
+        mf_site site = pur_stmt(1, 0, MF_SK_REPORT, "no-window-search");
+        mf_hooks th = pur_text_hooks(0);
+        mf_art *art = art_begin(ar, "pur", 0, NULL, NULL);
+        mf_wreply rr;
+        pur_ok(pur_ask(art, &site, &th, MF_WCALL_NONE, &rr, "opts: NONE") == 0,
+               "opts: the REPORT site's NONE ask refused (the fixture is not a refusal of the "
+               "framed ask's own)");
+        int cf = pur_ask(art, &site, &th, MF_WCALL_EMIT, &rr, "opts: EMIT");
+        char *text;
+        mf_result res;
+        int ee = pur_emit(&site, &th, &text, &res);
+        free(text);
+        snprintf(m, sizeof m, "opts: a framed ask on a REPORT site under no-window-search "
+                 "answers %d, mf_emit %d (it must refuse, as the define does)", cf, ee);
+        pur_ok(cf == -1 && ee != 0, m);
+        refused_n += cf == -1 && ee != 0;
+    }
+    static const char *const deny[] = { NULL, "no-fd-d1" };
+    for (unsigned k = 0; k < 2; k++)
+        for (unsigned i = 0; i < PUR_N; i++) {
+            mf_site site = pur_stmt(i, 0, MF_SK_REPORT, deny[k]);
+            mf_hooks th = pur_text_hooks(0);
+            mf_art *art = art_begin(ar, "pur", 0, NULL, NULL);
+            mf_wreply rr;
+            if (pur_ask(art, &site, &th, MF_WCALL_EMIT, &rr, "opts: EMIT over T-FIND")) continue;
+            char *text;
+            mf_result res;
+            if (pur_emit(&site, &th, &text, &res)) { free(text); continue; }
+            int libc = strstr(text, "memchr(") != NULL;
+            free(text);
+            if (strcmp(rr.frame_row, "E-find")) continue;
+            pair_n += rr.search == MF_WSEARCH_PAIR;
+            if (rr.search == MF_WSEARCH_PAIR) continue;
+            snprintf(m, sizeof m, "opts: site %u under %s: the framed search %u (method %s) "
+                     "is %sLIBC where the define's text %s memchr", i, deny[k] ? deny[k] : "-",
+                     rr.search, rr.method,
+                     rr.search == MF_WSEARCH_LIBC ? "" : "not ", libc ? "calls" : "does not call");
+            pur_ok((rr.search == MF_WSEARCH_LIBC || rr.search == MF_WSEARCH_LIBC_BACK) == libc,
+                   m);
+        }
+    /* AC's populations, counted: a count of 0 is a named failure (the
+       counting arena would have nothing to see) */
+    snprintf(m, sizeof m, "arena population: %ld framed asks picked PAIR on E-find "
+             "(wf_find_decide's allocation); 0 reaches none", pair_n);
+    pur_ok(pair_n > 0, m);
+    snprintf(m, sizeof m, "arena population: %ld refused framed asks reached the plan "
+             "function's refusal (why_room); 0 reaches none", refused_n);
+    pur_ok(refused_n > 0, m);
+
+    /* (AD) THE SAME-CLASS-DIFFERENT-TEXT FIXTURE (plan_frame.md §2.2's round
+       trip; R21): STMT/ASSIGN and STMT/ON_MISS sites asked with EMIT (the
+       window rows read the text hooks at USE only), every text hook stated,
+       each replaced by a text of the SAME class: the reply does not move.
+       The population: every purity site in both frames (their rows serve
+       every class of the text hooks), and the PF site (pur_pf_site: the PF
+       memchr row serves `s`, `n`, `lo` and `result` as identifiers only, so a
+       gate reading a spelling beyond its class moves its frame row). */
+    long ad_n = 0, ad_moved = 0, ad_pf = 0;
+    for (int onm = 0; onm < 3; onm++)
+        for (unsigned i = 0; i < (onm < 2 ? PUR_N : 1); i++) {
+            mf_site site = onm < 2 ? pur_stmt(i, onm, MF_SK_DFA_SCAN, NULL) : pur_pf_site();
+            mf_art *art = art_begin(ar, "pur", 0, NULL, NULL);
+            mf_hooks base = onm < 2 ? pur_text_hooks(onm) : pur_pf_hooks();
+            mf_wreply r0, r1;
+            if (pur_ask(art, &site, &base, MF_WCALL_EMIT, &r0, "same-class: base")) continue;
+            ad_n++;
+            ad_pf += onm == 2 && r0.fused == MF_WFUSED_NO && !strcmp(r0.frame_row, "E-stmt");
+            for (int c = 0; c < 9; c++) {
+                mf_hooks from = base, to = base;
+                const char *what;
+                switch (c) {
+                case 0: to.s = "subj"; what = "s"; break;
+                case 1: to.n = "len"; what = "n"; break;
+                case 2: to.lo = "lo2"; what = "lo"; break;
+                case 3: to.floor = to.floor ? "fl2" : NULL; what = "floor"; break;
+                case 4: to.result = "r2"; what = "result"; break;
+                case 5: to.miss = "((size_t)-2)"; what = "miss (a text)"; break;
+                case 6: to.on_miss = onm == 1 ? "{ k = 1; }" : onm ? "goto p;" : NULL;
+                        what = "on_miss"; break;
+                /* the cross-hook relation (cl_miss): a miss equal to n's text
+                   is the N class, so the two rename together; and the N
+                   token (compared by address) stands for that text */
+                case 7: from.miss = "n"; to.miss = "len"; to.n = "len";
+                        what = "n with the miss equal to it"; break;
+                default: from.miss = "n"; to.miss = MF_MISS_N;
+                         what = "miss (the N token for n's text)"; break;
+                }
+                mf_wreply rf;
+                if (pur_ask(art, &site, &from, MF_WCALL_EMIT, &rf, "same-class: from")) continue;
+                int rc = pur_ask(art, &site, &to, MF_WCALL_EMIT, &r1, "same-class: renamed");
+                const char *d = rc ? "the ask's refusal" : pur_diff(&rf, &r1);
+                snprintf(m, sizeof m, "same-class: site %u (%s): renaming %s moved the reply "
+                         "at %s", i, onm == 2 ? "PF" : onm ? "ON_MISS" : "ASSIGN", what,
+                         d ? d : "-");
+                pur_ok(!d, m);
+            }
+            /* ONE class move: n renamed while the miss keeps n's old text,
+               so miss leaves the N class: the reply MAY differ (asserted as
+               the class move it is, never as an equality) */
+            mf_hooks a = base, b = base;
+            a.miss = "n";
+            b.miss = "n";
+            b.n = "len";
+            mf_wreply ra, rb2;
+            int ca = pur_ask(art, &site, &a, MF_WCALL_EMIT, &ra, "class-move: before");
+            int cb = pur_ask(art, &site, &b, MF_WCALL_EMIT, &rb2, "class-move: after");
+            ad_moved += ca != cb || (!ca && pur_diff(&ra, &rb2));
+        }
+    snprintf(m, sizeof m, "same-class population: %ld STMT sites asked with EMIT; 0 holds "
+             "nothing", ad_n);
+    pur_ok(ad_n > 0, m);
+    snprintf(m, sizeof m, "same-class population: the PF site is not rendered by the PF memchr "
+             "row on E-stmt (%ld): no row in it reads a class narrower than every text", ad_pf);
+    pur_ok(ad_pf == 1, m);
+    printf("purity: framed fixtures: pair %ld refused %ld same-class %ld (pf %ld) "
+           "class-move-moved %ld\n", pair_n, refused_n, ad_n, ad_pf, ad_moved);
+}
+
+static int purity_mode(void)
+{
+    static mf_arena ar = { NULL, pur_alloc };
     mf_site site[PUR_N];
     for (unsigned i = 0; i < PUR_N; i++) site[i] = pur_site(i);
     unsigned in_order[PUR_N], reversed[PUR_N], repeated[2 * PUR_N];
@@ -2316,28 +2678,32 @@ static int purity_mode(void)
         { "in-order", in_order, PUR_N }, { "reversed", reversed, PUR_N },
         { "repeated", repeated, 2 * PUR_N },
     };
-    char m[160];
+    static const uint8_t calls[2] = { MF_WCALL_NONE, MF_WCALL_DEFINE };
+    mf_hooks hk = pur_hooks(0);
+    char m[200];
     for (int rated = 0; rated < 2; rated++) {
         const mf_analysis *an = rated ? pur_rated() : NULL;
-        mf_wreply fresh[PUR_N];
-        for (unsigned i = 0; i < PUR_N; i++) {
-            mf_art *art = art_begin(&ar, "pur", 0, NULL, an);
-            snprintf(m, sizeof m, "%s: site %u: the fresh art's plan call refused",
-                     rated ? "rated" : "none", i);
-            pur_ok(mf_wdecide(art, &site[i], &fresh[i]) == 0, m);
-        }
+        mf_wreply fresh[2][PUR_N];
+        for (unsigned i = 0; i < PUR_N; i++)
+            for (int c = 0; c < 2; c++) {
+                mf_art *art = art_begin(&ar, "pur", 0, NULL, an);
+                snprintf(m, sizeof m, "%s: site %u: the fresh art's %s plan call refused",
+                         rated ? "rated" : "none", i, c ? "framed" : "NONE");
+                pur_ok(pur_ask(art, &site[i], &hk, calls[c], &fresh[c][i], m) == 0, m);
+            }
         for (size_t o = 0; o < sizeof orders / sizeof orders[0]; o++) {
             mf_art *art = art_begin(&ar, "pur", 0, NULL, an);
             for (unsigned k = 0; k <= orders[o].n; k++) {
-                for (unsigned i = 0; i < PUR_N; i++) {
-                    mf_wreply r;
-                    int rc = mf_wdecide(art, &site[i], &r);
-                    const char *d = rc ? "the plan call refused" : pur_diff(&r, &fresh[i]);
-                    snprintf(m, sizeof m, "%s %s: site %u after %u defines: %s differs from "
-                             "the fresh art's", rated ? "rated" : "none", orders[o].name, i, k,
-                             d ? d : "-");
-                    pur_ok(!d, m);
-                }
+                for (unsigned i = 0; i < PUR_N; i++)
+                    for (int c = 0; c < 2; c++) {
+                        mf_wreply r;
+                        int rc = pur_ask(art, &site[i], &hk, calls[c], &r, "interleaved");
+                        const char *d = rc ? "the plan call refused" : pur_diff(&r, &fresh[c][i]);
+                        snprintf(m, sizeof m, "%s %s: site %u after %u defines: %s %s differs "
+                                 "from the fresh art's", rated ? "rated" : "none",
+                                 orders[o].name, i, k, c ? "framed" : "NONE", d ? d : "-");
+                        pur_ok(!d, m);
+                    }
                 if (k == orders[o].n) break;
                 unsigned j = orders[o].seq[k];
                 int rc = pur_define(art, &site[j]);
@@ -2347,6 +2713,7 @@ static int purity_mode(void)
             }
         }
     }
+    pur_call_fixtures(&ar);
     /* THE STICKY-ERR CASE: breaker (a), FENCED (no reply after a refusal
        reaches an artifact); equal replies are asserted only once a later
        unit makes the refusal non-sticky */
@@ -2354,42 +2721,73 @@ static int purity_mode(void)
     pur_ok(pur_define(art, &site[0]) == 0, "sticky-err: the first define refused");
     mf_site bad = pur_refused();
     pur_ok(pur_define(art, &bad) != 0, "sticky-err: the two-NONE site's define was accepted");
-    for (unsigned i = 0; i < PUR_N; i++) {
-        mf_wreply r;
-        snprintf(m, sizeof m, "sticky-err: site %u's plan call after a refused define did not "
-                 "answer -1 (breaker (a) is FENCED by the refusal)", i);
-        pur_ok(mf_wdecide(art, &site[i], &r) == -1, m);
-    }
+    for (unsigned i = 0; i < PUR_N; i++)
+        for (int c = 0; c < 2; c++) {
+            mf_wreply r;
+            snprintf(m, sizeof m, "sticky-err: site %u's %s plan call after a refused define "
+                     "did not answer -1 (breaker (a) is FENCED by the refusal)", i,
+                     c ? "framed" : "NONE");
+            pur_ok(mf_wdecide(art, &site[i], &hk, calls[c], &r) == -1, m);
+        }
     printf("checks passed: %ld\n", pur_pass);
     printf("checks failed: %ld\n", pur_fail);
     return pur_fail ? 1 : 0;
 }
 
-/* THE CONTROL's print: each site's reply after one define of the next. */
+/* `r` as a hex dump of the whole struct (the control's print: every member,
+ * present and future, and the padding the kit zeroes). */
+static void pur_hex(const mf_wreply *r)
+{
+    const unsigned char *b = (const unsigned char *)r;
+    for (size_t k = 0; k < sizeof *r; k++) printf("%02x", b[k]);
+}
+
+/* THE CONTROL's print: each site's NONE and framed replies after one define
+ * of the next. */
 static int purity_control_mode(void)
 {
     static mf_arena ar = { NULL, a_alloc };
     mf_site site[PUR_N];
+    mf_hooks hk = pur_hooks(0);
     for (unsigned i = 0; i < PUR_N; i++) site[i] = pur_site(i);
     for (int rated = 0; rated < 2; rated++)
         for (unsigned i = 0; i < PUR_N; i++) {
             mf_art *art = art_begin(&ar, "pur", 0, NULL,
                                        rated ? pur_rated() : NULL);
-            mf_wreply r;
-            if (pur_define(art, &site[(i + 1) % PUR_N]) || mf_wdecide(art, &site[i], &r)) {
+            mf_wreply r, f;
+            if (pur_define(art, &site[(i + 1) % PUR_N]) ||
+                mf_wdecide(art, &site[i], NULL, MF_WCALL_NONE, &r) ||
+                mf_wdecide(art, &site[i], &hk, MF_WCALL_DEFINE, &f)) {
                 printf("%s site %u: refused: %s\n", rated ? "rated" : "none", i,
                        mf_art_error(art));
                 continue;
             }
-            printf("%s site %u: alt=%u reseed=%u stop=%u@%d set=", rated ? "rated" : "none", i,
-                   r.alt, r.reseed, r.has_stop, (int)r.stop);
-            for (unsigned k = 0; k < 32; k++) printf("%02x", r.stop_set[k]);
-            printf(" plan=");
-            for (unsigned k = 0; k < r.nplan; k++) printf("%s%d/%u", k ? "," : "", (int)r.plan[k],
-                                                          r.plan_term[k]);
-            printf(" pinned=%u run=%u@%d+%d/%u path=%s\n", r.pinned, r.run_stated,
-                   (int)r.run_member, (int)r.run_lo, r.run_len, r.path);
+            printf("%s site %u: none=", rated ? "rated" : "none", i);
+            pur_hex(&r);
+            printf(" framed=");
+            pur_hex(&f);
+            printf(" (%s %s)\n", f.frame_row, r.path);
+            /* 3.0b: the STMT frames' one-call (EMIT) replies, so Table E's
+               E-stmt row and the composer's search rows print too */
+            static const uint8_t kinds[2] = { MF_SK_DFA_SCAN, MF_SK_REPORT };
+            for (int k = 0; k < 2; k++) {
+                mf_site st = pur_stmt(i, 0, kinds[k], NULL);
+                mf_hooks th = pur_text_hooks(0);
+                mf_wreply e;
+                printf("%s site %u stmt%d: ", rated ? "rated" : "none", i, k);
+                if (mf_wdecide(art, &st, &th, MF_WCALL_EMIT, &e)) printf("refused\n");
+                else { pur_hex(&e); printf(" (%s)\n", e.frame_row); }
+            }
         }
+    {
+        mf_art *art = art_begin(&ar, "pur", 0, NULL, NULL);
+        mf_site st = pur_pf_site();
+        mf_hooks th = pur_pf_hooks();
+        mf_wreply e;
+        printf("pf site: ");
+        if (mf_wdecide(art, &st, &th, MF_WCALL_EMIT, &e)) printf("refused\n");
+        else { pur_hex(&e); printf(" (%s)\n", e.frame_row); }
+    }
     return 0;
 }
 

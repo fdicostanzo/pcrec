@@ -78,6 +78,9 @@ window.c	wf_stmt_row	fn	-	T-FRAME	- (3.0a: the composer's search renderer row, t
 window.c	wf_srows	data	-	T-STREAM	- (3.0a: TABLE S's rows, each with its refusal text)
 window.c	wf_stream_refusal	fn	-	T-STREAM	- (3.0a: Table S's ST-many row's text, the composer's refusal)
 window.c	wf_tables_check	excluded	-	the renderer tables' self-check (mf_art_begin refuses a broken table; it decides nothing)	-
+window.c	wf_arm_pick	fn	-	T-FRAME	- (plan_frame.md 3.0b: E-stmt's arm-to-pick map over the search renderer table's E-stmt rows; both halves of the agreement read it)
+window.c	wf_frame_of	fn	-	T-FRAME,T-STREAM	- (3.0b: THE plan function's FRAME PART, the reply's frame_row/method/search/stream/fused/tests)
+window.c	wf_agree	excluded	-	the MF_TRACE agreement's define side (3.0b, plan_frame.md §4.1): reads the stored record and the declared rows; it decides nothing	-
 presence.c	kit_pres_picks:set-pick	part	kit_pick_takes(&bs,	T-PRES	- (asks kit_pick_takes since 1d)
 presence.c	kit_run_decide	fn	-	T-VERIFY,TIE	- (K38-1: THE RUN DECISION, scan and stretch; kit_pres_picks:run-window moved in, reads T_WINDOW, asks kit_pick_takes)
 presence.c	kit_run_opts_of	fn	-	T-VERIFY,TIE	- (K38-2a: the run decision's options on an art, its TIE row T_MASS_STRETCH or, under the test-only lever run-tie-left, T_RUN_LEFT)

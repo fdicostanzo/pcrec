@@ -316,6 +316,30 @@ int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
     return !site_check(s) && select_arm(art, s, def, gphases, &why, 1, &rid, &ren) != NULL;
 }
 
+static const char *pres_layout_check(const mf_art *art, const mf_site *s, const mf_class *c);
+
+/* The arm the define renders translated site `s` with (kit.h), refused as
+ * ask_sel refuses a site no window plan states: the composer's walk is
+ * select_arm's second caller beside kit_legacy_serves (plan_frame.md §4.1,
+ * E-stmt's map from arm to pick). Quiet, writing nothing. */
+const arm *kit_legacy_arm(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                          unsigned gphases, const char **rid)
+{
+    gate_verdict why = { 0, 0 };
+    const ren_key *ren;
+    mf_class cls;
+    const char *pw;
+    *rid = NULL;
+    if (site_check(s) || s->denies != art->denies) return NULL;
+    const arm *row = select_arm(art, s, def, gphases, &why, 1, rid, &ren);
+    memset(&cls, 0, sizeof cls);
+    if (!row || kit_class(row, s, &cls) ||
+        fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, &cls, &pw) ||
+        (s->npspan && pres_layout_check(art, s, &cls)))
+        return NULL;
+    return row;
+}
+
 /* ---- the form CLASS (r17b_prime.md §4.5; MF_SITE_ABI 12, 13, 18) ---------
  *
  * What row `a`'s text for site `s` proves, as facts (D157): every row today
@@ -1254,6 +1278,18 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
 #endif
 
     if (row->define(art, h, def, file_scope)) return -1;
+#ifdef MF_TRACE
+    /* plan_frame.md §4.1 (unit 3.0b), THE AGREEMENT: a window site's framed
+       phase-1 ask, re-asked with the define's site, hooks and call, answers
+       the reply re-derived from the decision and the define's record */
+    if (ws->nalt) {
+        const char *d = wf_agree(art, ws, def, gphases, &art->sites[h - 1]);
+        if (d)
+            return kit_fail(art, "mf_define: the window family's phase-1 reply differs from "
+                            "the define's record at `%s` (plan_frame.md §4.1, the agreement)",
+                            d);
+    }
+#endif
     *handle = h;
     return 0;
 }

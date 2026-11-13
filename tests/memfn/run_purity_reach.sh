@@ -28,6 +28,13 @@ win="$ROOT/memfn/src/window.c"
 { grep -oE 'WF_CT_A\([a-z_]+, *"[^"]+"' "$win" | sed 's/.*"\(.*\)"/\1/'
   grep -oE 'WF_CT_M\([a-z_]+, *"[^"]+"' "$win" | sed 's/.*"\(.*\)"/\1/'
   grep -oE '^    \{ [0-9], "C-[^"]+"' "$win" | sed 's/.*"\(.*\)"/\1/'
+  # plan_frame.md 3.0b: Table E's rows (wf_erows), the renderer tables' rows
+  # (skeleton RK_, search RB_, stream RS_, check RC_, fused RF_), the search
+  # support rows (wf_support, `support:PICK`) and Table S's rows (wf_srows)
+  grep -oE '^    \[E_[A-Z]+\] += \{ [a-z_]+_holds' "$win" | grep -oE 'E_[A-Z]+'
+  grep -oE '^    \[R[KBSCF]_[A-Z_]+\] += \{' "$win" | grep -oE 'R[KBSCF]_[A-Z_]+'
+  grep -oE '^    \{ "[A-Z_]+", +FF_[A-Z_]+, +WF_ST_' "$win" | sed 's/^    { "\([A-Z_]*\)".*/support:\1/'
+  grep -oE '^    \[ST_[A-Z]+\] += \{ "' "$win" | grep -oE 'ST_[A-Z]+'
 } | sort > "$W/ids.src"
 grep -v '^#' "$TSV" | cut -f1 | grep -v '^+' | sort > "$W/ids.tsv"
 if [ -s "$W/ids.src" ] && cmp -s "$W/ids.src" "$W/ids.tsv"; then
@@ -50,7 +57,9 @@ done
 [ "$built" -eq 1 ] || { fail "the base kit and fixture do not build"; echo "checks passed: $tp"; echo "checks failed: $tf"; exit 1; }
 
 NEVER='static int pur_never_x(const wf_x *x) { (void)x; return 0; }
-static int pur_never_d(const wf_dec *d) { (void)d; return 0; }'
+static int pur_never_d(const wf_dec *d) { (void)d; return 0; }
+static int pur_never_v(const void *x) { (void)x; return 0; }
+static int pur_never_u(unsigned n) { (void)n; return 0; }'
 while IFS=$'\t' read -r id old new status; do
     case "$id" in '#'*|'') continue ;; esac
     if [ "$old" = "-" ]; then

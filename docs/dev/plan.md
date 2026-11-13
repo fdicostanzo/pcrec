@@ -221,7 +221,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 - [RUN-POS-SET] STATE:started — required runs read one alternation normal form (folds are alternations; positions as sets at seam)
   filed: 2026-11-04 Frank ("Let's file it"), from his question on how a caseless position's set is built per encoding
   status (2026-11-11): stages 1, 2p, 2b LANDED (merge f77ed1130, abi 97, lane altland); stage 3 + the kit's R-38 Part D GO'd by Frank 2026-11-11 to start when the kit's K38-2 lands, as set S2; 2a census-first and 3m follow
-  waits: the kit's K38-2 delivery (set S2); R-38 Part D is answered when stage 3 is scheduled, and Frank's go for both is given (2026-11-11), so nothing waits on the other
+  waits: (S2 STARTED 2026-11-13 07:00) lane rps3 (stage 3, lane/rps3) and the kit's lane partd (Part D + R-41, lane/memfn-partd); one joint landing by the manager
   trigger: FIRED 2026-11-05 (rpsurvey: runs cut on bench/utf8 ci-* cells); the span_pick unit 1e gate is DISCHARGED ([MEASURE-SET]: stage 1 complete at 1e); build go given 2026-11-11 (above)
   refs: docs/design/alt_normal_form.md; docs/dev/lanes/altdesign_report.md; docs/dev/lanes/altthink_report.md; docs/dev/lanes/rpsurvey_report.md (its derived москва/αβγ numbers corrected by altthink); D187; D186; D153; src/facts/req.c (rr_alt); src/opt/lower_enc.c (lower_class_utf8); src/opt/altcls.c; [POS-ONE-DETECTOR]; [SEQ-FOLD]; [DFA-ALPHA-MERGE]
   Restated (Frank 2026-11-05): folds are set up as alternations and handled by ONE alternation normal form (width groups, exact sibling merge, a facts-only superset hull), owned by one module called from UTF-8 lowering and from altcls; the run reads it; positions cross the kit seam as sets. Staged: 1 lowering (byte artifacts unchanged), 2 rr_alt hull + A_EMPTY identity, 2b altcls, 3 set positions (with [POS-ONE-DETECTOR]), 3m mixed-width affixes.
@@ -281,6 +281,24 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-12, Frank: blocks instead of doubling, "also helps with streaming"): leading candidate = BLOCKED look-ahead: one presence question per block of B bytes ahead of the loop (yes: the block's attempts run unasked; no: scan forward to the next occurrence, end of subject stops); forward-only, at most one block ahead (stream- and readahead-friendly; doubling can demand unbounded look-ahead a stream cannot supply). B is a tuning constant: derive it from a SYSTEM constant (Frank): the stream's chunk when streaming, else the page size (sysconf(_SC_PAGESIZE), POSIX libc, or a build-time page constant if the measurement shows insensitivity; not the per-device /sys readahead window, not glibc-only cache sizes) and show insensitivity across that range in the measurement.
 
 ## Candidates ([OPTLOOP])
+- [COST-EXPLAIN] STATE:not-started — a regex cost explainer: per-construct marginal cost by ablation (swap a node, recompile)
+  filed: 2026-11-13 manager (Frank: "That suggests a tool for looking at regex dfa cost by repeated modify/compile")
+  status (2026-11-13): filed, unscheduled; idea from the predicate cost-surfacing discussion ([COND-FAMILY] row body)
+  next: when scheduled: a driver over existing compiles; per node a stand-in variant ({n,m} -> +, class -> ., drop lookaround/alternative, capture -> non-capturing, predicate -> its type); report delta bytes/states/compile ms/engine route, ranked; bounded by the compile timeout
+  refs: [DFA-MIN-FAST] (its long-compile census can use it); [COND-FAMILY] (predicate marginal cost is one node kind); [LOOP-FIXW]
+  A stand-in changes meaning: the report says what a part COSTS, never 'rewrite it so'; equivalent cheaper forms are a separate, harder feature. Users get 'why is my matcher huge/slow' pointed at the construct.
+- [DFA-MIN-FAST] STATE:not-started — DFA minimization is quadratic on large counted repeats; make it n log n
+  filed: 2026-11-13 manager (Frank: "It should be microseconds or at least under a second ... running some check nonlinearly"; "Agree" to filing it separately)
+  status (2026-11-13): MEASURED on main: (?:a|b){1,n} compiles in 0.08/0.31/0.80/3.10/12.2 s at n = 1875/3750/7500/15000/30000 (x4 per doubling), 99.9% in pcrec_minimize_dfa; n = 60000 skips the DFA (VM) in 0.04 s
+  next: after S2: (1) census EVERY long compile (compile_time_census.py, corpus + stress shapes): per-phase profile and growth vs size, naming each nonlinear phase; (2) fix minimization; others filed per cause; zero movers
+  refs: [LOOP-FIXW] (the counted-repeat shape itself); src/ir (pcrec_minimize_dfa); lane rps3c report (the dTLB/memcmp finding)
+  Frank 2026-11-13: "Have the row look at other long compiles as well". Compile time should be microseconds, at worst under a second; each slow phase gets a compile-time witness in tests/resource.
+- [LOOP-FIXW] STATE:not-started — fixed-width loops by pointer arithmetic; survey of related loop ideas
+  filed: 2026-11-13 manager (Frank: "for long counts like that in vm: 1. pointer arithmetic instead of frames ... fixed width 2. set the capture after the loop runs and on fallback"; "Have the item look at other general loop ideas related")
+  status (2026-11-13): filed; context = (a|b){1,30000} (S2 cloud red, ~12.5 s compile on main at BOTH engines, so the time is pre-engine analysis, a separate anomaly)
+  next: (1) census: corpus loops with a fixed-width body, the rung each takes today, VM frames/size; (2) design the fixed-width step as a SPECIAL CASE of the reverse-deterministic rung (no parallel mechanism); (3) survey related general loop ideas with triggers
+  refs: [ENG-BREP], RUNG-SELECT (plan_completed: src/opt/revdet.c, vm_revdet_rep: O(1) frames, last-iteration capture walk); [REPEAT-RUN]; D47.1; memory pcrec-general-mechanisms-not-special-cases
+  Body: docs/design/plan_row_bodies/LOOP-FIXW.md
 - [LITSCAN-SIZEFLOOR] STATE:not-started — a size-aware F5 floor: chain 2-byte runs only where the collapsed form would not overflow the cap
   filed: 2026-11-10 closea (the residual witness of the closed [OPT-LITSCAN], bench O-78 filed 2026-09-30)
   status (2026-11-10): filed, nothing scheduled; D127's floor of 3 re-refuses wild-datetime-datefinder-alternation at --engine=vm under the default 500,000-byte code cap (vm_program_bytes 508,413 -> 605,083); not a bug
@@ -590,7 +608,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   SURVEY LEAD for the capture question: re2c's TDFA (tagged-DFA submatch extraction, Trofimovich) is the literature for captures in direct-coded DFAs — the road by which direct-DFA could someday serve capture-bearing patterns without the VM; survey by measurement per OPT-A's rule when this opens.
 - [SHADOW-TABLE] STATE:not-started — one declared table of pcrec expectations that shadow kit reply fields: live, retired, or replaced
   filed: 2026-11-12 manager (kit review partd3 FIX-S1; third member of a family)
-  status (2026-11-12): three retirements so far, each ad hoc: K38-2's scan/rwin, S2's leads/rlead (P8) and dominated/rdom (FIX-1), all because the shadow would have to predict the kit's findability (D157)
+  status (2026-11-13): four ad hoc retirements: K38-2 scan/rwin; S2 leads/rlead (P8), dominated/rdom (FIX-1), head-vs-req_byte on a decline (successor: K from the head member, req_landmark_k); each because the check would predict the kit's pick (D157)
   next: trigger: the next shadow retirement or a new shadow; a sibling of [FACT-READS] and [ASK-DEFINE-FRAME] (declared, checked consumers): fold into [FACT-READS] if it builds first
   refs: lane/memfn-pdesign part_d §9; review 2026-11-12-r3-memfn-partd3
   Rule: each row names the shadowed reply field, its state (live / retired / replaced) and the named successor control; a retired shadow with no successor is a check finding.

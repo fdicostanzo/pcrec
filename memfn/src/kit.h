@@ -272,6 +272,11 @@ typedef struct {
        decision's path id */
     const struct wf_plan *wplan;
     const char       *wpath;
+    /* unit 3.0b (MF_SITE_ABI 28): the offset-skip function's BODY row's
+       pick (fd_form, fn_rows' pick column), written by its define: what
+       the agreement (wf_agree) reads as an E-func site's search where the
+       arm is ofsskip_arm, read nowhere else */
+    uint8_t           fn_pick;
 } site_rec;
 
 struct mf_art {
@@ -930,11 +935,13 @@ int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf
                      const mf_pred *p, const char *fn, mf_sink *o);
 /* 1 iff the function serves predicate `p` of site `site` under the define
  * hooks `h`: ofs_fn_applies and the BODY slot's walk (the gate's verdict),
- * asked quietly; *two 1 iff the BODY row it takes is fn-pair (the two
- * streams). */
+ * asked quietly; *pick the pick of the BODY row it takes (fn_rows' pick
+ * column: fn-pair PAIR, the two streams; fn-memchr LIBC; fn-every-pos NONE,
+ * never served here: its scope is the derived run part's), FF_UNSTATED where
+ * none serves. */
 #define ofs_fn_serves MF_NS(ofs_fn_serves)
 int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
-                  const mf_pred *p, int *two);
+                  const mf_pred *p, fd_form *pick);
 /* Writes its call, `<fn>(<s>, <n>, <lo>[, tables])`, the definition's
  * parameters in its order. */
 int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
@@ -1100,6 +1107,23 @@ int wf_parts_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def, i
 #define kit_legacy_serves MF_NS(kit_legacy_serves)
 int kit_legacy_serves(const mf_art *art, const mf_site *s, const mf_hooks *def,
                       unsigned gphases);
+/* (compose.c) The arm the define would render translated site `s` with
+ * (mf_ask's rule 1 for it: the vocabulary, the denies, the composer's walk
+ * with the finder's routed pick, the class and the presence links), asked
+ * quietly and writing nothing, with the routed finder row in *rid (NULL
+ * where the site walks); NULL where the define would refuse it. The window
+ * family's framed ask reads it for E-func's and E-stmt's frame part. */
+#define kit_legacy_arm MF_NS(kit_legacy_arm)
+const struct arm *kit_legacy_arm(const mf_art *art, const mf_site *s, const mf_hooks *def,
+                                 unsigned gphases, const char **rid);
+/* (window.c, MF_TRACE) THE AGREEMENT at a window site's define: window
+ * site `ws`, defined as record `r` under hooks `def` and phases `gphases`,
+ * re-asked framed through mf_wdecide, equals the reply re-derived from the
+ * decision and the record (plan_frame.md §4.1). NULL, or the first reply
+ * member that differs. */
+#define wf_agree MF_NS(wf_agree)
+const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
+                     unsigned gphases, const site_rec *r);
 /* The class of the family row's text for `plan` (R-25: the positions it
  * TESTS, the stop's find included; the libc and include bounds of the text
  * for THIS plan, not the row's widest), the row itself (E-find's or the

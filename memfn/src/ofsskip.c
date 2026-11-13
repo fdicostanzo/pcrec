@@ -272,6 +272,9 @@ typedef struct fn_row {
     int (*render)(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o);
     const gate_contract *ct;
     const mf_formdecl *decl;
+    fd_form pick;       /* a BODY row's search pick (the fact the window
+                           family's reply reads, unit 3.0b); FF_UNSTATED on
+                           a PREFIX row */
 } fn_row;
 
 /* THE PAIR LEAPFROG (kit.h's ofs_pair). Each stream keeps a FRONTIER, an
@@ -475,13 +478,13 @@ static int prefix_holds(const mf_formdecl *d, const fn_in *x)
 }
 
 static const fn_row fn_rows[] = {
-    { FN_BODY, every_pos_holds, every_pos_body, &fn_every_pos_ct, NULL },
-    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL },
-    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL },
+    { FN_BODY, every_pos_holds, every_pos_body, &fn_every_pos_ct, NULL, FF_NONE },
+    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },
+    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },
     /* FN_PREFIX (R4e' batch 1, §R4.9.2.4): the SIMD rows, first match, the
        widest level first; a chosen row's narrower rungs are its NAMED ones */
-    { FN_PREFIX, NULL, NULL, &vrun_w32_ct, &vrun_w32_decl },
-    { FN_PREFIX, NULL, NULL, &vrun_w16_ct, &vrun_w16_decl },
+    { FN_PREFIX, NULL, NULL, &vrun_w32_ct, &vrun_w32_decl, FF_UNSTATED },
+    { FN_PREFIX, NULL, NULL, &vrun_w16_ct, &vrun_w16_decl, FF_UNSTATED },
 };
 #define NFN (sizeof fn_rows / sizeof fn_rows[0])
 
@@ -537,12 +540,12 @@ static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
 
 /* 1 iff the function serves predicate `p` of site `site` under the define
  * hooks `h`: ofs_fn_applies, then the BODY slot's walk, asked quietly (the
- * gate reads `site`: what fn_select would decline is not served); *two 1
- * iff that walk takes fn-pair. */
+ * gate reads `site`: what fn_select would decline is not served); *pick the
+ * pick column of the BODY row that walk takes. */
 int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
-                  const mf_pred *p, int *two)
+                  const mf_pred *p, fd_form *pick)
 {
-    *two = 0;
+    *pick = FF_UNSTATED;
     if (!ofs_fn_applies(p, h, 0)) return 0;
     fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0 };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
@@ -550,7 +553,7 @@ int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
     gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
     gate_verdict why = { 0, 0 };
     size_t r = kit_walk(&fn_table, FN_BODY, &in, MF_PH_DEFINE, art->denies, &x, &tc, &why);
-    *two = r < NFN && fn_rows[r].render == pair_body;
+    if (r < NFN) *pick = fn_rows[r].pick;
     return r < NFN;
 }
 
@@ -704,6 +707,9 @@ static int fn_define(mf_art *art, uint32_t handle, const mf_site *site, const mf
 
     const fn_row *body = fn_select(art, handle, h, &x, FN_BODY);
     if (!body) return -1;
+    /* the define's record of its BODY row's pick (site_rec.fn_pick: the
+       agreement reads it where the site's own arm is this function) */
+    art->sites[handle - 1].fn_pick = (uint8_t)body->pick;
     x.body_row = body->ct->row;
     art->fn_body = body->ct->row;
     const fn_row *prefix = fn_select(art, handle, h, &x, FN_PREFIX);

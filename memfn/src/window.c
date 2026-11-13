@@ -48,7 +48,8 @@
  * T-FIND's fd_rows) or a declared row list read in order (C, TIE, and B's
  * renderers, keyed on the FIND slot's pick); every cost row reads ONE cost
  * table, plan_cost.def (HORS_MIN in finder.c's D-hors facts).
- * The decision reads no frame fact.
+ * The decision reads no frame fact; a FRAMED phase-1 ask's frame part
+ * (mf_wdecide DEFINE/EMIT, plan_frame.md 3.0b) does, through the plan function.
  *
  * THE TIE TABLE (window_site.md §2.1) is `wf_ties[]`: every tie rule of the
  * family lives there and every comparison that can tie reads its row.
@@ -62,6 +63,7 @@
  * merged with R would filter parked candidates by R without the re-seed
  * (docs/dev/lanes/wsc1_report.md, finding F-1).
  */
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1280,6 +1282,8 @@ static void decide(const mf_art *art, const mf_site *s, int quiet, wf_dec *d)
     trace_cands(d, &tc);
 }
 
+/* The reply's DECISION GROUP (`alt` .. `path`) from decision `d`, the reply
+ * zeroed whole first (padding and the frame part included). */
 static void reply_of(const wf_dec *d, mf_wreply *out)
 {
     const wf_alt *m = &d->a[d->ch];
@@ -1306,28 +1310,6 @@ static void reply_of(const wf_dec *d, mf_wreply *out)
     snprintf(out->path, sizeof out->path, "%s", d->path);
 }
 
-
-/* -1 where the art has failed, the site is not a window site the family
- * reads, or the decision's heap allocation is refused (OOM, R-28): every
- * pcrec caller turns -1 into pcrec_ctx_fail, so a refusal is never read as
- * a decision. */
-int mf_wdecide(const mf_art *art, const mf_site *site, mf_wreply *out)
-{
-    memset(out, 0, sizeof *out);
-    /* the decision reads no frame fact (§0): only the window facts are held */
-    if (art->err[0] || site->abi != MF_SITE_ABI || !site->nalt ||
-        wf_check(site, 0))
-        return -1;
-    /* the decision is ~10 KB, so it lives on the heap (R-28: a stack frame
-       above 4 KB is a kit defect); the ask is pure, so not the art's
-       arena; a refused allocation is -1 */
-    wf_dec *d = calloc(1, sizeof *d);
-    if (!d) return -1;
-    decide(art, site, 1, d);
-    reply_of(d, out);
-    free(d);
-    return 0;
-}
 
 /* ---- THE PLAN the text tests (phase 2) ------------------------------------ */
 
@@ -1799,12 +1781,12 @@ static void find_groups(const wf_dec *d, struct wf_plan *w)
 }
 
 /* C-run's RUN terms (w->runs, runcmp.c's input), one per group find_groups
- * formed, in the art's arena: the define's alone. 0, or -1 out of memory
- * (or, after kit_fail, a grouped position with no (T, K) spelling, which
- * C-run's grouping never forms). */
-static int build_runs(const mf_art *art, struct wf_plan *w)
+ * formed, from allocator `al` (the art's arena: the define's alone). 0, or
+ * -1 out of memory (or, after kit_fail on `art`, a grouped position with no
+ * (T, K) spelling, which C-run's grouping never forms). */
+static int build_runs(const mf_art *art, mf_arena *al, struct wf_plan *w)
 {
-    w->runs = art->a->alloc(art->a->u, sizeof *w->runs);
+    w->runs = al->alloc(al->u, sizeof *w->runs);
     if (!w->runs) return -1;
     memset(w->runs, 0, sizeof *w->runs);
     w->runs->need = MF_REQUIRED;
@@ -1813,8 +1795,8 @@ static int build_runs(const mf_art *art, struct wf_plan *w)
         if (w->grp[i] < 0) { i = j; continue; }
         while (j < w->n && w->grp[j] == w->grp[i]) j++;
         mf_term *t = &w->runs->term[w->grp[i]];
-        uint8_t *run = art->a->alloc(art->a->u, j - i);
-        uint8_t *mask = art->a->alloc(art->a->u, j - i);
+        uint8_t *run = al->alloc(al->u, j - i);
+        uint8_t *mask = al->alloc(al->u, j - i);
         if (!run || !mask) return -1;
         int exact;
         if (run_bytes(art, sets_at, w->set, i, j, run, mask, &exact)) return -1;
@@ -1975,10 +1957,12 @@ static int b_fn_holds(const void *x)
     if (!legacy_ok(b->d, b->w, &eb) || eb) return 0;
     translate(b->d, b->w, 0, b->fn);
     const mf_pred *p = &b->fn->site.pred;
-    int k, lo, hi, two;
+    int k, lo, hi;
+    fd_form body;
     if (p->plan_hint == MF_NO_PRED) return 0;
     ofs_fn_scan(p, &k, &lo, &hi);
-    return hi >= 0 && ofs_fn_serves(b->d->art, &b->fn->site, b->def, p, &two) && two;
+    return hi >= 0 && ofs_fn_serves(b->d->art, &b->fn->site, b->def, p, &body) &&
+           body == FF_PAIR;
 }
 
 /* THE SKELETON ROWS (§2.6.0): the loop's SHAPE is the frame's, one row per
@@ -2281,9 +2265,10 @@ const char *wf_tables_check(void)
  * a fused row first (B-fn), else the search renderer table's row, into
  * `fx`. `quiet` 0 is the define's record of the selection E-find made (the
  * walk traced and counted); the setup itself runs quietly, before Table E
- * walks. 0, or -1 out of memory. */
-static int wf_find_decide(const mf_art *art, const wf_dec *d, const struct wf_plan *w,
-                          const mf_hooks *def, int quiet, wf_fx *fx)
+ * walks. B-fn's translation comes from allocator `al`. 0, or -1 out of
+ * memory. */
+static int wf_find_decide(const mf_art *art, mf_arena *al, const wf_dec *d,
+                          const struct wf_plan *w, const mf_hooks *def, int quiet, wf_fx *fx)
 {
     const wf_alt *m = &d->a[d->ch];
     wf_legacy *fn = fx->fn;
@@ -2306,7 +2291,7 @@ static int wf_find_decide(const mf_art *art, const wf_dec *d, const struct wf_pl
     fx->wlo = st.wlo;
     fx->whi = st.whi;
     if (fx->pick == FF_PAIR && !fx->fn) {
-        fx->fn = art->a->alloc(art->a->u, sizeof *fx->fn);
+        fx->fn = al->alloc(al->u, sizeof *fx->fn);
         if (!fx->fn) return -1;
     }
     wf_bx bx = { d, w, def, fx->fn };
@@ -2328,8 +2313,9 @@ static uint8_t pieces_libc(const struct wf_plan *w)
  * and renderer; B-fn's translated site), the stop's role, C-run's compares
  * (the terms at the define), the search's and the stream's preparation
  * (D-hors's probe and shift table), and the text's libc and include bounds
- * (pieces_libc). 0, or -1 out of memory. */
-static int wf_find_prepare(const mf_art *art, const wf_dec *d, struct wf_plan *w,
+ * (pieces_libc). The run terms come from allocator `al`. 0, or -1 out of
+ * memory. */
+static int wf_find_prepare(mf_arena *al, const wf_dec *d, struct wf_plan *w,
                            const wf_fx *fx, int build)
 {
     w->row = &wf_find_arm;
@@ -2345,7 +2331,7 @@ static int wf_find_prepare(const mf_art *art, const wf_dec *d, struct wf_plan *w
         return 0;
     }
     find_groups(d, w);
-    if (build && build_runs(art, w)) return -1;
+    if (build && build_runs(d->art, al, w)) return -1;
     if (w->srch->prepare) w->srch->prepare(w, fx);
     if (w->strm->prepare) w->strm->prepare(w, fx);
     /* memchr where the search calls it (not B-hors: D-hors's probe); a run
@@ -2361,11 +2347,11 @@ static int wf_find_prepare(const mf_art *art, const wf_dec *d, struct wf_plan *w
  * shared bound exists; compose.c's own buffers are 200). */
 enum { WF_WHY_MAX = 320 };
 
-/* Room in the art's arena for a refusal of wf_plan_site's, into *why
+/* Room from allocator `al` for a refusal of wf_plan_site's, into *why
  * ("out of memory" where none is left): NULL then. */
-static char *why_room(const mf_art *art, const char **why)
+static char *why_room(mf_arena *al, const char **why)
 {
-    char *buf = art->a->alloc(art->a->u, WF_WHY_MAX);
+    char *buf = al->alloc(al->u, WF_WHY_MAX);
     *why = buf ? buf : "out of memory";
     return buf;
 }
@@ -2380,15 +2366,19 @@ static char *why_room(const mf_art *art, const char **why)
  * renders from it. 0; -1 with *why where no Table E row serves the frame,
  * a piece has no row on it, Table S's row on it refuses (ST-none, or the
  * ST-many T-FIND's walk refused: raised here, only where Table E answers
- * E-find, so a site another frame renders keeps it), or out of memory. */
-static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def,
-                        unsigned gphases, int quiet, wf_dec *d, struct wf_plan *w,
-                        wf_legacy *L, wf_fx *fx, size_t *erow, const char **why)
+ * E-find, so a site another frame renders keeps it), or out of memory.
+ * Everything it allocates comes from `al` (plan_frame.md §2.2
+ * "Allocation"): the define passes the art's arena, mf_wdecide a heap
+ * allocator it frees before it returns, so a phase-1 ask grows no arena. */
+static int wf_plan_site(const mf_art *art, mf_arena *al, const mf_site *s,
+                        const mf_hooks *def, unsigned gphases, int quiet, wf_dec *d,
+                        struct wf_plan *w, wf_legacy *L, wf_fx *fx, size_t *erow,
+                        const char **why)
 {
     decide(art, s, quiet, d);
     plan_of(d, def, w);
     fx->fn = NULL;
-    if (wf_find_decide(art, d, w, def, 1, fx)) { *why = "out of memory"; return -1; }
+    if (wf_find_decide(art, al, d, w, def, 1, fx)) { *why = "out of memory"; return -1; }
     wf_facts f = { s, d->a[d->ch].alt };
     gate_in in = { .s = s, .h = def, .wf = &f };
     gate_tctx tc = { art, "wfE", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
@@ -2400,7 +2390,7 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
         /* no row: a REPORT site E-find does not render (E-generic declines
            REPORT), or a frame only a contract leaves with none (a stated
            `moved`, an unstated hook a row uses) */
-        char *buf = why_room(art, why);
+        char *buf = why_room(al, why);
         if (!buf) return -1;
         if (s->site_kind == MF_SK_REPORT && !(v.r1 | v.r2))
             snprintf(buf, WF_WHY_MAX, "no Table E row serves this REPORT site: E-find does "
@@ -2413,7 +2403,7 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
         return -1;
     }
     /* the define records E-find's selection (T-FIND's walk, traced) */
-    if (r == E_FIND && !quiet && wf_find_decide(art, d, w, def, 0, fx)) {
+    if (r == E_FIND && !quiet && wf_find_decide(art, al, d, w, def, 0, fx)) {
         *why = "out of memory";
         return -1;
     }
@@ -2434,7 +2424,7 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
         w->chk = ren_find(REN_ROWS(ren_check), (wf_frame_row)r, REN_FRAME, NULL);
     }
     if (wf_srows[sr].why) {
-        char *buf = why_room(art, why);
+        char *buf = why_room(al, why);
         if (!buf) return -1;
         snprintf(buf, WF_WHY_MAX, "%s: %s", frame, wf_srows[sr].why);
         return -1;
@@ -2443,12 +2433,12 @@ static int wf_plan_site(const mf_art *art, const mf_site *s, const mf_hooks *def
                      : r == E_FIND && !fu && !fx->srch ? "search"
                      : !fu && !w->strm ? "stream" : !fu && !w->chk ? "check" : NULL;
     if (none) {
-        char *buf = why_room(art, why);
+        char *buf = why_room(al, why);
         if (!buf) return -1;
         snprintf(buf, WF_WHY_MAX, "%s has no %s renderer row", frame, none);
         return -1;
     }
-    if (r == E_FIND && wf_find_prepare(art, d, w, fx, !quiet)) {
+    if (r == E_FIND && wf_find_prepare(al, d, w, fx, !quiet)) {
         *why = "out of memory";
         return -1;
     }
@@ -2480,7 +2470,7 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
     wf_fx *fx = art->a->alloc(art->a->u, sizeof *fx);
     if (!d || !w || !pid || !L || !fx) { *why = "out of memory"; return -1; }
     size_t r;
-    if (wf_plan_site(art, s, def, gphases, quiet, d, w, L, fx, &r, why)) return -1;
+    if (wf_plan_site(art, art->a, s, def, gphases, quiet, d, w, L, fx, &r, why)) return -1;
     snprintf(pid, sizeof d->path, "%s%s", d->path,
              r == E_FIND && fx->srch ? fx->srch->path : "");
     *path = pid;
@@ -2494,6 +2484,322 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
     *legacy = &L->site;
     return 0;
 }
+
+/* ---- THE FRAMED ASK (plan_frame.md §2.2-§2.3, unit 3.0b) -----------------
+ *
+ * A phase-1 ask with `call` DEFINE or EMIT answers, beside the decision,
+ * THE FRAME PART: what the define of the same site, hooks and call renders
+ * (T-FRAME's row, T-FIND's deciding row, the triple's search and stream, how
+ * the pieces are joined, and the check's test kinds). The plan function
+ * computes it (wf_frame_of); the define's own record answers it again from
+ * what the define STORED (wf_agree, MF_TRACE), never through the plan
+ * function, so a frame-part fault that moves no text is still seen. */
+
+/* T-FIND's picks as the reply's search piece (mf_wsearch): the built picks;
+ * every other pick renders no search, NONE. */
+static const uint8_t wf_wsearch[FF_HORS + 1] = {
+    [FF_LIBC] = MF_WSEARCH_LIBC, [FF_LIBC_BACK] = MF_WSEARCH_LIBC_BACK,
+    [FF_WALK] = MF_WSEARCH_WALK, [FF_PAIR] = MF_WSEARCH_PAIR, [FF_HORS] = MF_WSEARCH_HORS,
+};
+
+/* The reply's search piece for pick `f`. */
+static uint8_t wsearch_of(fd_form f)
+{
+    return (unsigned)f <= FF_HORS ? wf_wsearch[f] : MF_WSEARCH_NONE;
+}
+
+/* The reply's candidate stream (mf_wstream) for a stream row's key or a
+ * fused row's declared stream (WF_ST_*, one bit). */
+static uint8_t wstream_of(unsigned st)
+{
+    return st == WF_ST_SHIFT ? MF_WSTREAM_SHIFT : st == WF_ST_MASK ? MF_WSTREAM_MASK
+         : st == WF_ST_RESTART ? MF_WSTREAM_RESTART : MF_WSTREAM_NONE;
+}
+
+/* The pick E-stmt's search renderer table names for composer arm `a` (its
+ * PF arms; each arm renders one pick), FF_UNSTATED for any other arm: the
+ * map from arm to pick both halves of the agreement read. */
+static fd_form wf_arm_pick(const arm *a)
+{
+    for (size_t i = 0; i < RB_N; i++)
+        if (ren_search[i].k.frame == E_STMT && ren_search[i].arm == a)
+            return (fd_form)__builtin_ctz(ren_search[i].k.keys);
+    return FF_UNSTATED;
+}
+
+/* THE FRAME PART as the plan function answers it: T-FRAME's row, T-FIND's
+ * deciding row, the search and stream pieces, the join, and the check's
+ * test kind per plan position (aligned with the decision's plan[]) and at
+ * the stop. */
+typedef struct {
+    wf_frame_row erow;
+    const char  *method;
+    uint8_t      search, stream, fused;
+    uint8_t      plan_test[MF_WPLAN_MAX];
+    uint8_t      stop_test;
+} wf_fpart;
+
+/* The test kind of tested position `k` of plan `w`: TABLE where the define's
+ * hooks took the covering span's offered table (C-table), OWN otherwise. */
+static uint8_t test_of(const struct wf_plan *w, unsigned k)
+{
+    return w->table[k] ? MF_WTEST_TABLE : MF_WTEST_OWN;
+}
+
+/* The composing frames' check test kinds into `fp` (E-find's composed rows,
+ * E-generic): per plan position, the define's entry at the same OFFSET
+ * (`w->off[]` lists the stop too, so its indices are not plan[]'s), and on
+ * E-find the stop's. */
+static void plan_tests(const wf_dec *d, const struct wf_plan *w, int stop, wf_fpart *fp)
+{
+    for (unsigned i = 0; i < d->np; i++)
+        for (unsigned k = 0; k < w->n; k++)
+            if (w->off[k] == d->poff[i]) fp->plan_test[i] = test_of(w, k);
+    if (stop && w->stop_ix >= 0) fp->stop_test = test_of(w, (unsigned)w->stop_ix);
+}
+
+/* The plan function's FRAME PART for Table E's row `r` over decision `d`,
+ * plan `w`, E-find's setup `fx` and the legacy translation `L` (E-func,
+ * E-stmt: the composer's arm walk over it, asked quietly, as the define
+ * walks it). 0, or -1 where the define would refuse the translated site. */
+static int wf_frame_of(const mf_art *art, const mf_hooks *def, unsigned gphases, size_t r,
+                       const wf_dec *d, const struct wf_plan *w, const wf_fx *fx,
+                       const wf_legacy *L, wf_fpart *fp)
+{
+    memset(fp, 0, sizeof *fp);
+    fp->erow = (wf_frame_row)r;
+    fp->method = "";
+    if (r == E_FIND && fx->fused) {
+        fp->method = fx->brow;
+        fp->fused = MF_WFUSED_FN;
+        fp->search = wsearch_of(fx->fused->search);
+        fp->stream = wstream_of(fx->fused->stream);
+        return 0;
+    }
+    if (r == E_FIND || r == E_GENERIC) {
+        if (r == E_FIND) fp->method = fx->brow;
+        fp->fused = MF_WFUSED_NO;
+        fp->search = r == E_FIND ? wsearch_of(fx->pick) : MF_WSEARCH_NONE;
+        fp->stream = wstream_of(w->strm->k.keys);
+        plan_tests(d, w, r == E_FIND, fp);
+        return 0;
+    }
+    const char *rid = NULL;
+    const arm *a = kit_legacy_arm(art, &L->site, def, gphases, &rid);
+    if (!a) return -1;
+    fp->fused = MF_WFUSED_ARM;
+    if (r == E_FUNC && a == &ofsskip_arm) {
+        fd_form pick;
+        ofs_fn_serves(art, &L->site, def, &L->site.pred, &pick);
+        fp->fused = MF_WFUSED_FN;
+        fp->search = wsearch_of(pick);
+        fp->stream = wstream_of(ren_fused[RF_FN].stream);
+    } else if (r == E_STMT && wf_arm_pick(a) != FF_UNSTATED) {
+        fp->method = rid ? rid : "";
+        fp->fused = MF_WFUSED_NO;
+        fp->search = wsearch_of(wf_arm_pick(a));
+        fp->stream = wstream_of(ren_stream[RS_CALLER].k.keys);
+    }
+    return 0;
+}
+
+/* The reply's FRAME PART from `fp` (`out`'s decision group already
+ * written): framed 1, the ids spelled, the pieces copied. */
+static void reply_frame(const wf_fpart *fp, mf_wreply *out)
+{
+    out->framed = 1;
+    snprintf(out->frame_row, sizeof out->frame_row, "%s", wf_frame_name(fp->erow));
+    snprintf(out->method, sizeof out->method, "%s", fp->method ? fp->method : "");
+    out->search = fp->search;
+    out->stream = fp->stream;
+    out->fused = fp->fused;
+    memcpy(out->plan_test, fp->plan_test, sizeof out->plan_test);
+    out->stop_test = fp->stop_test;
+}
+
+/* mf_wdecide's ALLOCATOR: C-heap blocks chained through `*u`, each freed by
+ * wd_free before the ask returns (the ask is pure: it grows no arena). */
+typedef struct wd_blk {
+    struct wd_blk *next;
+    max_align_t    data[];
+} wd_blk;
+
+/* A zeroed block of `n` bytes on the C heap, chained for wd_free. */
+static void *wd_alloc(void *u, size_t n)
+{
+    wd_blk **head = u;
+    wd_blk *b = calloc(1, sizeof *b + n);
+    if (!b) return NULL;
+    b->next = *head;
+    *head = b;
+    return b->data;
+}
+
+/* Frees every block wd_alloc chained from `b`. */
+static void wd_free(wd_blk *b)
+{
+    while (b) {
+        wd_blk *n = b->next;
+        free(b);
+        b = n;
+    }
+}
+
+/* 1 iff mf_define would refuse window site `s` before its selection: an
+ * unstated target, a policy bit outside the kit's named set, a part or frame
+ * statement the family does not describe (window_route's checks), or denies
+ * that are not the art's. */
+static int framed_refused(const mf_art *art, const mf_site *s)
+{
+    return !art->target || (s->policy & ~(uint32_t)MF_P_KIT_NAMED) ||
+           wf_parts_check(s) || wf_check(s, 1) || s->denies != art->denies;
+}
+
+/* The FRAMED ask's body (`gphases` the define's: DEFINE, or DEFINE|USE for
+ * EMIT): the plan function over `def` on the heap allocator, then the reply,
+ * decision group and frame part. 0, or -1 where the define would refuse. */
+static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks *def,
+                          unsigned gphases, mf_wreply *out)
+{
+    if (framed_refused(art, site)) return -1;
+    wd_blk *blks = NULL;
+    mf_arena heap = { &blks, wd_alloc };
+    wf_dec *d = wd_alloc(&blks, sizeof *d);
+    struct wf_plan *w = wd_alloc(&blks, sizeof *w);
+    wf_legacy *L = wd_alloc(&blks, sizeof *L);
+    wf_fx *fx = wd_alloc(&blks, sizeof *fx);
+    wf_fpart *fp = wd_alloc(&blks, sizeof *fp);
+    size_t r;
+    const char *why;
+    int rc = -1;
+    if (d && w && L && fx && fp &&
+        !wf_plan_site(art, &heap, site, def, gphases, 1, d, w, L, fx, &r, &why)) {
+        unsigned eb;
+        /* the translation the define renders E-func/E-stmt from (wf_prepare) */
+        if (r == E_FUNC || r == E_STMT) {
+            legacy_ok(d, w, &eb);
+            translate(d, w, eb, L);
+        }
+        if (!wf_frame_of(art, def, gphases, r, d, w, fx, L, fp)) {
+            reply_of(d, out);
+            reply_frame(fp, out);
+            rc = 0;
+        }
+    }
+    wd_free(blks);
+    return rc;
+}
+
+/* -1 where `call` is UNSTATED or unknown, the art has failed, the site is
+ * not a window site the family reads, a framed ask's define would refuse
+ * it, or a heap allocation is refused (OOM, R-28): every pcrec caller turns
+ * -1 into pcrec_ctx_fail, so a refusal is never read as a reply. */
+int mf_wdecide(const mf_art *art, const mf_site *site, const mf_hooks *def, uint8_t call,
+               mf_wreply *out)
+{
+    memset(out, 0, sizeof *out);
+    if (call == MF_WCALL_UNSTATED || call > MF_WCALL_EMIT) return -1;
+    if (art->err[0] || site->abi != MF_SITE_ABI || !site->nalt) return -1;
+    if (call != MF_WCALL_NONE)
+        return wdecide_framed(art, site, def,
+                              call == MF_WCALL_EMIT ? MF_PH_DEFINE | MF_PH_USE : MF_PH_DEFINE,
+                              out);
+    /* NONE: the decision reads no frame fact (§0), so only the window facts
+       are held, and `def` is not read */
+    if (wf_check(site, 0)) return -1;
+    /* the decision is ~10 KB, so it lives on the heap (R-28: a stack frame
+       above 4 KB is a kit defect); the ask is pure, so not the art's
+       arena; a refused allocation is -1 */
+    wf_dec *d = calloc(1, sizeof *d);
+    if (!d) return -1;
+    decide(art, site, 1, d);
+    reply_of(d, out);
+    free(d);
+    return 0;
+}
+
+#ifdef MF_TRACE
+/* The reply members by offset, for naming the first one two replies differ
+ * at (the agreement's refusal; a NONE reply's frame part is zero). */
+#define WR_M(m) { #m, offsetof(mf_wreply, m), sizeof ((mf_wreply *)0)->m }
+static const struct { const char *name; size_t off, size; } wr_members[] = {
+    WR_M(alt), WR_M(reseed), WR_M(has_stop), WR_M(stop), WR_M(stop_set), WR_M(nplan),
+    WR_M(plan), WR_M(plan_term), WR_M(pinned), WR_M(run_stated), WR_M(run_member),
+    WR_M(run_lo), WR_M(run_len), WR_M(path), WR_M(framed), WR_M(frame_row), WR_M(method),
+    WR_M(search), WR_M(stream), WR_M(fused), WR_M(plan_test), WR_M(stop_test),
+};
+#undef WR_M
+
+/* The name of the first member at which `a` and `b` differ ("padding"
+ * where only padding does). */
+static const char *wr_first_diff(const mf_wreply *a, const mf_wreply *b)
+{
+    for (size_t i = 0; i < sizeof wr_members / sizeof *wr_members; i++)
+        if (memcmp((const char *)a + wr_members[i].off, (const char *)b + wr_members[i].off,
+                   wr_members[i].size))
+            return wr_members[i].name;
+    return "padding";
+}
+
+/* THE AGREEMENT (MF_TRACE; plan_frame.md §4.1 "The agreement's two
+ * halves"): window site `ws`, just defined as record `r` under the hooks
+ * `def` and the define's phases `gphases`, re-asked through mf_wdecide with
+ * the define's call, equals byte for byte a reply whose DECISION GROUP is
+ * re-derived (`decide` on `ws`) and whose FRAME PART is read off what the
+ * define STORED (`r`'s plan, arm, finder row and BODY row; the field map),
+ * never through the plan function. NULL, or the first reply member that
+ * differs (a static name; "the framed ask's refusal" where the re-ask
+ * refuses). */
+const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
+                     unsigned gphases, const site_rec *r)
+{
+    mf_wreply asked, held;
+    uint8_t call = gphases & MF_PH_USE ? MF_WCALL_EMIT : MF_WCALL_DEFINE;
+    if (mf_wdecide(art, ws, def, call, &asked))
+        return "the framed ask's refusal";
+    wf_dec *d = calloc(1, sizeof *d);
+    if (!d) return "(out of memory)";
+    decide(art, ws, 1, d);
+    reply_of(d, &held);
+    const struct wf_plan *w = r->wplan;
+    wf_frame_row erow = w ? (w->row == &wf_find_arm ? E_FIND : E_GENERIC)
+                          : r->site.form == MF_FORM_FUNC ? E_FUNC : E_STMT;
+    held.framed = 1;
+    snprintf(held.frame_row, sizeof held.frame_row, "%s", wf_frame_name(erow));
+    if (w && w->fused) {                        /* E-find, B-fn */
+        snprintf(held.method, sizeof held.method, "%s", w->brow ? w->brow : "");
+        held.fused = MF_WFUSED_FN;
+        held.search = wsearch_of(w->fused->search);
+        held.stream = wstream_of(w->fused->stream);
+    } else if (w) {                             /* E-find composed, E-generic */
+        if (erow == E_FIND) snprintf(held.method, sizeof held.method, "%s", w->brow ? w->brow : "");
+        held.fused = MF_WFUSED_NO;
+        held.search = erow == E_FIND ? wsearch_of(w->pick) : MF_WSEARCH_NONE;
+        held.stream = wstream_of(w->strm->k.keys);
+        /* the check, matched by OFFSET (written out here, not plan_tests:
+           this half shares no code with the plan function's frame part) */
+        for (unsigned i = 0; i < d->np; i++)
+            for (unsigned k = 0; k < w->n; k++)
+                if (w->off[k] == d->poff[i])
+                    held.plan_test[i] = w->table[k] ? MF_WTEST_TABLE : MF_WTEST_OWN;
+        if (erow == E_FIND && w->stop_ix >= 0)
+            held.stop_test = w->table[w->stop_ix] ? MF_WTEST_TABLE : MF_WTEST_OWN;
+    } else if (erow == E_FUNC && r->arm == &ofsskip_arm) {
+        held.fused = MF_WFUSED_FN;
+        held.search = wsearch_of((fd_form)r->fn_pick);
+        held.stream = wstream_of(ren_fused[RF_FN].stream);
+    } else if (erow == E_STMT && wf_arm_pick(r->arm) != FF_UNSTATED) {
+        snprintf(held.method, sizeof held.method, "%s", r->fd_row ? r->fd_row : "");
+        held.fused = MF_WFUSED_NO;
+        held.search = wsearch_of(wf_arm_pick(r->arm));
+        held.stream = wstream_of(ren_stream[RS_CALLER].k.keys);
+    } else {
+        held.fused = MF_WFUSED_ARM;
+    }
+    free(d);
+    return memcmp(&asked, &held, sizeof asked) ? wr_first_diff(&asked, &held) : NULL;
+}
+#endif
 
 /* ---- THE PARTS (window_site.md §1.2's pre-check row; the kit manager's wsc3
  * ruling 3: window facts PER PART) ---------------------------------------------

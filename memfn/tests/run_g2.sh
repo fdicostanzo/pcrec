@@ -1053,6 +1053,24 @@ else
     note_fail 1 "window family (run_g2_win.sh): $(grep '^checks failed' "$work/win.log")"
 fi
 grep -E '^G2W (sites|paths|forms)' "$work/win.log" | sed 's/^/   /'
+# plan_frame.md 3.0b: the TRACED window-family pass. The same runner against
+# the MF_TRACE kit (libpcrec_mftrace.a, which the Makefile builds for
+# test-memfn-g2), so the kit's agreement at every window define, and its other
+# MF_TRACE-only checks, meet G2's E-find, E-generic, E-stmt, E-func and
+# k3_inrun lever sites. Generator and plain driver only (G2W_NOASAN: the
+# sanitized driver reads the same text the plain pass already ran).
+echo "== window (traced): G2's window family against the MF_TRACE kit"
+trlib="$root/build/libpcrec_mftrace.a"
+if [ ! -f "$trlib" ]; then
+    note_fail 1 "window family (traced): $trlib missing (make builds it for test-memfn-g2)"
+elif TMPDIR="$work" LIB="$trlib" G2W_TRACE=1 G2W_NOASAN=1 "$TO" 3000 bash "$here/run_g2_win.sh" \
+        > "$work/wintr.log" 2>&1; then
+    passed=$((passed + 1))
+    echo "PASS: window family, traced ($(grep '^checks passed' "$work/wintr.log"))"
+else
+    grep -E '^FAIL' "$work/wintr.log" | head -20
+    note_fail 1 "window family, traced (run_g2_win.sh): $(grep '^checks failed' "$work/wintr.log")"
+fi
 udone win
 fi
 

@@ -204,7 +204,7 @@ static int wreply(const mf_analysis *a, const char *run, mf_wreply *r)
 {
     mf_site s = run_find_site(run);
     mf_art *art = art_of(a);
-    if (mf_wdecide(art, &s, r) || !r->run_stated) {
+    if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, r) || !r->run_stated) {
         printf("FAIL: mf_wdecide names no run member for %s (%s)\n", run, mf_art_error(art));
         failed++;
         return -1;

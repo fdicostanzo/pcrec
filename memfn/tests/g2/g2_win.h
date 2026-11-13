@@ -51,6 +51,13 @@ typedef struct {
     int      plan_term[G2W_NOFF];
     int      pinned, run_stated, run_member, run_lo, run_len;
     char     path[16];
+    /* the frame part (plan_frame.md 3.0b), the framed EMIT ask's */
+    int      framed;
+    char     frame_row[12];
+    char     method[8];
+    int      search, stream, fused;
+    int      plan_test[G2W_NOFF];
+    int      stop_test;
 } g2w_reply;
 
 /* The frames G2 renders a site in (the driver's wrapper per site). */

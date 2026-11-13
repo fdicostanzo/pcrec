@@ -51,3 +51,26 @@ with that text set aside, so no check carries a second copy of the spellings.
 ## run_rank.sh / rank_check.py (full index entry, moved 2026-11-10 for the 12 KB limit)
 
 - **run_rank.sh**, **rank_check.py** — (R17-a, lane r17a: the same probe build also carries N4's door assertion, `find_door` in src/gen/emit_dfa.c: where a defined FIND's ... SINCE D172 S2 COMMIT 6 (lane wsc6, the kit manager's R1) THE CLAIM IS INVERTED: pcrec hands the kit NO ranking (the ranking and `plan_hint` are the kit's renderer interface, written by the window family's translation), so every predicate of every PRE/OFS site carries rank_n 0 and names no RUN term; pcrec's ranking (`ofs_pred_rank`, `pcrec_find_run_rank`) and its rows S731-S737 retired, and S1420 (a ranking stated on a pre-check part) is the claim's failing direction. N4's door stays.
+
+## Purity harness (memfn plan_frame.md 3.0b, lane b30b, 2026-11-12)
+
+`arm_fixtures --purity` asks each site NONE and framed (DEFINE) between interleaved defines and
+compares the WHOLE reply with a fresh art's (memcmp; `pur_diff` names the first differing member,
+or "padding"). Every ask goes through `pur_ask`: the COUNTING HOOKS (every stated callback counts;
+the call fixtures state all six: fn_name, table_name, note, note_tag, member, on_cand) and the
+COUNTING ARENA (every purity art allocates through `pur_alloc`) must read 0 across the ask. The
+arena's populations are counted (a framed E-find ask picking PAIR; a REPORT site refused under
+`no-window-search`, reaching `why_room`), a count of 0 a named failure. The call fixtures
+(`pur_call_fixtures`): UNSTATED and every call above EMIT refused (S); NONE's frame part zero (T)
+and blind to frame fields and `def`; NONE and framed agree on the decision group
+(`offsetof(mf_wreply, framed)`); EMIT walks DEFINE|USE (U: `pur_pf_site`, where the PF memchr row
+serves the define and declines a non-jump `on_miss` at USE, so mf_define renders E-stmt and mf_emit
+E-find); the site's `--memfn=` options reach a framed ask (I: REPORT under no-window-search refused;
+under no-fd-d1 search LIBC iff the define's text calls memchr); the SAME-CLASS-DIFFERENT-TEXT
+fixture (AD: STMT/ASSIGN, STMT/ON_MISS and the PF site asked with EMIT, each text hook renamed
+within its class, miss = n's text and MF_MISS_N by address included; one class-breaking case
+counted). `--purity-control` prints hex dumps of each site's NONE and framed replies after one
+define, its STMT EMIT replies, and the PF site's. run_finder.sh also runs `fxt --purity` (the
+MF_TRACE kit: the agreement at every purity define) and pins its E-func (81) and E-generic (8)
+define counts EXACT; its control (E-func declined in `e_legacy_holds`) moved no purity check and
+took E-func to 0 (b30b_report.md).

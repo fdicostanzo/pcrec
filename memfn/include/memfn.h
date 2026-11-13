@@ -240,8 +240,18 @@
                            max(K, 0); mf_pres_picks' run pair and
                            MF_PRES_WINDOW leave the header; the lever
                            pres-window retires. pcrec bytes move (a pcrec
-                           abi event in the same commit). 28: plan_frame.md
-                           3.0b's (on main, lane b30b). 29 (R-38 Part D
+                           abi event in the same commit). 28 (unit 3.0b,
+                           docs/design/memfn/plan_frame.md §2.2-§2.3, §5):
+                           mf_wdecide takes the frame (the site's frame
+                           fields, the define hooks, mf_wcall); mf_wreply
+                           gains framed, frame_row, method, search,
+                           stream, fused, plan_test and stop_test,
+                           appended LAST; its T-VERIFY group, plan_test
+                           and stop_test are named the check; mf_wcall,
+                           mf_wsearch, mf_wstream, mf_wfused, mf_wtest
+                           added. No MF_VOCAB or MF_CLASS_V move; no pcrec
+                           byte moved.
+                           29 (R-38 Part D
                            + R-41, docs/design/memfn/part_d.md rev 4 §2.2,
                            §4; one meaning event, no layout move): R BY
                            ROLE, in a window site's alternative a
@@ -619,7 +629,9 @@ typedef enum { MF_SPAN_UNSTATED = 0, MF_SPAN_BOUNDED, MF_SPAN_CONTEXT,
  * Every fact has an UNSTATED zero, refused where it is read (an empty core is
  * a value: `core` STATED with `core_len` 0). The FRAME (form, op, handoff,
  * empty, use, body, decl_point, site_kind, the hooks, span_lo/span_hi, the
- * FUNC name `pred.fn_ref`) is today's fields, read by phase 2 only.
+ * FUNC name `pred.fn_ref`) is today's fields, read by phase 2 and by a
+ * FRAMED phase-1 ask (mf_wdecide's `call` DEFINE or EMIT, MF_SITE_ABI 28);
+ * the DECISION reads none of them.
  *
  * A WINDOW SITE STATES NOTHING ELSE (D172 S2 commit 6; the kit manager's R1).
  * Its `pred` carries no term (`nterm` 0), no `need`, no `plan_hint` (0 or
@@ -1596,9 +1608,12 @@ int      mf_lever(mf_art *, const char *name);
 /* ---- THE WINDOW FAMILY'S PHASE-1 REPLY (window_site.md §0, §2, §3.4-§3.5) --
  *
  * THE DECISION, no text: pcrec asks with the spans, the alternatives and the
- * frequencies (the analysis object's byte-rate on mf_art_begin), never a
- * frame fact; the kit answers what its text will do. pcrec's NEXT rows and
- * the stamps read this reply (window_site.md §3.4's reply-to-stamp table).
+ * frequencies (the analysis object's byte-rate on mf_art_begin); the
+ * decision reads no frame fact, and the kit answers what its text will do.
+ * pcrec's NEXT rows and the stamps read this reply (window_site.md §3.4's
+ * reply-to-stamp table). The members `alt` .. `path` are THE DECISION GROUP
+ * (frame-independent); a FRAMED ask (MF_SITE_ABI 28, below) adds THE FRAME
+ * PART after `path`.
  *   alt         the chosen alternative's index in site.alts
  *   reseed      THE RE-SEED BIT (§3.5): 1 iff the plan needs the matcher
  *               re-seeded at each candidate (a RESEED choice, or a PARKED one
@@ -1627,8 +1642,43 @@ int      mf_lever(mf_art *, const char *name);
  *               of both (MF_SITE_ABI 29: R by role, part_d.md §2.2)
  *   path        the decision's path id: "parked", "reseed", "mass", "floor",
  *               "empty", each with "+pin" where C-pin fired
+ * THE CHECK is T-VERIFY's plan: nplan, plan[], plan_term[], pinned and the
+ * run_* members, with the frame part's plan_test[] and stop_test.
+ * THE FRAME PART (plan_frame.md §2.3; zero on a NONE ask), what the define
+ * of this site, hooks and call selects:
+ *   framed      1 iff `call` was DEFINE or EMIT and the ask answered 0
+ *   frame_row   T-FRAME's row: "E-func", "E-stmt", "E-find" or "E-generic"
+ *   method      T-FIND's DECIDING row id (mf_finder_rows), "" where none
+ *               decides (E-generic, E-func, a walked composer arm, ARM)
+ *   search      the SEARCH piece: the pick rendering the find (mf_wsearch);
+ *               on a fused row the pick it implements; NONE on E-generic
+ *               and ARM
+ *   stream      the CANDIDATE STREAM (mf_wstream): SHIFT iff search is HORS,
+ *               RESTART where a search or the floor renders, NONE on ARM
+ *   fused       how the pieces are joined (mf_wfused): NO where the frame
+ *               composes them, FN where one function renders search, stream
+ *               and check (the offset-skip function), ARM where a composer
+ *               arm the triple does not describe renders the site
+ *   plan_test[] the CHECK's test kind at plan[i] (mf_wtest): TABLE iff the
+ *               define hooks state `table_name` and the span covering
+ *               plan[i] offers a table whose set is the set tested there,
+ *               else OWN; NONE past nplan and off the composing frames
+ *   stop_test   the stop's test kind by the same rule, on E-find's composed
+ *               rows where the window has a stop; NONE elsewhere
+ * search, stream and fused describe the OFF (scalar) variant: under
+ * -fmemfn-simd the artifact may run a vector block the reply does not name.
  * MF_WPLAN_MAX is a SHAPE BOUND, DERIVED: every offset a span may state. */
 #define MF_WPLAN_MAX (MF_WREACH + MF_MAX_BACK)
+/* What a phase-1 ask is FOR (MF_SITE_ABI 28): NONE the decision only;
+ * DEFINE / EMIT the decision and the frame part mf_define / mf_emit would
+ * render. UNSTATED and every value above EMIT are refused. */
+typedef enum { MF_WCALL_UNSTATED = 0, MF_WCALL_NONE, MF_WCALL_DEFINE, MF_WCALL_EMIT } mf_wcall;
+typedef enum { MF_WSEARCH_NONE = 0, MF_WSEARCH_LIBC, MF_WSEARCH_LIBC_BACK, MF_WSEARCH_WALK,
+               MF_WSEARCH_PAIR, MF_WSEARCH_HORS } mf_wsearch;
+typedef enum { MF_WSTREAM_NONE = 0, MF_WSTREAM_RESTART, MF_WSTREAM_MASK,
+               MF_WSTREAM_SHIFT } mf_wstream;
+typedef enum { MF_WFUSED_NONE = 0, MF_WFUSED_NO, MF_WFUSED_FN, MF_WFUSED_ARM } mf_wfused;
+typedef enum { MF_WTEST_NONE = 0, MF_WTEST_OWN, MF_WTEST_TABLE } mf_wtest;
 typedef struct {
     uint8_t  alt;
     uint8_t  reseed;
@@ -1644,13 +1694,29 @@ typedef struct {
     int32_t  run_lo;
     uint8_t  run_len;
     char     path[16];
+    /* the frame part (MF_SITE_ABI 28), appended LAST */
+    uint8_t  framed;
+    char     frame_row[12];
+    char     method[8];
+    uint8_t  search;                    /* mf_wsearch */
+    uint8_t  stream;                    /* mf_wstream */
+    uint8_t  fused;                     /* mf_wfused  */
+    uint8_t  plan_test[MF_WPLAN_MAX];   /* mf_wtest, aligned with plan[] */
+    uint8_t  stop_test;                 /* mf_wtest */
 } mf_wreply;
-/* THE PHASE-1 ASK: the family's decision for window site `site` on `art`,
- * any art (S2 commit 6). PURE, as mf_ask is: no text, no handle, no art
- * state, no error set. Returns 0, or -1 where the site is not one the family
- * describes (the define would refuse it). */
+/* THE PHASE-1 ASK: the family's reply for window site `site` on `art`, any
+ * art (S2 commit 6), for the CALL `call` (mf_wcall) with the define hooks
+ * `def`. `*out` is zeroed whole first, on every return. NONE: the decision
+ * only; neither the site's frame fields nor `def` is read. DEFINE / EMIT:
+ * the frame is the site's own fields and `def` the hooks mf_define /
+ * mf_emit would take; the reply adds the frame part, and the ask answers
+ * -1 exactly where that define would refuse. PURE: no text, no handle, no
+ * art state, no error set, no hook callback called. Returns 0, or -1 (an
+ * UNSTATED or unknown `call`, a site the family does not describe, a frame
+ * the define refuses, out of memory). */
 #define mf_wdecide MF_NS(wdecide)
-int      mf_wdecide(const mf_art *, const mf_site *site, mf_wreply *out);
+int      mf_wdecide(const mf_art *, const mf_site *site, const mf_hooks *def, uint8_t call,
+                    mf_wreply *out);
 /* Records that the artifact's text calls libc function `name` (§R4.3.3
  * "Coverage"). The kit itself calls it as it RENDERS a libc call (memchr,
  * memcmp), once the call's text is written to a sink; a constant 2-8 byte

@@ -31,6 +31,7 @@
  *                                    G2W_R2_SITES: the two-byte sites, 300)
  */
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -674,7 +675,163 @@ static long ef_hwin;            /* the stop's verify-YES core window wholly belo
 static void fail(int id, const char *what, const char *detail)
 {
     fails++;
-    if (fails <= 30) printf("FAIL: site %d: %s: %s\n", id, what, detail ? detail : "");
+    if (fails <= 3000) printf("FAIL: site %d: %s: %s\n", id, what, detail ? detail : "");
+}
+
+/* ---- the frame part's classes (plan_frame.md 3.0b) ------------------------------- */
+
+/* THE (frame_row, stream) CELLS, the text classes and the table_name
+ * population, each counted (K35: the floors are run_g2_win.sh's). */
+static const char *const fr_names[4] = { "E-func", "E-stmt", "E-find", "E-generic" };
+static const char *const st_names[4] = { "none", "restart", "mask", "shift" };
+static const char *const se_names[6] = { "", "LIBC", "LIBC_BACK", "WALK", "PAIR", "HORS" };
+static long fcell[4][4];
+static long fc_fn, fc_pair, fc_hors, fc_libc, fc_walk, fc_method;
+static long tn_table, tn_own, tn_noffer, tn_term, tn_below, tn_stop_own, af_walk, af_other;
+static mf_finder_listing g_rows;
+
+/* The ref G2 offered at offset `off` of alternative `alt` (0: none). */
+static uint32_t offer_at(const g2w_site *x, int alt, int off)
+{
+    const g2w_alt *a = &x->alt[alt];
+    for (int i = 0; i < a->nspan; i++) {
+        const g2w_span *g = &a->span[i];
+        if (off >= g->start && off < g->start + g->len) return g->table[off - g->start];
+    }
+    return 0;
+}
+
+static int marker_read(int id, uint32_t ref, const char *t, const char *ft)
+{
+    char nm[48];
+    snprintf(nm, sizeof nm, "g2w_t%d_%u[", id, ref);
+    return ref && (strstr(t, nm) || strstr(ft, nm));
+}
+
+/* Site `id`'s framed reply `w` against its rendered text and mf_result. */
+static void frame_classes(int id, const g2w_site *x, const mf_wreply *w, const mf_result *res,
+                          const char *t, const char *ft)
+{
+    char m[160];
+    int fr = -1, efind = !strcmp(res->form_id, "window-search");
+    for (int i = 0; i < 4; i++) if (!strcmp(w->frame_row, fr_names[i])) fr = i;
+    if (!w->framed || fr < 0) { fail(id, "frame row", "not one of T-FRAME's four rows, or not framed"); return; }
+    if (w->stream > MF_WSTREAM_SHIFT || w->search > MF_WSEARCH_HORS || w->fused < MF_WFUSED_NO ||
+        w->fused > MF_WFUSED_ARM) { fail(id, "frame part", "a member outside its enum"); return; }
+    fcell[fr][w->stream]++;
+    /* the impossible cells (R26, R24): MASK anywhere; SHIFT off E-find; E-generic
+       only RESTART; E-func and E-stmt RESTART or NONE; NONE iff ARM */
+    if (w->stream == MF_WSTREAM_MASK) fail(id, "cell", "stream MASK (no frame renders it)");
+    if (w->stream == MF_WSTREAM_SHIFT && fr != 2) fail(id, "cell", "stream SHIFT off E-find");
+    if (fr == 3 && w->stream != MF_WSTREAM_RESTART) fail(id, "cell", "E-generic not RESTART");
+    if (fr < 2 && w->stream != MF_WSTREAM_RESTART && w->stream != MF_WSTREAM_NONE)
+        fail(id, "cell", "E-func/E-stmt neither RESTART nor NONE");
+    if ((w->stream == MF_WSTREAM_NONE) != (w->fused == MF_WFUSED_ARM))
+        fail(id, "cell", "stream NONE is not exactly fused ARM");
+    /* the id resolution (Goal 5), exact emptiness: method names T-FIND's FIND
+       row whose pick IS search; empty iff no row decides (E-generic, E-func,
+       ARM, a walked composer arm) */
+    if (w->method[0]) {
+        size_t k = 0;
+        while (k < g_rows.n && (strcmp(g_rows.rows[k].slot, "FIND") ||
+                                strcmp(g_rows.rows[k].id, w->method))) k++;
+        if (k == g_rows.n) {
+            snprintf(m, sizeof m, "method `%s` names no FIND row", w->method);
+            fail(id, "reply id", m);
+        } else if (strcmp(g_rows.rows[k].pick, se_names[w->search])) {
+            snprintf(m, sizeof m, "method `%s` picks %s, search is %s", w->method,
+                     g_rows.rows[k].pick, se_names[w->search]);
+            fail(id, "reply id", m);
+        } else fc_method++;
+    }
+    if (!w->method[0] != (fr == 0 || fr == 3 || w->fused == MF_WFUSED_ARM ||
+                          (fr == 1 && w->search == MF_WSEARCH_NONE)))
+        fail(id, "reply id", "method's emptiness is not exactly the rows no T-FIND row decides");
+    if (fr == 3 && w->search != MF_WSEARCH_NONE) fail(id, "reply id", "E-generic states a search");
+    /* T-FRAME against the form: E-find iff window-search, E-generic iff wf-floor */
+    if ((fr == 2) != efind || (fr == 3) != !strcmp(res->form_id, "wf-floor")) {
+        snprintf(m, sizeof m, "frame_row %s on form %s", w->frame_row, res->form_id);
+        fail(id, "form class", m);
+    }
+    if (!efind) return;
+    /* the text classes per E-find site (§2.3's observable meanings) */
+    int fn = strstr(ft, "_ofsskip__body(") != NULL;
+    int pair = strstr(t, "_ha < ") || strstr(ft, "ha < pos");
+    int hors = strstr(ft, "_sh[256]") != NULL;
+    int libc = !pair && !hors && strstr(t, "memchr(") != NULL;
+    int walk = !pair && !hors && !libc;
+    int libcs = w->search == MF_WSEARCH_LIBC || w->search == MF_WSEARCH_LIBC_BACK;
+    fc_fn += fn; fc_pair += pair; fc_hors += hors; fc_libc += libc; fc_walk += walk;
+    if (fn != (w->fused == MF_WFUSED_FN)) fail(id, "text class", "fused FN is not exactly a call of _ofsskip");
+    if (pair != (w->search == MF_WSEARCH_PAIR) || hors != (w->search == MF_WSEARCH_HORS) ||
+        libc != libcs || walk != (w->search == MF_WSEARCH_WALK)) {
+        snprintf(m, sizeof m, "search %s (method %s) on a %s text", se_names[w->search], w->method,
+                 pair ? "two-memchr" : hors ? "_sh[256]" : libc ? "one-memchr" : "walk");
+        fail(id, "text class", m);
+    }
+    if (hors != (w->stream == MF_WSTREAM_SHIFT)) fail(id, "text class", "stream SHIFT is not exactly _sh[256]");
+    /* THE table_name POPULATION (R2): by OFFSET, through the ref G2 offered
+       there; OWN never reads a marker; TABLE is read where the text member-
+       tests the position (a plan position whose compare term is its own: a
+       term shared by several positions is one byte compare, which reads no
+       table; the stop: B-walk's find). A fused row's check is its own:
+       plan_test and stop_test are NONE there (plan_frame.md §4.1) */
+    int composed = w->fused == MF_WFUSED_NO, maxtab = -1000;
+    for (int i = 0; i < w->nplan; i++) {
+        uint32_t ref = offer_at(x, w->alt, w->plan[i]);
+        int rd = marker_read(id, ref, t, ft), alone = 1;
+        for (int k = 0; k < w->nplan; k++)
+            if (k != i && w->plan_term[k] == w->plan_term[i]) alone = 0;
+        if (!composed) {
+            if (w->plan_test[i]) { fail(id, "table_name", "plan_test stated on a fused row"); break; }
+            continue;
+        }
+        if (!ref) tn_noffer++;
+        if (ref && !alone) tn_term++;
+        if (w->plan_test[i] != (ref ? MF_WTEST_TABLE : MF_WTEST_OWN)) {
+            snprintf(m, sizeof m, "plan[%d] (offset %d, offer %u): plan_test %u (fused %u search %u)", i, w->plan[i], ref,
+                     w->plan_test[i], w->fused, w->search);
+            fail(id, "table_name", m);
+        } else if (rd ? w->plan_test[i] != MF_WTEST_TABLE : w->plan_test[i] == MF_WTEST_TABLE && alone) {
+            snprintf(m, sizeof m, "plan[%d] (offset %d): plan_test %s, the marker %sread", i,
+                     w->plan[i], ref ? "TABLE" : "OWN", rd ? "" : "not ");
+            fail(id, "table_name", m);
+        }
+        if (w->plan_test[i] == MF_WTEST_TABLE) { tn_table++; if (w->plan[i] > maxtab) maxtab = w->plan[i]; }
+        else tn_own++;
+    }
+    for (int i = w->nplan; i < MF_WPLAN_MAX; i++)
+        if (w->plan_test[i]) { fail(id, "table_name", "plan_test past nplan"); break; }
+    if (!w->has_stop) {
+        if (w->stop_test) fail(id, "table_name", "stop_test without a stop");
+        return;
+    }
+    if (!composed) {
+        if (w->stop_test) fail(id, "table_name", "stop_test stated on a fused row");
+        return;
+    }
+    uint32_t sref = offer_at(x, w->alt, w->stop);
+    int srd = marker_read(id, sref, t, ft);
+    tn_below += w->stop < maxtab;
+    if (w->stop_test != (sref ? MF_WTEST_TABLE : MF_WTEST_OWN)) {
+        snprintf(m, sizeof m, "the stop (offset %d, offer %u): stop_test %u", w->stop, sref, w->stop_test);
+        fail(id, "table_name", m);
+    } else if (w->stop_test == MF_WTEST_OWN) {
+        tn_stop_own++;
+        if (srd) fail(id, "table_name", "stop_test OWN, the stop's marker read");
+    } else if (w->search == MF_WSEARCH_WALK && !srd) {
+        fail(id, "table_name", "B-walk's stop_test TABLE, the stop's marker not read");
+    }
+    if (srd && w->stop_test == MF_WTEST_TABLE) {
+        if (w->search == MF_WSEARCH_WALK) af_walk++;
+        else {
+            int inplan = 0;
+            for (int i = 0; i < w->nplan; i++) inplan |= w->plan[i] == w->stop;
+            af_other++;
+            printf("g2_win_gen: stop marker read off B-walk: site %d search %s fused %u stop %d "
+                   "in plan %d\n", id, se_names[w->search], w->fused, w->stop, inplan);
+        }
+    }
 }
 
 /* ---- THE S3 CONTROLS (D172 S3; window_site.md §5.2's deny rows) ------------------ */
@@ -800,6 +957,7 @@ int main(int argc, char **argv)
     if (argc != 4) { fprintf(stderr, "usage: g2_win_gen SEED NSITES OUTDIR\n"); return 2; }
     rng = strtoull(argv[1], NULL, 10) * 2654435761ull + 0x9E3779B97F4A7C15ull;
     int nsites = atoi(argv[2]);
+    mf_finder_rows(&g_rows);
     const char *s3n = getenv("G2W_S3_SITES");
     int n3 = s3n ? atoi(s3n) : 400;
     const char *c1n = getenv("G2W_C1_SITES");
@@ -830,7 +988,8 @@ int main(int argc, char **argv)
         s.empty = MF_EMPTY_MISS; s.body = MF_BODY_ONESHOT;
         mf_art *art = g2_art_begin(&g_arena, "g2w", 0, NULL, NULL);
         mf_wreply r;
-        if (mf_wdecide(art, &s, &r)) fail(-1, "control", "mf_wdecide refused on a plain art");
+        if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, &r))
+            fail(-1, "control", "mf_wdecide refused on a plain art");
         else refused_ok++;
         buf b1 = { 0 }, b2 = { 0 };
         mf_sink sb = mk_sink(&b1), sf = mk_sink(&b2);
@@ -890,7 +1049,7 @@ int main(int argc, char **argv)
             t.op = MF_OP_FIND;
             mf_art *ar = g2_art_begin(&g_arena, "g2w", 0, NULL, NULL);
             mf_wreply tr;
-            if (!mf_wdecide(ar, &t, &tr))
+            if (!mf_wdecide(ar, &t, NULL, MF_WCALL_NONE, &tr))
                 fail(id, "two runs", "an alternative stating two R spans or two whole-compared verify-YES spans was decided");
             else { refused_ok++; two_run_refused++; }
             two_runs(&gf, 1);
@@ -954,7 +1113,7 @@ int main(int argc, char **argv)
                                    x.rate_kind ? &an : NULL);
         if (art && x.run_left && mf_lever(art, "run-tie-left")) { fail(id, "mf_lever", mf_art_error(art)); continue; }
         mf_wreply r;
-        if (mf_wdecide(art, &s, &r)) { fail(id, "mf_wdecide refused", art ? mf_art_error(art) : NULL); continue; }
+        if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, &r)) { fail(id, "mf_wdecide refused", art ? mf_art_error(art) : NULL); continue; }
         /* the reply, field by field */
         x.reply.alt = r.alt; x.reply.reseed = r.reseed; x.reply.has_stop = r.has_stop;
         x.reply.stop = r.stop; memcpy(x.reply.stop_set, r.stop_set, 32);
@@ -1081,6 +1240,16 @@ int main(int argc, char **argv)
         h.table_name = h_table_name;
         h.u = &hc;
 
+        /* plan_frame.md 3.0b: the FRAMED ask in the frame the site is
+           rendered in (EMIT: mf_emit's walk), before the render; its decision
+           group is the NONE ask's (§2.3, R27) */
+        mf_wreply fw;
+        if (mf_wdecide(art, &s, &h, MF_WCALL_EMIT, &fw)) {
+            fail(id, "the framed ask refused", mf_art_error(art));
+            continue;
+        }
+        if (memcmp(&r, &fw, offsetof(mf_wreply, framed)))
+            fail(id, "framed ask", "the decision group differs from the NONE ask's");
         buf body = { 0 }, file = { 0 };
         mf_sink sb = mk_sink(&body), sf = mk_sink(&file);
         mf_result res;
@@ -1089,6 +1258,13 @@ int main(int argc, char **argv)
             fail(id, "render refused", mf_art_error(art));
             continue;
         }
+        frame_classes(id, &x, &fw, &res, body.p ? body.p : "", file.p ? file.p : "");
+        x.reply.framed = fw.framed;
+        memcpy(x.reply.frame_row, fw.frame_row, sizeof x.reply.frame_row);
+        memcpy(x.reply.method, fw.method, sizeof x.reply.method);
+        x.reply.search = fw.search; x.reply.stream = fw.stream; x.reply.fused = fw.fused;
+        for (int i = 0; i < fw.nplan; i++) x.reply.plan_test[i] = fw.plan_test[i];
+        x.reply.stop_test = fw.stop_test;
         mf_class asked;
         mf_result def;
         rendered++;
@@ -1251,8 +1427,13 @@ int main(int argc, char **argv)
         bputs(&data, "}, {");
         for (int i = 0; i < r.nplan; i++) bprintf(&data, "%s%d", i ? "," : "", r.plan_term[i]);
         if (!r.nplan) bputs(&data, "0");
-        bprintf(&data, "}, %d, %d, %d, %d, %d, \"%s\" }, g2w_pv%d, \"%s\", \"%s\", %d, %d },\n",
-                r.pinned, r.run_stated, r.run_member, r.run_lo, r.run_len, r.path, id,
+        bprintf(&data, "}, %d, %d, %d, %d, %d, \"%s\", %d, \"%s\", \"%s\", %d, %d, %d, {",
+                r.pinned, r.run_stated, r.run_member, r.run_lo, r.run_len, r.path,
+                x.reply.framed, x.reply.frame_row, x.reply.method, x.reply.search,
+                x.reply.stream, x.reply.fused);
+        for (int i = 0; i < r.nplan; i++) bprintf(&data, "%s%d", i ? "," : "", x.reply.plan_test[i]);
+        if (!r.nplan) bputs(&data, "0");
+        bprintf(&data, "}, %d }, g2w_pv%d, \"%s\", \"%s\", %d, %d },\n", x.reply.stop_test, id,
                 res.form_id, res.row, x.pair, x.run_left);
         bprintf(&table, "    g2w_call%d,\n", id);
         free(body.p);
@@ -1277,6 +1458,14 @@ int main(int argc, char **argv)
     printf("g2_win_gen: e-find %ld: libc %ld walk %ld hors %ld run %ld below %ld report %ld "
            "pair %ld fn %ld hwin %ld; report refused %ld\n", ef_n, ef_libc, ef_walk, ef_hors, ef_run,
            ef_below, ef_report, ef_pair, ef_fn, ef_hwin, report_refused);
+    printf("g2_win_gen: cells");
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++) printf(" %s/%s %ld", fr_names[i], st_names[j], fcell[i][j]);
+    printf("\n");
+    printf("g2_win_gen: classes fn %ld pair %ld hors %ld libc %ld walk %ld method %ld; table_name "
+           "table %ld own %ld noffer %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld\n", fc_fn,
+           fc_pair, fc_hors, fc_libc, fc_walk, fc_method, tn_table, tn_own, tn_noffer, tn_term, tn_below,
+           tn_stop_own, af_walk, af_other);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }

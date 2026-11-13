@@ -261,4 +261,16 @@ else
     bad "[R-28] kit frame(s) over $FRAME_LIMIT B (bytes function): $fat -- move the working storage off the stack (memfn/CLAUDE.md, Compile-time stack)"
 fi
 
+# ---- the census probe (memfn plan_frame.md 3.0b) ---------------------------
+# docs/design/memfn/span_pick/probe/probe.c, an out-of-build seam reader that
+# wraps mf_art_begin/mf_define/mf_emit (declared by __typeof__ of the public
+# entries) and asks mf_wdecide: compiled here so the next MF_SITE_ABI event
+# reds a checked build, not a census run.
+if "${CC:-gcc}" -std=gnu11 -fsyntax-only -Wall -Werror -I"$ROOT_DIR/memfn/include" \
+        "$ROOT_DIR/docs/design/memfn/span_pick/probe/probe.c" 2> "$WORKDIR/probe.err"; then
+    ok "[probe] the census probe compiles against memfn.h's entries"
+else
+    bad "[probe] the census probe does not compile against memfn.h: $(head -1 "$WORKDIR/probe.err")"
+fi
+
 finish

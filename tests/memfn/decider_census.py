@@ -104,8 +104,10 @@ BACKSTOP = LIVE + BYPASS
 # held none of the shapes); 60 at the r1 s30a review's fixes (F13's shapes
 # `REN_ROWS(ren_`, `keys &`, `wf_support[`, `wf_srows[`; Table S's refusal text,
 # the composer's search row and the tables' self-check); 61 at R-38 K38-2a
-# (the TIE table's row T_RUN_LEFT, `TIE_LOWER`, inside wf_ties).
-HITS = 61
+# (the TIE table's row T_RUN_LEFT, `TIE_LOWER`, inside wf_ties); 67 at
+# plan_frame.md 3.0b (wf_arm_pick's E-stmt row walk, the frame part's fixed
+# RF_FN / RS_CALLER rows read by wf_frame_of and by wf_agree).
+HITS = 67
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
@@ -131,10 +133,12 @@ HITS = 61
 # in: the decision's TIE row, the test-only lever run-tie-left's one reader);
 # 67 at R-38 K38-2 (precheck.c's implied_by out with the R-30 implied parts;
 # the run decision's WINDOW stretch stretch_window and the route's mode table
-# fd_run_modes in: K7 (b)'s mode table and U3's route as the input).
+# fd_run_modes in: K7 (b)'s mode table and U3's route as the input); 70 at
+# plan_frame.md 3.0b (the frame part's wf_frame_of and wf_arm_pick in, the
+# MF_TRACE agreement wf_agree excluded).
 # R-38 Part D: translate:run-rank became the shared function run_rank (one
 # member for one, part_d.md §2.1 item 3; RUN_CALLERS' `translate` with it).
-MEMBER_COUNT = 67
+MEMBER_COUNT = 70
 
 # D: THE RUN CALLERS, EXACT (a call site added or lost is red): callee ->
 # {enclosing definition: uses}: EVERY use of the identifier (a call, an alias, a
