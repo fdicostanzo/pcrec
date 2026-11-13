@@ -3369,3 +3369,21 @@ the compiler, and is never adopted silently. Proposed for main to file
   - cloud mechrows S278/S517/S1909: GREEN;
   - cloud mech (90 shards, run 43315914363): 89/90 GREEN. The one red row is S708-vmlazy-reach-in-iterations, UNDETECTED, and it is MAIN's: S1's min-width search stop (51481d1b3) returns 0 for subjects under 7 bytes, and S708's subjects ("aabae", "aabaex", "aabcae") are 5-6 bytes. K38-2 code is not involved; main's own mech after S1 should show the same red. Triage: /var/tmp/pcrec-pcrec/scratch/memfn/triagecm5/triage.md.
   Also delivered: the c2a/c2b findings readers re-aimed per §4.3 (findings.md §4), the cloud mech shard table re-derived, and several sabotage rows re-aimed, re-planted or declared (S278, S446, S448, S461, S517, S526, S1906, S1909, S1917, S1930, S3006, S3043-S3048).
+- ack: R-38 Part D, SCHEDULED (2026-11-12) — set S2. Design first, as lane pdesign (opus) on lane/memfn-pdesign from main 71c9349be. It answers the three K38-2 sites you named (wf_parts_prepare's one RUN term (T, K), run_shaped, runcmp's (T, K)) and the 1-128-member superset positions on every reader, and decides whether this is an MF_SITE_ABI event. It names any new reply field pcrec must read. Then a readiness critic round, then the design to main for the build GO. The build lands with your stage 3 in one pcrec abi event.
+- ack: set S1 (K38-3 + 3.0b, under R-38 and D190; no new request). K38-2 landed first, so per span_runs_sheet §5's Order, 3.0b's ASK-2 is void and 3.0b takes the next MF_SITE_ABI number and re-baselines. Lane s1design (opus) re-bases plan_frame.md §5 3.0b and the sheet's K38-3 row on main 71c9349be. Then a readiness critic round, then the design to main for the GO.
+- ack: set S1 BUILD (Frank's GO 2026-11-12, "Go for both", relayed by main). Two build lanes are cut from main a9fc6dbd8:
+  - b30b (opus): 3.0b on lane/memfn-b30b, per plan_frame.md §5 3.0b as revised [s1d]/[r1s1]/[r2s1]. MF_SITE_ABI 28, rows S3078-S3097, ASK-6's loud refusal as the approved pcrec hunk; no pcrec byte moves.
+  - k383 (opus): K38-3 on lane/memfn-k383, per span_runs_sheet §5's K38-3 row. No byte moves and no abi.
+  Heavy validation goes to the cloud, or to the box queue after 01:00.
+- ack: R-41 (a named unbounded head_max; the landmark admission declines it, h == 0 included; a G2 case). Set S2: a small unit inside S2's single MF_SITE_ABI event, built with Part D (part_d rev 4's units D0-D3, plus this one). The interim 2^40 statement is safe for the kit's only reader (no overflow; the landmark is declined), and the C10 re-pin on lane/rpfix has the kit's OK.
+- done: R-38 K38-3 (set S1; Frank's build GO 2026-11-12) — branch lane/memfn-k383 @ e590159b1, main d05ffcd23 merged in. No emitted byte moves and no abi event.
+  What it adds:
+  - W-K4a/W-K4b cells per (level, layout U/L/A). They count arm ENTRIES in the recording build, with levels and admission read from the kit's own target table; floors by the family rule; cells for non-admitting levels and generic are held at exactly 0.
+  - Plants S3098-S3101 each red by their OWN detector. S3100 and S3101 run under ASan, read from asan.log; a new mech arm, g2pres-asan.
+  - Controls S3102-S3104 and S3105 (the card's plan dry run).
+  - The step-back card `enter_back` at ver 4, visibly UNMEASURED, in its own unscheduled group J5B (finding F1): J5 dry-runs as before, zen4-grid3@1 is intact, and est.py skips groups outside record.JOBS. The step-back timing artifact and one-record-per-ver (F2) are designed when J5B is scheduled.
+  - Sabotage prose made arch-free (C4), with 9 counted allowlist rows for SAB_AFTER/BEFORE text.
+  Reports docs/dev/lanes/: k383, k383f1, k383c4. Validation:
+  - box gate 590 on the merged tip, BASE d05ffcd23: GREEN (zero movers; G2 presence 1,124,582/0; plants as designed);
+  - cloud on the merged tip: test and mechrows S3098-S3104 GREEN;
+  - cloud on the pre-merge tip: axes, ubsan and asan GREEN, with only C4 comments and allowlist rows changed since.

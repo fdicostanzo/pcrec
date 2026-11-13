@@ -26,3 +26,31 @@ R-38 K38-2 PLAN (e) (EMIT-3 of code review 2026-11-10 r2 k382a; lane k382, 2026-
 ## The presence family (K38-2a, K38-2)
 
 `run_g2_pres.sh`, `g2/g2_pres.h`, `g2/g2_pres_gen.c`, `g2/g2_pres_run.c` — the PRESENCE family (K38-2a lane k382a, K38-2 lane k382; run_g2.sh 4p): generated pre-check sites in MF_SITE_ABI 27's form (SET-form run span, signed omin and K, ONE derived run part) on routes P0/P2/P3/P9, one pass per U2 target x {default, `run-tie-left`}; the run's scan and extent read off the reply `mf_class.run` (mf_ask = mf_defined; FAM-2); C2's text classifier in the run frame (COVER, EXTENT with per-bit near-misses, SCAN, SOUND; P2's untested-link control), lever witnesses, the §3.5 witnesses W-L1 a/b, W-K1 (and W-K1b, k382fix F16: W-K1 with its scan at offset 0 < N - origin, so a wrapped floor moves the answer), W-K2 (driver) and W-K3 (twin, generator), layouts U/L (W-K4a) and ASan A (W-K4b), and the ORACLE RECORDS at the caller boundary in the run frame with the site's reply (ORC-3; `docs/dev/lanes/k382a_oracle_iface.md`) piped to `tests/memfn/occurrence_oracle.py`, the oracle absent a FAIL. `--plant`/`--plants` S3007-S3012, S3060-S3064 (each must red BY its own detector), `--reach`. Own process and stream; not D27-blinded (the oracle is k382o's). Since k382fix (review 2026-11-11 r1 k382): a GENERIC pass (`generic` target, lever 0, `on_miss_leaves` 0: the generic row renders every site, the PRESENCE rule checks it, F1, plant S3043); F14's two layout controls (a tested link with no run part; a second derived part), each refused by ITS rule (S3046, S3047); the run link's `member` 0 (F13, S3044); an unlisted run-mode row refused (F12, S3045).
+
+## The presence family's per-level cells (K38-3, lane k383, 2026-11-12)
+
+span_runs_sheet.md §5's K38-3 row (1). The recording build counts, per (width, layout), the use calls that ENTER a
+level's arm (execute a W-byte load: the outlined `__asan_load16`/`__asan_loadN(…, 32)` hooks, by size), live only
+inside an entry or re-entry call (`use_call`), so the classifier's direct part calls never count. Layout U: every use
+call (the records' population); L: COUNT-ONLY calls, W-K4a's population (omin -8..-32, origin below -omin); A: a
+count-only placement loop (`lay_a_count`, subject at offset 1..W-1 of a W-aligned block, length run_len + rnd(2W+24),
+its own stream `rnd3`, no poisoning). Nothing draws from `rnd`, so K38-2's recording pins are unchanged (checked:
+every `G2P`/`G2PGEN` line identical before and after); the ASan build's `lay_a` widened its length on `rnd`, which
+moves only the ASan driver's pass count (no rnd-dependent ASan floor). The runner (`cell_checks`) reads the level
+list and admission from the kit (`tests/memfn/simd_levels.c` against `$LIB`, `target_text.admitted()`), floors
+`CELL_FLOORS` where a pass's target admits the level and holds every other cell (and every generic-pass cell) at
+exactly 0; the coverage check names a kit level no pass target runs. Controls, each shown red by hand: S3102 (the
+w32 entry threshold raised: the census stays green, the cells read 0), S3103 (the kit admits w32 on x86-64 while the
+facts do not: exact-0 reds), S3104 (mech only: x86-64-v3 dropped from the pass list: coverage reds). The W-K4 plants
+S3098/S3099 (unaligned floor - 1: layout L faults) and S3100/S3101 (aligned down: ASan in layout A; `plant_asan`
+runs their passes with the ASan build and the plant path reads each `asan.log`; without that read S3100 prints RED
+BUT NOT BY ITS DETECTOR); the occurrence oracle reds on all four as the second detector. `plant_absent` holds the
+passes a level's plant must leave unchanged. Cost: a NOASAN plant ~44 s, an ASan plant ~80 s (dev box, nice).
+
+## SIMD family targets
+
+SIMD family targets (unit U2): the space renders once per target (x86-64-v3, x86-64, generic), each file in the target's family guard, `mf_includes` lines, and region, the kit's text between markers; zero CPU conditionals or `#include`s and exactly the admitted levels' helpers per file; a consumer TU (r5 X-1); the x86-64 and generic tokens follow x86-64-v3's by rule. Host gate: arms for higher ISA levels are always BUILT but RUN only when the host supports the level (a file whose target needs it, or a -march above it); a skipped arm prints `SKIPPED ARM <level>: <why>; N checks NOT run` plus `skipped arms: K` (never a silent pass); `G2V_SKIP_ARMS` forces a skip; `G2V_CPUS` pin is honoured as given (hard error outside the affinity set); `G2V_JOBS` concurrent builds. Its checks: ranking check, verify check, padded verify, guarded bytes vs `tests/memfn/simd_bounds.tsv`, answers across levels and ASan+UBSan, per-path execution floors, six plants per level, no PDEP/PEXT/gather.
+
+## check_targets.sh
+
+`check_targets.sh` — NOT G2: the kit's CPU TARGET TABLE CHECK (unit K0, R-36; its header): targets.def (facts) and targets_c.def (C spellings) through the preprocessor, held to gcc's own `-march` (floor plus needs vs `-march=<name>`, the whole `-dM` set), the structural rules, every facts field a token list (no emitter text), one C spelling per family, and the host `#if` chain to the guard column under four preprocessor targets, and (unit U2) LEVEL ADMISSION: for each host-family target and level, the table admits it iff gcc -march=<target> supplies every need (`-m<need>` adds no macro); FEATURES COMPLETE: over the check's own token->macro vocabulary, a target lists exactly what `-march=<name>` enables; `LEVELS_DEF` points it at another levels table. Run at `make` (warns), `make strict` and `make test-memfn-targets` (fail); `TARGETS_DEF` points it at another table (hand plants). Exit 0 ok, 1 mismatch, 2 could not run.

@@ -40,10 +40,17 @@
 #      inline: no function for the classifier); its checks are the uses'
 #      PRESENCE rule (every pass runs it; g2_pres_run.c pres_check) and the
 #      §3.5 witnesses, both read off the stated rule, not the row;
-#   6. the floors (K35): literals below, sharing no source with the family.
+#   6. the floors (K35): literals below, sharing no source with the family;
+#   7. (R-38 K38-3) THE PER-LEVEL CELLS: per (level, layout U/L/A), the use
+#      calls that ENTER the level's arm, floored where the pass's target
+#      admits the level and exactly 0 where it does not (the kit's level
+#      list and admission, read through tests/memfn/simd_levels.c and
+#      target_text.py), and the level-list coverage (every kit level run by
+#      a pass target on this host).
 #
-#   --plant ID / --plants   the same passes (no ASan) over a COPY of memfn/src
-#                           with one planted defect (the table below).
+#   --plant ID / --plants   the same passes over a COPY of memfn/src with one
+#                           planted defect (the table below); no ASan, except
+#                           a plant plant_asan names (its asan.log is read).
 #   --reach                 the mech rows' witness probe: renders the default
 #                           and lever generic passes and prints one REACH
 #                           token per plant site the text reaches.
@@ -128,6 +135,22 @@ FLOOR_CTL_TWO=318         # F14 (iii): tested sites laid out with two derived pa
 # x86-64-v3 admits both levels, x86-64 w16 alone, generic (the OFF layer)
 # none: a level the target does not admit must render NOTHING (exactly 0).
 SIMD_FLOORS="x86-64-v3:19:19:1600 x86-64:19:0:1340 generic:0:0:0"   # (22 22 1786; 22 0 1495; 0 0)
+# THE PER-LEVEL CELLS (R-38 K38-3; span_runs_sheet.md §5 K38-3 (1), [r1s1
+# S1-10, S1-14, S1-15], [r2s1 RK383-1, RK383-5]): per (level, layout), the
+# use calls that ENTER the level's arm (execute a load of its width W; the
+# recording build's hooks, counted inside entry and re-entry calls only),
+# layout U every use call, L W-K4a's population (omin -8..-32, the origin
+# below -omin), A the count-only placements at W. The LEVEL LIST and which
+# target admits which level are the KIT's (mf_levels/mf_targets through
+# tests/memfn/simd_levels.c, admitted by tests/memfn/target_text.py's
+# admitted()), never a copy here. The family rule: on a pass whose target
+# admits the level, the least over those passes less ~10%, a cell at 0 a
+# named failure; on a pass whose target does not admit it (and every cell of
+# a generic pass, the OFF cell) EXACTLY 0. Every kit level needs a target
+# the pass list runs on this host. MEASURED 2026-11-12 by lane k383 on the
+# Linux dev box (main a9fc6dbd8, seed 20261110, 400 sites; the least over the
+# admitting passes in parentheses):
+CELL_FLOORS="w16:163:75:158 w32:100:72:455"   # level:U:L:A  (w16 181 84 176; w32 111 80 506)
 
 # THE PLANTS: id, then one line FILE@@FROM@@TO per edit (FILE under
 # memfn/src; FROM replaced by TO, `\n` a newline, `\\n` the C escape, `\&`
@@ -199,7 +222,42 @@ plant_spec() {
         # old extent; reaches where the extent ends before the run does
         echo 'compose.c@@        return fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, \&why) ? -1 : 0;@@        if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, \&why)) return -1;\n        { int r_ = kit_pres_run(s); if (r_ >= 0 \&\& out->pres[r_].verify \&\& out->run.ver_len \&\& out->run.ver_lo + out->run.ver_len < kit_pres_run_span(s, r_)->len) out->run.ver_len++; }\n        return 0;'
         echo 'compose.c@@            return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);@@            return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);\n        { int r_ = kit_pres_run(s); if (r_ >= 0 \&\& r->cls.pres[r_].verify \&\& r->cls.run.ver_len \&\& r->cls.run.ver_lo + r->cls.run.ver_len < kit_pres_run_span(s, r_)->len) r->cls.run.ver_len++; }' ;;
+    # R-38 K38-3 (lane k383; ids S3098-S3105, from the top of the free range
+    # above S3077, 3.0b's S3078-S3097 aside). THE W-K4 PLANTS, per admitted
+    # level: the arm's first load starts below the run's floor. W-K4a's
+    # UNALIGNED at floor - 1 (the KA load at subject + pos - 1): a fault in
+    # layout L on that level's target passes, the generic passes unchanged.
+    S3098) echo 'vrun.c@@    o->puts(o->u, "    size_t i = pos;\\n"\n                  "    for (;;) {\\n"@@    if (d->level == LV_X86_W16) kit_out(o, "    size_t i = pos - %d;\\n", ka + 1);\n    else o->puts(o->u, "    size_t i = pos;\\n");\n    o->puts(o->u, "    for (;;) {\\n"' ;;
+    S3099) echo 'vrun.c@@    o->puts(o->u, "    size_t i = pos;\\n"\n                  "    for (;;) {\\n"@@    if (d->level == LV_X86_W32) kit_out(o, "    size_t i = pos - %d;\\n", ka + 1);\n    else o->puts(o->u, "    size_t i = pos;\\n");\n    o->puts(o->u, "    for (;;) {\\n"' ;;
+    # W-K4b's ALIGNED DOWN ([r1s1 S1-11]): the ADDRESS s + floor + KA aligned
+    # down to W, so the load never leaves its page (layout L cannot see it):
+    # an ASan report in layout A, where off >= 8 poisons a granule below s
+    S3100) echo 'vrun.c@@    o->puts(o->u, "    size_t i = pos;\\n"\n                  "    for (;;) {\\n"@@    if (d->level == LV_X86_W16) kit_out(o, "    size_t i = pos - (size_t)((uintptr_t)(subject + pos + %d) \& %u);\\n", ka, vw - 1);\n    else o->puts(o->u, "    size_t i = pos;\\n");\n    o->puts(o->u, "    for (;;) {\\n"' ;;
+    S3101) echo 'vrun.c@@    o->puts(o->u, "    size_t i = pos;\\n"\n                  "    for (;;) {\\n"@@    if (d->level == LV_X86_W32) kit_out(o, "    size_t i = pos - (size_t)((uintptr_t)(subject + pos + %d) \& %u);\\n", ka, vw - 1);\n    else o->puts(o->u, "    size_t i = pos;\\n");\n    o->puts(o->u, "    for (;;) {\\n"' ;;
+    # THE CELLS' CONTROL ([r1s1 S1-10]): the w32 arm entered only when n >=
+    # run_len + 2W + 24, past the generator's longest subject; the text census
+    # still reads __w32( (green), the w32 entry cells read 0
+    S3102) echo 'vrun.c@@    kit_out(o, "    if (pos >= n || n - pos < %u) return %s(subject, n, pos);\\n", r, fall);@@    kit_out(o, "    if (pos >= n || n - pos < %u) return %s(subject, n, pos);\\n", d->level == LV_X86_W32 ? r + vw + 25 : r, fall);' ;;
+    # THE EXACT-0 RULE's control ([r2s1 RK383-5]): the kit admits w32 on
+    # x86-64 (its admission rule widened, the target's region given avx2 so the
+    # text compiles) while the listing's facts do not: the x86-64 w32 cells
+    # read nonzero
+    S3103) echo 'levels.c@@        if (admits(t, \&level_table[lv])) m |= 1u << lv;@@        if (admits(t, \&level_table[lv]) || (lv == LV_X86_W32 \&\& !strcmp(t->name, "x86-64"))) m |= 1u << lv;'
+        echo 'targets.def@@MF_NEEDS("sse2"), "fxsr,mmx,sse,sse2",@@MF_NEEDS("sse2,avx2"), "fxsr,mmx,sse,sse2",' ;;
     *) return 1 ;;
+    esac
+}
+# plant_asan ID: 0 iff the plant's detector is ASan (layout A, the ASan+UBSan
+# build): its passes run WITH that build (K38-3, [r1s1 S1-11] the per-plant
+# opt-in) and the plant path reads each pass's asan.log ([r2s1 RK383-2])
+plant_asan() { case "$1" in S3100|S3101) return 0 ;; *) return 1 ;; esac; }
+# plant_absent ID: FAIL lines that must NOT occur (grep -E): a plant on one
+# level leaves the passes of targets that do not admit it exactly unchanged
+plant_absent() {
+    case "$1" in
+    S3098|S3100) echo '(^FAIL |CELL: )generic\.' ;;
+    S3099|S3101) echo '(^FAIL |CELL: )(generic|x86-64)\.' ;;
+    *) echo '' ;;
     esac
 }
 plant_detector() { case "$1" in S3008|S3010) echo oracle ;; *) echo family ;; esac; }
@@ -225,10 +283,14 @@ plant_expect() {
     S3044) echo "the run's link \\(mf_ask\\): .member. is not 0 on the run span" ;;
     S3045) echo 'mf_ask \(the presence links\): refused' ;;
     S3043) echo 'default\.oml0 .*: PRESENCE: ;default\.oml0 .*: W-L1: ' ;;
+    S3098|S3099) echo ': LAYOUT: L \(subject at a page start, guard below\): the (entry|re-entry) faulted' ;;
+    S3100|S3101) echo 'ERROR: AddressSanitizer' ;;
+    S3102) echo 'CELL: x86-64-v3\.[01]: w32 U: 0 arm entries;CELL: x86-64-v3\.[01]: w32 L: 0 arm entries;CELL: x86-64-v3\.[01]: w32 A: 0 arm entries' ;;
+    S3103) echo 'CELL: x86-64\.[01]: w32 U: [0-9]+ arm entries where the target admits none' ;;
     *) echo '' ;;
     esac
 }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064"
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -285,6 +347,60 @@ one_pass() {
         rc=$((rc || $?))
     fi
     return "$rc"
+}
+
+# level_table: the kit's levels and each pass target's admitted levels,
+# into $WORK/levels.txt ("level STAMP VW", "admits TARGET STAMP..."): the
+# kit's own listing (tests/memfn/simd_levels.c against $LIB, the tree's
+# committed kit even under --plant) through target_text.admitted()
+level_table() {
+    "$CC" -std=gnu11 -O2 -I"$ROOT/memfn/include" -o "$WORK/simd_levels" "$ROOT/tests/memfn/simd_levels.c" \
+        "$LIB" 2> "$WORK/simd_levels.build" || { head -5 "$WORK/simd_levels.build"; return 1; }
+    python3 -I - "$ROOT/tests/memfn" "$WORK/simd_levels" $TARGETS > "$WORK/levels.txt" <<'EOF' || return 1
+import sys
+sys.path.insert(0, sys.argv[1])
+import target_text
+levels, targets = target_text.read_table(sys.argv[2])
+if not levels:
+    sys.exit("the kit lists no level")
+for l in levels:
+    print("level", l["stamp"], l["vw"])
+by = {t["name"]: t for t in targets}
+for name in sys.argv[3:]:
+    if name not in by:
+        sys.exit("pass target %s is no kit target" % name)
+    print("admits", name, *[l["stamp"] for l in target_text.admitted(by[name], levels)])
+EOF
+}
+
+# cell_checks TAG TARGET: the per-level cells of one pass's recording log, by
+# the family rule; one line per check, "CELLOK ..." or "CELLFAIL: ..."
+cell_checks() {
+    local tag="$1" tgt="$2" line adm stamp vw lay i c f v fl
+    line=$(grep -h '^G2P cells ' "$WORK/$tag.run.log")
+    [ -n "$line" ] || { echo "CELLFAIL: $tag: the recording driver printed no cells line"; return; }
+    adm=" $(awk -v t="$tgt" '$1 == "admits" && $2 == t { $1 = ""; $2 = ""; print }' "$WORK/levels.txt") "
+    while read -r _ stamp vw; do
+        v=$(echo "$line" | grep -oE " vw$vw=[0-9]+,[0-9]+,[0-9]+" | cut -d= -f2)
+        [ -n "$v" ] || { echo "CELLFAIL: $tag: level $stamp (W $vw): the driver counts no W-$vw cell"; continue; }
+        fl=$(echo " $CELL_FLOORS " | grep -oE " $stamp:[0-9]+:[0-9]+:[0-9]+ " | tr -d ' ')
+        case "$adm" in *" $stamp "*) [ -n "$fl" ] || { echo "CELLFAIL: level $stamp has no CELL_FLOORS literal"; continue; } ;; esac
+        i=0
+        for lay in U L A; do
+            i=$((i + 1))
+            c=$(echo "$v" | cut -d, -f$i)
+            case "$adm" in
+            *" $stamp "*)
+                f=$(echo "$fl" | cut -d: -f$((i + 1)))
+                if [ "$c" = 0 ]; then echo "CELLFAIL: $tag: $stamp $lay: 0 arm entries (a cell that measures 0)"
+                elif [ "$c" -lt "$f" ]; then echo "CELLFAIL: $tag: $stamp $lay: $c arm entries < floor $f"
+                else echo "CELLOK $tag $stamp $lay $c"; fi ;;
+            *)
+                if [ "$c" = 0 ]; then echo "CELLOK $tag $stamp $lay 0"
+                else echo "CELLFAIL: $tag: $stamp $lay: $c arm entries where the target admits none"; fi ;;
+            esac
+        done
+    done < <(grep '^level ' "$WORK/levels.txt")
 }
 
 counts() {   # counts LOG: "P F" from its checks lines
@@ -354,6 +470,21 @@ if [ "${1:-}" = "--reach" ]; then
     m=$(grep -oE 'G2PGEN generic.lever sites=[0-9]+ rendered=[0-9]+' "$WORK/reach.1.log" | grep -oE '[0-9]+$')
     [ "${m:-0}" -ge 300 ] && grep -q '^g2_pres_gen failures: 0' "$WORK/reach.1.log" \
         && echo "REACH-G2P-LEVER-PASS rendered=$m"
+    # K38-3 (S3098-S3103): the vrun arms the W-K4 plants and the cells'
+    # controls edit, on the x86-64-v3 pass (w16 and w32 run parts)
+    mkdir -p "$WORK/reach.v3"
+    "$TIMEOUT_BIN" 120 "$WORK/reach.gen" "$SEED" "$NSITES" "$WORK/reach.v3" x86-64-v3 0 \
+        > "$WORK/reach.v3.log" 2>&1 || { echo "the generator failed (x86-64-v3 pass)"; exit 1; }
+    m=$(grep -c '__w16(const unsigned char \*subject' "$WORK/reach.v3/g2p_sites.c")
+    [ "${m:-0}" -ge 10 ] && echo "REACH-G2P-W16-ARM n=$m"
+    m=$(grep -c '__w32(const unsigned char \*subject' "$WORK/reach.v3/g2p_sites.c")
+    [ "${m:-0}" -ge 10 ] && echo "REACH-G2P-W32-ARM n=$m"
+    # S3104: the level list the coverage check walks (every level run by a pass target)
+    level_table || { echo "the kit's level listing could not be read"; exit 1; }
+    m=$(grep -c '^level ' "$WORK/levels.txt")
+    a=$(grep '^level ' "$WORK/levels.txt" | while read -r _ st _; do
+        grep -qE "^admits [^ ]+( .*)? $st( |$)" "$WORK/levels.txt" && echo "$st"; done | wc -l)
+    [ "${m:-0}" -ge 2 ] && [ "$a" = "$m" ] && echo "REACH-G2P-LEVELS n=$m"
     exit 0
 fi
 
@@ -362,10 +493,11 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     ids="${2:-}"
     [ "$1" = "--plants" ] && ids="$PLANTS"
     [ -n "$ids" ] || fail_setup "--plant needs an id ($PLANTS)"
-    export G2P_NOASAN=1
+    level_table || fail_setup "the kit's level listing could not be read"
     bad=0
     for id in $ids; do
         specs="$(plant_spec "$id")" || fail_setup "no plant $id"
+        if plant_asan "$id"; then unset G2P_NOASAN; else export G2P_NOASAN=1; fi
         rm -rf "$WORK/src"; cp -rL "$ROOT/memfn/src" "$WORK/src"   # -L: a symlinked src is copied, never planted in place
         while IFS= read -r spec; do
         file="${spec%%@@*}"; rest="${spec#*@@}"; from="${rest%%@@*}"; to="${rest#*@@}"
@@ -392,7 +524,13 @@ EOF
                 built=$(one_pass "$tgt.$lev" "$tgt" "$lev" | grep -m1 '^FAIL')
                 grep -h '^FAIL' "$WORK/$tgt.$lev.gen.log" "$WORK/$tgt.$lev.run.log" 2>/dev/null \
                     >> "$WORK/fails.$id"
+                # the per-level cells (K38-3) and, on an ASan plant, the ASan
+                # report: each a FAIL line of the pass
+                cell_checks "$tgt.$lev" "$tgt" | sed -n 's/^CELLFAIL: /FAIL: CELL: /p' >> "$WORK/fails.$id"
+                plant_asan "$id" && grep -h -m1 'ERROR: AddressSanitizer' "$WORK/$tgt.$lev.asan.log" 2>/dev/null \
+                    | sed "s/^/FAIL: $tgt.$lev ASan: /" >> "$WORK/fails.$id"
                 r=$(grep -h '^FAIL' "$WORK/$tgt.$lev.gen.log" "$WORK/$tgt.$lev.run.log" 2>/dev/null | head -1)
+                [ -n "$r" ] || r=$(grep -m1 -E "^FAIL: (CELL: )?$tgt\.$lev[: ]" "$WORK/fails.$id")
                 [ -n "$r" ] || r="$built"
                 [ -n "$red" ] || red="$r"
             done
@@ -424,6 +562,11 @@ EOF
                 if [ -n "$m" ]; then shown="$m"; else byown=0; fi
             done
         fi
+        ab="$(plant_absent "$id")"
+        if [ -n "$ab" ] && grep -qE -- "$ab" "$WORK/fails.$id"; then
+            echo "PLANT $id MOVED A PASS IT MUST LEAVE UNCHANGED: $(grep -E -m1 -- "$ab" "$WORK/fails.$id")"
+            bad=$((bad + 1))
+        fi
         if [ -n "$red" ] && [ "$byown" = 1 ]; then
             echo "PLANT $id RED   ($(plant_detector "$id"); $ostate): ${shown:-$red}"
         elif [ -n "$red" ]; then
@@ -446,6 +589,20 @@ tp=0 tf=0 skipped=0
 note() { tf=$((tf + 1)); echo "FAIL: $1"; }
 floor() { if [ "${2:-0}" -ge "$3" ]; then tp=$((tp + 1)); else note "floor $1: ${2:-0} < $3"; fi; }
 build_gen main "$LIB" || fail_setup "the generator does not build"
+level_table || fail_setup "the kit's level listing (tests/memfn/simd_levels.c, target_text.py) could not be read"
+# THE LEVEL-LIST COVERAGE (K38-3, [r1s1 S1-15]): every level the kit lists is
+# admitted by a target this run's pass list runs on this host, else its
+# cells are never measured: a named failure, not a skip
+while read -r _ stamp _; do
+    run_by=""
+    for tgt in $TARGETS; do
+        case " ${G2P_SKIP_ARMS:-} " in *" $tgt "*) continue ;; esac
+        host_has "$tgt" || continue
+        grep -qE "^admits $tgt( .*)? $stamp( |$)" "$WORK/levels.txt" && run_by="$run_by $tgt"
+    done
+    if [ -n "$run_by" ]; then tp=$((tp + 1)); echo "level $stamp: run by$run_by"
+    else note "level $stamp has no runnable target (pass list: $TARGETS)"; fi
+done < <(grep '^level ' "$WORK/levels.txt")
 for tgt in $TARGETS; do
     case " ${G2P_SKIP_ARMS:-} " in *" $tgt "*) skip_why="G2P_SKIP_ARMS" ;; *) skip_why="" ;; esac
     [ -n "$skip_why" ] || host_has "$tgt" || skip_why="this host lacks the target's ISA"
@@ -538,6 +695,11 @@ for tgt in $TARGETS; do
             else floor "$tag simd32" "$s32" "$f32"; fi
             [ "$fvec" = 0 ] || floor "$tag vector loads" "$vec" "$fvec"
         done
+        # the per-level cells (K38-3): arm ENTRIES per (level, layout)
+        grep -h '^G2P cells ' "$WORK/$tag.run.log"
+        while read -r cl; do
+            case "$cl" in CELLOK*) tp=$((tp + 1)) ;; *) note "${cl#CELLFAIL: }" ;; esac
+        done < <(cell_checks "$tag" "$tgt")
     done
     # the lever's reach (plant C's witness): every witness's scan moved
     read -r mv nw < <(moved "$tgt")

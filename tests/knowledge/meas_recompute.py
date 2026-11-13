@@ -46,23 +46,27 @@ K_MED_E6 = 210300       # measures.md §3.5¶6
 L_SUPPORTED = 7         # measures.md §3.4¶2a
 
 # --- the producer rules this recompute HOLDS (measures.md §3.5¶8a) -------
-# kit-grid@3, from span_cards.md: the family base rule (§2.4, restated in
+# kit-grid@3 (and @4 below), from span_cards.md: the family base rule (§2.4, restated in
 # §3.4 step 1 (c)), the floor condition tokens (§3.5 "The run record"), the
 # bound token (§R1.5, measures.md §3.5¶3b), the policy names a `-` gate and
 # r_max take (§2.4, §3.5 run record `policy`), J1's rule (§3.6: m 0.5, k 5).
-RULES = {
-    "kit-grid@3": {
-        "base": {
-            "find_hit": "base.{form}",
-            "verify_cmp": "base.null.{cls}",
-            "enter": "base.fail.{kind}.{entry}",
-        },
-        "conditions": {"always", "unless-j1-b"},
-        "bound": "fused-load-op",
-        "gate_policy": "gate_default_e6",
-        "rmax_policy": "r_max_e6",
-        "j1": {"ref": "128", "twin": "128#b", "k": 5},
+_RULES_3 = {
+    "base": {
+        "find_hit": "base.{form}",
+        "verify_cmp": "base.null.{cls}",
+        "enter": "base.fail.{kind}.{entry}",
     },
+    "conditions": {"always", "unless-j1-b"},
+    "bound": "fused-load-op",
+    "gate_policy": "gate_default_e6",
+    "rmax_policy": "r_max_e6",
+    "j1": {"ref": "128", "twin": "128#b", "k": 5},
+}
+# kit-grid@4 (K38-3's step-back cell, span_runs_sheet.md §5.2): ver 3's rules plus the base rule for `enter_back`:
+# the (kind, entry)'s fail base, whatever the step-back t (the key's third token)
+RULES = {
+    "kit-grid@3": _RULES_3,
+    "kit-grid@4": dict(_RULES_3, base=dict(_RULES_3["base"], enter_back="base.fail.{kind}.{entry}")),
 }
 
 
