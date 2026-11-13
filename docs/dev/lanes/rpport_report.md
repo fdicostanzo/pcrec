@@ -38,12 +38,15 @@ The auto-merged hunks were read against main's API: `req_handoff_vm_run`,
 the unbounded predicate, the stamp, the row, and the test files. None reads
 a retired name. reqpast's lane reports and review record travel with it.
 
-Validation (local, PCREC_BOXLOCK=0, nice 19, -j2, on da027915e unless named):
+Validation (local, PCREC_BOXLOCK=0, nice 19, -j2; sections on da027915e, whose emitted bytes equal the final tip's):
 
 - `make strict`: GREEN.
 - Sections `make test-codegen test-registry test-rxtsource test-memfn-deleg
-  test-startset test-compound test-recursion-identity`: SEE THE VERDICT LINE
-  BELOW (log `$PCREC_TMPDIR/scratch/rpport/sections.log`).
+  test-startset test-compound test-recursion-identity`: GREEN, rc 0, and no
+  `*** [... test-X] Error` line (log `$PCREC_TMPDIR/scratch/rpport/sections.log`;
+  rxtsource census 336/7041/98459). After the facts fix and the self-pin
+  move, `test-recursion-identity test-registry` were re-run: see
+  RE-CHECK below.
 - `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh S463 S470 S471 S3074
   S3075 S3076 S3077`: `mech-reach-only: DONE rc=0 rows=7 reached=7
   unreached=0`.
@@ -52,12 +55,27 @@ Validation (local, PCREC_BOXLOCK=0, nice 19, -j2, on da027915e unless named):
 - Smoke (`--engine=vm`): `a+xyz`, `[^@ ]+@x`, `(a|aa|b)+cxyz`, `b*xx(?=q)`
   and `(a+)+zq` stamp `"unbounded"` with `handoff_position = search_from;`
   and the kept re-ask; `(?m)^x{2,5}(?i:cat)` still stamps `"3"`.
-- `scripts/emit_sweep.py --ref a07f76d6c` (log
-  `$PCREC_TMPDIR/scratch/rpport/sweep.log`): SEE BELOW.
+- `scripts/emit_sweep.py --ref a07f76d6c` (log `sweep.log`): rc 1. Every
+  artifact moves in the abi digits (c-default 6467, c-vm 6468). The FACTS
+  stream showed 2302 movers: `req_landmark_maxoff`'s `used` column flipped
+  to yes, because `pcrec_emit_req_attempt_reentry` (reqpast) read
+  `req_handoff_k` BEFORE its gate, on every VM compile. FIXED in 8942e88d4:
+  K is now read after the gate. No emitted byte moves.
+- Abi-neutral sweep (`--ref-bin`: main a07f76d6c archived, abi define set to
+  105, built in scratch; logs `sweep2.log`/`sweep3.log`, `movers.tsv`):
+  c-default 10 movers (8 unique patterns, reqpast's 8 auto), c-vm 191 (159
+  unique; reqpast's 155 plus rpfix's added witnesses). Every one of those
+  201 movers stamps `RX_REQ_HANDOFF "unbounded"`, checked by recompiling
+  each. The facts stream has 10 movers, only the stamp's none -> unbounded.
+  The dumps stream has 1 (`--list-axes` gains the row). emit-ir-vm,
+  emit-ir-auto (4 arms), stderr and composition: 0 movers.
+- RE-CHECK on the final tip: `make test-recursion-identity test-registry`,
+  log `$PCREC_TMPDIR/scratch/rpport/sections2.log`, result line in the
+  handback.
 
 ## CHANGES
 
-One port commit (76fea82d8) and two pin commits:
+One port commit (76fea82d8), a facts-ask fix (8942e88d4) and the pin commits:
 
 - `src/gen/emit_dfa.c`: abi 105. `emit_req_handoff_rest` takes reqpast's
   unbounded branch (no subtraction, `handoff_position = posvar`, the
@@ -81,7 +99,7 @@ One port commit (76fea82d8) and two pin commits:
   (104 -> 105; 104 is now "was").
 - Pins: `run_codegen_tests.sh` ABI_EXPECT 105 plus a 104->105 line in its
   history message. `run_recursion_identity.sh` FILEPIN and ABASEPIN are
-  self-pinned to 76fea82d8 (the lane's last src commit; the rpfix self-pin
+  self-pinned to 8942e88d4 (the lane's last src commit; the rpfix self-pin
   7ddf68c71 never landed), and the manager re-pins them to the landing merge.
   S693: BEFORE 105, AFTER 104. S463 is re-anchored on K38-2's `whole_len`
   context line, with the same rpfix2 bounded-only plant. rxtsource census is
@@ -98,9 +116,11 @@ One port commit (76fea82d8) and two pin commits:
 
 - For the manager (not run here, per brief): cloud test + axes + mechrows on
   lane/rpport.
-- The identity-gate landing re-pin (FILEPIN/ABASEPIN 76fea82d8 -> the
+- The identity-gate landing re-pin (FILEPIN/ABASEPIN 8942e88d4 -> the
   landing merge).
 - reqpast's timings in `tuning.md` §2.41¶8c (1.38/0.81 ms, 1.56/0.71 ms,
   0.009/1.47 ms) were measured on the pre-K38-2 base. K38-2 changed the
   pre-check's run part, so they are not re-measured here. They are a
   re-measure candidate if the dense-hit remedy row runs.
+- Not fixed here: rpfix's tree carried the same eager ask (it was pre-K38-2;
+  whether its sweep saw the flip is not recorded).
