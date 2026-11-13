@@ -157,6 +157,10 @@ MEMFN_CLASS = {
     **{("window-skip", ly): ("DIFFER",
         {("byte", "c-default"): 7, ("byte", "c-vm"): 0, ("utf8", "c-default"): 2, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"\\b[0-9a-f]{8}\\b"), ("utf8", "c-default", b"\\w\\B\\w")]) for ly in ("default", "simd")},
+    # run-verify-wide (R-38 Part D, memfn/src/options.def): the deny is the identity on every run
+    # stated before Part D, so it is inert on today's pcrec at both layers (partdland, 2026-11-13).
+    # The stage 3 joint landing ([RUN-POS-SET]) re-measures it, and a moved cell is that landing's red.
+    **{("run-verify-wide", ly): ("ASSERT_ZERO", {}, []) for ly in ("default", "simd")},
     ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-kb", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},

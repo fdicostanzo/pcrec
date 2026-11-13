@@ -10,7 +10,9 @@ R-41, tip ea1ddd78b + the deliver file b21990615). Merge commit f9528e943. Three
 each hunk is listed below. Every d27fix change to `memfn/src/window.c` and `memfn/src/kit.h` is in the
 merged tree; the only d27fix code replaced is translate's ranking loop, which Part D moved into
 `run_rank`, and `run_rank` holds the same two properties (below). `MF_SITE_ABI` stays 29 (main is 28).
-`make strict` was green before the merge commit. d27frame is GREEN on the merged tip (Checks). The box
+`make strict` was green before the merge commit. d27frame is GREEN on the merged tip (Checks). Validation found
+one merge-only G2 red, which was fixed in G2 (fix 1). The kit manager's triage of the pre-merge cloud reds
+found two of Part D's own gaps, both fixed here: the axes classification (fix 2) and the arm pins (fix 3). The box
 gate is queued as 597-kit-partdland-gate (BASE dd5143e8d, built fresh by the job).
 
 ## Merge and conflicts
@@ -61,12 +63,48 @@ c5b3c2c22):
 
 ## Checks
 
-PENDING (filled when the validation chain ends; logs under /var/tmp/pcrec-pcrec/scratch/memfn/partdland/).
+Logs are under /var/tmp/pcrec-pcrec/scratch/memfn/partdland/ (val.log is the chain's index).
 
 | check | result |
 |---|---|
 | nice make -j8 | rc 0 |
 | make strict (before the merge commit) | rc 0 |
+| make test-codegen | rc 0, run_group 21/21 |
+| make test-memfn-d27frame | GREEN: 6,937,301 checks passed, 0 failed (floor 6,500,000); control red in all 4 runs; empty red in all 4 runs |
+| make test-memfn-finder | rc 0, 18,058 / 0 |
+| make test-memfn-rows / link / targets / arch / forms | rc 0 each |
+| make test-memfn-g2 (the quick tier) | first run RED: window family, plain and traced, `site 1452: table_name: plan[3] (offset 1): plan_test TABLE, the marker read`. Fix 1 below. Rerun rc 0: 70,358,671 passed / 0 failed (window traced 5,673; presence 8,051,517) |
+| anchors (scripts/m6read_check_sab_anchors.py) | 1,294 sabotages, 1,345 anchor sites, all resolve |
+| `CLAUDEMD_ROOT=... check_claudemd_size.sh --all` | rc 0, 370 files |
+| make test-memfn-arms (after fix 3) | rc 0: 382 passed, 0 failed; 116 pinned rows over 58 fixtures |
+| axes reach, `MEMFN_REACH_ONLY=1 AXES="--memfn=no-run-verify-wide" bash tests/axes/run_axes.sh` (after fix 2) | rc 0: run-verify-wide ASSERT_ZERO, differ=0 refused=0 of 5,491 patterns in all 8 cells (default and simd layers x byte/utf8 x c-default/c-vm); the population check passed |
+| make strict (after fixes 1-3) | rc 0 |
+
+**Fix 1: G2's table_name check at a stop that sits inside a run compare (commit d51ff0980).** At site 1452
+(seed 20261022), the kit's text is a B-walk find over the stop at offset 1, whose marker
+`g2w_t1452_2` is the stop's table, followed by ONE `memcmp` of offsets -2..1. Plan position 3 is
+offset 1, which is the stop, inside that compare. The kit answers plan_test OWN there. That is right
+under plan_frame §2.3 as d27fix revised it (F4: a position inside a run compare reads no table;
+`plan_tests` answers the stop by C-table alone). The stop's own check (stop_test TABLE, marker read)
+holds. G2 was wrong: it attributed the stop's marker read to the plan position. The fix exempts that
+read only when four things hold: the position is the stop, it is inside a shared compare, it answers
+OWN, and B-walk's stop_test TABLE reads that marker. The case is counted as `stop_run` on the classes
+line; this seed has 1. No floor is set on it, because one witness is too thin to floor. Neither parent
+had such a site. It is the first one Part D's generator produced under d27fix's rule.
+
+**Fix 2 (the kit manager's triage, cloud axes run 43467980369): `tests/axes/memfn_arm.py`'s MEMFN_CLASS
+had no row for Part D's new deny `run-verify-wide`.** `--list-axes` lists that deny, so the population
+check went red. Added: ASSERT_ZERO cells at both layers (default, simd), the vrun-* shape. The deny is
+the identity on every run stated before Part D, so it is inert on today's pcrec. A comment says that
+the stage 3 joint landing ([RUN-POS-SET]) re-measures it.
+
+**Fix 3 (the same triage, cloud test run 43467904318 shard 5): `make test-memfn-arms` reported four
+parts rendered with no pin.** They are pre-wide-every-pos and pre-wide-findable, each .def and .use
+(Part D's fixtures, never pinned). They are now pinned in `tests/memfn/pins/arms.tsv` under an ADDED
+header, the way the file's header says pins are made. The digests were recorded from the kit's own
+rendering (arm_fixtures.c's output on this tip, through run_arm_pins.sh's sha256 digest), never hand
+computed. The arm column is `precheck`, the form id the driver prints for both fixtures. The triage
+suggested fn-every-pos / fn-memchr, but check 1 compares against the printed id.
 
 ## Owed runs
 
