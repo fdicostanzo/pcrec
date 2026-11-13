@@ -102,6 +102,8 @@ handle() { # handle LINE (queuewatch's line, `queuewatch: ` stripped): the first
         CLOUD-DONE\ *)                                                                                       # a cloud run ended ([CLOUD-SUITE]): to ITS owner
             o=$(kv owner "$l")
             if [[ $l == *" verdict=GREEN "* ]]; then say GREEN "${o:-main}" "$l"; else say RED "${o:-main}" "$l; owner triages"; fi ;;
+        CLOUD-SHARD-RED\ *)                                                                                  # one failing shard of a running cloud run: to ITS owner (field 2)
+            o=${l#CLOUD-SHARD-RED }; o=${o%% *}; say RED "${o:-main}" "$l" ;;
         CLOUD-INFRA\ *)                                                                                      # a cloud run lost only its artifact uploads (GitHub 5xx), after one rerun
             o=$(kv owner "$l"); say PROBLEM "${o:-main}" "$l; test steps passed, uploads failed twice: re-dispatch (not a code verdict)" ;;
         CI-RED\ *) say CI main "$l" ;;                                                                       # rows 11-13
