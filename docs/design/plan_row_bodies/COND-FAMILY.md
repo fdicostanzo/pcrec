@@ -372,3 +372,12 @@ Addendum (Frank: "It would imply (a: digit)(x)"): yes; application of a conditio
 spellings, one meaning: `x & (a: digit)` (inline), `(a: digit)(x)` (call a named condition: `isSmallYear :=
 (year: <2000)`, `isSmallYear(d)`; a plain DEFINE binding), `each((a: digit), A)` (each alternative; one without
 label `a` is a compile error naming it). Applications nest like calls; `&` commutes, so order is readability only.
+
+**2026-11-14 — `!` (Frank: `!` fine in the predicate language, unsure in the rx language; if `&!` is "and not", it could be `&` and `!` as two items; "consistency... a hobgoblin to good design").**
+SUPERSEDES "shared operators `&`, `&!`, `|`": the operators are `&`, `|` and prefix `!`, and `!` is ALWAYS a
+filter (a macro awaiting a target), by the rule just agreed: a standalone complement (`!abc` = nearly every
+string) is useless in a search and VM-hostile, while under `&` it is bounded. So `A & !B` = `(!B)(A)` = A minus B
+(`&!` dissolves into `&` + filter); `${!B}` / `C | !B` get the standard "no target" error; filters combine
+pointwise so `!(x: <200)` and `(x: <200) & !(y: >55)` work: one `!` in both languages. Comparisons: `!<200` is a
+filter, `>=200` a full rx; equal on any target (positive form is a lint hint). De Morgan / double negation are
+ordinary filter rewrites the compiler may normalise.
