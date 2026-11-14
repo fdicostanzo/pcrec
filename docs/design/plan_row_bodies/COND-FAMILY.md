@@ -168,3 +168,4 @@ Manager's leaning: YES, disjoint, and then overloading is not selection at all b
 - Overlapping overload types: ERROR with a witness string in both (`\d\d` and `(< 100)` share "10".."99", so they cannot both be overloads; the user must say which applies).
 - No "best match" ranking: most-specific-wins needs a subset order and is ambiguous when types are incomparable; disjointness removes the question.
 - Needs intersection emptiness only (cheap), not complement, for the overlap check.
+- Frank: so types have two purposes: (1) restrict arguments, (2) syntactic sugar on macro constructions via overloading. Manager: agreed, and both are compile-time: types add NO expressive power or match-time mechanism (an overload set is an alternation of intersections; a type check is an emptiness test). Corollary of (1): a typed parameter list is the macro's written contract, the seam its diagnostics quote.
