@@ -1112,3 +1112,174 @@ the leftmost-longest named mode [6.2, 6.4].
 
 Avoid: class-content set operations; silent engine fallback; backtracking baseline; imperative actions; textual
 macros; `between` as bracketing; any-order operators that are not span-exact.
+
+## 7. CONTRADICTIONS
+
+For each of C1-C16 (draft §13): a proposed resolution, the reasoning, and what in §1-§6 of this report bears on
+it. Proposals only; the owner rules. Then the open items O1-O18 where this report has something to add, and two
+contradictions the draft did not list (C17, C18).
+
+**C1. `&` order (extensional set vs D196's left-chooses).** PROPOSE: both, as two different functions. ⟦A & B⟧ is
+a set and commutative (membership). The REPORTED MATCH is `search(P, subject)`, a function of P's STRUCTURE (§5.4
+last paragraph), and D196 is its rule: the leftmost rx operand's priority order, filtered by the rest. Since a
+constant condition lowers to substitution into the target (§2.1), "the left operand chooses" is literally true
+for `P & cond` (the result has P's structure). Wording for the spec: "`&` is a set operation; the span a SEARCH
+reports for an `&` is decided by its spelling (D196): the leftmost rx operand's preference among the ends the
+others admit." Then "order is readability only" is true of the set and false of the search, and the draft can say
+both without contradiction. A2 (§5.5) adds the sentence for a macro on the left.
+
+**C2. x-mode default vs "every PCRE pattern is a literal".** PROPOSE: no x default. Reasoning: in this design
+long patterns are DECOMPOSED into bindings and joins, so literals become short and x-mode's benefit (laying out a
+long pattern) is taken over by the expression language, where whitespace is free; its cost stays whole: G3 breaks
+(`/a b/` changes meaning), the draft's own E-LUHN `( ?\d{4})` trap, every literal space needs `[ ]`, and no clear
+error exists (H5). Reading B (a lone literal keeps PCRE flags, x applies inside larger programs) is a discontinuity:
+adding one binding changes what a literal means. Users who want x write `(?x)` in that literal, as in PCRE. If the
+owner wants x anyway, Raku's shape (6.2) is the fallback: a DISTINCT literal form (say `//x ... //`) carries it,
+never the unit.
+
+**C3. DEFINE bindings in the inner direction.** PROPOSE: Reading A. The inner direction (an API caller passing a
+PCRE string with holes) has holes and no bindings; bindings live only in the outer language. One place for `:=`
+keeps the scoping story one paragraph long; an API caller who wants bindings passes a program (the outer form),
+which costs them a `/.../` wrapper. DEFINE stays PCRE syntax with PCRE's meaning inside a literal.
+
+**C4. The target of a guard hole.** PROPOSE: Reading B, from the formal core (§5.3 hole rule): a hole's KIND
+decides. An Rx inserts a sub-pattern (so `(\d+)${<256}` is digits FOLLOWED BY a numeral below 256); a Mac over labels
+of the literal is a guard on the whole literal (`/(?<n>\d+)${n: <256}/` = `/(?<n>\d+)/ & (n: <256)`). No
+"innermost enclosing group" rule, no special case for value filters. Cost: the trap H4 remains and is caught by
+tests; the gain is that the hole rule has no exception and `${}` stays injection-safe by kind alone. The 01:00
+spelling `\d{3}&${<256}` dies with C15 (no `&` in rx text).
+
+**C5. Multi-index comma.** PROPOSE: `X[1,3,5]` is a multi-select, and `[i, j]` two-dimensional indexing never
+exists: the array view is one-dimensional (an rx's top-level alternatives) and descent is `X[i][j]` (the draft's
+own `d[1][1]`). The 00:10 note kept the comma for a later `A[i, j]`; nothing in §3 wanted it. Comma inside `[]`
+then means what it means everywhere (A11): another entry.
+
+**C6. Binding a test.** PROPOSE: allowed; the earlier error is superseded. A test is a Mac (a filter); binding a Mac
+is what every `between(lo, hi) := ...` does. The 2026-11-13 error was about `!~` producing no OCCURRENCE to bind,
+which was true of the old projection semantics and is moot now that `!~` is `& !contains(...)`.
+
+**C7. Value-valued maps.** PROPOSE: Reading A, generalized by 3.3/F9: a RECORD ARRAY is the value-valued map. Any
+column used as a pattern (`rows.npa`) has the other columns as computed labels (`$area.region`), checked to be
+functions. `["US" => "United States"]` becomes an inline two-column table (`records("US,United States\n...",
+csvline)` or a list of record literals). No `=>` construct; one mechanism (pullback/computed label) covers it; the
+spelling of inline records is a later step. The notes' `/Jan(uary)?/ => 1` is `month_abbrevs.index` already.
+
+**C8. Comma in records vs lists.** PROPOSE: the comma is never a connective (A11); it separates entries of a
+bracket or arguments of a call, and the CONSTRUCT decides the combinator: a list literal unions its entries
+(`[a, b]` = `a | b`), a call conjoins its `name:` arguments (`p(a: s, b: t)` = `p & (a: s) & (b: t)`). The free-
+standing record `(x: <200, y: >55)` is dropped; write `(x: <200 & y: >55)`. The draft's 01:00 note said records
+"remain as shorthand": they remain only in call position, where they already are.
+
+**C9. Comparisons on padded labels.** PROPOSE: Reading A as the foundation (comparison sets contain canonical
+numerals; `unpad` is explicit), PLUS: a label with a declared value type `number` compares BY VALUE (the draft's
+"07 complies with number via canonical unpad"), which is Reading B derived from a declaration, not a default. And
+a lint: a comparison section intersected with a shape whose strings include non-canonical numerals (`/\d\d/ &
+between(1, 12)`) warns once, with the dropped witness ("01"), under the existing dead-branch/witness machinery
+(§5.2 of the draft). The draft's E-CAL text is then a WARNING, not a silent drop, which is what "no silent
+defaults" asks for.
+
+**C10. Transform sections and the left of `:`.** PROPOSE three rules that together resolve it. (1) TRANSFORMS ARE
+PULLBACKS: `t(S)` = the strings whose t-image lies in S (`unpad(between(1, 12))`, `length(<=20)`, `left(1, =="S")`,
+`jstr(p)`); the binary forms (`unpad() == 5`, `length() < 6`) are dropped. (2) The left of `:` is a label PATH or a
+TUPLE OF PATHS (F37, 3.11); never an expression. (3) A computed value is constrained through a COMPUTED LABEL
+(`with d = days($b) - days($a)` then `(d: between(-15, 15))`), so E-NEAR (c) and E-RFC's `wname.index:` are
+written as `label: section` like everything else, and `$x & S` stays the E2 error. One rule ("everything is
+`label: set`"), at the price of a `with` for computed values. Alternative considered: admit `f(value)` application
+as a test (`between(-15, 15)(days($b) - days($a))`): fewer keystrokes, a second syntax for conditions; not
+recommended.
+
+**C11. Purity of `x:` vs ambiguity.** PROPOSE: Reading A at the default level (`x: S` = SOME parse passes, one
+automaton), Reading B at `vm` (PCRE's parse), with the E7 warning whenever a user label under a condition is
+ambiguous (library labels are checked unambiguous, so the warning is rare). Reasoning: the default level is a
+promise; only A keeps it; for unambiguous labels the two readings coincide (A1), so the difference is confined to
+exactly the patterns E7 flags. The draft's "purity claim holds only for unambiguous labels" is then "purity holds;
+the MEANING differs from PCRE's only for ambiguous labels, and the compiler says where".
+
+**C12. Define-before-use.** PROPOSE: forward references allowed, cycles refused (the 2026-11-13 evening rule);
+define-before-use is a LINT (readability), on by default for user programs, off for library files (O13: a library
+file is bindings plus `export`, no final expression, and its exports reference each other freely). The acyclicity
+check is needed anyway (G4); ordering adds nothing to it.
+
+**C13. Bare label names as values.** PROPOSE: Reading B: a bare name is a binding or the constrained side of `:`;
+a VALUE is always `$x`. One token, one kind (§5.2: `$x` is a Mac over {x}; bare `x` in value position is an
+undeclared-name error with the suggestion "`$x` for the captured value, `x:` to constrain it").
+
+**C14. Size-cap fallback.** PROPOSE: Reading A, with the PROMISE restated so [PRED-SPLIT]'s automaton verify is
+inside it. The default level promises "linear time, automaton code only, no backtracking, self-contained"; it does
+NOT promise one DFA pass. A relax-then-verify split whose verify step is itself a DFA over the candidate span is
+two automaton passes (<= 2n) and keeps every word of the promise; a verify by CALLOUT is `functions`; a VM verify
+is `vm`. The planner may choose the split silently because it changes nothing observable except speed (RE2's
+`max_mem` logic, 6.4); it may NOT change level silently. Over the cap with no automaton split available: the E3
+error.
+
+**C15. In-context vs value-scoped `&`.** PROPOSE: Reading A (all `&` is expression-level, no `&` inside `/.../`,
+so `R&D` stays a literal and G3 holds) AND replace "value-scoped literals" by CONTEXT-MARKED SETS. Problem with
+value scoping as written: the draft's own E-JSONL program `/^${q}$/m` needs `^`/`$` to mean the SUBJECT's line
+ends, and `/(?<=\$)\d+/` as a whole program (G3: a valid one-literal program) must read the subject's left context,
+which a set of strings cannot express (A14). Resolution: a pattern denotes a set of TRIPLES (left context, span,
+right context); plain patterns ignore the contexts; `^`, `$`, `\b`, lookarounds constrain them; `&` intersects
+triples (extensional, closed); a label condition's "value" is the label's span WITH its context inside the match,
+so a lookbehind in a condition's set sees the text before the label. This is the standard semantics of regular
+languages with lookaround and is exactly what D196 add. 2's intersection-family IR computes (lookbehind = product
+with a reverse automaton over the left context, which pcrec's [VLOOKBEHIND] already builds). The draft's stated
+reason for value scoping ("a named type means the same everywhere") holds BETTER under triples: `isodate` means the
+same set of triples whether it is the program, a filter or a hole; a filter without lookarounds is context-free
+automatically. The remaining question is only which PCRE context constructs the strict pure subset admits in the
+first build (lookarounds that are regular: yes, via D196 add. 2; `\K`, `\G`: no, as the draft says).
+
+**C16. Precedence example.** PROPOSE: D196 stands (`&` tighter than `|`); the 00:10 example was a slip and reads
+`x & (<256 | >300)`. Publish the full table (O2), from §5.1: postfix, section, `:`, `!`, `&`, `|`; arithmetic
+only inside a section operand, a `with` body or a hole.
+
+### 7.1 Open items this report can move
+
+- O1 (search vs whole-subject): the LANGUAGE denotes a set (plus structure); whether the API/CLI searches or tests
+  the whole subject is the existing anchored-vs-search API choice, not a language fact. Lean: the program is a set;
+  the CALLER picks search (default, G3) or whole; `.rxt` entries say which, as today.
+- O2: the table in C16.
+- O3 (status of "ruled" claims): nothing to add; the owner confirms.
+- O4 (`x:` on a repeated group): ALL iterations (substitution into the loop body; the only pure lowering, §2.1),
+  with `some(x: S)`, `count(x: S)` as the quantified forms (F27); plain `$x` on a repeated label: error at
+  default, PCRE's last iteration at `vm` (6.1 borrow 2).
+- O5 (field constraints carrying into joined labels): yes, by construction: `join` concatenates the entries'
+  automata, so a narrowed entry stays narrowed; the label's TYPE is the narrowed set. Nothing to decide, only to
+  state.
+- O6 (`functions` needs TDFA): yes for callouts; the default level needs no captures at all (§2.4), so TDFA gates
+  `functions` and capture REPORTING, not the predicate language's first build.
+- O7 (weekday type): a NUMBER with a stated convention (ISO: Monday = 1), the `.index` of a 1-based weekday array
+  starting at Monday, so `weekday: 6` and `weekday_abbrevs[$weekday]` agree without a table. Strings as a value
+  type for weekdays invite locale questions.
+- O8 (luhn over separated digits): the twin takes a DIGIT SEQUENCE; the caller strips separators by a pullback
+  (`luhn` applied to `digits_of(x)`, where `digits_of` deletes non-digits: a transducer). Spell it so the library
+  entry says "digits only" and the card example writes `& digits_of(luhn)`. No silent space-skipping.
+- O9 (run-time parameter with a large variant set): parameters enter comparisons through PARAMETRIC automata
+  (3.5; §2.1 param row) at no state cost; arithmetic ON parameters (`anchor +/- 15 days`) runs ONCE PER MATCH on
+  the parameter, not the subject, and can be admitted at the default level without breaking linearity or
+  self-containment (it is C text over a fixed-size value). PROPOSE: define `functions` as "functions over CAPTURED
+  text"; functions over parameters are default-level. E-NEAR (b) then is default.
+- O10 (resume after a rejecting callout): with the split (C14) the DFA finds candidates and the callout rejects
+  one; the next candidate is the next DFA match start, exactly the find-all iterator's resume rule; the verbs
+  question dissolves at `functions` and remains only at `vm` (where PCRE's verbs already exist).
+- O11 (index base): E-RFC decides it: `mname.index` IS the month number only 1-based (F20). Confirm 1-based.
+- O12 (`!~`): drop as sugar; `!contains` reads better and has no operator precedence question.
+- O13 (library files): bindings + `export`, no final expression (C12).
+- O14 (string positions out of range): CLAMP is a silent default (a `left(10)` on "abc" yielding "abc" hides a
+  length assumption); strict FALSE matches "comparison on an unset label is false" (§4.2). Lean: strict false, with
+  the dead-branch lint when a position exceeds the shape's maximum length.
+- O15 (`before`/`after` on `|`): no example needed it; leave deferred.
+- O16, O17: unchanged by this report except that C15's triples answer "in-context lookaround" (yes, as context
+  constraints) and 3.10/F35 answers "cross-operand backrefs" (regular when the group is finite: enumerate).
+- O18 (`records` dropping unmatched lines): `records` should REQUIRE that the record rx's matches tile the text
+  (every byte belongs to a record or to a declared separator), else error "bytes 12-14 (`\r\n`) belong to no
+  record". That is "no silent defaults" applied to data files; `records(text, rx, gaps = allow)` opts out.
+
+### 7.2 Contradictions the draft did not list
+
+- C17. `&` IS EXTENSIONAL (§2.2, §3.4) YET DISTRIBUTES OVER ARRAY ENTRIES AND DROPS EMPTY PRODUCTS (§3.2 rule 2).
+  Distribution is a STRUCTURAL effect (it changes the array view: `/a|b/ & /b|a/` has entries [a, b] under
+  left-major distribution, [b, a] the other way). Resolution: `&`'s SET is extensional; its STRUCTURE follows the
+  rule of A4 (left-major cross product, empties dropped), stated as a structural rule beside `|`'s "append".
+  Nothing is wrong once both halves are written down; today only one is.
+- C18. "A LITERAL IS ITS OWN SCOPE, VALUE-SCOPED" (§11) vs E-JSONL's `/^${q}$/m` and G3's lone-literal programs
+  with lookbehind (C15 above). Listed here because the draft treats C15 as a question about `&` only; the
+  conflict exists with no `&` at all.
