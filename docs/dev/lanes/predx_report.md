@@ -324,13 +324,12 @@ Friction:
     sep  := ["-", ".", " ", ""]
     phone_with(s) := join([area = ac, exch = /[2-9]\d\d/, line = /\d{4}/], sep = s)
     phone := each(phone_with, sep)                           # 4 entries, one per separator; |-ed by use
-    phone & !(area: /555/)
+    phone & !(exch: ==555)                                   # fictional exchanges excluded
 
-Expected: `212-555-0100` out (555 exchange filter: a bug in my first draft, `area: /555/` filters the AREA; the
-exchange filter is `exch: ==555`; left in to show the error the compiler should give: the pattern `/555/` on
-label `area`, whose language is the 300 file codes, has an empty intersection unless 555 is in the file: "dead
-branch, `area: /555/` admits nothing" (§4 error 6). `212.555.0100`, `2125550100` in; `212-555 0100` out (mixed
-separators).
+Expected: `212-555-0100` out (555 exchange); `212.867.5309`, `2128675309` in; `212-867 5309` out (mixed
+separators). A slip I made while writing this, `!(area: /555/)`, is worth keeping as an error case: `/555/` on
+label `area`, whose language is the 300 file codes, is an EMPTY intersection unless 555 is in the file, so draft
+§5.2's rule gives "dead branch: `area: /555/` admits nothing" (§4 error 6) instead of a silently useless filter.
 
 Compiles to: `ac` is a 300-leaf trie (~30 states after minimization, est.) whose accept classes are the 300 rows
 (the region is a per-row constant: "tabulated mappings report a constant from the accept state", draft §4.4);
@@ -561,3 +560,153 @@ Friction:
   done... how? A VM cannot intersect. At `vm`, `&` must lower to (DFA pre-check where regular) + VM verify of the
   non-regular operand: the [PRED-SPLIT] shape. The draft says `vm` = "full PCRE semantics" and nothing about `&`
   with a non-regular operand. Gap (§8.1).
+
+### 3.10 Password policy (probe: a regular property spelled with a non-regular construct)
+
+Problem: 8-64 chars, at least one digit, one upper, one lower, no three identical consecutive characters.
+
+    pw := /[\x21-\x7E]+/ & length(between(8, 64))
+          & contains(/\d/) & contains(/[A-Z]/) & contains(/[a-z]/)
+          & !contains(/(.)\1\1/)                                   # attempt 1: backreference
+    triple(c) := /${c}{3}/
+    pw2 := ... & !contains(each(triple, enumerate(/[\x21-\x7E]/)))  # attempt 2: PROPOSED enumerate()
+
+Attempt 1 at default: the strict pure subset refuses `\1` ("backreference in a literal: needs `vm`"). Yet the
+property "no three identical consecutive printable characters" IS regular (94 x 3 states). Attempt 2 says so
+explicitly by enumerating the alphabet and unioning 94 triples; the complement is a 94 x 3 state DFA; the whole
+`pw2`: three containment flags (2^3) x the 65-counter x the triple tracker (~280 states): est. ~150k states before
+minimization, ~20k after (the triple tracker does not factor out). Level: default, but heavy.
+
+Friction:
+- F34. NO WAY TO ENUMERATE A CLASS. Arrays are top-level alternatives; a class `[a-z]` is ONE alternative. There is
+  no `enumerate(rx)` (finite rx -> array of its strings). PROPOSED (§10 S11); G4 is kept by requiring finiteness
+  (checked) and a size bound.
+- F35. THE FINITE-BACKREFERENCE RULE. `(.)\1\1` is a backreference to a group with a finite language; by §2.1 it is
+  regular at cost |dom| = 94. A compiler applying that rule generally would accept attempt 1 at the default level
+  with no language change at all, and would also move PCRE patterns like `(\d\d)\1`, `([ab])\1{3}` off the VM
+  today. This is an UNLOCK for pcrec proper (§10 S11): a general mechanism (bounded-group backreference =
+  enumerate and substitute), budgeted by |dom|, replacing the blanket "backref => VM" rule. The strict-subset
+  refusal (draft §11) would then read "backreference to an UNBOUNDED group".
+- F36. The three `contains` flags and the length counter and the triple tracker are independent automata whose
+  product is the answer; the state count is the product of their sizes and no minimization helps (they are
+  genuinely independent facts). This is the honest cost of "pure DFA" for conjunctions of independent properties;
+  `functions` (three callouts on the candidate) would be ~10 states plus a linear pass. The cost tool should say
+  "product of 4 independent factors: 8 x 65 x 282 x ..." so the user can choose. Supports the draft's
+  independent-switch design: a user may well want `functions` here while staying linear.
+
+### 3.11 Semantic versions, precedence against constants (probe: tuple comparison)
+
+Problem: match versions `>= 1.4.0` and `< 2.0.0`, with pre-release tags ranking below the release.
+
+    num := /0|[1-9]\d*/                                            # canonical, no leading zeros (semver rule)
+    core := join([major = num, minor = num, patch = num], sep = ".")
+    pre := /-[0-9A-Za-z.-]+/
+    semver := /${core}(?:${pre})?/
+    semver & (major: 1 & minor: >=4 | major: 1 & minor: >=4 & ... )   # attempt 1: by hand, wrong below
+
+By hand the condition is `(major: ==1 & minor: >=4) | (major: >1 & major: <2)`, and "1.4.0-alpha < 1.4.0" needs
+`& !(major: ==1 & minor: ==4 & patch: ==0 & has_pre)`. Clumsy and easy to get wrong (my attempt 1 forgot the
+pre-release rule). What one wants to write:
+
+    semver & ((major, minor, patch): >= (1, 4, 0) & (major, minor, patch): < (2, 0, 0))    # PROPOSED tuple condition
+
+Compiles to: a tuple comparison against a CONSTANT tuple is a chain of per-field 3-outcome comparisons
+(below / equal / above), i.e. a product of three small sections with a 3-state "decided yet?" flag: at most ~27
+states on top of `core`'s ~10. Numeric comparison of variable-width canonical numerals against a constant is the
+int-range generator with "fewer digits means smaller" built in. Level: default.
+
+Friction:
+- F37. TUPLE ON THE LEFT OF `:`. The draft's left side is a label path (C10); comparing a lexicographic tuple of
+  labels against a constant tuple is the natural way to say version, date-as-fields, or (h, m) precedence, and it
+  is cheap. PROPOSED (§10 S12). It also absorbs 3.5's `(h, m): between(("22","30"), ("23","59"))`.
+- F38. A tuple compared against ANOTHER MATCH's tuple (`(a.major, a.minor) < (b.major, b.minor)`) is the raw
+  cross-label relation (|dom| classes, unbounded here: refuse at default; `functions` does it in a callout). The
+  error must say which operand is unbounded (`a.major` is `0|[1-9]\d*`).
+- F39. "Canonical, no leading zeros" is a semver RULE, so here the draft's canonical-numeral default helps rather
+  than hurts; a general number library needs both `num` (canonical) and `digits` (any) spellings, named so.
+
+### 3.12 ZIP/state consistency from a table (probe: a relation defined by data)
+
+Problem: `ST 12345` where the ZIP must lie in one of the state's ranges, from a file `state,lo,hi`.
+
+    ranges := records(file_text("zip_ranges.csv", sha256 = "<pin>"),
+                      /^(?<st>[A-Z]{2}),(?<lo>\d{5}),(?<hi>\d{5})$/m)
+    addr := join([state = /[A-Z]{2}/, zip = /\d{5}/], sep = " ")
+    row_ok(r) := (state: ==r.st & zip: between(r.lo, r.hi))        # a filter per row
+    addr & each(row_ok, ranges)                                    # array of ~90 filters; .index = which range row
+
+Compiles to: each `row_ok(r)` is a constant condition on two labels (subst into `state` and `zip`): a 2-literal
+state plus a 5-digit range automaton (~12 states). The array of 90 filters applied to `addr` is 90 products,
+unioned: the minimal DFA is a trie on the state code branching into that state's ZIP ranges: est. 200-400 states;
+accept classes 90. Level: default. Note `between(r.lo, r.hi)`: the bounds are RECORD FIELDS (compile-time strings),
+decided as strings by the record rx (`\d{5}`): lexicographic compare on fixed width, correct.
+
+Friction:
+- F40. `r.lo` in `between(...)`: the literal-decides rule has NO LITERAL here; the bound is a record field. Draft
+  §2.4: "declared types are needed only where no literal fixes the reading (value vs value)". So `between(r.lo,
+  r.hi)` is value-vs-value and needs a declared type. Fixed-width digits make string and numeric readings agree,
+  but the compiler cannot know that is why the user did not care. Rule needed: a record field has the SHAPE type
+  of its group (`\d{5}`); a comparison over a shape type whose strings are all canonical fixed-width numerals is
+  the same under both readings (provable); otherwise an error asks for `unpad`/`number`. (The proof is a product
+  emptiness check: "exists a pair ordered differently by the two readings".)
+- F41. The relation (state, zip) is DEFINED BY A TABLE, and the natural lowering (union of per-row constant
+  conditions) is cheap because the table is finite and small. This is the shape of most real-world
+  "cross-label" needs (country/phone prefix, currency/decimals, state/zip): a finite table, not arithmetic. The
+  draft's E-NEAR (c) (arithmetic on unbounded dates) is the exception, not the rule. Worth saying in the guide:
+  "if the relation is a table, write it as records; it stays at the default level".
+- F42. The array-of-filters kind (F13) and `&` with an array (F14) again; both must be defined for this program to
+  be legal.
+
+### 3.13 One constraint over several date formats (probe: does the organisational layer earn its place?)
+
+Problem: accept ISO (`2024-02-29`), US (`02/29/2024`) and text (`29 Feb 2024`) dates; require Feb 29 of a leap year;
+also require a Saturday.
+
+    isodate  := join([year = y4, month = m2, day = d2], sep = "-")
+    usdate   := join([month = m2, day = d2, year = y4], sep = "/")
+    textdate := join([day = /\d{1,2}/, mname = month_abbrevs, year = y4], sep = " ") with month = mname.index
+    anydate  := isodate | usdate | textdate                       # duplicate labels: year/month/day in each entry
+    anydate & (month: 2 & day: 29) & (year: leap_year)           # leap_year := years with leap($year): a twin
+    anydate with weekday = weekday_of($year, $month, $day)        # attach the computed label to the UNION once
+            & (weekday: 6)
+
+Compiles to: `month: 2` on the union narrows each entry's month (textdate's through the `.index` pullback: `Feb`
+only); the union of three narrowed entries; the weekday twin attached per entry (each entry has all three labels,
+in different positions: the twin's class product is computed per entry, 14 x 12 x 31 before the condition). Level:
+default; est. a few hundred states.
+
+Friction:
+- F43. DUPLICATE LABELS ACROSS A UNION work as the draft says (§4.3: static type = union of definitions) and make
+  the organisational layer UNNECESSARY for this case: `with` on the union attaches `weekday` once, no interface. The
+  only things an interface (`date := type(year: number, month: ..., day: ...)`) would add: (a) a compile-time
+  CHECK that every entry has the three fields with the value types (the union would otherwise fail later with
+  "label `day` unset in entry 3" for a format lacking it — same information, later), (b) a NAME for the contract so
+  a LIBRARY can ship `weekday` for user formats it has never seen. (b) is a packaging need; §9 concludes
+  accordingly.
+- F44. `textdate` has `month` as a computed label and `isodate` as a substring label; the union's `month` is of
+  mixed nature. `month: 2` pulls back fine on both; `$month` as a reported VALUE is "02" for one and 2 for the
+  other: the value type (`number`, canonical) must unify them, i.e. the union's label carries the value type
+  `number` and reporting goes through the canonical form. The draft (§4.4) has the pieces; it does not say that a
+  union's label value type is the JOIN of the entries' value types and that reporting canonicalizes. Rule to add.
+- F45. `year: leap_year` where `leap_year` is a set defined by a twin (the years whose leap class is true): a
+  COMPUTED set from a function, i.e. the pullback of `{true}` through `leap`. Writing it needs the library to export
+  the set, or the user to write `leap(S)` as a pullback (`year: leap(==true)`): the pullback spelling makes every
+  predicate-valued twin a set-former. Consistent with §8; the spelling `leap(==true)` is ugly; `leap_year` is the
+  library's job.
+
+### 3.14 What the solutions say together
+
+- Thirteen programs, all at the default level except where the problem is non-regular (3.9) or the user chooses a
+  non-regular spelling (3.10 attempt 1). G1 and G2 hold on this sample; the draft's claim that the foundation plus
+  library filters suffice is confirmed for the regular problems, with the gaps below.
+- Recurring mechanisms, in order of frequency: subst of constant conditions (every case); pullback through a
+  transform/decoder/table/arithmetic (3.1, 3.3, 3.5, 3.6, 3.8, 3.13: six cases, under five different draft
+  headings); `&` with an array operand = classification (3.4, 3.12); enumerate-a-finite-choice instead of a
+  backreference (3.3, 3.10); any-order grid (3.1, E-JSONL).
+- Features the draft lacks that more than one case needed: arrays of filters (F13, F42); `x:` inside `some`/`count`
+  on repeated labels (F4, F27); tuple conditions (F15, F37); `enumerate` (F34); bounded recursion (F32); the
+  empty-entry trap in the way of `opt` (F6, F20); value tests without a label (F19, F28); value-vs-value
+  comparison typing (F40).
+- Error cases the solutions produced naturally: dead branch on an impossible label filter (3.3), empty `between`
+  across midnight (3.5), the unknown-label `depth` (3.9), the unbounded-operand relation (3.11), the backreference
+  in a literal (3.10). §4 writes them out.
