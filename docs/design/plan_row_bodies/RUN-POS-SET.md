@@ -12,3 +12,9 @@ Long-form notes moved out of plan.md (PL11 row cap).
 
 - Rule (1) (2026-11-13, Frank: "Isn't that general to the hull?"): yes: `all` is a hull statement (alt_normal_form §4.2, O1), so no owner ruling is needed; S2 lands it OFF; after S2 the census runs with/without (readiness §4 stage 0) and the manager turns it ON if movers are as expected.
 - Post-S2 measurement set (Frank 2026-11-13: "Once this framework is in there are a bunch of items that can be measured"; not injected before landing): first item = inline rarest-byte find + in-place neighbour check vs main vs S2 on IPv4, dot-heavy and number-dense texts (memfn/docs/ideas.md 2026-11-13).
+
+**2026-11-14 manager ruling (rps3 STOP note, §9 item 2).** CONFIRMED as built: the head-vs-`req_byte`
+check holds only where NO run is stated; on a decline K is read from the head member itself
+(`req_landmark_k`). Reason: on a declined run with an exact position the kit's P3 head pick and pcrec's
+`req_byte` pick may legitimately differ, so equality there would be a false internal error; the check's
+purpose is the K the handoff subtracts, which the head member supplies.
