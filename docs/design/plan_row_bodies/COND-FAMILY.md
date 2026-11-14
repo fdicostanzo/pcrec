@@ -616,3 +616,14 @@ Options: (a) `export([leap = leap, ...])` (consistent, repetitive); (b) CONVENTI
 unless its name starts with `_` (Python/Go style; no call, no grammar; visibility from the name); (c) `export(leap,
 weekday)` receiving names = a macro seeing argument expressions (a meta feature; avoid). Lean (b). Result: grammar =
 bindings, expressions, calls; NO keywords (import/export cease to be exceptions). Export choice PENDING Frank.
+Follow-up (Frank: an import could be an rx, a map of labels to rx, not useful whole, a container; `export(["leap",
+!startsWith("_")])` as a filter on the current module's labels; a prefix designating side-effect macros). Lean:
+(1) MODULE = MAP (the aligned map case), NOT a third value kind; modules hold macros too, so using a module whole as
+a pattern is legal only if every entry is an rx (else the standard "unapplied macro" error); member access = label
+navigation. (2) `export(names)` = export every module label whose NAME is in the rx `names`; the filter must be a set
+of strings, not a target-less filter in an alternation (ruled error), so `export(["leap", /[^_].*/])` or
+`export(/[^_].*/)`; a library file with no export = error ("library exports nothing"; no silent default). (3) `@` marks
+COMPILE-TIME EFFECT macros: `@export(...)`, `@assert.some("2024" & leap)`; only `@` forms may be bare statements; a
+bare statement without `@` is an error (catches the unbound pattern); pure macros cannot take `@`, effect macros
+cannot drop it (purity visible and checked syntactically); `import(...)` is unprefixed (returns a value). `@` exists
+only in the expression language. Grammar: bindings, expressions, calls, `@` statements; NO keywords.
