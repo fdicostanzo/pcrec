@@ -228,7 +228,6 @@ static void pf_derive_req_walk(Ctx *cx)
     const ReqWalkParams p = {
         .pos_set    = pcrec_opt_has(cx->opt, PCREC_NO_REQ_RUN_FOLD) ? 1
                     : PCREC_MAX_REQ_RUN_POS_SET,
-        .alt_union  = h && h->alt_union_run,
         .max_pieces = PCREC_MAX_REQ_PIECES,
         .restored   = h ? h->walk_arms
                     : cx->emit_in && cx->emit_in->meas ? cx->emit_in->meas->walk_arms : 0,

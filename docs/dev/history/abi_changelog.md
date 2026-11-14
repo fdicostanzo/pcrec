@@ -23,7 +23,19 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `106` on every artifact today ([RUN-POS-SET] stage 3 with the memfn kit's
+- **`rx_info.abi` is `107` on every artifact today ([RUN-POS-SET] stage 2a rule (1), 106 -> 107,
+  lane r1on 2026-11-14; `docs/design/alt_normal_form.md` §6 row 1, the manager's ON ruling on the
+  s2r1b census).**
+  An alternation whose branches each match exactly the same number of bytes and whose runs are
+  whole (`rr_alt_rows` row 1, `alt_union`) contributes its per-position UNION to the necessary run,
+  so the run continues through it (`xy(?:ab|ac)zw` -> `xy{a}{b,c}zw`, `((a)|b){3}c` ->
+  `{a,b}{a,b}{a,b}c`, a run across an alternation of zero-width branches); an alternation of
+  unequal widths keeps only its common head and tail as before. Moves the `<PREFIX>_REQ_RUN`,
+  `_REQ_WHY` and `_REQ_HANDOFF` stamps and the pre-check bytes of 19 byte / 22 utf8 corpus patterns
+  (census, `docs/dev/lanes/s2r1b_report.md`); no struct offset moves, no `rx_info` member is added
+  or changed, and no answer moves (14,880 cases identical over the mover files).
+
+- **`rx_info.abi` was `106` on every artifact ([RUN-POS-SET] stage 3 with the memfn kit's
   R-38 Part D and R-41, 105 -> 106, one event with the kit's MF_SITE_ABI 29 / MF_CLASS_V 10, the S2
   joint landing, lane s2land 2026-11-13; `docs/design/run_pos_set_stage3_readiness.md`,
   `docs/design/memfn/part_d.md` rev 4).**

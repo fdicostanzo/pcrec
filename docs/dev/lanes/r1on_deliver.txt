@@ -1,0 +1,4 @@
+report=docs/dev/lanes/r1on_report.md
+sections: STATE AT HANDOFF; FLIP; ABI READERS; WITNESSES; VALIDATION; OWED
+nonempty: all
+commit: yes

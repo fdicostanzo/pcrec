@@ -895,26 +895,35 @@ else
 fi
 
 # [facts-ahead] [RUN-POS-SET] stage 3 (DEFAULT since the S2 joint landing,
-# lane s2land) and stage 2a rule (1) (AHEAD: rps3b, manager ruling
-# 2026-11-13). The default walk is the stage-3 DOMAIN (a run position any
-# set of at most 128 members, no cube clause); the test-only lever
-# `alt-union-run` of build/pcrec-harness is alt_normal_form.md §6's `rr_alt`
-# row 1 (every branch `all`, equal untruncated width: the alternation is
-# `all`, its run the per-position union), so each lever cell has its default
-# twin. Every cell is a real compile the kit must ACCEPT: the rows from
-# `[α-ω]foo` down are the ones today's kit refused before Part D (K-1,
-# docs/dev/lanes/rps3b_report.md "go green only after the flip"), so a kit
-# that regresses to cube-only run positions reds here as REFUSED. Rule (1)'s
-# cells deny altcls (bits 10, 11), which otherwise factors the alternation
-# into a class before the walk sees it. Expectations by hand from req.c's
-# rules (the memo's §3 table, alt_normal_form §5 stage 2a's predicted movers,
-# readiness memo U-d's `cat|dog` -> `{c,d}{a,o}{t,g}`), each confirmed on the
-# landing build; `xy(?:ab|abc)zw` is S-c, the unequal-width control that row
-# 1 must never claim.
+# lane s2land) and stage 2a rule (1) (DEFAULT since lane r1on, abi 107, the
+# manager's ON ruling on the s2r1b census). The default walk is the stage-3
+# DOMAIN (a run position any set of at most 128 members, no cube clause) with
+# alt_normal_form.md §6's `rr_alt` row 1 (every branch `all`, equal
+# untruncated width: the alternation is `all`, its run the per-position
+# union); the restored arm `alt` of build/pcrec-harness
+# (`--harness=restore=alt`, src/facts/walk_arms.def) is row 2 alone, so each
+# rule (1) cell has its restored twin. Every cell is a real compile the kit
+# must ACCEPT: the rows from `[α-ω]foo` down are the ones today's kit refused
+# before Part D (K-1, docs/dev/lanes/rps3b_report.md "go green only after the
+# flip"), so a kit that regresses to cube-only run positions reds here as
+# REFUSED. Rule (1)'s cells deny altcls (bits 10, 11) where altcls would
+# otherwise factor the alternation into a class before the walk sees it.
+# Expectations by hand from req.c's rules (the memo's §3 table, alt_normal_form
+# §5 stage 2a's predicted movers, readiness memo U-d's `cat|dog` ->
+# `{c,d}{a,o}{t,g}`), each confirmed on the landing build. `xy(?:ab|abc)zw` is
+# S-c, the unequal-width control row 1 must never claim (S3130 drops the
+# equal-width test). The rows from `AKIA|...` down are one witness per mover
+# class of the s2r1b census (lane/s2r1 508bec313, docs/dev/lanes/
+# s2r1b_report.md "MOVERS BY CLASS"): literal-set branches, the head- vs
+# tail-aligned union, a repeat of a capturing alternation, nested groups,
+# zero-width branches, the empty branch, a utf8 range lowered to equal-width
+# byte branches, the handoff-shrinking repeat, and `(?i)Ελληνικά`, whose
+# outer alternation has a 3-byte fold branch (U+1FBE) beside 2-byte ones, so
+# the run ENDS at the fold set's common head.
 abad=""; nah=0
 aget() { # aget <levers> <denies> <enc> <pattern> -> the req_whole_run value
     local lv=() dn=()
-    case "$1" in (*alt*) lv+=(--harness=alt-union-run) ;; esac
+    case "$1" in (*alt*) lv+=(--harness=restore=alt) ;; esac
     [ "$2" = noaltcls ] && dn=(-fno-altcls-merge -fno-altcls-factor)
     "$TIMEOUT_BIN" 120 "$HBIN" --features all "${lv[@]}" "${dn[@]}" -e "$3" --emit-facts --pattern "$4" > "$WORKDIR/ah.l" 2> "$WORKDIR/ah.err" ||
         { printf 'REFUSED(%s)' "$(head -1 "$WORKDIR/ah.err")"; return; }
@@ -934,31 +943,59 @@ else
 -	-	byte	\w+@example\.com	[30-3941-5a5f61-7a]406578616d706c652e636f6d
 -	-	byte	GET /[a-z]+ HTTP	[61-7a]2048545450
 -	-	utf8	(?i)xyzłw	[5878][5979][5a7a]c5[8182][5777]
--	noaltcls	byte	abcd(?:ab|ab)efgh	616263646162
-alt	noaltcls	byte	abcd(?:ab|ab)efgh	61626364616265666768
--	noaltcls	byte	(?:ab|Ab)(?:cd|Cd)(?:ef|Ef)	41624364/dfffdfff
-alt	noaltcls	byte	(?:ab|Ab)(?:cd|Cd)(?:ef|Ef)	416243644566/dfffdfffdfff
--	noaltcls	byte	xy(?:ab|ac)zw	61627a77/fffeffff
-alt	noaltcls	byte	xy(?:ab|ac)zw	787961627a77/fffffffeffff
--	noaltcls	byte	xy(?:abc|abd)zw	6162[6364]7a77
-alt	noaltcls	byte	xy(?:abc|abd)zw	78796162[6364]7a77
+-	noaltcls	byte	abcd(?:ab|ab)efgh	61626364616265666768
+alt	noaltcls	byte	abcd(?:ab|ab)efgh	616263646162
+-	noaltcls	byte	(?:ab|Ab)(?:cd|Cd)(?:ef|Ef)	416243644566/dfffdfffdfff
+alt	noaltcls	byte	(?:ab|Ab)(?:cd|Cd)(?:ef|Ef)	41624364/dfffdfff
+-	noaltcls	byte	xy(?:ab|ac)zw	787961627a77/fffffffeffff
+alt	noaltcls	byte	xy(?:ab|ac)zw	61627a77/fffeffff
+-	noaltcls	byte	xy(?:abc|abd)zw	78796162[6364]7a77
+alt	noaltcls	byte	xy(?:abc|abd)zw	6162[6364]7a77
+-	noaltcls	byte	xy(?:ab|abc)zw	78796162
 alt	noaltcls	byte	xy(?:ab|abc)zw	78796162
 -	-	utf8	[α-ω]foo	[cecf][80-89b1-bf]666f6f
--	-	utf8	abc[α-ω]defg	[cecf][80-89b1-bf]64656667
--	-	utf8	(?i)αβγ	ce[91b1][cecf][9092b2]
--	-	utf8	(?i)xyzβw	[5878][5979][5a7a][cecf][9092b2]
+-	-	utf8	abc[α-ω]defg	616263[cecf][80-89b1-bf]64656667
+alt	-	utf8	abc[α-ω]defg	[cecf][80-89b1-bf]64656667
+-	-	utf8	(?i)αβγ	ce[91b1][cecf][9092b2]ce[93b3]
+alt	-	utf8	(?i)αβγ	ce[91b1][cecf][9092b2]
+-	-	utf8	(?i)xyzβw	[5878][5979][5a7a][cecf][9092b2][5777]
+alt	-	utf8	(?i)xyzβw	[5878][5979][5a7a][cecf][9092b2]
 -	-	utf8	(?i)москва	[b2d0d1][8183a1]d0[9aba][d0e1][92b2]
 -	-	byte	cat|dog	[6364][616f][6774]
+alt	-	byte	cat|dog	[6364][616f][6774]
 -	-	byte	(?:ab|cd)xy	[6163][6264]7879
--	-	byte	q(?:cat|dog)q	71[6364][616f][6774]
--	noaltcls	byte	xy(?:ab|cd|ef)zw	[616365][626466]7a77
+alt	-	byte	(?:ab|cd)xy	[6163][6264]7879
+-	-	byte	q(?:cat|dog)q	71[6364][616f][6774]71
+alt	-	byte	q(?:cat|dog)q	71[6364][616f][6774]
+-	noaltcls	byte	xy(?:ab|cd|ef)zw	7879[616365][626466]7a77
+alt	noaltcls	byte	xy(?:ab|cd|ef)zw	[616365][626466]7a77
+-	-	byte	AKIA|AGPA|AIDA|AROA	41[47494b52][44494f50]41
+alt	-	byte	AKIA|AGPA|AIDA|AROA	41[47494b52][44494f50]
+-	-	byte	frank|zred|brad	[62667a]72[6165][646e]
+alt	-	byte	frank|zred|brad	[62727a][6172][61656e][646b]
+-	-	byte	((a)|b){3}c	[6162][6162][6162]63
+alt	-	byte	((a)|b){3}c	none
+-	noaltcls	byte	(a(b|c)(d|e))	616264/fffefe
+alt	noaltcls	byte	(a(b|c)(d|e))	none
+-	-	byte	-+(?:(?=a)|)A	2d41
+alt	-	byte	-+(?:(?=a)|)A	none
+-	noaltcls	byte	abcd(?:|)efgh	6162636465666768
+alt	noaltcls	byte	abcd(?:|)efgh	61626364
+-	-	utf8	x[\x{800}-\x{ffff}]y	78e0808079/fff0c0c0ff
+alt	-	utf8	x[\x{800}-\x{ffff}]y	78e08080/fff0c0c0
+-	noaltcls	utf8	(?i)Ελληνικά	[cecf][95b5]ce[9bbb]ce[9bbb]ce[97b7]ce[9dbd][cdcee1][8599b9be]
+alt	noaltcls	utf8	(?i)Ελληνικά	ce9bce9b/ffdfffdf
+-	noaltcls	byte	(?:ab|ba|aa|bb){24}c	[6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162][6162]63
+alt	noaltcls	byte	(?:ab|ba|aa|bb){24}c	[6162][6162][6162][6162]
+-	-	byte	ab|a\Gb	6162
+alt	-	byte	ab|a\Gb	none
 AHEOF
 fi
 echo "REACH: $nah [facts-ahead] listing cell(s)"
 if [ "$nah" -eq 0 ] || [ -n "$abad" ]; then
-    bad "[facts-ahead] the stage-3 run or the alt-union-run lever lists the wrong run:${abad:- no cell was read}"
+    bad "[facts-ahead] the stage-3 run or rule (1)'s default lists the wrong run:${abad:- no cell was read}"
 else
-    ok "[facts-ahead] $nah cells: the default walk states stage-3 set positions the kit accepts, alt-union-run makes an equal-width all-branch alternation all (and never an unequal one), each beside its default twin"
+    ok "[facts-ahead] $nah cells: the default walk states stage-3 set positions the kit accepts and makes an equal-width all-branch alternation all (never an unequal one), each rule (1) cell beside its restore=alt twin"
 fi
 
 echo "checks passed: $pass"
