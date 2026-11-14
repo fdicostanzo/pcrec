@@ -532,3 +532,9 @@ startsWith, length), blessed callouts. ORGANISATIONAL (nothing below depends on 
 namespaces, dot resolution/UFCS, types(). Test of the ranking: no worked example needs the organisational layer
 (Luhn, calendar, JSONL, IPv4: foundation + library filters; date distance: the functions level; RFC weekday:
 computed labels only). Interfaces wait for after a first build; value types + computed labels go with the core.
+
+**ERRATUM 2026-11-14 (Frank: "You've mixed rx with predicate language. Like (x: \d+)").** Examples in today's notes that
+put bare rx fragments in the expression language (`(x: \d+)`, `join((year: \d{4}, ...))`, `(day: \d{1,2}, ...)`)
+are ILLUSTRATIVE; by the ruled crossings (`/.../` and `${...}` only) they read `(x: /\d+/)`, `(year: /\d{4}/)`, etc.
+Bare fragments must NOT be admitted: `.` is navigation vs any-char, `|`/`&` are value operators vs rx syntax,
+`*`/`+`/`-` collide with arithmetic (E-NEAR uses `-`); without the slashes `d.year` is ambiguous.
