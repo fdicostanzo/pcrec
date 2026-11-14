@@ -1,0 +1,3 @@
+report=docs/dev/lanes/vocfix_report.md
+sections: STATE; CAUSE; FIX; VALIDATION
+commit: yes
