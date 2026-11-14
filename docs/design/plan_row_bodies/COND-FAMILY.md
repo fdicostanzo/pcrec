@@ -437,3 +437,8 @@ dependency); a BUDGET (lazy DFA, bounded state cache; exhaustion is a distinct r
 no-match; attacker-supplied patterns are a DoS surface); a cache keyed by pattern string. Likely common variant: a
 caller-PARAMETERISED matcher (static skeleton + runtime hole, like a prepared statement; trusted source); runtime
 LITERAL sets deserve a cheaper hash/trie form. Needs an owner ruling on the module/dependency line when reached.
+Addendum (Frank: "a file describe its own format"): split by what the file declares. A self-declared LITERAL
+(MIME `boundary=`, heredoc `<<EOF`, Rust `r#"..."#`) is already a backreference (`(?<d>...)...\k<d>`): no eval,
+bounded. A self-declared PATTERN (`# format: ...` header, then `header & eval($fmt)`) is eval's real new capability
+(schema-with-data) and its WORST trust case (the pattern comes from the data), the case that justifies the budget.
+Workhorse remains the caller-parameterised matcher; self-describing files are a demonstration, not a driver.
