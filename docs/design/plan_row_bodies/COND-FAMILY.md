@@ -426,3 +426,14 @@ groups make records MAPS (compile-time data): `rows := records(file_text("w.csv"
 `each(r => r.word, rows[r.w: >100])` (lambda spelling a placeholder). COST: `records` needs an IN-COMPILER
 matcher (pcrec has none; it only emits); restrict record rx to the DFA-able subset (no backrefs/recursion) and
 build on [AUTOMATON-KIT] (already #6's foundation row).
+
+**2026-11-14 — runtime eval (Frank: with the dynamic automaton and pcrec as a library, `x := eval(...)` for a dynamic rx; restriction DFA; opaque; effectively a callout).**
+IDEA, late in #6. Fits the algebra: `x & eval($fmt)` is a CONDITION (macro awaiting a target) known only at match
+time; opaque to static analysis; the hull ignores it (supersets ruled OK), so the static matcher finds candidates and
+eval filters them (a callout). DFA-only: linear time, no inner captures; the SAME automaton code as compile-time
+`records()` ([AUTOMATON-KIT] serves both). COST = a founding line: the output stops being self-contained (links a
+pcrec runtime). Only as: an explicit MODULE ("requires module 'eval'" otherwise; the artifact declares the runtime
+dependency); a BUDGET (lazy DFA, bounded state cache; exhaustion is a distinct result to the caller, never a silent
+no-match; attacker-supplied patterns are a DoS surface); a cache keyed by pattern string. Likely common variant: a
+caller-PARAMETERISED matcher (static skeleton + runtime hole, like a prepared statement; trusted source); runtime
+LITERAL sets deserve a cheaper hash/trie form. Needs an owner ruling on the module/dependency line when reached.
