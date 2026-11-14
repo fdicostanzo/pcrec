@@ -145,3 +145,15 @@ Manager's leaning:
 - WARN for a dead branch (one alternative of an alternation emptied while the whole still matches).
 - NOTHING when emptiness depends on the match or a run-time parameter (it may be empty only for some matches) or when a part has no exact automaton (VM-only: backreferences); then emptiness is unknown, not proved.
 - Existing base: S1's never-match analysis already proves a whole pattern empty (spec match_api "empty"); this extends it to say WHERE it emptied. Emptiness of an automaton is a cheap reachability check, so this costs nothing measurable.
+
+### 2026-11-13 evening: equality checks on typed parameters (Frank's amendment)
+
+Frank: the parameter's type intersected with the argument must EQUAL the type: `m(d: /\d\d/)` applied to `j` makes `j & type` the type. "Shaky?"
+Manager: the idea (type as a contract, not a silent filter) is sound; the equality has two directions with different meanings:
+- `j & T == T` (T within j, "the argument covers the type"; Frank's wording): passing `\d+` to `d: \d\d` is fine. But a NARROWER argument fails: `(?:19|20)\d\d` to a `\d{4}` year is rejected, though it is the most natural argument. Too strict for the common case.
+- `j & T == j` (j within T, classic typing, "every argument string is a T"): narrower arguments pass, a broader one (`\d+` to `\d\d`) fails.
+Leaning: three levels, judged by containment:
+- either contains the other: clean (j within T: the type is a no-op check; T within j: the type narrows, the obvious intent);
+- partial overlap (neither contains the other, e.g. `[0-5]\d|\d{3}` vs `\d\d`): WARN, the type silently drops some of the argument and adds nothing the argument lacked; the message shows a dropped witness;
+- empty: ERROR (previous note).
+Cost: containment = emptiness of `j & !T`, so it needs COMPLEMENT, which the graph survey found missing ([AUTOMATON-KIT]); exact only on automaton parts, unknown (no diagnostic) for VM-only parts.
