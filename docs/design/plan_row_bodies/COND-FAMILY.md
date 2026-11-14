@@ -579,3 +579,16 @@ means exactly what PCRE means, NO implicit x-mode (`/foo bar/` keeps its space, 
 per literal (`/.../x` or a leading `(?x)`). SUPERSEDES "the predicate opt-in implies x-mode": the intent was
 free-form MULTI-LINE PREDICATE (expression-language) syntax, which the outer layer gives (whitespace and newlines
 free between expression tokens; long logic in `:=` definitions; literals stay short).
+
+**2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11 (Frank: "I agree with your leans excepting explain 6, and show 9 examples").**
+AGREED (manager's leans): Q1 a pattern denotes strings IN CONTEXT (context-marked sets, S2), TENTATIVE: the first
+target of a critic round; Q2 a condition on an ambiguous label passes if SOME parse passes (warning with witness;
+PCRE's parse at `vm`); Q3 no x-mode default (= C2 ruling); Q4 repeated labels by the sequence rule at default (`x:` =
+all iterations, some/count; bare `$x` on a repeated label = error; PCRE last-iteration at `vm`), SUPERSEDES "$x = last
+iteration" at the default level; Q5 default promise = "linear, automaton code only"; Q7 1-based (ruled); Q8 cut
+interfaces/members/UFCS/types() from the first spec (interfaces return as library packaging after a build); Q10
+finite-group backreferences as regular = a GENERAL ENGINE question, to be filed as its own unscheduled plan row (not
+#6); Q11 default output = span + accept-class values, named spans need `captures`; Q12 bounded recursion by a strictly
+decreasing literal parameter (low priority, one example); Q13 `records` must tile the text (`gaps = allow` opt-out);
+Q14 the unverified prior-art details are answered by scratch/predx/fetch_pomsky_hyperscan.md. PENDING: Q6 (one
+condition form; explanation requested), Q9 (compile-time `check`; examples requested).
