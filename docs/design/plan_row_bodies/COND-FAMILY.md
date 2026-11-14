@@ -183,3 +183,35 @@ Manager's leaning:
 - `&` is always a FILTER, never an implication: `a & (< 256)` with `a: \d|[a-z]` rejects letters (type narrows to `\d`; dead-branch warning). "Only when" is written as an alternation.
 - ADDED (Frank 2026-11-13: "Add when"): library macro `when(c, p)`, meaning "if in c, must also be in p; otherwise unconstrained": `x & when(c, p)` = `(x & c & p) | (x &! c)`. A name (a macro), not an operator, per "operators for primitives, names for macros". Example: `a & when(\d, (< 256))` lets letters pass and holds digits below 256.
 - Frank: forms like `between` have no target, so they apply by `&`, always: `X & between(3, 6)`. Manager: yes, always. Every binding, macro result and section denotes a SET; a target is attached only by `&` (the application form `p(x)` stays as the default one-argument macro of a parameterless binding, i.e. the same `&`). Constructor macros (`pair(p) := /${p},${p}/`) build a set and are intersected the same way. Naming: `between(lo, hi)` is INCLUSIVE (`(>= lo) & (<= hi)`), the reading most people expect; corrects the earlier exclusive sketch.
+
+### 2026-11-13 late: worked exercise, searching flat JSONL (Frank)
+
+Frank: search a JSONL file (one level) for rows matching a date range and a string match; what library, what query?
+Library `json.rxt` (sketch; spellings placeholders):
+
+    ws          := /[ \t]*/
+    jchar       := /[^"\\\x00-\x1f]|\\["\\\/bfnrt]|\\u[0-9a-fA-F]{4}/
+    jstr_any    := /"${jchar}*"/
+    num         := /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/
+    value       := jstr_any | num | /true|false|null/
+    member_any  := /${jstr_any}${ws}:${ws}${value}/
+    jstr(p)     := the JSON string literals whose DECODED text is in p   # a pull-back through the decoding mapping
+    member(k, v):= /${jstr(k)}${ws}:${ws}${v}/
+    row(k, v)   := /\{${ws}(?:${member_any}${ws},${ws})*${member(k, v)}(?:${ws},${ws}${member_any})*${ws}\}/
+    contains(s) := /.*${s}.*/
+
+    export jstr, row, contains, value
+
+Query (libraries json and dates):
+
+    ^${ row("ts",    jstr(isodate & between("2024-01-01", "2024-03-31")))
+      & row("level", jstr("error"))
+      & row("msg",   jstr(contains("timeout"))) }$
+
+Points the exercise shows:
+- `&` gives KEY-ORDER INDEPENDENCE for free: each `row` is aligned to the member grid; their intersection accepts the fields in any order. Concatenation could not.
+- `jstr(p)` matches every JSON spelling of the text (`error` included): a mapping pulled back to a pattern, not a run-time decode.
+- Quoted literals compare as strings; fixed-width ISO dates compare correctly that way ("literals decide comparison meaning").
+- Everything is PURE (no match-dependent binding), so the query is one automaton: one pass per line, no JSON parse. Cost = the product of the `row` automata; [COST-EXPLAIN] would show it.
+- Duplicate keys: `row` holds if ANY member with that key matches.
+- Nesting later: recursion (`(?&value)`) is VM; a depth-bounded unrolling stays an automaton.
