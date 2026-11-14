@@ -313,3 +313,14 @@ bound awaiting the target (`<200`, `between(3, 6)`): the paren-free unary sectio
 applications. Rule: an application is a value until every required parameter is bound; keywords bind in any
 order across partial applications; rebinding one is an error. `each`'s function argument must be one
 argument short (two if it takes the ordinal), checked at compile time.
+
+**2026-11-14 — applying an arraymap to an arraymap (Frank: the condition record in `rx & (x: d2)` IS an arraymap; generally one could apply an arraymap to another, including adding new entries — where?).**
+Same structure, two readings: SUM (array/map as alternation: any entry matches) vs PRODUCT (condition record:
+every field holds on its own part). Their languages differ (`(x: \d, y: [a-z]) & (x: [0-5])` as languages is
+`[0-5]`; field-wise it is `(x: [0-5], y: [a-z])`), so map-to-map application is its own operation. Lean:
+(1) APPLY = field-wise `&` on shared keys; `rx & (x: d2)` is this with the rx's label map on the left; a key
+absent from the target is an error naming it (`&` filters, never adds). (2) ADD = `|` (sum reading): appends,
+end = lowest PCRE priority, so position and meaning agree; prepend by writing it first; a duplicate key gives a
+union-typed label (ruled). (3) REPLACE = drop then add, `a[!x] | (x: ...)`; no update operator until an example
+needs one. OPEN: mid-sequence placement for joined maps (`before:`/`after:` keywords on `|`), deferred to a
+real example.
