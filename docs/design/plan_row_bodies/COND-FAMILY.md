@@ -404,3 +404,14 @@ the alternation of all of them = the ruled union type; `count(alt.repeated)` is 
 distinct: `alt.repeated[1]` = structural, the first entry in the PATTERN (compile time); `$repeated` = the
 MATCH's value by PCRE's rule (lowest-numbered set group; match time). They differ when the first alternative
 did not participate (the colon/dot vs `$` split).
+
+**2026-11-14 — literals from a file (Frank: `alts := file_literals("...")`, filtered: drop comment lines, max length, sort for trie optimisation).**
+Lean: `file_literals(path, sha256: ...)` = an array, one entry per line, each a one-string set (auto-escaped),
+under the same compile-time trust/pin rules as `.rxt` `include` (a changed file is a loud error). Filtering =
+indexing by a filter (ruled): `file_literals("w.txt")[!startsWith("#") & length(<=20)]`; `length` a library value
+filter. Loud traps (no silent defaults): an EMPTY entry (the alternation would match everywhere) is a compile
+error unless filtered or `skip_empty: true`; `\r`/trailing spaces are errors unless `trim: true`. SORT IS
+SEMANTICS: alternation order = PCRE priority (`ab|abc` vs `abc|ab` on `abcd`); the compiler already builds
+priority-preserving tries (literal sets, alt_normal_form), so users never sort for speed; `sort(alts, by:
+length, desc)` exists only as the deliberate leftmost-longest choice. `unique` keeps the first occurrence.
+Candidate FIRST WORKED EXAMPLE for #6 (arrays, filter-indexing, keywords, trust/pin; nothing at match time).
