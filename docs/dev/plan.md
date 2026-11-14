@@ -289,18 +289,18 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: lane/s2land s2tri_report.md (test-island row); docs/spec/limits.md §8.4¶2b; [RUN-POS-SET] (set runs add handoff/verify bytes)
 - [PRED-SPLIT] STATE:not-started — automatically demote an exploding predicate to a verify step; DFA keeps the rest
   filed: 2026-11-13 manager (Frank: "isolate expensive operations ... DFA for most of it but this one check is VM ... a non-manual method?"; "file away for later optimization")
-  status (2026-11-13): filed, unscheduled; waits for the predicate base ([COND-FAMILY])
+  status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); waits for the predicate base ([COND-FAMILY])
   next: when scheduled: product build under a state budget, growth attributed per operand; the culprit is relaxed in the DFA (dropped: an over-approximation) and checked by a verify step (prefilter + verify, FINISH verify); left-chooses fallback to the VM per match
   refs: [COND-FAMILY] row body ("AUTOMATIC SPLIT"); [COST-EXPLAIN] (the manual tool); D196 (left chooses)
 - [COST-EXPLAIN] STATE:not-started — a regex cost explainer: per-construct marginal cost by ablation (swap a node, recompile)
   filed: 2026-11-13 manager (Frank: "That suggests a tool for looking at regex dfa cost by repeated modify/compile")
-  status (2026-11-13): filed, unscheduled; idea from the predicate cost-surfacing discussion ([COND-FAMILY] row body)
+  status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); idea from the predicate cost-surfacing discussion ([COND-FAMILY] row body)
   next: when scheduled: a driver over existing compiles; per node a stand-in variant ({n,m} -> +, class -> ., drop lookaround/alternative, capture -> non-capturing, predicate -> its type); report delta bytes/states/compile ms/engine route, ranked; bounded by the compile timeout
   refs: [DFA-MIN-FAST] (its long-compile census can use it); [COND-FAMILY] (predicate marginal cost is one node kind); [LOOP-FIXW]
   A stand-in changes meaning: the report says what a part COSTS, never 'rewrite it so'; equivalent cheaper forms are a separate, harder feature. Users get 'why is my matcher huge/slow' pointed at the construct.
 - [AUTOMATON-KIT] STATE:not-started — a plain automaton toolkit layer: generic graph algorithms over one simple automaton
   filed: 2026-11-13 manager (Frank: "the predicate section is likely to need a bunch of graph transformation work ... is the graph setup for it ... generic helpers ... as simple and generic as it could be ... am I off base?"; survey: not off base)
-  status (2026-11-13): filed, unscheduled; PREREQUISITE of the [COND-FAMILY] predicate base; first client [DFA-MIN-FAST]
+  status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); PREREQUISITE of the [COND-FAMILY] predicate base; first client [DFA-MIN-FAST]
   next: when scheduled: a plain automaton (byte-class transitions, accept tags, special conditions as symbols); shared worklist, state-set hash, bitset, ONE partition refinement; generic reachability, SCC, product, complement, reversal, Hopcroft; emission DFA derived after
   refs: [DFA-MIN-FAST]; [COND-FAMILY]; D196 add. 2 (internal Boolean operators, lookaround lowering); D153 remodel-first; survey facts in the row's charter text below
   Survey 2026-11-13: no product/intersection/complement/dominators/graph reversal; 3 epsilon-closure walks (dfa.c clo_walk, kset.c wdrain, nfa.c cstart_check_omission), 4 hand-written hash tables, per-file seen[] arrays, 2 callgraph cycle detections, partition refinement twice (dfa.c refine_by static, minimize.c Moore); ~350 lines of context/island special cases inline in dfa.c, minimize declines islands; lookaround lowered to epsilon (a sound superset, UNSOUND under complement: &! needs exact operands); only direction (sides_of) and context-as-atoms are generic today.
