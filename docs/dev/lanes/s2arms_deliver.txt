@@ -1,0 +1,4 @@
+report=docs/dev/lanes/s2arms_report.md
+sections: STATE AT HANDOFF; ARMS; PINS; REACH; OWED
+nonempty: all
+commit: yes

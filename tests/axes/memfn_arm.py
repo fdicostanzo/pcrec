@@ -182,10 +182,10 @@ MEMFN_CLASS = {
     # Part D (ASSERT_ZERO at partdland, 2026-11-13). Since [RUN-POS-SET] stage 3's S2 joint landing
     # (lane s2land) runs carry wide positions and the deny clips them: DIFFER, the corpus witness
     # `(?i:select)\d+x` MEASURED to differ in all four cells at both layers by single compiles.
-    # PROVISIONAL FLOOR 1 (the corpus counts were not measured inside the owner's box hold): the
-    # landing's queued axes run measures them and a follow-up re-pins at the measured value.
+    # Floors AT the measured value (lane s2arms, 2026-11-14, `--measure` at 370aab9fe, both
+    # layers identical; was PROVISIONAL 1).
     **{("run-verify-wide", ly): ("DIFFER",
-        {("byte", "c-default"): 1, ("byte", "c-vm"): 1, ("utf8", "c-default"): 1, ("utf8", "c-vm"): 1},
+        {("byte", "c-default"): 58, ("byte", "c-vm"): 117, ("utf8", "c-default"): 99, ("utf8", "c-vm"): 181},
         [(e, st, b"(?i:select)\\d+x") for e in ("byte", "utf8") for st in ("c-default", "c-vm")]) for ly in ("default", "simd")},
     # The five vrun rows' utf8 witnesses (lane s2axes, 2026-11-13). [RUN-POS-SET] stage 3
     # (the S2 joint landing) states a utf8 caseless `s` or `k` as a WIDE position (`[Ss\xbf]`,
