@@ -710,3 +710,251 @@ Friction:
 - Error cases the solutions produced naturally: dead branch on an impossible label filter (3.3), empty `between`
   across midnight (3.5), the unknown-label `depth` (3.9), the unbounded-operand relation (3.11), the backreference
   in a literal (3.10). §4 writes them out.
+
+## 4. ERROR MESSAGES
+
+Eight misuse cases (the brief asked for about six; two more came out of §3 for free), each with the compile error
+as I would want it printed, and then the rules whose clear error is HARD to write. Wording is a proposal of SHAPE,
+not of text (D26 applies to PCRE2's diagnostics, not to ours, but the same "say the construct, the fact, the fix"
+discipline is what makes these useful). Every message has three parts: WHAT (the construct and where), WHY (the
+fact the compiler established, with a witness or a number), FIX (the spellings that would work).
+
+E1. Unapplied macro where an rx is needed (draft §2.3). Program: `C | !startsWith("#")`.
+
+    error: `!startsWith("#")` is a filter with no target (it awaits the set it filters)
+      in: C | !startsWith("#")
+                ^~~~~~~~~~~~~~~~
+      `|` needs two sets; a filter becomes a set only when applied with `&`.
+      fix: C | (alts & !startsWith("#"))      -- filter alts, then union
+           (C | alts) & !startsWith("#")      -- filter the union
+
+E2. A value used as a condition (draft §4.1). Program: `isodate & ($year & <2000)`.
+
+    error: `$year & <2000` is a value (one string per match) used where a condition is needed
+      `$year` is the captured text; a condition on the label is written with `:`.
+      fix: isodate & (year: <2000)
+
+E3. Cross-label relation too large for the default level (draft §6; W2). Program: E-NEAR (c).
+
+    error: `(days($b) - days($a)): between(-15, 15)` relates labels `b` and `a` across the text between them
+      the automaton must remember `a` while reading `b`: `a` enters the relation through `days`, which has
+      3,652,425 distinct values over `isodate` (no smaller regular form declared); the default level caps at
+      <N> states (option --predicate-cap).
+      fix: level `functions`   -- checks the relation on each candidate with a callout (linear, self-contained)
+           bound the domain   -- `a: between("2026-01-01", "2026-12-31")` gives 365 values (~<M> states)
+           make one side constant -- `b: within(15, of = "2026-11-14")` is a 31-string set
+
+E4. Recursion at the default level (draft §7, §3.9). Program: `json.value & ...`.
+
+    error: `json.value` is recursive (`(?&value)` in its definition): not a regular language
+      the default level compiles only to a pure automaton.
+      fix: level `vm`              -- PCRE recursion, backtracking
+           json.value_depth(3)     -- the same grammar unrolled to depth 3 (regular; ~<K> states)
+
+E5. Typed parameter not within its type (draft §5.2). Program: `isodate(year: /\d\d/)`.
+
+    error: argument `/\d\d/` for `year: /\d{4}/` is not within the parameter's type
+      witness: "26" is in the argument and not in `\d{4}` (the type removes nothing; it never widens)
+      fix: isodate(year: /20\d\d/)            -- a narrower 4-digit set
+           isodate(year: right(/\d\d/, 4))    -- if you meant 2-digit years: no such conversion exists;
+                                                 write the 4-digit form you accept
+
+E6. Empty or dead intersection from pure parts (draft §5.2; 3.3, 3.5). Programs: `t & between("22:30", "06:15")`;
+`phone & !(area: /555/)`.
+
+    error: `between("22:30", "06:15")` is the empty set: "22:30" > "06:15" in string order
+      a range crossing a boundary is two ranges.
+      fix: between("22:30", "23:59") | between("00:00", "06:15")
+
+    warning: `area: /555/` removes nothing: no string of label `area` (300 entries from npa.csv) is in `/555/`
+      the filter is dead; if you meant the exchange: `exch: ==555`
+
+E7. Ambiguous label under a condition (draft §4.5; C11). Program: `/(?<x>a*)(?<y>a*)/ & (x: /aa/)`.
+
+    warning: label `x` is ambiguous: "aaa" parses with x="aaa",y="" and with x="aa",y="a" (and more)
+      at the default level `x: /aa/` means "some parse puts x in /aa/": "aaa" MATCHES.
+      PCRE's own parse is greedy (x="aaa"), under which "aaa" would NOT match.
+      fix: make x unambiguous: /(?<x>a*)(?<y>b*)/, or /(?<x>a{2})(?<y>a*)/ if the length is known
+           level `vm`: use PCRE's parse (x = "aaa") instead
+
+E8. A time written without quotes (3.5, F17). Program: `t & between(22:30, 23:59)`.
+
+    error: `22: 30` reads as a condition on label `22` (labels are names, not numbers)
+      inside between(...): did you mean the string "22:30"?
+      fix: between("22:30", "23:59")      -- strings compare in dictionary order; fixed-width times order correctly
+
+### 4.1 Rules whose clear error is hard to write
+
+- H1. THE SIZE CAP (E3's `<N>`). The user cannot predict a state count and cannot reason about it; "too large"
+  is honest but useless unless the message names the DOMINANT FACTOR in the user's terms (the label, its value
+  count, the operation: W2, §2.3). The cap error is writable only if the compiler attributes the size to a
+  construct; that attribution (a cost explanation) is a compiler feature ([COST-EXPLAIN]) the spec must require,
+  not an afterthought. Without it the error degenerates to "pattern too complex", the industry's worst message.
+- H2. SOME-PARSE vs PCRE'S PARSE (E7). Explaining a semantic difference that most users have never thought about
+  needs a witness string with both parses and the two verdicts. The compiler must FIND the witness (a product of
+  two copies of the pattern with differing spans for x: decidable, the draft says so), and the message must show
+  the consequence for THIS condition, not just "ambiguous". Hard but doable; the draft's "warnings must be
+  helpful" is the right bar and E7 is its template.
+- H3. STRUCTURAL vs EXTENSIONAL (draft §3.4). `/a|b/ & /b|a/` are equal as sets and `[1]` differs: there is NO
+  ERROR to write because nothing is wrong; the hazard is a user expecting `X & Y` to keep Y's order. Only
+  documentation and the cost/explain listing (which shows the array view of a result) can help. Flagging that
+  this rule relies on explanation rather than diagnosis.
+- H4. THE GUARD HOLE (C4). `(\d+)${<256}` is legal under reading B (a numeral set concatenated) and means
+  something the user did not intend. A warning "value filter in a hole directly after a group: did you mean a
+  label condition?" is a heuristic; it will fire on correct code (`/x${<10}/`, "x followed by a digit"). Either
+  accept a noisy lint or accept that this mistake is caught only by tests. The formal core (§5) removes the
+  ambiguity; it does not remove the trap.
+- H5. X-MODE SILENT SPACE (C2, F8). `/T ${n}H/` under x drops the space with no error because it is legal and
+  idiomatic PCRE. No clear error exists; the only remedies are not defaulting x (my lean, §7 C2) or a lint
+  "literal contains a space under (?x)" that would fire on every intentionally spaced pattern.
+- H6. VALUE-VS-VALUE COMPARISON TYPING (F40). "`between(r.lo, r.hi)` has no literal to decide number vs string":
+  the message is easy when the readings DIFFER (show the pair ordered differently: "100" < "99" as strings); when
+  they agree on the whole operand set (fixed width) the compiler should say nothing, which requires the emptiness
+  proof in F40. Hard only in the sense that silence must be justified by a check.
+- H7. THE 2^n OF ANY-ORDER (W5). The number is inherent; the message "any_order of 12 parts needs 4,096 x ...
+  states" is clear, but the fix is a level change (`functions`) or fewer parts; no spelling fixes it. State that
+  plainly rather than suggesting a rewrite that does not exist.
+
+## 5. FORMAL CORE
+
+A minimal grammar plus kinds, typing and evaluation for the FOUNDATION layer only (draft §1-§7), written to find
+ambiguities, not to be adopted as is. Spelling is the draft's placeholder. Ambiguities exposed are listed as A1..
+at the end and fed into §7, §8, §10.
+
+### 5.1 Grammar (concrete, placeholder spelling)
+
+    Prog   ::= Bind* Expr                             -- one final expression
+    Bind   ::= Name [ "(" Param ("," Param)* ")" ] ":=" Expr
+    Param  ::= Name [ ":" Expr ]                      -- optional type (a set)
+    Expr   ::= Expr "|" Term  | Term                  -- union / array append (loosest)
+    Term   ::= Term "&" Fact  | Fact                  -- intersection / application
+    Fact   ::= "!" Fact | Cond | Post                 -- prefix complement (a filter)
+    Cond   ::= Path ":" Fact                          -- label condition; one operand, tighter than &, |, !
+    Post   ::= Post "[" Expr "]" | Post "." Name | Post "(" Args ")" | Post "with" Name "=" Expr | Atom
+    Atom   ::= RxLit | NumLit | StrLit | Section | "$" Path | Name | "(" Expr ")" | "[" Entries "]"
+    Section::= ("<" | "<=" | ">" | ">=" | "==") Atom  -- unary comparison, tightest
+    Path   ::= Name ("." Name)*
+    Args   ::= Arg ("," Arg)*;  Arg ::= Expr | Name "=" Expr | Name ":" Expr
+    Entries::= Entry ("," Entry)*;  Entry ::= Expr | Name "=" Expr
+    RxLit  ::= "/" pcre-text-with-holes "/"           -- holes: "${" Expr "}"
+
+Precedence, tightest first: postfix (`[]`, `.`, call, `with`), Section, `:` (Cond), `!`, `&`, `|`. Arithmetic
+(`+ - * %`) lives inside Atom as a value sub-grammar over `$`-values and numerals; it is omitted here (it only
+ever appears inside a Section's operand, a `with` body, or a hole).
+
+### 5.2 Kinds
+
+Two kinds, as the draft says (§2.1), made precise as TERMS WITH FREE VARIABLES:
+
+    Rx(L)        a pattern: a regular set of strings (with its spelling/structure) whose map view declares the
+                 label set L (names -> sub-patterns, possibly duplicated)
+    Mac(Δ ⇒ κ)   a term awaiting the variables Δ, producing kind κ; Δ is a set of LABELS (free match
+                 variables) and/or PARAMETERS (declared by `:=`)
+
+Derived: a VALUE `$x` is `Mac({x} ⇒ Rx)` (it denotes a one-string set once the match is known); a CONDITION
+`x: S` is `Mac({x} ∪ free(S) ⇒ Rx)`; a FILTER `!B`, `<k`, `startsWith(s)` is `Mac({_target} ⇒ Rx)` with the
+target as its single free variable; a parameterized definition `m(p) := body` is `Mac({p} ∪ free(body) ⇒ κ)`.
+Arrays and maps are not kinds: they are VIEWS of an Rx (A3 below questions this).
+
+### 5.3 Typing rules (selected; Γ holds bindings; "lbl(e)" = the label set of an Rx)
+
+    (lit)    Γ ⊢ /r/ : Rx(groups named in r)            if r is in the strict pure subset and every hole is well-typed
+    (hole)   inside /r/: ${e} with Γ ⊢ e : Rx(L)       inserts a sub-pattern (an atom); L becomes nested labels
+             ${e} with Γ ⊢ e : Mac(Δ ⇒ Rx), Δ ⊆ labels defined in r   is a GUARD on the whole literal: /r/ & e
+             ${e} with Γ ⊢ e : Mac(Δ ⇒ Rx), Δ not covered              error "hole mentions label y not in this literal"
+    (and-rr) Γ ⊢ A : Rx(L1), Γ ⊢ B : Rx(L2)   ⟹  Γ ⊢ A & B : Rx(L1 ⊎ L2)       (⊎: duplicates allowed, typed as union)
+    (and-rm) Γ ⊢ A : Rx(L), Γ ⊢ m : Mac(Δ ⇒ Rx), Δ ⊆ L (labels) ⟹ Γ ⊢ A & m : Rx(L)   -- APPLICATION; also m & A
+    (and-mm) Γ ⊢ m : Mac(Δ1 ⇒ Rx), Γ ⊢ n : Mac(Δ2 ⇒ Rx)  ⟹  Γ ⊢ m & n : Mac(Δ1 ∪ Δ2 ⇒ Rx)   -- pointwise
+    (or-rr)  Rx | Rx : Rx;  (or-mm) Mac | Mac : Mac;  (or-rm) Rx | Mac : ERROR E1 (unapplied)
+    (not)    Γ ⊢ B : Rx ⟹ Γ ⊢ !B : Mac({_} ⇒ Rx);   Γ ⊢ m : Mac(Δ ⇒ Rx) ⟹ Γ ⊢ !m : Mac(Δ ⇒ Rx)
+    (sect)   Γ ⊢ <a : Rx            if a is a literal (the literal decides numeric/string reading)
+             Γ ⊢ <a : Mac(free(a) ⇒ Rx)   if a mentions $-values (capture-vs-capture)
+    (cond)   Γ ⊢ S : Rx or Mac(Δ ⇒ Rx)   ⟹  Γ ⊢ x: S : Mac({x} ∪ Δ ⇒ Rx)
+    (val)    Γ ⊢ $x : Mac({x} ⇒ Rx)
+    (def)    Γ, p1..pn ⊢ body : κ  ⟹  Γ ⊢ m(p1..pn) := body  adds m : Mac({p1..pn} ⇒ κ)   (acyclic: §7)
+    (app)    Γ ⊢ m : Mac({p} ∪ Δ ⇒ κ), Γ ⊢ a : κp, a WITHIN type(p)  ⟹  Γ ⊢ m(a) : Mac(Δ ⇒ κ)   (currying)
+    (idx)    Γ ⊢ A : Rx ⟹ Γ ⊢ A[i] : Rx (array view; out of range: the empty pattern, tests false)
+    (nav)    Γ ⊢ A : Rx(L), x ∈ L ⟹ Γ ⊢ A.x : Rx (the sub-pattern; an array if x is duplicated)
+             Γ ⊢ $x : Mac, y a nested label of x ⟹ $x.y : Mac({x.y} ⇒ Rx)
+    (with)   Γ ⊢ A : Rx(L), Γ ⊢ e : Mac(Δ ⇒ value), Δ ⊆ L ⟹ Γ ⊢ A with v = e : Rx(L ∪ {v})   (v computed)
+    (final)  the program's Expr must have kind Rx; a Mac is error E1
+
+### 5.4 Evaluation (denotations)
+
+Let Σ* be strings. A PARSE of w in pattern P is a derivation; it assigns each label a span (or "unset");
+parses(P, w) is finite for the pure subset (no empty loops). Write span_π(x) for the substring.
+
+    ⟦/r/⟧            = { w | ∃ parse of w in r }                                 (a set, with r's structure)
+    ⟦A | B⟧          = ⟦A⟧ ∪ ⟦B⟧
+    ⟦A & B⟧ (rr)     = ⟦A⟧ ∩ ⟦B⟧
+    ⟦m⟧ρ for Mac     = a set, given an environment ρ : Δ -> Σ* ∪ {unset}
+    ⟦$x⟧ρ            = { ρ(x) }  (∅ if unset)
+    ⟦x: S⟧ρ          = Σ*  if ρ(x) ∈ ⟦S⟧ρ ;  ∅ otherwise            -- a condition is all-or-nothing per environment
+    ⟦!m⟧ρ            = Σ* \ ⟦m⟧ρ ;   ⟦!B⟧ρ = Σ* \ ⟦B⟧ (B closed)
+    ⟦<k⟧             = { canonical numerals n | n < k }  (literal k numeric);  strings by dictionary order if k is a string
+    ⟦A & m⟧ (rm)     = { w ∈ ⟦A⟧ | ∃ π ∈ parses(A, w) : w ∈ ⟦m⟧(spans_π) }      -- SOME-PARSE (the pure reading)
+    ⟦A & m⟧_pcre     = { w ∈ ⟦A⟧ | w ∈ ⟦m⟧(spans_{π*}) }, π* = PCRE's preferred parse    -- the VM reading (C11)
+    ⟦m & n⟧ρ         = ⟦m⟧ρ ∩ ⟦n⟧ρ ;  ⟦m | n⟧ρ = ⟦m⟧ρ ∪ ⟦n⟧ρ
+    ⟦A with v = e⟧   = ⟦A⟧, and label v's value for parse π is ⟦e⟧(spans_π)   -- must be a function of w (ambiguity check)
+
+Structure (array/map views, `[]`, `.`, `each`, `join`, `where`) is defined on the SPELLING (the term), not on
+⟦·⟧; ⟦·⟧ is invariant under the optimizer, structure is not (draft §3.4). The final expression's SEARCH semantics
+(leftmost start; D196 end choice) is a separate function search(P, subject) over the structure, not part of ⟦·⟧.
+
+### 5.5 Ambiguities exposed
+
+- A1. SOME-PARSE vs PCRE-PARSE is now two different equations (rm vs _pcre). The draft needs one of them as the
+  meaning of `&` at the default level; only the first is a pure automaton (§7 C11). For UNAMBIGUOUS labels
+  (parses(A, w) all agree on x's span) they coincide; library labels are checked so; for user labels they differ
+  and E7 is the warning.
+- A2. `m & A` (macro on the left) is well-typed by (and-rm) read symmetrically, and the draft's `&` is
+  commutative as a set; but D196's "left chooses" needs an rx operand to choose. Rule to state: the structure
+  and priority of an application are the Rx operand's; with two Rx operands, the left's (so `(!B) & A` = `A & !B`
+  in every respect). Without this sentence `cond & pattern` is either illegal or undefined.
+- A3. ARRAYS OF MACROS. Views are defined on Rx only; `each(f, A)` with f returning a Mac yields a thing with no
+  kind (F13, F42). Fix: views are of TERMS; an array of Macs applied via `&` is the array of applications; `|` of
+  an array of Macs is a Mac (pointwise). Then (and-rm) distributes over the array view (draft §3.2 rule 2) and
+  the result's `.index` is the entry that admitted the string.
+- A4. `A & B` WITH BOTH ARRAY VIEWS NON-TRIVIAL: distribution over both gives a left-major cross product whose
+  empty products drop; over one gives per-entry filtering. The set is the same; the ARRAY VIEW differs and
+  `.index`/`[i]` read it. Must be chosen (lean: left-major cross product; it degenerates to the draft's rule when
+  one side has one entry).
+- A5. LABEL SCOPE OF A CONDITION under associativity: `P & Q & x: S` parses as `(P & Q) & (x: S)` (left-assoc), so x
+  is looked up in P ⊎ Q as the draft says; but `P & (Q & x: S)` looks x up in Q only. Parentheses change scope,
+  which is right (they change the application target) but surprising. State it; the error for a label missing
+  from the target names the target expression.
+- A6. `!` AND `:`: the grammar makes `!x: S` = `!(x: S)` (Cond is a Fact under `!`). The other reading `(!x): S`
+  is meaningless, so the grammar is right, but a reader might expect `!x:` to negate the LABEL's presence
+  (`x` unset). "Label unset" has no spelling at all (draft §4.2 gives unset a truth value but no test): gap §8.1.
+- A7. DECIMAL CANONICAL FORMS. `<2.5` under "no decimal point unless the literal has one": is "2" in the set?
+  Per-LITERAL canonicality says no (the strings must have a point); per-VALUE says yes ("2" is the canonical form
+  of 2). Lean: per-value (a comparison set is a set of VALUES in their canonical spelling; `2.0` is not canonical,
+  `2` is), with `decimals(k)` as the explicit fixed-scale transform.
+- A8. MIXED-KIND UNIONS IN A SECTION OPERAND: `x: (<256 | <"a")` is a union of a numeric and a string set: legal
+  (both are sets of strings) and harmless; `between(1, "12")` (mixed literals in one section) should be an error.
+  The draft says the literal decides; with two literals disagreeing it must say which wins or refuse. Lean: refuse.
+- A9. `$x` IN A PURE-LOOKING BINDING: `k := $x + 1` has kind Mac({x} ⇒ value); used in a hole it is a generalized
+  backreference (fine); used as the final expression it is E1/E2. Consistent, but the draft's "a binding mentioning a
+  match label is MATCH-DEPENDENT (evaluated per match)" conflates kind (Mac over labels) with lowering (W1): a Mac
+  over labels may still lower to a constant automaton. Replace "evaluated per match" by "a term over the match's
+  labels".
+- A10. HOLES THAT MENTION LABELS OUTSIDE THEIR LITERAL: `/(?<y>\d{4})/ & /-${$y + 1}/` — the second literal's hole
+  mentions y, defined in the first. By (hole) this is an error ("y not in this literal"), yet the intent (a
+  relation across two operands of `&`) is reasonable and regular. The draft's "a literal is its own scope" makes the
+  guard-hole rule simple; allowing cross-literal labels in holes would make `&` a binder. Lean: keep the error;
+  write the relation as a condition `y2: ==($y + 1)` on a joined pattern. Spell this out in the guide.
+- A11. THE COMMA (C8) does not appear as a connective anywhere in this grammar: it separates Args and Entries. The
+  construct decides the combinator: a list literal unions its entries, a call conjoins its `name:` args. The
+  draft's "record `(x: <200, y: >55)` = AND" is then not a separate form; it is a call with no callee. Lean: drop the
+  record (write `&`), keep call-site `p(a: s, b: t)` (§7 C8).
+- A12. `with` BINDS A COMPUTED LABEL after `&` has been applied? `A & c with v = e`: is `with` on `(A & c)` or on
+  `c`? As a postfix it binds tighter than `&`, so it attaches to `c` (a Mac): wrong. `with` should be a Bind-level
+  form (`A2 := A with v = e`) or bind loosest. Lean: loosest (a whole-expression suffix), or a function
+  `define(A, v = e)`.
+- A13. UNSET LABELS IN RELATIONS: `x: <$y` with y unset in some alternative: ⟦$y⟧ρ = ∅, so `<$y` is... a section
+  over an empty atom: undefined above. Draft §4.2 says a comparison on an unset label is false. Add: a section
+  whose operand is unset denotes ∅ (so the condition fails), and `!` of it is Σ* (true), matching §4.2.
+- A14. The strict pure subset's LOOKAROUNDS inside a literal are in the grammar (they are PCRE) but their meaning
+  under value scoping (draft §11) vs a top-level search is C15; the denotation above treats ⟦/r/⟧ as a set of
+  strings, which cannot express a lookbehind that reads the left CONTEXT. §7 C15 proposes the fix (sets of
+  context-marked strings); without it, `/(?<=\$)\d+/` as a whole program has no meaning in this core.
