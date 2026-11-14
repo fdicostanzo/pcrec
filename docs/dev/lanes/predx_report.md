@@ -229,3 +229,335 @@ string positions and lengths as pullbacks; any-order `&` for small n; every stru
   that must hold one unbounded operand while reading the other (subtraction of two labels, multiplication,
   equality of unbounded strings) is not, unless a twin shrinks the first operand to classes. This single sentence
   predicts every row of the table above and is a candidate for the spec's §6 "what the default level can express".
+
+## 3. SOLUTIONS
+
+Thirteen problems written in the draft's language: the nine the brief names (3.1-3.9) and four probes of my own
+(3.10-3.13) chosen to hit features the nine do not: a regular property spelled with a non-regular construct
+(3.10), tuple comparison (3.11), relations defined by a table (3.12), and one problem across several formats to
+test whether the organisational layer earns its place (3.13). Per solution: the program (draft spelling; PROPOSED
+marks a feature the draft lacks), what it compiles to, the capability level, and every FRICTION point. Friction
+points are numbered F1.. across the section and referenced from §8-§10.
+
+### 3.1 key=value log lines in any order
+
+Problem: lines like `level=error ts=2024-02-10T12:00:00Z msg="db timeout" host=web3`, fields in any order; want
+level=error, ts in Feb 2024, msg containing "timeout".
+
+    key   := /[A-Za-z_][A-Za-z0-9_]*/
+    bare  := /[^\s"]+/
+    quoted(p) := /"${unquote(p)}"/           # pullback through the unescape map (\" -> ", \\ -> \)
+    val(p) := bare & p | quoted(p)
+    kv_any := /${key}=${val(/.*/)}/
+    kv(k, p) := /${k}=${val(p)}/
+    field(k, p) := /(?:${kv_any}\s+)*${kv(k, p)}(?:\s+${kv_any})*/
+    line := field("level", "error")
+          & field("ts", startsWith("2024-02"))
+          & field("msg", contains("timeout"))
+    /^${line}$/m
+
+Compiles to: three `field` DFAs (skeleton: skip pairs, match the named pair, skip pairs) in product; minimal
+result ~ skeleton x 2^3 (W5). `quoted(p)` is a pullback of p through the unescape transducer (W4). Level: default.
+
+Friction:
+- F1. The "member grid" shape (skip-match-skip) is written by hand three times across 3.1 and E-JSONL. It is the
+  any-order primitive. The draft lists `any_order(a, sep = ...)` as "candidate sugar" (§5.3); 3.1 shows it is not
+  sugar over `join` but a different combinator (skip-match-skip per part, product over parts). PROPOSED: library
+  `any_order(parts, sep, filler)` = the `&` of per-part grids; its cost line says "2^n".
+- F2. `bare & p`: `p` here is `"error"` (a one-string set) or a filter (`contains(...)`), and `val(p)` must be an rx
+  in both cases. With p a FILTER (macro), `bare & p` is an application (fine) but `quoted(p)` needs `unquote(p)` =
+  pullback of a MACRO: the pullback must be defined for filters, not only sets. It is (the inverse image of a set
+  defined later), but the draft's kinds (§2.1) do not say a transform applied to a macro yields a macro. (Kind
+  rule to add: `t(m)` for macro m is a macro.)
+- F3. `val(/.*/)` for "any value": a hole with a literal is a sub-pattern; but `.*` inside the hole is value-scoped,
+  matching across spaces into the next pair unless `bare` bounds it. Because `bare & p` intersects, `bare` bounds
+  it. Works, but a reader must know that `&` with `bare` is what stops the run-on. Expected; note it in the guide.
+- F4. Duplicate keys (`level=info level=error`): `field` holds if any pair matches (3.1 mirrors E-JSONL). A user
+  wanting "exactly one level pair" has no spelling: `count` ranges over occurrences of a label or of a search
+  (`$x ~ rx`), and the pairs here are not labelled (the grid is in a literal). Spell `(?<pair>...)` and
+  `count(pair: startsWith("level=")) == 1`: needs `x:` inside `count` (O4; §7 proposal).
+
+### 3.2 ISO 8601 durations
+
+Problem: `P[nY][nM][nW][nD][T[nH][nM][nS]]`; at least one component; `T` only with a time component; the lowest
+component may be fractional; `PnW` is exclusive with the others.
+
+    n   := /\d+/
+    frac := /\d+(?:[.,]\d+)?/
+    date_part := /(?:${n}Y)?(?:${n}M)?(?:${n}D)?/
+    time_part := /T(?:${n}H)?(?:${n}M)?(?:${n}S)?/
+    dur := /P${date_part}(?:${time_part})?/ & !"P" & !endsWith("T")
+    week := /P${n}W/
+    dur | week
+
+Fractional lowest component: PCRE spelling `P(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+S)?)?` with
+the fraction allowed only on the last present component is awkward in any regex (the "last present" condition);
+in this language it is a filter: `& !contains(/[.,]\d+[YMDHM](?=.)/)` hmm, no: the fraction must be on the final
+component, so: `frac_ok := !contains(/[.,]\d+[A-Z][^\s]/)` ("a fraction is never followed by another component"),
+appended with `&`. Compiles to: product of the skeleton with two complements (both tiny filters: `"P"` is one
+string; `endsWith("T")` is `.*T`), minimal DFA ~20 states. Level: default.
+
+Friction:
+- F5. "At least one component" is a filter (`!"P"`), not a lookahead. Clean win over PCRE's `(?=.)` idiom. But
+  "T only with a time component" became `!endsWith("T")`, a negative phrasing a reader must decode. The positive
+  phrasing would be `time_part := /T/ & !"T"` hmm: `/T(...)?(...)?(...)?/ & !"T"`. Fine. Both are filters; no
+  friction beyond taste.
+- F6. OPTIONAL PARTS vs the EMPTY-ENTRY TRAP. I first wrote the duration as a `join` of optional entries:
+  `join([y = opt(/${n}Y/), m = opt(/${n}M/), ...], sep = "")` with `opt(x) := x | ""`. Draft §7 makes an EMPTY
+  ENTRY a compile error ("the alternation would match everywhere") unless `skip_empty = true`. `opt` is legitimate
+  and empty by design; the trap fires on correct code. The trap's real target is a FINAL EXPRESSION that admits
+  the empty string in an unanchored search (that is what "matches everywhere" means); an empty ENTRY deep inside
+  a join is harmless. PROPOSED (§10 S5): move the trap to "the program's final expression is nullable in search
+  mode", regardless of where the emptiness came from; keep the file-records case as the motivating instance.
+- F7. Within one literal the PCRE spelling `(?:${n}Y)?` is shorter and clearer than a `join` of `opt`s. Lesson for
+  the guide: `join` is for maps built from arrays (labelled fields); in-line optional sequences stay in the
+  literal. The draft does not say when to use which; a reader will reach for `join` because the examples do.
+- F8. `[.,]` vs x-mode: no issue, but `P${date_part}` with x-mode on is fine only because there are no spaces. A
+  user adding `P ${date_part}` for readability silently changes nothing (space ignored) which is the intent of x,
+  yet `/T ${n}H/` meaning "T, space, digits" would silently drop the space. See C2 (§7).
+
+### 3.3 Phone numbers against an area-code file, with the region reported
+
+    npa_rows := records(file_text("npa.csv", sha256 = "<pin>"), /^(?<npa>[2-9]\d\d),(?<region>[^,\r\n]+)$/m)
+    ac   := npa_rows.npa                                     # PROPOSED: a record array's column as a pattern
+                                                             # keeps the sibling columns as computed labels
+    sep  := ["-", ".", " ", ""]
+    phone_with(s) := join([area = ac, exch = /[2-9]\d\d/, line = /\d{4}/], sep = s)
+    phone := each(phone_with, sep)                           # 4 entries, one per separator; |-ed by use
+    phone & !(area: /555/)
+
+Expected: `212-555-0100` out (555 exchange filter: a bug in my first draft, `area: /555/` filters the AREA; the
+exchange filter is `exch: ==555`; left in to show the error the compiler should give: the pattern `/555/` on
+label `area`, whose language is the 300 file codes, has an empty intersection unless 555 is in the file: "dead
+branch, `area: /555/` admits nothing" (§4 error 6). `212.555.0100`, `2125550100` in; `212-555 0100` out (mixed
+separators).
+
+Compiles to: `ac` is a 300-leaf trie (~30 states after minimization, est.) whose accept classes are the 300 rows
+(the region is a per-row constant: "tabulated mappings report a constant from the accept state", draft §4.4);
+four copies of the join (one per separator) unioned; the mixed-separator case is excluded BECAUSE each entry
+fixes its separator (`each` over the separator array is how "the same separator twice" is said without a
+backreference: enumerate the finite choice). Minimal DFA: the trie x 4 separator branches ~ 100 states (est.);
+the 300 accept classes force >= 300 accept states (§2.1 classification row). Level: default; the REGION is
+reportable at default as an accept-class value, without captures (§8.4).
+
+Friction:
+- F9. ATTACHING THE SIBLING COLUMN. The draft gives `records` entries as maps (`r.word`, E-FILE) and `each(word_of,
+  rows)` to project a column; the projection LOSES the other columns. To report the region the draft offers only
+  `with region = ...` on a computed label, but nothing says what expression yields "the region of the row whose
+  npa matched". C7 (value-valued maps) is this exact need. PROPOSED (§10 S1): a record array IS a pattern -> value
+  mapping: `rows.col` is an rx (the union of that column's entries, the rows as its accept classes) and every
+  other column is a computed label of it (`$area.region`), checked to be a FUNCTION (two rows with one npa and
+  different regions = error naming both rows). No `=>` construct needed; inline tables are `records` over an
+  inline string.
+- F10. "Same separator in both places" needed a macro over the separator array. It works (no lambda needed, as
+  the draft predicts), but the reader must know the idiom: enumerate the finite choice, join per choice, union.
+  The draft's non-regular-looking alternative (`\k<sep>`) is a backreference to a finite group, which §2.1 shows
+  IS regular with cost |dom(sep)| = 4; a compiler that applied the finite-backreference rule would accept
+  `/${ac}(?<s>[-. ]?)${exch}\k<s>${line}/` at the default level directly. Two spellings, one mechanism; the
+  idiom should be in the guide either way.
+- F11. The `[2-9]\d\d` for exchange repeated in the record rx and the phone: a type binding (`npa_shape :=
+  /[2-9]\d\d/`) used in both (`(?<npa>${npa_shape})` inside the record literal) works since holes are allowed in
+  the record rx. Fine; noting that a RECORD rx with holes is itself a program value, so `records` takes an rx
+  value, not a literal — the draft says so (§7); confirmed workable.
+- F12. `[^,\r\n]+` for region: the CRLF trap (O18) again. The record rx author must think about `\r`.
+
+### 3.4 IPv4 within a list of CIDRs
+
+    octet := /\d{1,3}/ & between(0, 255)
+    ipv4  := join([octet, octet, octet, octet], sep = ".")
+    cidrs := ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10"]
+    in_any := each(in_cidr, cidrs)                           # array of 4 filters (macros)
+    ipv4 & in_any                                            # & with an ARRAY: 4 entries, .index = which CIDR
+
+Expected: `10.1.2.3` in (index 1); `172.32.0.1` out (/12 ends at 172.31); `100.127.255.255` in (index 4).
+
+Compiles to: `in_cidr(c)` is a library regular twin: the first k bits fixed means each octet is either fixed,
+a `between(lo, hi)`, or full; the twin is the join of four octet ranges (`172\.(1[6-9]|2\d|3[01])\.octet\.octet`
+for /12). `ipv4 & in_any` distributes over the array (draft §3.2 rule 2): four products `ipv4 & in_cidr(c_i)`,
+each ~ the CIDR's trie; union with accept classes = the CIDR index. Minimal DFA ~50 states (est.). Level: default.
+With 1,000 CIDRs: a 1,000-leaf trie of octet-range automata, est. low thousands of states; accept classes 1,000.
+
+Friction:
+- F13. `each(in_cidr, cidrs)` yields an ARRAY OF MACROS (filters). Draft §3 defines arrays as a VIEW OF AN RX;
+  an array of macros has no rx to be a view of. The program is natural and the draft's own "filters combine
+  pointwise" (§2.2) suggests `|` of filters is a filter, so a finite array of filters should be a filter whose
+  application distributes. Kind rule to add: arrays (and maps) are views of TERMS; an array of macros applied to a
+  target is the array of applications (§5 ambiguity A3).
+- F14. `&` with an array operand gives CLASSIFICATION (which CIDR) for free. This is closure the notes did not call
+  out (§8.2). But `A & B` with BOTH arrays is unspecified: distribute over both (left-major cross product, empties
+  dropped) or zip? The draft's `&` is extensional, so any choice is fine for membership; the ARRAY VIEW of the
+  result (hence `.index`) depends on it. Must be stated (§7 C-extra).
+- F15. `in_cidr` needs IPv4 PARSE knowledge (which join part is which octet): a filter on the WHOLE dotted string
+  can only be an enumeration of the accepted strings, i.e. the twin regenerates the octet structure itself. Fine
+  for a library (it knows the format), but a USER-written filter of the same kind would want to say
+  "(a, b, c, d): in_range(...)" over the four labels: the tuple-condition need of 3.11 again.
+
+### 3.5 A time range crossing midnight (22:30 to 06:15)
+
+    hh := /\d\d/ & unpad(<=23)
+    mm := /\d\d/ & unpad(<=59)
+    t  := join([h = hh, m = mm], sep = ":")
+    t & (between("22:30", "23:59") | between("00:00", "06:15"))
+
+With run-time bounds:
+
+    from := param(t);  to := param(t)
+    t & window(from, to)        # library: between(from, to) if from <= to else between(from, "23:59") | between("00:00", to)
+
+Compiles to: fixed-width strings, lexicographic sections (~10 states each), product with `t` (~10 states): ~30
+states. Level: default. The parametric form: the comparison against a parameter of the same fixed width is a
+guarded automaton: 3 classes (below / equal-so-far / above) per bound, read digit by digit against the parameter's
+digits; `window` chooses between one and two ranges by a ONCE-PER-MATCH test on the parameters (from <= to), which
+touches no subject text. Level: default, if parameter-only computations are admitted at default (O9 proposal, §7).
+
+Friction:
+- F16. `between("22:30", "06:15")` written naively is the EMPTY set (lo > hi lexicographically), and draft §5.2's
+  "empty intersection from pure parts is an ERROR" fires: `t & between("22:30", "06:15")` admits nothing. Good:
+  the user learns to split. But the message must say WHY (lo > hi), not just "empty" (§4 error 6).
+- F17. `between(22:30, 23:59)` without quotes is a syntax error (a colon in an argument reads as a condition
+  `22: 30`); the error should suggest quoting (§4). The literal-decides rule (draft §2.4) is doing real work here
+  and the user must know a time is a STRING.
+- F18. Lexicographic `between` on strings is correct only for FIXED-WIDTH canonical text; `t` guarantees it. For
+  `h:mm` (one-digit hours) it is wrong (`9:00` > `10:00`). Nothing warns. A `between` on strings whose operand set
+  has variable-width members could warn ("lexicographic order over variable widths"): a lint, cheap, worth it.
+- F19. Arithmetic phrasing (`(h*60 + m): between(1350, 375)`) is more natural to some users and is NOT
+  expressible: the left of `:` must be a label path (C10) and `h*60+m` is a computed value over two labels. With
+  the pullback mechanism (§8) it is `minutes_of_day($h, $m)` as a computed label, a twin with 1,440 classes (too
+  many as accept classes; fine as an intermediate because the comparison collapses it to pass/fail). The draft
+  has no way to say "compute then compare without materializing": the compiler must fuse the twin with the
+  section (compose the two automata) rather than build 1,440 accept classes. Note for the build; no language
+  change.
+
+### 3.6 Roman numerals below 2000, with value
+
+    thousands := ["", "M"]                                        # opt("M")
+    hundreds  := ["", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"]
+    tens      := ["", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"]
+    units     := ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"]
+    roman := join([th = thousands, h = hundreds, t = tens, u = units], sep = "") & !""
+             with value = 1000*($th.index - 1) + 100*($h.index - 1) + 10*($t.index - 1) + ($u.index - 1)
+    roman & (value: <1500)
+
+Compiles to: the join is the classic Roman DFA (~20 states). `value` as a computed label over four group classes
+(2 x 10 x 10 x 10 = 2,000 joint classes); `value: <1500` pulls the section back through the arithmetic: the
+passing set is the 1,499 numerals below 1500 — enumerable (the twin by enumeration) and then minimized to a DFA of
+~25 states (the condition only cuts the thousands/hundreds digits). Level: default. If the user asks to REPORT
+`$value`, the joint class count (1,999 distinct values) must be carried to the accept states: >= 1,999 accept
+states (§2.1). Reporting the four per-group indices instead (4 accept-class outputs of 2, 10, 10, 10) and
+combining them at output costs nothing: PROPOSED (§10 S9) that computed labels are reported COMPOSITIONALLY.
+
+Friction:
+- F20. `""` AS AN ARRAY ENTRY is the empty-entry trap again (F6); here it is essential (`opt`). Also the index
+  arithmetic `.index - 1` everywhere because the array is 1-based: 1-based indexing is right for `.index` as a
+  month number (E-RFC) and wrong for positional digit values. Neither base wins; the arithmetic is cheap. No change
+  proposed; noting that 1-based was DECIDED by E-RFC, not by taste (O11, §7).
+- F21. A computed label defined by ARITHMETIC over other computed labels: the draft's §4.4 says mappings must be
+  functions and may be tabulated or "numerals by digit conversion"; arithmetic on indices is neither. The general
+  statement: a computed label is any PURE FUNCTION of the group classes; the compiler evaluates it per joint class
+  (finite). That is the pullback mechanism (§8) once more.
+- F22. `value: <1500` reads as a condition on a label that is not a substring. Draft §4.1's "`x:` = the set of
+  whole matches whose label x is in S" holds if "label x's value" is the computed value; the draft says computed
+  labels are labels (§4.4), so this is consistent, but the §4.1 wording ("the span of x") should say "value of x
+  (a substring, or a computed value)".
+
+### 3.7 An email subset
+
+    atext := /[A-Za-z0-9!#$%&'*+\/=?^_`{|}~-]/
+    local := /(?:${atext}|\.)+/ & !startsWith(".") & !endsWith(".") & !contains("..") & length(<=64)
+    label := /[A-Za-z0-9-]+/ & !startsWith("-") & !endsWith("-") & length(<=63)
+    domain := list_of(label, sep = ".") & endsWith(/\.[A-Za-z]{2,63}/) & length(<=253)
+    email := join([local, domain], sep = "@") & length(<=254)
+    email
+
+Compiles to: `local`: a 2-state class loop in product with three complements (each a 2-4 state filter) and a
+65-state length counter: ~65 x small, est. ~200 states. `domain`: the `list_of` loop x the TLD suffix filter x a
+254-counter: est. ~1,000 states. `email` with a 255-counter over the product: the length counter dominates:
+est. several thousand states, mostly the counter's copies. Level: default.
+
+Friction:
+- F23. LENGTH BOUNDS MULTIPLY: three nested length bounds (64, 253, 254) each add a counter in product. Minimal
+  size is roughly |host| x max(counter), and the three counters are not independent (local's 64 is inside the
+  254). The cost tool should show the counter as the dominant factor. A library `email` would carry the measured
+  size. Nothing to change in the language; a cost fact for §8's "every kernel row reports table size".
+- F24. `\/` inside the class: the literal delimiter escape (draft §11) applies inside classes too; fine but note
+  the draft's synsurv rule "class contents keep PCRE2's meaning" has this one exception (the delimiter).
+- F25. `endsWith(/\.[A-Za-z]{2,63}/)`: the library filter takes a PATTERN argument, inserted via its hole
+  (`endsWith(s) := /.*${s}/`); the draft defines `startsWith(s)` with a string in mind ("a literal string
+  auto-escaped, or a pattern"). Works by the hole rule (a pattern inserts a sub-pattern). Good: the filters are
+  polymorphic over strings and patterns for free. (A reader may expect `endsWith` to be anchored; it is, by
+  value scoping.)
+- F26. Case-insensitivity for the domain: `(?i)` inside the literals, per literal; `label` and the TLD filter must
+  each carry it. A unit-level flag is excluded by "no inherited flags" (§11). Accepted cost of value-scoped
+  literals; a library would export `ci(p)` (case-fold pullback, a per-character transducer) to apply once.
+
+### 3.8 HTTP header lines (and a header block)
+
+    tchar := /[!#$%&'*+.^_`|~0-9A-Za-z-]/
+    token := /${tchar}+/
+    fvalue := /[ \t]*(?:[\x21-\x7E](?:[ \t\x21-\x7E]*[\x21-\x7E])?)?[ \t]*/
+    header := join([name = token, value = fvalue], sep = ":")
+    ok := header & when(name: ci("Content-Length"), value: /[ \t]*\d+[ \t]*/)
+                 & when(name: ci("Host"), value: /[ \t]*${hostport}[ \t]*/)
+                 & when(name: ci("Content-Type"), value: /[ \t]*${media_type}.*/)
+    block := list_of(ok, sep = /\r\n/) & count(name: ci("Host")) == 1          # PROPOSED: x: inside count
+
+Compiles to: `when(c, p)` = `(x & c & p) | (x & !c)`: `!c` is the complement of a tiny name filter; three `when`s in
+product; because the names are disjoint, the minimal DFA is the name trie branching into three value automata plus
+the generic value: est. 100-300 states (media_type dominates). Level: default. The block: `list_of` loop over
+headers with `\r\n`; `count(name: ...) == 1` is the "exactly one iteration passes" automaton: 2 flag states x the
+loop (§2.1 count row). Level: default.
+
+Friction:
+- F27. `count(name: ci("Host")) == 1` needs a CONDITION inside a set function over a REPEATED label (O4). The
+  draft's `count($x)` counts occurrences of x; it cannot count occurrences SATISFYING something. PROPOSED (§7 O4):
+  `x: S` on a repeated label means ALL iterations (the substitution semantics); `some(x: S)`, `count(x: S)` are
+  the quantified forms, lowered per §2.1.
+- F28. `== 1` after `count(...)`: a BINARY comparison, which draft §2.4 forbids (unary sections only). The unary
+  form is `count(name: ci("Host")) & ==1` hmm, or `==1(count(...))`: application of a section to a value (C10). The
+  draft's own E-RFC writes `wname.index: ==weekday_of(...)`, a condition on a computed label. For `count`, the
+  value has no label. Either admit binary comparisons for values (a second syntax, against §2.4's reasoning) or
+  make `count(...)` produce a computed label the user can constrain: `block with hosts = count(name: ci("Host"))`
+  then `(hosts: ==1)`. The second keeps one rule (everything is `label: section`) at the price of a `with`. Lean:
+  the second; §7 C10.
+- F29. `when(c, p)` reads well. The implication family (`unless`, `iff`) is not needed; `when` suffices.
+- F30. `ci("Host")`: a case-fold pullback; the draft has `(?i)` only inside literals. A string-to-set function
+  `ci` is a library one-liner once pullbacks through per-character maps exist (W4).
+- F31. Folded header continuation lines (obsolete `obs-fold`) would make `fvalue` span lines: a value-scoped
+  literal with `\r\n[ \t]+` inside is fine. Not a friction; noting the value-scoped `^`/`$` would NOT help here
+  because the whole header is one value.
+
+### 3.9 JSON nesting depth (deliberately non-regular)
+
+    json := import("json")
+    json.value & (depth: <=3)            # attempt 1
+    json.value_depth(3)                  # attempt 2: a depth-bounded library macro
+    json.value                           # attempt 3: full recursion
+
+Attempt 1 must fail: `depth` is not a label of `value` (no group computes it) -> "unknown label `depth`; labels
+available: ..." (§4 error). If the library exported `depth` as a computed label of a recursive pattern it could not
+be a regular twin (unbounded) -> at default "computed label `depth` has no automaton form; needs `vm` (PCRE
+recursion) or bound the depth: `value_depth(k)`". Attempt 3 at default: "pattern `json.value` is recursive
+(`(?&value)`): non-regular; needs `vm`, or use `json.value_depth(k)`". Clean failure, naming the opt-in and the
+bounded alternative: the design fails the non-regular case correctly.
+
+Attempt 2 is where the draft bites its own tail: how does the LIBRARY write `value_depth(k)`?
+
+    value_depth(k) := scalar | /\[(?:${value_depth(k - 1)}(?:,${value_depth(k - 1)})*)?\]/ | /\{...\}/
+
+is recursion through a PARAMETERIZED definition, which draft §7 forbids outright (acyclic at load). A bounded
+unrolling cannot be written in the language by anyone, library included. Options: (a) a compiler primitive
+`unroll(k, f, base)` = f(f(...f(base))) k times (a bounded fold; the draft's "maybe a fold"); (b) admit recursion
+through a parameterized definition when ONE integer parameter is a literal at every call site after expansion and
+STRICTLY DECREASES at every recursive call, with a literal base case (`value_depth(0) := scalar`): termination is
+checked syntactically, G4 holds, and the spelling is the natural one. PROPOSED (§10 S6): (b), with (a) as the
+fallback if (b)'s check is judged too clever. Cost: `value_depth(3)` for JSON is est. a few hundred states
+(each level multiplies the member grid); `value_depth(6)` thousands. The cost tool names the level.
+
+Friction:
+- F32. See above: the draft's termination rule is stricter than G4 needs and blocks the one legitimate use of
+  recursion at the default level.
+- F33. "Nested JSON needs vm" (draft §14) is right but the RESUME behaviour of a `vm` program in a mostly-DFA
+  pipeline is unstated: is `json.value & (json.row("ts", ...))` at `vm` level a VM pattern with the product
+  done... how? A VM cannot intersect. At `vm`, `&` must lower to (DFA pre-check where regular) + VM verify of the
+  non-regular operand: the [PRED-SPLIT] shape. The draft says `vm` = "full PCRE semantics" and nothing about `&`
+  with a non-regular operand. Gap (§8.1).
