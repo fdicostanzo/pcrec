@@ -3,8 +3,8 @@
 # §6 row 1, default since abi 107) -- RULE (1) IS OFF IN THE DEFAULT.
 #
 # `rr_alt_union` (src/facts/req.c) never applies, so every alternation falls to
-# row 2 (common head and tail, never `all`): the walk is the one
-# `--harness=restore=alt` runs, on every compile. No answer moves (row 2 is
+# row 2 (common head and tail, never `all`): the walk is the one the
+# restored walk arm `alt` runs, on every compile. No answer moves (row 2 is
 # today's sound form), so the detector is the claim: tests/codegen/
 # run_facts_checks.sh [facts-ahead]'s default rule (1) cells (`xy(?:ab|ac)zw`
 # with altcls denied lists `61627a77` where `787961627a77` is due, and the
