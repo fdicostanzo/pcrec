@@ -64,7 +64,7 @@ or it has no regression net at all.
 - `run_clspack.sh` — section "`run_clspack.sh` — [OPT-CLSPACK]'s shared atom table (2026-09-30)" (history file)
 - `run_wclass_census.sh`, `wclass_census.py` — section "`run_wclass_census.sh` + `wclass_census.py` — [CLS-TREE] S3's A_WCLASS checks (2026-09-29)" (history file)
 - `run_fallback_table.sh` — section "`run_fallback_table.sh` — the fallback tables' artifact-side check ([decfb B0], lane decfbB0b, 2026-10-08)" (history file)
-- `cand_oracle_unreached.tsv` — the UNREACHED witnesses table read with `run_cand_oracle.sh`.
+- `cand_oracle_unreached.tsv` — the DECLARED-UNREACHED allowance read with `run_cand_oracle.sh`: FINISH take cells, and ROW lines (ROUTE/HAND `-`) for a row with no producer yet (none since the S2 joint landing gave `untestable` its witness).
 - `manifests/` — pinned byte/line manifests read by the identity and structure checks.
 - `run_prechecks.sh` §5 `<PREFIX>_REQ_WHY`: see NOTES.md (moved for size).
 

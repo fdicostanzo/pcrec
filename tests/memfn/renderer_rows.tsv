@@ -19,8 +19,12 @@
 # UNREACHED, never a pass; (3) THE REFUSAL INVARIANT: a witness compile
 # whose refusal names a T-FIND row's routed pick or Table S's refusal is red
 # with its own message (plan_frame.md §5 row R). Rows B and C are SILENT
-# MOVES that (1)-(2) see: `foo|bar\d` prints a triple other than its line's
-# (rows_check.py §P, S2983, S2984).
+# MOVES that (1)-(2) see: `f.o|b.r\d` prints a triple other than its line's
+# (rows_check.py §P, S2983, S2984). ([RUN-POS-SET] S2, set positions up
+# to 128 members: the old witness `foo|bar\d` became the run
+# [6266][616f][6f72] and took no FIND site; RE-AIMED, its middle position
+# is `.`, which is no run position, so the two-byte start set {f, b} is
+# again a set FIND that R7w's walk takes.)
 #
 # Columns (TAB-separated; `-` is empty):
 #   row      the T-FIND row (fd_rows[] id)
@@ -42,5 +46,5 @@ D1	pf_memchr_bounded	E-stmt	-	"(?:GET|POST|PUT|PATCH|DELETE|HEAD) [^ "]+ HTTP/1\
 D1c	pf_memchr_back	E-stmt	-	(?m)^item	NO
 D1w	pf_walk	E-stmt	-	(/\*(?:[^*/]|\*(?!/)|/(?!\*)|(?1))*\*/)	NO
 D1w	pf_walk_bounded	E-stmt	-	-	NO
-R7w	pf_walk	E-stmt	-	foo|bar\d	NO
+R7w	pf_walk	E-stmt	-	f.o|b.r\d	NO
 R7w	pf_walk_bounded	E-stmt	-	(?:(?<!\\)(?:"(?:\\.|[^\\"]+)+"|""|(?:'(?:\\.|[^\\']+)+')|''|(?:`(?:\\.|[^\\`]+)+`)|``))	NO

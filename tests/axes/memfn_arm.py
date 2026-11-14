@@ -65,13 +65,34 @@ from concurrent.futures import ThreadPoolExecutor
 # pass, `-p rx --features all`; byte base nothing, utf8 base `-e utf8`; streams
 # c-default = the default engine, c-vm = --engine=vm). Counts are in the
 # report (docs/dev/lanes/runaxes_report.md).
+# The vrun rows' utf8 witnesses since [RUN-POS-SET] stage 3 (the comment at vrun-kb below).
+VRUN_U8 =[b"(?i)tra", b"(?i)update", b"(?i)union.*?update.*?from", b"(x?)(?i:abcdefghij)\\1"]
+VRUN_U8_PAD = VRUN_U8[:3]
+# The precheck-assign-byte witnesses since [RUN-POS-SET] stage 3 (lane s2pre2, 2026-11-14).
+# Stage 3 lets a class or alternation position next to the one-byte landmark join the
+# necessary run, so the landmark is a set run (`rx_reqrun`) and the one-byte ASSIGN site the
+# deny moves is gone: intended (s2pre_report.md, s2pre2_report.md). Eleven corpus patterns
+# left the reach that way (sweep job 599 over the base and tip corpora: byte c-default
+# 132 -> 123, utf8 189 -> 178, both layers). Each witness is a lost pattern's sibling with a
+# `.` between the landmark and its set neighbours, so no set run forms and the one-byte
+# site stays (single compiles at lane/s2land 692e5f431, both layers). PAB_BOTH differ at
+# byte and utf8; PAB_U8 at utf8 only (in byte mode its landmark is `x`, next to the set).
+PAB_BOTH = [b"(?:[0-9]{1,3}.\\.){3}[0-9]{1,3}", b"(?:[0-9a-f]{1,4}.:){4,7}[0-9a-f]{1,4}",
+            b"(?:\\d{1,3}.\\.){3}\\d{1,3}", b"(?:^|[\\s,;])(?:tr.e|fal.e)(?:$|[\\s,;])",
+            b"(?:a.|c.|a.r|c.t){8}.z", b"(?m)^ER.ROR|WA.RN", b"(\\d{2,4}).-.(\\d{2,4})",
+            b"[a-c]{2,4}.x.[0-9]{2,4}.y.[A-C]{2,4}.z.[j-l]{2,4}.w.[x-z]{2,4}",
+            b"\\b\\d{1,3}.\\..\\d", b"(?:ab|ba|aa|bb){24}.c"]
+PAB_U8 = [b"x.(?:1[\xc3\xa9\xc3\xa0]|q2|r3).y"]
+PAB_WIT = ([("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]
+           + [(e, "c-default", w) for w in PAB_BOTH for e in ("byte", "utf8")]
+           + [("utf8", "c-default", w) for w in PAB_U8])
 MEMFN_CLASS = {
     ("precheck-assign-byte", "default"): ("DIFFER",
         {("byte", "c-default"): 131, ("byte", "c-vm"): 0, ("utf8", "c-default"): 189, ("utf8", "c-vm"): 0},
-        [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
+        PAB_WIT),
     ("precheck-assign-byte", "simd"): ("DIFFER",
         {("byte", "c-default"): 131, ("byte", "c-vm"): 0, ("utf8", "c-default"): 189, ("utf8", "c-vm"): 0},
-        [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
+        PAB_WIT),
     # R17-b' B1's five finder-table denies (lane fdclass, 2026-10-17), MEASURED at
     # lane/b1fix f74bb0b7b (= the B1 tip): `taskset -c 0-7 python3 tests/axes/memfn_arm.py
     # --measure`, 10 cells (5 rows x 2 layers), differ=0 refused=0 of 4624 in every
@@ -157,28 +178,53 @@ MEMFN_CLASS = {
     **{("window-skip", ly): ("DIFFER",
         {("byte", "c-default"): 7, ("byte", "c-vm"): 0, ("utf8", "c-default"): 2, ("utf8", "c-vm"): 0},
         [("byte", "c-default", b"\\b[0-9a-f]{8}\\b"), ("utf8", "c-default", b"\\w\\B\\w")]) for ly in ("default", "simd")},
+    # run-verify-wide (R-38 Part D, memfn/src/options.def): the identity on every run stated before
+    # Part D (ASSERT_ZERO at partdland, 2026-11-13). Since [RUN-POS-SET] stage 3's S2 joint landing
+    # (lane s2land) runs carry wide positions and the deny clips them: DIFFER, the corpus witness
+    # `(?i:select)\d+x` MEASURED to differ in all four cells at both layers by single compiles.
+    # PROVISIONAL FLOOR 1 (the corpus counts were not measured inside the owner's box hold): the
+    # landing's queued axes run measures them and a follow-up re-pins at the measured value.
+    **{("run-verify-wide", ly): ("DIFFER",
+        {("byte", "c-default"): 1, ("byte", "c-vm"): 1, ("utf8", "c-default"): 1, ("utf8", "c-vm"): 1},
+        [(e, st, b"(?i:select)\\d+x") for e in ("byte", "utf8") for st in ("c-default", "c-vm")]) for ly in ("default", "simd")},
+    # The five vrun rows' utf8 witnesses (lane s2axes, 2026-11-13). [RUN-POS-SET] stage 3
+    # (the S2 joint landing) states a utf8 caseless `s` or `k` as a WIDE position (`[Ss\xbf]`,
+    # the last byte of U+017F; `k` likewise with U+212A), so a run through one is no single RUN
+    # term and vrun declines it, by design: part_d.md §3.1's `vrun_applies` row, §6 C4 (the
+    # deny `run-verify-wide` clips the run and vrun returns). Six corpus patterns left the
+    # utf8 reach that way (`(?i)select`, `(?i)stra`, `(?i)stra(ße)`, `(?i)straße`,
+    # `(?i)union.*?select.*?from`, `(x?)(?i:abcdefghijkl)\1`; cloud axes 43535669918: utf8
+    # 12/13 against floors 15/15, pad 10/12 against 13/14). Their siblings without a wide
+    # letter are the witnesses below (VRUN_U8: all five rows; the ten-byte run is past
+    # vrun-pad's 3 and 5-7, so pad takes the first three), single compiles at lane/s2land
+    # 692e5f431, so the floors hold at their measured values: no floor lowered.
     ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-kb", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8 for st in ("c-default", "c-vm")]),
     ("vrun-pad", "default"): ("ASSERT_ZERO", {}, []),
     # vrun-pad utf8/c-default 14 -> 13 at D172 S3 (job 620, tri620.md): one caseless pattern
     # became a cover artifact, where the pad deny is inert; its siblings' 15 hold.
     ("vrun-pad", "simd"): ("DIFFER",
         {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 13, ("utf8", "c-vm"): 14},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8_PAD for st in ("c-default", "c-vm")]),
     ("vrun-trim", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-trim", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8 for st in ("c-default", "c-vm")]),
     ("vrun-w16", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-w16", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8 for st in ("c-default", "c-vm")]),
     ("vrun-w32", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-w32", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8 for st in ("c-default", "c-vm")]),
 }
 
 STREAMS = {"c-default": [], "c-vm": ["--engine=vm"]}

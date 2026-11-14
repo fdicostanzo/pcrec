@@ -95,8 +95,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         memset(pf->req_set.maxoff, 0, sizeof pf->req_set.maxoff);
         break;
     case PF_REQ_WHOLE_RUN:
-        memset(pf->req_run.whole, 0, sizeof pf->req_run.whole);
-        memset(pf->req_run.whole_mask, 0, sizeof pf->req_run.whole_mask);
+        memset(pf->req_run.pos, 0, sizeof pf->req_run.pos);
         pf->req_run.whole_len = 0;
         pf->req_run.whole_maxoff = 0;
         break;
@@ -227,8 +226,9 @@ static void pf_derive_req_walk(Ctx *cx)
     PatFacts *pf = &cx->job->pf;
     const PcrecHarnessOptions *h = cx->emit_in ? cx->emit_in->harness : NULL;
     const ReqWalkParams p = {
-        .pos_set    = pcrec_opt_has(cx->opt, PCREC_NO_REQ_RUN_FOLD)
-                    ? 1 : PCREC_MAX_REQ_RUN_POS_SET,
+        .pos_set    = pcrec_opt_has(cx->opt, PCREC_NO_REQ_RUN_FOLD) ? 1
+                    : PCREC_MAX_REQ_RUN_POS_SET,
+        .alt_union  = h && h->alt_union_run,
         .max_pieces = PCREC_MAX_REQ_PIECES,
         .restored   = h ? h->walk_arms
                     : cx->emit_in && cx->emit_in->meas ? cx->emit_in->meas->walk_arms : 0,
@@ -239,7 +239,7 @@ static void pf_derive_req_walk(Ctx *cx)
     PdDesc pieces;
     int bits = 0;
     pcrec_req_walk(cx, pf->root, &p, &set, &run, &pieces);
-    for (int i = 0; i < run.n; i++) bits += __builtin_popcount(run.mask[i]);
+    for (int i = 0; i < run.n; i++) bits += pcrec_req_info(run.pos[i]);
     if (pf_enter(cx, PF_REQ_SET, false)) {
         memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
         pf->req_set.rightmost = set.pick;
@@ -254,13 +254,11 @@ static void pf_derive_req_walk(Ctx *cx)
         pf_done(pf, PF_REQ_SET_MAXOFF);
     }
     if (pf_enter(cx, PF_REQ_WHOLE_RUN, false)) {
-        memset(pf->req_run.whole, 0, sizeof pf->req_run.whole);
-        memset(pf->req_run.whole_mask, 0, sizeof pf->req_run.whole_mask);
+        memset(pf->req_run.pos, 0, sizeof pf->req_run.pos);
         pf->req_run.whole_len = 0;
         pf->req_run.whole_maxoff = 0;
         if (bits >= PCREC_MIN_REQ_RUN_BITS) {
-            memcpy(pf->req_run.whole, run.bytes, (size_t)run.n);
-            memcpy(pf->req_run.whole_mask, run.mask, (size_t)run.n);
+            memcpy(pf->req_run.pos, run.pos, (size_t)run.n * sizeof run.pos[0]);
             pf->req_run.whole_len = run.n;
             /* [K82] the walk's bound on where this run begins. */
             pf->req_run.whole_maxoff = run.off;
@@ -714,26 +712,49 @@ void pcrec_facts_force_failed(Ctx *cx)
     }
 }
 
-/* `n` bytes as lowercase hex, then `@idx` when `idx >= 0`, then — only where
- * some position of `mask` is not `0xFF` — `/` and the mask as hex: the
- * `REQ_RUN` spelling (hex because a run is arbitrary bytes inside a
- * `#define`'s string body — one spelling for all 256 values), arena text.
- * An exact run's text is unchanged by the mask ([OPT-LITSCAN] S4 C3), so
- * `"53454c454354@4/dfdfdfdfdfdf"` is a masked run and `"2e746172@0"` an
- * exact one. */
-static const char *pf_hex(Ctx *cx, const unsigned char *b,
-                          const unsigned char *mask, int n, int idx)
+/* The run's `n` positions `pos` in the `REQ_RUN` spelling, arena text (hex
+ * because a run is arbitrary bytes inside a `#define`'s string body — one
+ * spelling for all 256 values). Where every position is a CUBE, its lower
+ * members as hex, then `@idx` when `idx >= 0`, then — only where some
+ * position has more than one member — `/` and the masks as hex
+ * ([OPT-LITSCAN] S4 C3: `"53454c454354@4/dfdfdfdfdfdf"` is a masked run and
+ * `"2e746172@0"` an exact one). [RUN-POS-SET] stage 3: where some position
+ * is a set that is not one cube, every position that is not one byte is a
+ * BRACKETED hex class at its place (its members ascending, a stretch of
+ * three or more consecutive bytes as `lo-hi`), then `@idx`, and no mask:
+ * `"[cecf][80-89b1-bf]666f6f@4"` (D187: no second shape; the cube spelling
+ * is kept only so a cube run's text does not move). */
+static const char *pf_hex(Ctx *cx, const unsigned char *const *pos, int n, int idx)
 {
     StrBuf sb = { 0 };
     const char *t;
-    bool masked = false;
+    bool masked = false, cubes = true;
+    int tk[PCREC_MAX_REQ_RUN_SCAN][2];
     sb.cx = cx;
-    for (int k = 0; k < n; k++) pcrec_sb_printf(&sb, "%02x", b[k]);
+    for (int k = 0; k < n; k++) {
+        if (!pcrec_req_cube(pos[k], &tk[k][0], &tk[k][1])) cubes = false;
+        if (tk[k][1] != 0xFF) masked = true;
+    }
+    for (int k = 0; k < n; k++) {
+        if (cubes || tk[k][1] == 0xFF) {
+            pcrec_sb_printf(&sb, "%02x", tk[k][0]);
+            continue;
+        }
+        pcrec_sb_putc(&sb, '[');
+        for (int b = 0; b < 256; b++) {
+            int e = b;
+            if (!((pos[k][b >> 3] >> (b & 7)) & 1)) continue;
+            while (e < 255 && ((pos[k][(e + 1) >> 3] >> ((e + 1) & 7)) & 1)) e++;
+            if (e - b >= 2) pcrec_sb_printf(&sb, "%02x-%02x", b, e);
+            else for (int x = b; x <= e; x++) pcrec_sb_printf(&sb, "%02x", x);
+            b = e;
+        }
+        pcrec_sb_putc(&sb, ']');
+    }
     if (idx >= 0) pcrec_sb_printf(&sb, "@%d", idx);
-    for (int k = 0; k < n; k++) if (mask[k] != 0xFF) masked = true;
-    if (masked) {
+    if (cubes && masked) {
         pcrec_sb_putc(&sb, '/');
-        for (int k = 0; k < n; k++) pcrec_sb_printf(&sb, "%02x", mask[k]);
+        for (int k = 0; k < n; k++) pcrec_sb_printf(&sb, "%02x", tk[k][1]);
     }
     t = pcrec_sb_fragf(&cx->arena, "%s", sb.p ? sb.p : "");
     pcrec_sb_free(&sb);
@@ -845,8 +866,7 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
     }
     case PF_REQ_WHOLE_RUN:
         if (pf->req_run.whole_len < 2) return "none";
-        return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_mask,
-                      pf->req_run.whole_len, -1);
+        return pf_hex(cx, pf->req_run.pos, pf->req_run.whole_len, -1);
     case PF_REQ_PIECES: {
         /* [RUN-POS-SET] stage 2p: `W:` and one `[b,b,...]` byte list per
          * stored position, the pieces `|`-joined in ascending width; `W@o:`
@@ -957,5 +977,5 @@ const char *pcrec_fact_stamp_req_run(Ctx *cx, int member)
     pf_ask(cx, PF_REQ_WHOLE_RUN, true);
     PatFacts *pf = &cx->job->pf;
     if (pf->req_run.whole_len < 2) return "none";
-    return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_mask, pf->req_run.whole_len, member);
+    return pf_hex(cx, pf->req_run.pos, pf->req_run.whole_len, member);
 }

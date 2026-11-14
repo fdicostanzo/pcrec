@@ -56,10 +56,13 @@ never from the emitted C it checks:
      no `/` suffix remain, and an exact-only artifact is byte-identical with
      and without the flag.
   8. THE CANONICAL FORM over every corpus pattern (as written, through
-     `--list-source`): every masked `req_run`/`req_whole_run` position has
-     `T & ~K == 0` and `popcount(K)` 7 or 8; the count of masked rows read is
-     printed and floored (half the 92 measured at landing, D110), so the
-     check cannot pass on an empty population.
+     `--list-source`): every masked `req_whole_run` position has
+     `T & ~K == 0` and at most 128 members (popcount(K) >= 1; 7 or 8 before
+     [RUN-POS-SET] stage 3's S2 landing); a set-form run (stage 3) holds a
+     position that is not one cube and no bracketed position over 128
+     members; the count of masked rows read is printed and floored (half the
+     92 measured at landing, D110), so the check cannot pass on an empty
+     population.
   9. Every witness compiles under the harness's own -Wall -Wextra -Werror.
 
 Failing direction, recorded at the landing (docs/dev/lanes/c3build_report.md):
@@ -125,14 +128,48 @@ def facts(pat, *flags):
     return d
 
 
+def cube_of(members):
+    """The covering cube (T, K) of a member set, and whether it IS that cube."""
+    t, o = 0xFF, 0
+    for b in members:
+        t &= b; o |= b
+    k = ~(t ^ o) & 0xFF
+    return t, k, len(members) == 1 << (8 - bin(k).count("1"))
+
+
 def parse_run(v):
-    """`hex@idx[/mask]` or `hex[/mask]` -> (T bytes, K bytes, idx or None)."""
+    """A run's spelling (tuning.md §2.28¶7, facts_listing.md §4.1.2¶1) ->
+    (T bytes, K bytes, idx or None, per-position member sets, set_form).
+    `hex@idx[/mask]` or `hex[/mask]` where every position is one cube; else
+    ([RUN-POS-SET] stage 3) each position of two or more members a bracketed
+    hex class (`[61-7a]`, `[cecf]`, `[80-89b1-bf]`) and no `/`. T and K are each
+    position's covering cube (exact where the position IS a cube); None for an
+    unreadable spelling."""
     if v in (None, "", "none", "-"):
         return None
-    m = re.match(r"^([0-9a-f]+)(?:@(\d+))?(?:/([0-9a-f]+))?$", v)
-    t = bytes.fromhex(m.group(1))
-    k = bytes.fromhex(m.group(3)) if m.group(3) else b"\xff" * len(t)
-    return t, k, int(m.group(2)) if m.group(2) is not None else None
+    m = re.match(r"^((?:[0-9a-f]{2}|\[(?:[0-9a-f]{2}(?:-[0-9a-f]{2})?)+\])+)(?:@(\d+))?(?:/([0-9a-f]+))?$", v)
+    if not m:
+        return None
+    sets, setform = [], "[" in m.group(1)
+    for tok in re.findall(r"\[[^\]]*\]|[0-9a-f]{2}", m.group(1)):
+        if tok[0] == "[":
+            mem = set()
+            for lo, hi in re.findall(r"([0-9a-f]{2})(?:-([0-9a-f]{2}))?", tok):
+                mem |= set(range(int(lo, 16), int(hi or lo, 16) + 1))
+            sets.append(frozenset(mem))
+        else:
+            sets.append(frozenset([int(tok, 16)]))
+    if m.group(3):
+        if setform:
+            return None
+        t, k = bytes.fromhex(m.group(1)), bytes.fromhex(m.group(3))
+        if len(k) != len(t):
+            return None
+        sets = [frozenset(b for b in range(256) if b & kk == tt) for tt, kk in zip(t, k)]
+    else:
+        t = bytes(cube_of(x)[0] for x in sets)
+        k = bytes(cube_of(x)[1] for x in sets)
+    return t, k, int(m.group(2)) if m.group(2) is not None else None, sets, setform
 
 
 def cdecode(lit):
@@ -241,8 +278,11 @@ WIT = [
     ("selvm", "(?i)select", ("--engine=vm",)),
     ("union", "(?i)union.*?select.*?from", ()),
     ("k66", r"(x?)(?i:abcdefghijkl)\1", ()),
-    ("s2b", r"(x?)([a-z]+)+S\d(?i:select)\1", ()),
-    ("s2c", r"(x?)([a-z]+)+S\d(?i:s)qz\1", ()),
+    # s2b/s2c: `S` must sit OUTSIDE the run, so the byte between carries no
+    # information (`.`); they read `S\d` until [RUN-POS-SET] stage 3's S2
+    # landing made `\d` a run position (`S` joined the run as an exact byte)
+    ("s2b", r"(x?)([a-z]+)+S.(?i:select)\1", ()),
+    ("s2c", r"(x?)([a-z]+)+S.(?i:s)qz\1", ()),
     ("s2a", r"(?i:select)\d+x", ()),
     ("mixed", "[0-9]+(?i:a)bcdefg", ()),
     ("abcde", "a[bc]de", ()),
@@ -253,6 +293,7 @@ WIT = [
 
 n_whole_route = 0
 n_c4 = 0
+n_setform = 0
 for tag, pat, flags in WIT:
     got = emit(tag, pat, *flags)
     fx = facts(pat.encode(), *flags)
@@ -266,7 +307,7 @@ for tag, pat, flags in WIT:
     lbl = f"'{pat}'" + (" " + " ".join(flags) if flags else "")
     # 4. the stamps (the hex and mask are the whole run's; `@` is 2c's)
     srun = parse_run(st.get("REQ_RUN"))
-    if (srun is None) != (whole is None) or (srun and (srun[0], srun[1]) != (whole[0], whole[1])):
+    if (srun is None) != (whole is None) or (srun and srun[3] != whole[3]):
         bad(f"{lbl}: RX_REQ_RUN '{st.get('REQ_RUN')}' does not spell the req_whole_run fact '{fx.get('req_whole_run')}'")
     rb = st.get("REQ_BYTE", "none")
     if rb != "none" and int(rb) not in rset:
@@ -278,7 +319,7 @@ for tag, pat, flags in WIT:
     why = st.get("REQ_WHY")
     if (why == "none") != (rb == "none" and st.get("REQ_RUN") == "none"):
         bad(f"{lbl}: RX_REQ_WHY '{why}' against REQ_BYTE '{rb}' / REQ_RUN '{st.get('REQ_RUN')}' -- 'none' must hold iff both are none")
-    elif whole and whole[1] != b"\xff" * len(whole[1]) and (why == "none" or fx.get("run_pin") not in ("none", "", None)
+    elif whole and any(len(x) > 1 for x in whole[3]) and (why == "none" or fx.get("run_pin") not in ("none", "", None)
                                                       and ":" not in fx.get("run_pin", "")):
         bad(f"{lbl}: a masked run reads REQ_WHY '{why}' / run_pin '{fx.get('run_pin')}' (never none, never pinned whole)")
     else:
@@ -305,7 +346,12 @@ for tag, pat, flags in WIT:
             else:
                 n_c4 += 1
                 ok(f"{lbl}: RX_REQ_RUN's @{at} is the run block's scan offset (C4)")
-            if whole[1] != b"\xff" * len(whole[1]):
+            if whole[4]:
+                # [RUN-POS-SET] stage 3: a run with a position that is not one
+                # cube is verified by the memfn kit's set test (Part D), not by
+                # the masked words checks 1-2 read; counted, never checked here.
+                n_setform += 1
+            elif whole[1] != b"\xff" * len(whole[1]):
                 ext = check_block(f"{lbl} rx_reqrun", b0, whole[0], whole[1], at)
                 if whole_route:
                     if ext != (0, len(whole[0])):
@@ -329,7 +375,7 @@ for tag, pat, flags in WIT:
         call = text.find("rx_reqrun(subject")
         lm = re.search(r"!memchr\([a-z_]+ \+ [a-z_]+, (\d+),", text[:call]) if call >= 0 else None
         lead = {int(lm.group(1))} if lm else set()
-        exact = {whole[0][i] for i in range(len(whole[0])) if whole[1][i] == 0xFF} if whole else set()
+        exact = {next(iter(x)) for x in whole[3] if len(x) == 1} if whole else set()
         want = rset - exact
         where = {"s2b": lead, "s2c": got_set}[tag]
         if want <= got_set | lead and 83 in where:
@@ -375,7 +421,9 @@ for tag, pat, flags in WIT:
         ok(f"{lbl}: compiles under -Wall -Wextra -Werror")
 
 # 7b. an exact-only artifact is byte-identical with and without the flag
-for tag, pat in (("ctl1", "[0-9]+abcdef"), ("ctl2", "/user|/users"), ("ctl3", "(?i)ab")):
+# ctl1 read `[0-9]+abcdef` until stage 3 made `[0-9]` a run position (a set
+# position moves under -fno-req-run-fold); `.` keeps the run exact
+for tag, pat in (("ctl1", ".+abcdef"), ("ctl2", "/user|/users"), ("ctl3", "(?i)ab")):
     a, d = emit(tag, pat), emit(tag + "_d", pat, "-fno-req-run-fold")
     if a is None or d is None:
         bad(f"control '{pat}': refused")
@@ -472,28 +520,47 @@ for r_, _d, fs in os.walk(os.path.join(ROOT, "tests")):
 
 with ThreadPoolExecutor(int(os.environ.get("PROCS", "4"))) as ex:
     res = list(ex.map(lambda pa: facts(pa[0], *pa[1]), sorted(rows)))
-nmask = nbadc = 0
+nmask = nset = nbadc = 0
 for (pat, args), fx in zip(sorted(rows), res):
     if fx is None:
         continue
     for key in ("req_whole_run",):     # the `req_run` row retired (F5)
-        pr = parse_run(fx.get(key))
-        if not pr or pr[1] == b"\xff" * len(pr[1]):
+        v = fx.get(key)
+        pr = parse_run(v)
+        if v not in (None, "", "none", "-") and pr is None:
+            nbadc += 1
+            bad(f"canonical form: '{pat[:60]!r}' {key} {v} is not a run spelling (tuning.md §2.28¶7)")
+            continue
+        if not pr or all(len(x) == 1 for x in pr[3]):
+            continue
+        if pr[4]:
+            # [RUN-POS-SET] stage 3: the set form is used only where some
+            # position is NOT one cube, and every bracketed position holds 2-128
+            # members (a position carrying information, PCREC_MAX_REQ_RUN_POS_SET)
+            nset += 1
+            wide = [x for x in pr[3] if len(x) > 1]
+            if all(cube_of(x)[2] for x in wide) or any(len(x) > 128 for x in wide):
+                nbadc += 1
+                bad(f"canonical form: '{pat[:60]!r}' {key} {v} is set-spelled but every position is one cube, "
+                    f"or a position holds more than 128 members")
             continue
         nmask += 1
         for tt, kk in zip(pr[0], pr[1]):
-            if tt & ~kk & 0xFF or bin(kk).count("1") not in (7, 8):
+            # a cube carrying information: canonical T, at most 128 members
+            if tt & ~kk & 0xFF or bin(kk).count("1") < 1:
                 nbadc += 1
-                bad(f"canonical form: '{pat[:60]!r}' {key} {fx.get(key)} has a position "
-                    f"T={tt:02x} K={kk:02x} (T & ~K must be 0, popcount(K) 7 or 8)")
+                bad(f"canonical form: '{pat[:60]!r}' {key} {v} has a position "
+                    f"T={tt:02x} K={kk:02x} (T & ~K must be 0, popcount(K) at least 1)")
                 break
 FLOOR = 46
 if nbadc == 0 and nmask >= FLOOR:
-    ok(f"canonical form: {nmask} masked req_whole_run rows over {len(rows)} corpus patterns, "
-       f"every position T & ~K == 0 and popcount(K) 7 or 8 (floor {FLOOR})")
+    ok(f"canonical form: {nmask} masked and {nset} set-form req_whole_run rows over {len(rows)} corpus "
+       f"patterns, every cube position T & ~K == 0 with at most 128 members, every set form holding a "
+       f"position that is not one cube (floor {FLOOR} masked)")
 elif nmask < FLOOR:
     bad(f"canonical form: only {nmask} masked rows read over {len(rows)} corpus patterns, under the floor "
         f"{FLOOR} -- the population this check exists for has shrunk or the walk stopped producing cubes")
+print(f"REACH: reqcube_check: {n_setform} emitted witness run(s) in the set form (verified by the kit's set test, outside checks 1-2)")
 
 print(f"reqcube_check: {npass} passed, {nfail} failed")
 sys.exit(1 if nfail else 0)

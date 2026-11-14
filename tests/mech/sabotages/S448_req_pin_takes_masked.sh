@@ -28,10 +28,15 @@ SAB_COUNT=1
 # whole masked window instead, as before.
 SAB_BEFORE='        t->run_o = w->run_lo;
         t->run_len = w->run_len;
-        t->run_bytes = r->whole + (w->run_lo - (pin.o - pin.at));'
+        t->run = r;
+        t->run_at = w->run_lo - (pin.o - pin.at);'
 SAB_AFTER='        t->run_o = pin.o - pin.at;   /* SABOTAGE S448 */
         t->run_len = r->whole_len;
-        t->run_bytes = r->whole;'
+        t->run = r;
+        t->run_at = 0;'
+SAB_FILE2="src/gen/emit_dfa.c"
+SAB_BEFORE2='        *bytep = pcrec_run_byte(t->run, t->run_at + o - t->run_o);'
+SAB_AFTER2='        { int t_, k_; pcrec_req_cube(t->run->pos[t->run_at + o - t->run_o], &t_, &k_); *bytep = t_; }   /* SABOTAGE S448: compared exactly */'
 # RE-ANCHORED 2026-11-11 (lane k382, R-38 K38-2; span_runs_sheet.md §4.2): the run's bytes are the WHOLE run's
 # (`r->whole`; the cut window `r->bytes` retired); the plant takes the whole masked run
 # compared exactly at the run's position 0, as before. Probe unchanged (re-read: the stamp
@@ -46,3 +51,7 @@ SAB_AFTER='        t->run_o = pin.o - pin.at;   /* SABOTAGE S448 */
 # `dominated` verdict (`ofs_test_verifies_run`) and the OFFSETS stamp, so a[bc]de reads
 # REQ_WHY "dominated" and OFFSETS "0,1,2*,3" (clean: "emitted", "0,2*,3"). Detector:
 # reqcube_check.py check 6 (the kept pin's REQ_WHY "emitted"), the codegen arm.
+# RE-ANCHORED 2026-11-13 (lane rps3, [RUN-POS-SET] stage 3): the record holds the run
+# (`t->run`, `t->run_at`), and a wider position reads as no byte; the plant's "compared
+# exactly" half is now its own site (SAB_BEFORE2: the position's lower member as the
+# byte tested), so the two halves together are the old plant's one fault.

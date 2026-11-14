@@ -20,5 +20,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i:sele
 SAB_REACH_EXPECT="REACH-PAIR-PICK"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (run->whole_mask[idx] == 0xFF) return run->whole[idx];'
-SAB_AFTER='        return run->whole[idx];   /* SABOTAGE S453 */'
+SAB_BEFORE='        int x = pcrec_run_byte(run, pcrec_find_run_scan_index(rate, run->pos, run->whole_len));'
+SAB_AFTER='        int t_, k_; pcrec_req_cube(run->pos[pcrec_find_run_scan_index(rate, run->pos, run->whole_len)], &t_, &k_); int x = t_;   /* SABOTAGE S453 */'
+# RE-ANCHORED 2026-11-13 (lane rps3, [RUN-POS-SET] stage 3): the pick reads the scan
+# position's one member (`pcrec_run_byte`, -1 for a wider set); the plant takes its lower
+# member whatever its size, as before.

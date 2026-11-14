@@ -1538,6 +1538,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
         else if (!strcmp(a, "--harness=run-tie-left")) st->harness.run_tie_left = 1;
         /* [FIND-MINW] the minimum-width stop's inverse lever */
         else if (!strcmp(a, "--harness=no-min-width")) st->harness.no_min_width = 1;
+        /* [RUN-POS-SET] stage 2a: rr_alt row 1, ahead of its ruling */
+        else if (!strcmp(a, "--harness=alt-union-run")) st->harness.alt_union_run = 1;
         /* [REQ-EMPTYCAT] span_arms §3.7: the necessary-run walk's restored
            arms, names joined by '+' (src/facts/walk_arms.def) */
         else if (!strncmp(a, "--harness=restore=", 18)) {

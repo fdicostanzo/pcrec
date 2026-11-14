@@ -715,17 +715,26 @@ static int span_byte(const mf_pred *p)
 static const char *pres_layout_check(const mf_art *art, const mf_site *s, const mf_class *c)
 {
     (void)art;
-    int run = kit_pres_run(s), head = -1;
+    int run = kit_pres_run(s), head = -1, member = 0;
+    /* the run is TESTED (part_d.md §2.4 item 4): a declined run's site is
+       laid out as a run-less one */
+    int trun = run >= 0 && c->pres[run].verify;
     for (unsigned i = 0; i < s->npspan; i++)
-        if ((int)i != run && c->pres[i].verify && c->pres[i].order == 0) head = (int)i;
+        if ((int)i != run && c->pres[i].verify) {
+            member = 1;
+            if (c->pres[i].order == 0) head = (int)i;
+        }
+    if (!trun && member && head < 0)
+        return "no run is tested and a member is verified, yet no presence link is the HEAD "
+               "(a run-less layout leads with the set's pick)";
     unsigned k = 0;
     if (head >= 0) {
-        mf_need need = run >= 0 ? (mf_need)s->pspans[head].need : MF_REQUIRED;
+        mf_need need = trun ? (mf_need)s->pspans[head].need : MF_REQUIRED;
         if (k >= s->npred || !part_is_byte(&s->preds[k], span_byte(&s->pspans[head]), need))
             return "its first part is not the HEAD member its presence links lead with";
         k++;
     }
-    if (run >= 0 && c->pres[run].verify) {
+    if (trun) {
         if (k >= s->npred || !s->preds[k].fn_ref)
             return "its run part (the FUNC part the kit derives) is not where the run's "
                    "tested link orders it";

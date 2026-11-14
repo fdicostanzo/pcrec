@@ -359,6 +359,16 @@ for fl_ in $FORM_FLOORS; do
     r_=$(grep "^FORMID [0-9]* $fn_ " "$gres" | sed 's/.* rendered=\([0-9]*\).*/\1/')
     [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "form $fn_: ${r_:-0} hard sites rendered < floor $fv_"
 done
+# R-38 Part D's TWO-SIDED PIN (part_d.md §5.1 D2 (p9), [r2pd P12]): the
+# sites ofsskip renders with a tableless multi-member SET term or no scan
+# are EXACTLY 0 here (the scoped admission is the derived run part's alone);
+# a one-sided floor could not red when the scope is dropped. Its population
+# (the sites ofsskip renders) is floored too, so the 0 is not vacuous.
+ofs_r_=$(grep '^OFSSCOPE ' "$gres" | sed 's/.* rendered=\([0-9]*\).*/\1/')
+ofs_s_=$(grep '^OFSSCOPE ' "$gres" | sed 's/.* scoped=\([0-9]*\).*/\1/')
+echo "== ofsskip's scope (R-38 Part D): rendered ${ofs_r_:-?}, of them tableless/scan-less ${ofs_s_:-?} (must be 0)"
+[ "${ofs_s_:-x}" = 0 ] || note_fail 1 "ofsskip rendered ${ofs_s_:-?} sites with a tableless multi-member SET term or no scan (its scoped admission is the derived run part's alone)"
+[ "${ofs_r_:-0}" -ge 1 ] || note_fail 1 "ofsskip rendered no site: the two-sided pin's 0 is vacuous"
 echo "== LOOP_EXIT (Q-R7-3) rendered sites by form id: $(grep '^LOOPX forms=' "$gres" | sed 's/^LOOPX forms=//')"
 if grep '^LOOPX forms=' "$gres" | grep -q 'generic'; then
     note_fail 1 "LOOP_EXIT: the generic row rendered a site (Q-R7-3: it serves none)"
@@ -1130,6 +1140,17 @@ if [ "$rows" = 1 ]; then
     want rows && { gen "$work/mmonly" --mm-only 1 > "$work/mmonly.log" 2>&1 || { cat "$work/mmonly.log"; echo "run_g2.sh: the MISMATCH-only generator failed" >&2; exit 2; }; }
     # lane g2m6: and one of its own for the STRIDED sites, so the rows chosen for them are countable apart too
     want rows && { gen "$work/stonly" --stride-only 1 > "$work/stonly.log" 2>&1 || { cat "$work/stonly.log"; echo "run_g2.sh: the STRIDE-only generator failed" >&2; exit 2; }; }
+    # R-38 Part D (lane partd): the PRESENCE generator (g2_pres_gen.c), traced. Its sites are the only
+    # G2 sites stating a run presence span, so the derived run part's rows (ofsskip's scan-less BODY
+    # fn-every-pos among them) are reached here alone; the presence family itself (section 4p) links
+    # the plain library. One pass: generic target, default lever, today's 400 sites + 300 wide.
+    want rows && {
+        "$TO" 300 "$gencc" -std=gnu11 -O1 -I "$inc" -I "$g2" "$g2/g2_pres_gen.c" "$lib" -o "$work/g2_pres_gen_tr" \
+            && mkdir -p "$work/prestr" \
+            && "$TO" 600 "$work/g2_pres_gen_tr" 20261110 400 "$work/prestr" generic 0 1 300 0 \
+                > "$work/prestr.log" 2> "$work/reach/gen-prestr.err" \
+            || { tail -5 "$work/prestr.log" "$work/reach/gen-prestr.err"; echo "run_g2.sh: the traced PRESENCE generator failed" >&2; exit 2; }
+    }
     echo "== rows: kit selection-table rows chosen over the whole tier (MFTRACE REACH, summed)"
     nproc_files=0; noreach=""
     for f in "$work"/reach/*.err; do

@@ -107,8 +107,12 @@ NAMED = [
     ('mod-i (DFA, ASSIGN)', '(?i)cat', []),
     ('union-select (DFA)', '(?i)union.*?select.*?from', []),
     ('union-select (no-DFA, ON_MISS)', '(?i)union.*?select.*?from', ['--engine=vm']),
-    ('no-DFA ON_MISS', '(?i)\\d+cat', ['--engine=vm']),
-    ('VM hybrid', '(?i)(a|b)+cat', []),
+    # [RUN-POS-SET] S2 re-aim (PCREC_MAX_REQ_RUN_POS_SET 2 -> 128): `\d+` and
+    # `(a|b)+` became run POSITIONS (`[30-39]`, `[41426162]` joined the
+    # caseless cat run), which left both bins unreached; `.` (255 members)
+    # stays outside the run, so the run is the cube pair cat again.
+    ('no-DFA ON_MISS', '(?i).+cat', ['--engine=vm']),
+    ('VM hybrid', '(?i)(.)+cat', []),
 ]
 # [COMPOUND] the artifact's own stamp lines: a compound's .c also carries its
 # PARTS' lines under `<prefix>__<role>` (match_api.md §3.7¶1, not contract),

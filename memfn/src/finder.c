@@ -110,6 +110,8 @@ enum {
                                    >= 0 (span_pick 1e: Table D's predicate)   */
     SF_HORS_DENSE   = 1u << 17, /* the stop set's mass under the handed rates
                                    is at least HORS_MIN (plan_cost.def)       */
+    SF_RUN_NOSCAN   = 1u << 18, /* the RUN span, where the run has no position
+                                   the kit finds (part_d.md §2.4 item 2)      */
 };
 
 /* ONE comparator (§1.2 [rev3 D2]): lhs OP key, every threshold a set key. */
@@ -235,6 +237,7 @@ FD_CT_T(ct_r7w, "R7w", use_kind,  KD_STOP,           NEED_ALL,        MF_ANY,   
         MF_ANY)
 FD_CT(ct_p0,  "P0",  use_none,    KD_ALL,            CM(N_REQUIRED),  MF_ANY,      LY_ALL)
 FD_CT(ct_p2,  "P2",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,      LY_ALL)
+FD_CT(ct_pd,  "PD",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,      LY_ALL)
 FD_CT(ct_p3,  "P3",  use_none,    KD_ALL,            CM(N_OPTIONAL),  MF_ANY,      LY_ALL)
 FD_CT(ct_p4,  "P4",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
 FD_CT(ct_p9,  "P9",  use_none,    KD_ALL,            NEED_ALL,        MF_ANY,      LY_ALL)
@@ -321,6 +324,20 @@ static const fd_row fd_rows[] = {
       "G1, ported: span 0's proof covers the span (identity, run_verified, or the density "
       "conjunct on the prior): dropped",
       "a measured cell where the dominated pre-check pays for itself", &ct_p2 },
+    /* PD (R-38 Part D; part_d.md rev 4 §2.4 item 2): THE DECLINE. A run with
+       no position the kit finds (`[a-z]{8}`, `cat|dog`) on an OPTIONAL route
+       P2 did not take is left UNTESTED: verify 0, proven_by 0, the run's
+       reply unread; the set's pick is then verified as on a run-less site
+       (P3's member rule reads the TESTED run). After P2, so P2's "every span,
+       or none" stands (review r1 F3); P0 precedes it on REQUIRED, where the
+       run is verified scan-less instead (fd_run_modes[]). It tests nothing,
+       so no stretch mode; no deny (denying it would refuse the compile:
+       memory pcrec-flag-follows-caller-effect) */
+    { "PD", FD_PRES, KN_P, SF_RUN_NOSCAN, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
+      FF_UNSTATED, FF_UNSTATED, { 0, 0, 0, 0 }, NULL, FB_DERIVED, "Part D",
+      "a run with no findable position on an OPTIONAL route: declined, the run untested "
+      "(part_d §2.4 item 2)",
+      "none: derived from the reply contract (no find tests the run)", &ct_pd },
     { "P3", FD_PRES, KN_P | KN_E, SF_PRES_SPLIT, 0, { { FL_NONE, NULL, 0, NULL, NULL } },
       FF_UNSTATED, FF_UNSTATED, { 1, 0, 1, 0 }, "fd-pres-pick", FB_UNMEASURED_DEFAULT, "B3b",
       "the pick, ported: the rarest member by the frequency kind (ties to the higher pattern "
@@ -742,17 +759,27 @@ int fd_find(const mf_art *art, const mf_site *s, const mf_hooks *def, const fd_s
  * and both masses silently; review 2026-11-11 r1 k382 F12, memory
  * pcrec-no-silent-defaults). PLAN: the stretch as a column of the PRES row
  * itself (span_runs_sheet.md §5 K38-2 PLAN (a)). */
-static const struct { const char *row; kit_run_stretch st; } fd_run_modes[] = {
-    { "P0", KIT_RUN_WHOLE },    /* REQUIRED: the whole run (K66)            */
-    { "P3", KIT_RUN_WINDOW },   /* the OPTIONAL route's pick: its window    */
-    { "P9", KIT_RUN_WHOLE },    /* the total default: the whole run         */
+/* `no_scan` (R-38 Part D, part_d.md §2.4 item 3): the reply where the run
+ * has NO position the kit finds. P0's is the WHOLE run verified scan-less
+ * (has_scan 0, the extent the whole run: K66's linear no-match proof kept,
+ * rendered by ofsskip's fn-every-pos); P3's and P9's is UNREACHABLE (the
+ * decline row PD precedes them on such a run) and REFUSED if reached. */
+typedef enum { FD_NOSCAN_REFUSE, FD_NOSCAN_WHOLE } fd_noscan;
+static const struct { const char *row; kit_run_stretch st; fd_noscan no_scan; } fd_run_modes[] = {
+    { "P0", KIT_RUN_WHOLE,  FD_NOSCAN_WHOLE },  /* REQUIRED: the whole run (K66) */
+    { "P3", KIT_RUN_WINDOW, FD_NOSCAN_REFUSE }, /* the OPTIONAL route's pick: its window */
+    { "P9", KIT_RUN_WHOLE,  FD_NOSCAN_REFUSE }, /* the total default: the whole run */
 };
 
-/* 0 and *st set, or -1: `row` names no listed mode */
-static int fd_run_mode(const char *row, kit_run_stretch *st)
+/* 0 and *st, *ns set, or -1: `row` names no listed mode */
+static int fd_run_mode(const char *row, kit_run_stretch *st, fd_noscan *ns)
 {
     for (unsigned i = 0; i < sizeof fd_run_modes / sizeof fd_run_modes[0]; i++)
-        if (!strcmp(fd_run_modes[i].row, row)) { *st = fd_run_modes[i].st; return 0; }
+        if (!strcmp(fd_run_modes[i].row, row)) {
+            *st = fd_run_modes[i].st;
+            *ns = fd_run_modes[i].no_scan;
+            return 0;
+        }
     return -1;
 }
 
@@ -766,7 +793,8 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
     if (!(fd_scope(s) & (1 << FD_PRES))) return 0;
     if (s->npspan > MF_MAX_PRES) { *why = "npspan > MF_MAX_PRES"; return -1; }
     mf_pres_picks pk;
-    kit_pres_picks(art, s, &s->pres_proof, NULL, NULL, &pk);
+    int noscan;
+    kit_pres_picks(art, s, &s->pres_proof, NULL, NULL, &pk, &noscan);
     int run = kit_pres_run(s);
     const mf_wspan *rs = run >= 0 ? kit_pres_run_span(s, run) : NULL;
     size_t p4 = FD_NROWS;
@@ -780,7 +808,12 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         *why = "a presence pick past mf_link.member's range (a set member beyond index 254)";
         return -1;
     }
-    for (unsigned i = 0; i < s->npspan; i++) {
+    /* THE RUN SPAN FIRST (part_d.md §2.4 item 4): each span's row is its
+       own, but P3's member rule reads whether the run is TESTED (`trun`),
+       so the run's link is known before any member's */
+    int trun = 0;
+    for (unsigned o = 0; o < s->npspan; o++) {
+        unsigned i = run < 0 ? o : o == 0 ? (unsigned)run : o - 1 + (o - 1 >= (unsigned)run);
         const mf_pred *sp = &s->pspans[i];
         int member = (int)i != run;
         fd_x q;
@@ -800,6 +833,8 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         if (member) {
             q.members = popcount256(sp->term[0].set);
             if (pk.set_leads == 1 && (int)i == pk.set_pick) q.facts |= SF_SET_RARER;
+        } else if (noscan) {
+            q.facts |= SF_RUN_NOSCAN;
         }
         gate_in in = { .s = s, .fd = &q.ff };
         gate_tctx tc = { art, "fd", handle, mode == FD_PRES_ASK ? MF_PH_SHADOW : MF_PH_DEFINE,
@@ -814,18 +849,28 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         mf_link k = t->link;
         if (!strcmp(t->id, "P3") && member) {
             k.member = (uint8_t)(pk.set_pick + 1);
-            k.verify = run < 0 && (int)i == pk.set_pick;
+            k.verify = !trun && (int)i == pk.set_pick;
         }
         if (!member) k.member = 0;  /* the run span's `member` is 0 and UNREAD (memfn.h
                                        mf_link; F13): its stretch is `cls->run`'s */
         if (!member && k.verify) {  /* the run's reply, the route its row names */
             kit_run_stretch st;
-            if (fd_run_mode(t->id, &st)) {
+            fd_noscan ns;
+            if (fd_run_mode(t->id, &st, &ns)) {
                 *why = "a row tests the run's link but names no stretch mode (fd_run_modes[])";
                 return -1;
             }
-            cls->run = kit_run_decide(kit_byte_rate(art), kit_run_opts_of(art, st),
+            cls->run = kit_run_decide(kit_byte_rate(art), kit_run_opts_of(art, s, st),
                                       kit_wspan_at, rs, rs->len, NULL);
+            if (!cls->run.has_scan) {   /* no position the kit finds */
+                if (ns != FD_NOSCAN_WHOLE) {
+                    *why = "a row tests a run with no findable position but names no scan-less "
+                           "reply (fd_run_modes[]' no_scan: the decline row precedes it)";
+                    return -1;
+                }
+                cls->run = (kit_run_reply){ 0, 0, 0, rs->len };
+            }
+            trun = 1;
         }
         /* P4, the order row, asked on its own (deny, gate, predicate) */
         led[i] = 0;
@@ -842,11 +887,13 @@ int fd_pres(const mf_art *art, uint32_t handle, const mf_site *s, int mode,
         rows[i] = t;
     }
     cls->npres = s->npspan;
-    /* the chain order, and the one coverage rule */
+    /* the chain order, and the one coverage rule: the HEAD reads the TESTED
+       run (`trun`), never a stated one (a declined run leaves the set's pick
+       the head, as on a run-less site: part_d.md §2.4 item 4 [r1pd F2]) */
     int head = -1;
     for (unsigned i = 0; i < s->npspan; i++)
-        if (led[i] && run >= 0) head = (int)i;
-    if (head < 0 && run < 0 && pk.set_pick >= 0 && cls->pres[pk.set_pick].verify)
+        if (led[i] && trun) head = (int)i;
+    if (head < 0 && !trun && pk.set_pick >= 0 && cls->pres[pk.set_pick].verify)
         head = pk.set_pick;
     /* the coverage rule reads the reply's VERIFIED EXTENT, its exact
        (one-member) positions */

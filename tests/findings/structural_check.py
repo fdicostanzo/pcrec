@@ -37,8 +37,8 @@ import re
 import sys
 
 ROOT = sys.argv[1]
-PRIMITIVES = {"pcrec_find_pick", "pcrec_find_no_commoner",
-              "pcrec_find_set_mass", "pcrec_find_seq_mass"}
+PRIMITIVES = {"pcrec_find_pick", "pcrec_find_pos_pick", "pcrec_find_no_commoner",
+              "pcrec_find_set_mass", "pcrec_find_pos_mass"}
 # The readers S1 must reach, by name: if one of these is not found calling a
 # pcrec_find_* function, the scan has stopped seeing the population it exists
 # for (a witness that stopped reaching its site, [MECH-REACH]).

@@ -97,3 +97,16 @@ MF_OPT("window-skip", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
        "the window search's skip for a common byte set: read the window's last byte and skip "
        "by a table of where that byte can sit in a match; denied, the search finds its byte "
        "and steps one byte at a time")
+/* R-38 Part D (part_d.md rev 4 §5.1 D2 [r1pd F6]; D174 name): the run
+ * reply's verified extent may hold positions of three or more members, each
+ * tested against its full set. Denied, EVERY stretch mode is clipped to the
+ * maximal stretch of positions the kit finds (one member or a two-member
+ * cube) holding the scan: the identity on every run stated before Part D, so
+ * its emit_sweep cells are ASSERT_ZERO until pcrec's [RUN-POS-SET] stage 3
+ * states such runs. Read through kit_run_opts_of (every reader of the
+ * decision on the site). A scan-less REQUIRED run is not clipped (nothing to
+ * clip around; K66's proof is undeniable, D158). */
+MF_OPT("run-verify-wide", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "verify wide run positions: the run pre-check also tests the run's positions of three or "
+       "more bytes, each against its whole byte set; denied, it tests only the stretch of "
+       "one- and two-byte positions around the position it searches for")

@@ -22,8 +22,10 @@
                                    27; no host-cut window, no second part)   */
 
 /* The routes (the PRES row that decided the run's link, read off
- * mf_class.pres_row through mf_finder_rows). */
-enum { G2P_P0, G2P_P2, G2P_P3, G2P_P9, G2P_NROUTE };
+ * mf_class.pres_row through mf_finder_rows); G2P_PD the decline (R-38 Part
+ * D, part_d.md §2.4 item 2: a run with no findable position, untested on an
+ * OPTIONAL route), appended so today's route numbers stay. */
+enum { G2P_P0, G2P_P2, G2P_P3, G2P_P9, G2P_PD, G2P_NROUTE };
 
 /* The fixed witnesses of span_runs_sheet.md §3.5 the DRIVER runs (W-K3, the
  * twin, is the generator's: it is a port answer, not text). */
@@ -67,6 +69,20 @@ typedef struct {
     uint8_t     mem[8];         /* and the rest), as laid out: each must occur */
                                 /* in [lo, n) for the site to answer present   */
 } g2p_site;
+
+/* R-38 Part D (part_d.md §5.1 D0 [r1pd F16, F18]): THE WIDE STREAM's sites
+ * state each run position as a SET (run_len sets of 32 bytes; their `run`
+ * and `mask` unread), listed in a table of their own that the generator
+ * writes only where it renders a wide site. WEAK, so a site file of today's
+ * stream alone (which must stay byte-identical, a hashed check) declares
+ * neither and links: &g2p_nwides is then NULL, and position j of every site
+ * is {b : (b & mask[j]) == run[j]} as before. */
+typedef struct {
+    int             id;
+    const uint8_t (*sets)[32];
+} g2p_wide;
+extern const g2p_wide g2p_wides[] __attribute__((weak));
+extern const int g2p_nwides __attribute__((weak));
 
 extern const g2p_site g2p_sites[];
 extern const int g2p_nsites;

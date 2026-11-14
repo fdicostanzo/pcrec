@@ -35,7 +35,7 @@ SAB_ID="S268-req-run-alt-overclaim"
 SAB_FILE="src/facts/req.c"
 SAB_SUITES="harness prechecks altdiff"
 SAB_DESC="the necessary-run analysis takes an alternation's head run to be the LONGER of its branches' heads instead of their longest COMMON prefix, so the emitted whole-window pre-check demands a contiguous run that only one alternative contains — a run longer than the analysis can prove, which deletes every match of every other branch; the general form of reqpos_2b.md §5.4's proposed plant, chosen because the shipped corpus reaches it while a one-byte-longer literal would have needed a bespoke witness this corpus does not supply"
-SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary detector: every 'm' case whose match takes a branch other than the one whose prefix was claimed reports nomatch. tests/codegen/run_prechecks.sh §4.7 is the structural detector and names the claim rather than the symptom — its (?:xabcy|wabcv)q row (zabcw before S4 C3) reports 'run \"7861626379@0\" / byte \"113\" — expected a declined run and a live byte (an alternation contributes only its common affixes, so abc is not claimed)'. §4.1's (?:/user|/users) row stays GREEN under this plant by construction, since there the left branch's head IS the common prefix. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S268."
+SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary detector: every 'm' case whose match takes a branch other than the one whose prefix was claimed reports nomatch. tests/codegen/run_prechecks.sh §4.7 is the structural detector and names the claim rather than the symptom — its (?:x.abcy|wabc.v)q row ((?:xabcy|wabcv)q before the 2026-11-13 set-domain flip, zabcw before S4 C3) reports (measured on a planted scratch build, 2026-11-13) 'run \"77616263@2\" / byte \"98\" — expected a declined run and a live byte (an alternation contributes only its common affixes, so abc is not claimed)'. §4.1's (?:/user|/users) row stays GREEN under this plant by construction, since there the left branch's head IS the common prefix. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S268."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree an
 # alternation with a real common prefix produces a run from THIS arm, and one
 # with no common affix produces none.
@@ -45,9 +45,23 @@ SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary de
 # C3's cube hull now claims a MASKED run (x|z)abc@0 there and the old probe
 # read MISSING. x/w and y/v differ in more than one bit, so no hull is a
 # position. Intent unchanged.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:/user|/users)" && grep -q "^#define RX_REQ_RUN \"2f75736572@0\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/p.c" --pattern "(?:xabcy|wabcv)q" && grep -q "^#define RX_REQ_RUN \"none\"" "$REACH_TMP/p.c" && echo REACH-REQ-RUN-ALT-COMMON-PREFIX'
+# RE-AIMED 2026-11-13 (lane s2tri, [RUN-POS-SET] flip 2 -> 128): the
+# no-common-affix half moved (?:xabcy|wabcv)q -> (?:x.abcy|wabc.v)q, the
+# witness run_prechecks.sh §4.7 already moved to (3d70b9997). With the set
+# domain at 128 the two equal-width all-literal branches take row 1
+# (`rr_alt_union`) and read the run [7778]616263[7679]71@5, so the old probe
+# never touched this row's arm (row 2, `rr_alt_affix`). The `.`s keep both
+# branches non-`all`, so row 2 decides: common head [7778] (1 position) and
+# common tail [7679]q are under the floor -> "none"; under the plant the head
+# becomes wabc (32 bits) and §4.7 reads a run. Measured on the tip.
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:/user|/users)" && grep -q "^#define RX_REQ_RUN \"2f75736572@0\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/p.c" --pattern "(?:x.abcy|wabc.v)q" && grep -q "^#define RX_REQ_RUN \"none\"" "$REACH_TMP/p.c" && echo REACH-REQ-RUN-ALT-COMMON-PREFIX'
 SAB_REACH_EXPECT="REACH-REQ-RUN-ALT-COMMON-PREFIX"
 SAB_COUNT=1
-SAB_BEFORE='    o.head = rn_common_head(w, l.head, r.head);'
-SAB_AFTER='    o.head = rn_better(w, l.head, r.head);   /* SABOTAGE S268: one branch is not both */
-    (void)rn_common_head;'
+SAB_BEFORE='    o->head = rn_common_head(w, l->head, r->head);'
+SAB_AFTER='    o->head = rn_better(w, l->head, r->head);   /* SABOTAGE S268: one branch is not both */'
+# RE-ANCHORED 2026-11-13 (lane rps3b, [RUN-POS-SET] stage 2a rule (1)):
+# `rr_alt` became a first-match row table (`rr_alt_rows`); today's rule is row
+# 2, `rr_alt_affix`, which reads its operands through pointers. Same fault on
+# the same line (the head becomes one branch's); the `(void)` guard is gone
+# because row 1 still calls `rn_common_head`. Probe re-read on the branch
+# (default build, row 1 off).

@@ -19,6 +19,7 @@
 # Here: P0's run link narrowed to its window (`member` 1 + the window start,
 # never 0 = WHOLE), so pcrec lays out the window alone (intent unchanged: the
 # whole-run compare never emitted; SW-2's K66-window).
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md rev 4 §5.1 [r3pd FIX-6]): fd_run_modes[] rows gained the `no_scan` column (P0's scan-less reply); the same plant, P0's stretch narrowed to its window.
 SAB_ID="S278-precheck-whole-run-removed"
 SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="prechecks harness"
@@ -32,7 +33,10 @@ SAB_DOC_FIGURE="tests/base/k66_precheck_whole_run.rxt is the answer-level detect
 # @0 -> @6 at [FIND-TIE] (72e3ae41, 2026-09-28: a run-scan data tie follows
 # NONE order, the rightmost); the window, the whole-run block and its call
 # are unchanged. The probe read MISSING from then until this re-pin.
-SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"65656565656565657e237e237e237e23@14\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
+# RE-AIMED 2026-11-13 (lane s2tri, [RUN-POS-SET] flip 2 -> 128): the witness
+# carries `.` before its run; `[a-z]` became a run position, which made the run
+# 17 wide with a set part. Pins unchanged (same 16-byte compare, scan @14).
+SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"65656565656565657e237e237e237e23@14\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
 # RE-PINNED 2026-10-29 (lane r30b, [MEMFN] R-30): the window's own search is
 # no longer emitted beside the whole run's, and the whole run's compare is led
 # by the window's bytes (`~#~#~#~#` at +8); the probe reads the led compare.
@@ -44,8 +48,8 @@ SAB_REACH_EXPECT="REACH-K66-WHOLE-RUN-EMITTED"
 # after the window's test) removes the block and the call together. Intent
 # unchanged: the K66 whole-run compare is never emitted.
 SAB_COUNT=1
-SAB_BEFORE='    { "P0", KIT_RUN_WHOLE },    /* REQUIRED: the whole run (K66)            */'
-SAB_AFTER='    { "P0", KIT_RUN_WINDOW },   /* SABOTAGE S278 */'
+SAB_BEFORE='    { "P0", KIT_RUN_WHOLE,  FD_NOSCAN_WHOLE },  /* REQUIRED: the whole run (K66) */'
+SAB_AFTER='    { "P0", KIT_RUN_WINDOW, FD_NOSCAN_WHOLE },  /* SABOTAGE S278 */'
 # RE-AIMED 2026-11-11 (lane k382, R-38 K38-2): pcrec states the run once (set form) and the kit
 # DERIVES its one part from the run decision's reply; the link's `member` is 0 and unread on the
 # run, so the old plant (`k.member = pk.run_window + 1`) no longer compiles (pk.run_window

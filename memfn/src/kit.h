@@ -299,6 +299,9 @@ struct mf_art {
     unsigned    levels;
     uint64_t    denies;
     site_rec   *sites;          /* handle h is sites[h - 1]; 0 is no handle   */
+    const char *fn_body;        /* the offset-skip BODY row the last define
+                                   chose (ofsskip.c fn_define); formhash's
+                                   RUNPART shape asserts it (R-38 Part D) */
     uint32_t    nsites, cap;
     uint32_t    includes;       /* MF_INC_* the rendered text needs           */
     /* the run compare's record (runcmp.c, §14.8): compares written through
@@ -380,7 +383,12 @@ const char *kit_presence_check(const mf_site *s);
  * the run's link is tested), the landmark's mass term; NULL: no landmark
  * answer (-1), fd_pres's own call, which decides it. */
 void kit_pres_picks(const mf_art *art, const mf_site *s, const mf_pres_proof *proof,
-                    const uint8_t *start_set, const mf_run_reply *ext, mf_pres_picks *out);
+                    const uint8_t *start_set, const mf_run_reply *ext, mf_pres_picks *out,
+                    int *run_noscan);
+/* (part_d.md §2.4 item 2) `run_noscan`, NULL or written: 1 iff the site
+ * states a run with NO position the kit finds (its whole-run decision has no
+ * scan), the fact SF_RUN_NOSCAN the decline row reads, handed back from the
+ * run answer the picks already ask (no second kit_run_decide call). */
 /* THE RUN's REPLY of site `s` (finder.c): the run decision the routed PRES
  * rows take for its run span (mf_class.run), asked quietly; all zero where
  * the run's link is not tested or no run is stated. 0, or -1 with *why. */
@@ -426,9 +434,28 @@ void kit_run_set(const mf_term *t, unsigned j, uint8_t set[32]);
  * (`exact` 1). */
 typedef struct { int pos; uint32_t mass; } kit_member;
 typedef const uint8_t *kit_pos_at(const void *src, unsigned j, uint8_t buf[32]);
+/* A run member's CANDIDATES (part_d.md §2.4 item 1), the run modes'
+ * column: EXACT, one-member positions only (the window site's verify-NO
+ * stretch); FINDABLE, the positions the kit's finds read, one member or a
+ * two-member cube (kit_pos_spelled). "Findable" is the kit's PRIVATE rule:
+ * no host reads it (D157). */
+typedef enum { KIT_CAND_EXACT, KIT_CAND_FINDABLE } kit_cand;
 #define kit_run_member MF_NS(kit_run_member)
 kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src, unsigned n,
-                          int exact, const kit_member *after, int tie);
+                          kit_cand cand, const kit_member *after, int tie);
+
+/* THE ONE SPELLING ACCESSOR (window.c; part_d.md §2.1 item 6 [r2pd P23]):
+ * the class of a position's set, ONE (one member), CUBE (two members
+ * differing in one bit) or WIDE (anything else: three or more members, or
+ * two that are no cube, or none). A position "has a (T, K) spelling" iff
+ * it is not WIDE (kit_pos_spelled): the run modes' FINDABLE candidates, the
+ * derived run part's scan stretch, the verify-YES pinned span's test and
+ * run_bytes' refusal all read this one accessor. */
+typedef enum { KIT_POS_WIDE, KIT_POS_ONE, KIT_POS_CUBE } kit_pos_class;
+#define kit_pos_class_of MF_NS(kit_pos_class_of)
+#define kit_pos_spelled  MF_NS(kit_pos_spelled)
+kit_pos_class kit_pos_class_of(const uint8_t set[32]);
+int kit_pos_spelled(const uint8_t set[32]);
 
 /* THE RUN DECISION (presence.c; R-38 K38-1, span_runs_sheet.md rev 1.3
  * §2.3): a run's scan position and the stretch its check verifies, ONE
@@ -449,7 +476,11 @@ kit_member kit_run_member(const uint32_t *rate, kit_pos_at *at, const void *src,
  * stretch. `after` non-NULL asks the next ranked position (translate's walk,
  * the in-run stop's; the stretch is then the whole run's). */
 typedef enum { KIT_RUN_WHOLE, KIT_RUN_WINDOW, KIT_RUN_EXACT_AROUND } kit_run_stretch;
-typedef struct { kit_run_stretch st; int tie; } kit_run_opts;
+/* `clip` (part_d.md §5.1 D2, the deny `run-verify-wide`): 1 clips every
+ * mode's stretch to the maximal FINDABLE stretch holding the scan, the
+ * identity where every position is findable; read through kit_run_opts_of,
+ * so every reader of the decision on one art reads it. */
+typedef struct { kit_run_stretch st; int tie; int clip; } kit_run_opts;
 typedef mf_run_reply kit_run_reply;
 #define KIT_RUN_NONE ((kit_run_reply){ 0, 0, 0, 0 })   /* no scan, no stretch */
 #define kit_run_decide  MF_NS(kit_run_decide)
@@ -457,8 +488,9 @@ typedef mf_run_reply kit_run_reply;
 #define kit_run_at      MF_NS(kit_run_at)
 kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_opts o, kit_pos_at *at,
                              const void *src, unsigned n, const kit_run_reply *after);
-/* The decision's options on art `art` for a reader rendering stretch `st`. */
-kit_run_opts kit_run_opts_of(const mf_art *art, kit_run_stretch st);
+/* The decision's options on art `art` for a reader rendering stretch `st`
+ * of site `s` (its `opts` carry the deny `run-verify-wide`; NULL: none). */
+kit_run_opts kit_run_opts_of(const mf_art *art, const mf_site *s, kit_run_stretch st);
 /* A RUN term's (`src`, an mf_term) position j as its set (kit_run_set). */
 const uint8_t *kit_run_at(const void *src, unsigned j, uint8_t buf[32]);
 
@@ -884,9 +916,17 @@ unsigned kit_target_levels(const mf_target *t);
 /* 1 iff predicate `p` is one the offset-skip function renders with the
  * hooks `def` offers (its tables are the caller's, its run compare the
  * kit's: a run byte outside its mask is the generic row's). */
-int ofs_fn_applies(const mf_pred *p, const mf_hooks *def);
-/* The scan: offset `*k` from the candidate and byte `*a`; `*b` is the
- * second member where the scanned position is a two-member cube, else -1. */
+int ofs_fn_applies(const mf_pred *p, const mf_hooks *def, int derived);
+/* `derived` 1: the predicate is THE DERIVED RUN PART (part_d.md §2.1, the
+ * SCOPED admission [r1pd F9]): passed by precheck's run part on a site
+ * stating a run presence span, never by the offset-skip site or the window
+ * family's B-pair. It admits two shapes nothing else may state: a
+ * multi-member SET term with no table (`table_ref` 0: the kit's own set
+ * test, kit_set_test), and no scan (`plan_hint` MF_NO_PRED: the BODY row
+ * fn-every-pos verifies every candidate). A special case to RETIRE (§6 C7).
+ * The scan: offset `*k` from the candidate and byte `*a`; `*b` is the
+ * second member where the scanned position is a two-member cube, else -1;
+ * all three -1 where the predicate states no scan (MF_NO_PRED). */
 void ofs_fn_scan(const mf_pred *p, int *k, int *a, int *b);
 /* Writes the function `<fn>` for predicate `p` of site `handle` (the
  * calling site: the offset-skip site, or the pre-check composite that holds
@@ -907,7 +947,8 @@ int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf
 /* 1 iff the function serves predicate `p` of site `site` under the define
  * hooks `h`: ofs_fn_applies and the BODY slot's walk (the gate's verdict),
  * asked quietly; *pick the pick of the BODY row it takes (fn_rows' pick
- * column: fn-pair PAIR, the two streams; fn-memchr LIBC), FF_UNSTATED where
+ * column: fn-pair PAIR, the two streams; fn-memchr LIBC; fn-every-pos NONE,
+ * never served here: its scope is the derived run part's), FF_UNSTATED where
  * none serves. */
 #define ofs_fn_serves MF_NS(ofs_fn_serves)
 int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
@@ -1282,7 +1323,7 @@ static inline void gate_trace_cand(const gate_tctx *t, const gate_cand *c)
  * mf_form_hash folds (every instance of the id, one text) AND what a
  * span_cards cell times. TEST entries (no
  * memfn.h change): the slot harness and tests/memfn/arm_fixtures.c read them. */
-typedef enum { MF_FH_FIND = 0, MF_FH_WINDOW, MF_FH_RUNCMP, MF_FH_SETTEST } mf_form_shape_id;
+typedef enum { MF_FH_FIND = 0, MF_FH_WINDOW, MF_FH_RUNCMP, MF_FH_SETTEST, MF_FH_RUNPART } mf_form_shape_id;
 typedef struct {
     const char *id;
     const char *cls;        /* the class token; "-" for an id with one instance */

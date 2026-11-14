@@ -24,7 +24,10 @@ design's own formula). A study only: never built or run by `make`. Run python wi
   band from the cards' noises; plus the vcls fold (verify classes, `class_measure`) and the smp20 watched-witness
   reading (measured k vs k*). Output `census0_cards.out`, committed beside `census0.out` (which stays S2b's: it
   is a TIMED path, `slot/plan.py` reads it, so S2f leaves it byte for byte). `slot/vcls.py` stays (link.py and
-  plan.py read it); its data lines equal the fold's, checked by the S2f job.
+  plan.py read it); its data lines equal the fold's, checked by the S2f job. R-38 Part D D3: `settest_cls` bounds
+  c1/c2/cn (3-7 compares)/cn+ (more, UNMEASURED; vcls.py holds the same), and THE ONE PARSER of the kit's
+  `run_part_terms` record (`run_part_record`, `run_part_classes`, `run_part_unspelled`): a `deleg:runpart` unit per
+  record, its verify classes in the vcls fold; G2's D3 check (memfn/tests/g2/run_part_census.py) reads it too.
 - `census0_control.sh BUNDLEDIR` — census0's control: `control` on smp20's site must equal `smp20.out` byte
   for byte (sabotage S2920 plants the incumbent read from the wrong field).
 - `witness.sh PCREC PCREC_ANALYZE SCRATCH` — the watched witness: builds the scratch `prose` bundle
