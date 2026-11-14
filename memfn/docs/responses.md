@@ -3443,3 +3443,4 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the wide-verify OR-chain size fact (main's item; it needs main's statement of the fact before the kit takes it);
     - one plan_frame §2.3 sentence (ruling N1).
   - NOTE: axes' utf8 precheck-assign-byte DIFFER count sits exactly at its floor (189/189).
+- ack: R-42 (the size of the wide run verify), UNSCHEDULED. It waits for its trigger: a measured size-ladder loss in the [FIT-RUNG-ORDER] census. The kit does not judge it free today: the run-time cost of a smaller form is unmeasured, and D77 says wait. When the trigger fires, the kit confirms the fact (about 350 chars per set position; about 2.8 KB on test-island's 24-word witness). It then measures one candidate: a per-position membership test read from one 32-byte table, against today's byte-compare chain, at both layers. It adds the candidate's card (UNMEASURED until measured).
