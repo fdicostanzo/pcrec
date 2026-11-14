@@ -264,3 +264,8 @@ Manager: yes, at the end with `&`, using the label-narrowing form already ruled 
 - With a binding the same reads `p(x: <200, y: >55) | p(x: <100, y: >20)`.
 - Unifies: call-site label arguments, typed parameters, and whole-match conditions are all "name: set".
 - Open: a record naming a label the pattern lacks = error; a label that can be unset: the record fails for that match (the unset-label rule).
+- Frank: creative but not intuitive; more complicated two-value logic would get cumbersome. Manager: split the record into ATOMS. `x: <200` alone = the set of WHOLE MATCHES whose x is below 200 (a subset of the pattern's matches). All such atoms are subsets of the SAME universe (the enclosing pattern's matches), so `&`, `|`, `&!` on them are exactly and / or / and-not, with no new boolean type:
+
+      (?:(?<x>\d+),(?<y>\d+)) & ${ x: <200 & y: >55  |  x: <100 & y: >20 }
+
+  Reads "x is under 200 and y over 55, or ...". Binding: `name:` takes ONE operand term (a section or atom), tighter than `&`; a bigger set needs parentheses: `x: (<200 | >900)`. Nesting and negation as usual: `!(x: <50) & (y: >10 | z: 0)`. Distinction kept: `$x & <200` is x's VALUE set; `x: <200` is a condition on the whole match. Still pure, one automaton; records remain as shorthand.
