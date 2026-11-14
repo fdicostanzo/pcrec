@@ -28,6 +28,7 @@ Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it); 1 maj
 - 2026-11-09 cf578177e major — merge lane/u3mech edf78bcbf ([XARCH-DEV] kit U2 per-CPU SIMD seam + pcrec U3 targets), abi 98, MF_SITE_ABI 26; review 2026-11-08 r5 xarch ruled, fixes in; landing lane landu3; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge; lane gates: make test, strict, axes, mech, movers, sections, sweep (landsweep 080 green on edf78bcbf), kit 560-569 + 089
 
 - 2026-11-14 9cecc3caa major — merge lane/s2land (23700b344, [RUN-POS-SET] stage 3 S2 + kit Part D + R-41), abi 106; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge (65ef919fc); landing lane s2fin; lane gates: cloud test GREEN at 692e5f431, cloud axes GREEN at 23700b344; post-merge make and make strict green, test-codegen/test-registry/test-rxtsource per the s2fin report
+- 2026-11-14 e711c6fe6 major — merge lane/r1on (14325654b, [RUN-POS-SET] stage 2a rule (1) alt_union default ON), abi 106 -> 107; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge (ceaa058c9); landing lane r1land; lane gates: cloud test, axes r1on-axes2 and mechrows GREEN at 14325654b; post-merge make strict green, test-codegen/test-registry/test-rxtsource/test-startset/test-cand-oracle per the r1land deliver
 
 ### minor
 
