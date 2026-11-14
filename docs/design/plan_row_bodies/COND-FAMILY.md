@@ -296,3 +296,11 @@ arrays need a prefix argument); (3) NAME CLASH: "map" is already the labelled-al
 operator is `each(f, a)` (or `apply`); `each` keeps labels and order, its result is an array (joinable,
 indexable); (4) navigation labels stay free and exist without this; exporting caller-visible captures is a
 one-line library function: `export capture(x) := /(?<${x.label}>${x})/`, `join(each(capture, a), sep: ".")`.
+
+**2026-11-14 — each's bindings (Frank: an incremented iteration index, initialised by `index:`; the original index and label also exposed).**
+Three distinct values (they differ once the array is sliced, e.g. `A[[1,3,5]]`): the ITERATION ORDINAL
+(dense, starts at `index:`, default 0; e.g. `index: 1` matches PCRE's 1-based groups), `x.index` (original
+position: 1,3,5) and `x.label` (original name). Lean: element facts stay on the element (`x.index`,
+`x.label`); the ordinal is a PARAMETER the macro declares (`capture(x, i) := /(?<f_${i}>${x})/`; `each`
+passes it as the second argument when the macro takes one), not an implicit binding, so nested `each`s
+never shadow and the dependency shows in the signature. A numeral spliced into a name is canonical.
