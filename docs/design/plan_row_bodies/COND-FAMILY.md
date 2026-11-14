@@ -627,3 +627,5 @@ COMPILE-TIME EFFECT macros: `@export(...)`, `@assert.some("2024" & leap)`; only 
 bare statement without `@` is an error (catches the unbound pattern); pure macros cannot take `@`, effect macros
 cannot drop it (purity visible and checked syntactically); `import(...)` is unprefixed (returns a value). `@` exists
 only in the expression language. Grammar: bindings, expressions, calls, `@` statements; NO keywords.
+Addendum (Frank): `import(...)`'s argument is a set of names (an rx over file names, consistent with export); it must
+resolve to EXACTLY ONE file; zero or several matches = compile error listing the candidates.
