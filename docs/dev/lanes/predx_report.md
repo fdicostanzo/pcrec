@@ -1283,3 +1283,131 @@ only inside a section operand, a `with` body or a hole.
 - C18. "A LITERAL IS ITS OWN SCOPE, VALUE-SCOPED" (§11) vs E-JSONL's `/^${q}$/m` and G3's lone-literal programs
   with lookbehind (C15 above). Listed here because the draft treats C15 as a question about `&` only; the
   conflict exists with no `&` at all.
+
+## 8. GAPS AND CLOSURE
+
+### 8.1 Missing features (each with the solution that needed it)
+
+| gap | needed by | shape of the fix (proposal; §10 ranks them) |
+|---|---|---|
+| arrays of filters (macros) as values | 3.4 (CIDR list), 3.12 (table of ranges) | views are of TERMS (A3); `&` with an array of filters distributes (A4) |
+| `x:` inside `some`/`count` on a repeated label | 3.1 F4, 3.8 F27 | O4 proposal: `x: S` = all iterations; `some(x: S)`, `count(x: S) == k` quantified |
+| tuple on the left of `:` | 3.11 F37, 3.4 F15, 3.5 | `(a, b, c): >= (1, 4, 0)`: chained 3-outcome compares, ~3^k states |
+| `enumerate(rx)` (finite rx -> array) | 3.10 F34 | finiteness checked; size bound; the finite-backreference rule makes it unnecessary for the backref case |
+| bounded recursion / unroll | 3.9 F32 | strictly decreasing literal integer parameter, or `unroll(k, f, base)` |
+| `opt(x)` vs the empty-entry trap | 3.2 F6, 3.6 F20 | the trap moves to "final expression nullable in search" |
+| value tests without a label | 3.5 F19, 3.8 F28, E-NEAR (c) | computed label + `label: section` (C10 rule 3) |
+| value-vs-value comparison typing (no literal) | 3.12 F40 | shape type of the record group; "both readings agree" proof or an error asking for `number`/`unpad` |
+| "label unset" as a TEST | A6 | `unset(x)` / `set(x)` filters (the draft gives unset a truth value but no spelling) |
+| union label value type | 3.13 F44 | a union's label carries the JOIN of the entries' value types; reporting canonicalizes |
+| `records` tiling requirement | O18, 3.3 F12 | every byte in a record or a declared gap, else error |
+| regular twin SUPPLY API | W3 | enumerate-and-classify or digit-fold; the library interface must offer both |
+| per-level refusal table | 6.4 | a published table (construct, level, reason, opt-in) as the strict-subset spec |
+| `vm`-level `&` with a non-regular operand | 3.9 F33 | define: DFA for the regular operands, VM verify for the rest ([PRED-SPLIT] shape); or refuse `&` on non-regular operands and say so |
+| empty-match iteration rule for `count`/`s[i]` | 6.4 borrow 3 | adopt PCRE's find-all rule (the C iterator's) and write it down |
+| any-order combinator | 3.1 F1, E-JSONL | library `any_order(parts, sep, filler)` with a "2^n" cost line |
+| case-fold pullback `ci(s)` | 3.7 F26, 3.8 F30 | a per-character transducer pullback; library one-liner once pullbacks exist |
+
+### 8.2 Closure properties
+
+Closed (the result stays in the system):
+- `&`, `|`, `!`-under-`&` over rx: regular languages are closed under Boolean operations. With C15's triples, also
+  closed over context-marked sets (lookarounds inside operands stay meaningful).
+- Pullback through any finite transducer or finite table: regular (inverse image under a rational relation). This
+  covers transforms (`unpad`, `length`, `left/right/mid`), decoders (`jstr`, `unquote`), case folding, computed
+  labels' value conditions, and record columns. ONE closure theorem, six draft headings (W4): the spec can state
+  it once and derive the rest.
+- Substitution of a narrowed group (`x: S`, S constant): regular; locality is what makes it cheap.
+- Relations across labels with FINITE class counts: regular (product remembering the class); cost = class product.
+- `join`, `list_of`, union of arrays, holes: concatenation/star/union of regular sets: closed.
+- Compile-time structure (`each`, `where`, `records`, `[]`, `.`): terms map to terms; G4 bounds it.
+- Application of a macro to an rx: an rx; of a macro to a macro (currying): a macro. Both kinds closed under
+  the operators, with the mixed `|` refused (E1).
+- "Fully constrained = formatting" (draft §5.2): a pattern whose every label is fixed to a one-string set is a
+  finite set; enumerating it GENERATES strings. The system can produce test subjects for its own patterns.
+
+NOT closed (results fall outside; each needs a level or a refusal):
+- Relations across labels with UNBOUNDED domains (general backreference, `a: <$b` on `\d+`): non-regular -> `vm`
+  (or `functions` for the arithmetic kind). The compiler can always tell which (finite vs infinite language of the
+  earlier label), so the boundary is decidable and the error precise (E3).
+- Relations between two COUNTS (`count(a) == count(b)`): non-regular; no level below `vm`/`functions` helps; refuse
+  with the reason.
+- Recursion (nesting): non-regular -> `vm`, or bounded unrolling (regular, in the system).
+- Computed labels with INFINITE value domains (`length` of an unbounded label as a reported value): as a CONDITION
+  against a constant it is closed (pullback); as a REPORTED VALUE it needs a capture or a counter in the output,
+  i.e. `functions`-class machinery. The spec should separate "condition on a computed label" (closed) from
+  "report a computed label" (closed only for finite class counts).
+- `sort(alts, by = length)` on entries that are not literals (patterns have no single length): kind error; `by`
+  must be a property every entry has.
+- Arithmetic on patterns (`isodate + 1`): kind error. Arithmetic on values (`$x + 1`) with an unbounded label: a
+  value, fine in a condition against a constant only through a twin with finite classes (`($x + 1) mod 7`).
+- `eval` (run-time patterns): by construction outside the compile-time system; a module with a runtime.
+- Occurrence sets of a NULLABLE pattern (`count($x ~ /a*/)`): defined only with an empty-match rule; refuse until
+  the rule is written (8.1 last rows).
+
+### 8.3 Interesting closure the notes did not call out
+
+1. `&` WITH AN ARRAY OPERAND IS CLASSIFICATION. `ipv4 & cidrs` (3.4), `addr & ranges` (3.12): the result's array
+   view has one entry per admitting filter and `.index` names it, at no cost beyond the accept-class labels.
+   Combined with record arrays (3.3) this is "match against a table and report the row" (phone -> region,
+   state/zip -> which range, card -> brand), the most common lookup task, written as `pattern & table.column`.
+2. RECORD ARRAYS ARE PATTERN -> VALUE MAPPINGS. Any column is a pattern; the others are its computed labels; the
+   function check is the per-label ambiguity check the draft already has (§4.4). C7's `=>` is unnecessary.
+3. COMPILE-TIME ASSERTIONS ARE FREE. Language equality and inclusion are decidable (D196 add. 2's XOR/never-match
+   fact; the typed-parameter inclusion check). So a library can carry its own TESTS as bindings:
+   `check isodate(year: 2024, month: 2, day: 29) == /2024-02-29/`, `check leap_year within /\d{4}/`,
+   `check "2023-02-29" !in valid`. The draft's §8 asks for library entries "tested against the standard's own
+   vectors": those vectors can live IN the library file as checks the compiler runs at import. This is the single
+   largest free feature I found; it needs one keyword and no new semantics.
+4. FORMATTING = GENERATION = FUZZ SEEDS. A fully constrained pattern enumerates; a partially constrained one can be
+   sampled (random walk on the DFA). `isodate(year: 2024)` yields every valid 2024 date: test-subject generation
+   for the predicate corpus comes from the patterns themselves.
+5. EQUIVALENCE OF TWO FORMATS FOR ONE VALUE IS CHECKABLE. "Two compliant formats holding one date must agree"
+   (draft §9) is decidable when both have finite class products: compare the two pullbacks of each weekday class.
+   The no-semantic-override rule can be ENFORCED, not just stated.
+6. PARAMETRIC COMPARISON AUTOMATA (3.5): a run-time parameter in a comparison costs 3 classes per bound, not a
+   variant set. The draft feared "~3.65M anchor values" (O9); for comparisons the cost is constant.
+7. FINITE BACKREFERENCES ARE REGULAR (F35). Outside the predicate language: a general unlock for pcrec's engine
+   choice, budgeted by |dom(group)|.
+8. THE TRIPLE SEMANTICS (C15) makes every PCRE context construct (`^ $ \b \B` and the regular lookarounds) an
+   ordinary member of the algebra: `A & /\b.*\b/` ("A on word boundaries") is a filter like any other, and
+   `startsWith`/`endsWith` are its special cases. The notes treated anchors as a scoping problem; they are
+   filters on context.
+
+### 8.4 The capture-reporting axis (a gap of a different kind)
+
+The draft ties captures to `functions` (O6) and otherwise does not say what a default-level program REPORTS. From
+§2.4: evaluation needs no captures; reporting a NAMED SPAN does. So there are three outputs with different costs:
+(a) the match span: default, free; (b) ACCEPT-CLASS values (`.index`, computed labels with finite class counts:
+weekday, region, brand, Roman value per group): default, free (a lookup on the accept state); (c) named-group SPANS
+(`$year` as text): a tagged DFA ([ENG-TDFA]) or the VM. PROPOSE that the spec name (b) explicitly (it is the
+language's most distinctive output and costs nothing) and treat (c) as an orthogonal opt-in (`captures`), not as
+part of `functions`. This also answers "what does the DFA engine return for a predicate program" for the API
+freeze: span + class ids.
+
+## 9. META FEATURES
+
+For each organisational-layer feature (draft §9-§10): the example that needs it (or none), the verdict, and where
+it would enter if adopted. The layering test (draft §1) asked whether any acceptance case needs the layer; §3
+asked the same of thirteen more programs.
+
+| feature | example that needs it | verdict | where it enters |
+|---|---|---|---|
+| definitions as NAMESPACES (`isodate.year`, `json.row`) | every program that navigates a map view or imports a library | FOUNDATION, not meta: the map view IS dotted navigation; `import` needs a prefix | §3 views and §7 import; already there |
+| `import ... as` | two libraries exporting `between`-like names | needed with the first second library; trivial | §7 |
+| COMPUTED LABELS (`with v = ...`) | E-WEEKDAY, E-RFC, 3.3 region, 3.6 value, 3.13 | FOUNDATION (the draft already says so); the spelling `with` is placeholder and binds wrong as a postfix (A12) | §4.4; make it a binding-level form |
+| INTERFACES (`date := type(...)`, `isodate: date`) | 3.13 did NOT need one (a `with` on the union sufficed); the only need is a LIBRARY shipping members for user formats it has never seen, and a compile-time check that a format has the fields | EARNS ITS PLACE ONLY AS LIBRARY PACKAGING; not in the first spec; when it comes, it is "a set of required labels with value types", i.e. a map-view TYPE, checked by inclusion per field: no new semantics | an `export`-side declaration in library files, after a first build (as the draft says) |
+| MEMBERS declared with the type (`{ weekday(d) := ... }`) | same as interfaces | same verdict; a member is a macro whose first parameter has the interface type; "declared with the type" is a namespacing choice, fine | with interfaces |
+| NO SEMANTIC OVERRIDE | 3.13 (two formats, one weekday) | a RULE, not a feature; enforceable (8.3 item 5); keep | spec text |
+| UFCS (`d.weekday` resolving to a scoped macro) | none; `weekday_of($year, $month, $day)` and `weekday($d)` read fine | UNNECESSARY COMPLICATION: adds a third resolution rule to `.` (label, member, scoped macro) and a new error class (ambiguous dot); `.` already means navigation; drop | nowhere |
+| `types(x)` array | none | UNNECESSARY: no program asked what interfaces a pattern satisfies; the inclusion check answers "is x a date" directly | nowhere |
+| OVERLOADING by disjoint type | none in §3 (the draft already defers it) | keep deferred; the union-of-formats idiom (3.13) covers the realistic case without dispatch | nowhere yet |
+| `eval` (run-time patterns) | none; the parameterised matcher (`param`) covered 3.5 and E-NEAR (b) | a separate MODULE if ever; the draft's own assessment ("self-describing files are a demonstration, not a driver") stands; do not spend spec text on it before an example | §10 of the draft, unchanged, marked IDEA |
+| `where`/`where_group` (structural filters) | E-FILE-like cases; none in §3 beyond `each` | keep as library (they are `each` + a drop); low cost | §5.3 |
+| `each_group`, `unmatched = keep` | none in §3 | keep deferred, as the draft says | §5.3 |
+| compile-time CHECKS (`check ... == ...`) | 8.3 item 3: every library | PROPOSED addition: the one meta feature that earns its place immediately; it is the test discipline the draft asks for (§8 "tested against the standard's own vectors") made executable | library files and user programs, as a binding-level form |
+
+Where the organisational layer would ENTER, if adopted later: at the `export` boundary of library files (an
+interface is a published contract for a library's members), never inside the foundation's semantics. The test of
+the ranking (draft §1) holds on all thirteen programs: none needed interfaces, UFCS or `types()`; three needed
+`with`; one would have benefited from `check`.
