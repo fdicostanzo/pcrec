@@ -36,3 +36,12 @@ SAB_BEFORE='    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PA
     { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },'
 SAB_AFTER='    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },   /* SABOTAGE S686 */
     { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },'
+# RE-AIMED 2026-11-14 (lane s686): [RUN-POS-SET] partd added fn-every-pos ABOVE both rows and
+# narrowed memchr_holds to `a >= 0 && b < 0`, so pair and memchr are DISJOINT and swapping them
+# alone is answer-invisible (the row went UNDETECTED at 0c9751138, reach ok). The plant now
+# restores the floor the swap presupposes: memchr_holds true on any stated scan (a >= 0), then
+# swaps, so the floor takes a cube again. Same intent as the original plant.
+SAB_FILE2="memfn/src/ofsskip.c"
+SAB_COUNT2=1
+SAB_BEFORE2='    return x->a >= 0 && x->b < 0;'
+SAB_AFTER2='    return x->a >= 0;   /* SABOTAGE S686 */'
