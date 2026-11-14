@@ -339,3 +339,13 @@ OPERATION, stated: extensional (`& | !`, comparisons) depend only on the languag
 `each`, `join`, `.label`) read the spelling, so `/a|b/` and `/b|a/` are equal under `&` but differ under
 `[0]` (and in PCRE priority). Internal rewrites (altcls, alt_normal_form) never change the user-visible
 structure. Field-wise narrowing that KEEPS other entries is spelled structurally (each/projection), not `&`.
+
+**2026-11-14 — arrays vs maps are two VIEWS of one rx (Frank: "Maps are the labeled groups. The interpretation between the two is different and can have different counts").**
+ARRAY view = top-level alternatives (flat); MAP view = labelled groups (a tree; nesting gives paths, `d.year`).
+Counts differ: `/(?<y>\d{4})-(?<m>\d\d)/` = array 1, map 2; `/(?<a>x)|(?<b>y)|z/` = array 3, map 2. Access: a
+NUMBER indexes the array view (`rx[1]`), a NAME navigates the map view (`rx.y`, `rx["y"]`): no ambiguity rule.
+The earlier labelled arrays (`(Monday: ..., ...)`) are the ALIGNED case: each alternative is exactly one named
+group, so both views count 7. Map order = PCRE group number, so a map entry's natural index is its group
+number (fits `each(..., index: 1)`). `each`/`join` take either view; where they differ the caller names it
+(e.g. `rx.alts` / `rx.groups`, spelling open). Duplicate labels: union type (ruled). Both views are
+structural; `&` stays extensional.
