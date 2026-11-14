@@ -116,3 +116,7 @@ Manager's leaning:
 
 Yes, and there is only ONE kind: `name := expression`. By the closure, a predicate IS a pattern (`year := /\d{4}/ & (> 2000)` is both). The expression's TYPE, inferred, decides use in a hole (as before: pattern -> sub-pattern, value -> text, test -> guard). Values (`n := 3`, tables, mappings) and tests (`ok := leap($d.year)`) sit beside patterns, in any order (forward references allowed, no cycles).
 The useful distinction is not kind but DEPENDENCE: a binding that mentions a match label (`$x`) is match-dependent (evaluated per match); one that does not is pure (compile time). The compiler tells them apart from the text; leaning: the cost report ([COST-EXPLAIN]) shows which bindings are match-dependent, since those are where run-time cost lives.
+
+### 2026-11-13 evening: classic DEFINE groups beside bindings (Frank's clarified question)
+
+REVISES the earlier "DEFINE only bindings" leaning: ALLOW classic `(?<name>…)` groups beside `:=` bindings in an opted-in DEFINE. A classic group IS a pattern binding of that name, with PCRE's own semantics kept: it takes its group number, inherits the enclosing flags (a `/…/` literal does not), and `(?&name)` calls it. One namespace: a group and a binding with the same name is an error. Why allow: the classic group is already well defined, forbidding it adds an error case and a migration step for existing pattern libraries, and nothing about it conflicts with bindings. Holes still take no `:=` (unchanged).
