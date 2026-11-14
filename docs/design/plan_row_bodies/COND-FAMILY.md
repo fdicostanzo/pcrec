@@ -492,3 +492,13 @@ parameter has the value's type (`d.weekday` = `weekday(d)`); a name that is both
 format supplies the required labels, the interface everything else; extra information becomes a CONSTRAINT.
 (E-RFC) `rfcdate: date := join((wname: weekday_abbrevs, rest: textdate), sep: ", ") & (wname.index: = weekday(rest))`
 rejects `Fri, 14 Nov 2026`; weekday is regular, so a weekday-consistent date validator is one pure-DFA automaton.
+
+**2026-11-14 — namespaces for type members (Frank: importing isodate, a "date", does weekday come along? Could it know weekday is typed to date and import it as date.weekday?).**
+Lean: members travel WITH THE TYPE, not into the importer's namespace (Rust traits / Go methods). Dot lookup searches
+the value's type in that type's home library: `import isodate` brings isodate; its type `date` comes as a
+dependency, not a name; `d.weekday` works with no further import; a bare `weekday(d)` is an ordinary name needing
+`import weekday` (scopes stay clean). MEMBERSHIP IS EXPLICIT, declared with the type (`export date := type(...) {
+weekday(d) := ...; leap(d) := ...; month_name(d) := ... }`), never "any macro anywhere whose first parameter is
+date" (extension methods: an unrelated import could change or ambiguate `d.foo`). Outside extension = ordinary typed
+macros, called bare after import (`fiscal_quarter(d)`). Collisions: label vs member = compile error (ruled); import
+name clashes resolved by `import weekday as wd`.
