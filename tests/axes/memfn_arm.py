@@ -68,13 +68,31 @@ from concurrent.futures import ThreadPoolExecutor
 # The vrun rows' utf8 witnesses since [RUN-POS-SET] stage 3 (the comment at vrun-kb below).
 VRUN_U8 =[b"(?i)tra", b"(?i)update", b"(?i)union.*?update.*?from", b"(x?)(?i:abcdefghij)\\1"]
 VRUN_U8_PAD = VRUN_U8[:3]
+# The precheck-assign-byte witnesses since [RUN-POS-SET] stage 3 (lane s2pre2, 2026-11-14).
+# Stage 3 lets a class or alternation position next to the one-byte landmark join the
+# necessary run, so the landmark is a set run (`rx_reqrun`) and the one-byte ASSIGN site the
+# deny moves is gone: intended (s2pre_report.md, s2pre2_report.md). Eleven corpus patterns
+# left the reach that way (sweep job 599 over the base and tip corpora: byte c-default
+# 132 -> 123, utf8 189 -> 178, both layers). Each witness is a lost pattern's sibling with a
+# `.` between the landmark and its set neighbours, so no set run forms and the one-byte
+# site stays (single compiles at lane/s2land 692e5f431, both layers). PAB_BOTH differ at
+# byte and utf8; PAB_U8 at utf8 only (in byte mode its landmark is `x`, next to the set).
+PAB_BOTH = [b"(?:[0-9]{1,3}.\\.){3}[0-9]{1,3}", b"(?:[0-9a-f]{1,4}.:){4,7}[0-9a-f]{1,4}",
+            b"(?:\\d{1,3}.\\.){3}\\d{1,3}", b"(?:^|[\\s,;])(?:tr.e|fal.e)(?:$|[\\s,;])",
+            b"(?:a.|c.|a.r|c.t){8}.z", b"(?m)^ER.ROR|WA.RN", b"(\\d{2,4}).-.(\\d{2,4})",
+            b"[a-c]{2,4}.x.[0-9]{2,4}.y.[A-C]{2,4}.z.[j-l]{2,4}.w.[x-z]{2,4}",
+            b"\\b\\d{1,3}.\\..\\d", b"(?:ab|ba|aa|bb){24}.c"]
+PAB_U8 = [b"x.(?:1[\xc3\xa9\xc3\xa0]|q2|r3).y"]
+PAB_WIT = ([("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]
+           + [(e, "c-default", w) for w in PAB_BOTH for e in ("byte", "utf8")]
+           + [("utf8", "c-default", w) for w in PAB_U8])
 MEMFN_CLASS = {
     ("precheck-assign-byte", "default"): ("DIFFER",
         {("byte", "c-default"): 131, ("byte", "c-vm"): 0, ("utf8", "c-default"): 189, ("utf8", "c-vm"): 0},
-        [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
+        PAB_WIT),
     ("precheck-assign-byte", "simd"): ("DIFFER",
         {("byte", "c-default"): 131, ("byte", "c-vm"): 0, ("utf8", "c-default"): 189, ("utf8", "c-vm"): 0},
-        [("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]),
+        PAB_WIT),
     # R17-b' B1's five finder-table denies (lane fdclass, 2026-10-17), MEASURED at
     # lane/b1fix f74bb0b7b (= the B1 tip): `taskset -c 0-7 python3 tests/axes/memfn_arm.py
     # --measure`, 10 cells (5 rows x 2 layers), differ=0 refused=0 of 4624 in every
