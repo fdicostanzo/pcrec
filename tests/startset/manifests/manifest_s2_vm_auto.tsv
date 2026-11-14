@@ -95,6 +95,8 @@ tests/base/vm_lazy_rmin_prefix.rxt:186	--engine=vm	2862292861297b3230302c7d3f62
 tests/base/vm_lazy_rmin_prefix.rxt:212	--engine=vm	7a5b6162635d7b332c7d3f643f
 tests/base/vm_lazy_rmin_prefix.rxt:229	--engine=vm	286129283f3a615b6263645d297b322c7d3f6165
 tests/base/vm_lazy_rmin_prefix.rxt:253	--engine=vm	286129283f3a6162297b322c7d3f61637c71
+tests/base/vm_lazy_rmin_prefix.rxt:268	--engine=vm	283f3a617b322c7d3f7c78295b61625d
+tests/base/vm_lazy_rmin_prefix.rxt:276	--engine=vm	7a283f3a617b332c7d3f7c7829633f
 tests/base/vm_lazy_rmin_prefix.rxt:35	--engine=vm	286129283f3a6162297b322c7d3f63
 tests/base/vm_lazy_rmin_prefix.rxt:53	--engine=vm	286129283f3a6162297b322c7d3f6162
 tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f6162
@@ -596,6 +598,7 @@ tests/litscan/spanarms.rxt:643	--features all --engine=vm	61626364282965666768
 tests/litscan/spanarms.rxt:660	--features all --engine=vm	61626364283f3a7c2965666768
 tests/litscan/spanarms.rxt:675	--features all --engine=vm	6162283f3a7c78296364
 # reqpast (2026-11-12, [REQ-PAST-LAST]): tests/litscan/handoff_vm.rxt regenerated (six unbounded-K blocks inserted before the declines): rows 485, 509, 550 removed and the file's movers re-pinned under their new ids; the VM hat row read off each block's own compile on the lane build, no other file's row moved.
+# mechund (2026-11-14): +2 rows, the two --engine=vm blocks added to tests/base/vm_lazy_rmin_prefix.rxt (S711's alternative-wrapped witnesses, lines 268/276), correct movers never pinned; no existing row moved.
 tests/litscan/handoff_vm.rxt:485	--features all --encoding=byte --engine=vm	28617c61617c62292b6378797a
 tests/litscan/handoff_vm.rxt:549	--features all --encoding=byte --engine=vm	622a7878283f3d7129
 tests/litscan/handoff_vm.rxt:569	--features all --encoding=byte --engine=vm	612b78797a
