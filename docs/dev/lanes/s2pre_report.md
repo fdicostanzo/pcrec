@@ -1,8 +1,8 @@
 # s2pre — S2 landing cloud axes red: precheck-assign-byte floors
 
-STATE: stopped (staged delivery). The cause is named and RIGHT for every loss found by
-targeted compiles. The full list of lost patterns is OWED by the queued sweep
-`kit-s2pre-sweep`. No floor or witness was changed: that is the follow-up's step 4.
+STATE: delivered, stage 1 of the brief's plan (step 2: the sweep is queued, the lane ends). The cause
+is named and RIGHT for every loss found by targeted compiles; the full list of lost patterns is
+OWED by `kit-s2pre-sweep`. No floor or witness was changed: that is the follow-up's step 4.
 
 ## Summary
 
