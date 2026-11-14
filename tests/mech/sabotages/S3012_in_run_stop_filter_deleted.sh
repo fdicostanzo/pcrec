@@ -6,18 +6,21 @@
 # picked by T_MASS_STRETCH directly again and the run-tie-left lever no longer moves it.
 # tests/memfn/decider_census.py D stays green on this plant (it counts the kit_run_decide CALL,
 # which stays; its header states the limit).
-# Detector: G2's presence family (memfn/tests/run_g2_pres.sh): in the run-tie-left pass the
+# RE-AIMED 2026-11-14 (lane mechund): since [RUN-POS-SET] stage 3 the derived run part is a direct
+# translation of the reply (part_d.md §2.1), so g2pres no longer reaches the filter; the detector is G2's WINDOW family
+# (memfn/tests/run_g2_win.sh, arm g2win): its in-run sites' DECIDE check reds (86 fails on the plant, 2026-11-14).
+# Former detector: G2's presence family (memfn/tests/run_g2_pres.sh): in the run-tie-left pass the
 # window's stop and the run decision disagree, mf_define refuses the layout ("its run part is
 # not the WINDOW its presence link verifies"), and the generator's failures red the pass.
 SAB_ID="S3012-in-run-stop-filter-deleted"
 SAB_FILE="memfn/src/window.c"
-SAB_SUITES="g2pres"
-SAB_DESC="a_mass_choose's in-run filter deleted: the in-run stop reads T_MASS_STRETCH directly, G2's lever pass must red"
+SAB_SUITES="g2win"
+SAB_DESC="a_mass_choose's in-run filter deleted: the in-run stop reads T_MASS_STRETCH directly, G2's window family must red"
 SAB_DOC_FIGURE="HAND-MEASURED by lane k382afix 2026-11-10 (docs/dev/lanes/k382afix_report.md): memfn/tests/run_g2_pres.sh --plant S3012 RED (the lever pass's generator: mf_define refuses the layout). Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3012."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        if (r && p->stretch && o >= r->start && o < r->start + r->len && o != rs)
             continue;                   /* inside R: the run decision'"'"'s one */'
 SAB_AFTER='        (void)o; (void)rs;   /* SABOTAGE S3012 */'
-SAB_REACH='TMPDIR="$REACH_TMP" bash "$TREE/memfn/tests/run_g2_pres.sh" --reach'
-SAB_REACH_EXPECT="REACH-G2P-LEVER-PASS"
+SAB_REACH='LIB="$TREE/build/libpcrec.a" TMPDIR="$REACH_TMP" bash "$TREE/memfn/tests/run_g2_win.sh" --reach'
+SAB_REACH_EXPECT="REACH-G2W-INRUN"

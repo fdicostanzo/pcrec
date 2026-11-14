@@ -21,6 +21,7 @@
 #      the driver red;
 #   4. the floors (K35), literals below, sharing no source with the family.
 #
+#   --reach        the mech row S3012's probe: the in-run sites render (a REACH token)
 #   --plant NAME   the same run over a COPY of memfn/src with one planted
 #                  defect (the table below): the run must go red. --plants
 #                  runs them all. Writes only the work directory.
@@ -350,6 +351,22 @@ EOF
     done
     [ "$bad" -eq 0 ]
     exit $?
+fi
+
+# --reach: the mech row S3012's witness probe (the clean tree's kit): the generator's
+# in-run sites, where a verify-YES run's stop is the run decision's, rendered by the
+# default build. Prints one REACH token; the generator alone, no driver.
+if [ "${1:-}" = "--reach" ]; then
+    [ -f "$LIB" ] || fail_setup "$LIB not built (make all first)"
+    "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror -I"$ROOT/memfn/include" -I"$G2" \
+        "$G2/g2_win_gen.c" "$G2/g2_win_ref.c" "$LIB" -o "$WORK/reach.gen" 2> "$WORK/reach.genbuild" \
+        || { echo "the generator does not build"; exit 1; }
+    mkdir -p "$WORK/reach.out"
+    "$TIMEOUT_BIN" 300 "$WORK/reach.gen" "$SEED" "$NSITES" "$WORK/reach.out" > "$WORK/reach.gen.log" 2>&1 \
+        || { echo "the generator failed"; exit 1; }
+    m=$(grep -oE 'in-run [0-9]+' "$WORK/reach.gen.log" | head -1 | grep -oE '[0-9]+$')
+    [ "${m:-0}" -ge 100 ] && echo "REACH-G2W-INRUN n=$m"
+    exit 0
 fi
 
 [ -f "$LIB" ] || fail_setup "$LIB not built (make all first)"

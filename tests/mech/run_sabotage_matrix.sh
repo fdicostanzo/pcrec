@@ -573,6 +573,13 @@
 #     whole family under ASan costs ~1.8x g2pres (measured by lane k383:
 #     the --plant ASan path 80 s vs 44 s per plant on the dev box). Rows:
 #     S3100, S3101.
+#   g2win — added 2026-11-14 (lane mechund); runs memfn/tests/run_g2_win.sh:
+#     G2's window family (generated window sites against g2/g2_win_ref.c's
+#     decision, the in-run sites under the lever run-tie-left included).
+#     Its own arm because since [RUN-POS-SET] stage 3 the derived run part
+#     is a direct translation of the reply, so g2pres no longer sees
+#     a_mass_choose's in-run filter (S3012); the window family's DECIDE
+#     check does. Links the sabotaged tree's build/libpcrec.a.
 #   memfnd27frame — added 2026-11-13 ([MEMFN] span_pick 3.0b, lane d27fix);
 #     runs tests/memfn/d27_frame/run.sh at D27_QUICK=1: the D27 spec-first
 #     suite of the framed phase-1 ask (mf_wdecide against mf_define's and
@@ -3511,6 +3518,15 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/g2pres.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/g2pres.log" | grep -oE '[0-9]+')"
                 score_arm "$work/g2pres.log" "$f" "g2pres:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            g2win)
+                # [MEMFN] memfn/tests/run_g2_win.sh — see the vocabulary
+                # entry above. Links the sabotaged tree's own build/libpcrec.a.
+                LIB="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" G2W_NOASAN=1 \
+                    bash "$tree/memfn/tests/run_g2_win.sh" > "$work/g2win.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/g2win.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/g2win.log" | grep -oE '[0-9]+')"
+                score_arm "$work/g2win.log" "$f" "g2win:${f:-ERR}fail/${p:-?}pass"
                 ;;
             g2pres-asan)
                 # [MEMFN] R-38 K38-3 memfn/tests/run_g2_pres.sh WITH the
