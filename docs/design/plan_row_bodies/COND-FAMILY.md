@@ -396,3 +396,11 @@ Indexing descends: a group entry's contents are an rx with their own array view 
 the `each` ordinal default 0 in earlier notes): the map view's index is the PCRE group number, `$1`/`$2`, and
 Frank's `index: 1` all point there; two bases on one rx would be a trap. `[0]` = the whole rx (PCRE group 0
 = the whole match). The `each` ordinal defaults to 1.
+
+**2026-11-14 — duplicate labels by index (Frank: with same-labelled alternations, `alt.repeated[1]` gets the first).**
+Yes: `alt.x` returns EVERY entry labelled x as an array in group order (`alt.repeated[1]`, `[2]`, ...); a unique
+label gives an array of one = the rx itself, so the common case needs no `[1]`; used whole with duplicates it is
+the alternation of all of them = the ruled union type; `count(alt.repeated)` is the compile-time count. Keep
+distinct: `alt.repeated[1]` = structural, the first entry in the PATTERN (compile time); `$repeated` = the
+MATCH's value by PCRE's rule (lowest-numbered set group; match time). They differ when the first alternative
+did not participate (the colon/dot vs `$` split).
