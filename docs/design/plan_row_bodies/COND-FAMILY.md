@@ -169,3 +169,13 @@ Manager's leaning: YES, disjoint, and then overloading is not selection at all b
 - No "best match" ranking: most-specific-wins needs a subset order and is ambiguous when types are incomparable; disjointness removes the question.
 - Needs intersection emptiness only (cheap), not complement, for the overlap check.
 - Frank: so types have two purposes: (1) restrict arguments, (2) syntactic sugar on macro constructions via overloading. Manager: agreed, and both are compile-time: types add NO expressive power or match-time mechanism (an overload set is an alternation of intersections; a type check is an emptiness test). Corollary of (1): a typed parameter list is the macro's written contract, the seam its diagnostics quote.
+
+### 2026-11-13 late: what a label reference means; duplicate and repeated labels (Frank)
+
+Frank: a binding always refers to an rx; a label refers to its rx or its value? With several definitions of a label, which one does a (forward) reference get? some() over them? Last matched or last defined?
+Manager's leaning:
+- `$x` = the VALUE captured in this match (match-dependent). By the closure it is still a pattern: the one-string set {captured text}, so every operator applies. The group's PATTERN (its "type") is static and rarely needed; when it is, bind it (`y := /…/`, `(?<x>${y})`) and use `y`. One meaning per spelling.
+- Forward references do not matter: match-dependent bindings are evaluated over the complete match (ruled earlier).
+- Plain `$x` follows PCRE exactly, so it equals what `\k<x>` sees: a repeated group gives its LAST iteration; duplicate names ((?J), (?|…)) give the lowest-numbered group that is set (in an alternation only one is set anyway).
+- `some($x)`, `all($x)`, `count($x)`, `$x[i]` range over EVERY occurrence: each iteration of each participating definition, in match order (the "set functions apply to repeated captures" rule).
+- WARN when plain `$x` names a label that can hold more than one occurrence in one match (repeated, or duplicates that can both be set), suggesting `some`/`all` or an index, since "last/lowest-numbered" is rarely what a predicate means.
