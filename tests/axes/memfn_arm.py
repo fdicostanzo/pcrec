@@ -65,6 +65,9 @@ from concurrent.futures import ThreadPoolExecutor
 # pass, `-p rx --features all`; byte base nothing, utf8 base `-e utf8`; streams
 # c-default = the default engine, c-vm = --engine=vm). Counts are in the
 # report (docs/dev/lanes/runaxes_report.md).
+# The vrun rows' utf8 witnesses since [RUN-POS-SET] stage 3 (the comment at vrun-kb below).
+VRUN_U8 =[b"(?i)tra", b"(?i)update", b"(?i)union.*?update.*?from", b"(x?)(?i:abcdefghij)\\1"]
+VRUN_U8_PAD = VRUN_U8[:3]
 MEMFN_CLASS = {
     ("precheck-assign-byte", "default"): ("DIFFER",
         {("byte", "c-default"): 131, ("byte", "c-vm"): 0, ("utf8", "c-default"): 189, ("utf8", "c-vm"): 0},
@@ -166,28 +169,44 @@ MEMFN_CLASS = {
     **{("run-verify-wide", ly): ("DIFFER",
         {("byte", "c-default"): 1, ("byte", "c-vm"): 1, ("utf8", "c-default"): 1, ("utf8", "c-vm"): 1},
         [(e, st, b"(?i:select)\\d+x") for e in ("byte", "utf8") for st in ("c-default", "c-vm")]) for ly in ("default", "simd")},
+    # The five vrun rows' utf8 witnesses (lane s2axes, 2026-11-13). [RUN-POS-SET] stage 3
+    # (the S2 joint landing) states a utf8 caseless `s` or `k` as a WIDE position (`[Ss\xbf]`,
+    # the last byte of U+017F; `k` likewise with U+212A), so a run through one is no single RUN
+    # term and vrun declines it, by design: part_d.md §3.1's `vrun_applies` row, §6 C4 (the
+    # deny `run-verify-wide` clips the run and vrun returns). Six corpus patterns left the
+    # utf8 reach that way (`(?i)select`, `(?i)stra`, `(?i)stra(ße)`, `(?i)straße`,
+    # `(?i)union.*?select.*?from`, `(x?)(?i:abcdefghijkl)\1`; cloud axes 43535669918: utf8
+    # 12/13 against floors 15/15, pad 10/12 against 13/14). Their siblings without a wide
+    # letter are the witnesses below (VRUN_U8: all five rows; the ten-byte run is past
+    # vrun-pad's 3 and 5-7, so pad takes the first three), single compiles at lane/s2land
+    # 692e5f431, so the floors hold at their measured values: no floor lowered.
     ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-kb", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8 for st in ("c-default", "c-vm")]),
     ("vrun-pad", "default"): ("ASSERT_ZERO", {}, []),
     # vrun-pad utf8/c-default 14 -> 13 at D172 S3 (job 620, tri620.md): one caseless pattern
     # became a cover artifact, where the pad deny is inert; its siblings' 15 hold.
     ("vrun-pad", "simd"): ("DIFFER",
         {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 13, ("utf8", "c-vm"): 14},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8_PAD for st in ("c-default", "c-vm")]),
     ("vrun-trim", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-trim", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8 for st in ("c-default", "c-vm")]),
     ("vrun-w16", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-w16", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8 for st in ("c-default", "c-vm")]),
     ("vrun-w32", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-w32", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
-        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]),
+        [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
+         + [("utf8", st, w) for w in VRUN_U8 for st in ("c-default", "c-vm")]),
 }
 
 STREAMS = {"c-default": [], "c-vm": ["--engine=vm"]}
