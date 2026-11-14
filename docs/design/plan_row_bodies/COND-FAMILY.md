@@ -216,3 +216,12 @@ Points the exercise shows:
 - Duplicate keys: `row` holds if ANY member with that key matches.
 - Nesting later: recursion (`(?&value)`) is VM; a depth-bounded unrolling stays an automaton.
 - Frank: no per-row parse; a byte-at-a-time DFA over the file. Manager: and better than byte-at-a-time on most rows: the existing required-literal machinery (S2's set runs) can skip rows that lack the rarest required text at SIMD speed, and a dead state in a line-anchored search jumps to the next newline. CAVEAT for the library: exact escape handling (`error` matching "error") makes the literal text NOT required, which weakens that skip; a `jstr_plain(p)` (producer never escapes ASCII) restores it. A library choice the cost report should make visible (exactness vs scan speed).
+
+### 2026-11-13 late: day of week as a computed property (Frank)
+
+Frank: given a date, can we determine the day of week; can it be a property like `year` without being a capture group?
+Manager: yes, both.
+- Regular, and SMALL: the Gregorian calendar repeats every 400 years (146,097 days, a multiple of 7). Reading left to right the automaton needs only: century mod 4, then year mod 400, collapsing after the 4th digit to (weekday of Jan 1, leap?) = 14 states; month folds into an offset mod 7 (+ leap for Feb 29); the day digits give one of 7 classes. Minimal DFA on the order of a hundred states (estimate, unmeasured).
+- A PROPERTY is a field that is not a substring: a pattern -> value mapping (accept-state labels, the classification machinery). `d.weekday` reads like `d.year`; labels are captured substrings, properties are mappings of the match; both are exports of the definition.
+- Library form: bounded arithmetic over labels, e.g. `weekday := (day + month_offset[month] + year_offset(year)) mod 7` mapped to names; the compiler builds the product and MINIMIZATION collapses it, so [DFA-MIN-FAST] matters here.
+- Use: `x & isodate & (weekday == "Sat")` filters; `isodate(x).weekday` yields the value.
