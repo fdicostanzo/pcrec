@@ -479,3 +479,16 @@ backrefs, recursion, non-DFA lookbehind), `eval` (runtime patterns; budgeted; li
 imply `vm`. At the default level a regular twin (luhn, weekday) MUST take its automaton form; too large = compile
 error with the size, suggesting `functions` (never a silent switch). Scope: inside the predicate opt-in only; plain
 PCRE patterns unchanged. [COST-EXPLAIN]'s first output: the level a pattern needed and why.
+
+**2026-11-14 — interfaces (Frank: isodate provides year/month/day as numbers; it should also BE a "date"; other formats comply too; "date" supplies weekday, leap year, month/day spellings that formats need not define).**
+Already present: typed bindings (`isodate: date := ...`, compliance checked at compile time, narrower OK); the extras
+are macros typed on `date` (`weekday(d: date)`, defined once over d.year/d.month/d.day); a union of compliant forms
+complies (`anydate := isodate | usdate | textdate`). GAPS: (1) INTERFACE TYPES: a named set of required labels with
+VALUE types (`date := type(year: number, month: number & between(1,12), day: number & between(1,31))`; "07" complies
+with number via canonical unpad); (2) COMPUTED LABELS so non-numeric forms comply: `textdate: date := join((day:
+\d{1,2}, mname: month_abbrevs, year: \d{4}), sep: " ") with month := mname.index` (the 1-based array index IS the
+month number; finite mapping = one more automaton lookup); (3) DOT RESOLUTION: label first, then a macro whose first
+parameter has the value's type (`d.weekday` = `weekday(d)`); a name that is both = compile error. NO OVERRIDES: a
+format supplies the required labels, the interface everything else; extra information becomes a CONSTRAINT.
+(E-RFC) `rfcdate: date := join((wname: weekday_abbrevs, rest: textdate), sep: ", ") & (wname.index: = weekday(rest))`
+rejects `Fri, 14 Nov 2026`; weekday is regular, so a weekday-consistent date validator is one pure-DFA automaton.
