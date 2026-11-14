@@ -598,8 +598,10 @@ tests/litscan/spanarms.rxt:626	--features all --engine=vm	6162283f21636429283f3c
 tests/litscan/spanarms.rxt:643	--features all --engine=vm	61626364282965666768
 tests/litscan/spanarms.rxt:660	--features all --engine=vm	61626364283f3a7c2965666768
 tests/litscan/spanarms.rxt:675	--features all --engine=vm	6162283f3a7c78296364
+tests/litscan/spanarms.rxt:690	--features all --engine=vm	7879283f3a61627c616263297a77
 # reqpast (2026-11-12, [REQ-PAST-LAST]): tests/litscan/handoff_vm.rxt regenerated (six unbounded-K blocks inserted before the declines): rows 485, 509, 550 removed and the file's movers re-pinned under their new ids; the VM hat row read off each block's own compile on the lane build, no other file's row moved.
 # mechund (2026-11-14): +2 rows, the two --engine=vm blocks added to tests/base/vm_lazy_rmin_prefix.rxt (S711's alternative-wrapped witnesses, lines 268/276), correct movers never pinned; no existing row moved.
+# r1on (2026-11-14, [RUN-POS-SET] rule (1) on): tests/litscan/spanarms.rxt gains S-c's two blocks at its end (`xy(?:ab|abc)zw`, lines 683 default and 690 engine vm); vm_auto +1 row (690), vm_forced +2 (683, 690); no existing row moved.
 tests/litscan/handoff_vm.rxt:485	--features all --encoding=byte --engine=vm	28617c61617c62292b6378797a
 tests/litscan/handoff_vm.rxt:549	--features all --encoding=byte --engine=vm	622a7878283f3d7129
 tests/litscan/handoff_vm.rxt:569	--features all --encoding=byte --engine=vm	612b78797a

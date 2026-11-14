@@ -128,10 +128,6 @@ typedef struct {
      * set one run position may have (`PCREC_MAX_REQ_RUN_POS_SET`, or 1 under
      * `-fno-req-run-fold`) */
     int pos_set;
-    /* the alternation's equal-width row (alt_normal_form.md §6 row 1,
-     * req.c `rr_alt_rows`): false but under the harness lever
-     * `alt-union-run` until the landing */
-    bool alt_union;
     /* the piece description's group bound, `PCREC_MAX_REQ_PIECES` */
     int max_pieces;
     /* the arms run in their form before the unit that changed them

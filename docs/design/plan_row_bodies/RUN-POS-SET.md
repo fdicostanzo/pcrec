@@ -18,3 +18,17 @@ check holds only where NO run is stated; on a decline K is read from the head me
 (`req_landmark_k`). Reason: on a declined run with an exact position the kit's P3 head pick and pcrec's
 `req_byte` pick may legitimately differ, so equality there would be a false internal error; the check's
 purpose is the K the handoff subtracts, which the head member supplies.
+
+**2026-11-14 manager ruling (rule (1) default ON), landed by lane r1on (abi 106 -> 107).** `rr_alt`
+row 1 (`alt_union`: an alternation whose branches are all `all` and of one untruncated width is
+`all`, its run the per-position union) is the DEFAULT. Basis: Frank 2026-11-13 (`all` is a hull
+statement, supersets ruled OK, ON/OFF the manager's) and the s2r1b census (lane/s2r1 508bec313,
+`docs/dev/lanes/s2r1b_report.md`): 19 byte movers of 5,489 distinct corpus patterns in the default
+configuration (22 with altcls denied, 22/27 utf8 facts), every one an equal-width or all-zero-width
+alternation extending or newly stating a run, 0 unexpected; answers identical 14,880/0 over the 14
+mover files; emitted size +0.005% (`(?:ab|ba|aa|bb){24}c` shrinks 9.9 KB, handoff none -> 17). The
+AHEAD lever `--harness=alt-union-run` retires; its restore is the walk arm `alt`
+(`--harness=restore=alt`, src/facts/walk_arms.def, an internal arm of `tests/axes/run_axes.sh`), a
+test-only lever because the change's risk is a wrong answer and it can never be slower for a caller
+(no public deny). Witnesses: [facts-ahead] default cells + `alt` twins, S-c in
+`tests/litscan/spanarms.rxt`; sabotage rows S3129-S3132; S-g was already landed as S1927.
