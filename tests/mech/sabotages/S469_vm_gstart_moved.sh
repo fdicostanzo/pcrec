@@ -13,7 +13,12 @@ SAB_SUITES="harness prechecks"
 SAB_HARNESS_TARGET="tests/litscan/handoff.rxt"
 SAB_DESC='the VM hybrid passes the handoff'\''s start into the VM'\''s own \G anchor (match_anchored'\''s search_from) instead of the caller'\''s startpos, so \Gab is tested at the moved start'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/k82hbuild_report.md §6); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S469.'
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?:\Gab|x)(cat)(?=dog)'\'' && grep -q '\''^#define RX_REQ_HANDOFF "2"'\'' "$REACH_TMP/o.c" && echo REACH-GSTART-HYBRID'
+# RE-AIMED 2026-11-13 (lane s2tri, [RUN-POS-SET] flip 2 -> 128): the alternation union {b, x}
+# became the run's lead position (RX_REQ_RUN "[6278]636174@1", was "636174@0"), so K moved
+# 2 -> 1 and the probe's pinned "2" read UNREACHED. The witness and its detectors are
+# unchanged (handoff.rxt's row and §5.12g read no K): the handoff from the run's 'b' at 3,
+# minus K 1, is still 2, where the plant's \G accepts \Gab, so the probe pins K 1.
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?:\Gab|x)(cat)(?=dog)'\'' && grep -q '\''^#define RX_REQ_HANDOFF "1"'\'' "$REACH_TMP/o.c" && echo REACH-GSTART-HYBRID'
 SAB_REACH_EXPECT='REACH-GSTART-HYBRID'
 SAB_REACH_POP='tests/litscan/handoff.rxt|^pattern \(\?:\\Gab\|x\)\(cat\)\(\?=dog\)$|1'
 SAB_EXPECT=DETECTED
