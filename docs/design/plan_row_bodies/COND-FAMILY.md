@@ -240,3 +240,4 @@ Manager: yes, and it unifies four things already in these notes.
 - `count(a)` = the number of branches (compile time); `some`/`all` over an array = over its branches.
 - Disjoint overloads were already a labelled alternation (per-string dispatch); same object.
 - Overlapping branches (`Jun` / `June`): PCRE's first-alternative order makes it deterministic, but as for overloads, WARN with a witness in both, since a map with overlapping keys is usually a mistake.
+- Frank: is `x & some(array)` the same as `x & array`? And no explicit `in`. Manager: yes to both. `some` over a static array is the union of its branches, which IS the array, so `some(a)` = `a` there (redundant, harmless). `all(a)` is NOT redundant: the intersection of the branches. `some` keeps its meaning where the set is match-dependent (occurrences of a search, iterations of a repeated capture): "an occurrence exists that satisfies…". Membership is `x & a`, non-membership `x &! a`: no `in` keyword.
