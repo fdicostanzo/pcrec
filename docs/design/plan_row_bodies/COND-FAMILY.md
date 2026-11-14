@@ -129,3 +129,9 @@ Manager: yes. Explicit parameters make a macro: `between(lo, hi) := (> lo) & (< 
 - Two kinds of argument, no clash: positional = explicit parameters; `name:` = label parameters (`isodate(year: 2000)`). A macro may take both.
 - Parameters are names scoped to the body (hiding an outer name warns, as for labels).
 - Macros expand at compile time (inlined per use), so cost is per USE; the cost report lists each use. No recursion through parameterized definitions (unchanged).
+
+### 2026-11-13 evening: `m(x: d2) := x & d2 & m` (Frank)
+
+Manager's reading, in two parts:
+- `x: d2` = a typed parameter, and a TYPE IS A PATTERN: the parameter is narrowed by `d2`, i.e. the annotation means `x & d2`. So the body's `& d2` is redundant (harmless). The colon then means ONE thing in both places: at a call, `isodate(year: 2000)` narrows label `year` by `2000`; in a definition, `x: d2` narrows parameter `x` by `d2`. "name: pattern" = "this name is intersected with this pattern".
+- `& m` in m's own body is a self-reference through a parameterized definition: a cycle, rejected (rule unchanged). It cannot mean "some outer m": one namespace, so a second `m` is a name clash. Error text names the cycle (m -> m) and suggests the non-recursive form. If unbounded self-reference is wanted, it is a plain pattern binding calling itself with `(?&m)` (PCRE recursion), not a macro.
