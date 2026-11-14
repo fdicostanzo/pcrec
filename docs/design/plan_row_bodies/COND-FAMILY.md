@@ -358,3 +358,13 @@ macro (`each_group`, name open) zips BY LABEL; a label in only one input is an e
 is the old field-wise apply, now explicit, structural, and `&` stays extensional. General: a perspective is a
 decomposition of an rx and brings its own mapping macro; keep names parallel (`each`/`each_group` or
 `each_alt`/`each_group`); stop at two until an example needs a third.
+
+**2026-11-14 — the "fractional rx" (Frank: `(x: ...)` can only be applied, via intersection, to another rx; not usable as `${x: digit}` or in an alternation; everything else is a full rx).**
+Lean: it is not a fractional rx but a MACRO awaiting its target (a term with a free variable: `x:` names a
+label of some other pattern; `&` binds it), the same kind of value currying already introduced. So: values are
+rx or macros producing rx. Rules (all from earlier rulings): `rx & f` = `f(rx)` (`p(x)` = `x & p` read
+backwards); filters combine POINTWISE by `& | !` (`(x: <200) | (y: >55)` is a filter, not an rx alternation);
+an unapplied macro where an rx is required (`${x: digit}`, `rx | (x: ...)`) is a compile error ("filter
+`x: digit` has no target; write `T & (x: digit)`"), the same error as an unapplied `capture(prefix: ...)`. The
+line: value filters mentioning NO label (`<200`, `between(3, 6)`, `startsWith("S")`) are full rx (the set
+that passes); anything naming a label it does not define is a macro. The colon marks it.
