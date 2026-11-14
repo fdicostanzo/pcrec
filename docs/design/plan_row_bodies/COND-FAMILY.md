@@ -592,3 +592,15 @@ finite-group backreferences as regular = a GENERAL ENGINE question, to be filed 
 decreasing literal parameter (low priority, one example); Q13 `records` must tile the text (`gaps = allow` opt-out);
 Q14 the unverified prior-art details are answered by scratch/predx/fetch_pomsky_hyperscan.md. PENDING: Q6 (one
 condition form; explanation requested), Q9 (compile-time `check`; examples requested).
+Q6 + Q9 (Frank 2026-11-14: "I agree with both excepting the spelling ... no alpha operators ... with, check, in ...
+check is not `x := ...` ... don't want to go into new grammar lightly"). CONCEPTS AGREED (one condition form
+`label: set`; compile-time assertions). SPELLING LEAN with NO new grammar, and a RULE: no alphabetic operators or
+statement keywords; a word is always a NAME (function, label, binding). Computed values = MATCH-DEPENDENT BINDINGS
+(the ruled kind): `d := days($b) - days($a)`, `close := pair & (d: between(-15, 15))`; rule: a match-dependent
+binding is a computed label of the pattern whose labels it reads (E-RFC: `wd := weekday(rest)`,
+`(wname.index: == wd)`). Assertions = named bindings to built-ins over rx: membership is `&` (`"2024" & leap` is
+{"2024"} or empty), inclusion is `A & !B` empty: `leap_2024 := assert_some("2024" & leap)`, `leap_1900 :=
+assert_none("1900" & leap)`, `octets := assert_none(octet & !/\d{1,3}/)`, `refactor := assert_same(old, new)` (library:
+both differences empty), `not_dead := assert_some(slow_errors)`. Named failures; no boolean type; `!` stays a filter.
+Beyond the default level, an unprovable `==`/within reports "can't prove: not regular". Deliberate exceptions to the
+rule so far: `import`/`export` (look later: `export` as a binding attribute, imports as a compilation-unit setting).
