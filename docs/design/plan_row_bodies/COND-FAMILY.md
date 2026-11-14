@@ -349,3 +349,12 @@ group, so both views count 7. Map order = PCRE group number, so a map entry's na
 number (fits `each(..., index: 1)`). `each`/`join` take either view; where they differ the caller names it
 (e.g. `rx.alts` / `rx.groups`, spelling open). Duplicate labels: union type (ruled). Both views are
 structural; `&` stays extensional.
+
+**2026-11-14 — piecewise via each; one mapping macro per perspective (Frank: piecewise intersection could be `each(&, A, B)`; map and array are perspectives on an rx, not types — like matching an integer — so they need different mapping macros).**
+Lean ADOPT. Operators are macros (`&` as a value is two-argument intersection; `(& B)` a curried filter). `each`
+over several arrays ZIPS by position; unequal lengths are an error naming both counts. The map perspective's
+macro (`each_group`, name open) zips BY LABEL; a label in only one input is an error (as `&` never adds);
+"keep the others" would be a keyword (`unmatched: keep`), only on a real example. `each_group(&, rx, (x: d2))`
+is the old field-wise apply, now explicit, structural, and `&` stays extensional. General: a perspective is a
+decomposition of an rx and brings its own mapping macro; keep names parallel (`each`/`each_group` or
+`each_alt`/`each_group`); stop at two until an example needs a third.
