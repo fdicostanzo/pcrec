@@ -36,9 +36,11 @@ _Static_assert(__builtin_types_compatible_p(__typeof__(&__real_pcrec_mf_art_begi
 static unsigned n_art;
 static const mf_art *arts[64];
 
+/* The LATEST art begun at `a`: an ended art's memory is reused by a later one (lane r43: corpus c04459 under
+   --engine=vm begins arts 3-7 at one address; the first match named art 3 for art 7's sites). */
 static unsigned art_no(const mf_art *a)
 {
-    for (unsigned i = 0; i < n_art && i < 64; i++)
+    for (unsigned i = n_art < 64 ? n_art : 64; i-- > 0;)
         if (arts[i] == a) return i + 1;
     return 0;
 }

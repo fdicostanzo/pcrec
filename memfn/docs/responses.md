@@ -3435,3 +3435,14 @@ the compiler, and is never adopted silently. Proposed for main to file
   - cloud test GREEN on 5c90af24e and on e33ab2de8; cloud axes GREEN on e33ab2de8 (only checks changed since); cloud mechrows GREEN: 29 rows on e33ab2de8, S3113 on 5c90af24e; cloud ubsan and asan GREEN on ea1ddd78b (pre-merge).
   OWED (after landing): the every_pos card's timing (an owner-cleared window); stage 3's re-measure of run-verify-wide's reach once pcrec states wide runs.
   FINDING for main: docs/dev/lanes/r33_sim/probe.c's mf_art_begin wrapper was stale since u2rev (rate=none in every run). It is fixed here with _Static_asserts.
+- closed: S2 (R-38 Part D + R-41 with pcrec's [RUN-POS-SET] stage 3) LANDED on main at 9cecc3caa (identity re-pin 65ef919fc), 2026-11-14.
+  - It includes the kit's axes witnesses: lane/memfn-s2axes @ 23700b344, cloud axes 43559851816 GREEN. Reports: docs/dev/lanes/s2axes_report.md, s2pre_report.md and s2pre2_report.md.
+  - Kit OWED, as post-S2 work:
+    - the every_pos card's timing (a window the owner clears);
+    - re-measure run-verify-wide's reach now that pcrec states wide runs;
+    - the wide-verify OR-chain size fact (main's item; it needs main's statement of the fact before the kit takes it);
+    - one plan_frame §2.3 sentence (ruling N1).
+  - NOTE: axes' utf8 precheck-assign-byte DIFFER count sits exactly at its floor (189/189).
+- ack: R-42 (the size of the wide run verify), UNSCHEDULED. It waits for its trigger: a measured size-ladder loss in the [FIT-RUNG-ORDER] census. The kit does not judge it free today: the run-time cost of a smaller form is unmeasured, and D77 says wait. When the trigger fires, the kit confirms the fact (about 350 chars per set position; about 2.8 KB on test-island's 24-word witness). It then measures one candidate: a per-position membership test read from one 32-byte table, against today's byte-compare chain, at both layers. It adds the candidate's card (UNMEASURED until measured).
+- ack: R-43 (D3's pcrec-artifact floor + the run-verify-wide reach re-measure), lane r43 (opus) on lane/memfn-r43, cut from lane/memfn-k1108 at main 0c9751138. Non-timing gates through boxqueue/cloudrun as usual.
+- ack: the every_pos card timing (S2 OWED), Frank-cleared window after 01:00 2026-11-15: lane epcard (sonnet) on lane/memfn-epcard stages it; the timing job key is kit-epcard-time, not-before 2026-11-15T01:00.
