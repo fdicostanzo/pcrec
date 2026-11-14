@@ -1,7 +1,7 @@
 # s2arms report
 
 ## STATE AT HANDOFF
-Commit on lane/s2arms (from main 370aab9fe): re-pins in scripts/emit_sweep.py and tests/axes/memfn_arm.py, no emitted byte moved. No rulings file was written (no later rulings). Re-run arms sweep and REACH stage queued as the last act (batch key below); cloud axes dispatched after.
+Commit on lane/s2arms (from main 370aab9fe): re-pins in scripts/emit_sweep.py and tests/axes/memfn_arm.py, no emitted byte moved. No rulings file was written (no later rulings). Re-run arms sweep and REACH stage queued as the last act (batch key b202611140752593761835); cloud axes dispatched after.
 
 ## ARMS
 Red batch b20261114073238151348, arms stage rc=1 (744 s). Exactly ONE red line: `utf8 -fmemfn-simd=x86-64 c-vm differ=13/13 floor=15` (DIFFER FLOOR 13 < 15). It is NOT a run-verify-wide line (those four cells passed: pins were provisional 1, measured far above). Not a crash or missing file; arms.tsv was written (build-emitsweep/arms.tsv, 93 rows); `--emit-pins` output (arms_pins.tsv) was NOT written because the red ended the run before write_pins.
