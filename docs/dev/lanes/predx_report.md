@@ -958,3 +958,157 @@ Structure (array/map views, `[]`, `.`, `each`, `join`, `where`) is defined on th
   under value scoping (draft §11) vs a top-level search is C15; the denotation above treats ⟦/r/⟧ as a set of
   strings, which cannot express a lookbehind that reads the left CONTEXT. §7 C15 proposes the fix (sets of
   context-marked strings); without it, `/(?<=\$)\d+/` as a whole program has no meaning in this core.
+
+## 6. PRIOR ART
+
+What each system does that the draft lacks or does better, what to borrow, what to deliberately not borrow.
+Facts here are from my own knowledge of these systems (no web verification in this lane except where noted;
+two details are marked UNVERIFIED). Nothing needs a REFERENCES.md entry: no paper is cited by key; if the spec
+adopts a borrowed definition (XDuce ambiguity classes, semantic subtyping) it should add the citation then.
+
+### 6.1 XDuce / CDuce (regular expression types, semantic subtyping)
+
+What they do: types ARE sets of values (of XML trees; for us, strings); subtyping IS language inclusion, decided by
+an automaton algorithm; intersection, union and complement of types are first-class and the type checker computes
+with them; a failed inclusion check produces a WITNESS value (CDuce prints a sample value in the argument type and
+not in the parameter type). Pattern matching binds variables inside regular patterns; XDuce's rule for a variable
+under repetition is that it has SEQUENCE type (it collects every iteration), never "the last one"; a variable must
+be bound in every branch of an alternation or it is an error (linearity). Hosoya's work defines ambiguity classes
+for regular patterns (a pattern is ambiguous when two parses of one value differ in their bindings) and XML Schema's
+"unique particle attribution" is the deterministic subclass.
+
+Draft vs them: the draft's typed parameter "argument within T, witness shown" (§5.2) is CDuce's semantic subtyping
+check, unnamed. The draft's §4.5 ambiguity definition is Hosoya's. The draft's "repeated label: plain `$x` is the
+LAST iteration, WARN" (§4.3) is weaker than XDuce's sequence rule.
+
+Borrow: (1) name the discipline (semantic subtyping) so the spec's inclusion rules, dead-branch and witness
+diagnostics are one mechanism (language inclusion with a counterexample), not four rules; (2) XDuce's sequence
+rule for labels under repetition: at the default level plain `$x` on a repeated label is an ERROR ("`x` repeats:
+use `all(x: ...)`, `some(x: ...)`, `count(x: ...)`, or `$x[i]`"), with PCRE's last-iteration meaning available only
+at `vm` where PCRE compatibility is the point; (3) the linearity warning: a label absent in one alternative of a
+union makes `$x` possibly unset (the draft has the WARN; make it the same check as XDuce's).
+
+Do not borrow: tree types, the type-of-function machinery, overloading by type (the draft already defers it), the
+full pattern language (XDuce patterns can bind inside arbitrary nesting; our labels are PCRE groups).
+
+### 6.2 Raku grammars
+
+What they do: named `token`/`rule`/`regex` bindings in a grammar class (= our `:=` bindings); `<name>` sub-rule
+calls (= our holes); `proto` tokens with multiple candidates (= overloading, deferred by the draft); actions classes
+whose methods compute values per rule (`make`/`made`: computed labels, but imperative and on an AST); code
+assertions `<?{ ... }>` (unrestricted callouts); `token` ratchets (atomic) by default, `rule` additionally makes
+whitespace significant as a SEPARATOR (`:sigspace`), `regex` backtracks: the whitespace behaviour is decided by the
+KIND of binding, not by a flag; `&`/`&&` conjunction INSIDE regex (both sides must match the same span; `&&` is
+sequential, `&` lets the longest-token rule apply); `|` is longest-token match (LTM) and `||` is first-match. No
+regularity guarantee anywhere.
+
+Borrow: (1) the LTM/first-match PAIR of alternation operators is a precedent for the draft's "sort is semantics":
+offering leftmost-longest as a NAMED CHOICE (`sort(by = length)` or a `||`-like operator) rather than a sort
+users do for speed; (2) Raku's whitespace-by-kind is a better shape than x-mode-by-flag: if x-mode survives (C2),
+make it a property of a binding kind or of a `rule`-like literal form, never of the unit; (3) the actions-class
+separation (grammar text vs computed values) matches our `with`: keep computed labels OUT of the literal.
+
+Do not borrow: backtracking as the baseline, imperative actions, the grammar-as-class object model (the draft's
+"definitions are namespaces" gives the dotted paths without classes), code assertions as the first escape (ours are
+blessed callouts with contracts).
+
+### 6.3 Parser combinators and PEG
+
+Combinators (Parsec family): sequencing and choice are functions; `sepBy`/`sepBy1`/`endBy` for lists (= `list_of`,
+with the EMPTY-LIST case explicit in the name); `option`/`optional` (= `opt`); `between` means BRACKETING (open p
+close), a NAME CLASH with the draft's numeric `between`; `many`/`many1`. The APPLICATIVE vs MONADIC split:
+applicative parsers have a structure known before any input (so they can be analysed, printed, optimised);
+monadic ones choose the next parser from a parsed value. PEG: ordered choice `/` (= PCRE alternation priority),
+syntactic predicates `&e` / `!e` (lookahead at a position, not set operations), no ambiguity by construction, linear
+time with memoization (packrat) but not streaming; language inclusion for PEGs is undecidable; no complement of
+LANGUAGES, only of lookahead.
+
+Borrow: (1) the applicative/monadic distinction is exactly the draft's default level vs `functions`/`vm`: the
+foundation is "applicative" (structure fixed at compile time; every § 7 structural operator is a compile-time
+rewrite), and the opt-ins add value-dependent behaviour. Naming it so gives the spec a one-line test for whether a
+proposed feature belongs in the foundation: "does its structure depend on a value read from the subject?"
+(2) the `sepBy`/`sepBy1` naming lesson: `list_of` must say whether zero items is allowed (F6's empty-string
+question in another form). (3) PEG's `!e` is a reminder that our `!` is a SET complement under `&`, not a
+positional predicate; the guide must say so because every PEG user will read it the other way.
+
+Do not borrow: `between` as a bracketing name (the draft's numeric `between` is the regex-world convention;
+rename the bracketing need if it ever arises); PEG's position predicates as an operator family (PCRE's lookarounds
+inside literals already cover them).
+
+### 6.4 RE2 (and Rust regex)
+
+What they do: linear-time guarantee by refusing backreferences and lookaround at PARSE time with a named error
+(the construct and the reason); `RE2::Set` matches many patterns at once and reports WHICH matched (= our `.index`
+classification and Hyperscan's multi-pattern ids); `longest_match` option (leftmost-longest instead of
+leftmost-first); `max_mem` budget with SILENT fallback from DFA to NFA (same answers, slower); `PossibleMatchRange`
+(the lexicographic range a match can lie in). Rust regex: `RegexSet`, class set operations `[a-z&&[^aeiou]]`
+`--` `~~` INSIDE classes (incompatible with PCRE class syntax), a `meta` engine that picks strategies, an `Hir`
+with explicit class intersections, and the empty-match iteration rule spelled out in the docs.
+
+Draft vs them: G2 is RE2's promise with far more expressiveness; the draft's "never a silent switch" is stricter
+than RE2's `max_mem` fallback, and rightly so for a different reason: RE2's fallback changes SPEED only; the
+draft's would change the LEVEL (a promise). Both are consistent once the promise is "linear and automaton-only"
+rather than "one DFA" (C14).
+
+Borrow: (1) RE2's parse-time refusal LIST as the shape of our strict pure subset: a table (construct, refused at
+level, reason, opt-in) published in the spec; (2) `RegexSet`/`RE2::Set` semantics for classification output
+(which entries matched, as a set, since several can); (3) Rust regex's written-out empty-match iteration rule for
+our `count`/`s[i]` over nullable patterns (A-gap in §8); (4) RE2's `longest_match` as the precedent that
+leftmost-longest is a MODE users ask for by name.
+
+Do not borrow: class set operations inside `[...]` (synsurv's "do not touch class contents" stands; `/[a-z]/ &
+!/[aeiou]/` says it at the value level); the silent engine fallback.
+
+### 6.5 Pomsky and other regex-generating languages (Melody, Emacs `rx`, egg expressions)
+
+Pomsky: `let name = ...;` variables (textual, compile-time, acyclic); string literals auto-escaped (= the draft's
+string-literal rule); `range '0'-'255'` generates the digit-alternation regex (= the draft's int generator);
+compiles to a chosen TARGET FLAVOR and refuses constructs the flavor lacks with an error naming the flavor (=
+our capability levels, per target). UNVERIFIED in this lane: how `range` treats leading zeros (whether `007` is in
+`range '0'-'255'` and whether a modifier controls it); if Pomsky has an explicit choice there, it is prior art for
+the draft's canonical-numeral rule and `unpad`. Emacs `rx`: an s-expression regex builder with `(regexp "...")`
+to embed raw regex text (= our `/.../` literal inside the expression language) and `rx-define` with parameters (=
+our macros): the clearest precedent for "an rx is a LITERAL inside the expression language". Melody and egg
+expressions (Oils): readable-syntax front ends that compile to ERE/PCRE text; egg expressions splice variables and
+have a capture syntax; neither adds semantics beyond regex.
+
+Borrow: (1) Pomsky's per-flavor feature matrix and error shape ("`atomic` is not supported in the JavaScript
+flavor") for our per-LEVEL table; (2) `rx`'s split (builder language outside, raw regex quoted inside) as the
+confirmation that the draft's outer-layer decision has a long-lived precedent; (3) Pomsky's test-suite shape
+(source, expected output per flavor) for the predicate corpus (`.rxt` entry: program, level, expected automaton
+class, subjects).
+
+Do not borrow: textual macro expansion without kinds (Pomsky variables are text; our bindings have kinds and
+inclusion checks); compiling to regex TEXT as the target (we compile to automata; the draft's "fully constrained =
+formatting" is a feature those tools cannot have).
+
+### 6.6 Others worth one line each
+
+- Relax NG `interleave`: the any-order combinator over schema particles, with the documented exponential cost and
+  restrictions to keep it tractable. Borrow the NAME semantics (any order, each part once) and the cost warning
+  for `any_order` (F1, W5).
+- Hyperscan logical combinations (5.x): `&`, `|`, `!` over PATTERN IDS, reported as a combination match when the
+  component patterns have matched SO FAR in the stream (UNVERIFIED detail: the exact point of reporting and
+  whether `!`-only combinations are allowed). The cautionary lesson is exact: a production `&` over patterns that is
+  NOT span-exact exists and confuses users; our `&` must say what span it is over (C15) and never be confused with
+  "both have matched somewhere".
+- Dhall (total configuration language): imports PINNED by `sha256:` integrity checks, no recursion, guaranteed
+  termination, and a SEMANTIC hash (of the normalized term) rather than a textual one. The draft's §7 import rule
+  is Dhall's; borrow the semantic-hash idea for `.rxt` library pins once programs normalize (the hash of the
+  expanded program, so a reformatted library does not break pins).
+- Kleenex / streaming string transducers: regular grammars with output actions compiled to transducers; prior art
+  for `records` and for the decode-pullback (`jstr`) being a transducer composition. Not needed in the spec; a
+  pointer for the build.
+- SQL: `WHERE` over columns (the draft's own metaphor for `x:`), `IN` lists, `BETWEEN` inclusive (the draft agrees),
+  `LIKE`/`SIMILAR TO` as the string-set operators. Borrow nothing new; note that SQL's `BETWEEN` on strings is
+  collation-dependent, which is why F18's variable-width warning matters.
+
+### 6.7 Summary: borrow / avoid
+
+Borrow: semantic subtyping as the named discipline (inclusion + witness) [6.1]; sequence semantics for repeated
+labels [6.1]; applicative/monadic as the foundation test [6.3]; the refusal table and set-classification semantics
+[6.4]; per-level feature matrix and error shape [6.5]; `interleave`'s cost statement [6.6]; Dhall's pins [6.6];
+the leftmost-longest named mode [6.2, 6.4].
+
+Avoid: class-content set operations; silent engine fallback; backtracking baseline; imperative actions; textual
+macros; `between` as bracketing; any-order operators that are not span-exact.
