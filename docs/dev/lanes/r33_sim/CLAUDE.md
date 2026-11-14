@@ -17,6 +17,12 @@ The simulation of the inner-first "find the span" pick against the kit's answer 
 - `runpart_prod.py SWEEP.jsonl [--floor N]` — D3's production-path check: every compile stamping an emitted run
   carries exactly one `run_part_terms` record ON ITS SHIPPED (last) art, collect.py's `arts` (plant p14, summarize
   dropping it, reds). `--self-test fixtures/runpart_c01877.jsonl`: the join's own control (lane partdfix).
+- `runpart_floor.py --tree TREE CELL=SWEEP.jsonl .. [--movers CELL=MOVERS.tsv ..]` — D3's pcrec-artifact floor
+  (R-43, RDY-5): per emit_sweep cell (byte|utf8 x c-default|c-vm), the corpus patterns whose shipped art carries a
+  record with an unspelled SET term (census0's parser) >= its measured literal floor >= the
+  `--memfn=no-run-verify-wide` movers; with `--movers`, every mover is in the census.
+- `deny_reach.py` — a measurement: the corpus patterns a deny moves in one cell (plain pcrec, emit_sweep's argv).
+  collect.py's `--flags` makes one sweep one cell.
 - `fixtures/runpart_c01877.jsonl` — one real collect.py line: a record on a declined compound part's art and one on
   the shipped art.
 - `sim.py IN.jsonl OUTDIR --key A|B [--h-hit N] [--tag T]` — the simulation and today-vs-sim
