@@ -274,3 +274,14 @@ Manager: yes, at the end with `&`, using the label-narrowing form already ruled 
 - Frank: `x:` comes from the pattern before the `&`: `X & ${x: …}` in a pattern, or `/def(?<x>\d{3})abc/ & x: <256` in expression language. Manager: yes; `x:` names a label of the OTHER operand of its `&`. Rules: a bare `x: …` with nothing to intersect is an error; in a chain `P & Q & x: …` the label is looked up in `P & Q` and a label present in both is AMBIGUOUS (error naming both; fix: rename, or scope `(P & x: …) & Q`); an unknown label is an error listing the labels available.
 - Frank (half an idea): dot notation, `/def(?<x>\d{3})abc/ & (.x & <256)`, noting it fails as a filter. Manager: right, and that failure is the reason for a narrowing operator: `.x & <256` as a set would be "strings that are an x-value below 256", which no whole match is, so the result is empty. Keep the colon as the ONE narrowing operator (it already unifies call arguments `isodate(year: 2000)`, typed parameters and conditions) and let the DOT do what it does elsewhere, navigate: the left of `:` may be a PATH, `d.year: <2000`, `row.ts: …`, `a.b.c: …`. So: dot = which part, colon = constrain it. A jq-style `.x <256` (juxtaposition) was considered and not adopted: it would need its own precedence and splits the narrowing meaning across two spellings.
 - Frank: full circle: `isodate(year: 2000)` could be written `isodate & (year: 2000)`. Manager: yes; the call form is SUGAR: `p(a: s, b: t)` = `p & a: s & b: t`. So label arguments, conditions and typed parameters are ONE primitive (`&`) with ONE atom (`path: set`). Line kept: `name:` arguments narrow (sugar); POSITIONAL arguments construct (real macros: `between(3, 6)`, `list_of(\d)`).
+
+**2026-11-14 — join (Frank: `a := A | B | C`; `join(a)` -> `/${A}${B}${C}/`; `join(a, sep: ".")` -> `/${A}\.${B}\.${C}/`; captures by index or a `group:` option).**
+Manager's reading: `join` is STRUCTURAL (reads the named definition's declared order and labels, not its
+language; same rule as projection by indexing). `sep:` is a set: a literal is one string (auto-escaped) or
+a pattern. Labels vs captures: the joined parts are always navigable labels (`c.A: <200`, `c[1]`), free when
+unread (the compiler drops them); `group:` (true | a name prefix) EXPORTS them as caller-visible captures
+(ovector change, hence the option; index labels need the prefix). Family: in-order fixed = `join`,
+in-order repeated = `list_of(X, sep:)` (shared `sep:` spelling), any-order fixed = `&` of labelled parts
+(JSONL), candidate sugar `any_order(a, sep:)`. `join` of an empty array = the empty string (not the empty
+set). No `prefix:`/`suffix:` (concatenation says it). OPEN (asked Frank): a map's per-field value
+constraints carry into the joined labels (lean yes: `isodate := join(d, sep: "-")` inherits `year: <2100`).
