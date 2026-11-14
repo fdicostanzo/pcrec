@@ -518,3 +518,17 @@ TYPES ARRAY: a bare built-in `types(isodate)` = `[isodate, date]` (no member, so
 rx is first because an rx IS a type (its string set, the shape type), then declared interfaces in declaration
 order; an ordinary array: `types(isodate)[2]` = date, `types(isodate)[has_member(weekday)]` = [date]. No
 type-of-type tower: `types()` is the compliance chain; a `kind()` built-in only if an example asks. Compile time.
+
+**2026-11-14 — LAYERING (Frank: the purpose is to probe the fundamental structure; unless foundational, lower priority). The outline #6's design document starts from.**
+FOUNDATION: (1) two value kinds: rx (string sets, extensional) and macros (curried by keywords; conditions, `!B`,
+unapplied filters); (2) operators `&` `|` (extensional) and prefix `!` (always a filter); unapplied macro where an
+rx is needed = compile error; (3) two structural views: ARRAY (top-level alternatives, 1-based) and MAP (labelled
+groups, a tree); holes/groups are single entries; structural operations read the spelling; (4) match values: `x:`
+constrains a part, `$x` reads it, unset label = comparison false, label VALUE TYPES (number via canonical numeral)
+and COMPUTED LABELS (`month := mname.index`); (5) capability levels: pure DFA default, `functions`/`vm`/`eval` opt-in;
+(6) compile-time boundary: structural evaluation is total over finite things, no recursion, terminates.
+LIBRARIES (on the foundation, changeable without it): each, join, records, file_text, standard filters (between,
+startsWith, length), blessed callouts. ORGANISATIONAL (nothing below depends on it): interfaces, type members,
+namespaces, dot resolution/UFCS, types(). Test of the ranking: no worked example needs the organisational layer
+(Luhn, calendar, JSONL, IPv4: foundation + library filters; date distance: the functions level; RFC weekday:
+computed labels only). Interfaces wait for after a first build; value types + computed labels go with the core.
