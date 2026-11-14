@@ -457,3 +457,14 @@ no eval); both dates in the subject -> a MATCH-TIME check (regular in principle,
 ~3.65M day values): `pair := join((a: isodate, b: isodate), sep: /\s*,\s*/)`, `close := pair & (days($b) - days($a):
 between(-15, 15))`, an inline callout on DFA-validated candidates using DFA captures (no VM re-run). The compiler,
 not the spelling, picks set-expansion vs match-time check (`within(15, of: x)` is cheap whenever x is constant).
+
+**2026-11-14 — a standard library of blessed callouts (Frank).**
+Lean ADOPT as a #6 component after the static pieces. Blessed callouts are EMITTED C TEXT (like kit search code),
+so the artifact stays self-contained (unlike eval). Blessed = guarantees the compiler relies on: PURE (reorder,
+skip, run only on DFA-validated candidates), BOUNDED (linear, stated limit), TOTAL (bad input = filter false,
+never a match-time error), ORACLE-TESTED (python datetime/ipaddress etc.), and DECLARES ITS REGULAR TWIN where one
+exists (luhn, weekday, days_in): the compiler picks automaton vs callout (as `within(15, of: x)`). First contents:
+numbers (int, decimal, canonical compare), dates (days, weekday, days_in, leap), checksums (luhn, mod97, isbn10/13),
+network (ipv4_int, in_cidr, ipv6 normalise), text (code-point length); Unicode normalisation deferred (official UCD
+data and tests only). Unblessed escape hatch = PCRE `(?C)` with a caller C function, no compiler assumptions. Home:
+its own directory/tests/journal like memfn/ (pcrec describes the need, the library returns C text: same seam).
