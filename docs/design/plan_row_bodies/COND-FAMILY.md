@@ -574,3 +574,8 @@ detail = manager's call, settled at build).
 actually. Integers should be \d+ to be variable width. Unpad would be the right approach" (Reading A: explicit
 `unpad`; E-CAL as written with `/\d\d/ & between(1,12)` is wrong, use unpad). C4: the guard hole is written with an
 explicit `&`: `(\d+)&${ <256 }` (a hole after an atom without `&` is a following item, not a guard).
+RULING C2 (Frank 2026-11-14, "I agree... I was mostly thinking about multi line predicate syntax"): an rx literal
+means exactly what PCRE means, NO implicit x-mode (`/foo bar/` keeps its space, `#` is literal); extended mode is
+per literal (`/.../x` or a leading `(?x)`). SUPERSEDES "the predicate opt-in implies x-mode": the intent was
+free-form MULTI-LINE PREDICATE (expression-language) syntax, which the outer layer gives (whitespace and newlines
+free between expression tokens; long logic in `:=` definitions; literals stay short).
