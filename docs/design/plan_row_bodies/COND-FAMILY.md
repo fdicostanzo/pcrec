@@ -215,3 +215,4 @@ Points the exercise shows:
 - Everything is PURE (no match-dependent binding), so the query is one automaton: one pass per line, no JSON parse. Cost = the product of the `row` automata; [COST-EXPLAIN] would show it.
 - Duplicate keys: `row` holds if ANY member with that key matches.
 - Nesting later: recursion (`(?&value)`) is VM; a depth-bounded unrolling stays an automaton.
+- Frank: no per-row parse; a byte-at-a-time DFA over the file. Manager: and better than byte-at-a-time on most rows: the existing required-literal machinery (S2's set runs) can skip rows that lack the rarest required text at SIMD speed, and a dead state in a line-anchored search jumps to the next newline. CAVEAT for the library: exact escape handling (`error` matching "error") makes the literal text NOT required, which weakens that skip; a `jstr_plain(p)` (producer never escapes ASCII) restores it. A library choice the cost report should make visible (exactness vs scan speed).
