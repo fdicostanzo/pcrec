@@ -28,7 +28,7 @@ the bump's own commit.**
   s2r1b census).**
   An alternation whose branches each match exactly the same number of bytes and whose runs are
   whole (`rr_alt_rows` row 1, `alt_union`) contributes its per-position UNION to the necessary run,
-  so the run continues through it (`xy(?:ab|ac)zw` -> `xy{a}{b,c}zw`, `((a)|b){3}c` ->
+  so the run continues through it (`AKIA|AGPA|AIDA|AROA` -> `A{G,I,K,R}{A,D,I,P}A`, `((a)|b){3}c` ->
   `{a,b}{a,b}{a,b}c`, a run across an alternation of zero-width branches); an alternation of
   unequal widths keeps only its common head and tail as before. Moves the `<PREFIX>_REQ_RUN`,
   `_REQ_WHY` and `_REQ_HANDOFF` stamps and the pre-check bytes of 19 byte / 22 utf8 corpus patterns
