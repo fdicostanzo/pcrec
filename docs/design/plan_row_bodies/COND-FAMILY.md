@@ -304,3 +304,12 @@ position: 1,3,5) and `x.label` (original name). Lean: element facts stay on the 
 `x.label`); the ordinal is a PARAMETER the macro declares (`capture(x, i) := /(?<f_${i}>${x})/`; `each`
 passes it as the second argument when the macro takes one), not an implicit binding, so nested `each`s
 never shadow and the dependency shows in the signature. A numeral spliced into a name is canonical.
+
+**2026-11-14 — keywords curry (Frank: "Keywords to macros basically curry the rx function").**
+Keyword arguments configure, the positional argument is the subject: `capture(prefix: "f_")` is a VALUE (a
+macro awaiting `x`), so `each(capture(prefix: "f_"), a)` needs no lambda syntax; supplying the subject
+(`B & capture(prefix: "f_")`, by `p(x)` = `x & p`) makes a pattern. Filters are macros with their keywords
+bound awaiting the target (`<200`, `between(3, 6)`): the paren-free unary sections were partial
+applications. Rule: an application is a value until every required parameter is bound; keywords bind in any
+order across partial applications; rebinding one is an error. `each`'s function argument must be one
+argument short (two if it takes the ordinal), checked at compile time.
