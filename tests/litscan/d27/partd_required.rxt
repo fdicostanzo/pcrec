@@ -28,7 +28,6 @@ n "aeeeeeeee~#~#~#~#x0000000000000000000000000000000"
 # route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "none" _REQ_RUN "3030303030303030303030303030303030303030303030303030303030303030/f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8" _ENGINE "vm" _VM_PREFILTER "none"
 # pcre2-only
 pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#.[0-7]{32}\1
-oracle none python re backtracks exponentially on this subject; no-match derived (no byte 0-7 in the subject, [0-7]{32} necessary)
 features all
 n "eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa~#~#~#~#x88888888888888888888888888888888"
 
