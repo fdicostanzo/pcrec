@@ -389,3 +389,10 @@ a `${}` HOLE is ONE entry. So `/(a|b|c)|d/` = 2; `x := /(a|b|c)/; x | /d/` = 2 (
 correctness (`/${x}d/` = `(?:a|b|c)d`), so the two crossings give both choices: merge entries in the expression
 language (`x | /d/`), nest x as one entry by crossing into rx text (`/${x}/ | /d/`). Expression-language
 parentheses are precedence only, never structure (`(x) | /d/` is still 4).
+
+**2026-11-14 — index base (Frank: "So d[1][1] is \"a\"").**
+Indexing descends: a group entry's contents are an rx with their own array view (`d := /(a|b|c)|d/`: `d[1]` =
+`(a|b|c)`, `d[1][1]` = `/a/` = `"a"`, `d[2]` = `/d/`). Lean 1-BASED EVERYWHERE (SUPERSEDES `/a|b|c/[1]` = `/b/` and
+the `each` ordinal default 0 in earlier notes): the map view's index is the PCRE group number, `$1`/`$2`, and
+Frank's `index: 1` all point there; two bases on one rx would be a trap. `[0]` = the whole rx (PCRE group 0
+= the whole match). The `each` ordinal defaults to 1.
