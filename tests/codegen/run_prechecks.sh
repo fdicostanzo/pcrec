@@ -1640,7 +1640,7 @@ foo\b%%run-pinned-bounded%0*,1,2%dominated%B-bounded: the trailing word context 
 [ab]/user%-fno-run-prefilter%offset-set%0,1*%emitted%C1 denied falls back to offset-set, whose test does not verify the run
 \Bfoo\B%%offset-set-bounded%0,1*%emitted%class C2: the model scans o at 1, not the pick f, so no run row (sabotage row f: clause 3)
 q[a-z]*qu%%memchr%none%emitted%class D: memchr on q IS the pick, but the run floats, so the scan does not verify it (sabotage row c: the verifies conjunct)
-[ab]\x80[0-9]{3}\x81%%offset-set%0,1*%emitted%a one-byte check on 0x81 beside an offset-set scanning 0x80 of equal ppm: density is a memchr form's alone (sabotage row e)
+[ab]\x80[0-9]*\x81%%offset-set%0,1*%emitted%a one-byte check on 0x81 beside an offset-set scanning 0x80 of equal ppm, no run for the kit's decision to read (a [0-9]{3} here makes a set-position run, whose scan decides first): density is a memchr form's alone (sabotage row e; re-aimed 2026-11-14, lane mechund)
 /abcd[xy]/user%%handoff%none%emitted%class C0: the run is pinned at 6 but the scan member / sits at 0, so no run row (sabotage row g's witness: the pin must match BYTES); [REQ-HANDOFF-L1] the run pre-check's handoff re-enters
 /abcd[xy]/user%-fno-req-handoff%memchr%none%emitted%class C0 with the handoff denied: the memchr start scan
 (x?)([a-z]+)+Z.@\1%-e byte%-%-%emitted%K65's witness: no DFA scan of any kind, so G1 has no p and the pre-check stays (litscan_s1.md R3-1)
