@@ -282,6 +282,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-12, Frank: blocks instead of doubling, "also helps with streaming"): leading candidate = BLOCKED look-ahead: one presence question per block of B bytes ahead of the loop (yes: the block's attempts run unasked; no: scan forward to the next occurrence, end of subject stops); forward-only, at most one block ahead (stream- and readahead-friendly; doubling can demand unbounded look-ahead a stream cannot supply). B is a tuning constant: derive it from a SYSTEM constant (Frank): the stream's chunk when streaming, else the page size (sysconf(_SC_PAGESIZE), POSIX libc, or a build-time page constant if the measurement shows insensitivity; not the per-device /sys readahead window, not glibc-only cache sizes) and show insensitivity across that range in the measurement.
 
 ## Candidates ([OPTLOOP])
+- [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
+  filed: 2026-11-13 manager (finding of lane s2tri on the S2 landing; test-island N=300/340, RETRY)
+  status (2026-11-13): filed, unscheduled; speed cost only, under the size cap (answers unchanged); measured instance: the island-free artifact WITH the handoff is 412,797 B and fits, yet the handoff is dropped
+  next: when scheduled: census the fit_rungs[] firings since S2 (which patterns lose a handoff they could keep); decide the order or a re-add step after drop-islands; measure
+  refs: lane/s2land s2tri_report.md (test-island row); docs/spec/limits.md §8.4¶2b; [RUN-POS-SET] (set runs add handoff/verify bytes)
 - [PRED-SPLIT] STATE:not-started — automatically demote an exploding predicate to a verify step; DFA keeps the rest
   filed: 2026-11-13 manager (Frank: "isolate expensive operations ... DFA for most of it but this one check is VM ... a non-manual method?"; "file away for later optimization")
   status (2026-11-13): filed, unscheduled; waits for the predicate base ([COND-FAMILY])
