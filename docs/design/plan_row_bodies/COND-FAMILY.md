@@ -415,3 +415,14 @@ SEMANTICS: alternation order = PCRE priority (`ab|abc` vs `abc|ab` on `abcd`); t
 priority-preserving tries (literal sets, alt_normal_form), so users never sort for speed; `sort(alts, by:
 length, desc)` exists only as the deliberate leftmost-longest choice. `unique` keeps the first occurrence.
 Candidate FIRST WORKED EXAMPLE for #6 (arrays, filter-indexing, keywords, trust/pin; nothing at match time).
+
+**2026-11-14 — file_text + records (Frank: either 1. read the whole file into a binding and search it by line, or 2. give the file-literal command a record rx).**
+Lean: (2) is the general form, (1) its special case, and they split into two primitives: `file_text(path,
+sha256: ...)` (the whole file, one string; = option 1) and `records(text, rx)` (each compile-time match of rx
+over any compile-time string is an entry; works on any string, composes with filters/each/join). `file_literals`
+becomes library sugar `records(file_text(p), lines)` where `lines` is a NAMED record rx (no hidden default: blank
+lines and `\r` are decided by the chosen rx). The record rx can do the filtering (`/^[^#\r\n]{1,20}$/m`). Named
+groups make records MAPS (compile-time data): `rows := records(file_text("w.csv"), /^(?<word>[^,]+),(?<w>\d+)$/m)`,
+`each(r => r.word, rows[r.w: >100])` (lambda spelling a placeholder). COST: `records` needs an IN-COMPILER
+matcher (pcrec has none; it only emits); restrict record rx to the DFA-able subset (no backrefs/recursion) and
+build on [AUTOMATON-KIT] (already #6's foundation row).
