@@ -120,3 +120,12 @@ The useful distinction is not kind but DEPENDENCE: a binding that mentions a mat
 ### 2026-11-13 evening: classic DEFINE groups beside bindings (Frank's clarified question)
 
 REVISES the earlier "DEFINE only bindings" leaning: ALLOW classic `(?<name>…)` groups beside `:=` bindings in an opted-in DEFINE. A classic group IS a pattern binding of that name, with PCRE's own semantics kept: it takes its group number, inherits the enclosing flags (a `/…/` literal does not), and `(?&name)` calls it. One namespace: a group and a binding with the same name is an error. Why allow: the classic group is already well defined, forbidding it adds an error case and a migration step for existing pattern libraries, and nothing about it conflicts with bindings. Holes still take no `:=` (unchanged).
+
+### 2026-11-13 evening: macro bindings `m(x) := …` (Frank)
+
+Frank: classic group and `:=` are two spellings of the same pattern binding; "Then macro binding is m(x) := /.../ & x".
+Manager: yes. Explicit parameters make a macro: `between(lo, hi) := (> lo) & (< hi)`; `year := /\d{4}/ & between(2000, 2100)`; `pair(p) := /${p},${p}/`.
+- Frank's example IS the application rule written out: for a parameterless `p`, `p(x)` already means `x & p`. So application becomes "the default macro every parameterless binding has", one rule instead of sugar.
+- Two kinds of argument, no clash: positional = explicit parameters; `name:` = label parameters (`isodate(year: 2000)`). A macro may take both.
+- Parameters are names scoped to the body (hiding an outer name warns, as for labels).
+- Macros expand at compile time (inlined per use), so cost is per USE; the cost report lists each use. No recursion through parameterized definitions (unchanged).
