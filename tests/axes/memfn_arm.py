@@ -83,15 +83,22 @@ PAB_BOTH = [b"(?:[0-9]{1,3}.\\.){3}[0-9]{1,3}", b"(?:[0-9a-f]{1,4}.:){4,7}[0-9a-
             b"[a-c]{2,4}.x.[0-9]{2,4}.y.[A-C]{2,4}.z.[j-l]{2,4}.w.[x-z]{2,4}",
             b"\\b\\d{1,3}.\\..\\d", b"(?:ab|ba|aa|bb){24}.c"]
 PAB_U8 = [b"x.(?:1[\xc3\xa9\xc3\xa0]|q2|r3).y"]
+# RE-PINNED at rule (1) ON (lane r1onax, abi 107; cloud axes 43625961160): byte 131 -> 130,
+# utf8 189 -> 185. `alt_union` states runs through equal-width alternations, so the
+# one-byte assign site the deny moves is gone for the census movers: byte `((a)|b){2,4}c`,
+# `ab|a\Gb`, `a{1,2}(?:(?=\w)|(?<=\w))A`; utf8 those three and `-{1,2}(?:(?!a)|)a` (all in
+# s2r1b_report.md's census, classes 1, 2, 4). Measured by diffing the reach under
+# `--harness=restore=alt` against the default over the corpus (nothing joined). The floors
+# are the measured counts (corpus 120/174 + 10/11 witness-only).
 PAB_WIT = ([("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)")]
            + [(e, "c-default", w) for w in PAB_BOTH for e in ("byte", "utf8")]
            + [("utf8", "c-default", w) for w in PAB_U8])
 MEMFN_CLASS = {
     ("precheck-assign-byte", "default"): ("DIFFER",
-        {("byte", "c-default"): 131, ("byte", "c-vm"): 0, ("utf8", "c-default"): 189, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 130, ("byte", "c-vm"): 0, ("utf8", "c-default"): 185, ("utf8", "c-vm"): 0},
         PAB_WIT),
     ("precheck-assign-byte", "simd"): ("DIFFER",
-        {("byte", "c-default"): 131, ("byte", "c-vm"): 0, ("utf8", "c-default"): 189, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 130, ("byte", "c-vm"): 0, ("utf8", "c-default"): 185, ("utf8", "c-vm"): 0},
         PAB_WIT),
     # R17-b' B1's five finder-table denies (lane fdclass, 2026-10-17), MEASURED at
     # lane/b1fix f74bb0b7b (= the B1 tip): `taskset -c 0-7 python3 tests/axes/memfn_arm.py
