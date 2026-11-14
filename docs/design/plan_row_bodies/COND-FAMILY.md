@@ -502,3 +502,9 @@ weekday(d) := ...; leap(d) := ...; month_name(d) := ... }`), never "any macro an
 date" (extension methods: an unrelated import could change or ambiguate `d.foo`). Outside extension = ordinary typed
 macros, called bare after import (`fiscal_quarter(d)`). Collisions: label vs member = compile error (ruled); import
 name clashes resolved by `import weekday as wd`.
+Addendum (Frank: `dt: date` then `dt.fiscal_quarter` -> `fiscal_quarter(dt)`): yes, scope-limited UFCS (D/Nim).
+Dot resolution: (1) a label; (2) a type member (declared with the type); (3) a macro IN THE IMPORTER'S SCOPE
+(imported or local) whose first parameter accepts the value's type. More than one match = compile error naming
+both (a later library member of the same name breaks the build, never silently rebinds); fix by `import ... as`
+or a bare call. What stays excluded is dot lookup into libraries you did not import. Type check at the dot;
+narrower values OK (`isodate_value.fiscal_quarter`).
