@@ -442,3 +442,18 @@ Addendum (Frank: "a file describe its own format"): split by what the file decla
 bounded. A self-declared PATTERN (`# format: ...` header, then `header & eval($fmt)`) is eval's real new capability
 (schema-with-data) and its WORST trust case (the pattern comes from the data), the case that justifies the budget.
 Workhorse remains the caller-parameterised matcher; self-describing files are a demonstration, not a driver.
+
+**2026-11-14 — EXAMPLES (Frank: add Luhn and calendar dates beside JSONL; plus "given a parsed date, see if another date is within 15 days of the first").**
+Worked examples are the design's acceptance tests (expected expansion + matches; the first D27 spec-first inputs
+when built). Set so far: JSONL (key-order independence), ISO date + weekday, IPv4, file_literals/records/CSV, and:
+(E-LUHN) `card := /\d{4}( ?\d{4}){3}/ & luhn & startsWith("4")`: Luhn validity (weighted digit sum mod 10) is
+REGULAR (~20 states), an exact computed-property filter, no callout; IBAN mod 97 and ISBN-10 mod 11 the same class.
+(E-CAL) `isodate := join((year: \d{4}, month: \d\d & between(1,12), day: \d\d & between(1,31)), sep: "-")`;
+`valid := isodate & (day: <=days_in(month, leap(year)))`: a label's constraint depends on ANOTHER label's value;
+finite and enumerable (leap = mod 4/100/400, regular), so still one automaton; tests cross-label conditions.
+(E-NEAR) date within 15 days of another; the cost depends on WHERE the anchor comes from: compile-time constant
+-> a 31-literal set (tiny trie); caller-supplied at run time -> computed set or arithmetic (parameterised matcher,
+no eval); both dates in the subject -> a MATCH-TIME check (regular in principle, but the automaton would remember
+~3.65M day values): `pair := join((a: isodate, b: isodate), sep: /\s*,\s*/)`, `close := pair & (days($b) - days($a):
+between(-15, 15))`, an inline callout on DFA-validated candidates using DFA captures (no VM re-run). The compiler,
+not the spelling, picks set-expansion vs match-time check (`within(15, of: x)` is cheap whenever x is constant).
