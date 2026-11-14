@@ -102,3 +102,12 @@ Manager's notes:
 - Cost: literal spaces in such patterns need `\ ` or `[ ]`. Opted-in patterns are new text, so no existing pattern changes meaning; `(?-x)` turns it off locally.
 - x, not xx: spaces inside classes keep their meaning (manager's leaning, open).
 - "No inherited flags" for `/…/` literals still holds: x is the opt-in's DEFAULT for every pattern in the unit, literals included, not a flag inherited from the enclosing group.
+
+### 2026-11-13 evening: bindings only in DEFINE; DEFINE only bindings (Frank's question)
+
+Frank: lengthy logic in DEFINE, short references in `${}`: does that forbid bindings in `${}` or discourage them? And DEFINE must hold only bindings.
+Manager's leaning:
+- FORBID `:=` in holes. Holes are pure expressions. Reason beyond style: a binding inside a repeated group (`(?:${x := …})+`) has no single value (which iteration?); keeping `:=` in DEFINE removes the question. One place lists every binding.
+- Call-site naming does not need it: `(?<e>${isodate})` (a named group around a hole) already gives `$e.year`, like `(?&e=isodate)`.
+- DEFINE in an opted-in pattern holds ONLY bindings. A pattern-valued binding is callable as `(?&name)`, so classic `(?<name>…)` definitions lose nothing; a classic group in an opted-in DEFINE is an error whose fix hint shows `name := /…/`. Non-opted patterns keep PCRE's DEFINE unchanged.
+- Open: recursive definitions (balanced parentheses) today live in DEFINE groups. Leaning: a pattern binding may call itself via `(?&name)` inside its own literal (plain PCRE recursion); the no-cycle rule stays for PARAMETERIZED definitions and value bindings only.
