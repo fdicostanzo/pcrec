@@ -549,3 +549,14 @@ same value (as `[1,3,5]` = `1|3|5`), so join takes an ordinary array, no tuple t
 /\d{4}/, month = /\d\d/, day = /\d\d/], sep = "-")`. Reading payoff: `f(sep = ".")` configures, `isodate(year: 2000)`
 filters. SUPERSEDES the `sep: "."` keyword spelling in earlier notes. LAMBDA (`r => r.word`) was a placeholder;
 currying + named macros cover every example; no lambda until an example needs one.
+
+**2026-11-14 — `[]` is positional only (Frank: X[y] filters X by its keys, but there are two key sets by perspective; the output is always an array, so `[]` should always use the array perspective; map-label filtering via a primitive like each_label; type-dependent `[]` breaks on `[1,2,"fire",startsWith("S")]`).**
+Agreed. FOUR TOOLS: (1) `X[...]` = POSITION in the array perspective: integers, integer sets, numeric filters
+(`X[1]`, `X[1,3,5]`, `X[<4]`); result always an array; a string or non-numeric filter inside is a compile error
+suggesting the right tool. (2) `X & f` = filter by LANGUAGE; `&` distributes over entries and empty products drop,
+so `alts & !startsWith("#") & length(<=20)` keeps passing literals and `rows & (w: >100)` keeps matching rows.
+(3) `where(p, X)` = filter by a compile-time STRUCTURAL property (the filtering twin of `each`); `where_group(p, X)`
+for the map perspective: `where(has_member(weekday), types(isodate))` (`&` there would intersect languages: wrong),
+`where_group(label: startsWith("S"), A)`. (4) `X.name` = LABEL navigation (`A.Saturday`, `alt.repeated[1]`).
+SUPERSEDES: `A["Saturday"]` -> `A.Saturday`; `A[startsWith("S")]` -> where_group; `file_literals(...)[!startsWith("#")]`
+-> `& !startsWith("#")`; `rows[r.w: >100]` -> `rows & (w: >100)`; `types(isodate)[has_member(weekday)]` -> where.
