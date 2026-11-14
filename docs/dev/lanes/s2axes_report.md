@@ -122,3 +122,9 @@ tests/axes/memfn_arm.py (commit 087cabce7):
 OWED: none. The kit manager dispatches the cloud axes run, which checks the floors
 over the full corpus. The precheck-assign-byte red (shard 7) is outside this lane's
 brief and still open with the manager.
+
+## STATE AT HANDOFF
+
+Delivered on lane/memfn-s2axes: commit 087cabce7 (memfn_arm.py witnesses) plus this report.
+OWED: none. The kit manager's cloud axes run confirms the corpus floors. No rulings file
+was named. Open outside this lane: the precheck-assign-byte floors (shard 7).
