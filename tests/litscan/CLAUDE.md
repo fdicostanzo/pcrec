@@ -132,5 +132,15 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   `gen_handoff.py`'s own oracle helpers (python3 `re` AND libpcre2 for a byte
   block, libpcre2 alone for utf8 or `\K`); `--check-pcrec BIN` runs the
   result under the default and each deny.
+- **d27/** — Part D's SPEC-FIRST witnesses (lane s2d27, D27-blinded author;
+  landed by lane s2d27land, 2026-11-14; `docs/design/memfn/part_d.md` §5.1.1;
+  author's report `docs/dev/lanes/s2d27_report.md`): five `partd_*.rxt` files
+  (`decline`, `deny_stretch`, `dominated`, `r_by_role`, `required`; 26 blocks,
+  143 cases), written from the contract by an author denied `src/` and
+  `tests/`. Every expectation is python3 `re`-derived except the one
+  `oracle none` block in `partd_required.rxt` (python backtracks
+  exponentially; its no-match is derived, reason on the line). Never adjust
+  an expectation to pcrec: a disagreement is a finding. The design's
+  `(a|bc)[a-z]{8}.q` became `(a|bc|de)` / `(a|bd)` since {a,c} is now a cube.
 
 Maintenance: update this file when files are added/removed or change roles.
