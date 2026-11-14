@@ -111,3 +111,8 @@ Manager's leaning:
 - Call-site naming does not need it: `(?<e>${isodate})` (a named group around a hole) already gives `$e.year`, like `(?&e=isodate)`.
 - DEFINE in an opted-in pattern holds ONLY bindings. A pattern-valued binding is callable as `(?&name)`, so classic `(?<name>…)` definitions lose nothing; a classic group in an opted-in DEFINE is an error whose fix hint shows `name := /…/`. Non-opted patterns keep PCRE's DEFINE unchanged.
 - Open: recursive definitions (balanced parentheses) today live in DEFINE groups. Leaning: a pattern binding may call itself via `(?&name)` inside its own literal (plain PCRE recursion); the no-cycle rule stays for PARAMETERIZED definitions and value bindings only.
+
+### 2026-11-13 evening: one kind of binding in DEFINE (Frank: "Can you mix pattern and predicate bindings?")
+
+Yes, and there is only ONE kind: `name := expression`. By the closure, a predicate IS a pattern (`year := /\d{4}/ & (> 2000)` is both). The expression's TYPE, inferred, decides use in a hole (as before: pattern -> sub-pattern, value -> text, test -> guard). Values (`n := 3`, tables, mappings) and tests (`ok := leap($d.year)`) sit beside patterns, in any order (forward references allowed, no cycles).
+The useful distinction is not kind but DEPENDENCE: a binding that mentions a match label (`$x`) is match-dependent (evaluated per match); one that does not is pure (compile time). The compiler tells them apart from the text; leaning: the cost report ([COST-EXPLAIN]) shows which bindings are match-dependent, since those are where run-time cost lives.
