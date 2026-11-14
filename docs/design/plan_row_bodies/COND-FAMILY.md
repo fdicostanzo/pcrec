@@ -381,3 +381,11 @@ string) is useless in a search and VM-hostile, while under `&` it is bounded. So
 pointwise so `!(x: <200)` and `(x: <200) & !(y: >55)` work: one `!` in both languages. Comparisons: `!<200` is a
 filter, `>=200` a full rx; equal on any target (positive form is a lint hint). De Morgan / double negation are
 ordinary filter rewrites the compiler may normalise.
+
+**2026-11-14 — spelling vs logic in the array view (Frank: is `(a|b|c)|d` 2 entries or 4; with `x := /(a|b|c)/`, which does `y := x | /d/` give?).**
+Rule: expression `|` CONCATENATES arrays (each operand contributes its top-level alternatives); an rx GROUP or
+a `${}` HOLE is ONE entry. So `/(a|b|c)|d/` = 2; `x := /(a|b|c)/; x | /d/` = 2 (x is an array of one);
+`x := /a|b|c/; x | /d/` = 4 (= `/a|b|c|d/`); `/${x}|d/` = 2 for either x. A hole must be an atom for
+correctness (`/${x}d/` = `(?:a|b|c)d`), so the two crossings give both choices: merge entries in the expression
+language (`x | /d/`), nest x as one entry by crossing into rx text (`/${x}/ | /d/`). Expression-language
+parentheses are precedence only, never structure (`(x) | /d/` is still 4).
