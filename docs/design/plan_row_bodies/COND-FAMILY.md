@@ -468,3 +468,14 @@ numbers (int, decimal, canonical compare), dates (days, weekday, days_in, leap),
 network (ipv4_int, in_cidr, ipv6 normalise), text (code-point length); Unicode normalisation deferred (official UCD
 data and tests only). Unblessed escape hatch = PCRE `(?C)` with a caller C function, no compiler assumptions. Home:
 its own directory/tests/journal like memfn/ (pcrec describes the need, the library returns C text: same seam).
+
+**2026-11-14 — capability levels (Frank: blessed callouts must be a specific choice; a predicate version, perhaps the default, that is PURE DFA; opt in to pure functions or VM).**
+Lean ADOPT. DEFAULT inside the predicate opt-in = pure automaton: linear time, no backtracking, hostile-input safe,
+self-contained (an RE2-class promise with far more expressive power). Anything beyond it is a compile error naming
+the construct and the option that allows it ("`days($b) - days($a)` needs match-time functions: add `functions`, or
+make the anchor a constant"), the "requires module 'X'" contract shape. OPT-INS are INDEPENDENT switches, not a
+ladder: `functions` (blessed callouts on DFA captures; still linear, self-contained), `vm` (full PCRE semantics:
+backrefs, recursion, non-DFA lookbehind), `eval` (runtime patterns; budgeted; links a runtime); `functions` does not
+imply `vm`. At the default level a regular twin (luhn, weekday) MUST take its automaton form; too large = compile
+error with the size, suggesting `functions` (never a silent switch). Scope: inside the predicate opt-in only; plain
+PCRE patterns unchanged. [COST-EXPLAIN]'s first output: the level a pattern needed and why.
