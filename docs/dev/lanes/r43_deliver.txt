@@ -1,0 +1,5 @@
+report=docs/dev/lanes/r43_report.md
+sections: Summary; D3 artifact floor; Reach re-measure; Checks and plants; Owed runs
+nonempty: all
+commit: yes
+owed: kit-r43-validate

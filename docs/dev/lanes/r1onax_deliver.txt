@@ -1,0 +1,4 @@
+report=docs/dev/lanes/r1onax_report.md
+sections: STATE AT HANDOFF; CAUSE; PINS; VALIDATION; OWED
+nonempty: all
+commit: yes

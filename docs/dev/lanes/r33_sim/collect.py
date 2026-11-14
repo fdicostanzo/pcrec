@@ -2,7 +2,7 @@
 """docs/dev/lanes/r33_sim/collect.py -- R-33's collector: TODAY's answer per search site, as compiled.
 
     python3 -I collect.py --probe BIN --tree TREE --bench BENCHDIR --out OUT.jsonl
-                          [--sources corpus,bench,s588] [--skip N] [--limit N] [--jobs N]
+                          [--sources corpus,bench,s588] [--skip N] [--limit N] [--jobs N] [--flags 'F ..']
 
 BIN is build.sh's probe compiler (the traced pcrec with probe.c wrapping the kit's entries). Each
 pattern is compiled ONCE per arm, `--features all -p rx` (job 588's and pick_588.py's flags), with
@@ -21,6 +21,8 @@ Arms: every pattern its default compile (RTE); job 588's patterns also DEF
 of pcrec-bench/bench/*/subbench.toml (READ-ONLY; compiled with the same flags, no per-subbench encoding:
 labelled in the report); s588 = kit_proof/measure/cells.tsv + s3_evidence/sample_588.tsv + pair_588.tsv;
 rp = the rule-list pilot's census arms (src_rp; asked only by name, not in the default sources).
+--flags (R-43): options appended to EVERY compile, e.g. `-e utf8 --engine=vm`, so one sweep is one of
+emit_sweep's (base, stream) cells; each line records them in `flags`.
 """
 import argparse
 import concurrent.futures
@@ -166,10 +168,10 @@ def req_stamps(text):
 
 
 def run_one(task):
-    probe, src, pid, pat, note, arm, flags = task
+    probe, src, pid, pat, note, arm, flags, cell = task
     env = dict(os.environ, PCREC_MF_ROUTE_TRACE="1")
     try:
-        r = subprocess.run([probe, "--features", "all", "-p", "rx", *flags, "-o", "-", "--pattern", pat],
+        r = subprocess.run([probe, "--features", "all", "-p", "rx", *cell, *flags, "-o", "-", "--pattern", pat],
                            capture_output=True, timeout=120, env=env)
         rc, err, req = r.returncode, r.stderr, req_stamps(r.stdout)
     except subprocess.TimeoutExpired:
@@ -177,7 +179,8 @@ def run_one(task):
     rates = {}
     sites, arts = parse(err, rates)
     return {"src": src, "id": pid, "arm": arm, "note": note, "pat_hex": pat.hex(),
-            "pat": pat.decode("latin-1"), "rc": rc, "req": req, "arts": arts, "sites": sites}, rates
+            "pat": pat.decode("latin-1"), "rc": rc, "req": req, "arts": arts, "sites": sites,
+            "flags": " ".join(cell)}, rates
 
 
 def main():
@@ -191,6 +194,7 @@ def main():
     ap.add_argument("--skip", type=int, default=0)
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--count-only", action="store_true")
+    ap.add_argument("--flags", default="", help="options appended to every compile (one emit_sweep cell)")
     a = ap.parse_args()
     es = load_emit_sweep(a.tree)
     plain = os.path.join(a.tree, "build/pcrec")
@@ -208,11 +212,12 @@ def main():
     items = items[a.skip:]
     if a.limit:
         items = items[:a.limit]
+    cell = a.flags.split()
     tasks = []
     for src, pid, pat, note, flags in items:
-        tasks.append((a.probe, src, pid, pat, note, "RTE", flags))
+        tasks.append((a.probe, src, pid, pat, note, "RTE", flags, cell))
         if src == "s588":
-            tasks.append((a.probe, src, pid, pat, note, "DEF", DEF_FLAGS))
+            tasks.append((a.probe, src, pid, pat, note, "DEF", DEF_FLAGS, cell))
     if a.count_only:
         print("compiles %d (patterns %d)" % (len(tasks), len(items)))
         return

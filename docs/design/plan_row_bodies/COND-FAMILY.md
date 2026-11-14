@@ -274,3 +274,289 @@ Manager: yes, at the end with `&`, using the label-narrowing form already ruled 
 - Frank: `x:` comes from the pattern before the `&`: `X & ${x: …}` in a pattern, or `/def(?<x>\d{3})abc/ & x: <256` in expression language. Manager: yes; `x:` names a label of the OTHER operand of its `&`. Rules: a bare `x: …` with nothing to intersect is an error; in a chain `P & Q & x: …` the label is looked up in `P & Q` and a label present in both is AMBIGUOUS (error naming both; fix: rename, or scope `(P & x: …) & Q`); an unknown label is an error listing the labels available.
 - Frank (half an idea): dot notation, `/def(?<x>\d{3})abc/ & (.x & <256)`, noting it fails as a filter. Manager: right, and that failure is the reason for a narrowing operator: `.x & <256` as a set would be "strings that are an x-value below 256", which no whole match is, so the result is empty. Keep the colon as the ONE narrowing operator (it already unifies call arguments `isodate(year: 2000)`, typed parameters and conditions) and let the DOT do what it does elsewhere, navigate: the left of `:` may be a PATH, `d.year: <2000`, `row.ts: …`, `a.b.c: …`. So: dot = which part, colon = constrain it. A jq-style `.x <256` (juxtaposition) was considered and not adopted: it would need its own precedence and splits the narrowing meaning across two spellings.
 - Frank: full circle: `isodate(year: 2000)` could be written `isodate & (year: 2000)`. Manager: yes; the call form is SUGAR: `p(a: s, b: t)` = `p & a: s & b: t`. So label arguments, conditions and typed parameters are ONE primitive (`&`) with ONE atom (`path: set`). Line kept: `name:` arguments narrow (sugar); POSITIONAL arguments construct (real macros: `between(3, 6)`, `list_of(\d)`).
+
+**2026-11-14 — join (Frank: `a := A | B | C`; `join(a)` -> `/${A}${B}${C}/`; `join(a, sep: ".")` -> `/${A}\.${B}\.${C}/`; captures by index or a `group:` option).**
+Manager's reading: `join` is STRUCTURAL (reads the named definition's declared order and labels, not its
+language; same rule as projection by indexing). `sep:` is a set: a literal is one string (auto-escaped) or
+a pattern. Labels vs captures: the joined parts are always navigable labels (`c.A: <200`, `c[1]`), free when
+unread (the compiler drops them); `group:` (true | a name prefix) EXPORTS them as caller-visible captures
+(ovector change, hence the option; index labels need the prefix). Family: in-order fixed = `join`,
+in-order repeated = `list_of(X, sep:)` (shared `sep:` spelling), any-order fixed = `&` of labelled parts
+(JSONL), candidate sugar `any_order(a, sep:)`. `join` of an empty array = the empty string (not the empty
+set). No `prefix:`/`suffix:` (concatenation says it). OPEN (asked Frank): a map's per-field value
+constraints carry into the joined labels (lean yes: `isodate := join(d, sep: "-")` inherits `year: <2100`).
+
+**2026-11-14 — compose instead of an option (Frank: `group(x) := /(?<${x.label}>${x})/`, `join(map(group, a))`, "lots of hand waving").**
+Manager's reading, leaning ADOPT and DROP the `group:` option of the previous note: (1) macros are passable
+values, fenced: compile-time only, over finite declared arrays, structural operators only (each, join, maybe
+a fold), no recursion, so every expansion terminates (the fence keeps this from becoming a general language);
+(2) elements carry compile-time metadata `x.label`, `x.index`; `${x.label}` in a group-name position is a
+compile-time splice that must yield a valid PCRE name (else a compile error naming the element; index-only
+arrays need a prefix argument); (3) NAME CLASH: "map" is already the labelled-alternation data type, so the
+operator is `each(f, a)` (or `apply`); `each` keeps labels and order, its result is an array (joinable,
+indexable); (4) navigation labels stay free and exist without this; exporting caller-visible captures is a
+one-line library function: `export capture(x) := /(?<${x.label}>${x})/`, `join(each(capture, a), sep: ".")`.
+
+**2026-11-14 — each's bindings (Frank: an incremented iteration index, initialised by `index:`; the original index and label also exposed).**
+Three distinct values (they differ once the array is sliced, e.g. `A[[1,3,5]]`): the ITERATION ORDINAL
+(dense, starts at `index:`, default 0; e.g. `index: 1` matches PCRE's 1-based groups), `x.index` (original
+position: 1,3,5) and `x.label` (original name). Lean: element facts stay on the element (`x.index`,
+`x.label`); the ordinal is a PARAMETER the macro declares (`capture(x, i) := /(?<f_${i}>${x})/`; `each`
+passes it as the second argument when the macro takes one), not an implicit binding, so nested `each`s
+never shadow and the dependency shows in the signature. A numeral spliced into a name is canonical.
+
+**2026-11-14 — keywords curry (Frank: "Keywords to macros basically curry the rx function").**
+Keyword arguments configure, the positional argument is the subject: `capture(prefix: "f_")` is a VALUE (a
+macro awaiting `x`), so `each(capture(prefix: "f_"), a)` needs no lambda syntax; supplying the subject
+(`B & capture(prefix: "f_")`, by `p(x)` = `x & p`) makes a pattern. Filters are macros with their keywords
+bound awaiting the target (`<200`, `between(3, 6)`): the paren-free unary sections were partial
+applications. Rule: an application is a value until every required parameter is bound; keywords bind in any
+order across partial applications; rebinding one is an error. `each`'s function argument must be one
+argument short (two if it takes the ordinal), checked at compile time.
+
+**2026-11-14 — applying an arraymap to an arraymap (Frank: the condition record in `rx & (x: d2)` IS an arraymap; generally one could apply an arraymap to another, including adding new entries — where?).**
+Same structure, two readings: SUM (array/map as alternation: any entry matches) vs PRODUCT (condition record:
+every field holds on its own part). Their languages differ (`(x: \d, y: [a-z]) & (x: [0-5])` as languages is
+`[0-5]`; field-wise it is `(x: [0-5], y: [a-z])`), so map-to-map application is its own operation. Lean:
+(1) APPLY = field-wise `&` on shared keys; `rx & (x: d2)` is this with the rx's label map on the left; a key
+absent from the target is an error naming it (`&` filters, never adds). (2) ADD = `|` (sum reading): appends,
+end = lowest PCRE priority, so position and meaning agree; prepend by writing it first; a duplicate key gives a
+union-typed label (ruled). (3) REPLACE = drop then add, `a[!x] | (x: ...)`; no update operator until an example
+needs one. OPEN: mid-sequence placement for joined maps (`before:`/`after:` keywords on `|`), deferred to a
+real example.
+
+**2026-11-14 — SUPERSEDES the previous note's field-wise `&` (Frank: arrays and rx are "the same", so intersecting two arrays must behave like intersecting the two rx; he would rather say `(a: ...)` is not a map or an rx than give up that consistency. And: every rx is an array divided at its top-level alternation; no top-level alternation = an array of one).**
+Agreed. RULE: `&` is extensional on every rx/array (membership = language; two spellings of one language
+behave the same under `&`, `|`, `!`). Labels ANNOTATE, never decide membership. `(x: d2)` is therefore a
+CONDITION, its own kind (a predicate over a match's labelled parts; conditions combine by `& | !`; `rx & cond`
+filters), not a map. It stays consistent with language `&` because of the ruled "unset label: comparison
+false": `(x: \d | y: [a-z]) & (x: [0-5])` keeps only matches whose x part is set and in [0-5], i.e. `[0-5]`, the
+same as the language intersection. Arrays: an rx IS the array of its top-level alternatives (`/a|b|c/[1]` =
+`/b/`; `/abc/` = an array of one; a group is an atom, so `/(?:a|b)|c/` has 2 entries); unlabelled entries are
+index-labelled. `&` on arrays distributes: `(A|B) & (C|D)` = `(A&C)|(A&D)|(B&C)|(B&D)`, empty products dropped,
+each product carrying both sides' labels (this is how `x:` resolves from either operand). TWO KINDS OF
+OPERATION, stated: extensional (`& | !`, comparisons) depend only on the language; STRUCTURAL (indexing,
+`each`, `join`, `.label`) read the spelling, so `/a|b/` and `/b|a/` are equal under `&` but differ under
+`[0]` (and in PCRE priority). Internal rewrites (altcls, alt_normal_form) never change the user-visible
+structure. Field-wise narrowing that KEEPS other entries is spelled structurally (each/projection), not `&`.
+
+**2026-11-14 — arrays vs maps are two VIEWS of one rx (Frank: "Maps are the labeled groups. The interpretation between the two is different and can have different counts").**
+ARRAY view = top-level alternatives (flat); MAP view = labelled groups (a tree; nesting gives paths, `d.year`).
+Counts differ: `/(?<y>\d{4})-(?<m>\d\d)/` = array 1, map 2; `/(?<a>x)|(?<b>y)|z/` = array 3, map 2. Access: a
+NUMBER indexes the array view (`rx[1]`), a NAME navigates the map view (`rx.y`, `rx["y"]`): no ambiguity rule.
+The earlier labelled arrays (`(Monday: ..., ...)`) are the ALIGNED case: each alternative is exactly one named
+group, so both views count 7. Map order = PCRE group number, so a map entry's natural index is its group
+number (fits `each(..., index: 1)`). `each`/`join` take either view; where they differ the caller names it
+(e.g. `rx.alts` / `rx.groups`, spelling open). Duplicate labels: union type (ruled). Both views are
+structural; `&` stays extensional.
+
+**2026-11-14 — piecewise via each; one mapping macro per perspective (Frank: piecewise intersection could be `each(&, A, B)`; map and array are perspectives on an rx, not types — like matching an integer — so they need different mapping macros).**
+Lean ADOPT. Operators are macros (`&` as a value is two-argument intersection; `(& B)` a curried filter). `each`
+over several arrays ZIPS by position; unequal lengths are an error naming both counts. The map perspective's
+macro (`each_group`, name open) zips BY LABEL; a label in only one input is an error (as `&` never adds);
+"keep the others" would be a keyword (`unmatched: keep`), only on a real example. `each_group(&, rx, (x: d2))`
+is the old field-wise apply, now explicit, structural, and `&` stays extensional. General: a perspective is a
+decomposition of an rx and brings its own mapping macro; keep names parallel (`each`/`each_group` or
+`each_alt`/`each_group`); stop at two until an example needs a third.
+
+**2026-11-14 — the "fractional rx" (Frank: `(x: ...)` can only be applied, via intersection, to another rx; not usable as `${x: digit}` or in an alternation; everything else is a full rx).**
+Lean: it is not a fractional rx but a MACRO awaiting its target (a term with a free variable: `x:` names a
+label of some other pattern; `&` binds it), the same kind of value currying already introduced. So: values are
+rx or macros producing rx. Rules (all from earlier rulings): `rx & f` = `f(rx)` (`p(x)` = `x & p` read
+backwards); filters combine POINTWISE by `& | !` (`(x: <200) | (y: >55)` is a filter, not an rx alternation);
+an unapplied macro where an rx is required (`${x: digit}`, `rx | (x: ...)`) is a compile error ("filter
+`x: digit` has no target; write `T & (x: digit)`"), the same error as an unapplied `capture(prefix: ...)`. The
+line: value filters mentioning NO label (`<200`, `between(3, 6)`, `startsWith("S")`) are full rx (the set
+that passes); anything naming a label it does not define is a macro. The colon marks it.
+Addendum (Frank: "It would imply (a: digit)(x)"): yes; application of a condition = `x & cond`. Three
+spellings, one meaning: `x & (a: digit)` (inline), `(a: digit)(x)` (call a named condition: `isSmallYear :=
+(year: <2000)`, `isSmallYear(d)`; a plain DEFINE binding), `each((a: digit), A)` (each alternative; one without
+label `a` is a compile error naming it). Applications nest like calls; `&` commutes, so order is readability only.
+
+**2026-11-14 — `!` (Frank: `!` fine in the predicate language, unsure in the rx language; if `&!` is "and not", it could be `&` and `!` as two items; "consistency... a hobgoblin to good design").**
+SUPERSEDES "shared operators `&`, `&!`, `|`": the operators are `&`, `|` and prefix `!`, and `!` is ALWAYS a
+filter (a macro awaiting a target), by the rule just agreed: a standalone complement (`!abc` = nearly every
+string) is useless in a search and VM-hostile, while under `&` it is bounded. So `A & !B` = `(!B)(A)` = A minus B
+(`&!` dissolves into `&` + filter); `${!B}` / `C | !B` get the standard "no target" error; filters combine
+pointwise so `!(x: <200)` and `(x: <200) & !(y: >55)` work: one `!` in both languages. Comparisons: `!<200` is a
+filter, `>=200` a full rx; equal on any target (positive form is a lint hint). De Morgan / double negation are
+ordinary filter rewrites the compiler may normalise.
+
+**2026-11-14 — spelling vs logic in the array view (Frank: is `(a|b|c)|d` 2 entries or 4; with `x := /(a|b|c)/`, which does `y := x | /d/` give?).**
+Rule: expression `|` CONCATENATES arrays (each operand contributes its top-level alternatives); an rx GROUP or
+a `${}` HOLE is ONE entry. So `/(a|b|c)|d/` = 2; `x := /(a|b|c)/; x | /d/` = 2 (x is an array of one);
+`x := /a|b|c/; x | /d/` = 4 (= `/a|b|c|d/`); `/${x}|d/` = 2 for either x. A hole must be an atom for
+correctness (`/${x}d/` = `(?:a|b|c)d`), so the two crossings give both choices: merge entries in the expression
+language (`x | /d/`), nest x as one entry by crossing into rx text (`/${x}/ | /d/`). Expression-language
+parentheses are precedence only, never structure (`(x) | /d/` is still 4).
+
+**2026-11-14 — index base (Frank: "So d[1][1] is \"a\"").**
+Indexing descends: a group entry's contents are an rx with their own array view (`d := /(a|b|c)|d/`: `d[1]` =
+`(a|b|c)`, `d[1][1]` = `/a/` = `"a"`, `d[2]` = `/d/`). Lean 1-BASED EVERYWHERE (SUPERSEDES `/a|b|c/[1]` = `/b/` and
+the `each` ordinal default 0 in earlier notes): the map view's index is the PCRE group number, `$1`/`$2`, and
+Frank's `index: 1` all point there; two bases on one rx would be a trap. `[0]` = the whole rx (PCRE group 0
+= the whole match). The `each` ordinal defaults to 1.
+
+**2026-11-14 — duplicate labels by index (Frank: with same-labelled alternations, `alt.repeated[1]` gets the first).**
+Yes: `alt.x` returns EVERY entry labelled x as an array in group order (`alt.repeated[1]`, `[2]`, ...); a unique
+label gives an array of one = the rx itself, so the common case needs no `[1]`; used whole with duplicates it is
+the alternation of all of them = the ruled union type; `count(alt.repeated)` is the compile-time count. Keep
+distinct: `alt.repeated[1]` = structural, the first entry in the PATTERN (compile time); `$repeated` = the
+MATCH's value by PCRE's rule (lowest-numbered set group; match time). They differ when the first alternative
+did not participate (the colon/dot vs `$` split).
+
+**2026-11-14 — literals from a file (Frank: `alts := file_literals("...")`, filtered: drop comment lines, max length, sort for trie optimisation).**
+Lean: `file_literals(path, sha256: ...)` = an array, one entry per line, each a one-string set (auto-escaped),
+under the same compile-time trust/pin rules as `.rxt` `include` (a changed file is a loud error). Filtering =
+indexing by a filter (ruled): `file_literals("w.txt")[!startsWith("#") & length(<=20)]`; `length` a library value
+filter. Loud traps (no silent defaults): an EMPTY entry (the alternation would match everywhere) is a compile
+error unless filtered or `skip_empty: true`; `\r`/trailing spaces are errors unless `trim: true`. SORT IS
+SEMANTICS: alternation order = PCRE priority (`ab|abc` vs `abc|ab` on `abcd`); the compiler already builds
+priority-preserving tries (literal sets, alt_normal_form), so users never sort for speed; `sort(alts, by:
+length, desc)` exists only as the deliberate leftmost-longest choice. `unique` keeps the first occurrence.
+Candidate FIRST WORKED EXAMPLE for #6 (arrays, filter-indexing, keywords, trust/pin; nothing at match time).
+
+**2026-11-14 — file_text + records (Frank: either 1. read the whole file into a binding and search it by line, or 2. give the file-literal command a record rx).**
+Lean: (2) is the general form, (1) its special case, and they split into two primitives: `file_text(path,
+sha256: ...)` (the whole file, one string; = option 1) and `records(text, rx)` (each compile-time match of rx
+over any compile-time string is an entry; works on any string, composes with filters/each/join). `file_literals`
+becomes library sugar `records(file_text(p), lines)` where `lines` is a NAMED record rx (no hidden default: blank
+lines and `\r` are decided by the chosen rx). The record rx can do the filtering (`/^[^#\r\n]{1,20}$/m`). Named
+groups make records MAPS (compile-time data): `rows := records(file_text("w.csv"), /^(?<word>[^,]+),(?<w>\d+)$/m)`,
+`each(r => r.word, rows[r.w: >100])` (lambda spelling a placeholder). COST: `records` needs an IN-COMPILER
+matcher (pcrec has none; it only emits); restrict record rx to the DFA-able subset (no backrefs/recursion) and
+build on [AUTOMATON-KIT] (already #6's foundation row).
+
+**2026-11-14 — runtime eval (Frank: with the dynamic automaton and pcrec as a library, `x := eval(...)` for a dynamic rx; restriction DFA; opaque; effectively a callout).**
+IDEA, late in #6. Fits the algebra: `x & eval($fmt)` is a CONDITION (macro awaiting a target) known only at match
+time; opaque to static analysis; the hull ignores it (supersets ruled OK), so the static matcher finds candidates and
+eval filters them (a callout). DFA-only: linear time, no inner captures; the SAME automaton code as compile-time
+`records()` ([AUTOMATON-KIT] serves both). COST = a founding line: the output stops being self-contained (links a
+pcrec runtime). Only as: an explicit MODULE ("requires module 'eval'" otherwise; the artifact declares the runtime
+dependency); a BUDGET (lazy DFA, bounded state cache; exhaustion is a distinct result to the caller, never a silent
+no-match; attacker-supplied patterns are a DoS surface); a cache keyed by pattern string. Likely common variant: a
+caller-PARAMETERISED matcher (static skeleton + runtime hole, like a prepared statement; trusted source); runtime
+LITERAL sets deserve a cheaper hash/trie form. Needs an owner ruling on the module/dependency line when reached.
+Addendum (Frank: "a file describe its own format"): split by what the file declares. A self-declared LITERAL
+(MIME `boundary=`, heredoc `<<EOF`, Rust `r#"..."#`) is already a backreference (`(?<d>...)...\k<d>`): no eval,
+bounded. A self-declared PATTERN (`# format: ...` header, then `header & eval($fmt)`) is eval's real new capability
+(schema-with-data) and its WORST trust case (the pattern comes from the data), the case that justifies the budget.
+Workhorse remains the caller-parameterised matcher; self-describing files are a demonstration, not a driver.
+
+**2026-11-14 — EXAMPLES (Frank: add Luhn and calendar dates beside JSONL; plus "given a parsed date, see if another date is within 15 days of the first").**
+Worked examples are the design's acceptance tests (expected expansion + matches; the first D27 spec-first inputs
+when built). Set so far: JSONL (key-order independence), ISO date + weekday, IPv4, file_literals/records/CSV, and:
+(E-LUHN) `card := /\d{4}( ?\d{4}){3}/ & luhn & startsWith("4")`: Luhn validity (weighted digit sum mod 10) is
+REGULAR (~20 states), an exact computed-property filter, no callout; IBAN mod 97 and ISBN-10 mod 11 the same class.
+(E-CAL) `isodate := join((year: \d{4}, month: \d\d & between(1,12), day: \d\d & between(1,31)), sep: "-")`;
+`valid := isodate & (day: <=days_in(month, leap(year)))`: a label's constraint depends on ANOTHER label's value;
+finite and enumerable (leap = mod 4/100/400, regular), so still one automaton; tests cross-label conditions.
+(E-NEAR) date within 15 days of another; the cost depends on WHERE the anchor comes from: compile-time constant
+-> a 31-literal set (tiny trie); caller-supplied at run time -> computed set or arithmetic (parameterised matcher,
+no eval); both dates in the subject -> a MATCH-TIME check (regular in principle, but the automaton would remember
+~3.65M day values): `pair := join((a: isodate, b: isodate), sep: /\s*,\s*/)`, `close := pair & (days($b) - days($a):
+between(-15, 15))`, an inline callout on DFA-validated candidates using DFA captures (no VM re-run). The compiler,
+not the spelling, picks set-expansion vs match-time check (`within(15, of: x)` is cheap whenever x is constant).
+
+**2026-11-14 — a standard library of blessed callouts (Frank).**
+Lean ADOPT as a #6 component after the static pieces. Blessed callouts are EMITTED C TEXT (like kit search code),
+so the artifact stays self-contained (unlike eval). Blessed = guarantees the compiler relies on: PURE (reorder,
+skip, run only on DFA-validated candidates), BOUNDED (linear, stated limit), TOTAL (bad input = filter false,
+never a match-time error), ORACLE-TESTED (python datetime/ipaddress etc.), and DECLARES ITS REGULAR TWIN where one
+exists (luhn, weekday, days_in): the compiler picks automaton vs callout (as `within(15, of: x)`). First contents:
+numbers (int, decimal, canonical compare), dates (days, weekday, days_in, leap), checksums (luhn, mod97, isbn10/13),
+network (ipv4_int, in_cidr, ipv6 normalise), text (code-point length); Unicode normalisation deferred (official UCD
+data and tests only). Unblessed escape hatch = PCRE `(?C)` with a caller C function, no compiler assumptions. Home:
+its own directory/tests/journal like memfn/ (pcrec describes the need, the library returns C text: same seam).
+
+**2026-11-14 — capability levels (Frank: blessed callouts must be a specific choice; a predicate version, perhaps the default, that is PURE DFA; opt in to pure functions or VM).**
+Lean ADOPT. DEFAULT inside the predicate opt-in = pure automaton: linear time, no backtracking, hostile-input safe,
+self-contained (an RE2-class promise with far more expressive power). Anything beyond it is a compile error naming
+the construct and the option that allows it ("`days($b) - days($a)` needs match-time functions: add `functions`, or
+make the anchor a constant"), the "requires module 'X'" contract shape. OPT-INS are INDEPENDENT switches, not a
+ladder: `functions` (blessed callouts on DFA captures; still linear, self-contained), `vm` (full PCRE semantics:
+backrefs, recursion, non-DFA lookbehind), `eval` (runtime patterns; budgeted; links a runtime); `functions` does not
+imply `vm`. At the default level a regular twin (luhn, weekday) MUST take its automaton form; too large = compile
+error with the size, suggesting `functions` (never a silent switch). Scope: inside the predicate opt-in only; plain
+PCRE patterns unchanged. [COST-EXPLAIN]'s first output: the level a pattern needed and why.
+
+**2026-11-14 — interfaces (Frank: isodate provides year/month/day as numbers; it should also BE a "date"; other formats comply too; "date" supplies weekday, leap year, month/day spellings that formats need not define).**
+Already present: typed bindings (`isodate: date := ...`, compliance checked at compile time, narrower OK); the extras
+are macros typed on `date` (`weekday(d: date)`, defined once over d.year/d.month/d.day); a union of compliant forms
+complies (`anydate := isodate | usdate | textdate`). GAPS: (1) INTERFACE TYPES: a named set of required labels with
+VALUE types (`date := type(year: number, month: number & between(1,12), day: number & between(1,31))`; "07" complies
+with number via canonical unpad); (2) COMPUTED LABELS so non-numeric forms comply: `textdate: date := join((day:
+\d{1,2}, mname: month_abbrevs, year: \d{4}), sep: " ") with month := mname.index` (the 1-based array index IS the
+month number; finite mapping = one more automaton lookup); (3) DOT RESOLUTION: label first, then a macro whose first
+parameter has the value's type (`d.weekday` = `weekday(d)`); a name that is both = compile error. NO OVERRIDES: a
+format supplies the required labels, the interface everything else; extra information becomes a CONSTRAINT.
+(E-RFC) `rfcdate: date := join((wname: weekday_abbrevs, rest: textdate), sep: ", ") & (wname.index: = weekday(rest))`
+rejects `Fri, 14 Nov 2026`; weekday is regular, so a weekday-consistent date validator is one pure-DFA automaton.
+
+**2026-11-14 — namespaces for type members (Frank: importing isodate, a "date", does weekday come along? Could it know weekday is typed to date and import it as date.weekday?).**
+Lean: members travel WITH THE TYPE, not into the importer's namespace (Rust traits / Go methods). Dot lookup searches
+the value's type in that type's home library: `import isodate` brings isodate; its type `date` comes as a
+dependency, not a name; `d.weekday` works with no further import; a bare `weekday(d)` is an ordinary name needing
+`import weekday` (scopes stay clean). MEMBERSHIP IS EXPLICIT, declared with the type (`export date := type(...) {
+weekday(d) := ...; leap(d) := ...; month_name(d) := ... }`), never "any macro anywhere whose first parameter is
+date" (extension methods: an unrelated import could change or ambiguate `d.foo`). Outside extension = ordinary typed
+macros, called bare after import (`fiscal_quarter(d)`). Collisions: label vs member = compile error (ruled); import
+name clashes resolved by `import weekday as wd`.
+Addendum (Frank: `dt: date` then `dt.fiscal_quarter` -> `fiscal_quarter(dt)`): yes, scope-limited UFCS (D/Nim).
+Dot resolution: (1) a label; (2) a type member (declared with the type); (3) a macro IN THE IMPORTER'S SCOPE
+(imported or local) whose first parameter accepts the value's type. More than one match = compile error naming
+both (a later library member of the same name breaks the build, never silently rebinds); fix by `import ... as`
+or a bare call. What stays excluded is dot lookup into libraries you did not import. Type check at the dot;
+narrower values OK (`isodate_value.fiscal_quarter`).
+
+**2026-11-14 — polymorphism and the types array (Frank: could isodate change weekday at its level, or is polymorphism unsupported? If yes, I need isodate's type, but no `isodate.type` meta-member (clash; type-of-type); I want a type array `[isodate date]` I can index or filter for a member).**
+NO SEMANTIC OVERRIDE: `weekday` is a function of the values; two compliant formats holding one date must agree or
+"is a date" means nothing; an override could only be a different IMPLEMENTATION of the same answer (a cheaper
+automaton), which is the compiler's choice. A different meaning (Julian calendar) is a different TYPE. Spelling:
+`(X & isodate).weekday` = a value; `X & isodate & (weekday: 6)` = a filter (member resolved on the date target).
+TYPES ARRAY: a bare built-in `types(isodate)` = `[isodate, date]` (no member, so no clash; like count/pattern); the
+rx is first because an rx IS a type (its string set, the shape type), then declared interfaces in declaration
+order; an ordinary array: `types(isodate)[2]` = date, `types(isodate)[has_member(weekday)]` = [date]. No
+type-of-type tower: `types()` is the compliance chain; a `kind()` built-in only if an example asks. Compile time.
+
+**2026-11-14 — LAYERING (Frank: the purpose is to probe the fundamental structure; unless foundational, lower priority). The outline #6's design document starts from.**
+FOUNDATION: (1) two value kinds: rx (string sets, extensional) and macros (curried by keywords; conditions, `!B`,
+unapplied filters); (2) operators `&` `|` (extensional) and prefix `!` (always a filter); unapplied macro where an
+rx is needed = compile error; (3) two structural views: ARRAY (top-level alternatives, 1-based) and MAP (labelled
+groups, a tree); holes/groups are single entries; structural operations read the spelling; (4) match values: `x:`
+constrains a part, `$x` reads it, unset label = comparison false, label VALUE TYPES (number via canonical numeral)
+and COMPUTED LABELS (`month := mname.index`); (5) capability levels: pure DFA default, `functions`/`vm`/`eval` opt-in;
+(6) compile-time boundary: structural evaluation is total over finite things, no recursion, terminates.
+LIBRARIES (on the foundation, changeable without it): each, join, records, file_text, standard filters (between,
+startsWith, length), blessed callouts. ORGANISATIONAL (nothing below depends on it): interfaces, type members,
+namespaces, dot resolution/UFCS, types(). Test of the ranking: no worked example needs the organisational layer
+(Luhn, calendar, JSONL, IPv4: foundation + library filters; date distance: the functions level; RFC weekday:
+computed labels only). Interfaces wait for after a first build; value types + computed labels go with the core.
+
+**ERRATUM 2026-11-14 (Frank: "You've mixed rx with predicate language. Like (x: \d+)").** Examples in today's notes that
+put bare rx fragments in the expression language (`(x: \d+)`, `join((year: \d{4}, ...))`, `(day: \d{1,2}, ...)`)
+are ILLUSTRATIVE; by the ruled crossings (`/.../` and `${...}` only) they read `(x: /\d+/)`, `(year: /\d{4}/)`, etc.
+Bare fragments must NOT be admitted: `.` is navigation vs any-char, `|`/`&` are value operators vs rx syntax,
+`*`/`+`/`-` collide with arithmetic (E-NEAR uses `-`); without the slashes `d.year` is ambiguous.
+
+**2026-11-14 — binding vs constraining marks (Frank: a lambda was mentioned, and an older label-definition syntax for maps; is a map literal `(x: foo, y: bar)` or `(x: foo | y: bar)`?).** SPELLING LEAN, syntax not ruled.
+`name: value` was doing three jobs (label definition, condition, keyword argument); `(x: /foo/ | y: /bar/)` is
+ambiguous (labelled alternation vs two conditions OR-ed). Split the marks: `:=` define a name; `=` BIND (a label
+inside a literal: `year = /\d{4}/`; a keyword argument: `sep = "."`); `:` CONSTRAIN (types `x: date`,
+`type(year: number)`; conditions `year: <2000`; sugar `isodate(year: 2000)`); `==` the equality section. Map literal
+`(x = /foo/ | y = /bar/)` IS the rx `(?<x>foo)|(?<y>bar)` (aligned views); list form `[x = /foo/, y = /bar/]` is the
+same value (as `[1,3,5]` = `1|3|5`), so join takes an ordinary array, no tuple type: `isodate := join([year =
+/\d{4}/, month = /\d\d/, day = /\d\d/], sep = "-")`. Reading payoff: `f(sep = ".")` configures, `isodate(year: 2000)`
+filters. SUPERSEDES the `sep: "."` keyword spelling in earlier notes. LAMBDA (`r => r.word`) was a placeholder;
+currying + named macros cover every example; no lambda until an example needs one.
+
+**2026-11-14 — `[]` is positional only (Frank: X[y] filters X by its keys, but there are two key sets by perspective; the output is always an array, so `[]` should always use the array perspective; map-label filtering via a primitive like each_label; type-dependent `[]` breaks on `[1,2,"fire",startsWith("S")]`).**
+Agreed. FOUR TOOLS: (1) `X[...]` = POSITION in the array perspective: integers, integer sets, numeric filters
+(`X[1]`, `X[1,3,5]`, `X[<4]`); result always an array; a string or non-numeric filter inside is a compile error
+suggesting the right tool. (2) `X & f` = filter by LANGUAGE; `&` distributes over entries and empty products drop,
+so `alts & !startsWith("#") & length(<=20)` keeps passing literals and `rows & (w: >100)` keeps matching rows.
+(3) `where(p, X)` = filter by a compile-time STRUCTURAL property (the filtering twin of `each`); `where_group(p, X)`
+for the map perspective: `where(has_member(weekday), types(isodate))` (`&` there would intersect languages: wrong),
+`where_group(label: startsWith("S"), A)`. (4) `X.name` = LABEL navigation (`A.Saturday`, `alt.repeated[1]`).
+SUPERSEDES: `A["Saturday"]` -> `A.Saturday`; `A[startsWith("S")]` -> where_group; `file_literals(...)[!startsWith("#")]`
+-> `& !startsWith("#")`; `rows[r.w: >100]` -> `rows & (w: >100)`; `types(isodate)[has_member(weekday)]` -> where.

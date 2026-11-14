@@ -8,15 +8,23 @@ The simulation of the inner-first "find the span" pick against the kit's answer 
 - `probe.c` — wraps the kit's `pcrec_mf_define`/`pcrec_mf_emit`/`pcrec_mf_art_begin` (`-Wl,--wrap`; each wrapper
   `_Static_assert`ed against memfn.h's prototype). It prints
   each site's stated facts and the kit's `mf_wdecide` reply (`R33 {json}`), plus each art's byte-rate table (`R33RATE`).
+  A site's `art` is the LATEST art begun at its pointer (an ended art's memory is reused; fixed by R-43).
 - `build.sh TREE OUTDIR` — builds a traced libpcrec (`-DMF_TRACE -DPCREC_CAND_TRACE`, no source edit) and links
   the probe compiler `OUTDIR/pcrec-r33`.
 - `collect.py` — compiles every source pattern with the probe and writes one JSON line per (source, id, arm).
   Sources: the corpus, the bench patterns, job 588's patterns (RTE and DEF arms) and the rule-pilot census arms.
   R-38 Part D D3: `summarize` keeps each `run_part_terms` record raw (`trace.parts`); each line carries pcrec's
   `_REQ_RUN`/`_REQ_WHY` stamps (`req`, read off the emitted text).
-- `runpart_prod.py SWEEP.jsonl [--floor N]` — D3's production-path check: every compile stamping an emitted run
-  carries exactly one `run_part_terms` record ON ITS SHIPPED (last) art, collect.py's `arts` (plant p14, summarize
-  dropping it, reds). `--self-test fixtures/runpart_c01877.jsonl`: the join's own control (lane partdfix).
+- `runpart_prod.py SWEEP.jsonl [--floor N]` — D3's production-path check: every compile stamping an emitted run is
+  joined to its `run_part_terms` records ON ITS SHIPPED (last) art, collect.py's `arts`, by each record's own `art=`
+  (R-43): an `@idx` run has one record with a scan hint, a scan-less run one `hint=-`, a run the kit declines (PD)
+  none (plant p14, summarize dropping it, reds). `--self-test fixtures/runpart_c01877.jsonl`: the join's own control.
+- `runpart_floor.py --tree TREE CELL=SWEEP.jsonl .. [--movers CELL=MOVERS.tsv ..]` — D3's pcrec-artifact floor
+  (R-43, RDY-5): per emit_sweep cell (byte|utf8 x c-default|c-vm), the corpus patterns whose shipped art carries a
+  record with an unspelled SET term (census0's parser) >= its measured literal floor >= the
+  `--memfn=no-run-verify-wide` movers; with `--movers`, every mover is in the census.
+- `deny_reach.py` — a measurement: the corpus patterns a deny moves in one cell (plain pcrec, emit_sweep's argv).
+  collect.py's `--flags` makes one sweep one cell.
 - `fixtures/runpart_c01877.jsonl` — one real collect.py line: a record on a declined compound part's art and one on
   the shipped art.
 - `sim.py IN.jsonl OUTDIR --key A|B [--h-hit N] [--tag T]` — the simulation and today-vs-sim

@@ -1,0 +1,66 @@
+# Part D decline witnesses (D27 spec-first; lane s2d27). Written from the
+# contract text only: memfn.h mf_link (THE RUN SPAN's link), mf_run_reply,
+# mf_pres_picks; match_api.md §6.3.7¶7 row 3, ¶8 ("untestable"), ¶11 (the
+# landmark is the head member where the kit declined the run); part_d.md §4
+# items 1 and 4, §9 items 2 and 3. Every m/n line is python3 `re` verified.
+# A run with no position the kit finds (findable: one member, or a cube of
+# two members), on an OPTIONAL route, is DECLINED: no `@` on _REQ_RUN, the
+# landmark and K are the head member's.
+# The route stamps each block's compile showed are recorded above it
+# (default arm; the other arms are answer-identity runs only).
+# arms: --memfn=no-run-verify-wide | --memfn=no-window-search | --memfn=no-fd-pres-pick | --memfn=no-fd-pres-g1
+
+# F1 + F2 (handoff route, member head). Position 0 is {a,c,e}: 3 members,
+# every other run position [a-z]: the run has no findable position, so it is
+# declined; the necessary byte q leads; K is q's own maximum offset (11), not
+# the run's (1). A K of 1 would begin the body's scan at the q hit less 1
+# and miss every match below.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "11" _REQ_RUN "[616365][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a]" _ENGINE "vm" _DFA_PREFILTER "handoff" _DFA_PREFILTER_OFFSETS "none"
+pattern (a|bc|de)[a-z]{8}.q
+m "bcabcdefgh-q" 0 12
+m "deabcdefgh-q" 0 12
+m "zz bcabcdefgh-q" 3 15
+m "aabcdefgh-q" 0 11
+m "qqqq deabcdefgh-q" 5 17
+m "de-bcdefgh-q xxdeabcdefgh-q" 15 27
+m "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaq" 20 31
+m "bcdefghijklmnq" 2 14
+n "deabcdefgh-x"
+n "deabcdefg-q"
+n "DEABCDEFGH-Q"
+n "q"
+n ""
+
+# F1 + F2, the "two members, not a cube" stratum: {a,d} (0x61, 0x64 differ in
+# two bits) is not findable either.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "11" _REQ_RUN "[6164][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a]" _ENGINE "vm" _DFA_PREFILTER "handoff" _DFA_PREFILTER_OFFSETS "none"
+pattern (a|bd)[a-z]{8}.q
+m "bdabcdefgh-q" 0 12
+m "zz bdabcdefgh-q" 3 15
+m "aaaaaaaaaaaaaaaaaaaaq" 10 21
+n "bcabcdefgh-q"
+n "dabcdefgh-q"
+
+# §9 item 3, NOTHING TO RENDER: the same declined run with no necessary-set
+# member, so _REQ_WHY "untestable" (match_api.md §6.3.7¶8) and no pre-check.
+# route (default arm, this build): _REQ_WHY "untestable" _REQ_HANDOFF "none" _REQ_RUN "[616365][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a]" _ENGINE "vm" _DFA_PREFILTER "byte-class" _DFA_PREFILTER_OFFSETS "none"
+pattern (a|bc|de)[a-z]{8}
+m "xx deabcdefgh" 3 13
+m "abcdefghi" 0 9
+n "zzzzzzzzzz"
+n "de1234567"
+n "bcdefgh"
+n "bc defghijk"
+
+# Control beside F1: position 0 {a,c} IS a two-member cube (0x61, 0x63), so
+# the run is TESTED, its scan the cube between wide positions (a stretch of
+# one position, part_d.md §2.1 item 2), and _REQ_RUN carries `@0`; K is the
+# run's position 0's (1).
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "1" _REQ_RUN "[6163][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a]@0" _ENGINE "vm" _DFA_PREFILTER "handoff" _DFA_PREFILTER_OFFSETS "none"
+pattern (a|bc)[a-z]{8}.q
+m "bcabcdefgh-q" 0 12
+m "zz bcabcdefgh-q" 3 15
+n "cccccccccccccq"
+m "xxaaaaaaaaa-q" 2 13
+n "bbabcdefgh-q"
+n "deabcdefgh-q"

@@ -261,7 +261,6 @@ static RbSet rb_intersect(RbSet l, RbSet r)
 typedef struct {
     Ctx *cx;
     int pos_set;     /* the domain: a position's largest member count */
-    bool alt_union;  /* `rr_alt_rows`' equal-width row is on */
     unsigned restored;
     const uint32_t *rate;   /* the byte-rate, for the run choice's tie row */
     int depth, nslot;
@@ -599,13 +598,13 @@ typedef bool (*RrAltRow)(const RbWalk *w, const RbRuns *l, const RbRuns *r,
  * untruncated width, and their per-position UNION inside the walk's domain at
  * every position: the alternation is `all` and its run is that union. Sound
  * because every match of either branch is exactly `n` bytes, each in its
- * branch's set at that position, so in the union. On under the test build's
- * lever `alt-union-run` until the landing (`ReqWalkParams.alt_union`). */
+ * branch's set at that position, so in the union. The default since lane
+ * r1on (abi 107); the restored arm `alt` passes it over. */
 static bool rr_alt_union(const RbWalk *w, const RbRuns *l, const RbRuns *r,
                          RbRuns *o)
 {
     int n = l->head.n;
-    if (!w->alt_union || !l->all || !r->all || l->head.trunc || r->head.trunc ||
+    if (!l->all || !r->all || l->head.trunc || r->head.trunc ||
         r->head.n != n || l->maxw != n || r->maxw != n)
         return false;
     RbRun u = rn_common_head(w, l->head, r->head);
@@ -631,12 +630,20 @@ static bool rr_alt_affix(const RbWalk *w, const RbRuns *l, const RbRuns *r,
     return true;
 }
 
-static const RrAltRow rr_alt_rows[] = { rr_alt_union, rr_alt_affix };
+static const struct {
+    RrAltRow row;
+    unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
+} rr_alt_rows[] = {
+    { rr_alt_union, PCREC_WALK_ARM(ALT) },
+    /* the last row matches every alternation and is never restored */
+    { rr_alt_affix, 0 },
+};
 
 static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
 {
     RbRuns o;
-    for (size_t i = 0; !rr_alt_rows[i](w, &l, &r, &o); i++)
+    for (size_t i = 0; (rr_alt_rows[i].arm & w->restored) ||
+                       !rr_alt_rows[i].row(w, &l, &r, &o); i++)
         ;
     return o;
 }
@@ -1214,7 +1221,6 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
     RbWalk *w = pcrec_arena_alloc(&cx->arena, sizeof *w);
     w->cx = cx;
     w->pos_set = p->pos_set;
-    w->alt_union = p->alt_union;
     w->restored = p->restored;
     w->rate = p->rate;
     w->pd = (PdCfg){ &rb_pd_bytes, p->max_pieces, PCREC_MAX_REQ_RUN_SCAN };

@@ -564,7 +564,7 @@ DIFFER_PINS = {
     ("utf8", "-fno-length-prune", "c-default"): (468, 118, b"(a)*b"),
     ("utf8", "-fno-length-prune", "c-vm"): (815, 0, b"(a)*b"),
     ("utf8", "-fmemfn-simd=x86-64", "c-default"): (15, 0, b"((?i:abc))"),    # r2 re-pin (S3: 10; main: 15, b"(?i)cat"; byte cell's note)
-    ("utf8", "-fmemfn-simd=x86-64", "c-vm"): (15, 0, b"(?i)cat"),
+    ("utf8", "-fmemfn-simd=x86-64", "c-vm"): (13, 0, b"(?i)cat"),    # S2 arms re-pin (was 15): [RUN-POS-SET] stage 3 states a utf8 caseless s/k as a wide position, so vrun declines those runs (memfn_arm.py's vrun comment: six corpus patterns left the utf8 reach); measured 13/13 by s2arms
     ("utf8", "-fcomments", "c-default"): (4255, 0, b"a"),
     ("utf8", "-fcomments", "c-vm"): (4257, 0, b"a"),
     # [MEMFN] R17-b' B1 (lane fdb1; r17b_prime.md §3.4 [rev3 B7, B13]): the
@@ -616,14 +616,14 @@ DIFFER_PINS = {
     # wide positions; at the S2 joint landing (lane s2land, 2026-11-13) each
     # cell is a DIFFER cell with a stage-3 manifest, the corpus pattern
     # `(?i:select)\d+x`, MEASURED to differ in all four cells by single
-    # compiles on the landing build. PROVISIONAL FLOOR 1:
-    # the corpus counts were not measured inside the owner's box hold; the
-    # landing's queued `--arms start --emit-pins` run measures them and a
-    # follow-up re-pins AT the measured value (s2land_report.md OWED).
-    ("byte", "--memfn=no-run-verify-wide", "c-default"): (1, 0, b"(?i:select)\\d+x"),
-    ("utf8", "--memfn=no-run-verify-wide", "c-default"): (1, 0, b"(?i:select)\\d+x"),
-    ("byte", "--memfn=no-run-verify-wide", "c-vm"): (1, 0, b"(?i:select)\\d+x"),
-    ("utf8", "--memfn=no-run-verify-wide", "c-vm"): (1, 0, b"(?i:select)\\d+x"),
+    # compiles on the landing build. Floors re-pinned AT the measured value
+    # (lane s2arms, 2026-11-14, arms sweep at 370aab9fe; was PROVISIONAL 1):
+    # byte 58 / 117, utf8 99 / 181 (c-default / c-vm), the same counts
+    # memfn_arm.py --measure gives at both layers.
+    ("byte", "--memfn=no-run-verify-wide", "c-default"): (58, 0, b"(?i:select)\\d+x"),
+    ("utf8", "--memfn=no-run-verify-wide", "c-default"): (99, 0, b"(?i:select)\\d+x"),
+    ("byte", "--memfn=no-run-verify-wide", "c-vm"): (117, 0, b"(?i:select)\\d+x"),
+    ("utf8", "--memfn=no-run-verify-wide", "c-vm"): (181, 0, b"(?i:select)\\d+x"),
 }
 
 # Cells that must read EXACTLY 0 on every population (a zero holds on any

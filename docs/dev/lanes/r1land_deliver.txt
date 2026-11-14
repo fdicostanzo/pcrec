@@ -1,0 +1,4 @@
+report=docs/dev/lanes/r1land_report.md
+sections: STATE AT HANDOFF; MERGE; PINS; VALIDATION; PUSH; OWED
+nonempty: all
+commit: yes

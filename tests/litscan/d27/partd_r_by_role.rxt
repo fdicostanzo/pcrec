@@ -1,0 +1,80 @@
+# Part D R-by-role witnesses (D27 spec-first, lane s2d27). Contract: memfn.h
+# mf_wspan.verify ("in a window site's alternative a verify-NO span of two or
+# more positions IS the run R (any sets)"), mf_wreply.run_stated (member the
+# least-mass EXACT position, stretch the exact run around it; 0 where R has no
+# one-member position); tuning.md §2.30¶4 (the pin is the maximal stretch of
+# exact positions around the rarest exact byte; a wider position elsewhere
+# does not cost the rows: `xy/users\d+` takes `run-pinned`); part_d.md §9
+# item 1. Every m/n line is python3 `re` verified.
+# arms: -fno-run-prefilter | --memfn=no-run-verify-wide | --memfn=no-window-search
+
+# The named witness: run-pinned, offsets 0*,1,..,7, _REQ_RUN with `@0`.
+# route (default arm, this build): _REQ_WHY "dominated" _REQ_HANDOFF "none" _REQ_RUN "78792f7573657273[30-39]@0" _ENGINE "dfa" _DFA_PREFILTER "run-pinned" _DFA_PREFILTER_OFFSETS "0*,1,2,3,4,5,6,7"
+pattern xy/users\d+
+m "xy/users42" 0 10
+m "GET xy/users7/" 4 13
+m "xy/usersxy/users0" 8 17
+m "xy/xy/users00000000000000000000" 3 31
+n "xy/users"
+n "xy/user5"
+n "xy/usersx1"
+n "XY/USERS1"
+
+# route (default arm, this build): _REQ_WHY "dominated" _REQ_HANDOFF "none" _REQ_RUN "78792f7573657273[30-39]@0" _ENGINE "dfa" _DFA_PREFILTER "run-pinned" _DFA_PREFILTER_OFFSETS "0*,1,2,3,4,5,6,7"
+pattern xy/users\d+z
+m "xy/users12z" 0 11
+m "xy/users1 xy/users2z" 10 20
+n "xy/users12"
+n "xy/usersz"
+
+# R's exact stretch at the end (`id=`), wide positions after it.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "0" _REQ_RUN "69643d[30-39][30-39][30-39][61-7a]@2" _ENGINE "dfa" _DFA_PREFILTER "run-pinned" _DFA_PREFILTER_OFFSETS "0,1,2*"
+pattern id=\d{3}[a-z]+
+m "id=123abc" 0 9
+m "xid=id=999z" 4 11
+n "id=12abc"
+n "id=1234"
+
+# A wide position inside R, exact stretches on both sides.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "0" _REQ_RUN "7879[61-7a]7573657273[30-39]@0" _ENGINE "dfa" _DFA_PREFILTER "run-pinned" _DFA_PREFILTER_OFFSETS "0*,1"
+pattern xy[a-z]users\d+
+m "xyqusers9" 0 9
+m "xy-users9 xyzusers12" 10 20
+n "xy-users9"
+n "xyQusers9"
+
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "0" _REQ_RUN "61[30-39]626364656667[30-39]@2" _ENGINE "dfa" _DFA_PREFILTER "run-pinned" _DFA_PREFILTER_OFFSETS "0,2*,3,4,5,6,7"
+pattern a\dbcdefg\d+
+m "a1bcdefg2" 0 9
+m "abcdefg1 a9bcdefg99" 9 19
+n "a1bcdefg"
+n "aabcdefg1"
+
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "0" _REQ_RUN "[30-39][30-39]61626364656667[30-39]@3" _ENGINE "dfa" _DFA_PREFILTER "run-pinned" _DFA_PREFILTER_OFFSETS "0,2,3*,4,5,6,7,8"
+pattern \d{2}abcdefg\d+
+m "12abcdefg3" 0 10
+m "1abcdefg2 99abcdefg0" 10 20
+n "1abcdefg2"
+
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "0" _REQ_RUN "6162[30-3961-66]636465666768[7879]@1" _ENGINE "dfa" _DFA_PREFILTER "run-pinned" _DFA_PREFILTER_OFFSETS "0,1*"
+pattern ab[0-9a-f]cdefgh[xy]+
+m "abfcdefghx" 0 10
+m "abgcdefghx ab0cdefghyy" 11 22
+n "abgcdefghx"
+n "ab0cdefgh"
+
+# Control: R with NO one-member position, so run_stated 0 and no run-pinned.
+# route (default arm, this build): _REQ_WHY "untestable" _REQ_HANDOFF "none" _REQ_RUN "[61-7a][61-7a][61-7a][61-7a][30-39]" _ENGINE "dfa" _DFA_PREFILTER "byte-class" _DFA_PREFILTER_OFFSETS "none"
+pattern [a-z]{4}\d+
+m "abcd1" 0 5
+m "ab1 xyzw99" 4 10
+n "abc1"
+n "ABCD1"
+
+# Caseless: every position a caseless pair but `/`.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "0" _REQ_RUN "[5878][5979]2f[5575][5373][4565][5272][5373][30-39]@0" _ENGINE "dfa" _DFA_PREFILTER "offset-set" _DFA_PREFILTER_OFFSETS "0,2*"
+pattern xy/users\d+
+flags i
+m "XY/Users42" 0 10
+m "xY/uSeRs7" 0 9
+n "xy\\users1"

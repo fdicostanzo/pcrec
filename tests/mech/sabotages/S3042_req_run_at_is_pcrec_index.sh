@@ -28,5 +28,5 @@ SAB_BEFORE='    if (pcrec_fact_req_whole_run_stated(cx)->whole_len < 2) return -
     if (req_admit_emits(admit)) {'
 SAB_AFTER='    if (pcrec_fact_req_whole_run_stated(cx)->whole_len < 2) return -1;
     { const ReqRun *r_ = pcrec_fact_req_whole_run_stated(cx);   /* SABOTAGE S3042 */
-      return pcrec_find_run_scan_index(pcrec_find_byte_rate(cx), r_->whole, r_->whole_mask, r_->whole_len); }
+      return pcrec_find_run_scan_index(pcrec_find_byte_rate(cx), r_->pos, r_->whole_len); }
     if (req_admit_emits(admit)) {'

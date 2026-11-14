@@ -286,6 +286,10 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-13 manager (finding of lane s2tri on the S2 landing; test-island N=300/340, RETRY)
   status (2026-11-13): filed, unscheduled; speed cost only, under the size cap (answers unchanged); measured instance: the island-free artifact WITH the handoff is 412,797 B and fits, yet the handoff is dropped
   next: when scheduled: census the fit_rungs[] firings since S2 (which patterns lose a handoff they could keep); decide the order or a re-add step after drop-islands; measure
+- [PREFLIGHT] STATE:not-started — fast checks on what a change touches, run BEFORE queuing heavy runs
+  filed: 2026-11-14 Frank ("File it but I don't want to invest more than we save: let's spend hours not days and strive for tweaks or general fixes ie cost related to benefit")
+  status (2026-11-14): filed, after S2 close; budget hours not days; reuse checks on the diff. Catchable reds today: duplicated arm floor, --emit-pins ignored under --arms, rxt keyword COLLISION, verify_rxt hang (K145), VRUN_U8 vocabulary; execution-only: S686 no-op plant
+  next: cheapest first: one source per floor; tools refuse ignored flags; rxt + vocabulary checks on changed files; mechrows whose plants touch edited files; Frank: review test-code diffs too (check-adequacy lens)
   refs: lane/s2land s2tri_report.md (test-island row); docs/spec/limits.md §8.4¶2b; [RUN-POS-SET] (set runs add handoff/verify bytes)
 - [PRED-SPLIT] STATE:not-started — automatically demote an exploding predicate to a verify step; DFA keeps the rest
   filed: 2026-11-13 manager (Frank: "isolate expensive operations ... DFA for most of it but this one check is VM ... a non-manual method?"; "file away for later optimization")
