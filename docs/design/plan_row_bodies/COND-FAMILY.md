@@ -604,3 +604,15 @@ assert_none("1900" & leap)`, `octets := assert_none(octet & !/\d{1,3}/)`, `refac
 both differences empty), `not_dead := assert_some(slow_errors)`. Named failures; no boolean type; `!` stays a filter.
 Beyond the default level, an unprovable `==`/within reports "can't prove: not regular". Deliberate exceptions to the
 rule so far: `import`/`export` (look later: `export` as a binding attribute, imports as a compilation-unit setting).
+
+**2026-11-14 — import/export as functions (Frank: `assert := import("assert")`, `assert.some("2024" & leap)`, `export([leap])`; "we could allow other forms but I want it considered").**
+Lean: (1) `import("lib", sha256 = ...)` is a built-in FUNCTION returning a NAMESPACE, a third value kind (compile-time
+map of named bindings, may hold macros; not an rx); the argument must be a CONSTANT (no computed imports; terminating,
+pinned); `assert.some` = member lookup. (2) BARE STATEMENTS allowed only for ASSERTIONS (their own value kind); a bare
+rx anywhere but the program's final expression = error ("unused pattern: bind it or make it the result"); named
+assertions (`leap_1900 := assert.none(...)`) remain for named failures; anonymous ones report line + text.
+(3) `export([leap])` CONFLICTS: `[...]` is an array = alternation, so `[leap, weekday]` = `leap | weekday`, names lost.
+Options: (a) `export([leap = leap, ...])` (consistent, repetitive); (b) CONVENTION: every top-level binding is exported
+unless its name starts with `_` (Python/Go style; no call, no grammar; visibility from the name); (c) `export(leap,
+weekday)` receiving names = a macro seeing argument expressions (a meta feature; avoid). Lean (b). Result: grammar =
+bindings, expressions, calls; NO keywords (import/export cease to be exceptions). Export choice PENDING Frank.
