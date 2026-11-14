@@ -508,3 +508,13 @@ Dot resolution: (1) a label; (2) a type member (declared with the type); (3) a m
 both (a later library member of the same name breaks the build, never silently rebinds); fix by `import ... as`
 or a bare call. What stays excluded is dot lookup into libraries you did not import. Type check at the dot;
 narrower values OK (`isodate_value.fiscal_quarter`).
+
+**2026-11-14 — polymorphism and the types array (Frank: could isodate change weekday at its level, or is polymorphism unsupported? If yes, I need isodate's type, but no `isodate.type` meta-member (clash; type-of-type); I want a type array `[isodate date]` I can index or filter for a member).**
+NO SEMANTIC OVERRIDE: `weekday` is a function of the values; two compliant formats holding one date must agree or
+"is a date" means nothing; an override could only be a different IMPLEMENTATION of the same answer (a cheaper
+automaton), which is the compiler's choice. A different meaning (Julian calendar) is a different TYPE. Spelling:
+`(X & isodate).weekday` = a value; `X & isodate & (weekday: 6)` = a filter (member resolved on the date target).
+TYPES ARRAY: a bare built-in `types(isodate)` = `[isodate, date]` (no member, so no clash; like count/pattern); the
+rx is first because an rx IS a type (its string set, the shape type), then declared interfaces in declaration
+order; an ordinary array: `types(isodate)[2]` = date, `types(isodate)[has_member(weekday)]` = [date]. No
+type-of-type tower: `types()` is the compliance chain; a `kind()` built-in only if an example asks. Compile time.
