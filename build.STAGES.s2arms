@@ -1,0 +1,4 @@
+# S2 close: arms pins + REACH rows on main 370aab9fe (manager-queued for lane s2arms)
+build light 900 nice make -j8
+arms light 5400 TMPDIR=/var/tmp/pcrec-pcrec nice -n 10 python3 scripts/emit_sweep.py --ref 370aab9fe --arms start --emit-pins /var/tmp/pcrec-pcrec/scratch/s2arms/arms_pins.tsv
+reach light 3600 REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh S1923 S3128 S693 S448 S451 S452 S453 S454 S3107 S3119 S465 S805 S266 S268 S461 S265
