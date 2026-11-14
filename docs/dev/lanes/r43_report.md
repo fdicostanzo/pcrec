@@ -1,8 +1,7 @@
 # Lane r43: R-43, D3's pcrec-artifact floor and the run-verify-wide reach re-measure (S2 close)
 
-STATE: stopped (staged delivery). Everything is built and committed except the measured literals, which wait on box
-job `200-kit-r43-measure` (key `kit-r43-measure`), queued behind `300-s2d27land-check` (a make test, cap 5400 s). A
-fresh agent resumes from "Resume" below. Branch `lane/memfn-r43` (from `lane/memfn-k1108` 9e631ad36). No emitted
+STATE: resumed; the measure job `kit-r43-measure` is GREEN and the CENSUS_FLOOR literals are set (58/143/99/216). Only
+the validate job `kit-r43-validate` (plants S3140/S3141, runpart_prod) is OWED. Branch `lane/memfn-r43` (from `lane/memfn-k1108` 9e631ad36). No emitted
 byte moves: no file under `src/`, `cli/`, `lib/`, `memfn/src/` or `memfn/include/` is edited, and the branch has no
 emitter diff from main 370aab9fe (`git diff --stat 370aab9fe HEAD -- src cli lib memfn/src memfn/include` is empty).
 
@@ -46,14 +45,17 @@ Design of record: part_d.md §5.1 row D3 ("AT THE JOINT LANDING the pcrec-artifa
   | utf8/c-default | `-e utf8` |
   | utf8/c-vm | `-e utf8 --engine=vm` |
 
-- **Floors.** MEASURED: OWED (job `kit-r43-measure`, outputs in `/var/tmp/pcrec-pcrec/scratch/memfn/r43/m1/`).
-  `CENSUS_FLOOR` is 0 in all four cells on this commit.
+- **Floors.** MEASURED (job `kit-r43-measure`, outputs in `/var/tmp/pcrec-pcrec/scratch/memfn/r43/m1/`):
+  census byte/c-default 58, byte/c-vm 143, utf8/c-default 99, utf8/c-vm 216 (of 354/1015/474/1139 records over 5,003/5,004/5,073/5,050 compiled patterns).
+  `CENSUS_FLOOR` is set to those four census values in `runpart_floor.py`. runpart_floor on the m1 sweeps with `--movers`:
+  census >= movers in every cell, every mover is in its census (movers_in_census = movers_measured), and no MOVER-WITHOUT-RECORD line. So the inferred direction holds.
+  The floor line reds only on floor-vs-pin: emit_sweep's DIFFER pin reads 1 on this branch, below the floor, which is fine (floor >= pin).
 - **The check against the movers.** The movers per cell are the arms table on main 370aab9fe (read-only,
   `/var/tmp/pcrec-pcrec/scratch/s2arms/arms_370aab9fe.tsv`): byte c-default 58, byte c-vm 117, utf8 c-default 99,
   utf8 c-vm 181. They are literals in `MOVERS`. emit_sweep's `DIFFER_PINS` is not edited; it still reads 1 on this
   branch, and pcrec re-pins it on lane/s2arms.
 - **Finding rule (the brief's).** If any cell's census is below its movers, the inferred direction in part_d is
-  wrong. The lane then stops and reports the patterns; nothing is lowered. Not yet known: OWED.
+  wrong. The lane then stops and reports the patterns; nothing is lowered. Result: no cell has census below movers; no finding. Census exceeds movers by 0 / 26 / 0 / 35 (byte c-vm and utf8 c-vm carry unspelled SET terms the deny does not move).
 
 ## Reach re-measure
 
@@ -64,9 +66,9 @@ Design of record: part_d.md §5.1 row D3 ("AT THE JOINT LANDING the pcrec-artifa
 - **Post-S2 reach on main 370aab9fe** (`/var/tmp/pcrec-pcrec/scratch/s2arms/measure.out`, both layers equal): byte c-default 58, byte
   c-vm 117, utf8 c-default 99, utf8 c-vm 181. Refused 0 in every cell.
 - **The change is the whole mover set.** Pre-S2 it was empty, so every mover accounts for the change. The
-  per-pattern list per cell comes from `deny_reach.py`, OWED in job `kit-r43-measure` (`m1/movers.<cell>.tsv`).
-  This branch has no emitter diff from 370aab9fe, so its movers should equal main's counts. A difference is a
-  finding.
+  per-pattern list per cell comes from `deny_reach.py` (`m1/movers.<cell>.tsv`, column 4 = 1 for a mover; the plain pattern lists are `m1/moverpats.<cell>.txt`).
+  **Re-measured on this branch: differ=58 / 117 / 99 / 181, refused=0 in every cell (`m1/reach.<cell>.log`). Identical to main's counts; no difference, no finding.**
+  Shapes: short alternations of literals with a shared or distinct prefix (`frank|fred`, `fra(n|m)k|frost`, `aab|bbb|bab`, `\Gfoo|bar`, `needle|haystack`, `AKIA|AGPA|AIDA|AROA`); bounded-repeat runs (`(?:[0-9]{1,3}\.){3}[0-9]{1,3}`, `(a|b){3,3}c`, `(?:ab|cd|aqr|cst){8}z`); lookbehind/lookahead before an alternation (`(?<=a{1,2})(?:foo|fob|fox)`, `(?![a-z]*b)[a-z]+@x`); `\G`/`$`/`\b` anchored forms. byte c-vm adds the `[0-9]+ABC..` family, atomic groups and `$`/word-anchored forms (37 not in c-default's set; 117 vs 58). utf8 adds multibyte classes and ranges (`[🌀-😀]`, `(?:€|☃)`), case-folded alternations (`(?:(?i:ab)S|(?i:abs))`, `(?i)straße`) and `\p{blk=...}` block classes.
 - **Examples (main's arm output, first three per cell):**
   - `(?![a-z]*b)[a-z]+@x`
   - `(?:[0-9]{1,3}\.){3}[0-9]{1,3}`
@@ -99,7 +101,7 @@ Design of record: part_d.md §5.1 row D3 ("AT THE JOINT LANDING the pcrec-artifa
   runs collect.py over the corpus (`m1/sweep.<cell>.jsonl`) and deny_reach.py (`m1/movers.<cell>.tsv`).
   - Completion lines: four `r43 measure cell <cell> OK`, then `r43 measure DONE bad=0`.
   - Script: `/var/tmp/pcrec-pcrec/scratch/memfn/r43/jobs/measure.sh`.
-- **`kit-r43-validate`** (NOT YET QUEUED; it needs the literal first).
+- **`kit-r43-validate`** (key `kit-r43-validate`, queued as `200-kit-r43-validate` by the resume agent).
   - Script: `/var/tmp/pcrec-pcrec/scratch/memfn/r43/jobs/validate.sh`.
   - Steps: the floor GREEN on m1 with movers; runpart_prod on each cell; S3140 (re-collects four cells) RED; S3141
     RED.

@@ -38,8 +38,9 @@ DENY = "--memfn=no-run-verify-wide"
 # b202611140752593761835, /var/tmp/pcrec-pcrec/scratch/s2arms/arms_370aab9fe.tsv): R-43's FACT
 MOVERS = {"byte/c-default": 58, "byte/c-vm": 117, "utf8/c-default": 99, "utf8/c-vm": 181}
 
-# the census, MEASURED at R-43's first green run (lane r43; was 0 on the kit branch, part_d.md §5.1 D3)
-CENSUS_FLOOR = {"byte/c-default": 0, "byte/c-vm": 0, "utf8/c-default": 0, "utf8/c-vm": 0}
+# the census, MEASURED at R-43's first green run (lane r43, box job kit-r43-measure, m1 sweeps on 5,489 corpus
+# patterns; was 0 on the kit branch, part_d.md §5.1 D3). Every deny mover is in its cell's census.
+CENSUS_FLOOR = {"byte/c-default": 58, "byte/c-vm": 143, "utf8/c-default": 99, "utf8/c-vm": 216}
 
 
 def load_census0(tree):
