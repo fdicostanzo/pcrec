@@ -1,0 +1,4 @@
+report=docs/dev/lanes/s2tri_report.md
+sections: STATE AT HANDOFF; REDS; FIXES; KIT-SIDE; OWED
+nonempty: all
+commit: yes
