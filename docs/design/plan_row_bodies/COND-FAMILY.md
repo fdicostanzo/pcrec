@@ -136,3 +136,12 @@ Manager's reading, in two parts:
 - `x: d2` = a typed parameter, and a TYPE IS A PATTERN: the parameter is narrowed by `d2`, i.e. the annotation means `x & d2`. So the body's `& d2` is redundant (harmless). The colon then means ONE thing in both places: at a call, `isodate(year: 2000)` narrows label `year` by `2000`; in a definition, `x: d2` narrows parameter `x` by `d2`. "name: pattern" = "this name is intersected with this pattern".
 - `& m` in m's own body is a self-reference through a parameterized definition: a cycle, rejected (rule unchanged). It cannot mean "some outer m": one namespace, so a second `m` is a name clash. Error text names the cycle (m -> m) and suggests the non-recursive form. If unbounded self-reference is wanted, it is a plain pattern binding calling itself with `(?&m)` (PCRE recursion), not a macro.
 - CORRECTION (Frank): he meant it as a DEFINITION OF MEANING, written in the binding form, not as a binding. Read that way it is right, and it is the rule: applying a pattern binding `m` to an argument `x` of type `d2` means `x & d2 & m` (the `m` on the right is the pattern itself, not a recursive call). Application and typing are both intersection; the self-reference objection above applies only if someone writes it as code.
+
+### 2026-11-13 evening: an empty intersection is a diagnostic (Frank)
+
+Frank: the type intersection could additionally fail or warn when the result is empty.
+Manager's leaning:
+- ERROR when the empty set comes only from what the author wrote, pure parts (types, literal arguments, library parts): `isodate(year: 3000)` with year limited to 2000-2100 can never match; it is always a bug. The message names the intersection that emptied, both operands, and a witness from each side.
+- WARN for a dead branch (one alternative of an alternation emptied while the whole still matches).
+- NOTHING when emptiness depends on the match or a run-time parameter (it may be empty only for some matches) or when a part has no exact automaton (VM-only: backreferences); then emptiness is unknown, not proved.
+- Existing base: S1's never-match analysis already proves a whole pattern empty (spec match_api "empty"); this extends it to say WHERE it emptied. Emptiness of an automaton is a cheap reachability check, so this costs nothing measurable.
