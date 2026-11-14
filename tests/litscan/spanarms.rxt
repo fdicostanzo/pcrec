@@ -678,3 +678,18 @@ engine vm
 m "abcd" 0 4
 m "abxcd" 0 5
 n "abycd"
+
+# S-c (alt_normal_form §5 stage 2a, rule (1) default since lane r1on): `ab|abc` has unequal widths, so `rr_alt` row 1 never claims it `all` and the run stays `xyab`; S3130 drops the equal-width test, claims `xyabzw` and deletes `xyabczw`; `xyabzw` catches the form that keeps the longer width
+pattern xy(?:ab|abc)zw
+features all
+m "xyabczw" 0 7
+m "xyabzw" 0 6
+n "xyacbzw"
+
+# S-c (alt_normal_form §5 stage 2a, rule (1) default since lane r1on): `ab|abc` has unequal widths, so `rr_alt` row 1 never claims it `all` and the run stays `xyab`; S3130 drops the equal-width test, claims `xyabzw` and deletes `xyabczw`; `xyabzw` catches the form that keeps the longer width [engine vm]
+pattern xy(?:ab|abc)zw
+features all
+engine vm
+m "xyabczw" 0 7
+m "xyabzw" 0 6
+n "xyacbzw"
