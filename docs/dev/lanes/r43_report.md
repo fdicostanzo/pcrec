@@ -118,3 +118,11 @@ Design of record: part_d.md §5.1 row D3 ("AT THE JOINT LANDING the pcrec-artifa
    - Otherwise set `CENSUS_FLOOR` to each cell's census, with a comment naming the run.
 3. Compare each cell's measured `differ=` (`m1/reach.<cell>.log`) with 58/117/99/181, and fill the reach table.
 4. Commit, queue `validate.sh` as `200-kit-r43-validate` (owner kit, `--dry-run` first), fill this report, lanecheck.
+
+## STATE AT HANDOFF
+
+- Floors set and committed (`CENSUS_FLOOR` 58/143/99/216); no finding: census >= movers in every cell, every mover has a
+  record, reach re-measure equals main's 58/117/99/181. No emitter byte moved.
+- OWED: `kit-r43-validate` (queued as `200-kit-r43-validate`, cap 3600 s). Completion line: `r43 validate DONE bad=0`;
+  plants S3140/S3141 must be RED, and the S3140/S3141 rows above get their measured column from it. A fresh agent or the
+  manager reads the job log; nothing here polls it.
