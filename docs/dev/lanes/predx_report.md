@@ -12,9 +12,31 @@ construction named beside it, marked (est.).
 
 ## STATE AT HANDOFF
 
-STATE: in progress — sections written incrementally, one commit each. Rulings file
-`docs/dev/lanes/predx_rulings.md` was empty at every re-read (no ruling applied). Validation: none owed (analysis
-lane, nothing built). Section status is updated here as each lands.
+STATE: done. All eleven briefed sections written (§1-§11 below), committed incrementally on branch `lane/predx`.
+Rulings file `docs/dev/lanes/predx_rulings.md` was empty at every re-read (no ruling applied; "last entry applied":
+none). Validation: none owed (analysis lane; no code, no build, no measurement; every state count is an estimate
+marked as such). Premise test passed: `docs/design/predicates_draft.md` exists with sections 0-15.
+
+Headline findings a fresh reader should take first:
+1. PULLBACK is one mechanism under six draft headings (transforms, decoders, computed labels, record columns, C7,
+   C10): §1.2 W4, §8.2, S1.
+2. VALUE-SCOPED LITERALS contradict the draft's own E-JSONL (`/^...$/m`) and any lone-literal lookbehind program;
+   CONTEXT-MARKED SETS (triples) fix it with no new mechanism: C15/C18, S2, owner question 1.
+3. The default level never needs captures to EVALUATE; it needs them only to REPORT named spans; accept-class
+   values (`.index`, finite computed labels) are free: §2.4, §8.4, S9.
+4. The cost of a cross-label relation is the CLASS count of the earlier labels (E-CAL: 24; E-NEAR: 3.65M), which the
+   compiler can compute before building and print in the error: W2, §2.3, E3, S3.
+5. Thirteen programs: all regular ones compile at the default level; 45 friction points, of which eight recur
+   (arrays of filters, `x:` inside `count`, tuple conditions, `enumerate`, bounded recursion, the empty-entry trap
+   vs `opt`, value tests, value-vs-value typing): §3.14, §8.1.
+6. Free closure the notes missed: `&` with an array operand is classification; record arrays are pattern->value
+   maps; compile-time `check` (library test vectors as code) is decidable and one keyword: §8.3, S8.
+7. Meta features: namespaces and computed labels are foundation; interfaces earn their place only as library
+   packaging; UFCS and `types()` are unnecessary; `eval` waits for an example: §9.
+
+Two prior-art details are UNVERIFIED (Pomsky leading zeros; Hyperscan's combination reporting point), marked in
+§6.5/§6.6; nothing in §7-§11 depends on them (owner question 14). A web-fetch subagent was spawned for them and its
+report did not reach this lane; not re-run (do-then-finish).
 
 ## 1. WALKTHROUGH
 
@@ -1411,3 +1433,80 @@ Where the organisational layer would ENTER, if adopted later: at the `export` bo
 interface is a published contract for a library's members), never inside the foundation's semantics. The test of
 the ranking (draft §1) holds on all thirteen programs: none needed interfaces, UFCS or `types()`; three needed
 `with`; one would have benefited from `check`.
+
+## 10. SUGGESTIONS
+
+Ranked. Each with VALUE (what it buys), COST (spec text, compiler mechanism, or risk), and the EXAMPLE that needs
+it (no feature without a problem scenario). "Spec-only" means a rewrite of the draft with no new mechanism; "mech"
+names the compiler mechanism it needs. The first five are the ones I would want settled before any critic round,
+because they change several sections at once.
+
+| # | suggestion | value | cost | example that needs it |
+|---|---|---|---|---|
+| S1 | PULLBACK as the one mechanism: `t(S)` = strings whose t-image is in S, for transforms, decoders, case-fold, computed-label conditions and record columns; drop binary section forms | collapses draft §2.4 transforms, §4.4 mappings, §12.1 `jstr`, C7, C10 into one rule and one closure theorem (8.2); every §3 program used it | spec-only now; mech: product with a finite transducer/table + determinize (one construction) | 3.1 `quoted(p)`, 3.3 region, 3.5, 3.6 value, 3.8 `ci`, 3.13; E-JSONL `jstr` |
+| S2 | CONTEXT-MARKED SETS replace value-scoped literals (C15/C18): a pattern denotes (left, span, right) triples; anchors and regular lookarounds constrain context; `&` intersects triples | keeps G3 for lookbehind programs and E-JSONL's `/^...$/m`; "a name means the same everywhere" becomes true; anchors/lookarounds become ordinary filters | spec-only now; mech: D196 add. 2's intersection-family nodes and [VLOOKBEHIND]'s reverse automata, already planned | `/(?<=\$)\d+/` as a program; `/^${q}$/m`; `A & /\b.*\b/` |
+| S3 | CLASS-COUNT COST MODEL for relations: a relation's cost is the product of the classes the earlier labels enter with (raw = \|dom\|, through a twin = its class count); the compiler computes it BEFORE building and the E3 error prints it with the three fixes | turns "too large" (H1) into an explainable number; predicts E-CAL (24) vs E-NEAR (3.65M) | mech: finite-language size and twin class counts are cheap automaton facts; the attribution is [COST-EXPLAIN]'s job | E-CAL, E-NEAR (c), 3.11 F38 |
+| S4 | DROP THE X-MODE DEFAULT (C2) | G3 exact; the `( ?\d{4})` trap gone; no H5 lint | spec-only; users write `(?x)` per literal | E-LUHN; 3.2 F8 |
+| S5 | MOVE THE EMPTY-ENTRY TRAP to "the final expression is nullable in search mode" | `opt(x)` and `[""]` become legal where they belong; the real hazard (matches everywhere) is still caught, from any source | spec-only; mech: nullability is a fact pcrec already has | 3.2 F6, 3.6 F20, E-FILE |
+| S6 | BOUNDED RECURSION: a parameterized definition may recurse when one integer parameter is a literal after expansion and strictly decreases, with a literal base case (fallback: `unroll(k, f, base)`) | the only legitimate recursion at the default level becomes writable, by libraries and users; G4 intact | spec: one paragraph; mech: a syntactic check at expansion | 3.9 `value_depth(3)` |
+| S7 | REPEATED LABELS the XDuce way: `x: S` = all iterations; `some(x: S)`, `count(x: S) == k` quantified; plain `$x` on a repeated label is an error at default (last iteration only at `vm`) | resolves O4 with the lowering that is actually pure; makes "exactly one Host header" writable | spec-only; mech: the §2.1 rows for some/count | 3.8 F27, 3.1 F4 |
+| S8 | COMPILE-TIME CHECKS (`check A == B`, `check A within B`, `check "s" in A`, `check empty(A)`) in programs and library files | libraries carry their standard's test vectors and run them at import; decidable (equality/inclusion facts exist, D196 add. 2) | spec: one form; mech: the never-match/XOR fact already planned | every library entry of draft §8; 8.3 item 3 |
+| S9 | THE REPORTING AXIS: default-level programs return span + ACCEPT-CLASS values (`.index`, finite computed labels, per-GROUP classes combined at output); named spans need `captures` (TDFA/VM), orthogonal to `functions` | names the language's distinctive free output; keeps the Roman value (1,999 classes) cheap by composing per-group classes; fixes O6's scope | spec: a section; mech: accept-class tables (classification machinery exists), per-group class outputs | 3.3 region, 3.4 which-CIDR, 3.6 value, E-WEEKDAY |
+| S10 | PARAMETERS AT DEFAULT: comparisons against run-time parameters compile to parametric automata (3 classes per bound); arithmetic on PARAMETERS runs once per match and is default-level; `functions` means functions over captured text | E-NEAR (b) and run-time windows at default; O9 answered | spec: redefine the `functions` boundary; mech: guarded transitions (draft §11 already names them) | 3.5 `window(from, to)`, E-NEAR (b) |
+| S11 | FINITE-GROUP BACKREFERENCES ARE REGULAR (enumerate and substitute, budgeted by \|dom\|), inside the predicate language and as a general pcrec engine rule; plus `enumerate(rx)` for finite rx | regular properties spelled with `\1` stay at default; `(\d\d)\1`-class PCRE patterns leave the VM; the "same separator twice" idiom becomes a backreference again | spec: the strict subset refuses UNBOUNDED backrefs only; mech: finite-language enumeration + substitution, a budget | 3.10 F35, 3.3 F10 |
+| S12 | TUPLE CONDITIONS `(a, b, c): >= (1, 4, 0)` | lexicographic comparisons of multi-field values against constants (versions, dates as fields, times) in one line; ~3^k states | spec: the left of `:` is a path or a tuple of paths; mech: chained 3-outcome sections | 3.11, 3.5 alternative, 3.4 F15 |
+| S13 | A PUBLISHED REFUSAL TABLE for the strict pure subset and each level (construct, level, reason, opt-in), RE2-style | one place for "what the default level is"; the error texts derive from it | spec-only | every E4/E3-class error |
+| S14 | `records` must TILE the text (every byte in a record or a declared gap) | "no silent defaults" for data files; the CRLF trap becomes an error | spec-only; mech: a gap check at compile time | E-FILE O18, 3.3 F12 |
+| S15 | STATE THE STRUCTURAL RULE FOR `&` (left-major cross product over array views, empties dropped) beside `|`'s append; and A2's "the rx operand's structure wins" | closes C17 and A4; `.index` after `&` is defined | spec-only | 3.4, 3.12 |
+| S16 | REGULAR-TWIN SUPPLY API with two shapes (enumerate-and-classify; digit-fold with a finite state set) and a declared class count | libraries can actually provide twins; S3 needs the class count | spec: the blessed-callout contract gains two fields; mech: trie-and-minimize, fold-to-DFA | `leap`, `weekday_of` (enumerate); `luhn`, `mod97` (fold) |
+| S17 | THE PRECEDENCE TABLE (C16/O2) and the comma rule (C8/A11), written once | removes two classes of reading error | spec-only | `x & (<256 \| >300)`; `[a, b]` vs `p(a: s, b: t)` |
+| S18 | `any_order(parts, sep, filler)` as a library combinator with a "2^n" cost line; `interleave` semantics (each part once) | the key=value and JSONL grid written once | library; mech: none new | 3.1 F1, E-JSONL |
+| S19 | A LINT for lexicographic `between` over variable-width operands | catches `9:00 > 10:00` silently wrong programs | compiler lint; cheap | 3.5 F18 |
+| S20 | `unset(x)` / `set(x)` filters | the only truth value the draft assigns without a spelling | spec: two library names | A6; optional labels in unions |
+
+Not suggested (considered and dropped): a lambda (no §3 program needed one; macros with parameters covered every
+case, as the draft predicted); `=>` value maps (S1 covers them); UFCS and `types()` (§9); `eval` work before an
+example; binary comparison operators (S1/C10 keep one form); an `in` operator (`&` with a set is membership);
+`before`/`after` on `|` (no example).
+
+## 11. QUESTIONS FOR OWNER
+
+Decisions only Frank can make, each with my leaning. Plain words; the items reference this report's sections for
+the reasoning. "Reply either way" applies to each.
+
+1. **What does a pattern DENOTE: a set of strings (value-scoped), or a set of strings with their context
+   (S2)?** Leaning: with context. Your own JSONL example and every lone-literal program with a lookbehind need it;
+   it costs no new mechanism beyond the lookaround-as-intersection work already ruled (D196 add. 2).
+2. **Does the default level mean "some parse passes" for a condition on an ambiguous label (C11)?** Leaning: yes,
+   with the E7 warning showing the witness, and PCRE's parse only at `vm`. The alternative makes the default level
+   unable to compile any condition on an ambiguous user label.
+3. **Drop the x-mode default (C2, S4)?** Leaning: drop. Decomposition into bindings already gives the readability
+   x-mode was for; the default breaks "every PCRE pattern is a one-literal program".
+4. **Repeated labels: XDuce's sequence rule (S7) or PCRE's last-iteration with a warning?** Leaning: sequence rule
+   at default (`$x` on a repeated label is an error that names `all`/`some`/`count`/`$x[i]`), PCRE's meaning at
+   `vm`.
+5. **Is the default-level promise "one automaton pass" or "linear, automaton code only" (C14, S10)?** Leaning: the
+   latter, so an automaton verify split and parameter-only computations are inside it, and only callouts on
+   captured text need `functions`.
+6. **One condition form (`label: set`, computed values via `with`) or also value tests (`f(value)`) (C10)?**
+   Leaning: one form. It costs a `with` for E-NEAR (c) and buys a language with a single kind of condition.
+7. **Index base: confirm 1-based (O11)?** Leaning: yes; E-RFC's `mname.index` as the month number decides it, and
+   `[0]` = group 0 matches PCRE.
+8. **Interfaces, members, UFCS, `types()`: cut from the first spec, with interfaces returning as library packaging
+   after a build (§9)?** Leaning: cut; none of thirteen programs needed them. Keep `with` (computed labels) and
+   namespaces in the foundation.
+9. **Add compile-time `check` (S8) to the foundation now, or wait for the library initiative?** Leaning: now; it is
+   one keyword, decidable, and it is how the library's "tested against the standard's own vectors" rule becomes
+   enforceable rather than procedural.
+10. **Finite-group backreferences as regular (S11): a predicate-language rule only, or a general pcrec engine rule
+    (an unlock beyond #6)?** Leaning: general, budgeted, filed as its own row; it changes which PCRE patterns
+    take the VM today and so is an engine decision, not a #6 one.
+11. **The capture-reporting axis (S9): is "span + accept-class values at default; named spans need `captures`" the
+    API shape you want?** Leaning: yes; it names the language's distinctive output and keeps TDFA off the first
+    build's critical path.
+12. **Bounded recursion by a strictly decreasing literal parameter (S6), or an `unroll` primitive?** Leaning: the
+    parameter rule; it is the natural spelling and the termination check is syntactic.
+13. **`records` must tile the text (S14)?** Leaning: yes, with an explicit `gaps = allow` opt-out.
+14. **The two unverified prior-art details (Pomsky's leading-zero handling, Hyperscan's combination reporting
+    point, §6.5/§6.6): worth a follow-up lookup before a critic round cites them, or drop the citations?**
+    Leaning: drop unless a critic needs them; nothing in §7-§10 depends on either.
