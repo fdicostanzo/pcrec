@@ -324,3 +324,18 @@ end = lowest PCRE priority, so position and meaning agree; prepend by writing it
 union-typed label (ruled). (3) REPLACE = drop then add, `a[!x] | (x: ...)`; no update operator until an example
 needs one. OPEN: mid-sequence placement for joined maps (`before:`/`after:` keywords on `|`), deferred to a
 real example.
+
+**2026-11-14 — SUPERSEDES the previous note's field-wise `&` (Frank: arrays and rx are "the same", so intersecting two arrays must behave like intersecting the two rx; he would rather say `(a: ...)` is not a map or an rx than give up that consistency. And: every rx is an array divided at its top-level alternation; no top-level alternation = an array of one).**
+Agreed. RULE: `&` is extensional on every rx/array (membership = language; two spellings of one language
+behave the same under `&`, `|`, `!`). Labels ANNOTATE, never decide membership. `(x: d2)` is therefore a
+CONDITION, its own kind (a predicate over a match's labelled parts; conditions combine by `& | !`; `rx & cond`
+filters), not a map. It stays consistent with language `&` because of the ruled "unset label: comparison
+false": `(x: \d | y: [a-z]) & (x: [0-5])` keeps only matches whose x part is set and in [0-5], i.e. `[0-5]`, the
+same as the language intersection. Arrays: an rx IS the array of its top-level alternatives (`/a|b|c/[1]` =
+`/b/`; `/abc/` = an array of one; a group is an atom, so `/(?:a|b)|c/` has 2 entries); unlabelled entries are
+index-labelled. `&` on arrays distributes: `(A|B) & (C|D)` = `(A&C)|(A&D)|(B&C)|(B&D)`, empty products dropped,
+each product carrying both sides' labels (this is how `x:` resolves from either operand). TWO KINDS OF
+OPERATION, stated: extensional (`& | !`, comparisons) depend only on the language; STRUCTURAL (indexing,
+`each`, `join`, `.label`) read the spelling, so `/a|b/` and `/b|a/` are equal under `&` but differ under
+`[0]` (and in PCRE priority). Internal rewrites (altcls, alt_normal_form) never change the user-visible
+structure. Field-wise narrowing that KEEPS other entries is spelled structurally (each/projection), not `&`.
