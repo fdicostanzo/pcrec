@@ -6,8 +6,13 @@
 # Compiled `--features all -e byte`; run by gen_adversarial.py witness.
 #bundle	reader	stamp	pattern	default	moved
 w-c1	c1	REQ_BYTE	[0-9]+x[0-9]+e[0-9]+	120	101
-w-c2a	c2a	REQ_RUN	github_pat_[0-9]+	6769746875625f7061745f@10	6769746875625f7061745f@7
-w-c2b	c2b	REQ_RUN	[a-z]abcdefghijkl\d+	6162636465666768696a6b6c@9	6162636465666768696a6b6c@5
+# [RUN-POS-SET] S2 landing (s2tri h3, abi 106): `[0-9]` and `\d` are run positions now. w-c2a
+# keeps its row (a `_reqrun` block) and its moved member ('_' @10 -> 'p' @7): re-pinned to the
+# set-form run. w-c2b's DEFAULT artifact took row 1 (the `[30-39]` tail put the run past the
+# prefilter, so a `_reqrun` block appeared), leaving c2b's site: re-aimed with `.` (no
+# information, outside the run), which restores row 2 under both tables and the old values.
+w-c2a	c2a	REQ_RUN	github_pat_[0-9]+	6769746875625f7061745f[30-39]@10	6769746875625f7061745f[30-39]@7
+w-c2b	c2b	REQ_RUN	.abcdefghijkl.+	6162636465666768696a6b6c@9	6162636465666768696a6b6c@5
 # w-c3: `a+c` until [LANDWALK] stage 1 (lane p1tri, 2026-10-30), whose default build takes the
 # landmark walk (REQ_WHY "dominated": the walk answers presence); `(?:a+c)+` keeps the same G1
 # identity flip on the unanchored scan, the walk declining it (the landmark recurs in the prefix).

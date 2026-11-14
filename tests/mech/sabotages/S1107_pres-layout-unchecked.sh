@@ -12,6 +12,7 @@
 # (skip the whole check) at the rewritten function's top. Detector unchanged: finder_check's
 # pre-lead-run (P4 leads, the head part dropped) must be refused naming the layout. The run
 # decision's own disagreement is the per-reader tie plant's (S1095).
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md rev 4 §5.1 [r3pd FIX-6]): the function's first line gained `member` (the headless-layout clause reads it); the same plant at its top.
 SAB_ID="S1107-pres-layout-unchecked"
 SAB_FILE="memfn/src/compose.c"
 SAB_SUITES="memfnfinder"
@@ -19,8 +20,8 @@ SAB_DESC='the define no longer holds a pre-check'"'"'s parts to its routed prese
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    (void)art;
-    int run = kit_pres_run(s), head = -1;'
+    int run = kit_pres_run(s), head = -1, member = 0;'
 SAB_AFTER='    return NULL;   /* SABOTAGE S1107 */
     (void)art;
-    int run = kit_pres_run(s), head = -1;'
+    int run = kit_pres_run(s), head = -1, member = 0;'
 SAB_DOC_FIGURE="HAND-MEASURED by lane b3b: see docs/dev/lanes/b3b_report.md (the solo mech run of this row)."

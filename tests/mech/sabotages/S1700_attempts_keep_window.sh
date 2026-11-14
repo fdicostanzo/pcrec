@@ -19,7 +19,12 @@ SAB_SUITES='harness'
 SAB_HARNESS_TARGET='tests/litscan/handoff_vm.rxt'
 SAB_DESC='the kit'"'"'s ASSIGN line keeps the run part'"'"'s scan position instead of the run occurrence'"'"'s position 0 while pcrec subtracts the whole run'"'"'s K, so the VM attempt loop'"'"'s first attempt starts past matches'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/reqvm1_report.md, Tests and sabotage); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1700.'
-SAB_REACH='"$PCREC" --features all -p rx --engine=vm -o "$REACH_TMP/o.c" --pattern '"'"'(https://www\.(?:acme|hooli)\.(com|de)/[^"?\s]*)'"'"' && grep -q '"'"'^#define RX_REQ_HANDOFF "0"'"'"' "$REACH_TMP/o.c" && grep -q '"'"'^#define RX_REQ_RUN "68747470733a2f2f7777772e@7"'"'"' "$REACH_TMP/o.c" && grep -qF '"'"'size_t handoff_position = rx_reqrun(subject, subject_length, search_from);'"'"' "$REACH_TMP/o.c" && grep -q '"'"'attempt_position = handoff_position;'"'"' "$REACH_TMP/o.c" && echo REACH-ASSIGN-POSITION-0'
+# RE-AIMED 2026-11-13 (lane s2tri, [RUN-POS-SET] flip 2 -> 128): the run now extends through
+# the host alternation's union positions (RX_REQ_RUN "68747470733a2f2f7777772e[6168][636f][6d6f][656c]@7"
+# on the old probe's (acme|hooli), was "...7777772e@7"), so the pinned run read UNREACHED. The probe
+# now compiles the DETECTOR's own witness (handoff_vm.rxt's bench subst case 7 pattern) and pins
+# its flipped run; K 0, the kit's ASSIGN line and the attempt loop's handoff are unchanged.
+SAB_REACH='"$PCREC" --features all -p rx --engine=vm -o "$REACH_TMP/o.c" --pattern '"'"'(https://www\.(?:acme|globex|initech|umbrella|hooli)\.(com|de|fr|nl|org)/[^"?\s]*)(?:(\?(?:[^"\s]*&)?tld=)(?!\2\b)[a-z]+|(?!\?(?:[^"\s]*&)?tld=)(\?[^"\s]*)?(?="))'"'"' && grep -q '"'"'^#define RX_REQ_HANDOFF "0"'"'"' "$REACH_TMP/o.c" && grep -qF '"'"'#define RX_REQ_RUN "68747470733a2f2f7777772e[6167-6975][636c-6f][62696d6f][62656c7274]@7"'"'"' "$REACH_TMP/o.c" && grep -qF '"'"'size_t handoff_position = rx_reqrun(subject, subject_length, search_from);'"'"' "$REACH_TMP/o.c" && grep -q '"'"'attempt_position = handoff_position;'"'"' "$REACH_TMP/o.c" && echo REACH-ASSIGN-POSITION-0'
 SAB_REACH_EXPECT='REACH-ASSIGN-POSITION-0'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

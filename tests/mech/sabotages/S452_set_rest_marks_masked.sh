@@ -24,13 +24,17 @@
 # (mf_class.run) over the set-form span, a position covered where its set is one member;
 # the plant covers every position, a pair position's both members included (intent
 # unchanged).
+# RE-AIMED 2026-11-13 (lane s2tri, [RUN-POS-SET] flip 2 -> 128): S2c is now
+# `(x?)([a-z]+)+S.(?i:s)qz\1`; `\d` became a run position, the run S[0-9][sS]qz
+# proved 'S' itself and rq_set emptied (the probe read MISSING). `.` keeps 'S'
+# outside the run; rq_set is { 83 } again.
 SAB_ID="S452-set-rest-marks-masked"
 SAB_FILE="memfn/src/finder.c"
 SAB_SUITES="harness codegen"
 SAB_HARNESS_TARGET="tests/litscan/reqcube.rxt"
 SAB_DESC="K65's whole-set half marks every whole-run position's T as already proved, including pair positions, so a set member equal to such a T loses its memchr and a NOMATCH turns into a step give-up"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/c3build_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S452."
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+S\\d(?i:s)qz\\1" && grep -q "rq_set\[\] = { 83 }" "$REACH_TMP/o.c" && echo REACH-K65-REST'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+S.(?i:s)qz\\1" && grep -q "rq_set\[\] = { 83 }" "$REACH_TMP/o.c" && echo REACH-K65-REST'
 SAB_REACH_EXPECT="REACH-K65-REST"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

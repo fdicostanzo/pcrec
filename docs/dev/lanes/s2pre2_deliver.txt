@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2pre2_report.md
+sections: Summary; Every lost pattern; Floors and witnesses; Checks; Owed runs
+nonempty: all
+commit: yes
+owed: none

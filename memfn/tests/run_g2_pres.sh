@@ -66,6 +66,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT/build/libpcrec.a}"
 G2="$ROOT/memfn/tests/g2"
 NSITES="${G2P_SITES:-400}"
+NWIDE="${G2P_WIDE:-300}"   # R-38 Part D: the WIDE stream's sites, after today's (their own rng)
 SEED="${G2P_SEED:-20261110}"
 WORK="$(mktemp -d "${TMPDIR:-/var/tmp}/g2pres.XXXXXX")"
 if [ -n "${G2P_KEEP:-}" ]; then echo "work directory: $WORK"; else trap 'rm -rf "$WORK"' EXIT; fi
@@ -151,6 +152,45 @@ SIMD_FLOORS="x86-64-v3:19:19:1600 x86-64:19:0:1340 generic:0:0:0"   # (22 22 178
 # Linux dev box (main a9fc6dbd8, seed 20261110, 400 sites; the least over the
 # admitting passes in parentheses):
 CELL_FLOORS="w16:163:75:158 w32:100:72:455"   # level:U:L:A  (w16 181 84 176; w32 111 80 506)
+# R-38 PART D (docs/design/memfn/part_d.md rev 4 §5.1.1, §5.2; lane partd):
+# THE SITE FILE'S HASH ([r3pd FIX-3]): today's stream (NWIDE 0) renders the
+# SAME site file as the base did, byte for byte, per pass. sha-256 of
+# g2p_sites.c written by the BASE's generator against the BASE's kit (lane
+# partd's base a6054c124, built fresh from `git archive`, seed 20261110, 400
+# sites), one literal per pass tag; the plant "the rate rule on cubes too"
+# moves the main rng's draws and reds it. A change that legitimately moves
+# today's site file re-pins these with its own named run, as a floor re-pin.
+SITE_HASHES="x86-64-v3.0.1:991f06252c6c74704e30076ae144c911e5757622ec935cd5b54964bd92296ca7
+x86-64-v3.1.1:bce52ce0346c152c028b4982005387cac605df5f2688e2b34fddbcd17bffea0b
+x86-64.0.1:7e3cfc6cffd0753967e1a2fda1d7aa2d5f0d982b20cde570478587a912306cfc
+x86-64.1.1:7346e225fb723d93cdeda5ccd33eb8272b20ab84df1fc68012ac54affdbb0696
+generic.0.1:c38f81972d41c9bd32557d4a786ed6c9d9b24f76ee30534aae751b4f431598c8
+generic.1.1:c95e82f9cfc3462ca6c92a803f603fb961d30b6411d113e6cdca53ae483ce3ec
+generic.0.0:21cde5415e8e8c159577afdc778e31d184de8a97b804996b32c33e098e6d8040"
+# THE WIDE STREAM's populations, per pass (the generator's G2PWIDE census
+# and the driver's `G2P partd` line). MEASURED 2026-11-13 by lane partd on the
+# Linux dev box (seed 20261110, 400 + 300 wide sites): each floor is the
+# least over the six target passes less ~10% (a count under 10 keeps its
+# measure). Measured: 300 197 61 13 32 27 194 45 18 29 18 45 18 27 9 7;
+# R-41's stated unbounded K, declined on every ASSIGN site: 729 729;
+# driver 18 9 151 10 399844; deny pass 576 81 (wide_ver 9 under the deny).
+FLOOR_WIDE="wide_sites:270 wide_ver:177 nofind:54 nobg:11 f24:28 f24_3:24 scan_findable:174 declines:40 dec_member:16 dec_assign:26 dec_twin:16 dec_refused:40 dec_rendered:16 dec_noprecheck:24 scanless_req:9 dom_noscan:7 r41:656 r41_flip:656"
+FLOOR_WIDE_RUN="declined:16 scanless:9 scanless_match:135 nobg:9 exact_wide:359859"
+# THE DENY PASS (the run-verify-wide deny, [r1pd F6, F7]): generic target, every
+# site under no-run-verify-wide; every verified extent findable-only (the
+# generator's check), one-position stretches and deny-pass sites floored
+FLOOR_DENY="deny_sites:518 deny_one:72"
+# R-38 PART D D3 (part_d.md §5.1 D3, [r3pd RDY-4]): per target's default pass,
+# the trace kit's run_part_terms records joined to G2's own counts by G2SITE
+# (memfn/tests/g2/run_part_census.py): the population (sites whose define
+# chose an ofsskip FUNC row), the census's unspelled SET terms and every-pos
+# parts (each EQUAL to G2's own, per site). Literals recorded at D3's first
+# green run (lane partd2 2026-11-13, seed 20261110, 400 + 300 wide), the least
+# over the three targets less about 10% (a count under 10 keeps its measure):
+# measured pop 558, unspelled 833 (G2's own 833), everypos 9 (G2's 9) on each
+# of x86-64-v3, x86-64 and generic; the generic pass's 558 records over 576
+# sites are counted apart (reported, outside the equalities)
+FLOOR_D3="pop:502 unspelled:750 everypos:9"
 
 # THE PLANTS: id, then one line FILE@@FROM@@TO per edit (FILE under
 # memfn/src; FROM replaced by TO, `\n` a newline, `\\n` the C escape, `\&`
@@ -168,11 +208,11 @@ plant_spec() {
         # least is yielded (§3.3 item 2, "least"). The ORACLE's plant: the text's reads
         # are unchanged until a candidate verifies, and the classifier's probes put the
         # occurrence above `lo` (the occurrence contract is the oracle's, not a copy)
-        echo 'ofsskip.c@@    int maxk = x->maxk, k = x->k, a = x->a;\n    kit_out(o, "    while (pos + %d < n) {\\n", maxk);@@    int maxk = x->maxk, k = x->k, a = x->a;\n    o->puts(o->u, "    size_t lo0 = pos;\\n");\n    kit_out(o, "    while (pos + %d < n) {\\n", maxk);'
+        echo 'ofsskip.c@@    int maxk = x->maxk, k = x->k, a = x->a;\n    if (note_memchr(art)) return -1;\n    kit_out(o, "    while (pos + %d < n) {\\n", maxk);@@    int maxk = x->maxk, k = x->k, a = x->a;\n    if (note_memchr(art)) return -1;\n    o->puts(o->u, "    size_t lo0 = pos;\\n");\n    kit_out(o, "    while (pos + %d < n) {\\n", maxk);'
         echo 'ofsskip.c@@    o->puts(o->u,   ") return cand;\\n");@@    o->puts(o->u,   ") { if (cand == lo0) { pos = cand + 1; continue; } return cand; }\\n");' ;;
     S3009) # C: the lever leaves the run decision's ties rightmost (kit_run_opts_of
         # ignores run-tie-left): the witnesses' text scan does not move
-        echo 'presence.c@@    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH };@@    (void)left;\n    return (kit_run_opts){ st, T_MASS_STRETCH };' ;;
+        echo 'presence.c@@    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH, clip };@@    (void)left;\n    return (kit_run_opts){ st, T_MASS_STRETCH, clip };' ;;
     S3010) # ORC-1: every use passes its run part the attempt start + 1 (the
         # position at the attempt start is never asked): the part's own call
         # is honest in its own frame, so only a record taken at the CALLER
@@ -209,7 +249,7 @@ plant_spec() {
         echo 'finder.c@@        if (!member) k.member = 0;@@        (void)0;' ;;
     S3045) # F12: P3 drops out of the stretch-mode table (a renamed row): every
         # P3 site's ask is REFUSED, never handed a catch-all's stretch
-        echo 'finder.c@@    { "P3", KIT_RUN_WINDOW },@@    { "P3-renamed", KIT_RUN_WINDOW },' ;;
+        echo 'finder.c@@    { "P3", KIT_RUN_WINDOW, FD_NOSCAN_REFUSE },@@    { "P3-renamed", KIT_RUN_WINDOW, FD_NOSCAN_REFUSE },' ;;
     S3046) # F14 (ii): the statement rule's "a tested link lays out its run part"
         # refusal deleted (compose.c pres_layout_check skips the run part's slot):
         # the generator's control (ii) is no longer refused by that rule
@@ -244,6 +284,51 @@ plant_spec() {
     # read nonzero
     S3103) echo 'levels.c@@        if (admits(t, \&level_table[lv])) m |= 1u << lv;@@        if (admits(t, \&level_table[lv]) || (lv == LV_X86_W32 \&\& !strcmp(t->name, "x86-64"))) m |= 1u << lv;'
         echo 'targets.def@@MF_NEEDS("sse2"), "fxsr,mmx,sse,sse2",@@MF_NEEDS("sse2,avx2"), "fxsr,mmx,sse,sse2",' ;;
+    # R-38 Part D (lane partd; part_d.md rev 4 §5.1's plant column, §5.1.1):
+    S3106) # p1: the `findable` column ignored (kit_run_member's FINDABLE candidates
+        # read as every position): the scan lands on a WIDE position where one is
+        # lighter than every findable one (F24's sites)
+        echo 'window.c@@        if (cand == KIT_CAND_EXACT ? count(set) != 1 : !kit_pos_spelled(set)) continue;@@        if (cand == KIT_CAND_EXACT && count(set) != 1) continue;   /* SABOTAGE S3106 */' ;;
+    S3107) # p2: the decline row PD deleted: a no-findable run on an OPTIONAL route
+        # reaches P3, which names no scan-less reply
+        echo 'finder.c@@    { "PD", FD_PRES, KN_P, SF_RUN_NOSCAN, 0,@@#if 0   /* SABOTAGE S3107 */\n    { "PD", FD_PRES, KN_P, SF_RUN_NOSCAN, 0,'
+        echo 'finder.c@@"none: derived from the reply contract (no find tests the run)", &ct_pd },@@"none: derived from the reply contract (no find tests the run)", &ct_pd },\n#endif' ;;
+    S3108) # p3: "decline when the scan is a cube" (F21): a run whose scan is a
+        # two-member cube is handed back as having no scan
+        echo 'presence.c@@        else if (run_noscan) *run_noscan = 1;@@        else if (run_noscan) *run_noscan = 1;\n        if (rr.has_scan && run_noscan && kit_pos_class_of(rs->set[rr.scan]) == KIT_POS_CUBE) *run_noscan = 1;   /* SABOTAGE S3108 */' ;;
+    S3109) # p4: the head rule back to `run >= 0`: a declined (untested) run's layout
+        # reads the run span's need for the HEAD member instead of REQUIRED
+        echo 'compose.c@@        mf_need need = trun ? (mf_need)s->pspans[head].need : MF_REQUIRED;@@        mf_need need = run >= 0 ? (mf_need)s->pspans[head].need : MF_REQUIRED;   /* SABOTAGE S3109 */' ;;
+    S3110) # p5: a wide verified position rendered by its cube HULL (the least
+        # cube holding its members): non-members pass the verify
+        echo 'window.c@@            memcpy(t->set, run->set[j], 32);@@            memcpy(t->set, run->set[j], 32);\n            { int a0 = 255, o0 = 0; for (int z = 0; z < 256; z++) if (run->set[j][z >> 3] >> (z & 7) & 1) { a0 &= z; o0 |= z; } int k0 = ~(a0 ^ o0) & 255; for (int z = 0; z < 256; z++) if ((z & k0) == (a0 & k0)) t->set[z >> 3] |= (uint8_t)(1u << (z & 7)); }   /* SABOTAGE S3110 */' ;;
+    S3111) # p6': one member dropped from the verify chain's set test (the lowest):
+        # an occurrence holding it is missed (the occurrence oracle's plant)
+        echo 'ofsskip.c@@            kit_set_test(&test, t->set, byte.p);@@            { uint8_t s2[32]; memcpy(s2, t->set, 32); for (int z = 0; z < 256; z++) if (s2[z >> 3] >> (z & 7) & 1) { s2[z >> 3] &= (uint8_t)~(1u << (z & 7)); break; } kit_set_test(&test, s2, byte.p); }   /* SABOTAGE S3111 */' ;;
+    S3112) # p7: the direct translation's stretch widened past a wide position:
+        # the RUN term reaches a position with no (T, K) spelling
+        echo 'window.c@@        while (b < hi && kit_pos_spelled(run->set[b])) b++;@@        while (b < hi) b++;   /* SABOTAGE S3112 */' ;;
+    S3113) # p10: the no-scan fact read as a scan of byte 0 (fn-every-pos no longer
+        # holds) and pair_holds left as `b >= 0`: fn-pair takes every scan-less
+        # part and searches for byte 0 (the design's row swap is implied: pair
+        # holds where every-pos stopped holding)
+        echo 'ofsskip.c@@        *k = *a = *b = -1;@@        *k = *a = *b = 0;   /* SABOTAGE S3113 */'
+        echo 'ofsskip.c@@    return x->a >= 0 && x->b >= 0;@@    return x->b >= 0;' ;;
+    S3119) # R-41: a stated unbounded K (MF_HEAD_MAX_UNBOUNDED) no longer declines the
+        # landmark: the bit is read as at K 0
+        echo 'presence.c@@        if (s->head_max == MF_HEAD_MAX_UNBOUNDED) out->landmark = 0;@@        if (0) out->landmark = 0;   /* SABOTAGE S3119 */' ;;
+    S3125) # D3 p12: run_part_terms not printed for a scan-less part: the census's
+        # every-pos count falls below G2's own scan-less count
+        echo 'window.c@@    if (!quiet) {\n        fprintf(stderr, "MFTRACE run_part_terms@@    if (!quiet \&\& q->plan_hint != MF_NO_PRED) {   /* SABOTAGE S3125 */\n        fprintf(stderr, "MFTRACE run_part_terms' ;;
+    S3126) # D3 p15: the record printed on the quiet path too (the trace build's
+        # define re-asks its own site quietly, ask_sel): every site's records double
+        echo 'window.c@@    if (!quiet) {\n        fprintf(stderr, "MFTRACE run_part_terms@@    if (1) {   /* SABOTAGE S3126 */\n        fprintf(stderr, "MFTRACE run_part_terms' ;;
+    S3127) # D3 p11: the census's parser skips the record's SET terms: its
+        # unspelled count falls to 0 against G2's (a census0.py plant: @c0/)
+        echo '@c0/census0.py@@        off, kind, val = t.split(":", 2)\n@@        off, kind, val = t.split(":", 2)\n        if kind == "SET":   # SABOTAGE S3127\n            continue\n' ;;
+    S3114) # p13: P2 keeps `rs && !proof->run` on a no-scan run: a dominated site
+        # whose run has no findable position is no longer dominated
+        echo 'presence.c@@        else if (rsc && !proof->run) dom = 0;@@        else if (rs && !proof->run) dom = 0;   /* SABOTAGE S3114 */' ;;
     *) return 1 ;;
     esac
 }
@@ -260,7 +345,7 @@ plant_absent() {
     *) echo '' ;;
     esac
 }
-plant_detector() { case "$1" in S3008|S3010) echo oracle ;; *) echo family ;; esac; }
+plant_detector() { case "$1" in S3008|S3010|S3111) echo oracle ;; *) echo family ;; esac; }
 # plant_expect ID: the FAIL-line patterns (each grep -E, each required, `|`
 # between them NOT an alternation: split below) naming the detector the plant
 # is FOR; a plant red only by something else is not detected by its witness
@@ -287,18 +372,38 @@ plant_expect() {
     S3100|S3101) echo 'ERROR: AddressSanitizer' ;;
     S3102) echo 'CELL: x86-64-v3\.[01]: w32 U: 0 arm entries;CELL: x86-64-v3\.[01]: w32 L: 0 arm entries;CELL: x86-64-v3\.[01]: w32 A: 0 arm entries' ;;
     S3103) echo 'CELL: x86-64\.[01]: w32 U: [0-9]+ arm entries where the target admits none' ;;
+    S3106) echo "the run.s reply: its scan is a WIDE position" ;;
+    S3107) echo 'mf_ask \(the presence links\): refused|: the decline: ' ;;
+    S3108) echo ': the decline: PD declined' ;;
+    S3109) echo 'its first part is not the HEAD' ;;
+    S3110) echo ': EXTENT: ' ;;
+    S3112) echo 'no \(T, K\) spelling' ;;
+    S3113) # COVER, the family's positive check (a whole occurrence IS yielded):
+        # a scan-less part searching byte 0 misses every occurrence without it.
+        # Measured (lane partdfix, seed 20261110): COVER reds 60 sites on each of
+        # the six passes and nothing else of the family does; the scanless_match
+        # FLOOR counts generator facts the plant leaves alone, SOUND/EXTENT check
+        # that nothing FALSE is yielded, and PRESENCE stayed green (the oracle
+        # reds too: the backstop, not this row's catch)
+        echo ': COVER: part at [0-9]+ len [0-9]+: member ' ;;
+    S3114) echo 'FLOOR: .*dom_noscan' ;;
+    S3119) echo ': R-41: ' ;;
+    S3125) echo 'D3 EVERY-POS: ' ;;
+    S3126) echo 'D3 RECORDS: ' ;;
+    S3127) echo 'D3 UNSPELLED: ' ;;
     *) echo '' ;;
     esac
 }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103"
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3119 S3125 S3126 S3127"
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
-kit_objs() {   # kit_objs SRCDIR OUTDIR: every kit source compiled into OUTDIR
+kit_objs() {   # kit_objs SRCDIR OUTDIR [CFLAGS..]: every kit source compiled into OUTDIR
     local src="$1" out="$2"
+    shift 2
     mkdir -p "$out"
     for s in "$src"/*.c; do
-        "$CC" -std=gnu11 -O1 -I"$ROOT/memfn/include" -c -o "$out/$(basename "${s%.c}").o" "$s" \
+        "$CC" -std=gnu11 -O1 "$@" -I"$ROOT/memfn/include" -c -o "$out/$(basename "${s%.c}").o" "$s" \
             || return 1
     done
 }
@@ -318,13 +423,14 @@ build_gen() {
         || { echo "FAIL: $tag: the generator does not build"; head -20 "$WORK/$tag.genbuild"; return 1; }
 }
 
-# one_pass TAG TARGET LEVER [ON_MISS_LEAVES]: render, compile, run (recording; ASan unless
+# one_pass TAG TARGET LEVER [ON_MISS_LEAVES [DENY]]: render, compile, run (recording; ASan unless
 # G2P_NOASAN). Logs in $WORK/TAG.*; records in $WORK/TAG.rec.tsv.
 one_pass() {
     local tag="$1" tgt="$2" lev="$3" o="$WORK/$1.out"
     mkdir -p "$o"
     # shellcheck disable=SC2086
-    "$TIMEOUT_BIN" 300 "$WORK/$tag.gen" "$SEED" "$NSITES" "$o" "$tgt" "$lev" ${4:-} > "$WORK/$tag.gen.log" 2>&1
+    "$TIMEOUT_BIN" 300 "$WORK/$tag.gen" "$SEED" "$NSITES" "$o" "$tgt" "$lev" "${4:-1}" "$NWIDE" "${5:-0}" \
+        > "$WORK/$tag.gen.log" 2>&1
     local rc=$?
     "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror -I"$G2" -c "$o/g2p_sites.c" -o "$WORK/$tag.plain.o" \
         2> "$WORK/$tag.plainbuild" \
@@ -347,6 +453,23 @@ one_pass() {
         rc=$((rc || $?))
     fi
     return "$rc"
+}
+
+# d3_pass TAG TARGET ON_MISS_LEAVES CENSUS0: R-38 Part D D3's CHECK on pass
+# TAG (already run by one_pass, lever default): the TRACE generator
+# ($WORK/trace.gen, the kit built -DMF_TRACE) over the same arguments with
+# G2P_G2SITE, its site file held byte-equal to the pass's (the trace kit
+# renders the same text), its records joined to the pass's G2PRP lines by
+# run_part_census.py through the census's ONE parser (CENSUS0, census0.py).
+# Prints the checker's FAIL lines and its RPCENSUS line.
+d3_pass() {
+    local tag="$1" o="$WORK/$1.tr.out"
+    mkdir -p "$o"
+    G2P_G2SITE=1 "$TIMEOUT_BIN" 600 "$WORK/trace.gen" "$SEED" "$NSITES" "$o" "$2" 0 "$3" "$NWIDE" 0 \
+        > "$WORK/$tag.tr.log" 2> "$WORK/$tag.tr.err"
+    cmp -s "$o/g2p_sites.c" "$WORK/$tag.out/g2p_sites.c" \
+        || echo "FAIL: $tag: D3 the trace kit's site file differs from the plain kit's"
+    python3 -I "$G2/run_part_census.py" --census0 "$4" --tag "$tag" "$WORK/$tag.tr.err" "$WORK/$tag.run.log"
 }
 
 # level_table: the kit's levels and each pass target's admitted levels,
@@ -488,6 +611,47 @@ if [ "${1:-}" = "--reach" ]; then
     exit 0
 fi
 
+tp=0 tf=0
+note() { tf=$((tf + 1)); echo "FAIL: $1"; }
+floor() { if [ "${2:-0}" -ge "$3" ]; then tp=$((tp + 1)); else note "floor $1: ${2:-0} < $3"; fi; }
+
+# site_hashes GEN: THE SITE FILE'S HASH (R-38 Part D, [r3pd FIX-3]): today's
+# stream, per pass, written by generator GEN (main, or a plant's p<ID>)
+site_hashes() {
+    local hp htgt hlev homl hd got
+    while read -r hp; do
+        [ -n "$hp" ] || continue
+        IFS=. read -r htgt hlev homl <<< "${hp%%:*}"
+        hd="$WORK/hash.$1.${hp%%:*}"; mkdir -p "$hd"
+        "$TIMEOUT_BIN" 300 "$WORK/$1.gen" "$SEED" "$NSITES" "$hd" "$htgt" "$hlev" "$homl" 0 0 > "$hd.log" 2>&1
+        got=$(sha256sum < "$hd/g2p_sites.c" | cut -c1-64)
+        if [ "$got" = "${hp#*:}" ]; then tp=$((tp + 1))
+        else note "the site file of today's stream moved (${hp%%:*}: $got, the base's ${hp#*:})"; fi
+    done <<< "$SITE_HASHES"
+}
+
+# wide_floors TAG: R-38 Part D's populations of one pass, and the P2 pair's
+# equality ([r3pd FIX-7]: every P2 untested link's laid-out run part refused)
+wide_floors() {
+    local tag="$1" x
+    wv() { grep -h "^G2PWIDE" "$WORK/$tag.gen.log" | grep -oE " $1=[0-9]+" | cut -d= -f2; }
+    pv() { grep -h "^G2P partd" "$WORK/$tag.run.log" | grep -oE " $1=[0-9]+" | cut -d= -f2; }
+    grep -h '^G2PWIDE\|^G2P partd' "$WORK/$tag.gen.log" "$WORK/$tag.run.log"
+    for x in $FLOOR_WIDE; do floor "$tag ${x%%:*}" "$(wv "${x%%:*}")" "${x#*:}"; done
+    for x in $FLOOR_WIDE_RUN; do floor "$tag driver ${x%%:*}" "$(pv "${x%%:*}")" "${x#*:}"; done
+    local u r
+    u=$(grep -h "^G2PGEN" "$WORK/$tag.gen.log" | grep -oE " p2_untested=[0-9]+" | cut -d= -f2)
+    r=$(grep -h "^G2PGEN" "$WORK/$tag.gen.log" | grep -oE " p2_refused=[0-9]+" | cut -d= -f2)
+    if [ -n "$u" ] && [ "$u" = "$r" ]; then tp=$((tp + 1))
+    else note "$tag: p2_untested ${u:-?} != p2_refused ${r:-?} (a refusal counted on another route)"; fi
+    u=$(wv dec_untested); r=$(wv dec_refused)
+    if [ -n "$u" ] && [ "$u" = "$r" ]; then tp=$((tp + 1))
+    else note "$tag: dec_untested ${u:-?} != dec_refused ${r:-?}"; fi
+    u=$(wv declines); r=$(wv PD)
+    if [ -n "$u" ] && [ "$u" = "$r" ]; then tp=$((tp + 1))
+    else note "$tag: declines ${u:-?} != PD route sites ${r:-?}"; fi
+}
+
 # --- --plant / --plants -------------------------------------------------------
 if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     ids="${2:-}"
@@ -499,9 +663,11 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
         specs="$(plant_spec "$id")" || fail_setup "no plant $id"
         if plant_asan "$id"; then unset G2P_NOASAN; else export G2P_NOASAN=1; fi
         rm -rf "$WORK/src"; cp -rL "$ROOT/memfn/src" "$WORK/src"   # -L: a symlinked src is copied, never planted in place
+        rm -rf "$WORK/c0"; mkdir -p "$WORK/c0"; cp "$ROOT/docs/design/memfn/span_pick/census0.py" "$WORK/c0/"
         while IFS= read -r spec; do
         file="${spec%%@@*}"; rest="${spec#*@@}"; from="${rest%%@@*}"; to="${rest#*@@}"
-        python3 -I - "$WORK/src/$file" "$from" "$to" <<'EOF' || fail_setup "$id: the plant does not apply"
+        case "$file" in @c0/*) path="$WORK/c0/${file#@c0/}" ;; *) path="$WORK/src/$file" ;; esac
+        python3 -I - "$path" "$from" "$to" <<'EOF' || fail_setup "$id: the plant does not apply"
 import sys
 p, a, b = sys.argv[1], sys.argv[2], sys.argv[3]
 def un(s):
@@ -515,8 +681,14 @@ EOF
         done <<< "$specs"
         kit_objs "$WORK/src" "$WORK/pk_$id" || fail_setup "$id: the planted kit does not compile"
         build_gen "p$id" "$WORK/pk_$id"/*.o || fail_setup "$id: the generator does not build"
+        kit_objs "$WORK/src" "$WORK/tk_$id" -DMF_TRACE || fail_setup "$id: the planted trace kit does not compile"
+        build_gen trace "$WORK/tk_$id"/*.o || fail_setup "$id: the trace generator does not build"
         red=""
         rm -f "$WORK"/*.rec.tsv "$WORK/fails.$id"
+        # the site file's hash and the wide floors are checks of the family
+        # (R-38 Part D): a plant may red them alone (S3114's floor, S3115's hash)
+        site_hashes "p$id" | sed -n 's/^FAIL: /FAIL: HASH: /p' >> "$WORK/fails.$id"
+        red=$(grep -m1 '^FAIL: HASH: ' "$WORK/fails.$id")
         for tgt in $TARGETS; do
             host_has "$tgt" || continue
             for lev in 0 1; do
@@ -527,12 +699,18 @@ EOF
                 # the per-level cells (K38-3) and, on an ASan plant, the ASan
                 # report: each a FAIL line of the pass
                 cell_checks "$tgt.$lev" "$tgt" | sed -n 's/^CELLFAIL: /FAIL: CELL: /p' >> "$WORK/fails.$id"
+                wide_floors "$tgt.$lev" | sed -n "s/^FAIL: /FAIL: FLOOR: $tgt.$lev: /p" >> "$WORK/fails.$id"
                 plant_asan "$id" && grep -h -m1 'ERROR: AddressSanitizer' "$WORK/$tgt.$lev.asan.log" 2>/dev/null \
                     | sed "s/^/FAIL: $tgt.$lev ASan: /" >> "$WORK/fails.$id"
                 r=$(grep -h '^FAIL' "$WORK/$tgt.$lev.gen.log" "$WORK/$tgt.$lev.run.log" 2>/dev/null | head -1)
-                [ -n "$r" ] || r=$(grep -m1 -E "^FAIL: (CELL: )?$tgt\.$lev[: ]" "$WORK/fails.$id")
+                [ -n "$r" ] || r=$(grep -m1 -E "^FAIL: (CELL: |FLOOR: )?$tgt\.$lev[: ]" "$WORK/fails.$id")
                 [ -n "$r" ] || r="$built"
                 [ -n "$red" ] || red="$r"
+                # D3 (R-38 Part D): the record census on the default pass
+                if [ "$lev" = 0 ]; then
+                    d3_pass "$tgt.$lev" "$tgt" 1 "$WORK/c0/census0.py" | grep '^FAIL' >> "$WORK/fails.$id"
+                    [ -n "$red" ] || red=$(grep -m1 "^FAIL: $tgt\.$lev: D3 " "$WORK/fails.$id")
+                fi
             done
             read -r mv nw < <(moved "$tgt")
             [ -n "$red" ] || [ "$mv" = "$nw" ] || red="LEVER: $mv of $nw witnesses moved on $tgt"
@@ -586,9 +764,10 @@ fi
 # --- the run ----------------------------------------------------------------------
 [ -f "$LIB" ] || fail_setup "$LIB not built (make all first)"
 tp=0 tf=0 skipped=0
-note() { tf=$((tf + 1)); echo "FAIL: $1"; }
-floor() { if [ "${2:-0}" -ge "$3" ]; then tp=$((tp + 1)); else note "floor $1: ${2:-0} < $3"; fi; }
 build_gen main "$LIB" || fail_setup "the generator does not build"
+kit_objs "$ROOT/memfn/src" "$WORK/trk" -DMF_TRACE || fail_setup "the trace kit (-DMF_TRACE) does not compile"
+build_gen trace "$WORK/trk"/*.o || fail_setup "the trace generator does not build"
+site_hashes main
 level_table || fail_setup "the kit's level listing (tests/memfn/simd_levels.c, target_text.py) could not be read"
 # THE LEVEL-LIST COVERAGE (K38-3, [r1s1 S1-15]): every level the kit lists is
 # admitted by a target this run's pass list runs on this host, else its
@@ -670,6 +849,7 @@ for tgt in $TARGETS; do
         floor "$tag presence checks" "$(rv presence checks)" "$FLOOR_PRES_CHECKS"
         floor "$tag presence below" "$(rv presence below)" "$FLOOR_PRES_BELOW"
         [ "$(rv presence generic)" = 0 ] && tp=$((tp + 1)) || note "$tag: $(rv presence generic) sites rendered by the generic row on an on_miss_leaves 1 pass"
+        wide_floors "$tag"
         # the §3.5 witnesses: each green AND reached, in the recording driver
         # and the ASan+UBSan one; W-K3's own witness reached in the generator
         wk=$(grep -h '^G2P wk ' "$WORK/$tag.run.log")
@@ -682,6 +862,18 @@ for tgt in $TARGETS; do
         fi
         if grep -qE "^G2PWK3 $tgt\.(default|lever) site [0-9]+ reached" "$WORK/$tag.gen.log"; then tp=$((tp + 1))
         else note "$tag: W-K3's witness (stated rates m > h) did not reach"; fi
+        # R-38 Part D D3: the record census, joined to G2's own counts (default pass)
+        if [ "$lev" = 0 ]; then
+            d3=$(d3_pass "$tag" "$tgt" 1 "$ROOT/docs/design/memfn/span_pick/census0.py")
+            echo "$d3" | grep '^RPCENSUS\|^FAIL' | head -12
+            nd3=$(echo "$d3" | grep -c '^FAIL')
+            if [ "$nd3" = 0 ]; then tp=$((tp + 1)); else note "$tag: D3's record census: $nd3 failure line(s)"; fi
+            dl=$(echo "$d3" | grep '^RPCENSUS')
+            [ -n "$dl" ] || note "$tag: D3's census printed no RPCENSUS line"
+            for x in $FLOOR_D3; do
+                floor "$tag D3 ${x%%:*}" "$(echo "$dl" | grep -oE " ${x%%:*}=[0-9]+" | cut -d= -f2)" "${x#*:}"
+            done
+        fi
         for x in $SIMD_FLOORS; do
             [ "${x%%:*}" = "$tgt" ] || continue
             IFS=: read -r _ f16 f32 fvec <<< "$x"
@@ -732,6 +924,13 @@ fi
 gv() { grep -h "^G2PGEN" "$WORK/$tag.gen.log" | grep -oE " $1=[0-9]+" | cut -d= -f2; }
 rv() { grep -h "^G2P $1" "$WORK/$tag.run.log" | grep -oE " $2=[0-9]+" | head -1 | cut -d= -f2; }
 floor "$tag generic sites (generator)" "$(gv generic)" "$FLOOR_GENERIC"
+# D3: the generic pass's records, counted APART (outside the equalities: the
+# generic row's run part is inline, C2's classifier skips it); a G2 run part
+# line there, or any other failure line, is still a failure
+d3=$(d3_pass "$tag" generic 0 "$ROOT/docs/design/memfn/span_pick/census0.py")
+echo "$d3" | grep '^RPCENSUS\|^FAIL' | head -12
+nd3=$(echo "$d3" | grep -c '^FAIL')
+if [ "$nd3" = 0 ]; then tp=$((tp + 1)); else note "$tag: D3's record census: $nd3 failure line(s)"; fi
 floor "$tag generic sites (driver)" "$(rv presence generic)" "$FLOOR_GENERIC"
 floor "$tag presence checks" "$(rv presence checks)" "$FLOOR_PRES_CHECKS"
 floor "$tag presence below" "$(rv presence below)" "$FLOOR_PRES_BELOW"
@@ -739,6 +938,27 @@ floor "$tag neg_omin" "$(gv neg_omin)" "$FLOOR_NEG_OMIN"
 wk=$(grep -h '^G2P wk ' "$WORK/$tag.run.log")
 if [ "$wk" = "G2P wk L1=1/1 L1b=1/1 K1=1/1 K2=1/1 K1b=1/1 (green/reached)" ]; then tp=$((tp + 1))
 else note "$tag: the §3.5 witnesses are not all green and reached (${wk:-no line})"; fi
+
+# THE DENY PASS (R-38 Part D, [r1pd F6, F7]): every site under the
+# run-verify-wide deny; the generator holds every verified extent to the
+# findable stretch; a refusal is a generator failure (floor 0)
+tag=generic.deny
+cp "$WORK/main.gen" "$WORK/$tag.gen"
+one_pass "$tag" generic 0 1 1
+grep -h '^FAIL' "$WORK/$tag.gen.log" "$WORK/$tag.run.log" | head -20
+gf=$(grep -h '^g2_pres_gen failures:' "$WORK/$tag.gen.log" | grep -oE '[0-9]+$')
+if [ "${gf:-x}" != 0 ]; then note "$tag: the generator failed ${gf:-?} sites"; else tp=$((tp + 1)); fi
+read -r p f < <(counts "$WORK/$tag.run.log")
+if [ "$p" = x ] || [ "$f" = x ]; then note "$tag: the recording driver printed no counts"
+else tp=$((tp + p)); tf=$((tf + f)); echo "$tag recording driver: passed $p failed $f"; fi
+if [ -z "${G2P_NOASAN:-}" ]; then
+    read -r p f < <(counts "$WORK/$tag.asan.log")
+    if [ "$p" = x ] || [ "$f" = x ]; then note "$tag: the ASan+UBSan driver printed no counts"
+    else tp=$((tp + p)); tf=$((tf + f)); echo "$tag ASan+UBSan driver: passed $p failed $f"; fi
+fi
+for x in $FLOOR_DENY; do
+    floor "$tag ${x%%:*}" "$(grep -h '^G2PWIDE' "$WORK/$tag.gen.log" | grep -oE " ${x%%:*}=[0-9]+" | cut -d= -f2)" "${x#*:}"
+done
 
 # the records: the seam's format, held by the family before the oracle reads them
 ls "$WORK"/*.rec.tsv > /dev/null 2>&1 || fail_setup "no pass wrote records"

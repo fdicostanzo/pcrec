@@ -18,7 +18,9 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
 - `vcls.py`, `vcls.out` — the verify-class census (T-CMP / T-SETTEST classes of the S2b corpus's row-1 sites):
   settest c1/c2/cn by compare count, rc-words w1/w2/w3 by word count, rc-memcmp l1; c2's `shape`
   lines by gcc's lowering (`alu1`: one ALU op + one compare, a single-bit pair, an inner range or `[^x]` (S2e, FIX-5); `cmp2`:
-  two compares); the header stamps the sweep's sha-256 and commit.
+  two compares); the header stamps the sweep's sha-256 and commit. R-38 Part D D3: cn is 3-7 compares, cn+ above
+  (UNMEASURED: plan.py's `UNPLANNED` lists it and never schedules it, nor `every-pos`); derived run parts' records
+  join the population through census0's parser (`runpart_pop`).
 - `slot.h`, `gen.c`, `drv.c` — the arm table, the seeded subject generator (hits, candidates, the gate's
   expected count/position sum/FNV-1a-64, the sentinel subject) and the driver (`gate`: `_gate` and `_time` on
   every subject and sentinel, the population line; `addr`; `round R NFILE`, its ACC checked against the planted

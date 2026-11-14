@@ -14,12 +14,17 @@
 # BY ID over the corpus); an attempt-scan machine the plant admitted would read
 # DETECTED (UNEXPECTED). The REACH probe pairs the guarded population with an
 # unanchored hat mover that runs the plant line.
+# RE-AIMED 2026-11-13 (lane s2tri, [RUN-POS-SET] flip 2 -> 128): the hat half's witness
+# \b(?:true|false)\b lost the hat (RX_DFA_PREFILTER "handoff": the union became the run
+# "[6174][6c72][7375]65@3"), so the probe read UNREACHED. It now probes the detector's own
+# hat witness, dfahat_checks.py's \b(?:true|false|null)\b (still "first-class-bounded" on
+# the flipped tree; its union run has no fixed byte, so no handoff outranks the hat).
 SAB_ID='S490-dfahat-scan-kind-conjunct'
 SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='dfahatstruct'
 SAB_DESC='the DFA hat'\''s predicate no longer requires the unanchored forward scan; an equivalent mutant while every caller is reached on ENG_UNANCH machines only'
 SAB_DOC_FIGURE='DECLARED EQUIVALENT (the argument above). MEASURED 2026-10-06 (lane ssfix3, solo, 3b7ba538): UNDETECTED (EXPECTED), reach:ok(1/1), dfahatstruct:0fail/32pass. See (docs/dev/lanes/ssbuild3_report.md, Panel fixes): read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S490.'
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?m)^(?:ab|\bcd)'\'' && grep -q '\''^#define RX_DFA_SCAN "attempt"'\'' "$REACH_TMP/o.c" && grep -q '\''rx_seed_state\['\'' "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/h.c" --pattern '\''\b(?:true|false)\b'\'' && grep -q '\''^#define RX_DFA_PREFILTER "first-'\'' "$REACH_TMP/h.c" && echo REACH-ATTEMPT-SEEDED-AND-HAT'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''(?m)^(?:ab|\bcd)'\'' && grep -q '\''^#define RX_DFA_SCAN "attempt"'\'' "$REACH_TMP/o.c" && grep -q '\''rx_seed_state\['\'' "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/h.c" --pattern '\''\b(?:true|false|null)\b'\'' && grep -q '\''^#define RX_DFA_PREFILTER "first-'\'' "$REACH_TMP/h.c" && echo REACH-ATTEMPT-SEEDED-AND-HAT'
 SAB_REACH_EXPECT='REACH-ATTEMPT-SEEDED-AND-HAT'
 SAB_EXPECT=UNDETECTED
 SAB_COUNT=1

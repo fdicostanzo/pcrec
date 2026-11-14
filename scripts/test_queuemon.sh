@@ -51,6 +51,7 @@ cat > "$FAKE_SCRIPT" <<EOS
 0|CI-UNAVAILABLE gh missing
 0|CLOUD-DONE lane-a-test-x owner=lane-a kind=test verdict=GREEN conclusion=success run=7 sha=abc branch=cloud/lane-a/test/x :: http://u
 0|CLOUD-DONE kit-test-y owner=kit kind=test verdict=RED conclusion=failure run=8 sha=def branch=cloud/kit/test/y :: http://u
+0|CLOUD-SHARD-RED kit test w shard 3/18 run=10 :: FAIL: x
 0|CLOUD-INFRA lane-a-test-z owner=lane-a kind=test verdict=INFRA conclusion=failure run=9 sha=ghi branch=cloud/lane-a/test/z :: http://u
 0|WHAT-IS-THIS 1 2 3
 6|CAP watched 3000s, nothing new - relaunch
@@ -85,9 +86,10 @@ has ' PROBLEM main DISK-HIGH'; chk "row 10 DISK-HIGH" $?
 has ' CI main CI-RED abc123' && has ' CI main CI-CANCELLED' && has ' CI main CI-UNAVAILABLE gh missing'; chk "rows 11-13 CI lines" $?
 has ' GREEN main CLOUD-DONE lane-a-test-x owner=lane-a'; chk "CLOUD-DONE green: GREEN line (a lane owner routed to main)" $?
 has ' RED kit CLOUD-DONE kit-test-y .*verdict=RED.*owner triages' && has ' RED main \[kit\] CLOUD-DONE kit-test-y'; chk "CLOUD-DONE red: RED to its owner (kit), also to main" $?
+has ' RED kit CLOUD-SHARD-RED kit test w shard 3/18' && ! has 'UNEXPECTED CLOUD-SHARD-RED'; chk "CLOUD-SHARD-RED: RED to its owner (kit), never UNEXPECTED" $?
 has ' PROBLEM main CLOUD-INFRA lane-a-test-z .*not a code verdict'; chk "CLOUD-INFRA: a PROBLEM (a lane owner routed to main), not RED" $?
 has ' PROBLEM main UNEXPECTED WHAT-IS-THIS 1 2 3'; chk "UNEXPECTED line is a PROBLEM" $?
-[ "$(grep -c ' UP mon ' "$LOG")" = 26 ]; chk "an UP line at every launch/relaunch (26)" $?
+[ "$(grep -c ' UP mon ' "$LOG")" = 27 ]; chk "an UP line at every launch/relaunch (27)" $?
 awk 'NF < 4 || $2 !~ /^(GREEN|RED|PROBLEM|CI|INFO|UP)$/ { exit 1 }' "$LOG"; chk "every line is ISO CLASS OWNER text" $?
 [ ! -e "$T/mgr/queuemon.pid" ]; chk "pid file removed at exit" $?
 # single instance

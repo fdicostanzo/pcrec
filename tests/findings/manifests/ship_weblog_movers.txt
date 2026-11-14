@@ -590,8 +590,8 @@ utf8	corpus:tests	auto	RX_REQ_BYTE,RX_REQ_WHY,program	(x)(a|ab){0,4}c
 utf8	corpus:tests	vm	RX_REQ_BYTE,program	(x)(a|ab){0,4}c
 utf8	corpus:tests	auto	RX_REQ_BYTE,RX_REQ_WHY,program	(x)(|a){2,4}b
 utf8	corpus:tests	vm	RX_REQ_BYTE,program	(x)(|a){2,4}b
-utf8	corpus:tests	auto	RX_REQ_BYTE,RX_REQ_RUN,program	(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1
-utf8	corpus:tests	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1
+utf8	corpus:tests	auto	RX_REQ_BYTE,RX_REQ_RUN,program	(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1
+utf8	corpus:tests	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1
 utf8	corpus:tests	auto	RX_REQ_BYTE,RX_REQ_WHY,program	(z(ab)*y)
 utf8	corpus:tests	vm	RX_REQ_BYTE,program	(z(ab)*y)
 utf8	corpus:tests	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,program	(za{1,3})

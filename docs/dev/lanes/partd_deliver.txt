@@ -1,0 +1,5 @@
+report=docs/dev/lanes/partd_report.md
+sections: Summary; Built vs designed; R-41; MF_SITE_ABI and MF_CLASS_V; The decline; Witnesses; Sabotage rows; Identity and movers; Checks; Owed runs; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

@@ -50,7 +50,7 @@ cat|dog|cow|calf|camel	RX_ENGINE	"dfa"
 cat|dog|cow|calf|camel	RX_ENGINE_SEL	"selected"
 cat|dog|cow|calf|camel	RX_DFA_TABLE	"premultiplied"
 cat|dog|cow|calf|camel	RX_DFA_PREFILTER	"byte-class"
-cat|dog|cow|calf|camel	EMITTED_BYTES	36161
+cat|dog|cow|calf|camel	EMITTED_BYTES	36187
 (\w+)\s+\1	RX_ENGINE	"vm"
 (\w+)\s+\1	RX_ENGINE_SEL	"selected"
 (\w+)\s+\1	RX_VM_RUNGS	0x1u

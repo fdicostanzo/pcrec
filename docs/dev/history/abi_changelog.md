@@ -23,7 +23,21 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `105` on every artifact today ([REQ-PAST-LAST] the VM attempt loop stops past the last
+- **`rx_info.abi` is `106` on every artifact today ([RUN-POS-SET] stage 3 with the memfn kit's
+  R-38 Part D and R-41, 105 -> 106, one event with the kit's MF_SITE_ABI 29 / MF_CLASS_V 10, the S2
+  joint landing, lane s2land 2026-11-13; `docs/design/run_pos_set_stage3_readiness.md`,
+  `docs/design/memfn/part_d.md` rev 4).**
+  A position of the necessary run is any byte SET that still carries information (at most 128
+  members, `PCREC_MAX_REQ_RUN_POS_SET`, was 2 and one cube), so runs reach through digit, letter and
+  word classes and alternation unions (`\d{3}-\d{4}`, `[a-z]{8}`, `cat|dog` -> `{c,d}{a,o}{t,g}`) and
+  the `<PREFIX>_REQ_RUN` stamp spells a non-cube position as a bracketed hex class. The kit scans
+  only a findable position (one member or a cube) and verifies wide ones; where no position is
+  findable it DECLINES the run (`<PREFIX>_REQ_WHY "untestable"`, a new `req-admit` row) and the
+  pre-check is the kit's set pick. An unbounded handoff K is stated as the kit's
+  `MF_HEAD_MAX_UNBOUNDED` (R-41), which declines the landmark. No struct offset moves, no `rx_info`
+  member is added or changed, and no answer moves.
+
+- **`rx_info.abi` was `105` on every artifact ([REQ-PAST-LAST] the VM attempt loop stops past the last
   occurrence of an unbounded required run, 104 -> 105, lane reqpast 2026-11-12, ported onto K38-2 by lane
   rpport 2026-11-13).**
   On a VM artifact with no DFA scan whose necessary whole run has an UNBOUNDED maximum offset (the `req-use` row

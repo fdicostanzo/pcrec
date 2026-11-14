@@ -573,6 +573,14 @@
 #     whole family under ASan costs ~1.8x g2pres (measured by lane k383:
 #     the --plant ASan path 80 s vs 44 s per plant on the dev box). Rows:
 #     S3100, S3101.
+#   memfnd27frame — added 2026-11-13 ([MEMFN] span_pick 3.0b, lane d27fix);
+#     runs tests/memfn/d27_frame/run.sh at D27_QUICK=1: the D27 spec-first
+#     suite of the framed phase-1 ask (mf_wdecide against mf_define's and
+#     mf_emit's own output, seeds 1-3 plain and seed 1 traced; ~40 s). Its
+#     own arm because a framed reply that disagrees with its define moves no
+#     pcrec byte (pcrec reads none of the frame part) and the agreement
+#     holds the define's record, not the define's output. Builds the
+#     sabotaged tree's build/libpcrec_mftrace.a. Rows: S3120-S3124.
 #   memfndeleg — added 2026-10-09 ([MEMFN] M6 follow-up, kit session);
 #     runs tests/memfn/run_deleg_sites.sh, C10: every DELEG_SITES row against
 #     D91's use ceiling, the vocabulary probe and the planted control. Its own
@@ -3513,6 +3521,23 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/g2presasan.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/g2presasan.log" | grep -oE '[0-9]+')"
                 score_arm "$work/g2presasan.log" "$f" "g2pres-asan:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            memfnd27frame)
+                # [MEMFN] span_pick 3.0b tests/memfn/d27_frame/run.sh — see
+                # the vocabulary entry above. Links the sabotaged tree's own
+                # build/libpcrec.a and the libpcrec_mftrace.a built here.
+                rc=1
+                if "$TIMEOUT_BIN" 900 make -C "$tree" build/libpcrec_mftrace.a > "$work/memfnd27frame.log" 2>&1; then
+                    D27_OUT="$work/d27frame" D27_QUICK=1 TMPDIR="$work" \
+                        bash "$tree/tests/memfn/d27_frame/run.sh" >> "$work/memfnd27frame.log" 2>&1
+                    rc=$?
+                fi
+                p="$(sed -n 's/^checks passed: //p' "$work/memfnd27frame.log" | tail -1)"
+                f="$(sed -n 's/^checks failed: //p' "$work/memfnd27frame.log" | tail -1)"
+                # a red run with no failed check is a broken floor (run.sh's
+                # own verdict): one failure, never a pass
+                [ "$rc" -ne 0 ] && [ "${f:-x}" = 0 ] && f=1
+                score_arm "$work/memfnd27frame.log" "$f" "memfnd27frame:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfndeleg)
                 # [MEMFN] C10 tests/memfn/run_deleg_sites.sh — see the

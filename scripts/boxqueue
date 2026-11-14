@@ -18,7 +18,11 @@
 #                        pending job's last answer, recent ends
 #   scripts/boxqueue state KEY      the latest state of a job (exit 0 = green)
 #   scripts/boxqueue after KEY      a readiness helper: 0 when KEY is green,
-#                        75 while it is pending/running/failed, 77 cancelled
+#                        75 while it is pending/running/failed, 77 cancelled; 77 too
+#                        once KEY has been FAILED longer than BOXQUEUE_PREREQ_GRACE (1800 s,
+#                        the owner's window to `boxqueue retry` it): the waiting job is then
+#                        cancelled, reason `prerequisite-failed:KEY` (queuewatch CANCELLED (never
+#                        ran), queuemon INFO), and a chain cascades (the next job sees a cancelled one)
 #   scripts/boxqueue retry [--no-start] KEY | cancel KEY   (cancel of a RUNNING job writes running/NAME/cancelled,
 #                        then safekills the job's group and its battery.pid, if any; the end is outcome=cancelled
 #                        reason=CANCELLED-BY-OWNER, never a failure: queuewatch reports CANCELLED, not RED)
@@ -233,6 +237,10 @@ CLK=$(getconf CLK_TCK 2>/dev/null || echo 100)
 OVERRIDE_BELOW=${BOXQUEUE_OVERRIDE_BELOW:-100}   # a PRIO below this is an explicit override (row `override`)
 STARVE_AFTER=${BOXQUEUE_STARVE_AFTER:-14400}     # a ready job passed over this long (s) goes first (row `starved`): about one long job's run
 CAP_GRACE=${BOXQUEUE_CAP_GRACE:-30}              # TERM -> KILL grace (s) of the cap kill, for a job's own cleanup (timeout's old --kill-after was 60)
+# [QREAP] a job waiting (via `boxqueue after`) on a prerequisite that ENDED failed this long ago is cancelled, reason
+# prerequisite-failed:KEY. The window is the owner's time to `boxqueue retry` the prerequisite, which keeps the chain
+# intact. UNMEASURED default (2026-11-13; tune from the first miss).
+PREREQ_GRACE=${BOXQUEUE_PREREQ_GRACE:-1800}
 NOLEN=999999999999                               # the length of a job with no estimate and no cap
 
 die() { echo "boxqueue: $*" >&2; exit 64; }
@@ -1123,7 +1131,9 @@ cmd_after() {
     case "$s" in
         green) exit 0 ;;
         pending|running) echo "waiting on $1 ($s)"; exit 75 ;;
-        failed) echo "waiting on $1, which FAILED (boxqueue retry $1, or cancel this job)"; exit 75 ;;
+        failed) local d age; d=$(latest_end "$1"); age=$(( $(date +%s) - $(stat -c %Y "$d/result" 2>/dev/null || date +%s) ))
+            if [ "$age" -gt "$PREREQ_GRACE" ]; then echo "prerequisite-failed:$1 (ended failed ${age}s ago, past the ${PREREQ_GRACE}s retry window)"; exit 77; fi
+            echo "waiting on $1, which FAILED (boxqueue retry $1 within $((PREREQ_GRACE - age))s, or cancel this job)"; exit 75 ;;
         cancelled) echo "upstream $1 was cancelled"; exit 77 ;;
         *) echo "no job $1 in the queue (a typo?)"; exit 1 ;;
     esac

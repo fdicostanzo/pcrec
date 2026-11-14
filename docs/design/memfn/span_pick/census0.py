@@ -282,6 +282,9 @@ def units(rec):
             _f, meth, _r = today_method(s)
             yield {"kind": deleg, "alts": s["alts"], "wr": s["wr"], "method": meth, "site": s,
                    "runcmp": [ch for tb, ch in s["trace"]["ends"] if tb == "runcmp"]}
+        for line in s.get("trace", {}).get("parts", []):   # D3's NEW population branch: one unit per record
+            yield {"kind": deleg + ":runpart", "alts": [], "wr": {}, "method": "-", "site": s, "runcmp": [],
+                   "record": run_part_record(line)}
         pi = 0
         for p in s.get("preds", []):
             if "part" in p:
@@ -318,6 +321,9 @@ def sweep(path, outpath, note=""):
         arm = "DEF" if rec.get("arm") == "DEF" else "RTE"
         for u in units(rec):
             c = C[arm]
+            if u["kind"].endswith(":runpart"):         # a derived run part: verify classes only (vcls fold)
+                c["run part units (deleg:runpart)"] += 1
+                continue
             rid = u["site"].get("rate")
             if rid not in models:
                 models[rid] = dict(enumerate(rates_all[rid]["rate"]))
@@ -486,10 +492,64 @@ def class_measure(form, arg):
 
 
 def settest_cls(ms):
+    """the set test's class by its COMPARE count (R-38 Part D, part_d.md §5.1 D3 [r1pd F20]): c1, c2, cn = 3 to 7
+    compares (the measured `\\w` instance's range), cn+ above 7, UNMEASURED: never priced by cn's 7-compare row.
+    vcls.py holds the SAME bounds (two copies, changed in one commit; census0_cards.out's data lines equal vcls.out's)"""
     r = class_measure("settest", ms)
     if r is None:
         return None
-    return "c1" if r[0] == 1 else "c2" if r[0] == 2 else "cn"
+    return "c1" if r[0] == 1 else "c2" if r[0] == 2 else "cn" if r[0] <= 7 else "cn+"
+
+
+# ---------------------------------------------------------------- the derived run part's record (R-38 Part D D3)
+# The kit's trace build prints ONE `MFTRACE run_part_terms` record per derived run part, on the define path
+# (window.c run_part_terms; part_d.md §5.1 D3):
+#   MFTRACE run_part_terms art=A site=S part=I hint=H terms=OFF:KIND:VAL,...
+# KIND RUN (VAL its run_len) or SET (VAL the 32-byte set in hex); `hint` the RUN term's index, `-` scan-less.
+# THE ONE PARSER of the record: census0's population branch (`deleg:runpart`), vcls_lines' verify classes,
+# vcls.py, and G2's check of the record (memfn/tests/g2/run_part_census.py) all read it here.
+def run_part_record(line):
+    """one record line -> {"art", "site", "part", "hint" (None scan-less), "terms": [(off, "RUN", run_len) |
+    (off, "SET", members)]}; None for any other line"""
+    f = line.split()
+    if len(f) < 3 or f[0] != "MFTRACE" or f[1] != "run_part_terms":
+        return None
+    kv = dict(x.split("=", 1) for x in f[2:] if "=" in x)
+    terms = []
+    for t in kv.get("terms", "").split(","):
+        if not t:
+            continue
+        off, kind, val = t.split(":", 2)
+        terms.append((int(off), kind, int(val) if kind == "RUN" else sorted(setbits(val))))
+    return {"art": int(kv["art"]), "site": int(kv["site"]), "part": int(kv["part"]),
+            "hint": None if kv.get("hint") == "-" else int(kv["hint"]), "terms": terms}
+
+
+def spelled(ms):
+    """a position the kit's RUN term can spell (T, K): one member, or two members one bit apart (a cube)"""
+    return len(ms) == 1 or (len(ms) == 2 and bin(ms[0] ^ ms[1]).count("1") == 1)
+
+
+def run_part_classes(rec, runcmp=None):
+    """the record's verify (form, cls) pairs: every multi-member SET term (settest, settest_cls), the RUN term
+    (rc-<row>, its class; `runcmp` the run compare's chosen row, the term unclassed where none is read), a
+    scan-less part (every-pos, -)"""
+    out = []
+    for off, kind, val in rec["terms"]:
+        if kind == "SET" and len(val) > 1:
+            c = settest_cls(val)
+            if c:
+                out.append(("settest", c))
+        elif kind == "RUN" and runcmp not in (None, "none", "-"):
+            out.append(("rc-" + runcmp, rc_cls(runcmp, val)))
+    if rec["hint"] is None:
+        out.append(("every-pos", "-"))
+    return out
+
+
+def run_part_unspelled(rec):
+    """the record's SET terms whose set the kit's RUN term cannot spell (G2's check's census quantity)"""
+    return sum(1 for off, kind, val in rec["terms"] if kind == "SET" and not spelled(val))
 
 
 def settest_shape(ms):
@@ -522,6 +582,15 @@ def plan_run_len(wr):
     return best
 
 
+def runpart_pop(s):
+    """a site's derived run parts' verify (form, cls) pairs, from its `run_part_terms` records (collect.py keeps
+    them raw in `trace.parts`); the run compare's row is the site's first chosen `runcmp` row"""
+    rc = next((ch for tb, ch in s.get("trace", {}).get("ends", []) if tb == "runcmp" and ch not in (None, "none", "-")),
+              None)
+    for line in s.get("trace", {}).get("parts", []):
+        yield from run_part_classes(run_part_record(line), rc)
+
+
 def vcls_lines(path, swept_at):
     """vcls.py's census folded in: verify (form, cls) counts per arm over every row-1-class window SITE, the
     c2 lowering shapes, stamped with the sweep's sha-256 and commit (r9-SLOT-9). The data lines are vcls.out's,
@@ -531,6 +600,8 @@ def vcls_lines(path, swept_at):
     for line in open(path):
         rec = json.loads(line)
         for s in rec.get("sites", []):
+            for k in runpart_pop(s):
+                pop[(rec["arm"],) + k] += 1
             alts = s.get("alts")
             if not alts or not any(row1_class(a) for a in alts):
                 continue
@@ -607,6 +678,10 @@ def forecast(path, setpath, outpath, swept_at):
             continue
         arm = "DEF" if rec.get("arm") == "DEF" else "RTE"
         for u in units(rec):
+            if u["kind"].endswith(":runpart"):         # a derived run part: verify classes only (vcls fold)
+                for gap in CARD_GAPS:
+                    C[(arm, gap)]["run part units (deleg:runpart)"] += 1
+                continue
             rid = u["site"].get("rate")
             if rid not in models:
                 models[rid] = dict(enumerate(rates_all[rid]["rate"]))

@@ -13,9 +13,9 @@
 set -u
 export LC_ALL=C
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-export ROWS_FLOOR=31       # rows of every table (12 arms + 4 runcmp + 4 fn + 11 fd; M4 prep: pf_memchr_back; M7 prep: mismatch_inplace; R4e'.0: fn-pair, fn-memchr; R-13: vrun-w16, vrun-w32; R-15: precheck_assign_byte; R17-b' B1: the finder table's 19; R-26.6: RPT; B4': R0, R5 and R7 withdrawn, 20 -> 17; D172 S2 commit 6: D2 retired, 17 -> 16; D172 S3: RPT retired, 16 -> 15; code review r1 C1: PAIR, 15 -> 16; span_pick 1a: R3a, R3b, R4 deleted, 16 -> 13; span_pick 1f: R8, R1, R2 deleted, 13 -> 10; span_pick 1e: D-hors joined from window.c's Table D, 10 -> 11)
+export ROWS_FLOOR=33       # rows of every table (12 arms + 4 runcmp + 5 fn + 12 fd; R-38 Part D: fd PD and fn fn-every-pos, 31 -> 33; M4 prep: pf_memchr_back; M7 prep: mismatch_inplace; R4e'.0: fn-pair, fn-memchr; R-13: vrun-w16, vrun-w32; R-15: precheck_assign_byte; R17-b' B1: the finder table's 19; R-26.6: RPT; B4': R0, R5 and R7 withdrawn, 20 -> 17; D172 S2 commit 6: D2 retired, 17 -> 16; D172 S3: RPT retired, 16 -> 15; code review r1 C1: PAIR, 15 -> 16; span_pick 1a: R3a, R3b, R4 deleted, 16 -> 13; span_pick 1f: R8, R1, R2 deleted, 13 -> 10; span_pick 1e: D-hors joined from window.c's Table D, 10 -> 11)
 export KIT_SRC_FLOOR=15    # memfn/src/*.c (R17-b' B1: finder.c, formhash.c, terms.c; span_pick 1a: terms.c deleted, 17 files)
-export FIXTURE_FLOOR=34    # tests/memfn/arm_fixtures.c fixtures (+2 ADVANCE, R4h prep; +5 pre-landmark-*, R-15)
+export FIXTURE_FLOOR=36    # tests/memfn/arm_fixtures.c fixtures (+2 ADVANCE, R4h prep; +5 pre-landmark-*, R-15; +2 pre-wide-*, R-38 Part D)
 export ROW_MAP_PIN="wfD:D-hors wfD:D-one"  # row_map.tsv's lines (from_table:from_row): a literal, so a deleted or invented line is red (span_pick 1e, F3)
 export CLASS_CASE_FLOOR=15 # rows_check.py CLASS_EXPECT's cases (R4h prep, check E)
 CC="${CC:-cc}"

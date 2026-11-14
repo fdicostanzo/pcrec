@@ -2558,7 +2558,10 @@ fi
 # force spelling is refused, with the kit's own text: a deny-only row.
 mfsig='_q = subject_length > search_from ? memchr('
 for mfsimd in -fno-memfn-simd -fmemfn-simd; do
-    mfp='(?:\d{1,3}\.){3}\d{1,3}'
+    # ([RUN-POS-SET] S2: `\d` is a run position now, so the old witness
+    # (?:\d{1,3}\.){3}\d{1,3} stated the run [30-39]2e[30-39], no byte
+    # landmark; re-aimed with `.`, which is no run position.)
+    mfp='(?:.{1,3}\.){3}.{1,3}'
     pcrec_run "$PCREC" -p rx $mfsimd -o - --pattern "$mfp" 2>/dev/null >"$WORKDIR/mfb0.c"
     pcrec_run "$PCREC" -p rx $mfsimd --memfn=no-precheck-assign-byte -o - --pattern "$mfp" 2>/dev/null >"$WORKDIR/mfb1.c"
     if [ -s "$WORKDIR/mfb1.c" ] && grep -qF "$mfsig" "$WORKDIR/mfb0.c" \

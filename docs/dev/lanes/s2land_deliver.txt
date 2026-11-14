@@ -1,0 +1,4 @@
+report=docs/dev/lanes/s2land_report.md
+sections: STATE AT HANDOFF; MERGES; FLIP; ABI; CHANGES; OWED
+nonempty: all
+commit: yes

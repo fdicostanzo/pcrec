@@ -1,0 +1,5 @@
+report=docs/dev/lanes/pdesign_report.md
+sections: Summary; The request's facts; The three K38-2 sites; Readers of a wide or superset position; MF_SITE_ABI; New reply fields for pcrec; Build units; Open questions; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

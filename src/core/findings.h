@@ -365,6 +365,12 @@ void pcrec_find_offer(Ctx *cx, size_t query, PcrecFindOffer *out);
  * one PICK kind, one NONE.) */
 int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
                     const unsigned char *care, int n, int rightmost);
+/* PICK over candidates that are member SETS ([RUN-POS-SET] stage 3): the
+ * same argmin, tie and NONE rules as `pcrec_find_pick`, candidate i costing
+ * `pcrec_find_pos_mass(rate, cand[i])`; on cube candidates the two answer
+ * alike (a cube's mass is its members' sum either way). */
+int pcrec_find_pos_pick(const uint32_t *rate, const unsigned char *const *cand,
+                        int n, int rightmost);
 
 /* COMPARE: is `p` no commoner than `q` (rate[p] <= rate[q])? NONE: false —
  * unknown, so no density claim. Identity (p == q) is not a density fact and
@@ -372,13 +378,15 @@ int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
 bool pcrec_find_no_commoner(const uint32_t *rate, int p, int q);
 
 /* MASS: the rate summed over a SET (`set[b]` nonzero for a member), capped at
- * 1,000,000, or over a SEQUENCE of n bytes (a byte may repeat). NONE, for
- * both: the mass under the UNIFORM rate, floor(k * 10^6 / 256) with k the
- * member or byte count — CARDINALITY (design §0.8). An empty set, or n == 0,
- * is 0 under both arms. */
+ * 1,000,000. NONE: the mass under the UNIFORM rate, floor(k * 10^6 / 256)
+ * with k the member count — CARDINALITY (design §0.8). An empty set is 0
+ * under both arms. (The SEQUENCE mass retired at [RUN-POS-SET] stage 3: its
+ * one reader, the run choice's scan mass, reads a position's set.) */
 uint32_t pcrec_find_set_mass(const uint32_t *rate, const uint8_t set[256]);
-uint32_t pcrec_find_seq_mass(const uint32_t *rate, const unsigned char *bytes,
-                             int n);
+/* MASS over a run POSITION, the 256-bit member set `pos` (bit `b` of byte
+ * `b >> 3`), UNCAPPED (the PICK kind's per-candidate cost: a cube's is the
+ * sum `pcrec_find_pick` reads); NONE the uniform mass of its member count. */
+uint32_t pcrec_find_pos_mass(const uint32_t *rate, const unsigned char *pos);
 
 /* ---- THE RATE READERS (design §6.1 "Where the rate readers live") --------
  *
@@ -394,15 +402,15 @@ uint32_t pcrec_find_seq_mass(const uint32_t *rate, const unsigned char *bytes,
 int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
                         int rightmost);
 
-/* Which position of a necessary RUN (`bytes[0..n)` with per-position masks
- * `mask[0..n)`, each position the cube (bytes[i], mask[i]); n >= 2,
- * n <= PCREC_MAX_REQ_RUN_SCAN) the emitted scan tests. PICK over the
- * positions as cubes in the order `[n-1, n-2, ..., 0]`
- * (`pcrec_find_set_pick`'s own `[rightmost, ...]` shape): the cheapest by
- * member-set mass, ties to the RIGHTMOST — its own positional rightmost
- * position, which is also the NONE answer [FIND-TIE]. */
-int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
-                              const unsigned char *mask, int n);
+/* Which position of a necessary RUN (`pos[0..n)`, each position a 256-bit
+ * member set, `pcrec_find_pos_mass`'s layout; n >= 2, n <=
+ * PCREC_MAX_REQ_RUN_SCAN) pcrec's own pick tests. PICK over the positions'
+ * sets in the order `[n-1, n-2, ..., 0]` (`pcrec_find_set_pick`'s own
+ * `[rightmost, ...]` shape): the cheapest by member-set mass, ties to the
+ * RIGHTMOST — its own positional rightmost position, which is also the NONE
+ * answer [FIND-TIE]. */
+int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *const *pos,
+                              int n);
 
 /* MASS over `set` (`set[b]` nonzero for a member), in ppm, capped at
  * 1,000,000: a per-set cost input (the DFA candidate rate,

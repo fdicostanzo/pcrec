@@ -1121,6 +1121,12 @@ fi
 # `attempt_max` line; `cat|dog|cow|calf|camel` (DFA, width 3) +120: the entry check and the skip
 # landing's check. The other six have width < 2 or a route the stop does not reach. Diff read,
 # not bumped.
+# RE-RECORDED 2026-11-13 at the [RUN-POS-SET] S2 joint landing (s2tri h3, abi 105 -> 106,
+# PCREC_MAX_REQ_RUN_POS_SET 2 -> 128): ONE row moved, `cat|dog|cow|calf|camel` EMITTED_BYTES
+# 36161 -> 36187 (+26), no stamp. The alternation's union is now a run (tuning.md §2.28¶4):
+# RX_REQ_RUN "none" -> "[6364][616f][676c6d7477]" (+20) and RX_REQ_WHY "none" -> "untestable"
+# (+6); the abi number keeps its width. Read by diffing the artifact built from 27bf6f146^
+# (the tree before the flip). Diff read, not bumped.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

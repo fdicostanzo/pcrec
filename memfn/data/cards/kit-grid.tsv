@@ -55,6 +55,16 @@
 # no set exists under ver 4; its measurement is a timing run in an owner-cleared
 # window. Subject, estimator, launches, rounds and A/A are `enter`'s.
 #
+# `ver 5` is R-38 Part D's scan-less body (docs/design/memfn/part_d.md rev 4
+# §5.3 [r2pd P9], [r3pd FIX-5]): the one card `every_pos`, the offset-skip
+# function's `fn-every-pos` BODY (no find: every candidate position runs the
+# verify chain), per byte of subject, its form the formhash.c instance
+# `every-pos` (a REQUIRED run of two wide positions, P0's scan-less reply).
+# UNMEASURED: no set holds a `kit.every_pos.*` row and no box has run this
+# card; every reader skips an absent key (the kit-kernels@1 precedent).
+# Nothing prices it (no pricing reads cards yet), so UNMEASURED moves no byte.
+# Subject, estimator, launches, rounds and A/A are find_byte's.
+#
 # Divergence recorded (fdb1_report.md F-B1-6): r17b_prime.md §5.2's card table
 # lists `gstar` with dims form;kind;shape, while §1.3's reader R5 reads
 # `kit.gstar.<liner>.<kind>` (two tokens). The card follows the READER; a
@@ -76,3 +86,4 @@ kit	find_hit	3	form;landing;split;gap	walkbytes	streamed-fresh pool16Mi landed:p
 kit	verify_cmp	3	form;cls;pass	walkbytes	candidate-array pass:0|1/2	delta 1048576	7	7	twin-per-arm	-	-	kit:form.settest;kit:form.rc-words;kit:form.rc-memcmp
 kit	enter	3	kind;entry	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-arm	-	-	-
 kit	enter_back	4	kind;entry;back	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-arm	-	-	-
+kit	every_pos	5	form	walkbytes	streamed-fresh pool16Mi miss-only	slope 65536,262144,1048576	7	7	twin-per-arm	-	-	kit:form.every-pos

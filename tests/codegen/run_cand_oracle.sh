@@ -29,6 +29,18 @@
 # source (`.c = { "<identity>"` inside `static const CandRow cand_rows[]`)
 # must have a witness line, and the table must have at least one row.
 #
+# A ROW WITH NO PRODUCER YET ([RUN-POS-SET] stage 3, lane rps3c): a row the
+# table carries ahead of the input that reaches it (`untestable`, whose
+# premise is the memfn kit's run DECLINE, part_d.md §9 item 3, which no kit
+# row produces until Part D lands) has no witness to give. It is listed in
+# the same DECLARED-UNREACHED allowance below as a ROW line (ROUTE and HAND
+# `-`) instead of a witness line, with the argument and the producer, and
+# the allowance is held from both sides: a declared row that also has a
+# witness line fails, a declared row that ANY witness compile reaches (a
+# `CANDROW` hit naming it, on any slot) fails as stale, and a declared row
+# that names no row of `cand_rows[]` fails. Every row is still witnessed or
+# declared; the population check counts both.
+#
 # [OPT-REVEND] L0 THE FINISH TAKE CELLS (docs/design/locate_finish.md §2.3,
 # [r2 C4]). A FINISH row is selected per (route, hand), so a row reached on
 # one cell says nothing about its others: every take cell the table declares
@@ -112,11 +124,19 @@ nrows=$(printf '%s\n' "$rows" | grep -c . || true)
 if [ "$nrows" -ge 1 ]; then ok "[cand-oracle-population] cand_rows[] has $nrows row identities"
 else bad "[cand-oracle-population] no row identity read from cand_rows[] (table moved or renamed?)"; fi
 
-# Every row has a witness line.
+# Every row has a witness line, or a ROW line in the allowance (ROUTE `-`).
 wrows="$(grep -v '^#' "$WIT" | grep . | cut -f1 | sort -u)"
-missing="$(comm -23 <(printf '%s\n' "$rows") <(printf '%s\n' "$wrows") | grep . || true)"
-if [ -z "$missing" ]; then ok "[cand-oracle-coverage] every row of cand_rows[] has a witness line"
+urows="$(grep -v '^#' "$UNR" 2>/dev/null | grep . | awk -F'\t' '$2=="-" && $3=="-" {print $1}' | sort -u || true)"
+nurows=$(printf '%s\n' "$urows" | grep -c . || true)
+missing="$(comm -23 <(printf '%s\n' "$rows") <(printf '%s\n' "$wrows" "$urows" | grep . | sort -u) | grep . || true)"
+if [ -z "$missing" ]; then ok "[cand-oracle-coverage] every row of cand_rows[] has a witness line or a declared-unreached row line ($nurows)"
 else bad "[cand-oracle-coverage] rows with no witness: $(echo $missing)"; fi
+for r in $urows; do
+    printf '%s\n' "$rows" | grep -qxF "$r" ||
+        bad "[cand-oracle-coverage] declared-unreached row '$r' names no row of cand_rows[]"
+    printf '%s\n' "$wrows" | grep -qxF "$r" &&
+        bad "[cand-oracle-coverage] row '$r' is declared unreached AND has a witness line (drop the declaration)"
+done
 stale="$(comm -13 <(printf '%s\n' "$rows") <(printf '%s\n' "$wrows") | grep . || true)"
 if [ -z "$stale" ]; then ok "[cand-oracle-coverage] every witness names a row of cand_rows[]"
 else bad "[cand-oracle-coverage] witnesses naming no row: $(echo $stale)"; fi
@@ -125,6 +145,7 @@ else bad "[cand-oracle-coverage] witnesses naming no row: $(echo $stale)"; fi
 # in $WORK/cells as `row route hand`.
 nwit=0
 : > "$WORK/cells"
+: > "$WORK/hits"
 while IFS=$'\t' read -r row flags pat; do
     case "$row" in ''|'#'*) continue ;; esac
     nwit=$((nwit + 1))
@@ -154,6 +175,7 @@ while IFS=$'\t' read -r row flags pat; do
         ok "[cand-oracle] $flags $pat reaches '$row', self-check clean"
     fi
     awk -F'\t' '$1=="CANDROW" && $2=="FINISH" {print $4" "$3" "$7}' "$WORK/err" >> "$WORK/cells"
+    awk -F'\t' '$1=="CANDROW" {print $4}' "$WORK/err" >> "$WORK/hits"
 done < "$WIT"
 
 # [KIT-VERIFY] U1 Z2 THE SHIPPED BUILD DECLINES A HARNESS-ONLY ROW. Every
@@ -222,7 +244,16 @@ for row in re.split(r"\n    \{ \.c = ", src)[1:]:
 ncell=$(printf '%s\n' "$decl" | grep -c . || true)
 if [ "$ncell" -ge 1 ]; then ok "[cand-oracle-cells] $ncell FINISH take cells declared in cand_rows[]"
 else bad "[cand-oracle-cells] no FINISH take cell read from cand_rows[] (table moved or renamed?)"; fi
-allowed="$(grep -v '^#' "$UNR" 2>/dev/null | grep . | awk -F'\t' '{print $1" "$2" "$3}' || true)"
+# A declared-unreached ROW that some witness compile reaches is stale.
+nhits=$(grep -c . "$WORK/hits" || true)
+for r in $urows; do
+    if grep -qxF "$r" "$WORK/hits"; then
+        bad "[cand-oracle-coverage] row '$r' is declared unreached but a witness compile reaches it (stale allowance)"
+    elif [ "$nhits" -ge 1 ]; then
+        ok "[cand-oracle-coverage] row '$r' declared unreached, reached by none of $nhits witness row hits"
+    else bad "[cand-oracle-coverage] no CANDROW hit recorded at all, so '$r' unreached proves nothing"; fi
+done
+allowed="$(grep -v '^#' "$UNR" 2>/dev/null | grep . | awk -F'\t' '$2!="-" {print $1" "$2" "$3}' || true)"
 reached="$(sort -u "$WORK/cells")"
 while read -r cell; do
     [ -n "$cell" ] || continue
@@ -241,8 +272,8 @@ while read -r cell; do
     printf '%s\n' "$decl" | grep -qxF "$cell" ||
         bad "[cand-oracle-cells] allowance '$cell' names no take cell of cand_rows[]"
 done <<< "$allowed"
-if [ "$nwit" -ge "$nrows" ]; then ok "[cand-oracle-population] $nwit witness lines for $nrows rows"
-else bad "[cand-oracle-population] $nwit witness lines for $nrows rows"; fi
+if [ $((nwit + nurows)) -ge "$nrows" ]; then ok "[cand-oracle-population] $nwit witness lines + $nurows declared-unreached rows for $nrows rows"
+else bad "[cand-oracle-population] $nwit witness lines + $nurows declared-unreached rows for $nrows rows"; fi
 
 # [MEMFN] R17-b' B3a THE FIVE-PICK SHADOW (KW-8, SN-6): the same trace
 # build's `MFPICK` records over tests/memfn/pres_pick_witnesses.tsv

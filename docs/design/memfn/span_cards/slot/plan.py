@@ -130,13 +130,30 @@ def census_enter_kinds():
     return sorted(kinds)
 
 
+# Verify classes vcls.out lists that are NEVER scheduled (R-38 Part D, part_d.md §5.1 D3 [r1pd F20]): cn+ (a set
+# test of more than 7 compares) is UNMEASURED, never priced by cn's 7-compare row; every-pos (a scan-less derived
+# run part) is a FORM with its own UNMEASURED card (kit-grid@5's every_pos), not a verify_cmp class.
+UNPLANNED = {("settest", "cn+"): "UNMEASURED (more than 7 compares; cn's row does not price it)",
+             ("every-pos", "-"): "a form, its own card (kit-grid@5 every_pos, UNMEASURED), no verify_cmp class"}
+
+
 def vcls_pairs():
     pairs = set()
     for ln in open(VCLS):
         f = ln.rstrip("\n").split("\t")
-        if len(f) == 5 and f[1] == "verify" and int(f[4]) > 0:
+        if len(f) == 5 and f[1] == "verify" and int(f[4]) > 0 and (f[2], f[3]) not in UNPLANNED:
             pairs.add((f[2], f[3]))
     return sorted(pairs)
+
+
+def vcls_unplanned():
+    """the vcls.out verify classes listed and never scheduled (UNPLANNED), with their reasons"""
+    seen = set()
+    for ln in open(VCLS):
+        f = ln.rstrip("\n").split("\t")
+        if len(f) == 5 and f[1] == "verify" and int(f[4]) > 0 and (f[2], f[3]) in UNPLANNED:
+            seen.add((f[2], f[3]))
+    return ["verify_cmp.%s.%s: %s" % (fm, c, UNPLANNED[(fm, c)]) for fm, c in sorted(seen)]
 
 
 def shape_split():
@@ -335,6 +352,7 @@ def build():
                               base=base_of(k), events=LEN // g), base_of(k))
     # J4: verify_cmp per (form, cls), each cls its own null base (its run, mask or members the cls's instance's)
     pairs = vcls_pairs()
+    unreached.extend(vcls_unplanned())
     owner = {}
     for f, c in pairs:
         if owner.setdefault(c, f) != f:

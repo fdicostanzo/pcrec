@@ -12,7 +12,7 @@ at main 35bee4da9 (no file 3.0b reads moved between 35bee4da9 and 781275381). `[
 applied re-check review `docs/dev/reviews/2026-11-12-r2-memfn-s1b.md` as the kit manager ruled it (its "Rulings"
 section: FIX-NOW R30B-1..6, R30B-8, R30B-9; PLAN R30B-7, which rewords §7 Q16): its text is marked `[r2s1 R30B-n]` and
 replaces any older text it contradicts, `[r1s1]` text included. Its cites were read at main 0f1d54089 (nothing under
-`src/`, `memfn/`, `tests/`, the Makefile or `docs/dev/lanes/r33_sim/` moved since 522faf600, the review's tree). Rev 2.1 applies ONE ruling, the kit manager's on rev 2's Q13 (last section of review r12), and is marked `[rev2.1 Q13]`; see R2.1. Rev 2 applies review
+`src/`, `memfn/`, `tests/`, the Makefile or `docs/dev/lanes/r33_sim/` moved since 522faf600, the review's tree). `[d27fix]` Lane d27fix (2026-11-13) applied the D27 author's findings on 3.0b's seam contract (F1-F5, A1-A7, `tests/memfn/d27_frame/`) as the kit manager ruled them: its text, in §2.2-§2.3 and §4.1, is marked `[d27fix Fn]`/`[d27fix An]` and replaces any older text it contradicts. Rev 2.1 applies ONE ruling, the kit manager's on rev 2's Q13 (last section of review r12), and is marked `[rev2.1 Q13]`; see R2.1. Rev 2 applies review
 `docs/dev/reviews/2026-11-07-r12-memfn-planframe1.md` (r12) as the kit manager ruled it (its "## Rulings"
 section). Text changed in rev 2 is marked `[rev2 Fn]` and replaces any `[rev1]` or unmarked text it
 contradicts. Rev 1's changes are marked `[rev1]` (§R1). After §R2.2, read §R2, then §0, §2.3 (the reply), §2.5
@@ -235,6 +235,13 @@ int mf_wdecide(const mf_art *, const mf_site *site, const mf_hooks *def, uint8_t
   2. `def` under DEFINE/EMIT is read exactly as the define reads its hooks: NULL is the define's NULL (every hook
      unstated), and the call answers -1 exactly where `mf_define`/`mf_emit` with that `def` would refuse. Under
      NONE `def` is not read and may hold any value (`[r1s1 S1-6]` pcrec's ASK-6 passes NULL; ASK-2 is VOID).
+     `[d27fix A1]` "Would refuse" means a refusal the call's own inputs decide: one caused by a SINK capability
+     (the `mf_sink` the define or emit writes to, which the ask does not take) is excluded, and the ask assumes a
+     full sink. `[d27fix F2, F3]` Under EMIT it includes `mf_emit`'s USE half: a `decl_point` 1 site (`mf_emit`
+     places no `mf_locals` between its define and its use, so it always refuses one), and the refusals a row's
+     use makes at its own text, beyond the gate's re-check the walk already applies under DEFINE|USE: today one,
+     a NOP ASSIGN site whose hooks state `result_decl` ("a NOP ASSIGN cannot declare its result"), on the rows
+     whose statement frame refuses it (E-find, the floor, the `generic` row).
   3. `*out` is zeroed WHOLE (padding included) before anything else, on every return, -1 included (today's first
      statement of `mf_wdecide`, `window.c` :1224, `[r1s1 S1-6]` :1281 at 35bee4da9). A reply is therefore comparable by `memcmp`, which ASK-3 and
      the agreement rely on.
@@ -244,10 +251,11 @@ int mf_wdecide(const mf_art *, const mf_site *site, const mf_hooks *def, uint8_t
      `def`) answer byte-equal replies. DEFINE/EMIT add these refusals (the frame half of `wf_check`): a site that is
      not a forward FIND (`op`, `reverse`); a frame other than FUNC/RETURN, STMT/ASSIGN or STMT/ON_MISS (the three
      Table E renders); `empty`, `use`, `body` (ONESHOT only), `site_kind`, `decl_point` or `on_miss_leaves` out of
-     its range, or `on_miss_leaves` on a non-STMT site; and every refusal of the define's own walk (`mf_ask`'s rule
+     its range (`decl_point` 0 or 1; under EMIT 0 only, line 2 `[d27fix F3]`), or `on_miss_leaves` on a non-STMT site; and every refusal of the define's own walk (`mf_ask`'s rule
      1). The observable meaning of each reply value is §2.3's last column.
 - **Purity** (D186 add. 2): the reply is a function of the site's facts (window and frame), the hooks'
-  stated-ness and text classes, the call, the art's denies/options and layer, `[r1s1 S1-7]` the art's test-only lever
+  stated-ness and text classes, the call, the art's denies/options (`[d27fix A5]` not its layer: the reply describes
+  the OFF variant, §2.3's stated gap; the D27 author measured 0 differences over 13.3k layer pairs), `[r1s1 S1-7]` the art's test-only lever
   set (`art->levers`, a member apart from the options, written by `mf_lever`, R-30: the plan face's SECOND art-state
   writer beside `mf_define`; at 35bee4da9 `decide` reads it at `window.c` :664, `a_mass_choose`, which moves the in-run
   STOP, the field ASK-6 reads, and at :938, `run_member`; the plan function's Table E walk and the define read it at
@@ -260,7 +268,11 @@ int mf_wdecide(const mf_art *, const mf_site *site, const mf_hooks *def, uint8_t
   the run member) call `kit_fail`, which writes the art's sticky `err` (`compose.c` :77-86). Such a plan call
   POISONS THE ART, as the define on the same facts would. It is FENCED as breaker (a) is (pcrec fails the compile on
   any refusal, so no later reply from that art reaches an artifact; the purity header, `arm_fixtures.c` :2096-2099,
-  asserts the fence, not purity). A NONE ask (`decide` only) never reaches `translate`. So the contract's "-1
+  asserts the fence, not purity). `[d27fix F1, A3]` Such an ask answers -1, never 0 with the art's error set (its
+  last step turns a set error into a refusal; `memfn.h`'s -1 causes list the poisoned art). The one green reach the
+  D27 author found (a verify-NO run under the lever `run-tie-left`: the member keeps the stretch row's tie, the
+  ranking took the art's) is closed: a PINNED run's ranking takes its member's tie (`member_opts`, `window.c`), so
+  the lever moves the ranking exactly where it moves the member, K38-1's RQ-2 ruling. A NONE ask (`decide` only) never reaches `translate`. So the contract's "-1
   exactly where that define would refuse" holds, and the art-state writers a D27 author may assume are `mf_define`,
   `mf_lever` and this fenced defect path; no green input reaches the last. Reach stays counted on the define (`span_pick.md` breaker (c)). Nothing is cached: the define
   recomputes the plan. `[rev2 F26]` **Allocation**: today `mf_wdecide` keeps its `wf_dec` on the C heap
@@ -297,9 +309,9 @@ Appended LAST to `mf_wreply` (`memfn.h` :1467-1482), because initializers are po
 | `method` | `char[8]` (= `mf_result.row`'s width) | T-FIND's DECIDING row id (`D-hors`, `D1`, `D1c`, `D1w`, `PAIR`, `R7w`): on E-find the window walk's row (`wf_find_decide`'s `brow`, the value `wf_plan_brow` returns), on E-stmt the composer's routed row (`mf_result.row`, `compose.c` :1316). `""` where no T-FIND row decides: E-generic; E-func, where `fn_rows` BODY decides (OFS is FUNC, outside `fd_scope`'s STMT-only scope, `finder.c` :586-592); a composer walk that reaches a PF arm with no deciding row; an ARM frame |
 | `search` `[rev2 F14]` | `uint8_t`, `mf_wsearch` {`NONE` = 0, `LIBC`, `LIBC_BACK`, `WALK`, `PAIR`, `HORS`} `[rev2.2 R25]` (no VECTOR: §2.5.5) | **the SEARCH piece**: the pick that renders the find. Where T-FIND decides, its pick. On a FUSED row, the pick the row declares it implements: B-fn PAIR; E-func's offset-skip function PAIR for `fn-pair` and LIBC for `fn-memchr`, read through `fn_rows` BODY's quiet walk (`ofs_fn_serves`, `ofsskip.c` :482-493). On a PF arm the composer's walk reached with no deciding row, the pick of the search renderer row naming that arm. NONE on E-generic (no search) and on ARM. `[rev2.2 R25]` vrun's vector block search has no value in 3.0 (it is unreported: the gap below; RUNG-LIST declares it) |
 | `stream` | `uint8_t`, `mf_wstream` {`MF_WSTREAM_NONE` = 0, `MF_WSTREAM_RESTART` `[rev2 F24]`, `MF_WSTREAM_MASK`, `MF_WSTREAM_SHIFT`} | **the CANDIDATE STREAM**: Table S's answer for (search, frame) (§2.5.3), or a fused row's declared stream. In 3.0 it is `[rev2.2 R24]` SHIFT iff `search` is HORS, RESTART where a search or the floor renders, NONE on an unframed ask and on ARM. MASK is declared and occurs in no reply in 3.0 |
-| `fused` `[rev2 F14]` | `uint8_t`, `mf_wfused` {`NONE` = 0, `NO`, `FN`, `ARM`} | **how the pieces are joined**, a fact about the piece boundary, never a C id: NO where the frame composes the triple (E-find's composed rows, E-generic, `[rev2 F10]` E-stmt's PF arms); FN where one function renders search, stream and check (B-fn, and E-func's offset-skip arm); ARM where a composer arm the triple does not yet describe renders the site (the pre-check composites, `runcmp`, `mismatch-inplace`, `generic`: arms[]'s named exception, with `search` and `stream` NONE). The C arm and renderer ids stay in MFTRACE (FDROUTE `ren=`, `mf_result.form_id`), which belong to the emitter |
-| `plan_test` `[rev2 F12]` | `uint8_t[MF_WPLAN_MAX]`, `mf_wtest` {`NONE` = 0, `OWN`, `TABLE`}, aligned with `plan[]` | the CHECK's per-position test kind, T-VERIFY step 6 (`wf_crows` C-table/C-own, `window.c` :1087-1089). `[rev2.2 R2]` **TABLE iff the define hooks state `table_name` AND the alternative's span covering `plan[i]` offers a table whose set is the set tested there** (`offer_at`, `window.c` :1281-1290, read at :1314: `w->table[i] = def && def->table_name ? offer_at(...) : 0`); OWN otherwise (a stated hook with no offer is OWN). The define's own list is indexed over its tested positions (`off[]`: the plan PLUS the stop when C-stop removed it, sorted, `window.c` :1300-1306), not over `plan[]`, so the define side is matched by OFFSET: `plan_test[i]` is the define's entry whose `off` equals `plan[i]`. Answered where the family renders T-VERIFY's plan (E-find's composed rows, E-generic); NONE past `nplan`, on fused, E-stmt and ARM frames (their set test is the fused function's or the caller's: the residue, §2.6.3) |
-| `stop_test` `[rev2.2 R2]` | `uint8_t`, `mf_wtest` | the STOP's test kind. C-stop removes the stop's offset from `plan[]` (`wf_crows` step 4, `window.c` :1082; `c_stop`'s `plan_drop`, :999-1002, except inside a pinned stretch), but the define still decides how the stop is tested: B-walk's find tests it through `wf_member(rc, b, stop_ix)` (:2553 -> `wf_member_of`, :2159-2166, which reads `w->table[stop_ix]`; `[r2s1 R30B-9]` at 0f1d54089: `wf_crows` table :1112, `c_stop` :1054-1056, B-walk's stop test :3124, `wf_member_of` :2709). `[r2s1 R30B-9]` B-walk's FIND is the one search whose find member-tests the stop; where the stop's offset STAYS in `plan[]` (the pinned-stretch exception above), the text can also read the stop's marker through the candidate test (`wf_test_to`, :2797, which member-tests every plan position through `wf_pos_test`) or through B-hors's probe (`d_hors_head`, :3217, when `hl` is the stop's offset). Those reads change nothing below: the rule is by OFFSET, so TABLE there is still the offer at the stop. TABLE iff the hook is stated AND the span covering the stop's offset offers the stop's set (the same rule as `plan_test`, matched by the stop's OFFSET); OWN otherwise. Answered on E-find's composed rows wherever the window has a stop; NONE where it has none (the floor, `stop_ix` -1) and on fused, E-stmt and ARM frames. What it reports on searches that test the stop by its bytes (B-pair, B-memchr) or probe another position (B-hors) is §7 Q14 |
+| `fused` `[rev2 F14]` | `uint8_t`, `mf_wfused` {`NONE` = 0, `NO`, `FN`, `ARM`} | **how the pieces are joined**, a fact about the piece boundary, never a C id: NO where the frame composes the triple (E-find's composed rows, E-generic, `[rev2 F10]` E-stmt's PF arms); FN where one function renders search, stream and check (B-fn, and E-func's offset-skip arm); ARM where a composer arm the triple does not yet describe renders the site (the pre-check composites, `runcmp`, `mismatch_inplace` `[d27fix A6]`, `generic`: arms[]'s named exception, with `search` and `stream` NONE). The C arm and renderer ids stay in MFTRACE (FDROUTE `ren=`, `mf_result.form_id`), which belong to the emitter |
+| `plan_test` `[rev2 F12]` | `uint8_t[MF_WPLAN_MAX]`, `mf_wtest` {`NONE` = 0, `OWN`, `TABLE`}, aligned with `plan[]` | the CHECK's per-position test kind, T-VERIFY step 6 (`wf_crows` C-table/C-own, `window.c` :1087-1089). `[rev2.2 R2]` **TABLE iff the define hooks state `table_name` AND the alternative's span covering `plan[i]` offers a table whose set is the set tested there** (`offer_at`, `window.c` :1281-1290, read at :1314: `w->table[i] = def && def->table_name ? offer_at(...) : 0`) **AND the text tests the position alone** `[d27fix F4]`; OWN otherwise (a stated hook with no offer is OWN). A position E-find tests inside a RUN COMPARE (C-run's compare, `grp`: two or more adjacent plan positions sharing one `plan_term`, every one core, each set one byte or a one-bit two-byte cube) answers OWN: one compare of the stretch's bytes reads no table, and the reply follows the text (the kit manager's F4 ruling). A shared `plan_term` alone is not such a compare (a position failing C-run's conditions is tested alone), and the floor (E-generic) tests every position alone. The define's own list is indexed over its tested positions (`off[]`: the plan PLUS the stop when C-stop removed it, sorted, `window.c` :1300-1306), not over `plan[]`, so the define side is matched by OFFSET: `plan_test[i]` is the define's entry whose `off` equals `plan[i]`. Answered where the family renders T-VERIFY's plan (E-find's composed rows, E-generic); NONE past `nplan`, on fused, E-stmt and ARM frames (their set test is the fused function's or the caller's: the residue, §2.6.3) |
+| `stop_test` `[rev2.2 R2]` | `uint8_t`, `mf_wtest` | the STOP's test kind. C-stop removes the stop's offset from `plan[]` (`wf_crows` step 4, `window.c` :1082; `c_stop`'s `plan_drop`, :999-1002, except inside a pinned stretch), but the define still decides how the stop is tested: B-walk's find tests it through `wf_member(rc, b, stop_ix)` (:2553 -> `wf_member_of`, :2159-2166, which reads `w->table[stop_ix]`; `[r2s1 R30B-9]` at 0f1d54089: `wf_crows` table :1112, `c_stop` :1054-1056, B-walk's stop test :3124, `wf_member_of` :2709). `[r2s1 R30B-9]` B-walk's FIND is the one search whose find member-tests the stop; where the stop's offset STAYS in `plan[]` (the pinned-stretch exception above), the text can also read the stop's marker through the candidate test (`wf_test_to`, :2797, which member-tests every plan position through `wf_pos_test`) or through B-hors's probe (`d_hors_head`, :3217, when `hl` is the stop's offset). Those reads change nothing below: the rule is by OFFSET, so TABLE there is still the offer at the stop. TABLE iff the hook is stated AND the span covering the stop's offset offers the stop's set (C-table's rule, matched by the stop's OFFSET; `[d27fix F4]` not `plan_test`'s run-compare clause: the find tests the stop, whatever compare its offset also sits in); OWN otherwise. Answered on E-find's composed rows wherever the window has a stop; NONE where it has none (`stop_ix` -1), on E-generic (the floor) whether or not its window has a stop `[d27fix A2]`, and on fused, E-stmt and ARM frames. What it reports on searches that test the stop by its bytes (B-pair, B-memchr) or probe another position (B-hors) is §7 Q14 |
 
 **The observable meaning of each value** `[rev2.2 R18]` (moved here from §5's G2 text classes, so a D27 author
 holds the reply to the define's OUTPUT, never to the kit's code). "The text" is the define's artifact text for that
@@ -310,13 +322,13 @@ site; "the result" is `mf_defined`'s `mf_result`.
 | `framed` | 1 / 0 | 1 iff `call` is DEFINE or EMIT and the call returned 0 |
 | `frame_row` | E-find / E-generic | the result's `form_id` is `window-search` / `wf-floor` |
 | `frame_row` | E-func / E-stmt | the site states FUNC/RETURN / STMT (ASSIGN or ON_MISS), and the result's `form_id` is a composer arm's |
-| `fused` | FN | the text calls the site's offset-skip function (`<prefix>_mf<handle>_ofsskip`) |
-| `fused` | ARM | the result's `form_id` is a composer arm other than a PF arm and the offset-skip arm (a pre-check composite, `runcmp`, `mismatch-inplace`, `generic`) |
+| `fused` | FN | on E-find (B-fn), the text calls the site's offset-skip function (`<prefix>_mf<handle>_ofsskip`); on E-func, the text defines and calls the FUNC site's own function, `<fn_name>` and its body `<fn_name>__body` (`fn_name`'s text for the site's `fn_ref`) `[d27fix F5]` |
+| `fused` | ARM | the result's `form_id` is a composer arm other than a PF arm and the offset-skip arm (a pre-check composite, `runcmp`, `mismatch_inplace` `[d27fix A6]`, `generic`) |
 | `fused` | NO | otherwise, on a framed ask |
 | `search` | PAIR / HORS / LIBC or LIBC_BACK / WALK / NONE | the find's text holds the two `memchr` frontiers / the 256-byte shift table `_sh[256]` / one `memchr` (LIBC and LIBC_BACK told apart by `method`, D1 vs D1c) / a byte walk / none of them |
 | `stream` | SHIFT / RESTART / NONE | the text advances by `_sh[...]` / by one position (`C++`), or the caller's loop restarts (E-stmt) / no search loop (ARM, unframed) |
 | `method` | a row id | it resolves in `mf_finder_rows`, and on a composed E-find row that row's pick is `search`; the kit trace's FDROUTE `row=` prints it (`trace_format.md`) |
-| `plan_test[i]`, `stop_test` | TABLE / OWN | the text reads the offered table through the hook's own spelling (`table_name`'s text for that offset's ref, then `[`) / tests that offset against the kit's own set; except a position the search proved (§2.3's residue) and Q14's byte-tested stops |
+| `plan_test[i]`, `stop_test` | TABLE / OWN | the text reads the offered table through the hook's own spelling (`table_name`'s text for that offset's ref, then `[`) / tests that offset against the kit's own set, or inside a run compare, which reads no table `[d27fix F4]`; except the one position the HORS skip verifies (D-hors's probe offset: the text drops it from the candidate test and its probe reads that offset's offer, `[d27fix A4]` §2.3's residue), Q14's byte-tested stops, and a stop's offset inside a pinned run compare, whose `plan_test` is the compare's OWN while a find that member-tests the stop reads its offer for `stop_test`. `[d27fix A7]` `stop_test`'s text is checked only on WALK searches (B-walk member-tests the stop); on the others it is held by its rule column (Q14) |
 
 **Who decides each value in 3.0** `[rev2 F10, F14]` `[rev2.1 Q13]` (the define stores the same: `[rev2.2 R1]` §4.1's field map):
 
@@ -665,7 +677,7 @@ declared stream (the offset-skip arm's RESTART included: `fn_rows` gains only BO
 
 `[rev2 F10]` The composer's PF arms are NOT fused rows: they are E-stmt's search renderer rows, composed with
 S-caller and C-caller (`fused` NO). The composer's other arms (pre-check composites, `runcmp`,
-`mismatch-inplace`, `generic`) are arms[]'s named exception (`fused` ARM), with its trigger. Their set
+`mismatch_inplace`, `generic`) are arms[]'s named exception (`fused` ARM), with its trigger. Their set
 test, and the fused rows', is their own, so `plan_test` `[rev2.2 R2]` and `stop_test` are NONE there `[rev2 F12]`: two E-func asks that
 differ only in `table_name` stated-ness may answer equal replies while the function's table parameters
 differ. That residue closes when a fused row is re-expressed.
@@ -850,8 +862,10 @@ define's own record of what it rendered (`site_rec` gains the fused function's B
 `r->fd_row` and `r->wplan`), the MF_TRACE agreement check at `define_sel` (beside rule 2's re-ask, `compose.c`
 :1180-1200), the harness and G2 edits, and the ledgers.
 
-**The agreement's two halves** `[rev2.2 R1]` (the kit manager's ruling: NARROW). The define-side reply is
-assembled, zeroed whole first, from two sources:
+**The agreement's two halves** `[rev2.2 R1]` (the kit manager's ruling: NARROW). `[d27fix F2, F3]` The re-ask is
+the framed ask's DEFINE half under the define's phases: under `mf_emit` it leaves out the use half's refusals
+(§2.2 contract line 2), which `mf_emit` makes after the define, at its use, so a site whose use refuses still
+agrees at its define. The define-side reply is assembled, zeroed whole first, from two sources:
 
 - **The FRAME part, from the STORED record**, by the field map below, never through `reply_of` or the plan
   function. This is what F29 and row E2 are about: a frame-part fault in the plan function that moves no text is

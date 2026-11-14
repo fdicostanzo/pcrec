@@ -652,6 +652,27 @@ int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand,
     return best;
 }
 
+uint32_t pcrec_find_pos_mass(const uint32_t *rate, const unsigned char *pos)
+{
+    unsigned long long m = 0;
+    int k = 0;
+    for (int b = 0; b < 256; b++)
+        if ((pos[b >> 3] >> (b & 7)) & 1) { k++; if (rate) m += rate[b]; }
+    return rate ? (uint32_t)m : uniform_mass(k);
+}
+
+int pcrec_find_pos_pick(const uint32_t *rate, const unsigned char *const *cand,
+                        int n, int rightmost)
+{
+    int best = rightmost;
+    uint32_t lo = pcrec_find_pos_mass(rate, cand[best]);
+    for (int i = 0; i < n; i++) {
+        uint32_t m = pcrec_find_pos_mass(rate, cand[i]);
+        if (m < lo) { lo = m; best = i; }
+    }
+    return best;
+}
+
 bool pcrec_find_no_commoner(const uint32_t *rate, int p, int q)
 {
     if (!rate) return false;
@@ -665,15 +686,6 @@ uint32_t pcrec_find_set_mass(const uint32_t *rate, const uint8_t set[256])
     for (int b = 0; b < 256; b++) if (set[b]) { k++; if (rate) t += rate[b]; }
     if (!rate) t = uniform_mass(k);
     return t > 1000000u ? 1000000u : (uint32_t)t;
-}
-
-uint32_t pcrec_find_seq_mass(const uint32_t *rate, const unsigned char *bytes,
-                             int n)
-{
-    unsigned long long t = 0;
-    if (!rate) return uniform_mass(n);
-    for (int i = 0; i < n; i++) t += rate[bytes[i]];
-    return (uint32_t)t;
 }
 
 /* ---- THE RATE READERS: each builds a candidate order and asks one primitive */
@@ -742,8 +754,8 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
  * a lead byte only if the run is truncated mid-character, which the census
  * found in ZERO of 912 real `-e utf8` runs, so the rightmost rule closes it
  * with no byte-range logic (D77). */
-int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
-                              const unsigned char *mask, int n)
+int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *const *pos,
+                              int n)
 {
     /* `bytes[0..n)`, n <= PCREC_MAX_REQ_RUN_SCAN by its one caller's own
      * bound (RbRun/ReqRun's `whole` array, src/facts/facts_derive.h,
@@ -755,13 +767,10 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
      * no-error-channel sites do — coding_guide.md's fail-loudly rule, never
      * silent truncation). */
     if (n > PCREC_MAX_REQ_RUN_SCAN) abort();
-    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN], care[PCREC_MAX_REQ_RUN_SCAN];
+    const unsigned char *cand[PCREC_MAX_REQ_RUN_SCAN];
     int i;
-    for (i = 0; i < n; i++) {
-        cand[i] = bytes[n - 1 - i];
-        care[i] = mask[n - 1 - i];
-    }
-    return n - 1 - pcrec_find_pick(rate, cand, care, n, 0);
+    for (i = 0; i < n; i++) cand[i] = pos[n - 1 - i];
+    return n - 1 - pcrec_find_pos_pick(rate, cand, n, 0);
 }
 
 /* A per-set cost input (the DFA candidate rate; the offset-k selection's

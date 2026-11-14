@@ -505,13 +505,26 @@ for b in base:
 print("(?:" + "|".join(ws) + ")Z")' "$1"
 }
 NOOWN="-fno-altcls-factor -fno-altcls-merge"
+# THE CHAIN LEG CARRIES THE RUNGS FIRED BEFORE drop-islands (s2tri,
+# 2026-11-13). fit_rungs[] (src/core/compile.c) is cumulative and takes
+# `drop-handoff` BEFORE `drop-islands`: since the [RUN-POS-SET] flip
+# (PCREC_MAX_REQ_RUN_POS_SET 2 -> 128) these alternations' unions are a
+# necessary run ([61-6e71][61-6e7172][61-6e71-73]5a), so the island attempt
+# first drops the run's VM handoff, then its islands, while the chain alone
+# fits WITH the handoff. The artifact that drops its islands is then the
+# chain's with the handoff denied, byte for byte: when the island build's
+# stderr carries the drop-handoff note, the chain leg adds -fno-req-handoff.
+# Read from the note (the rung that FIRED), never from a stamp comparison.
+chain_extra() {   # chain_extra <island-build stderr file>
+    if grep -q "dropped the VM's required-run handoff" "$1"; then echo "-fno-req-handoff"; fi
+}
 
 cap_bad=0
 for N in 260 300 340; do
     pat="$(capwit "$N")"
     on_ok=1; off_ok=1
     # shellcheck disable=SC2086
-    pcrec_run "$PCREC" -p rx --engine=vm $NOOWN -o "$WORKDIR/cap_on.c"  --pattern "$pat" >/dev/null 2>&1 || on_ok=0
+    pcrec_run "$PCREC" -p rx --engine=vm $NOOWN -o "$WORKDIR/cap_on.c"  --pattern "$pat" >/dev/null 2>"$WORKDIR/cap_on.err" || on_ok=0
     # shellcheck disable=SC2086
     pcrec_run "$PCREC" -p rx --engine=vm $NOOWN -fno-alt-island -o "$WORKDIR/cap_off.c" --pattern "$pat" >/dev/null 2>&1 || off_ok=0
     if [ "$off_ok" = "1" ] && [ "$on_ok" = "0" ]; then
@@ -522,7 +535,10 @@ for N in 260 300 340; do
         # An artifact that stamps no island was declined whole (the guard) or
         # retried without islands (the row); either way it IS the chain's.
         # A rung whose islands fit (N=260 since the owner) keeps them.
-        if ! diff <(grep -v '^#include "' "$WORKDIR/cap_on.c") \
+        # shellcheck disable=SC2086,SC2046
+        if ! pcrec_run "$PCREC" -p rx --engine=vm $NOOWN -fno-alt-island $(chain_extra "$WORKDIR/cap_on.err") \
+                 -o "$WORKDIR/cap_off.c" --pattern "$pat" >/dev/null 2>&1 ||
+           ! diff <(grep -v '^#include "' "$WORKDIR/cap_on.c") \
                   <(grep -v '^#include "' "$WORKDIR/cap_off.c") >/dev/null; then
             bad "CAP GUARD: the N=$N rung stamps no island but DIFFERS from its -fno-alt-island artifact. An artifact whose islands were all declined (the guard) or dropped (the drop-islands retry) must be the chain's byte for byte"
             cap_bad=$((cap_bad + 1))
@@ -552,7 +568,8 @@ elif ! grep -q "dropped the VM's alternation islands" "$WORKDIR/rr_on.err"; then
     bad "RETRY: the 1,000-word random set compiled WITHOUT the drop-islands note, so the retry row did not fire on it; the cell no longer reaches the row (re-scale the set, or the guard's estimate changed)"
 elif ! grep -q '^#define RX_VM_ALT_ISLANDS 0$' "$WORKDIR/rr_on.c"; then
     bad "RETRY: after the drop-islands note the artifact still stamps an island"
-elif ! pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island -o "$WORKDIR/rr_off.c" --pattern "$pat" >/dev/null 2>&1 ||
+# shellcheck disable=SC2046
+elif ! pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island $(chain_extra "$WORKDIR/rr_on.err") -o "$WORKDIR/rr_off.c" --pattern "$pat" >/dev/null 2>&1 ||
      ! diff <(grep -v '^#include "' "$WORKDIR/rr_on.c") <(grep -v '^#include "' "$WORKDIR/rr_off.c") >/dev/null; then
     bad "RETRY: the drop-islands artifact differs from the caller's own -fno-alt-island one (or that build refused)"
 else

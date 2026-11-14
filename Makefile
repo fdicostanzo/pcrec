@@ -464,7 +464,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-targets \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
-      test-memfn-simdfloor test-memfn-d27region \
+      test-memfn-simdfloor test-memfn-d27region test-memfn-d27frame \
       test-memfn-rank test-memfn-finder \
       test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-endmark test-partlayout \
       test-kitproof test-casemap test-findall test-subst test-subst-d27 test-alloc test-ci-shards
@@ -1556,6 +1556,20 @@ test-memfn-d27region: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-d27region.ran"; fi
 	bash tests/memfn/run_d27_region.sh
 
+# [MEMFN] span_pick 3.0b: the D27 spec-first suite of the framed phase-1
+# ask's seam contract (tests/memfn/d27_frame/, author s1owed-d27; adopted by
+# lane d27fix): mf_wdecide's replies against the define's and emit's own
+# output over a generated site space, plain and traced kit, then its control
+# (every check inverted: red) and its empty generator (the floors: red). The
+# QUICK tier (gcc -O2), serial, about a minute; test-memfn-d27frame-full is
+# the gcc + clang + ASan/UBSan tier, about 3 minutes, OPT-IN.
+test-memfn-d27frame: all $(BUILD_DIR)/libpcrec_mftrace.a
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-d27frame.ran"; fi
+	bash tests/memfn/run_d27_frame.sh
+
+test-memfn-d27frame-full: all $(BUILD_DIR)/libpcrec_mftrace.a
+	D27F_FULL=1 bash tests/memfn/run_d27_frame.sh
+
 # [MEMFN] RQ-2 (D157): the PROBE build (-DPCREC_RANK_PROBE: every PRE/OFS
 # predicate pcrec hands the kit, with the mf_pred.rank_* it carries, on
 # stderr) over the corpus at three arms: since D172 S2 commit 6 every
@@ -2333,7 +2347,7 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
-        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-d27region test-memfn-rank test-memfn-finder \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-d27region test-memfn-d27frame test-memfn-d27frame-full test-memfn-rank test-memfn-finder \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-targets test-memfn-rows \
         test-startset test-spec-history test-plan-lint test-doc-lint test-claudemd-size test-compound test-partlayout test-kitproof test-findall test-subst test-subst-d27 test-shard test-ci-shards cloud-check cloud-reweight \

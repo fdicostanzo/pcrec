@@ -18,5 +18,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?:S(?i:
 SAB_REACH_EXPECT="REACH-HULL-HEAD"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        int k = rn_hull_mask(a.bytes[o.n], a.mask[o.n], b.bytes[o.n], b.mask[o.n]);'
-SAB_AFTER='        int k = a.bytes[o.n] == b.bytes[o.n] ? a.mask[o.n] : 0;   /* SABOTAGE S451: round 0'\''s rule */'
+SAB_BEFORE='        const unsigned char *u = rb_pd_join(w->cx, a.pos[o.n], b.pos[o.n]);'
+SAB_AFTER='        const unsigned char *u = a.pos[o.n];   /* SABOTAGE S451: the left branch'\''s set */'
+# RE-ANCHORED 2026-11-13 (lane rps3, [RUN-POS-SET] stage 3): the common head is the
+# per-position UNION of the branches' sets; the plant keeps the left branch's set, so an
+# exact left `S` beside a caseless right `[Ss]` claims `S` alone, as before.

@@ -836,7 +836,7 @@ declare -A GIVEUP1_ALLOWANCE=(
 # giveup1-unallowed=45 exactly. E5 (19, below) added 2026-10-07: 64.
 #
 # E1 (18 cases) — tests/base/k65_precheck_whole_set.rxt, K65 (tuning.md
-# §2.29, known_issues.md K65). `(x?)([a-z]+)+Z.@\1` / `(x?)([a-z]+)+
+# §2.29, known_issues.md K65). `(x?)([a-z]+)+Z.@\1` / `(x?)([a-z]+)+.
 # eeeeeeee~#~#~#~#\1` (backrefs): on the no-DFA-scan VM route the emitted
 # pre-check tests the WHOLE necessary set, the call's only linear no-match
 # proof; -fno-req-byte reads RX_REQ_BYTE "none" and removes it, and the
@@ -941,8 +941,8 @@ declare -A GIVEUP1_ALLOWANCE=(
 # [K82] S2b and S2c blocks (landed 2026-10-03/04, AFTER this manifest was
 # populated — the full AXES_FULL=1 HARNESS_BATCH=64 run at 041e450a was the
 # first to reach them; lane axtri, docs/dev/lanes/axtri_report.md). E1's
-# mechanism EXACTLY: `(x?)([a-z]+)+S\d(?i:select)\1` and
-# `(x?)([a-z]+)+S\d(?i:s)qz\1` are K65's backref family, and those blocks'
+# mechanism EXACTLY: `(x?)([a-z]+)+S.(?i:select)\1` and
+# `(x?)([a-z]+)+S.(?i:s)qz\1` (`S.`, was `S\d` before the [RUN-POS-SET] flip) are K65's backref family, and those blocks'
 # own comments say the n cells exist to turn into step give-ups when K65's
 # whole-set memchr of 'S' is lost (S451/S452). -fno-req-byte loses it the
 # blunt way (RX_REQ_BYTE/RX_REQ_RUN/RX_REQ_WHY all "none"). Measured live

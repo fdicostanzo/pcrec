@@ -1152,7 +1152,7 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
 
 ## U26 — PCRE2 10.46 and 10.49: a lookbehind inside `(?(DEFINE)...)` inside a lookbehind is not length-checked; calling it matches wrongly (lane vlbrev52, [PCRE2-DEFLB], reported 2026-11-12)
 
-- **Status**: reported-upstream — https://github.com/PCRE2Project/pcre2/issues/1072
+- **Status**: reported-upstream — https://github.com/PCRE2Project/pcre2/issues/1072 — 2026-11-13: maintainer (NWilson) replied, labelled `bug`.
   (filed 2026-11-12, after Frank's approval to send it if it still existed on
   10.49; awaiting maintainers). Followed daily by `scripts/upstream_watch`
   (list: `docs/dev/upstream_tracked.tsv`).
@@ -1169,7 +1169,7 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
 
 ## U27 — PCRE2 10.46 and 10.49: under `MATCH_INVALID_UTF`, `pcre2_match()` from an earlier offset cannot find an end-of-subject match when the subject ends in an ill-formed unit; since 10.47 global loops lose the final empty match (lane upbug27, drafted 2026-11-12)
 
-- **Status**: reported-upstream — https://github.com/PCRE2Project/pcre2/issues/1074 (filed 2026-11-12 after the verdict BUG; Frank: "Make sure it's an error but then report it"). pcrec keeps the end-of-subject match; 10.49 tolerance per [ORACLE-UPGRADE] R6.
+- **Status**: reported-upstream — https://github.com/PCRE2Project/pcre2/issues/1074 (filed 2026-11-12 after the verdict BUG; Frank: "Make sure it's an error but then report it"). pcrec keeps the end-of-subject match; 10.49 tolerance per [ORACLE-UPGRADE] R6. — 2026-11-13: maintainer (NWilson) replied, labelled `bug` (wonders if pcre2_next_match regressed it).
 - **Found**: or49disp finding 6 (d27 `utf-004..008, 064..068`); isolated by lane upbug27.
 - **Repro** (interpreter, no JIT; 10.46 and 10.49 library identical): `/\z/utf,match_invalid_utf` on `aÿ` (also with `\=offset=1`) = No match, expected offset 2; `aÃ©` finds offset 3. Global `x*` on `aÿ`: 10.46 loop 3 matches, 10.49 `pcre2_next_match()` loop (pcre2test /g, `pcre2_substitute`) 2.
 - **Impact on pcrec**: none; pcrec keeps the 10.46 answer (the 3 matches) and the subst/d27 cells stay a recorded oracle difference.

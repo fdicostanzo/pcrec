@@ -12,6 +12,7 @@
 # The plant's reach, measured by hand (k382a_report.md "Plants"): over one generic pass's
 # records, 415 hold an occurrence at their origin; the clean kit yields the origin on all of
 # them, the planted kit on 93 (322 moved).
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md rev 4 §5.1 [r3pd FIX-6]): the memchr body notes its own libc read (note_memchr: the libc note moved into each BODY row, §2.1 [r2pd P2]); the same plant.
 SAB_ID="S3008-run-part-candidate-above-least"
 SAB_FILE="memfn/src/ofsskip.c"
 SAB_SUITES="g2pres"
@@ -20,8 +21,10 @@ SAB_DOC_FIGURE="HAND-MEASURED by the kit manager 2026-11-10 with the oracle merg
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    int maxk = x->maxk, k = x->k, a = x->a;
+    if (note_memchr(art)) return -1;
     kit_out(o, "    while (pos + %d < n) {\n", maxk);'
 SAB_AFTER='    int maxk = x->maxk, k = x->k, a = x->a;
+    if (note_memchr(art)) return -1;
     o->puts(o->u, "    size_t lo0 = pos;\n");   /* SABOTAGE S3008 */
     kit_out(o, "    while (pos + %d < n) {\n", maxk);'
 SAB_FILE2="memfn/src/ofsskip.c"

@@ -18,11 +18,9 @@ SAB_REACH_POP='tests/litscan/handoff.rxt|^pattern \(\?m\)\^x\{2,5\}|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    long long k = req_handoff_k(cx);
-    bool whole = req_use_whole(cx), run = pcrec_fact_req_whole_run(cx)->whole_len >= 2;
-    /* [REQ-HANDOFF-L1] the hit itself,'
+    /* the run is the landmark only where the pre-check TESTS it (part_d.md'
 SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0 && req_handoff_k(cx) < PCREC_W_UNBOUNDED); /* SABOTAGE S463 */
-    bool whole = req_use_whole(cx), run = pcrec_fact_req_whole_run(cx)->whole_len >= 2;
-    /* [REQ-HANDOFF-L1] the hit itself,'
+    /* the run is the landmark only where the pre-check TESTS it (part_d.md'
 # RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): K is the LANDMARK's
 # (`req_landmark_maxoff`, the run window's where a run ships, so every run
 # witness reads the same K); the anchor carries the entry's round-up target
@@ -45,3 +43,9 @@ SAB_AFTER='    long long k = req_handoff_k(cx) - (req_handoff_k(cx) > 0 && req_h
 # into the bounded branch, so the anchor is the k/whole/run lines plus the
 # next comment; K is lowered only where it is bounded and positive (an
 # unbounded K - 1 would leave the unbounded branch). Intent unchanged.
+# RE-ANCHORED 2026-11-13 (lane rps3b, [RUN-POS-SET] stage 3, part_d §9 item 4):
+# the context line's `run` reads the tested predicate (`req_run_tested_cx`)
+# under a new comment, so the anchor is the k line plus that comment's first
+# line (unique: `emit_req_landmark_move`'s k line is followed by code). Probe
+# unchanged (re-read on the branch: REQ_HANDOFF "3"). Intent unchanged: the
+# ENTRY starts one byte too late.

@@ -16,7 +16,12 @@ SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/stc67_report.md §
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
 # compile takes the cover row's deny --memfn=no-window-search, the build before S3.
-SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\d\\dxyz" && grep -qF "#define RX_REQ_HANDOFF \"2\"" "$REACH_TMP/o.c" && echo REACH-HANDOFF'
+# RE-AIMED 2026-11-13 (lane s2tri, [RUN-POS-SET] flip 2 -> 128): `\d` became a run position,
+# so the run starts at the digits (RX_REQ_RUN "[30-39][30-39]78797a@4", was "78797a@2") and
+# K moved 2 -> 0; the probe's pinned "2" read UNREACHED. The detector's own witness is this
+# pattern (cand_oracle_witnesses.tsv's `handoff` line, which still reaches 'handoff' on the
+# flipped tree), so the probe keeps it and pins K 0.
+SAB_REACH='"$PCREC" --memfn=no-window-search --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\d\\dxyz" && grep -qF "#define RX_REQ_HANDOFF \"0\"" "$REACH_TMP/o.c" && echo REACH-HANDOFF'
 SAB_REACH_EXPECT='REACH-HANDOFF'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

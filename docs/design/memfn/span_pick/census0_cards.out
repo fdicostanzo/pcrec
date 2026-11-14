@@ -10,37 +10,40 @@ RTE	verify	rc-words	w2	49
 RTE	verify	rc-words	w3	1
 RTE	verify	settest	c1	48
 RTE	verify	settest	c2	290
-RTE	verify	settest	cn	7
+RTE	verify	settest	cn	6
+RTE	verify	settest	cn+	1
 DEF	shape	settest	c2.alu1	1
 DEF	shape	settest	c2.cmp2	1
 RTE	shape	settest	c2.alu1	220
 RTE	shape	settest	c2.cmp2	70
 == (4) movers at the measured card point; RTE = default compile, DEF = the no-window-search,no-window-skip recompile
-RTE gap 256  movers (BAND-0)                                                              77
+RTE gap 256  movers (BAND-0)                                                              76
 RTE gap 256  movers beyond band (z 3)                                                     11
-RTE gap 256  priced                                                                     1562
-RTE gap 256  row-1-class movers (BAND-0)                                                  70
+RTE gap 256  priced                                                                     1550
+RTE gap 256  row-1-class movers (BAND-0)                                                  69
 RTE gap 256  row-1-class movers beyond band (z 3)                                          7
-RTE gap 256  row-1-class priced                                                          206
+RTE gap 256  row-1-class priced                                                          205
 RTE gap 256  row-1-class units                                                           207
 RTE gap 256  unpriced: incumbent alternative entry PARKED (no enter card)               1368
 RTE gap 256  unpriced: incumbent method D-hors                                            14
 RTE gap 256  unpriced: incumbent method memchr-back                                       39
 RTE gap 256  unpriced: incumbent method unobserved                                         5
+RTE gap 256  unpriced: no card kit.verify_cmp.settest.cn+.p0                              12
 RTE gap 256  unpriced: no enter card for site kind 0                                     371
 RTE gap 256  unpriced: no enter card for site kind 2                                      71
 RTE gap 256  window units                                                               3430
-RTE gap 1024 movers (BAND-0)                                                             108
+RTE gap 1024 movers (BAND-0)                                                             107
 RTE gap 1024 movers beyond band (z 3)                                                     17
-RTE gap 1024 priced                                                                     1562
-RTE gap 1024 row-1-class movers (BAND-0)                                                  98
+RTE gap 1024 priced                                                                     1550
+RTE gap 1024 row-1-class movers (BAND-0)                                                  97
 RTE gap 1024 row-1-class movers beyond band (z 3)                                         11
-RTE gap 1024 row-1-class priced                                                          206
+RTE gap 1024 row-1-class priced                                                          205
 RTE gap 1024 row-1-class units                                                           207
 RTE gap 1024 unpriced: incumbent alternative entry PARKED (no enter card)               1368
 RTE gap 1024 unpriced: incumbent method D-hors                                            14
 RTE gap 1024 unpriced: incumbent method memchr-back                                       39
 RTE gap 1024 unpriced: incumbent method unobserved                                         5
+RTE gap 1024 unpriced: no card kit.verify_cmp.settest.cn+.p0                              12
 RTE gap 1024 unpriced: no enter card for site kind 0                                     371
 RTE gap 1024 unpriced: no enter card for site kind 2                                      71
 RTE gap 1024 window units                                                               3430
@@ -67,12 +70,12 @@ DEF gap 1024 unpriced: no enter card for site kind 0                            
 DEF gap 1024 unpriced: no enter card for site kind 2                                       2
 DEF gap 1024 window units                                                                 51
 == (5) row 1's forecast mover list: ROW-1 class units (a NONE alternative whose core position 0 is a two-member set), by class and arm; 'other' = every other unit
-RTE gap 256  mover class ROW-1: k2/pair -> k2/walk                           BAND-0     59  beyond band      0
+RTE gap 256  mover class ROW-1: k2/pair -> k2/walk                           BAND-0     58  beyond band      0
 RTE gap 256  mover class ROW-1: k2/walk -> k2/pair                           BAND-0     11  beyond band      7
 RTE gap 256  mover class other: k2/pair -> k1/memchr                         BAND-0      3  beyond band      3
 RTE gap 256  mover class other: k2/pair -> k2/walk                           BAND-0      3  beyond band      0
 RTE gap 256  mover class other: k32/walk -> k1/memchr                        BAND-0      1  beyond band      1
-RTE gap 1024 mover class ROW-1: k2/pair -> k2/walk                           BAND-0     91  beyond band      5
+RTE gap 1024 mover class ROW-1: k2/pair -> k2/walk                           BAND-0     90  beyond band      5
 RTE gap 1024 mover class ROW-1: k2/walk -> k2/pair                           BAND-0      7  beyond band      6
 RTE gap 1024 mover class other: k2/pair -> k1/memchr                         BAND-0      4  beyond band      4
 RTE gap 1024 mover class other: k2/pair -> k2/walk                           BAND-0      5  beyond band      1

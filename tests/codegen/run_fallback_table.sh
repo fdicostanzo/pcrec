@@ -292,7 +292,11 @@ fseq seq-pfc      trplain ok 'prefilter-collapse@size'                         '
 # rows and E2's zero-width rows compose to the necessary run `aab` (neither parent finds one), whose
 # window pre-check adds ~670 B and puts the collapsed artifact 57 B over the trlowsize cap. The `\d`
 # tail keeps the \K-in-repeat shape (run `aa`, ~700 B under after collapse on main and merged alike).
-fseq seq-pfclow   trlowsize ok 'prefilter-collapse@size'                       '(?:a\K){2,}\d'
+# [RUN-POS-SET] S2 landing (s2tri h3, abi 106): `\d` became a run position (`6161[30-39]`, a
+# handoff and a wide verify: +743 B unrescued, 33,912 against the 31,920 cap), so collapse no
+# longer fits and drop-prefilter followed. `.` carries no information and stays outside the run
+# (the s2land precedent): run `aa` again, collapse alone fits (31,689 code, 231 under).
+fseq seq-pfclow   trlowsize ok 'prefilter-collapse@size'                       '(?:a\K){2,}.'
 fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(\bcat\b)+' -e utf8
 # [OPT-REVEND] L2 (lane revbuild): was '(\bcat\b){2,}', whose hybrid body is `empty` and lost its
 # whole-window pre-check to the walk deference (REQ_WHY "dominated", -705 B), landing under
@@ -318,7 +322,11 @@ fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(
 # match (no \b between `s` and `c`), so it now compiles to the DFA empty artifact and reads no
 # rows. `\W` between the words can match and keeps the shape (VM-only attempt loop over the
 # cap); `{2,4}` is the measured form (`{2,}` with a separator lands on `refuse@size`).
-fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size > drop-handoff@size' '(\bcats\b\W){2,4}[a-z]\d\d' -e utf8
+# [RUN-POS-SET] S2 landing (s2tri h3, abi 106): `\W` became a run position
+# (`63617473[00-2f3a-405b-5e607b-7fc2-f4]`), and after all three rows the artifact read 31,941
+# code bytes against 31,920 (refused). `.` keeps the run `cats` and the three rows (31,462 after
+# the third, 458 under).
+fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size > drop-handoff@size' '(\bcats\b.){2,4}[a-z]\d\d' -e utf8
 fstate seq-pfcd2 2 'restart=1'
 fstate seq-pfcd2 3 'restart=1'
 # [REQRUN-VM] the `drop-handoff` rung BEFORE the prefilter drop, at the shipped caps: the
@@ -356,8 +364,14 @@ fseq seq-premuls  trlowsize ok 'drop-anchored@size > drop-premul@size'         '
 # cap with it; without it the chain is 29,750 B code (31,218 B total), so the one rung
 # fits it. The retry IS the caller's own -fno-alt-island artifact (run_island_tests.sh
 # section 11 asserts that byte identity at the shipped caps).
-W_ISLSIZE='(?:bckwnzmr|bgkkxcjd|daqfpxov|euekpgvt|hvtzepji|jpcvyitf|jxyaooxu|ljekxczs|mcplkiyf|nmumjiom|owkoozyc|pozcfzhe|psqnmhjj|qusgoefb|rxigcspz|rzhcueik|uruhmgzj|uzairawu|vkjcrulv|vvcwyezw|vylkxama|wmsfgfgf|xsnkhlbb|zepqiqyh)Z'
-fseq seq-isldrop  trlowsize ok 'drop-islands@size'                              "$W_ISLSIZE" --engine=vm
+# [RUN-POS-SET] S2 landing (s2tri h3, abi 106): the union is now a run of eight SET positions
+# then `Z`, so the VM carries handoff rows and a wide verify: the 24-word chain read 33,473 code
+# bytes (30,087 before) and refused even under -fno-alt-island. Re-scaled to the first 19 words:
+# with islands 33,469 (32,911 without the handoff), the chain 31,694 (31,136 without it). The
+# ladder takes drop-handoff (4a) first and, still over, drop-islands; once 4a fired the rows stay
+# dropped (limits.md 8.4p2b), so the shipped artifact is -fno-alt-island -fno-req-handoff's.
+W_ISLSIZE='(?:bckwnzmr|bgkkxcjd|daqfpxov|euekpgvt|hvtzepji|jpcvyitf|jxyaooxu|ljekxczs|mcplkiyf|nmumjiom|owkoozyc|pozcfzhe|psqnmhjj|qusgoefb|rxigcspz|rzhcueik|uruhmgzj|uzairawu|vkjcrulv)Z'
+fseq seq-isldrop  trlowsize ok 'drop-handoff@size > drop-islands@size'          "$W_ISLSIZE" --engine=vm
 fseq seq-islref   trlowsize refused 'refuse@size'                               "$W_ISLSIZE" --engine=vm --size-cap=refuse
 fseq seq-islnone  trlowsize ok '(none)'                                         "$W_ISLSIZE" --engine=vm -fno-alt-island
 # [RUN-POS-SET] K139 at the SHIPPED caps, the rung's place (review r5 altcode
@@ -373,7 +387,9 @@ random.seed(11)
 w=["".join(random.choice(string.ascii_lowercase) for _ in range(8)) for _ in range(1000)]
 sys.stdout.write("("+"|".join(w[:int(sys.argv[1])])+")\\d+")' "$1"; }
 fseq seq-isl400   trplain ok 'drop-prefilter@size'                             "$(W_KWORDS 400)"
-fseq seq-isl1000  trplain ok 'drop-prefilter@size > drop-islands@size'         "$(W_KWORDS 1000)"
+# [RUN-POS-SET] S2 landing (s2tri h3, abi 106): the union then `\d` is a set-form run, so the
+# VM-only attempt loop carries handoff rows and 4a fires after the prefilter drop (sizes +58 B).
+fseq seq-isl1000  trplain ok 'drop-prefilter@size > drop-handoff@size > drop-islands@size' "$(W_KWORDS 1000)"
 # T1 row 2 (the size term's trial catch), label `other`
 fseq seq-trial    trplain ok 'size-term-trial@other > size-term-trial@other > size-term-trial@other' \
                   "$W_TOWER" --engine=vm
@@ -421,7 +437,7 @@ frec adm-ovf      trplain admit 'none|overflow-drop pf=0'      "$W_OVF"
 frec adm-ovfsel1  trplain admit 'sel1|overflow-drop pf=0'      "$W_OVFNN" -fno-prefilter
 frec adm-fon      trplain admit 'none|forced-on pf=1'          '(a)b' --engine=vm -fprefilter
 frec adm-sizedrop trplain admit 'none|size-dropped pf=0'       '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
-frec adm-sizedcol trlowsize admit 'sizecap|size-dropped pf=0'  '(\bcats\b\W){2,4}[a-z]\d\d' -e utf8
+frec adm-sizedcol trlowsize admit 'sizecap|size-dropped pf=0'  '(\bcats\b.){2,4}[a-z]\d\d' -e utf8
 frec adm-fonsc    trplain admit 'sizecap|forced-on pf=1'       '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 frec att-forced   trplain attrib '-|forced from=forced'                       '(a)b' --engine=vm
 frec att-sel      trplain attrib '-|selected from=none'                       '(a)b'
@@ -437,8 +453,8 @@ frec att-ovfpf    trlowdfa attrib '-|overflowed-prefilter from=sel1-drop'     "$
 frec att-ovfcd    trplain attrib '-|overflowed-dfa from=sel1-drop'            "$W_LOOKR"
 # [REQRUN-VM] att-scpfd's last attempt is now the one after `drop-handoff` (prefilter-
 # collapse > drop-prefilter > drop-handoff, still over the cap): the giving row is the THIRD.
-frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-handoff'       '(\bcats\b\W){2,4}[a-z]\d\d' -e utf8
-frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}\d'
+frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-handoff'       '(\bcats\b.){2,4}[a-z]\d\d' -e utf8
+frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}.'
 frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8 -fno-start-landing
 frec att-sclw     trlowsize attrib '-|size-cap-retry from=drop-landmark-walk' "$W_LWSIZE"
 frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd}|\p{Nd}x|\p{Sc}y)' -e utf8 -fno-start-landing
@@ -637,7 +653,8 @@ fnotes note-none  ""                   '(a)b'
 N_ISL="$NOTE_HEAD the VM's alternation islands -- each alternation tries its branches through the serial chain again instead of one trie dispatch (docs/spec/tuning.md section 2.20)$NOTE_TAIL"
 if compile note-isl trlowsize "$W_ISLSIZE" --engine=vm; then
     got="$(grep -F -- "$NOTE_HEAD" "$WORK/note-isl.err")"
-    [ "$got" = "$N_ISL" ] && ok "notes note-isl [trlowsize --engine=vm]: 1 drop note(s), as hand-written" \
+    [ "$got" = "$N_HO
+$N_ISL" ] && ok "notes note-isl [trlowsize --engine=vm]: 2 drop note(s) (handoff, islands), as hand-written" \
                           || bad "notes note-isl [trlowsize --engine=vm]: drop notes differ from the hand-written line: '$got'"
 else
     bad "notes note-isl [trlowsize --engine=vm]: refused: $(head -1 "$WORK/note-isl.err")"

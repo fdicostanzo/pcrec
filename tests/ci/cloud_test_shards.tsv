@@ -4,7 +4,7 @@
 # plan: target=600s slots=20 setup=70s estimated_wall=1216s sections_total=9817s
 # predicted_shard_s=1146
 # indivisible_floor_s=1216 (setup 70s + largest unit test-memfn-g2 1146s)
-# unmeasured: 3 section(s) -- test-alloc cloudgate-strict cloudgate-lint
+# unmeasured: 4 section(s) -- test-alloc cloudgate-strict cloudgate-lint test-memfn-d27frame
 # measured from: runs (4): 43053664196 (CI run, pcrec-ci-sections-*); 42926942809 (CI run, pcrec-ci-sections-*); 42904468909 (CI run, pcrec-ci-sections-*); 42889667159 (CI run, pcrec-ci-sections-*)
 # floor: test-memfn-g2 1146s; test-corpus 683s
 # ci_scale=1.0
@@ -80,6 +80,7 @@ test-fallback-table	12	44.5	ci-measured measured_test.tsv n=4 measured
 test-memfn-guarded	15	172.1	ci-measured measured_test.tsv n=4 measured
 test-memfn-simdfloor	10	322.4	ci-measured measured_test.tsv n=4 measured
 test-memfn-d27region	4	434.9	ci-measured measured_test.tsv n=4 measured
+test-memfn-d27frame	11	90	ESTIMATE (no measurement; lane d27fix, the quick tier on the dev box, x1.5)
 test-memfn-rank	14	30.9	ci-measured measured_test.tsv n=4 measured
 test-memfn-finder	15	204.9	ci-measured measured_test.tsv n=4 measured
 test-spec-history	15	8	ci-measured measured_test.tsv n=4 measured

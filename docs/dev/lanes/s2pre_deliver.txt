@@ -1,0 +1,5 @@
+report=docs/dev/lanes/s2pre_report.md
+sections: Summary; What moved and why; Floors and witnesses; Checks; Owed runs
+nonempty: all
+commit: yes
+owed: kit-s2pre-sweep

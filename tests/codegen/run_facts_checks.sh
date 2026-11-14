@@ -774,7 +774,11 @@ fi
 #     the new run); the same for T2 row 3, `xy(?:ab){1,2}zw` (`abzw` by
 #     default, the `xyab`/`abzw` tie to the rarer `z`; `zw` restored; S1922);
 #   - a body that is not `all` saturates at TWO copies (`rr_pow_count`):
-#     `(?:ab[0-9]cd){3}` is the join `cdab` (S1923 stops at one copy: `ab`);
+#     `(?:ab.cd){3}` is the join `cdab` (S1923 stops at one copy: `ab`);
+#     `.` (255 members) carries no information, so it is outside the run
+#     domain at any bound. Before the S2 joint landing this cell was
+#     `(?:ab[0-9]cd){3}`; since stage 3 `[0-9]` is a run position, that
+#     body is `all` and the repeat is the whole pattern (its own cell);
 #   - W-R5: `(?:abc){20}` unrolls ceil(32/3) = 11 copies, so the run is the
 #     storage bound's 32 positions, (abc)^10 ab (S1918 stops one copy short:
 #     30 positions, sound, seen only here);
@@ -814,7 +818,8 @@ h	rep	$RP	req_set	97,98,119,120,121,122	-
 p	-	(?:abc){20}	req_whole_run	6162636162636162636162636162636162636162636162636162636162636162	rate:builtin-prior
 p	-	xy(?:ab){1,2}zw	req_whole_run	61627a77	rate:builtin-prior
 h	rep	xy(?:ab){1,2}zw	req_whole_run	7a77	harness:rep
-p	-	(?:ab[0-9]cd){3}	req_whole_run	63646162	rate:builtin-prior
+p	-	(?:ab.cd){3}	req_whole_run	63646162	rate:builtin-prior
+p	-	(?:ab[0-9]cd){3}	req_whole_run	6162[30-39]63646162[30-39]63646162[30-39]6364	rate:builtin-prior
 p	-	(?:a|bc){2}	req_pieces	2:[97][97]|3:[97,98][98,99][97,99]|4:[98][99][98][99]	-
 h	rep	(?:a|bc){2}	req_pieces	none	harness:rep
 p	-	(?:ab){20}(?:c|de)	req_pieces	41@9:[98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][99]|42@10:[97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][97][98][100][101]	-
@@ -887,6 +892,73 @@ else
     else
         ok "[facts-tie] --harness=restore=tie reaches --pattern and a .rxt FILE compile alike (abcd.efgh: rarer run by default, the predecessor's restored)"
     fi
+fi
+
+# [facts-ahead] [RUN-POS-SET] stage 3 (DEFAULT since the S2 joint landing,
+# lane s2land) and stage 2a rule (1) (AHEAD: rps3b, manager ruling
+# 2026-11-13). The default walk is the stage-3 DOMAIN (a run position any
+# set of at most 128 members, no cube clause); the test-only lever
+# `alt-union-run` of build/pcrec-harness is alt_normal_form.md §6's `rr_alt`
+# row 1 (every branch `all`, equal untruncated width: the alternation is
+# `all`, its run the per-position union), so each lever cell has its default
+# twin. Every cell is a real compile the kit must ACCEPT: the rows from
+# `[α-ω]foo` down are the ones today's kit refused before Part D (K-1,
+# docs/dev/lanes/rps3b_report.md "go green only after the flip"), so a kit
+# that regresses to cube-only run positions reds here as REFUSED. Rule (1)'s
+# cells deny altcls (bits 10, 11), which otherwise factors the alternation
+# into a class before the walk sees it. Expectations by hand from req.c's
+# rules (the memo's §3 table, alt_normal_form §5 stage 2a's predicted movers,
+# readiness memo U-d's `cat|dog` -> `{c,d}{a,o}{t,g}`), each confirmed on the
+# landing build; `xy(?:ab|abc)zw` is S-c, the unequal-width control that row
+# 1 must never claim.
+abad=""; nah=0
+aget() { # aget <levers> <denies> <enc> <pattern> -> the req_whole_run value
+    local lv=() dn=()
+    case "$1" in (*alt*) lv+=(--harness=alt-union-run) ;; esac
+    [ "$2" = noaltcls ] && dn=(-fno-altcls-merge -fno-altcls-factor)
+    "$TIMEOUT_BIN" 120 "$HBIN" --features all "${lv[@]}" "${dn[@]}" -e "$3" --emit-facts --pattern "$4" > "$WORKDIR/ah.l" 2> "$WORKDIR/ah.err" ||
+        { printf 'REFUSED(%s)' "$(head -1 "$WORKDIR/ah.err")"; return; }
+    sect "$WORKDIR/ah.l" facts | grep -F "$(printf 'encoding=%s\t' "$3")" | arow req_whole_run /dev/stdin | col value
+}
+if [ ! -x "$HBIN" ]; then
+    abad=" $HBIN is missing (make builds it);"
+else
+    while IFS=$'\t' read -r lv dn enc pat want; do
+        nah=$((nah + 1))
+        got="$(aget "$lv" "$dn" "$enc" "$pat")"
+        [ "$got" = "$want" ] || abad="$abad [$lv $dn $enc] '$pat' req_whole_run [$got], want [$want];"
+    done <<'AHEOF'
+-	-	byte	\d{3}-\d{4}	[30-39][30-39][30-39]2d[30-39][30-39][30-39][30-39]
+-	-	byte	[a-z]{8}	[61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a]
+-	-	byte	xy/users\d+	78792f7573657273[30-39]
+-	-	byte	\w+@example\.com	[30-3941-5a5f61-7a]406578616d706c652e636f6d
+-	-	byte	GET /[a-z]+ HTTP	[61-7a]2048545450
+-	-	utf8	(?i)xyzłw	[5878][5979][5a7a]c5[8182][5777]
+-	noaltcls	byte	abcd(?:ab|ab)efgh	616263646162
+alt	noaltcls	byte	abcd(?:ab|ab)efgh	61626364616265666768
+-	noaltcls	byte	(?:ab|Ab)(?:cd|Cd)(?:ef|Ef)	41624364/dfffdfff
+alt	noaltcls	byte	(?:ab|Ab)(?:cd|Cd)(?:ef|Ef)	416243644566/dfffdfffdfff
+-	noaltcls	byte	xy(?:ab|ac)zw	61627a77/fffeffff
+alt	noaltcls	byte	xy(?:ab|ac)zw	787961627a77/fffffffeffff
+-	noaltcls	byte	xy(?:abc|abd)zw	6162[6364]7a77
+alt	noaltcls	byte	xy(?:abc|abd)zw	78796162[6364]7a77
+alt	noaltcls	byte	xy(?:ab|abc)zw	78796162
+-	-	utf8	[α-ω]foo	[cecf][80-89b1-bf]666f6f
+-	-	utf8	abc[α-ω]defg	[cecf][80-89b1-bf]64656667
+-	-	utf8	(?i)αβγ	ce[91b1][cecf][9092b2]
+-	-	utf8	(?i)xyzβw	[5878][5979][5a7a][cecf][9092b2]
+-	-	utf8	(?i)москва	[b2d0d1][8183a1]d0[9aba][d0e1][92b2]
+-	-	byte	cat|dog	[6364][616f][6774]
+-	-	byte	(?:ab|cd)xy	[6163][6264]7879
+-	-	byte	q(?:cat|dog)q	71[6364][616f][6774]
+-	noaltcls	byte	xy(?:ab|cd|ef)zw	[616365][626466]7a77
+AHEOF
+fi
+echo "REACH: $nah [facts-ahead] listing cell(s)"
+if [ "$nah" -eq 0 ] || [ -n "$abad" ]; then
+    bad "[facts-ahead] the stage-3 run or the alt-union-run lever lists the wrong run:${abad:- no cell was read}"
+else
+    ok "[facts-ahead] $nah cells: the default walk states stage-3 set positions the kit accepts, alt-union-run makes an equal-width all-branch alternation all (and never an unequal one), each beside its default twin"
 fi
 
 echo "checks passed: $pass"

@@ -39,11 +39,18 @@ struct Ast;
 /* ---- the facts' value types -------------------------------------------- */
 
 /* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN: `whole_len` contiguous
- * positions every match of the pattern must contain (`whole`, each position
- * the cube (whole[i], whole_mask[i])), as the analysis stored it (at most
- * `PCREC_MAX_REQ_RUN_SCAN` positions), with `whole_maxoff` the core walk's
- * bound on where position 0 lies inside any match ([K82]; `PCREC_W_UNBOUNDED`
- * where no static bound exists).
+ * positions every match of the pattern must contain, as the analysis stored
+ * it (at most `PCREC_MAX_REQ_RUN_SCAN` positions), with `whole_maxoff` the
+ * core walk's bound on where position 0 lies inside any match ([K82];
+ * `PCREC_W_UNBOUNDED` where no static bound exists).
+ *
+ * [RUN-POS-SET] stage 3 (D187): position `i` is the BYTE SET `pos[i]` (32
+ * bytes, bit `b` of byte `b >> 3`; arena-owned, NULL past `whole_len`): every
+ * match carries one of its members there, and an exact byte is a one-member
+ * set. A position may be a joint SUPERSET (`cat|dog` states `{c,d}{a,o}{t,g}`):
+ * each position holds, never "the run is one of the matches' strings". A
+ * reader that wants a cube rebuilds it from the set (D187 addendum 1); the
+ * accessors below are the readers' one spelling of membership.
  *
  * `whole_len == 0` is the decline and is the safe direction, exactly as
  * `req_byte`'s -1 is. It is never 1 — a one-byte run is `[OPT-REQBYTE]`'s
@@ -58,13 +65,8 @@ struct Ast;
  * `req_byte`'s derivation's (src/facts/req.c `pcrec_req_pick`); the kit
  * chooses what the pre-check verifies. */
 typedef struct {
-    unsigned char whole[PCREC_MAX_REQ_RUN_SCAN];
+    const unsigned char *pos[PCREC_MAX_REQ_RUN_SCAN];
     int whole_len;   /* 0 exactly when the analysis found no run */
-    /* [OPT-LITSCAN] S4 C3 THE MASKS, each position's K: `(x & mask[i]) ==
-     * whole[i]` is the position's membership test, `0xFF` an exact byte, one
-     * clear bit a two-member cube (litscan_s4.md §2.3.2). All `0xFF` on an
-     * exact run. */
-    unsigned char whole_mask[PCREC_MAX_REQ_RUN_SCAN];
     /* [K82] THE RUN's position 0's MAXIMUM BYTE OFFSET FROM THE ATTEMPT
      * START (`req_whole_run`): every successful attempt at `p` holds the run
      * at some `q` in `[p, p + whole_maxoff]` (invariant F, litscan_k82h.md
@@ -73,6 +75,33 @@ typedef struct {
      * wherever a run is the landmark. */
     long long whole_maxoff;
 } ReqRun;
+
+/* A run position's INFORMATION, `8 - ceil(log2 |S|)` over its member set
+ * `pos` (8 for an exact byte, 7 for a pair, 0 past 128 members): the run's
+ * ranking unit and its floor's (src/facts/req.c). */
+int pcrec_req_info(const unsigned char *pos);
+/* A run position's covering CUBE `(t, k)` over its member set `pos`: `t` the
+ * AND of the members, `k` the bits they all agree on (a reader's private
+ * spelling, D187 addendum 1). True where the set IS the cube's members. */
+bool pcrec_req_cube(const unsigned char *pos, int *t, int *k);
+
+/* Is byte `b` a member of the run's position `i`? */
+static inline bool pcrec_run_has(const ReqRun *r, int i, int b)
+{
+    return (r->pos[i][b >> 3] >> (b & 7)) & 1;
+}
+
+/* The run's position `i`'s one member, or -1 where it has more than one. */
+static inline int pcrec_run_byte(const ReqRun *r, int i)
+{
+    int m = -1;
+    for (int b = 0; b < 256; b++) {
+        if (!pcrec_run_has(r, i, b)) continue;
+        if (m >= 0) return -1;
+        m = b;
+    }
+    return m;
+}
 
 /* [RUN-POS-SET] stage 2p THE PIECE DESCRIPTION's value types (its combinators
  * are src/facts/desc.h's, docs/design/alt_normal_form.md §3.4-§3.5). */

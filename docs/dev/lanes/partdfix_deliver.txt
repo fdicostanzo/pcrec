@@ -1,0 +1,5 @@
+report=docs/dev/lanes/partdfix_report.md
+sections: Summary; c01877; S3113; Gate script; Checks; Owed runs
+nonempty: all
+commit: yes
+owed: kit-partdfix-gate

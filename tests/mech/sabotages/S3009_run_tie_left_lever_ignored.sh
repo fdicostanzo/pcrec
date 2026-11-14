@@ -12,6 +12,7 @@
 # family's own output (the lever pass rendered); the row's real reach is the runner's floor
 # of 24 witnesses read. No pcrec observable before K38-2: req_run_member refuses the
 # lever's tie compiles until then, so the row is read in G2 only.
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md rev 4 §5.1 [r3pd FIX-6]): kit_run_opts gained `clip` (the run-verify-wide deny, read by every reader of the decision); the same plant, the lever ignored.
 SAB_ID="S3009-run-tie-left-lever-ignored"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="g2pres"
@@ -19,8 +20,8 @@ SAB_DESC="kit_run_opts_of ignores the run-tie-left lever: in the lever pass the 
 SAB_DOC_FIGURE="HAND-MEASURED by lane k382a 2026-11-10 (docs/dev/lanes/k382a_report.md): memfn/tests/run_g2_pres.sh --plant S3009 RED (LEVER). Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3009."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH };'
+SAB_BEFORE='    return (kit_run_opts){ st, left ? T_RUN_LEFT : T_MASS_STRETCH, clip };'
 SAB_AFTER='    (void)left;   /* SABOTAGE S3009 */
-    return (kit_run_opts){ st, T_MASS_STRETCH };'
+    return (kit_run_opts){ st, T_MASS_STRETCH, clip };'
 SAB_REACH='TMPDIR="$REACH_TMP" bash "$TREE/memfn/tests/run_g2_pres.sh" --reach'
 SAB_REACH_EXPECT="REACH-G2P-LEVER-PASS"

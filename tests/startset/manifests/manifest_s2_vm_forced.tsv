@@ -1176,8 +1176,8 @@ tests/base/k18_cost_gates.rxt:70		28317b302c33307d3f5b5e5d6162635d5b5e6162635d29
 tests/base/k65_precheck_whole_set.rxt:31	--features backrefs --encoding=byte	28783f29285b612d7a5d2b292b5a2e405c31
 tests/base/k65_precheck_whole_set.rxt:44	--features backrefs --encoding=utf8	28783f29285b612d7a5d2b292b5a2e405c31
 tests/base/k65_precheck_whole_set.rxt:57	--features backrefs --encoding=byte	28783f29285b612d7a5d2b292b5a2e40235c31
-tests/base/k66_precheck_whole_run.rxt:34	--features backrefs --encoding=byte	28783f29285b612d7a5d2b292b65656565656565657e237e237e237e235c31
-tests/base/k66_precheck_whole_run.rxt:47	--features backrefs --encoding=utf8	28783f29285b612d7a5d2b292b65656565656565657e237e237e237e235c31
+tests/base/k66_precheck_whole_run.rxt:34	--features backrefs --encoding=byte	28783f29285b612d7a5d2b292b2e65656565656565657e237e237e237e235c31
+tests/base/k66_precheck_whole_run.rxt:47	--features backrefs --encoding=utf8	28783f29285b612d7a5d2b292b2e65656565656565657e237e237e237e235c31
 tests/base/leftmost_semantics.rxt:20		612b
 tests/base/leftmost_semantics.rxt:23		612b3f
 tests/base/leftmost_semantics.rxt:26		2e2a62
@@ -1886,14 +1886,14 @@ tests/litscan/reqcube.rxt:396		283f6929756e696f6e2e2a3f73656c6563742e2a3f66726f6
 tests/litscan/reqcube.rxt:405	--engine=vm	283f6929756e696f6e2e2a3f73656c6563742e2a3f66726f6d
 tests/litscan/reqcube.rxt:415	--features lookaround,modifiers	283f3c3d616229283f693a6364656629
 tests/litscan/reqcube.rxt:424	--features lookaround,modifiers --engine=vm	283f3c3d616229283f693a6364656629
-tests/litscan/reqcube.rxt:434	--features backrefs,classes,modifiers --encoding=byte	28783f29285b612d7a5d2b292b535c64283f693a73656c656374295c31
-tests/litscan/reqcube.rxt:445	--features backrefs,classes,modifiers --encoding=byte --engine=vm	28783f29285b612d7a5d2b292b535c64283f693a73656c656374295c31
-tests/litscan/reqcube.rxt:457	--features backrefs,classes,modifiers --encoding=utf8	28783f29285b612d7a5d2b292b535c64283f693a73656c656374295c31
-tests/litscan/reqcube.rxt:468	--features backrefs,classes,modifiers --encoding=utf8 --engine=vm	28783f29285b612d7a5d2b292b535c64283f693a73656c656374295c31
+tests/litscan/reqcube.rxt:434	--features backrefs,classes,modifiers --encoding=byte	28783f29285b612d7a5d2b292b532e283f693a73656c656374295c31
+tests/litscan/reqcube.rxt:445	--features backrefs,classes,modifiers --encoding=byte --engine=vm	28783f29285b612d7a5d2b292b532e283f693a73656c656374295c31
+tests/litscan/reqcube.rxt:457	--features backrefs,classes,modifiers --encoding=utf8	28783f29285b612d7a5d2b292b532e283f693a73656c656374295c31
+tests/litscan/reqcube.rxt:468	--features backrefs,classes,modifiers --encoding=utf8 --engine=vm	28783f29285b612d7a5d2b292b532e283f693a73656c656374295c31
 tests/litscan/reqcube.rxt:48		283f3a283f693a736162297c53283f693a61622929
-tests/litscan/reqcube.rxt:480	--features backrefs,classes,modifiers --encoding=byte	28783f29285b612d7a5d2b292b535c64283f693a7329717a5c31
-tests/litscan/reqcube.rxt:492	--features backrefs,classes,modifiers --encoding=byte --engine=vm	28783f29285b612d7a5d2b292b535c64283f693a7329717a5c31
-tests/litscan/reqcube.rxt:507	--features backrefs,classes,modifiers	28783f29285b612d7a5d2b292b535c64283f693a73656c656374295c31
+tests/litscan/reqcube.rxt:480	--features backrefs,classes,modifiers --encoding=byte	28783f29285b612d7a5d2b292b532e283f693a7329717a5c31
+tests/litscan/reqcube.rxt:492	--features backrefs,classes,modifiers --encoding=byte --engine=vm	28783f29285b612d7a5d2b292b532e283f693a7329717a5c31
+tests/litscan/reqcube.rxt:507	--features backrefs,classes,modifiers	28783f29285b612d7a5d2b292b532e283f693a73656c656374295c31
 tests/litscan/reqcube.rxt:57	--engine=vm	283f3a283f693a736162297c53283f693a61622929
 tests/litscan/reqcube.rxt:67		283f3a283f693a616229537c283f693a6162732929
 tests/litscan/reqcube.rxt:76	--engine=vm	283f3a283f693a616229537c283f693a6162732929

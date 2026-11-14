@@ -27,12 +27,13 @@
 # T_MASS_STRETCH row in `o.tie`), so the plant now moves that reader as well; req_run_member's
 # agreement check retired with pcrec's cut, so pcrec no longer stops the tie compile: the
 # detectors are the per-reader check (memfnfinder) and candoracle.
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md rev 4 §5.1 [r3pd FIX-6]): the mode row's candidate column is named `cand` (kit_cand: EXACT or FINDABLE); the same plant on the same call.
 SAB_ID="S1095-scan-tie-leftmost"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="candoracle memfnfinder"
 SAB_DESC="SN-6: the run decision drops its tie rule (a tie goes to the leftmost position); every reader moves; caught by the -e utf8 abcd tie witness and the run decision's per-reader check"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    kit_member sc = kit_run_member(rate, at, src, n, run_modes[m].exact, after ? &prev : NULL, o.tie);'
-SAB_AFTER='    kit_member sc = kit_run_member(rate, at, src, n, run_modes[m].exact, after ? &prev : NULL, T_MASS_SET);   /* SABOTAGE S1095 */'
+SAB_BEFORE='    kit_member sc = kit_run_member(rate, at, src, n, run_modes[m].cand, after ? &prev : NULL, o.tie);'
+SAB_AFTER='    kit_member sc = kit_run_member(rate, at, src, n, run_modes[m].cand, after ? &prev : NULL, T_MASS_SET);   /* SABOTAGE S1095 */'
 SAB_DOC_FIGURE="HAND-MEASURED by lane k381 (re-aim onto kit_run_decide's tie; docs/dev/lanes/k381_report.md): the row's plant applied to a git archive of the lane's tip, built with nice make -j2: tests/memfn/run_decide_check.c 8fail/3pass (scan W1 W2, member W1 W2, rank W1 W2, window W2, twin W2); the witness -e utf8 abcd is refused by req_run_member (also under --memfn=no-window-search and --engine=vm). The candoracle and memfnfinder figures are the gate's mech shard's. Earlier: HAND-MEASURED by lane sp1d (re-anchor on kit_pick_takes; docs/dev/lanes/sp1d_report.md): the row's plant applied by tests/mech/lib/replace.py to a git archive of 9eb7d7837, built, tests/codegen/run_cand_oracle.sh: candoracle:31fail/151pass DETECTED (clean 0fail/182pass). Earlier: lane sp1c (re-anchor; docs/dev/lanes/sp1c_report.md): the row's plant applied by tests/mech/lib/replace.py to a git archive of 439c263c8, built, tests/codegen/run_cand_oracle.sh: candoracle:28fail/150pass DETECTED (clean 0fail/178pass). Earlier: lane b3afix, candoracle:6fail/129pass at ebfb5a88a."

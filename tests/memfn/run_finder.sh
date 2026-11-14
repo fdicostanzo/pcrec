@@ -92,9 +92,10 @@ else
 fi
 # span_pick units 1b/1c: kit_mass's golden values and 1c's set-only cases.
 # MASS_FLOOR is the driver's case count (41 since sp1cfix; 43 at R-38 K38-2,
-# NORMAL's four RUN-term cases retired for RUNFORM's six), a literal: a driver
-# that silently ran fewer reads red.
-MASS_FLOOR=43
+# NORMAL's four RUN-term cases retired for RUNFORM's six; 44 at R-38 Part D,
+# MEMBER's wide-position case), a literal: a driver that silently ran fewer
+# reads red.
+MASS_FLOOR=44
 "$WORK/masschk" > "$WORK/mass.log" 2>&1
 rc=$?
 part mass "$WORK/mass.log"

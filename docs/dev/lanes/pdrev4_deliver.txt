@@ -1,0 +1,5 @@
+report=docs/dev/lanes/pdrev4_report.md
+sections: Summary; Per-finding changes; Facts for pcrec's stage 3; Charter-vs-committed checklist
+nonempty: all
+commit: yes
+owed: none

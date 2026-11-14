@@ -27,6 +27,8 @@ Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it); 1 maj
 
 - 2026-11-09 cf578177e major — merge lane/u3mech edf78bcbf ([XARCH-DEV] kit U2 per-CPU SIMD seam + pcrec U3 targets), abi 98, MF_SITE_ABI 26; review 2026-11-08 r5 xarch ruled, fixes in; landing lane landu3; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge; lane gates: make test, strict, axes, mech, movers, sections, sweep (landsweep 080 green on edf78bcbf), kit 560-569 + 089
 
+- 2026-11-14 9cecc3caa major — merge lane/s2land (23700b344, [RUN-POS-SET] stage 3 S2 + kit Part D + R-41), abi 106; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge (65ef919fc); landing lane s2fin; lane gates: cloud test GREEN at 692e5f431, cloud axes GREEN at 23700b344; post-merge make and make strict green, test-codegen/test-registry/test-rxtsource per the s2fin report
+
 ### minor
 
 - 2026-11-08 bfecd6143 minor — merge lane/p1cpu ([XARCH-DEV] P1: -fmemfn-simd[=TOKEN,..] option, kit token parse at option parse, --list-cpu-targets, pcrec_options.memfn_simd; 0 emitted bytes (sweep GREEN); its make test (p1tri re-run) and 6-row mech GREEN)

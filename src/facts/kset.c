@@ -287,8 +287,9 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o)
  * a wrong answer.
  *
  * [OPT-LITSCAN] S4 C3 WHICH STRETCH (litscan_s4.md §2.3.5, r2 R2-C3). A pin
- * is a fact about EXACT positions: a cube position has two members and the
- * walk's `count == 1` test could never claim it anyway. So PICK — the one
+ * is a fact about EXACT positions (one-member sets): a wider position has
+ * two or more members and the walk's `count == 1` test could never claim it
+ * anyway. So PICK — the one
  * PICK primitive, byte candidates — over the run's exact positions in
  * REVERSE order (ties and the NONE answer to the rightmost, the run scan
  * index's own rule), and the stretch is the maximal run of exact positions
@@ -306,12 +307,14 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
 
     *pin = (RunPin){ false, 0, 0, 0, 0 };
     if (r->whole_len < 2) return;
-    for (int i = r->whole_len - 1; i >= 0; i--)
-        if (r->whole_mask[i] == 0xFF) { cand[nc] = r->whole[i]; pos[nc] = i; nc++; }
+    for (int i = r->whole_len - 1; i >= 0; i--) {
+        int b = pcrec_run_byte(r, i);
+        if (b >= 0) { cand[nc] = (unsigned char)b; pos[nc] = i; nc++; }
+    }
     if (nc == 0) return;
     x = pos[pcrec_find_pick(rate, cand, NULL, nc, 0)];
-    for (s0 = x; s0 > 0 && r->whole_mask[s0 - 1] == 0xFF; s0--) {}
-    for (e0 = x + 1; e0 < r->whole_len && r->whole_mask[e0] == 0xFF; e0++) {}
+    for (s0 = x; s0 > 0 && pcrec_run_byte(r, s0 - 1) >= 0; s0--) {}
+    for (e0 = x + 1; e0 < r->whole_len && pcrec_run_byte(r, e0) >= 0; e0++) {}
     if (e0 - s0 < 2) return;
     /* R-38 K38-2 (span_runs_sheet.md §4.2): the WHOLE run, CLIPPED per
        placement to the walk's reach, `l = min(e0 - s0, nwalk - ro)`; the
@@ -323,7 +326,7 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
         if (l < 2 || x - s0 >= l) break;
         int i = 0;
         while (i < l && o->k[ro + i].count == 1 &&
-               o->k[ro + i].byte == r->whole[s0 + i])
+               o->k[ro + i].byte == pcrec_run_byte(r, s0 + i))
             i++;
         if (i == l) *pin = (RunPin){ true, ro, s0, l, x - s0 };
     }

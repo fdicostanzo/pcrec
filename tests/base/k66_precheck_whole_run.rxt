@@ -31,7 +31,7 @@
 # short, which at these lengths would otherwise hide the defect. (tests/codegen/run_prechecks.sh §5.9
 # asserts the emitted whole-run text; this file asserts the answers.)
 
-pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#\1
+pattern (x?)([a-z]+)+.eeeeeeee~#~#~#~#\1
 features backrefs
 encoding byte
 budget steps=10000
@@ -42,9 +42,9 @@ n "aaaaaaaaaaeeeeeeee~#!!!!!!!!!!!!!!!!"
 n "aaaaaaaaeeeeeeee!~#~#~#~#!!!!!!!!!!!!!!!!"
 n "aaaaaaaaaaeeeeeeee!~#~#~#~#!!!!!!!!!!!!!!!!"
 m "abceeeeeeee~#~#~#~#" 0 19
-gu steps "aaaaaaaaaaaaaaaaaaZb!eeeeeeee~#~#~#~#"
+gu steps "aaaaaaaaaaaaaaaaaaZ!eeeeeeee~#~#~#~#"
 
-pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#\1
+pattern (x?)([a-z]+)+.eeeeeeee~#~#~#~#\1
 features backrefs
 encoding utf8
 budget steps=10000
@@ -55,4 +55,11 @@ n "aaaaaaaaaaeeeeeeee~#!!!!!!!!!!!!!!!!"
 n "aaaaaaaaeeeeeeee!~#~#~#~#!!!!!!!!!!!!!!!!"
 n "aaaaaaaaaaeeeeeeee!~#~#~#~#!!!!!!!!!!!!!!!!"
 m "abceeeeeeee~#~#~#~#" 0 19
-gu steps "aaaaaaaaaaaaaaaaaaZb!eeeeeeee~#~#~#~#"
+gu steps "aaaaaaaaaaaaaaaaaaZ!eeeeeeee~#~#~#~#"
+
+# The `.` before the run (s2tri, 2026-11-13): since the [RUN-POS-SET] flip
+# (PCREC_MAX_REQ_RUN_POS_SET 2 -> 128) `[a-z]` is a run POSITION, so without it
+# the run is [a-z]eeeeeeee~#~#~#~# (17 positions) and no subject can hold the
+# whole run and still fail: the `gu` control became NOMATCH. `.` carries no
+# information, keeps the run the 16 bytes above, and the control's subject
+# holds the run with no letter two bytes before it (`Z!`).

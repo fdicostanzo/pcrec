@@ -1,0 +1,5 @@
+report=docs/dev/lanes/partdland_report.md
+sections: Summary; Merge and conflicts; d27fix's fixes kept; Checks; Owed runs
+nonempty: all
+commit: yes
+owed: kit-partdland-gate

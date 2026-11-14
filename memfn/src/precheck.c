@@ -67,14 +67,23 @@ static int single_byte(const mf_pred *p)
     return n == 1;
 }
 
-/* Is `p` a run with a FUNC part: one RUN term at an offset >= 0 (the derived
- * run part's is its verified extent's first position, MF_SITE_ABI 27),
- * scanned on its own bytes? */
-static int run_part(const mf_pred *p, const mf_hooks *def)
+/* Is `p` a run with a FUNC part (the derived run part, MF_SITE_ABI 27):
+ * every term at an offset >= 0 (the verified extent's positions), at most one
+ * RUN term, which is the scanned one (`plan_hint`'s), or no scan and no RUN
+ * term (P0's scan-less run, part_d.md §2.1 [r1pd F23]); wide positions are
+ * SET terms. Admitted by the offset-skip function with the derived part's
+ * SCOPE (ofs_fn_applies `derived`), passed only where `s` states a run
+ * presence span. */
+static int run_part(const mf_site *s, const mf_pred *p, const mf_hooks *def)
 {
-    return p->fn_ref && p->nterm == 1 && p->term[0].kind == MF_T_RUN &&
-           p->term[0].offset >= 0 && p->plan_hint == 0 && def->fn_name &&
-           ofs_fn_applies(p, def);
+    if (!p->fn_ref || !p->nterm || !def->fn_name) return 0;
+    unsigned runs = 0;
+    for (unsigned i = 0; i < p->nterm; i++) {
+        if (p->term[i].offset < 0) return 0;
+        if (p->term[i].kind == MF_T_RUN && (runs++ || i != p->plan_hint)) return 0;
+    }
+    if (p->plan_hint == MF_NO_PRED ? runs != 0 : runs != 1) return 0;
+    return ofs_fn_applies(p, def, kit_pres_run(s) >= 0);
 }
 
 /* Is the site a composite of parts this renderer writes, in an order it
@@ -90,7 +99,7 @@ static int precheck_parts(const mf_site *s, const mf_hooks *def)
     int rest = 0;
     for (unsigned i = 0; i < s->npred; i++) {
         const mf_pred *p = &s->preds[i];
-        if (run_part(p, def)) {
+        if (run_part(s, p, def)) {
             if (rest) return 0;       /* the set rest is the last part */
         } else if (single_byte(p) && !p->fn_ref) {
             if (i > 0) rest = 1;
@@ -104,7 +113,7 @@ static int precheck_parts(const mf_site *s, const mf_hooks *def)
 static int precheck_applies(const mf_site *s, const mf_hooks *def)
 {
     return precheck_parts(s, def) &&
-           (s->ret_pred == MF_NO_PRED || run_part(&s->preds[s->ret_pred], def));
+           (s->ret_pred == MF_NO_PRED || run_part(s, &s->preds[s->ret_pred], def));
 }
 
 /* Is ret_pred a position the one-byte ASSIGN line may keep: part 0, one
@@ -145,16 +154,58 @@ static int precheck_assign_byte_applies(const mf_site *s, const mf_hooks *def)
  * (the run decision's window, its term at offset `ver_lo` holding `ver_len`
  * positions), the text says which positions each hit compares and that the
  * candidate is run position 0, never "the whole run" (review 2026-11-11 r1
- * k382 F4). */
+ * k382 F4). Since R-38 Part D the run is the RUN term `plan_hint` names, the
+ * part's other terms each a set test at one position (part_d.md §2.1); a
+ * scan-less part (no RUN term) tests every position from `pos`. */
+static void set_positions(const mf_pred *p, mf_sink *o)
+{
+    unsigned m = 0;
+    for (unsigned j = 0; j < p->nterm; j++)
+        if (p->term[j].kind == MF_T_SET) kit_out(o, "%s%d", m++ ? ", " : "", (int)p->term[j].offset);
+}
+
 static void run_comment(const mf_hooks *h, const mf_pred *p, uint32_t i,
                         int whole, unsigned n, mf_sink *o)
 {
     if (!o->cmt_open || !o->cmt_open(o->u, h->comment_tier)) return;
     const char *tag = h->note_tag ? h->note_tag(h->u, i) : NULL;
-    const mf_term *t = &p->term[0];
+    if (p->plan_hint == MF_NO_PRED) {
+        kit_out(o,
+            "%s THE NECESSARY-RUN SEARCH: the first position >= `pos` at\n"
+            " * which the %u-position %s every match contains may begin inside\n"
+            " * [pos, n), or `n` when there is none -- no position is searched\n"
+            " * for: every position from `pos` is tested, a set test at each of\n"
+            " * positions ",
+            tag ? tag : "", n, whole ? "whole run" : "run");
+        set_positions(p, o);
+        kit_out(o,
+            ".\n"
+            " * The search entry answers NOMATCH on `n`. -fno-req-byte removes\n"
+            " * the pre-check.");
+        if (o->cmt_close) o->cmt_close(o->u);
+        return;
+    }
+    const mf_term *t = &p->term[p->plan_hint];
     int k, a, b;
     ofs_fn_scan(p, &k, &a, &b);
-    if (t->offset || t->run_len != n) {
+    if (p->nterm > 1) {
+        kit_out(o,
+            "%s THE NECESSARY-RUN SEARCH: the first position >= `pos` at\n"
+            " * which the %u-position %s every match contains may begin inside\n"
+            " * [pos, n), or `n` when there is none --\n * ",
+            tag ? tag : "", n, whole ? "whole run" : "run");
+        if (b >= 0) kit_out(o, "two memchr streams for its bytes %d and %d", a, b);
+        else        kit_out(o, "one memchr for its byte %d", a);
+        kit_out(o,
+            " at offset %d, one %scompare of its\n"
+            " * positions %d..%d per hit, and a set test at each of positions ",
+            k, t->mask ? "masked " : "", (int)t->offset, (int)(t->offset + t->run_len - 1));
+        set_positions(p, o);
+        kit_out(o,
+            ".\n"
+            " * The search entry answers NOMATCH on `n`. -fno-req-run replaces it\n"
+            " * with the one-byte check, -fno-req-byte removes the pre-check.");
+    } else if (t->offset || t->run_len != n) {
         kit_out(o,
             "%s THE NECESSARY-RUN SEARCH: the first position >= `pos` at\n"
             " * which the %u-position %s every match contains may begin inside\n"
@@ -399,7 +450,9 @@ static const gate_use precheck_assign_uses[] = {
     [FLD_fn_ref]          = MF_ANY,                   /* not read: each part's own fn_ref, :187, is \
                                                          the predicate's (:69, :89) */ \
     [FLD_table_ref]       = MF_ANY,                   /* not read: a byte part reads its set bits, \
-                                                         :48-53; a run part has no SET term */ \
+                                                         :48-53; the derived part's SET terms \
+                                                         carry table_ref 0 and are the kit's own \
+                                                         test (part_d.md §2.1) */ \
     [FLD_s]               = CM(IDENT),                /* :211, :251 raw in `%s + %s` (S2) */ \
     [FLD_n]               = CM(IDENT),                /* :210-211, :251 raw in `%s <= %s`, \
                                                          `%s - %s` (S3) */ \
@@ -424,8 +477,10 @@ static const gate_use precheck_assign_uses[] = {
     [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */ \
     [FLD_member]          = MF_ANY,                   /* not read: a byte part is one memchr, \
                                                          :211, :251 */ \
-    [FLD_table_name]      = MF_ANY,                   /* not read: no part has a SET term to name \
-                                                         (ofsskip.c table_params) */ \
+    [FLD_table_name]      = MF_ANY,                   /* not read: the derived part's SET terms \
+                                                         carry table_ref 0 and are the kit's own \
+                                                         test, no table to name (ofsskip.c \
+                                                         table_params) */ \
     [FLD_fn_name]         = MF_ANY,                   /* :190 names each part, any name */ \
     [FLD_note]            = MF_ANY,                   /* :195, :293 pcrec's own writer, as given */ \
     [FLD_note_tag]        = MF_ANY,                   /* :142 a comment tag, as given */ \

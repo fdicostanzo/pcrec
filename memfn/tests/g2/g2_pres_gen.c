@@ -141,14 +141,51 @@ static unsigned rnd(unsigned n)
 
 static void set_add(uint8_t set[32], unsigned b) { set[b >> 3] |= (uint8_t)(1u << (b & 7)); }
 
+/* THE WIDE STREAM's own random stream (R-38 Part D, part_d.md §5.1 D0
+   [r1pd F18]): every draw of the wide sites, after today's sites, so the
+   main stream's sites, and the site file they write, stay byte-identical */
+static unsigned long long g_rng2;
+static unsigned rnd2(unsigned n)
+{
+    g_rng2 = g_rng2 * 6364136223846793005ull + 1442695040888963407ull;
+    return n ? (unsigned)((g_rng2 >> 33) % n) : 0;
+}
+
+static unsigned set_count(const uint8_t set[32])
+{
+    unsigned k = 0;
+    for (unsigned i = 0; i < 32; i++) k += (unsigned)__builtin_popcount(set[i]);
+    return k;
+}
+static int set_has(const uint8_t set[32], unsigned b) { return set[b >> 3] >> (b & 7) & 1; }
+static int set_first(const uint8_t set[32])
+{
+    for (unsigned b = 0; b < 256; b++) if (set_has(set, b)) return (int)b;
+    return -1;
+}
+/* G2's OWN reading of "findable" (part_d.md §2.4 item 1, written from the
+   design's words, never the kit's accessor): one member, or two members
+   differing in one bit (a cube) */
+static int findable(const uint8_t set[32])
+{
+    unsigned k = set_count(set);
+    if (k == 1) return 1;
+    if (k != 2) return 0;
+    int a = set_first(set), b = -1;
+    for (unsigned x = (unsigned)a + 1; x < 256 && b < 0; x++) if (set_has(set, x)) b = (int)x;
+    return __builtin_popcount((unsigned)(a ^ b)) == 1;
+}
+
 /* ---- a generated site -------------------------------------------------------- */
 
 enum { RATE_NONE, RATE_SKEW, RATE_UNIFORM, RATE_TIES, RATE_N, RATE_FIXED = RATE_N };
 
 typedef struct {
     int      id, want, witness, wk;
+    int      wide;                      /* a WIDE stream site (sets authoritative) */
     unsigned L;
     uint8_t  run[G2P_MAXRUN], mask[G2P_MAXRUN];
+    uint8_t  set[G2P_MAXRUN][32];       /* each position's set (every site) */
     unsigned nm;
     uint8_t  members[4];
     int      rates, assign;
@@ -199,6 +236,136 @@ static int32_t gen_omin(void)
     return rnd(2) ? -(int32_t)(8 + rnd(25)) : -(int32_t)(1 + rnd(40));
 }
 
+/* THE WIDE STREAM (R-38 Part D, part_d.md §5.2): a position's set from a
+   stratified member-count distribution and shape, on rnd2 alone. `cls`:
+   0 one byte; 1 a cube (a letter's case pair or a one-bit pair); 2 two
+   members not a cube; 3 3-8 scattered; 4 one range of 9-32; 5 a union of
+   ranges, 33-128 members; 6 exactly 128 (the low or the high half); 7 \d;
+   8 hex; 9 [a-z]; 10 \w; 11 \s; 12 a UTF-8 lead set; 13 continuation */
+enum { PC_ONE, PC_CUBE, PC_TWO, PC_SCAT, PC_RANGE, PC_UNION, PC_128, PC_D, PC_HEX, PC_AZ, PC_W,
+       PC_S, PC_LEAD, PC_CONT, PC_N };
+static void set_range(uint8_t s[32], unsigned lo, unsigned hi) { for (unsigned b = lo; b <= hi; b++) set_add(s, b); }
+static void wide_pos(uint8_t s[32], int cls)
+{
+    memset(s, 0, 32);
+    unsigned b = rnd2(256);
+    switch (cls) {
+    case PC_ONE:   set_add(s, b); break;
+    case PC_CUBE:
+        if (rnd2(2)) { b = 'a' + rnd2(26); set_add(s, b); set_add(s, b & 0xDF); }
+        else { set_add(s, b); set_add(s, b ^ (1u << rnd2(8))); }
+        break;
+    case PC_TWO:   set_add(s, b); set_add(s, b ^ (3u << rnd2(7))); break;   /* two bits differ */
+    case PC_SCAT:  for (unsigned n = 3 + rnd2(6); set_count(s) < n;) set_add(s, rnd2(256)); break;
+    case PC_RANGE: { unsigned n = 9 + rnd2(24), lo = rnd2(256 - n); set_range(s, lo, lo + n - 1); } break;
+    case PC_UNION: {
+        unsigned want = 33 + rnd2(96);
+        while (set_count(s) < want) {
+            unsigned n = 4 + rnd2(28), lo = rnd2(256 - n);
+            set_range(s, lo, lo + n - 1);
+        }
+        while (set_count(s) > 128) {                    /* at most 128 (info >= 1 bit) */
+            unsigned x = (unsigned)set_first(s);
+            s[x >> 3] &= (uint8_t)~(1u << (x & 7));
+        }
+        break;
+    }
+    case PC_128:   if (rnd2(2)) set_range(s, 0x00, 0x7F); else set_range(s, 0x80, 0xFF); break;
+    case PC_D:     set_range(s, '0', '9'); break;
+    case PC_HEX:   set_range(s, '0', '9'); set_range(s, 'a', 'f'); set_range(s, 'A', 'F'); break;
+    case PC_AZ:    set_range(s, 'a', 'z'); break;
+    case PC_W:     set_range(s, '0', '9'); set_range(s, 'a', 'z'); set_range(s, 'A', 'Z'); set_add(s, '_'); break;
+    case PC_S:     set_range(s, 9, 13); set_add(s, ' '); break;
+    case PC_LEAD:  set_range(s, 0xC2, 0xDF); break;
+    default:       set_range(s, 0x80, 0xBF); break;
+    }
+}
+static int wide_cls(void)        /* a WIDE class: three or more members */
+{
+    return PC_SCAT + (int)rnd2(PC_N - PC_SCAT);
+}
+static int find_cls(void)        /* a FINDABLE class */
+{
+    return rnd2(3) ? PC_ONE : PC_CUBE;
+}
+static void gen_wide(gsite *g)
+{
+    g->wide = 1;
+    unsigned L = 0;
+    int cls[G2P_MAXRUN];
+    switch (rnd2(8)) {
+    case 0:                                         /* NO findable position */
+        L = 2 + rnd2(11);
+        for (unsigned j = 0; j < L; j++) cls[j] = wide_cls();
+        if (rnd2(4) == 0) { cls[0] = PC_128; cls[1] = PC_128; }   /* maybe "no background" */
+        break;
+    case 1: {                                       /* ab\dcd: a wide position between two stretches */
+        unsigned a = 1 + rnd2(4), b = 1 + rnd2(4);
+        for (unsigned j = 0; j < a; j++) cls[L++] = find_cls();
+        cls[L++] = wide_cls();
+        for (unsigned j = 0; j < b; j++) cls[L++] = find_cls();
+        break;
+    }
+    case 2: {                                       /* \d[aA]\d: a lone findable between wide ones */
+        unsigned n = 1 + rnd2(3);
+        for (unsigned j = 0; j < n; j++) cls[L++] = wide_cls();
+        cls[L++] = find_cls();
+        for (unsigned j = 0; j < n; j++) cls[L++] = wide_cls();
+        break;
+    }
+    case 3:                                         /* a wide position at either end */
+        L = 3 + rnd2(10);
+        for (unsigned j = 0; j < L; j++) cls[j] = find_cls();
+        if (rnd2(2)) cls[0] = wide_cls();
+        if (rnd2(2) || cls[0] < PC_SCAT) cls[L - 1] = wide_cls();
+        break;
+    case 4: {                                       /* a joint superset: 2-4 literal branches' union */
+        L = 2 + rnd2(7);
+        unsigned nb = 2 + rnd2(3);
+        for (unsigned j = 0; j < L; j++) {
+            memset(g->set[j], 0, 32);
+            for (unsigned k = 0; k < nb; k++) set_add(g->set[j], 'a' + rnd2(26));
+            cls[j] = -1;
+        }
+        break;
+    }
+    default:                                        /* stratified per position */
+        L = 2 + rnd2(G2P_MAXRUN - 1);
+        for (unsigned j = 0; j < L; j++) {
+            unsigned k = rnd2(10);
+            cls[j] = k < 3 ? PC_ONE : k < 5 ? PC_CUBE : k < 6 ? PC_TWO : wide_cls();
+        }
+        break;
+    }
+    g->L = L;
+    for (unsigned j = 0; j < L; j++) {
+        if (cls[j] >= 0) wide_pos(g->set[j], cls[j]);
+        g->run[j] = (uint8_t)set_first(g->set[j]);   /* unread on a wide site: the sets are */
+        g->mask[j] = 0xFF;
+    }
+}
+
+/* every position's set from today's run/mask form (the main stream) */
+static void sets_of_run(gsite *g)
+{
+    memset(g->set, 0, sizeof g->set);
+    for (unsigned j = 0; j < g->L; j++)
+        for (unsigned b = 0; b < 256; b++)
+            if ((b & g->mask[j]) == g->run[j]) set_add(g->set[j], b);
+}
+
+/* 1 iff no position of `g` is findable (G2's own computation, [r1pd F21]) */
+static int no_findable(const gsite *g)
+{
+    for (unsigned j = 0; j < g->L; j++) if (findable(g->set[j])) return 0;
+    return 1;
+}
+static int any_wide(const gsite *g)
+{
+    for (unsigned j = 0; j < g->L; j++) if (!findable(g->set[j])) return 1;
+    return 0;
+}
+
 /* the lever witness: distinct exact bytes, uniform rates: every position a tie */
 static void gen_witness(gsite *g)
 {
@@ -245,9 +412,39 @@ static void gen_wk(gsite *g, int wk)
     }
 }
 
+/* The rates of a WIDE stream site ([r2pd P18], scoped by [r3pd FIX-3]): a
+   position of THREE or more members rates each member (RATE_SKEW from
+   rnd2(200000 / |S|), RATE_TIES 50000 / |S|), so its summed mass is in a
+   one-member position's range; a position of one or two members keeps
+   today's one draw on its first member; all on rnd2 */
+static void gen_rates_wide(gsite *g)
+{
+    for (unsigned b = 0; b < 256; b++) g->rate[b] = 0;
+    int skew = g->rates == RATE_SKEW;
+    switch (g->rates) {
+    case RATE_SKEW:
+    case RATE_TIES:
+        for (unsigned b = 0; b < 256; b++) g->rate[b] = skew ? rnd2(2000) : 100 + rnd2(50);
+        for (unsigned j = 0; j < g->L; j++) {
+            unsigned c = set_count(g->set[j]);
+            if (c >= 3) {
+                for (unsigned b = 0; b < 256; b++)
+                    if (set_has(g->set[j], b)) g->rate[b] = skew ? rnd2(200000 / c) : 50000 / c;
+            } else g->rate[set_first(g->set[j])] = skew ? rnd2(200000) : 50000;
+        }
+        for (unsigned i = 0; i < g->nm; i++) g->rate[g->members[i]] = skew ? rnd2(200000) : 50000;
+        break;
+    case RATE_UNIFORM:
+        for (unsigned b = 0; b < 256; b++) g->rate[b] = 3906;
+        break;
+    default: break;
+    }
+}
+
 static void gen_rates(gsite *g)
 {
     if (g->rates == RATE_FIXED) return;
+    if (g->wide) { gen_rates_wide(g); return; }
     for (unsigned b = 0; b < 256; b++) g->rate[b] = 0;
     switch (g->rates) {
     case RATE_SKEW:
@@ -275,7 +472,7 @@ static const char *fn_name_hook(void *u, uint32_t fn_ref)
 
 static int in_run_set(const gsite *g, unsigned j, unsigned b)
 {
-    return (b & g->mask[j]) == g->run[j];
+    return set_has(g->set[j], b);
 }
 
 /* the presence spans a host states (emit_dfa.c req_pres_spans' shape): the
@@ -345,7 +542,9 @@ static void site_base(mf_site *s)
 
 static const mf_target *g_target;
 static int g_lever;
+static int g_deny;                      /* the deny pass: every site under no-run-verify-wide */
 static int g_oml = 1;                   /* the sites' on_miss_leaves (argv[6]) */
+static int g_g2site;                    /* env G2P_G2SITE: print D3's join line */
 static const char *g_tag;
 static uint32_t g_inc;
 static int g_fails;
@@ -355,6 +554,11 @@ static long g_route_sites[G2P_NROUTE], g_p2_untested, g_p2_refused, g_layout_ok,
 static long g_neg_omin, g_wk4_omin, g_k_nonpos, g_k_signed, g_partial, g_room, g_wk3_sites,
             g_wk3_cases, g_wk3_zero;
 static mf_finder_listing g_rows;
+/* R-38 Part D's populations (part_d.md §5.1.1 D0-D2 floors; K35) */
+static long g_wide_sites, g_wide_ver, g_nofind, g_nobg, g_f24, g_f24_3, g_scan_findable,
+            g_declines, g_dec_member, g_dec_assign, g_dec_twin, g_dec_untested, g_dec_refused,
+            g_dec_rendered, g_dec_noprecheck, g_scanless_req, g_dom_noscan, g_deny_sites, g_deny_one,
+            g_r41, g_r41_flip;
 
 static void fail(int id, const char *what, const char *why)
 {
@@ -375,11 +579,11 @@ static int route_of(const mf_class *c, unsigned run)
     unsigned r = c->pres_row[run];
     const char *id = r >= 1 && r <= g_rows.n ? g_rows.rows[r - 1].id : "";
     return !strcmp(id, "P0") ? G2P_P0 : !strcmp(id, "P2") ? G2P_P2 : !strcmp(id, "P3") ? G2P_P3
-         : !strcmp(id, "P9") ? G2P_P9 : -1;
+         : !strcmp(id, "P9") ? G2P_P9 : !strcmp(id, "PD") ? G2P_PD : -1;
 }
 
 typedef struct {
-    int      rendered, route, assign, has_scan, scan, fnok;
+    int      rendered, route, assign, has_scan, scan, fnok, tested;
     int32_t  omin;                      /* the run span's stated omin */
     int64_t  head_max;                  /* K as stated               */
     unsigned ver_lo, ver_len;
@@ -407,7 +611,7 @@ static const char *reply_bad(const mf_run_reply *r, unsigned n, int tested)
  * is 0 and the plant cannot show). The expectation is the STATED rule: the
  * kit admits by max(K, 0) (§3.2), so a K <= 0 is K 0. The start set is every
  * byte (m the mass of the whole alphabet). */
-static void twin_check(gsite *g, const mf_art *art, const mf_site *s)
+static void twin_check(gsite *g, const mf_art *art, const mf_site *s, int dec, int head)
 {
     static uint8_t all[32];
     memset(all, 0xFF, sizeof all);
@@ -424,6 +628,47 @@ static void twin_check(gsite *g, const mf_art *art, const mf_site *s)
     }
     g_wk3_sites++;
     if (pk.landmark < 0) { fail(g->id, "W-K3", "no landmark bit on an ASSIGN site"); return; }
+    /* R-41 (MF_SITE_ABI 29): a STATED unbounded K (MF_HEAD_MAX_UNBOUNDED)
+       declines the landmark on every ASSIGN site, whatever the bit at K 0
+       (an h == 0 member's admission included); r41_flip counts the sites
+       whose K 0 bit was 1, the ones the decline moves */
+    {
+        mf_site u = t;
+        mf_pres_picks pu;
+        u.head_max = MF_HEAD_MAX_UNBOUNDED;
+        if (mf_pres_ports(art, &u, &u.pres_proof, all, &pu)) {
+            fail(g->id, "R-41", "mf_pres_ports refused a stated unbounded K");
+            return;
+        }
+        if (pu.landmark != 0) {
+            fail(g->id, "R-41", "a stated unbounded K (MF_HEAD_MAX_UNBOUNDED) did not decline the landmark");
+            return;
+        }
+        g_r41++;
+        g_r41_flip += pk.landmark == 1;
+    }
+    /* F1 (part_d.md §2.4 item 5): on a DECLINED run the landmark is the head
+       member, so the bit at K 0 is G2's own byte rule: the member's mass h
+       (its rate capped at 1e6; under no rates the uniform floor(1e6 / 256))
+       against the start set's m (every byte: 1e6), admitted iff h == 0 or
+       m > h; the run branch over the empty extent would read h = 1e6 (0) */
+    if (dec && head >= 0) {
+        unsigned b = (unsigned)set_first(g_ps[head].term[0].set);
+        unsigned long long h = g->rates == RATE_NONE ? 1000000u / 256u
+                             : g->rate[b] > 1000000u ? 1000000u : g->rate[b];
+        unsigned long long m = 0;
+        if (g->rates == RATE_NONE) m = 1000000u;
+        else { for (unsigned x = 0; x < 256; x++) m += g->rate[x]; if (m > 1000000u) m = 1000000u; }
+        int want = h == 0 || m > h;
+        if (pk.landmark != want) {
+            char why[160];
+            snprintf(why, sizeof why, "a declined run's landmark bit at K 0 is %d, the head member's "
+                     "byte rule (h %llu, m %llu) says %d", pk.landmark, h, m, want);
+            fail(g->id, "F1 (the twin on a declined run)", why);
+            return;
+        }
+        g_dec_twin += want;
+    }
     if ((g->wk == G2P_W_L1B || g->wk == G2P_W_K1B) && pk.landmark != 1)
         fail(g->id, "W-K3", "the witness's stated rates (m > h) do not reach: the bit at K 0 is 0");
     if (pk.landmark != 1) { g_wk3_zero++; return; }
@@ -477,7 +722,9 @@ static void one_site(gsite *g, buf *fs, gout *o)
     static const uint8_t kinds[] = { MF_SK_DFA_SCAN, MF_SK_DFA_ATTEMPT, MF_SK_HYB_PF };
     s.site_kind = g->want == G2P_P0 ? MF_SK_VM_ATTEMPT : kinds[rnd(3)];
     s.on_miss_leaves = (uint8_t)g_oml;
-    s.opts = g->want == G2P_P9 ? "no-fd-pres-pick" : NULL;
+    s.opts = g->want == G2P_P9 ? (g_deny ? "no-fd-pres-pick,no-run-verify-wide" : "no-fd-pres-pick")
+           : g_deny ? "no-run-verify-wide" : NULL;
+    int nofind = no_findable(g);
     s.npspan = (uint16_t)state_spans(g, need);
     s.pspans = g_ps;
     s.pres_proof = (mf_pres_proof){ -1, 0, 0, 1 };
@@ -500,11 +747,14 @@ static void one_site(gsite *g, buf *fs, gout *o)
         if (mf_ask(art, &s, &h, &c)) { fail(g->id, "mf_ask (P2's lead)", "refused"); return; }
         int sc = c.pres[run].verify && c.run.has_scan ? c.run.scan : -1;
         int lead = -1;
-        if (sc >= 0 && g->mask[sc] == 0xFF) lead = g->run[sc];
+        if (sc >= 0 && set_count(g->set[sc]) == 1) lead = set_first(g->set[sc]);
         else if (pk.set_pick >= 0)
             for (unsigned b = 0; b < 256; b++)
                 if (g_ps[pk.set_pick].term[0].set[b >> 3] >> (b & 7) & 1) lead = (int)b;
-        if (lead >= 0) s.pres_proof = (mf_pres_proof){ (int16_t)lead, 0, 1, 1 };
+        /* [r3pd FIX-4]: pcrec's real proof states `run` 0 on a run the kit
+           cannot scan (run_verified is never set there): G2 states it so on
+           its no-findable-position sites; every other site keeps run 1 */
+        if (lead >= 0) s.pres_proof = (mf_pres_proof){ (int16_t)lead, 0, (uint8_t)!nofind, 1 };
     }
 
     if (mf_ask(art, &s, &h, &c)) { fail(g->id, "mf_ask (the presence links)", "refused"); return; }
@@ -522,8 +772,69 @@ static void one_site(gsite *g, buf *fs, gout *o)
         return;
     }
 
+    /* R-38 Part D, THE REPLY LEVEL (part_d.md §5.1 D1's check, [r1pd F14,
+       F21], [r2pd P22]), each against G2's OWN sets: the scan is never a
+       wide position; a decline exactly where G2 computes one (an OPTIONAL
+       route, no findable position, not dominated by P2); a REQUIRED run with
+       no findable position verified whole, scan-less; a dominated no-scan
+       site's every span proven (F3); a declined run's member at the HEAD
+       (F2); the twin's landmark on a declined run the head's byte (F1) */
+    int head = -1;
+    for (unsigned i = 0; i < run; i++)
+        if (c.pres[i].verify && c.pres[i].order == 0) head = (int)i;
+    int dec = o->route == G2P_PD;
+    if (g->wide) g_wide_sites++;
+    g_nofind += nofind;
+    if (c.run.has_scan && c.run.scan < g->L && !findable(g->set[c.run.scan])) {
+        fail(g->id, "the run's reply", "its scan is a WIDE position (the scan is findable only)");
+        return;
+    }
+    if (c.run.has_scan && any_wide(g)) g_scan_findable++;
+    int dec_want = need == MF_OPTIONAL && nofind && o->route != G2P_P2;
+    if (dec != dec_want) {
+        fail(g->id, "the decline", dec ? "PD declined a run G2 finds a findable position in (or "
+                                         "on a REQUIRED route)"
+                                       : "a run with no findable position on an OPTIONAL, "
+                                         "undominated route was not declined");
+        return;
+    }
+    if (dec) {
+        g_declines++;
+        if (g->nm) {
+            if (head < 0) { fail(g->id, "F2", "a declined run with a member has no HEAD"); return; }
+            g_dec_member++;
+        }
+        if (g->assign) g_dec_assign++;
+    }
+    if (need == MF_REQUIRED && nofind) {
+        if (!tested || c.run.has_scan || c.run.ver_lo || c.run.ver_len != g->L) {
+            fail(g->id, "the scan-less REQUIRED run", "not verified whole without a scan (K66)");
+            return;
+        }
+        g_scanless_req++;
+    }
+    if (o->route == G2P_P2 && nofind) {
+        for (unsigned i = 0; i < s.npspan; i++)
+            if (!c.pres[i].proven_by) {
+                fail(g->id, "F3", "a dominated site with no findable run position leaves a span unproven");
+                return;
+            }
+        g_dom_noscan++;
+    }
+    if (g_deny && tested) {
+        for (unsigned j = c.run.ver_lo; j < (unsigned)c.run.ver_lo + c.run.ver_len; j++)
+            if (c.run.has_scan && !findable(g->set[j])) {
+                fail(g->id, "the deny (run-verify-wide)", "the verified extent holds a wide position");
+                return;
+            }
+        g_deny_one += c.run.has_scan && c.run.ver_len == 1;
+    }
+    if (tested)
+        for (unsigned j = c.run.ver_lo; j < (unsigned)c.run.ver_lo + c.run.ver_len; j++)
+            if (!findable(g->set[j])) { g_wide_ver++; break; }
+
     /* W-K3, the twin, on every site (the port reads the reply's extent) */
-    twin_check(g, art, &s);
+    twin_check(g, art, &s, dec, head);
 
     /* THE LAYOUT (compose.c's statement rule as a host follows it, emit_dfa.c
        req_site_define): the head, ONE derived run part where the run's link
@@ -531,14 +842,13 @@ static void one_site(gsite *g, buf *fs, gout *o)
     static mf_pred preds[1 + 1 + 4];
     memset(preds, 0, sizeof preds);
     unsigned np = 0;
-    int head = -1;
-    for (unsigned i = 0; i + 1 < s.npspan; i++)
-        if (c.pres[i].verify && c.pres[i].order == 0) head = (int)i;
-    if (head >= 0) {
+    if (head >= 0) {                    /* the head as read above (the kit's links) */
         int b = -1;
         for (unsigned x = 0; x < 256; x++)
             if (g_ps[head].term[0].set[x >> 3] >> (x & 7) & 1) b = (int)x;
-        mf_need gn = (mf_need)g_ps[head].need;
+        /* the head's need reads whether the run is TESTED ([r2pd P1, P6]): a
+           declined run's layout is a run-less one, its head REQUIRED */
+        mf_need gn = tested ? (mf_need)g_ps[head].need : MF_REQUIRED;
         o->mem[o->nmem++] = (uint8_t)b;
         preds[np].nterm = 1;
         preds[np].need = gn;
@@ -573,10 +883,16 @@ static void one_site(gsite *g, buf *fs, gout *o)
             np++;
         }
 
+    o->tested = tested;
     if (!tested) {
         /* C2's third clause: the run's link is untested, so no run part; the
-           control lays the derived part out anyway and the kit must refuse it */
+           control lays the derived part out anyway and the kit must refuse it.
+           Each untested route counts its own pair ([r3pd FIX-7]): P2's, and
+           the DECLINE's ([r2pd P6]), whose site is then laid out WITHOUT a
+           run part (members only, the head by the kit's links), rendered and
+           checked; a declined site with no verified member has no pre-check */
         if (o->route == G2P_P2) g_p2_untested++;
+        if (dec) g_dec_untested++;
         mf_art *ac = art_of(pfx, anp);
         mf_pred cp[1];
         memset(cp, 0, sizeof cp);
@@ -587,11 +903,14 @@ static void one_site(gsite *g, buf *fs, gout *o)
         buf t = { 0 };
         mf_sink sk = mk_sink(&t);
         uint32_t hd;
-        if (ac && mf_define(ac, &sc, &h, &sk, &hd)) g_p2_refused++;
-        else fail(g->id, "C2 (no run part where the link is untested)",
-                  "a run part laid out on an untested link was not refused");
+        if (ac && mf_define(ac, &sc, &h, &sk, &hd)) {
+            if (o->route == G2P_P2) g_p2_refused++;
+            if (dec) g_dec_refused++;
+        } else fail(g->id, "C2 (no run part where the link is untested)",
+                    "a run part laid out on an untested link was not refused");
         free(t.p);
-        return;
+        if (!dec) return;
+        if (!np) { g_dec_noprecheck++; return; }
     }
 
     /* THE STATEMENT RULE's other two refusals (review 2026-11-11 r1 k382
@@ -600,7 +919,7 @@ static void one_site(gsite *g, buf *fs, gout *o)
        (ii) the layout drops the derived run part (compose.c
        pres_layout_check); (iii) the layout carries a SECOND derived part
        (window.c wf_parts_check) */
-    {
+    if (tested) {
         static mf_pred cp[1 + 2 + 4];
         const char *want[2] = { "its run part (the FUNC part the kit derives) is not where",
                                 "a second derived run part" };
@@ -645,7 +964,15 @@ static void one_site(gsite *g, buf *fs, gout *o)
         fail(g->id, "mf_define", mf_art_error(art));
         return;
     }
+    /* R-38 Part D D3's JOIN (part_d.md §5.1 D3 [r3pd RDY-4]): under
+       G2P_G2SITE (the run against the trace kit) each site's define is
+       closed by `G2SITE id=N` on stderr, the stream the kit's MFTRACE
+       records share, so every `run_part_terms` record between two G2SITE
+       lines is site N's (the kit's art= is its own trace id) */
+    if (g_g2site) fprintf(stderr, "G2SITE id=%d\n", g->id);
     g_layout_ok++;
+    g_dec_rendered += dec;
+    g_deny_sites += g_deny;
     /* FAM-2: the reply the define kept (mf_defined), held equal to the ask's;
        every reader below reads it */
     mf_result dr;
@@ -709,7 +1036,8 @@ static void one_site(gsite *g, buf *fs, gout *o)
     char call[64];
     snprintf(call, sizeof call, "%s(", g->names[0]);
     o->fnok = def.p && strstr(def.p, call) != NULL;
-    if (!o->fnok && g_oml) fail(g->id, "the derived run part", "the define rendered no function of its name");
+    if (!o->fnok && g_oml && tested) fail(g->id, "the derived run part", "the define rendered no function of its name");
+    if (o->fnok && !tested) fail(g->id, "the declined site", "the define rendered a run part");
     else if (o->fnok) {
         bprintf(fs, "size_t g2p_part_%d_0(const unsigned char *s, size_t n, size_t lo)\n"
                     "{ return %s(s, n, lo); }\n", g->id, g->names[0]);
@@ -730,25 +1058,31 @@ static void one_site(gsite *g, buf *fs, gout *o)
 
 int main(int argc, char **argv)
 {
-    if (argc != 6 && argc != 7) {
-        fprintf(stderr, "usage: g2_pres_gen SEED NSITES OUTDIR TARGET LEVER [ON_MISS_LEAVES]\n");
+    if (argc < 6 || argc > 9) {
+        fprintf(stderr, "usage: g2_pres_gen SEED NSITES OUTDIR TARGET LEVER [ON_MISS_LEAVES "
+                        "[NWIDE [DENY]]]\n");
         return 2;
     }
     g_rng = strtoull(argv[1], NULL, 10) * 2654435761ull + 0x7072657365ull;
+    g_rng2 = strtoull(argv[1], NULL, 10) * 40503ull + 0x77696465ull;
+    int nwide = argc > 7 ? atoi(argv[7]) : 0;  /* the WIDE stream's sites (R-38 Part D), LAST */
+    g_deny = argc > 8 && atoi(argv[8]);
     int nsites = atoi(argv[2]);
     char err[200];
     g_target = mf_target_parse(argv[4], strlen(argv[4]), err, sizeof err);
     if (!g_target) { fprintf(stderr, "g2p: target %s: %s\n", argv[4], err); return 2; }
     g_lever = atoi(argv[5]);
-    if (argc == 7) g_oml = atoi(argv[6]);
+    if (argc >= 7) g_oml = atoi(argv[6]);
+    g_g2site = getenv("G2P_G2SITE") != NULL;
     char tag[64];
-    snprintf(tag, sizeof tag, "%s.%s%s", argv[4], g_lever ? "lever" : "default", g_oml ? "" : ".oml0");
+    snprintf(tag, sizeof tag, "%s.%s%s%s", argv[4], g_lever ? "lever" : "default", g_oml ? "" : ".oml0",
+             g_deny ? ".deny" : "");
     g_tag = tag;
     mf_finder_rows(&g_rows);
 
     int nw = 24;                        /* the lever witnesses, first */
     int nwk = G2P_W_N - 1;              /* the §3.5 witness sites, LAST */
-    int total = nw + nsites + nwk;
+    int total = nw + nsites + nwk + nwide;
     gsite *gs = calloc((size_t)total, sizeof *gs);
     gout *os = calloc((size_t)total, sizeof *os);
     buf fs = { 0 };
@@ -761,6 +1095,26 @@ int main(int argc, char **argv)
             g->want = i % 2 ? G2P_P3 : G2P_P0;
             g->rates = RATE_UNIFORM;
             g->assign = 0;
+        } else if (i >= nw + nsites + nwk) {
+            /* THE WIDE STREAM (rnd2 only): its own layouts, members, routes, rates */
+            gen_wide(g);
+            g->nm = rnd2(4) ? rnd2(4) : 0;
+            for (unsigned m = 0; m < g->nm; m++) {
+                const uint8_t *ps = g->set[rnd2(g->L)];
+                unsigned c = set_count(ps), k = rnd2(c);
+                int b = -1;
+                for (unsigned x = 0; x < 256 && b < 0; x++) if (set_has(ps, x) && !k--) b = (int)x;
+                g->members[m] = (uint8_t)(rnd2(3) ? (unsigned)b : rnd2(256));
+            }
+            for (unsigned a = 0; a < g->nm; a++)        /* distinct members */
+                for (unsigned b = a + 1; b < g->nm; b++)
+                    if (g->members[b] == g->members[a]) g->members[b] = (uint8_t)(g->members[b] + 1 + b);
+            static const int wwants[] = { G2P_P0, G2P_P3, G2P_P3, G2P_P9, G2P_P2 };
+            g->want = wwants[i % 5];
+            g->rates = (int)rnd2(RATE_N);
+            g->assign = rnd2(3) != 0;
+            g->omin = rnd2(2) ? 0 : -(int32_t)(1 + rnd2(40));
+            g->kdraw = (int)rnd2(40);
         } else if (i >= nw + nsites) {
             gen_wk(g, 1 + (i - nw - nsites));
         } else {
@@ -778,7 +1132,28 @@ int main(int argc, char **argv)
             g->omin = gen_omin();
             g->kdraw = (int)rnd(40);
         }
+        if (!g->wide) sets_of_run(g);
         gen_rates(g);
+        if (g->wide) {
+            /* the background (§5.2): a byte in no position's set, else "no
+               background"; F24's population: on a RATED art, a wide position
+               LIGHTER than every findable one (p1's reach), and its stratum of
+               three or more members ([r3pd FIX-2]) */
+            uint8_t u[32] = { 0 };
+            for (unsigned j = 0; j < g->L; j++) for (unsigned x = 0; x < 32; x++) u[x] |= g->set[j][x];
+            g_nobg += set_count(u) == 256;
+            if (g->rates != RATE_NONE) {
+                unsigned long long fmin = ~0ull, wmin = ~0ull;
+                unsigned wc = 0;
+                for (unsigned j = 0; j < g->L; j++) {
+                    unsigned long long ms = 0;
+                    for (unsigned b = 0; b < 256; b++) if (set_has(g->set[j], b)) ms += g->rate[b];
+                    if (findable(g->set[j])) { if (ms < fmin) fmin = ms; }
+                    else if (ms < wmin) { wmin = ms; wc = set_count(g->set[j]); }
+                }
+                if (fmin != ~0ull && wmin < fmin) { g_f24++; g_f24_3 += wc >= 3; }
+            }
+        }
         one_site(g, &fs, &os[i]);
         if (g->wk && !os[i].rendered) fail(g->id, "a §3.5 witness site", "not rendered");
         if (g->wk && os[i].route != G2P_P0) fail(g->id, "a §3.5 witness site", "its route is not P0");
@@ -818,6 +1193,16 @@ int main(int argc, char **argv)
         if (os[i].assign)
             fprintf(c, "int g2p_reentry_%d(const unsigned char *, size_t, size_t, size_t *);\n", i);
     }
+    for (int i = 0; i < total; i++) {      /* the WIDE stream's sets (none on today's) */
+        if (!os[i].rendered || !gs[i].wide) continue;
+        fprintf(c, "static const uint8_t g2p_sets_%d[%u][32] = {", i, gs[i].L);
+        for (unsigned j = 0; j < gs[i].L; j++) {
+            fputs(j ? ", {" : "{", c);
+            for (unsigned x = 0; x < 32; x++) fprintf(c, "%s%u", x ? "," : "", gs[i].set[j][x]);
+            fputc('}', c);
+        }
+        fputs("};\n", c);
+    }
     fprintf(c, "const g2p_site g2p_sites[] = {\n");
     int n = 0;
     for (int i = 0; i < total; i++) {
@@ -830,8 +1215,8 @@ int main(int argc, char **argv)
         for (unsigned j = 0; j < g->L; j++) fprintf(c, "%s%u", j ? "," : "", g->run[j]);
         fputs("}, {", c);
         for (unsigned j = 0; j < g->L; j++) fprintf(c, "%s%u", j ? "," : "", g->mask[j]);
-        fprintf(c, "}, %d, %d, %u, %u, 1, {{ 0, %u, ", o->has_scan, o->scan, o->ver_lo, o->ver_len,
-                g->L);
+        fprintf(c, "}, %d, %d, %u, %u, %d, {{ 0, %u, ", o->has_scan, o->scan, o->ver_lo, o->ver_len,
+                o->tested, g->L);
         if (o->fnok) fprintf(c, "g2p_part_%d_0", i);
         else fputs("NULL", c);
         fprintf(c, ", %d, %u, %u }}, g2p_entry_%d, ", o->scan, o->ver_lo, o->ver_len, i);
@@ -842,6 +1227,14 @@ int main(int argc, char **argv)
         fputs("} },\n", c);
     }
     fprintf(c, "};\nconst int g2p_nsites = %d;\n", n);
+    int nw2 = 0;                        /* the WIDE stream's table (g2_pres.h), only if any */
+    for (int i = 0; i < total; i++) nw2 += os[i].rendered && gs[i].wide;
+    if (nw2) {
+        fputs("const g2p_wide g2p_wides[] = {\n", c);
+        for (int i = 0; i < total; i++)
+            if (os[i].rendered && gs[i].wide) fprintf(c, "    { %d, g2p_sets_%d },\n", i, i);
+        fprintf(c, "};\nconst int g2p_nwides = %d;\n", nw2);
+    }
     fclose(c);
 
     /* the generator's census (the runner's floors read it) */
@@ -853,6 +1246,14 @@ int main(int argc, char **argv)
            g_route_sites[G2P_P3], g_route_sites[G2P_P9], g_p2_untested, g_p2_refused, g_simd16,
            g_simd32, g_neg_omin, g_wk4_omin, g_k_signed, g_k_nonpos, g_partial, g_room, g_wk3_sites,
            g_wk3_zero, g_wk3_cases, g_generic, g_ctl_nopart, g_ctl_two);
+    /* R-38 Part D's census (part_d.md §5.1.1; the runner's floors read it) */
+    printf("G2PWIDE %s wide_sites=%ld wide_ver=%ld nofind=%ld nobg=%ld f24=%ld f24_3=%ld "
+           "scan_findable=%ld PD=%ld declines=%ld dec_member=%ld dec_assign=%ld dec_twin=%ld "
+           "dec_untested=%ld dec_refused=%ld dec_rendered=%ld dec_noprecheck=%ld scanless_req=%ld "
+           "dom_noscan=%ld deny_sites=%ld deny_one=%ld r41=%ld r41_flip=%ld\n", tag, g_wide_sites, g_wide_ver, g_nofind,
+           g_nobg, g_f24, g_f24_3, g_scan_findable, g_route_sites[G2P_PD], g_declines, g_dec_member,
+           g_dec_assign, g_dec_twin, g_dec_untested, g_dec_refused, g_dec_rendered, g_dec_noprecheck,
+           g_scanless_req, g_dom_noscan, g_deny_sites, g_deny_one, g_r41, g_r41_flip);
     printf("g2_pres_gen failures: %d\n", g_fails);
     return g_fails ? 1 : 0;
 }

@@ -16,7 +16,9 @@ SAB_DESC="the run presence span states every position exact (mask 0xFF): reqcube
 SAB_DOC_FIGURE="HAND-MEASURED by lane k382fix 2026-11-11: reqcube_check.py against a planted build RED on the k66 witness (words K=ff.. vs the fact's dfdf..; pair position 9 scanned on [74]; S448's whole-run row) and on '(?i)select'; k66_precheck_whole_run.rxt 16/16 (not a detector). Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3048."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='            pcrec_memfn_wpos_cube(sp, j, run->whole[j], run->whole_mask[j]);'
-SAB_AFTER='            pcrec_memfn_wpos_cube(sp, j, run->whole[j], 0xFF);   /* SABOTAGE S3048 */'
+SAB_BEFORE='            pcrec_memfn_wpos_bits(sp, j, run->pos[j]);'
+SAB_AFTER='            { int t_, k_; pcrec_req_cube(run->pos[j], &t_, &k_); pcrec_memfn_wpos_cube(sp, j, (unsigned)t_, 0xFF); }   /* SABOTAGE S3048 */'
 SAB_REACH='"$PCREC" --features all -p rx --engine=vm -o "$REACH_TMP/k.c" --pattern "(x?)(?i:abcdefghijkl)\\1" && grep -q "RX_REQ_RUN \"4142434445464748494a4b4c@[0-9]*/dfdf" "$REACH_TMP/k.c" && echo REACH-K66-MASKED-RUN'
 SAB_REACH_EXPECT="REACH-K66-MASKED-RUN"
+# RE-ANCHORED 2026-11-13 (lane rps3, [RUN-POS-SET] stage 3): the run presence span states
+# each position's SET (`pcrec_memfn_wpos_bits`); the plant states its lower member exact, as before.

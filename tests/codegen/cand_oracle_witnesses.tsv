@@ -37,9 +37,16 @@ window-none	-	a(b|c)+d
 presence-none	-	[a-z](?=the)
 one-attempt	-	^(a)(b|c)
 dominated	--memfn=no-window-search	foo\b
-set-leads	-	(?:é|ü){2,5}((?i:cat))
-emitted	-fno-req-set-lead	(?:é|ü){2,5}((?i:cat))
+# ([RUN-POS-SET] S2, set positions up to 128 members: `(?:é|ü){2,5}` became
+# run positions c3[a9bc]c3[a9bc], so no set member led the run; RE-AIMED with
+# a `.` after each member, no run position: the run is CAT/dfdfdf again and
+# the necessary c3 leads it. The handoff-attempts-entry line below likewise.)
+set-leads	-	(?:é.|ü.){2,5}((?i:cat))
+emitted	-fno-req-set-lead	(?:é.|ü.){2,5}((?i:cat))
 emitted	-	a(b|c)+d
+# [RUN-POS-SET] stage 3 + memfn Part D (S2 joint landing, lane s2land): the kit
+# DECLINES {c,d}{a,o}{t,g} (no position findable), so the stated run is untested
+untestable	-	cat|dog
 ceiling	-	^((?1)a)$
 # [FIND-MINW] (lane minw): every match of a(b|c)+d is at least 3 bytes, so it is
 # `min-width` since abi 103; a(b|c)* (width 1) and the inverse lever keep `width-none`
@@ -53,7 +60,7 @@ scan-from-startpos	-fno-req-handoff --memfn=no-window-search	\d\dxyz
 # set-rest byte (`x`) is not; the deny lands on scan-from-startpos.
 handoff-attempts	--engine=vm	(?:xx|y)abc
 handoff-attempts	--engine=vm	(a|aa){0,10}cxyz
-handoff-attempts-entry	--engine=vm	(?:é|ü){2,5}(?i:cat)
+handoff-attempts-entry	--engine=vm	(?:é.|ü.){2,5}(?i:cat)
 # [REQ-PAST-LAST] the attempt-loop handoff with K unbounded (lane reqpast)
 handoff-attempts-unbounded	--engine=vm	a+xyz
 scan-from-startpos	--engine=vm -fno-req-handoff	(?:xx|y)abc

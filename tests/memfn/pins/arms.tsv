@@ -212,3 +212,12 @@ generic	pre-landmark-optional	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b
 generic	pre-landmark-optional	use	571	b0734348233bcaa54d7c556f7d0bf73ba6283993361bc756bd0f8a3abf1b5c4b
 generic	pre-landmark-later	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 generic	pre-landmark-later	use	867	7e251d6b758ce9a1b2771db41d1e6ca66965dabc1a5c6955596bf8d53d12c65e
+# partdland ADDED (no row re-pinned; R-38 Part D, lane partd's two fixtures, never pinned there):
+# pre-wide-every-pos and pre-wide-findable, the pre-check's scan-less REQUIRED run (row fn-every-pos)
+# and its findable twin (memchr + memcmp). Both render through form id precheck (the id the driver
+# prints). The digests are the kit's rendering at lane/memfn-partd d51ff0980, recorded with this script's
+# own digest over arm_fixtures.c's output, never hand-computed.
+precheck	pre-wide-every-pos	def	841	e64e7a7fc794fb91ea63e5e1ecd031318820235647772bf91583e9ad37f824de
+precheck	pre-wide-every-pos	use	102	905b974bc47dc65c20f72919e3549cf33b6f214f9f75ccda3aea7265988b4df2
+precheck	pre-wide-findable	def	1097	24a687e5442b422412dc4d260608b4e006ec6e5197c6c6c4a37fb6cb5df3360e
+precheck	pre-wide-findable	use	102	905b974bc47dc65c20f72919e3549cf33b6f214f9f75ccda3aea7265988b4df2

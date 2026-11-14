@@ -153,7 +153,7 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 
 <a id="s3-4a-p3"></a>[3.4a¶3] The `override` column says how a caller moves the number. `flag` means a CLI flag or `pcrec_options` field moves it per compile. `-D` means only pcrec's own build does. `flag+-D` means a caller flag moves it per compile and a build-time `-D` moves the built-in default that flag's floor is measured against. `none` means nothing does.
 
-<a id="s3-4a-p4"></a>[3.4a¶4] The `unit` column says how to read `value`: a count of a thing (`bytes`, `states`, `positions`), `percent` (a fraction of another row's quantity), or `bits` (information: `PCREC_MIN_REQ_RUN_BITS` is a sum of `popcount(K)` over a run's positions, `tuning.md` §2.28). Selection knees carry no anchor in this document (§8b); `tuning.md` §2.20 states the rule and §2.39 the required-run knees.
+<a id="s3-4a-p4"></a>[3.4a¶4] The `unit` column says how to read `value`: a count of a thing (`bytes`, `states`, `positions`), `percent` (a fraction of another row's quantity), or `bits` (information: `PCREC_MIN_REQ_RUN_BITS` is a sum over a run's positions of `8 - ceil(log2 |S|)`, `S` the position's member set, `tuning.md` §2.28). Selection knees carry no anchor in this document (§8b); `tuning.md` §2.20 states the rule and §2.39 the required-run knees.
 
 <a id="s3-4a-p5"></a>[3.4a¶5] No limit is duplicated into `lib/pcrec.h` as a macro: a second spelling could drift from `limits.def`. The six `max_*` members of `pcrec_options` are raise-only (§3.3.2), so a caller raising one reads its default from this function.
 

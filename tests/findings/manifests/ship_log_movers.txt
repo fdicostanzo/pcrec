@@ -232,8 +232,8 @@ byte	corpus:tests	auto	RX_REQ_BYTE,RX_REQ_WHY,program	(x)(y)?(z)
 byte	corpus:tests	vm	RX_REQ_BYTE,program	(x)(y)?(z)
 byte	corpus:tests	auto	RX_REQ_BYTE,program	(x?)([a-z]+)+Z.@\\1
 byte	corpus:tests	vm	RX_REQ_BYTE,program	(x?)([a-z]+)+Z.@\\1
-byte	corpus:tests	auto	RX_REQ_BYTE,RX_REQ_RUN,program	(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1
-byte	corpus:tests	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1
+byte	corpus:tests	auto	RX_REQ_BYTE,RX_REQ_RUN,program	(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1
+byte	corpus:tests	vm	RX_REQ_BYTE,RX_REQ_RUN,program	(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1
 byte	corpus:tests	auto	RX_DFA_PREFILTER,RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	/abcd[xy]/user
 byte	corpus:tests	vm	RX_REQ_BYTE,RX_REQ_RUN,program	/abcd[xy]/user
 byte	corpus:tests	auto	RX_DFA_PREFILTER_OFFSETS,RX_REQ_BYTE,RX_REQ_RUN,program	/user$

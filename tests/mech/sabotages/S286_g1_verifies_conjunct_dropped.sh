@@ -13,6 +13,7 @@
 # second linear no-match proof. The detector is `run_prechecks.sh` §5.10's
 # own two witnesses, whose `REQ_WHY` must stay "emitted" and reads
 # "dominated" instead under the plant.
+# RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D; part_d.md rev 4 §5.1 [r3pd FIX-6]): P2 reads `rsc` (a run WITH a scan; a no-scan run is run-less in P2, §2.4 item 2 [r2pd P3]); the same conjunct dropped, intent and detector unchanged.
 SAB_ID="S286-g1-verifies-conjunct-dropped"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="prechecks"
@@ -29,7 +30,7 @@ SAB_COUNT=1
 # only in the PCREC_CAND_TRACE build as the five-pick shadow's expectation,
 # so the old plant landed on code no default artifact reads. The plant moves
 # to the same conjunct of the port; intent and detector unchanged.
-SAB_BEFORE='        else if (rs && !proof->run) dom = 0;
+SAB_BEFORE='        else if (rsc && !proof->run) dom = 0;
         else if (proof->byte == lead) dom = 1;'
 SAB_AFTER='        /* SABOTAGE S286: run_verified conjunct dropped */
         else if (proof->byte == lead) dom = 1;'

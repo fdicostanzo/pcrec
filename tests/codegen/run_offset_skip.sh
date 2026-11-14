@@ -242,6 +242,12 @@ witness "needleXYZW"   'needleXYZW'                               offset-set    
 witness "router"       '/user|/users'                             run-pinned           '0*,1,2,3,4' 0 47  4 'rx_w4(subject + cand) == rx_w4("/use") && rx_w4(subject + cand + 1) == rx_w4("user")' 0
 witness "foo-b"        'foo\b'                                    run-pinned-bounded   '0*,1,2'     0 102 2 'rx_w2(subject + cand) == rx_w2("fo") && rx_w2(subject + cand + 1) == rx_w2("oo")' 0
 witness "ab-user"      '[ab]/user'                                run-pinned           '0,1*,2,3,4,5' 1 47 5 'rx_w4(subject + cand + 1) == rx_w4("/use") && rx_w4(subject + cand + 2) == rx_w4("user")' 1
+# [RUN-POS-SET] stage 3 + memfn Part D (S2 joint landing, part_d.md §9 item 1, R by ROLE):
+# the run `xy/users[0-9]` has a WIDE last position; the pin claims only its exact
+# stretch `xy/users` (offsets 0-7, scanned at 0, 'x' = 120), compared as one
+# 8-byte run (a word-length run is one memcmp, src/gen/runcmp.c), and the wide
+# position stays outside the pin (before Part D the kit read R by shape: `handoff`).
+witness "users-digit"  'xy/users\d+'                              run-pinned           '0*,1,2,3,4,5,6,7' 0 120 7 '!memcmp(subject + cand, "xy/users", 8)' 0
 
 # =========================================================================
 # §2b THE RESEED — the one place a wrong answer is reachable

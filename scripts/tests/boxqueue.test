@@ -321,6 +321,34 @@ printf 'a light ttune true\n' > "$T/stages.bad"; git init -q "$T/emptyrepo" 2>/d
 out=$(bq batch --owner main --prio 500 --tree "$T/emptyrepo" --no-start "$T/stages.bad" 2>&1); rc=$?
 [ "$rc" = 64 ] && printf '%s' "$out" | grep -q 'cap=ttune' && ok "batch reuses chainrun's parser: a ttune cap with no ledger refuses (64)" || bad "batch parse: rc=$rc $out"
 
+# 18b. [QREAP] a job whose prerequisite ENDED failed past the grace window is cancelled (prerequisite-failed:KEY), cascading
+age() { local d; d=$(ls -d "$Q"/failed/*/ | grep -- "-$1/\$" | tail -1); touch -d '2 hours ago' "$d/result"; }   # age a failed run's end
+newq; rm -f "$T/tree/flag" "$T/tree/a.out" "$T/tree/b.out"
+printf '%s\n' 'a light 10 test -e "$CHAIN_TREE/flag" && echo A > "$CHAIN_TREE/a.out"' 'b light 10 test -e "$CHAIN_TREE/a.out"' 'c light 10 true' > "$T/stages3"
+bq batch --owner main --prio 300 --tree "$T/tree" --no-start "$T/stages3" > /dev/null 2>&1
+ka=$(ls "$Q/pending" | sed -n 's/^300-//p'); kb=$(ls "$Q/pending" | sed -n 's/^301-//p'); kc=$(ls "$Q/pending" | sed -n 's/^302-//p')
+run1
+[ "$(st "$ka")" = failed ] && [ -f "$Q/pending/301-$kb" ] && [ -f "$Q/pending/302-$kc" ] && ok "qreap: failed head inside the window: b and c still pending" || bad "qreap fresh: $(st "$ka")"
+age "$ka"; run1
+[ "$(st "$kb")" = cancelled ] && [ "$(st "$kc")" = cancelled ] && [ ! -e "$Q/pending/301-$kb" ] && res "$kb" | grep -q "prerequisite-failed:$ka" \
+    && has "301-$kb ENDED WITHOUT RUNNING outcome=cancelled" && ok "qreap: failed head + 2-job chain past the window: all cleaned, reason prerequisite-failed:KEY" || bad "qreap past: $(st "$kb") $(st "$kc") $(res "$kb")"
+newq; rm -f "$T/tree/flag" "$T/tree/a.out"
+bq batch --owner main --prio 300 --tree "$T/tree" --no-start "$T/stages3" > /dev/null 2>&1
+ka=$(ls "$Q/pending" | sed -n 's/^300-//p'); kb=$(ls "$Q/pending" | sed -n 's/^301-//p')
+run1; touch "$T/tree/flag"; bq retry --no-start "$ka" > /dev/null; run1
+[ "$(st "$ka")" = green ] && [ "$(st "$kb")" = green ] && ok "qreap: retry inside the window keeps the chain (a, b green)" || bad "qreap retry: $(st "$ka") $(st "$kb")"
+newq; rm -f "$T/tree/flag" "$T/tree/a.out"
+bq batch --owner main --prio 300 --tree "$T/tree" --no-start "$T/stages3" > /dev/null 2>&1
+ka=$(ls "$Q/pending" | sed -n 's/^300-//p'); kb=$(ls "$Q/pending" | sed -n 's/^301-//p')
+bq cancel "$ka" > /dev/null; run1
+[ "$(st "$kb")" = cancelled ] && ok "qreap: cancelled prerequisite -> dependent cleaned" || bad "qreap cancelled: $(st "$kb")"
+newq; mkjob "$T/j/dep" "$(D 30 none none)" 'exec bash "$BOXQUEUE" after main-qgreen' 'exit 0'
+bq add --name 100-main-qgreen --no-start "$T/j/w" > /dev/null; bq add --name 200-main-qdep --no-start "$T/j/dep" > /dev/null; run1
+[ "$(st main-qgreen)" = green ] && [ "$(st main-qdep)" = green ] && ok "qreap: a job waiting on a green prerequisite is untouched (runs)" || bad "qreap green: $(st main-qdep)"
+newq; mkjob "$T/j/dep2" "$(D 30 none none)" 'exec bash "$BOXQUEUE" after main-never' 'exit 0'
+bq add --name 100-main-never --no-start "$T/j/never" > /dev/null; bq add --name 200-main-qdep2 --no-start "$T/j/dep2" > /dev/null; run1
+[ -f "$Q/pending/200-main-qdep2" ] && [ -f "$Q/pending/100-main-never" ] && ok "qreap: a job waiting on a pending/running prerequisite is untouched" || bad "qreap pending: $(st main-qdep2)"
+
 # 19. --dry-run: the whole queue's plan
 newq
 mkjob "$T/j/p1" "$(D 600 none 'rows=6 lines=^== row ')" 'exit 0' 'exit 0'

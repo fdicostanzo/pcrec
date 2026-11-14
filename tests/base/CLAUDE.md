@@ -80,7 +80,7 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   skipped; runs of 16..18 bytes) and spot-checked on libpcre2 10.48;
   sabotage S277 is its failing direction
 - **k66_precheck_whole_run.rxt** — [K66]'s regression (2026-09-25, lane
-  k66fix): `(x?)([a-z]+)+eeeeeeee~#~#~#~#\1` (backreference, so an unguarded
+  k66fix): `(x?)([a-z]+)+.eeeeeeee~#~#~#~#\1` (the `.` since the [RUN-POS-SET] flip; backreference, so an unguarded
   framed VM program) under `encoding byte` and `encoding utf8`, whose
   8-byte windows of the 16-byte necessary run differ (`~#~#~#~#` /
   `eeeeeeee`), each with `budget steps=10000`. The `n` cells hold a window

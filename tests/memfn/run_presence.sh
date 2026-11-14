@@ -79,7 +79,11 @@ def art(tag, flags, pat):
 # (Span arms R1, lane sar1: a repeat of a literal is its copies in the run, so
 # `é{2,3}cat` states `éécat` and no set lead precedes it; the witnesses are
 # the same count shapes over an alternation body, whose copies are not a run)
-WIT = [([], "(?:é|ü){2,3}cat"), (["--engine=vm"], "(?:é|ü){2,3}cat"), (["-e", "utf8"], "(?:é|ü){2,3}(?i:cat)"),
+# ([RUN-POS-SET] S2, set positions up to 128 members: the alternation's
+# copies ARE a run now, `(?:é|ü){2,3}cat` states c3[a9bc]c3[a9bc]cat and no set
+# lead precedes it; RE-AIMED with a `.` after each member, no run position, so
+# the run is `cat` again and the necessary c3 leads it)
+WIT = [([], "(?:é.|ü.){2,3}cat"), (["--engine=vm"], "(?:é.|ü.){2,3}cat"), (["-e", "utf8"], "(?:é.|ü.){2,3}(?i:cat)"),
        ([], "(?:user|USER)[ \\t]*="), (["-e", "byte"], "(x?)([a-z]+)+Z.@#\\1")]
 na = 0
 for i, (fl, pat) in enumerate(WIT):
@@ -235,10 +239,12 @@ for i, (pat, enc) in enumerate(pats):
 # expected compare lines are LITERALS written from the run's bytes (a
 # compare of all of `eeeeeeee~#~#~#~#` at the candidate; two word loads over
 # `abcdefghi`), never read from a kit function.
+# The K66 witness carries `.` before its run (s2tri, 2026-11-13): since the
+# [RUN-POS-SET] flip `[a-z]` is a run position and the run would be 17 wide.
 ASK = "rx_reqrun(subject, subject_length, search_from)"   # the CALL, not the definition
-LED = [([], "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1",
+LED = [([], "(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1",
         'if (!memcmp(subject + cand, "eeeeeeee~#~#~#~#", 16)) return cand;'),
-       (["-e", "utf8"], "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1",
+       (["-e", "utf8"], "(x?)([a-z]+)+.eeeeeeee~#~#~#~#\\1",
         'if (!memcmp(subject + cand, "eeeeeeee~#~#~#~#", 16)) return cand;'),
        ([], "(a)(b)(c)(d)(e)(f)(g)(h)(i)\\9",
         'if (rx_w8(subject + cand) == rx_w8("abcdefgh") && '

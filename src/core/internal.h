@@ -196,6 +196,14 @@ typedef struct {
      * at the minimum width and the answer-identity sweep can still produce
      * the form before it. Off on every shipped compile. */
     unsigned no_min_width : 1;
+    /* [RUN-POS-SET] stage 2a, the tenth (the ninth, `run-pos-sets`, retired
+     * at the S2 joint landing when its domain became the default): an AHEAD
+     * lever, `--harness=alt-union-run`, the alternation's equal-width row
+     * (alt_normal_form.md §6 row 1, src/facts/req.c `rr_alt_rows`), for
+     * evidence on `--emit-facts` ahead of its default ruling. Read once at
+     * the walk entry into its parameter record. Off on every shipped
+     * compile; it becomes a restore arm when row 1 turns on. */
+    unsigned alt_union_run : 1;
     /* [REQ-EMPTYCAT] span_arms E1 (§3.7): the sixth, `--harness=restore=`,
      * the necessary-run walk's RESTORED ARMS (`PCREC_WALK_ARM` bits,
      * src/facts/walk_arms.def), read once at the walk entry into its
