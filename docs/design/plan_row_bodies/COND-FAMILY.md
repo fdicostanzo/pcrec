@@ -285,3 +285,14 @@ in-order repeated = `list_of(X, sep:)` (shared `sep:` spelling), any-order fixed
 (JSONL), candidate sugar `any_order(a, sep:)`. `join` of an empty array = the empty string (not the empty
 set). No `prefix:`/`suffix:` (concatenation says it). OPEN (asked Frank): a map's per-field value
 constraints carry into the joined labels (lean yes: `isodate := join(d, sep: "-")` inherits `year: <2100`).
+
+**2026-11-14 — compose instead of an option (Frank: `group(x) := /(?<${x.label}>${x})/`, `join(map(group, a))`, "lots of hand waving").**
+Manager's reading, leaning ADOPT and DROP the `group:` option of the previous note: (1) macros are passable
+values, fenced: compile-time only, over finite declared arrays, structural operators only (each, join, maybe
+a fold), no recursion, so every expansion terminates (the fence keeps this from becoming a general language);
+(2) elements carry compile-time metadata `x.label`, `x.index`; `${x.label}` in a group-name position is a
+compile-time splice that must yield a valid PCRE name (else a compile error naming the element; index-only
+arrays need a prefix argument); (3) NAME CLASH: "map" is already the labelled-alternation data type, so the
+operator is `each(f, a)` (or `apply`); `each` keeps labels and order, its result is an array (joinable,
+indexable); (4) navigation labels stay free and exist without this; exporting caller-visible captures is a
+one-line library function: `export capture(x) := /(?<${x.label}>${x})/`, `join(each(capture, a), sep: ".")`.
