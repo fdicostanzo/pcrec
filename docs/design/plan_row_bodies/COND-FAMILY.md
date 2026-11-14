@@ -560,3 +560,12 @@ for the map perspective: `where(has_member(weekday), types(isodate))` (`&` there
 `where_group(label: startsWith("S"), A)`. (4) `X.name` = LABEL navigation (`A.Saturday`, `alt.repeated[1]`).
 SUPERSEDES: `A["Saturday"]` -> `A.Saturday`; `A[startsWith("S")]` -> where_group; `file_literals(...)[!startsWith("#")]`
 -> `& !startsWith("#")`; `rows[r.w: >100]` -> `rows & (w: >100)`; `types(isodate)[has_member(weekday)]` -> where.
+
+**2026-11-14 — the expression language is the OUTER layer (Frank: the JSONL example suggests the predicate language can stand on its own as the outer layer, without an encapsulating rx).**
+Lean ADOPT (already implied: library files are expression-language with `export`). An rx is a LITERAL inside the
+expression language: a program that is just `/(a|b)+c/` is valid, so every PCRE pattern is a one-literal program
+(no separate PCRE mode). `:=` at top level replaces DEFINE for new code; DEFINE stays only as PCRE syntax inside a
+literal with PCRE's meaning. The predicate opt-in = WHICH LANGUAGE the file/API call is in, not a flag inside a regex
+(x-mode inside literals, as ruled). Holes keep the inner direction for API callers passing a plain PCRE string
+(`(\d+)${ <256 }`). The `.rxt` test format is unchanged: a predicate program is a pattern entry's content (format
+detail = manager's call, settled at build).
