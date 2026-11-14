@@ -538,3 +538,14 @@ put bare rx fragments in the expression language (`(x: \d+)`, `join((year: \d{4}
 are ILLUSTRATIVE; by the ruled crossings (`/.../` and `${...}` only) they read `(x: /\d+/)`, `(year: /\d{4}/)`, etc.
 Bare fragments must NOT be admitted: `.` is navigation vs any-char, `|`/`&` are value operators vs rx syntax,
 `*`/`+`/`-` collide with arithmetic (E-NEAR uses `-`); without the slashes `d.year` is ambiguous.
+
+**2026-11-14 — binding vs constraining marks (Frank: a lambda was mentioned, and an older label-definition syntax for maps; is a map literal `(x: foo, y: bar)` or `(x: foo | y: bar)`?).** SPELLING LEAN, syntax not ruled.
+`name: value` was doing three jobs (label definition, condition, keyword argument); `(x: /foo/ | y: /bar/)` is
+ambiguous (labelled alternation vs two conditions OR-ed). Split the marks: `:=` define a name; `=` BIND (a label
+inside a literal: `year = /\d{4}/`; a keyword argument: `sep = "."`); `:` CONSTRAIN (types `x: date`,
+`type(year: number)`; conditions `year: <2000`; sugar `isodate(year: 2000)`); `==` the equality section. Map literal
+`(x = /foo/ | y = /bar/)` IS the rx `(?<x>foo)|(?<y>bar)` (aligned views); list form `[x = /foo/, y = /bar/]` is the
+same value (as `[1,3,5]` = `1|3|5`), so join takes an ordinary array, no tuple type: `isodate := join([year =
+/\d{4}/, month = /\d\d/, day = /\d\d/], sep = "-")`. Reading payoff: `f(sep = ".")` configures, `isodate(year: 2000)`
+filters. SUPERSEDES the `sep: "."` keyword spelling in earlier notes. LAMBDA (`r => r.word`) was a placeholder;
+currying + named macros cover every example; no lambda until an example needs one.
