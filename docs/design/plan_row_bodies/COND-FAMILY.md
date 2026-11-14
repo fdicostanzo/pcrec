@@ -569,3 +569,8 @@ literal with PCRE's meaning. The predicate opt-in = WHICH LANGUAGE the file/API 
 (x-mode inside literals, as ruled). Holes keep the inner direction for API callers passing a plain PCRE string
 (`(\d+)${ <256 }`). The `.rxt` test format is unchanged: a predicate program is a pattern entry's content (format
 detail = manager's call, settled at build).
+
+**2026-11-14 RULINGS on predicates_draft.md §13 (Frank).** C9: comparisons are on the STRING SET; "number makes sense
+actually. Integers should be \d+ to be variable width. Unpad would be the right approach" (Reading A: explicit
+`unpad`; E-CAL as written with `/\d\d/ & between(1,12)` is wrong, use unpad). C4: the guard hole is written with an
+explicit `&`: `(\d+)&${ <256 }` (a hole after an atom without `&` is a following item, not a guard).
