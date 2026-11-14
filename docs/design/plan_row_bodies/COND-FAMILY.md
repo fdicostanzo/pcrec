@@ -368,3 +368,7 @@ an unapplied macro where an rx is required (`${x: digit}`, `rx | (x: ...)`) is a
 `x: digit` has no target; write `T & (x: digit)`"), the same error as an unapplied `capture(prefix: ...)`. The
 line: value filters mentioning NO label (`<200`, `between(3, 6)`, `startsWith("S")`) are full rx (the set
 that passes); anything naming a label it does not define is a macro. The colon marks it.
+Addendum (Frank: "It would imply (a: digit)(x)"): yes; application of a condition = `x & cond`. Three
+spellings, one meaning: `x & (a: digit)` (inline), `(a: digit)(x)` (call a named condition: `isSmallYear :=
+(year: <2000)`, `isSmallYear(d)`; a plain DEFINE binding), `each((a: digit), A)` (each alternative; one without
+label `a` is a compile error naming it). Applications nest like calls; `&` commutes, so order is readability only.
