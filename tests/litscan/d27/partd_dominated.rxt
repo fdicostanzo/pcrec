@@ -1,0 +1,31 @@
+# Part D dominated no-scan witnesses (F3; D27 spec-first, lane s2d27).
+# Contract: memfn.h mf_pres_picks `dominated` ("a run with no position the
+# kit finds is read as absent: the set's pick leads and the proof's `run` is
+# not required"); part_d.md §9 item 5; match_api.md §6.3.7¶8 "dominated".
+# Expected route: _REQ_WHY "dominated", no `@`. Every m/n line is python3 `re`
+# verified. `x.(?:cat|dog)` also states a JOINT SUPERSET run {c,d}{a,o}{t,g}
+# (§6.3.7¶7a): `cog`, `dat`, `cag` hold every position's set and must not match.
+# arms: --memfn=no-run-verify-wide | --memfn=no-window-search | --memfn=no-fd-pres-g1 | --memfn=no-fd-pres-pick
+
+# route (default arm, this build): _REQ_WHY "dominated" _REQ_HANDOFF "none" _REQ_RUN "[6364][616f][6774]" _ENGINE "dfa" _DFA_PREFILTER "memchr" _DFA_PREFILTER_OFFSETS "none"
+pattern x.(?:cat|dog)
+m "x-dog" 0 5
+m "xxcat" 0 5
+m "zzx-cat" 2 7
+m "x-dox-dog" 4 9
+m "x-cogx-cat" 5 10
+n "x-cog"
+n "x-dat"
+n "x-cag"
+n "x-dot"
+n "xcat"
+n "X-DOG"
+
+# route (default arm, this build): _REQ_WHY "dominated" _REQ_HANDOFF "none" _REQ_RUN "[616365][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a][61-7a]" _ENGINE "vm" _DFA_PREFILTER "memchr" _DFA_PREFILTER_OFFSETS "none"
+pattern q(a|bc|de)[a-z]{8}
+m "qdeabcdefgh" 0 11
+m "qq qaabcdefgh" 3 13
+m "qbcqbcdefghij" 0 11
+n "qdeabcdefg"
+n "deabcdefghq"
+n "qxxabcdefgh"

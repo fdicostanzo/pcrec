@@ -11,6 +11,10 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K145 — OPEN (TOOLING; found by lane s2d27land, 2026-11-14; filed by lane s2d27fix; not scheduled) — `tests/litscan/verify_rxt.py` hangs on a block carrying an `oracle none` line
+
+**Witness:** `tests/litscan/d27/partd_required.rxt` block F4 (`(x?)([a-z]+)+eeeeeeee~#~#~#~#.[0-7]{32}\1`, subject with no byte 0-7) carried `oracle none python re backtracks exponentially ...`; verify_rxt.py hung on it (python `re` backtracks 2^37 partitions). The landing lane worked around it with a `# pcre2-only` annotation line and kept the `oracle none` line; the keyword census then refused the line (`oracle` is a word the grown grammar wants as a keyword, a COLLISION), so the line was removed and the reason moved into the comment. **Not fixed:** verify_rxt.py should honour a not-python-judgeable marker without ever evaluating the pattern in `re`. Tooling only; no answer moves.
+
 ## K144 — OPEN (found by lane ucpu3fix, 2026-11-10; no fix lane) — an empty `\B` match between two ill-formed UTF-8 units: pcrec finds (2,2) from startpos 0 and 1, libpcre2 finds none from there
 
 **Witness:** `\B` (UCP or not) over `61 c3 c3 61` under `-e utf8`: pcrec gives (2,2) from startpos 0, 1 or 2; libpcre2 10.46 under MATCH_INVALID_UTF gives no match from 0 or 1, and (2,2) from 2. Every engine and the char-step DFA alike; pre-existing (the BASE non-UCP `\B` is identical). Arguably a PCRE2 inconsistency: a search from 0 misses what a search from 2 finds. Spec: match_api.md §9.5¶2a. Repro cells: the header of tests/utf8/island_illformed.rxt. **Owner:** a pcre2-reader note on whether it is a PCRE2 bug (D26 addendum: compatible unless a PCRE2 bug); then follow the standard and file upstream if so.

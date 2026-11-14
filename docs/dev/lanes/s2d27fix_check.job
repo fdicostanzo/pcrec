@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# 301-s2d27fix-check: make strict + test-corpus/registry/rxtsource on worktrees/s2d27
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/s2d27
+case "${1:-}" in
+    --dry-run)
+        echo "would run in $TREE: make -j16 strict; make -k test-corpus test-registry test-rxtsource"
+        echo "boxqueue: cap 5400"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=exec'd make chain, its rc is the job's rc"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+make -C "$TREE" -j16 strict || exit 1
+exec make -C "$TREE" -k test-corpus test-registry test-rxtsource

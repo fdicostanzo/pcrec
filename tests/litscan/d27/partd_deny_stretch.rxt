@@ -1,0 +1,52 @@
+# Part D deny-arm witnesses (F7; D27 spec-first, lane s2d27). Contract:
+# --list-axes memfn row run-verify-wide ("denied, it tests only the stretch
+# of one- and two-byte positions around the position it searches for");
+# memfn.h mf_run_reply (the extent may hold positions of any number of
+# members, each tested against its FULL set); part_d.md §4 item 3. Under the
+# deny the stretch here is ONE position: `-` (one member) or [aA] (a cube),
+# with wide \d positions on both sides. The .rxt format has no per-block
+# --memfn line: the deny arm reaches these blocks through `make test-axes`'
+# memfn arm (docs/testing.md, the --memfn= arm). Answers are arm-independent
+# and python3 `re` verified.
+# arms: --memfn=no-run-verify-wide | --memfn=no-window-search | --memfn=no-run-verify-wide,no-window-search
+
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "1" _REQ_RUN "[6163][30-39][30-39][30-39]2d[30-39][30-39][30-39][30-39]@4" _ENGINE "vm" _DFA_PREFILTER "handoff" _DFA_PREFILTER_OFFSETS "none"
+pattern (a|bc)\d{3}-\d{4}
+m "tel bc555-1234" 4 14
+m "a123-4567" 0 9
+m "bc555-12345" 0 10
+m "--- 1-2 a999-0000" 8 17
+m "a12-3456 a123-4567" 9 18
+n "tel bc55-1234"
+n "tel bc555-123"
+n "x123-4567"
+n "bc555 1234"
+n "-------------"
+
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "1" _REQ_RUN "[6163][30-39][4161][30-39]@2" _ENGINE "vm" _DFA_PREFILTER "handoff" _DFA_PREFILTER_OFFSETS "none"
+pattern (a|bc)\d[aA]\d
+m "xbc1A2" 1 6
+m "a9a9" 0 4
+m "aAaA a1A1" 5 9
+m "bc1B2 bc1a2" 6 11
+n "bc1B2"
+n "bcA1"
+n "aaaa"
+
+# The same with a WIDE position 0 ({a,c,e}): the default arm verifies it
+# against its whole set, the deny arm does not test it.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "1" _REQ_RUN "[616365][30-39][30-39][30-39]2d[30-39][30-39][30-39][30-39]@4" _ENGINE "vm" _DFA_PREFILTER "handoff" _DFA_PREFILTER_OFFSETS "none"
+pattern (a|bc|de)\d{3}-\d{4}
+m "tel de555-1234" 4 14
+n "e123-4567"
+m "xde123-4567" 1 11
+n "tel df555-1234"
+n "f123-4567"
+
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "1" _REQ_RUN "[616365][30-39][4161][30-39]@2" _ENGINE "vm" _DFA_PREFILTER "handoff" _DFA_PREFILTER_OFFSETS "none"
+pattern (a|bc|de)\d[aA]\d
+m "xde1A2" 1 6
+n "e9a9"
+n "f9a9 c9A9"
+m "f9a9 de9A9" 5 10
+n "f9a9"

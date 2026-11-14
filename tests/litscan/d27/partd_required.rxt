@@ -1,0 +1,81 @@
+# Part D REQUIRED-route witnesses (F4, P2/P9; D27 spec-first, lane s2d27).
+# Contract: memfn.h mf_link ("On a REQUIRED route the run is never declined:
+# it is tested with no find position"), mf_run_reply has_scan 0 with
+# ver_len > 0 ("every candidate position is tested, no find"); match_api.md
+# §6.3.7¶7 row 3 (no `@`), ¶11 (the landmark is the run where the
+# pre-check tests it); part_d.md §4 item 2, §9 item 4. The route is the VM
+# attempt loop (_VM_PREFILTER "none"; a backreference keeps the pattern off
+# the DFA), whose pre-check is REQUIRED. Each run below has no findable
+# position (one member, or a two-member cube): [0-7] is an 8-member cube,
+# [a-z], [a-f] and \d are not cubes. Every m/n line is python3 `re` verified
+# except the one block marked `oracle none` (its reason is on the line).
+# arms: --memfn=no-run-verify-wide | --memfn=no-window-search | --memfn=no-fd-pres-pick
+
+# F4 / P2 / P9: the run is [0-7]{32}, ranked above the exact 16-byte run.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "none" _REQ_RUN "3030303030303030303030303030303030303030303030303030303030303030/f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8" _ENGINE "vm" _VM_PREFILTER "none"
+pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#.[0-7]{32}\1
+features all
+m "aeeeeeeee~#~#~#~#x00000000000000000000000000000000" 0 50
+m "zz~#~#aeeeeeeee~#~#~#~#x00000000000000000000000000000000" 6 56
+m "xaeeeeeeee~#~#~#~#x00000000000000000000000000000000x" 0 52
+n "eaaaaaaaaaaaaaaaaaaaa~#~#~#~#x88888888888888888888888888888888"
+n "aeeeeeeee~#~#~#~#x0000000000000000000000000000000"
+
+# F4, the subject that gives up without the run: python3 `re` cannot judge it
+# (`([a-z]+)+` backtracks exponentially, 2^37 partitions; measured 0.42 s at
+# 22 letters, doubling per letter). Its answer is derived instead: every match
+# contains [0-7]{32} and the subject holds no byte 0-7, so there is no match.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "none" _REQ_RUN "3030303030303030303030303030303030303030303030303030303030303030/f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8" _ENGINE "vm" _VM_PREFILTER "none"
+# pcre2-only
+pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#.[0-7]{32}\1
+features all
+n "eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa~#~#~#~#x88888888888888888888888888888888"
+
+# A scan-less whole run with a finite K (1): the attempt loop's handoff rows.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "1" _REQ_RUN "[61-7a][61-7a][61-7a][61-7a][61-7a][61-7a]" _ENGINE "vm" _VM_PREFILTER "none"
+pattern (x?)[a-z]{6}\1
+features all
+m "abcdef" 0 6
+m "123456789 abcdef" 10 16
+m "xabcdefx" 0 8
+m "xabcde1 qwerty" 0 6
+m "x12345 qwerty" 7 13
+n "abcde 12345"
+n "ABCDEF"
+
+# K unbounded (a backreference before the run): handoff-attempts-unbounded.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "unbounded" _REQ_RUN "[30-39][30-39][30-39][30-39][30-39][30-39]" _ENGINE "vm" _VM_PREFILTER "none"
+pattern ([a-z])\1\d{6}
+features all
+m "zz123456" 0 8
+m "ab12345 cc123456" 8 16
+m "aa1234567" 0 8
+m "zy123456 qq654321" 9 17
+n "zy123456"
+n "aa12345"
+
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "unbounded" _REQ_RUN "[61-7a][61-7a][61-7a][61-7a][61-7a][61-7a]" _ENGINE "vm" _VM_PREFILTER "none"
+pattern (\w)\1[a-z]{6}
+features all
+m "11abcdef" 0 8
+m "ab abcdef xxqwerty" 10 18
+n "abcdefgh"
+
+# K 0: the run begins at the attempt start.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "0" _REQ_RUN "[30-39][61-66][61-66][61-66][61-66][61-66][61-66]" _ENGINE "vm" _VM_PREFILTER "none"
+pattern (\d)[a-f]{6}\1
+features all
+m "1abcdef1" 0 8
+m "1abcdef2 3fedcba3" 9 17
+n "1abcdef2"
+n "1abcdeg1"
+
+# The cube [0-7]: spelled as a cube on _REQ_RUN (/f8), still not findable.
+# route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "none" _REQ_RUN "30303030/f8f8f8f8" _ENGINE "vm" _VM_PREFILTER "none"
+pattern (a)\1?[0-7]{4}
+features all
+m "a0123" 0 5
+m "aa7777" 0 6
+m "b0123 a4567" 6 11
+n "a0128"
+n "b0123"
