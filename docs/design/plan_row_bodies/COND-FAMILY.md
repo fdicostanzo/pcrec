@@ -251,3 +251,16 @@ Manager: yes, and it unifies four things already in these notes.
 - Frank: does it need the parentheses: `x & <256`? Manager: no, with one binding rule: a prefix comparison takes ONE ATOM as operand (a literal, label, call, field access or parenthesized expression) and binds tighter than `&`, `&!` and `|`. So `x & <256 | >300` = `x & ((<256) | (>300))` reads naturally; a compound operand needs its own parentheses: `<($end - 1)`. No clash with the pattern language (`(?<name>`, `(?<=` live inside `/…/`).
 - Frank: with a group labelled x, `$x` is that match; how to get the group's PATTERN for use elsewhere without referencing the match? Manager's leaning: a built-in `pattern($x)` (call position, like every built-in) = the group's static pattern, so `/${pattern($x)},${pattern($x)}/` reuses it. It is PURE although it mentions a label (the dependence classifier treats `pattern(...)` as compile time). Details: duplicate names give the union of the definitions; the group's flags as compiled in place (an inherited `(?i)`) are part of it; inner named groups come along as fields; a group that refers OUTSIDE itself (a backreference `\1`, a call to an enclosing group) is an error "not self-contained", suggesting a binding. Replaces the earlier "bind it yourself" answer as the convenient form (binding still works).
 - Frank: useful for macros that want to ensure an argument is a pure pattern (then `& pattern`). Manager: agreed on the need; leaning: a CHECK, not a coercion. Coercing inside the body (`pattern(arg)`) would silently turn a caller's matched text `$x` into the group's shape, against "no silent conversions". Instead a parameter kind marks it: `m(p: pure)` makes a match-dependent argument an ERROR whose fix hint is "pass `pattern($x)`", so the caller converts explicitly. Composes with typed parameters (`p: pure & /\d+/`).
+
+### 2026-11-14 01:00: conditions over several labels = label-narrowing records (Frank)
+
+Frank: `${}` expresses conditions at the match point (`\d{3}&${<256}`); what about a condition over two labels, `(x < 200 and y > 55) or (x < 100 and y > 20)`? At the end with `&`?
+Manager: yes, at the end with `&`, using the label-narrowing form already ruled for calls (`isodate(year: 2000)`), written as a RECORD: `(x: <200, y: >55)` = "the strings whose label x is in <200 and label y is in >55" (relative to the pattern it meets). Then:
+
+    (?:(?<x>\d+),(?<y>\d+)) & ${ (x: <200, y: >55) | (x: <100, y: >20) }
+
+- No booleans are needed: AND is the record's commas (each narrows its own group), OR is `|` between records. Avoids the trap that `($x & <200) & ($y & >55)` would INTERSECT x's value with y's (requiring x = y).
+- PURE, not match-dependent: each narrowing is a static constraint on its group, so the whole condition is one automaton (a union of products); no VM, no callout. Only genuine capture-vs-capture (`$x & <$y`) is match-dependent.
+- With a binding the same reads `p(x: <200, y: >55) | p(x: <100, y: >20)`.
+- Unifies: call-site label arguments, typed parameters, and whole-match conditions are all "name: set".
+- Open: a record naming a label the pattern lacks = error; a label that can be unset: the record fails for that match (the unset-label rule).
