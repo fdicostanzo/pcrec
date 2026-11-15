@@ -1114,6 +1114,19 @@ declare -A GIVEUP1_ALLOWANCE=(
     ["-fno-req-byte|tests/litscan/handoff_vm.rxt:502"]="[REQ-PAST-LAST] (tuning.md §2.41¶8c, §2.27): the unbounded-K witness (a|aa|b)+cxyz from startpos 1..14, past the only cxyz; with the necessary-byte pre-check removed no entry gate proves no match, so the attempts on the a-run exhaust budget steps=3000 and give up; the default's gate answers no match. One direction only."
     ["-fno-req-byte|tests/litscan/handoff_vm.rxt:503"]="[REQ-PAST-LAST] (tuning.md §2.41¶8c, §2.27): the unbounded-K witness (a|aa|b)+cxyz from startpos 1..14, past the only cxyz; with the necessary-byte pre-check removed no entry gate proves no match, so the attempts on the a-run exhaust budget steps=3000 and give up; the default's gate answers no match. One direction only."
     ["-fno-req-byte|tests/litscan/handoff_vm.rxt:504"]="[REQ-PAST-LAST] (tuning.md §2.41¶8c, §2.27): the unbounded-K witness (a|aa|b)+cxyz from startpos 1..14, past the only cxyz; with the necessary-byte pre-check removed no entry gate proves no match, so the attempts on the a-run exhaust budget steps=3000 and give up; the default's gate answers no match. One direction only."
+# [S2 D27] tests/litscan/d27/partd_required.rxt, the F4 "subject that gives
+# up without the run" witness (lane axtri1115, 2026-11-15): `(x?)([a-z]+)+
+# eeeeeeee~#~#~#~#.[0-7]{32}\1` on a subject holding no byte 0-7 — K65/K66's
+# backref family on the REQUIRED route. The file's own comment says this
+# subject gives up without the run (python3 `re` cannot judge it either); the
+# default build's necessary-run pre-check proves nomatch at once, and
+# -fno-req-run / -fno-req-byte remove it, leaving the VM's `([a-z]+)+`
+# catastrophic backtracking to exhaust the default steps budget. Live
+# (RXTFLAGS= each flag over tests/litscan/d27): keys_base=143 giveup1=1, this
+# one case, for BOTH flags. Keyed by TEXT (the second of the file's two
+# identical `pattern` lines governs it; the file's header comment grows).
+    ["-fno-req-run|tests/litscan/d27/partd_required.rxt@pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#.[0-7]{32}\1 :: n \"eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa~#~#~#~#x88888888888888888888888888888888\""]="K65/K66 shape (tuning.md §2.28/§2.29, [S2 D27] partd_required.rxt:32): -fno-req-run removes the whole-run compare, the one linear no-match proof of this required-route subject — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/litscan/d27/partd_required.rxt@pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#.[0-7]{32}\1 :: n \"eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa~#~#~#~#x88888888888888888888888888888888\""]="K65/K66 shape (tuning.md §2.28/§2.29, [S2 D27] partd_required.rxt:32): -fno-req-byte removes the necessary-run pre-check, the one linear no-match proof of this required-route subject — default proves nomatch, axis gives up (steps)"
     ["-fno-start-set|tests/startset/giveup.rxt:21"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
     ["-fno-start-set|tests/startset/giveup.rxt:22"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
     ["-fno-start-set|tests/startset/giveup.rxt:23"]="[START-SET] Q-R3 (tuning.md §2.42, match_api.md §3.1): the deny arm's attempt at a non-S byte exhausts budget frames=8 inside the lookahead and gives up; the hat skips that attempt and answers (libpcre2's unbounded answer). One direction only."
