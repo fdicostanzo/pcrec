@@ -51,7 +51,7 @@ NAMED = [
 # (r17a_report.md, the figure beside each), ~10% below it.
 DOOR_CBM_FLOOR = 1179   # 1,574; 1,179 at D172 S3, pinned AT the measure (lane s3: the cover row
                          # took the fixed-width patterns, whose search reads no can_begin_match door)
-DOOR_SB_FLOOR = 68      # 78; 68 at [COVER-CAP] stage 1 (lane covs1u), pinned AT the measure: five corpus
+DOOR_SB_FLOOR = 61      # 78; 68 at [COVER-CAP] stage 1 (lane covs1u), floor ~10% below it (review r9 TRADES-5): five corpus
                          # patterns (a*\bA, [a-c]*\ba, [A-C]*\b[a-c], [a-z]*\b[0-9], \d{0,}?\B-) now take the
                          # cover row, whose search reads no start_bytes door -- 10 passes (byte + utf8 arms)
                          # left the population (78 -> 68, named by a before/after probe diff); the door
