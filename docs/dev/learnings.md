@@ -433,6 +433,8 @@ Rule: a job's stages are separate jobs, or the job reports EVERY stage's verdict
 - (d) A new kind's first shard weights are a GUESS: read the first run as a MEASURING run (mech's 45 s/row was 4x low).
 - (e) Do not filter a noisy report by hand: the manager dropped gestalt lines it found noisy and hid actionable ones. Fix the noise at the source (Frank 2026-11-12).
 
+- (f) (2026-11-15) A landing that flips a DEFAULT runs EVERY mech row's reach probe (REACH_ONLY), not only the new rows': rule (1) moved S486's witness off its site, and landing validation plus a retroactive code round had probed 9 rows of ~1,300.
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three

@@ -30,6 +30,7 @@ merge VERDICT and a sonnet landing lane does merge/strict/index/push/prune
   ends (while it exists, NO subagent is guarded). While a lane works in the
   main tree, commit named paths only (memory
   pcrec-no-commit-a-during-landing).
+- A landing that flips a DEFAULT runs EVERY mech row's reach probe (REACH_ONLY), not only the new rows' (2026-11-15: rule (1) moved S486's witness off its site; landing validation and a retroactive code round probed 9 rows of ~1,300; learnings §3.ad (f)).
 - At each landing, add a line to docs/dev/full_suite_ledger.md
   (major/minor/none) and check D177's triggers; when one fires, offer the
   owner the full suite (skill "Offer the owner") and queue

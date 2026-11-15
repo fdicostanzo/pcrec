@@ -810,3 +810,30 @@ secondary." RECORD: (1) the DESIGN keeps currying (2026-11-13/14: "Keywords to m
 function"); C34 does NOT supersede it. (2) PHASE 1 (the base-level predicate build) is built WITHOUT partial
 application, as a scope reduction: a macro call binds every required parameter; revisit after phase 1. (3) No reason
 for dropping currying from the design was ever put to the owner; none is recorded, and none is assumed.
+**2026-11-15 OWNER NOTE — the two-kinds-of-numbers split is NOT his preference (Frank, to session 132; qualifies the
+"two kinds of numbers; the `occurs` module" entry above).** His words: "the idea of separating the numbers was from
+the manager. in my ideal world they would be the same. my understanding is that it becomes a capability problem as the
+number of states to implement counts the same is high". STATUS: OPEN, under discussion. The `occurs` module was his
+answer to a split the manager proposed, not a wish for two kinds. Manager's view put to him (mine, not ruled): the cost
+is not about counts vs digits but about WHERE a number test is evaluated: compiled into the match as a set (must be
+regular; a count bound N multiplies states by about N; comparing two counts is not regular at all) or computed on the
+result as a value (an integer after matching; any arithmetic; cheap; but it can only accept or reject afterwards).
+Subject numbers already have both forms (`between(1,12)` as a set, `$y + 1` as a value). On that reading numbers can be
+ONE kind for the user, with the evaluation place decided (and its cost shown) by the compiler.
+**2026-11-15 RULING (lean) — counts: `count()` first, `occurs` as the fallback (Frank, to session 132).** His words:
+"counts: perhaps the solution is both. you can use count() until you can't then you can use 'occurs' as a fallback".
+RECORD: numbers are ONE kind for the user; `count(...)` yields a number used with the ordinary comparisons and
+arithmetic, like a subject number. `occurs.*` stays as the fallback for the cases `count()` cannot serve. Manager's
+reading of "until you can't" (mine; to confirm with him): `count()` is a value computed on the result, so it cannot
+take part in the match itself; where a count test must be compiled into the match (a set position, e.g. an `&`
+operand inside a larger pattern), the compiler refuses the `count()` form with a message naming the `occurs` form,
+whose bounded shape compiles to states (cost shown for large bounds). SUPERSEDES the "OPEN, lean = spell it through
+`occurs`" sentence of the two-kinds entry above. "perhaps" = a lean, not final.
+**2026-11-15 RULING — when `count()` gives way to `occurs`: by BUDGET, not by rule (Frank, to session 132; answers
+the manager's "until you can't" reading above, which is WITHDRAWN).** His words: "i would refuse count() on budget or
+as a recommended way to reduce states rather than rules". RECORD: there is NO positional rule that forbids `count()`
+(not "never in a set position"). `count()` is accepted wherever it is written; the compiler refuses it only when
+building it exceeds the budget (the state cost), and the refusal names `occurs` as the fix. Below the budget, `occurs`
+may be RECOMMENDED (a warning or note) as the way to reduce states. Manager's note (mine): this follows the standing
+preference for measured budgets over structural rules; the budget is a labelled, measured quantity, and what `occurs`
+saves over `count()` for the same test is a question for the lowering section of the spec.

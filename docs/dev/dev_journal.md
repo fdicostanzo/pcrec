@@ -27696,3 +27696,31 @@ Next
   questions (entries at the file's tail). Frank LIFTED the stop: complete the planned sets (S2 leftovers, S3, S4) and
   open work before any next item; kit continues; predicates stay design-only; critics on all work. Launched fixposts2c,
   s486re (sonnet), covcap3 (opus, [COVER-CAP] rev 2 on the exact/hull model). Kit told to resume, fresh code rounds.
+- 12:00 (2026-11-15): Frank ruled the kit's F5: "agree with instrument only": the fused inline finder row stays an
+  unpicked measuring instrument (never a pick, never stage 1); tonight's timing is a one-sided test (loss settles row 1
+  against; a win triggers the ruled split shape, with its own go, then a re-measure). Relayed to the kit.
+  s486re delivered (probe compiled on the detector's own arm, -fno-req-handoff; reach sweep job 650 + cloud mechrows owed).
+- 11:10 (2026-11-15, box clock; earlier entries today run ~1 h ahead of it): filing lane file1115 merged (D197, [RX-NOT],
+  [RULE1-ROUTE], [FLOORS-REMEASURE], R-44, reach-probe lesson + landing step). Reach sweep job 650 GREEN on lane/s486re
+  (1,299 rows: 631 reached, 0 unreached, 16 declared-unreached, 652 with no probe). Cloud mechrows S3012+S474 GREEN on
+  lane/fixposts2 535caf149. Code round crit-fixposts2c running over both branches. Kit slotx F8 (i) ruled by the
+  manager (harness, answer-free): draft sets split by ISA LEVEL (generic + x86-64 share class x86_64/zen4; x86-64-v3
+  its own set), guard refuses mixed levels, no format event. Frank on numbers: the subject/structural split was the
+  old manager's idea; lean = one kind, count() first with occurs as fallback (COND-FAMILY.md tail).
+- 11:40 (2026-11-15): [COVER-CAP] rev 2 delivered + merged as a doc (6259d6c7a; census: 1,852 covering compiles, net loss
+  4 = 0.2% under the straight walk; no budget); design round crit-covcap-r2 running. Code round crit-fixposts2c ruled
+  (review to be committed by fix lane fixposts2d, opus): no answer/speed findings; S486 lands as is.
+  OWNER ANSWERS on rev 2's questions (Frank, verbatim): "1.yes. 2. cover is yes which is the purpose of the cover
+  initiative. but the general form i wanted was given an rx, kit proves the quick stretch out some distance. if its the
+  whole rx, then great, done. if its some fraction, then the proven parts are considered done and the rest is an
+  engine. the hull idea is used to suppliment spans where there is insufficient exact matches. this particularly shows
+  up in utf matches. 3. kit knows nothing about utf or encoding just bytes. utf as variable width characters which
+  create scenarios where exact match spans are rarer. therefore it is likely that hull supplements to filter candidates
+  are more likely with utf8 because otherwise there is little or no span to search for. 4. i agree but leave that
+  ordering step to you. i am primarily interested in the end result."
+  Manager's reading (mine): (1) the 4 lost test covers are accepted. (2) The END STATE is general: the exact stretch is
+  proven as far as it goes; whole pattern = cover; a fraction = that part is done and the engine runs only the rest
+  (this is what the PARKED rows [EARNED-SKIP]/[MATCH-KNOWN] hold; cover is its first case, and rev 2's walk states the
+  fact both need). Hull positions supplement where the exact stretch is too short to filter on. (3) "hull for UTF-8" is
+  not a UTF feature: the kit sees bytes only; variable-width characters just make short exact stretches commoner, so
+  hull supplements matter more there. (4) Stage ordering is the manager's call; two stages kept.
