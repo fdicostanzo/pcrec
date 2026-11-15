@@ -924,3 +924,24 @@ over the iterations of ANY repeated label. Group questions (count, some, all, ex
 phase 1; access to ONE iteration (`d[2]`, `d[2].g`, "keep 1 and 3", the owner's 2026-11-15 array example) needs
 captures inside a loop: a higher capability level with its cost shown. This last sentence is the MANAGER'S LEAN (stated
 to him twice, not separately ruled); his array example stays the intended behaviour at that level.
+**2026-11-15 RULINGS — search follows PCRE's matching; a bound name holds the transformed rx; hit-count control by
+min/max settings (Frank, to session 132; answers the three questions of the rev 8 lane).** His words: on binding: "3.
+the name binds to the transformed regex as for all transformed regex. Am I missing something?" (he is not: `hits :=
+search(r)` binds the rx `search(r)` returns; it is applied to a value like any filter). On which reading counts the
+hits: "1. if I understand this question, it's asking if the search rx follows non-pcre matching behavior? If that's the
+question, then the answer is it should always follow it if for no other reason than that's what's expected." On "every
+hit" with zero hits: "2. this is subtle tricksy question. What's missing is the + or * control. Perhaps search needs a
+min max with defaults."
+RECORD: (1) C36 of the draft is RESOLVED: the hits of a search, their count and every question about them follow
+PCRE's own matching (left to right, the priority parse). "Always" is his word. (2) A name bound to a transform's result
+binds the transformed rx (no special case for search). (3) `search` takes optional min/max settings with defaults
+("perhaps": a LEAN of his): the zero-hit case is then decided by the quantifier the user chose, as for any repeated
+label whose own `*` or `+` decides; a plain condition on the hits stays "all hits" and is true over zero hits when
+zero hits are allowed.
+Manager's notes (mine, NOT ruled; put to him in chat): (a) "always follow PCRE" taken generally also retires the
+2026-11-14 some-parse rule for a label set ONCE (`/(?<a>\d+)(?<b>\d+)/ & (a: 1)` on `123` would fail, PCRE gives a =
+`12`); lean: yes, ONE rule (PCRE's reading everywhere), the compiler builds it where it can with the cost shown and
+refuses on budget naming the higher level. (b) `min` = "at least N hits or the value is rejected" (default 0);
+`contains(x)` is then `search(x, min = 1)` in what it accepts. `max` under PCRE's reading means "take the first N
+hits" (the rest of the value may hold more), NOT "at most N hits in the value", which stays a count test
+(`occurs.at_most`); the draft must say so in a look-alike row.
