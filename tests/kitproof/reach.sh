@@ -33,7 +33,15 @@ if [ "$mode" = --facts ]; then
     if [ "$got" = "$want" ]; then echo REACH-FACTS-EQUAL; else echo REACH-FACTS-DIFFER; fi
     exit 0
 fi
-out="${REACH_TMP:-.}/kitproof_reach.c"
+# The compile writes kitproof_reach.c AND .h: never into the invoking directory
+# (a bare run left both at the main tree's root, 2026-11-15). Without REACH_TMP
+# use a private dir under the temp root, removed on exit.
+if [ -z "${REACH_TMP:-}" ]; then
+    mkdir -p "${TMPDIR:-/var/tmp/pcrec-$(id -un)}" || exit 1
+    REACH_TMP="$(mktemp -d "${TMPDIR:-/var/tmp/pcrec-$(id -un)}/kitproof_reach.XXXXXX")" || exit 1
+    trap 'rm -rf "$REACH_TMP"' EXIT
+fi
+out="$REACH_TMP/kitproof_reach.c"
 # shellcheck disable=SC2086
 if ! "$root/build/pcrec-harness" --harness=kit-proof --features all -p rx $a -o "$out" \
         --pattern "$pat" > /dev/null 2>&1; then
