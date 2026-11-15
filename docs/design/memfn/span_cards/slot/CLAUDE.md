@@ -37,9 +37,12 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   and fold hashes, the EMIT-3 shape tag), arm and twin, seven launches with seeded pads, the placement
   constraints with the bounded re-draw, linked-text equality, and the fixed `ctl` (refuses other inputs).
   [lane slotx] THE ARM'S TARGET REGION: a TU whose instance's kit target opens a region is compiled inside it as
-  pcrec places one (`arm_fixtures --frame`: header lines ahead, region around the TU's functions); the target and
-  the features its code uses go to cell_text.tsv (`target`, `target_isa`), and the ISA check refuses an object
-  needing a feature outside floor + target, or none of what its target adds.
+  pcrec places one (`arm_fixtures --frame`: the family guard first, header lines ahead, region around the TU's
+  functions); the target and the features its code uses go to cell_text.tsv (`target`, `target_isa`), and the ISA
+  check refuses an object needing a feature outside floor + target, or none of what its target adds. Review
+  2026-11-15 r1: the ISA table classifies by ENCODING (the bytes: EVEX = AVX-512, also the mask-register and
+  high-register rows; an unpriced VEX/EVEX instruction refuses), and `isa_table_check` holds the table to every
+  planned target's `--target-facts` (a feature above the floor with no row refuses).
 - `art.py` — whole-artifact arms for J5 (`enter`; refuses a step-back arm, `no_back`, until t's artifact is specified) and J1 (PAIR width substitution): pcrec artifact + one
   wrapper, symbol localization, subjects, python `re` expectations, all cached by their inputs' sha;
   `art.py check RUNDIR`.
@@ -59,7 +62,8 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   policy values read from the record's pinned rows only (r9fc FIX-1), the format-2 draft writer (SPLIT BY VER: one set per method, ver 3 `zen4-grid3`, ver 4 `zen4-grid4` to `<path>.v4`, [slotx] ver 6
   `zen4-grid6` to `.v6`, each set's rows held to its own cards by `draft_split`; only the WINDOW's jobs' rows priced; none for a ver
   with no timed row; no draft on
-  REFUSED; the cards as declared, r9fc FIX-8), `selftest SCRATCH` (the input cross-checks, a live table edit,
+  REFUSED; [review r1 F8, interim] no draft while a set would hold rows of more than one kit target (DRAFT-TARGET
+  MIXED); the cards as declared, r9fc FIX-8), `selftest SCRATCH` (the input cross-checks, a live table edit,
   rev 1.4's sub-resolution branches); `[rev1.4]` delta rows printed `ungated`, the sub-resolution branch
   (measures.md §3.5¶3a; `[r10]` the all-negative rule, r capped at the pinned policy's `r_max_e6`
   (`r_max`: the live row, named, for a record planned before it), the A/A in the branch), `notes` (box-state split, bimodal delta rows); the primitives' one home.
@@ -82,7 +86,9 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   S2935, (g3) S2936, (f1) S2937, (f2) S2938, (f6) S2939, rev 1.4's (n1) S2940, (n2) S2941, (s1) S2942, (s2) S2943,
   (q1) S2944, (b1) S2945, review r10's (n3) S2946, (s3) S2947, (s4) S2948, (s5) S2949, rev 1.5's (x1) S2950, (x2) S2951,
   (x3) S2952, review r11's (y1)-(y11) S2953-S2963, K38-3's (d1) S3105, lane slotx's (t1) S3160, (t2) S3161,
-  (r1) S3162, (r2) S3163, (v1) S3164, (v2) S3165, (w1) S3166, (k1) S3167, planted in scratch copies; DETECTED/MISSED per row.
+  (r1) S3162, (r2) S3163, (v1) S3164, (v2) S3165, (w1) S3166, (k1) S3167, lane slotxfix's (e1) S3168, (e2) S3169,
+  (e3) S3171, (e4) S3172, planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
+  selected rows score on first (review r1 F3).
 - `movers.py` — S2e's data-mover census (m0build's method, normalization EMPTY, plus the head-vs-itself pass
   across the two sets); written by S2c, run by S2e.
 - `run_record.tsv` (S2d, later) — the run record zen4-grid3's PROVENANCE.md cites by sha-256.
