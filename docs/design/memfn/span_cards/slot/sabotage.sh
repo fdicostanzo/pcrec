@@ -284,8 +284,8 @@ row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT
         patch "$SCR/$row/plan.py" '    ("back",    lambda a: None if a.back is None else str(a.back)),    # kit-grid@4: the step-back t
 ' '' ;;
     t1) job=JMB want='inlining failed in call to .*target specific option mismatch'
-        patch "$SCR/$row/link.py" '    return pro + heads + ro + "#define CAT_(a, b) a##b\n" + rest + rc' \
-'    return pro + heads + "#define CAT_(a, b) a##b\n" + rest   # SABOTAGE S3160' ;;
+        patch "$SCR/$row/link.py" '    return gd + pro + heads + ro + "#define CAT_(a, b) a##b\n" + rest + rc' \
+'    return gd + pro + heads + "#define CAT_(a, b) a##b\n" + rest   # SABOTAGE S3160' ;;
     t2) job=JMB want='ISA MISMATCH [^ ]+: keyed target generic, its code needs'
         patch "$SCR/$row/link.py" '    sh(CC + ["-c", "-DSYM=" + sym,' '    # SABOTAGE S3161
     sh(CC + ["-march=x86-64-v3", "-c", "-DSYM=" + sym,' ;;
