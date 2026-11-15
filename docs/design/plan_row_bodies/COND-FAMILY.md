@@ -728,3 +728,16 @@ NAMING RULE: a modifier's name describes the SUBJECTS IT ACCEPTS (adjective/phra
 never a verb acting on the subject (unpad, trim, lowercase). DOCS RULE (owner): every spec/guide text on transforms says
 the transform TRANSFORMS THE FILTER, not the subject (the subject is never modified; the modified filter ignores
 or reinterprets parts of it). Comma inside `( ... )` keeps its condition-separator meaning (C22).
+
+**2026-11-14 RULINGS on rev 3's contradictions (Frank: "agree all four").** C32: `^`/`$` in a condition mean the
+VALUE's start/end (D193 add. 3 stands; `x: /^S\w*/` works); the edge-assertion ERROR covers `\b` and edge lookarounds
+only. C1: `A & B` and `B & A` accept the same subjects; D196's left operand picks the REPORTED span among overlapping
+qualifiers; look-alike row "same matches, report may differ". C30: modifiers are filter -> filter (subject arrives via
+`&`). C31: counted conditions are passed as a parenthesised literal: `occurs.exactly(1, (name: any_case("Host")))`;
+labelled arguments keep one meaning (narrowing).
+Follow-up (Frank: "between uses position args for high/low. Should those be keywords?"). LEAN (pending): revise the
+currying rule: THE SUBJECT IS NEVER AN ARGUMENT (always via `&` or `label:`); every argument is a PARAMETER: positional
+= required parameters in declared order (`between(1, 12)`, `padded(S)`, `occurs.exactly(1, cond)`), keywords = optional
+settings with defaults (`sep = "."`); ANY parameter may also be passed by name (`between(low = 1, high = 12)`), one rule
+for all macros. Removes C30 and C20 (`p(x) = x & p` withdrawn; application has one spelling `x & f`).
+`isodate(year: S)` (an rx called with conditions) is the separate labelled-argument form.
