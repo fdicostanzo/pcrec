@@ -674,3 +674,7 @@ effects (no new grammar): `@warn.off("compare.width")` (rest of file), `@warn.of
 `@warn.off("*")`, per-binding form (spelling open), and the compiler option for a whole build (like -Wno-); reverse
 `@warn.error("*")` (a strict build). Errors cannot be disabled. An `@warn.off` that suppresses nothing raises
 `warn.unused` (itself suppressible). Still PENDING: counting filters (exactly/at_least/none).
+Amendment (Frank 2026-11-14: "use an rx instead of wild card purely for consistency"): warning selectors are a SET OF
+NAMES as an rx, like import/export: `@warn.off("compare.width")`, `@warn.off(startsWith("dead."))` (a label-free value
+filter is a full rx), `@warn.off(/.*/)`, `@warn.error(/.*/)`. No `*` wildcard (`"*"` is the literal name `*`, matches
+nothing, so `warn.unused` flags it). One name-selection rule for import, export and warnings.
