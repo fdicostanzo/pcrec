@@ -843,3 +843,37 @@ semantics that it convert count() into occurs". RECORD: a later, separate plan i
 the compiler can PROVE the answers do not change, it rewrites a `count()` test into the `occurs` form itself, so the
 user writes `count()` and gets the cheaper form where it is provably the same. Until then the earlier ruling stands
 (`count()` refused only on budget, `occurs` recommended to reduce states). Plan row to file: [COUNT-TO-OCCURS].
+**2026-11-15 RULING — the type picture: two value kinds, two views, the RECORD is a shape and never a value (Frank, to
+session 132, afternoon discussion).** His opening (a question, his words): "I want to make the semantics and grammar as
+simple as reasonable which in my mind means few types and few operators that always mean the same thing wherever they
+are used"; concern 1: "a condition is another type but it could almost be a regex ... It's more like a macro"; concern
+2: "What I'd like is a consistent grammar over comma where it has a specific meaning. Then macro application has a
+specific meaning." On the manager's proposal below: "I'm liking your ideas"; "I'm ok with a purely structural type if
+it can't be bound directly ie not first class type. We might use it to bind values from a search (x,y) := rx ~ /.../
+Alternatively, a record is a third view on a regex but an abstract one. You can view a regex as a record but not vice
+versa as what does that even mean?"; on the search result: "Ok. I like this view. Let's fold it in for the next round."
+His correction: in `isodate & (year: 2000)`, "isodate is not a macro but an rx. More specifically, it's the binding of
+isodate to an rx" (the macro is the condition).
+RECORD (the manager's proposal he accepted; spellings are placeholders, memory pcrec-owner-examples-not-syntax):
+(1) VALUES are two kinds: rx (a set of strings) and macro (awaits input). A CONDITION is a macro, not a third kind.
+"Filter" is a ROLE (what stands on the filtering side of `&`), not a type. A binding names whatever its expression is.
+(2) A macro takes input two ways under ONE rule: a CALL fills its parameters; `&` fills its one SUBJECT slot with the
+rx on the other side. The rx is never the thing applied. A condition = a macro with a subject and no parameters; a
+transform = a macro whose parameter is a filter and whose result is a filter; `(& B)` = only the subject open.
+(3) COMMA never carries logic: it means "next entry". The BRACKET says how entries relate: `[ ... ]` = ARRAY, any one
+entry (alternation; a list of filters; a multi-index if adopted); `( ... )` = RECORD, all entries together, positional
+or labelled. `=` gives an entry its label (a parameter name, a group name); `:` constrains a label that exists.
+(4) A RECORD is NOT a value: it cannot be bound, stored or returned. It appears only laid against something with
+fields: (a) in a call, against a macro's parameters (a macro call = the macro applied to ONE record); (b) in a
+condition, against a pattern's labels (`(a: 1, b: 2)`: the AND comes from the record, not the comma); (c) on the left
+of a binding, against a result's groups (`(x, y) := rx ~ /.../`; kept in the design, phase 1 only if an example needs
+it). The record is the written form of the MAP view as `[ ]` is of the array view; NO third view. One-way: an rx can be
+viewed as a record (its groups are its fields); a record is never read as an rx (the "record of rx = sequence" closure
+was considered and NOT adopted: it reverses the no-concatenation lean and loses boundaries, `(1, 40)` vs `(14, 0)`).
+(5) A SEARCH returns an rx (the occurrence set = the search pattern narrowed to what occurs): array view = occurrences
+in order, map view = the search pattern's labels (`d.year` = the set of the occurrences' years). `d := ...` binds an
+rx; `(x, y) := ...` lays a record over the same rx's fields; no record is bound either way.
+TO CHECK in the next round (manager's, not ruled): `(x)` as grouping vs a one-entry record; the tuple example
+`lex_ge([major, minor, patch], [1, 4, 0])` passes tuples as values, which (4) forbids (candidate rewrite `version &
+lex_ge(1, 4, 0)`); whether any worked example needs a tuple as a value; `[x = /foo/, y = /bar/]` and the map literal
+`(x = /foo/ | y = /bar/)` under (3).
