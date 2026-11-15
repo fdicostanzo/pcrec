@@ -27614,3 +27614,85 @@ Next
 - Predicate design ([COND-FAMILY], held, discussion only): ~30 notes in COND-FAMILY.md: x-mode opt-in, DEFINE bindings (one kind; pure vs match-dependent), macros, typed parameters (type removes nothing; overloads disjoint = per-string dispatch), `when`, arrays/maps = labelled alternations, `[]` access by any key set, pre-image sections, unary comparisons, `x:` conditions over the whole match vs `$x` values (misuse an error), calls as sugar for `& path: set`, JSONL worked example, weekday property, hull + inline callout with verbs, DFA captures feeding callouts.
 - Lessons: a control built on pcrec FAILING to prove something breaks when pcrec improves (gu step-limit controls); force the slow path with a test lever instead. Ask whether gated work can go to the cloud during a hold.
 - Next: owed post-S2 items (floors, Part D D27 tests, kit timing/reach, rule (1) census), prune delivered worktrees, then [FLAG-DEMOTE] set with the kit's post-S2 measurement set.
+
+## 2026-11-14/15 — S2 closed; predicate spec revs 0-4 with a critic round; [FLAG-DEMOTE] set opened (manager)
+
+- S2 CLOSED on main: rule (1) alt_union ON (abi 107, 13f46ea50), the arms re-pin, D27 Part D witnesses (tests/litscan/d27/),
+  mech re-aims, kit R-43; CI fixes (62a5aae77, a518df820); CI green. [PREFLIGHT] filed (budget: hours, not days),
+  gaining the lever-name grep (hk1115). [BACKREF-FINITE] filed.
+- #6 predicates (discussion only, never scheduled): spec docs/design/predicates_draft.md rev 0 (predspec) -> exploration
+  lane predx (fable; 13 solutions, 45 frictions, S1-S20, Q1-Q14) -> rev 2 (predspec2) -> critic round
+  docs/dev/reviews/2026-11-14-r1-predspec.md (4 opus critics + verifier, 25 verified, 0 refuted) -> rev 3 (predspec3)
+  -> rev 4 (predspec4). Owner rulings, all in COND-FAMILY.md: look-alike consistency ranked FIRST (G0 + table);
+  string sets as the foundation, edge assertions (`\b`, edge lookarounds) are an error in set positions, `^`/`$` = the
+  value's ends, an explicit `(?m)` keeps PCRE meaning; transforms are FILTER MODIFIERS with adjective names (`padded`,
+  `any_case`), `&` pure intersection; no alphabetic keywords (`@` effects, `import`/`export` as functions over name sets,
+  warnings named + rx selectors); the subject is never an argument; `&` sections for mapping; no partial application;
+  enumerate, occurs.*, arrays of filters, the vm-level `&` split, priced value comparisons. Lesson (critic round): brief
+  a model choice with its SEPARATING cases first; the draft's own argument for context sets used none.
+- [FLAG-DEMOTE] set opened (Frank GO): kit (a) smpdec (smp20's pick is decided by the prior; the finder's per-hit cost
+  decides), (b) the inline one-member finder built UNPICKED (lane/memfn-mfind, 0 movers), harness pieces 1/3/4
+  (slotx; w64 owed), (c) kit-mfcard-time BOOKED night 11-15 to 11-16 after 01:00, (d) IPv4 build DEFERRED (D77) until
+  (c). The kit's cloud axes run exposed main's D27 file under -fno-req-run/-fno-req-byte (a one-sided budget give-up):
+  lane axtri1115 triaging.
+- Prune (hk1115): 12 worktrees + 10 branches; it also removed the kit's merged r43 worktree (branch kept; kit told).
+- 01:00-02:00 (2026-11-15): the box hold ended at 01:00. Job 450 (test-axes on lane/axtri1115) started 00:53, seven
+  minutes inside the hold. My re-queued job's `--ready` was `exit 0`, on the wrong belief that the queue enforces the
+  hold; each job's own `--ready` must (not-ready = exit 75). Lesson: a main job's `--ready` always encodes the 20:00-01:00
+  hold. Frank: full suite in the CLOUD, not on the box (scripts/cloudrun's suite covers test, axes, ubsan, asan, mech and
+  recidentity; alloc and lint stay local); one cloud suite on main after the axtri1115 merge covers every landing since
+  11-11. R-40 filed (reply only; build on trigger). Set S3 opened: design lane covcap (opus), [COVER-CAP] design only.
+- 02:10 (2026-11-15): S3 design delivered (covcap; docs/design/cover_cap.md rev 0: the span slice gets its own bound
+  PCREC_SPAN_EXACT_MAX 32 against the kit's MF_MAX_SPAN_POS, separate from PREFIX_K_MAX 24; no abi; movers l31/hex32/
+  dig32/hex32-id). Frank: "design and code critics on ALL work" (memory pcrec-critics-on-all-work; kit told).
+  Rounds launched: crit-covcap (design, light) and crit-posts2 (code, RETROACTIVE over the code landed after the S2
+  close without a round: s2d27, s686, mechund, r43, s2arms, r1on/r1land, ci fixes, axtri1115).
+- 03:00 (2026-11-15): retroactive code round crit-posts2 on the post-S2 landings (docs/dev/reviews/2026-11-15-r1-posts2.md):
+  0 answer findings (rule (1) ON: ~2,000 runs vs libpcre2, restore=alt byte-identical apart from abi; every abi reader on
+  107). FIX-NOW to lane fixposts2 (sonnet): one bounded first-match scan helper for req.c's four restore tables
+  (CONTRACT-1, general form), INTERNAL_ARMS derived from walk_arms.def (CONTRACT-4), S3012's reach on a measured count
+  (PLANTS-1), D27 `# arms:` headers, vrun utf8 floors split corpus/witness, doc items; run-verify-wide floor re-measure
+  queued; EMITTED-1 -> Boonies row. FLOORS-4 (the D3 floor script has no caller) relayed to the kit. Rev 0 covcap round
+  filed as r2-covcap0; its findings fed to covcap2 (rev 1, no length bound, Frank: "avoid arbitrary tuning constants").
+- 03:05 (2026-11-15) OWNER STOP: Frank: "Let the critic finish then stop all design and development. Please run all
+  planned tests and merge proven branches but nothing else. ... note that I asked you to stop and what you were working
+  on. Stop kit as well." What was in progress at the stop:
+  (a) S3 [COVER-CAP]: design rev 1 merged (docs/design/cover_cap.md, no length bound, two stages). Frank had already
+      held the design (02:58, "Stop the design work") while we discussed replacing the subset walk with a straight-line
+      walk that ends at the first branch, with no budget (his point: a span is an array of byte classes; a branch ends it;
+      hull positions only for UTF-8, later). Not folded into the doc; no design pass, no critic round on rev 1.
+  (b) Retroactive post-S2 fix lane: lane/fixposts2 has the r1-posts2 fixes; its own light round (r3-fixposts2) asked
+      for more; follow-up lane fixposts2b was mid-fix, told to commit WIP and end. NOT proven, so NOT merged.
+  (c) Kit: mfind (inline finder) + slotx (harness) with fix lanes mfindg2/slotxfix in flight, follow-ups slotxf8/d3wire
+      planned; told to stop dev, run planned tests, merge only proven branches into its own branch.
+  (d) #6 predicates: discussion only; rev 4 merged; no work in flight.
+  Allowed tonight: the cloud full suite on main 2275777e0 (test, ubsan, asan, recidentity GREEN; axes, mech pending);
+  box jobs 700 (emit neutrality, lane/fixposts2) and 701 (memarm re-measure); cloud mechrows/test on fixposts2 if
+  already dispatched; kit gates. Merge only branches proven green AND round-ruled. Kit timing window (night 11-15 to
+  11-16) remains booked.
+
+## 2026-11-15 10:45 — new manager session (132); review of the overnight work; owner's span model recorded (manager)
+
+- Frank restarted the manager session (the previous one was forgetting agreed design after a long run with repeated
+  compactions). Manager model is now fable; lanes stay opus/sonnet. The 03:05 owner stop is STILL in force.
+- Read-only audits of the overnight work (spanfacts sonnet, audnight opus, audpred opus); results in wake.md 10:40 and
+  the next entry. No dev or design launched.
+- OWNER'S SPAN MODEL (Frank 2026-11-15, for [COVER-CAP] rev 2; his words): "there are two kinds of spans. exact spans
+  that can prove each position is exactly as the rx requires and the engine does not need to retest, and hull positions
+  that show the position is possibly matching but not proven. the purpose of the hull positions is to get better
+  candidates but the work is thrown out. how far to go to get these is a judgement call. i would say that if the span
+  exceeds N positions, the hull is not needed. the hull positions can be used to extend a short span and get something
+  to filter candidates." Earlier the same night (02:58): a span is an array of byte classes; a branch ends it; the kit
+  can loop over repeated positions and detect them by scanning the span it is passed.
+  Manager's reading (mine, not his words): the exact span needs no subset exploration and so no budget or length bound;
+  bounds belong only to the hull, where "how far" is a judgement; N is a tuning constant to label and measure.
+  cover_cap.md rev 1 (subset walk kept for exactness, 512 budget cliff, run facts offered to the kit, owner questions
+  2-3) does not follow this model; a rev 2 waits for the owner's word.
+- 11:35 (2026-11-15): audits done. audnight: lane/fixposts2 not merge-ready (axes runner hard-codes gcc -fpreprocessed;
+  floors unpinned; mechrows green only on the pre-fixposts2b tip); S486's cause is the rule (1) landing (the AWS-key
+  witness moved first-memchr-bounded -> handoff, speed unmeasured), which neither the landing nor the retroactive round
+  caught (only the 9 new rows' reach was probed). Lesson: a default-flip landing runs EVERY mech row's reach probe.
+  audpred: the 11-14/15 COND-FAMILY record is right on Frank's words, unreliable on reach; Frank answered the five
+  questions (entries at the file's tail). Frank LIFTED the stop: complete the planned sets (S2 leftovers, S3, S4) and
+  open work before any next item; kit continues; predicates stay design-only; critics on all work. Launched fixposts2c,
+  s486re (sonnet), covcap3 (opus, [COVER-CAP] rev 2 on the exact/hull model). Kit told to resume, fresh code rounds.

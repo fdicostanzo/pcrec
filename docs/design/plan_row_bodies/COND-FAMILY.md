@@ -755,3 +755,58 @@ with `&` only (`(& f)`, subject on the left; `(& !B)` covered); other operators 
 with NO partial application: a macro call binds every required parameter or is an error naming the missing one;
 sections are the one way to leave a hole (revisit on need). C35: an explicitly written `(?m)` keeps PCRE meaning inside
 a value (`^`/`$` also at line breaks within it); without it `^`/`$` are the value's ends; never reads outside the value.
+RULING (Frank 2026-11-15: "spelling: keep ! out of rx for now"): CLOSES the Boolean-operator spelling question (open
+since 2026-11-12). No standalone `!` in the rx language for now; `!` lives in the predicate/expression language only
+(always a filter). Combined with the 2026-11-14 rulings: `&` intersection, `|` alternation, no alphabetic operators.
+**2026-11-15 CONFIRMATION — `^`/`$` and edge assertions in a filter (Frank, to session 132, after an audit asked
+whether the 11-14 C32 record over-reached).** His words: "a review of the predicate design suggested that rx be
+considered spans 'in context' instead of a set of strings ... when composing rx like 'a & b' we had thought before that
+b was in the span context of a so ^a+$ meant that ^ and $ were the start and end of the a span. but the 'in context'
+span idea seemed to change that or similar things like \bfoo which changes match depending on the context. it was
+decided to drop this interpretation and consider 'a' to instead be the set of strings again so there was a reversal.
+the rulling was to say again that ^...$ meant the start and end of the filtered condition and to disallow certain
+contextual rx like \b in a filter rx that would exceed the span rx that it was filtering". RECORD: (1) foundation =
+string sets (Q1 stands); (2) in a filter (`a & b`, a condition on a value) `^`/`$` mean the start and end of the SPAN
+BEING FILTERED: this is C32, and it SUPERSEDES the part of the Q1 entry above that listed `^` and `$` among the
+compile errors; (3) assertions that would read beyond the filtered span (`\b` named by Frank) are disallowed in a
+filter rx. This RESTORES the pre-11-14 understanding (2026-11-13: b is in the span context of a). Manager's reading,
+not his words: "edge lookarounds" in the C32 entry are the same class as `\b`; C35's explicit `(?m)` rule is unchanged.
+**2026-11-15 CONFIRMATION — numeric ranges are string sets; padding is an explicit transform (Frank, to session 132,
+after the audit asked whether C9 was recorded as he meant).** His words: "for numbers there was a critic complaining
+that \d\d & between(1,12) would only match 10-12 and i said yes, that is correct because the \d\d means two digits. if
+the intention was the numeric range 1-12 then either use \d{1,2} or similar or use a transform like
+padded(between(1,12)) to get between to ignore leading 0". RECORD: C9 as recorded on 11-14 STANDS (the string-set
+reading): `between(1,12)` is the set of the unpadded spellings "1".."12"; `\d\d & between(1,12)` accepts exactly
+10, 11, 12; leading zeros are accepted only through an explicit transform on the filter (`padded(between(1,12))`) or
+by writing the wider pattern (`\d{1,2}`). The "compares by value" reading is NOT adopted.
+**2026-11-15 CONFIRMATION — two kinds of numbers; the `occurs` module (Frank, to session 132, after the audit found
+"(no number type)" recorded beyond his words on 11-14).** His words: "there are numbers you get from the subject like
+\d\d and numbers that come from the structure like the count of matches to 'Host'. the proposal from the manager was
+that these be treated differently. \d+ numbers can be added, filtered <256. but structural numbers like the count would
+use 'occurs' module like occurs.at_least(3, ...). my comment was that the previous used at_least(...) and was doing
+number tests without between() but it wasn't immediately clear to the user why they were different. so i suggested an
+'occurs' type module that would handle structural predicates". RECORD: (1) SUBJECT numbers (text matched by `\d+` and
+the like) can be added and filtered (`< 256`, `between`); the earlier arithmetic in this record (`$y + 1`, day
+differences) stands. (2) STRUCTURAL numbers (how many times something matches) are tested through the `occurs` module
+(`occurs.at_least(3, ...)`); the module name is what tells the user these are a different kind. (3) The 11-14 gloss
+"(no number type)" is WITHDRAWN as over-reach: his concern was the user's confusion between the two kinds, answered by
+the module, not a ban on numbers. Whether a bare count may also be compared directly (`count(...) == 3`, used earlier
+in this record) was not addressed today: OPEN, lean = spell it through `occurs`.
+**2026-11-15 CORRECTION — `!` inside a normal rx is PARKED, not closed (Frank, to session 132; corrects the entry
+above that said his "keep ! out of rx for now" CLOSES the Boolean-operator spelling question).** His words: "i said we
+should keep ! out of normal rx /!foo/ mostly because it wasn't clear to me if the ! covered the whole foo or just the
+f. i would revisit later with clarification. the primary goal of the predicate design is the predicate part itself and
+extra elements added to rx like ${} and & are necessary parts of that. the ! in rx can be revisited in a later plan
+item". RECORD: (1) no `!` inside a normal rx (`/!foo/`) in this design; reason = its SCOPE is unclear (the whole `foo`
+or just the `f`). (2) PARKED for a later plan item, to be revisited with a clarified scope; the spelling question is
+NOT closed. (3) SCOPE OF THIS DESIGN: the predicate part itself is the primary goal; additions to the rx language are
+limited to the ones the predicates need (`${}` and `&`). `!` in the predicate language is unaffected.
+**2026-11-15 CLARIFICATION — currying is DEFERRED from phase 1, not dropped (Frank, to session 132; clarifies C34
+above, which named no superseded rule).** His words: "we had a design that suggested a macro with values could be
+curried. however, the manager then suddenly asked without context if we should no longer do that. i'm not sure the
+reason. my answer was to say that we can start out phase 1 without currying and revisit later. i don't know the reason
+it wanted to drop it. i also wanted to reduce the scope of the initial base level predicate build and it seemed
+secondary." RECORD: (1) the DESIGN keeps currying (2026-11-13/14: "Keywords to macros basically curry the rx
+function"); C34 does NOT supersede it. (2) PHASE 1 (the base-level predicate build) is built WITHOUT partial
+application, as a scope reduction: a macro call binds every required parameter; revisit after phase 1. (3) No reason
+for dropping currying from the design was ever put to the owner; none is recorded, and none is assumed.
