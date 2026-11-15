@@ -45,3 +45,4 @@ w2-13	26	job 561 wall in part
 w2-14	15	job 561 wall in part
 w2-15	20	job 561 wall in part
 w2-16	23	job 561 wall in part
+mfind	73	lane mfind own run_g2_mfind.py --quick (73 s, G2M_JOBS 2, unloaded)
