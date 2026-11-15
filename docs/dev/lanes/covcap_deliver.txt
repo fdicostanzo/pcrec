@@ -1,0 +1,4 @@
+report=docs/dev/lanes/covcap_report.md
+sections: STATE AT HANDOFF; WHERE THE CAP LIVES; DESIGN; ANSWER IDENTITY PLAN; MOVERS ESTIMATE; QUESTIONS
+nonempty: all
+commit: yes
