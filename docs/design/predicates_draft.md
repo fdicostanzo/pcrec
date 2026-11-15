@@ -2,6 +2,20 @@
 
 ## Changelog
 
+- **rev 11 (lane predspec11, 2026-11-15).** Applies review `docs/dev/reviews/2026-11-15-r12-predspec10.md` (critic
+  texts in its directory): its 15 FIX-NOW findings with the picks of its DISPOSITIONS RULED (manager); the refuted
+  part of CENSUS-6 (a) left as it stood. ANSWER-LEVEL (SIMULATE-1): under the ruled anchoring a directly applied
+  `/^foo/` is exactly `foo`, so L7, L11, L13, L15, L41 move from SAME to DIFFERENT: BY DESIGN, §2.7, §7.1, §11 and
+  E-CTX-1/5 are respelled, and every SAME row and every §12 case is re-applied under the ruling (§0.1, §12 REV 11).
+  DESIGN: the second argument refusal NARROWED to its reason (a reader that can run with its group unset in the
+  current hit; `/(.)\1/` admitted; SIMULATE-2, LEAN); one-hit vs every-hit/selection marks split (CENSUS-8) and the
+  selection written in the path, `$m.hit[(g: "x")]` (CENSUS-1, LEAN); `$` reads the VALUE(S) of a label path
+  (CENSUS-11); `balanced` respelled with its literal's own named group, so rx text has exactly two non-PCRE marks
+  (CENSUS-2); under the rx-`&` switch ON PCRE's own constructs (`(?&name)`) keep their meaning and a literal `&` is
+  `[&]`, rev 10's `\&` rewrite withdrawn (CENSUS-3: an OWNER QUESTION, §13 O60 (d)); `${` in a class or `\Q...\E`
+  (CENSUS-4); an rx-text `&` takes the whole concatenation, new L67 (CENSUS-5); a duplicate label in a loop is a
+  repeated label (CENSUS-12). DOC: SIMULATE-3, CENSUS-6 (b)-(d), CENSUS-7 (MARK TABLE case lists, `+`), CENSUS-9 (one
+  mark for the per-match rule), CENSUS-10 (transform vs filter modifier; "searched").
 - **rev 10 (lane predspec10, 2026-11-15).** Applies review `docs/dev/reviews/2026-11-15-r10-predspec9.md` (critic
   texts in its directory) with its DISPOSITIONS RULED (18 FIX-NOW, 19 DOC, FIXB-8 PLAN, FIXB-9 NOTED), and folds the
   owner's last three COND-FAMILY.md entries (CF:962-1000, the last on main after this lane's base; rulings file R-1): `min` is 0 or 1 and the ambiguity warning is for the
@@ -88,7 +102,7 @@
 
 ## 0. Status, goals, standing questions
 
-**Status: DRAFT rev 10 (lane predspec10, 2026-11-15). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
+**Status: DRAFT rev 11 (lane predspec11, 2026-11-15). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
 #6 not scheduled; 2026-11-15, relayed in the predspec5 brief: "the predicate work is not a go to build as we are
 still in design"). Purpose (Frank 2026-11-14): "create a preliminary predicate spec doc with our latest ideas for the
 purpose of critical analysis. Provide reasoning." It consolidates the dated notes in
@@ -105,11 +119,11 @@ transform; `search` and `contains` are transforms that are not modifiers). Examp
 fragments are never admitted in the expression language), `:=` define, `,` "next entry" inside `[ ]` (ARRAY, any
 one entry) or `( )` (RECORD, all entries together), `=` labels an entry, `:` constrains a label that exists (THE
 grammar summary is §5.4), `==` the equality comparison, `X[...]` positional, `&` (pure intersection) / dot for
-filtering and labels, `where` for structural selection, conditions `(x: S, y: T)`, transforms as FILTER MODIFIERS
-(`x & padded(between(1, 12))`), operator sections `(& f)`, `@` effects, modules as `m := import("m")`, 1-based indexes,
+filtering and labels, `where` for structural selection, conditions `(x: S, y: T)`, FILTER MODIFIERS, the pullback
+kind of transform (`x & padded(between(1, 12))`), operator sections `(& f)`, `@` effects, modules as `m := import("m")`, 1-based indexes,
 search as the library transform `search(rx)` (rev 7's `~`/`!~` are withdrawn, §2.6).
 
-Status marks (rev 10; every mark is one of three):
+Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 - **RULED (CF:n)**: the owner's own words at line n of COND-FAMILY.md (or a D-number) cover the rule; it reaches only
   as far as his quoted words, not a manager gloss beside them. HEDGED WORDS (rev 10, review r10 FIXB-5): a hedged
   ANSWER to a question the manager put to him ("we could skip it", "I think it will help") RULES what it answers; a
@@ -184,7 +198,7 @@ Status marks (rev 10; every mark is one of three):
 | G0b | FEW KINDS, FEW MARKS, ONE MEANING EACH: "few types and few operators that always mean the same thing wherever they are used"; "a consistent grammar over comma where it has a specific meaning. Then macro application has a specific meaning" (CF:847-851) | every user (one meaning to learn per mark); the spelling step (a small fixed inventory to spell) | the MARK TABLE (§5.4: every mark, its ONE meaning, every position it may take) and the KIND COUNT (§2.1 KIND TABLE), each entry naming the §12 case that needs it; acceptance = no mark or kind with two meanings, and every mark and kind either needed by a case or listed in the TWO-WAY CENSUS (§12) as carried without one, with its reason |
 | G1 | EXPRESSIVENESS over the string: conditions PCRE cannot state (cross-label arithmetic, checksums, calendar validity, key-order independence, computed properties, occurrence counts) are short programs | users writing validators, filters, log/JSONL searches | every §12 acceptance case is written with no construct outside §§2-8 (the cases are chosen by the rules' own author: a control sharing its source, review OWN-15) |
 | G2 | LINEAR, AUTOMATON-CODE-ONLY BY DEFAULT: a program that compiles at the default level runs as automaton code (one pass or an automaton relax-then-verify split; linear time, no backtracking, hostile-input safe, self-contained output) | anyone matching untrusted input; embedders | at design: every §12 case names its level; at build: every default-level §12 case compiles to automaton code only (`RX_ENGINE` stamp); anything else is a compile error naming the construct and the opt-in, never a silent route change |
-| G3 | PCRE COMPATIBILITY: a one-literal program IS today's PCRE pattern, with PCRE's meaning (no subset, no level beyond today's engine choice) | existing PCRE users; the corpus | the whole `.rxt` corpus, each pattern wrapped as `/.../` (with `/` escaped as `\/`, each `${` written `$\{`, and the case's flags transferred to the literal), answers identically to today with the rx-`&` switch OFF (a nullable one-literal program gets the `empty.search` WARNING only, §7). The two marks inside `/.../` that are not PCRE's are §11's: `${` always (in PCRE `$` then a literal `{`, an anchor no text can satisfy before a `{`; `$\{` means the same in PCRE; 33 of 7,057 corpus pattern lines contain `${`, all in `tests/vars/`, the [VAR] module's own hole), and `&` only with the switch ON (G3's check runs OFF. Of the 165 corpus pattern lines that contain `&`, 154 hold PCRE's subroutine call `(?&name)`, 7 an `&` inside a callout's text `(?C...)`, 1 the property `\p{bc=L&}`, 2 an `&` only inside a character class, and 1 a bare literal `&`, a URL's query separator: under ON, by the lean of §11/§13 O60 every one of PCRE's own constructs keeps its meaning and only that one bare `&` would be rewritten, to `[&]`; review r12 CENSUS-3; counts: `scratch` script in `docs/dev/lanes/predspec11_report.md`). Counts: `grep -rhE '^pattern .*\$\{' --include='*.rxt' tests \| wc -l` and the same with `&` and with `^pattern ` alone |
+| G3 | PCRE COMPATIBILITY: a one-literal program IS today's PCRE pattern, with PCRE's meaning (no subset, no level beyond today's engine choice) | existing PCRE users; the corpus | the whole `.rxt` corpus, each pattern wrapped as `/.../` (with `/` escaped as `\/`, each `${` written `$\{`, and the case's flags transferred to the literal), answers identically to today with the rx-`&` switch OFF (a nullable one-literal program gets the `empty.search` WARNING only, §7). The two marks inside `/.../` that are not PCRE's are §11's: `${` always (in PCRE `$` then a literal `{`, an anchor no text can satisfy before a `{`; `$\{` means the same in PCRE; 33 of 7,057 corpus pattern lines contain `${`, all in `tests/vars/`, the [VAR] module's own hole), and `&` only with the switch ON (G3's check runs OFF. Of the 165 corpus pattern lines that contain `&`, 154 hold PCRE's subroutine call `(?&name)`, 7 an `&` inside a callout's text `(?C...)`, 1 the property `\p{bc=L&}`, 2 an `&` only inside a character class, and 1 a bare literal `&`, a URL's query separator: under ON, by the lean of §11/§13 O60 every one of PCRE's own constructs keeps its meaning and only that one bare `&` would be rewritten, to `[&]`; review r12 CENSUS-3; the classifying script is recorded in `docs/dev/lanes/predspec11_report.md`). Counts: `grep -rhE '^pattern .*\$\{' --include='*.rxt' tests \| wc -l` and the same with `&` and with `^pattern ` alone |
 | G4 | STRUCTURE OF SPELLED THINGS IS COMPILE-TIME ONLY, TOTAL, TERMINATING: every structural evaluation (each, join, records, indexing, imports, enumerate) over a SPELLED array (§3.4) is finite and ends; a repeated label's ITERATIONS (a search's hits included) exist per match and are questions of the automaton (G2), outside this goal (§3.4, §4.3) | the compiler's users (no hang at build), the security story | recursion through parameterized definitions only by a strictly decreasing literal parameter (§7); every structural operator ranges over finite declared things, `enumerate` under a budget; a fuzzer over programs never hangs the compiler (watchdog) |
 
 Constraints on every goal (ruled RULES, not ranked goals): no alphabetic operators or keywords (§5.1); `&`, `|`,
@@ -225,7 +239,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L16 | `(m: search(/^err/))` vs `(m: contains(/^err/))` | DIFFERENT: BY DESIGN | `search` with its default `min = 0` NEVER REJECTS (as a set it is every string; what it adds is the repeated label `hit`, one iteration per hit, here at most one, at m's start); `contains` is the TEST (one hit needed). The search filters nothing until a question is asked of its hits (`some(...)`, `count(...)`, a plain condition; §2.6, §4.3). With `min = 1` the two are SAME (L58) | CF:907-909 (accepted at CF:905); rev 7's `$m ~ /^err/` row withdrawn with `~`; `min`: CF:960 |
 | L17 | `(m: contains(/^err/))` vs `(m: startsWith("err"))` | SAME | `contains` removes the filter's anchoring and `^` in its argument puts the start back: `^` is m's start in both (§11 THE FILTERED SPAN); `(m: !contains(/^err/))` is the negated test (rev 7's `$m !~ /^err/`, withdrawn, §2.6) | CF:761; RULED BY ACCEPTANCE (CF:991-994, accepted at CF:990: filters stay anchored, `contains`/`search` remove it, `^`/`$` in their argument are the value's ends) |
 | L18 | a nullable final search pattern: `/\b/` vs `/a*/` | SAME | both are nullable IN CONTEXT: `empty.search` WARNING for a one-literal program, ERROR in a predicate program (§7) | Q1R-9 |
-| L19 | `(?m)^\d*` searched vs the same pattern in whole-subject mode | DIFFERENT: WARNING | by MODE only: `empty.search` in search mode, none when anchored (a `^` in the pattern does not exempt) | Q1R-9 |
+| L19 | `(?m)^\d*` searched vs the same pattern in whole-subject mode | DIFFERENT: WARNING | by MODE only: `empty.search` in searched mode, none when anchored (a `^` in the pattern does not exempt) | Q1R-9 |
 | L20 | `/\d\d/ & padded(between(1, 12))` vs `/\d\d/ & between(1, 12)` | DIFFERENT: GAP | GAP: the second is {10, 11, 12} by the C9 ruling (string sets, canonical numerals); no warning is named for a padded target against an integer comparison set | C9, OWN-2 |
 | L21 | `!<200` vs `>=200` | DIFFERENT: GAP | on targets with non-canonical members (`0150`, `abc`: kept by `!<200`, refused by `>=200`): GAP; in where they may stand (`${>=200}` legal, `${!<200}` the unapplied-macro error): the unapplied-macro error. §13 O26 | OWN-2, RUL-2 |
 | L22 | `(x: <200 \| >900)` vs top-level `x & <200 \| >900` | DIFFERENT: GAP | inside a condition `\|` binds tighter than `:` (x in either range); at top level D196 parses `(x & <200) \| >900`, a full rx that widens the program; `precedence.section` (proposed, PLAN) | C22, RUL-15 |
@@ -262,7 +276,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L53 | `(m: search(/a*/))` vs find-all of `/a*/` (Python's `re.findall("a*", "baa")` = 3 results) | DIFFERENT: ERROR (lean) | the lazy-gap definition stops at an EMPTY hit (PCRE ends a loop whose iteration matched empty: 1 hit on `baa`); a search argument that can match empty is refused, naming `x & !""` (§2.6, §13 O53) | CF:919-920 (accepted at CF:905); the refusal: LEAN (manager, rev 9) |
 | L54 | `x & s` with s an rx vs `some(...)` | DIFFERENT: BY DESIGN | `x & s` is MEMBERSHIP in the rx s (any one entry under `&`, §3.4); `some(...)` asks whether some ITERATION of a repeated label meets a condition (§4.3). Rev 7's three spellings of "some result" (`x & s`, `some(s)`, `occurs.some`) become one: `some(...)` | CF:913-914 (accepted at CF:905) |
 | L55 | `(m: search(r) & (g: S))` vs `(m: search(r, min = 1) & (g: S))` on a span with NO hit | DIFFERENT: BY DESIGN | `min` says whether zero hits are allowed (the owner's "+ or * control", CF:933): with the default `min = 0` a plain condition over zero hits HOLDS (every one of none), with `min = 1` the span is rejected. On `xyz` with `r := /ab(?<g>[xy])/`: the first accepts, the second rejects (§2.6 hand checks). Rev 8's lean (a plain condition FAILS on zero hits) is withdrawn | CF:933-934; CF:937-940 (record); the zero-hit answer RULED BY ACCEPTANCE (CF:997-1000 on main, "Agree with lean"; rulings R-1) |
-| L56 | `/(?<n>\d)?x/` vs `/(?<n>\d)*x/` under `(n: <5)`, on the span `x` | DIFFERENT: WARNING | PER MATCH (§4.2): with `?` the match skipped n's OPTIONAL group, so n is UNSET and the condition fails (`label.unset` warns on the `?` form); with `*` the match REACHED n's loop and ran it zero times, so the plain condition holds (§4.3). See L65 for a loop the match never reached | §4.2 (unset fails: LEAN, CF:173; the per-match statement: RULED BY ACCEPTANCE (CF:997-1000 on main, "Agree with lean"; rulings R-1)); CF:937-940 |
+| L56 | `/(?<n>\d)?x/` vs `/(?<n>\d)*x/` under `(n: <5)`, on the span `x` | DIFFERENT: WARNING | PER MATCH (§4.2): with `?` the match skipped n's OPTIONAL group, so n is UNSET and the condition fails (`label.unset` warns on the `?` form); with `*` the match REACHED n's loop and ran it zero times, so the plain condition holds (§4.3). See L65 for a loop the match never reached | the per-match rule (the optional skipped = never reached = FAILS; the loop reached and run zero times HOLDS): RULED BY ACCEPTANCE (CF:997-999, accepted at CF:1000, "Agree with lean"; rulings R-1); the `label.unset` name: LEAN; CF:937-940 (rev 11, review r12 CENSUS-9: rev 10 also marked "unset fails" LEAN, CF:173) |
 | L57 | `search(x, min = 2)` vs `search(x) & occurs.at_least(2, (hit: /(?s).*/))` | DIFFERENT: ERROR | under PCRE's reading `{2,}` RE-CUTS the hits to reach two: `x := /aab\|a/` on `aab` gives one hit (`aab`@0) at `min` 0 or 1 but two (`a`@0, `a`@1) at `min = 2` (libpcre2 and Python's `re` agree, §2.6), while the `occurs` form counts the default hits (one: rejects). `min` is 0 or 1; a larger `min` is a compile ERROR naming the `occurs.at_least` form (§13 O58 RESOLVED) | `min` 0 or 1: RULED (CF:963-966); the error for other values: LEAN (the record: the manager's reading, CF:968-969) |
 | L58 | `contains(x)` vs `search(x, min = 1)` | SAME | ONE definition (§2.6, §8): `contains(x) := search(x, min = 1)`, so they accept the same values AND read x's labels the same way (leftmost hits, a plain condition = every hit). Rev 8's own body `/(?s).*${x}.*/` accepted the same values but, under the one reading, would read x's labels at the RIGHTMOST occurrence (its greedy lead; `contains(/ab(?<g>[xy])/)` on `abx aby` gives g = `y`, libpcre2), a look-alike the one definition removes. ANSWER MOVE (review r10 FIXB-3): a condition on x's labels after `contains` now reads EVERY hit: `(m: contains(r) & (g: "x"))` on `abx aby` (`r := /ab(?<g>[xy])/`) ACCEPTED under rev 8 (a parse with g = x existed) and REJECTS from rev 9 (hit 2 has g = y); rev 8's meaning is `contains(r & (g: "x"))` or `contains(r) & some((g: "x"))` (L61) | CF:944-945 (note (b)); LEAN (this document) |
 | L59 | `/(?<a>\d+)(?<b>\d+)/ & (a: "1")` vs the constraint written into the pattern, `/(?<a>1)(?<b>\d+)/`, on `123` | DIFFERENT: WARNING | a condition READS PCRE's parse of the pattern it is laid against and never steers it (§4.5): that parse gives a = `12`, so on the WHOLE VALUE `123` the first rejects; a constraint written INTO the pattern changes the pattern, whose parse then gives a = `1`, so the second accepts. `label.ambiguous` names a and shows the witness; the author validates the intended reading (§5.6). SEARCHED in the subject `123`, the first reports `12` (the parse of `12` gives a = `1`): the condition never steers the PARSE of a span, but by D196 it selects which SPAN is reported (§4.5; review r10 FIXB-7 (d)) | CF:953-955; the no-steering statement: LEAN (this document) |
@@ -475,8 +489,8 @@ unlike `/a.b/`); they differ only in what a comparison means (§2.4).
 ONE INPUT RULE. A macro takes input two ways: a CALL fills its PARAMETERS (the call's argument list is ONE record laid
 against them, §5.2); `&` fills its one OPERAND slot with the rx on the other side (the record's "subject slot",
 CF:860; §0.3). The rx is never the thing applied (the operand is never an argument, §2.3). So: a CONDITION (`(x:
-<200)`, `(a: 1, b: 2)`) = a macro with an operand and no parameters; a TRANSFORM (filter modifier, §2.7) = a macro
-whose parameter is a filter and whose result is a filter; an operator SECTION `(& B)` = only the operand open; prefix
+<200)`, `(a: 1, b: 2)`) = a macro with an operand and no parameters; a TRANSFORM (a filter modifier, §2.7, or
+`search`/`contains`, §2.6; §0.3) = a macro whose parameter is a filter and whose result is a filter; an operator SECTION `(& B)` = only the operand open; prefix
 `!B` = a macro with the operand open (§2.2); an unapplied filter modifier (`padded` alone) = a macro with its
 parameter open. A section of something that is already a macro with only its operand open is that macro: `(& M)` =
 M (so `each((& (a: d)), x)` and `each((a: d), x)` are one program, §5.3; review r8 P6-8 (f)).
@@ -523,7 +537,7 @@ VALUE kinds are unchanged, the other rows are not values):
 | array / map INTERFACE | applied to a thing (an rx, a repeated label's iterations, a module); never created (CF:890-891) | NO | no | no | every case that indexes, joins or reads a field | RULED (CF:890-891) |
 | repeated label's iterations | the passes of one label in one match (search hits included), read through the array interface (§4.3) | no (they are parts of a match) | no | no | E-HTTP (`name`) | the group questions: CF:922-924, accepted at CF:905 |
 | run-time input | `limit := param(rx)`: an rx whose string the caller fixes per match | as an rx (lean) | yes, by `:= param(...)` | yes, as an rx | E-NEAR (b) | OPEN (§13 O46) |
-| effect | an `@` form, a compile-time statement (§5.1) | no | no | no | E-IPV4, E-CAL (`@assert`) | LEAN (CF:619) |
+| effect | an `@` form, a compile-time statement (§5.1) | no | no | no | E-IPV4, E-CAL, E-CTX (`@assert`) | LEAN (CF:619) |
 
 The map-interface tools' results (`where_group`, `each_group`, §3.2, §5.3) are rx whose array interface lists the
 selected parts in group order: LEAN (this document; review r8 P6-8 (e): the result kind was unstated). Rev 8 (CF:890-891):
@@ -557,7 +571,8 @@ A CONDITION on a label is not membership: it reads the parse of the SPELLING it 
 reading), like a structural tool (§3.4), so two spellings of one language can answer differently under a condition
 (greedy vs lazy, `A | B` vs `B | A`: §0.1 L60; review r10 FIXB-1, a consequence of the ruled one reading). `&` is PURE INTERSECTION:
 associative and commutative, so the ORDER and GROUPING of an `&` chain never change which strings it admits (a
-transform is a filter modifier, §2.7, never an `&` operand with a position). Prefix `!B` is ALWAYS A MACRO with its
+transform, a filter modifier or `search`/`contains`, §2.6, §2.7, is a macro called on a filter, never an operator
+with a position in the chain). Prefix `!B` is ALWAYS A MACRO with its
 operand open (it takes the filter role, §2.1): `A & !B` = A minus B; `&!` is not a separate operator. A standalone `!B` where an rx
 is needed (`${!B}`, `C | !B`) is the unapplied-macro error. Macros in the filter role combine pointwise by `& | !`
 (the typing sentence, §2.1). `!` lives in the
@@ -1123,7 +1138,11 @@ optional skipped the loop); `/(?<n>\d)?x/` FAILS and `/(?<n>\d)*x/` HOLDS on `x`
 one of these: the zero-iteration rule is a CONDITION rule laid over PCRE's parse (it reads where the parse stopped),
 not PCRE's capture state.
 
-**STATUS.** LEAN (CF:173); cited as "ruled" by a later note (§13 O3). That warnings have names: RULED (CF:666); the name
+**STATUS.** The per-match rule (a condition on a label whose group or loop the match never reached FAILS, set once or
+not; a loop reached and run zero times holds a plain condition): RULED BY ACCEPTANCE (CF:997-999, accepted at
+CF:1000; rulings R-1), which overtakes CF:173's earlier lean ("unset fails") for every never-reached label (rev 11,
+review r12 CENSUS-9: one mark per point). The rest of this section's RULE (a comparison on an unset label false, its
+`!` true) stays LEAN (CF:173); cited as "ruled" by a later note (§13 O3). That warnings have names: RULED (CF:666); the name
 `label.unset`: LEAN (manager's list, review RUL-14.1). The two sentences disagree on `(x: !<5)` for an unset x: §13
 O28. The zero-iteration answer (a plain condition true over zero iterations a reached loop allowed): the record
 (CF:937-940) of the owner's "+ or * control" (CF:933), which is a diagnosis plus a hedged proposal ("Perhaps search
@@ -1143,7 +1162,13 @@ makes a repeated label's iterations those of PCRE's parse, as for every label.
 captures inside a loop, so at the default level it is an ERROR naming the group questions below and the `captures`
 level. At `vm`, PCRE's own `\k<x>` INSIDE rx text sees the last iteration (PCRE's meaning, inside a literal); the
 expression's `$x` keeps its one meaning at every level (review r10 FIXA-3, CENSUS-1; rev 9 gave `$x` at `vm` the
-last-iteration meaning). Duplicate names (`(?J)`, `(?|`): plain `$x` gives the lowest-numbered set group; the static
+last-iteration meaning). Duplicate names (`(?J)`, `(?|`) on a SET-ONCE label (no loop encloses the duplicate
+groups): plain `$x` gives the lowest-numbered set group. A duplicate label INSIDE A LOOP is a REPEATED label first:
+its iterations in match order, each iteration's value from whichever of the duplicate groups THAT iteration set (the
+iteration's own values, §2.6), so `/(?J)(?:(?<x>a)|(?<x>b))+/` on `ba` has iterations `b`, `a` (PCRE's raw state:
+group 1 = `a`, group 2 = `b`, libpcre2 10.46), `$x[1]` = `b` and a bare `$x` is the repeated-label error at the
+default level (§0.1 L64; rev 11, review r12 CENSUS-12: LEAN; a duplicate label set twice in ONE match outside a loop
+stays §13 O35). The static
 CONSTRAINT SET of a duplicate label (the strings it can hold) is the UNION of the definitions that can set it.
 Structurally, `alt.x` returns EVERY entry labelled x as an rx read through the array interface in group order;
 `alt.x[1]` (first in the PATTERN, compile time: `[n]` in value position) differs from `$x[1]` and `(x[1]: S)` (the
@@ -1277,7 +1302,8 @@ parse a = `1`, b = `23` exists (rev 8's some-parse rule accepted both). `P & (a:
 rejecting callout that would send PCRE back into another parse (an oracle or a build that used one would compute a
 some-parse answer).
 
-IN SEARCH MODE THE CONDITION SELECTS THE SPAN (review r10 FIXB-7 (d)). "Never steers the parse" holds for a given
+IN A SEARCHED PROGRAM THE CONDITION SELECTS THE SPAN (review r10 FIXB-7 (d); "searched", not "search", rev 11,
+review r12 CENSUS-10). "Never steers the parse" holds for a given
 span. A SEARCHED program tries other spans (D196: the leftmost start, then the left operand's next end when a filter
 rejects the preferred one), and each span has its own parse: `P & (a: "1")` searched in the subject `123` rejects the
 span `123` (a = `12`) and reports `12` (whose parse gives a = `1`, b = `2`; libpcre2 and Python's `re.fullmatch`
@@ -1510,7 +1536,7 @@ THE BRACKETS AND THEIR MARKS (`,` `( )` `[ ]` `=` `:`):
 
 | mark | where it may appear | what it means | §12 case |
 |---|---|---|---|
-| `,` | only between ENTRIES inside `[ ]` or `( )` (a call's parentheses are a `( )`) | "next entry"; it never carries logic (no AND, no OR, no dimension) | every case |
+| `,` | only between ENTRIES inside `[ ]` or `( )` (a call's parentheses are a `( )`) | "next entry"; it never carries logic (no AND, no OR, no dimension) | every case but E-LUHN, E-DEPTH (its commas are inside rx text) and E-CTX (rev 11, review r12 CENSUS-7) |
 | `[ e1, e2, ... ]` | value position; and as the index bracket `X[...]` | ARRAY (the written form of the array interface: it WRITES AN RX entry by entry and creates no array value, CF:890-891): ORDERED ENTRIES, each entry ONE entry (like a group or a hole, §3.3: `[x, /d/]` has 2 entries whatever x holds, §0.1 L48). Under `& \| !` and in the filter role (extensional, §3.4): ANY ONE entry (of rx: an alternation; of macros: a macro, a list of filters, §3.5; mixed: error). Under structural tools (indexing, `each`, `join`, the entry count, §3.4): the entries in their written order. One meaning, two readings of it, as for every rx (§3.4). `X[...]` selects positions, any one of those listed (`X[1, 3, 5]` = `X[1\|3\|5]`, if the multi-index is adopted, C5); BY POSITION (§3.2 tool 1, §0.1 L64): in value position the ENTRIES of the rx on the left (`alt.x[1]`), in a match position (under `$`, a path on the left of `:`) the ITERATIONS of the label (`$m.hit[2]`, `(x[2]: S)`), and there a CONDITION in the bracket keeps the iterations whose own labels meet it (`$m.hit[(g: "x")]`; rev 11, review r12 CENSUS-1, LEAN) | E-WEEKDAY, E-IPV4, E-RFC, E-NEAR, E-SEP, E-HTTP (`join` inputs); E-RFC (alternations of names) |
 | `( e1, e2, ... )` | ONLY laid against something with fields: (a) a CALL's argument list, against the macro's parameters (also a definition head `m(p1, p2) :=`, which declares them); (b) a CONDITION, against a pattern's labels; (c) the LEFT of `:=`, against a result's groups (design only; out of phase 1, §0.2) | RECORD: ALL entries together, positional or labelled. NEVER A VALUE: it cannot be bound, stored or returned. The written form of the MAP interface (§3.1); one-way | every call; every condition |
 | `( label: S, ... )` in VALUE position (an argument, an array entry, the right of `:=`) | where a value may stand | a CONDITION, i.e. a MACRO (CF:858), NOT a record: the record is its written body, laid against the operand's labels when `&` fills it (position (b)); no record is bound or passed (§4.1; §13 O45). Any other record in value position is an error (`(x = /a/, y = /b/)`: "a record is not a value; for any one of the entries write `[ ... ]`", §0.1 L43) | E-HTTP (`occurs.exactly(1, (name: ...))`, `count((name: ...))`) |
@@ -1530,15 +1556,15 @@ THE OTHER MARKS:
 | `\|` | between two expressions | ANY ONE: union of rx, concatenation of entries (§3.3), pointwise on macros; rx \| macro is an error (§2.1) | E-FILE, E-DEPTH |
 | prefix `!` | before an expression (expression language only, §2.2) | the complement in the filter role: a macro with its operand open | E-FILE |
 | `<` `<=` `>` `>=` `==` | prefix, before ONE atom | a COMPARISON SET (a full rx, §2.4) | E-CAL (`<=`), E-RFC (`==`), E-FILE (`<=`, `>`) |
-| `+` `-` `*` `%` | between numbers | arithmetic on numerals (§2.5) | E-NEAR, E-DEPTH (`-`); `*`, `%`: no case |
+| `+` `-` `*` `%` | between numbers | arithmetic on numerals (§2.5) | E-NEAR, E-DEPTH (`-`); `+`, `*`, `%`: no case (the TWO-WAY CENSUS gives the reason; `+` listed in rev 11, review r12 CENSUS-7) |
 | `:=` | statement start (a name, a definition head, or a record on the left, design only) | binds a name to an rx or a macro (§5.1) | every case |
 | `.` | after an expression or a label path | a FIELD of the MAP INTERFACE of the thing on the left (§3.2 tool 4), its ONE meaning (CF:898-899, agreed CF:892): a label (`d.year`, `rest.year`), a module member (`json.row`, §7), metadata (`.index`, `.label`, reserved fields) and a `$` path are instances. A user label named `index` or `label` is an ERROR naming the reserved field (rev 9: the manager's call, LEAN; §13 O31) | E-RFC (`.index`, `$rest.year`), E-JSONL and others (`json.row`), E-FILE (`r.word`) |
 | `$` | before a label PATH | the VALUE(S) of the whole label path in this match, read through the array interface: ONE ENTRY PER ITERATION in match order (a set-once label: one entry, so a one-string set; unset: no entry). For a GROUP label the value is its CAPTURED STRING (`$year`); for METADATA (`$mname.index`) or a COMPUTED LABEL (`$d`, `$wd`, §4.4) it is that value, a numeral string, not captured text (rev 11, review r12 CENSUS-11). An entry is a one-string rx with NO labels: a selection of iterations is written in the path, before `$` (`$m.hit[(g: "x")]`), never as a condition laid against `$`'s entries (review r12 CENSUS-1). The path is read whole: `$a.b.c` reads the path `a.b.c` (the parenthesised `$(a.b.c)` is notation here, not a program), so `$mname.index` is the index of mname's matched entry (11 for `Nov`), never the field `index` of `$mname` (review r8 P6-6). On a repeated label it needs captures, the `captures` level: for ONE iteration (`$m.hit[2]`, `$m.hit[2].g`) RULED BY ACCEPTANCE (CF:977, to CF:972-973's "reading ONE hit"); for every iteration (`$m.hit`) or a selection: LEAN (review r12 CENSUS-8; §4.3); one meaning at every level (review r10 FIXA-3, CENSUS-1; LEAN) | E-WEEKDAY, E-CAL, E-RFC, E-NEAR |
-| `${ }` | inside rx text, ALWAYS (in the opt-in, whatever the rx-`&` switch; §11) | a HOLE: the text the expression inside denotes, inserted where it stands. In an ATOM position (the usual one) it inserts an rx's set as ONE entry (§3.3); in a TYPED SYNTAX POSITION it supplies that position's value from a finite compile-time set: a quantifier bound (`{${min},}`, `\d{${n}}`), a class range end (`[${a}-${b}]`), a GROUP NAME (`(?<${x.label}>...)`, `(?<f_${i}>...)`: a one-string set that is a valid name) (§11; review r10 CENSUS-3). A macro in it is the unapplied-macro error (§2.3) | E-JSONL, E-DEPTH, E-IPV4 (prose); typed positions: §2.6, §5.3 (no case) |
-| `/.../` | value position | an rx literal with PCRE's meaning (§11) | every case |
-| `@` | statement start | marks an EFFECT (§5.1): a module's effect (`@assert.some`) or one of the two effect built-ins `@warn`, `@export` (§5.1) | E-IPV4, E-CAL |
+| `${ }` | inside rx text, ALWAYS (in the opt-in, whatever the rx-`&` switch; §11) | a HOLE: the text the expression inside denotes, inserted where it stands. In an ATOM position (the usual one) it inserts an rx's set as ONE entry (§3.3); in a TYPED SYNTAX POSITION it supplies that position's value from a finite compile-time set: a quantifier bound (`{${min},}`, `\d{${n}}`), a class range end (`[${a}-${b}]`), a GROUP NAME (`(?<${x.label}>...)`, `(?<f_${i}>...)`: a one-string set that is a valid name) (§11; review r10 CENSUS-3). A macro in it is the unapplied-macro error (§2.3) | E-JSONL, E-DEPTH, E-HTTP (`/\A${block}\z/`), E-CTX (`/a${num}/`); E-IPV4 (prose); typed positions: §2.6, §5.3 (no case) (rev 11, review r12 CENSUS-7) |
+| `/.../` | value position | an rx literal with PCRE's meaning (§11) | every case but E-CAL (its `isodate` is a comment since rev 10; review r12 CENSUS-7) |
+| `@` | statement start | marks an EFFECT (§5.1): a module's effect (`@assert.some`) or one of the two effect built-ins `@warn`, `@export` (§5.1) | E-IPV4, E-CAL, E-CTX (`@assert.none`; review r12 CENSUS-7) |
 | `#` | outside rx text, to the end of the line | a COMMENT (layout; inside `/.../` `#` is PCRE's: a literal, or a comment only in extended mode, §11; review r10 CENSUS-17) | ten of the twelve §12 blocks |
-| `"..."` and numerals | value position | a one-string rx (§2.1); a numeral may carry a sign (`between(-15, 15)`, §2.4) | every case |
+| `"..."` and numerals | value position | a one-string rx (§2.1); a numeral may carry a sign (`between(-15, 15)`, §2.4) | every case but E-SEP (review r12 CENSUS-7) |
 
 **STATUS.** The comma as "next entry", `[ ]` any one, `( )` all together, `=` labels, `:` constrains an existing label:
 RULED (CF:863, on the acceptance alone except the comma, CF:850). The record never a value: RULED (CF:851-852, his
@@ -1725,7 +1751,7 @@ grammar, a literal in a head and two `:=` for one name, §13 O21; review r10 CEN
   the edge-assertion error (§11). A library file with no export is an error ("library exports nothing"). Imports and
   file reads are COMPILE TIME ONLY (artifact self-contained), PINNED by `sha256`; the name -> file map and its pin
   live in configuration (the .rxt `include`/`lib` machinery, `docs/spec/rxt_format.md` §1.1.1, and [LIB]).
-- THE EMPTY-MATCH HAZARD. When the program's FINAL pattern is NULLABLE and used in SEARCH mode: an ERROR in a
+- THE EMPTY-MATCH HAZARD. When the program's FINAL pattern is NULLABLE and used in SEARCHED mode: an ERROR in a
   predicate program, a WARNING (`empty.search`) for a program that is one plain PCRE literal (`/a*/` is legal
   PCRE). NULLABILITY IS COMPUTED IN CONTEXT: a pattern is nullable when it can report an empty find in some subject,
   so `/\b/`, `/(?=a)/` and `(?m)^\d*` are nullable although as string sets `/\b/` and `/(?=a)/` are empty. Only the
@@ -2132,6 +2158,20 @@ group (the per-iteration reading, SIM-2), an argument with a backreference or co
 final newline in a filter (SIM-5), or two spellings of one labelled operand (FIXB-1); E-HTTP's `name` loop is always
 REACHED (the block is the loop), so the per-match zero-iteration rule changes nothing there.
 
+REV 11 RE-APPLIED UNDER THE ANCHORING RULING, EACH CASE IN ITS REAL MODE (review r12 SIMULATE-1; per-case table in
+`docs/dev/lanes/predspec11_report.md`, ROWS AND EXAMPLES RE-APPLIED). The ruling (CF:991-996) changes a case only
+where a `^` or `$` stands in a filter no loosening transform wraps. CODE LINES: unchanged token for token. ANSWERS:
+unchanged in every case; E-JSONL's `^`/`$` sit in the FINAL pattern (searched, the subject's lines), E-HTTP's
+`\A`/`\z` likewise, E-LUHN and E-FILE use `startsWith` (a library call), E-CTX-7's `/^[A-Z][\w-]*/` was already read
+as a whole-string set. RESPELLED (prose): E-CTX-1's reason (x must be ENTIRELY `S\w*`; equal to `startsWith("S")`
+only because x is `\w+`); E-CTX-5's stated equivalence MOVES (`padded(/^5/)` = `padded("5")`, not
+`padded(startsWith("5"))`; the program has no subject and its no-error verdict stands); E-NEAR (c) and E-HTTP's
+budget outcomes worded as EXPECTED under the unmeasured ONE budget (review r12 CENSUS-6 (d)). Rev 11's other changes
+touch no case: the narrowed second argument refusal (no case passes a backreference to `search`/`contains`), the
+selection spelling `$m.hit[(g: "x")]` (no case reads iterations out), `balanced`'s respelling (not a case), the
+rx-`&` reading under ON (G3 runs OFF; no case uses rx-text `&`), and the duplicate-in-a-loop rule (no case has
+`(?J)`).
+
 THE TWO-WAY CENSUS (G0b; review r8 P6-9, OWNER-12). G1's check runs case -> construct (every case uses only §§2-8);
 this table runs construct -> case. Counts are uses in §12's code lines, comments stripped (command in
 `docs/dev/lanes/predspec7_report.md`; rev 8's re-run: `docs/dev/lanes/predspec8_report.md`). A construct with no case is LISTED, not cut and not given an invented case:
@@ -2140,7 +2180,7 @@ the owner decides which stay in phase 1 (§0.2).
 | construct | §12 cases that need it | if none: why it is carried |
 |---|---|---|
 | `&`, `\|`, prefix `!`, `:=`, `,`, `[ ]`, `( )` call/condition, `=`, `:` in a condition, `.`, `$x`, `${}`, comparison sets, `-`, `/.../` | all twelve between them (§5.4's MARK TABLE names the cases per mark) | |
-| `@assert`, `import`, `param`, `enumerate`, `records`/`file_text`, `each`, `join`, `list_of`, `occurs.*` | E-IPV4, E-CAL; E-JSONL, E-IPV4, E-HTTP, E-DEPTH; E-NEAR; E-SEP; E-FILE; E-FILE, E-SEP; six cases; E-HTTP; E-HTTP | |
+| `@assert`, `import`, `param`, `enumerate`, `records`/`file_text`, `each`, `join`, `list_of`, `occurs.*` | E-IPV4, E-CAL, E-CTX; E-JSONL, E-IPV4, E-HTTP, E-DEPTH; E-NEAR; E-SEP; E-FILE; E-FILE, E-SEP; six cases; E-HTTP; E-HTTP | |
 | `count(...)` | none in code (E-HTTP's prose only) | the first spelling: LEAN (CF:823, "perhaps"); its budget refusal RULED (CF:832); a count is a numeral string RULED (CF:977-978) (review r10 FIXA-6) |
 | operator section `(& f)` in code | none (prose only, §5.2, §5.3) | RULED, IN phase 1 (CF:753) |
 | the `search` transform (rev 7's `~`, `!~`: withdrawn) and its `min` setting | none (E-JSONL's `contains` is `search(x, min = 1)` by definition, rev 9) | CF:907-909 (accepted at CF:905); its group questions phase 1 (CF:922-924); `min`: CF:933-934, CF:960; whether a case is wanted: the owner's (§0.2) |
@@ -2153,6 +2193,7 @@ the owner decides which stay in phase 1 (§0.2).
 | `eval` | none | LEAN (§10); an opt-in module |
 | `@export`, `@warn` | none (library files are not cases) | LEAN (CF:608, CF:619); warnings RULED (CF:666); effect built-ins (§5.1) |
 | multi-clause definition (a literal in a head, two `:=` for one name) | E-DEPTH | NOT IN THE GRAMMAR (§5.2 heads declare names and defaults; §13 O21); E-DEPTH is marked as needing it (review r10 CENSUS-5) |
+| `+` | none | RULED (CF:782 (1), "\d+ numbers can be added", his words; §2.5); listed in rev 11 (review r12 CENSUS-7: carried without a case and not listed) |
 | `*`, `%` | none | LEAN (the manager's reading of CF:782 (1), whose words name addition only; review r10 FIXA-6) |
 | `.label` | none | LEAN (§5.3); §13 O31 |
 | record on the left of `:=` | none | RULED in the design (CF:852); OUT of phase 1 (§0.2) |
@@ -2198,7 +2239,7 @@ match (Saturday); `2026-11-13` -> no (Friday); `2024-02-29` -> no (Thursday). We
     ipv4
 
 LEVEL: default. Expected (whole-subject test): `192.168.1.17` in; `256.1.1.1` out; `01.2.3.4` out (canonical rule;
-`padded(between(0, 255))` admits it, a stated library choice). As a SEARCH program (its real mode: no anchor),
+`padded(between(0, 255))` admits it, a stated library choice). As a SEARCHED program (its real mode: no anchor),
 `256.1.1.1` yields `56.1.1.1` and `01.2.3.4` yields `1.2.3.4` (held under Python's `re` on the octet pattern, rev 10); a boundary is the user's to write, in the final pattern around the hole: `/\b${ipv4}\b/` on
 `256.1.1.1 and 10.0.0.1` finds `10.0.0.1` only (the `\b` belong to the final pattern, not to the hole's set, §11).
 The assertions run at compile time and are decided on strings (§5.6).
@@ -2256,8 +2297,9 @@ same mapping as the `month_numbered` modifier, §2.7; family note, §13). `==wd`
 
 (a) a 31-literal set (2026-10-30 .. 2026-11-29); LEVEL default. `2026-11-29` in, `2026-11-30` out. (b) a
 computation on a run-time input only (anchor +- 15 days, once per match) and a parametric comparison: LEVEL default
-(§6.1). (c) a relation with ~3.65M classes (§4.6): at the default level a compile error printing the count and
-naming `functions`; under `functions` a linear arithmetic check on DFA-validated candidates. `2026-11-01,
+(§6.1). (c) a relation with ~3.65M classes (§4.6): at the default level REFUSED when the count is over the ONE measured
+budget (RULED, CF:977; the budget is unmeasured, so the refusal is the EXPECTED outcome, not a fixed one: review r12
+CENSUS-6 (d)), the error printing the count and naming `functions`; under `functions` a linear arithmetic check on DFA-validated candidates. `2026-11-01,
 2026-11-14` -> match (13 days); `2026-11-01, 2026-12-01` -> no (30 days).
 
 ### 12.8 E-FILE: file literals and CSV records
@@ -2274,7 +2316,7 @@ LEVEL: default; nothing happens at match time. Expected, with `w.txt` = `# words
 `apple,150`, `pear,90`: `alts` = `foo|foobar` (file order), `heavy` = `apple`. Searching `foobarbaz` reports `foo`
 (sort is semantics). The item rx is searched in the file text (its `^`/`$` read the file); the items are one-string
 rx. A BLANK LINE inside `w.txt` gives an empty item (without `& !""` the final pattern is nullable and the
-search program is an error, the `empty.search` hazard, §7); a TRAILING newline gives none (PCRE2's multiline `^`
+searched program is an error, the `empty.search` hazard, §7); a TRAILING newline gives none (PCRE2's multiline `^`
 does not match after a final newline; Python's `re` differs). A CRLF line `foo\r\n` is not matched at all by `lines`,
 so the tiling error names the whole range `foo\r\n`, not just the `\r`. NOT YET A VALID ACCEPTANCE CASE: the `\n`
 terminators belong to no record, so under the tiling rule as written E-FILE is itself a tiling error until O20
@@ -2297,7 +2339,9 @@ repeated label: a bare `$name` would be an error (§4.3). Each `occurs` filter i
 states: 3, 3, 2) multiplied into the loop. The condition is passed as a parenthesised literal (a required positional parameter, C31 RESOLVED 2026-11-14); the
 labelled-argument spelling `occurs.exactly(1, name: ...)` is not used.
 The `count()` spelling (§8) is the same test: `n_host := count((name: any_case("Host")))` and `headers & (n_host:
-==1)` inside the anchored block; at these bounds it is within any budget, so it is accepted, and the compiler may recommend the `occurs` form.
+==1)` inside the anchored block; at these bounds (a capped counter of a few states) it is EXPECTED to fall within the
+ONE measured budget and is then accepted (the budget is unmeasured; review r12 CENSUS-6 (d)); the compiler may
+recommend the `occurs` form.
 LEVEL: default. Expected (the subject is the block): a block with one `Host:` line and no `Transfer-Encoding` ->
 match; two `host:` lines -> no (`any_case`); `Host: a\r\nTransfer-Encoding: chunked` -> no.
 
@@ -2546,7 +2590,7 @@ STILL OPEN (contradictions):
 
 Open items (rev 0, still open):
 - **O1.** The meaning of a program's final expression against the subject (search vs whole-subject test). The
-  empty-match rule presupposes a SEARCH MODE chosen by the caller (predx O1 lean: the caller picks); not ruled.
+  empty-match rule presupposes a SEARCHED MODE chosen by the caller (predx O1 lean: the caller picks); not ruled.
 - **O2.** Precedence among `!`, `:`, `.`, `$`, prefix comparisons, arithmetic and `@` is stated only pairwise (C16,
   §4.1's entry extent; and `$` over a dot path, §5.4: `$a.b.c` = `$(a.b.c)`).
 - **O3.** Notes call several leanings "ruled" (unset label false, union type of duplicates, filtering by indexing).
@@ -2648,7 +2692,11 @@ review's proposed lean, in plain words, NOT resolved):
 - **O38. Look-alike rows with no diagnostic.** §0.1 marks GAP rows (rev 8: L20, L21 on answers, L22, L24, L29, L30,
   L32, L33, L35, unchanged in rev 9, whose new rows L55-L59 carry a class each: L55 BY DESIGN, L56 and L59 WARNING,
   L57 ERROR, L58 SAME, and L34 moves from WARNING to SAME; rev 10's L60-L66: L60, L65 WARNING, L61, L64 BY DESIGN, L62
-  ERROR, L63 SAME, and L66 a NEW GAP (a count filter in a searched program, `count.searched` proposed, not adopted); rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
+  ERROR, L63 SAME, and L66 a NEW GAP (a count filter in a searched program, `count.searched` proposed, not adopted);
+  rev 11 (review r12): L7, L11, L13, L15, L41 move from SAME to BY DESIGN (a `^` in a directly applied filter adds
+  nothing; whether a warning should say so, since the form LOOKS like "starts with", is this item's question), and
+  L67 is a NEW GAP (an rx-text `&` whose concatenation makes the result empty; the empty-intersection error at every
+  `&`, proposed, not adopted); rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
   stated meaning of a mark or a library name, §5.4, §4.3; L52, "a plain condition on a hit means ALL hits", is the one
   rev 8 row where a warning could pay, since the owner's own first question was about it, CF:904):
   DIFFERENT with no named diagnostic, so G0's acceptance fails on them today. Some are open items above; L20 (a padded
@@ -2945,11 +2993,22 @@ Items NEW in rev 10:
 - **O60. The rx-`&` switch: its default and its spelling.** The owner ruled `&` in rx text ALL OR NOTHING by a module
   or option (CF:978-984). Open: (a) the DEFAULT. Readings: (A) OFF, so a pasted PCRE pattern keeps its meaning (G3) and
   an intersection inside rx text is written with the whole rx in a hole (`${/(\d+)/ & <256}`); (B) ON inside the
-  predicate opt-in, so `(\d+)&${ <256 }` works as written and a literal ampersand is `\&` (165 of 7,057 corpus
-  pattern lines contain `&`, §0 G3). (b) The literal: `\&` in both modes (PCRE already reads `\&` as a literal `&`),
-  so text written for ON reads the same under OFF wherever it has no intersection. (c) The switch's NAME and whether it
-  is a module (`requires module 'X'`, D26's shape) or an option: a spelling-step question (D193 add. 4). Lean: (A) and
-  (b) (the manager's leans, CF:986-987); (c) at the spelling step. §11.
+  predicate opt-in, so `(\d+)&${ <256 }` works as written (`(?:(\d+)&${<256})` inside a longer literal, §0.1 L67) and
+  a literal ampersand is `[&]` (165 of 7,057 corpus pattern lines contain `&`, but only ONE holds a bare literal `&`,
+  §0 G3). (b) The literal: REV 11 (review r12 CENSUS-3): `[&]`, valid PCRE meaning `&` under both settings, so text
+  written for ON reads the same under OFF wherever it has no intersection. Rev 10's `\&` is withdrawn as the
+  rewrite: `\&` alone compiles and matches `&` (libpcre2 10.46, Python 3.14's `re`), but rewriting every `&` turns
+  `(?&a)` into `(?\&a)`, a PCRE compile error. (c) The switch's NAME and whether it is a module (`requires module
+  'X'`, D26's shape) or an option: a spelling-step question (D193 add. 4). (d) NEW in rev 11 (review r12 CENSUS-3), AN
+  OWNER QUESTION: with the switch ON, which `&` is the operator? PCRE text holds `&` mostly inside PCRE's OWN
+  constructs: the subroutine call `(?&name)` (154 of the 165 corpus lines), a callout's text (7), a property `\p{L&}`
+  (1), a character class (2); one line has a bare literal `&`. Readings: (A') every PCRE construct keeps PCRE's meaning
+  under both settings, every `(?...` opener included, and the operator replaces only PCRE's BARE literal `&` (decided
+  by PCRE's own tokenizing, so no position the predicate language invents); (B') EVERY `&` character is the operator
+  under ON, so `(?&name)`, callouts with `&`, `\p{L&}` and `[a&b]` cannot be written with the switch ON (such a
+  pattern stays OFF and puts its intersections in holes). Lean: (A') (the manager's, review r12 dispositions), as the
+  reading that keeps "fully yes or no" for the operator while leaving PCRE's own constructs whole. Lean overall: (a)
+  (A), (b) `[&]`, (c) at the spelling step, (d) (A'). §11.
 
 ## 14. Non-goals
 
