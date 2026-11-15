@@ -774,14 +774,14 @@ const gate_contract mfind_w16_ct = {
     "fn", "mfind-w16", vrun_uses, 1, {
     VRUN_SERVES
     [FLD_table_ref]       = CM(NONE) | CM(REF),       /* ofs_verify_chain: a set's table */
-    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W16),  /* a target admitting w16 */
+    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W16),  /* admits w16 */
 }};
 
 const gate_contract mfind_w32_ct = {
     "fn", "mfind-w32", vrun_uses, 1, {
     VRUN_SERVES
     [FLD_table_ref]       = CM(NONE) | CM(REF),       /* ofs_verify_chain: a set's table */
-    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W32),  /* a target admitting w32 */
+    [FLD_target]          = MF_ANY & ~CM_NO_LEVEL(LV_X86_W32),  /* admits w32 */
 }};
 
 #undef VRUN_SERVES
