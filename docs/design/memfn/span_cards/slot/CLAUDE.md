@@ -42,7 +42,10 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   check refuses an object needing a feature outside floor + target, or none of what its target adds. Review
   2026-11-15 r1: the ISA table classifies by ENCODING (the bytes: EVEX = AVX-512, also the mask-register and
   high-register rows; an unpriced VEX/EVEX instruction refuses), and `isa_table_check` holds the table to every
-  planned target's `--target-facts` (a feature above the floor with no row refuses).
+  planned target's `--target-facts` (a feature above the floor with no row refuses). Review r5 (mcfixa): ONE TEXT,
+  TWO OBJECTS (`_time` alone; `_gate` from the same file under `-DSLOT_GATE_TU`, linked after the arms), and
+  TIMED-SHAPE refuses a `_time` calling a function its own object defines (the site out of line); cell_text's
+  `text_bytes` (the timed function's size, reported beside the timing).
 - `art.py` — whole-artifact arms for J5 (`enter`; refuses a step-back arm, `no_back`, until t's artifact is specified) and J1 (PAIR width substitution): pcrec artifact + one
   wrapper, symbol localization, subjects, python `re` expectations, all cached by their inputs' sha;
   `art.py check RUNDIR`.
@@ -62,9 +65,11 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   policy values read from the record's pinned rows only (r9fc FIX-1), the format-2 draft writer (SPLIT BY VER: one set per method, ver 3 `zen4-grid3`, ver 4 `zen4-grid4` to `<path>.v4`, [slotx] ver 6
   `zen4-grid6` to `.v6`, each set's rows held to its own cards by `draft_split`; only the WINDOW's jobs' rows priced; none for a ver
   with no timed row; no draft on
-  REFUSED; [review r1 F8] one set per ISA level (`TARGET_SET`: generic + x86-64 `zen4-grid6` `x86_64/zen4`, x86-64-v3
-  `zen4-grid6-v3` `x86_64-v3/zen4`), no draft while a set would mix ISA levels (DRAFT-ISA-LEVEL
-  MIXED); the cards as declared, r9fc FIX-8), `selftest SCRATCH` (the input cross-checks, a live table edit,
+  REFUSED; one set per ISA level, [r5] the level from the kit's target facts (`Levels`: floor level or the
+  target's own; suffix/class by rule), the guard on link's RECORDED needs (DRAFT-ISA-LEVEL MIXED), the unit row
+  repeated in every set (its one exemption), bases and ctl by their rows' sets; every ran job's manifest
+  (`cell_text`, `placement` pins), a duplicate cell or cell_text line refused; `rows` prints each row's size;
+  the self-test loads every draft with build/pcrec; the cards as declared, r9fc FIX-8), `selftest SCRATCH` (the input cross-checks, a live table edit,
   rev 1.4's sub-resolution branches); `[rev1.4]` delta rows printed `ungated`, the sub-resolution branch
   (measures.md §3.5¶3a; `[r10]` the all-negative rule, r capped at the pinned policy's `r_max_e6`
   (`r_max`: the live row, named, for a record planned before it), the A/A in the branch), `notes` (box-state split, bimodal delta rows); the primitives' one home.
@@ -77,10 +82,14 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   any operand through a register derived from `%rdi`), VEX/EVEX decoded, a fused null base refused, the bound's value
   max(0, med); the draft's inputs blob-identical at HEAD (`est_inputs`, `est_commit`, `draft_gate`), timed paths by the
   exclusion table `NON_TIMED`; self-test READING_CASES (assembled functions) and GATE_CASES (a scratch git tree).
+- `d197_rule.tsv`, `d197_rule.py` — [r5 FIDELITY-4 + R1] D197's DECLARED decision rule for the mfcard window, ONE
+  VERDICT PER ISA LEVEL (first-match tables: deciding cells, levels (form each level emits, every differing axis),
+  cell/arm/verdict with triggers and the one re-run) and its reader (`rule RUNDIR AVX2RUNDIR [--second]`,
+  `drill [SCRATCH]`: constructed outcomes, plus end to end on est's synth).
 - `j1_rule.py` — J1's verdict (a)/(b)/(c) from its cells (m 0.5, k 5), on est.py's primitives.
 - `record.py` — the run record's one writer: per-ver `SETS`/`RULES` (ver 3 keeps the `rules` key, others `rules.<ver>`); [slotx]
   `WINDOWS` (a window's job set: `s2d`, `mfcard` = J2 J2p JMB JMH; finalize records `window`), `libc` names any
-  GLIBC_TUNABLES; `window`, `j1`, `ready-j2p`, `finalize` (the CAUSE table; plan,
+  GLIBC_TUNABLES and [r5] the memchr variant the process bound (`memchr_variant`, a probe); `window`, `j1`, `ready-j2p`, `finalize` (the CAUSE table; plan,
   floor, cards and policy pinned from the frozen plan with the tables' sha-256; `[rev1.4 R14-3]` the `quiet`
   section from the transcript and est's two note keys; `[rev1.5 r11-REV15-1]` `manifest_sha256_<job>` per ran job).
 - `sabotage.sh SCRATCH [ROW..]` — the slot-local sabotage rows (j), (j2), (k), (l1), (l2), (l3) S2934, (g2)
@@ -88,7 +97,7 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   (q1) S2944, (b1) S2945, review r10's (n3) S2946, (s3) S2947, (s4) S2948, (s5) S2949, rev 1.5's (x1) S2950, (x2) S2951,
   (x3) S2952, review r11's (y1)-(y11) S2953-S2963, K38-3's (d1) S3105, lane slotx's (t1) S3160, (t2) S3161,
   (r1) S3162, (r2) S3163, (v1) S3164, (v2) S3165, (w1) S3166, (k1) S3167, lane slotxfix's (e1) S3168, (e2) S3169,
-  (e3) S3171, (e4) S3172, lane slotxf8b's (f8a) S3183, (f8b) S3184, planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
+  (e3) S3171, (e4) S3172, lane slotxf8b's (f8a) S3183, (f8b) S3184, lane mcfixa's (i1)-(i10) S3188-S3197, planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
   selected rows score on first (review r1 F3).
 - `movers.py` — S2e's data-mover census (m0build's method, normalization EMPTY, plus the head-vs-itself pass
   across the two sets); written by S2c, run by S2e.

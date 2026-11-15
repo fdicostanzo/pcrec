@@ -28,6 +28,7 @@ import hashlib, math, os, re, shutil, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import plan  # noqa: E402
+import link  # noqa: E402  [r5 DRAFTSETS-1] the compile floor (link.CC), one spelling
 
 TREE = plan.TREE
 K_TRIM_E6, K_MED_E6 = 1723000, 210300      # measures.md §3.4¶16, §3.5¶6
@@ -350,13 +351,16 @@ def disasm(exe):
             cur.append(([int(x, 16) for x in m.group(2).split()], re.sub(r"\s*#.*$", "", m.group(3)).strip()))
     return out
 
+MANIFEST_FILES = ("cell_text", "placement")      # [r5 FIDELITY-2] the job files a manifest pins and est re-reads
+
 def manifest_check(rundir, rec, j, L):
     """[r11-REV15-1] job j's MANIFEST (run.py dry's: the run id and the sha-256 of the frozen plan and of every launch
     executable) against the run directory, and against the record's pin of it (`manifest_sha256_<job>`, from the
     window after the second) when the record has one: (the manifest's sha-256, pinned?)"""
     p = os.path.join(rundir, j, "manifest.tsv")
     if not os.path.exists(p):
-        raise InputError("job %s ran but %s is absent (the fused-compare fact is read from the code it pins)" % (j, p))
+        raise InputError("MANIFEST ABSENT job %s ran but %s is absent (est reads the job's cells, text facts and "
+                         "code through the dry run's pins)" % (j, p))
     m = dict(ln.rstrip("\n").split("\t", 1) for ln in open(p) if ln.strip() and not ln.startswith("#"))
     msha, pin = plan.sha256(p), rec["run"].get("manifest_sha256_" + j)
     if pin is not None and pin != msha:
@@ -365,6 +369,15 @@ def manifest_check(rundir, rec, j, L):
         raise InputError("MANIFEST MISMATCH job %s: the manifest's run id %s, the record's %s" % (j, m.get("run_id"), rec["run"]["run_id"]))
     if m.get("plan") != plan.sha256(os.path.join(rundir, "plan.tsv")):
         raise InputError("MANIFEST MISMATCH job %s: plan.tsv is not the plan the manifest pins" % j)
+    # [review 2026-11-15 r5 FIDELITY-2] the job's text facts the draft reads (cell_text.tsv: each row's form, fold
+    # hash, target and recorded ISA needs, which decide its set) and its placement record, against their pins
+    for f in MANIFEST_FILES:
+        fp = os.path.join(rundir, j, f + ".tsv")
+        if not m.get(f):
+            raise InputError("MANIFEST MISMATCH job %s: the manifest pins no %s (run.py dry writes it)" % (j, f))
+        if not os.path.exists(fp) or plan.sha256(fp) != m[f]:
+            raise InputError("MANIFEST MISMATCH job %s: %s is not the %s the manifest pins (edited after the dry run)"
+                             % (j, fp, f))
     for l in range(1, L + 1):
         exe = os.path.join(rundir, j, "L%d" % l, "%s.L%d" % (j, l))
         if not os.path.exists(exe):
@@ -516,7 +529,7 @@ def cells_text(run_id, rows):
 def read_cells(rundir, rec):
     """the cells of every RAN timing job, cross-checked against the record (r9 G3)"""
     ran = {j for j, (s, _c) in rec["jobs"].items() if s == "ran"}
-    cells = []
+    cells, seen = [], set()
     for f in sorted(os.listdir(rundir)):
         m = re.fullmatch(r"cells\.(J\w+)\.tsv", f)
         if not m:
@@ -543,6 +556,12 @@ def read_cells(rundir, rec):
             if (idf[4] if len(idf) == 5 else None) != want or len(idf) > 5:
                 raise InputError("%s: cell %s names base %s, the family rule's is %s" % (f, c["cell"], idf[4:] or "none", want))
             c["job"] = j
+            # [review 2026-11-15 r5 FIDELITY-5] one line per (job, arm, length, launch): a second line (a duplicate, or
+            # two keys' cells renamed into each other) would replace the first silently
+            ck = (j, c["arm"], c["length"], c["launch"])
+            if ck in seen:
+                raise InputError("%s: cell (%s, %s, %d, launch %d) appears twice (CELL TWICE)" % ((f,) + ck))
+            seen.add(ck)
             cells.append(c)
     return cells
 
@@ -627,8 +646,11 @@ def compute(rundir):
             raise InputError("job %s's control slopes %s: every u_l must be positive (measures.md §3.4¶14a)" % (j, u[j]))
     out = {}
     W = None
+    # [review 2026-11-15 r5 FIDELITY-2] EVERY ran job's manifest (r11's check ran for verify jobs only, so the mfcard
+    # window's cells, cell_text.tsv and executables were read unvouched)
+    pins = {j: manifest_check(rundir, rec, j, L) for j in sorted(ran)}
     # [rev1.5 R15-1] every ran verify row's FUSED-COMPARE fact, from its timed code
-    fused, pins = fused_facts(rundir, rec, [(k, j) for k, _g, j, _e, b in rows if j in ran and b and k.startswith("kit.verify_cmp.")], L)
+    fused, _vp = fused_facts(rundir, rec, [(k, j) for k, _g, j, _e, b in rows if j in ran and b and k.startswith("kit.verify_cmp.")], L)
     for key, group, j, est, base in rows:
         if j not in ran:
             out[key] = {"absent": "never-ran:%s" % j}
@@ -767,8 +789,10 @@ def notes(rundir, out=None):
              "launches; priced with their spread as noise): %s" % (NOTE_BIMODAL_E6, ", ".join(bim) or "none"))]
 
 def cell_texts(rundir, rec):
-    """{row key: (form, fold hash, tags)} from every ran job's cell_text.tsv (link.py's, the texts it TIMED and
-    checked, r9 G5); a form whose fold differs between jobs REFUSES (the kit moved inside the window)"""
+    """{arm: (form, fold hash, tags, target, ISA needs, job)} for every row and base arm (twins left out) from every
+    ran job's cell_text.tsv (link.py's, the texts it TIMED and checked, r9 G5; the file its manifest pins, r5
+    FIDELITY-2); a form whose fold differs between jobs REFUSES (the kit moved inside the window), and so does an
+    arm with two lines (r5 DRAFTSETS-2: the last line used to win, whatever its text or target)"""
     out, fold = {}, {}
     for j, (s, _c) in sorted(rec["jobs"].items()):
         if s != "ran" or j == "J1":
@@ -782,18 +806,70 @@ def cell_texts(rundir, rec):
             f = ln.rstrip("\n").split("\t")
             arm, form, _cls, _inst, fh, tags = f[:6]
             tgt = f[6] if len(f) > 6 else "-"          # [lane slotx] the target the cell TU was compiled in
+            isa = f[7] if len(f) > 7 else "-"          # [r5 DRAFTSETS-1] the features above the floor its code used
             if fold.setdefault(form, fh) != fh:
                 raise InputError("form %s's fold hash is %s in one job and %s in %s" % (form, fold[form], fh, j))
-            if not arm.endswith("#b") and arm.startswith("kit."):
-                out[arm] = (form, fh, tags, tgt)
+            if arm.endswith("#b"):
+                continue
+            key = arm if arm.startswith("kit.") else (j, arm)    # a base is its job's (each job renders its own)
+            if key in out:
+                raise InputError("CELL-TEXT TWICE %s: two lines in job %s's cell_text.tsv (or two jobs')" % (arm, j))
+            out[key] = (form, fh, tags, "generic" if tgt == "-" else tgt,
+                        set() if isa in ("-", "") else set(isa.split(",")), j)
     return out
 
-# [review 2026-11-15 r1 F8] THE DRAFT SETS' TARGET TABLE, one place: kit target -> (set id suffix, class); TARGET_LEVEL
-# is the ISA level the target's code is compiled for (targets.def: x86-64's only need, sse2, is in the baseline), the
-# fact the guard holds each set's class to
-TARGET_SET = {"generic": ("", "x86_64/zen4"), "x86-64": ("", "x86_64/zen4"),
-              "x86-64-v3": ("-v3", "x86_64-v3/zen4")}
-TARGET_LEVEL = {"generic": "x86_64", "x86-64": "x86_64", "x86-64-v3": "x86_64-v3"}
+# [review 2026-11-15 r5 DRAFTSETS-1] THE DRAFT SETS' ISA LEVEL, from ONE source: the kit's own target facts
+# (`arm_fixtures --target-facts`, the run's fixture binary, the one its manifests pin). A target whose features the
+# compile floor (link.CC's -march, a kit target token too) already has is the FLOOR's level; any other target is its
+# own level. A set is one level: id suffix `-<level past the floor's family>` (x86-64-v3 -> `-v3`, the floor ``),
+# class the level's glibc-hwcaps spelling (x86-64 -> x86_64) on the box's uarch. No per-target table: a new kit
+# target (the owed mfind-w64's) gets its own set by the rule; a token the kit does not know REFUSES
+BOX_UARCH = "zen4"                      # the timing box's uarch, the class's second half (record.SETS' ids too)
+
+class Levels:
+    def __init__(self, fx):
+        self.fx, self.floor, self._f = fx, next(x.split("=", 1)[1] for x in link.CC if x.startswith("-march=")), {}
+    def feats(self, tok):
+        if tok not in self._f:
+            r = subprocess.run([self.fx, "--target-facts", tok], capture_output=True, text=True)
+            f = r.stdout.strip().split("\t")
+            if r.returncode or len(f) != 3 or f[:2] != ["target", tok]:
+                raise InputError("DRAFT-ISA-LEVEL: target %s is not one the kit's target facts know (%s): no draft set "
+                                 "for it (span_cards.md §2.7)" % (tok, (r.stderr or r.stdout).strip()[:80]))
+            self._f[tok] = set() if f[2] == "-" else set(f[2].split(","))
+        return self._f[tok]
+    def level(self, tok):
+        """the ISA level a target's code is compiled for: the floor's when the floor has every feature it enables"""
+        return self.floor if self.feats(tok) <= self.feats(self.floor) else tok
+    def set_of(self, lvl):
+        """(set id suffix, class) of the set holding level lvl's rows"""
+        fam = self.floor + "-"
+        suf = "" if lvl == self.floor else "-" + (lvl[len(fam):] if lvl.startswith(fam) else lvl)
+        return suf, "%s/%s" % (lvl.replace(self.floor, self.floor.replace("-", "_"), 1), BOX_UARCH)
+    def class_feats(self, cls):
+        """the features a set's CLASS admits (read back from the class, not from the row's target): the floor's
+        plus its level's"""
+        lvl = cls.split("/")[0].replace(self.floor.replace("-", "_"), self.floor, 1)
+        return self.feats(self.floor) | self.feats(lvl)
+
+LEVEL_OF = None        # the self-test's plant hook (a derivation that files a level elsewhere); None: Levels.level
+
+def run_fx(rundir, rec):
+    """the run's fixture binary: RUNDIR/fx.* whose sha-256 every ran job's manifest pins (one fx per window)"""
+    shas = set()
+    for j, (s, _c) in sorted(rec["jobs"].items()):
+        if s != "ran" or j == "J1":
+            continue
+        m = dict(ln.rstrip("\n").split("\t", 1) for ln in open(os.path.join(rundir, j, "manifest.tsv"))
+                 if ln.strip() and not ln.startswith("#"))
+        shas.add(m.get("fx"))
+    if len(shas) != 1 or None in shas:
+        raise InputError("the ran jobs' manifests pin %s fixture binaries (one per window)" % (sorted(map(str, shas)) or "no"))
+    want = shas.pop()
+    for f in sorted(os.listdir(rundir)):
+        if f.startswith("fx.") and plan.sha256(os.path.join(rundir, f)) == want:
+            return os.path.join(rundir, f)
+    raise InputError("no RUNDIR/fx.* is the fixture binary the manifests pin (%s)" % want[:16])
 
 def draft_split(rec, rows):
     """[lane slotx] THE WRITER'S SPLIT BY VER: {ver: rows}, each row in its KEY's card's ver (plan.card_of over the
@@ -845,6 +921,16 @@ def main():
                                        "gate %s" % ("pass" if r.get("gate", True) else "FAIL"))))
         for j, (d, T, bad) in sorted(drift.items()):
             print("drift\t%s\t%d\t%d\t%s" % (j, d, T, "REFUSED" if bad else "kept"))
+        # [review 2026-11-15 r5 EMITTED-1] the emitted size BESIDE the timing (never in a value): each row's timed
+        # function (its site inlined) in bytes, link.py's cell_text column; `-` for a TU it did not size
+        rec = read_record(rundir)
+        for j, (s, _c) in sorted(rec["jobs"].items()):
+            p = os.path.join(rundir, j, "cell_text.tsv")
+            if s == "ran" and j != "J1" and os.path.exists(p):
+                for ln in open(p):
+                    f = ln.rstrip("\n").split("\t")
+                    if not ln.startswith("#") and f[0].startswith("kit.") and not f[0].endswith("#b"):
+                        print("size\t%s\t%s bytes (the timed function, its site inlined)" % (f[0], f[8] if len(f) > 8 else "-"))
         for k, v in notes(rundir, out):
             print("note\t%s\t%s" % (k, v))
         print("== s2 OUTCOME %s exit %d %s" % (outcome[0], outcome[1], "; ".join(outcome[2])))
@@ -872,7 +958,7 @@ def write_draft(rundir, path, out, drift, outcome):
     # [r2s1 RK383-3] THE WRITER SPLITS BY VER: one set per method, each with that ver's cards section and rows only
     # (kit-grid@3 keeps zen4-grid3; a ver with no timed row writes no set, so an unmeasured cell stays unmeasured)
     n = str(rec["facts"][2] * rec["facts"][3])
-    rows, tgt_of = [], {}
+    rows, tgt_of, isa_of = [], {}, {}
     rec_rmax = r_max(rec)[0]
     for k in sorted(out):
         r = out[k]
@@ -884,11 +970,12 @@ def write_draft(rundir, path, out, drift, outcome):
         if q[1] not in ("enter", "enter_back"):
             if k not in texts:
                 raise InputError("row %s has no cell text in its job's cell_text.tsv" % k)
-            form, fh, tags, tgt = texts[k]
+            form, fh, tags, tgt, isa_of[k], _j = texts[k]
             if form != q[2]:
                 raise InputError("row %s's cell text is form %s's" % (k, form))
             deps = "kit:form.%s=%s" % (form, fh)
         tgt_of[k] = "generic" if tgt == "-" else tgt     # an unframed TU is the compile floor's: no region
+        isa_of.setdefault(k, set())
         if r.get("null"):
             rows.append([k, unit, "", str(r["abs"]), "-", n, "null", "-", "-",
                          deps, tags, r["why"]])
@@ -903,35 +990,62 @@ def write_draft(rundir, path, out, drift, outcome):
     import record
     allcells = read_cells(rundir, rec)
     split = draft_split(rec, rows)
-    ver_of = lambda key: plan.card_of(rec["card"], key)["ver"]
-    def mine(v, c):          # a cell belongs to ver v's set: its row's arm (any ver), and a base or the ctl (ver 3's
-        a = c["arm"][:-2] if c["arm"].endswith("#b") else c["arm"]   # always; ver v's when one of its rows names it)
-        if a.startswith("kit."):
-            return ver_of(a) == v
-        return v == "3" or a == "ctl" or any(plan.base_of(r[0]) == a for r in rows if ver_of(r[0]) == v)
     msgs, rc = [], outcome[1]
     vers = sorted({c["ver"] for c in rec["card"].values()})
-    # [review 2026-11-15 r1 F8] ONE DRAFT SET PER (ver, ISA LEVEL) (span_cards.md §2.7): `class` names the ISA level
-    # the set's code was compiled FOR, so a row goes to the set TARGET_SET names for its kit target, and a set whose
-    # rows were built for another ISA level than its class REFUSES the whole draft before any file is written
-    # (DRAFT-ISA-LEVEL MIXED); generic and x86-64 are the same baseline code, one set
+    job_of = {r[0]: out[r[0]]["job"] for r in rows}
+    # [review 2026-11-15 r5 DRAFTSETS-1] ONE DRAFT SET PER (ver, ISA LEVEL) (span_cards.md §2.7): a row goes to the
+    # set of its target's LEVEL (Levels, from the kit's target facts), and THE GUARD holds every row and every base
+    # cell of a set to the set's CLASS through the ISA needs link.py RECORDED from the object (cell_text's
+    # target_isa): needs above what the class admits REFUSE the whole draft before any file is written
+    # (DRAFT-ISA-LEVEL MIXED); so does a target the kit does not know. [r5 contract-2] the UNIT row (the header's
+    # unit_key, the set's normaliser: same box, same run, never a priced form) is REPEATED in every set written, so
+    # each set loads; it alone is exempt from the guard, as the job controls are (compiled at the floor, no region)
+    lv = Levels(run_fx(rundir, rec))
+    level_of = LEVEL_OF or lv.level
     groups = {}                  # (ver, set suffix, class) -> rows
     for v in vers:
         for r in split.get(v, []):
-            suf, cls = TARGET_SET[tgt_of[r[0]]]
-            if cls.split("/")[0] != TARGET_LEVEL[tgt_of[r[0]]]:
-                raise InputError("DRAFT-ISA-LEVEL MIXED ver %s's set %s (class %s) would hold row %s built for ISA "
-                                 "level %s (span_cards.md §2.7: a set never mixes ISA levels): no draft written"
-                                 % (v, suf or "baseline", cls, r[0], TARGET_LEVEL[tgt_of[r[0]]]))
+            if r[0] == plan.UNIT_KEY:
+                continue
+            lv.feats(tgt_of[r[0]])                       # a token the kit does not know refuses here
+            suf, cls = lv.set_of(level_of(tgt_of[r[0]]))
             groups.setdefault((v, suf, cls), []).append(r)
+    unit = [r for r in rows if r[0] == plan.UNIT_KEY]
+    for g in list(groups):
+        groups[g] = sorted(unit + groups[g], key=lambda r: r[0])
+    if unit and not any(g[0] == "3" and not g[1] for g in groups):
+        groups[("3",) + lv.set_of(lv.floor)] = list(unit)     # the unit's own ver, the floor's set (a window of ver 3)
+    def guard(what, needs, g):
+        over = sorted(needs - lv.class_feats(g[2]))
+        if over:
+            raise InputError("DRAFT-ISA-LEVEL MIXED ver %s's set %s (class %s) would hold %s whose recorded ISA needs "
+                             "%s are above its class (span_cards.md §2.7: a set never mixes ISA levels): no draft "
+                             "written" % (g[0], g[1] or "baseline", g[2], what, ",".join(over)))
+    for g, vrows in groups.items():
+        for r in vrows:
+            if r[0] != plan.UNIT_KEY:
+                guard("row " + r[0], isa_of[r[0]] | (lv.feats(tgt_of[r[0]]) - lv.feats(lv.floor)), g)
+    def homes(c):
+        """[r5 FIDELITY-3] the sets a cell belongs to: a row's cells its row's set(s); a base's the sets of the rows
+        of ITS job that name it (held to the set's class by its own recorded needs); a job's ctl the sets holding
+        a row of that job. Never a set of another ver or level by default"""
+        a = c["arm"][:-2] if c["arm"].endswith("#b") else c["arm"]
+        if a.startswith("kit."):
+            return [g for g, vr in groups.items() if any(r[0] == a for r in vr)]
+        if a == "ctl":
+            return [g for g, vr in groups.items() if any(job_of[r[0]] == c["job"] for r in vr)]
+        hs = [g for g, vr in groups.items() if any(plan.base_of(r[0]) == a and job_of[r[0]] == c["job"] for r in vr)]
+        bt = texts.get((c["job"], a))
+        for g in hs:
+            if bt:
+                guard("base %s's cells" % a, bt[4] | (lv.feats(bt[3]) - lv.feats(lv.floor)), g)
+        return hs
+    cell_home = [(c, homes(c)) for c in allcells]
     for v in vers:
-        if not split.get(v):
-            groups[(v, "", "x86_64/zen4")] = []
+        if not any(g[0] == v for g in groups):
+            print("draft: ver %s: no timed row, no set written (its cards stay UNMEASURED)" % v)
     for (v, suf, cls) in sorted(groups):
         vrows = groups[(v, suf, cls)]
-        if not vrows:
-            print("draft: ver %s: no timed row, no set written (its cards stay UNMEASURED)" % v)
-            continue
         vpath = path if v == "3" else "%s.v%s%s%s" % (os.path.splitext(path)[0], v, suf, os.path.splitext(path)[1])
         vcards = ["\t".join(f) for f in rec["cards"] if f[2] == v]
         sid, srev = record.SETS[v].split("@")
@@ -946,11 +1060,8 @@ def write_draft(rundir, path, out, drift, outcome):
                ("libc", rec["run"]["libc"]), ("code_commit", rec["run"]["code_commit"]),
                ("counters", "skipped:not-taken"), ("partial", "1" if outcome[0] == "PARTIAL" else "0"),
                ("rows", str(len(vrows))), ("values_digest", "0000000000000000")]
-        def in_set(c):           # a kit arm's cell goes with its row's set; a base or the ctl with every set of its ver
-            a = c["arm"][:-2] if c["arm"].endswith("#b") else c["arm"]
-            return TARGET_SET[tgt_of[a]][1] == cls if a in tgt_of else True
         cells = ["\t".join([c[k] if isinstance(c[k], str) else str(c[k]) for k in CELL_COLS])
-                 for c in allcells if mine(v, c) and in_set(c)]
+                 for c, hs in cell_home if (v, suf, cls) in hs]
         def text(h):
             t = ["# pcrec measurement set (spec: docs/spec/measures.md)"]
             t += ["# note %s: %s" % kv for kv in notes(rundir, out)]       # [rev1.4 R14-3, R14-4]
@@ -1009,10 +1120,72 @@ def _synth_code(scratch, arms, fused, variant=None):
                         o[:-2] + ".c", "-o", o], check=True)
     return o
 
+# [r5 DRAFTSETS-1] the synth's kit targets per form (link.py's: the instance's `--frame` target) and the ISA needs
+# link.py records for them (the features above the floor the object used); every other form generic, none
+SYNTH_TARGET = {"mfind-w16": ("x86-64", "-"), "mfind-w32": ("x86-64-v3", "avx,avx2,bmi,bmi2")}
+
+def _synth_cell_text(d, j, tgt=None):
+    """[r5] job j's cell_text.tsv as link.py writes it: every row, twin and base arm whose key names a (form, cls),
+    its target and recorded needs from SYNTH_TARGET updated by `tgt` {form: (target, needs)}"""
+    tg = dict(SYNTH_TARGET, **(tgt or {}))
+    lines = []
+    for a in plan.build()[0][j]:
+        kf = plan.key_form(a.name[:-2] if a.name.endswith("#b") else a.name) if a.kind not in ("ctl", "enter", "j1") else None
+        if kf:
+            t_, isa = tg.get(kf[0], ("generic", "-"))
+            lines.append("\t".join([a.name, kf[0], kf[1] or "-", "h", "fold." + kf[0], "-", t_, isa]) + "\n")
+    os.makedirs(os.path.join(d, j), exist_ok=True)
+    open(os.path.join(d, j, "cell_text.tsv"), "w").write(
+        "#arm\tform\tcls\tinstance_hash\tfold_hash\ttags\ttarget\ttarget_isa\n" + "".join(lines))
+
+def load_set(path):
+    """[r5 contract-2] (rc, why): the set LOADED by the tree's own loader (build/pcrec --measures=FILE, a compile
+    of one pattern). A self-test set holds synthetic values, so its id is renamed in a copy first: the store's
+    shadow rule (measures.md §3.3) refuses a committed id with other values, a fact about the store, not the set"""
+    txt = open(path).read()
+    cp = path + ".load.tsv"
+    open(cp, "w").write(re.sub(r"(?m)^id\t(\S+)$", lambda m: "id\tselftest-" + m.group(1), txt, count=1))
+    r = subprocess.run([os.path.join(TREE, "build", "pcrec"), "-p", "rx", "--measures=" + cp, "-o", cp + ".c",
+                        "--pattern", "abc"], capture_output=True, text=True)
+    os.remove(cp)
+    return r.returncode, (r.stderr or r.stdout).strip()[:200]
+
+def _synth_fx(d):
+    """[r5] the run's fixture binary in d (link.fx_path's, built once per scratch and copied): est reads the kit's
+    target facts from it"""
+    fx = link.fx_path(os.path.dirname(d))
+    dst = os.path.join(d, os.path.basename(fx))
+    if not os.path.exists(dst):
+        shutil.copyfile(fx, dst)
+        os.chmod(dst, 0o755)
+    return dst
+
+def _synth_seal(d, j):
+    """[r5 FIDELITY-2] job j sealed as a dry run leaves it: its placement record, a launch file per launch when it
+    has no compiled code (a non-verify job: est reads no code of it), the manifest, the record's pin"""
+    os.makedirs(os.path.join(d, j), exist_ok=True)
+    if not os.path.exists(os.path.join(d, j, "cell_text.tsv")):
+        _synth_cell_text(d, j)
+    open(os.path.join(d, j, "placement.tsv"), "w").write("#job\tlaunch\tarm\taddr\tmod64\thot_loop\tdraws\n")
+    for l in range(1, plan.L_LAUNCHES + 1):
+        e = os.path.join(d, j, "L%d" % l, "%s.L%d" % (j, l))
+        if not os.path.exists(e):
+            os.makedirs(os.path.dirname(e), exist_ok=True)
+            open(e, "w").write("synthetic launch %s L%d\n" % (j, l))
+    _synth_manifest(d, j)
+    _synth_pin(d, j)
+
 def _synth_manifest(d, j):
-    """[r11-REV15-1] job j's manifest as run.py dry writes it (the run id, the plan's and every launch's sha-256)"""
+    """[r11-REV15-1] job j's manifest as run.py dry writes it (the run id, the plan's and every launch's sha-256;
+    [r5] the fixture binary's, cell_text's and placement's)"""
     run_id = read_record(d)["run"]["run_id"] if os.path.exists(os.path.join(d, "run_record.tsv")) else "selftest"
-    m = {"run_id": run_id, "plan": plan.sha256(os.path.join(d, "plan.tsv"))}
+    m = {"run_id": run_id, "plan": plan.sha256(os.path.join(d, "plan.tsv")), "fx": plan.sha256(_synth_fx(d))}
+    for f in MANIFEST_FILES:
+        p = os.path.join(d, j, f + ".tsv")
+        if not os.path.exists(p):
+            (_synth_cell_text(d, j) if f == "cell_text" else
+             open(p, "w").write("#job\tlaunch\tarm\taddr\tmod64\thot_loop\tdraws\n"))
+        m[f] = plan.sha256(p)
     for l in range(1, plan.L_LAUNCHES + 1):
         m["L%d" % l] = plan.sha256(os.path.join(d, j, "L%d" % l, "%s.L%d" % (j, l)))
     open(os.path.join(d, j, "manifest.tsv"), "w").write("#name\tvalue\n" + "".join("%s\t%s\n" % kv for kv in sorted(m.items())))
@@ -1079,6 +1252,8 @@ def _synth(d, run_id="selftest", window="s2d"):
         if any(a.name.startswith("kit.verify_cmp.") for a in arms):
             _synth_launches(d, j, [a for a in arms if a.kind != "ctl"], SYNTH_FUSED)
             _synth_pin(d, j)
+        else:
+            _synth_seal(d, j)          # [r5 FIDELITY-2] every ran job's manifest is checked, not only verify jobs'
     return d
 
 # [r11-REV15-2..4] the READING cases: hand-written timed functions (assembled, .size set), each with the fact both
@@ -1403,20 +1578,22 @@ def selftest(scratch):
         six = [r[0] for r in sp.get("6", [])]
         return (K6 in six and all(k.split(".")[2] in plan.FORMS6 for k in six)
                 and plan.UNIT_KEY in [r[0] for r in sp.get("3", [])] and "4" not in sp)
-    def mf_draft(d, tgt):
-        """[review 2026-11-15 r1 F5] write_draft itself on the synth (cell_text.tsv per ran job, the targets `tgt`
-        gives each form; the draft gate stubbed: the synth has no commit), then each written set's row keys"""
+    def mf_draft(d, tgt=None, edit=None):
+        """[review 2026-11-15 r1 F5] write_draft itself on the synth (each ran job's cell_text.tsv, the targets
+        `tgt` {form: (target, needs)} over SYNTH_TARGET's, sealed by its manifest as a dry run leaves it; `edit`: a
+        post-run edit of the run directory, NOT re-sealed; the draft gate stubbed: the synth has no commit), then
+        {set: (row keys, cell lines' (job, arm))} per written set"""
         rec = read_record(d)
         for j, (s, _c) in rec["jobs"].items():
-            arms = sorted({k for k, _g, jj in rec["plan"] if jj == j and k.startswith("kit.")})
-            os.makedirs(os.path.join(d, j), exist_ok=True)
-            open(os.path.join(d, j, "cell_text.tsv"), "w").write("".join(
-                "%s\t%s\t-\th\tfold.%s\t-\t%s\t-\n" % (k, plan.key_form(k)[0], plan.key_form(k)[0],
-                                                     tgt.get(plan.key_form(k)[0], "generic")) for k in arms))
+            if s == "ran" and j != "J1":
+                _synth_cell_text(d, j, tgt)
+                _synth_seal(d, j)
         rr = os.path.join(d, "run_record.tsv")
         txt = open(rr).read().replace("run_id\tselftest\n", "run_id\tselftest\nbox\tselftest\nisa\tselftest\n"
                                        "libc\tselftest\ngcc\tselftest\n", 1)
         open(rr, "w").write(txt)
+        if edit:
+            edit(d)
         out, drift, _ub, outcome, _w, _p = compute(d)
         gate = globals()["draft_gate"]
         globals()["draft_gate"] = lambda code_commit, paths=None: "0" * 40
@@ -1430,55 +1607,122 @@ def selftest(scratch):
         finally:
             globals()["draft_gate"] = gate
         sets = {}
-        for v, p in (("3", "draft.tsv"), ("4", "draft.v4.tsv"), ("6", "draft.v6.tsv"), ("6v3", "draft.v6-v3.tsv")):
-            if os.path.exists(os.path.join(d, p)):
-                rows = open(os.path.join(d, p)).read().split("#section rows\n", 1)[1].split("#section members", 1)[0]
-                sets[v] = [ln.split("\t")[0] for ln in rows.splitlines()[1:] if ln]
+        for p in sorted(os.listdir(d)):
+            m = re.fullmatch(r"draft(?:\.v(\d+)(-\w+)?)?\.tsv", p)
+            if m:
+                txt = open(os.path.join(d, p)).read()
+                rows = txt.split("#section rows\n", 1)[1].split("#section members", 1)[0]
+                cells = txt.split("#section cells\n", 1)[1]
+                sets[(m.group(1) or "3") + (m.group(2) or "").lstrip("-")] = (
+                    [ln.split("\t")[0] for ln in rows.splitlines()[1:] if ln],
+                    [(ln.split("\t")[1].split(".")[0], ln.split("\t")[2]) for ln in cells.splitlines()[1:] if ln])
         return sets
-    def mf_write(d):
-        sets = mf_draft(d, {})        # one target (generic) for every form: the draft is written
-        six = {k for k, _g, _j in read_record(d)["plan"] if k.startswith("kit.") and k.split(".")[2] in plan.FORMS6}
-        return (set(sets.get("6", [])) == six and K6 in six and not six & set(sets.get("3", []))
-                and plan.UNIT_KEY in sets.get("3", []) and "4" not in sets)
+    def mf_rows(sets, s):
+        return set(sets.get(s, ([], []))[0])
     def mf_header(d, p):
         h = open(os.path.join(d, p)).read().split("#section header\n#key\tvalue\n", 1)[1].split("#section cards", 1)[0]
         return dict(ln.split("\t", 1) for ln in h.splitlines() if ln)
+    six_of = lambda d: {k for k, _g, _j in read_record(d)["plan"] if k.startswith("kit.") and k.split(".")[2] in plan.FORMS6}
+    def mf_write(d):
+        sets = mf_draft(d, {f: ("generic", "-") for f in plan.FORMS6})   # one level (all generic): one ver-6 set
+        six = six_of(d)
+        return (mf_rows(sets, "6") == six | {plan.UNIT_KEY} and K6 in six and not six & mf_rows(sets, "3")
+                and plan.UNIT_KEY in mf_rows(sets, "3") and not any(s.startswith("4") for s in sets)
+                and set(sets) == {"3", "6"})
     def mf_levels(d):
-        """[F8] all three kit targets: two sets (zen4-grid6 x86_64/zen4 holding generic + x86-64 rows, zen4-grid6-v3
-        x86_64-v3/zen4 holding the x86-64-v3 rows only), none mixing ISA levels"""
-        sets = mf_draft(d, {"mfind-w16": "x86-64", "mfind-w32": "x86-64-v3"})
-        if "6" not in sets or "6v3" not in sets:
+        """[F8, r5 DRAFTSETS-1/FIDELITY-3/contract-2] the kit's three targets: two ver-6 sets (zen4-grid6
+        x86_64/zen4 holding the generic + x86-64 rows, zen4-grid6-v3 x86_64-v3/zen4 the x86-64-v3 rows), each
+        with the unit row; a base's cells only in its own level's set; no ver-6 job's base or ctl cell in ver 3's"""
+        sets = mf_draft(d)
+        if set(sets) != {"3", "6", "6v3"}:
             return False
         h6, h3 = mf_header(d, "draft.v6.tsv"), mf_header(d, "draft.v6-v3.tsv")
-        lvl = lambda k: ("v3" if ".mfind-w32" in k else "base")
-        base_tg = {"generic", "x86-64"}
+        r6, r3 = mf_rows(sets, "6") - {plan.UNIT_KEY}, mf_rows(sets, "6v3") - {plan.UNIT_KEY}
+        c6, c3, cv3 = (set(sets[s][1]) for s in ("6", "6v3", "3"))
         return ((h6["id"], h6["class"], h3["id"], h3["class"]) ==
                 ("zen4-grid6", "x86_64/zen4", "zen4-grid6-v3", "x86_64-v3/zen4")
-                and sets["6v3"] and all(lvl(k) == "v3" for k in sets["6v3"])
-                and sets["6"] and all(lvl(k) == "base" for k in sets["6"])
-                and any(".mfind-w16" in k for k in sets["6"]) and any(".mfind-w32" in k for k in sets["6v3"])
-                and not set(sets["6"]) & set(sets["6v3"]) and base_tg)
+                and plan.UNIT_KEY in mf_rows(sets, "6") and plan.UNIT_KEY in mf_rows(sets, "6v3")
+                and r3 and all(".mfind-w32" in k for k in r3) and r6 and not any(".mfind-w32" in k for k in r6)
+                and any(".mfind-w16" in k for k in r6) and not r6 & r3
+                and ("JMH", "base.mfind-w32") in c3 and ("JMH", "base.mfind-w32") not in c6
+                and ("JMH", "base.mfind-w16") in c6 and ("JMH", "base.mfind-w16") not in c3
+                and not any(j in ("JMB", "JMH") for j, _a in cv3))
+    def mf_loads(d):
+        """[r5 contract-2] every set the writer writes LOADS with the tree's own loader (build/pcrec --measures)"""
+        mf_draft(d)
+        bad = []
+        for p in sorted(os.listdir(d)):
+            if re.fullmatch(r"draft.*\.tsv", p):
+                rc, why = load_set(os.path.join(d, p))
+                if rc:
+                    bad.append("%s: %s" % (p, why))
+        if bad:
+            raise InputError("LOAD " + "; ".join(bad))
+        return True
+    def refused(text, **kw):
+        def pred(d):
+            try:
+                mf_draft(d, **kw)
+            except InputError as e:
+                if text not in str(e):
+                    raise
+                return not any(p.startswith("draft") for p in os.listdir(d))
+            return False
+        return pred
     def mf_mixed(d):
-        """the guard: the table maps x86-64-v3 to the baseline set (a planted mix), so the draft is refused whole"""
-        saved = TARGET_SET["x86-64-v3"]
-        TARGET_SET["x86-64-v3"] = TARGET_SET["generic"]
+        """[r5 DRAFTSETS-1 P4] the level derivation files every target at the floor's level (one set): the guard,
+        reading the needs link.py RECORDED, refuses the whole draft"""
+        globals()["LEVEL_OF"] = lambda tok: next(x.split("=", 1)[1] for x in link.CC if x.startswith("-march="))
         try:
-            mf_draft(d, {"mfind-w16": "x86-64", "mfind-w32": "x86-64-v3"})
-        except InputError as e:
-            return ("DRAFT-ISA-LEVEL MIXED ver 6" in str(e) and not os.path.exists(os.path.join(d, "draft.v6.tsv"))
-                    and not os.path.exists(os.path.join(d, "draft.v6-v3.tsv")))
+            return refused("DRAFT-ISA-LEVEL MIXED ver 6")(d)
         finally:
-            TARGET_SET["x86-64-v3"] = saved
+            globals()["LEVEL_OF"] = None
+    def mf_edit(d):
+        """[r5 FIDELITY-2 P11] cell_text.tsv relabelled after the dry run (x86-64-v3 -> generic), not re-sealed"""
+        def ed(d):
+            for j in ("JMB", "JMH"):
+                p = os.path.join(d, j, "cell_text.tsv")
+                open(p, "w").write(open(p).read().replace("\tx86-64-v3\t", "\tgeneric\t"))
+        return refused("MANIFEST MISMATCH job JMB", edit=ed)(d)
+    def mf_twice(d):
+        """[r5 DRAFTSETS-2 P9] a second cell_text line for one key (another text, another target), sealed"""
+        def ed(d):
+            p = os.path.join(d, "JMH", "cell_text.tsv")
+            ls = open(p).read().splitlines(True)
+            ln = next(x for x in ls if x.startswith(K6 + "\t"))
+            open(p, "a").write(ln.replace("\th\t", "\th2\t").replace("\tx86-64-v3\t", "\tx86-64\t"))
+            _synth_seal(d, "JMH")
+        return refused("CELL-TEXT TWICE " + K6, edit=ed)(d)
+    def mf_dupcell(d):
+        """[r5 FIDELITY-5 P3b] a cell line repeated with another value (a second record of one cell)"""
+        p = os.path.join(d, "cells.JMH.tsv")
+        ln = next(x for x in open(p).read().splitlines() if ("/%s/" % K6) in x)
+        f = ln.split("\t")
+        open(p, "a").write("\t".join(f[:-1] + [str(int(f[-1]) * 3)]) + "\n")
+        try:
+            compute(d)
+        except InputError as e:
+            return "CELL TWICE" in str(e)
         return False
     MF_CASES = (
         ("[slotx] window mfcard: kit-grid@6 rows priced, no J3/J4/J5 row this window's", mf_priced),
         ("[slotx] the draft split: every ver-6 row in ver 6's set, the unit in ver 3's, none in ver 4's", mf_split),
-        ("[F5] write_draft on the mfcard window: ver 6's set holds exactly the FORMS6 rows, ver 3's the unit and "
-         "none of them, no ver-4 set", mf_write),
+        ("[F5] write_draft on the mfcard window: ver 6's set holds exactly the FORMS6 rows and the unit, ver 3's the "
+         "unit and none of them, no ver-4 set", mf_write),
         ("[F8] write_draft writes one ver-6 set per ISA level (generic + x86-64 together, x86-64-v3 apart), ids and "
-         "classes as ruled", mf_levels),
-        ("[F8] write_draft refuses a set mixing ISA levels (a target mapped to another level's class) and writes no "
-         "set", mf_mixed),
+         "classes as ruled, bases by their own level", mf_levels),
+        ("[r5 contract-2] every draft set written loads with the tree's loader", mf_loads),
+        ("[F8, r5 P4] write_draft refuses a set mixing ISA levels (the derivation files v3 at the floor) and writes "
+         "no set", mf_mixed),
+        ("[r5 P5] a row labelled generic whose recorded needs are AVX2: refused",
+         refused("DRAFT-ISA-LEVEL MIXED", tgt={"mfind-w32": ("generic", "avx,avx2")})),
+        ("[r5 P11] a post-run cell_text edit: refused by the manifest", mf_edit),
+        ("[r5 DRAFTSETS-3 P6] a target the kit does not know: refused, no traceback",
+         refused("not one the kit's target facts know", tgt={"mfind-w32": ("x86-64-v4", "avx512f")})),
+        ("[r5 DRAFTSETS-2 P9] one key, two cell_text lines: refused", mf_twice),
+        ("[r5 FIDELITY-5] one cell, two lines: refused", mf_dupcell),
+        ("[r5 FIDELITY-2] a mfcard job without its manifest: refused",
+         refused("MANIFEST ABSENT job JMB", edit=lambda d: os.remove(os.path.join(d, "JMB", "manifest.tsv")))),
     )
     for name, pred in MF_CASES:
         d = _synth(os.path.join(scratch, "est_selftest_mf"), window="mfcard")

@@ -8,7 +8,7 @@
 # a row DETECTED). Each row scores DETECTED (the dry run refused with the expected text) or MISSED; exit 0 iff the
 # control is green and every row is DETECTED.
 #   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 d1
-#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4
+#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1-i10
 #                                         y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
@@ -122,12 +122,27 @@
 #   (e4) S3172 [F8] write_draft's mixed-ISA-level refusal removed: the self-test case "[F8] write_draft refuses a
 #        set mixing ISA levels" goes WRONG
 #   review 2026-11-15 r1 F8 (slotxf8b):
-#   (f8a) S3183 the target table maps x86-64-v3 to the baseline set: the guard refuses (DRAFT-ISA-LEVEL MIXED), the
-#        one-set-per-ISA-level case shows it
-#   (f8b) S3184 the v3 set keeps the baseline class value: that case goes WRONG (a set's class must name its level)
+#   (f8a) S3183 [re-aimed r5] the level derivation files x86-64-v3 at the floor's level (the baseline set): the
+#        guard, reading the needs link.py recorded, refuses (DRAFT-ISA-LEVEL MIXED) in the one-set-per-level case
+#   (f8b) S3184 [re-aimed r5] the v3 set keeps the baseline class value: the guard reads the class back and refuses
+#   review 2026-11-15 r5 memfn-mfindcomb (mcfixa):
+#   (i1) S3188 [FIDELITY-1] the find wrapper's gate compiled back INTO the timed TU, no gate object (the critic's
+#        shape: two callers of `step`): gcc keeps the w16/w32 finder out of line; the timed-shape check refuses (TIMED-SHAPE ...
+#        calls mf_fn__w16)
+#   (i2) S3189 [FIDELITY-2] est checks the manifests of verify jobs only (as before r5): the P11 case goes WRONG
+#   (i3) S3190 [FIDELITY-2] the manifest's cell_text pin not compared: the P11 case goes WRONG
+#   (i4) S3191 [FIDELITY-5] the duplicate-cell refusal removed: the one-cell-two-lines case goes WRONG
+#   (i5) S3192 [DRAFTSETS-2] the cell_text-twice refusal removed: the P9 case goes WRONG
+#   (i6) S3193 [contract-2] the unit row not repeated in the ver-6 sets: the tree's loader refuses them (LOAD)
+#   (i7) S3194 [FIDELITY-3] a base's cells filed with every set: the guard refuses base.mfind-w32's
+#        (x86-64-v3 needs) in the baseline set
+#   (i8) S3195 [FIDELITY-3] every job control in every set: the levels case goes WRONG (JMB/JMH ctl in ver 3's)
+#   (i9) S3196 [FIDELITY-4] the D197 rule's A/A floor dropped: the drill's within-floor tie reads WIN (WRONG)
+#   (i10) S3197 [R3 (1)] a confirming run never clears a loss: the not-reproduced case reads CONFIRM (WRONG)
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
 # rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
-# r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's; they
+# r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's,
+# S3188-S3197 lane mcfixa's; they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
@@ -135,7 +150,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=${SLOT_TREE:-$(cd "$here/../../../../.." && pwd)}   # SLOT_TREE: the tree when slot/ runs from a copy
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9 i10}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -164,6 +179,8 @@ dry() {    # COPY JOB [NAME]: the job's dry run in the copy COPY (a fresh RUNDIR
     rm -rf "$SCR/run.$n"
     if [ "$2" = plan ]; then          # JOB `plan`: the planner's report (build() and its checks), no render
         SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/plan.py" report > "$SCR/$n.out" 2>&1
+    elif [ "$2" = d197 ]; then        # JOB `d197`: the D197 rule's drill (constructed outcomes)
+        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/d197_rule.py" drill > "$SCR/$n.out" 2>&1
     elif [ "$2" = est ]; then
         SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/est.py" selftest "$SCR/run.$n" > "$SCR/$n.out" 2>&1
     else
@@ -321,14 +338,59 @@ row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT
     e3) job=est want='selftest	\[F5\] write_draft on the mfcard window[^	]*	WRONG'
         patch "$SCR/$row/est.py" '        vrows = groups[(v, suf, cls)]' \
 '        vrows = groups[(v, suf, cls)] + (split.get("6", []) if v == "3" else [])   # SABOTAGE S3171' ;;
-    e4) job=est want='selftest	\[F8\] write_draft refuses a set mixing ISA levels[^	]*	WRONG'
-        patch "$SCR/$row/est.py" '            if cls.split("/")[0] != TARGET_LEVEL[tgt_of[r[0]]]:' '            if False:   # SABOTAGE S3172' ;;
+    e4) job=est want='selftest	\[F8, r5 P4\] write_draft refuses a set mixing ISA levels[^	]*	WRONG'
+        # [r5] re-anchored: the guard's over-the-class test never refuses
+        patch "$SCR/$row/est.py" '        if over:
+            raise InputError("DRAFT-ISA-LEVEL MIXED' '        if False:   # SABOTAGE S3172
+            raise InputError("DRAFT-ISA-LEVEL MIXED' ;;
     f8a) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	\(DRAFT-ISA-LEVEL MIXED'
-        patch "$SCR/$row/est.py" '              "x86-64-v3": ("-v3", "x86_64-v3/zen4")}' \
-'              "x86-64-v3": ("", "x86_64/zen4")}   # SABOTAGE S3183: the v3 target mapped to the baseline set' ;;
-    f8b) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	WRONG'
-        patch "$SCR/$row/est.py" '              "x86-64-v3": ("-v3", "x86_64-v3/zen4")}' \
-'              "x86-64-v3": ("-v3", "x86_64/zen4")}   # SABOTAGE S3184: the v3 set keeps the baseline class' ;;
+        # [r5] re-anchored: the level derivation files every target at the floor's level (the baseline set)
+        patch "$SCR/$row/est.py" '        return self.floor if self.feats(tok) <= self.feats(self.floor) else tok' \
+'        return self.floor   # SABOTAGE S3183: every target at the floor level' ;;
+    f8b) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	\(DRAFT-ISA-LEVEL MIXED'
+        # [r5] re-anchored: the v3 set keeps the baseline class; the guard, reading the class back, refuses
+        patch "$SCR/$row/est.py" '        return suf, "%s/%s" % (lvl.replace(self.floor, self.floor.replace("-", "_"), 1), BOX_UARCH)' \
+'        return suf, "%s/%s" % (self.floor.replace("-", "_"), BOX_UARCH)   # SABOTAGE S3184' ;;
+    i1) job=JMB want='TIMED-SHAPE kit\.find_byte\.mfind-w(16|32)(#b)?: a[0-9]+_time calls mf_fn__w(16|32)'
+        patch "$SCR/$row/link.py" '#endif
+#ifdef SLOT_GATE_TU
+__attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
+                                                   uint64_t *sum, uint64_t *h)
+{
+    (void)c; (void)nc;' '#endif
+#if 1   /* SABOTAGE S3188: the gate back in the timed TU */
+__attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
+                                                   uint64_t *sum, uint64_t *h)
+{
+    (void)c; (void)nc;'
+        patch "$SCR/$row/link.py" '            gates.append(compile_tu(src, os.path.join(d, "arm%d.c" % k), sym, gate=True))' \
+'            pass   # SABOTAGE S3188: no gate object (the timed TU holds the gate)' ;;
+    i2) job=est want='selftest	\[r5 P11\][^	]*	WRONG'
+        patch "$SCR/$row/est.py" '    pins = {j: manifest_check(rundir, rec, j, L) for j in sorted(ran)}' \
+'    pins = {}   # SABOTAGE S3189: the manifests checked for verify jobs only (fused_facts), as before r5' ;;
+    i3) job=est want='selftest	\[r5 P11\][^	]*	WRONG'
+        patch "$SCR/$row/est.py" 'MANIFEST_FILES = ("cell_text", "placement")' 'MANIFEST_FILES = ("placement",)   # SABOTAGE S3190' ;;
+    i4) job=est want='selftest	\[r5 FIDELITY-5\] one cell, two lines: refused	WRONG'
+        patch "$SCR/$row/est.py" '            if ck in seen:' '            if False:   # SABOTAGE S3191' ;;
+    i5) job=est want='selftest	\[r5 DRAFTSETS-2 P9\] one key, two cell_text lines: refused	WRONG'
+        patch "$SCR/$row/est.py" '            if key in out:
+                raise InputError("CELL-TEXT TWICE' '            if False:   # SABOTAGE S3192
+                raise InputError("CELL-TEXT TWICE' ;;
+    i6) job=est want='selftest	\[r5 contract-2\][^	]*	\(LOAD draft\.v6'
+        patch "$SCR/$row/est.py" '        groups[g] = sorted(unit + groups[g], key=lambda r: r[0])' \
+'        groups[g] = sorted((unit if g[0] == "3" and not g[1] else []) + groups[g], key=lambda r: r[0])   # SABOTAGE S3193' ;;
+    i7) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	\(DRAFT-ISA-LEVEL MIXED.*base base\.mfind-w32'
+        patch "$SCR/$row/est.py" '        hs = [g for g, vr in groups.items() if any(plan.base_of(r[0]) == a and job_of[r[0]] == c["job"] for r in vr)]' \
+'        hs = list(groups)   # SABOTAGE S3194: a base with every set' ;;
+    i8) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	WRONG'
+        patch "$SCR/$row/est.py" '            return [g for g, vr in groups.items() if any(job_of[r[0]] == c["job"] for r in vr)]' \
+'            return list(groups)   # SABOTAGE S3195: every job control in every set' ;;
+    i9) job=d197 want='drill	within-floor tie[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '        lambda c: c["gain"] > c["floor"] and all(x > 0 for x in trim(c["gain_l"])),' \
+'        lambda c: c["gain"] > 0 and all(x > 0 for x in trim(c["gain_l"])),   # SABOTAGE S3196: the A/A floor dropped' ;;
+    i10) job=d197 want='drill	\[R3\] that one-cell loss does NOT reproduce[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '    "loss-not-reproduced": lambda c: c["gain"] < -c["floor"] and c["conf"] is not None' \
+'    "loss-not-reproduced": lambda c: False and c["conf"] is not None   # SABOTAGE S3197: a confirming run never clears a loss' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
 }

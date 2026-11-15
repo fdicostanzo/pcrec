@@ -788,23 +788,42 @@ Every fixture (kit arm, driver, `enter` artifact, J1 width) is compiled `gcc 15.
   suffix) `/` the box's tuning class (`measures.md` §2.1: "the ISA level and tuning class it was measured
   for"). grid1's `x86_64-avx2/zen4` is NOT copied: a copied class would read as the AVX2 variant's prices
   under [XARCH-DEV] while every cell is generic-target text. The card keys carry no target dim, because a
-  set is one target.
+  set is one ISA LEVEL `[r5 DRAFTSETS-4]` (zen4-grid3@1's one target is the one level's) and a key names a form whose
+  kit instance has ONE target, so one key never names two targets' text.
 - **(a)** the box has the target's features: the header's `isa` key (the box's cpuid list, provenance, as
   today) includes the baseline's; the slot harness's dry run refuses otherwise.
 - **(b)** the built fixtures contain exactly the declared target's variant: **the `class` header, and it is
   INSIDE the set's identity**: the format-2 digest folds `class` after the domain (§5), so `id@rev:digest`
   names the priced target, and a FILE set re-using the id with another class is refused by no-shadowing
-  (which compares digests, `measures.c`'s shadow rule). Every other target: absent (build), by the
-  one-target rule, with nothing to record per target. Rev 1 homed (b) in PROVENANCE.md prose, outside the
+  (which compares digests, `measures.c`'s shadow rule). Every other level: absent (build), by the
+  one-level rule `[r5 DRAFTSETS-4]`, with nothing to record per target. Rev 1 homed (b) in PROVENANCE.md prose, outside the
   digest and outside `index.tsv`'s file sha; D188 says the SET records it.
 - **(c)** the rows.
 The spelling of (b) and (c) for a set holding SEVERAL targets' variants (rows per target, a section, header
 keys) is the format event J6's design makes at [XARCH-DEV].
-`[review 2026-11-15 r1 F8]` **One draft set per ISA level.** The ver-6 run's kit targets generic and x86-64 are the
-same baseline code and write `zen4-grid6@1`, class `x86_64/zen4`; x86-64-v3 writes `zen4-grid6-v3@1`, class
-`x86_64-v3/zen4` (a new class VALUE, no new format); est's draft writer REFUSES a set that would hold rows built for
-another ISA level than its class names (`DRAFT-ISA-LEVEL MIXED`), and identical site text from generic and x86-64
-is the same code, so it shares one cell.
+`[review 2026-11-15 r1 F8, r5 DRAFTSETS-1/-4 FIDELITY-3 contract-2]` **One draft set per ISA level.** A row's level
+comes from ONE source, the kit's own target facts (`arm_fixtures --target-facts`, the run's fixture binary): a
+target whose features the compile floor (`-march=x86-64`) already has is the floor's level, any other target its own
+level. So the ver-6 run's kit targets generic and x86-64 are one level and write `zen4-grid6@1`, class
+`x86_64/zen4`; x86-64-v3 writes `zen4-grid6-v3@1`, class `x86_64-v3/zen4` (a new class VALUE, no new format; a later
+target, mfind-w64's, gets its own set by the same rule). est's draft writer holds every row and every base cell of
+a set to the set's class through the ISA needs link.py RECORDED from the object (`cell_text.tsv`'s `target_isa`,
+pinned by the job's manifest) and REFUSES the whole draft on needs above the class (`DRAFT-ISA-LEVEL MIXED`), or a
+target the kit does not know. A base's cells go with the rows of its job that name it, a job's control with the sets
+holding a row of that job: never a set of another level or ver. Two targets' identical text cannot reach two cells:
+a key names one instance with one target, and a key with two `cell_text` lines refuses. Each set REPEATS the unit's
+ratio-1 row (`kit.find_byte.walk`, the header's `unit_key`) so it loads; that one row, the set's normaliser (same
+box, same run, never a priced form), is the guard's only exemption.
+
+`[r5 contract-3, EMITTED-1, R2]` **kit-grid@6 (ver 6) owed list**, the card comment's pointer. The ver-6 rows are an
+UNPICKED MEASURING INSTRUMENT (D197, Frank 2026-11-15), never a pick. (1) the `mfind-w64`
+(AVX-512BW) arm, which needs a kit target above x86-64-v3 (`slot/plan.py` `UNPLANNED6`); (2) the single-piece cells,
+SEARCH vs the walk and STREAM RESTART vs MASK (D190), owed only on a D197 WIN at a level, under their own owner go;
+(3) the D149 UNMEASURED DEFAULT on the inline finder's entry cut-over (`memfn/src/vrun.c`), which the timing
+answers; (4) the three rows' `row_floors.tsv` g2 floors, from a G2 `--rows` REACH run. The ver-6 timing sees ONE
+site: it does not time the artifact's size (the lever text is 2.9x (SWAR) to 6x (x86-64-v3) fn-memchr's body), so
+`est.py rows` reports each row's emitted size (the timed function, its site inlined) BESIDE its value, and D197's
+rule (`slot/d197_rule.tsv`) never folds size into its verdict.
 
 **J6 = unit S2g, SEPARABLE and HELD until [XARCH-DEV]'s go (D188 add. 1).** Content once released: vrun only (`vrun-w16`, `vrun-w32`; the kit
 manager's ruling drops vany, §2.5). Its cells cannot come from the scalar builders: vrun renders only through
