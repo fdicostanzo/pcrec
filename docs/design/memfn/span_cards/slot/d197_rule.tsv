@@ -1,33 +1,45 @@
 # d197_rule.tsv — D197's DECISION RULE for the mfcard window, DECLARED BEFORE ANY NUMBER EXISTS (review 2026-11-15 r5
-# memfn-mfindcomb FIDELITY-4, as ruled; lane mcfixa). D197: the fused inline one-member finder is an unpicked
-# measuring instrument; the timing is ONE-SIDED: a fused LOSS to libc memchr settles span_pick row 1 against the
-# finder, a fused WIN triggers building the ruled split shape under its own owner go (then a re-measure).
-# Read by d197_rule.py (`rule RUNDIR AVX2RUNDIR`, `drill`). Every table is FIRST MATCH, top to bottom; the `when`
-# words are the named predicates d197_rule.py defines (WHEN, one line each), nothing else.
-# Units: est.py's, a find_hit@6 row's x_l = its per-HIT cost (cell minus its own miss-only base, over the planted
-# hits E) in ppm of the window's unit W, per launch l (7 launches).
-#   gain_l  = x_l(libc) - x_l(fused), the SAME job, launch and cell (positive: the fused form is cheaper per hit)
+# memfn-mfindcomb FIDELITY-4, as ruled, with the kit manager's R1 of 2026-11-15 (main's conditions); lane mcfixa).
+# D197: the fused inline one-member finder is an unpicked measuring instrument; the timing is ONE-SIDED: a fused
+# LOSS to libc memchr settles span_pick row 1 against the finder, a fused WIN triggers building the ruled split
+# shape under its own owner go (then a re-measure).
+# THE TIMED SHAPE IS INLINE, AS PCREC EMITS IT: each cell's timed function `_time` holds the finder's ONE call site
+# with the site inlined (the gate is a separate object; link.py's TIMED-SHAPE check refuses a `_time` calling a
+# function its own object defines), as in pcrec's rx_search under `--harness=mfind` (review r5 FIDELITY-1).
+# ONE VERDICT PER ISA LEVEL, never one global verdict (R1 (1)). Each `levels` row names the form a pcrec build AT
+# THAT LEVEL emits under the lever, CONFIRMED from the kit's selection (lane mcfixa, 2026-11-15, build/pcrec-harness
+# --harness=mfind -p rx --pattern 'xy[0-9]+z' and 'foo.*bar': no -fmemfn-simd -> the SWAR body `fn-mfind` = cell
+# form mfind-swar (4 `memcpy(&w` loads with the lever, 0 without; stamp `none`, the stamp names SIMD forms only);
+# -fmemfn-simd=x86-64 -> `mfind@w16`; -fmemfn-simd=x86-64-v3 -> `mfind@w32+w16` (w32 the timed loop, w16 its
+# tail)), compared with libc memchr AS IT RUNS ON THIS BOX: the shipped arm (RUNDIR; the record names the ifunc
+# variant bound, `memchr=`) and the AVX2-tunable arm (RUNDIR.avx2libc; its record must name memchr=avx2) as the
+# second libc row. Each row's `axes` names EVERY axis on which its two forms differ (the standing one-variable rule).
+# Read by d197_rule.py (`rule RUNDIR AVX2RUNDIR [--second]`, `drill`). Tables are FIRST MATCH, top to bottom; the
+# `when` words are the named predicates d197_rule.py defines (WHEN, one line each), nothing else.
+# STATISTIC (R1 (2)), est.py's units: a find_hit@6 row's x_l = its PER-HIT cost (the cell minus its own miss-only
+# base, over the planted hits E: the per-hit slope of cost over hits at fixed length) in ppm of the window's unit W,
+# per launch l (7 launches). Per deciding cell, the level's form F against libc L in the SAME record:
+#   gain_l  = x_l(L) - x_l(F), the same job, launch and cell (positive: F is cheaper per hit)
 #   gain    = med over the 7 launches of gain_l
-#   floor   = aa(libc) + aa(fused), each row's paired A/A (est.py's `aa`: med_l |x_l(twin) - x_l(arm)|)
+#   floor   = aa(L) + aa(F), each row's paired A/A (est.py's `aa`: med_l |x_l(twin) - x_l(arm)|): THE A/A FLOOR
 #   trimmed = the 7 gain_l less the one farthest from their median (est.py's trim)
-# NOTE (EMITTED-2): a mfind-swar (8-byte SWAR) row against libc measures SEARCH WIDTH, not fusion; it is reported by
-# est.py as any row and never decides. NOTE (EMITTED-1): the timing sees one site; the emitted size (the lever
-# text 2.9x-6x fn-memchr's body) is reported beside it, never folded into the verdict.
+# The SCAN cost (find_byte@6, JMB's miss-only per-byte slope of F and L) is REPORTED beside each level, never decides.
+# The emitted size (EMITTED-1: the lever text 2.9x-6x fn-memchr's body) is reported by est.py rows, never decides.
 #section deciding
 #key	value
 quantity	find_hit
+scan	find_byte
 ver	6
 landing	periodic
 split	one
 gaps	2,4,8,16,32,64,256,1024,65536
 rejects	0,100
 libc_form	fn-memchr
-#section fused
-#box_level	form
-x86-64-v4	mfind-w32
-x86-64-v3	mfind-w32
-x86-64-v2	mfind-w16
-x86-64	mfind-w16
+#section levels
+#level	build	form	axes
+generic	pcrec default (no -fmemfn-simd) + --harness=mfind	mfind-swar	search width (8-byte SWAR word vs libc's ifunc vector: 32-byte EVEX shipped, 32-byte AVX2 tunable); own inline code vs a libc call per search; candidate stream (MASK continue-after-reject vs RESTART at hit+1); the 2-byte check inside the finder's mask loop vs a memcmp after each call
+x86-64	-fmemfn-simd=x86-64 + --harness=mfind	mfind-w16	search width (16-byte SSE2 vs 32-byte EVEX / AVX2); own inline code vs a libc call per search; candidate stream (MASK vs RESTART); the check inside the mask loop vs a memcmp after each call
+x86-64-v3	-fmemfn-simd=x86-64-v3 + --harness=mfind	mfind-w32	search width (32-byte AVX2 vs 32-byte EVEX shipped: same width, another encoding; equal under the AVX2 tunable); own inline code vs a libc call per search; candidate stream (MASK vs RESTART); the check inside the mask loop vs a memcmp after each call
 #section cell
 #result	when
 unresolved	either-row-unpriced
@@ -40,11 +52,12 @@ no-verdict	run-refused
 no-verdict	memchr-variant-not-the-arms
 LOSS	any-cell-loss
 WIN	wins-over-half-of-deciding-cells
-LOSS	always
+inconclusive	always
 #section verdict
-#result	when
-NO-VERDICT	shipped-arm-no-verdict
-LOSS	shipped-arm-loss
-NO-VERDICT	avx2-arm-no-verdict
-LOSS	avx2-arm-not-win
-WIN	always
+#result	when	triggers (D197)
+INCONCLUSIVE	shipped-arm-no-verdict	the ONE re-run (below)
+LOSS	shipped-arm-loss	settles span_pick row 1 against the finder AT THIS LEVEL
+LOSS	avx2-arm-loss	settles span_pick row 1 against the finder AT THIS LEVEL (it loses to a width-matched libc)
+WIN	both-arms-win	builds the ruled split shape for this level, under its own owner go, then a re-measure
+LOSS	second-run	settles row 1 against the finder at this level (a second INCONCLUSIVE: D197's "anything else is a LOSS")
+INCONCLUSIVE	always	ONE re-run allowed: the mfcard window again (J2, J2p, JMB, JMH; both libc arms) in a later window Frank clears, the same plan, a new run id, scored with `--second`
