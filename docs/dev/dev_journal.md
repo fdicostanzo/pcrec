@@ -27740,3 +27740,12 @@ Next
   criteria. lane/s486re merged + pushed (CI green on ac91d48bb). lane/fixposts2 waits only on cloud axes at 825af3c1e.
   Kit: fresh code round found timing-harness defects (no decision rule, out-of-line finders, unloadable draft sets);
   D197 rule table agreed with three changes (kit 106412a6e); window after 01:00 stands.
+- 13:55 (2026-11-15): lane/fixposts2 LANDED + pushed (merge c6308ddc8, origin 47d48deb4; cloud test/axes/mechrows green
+  on 825af3c1e, box job 702 green, round r4 ruled + fixed; strict/plan-lint/anchors green). Last night's open work is
+  closed (S486 red, unmerged review fixes). Filing lane file1115b merged ([COUNT-TO-OCCURS], [HULL-N],
+  [LIMIT-PREFIX-K-LABEL], [REACH-PROBE-GAP], DD-11.5 note). predicates_draft rev 5 merged (design only; the 2026-11-15
+  owner answers folded, audit fixes, phase 1 scope section; four open items in owner.md). Waiting on Frank: build go
+  for [COVER-CAP] stage 1 (design rev 4.1). Push of the last three merges waits for CI on 47d48deb4 to finish.
+  Lesson (process): a lane report's "OWED: cloudrun ..." line may be a command it never ran; read OWED as "check the
+  run exists" (s486re-rows was dispatched by the manager 40 min late). Lesson: run make test-plan-lint before merging
+  ANY lane, docs-only included (file1115's report tripped PL14 and blocked the kit's cloud dispatch).
