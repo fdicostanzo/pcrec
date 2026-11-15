@@ -1325,13 +1325,38 @@ hand-written Luhn), not with pcrec; PCRE behaviours (E-IPV4, E-DEPTH, E-FILE, E-
 by review 2026-11-14-r1-predspec. Libraries are modules (`d := import("dates")`, §7). No §12.1-12.11 case puts an
 assertion in a set position, so none of them depends on the Q1 model; §12.12 holds the cases that do.
 
-REV 6 RE-CHECK (the type picture, CF:846-878; per-case record in `docs/dev/lanes/predspec6_report.md`): all twelve
-cases are UNCHANGED token for token. Every comma in them sits in a call record, a condition record, a `[ ]` array or
-rx text (§5.4); every `[ ]` is an array read as any one entry (an alternation of names or strings) or passed to a
-structural macro that reads its entries in order (`join`, §3.4); every `( ... )` is a call, a condition or grouping;
-no case passes a tuple or a record as a value, and none needs a record on the left of a binding (§0.2). Two open
-items touch cases without changing their spelling: the module bindings (`json := import("json")`, E-JSONL, E-IPV4, E-HTTP, E-DEPTH; §13 O46)
-and a condition passed as an argument (`occurs.exactly(1, (name: ...))`, `count((name: ...))`, E-HTTP; §13 O45).
+REV 7 RE-CHECK (review r8; per-case record in `docs/dev/lanes/predspec7_report.md`): all twelve cases are UNCHANGED
+token for token. Every comma sits in a call record, a condition record, a `[ ]` array or rx text (§5.4); every `[ ]`
+is an array of ordered entries, read as any one entry under `&` (an alternation of names or strings) or in order by
+`join` (§3.4, §5.4); every `( ... )` is a call or a condition (none is grouping); no case passes a record as a value
+or needs a record on the left of a binding (§0.2); no case uses search (`~`: 0 uses), so the owner's search-result
+note (CF:880-887) changes none of them. OPEN items that touch cases without changing their spelling: the module
+bindings (`json := import("json")`, E-JSONL, E-IPV4, E-HTTP, E-DEPTH; §13 O46); a condition passed as an argument
+(E-HTTP; now stated in §5.4's `( label: S, ... )` row, §13 O45); a computed label read BARE as an operand (E-CAL's
+`<=dim`, E-RFC's `==wd`; §13 C13, lean `<=$dim`, `==$wd`); the dot family (E-RFC's `.index`, `$rest.year`; §13 O31).
+E-RFC's `$mname.index` now has one parse, `$(mname.index)` (§5.4 `$` row; review r8 P6-6).
+
+THE TWO-WAY CENSUS (G0b; review r8 P6-9, OWNER-12). G1's check runs case -> construct (every case uses only §§2-8);
+this table runs construct -> case. Counts are uses in §12's code lines, comments stripped (command in
+`docs/dev/lanes/predspec7_report.md`). A construct with no case is LISTED, not cut and not given an invented case:
+the owner decides which stay in phase 1 (§0.2).
+
+| construct | §12 cases that need it | if none: why it is carried |
+|---|---|---|
+| `&`, `\|`, prefix `!`, `:=`, `,`, `[ ]`, `( )` call/condition, `=`, `:` in a condition, `.`, `$x`, `${}`, comparison sets, `-`, `/.../` | all twelve between them (§5.4's MARK TABLE names the cases per mark) | |
+| `@assert`, `import`, `param`, `enumerate`, `records`/`file_text`, `each`, `join`, `list_of`, `occurs.*` | E-IPV4, E-CAL; E-JSONL, E-IPV4, E-HTTP, E-DEPTH; E-NEAR; E-SEP; E-FILE; E-FILE, E-SEP; six cases; E-HTTP; E-HTTP | |
+| `count(...)` | none in code (E-HTTP's prose only) | RULED as the first spelling (CF:823, CF:832) |
+| operator section `(& f)` in code | none (prose only, §5.2, §5.3) | RULED, IN phase 1 (CF:753) |
+| search `~`, `!~` | none | RULED as a construct (CF:74, CF:873, CF:880-887); phase 1: the owner's |
+| positional `X[...]` | none | RULED (CF:553); needed by the owner's search example (§2.6) |
+| `where`, `where_group`, `each_group` | none | LEAN (§3.2, §5.3); candidate cut |
+| `when(c, p)` | none | RULED (CF:184, "Add when") |
+| typed parameters `m(x: T)`, `pure`, `pattern()` | none | LEAN (CF:149); §13 O48 |
+| `eval` | none | LEAN (§10); an opt-in module |
+| `@export`, `@warn` | none (library files are not cases) | LEAN (CF:608, CF:619); warnings RULED (CF:666) |
+| `*`, `%` | none | RULED in kind (arithmetic, CF:782 (1)) |
+| `.label` | none | LEAN (§5.3); §13 O31 |
+| record on the left of `:=` | none | RULED in the design (CF:852); OUT of phase 1 (§0.2) |
 
 ### 12.1 E-JSONL: flat JSONL, date range + string match (key-order independence)
 
@@ -1399,9 +1424,9 @@ fails `startsWith("4")`). Whether `luhn` skips the spaces: §13 O8.
     valid
 
 A value-vs-value relation with class count 24 (§4.6): one automaton. `days_in` is a value macro whose parameters
-are the two values; the leap test (`$year & leap`) sits inside it, so no filter is called with a subject (§2.3; rev 4
-wrote `days_in($month, leap($year))`, which called the filter `leap` with the subject and used its result as a truth
-value). LEVEL: default. Expected (whole subject):
+are the two captured strings; the leap test (`$year & leap`) sits inside it, so no rx is called with an operand
+(§2.3; rev 4 wrote `days_in($month, leap($year))`, which called the rx `leap` with the operand and used its result
+as a truth value). `<=dim` reads the computed label BARE: §13 C13 (lean `<=$dim`; review r8 SIM-8). LEVEL: default. Expected (whole subject):
 `2024-02-29` in; `2023-02-29` out; `2024-04-31` out; `2024-13-01` out (not an isodate). The notes' `month: \d\d &
 between(1,12)` is WRONG (only 10, 11, 12 pass): C9, confirmed CF:774; `padded` is the fix (§0.1 L20).
 
@@ -1550,8 +1575,9 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
 - **C8** comma in records vs lists: RULED (CF:698), RESTATED by the type picture (rev 6, CF:863): the comma means
   only "next entry" in both; the BRACKET says how entries relate (`( )` all together, `[ ]` any one); answers
   unchanged, §5.4, §0.1 L23.
-- **C19** the kind of an assertion (rev 6): RULED (CF:858): two value kinds; an assertion is not a value kind; `@`
-  forms are statements (§2.1, §5.6). Whether one can be NAMED: C18.
+- **C19** the kind of an assertion (rev 6): RULED (CF:858): two value kinds, so an assertion is not a value kind.
+  That `@` forms are EFFECTS (statements, §2.1 kind table, §5.6): LEAN (CF:619; CF:858 has no `@`, review r8
+  RUL-10). Whether one can be NAMED: C18.
 - **O30** brackets and commas with opposite meanings (rev 6): RULED (CF:863): the comma has one meaning and the
   bracket carries the relation, so `(x: <200, y: >55)` vs `[(x: <200), (y: >55)]` differ by the bracket alone (L23);
   `x[[1, 3, 5]]` vs `x & [1, 3, 5]` differ by the TOOL (position vs language, §3.2), both brackets reading any one.
@@ -1606,8 +1632,9 @@ STILL OPEN (contradictions):
 - **C12. Define-before-use.** 2026-11-13 BLOCK SHAPE: required; 2026-11-13 evening: forward references allowed, no
   cycles. Bounded recursion (§7) needs a self-reference at least.
 - **C13. Bare label names as values.** 2026-11-13 NAME RESOLUTION: an undeclared bare name is a label; 2026-11-14
-  01:00: values always `$x`. `(wname.index: ==wd)` uses a bare binding as a value while `(b: >$a)` uses `$` (§0.1
-  L37). Review OWN-11's lean: computed labels follow labels, `x:` to constrain, `$x` to read (so `==$wd`).
+  01:00: values always `$x`. `(wname.index: ==wd)` (E-RFC) and `(day: padded(<=dim))` (E-CAL) use a bare computed
+  label as an operand while `(b: >$a)` uses `$` (§0.1 L37); rev 5's tuple `lex_ge([major, minor, patch], ...)` did the
+  same with plain labels (§8). Review OWN-11's lean: computed labels follow labels, `x:` to constrain, `$x` to read (so `==$wd`).
 - **C16. Precedence example.** D196 (`&` tighter than `|`) parses the 00:10 example `x & <256 | >300` (CF:251) as
   `(x & <256) | >300`, silently WIDENING the program; WITHDRAWN (LEAN, review RUL-15): write `(x: <256 | >300)`
   (§4.1); a `precedence.section` warning is PLAN (§0.1 L22).
@@ -1625,32 +1652,36 @@ STILL OPEN (contradictions):
   where `R&D` is three literal characters (G3). Reading A: `&${` is a two-token marker, rx syntax only before a hole.
   Reading B: `&` is an operator throughout rx text in the predicate opt-in (a one-literal program then differs from
   PCRE on `R&D`). Lean: A, which keeps G3 and still gives the owner's `&` in rx.
-- **C25. Tuple comparison arrays.** `lex_ge([major, minor, patch], [1, 4, 0])` (CF:648); but an array literal IS an
-  alternation (§3.1), and the export discussion rejects `[leap, weekday]` for exactly this (CF:614: "names lost");
-  `[1, 4, 0]` is `&`-equal to `[0, 1, 4]` (review OWN-9). Rev 6: the type picture forbids the tuple as a value (a
-  record is never a value, CF:866; an array is any one entry, CF:863); what stays RULED from CF:644 is "a library
-  macro, no syntax". Candidate rewrite (the manager's, CF:876): `version & lex_ge(1, 4, 0)`: the call record is the
-  bound tuple, the subject (by `&`) gives the other side as its labels in group order. Lean: adopt that shape for the
-  library, with a compile error when the call record's length differs from the subject's label count; it needs a
-  variable-length call record (O47). No worked example or other library signature needs a tuple or record as a
-  value (rev 6 check of §8 and §12); phase 1 can rely on the condition spelling of §8, which needs no tuple.
+- **C25. Tuple comparison arrays.** `lex_ge([major, minor, patch], [1, 4, 0])` (CF:648). RULED from CF:644: "a library
+  macro, no syntax". Rev 6 closed the array spelling on a false reason (that a `[ ]` has no order; review r8 P6-2):
+  a `[ ]` has ordered entries that structural tools read in order (§3.4, §5.4; `join` does exactly this), and a
+  record is never a value only as a RECORD (CF:866), which an array is not. The real defect of the rev 5 spelling is
+  its bare label names used as values (C13). BACK TO OPEN between: (A) a STRUCTURAL library macro over two arrays,
+  `join`-like, read in order, with the label side spelled without bare names (`$major`, ... or the labels' names as
+  strings); (B) `version & lex_ge(1, 4, 0)`: the call record is the bound tuple, the operand (by `&`) gives the other
+  side as its labels in group order, with a compile error when the counts differ; it needs a variable-length call
+  record (O47). (The `&`-equality of `[1, 4, 0]` and `[0, 1, 4]`, review OWN-9, is the language reading; a structural
+  macro reads the order, so it does not decide.) No lean in rev 7: no worked example needs a tuple (rev 7 check of
+  §8 and §12), and phase 1 can rely on the condition spelling of §8.
 - **C26. The empty-match ERROR "opted out".** §7: in a predicate program the nullable-search case is an ERROR, with
   "no diagnostic ... when opted out"; §7.1: "Errors cannot be disabled". How a predicate program opts out of an
   error (other than `& !""` or anchoring) is not stated.
 - **C28. `occurs.all` vs the sequence rule.** §4.3: `x: S` on a repeated label already means all iterations; the
-  counting ruling adds `occurs.all(x: S)`. Either they are synonyms or `x: S` means something else (§0.1 L36; O28).
+  counting ruling adds `occurs.all((x: S))` (rev 6 wrote `occurs.all(x: S)`, a `:` in a call record, an error by
+  §5.4; review r8 SIM-3). Either they are synonyms or `x: S` means something else (§0.1 L36; O28).
   Also open here: whether `some`/`all` are built-ins or library names (review RUL-13).
 - **C29. `(x & isodate).year`.** `isodate(x)` is a compile error (CF:744, CF:749). What remains: whether `.year` of
   `x & isodate` is a VALUE (the cut layer's `(X & isodate).weekday`) or the map-view PATTERN of the part (§3.2).
   Reading A: `.` on any rx is structural and values are only `$`-forms (`$d.year`). Reading B: `.year` of an
-  application is a value. Rev 6: the ruled search result (CF:873) reads `d.year` on an rx as an rx (the set of the
-  occurrences' years), i.e. the map view gives an rx, never a third thing; lean A, with `.year` of `x & isodate` the
-  set of the year strings of the narrowed pattern (one string when the narrowed set has one year).
+  application is a value. Rev 6 leaned A citing the search result's `d.year` as "the set of the occurrences' years"
+  (CF:874), but that sentence is the manager's gloss, and what `d.year` means across several entries is OPEN (O50
+  (b); review r8 DRIFT-7). The conclusion survives every O50 reading (each gives an rx or a label, never a third
+  thing); the premise does not. Lean A (unchanged), argued from §3.1 alone: the map view of an rx gives an rx.
 
 Open items (rev 0, still open):
 - **O1.** The meaning of a program's final expression against the subject (search vs whole-subject test). The
   empty-match rule presupposes a SEARCH MODE chosen by the caller (predx O1 lean: the caller picks); not ruled.
-- **O2.** Precedence among `!`, `:`, `.`, prefix comparisons, arithmetic and `@` is stated only pairwise (C16,
+- **O2.** Precedence among `!`, `:`, `.`, `$`, prefix comparisons, arithmetic and `@` is stated only pairwise (C16,
   §4.1's entry extent; and `$` over a dot path, §5.4: `$a.b.c` = `$(a.b.c)`).
 - **O3.** Notes call several leanings "ruled" (unset label false, union type of duplicates, filtering by indexing).
 - **O5.** Do a map's per-field value constraints carry into joined labels (asked Frank 2026-11-14; lean yes; predx:
@@ -1661,7 +1692,8 @@ Open items (rev 0, still open):
 - **O8.** Checksum filters over separated digits (does `luhn` skip spaces?).
 - **O10.** Resume after a rejecting callout for unanchored search (predx: the next DFA candidate; not ruled).
 - **O12.** `!~` once `!` is a filter: keep (as the sugar of §2.6, review RUL-5), or drop it (no edge-assertion
-  special case remains, C32).
+  special case remains, C32). Rev 7: `$m !~ r` is a condition while `$m ~ r` is an rx (the array of results), so `!~`
+  is not the negation of `~` (§0.1 L51); decided with O50 (c).
 - **O13.** Library files: bindings + `@export`; whether a library has a final expression (the "one final
   expression" and "unused pattern" rules, §5.1) is not stated.
 - **O14.** String position out of range: CLAMP (rev 0 leaning) vs strict false (predx lean).
@@ -1703,11 +1735,17 @@ review's proposed lean, in plain words, NOT resolved):
   iterations (filters combine independently), but §2.6 says every `some(s)` over one search set is the SAME
   occurrence. Lean: each `some(...)` picks its own witness; to make one occurrence satisfy two tests, write one `some`
   with both tests conjoined. This deletes the "two occurrences need two names" rule.
-- **O31. Metadata members and level selection.** (OWN-7, RUL-12.) `.index` and `.label` share the dot with user
-  labels: for `/(?<index>\d+),(?<label>\w+)/`, `r.index` is the label or the position? Lean: a non-alphabetic
-  metadata mark, or metadata as call-position built-ins (`index(x)`, `label_of(x)`), or an error for user labels
-  named like a metadata member. Also unstated: how a program selects `functions`/`captures`/`vm`/`eval` (as strings
-  or API options, not bare words).
+- **O31. The dot family, and level selection.** (OWN-7, RUL-12; WIDENED in rev 7 by review r8 P6-12, CENSUS-24.)
+  One `.` carries four resolutions: (1) a LABEL of the map view (`d.year`, `rest.year`); (2) a module MEMBER
+  (`json.row`), which is name resolution if a module is a namespace (O46's lean), not navigation on a value;
+  (3) METADATA (`.index`, `.label`), which share the dot with user labels: for `/(?<index>\d+),(?<label>\w+)/`, is
+  `r.index` the label or the position?; (4) a PATH under `$` (`$rest.year`; `$` covers the whole path, §5.4). §9 cut
+  UFCS for being "a third resolution rule to `.`"; the same argument applies here. Readings: (A) one meaning, the
+  field of the map view of the thing on the left, with modules read as maps of members and metadata as reserved
+  fields (an error for user labels so named); (B) the dot for labels and members only, metadata as call-position
+  built-ins (`index(x)`, `label_of(x)`); (C) a non-alphabetic metadata mark. Lean: A for labels and paths (§5.4's
+  `.` row), B for metadata; members follow O46. Also unstated: how a program selects `functions`/`captures`/`vm`/
+  `eval` (as strings or API options, not bare words).
 - **O32. Flags of a pattern inserted in a hole.** (Q1R-11.) With no inherited flags, `q := /^\{.*\}$/` inserted in
   `/${q}/m` keeps single-line `^`/`$` and finds nothing on `{a}\n{b}`, while the same text inlined in the `m`
   literal finds both lines. Lean: a `flag.hole` warning naming the fix (`q := /.../m`), or state the flags of a
@@ -1730,12 +1768,13 @@ review's proposed lean, in plain words, NOT resolved):
 - **O37. Two modifier names this document chose.** `unpadded(n, S)` (rev 2's `pad(n)`: the filter reads a subject
   as if zero-padded to width n) and `json.quoted(S)` (rev 2's `jstr`) are placeholders under the naming rule; the
   ruling named `padded`, `any_case`, `quoted`, `length`, `month_numbered` only.
-- **O38. Look-alike rows with no diagnostic.** §0.1 marks GAP rows (L20, L21 on answers, L25, L29-L32, L35; L23
-  left the list in rev 6: its difference is now the stated meaning of the bracket, CF:863):
+- **O38. Look-alike rows with no diagnostic.** §0.1 marks GAP rows (rev 7: L20, L21 on answers, L22, L24, L29-L33,
+  L35, L51; L23, L25 and L48 are BY DESIGN, the stated meaning of a mark, §5.4):
   DIFFERENT with no named diagnostic, so G0's acceptance fails on them today. Some are open items above; L20 (a padded
   target against an integer section) and L25 (`/a|b/` vs `/b|a/` under `[]`/`.index`, by design) have no item:
-  whether a documented structural difference needs a diagnostic, and which warning L20 gets, are open. Also from
-  OWN-15: whether the goal order G1 > G2 should be stated as G2 > G1 at the default level (what the rules do).
+  whether a documented structural difference (a BY DESIGN row) also needs a diagnostic, and which warning L20 gets,
+  are open. Also from OWN-15: whether the goal order G1 > G2 should be stated as G2 > G1 at the default level (what
+  the rules do, §0 Goals).
 
 Open items NEW in rev 5 (from the 2026-11-15 entries and the rev 4 audit; plain words, each with a leaning):
 - **O39. The budgets: how big is too big?** Two size limits are named but never set by the owner: (a) the
@@ -1779,26 +1818,103 @@ the brief's; each with a lean, none decided here):
   `m(p1, p2) :=` and typed parameters `m(x: T)`; lean: a head is position (a), the call shape that declares the
   parameters, with `:` constraining the parameter it declares; (2) the library name `records(text, rx)` (§7) now
   collides with the vocabulary word "record"; lean: rename the placeholder when spellings are chosen (it returns an
-  ARRAY of entries, so a name like `entries_of` says what it returns).
+  ARRAY of items, so a name like `items_of` says what it returns); rev 7 already says "item rx" for its pattern and
+  "item" for each entry (§0.3, §7; review r8 CENSUS-23).
 - **O45. A condition written where a value is expected.** The ruling says a condition is a macro (a value, CF:858)
   and that a record appears "in a condition, against a pattern's labels" (CF:866 (b)); conditions are also passed
   (`occurs.exactly(1, (name: S))`, `count((name: S))`), put in arrays (`[(x: <200), (y: >55)]`) and could be bound
   (`c := (year: 2000)`). Lean: a record whose entries are all `label: S`, written in value position, DENOTES ITS
-  CONDITION (the macro with the subject open that lays the record against the subject's labels); the macro is the
+  CONDITION (the macro with the operand open that lays the record against the operand's labels); the macro is the
   value, the record is its written body, and no record is ever bound. Any other record in value position is an
-  error (L43). §4.1, §5.4, §0.1 L46.
+  error (L43). §4.1, §0.1 L46; rev 7 states it IN §5.4's table as its own row (review r8 P6-3).
 - **O46. What a module is.** Rev 5: a module is a MAP of the file's bindings (LEAN, CF:619), usable whole as a
   pattern when every entry is an rx. Under the two kinds it is neither an rx (it holds macros) nor a record (never a
   value, CF:866), yet `json := import("json")` binds it. Reading A: a module is a compile-time NAMESPACE that `:=`
   names, not a value (no passing, storing or returning; `json.row` is name resolution). Reading B: a module is an rx
   when every export is an rx and a namespace otherwise (two meanings for one form, against G0). Lean: A; the "use a
   module whole as a pattern" sentence goes (name the entries in an array instead). Touches E-JSONL, E-IPV4, E-HTTP,
-  E-DEPTH only through their `import` lines, whose spelling does not change. §7.
-- **O47. A call record of variable length.** (b.) The candidate `version & lex_ge(1, 4, 0)` (C25) needs a macro that
-  accepts as many positional entries as the subject has labels; §5.2's macros have a fixed parameter list. Readings:
-  (A) a library-only variadic form (a declared "rest" parameter), (B) fixed-arity variants (`lex_ge3`), (C) no tuple
-  macro: write the condition spelling of §8. Lean: C for phase 1 (no example needs more), A as the design's later
-  shape, decided when a library needs it (D77).
+  E-DEPTH only through their `import` lines, whose spelling does not change. §7. Rev 7 (review r8 P6-8 (c)): the
+  same question covers a RUN-TIME PARAMETER (`anchor := param(isodate)`, E-NEAR (b)), also bound by `:=` and neither
+  plainly an rx nor a macro; the KIND TABLE (§2.1) lists both. Readings: (A) both are named by `:=` but are not
+  values (a third BINDABLE shape beside the two value kinds, never passed or returned); (B) a parameter is an rx whose
+  string the caller fixes per match (a value), a module a namespace (not a value); (C) both become values (a third
+  value kind). Lean: B (it keeps two value kinds and needs one non-value shape, the namespace).
+- **O47. A call record of variable length.** (b.) Rev 6's motivation was the tuple: its argument that a `[ ]` cannot
+  carry a tuple was false (C25, review r8 P6-2), so O47 is needed ONLY IF C25 takes reading (B) `version & lex_ge(1,
+  4, 0)`, or the FAMILIES unlock (O52 (a)) moves `join`'s ordered parts into a call record. §5.2's macros have a fixed
+  parameter list. Readings: (A) a library-only variadic form (a declared "rest" parameter), (B) fixed-arity variants
+  (`lex_ge3`), (C) none. Lean: C until C25 or O52 (a) needs it (D77); then A.
+
+Open items NEW in rev 7 (review r8 2026-11-15-r8-predspec6, its PLAN items and the owner's search note; each with
+its readings and a lean, NONE decided here):
+- **O48. What `:` means in a definition head.** (Review r8 P6-4; OWNER-8, CENSUS-4/5, SIM-11.) In a condition `x: S`
+  NARROWS silently (`isodate & (year: <2000)` drops what is outside); in a head `m(x: T)` it CHECKS (an argument
+  partly outside T is an error showing a dropped witness, §5.2); §0.1 L49. The owner's own word for `:` is "filters"
+  (CF:706). No §12 case uses a typed head. Also `m(p: pure)` puts a PROPERTY after `:`, not a constraint set.
+  Readings: (A) `:` NARROWS in both, the head check becoming the existing dead-branch / empty-intersection
+  diagnostics at a narrowing site (one meaning; the general form of O52 (c)); (B) the containment check gets its own
+  spelling, `:` keeps narrowing; (C) typed parameters leave phase 1 (no case needs them). `pure`: a non-`:` spelling
+  under any reading. Lean: A (it removes the second behaviour without a new mark), C for phase 1 if the owner prefers
+  not to decide now.
+- **O49. One span per filter role: confirm.** (Review r8 P6-5, ruled FIX-NOW by the manager; LEAN until the owner
+  confirms.) Rev 7 states that `^`/`$` in a filter passed as an argument, or in a hole of a filter's body, are the
+  ends of the span the enclosing FILTER ROLE filters (§11 ONE SPAN PER FILTER ROLE), so `contains(/^err/)` =
+  `startsWith("err")`. The alternative: a hole (and so an argument a library body puts in a hole) opens a span of its
+  own, `contains(/^err/)` = `contains("err")`, with a diagnostic for an anchored argument (review r8 P6-5 (b)). The
+  consequence the owner should see: under rev 7, `\b` at a hole's edge stays the edge-assertion error (L8, CF:713)
+  while `^` in a hole reads the enclosing span: two assertion kinds, two rules, because `^` needs no text outside the
+  span and `\b` does. Lean: rev 7's reading (it is the one a user expects, G0, and it is the owner's 11-15 rule,
+  CF:761, applied without exception).
+- **O50. What a search result IS at match time.** (Review r8 P6-7: OWNER-10, RUL-8/9, CENSUS-11, DRIFT-1..8; the
+  largest open item of the round.) The owner: "an array of all of the results. You could use count to check the
+  number of results. You could treat it as an array. You could use the occurs module" (CF:881-883). His EXAMPLE
+  (§2.6) is the behaviour every answer must give: on `abx aby abx`, `d := <subject> ~ /ab(?<g>[xy])/` has `count(d)`
+  = 3, `d[2].g` = `y`, and `d & (g: x)` keeps entries 1 and 3, positions kept. The array tools were defined over
+  SPELLED arrays at compile time (G4, §3.4, §5.3); `d` is a MATCH-TIME array (§3.4). Parts and readings:
+  (a) THE TOOLS. (A) Two populations stated once: on a match-time array, `[i]` with a literal or bounded i,
+  `count`, `&` per entry and `occurs.*` are match-time tests (regular: counters, CF:62's cost rule), while `each`,
+  `join`, `where`, `enumerate`, `.label` are a compile error naming the match-time source (DRIFT-2). (D) The search
+  result is a REPEATED LABEL, one iteration per occurrence (`$m ~ P` read as the value matched against
+  `(?:.*?(P))*.*`), so §4.3's sequence rule and §8's `count`/`occurs` cover search results with no new rule, the
+  owner's own pairing of search results with repeated captures (CF:75); DRIFT's lean. Note: under the sequence rule
+  `(g: x)` on a repeated label means ALL iterations, so `d & (g: x)` would TEST every result rather than SELECT
+  entries 1 and 3; to give the owner's example, (D) needs `&` on a search result to keep entries (the array
+  reading, §3.2 tool 2), i.e. (D)'s counting with (A)'s per-entry `&`.
+  (b) `d.g` ACROSS ENTRIES. (A) the union set (rev 6's text; loses multiplicity: `count(d.g)` is not the number of
+  results); (B) the projection array, `d.g[i]` = `d[i].g` (keeps order and multiplicity; extensionally equal to A
+  under `& | !`); (C) per entry only, `d.g` an error on a multi-entry array; (D) the repeated label: `(d.g: S)` = every
+  result, `occurs.some((d.g: S))` = some result.
+  (c) THE FILTER ROLE. (a) `~` only produces a value; the test spelling is the condition `(m: contains(r))`, `!~` its
+  complement, and a bare `$m ~ r` in the filter role is an error naming it (§0.1 L16, L51); (b) a search result in the
+  filter role means "non-empty", an emptiness-to-test coercion seen nowhere else. DRIFT's lean (a).
+  (d) THE RECORD ON THE LEFT, `(x, y) := $m ~ P` (design only, out of phase 1): (i) the projection arrays, paired by
+  index; (ii) one indexed entry (`[1]` implied, or an error unless at most one result); (iii) the union per field
+  (rev 6's text); (iv) the first two RESULTS (entries are index-labelled, §3.1; Python's `x, y = re.findall(...)`),
+  which rev 6's rules also admit: the same spelling with two meanings (§0.1 L50). DRIFT's lean: laid against the
+  search pattern's GROUPS only, never entry positions, per result via (D).
+  (e) `some`/`all` over a search result: `x & s`, `some(s)` and `occurs.some(...)` are three spellings of "some
+  result" with two witness rules (O29).
+  Lean (this lane's, after the owner's example): (A)'s two populations with `&` selecting entries (the example's
+  `d & (g: x)`), counting and `occurs` read as (D)'s repeated label (one population for `count`, CF:75), `d.g` as the
+  projection array (b) (B), the filter role (c) (a), the record on the left (d) over groups. Phase 1: the owner's
+  call (§0.2); no §12 case uses search.
+- **O51. Statements that start with `(` or `[`.** (Review r8 P6-13, CENSUS-14.) `(` and `[` after an expression are
+  always a call or an index, and newlines are layout (§5.1), so `t := foo` NEWLINE `[a, b]` parses as `foo[a, b]` and
+  `d := ...` NEWLINE `(x, y) := ...` as a call. The final-array half is live today; the destructuring half is design
+  only. Readings, for the spelling step: (A) a statement never starts with `(` or `[` (a record on the left gets a
+  leading mark; a final array is bound first); (B) a newline is significant before `(` and `[`. Lean: A (no layout
+  rule; one-token look-ahead stays as §2.5 argues).
+- **O52. FAMILIES and the general form behind them.** (Review r8 P6-16, CENSUS-25/26; a unification candidate, not a
+  rev 7 rewrite.) ANY ONE is spelled `|`, `[ , ]`, `some`, `occurs.some`, `X[1|3|5]`; ALL TOGETHER `&`, `( : , : )`,
+  the sequence rule, `occurs.all`; a NAME is introduced by `:=`, `[x = e]`, `(?<x>...)`, a head parameter, a record
+  on the left. General form: one ENTRY LIST whose bracket names the combiner and whose entry marks are fill (`=`) vs
+  narrow (`:`). Unlocks, each with its TRIGGER: (a) `join`'s ordered parts in a call record (`join(year = ..., month =
+  ..., sep = "-")`-shaped), so `[ ]` reads only as any-one; trigger: the variadic record O47 needs, one mechanism for
+  C25, O47 and this; (b) piecewise definitions as narrowed heads (`value_depth(k: 0)`), no new form; trigger: O21
+  decided, or a second recursive library; (c) one meaning of `:` (O48 (A)); trigger: any typed-parameter build;
+  (d) mixed rx/macro arrays and `each(isodate, dates)` without a section (§3.5's mixed-array error goes); trigger: a
+  worked example with a mixed table, or C33's "other sections on need". Lean: record the family; decide each unlock at
+  its trigger (D77).
 
 FAMILIES noted by the review (PLAN; not folded): value mappings (RUL-F1); quantifiers and emptiness checks, now
 incl. `count()` vs `occurs` (RUL-F2); same-text-twice (O34, RUL-F3); name-set selection (RUL-F4); the dot (O31,
