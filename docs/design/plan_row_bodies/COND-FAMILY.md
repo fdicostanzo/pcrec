@@ -801,3 +801,12 @@ item". RECORD: (1) no `!` inside a normal rx (`/!foo/`) in this design; reason =
 or just the `f`). (2) PARKED for a later plan item, to be revisited with a clarified scope; the spelling question is
 NOT closed. (3) SCOPE OF THIS DESIGN: the predicate part itself is the primary goal; additions to the rx language are
 limited to the ones the predicates need (`${}` and `&`). `!` in the predicate language is unaffected.
+**2026-11-15 CLARIFICATION — currying is DEFERRED from phase 1, not dropped (Frank, to session 132; clarifies C34
+above, which named no superseded rule).** His words: "we had a design that suggested a macro with values could be
+curried. however, the manager then suddenly asked without context if we should no longer do that. i'm not sure the
+reason. my answer was to say that we can start out phase 1 without currying and revisit later. i don't know the reason
+it wanted to drop it. i also wanted to reduce the scope of the initial base level predicate build and it seemed
+secondary." RECORD: (1) the DESIGN keeps currying (2026-11-13/14: "Keywords to macros basically curry the rx
+function"); C34 does NOT supersede it. (2) PHASE 1 (the base-level predicate build) is built WITHOUT partial
+application, as a scope reduction: a macro call binds every required parameter; revisit after phase 1. (3) No reason
+for dropping currying from the design was ever put to the owner; none is recorded, and none is assumed.
