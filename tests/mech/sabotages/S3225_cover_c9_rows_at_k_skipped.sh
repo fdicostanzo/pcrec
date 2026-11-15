@@ -6,15 +6,16 @@ SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'
 SAB_DESC='C9 skips the rows at k: the eol-view check runs only on depths the walk passes without stopping, so a non-identity eol view on the row at k is admitted'
 SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the cloud mechrows run owed by lane covs1 (docs/dev/lanes/covs1_report.md).'
-SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'a(?:b|c)(?:$|q(?<=x))'"'"''
-SAB_REACH_EXPECT='REACH-DECLINE'
+SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'a(?:b|c)(?:$|q(?<=x))'"'"' --why'
+SAB_REACH_EXPECT='REACH-DECLINE
+REACH-WHY=[no-eol-view]'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        kn_eol_rows(w);                      /* C9, the rows at k included */
+        if (viewed) { w->stop = COVER_STOP_VIEW; break; }   /* VIEW wins: k */
         if (w->nrow == 0) { w->stop = COVER_STOP_EMPTY; break; }
-        if (viewed) { w->stop = COVER_STOP_VIEW; break; }
         if (kn_rows_accept(w)) { w->stop = COVER_STOP_ACCEPT; break; }'
-SAB_AFTER='        if (w->nrow == 0) { w->stop = COVER_STOP_EMPTY; break; }
-        if (viewed) { w->stop = COVER_STOP_VIEW; break; }
+SAB_AFTER='        if (viewed) { w->stop = COVER_STOP_VIEW; break; }   /* VIEW wins: k */
+        if (w->nrow == 0) { w->stop = COVER_STOP_EMPTY; break; }
         if (kn_rows_accept(w)) { w->stop = COVER_STOP_ACCEPT; break; }
         kn_eol_rows(w);   /* SABOTAGE S3225 */'

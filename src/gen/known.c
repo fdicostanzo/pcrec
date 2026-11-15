@@ -192,8 +192,8 @@ static void kn_walk(Ctx *cx, KnWalk *w, int r0)
     for (;; j++) {
         uint8_t first[32], *set;
         kn_eol_rows(w);                      /* C9, the rows at k included */
+        if (viewed) { w->stop = COVER_STOP_VIEW; break; }   /* VIEW wins: k */
         if (w->nrow == 0) { w->stop = COVER_STOP_EMPTY; break; }
-        if (viewed) { w->stop = COVER_STOP_VIEW; break; }
         if (kn_rows_accept(w)) { w->stop = COVER_STOP_ACCEPT; break; }
         set = kn_set_at(cx, w, j);
         w->nnext = 0;
@@ -472,6 +472,17 @@ static bool cover_key_holds(const Job *job, const PcrecCover *cv)
            cv->key_n == job->adfa.n && cv->key_fin == (int)job->fit.chosen;
 }
 
+/* Whether the compile's `width` fact bounds a match's length: where it does,
+ * a stated stretch is checkable by X0 with `wmax` as its horizon
+ * (cover_cap.md §3.3 R-4), and only there is one listed off a cover (the listing's and the trace's COVERSET
+ * rule, one home: review r9 covs1 CONFORM-4). */
+static bool cover_width_bounded(const Ctx *cx)
+{
+    const PatFacts *pf = &cx->job->pf;
+    return pf->why[PF_WIDTH].status == PF_ST_DERIVED && pf->width.bmin >= 0 &&
+           pf->width.bmax < PCREC_W_UNBOUNDED;
+}
+
 const PcrecCover *pcrec_cover(Ctx *cx)
 {
     Job *job = cx->job;
@@ -520,7 +531,9 @@ const PcrecCover *pcrec_cover(Ctx *cx)
          * compile had not derived it by now */
         const PatFacts *pf = &cx->job->pf;
         bool wder = pf->why[PF_WIDTH].status == PF_ST_DERIVED;
-        bool wfin = wder && pf->width.bmin >= 0 && pf->width.bmax < PCREC_W_UNBOUNDED;
+        bool wfin = cover_width_bounded(cx);
+        /* `!wder` is the trace's own clause: a width not derived yet is `?`,
+           and the stretch is stated for X0 to judge (the listing reads `-`) */
         bool stated = cv->exact_known && (!cv->why || wfin || !wder);
         fprintf(stderr, "COVERSET\t%s\t", cv->why ? cv->why : "cover");
         if (stated) fprintf(stderr, "%u", (unsigned)cv->exact_len);
@@ -651,16 +664,6 @@ const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class
 }
 
 /* ---- the listing's `cover` section ------------------------------------ */
-
-/* Whether the compile's `width` fact bounds a match's length: where it does,
- * a stated stretch is checkable by X0 with `wmax` as its horizon
- * (cover_cap.md §3.3 R-4), and only there is one listed off a cover. */
-static bool cover_width_bounded(const Ctx *cx)
-{
-    const PatFacts *pf = &cx->job->pf;
-    return pf->why[PF_WIDTH].status == PF_ST_DERIVED && pf->width.bmin >= 0 &&
-           pf->width.bmax < PCREC_W_UNBOUNDED;
-}
 
 void pcrec_cover_listing_cells(Ctx *cx, const char *cells[4])
 {
