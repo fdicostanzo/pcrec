@@ -548,7 +548,8 @@ def read_cells(rundir, rec):
 
 def read_record(rundir):
     """the finalized run record: run (dict), jobs {job: (state, cause)}, plan [(key, group, job)], floor, the
-    pinned card and policy rows, and from them `card` ({quantity: card}) and `facts` (plan.card_facts)"""
+    pinned card and policy rows, and from them `card` ({quantity@ver: card}, a key's through plan.card_of) and
+    `facts` (plan.card_facts)"""
     rec, sec = {"run": {}, "jobs": {}, "plan": [], "floor": [], "cards": [], "policy": []}, None
     p = os.path.join(rundir, "run_record.tsv")
     if not os.path.exists(p):
@@ -598,9 +599,15 @@ def compute(rundir):
     R_MAX = r_max(rec)[0]
     card = rec["card"]                         # the PINNED cards (r9fc FIX-1), never plan.CARD
     LENGTHS, _LEN, L, _R, GU = rec["facts"]
-    if any(k.split(".")[1] not in card for k, _g, _j in rec["plan"]):
-        raise InputError("a planned key's quantity has no pinned card (%s)" % sorted({k.split(".")[1] for k, _g, _j in rec["plan"]} - set(card)))
-    rows = [(k, g, j, card[k.split(".")[1]]["est"], plan.base_of(k)) for k, g, j in rec["plan"]]
+    # [lane slotx] THE WINDOW's rows only: the frozen plan holds every job's rows, the record the window's jobs
+    # (record.py WINDOWS); a row of a job outside the window is not this window's (never `never-ran`), and so
+    # are its floor lines
+    win = [(k, g, j) for k, g, j in rec["plan"] if j in rec["jobs"]]
+    try:
+        rows = [(k, g, j, plan.card_of(card, k)["est"], plan.base_of(k)) for k, g, j in win]
+    except SystemExit as e:
+        raise InputError("a planned key names no pinned card: %s" % e)
+    floor = [f for f in floor if f[1] in {k for k, _g, _j in win}]
     c = {}
     for x in cells:
         c[(x["job"], x["arm"], x["length"], x["launch"])] = x
@@ -681,7 +688,7 @@ def compute(rundir):
                 r["why"] = "null: below its paired A/A or signs mixed, at a size above its resolution r %d" % res
         else:
             # §3.5¶2: the card's gate; the unit's is HALF, compared doubled (exact for an odd gate, r9 G7)
-            G = card[key.split(".")[1]]["gate"]
+            G = plan.card_of(card, key)["gate"]
             half = 2 if key == plan.UNIT_KEY else 1
             r["gate"] = r["value"] > 0 and half * r["noise"] * 10**6 <= G * r["value"]
     unit = out.get(plan.UNIT_KEY, {})
@@ -772,11 +779,35 @@ def cell_texts(rundir, rec):
         for ln in open(p):
             if ln.startswith("#") or not ln.strip():
                 continue
-            arm, form, _cls, _inst, fh, tags = ln.rstrip("\n").split("\t")
+            f = ln.rstrip("\n").split("\t")
+            arm, form, _cls, _inst, fh, tags = f[:6]
+            tgt = f[6] if len(f) > 6 else "-"          # [lane slotx] the target the cell TU was compiled in
             if fold.setdefault(form, fh) != fh:
                 raise InputError("form %s's fold hash is %s in one job and %s in %s" % (form, fold[form], fh, j))
             if not arm.endswith("#b") and arm.startswith("kit."):
-                out[arm] = (form, fh, tags)
+                out[arm] = (form, fh, tags, tgt)
+    return out
+
+def draft_split(rec, rows):
+    """[lane slotx] THE WRITER'S SPLIT BY VER: {ver: rows}, each row in its KEY's card's ver (plan.card_of over the
+    record's pinned cards); then each set's rows are held to that set's OWN cards, read here without card_of: a
+    card of the row's quantity at the set's ver that prices the row's form (its deps name it, or it names none). A
+    row in a set whose cards do not price it REFUSES (DRAFT-VER MISMATCH): a ver-6 row never lands in another
+    ver's set under a card of the same quantity"""
+    out = {}
+    for r in rows:
+        try:
+            v = plan.card_of(rec["card"], r[0])["ver"]
+        except SystemExit as e:
+            raise InputError("DRAFT-VER: %s" % e)
+        out.setdefault(v, []).append(r)
+    for v, vr in sorted(out.items()):
+        for r in vr:
+            q = r[0].split(".")
+            if not any(c["ver"] == v and c["quantity"] == q[1] and (plan.card_forms(c) is None or q[2] in plan.card_forms(c))
+                       for c in rec["card"].values()):
+                raise InputError("DRAFT-VER MISMATCH row %s in ver %s's set: no ver-%s card of %s prices form %s"
+                                 % (r[0], v, v, q[1], q[2]))
     return out
 
 def main():
@@ -841,12 +872,12 @@ def write_draft(rundir, path, out, drift, outcome):
         if "absent" in r or r.get("gate") is False or drift.get(r["job"], (0, 0, False))[2]:
             continue
         q = k.split(".")
-        unit = rec["card"][q[1]]["unit"]
-        deps, tags = "-", "-"
+        unit = plan.card_of(rec["card"], k)["unit"]
+        deps, tags, tgt = "-", "-", "-"
         if q[1] not in ("enter", "enter_back"):
             if k not in texts:
                 raise InputError("row %s has no cell text in its job's cell_text.tsv" % k)
-            form, fh, tags = texts[k]
+            form, fh, tags, tgt = texts[k]
             if form != q[2]:
                 raise InputError("row %s's cell text is form %s's" % (k, form))
             deps = "kit:form.%s=%s" % (form, fh)
@@ -859,10 +890,12 @@ def write_draft(rundir, path, out, drift, outcome):
                          "slot %s fused-compare bound r_max %d; %s" % (r["job"], rec_rmax, FUSED_EVIDENCE)])
         else:
             rows.append([k, unit, str(r["value"]), str(r["abs"]), str(r["noise"]), n, "measured", "-", "-", deps,
-                         tags, "slot %s%s" % (r["job"], " sub-resolution r %d" % r["sub"] if r.get("sub") else "")])
+                         tags, "slot %s%s%s" % (r["job"], " sub-resolution r %d" % r["sub"] if r.get("sub") else "",
+                                                " target %s" % tgt if tgt not in ("-", "generic") else "")])
     import record
     allcells = read_cells(rundir, rec)
-    ver_of = lambda key: rec["card"][key.split(".")[1]]["ver"]
+    split = draft_split(rec, rows)
+    ver_of = lambda key: plan.card_of(rec["card"], key)["ver"]
     def mine(v, c):          # a cell belongs to ver v's set: its row's arm (any ver), and a base or the ctl (ver 3's
         a = c["arm"][:-2] if c["arm"].endswith("#b") else c["arm"]   # always; ver v's when one of its rows names it)
         if a.startswith("kit."):
@@ -870,7 +903,7 @@ def write_draft(rundir, path, out, drift, outcome):
         return v == "3" or a == "ctl" or any(plan.base_of(r[0]) == a for r in rows if ver_of(r[0]) == v)
     msgs, rc = [], outcome[1]
     for v in sorted({c["ver"] for c in rec["card"].values()}):
-        vrows = [r for r in rows if ver_of(r[0]) == v]
+        vrows = split.get(v, [])
         if not vrows:
             print("draft: ver %s: no timed row, no set written (its cards stay UNMEASURED)" % v)
             continue
@@ -881,7 +914,9 @@ def write_draft(rundir, path, out, drift, outcome):
                ("isa", rec["run"]["isa"]), ("tier", "scratch"), ("composite", "0"), ("members", ""),
                ("unit_key", plan.UNIT_KEY), ("method", "kit-grid@%s" % v),
                ("run", "%s record:%s" % (rec["run"]["run_id"], rsha)),
-               ("box", rec["run"]["box"]), ("compiler", "gcc %s -O2 -march=x86-64 -mtune=generic" % rec["run"]["gcc"]),
+               ("box", rec["run"]["box"]), ("compiler", "gcc %s -O2 -march=x86-64 -mtune=generic%s" % (rec["run"]["gcc"],
+                    "; a row compiled in a kit target's region names it (source `target T`)"
+                    if any(" target " in r[-1] for r in vrows) else "")),
                ("libc", rec["run"]["libc"]), ("code_commit", rec["run"]["code_commit"]),
                ("counters", "skipped:not-taken"), ("partial", "1" if outcome[0] == "PARTIAL" else "0"),
                ("rows", str(len(vrows))), ("values_digest", "0000000000000000")]
@@ -978,7 +1013,7 @@ def _synth_launches(d, j, arms, fused, launches=None, variant=None, manifest=Tru
     if manifest:
         _synth_manifest(d, j)
 
-def _synth(d, run_id="selftest"):
+def _synth(d, run_id="selftest", window="s2d"):
     """a synthetic finalized run directory: the live plan frozen, every timing job ran, linear cells (a slope
     arm's per-byte cost and a delta arm's per-event cost by its key's hash, so rows differ), no clock;
     [rev1.5 R15-1] each verify job's timed code compiled (_synth_code), [r11-REV15-1] its manifest written and
@@ -991,13 +1026,13 @@ def _synth(d, run_id="selftest"):
     fr = plan.read_frozen(os.path.join(d, "plan.tsv"))
     jobs, _rows, _f, _u = plan.build()
     rec = {name: [] for name, _ in record.SECTIONS}
-    rec["run"] = [["set", record.SET], ["rules", record.RULES["3"]], ["rules.4", record.RULES["4"]], ["run_id", run_id], ["code_commit", "0000000"],
-                  ["j1_verdict", "a"]]
-    rec["jobs"] = [[j, "ran", "-"] for j in record.JOBS]
+    rec["run"] = ([["set", record.SET]] + [[record.rules_key(v), record.RULES[v]] for v in sorted(record.RULES)]
+                  + [["run_id", run_id], ["code_commit", "0000000"], ["j1_verdict", "a"], ["window", window]])
+    rec["jobs"] = [[j, "ran", "-"] for j in record.WINDOWS[window]]
     record.pin(rec, fr)
     record.write(os.path.join(d, "run_record.tsv"), rec)
     for j, arms in jobs.items():
-        if j == "J1" or j not in record.JOBS:       # J5B ([k383 F1]) is planned, not scheduled: no cells
+        if j == "J1" or j not in record.WINDOWS[window]:   # J5B ([k383 F1]) is planned, not scheduled: no cells
             continue
         lines = []
         for a in arms:
@@ -1005,7 +1040,8 @@ def _synth(d, run_id="selftest"):
             for l in range(1, plan.L_LAUNCHES + 1):
                 for x in a.lengths:
                     jit = (l * 7919 + (a.name.endswith("#b")) * 13) % 97
-                    if a.kind == "ctl" or plan._est_parse(plan.CARD.get(a.name.split(".")[1], {"est": "slope 1,2,3"})["est"])[0] == "slope" and not a.name.startswith("base."):
+                    est = plan.card_of(plan.CARD, a.name)["est"] if a.name.startswith("kit.") else "slope 1,2,3"
+                    if a.kind == "ctl" or plan._est_parse(est)[0] == "slope" and not a.name.startswith("base."):
                         ns = x * (1000 + h % 500) + 5000 + jit
                     else:
                         ns = 9000000 + (a.events or 0) * (2000 + h % 900) + jit
@@ -1130,7 +1166,7 @@ def selftest(scratch):
         unit_twin_skew(d)
         for c in plan.CARD.values():
             c["gate"] = 300
-        plan.CARD["find_byte"]["est"] = "slope 1,2,3"
+        plan.CARD["find_byte@3"]["est"] = "slope 1,2,3"
     def set_delta(d, key, ds, twin=3):
         """[rev1.4 R14-2] KEY's (and its twin's) cells in J4 = its base's cell + ds[l-1] x E per launch l (the twin
         `twin` x E above, or twin[l-1] x E for a list): a per-event cost of ds[l-1] in the cells' own units"""
@@ -1325,6 +1361,32 @@ def selftest(scratch):
         ok = got == want.split(":")[0] and (":" not in want or want.split(":", 1)[1] in why)
         bad += not ok
         print("selftest\t%s\t%s\t%s (%s)" % (name, "ok" if ok else "WRONG", got, why[:150]))
+    # [lane slotx] THE mfcard WINDOW (record.py WINDOWS): kit-grid@6's rows priced under their own cards, the frozen
+    # plan's other jobs' rows not this window's, and the writer's split by ver (draft_split)
+    K6 = "kit.find_hit.mfind-w32.periodic.one.256.50"
+    def mf_priced(d):
+        out, _dr, _ub, outcome, _w, _p = compute(d)
+        return (K6 in out and "value" in out[K6] and outcome[0] != "REFUSED"
+                and not any(k.startswith(("kit.verify_cmp.", "kit.enter")) or out[k].get("job") == "J3" for k in out))
+    def mf_split(d):
+        out = compute(d)[0]
+        sp = draft_split(read_record(d), [[k] for k in sorted(out) if "absent" not in out[k]])
+        six = [r[0] for r in sp.get("6", [])]
+        return (K6 in six and all(k.split(".")[2] in plan.FORMS6 for k in six)
+                and plan.UNIT_KEY in [r[0] for r in sp.get("3", [])] and "4" not in sp)
+    MF_CASES = (
+        ("[slotx] window mfcard: kit-grid@6 rows priced, no J3/J4/J5 row this window's", mf_priced),
+        ("[slotx] the draft split: every ver-6 row in ver 6's set, the unit in ver 3's, none in ver 4's", mf_split),
+    )
+    for name, pred in MF_CASES:
+        d = _synth(os.path.join(scratch, "est_selftest_mf"), window="mfcard")
+        try:
+            ok = bool(pred(d))
+        except (InputError, KeyError) as e:
+            ok = False
+            print("selftest\t%s\t(%s)" % (name, str(e)[:200]))
+        bad += not ok
+        print("selftest\t%s\t%s" % (name, "ok" if ok else "WRONG"))
     for name, got, want in _reading_cases(scratch):          # [r11-REV15-2..4]
         ok = got == want
         bad += not ok
@@ -1339,7 +1401,7 @@ def selftest(scratch):
         ok = got == want.split(":")[0] and (":" not in want or want.split(":", 1)[1] in why)
         bad += not ok
         print("selftest\t[r11 gate] %s\t%s\t%s (%s)" % (name, "ok" if ok else "WRONG", got, why[:150]))
-    n = len(cases) + len(READING_CASES) + len(GATE_CASES)
+    n = len(cases) + len(MF_CASES) + len(READING_CASES) + len(GATE_CASES)
     print("== est SELFTEST %s: %d cases, %d wrong" % ("ok" if not bad else "FAILED", n, bad))
     return 1 if bad else 0
 

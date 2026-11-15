@@ -1348,7 +1348,9 @@ static void gate_cases(void)
  *       places them)
  *   arm_fixtures --frame ID [CLS]  the instance's header lines, its
  *       target's region open and close, form-feed separated (the host's
- *       text around a cell, as pcrec places it; lane slotx)
+ *       text around a cell, as pcrec places it; lane slotx), then its
+ *       target's facts line
+ *   arm_fixtures --target-facts TOKEN  `target<TAB>name<TAB>features`
  *   arm_fixtures --hash-text FILE|-  mf_form_hash_text of a text (the slot's
  *       cell-text check folds a cell TU's site span with it)
  *   arm_fixtures --facts ID [CLS]  `key<TAB>value` lines the slot harness
@@ -1929,8 +1931,23 @@ static int site_parts_mode(const char *id, const char *cls)
  * `#include` lines of its rendered art's header facts (mf_include_c of each
  * mf_form_includes bit), a form-feed line, its target's region open, a
  * form-feed line, the region close (mf_target_c_of; both "" for a target
- * with nothing to enable). The slot harness writes the lines at file scope
- * ahead of the region (span_cards/slot/link.py). */
+ * with nothing to enable), a form-feed line, the target's facts line
+ * (--target-facts). The slot harness writes the lines at file scope ahead
+ * of the region (span_cards/slot/link.py). */
+static void target_facts(const mf_target *t)
+{
+    printf("target\t%s\t%s\n", t->name, *t->features ? t->features : "-");
+}
+/* --target-facts TOKEN: `target<TAB>name<TAB>features` (`-` none), the kit
+ * table's row for a token (the slot harness's ISA check reads the features
+ * its compile floor, -march=x86-64, supplies) */
+static int target_facts_mode(const char *tok)
+{
+    const mf_target *t = mf_target_parse(tok, strlen(tok), NULL, 0);
+    if (!t) { fprintf(stderr, "arm_fixtures: no target %s\n", tok); return 1; }
+    target_facts(t);
+    return 0;
+}
 static int frame_mode(const char *id, const char *cls)
 {
     const mf_form_entry *e = mf_form_entry_of(id, cls);
@@ -1947,7 +1964,8 @@ static int frame_mode(const char *id, const char *cls)
         fputs(line, stdout);
     }
     const mf_target_c *c = mf_target_c_of(t);
-    printf("\f\n%s\f\n%s", c->region_open, c->region_close);
+    printf("\f\n%s\f\n%s\f\n", c->region_open, c->region_close);
+    target_facts(t);
     return 0;
 }
 
@@ -2856,7 +2874,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
                           "--fd-site SITE [--fd-set FILE] [--fd-an DIGEST] | --finder-rows | --hash | "
-                          "--site-text ID [CLS] | --site-parts ID [CLS] | --frame ID [CLS] | --hash-text FILE|- | --facts ID [CLS] | "
+                          "--site-text ID [CLS] | --site-parts ID [CLS] | --frame ID [CLS] | --target-facts TOKEN | --hash-text FILE|- | --facts ID [CLS] | "
                           "--purity | --purity-control\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
         const char *set = NULL, *opts = NULL, *digest = NULL;
@@ -2874,6 +2892,7 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--site-parts") && argc > 2) return site_parts_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--hash-text") && argc > 2) return hash_text_mode(argv[2]);
     if (!strcmp(argv[1], "--frame") && argc > 2) return frame_mode(argv[2], argc > 3 ? argv[3] : NULL);
+    if (!strcmp(argv[1], "--target-facts") && argc > 2) return target_facts_mode(argv[2]);
     if (!strcmp(argv[1], "--facts") && argc > 2) return facts_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--purity")) return purity_mode();
     if (!strcmp(argv[1], "--purity-control")) return purity_control_mode();

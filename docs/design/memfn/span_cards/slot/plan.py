@@ -30,8 +30,9 @@ VCLS = os.path.join(HERE, "vcls.out")
 ENTER_FIX = os.path.join(HERE, "enter", "fixtures.tsv")
 CARDS = os.path.join(TREE, "memfn", "data", "cards", "kit-grid.tsv")
 POLICY = os.path.join(TREE, "memfn", "data", "policy.tsv")
-METHOD_VERS = ("3", "4")               # the vers this producer plans, each card read at ITS OWN ver: kit-grid@3
-                                       # (span_cards.md §2.1) and kit-grid@4 (K38-3's step-back cell, span_runs_sheet.md §5.2)
+METHOD_VERS = ("3", "4", "6")          # the vers this producer plans, each card read at ITS OWN ver: kit-grid@3
+                                       # (span_cards.md §2.1), kit-grid@4 (K38-3's step-back cell, span_runs_sheet.md §5.2)
+                                       # and kit-grid@6 (lane mfind's one-member finder; lane slotx: J6B, J6H)
 BACK_STEPS = (0, 3, 8, 16, 32)         # kit-grid@4's `back` dim: the step-back t (bytes) on the `enter` quantity
 UNIT_KEY = "kit.find_byte.walk"        # the set's unit row (§2.2): the walk's find_byte
 
@@ -62,21 +63,48 @@ def parse_policy(rows):
 
 
 def parse_cards(rows, pol):
-    """{quantity: card} for the card rows at the planned vers (kit-grid@3 and @4); `est` the estimator (`lengths`), `gate` the gate_e6 the card
-    states or, for `-`, the policy's gate_default_e6. One parser for the live tables (the dry run) and the run
-    record's pinned copies (est.py, [rev1.3 r9fc-FIX-1])"""
+    """{`quantity@ver`: card} for the card rows at the planned vers (kit-grid@3, @4, @6); `est` the estimator
+    (`lengths`), `gate` the gate_e6 the card states or, for `-`, the policy's gate_default_e6. One parser for the
+    live tables (the dry run) and the run record's pinned copies (est.py, [rev1.3 r9fc-FIX-1]). A quantity may
+    have cards at two planned vers (find_byte, find_hit at 3 and 6): a KEY names its card through card_of"""
     cards = {}
     for f in card_rows(rows):
         c = dict(zip(CARD_COLS, f))
         c["gate"] = pol["gate_default_e6"] if c["gate_e6"] == "-" else int(c["gate_e6"])
         c["est"] = c["lengths"]
-        if c["quantity"] in cards:
-            raise SystemExit("plan: quantity %s has cards at two planned vers (%s, %s): its rows would key one card"
-                             % (c["quantity"], cards[c["quantity"]]["ver"], c["ver"]))
-        cards[c["quantity"]] = c
+        cid = "%s@%s" % (c["quantity"], c["ver"])
+        if cid in cards:
+            raise SystemExit("plan: card %s is listed twice" % cid)
+        cards[cid] = c
     if not cards:
         raise SystemExit("plan: the card rows hold no ver-%s card" % "/".join(METHOD_VERS))
     return cards
+
+
+def card_forms(c):
+    """the form tokens a card prices: its `kit:form.<id>` deps (a card naming one has `form` as its first dim,
+    finder_check.py check C), None for a card naming none (it prices every key of its quantity)"""
+    fs = {d[len("kit:form."):] for d in c["deps"].split(";") if d.startswith("kit:form.")}
+    return fs or None
+
+
+def card_of(cards, name):
+    """THE CARD A KEY NAMES (lane slotx): its quantity's card at a planned ver whose deps name the key's form token
+    (its first token, the `form` dim), or the quantity's one card where that card names no form. Exactly one, else
+    REFUSE: a key no planned card prices (a ver-6 form with ver 6 unplanned) is never priced by another ver's card
+    of the same quantity, whose estimator, launches and gate may well be equal (find_byte@3 and @6)"""
+    n = name[:-2] if name.endswith("#b") else name
+    q = n.split(".")
+    if len(q) < 2 or q[0] != "kit":
+        raise SystemExit("plan: %s is no row key" % name)
+    got = [c for c in cards.values() if c["quantity"] == q[1]
+           and (card_forms(c) is None or (len(q) > 2 and q[2] in card_forms(c)))]
+    if len(got) != 1:
+        raise SystemExit("plan: key %s names %s planned ver-%s card%s of quantity %s (%s)"
+                         % (name, len(got) or "no", "/".join(METHOD_VERS), "" if len(got) == 1 else "s", q[1],
+                            ",".join(sorted("%s@%s" % (c["quantity"], c["ver"]) for c in got)) or "none prices form %s"
+                            % (q[2] if len(q) > 2 else "-")))
+    return got[0]
 
 
 CARD = parse_cards(table_rows(CARDS), parse_policy(table_rows(POLICY)))
@@ -105,12 +133,25 @@ def card_facts(cards):
     L = _one(cards, "launches")
     if L != 7:                         # measures.md §3.4¶2a: the estimator's constants are seven launches'
         raise SystemExit("plan: the planned cards state %d launches; the spec's estimator is written for 7" % L)
-    return (_est_parse(cards["find_byte"]["est"])[1], next(iter(delta))[0], L, _one(cards, "rounds"),
-            cards["find_byte"]["gate"])
+    unit = card_of(cards, UNIT_KEY)
+    return (_est_parse(unit["est"])[1], next(iter(delta))[0], L, _one(cards, "rounds"), unit["gate"])
 
 
 LENGTHS, LEN, L_LAUNCHES, R_ROUNDS, GATE_E6 = card_facts(CARD)
 GAPS = (256, 1024)
+# kit-grid@6's find_hit sweep (J6H; lane slotx): THE HIT-GAP SWEEP, per-byte cost vs gap (slope over 1/gap the
+# per-hit cost, intercept the streaming rate) at each REJECT rate (the percent of planted hits the site's check
+# rejects: 0 every hit returns to the caller, 100 every hit continues through the mask). The site's run is 2
+# bytes, so a gap is >= 2 (gap 1 cannot plant a non-overlapping run: listed UNREACHED, never forced); REJECTS_ALL
+# at every gap, REJECTS_SOME at GAPS6_SOME (the mixed rate: the stream's branch on the check unpredictable).
+# Sweep points, not tuning constants: each is a measured cell
+GAPS6 = (2, 4, 8, 16, 32, 64, 256, 1024, 65536)
+REJECTS_ALL = (0, 100)
+REJECTS_SOME, GAPS6_SOME = (50,), (4, 32, 256)
+FORMS6 = ("mfind-swar", "mfind-w16", "mfind-w32", "fn-memchr")   # kit-grid@6's deps; mfind-w64 OWED (UNPLANNED6)
+UNPLANNED6 = ("find_byte.mfind-w64, find_hit.mfind-w64: OWED, the AVX-512BW measurement-only arm (slot harness "
+              "piece 2, lane slotx's report): no entry-table text, so KEY-ARM refuses it; never priced by w32's row",
+              "find_hit@6 gap 1: the site's run is 2 bytes; a hit every byte plants no non-overlapping run")
 LANDINGS = ("periodic", "random")
 PASSES = ("p0", "p50")
 ENTRIES = ("NONE", "PARKED", "RESEED")
@@ -213,6 +254,7 @@ DIM_FIELD = (
     ("kind",    lambda a: a.fixture[0] if a.fixture else None),
     ("entry",   lambda a: a.fixture[1] if a.fixture else None),
     ("back",    lambda a: None if a.back is None else str(a.back)),    # kit-grid@4: the step-back t
+    ("reject",  lambda a: None if a.reject is None else str(a.reject)),  # kit-grid@6: the check's reject percent
 )
 
 
@@ -222,11 +264,11 @@ def check_card_dims(cards=None):
     refuses (so the dry run does, before any render). NEVER the whole card table: ver 1's cards carry dims (shape,
     vs, subject, lenclass) with no line here and must not refuse"""
     field = {d for d, _f in DIM_FIELD}
-    for q, c in sorted((cards or CARD).items()):
+    for _cid, c in sorted((cards or CARD).items()):
         for dim in c["dims"].split(";"):
             if dim not in field:
                 raise SystemExit("plan: card %s@%s dim %s has no DIM_FIELD line (no Arm field carries it)"
-                                 % (q, c["ver"], dim))
+                                 % (c["quantity"], c["ver"], dim))
 
 
 def key_dims(name):
@@ -236,9 +278,7 @@ def key_dims(name):
     q = n.split(".")
     if q[0] != "kit":
         return None
-    if q[1] not in CARD:
-        raise SystemExit("plan: key %s names quantity %s, which has no ver-%s card" % (name, q[1], "/".join(METHOD_VERS)))
-    dims = CARD[q[1]]["dims"].split(";")
+    dims = card_of(CARD, n)["dims"].split(";")
     if len(q) - 2 != len(dims):
         raise SystemExit("plan: key %s has %d tokens, its card's dims %s are %d" % (name, len(q) - 2, dims, len(dims)))
     return dict(zip(dims, q[2:]))
@@ -288,30 +328,34 @@ class Arm:
     """One timed arm: its name (a row key, KEY#b, base.<name> or ctl), the job group, its shape and lengths.
     `of` names a null base's paired verify instance (form, cls): its run/mask/members are the base's."""
     def __init__(self, name, group, kind, form, cls=None, lengths=(LEN,), landing=None, split=None, gap=None,
-                 pas=None, base=None, events=None, fixture=None, of=None, back=None):
+                 pas=None, base=None, events=None, fixture=None, of=None, back=None, reject=None):
         self.name, self.group, self.kind, self.form, self.cls = name, group, kind, form, cls
         self.lengths, self.landing, self.split, self.gap = lengths, landing, split, gap
         self.pas, self.base, self.events, self.fixture, self.of = pas, base, events, fixture, of
         self.back = back               # kit-grid@4: the step-back t (bytes) of an enter_back arm, else None
+        self.reject = reject           # kit-grid@6: the percent of planted hits the site's check rejects, else None
 
     def twin(self):
         return Arm(self.name + "#b", self.group, self.kind, self.form, self.cls, self.lengths, self.landing,
-                   self.split, self.gap, self.pas, self.base, self.events, self.fixture, self.of, self.back)
+                   self.split, self.gap, self.pas, self.base, self.events, self.fixture, self.of, self.back,
+                   self.reject)
 
 
 def find_hit_rows(form, splits):
     return [(form, ld, sp, g) for g in GAPS for ld in LANDINGS for sp in splits]
 
 
-# THE FLOOR (§3.5 "The run record", §1 Goal 2), one row per quantity, first match: (quantity, which of its keys
-# join, the clause). A planned row whose quantity has no line REFUSES the plan (never a silent no-clause).
+# THE FLOOR (§3.5 "The run record", §1 Goal 2), first match on (quantity, the key's card ver; `*` any): which of
+# its keys join, the clause. A planned row whose quantity has no line REFUSES the plan (never a silent no-clause).
 FLOOR = (
-    ("find_byte",  lambda q: True,              lambda q: "byte.%s" % q[2]),
-    ("find_hit",   lambda q: q[3] == "random",  lambda q: "hit.%s" % q[2]),
-    ("verify_cmp", lambda q: True,              lambda q: "verify.%s.%s" % (q[2], q[3])),
-    ("enter",      lambda q: q[3] == "NONE",    lambda q: "enter.%s" % q[2]),
+    ("find_byte",  "*", lambda q: True,              lambda q: "byte.%s" % q[2]),
+    # kit-grid@6 (lane slotx): the sweep is periodic; a form's clause holds if any of its reject-0 rows is priced
+    ("find_hit",   "6", lambda q: q[6] == "0",       lambda q: "hit6.%s" % q[2]),
+    ("find_hit",   "*", lambda q: q[3] == "random",  lambda q: "hit.%s" % q[2]),
+    ("verify_cmp", "*", lambda q: True,              lambda q: "verify.%s.%s" % (q[2], q[3])),
+    ("enter",      "*", lambda q: q[3] == "NONE",    lambda q: "enter.%s" % q[2]),
     # EXEMPT: no decision reads the step-back cell in R-38 (span_runs_sheet.md §5.2); it joins no floor clause
-    ("enter_back", lambda q: False,             lambda q: "enter_back.%s" % q[2]),
+    ("enter_back", "*", lambda q: False,             lambda q: "enter_back.%s" % q[2]),
 )
 
 
@@ -325,8 +369,7 @@ def build():
         jobs.setdefault(job, []).append(arm)
 
     def row(job, arm, base=None, twin=True):
-        q = arm.name.split(".")
-        rows.append((arm.name, arm.group, job, CARD[q[1]]["est"], base))
+        rows.append((arm.name, arm.group, job, card_of(CARD, arm.name)["est"], base))
         add(job, arm)
         if twin:
             add(job, arm.twin())
@@ -389,6 +432,21 @@ def build():
                 key = "kit.enter_back.%d.%s.%d" % (k, e, t)
                 row("J5B", Arm(key, "J5B", "enter", "artifact", fixture=fx[(k, e)], base=base_of(key),
                               events=LEN // ENTER_GAP, back=t), base_of(key))
+    # J6B, J6H (lane slotx): kit-grid@6, the one-member finder's forms on ONE offset-skip site (FORMS6: SIMD-off
+    # mfind-swar, SIMD-on mfind-w16/-w32 each compiled inside its target's region, the same site's libc stream
+    # fn-memchr). J6B: find_byte@6, the miss-only slope. J6H: find_hit@6, the sweep (GAPS6 x REJECTS), landing
+    # periodic, split one (one member), its bases base.<form> (miss-only) on J6H.base. A window runs them with
+    # J2 (the unit) and J2p (pair, the ver-3 anchor): record.py WINDOWS `mfcard`
+    for f in FORMS6:
+        row("J6B", Arm("kit.find_byte.%s" % f, "J6B.byte", "find", f, lengths=LENGTHS))
+        add("J6H", Arm("base.%s" % f, "J6H.base", "find", f, events=0))
+    for g in GAPS6:
+        for r in REJECTS_ALL + (REJECTS_SOME if g in GAPS6_SOME else ()):
+            for f in FORMS6:
+                k = "kit.find_hit.%s.periodic.one.%d.%d" % (f, g, r)
+                row("J6H", Arm(k, "J6H.hit.r%d.%d" % (r, g), "find", f, landing="periodic", split="one", gap=g,
+                               base=base_of(k), events=LEN // g, reject=r), base_of(k))
+    unreached.extend(UNPLANNED6)
     # J1 (§3.6, art.py, j1/): per cell (pattern, subject, regime) one group, a whole-artifact arm per PAIR width
     # and the twin 128#b; no rows (J1's cells go to the run record, never the set)
     for pid in j1_pattern_ids():
@@ -405,12 +463,13 @@ def build():
     for j in jobs:
         jobs[j].insert(0, Arm("ctl", "%s.ctl" % j, "ctl", "walk", lengths=LENGTHS))
     # the floor, by the FLOOR table
-    rule = {q: (test, clause) for q, test, clause in FLOOR}
     for key, _g, job, _e, _b in rows:
         q = key.split(".")
-        if q[1] not in rule:
+        v = card_of(CARD, key)["ver"]
+        hit = next(((test, clause) for fq, fv, test, clause in FLOOR if fq == q[1] and fv in ("*", v)), None)
+        if hit is None:
             raise SystemExit("plan: row %s's quantity %s has no FLOOR line" % (key, q[1]))
-        test, clause = rule[q[1]]
+        test, clause = hit
         if test(q):
             floor.append((clause(q), key, "unless-j1-b" if job == "J2p" else "always"))
     return jobs, rows, floor, unreached

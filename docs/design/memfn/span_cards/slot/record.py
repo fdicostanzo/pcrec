@@ -36,9 +36,14 @@ SECTIONS = [("run", ["key", "value"]), ("jobs", ["job", "state", "cause"]), ("pl
             ("j1_cells", ["cell", "pattern", "subject", "regime", "width", "launch", "ns_e6"]),
             ("quiet", ["job", "check", "load1", "corunners"])]
 JOBS = ("J1", "J2", "J2p", "J3", "J4", "J5")
+# [lane slotx] THE WINDOWS: each window's job set, one row per window. finalize holds STATES to exactly one of them
+# (recorded as `window`), and est.py prices only the rows of the window's jobs (the frozen plan holds every job's
+# rows; a row of a job outside the window is not this window's, never `never-ran`). `mfcard`: kit-grid@6's card
+# (J6B, J6H) with J2 (the unit and libc's byte row) and J2p (pair, the ver-3 anchor)
+WINDOWS = {"s2d": JOBS, "mfcard": ("J2", "J2p", "J6B", "J6H")}
 # PER VER ([r2s1 RK383-3]): the set a ver's rows are written to and the owner of the rules that ver is scored by
 # (measures.md §3.5¶8a: span_cards). Ver 3's keys stay `set` / `rules`; any other ver's are `rules.<ver>` (rules_key)
-SETS = {"3": "zen4-grid3@1", "4": "zen4-grid4@1"}
+SETS = {"3": "zen4-grid3@1", "4": "zen4-grid4@1", "6": "zen4-grid6@1"}
 RULES = {v: "kit-grid@" + v for v in plan.METHOD_VERS}
 SET = SETS["3"]
 assert set(SETS) == set(RULES)
@@ -125,11 +130,15 @@ def box_facts():
     isa = " ".join([lvl] + [f.replace("sse4_2", "sse4.2") for f in ("avx512f", "avx2", "sse4_2", "popcnt", "bmi2")
                             if f in fl])
     lib, ver = platform.libc_ver()
+    # [lane slotx] glibc's ifunc picks memchr's variant per PROCESS from GLIBC_TUNABLES: part of the libc fact, so
+    # one record never mixes two libc arms (window() refuses a second value)
+    tun = os.environ.get("GLIBC_TUNABLES")
     r = subprocess.run(["gcc", "-dumpfullversion"], capture_output=True, text=True)
     if r.returncode or not r.stdout.strip():
         refuse("gcc -dumpfullversion: rc %d" % r.returncode)
     return (("box", "%s, CPU %s" % (cpu.get("model name", "?"), plan.TIMING_CPU)), ("isa", isa),
-            ("libc", "%s %s" % (lib, ver) if lib else "-"), ("gcc", r.stdout.strip()))
+            ("libc", ("%s %s" % (lib, ver) if lib else "-") + (" GLIBC_TUNABLES=%s" % tun if tun else "")),
+            ("gcc", r.stdout.strip()))
 
 
 def pin(rec, fr):
@@ -204,11 +213,16 @@ def main():
             if ln.strip() and not ln.startswith("#"):
                 f = ln.rstrip("\n").split("\t")
                 st[f[0]] = f[1]
-        if sorted(st) != sorted(JOBS):
-            refuse("STATES names %s, the window's jobs are %s" % (sorted(st), sorted(JOBS)))
+        win = next((w for w, js in sorted(WINDOWS.items()) if sorted(st) == sorted(js)), None)
+        if win is None:
+            refuse("STATES names %s, no window's jobs (%s)" % (sorted(st), "; ".join(
+                "%s %s" % (w, ",".join(js)) for w, js in sorted(WINDOWS.items()))))
+        if getrun(rec, "window") not in (None, win):
+            refuse("the record names window %s, STATES window %s" % (getrun(rec, "window"), win))
+        setrun(rec, "window", win)
         v = getrun(rec, "j1_verdict")
         jobs = []
-        for j in JOBS:
+        for j in WINDOWS[win]:
             hit = next((c for s, test, c in CAUSE if s == st[j] and test(j, v)), None)
             if not hit:
                 refuse("job %s's state %r is in no CAUSE line" % (j, st[j]))
