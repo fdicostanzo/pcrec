@@ -1,0 +1,50 @@
+# d197_rule.tsv — D197's DECISION RULE for the mfcard window, DECLARED BEFORE ANY NUMBER EXISTS (review 2026-11-15 r5
+# memfn-mfindcomb FIDELITY-4, as ruled; lane mcfixa). D197: the fused inline one-member finder is an unpicked
+# measuring instrument; the timing is ONE-SIDED: a fused LOSS to libc memchr settles span_pick row 1 against the
+# finder, a fused WIN triggers building the ruled split shape under its own owner go (then a re-measure).
+# Read by d197_rule.py (`rule RUNDIR AVX2RUNDIR`, `drill`). Every table is FIRST MATCH, top to bottom; the `when`
+# words are the named predicates d197_rule.py defines (WHEN, one line each), nothing else.
+# Units: est.py's, a find_hit@6 row's x_l = its per-HIT cost (cell minus its own miss-only base, over the planted
+# hits E) in ppm of the window's unit W, per launch l (7 launches).
+#   gain_l  = x_l(libc) - x_l(fused), the SAME job, launch and cell (positive: the fused form is cheaper per hit)
+#   gain    = med over the 7 launches of gain_l
+#   floor   = aa(libc) + aa(fused), each row's paired A/A (est.py's `aa`: med_l |x_l(twin) - x_l(arm)|)
+#   trimmed = the 7 gain_l less the one farthest from their median (est.py's trim)
+# NOTE (EMITTED-2): a mfind-swar (8-byte SWAR) row against libc measures SEARCH WIDTH, not fusion; it is reported by
+# est.py as any row and never decides. NOTE (EMITTED-1): the timing sees one site; the emitted size (the lever
+# text 2.9x-6x fn-memchr's body) is reported beside it, never folded into the verdict.
+#section deciding
+#key	value
+quantity	find_hit
+ver	6
+landing	periodic
+split	one
+gaps	2,4,8,16,32,64,256,1024,65536
+rejects	0,100
+libc_form	fn-memchr
+#section fused
+#box_level	form
+x86-64-v4	mfind-w32
+x86-64-v3	mfind-w32
+x86-64-v2	mfind-w16
+x86-64	mfind-w16
+#section cell
+#result	when
+unresolved	either-row-unpriced
+win	gain-beyond-floor-and-every-trimmed-launch-positive
+loss	gain-below-minus-floor
+tie	always
+#section arm
+#result	when
+no-verdict	run-refused
+no-verdict	memchr-variant-not-the-arms
+LOSS	any-cell-loss
+WIN	wins-over-half-of-deciding-cells
+LOSS	always
+#section verdict
+#result	when
+NO-VERDICT	shipped-arm-no-verdict
+LOSS	shipped-arm-loss
+NO-VERDICT	avx2-arm-no-verdict
+LOSS	avx2-arm-not-win
+WIN	always

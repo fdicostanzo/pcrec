@@ -25,7 +25,7 @@
 # (the transcript's `quiet` lines: job, check, load1 and the top co-runners `pid:comm:%cpu`), copied at finalize;
 # [rev1.4 R14-3, R14-4] finalize also writes est.py's two NOTE lines (`run` keys note_box_state, note_bimodal).
 # Exit 2 on a refused input.
-import hashlib, os, platform, re, subprocess, sys
+import hashlib, os, platform, re, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -115,6 +115,39 @@ def quiet_rows(tp):
     return rows
 
 
+MEMCHR_PROBE = r"""#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stdio.h>
+int main(void) { const unsigned char *p = dlsym(RTLD_DEFAULT, "memchr"); if (!p) return 1; fwrite(p, 1, 128, stdout); return 0; }
+"""
+
+def memchr_variant():
+    """[review 2026-11-15 r5 FIDELITY-4] THE MEMCHR VARIANT glibc's ifunc binds in THIS process (the timing job's own
+    environment, GLIBC_TUNABLES included): a probe resolves memchr (dlsym returns the ifunc's pick) and its first
+    vector instruction's ENCODING names the class: `evex` (AVX-512VL code), `avx2` (VEX), `sse2` (legacy). The
+    tunable alone is not the fact: on glibc 2.43 `hwcaps=-AVX512F` still binds the EVEX variant (`-AVX512VL` binds
+    the AVX2 one), measured 2026-11-15 by lane mcfixa"""
+    import tempfile
+    from link import encoding
+    d = tempfile.mkdtemp(prefix="memchr.", dir=os.environ.get("PCREC_TMPDIR") or os.environ.get("TMPDIR"))
+    try:
+        open(os.path.join(d, "p.c"), "w").write(MEMCHR_PROBE)
+        r = subprocess.run(["gcc", "-O1", "-o", os.path.join(d, "p"), os.path.join(d, "p.c"), "-ldl"],
+                           capture_output=True, text=True)
+        b = subprocess.run([os.path.join(d, "p")], capture_output=True) if not r.returncode else None
+        if b is None or b.returncode:
+            refuse("the memchr probe did not run (%s)" % ((r.stderr or "rc %s" % (b and b.returncode)).strip()[:120]))
+        open(os.path.join(d, "b"), "wb").write(b.stdout)
+        dis = subprocess.run(["objdump", "-D", "-b", "binary", "-mi386:x86-64", "--insn-width=16", os.path.join(d, "b")],
+                             capture_output=True, text=True).stdout
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+    for ln in dis.splitlines():
+        m = re.match(r"\s+[0-9a-f]+:\t([0-9a-f ]+?)\s*\t(\S+)\s*(.*)$", ln)
+        if m and re.search(r"%[xyz]mm", m.group(3)):
+            return {"evex": "evex", "vex": "avx2", "legacy": "sse2"}[encoding([int(x, 16) for x in m.group(1).split()])]
+    refuse("the memchr probe's first 128 bytes hold no vector instruction: no variant named")
+
 def box_facts():
     """the box, its ISA features (cpuid's flags the kit's arms and gcc's levels read), libc and gcc"""
     cpu = {}
@@ -137,7 +170,8 @@ def box_facts():
     if r.returncode or not r.stdout.strip():
         refuse("gcc -dumpfullversion: rc %d" % r.returncode)
     return (("box", "%s, CPU %s" % (cpu.get("model name", "?"), plan.TIMING_CPU)), ("isa", isa),
-            ("libc", ("%s %s" % (lib, ver) if lib else "-") + (" GLIBC_TUNABLES=%s" % tun if tun else "")),
+            ("libc", ("%s %s" % (lib, ver) if lib else "-") + " memchr=%s" % memchr_variant()
+                     + (" GLIBC_TUNABLES=%s" % tun if tun else "")),
             ("gcc", r.stdout.strip()))
 
 
