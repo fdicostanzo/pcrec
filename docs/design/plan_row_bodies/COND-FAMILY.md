@@ -750,3 +750,8 @@ RULING (Frank 2026-11-15: "Agree with mapping"): THE SUBJECT IS NEVER AN ARGUMEN
 filter over subjects uses an operator SECTION `(& f)` (`each((& isodate), dates)`; sections compose: `(& isodate &
 (year: 2024))`); mapping a macro over values passes the macro (`each(triple, ...)`, entries are parameters). No lambda
 until an example needs one (D77). C20 and C30 RESOLVED.
+RULINGS on rev 4 (Frank 2026-11-15: "1. start with & and then we'll see. 2. start no, 3. agree"). C33: sections START
+with `&` only (`(& f)`, subject on the left; `(& !B)` covered); other operators "then we'll see" (on need). C34: START
+with NO partial application: a macro call binds every required parameter or is an error naming the missing one;
+sections are the one way to leave a hole (revisit on need). C35: an explicitly written `(?m)` keeps PCRE meaning inside
+a value (`^`/`$` also at line breaks within it); without it `^`/`$` are the value's ends; never reads outside the value.
