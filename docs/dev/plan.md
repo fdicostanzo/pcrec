@@ -286,6 +286,16 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-13 manager (finding of lane s2tri on the S2 landing; test-island N=300/340, RETRY)
   status (2026-11-13): filed, unscheduled; speed cost only, under the size cap (answers unchanged); measured instance: the island-free artifact WITH the handoff is 412,797 B and fits, yet the handoff is dropped
   next: when scheduled: census the fit_rungs[] firings since S2 (which patterns lose a handoff they could keep); decide the order or a re-add step after drop-islands; measure
+- [FLOORS-REMEASURE] STATE:not-started — re-measure the run-verify-wide floors and pin the corpus-only floors from a measure
+  filed: 2026-11-15 manager (review 2026-11-15-r3-fixposts2 CHECKS-4, PLAN half; FLOORS-2 of 2026-11-15-r1-posts2 rides with it)
+  status (2026-11-15): filed, unscheduled; the corpus-only floors (FLOORS-3) bound exactly as loosely as before (old 15 == new 11 on the corpus); the run-verify-wide floors (58/117/99/181) were measured before rule (1) went ON
+  next: when a box job is cheap: `memfn_arm.py --measure` with the cloud suite already owed on 65551ae98; pin the corpus-only floors from the recorded counts (12/13, pad 10/12) if the corpus has not moved, else from the measure; re-check the run-verify-wide floors for movers rule (1) added
+  refs: docs/dev/reviews/2026-11-15-r3-fixposts2.md (CHECKS-4); docs/dev/reviews/2026-11-15-r1-posts2.md (FLOORS-2, FLOORS-4); [RULE1-ROUTE]
+- [RULE1-ROUTE] STATE:not-started — measure the route change rule (1) alt_union made (S2 leftover; speed unmeasured)
+  filed: 2026-11-15 manager (2026-11-15 audit; mech row S486 UNREACHED on cloud suite 2275777e0)
+  status (2026-11-15): filed, unscheduled; rule (1) alt_union (13f46ea50, abi 107) moved `\b((?:A3T[A-Z0-9]|AKIA|AGPA)[A-Z0-9]{16})\b`: RX_DFA_PREFILTER first-memchr-bounded -> handoff, RX_REQ_WHY dominated -> emitted, RX_REQ_HANDOFF none -> 0, RX_MEMFN_LIBC memchr -> memchr,memcmp; no answer changed; speed UNMEASURED
+  next: count how many corpus/bench patterns moved the same way (stamp sweep abi 106 vs 107), then time before/after in a night window, one variable
+  refs: docs/dev/reviews/2026-11-15-r3-fixposts2.md; [RUN-POS-SET]; [FLOORS-REMEASURE]
 - [PREFLIGHT] STATE:not-started — fast checks on what a change touches, run BEFORE queuing heavy runs
   filed: 2026-11-14 Frank ("File it but I don't want to invest more than we save: let's spend hours not days and strive for tweaks or general fixes ie cost related to benefit")
   status (2026-11-14): filed, after S2 close; budget hours not days; reuse checks on the diff. Catchable reds today: duplicated arm floor, --emit-pins ignored under --arms, rxt keyword COLLISION, verify_rxt hang (K145), VRUN_U8 vocabulary; execution-only: S686 no-op plant
@@ -814,6 +824,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [RX-NOT] STATE:not-started — negation inside a normal rx (`!` in `/!foo/`): LATER item, not scheduled, in no set
+  filed: 2026-11-15 Frank (answer on COND-FAMILY scope), written by the manager
+  status (2026-11-15): filed, NOT SCHEDULED; parked until the owner clarifies what `!` covers; the predicate design ([COND-FAMILY]) does not depend on it
+  trigger: the owner reopens it with a clarified scope
+  refs: [COND-FAMILY]; decisions D196 addendum 1 (the `!` spelling study)
+  Frank 2026-11-15: "i said we should keep ! out of normal rx /!foo/ mostly because it wasn't clear to me if the ! covered the whole foo or just the f. i would revisit later with clarification. the primary goal of the predicate design is the predicate part itself and extra elements added to rx like ${} and & are necessary parts of that. the ! in rx can be revisited in a later plan item"
 - [RUNG-LIST] STATE:not-started — the memfn reply lists the SIMD rungs a define will render, a per-SIMD-level triple
   filed: 2026-11-07 lane kitfile for the kit (plan_frame.md §7 "Plan rows proposed", ruled at r12 Q13; trigger restated at r13 R28)
   status (2026-11-07): not started; D77 defers it; rev 2 designed it in full (u30d2, 45f3a337f) and rev 2.1 removed it from unit 3.0 (the reply names the OFF triple only, gap stated in §2.3)

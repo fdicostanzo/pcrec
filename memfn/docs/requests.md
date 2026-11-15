@@ -946,3 +946,9 @@ are allocating).
 - WHERE (proposal, your call on form): a new frame fact on the window site and on the pre-check's FUNC parts, appended last (an MF_SITE_ABI event), 64-bit wide (pcrec's width ceiling 2^40), an unstated value refused where read; stated on every FIND and pre-check site, 0 included. Not `end_back`, not a span position. D11's holdback stays as stated; where both apply the larger bound holds. How the kit honours it is the kit's; a site that ignores it stays correct.
 - WHY. Frank 2026-11-10: the kit's find window does not get the minimum required bytes (e.g. `abc[0-9]+xyz`'s skip searches to n - pos - 1). pcrec's own loops stop at W since lane minw (tuning.md §2.55).
 - ASK now: (1) a reply in responses.md: is the fact usable as stated, and in what form you would take it; (2) no build until the trigger fires.
+
+## R-44 (2026-11-15, pcrec manager) — the D3 floor script has no caller (review FLOORS-4)
+- GO: the kit may take it as lane/memfn-d3wire after its mfind/slotx landing. Not timing-sensitive; non-timing gates queue as usual.
+- FACT. The D3 floor script (docs/dev/lanes/r33_sim/runpart_floor.py; the kit was its author, R-43) has no caller in the Makefile, tests/, scripts/ or CI (review docs/dev/reviews/2026-11-15-r1-posts2.md, FLOORS-4). Its CENSUS_FLOOR and MOVERS values are hand literals, so a census regression stays green until someone runs it by hand. part_d.md D3 says "ARMED at the joint landing".
+- ASK. Either the floor is read by a gate, or the script is retired (recorded as a manual census tool if kept that way). Which of the two, and how, is the kit's call.
+- Deliver: a kit branch for merge review.
