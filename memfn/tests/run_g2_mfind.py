@@ -307,6 +307,10 @@ def main():
     a = ap.parse_args()
     if a.sites is None:
         a.sites = 80 if a.quick else 160
+    if a.sites < 80:
+        # the population floors were measured at 80 sites and scale to 0 at 40
+        # (every floor vacuous): below 80 no floor is a check (review r6 CHECKS-A3)
+        ap.error('--sites %d: below 80 the population floors are not checks' % a.sites)
     root = os.path.abspath(a.root)
     work = tempfile.mkdtemp(prefix='g2mfind.', dir=os.environ.get('TMPDIR'))
     try:
