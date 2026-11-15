@@ -640,3 +640,17 @@ target on the left"): `x & unpad & between(1, 12)`, `month: unpad & between(1, 1
 go before it; parentheses end its scope. Errors: a trailing transform (`x & unpad`) = no-op warning; `!transform` = error.
 Fits D196 precedence (`&` tighter than `|`). The variable-width lexicographic lint suggests `pad(n)`. SUPERSEDES the
 function forms `unpad(S)` / `length(<=20)` and the dot-view alternative (`month.unpad: S`).
+
+**2026-11-14 RULINGS on the predx gaps (Frank).** ARRAYS OF FILTERS (Frank: "an array of rx is an rx. An array of
+filters|macros is macro?"): yes, closure one level up: array of rx = rx (alternation); array of filters = a filter
+(pointwise `[f, g](t)` = `f(t) | g(t)`); array of transforms = a transform (union of pullbacks); mixed rx/filter array =
+error (fix: `(& /x/)` as a filter); entries must share arity; `.index` keeps original positions when entries drop.
+TUPLE CONDITIONS: a LIBRARY macro (`lex_ge([major, minor, patch], [1, 4, 0])`), no syntax. ENUMERATE ("I love it.
+Enumerate go." = design adoption; #6 still unscheduled): `enumerate(rx)` = the array of a FINITE rx's strings; uses:
+finite backreferences made regular (`each(date_sep, enumerate(/[-\/.]/))`, `!contains(each(triple, enumerate(/[\x21-
+\x7E]/)))`), matched delimiters (`each(q, enumerate(/["']/))`), which-option-matched via `.index` at default, per-entry
+library assertions (`@each(...)` spelling OPEN). Rules: a BUDGET (infinite or over-budget = compile error with the
+count); entries in PCRE PRIORITY ORDER (leftmost alternative, greedy before lazy) so re-joining preserves which match is
+reported, hence a built-in, not a library. Still PENDING: counting filters (exactly/at_least/none), moving the empty
+error to "final expression nullable in search mode", value-vs-value comparisons typed + class-count priced, `&` at `vm`
+with a non-regular operand = DFA candidates + VM verify ([PRED-SPLIT]).
