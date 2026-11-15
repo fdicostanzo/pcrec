@@ -3,7 +3,7 @@
 # LONGER SPELLS ITS LEVER.
 #
 # simd_guarded_check.py's LEVER_ARMS reach the rows only the test-only lever
-# `mfind` renders (mfind-w16, mfind-w32). With `--harness=mfind` dropped from
+# `mfind` renders (mfind-w16, mfind-w32). With the lever flag dropped from
 # the arm, `foo.*bar` renders no mfind site, so the two declared rows are read
 # by no artifact: the check's "rows no artifact read (a bound nothing
 # reaches)" gate goes red, and so does the simd-form-lever floor.
