@@ -379,18 +379,23 @@ static RbRun rn_pre(RbRun a, RbRun b)
 
 /* THE FIRST-MATCH ROW SCAN, shared by every `{row, arm}` restore table in this
  * file (`rn_choice_rows`, `rr_alt_rows`, `rb_rep_rows`, `rb_zero_rows`; reviews
- * 2026-11-15 r1 posts2 CONTRACT-1, r3 fixposts2 CONTRACT-1/3). A table holds
- * only the rows a restored arm can pass over; its CATCH-ALL is NOT a row but
- * a separate default, taken when the scan runs off the end, so it is reached
- * by construction and carries no arm to be wrong. `RB_ROW_SCAN(i, w, TAB,
- * TEST)` leaves in `i` the index of the first row of `TAB` that the walk does
- * not restore and for which the side-effect-free expression `TEST` (which
- * reads the row as `TAB[i]`) holds, or the row count when none does. */
+ * 2026-11-15 r1 posts2 CONTRACT-1, r3 fixposts2 CONTRACT-1/3, r4 fixposts2c
+ * RESPELL-2/3). A table holds no CATCH-ALL row: its catch-all is a separate
+ * default, taken when the scan runs off the end, so it is reached by
+ * construction and carries no arm to be wrong (an arm on a last catch-all row
+ * would run the scan off the end; tables without an arm column keep their
+ * always-true row). `RB_ROW_SCAN(i, w, TAB, TEST)` leaves in `i` the index of
+ * the first row of `TAB` that the walk does not restore and for which `TEST`
+ * (which reads the row as `TAB[i]`) holds, or the row count when none does.
+ * `TEST` runs at most once per row, so a row that builds its answer (an
+ * out-parameter, an arena set) is CAPTURED by the test, never called again. */
 #define RB_ROWS(tab) (sizeof (tab) / sizeof (tab)[0])
 #define RB_ROW_SCAN(i, w, tab, test)                                        \
-    for ((i) = 0; (i) < RB_ROWS(tab); (i)++)                                \
-        if (!((tab)[i].arm & (w)->restored) && (test))                      \
-            break
+    do {                                                                    \
+        for ((i) = 0; (i) < RB_ROWS(tab); (i)++)                            \
+            if (!((tab)[i].arm & (w)->restored) && (test))                  \
+                break;                                                      \
+    } while (0)
 
 /* THE RUN CHOICE: which of two candidate runs a subtree keeps as its best.
  * A declared first-match table of comparison rows (`rn_choice_rows`); each
@@ -482,9 +487,9 @@ static RbRun rn_better(const RbWalk *w, RbRun a, RbRun b)
 {
     size_t i;
     int c;
-    RB_ROW_SCAN(i, w, rn_choice_rows, rn_choice_rows[i].row(w, &a, &b) != 0);
-    c = i < RB_ROWS(rn_choice_rows) ? rn_choice_rows[i].row(w, &a, &b)
-                                    : rn_first(w, &a, &b);
+    RB_ROW_SCAN(i, w, rn_choice_rows,
+                (c = rn_choice_rows[i].row(w, &a, &b)) != 0);
+    if (i == RB_ROWS(rn_choice_rows)) c = rn_first(w, &a, &b);
     return c >= 0 ? a : b;
 }
 
@@ -605,7 +610,9 @@ static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
 
 /* ALTERNATION of runs: only what every branch guarantees. The outcome is a
  * declared first-match table (`rr_alt_rows`, alt_normal_form.md §6); each row
- * answers whether it applies and, if so, fills `*o`. */
+ * answers whether it applies and, if so, fills `*o`; a row that does not
+ * apply leaves `*o` untouched, so the scan hands `*o` to every row and the
+ * applying row's answer is the outcome (RB_ROW_SCAN's capture). */
 typedef bool (*RrAltRow)(const RbWalk *w, const RbRuns *l, const RbRuns *r,
                          RbRuns *o);
 
@@ -657,12 +664,9 @@ static const struct {
 static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
 {
     size_t i;
-    RbRuns o, t;
-    RB_ROW_SCAN(i, w, rr_alt_rows, rr_alt_rows[i].row(w, &l, &r, &t));
-    if (i < RB_ROWS(rr_alt_rows))
-        rr_alt_rows[i].row(w, &l, &r, &o);
-    else
-        rr_alt_affix(w, &l, &r, &o);
+    RbRuns o;
+    RB_ROW_SCAN(i, w, rr_alt_rows, rr_alt_rows[i].row(w, &l, &r, &o));
+    if (i == RB_ROWS(rr_alt_rows)) rr_alt_affix(w, &l, &r, &o);
     return o;
 }
 
