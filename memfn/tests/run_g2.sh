@@ -1146,7 +1146,7 @@ fi
 # driver output, and FLOOR_ROWS below is a literal measured once.
 MM_ROW_FLOORS="arms:generic:600 arms:mismatch_inplace:300"   # (f): the MISMATCH-only process, measured less ~10%
 ST_ROW_FLOORS="arms:generic:4100"   # (g): the STRIDE-only process, measured less ~10% (lane g2m6)
-FLOOR_ROWS=20   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr; lane r13: 19, with fn/vrun-w16 and fn/vrun-w32, reached by the SIMD family's process below; lane r15b: 20, with arms/precheck_assign_byte, reached by the gate family's landmark sites)
+FLOOR_ROWS=36   # distinct (table,row) pairs in the registry, COUNTED 36 on 2026-11-15 (review r2 F14, lane mfindfix2: lane mfindg2's full and gathered quick runs on lane/memfn-mfind both print 36, every row of the kit's 36 (tests/memfn/run_rows.sh ROWS_FLOOR); the literal sat at 20 since lane r15b; history: lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr; lane r13: 19, with fn/vrun-w16 and fn/vrun-w32, reached by the SIMD family's process below; lane r15b: 20, with arms/precheck_assign_byte, reached by the gate family's landmark sites)
 reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
 reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
 # reach_lines FILE: the chosen-lines of one process
