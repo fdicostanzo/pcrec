@@ -718,3 +718,13 @@ condition, a filter body, a hole's set, a compile-time set) an EDGE ASSERTION (o
 Assertions strictly inside a value keep PCRE meaning. Values, transform images and compile-time sets are context-free.
 Nullability (for `empty.search`) is computed IN CONTEXT; only the anchored/whole-string MODE exempts. D193 add. 3 stands.
 A named in-context form only on a measured need (D77). Item 2 (OWN-1: stage operator vs `&`) PENDING.
+
+**2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS (Frank: "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." ... "I like that. Docs should be clear the transform is transforming the filter").**
+SUPERSEDES the right-associative `&` / pipeline ruling and the `->` / `;` ideas. A transform is a macro FILTER -> FILTER
+(the pullback): `padded(between(1, 12))`, `any_case("host")`, `quoted(contains("timeout"))`, `length(<=64)`,
+`month_numbered(between(1, 6))`; used as `month & padded(between(1, 12))` or `month: padded(...)`; nests in reading
+order (`quoted(any_case("host"))`). `&` is pure intersection again (order- and grouping-free); no new operator.
+NAMING RULE: a modifier's name describes the SUBJECTS IT ACCEPTS (adjective/phrase: padded, any_case, quoted, length),
+never a verb acting on the subject (unpad, trim, lowercase). DOCS RULE (owner): every spec/guide text on transforms says
+the transform TRANSFORMS THE FILTER, not the subject (the subject is never modified; the modified filter ignores
+or reinterprets parts of it). Comma inside `( ... )` keeps its condition-separator meaning (C22).
