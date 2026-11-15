@@ -1,0 +1,4 @@
+report=docs/dev/lanes/mfindg2_report.md
+sections: Summary; Cause; Fix; Validation
+nonempty: all
+commit: yes
