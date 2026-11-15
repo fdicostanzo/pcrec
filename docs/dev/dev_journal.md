@@ -27642,3 +27642,8 @@ Next
   hold. Frank: full suite in the CLOUD, not on the box (scripts/cloudrun's suite covers test, axes, ubsan, asan, mech and
   recidentity; alloc and lint stay local); one cloud suite on main after the axtri1115 merge covers every landing since
   11-11. R-40 filed (reply only; build on trigger). Set S3 opened: design lane covcap (opus), [COVER-CAP] design only.
+- 02:10 (2026-11-15): S3 design delivered (covcap; docs/design/cover_cap.md rev 0: the span slice gets its own bound
+  PCREC_SPAN_EXACT_MAX 32 against the kit's MF_MAX_SPAN_POS, separate from PREFIX_K_MAX 24; no abi; movers l31/hex32/
+  dig32/hex32-id). Frank: "design and code critics on ALL work" (memory pcrec-critics-on-all-work; kit told).
+  Rounds launched: crit-covcap (design, light) and crit-posts2 (code, RETROACTIVE over the code landed after the S2
+  close without a round: s2d27, s686, mechund, r43, s2arms, r1on/r1land, ci fixes, axtri1115).
