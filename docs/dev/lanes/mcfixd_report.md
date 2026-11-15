@@ -36,4 +36,6 @@ All in worktrees/mcfixd, tip after this report's commit:
 
 ## STATE AT HANDOFF
 
-Rulings file read: no entries (empty); last entry applied: none. OWED: none.
+Rulings file read: no entries (empty); last entry applied: none.
+
+OWED: none
