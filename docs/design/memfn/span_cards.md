@@ -815,9 +815,10 @@ a key names one instance with one target, and a key with two `cell_text` lines r
 ratio-1 row (`kit.find_byte.walk`, the header's `unit_key`) so it loads; that one row, the set's normaliser (same
 box, same run, never a priced form), is the guard's only exemption.
 
-`[r5 contract-3, EMITTED-1]` **kit-grid@6 (ver 6) owed list**, the card comment's pointer: (1) the `mfind-w64`
+`[r5 contract-3, EMITTED-1, R2]` **kit-grid@6 (ver 6) owed list**, the card comment's pointer. The ver-6 rows are an
+UNPICKED MEASURING INSTRUMENT (D197, Frank 2026-11-15), never a pick. (1) the `mfind-w64`
 (AVX-512BW) arm, which needs a kit target above x86-64-v3 (`slot/plan.py` `UNPLANNED6`); (2) the single-piece cells,
-SEARCH vs the walk and STREAM RESTART vs MASK (D190), built only on D197's fused WIN, under their own owner go;
+SEARCH vs the walk and STREAM RESTART vs MASK (D190), owed only on a D197 WIN at a level, under their own owner go;
 (3) the D149 UNMEASURED DEFAULT on the inline finder's entry cut-over (`memfn/src/vrun.c`), which the timing
 answers; (4) the three rows' `row_floors.tsv` g2 floors, from a G2 `--rows` REACH run. The ver-6 timing sees ONE
 site: it does not time the artifact's size (the lever text is 2.9x (SWAR) to 6x (x86-64-v3) fn-memchr's body), so

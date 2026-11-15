@@ -149,6 +149,11 @@ GAPS6 = (2, 4, 8, 16, 32, 64, 256, 1024, 65536)
 REJECTS_ALL = (0, 100)
 REJECTS_SOME, GAPS6_SOME = (50,), (4, 32, 256)
 FORMS6 = ("mfind-swar", "mfind-w16", "mfind-w32", "fn-memchr")   # kit-grid@6's deps; mfind-w64 OWED (UNPLANNED6)
+# [r5 R3 (1), lane mcfixa] D197's CONFIRMING RE-RUN: a loss resting on one or two cells reproduces before it counts.
+# SLOT_CONFIRM_CELLS="GAP.REJECT ..." moves exactly those find_hit@6 cells (every form, its twin) from JMH to job
+# JMHC with JMHC's own bases and control; record.py's window `mfconfirm` (J2, JMHC). Empty (every other window):
+# no JMHC, the plan unchanged. The frozen plan records the moved rows, so the pin names what was re-run.
+CONFIRM_CELLS = tuple(tuple(int(x) for x in c.split(".")) for c in os.environ.get("SLOT_CONFIRM_CELLS", "").split())
 UNPLANNED6 = ("find_byte.mfind-w64, find_hit.mfind-w64: OWED, the AVX-512BW measurement-only arm (slot harness "
               "piece 2, lane slotx's report): no entry-table text, so KEY-ARM refuses it; never priced by w32's row",
               "find_hit@6 gap 1: the site's run is 2 bytes; a hit every byte plants no non-overlapping run")
@@ -442,12 +447,18 @@ def build():
     for f in FORMS6:
         row("JMB", Arm("kit.find_byte.%s" % f, "JMB.byte", "find", f, lengths=LENGTHS))
         add("JMH", Arm("base.%s" % f, "JMH.base", "find", f, events=0))
+        if CONFIRM_CELLS:
+            add("JMHC", Arm("base.%s" % f, "JMHC.base", "find", f, events=0))
+    for g, r in CONFIRM_CELLS:
+        if g not in GAPS6 or r not in REJECTS_ALL + (REJECTS_SOME if g in GAPS6_SOME else ()):
+            raise SystemExit("plan: SLOT_CONFIRM_CELLS names %d.%d, no find_hit@6 cell" % (g, r))
     for g in GAPS6:
         for r in REJECTS_ALL + (REJECTS_SOME if g in GAPS6_SOME else ()):
+            j = "JMHC" if (g, r) in CONFIRM_CELLS else "JMH"
             for f in FORMS6:
                 k = "kit.find_hit.%s.periodic.one.%d.%d" % (f, g, r)
-                row("JMH", Arm(k, "JMH.hit.r%d.%d" % (r, g), "find", f, landing="periodic", split="one", gap=g,
-                               base=base_of(k), events=LEN // g, reject=r), base_of(k))
+                row(j, Arm(k, "%s.hit.r%d.%d" % (j, r, g), "find", f, landing="periodic", split="one", gap=g,
+                           base=base_of(k), events=LEN // g, reject=r), base_of(k))
     unreached.extend(UNPLANNED6)
     # J1 (§3.6, art.py, j1/): per cell (pattern, subject, regime) one group, a whole-artifact arm per PAIR width
     # and the twin 128#b; no rows (J1's cells go to the run record, never the set)

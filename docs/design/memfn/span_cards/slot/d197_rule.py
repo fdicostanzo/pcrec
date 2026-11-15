@@ -1,15 +1,17 @@
 # span_cards/slot/d197_rule.py — D197's decision for the mfcard window, ONE VERDICT PER ISA LEVEL, by the DECLARED
 # table d197_rule.tsv (review 2026-11-15 r5 FIDELITY-4 + the kit manager's R1; written before any number exists;
 # the table is the rule, this file its reader).
-#   python3 -I d197_rule.py rule RUNDIR AVX2RUNDIR [--second]
+#   python3 -I d197_rule.py rule RUNDIR AVX2RUNDIR [--second] [--confirm CRUNDIR CAVX2RUNDIR]
 #                       the per-level verdicts from the two finalized records: RUNDIR timed with glibc's memchr
 #                       as shipped, AVX2RUNDIR under the AVX2 tunable (each its own record; record.py's `libc`
-#                       names the variant bound); --second: this is the ONE allowed re-run
+#                       names the variant bound); --second: this is the ONE allowed re-run; --confirm: the
+#                       confirming re-run's two records (window mfconfirm) for a loss on one or two cells
 #   python3 -I d197_rule.py drill [SCRATCH]
 #                       the rule on CONSTRUCTED outcomes (no rundir): each case's expected per-level verdicts,
 #                       `== d197 DRILL ok` iff all agree; SCRATCH: also end to end on est.py's synthetic window
-# Prints one line per deciding cell and arm (the scan cost beside it), then `d197_verdict LEVEL FORM RESULT (when)
-# -> trigger` per level. Exit 0 on verdicts, 2 on a refused input.
+# Prints one line per deciding cell and arm, then per level `d197_scan` (find_byte@6 form/libc, never deciding) and
+# `d197_verdict LEVEL FORM RESULT (when) -> trigger`; a CONFIRM names its cells (`d197_confirm_cells GAP.REJECT..`,
+# the SLOT_CONFIRM_CELLS value of job 610). Exit 0 on verdicts, 2 on a refused input.
 import os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -42,14 +44,16 @@ WHEN = {
     "gain-beyond-floor-and-every-trimmed-launch-positive":
         lambda c: c["gain"] > c["floor"] and all(x > 0 for x in trim(c["gain_l"])),
     "gain-below-minus-floor": lambda c: c["gain"] < -c["floor"],
+    "loss-not-reproduced": lambda c: c["gain"] < -c["floor"] and c["conf"] is not None
+                                     and not c["conf"]["gain"] < -c["conf"]["floor"],
     "run-refused": lambda a: a["outcome"] == "REFUSED",
     "memchr-variant-not-the-arms": lambda a: a["variant"] is None
                                              or a["want_variant"] != "any" and a["variant"] != a["want_variant"],
-    "any-cell-loss": lambda a: a["n"]["loss"] > 0,
-    "wins-over-half-of-deciding-cells": lambda a: 2 * a["n"]["win"] > a["n_cells"],
+    "no-loss-and-wins-over-half-of-deciding-cells": lambda a: a["n"]["loss"] == 0 and 2 * a["n"]["win"] > a["n_cells"],
     "shipped-arm-no-verdict": lambda v: v["shipped"] == "no-verdict",
-    "shipped-arm-loss": lambda v: v["shipped"] == "LOSS",
-    "avx2-arm-loss": lambda v: v["avx2"] == "LOSS",
+    "three-or-more-loss-cells": lambda v: len(v["losses"]) >= 3,
+    "loss-cells-awaiting-confirmation": lambda v: any(not confirmed for _c, confirmed in v["losses"]),
+    "reproduced-loss-cells": lambda v: len(v["losses"]) > 0,
     "both-arms-win": lambda v: v["shipped"] == "WIN" and v["avx2"] == "WIN",
     "second-run": lambda v: v["second"],
     "always": lambda _x: True,
@@ -68,54 +72,71 @@ def row_x(out, drift, k):
         return None
     return r
 
-def arm(t, form, out, drift, outcome, run, want_variant):
-    """(arm result, lines): one level's form against libc in one finalized record, through the cell and arm tables"""
+def variant_of(run):
+    return next((w.split("=", 1)[1] for w in (run.get("libc") or "").split() if w.startswith("memchr=")), None)
+
+def gain(t, form, out, drift, g, r):
+    """{gain_l, gain, floor} of one cell (form vs libc) in one record, or None (a row unpriced)"""
+    a, b = row_x(out, drift, key(t, t["deciding"]["libc_form"], g, r)), row_x(out, drift, key(t, form, g, r))
+    if not (a and b):
+        return None
+    gl = [a["x"][i] - b["x"][i] for i in range(len(a["x"]))]
+    return {"gain_l": gl, "gain": med(gl), "floor": a["aa"] + b["aa"]}
+
+def arm(t, form, out, drift, outcome, run, want_variant, conf=None):
+    """(arm result, loss cells [((gap, reject), confirmed)], scan, lines): one level's form against libc in one
+    finalized record, through the cell and arm tables; conf (out, drift) is the confirming record of this arm"""
     libc = t["deciding"]["libc_form"]
-    var = next((w.split("=", 1)[1] for w in (run.get("libc") or "").split() if w.startswith("memchr=")), None)
-    n, lines = {"win": 0, "loss": 0, "tie": 0, "unresolved": 0}, []
+    var = variant_of(run)
+    n, losses, lines = {"win": 0, "loss": 0, "tie": 0, "unresolved": 0}, [], []
     for g, r in cells(t):
-        a, b = row_x(out, drift, key(t, libc, g, r)), row_x(out, drift, key(t, form, g, r))
-        c = {"a": a, "b": b}
-        if a and b:
-            c["gain_l"] = [a["x"][i] - b["x"][i] for i in range(len(a["x"]))]
-            c.update(gain=med(c["gain_l"]), floor=a["aa"] + b["aa"])
+        gc = gain(t, form, out, drift, g, r)
+        c = dict(gc or {}, a=gc, b=gc, conf=gain(t, form, conf[0], conf[1], g, r) if conf else None)
         res, why = first(t, "cell", c)[:2]
         n[res] += 1
-        lines.append("cell\tgap %d reject %d\t%s vs %s\t%s\tgain %s floor %s\t(%s)" % (
-            g, r, form, libc, res, c.get("gain", "-"), c.get("floor", "-"), why))
-    scan = []
-    for f in (form, libc):                     # the scan cost, REPORTED beside, never deciding
-        s = row_x(out, drift, "kit.%s.%s" % (t["deciding"]["scan"], f))
-        scan.append("%s %s" % (f, s["value"] if s and "value" in s else "-"))
+        if res == "loss":
+            losses.append(((g, r), c["conf"] is not None))
+        lines.append("cell\tgap %d reject %d\t%s vs %s\t%s\tgain %s floor %s%s\t(%s)" % (
+            g, r, form, libc, res, c.get("gain", "-"), c.get("floor", "-"),
+            "" if c["conf"] is None else " confirming gain %s floor %s" % (c["conf"]["gain"], c["conf"]["floor"]), why))
+    sc = [row_x(out, drift, "kit.%s.%s" % (t["deciding"]["scan"], f)) for f in (form, libc)]
+    sv = [s["value"] if s and "value" in s else None for s in sc]
+    scan = "%s %s, %s %s, ratio %s" % (form, "-" if sv[0] is None else sv[0], libc, "-" if sv[1] is None else sv[1],
+                                       "%.2f" % (sv[0] / sv[1]) if sv[0] is not None and sv[1] else "-")
     av = {"outcome": outcome, "variant": var, "want_variant": want_variant, "n": n, "n_cells": len(cells(t))}
     res, why = first(t, "arm", av)[:2]
-    lines.append("arm\t%s vs %s (memchr=%s)\t%s\t%s\t(%s)\tscan (%s, not deciding): %s" % (
-        form, libc, var, res, " ".join("%s %d" % kv for kv in sorted(n.items())), why, t["deciding"]["scan"],
-        ", ".join(scan)))
-    return res, lines
-
-def verdict(t, shipped, avx2, second=False):
-    """the verdict row (result, when, trigger) of one level from its two arms"""
-    return first(t, "verdict", {"shipped": shipped, "avx2": avx2, "second": second})
+    lines.append("arm\t%s vs %s (memchr=%s)\t%s\t%s\t(%s)" % (
+        form, libc, var, res, " ".join("%s %d" % kv for kv in sorted(n.items())), why))
+    return res, ([] if res == "no-verdict" else losses), scan, lines
 
 def levels(t, arms_of, second=False):
-    """{level: (result, when, trigger, lines)}; arms_of(form, "shipped"|"avx2") -> (arm result, lines)"""
+    """{level: (result, when, trigger, lines, scan, confirm cells)}; arms_of(form, "shipped"|"avx2") -> arm()'s
+    tuple. The losses count over BOTH libc rows (the level's 36 comparisons); an arm without a verdict counts none"""
     out = {}
     for lvl, _build, form, _axes in t["levels"]:
-        r1, l1 = arms_of(form, "shipped")
-        r2, l2 = arms_of(form, "avx2")
-        out[lvl] = tuple(verdict(t, r1, r2, second)) + (["shipped\t" + x for x in l1] + ["avx2\t" + x for x in l2],)
+        r1, x1, s1, l1 = arms_of(form, "shipped")
+        r2, x2, s2, l2 = arms_of(form, "avx2")
+        v = {"shipped": r1, "avx2": r2, "second": second, "losses": x1 + x2}
+        res, when, trig = first(t, "verdict", v)
+        cc = sorted({c for c, confirmed in x1 + x2 if not confirmed}) if res == "CONFIRM" else []
+        out[lvl] = (res, when, trig, ["shipped\t" + x for x in l1] + ["avx2\t" + x for x in l2],
+                    "shipped: %s; avx2: %s" % (s1, s2), cc)
     return out
 
-def rule(rundir, avx2dir, second=False):
+def rule(rundir, avx2dir, second=False, confirm=None):
     t = load()
-    recs = {}
+    recs, conf = {}, {}
     for name, d in (("shipped", rundir), ("avx2", avx2dir)):
         o, drift, _ub, outcome, _w, _p = compute(d)
         recs[name] = (o, drift, outcome[0], read_record(d)["run"])
+    for name, d in zip(("shipped", "avx2"), confirm or ()):
+        o, drift, _ub, outcome, _w, _p = compute(d)
+        var = variant_of(read_record(d)["run"])
+        if outcome[0] != "REFUSED" and var is not None and (name == "shipped" or var == "avx2"):
+            conf[name] = (o, drift)      # a refused or mis-bound confirming record confirms nothing
     def arms_of(form, which):
         o, drift, outcome, run = recs[which]
-        return arm(t, form, o, drift, outcome, run, "any" if which == "shipped" else "avx2")
+        return arm(t, form, o, drift, outcome, run, "any" if which == "shipped" else "avx2", conf.get(which))
     return levels(t, arms_of, second)
 
 # ---- the drill: CONSTRUCTED outcomes, each with the per-level verdicts the rule must give -----------------------
@@ -142,61 +163,83 @@ def drill(scratch=None):
     allf = lambda v: {f: L7(v) for f in F}
     each = lambda v: dict.fromkeys(lv, v)
     dense = lambda gmax: {(f, g, r): L7(500) for f in F for g, r in cells(t) if g <= gmax}
-    W, Lo, T = "WIN", "LOSS", "INCONCLUSIVE"
+    W, Lo, T, C, NW = "WIN", "LOSS", "INCONCLUSIVE", "CONFIRM", "NOT-WIN"
     mixed = {"mfind-swar": L7(1500), "mfind-w16": L7(990), "mfind-w32": L7(500)}
-    CASES = (   # (name, shipped (out, outcome, variant), avx2 (out, outcome, variant), second, {level: expected})
-        ("clean win at every level, both libc rows", (_rec(t, L7(1000), allf(500)), "FULL", "evex"),
-         (_rec(t, L7(1000), allf(500)), "FULL", "avx2"), False, each(W)),
-        ("clean loss at every level", (_rec(t, L7(1000), allf(1500)), "FULL", "evex"),
-         (_rec(t, L7(1000), allf(1500)), "FULL", "avx2"), False, each(Lo)),
+    one_loss = {**dense(64), ("mfind-w32", 65536, 0): L7(1500)}          # w32: 12 wins, one loss (gap 65536)
+    three = {**dense(64), **{("mfind-w32", g, r): L7(1500) for g, r in ((65536, 0), (65536, 100), (1024, 0))}}
+    v3 = lambda x: dict(zip(lv, (W, W, x)))
+    good = lambda: (_rec(t, L7(1000), allf(500)), "FULL", "avx2")
+    CASES = (   # (name, shipped (out, outcome, variant), avx2 (out, outcome, variant), second, {level: expected},
+                #  confirming outs {arm: out} or None)
+        ("clean win at every level, both libc rows", (_rec(t, L7(1000), allf(500)), "FULL", "evex"), good(), False,
+         each(W), None),
+        ("clean loss at every level (18 cells: at once)", (_rec(t, L7(1000), allf(1500)), "FULL", "evex"),
+         (_rec(t, L7(1000), allf(1500)), "FULL", "avx2"), False, each(Lo), None),
         ("per level: swar loses, w16 ties, w32 wins: three verdicts, never one",
          (_rec(t, L7(1000), mixed), "FULL", "evex"), (_rec(t, L7(1000), mixed), "FULL", "avx2"), False,
-         dict(zip(lv, (Lo, T, W)))),
+         dict(zip(lv, (Lo, T, W))), None),
         ("within-floor tie (gain 30, floor 40): INCONCLUSIVE, the one re-run",
-         (_rec(t, L7(1000), allf(970)), "FULL", "evex"), (_rec(t, L7(1000), allf(970)), "FULL", "avx2"), False, each(T)),
-        ("the same tie on the re-run (--second): LOSS",
-         (_rec(t, L7(1000), allf(970)), "FULL", "evex"), (_rec(t, L7(1000), allf(970)), "FULL", "avx2"), True, each(Lo)),
-        ("a clean win on the re-run stays WIN",
-         (_rec(t, L7(1000), allf(500)), "FULL", "evex"), (_rec(t, L7(1000), allf(500)), "FULL", "avx2"), True, each(W)),
+         (_rec(t, L7(1000), allf(970)), "FULL", "evex"), (_rec(t, L7(1000), allf(970)), "FULL", "avx2"), False,
+         each(T), None),
+        ("the same tie on the re-run (--second): NOT-WIN, never LOSS",
+         (_rec(t, L7(1000), allf(970)), "FULL", "evex"), (_rec(t, L7(1000), allf(970)), "FULL", "avx2"), True,
+         each(NW), None),
+        ("a clean win on the re-run stays WIN", (_rec(t, L7(1000), allf(500)), "FULL", "evex"), good(), True,
+         each(W), None),
         ("clean win, one outlier launch (launch 3's cost x10) trimmed away",
-         (_rec(t, L7(1000), {f: [500, 500, 5000, 500, 500, 500, 500] for f in F}), "FULL", "evex"),
-         (_rec(t, L7(1000), allf(500)), "FULL", "avx2"), False, each(W)),
+         (_rec(t, L7(1000), {f: [500, 500, 5000, 500, 500, 500, 500] for f in F}), "FULL", "evex"), good(), False,
+         each(W), None),
         ("two outlier launches: a trimmed launch negative, no cell wins: INCONCLUSIVE",
-         (_rec(t, L7(1000), {f: [500, 500, 5000, 5000, 500, 500, 500] for f in F}), "FULL", "evex"),
-         (_rec(t, L7(1000), allf(500)), "FULL", "avx2"), False, each(T)),
-        ("wins vs the shipped evex memchr, loses to the AVX2 memchr: LOSS",
-         (_rec(t, L7(1000), allf(500)), "FULL", "evex"), (_rec(t, L7(400), allf(500)), "FULL", "avx2"), False, each(Lo)),
-        ("loses to the shipped memchr, wins vs AVX2: LOSS",
-         (_rec(t, L7(500), allf(1000)), "FULL", "evex"), (_rec(t, L7(1000), allf(500)), "FULL", "avx2"), False, each(Lo)),
+         (_rec(t, L7(1000), {f: [500, 500, 5000, 5000, 500, 500, 500] for f in F}), "FULL", "evex"), good(), False,
+         each(T), None),
+        ("wins vs the shipped evex memchr, loses to the AVX2 memchr on every cell: LOSS",
+         (_rec(t, L7(1000), allf(500)), "FULL", "evex"), (_rec(t, L7(400), allf(500)), "FULL", "avx2"), False,
+         each(Lo), None),
+        ("loses to the shipped memchr on every cell, wins vs AVX2: LOSS",
+         (_rec(t, L7(500), allf(1000)), "FULL", "evex"), good(), False, each(Lo), None),
         ("wins vs shipped, ties the AVX2 memchr: INCONCLUSIVE",
-         (_rec(t, L7(1000), allf(500)), "FULL", "evex"), (_rec(t, L7(510), allf(500)), "FULL", "avx2"), False, each(T)),
+         (_rec(t, L7(1000), allf(500)), "FULL", "evex"), (_rec(t, L7(510), allf(500)), "FULL", "avx2"), False,
+         each(T), None),
         ("the AVX2 record bound the EVEX memchr (the tunable did nothing): INCONCLUSIVE",
-         (_rec(t, L7(1000), allf(500)), "FULL", "evex"), (_rec(t, L7(1000), allf(500)), "FULL", "evex"), False, each(T)),
+         (_rec(t, L7(1000), allf(500)), "FULL", "evex"), (_rec(t, L7(1000), allf(500)), "FULL", "evex"), False,
+         each(T), None),
         ("wins on the hit-dense gaps (<= 64: 12 of 18 cells), ties above: WIN",
          (_rec(t, L7(1000), allf(990), per_cell=dense(64)), "FULL", "evex"),
-         (_rec(t, L7(1000), allf(990), per_cell=dense(64)), "FULL", "avx2"), False, each(W)),
-        ("all win on the dense gaps, w32 one clean loss at gap 65536: v3 LOSS, the others WIN",
-         (_rec(t, L7(1000), allf(990), per_cell={**dense(64), ("mfind-w32", 65536, 0): L7(1500)}), "FULL", "evex"),
-         (_rec(t, L7(1000), allf(500)), "FULL", "avx2"), False, dict(zip(lv, (W, W, Lo)))),
+         (_rec(t, L7(1000), allf(990), per_cell=dense(64)), "FULL", "avx2"), False, each(W), None),
+        ("[R3] w32 loses ONE cell (gap 65536), no confirming run yet: v3 CONFIRM",
+         (_rec(t, L7(1000), allf(990), per_cell=one_loss), "FULL", "evex"), good(), False, v3(C), None),
+        ("[R3] that one-cell loss REPRODUCES in the confirming run: v3 LOSS",
+         (_rec(t, L7(1000), allf(990), per_cell=one_loss), "FULL", "evex"), good(), False, v3(Lo),
+         {"shipped": _rec(t, L7(1000), allf(990), per_cell=one_loss), "avx2": _rec(t, L7(1000), allf(500))}),
+        ("[R3] that one-cell loss does NOT reproduce (the confirming cell ties): scored tie, v3 WIN",
+         (_rec(t, L7(1000), allf(990), per_cell=one_loss), "FULL", "evex"), good(), False, v3(W),
+         {"shipped": _rec(t, L7(1000), allf(990)), "avx2": _rec(t, L7(1000), allf(500))}),
+        ("[R3] w32 loses THREE cells: v3 LOSS at once, no confirming run",
+         (_rec(t, L7(1000), allf(990), per_cell=three), "FULL", "evex"), good(), False, v3(Lo), None),
+        ("[R3] one loss vs each libc row (two of the 36 comparisons): v3 CONFIRM",
+         (_rec(t, L7(1000), allf(990), per_cell=one_loss), "FULL", "evex"),
+         (_rec(t, L7(1000), allf(500), per_cell={("mfind-w32", 2, 100): L7(1500)}), "FULL", "avx2"), False, v3(C),
+         None),
         ("wins on 6 of 18 cells only (gaps <= 8), ties elsewhere: INCONCLUSIVE",
-         (_rec(t, L7(1000), allf(990), per_cell=dense(8)), "FULL", "evex"), (_rec(t, L7(1000), allf(500)), "FULL", "avx2"),
-         False, each(T)),
-        ("the shipped record's run REFUSED: INCONCLUSIVE", ({}, "REFUSED", "evex"),
-         (_rec(t, L7(1000), allf(500)), "FULL", "avx2"), False, each(T)),
+         (_rec(t, L7(1000), allf(990), per_cell=dense(8)), "FULL", "evex"), good(), False, each(T), None),
+        ("the shipped record's run REFUSED: INCONCLUSIVE", ({}, "REFUSED", "evex"), good(), False, each(T), None),
         ("deciding rows absent on 10 of 18 cells (gaps >= 32), the rest wins: INCONCLUSIVE",
          ({k: v for k, v in _rec(t, L7(1000), allf(500)).items() if int(k.split(".")[-2]) < 32}, "PARTIAL", "evex"),
-         (_rec(t, L7(1000), allf(500)), "FULL", "avx2"), False, each(T)),
+         good(), False, each(T), None),
     )
     bad = 0
-    for name, sa, aa, second, want in CASES:
+    for name, sa, aa, second, want, conf in CASES:
         recs = {"shipped": sa, "avx2": aa}
-        def arms_of(form, which, recs=recs):
+        def arms_of(form, which, recs=recs, conf=conf):
             o, outcome, var = recs[which]
-            return arm(t, form, o, {}, outcome, run(var), "any" if which == "shipped" else "avx2")
-        got = {l: v[0] for l, v in levels(t, arms_of, second).items()}
+            return arm(t, form, o, {}, outcome, run(var), "any" if which == "shipped" else "avx2",
+                       (conf[which], {}) if conf else None)
+        v = levels(t, arms_of, second)
+        got = {l: x[0] for l, x in v.items()}
         ok = got == want
         bad += not ok
-        print("drill\t%s\t%s\t%s" % (name, "ok" if ok else "WRONG", ", ".join("%s %s" % (l, got[l]) for l in lv)))
+        print("drill\t%s\t%s\t%s" % (name, "ok" if ok else "WRONG", ", ".join(
+            "%s %s%s" % (l, got[l], " (%s)" % " ".join("%d.%d" % c for c in v[l][5]) if v[l][5] else "") for l in lv)))
     n = len(CASES)
     if scratch:
         # END TO END: the reader on est.py's own synthetic finalized mfcard window (compute's real row keys and
@@ -211,7 +254,7 @@ def drill(scratch=None):
         v = rule(os.path.join(scratch, "d197_shipped"), os.path.join(scratch, "d197_avx2"))
         want_n = 2 * len(lv) * len(cells(t))
         nc = sum(1 for x in v.values() for ln in x[3] if "\tcell\t" in ln and "unresolved" not in ln)
-        ok = list(v) == lv and nc == want_n
+        ok = list(v) == lv and nc == want_n and all("ratio" in x[4] for x in v.values())
         bad += not ok
         n += 1
         print("drill\tend to end on est's synthetic window\t%s\t%d of %d cells read, %s" % (
@@ -222,16 +265,25 @@ def drill(scratch=None):
 def main():
     if sys.argv[1] == "drill":
         return drill(sys.argv[2] if len(sys.argv) > 2 else None)
+    a = sys.argv[4:]
     try:
-        v = rule(sys.argv[2], sys.argv[3], "--second" in sys.argv[4:])
+        conf = a[a.index("--confirm") + 1:a.index("--confirm") + 3] if "--confirm" in a else None
+        if conf is not None and len(conf) != 2:
+            raise InputError("--confirm takes two rundirs (shipped, avx2)")
+        v = rule(sys.argv[2], sys.argv[3], "--second" in a, conf)
     except InputError as e:
         print("d197: REFUSED input: %s" % e)
         return 2
+    cc = set()
     for lvl, _b, form, _axes in load()["levels"]:
-        res, when, trig, lines = v[lvl]
+        res, when, trig, lines, scan, cells_ = v[lvl]
         for ln in lines:
             print("%s\t%s" % (lvl, ln))
+        print("d197_scan\t%s\tfind_byte@6 (miss-only per byte, NOT deciding): %s" % (lvl, scan))
         print("d197_verdict\t%s\t%s\t%s\t(%s) -> %s" % (lvl, form, res, when, trig))
+        cc.update(cells_)
+    if cc:
+        print("d197_confirm_cells\t%s" % " ".join("%d.%d" % c for c in sorted(cc)))
     return 0
 
 if __name__ == "__main__":

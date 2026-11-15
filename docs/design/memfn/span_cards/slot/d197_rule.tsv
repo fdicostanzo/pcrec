@@ -14,8 +14,12 @@
 # tail)), compared with libc memchr AS IT RUNS ON THIS BOX: the shipped arm (RUNDIR; the record names the ifunc
 # variant bound, `memchr=`) and the AVX2-tunable arm (RUNDIR.avx2libc; its record must name memchr=avx2) as the
 # second libc row. Each row's `axes` names EVERY axis on which its two forms differ (the standing one-variable rule).
-# Read by d197_rule.py (`rule RUNDIR AVX2RUNDIR [--second]`, `drill`). Tables are FIRST MATCH, top to bottom; the
-# `when` words are the named predicates d197_rule.py defines (WHEN, one line each), nothing else.
+# THE LIBC ROWS' PROVENANCE ([r5 R3]): the AVX2 row is the process under GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX512VL;
+# on this box's glibc 2.43 -AVX512F alone STILL binds the EVEX memchr (ymm16; measured by lane mcfixa with
+# record.py's probe), so each record names the variant its process bound (`libc ... memchr=`) and the arm table
+# refuses an AVX2 record that bound anything else (no-verdict).
+# Read by d197_rule.py (`rule RUNDIR AVX2RUNDIR [--second] [--confirm CRUNDIR CAVX2RUNDIR]`, `drill`). Tables are
+# FIRST MATCH, top to bottom; the `when` words are the named predicates d197_rule.py defines (WHEN, one line each).
 # STATISTIC (R1 (2)), est.py's units: a find_hit@6 row's x_l = its PER-HIT cost (the cell minus its own miss-only
 # base, over the planted hits E: the per-hit slope of cost over hits at fixed length) in ppm of the window's unit W,
 # per launch l (7 launches). Per deciding cell, the level's form F against libc L in the SAME record:
@@ -23,8 +27,17 @@
 #   gain    = med over the 7 launches of gain_l
 #   floor   = aa(L) + aa(F), each row's paired A/A (est.py's `aa`: med_l |x_l(twin) - x_l(arm)|): THE A/A FLOOR
 #   trimmed = the 7 gain_l less the one farthest from their median (est.py's trim)
-# The SCAN cost (find_byte@6, JMB's miss-only per-byte slope of F and L) is REPORTED beside each level, never decides.
+# WHY THE SCAN COST NEVER DECIDES ([r5 R3 (3)]): span_pick row 1 picks what a find-then-verify site does AT EACH
+# CANDIDATE (the finder continues its mask past a rejected hit, libc restarts a call at hit+1 and checks after it),
+# and only the per-hit slope prices that; the miss-only per-byte rate is the search WIDTH, which the level (w16,
+# w32, later w64) fixes, not row 1. It is still PRINTED per level beside the verdict (find_byte@6, form and libc,
+# their ratio form/libc, both libc rows) so a large scan deficit is visible to whoever reads the verdict.
 # The emitted size (EMITTED-1: the lever text 2.9x-6x fn-memchr's body) is reported by est.py rows, never decides.
+# LOSSES COUNT OVER THE LEVEL'S 36 COMPARISONS (18 cells x 2 libc rows; [r5 R3 (1)]): three or more loss cells
+# count at once; a loss resting on one or two cells must REPRODUCE: those cells get ONE confirming re-run (job
+# 610-kit-mfcard-confirm: a new run id, only those cells, both libc arms; plan.py CONFIRM_CELLS, window
+# `mfconfirm`) and count only if they lose again beyond the floor (scored with --confirm); one that does not
+# reproduce scores tie.
 #section deciding
 #key	value
 quantity	find_hit
@@ -44,20 +57,21 @@ x86-64-v3	-fmemfn-simd=x86-64-v3 + --harness=mfind	mfind-w32	search width (32-by
 #result	when
 unresolved	either-row-unpriced
 win	gain-beyond-floor-and-every-trimmed-launch-positive
+tie	loss-not-reproduced
 loss	gain-below-minus-floor
 tie	always
 #section arm
 #result	when
 no-verdict	run-refused
 no-verdict	memchr-variant-not-the-arms
-LOSS	any-cell-loss
-WIN	wins-over-half-of-deciding-cells
-inconclusive	always
+WIN	no-loss-and-wins-over-half-of-deciding-cells
+not-win	always
 #section verdict
 #result	when	triggers (D197)
 INCONCLUSIVE	shipped-arm-no-verdict	the ONE re-run (below)
-LOSS	shipped-arm-loss	settles span_pick row 1 against the finder AT THIS LEVEL
-LOSS	avx2-arm-loss	settles span_pick row 1 against the finder AT THIS LEVEL (it loses to a width-matched libc)
+LOSS	three-or-more-loss-cells	settles span_pick row 1 against the finder AT THIS LEVEL
+CONFIRM	loss-cells-awaiting-confirmation	the confirming re-run of exactly those cells (610-kit-mfcard-confirm, both libc arms), then this rule again with --confirm
+LOSS	reproduced-loss-cells	settles span_pick row 1 against the finder AT THIS LEVEL (the loss reproduced)
 WIN	both-arms-win	builds the ruled split shape for this level, under its own owner go, then a re-measure
-LOSS	second-run	settles row 1 against the finder at this level (a second INCONCLUSIVE: D197's "anything else is a LOSS")
+NOT-WIN	second-run	no stage-2 build at this level; the ledger records NOT-WIN (a second INCONCLUSIVE), never a LOSS
 INCONCLUSIVE	always	ONE re-run allowed: the mfcard window again (J2, J2p, JMB, JMH; both libc arms) in a later window Frank clears, the same plan, a new run id, scored with `--second`
