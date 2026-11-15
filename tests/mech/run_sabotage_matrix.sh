@@ -689,10 +689,11 @@
 #   kitproof — added 2026-10-21 (lane z2build, [KIT-VERIFY] Z2); runs
 #     tests/kitproof/run_cover.sh (`make test-kitproof`) from the SABOTAGED
 #     tree: the `cover` row's verdicts on the harness-routed artifacts, the
-#     span slice's statements, and every answer against libpcre2 10.46's
+#     cover section's records (the span slice's statements until lane covs1,
+#     [COVER-CAP] stage 1), and every answer against libpcre2 10.46's
 #     committed ones. Its own arm because the `cover` row is routed only by
 #     the test harness's lever, which no other suite compiles under. Rows:
-#     S1130-S1144, S1148, S1149. Verdict: the script's `checks passed:`/
+#     S1130-S1144, S1148, S3220-S3225 (S1149 retired with the slice). Verdict: the script's `checks passed:`/
 #     `checks failed:` trailer.
 #   spechistory — added 2026-10-09 (lane specclean, [SPEC-CLEAN]); runs
 #     tests/spec_history/run_spec_history.sh against the SABOTAGED tree's
