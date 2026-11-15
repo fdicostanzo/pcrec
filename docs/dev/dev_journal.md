@@ -27758,3 +27758,12 @@ Next
   user-settable span limit is a STAGE 2 item (it only matters past the seam's 32; its default needs the stage-2
   size/timing data; public options ride [IFACE-PUSH]). (3) explained in chat. The BUILD GO for stage 1 was not given
   in these words: asked again.
+- 14:35 (2026-11-15): OWNER (Frank, verbatim) on [COVER-CAP] stage 2 and long spans: "2. stage 2 is fine. 3. we have a
+  performance dial for pcrec. it could include some options for the kit. Also, I would default to sub span loops
+  (excepting the measured head inline ) then measure if inline was faster than the other way around. Measure three:
+  all inline, all loops, header inline then loops. Then the speed dial option can be always inline should it prove
+  that is faster". RECORD: (a) the user-settable span limit is a STAGE 2 item. (b) For long spans the DEFAULT
+  rendering is LOOPS over repeated sub-spans, with a measured inline head; three forms get measured (all inline, all
+  loops, inline head then loops); if all-inline proves faster it becomes a performance-dial option, not the default.
+  (c) The performance dial ([OPT-DIAL]) may carry kit options. This is the owner's direction for the kit's stage-2
+  rendering (relayed to the kit; no build go by it). Stage 1 build go still not given in words.
