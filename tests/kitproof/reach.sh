@@ -22,7 +22,10 @@ case "$fl" in *i*) a="$a -i" ;; esac
 case "$fl" in *u*) a="$a -e utf8" ;; esac
 case "$fl" in *R*) a="$a -fno-rev-end" ;; esac
 if [ "$mode" = --facts ]; then
-    want="$(awk -F'\t' -v fl="$fl" -v pat="$pat" '$1 == "facts" && $2 == fl && $3 == pat { print $4; exit }' \
+    # PAT TRAVELS IN THE ENVIRONMENT, never `awk -v`: -v processes backslash
+    # escapes (`\z`, `\W`), and awks differ on an unknown one (the cloud
+    # runner's mawk mangled it; the dev box's did not -- S3222, 2026-11-15).
+    want="$(PAT="$pat" FL="$fl" awk -F'\t' '$1 == "facts" && $2 == ENVIRON["FL"] && $3 == ENVIRON["PAT"] { print $4; exit }' \
             "$root/tests/kitproof/cases.tsv")"
     [ -n "$want" ] || { echo REACH-FACTS-NOROW; exit 0; }
     enc=byte; case "$fl" in *u*) enc=utf8 ;; esac
@@ -30,7 +33,8 @@ if [ "$mode" = --facts ]; then
     got="$("$root/build/pcrec" --features all $a --emit-facts --pattern "$pat" 2>/dev/null \
            | awk -F'\t' -v enc="$enc" '/^#section / { sec = substr($0, 10); next }
                                        sec == "cover" && $1 == enc { print $2 "|" $3 "|" $4 "|" $5 }')"
-    if [ "$got" = "$want" ]; then echo REACH-FACTS-EQUAL; else echo REACH-FACTS-DIFFER; fi
+    if [ "$got" = "$want" ]; then echo REACH-FACTS-EQUAL
+    else echo REACH-FACTS-DIFFER; echo "reach.sh: want='$want' got='$got'" >&2; fi
     exit 0
 fi
 # The compile writes kitproof_reach.c AND .h: never into the invoking directory
