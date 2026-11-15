@@ -73,7 +73,9 @@ message when the draft is ready.
    `-DPCREC_KS_TRACE` binaries ONCE into the round dir as part of the round's build
    (r5 sp1g: saved three per-critic builds). For MFTRACE REACH equality, build the BASE and SUBJECT MF_TRACE pairs via
    `tests/memfn/mk_mftrace_lib.sh` + one gcc link; a BASE tree may be a `git archive` export in the
-   round dir (r1 sp1b).
+   round dir (r1 sp1b). When the subject adds or moves sabotage rows, also prebuild ONE planted compiler per moved
+   row into the round dir (`plants/<ID>/`, from the row's own BEFORE/AFTER), so critics test each row's witness
+   without running make (r9 covs1: 9 plants took about 10 minutes).
 3. Denylist (D27 applied to review): the lane's reports
    (`docs/dev/lanes/<lane>*`), review files on this subject, `git log` bodies
    beyond the subject lines, job logs, other worktrees, the box queue, plus the

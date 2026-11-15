@@ -693,7 +693,7 @@
 #     [COVER-CAP] stage 1), and every answer against libpcre2 10.46's
 #     committed ones. Its own arm because the `cover` row is routed only by
 #     the test harness's lever, which no other suite compiles under. Rows:
-#     S1130-S1144, S1148, S3220-S3225 (S1149 retired with the slice). Verdict: the script's `checks passed:`/
+#     S1130-S1144, S1148, S3220-S3226 (S1149 retired with the slice). Verdict: the script's `checks passed:`/
 #     `checks failed:` trailer.
 #   spechistory — added 2026-10-09 (lane specclean, [SPEC-CLEAN]); runs
 #     tests/spec_history/run_spec_history.sh against the SABOTAGED tree's
