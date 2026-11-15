@@ -2,6 +2,20 @@
 
 ## Changelog
 
+- **rev 9 (lane predspec9, 2026-11-15).** Folds the owner's last two COND-FAMILY.md entries (CF:927-961): SEARCH
+  FOLLOWS PCRE'S MATCHING, a name bound to a transform's result binds the transformed rx, hit-count control by
+  settings (CF:927-947); and ONE READING EVERYWHERE (PCRE's), ambiguity the author's to validate, no `max` on search
+  for now (CF:948-961). REWRITTEN: §4.5 (ONE READING: a condition on any label, set once or in a loop, follows PCRE's
+  own parse; the 11-14 some-parse rule SUPERSEDED; what the default level computes for free and what it builds at a
+  cost; the condition never steers the parse), §2.6 (`search(x, min = 0)`, `contains(x)` = `search(x, min = 1)` in
+  what it accepts and ONE definition, zero hits decided by `min`, hand checks re-run for min 0 and 1), §4.2 (the
+  boundary between an UNSET label set once and a loop with zero iterations, stated once), §4.3 (no conflict mark;
+  zero iterations: a plain condition holds), §5.6 (validating an ambiguous label's reading with the existing
+  assertions: no new form needed), §6.1 (the default level and PCRE's reading), §7.1 (`label.ambiguous` text), §8
+  (`search` with `min`, `contains` by `search`, lazy `endsWith`). §0.1: L16, L34, L36, L51, L53 restated; L55-L59
+  new. §13: C36, O33, O54 (the `d :=` half) RESOLVED; O28 restated; the manager's calls on O53, O31 (`index`/`label`),
+  C7 (`=>`) and the library `(?s)` marked LEAN (manager); O57 (the OWED MEASUREMENT of the one reading's cost), O58
+  (`min` above 1, `max`), O59 (the library bodies' own reading) new.
 - **rev 8 (lane predspec8, 2026-11-15).** Folds the owner's three latest COND-FAMILY.md entries: the search result
   is the ARRAY of all results (CF:880-887); his answers to review r8's four questions (CF:888-901: typed parameters
   OUT of phase 1, `:` narrows only; ARRAY and MAP are INTERFACES applied to a thing, never values that can be
@@ -59,7 +73,7 @@
 
 ## 0. Status, goals, standing questions
 
-**Status: DRAFT rev 8 (lane predspec8, 2026-11-15). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
+**Status: DRAFT rev 9 (lane predspec9, 2026-11-15). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
 #6 not scheduled; 2026-11-15, relayed in the predspec5 brief: "the predicate work is not a go to build as we are
 still in design"). Purpose (Frank 2026-11-14): "create a preliminary predicate spec doc with our latest ideas for the
 purpose of critical analysis. Provide reasoning." It consolidates the dated notes in
@@ -79,7 +93,7 @@ filtering and labels, `where` for structural selection, conditions `(x: S, y: T)
 (`x & padded(between(1, 12))`), operator sections `(& f)`, `@` effects, modules as `m := import("m")`, 1-based indexes,
 search as the library transform `search(rx)` (rev 7's `~`/`!~` are withdrawn, §2.6).
 
-Status marks (rev 8; every mark is one of three):
+Status marks (rev 9; every mark is one of three):
 - **RULED (CF:n)**: the owner's own words at line n of COND-FAMILY.md (or a D-number) cover the rule; it reaches only
   as far as his quoted words, not a manager gloss beside them. THE TYPE PICTURE (CF:846-879) is a manager's RECORD
   (CF:857-875) that the owner ACCEPTED as a whole at CF:851 ("I'm liking your ideas"); a mark "RULED (CF:858)" (or
@@ -109,6 +123,20 @@ Status marks (rev 8; every mark is one of three):
 | `some(...)` for some hits (CF:912-914) | "could you use some() to get some hits?" (CF:904-905, a question) | `all(...)` the default; `occurs` keeps counts only; `x & s` re-examined |
 | the hit is a repeated label (CF:910-911); same hit by record (CF:915-917); the definition requirements (CF:918-921); group questions phase 1 (CF:922-924) | none | all of it ("Do it") |
 | one-iteration access at a higher capability level (CF:924-926) | none | the MANAGER'S LEAN, "stated to him twice, not separately ruled" (CF:925-926): LEAN, not RULED |
+
+  The two LAST 2026-11-15 entries (rev 9). Both are the owner's answers in his own words (CF:929-934, CF:949-952);
+  the RECORD lines beside them (CF:935-940, CF:953-961) reach only as far as those words, and the manager's notes
+  (CF:941-947) are LEAN except where his second answer (CF:949-952) takes them up:
+
+| ruling point | the owner's own sentence behind it | what rests only on the record or is the manager's |
+|---|---|---|
+| search follows PCRE's matching, "always" (CF:935-936) | "it should always follow it if for no other reason than that's what's expected" (CF:932-933) | the count and every question about the hits on that parse (the record's gloss) |
+| a bound name holds the transformed rx (CF:936-937) | "the name binds to the transformed regex as for all transformed regex. Am I missing something?" (CF:929) | `hits := search(r)`, applied as `(m: hits)` (the manager's example of it) |
+| the quantifier decides zero hits; settings on `search` (CF:937-940) | "What's missing is the + or * control. Perhaps search needs a min max with defaults." (CF:933-934; "perhaps" = a LEAN of his) | "a plain condition on the hits stays all hits and is true over zero hits when zero hits are allowed" (the record's reading of "+ or * control") |
+| ONE reading everywhere, the some-parse rule SUPERSEDED (CF:953-955) | "I think it will help if our rx is consistent" (CF:950), answering note (a) (CF:941-944), whose words were "ONE rule (PCRE's reading everywhere)" | "the compiler builds it where it can with the cost shown and refuses on budget naming the higher level" (note (a)'s tail: the MANAGER'S LEAN, not taken up in his answer) |
+| the cost is to be known (CF:955-957) | "i'd like to know the cost of this, as you say" (CF:949-950) | the measurement's population and form (the record's, CF:955-957) |
+| ambiguity is the author's to validate (CF:957-959) | "If someone is writing ambiguous rx they need to think about what that means and validate it with @check()" (CF:950-951; `@check()` a placeholder) | the assertion library as its home; `label.ambiguous` kept as the pointer (the record's) |
+| `search` gets `min` only; no `max` for now (CF:960-961) | "if "max" is confusing we could skip it for now" (CF:951-952) | `min` default 0, `min = 1` = at least one hit (the manager's note (b), CF:944-945, which his answer leaves standing); `contains(x)` accepts what `search(x, min = 1)` accepts (note (b)) |
 - **LEAN**: a manager's reading or proposal, this document's consequence of a ruling, an owner "perhaps", or a
   review fix (the FIX-NOW dispositions of review r1 other than Q1 and OWN-1 carry no owner ruling); the source is
   named in parentheses (review finding id, "manager", "this document").
@@ -160,7 +188,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L13 | `x & padded(/^5/)` vs `x & padded(startsWith("5"))` | SAME | `^` is the start of the span the modified filter reads (§11); `padded(/\b5/)` stays the EDGE-ASSERTION ERROR | CF:761 |
 | L14 | `enumerate(/(?<=a)[bc]/)` vs `enumerate(/[bc]/)` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR | Q1R-8, Q1X-6 (b) |
 | L15 | `@warn.off(/^dead\./)` vs `@warn.off(startsWith("dead."))` | SAME | `^` is the start of the name (§11) | CF:732 (LEAN extension, §11) |
-| L16 | `(m: search(/^err/))` vs `(m: contains(/^err/))` | DIFFERENT: BY DESIGN | `search` NEVER REJECTS (as a set it is every string; what it adds is the repeated label `hit`, one iteration per hit, here at most one, at m's start); `contains` is the TEST (one hit needed). The search filters nothing until a question is asked of its hits (`some(...)`, `count(...)`, a plain condition; §2.6, §4.3) | CF:907-909 (accepted at CF:905); rev 7's `$m ~ /^err/` row withdrawn with `~` |
+| L16 | `(m: search(/^err/))` vs `(m: contains(/^err/))` | DIFFERENT: BY DESIGN | `search` with its default `min = 0` NEVER REJECTS (as a set it is every string; what it adds is the repeated label `hit`, one iteration per hit, here at most one, at m's start); `contains` is the TEST (one hit needed). The search filters nothing until a question is asked of its hits (`some(...)`, `count(...)`, a plain condition; §2.6, §4.3). With `min = 1` the two are SAME (L58) | CF:907-909 (accepted at CF:905); rev 7's `$m ~ /^err/` row withdrawn with `~`; `min`: CF:960 |
 | L17 | `(m: contains(/^err/))` vs `(m: startsWith("err"))` | SAME | a filter passed as an argument filters the span the call's filter role filters, so `^` is m's start in both (§11 THE FILTERED SPAN); `(m: !contains(/^err/))` is the negated test (rev 7's `$m !~ /^err/`, withdrawn, §2.6) | CF:761 (LEAN, r8 P6-5) |
 | L18 | a nullable final search pattern: `/\b/` vs `/a*/` | SAME | both are nullable IN CONTEXT: `empty.search` WARNING for a one-literal program, ERROR in a predicate program (§7) | Q1R-9 |
 | L19 | `(?m)^\d*` searched vs the same pattern in whole-subject mode | DIFFERENT: WARNING | by MODE only: `empty.search` in search mode, none when anchored (a `^` in the pattern does not exempt) | Q1R-9 |
@@ -178,9 +206,9 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L31 | `some((g: "x", h: 1))` vs `some((g: "x")) & some((h: 1))` over a repeated label (search hits included) | DIFFERENT: BY DESIGN | SAME HIT BY RECORD: one record = all its entries on the SAME iteration; two `some` calls may be met by different iterations (§4.3; on hits `x2 y1` of `/(?<g>[xy])(?<h>\d)/`: the first false, the second true). Replaces rev 7's GAP row (two `occurs.some` vs one `some(s)`); §13 O29 RESOLVED | CF:915-917 (accepted at CF:905) |
 | L32 | `/${q}/m` vs the inlined text of `q` | DIFFERENT: GAP | GAP; `flag.hole` (proposed); OPEN (§13 O32) | Q1R-11 |
 | L33 | `\k<s>` vs `${$s}` vs `each(..., enumerate(...))` on a finite label | DIFFERENT: GAP | different levels today; OPEN (§13 O34) | RUL-7 |
-| L34 | `(a: <5) & (b: <5)` on an ambiguous two-label parse: default level vs `vm` | DIFFERENT: WARNING | `label.ambiguous` WARNING (per label); multi-label reading OPEN (§13 O33) | RUL-3 |
+| L34 | `(a: <5) & (b: <5)` on an ambiguous two-label pattern (`/(?<a>\d+)(?<b>\d+)/` on `123`): default level vs `vm` | SAME | ONE READING (§4.5, CF:953-955): both levels read PCRE's one parse (a = `12`, b = `3`), so the program is false at both; the default level may pay states for it (cost owed, §13 O57). `label.ambiguous` still names the label, as the POINTER to the author's validation (§5.6, CF:959), not as a report of a difference. Rev 8: DIFFERENT: WARNING (some-parse at default) | CF:953-955; rev 8 RUL-3 |
 | L35 | `(?J)` duplicate label vs a repeated label, under `x: S` | DIFFERENT: GAP | GAP; OPEN (§13 O35) | RUL-16 |
-| L36 | `(x: S)` vs `all((x: S))` on a repeated label | SAME | `all(...)` is the default, "rarely written": a plain condition already means every iteration (§4.3); rev 7's `occurs.all` leaves (`occurs` keeps counts only); on ZERO iterations both follow §13 O28 | CF:912-913 (accepted at CF:905); C28 RESOLVED |
+| L36 | `(x: S)` vs `all((x: S))` on a repeated label | SAME | `all(...)` is the default, "rarely written": a plain condition already means every iteration (§4.3); rev 7's `occurs.all` leaves (`occurs` keeps counts only); on ZERO iterations both HOLD (the loop's own quantifier allowed none; the boundary with an unset label: §4.2) | CF:912-913 (accepted at CF:905); C28 RESOLVED |
 | L37 | `(wname.index: ==wd)` vs `(b: >$a)` | OPEN | a computed label read bare vs with `$` (§13 C13; E-RFC's `==wd` and E-CAL's `<=dim` both rest on it) | OWN-11, r8 P6-11 |
 | L38 | `isodate(x).year` vs `(x & isodate).year` | DIFFERENT: ERROR | the first is a compile ERROR (a pattern takes no arguments; hint "write `x & isodate`"); whether `.year` of `x & isodate` is a value or a pattern: OPEN (§13 C29) | RUL-8, 2026-11-15 RULING |
 | L39 | `A & B` vs `B & A` | SAME | the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2) | C1 ruling |
@@ -195,10 +223,15 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L48 | `x := /a\|b\|c/`: `[x, /d/]` vs `x \| /d/` | DIFFERENT: BY DESIGN | SAME under `& \| !` (one language); under structural tools `[x, /d/]` has 2 entries (each entry of `[ ]` is ONE entry, like a group or a hole, §3.3, §5.4) and `x \| /d/` has 4 (`\|` concatenates arrays) | r8 P6-14 |
 | L49 | `m(x: T) := ...` then `m(A)` vs `A & (x: T)` | DIFFERENT: ERROR (phase 1) | typed parameters are OUT of phase 1 (the owner: "keep out of phase 1", CF:889), so in phase 1 the first form is an ERROR ("a parameter takes no constraint in phase 1; constrain where it is used") and `:` has ONE behaviour, it narrows. In the design (types "need more thinking", CF:889) rev 7's difference (`:` checks in a head, narrows in a condition) stays unruled (§13 O48) | r8 P6-4; CF:889 |
 | L50 | a record on the left over a search, rev 8 spelling `(x, y) := $m & search(/(?<a>\d)(?<b>\d)/)`: laid over the search pattern's GROUPS vs read as the first two HITS (Python's `x, y = re.findall(...)`) | OPEN | design only, out of phase 1 (§0.2). Rev 8 removes the second reading's footing (hits are iterations of a label, reached by the array interface over iterations, never entries of a value), so the lean is the first: the record is laid against the map interface (groups); x and y are then REPEATED labels, one iteration per hit, paired by iteration. Whether the form survives the withdrawal of `~` at all: §13 O54 | r8 P6-7 (DRIFT-6); CF:852 |
-| L51 | `(m: !search(r))` vs `(m: !contains(r))` | DIFFERENT: ERROR | `search(r)` accepts every string, so `!search(r)` is EMPTY: the empty-intersection ERROR at a narrowing site (§5.2), hint "for no hit write `!contains(r)`". Replaces rev 7's `!($m ~ r)` vs `$m !~ r` GAP row (both operators withdrawn) | CF:909 (accepted at CF:905); §5.2 (LEAN) |
+| L51 | `(m: !search(r))` vs `(m: !contains(r))` | DIFFERENT: ERROR | `search(r)` accepts every string, so `!search(r)` is EMPTY: the empty-intersection ERROR at a narrowing site (§5.2), hint "for no hit write `!contains(r)`". Replaces rev 7's `!($m ~ r)` vs `$m !~ r` GAP row (both operators withdrawn). With `min = 1`, `!search(r, min = 1)` = `!contains(r)` (L58) | CF:909 (accepted at CF:905); §5.2 (LEAN) |
 | L52 | `(m: search(r) & (g: "x"))` vs `(m: search(r) & some((g: "x")))` | DIFFERENT: BY DESIGN | the LOOK-ALIKE ROW the transform ruling requires: a plain condition on a hit's label means ALL hits (the sequence rule, §4.3); "some hit" is `some(...)`. On `abx aby abx` with `r = /ab(?<g>[xy])/`: the first rejects (hit 2 has g = y), the second accepts. Whether it also gets a named warning: §13 O38 | CF:920-921 (accepted at CF:905) |
-| L53 | `(m: search(/a*/))` vs find-all of `/a*/` (Python's `re.findall("a*", "baa")` = 3 results) | DIFFERENT: ERROR (lean) | the lazy-gap definition stops at an EMPTY hit (PCRE ends a loop whose iteration matched empty: 1 hit on `baa`); rev 8 refuses a search argument that can match empty, naming `x & !""` (§2.6, §13 O53) | CF:919-920 (accepted at CF:905); LEAN |
+| L53 | `(m: search(/a*/))` vs find-all of `/a*/` (Python's `re.findall("a*", "baa")` = 3 results) | DIFFERENT: ERROR (lean) | the lazy-gap definition stops at an EMPTY hit (PCRE ends a loop whose iteration matched empty: 1 hit on `baa`); a search argument that can match empty is refused, naming `x & !""` (§2.6, §13 O53) | CF:919-920 (accepted at CF:905); the refusal: LEAN (manager, rev 9) |
 | L54 | `x & s` with s an rx vs `some(...)` | DIFFERENT: BY DESIGN | `x & s` is MEMBERSHIP in the rx s (any one entry under `&`, §3.4); `some(...)` asks whether some ITERATION of a repeated label meets a condition (§4.3). Rev 7's three spellings of "some result" (`x & s`, `some(s)`, `occurs.some`) become one: `some(...)` | CF:913-914 (accepted at CF:905) |
+| L55 | `(m: search(r) & (g: S))` vs `(m: search(r, min = 1) & (g: S))` on a value with NO hit | DIFFERENT: BY DESIGN | `min` says whether zero hits are allowed (the owner's "+ or * control", CF:933): with the default `min = 0` a plain condition over zero hits HOLDS (every one of none), with `min = 1` the value is rejected. On `xyz` with `r = /ab(?<g>[xy])/`: the first accepts, the second rejects (§2.6 hand checks). Rev 8's lean (a plain condition FAILS on zero hits) is withdrawn | CF:933-934; CF:937-940 (record) |
+| L56 | `(?<n>\d)?` vs `(?<n>\d)*` under `(n: <5)`, on a value with no digit | DIFFERENT: WARNING | `?` makes n SET ONCE, here UNSET, so the condition fails (§4.2), with the `label.unset` warning on the `?` form; `*` makes n REPEATED with zero iterations, so the plain condition holds (§4.3). The boundary is stated once, in §4.2 | §4.2 (LEAN, CF:173); CF:937-940 |
+| L57 | `search(x, min = 2)` vs `search(x) & occurs.at_least(2, (hit: /(?s).*/))` | DIFFERENT: ERROR (lean) | under PCRE's reading `{2,}` RE-CUTS the hits to reach two: `x = /aab\|a/` on `aab` gives one hit (`aab`@0) at `min` 0 or 1 but two (`a`@0, `a`@1) at `min = 2` (libpcre2 and Python's `re` agree, §2.6), while the `occurs` form counts the default hits (one: rejects). Lean: `min` is 0 or 1; a larger `min` is an ERROR naming the `occurs.at_least` form (§13 O58) | CF:960 (`min` only); LEAN (this document) |
+| L58 | `contains(x)` vs `search(x, min = 1)` | SAME | ONE definition (§2.6, §8): `contains(x) := search(x, min = 1)`, so they accept the same values AND read x's labels the same way (leftmost hits, a plain condition = every hit). Rev 8's own body `/(?s).*${x}.*/` accepted the same values but, under the one reading, would read x's labels at the RIGHTMOST occurrence (its greedy lead; `contains(/ab(?<g>[xy])/)` on `abx aby` gives g = `y`, libpcre2), a look-alike the one definition removes | CF:944-945 (note (b)); LEAN (this document) |
+| L59 | `/(?<a>\d+)(?<b>\d+)/ & (a: "1")` vs the constraint written into the pattern, `/(?<a>1)(?<b>\d+)/`, on `123` | DIFFERENT: WARNING | a condition READS PCRE's parse of the pattern it is laid against and never steers it (§4.5): that parse gives a = `12`, so the first rejects `123`; a constraint written INTO the pattern changes the pattern, whose parse then gives a = `1`, so the second accepts. `label.ambiguous` names a and shows the witness; the author validates the intended reading (§5.6) | CF:953-955; the no-steering statement: LEAN (this document) |
 
 **REASONING.** The owner's framing: "complex context could cause predicates to just not work and it's not clear how
 the obscure rules impact it ... that's why it was so important to me that things that look like they should do the
@@ -217,7 +250,10 @@ LEAN (§13 O42); L44-L47: LEAN (this document's readings of CF:858-866); L48-L51
 rule of the section cited, OPEN/GAP rows their §13 item; the class on each DIFFERENT row: LEAN (review r8 P6-9); other
 rows state the rule of the section cited. Rev 8: L16, L31, L36, L51, L52, L54 rest on the transform ruling as
 accepted ("Do it", CF:905), not on the owner's own words; L53's refusal and L51's error class are this document's
-LEAN; L49's phase-1 verdict is RULED in his words (CF:889); L50 stays OPEN with a lean (§13 O54).
+LEAN; L49's phase-1 verdict is RULED in his words (CF:889); L50 stays OPEN with a lean (§13 O54). Rev 9: L34's SAME
+rests on the one reading (CF:953-955, his "consistent", CF:950); L55's zero-hit answer on the owner's "+ or * control"
+(CF:933) as the record reads it (CF:937-940); L57's refusal, L58's one definition and L59's no-steering statement are
+this document's LEAN; L53's refusal is the manager's call (LEAN).
 
 ### 0.2 Phase 1 scope (what the owner said is in and out of the first build)
 
@@ -246,6 +282,10 @@ base-level predicate build whenever it is chartered.
   `all(...)`, `count(...)`, `occurs.exactly/at_least/at_most/none` ("compile to states and are phase 1": CF:922-924,
   accepted at CF:905). NOT the default level: access to ONE iteration (`$m.hit[2]`, keep iterations 1 and 3), which
   needs captures inside a loop (CF:924-926: the MANAGER'S LEAN, LEAN; §4.3).
+- IN (rev 9) as RULES that every phase-1 piece obeys, not as constructs: ONE READING, a condition on any label reads
+  PCRE's own parse (§4.5; CF:950, CF:953-955), with its COST OWED as a measurement before any build go (§13 O57,
+  CF:955-957); `search`'s `min` setting, 0 or 1 (CF:960; above 1: §13 O58). OUT for now: a `max` setting on `search`
+  (CF:951-952: "we could skip it for now"). RULED in his words where cited; the rest LEAN.
 - Not stated by the owner: which library pieces (§8) and levels beyond the default (§6.1) phase 1 carries; and, of
   the constructs NO §12 case uses (the TWO-WAY CENSUS, §12: operator sections in code, the `search` transform and
   `some`/`all`, positional `X[...]`, `where`/`where_group`/`each_group`, `when`, `eval`, `@export`/`@warn`, `*`/`%`,
@@ -279,6 +319,8 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 | **interface** | the ARRAY interface (entries in order) or the MAP interface (fields by name) APPLIED TO a thing: to an rx (§3.1), to a repeated label's iterations (array, §4.3), to a module (map, §7). The owner's word ("Array and map are interfaces that can be applied to regex but interfaces aren't themselves values that can be created", CF:890-891; rev 7 said "view"). An interface is never a value: nothing creates an array or a map | a declared type (§9: rev 7's cut "interfaces", now DECLARED TYPES) |
 | **iteration** | one pass of a repeated label in one match (a search's HIT is one iteration of its `hit` label, §2.6) | an entry (spelled) |
 | **hit** | one occurrence found by `search`: an iteration of the repeated label `hit` (§2.6) | rev 7's "result"/"occurrence" as an array entry |
+| **PCRE's reading** (= **the parse**) | the ONE parse PCRE2 gives a pattern matched against exactly the value a set position filters (anchored at both of its ends): every label's span, every iteration of a loop (§4.5, rev 9) | "some parse" (rev 8's some-parse rule, SUPERSEDED); a parse a condition would steer toward (a condition never steers, §4.5) |
+| **set once** / **repeated** | a label whose group can be set at most once in one match (it may be UNSET: an optional group, an untaken alternative) / a label whose group can be set more than once (a loop with an upper bound of 2 or more, or none; the `hit` of `search`); the boundary: §4.2 | |
 | **record** | the written `( ... )` laid against fields (§5.4); never a value | what `records()` returns (an rx whose ARRAY interface lists the ITEMS; its pattern is the ITEM RX; the name `records` is a placeholder to rename, §13 O44) |
 | **effect** | an `@` form, a compile-time statement (§5.1), not a value and not a macro | |
 
@@ -287,13 +329,25 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 1. **Measurement regime.** Mostly not relevant: a language spec introduces no measured quantity. The numbers cited
    (ISO date with leap Feb 29 as a plain regex: 6,848 B object, 5.9 ms compile; CF:40; class counts in §4.6) are
    compile-time sizes or arithmetic, not timings. The budgets of §4.6/§8 (O39) are measured quantities when a build
-   sets them, and must name their regime then.
+   sets them, and must name their regime then. RELEVANT in rev 9 for ONE owed measurement (§13 O57: the cost of
+   PCRE's reading of a condition on an ambiguous label, CF:955-957). Regime: COMPILE-TIME size, not match speed:
+   minimal-DFA states (and build time, reported beside them) of the automaton for PCRE's reading vs the some-parse
+   automaton for the same program, one minimiser, one alphabet, one box and compiler named in the result. A
+   different regime (match throughput) would not flip the decision it feeds (both are automaton code, linear); a
+   different POPULATION could, which is why O57 names two.
 2. **The independent control.** Relevant to §12 and G0: expected behaviours were checked against Python's
    `datetime`, a hand-written Luhn function and libpcre2 10.49 (review r1's kit), not against pcrec. At build: the
    PCRE2+callout oracle (studies/andspike, F9), an independent Python reference evaluator, standards' own test
-   vectors as `@assert.*` statements (§5.6); for G0 a D27 author working from §0.1 alone.
+   vectors as `@assert.*` statements (§5.6); for G0 a D27 author working from §0.1 alone. Rev 9: PCRE's reading of
+   a label is checked against libpcre2's OWN parse through its public API (the pattern matched against the whole
+   value, the label's span read from the match; never a rejecting callout, which would make PCRE backtrack into
+   another parse, §4.5), with Python's `re` (same priority rules for these constructs) as a second, separately built
+   engine; neither shares a source with a construction pcrec would build. For O57 the ambiguous-pattern population is
+   counted by the decidable ambiguity check (§4.5) AND, independently, by a libpcre2 differential that finds a
+   witness string whose PCRE parse differs from another accepting parse (K35: who counts the population).
 3. **What moves when data is regenerated.** Relevant only through `file_text`/`import` pins (§7): a changed file
-   under a `sha256` pin is a loud compile error; a re-pinned file changes the emitted automaton.
+   under a `sha256` pin is a loud compile error; a re-pinned file changes the emitted automaton. O57's result, when
+   measured, moves no emitted byte: it feeds the budget (§13 O39) and the owner's go/no-go on the one reading's cost.
 
 ## 1. Layering
 
@@ -504,14 +558,39 @@ over the WHOLE value in which the hit group REPEATS, once per hit, and it is app
 longer a value: a TEST is `contains`, a QUESTION about the hits is `search` with a group question (§4.3). The hit
 needs no new concept: it is a REPEATED LABEL (§4.3), so a plain condition on a hit's label means ALL hits,
 `some(...)` some hit, `count(...)` and `occurs.*` count them, and one record means one hit (SAME HIT BY RECORD).
+The hits are those of PCRE's OWN matching of the body, "always" (the owner, CF:932-933): the ONE READING of §4.5.
 
-    contains(x) := /(?s).*${x}.*/                   # a TEST: one hit needed
-    search(x)   := /(?s)(?:.*?(?<hit>${x}))*.*/     # every value; each hit is one iteration of the label `hit`
+    search(x, min = 0) := /(?s)(?:.*?(?<hit>${x})){${min},}.*/   # each hit is one iteration of the label `hit`
+    contains(x)        := search(x, min = 1)                      # a TEST: at least one hit
 
 (Library text, §8; spelling placeholder, D193 add. 4. The owner's sketch `search(x) := /.*(?:(${x}.*).*/`, CF:903-904,
-is the idea; the shape is the record's requirement (5), CF:918-919. `(?s)` makes the gaps cross line breaks; it does
-not reach into the hole, a literal's flags are never inherited by a hole's pattern, §11, §13 O32. The label name
-`hit` is a library placeholder, §13 O55.)
+is the idea; the shape is the record's requirement (5), CF:918-919. `${min}` is a hole in a typed syntax position, the
+quantifier's lower bound (§11); `{0,}` is `*`, `{1,}` is `+`, the owner's "+ or * control" (CF:933). `(?s)` makes the
+gaps cross line breaks (the manager's call, LEAN, rev 9); it does not reach into the hole, a literal's flags are never
+inherited by a hole's pattern, §11, §13 O32. The label name `hit` is a library placeholder, §13 O55.)
+
+THE `min` SETTING (CF:933-934 "Perhaps search needs a min max with defaults", his LEAN; CF:960 `min` only). `min` is an
+optional setting with the default 0 (§5.2: keywords are optional settings): `min = 0` allows zero hits (the value is
+never rejected), `min = 1` requires at least one hit (a value with none is rejected). THERE IS NO `max` FOR NOW (the
+owner: "if "max" is confusing we could skip it for now", CF:951-952): under PCRE's reading `{0,N}` would mean "take the
+FIRST N hits" (the rest of the value may hold more), not "at most N hits in the value", which stays a count test,
+`occurs.at_most` (§13 O58). A `min` above 1 is refused (LEAN, this document; §0.1 L57, §13 O58): `{2,}` lets PCRE
+RE-CUT the hits to reach two (`x = /aab|a/` on `aab`: one hit `aab` at `min` 0 or 1, two hits `a`, `a` at `min = 2`),
+so it is not "at least two of the hits", which is `occurs.at_least(2, ...)`.
+
+`min = 1` FINDS THE SAME HITS AS `min = 0` whenever there is at least one. Proof (in PCRE's priority order): the rest
+of the pattern after any iteration always succeeds (`{0,}` may stop and the tail `(?s).*` takes what is left), so the
+first iteration's first success is never undone; under `{0,}` the greedy loop tries that iteration before stopping,
+and under `{1,}` it must; each later iteration is the same choice in both. Checked below on every row.
+
+`contains` IS `search(x, min = 1)`: ONE definition (the manager's note (b), CF:944-945, "`contains(x)` is then
+`search(x, min = 1)` in what it accepts"; ONE definition: LEAN, this document). What it accepts is unchanged from rev
+8's own body `/(?s).*${x}.*/`: as SETS both are the values with a substring in x. What differs is x's LABELS under the
+one reading: rev 8's greedy lead puts x at its RIGHTMOST occurrence (`contains(/ab(?<g>[xy])/)` on `abx aby`: g = `y`,
+libpcre2), while the search body puts the hits leftmost, every one an iteration, so `(m: contains(/ab(?<g>[xy])/) &
+(g: "x"))` means "every hit has g = x" and `some((g: "x"))` "some hit does", exactly as for `search` (§0.1 L58). The
+labels therefore ALLOW one definition, and it removes a look-alike. Cost: where no question reads x's labels, the
+compiler may build `contains` as the plain set (an optimisation that changes no answer).
 
 THE DEFINITION'S REQUIREMENTS (CF:918-921, accepted at CF:905), and how the text above meets each:
 1. LAZY GAPS, so the hits are LEFTMOST and NON-OVERLAPPING. In PCRE's priority parse of `(?:.*?(x))*.*` against the
@@ -520,60 +599,73 @@ THE DEFINITION'S REQUIREMENTS (CF:918-921, accepted at CF:905), and how the text
    `.*` takes what is left), so nothing backtracks into a hit and each hit is x's own PCRE-preferred match at that
    place. That is PCRE2's find-all order (the C find-all iterator's), for an argument that cannot match empty.
 2. A REPEATED LABEL'S COUNT FOLLOWS PCRE'S PRIORITY PARSE (which with lazy gaps is find-all order). As a SET the
-   pattern is every string and it has other parses (a gap can swallow a hit), so the hits are the iterations of the
-   PRIORITY parse, not of "some parse". This is a CONFLICT with §4.5's ruled some-parse rule for ambiguous labels: §13
-   C36 gives both readings and does not pick.
+   pattern is every string and it has other parses (a gap can swallow a hit); the hits are the iterations of PCRE's
+   parse. Rev 8 marked this a CONFLICT with the 11-14 some-parse rule (C36); the ONE READING (§4.5, CF:953-955)
+   RESOLVES it: PCRE's parse is the reading of every label, so `search` needs no exception.
 3. THE EMPTY-MATCH ADVANCE. PCRE ends a loop whose iteration matched the empty string, so an argument that can match
    empty gives at most ONE hit (the first, possibly empty) where find-all advances and continues (`/a*/` on `baa`: one
-   empty hit at 0; Python's `re.findall("a*", "baa")` gives `['', 'aa', '']`, three; §0.1 L53). Rev 8 (LEAN): a
-   search argument that can match empty is a compile ERROR naming the fix `x & !""` (the same hazard the empty-match
-   rule refuses for a predicate program's final pattern, §7); the alternative, PCRE2's find-all advance rule written
-   into the library text, is §13 O53.
+   empty hit at 0; Python's `re.findall("a*", "baa")` gives `['', 'aa', '']`, three; §0.1 L53). A search (or
+   `contains`) argument that can match empty is a compile ERROR naming the fix `x & !""` (the MANAGER'S CALL, LEAN,
+   rev 9; the same hazard the empty-match rule refuses for a predicate program's final pattern, §7; §13 O53).
 4. THE LOOK-ALIKE ROW: "`(g: x)` on a search result means ALL hits" is §0.1 L52 (BY DESIGN).
 
 THE ANCHORED ARGUMENT. `^`/`$` in the argument are the ends of the span the enclosing filter role filters (§11 ONE
-SPAN PER FILTER ROLE; §13 O49), not of the hole the body puts the argument in. So `search(/^err/)` can hit only at
-the value's start: AT MOST ONE HIT. This is the rev 7 rule unchanged: `contains(/^err/)` = `startsWith("err")` (L17),
-and `search(/^err/)` has its one hit exactly when `contains(/^err/)` holds. With an explicit `(?m)` in the argument
-`^` also matches after a line break inside the span (C35), one hit per such line.
+SPAN PER FILTER ROLE; §13 O49, still OPEN), not of the hole the body puts the argument in. So `search(/^err/)` can hit
+only at the value's start: AT MOST ONE HIT. `contains(/^err/)` = `startsWith("err")` (L17), and `search(/^err/)` has
+its one hit exactly when `contains(/^err/)` holds. With an explicit `(?m)` in the argument `^` also matches after a
+line break inside the span (C35), one hit per such line.
 
-ZERO HITS. `search` NEVER REJECTS (zero iterations always parse; as a set it is every string); `contains` does.
-`(m: search(r))` alone narrows nothing (§0.1 L16); a question narrows: on zero hits `some(...)` fails, `count(...)` is
-0, `occurs.none(...)` holds, and a plain condition or `all(...)` follows §13 O28 (lean: fails, zero iterations being
-"unset"). `!search(r)` is empty, the empty-intersection error (L51).
+ZERO HITS (CF:933 "What's missing is the + or * control"; the record, CF:937-940). The quantifier the user chose
+decides, as for any repeated label whose own `*` or `+` decides (§4.2 states the boundary with an UNSET label once).
+- With `min = 0` zero hits are ALLOWED: `search` never rejects (zero iterations always parse; as a set it is every
+  string). A plain condition or `all(...)` on the hits HOLDS over zero hits (every one of none); `some(...)` fails,
+  `count(...)` is 0, `occurs.none(...)` holds. Rev 8's lean (a plain condition FAILS on zero hits) is WITHDRAWN; "there
+  is a hit and every hit is an x" is written `search(r, min = 1) & (g: "x")` or `some(...) & (g: "x")`.
+- With `min = 1` zero hits REJECT the value; otherwise the hits are the `min = 0` hits (above).
+`(m: search(r))` alone narrows nothing (§0.1 L16); `!search(r)` is empty, the empty-intersection error (L51), and
+`!search(r, min = 1)` = `!contains(r)`.
 
-HAND CHECKS. Each row was derived by hand from the priority parse and then run on the system libpcre2-8 (10.46): the
-pattern `(?s)(?:.*?(X)(?C1))*.*` matched against the whole value (anchored at both ends), a callout recording the
-span of each hit (script and output: `docs/dev/lanes/predspec8_report.md`, EXAMPLES RE-CHECKED).
+HAND CHECKS (rev 9: re-run for `min` 0 and 1). Each row was derived by hand from the priority parse, then run on the
+system libpcre2-8 10.46 through its public API: the loop `(?:.*?(X)){min,}` UNROLLED into nested optionals with one
+capture group per iteration (equal to the loop in priority for an argument that cannot match empty), matched against
+the whole value (PCRE2_ANCHORED|PCRE2_ENDANCHORED), every hit read from the final match, so nothing abandoned is
+recorded; Python 3.14's `re` ran the same patterns as a second engine and agreed on every row (script and output:
+`docs/dev/lanes/predspec9_reading.py`, `predspec9_reading.out`).
 
-| value | argument X | hits (the priority parse) | `count` | `search` accepts | `contains` accepts |
-|---|---|---|---|---|---|
-| `abx aby abx` | `/ab(?<g>[xy])/` | `abx`@0 g=x, `aby`@4 g=y, `abx`@8 g=x | 3 | yes | yes |
-| `aaa` | `/aa/` | `aa`@0 (the parse with a hit at 1 has lower priority) | 1 | yes | yes |
-| `baa` | `/a*/` | the empty string @0, then the loop ends | 1 (find-all: 3) | refused (L53, lean) | refused (lean) |
-| `err x err` | `/^err/` | `err`@0 (`^` is the span's start) | 1 | yes | yes |
-| `x err` | `/^err/` | none | 0 | yes | no |
-| `xyz` | `/ab(?<g>[xy])/` | none | 0 | yes | no |
-| `err\nerr x\nok` | `/(?m)^err/` | `err`@0, `err`@4 | 2 | yes | yes |
+| value | argument X | hits, `min = 0` (PCRE's parse) | `count` | `min = 0` accepts | `min = 1` hits | `min = 1` (= `contains`) accepts |
+|---|---|---|---|---|---|---|
+| `abx aby abx` | `/ab(?<g>[xy])/` | `abx`@0 g=x, `aby`@4 g=y, `abx`@8 g=x | 3 | yes | the same three | yes |
+| `xyz` (no hit) | `/ab(?<g>[xy])/` | none | 0 | yes | none | NO |
+| `aaa` | `/aa/` | `aa`@0 (a hit at 1 would need a lower-priority parse) | 1 | yes | `aa`@0 | yes |
+| `err x err` | `/^err/` | `err`@0 (`^` is the span's start) | 1 | yes | `err`@0 | yes |
+| `x err` | `/^err/` | none | 0 | yes | none | NO |
+| `err\nerr x\nok` | `/(?m)^err/` | `err`@0, `err`@4 | 2 | yes | the same two | yes |
+| `aab` | `/aab\|a/` | `aab`@0 | 1 | yes | `aab`@0 | yes (`min = 2` would give `a`@0, `a`@1: L57) |
+| `baa` | `/a*/` | the empty string @0, then the loop ends (rev 8's loop run) | 1 (find-all: 3) | refused (L53) | refused | refused |
 
 On the first row: a plain `(g: "x")` fails (hit 2), `some((g: "x"))` holds, `occurs.exactly(2, (g: "x"))` holds,
-`count((g: "y"))` = 1 (§4.3).
+`count((g: "y"))` = 1 (§4.3). On the `xyz` row: a plain `(g: "x")` HOLDS at `min = 0` (no hit to violate it) and the
+value is rejected at `min = 1` (§0.1 L55). The unrolled form is NOT the loop for a nullable argument (it does not stop
+at an empty iteration: six empty hits on `baa`), which is why the `/a*/` row keeps rev 8's loop run.
 
 THE OWNER'S EXAMPLE (his semantics, CF:880-887 and the predspec7 brief; his `d := <subject> ~ ...` spelling used the
-withdrawn `~`; his example stays the INTENDED BEHAVIOUR). With `r := /ab(?<g>[xy])/` and a pattern P whose label m
-holds `abx aby abx`:
+withdrawn `~`; his example stays the INTENDED BEHAVIOUR). A NAME BOUND TO A TRANSFORM'S RESULT BINDS THE TRANSFORMED RX
+(the owner: "the name binds to the transformed regex as for all transformed regex", CF:929), so his `d` is the
+search itself, applied to a value like any filter. With `r := /ab(?<g>[xy])/`, `hits := search(r)` and a pattern P
+whose label m holds `abx aby abx`:
 
-    P & (m: search(r) & occurs.exactly(3, (hit: /(?s).*/)))   # his count(d) = 3: a group question, phase 1
-    P & (m: search(r) & some((g: "x")))                        # some hit has g = x: phase 1
-    P & (m: search(r) & occurs.exactly(2, (g: "x")))           # two hits have g = x: phase 1
-    $m.hit[2]                                                  # his d[2] = aby: ONE iteration, captures level
-    $m.hit[2].g                                                # his d[2].g = y: captures level
-    $m.hit & (g: "x")                                          # his d & (g: x): iterations 1 and 3, positions kept
+    P & (m: hits & occurs.exactly(3, (hit: /(?s).*/)))   # his count(d) = 3: a group question, phase 1
+    P & (m: hits & some((g: "x")))                        # some hit has g = x: phase 1
+    P & (m: hits & occurs.exactly(2, (g: "x")))           # two hits have g = x: phase 1
+    $m.hit[2]                                             # his d[2] = aby: ONE iteration, captures level
+    $m.hit[2].g                                           # his d[2].g = y: captures level
+    $m.hit & (g: "x")                                     # his d & (g: x): iterations 1 and 3, positions kept
 
 The first three are GROUP QUESTIONS, which compile to states (phase 1; CF:922-924, accepted at CF:905). The last
 three read ONE ITERATION, which needs captures inside a loop: a higher capability level with its cost shown (the
-MANAGER'S LEAN, CF:924-926, LEAN; §4.3). `(hit: /(?s).*/)` is "every hit" spelled as a condition; a shorter spelling
-is §13 O55. A search result is no longer BOUND: what `d := ...` becomes is §13 O54.
+MANAGER'S LEAN, CF:924-926, still OPEN for the owner; LEAN; §4.3). `(hit: /(?s).*/)` is "every hit" spelled as a
+condition; a shorter spelling is §13 O55. `hits` is an rx (a binding names whatever its expression is, §5.1), so
+`(m: hits)` and `(m: search(r))` are one program (§0.1 L2); no special case for search (§13 O54 RESOLVED for `d :=`).
 
 `x & s` with s an rx stays MEMBERSHIP (`x & a`; no `in`): it is not a "some result" spelling (§0.1 L54); over
 iterations the one spelling is `some(...)` (CF:913-914).
@@ -583,20 +675,27 @@ used" (CF:847-848): two operators leave, and the one thing rev 7 had to invent f
 its own rules (rev 7 §3.4, O50), is gone: the hits are the iterations of a repeated label, which the language had
 already (§4.3), and the array interface over them is the general one for ANY repeated label (CF:922-923). A search
 is a filter like `contains`, so it composes by `&` and `:` like every other filter, and `^`/`$` in its argument follow
-the one filtered-span rule (§11). Search results stay values-not-globals in the owner's sense ("Even Perl had the
-awkward $1"): a hit is reached through the label of the match it belongs to, never through a global.
+the one filtered-span rule (§11). `min` is the loop's own lower bound, so zero hits follow the rule of every loop
+(§4.2) and `contains` is no longer a second body with a second reading of its argument's labels. Search results stay
+values-not-globals in the owner's sense ("Even Perl had the awkward $1"): a hit is reached through the label of the
+match it belongs to, never through a global.
 
 **STATUS.** Search as a library transform of the `contains` family, `~` and `!~` withdrawn, the hit a repeated label,
 the definition requirements (lazy gaps, the count along PCRE's priority parse, the empty-match advance stated, the
-look-alike row): CF:907-921, accepted at CF:905 ("Do it"; the transform idea is his own, CF:903-904). The written
-definitions and the hand checks: this document (LEAN). The refusal of a nullable argument: LEAN (§13 O53). `(?s)` in
-the library bodies: LEAN (this document). The priority parse vs §4.5: CONFLICT (§13 C36). `^`/`$` of the argument =
-the filtered span's ends: RULED (D193 add. 3; CF:761), applied to an argument: LEAN (§13 O49). The group questions
-phase 1: CF:922-924, accepted at CF:905; one-iteration access at captures: LEAN (CF:924-926). The owner's example:
-his intended behaviour. SUPERSEDES rev 7 §2.6 (`$x ~ rx` as an operator, the search result as a match-time ARRAY
-VALUE, `!~` as sugar) and rev 6's "a search returns an rx (the occurrence set)" (CF:873) as a VALUE reading; its
-occurrence order (non-overlapping, leftmost, CF:74) is kept as requirement 1. Binding a test: allowed (§13 C6
-RESOLVED).
+look-alike row): CF:907-921, accepted at CF:905 ("Do it"; the transform idea is his own, CF:903-904). The hits follow
+PCRE's matching, "always": RULED (CF:932-933, his words); C36 RESOLVED by the one reading (CF:953-955). A bound name
+holds the transformed rx: RULED (CF:929, his words). `min` with default 0: the owner's LEAN ("Perhaps", CF:933-934),
+`min` only and no `max` for now: RULED (CF:951-952, "we could skip it for now"); zero hits decided by the quantifier
+and a plain condition true over zero allowed hits: the record's reading (CF:937-940) of his "+ or * control" (CF:933).
+`contains` accepting what `search(x, min = 1)` accepts: the manager's note (b) (CF:944-945); ONE definition, `min`
+above 1 refused, the written bodies and the hand checks: LEAN (this document). The refusal of a nullable argument and
+`(?s)` in the library bodies: LEAN (manager, rev 9; §13 O53). `^`/`$` of the argument = the filtered span's ends:
+RULED (D193 add. 3; CF:761), applied to an argument: LEAN (§13 O49, OPEN). The group questions phase 1: CF:922-924,
+accepted at CF:905; one-iteration access at captures: LEAN (CF:924-926, OPEN). The owner's example: his intended
+behaviour. SUPERSEDES rev 8's `contains(x) := /(?s).*${x}.*/` body, rev 8's zero-hit lean (fails), and rev 7 §2.6
+(`$x ~ rx` as an operator, the search result as a match-time ARRAY VALUE, `!~` as sugar) and rev 6's "a search
+returns an rx (the occurrence set)" (CF:873) as a VALUE reading; its occurrence order (non-overlapping, leftmost,
+CF:74) is kept as requirement 1. Binding a test: allowed (§13 C6 RESOLVED).
 
 ### 2.7 Transforms are FILTER MODIFIERS
 
@@ -822,16 +921,28 @@ match fails for that match; WARN (`label.unset`) when a plain reference can be u
 consistent: `[x = /\d/, y = /[a-z]/] & (x: /[0-5]/)` = `[0-5]` (the alternative lacking x drops, §2.3; rev 5
 spelled the labelled alternation as the withdrawn map literal, §3.1).
 
+THE BOUNDARY, stated once (rev 9). A label is SET ONCE when its group can be set at most once in one match (an
+optional group `(?<x>...)?` or `{0,1}`, an alternative that may not be taken); it is REPEATED when its group can be
+set more than once (a group under `*`, `+`, `{n,m}` with m >= 2 or no m, a `list_of` part, a `search` hit; §4.3).
+- A SET-ONCE label that is UNSET in a match: a condition naming it FAILS (this section's rule; `label.unset` warns).
+- A REPEATED label with ZERO iterations is NOT unset: the loop's own quantifier allowed none, and a plain condition
+  (every iteration) HOLDS over none; `some(...)` fails; `count(...)` is 0 (§4.3). The quantifier the user chose
+  decides (the owner's "+ or * control", CF:933; for `search`, its `min`, §2.6): `*` admits zero iterations, `+`
+  does not.
+So `(?<n>\d)?` and `(?<n>\d)*` differ under `(n: <5)` on a value with no digit (fails vs holds): §0.1 L56, a WARNING
+row (`label.unset` on the `?` form).
+
 **STATUS.** LEAN (CF:173); cited as "ruled" by a later note (§13 O3). That warnings have names: RULED (CF:666); the name
-`label.unset`: LEAN (manager's list, review RUL-14.1). The two sentences disagree on `(x: !<5)` for an unset x, and
-on zero-iteration repeated labels: §13 O28.
+`label.unset`: LEAN (manager's list, review RUL-14.1). The two sentences disagree on `(x: !<5)` for an unset x: §13
+O28. The boundary: zero iterations decided by the quantifier, a plain condition true over them: the record (CF:937-940)
+of the owner's "+ or * control" (CF:933), said there of search and of "any repeated label whose own `*` or `+`
+decides"; where the line between set once and repeated falls (`?` = set once): LEAN (this document). SUPERSEDES rev
+8's O28 lean "zero iterations = unset = fail".
 
 ### 4.3 Repeated and duplicate labels: the general home of the group questions
 
-**CONFLICT MARKED (§13 C36).** The transform ruling requires a repeated label's iterations to be those of PCRE's
-PRIORITY parse (CF:919-920); §4.5 (RULED, CF:583) lets a condition on an ambiguous label pass on SOME parse. For an
-unambiguous loop the two agree; for a search's hits (always ambiguous as a set) they do not. This section is written
-under the priority parse because the search definition (§2.6) needs it; it does not decide C36.
+Rev 8's CONFLICT MARK (§13 C36: the priority parse vs the some-parse rule) is GONE: the ONE READING (§4.5, CF:953-955)
+makes a repeated label's iterations those of PCRE's parse, as for every label.
 
 **RULE.** At the default level a repeated label follows the SEQUENCE RULE: `x: S` constrains ALL iterations; a bare
 `$x` on a repeated label is an ERROR naming the group questions below. At `vm`, `$x` is PCRE's last iteration (what
@@ -839,7 +950,8 @@ under the priority parse because the search definition (§2.6) needs it; it does
 CONSTRAINT SET of a duplicate label (the strings it can hold) is the UNION of the definitions that can set it.
 Structurally, `alt.x` returns EVERY entry labelled x as an rx read through the array interface in group order;
 `alt.x[1]` (first in the PATTERN, compile time) differs from `$x` (the MATCH's captured string). A repeated label is
-ANY label inside a loop: a group under `*`/`+`/`{n,m}`, a `list_of` part (E-HTTP's `name`), and the `hit` label of a
+ANY label inside a loop (one that can set it more than once; the boundary with a set-once label is §4.2's): a group
+under `*`/`+`/`{n,m}` with m >= 2 or no m, a `list_of` part (E-HTTP's `name`), and the `hit` label of a
 `search` with every label of its argument (§2.6). There is no second population: rev 7's "entries of a match-time
 array" are these iterations.
 
@@ -849,8 +961,8 @@ looked up in its operand as for any condition (§4.1).
 
 | form | means, over the iterations of the labels it names | example on the hits `abx`, `aby`, `abx` of `/ab(?<g>[xy])/` |
 |---|---|---|
-| plain `(g: S)` | EVERY iteration's g is in S (the sequence rule); on zero iterations: §13 O28 | `(g: "x")` fails |
-| `all((g: S))` | the same as the plain condition: the default, "rarely written" (§0.1 L36) | `all((g: "x"))` fails |
+| plain `(g: S)` | EVERY iteration's g is in S (the sequence rule); HOLDS on zero iterations (the quantifier allowed none, §4.2) | `(g: "x")` fails |
+| `all((g: S))` | the same as the plain condition, zero iterations included: the default, "rarely written" (§0.1 L36) | `all((g: "x"))` fails |
 | `some((g: S))` | AT LEAST ONE iteration's g is in S; false on zero iterations | `some((g: "x"))` holds |
 | `count(c)` | the NUMBER of iterations meeting the condition c: a number (an rx of canonical numerals, §2.1, §13 O40), tested through a computed label (`n := count(c)`, `P & (n: ==2)`) | `count((g: "x"))` = 2 |
 | `occurs.exactly(n, c)`, `occurs.at_least(n, c)`, `occurs.at_most(n, c)`, `occurs.none(c)` | `count(c)` compared with a constant n; `none(c)` = `count(c)` is 0 = `!some(c)` | `occurs.exactly(2, (g: "x"))` holds; `occurs.none((g: "y"))` fails |
@@ -872,8 +984,8 @@ Which iteration a record means when its labels sit at different depths (g inside
 THE ARRAY INTERFACE OVER ITERATIONS (CF:922-926). The iterations of any repeated label, in match order, are read
 through the array interface (§3.1, §3.4); nothing is created. Two levels:
 - GROUP QUESTIONS (the table above) compile to states (a capped counter per question, n+2 states, CF:62's cost rule):
-  the DEFAULT level, phase 1 (CF:922-924, accepted at CF:905). The iterations are those of PCRE's priority parse
-  (CF:919-920; C36 above).
+  the DEFAULT level, phase 1 (CF:922-924, accepted at CF:905). The iterations are those of PCRE's parse (CF:919-920;
+  the one reading, §4.5).
 - ONE ITERATION read out: `$x[2]` (the captured string of iteration 2), `$m.hit[2].g` (a label inside it; `$` covers
   the whole path, §5.4), and selecting iterations by a condition (`$m.hit & (g: "x")` keeps iterations 1 and 3 with
   their positions, the owner's array example, §2.6) need captures inside a loop: the `captures` level, its cost shown
@@ -894,7 +1006,8 @@ Plain condition = all, `some`/`all` the one spelling, `occurs` counts only, same
 repeated label, group questions at the default level and phase 1: CF:910-917, CF:922-924 (accepted at CF:905;
 "could you use some() to get some hits?" is his own question, CF:904-905). `occurs.some`/`occurs.all` removed rather
 than aliased: LEAN. One-iteration access at `captures`: LEAN (CF:924-926, the manager's, not separately ruled); a
-literal-index TEST at the default level: LEAN (CF:62). The priority parse: C36 (CONFLICT). `occurs` as a library:
+literal-index TEST at the default level: LEAN (CF:62). The iterations of PCRE's parse: RULED (CF:932-933 for
+search's hits, CF:950/CF:953-955 for every label; C36 RESOLVED). Zero iterations: §4.2. `occurs` as a library:
 RULED (CF:682); its role as the FALLBACK to `count()`: LEAN (CF:823) with the budget rule RULED (CF:832); the name
 `occurs`: RULED in use (CF:782). Duplicate labels by index: LEAN (CF:400); union type cited "ruled" (CF:350; §13 O3).
 A duplicate label set twice in one match under `x: S`: §13 O35. The `occurs` condition argument is a parenthesised
@@ -925,24 +1038,70 @@ property without a capture group. A binding instead of a keyword keeps the gramm
 LEAN (manager, CF:595; the concept RULED there), SUPERSEDES the `with` placeholder and predx's `with`. Which pattern a
 binding attaches to when its labels occur in several: §13 O19.
 
-### 4.5 Ambiguity
+### 4.5 Ambiguity: ONE READING (PCRE's)
 
-**RULE.** A label is AMBIGUOUS when two accepting parses give it different spans (decidable). At the default level
-a condition on an ambiguous label passes if SOME parse passes (one automaton); a `label.ambiguous` WARNING shows a
-witness, the two parses, which one PCRE chooses, the consequence and a fix where one exists. At `vm` the condition
-uses PCRE's chosen parse. Library patterns are checked unambiguous at their labels. Every occurrence of the same
-application denotes ONE parse (merged narrowing).
+**RULE.** A label is AMBIGUOUS when two accepting parses give it different spans (decidable). ONE READING
+EVERYWHERE: a condition on ANY label, set once or in a loop, at every level, reads PCRE'S OWN PARSE: the parse PCRE2
+gives the pattern matched against exactly the value the condition filters (anchored at both of its ends, as a set
+position reads it; §0.3). Several conditions on one pattern read the SAME one parse, and a repeated label's iterations
+and a search's hits are that parse's (§4.3, §2.6).
 
-**CONFLICT MARKED (§13 C36, rev 8).** The library transform `search` (§2.6) is AMBIGUOUS at its `hit` label by
-construction (a lazy gap, as a set, can swallow a hit), so it fails "library patterns are checked unambiguous at their
-labels", and its group questions are defined on PCRE's PRIORITY parse (CF:919-920), not on some parse. Both readings
-are in C36; this section's rule is unchanged until the owner decides.
+THE CONDITION FILTERS THE PARSE; IT NEVER STEERS IT. A condition that fails on PCRE's parse fails, even when another
+parse would pass. Worked example (set once): `P := /(?<a>\d+)(?<b>\d+)/` on `123`. PCRE's greedy `\d+` first takes
+`123`, b then has nothing, so a gives back one digit: a = `12`, b = `3` (libpcre2 10.46 and Python's `re` agree;
+`docs/dev/lanes/predspec9_reading.out`). So `P & (a: "12")` accepts `123` and `P & (a: "1")` does NOT, though the
+parse a = `1`, b = `23` exists (rev 8's some-parse rule accepted both). `P & (a: <5) & (b: <5)` is false (both read a =
+`12`; O33 RESOLVED). A constraint written INTO the pattern is a different pattern with its own parse
+(`/(?<a>1)(?<b>\d+)/` accepts `123`): §0.1 L59. At `vm` the condition is checked on PCRE's match, never as a
+rejecting callout that would send PCRE back into another parse (an oracle or a build that used one would compute a
+some-parse answer).
 
-**REASONING.** The default level is a promise; only some-parse keeps it; for unambiguous labels the readings
-coincide, so the difference is confined to exactly the patterns the warning flags (predx C11).
+WHAT A DEFAULT-LEVEL PROGRAM GETS, AND PAYS.
+- An UNAMBIGUOUS label (every accepting parse gives it one span): PCRE's reading is every parse's, so the plain
+  automaton (the product of the pattern's automaton and the condition's, as before) computes it, FREE. Every §12 case is here
+  (rev 9 re-check, §12), and so is every label of a fixed-width or separator-delimited layout.
+- An AMBIGUOUS label: the plain automaton computes "some parse passes", which is NOT PCRE's reading. The compiler
+  builds PCRE's reading as AUTOMATON CODE where it can: for a pattern without backreferences, PCRE's choice among
+  parses is a finite-state function of the value, so the values whose PCRE parse puts the label in S form a regular
+  set (this document's claim, LEAN, the one the measurement O57 exercises), and the default promise "linear, automaton
+  code only" (§6.1) holds. The extra states over the some-parse automaton are its COST, shown by the cost report
+  ([COST-EXPLAIN]); over the budget (§13 O39) the program is REFUSED with an error naming the higher level that
+  computes the parse at run time (`captures` where its tagged automaton follows PCRE's priority, [ENG-TDFA]; else
+  `vm`). This clause is the MANAGER'S LEAN (CF:943-944), not taken up in the owner's answer: LEAN. HOW MANY states:
+  unmeasured, the OWED MEASUREMENT §13 O57, before any build go (CF:955-957).
 
-**STATUS.** RULED (CF:583, predx Q2). Resolves C11. Some-parse per condition vs merged narrowing for two conditions on
-one pattern (`(a: <5) & (b: <5)` on `123`): §13 O33.
+AMBIGUITY IS THE AUTHOR'S TO VALIDATE (CF:950-951, CF:957-959). The `label.ambiguous` WARNING stays as the POINTER
+to that validation: it names the label, shows a witness and two parses, says which one PCRE takes (the one the
+program uses), shows the cost of computing it, and names the fix, an assertion on the witness (§5.6):
+
+    "label `a` is ambiguous: on `123` the parses give a = `12` (PCRE's, used here) or a = `1`; validate the reading
+     you intend, e.g. `@assert.some("123" & P & (a: "12"))`; PCRE's reading of `a` costs N states over the plain
+     automaton"
+
+LIBRARY PATTERNS. Rev 8's "library patterns are checked unambiguous at their labels" was the some-parse rule's guard
+(it kept the two readings equal on library labels). Under one reading it becomes the library author's own validation,
+like any author's: an ambiguous library label carries its assertions (the library's test vectors, §5.6, §8). The
+`hit` of `search` is ambiguous as a set by construction; its reading (leftmost, non-overlapping hits) IS its
+definition, checked by its hand checks (§2.6). Whether `label.ambiguous` fires in a USER's program for ambiguity that
+only a library body introduces (a gap in `search`, `endsWith`): §13 O59.
+
+**REASONING.** The owner: "I think it will help if our rx is consistent" (CF:950). One reading means a condition means
+the same at the default level and at `vm`, set once and in a loop, inside a search and in a plain pattern; and what
+a validation assertion checks is what the program does (under some-parse, `@assert.some("123" & P & (a: "1"))` and
+the same with `"12"` would BOTH pass, so no assertion could validate a reading). Rev 8's argument ("the default level
+is a promise; only some-parse keeps it") is WITHDRAWN: the promise is linear automaton code (§6.1), which PCRE's
+reading keeps for backreference-free patterns; what the reading costs is states, measured (O57), and over the budget
+the refusal names the level, never a silent route change (G2). For unambiguous labels nothing changes.
+
+**STATUS.** ONE READING (a condition on any label, set once or in a loop, follows PCRE's own reading) and the
+some-parse rule SUPERSEDED: RULED (CF:950, his words, answering the manager's note (a), CF:941-944; record
+CF:953-955). The cost known before any build go: RULED (CF:949-950, "i'd like to know the cost of this"; the
+measurement: §13 O57). Ambiguity the author's to validate, with an assertion: RULED (CF:950-951, `@check()` a
+placeholder); `label.ambiguous` kept as the pointer: the record (CF:958-959). Built where it can with the cost shown,
+refused on budget naming the higher level: LEAN (the manager's, CF:943-944). The no-steering statement, the regularity
+claim, the library check restated and the warning's text: LEAN (this document). SUPERSEDES the 11-14 rule (CF:583,
+predx Q2: "passes if SOME parse passes", "library patterns are checked unambiguous") and rev 8's §4.5; C36 and O33
+RESOLVED; C11 (purity vs ambiguity) re-resolved by CF:953-955.
 
 ### 4.6 Value-vs-value relations, priced by class count
 
@@ -1102,7 +1261,7 @@ THE BRACKETS AND THEIR MARKS (`,` `( )` `[ ]` `=` `:`):
 | `( label: S, ... )` in VALUE position (an argument, an array entry, the right of `:=`) | where a value may stand | a CONDITION, i.e. a MACRO (CF:858), NOT a record: the record is its written body, laid against the operand's labels when `&` fills it (position (b)); no record is bound or passed (§4.1; §13 O45). Any other record in value position is an error (`(x = /a/, y = /b/)`: "a record is not a value; for any one of the entries write `[ ... ]`", §0.1 L43) | E-HTTP (`occurs.exactly(1, (name: ...))`, `count((name: ...))`) |
 | `(& f)` | value position | a SECTION: the macro with only its operand open (§5.2); `(& M)` = M for M with only its operand open (§2.1) | no case (prose only, §5.2, §5.3) |
 | `( e )` | value position, no comma, no label mark | GROUPING (precedence only); a one-entry record exists only in positions (a)-(c) (§13 O41) | no case (§12's parentheses are calls and conditions) |
-| `=` | `name = e` as an entry of `[ ]` or of a call record | gives the entry its NAME: a LABEL (group name) in an array (`[year = /\d{4}/, ...]`), a PARAMETER in a call (`sep = "."`) | E-WEEKDAY, E-RFC, E-NEAR, E-SEP, E-HTTP; `sep =`, `of =`, `sha256 =` |
+| `=` | `name = e` as an entry of `[ ]` or of a call record | gives the entry its NAME: a LABEL (group name) in an array (`[year = /\d{4}/, ...]`), a PARAMETER in a call (`sep = "."`) | E-WEEKDAY, E-RFC, E-NEAR, E-SEP, E-HTTP; `sep =`, `of =`, `sha256 =`; `search`'s `min =` (an optional setting, §2.6): no case |
 | `:` | `label: S` as an entry of a condition record (the label may be a path, `d.year: S`) | NARROWS a label that EXISTS by a constraint set: ONE behaviour in phase 1. Elsewhere an error (`P & x: S`, `[x: S]`, `f(x: S)` in a call, and in phase 1 `m(x: T) :=` in a definition head: typed parameters are OUT, CF:889; §5.2, §0.1 L49, §13 O48) | E-WEEKDAY, E-CAL, E-RFC, E-NEAR, E-HTTP, E-CTX (conditions) |
 
 ENTRY EXTENT: an entry runs to the next `,` or the closing bracket; inside it `&` and `|` bind tighter than `:` and
@@ -1118,7 +1277,7 @@ THE OTHER MARKS:
 | `<` `<=` `>` `>=` `==` | prefix, before ONE atom | a COMPARISON SET (a full rx, §2.4) | E-CAL (`<=`), E-RFC (`==`), E-FILE (`<=`, `>`) |
 | `+` `-` `*` `%` | between numbers | arithmetic on numerals (§2.5) | E-NEAR, E-DEPTH (`-`); `*`, `%`: no case |
 | `:=` | statement start (a name, a definition head, or a record on the left, design only) | binds a name to an rx or a macro (§5.1) | every case |
-| `.` | after an expression or a label path | a FIELD of the MAP INTERFACE of the thing on the left (§3.2 tool 4), its ONE meaning (CF:898-899, agreed CF:892): a label (`d.year`, `rest.year`), a module member (`json.row`, §7), metadata (`.index`, `.label`, reserved fields) and a `$` path are instances. Open only: a metadata name used as a user label (§13 O31) | E-RFC (`.index`, `$rest.year`), E-JSONL and others (`json.row`), E-FILE (`r.word`) |
+| `.` | after an expression or a label path | a FIELD of the MAP INTERFACE of the thing on the left (§3.2 tool 4), its ONE meaning (CF:898-899, agreed CF:892): a label (`d.year`, `rest.year`), a module member (`json.row`, §7), metadata (`.index`, `.label`, reserved fields) and a `$` path are instances. A user label named `index` or `label` is an ERROR naming the reserved field (rev 9: the manager's call, LEAN; §13 O31) | E-RFC (`.index`, `$rest.year`), E-JSONL and others (`json.row`), E-FILE (`r.word`) |
 | `$` | before a label PATH | the CAPTURED STRING of the whole path: `$a.b.c` = `$(a.b.c)`, so `$mname.index` is the index of mname's matched entry (11 for `Nov`), never `($mname).index` (review r8 P6-6); a path may index a repeated label's iterations (`$m.hit[2].g`), the `captures` level (§4.3, LEAN) | E-WEEKDAY, E-CAL, E-RFC, E-NEAR |
 | `${ }` | inside rx text | a HOLE: inserts an rx's set as one entry (§3.3, §11); a macro in it is the unapplied-macro error (§2.3) | E-JSONL, E-DEPTH, E-IPV4 (prose) |
 | `/.../` | value position | an rx literal with PCRE's meaning (§11) | every case |
@@ -1179,13 +1338,32 @@ text; NAMED assertions give named failures (§13 C18 for their spelling). An ass
 reports "can't prove: not regular" beyond the default level. Libraries carry their standard's test vectors as
 assertions run at import.
 
+VALIDATING AN AMBIGUOUS LABEL'S READING (rev 9; the owner: "If someone is writing ambiguous rx they need to think about
+what that means and validate it with @check()", CF:950-951, his `@check()` a placeholder for this library). The
+EXISTING forms express "on this witness, label a is `12`", because a condition reads PCRE's parse (§4.5): the witness
+narrowed by the pattern and a condition on the label is non-empty exactly when PCRE's parse of the witness gives the
+label that value.
+
+    P := /(?<a>\d+)(?<b>\d+)/
+    @assert.some("123" & P & (a: "12"))          # the intended reading: a takes all but the last digit
+    @assert.none("123" & P & (a: "1"))           # and not the other parse
+
+Both pass (PCRE's parse of `123` is a = `12`, b = `3`, §4.5). If the author meant a = `1`, the first fails at compile
+time with its line and text, and the fix is in the pattern (`/(?<a>\d)(?<b>\d+)/` or a lazy `\d+?`), not in the
+condition. NO NEW FORM IS NEEDED: under rev 8's some-parse rule both assertions above would pass whatever the author
+meant, so no assertion could validate a reading; the one reading is what makes the existing library sufficient. A
+shorter spelling for "the parse of this witness" (`@assert.reading(P, "123", (a: "12"))`-shaped) is not proposed
+(D77); named assertions for clearer failures are §13 C18.
+
 **REASONING.** Language equality and inclusion are decidable (D196 add. 2's never-match/XOR fact), so the library
 test rule ("tested against the standard's own vectors") becomes executable (predx S8, §8.3 item 3).
 
 **STATUS.** Concept (compile-time assertions): RULED (CF:595, Q9). Library form `assert.some` etc.: RULED (CF:608,
 Frank's own `assert := import("assert")`, `assert.some("2024" & leap)`); `@` prefix: LEAN (manager, CF:619),
 SUPERSEDES `check A == B` and the `assert_some(...)` built-ins. Set position: RULED (CF:713). The empty-intersection
-exemption: LEAN (review RUL-6). A library SEARCH assertion (review Q1X-5): not adopted, §13 O36.
+exemption: LEAN (review RUL-6). A library SEARCH assertion (review Q1X-5): not adopted, §13 O36. Validation of an
+ambiguous label's reading by an assertion: RULED (CF:950-951; the assertion library as its home: the record,
+CF:958); that the existing forms suffice, and the example: LEAN (this document).
 
 ## 6. Capability levels and the reporting axis
 
@@ -1206,6 +1384,14 @@ At the default level a REGULAR TWIN (luhn, weekday, days_in) MUST take its autom
 with the size (§4.6), never a silent switch. The planner may choose an automaton split silently (it changes only
 speed); it may NOT change level silently. A one-literal program is today's PCRE pattern on today's engines (G3,
 §11). The cost tool's first output is the level a program needed and why.
+
+THE ONE READING AT THE DEFAULT LEVEL (rev 9, §4.5). Every level reads PCRE's parse; the levels differ only in what
+they compute it WITH. For an unambiguous label the default level computes it free (the plain automaton); for an
+ambiguous label it builds PCRE's reading as automaton code (backreference-free patterns: still linear, so inside the
+promise) with the extra states shown, and over the budget the program is a compile error naming the level that
+computes the parse at run time, never a silent fall-back to "some parse" (rev 8 kept the promise by changing the
+answer; rev 9 keeps the answer and prices the promise). The building and the refusal: LEAN (manager, CF:943-944); the
+size: OWED (§13 O57).
 
 **`&` AT `vm` WITH A NON-REGULAR OPERAND.** The regular operands build the CANDIDATE automaton; the VM verifies the
 non-regular operand on each candidate span; the reported span follows D196 ([PRED-SPLIT]). CAVEAT (CF:63): D196's
@@ -1308,7 +1494,8 @@ OWN-7). Prerequisite list: LEAN (review Q1X-8). The untiled-range wording: LEAN 
 ### 7.1 Named warnings
 
 **RULE.** Every warning has a STABLE NAME in dotted families (a contract, stated in the spec): `empty.search`,
-`dead.branch`, `label.unset`, `compare.width`, `label.ambiguous`, `warn.unused`; proposed by review 2026-11-14-r1
+`dead.branch`, `label.unset`, `compare.width`, `label.ambiguous` (rev 9: the pointer to the author's validation of an
+ambiguous label, never a report that the levels differ: they read one parse, §4.5), `warn.unused`; proposed by review 2026-11-14-r1
 and not adopted: `precedence.section`, `array.hole`, `flag.hole`. Control is by `@` effects, rest of file:
 `@warn.off("compare.width")`, `@warn.off(startsWith("dead."))` (a label-free library rx is a full rx; the look-alike
 `@warn.off(/^dead\./)` is the same set, `^` being the name's start, §0.1 L15), `@warn.off(/.*/)`; the reverse `@warn.error(/.*/)` (a
@@ -1326,21 +1513,28 @@ filter is the unapplied-macro error (§2.3).
 
 **RULE.** Standard library = prelude text (macros; typed parameters are out of phase 1, §5.2) on the foundation; it
 grows without compiler changes. Standard library sets (each call is a full rx, used in the filter role): `between`
-(inclusive), `startsWith(s) := /${s}(?s:.*)/`, `endsWith(s) := /(?s).*${s}/`, `contains(s) := /(?s).*${s}.*/`
+(inclusive), `startsWith(s) := /${s}(?s:.*)/`, `endsWith(s) := /(?s).*?${s}/`, `contains(s) := search(s, min = 1)`
 (`^`/`$` in an argument are the ends of the span the call's filter role filters, §11, so `contains(/^err/)` =
-`startsWith("err")`; the body's hole does not open a span of its own; rev 8 adds `(?s)` so a gap crosses a line break
-inside the span, LEAN), `when(c, p)` (`x & when(c, p)` = `(x & c & p) | (x & !c)`). Standard FILTER MODIFIERS (§2.7; each transforms the
+`startsWith("err")`; the body's hole does not open a span of its own; `(?s)` so a gap crosses a line break inside the
+span: the manager's call, LEAN, rev 9). Under the ONE READING (§4.5) a library body's gaps decide how the argument's
+labels read, so the bodies are written for the reading a user expects (rev 9, LEAN): `endsWith`'s gap is LAZY, so its
+argument starts as far LEFT as it can (`endsWith(/(?<n>\d+)/)` on `ab123`: n = `123`; rev 8's greedy `.*` gave n = `3`,
+libpcre2), and `contains` is `search` (§2.6: leftmost hits; rev 8's greedy-lead body read the RIGHTMOST occurrence).
+As SETS nothing changes (a lazy and a greedy gap admit the same strings). `when(c, p)` (`x & when(c, p)` = `(x & c & p) | (x & !c)`). Standard FILTER MODIFIERS (§2.7; each transforms the
 filter, never the subject): `padded(S)` (leading zeros ignored), `unpadded(n, S)` (read as if zero-padded to width
 n), `any_case(S)` (letter case ignored), `quoted(S)` (only the text inside the quotes read), `length(S)` (the
 subject's length read), `month_numbered(S)` (a month name read as its number), string positions `left/right/mid`
 with literal positions (units = characters per the encoding mode; out-of-range: §13 O14); `json.quoted(S)` (a JSON
 string literal read as its decoded text) lives in the `json` module.
-- THE SEARCH TRANSFORM (§2.6; CF:907-909, accepted at CF:905): `search(x) := /(?s)(?:.*?(?<hit>${x}))*.*/`, of
-  the `contains` family: as a set every string (it never rejects); each hit, leftmost and non-overlapping along PCRE's
-  priority parse, is one iteration of the repeated label `hit` (§4.3), with the argument's labels inside it. A
-  nullable argument is refused (LEAN, §13 O53). `contains(x)` is the one-hit TEST of the family (the law
-  `contains(x)` = `search(x) & some((hit: /(?s).*/))` holds by requirement 1 of §2.6; `contains` keeps its own,
-  cheaper body). The negated test is `!contains(x)` (rev 7's `!~`, withdrawn).
+- THE SEARCH TRANSFORM (§2.6; CF:907-909, accepted at CF:905): `search(x, min = 0) :=
+  /(?s)(?:.*?(?<hit>${x})){${min},}.*/`, of the `contains` family: each hit, leftmost and non-overlapping along PCRE's
+  own parse (the one reading, §4.5; "always", CF:932-933), is one iteration of the repeated label `hit` (§4.3), with
+  the argument's labels inside it. `min` (0 or 1; default 0; CF:960): with 0 it never rejects, with 1 a value with no
+  hit is rejected; a larger `min` is refused naming `occurs.at_least` (LEAN, §13 O58); NO `max` for now (CF:951-952;
+  §13 O58). A nullable argument is refused (LEAN, manager; §13 O53). `contains(x) := search(x, min = 1)` is the
+  one-hit TEST of the family, ONE definition (§2.6, §0.1 L58; it also equals `search(x) & some((hit: /(?s).*/))`);
+  where no question reads x's labels the compiler may build it as the plain set. The negated test is `!contains(x)`
+  (rev 7's `!~`, withdrawn).
 - THE GROUP QUESTIONS over any repeated label (§4.3, stated there once): `some(c)`, `all(c)` (= the plain condition,
   rarely written), `count(c)`, and the `occurs` module (`occurs := import("occurs")`), which keeps the COUNTS ONLY
   (CF:913): `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`; rev 7's `occurs.some` and `occurs.all` are
@@ -1387,8 +1581,10 @@ states rather than rules"); the budget as a labelled measured quantity: LEAN (ma
 automatic rewrite: RULED as a LATER plan item (CF:840). Tuples as a library macro: RULED (CF:644), SUPERSEDES predx's
 tuple-on-the-left-of-`:` syntax (S12); its spelling: OPEN (C25). The comma form of the semver condition: RULED (CF:704).
 Rev 8: `search` as a library transform of the `contains` family, `occurs` keeping counts only, `some`/`all` the one
-spelling: CF:907-914 (accepted at CF:905); the written bodies, the law, the `(?s)` gaps and the removal (not
-aliasing) of `occurs.some`/`occurs.all`: LEAN (this document). SUPERSEDES rev 7's "`occurs`: `all`, `some`, `none`,
+spelling: CF:907-914 (accepted at CF:905); the written bodies, the law, and the removal (not aliasing) of
+`occurs.some`/`occurs.all`: LEAN (this document). Rev 9: the hits on PCRE's parse: RULED (CF:932-933); `min`: the
+owner's LEAN (CF:933-934), no `max`: RULED (CF:951-952); `contains` by `search` and the lazy `endsWith`: LEAN (this
+document); the `(?s)` gaps and the nullable refusal: LEAN (manager). SUPERSEDES rev 7's "`occurs`: `all`, `some`, `none`,
 ..." and its search result as a second population.
 
 ## 9. Cut from the first spec
@@ -1548,6 +1744,21 @@ its `name` is a repeated label under §4.3's group questions; the module binding
 (CF:891-892; E-JSONL, E-IPV4, E-HTTP, E-DEPTH; §13 O46 restated); E-RFC's `.index`, `$rest.year` and E-FILE's
 `r.word` are instances of the one ruled `.` (CF:892, CF:898-899; §13 O31 narrowed to the metadata collision).
 
+REV 9 RE-CHECK against the ONE READING (§4.5; per-case record in `docs/dev/lanes/predspec9_report.md`, EXAMPLES
+RE-CHECKED). The question for each case: does any condition read an AMBIGUOUS label (two accepting parses giving it
+different spans)? If none does, PCRE's reading and rev 8's some-parse answer coincide and no expected answer moves.
+Result: NO §12 CASE depends on some-parse; every expected answer is unchanged, and the code lines are unchanged token
+for token. The labels conditions read are fixed-width or delimited by a character they cannot contain: E-WEEKDAY,
+E-CAL (`\d{4}`, `\d\d`, `-`), E-RFC (`\d{1,2}` then a space; names from fixed lists), E-NEAR (c) (two fixed-width
+isodates), E-FILE (`[^,]+` then `,`, `\d+` to the line end), E-HTTP (`name = token`, which has no `:`; `fvalue` holds
+no CR/LF, so the `list_of` iterations split at each `\r\n` in one way; predx §3.8), E-CTX-1/7 (`\w` then one space;
+the whole `name`), and the agreeing look-alike's `v` (the whole value). E-JSONL, E-IPV4, E-LUHN, E-SEP and E-DEPTH
+put no condition on a label (their `&` operands are label-free sets), and E-CTX-2..6 are compile errors. What rev 9
+changes AROUND them: E-JSONL's `contains("timeout")` is now `search("timeout", min = 1)` (§2.6), the same set; E-HTTP's
+`name` iterations would follow PCRE's parse if `fvalue` could hold a line break (it cannot). §0.1: L34 changes verdict
+(DIFFERENT: WARNING -> SAME, both levels read PCRE's parse); L16, L36, L51, L53 restated; L55-L59 new; no other row's
+answer depended on some-parse.
+
 THE TWO-WAY CENSUS (G0b; review r8 P6-9, OWNER-12). G1's check runs case -> construct (every case uses only §§2-8);
 this table runs construct -> case. Counts are uses in §12's code lines, comments stripped (command in
 `docs/dev/lanes/predspec7_report.md`; rev 8's re-run: `docs/dev/lanes/predspec8_report.md`). A construct with no case is LISTED, not cut and not given an invented case:
@@ -1559,7 +1770,7 @@ the owner decides which stay in phase 1 (§0.2).
 | `@assert`, `import`, `param`, `enumerate`, `records`/`file_text`, `each`, `join`, `list_of`, `occurs.*` | E-IPV4, E-CAL; E-JSONL, E-IPV4, E-HTTP, E-DEPTH; E-NEAR; E-SEP; E-FILE; E-FILE, E-SEP; six cases; E-HTTP; E-HTTP | |
 | `count(...)` | none in code (E-HTTP's prose only) | RULED as the first spelling (CF:823, CF:832) |
 | operator section `(& f)` in code | none (prose only, §5.2, §5.3) | RULED, IN phase 1 (CF:753) |
-| the `search` transform (rev 7's `~`, `!~`: withdrawn) | none | CF:907-909 (accepted at CF:905); its group questions phase 1 (CF:922-924); whether a case is wanted: the owner's (§0.2) |
+| the `search` transform (rev 7's `~`, `!~`: withdrawn) and its `min` setting | none (E-JSONL's `contains` is `search(x, min = 1)` by definition, rev 9) | CF:907-909 (accepted at CF:905); its group questions phase 1 (CF:922-924); `min`: CF:933-934, CF:960; whether a case is wanted: the owner's (§0.2) |
 | `some(...)`, `all(...)` | none (the two `some(` hits are `@assert.some`) | CF:912-914 (accepted at CF:905; `some()` is his own question, CF:904-905) |
 | `contains(...)` | E-JSONL | standard library (§8) |
 | positional `X[...]` | none | RULED (CF:553); the owner's search example reads one iteration by it (`$m.hit[2]`, §2.6), at the `captures` level (LEAN) |
@@ -1779,7 +1990,7 @@ recorded ruling, cited.
 
 RESOLVED (one line each; the rule now stands in the section named; RULED marks cite the record):
 - **C1** `&` order: RULED (CF:732), §2.2, §0.1 L39. **C2** x-mode: RULED (CF:577), §11. **C4** guard holes: RULED
-  (CF:573), §11. **C11** purity vs ambiguity: RULED (CF:583, Q2), §4.5. **C14** size-cap fallback: RULED (CF:583,
+  (CF:573), §11. **C11** purity vs ambiguity: RULED (CF:583, Q2), RE-RESOLVED in rev 9 by the one reading (CF:953-955), §4.5. **C14** size-cap fallback: RULED (CF:583,
   Q5), §6.1. **C20** application: RULED (CF:749), §2.3. **C22** the pipeline under `name:`: RULED (CF:698, CF:706),
   §4.1. **C24** `ci`: RULED (CF:722, `any_case`), §2.7.
 - **O4** (CF:583, Q4), **O9** (Q5), **O11** (Q7, 1-based), **O18** (Q13, tiling), **O25** (CF:713, string sets): RULED,
@@ -1834,7 +2045,7 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
 
 - **C28** `occurs.all` vs the sequence rule (rev 8): RESOLVED by the transform ruling (CF:912-913, accepted at
   CF:905): `occurs` keeps the COUNTS only, so `occurs.all` (and `occurs.some`) leave; `all((x: S))` is the plain
-  condition, the default, rarely written (§0.1 L36 SAME). Removed rather than aliased: LEAN. Zero iterations: O28.
+  condition, the default, rarely written (§0.1 L36 SAME). Removed rather than aliased: LEAN. Zero iterations: both hold (rev 9, §4.2).
 - **O12** `!~` (rev 8): RESOLVED: WITHDRAWN with `~` (CF:909, accepted at CF:905); the negated test is
   `!contains(rx)` (§2.6). L51 is restated on `!search(r)` vs `!contains(r)`.
 - **O29** does each `some` pick its own occurrence (rev 8): RESOLVED by SAME HIT BY RECORD (CF:915-917, accepted at
@@ -1843,6 +2054,20 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
   the review's OWN-6 lean, now accepted. §4.3, §0.1 L31.
 - **O48** for PHASE 1 (rev 8): RESOLVED by the owner's reading (C): typed parameters are OUT of phase 1 (CF:889: "yes
   keep out of phase 1"), so `:` narrows only in phase 1 (§5.2, §5.4, §0.1 L49). In the design, O48 stays open below.
+- **C36** the priority parse vs some-parse (rev 9): RESOLVED by the owner (CF:950, "I think it will help if our rx is
+  consistent", answering the manager's note (a), CF:941-944; record CF:953-955): ONE READING, PCRE's, for a condition
+  on ANY label, set once or in a loop. This is broader than rev 8's three readings ((A) some-parse everywhere, (B)
+  PCRE's parse for repeated labels only, (C) for `search` only): the some-parse rule (CF:583, predx Q2) is SUPERSEDED
+  for every label. Its cost is the owed measurement O57. §4.5, §2.6, §4.3.
+- **O33** two conditions on an ambiguous pattern (rev 9): RESOLVED by the one reading (CF:953-955): both conditions
+  read PCRE's one parse, so `/(?<a>\d+)(?<b>\d+)/ & (a: <5) & (b: <5)` on `123` is FALSE (a = `12`) at every level;
+  merged narrowing is no longer a separate rule. §4.5, §0.1 L34.
+- **O54**, the `d :=` half (rev 9): RESOLVED (CF:929): a name bound to a transform's result binds the transformed rx
+  (`hits := search(r)`, applied as `(m: hits)`). The record-on-the-left half stays open below. §2.6.
+- **O28**, the zero-iteration half (rev 9): RESOLVED by the record (CF:937-940) of the owner's "+ or * control"
+  (CF:933): a REPEATED label with zero iterations is not unset; a plain condition holds over none, and the quantifier
+  (for `search`, `min`) decides whether none is allowed. Rev 8's lean (fail) withdrawn. The rest of O28 stays open
+  below. §4.2, §4.3, §2.6, §0.1 L36, L55, L56.
 
 STILL OPEN (contradictions):
 - **C3. DEFINE bindings in the inner direction.** 2026-11-13 evening: an opted-in DEFINE holds `name := ...` bindings.
@@ -1860,6 +2085,8 @@ STILL OPEN (contradictions):
   and map are interfaces ... interfaces aren't themselves values that can be created", CF:890-891), unless `=>` only
   WRITES an rx whose entries carry a computed label (then it is reading A's form with a new mark). Lean: A (this
   document's consequence of CF:890-891); the item stays listed because the owner has not seen it in these terms.
+  REV 9: reading A is the MANAGER'S CALL (LEAN, manager): the `=>` lookup-table spelling is DROPPED in favour of
+  computed labels (§4.4: `country := names_of($code)`-shaped, a mapping that must be a function).
 - **C12. Define-before-use.** 2026-11-13 BLOCK SHAPE: required; 2026-11-13 evening: forward references allowed, no
   cycles. Bounded recursion (§7) needs a self-reference at least.
 - **C13. Bare label names as values.** 2026-11-13 NAME RESOLUTION: an undeclared bare name is a label; 2026-11-14
@@ -1957,13 +2184,17 @@ review's proposed lean, in plain words, NOT resolved):
 - **O28. One rule for conditions on optional, repeated and never-entered labels?** (OWN-4.) On `1,7,` with a
   repeated n, "not all below 5" (`!(n: <5)`) matches while "each not below 5" (`(n: !<5)`) does not; on an optional
   label that is unset the two sentences of §4.2 disagree; `?` vs `*` around the same group flips `(n: <5)` on `end`.
-  Lean: a condition holds when EVERY occurrence is in the set AND there is at least one (zero iterations = unset =
-  fail); `!(x: S)` is its plain complement; `(x: !S)` = every occurrence outside S; a warning with a witness when the
+  Rev 3 lean (its zero-iteration clause WITHDRAWN in rev 9, below): a condition holds when EVERY occurrence is in the
+  set AND there is at least one (zero iterations = unset = fail); `!(x: S)` is its plain complement; `(x: !S)` = every occurrence outside S; a warning with a witness when the
   two differ for the pattern at hand; `occurs.all` an alias or removed (C28). Rev 8: `occurs.all` is gone (C28
-  RESOLVED) and the question now covers a SEARCH with zero hits: on a value with no hit a plain condition `(g: S)` or
-  `all((g: S))` holds vacuously under the 11-13 leaning ("`all` is true" over no occurrences, CF:180) and fails under
-  this item's lean (zero iterations = unset). `some(...)` is false and `count` 0 under both. Lean unchanged (fail),
-  so "every hit is an x" also says "there is a hit"; the vacuous reading is written `!some((g: !S))`.
+  RESOLVED) and the question now covers a SEARCH with zero hits. REV 9: the ZERO-ITERATION part is RESOLVED (see
+  the RESOLVED list): a plain condition HOLDS over zero iterations, as the 11-13 leaning said ("`all` is true" over no
+  occurrences, CF:180), and the quantifier the user chose decides whether zero is allowed (`*` vs `+`; `search`'s
+  `min`); rev 8's lean (fail) is WITHDRAWN. The boundary with an UNSET set-once label (fails, §4.2) is stated once in
+  §4.2, with its look-alike L56. STILL OPEN: `!(x: S)` vs `(x: !S)` on a repeated label (on `1,7,`: "not all below
+  5" matches, "each not below 5" does not; L30, GAP), and `(x: !<5)` on an unset set-once x (the two sentences of
+  §4.2). Lean for those: `!(x: S)` is the plain complement, `(x: !S)` = every iteration outside S, with a warning and
+  a witness where the two differ for the pattern at hand.
 - **O31. The dot family, and level selection.** (OWN-7, RUL-12; WIDENED in rev 7 by review r8 P6-12, CENSUS-24.)
   One `.` carries four resolutions: (1) a LABEL of the map interface (`d.year`, `rest.year`); (2) a module MEMBER
   (`json.row`), which is name resolution if a module is a namespace (O46's lean), not navigation on a value;
@@ -1977,17 +2208,16 @@ review's proposed lean, in plain words, NOT resolved):
   CF:892, to the manager's lean recorded at CF:898-899: "label, module member, metadata and the `$` path are
   instances"), so metadata are RESERVED FIELDS of the map interface and a module's members are its map interface's
   fields (CF:891-892). What remains, as this document's consequence of A (LEAN): a user label named `index` or `label`
-  is a compile ERROR naming the reserved field (reading A's own clause); the metadata name list is closed (`.index`,
-  `.label`). STILL OPEN: how a program selects `functions`/`captures`/`vm`/`eval` (as strings or API options, not
+  is a compile ERROR naming the reserved field (reading A's own clause; REV 9: the MANAGER'S CALL, LEAN (manager));
+  the metadata name list is closed (`.index`, `.label`). STILL OPEN: how a program selects `functions`/`captures`/`vm`/`eval` (as strings or API options, not
   bare words).
 - **O32. Flags of a pattern inserted in a hole.** (Q1R-11.) With no inherited flags, `q := /^\{.*\}$/` inserted in
   `/${q}/m` keeps single-line `^`/`$` and finds nothing on `{a}\n{b}`, while the same text inlined in the `m`
   literal finds both lines. Lean: a `flag.hole` warning naming the fix (`q := /.../m`), or state the flags of a
   binding explicitly.
-- **O33. Two conditions on an ambiguous pattern.** (RUL-3.) `/(?<a>\d+)(?<b>\d+)/ & (a: <5) & (b: <5)` on `123`:
-  each condition passes on SOME parse (true per condition, the extensional reading), no single parse passes both
-  (merged narrowing: false), PCRE's chosen parse gives false. Lean: per-condition some-parse (the extensional
-  reading), with the `label.ambiguous` text saying that two conditions may be met by different parses.
+- **O33. Two conditions on an ambiguous pattern.** (RUL-3.) RESOLVED in rev 9 by the one reading (CF:953-955; see the
+  RESOLVED list): both conditions read PCRE's one parse, so the example is false at every level. Rev 8's lean
+  (per-condition some-parse) is SUPERSEDED with the some-parse rule.
 - **O34. Same text twice: one level for every spelling?** (RUL-7.) `\k<s>` on a 3-valued finite group needs `vm`,
   the value hole `${$s}` on the same label is default-level, and `each(..., enumerate(...))` is a third spelling.
   Lean: one rule keyed by whether the referenced language is finite, for all three spellings (links
@@ -2006,7 +2236,8 @@ review's proposed lean, in plain words, NOT resolved):
   as if zero-padded to width n) and `json.quoted(S)` (rev 2's `jstr`) are placeholders under the naming rule; the
   ruling named `padded`, `any_case`, `quoted`, `length`, `month_numbered` only.
 - **O38. Look-alike rows with no diagnostic.** §0.1 marks GAP rows (rev 8: L20, L21 on answers, L22, L24, L29, L30,
-  L32, L33, L35; rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
+  L32, L33, L35, unchanged in rev 9, whose new rows L55-L59 carry a class each: L55 BY DESIGN, L56 and L59 WARNING,
+  L57 ERROR (lean), L58 SAME, and L34 moves from WARNING to SAME; rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
   stated meaning of a mark or a library name, §5.4, §4.3; L52, "a plain condition on a hit means ALL hits", is the one
   rev 8 row where a warning could pay, since the owner's own first question was about it, CF:904):
   DIFFERENT with no named diagnostic, so G0's acceptance fails on them today. Some are open items above; L20 (a padded
@@ -2132,8 +2363,8 @@ its readings and a lean, NONE decided here):
   (d) THE RECORD ON THE LEFT: moved to O54 with the binding of a search.
   (e) `some`/`all`: decided: `some(...)` is the one spelling of "some" (CF:912-914), `all(...)` the default, and the
   witness rule is SAME ITERATION BY RECORD (O29 RESOLVED).
-  What stays open here: only the level of one-iteration access (LEAN `captures`), until the owner rules it; and C36
-  (the priority parse), which the whole restatement rests on.
+  What stays open here: only the level of one-iteration access (LEAN `captures`), until the owner rules it. C36 (the
+  priority parse), which the whole restatement rested on, is RESOLVED in rev 9 by the one reading (CF:953-955).
 - **O51. Statements that start with `(` or `[`.** (Review r8 P6-13, CENSUS-14.) `(` and `[` after an expression are
   always a call or an index, and newlines are layout (§5.1), so `t := foo` NEWLINE `[a, b]` parses as `foo[a, b]` and
   `d := ...` NEWLINE `(x, y) := ...` as a call. The final-array half is live today; the destructuring half is design
@@ -2156,27 +2387,7 @@ its readings and a lean, NONE decided here):
 
 Items NEW in rev 8 (the owner's three 2026-11-15 entries, CF:880-926; each with its readings and a lean, NONE decided
 here):
-- **C36. CONFLICT: the priority parse vs some-parse.** (The STOP RULE of the predspec8 brief: the transform ruling
-  contradicts an earlier RULED item and this document cannot reconcile them; both readings, no pick. §2.6, §4.3 and
-  §4.5 are marked.) RULED (CF:583, predx Q2), §4.5: "at the default level a condition on an ambiguous label passes if
-  SOME parse passes", and "library patterns are checked unambiguous at their labels". Accepted with "Do it" (CF:905),
-  the transform record (5): "a repeated label's COUNT follows PCRE's priority parse (which with lazy gaps is find-all
-  order)" (CF:919-920). The search body `(?s)(?:.*?(?<hit>x))*.*` is ambiguous at `hit` for every argument that can
-  occur at all (as a set a lazy gap is a plain `.*` and can swallow a hit), and it is a library pattern. Under
-  SOME-PARSE, a group question asks whether ANY parse answers it: on `abx aby abx`, `occurs.exactly(n, (hit: ...))`
-  holds for n = 0, 1, 2 and 3, `some((g: "y"))` holds and so does `!some((g: "y"))` (the parse with zero hits); the
-  owner's own example (`count` = 3, CF:881-882) cannot be given. Under the PRIORITY PARSE every group question has
-  one answer, the find-all one (§2.6's hand checks), but §4.5's promise (one automaton, some parse, a warning where
-  readings differ) does not cover it: counting along the priority parse of a regular pattern is still a function of
-  the text (the priority parse of a backreference-free pattern is itself computable by a finite-state device), but it
-  is a different construction from today's DFA product, unmeasured. Readings: (A) §4.5 governs everywhere, and
-  `search` must be written UNAMBIGUOUSLY (e.g. a gap that cannot contain the start of a hit, `(?:(?!x)(?s:.))*`,
-  which needs a lookahead bounded to the span, refused today by §11's edge-assertion rule at the span's end, and still
-  leaves the hit's own length ambiguous for arguments like `/a+/`); (B) record (5) governs REPEATED labels: their
-  iterations are the priority parse's, §4.5's some-parse stays for a label set once per match, and the library
-  unambiguity check exempts repeated labels; (C) record (5) governs only `search`'s `hit` (a special case, against
-  the owner's general-mechanisms preference). No pick (STOP RULE). The record's own text names (B) ("a repeated
-  label's COUNT"); the cost of (B), the default-level construction for priority-parse counting, is unmeasured.
+- **C36** (rev 8's CONFLICT, the priority parse vs some-parse): RESOLVED in rev 9 (CF:953-955); see the RESOLVED list.
 - **O53. A search argument that can match the empty string.** (Record (5), "the empty-match advance rule stated",
   CF:920.) PCRE ends a loop whose iteration matched empty, so the lazy-gap body gives at most one hit for a nullable
   argument (`/a*/` on `baa`: one empty hit at 0, where find-all gives `''`, `aa`, `''`; §0.1 L53; checked on
@@ -2184,26 +2395,16 @@ here):
   compile error naming `x & !""`, as the empty-match rule refuses a nullable final pattern in a predicate program
   (§7); (B) write PCRE2's find-all ADVANCE RULE into the definition (after an empty hit, the next hit may not be empty
   at the same place; one character is skipped), which no lazy-gap regex expresses directly, so `search` would stop
-  being library text. Lean: A (one rule with §7; library text stays text; the find-all answer for `/a*/` is rarely
-  what a predicate means).
-- **O54. What a binding of a search result becomes.** (Brief item (v); review r8 P6-7 (d); §0.1 L50.) Rev 7 bound a
-  result: `d := <subject> ~ /ab(?<g>[xy])/` (the owner's example) and `(x, y) := rx ~ /.../` (CF:852, his words, "We
-  might use it to bind values from a search"). With search a FILTER applied by `:` or `&`, there is no result value
-  to bind; the hits are iterations of a label of the match (§4.3). Readings for `d := ...`:
-  (A) `d := search(r)` binds the FILTER (an rx, compile time, no match), used as `(m: d)`; the owner's `count(d)`,
-  `d[2]` become questions on the label (`(m: d & occurs.exactly(3, (hit: /(?s).*/)))`, `$m.hit[2]`), so "the search
-  result" is never named;
-  (B) a MATCH-DEPENDENT binding `d := $m & search(r)` (a computed label, §4.4): the captured string of m narrowed by
-  the search, whose `hit` iterations are then d's (`(d: some((g: "x")))`, `$d.hit[2]`), a name for "m's hits";
-  (C) both: (A) for reuse of the filter, (B) only when a computed label is wanted.
-  For the record on the left `(x, y) := ...`: (i) WITHDRAWN with `~` (its only spelling; no §12 case needs it); (ii)
-  KEPT in the design over (B): `(x, y) := $m & search(/(?<a>\d)(?<b>\d)/)` lays x and y against the search pattern's
-  GROUPS (the map interface), so x and y are REPEATED labels, one iteration per hit, paired by iteration (rev 7's
-  "first two results" reading has no footing: hits are not entries of a value). Lean: (A) for `d :=` (it adds
-  nothing: a binding names an rx, and the hits stay where the owner's group questions find them), with (B) available
-  under §4.4's existing rules if a case wants a name for one label's hits; for the record on the left, (ii), design
-  only, out of phase 1, because the owner's own words (CF:852) want the form and nothing in the transform ruling
-  withdraws it.
+  being library text. REV 9: (A) is the MANAGER'S CALL (LEAN, manager; not an owner ruling): §2.6 and §8 say so; the
+  item stays listed until the owner sees it.
+- **O54. What a binding of a search result becomes.** (Brief item (v); review r8 P6-7 (d); §0.1 L50.) REV 9: the
+  `d :=` half is RESOLVED by the owner (CF:929: "the name binds to the transformed regex as for all transformed
+  regex"): rev 8's reading (A), `hits := search(r)` binds the transformed rx, applied as `(m: hits)`, no special case
+  for search (§2.6, §5.1). Reading (B), a match-dependent binding `d := $m & search(r)` (a computed label, §4.4), is
+  not a separate rule: §4.4 already admits it, and it is used only if a case wants a name for one label's hits. STILL
+  OPEN, unchanged: the RECORD ON THE LEFT, `(x, y) := $m & search(/(?<a>\d)(?<b>\d)/)` (CF:852, his words, "We might
+  use it to bind values from a search"); lean (ii): laid against the search pattern's GROUPS (the map interface), x and
+  y REPEATED labels, one iteration per hit, paired by iteration; design only, out of phase 1 (§0.2, L50).
 - **O55. The hit's label, and "every hit" as a condition.** The library body names the hit group `hit`
   (placeholder). A user label `hit` inside the argument would be a duplicate (the `(?J)` question, O35). And
   "count the hits" is spelled `count((hit: /(?s).*/))`, a condition whose set is every string. Readings: (A) a fixed
@@ -2220,6 +2421,59 @@ here):
   level (CF:924-926, the manager's lean). Lean: a TEST on iteration i is a group question at the default level (it
   reads no text out); READING iteration i's text (`$x[2]`, `${$x[2]}`) is the `captures` level. Both leans are this
   document's.
+
+Items NEW in rev 9 (the owner's last two 2026-11-15 entries, CF:927-961; each with its readings and a lean):
+- **O57. OWED MEASUREMENT: what does the one reading cost?** (CF:949-950: "i'd like to know the cost of this";
+  record CF:955-957: "a measurement owed before any build go".) NOT RUN in rev 9 (design only). WHAT IS MEASURED: for
+  a condition on an AMBIGUOUS label, the extra states of the automaton for PCRE's reading (§4.5) over the some-parse
+  automaton (the plain product of pattern and condition) for the same program: both absolute minimal-DFA state
+  counts and their ratio, with the build time beside them and whether the construction finishes under a stated
+  budget. ON WHICH POPULATION: (1) the worked examples: every §12 case (all unambiguous at the labels they read, so
+  the expected extra is ZERO: a control that the construction adds nothing where the readings coincide), §4.5's
+  `/(?<a>\d+)(?<b>\d+)/` conditions, §2.6's search rows (the `hit` label, ambiguous as a set by construction: the
+  case every search question meets) and the §0.1 rows L34, L59; (2) a CORPUS OF AMBIGUOUS PATTERNS: the `.rxt`
+  corpus's patterns with a capture group, kept where the decidable ambiguity check (§4.5) finds an ambiguous label,
+  each paired with one fixed condition family per ambiguous label (the label equal to its PCRE value on a
+  shortest witness, and its negation), so the conditions are not chosen by the construction's author. THE REGIME:
+  compile-time size on one box, compiler and minimiser, named in the result (§0 standing question 1); match speed
+  is not measured (both automata are linear). THE INDEPENDENT CONTROL: each constructed automaton's answers are
+  checked on sampled strings against libpcre2's own anchored match (the label read from the match, never a
+  rejecting callout) and Python's `re`; the ambiguous population is counted twice, by the ambiguity check and by a
+  libpcre2 differential that finds a witness with two accepting parses (K35). WHAT MOVES: no emitted byte; the result
+  feeds the budget (O39) and the owner's go/no-go on the one reading's cost. WHAT WOULD FLIP A DECISION: a small,
+  bounded extra on the corpus keeps the manager's lean (build at the default level); frequent blow-ups would make
+  the budget refusal common and send the cost back to the owner. Prerequisite: a construction of PCRE's reading as
+  an automaton, which pcrec does not have today (an in-compiler automaton kit, [AUTOMATON-KIT], is the natural home).
+  Lean: run it as its own measurement lane when the predicate front end nears a build go, not before (D77).
+- **O58. `min` above 1, and `max`.** (CF:951-952, CF:960; §0.1 L57.) Under PCRE's reading the quantifier `{n,}`
+  with n >= 2 lets PCRE RE-CUT the hits to reach n (`x = /aab|a/` on `aab`: one hit at `min` 0 or 1, two at `min = 2`;
+  libpcre2 and Python's `re`, `docs/dev/lanes/predspec9_reading.out`), so `search(x, min = 2)` is not "at least two of
+  the hits" (`search(x) & occurs.at_least(2, (hit: /(?s).*/))`, which rejects `aab`). Readings: (A) `min` is 0 or 1;
+  a larger `min` is an ERROR naming the `occurs.at_least` form; (B) `min = n` is SUGAR for the `occurs.at_least` form
+  (not the quantifier), so the hits never change with `min`; (C) `min = n` is the quantifier `{n,}`, with a
+  look-alike WARNING when the argument can re-cut. Lean: (A) (the owner named only 0 and 1, CF:960; (B) would make
+  `min` mean two mechanisms). `max`: LEFT OUT for now, RULED (CF:951-952, "we could skip it for now"); FILED with its
+  confusion stated: under PCRE's reading `{0,N}` means "take the FIRST N hits" (the rest of the value may hold more),
+  whereas "AT MOST N hits in the value" is a count test that stays `occurs.at_most(N, ...)`. Trigger to revisit: a
+  worked example that needs "the first N hits".
+- **O59. The library bodies' own reading, and where `label.ambiguous` fires.** Under the one reading, a library body's
+  gaps decide how the ARGUMENT's labels read: rev 8's `endsWith(s) := /(?s).*${s}/` reads `endsWith(/(?<n>\d+)/)` on
+  `ab123` as n = `3` (greedy lead), the lazy body as n = `123`; rev 8's `contains` body read its argument's labels at
+  the RIGHTMOST occurrence. Rev 9 (LEAN, this document) writes the bodies so the argument starts as far LEFT as it can
+  (lazy gaps; `contains` = `search`, §8), each library macro stating its reading and checking it by assertions (§5.6).
+  Readings for the warning: (A) `label.ambiguous` fires only for ambiguity in the user's OWN text (the argument
+  `/(?<a>\d+)(?<b>\d+)/` passed to `search` still warns for a), not for ambiguity that a library body introduces and
+  states (the gap of `search` or `endsWith`); (B) it fires for every ambiguous label a condition reads, library-made
+  or not. Lean: (A) (the library author validated the body's reading; warning every `search` user would bury the
+  warnings that matter). The LEVEL a budget refusal names (§4.5: `captures` where its tagged automaton follows PCRE's
+  priority, else `vm`) waits on [ENG-TDFA] (§13 O6).
+
+DECIDED BY THE MANAGER (rev 9; the manager's calls, each LEAN (manager), none an owner ruling; listed so the owner
+sees them): (1) a search argument that can match the empty string is REFUSED with the fix `x & !""` (O53 reading A;
+§2.6, §8); (2) a user label named `index` or `label` is a compile ERROR naming the reserved field of the map
+interface (O31; §5.4 `.` row); (3) the library transforms' gaps cross line breaks: `(?s)` in `search`, `contains`,
+`startsWith`, `endsWith` (§2.6, §8); (4) the `["US" => "United States"]` lookup-table spelling is DROPPED in favour of
+computed labels (C7 reading A; §3.1).
 
 FAMILIES noted by the review (PLAN; not folded): value mappings (RUL-F1); quantifiers and emptiness checks, now
 incl. `count()` vs `occurs` (RUL-F2); same-text-twice (O34, RUL-F3); name-set selection (RUL-F4); the dot (O31,
@@ -2256,6 +2510,7 @@ COND-FAMILY.md notes by date/heading; "11-12" = the 2026-11-12 sections, etc. "p
 
 | section | notes consolidated |
 |---|---|
+| rev 9 (all sections touched) | CF:927-947 (search follows PCRE's matching; a bound name holds the transformed rx; min/max settings): CF:929 -> §2.6 owner's example, §5.1, O54; CF:932-936 -> §2.6, §4.3, §8, C36; CF:933-940 -> §2.6 `min` and ZERO HITS, §4.2 boundary, §4.3 table, L36, L55, L56, O28; CF:941-944 (the manager's note (a)) -> §4.5 build-or-refuse (LEAN), §6.1; CF:944-947 (note (b)) -> §2.6 `contains` = `search(x, min = 1)`, L58, O58. CF:948-961 (ONE reading everywhere; ambiguity the author's; no `max`): CF:950, CF:953-955 -> §4.5 rewritten, §0.3 glossary, L34, L59, C36, O33, C11; CF:949-950, CF:955-957 -> O57, §0 standing questions; CF:950-951, CF:957-959 -> §5.6 validation example, §7.1 `label.ambiguous`, §4.5; CF:951-952, CF:960-961 -> §2.6, §8, §0.2, O58. The brief's manager's calls -> O53, O31, C7, §2.6/§8 `(?s)` and the DECIDED BY THE MANAGER list. CF:180 -> O28 |
 | rev 8 (all sections touched) | CF:880-887 (the search result as the ARRAY of all results) -> §2.6's owner's example, O50; CF:888-901 (the four answers): CF:889 -> §0.2, §5.2, §5.4 `:`, L49, O48, O52 (c); CF:890-891 -> §0.3 interface, §1, §2.1 kind table, §3.1, §3.2, §3.4, §5.4, §9, §14; CF:891-892 -> §7, O46, kind table; CF:892/CF:898-899 -> §3.2 tool 4, §5.4 `.`, O31, C29; CF:902-926 (SEARCH IS A TRANSFORM) -> §0 rulings table, §0.1 L16, L17, L31, L36, L50-L54, §0.2, §2.6, §3.4, §4.3, §4.5, §5.1, §5.3, §5.4, §8, §11, §12, C17, C28, O12, O28, O29, O36, O38, O50, O52, C36, O53-O56; CF:62 -> §4.3, O56 (2); CF:180 -> O28 |
 | rev 7 (all sections touched) | review `docs/dev/reviews/2026-11-15-r8-predspec6.md` P6-1..P6-18 (critic texts in its directory) with its DISPOSITIONS RULED; CF:880-887 (the search result is the ARRAY of all results) -> §2.6, §3.4, §8, §0.1 L16/L50/L51, O50, and the owner's example (via the predspec7 brief) -> §2.6, O50; CF:761-768 (the filtered span) -> §11 ONE SPAN PER FILTER ROLE, §2.7, §8, L17, O49 (P6-5); CF:362 -> §2.3, §5.1, §11 (the macro-in-a-hole error, P6-1); CF:847-856 (the owner's own words behind the type picture) -> §0 marks table, §2.1, §3.1, §5.4 (P6-10); CF:113 -> §7, §11 (the `(?&name)` crossing, SIM-9); CF:548 -> §8, C25 (P6-2); CF:75 -> O50 (D) |
 | rev 6 (all sections touched) | the type picture, CF:846-878: CF:858 (two kinds, condition = macro, filter a role) -> §2.1, §2.2, §3.5, §14, C19, O40; CF:860 (one input rule) -> §2.1, §2.3, §2.7, §5.2; CF:863 (comma, brackets, `=`, `:`) -> §5.4, §3.1, §3.2, §4.1, L23, C5, C8, O30; CF:866 (record never a value, three positions, map view, one-way, no sequence closure) -> §5.4, §3.1, §4.1, §5.2, §0.2, §7, §8, L43-L47, C25, O41-O47; CF:873 (search returns an rx) -> §2.6, C29; CF:876 (the manager's TO CHECK list) -> O41, O42, C25, O47 |
