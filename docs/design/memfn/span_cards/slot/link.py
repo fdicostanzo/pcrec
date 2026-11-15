@@ -200,6 +200,39 @@ def isa_check(name, obj, target, tfeat, floor):
                          "it: the region did not reach the code" % (name, target, ",".join(sorted(extra))))
     return ",".join(sorted(f for f in need if f in extra)) or "-"
 
+def timed_shape_check(name, obj, sym):
+    """[review 2026-11-15 r5 FIDELITY-1] THE TIMED FUNCTION HOLDS THE SITE: `SYM_time` in the timed object calls (or
+    tail-jumps to) no function the object itself defines. pcrec's matcher inlines the site (one caller), so a site
+    gcc kept out of line (a second caller in the TU: the critic's `_gate`) times a call per hit the artifact does
+    not pay. A call to an external (libc's memchr: a relocation to an undefined symbol) is the site's own call and
+    stays. Returns the externals `_time` calls"""
+    defined = set()
+    for ln in sh(["nm", "--defined-only", obj]).splitlines():
+        p = ln.split()
+        if len(p) == 3 and p[1] in "tTwW":
+            defined.add(p[2])
+    lines = sh(["objdump", "-dr", "--no-show-raw-insn", "--disassemble=%s_time" % sym, obj]).splitlines()
+    ext, bad = set(), []
+    for i, ln in enumerate(lines):
+        m = re.match(r"\s+[0-9a-f]+:\s+(call|jmp)\w*\s+\S+\s+<([^>+]+)", ln)
+        if not m:
+            continue
+        callee = m.group(2)
+        r = re.match(r"\s+[0-9a-f]+: R_X86_64_\w+\s+([^\s+-]+)", lines[i + 1]) if i + 1 < len(lines) else None
+        if r:
+            callee = r.group(1)
+        if callee == sym + "_time":
+            continue                          # a branch inside the timed function itself
+        if callee in defined:
+            bad.append(callee)
+        elif r:
+            ext.add(callee)
+    if bad:
+        raise SystemExit("link: TIMED-SHAPE %s: %s_time calls %s, a function its own object defines: the site is out "
+                         "of line in the timed code, inlined in pcrec's matcher (review r5 FIDELITY-1)"
+                         % (name, sym, ",".join(sorted(set(bad)))))
+    return sorted(ext)
+
 def form_hash(fx, form, cls):
     """(the instance's hash, the form's FOLD hash mf_form_hash(form)): cls None names the canonical instance"""
     inst = fold = None
@@ -221,6 +254,9 @@ def hexbytes(s):
 
 # ---- the wrappers: ONE text per site shape ----------------------------------------------------------------
 # SYM is the arm's symbol stem (-DSYM=a<k>), so an arm's and its twin's sources are byte-identical.
+# [review 2026-11-15 r5 FIDELITY-1] ONE TEXT, TWO OBJECTS: the timed object (armK.o) holds `_time` alone, the gate
+# object (armK_g.o, the same file compiled with -DSLOT_GATE_TU) `_gate` alone, so the site has ONE caller in the
+# timed TU, as in pcrec's matcher (a second caller kept a static finder out of line); timed_shape_check holds it.
 WRAP_FIND = """#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -239,6 +275,7 @@ static inline __attribute__((always_inline)) int step(const unsigned char *subje
     *io = pos;
     return pos < n;
 }
+#ifndef SLOT_GATE_TU
 __attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc)
 {
     (void)c; (void)nc;
@@ -246,6 +283,8 @@ __attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_
     for (size_t p = 0; p < n && step(s, n, &p); p++) k++;
     return k;
 }
+#endif
+#ifdef SLOT_GATE_TU
 __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
                                                    uint64_t *sum, uint64_t *h)
 {
@@ -258,6 +297,7 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
     }
     return k;
 }
+#endif
 """
 
 WRAP_CMP = """#include <stddef.h>
@@ -276,6 +316,7 @@ static inline __attribute__((always_inline)) int test(const unsigned char *subje
 /* SITE BODY END */
     ;
 }
+#ifndef SLOT_GATE_TU
 __attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc)
 {
     (void)n;
@@ -283,6 +324,8 @@ __attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_
     for (const uint32_t *p = c, *e = c + nc; p < e; p++) k += test(s, *p) != 0;   /* a pointer bump: R14-1 */
     return k;
 }
+#endif
+#ifdef SLOT_GATE_TU
 __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
                                                    uint64_t *sum, uint64_t *h)
 {
@@ -296,6 +339,7 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
         }
     return k;
 }
+#endif
 """
 
 # [rev1.4 R14-1] THE NULL VERIFY BASE IS ITS CLASS ARM'S OWN LOOP WITH THE COMPARE REMOVED: the base's TU is the
@@ -445,10 +489,12 @@ def seed_pad(run_id, job, l, arm, d):
     h = hashlib.sha256(("%s|%s|%d|%s|%d" % (run_id, job, l, arm, d)).encode()).digest()
     return PAD_STEP * (1 + int.from_bytes(h[:8], "little") % PAD_UNITS)
 
-def compile_tu(src, path, sym):
-    open(path, "w").write(src)
-    obj = path[:-2] + ".o"
-    sh(CC + ["-c", "-DSYM=" + sym, "-DCAND_STRIDE=%du" % plan.CAND_STRIDE, "-DPOOL_BYTES=%du" % plan.POOL_BYTES,
+def compile_tu(src, path, sym, gate=False):
+    """the TU's object; gate: the same file's GATE object (-DSLOT_GATE_TU, `_g.o`), the text already written"""
+    if not gate:
+        open(path, "w").write(src)
+    obj = path[:-2] + ("_g.o" if gate else ".o")
+    sh(CC + ["-DSLOT_GATE_TU"] * gate + ["-c", "-DSYM=" + sym, "-DCAND_STRIDE=%du" % plan.CAND_STRIDE, "-DPOOL_BYTES=%du" % plan.POOL_BYTES,
              "-I" + HERE, path, "-o", obj])
     return obj
 
@@ -522,13 +568,18 @@ def build_objs(job, rundir, arms):
     common = []
     for c in ("drv", "gen"):
         common.append(compile_tu(open(os.path.join(HERE, c + ".c")).read(), os.path.join(d, c + ".c"), "x"))
-    objs, checks, hashes, ctext = [], [], {}, []
+    objs, checks, hashes, ctext, gates = [], [], {}, [], []
     floor = floor_features(fx)
     isa_table_check(fx, floor)
     for k, a in enumerate(arms):
         src, fc, f = render(fx, a)
         sym = "a%d" % k
         o = compile_tu(src, os.path.join(d, "arm%d.c" % k), sym)
+        if "SLOT_GATE_TU" in src:                 # a site wrapper's TU (not a whole artifact's): its gate apart
+            gates.append(compile_tu(src, os.path.join(d, "arm%d.c" % k), sym, gate=True))
+            timed_shape_check(a.name, o, sym)
+        elif a.kind not in ("enter", "j1"):
+            raise SystemExit("link: TIMED-SHAPE %s: a site wrapper's TU without the gate split" % a.name)
         tgt = isa = "-"
         if "frame" in f:
             tgt = f["frame"][3]
@@ -579,17 +630,17 @@ def build_objs(job, rundir, arms):
         + "\n};\nconst int slot_narms = %d;\n" % len(objs)
         + "const unsigned char slot_find_members[32] = { %s };\n" % cbytes(find_members(fx)))
     common.append(compile_tu(open(tab).read(), tab, "x"))
-    return common, objs
+    return common, objs, gates
 
-def link_launch(job, rundir, run_id, l, common, objs, d):
-    """d: the draw index per arm name (0 if absent)"""
+def link_launch(job, rundir, run_id, l, common, objs, d, gates=()):
+    """d: the draw index per arm name (0 if absent); the gate objects link after every arm (no arm moves for them)"""
     ld = os.path.join(rundir, job, "L%d" % l)
     os.makedirs(ld, exist_ok=True)
     cmd = []
     for k, (a, _s, o, _f, _src) in enumerate(objs):
         cmd += [pad_obj(ld, seed_pad(run_id, job, l, a.name, d.get(a.name, 0)), k), o]
     exe = os.path.join(ld, "%s.L%d" % (job, l))
-    sh(["gcc", "-o", exe] + common + cmd)
+    sh(["gcc", "-o", exe] + common + cmd + list(gates))
     return exe
 
 def text_align(obj):
@@ -608,7 +659,7 @@ def link_job(job, rundir, run_id):
     draws; exhausting a bound REFUSES naming the launch, the arm and the constraint."""
     jobs, _rows, _floor, _un = plan.build()
     arms = [a for a in jobs[job] if a.kind != "ctl"]   # the control is its own executable (link_ctl)
-    common, objs = build_objs(job, rundir, arms)
+    common, objs, gates = build_objs(job, rundir, arms)
     names = {a.name: s for a, s, _o, _f, _src in objs}
     order = [a.name for a, _s, _o, _f, _src in objs]
     draws = {l: {} for l in range(1, 8)}
@@ -623,7 +674,7 @@ def link_job(job, rundir, run_id):
                              % (job, l, name, MAXDRAW, why))
     def fix_launch(l):
         while True:
-            exes[l] = link_launch(job, rundir, run_id, l, common, objs, draws[l])
+            exes[l] = link_launch(job, rundir, run_id, l, common, objs, draws[l], gates)
             addrs[l] = nm_addrs(exes[l])
             bad = next((n for n in order if n.endswith("#b") and need[names[n]] > 1
                         and addrs[l][names[n]] % 64 == addrs[l][names[n[:-2]]] % 64), None)
@@ -672,8 +723,8 @@ def link_ctl(rundir):
     kp = os.path.join(d, "inputs.sha256")
     if not os.path.exists(exe):
         os.makedirs(d, exist_ok=True)
-        common, objs = build_objs("ctl", rundir, [plan.Arm("ctl", "ctl", "ctl", "walk", lengths=plan.LENGTHS)])
-        shutil.move(link_launch("ctl", rundir, "ctl", 1, common, objs, {}), exe)
+        common, objs, gates = build_objs("ctl", rundir, [plan.Arm("ctl", "ctl", "ctl", "walk", lengths=plan.LENGTHS)])
+        shutil.move(link_launch("ctl", rundir, "ctl", 1, common, objs, {}, gates), exe)
         open(os.path.join(rundir, "ctl.sha256"), "w").write(hashlib.sha256(open(exe, "rb").read()).hexdigest() + "\n")
         open(kp, "w").write(key + "\n")
     elif not os.path.exists(kp) or open(kp).read().strip() != key:

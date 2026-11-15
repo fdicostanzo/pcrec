@@ -8,7 +8,7 @@
 # a row DETECTED). Each row scores DETECTED (the dry run refused with the expected text) or MISSED; exit 0 iff the
 # control is green and every row is DETECTED.
 #   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 d1
-#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4
+#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1
 #                                         y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
@@ -125,9 +125,14 @@
 #   (f8a) S3183 the target table maps x86-64-v3 to the baseline set: the guard refuses (DRAFT-ISA-LEVEL MIXED), the
 #        one-set-per-ISA-level case shows it
 #   (f8b) S3184 the v3 set keeps the baseline class value: that case goes WRONG (a set's class must name its level)
+#   review 2026-11-15 r5 memfn-mfindcomb (mcfixa):
+#   (i1) S3188 [FIDELITY-1] the find wrapper's gate compiled back INTO the timed TU (the critic's shape: two callers
+#        of `step`): gcc keeps the w16/w32 finder out of line; the timed-shape check refuses (TIMED-SHAPE ...
+#        calls mf_fn__w16)
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
 # rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
-# r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's; they
+# r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's,
+# S3188-S3197 lane mcfixa's; they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
@@ -135,7 +140,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=${SLOT_TREE:-$(cd "$here/../../../../.." && pwd)}   # SLOT_TREE: the tree when slot/ runs from a copy
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -329,6 +334,18 @@ row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT
     f8b) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	WRONG'
         patch "$SCR/$row/est.py" '              "x86-64-v3": ("-v3", "x86_64-v3/zen4")}' \
 '              "x86-64-v3": ("-v3", "x86_64/zen4")}   # SABOTAGE S3184: the v3 set keeps the baseline class' ;;
+    i1) job=JMB want='TIMED-SHAPE kit\.find_byte\.mfind-w(16|32)(#b)?: a[0-9]+_time calls mf_fn__w(16|32)'
+        patch "$SCR/$row/link.py" '#endif
+#ifdef SLOT_GATE_TU
+__attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
+                                                   uint64_t *sum, uint64_t *h)
+{
+    (void)c; (void)nc;' '#endif
+#if 1   /* SABOTAGE S3188: the gate back in the timed TU */
+__attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
+                                                   uint64_t *sum, uint64_t *h)
+{
+    (void)c; (void)nc;' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
 }
