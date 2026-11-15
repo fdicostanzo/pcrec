@@ -687,3 +687,10 @@ against another label's value is a priced value-vs-value relation. NAMESPACE: le
 with element metadata `x.label`): `occurs := import("occurs")`, `headers & occurs.exactly(1, name: ci("Host")) &
 occurs.at_most(1, name: ci("Content-Length")) & occurs.none(name: ci("Transfer-Encoding"))`; value comparisons
 (between, <=) stay purely about values. Name open to Frank. All predx gaps now ruled.
+
+**2026-11-14 — Q1 critic framing (Frank: "Agree. From a user perspective, things should work intuitively. But complex context could cause predicates to just not work and it's not clear how the obscure rules impact it. Rx is already hieroglyphics ... that's why it was so important to me that things that look like they should do the same thing actually do.").**
+Critic round on predicates_draft rev 2 compares BOTH models (context-marked sets vs string sets + context-dependent
+values) rule by rule: what changes, which examples need which, cost. STANDING CRITERION (owner, ranked first for this
+design): LOOK-ALIKE CONSISTENCY / INTUITIVE BEHAVIOUR: forms that look like they should do the same thing must do the
+same thing; a rule whose effect a user cannot predict (e.g. context silently making a predicate fail) is a defect even
+when formally sound.
