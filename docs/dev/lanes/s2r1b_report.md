@@ -1,0 +1,44 @@
+# s2r1b report: rule (1) `alt_union` census, default vs `--harness=alt-union-run`
+
+STATE: complete (census, answer identity and size delta measured; ON/OFF is the manager's)
+
+## STATE AT HANDOFF
+Premise test PASSED (reproduced below). No rulings-file entries (s2r1b_rulings.md empty/absent). Measure-only: no edits to src/, cli/, lib/, memfn/; scripts and logs are in `/var/tmp/pcrec-pcrec/scratch/s2r1b/` (census.py, an.py, ident.sh, census.json, ident_*.log), not committed. Binary: build/pcrec-harness built from main 370aab9fe in this worktree. Nothing owed.
+
+## METHOD
+Premise: `xy(?:ab|ac)zw`, `--features all -e byte --emit-facts`, RX_REQ_RUN: default `787961627a77@4/fffffffeffff`; altcls denied (`-fno-altcls-merge -fno-altcls-factor`) `61627a77@2/fffeffff`; lever on, denied: `787961627a77@4/fffffffeffff`. Reproduces the previous lane's difference (s2r1_report.md) and adds that the DEFAULT config already merges the alternation to a class (altcls), so the lever's effect is hidden there for that pattern.
+
+Census: scratch/s2r1b/census.py enumerates the corpus with emit_sweep.py's own `enumerate_corpus` (7,041 pattern rows, 5,489 distinct, `.rxt` under tests/), then for each distinct pattern and each of four cells (default, default+lever, altcls denied, denied+lever) runs build/pcrec-harness `--features all -e byte --emit-facts` (RX_REQ_RUN / _WHY / _HANDOFF) and `-p rx --features all -o -` (emitted C bytes, sha1, size). I did NOT use emit_sweep.py's driver: its `--extra` applies to BOTH sides, so a lever-vs-default pair needs two binaries or a bespoke loop. A utf8 facts-only pass (`-e utf8`, census_u8.py) covers the encoding the byte pass cannot. 486 patterns refuse to compile in every cell alike (reject-table patterns; rc identical across all four cells), so they never move.
+Answer identity: `tests/harness/run.sh` over the 14 `.rxt` files that hold a mover pattern (list: scratch/s2r1b/files.txt), `PCREC=build/pcrec-harness RXTFLAGS=...`, four cells (base, lever, deny+lever, deny; the last was cut by my 590 s timeout, the first three completed).
+
+## CENSUS
+(a) Movers (distinct corpus patterns whose RX_REQ_RUN/WHY/HANDOFF differ lever vs default), byte encoding:
+- (i) default flags: 19 movers of 5,489 (0.35%).
+- (ii) altcls denied: 22 movers (0.40%). 16 are common to both configurations; 3 move only in (i) (`AKIA|AGPA|AIDA|AROA`, `ab|a\Gb`, `frank|zred|brad`: with altcls on, the default already handles them differently) and 6 only in (ii) (`(?:ab|ba|aa|bb){24}c`, `(a(b|c)(d|e))`, `(a|b){3,3}c`, `abcd(?:|)efgh`, `x(a|b|c)y`, `fra(n|m)k|frost`: the alternations altcls would otherwise merge to a class).
+In both configurations the emitted-C bytes differ for exactly the patterns whose facts differ (19/19, 22/22), and for no others: the lever's reach in emitted code equals its reach in facts.
+utf8 facts: 22 movers (i) / 27 (ii); the extra ones over byte are 4 byte-range classes (`x[\x{800}-\x{ffff}]y`, `x[\x{10000}-\x{10ffff}]y` and the `(...)` forms) plus under (ii) `(?i)abcdÀefgh` and `(?i)Ελληνικά`.
+
+(e) Emitted size, whole distinct corpus at byte, `-o -` bytes: (i) 178,026,866 -> 178,035,585, +8,719 (+0.005%); 18 movers grow, none shrink, max +977 (`frank|zred|brad`). (ii) 178,169,536 -> 178,170,802, +1,266; 20 grow, 1 shrinks: `(?:ab|ba|aa|bb){24}c` -9,892 (43,737 -> 33,845; HANDOFF none -> 17, run 4 positions -> 31 positions), max grow +1,767 (`(a(b|c)(d|e))`).
+
+## MOVERS BY CLASS
+Source: scratch/s2r1b/an.out (per-mover lines), `default -> lever` as RX_REQ_RUN / WHY / HANDOFF.
+1. Run extended through an equal-width all-branch alternation, literal sets (EXPECTED): `AKIA|AGPA|AIDA|AROA` `41[47494b52][44494f50]@0` -> `...41@3`; `fra(n|m)k|frost` (ii) gains a fifth position `[6b74]`; `x(?:1[éà]|q2|r3)y` gains `79` (byte mode: `[éà]` is a one-byte class, all branches 2 bytes); `frank|zred|brad` default `[62727a][6172][61656e][646b]` dominated -> lever `[62667a]72[6165][646e]@1` emitted (the default's run is aligned to the branch tails, the lever's to the heads; both are correct unions; same length 4, WHY dominated -> emitted); `ab|a\Gb` none -> `6162@1`.
+2. Repeat of a capturing equal-width alternation, newly stated (EXPECTED): `((a)|b){3}c` none/dominated -> `[6162][6162][6162]63@3`; `((H)|I){3}J` -> `4848484a@3/fefefeff`; `((I)|J){2}K`, `((\x80)|\x81){3}\x82`, `((\xb0)|\xb1){2}\xb2`, `(a|b){3,3}c`, `((a)|b){2,4}c` (HANDOFF 4 -> 2), `((a)|(b)){3}` none -> `[6162]x3` WHY untestable, `(?:ab|ba|aa|bb){24}c` (ii only; the size win above).
+3. Small nested/grouped alternations (EXPECTED): `(a(b|c)(d|e))` none -> `616264@1/fffefe`; `x(a|b|c)y` (ii only) -> `78[61-63]79@0`.
+4. Alternations whose branches are all zero-width (EXPECTED, equal width 0), run continues across them: `-+(?:(?=a)|)A` none -> `2d41@0`; `-{1,2}(?:(?!a)|)a` -> `2d61@0`; `a{2,}?(?:\b|)b` `6161` -> `616162@2`; `a{2}(?:(?<!\w)|)b` same; `[ab]{2,}(?:\B|)-` none -> `[6162][6162]2d`; `[a-]{2,}(?:(?=)|)\w` none -> `[2d61][2d61][...]` untestable; `a(?:(?<=\w)(?!\w)|(?<!\w)(?=\w))b` none -> `6162` (emitted size unchanged, bytes differ); `a{1,2}(?:(?=\w)|(?<=\w))A` none -> `6141@1` (HANDOFF 2 -> 1); `abcd(?:|)efgh` (ii) `61626364@1` -> `6162636465666768@1`.
+5. utf8 class ranges lowered to equal-width byte alternations (EXPECTED): `x[\x{800}-\x{ffff}]y` `78e08080@0/fff0c0c0` -> `78e0808079@4/fff0c0c0ff`; `x[\x{10000}-\x{10ffff}]y` `78[f0-f4][80-bf][80-bf][80-bf]@0` -> `...79@5`; `(?i)abcdÀefgh` (ii) extended through `efgh`.
+6. One to read closely (utf8 (ii), see UNEXPECTED).
+
+(b) `_REQ_WHY` moves: dominated/none -> emitted or untestable; `_REQ_HANDOFF` falls (4->2, 2->1, none->0, none->17), meaning a longer run takes over from a handoff. No mover's run is shorter or lost.
+
+## UNEXPECTED
+Looked for: an unequal-width alternation contributing `all`; a run shorter or lost; a mover with no alternation. Found none. Checks done:
+- Shorter/lost: every mover's lever run is at least as long as the default's, except the alignment switch in `frank|zred|brad` (same length, head-aligned instead of tail-aligned, both sound unions).
+- Unequal widths: the only mover with an unequal-width alternation is utf8 `(?i)Ελληνικά` ((ii) only): default `ce9bce9b@2`, lever `[cecf][95b5]ce[9bbb]...[cdcee1][8599b9be]@8`. The last position is the fold set of `ι` (2-byte `ι`/`Ι`/U+0345, 3-byte U+1FBE `e1 be be`). `rr_alt_union` (src/facts/req.c) requires `l->maxw == n` and `r->maxw == n`, so the 3-byte branch cannot join row 1; the 2-byte sub-alternation is now `all`, the outer unequal-width one falls to row 2 (affix, `all` false) and the run correctly ENDS at the first two bytes of `ι` (`κ`, the next character, is not stated). So the unequal width contributes only its head, not `all`. Expected by the row's own text; flagged because it is the one place a reader should look.
+- (i) vs (ii): altcls turns `x(a|b|c)y`, `(a(b|c)(d|e))`, `(?:ab|ba|aa|bb){24}c`, `abcd(?:|)efgh` and the like into classes in the default config, so they move only under (ii); the 3 patterns that move only under (i) are listed in CENSUS.
+
+## ANSWER IDENTITY
+(d) No existing path drives a harness lever through the whole answer corpus (tests/axes/run_axes.sh's INTERNAL_ARMS has no `alt-union-run`), but tests/harness/run.sh takes `RXTFLAGS` and `PCREC`, so I ran it over every `.rxt` file holding a mover pattern (14 files: altcls, assertions/gpos, base/alternation, base/bounded_repeats, base/d27_captures, captures/structure_anchors_misc, counterk, litscan/litrun, litscan/spanarms, lookaround/d27/expansions, possessify/composition_d27, rungselect/revdet_highbytes, rungselect/rungselect, utf8/altnf_lowering). Logs scratch/s2r1b/ident_{base,lever,denyl}.log: base `cases passed: 14880`, `cases failed: 0`; lever `14880`/`0`; denied+lever `14880`/`0`; pattern-compile failures 0 in all three. Since the emitted C of every other corpus pattern is byte-identical lever vs default (census above), answers outside these files cannot move. Not covered: the `.rxt` blocks' own per-block flags/encodings differing from my byte/utf8 argv (the utf8 pass covers facts only, not emitted bytes), and the denied-alone cell (timeout).
+
+## RECOMMENDATION
+ON is supported by this census: 19 movers (0.35%) in the default configuration, all explained by an equal-width (or all-zero-width) alternation extending or newly stating a run; no unexpected movers; answers identical on all 14,880 cases of the 14 files; aggregate emitted size +0.005% (one pattern shrinks by 9.9 KB). The effect is small; the decision turns on the hull ruling (made 2026-11-13), not on risk. If ON, the 19 (default) + 22 (denied) mover witnesses, the 4 utf8 class-range patterns, and any pins reading the lever (`tests/codegen/run_facts_checks.sh` [facts-ahead], the `alt-union-run` harness lever retirement) move in that landing.

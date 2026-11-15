@@ -1,0 +1,4 @@
+report=docs/dev/lanes/s2r1b_report.md
+sections: STATE AT HANDOFF; METHOD; CENSUS; MOVERS BY CLASS; UNEXPECTED; RECOMMENDATION
+nonempty: all
+commit: yes
