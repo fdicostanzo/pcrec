@@ -1241,7 +1241,7 @@ tree (R-MS5), pcrec's in `measure/cards.tsv`. Its columns:
 
 | column | meaning |
 |---|---|
-| `owner`, `quantity`, `ver` | identity; a committed (owner, quantity, ver) row never changes (append-only by version) |
+| `owner`, `quantity`, `ver` | identity; a committed (owner, quantity, ver) row never changes (append-only by version). `[review 2026-11-15 r1 F7]` A row binds from its first merge to main or its first set/record under it, whichever comes first; before that it is a draft of its lane chain and may be respelled |
 | `dims` | the key's dimension names in order (§1.3) |
 | `unit` | the row's unit |
 | `subject` | the subject regime: `streamed-fresh` / `fit-repeated` / `landed:<g-ladder>` … (an owner token; the driver knows only how to build each token's buffer from the card's own parameters) |

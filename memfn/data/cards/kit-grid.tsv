@@ -78,7 +78,12 @@
 # and no box has run it; nothing picks the form (it is reached by the
 # test-only lever `mfind`), so UNMEASURED moves no byte. Its timing plan is
 # docs/dev/lanes/mfind_report.md "Owed runs" (the slot harness pieces it
-# still lacks are listed there).
+# still lacks are listed there). Lane slotx gave find_hit@6 a fifth dim
+# while the row was still a draft of its lane chain (when a card row binds:
+# docs/design/measure_sets.md §7.2), `reject`: the percent of planted hits the site's check rejects
+# (the site's run is two bytes, `xy`; a rejected hit lacks its `y`), so the
+# MASK stream's continue-after-reject path is timed, not only accepted
+# hits; the slot plans the card as jobs JMB/JMH (slot/plan.py).
 #
 # Divergence recorded (fdb1_report.md F-B1-6): r17b_prime.md §5.2's card table
 # lists `gstar` with dims form;kind;shape, while §1.3's reader R5 reads
@@ -103,4 +108,4 @@ kit	enter	3	kind;entry	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-a
 kit	enter_back	4	kind;entry;back	walkbytes	artifact die1 g256	delta 1048576	7	7	twin-per-arm	-	-	-
 kit	every_pos	5	form	walkbytes	streamed-fresh pool16Mi miss-only	slope 65536,262144,1048576	7	7	twin-per-arm	-	-	kit:form.every-pos
 kit	find_byte	6	form	ratio	streamed-fresh pool16Mi miss-only	slope 65536,262144,1048576	7	7	twin-per-arm;bimodal-test	-	-	kit:form.mfind-swar;kit:form.mfind-w16;kit:form.mfind-w32;kit:form.fn-memchr
-kit	find_hit	6	form;landing;split;gap	walkbytes	streamed-fresh pool16Mi landed:periodic|random	delta 1048576	7	7	twin-per-arm	-	-	kit:form.mfind-swar;kit:form.mfind-w16;kit:form.mfind-w32;kit:form.fn-memchr
+kit	find_hit	6	form;landing;split;gap;reject	walkbytes	streamed-fresh pool16Mi landed:periodic|random reject:percent	delta 1048576	7	7	twin-per-arm	-	-	kit:form.mfind-swar;kit:form.mfind-w16;kit:form.mfind-w32;kit:form.fn-memchr

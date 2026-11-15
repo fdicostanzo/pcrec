@@ -3,7 +3,11 @@
  *   drv gate              THE ANSWER GATE, no clock: every arm, length and pool subject; `_gate`'s count,
  *                         position sum and FNV-1a-64 AND the timed `_time`'s count against gen.c's (r9 G1);
  *                         one line per arm, then the population (arms, pools, subjects, timed calls) that
- *                         run.py asserts against the plan; exit 3 on any miss
+ *                         run.py asserts against the plan; exit 3 on any miss. [lane slotx] Per landed find
+ *                         arm a `reject ARM CAND REJECTED` line: CAND the subjects' bytes that ARE a hit's
+ *                         member (read off the bytes, not gen.c's bookkeeping), REJECTED those `_gate` did not
+ *                         return, summed over the pools' non-sentinel subjects; run.py holds REJECTED to the
+ *                         reject percent the arm's KEY names
  *   drv addr              each arm's timed function address (the placement, also read by nm)
  *   drv round R NFILE     one ROUND of the launch: every (arm, length) point in the order rotated by R,
  *                         each timing N calls over its 16 MiB pool (N doubled until a loop takes >= 50 ms,
@@ -63,7 +67,7 @@ static void sentinel_check(const arm *a, uint32_t len, uint32_t i, int *bad)
 
 /* the pool of (a, len): np subjects (1 for a whole artifact, else POOL_BYTES / len); with `gate`, every subject
    is checked as it is made: `_gate`'s count, sum and FNV and `_time`'s count against gen.c's planted answer */
-static void pool_make(const arm *a, uint32_t len, pool *p, int gate, int *bad, uint64_t *ncalls)
+static void pool_make(const arm *a, uint32_t len, pool *p, int gate, int *bad, uint64_t *ncalls, uint64_t *rj)
 {
     p->len = len;
     p->np = a->kind == K_ART ? 1 : POOL_BYTES / len;
@@ -82,6 +86,13 @@ static void pool_make(const arm *a, uint32_t len, pool *p, int gate, int *bad, u
             uint64_t tc = a->time(p->s[i], len, p->c[i], p->nc);
             (*ncalls)++;
             miss(a, len, i, "", cnt, sum, h, tc, ec, es, eh, bad);
+            if (a->kind == K_FIND && a->landing != LD_MISS) {     /* the check's realized rejects */
+                uint64_t cand = 0;
+                for (uint32_t q = 0; q < len; q++)
+                    cand += p->s[i][q] == a->hit[0] || (a->split && p->s[i][q] == a->hit[1]);
+                rj[0] += cand;
+                rj[1] += cand - cnt;
+            }
             if (a->kind == K_FIND || a->kind == K_CMP)
                 sentinel_check(a, len, i, bad);
         }
@@ -142,18 +153,21 @@ int main(int argc, char **argv)
         for (int i = 0; i < slot_narms; i++) {
             const arm *a = &slot_arms[i];
             int b0 = bad;
+            uint64_t rj[2] = { 0, 0 };
             if (a->nlen < 1 || a->nlen > 3) {           /* an arm with no length gates nothing: a miss */
                 printf("GATE MISS %s: %d lengths\n", a->name, a->nlen);
                 bad++;
             }
             for (int k = 0; k < a->nlen && k < 3; k++) {
                 pool p;
-                pool_make(a, a->len[k], &p, 1, &bad, &ncalls);
+                pool_make(a, a->len[k], &p, 1, &bad, &ncalls, rj);
                 nsub += p.np;
                 pool_free(&p);
                 total++;
             }
             printf("gate\t%s\t%s\n", a->name, bad == b0 ? "ok" : "MISS");
+            if (a->kind == K_FIND && a->landing != LD_MISS)
+                printf("reject\t%s\t%llu\t%llu\n", a->name, (unsigned long long)rj[0], (unsigned long long)rj[1]);
         }
         printf("== s2 GATE %s: %d arms, %d pools, %llu subjects, %llu timed calls, %d misses\n",
                bad ? "FAILED" : "ok", slot_narms, total, (unsigned long long)nsub, (unsigned long long)ncalls, bad);
@@ -178,7 +192,7 @@ int main(int argc, char **argv)
             const arm *a = &slot_arms[ai];
             pool p;
             uint64_t acc = 0;
-            pool_make(a, a->len[k], &p, 0, &bad, NULL);
+            pool_make(a, a->len[k], &p, 0, &bad, NULL, NULL);
             if (check)
                 nn[pt] = p.np;
             if (calibrate) {

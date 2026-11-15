@@ -1408,6 +1408,7 @@ typedef struct {
 #define mf_form_site_text MF_NS(form_site_text)
 #define mf_form_site_split MF_NS(form_site_split)
 #define mf_form_row       MF_NS(form_row)
+#define mf_form_includes  MF_NS(form_includes)
 #define mf_form_hash_cls  MF_NS(form_hash_cls)
 /* The i-th instance (NULL past the last); the instance of `id` in class
  * `cls` (NULL: the canonical one), NULL for none; an instance's shape. */
@@ -1425,6 +1426,11 @@ int mf_form_site_split(const char *id, const char *cls, char **out, size_t *file
 /* The kit row the instance's facts reached ("-": its shape has none), NULL
  * on a -1 of mf_form_site_text. */
 const char *mf_form_row(const char *id, const char *cls);
+/* The MF_INC_* bits the instance's rendered art needs (mf_includes at its
+ * end) into *inc: 0, or -1 as mf_form_site_text. The slot harness writes
+ * their lines at file scope ahead of the target's region (span_cards/slot/
+ * link.py's frame, as pcrec places them). */
+int mf_form_includes(const char *id, const char *cls, uint32_t *inc);
 /* The hash of ONE instance's site text (the slot's cell-text check); for an
  * id with one instance it equals mf_form_hash(id), which folds every
  * instance (formhash.c). */

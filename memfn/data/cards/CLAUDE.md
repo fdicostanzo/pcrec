@@ -14,7 +14,8 @@ Hand-written, append-only by version (a committed row never changes):
   `kit-grid@5` (R-38 Part D, `part_d.md` §5.3): `every_pos`, the fn-every-pos body, UNMEASURED;
   `kit-grid@6` (lane mfind): `find_byte`, `find_hit` over the inline one-member finder's forms
   (`mfind-swar/w16/w32`) and the same site's libc memchr search (and its restart
-  stream) `fn-memchr`, the bundle comparison (review r2 F6), UNMEASURED;
+  stream) `fn-memchr`, the bundle comparison (review r2 F6), UNMEASURED; find_hit@6 carries a
+  `reject` dim (lane slotx, a respelling of a draft row: `measure_sets.md` §7.2 says when a row binds): the percent of hits the site's check rejects;
   their `deps` name formhash.c's entry-table ids (`walk-set` folded into
   `walk`), `enter` none.
 - `kit-synthetic.tsv` — `kit-synthetic@1` and `@2`: the cards of the synthetic sets

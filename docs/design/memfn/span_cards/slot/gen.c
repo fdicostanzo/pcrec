@@ -4,6 +4,11 @@
  *          (slot_find_members, the forms' own facts via link.py), so the forms read the same bytes and
  *          differ only by their hits; hits planted periodic (every gap-th byte) or random (E distinct
  *          uniform positions), E = len / gap exactly (§2.3), split one (hit[0]) or alt (alternating).
+ *          [lane slotx] Where the site's check is a RUN of L > 1 bytes scanned at its position 0 (the
+ *          offset-skip site, kit-grid@6), each hit is the run's first byte and occupies [p, p + L): periodic
+ *          at k gap + gap - L, random non-overlapping, the sentinel at len - L; floor(E x reject / 100) of
+ *          the E hits, a seeded choice, carry ONE check byte failing the run (and outside every find
+ *          member, so it plants no hit), the rest the run itself; the expectation counts the others.
  *   cmp    candidates at S i + j (S = CAND_STRIDE, j seeded in [0, S - L)), E = len / S; a candidate passes with
  *          probability 0 (p0) or 1/2 (p50); a failing one differs at ONE uniformly seeded position; filler
  *          bytes uniform; the masked-off bits of a run's passing bytes random.
@@ -67,29 +72,72 @@ void gen_subject(const arm *a, uint32_t len, uint32_t idx, unsigned char *buf, u
         }
         if (a->landing == LD_MISS && !sentinel) return;
         if (a->landing != LD_MISS && a->gap == 0) { fprintf(stderr, "gen: %s: a landing with gap 0\n", a->name); exit(2); }
+        uint32_t L = a->L > 1 ? (uint32_t)a->L : 1;          /* the site's run: the hit, then its check */
+        if (L > 1 && a->landing != LD_MISS && a->gap < L) {
+            fprintf(stderr, "gen: %s: gap %u under the check's run of %u bytes\n", a->name, a->gap, L); exit(2);
+        }
+        if (a->reject < 0 || a->reject > 100 || (a->reject && L < 2)) {
+            fprintf(stderr, "gen: %s: reject %d with a run of %u (a reject needs a check past the hit)\n", a->name, a->reject, L); exit(2);
+        }
+        for (uint32_t j = 1; j < L; j++)
+            if (in(slot_find_members, a->run[j])) {
+                fprintf(stderr, "gen: %s: the check's byte %u is a find member (it would plant hits)\n", a->name, a->run[j]); exit(2);
+            }
         uint32_t E = a->landing == LD_MISS ? 0 : len / a->gap;
         uint64_t sh = 0x417e0000ull ^ ((uint64_t)a->gap << 32) ^ ((uint64_t)a->landing << 40) ^ idx;
         unsigned char *mark = calloc(len, 1);
         if (!mark) { fprintf(stderr, "gen: out of memory (%u-byte hit map)\n", len); exit(2); }
         if (a->landing == LD_PERIODIC) {
-            for (uint32_t k = 0; k < E; k++) mark[(uint64_t)k * a->gap + a->gap - 1] = 1;
-        } else if (a->landing == LD_RANDOM) {
+            for (uint32_t k = 0; k < E; k++) mark[(uint64_t)k * a->gap + a->gap - L] = 1;
+        } else if (a->landing == LD_RANDOM && L == 1) {
             for (uint32_t k = 0; k < E; ) {
                 uint32_t p = (uint32_t)(sm(&sh) % len);
                 if (!mark[p]) { mark[p] = 1; k++; }
             }
+        } else if (a->landing == LD_RANDOM) {               /* runs never overlap: no mark within L - 1 */
+            for (uint32_t k = 0; k < E; ) {
+                uint32_t p = (uint32_t)(sm(&sh) % (len - L + 1)), q = p >= L - 1 ? p - (L - 1) : 0, free_ = 1;
+                for (; q < p + L && q < len; q++) free_ &= !mark[q];
+                if (free_) { mark[p] = 1; k++; }
+            }
         }
-        if (sentinel)
-            mark[len - 1] = 1;
+        if (sentinel) {
+            for (uint32_t q = len >= 2 * L ? len - 2 * L + 1 : 0; q < len; q++) mark[q] = 0;
+            mark[len - L] = 1;
+        }
+        /* the rejected hits: exactly floor(E x reject / 100) of the E (non-sentinel) hits, a seeded choice */
+        unsigned char *rej = calloc(E + 1, 1);
+        if (!rej) { fprintf(stderr, "gen: out of memory (%u-hit reject map)\n", E); exit(2); }
+        uint64_t sr = 0x7e1ec000ull ^ ((uint64_t)a->gap << 32) ^ ((uint64_t)a->reject << 48) ^ idx;
+        uint32_t m = (uint32_t)((uint64_t)E * (uint64_t)a->reject / 100);
+        if (m == E)
+            memset(rej, 1, E);
+        else
+            for (uint32_t k = 0; k < m; ) {
+                uint32_t i = (uint32_t)(sm(&sr) % E);
+                if (!rej[i]) { rej[i] = 1; k++; }
+            }
         uint32_t k = 0;
         for (uint32_t p = 0; p < len; p++) {
             if (!mark[p]) continue;
+            int bad = !(sentinel && p == len - L) && k < E && rej[k];
             buf[p] = a->hit[a->split ? (k & 1) : 0];
+            uint32_t jb = bad ? 1 + (uint32_t)(sm(&sr) % (L - 1)) : 0;
+            for (uint32_t j = 1; j < L; j++) {
+                unsigned b = a->run[j];
+                if (j == jb)
+                    do b = (unsigned)(sm(&sr) & 0xff);
+                    while ((b & a->mask[j]) == (a->run[j] & a->mask[j]) || in(slot_find_members, b));
+                buf[p + j] = (unsigned char)b;
+            }
             k++;
+            if (bad)
+                continue;
             (*count)++;
             *sum += p;
             *h = fnv_pos(*h, p);
         }
+        free(rej);
         free(mark);
         return;
     }

@@ -1346,6 +1346,11 @@ static void gate_cases(void)
  *   arm_fixtures --site-parts ID [CLS]  the same text in two parts: the
  *       FILE part, a form-feed line, the BODY part (the slot's wrapper
  *       places them)
+ *   arm_fixtures --frame ID [CLS]  the instance's header lines, its
+ *       target's region open and close, its family guard, form-feed
+ *       separated (the host's text around a cell, as pcrec places it; lane
+ *       slotx), then its target's facts line
+ *   arm_fixtures --target-facts TOKEN  `target<TAB>name<TAB>features`
  *   arm_fixtures --hash-text FILE|-  mf_form_hash_text of a text (the slot's
  *       cell-text check folds a cell TU's site span with it)
  *   arm_fixtures --facts ID [CLS]  `key<TAB>value` lines the slot harness
@@ -1921,6 +1926,52 @@ static int site_parts_mode(const char *id, const char *cls)
     return 0;
 }
 
+/* --frame: what a HOST writes around the instance's site text, as pcrec
+ * places it (match_api.md §6.3.10¶15; src/gen/memfn_targets.c): the
+ * `#include` lines of its rendered art's header facts (mf_include_c of each
+ * mf_form_includes bit), a form-feed line, its target's region open, a
+ * form-feed line, the region close (mf_target_c_of; both "" for a target
+ * with nothing to enable), a form-feed line, the family guard
+ * (mf_family_c_of; "" for the portable target, which has no family; review
+ * 2026-11-15 r1 F10), a form-feed line, the target's facts line
+ * (--target-facts). The slot harness writes the guard first in the TU, the
+ * header lines at file scope ahead of the region (span_cards/slot/link.py). */
+static void target_facts(const mf_target *t)
+{
+    printf("target\t%s\t%s\n", t->name, *t->features ? t->features : "-");
+}
+/* --target-facts TOKEN: `target<TAB>name<TAB>features` (`-` none), the kit
+ * table's row for a token (the slot harness's ISA check reads the features
+ * its compile floor, -march=x86-64, supplies) */
+static int target_facts_mode(const char *tok)
+{
+    const mf_target *t = mf_target_parse(tok, strlen(tok), NULL, 0);
+    if (!t) { fprintf(stderr, "arm_fixtures: no target %s\n", tok); return 1; }
+    target_facts(t);
+    return 0;
+}
+static int frame_mode(const char *id, const char *cls)
+{
+    const mf_form_entry *e = mf_form_entry_of(id, cls);
+    uint32_t inc;
+    const mf_target *t = e ? mf_target_parse(e->target, strlen(e->target), NULL, 0) : NULL;
+    if (!t || mf_form_includes(id, cls, &inc)) {
+        fprintf(stderr, "arm_fixtures: no rendered instance %s %s\n", id, cls ? cls : "(canonical)");
+        return 1;
+    }
+    for (uint32_t bit = 1; bit; bit <<= 1) {
+        if (!(inc & bit)) continue;
+        const char *line = mf_include_c(bit);
+        if (!line) { fprintf(stderr, "arm_fixtures: no C spelling for header fact 0x%x\n", (unsigned)bit); return 1; }
+        fputs(line, stdout);
+    }
+    const mf_target_c *c = mf_target_c_of(t);
+    printf("\f\n%s\f\n%s\f\n%s\f\n", c->region_open, c->region_close,
+           t->family ? mf_family_c_of(t->family)->guard : "");
+    target_facts(t);
+    return 0;
+}
+
 /* --hash-text FILE|-: mf_form_hash_text of a whole text (the slot harness's
  * cell-text check folds a cell TU's site span with it; check B folds the
  * instances' texts with it). */
@@ -1968,6 +2019,10 @@ static void f_hex(Text *o, const uint8_t *b, size_t n)
     if (!n) f_str(o, NULL);
 }
 static int f_set_shape(const FactIn *x) { return x->e->shape != MF_FH_RUNCMP; }
+/* the offset-skip site's ONE RUN term (lane slotx): scanned at its position
+   0 (its `members`, the byte a hit plants), the whole run its verify chain
+   compares (L, run, mask: a hit is an answer iff the run follows it) */
+static int f_ofs_shape(const FactIn *x) { return x->e->shape == MF_FH_OFS; }
 static int f_find_shape(const FactIn *x)
 {
     return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW || x->e->shape == MF_FH_OFS;
@@ -2033,7 +2088,8 @@ static void f_table_value(const FactIn *x, Text *o)
 }
 static void f_members(const FactIn *x, Text *o)
 {
-    if (f_set_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
+    if (f_ofs_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, 1);
+    else if (f_set_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
     else f_str(o, NULL);
 }
 /* the first byte from 'a' up (mod 256) outside the set, or one failing the
@@ -2053,25 +2109,26 @@ static void f_L(const FactIn *x, Text *o)
 {
     char buf[24];
     snprintf(buf, sizeof buf, "%zu", strlen(x->e->bytes));
-    f_str(o, f_set_shape(x) ? NULL : buf);
+    f_str(o, f_set_shape(x) && !f_ofs_shape(x) ? NULL : buf);
 }
 static void f_run(const FactIn *x, Text *o)
 {
-    if (f_set_shape(x)) f_str(o, NULL);
+    if (f_set_shape(x) && !f_ofs_shape(x)) f_str(o, NULL);
     else f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
 }
 static void f_runmask(const FactIn *x, Text *o)
 {
     uint8_t m[64];
     size_t L = strlen(x->e->bytes);
-    if (f_set_shape(x) || L > sizeof m) { f_str(o, NULL); return; }
+    if ((f_set_shape(x) && !f_ofs_shape(x)) || L > sizeof m) { f_str(o, NULL); return; }
     for (size_t i = 0; i < L; i++) m[i] = f_mask(x->e, i);
     f_hex(o, m, L);
 }
 static void f_hit(const FactIn *x, Text *o)
 {
-    f_str(o, f_set_shape(x) ? "a byte of `members`"
-                            : "the bytes b[0..L) with (b[i] & mask[i]) == run[i]");
+    f_str(o, f_ofs_shape(x) ? "a byte of `members` at the candidate; an answer iff the run holds there"
+             : f_set_shape(x) ? "a byte of `members`"
+                              : "the bytes b[0..L) with (b[i] & mask[i]) == run[i]");
 }
 static void f_reads(const FactIn *x, Text *o)
 {
@@ -2820,7 +2877,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
                           "--fd-site SITE [--fd-set FILE] [--fd-an DIGEST] | --finder-rows | --hash | "
-                          "--site-text ID [CLS] | --site-parts ID [CLS] | --hash-text FILE|- | --facts ID [CLS] | "
+                          "--site-text ID [CLS] | --site-parts ID [CLS] | --frame ID [CLS] | --target-facts TOKEN | --hash-text FILE|- | --facts ID [CLS] | "
                           "--purity | --purity-control\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
         const char *set = NULL, *opts = NULL, *digest = NULL;
@@ -2837,6 +2894,8 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--site-text") && argc > 2) return site_text_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--site-parts") && argc > 2) return site_parts_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--hash-text") && argc > 2) return hash_text_mode(argv[2]);
+    if (!strcmp(argv[1], "--frame") && argc > 2) return frame_mode(argv[2], argc > 3 ? argv[3] : NULL);
+    if (!strcmp(argv[1], "--target-facts") && argc > 2) return target_facts_mode(argv[2]);
     if (!strcmp(argv[1], "--facts") && argc > 2) return facts_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--purity")) return purity_mode();
     if (!strcmp(argv[1], "--purity-control")) return purity_control_mode();

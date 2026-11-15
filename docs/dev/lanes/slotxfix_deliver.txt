@@ -1,0 +1,4 @@
+report=docs/dev/lanes/slotxfix_report.md
+sections: Summary; Fixes by id; Validation
+nonempty: all
+commit: yes

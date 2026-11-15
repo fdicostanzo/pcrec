@@ -321,16 +321,20 @@ static const mf_form_entry entries[] = {
     { "every-pos", "-",  1, MF_FH_RUNPART, "fn-every-pos", DIGITS,            0, 0, 0,                 0, NULL,        "generic",          NULL, NULL },
     /* the inline one-member finder (lane mfind), each form on ONE offset-skip
        site (MF_FH_OFS), reached through the test-only lever `mfind`; its
-       row the BODY row (SIMD-off) or the MEMFN_FORMS token (a level) */
-    { "mfind-swar", "-", 1, MF_FH_OFS,     "fn-mfind",  "x",                  0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, "mfind" },
-    { "mfind-w16", "-",  1, MF_FH_OFS,     "mfind@w16", "x",                  0, 0, MF_EMPTY_MISS,     0, NULL,        "x86-64",           NULL, "mfind" },
-    { "mfind-w32", "-",  1, MF_FH_OFS,     "mfind@w32+w16", "x",              0, 0, MF_EMPTY_MISS,     0, NULL,        "x86-64-v3",        NULL, "mfind" },
+       row the BODY row (SIMD-off) or the MEMFN_FORMS token (a level). The
+       run is TWO bytes (lane slotx): `x` scanned, `y` the check at offset 1,
+       so a hit the subject plants without its `y` is a candidate the
+       check REJECTS (find_hit@6's `reject` dim, the MASK stream's
+       continue-after-reject path) */
+    { "mfind-swar", "-", 1, MF_FH_OFS,     "fn-mfind",  "xy",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, "mfind" },
+    { "mfind-w16", "-",  1, MF_FH_OFS,     "mfind@w16", "xy",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "x86-64",           NULL, "mfind" },
+    { "mfind-w32", "-",  1, MF_FH_OFS,     "mfind@w32+w16", "xy",             0, 0, MF_EMPTY_MISS,     0, NULL,        "x86-64-v3",        NULL, "mfind" },
     /* the same site at no lever: fn-memchr, the libc memchr search and its
        restart stream. The BUNDLE comparison (review 2026-11-15 r2 F6): it
        differs from the finder in the call boundary, own code vs library,
        the search AND the stream, named as one; the ruled single-piece cells
        (search vs the walk, stream RESTART vs MASK) are not built */
-    { "fn-memchr", "-",  1, MF_FH_OFS,     "fn-memchr", "x",                  0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, NULL },
+    { "fn-memchr", "-",  1, MF_FH_OFS,     "fn-memchr", "xy",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, NULL },
 };
 #define NENTRIES (sizeof entries / sizeof entries[0])
 
@@ -427,7 +431,8 @@ static void fh_site(const mf_form_entry *e, mf_site *s)
  * body's) into `all`, and the kit row its facts reached into *row (NULL:
  * the shape has no row). 0, or -1 (a kit refusal, a scratch failure, or a
  * row other than the entry's). */
-static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t *flen)
+static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t *flen,
+                     uint32_t *inc)
 {
     fh_work *w = calloc(1, sizeof *w);
     if (!w) return -1;
@@ -577,8 +582,9 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
     case MF_FH_OFS:
         /* the offset-skip site (FIND/FUNC/RETURN) over ONE RUN term, the
            entry's bytes at offset 0, scanned at its position 0: the verify
-           chain compares the run (a scanned run is compared whole), so every
-           planted hit is an answer; the body assigns the call to pos */
+           chain compares the run (a scanned run is compared whole), so a
+           planted hit is an answer exactly when the run's later bytes
+           follow it; the body assigns the call to pos */
         fh_site(e, s);
         s->form = MF_FORM_FUNC;
         s->op = MF_OP_FIND;
@@ -622,6 +628,7 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
     }
     }
     if (e->row && (!*row || strcmp(*row, e->row))) goto out;    /* reached another row */
+    if (inc) *inc = mf_includes(art);
     rc = fa.full || body.oom || file.oom;
     if (!rc) {
         if (file.len) nb_put(all, file.p, file.len);
@@ -645,7 +652,7 @@ int mf_form_site_split(const char *id, const char *cls, char **out, size_t *file
     nbuf all = { 0 };
     *out = NULL;
     *file_len = 0;
-    if (!e || fh_render(e, &all, &row, file_len)) {
+    if (!e || fh_render(e, &all, &row, file_len, NULL)) {
         free(all.p);
         return -1;
     }
@@ -669,9 +676,23 @@ const char *mf_form_row(const char *id, const char *cls)
     const mf_form_entry *e = mf_form_entry_of(id, cls);
     const char *row;
     nbuf all = { 0 };
-    int rc = !e || fh_render(e, &all, &row, NULL);
+    int rc = !e || fh_render(e, &all, &row, NULL, NULL);
     free(all.p);
     return rc ? NULL : row ? row : "-";
+}
+
+/* kit.h: the MF_INC_* bits the instance's rendered art needs (mf_includes
+ * at its end), into *inc; renders the whole site (a test entry: the slot
+ * harness places the headers ahead of the target's region, as pcrec does). */
+int mf_form_includes(const char *id, const char *cls, uint32_t *inc)
+{
+    const mf_form_entry *e = mf_form_entry_of(id, cls);
+    const char *row;
+    nbuf all = { 0 };
+    *inc = 0;
+    int rc = !e || fh_render(e, &all, &row, NULL, inc);
+    free(all.p);
+    return rc ? -1 : 0;
 }
 
 /* kit.h: the hash of ONE instance's site text (the cell-text check's). */

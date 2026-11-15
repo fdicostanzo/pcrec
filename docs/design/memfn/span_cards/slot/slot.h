@@ -24,7 +24,9 @@ typedef struct {
     int         nlen;               /* 1..3; link.py writes the plan's lengths                          */
     uint32_t    len[3];
     /* the subject (gen.c): find: hits from `hit` (split one: hit[0]; alt: alternating hit[0], hit[1]) on
-       the shared miss text; cmp/null: E candidates every 64 bytes; art: the file `subj` */
+       the shared miss text, and where the site's check is a run (L > 1: the offset-skip site's, lane slotx)
+       run[1..L) after each hit, `reject` percent of them with one check byte failing; cmp/null: E candidates
+       every 64 bytes; art: the file `subj` */
     int         landing, split;
     uint32_t    gap;
     unsigned char hit[16];
@@ -32,6 +34,7 @@ typedef struct {
     int         L;
     unsigned char run[32], mask[32];
     int         pass;               /* cmp/null: 0 (p0) or 50 (p50)                                    */
+    int         reject;             /* find with L > 1: the percent of hits the check rejects (0..100)  */
     const char *subj;               /* art: the subject file (raw bytes)                               */
     const char *expect;             /* art: the file holding `count sum fnv` (python re's answer)      */
 } arm;

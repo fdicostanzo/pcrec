@@ -183,6 +183,7 @@ four hash ids and their rename/edit fixtures.
 - `find_byte@6`: form ratio, streamed-fresh, pool16Mi, miss-only, slope over 65536 / 262144 / 1048576, 7×7,
   twin-per-arm, bimodal-test.
 - `find_hit@6`: form / landing / split / gap, walkbytes, delta at 1048576, 7×7, twin-per-arm.
+  (Respelled by lane slotx (adds `reject`), before any merge or timing; measure_sets.md §7.2.)
 
 Both depend on `kit:form.mfind-swar`, `kit:form.mfind-w16`, `kit:form.mfind-w32` and `kit:form.fn-memchr`.
 cards/CLAUDE.md carries the @6 line and the pin text "20 (kit-grid 15, kit-kernels 5)".

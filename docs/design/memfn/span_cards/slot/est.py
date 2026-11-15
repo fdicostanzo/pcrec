@@ -548,7 +548,8 @@ def read_cells(rundir, rec):
 
 def read_record(rundir):
     """the finalized run record: run (dict), jobs {job: (state, cause)}, plan [(key, group, job)], floor, the
-    pinned card and policy rows, and from them `card` ({quantity: card}) and `facts` (plan.card_facts)"""
+    pinned card and policy rows, and from them `card` ({quantity@ver: card}, a key's through plan.card_of) and
+    `facts` (plan.card_facts)"""
     rec, sec = {"run": {}, "jobs": {}, "plan": [], "floor": [], "cards": [], "policy": []}, None
     p = os.path.join(rundir, "run_record.tsv")
     if not os.path.exists(p):
@@ -598,9 +599,15 @@ def compute(rundir):
     R_MAX = r_max(rec)[0]
     card = rec["card"]                         # the PINNED cards (r9fc FIX-1), never plan.CARD
     LENGTHS, _LEN, L, _R, GU = rec["facts"]
-    if any(k.split(".")[1] not in card for k, _g, _j in rec["plan"]):
-        raise InputError("a planned key's quantity has no pinned card (%s)" % sorted({k.split(".")[1] for k, _g, _j in rec["plan"]} - set(card)))
-    rows = [(k, g, j, card[k.split(".")[1]]["est"], plan.base_of(k)) for k, g, j in rec["plan"]]
+    # [lane slotx] THE WINDOW's rows only: the frozen plan holds every job's rows, the record the window's jobs
+    # (record.py WINDOWS); a row of a job outside the window is not this window's (never `never-ran`), and so
+    # are its floor lines
+    win = [(k, g, j) for k, g, j in rec["plan"] if j in rec["jobs"]]
+    try:
+        rows = [(k, g, j, plan.card_of(card, k)["est"], plan.base_of(k)) for k, g, j in win]
+    except SystemExit as e:
+        raise InputError("a planned key names no pinned card: %s" % e)
+    floor = [f for f in floor if f[1] in {k for k, _g, _j in win}]
     c = {}
     for x in cells:
         c[(x["job"], x["arm"], x["length"], x["launch"])] = x
@@ -681,7 +688,7 @@ def compute(rundir):
                 r["why"] = "null: below its paired A/A or signs mixed, at a size above its resolution r %d" % res
         else:
             # §3.5¶2: the card's gate; the unit's is HALF, compared doubled (exact for an odd gate, r9 G7)
-            G = card[key.split(".")[1]]["gate"]
+            G = plan.card_of(card, key)["gate"]
             half = 2 if key == plan.UNIT_KEY else 1
             r["gate"] = r["value"] > 0 and half * r["noise"] * 10**6 <= G * r["value"]
     unit = out.get(plan.UNIT_KEY, {})
@@ -772,11 +779,42 @@ def cell_texts(rundir, rec):
         for ln in open(p):
             if ln.startswith("#") or not ln.strip():
                 continue
-            arm, form, _cls, _inst, fh, tags = ln.rstrip("\n").split("\t")
+            f = ln.rstrip("\n").split("\t")
+            arm, form, _cls, _inst, fh, tags = f[:6]
+            tgt = f[6] if len(f) > 6 else "-"          # [lane slotx] the target the cell TU was compiled in
             if fold.setdefault(form, fh) != fh:
                 raise InputError("form %s's fold hash is %s in one job and %s in %s" % (form, fold[form], fh, j))
             if not arm.endswith("#b") and arm.startswith("kit."):
-                out[arm] = (form, fh, tags)
+                out[arm] = (form, fh, tags, tgt)
+    return out
+
+# [review 2026-11-15 r1 F8] THE DRAFT SETS' TARGET TABLE, one place: kit target -> (set id suffix, class); TARGET_LEVEL
+# is the ISA level the target's code is compiled for (targets.def: x86-64's only need, sse2, is in the baseline), the
+# fact the guard holds each set's class to
+TARGET_SET = {"generic": ("", "x86_64/zen4"), "x86-64": ("", "x86_64/zen4"),
+              "x86-64-v3": ("-v3", "x86_64-v3/zen4")}
+TARGET_LEVEL = {"generic": "x86_64", "x86-64": "x86_64", "x86-64-v3": "x86_64-v3"}
+
+def draft_split(rec, rows):
+    """[lane slotx] THE WRITER'S SPLIT BY VER: {ver: rows}, each row in its KEY's card's ver (plan.card_of over the
+    record's pinned cards); then each set's rows are held to that set's OWN cards, read here without card_of: a
+    card of the row's quantity at the set's ver that prices the row's form (its deps name it, or it names none). A
+    row in a set whose cards do not price it REFUSES (DRAFT-VER MISMATCH): a ver-6 row never lands in another
+    ver's set under a card of the same quantity"""
+    out = {}
+    for r in rows:
+        try:
+            v = plan.card_of(rec["card"], r[0])["ver"]
+        except SystemExit as e:
+            raise InputError("DRAFT-VER: %s" % e)
+        out.setdefault(v, []).append(r)
+    for v, vr in sorted(out.items()):
+        for r in vr:
+            q = r[0].split(".")
+            if not any(c["ver"] == v and c["quantity"] == q[1] and (plan.card_forms(c) is None or q[2] in plan.card_forms(c))
+                       for c in rec["card"].values()):
+                raise InputError("DRAFT-VER MISMATCH row %s in ver %s's set: no ver-%s card of %s prices form %s"
+                                 % (r[0], v, v, q[1], q[2]))
     return out
 
 def main():
@@ -834,22 +872,23 @@ def write_draft(rundir, path, out, drift, outcome):
     # [r2s1 RK383-3] THE WRITER SPLITS BY VER: one set per method, each with that ver's cards section and rows only
     # (kit-grid@3 keeps zen4-grid3; a ver with no timed row writes no set, so an unmeasured cell stays unmeasured)
     n = str(rec["facts"][2] * rec["facts"][3])
-    rows = []
+    rows, tgt_of = [], {}
     rec_rmax = r_max(rec)[0]
     for k in sorted(out):
         r = out[k]
         if "absent" in r or r.get("gate") is False or drift.get(r["job"], (0, 0, False))[2]:
             continue
         q = k.split(".")
-        unit = rec["card"][q[1]]["unit"]
-        deps, tags = "-", "-"
+        unit = plan.card_of(rec["card"], k)["unit"]
+        deps, tags, tgt = "-", "-", "-"
         if q[1] not in ("enter", "enter_back"):
             if k not in texts:
                 raise InputError("row %s has no cell text in its job's cell_text.tsv" % k)
-            form, fh, tags = texts[k]
+            form, fh, tags, tgt = texts[k]
             if form != q[2]:
                 raise InputError("row %s's cell text is form %s's" % (k, form))
             deps = "kit:form.%s=%s" % (form, fh)
+        tgt_of[k] = "generic" if tgt == "-" else tgt     # an unframed TU is the compile floor's: no region
         if r.get("null"):
             rows.append([k, unit, "", str(r["abs"]), "-", n, "null", "-", "-",
                          deps, tags, r["why"]])
@@ -859,34 +898,59 @@ def write_draft(rundir, path, out, drift, outcome):
                          "slot %s fused-compare bound r_max %d; %s" % (r["job"], rec_rmax, FUSED_EVIDENCE)])
         else:
             rows.append([k, unit, str(r["value"]), str(r["abs"]), str(r["noise"]), n, "measured", "-", "-", deps,
-                         tags, "slot %s%s" % (r["job"], " sub-resolution r %d" % r["sub"] if r.get("sub") else "")])
+                         tags, "slot %s%s%s" % (r["job"], " sub-resolution r %d" % r["sub"] if r.get("sub") else "",
+                                                " target %s" % tgt if tgt not in ("-", "generic") else "")])
     import record
     allcells = read_cells(rundir, rec)
-    ver_of = lambda key: rec["card"][key.split(".")[1]]["ver"]
+    split = draft_split(rec, rows)
+    ver_of = lambda key: plan.card_of(rec["card"], key)["ver"]
     def mine(v, c):          # a cell belongs to ver v's set: its row's arm (any ver), and a base or the ctl (ver 3's
         a = c["arm"][:-2] if c["arm"].endswith("#b") else c["arm"]   # always; ver v's when one of its rows names it)
         if a.startswith("kit."):
             return ver_of(a) == v
         return v == "3" or a == "ctl" or any(plan.base_of(r[0]) == a for r in rows if ver_of(r[0]) == v)
     msgs, rc = [], outcome[1]
-    for v in sorted({c["ver"] for c in rec["card"].values()}):
-        vrows = [r for r in rows if ver_of(r[0]) == v]
+    vers = sorted({c["ver"] for c in rec["card"].values()})
+    # [review 2026-11-15 r1 F8] ONE DRAFT SET PER (ver, ISA LEVEL) (span_cards.md §2.7): `class` names the ISA level
+    # the set's code was compiled FOR, so a row goes to the set TARGET_SET names for its kit target, and a set whose
+    # rows were built for another ISA level than its class REFUSES the whole draft before any file is written
+    # (DRAFT-ISA-LEVEL MIXED); generic and x86-64 are the same baseline code, one set
+    groups = {}                  # (ver, set suffix, class) -> rows
+    for v in vers:
+        for r in split.get(v, []):
+            suf, cls = TARGET_SET[tgt_of[r[0]]]
+            if cls.split("/")[0] != TARGET_LEVEL[tgt_of[r[0]]]:
+                raise InputError("DRAFT-ISA-LEVEL MIXED ver %s's set %s (class %s) would hold row %s built for ISA "
+                                 "level %s (span_cards.md §2.7: a set never mixes ISA levels): no draft written"
+                                 % (v, suf or "baseline", cls, r[0], TARGET_LEVEL[tgt_of[r[0]]]))
+            groups.setdefault((v, suf, cls), []).append(r)
+    for v in vers:
+        if not split.get(v):
+            groups[(v, "", "x86_64/zen4")] = []
+    for (v, suf, cls) in sorted(groups):
+        vrows = groups[(v, suf, cls)]
         if not vrows:
             print("draft: ver %s: no timed row, no set written (its cards stay UNMEASURED)" % v)
             continue
-        vpath = path if v == "3" else "%s.v%s%s" % (os.path.splitext(path)[0], v, os.path.splitext(path)[1])
+        vpath = path if v == "3" else "%s.v%s%s%s" % (os.path.splitext(path)[0], v, suf, os.path.splitext(path)[1])
         vcards = ["\t".join(f) for f in rec["cards"] if f[2] == v]
         sid, srev = record.SETS[v].split("@")
-        hdr = [("format", "2"), ("id", sid), ("rev", srev), ("class", "x86_64/zen4"),
+        sid += suf                                    # zen4-grid6 / zen4-grid6-v3
+        hdr = [("format", "2"), ("id", sid), ("rev", srev), ("class", cls),
                ("isa", rec["run"]["isa"]), ("tier", "scratch"), ("composite", "0"), ("members", ""),
                ("unit_key", plan.UNIT_KEY), ("method", "kit-grid@%s" % v),
                ("run", "%s record:%s" % (rec["run"]["run_id"], rsha)),
-               ("box", rec["run"]["box"]), ("compiler", "gcc %s -O2 -march=x86-64 -mtune=generic" % rec["run"]["gcc"]),
+               ("box", rec["run"]["box"]), ("compiler", "gcc %s -O2 -march=x86-64 -mtune=generic%s" % (rec["run"]["gcc"],
+                    "; a row compiled in a kit target's region names it (source `target T`)"
+                    if any(" target " in r[-1] for r in vrows) else "")),
                ("libc", rec["run"]["libc"]), ("code_commit", rec["run"]["code_commit"]),
                ("counters", "skipped:not-taken"), ("partial", "1" if outcome[0] == "PARTIAL" else "0"),
                ("rows", str(len(vrows))), ("values_digest", "0000000000000000")]
+        def in_set(c):           # a kit arm's cell goes with its row's set; a base or the ctl with every set of its ver
+            a = c["arm"][:-2] if c["arm"].endswith("#b") else c["arm"]
+            return TARGET_SET[tgt_of[a]][1] == cls if a in tgt_of else True
         cells = ["\t".join([c[k] if isinstance(c[k], str) else str(c[k]) for k in CELL_COLS])
-                 for c in allcells if mine(v, c)]
+                 for c in allcells if mine(v, c) and in_set(c)]
         def text(h):
             t = ["# pcrec measurement set (spec: docs/spec/measures.md)"]
             t += ["# note %s: %s" % kv for kv in notes(rundir, out)]       # [rev1.4 R14-3, R14-4]
@@ -978,7 +1042,7 @@ def _synth_launches(d, j, arms, fused, launches=None, variant=None, manifest=Tru
     if manifest:
         _synth_manifest(d, j)
 
-def _synth(d, run_id="selftest"):
+def _synth(d, run_id="selftest", window="s2d"):
     """a synthetic finalized run directory: the live plan frozen, every timing job ran, linear cells (a slope
     arm's per-byte cost and a delta arm's per-event cost by its key's hash, so rows differ), no clock;
     [rev1.5 R15-1] each verify job's timed code compiled (_synth_code), [r11-REV15-1] its manifest written and
@@ -991,13 +1055,13 @@ def _synth(d, run_id="selftest"):
     fr = plan.read_frozen(os.path.join(d, "plan.tsv"))
     jobs, _rows, _f, _u = plan.build()
     rec = {name: [] for name, _ in record.SECTIONS}
-    rec["run"] = [["set", record.SET], ["rules", record.RULES["3"]], ["rules.4", record.RULES["4"]], ["run_id", run_id], ["code_commit", "0000000"],
-                  ["j1_verdict", "a"]]
-    rec["jobs"] = [[j, "ran", "-"] for j in record.JOBS]
+    rec["run"] = ([["set", record.SET]] + [[record.rules_key(v), record.RULES[v]] for v in sorted(record.RULES)]
+                  + [["run_id", run_id], ["code_commit", "0000000"], ["j1_verdict", "a"], ["window", window]])
+    rec["jobs"] = [[j, "ran", "-"] for j in record.WINDOWS[window]]
     record.pin(rec, fr)
     record.write(os.path.join(d, "run_record.tsv"), rec)
     for j, arms in jobs.items():
-        if j == "J1" or j not in record.JOBS:       # J5B ([k383 F1]) is planned, not scheduled: no cells
+        if j == "J1" or j not in record.WINDOWS[window]:   # J5B ([k383 F1]) is planned, not scheduled: no cells
             continue
         lines = []
         for a in arms:
@@ -1005,7 +1069,8 @@ def _synth(d, run_id="selftest"):
             for l in range(1, plan.L_LAUNCHES + 1):
                 for x in a.lengths:
                     jit = (l * 7919 + (a.name.endswith("#b")) * 13) % 97
-                    if a.kind == "ctl" or plan._est_parse(plan.CARD.get(a.name.split(".")[1], {"est": "slope 1,2,3"})["est"])[0] == "slope" and not a.name.startswith("base."):
+                    est = plan.card_of(plan.CARD, a.name)["est"] if a.name.startswith("kit.") else "slope 1,2,3"
+                    if a.kind == "ctl" or plan._est_parse(est)[0] == "slope" and not a.name.startswith("base."):
                         ns = x * (1000 + h % 500) + 5000 + jit
                     else:
                         ns = 9000000 + (a.events or 0) * (2000 + h % 900) + jit
@@ -1130,7 +1195,7 @@ def selftest(scratch):
         unit_twin_skew(d)
         for c in plan.CARD.values():
             c["gate"] = 300
-        plan.CARD["find_byte"]["est"] = "slope 1,2,3"
+        plan.CARD["find_byte@3"]["est"] = "slope 1,2,3"
     def set_delta(d, key, ds, twin=3):
         """[rev1.4 R14-2] KEY's (and its twin's) cells in J4 = its base's cell + ds[l-1] x E per launch l (the twin
         `twin` x E above, or twin[l-1] x E for a list): a per-event cost of ds[l-1] in the cells' own units"""
@@ -1325,6 +1390,105 @@ def selftest(scratch):
         ok = got == want.split(":")[0] and (":" not in want or want.split(":", 1)[1] in why)
         bad += not ok
         print("selftest\t%s\t%s\t%s (%s)" % (name, "ok" if ok else "WRONG", got, why[:150]))
+    # [lane slotx] THE mfcard WINDOW (record.py WINDOWS): kit-grid@6's rows priced under their own cards, the frozen
+    # plan's other jobs' rows not this window's, and the writer's split by ver (draft_split)
+    K6 = "kit.find_hit.mfind-w32.periodic.one.256.50"
+    def mf_priced(d):
+        out, _dr, _ub, outcome, _w, _p = compute(d)
+        return (K6 in out and "value" in out[K6] and outcome[0] != "REFUSED"
+                and not any(k.startswith(("kit.verify_cmp.", "kit.enter")) or out[k].get("job") == "J3" for k in out))
+    def mf_split(d):
+        out = compute(d)[0]
+        sp = draft_split(read_record(d), [[k] for k in sorted(out) if "absent" not in out[k]])
+        six = [r[0] for r in sp.get("6", [])]
+        return (K6 in six and all(k.split(".")[2] in plan.FORMS6 for k in six)
+                and plan.UNIT_KEY in [r[0] for r in sp.get("3", [])] and "4" not in sp)
+    def mf_draft(d, tgt):
+        """[review 2026-11-15 r1 F5] write_draft itself on the synth (cell_text.tsv per ran job, the targets `tgt`
+        gives each form; the draft gate stubbed: the synth has no commit), then each written set's row keys"""
+        rec = read_record(d)
+        for j, (s, _c) in rec["jobs"].items():
+            arms = sorted({k for k, _g, jj in rec["plan"] if jj == j and k.startswith("kit.")})
+            os.makedirs(os.path.join(d, j), exist_ok=True)
+            open(os.path.join(d, j, "cell_text.tsv"), "w").write("".join(
+                "%s\t%s\t-\th\tfold.%s\t-\t%s\t-\n" % (k, plan.key_form(k)[0], plan.key_form(k)[0],
+                                                     tgt.get(plan.key_form(k)[0], "generic")) for k in arms))
+        rr = os.path.join(d, "run_record.tsv")
+        txt = open(rr).read().replace("run_id\tselftest\n", "run_id\tselftest\nbox\tselftest\nisa\tselftest\n"
+                                       "libc\tselftest\ngcc\tselftest\n", 1)
+        open(rr, "w").write(txt)
+        out, drift, _ub, outcome, _w, _p = compute(d)
+        gate = globals()["draft_gate"]
+        globals()["draft_gate"] = lambda code_commit, paths=None: "0" * 40
+        try:
+            with open(os.devnull, "w") as dn:
+                so, sys.stdout = sys.stdout, dn
+                try:
+                    write_draft(d, os.path.join(d, "draft.tsv"), out, drift, outcome)
+                finally:
+                    sys.stdout = so
+        finally:
+            globals()["draft_gate"] = gate
+        sets = {}
+        for v, p in (("3", "draft.tsv"), ("4", "draft.v4.tsv"), ("6", "draft.v6.tsv"), ("6v3", "draft.v6-v3.tsv")):
+            if os.path.exists(os.path.join(d, p)):
+                rows = open(os.path.join(d, p)).read().split("#section rows\n", 1)[1].split("#section members", 1)[0]
+                sets[v] = [ln.split("\t")[0] for ln in rows.splitlines()[1:] if ln]
+        return sets
+    def mf_write(d):
+        sets = mf_draft(d, {})        # one target (generic) for every form: the draft is written
+        six = {k for k, _g, _j in read_record(d)["plan"] if k.startswith("kit.") and k.split(".")[2] in plan.FORMS6}
+        return (set(sets.get("6", [])) == six and K6 in six and not six & set(sets.get("3", []))
+                and plan.UNIT_KEY in sets.get("3", []) and "4" not in sets)
+    def mf_header(d, p):
+        h = open(os.path.join(d, p)).read().split("#section header\n#key\tvalue\n", 1)[1].split("#section cards", 1)[0]
+        return dict(ln.split("\t", 1) for ln in h.splitlines() if ln)
+    def mf_levels(d):
+        """[F8] all three kit targets: two sets (zen4-grid6 x86_64/zen4 holding generic + x86-64 rows, zen4-grid6-v3
+        x86_64-v3/zen4 holding the x86-64-v3 rows only), none mixing ISA levels"""
+        sets = mf_draft(d, {"mfind-w16": "x86-64", "mfind-w32": "x86-64-v3"})
+        if "6" not in sets or "6v3" not in sets:
+            return False
+        h6, h3 = mf_header(d, "draft.v6.tsv"), mf_header(d, "draft.v6-v3.tsv")
+        lvl = lambda k: ("v3" if ".mfind-w32" in k else "base")
+        base_tg = {"generic", "x86-64"}
+        return ((h6["id"], h6["class"], h3["id"], h3["class"]) ==
+                ("zen4-grid6", "x86_64/zen4", "zen4-grid6-v3", "x86_64-v3/zen4")
+                and sets["6v3"] and all(lvl(k) == "v3" for k in sets["6v3"])
+                and sets["6"] and all(lvl(k) == "base" for k in sets["6"])
+                and any(".mfind-w16" in k for k in sets["6"]) and any(".mfind-w32" in k for k in sets["6v3"])
+                and not set(sets["6"]) & set(sets["6v3"]) and base_tg)
+    def mf_mixed(d):
+        """the guard: the table maps x86-64-v3 to the baseline set (a planted mix), so the draft is refused whole"""
+        saved = TARGET_SET["x86-64-v3"]
+        TARGET_SET["x86-64-v3"] = TARGET_SET["generic"]
+        try:
+            mf_draft(d, {"mfind-w16": "x86-64", "mfind-w32": "x86-64-v3"})
+        except InputError as e:
+            return ("DRAFT-ISA-LEVEL MIXED ver 6" in str(e) and not os.path.exists(os.path.join(d, "draft.v6.tsv"))
+                    and not os.path.exists(os.path.join(d, "draft.v6-v3.tsv")))
+        finally:
+            TARGET_SET["x86-64-v3"] = saved
+        return False
+    MF_CASES = (
+        ("[slotx] window mfcard: kit-grid@6 rows priced, no J3/J4/J5 row this window's", mf_priced),
+        ("[slotx] the draft split: every ver-6 row in ver 6's set, the unit in ver 3's, none in ver 4's", mf_split),
+        ("[F5] write_draft on the mfcard window: ver 6's set holds exactly the FORMS6 rows, ver 3's the unit and "
+         "none of them, no ver-4 set", mf_write),
+        ("[F8] write_draft writes one ver-6 set per ISA level (generic + x86-64 together, x86-64-v3 apart), ids and "
+         "classes as ruled", mf_levels),
+        ("[F8] write_draft refuses a set mixing ISA levels (a target mapped to another level's class) and writes no "
+         "set", mf_mixed),
+    )
+    for name, pred in MF_CASES:
+        d = _synth(os.path.join(scratch, "est_selftest_mf"), window="mfcard")
+        try:
+            ok = bool(pred(d))
+        except (InputError, KeyError) as e:
+            ok = False
+            print("selftest\t%s\t(%s)" % (name, str(e)[:200]))
+        bad += not ok
+        print("selftest\t%s\t%s" % (name, "ok" if ok else "WRONG"))
     for name, got, want in _reading_cases(scratch):          # [r11-REV15-2..4]
         ok = got == want
         bad += not ok
@@ -1339,7 +1503,7 @@ def selftest(scratch):
         ok = got == want.split(":")[0] and (":" not in want or want.split(":", 1)[1] in why)
         bad += not ok
         print("selftest\t[r11 gate] %s\t%s\t%s (%s)" % (name, "ok" if ok else "WRONG", got, why[:150]))
-    n = len(cases) + len(READING_CASES) + len(GATE_CASES)
+    n = len(cases) + len(MF_CASES) + len(READING_CASES) + len(GATE_CASES)
     print("== est SELFTEST %s: %d cases, %d wrong" % ("ok" if not bad else "FAILED", n, bad))
     return 1 if bad else 0
 
