@@ -85,3 +85,4 @@ History (long narrative, dated notes, measurements, per-lane records; not auto-i
 - `2026-11-15-r4-fixposts2c.md` (+ dir) — CODE round on lane/fixposts2 after its r3 fixes (+ lane/s486re): no answer/byte finding (450 pairs SAME); FIX-NOW spec example (RESPELL-1), double-evaluated scan row (RESPELL-2/3), S711 stale reach witness (SABROWS-1), comments; applied by lane fixposts2d.
 - `2026-11-15-r8-predspec6.md` (+ dir) — DESIGN round on predicates_draft.md rev 6 (type picture): comma held 200/200; P6-1..P6-18; applied in rev 7.
 - `2026-11-15-r10-predspec9.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 9 (one reading): FIXB-1..9, SIM-1..6, CENSUS-1..17, FIXA-1..11; ruled, applied in rev 10.
+- `2026-11-15-r12-predspec10.md` (+ dir) — confirming re-check of predicates_draft.md rev 10: SIMULATE-1..3, CENSUS-1..12; ruled, applied in rev 11.
