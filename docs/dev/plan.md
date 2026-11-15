@@ -1998,6 +1998,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   utf8 literal-pick cells: pcrec leads jit but trails re2/rust x1.2-x15.7 (lit-sharp-s worst), 10 utf8 cells. FIRST STEP: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect. ROUND 3 rank 3a-4 (D153): kept at rank 4; remodel overlap likely refactor A (landmark pick / [TIE-ALIGN]) — confirm at its twin step.
 
 ## Boonies
+- [RUN-LOWINFO-HEAD] STATE:not-started — run's head position is a low-information class tail (`\w+`) after rule (1)
+  filed: 2026-11-15 manager (review 2026-11-15 r1 posts2 EMITTED-1, NOTED; filed by lane fixposts2)
+  status (2026-11-15): NOTED, unmeasured (a suspected speed cost, very low); the answer is sound and the scan byte is unchanged.
+  trigger: a bench cell where the pre-check's first test (the run's head position) dominates and scan hits are common
+  refs: docs/dev/reviews/2026-11-15-r1-posts2.md EMITTED-1; docs/design/plan_row_bodies/RUN-POS-SET.md; [RUN-POS-SET]; D77
+  Rule (1) lets a run join a variable-width class repeat's tail (`\w+`, a 63-member position) at run position 0, so the pre-check tests that low-information position first (RX_REQ_RUN `[6264][6263][6379][6162]@1` becomes `[30-3941-5a5f61-7a][6264]...@2`). A run-metric and verify-order question (`rn_better`), not a rule (1) defect.
 - [LB-EXIST] STATE:not-started — lookbehind existence filter (an automaton in front of range) + unbounded lookbehind
   filed: 2026-11-05 manager (review 2026-11-05 r3 F16, filed by lane vlbrev1)
   status (2026-11-05): HELD, nothing designed beyond docs/design/vlookbehind.md §5.4: [ENG-LOOK]'s forward machine (or reverse-dfa's existence exit) as a filter row before range's finisher; with it `(?<=a+)` (err 125 in PCRE2 too)
