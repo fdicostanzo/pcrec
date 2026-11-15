@@ -363,3 +363,11 @@ Local evidence already in hand:
    public deny decision, the simd_accept lines and the re-pins.
 6. **Correct memfn/docs/ideas.md.** Its note calling pair "an inline word-at-a-time loop" is wrong (Summary). That
    file is a kit-manager-owned log, so the correction is owed there.
+
+## STATE AT HANDOFF
+
+- Branch `lane/memfn-mfind`. Work and this report are committed; the tree is clean except the DELIVER file.
+- OWED: kit-mfind-gate. It is the final job of the queued gate batch (620-628, owner kit) and is pending behind
+  the 01:00 evening-hold release. The lane does not poll it; the kit manager reads its verdict.
+- Not dispatched: the cloud test, axes and full-mech runs (Owed runs item 2). The timing plan is prepared, not
+  queued (item 3).
