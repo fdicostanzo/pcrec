@@ -259,6 +259,8 @@ def main():
     ap.add_argument('--sites', type=int, default=None)
     ap.add_argument('--lib', help='the kit library the generator links')
     ap.add_argument('--keep', action='store_true')
+    ap.add_argument('--reach-err', help="write every generator process's stderr here (the MF_TRACE "
+                    "kit's MFTRACE REACH lines join run_g2.sh's per-row sum, as the SIMD family's do)")
     ap.add_argument('--plants', dest='plants', action='store_true', default=True)
     ap.add_argument('--no-plants', dest='plants', action='store_false')
     ap.add_argument('--quick', action='store_true', help='a smaller space (80 sites per file, '
@@ -315,11 +317,15 @@ def run(a, root, work):
     targets = list(TARGETS) if x86 else ['generic']
     files, metas, texts = {}, [], {}
     guarded = {}
+    reach = []
     for lever in (1, 0):
         for tg in targets:
             d = os.path.join(work, 't-%s-%d' % (tg, lever))
             os.makedirs(d)
             r = sh([gen, a.seed, str(a.sites), d, tg, str(lever)])
+            reach.append(r.stderr)
+            if a.reach_err:   # the rows are chosen at lever 1 only; written as it goes so a failed run keeps what ran
+                open(a.reach_err, 'w').write(''.join(reach))
             if r.returncode:
                 bad('generator failed at %s lever %d: %s' % (tg, lever, (r.stderr + r.stdout)[-2000:]))
                 return

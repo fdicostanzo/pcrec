@@ -1118,11 +1118,16 @@ fi
 # generated one-byte-scan predicate space, every target and lever state, every
 # level and ASan+UBSan, against its own scalar loop with guard pages, the mask
 # stream and the SWAR-exactness trap, plus the plants S3150-S3159 (~60 s quick).
-# It links the PLAIN library: the form is no row of section 4b's registry.
+# Its generator links the same library as the others, so under --rows its REACH lines join the per-row
+# sum below (fn/fn-mfind, fn/mfind-w16 and fn/mfind-w32 are unpicked by default and reached only here,
+# through the lever, as the SIMD rows are reached only by section 4a's process).
 if want mfind; then
 ustart mfind
 echo "== mfind: G2's one-member family (run_g2_mfind.py)"
-if TMPDIR="$work" "$TO" 900 python3 "$here/run_g2_mfind.py" --root "$root" --lib "$plainlib" $([ "$quick" = 1 ] && echo --quick) > "$work/mfind.log" 2>&1; then
+mfind_args=(--root "$root" --lib "$lib")
+[ "$rows" = 1 ] && mfind_args+=(--reach-err "$work/reach/gen-mfind.err")
+[ "$quick" = 1 ] && mfind_args+=(--quick)
+if TMPDIR="$work" "$TO" 900 python3 "$here/run_g2_mfind.py" "${mfind_args[@]}" > "$work/mfind.log" 2>&1; then
     passed=$((passed + 1))
     echo "PASS: one-member family ($(grep '^checks passed' "$work/mfind.log"))"
 else
