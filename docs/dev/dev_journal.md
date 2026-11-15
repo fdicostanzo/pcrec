@@ -27670,3 +27670,21 @@ Next
   box jobs 700 (emit neutrality, lane/fixposts2) and 701 (memarm re-measure); cloud mechrows/test on fixposts2 if
   already dispatched; kit gates. Merge only branches proven green AND round-ruled. Kit timing window (night 11-15 to
   11-16) remains booked.
+
+## 2026-11-15 10:45 — new manager session (132); review of the overnight work; owner's span model recorded (manager)
+
+- Frank restarted the manager session (the previous one was forgetting agreed design after a long run with repeated
+  compactions). Manager model is now fable; lanes stay opus/sonnet. The 03:05 owner stop is STILL in force.
+- Read-only audits of the overnight work (spanfacts sonnet, audnight opus, audpred opus); results in wake.md 10:40 and
+  the next entry. No dev or design launched.
+- OWNER'S SPAN MODEL (Frank 2026-11-15, for [COVER-CAP] rev 2; his words): "there are two kinds of spans. exact spans
+  that can prove each position is exactly as the rx requires and the engine does not need to retest, and hull positions
+  that show the position is possibly matching but not proven. the purpose of the hull positions is to get better
+  candidates but the work is thrown out. how far to go to get these is a judgement call. i would say that if the span
+  exceeds N positions, the hull is not needed. the hull positions can be used to extend a short span and get something
+  to filter candidates." Earlier the same night (02:58): a span is an array of byte classes; a branch ends it; the kit
+  can loop over repeated positions and detect them by scanning the span it is passed.
+  Manager's reading (mine, not his words): the exact span needs no subset exploration and so no budget or length bound;
+  bounds belong only to the hull, where "how far" is a judgement; N is a tuning constant to label and measure.
+  cover_cap.md rev 1 (subset walk kept for exactness, 512 budget cliff, run facts offered to the kit, owner questions
+  2-3) does not follow this model; a rev 2 waits for the owner's word.
