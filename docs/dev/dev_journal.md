@@ -27731,3 +27731,12 @@ Next
   but that doesn't become a memory problem." Reading (mine): one SAFETY limit on the exact span, labelled with its
   derivation and how rarely it binds; past it the span is the first MAX positions (an exact prefix), never a collapse to
   zero; the one length limit shared by walk, machine reading and seam. Written to covcap4's rulings file as R5.
+- 13:00 (2026-11-15, box clock): [COVER-CAP] design: rev 2 (NFA-subset straight walk) -> round covcap-r2 (r5: walk's
+  termination/root rule/shape dependence) -> rev 3 (exact stretch read from the ANCHORED MACHINE by kn_walk's rule; NFA
+  span slice, C8 comparison, budget deleted; 0 covers lost, 18 gained) -> round covcap-r3 (r6: the new max limit can
+  never bind, the anchored 4096-state ceiling applies first; walk ran past its end) -> rev 4 (no new limit; stop at
+  first accept) -> round covcap-r4 (r7: READY WITH LISTED TEXT FIXES; FI-3 C9 depth range would have lost a PCRE2
+  match on `a(?:b|c)(?:$|q(?<=x))`) -> rev 4.1 merged. Waiting on Frank's build go for stage 1. D198 holds his
+  criteria. lane/s486re merged + pushed (CI green on ac91d48bb). lane/fixposts2 waits only on cloud axes at 825af3c1e.
+  Kit: fresh code round found timing-harness defects (no decision rule, out-of-line finders, unloadable draft sets);
+  D197 rule table agreed with three changes (kit 106412a6e); window after 01:00 stands.
