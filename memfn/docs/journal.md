@@ -4017,3 +4017,4 @@ Main ruled on the four kit findings (D186 add. 2):
   - RULED: FIX-NOW F1 (MFIND_W16/W32_GUARDED_MAX is not a bound: 4089 > 2100), F3, F4, F6, F8, F9, F10, F12, F13, F14. F5: stage 1 accepted, stage 2 owed before row 1 (to main). PLAN F2/F7; DOC F11; NOTED F15.
   - The fix lane mfindfix2 is HELD by the stop.
   - Gate: 621 g2 GREEN (873 s), 626 mech GREEN (263 s); 622-625 queued.
+- 03:40 main on mfind F5: will confirm after the stop lifts. Main leans to accept, and goes to Frank if the 11-07 shape was his ruling. Lessons noted for critics.md. F1 and the check-hole fixes stay held.
