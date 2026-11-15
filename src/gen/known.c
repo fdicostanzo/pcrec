@@ -509,6 +509,35 @@ const PcrecCover *pcrec_cover(Ctx *cx)
         fprintf(stderr, "KITPROOF\t%s\tk=%d\trouted=%d\t%s\n", cv->why ? cv->why : "cover",
                 cv->why ? 0 : cv->end.k, pcrec_kit_proof_routed(cx),
                 pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
+    /* X0's input (cover_cap.md §3.6 Q2): the record's exact stretch, every
+     * set as a comma list of hex bytes, `;` between positions (x0.py
+     * `stated`'s line shape), beside the listing's lossy `[N]` spelling */
+    if (getenv("PCREC_KIT_PROOF_TRACE")) {
+        /* the stated rule is the listing's (§3.3 R-4): a declined row states
+         * its stretch only under a finite width maximum, which is X0's
+         * horizon; the width is read off the record, never ASKED here (an
+         * ask would move the trace build's `used` column) -- `?` when this
+         * compile had not derived it by now */
+        const PatFacts *pf = &cx->job->pf;
+        bool wder = pf->why[PF_WIDTH].status == PF_ST_DERIVED;
+        bool wfin = wder && pf->width.bmin >= 0 && pf->width.bmax < PCREC_W_UNBOUNDED;
+        bool stated = cv->exact_known && (!cv->why || wfin || !wder);
+        fprintf(stderr, "COVERSET\t%s\t", cv->why ? cv->why : "cover");
+        if (stated) fprintf(stderr, "%u", (unsigned)cv->exact_len);
+        else fputc('-', stderr);
+        if (wfin) fprintf(stderr, "\t%d\t", (int)pf->width.bmax);
+        else fprintf(stderr, "\t%s\t", wder ? "-" : "?");
+        for (int d = 0; stated && d < cv->exact_len; d++) {
+            bool first = true;
+            if (d) fputc(';', stderr);
+            for (int b = 0; b < 256; b++)
+                if (kn_has(cv->sets[d], b)) {
+                    fprintf(stderr, "%s%02x", first ? "" : ",", b);
+                    first = false;
+                }
+        }
+        fprintf(stderr, "\t%s\n", pcrec_is_part(cx) ? cx->emit_in->part_role : "-");
+    }
 #endif
     return cv;
 }

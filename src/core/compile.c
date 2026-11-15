@@ -397,11 +397,13 @@ static void build_anchored_dfa(Ctx *cx)
     char  saved_why[sizeof cx->dfa_overflow_why];
     memcpy(saved_why, cx->dfa_overflow_why, sizeof saved_why);
 
-    /* `PCREC_ANCHORED_MAX_STATES` IS `PCREC_MAX_DFA_STATES_TABLE` in every
-     * shipped build (src/core/limits.h). It exists as a name so ONE consumer —
-     * tests/codegen/run_anchored_match.sh — can lower it and drive the
-     * overflow arm, whose real-world population is zero because the caps are
-     * shared and the mandatory machines reach them first. */
+    /* `PCREC_ANCHORED_MAX_STATES` is the anchored machine's own state
+     * ceiling, LOWER than the mandatory pair's `PCREC_MAX_DFA_STATES_TABLE`
+     * (its derivation: src/core/limits.h [ENG-ABS]); past it this optional
+     * machine is not built and the pattern runs without it. It also bounds
+     * the `cover` route's exact stretch (docs/design/cover_cap.md §3.1).
+     * tests/codegen/run_anchored_match.sh lowers it to drive the overflow
+     * arm. */
     pcrec_build_min_dfa(cx, &cx->job->nfa, &cx->job->adfa, true, false,
                         PCREC_ANCHORED_MAX_STATES,
                         cx->job->nfa.anch_start, true);

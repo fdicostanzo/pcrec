@@ -56,7 +56,8 @@ finding ids to sections).
   1-4.1 (rev 4.1 per Frank's Q-R17P-26/27); `r17b_prime/` — its
   compile-only instruments (own CLAUDE.md).
 - `window_contract.md` — D161 contract note, revs 1-3.1 (site/spans/stream
-  reply, analysis object, `span_facts`, E-1 build step);
+  reply, analysis object, the span slice's fact (deleted by [COVER-CAP]
+  stage 1), E-1 build step);
   `window_contract_rev3/`, `window_contract_rev31/` — evidence dirs (own CLAUDE.md).
 - `row_contracts.md` — [MEMFN-ROWCON] first-match table mechanism exported by
   the kit (`fields.def`, `honours` allowlists, reach counters); evidence in

@@ -3446,7 +3446,7 @@ def main():
     ap.add_argument("--facts-declared-moves", metavar="FACT:COLUMN:FROM>TO[,...]",
                     help="the facts stream's DECLARED delta, judged both ways per "
                          "pattern: the listing's only movers are these cells (e.g. "
-                         "span_facts:used:yes>no), every REF row holding FROM has "
+                         "kset_walk:used:yes>no), every REF row holding FROM has "
                          "moved to TO, nothing else moved; the stream is then "
                          "required at movers=0 and reports the declared count. "
                          "FACT:row:>new declares a NEW fact (one row per encoding "

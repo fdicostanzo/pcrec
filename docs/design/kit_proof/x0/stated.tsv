@@ -1,4 +1,5 @@
-# x0.py stated: FLAGS<TAB>PATTERN<TAB>EXACT_LEN<TAB>S_0;S_1;..<TAB>LABEL (sets: hex bytes)
+# x0.py stated: FLAGS<TAB>PATTERN<TAB>EXACT_LEN<TAB>S_0;S_1;..<TAB>LABEL[<TAB>WMAX] (sets: hex bytes;
+# WMAX = the width maximum, the witness horizon, since [COVER-CAP] stage 1; absent = the stated length)
 # plant rows (S1149, S1150) must read RED, slice rows GREEN (kit_proof.md §6.3, §6.4)
 -	a(?=b)[a-z]|ac	2	61;62	S1150
 -	a(?=b)[a-z]|ac	0	61;62	S1150-hull
