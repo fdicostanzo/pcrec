@@ -214,11 +214,23 @@ TIMED_CALLEES = (
     ("libc", ("memchr",)),       # J2's byte row and J2p's pair (dry runs 2026-11-15: memchr only)
     ("pair", ("memchr",)),
     ("walk", ()),
+    ("null", ()),                # [j4fix] J4's null verify bases: the class arm's loop, the compare removed (no call)
 )
 
 def timed_callees(form):
     """the externals form's `_time` may call (a tuple), or None (no row: any external)"""
     return next((ok for pre, ok in TIMED_CALLEES if (form or "").startswith(pre)), None)
+
+def timed_form(a, fc):
+    """[j4fix] the form TIMED_CALLEES keys an arm's `_time` on: its cell's form (render's fc), or for an arm with
+    no cell, what the arm IS: a J4 null base (`base.null.CLS`, form `null`). Any other cell-less site wrapper
+    refuses (never an unkeyed, silently looser check)"""
+    if fc:
+        return fc[0]
+    if a.kind == "verify" and a.form == "null":
+        return "null"
+    raise SystemExit("link: TIMED-SHAPE %s: a site wrapper with no cell and no TIMED_CALLEES key (kind %s, form %s)"
+                     % (a.name, a.kind, a.form))
 
 def timed_shape_check(name, obj, sym, form):
     """[review 2026-11-15 r5 FIDELITY-1, r6 FIDELITY-1] THE TIMED FUNCTION HOLDS THE SITE: `SYM_time` in the timed
@@ -281,6 +293,7 @@ __attribute__((noinline)) uint64_t a64_time(const unsigned char *s, size_t n, co
     return k;
 }
 """
+SHAPE_NULL = plan.Arm("base.null.c1", "J4.base", "verify", "null", cls="c1", events=0, of=("settest", "c1"))
 SHAPE_LOOP = "for (size_t i = pos; i < n; i++) if (s[i] == 120) return i; return n;"
 SHAPE_CASES = (
     ("an inline mfind site (the control)", "mfind-w32", "static inline", SHAPE_LOOP, "p = mf_site(s, n, p);", "ok"),
@@ -297,6 +310,11 @@ SHAPE_CASES = (
      "{ extern size_t mf_ext(const unsigned char *, size_t, size_t); p = mf_ext(s, n, p); }", "external mf_ext"),
     ("[S3213] fn-memchr calling another external", "fn-memchr", "static inline", SHAPE_LOOP,
      "p = mf_site(s, n, p) + strlen((const char *)s);", "external strlen"),
+    # [j4fix] a CELL-LESS arm (render's fc None): the form is timed_form's, as build_objs resolves it; J4's null base
+    ("a J4 null base, its load inline (the control)", SHAPE_NULL, "static inline", SHAPE_LOOP, "p = mf_site(s, n, p);",
+     "ok"),
+    ("[S3220] a J4 null base with an out-of-line callee", SHAPE_NULL, "static inline", SHAPE_LOOP,
+     "{ extern size_t mf_ext(const unsigned char *, size_t, size_t); p = mf_ext(s, n, p); }", "external mf_ext"),
 )
 
 def shape_selftest(scratch):
@@ -307,7 +325,7 @@ def shape_selftest(scratch):
         open(c, "w").write(SHAPE_SITE % (attrs, body, call))
         sh(CC + ["-c", c, "-o", c[:-2] + ".o"])
         try:
-            timed_shape_check(name, c[:-2] + ".o", "a64", form)
+            timed_shape_check(name, c[:-2] + ".o", "a64", form if isinstance(form, str) else timed_form(form, None))
             got = "ok"
         except SystemExit as e:
             got = str(e)
@@ -671,7 +689,7 @@ def build_objs(job, rundir, arms):
         o = compile_tu(src, os.path.join(d, "arm%d.c" % k), sym)
         if "SLOT_GATE_TU" in src:                 # a site wrapper's TU (not a whole artifact's): its gate apart
             gates.append(compile_tu(src, os.path.join(d, "arm%d.c" % k), sym, gate=True))
-            timed_shape_check(a.name, o, sym, fc[0])
+            timed_shape_check(a.name, o, sym, timed_form(a, fc))
         elif a.kind not in ("enter", "j1"):
             raise SystemExit("link: TIMED-SHAPE %s: a site wrapper's TU without the gate split" % a.name)
         tgt = isa = "-"

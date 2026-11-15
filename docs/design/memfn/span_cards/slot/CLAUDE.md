@@ -46,9 +46,9 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   TWO OBJECTS (`_time` alone; `_gate` from the same file under `-DSLOT_GATE_TU`, linked after the arms), and
   TIMED-SHAPE refuses a `_time` calling a function its own object defines (the site out of line); cell_text's
   `text_bytes` (the timed function's size, reported beside the timing). Review r6 (mcfixb): TIMED-SHAPE's per-form
-  callee table `TIMED_CALLEES` (mfind-*: none, fn-memchr: memchr), and it refuses any branch through a section
+  callee table `TIMED_CALLEES` (mfind-*: none, fn-memchr: memchr; [j4fix] J4's cell-less null bases keyed `null` by `timed_form`, none), and it refuses any branch through a section
   symbol (`section`/`cold` sites, `_time`'s own cold split) and indirect call/jmp; `link.py shape-selftest SCRATCH`
-  holds it to two controls and the critic's plants (S3210-S3213).
+  holds it to three controls and the critic's plants (S3210-S3213; j4fix's null-base plant S3220).
 - `art.py` — whole-artifact arms for J5 (`enter`; refuses a step-back arm, `no_back`, until t's artifact is specified) and J1 (PAIR width substitution): pcrec artifact + one
   wrapper, symbol localization, subjects, python `re` expectations, all cached by their inputs' sha;
   `art.py check RUNDIR`.
@@ -104,7 +104,7 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   (q1) S2944, (b1) S2945, review r10's (n3) S2946, (s3) S2947, (s4) S2948, (s5) S2949, rev 1.5's (x1) S2950, (x2) S2951,
   (x3) S2952, review r11's (y1)-(y11) S2953-S2963, K38-3's (d1) S3105, lane slotx's (t1) S3160, (t2) S3161,
   (r1) S3162, (r2) S3163, (v1) S3164, (v2) S3165, (w1) S3166, (k1) S3167, lane slotxfix's (e1) S3168, (e2) S3169,
-  (e3) S3171, (e4) S3172, lane slotxf8b's (f8a) S3183, (f8b) S3184, lane mcfixa's (i1)-(i10) S3188-S3197, lane mcfixb's (m1)-(m5) S3207-S3209 S3214 S3215 (jobs `d197e2e`,
+  (e3) S3171, (e4) S3172, lane slotxf8b's (f8a) S3183, (f8b) S3184, lane mcfixa's (i1)-(i10) S3188-S3197, lane mcfixb's (m1)-(m5) S3207-S3209 S3214 S3215, lane j4fix's (m6) S3221 (jobs `d197e2e`,
   `shape` too), planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
   selected rows score on first (review r1 F3).
 - `movers.py` — S2e's data-mover census (m0build's method, normalization EMPTY, plus the head-vs-itself pass
