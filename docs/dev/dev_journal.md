@@ -27654,3 +27654,19 @@ Next
   (PLANTS-1), D27 `# arms:` headers, vrun utf8 floors split corpus/witness, doc items; run-verify-wide floor re-measure
   queued; EMITTED-1 -> Boonies row. FLOORS-4 (the D3 floor script has no caller) relayed to the kit. Rev 0 covcap round
   filed as r2-covcap0; its findings fed to covcap2 (rev 1, no length bound, Frank: "avoid arbitrary tuning constants").
+- 03:05 (2026-11-15) OWNER STOP: Frank: "Let the critic finish then stop all design and development. Please run all
+  planned tests and merge proven branches but nothing else. ... note that I asked you to stop and what you were working
+  on. Stop kit as well." What was in progress at the stop:
+  (a) S3 [COVER-CAP]: design rev 1 merged (docs/design/cover_cap.md, no length bound, two stages). Frank had already
+      held the design (02:58, "Stop the design work") while we discussed replacing the subset walk with a straight-line
+      walk that ends at the first branch, with no budget (his point: a span is an array of byte classes; a branch ends it;
+      hull positions only for UTF-8, later). Not folded into the doc; no design pass, no critic round on rev 1.
+  (b) Retroactive post-S2 fix lane: lane/fixposts2 has the r1-posts2 fixes; its own light round (r3-fixposts2) asked
+      for more; follow-up lane fixposts2b was mid-fix, told to commit WIP and end. NOT proven, so NOT merged.
+  (c) Kit: mfind (inline finder) + slotx (harness) with fix lanes mfindg2/slotxfix in flight, follow-ups slotxf8/d3wire
+      planned; told to stop dev, run planned tests, merge only proven branches into its own branch.
+  (d) #6 predicates: discussion only; rev 4 merged; no work in flight.
+  Allowed tonight: the cloud full suite on main 2275777e0 (test, ubsan, asan, recidentity GREEN; axes, mech pending);
+  box jobs 700 (emit neutrality, lane/fixposts2) and 701 (memarm re-measure); cloud mechrows/test on fixposts2 if
+  already dispatched; kit gates. Merge only branches proven green AND round-ruled. Kit timing window (night 11-15 to
+  11-16) remains booked.
