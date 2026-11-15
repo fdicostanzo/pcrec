@@ -27724,3 +27724,10 @@ Next
   fact both need). Hull positions supplement where the exact stretch is too short to filter on. (3) "hull for UTF-8" is
   not a UTF feature: the kit sees bytes only; variable-width characters just make short exact stretches commoner, so
   hull supplements matter more there. (4) Stage ordering is the manager's call; two stages kept.
+- 12:00 (2026-11-15): design round covcap-r2 ruled (review to be committed as r5 by lane covcap4, opus, writing rev 3):
+  no answer moves; the NFA-subset walk's termination, root rule and shape-dependence need repair; the lane must weigh
+  reading the exact stretch from the anchored DFA instead. OWNER AMENDMENT (Frank, verbatim): "Practically, we might need
+  a max span length then. I don't want edge cases to ruin the concept. Something sufficiently high that it's rarely seen
+  but that doesn't become a memory problem." Reading (mine): one SAFETY limit on the exact span, labelled with its
+  derivation and how rarely it binds; past it the span is the first MAX positions (an exact prefix), never a collapse to
+  zero; the one length limit shared by walk, machine reading and seam. Written to covcap4's rulings file as R5.
