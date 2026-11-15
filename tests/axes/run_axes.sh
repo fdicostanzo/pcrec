@@ -1772,14 +1772,22 @@ done
 # predecessor's choice (information, then the first run). [RUN-POS-SET]
 # stage 2a's `restore=alt` (lane r1on) runs an alternation as its common head
 # and tail alone, never `all` (alt_normal_form.md §6 row 2 without row 1).
-# A later span arms unit adds its arm here (`restore=look`). [FIND-MINW]
+# A later span arms unit adds its row to walk_arms.def. [FIND-MINW]
 # `--harness=no-min-width` declines the minimum-width stop (tuning.md §2.55),
 # a change with no public deny; its answers must equal the default's.
 # Selected by the empty AXES= or by its spelling.
-INTERNAL_ARMS=("--harness=no-compound" "--harness=restore=empty"
-               "--harness=restore=zero" "--harness=restore=rep" "--harness=restore=tie"
-               "--harness=restore=alt"
-               "--harness=no-min-width")
+# The restore arms are DERIVED from src/facts/walk_arms.def (the one source of
+# the arm population; review 2026-11-15 r1 posts2 CONTRACT-4): an arm added
+# there is swept here without a second list to remember.
+INTERNAL_ARMS=("--harness=no-compound")
+while IFS= read -r walk_arm; do
+    INTERNAL_ARMS+=("--harness=restore=$walk_arm")
+done < <(sed -n 's/^WALK_ARM([A-Z0-9_]*, *"\([a-z0-9_]*\)".*/\1/p' "$ROOT_DIR/src/facts/walk_arms.def")
+if [ "${#INTERNAL_ARMS[@]}" -lt 2 ]; then
+    echo "run_axes.sh: FATAL: no WALK_ARM rows read from src/facts/walk_arms.def" >&2
+    exit 1
+fi
+INTERNAL_ARMS+=("--harness=no-min-width")
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0
 for arm in "${INTERNAL_ARMS[@]}"; do
