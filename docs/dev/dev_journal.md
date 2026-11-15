@@ -27700,3 +27700,10 @@ Next
   unpicked measuring instrument (never a pick, never stage 1); tonight's timing is a one-sided test (loss settles row 1
   against; a win triggers the ruled split shape, with its own go, then a re-measure). Relayed to the kit.
   s486re delivered (probe compiled on the detector's own arm, -fno-req-handoff; reach sweep job 650 + cloud mechrows owed).
+- 11:10 (2026-11-15, box clock; earlier entries today run ~1 h ahead of it): filing lane file1115 merged (D197, [RX-NOT],
+  [RULE1-ROUTE], [FLOORS-REMEASURE], R-44, reach-probe lesson + landing step). Reach sweep job 650 GREEN on lane/s486re
+  (1,299 rows: 631 reached, 0 unreached, 16 declared-unreached, 652 with no probe). Cloud mechrows S3012+S474 GREEN on
+  lane/fixposts2 535caf149. Code round crit-fixposts2c running over both branches. Kit slotx F8 (i) ruled by the
+  manager (harness, answer-free): draft sets split by ISA LEVEL (generic + x86-64 share class x86_64/zen4; x86-64-v3
+  its own set), guard refuses mixed levels, no format event. Frank on numbers: the subject/structural split was the
+  old manager's idea; lean = one kind, count() first with occurs as fallback (COND-FAMILY.md tail).
