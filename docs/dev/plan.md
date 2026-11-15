@@ -161,6 +161,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: docs/design/definitions_table.md; src/ir/nfa.c
   CHARTER (re-scoped by D168 add. 1; the old "wire the table-driven text substitution into compilation" charter is withdrawn, see git history): (1) design the D168 span-context producer in `span_facts` (per-offset sets at negative offsets / past the end, {set, includes-absent, exact}; `\b` via the fold, fixed positive lookbehind, width-1 negative lookbehind), shared with kit_proof UL-0; (2) review the idea (Frank: simplification alone qualifies; measured as the special-case sites it deletes) that `A_BOL`/`A_EOL` retire into A_CTX with an absent-aware truth function (abi event + identity gate if built). The definitions table stays documentation + oracle.
   Dependency: [DD-11.6] no longer waits on this row (the survey §2: its customers re-homed); its fate is the survey's §2 proposal, Frank's.
+  NOTE (2026-11-15): [COVER-CAP] design rev 4.1 (docs/design/cover_cap.md) DELETES the NFA span slice that part 1 built on; when COVER-CAP stage 1 gets its build go, this row must be re-scoped before its next step. STATE unchanged.
 - [FINDALL-NEXT] STATE:started — find-all iterator over a caller-filled struct (generic callers loop over info->next / next_n)
   filed: 2026-10-09 Frank
   status (2026-10-23): I0+I1+I4 LANDED on main (merge b8c66a739, abi 84, one event; RX_FOREACH dropped D175; r2 critic fixes, review 2026-10-23-r2-iter-code.md); remaining: I2 the kit's `st`, I3 `pair-hits`; follow-ups [ITER-RETRY-ELIDE], [ITER-REVIEW-PLAN]
@@ -949,6 +950,28 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Frank 2026-11-10: "Yes. Let's start or designate a master to all these. Perhaps others were missing? It should look at the machinery needed to satisfy and the common elements. Then we can plan them all together."
   UMBRELLA ROW. Members (rows stay where they are): [CONDITIONALS], [POSTFACT], [ENG-LOOK], [BRANCH-RESET], [PCRE2-GAPS-TBD] (`(*FAIL)` `(*ACCEPT)`), [CLASS-SETOPS], [VLOOKBEHIND], [LB-EXIST]; readers: [REQ-LOOKAROUND], [CTX-PREFILTER], [LOOK-LOCATE], [DESC-DEAD], [NEVER-MATCH], [BREF-SPAN], [SPAN-HELPERS]; superset machinery: [ENG-TDFA]. Common elements (survey §4): the condition node, the name table (labels vs capture numbers), ONE checker product for every DFA member (start/read rows), and the VM-drives/DFA-checks piece (A-REV and its forward twin).
   NOTE (2026-11-12): four notes (andspike oracle spike; D196 add. 2 mechanism-before-syntax; planning principles for the combined plan) in docs/design/plan_row_bodies/COND-FAMILY.md §2026-11-12
+- [COUNT-TO-OCCURS] STATE:not-started — a predicate `count()` converts to `occurs` when pcrec can show no change in semantics
+  filed: 2026-11-15 Frank (to session 132), manager wrote the row (lane file1115b)
+  status (2026-11-15): filed, later and unscheduled; nothing built; the predicate base has no `count()` yet
+  trigger: the predicate base ([COND-FAMILY]) has both `count()` and the `occurs` module in use, and a proof of identical semantics for a count form is available (D77: name the measurement or proof first)
+  refs: [COND-FAMILY] (docs/design/plan_row_bodies/COND-FAMILY.md, the 2026-11-15 entries on counts)
+  Frank 2026-11-15: "Predicate count/occurs issue: it would be a later optimization plan item that if pcrec could show no change in semantics that it convert count() into occurs"
+- [HULL-N] STATE:not-started — the hull threshold N: past N span positions no hull is needed; short spans extend by it
+  filed: 2026-11-15 Frank (to session 132), manager wrote the row (lane file1115b)
+  status (2026-11-15): filed; no reader takes exact plus hull positions yet (D77); N is UNMEASURED, a tuning constant until a measurement names it
+  trigger: the first search statement that offers the kit an exact stretch extended by hull positions (cover_cap.md section 1.1 (i))
+  refs: [COVER-CAP]; docs/design/cover_cap.md (section 3.4, the hull and N); decisions D198
+  Frank 2026-11-15: "the purpose of the hull positions is to get better candidates but the work is thrown out. how far to go to get these is a judgement call. i would say that if the span exceeds N positions, the hull is not needed. the hull positions can be used to extend a short span and get something to filter candidates."
+- [LIMIT-PREFIX-K-LABEL] STATE:not-started — label PCREC_PREFIX_K_MAX (24) in src/core/limits.def with its rationale
+  filed: 2026-11-15 manager (review docs/dev/reviews/2026-11-15-r5-covcap-r2.md finding C-12), lane file1115b
+  status (2026-11-15): the limits row carries no rationale; "headroom over a measured corpus maximum of 13" lives only in docs/design/offset_k_skip.md section 3.3; low priority
+  next: add the rationale to the limits row (a limits-table and doc item, no behaviour change; check the limits_check count and the limits doc readers)
+  refs: docs/design/offset_k_skip.md; docs/design/cover_cap.md section 3.4; [HULL-N]
+- [REACH-PROBE-GAP] STATE:not-started — sabotage rows with NO reach probe (the [MECH-REACH] discipline, 652 of 1,299 on 2026-11-15)
+  filed: 2026-11-15 manager (reach sweep, box job 650-s486re-reach), lane file1115b
+  status (2026-11-15): sweep of 1,299 sabotage rows: 631 reached, 0 unreached, 16 declared-unreached, 652 with NO reach probe (the completed [MECH-REACH] row covered the 180-row matrix of 2026-08-25)
+  trigger: the next landing that flips a default (docs/dev/learnings.md section 3, the reach-probe lesson: a check's population can lose its reach silently)
+  refs: docs/dev/learnings.md section 3; the completed [MECH-REACH] and [MECH-REACHONLY] rows (docs/dev/plan_completed.md)
 - [CONDITIONALS] STATE:not-started — PCRE2 gap rank 2: conditional groups `(?(1)a|b)`, `(?(<n>)..)`, `(?(R)..)`, `(?(?=a)..)`
   filed: 2026-11-05 Frank ("create tracking items at ranks 1-3"), from the completeness scoreboard rank 2
   status (2026-11-05): PARKED, a separate effort (Frank 2026-11-05); investigation done (docs/dev/lanes/condinv_report.md): no outside demand; one general condition node when designed
