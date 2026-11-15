@@ -27614,3 +27614,25 @@ Next
 - Predicate design ([COND-FAMILY], held, discussion only): ~30 notes in COND-FAMILY.md: x-mode opt-in, DEFINE bindings (one kind; pure vs match-dependent), macros, typed parameters (type removes nothing; overloads disjoint = per-string dispatch), `when`, arrays/maps = labelled alternations, `[]` access by any key set, pre-image sections, unary comparisons, `x:` conditions over the whole match vs `$x` values (misuse an error), calls as sugar for `& path: set`, JSONL worked example, weekday property, hull + inline callout with verbs, DFA captures feeding callouts.
 - Lessons: a control built on pcrec FAILING to prove something breaks when pcrec improves (gu step-limit controls); force the slow path with a test lever instead. Ask whether gated work can go to the cloud during a hold.
 - Next: owed post-S2 items (floors, Part D D27 tests, kit timing/reach, rule (1) census), prune delivered worktrees, then [FLAG-DEMOTE] set with the kit's post-S2 measurement set.
+
+## 2026-11-14/15 — S2 closed; predicate spec revs 0-4 with a critic round; [FLAG-DEMOTE] set opened (manager)
+
+- S2 CLOSED on main: rule (1) alt_union ON (abi 107, 13f46ea50), the arms re-pin, D27 Part D witnesses (tests/litscan/d27/),
+  mech re-aims, kit R-43; CI fixes (62a5aae77, a518df820); CI green. [PREFLIGHT] filed (budget: hours, not days),
+  gaining the lever-name grep (hk1115). [BACKREF-FINITE] filed.
+- #6 predicates (discussion only, never scheduled): spec docs/design/predicates_draft.md rev 0 (predspec) -> exploration
+  lane predx (fable; 13 solutions, 45 frictions, S1-S20, Q1-Q14) -> rev 2 (predspec2) -> critic round
+  docs/dev/reviews/2026-11-14-r1-predspec.md (4 opus critics + verifier, 25 verified, 0 refuted) -> rev 3 (predspec3)
+  -> rev 4 (predspec4). Owner rulings, all in COND-FAMILY.md: look-alike consistency ranked FIRST (G0 + table);
+  string sets as the foundation, edge assertions (`\b`, edge lookarounds) are an error in set positions, `^`/`$` = the
+  value's ends, an explicit `(?m)` keeps PCRE meaning; transforms are FILTER MODIFIERS with adjective names (`padded`,
+  `any_case`), `&` pure intersection; no alphabetic keywords (`@` effects, `import`/`export` as functions over name sets,
+  warnings named + rx selectors); the subject is never an argument; `&` sections for mapping; no partial application;
+  enumerate, occurs.*, arrays of filters, the vm-level `&` split, priced value comparisons. Lesson (critic round): brief
+  a model choice with its SEPARATING cases first; the draft's own argument for context sets used none.
+- [FLAG-DEMOTE] set opened (Frank GO): kit (a) smpdec (smp20's pick is decided by the prior; the finder's per-hit cost
+  decides), (b) the inline one-member finder built UNPICKED (lane/memfn-mfind, 0 movers), harness pieces 1/3/4
+  (slotx; w64 owed), (c) kit-mfcard-time BOOKED night 11-15 to 11-16 after 01:00, (d) IPv4 build DEFERRED (D77) until
+  (c). The kit's cloud axes run exposed main's D27 file under -fno-req-run/-fno-req-byte (a one-sided budget give-up):
+  lane axtri1115 triaging.
+- Prune (hk1115): 12 worktrees + 10 branches; it also removed the kit's merged r43 worktree (branch kept; kit told).
