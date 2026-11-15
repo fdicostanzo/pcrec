@@ -4004,3 +4004,11 @@ Main ruled on the four kit findings (D186 add. 2):
 - 03:05 MAIN RULED slotx F7 and F8. F7 AGREED: the measure_sets.md §7.2 sentence says a row binds from its first merge to main or its first set/record, whichever comes first; before that it is a draft of its lane chain and may be respelled. There is no ver-7 row. F8 AGREED, option (i): one set per declared target from the one run, split by (ver, target), with no new format; the refusal of mixed sets stays. That closes F6, since the class carries the target. Both guide lessons are accepted, and main files them in critics.md.
   - Per no-addenda: F7's sentence and F8 (i) go to a FRESH follow-up lane slotxf8 on lane/memfn-slotx after slotxfix delivers, not as an addendum to slotxfix.
 - 02:54 gates: 620 kit-mfind-strict GREEN (33 s); 640 kit-slotx-strict GREEN (old tip f13a59356; the slotx gate stays paused for the fixes).
+
+### 2026-11-15 03:10 — FRANK STOP for tonight (via main): all design and development stop
+- Ruling: let any running critic round finish. Running lanes commit WIP, write their state, and end. Start nothing new. Allowed: the already-planned tests (the mfind and slotx gates, cloud runs already dispatched) and merging PROVEN branches (gates green, code round ruled) into the kit's own branch. Deliveries wait for main's review after the hold lifts. The kit-mfcard-time window (night 11-15 to 11-16) stays booked.
+- What the kit was on at the stop:
+  - mfind: fix a2b2b2a08 in, strict 620 GREEN, gate 621-628 running/queued, cloud test a2b2b2a dispatched, code round crit-mfind RUNNING (it finishes).
+  - slotx: round r1 RULED. slotxfix (F1-F5, F8 interim, F9, F10) told to STOP: WIP commit + docs/dev/lanes/slotxfix_state.md. Gate 641-649 stays PAUSED; running it on the old tip proves nothing.
+  - HELD, not started: slotxf8 (F7 §7.2 sentence + F8 (i) split), d3wire (R-43 FLOORS-4), the slotx -> mfind merge, kit-mfcard-time queueing (needs both gates green + the merge).
+  - Main's axes fix (axtri1115) is pending; then a cloud axes run on mfind.
