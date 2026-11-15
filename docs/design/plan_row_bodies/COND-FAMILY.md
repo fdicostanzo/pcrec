@@ -899,3 +899,28 @@ fields); what kind of thing it is matters less and is not ruled. (4) `.` has ONE
 of the thing on its left (label, module member, metadata and the `$` path are instances); the manager's lean, AGREED.
 Manager's note (mine): "view" in the draft and "interface" in his words name the same thing; the next revision uses one
 word and checks that nothing in the draft creates an array or a map as a free-standing value.
+**2026-11-15 RULING — SEARCH IS A TRANSFORM (a library macro), not an operator; `some`/`all` the one spelling; same hit
+by record (Frank, to session 132).** His words: "Ok. Hold that thought. What if search was a transform like search(x) :=
+/.*(?:(${x}.*).*/"; then, on the manager's point that a condition on the result reads "all hits": "3. could you use
+some() to get some hits?"; then, on the manager's lean (below): "Do it".
+RECORD (the manager's lean he approved with "Do it"; spellings are placeholders, D193 add. 4):
+(1) SEARCH is a library transform of the `contains` family (`contains(s)` = one hit needed): it takes an rx and returns
+an rx over the WHOLE value in which the occurrence group REPEATS, once per hit; applied like any filter (`(m:
+search(/ab(?<g>[xy])/))`). The operators `~` and `!~` are WITHDRAWN (`!~` = `!contains(rx)`).
+(2) The result needs no new concept: the hit is a REPEATED LABEL (§4.3 of the draft): `count`, `occurs.exactly/at_least/
+at_most`, and a plain condition = ALL hits.
+(3) `some((g: x))` = at least one hit satisfies; `all(...)` = the default, rarely written. ONE spelling of "some hit":
+`some(...)`; `occurs` keeps the COUNTS only (`occurs.some` goes away or becomes an alias); `x & s` as a "some result"
+spelling is re-examined against this.
+(4) SAME HIT BY RECORD: `some((g: x, h: 1))` = one hit has both (a record = all fields together, on the same iteration);
+`some((g: x)) & some((h: 1))` = possibly different hits. REPLACES the rule that every `some(s)` over the same set
+denotes the same occurrence.
+(5) Definition requirements (manager's, accepted with the lean): lazy gaps so the hits are leftmost and non-overlapping
+(shape `/(?:.*?(${x}))*.*/`, not a greedy lead); a repeated label's COUNT follows PCRE's priority parse (which with
+lazy gaps is find-all order); the empty-match advance rule stated; a look-alike row for "`(g: x)` on a search result
+means ALL hits".
+(6) The earlier question "what is a search result at match time" is RESTATED as the general one: the ARRAY INTERFACE
+over the iterations of ANY repeated label. Group questions (count, some, all, exactly n) compile to states and are
+phase 1; access to ONE iteration (`d[2]`, `d[2].g`, "keep 1 and 3", the owner's 2026-11-15 array example) needs
+captures inside a loop: a higher capability level with its cost shown. This last sentence is the MANAGER'S LEAN (stated
+to him twice, not separately ruled); his array example stays the intended behaviour at that level.
