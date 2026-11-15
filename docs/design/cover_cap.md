@@ -1,9 +1,10 @@
 # cover_cap.md — the `cover` route's exact stretch: read from the anchored machine, bounded by that machine's own state ceiling, no budget ([COVER-CAP])
 
-Status: PROPOSED, revision 4 (lane `covcap5`, 2026-11-15). DESIGN ONLY: no build go.
+Status: PROPOSED, revision 4.1 (lane `covcap6`, 2026-11-15). DESIGN ONLY: no build go.
 Plan row: [COVER-CAP] (set S3). Owner criteria: D198. Reviews: round covcap-r2
 (`docs/dev/reviews/2026-11-15-r5-covcap-r2.md`, C-1..C-25) and round covcap-r3
-(`docs/dev/reviews/2026-11-15-r6-covcap-r3.md`, R-1..R-14), dispositions ruled by the manager.
+(`docs/dev/reviews/2026-11-15-r6-covcap-r3.md`, R-1..R-14) and round covcap-r4
+(`docs/dev/reviews/2026-11-15-r7-covcap-r4.md`, FI-1..FI-6, READY-1..READY-5), dispositions ruled by the manager.
 Compiler read: worktree at main `ac91d48bb` (no `src/`, `lib/`, `cli/` change since rev 3's
 `4ccd97ca7`). Every "today" number below carries its command;
 `$PC` is that worktree's `build/pcrec` and `SF() { $PC -p rx --features all --emit-facts --pattern "$1" | awk -F'\t' '$1=="byte"&&$2=="span_facts"{print $7}'; }`.
@@ -18,6 +19,13 @@ Q2). The rest is text: the walk stops at `min(L, first accept)` (R-2), the listi
 and where it states a stretch (R-3, R-4), the controls table (R-5), the delivery bar (R-6,
 R-8..R-13). R-7 is moot; R-14 NOTED (§3.3). Rev 3 (lane `covcap4`: the anchored-machine
 reading, the slice deleted) is in git; findings by id: `docs/dev/lanes/covcap5_report.md`.
+
+**REVISION 4.1 (round covcap-r4: READY WITH LISTED TEXT FIXES; text only).** C9 reads the
+rows at `k` too, with a decline witness (FI-3, the one answer-relevant item); the listing's
+`k`/`exact_len` rule, loader and VALUE (FI-4, READY-2); S1131's witness (READY-1); the
+`MkEnd` fill bound (READY-3); x0.py's horizon (FI-5); the `marked` guard dropped as C5's own
+test (FI-6); the INTO rule (READY-5); the owner example (FI-1), a dead clause (FI-2), cites
+and the grep rule (READY-4). Mapped by id: `docs/dev/lanes/covcap6_report.md`.
 
 **R5 (owner, 2026-11-15, amends "no length bound"; D198 (g)):** "Practically, we might need
 a max span length then. I don't want edge cases to ruin the concept. Something sufficiently
@@ -157,7 +165,8 @@ reachability to an accept in any form or through the view-gated final newline), 
 by a per-(state, count) stamp (rev 3 kept today's linear dedup, quadratic in rows; R-2).
 At depth `j`:
 1. No rows, or a view-gated newline consumed at `j - 1`: the walk ends, `k = j`.
-2. Some row accepts in any form: the walk ends, `k = j` (C10/C11 then read the rows at `k`).
+2. Some row accepts in any form: the walk ends, `k = j`. C9 is checked on the rows at `k`
+   too: C9 checks depths 0..k inclusive, as `cc_eol` does today (FI-3); C10/C11 then read them.
 3. Otherwise each row's live next-byte set is computed (`kn_step` over the bytes, plus `\n`
    through the eol view; C9 is checked here, as the walk passes the depth). If every row's
    set is the same set `S_j`, depth `j` is EXACT and the walk goes on. The first depth where
@@ -174,7 +183,7 @@ the rows at `k` only when the walk reached an accept). The `why` therefore moves
 
 **THE BOUND ON THIS ROUTE: the anchored machine's state ceiling (R-1).** The walk reads
 `Job.adfa`, which is built only when it fits `PCREC_ANCHORED_MAX_STATES`
-(`compile.c`'s anchored build, `cc_anchored`); every walked row is live and the walk ends
+(`compile.c`'s `build_anchored_dfa`; where it is absent, C4 `cc_anchored` in `known.c` declines); every walked row is live and the walk ends
 by the shortest path to an accept, so `k <= V - 1 <= 4095`. The row as `limits.def` has it:
 
     PCREC_LIMIT(PCREC_ANCHORED_MAX_STATES, 4096, "states", "compile budget", BUILD_D, "",
@@ -191,9 +200,10 @@ it equal to `PCREC_MAX_DFA_STATES_TABLE` contradicts limits.h's "lower than": st
 PAST THE CEILING: no anchored machine is built, C4 declines `anchored-A`, no exact stretch
 comes from this reading (`exact_len` 0) and the pattern runs exactly as it does today. That
 is today's behaviour, not a new drop, but it IS a step: `a{4095}` states 4095 positions,
-`a{4096}` states 0 (PREMISE, the report). The ceiling counts STATES, not positions, so wide
-machines meet it earlier (`a{2000}b{2090}` is walked, `a{3000}b{3000}` is not; the
-`PCREC_MAX_TABLE_ENTRIES` narrowing applies to a wide alphabet). A "fraction proven" reading
+`a{4096}` states 0 (PREMISE, the report). The ceiling counts STATES, not positions: a
+straight line meets it at 4096 positions (`a{2047}b{2048}` is walked, `a{2048}b{2048}` is
+not), a machine with many paths meets it sooner (`[ab]*a[ab]{12}`, 13 positions, gets no
+machine; `[ab]*a[ab]{11}` does). A "fraction proven" reading
 past the ceiling needs another producer (trigger [MATCH-KNOWN], §1.1 (iii)).
 
 **Why this walk** (rev 3, R4; covcap4's report has the comparison): it is the walk the
@@ -234,10 +244,14 @@ home is `INTERNAL_H`, not `limits.h` (R-10).
 island NFA and a marked accept (`end-mark`). Believed subsumed: an erased NFA widens the
 language, so its finisher is not the DFA (C1); a marked accept means a tagged machine (C5);
 an island machine is character-stepped. No counterexample in 72 decisions over 48 shapes
-(V-10), but not shown, so rev 4 KEEPS them as three lines at the top of `cc_anchored`, each
-declining `anchored-A` with its own detail (`erased`, `island`, `marked`); the build counts
-each over the census (expected 0) and §5.2's INTO list carries `exact/producer-unstated`
-(expected 0). Dropping them is a later cleanup once a count and an argument show it.
+(V-10), but not shown, so rev 4 KEEPS two as lines at the top of `cc_anchored`, each
+declining `anchored-A` with its own detail (`erased`, `island`). The `marked` guard is C5's
+own test (`kset.c`'s guard is `dfa.c`'s `tagged`, which C5 `cc_unmarked` reads), so it is
+not repeated (FI-6). The build counts each over C4's population, which is larger than the
+one V-10 measured (compiles that reached C8): a count above 0 there is a `why` move from
+C5-C7 into `anchored-A/erased|island`, listing-only (§5.2), not a lost cover. §5.2's INTO
+list carries `exact/producer-unstated` (expected 0). Dropping the two is a later cleanup
+once a count and an argument show it.
 
 ### 3.2 "A branch ends it", at language level (C-22)
 
@@ -263,15 +277,17 @@ compiles, rev 2's subset reading 4, this reading 0.
   Stage 1 adds C15 (§3.5).
 - C8 `exact`: the walk did not stop at a branch (`exact_len = k`); otherwise
   `exact/machine-inexact`. Its kind becomes `machine`; its `span fact` reading goes. C8 keeps
-  its id and its `why`.
+  its id and its `why`. It is decision-redundant at rev 4: the rows at a branch stop never
+  accept, so C10 declines whatever C8 declines; C8 names the `why` (READY-1, §5.4).
 - C12 `utf8-start` reads the record's `S_0`; its kind `span fact` becomes `machine`.
 - THE RECORD (R-3). `pcrec_cover`'s memo keeps, on EVERY decision it makes (cover or
-  decline): `why` (conjunct and detail), `k` and `exact_len` (`uint16_t`; 0 where not
-  reached), `stop` (`accept`, `branch`, `empty`, `view`) and `S_0..S_{exact_len-1}` in an
+  decline): `why` (conjunct and detail), `k` and `exact_len` (`uint16_t`, each with a
+  known/not-known mark), `stop` (`accept`, `branch`, `empty`, `view`; `-` where no walk ran)
+  and `S_0..S_{exact_len-1}` in an
   arena owned by the Job (32 bytes per depth; freed with the Job). Today the walk is a stack
   local and `MkEnd` (`uint8_t k`, `set[32][32]`) is written only when C8 holds; at stage 1
-  `MkEnd` keeps its shape (C15 bounds `k <= 32`) and is filled from the record when the
-  decision is `cover`. One compile may decide more than once (`[a-c]*\ba`: `anchored-A`,
+  `MkEnd` keeps its shape (C15 bounds `k <= 32`) and is filled from the record before C13
+  reads it (`cc_served` -> `pcrec_cover_site` -> `cover_window`), under §3.5's bound. One compile may decide more than once (`[a-c]*\ba`: `anchored-A`,
   then a later part): the record is the compile's LAST decision per encoding.
 - THE LISTING. `--emit-facts` loses the `span_facts` row. A new section `cover` (a new
   `facts_listing.md` section after its §4.4, and `cover` added to [3¶3]'s closed name set),
@@ -280,12 +296,15 @@ compiles, rev 2's subset reading 4, this reading 0.
   or empty. Where the memo was never asked (an earlier LOCATE row won: `ab$`, `^ab`), the
   row reads `why` `unasked`, `k` and `exact_len` `-`; the listing never runs the cover
   decision itself (no kit ask after the artifact, facts_listing.md [5¶2]). Where C1-C6
-  fail: the `why`, `exact_len` 0.
+  fail: the `why`, with `k` and `exact_len` by the rule below.
 - WHERE A STRETCH IS STATED (R-4). `exact_len` and `sets` are stated only where X0 can check
   them: the decision is `cover`, or the pattern's width is bounded (`width` fact
-  `[wmin, wmax]`, `wmax` finite), and X0's search is given `wmax` as its horizon. Other rows
-  read `exact_len` `-`; the build counts stated, checked and unstated rows over the census
-  (K35). The definition of a stated stretch is ¶7c's, unchanged: for every `d < exact_len`
+  `[wmin, wmax]`, `wmax` finite), and X0's search is given `wmax` as its horizon (a stage-1
+  build item, FI-5: `x0.py`'s `stated()` gains a `wmax` column and passes `horizon=wmax` to
+  `explore`, its header's row-format note says so; beside the `z2.py` re-point). Other rows,
+  C1-C6 declines included, read `exact_len` `-`; 0 is listed only where it is checkable.
+  `k` is listed where `stop` is `accept` or `view`, else `-` (FI-4). The build counts
+  stated, checked and unstated rows over the census (K35). The definition of a stated stretch is ¶7c's, unchanged: for every `d < exact_len`
   the matches' length-`(d+1)` prefixes are exactly the product and no match ends before
   `d + 1`. The section also makes the cover `why` visible in the default build, which the
   mover prediction reads (§5.2, C-15).
@@ -315,7 +334,10 @@ It is a later row after this one.
   read from the kit's constants, so `cover_window` never writes past `mf_wspan.set[]` (K7).
   pcrec has no bound of its own. Named build item (R-13): `cover_window` checks the span
   length BEFORE its position writes (`window_bounds_check` first, or at its top), so a
-  missing C15 is the named internal error, not an overrun of `mf_wspan.set[32..]`.
+  missing C15 is the named internal error, not an overrun of `mf_wspan.set[32..]`. Named
+  build item (READY-3): the `MkEnd` fill from the record copies only for
+  `k <= MF_MAX_SPAN_POS`, else the same named internal error, so plant (d) and
+  `a{40}(?:b|cc)` (k = 41) never write past `MkEnd.set`.
   Cover movers: `k` 25..32, and the 18 k = 1 compiles (§2).
 - **Stage 2 (after the kit's answer to §4.3).** A counted seam up to 4095 positions (the
   state ceiling, §3.1); C15 retired like C2 (id kept, absent). `cover_window` and
@@ -413,8 +435,9 @@ Stage 1:
   never disappears) and its `decline:` reasons leave §4.1.3¶3; [3¶3]'s closed name set gains
   `cover` (R-3); a new section `cover` after §4.4 defines §3.3's section: its columns, the
   `unasked` row, where a stretch is stated (§3.3 R-4), ¶7c's product definition carried
-  over word for word, and one sentence: a pattern whose anchored machine is not built states
-  `exact_len` 0. §4.1¶2's sentence on the `cover` row's reading of `span_facts` is rewritten
+  over word for word, the `k`/`exact_len` listing rule (§3.3 FI-4), and one sentence: a
+  pattern whose anchored machine is not built lists `exact_len` 0 where its width is
+  bounded, `-` otherwise. §4.1¶2's sentence on the `cover` row's reading of `span_facts` is rewritten
   to the machine reading.
 - `cli.md` §2.6 describes `--list-limits` generically and names no row: no hunk (the gone
   row and the `desc` text show in its output). The `kind` vocabulary is untouched (R-7 moot).
@@ -450,13 +473,14 @@ The prediction comes from the BASELINE build only, read from the trace build's `
 record (`PCREC_KIT_PROOF_TRACE=1` on the trace binary; `k=0` on a decline, so the width is
 read from the `width` fact of the same compile): INTO the cover, every decision whose `why`
 is `exact/producer-short` or `exact/producer-unstated` (expected 0, §3.1 R-9), or
-`fixed-width` with the width's LOWER bound `wmin` in 25..32 at stage 1 (`wmin <= 4095` at
+`fixed-width` with the width's LOWER bound `wmin <= 32` at stage 1 (`wmin <= 4095` at
 stage 2; R-8: C7 reads the first-accept depth, so `a{32}|a{32}b` and `x{31}(?:y|yz)`,
-width `[32,33]`, move). That is an UPPER bound: C9-C15 never ran on those decisions, so the
+width `[32,33]`, move; READY-5: a dead short arm puts that depth above `wmin`, as in
+`a\z\W|b{32}`, width `[2,32]`, first accept 32). That is an UPPER bound: C9-C15 never ran on those decisions, so the
 deliverable lists each predicted compile that does not move with the candidate's `why` (at
 stage 1 the bench's `wild-logparse-quotedstring-noatomic` is one, §2). OUT of the cover:
-none. A `why` that moves from `fixed-width` to `exact/machine-inexact` (§3.1) moves no
-artifact. No `k >= 25` floor is claimed for gains below 25 (the 18 k = 1 compiles are in
+none. A `why` that moves from `fixed-width` to `exact/machine-inexact` (§3.1), or from
+C5-C7 into `anchored-A/erased|island` (§3.1 FI-6), moves no artifact (listing only). No `k >= 25` floor is claimed for gains below 25 (the 18 k = 1 compiles are in
 the prediction by their `why`). The listing is not predicted (it changes form, §3.3); its
 values are checked by §3.6 Q2's table instead (C-15's downgrade).
 
@@ -466,7 +490,9 @@ values are checked by §3.6 Q2's table instead (C-15's downgrade).
   at 32, 40, 100; `\d{32}` under `u`. Stage 1: cover through 32, decline from 33
   (`statement-fits`). Stage 2: cover at every length the machine holds. `ab|abc|ad` cover;
   `(?:S(?i:ab)|(?i:sab))` cover (byte); `[a-c]*\ba` cover (a k = 1 gain);
-  `a[xy]c|b[xy]d` decline `exact/machine-inexact`. The existing
+  `a[xy]c|b[xy]d` decline `exact/machine-inexact`; `a(?:b|c)(?:$|q(?<=x))` decline
+  `no-eol-view` (FI-3: its one non-identity eol view sits on the row at `k`, so a plant
+  that drops depth `k` from C9 flips it; PCRE2 matches `ab\n` at (0,2)). The existing
   `(?:[a-z]{0,3}\z|x)[0-9]{3}` rows (Z2 ruling 1) are unchanged.
 - `facts` (the listing's `cover` section, compared whole; the loader in `run_cover.sh`
   reads the new section, a named loader change): the 6 existing rows keep their values on
@@ -475,14 +501,18 @@ values are checked by §3.6 Q2's table instead (C-15's downgrade).
   `31:` + 30 × `97` + `,[2]`, `ab|abc|ad` `2:97,[2]`, `a*?a` `1:97`, `(?:\bab|\Bac\z)` `0`
   (`entry-const/seeds`), `a(?:b|c\z\W)` `2:97,98` (plant (c)'s witness, R-11), and the
   ceiling's pair (R-1): `a{4095}` `4095:` + 4095 × `97` (generated by the build) and
-  `a{4096}` `why` `anchored-A`, `0`. The loader in `run_cover.sh` selects the new section by
-  `$2 == "cover"` and reads the §3.3 columns (R-3). Every value is written in full in `cases.tsv` (no prefixes).
+  `a{4096}` `why` `anchored-A`, `0`; and `ac|bd` (S1131's witness, READY-1; `why`
+  `exact/machine-inexact`, the build writes its value). The loader in `run_cover.sh` tracks
+  the `#section cover` line (listing rows carry no section name) and keys each row on `$1`,
+  the encoding (READY-2). A `facts` VALUE on this section is the row's `why | k | exact_len |
+  sets` columns, tab-joined; the short forms above give `exact_len:sets`, and the build
+  writes every value in full in `cases.tsv` (no prefixes).
 - `answer`: per length `n` of the verdict rows: subjects of `n-1`, `n`, `n+1` bytes, a near
   miss at the last position, a match at the subject end, two adjacent matches, every
   startoffset; expectations from libpcre2 via `gen_answers.sh`. Answer rows at `n >= 33`
   land at stage 2 (at stage 1 they fail their REACH, which requires `cover`).
 - Floors (`run_cover.sh`: verdict 24, facts 6, answer 55) rise by the rows added (facts
-  by 9, to 15); no row is
+  by 10, to 16); no row is
   removed (rev 2's loss of four answer rows does not happen).
 
 ### 5.4 Sabotage rows (mech arm `kitproof`), each with a unique witness (C-17)
@@ -495,10 +525,13 @@ values are checked by §3.6 Q2's table instead (C-15's downgrade).
 | (d) C15 removed (stage 1 only) | K7 | the 40-literal `verdict` compile goes red: `window_bounds_check`'s named internal error, after §3.5's R-13 reorder (before it, the red was an overrun) | nothing else states a 40-position span at stage 1 |
 | (f) a byte added to a stated `S_0` | §3.6 Q2's hull containment | the trace build's hull check fires on `facts` `a*?a` | the only plant that widens a set; (c) is told apart by its value |
 
-S1131 (C8 skipped) keeps its witness `ac|bd`; its `SAB_AFTER` copies `w.set` by
-`sizeof end.set` and is re-anchored on the record's counted copy. S1136 and S1139 anchor
-on `cc_eol`'s loop over retained rows, which §3.1 removes: both re-anchor on the walk's
-per-depth C9 check (R-12). S1149 (`slice ctx passthrough`) plants into the deleted slice:
+S1131 (C8 skipped): its `verdict` witness `ac|bd` cannot flip at rev 4 (C10 declines what
+C8 declines, §3.3), so its witness becomes the `facts` row `ac|bd`, whose VALUE carries the
+`why` (`exact/machine-inexact` -> `end-at-k` under the plant), with the REACH record below
+(READY-1); its `SAB_AFTER` copies `w.set` by `sizeof end.set` and is re-anchored on the
+record's counted copy. S1136 and S1139 anchor on `cc_eol`'s loop over retained rows, which
+§3.1 removes: both re-anchor on the walk's C9 check at depths 0..k inclusive, the rows at
+`k` included (R-12, FI-3). S1149 (`slice ctx passthrough`) plants into the deleted slice:
 the row retires with its code (its id stays absent), its three `facts` witnesses stay as
 `cover`-section rows, and the cloud tables drop it by regeneration
 (`cloud_units_plan.py mech --write`: `tests/ci/cloud_mech_shards.tsv`,
@@ -519,13 +552,18 @@ every non-`.rxt` test for the moving shapes at each stage. Stale text the build 
 `ctx_span.md` §11 N-1, `compile.c`'s comment on `PCREC_ANCHORED_MAX_STATES` (§3.1), and the
 readers R-10 lists: `tests/kitproof/CLAUDE.md`, `cases.tsv`'s header row, `run_cover.sh`'s
 header, `kit_proof/CLAUDE.md`, `x0/CLAUDE.md`, `z2/CLAUDE.md` with `z2.py`,
-`fact_consumers_inventory.md`'s two `span_facts` rows, `memfn/window_site.md`'s `span_facts`
-line (a kit file: a request to the kit, not a pcrec edit), `src/facts/CLAUDE.md`'s three
-mentions and `emit_sweep.py`'s help text. (Rev 3's `span_runs_sheet.md` and
+`fact_consumers_inventory.md`'s two `span_facts` rows, `docs/design/memfn/window_site.md`'s
+`MkLang` sentence (pcrec's design record for the kit: a pcrec edit), `docs/design/memfn/CLAUDE.md`,
+`scripts/NOTES.md`, `src/facts/CLAUDE.md`'s three mentions and `emit_sweep.py`'s help text. (Rev 3's `span_runs_sheet.md` and
 `patfacts/inventory.md` hold no mention: struck, V-11.) Each is found by grepping
 `span_facts`, `MkLang`, `KN_CAP`, `pcrec_known_derive`, `PF_WHY_ERASED`, `PF_WHY_MARKED` and
 `PCREC_SPAN_WALK_SUBSETS`, which must reach 0 outside history. HISTORY is `docs/dev/history/`,
-`docs/dev/reviews/`, `docs/dev/lanes/`, the journal and `decisions.md`; a LIVING design note
+`docs/dev/reviews/`, `docs/dev/lanes/`, the journal, `decisions.md`, `plan.md` and
+`plan_completed.md`, the kit's ledgers (`memfn/docs/journal.md`, `responses.md`: pcrec cannot
+edit them), study data (`studies/selflip/sweep.tsv`), the Z2 build's evidence kept as run
+(`docs/design/kit_proof/conj.py`, `witnesses.txt`, `x0/results.md`, `z2/stated_built.tsv`)
+and the fixture `scripts/tests/emit_sweep.py.test` (`span_facts` as an arbitrary row name;
+READY-4); a LIVING design note
 that mentions them (`ctx_span.md`, `span_arms.md`, `alt_normal_form.md`,
 `window_contract.md`) keeps the mention with a dated "superseded by cover_cap.md rev 4" note
 beside it, and the grep counts unmarked mentions.
@@ -561,7 +599,7 @@ the owner, outside 20:00-01:00, after each stage lands.
 Rev 1 §1's inventory (in git at `75d365a0b`) stands for its sites. Rev 4's verdicts:
 - THE BOUND THAT BINDS (R-1; omitted from rev 3's inventory): `PCREC_ANCHORED_MAX_STATES`
   (4096 states, so `k <= 4095`), existing, labelled `compile budget`, derived in `limits.h`
-  (§3.1), with `PCREC_MAX_TABLE_ENTRIES`' narrowing on wide alphabets. Nothing is added.
+  (§3.1). Nothing is added.
 - GONE with the slice: P1 (the 24-deep exact loop), P2 (the 48-deep horizon), P3
   (`MkLang.set[24][32]`, `uint8_t exact_len`), P4 (`PCREC_SPAN_WALK_SUBSETS`, a budget that
   never binds on a straight line; its cliff is P2's at 49, §2). GONE: M1 `KN_CAP`; M2 the
@@ -600,7 +638,7 @@ from libpcre2 in 66,243,390 cells, `docs/dev/lanes/z2build_report.md`), which re
    a pattern of 4095 positions gets all 4095 proven, and a pattern of 4096 gets no machine
    and no proven positions at all; it runs exactly as it does today. The ceiling counts
    machine states, not positions, so a pattern with many different paths meets it sooner
-   (`a{3000}b{3000}` does). Rev 4 therefore adds NO new number: the existing ceiling is the
+   (`[ab]*a[ab]{12}`, whose matches are 13 characters long, does). Rev 4 therefore adds NO new number: the existing ceiling is the
    maximum span, about four times the longest stretch we test (1000), and a pattern past it
    is not made worse than today. Proving a FRACTION past it would need a different reading
    of the pattern, a later item. Leaning: accept the existing ceiling as the maximum, and
@@ -630,4 +668,4 @@ needs re-scoping. [DEC-LIMITS]'s trigger does not fire (a row is removed). The N
 - DROPPED: rev 2's kit ASK 2/ASK 3, FACT 3 and kit-bound list (C-24), "cliff near 511"
   (C-9) and four cover losses; rev 3's `PCREC_MAX_EXACT_SPAN`, outcome 4, plant (e) (R-1).
 - Earlier dispositions: `docs/dev/reviews/2026-11-15-r2-covcap0.md`, `2026-11-15-r5-covcap-r2.md`,
-  `2026-11-15-r6-covcap-r3.md`.
+  `2026-11-15-r6-covcap-r3.md`, `2026-11-15-r7-covcap-r4.md`.
