@@ -151,11 +151,28 @@ static void c_stamp_int(void *u, const char *name, long long value)
     (void)u; (void)name; (void)value;
 }
 
+/* Lane mfind's fixtures: the art's CPU target (a kit token; NULL the
+ * portable one) and a test-only lever (NULL none), set around one render;
+ * a fixture at a target admitting a level gets the bracket ops, written as
+ * markers (the host's region is not the fixture's). */
+static const char *fx_target, *fx_lever;
+static void s_simd_open(void *u, int level)
+{
+    char b[48];
+    snprintf(b, sizeof b, "/* simd_open %d */\n", level);
+    s_puts(u, b);
+}
+static void s_simd_close(void *u) { s_puts(u, "/* simd_close */\n"); }
+
 static mf_sink sink_of(Text *t)
 {
     mf_sink s = { .u = t, .puts = s_puts, .vprintf = s_vprintf,
                   .cmt_open = s_cmt_open, .cmt_close = s_cmt_close,
                   .cstr = s_cstr, .legend_byte = s_legend };
+    if (fx_target) {
+        s.simd_open = s_simd_open;
+        s.simd_close = s_simd_close;
+    }
     return s;
 }
 
@@ -167,7 +184,10 @@ static mf_art *art_begin(mf_arena *a, const char *pfx, uint64_t denies,
                          const mf_measures *ms, const mf_analysis *an)
 {
     mf_art *art = mf_art_begin(a, pfx, denies, ms, an);
-    return art && !mf_art_target(art, mf_portable_target()) ? art : NULL;
+    const mf_target *t = fx_target ? mf_target_parse(fx_target, strlen(fx_target), NULL, 0)
+                                   : mf_portable_target();
+    if (!art || mf_art_target(art, t)) return NULL;
+    return !fx_lever || !mf_lever(art, fx_lever) ? art : NULL;
 }
 
 /* ---- the hooks ------------------------------------------------------------ */
@@ -2871,6 +2891,26 @@ int main(int argc, char **argv)
     t_byte(&s.pred.term[1], 1, 'e');
     s.pred.plan_hint = 0;
     bad |= render(dir, "ofs-scan0", &s, "rx_ofsskip");
+
+    /* lane mfind: the inline one-member finder, reached by the test-only
+     * lever `mfind` alone (rows.tsv's fn-mfind, mfind-w16, mfind-w32): a
+     * byte at 0 scanned, a byte at 2 verified; at the portable target the
+     * SWAR body, at x86-64 its w16 helper, at x86-64-v3 w32 over w16; the
+     * control the same site with no lever (fn-memchr) */
+    for (int f = 0; f < 4; f++) {
+        static const char *const nm[] = { "ofs-mfind-off", "ofs-mfind", "ofs-mfind-w16",
+                                          "ofs-mfind-w32" };
+        static const char *const tg[] = { NULL, NULL, "x86-64", "x86-64-v3" };
+        s = ofs_site();
+        s.pred.nterm = 2;
+        t_byte(&s.pred.term[0], 0, '.');
+        t_byte(&s.pred.term[1], 2, 'z');
+        s.pred.plan_hint = 0;
+        fx_target = tg[f];
+        fx_lever = f ? "mfind" : NULL;
+        bad |= render(dir, nm[f], &s, "rx_mfind");
+        fx_target = fx_lever = NULL;
+    }
 
     /* ofsskip: a masked run scanned on a two-member cube: the pair leapfrog */
     s = ofs_site();

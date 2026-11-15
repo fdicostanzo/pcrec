@@ -221,3 +221,15 @@ precheck	pre-wide-every-pos	def	841	e64e7a7fc794fb91ea63e5e1ecd03131882023564777
 precheck	pre-wide-every-pos	use	102	905b974bc47dc65c20f72919e3549cf33b6f214f9f75ccda3aea7265988b4df2
 precheck	pre-wide-findable	def	1097	24a687e5442b422412dc4d260608b4e006ec6e5197c6c6c4a37fb6cb5df3360e
 precheck	pre-wide-findable	use	102	905b974bc47dc65c20f72919e3549cf33b6f214f9f75ccda3aea7265988b4df2
+# lane mfind ADDED (no row re-pinned): ofs-mfind-off (the control, fn-memchr), ofs-mfind (the
+# inline one-member finder's SWAR body under the test-only lever `mfind`), ofs-mfind-w16 and
+# ofs-mfind-w32 (its helpers at x86-64 and x86-64-v3, the bracket ops written as markers), all through
+# form id ofsskip; digests of arm_fixtures.c's output at the lane's commit (sha256sum of each part).
+ofsskip	ofs-mfind-off	def	1506	59d9962291bfd193003c8b9cf88dd4cf7b0f482ca59ab80cbf48fb229d484547
+ofsskip	ofs-mfind-off	use	46	61315c62957c5a8dcdb45d0c55c7b896994dbcfe0a73b30abd3289697737c8e7
+ofsskip	ofs-mfind	def	2501	e54b3de683fe857806e7773e18cf1d82730398a2a305b468b2c0c3ff56ee0632
+ofsskip	ofs-mfind	use	46	61315c62957c5a8dcdb45d0c55c7b896994dbcfe0a73b30abd3289697737c8e7
+ofsskip	ofs-mfind-w16	def	3478	b853882aae3984d3b930a775fef2015bd1e021b2fc5a9fbf1fd85fef58e647ec
+ofsskip	ofs-mfind-w16	use	46	61315c62957c5a8dcdb45d0c55c7b896994dbcfe0a73b30abd3289697737c8e7
+ofsskip	ofs-mfind-w32	def	4441	81f659caa1a802804a807e648458bc94ccf7c2444f45a0562babbf342138f61c
+ofsskip	ofs-mfind-w32	use	46	61315c62957c5a8dcdb45d0c55c7b896994dbcfe0a73b30abd3289697737c8e7
