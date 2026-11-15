@@ -829,3 +829,11 @@ take part in the match itself; where a count test must be compiled into the matc
 operand inside a larger pattern), the compiler refuses the `count()` form with a message naming the `occurs` form,
 whose bounded shape compiles to states (cost shown for large bounds). SUPERSEDES the "OPEN, lean = spell it through
 `occurs`" sentence of the two-kinds entry above. "perhaps" = a lean, not final.
+**2026-11-15 RULING — when `count()` gives way to `occurs`: by BUDGET, not by rule (Frank, to session 132; answers
+the manager's "until you can't" reading above, which is WITHDRAWN).** His words: "i would refuse count() on budget or
+as a recommended way to reduce states rather than rules". RECORD: there is NO positional rule that forbids `count()`
+(not "never in a set position"). `count()` is accepted wherever it is written; the compiler refuses it only when
+building it exceeds the budget (the state cost), and the refusal names `occurs` as the fix. Below the budget, `occurs`
+may be RECOMMENDED (a warning or note) as the way to reduce states. Manager's note (mine): this follows the standing
+preference for measured budgets over structural rules; the budget is a labelled, measured quantity, and what `occurs`
+saves over `count()` for the same test is a question for the lowering section of the spec.
