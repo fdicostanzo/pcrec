@@ -959,3 +959,13 @@ thinks about what the ambiguity means and VALIDATES it with a compile-time check
 placeholder; the draft's assertion library is the home); the `label.ambiguous` warning stays as the pointer to it.
 (3) `search` gets `min` only for now (default 0; `min = 1` = at least one hit); `max` is LEFT OUT until a case needs
 it ("skip it for now"); "at most N hits" stays a count test.
+**2026-11-15 RULINGS — `min` is 0 or 1; the ambiguity warning is for the author's own text (Frank, to session 132;
+answers the two questions of the rev 9 lane).** His words: "1. yes. Keep the wording and we can adjust later. (No
+argument types so not sure formal way to express limit). 2. agree".
+RECORD: (1) `search`'s `min` setting takes 0 or 1 only (a larger value makes PCRE re-cut the hits: `aab` searched for
+`aab|a` is one hit, but "at least 2" yields `a`, `a`); "at least N hits" is the count test. The NAME `min` and the
+wording stay for now, to adjust later; with typed parameters out of phase 1 there is no formal way to state the limit
+in the signature, so it is a stated rule of the library entry with a compile error for other values (the last clause
+is the manager's reading). (2) The `label.ambiguous` warning fires only for ambiguity in the author's OWN pattern
+text; a library body states and tests its own reading. Both confirm rev 9's leans; no text change beyond the STATUS
+marks.
