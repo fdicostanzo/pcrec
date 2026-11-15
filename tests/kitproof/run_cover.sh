@@ -8,8 +8,10 @@
 #   verdict  the artifact's RX_DFA_SCAN reads "cover" (or does not): the
 #            cover_conj[] decision, held to kit_proof.md §1's table as the
 #            witness list states it;
-#   facts    build/pcrec --emit-facts' span_facts value: the span slice's
-#            statement, each one held green against libpcre2 by x0.py stated;
+#   facts    build/pcrec --emit-facts' `cover` section row (facts_listing.md
+#            §4.5): the cover decision's why and its exact stretch, read off
+#            the anchored machine, every stated stretch held green against
+#            libpcre2 by x0.py stated (cover_cap.md §3.6 Q2);
 #   answer   rx_search at every startoffset and match_api.md §3.1.3's find-all
 #            loop, every group span, against answers.tsv (libpcre2 10.46's
 #            answers, committed by gen_answers.sh). Every answer pattern must
@@ -17,7 +19,8 @@
 #            did not take the row would test today's search, not `cover`.
 # THE INDEPENDENT CONTROLS: the answers are libpcre2's, written by a program
 # (oracle.c) that knows no pcrec; the facts values are the ones X0's stated
-# check holds against libpcre2; the verdicts are kit_proof.md's witness list.
+# check holds against libpcre2; the verdicts are kit_proof.md's witness list
+# and docs/design/cover_cap.md §5.3's.
 #
 # Usage: bash tests/kitproof/run_cover.sh [ROOT]
 set -u
@@ -80,9 +83,14 @@ while IFS=$'\t' read -r kind fl pat val why; do
         facts)
             nf=$((nf + 1))
             # shellcheck disable=SC2046
+            # the `cover` section's row for the case's encoding: listing rows
+            # carry no section name, so the loader tracks the `#section` line
+            # and keys the row on $1 (cover_cap.md §5.3 READY-2)
+            enc=byte; case "$fl" in *u*) enc=utf8 ;; esac
             got="$("$TIMEOUT_BIN" 60 "$P" --features all $(flags "$fl") --emit-facts --pattern "$pat" 2>/dev/null \
-                   | awk -F'\t' '$2 == "span_facts" { print $7 }')"
-            [ "$got" = "$val" ] && ok || bad "facts $fl $pat: span_facts \"$got\", expected \"$val\" ($why)"
+                   | awk -F'\t' -v enc="$enc" '/^#section / { sec = substr($0, 10); next }
+                                               sec == "cover" && $1 == enc { print $2 "|" $3 "|" $4 "|" $5 }')"
+            [ "$got" = "$val" ] && ok || bad "facts $fl $pat: cover \"${got:0:200}\", expected \"${val:0:200}\" ($why)"
             ;;
         answer) ;;
         *) bad "cases.tsv: unknown kind $kind" ;;
@@ -130,9 +138,9 @@ print("ok %d" % len(wa))' "$want" "$got")"
 done < "$here/answers.tsv"
 
 # K35: the populations are counted, never assumed
-[ "$nv" -ge 24 ] && ok || bad "only $nv verdict rows (floor 24)"
-[ "$nf" -ge 6 ] && ok || bad "only $nf facts rows (floor 6)"
-[ "$na" -ge 55 ] && ok || bad "only $na answer rows (floor 55)"
+[ "$nv" -ge 47 ] && ok || bad "only $nv verdict rows (floor 47)"
+[ "$nf" -ge 16 ] && ok || bad "only $nf facts rows (floor 16)"
+[ "$na" -ge 105 ] && ok || bad "only $na answer rows (floor 105)"
 echo "kitproof: $nv verdicts, $nf facts, $na answers ($ncell cells)"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
