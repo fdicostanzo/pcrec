@@ -5,7 +5,7 @@ Lane fixposts2 (sonnet), branch lane/fixposts2 from main 3ed7d9d71. Subject: `do
 ## STATE AT HANDOFF
 
 All dispositions applied and committed; no rulings-file entries (the file is absent). Validation that needs the box is
-queued and OWED (below). `make strict` is clean; `make test-codegen` result is in VALIDATION. The cloud `make test` is
+queued and OWED (below). `make strict` is clean; `make test-codegen` passed. The cloud `make test` is
 dispatched as the last act and is OWED. FLOORS-4 is the kit's and was not touched.
 
 ## FIXES BY ID
@@ -53,7 +53,7 @@ dispatched as the last act and is OWED. FLOORS-4 is the kit's and was not touche
 - `make strict`: clean (rc 0).
 - `scripts/m6read_check_sab_anchors.py`: 1299 rows, all anchors resolve.
 - `scripts/plan_lint.sh`: 348 rows, 0 violations.
-- `make test-codegen`: see the line added below at hand-off.
+- `make test-codegen`: rc 0, `run_group: 21/21 scripts passed` (log scratch/fixposts2/codegen.log).
 - S3012 reach figures (clean 200/200, planted 157/200): hand-built plant lib, scratch only.
 
 ## OWED
