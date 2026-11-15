@@ -5,7 +5,7 @@
 # Expected route: _REQ_WHY "dominated", no `@`. Every m/n line is python3 `re`
 # verified. `x.(?:cat|dog)` also states a JOINT SUPERSET run {c,d}{a,o}{t,g}
 # (§6.3.7¶7a): `cog`, `dat`, `cag` hold every position's set and must not match.
-# arms: --memfn=no-fd-pres-g1 (moves 2 of 2 blocks; no-run-verify-wide, no-window-search and no-fd-pres-pick move 0 of 2); measured 2026-11-15, FLOORS-1)
+# arms: --memfn=no-fd-pres-g1; inert identity control: no-run-verify-wide, no-window-search, no-fd-pres-pick
 
 # route (default arm, this build): _REQ_WHY "dominated" _REQ_HANDOFF "none" _REQ_RUN "[6364][616f][6774]" _ENGINE "dfa" _DFA_PREFILTER "memchr" _DFA_PREFILTER_OFFSETS "none"
 pattern x.(?:cat|dog)

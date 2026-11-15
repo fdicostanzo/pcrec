@@ -123,6 +123,8 @@ FRAME_CLASS_FLOORS="fn:48 pair:368 hors:118 libc:615 walk:113 method:1446 table:
 # with R's stop at no greater mass (and winning), and a meet that moves R's stop (measured
 # lever 159 set 60 set_won 15 meet 67), each floor the measure less ~10%.
 INRUN_FLOORS="lever:143 set:54 set_won:13 meet:60"
+# the --reach probe's floor on the in-run sites the filter decides (measured 43 of 200, less ~10%)
+REACH_DECISIVE_FLOOR=38
 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
@@ -364,12 +366,18 @@ if [ "${1:-}" = "--reach" ]; then
     mkdir -p "$WORK/reach.out"
     "$TIMEOUT_BIN" 300 "$WORK/reach.gen" "$SEED" "$NSITES" "$WORK/reach.out" > "$WORK/reach.gen.log" 2>&1 \
         || { echo "the generator failed"; exit 1; }
-    # MEASURED, not requested (review 2026-11-15 r1 posts2 PLANTS-1): the in-run sites the
-    # generator rendered, and how many of them the library's stop agrees with the reference's
-    # on; a build that loses the in-run filter (S3012) prints a smaller second figure
+    # MEASURED, not requested (reviews 2026-11-15 r1 posts2 PLANTS-1, r3 fixposts2 CHECKS-1): the in-run
+    # sites the generator rendered, how many of them the in-run filter DECIDES (the reference's
+    # scan without the filter picks another stop), and how many the library's stop agrees with
+    # the reference on. The token prints only where the decisive population holds its floor and
+    # every rendered site agrees, so a clean tree prints it and a build that loses the filter
+    # (S3012: agree falls below rendered) does not.
     r=$(grep -oE 'in-run rendered [0-9]+' "$WORK/reach.gen.log" | head -1 | grep -oE '[0-9]+$')
+    f=$(grep -oE 'filter-decisive [0-9]+' "$WORK/reach.gen.log" | head -1 | grep -oE '[0-9]+$')
     m=$(grep -oE 'stop agreeing with the reference [0-9]+' "$WORK/reach.gen.log" | head -1 | grep -oE '[0-9]+$')
-    [ "${r:-0}" -ge 100 ] && echo "REACH-G2W-INRUN rendered=$r agree=${m:-0}"
+    echo "reach: rendered=${r:-0} decisive=${f:-0} agree=${m:-0}" >&2
+    [ "${r:-0}" -ge 100 ] && [ "${f:-0}" -ge "$REACH_DECISIVE_FLOOR" ] && [ "${m:-0}" -eq "${r:-0}" ] \
+        && echo "REACH-G2W-INRUN rendered=$r decisive=$f agree=$m"
     exit 0
 fi
 

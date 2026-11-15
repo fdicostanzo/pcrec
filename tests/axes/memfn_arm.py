@@ -205,36 +205,37 @@ MEMFN_CLASS = {
     # letter are the witnesses below (RUNW_U8: all five rows; the ten-byte run is past
     # vrun-pad's 3 and 5-7, so pad takes the first three), single compiles at lane/s2land
     # 692e5f431, so the floors hold at their measured values: no floor lowered.
-    # FLOORS-3 (review 2026-11-15 r1 posts2): the utf8 floors count CORPUS patterns only now, the
-    # witness-only RUNW_U8 patterns being checked as witnesses (the old 15/15 and pad's 13/14 counted
-    # both, so a corpus loss of up to the witness count passed). Each is the old floor less the
-    # witnesses it contained (4; pad 3), a PROVISIONAL bound until `--measure` (its `corpus=`
-    # column) pins the exact corpus-only counts: owed, see lane fixposts2's report.
+    # FLOORS-3/CHECKS-4 (reviews 2026-11-15 r1 posts2, r3 fixposts2): the utf8 floors count CORPUS
+    # patterns only, the witness-only RUNW_U8 patterns being checked one by one as witnesses. That
+    # restates the old floors over a different population without tightening them (old 15 ==
+    # new 11 on the corpus), so they are pinned from the corpus-only counts recorded above (cloud
+    # axes 43535669918: utf8 c-default 12, c-vm 13; pad 10, 12). The exact re-measure (`--measure`,
+    # its `corpus=` column) is owed to boxqueue job 701-main-fixposts2-memarm.
     ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-kb", "simd"): ("DIFFER",
-        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 11, ("utf8", "c-vm"): 11},
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 12, ("utf8", "c-vm"): 13},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8 for st in ("c-default", "c-vm")]),
     ("vrun-pad", "default"): ("ASSERT_ZERO", {}, []),
     # vrun-pad utf8/c-default 14 -> 13 at D172 S3 (job 620, tri620.md): one caseless pattern
     # became a cover artifact, where the pad deny is inert; its siblings' 15 hold.
     ("vrun-pad", "simd"): ("DIFFER",
-        {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 10, ("utf8", "c-vm"): 11},
+        {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 10, ("utf8", "c-vm"): 12},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8_PAD for st in ("c-default", "c-vm")]),
     ("vrun-trim", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-trim", "simd"): ("DIFFER",
-        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 11, ("utf8", "c-vm"): 11},
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 12, ("utf8", "c-vm"): 13},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8 for st in ("c-default", "c-vm")]),
     ("vrun-w16", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-w16", "simd"): ("DIFFER",
-        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 11, ("utf8", "c-vm"): 11},
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 12, ("utf8", "c-vm"): 13},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8 for st in ("c-default", "c-vm")]),
     ("vrun-w32", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-w32", "simd"): ("DIFFER",
-        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 11, ("utf8", "c-vm"): 11},
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 12, ("utf8", "c-vm"): 13},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8 for st in ("c-default", "c-vm")]),
 }

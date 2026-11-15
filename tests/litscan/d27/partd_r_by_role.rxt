@@ -6,7 +6,7 @@
 # exact positions around the rarest exact byte; a wider position elsewhere
 # does not cost the rows: `xy/users\d+` takes `run-pinned`); part_d.md §9
 # item 1. Every m/n line is python3 `re` verified.
-# arms: -fno-run-prefilter (moves 8 of 9 blocks) | --memfn=no-run-verify-wide (5 of 9); no-window-search moves 0 of 9; measured 2026-11-15, FLOORS-1)
+# arms: -fno-run-prefilter | --memfn=no-run-verify-wide; inert identity control: no-window-search
 
 # The named witness: run-pinned, offsets 0*,1,..,7, _REQ_RUN with `@0`.
 # route (default arm, this build): _REQ_WHY "dominated" _REQ_HANDOFF "none" _REQ_RUN "78792f7573657273[30-39]@0" _ENGINE "dfa" _DFA_PREFILTER "run-pinned" _DFA_PREFILTER_OFFSETS "0*,1,2,3,4,5,6,7"

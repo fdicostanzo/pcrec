@@ -8,7 +8,7 @@
 # landmark and K are the head member's.
 # The route stamps each block's compile showed are recorded above it
 # (default arm; the other arms are answer-identity runs only).
-# arms: --memfn=no-run-verify-wide | --memfn=no-fd-pres-pick (each moves 1 of 4 blocks); no-window-search and no-fd-pres-g1 move 0 of 4; measured 2026-11-15, FLOORS-1)
+# arms: --memfn=no-run-verify-wide | --memfn=no-fd-pres-pick; inert identity control: no-window-search, no-fd-pres-g1
 
 # F1 + F2 (handoff route, member head). Position 0 is {a,c,e}: 3 members,
 # every other run position [a-z]: the run has no findable position, so it is

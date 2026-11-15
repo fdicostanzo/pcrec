@@ -1777,16 +1777,24 @@ done
 # a change with no public deny; its answers must equal the default's.
 # Selected by the empty AXES= or by its spelling.
 # The restore arms are DERIVED from src/facts/walk_arms.def (the one source of
-# the arm population; review 2026-11-15 r1 posts2 CONTRACT-4): an arm added
-# there is swept here without a second list to remember.
+# the arm population; reviews 2026-11-15 r1 posts2 CONTRACT-4, r3 fixposts2
+# CHECKS-2/3): read by the preprocessor, the .def's own reader, never a second
+# grammar, and counted both ways -- every row the comment-stripped text holds
+# is an arm read, and every arm read is a row -- or FATAL. An arm added there
+# is swept here without a second list to remember.
+WALK_ARMS_DEF="$ROOT_DIR/src/facts/walk_arms.def"
+walk_arm_names=$(printf '#define WALK_ARM(ID, name, facts) PCREC_ARM name\n#include "%s"\n' \
+                   "$WALK_ARMS_DEF" | gcc -E -P -x c - | sed -n 's/^PCREC_ARM "\([a-z0-9_]*\)"$/\1/p')
+walk_arm_read=$(printf '%s\n' "$walk_arm_names" | grep -c .)
+walk_arm_rows=$(gcc -fpreprocessed -dD -E -P -x c "$WALK_ARMS_DEF" | grep -v '^#' | grep -o 'WALK_ARM' | grep -c .)
+if [ "$walk_arm_read" -lt 1 ] || [ "$walk_arm_read" != "$walk_arm_rows" ]; then
+    echo "run_axes.sh: FATAL: $walk_arm_read WALK_ARM arms read from src/facts/walk_arms.def, its text holds $walk_arm_rows rows" >&2
+    exit 1
+fi
 INTERNAL_ARMS=("--harness=no-compound")
 while IFS= read -r walk_arm; do
     INTERNAL_ARMS+=("--harness=restore=$walk_arm")
-done < <(sed -n 's/^WALK_ARM([A-Z0-9_]*, *"\([a-z0-9_]*\)".*/\1/p' "$ROOT_DIR/src/facts/walk_arms.def")
-if [ "${#INTERNAL_ARMS[@]}" -lt 2 ]; then
-    echo "run_axes.sh: FATAL: no WALK_ARM rows read from src/facts/walk_arms.def" >&2
-    exit 1
-fi
+done <<< "$walk_arm_names"
 INTERNAL_ARMS+=("--harness=no-min-width")
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0

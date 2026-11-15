@@ -13,10 +13,10 @@ SAB_REACH_EXPECT='REACH-RUN-CHOICE'
 SAB_REACH_POP='tests/codegen/run_prechecks.sh|78797a77|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    RnChoiceCtx x = { w, a, b, 0 };'
+SAB_BEFORE='    RB_ROW_SCAN(i, w, rn_choice_rows, rn_choice_rows[i].row(w, &a, &b) != 0);'
 SAB_AFTER='    if ((a.off < PCREC_W_UNBOUNDED) != (b.off < PCREC_W_UNBOUNDED)) /* SABOTAGE S474 */
         return a.off < PCREC_W_UNBOUNDED ? a : b;
-    RnChoiceCtx x = { w, a, b, 0 };'
-# RE-ANCHORED (lane fixposts2, 2026-11-15, review r1 posts2 CONTRACT-1): the row scan is the shared `RB_ROW_SCAN` helper now; the plant sits at the top of `rn_better`, as before.
+    RB_ROW_SCAN(i, w, rn_choice_rows, rn_choice_rows[i].row(w, &a, &b) != 0);'
+# RE-ANCHORED (lane fixposts2, 2026-11-15, review r1 posts2 CONTRACT-1): the row scan is the shared `RB_ROW_SCAN` statement macro now (r3 fixposts2b: the catch-all is a default outside the table); the plant sits just before the scan in `rn_better`.
 # RE-ANCHORED (lane sar1fix, 2026-11-09, review r5): `rn_better` is now the first-match
 # `rn_choice_rows` loop; the plant puts the bounded preference before row 1.
