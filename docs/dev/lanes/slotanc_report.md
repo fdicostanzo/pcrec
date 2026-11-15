@@ -17,4 +17,5 @@ The `run.py dry J4` crash is independent of the planted rows (unplanted copy), s
 Likely cause: the TIMED-SHAPE call added by mcfixa/mcfixb (de4413cbb) assumes fc is set for every SLOT_GATE_TU TU; some J4 arm kinds return None.
 
 ## STATE AT HANDOFF
-Rulings applied: none (file empty). OWED: none (needs a fix lane for the J4 `fc` None in link.py:674, then a re-run of the full table).
+Rulings applied: none (file empty). (needs a fix lane for the J4 `fc` None in link.py:674, then a re-run of the full table).
+OWED: none
