@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# s486re: REACH_ONLY sweep of every mech row's reach probe on worktrees/s486re (main 75d365a0b + the S486 re-aim). Needs no plant builds.
+# Not ready 20:00-01:00 (Frank's box hold).
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/s486re
+case "${1:-}" in
+    --dry-run)
+        out=$(cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh 2>&1) ||
+            { printf '%s\n' "$out" | tail -3 >&2; exit 1; }
+        echo "would run in $TREE: REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh"
+        echo "boxqueue: cap 3600"; echo "boxqueue: patience 86400"
+        echo "boxqueue: expect none reason=exec'd, so the matrix's rc (rc=2 on an incomplete sweep, rc!=0 on an unreached row) is the job's rc"
+        exit 0 ;;
+    --ready)
+        h=$((10#$(date +%H)))
+        { [ "$h" -ge 20 ] || [ "$h" -lt 1 ]; } && { echo "20:00-01:00 box hold"; exit 75; }
+        exit 0 ;;
+esac
+cd "$TREE" || exit 1
+REACH_ONLY=1 exec bash tests/mech/run_sabotage_matrix.sh
