@@ -51,7 +51,11 @@ NAMED = [
 # (r17a_report.md, the figure beside each), ~10% below it.
 DOOR_CBM_FLOOR = 1179   # 1,574; 1,179 at D172 S3, pinned AT the measure (lane s3: the cover row
                          # took the fixed-width patterns, whose search reads no can_begin_match door)
-DOOR_SB_FLOOR = 70      # 78
+DOOR_SB_FLOOR = 68      # 78; 68 at [COVER-CAP] stage 1 (lane covs1u), pinned AT the measure: five corpus
+                         # patterns (a*\bA, [a-c]*\ba, [A-C]*\b[a-c], [a-z]*\b[0-9], \d{0,}?\B-) now take the
+                         # cover row, whose search reads no start_bytes door -- 10 passes (byte + utf8 arms)
+                         # left the population (78 -> 68, named by a before/after probe diff); the door
+                         # keeps its other 68 passes, the cover row's own checks hold the five
 DOOR_SS_FLOOR = 3100    # 3,441
 # The predicates seen (lane wsc6, D172 S2 commit 6; the figure beside it).
 PRED_FLOOR = 5300  # rq2's landing read 5,891 predicate records (4,643 + 1,111 + 137); each remains, now rank_n 0
