@@ -1236,6 +1236,12 @@ def parse_fact_moves(spec):
         if col == "row":
             moves.append((fact, None, frm, to))
             continue
+        # [COVER-CAP] stage 1 (lane covs1): `FACT:row:gone>` declares a GONE
+        # fact (one REF row per encoding, none in NEW); `NAME:section:>new` a
+        # NEW `#section NAME` block (in NEW only, absent from REF).
+        if col == "section":
+            moves.append((fact, "section", frm, to))
+            continue
         moves.append((fact, FACTS_COLUMNS.index(col), frm, to))
     return moves
 
@@ -1255,8 +1261,46 @@ def facts_declared_delta(c_a, c_b, moves):
     # A declared NEW fact (`FACT:row:>new`): REF has no row of it, NEW has
     # exactly one per encoding REF lists; those rows leave NEW and the rest
     # is judged as before.
-    new_facts = {m[0] for m in moves if m[1] is None}
-    moves = [m for m in moves if m[1] is not None]
+    new_facts = {m[0] for m in moves if m[1] is None and m[2] != "gone"}
+    gone_facts = {m[0] for m in moves if m[1] is None and m[2] == "gone"}
+    new_sections = {m[0] for m in moves if m[1] == "section"}
+    moves = [m for m in moves if m[1] is not None and m[1] != "section"]
+    def drop_section(lines, name):
+        """lines without the `#section NAME` block (to the next section or
+        the end), and whether it was there"""
+        out, inside, seen = [], False, False
+        for line in lines:
+            if line.startswith("#section "):
+                inside = line.split()[1] == name
+                seen = seen or inside
+            if not inside:
+                out.append(line)
+        return out, seen
+    for ns in sorted(new_sections):
+        al, in_ref = drop_section(al, ns)
+        bl, in_new = drop_section(bl, ns)
+        if in_ref:
+            problems.append("declared-new section %s already in REF" % ns)
+        if not in_new:
+            problems.append("declared-new section %s absent from NEW" % ns)
+        else:
+            n += 1
+    if gone_facts:
+        def fact_of_g(line):
+            f = line.split("\t")
+            return f[1] if not line.startswith("#") and len(f) > 1 else None
+        encs_g = {line.split("\t")[0] for line in bl
+                  if not line.startswith("#") and line.strip() and len(line.split("\t")) > 1}
+        for gf in sorted(gone_facts):
+            if any(fact_of_g(y) == gf for y in bl):
+                problems.append("declared-gone fact %s still in NEW" % gf)
+            got = [x.split("\t")[0] for x in al if fact_of_g(x) == gf]
+            if sorted(got) != sorted(encs_g & {"byte", "utf8"}):
+                problems.append("declared-gone fact %s: REF rows for %s, want one per %s"
+                                % (gf, ",".join(got) or "none", ",".join(sorted(encs_g & {"byte", "utf8"}))))
+            elif got:
+                n += 1
+        al = [x for x in al if fact_of_g(x) not in gone_facts]
     if new_facts:
         def fact_of(line):
             f = line.split("\t")
@@ -3450,7 +3494,9 @@ def main():
                          "moved to TO, nothing else moved; the stream is then "
                          "required at movers=0 and reports the declared count. "
                          "FACT:row:>new declares a NEW fact (one row per encoding "
-                         "REF lists, none in REF)")
+                         "REF lists, none in REF); FACT:row:gone> a GONE fact (one "
+                         "REF row per encoding, none in NEW); NAME:section:>new a "
+                         "NEW `#section NAME` block, judged both ways")
     ap.add_argument("--facts-encodings", metavar="LIST", default="byte,utf8",
                     help="the facts stream's --emit-facts encoding list (default "
                          "byte,utf8); `byte` holds a utf8-only change to the byte half")
