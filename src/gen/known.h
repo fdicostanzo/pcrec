@@ -1,16 +1,15 @@
 /* src/gen/known.h — [KIT-VERIFY] U1: what is KNOWN at a `cover` candidate
  * (docs/design/kit_proof.md §5.1; [MATCH-KNOWN]'s first member).
  *
- * Three records and one helper. `MkLang` is a PATTERN fact (src/facts,
- * `span_facts`); the two here are gen's:
+ * Two records, both gen's:
  *   - `MkEnd`, a MACHINE fact read off the route's anchored machine A
  *     (`Job.adfa`): the end at k, the context before and after, and A's own
- *     per-position sets, C8's other producer;
+ *     per-position sets, the statement the REPORT site makes;
  *   - `MkKnown`, a SUBJECT fact: a REFERENCE to the kit's class at the
  *     point `(at, src)`, never a copy of it.
- * `pcrec_known_derive` derives knowledge from them, never an admission: the
- * admission is `cover_conj[]` (known.c), read in order, whose first failing
- * row is the `why`. */
+ * The admission is `cover_conj[]` (known.c), read in order, whose first
+ * failing row is the `why`. The exact stretch has ONE producer, the walk of
+ * A (docs/design/cover_cap.md §3.1); its record is `PcrecCover`'s. */
 #ifndef PCREC_GEN_KNOWN_H
 #define PCREC_GEN_KNOWN_H
 
@@ -25,7 +24,7 @@ typedef struct {
     uint8_t  ctx_before[32];             /* C_{-1}: bytes whose entry is live  */
     uint8_t  ctx_after[32];              /* C_k: bytes before which k accepts  */
     uint8_t  absent_before, absent_after;  /* MkAbsent                         */
-    uint8_t  set[MF_MAX_SPAN_POS][32];   /* A's S_d, d < k (C8's control)      */
+    uint8_t  set[MF_MAX_SPAN_POS][32];   /* A's S_d, d < k (the walk's record)  */
     int      x;                          /* the EMITTED entry constant (s0)    */
     int      r0;                         /* the walk's one live entry row      */
 } MkEnd;
@@ -38,25 +37,33 @@ typedef struct {
     const mf_class *cls;                 /* NULL: nothing known              */
 } MkKnown;
 
-/* What follows from the three: knowledge, not admission. */
-typedef struct {
-    uint8_t prefix;       /* largest L <= exact_len with proven[d] ⊆ S_d, d < L */
-    int8_t  suffix_lo;    /* first offset of the trailing proven run, or -1     */
-    uint8_t ctx_proven;   /* bit 0: before, bit 1: after                        */
-} MkDerived;
-
-MkDerived pcrec_known_derive(const MkLang *lang, const MkEnd *end, const MkKnown *known);
+/* How the cover walk of A ended (cover_cap.md §3.1): at the first depth a
+ * row accepts (ACCEPT), one past a view-gated final newline (VIEW), where no
+ * live row is left (EMPTY), or at the first depth two rows allow different
+ * next-byte sets (BRANCH, the end of the exact stretch `L`). NONE: no walk
+ * ran (a decline before C7). */
+typedef enum { COVER_STOP_NONE = 0, COVER_STOP_ACCEPT, COVER_STOP_BRANCH,
+               COVER_STOP_EMPTY, COVER_STOP_VIEW } PcrecCoverStop;
 
 /* THE COVER DECISION of one compile attempt, memoized on the Job: the walk of
  * `cover_conj[]` (kit_proof.md §1.1), the records it read, and the kit's
  * class for the REPORT description it asked. `why` is the first failing
- * row's id (`fixed-width`, `exact/producers-disagree`, ...), NULL where every
+ * row's id (`fixed-width`, `exact/machine-inexact`, ...), NULL where every
  * row holds. */
 typedef struct PcrecCover {
     const char   *why;
     MkEnd         end;
-    const MkLang *lang;
     MkKnown       known;
+    /* THE RECORD (cover_cap.md §3.3), kept on every decision: how the walk
+     * ended (`PcrecCoverStop`), the depth `k` it ended at (known where it
+     * ended at ACCEPT or VIEW), the exact stretch `exact_len` (`L` on a
+     * BRANCH, `k` otherwise; known wherever a walk ran) and its sets
+     * `S_0..S_{exact_len-1}` in the Job's arena. The listing's `cover`
+     * section and C12 read it; `MkEnd` is filled from it (C8). */
+    uint8_t         stop;
+    bool            k_known, exact_known;
+    uint16_t        k, exact_len;
+    const uint8_t (*sets)[32];
     mf_class      cls;
     /* the machines the decision read (its memo key, known.c) */
     bool          key_ok;

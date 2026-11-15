@@ -152,7 +152,6 @@ VM_ISL_BYTES_PER_NODE
 VM_ISL_BYTES_PER_CHAIN_NODE
 VM_ISL_SIZE_FACTOR
 PCREC_PREFIX_K_MAX
-PCREC_SPAN_WALK_SUBSETS
 PCREC_OFSK_MAX_SET
 PCREC_MINW_MAX
 PCREC_MAX_SCAN_EDGES
@@ -180,8 +179,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 82 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then   # 82 at R-38 K38-2 (PCREC_MAX_REQ_RUN_EMIT retired, span_runs_sheet.md §4.3; restored to the count by lane k382m); 82 at the [RUN-POS-SET] catch-up merge (lane altcatch): both sides took 78 -> 80 with different rows, git kept the shared LA_* pair once; 84 at [UCP] U3 (PCREC_MAX_CHAR_STEP_SETS, PCREC_MAX_CHAR_STEP_ATOMS); 83 at review r4 ucpu3 RULES-9 (PCREC_UCP_NARROW_MAX_INTERVALS retired: every UCP set compiles, the knee routed nothing)
-    ok "[count] --list-limits reports all 82 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 81 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then   # 81 at [COVER-CAP] stage 1 (PCREC_SPAN_WALK_SUBSETS retired with the span slice, cover_cap.md §3.1); 82 at R-38 K38-2 (PCREC_MAX_REQ_RUN_EMIT retired, span_runs_sheet.md §4.3; restored to the count by lane k382m); 82 at the [RUN-POS-SET] catch-up merge (lane altcatch): both sides took 78 -> 80 with different rows, git kept the shared LA_* pair once; 84 at [UCP] U3 (PCREC_MAX_CHAR_STEP_SETS, PCREC_MAX_CHAR_STEP_ATOMS); 83 at review r4 ucpu3 RULES-9 (PCREC_UCP_NARROW_MAX_INTERVALS retired: every UCP set compiles, the knee routed nothing)
+    ok "[count] --list-limits reports all 81 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true
