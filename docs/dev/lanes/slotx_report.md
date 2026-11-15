@@ -165,5 +165,5 @@ J2p. The two libc variants are memchr default (evex) and -AVX512F (the AVX2 vari
 
 - Branch lane/memfn-slotx in worktrees/slotx. Commits since the cut: WIP 4a694cd37 (kit side), dffc1eb65 (slot
   pieces), c230370d4 (plants, build-time key dims), dd5f84928 (CLAUDE.md), then this report.
-- Gate 640-649 is queued, owner kit. The timing jobs are prepared and not queued.
+- Gate 640-649 (final key kit-slotx-gate) is queued, owner kit, not before 2026-11-15T01:05; OWED. The timing jobs are prepared and not queued.
 - Nothing is running from this lane.
