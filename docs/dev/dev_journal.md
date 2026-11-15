@@ -27688,3 +27688,11 @@ Next
   bounds belong only to the hull, where "how far" is a judgement; N is a tuning constant to label and measure.
   cover_cap.md rev 1 (subset walk kept for exactness, 512 budget cliff, run facts offered to the kit, owner questions
   2-3) does not follow this model; a rev 2 waits for the owner's word.
+- 11:35 (2026-11-15): audits done. audnight: lane/fixposts2 not merge-ready (axes runner hard-codes gcc -fpreprocessed;
+  floors unpinned; mechrows green only on the pre-fixposts2b tip); S486's cause is the rule (1) landing (the AWS-key
+  witness moved first-memchr-bounded -> handoff, speed unmeasured), which neither the landing nor the retroactive round
+  caught (only the 9 new rows' reach was probed). Lesson: a default-flip landing runs EVERY mech row's reach probe.
+  audpred: the 11-14/15 COND-FAMILY record is right on Frank's words, unreliable on reach; Frank answered the five
+  questions (entries at the file's tail). Frank LIFTED the stop: complete the planned sets (S2 leftovers, S3, S4) and
+  open work before any next item; kit continues; predicates stay design-only; critics on all work. Launched fixposts2c,
+  s486re (sonnet), covcap3 (opus, [COVER-CAP] rev 2 on the exact/hull model). Kit told to resume, fresh code rounds.
