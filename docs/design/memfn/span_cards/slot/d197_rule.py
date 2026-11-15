@@ -473,18 +473,73 @@ def drill(scratch=None):
         n += 1
         print("drill\t[r6 RULE-2] end to end: the run's own records as their confirmation REFUSED\t%s\t%s" % (
             "ok" if ok else "WRONG", got[:160]))
+        # [r7 RULE-1] the ENTRY POINT the window's jobs 609/610 call, BY SUBPROCESS (the function drill above shares no
+        # source with the CLI's argument parsing): a first run whose shipped arm bound avx2 is INCONCLUSIVE, never
+        # NOT-WIN; --second takes the first run's pair; a bad argument count is refused with usage
+        import subprocess
+        d = est._synth(os.path.join(scratch, "d197_p1"), window="mfcard")
+        rr = os.path.join(d, "run_record.tsv")
+        txt = open(rr).read().replace("run_id\tselftest\n", "run_id\tselftest\nisa\tx86-64-v4 avx2\n"
+                                      "libc\tglibc 2.43 memchr=avx2\n"
+                                      + "".join("%s\t%s\n" % kv for kv in sorted(record.rule_pins().items())), 1)
+        open(rr, "w").write(txt)
+        p1 = os.path.join(scratch, "d197_p1")
+        def cli(*args):
+            r = subprocess.run([sys.executable, "-I", os.path.abspath(__file__), "rule"] + list(args), capture_output=True, text=True)
+            return r.returncode, r.stdout + r.stderr
+        verdicts = lambda o: [ln.split("\t")[3] for ln in o.splitlines() if ln.startswith("d197_verdict\t")]
+        rc, o = cli(p1, ad)
+        ok = rc == 0 and verdicts(o) == ["INCONCLUSIVE"] * len(lv)
+        bad += not ok
+        n += 1
+        print("drill\t[r7 RULE-1] CLI, no flag: a first run's shipped arm bound avx2 -> INCONCLUSIVE\t%s\trc %d %s" % (
+            "ok" if ok else "WRONG", rc, verdicts(o) or o[-120:]))
+        f1, f2 = os.path.join(scratch, "d197_first"), os.path.join(scratch, "d197_first_avx2")
+        for dst, var in ((f1, "evex"), (f2, "avx2")):       # the first run's pair: another run id, the same shapes
+            est._synth(dst, run_id="selftest0", window="mfcard")
+            q = os.path.join(dst, "run_record.tsv")
+            body = open(q).read().replace("run_id\tselftest0\n", "run_id\tselftest0\nisa\tx86-64-v4 avx2\n"
+                                          "libc\tglibc 2.43 memchr=%s%s\n" % (var, " GLIBC_TUNABLES=x" if var == "avx2" else "")
+                                          + "".join("%s\t%s\n" % kv for kv in sorted(record.rule_pins().items())), 1)
+            open(q, "w").write(body)
+        rc, o = cli(p1, ad, "--second", f1, f2)
+        ok = rc == 0 and "Traceback" not in o and all(v.startswith("NOT-WIN") or v == "NOT-WIN" for v in verdicts(o)) and len(verdicts(o)) == len(lv)
+        bad += not ok
+        n += 1
+        print("drill\t[r7 RULE-1] CLI --second FIRST FIRSTAVX2 parses (the second run scores NOT-WIN)\t%s\trc %d %s" % (
+            "ok" if ok else "WRONG", rc, verdicts(o) or o[-160:]))
+        for name, args in (("--second with one rundir", (p1, ad, "--second", sd)),
+                           ("--confirm with one rundir", (p1, ad, "--confirm", sd)),
+                           ("one positional rundir", (p1,)), ("an unknown flag", (p1, ad, "--third"))):
+            rc, o = cli(*args)
+            ok = rc == 2 and "usage" in o and "Traceback" not in o
+            bad += not ok
+            n += 1
+            print("drill\t[r7 RULE-1] CLI %s: refused with usage\t%s\trc %d %s" % (name, "ok" if ok else "WRONG", rc, o.strip()[:100]))
     print("== d197 DRILL %s: %d cases, %d wrong" % ("ok" if not bad else "FAILED", n, bad))
     return 1 if bad else 0
+
+class UsageError(Exception):
+    pass
 
 def main():
     if sys.argv[1] == "drill":
         return drill(sys.argv[2] if len(sys.argv) > 2 else None)
-    a = sys.argv[4:]
     try:
-        conf = a[a.index("--confirm") + 1:a.index("--confirm") + 3] if "--confirm" in a else None
-        if conf is not None and len(conf) != 2:
-            raise InputError("--confirm takes two rundirs (shipped, avx2)")
-        v = rule(sys.argv[2], sys.argv[3], "--second" in a, conf)
+        # [r7 RULE-1] every flag takes TWO rundirs; second-ness is given only by --second's pair (r6 RULE-6)
+        pairs, a = {}, sys.argv[2:]
+        if len(a) < 2 or a[0].startswith("--") or a[1].startswith("--") or sys.argv[1] != "rule":
+            raise UsageError("expected `rule RUNDIR AVX2RUNDIR [...]`")
+        run, a = a[:2], a[2:]
+        while a:
+            if a[0] not in ("--second", "--confirm") or a[0] in pairs or len(a) < 3 or a[1].startswith("--") or a[2].startswith("--"):
+                raise UsageError("bad argument %r (each of --second, --confirm once, with two rundirs)" % a[0])
+            pairs[a[0]], a = (a[1], a[2]), a[3:]
+        v = rule(run[0], run[1], pairs.get("--second"), pairs.get("--confirm"))
+    except UsageError as e:
+        print("d197: usage: d197_rule.py rule RUNDIR AVX2RUNDIR [--second FIRST FIRSTAVX2] [--confirm CRUNDIR CAVX2RUNDIR] "
+              "| drill [SCRATCH]  (%s)" % e)
+        return 2
     except InputError as e:
         print("d197: REFUSED input: %s" % e)
         return 2

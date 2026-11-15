@@ -1901,7 +1901,7 @@ static void s_shift_prepare(struct wf_plan *w, const wf_fx *fx)
 #define REN_FRAME   (1u << 31)          /* a row keyed by its frame alone      */
 #define REN_PICK(f) (1u << (f))         /* a search's key: its T-FIND pick     */
 #define REN_ROWS(t) (t), sizeof (t) / sizeof *(t), sizeof *(t)
-_Static_assert(FF_MFIND < 31 && WF_ST_SHIFT < REN_FRAME, "the renderer key spaces are disjoint");
+_Static_assert(FF__COUNT <= 31 && WF_ST_SHIFT < REN_FRAME, "the renderer key spaces are disjoint");
 
 /* The key a lookup by T-FIND pick `f` asks: none for FF_UNSTATED (a refusal
  * leaves it), so no row renders a refused decision. */

@@ -540,9 +540,13 @@ def read_cells(rundir, rec):
         # [review 2026-11-15 r6 FIDELITY-3] the file is the one finalize pinned (record.py cells_pins): a post-run edit
         # that keeps every cell key unique (two keys' values swapped) is refused here, not by CELL TWICE below
         got, pin = plan.sha256(os.path.join(rundir, f)), rec["run"].get("cells_sha256_" + j)
-        if got != pin:
-            raise InputError("CELLS PIN %s: sha-256 %s, the record pins %s (a cells file edited after finalize, or a "
-                             "record finalized before r6)" % (f, got[:16], (pin or "none")[:16]))
+        # [review 2026-11-15 r7 RULE-2] refused only when a pin is PRESENT and differs; a record with none (finalized
+        # before r6: the s2d1/s2d2 windows, rmax_drill.py's re-derivation) reads with a NOTE, as manifest_check does
+        if pin is None:
+            print("est: NOTE %s: the record pins no cells sha-256 (finalized before r6): read unpinned" % f, file=sys.stderr)
+        elif got != pin:
+            raise InputError("CELLS PIN %s: sha-256 %s, the record pins %s (a cells file edited after finalize)"
+                             % (f, got[:16], pin[:16]))
         lines = open(os.path.join(rundir, f)).read().splitlines()
         if not lines or lines[0] != "#run_id\t%s" % rec["run"]["run_id"]:
             raise InputError("%s's first line %r is not `#run_id<TAB>%s`: a cells file of another run" % (f, lines[:1], rec["run"]["run_id"]))
@@ -1753,7 +1757,32 @@ def selftest(scratch):
         except InputError as e:
             return not repin and n >= plan.L_LAUNCHES and "CELLS PIN cells.JMH.tsv" in str(e)
         return repin and n >= plan.L_LAUNCHES and ka in out and kb in out
+    def mf_nopin(d):
+        """[r7 RULE-2] a record finalized before r6 (no cells pin): priced, with a NOTE on stderr"""
+        import io, contextlib, record
+        rp = os.path.join(d, "run_record.tsv")
+        rec = record.read(rp)
+        rec["run"] = [r for r in rec["run"] if not r[0].startswith("cells_sha256_")]
+        record.write(rp, rec)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            out = compute(d)[0]
+        return bool(out) and err.getvalue().count("NOTE cells.") >= 1 and "pins no cells sha-256" in err.getvalue()
+    def mf_badpin(d):
+        """[r7 RULE-2] a record whose cells pin is present and WRONG: refused"""
+        import record
+        rp = os.path.join(d, "run_record.tsv")
+        rec = record.read(rp)
+        rec["run"] = [[r[0], "0" * 64] if r[0].startswith("cells_sha256_") else r for r in rec["run"]]
+        record.write(rp, rec)
+        try:
+            compute(d)
+        except InputError as e:
+            return "CELLS PIN" in str(e)
+        return False
     MF_CASES = (
+        ("[r7 RULE-2] a record with no cells pin (pre-r6): priced, with a NOTE", mf_nopin),
+        ("[r7 RULE-2] a record whose cells pin is present and different: refused", mf_badpin),
         ("[slotx] window mfcard: kit-grid@6 rows priced, no J3/J4/J5 row this window's", mf_priced),
         ("[slotx] the draft split: every ver-6 row in ver 6's set, the unit in ver 3's, none in ver 4's", mf_split),
         ("[F5] write_draft on the mfcard window: ver 6's set holds exactly the FORMS6 rows and the unit, ver 3's the "

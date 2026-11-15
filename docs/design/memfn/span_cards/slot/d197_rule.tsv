@@ -22,6 +22,10 @@
 # `_time` holds one site, rx_search more; `text_bytes` sizes the timed function only); PLACEMENT (the cell's seeded
 # pads vs the artifact's layout); the FIXED compile flags (the slot's, not the user's build); the EVEX libc variant's
 # width (the probe names the encoding, not 256 vs 512 bits).
+# THE WINDOW RUNS ON THE 7700X (ZEN 4) ONLY (review r7 RULE-3, DOC): the shipped-arm guard below (no-verdict whenever the
+# shipped memchr bound `avx2`) encodes that box's ifunc landscape (shipped = EVEX); on an AVX2-only box (the Zen 1)
+# the shipped memchr IS avx2, so every level reads INCONCLUSIVE, then NOT-WIN: the guard refuses such a box BY DESIGN.
+# The general fix (refuse on tunables alone) is a PLAN item, triggered by the first mfcard window planned off the 7700X.
 # THE LIBC ROWS' PROVENANCE ([r5 R3]): the AVX2 row is the process under GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX512VL;
 # on this box's glibc 2.43 -AVX512F alone STILL binds the EVEX memchr (ymm16; measured by lane mcfixa with
 # record.py's probe), so each record names the variant its process bound (`libc ... memchr=`) and the arm table
