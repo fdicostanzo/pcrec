@@ -49,9 +49,11 @@ S3206-S3215.
 ## Validation
 
 - `make strict`: rc 0. `make test-codegen`: rc 0 (21/21 scripts).
-- Emit identity vs ac097a76e's build (built in scratch): `scripts/emit_sweep.py --streams 1 --every 5` (default
-  engine, every 5th corpus pattern). Result: see STATE AT HANDOFF (it was still running when this report was first
-  written; the handback message carries its number).
+- Emit identity vs ac097a76e's build (git archive, built in scratch): 400 corpus patterns (every other `pattern`
+  line of tests/base, classes, anchored) x 3 flag sets (default, `-fmemfn-simd=x86-64-v3`, `--harness=mfind`), all
+  with `-p rx --features all`. The .c, .h, stderr and rc were compared: 1200 pairs (752 compiled), 0 movers.
+  scripts/emit_sweep.py was tried first; it was stopped because it waits on the box lock (it yielded to queue job
+  622-kit-mfind-ident1 for over 10 minutes).
 - `tests/memfn/run_arch_blind.sh`: rc 0, 17 passed, 0 failed.
 - est selftest (`est.py selftest .../st2`): 66 cases, 0 wrong (64 + the swap case and its control).
 - `d197_rule.py drill`: 43 cases, 0 wrong. `drill SCRATCH` (end to end): 45 cases, 0 wrong.
@@ -75,8 +77,6 @@ Scratch: /var/tmp/pcrec-pcrec/scratch/memfn/mcfixb/ (red/, dry1/, sab*, sweep*, 
 ## STATE AT HANDOFF
 
 - Rulings: last entry applied R1 (kit manager, 2026-11-15 ~13:20).
-- Emit identity sweep: see the handback message. It is recorded in the commit that adds this line if it finished
-  before delivery.
 - A record finalized before r6 carries no rule or cells pins, so the scorer and est now REFUSE it. No mfcard
   record exists yet. A second run would need `--second FIRST FIRSTAVX2`; no staged job runs one.
 - OWED: none
