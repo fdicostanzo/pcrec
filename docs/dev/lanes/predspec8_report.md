@@ -81,8 +81,8 @@ or read as if they did, and what rev 8 did with each:
     needed (CHECKED).
 13. O50 (b) rev 7's "projection array" and (d)'s readings: removed with O50's restatement (FIXED).
 Command for the remaining-word check: `awk 'NR>18' docs/design/predicates_draft.md | grep -n 'array view\|map view\|
-MAP view\|map-view\|returns an array\|the ARRAY of'` returns only quoted words, history lines, or "the ARRAY of all
-results" as his quoted note.
+MAP view\|map-view\|returns an array\|the ARRAY of'` returns 5 lines: the rev 6 changelog line, the §15
+provenance rows for revs 6-8 (history), and §2.1's own sentence saying what "returns an array" now means.
 
 ## EXAMPLES RE-CHECKED
 
@@ -144,8 +144,8 @@ sed 's/#.*//' > c12.txt` (67 lines), diffed against the same extraction from a75
 | L53 | new: nullable search argument vs find-all, ERROR (lean) |
 | L54 | new: `x & s` membership vs `some(...)`, BY DESIGN |
 
-Broken: none. O38's GAP list re-counted: L20, L21, L22, L24, L29, L30, L32, L33, L35 (9 rows; rev 7 had 12 with L31,
-L51 and the L36 OPEN out of it).
+Broken: none. O38's GAP list re-counted: L20, L21, L22, L24, L29, L30, L32, L33, L35 (9 rows; rev 7 had 11, with L31
+and L51; L36 was OPEN, now SAME).
 
 ## CONFLICTS FOUND
 
