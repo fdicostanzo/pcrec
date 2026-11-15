@@ -779,3 +779,16 @@ padded(between(1,12)) to get between to ignore leading 0". RECORD: C9 as recorde
 reading): `between(1,12)` is the set of the unpadded spellings "1".."12"; `\d\d & between(1,12)` accepts exactly
 10, 11, 12; leading zeros are accepted only through an explicit transform on the filter (`padded(between(1,12))`) or
 by writing the wider pattern (`\d{1,2}`). The "compares by value" reading is NOT adopted.
+**2026-11-15 CONFIRMATION — two kinds of numbers; the `occurs` module (Frank, to session 132, after the audit found
+"(no number type)" recorded beyond his words on 11-14).** His words: "there are numbers you get from the subject like
+\d\d and numbers that come from the structure like the count of matches to 'Host'. the proposal from the manager was
+that these be treated differently. \d+ numbers can be added, filtered <256. but structural numbers like the count would
+use 'occurs' module like occurs.at_least(3, ...). my comment was that the previous used at_least(...) and was doing
+number tests without between() but it wasn't immediately clear to the user why they were different. so i suggested an
+'occurs' type module that would handle structural predicates". RECORD: (1) SUBJECT numbers (text matched by `\d+` and
+the like) can be added and filtered (`< 256`, `between`); the earlier arithmetic in this record (`$y + 1`, day
+differences) stands. (2) STRUCTURAL numbers (how many times something matches) are tested through the `occurs` module
+(`occurs.at_least(3, ...)`); the module name is what tells the user these are a different kind. (3) The 11-14 gloss
+"(no number type)" is WITHDRAWN as over-reach: his concern was the user's confusion between the two kinds, answered by
+the module, not a ban on numbers. Whether a bare count may also be compared directly (`count(...) == 3`, used earlier
+in this record) was not addressed today: OPEN, lean = spell it through `occurs`.
