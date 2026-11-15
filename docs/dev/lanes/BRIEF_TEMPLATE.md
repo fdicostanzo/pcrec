@@ -52,6 +52,10 @@ A field with nothing to say is written "none", never dropped.
     brief, or a premise below fails, stop and report.
     PREMISE TEST: <the first check the lane makes that the brief's
     premises hold, with the expected result.>
+    TODAY NUMBERS (design lanes): every "today the tree does X" number
+    the note states carries the exact command that produced it (round
+    covcap-r2, 2026-11-15: "`[ab]{1000}` lists 24" was false on one
+    compile).
 
     OWED RUNS: queue every owed stage as a box-queue job (RUNS.md), name
     their keys in STATE AT HANDOFF, run lanecheck, SendMessage, then END.
