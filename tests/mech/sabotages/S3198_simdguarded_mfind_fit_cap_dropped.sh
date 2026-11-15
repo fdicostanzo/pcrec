@@ -6,7 +6,7 @@
 # render more guarded bytes than the row's declared bound DECLINES the row and
 # keeps the SWAR body alone (review 2026-11-15 r2 F1). Made unconditional, the
 # long-chain lever witnesses (mfind-long-tbl, mfind-long-run) render the w16/w32
-# helpers again and stamp 4,089 / 2,335 guarded bytes at x86-64, past the
+# helpers again and stamp 4,089 / 2,335 guarded bytes at the 16-byte level, past the
 # declared mfind-w16 bound plus target-text: simd_guarded_check's "plain stamp
 # exceeds the sum of its rows' bounds" and the lever-capped floor (0 < 4) fire.
 # G2's one-member space never reaches the cap (every G2 site fits), so only
