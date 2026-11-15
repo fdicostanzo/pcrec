@@ -14,8 +14,9 @@
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
 #   (j2) a twin linked at its arm's phase (its pad sized to land it there): the per-launch constraint
 #        refuses, after the bounded re-draw
-#   (k)  the walk's arm rendered from another entry row (libc's): its site-text hash differs from
-#        mf_form_hash(walk): the cell-text check refuses
+#   (k)  the libc arm rendered from another entry row (walk's): its site-text hash differs from
+#        mf_form_hash(libc) (its facts walk's too, so walk's table compiles): the cell-text check refuses
+#        (j4fix: was walk-from-libc, which since r6's TIMED_CALLEES the timed-shape check refuses first)
 #   (l1) the generator plants libc's hits as another byte: the count gate (count 0 vs E; the libc base's
 #        sentinel subject misses first since r9)
 #   (l2) the find wrapper returns each hit one byte late (count kept): the POSITION sum and FNV-1a-64 gate
@@ -216,7 +217,8 @@ row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT
             P = 64 + (-int(sh(["size", "-A", objs[k - 1][2]]).split(".text")[1].split()[0])) % 64
         cmd += [pad_obj(ld, P, k), o]' ;;
     k)  job=J2 want="CELL-TEXT MISMATCH"
-        patch "$SCR/$row/link.py" '    fi, bo = parts(fx, form, cls)' '    fi, bo = parts(fx, {"walk": "libc"}.get(form, form), cls)' ;;
+        patch "$SCR/$row/link.py" '    f = facts(fx, form, cls)' '    f = facts(fx, {"libc": "walk"}.get(form, form), cls)'
+        patch "$SCR/$row/link.py" '    fi, bo = parts(fx, form, cls)' '    fi, bo = parts(fx, {"libc": "walk"}.get(form, form), cls)' ;;
     l1) job=J3 want='GATE MISS (base|kit\.find_hit)\.libc'
         patch "$SCR/$row/gen.c" '            buf[p] = a->hit[a->split ? (k & 1) : 0];' \
 '            buf[p] = (unsigned char)(a->hit[a->split ? (k & 1) : 0] + (a->hit[0] == 120));' ;;
@@ -408,7 +410,7 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
         patch "$SCR/$row/d197_rule.py" '    "loss-not-reproduced": lambda c: c["gain"] < -c["floor"] and c["conf"] is not None' \
 '    "loss-not-reproduced": lambda c: False and c["conf"] is not None   # SABOTAGE S3197: a confirming run never clears a loss' ;;
     m1) job=est want='selftest	\[r6 FIDELITY-3\] two keys. cells swapped after finalize[^	]*	WRONG'
-        patch "$SCR/$row/est.py" '        if got != pin:' '        if False:   # SABOTAGE S3207: the cells pin not compared' ;;
+        patch "$SCR/$row/est.py" '        elif got != pin:' '        elif False:   # SABOTAGE S3207: the cells pin not compared' ;;
     m2) job=d197 want='drill	\[r6 provenance\] a confirming record \(window mfconfirm\) carrying[^	]*	WRONG'
         patch "$SCR/$row/d197_rule.py" '        if role.startswith("confirm.") and m["run"].get("run_id") in this | first:' \
 '        if False:   # SABOTAGE S3208: a confirming run id not held apart' ;;
