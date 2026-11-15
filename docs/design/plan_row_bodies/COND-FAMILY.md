@@ -969,3 +969,20 @@ in the signature, so it is a stated rule of the library entry with a compile err
 is the manager's reading). (2) The `label.ambiguous` warning fires only for ambiguity in the author's OWN pattern
 text; a library body states and tests its own reading. Both confirm rev 9's leans; no text change beyond the STATUS
 marks.
+**2026-11-15 RULINGS — the five open items (Frank, to session 132).** The manager's list: (1) reading ONE hit needs
+captures, a higher level with its cost shown, count/some/all in phase 1; (2) `^`/`$` inside a filter's argument = the
+ends of the value being filtered; (3) ONE measured budget for "too many classes" and the `count()` refusal, no fixed
+thresholds in the spec; (4) a count is a canonical numeral string, no new value kind; (5) `&` an operator in rx text
+only right before a `${` hole. His words: "1. agree. 2. It was explained that a filter rx is anchored both start and
+end. Is that not true? I want it considered. I like the control of specifying. 3. agree. 4. agree. Allows "even()" or
+other checks for count. 5. no. I thought we were going to add & to pcre but conditionally with a module or option?
+Also, fully yes or no. If no put the whole rx in the hole. Like ${// & blah}. Discuss if you see it otherwise".
+RECORD: (1) RULED as listed. (3) RULED as listed. (4) RULED: a count is a numeral string, so ordinary filters apply to
+it (his example: an `even()` check on a count). (5) REJECTED as listed; RULED instead: `&` in rx text is ALL OR
+NOTHING, switched by a module or option: ON = `&` is the intersection operator everywhere in the rx text; OFF = `&` is
+PCRE's literal everywhere, and an intersection is written in the expression language with the whole rx inside the
+hole (`${/.../ & blah}`). No position-dependent meaning. (2) NOT ruled: he asks that "a filter rx is anchored at both
+ends" be considered against the `^`/`$` rule and says he likes the control of specifying anchors; the manager answers
+in chat. Manager's leans (mine): for (5) the switch is OFF by default so pasted PCRE keeps its meaning, and `\&` is a
+literal in both modes; for (2) a directly applied filter stays anchored at both ends (the string-set foundation), a
+loosening transform (`contains`, `search`) removes that, and `^`/`$` written inside its argument put an end back.
