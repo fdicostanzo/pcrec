@@ -20,7 +20,9 @@ no edits under `src/`, `cli/`, `lib/`, `tests/` or `memfn/`.
     the premise lens's row gains "today numbers re-run from their command" and "kept
     functions: required property"), `docs/dev/guide/critics.md` (a dated lessons entry with
     all three), `docs/dev/lanes/BRIEF_TEMPLATE.md` (a TODAY NUMBERS field).
-- Rulings file: R1-R4 read at every checkpoint; last entry applied: **R4**.
+- Rulings file: R1-R5 read at every checkpoint; last entry applied: **R5** (the owner's
+  safety limit, arrived after rev 3's first commit and applied in `6630261a7`: one
+  `PCREC_MAX_EXACT_SPAN`, 4096 proposed with its derivation, no cliff; D198 (g)).
 - PREMISE TEST: holds. `build/pcrec -p rx --features all --emit-facts --pattern 'a{48}' |
   awk -F'\t' '$1=="byte"&&$2=="span_facts"{print $7}'` prints `24:97,...`; the same for
   `a{49}` prints `0` (C-9 reproduced). `[ab]{1000}` and `a{500}` print `0`.
@@ -72,6 +74,7 @@ All per R1. "§" is rev 3's section.
 | C-25 general form | §1.1 END STATE: one walk, exact up to `L`, whole = cover, fraction = rows at `L`, hull = the same walk merged; unlocks (i)-(iii) with triggers as PLAN |
 | R2 | §1.1 (end state, cover first case, nothing redone for the fraction); two stages kept |
 | R3 | §4.3 (capability ask + population fact only); §7 (hit-dense, near-miss, cold artifact; size beside each timing) |
+| R5 | §0 G4, §3.1 outcome 4 (no cliff: `exact_len = min(L, k, MAX)`, C7 `over-max`), §3.1 derivation (binding cost = emitted matcher size; 128 B/position pcrec side; population max stretch 1000, 0 compiles reach 4096), §3.5 stage 2 seam up to MAX, §4.3 asks "up to 4096", §5.3 `a{4097}` witness, §5.4 plant (e) the cliff, §8 the added row, §9 Q2; D198 (g) |
 
 ## WALK CHOICE
 
@@ -91,6 +94,11 @@ already exists, compares byte sets, needs no revisit rule, and keeps stretches l
 | listing values lost | 221 shrinks (census) | 1,519 compiles where no anchored machine finishes the match (no reader today) |
 | code | rewrite of `pcrec_span_walk` + 2 passes + hash; `kn_walk` bounded by the slice | delete ~430 lines (`kset.c` slice), `MkLang`, a facts row, a limits row, `KN_CAP`, C8's comparison, `pcrec_known_derive`; add growable rows and a listing section |
 | general form fit (R2, C-25) | the line's subset at `L` is an NFA set; the hull is a separate NFA walk (`kset_walk`) | the walk's rows at `L` ARE the engine's resume state; the hull is the same walk merged past `L` |
+
+R5 (4): with the safety limit the walk ends in at most `MAX` steps by construction, so the
+termination argument is no longer load-bearing. The same limit would let rev 2's NFA walk
+drop its cycle rule (C-1, C-2) but not its root rule, its shape dependence or its
+liveness passes (C-3, C-4, C-8), so the choice stands.
 
 Why: it is the only option that removes the round's soundness findings instead of
 repairing them, it loses nothing, and it is the walk the cover already trusts (X0 checked
@@ -128,8 +136,13 @@ For the owner (plain words; also cover_cap.md §9):
    2026-10-21 in the Z2 build lane after a check left 175 cells undecided; then 0
    differences against PCRE2 in 66,243,390 cells): rev 2 would have reversed it without
    saying so; rev 3 keeps it. Leaning: keep.
-3. If a long cover makes the matcher big enough to lose in the cold-cache timing: one
+3. The maximum span length you asked for: 4096 positions. The binding cost is the size of
+   the generated matcher (the kit's code today is about 8 to 31 assembly lines per position,
+   so 33,000 to 127,000 lines at 4096), not pcrec's memory (about 128 bytes per position).
+   The longest exact stretch in our test and bench patterns is 1000; none reaches 4096.
+   Past the limit nothing collapses: the first 4096 positions stay proven. Leaning: 4096.
+4. If a long cover makes the matcher big enough to lose in the cold-cache timing: one
    bounded try, then the kit, then you. Leaning: no action until the timing shows it.
-4. Build go for stage 1, after the narrow readiness re-check.
+5. Build go for stage 1, after the narrow readiness re-check.
 
 For main: the three costs above; the N row and the `PCREC_PREFIX_K_MAX` label row to file.
