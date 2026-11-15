@@ -1895,13 +1895,13 @@ static void s_shift_prepare(struct wf_plan *w, const wf_fx *fx)
  * is special-cased. */
 
 /* A renderer row opens with its ren_key (kit.h). The three key spaces are
- * disjoint bits: a pick's (REN_PICK, bits 1..FF_HORS: FF_UNSTATED, a
+ * disjoint bits: a pick's (REN_PICK, bits 1..FF_MFIND: FF_UNSTATED, a
  * refusal's pick, keys nothing), a stream's (WF_ST_*, on stream rows) and
  * REN_FRAME, a bit no pick or stream takes. */
 #define REN_FRAME   (1u << 31)          /* a row keyed by its frame alone      */
 #define REN_PICK(f) (1u << (f))         /* a search's key: its T-FIND pick     */
 #define REN_ROWS(t) (t), sizeof (t) / sizeof *(t), sizeof *(t)
-_Static_assert(FF_HORS < 31 && WF_ST_SHIFT < REN_FRAME, "the renderer key spaces are disjoint");
+_Static_assert(FF_MFIND < 31 && WF_ST_SHIFT < REN_FRAME, "the renderer key spaces are disjoint");
 
 /* The key a lookup by T-FIND pick `f` asks: none for FF_UNSTATED (a refusal
  * leaves it), so no row renders a refused decision. */

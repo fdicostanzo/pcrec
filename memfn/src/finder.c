@@ -67,9 +67,9 @@ enum { KN_P = 1u << 0, KN_E = 1u << 1, KN_A = 1u << 2, KN_I = 1u << 3,
  * too). One name per fd_form, in its order (D2's RUN and RPT's PROOF left
  * the enum with their rows: memfn/docs/finder_history.md). */
 static const char *const ff_name[] = {
-    "-", "NONE", "LIBC", "LIBC_BACK", "WALK", "V1", "W64", "A3", "PAIR", "HORS",
+    "-", "NONE", "LIBC", "LIBC_BACK", "WALK", "V1", "W64", "A3", "PAIR", "HORS", "MFIND",
 };
-_Static_assert(sizeof ff_name / sizeof ff_name[0] == FF_HORS + 1, "ff_name names every fd_form");
+_Static_assert(sizeof ff_name / sizeof ff_name[0] == FF_MFIND + 1, "ff_name names every fd_form");
 /* The forms this kit renders a site with, by layer: at B1 LIBC (pf_memchr),
  * LIBC_BACK (pf_memchr_back) and WALK (pf_walk); since D172 S3 the window
  * family's E-find renders the pick of the row deciding its stop (fd_find;

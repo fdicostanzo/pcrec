@@ -1945,7 +1945,7 @@ static void f_hex(Text *o, const uint8_t *b, size_t n)
 static int f_set_shape(const FactIn *x) { return x->e->shape != MF_FH_RUNCMP; }
 static int f_find_shape(const FactIn *x)
 {
-    return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW;
+    return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW || x->e->shape == MF_FH_OFS;
 }
 /* the run's mask byte at i: 0xDF at a caseless letter, else 0xFF (fh_run's) */
 static uint8_t f_mask(const mf_form_entry *e, size_t i)
