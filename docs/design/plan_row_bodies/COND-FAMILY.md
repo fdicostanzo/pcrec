@@ -994,3 +994,7 @@ argument `^` and `$` mean the ends of the value being filtered (`contains(/^err/
 `contains(/err$/)` = ends with `err`), so `startsWith`/`endsWith` are conveniences. ONE rule: `^`/`$` always mean the
 ends of the value being filtered. The alternative (regex filters unanchored by default, as in PCRE) is REJECTED: his
 own example, `/\d\d/ & between(1, 12)` would then match `31`. Resolves the draft's open item on the span rule.
+**2026-11-15 RULING — a condition on a label that never ran: decided PER MATCH (Frank, to session 132).** The manager's
+lean: a condition on a label FAILS when the match never reached the label's group or loop; a loop that was REACHED and
+ran zero times satisfies a plain condition (`/x|(?<n>\d)+/ & (n: <5)` on `x` fails, like the set-once form;
+`(?:(?<n>\d),)*` on an empty value holds). His words: "Agree with lean". RULED as stated; review r10's FIXB-2/FIXB-8.
