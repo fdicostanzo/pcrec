@@ -27775,3 +27775,29 @@ Next
   will inline due to being under the inline head portion of the prover. Therefore, this issue is mostly moot". For the
   stage-2 addendum: size the rendering work to the population (today: 1,852 covering compiles, almost all short; spans
   of 25+ positions are a few dozen patterns); the loop tail is the rare case; keep the three-way measurement small.
+
+## 2026-11-15 (session 132, afternoon and evening; box clock 15:00-17:45)
+
+- PREDICATES (design only). Frank reshaped the foundation in a live discussion; every ruling is at the tail of
+  docs/design/plan_row_bodies/COND-FAMILY.md with his words: two value kinds (rx, macro), a condition is a macro,
+  "filter" is a role; a call fills parameters and `&` fills the subject; comma = next entry, `[ ]` any-one, `( )` a
+  record that is never a value; array and map are INTERFACES; search is a library TRANSFORM (`~`/`!~` withdrawn),
+  `some`/`all` the one spelling, same hit by record, `min` 0 or 1, no `max`; PCRE's reading everywhere (some-parse
+  retired; its cost is a measurement owed before a build go); ambiguity is the author's to validate; typed parameters
+  out of phase 1; one meaning of the dot; counts are numeral strings; one measured budget; `&` in rx text all or
+  nothing by module/option; filters anchored at both ends, `^`/`$` in a contains/search argument = the value's ends;
+  a condition on a label that never ran is decided per match. Spec revs 6 -> 9 merged (lanes predspec6..9), rounds r8
+  (rev 6) and r10 (rev 9) ruled; rev 10 in progress (lane predspec10).
+- [COVER-CAP] STAGE 1 (lane/covs1, abi 108). Validation produced six reds, none a compiler defect: two stale pins
+  (dfa-movers manifest rows, door-start_bytes floor), an awk portability bug in the reach probe, an asan cap too
+  small, a self-check bug in scripts/emit_sweep.py, and a job contract that could never pass (the sweep exits 1 on any
+  mover). All four cloud runs green. Code round r9: ready to land after 9 fixes (the answer-level one a TEST gap: no
+  witness with bytes >= 0x80 or under utf8); fix lane covs1f delivered; re-check round crit-covs1f running.
+  EMITTED-2 (x6.65 instructions for a 32-position class cover on dense near misses): with Frank, LAND then time; the
+  remedy if slower is the class-run cover length (old exact length 24).
+- LESSONS. (1) `boxqueue retry` re-runs the queue's STORED copy of a job: after fixing a job script use `boxqueue add
+  --name KEY SCRIPT`. (2) A job pair where the first exits non-zero on the very thing the second is meant to judge
+  can never pass: dry-run the chain's contract on a branch that is SUPPOSED to move things. (3) Never run a fix lane in
+  a worktree that queued box jobs build in: cut a new branch/worktree. (4) I stamped notes with a clock 20-60 min
+  ahead of the box three times: read `date` before stamping. (5) Holding a design critic round until the owner's live
+  answers settle saved a round (rev 8); running one on rev 9 found four answer-level defects three re-checks missed.
