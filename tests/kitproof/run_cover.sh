@@ -138,8 +138,8 @@ print("ok %d" % len(wa))' "$want" "$got")"
 done < "$here/answers.tsv"
 
 # K35: the populations are counted, never assumed
-[ "$nv" -ge 47 ] && ok || bad "only $nv verdict rows (floor 47)"
-[ "$nf" -ge 16 ] && ok || bad "only $nf facts rows (floor 16)"
+[ "$nv" -ge 48 ] && ok || bad "only $nv verdict rows (floor 48)"
+[ "$nf" -ge 19 ] && ok || bad "only $nf facts rows (floor 19)"
 [ "$na" -ge 105 ] && ok || bad "only $na answer rows (floor 105)"
 echo "kitproof: $nv verdicts, $nf facts, $na answers ($ncell cells)"
 echo "checks passed: $pass"
