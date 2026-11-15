@@ -200,8 +200,8 @@ typedef struct {
      * lever (mf_lever(art, "mfind")): the offset-skip function's one-byte
      * scan takes the kit's INLINE ONE-MEMBER FINDER (its BODY row fn-mfind,
      * the SWAR word; at an art target admitting a level, its mfind-w16 /
-     * mfind-w32 helpers) instead of fn-memchr, a form no selection table
-     * picks yet. Off on every shipped compile. */
+     * mfind-w32 helpers) instead of fn-memchr, an unpicked measuring
+     * instrument (D197). Off on every shipped compile. */
     unsigned mfind : 1;
     /* [RUN-POS-SET] stage 2a: the ninth, `run-pos-sets`, and the tenth,
      * `alt-union-run`, both RETIRED (lanes s2land, r1on) when what they

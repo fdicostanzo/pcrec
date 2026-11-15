@@ -1783,8 +1783,8 @@ done
 # `--harness=no-min-width` declines the minimum-width stop (tuning.md §2.55),
 # a change with no public deny; its answers must equal the default's.
 # [MEMFN] lane mfind: `--harness=mfind` gives the offset-skip function's
-# one-byte scan the kit's inline one-member finder (a form no table picks
-# yet, the SWAR word at SIMD-off); its answers must equal the default's.
+# one-byte scan the kit's inline one-member finder (an unpicked measuring
+# instrument, D197; the SWAR word at SIMD-off); its answers must equal the default's.
 # Selected by the empty AXES= or by its spelling. Its SIMD x lever arm
 # (review 2026-11-15 r2 F12, lane mfindfix2): `--harness=mfind` at the SIMD
 # layer's target (memfn_top_target), so the rows mfind-w16/-w32 are answer-

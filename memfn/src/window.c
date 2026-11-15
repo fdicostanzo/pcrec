@@ -2508,15 +2508,20 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
 
 /* T-FIND's picks as the reply's search piece (mf_wsearch): the built picks;
  * every other pick renders no search, NONE. */
-static const uint8_t wf_wsearch[FF_HORS + 1] = {
+static const uint8_t wf_wsearch[FF_MFIND + 1] = {
     [FF_LIBC] = MF_WSEARCH_LIBC, [FF_LIBC_BACK] = MF_WSEARCH_LIBC_BACK,
     [FF_WALK] = MF_WSEARCH_WALK, [FF_PAIR] = MF_WSEARCH_PAIR, [FF_HORS] = MF_WSEARCH_HORS,
+    [FF_MFIND] = MF_WSEARCH_NONE, /* the inline one-member finder renders no search piece */
 };
+/* Keyed to the enum's LAST member, as finder.c's ff_name is: a form added
+ * after FF_MFIND must be declared here, not answered NONE by the bounds test. */
+_Static_assert(sizeof wf_wsearch / sizeof wf_wsearch[0] == FF_MFIND + 1,
+               "wf_wsearch declares every fd_form");
 
 /* The reply's search piece for pick `f`. */
 static uint8_t wsearch_of(fd_form f)
 {
-    return (unsigned)f <= FF_HORS ? wf_wsearch[f] : MF_WSEARCH_NONE;
+    return (unsigned)f < sizeof wf_wsearch / sizeof wf_wsearch[0] ? wf_wsearch[f] : MF_WSEARCH_NONE;
 }
 
 /* The reply's candidate stream (mf_wstream) for a stream row's key or a

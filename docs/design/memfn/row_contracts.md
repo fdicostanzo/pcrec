@@ -136,8 +136,9 @@ Under `MF_TRACE`, kit-private counters count CHOSEN per row, and per
 census. The independent controls, none derived from `fields.def`:
 - **`tests/memfn/rows.tsv`:** a hand-maintained name manifest, one line
   per row, with its reach reason and witness. Rows unreached from pcrec
-  take a closed reason: `total-fallback`, `pending-site:<trigger>` or
-  `contract-reach:<G2 family>`. Anything else is deleted (D77).
+  take a closed reason: `total-fallback`, `pending-site:<trigger>`,
+  `contract-reach:<G2 family>` or `instrument:<unit>` (an unpicked
+  measuring instrument, D197). Anything else is deleted (D77).
 - **A text signature per row,** checked in its witness's artifact.
 - **G2:** byte-loop agreement on every reached cell, and a per-row CHOSEN
   floor over G2 (fed by lane g2x's families). Two differentials:

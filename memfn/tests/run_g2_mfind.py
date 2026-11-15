@@ -412,7 +412,9 @@ def run(a, root, work):
     pop = dict.fromkeys(POP_FLOOR, 0)
     for m in metas:
         population(m, pop)
-    scale = a.sites / 80.0
+    # the floors were measured at 80 sites, of which the first 40 are a fixed
+    # head: below 80 only the sites past the head scale (r5 CHECKS-7)
+    scale = max(0.0, (a.sites - 40) / 40.0)
     for key, floor in POP_FLOOR.items():
         if not x86 and key not in ('sites',):
             continue

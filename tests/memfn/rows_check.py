@@ -22,6 +22,8 @@ subject):
      docs/spec/tuning.md §2.38's row table.
   B. THE REASONS. Every row's reach is from the closed set (pcrec,
      total-fallback, pending-site:<trigger>, contract-reach:<G2 family>,
+     instrument:<unit> (an UNPICKED measuring instrument, D197: no pcrec
+     site will reach it, only the test-only lever and its fixtures),
      the family read from memfn/tests/run_g2.sh's FAM_FLOORS; `pcrec:trace-only`
      is `pcrec` for a row whose text equals its fallback's, so only the trace
      observes it, span_pick 1e review F12); a `pcrec`
@@ -147,7 +149,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import row_map   # the ONE parser of row_map.tsv (reach_equal.py reads it too)
 
-REASONS = ("pcrec", "pcrec:trace-only", "total-fallback", "pending-site:", "contract-reach:")
+REASONS = ("pcrec", "pcrec:trace-only", "total-fallback", "pending-site:", "contract-reach:", "instrument:")
 PCREC_REASONS = ("pcrec", "pcrec:trace-only")    # a pcrec compile is the witness and a census floor holds the row
 ASK_MARK = " phase=ask"     # a signature carrying it: the row is decided at the ask
 passed = failed = 0
@@ -802,11 +804,13 @@ def main():
             good = len(why) > len("pending-site:")
         elif why.startswith("contract-reach:"):
             good = why[len("contract-reach:"):] in fams
+        elif why.startswith("instrument:"):
+            good = len(why) > len("instrument:")
         else:
             good = False
         if not good:
             bad("%s/%s: reach %r is not in the closed set (pcrec, pcrec:trace-only, total-fallback, "
-                "pending-site:<trigger>, contract-reach:<G2 family %s>)" % (t, rw, why, ",".join(fams)))
+                "pending-site:<trigger>, contract-reach:<G2 family %s>, instrument:<unit>)" % (t, rw, why, ",".join(fams)))
             continue
         want = "pattern" if why in PCREC_REASONS else "fixture"
         if t == "fd" and wk == "-" and why.startswith("pending-site:"):

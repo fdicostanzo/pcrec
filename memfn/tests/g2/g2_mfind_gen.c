@@ -375,6 +375,22 @@ static int check_site(unsigned id, const char *site, const char *target, int lev
                 id, target, lever, w16, w32, want16, want32);
         return 1;
     }
+    /* r5 CHECKS-1: the SELECTOR (the function named g2m_N) calls the TOP rung
+       of its target (w32 at x86-64-v3, w16 at x86-64), not merely a text that
+       holds the helper names: a selector that skips a rung leaves the answers
+       identical and the rung untested */
+    if (want16 || want32) {
+        char top[96], sn[48];
+        snprintf(sn, sizeof sn, "g2m_%u", id);
+        snprintf(top, sizeof top, "return g2m_%u__%s(", id, want32 ? "w32" : "w16");
+        char *sel = fn_text(site, sn);
+        if (!sel || !strstr(sel, top)) {
+            fprintf(stderr, "g2_mfind_gen: site %u at %s lever %d: the selector does not call its top rung (%s)\n",
+                    id, target, lever, top);
+            return 1;
+        }
+        free(sel);
+    }
     if (has_cpu_directive_or_include(site)) {
         fprintf(stderr, "g2_mfind_gen: site %u holds a CPU conditional or an #include\n", id);
         return 1;

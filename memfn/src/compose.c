@@ -1471,7 +1471,7 @@ static const struct {
     { "run-tie-left", KIT_LEVER_RUN_LEFT },
     /* ofsskip.c fn_rows[]: the BODY row fn-mfind (the inline one-member
        finder, vrun.c's mfind_text) holds where fn-memchr would: a PROBE of
-       a form no selection table picks yet (lane mfind) */
+       an unpicked measuring instrument, D197 (lane mfind) */
     { "mfind",        KIT_LEVER_MFIND },
 };
 

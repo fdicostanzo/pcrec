@@ -163,7 +163,7 @@ FLOORS = {
     'simd-form-lever': 2,    # lane mfind fix 1: the lever witnesses that render a SIMD row (2 of 2 measured:
                              # one per level-rendering target in LEVER_ARMS)
     'lever-capped': 4,       # lane mfindfix2 (r2 F1): lever witnesses whose helper the row's fit test
-                             # declined (MEMFN_FORMS none at a level-rendering arm): the two long-chain
+                             # declined (MEMFN_FORMS none AND the fn-mfind body present, r5 CHECKS-3): the two long-chain
                              # witnesses at both LEVER_ARMS, 4 of 4 measured
     'scaffold-copy': 200,    # [iterpin] witness artifacts whose VM program block sits in the scaffold copy (the ladder named witness; more measured)
 }
@@ -341,7 +341,10 @@ def main():
             rec['issues'].append('plain stamp %d on a portable-target artifact (no guard, no region)' % v)
         if v > total:
             rec['issues'].append('plain stamp %d exceeds the sum of its rows\' bounds %d' % (v, total))
-        if lever and not sites:
+        # r5 CHECKS-3: capped = the fit test DECLINED: the SWAR body is the
+        # fn-mfind body (`memcpy(&w, subject`) and no level helper rendered; a
+        # lever that never reached the row, or no lever at all, has no such body
+        if lever and not sites and b'memcpy(&w, subject' in pout:
             rec['counts'].append('lever-capped')
         if sites:
             if lever:

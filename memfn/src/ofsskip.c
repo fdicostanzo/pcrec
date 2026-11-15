@@ -461,10 +461,10 @@ static int memchr_holds(const fn_in *x)
 }
 
 /* fn-memchr's site on an art carrying the test-only lever `mfind` (lane
- * mfind): the inline one-member finder takes it. UNPICKED: no shipped
+ * mfind): the inline one-member finder takes it. UNPICKED (D197): no shipped
  * compile sets the lever, so the row moves no byte and has no deny (memory
  * pcrec-flag-follows-caller-effect: a test-only lever, never a public
- * flag); a selection that picks the form replaces this predicate. */
+ * flag); no selection table picks the form. */
 static int mfind_holds(const fn_in *x)
 {
     return memchr_holds(x) && (x->levers & KIT_LEVER_MFIND);
@@ -498,8 +498,7 @@ static const fn_row fn_rows[] = {
     { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },
     /* the inline one-member finder (vrun.c's mfind_text, its SWAR word):
        ahead of fn-memchr, whose site it takes under the lever alone. A
-       measuring instrument only (F5, Frank 2026-11-15): never picked; see
-       review r2-memfn-mfind */
+       measuring instrument only (D197): unpicked, never a pick */
     { FN_BODY, mfind_holds,  mfind_body,  &fn_mfind_ct,  NULL, FF_MFIND },
     { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },
     /* FN_PREFIX (R4e' batch 1, §R4.9.2.4): the SIMD rows, first match, the
@@ -508,8 +507,7 @@ static const fn_row fn_rows[] = {
     { FN_PREFIX, NULL, NULL, &vrun_w16_ct, &vrun_w16_decl, FF_UNSTATED },
     /* the one-member finder's levels, over fn-mfind only (their OVER), so
        disjoint from vrun's (over fn-pair): their order decides nothing. A
-       measuring instrument only (F5, Frank 2026-11-15): never picked; see
-       review r2-memfn-mfind */
+       measuring instrument only (D197): unpicked, never a pick */
     { FN_PREFIX, NULL, NULL, &mfind_w32_ct, &mfind_w32_decl, FF_UNSTATED },
     { FN_PREFIX, NULL, NULL, &mfind_w16_ct, &mfind_w16_decl, FF_UNSTATED },
 };
