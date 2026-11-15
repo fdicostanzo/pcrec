@@ -694,3 +694,12 @@ values) rule by rule: what changes, which examples need which, cost. STANDING CR
 design): LOOK-ALIKE CONSISTENCY / INTUITIVE BEHAVIOUR: forms that look like they should do the same thing must do the
 same thing; a rule whose effect a user cannot predict (e.g. context silently making a predicate fail) is a defect even
 when formally sound.
+
+**2026-11-14 RULING — C22, condition binding (Frank: `month: unpad & between(1, 12)` "is somewhat structural because it's combined with the comma. & binds tighter", cf. `point & (x: <100, y: unpad & between(1,4))`).**
+Inside a condition literal `( ... )` the COMMA separates conditions; each `label:` takes the whole expression up to the
+next comma or the closing paren: `&` and `|` bind tighter than `:`, `:` tighter than `,`. SUPERSEDES "`name:` takes one
+term". Consequences: conjunction of conditions = comma (`(major: 1, minor: >=4)`); disjunction = separate literals
+(`(major: 2) | (major: 1, minor: >=4)`); `(major: 1 & minor: >=4)` = `major: (1 & minor: >=4)` = compile error (a label
+inside a value), not a misreading; the pipeline reads the same at top level and after a label (look-alike principle).
+Draft §13 C22 RESOLVED; the semver example needs the comma form. (Arrived mid critic round crit-predspec on rev 2; fold
+with the round's dispositions.)
