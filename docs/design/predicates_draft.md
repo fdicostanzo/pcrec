@@ -879,7 +879,8 @@ pick). `^`/`$` of the
 argument = the ends of the span being filtered: RULED BY ACCEPTANCE (CF:991-994, accepted at CF:990; D193 add. 3;
 CF:761); `$` the exact end: LEAN (review r10 SIM-5). The group questions phase 1: CF:922-924, accepted at CF:905;
 one-iteration access at captures: RULED BY ACCEPTANCE (CF:977). The owner's example: his intended behaviour; its
-`$` reading: LEAN (review r10 FIXA-3). SUPERSEDES rev 8's `contains(x) := /(?s).*${x}.*/` body, rev 8's zero-hit lean
+`$` reading: LEAN (review r10 FIXA-3); the selection spelled in the path, `$m.hit[(g: "x")]`: LEAN (review r12
+CENSUS-1). SUPERSEDES rev 8's `contains(x) := /(?s).*${x}.*/` body, rev 8's zero-hit lean
 (fails), rev 9's unscoped `(?s)` body, and rev 7 §2.6 (`$x ~ rx` as an operator, the search result as a match-time
 ARRAY VALUE, `!~` as sugar) and rev 6's "a search returns an rx (the occurrence set)" (CF:873) as a VALUE reading; its
 occurrence order (non-overlapping, leftmost, CF:74) is kept as requirement 1. Binding a test: allowed (§13 C6
@@ -2064,8 +2065,10 @@ program (review OWN-14). The Q1 foundation: review r1 compared context-marked tr
 (B1) and string sets composed in context (B2); the rule set is string-set shaped, and rev 2's argument for A did not
 discriminate (its cases are FINAL patterns, searched under every model; Q1R-12, Q1X-1). Under A or B2 look-alikes
 fail SILENTLY (`\w{3} & /\w+\b/` moves the match; a `^` condition on a repeated label passes one header and fails
-two); under B1 others do (`n: p` dead for a lookbehind `p`). With `^`/`$` bound to the filtered span (CF:761) the `^`
-look-alikes agree with `startsWith`; every remaining divergence needs an assertion that reads outside the span, a
+two); under B1 others do (`n: p` dead for a lookbehind `p`). With `^`/`$` bound to the filtered span (CF:761) a `^`
+never reads the subject's start; under the anchoring (CF:991-993) a `^` in a directly applied filter adds nothing, and
+"starts with" is the loosening `contains(/^.../)` = `startsWith(...)` (rev 10 said the `^` look-alikes agree with
+`startsWith`; review r12 SIMULATE-1); every remaining divergence needs an assertion that reads outside the span, a
 static property, and refusing exactly those leaves no silent failure and no unbuilt lowering at the default level
 (G0, G2). Nullability in context is A's one real gain, adopted. What a hole holds (one string or a set) decides its
 insertion, never the text's content (no injection); a guard needs `&` so the hole rule has no exception (C4).
@@ -2684,7 +2687,7 @@ review's proposed lean, in plain words, NOT resolved):
   `56.1.1.1`). The critic's suggestion: a library search assertion (`@assert.finds(p, "256.1.1.1", ...)`-shaped, a
   name, not a keyword). Not dispositioned by the review; recorded. Rev 8: with `search` a library transform, an
   assertion can state what a search finds INSIDE A VALUE, decided on strings (`@assert.some("256.1.1.1" & search(ipv4)
-  & some((hit: "56.1.1.1")))`); the FINAL pattern's search mode (where in the subject a match is reported) is still
+  & some((hit: "56.1.1.1")))`); the FINAL pattern's searched mode (where in the subject a match is reported) is still
   outside every assertion. Lean: this narrows O36 to that remainder; no new assertion until a measured need (D77).
 - **O37. Two modifier names this document chose.** `unpadded(n, S)` (rev 2's `pad(n)`: the filter reads a subject
   as if zero-padded to width n) and `json.quoted(S)` (rev 2's `jstr`) are placeholders under the naming rule; the
@@ -2959,11 +2962,22 @@ Items NEW in rev 9 (the owner's last two 2026-11-15 entries, CF:927-961; each wi
 
 DECIDED BY THE MANAGER (rev 10, the picks of review r10's DISPOSITIONS RULED; each LEAN (manager), none an owner
 ruling; listed so the owner sees them): (5) a search argument whose own group is read by a backreference or
-conditional inside it is REFUSED, the nullable refusal's sibling (§2.6, O53); (6) a hit's labels are read within its
+conditional inside it is REFUSED, the nullable refusal's sibling (§2.6, O53; NARROWED in rev 11, below); (6) a hit's labels are read within its
 own iteration, a stated departure from PCRE's raw capture state (§2.6); (7) `${` is the one stated exception to "rx
 text has PCRE's meaning", a literal `$` then `{` written `$\{` (§11, G3); (8) `contains` stays ONE definition, so a
 condition after it reads every hit (§2.6, L58, L61); (9) E-DEPTH is marked as needing the multi-clause form, no new
 grammar (§12.11, O21); (10) `each` passes the ordinal BY NAME (§5.3).
+
+DECIDED BY THE MANAGER OR THIS LANE (rev 11, the picks of review r12's DISPOSITIONS RULED; each LEAN, none an owner
+ruling; listed so the owner sees them): (11) L7, L11, L13, L15, L41 are DIFFERENT: BY DESIGN, no tail added (the
+manager's pick on SIMULATE-1); (12) the second argument refusal is NARROWED to a reader that can run with its group
+unset in the current hit (this lane's pick on SIMULATE-2; §2.6); (13) a selection of iterations is written in the
+label path, `$m.hit[(g: "x")]`, and `$` reads the value(s) of a path (this lane's spelling on CENSUS-1, CENSUS-11;
+§2.6, §5.4); (14) `balanced` uses its literal's own named group (the manager's pick on CENSUS-2; §7); (15) under the
+rx-`&` switch ON PCRE's own constructs keep their meaning and a literal `&` is `[&]` (the manager's lean on CENSUS-3,
+put to the owner as O60 (d)); (16) an rx-text `&` takes the whole concatenation, a guard of one atom is grouped (the
+manager's pick on CENSUS-5; L67); (17) a duplicate label inside a loop is a repeated label (this lane's pick on
+CENSUS-12; §4.3).
 
 DECIDED BY THE MANAGER (rev 9; the manager's calls, each LEAN (manager), none an owner ruling; listed so the owner
 sees them): (1) a search argument that can match the empty string is REFUSED with the fix `x & !""` (O53 reading A;
