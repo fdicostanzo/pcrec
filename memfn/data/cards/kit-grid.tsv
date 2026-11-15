@@ -76,9 +76,13 @@
 # the stream together, as one; the ruled single-piece cells (SEARCH vs the
 # walk, STREAM RESTART vs MASK, D190) are not built and are owed. A new ver: ver 3 is CLOSED. UNMEASURED: no set holds a ver-6 row
 # and no box has run it; nothing picks the form (it is reached by the
-# test-only lever `mfind`), so UNMEASURED moves no byte. Its timing plan is
-# docs/dev/lanes/mfind_report.md "Owed runs" (the slot harness pieces it
-# still lacks are listed there). Lane slotx gave find_hit@6 a fifth dim
+# test-only lever `mfind`), so UNMEASURED moves no byte. Its timing is the
+# slot harness's mfcard window (jobs JMB/JMH, decided by slot/d197_rule.tsv);
+# what stays owed (the mfind-w64 arm, the single-piece cells, the entry
+# cut-over default, the row floors) is listed in span_cards.md §2.7. The
+# timing sees one site, NOT the artifact's size (the lever text is 2.9x-6x
+# fn-memchr's body): the emitted size is reported beside each row, never in
+# its value. Lane slotx gave find_hit@6 a fifth dim
 # while the row was still a draft of its lane chain (when a card row binds:
 # docs/design/measure_sets.md §7.2), `reject`: the percent of planted hits the site's check rejects
 # (the site's run is two bytes, `xy`; a rejected hit lacks its `y`), so the

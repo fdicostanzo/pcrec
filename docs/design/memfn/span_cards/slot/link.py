@@ -233,6 +233,16 @@ def timed_shape_check(name, obj, sym):
                          % (name, sym, ",".join(sorted(set(bad)))))
     return sorted(ext)
 
+def text_bytes(obj, sym):
+    """[review 2026-11-15 r5 EMITTED-1] the timed function's size in bytes (nm -S): the site inlined into its one
+    caller, so the EMITTED SIZE the timing is reported beside (a one-site timing cannot see a larger artifact's
+    cache cost, D198 (f))"""
+    for ln in sh(["nm", "-S", obj]).splitlines():
+        p = ln.split()
+        if len(p) == 4 and p[3] == sym + "_time":
+            return int(p[1], 16)
+    raise SystemExit("link: %s has no sized %s_time" % (obj, sym))
+
 def form_hash(fx, form, cls):
     """(the instance's hash, the form's FOLD hash mf_form_hash(form)): cls None names the canonical instance"""
     inst = fold = None
@@ -592,7 +602,7 @@ def build_objs(job, rundir, arms):
             got = sh([fx, "--hash-text", "-"], input=span(src, "FILE") + span(src, "BODY")).strip()
             want, fold = hashes.setdefault(fc, form_hash(fx, fc[0], fc[1]))
             checks.append((a.name, fc, got, want))
-            ctext.append([a.name, fc[0], fc[1] or "-", got, fold, shape_tag(a, f), tgt, isa])
+            ctext.append([a.name, fc[0], fc[1] or "-", got, fold, shape_tag(a, f), tgt, isa, str(text_bytes(o, sym))])
     bad = [c for c in checks if c[2] != c[3]]
     for c in bad:
         print("CELL-TEXT MISMATCH %s: site text %s, the hash of the instance its key names (%s %s) %s"
@@ -604,7 +614,7 @@ def build_objs(job, rundir, arms):
     print("target: every cell TU compiled in its KEY's target (%s); the ISA check holds each object to it"
           % "; ".join("%s uses %s" % tr for tr in regs))
     open(os.path.join(rundir, job, "cell_text.tsv"), "w").write(
-        "#arm\tform\tcls\tinstance_hash\tfold_hash\ttags\ttarget\ttarget_isa\n" + "".join("\t".join(r) + "\n" for r in ctext))
+        "#arm\tform\tcls\tinstance_hash\tfold_hash\ttags\ttarget\ttarget_isa\ttext_bytes\n" + "".join("\t".join(r) + "\n" for r in ctext))
     # arm vs twin: the sources byte-identical (cmp)
     by = {a.name: src for a, _s, _o, _f, src in objs}
     # [rev1.4 R14-1] every null base against its class arm: they differ only in the compare

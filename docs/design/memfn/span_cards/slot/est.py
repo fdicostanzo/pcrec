@@ -921,6 +921,16 @@ def main():
                                        "gate %s" % ("pass" if r.get("gate", True) else "FAIL"))))
         for j, (d, T, bad) in sorted(drift.items()):
             print("drift\t%s\t%d\t%d\t%s" % (j, d, T, "REFUSED" if bad else "kept"))
+        # [review 2026-11-15 r5 EMITTED-1] the emitted size BESIDE the timing (never in a value): each row's timed
+        # function (its site inlined) in bytes, link.py's cell_text column; `-` for a TU it did not size
+        rec = read_record(rundir)
+        for j, (s, _c) in sorted(rec["jobs"].items()):
+            p = os.path.join(rundir, j, "cell_text.tsv")
+            if s == "ran" and j != "J1" and os.path.exists(p):
+                for ln in open(p):
+                    f = ln.rstrip("\n").split("\t")
+                    if not ln.startswith("#") and f[0].startswith("kit.") and not f[0].endswith("#b"):
+                        print("size\t%s\t%s bytes (the timed function, its site inlined)" % (f[0], f[8] if len(f) > 8 else "-"))
         for k, v in notes(rundir, out):
             print("note\t%s\t%s" % (k, v))
         print("== s2 OUTCOME %s exit %d %s" % (outcome[0], outcome[1], "; ".join(outcome[2])))
