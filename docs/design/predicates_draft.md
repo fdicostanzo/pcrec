@@ -640,70 +640,83 @@ and the earlier function forms `unpad(S)` / `length(<=20)` read as images. Names
 `length`, `month_numbered`: RULED (CF:722). `unpadded(n, S)` and `json.quoted`: LEAN (this document's names under the
 naming rule, §13 O37).
 
-## 3. Views
+## 3. The array and map interfaces
 
-### 3.1 Array view and map view
+### 3.1 Array interface and map interface
 
-**RULE.** An rx has two STRUCTURAL views. ARRAY view = its top-level alternatives (flat): `/a|b|c/` has 3 entries,
-`/abc/` is an array of one, `/(?:a|b)|c/` has 2. MAP view = its labelled groups (a tree; nesting gives paths
+**RULE.** ARRAY and MAP are INTERFACES applied to a thing, never values that can be created (the owner: "Array and
+map are interfaces that can be applied to regex but interfaces aren't themselves values that can be created",
+CF:890-891; rev 7 called them "views"). An rx has both. ARRAY interface = its top-level alternatives (flat): `/a|b|c/`
+has 3 entries, `/abc/` has one, `/(?:a|b)|c/` has 2. MAP interface = its labelled groups (a tree; nesting gives paths
 `d.year`). Counts differ: `/(?<y>\d{4})-(?<m>\d\d)/` = array 1, map 2; `/(?<a>x)|(?<b>y)|z/` = array 3, map 2.
-Map order = PCRE group number. A labelled alternation where each alternative is exactly one named group is the
-ALIGNED case, written as an ARRAY with labelled entries: `[x = /foo/, y = /bar/]` IS the rx `(?<x>foo)|(?<y>bar)`
-(`[ ]` = any one entry, `=` labels an entry, §5.4; `[1, 3, 5]` = `1|3|5`). Unlabelled entries are index-labelled.
-Reverse lookup (which branch matched) is reading the accept-state label (`.index`).
+Map order = PCRE group number. The same two interfaces apply elsewhere: the ARRAY interface to a repeated label's
+iterations in a match (§3.4, §4.3), the MAP interface to a module (§7, CF:891-892). A labelled alternation where each
+alternative is exactly one named group is the ALIGNED case, written with labelled entries: `[x = /foo/, y = /bar/]`
+IS the rx `(?<x>foo)|(?<y>bar)` (`[ ]` = any one entry, `=` labels an entry, §5.4; `[1, 3, 5]` = `1|3|5`): a `[ ]`
+literal WRITES AN RX, it creates no array. Unlabelled entries are index-labelled. Reverse lookup (which branch
+matched) is reading the accept-state label (`.index`).
 
-THE WRITTEN FORMS OF THE TWO VIEWS. `[ ... ]` is the written form of the array view and the RECORD `( ... )` is the
-written form of the map view (no third view: the manager's record, CF:870; the owner's own words offer "a third
-view on a regex but an abstract one", CF:853, which this reading folds into the map view). The record is never a
-value (§5.4): it appears only laid
-against something that has fields (a macro's parameters, a pattern's labels, a result's groups). The relation is
-ONE-WAY: an rx can be viewed as a record (its groups are its fields); a record is never read as an rx. The rev 5 map
-literal `(x = /foo/ | y = /bar/)` is WITHDRAWN (a `( )` in value position would be a record used as a value; the
-array form above says the same thing; §0.1 L43, §13 O42). The closure "a record of rx is their sequence" was
-considered and NOT adopted: it would reverse the no-concatenation lean (§2.5) and lose entry boundaries (`(1, 40)`
-and `(14, 0)` would both be `140`); sequencing stays with `join` and literals.
+THE WRITTEN FORMS OF THE TWO INTERFACES. `[ ... ]` is the written form of the array interface (an rx spelled entry by
+entry) and the RECORD `( ... )` is the written form of the map interface (no third interface: the manager's record,
+CF:870; the owner's own words offer "a third view on a regex but an abstract one", CF:853, which this reading folds
+into the map interface). The record is never a value (§5.4): it appears only laid against something that has fields
+(a macro's parameters, a pattern's labels, a result's groups). The relation is ONE-WAY: an rx can be read through
+the map interface as a record (its groups are its fields); a record is never read as an rx. The rev 5 map literal `(x
+= /foo/ | y = /bar/)` is WITHDRAWN (a `( )` in value position would be a record used as a value, and a map is never
+created; the `[ ]` form above says the same thing; §0.1 L43, §13 O42). The closure "a record of rx is their sequence"
+was considered and NOT adopted: it would reverse the no-concatenation lean (§2.5) and lose entry boundaries (`(1,
+40)` and `(14, 0)` would both be `140`); sequencing stays with `join` and literals.
 
 **REASONING.** Frank: "Maps are the labeled groups. The interpretation between the two is different and can have
-different counts"; arrays and maps are perspectives on an rx, not types.
+different counts"; arrays and maps are perspectives on an rx, not types; 2026-11-15: they are interfaces "applied to"
+a thing, which is why one interface serves an rx, a label's iterations and a module.
 
-**STATUS.** RULED (CF:343, two VIEWS; SUPERSEDES ONE TABLE CONSTRUCT and `{Jan: 1}` / `["US" => ...]`; value-valued
-maps: §13 C7). One-way: RULED (CF:853-854, his words: "You can view a regex as a record but not vice versa"). The
-record never a value: RULED (CF:851-852, "it can't be bound directly ie not first class type"). The record as the
-written map view, "no third view", and the sequence closure not adopted: RULED only by the acceptance (CF:866,
-accepted at CF:851; review r8 RUL-2: "no third view" is the manager's word, not his). The labelled array as the one spelling of the aligned case and the map literal withdrawn: LEAN (this
-document; CF:542's spelling was itself a lean; §13 O42). The metadata members `.index`/`.label` vs user labels of those names: §13 O31.
+**STATUS.** RULED (CF:343, two VIEWS, now INTERFACES: CF:890-891, his words; SUPERSEDES ONE TABLE CONSTRUCT and `{Jan:
+1}` / `["US" => ...]`; value-valued maps: §13 C7). The array interface over a repeated label's iterations:
+CF:922-923, accepted at CF:905; the map interface of a module: RULED (CF:891-892). One-way: RULED (CF:853-854, his
+words: "You can view a regex as a record but not vice versa"). The record never a value: RULED (CF:851-852, "it
+can't be bound directly ie not first class type"). The record as the written map interface, "no third view", and the
+sequence closure not adopted: RULED only by the acceptance (CF:866, accepted at CF:851; review r8 RUL-2: "no third
+view" is the manager's word, not his). The labelled array as the one spelling of the aligned case and the map literal
+withdrawn: LEAN (this document; CF:542's spelling was itself a lean; §13 O42). The metadata members `.index`/`.label`
+vs user labels of those names: §13 O31.
 
 ### 3.2 The four tools
 
 **RULE.**
-1. `X[...]` = POSITION in the array view only: integers, integer sets, numeric filters (`X[1]`, `X[<4]`); the
-   result is always an array, keeping the ORIGINAL positions; a string or non-numeric filter inside is a compile
-   error suggesting the right tool. Indexing descends (`d[1][1]`). Integer sets and numeric filters select among
-   positions 1..n only (`X[<4]` = `X[1|2|3]`); there is no `X[0]` (the whole rx is X itself; review r8 P6-2, CENSUS-13:
-   a group-0 index read the map view's numbering through the array view's bracket). Out of range = entry absent:
-   tests on it are false. 1-based. Indexing reads a SPELLED array at compile time (§3.4); on a search result, a
-   match-time array, its meaning is §13 O50 (a).
+1. `X[...]` = POSITION in the array interface only: integers, integer sets, numeric filters (`X[1]`, `X[<4]`); the
+   result is always an rx read through the array interface, keeping the ORIGINAL positions; a string or non-numeric
+   filter inside is a compile error suggesting the right tool. Indexing descends (`d[1][1]`). Integer sets and
+   numeric filters select among positions 1..n only (`X[<4]` = `X[1|2|3]`); there is no `X[0]` (the whole rx is X
+   itself; review r8 P6-2, CENSUS-13: a group-0 index read the map interface's numbering through the array
+   interface's bracket). Out of range = entry absent: tests on it are false. 1-based. Indexing reads a SPELLED array
+   at compile time (§3.4); on a repeated label's iterations (`$m.hit[2]`) it reads ONE iteration, the captures level
+   (§4.3, LEAN).
 2. `X & f` = filter by LANGUAGE; `&` distributes over entries and empty products drop:
    `alts & !startsWith("#")` keeps passing literals; `rows & (w: >100)` keeps matching rows.
 3. `where(p, X)` = SELECT entries by a compile-time STRUCTURAL property (the selecting twin of `each`; not the filter
-   role, §0.3); `where_group(p, X)` for the map view; both return an rx (§2.1).
-4. `X.name` = LABEL navigation in the map view (`A.Saturday`, `alt.repeated[1]`); `.name` is never digits. The same
-   dot also reaches module MEMBERS (`json.row`), METADATA (`.index`, `.label`) and, under `$`, a label PATH
-   (`$rest.year`, §5.4): whether these are one meaning is §13 O31 (the dot family; review r8 P6-12).
+   role, §0.3); `where_group(p, X)` for the map interface; both return an rx (§2.1).
+4. `X.name` = a FIELD of the MAP INTERFACE of the thing on the left; `.name` is never digits. ONE meaning (the
+   manager's lean the owner agreed to, CF:892, CF:898-899): a LABEL (`A.Saturday`, `alt.repeated[1]`, `d.year`), a
+   module MEMBER (`json.row`, the module's map interface, §7), METADATA (`.index`, `.label`, reserved fields) and,
+   under `$`, a label PATH (`$rest.year`, §5.4) are instances of it. What remains open is only the collision of a
+   metadata name with a user label of that name (§13 O31).
 
-**REASONING.** The output of `[]` is always an array, so `[]` uses the array view. `&` on structural properties
+**REASONING.** The output of `[]` is always an rx read through the array interface, so `[]` uses the array
+interface. `&` on structural properties
 would intersect languages (wrong), hence `where`.
 
 **STATUS.** `[]` positional only: RULED (CF:553). 1-based: RULED (CF:583, predx Q7). Filters over 1..n: LEAN (review
 RUL-9). Multi-index `X[1, 3, 5]`: if adopted it is the array reading, any one of the positions = `X[1|3|5]`
-(CF:863); whether to adopt: §13 C5.
+(CF:863); whether to adopt: §13 C5. The dot's one meaning: RULED by acceptance ("agree", CF:892, to the lean at
+CF:898-899).
 
-### 3.3 Holes and groups are single entries; `|` concatenates arrays
+### 3.3 Holes and groups are single entries; `|` concatenates entries
 
-**RULE.** Expression `|` CONCATENATES arrays (each operand contributes its top-level alternatives; appended
+**RULE.** Expression `|` CONCATENATES the operands' entries (each operand contributes its top-level alternatives; appended
 entries take lowest PCRE priority). An rx GROUP or a `${}` HOLE is ONE entry. With `x := /(a|b|c)/`: `x | /d/`
 has 2 entries; with `x := /a|b|c/`: `x | /d/` has 4; `/${x}|d/` has 2 for either (§0.1 L24). A hole is an atom for
-correctness (`/${x}d/` = `(?:a|b|c)d`). Expression parentheses are precedence only. `join` of an empty array is the
+correctness (`/${x}d/` = `(?:a|b|c)d`). Expression parentheses are precedence only. `join` of no entries is the
 empty string.
 
 **STATUS.** LEAN (manager, CF:385; ADD = `|`). The `array.hole` warning: LEAN (proposed by review OWN-8, PLAN).
@@ -717,16 +730,21 @@ user-visible structure. Field-wise narrowing that keeps other entries is structu
 the condition passed as a section, §5.2; rev 6 passed a bare `&`, an operator as an argument, review r8 P6-8 (d)),
 never `&`.
 
-SPELLED vs MATCH-TIME ARRAYS (stated once; review r8 P6-7). An array whose entries are known from the program text
-(a literal `[ ]`, a binding of an rx, a `join` input, an `enumerate` or `records` result) is SPELLED: the structural
-tools above read it at compile time, and G4 covers it. A SEARCH RESULT inside a value (`d := $m ~ /.../`, §2.6) is a
-MATCH-TIME array: its entries exist per match. The owner says the array tools, `count` and `occurs` apply to it
-(CF:881-885, with his example in §2.6); which tools apply, what each means there and at which level is OPEN (§13
-O50). Until O50 is decided, a structural tool on a match-time array has no meaning in this draft.
+SPELLED ARRAYS vs A REPEATED LABEL'S ITERATIONS (stated once; review r8 P6-7, restated by the transform ruling,
+CF:922-923). The array interface applies to two kinds of thing. (1) An rx whose entries are known from the program
+text (a literal `[ ]`, a binding of an rx, a `join` input, an `enumerate` or `records` result) is a SPELLED array: the
+structural tools above read it at compile time, and G4 covers it. (2) The ITERATIONS of a repeated label in one match
+(a group inside a loop, the `hit` label of a `search`, §2.6) exist only per match: the array interface over them is
+§4.3's, where the GROUP QUESTIONS (a plain condition, `some`, `all`, `count`, `occurs.*`) compile to states (phase 1)
+and access to ONE iteration (`$m.hit[2]`) needs captures (LEAN). No structural tool of this section (`each`, `join`,
+`where`, `enumerate`, `.label`) reads iterations: on a label that can repeat it is a compile error naming the group
+questions. Rev 7's MATCH-TIME ARRAY (a search result as an array value, `d := $m ~ /.../`) is gone with `~`: nothing
+in the language is an array value (CF:890-891).
 
 **STATUS.** RULED (CF:328, CF:385). The structural effect of `&`'s distribution over entries is unstated: §13 C17.
-Spelled vs match-time arrays: the distinction LEAN (this document, review r8 DRIFT-2); the tools on a match-time
-array: OPEN (O50).
+The two things the array interface applies to: CF:922-923 (accepted at CF:905), restated here (LEAN); the error for a
+structural tool on iterations: LEAN (this document; review r8 DRIFT-2's "two populations", now one population per
+kind of thing).
 
 ### 3.5 Arrays of filters and filter modifiers
 
@@ -808,25 +826,80 @@ spelled the labelled alternation as the withdrawn map literal, §3.1).
 `label.unset`: LEAN (manager's list, review RUL-14.1). The two sentences disagree on `(x: !<5)` for an unset x, and
 on zero-iteration repeated labels: §13 O28.
 
-### 4.3 Repeated and duplicate labels
+### 4.3 Repeated and duplicate labels: the general home of the group questions
 
-**RULE.** At the default level a repeated label follows the SEQUENCE RULE: `x: S` constrains ALL iterations; the
-quantified forms are the `occurs` library (§8: `occurs.some((x: S))`, `occurs.exactly(n, (x: S))`, ...); a bare
-`$x` on a repeated label is an ERROR naming the quantified forms. At `vm`, `$x` is PCRE's last iteration (what
+**CONFLICT MARKED (§13 C36).** The transform ruling requires a repeated label's iterations to be those of PCRE's
+PRIORITY parse (CF:919-920); §4.5 (RULED, CF:583) lets a condition on an ambiguous label pass on SOME parse. For an
+unambiguous loop the two agree; for a search's hits (always ambiguous as a set) they do not. This section is written
+under the priority parse because the search definition (§2.6) needs it; it does not decide C36.
+
+**RULE.** At the default level a repeated label follows the SEQUENCE RULE: `x: S` constrains ALL iterations; a bare
+`$x` on a repeated label is an ERROR naming the group questions below. At `vm`, `$x` is PCRE's last iteration (what
 `\k<x>` sees). Duplicate names (`(?J)`, `(?|`): plain `$x` gives the lowest-numbered set group; the static
 CONSTRAINT SET of a duplicate label (the strings it can hold) is the UNION of the definitions that can set it.
-Structurally, `alt.x` returns EVERY entry labelled x as an array in group order; `alt.x[1]` (first in the PATTERN,
-compile time) differs from `$x` (the MATCH's captured string). The sequence rule is the candidate general form for a
-search result's entries (§13 O50, reading D).
+Structurally, `alt.x` returns EVERY entry labelled x as an rx read through the array interface in group order;
+`alt.x[1]` (first in the PATTERN, compile time) differs from `$x` (the MATCH's captured string). A repeated label is
+ANY label inside a loop: a group under `*`/`+`/`{n,m}`, a `list_of` part (E-HTTP's `name`), and the `hit` label of a
+`search` with every label of its argument (§2.6). There is no second population: rev 7's "entries of a match-time
+array" are these iterations.
+
+THE GROUP QUESTIONS, stated once (CF:910-915, accepted at CF:905). Each is a macro with its operand open, standing in
+the filter role like a condition (`P & some((g: "x"))`, `(m: search(r) & some((g: "x")))`); the labels it names are
+looked up in its operand as for any condition (§4.1).
+
+| form | means, over the iterations of the labels it names | example on the hits `abx`, `aby`, `abx` of `/ab(?<g>[xy])/` |
+|---|---|---|
+| plain `(g: S)` | EVERY iteration's g is in S (the sequence rule); on zero iterations: §13 O28 | `(g: "x")` fails |
+| `all((g: S))` | the same as the plain condition: the default, "rarely written" (§0.1 L36) | `all((g: "x"))` fails |
+| `some((g: S))` | AT LEAST ONE iteration's g is in S; false on zero iterations | `some((g: "x"))` holds |
+| `count(c)` | the NUMBER of iterations meeting the condition c: a number (an rx of canonical numerals, §2.1, §13 O40), tested through a computed label (`n := count(c)`, `P & (n: ==2)`) | `count((g: "x"))` = 2 |
+| `occurs.exactly(n, c)`, `occurs.at_least(n, c)`, `occurs.at_most(n, c)`, `occurs.none(c)` | `count(c)` compared with a constant n; `none(c)` = `count(c)` is 0 = `!some(c)` | `occurs.exactly(2, (g: "x"))` holds; `occurs.none((g: "y"))` fails |
+
+`occurs` keeps the COUNTS only (CF:913): `occurs.some` and `occurs.all` are withdrawn. The record allows "goes away
+or becomes an alias"; rev 8's lean is GONE, not aliased (one spelling for one question, G0b; nothing in §12 uses them).
+
+SAME ITERATION BY RECORD (CF:915-917, accepted at CF:905). A record is ALL its entries together ON THE SAME
+ITERATION; two calls are two questions, which different iterations may answer. With `/(?<g>[xy])(?<h>\d)/` searched
+in a value (§2.6):
+- on `x2 y1` (hits g=x h=2, g=y h=1): `some((g: "x", h: 1))` FAILS (no one hit has both); `some((g: "x")) & some((h:
+  1))` HOLDS (hit 1 gives g = x, hit 2 gives h = 1). The two spellings DIFFER (§0.1 L31).
+- on `x1 y2` (hits g=x h=1, g=y h=2): both HOLD (hit 1 has both). The two spellings AGREE.
+For `all`/the plain condition the two spellings always agree (every iteration has both = every iteration has g and
+every iteration has h); `count((g: "x", h: 1))` counts the iterations that have both. This REPLACES rev 2's rule that
+every `some(s)` over the same set denotes the same occurrence ("two occurrences need two names"; §13 O29 RESOLVED).
+Which iteration a record means when its labels sit at different depths (g inside the loop, k outside it): §13 O57.
+
+THE ARRAY INTERFACE OVER ITERATIONS (CF:922-926). The iterations of any repeated label, in match order, are read
+through the array interface (§3.1, §3.4); nothing is created. Two levels:
+- GROUP QUESTIONS (the table above) compile to states (a capped counter per question, n+2 states, CF:62's cost rule):
+  the DEFAULT level, phase 1 (CF:922-924, accepted at CF:905). The iterations are those of PCRE's priority parse
+  (CF:919-920; C36 above).
+- ONE ITERATION read out: `$x[2]` (the captured string of iteration 2), `$m.hit[2].g` (a label inside it; `$` covers
+  the whole path, §5.4), and selecting iterations by a condition (`$m.hit & (g: "x")` keeps iterations 1 and 3 with
+  their positions, the owner's array example, §2.6) need captures inside a loop: the `captures` level, its cost shown
+  (the MANAGER'S LEAN, CF:924-926: LEAN). Out of range = the iteration is absent and a test on it is false (CF:62). A
+  TEST on one iteration by a literal index (`(x[2]: S)`) does not read text out; CF:62's countdown makes it regular
+  (~k states for i <= k), so this document reads it as a group question at the default level (LEAN, reconciling
+  CF:62 with CF:924-926; §13 O57).
+- No structural tool (`each`, `join`, `where`, `enumerate`, `.label`) reads iterations (§3.4).
 
 **REASONING.** "All iterations" is substitution into the loop body, the only pure lowering (predx §2.1, O4); the
-last-iteration rule would need captures inside a loop.
+last-iteration rule would need captures inside a loop. One home for every repeated label means search adds no rule
+(§2.6), and "some" has one spelling (`some(...)`), "all" the plain condition, "how many" `count` and the `occurs`
+counts. The record-as-same-iteration rule is the record's own meaning (all entries together, §5.4) applied to one
+iteration, so it needs no extra rule either.
 
 **STATUS.** Sequence rule: RULED (CF:583, predx Q4), SUPERSEDES "plain `$x` = last iteration" at the default level.
-`occurs` as a library: RULED (CF:682); its role as the FALLBACK to `count()`: LEAN (CF:823) with the budget rule RULED
-(CF:832); the namespace name `occurs`: RULED in use (CF:782: "use 'occurs' module like occurs.at_least(3, ...)").
-Duplicate labels by index: LEAN (CF:400); union type cited "ruled" (CF:350; §13 O3). A duplicate label set twice in
-one match under `x: S`: §13 O35. The `occurs` condition argument is a parenthesised literal: RULED (CF:732, C31).
+Plain condition = all, `some`/`all` the one spelling, `occurs` counts only, same iteration by record, the hit a
+repeated label, group questions at the default level and phase 1: CF:910-917, CF:922-924 (accepted at CF:905;
+"could you use some() to get some hits?" is his own question, CF:904-905). `occurs.some`/`occurs.all` removed rather
+than aliased: LEAN. One-iteration access at `captures`: LEAN (CF:924-926, the manager's, not separately ruled); a
+literal-index TEST at the default level: LEAN (CF:62). The priority parse: C36 (CONFLICT). `occurs` as a library:
+RULED (CF:682); its role as the FALLBACK to `count()`: LEAN (CF:823) with the budget rule RULED (CF:832); the name
+`occurs`: RULED in use (CF:782). Duplicate labels by index: LEAN (CF:400); union type cited "ruled" (CF:350; §13 O3).
+A duplicate label set twice in one match under `x: S`: §13 O35. The `occurs` condition argument is a parenthesised
+literal: RULED (CF:732, C31). Whether `some`, `all`, `count` are built-ins or library names: lean library (prelude)
+names (§8; C28 RESOLVED for `occurs.all`, the rest LEAN).
 
 ### 4.4 Computed labels are match-dependent bindings
 
@@ -859,6 +932,11 @@ a condition on an ambiguous label passes if SOME parse passes (one automaton); a
 witness, the two parses, which one PCRE chooses, the consequence and a fix where one exists. At `vm` the condition
 uses PCRE's chosen parse. Library patterns are checked unambiguous at their labels. Every occurrence of the same
 application denotes ONE parse (merged narrowing).
+
+**CONFLICT MARKED (§13 C36, rev 8).** The library transform `search` (§2.6) is AMBIGUOUS at its `hit` label by
+construction (a lazy gap, as a set, can swallow a hit), so it fails "library patterns are checked unambiguous at their
+labels", and its group questions are defined on PCRE's PRIORITY parse (CF:919-920), not on some parse. Both readings
+are in C36; this section's rule is unchanged until the owner decides.
 
 **REASONING.** The default level is a promise; only some-parse keeps it; for unambiguous labels the readings
 coincide, so the difference is confined to exactly the patterns the warning flags (predx C11).
