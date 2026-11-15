@@ -877,3 +877,11 @@ TO CHECK in the next round (manager's, not ruled): `(x)` as grouping vs a one-en
 `lex_ge([major, minor, patch], [1, 4, 0])` passes tuples as values, which (4) forbids (candidate rewrite `version &
 lex_ge(1, 4, 0)`); whether any worked example needs a tuple as a value; `[x = /foo/, y = /bar/]` and the map literal
 `(x = /foo/ | y = /bar/)` under (3).
+**2026-11-15 OWNER NOTE — a search result is the ARRAY of all results (Frank, to session 132; confirms point (5) of the
+type-picture ruling above, changes nothing in it).** His words: "actually, I was thinking of it wrong. The result of the
+search would be an array of all of the results. You could use count to check the number of results. You could treat it
+as an array. You could use the occurs module." RECORD: `rx ~ /.../` yields the occurrences as an array (an array is a
+view of an rx, so this is point (5) said from the array side): `count(...)` gives the number of results, indexing and
+the other array tools apply, and `occurs.*` applies. He withdraws his earlier "in my mind it's a record". Manager's
+note (mine, to check in the design round): the record-on-the-left binding `(x, y) := rx ~ /.../` then names the fields
+of EACH entry (or of one indexed entry); which, and what `d.year` means across several entries, must be stated once.
