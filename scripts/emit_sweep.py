@@ -3718,7 +3718,9 @@ def main():
                     extra=list(run_extra) + (["-e", "utf8"] if enc == "utf8" else [])),
                 declared_keys={"\t".join(k.split(":", 1)) for k in
                                args.census_facts_keys.split(",")})
-        if args.facts_declared_moves:
+        # a self-check compares one revision with itself, so no declared move
+        # may be demanded there (dumps_declarations does the same for dumps)
+        if args.facts_declared_moves and not label.startswith("selfcheck"):
             facts_census.setdefault("facts", {})["declared_moves"] = parse_fact_moves(
                 args.facts_declared_moves)
         tasks = []

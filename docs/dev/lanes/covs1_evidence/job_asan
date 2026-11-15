@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # covs1-asan: make asan (both axes), then run_cover.sh on the ASan binaries (cover_cap.md §5.1)
+# cap/est (covs1v 2026-11-15): the first run was cap-killed at 3600 s with 30 of 45 suite scripts done (lookaround_diff 31st, mid-run), box otherwise idle, no sanitizer report; est 5400 = 3600*45/30 linear; cap 9000 = 1.67x est (docs/testing.md records 6672 s for the whole asan suite on this box at 26 scripts). Per-section A/B vs baseline: identical.
 set -u
 . /home/pcrec/projects/pcrec/worktrees/covs1/docs/dev/lanes/covs1_evidence/common.sh
 case "${1:-}" in
     --dry-run)
         make -C "$TREE" -n asan-locked >/dev/null 2>&1 || { echo "make -n asan failed" >&2; exit 1; }
         echo "would run in $TREE: make asan-locked; then run_cover.sh with build-asan binaries"
-        echo "boxqueue: cap 3600"; echo "boxqueue: est 2700"; echo "boxqueue: patience none"
+        echo "boxqueue: cap 9000"; echo "boxqueue: est 5400"; echo "boxqueue: patience none"
         echo "boxqueue: expect none reason=make's rc then run_cover's rc decide the job's rc"
         exit 0 ;;
     --ready) ready_after ;;
