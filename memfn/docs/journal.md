@@ -4013,3 +4013,7 @@ Main ruled on the four kit findings (D186 add. 2):
   - HELD, not started: slotxf8 (F7 §7.2 sentence + F8 (i) split), d3wire (R-43 FLOORS-4), the slotx -> mfind merge, kit-mfcard-time queueing (needs both gates green + the merge).
   - Main's axes fix (axtri1115) is pending; then a cloud axes run on mfind.
 - 03:20 slotxfix interim: all FIX-NOW items committed at 127418001 (each red on f13a59356 first); strict, finder/arms/targets, anchors and est selftest green; sabotage rows incl. new S3168/S3169/S3171/S3172 DETECTED. Under the stop it may let its two already-running test runs (full sabotage table, JMH disabled-check) finish, with no further code; then report, lanecheck, end.
+- 03:30 crit-mfind DRAFT (2026-11-15-r2-memfn-mfind, light; scratch/crit-mfind). No answer-level finding; 0 default movers in 390 pairs; the lever arm is 0-diff over 438k runs vs libpcre2 and 8M direct differential inputs.
+  - RULED: FIX-NOW F1 (MFIND_W16/W32_GUARDED_MAX is not a bound: 4089 > 2100), F3, F4, F6, F8, F9, F10, F12, F13, F14. F5: stage 1 accepted, stage 2 owed before row 1 (to main). PLAN F2/F7; DOC F11; NOTED F15.
+  - The fix lane mfindfix2 is HELD by the stop.
+  - Gate: 621 g2 GREEN (873 s), 626 mech GREEN (263 s); 622-625 queued.
