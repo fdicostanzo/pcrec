@@ -349,7 +349,11 @@ decline() { # decline <label> <pattern> <why>
         bad "§3 [$lbl] '$pat' now SELECTS the offset-k form ($gs $go) — $why. If that is intended, it needs a measurement on this row before the line moves, not after"
     fi
 }
-decline "hex32-id"    '\b[0-9a-f]{32}\b' \
+# [COVER-CAP] stage 1 (lane covs1, cover_cap.md §5.5): `\b[0-9a-f]{32}\b` became a
+# `cover` (its window search is the whole search, so it "declines" offset-k
+# vacuously); the witness is its CAPTURE form, which C1 keeps off the cover and
+# which selects the same prefilter form (first-class-bounded, offsets none).
+decline "hex32-id"    '\b([0-9a-f]{32})\b' \
     "every offset is the same 16-byte hex class; pcrec is 1.14x AHEAD of the JIT here and two coin-flip verify branches on 80% of positions is how that is lost"
 decline "ipv4"        '(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])' \
     "unequal-width alternation puts the '.' at a variable offset; 3.56x ahead"
@@ -400,11 +404,12 @@ done
 # A line count is a pin on every stamp anyone adds later; dropping the include
 # by its own shape is the same claim without that coupling.
 drop_own_header() { grep -v '^#include "' "$1"; }
-if emit p1 '\b[0-9a-f]{32}\b' && emit p2 '\b[0-9a-f]{32}\b' -fno-offset-skip; then
+# (the capture form since [COVER-CAP] stage 1: the bare pattern is a cover)
+if emit p1 '\b([0-9a-f]{32})\b' && emit p2 '\b([0-9a-f]{32})\b' -fno-offset-skip; then
     if cmp -s <(drop_own_header "$WORKDIR/p1.c") <(drop_own_header "$WORKDIR/p2.c"); then
         ok "§4 a DECLINED pattern is byte-identical across the flag (the flag denies this axis and nothing else)"
     else
-        bad "§4 '\\b[0-9a-f]{32}\\b' is not byte-identical across -fno-offset-skip, and it selects no offset-k form either way — the flag is reaching something that is not its axis"
+        bad "§4 '\\b([0-9a-f]{32})\\b' is not byte-identical across -fno-offset-skip, and it selects no offset-k form either way — the flag is reaching something that is not its axis"
     fi
 fi
 
