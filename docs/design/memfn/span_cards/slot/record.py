@@ -39,8 +39,8 @@ JOBS = ("J1", "J2", "J2p", "J3", "J4", "J5")
 # [lane slotx] THE WINDOWS: each window's job set, one row per window. finalize holds STATES to exactly one of them
 # (recorded as `window`), and est.py prices only the rows of the window's jobs (the frozen plan holds every job's
 # rows; a row of a job outside the window is not this window's, never `never-ran`). `mfcard`: kit-grid@6's card
-# (J6B, J6H) with J2 (the unit and libc's byte row) and J2p (pair, the ver-3 anchor)
-WINDOWS = {"s2d": JOBS, "mfcard": ("J2", "J2p", "J6B", "J6H")}
+# (JMB, JMH) with J2 (the unit and libc's byte row) and J2p (pair, the ver-3 anchor)
+WINDOWS = {"s2d": JOBS, "mfcard": ("J2", "J2p", "JMB", "JMH")}
 # PER VER ([r2s1 RK383-3]): the set a ver's rows are written to and the owner of the rules that ver is scored by
 # (measures.md §3.5¶8a: span_cards). Ver 3's keys stay `set` / `rules`; any other ver's are `rules.<ver>` (rules_key)
 SETS = {"3": "zen4-grid3@1", "4": "zen4-grid4@1", "6": "zen4-grid6@1"}

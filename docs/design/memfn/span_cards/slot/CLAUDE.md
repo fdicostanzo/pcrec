@@ -16,7 +16,7 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   card read at its own ver; kit-grid@4's `enter_back` (dim `back`, t in `BACK_STEPS`) is its OWN job and group `J5B` `[k383 F1]` (not J5's: `dry J5` keeps its 16 arms), UNMEASURED and UNSCHEDULED (no window job runs it; `record.JOBS`/`common.sh` omit it; est.py's selftest skips jobs outside `record.JOBS`); `check_card_dims`
   (build time) refuses a planned-ver card dim with no `DIM_FIELD` line. Env `SLOT_TREE`: the tree when slot/ runs from a copy.
   [lane slotx] ver 6 planned too: `card_of` (a key's card: its quantity's card whose deps name its form token;
-  find_byte/find_hit have cards at 3 and 6), jobs J6B (find_byte@6) and J6H (find_hit@6's sweep `GAPS6` x reject
+  find_byte/find_hit have cards at 3 and 6), jobs JMB (find_byte@6) and JMH (find_hit@6's sweep `GAPS6` x reject
   percent, dim `reject`), mfind-w64 listed OWED (`UNPLANNED6`); every row key held to its card's dims at build time.
 - `vcls.py`, `vcls.out` — the verify-class census (T-CMP / T-SETTEST classes of the S2b corpus's row-1 sites):
   settest c1/c2/cn by compare count, rc-words w1/w2/w3 by word count, rc-memcmp l1; c2's `shape`
@@ -74,7 +74,7 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   exclusion table `NON_TIMED`; self-test READING_CASES (assembled functions) and GATE_CASES (a scratch git tree).
 - `j1_rule.py` — J1's verdict (a)/(b)/(c) from its cells (m 0.5, k 5), on est.py's primitives.
 - `record.py` — the run record's one writer: per-ver `SETS`/`RULES` (ver 3 keeps the `rules` key, others `rules.<ver>`); [slotx]
-  `WINDOWS` (a window's job set: `s2d`, `mfcard` = J2 J2p J6B J6H; finalize records `window`), `libc` names any
+  `WINDOWS` (a window's job set: `s2d`, `mfcard` = J2 J2p JMB JMH; finalize records `window`), `libc` names any
   GLIBC_TUNABLES; `window`, `j1`, `ready-j2p`, `finalize` (the CAUSE table; plan,
   floor, cards and policy pinned from the frozen plan with the tables' sha-256; `[rev1.4 R14-3]` the `quiet`
   section from the transcript and est's two note keys; `[rev1.5 r11-REV15-1]` `manifest_sha256_<job>` per ran job).

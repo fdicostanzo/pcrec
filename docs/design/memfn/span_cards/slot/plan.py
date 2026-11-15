@@ -32,7 +32,7 @@ CARDS = os.path.join(TREE, "memfn", "data", "cards", "kit-grid.tsv")
 POLICY = os.path.join(TREE, "memfn", "data", "policy.tsv")
 METHOD_VERS = ("3", "4", "6")          # the vers this producer plans, each card read at ITS OWN ver: kit-grid@3
                                        # (span_cards.md §2.1), kit-grid@4 (K38-3's step-back cell, span_runs_sheet.md §5.2)
-                                       # and kit-grid@6 (lane mfind's one-member finder; lane slotx: J6B, J6H)
+                                       # and kit-grid@6 (lane mfind's one-member finder; lane slotx: JMB, JMH)
 BACK_STEPS = (0, 3, 8, 16, 32)         # kit-grid@4's `back` dim: the step-back t (bytes) on the `enter` quantity
 UNIT_KEY = "kit.find_byte.walk"        # the set's unit row (§2.2): the walk's find_byte
 
@@ -139,7 +139,7 @@ def card_facts(cards):
 
 LENGTHS, LEN, L_LAUNCHES, R_ROUNDS, GATE_E6 = card_facts(CARD)
 GAPS = (256, 1024)
-# kit-grid@6's find_hit sweep (J6H; lane slotx): THE HIT-GAP SWEEP, per-byte cost vs gap (slope over 1/gap the
+# kit-grid@6's find_hit sweep (JMH; lane slotx): THE HIT-GAP SWEEP, per-byte cost vs gap (slope over 1/gap the
 # per-hit cost, intercept the streaming rate) at each REJECT rate (the percent of planted hits the site's check
 # rejects: 0 every hit returns to the caller, 100 every hit continues through the mask). The site's run is 2
 # bytes, so a gap is >= 2 (gap 1 cannot plant a non-overlapping run: listed UNREACHED, never forced); REJECTS_ALL
@@ -433,19 +433,20 @@ def build():
                 key = "kit.enter_back.%d.%s.%d" % (k, e, t)
                 row("J5B", Arm(key, "J5B", "enter", "artifact", fixture=fx[(k, e)], base=base_of(key),
                               events=LEN // ENTER_GAP, back=t), base_of(key))
-    # J6B, J6H (lane slotx): kit-grid@6, the one-member finder's forms on ONE offset-skip site (FORMS6: SIMD-off
+    # JMB, JMH (lane slotx; "JM" = the Mfind cards, never J6: span_cards.md's J6 is unit S2g's vrun jobs, review
+    # 2026-11-15 r1 F9): kit-grid@6, the one-member finder's forms on ONE offset-skip site (FORMS6: SIMD-off
     # mfind-swar, SIMD-on mfind-w16/-w32 each compiled inside its target's region, the same site's libc stream
-    # fn-memchr). J6B: find_byte@6, the miss-only slope. J6H: find_hit@6, the sweep (GAPS6 x REJECTS), landing
-    # periodic, split one (one member), its bases base.<form> (miss-only) on J6H.base. A window runs them with
+    # fn-memchr). JMB: find_byte@6, the miss-only slope. JMH: find_hit@6, the sweep (GAPS6 x REJECTS), landing
+    # periodic, split one (one member), its bases base.<form> (miss-only) on JMH.base. A window runs them with
     # J2 (the unit) and J2p (pair, the ver-3 anchor): record.py WINDOWS `mfcard`
     for f in FORMS6:
-        row("J6B", Arm("kit.find_byte.%s" % f, "J6B.byte", "find", f, lengths=LENGTHS))
-        add("J6H", Arm("base.%s" % f, "J6H.base", "find", f, events=0))
+        row("JMB", Arm("kit.find_byte.%s" % f, "JMB.byte", "find", f, lengths=LENGTHS))
+        add("JMH", Arm("base.%s" % f, "JMH.base", "find", f, events=0))
     for g in GAPS6:
         for r in REJECTS_ALL + (REJECTS_SOME if g in GAPS6_SOME else ()):
             for f in FORMS6:
                 k = "kit.find_hit.%s.periodic.one.%d.%d" % (f, g, r)
-                row("J6H", Arm(k, "J6H.hit.r%d.%d" % (r, g), "find", f, landing="periodic", split="one", gap=g,
+                row("JMH", Arm(k, "JMH.hit.r%d.%d" % (r, g), "find", f, landing="periodic", split="one", gap=g,
                                base=base_of(k), events=LEN // g, reject=r), base_of(k))
     unreached.extend(UNPLANNED6)
     # J1 (§3.6, art.py, j1/): per cell (pattern, subject, regime) one group, a whole-artifact arm per PAIR width

@@ -282,19 +282,19 @@ for row in $ROWS; do
     d1) job=plan want='plan: card enter_back@4 dim back has no DIM_FIELD line'
         patch "$SCR/$row/plan.py" '    ("back",    lambda a: None if a.back is None else str(a.back)),    # kit-grid@4: the step-back t
 ' '' ;;
-    t1) job=J6B want='inlining failed in call to .*target specific option mismatch'
+    t1) job=JMB want='inlining failed in call to .*target specific option mismatch'
         patch "$SCR/$row/link.py" '    return pro + heads + ro + "#define CAT_(a, b) a##b\n" + rest + rc' \
 '    return pro + heads + "#define CAT_(a, b) a##b\n" + rest   # SABOTAGE S3160' ;;
-    t2) job=J6B want='ISA MISMATCH [^ ]+: keyed target generic, its code needs'
+    t2) job=JMB want='ISA MISMATCH [^ ]+: keyed target generic, its code needs'
         patch "$SCR/$row/link.py" '    sh(CC + ["-c", "-DSYM=" + sym,' '    # SABOTAGE S3161
     sh(CC + ["-march=x86-64-v3", "-c", "-DSYM=" + sym,' ;;
-    r1) job=J6H want='REJECT-RATE MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.(50|100)'
+    r1) job=JMH want='REJECT-RATE MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.(50|100)'
         patch "$SCR/$row/gen.c" '        uint32_t m = (uint32_t)((uint64_t)E * (uint64_t)a->reject / 100);' \
 '        uint32_t m = 0;   /* SABOTAGE S3162 */' ;;
-    r2) job=J6H want='REJECT-RATE MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.(50|100)'
+    r2) job=JMH want='REJECT-RATE MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.(50|100)'
         patch "$SCR/$row/link.py" '               50 if a.pas == "p50" else 0, a.reject or 0, subj, expect))' \
 '               50 if a.pas == "p50" else 0, 0, subj, expect))   # SABOTAGE S3163' ;;
-    k1) job=J6H want='KEY-ARM MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.50: dim reject: the key names 50, the Arm 0'
+    k1) job=JMH want='KEY-ARM MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.50: dim reject: the key names 50, the Arm 0'
         patch "$SCR/$row/plan.py" '                               base=base_of(k), events=LEN // g, reject=r), base_of(k))' \
 '                               base=base_of(k), events=LEN // g, reject=0 if r == 50 else r), base_of(k))   # SABOTAGE S3167' ;;
     v1) job=est want='selftest	\[slotx\] the draft split[^	]*	WRONG'

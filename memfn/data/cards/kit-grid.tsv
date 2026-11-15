@@ -81,7 +81,7 @@
 # fifth dim, `reject`: the percent of planted hits the site's check rejects
 # (the site's run is two bytes, `xy`; a rejected hit lacks its `y`), so the
 # MASK stream's continue-after-reject path is timed, not only accepted
-# hits; the slot plans the card as jobs J6B/J6H (slot/plan.py).
+# hits; the slot plans the card as jobs JMB/JMH (slot/plan.py).
 #
 # Divergence recorded (fdb1_report.md F-B1-6): r17b_prime.md §5.2's card table
 # lists `gstar` with dims form;kind;shape, while §1.3's reader R5 reads

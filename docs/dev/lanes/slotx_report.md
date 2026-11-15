@@ -18,9 +18,9 @@ no byte pcrec or the kit emits moved (identity job 643, below). Nothing was time
   from the subject's bytes, and run.py refuses any count other than the key's.
 - **Piece 4, ver-6 planning.** plan.py now plans ver 6 alongside 3 and 4:
   - `card_of` resolves a key to its card by form, because find_byte and find_hit have cards at both ver 3 and 6.
-  - Job J6B covers find_byte@6 and job J6H the find_hit@6 sweep over GAPS6 x reject.
+  - Job JMB covers find_byte@6 and job JMH the find_hit@6 sweep over GAPS6 x reject.
   - The UNMEASURED classes (mfind-w64, gap 1) stay listed in `UNPLANNED6` and are never scheduled or priced.
-  - record.py has a `mfcard` window, the job set J2 J2p J6B J6H.
+  - record.py has a `mfcard` window, the job set J2 J2p JMB JMH.
   - est.py prices only the rows of the window's own jobs and splits the draft by ver. `draft_split` holds each
     set's rows to that set's own cards.
 - **Piece 2 (mfind-w64) stays OWED**, along with both IPv4 one-axis comparisons; the slot harness cannot express
@@ -40,7 +40,7 @@ Files, all under docs/design/memfn/span_cards/slot/ unless named:
 | 3 | `slot.h` (`reject`), `gen.c` | with L>1 each run occupies [p,p+L). Periodic hits sit at k*gap+gap-L, random hits do not overlap, and the sentinel sits at len-L. A seeded choice of exactly floor(E*R/100) hits gets a check byte that fails the mask and is no find member. The generator refuses a gap below L, a reject with L<2, and a check byte that is a member. Ver-3 subjects are byte-identical to the base generator's (scratch tools/gencmp.c). |
 | 3 | `drv.c`, `run.py` `reject_check` | for each landed find arm, the gate prints `reject ARM CAND REJECTED`, counted from the bytes as candidates minus gate count. run.py requires rejected = pools x floor(E*R/100), E = LEN/gap and cand = pools x E; otherwise REJECT-RATE MISMATCH. |
 | 3 | memfn/data/cards/kit-grid.tsv | find_hit@6's dims become `form;landing;split;gap;reject`, with subject `reject:percent`. I amended that row instead of adding a ver 7 because it has never been merged or timed, so nothing reads the old dims; the file's header note says so. |
-| 4 | `plan.py` | `METHOD_VERS` gains 6. Cards are keyed `quantity@ver`. `card_of` returns the quantity's card whose deps name the key's form, or the one card naming no form, and refuses unless exactly one matches. Every row key is held to its card's dims at build time (`key_dims` in `row()`). New: J6B (9 arms), J6H (173 arms, groups `J6H.hit.rR.G`), GAPS6, REJECTS_ALL/SOME, `UNPLANNED6`, DIM_FIELD `reject`, and FLOOR rows `(quantity, ver, test, clause)` with find_hit@6's `hit6.<form>`. The plan report shows 151 rows. |
+| 4 | `plan.py` | `METHOD_VERS` gains 6. Cards are keyed `quantity@ver`. `card_of` returns the quantity's card whose deps name the key's form, or the one card naming no form, and refuses unless exactly one matches. Every row key is held to its card's dims at build time (`key_dims` in `row()`). New: JMB (9 arms), JMH (173 arms, groups `JMH.hit.rR.G`), GAPS6, REJECTS_ALL/SOME, `UNPLANNED6`, DIM_FIELD `reject`, and FLOOR rows `(quantity, ver, test, clause)` with find_hit@6's `hit6.<form>`. The plan report shows 151 rows. |
 | 4 | `record.py` | `WINDOWS` (`s2d` and `mfcard`). finalize records the window whose job set equals the states. SETS gains ver 6, `zen4-grid6@1`. The `libc` fact names any GLIBC_TUNABLES. |
 | 4 | `est.py` | `compute` keeps only the rows (and floor clauses) of the record's jobs. `card_of` supplies est and gate. `draft_split` raises DRAFT-VER MISMATCH. The draft's source field gains ` target T`. Self-test: 54 cases, 0 wrong (new: mf_priced, mf_split). |
 
@@ -87,7 +87,7 @@ nothing observable changes.
 
 | id | row | plant | measured | class |
 |---|---|---|---|---|
-| S3160 | t1 | (brief i) w32 compiled at the DEFAULT target while keyed v3: the region dropped, header lines kept | sabotage.sh: DETECTED, J6B dry: gcc `inlining failed ... target specific option mismatch` | LOUD |
+| S3160 | t1 | (brief i) w32 compiled at the DEFAULT target while keyed v3: the region dropped, header lines kept | sabotage.sh: DETECTED, JMB dry: gcc `inlining failed ... target specific option mismatch` | LOUD |
 | S3161 | t2 | (brief i, other half) the arm TUs compiled at -march=x86-64-v3 while the swar/w16 arms are keyed generic | sabotage.sh: DETECTED, `ISA MISMATCH ctl: keyed target generic, its code needs bmi2 (shrx ...)` | LOUD (without the ISA check: SILENT-MOVE, every generic arm timed at v3 code) |
 | S3162 | r1 | (brief ii) gen.c writes no failing check (m = 0) while the key says 50/100 | trace subset: `REJECT-RATE MISMATCH ... 0 rejected; its key names reject 100%`. With the check off, the same binary's answer gate and round check stay GREEN (`reject ... 4194304 0`, `GATE ok`). | LOUD (without reject_check: SILENT-MOVE, the answer gate cannot see it) |
 | S3163 | r2 | (brief ii) the arm table records reject 0 for every arm | trace subset: REJECT-RATE MISMATCH (gen reads the table's percent, the key names 100) | LOUD |
@@ -99,7 +99,7 @@ nothing observable changes.
 The ids S3168 and S3169 are unused. One more plant was considered: dropping the ISA check's "target features
 must appear" clause. I predict it SAME for today's arms, because w32 does use avx2. It is listed, not planted. On
 sabotage.sh, rows t1, t2, v1, v2 and w1 passed through sabotage.sh itself (the last run DETECTED v2 and t2 after
-the fixes). Rows r1, r2 and k1 were measured on the 4-arm trace subset, because their J6H dry run takes about 8
+the fixes). Rows r1, r2 and k1 were measured on the 4-arm trace subset, because their JMH dry run takes about 8
 minutes. The full sabotage.sh over every row (old and new) is gate job 642, OWED.
 
 ## Timing jobs
@@ -118,17 +118,17 @@ window.vars (RUN_ID mfcard-dryrun-check, FROZEN = the lane HEAD); that file was 
 
 | job | what | est (s) | cap |
 |---|---|---|---|
-| 600-kit-mfcard-prep | dry runs of J2 J2p J6B J6H, in RUNDIR and in RUNDIR.avx2libc under GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX512F | 1500 | 5400 |
+| 600-kit-mfcard-prep | dry runs of J2 J2p JMB JMH, in RUNDIR and in RUNDIR.avx2libc under GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX512F | 1500 | 5400 |
 | 601 J2 | the unit (find_byte.walk) and libc's byte row, default memchr (evex) | 240 | 720 |
 | 602 J2p | pair, the ver-3 anchor | 360 | 1080 |
-| 603 J6B | find_byte@6: miss-only slope of mfind-swar, mfind-w16, mfind-w32 (in its region) and fn-memchr | 360 | 1080 |
-| 604 J6H | find_hit@6: gaps 2..65536 x reject 0/100 (50 at 4, 32, 256), the same four forms, delta against base.FORM | 2400 | 7200 |
-| 605-608 | J2, J2p, J6B, J6H again under the -AVX512F tunable in RUNDIR.avx2libc (glibc's ifunc is chosen per process, so one record per libc variant; record `libc` names the tunable) | 240/360/360/2400 | 3x est |
+| 603 JMB | find_byte@6: miss-only slope of mfind-swar, mfind-w16, mfind-w32 (in its region) and fn-memchr | 360 | 1080 |
+| 604 JMH | find_hit@6: gaps 2..65536 x reject 0/100 (50 at 4, 32, 256), the same four forms, delta against base.FORM | 2400 | 7200 |
+| 605-608 | J2, J2p, JMB, JMH again under the -AVX512F tunable in RUNDIR.avx2libc (glibc's ifunc is chosen per process, so one record per libc variant; record `libc` names the tunable) | 240/360/360/2400 | 3x est |
 | 609-kit-mfcard-time | per rundir: record.py finalize (window mfcard), est.py rows, est.py draft (zen4-grid3 and zen4-grid6 `.v6`) | 120 | 900 |
 
 **Estimated wall for the whole window: about 2 h 20 min.** That is 1500 + 2 x 3360 + 120 = 8340 s. The basis is
 the measured dry-run gate and round cost (about 1 s per ~100 MiB generated; round 2 of the trace launch took
-0.9 s) scaled by the plan's arms, groups and launches. The J6H figures are the least certain. Pair is part of
+0.9 s) scaled by the plan's arms, groups and launches. The JMH figures are the least certain. Pair is part of
 J2p. The two libc variants are memchr default (evex) and -AVX512F (the AVX2 variant, width-matched to w32).
 
 **(d) key kit-ipv4-time: OWED.** The two one-axis comparisons cannot be expressed in the slot harness yet. Job
@@ -140,7 +140,7 @@ J2p. The two libc variants are memchr default (evex) and -AVX512F (the AVX2 vari
    build work outside the three pieces.
 2. **The kit loop vs libc memchr on TEXT.** Slot find subjects are synthetic, and the whole-artifact arm family
    takes neither pcrec's `--harness=mfind` lever nor an IPv4 text corpus. The finder-level half of this axis (kit
-   loop vs memchr, same byte, declared gaps and reject rates) is covered by J6H (mfind-* vs fn-memchr).
+   loop vs memchr, same byte, declared gaps and reject rates) is covered by JMH (mfind-* vs fn-memchr).
 
 ## Owed runs
 
@@ -151,7 +151,7 @@ J2p. The two libc variants are memchr default (evex) and -AVX512F (the AVX2 vari
    |---|---|---|
    | 640 strict | make strict, plus the BASE build | 420 |
    | 641 memfn | test-memfn-finder, test-memfn-arms, test-memfn-targets | 600 |
-   | 642 slot | est.py self-test, J6B and J6H dry runs, sabotage.sh over every row | 4200 (the sabotage time is UNMEASURED) |
+   | 642 slot | est.py self-test, JMB and JMH dry runs, sabotage.sh over every row | 4200 (the sabotage time is UNMEASURED) |
    | 643 ident | the `base` identity arm plus three CPU-target arms, BASE vs HEAD, no movers | 600 |
    | 644 mech | S2930, S2933, S520 | 1200 |
    | 649 | the verdict | 5 |
