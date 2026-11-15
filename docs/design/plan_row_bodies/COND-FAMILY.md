@@ -792,3 +792,12 @@ differences) stands. (2) STRUCTURAL numbers (how many times something matches) a
 "(no number type)" is WITHDRAWN as over-reach: his concern was the user's confusion between the two kinds, answered by
 the module, not a ban on numbers. Whether a bare count may also be compared directly (`count(...) == 3`, used earlier
 in this record) was not addressed today: OPEN, lean = spell it through `occurs`.
+**2026-11-15 CORRECTION — `!` inside a normal rx is PARKED, not closed (Frank, to session 132; corrects the entry
+above that said his "keep ! out of rx for now" CLOSES the Boolean-operator spelling question).** His words: "i said we
+should keep ! out of normal rx /!foo/ mostly because it wasn't clear to me if the ! covered the whole foo or just the
+f. i would revisit later with clarification. the primary goal of the predicate design is the predicate part itself and
+extra elements added to rx like ${} and & are necessary parts of that. the ! in rx can be revisited in a later plan
+item". RECORD: (1) no `!` inside a normal rx (`/!foo/`) in this design; reason = its SCOPE is unclear (the whole `foo`
+or just the `f`). (2) PARKED for a later plan item, to be revisited with a clarified scope; the spelling question is
+NOT closed. (3) SCOPE OF THIS DESIGN: the predicate part itself is the primary goal; additions to the rx language are
+limited to the ones the predicates need (`${}` and `&`). `!` in the predicate language is unaffected.
