@@ -369,6 +369,7 @@ def build():
         jobs.setdefault(job, []).append(arm)
 
     def row(job, arm, base=None, twin=True):
+        key_dims(arm.name)             # [lane slotx] the key has its card's dims, at build time (not first at link)
         rows.append((arm.name, arm.group, job, card_of(CARD, arm.name)["est"], base))
         add(job, arm)
         if twin:

@@ -110,8 +110,7 @@ ISA_NEEDS = (
     (r"v\S*", r"%zmm", "avx512f"),
     (r"v\S*", r"%ymm", "avx2"),
     (r"v\S*", r"%xmm|%k\d", "avx"),
-    (r"andn|bextr|blsi|blsmsk|blsr", r"", "bmi"),
-    (r"tzcnt", r"", "bmi"),
+    (r"andn|bextr|blsi|blsmsk|blsr", r"", "bmi"),     # not tzcnt: gcc's floor `rep bsf` decodes as tzcnt
     (r"bzhi|mulx|pdep|pext|rorx|sarx|shlx|shrx", r"", "bmi2"),
     (r"lzcnt", r"", "lzcnt"),
     (r"popcnt", r"", "popcnt"),
