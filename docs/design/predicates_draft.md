@@ -213,15 +213,15 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L4 | `(major: 1, minor: >=4)` vs `(major: 1 & minor: >=4)` | DIFFERENT: ERROR | the second is a compile ERROR: a label inside a value (`major: (1 & minor: >=4)`) | C22 |
 | L5 | `x & (a: d)` vs `(a: d)(x)` | DIFFERENT: ERROR | the second is a compile ERROR: the operand is never an argument (CF:749's "subject", §0.3; hint: "write `x & (a: d)`"); application has one spelling (§2.3) | 2026-11-15 RULING (supersedes OWN-5's two spellings) |
 | L6 | `x & (a: d)` vs `each((& (a: d)), x)` | DIFFERENT: ERROR | `each` is the STRUCTURAL per-entry map (keeps entries, labels, order; the filter is mapped through the section `(& (a: d))`, §5.3); an alternative lacking `a` is dropped by `&` with `label.unset`, an ERROR naming it under `each` | OWN-5, 2026-11-15 RULING (mapping) |
-| L7 | `x: /^S\w*/` vs `x: startsWith("S")` | SAME | in a filter `^` is the start of the span being filtered (§11) | CF:732, CF:761, D193 add. 3 |
+| L7 | `x: /^S\w*/` vs `x: startsWith("S")` | DIFFERENT: BY DESIGN | a filter applied directly is ANCHORED AT BOTH ENDS (§11 THE FILTERED SPAN), so `/^S\w*/` is the strings that are ENTIRELY `S\w*` (its `^` adds nothing), while `startsWith("S")` is every string that starts with `S`: on the span `S-1` the first rejects, the second accepts. The two agree only where the span is word characters (E-CTX-1's x is `\w+`). "Starts with" is `startsWith("S")` or `contains(/^S/)` (L17). Rev 10 said SAME (review r12 SIMULATE-1) | CF:732, CF:761, D193 add. 3; the anchoring: CF:991-993 (accepted at CF:990) |
 | L8 | `num := /\b\d+\b/`: `/x${num}/` vs the pasted `/x\b\d+\b/` | DIFFERENT: ERROR | the hole form is the EDGE-ASSERTION ERROR ("put `\b` in the pattern that places num") | Q1X-3 (iv), Q1R-3 |
 | L9 | `p := /(?<=\$)\d+/`: the program `p` (searched) vs `[n = /\d+/] & (n: p)` | DIFFERENT: ERROR | the condition is the EDGE-ASSERTION ERROR; the searched final pattern keeps PCRE meaning | Q1X-3 (iii), Q1X-1 |
 | L10 | `\w{3} & /\w+\b/` vs `/\w{3}\b/` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR (no silent move foo -> bar) | Q1X-2 |
-| L11 | `alts & !/^#.*/` vs `alts & !startsWith("#")` | SAME | `^` is the filtered span's start (§11) | CF:761 |
+| L11 | `alts & !/^#.*/` vs `alts & !startsWith("#")` | DIFFERENT: BY DESIGN | the directly applied `/^#.*/` is anchored at both ends and its `.` has no `(?s)`, so it is the entries that are ENTIRELY `#` and non-line-break characters; `startsWith("#")` is every entry starting `#`: the entry `#a\nb` is kept by the first, dropped by the second. They agree on entries without a line break (E-FILE's `alts` are lines). Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990) |
 | L12 | `"5" & /(?<=\$)\d+/` in `@assert.none(...)` vs `"5" & /\d+/` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR (an assertion argument is a set position, §5.6) | Q1X-5 |
-| L13 | `x & padded(/^5/)` vs `x & padded(startsWith("5"))` | SAME | `^` is the start of the span the modified filter reads (§11); `padded(/\b5/)` stays the EDGE-ASSERTION ERROR | CF:761 |
+| L13 | `x & padded(/^5/)` vs `x & padded(startsWith("5"))` | DIFFERENT: BY DESIGN | a modifier's argument filters the span AS THE MODIFIER READS IT, anchored at both ends like any filter that no loosening transform wraps (§2.7, §11): `padded(/^5/)` = `padded("5")` (`5`, `05`, ...), while `padded(startsWith("5"))` also accepts `57` and `057`. `padded(/\b5/)` stays the EDGE-ASSERTION ERROR. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring of a macro's argument: this document's application of CF:991-994 (LEAN, §13 O49) |
 | L14 | `enumerate(/(?<=a)[bc]/)` vs `enumerate(/[bc]/)` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR | Q1R-8, Q1X-6 (b) |
-| L15 | `@warn.off(/^dead\./)` vs `@warn.off(startsWith("dead."))` | SAME | `^` is the start of the name (§11) | CF:732 (LEAN extension, §11) |
+| L15 | `@warn.off(/^dead\./)` vs `@warn.off(startsWith("dead."))` | DIFFERENT: BY DESIGN | a name set is a compile-time set of WHOLE strings (§11 STRING SETS; there `^`/`$` are the string's own ends): `/^dead\./` is the ONE name `dead.`, `startsWith("dead.")` every name starting `dead.`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:713 (string sets); `^` in a compile-time set: LEAN (§11) |
 | L16 | `(m: search(/^err/))` vs `(m: contains(/^err/))` | DIFFERENT: BY DESIGN | `search` with its default `min = 0` NEVER REJECTS (as a set it is every string; what it adds is the repeated label `hit`, one iteration per hit, here at most one, at m's start); `contains` is the TEST (one hit needed). The search filters nothing until a question is asked of its hits (`some(...)`, `count(...)`, a plain condition; §2.6, §4.3). With `min = 1` the two are SAME (L58) | CF:907-909 (accepted at CF:905); rev 7's `$m ~ /^err/` row withdrawn with `~`; `min`: CF:960 |
 | L17 | `(m: contains(/^err/))` vs `(m: startsWith("err"))` | SAME | `contains` removes the filter's anchoring and `^` in its argument puts the start back: `^` is m's start in both (§11 THE FILTERED SPAN); `(m: !contains(/^err/))` is the negated test (rev 7's `$m !~ /^err/`, withdrawn, §2.6) | CF:761; RULED BY ACCEPTANCE (CF:991-994, accepted at CF:990: filters stay anchored, `contains`/`search` remove it, `^`/`$` in their argument are the value's ends) |
 | L18 | a nullable final search pattern: `/\b/` vs `/a*/` | SAME | both are nullable IN CONTEXT: `empty.search` WARNING for a one-literal program, ERROR in a predicate program (§7) | Q1R-9 |
@@ -247,7 +247,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L38 | `isodate(x).year` vs `(x & isodate).year` | DIFFERENT: ERROR | the first is a compile ERROR (a pattern takes no arguments; hint "write `x & isodate`"); whether `.year` of `x & isodate` is a value or a pattern: OPEN (§13 C29) | RUL-8, 2026-11-15 RULING |
 | L39 | `A & B` vs `B & A` | SAME | the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2) | C1 ruling |
 | L40 | `isodate(year: S)` vs `isodate & (year: S)` | DIFFERENT: ERROR | the first is a compile ERROR: a pattern has no parameters; hint "write `isodate & (year: ...)`"; a parameterised pattern is a macro, `date_in(years) := isodate & (year: years)` (§5.2) | CF:744 |
-| L41 | `/\w+/ & /^foo/` vs `/\w+/ & startsWith("foo")` | SAME | `^` in a filter is the start of the span being filtered (the `\w+` word), not of the subject (§11) | CF:761 |
+| L41 | `/\w+/ & /^foo/` vs `/\w+/ & startsWith("foo")` | DIFFERENT: BY DESIGN | the directly applied `/^foo/` is anchored at both ends, so the first is the ONE word `foo` (its `^` is the word's start, never the subject's, and adds nothing); the second is every word starting `foo`. Searched in `foobar` the first reports `foo` (D196 tries the shorter end), the second `foobar`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990) |
 | L42 | `n := count((name: S))` then `headers & (n: ==1)` vs `headers & occurs.exactly(1, (name: S))` | SAME | one count, two spellings; `count()` is refused only over the BUDGET, naming the `occurs` form (§8) | CF:823 (LEAN), CF:832 |
 | L43 | `[x = /foo/, y = /bar/]` vs `(x = /foo/, y = /bar/)` in value position | DIFFERENT: ERROR | the second is a compile ERROR: "a record is not a value; for any one of the entries write `[ ... ]`" (§3.1, §5.4); the rev 5 map literal `(x = /foo/ \| y = /bar/)` is withdrawn (§13 O42) | CF:863, CF:866 |
 | L44 | `(x)` vs `x` in value position | SAME | parentheses with one unlabelled entry are GROUPING; a one-entry record exists only where a record stands (a call `f(x)`, the left of a binding), so no value is ever a one-entry record (§5.4; §13 O41) | CF:866 (LEAN) |
@@ -272,6 +272,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L63 | `contains(/err$/)` vs `endsWith("err")` on the span `err\n` | SAME | `$` in a set position is the END of the span being filtered EXACTLY (no before-final-newline reading; §11): both reject. PCRE's own `$` in the loop would accept (`err` before the final newline); the filter does not take that reading | CF:994 ("`^`/`$` always mean the ends of the value being filtered", accepted at CF:990); the exact end: LEAN (review r10 SIM-5) |
 | L64 | `alt.x[1]` vs `(x[1]: S)` (and `$x[1]`) on `alt := /(?J)(?:(?<x>a)\|(?<x>b))+/` | DIFFERENT: BY DESIGN | `[n]` reads BY POSITION (§5.4 `[ ]` row): in VALUE position (`alt.x[1]`, the rx of the groups labelled x) it is ENTRY 1 of that rx's array interface, the first group in the PATTERN (`a`); on the left of `:` and under `$` (match positions) it is ITERATION 1 of the label in the MATCH (`b` on `ba`) | review r10 FIXA-2, CENSUS-10; LEAN |
 | L65 | `/x\|(?<n>\d)+/` vs `/(?<n>\d)*x/` under `(n: <5)`, on the span `x` | DIFFERENT: WARNING | PER MATCH (§4.2): in the first the match took the other alternative and never REACHED n's loop, so n is UNSET and the condition FAILS (`label.unset`), although the loop's own `+` is never consulted; in the second the loop was REACHED and ran zero times, so it HOLDS. PCRE reports n unset in both: the zero-iteration rule is a condition rule laid over PCRE's parse (where the match stopped short of the label), not a capture state | review r10 FIXB-2; RULED BY ACCEPTANCE (CF:997-1000 on main, "Agree with lean"; rulings R-1) |
+| L67 | `/(\d+)&${<256}/` vs `/port=(\d+)&${<256}/` vs `/port=(?:(\d+)&${<256})/`, with the rx-`&` switch ON | DIFFERENT: GAP | D196's precedence (concatenation, then `&`) makes an rx-text `&` cover the WHOLE CONCATENATION on each side within its alternative: the first guards the number; the second is `/port=(\d+)/ & <256`, EMPTY (no string starting `port=` is a numeral); the third guards one atom by grouping it and matches `port=80`. An empty-intersection diagnostic at an rx-text `&` is not stated (§5.2 names narrowing sites only; proposed: the empty-intersection error at every `&` whose result is empty, not adopted) | review r12 CENSUS-5; LEAN (this document) |
 | L66 | `headers & occurs.exactly(1, (name: any_case("Host")))` SEARCHED vs the same program on the WHOLE SUBJECT, on `Host: a\r\nhost: b` | DIFFERENT: GAP | a count filter is NOT UPWARD-CLOSED: searched, D196 tries shorter ends and the one-header span `Host: a` passes (match), while the whole value has two Host headers (no match). A count over a block means "the whole block" only when the program anchors (§12.9 is anchored in rev 10); a warning for a count filter in a searched program (`count.searched`, proposed) is not adopted | review r10 SIM-6; §13 O38 |
 
 **REASONING.** The owner's framing: "complex context could cause predicates to just not work and it's not clear how
@@ -297,7 +298,13 @@ rests on the one reading (CF:953-955, his "consistent", CF:950); L55's zero-hit 
 the same record lines; L56 on §4.2's LEAN (CF:173) and the record (CF:937-940); L58's one definition and L59's
 no-steering statement are this document's LEAN; L53's refusal is the manager's call (LEAN). Rev 10: L57's `min` 0 or
 1 RULED (CF:963-966), its error LEAN; L17 RULED BY ACCEPTANCE (CF:990); L55, L56 and L36's zero-iteration clause LEAN
-RULED BY ACCEPTANCE (CF:997-1000, the per-match rule; rulings R-1); L60-L64, L66 LEAN; L65 RULED with them (review r10 picks, this document).
+RULED BY ACCEPTANCE (CF:997-1000, the per-match rule; rulings R-1); L60-L64, L66 LEAN; L65 RULED with them (review r10 picks, this document). Rev 11 (review r12 CENSUS-9: one mark per
+point): the PER-MATCH RULE behind L36's zero-iteration clause, L55, L56 and L65 is RULED BY ACCEPTANCE (CF:997-999,
+accepted at CF:1000, "Agree with lean"; rulings R-1); the wording of "reached" (§4.2) is LEAN; L60-L64 and L66 stay
+LEAN (review r10 picks, this document). Rev 11 (review r12 SIMULATE-1): L7, L11, L13, L15 and L41 move from SAME to
+DIFFERENT: BY DESIGN under the anchoring ruling (RULED BY ACCEPTANCE, CF:991-993, accepted at CF:990, for the
+directly applied filters of L7, L11, L41; L13's modifier argument and L15's compile-time set by this document's
+application of the same rule, LEAN); the class BY DESIGN on each: LEAN. L67 (review r12 CENSUS-5): LEAN.
 
 MODE OF THE ANSWERS (rev 10, review r10 SIM-6, FIXB-7 (d)). A row's answer is on the VALUE a set position filters
 (the whole span, as a condition reads it) unless the row says SEARCHED. A searched program may report a SHORTER span
@@ -311,7 +318,19 @@ operand that defines a label keeps its spelling; its parse does not depend on th
 what the other form writes out (the same text after expansion), L3 and L36 and L42 lay one or two questions on ONE
 operand, L58 is one definition: all hold. L7, L11, L13, L15, L17, L41, L63 compare filters no condition reads (the `hit` label of `contains` in L17, L63 is named by neither form), L18, L26, L27,
 L44 have no condition: unaffected. The rows whose spellings DO differ under a condition were already DIFFERENT (L24,
-L25, L48) or are new (L60).
+L25, L48) or are new (L60). (Rev 11: this re-check asked only the one-reading question; five of the rows it passed
+break under the anchoring ruling folded in the same revision, next paragraph.)
+
+SAME ROWS RE-APPLIED UNDER THE ANCHORING RULING (rev 11, review r12 SIMULATE-1; the ruling: a filter applied
+directly is anchored at both ends, `contains`/`search` remove that, `^`/`$` in their argument are the span's ends,
+CF:991-996). A SAME row can break only where one form writes `^` or `$` in a filter that no loosening transform wraps
+(the ruling changes nothing else: sets were already the strings matched ENTIRELY, CF:713). L7, L11, L13, L15, L41 do
+and BREAK: each pits a directly applied `/^.../` against `startsWith(...)`, and the anchored filter is the whole-string
+set, not "starts with" (each row now states its witness). L17 and L63 put the anchor INSIDE `contains`: they HOLD
+(`contains(/^err/)` = `startsWith("err")`; `contains(/err$/)` and `endsWith("err")` both reject `err\n`). L1, L2, L3,
+L18, L26, L27, L34, L36, L39, L42, L44, L46, L58 write no `^`/`$` in a filter (L18's `/\b/` and `/a*/` are FINAL
+patterns, searched): they HOLD. Each row in its real mode (searched only where the row says SEARCHED): the per-row
+table is in `docs/dev/lanes/predspec11_report.md`, ROWS AND EXAMPLES RE-APPLIED.
 
 ### 0.2 Phase 1 scope (what the owner said is in and out of the first build)
 
@@ -854,7 +873,9 @@ anywhere in a chain. A modifier without its filter argument where a filter is ne
 (§2.3). `!padded(S)` is an ordinary filter (the complement of a filter). A modified filter's argument is a SET
 POSITION (§11): `^`/`$` inside it are the ends of the span the modified filter filters, AS THE MODIFIER READS IT (the
 argument's "own" start and end in rev 6's words: the argument filters what the reading yields, so its ends are that
-span's ends; `padded(/^5/)` = `padded(startsWith("5"))`). This is the one filtered-span rule of §11 applied to an
+span's ends). Like every filter no loosening transform wraps, the argument is ANCHORED at both of those ends, so a `^`
+in it adds nothing: `padded(/^5/)` = `padded("5")`, NOT `padded(startsWith("5"))` (§0.1 L13; rev 10 said the
+opposite, review r12 SIMULATE-1). This is the one filtered-span rule of §11 applied to an
 argument (review r8 P6-5: an argument never opens a span of its own, whether the macro is a modifier, `contains` or a
 user macro); `\b` and edge lookarounds are the edge-assertion error (§11). The variable-width lexicographic lint (`compare.width`) suggests `unpadded(n, ...)`.
 
@@ -1714,7 +1735,7 @@ ambiguous label, never a report that the levels differ: they read one parse, §4
 author's OWN pattern text, RULED, CF:964), `warn.unused`; proposed by review 2026-11-14-r1
 and not adopted: `precedence.section`, `array.hole`, `flag.hole`. Control is by `@` effects, rest of file:
 `@warn.off("compare.width")`, `@warn.off(startsWith("dead."))` (a label-free library rx is a full rx; the look-alike
-`@warn.off(/^dead\./)` is the same set, `^` being the name's start, §0.1 L15), `@warn.off(/.*/)`; the reverse `@warn.error(/.*/)` (a
+`@warn.off(/^dead\./)` is NOT the same set: a name set holds whole strings, so it is the one name `dead.`, §0.1 L15), `@warn.off(/.*/)`; the reverse `@warn.error(/.*/)` (a
 strict build); a per-binding form (spelling OPEN); and a compiler option for a whole build (like `-Wno-`). A warning name
 written in CODE is a STRING (`@warn.off("label.unset")`): bare, `label.unset` would parse as the field `unset` of a
 label named `label` (§5.4 `.` row); in prose its code font is only a name (review r10 CENSUS-14). SELECTORS
@@ -1895,9 +1916,12 @@ WHOLE strings: `m & /^err$/` = `m & /err/`); `contains` and `search` REMOVE that
 CF:991-994, accepted at CF:990; the owner's reason: `/\d\d/ & between(1, 12)` unanchored "would match "31""). In a
 filter, `^` and `$` mean the START and END OF THE SPAN BEING FILTERED, not of the subject ("ONE rule: `^`/`$` always
 mean the ends of the value being filtered", CF:994-995). `$` there is the span's end EXACTLY: never PCRE's "before a
-final newline" (`contains(/err$/)` rejects `err\n`, like `endsWith("err")`, §0.1 L63; LEAN, review r10 SIM-5). `/\w+/ & /^foo/` accepts the words that start with `foo`, exactly as `/\w+/ & startsWith("foo")`
-(§0.1 L41); `P & (x: /^S\w*/)` constrains x's own start (L7); `alts & !/^#.*/` drops entries starting `#` (L11). The
-lone program `/^foo/` is different because it is a FINAL pattern, searched in the subject: there `^` is the subject's
+final newline" (`contains(/err$/)` rejects `err\n`, like `endsWith("err")`, §0.1 L63; LEAN, review r10 SIM-5). Because a directly applied filter is anchored, a `^` or `$` written in it ADDS NOTHING:
+`/\w+/ & /^foo/` = `/\w+/ & /foo/`, the one word `foo`, NOT the words that start with `foo` (that is `/\w+/ &
+startsWith("foo")` = `/\w+/ & contains(/^foo/)`; §0.1 L41); `P & (x: /^S\w*/)` makes x ENTIRELY `S\w*` (L7); `alts &
+!/^#.*/` drops the entries that are entirely `#` and non-line-break characters (L11). "Starts with" needs the
+loosening transform: `contains(/^foo/)` (L17). (Rev 10 said the first three equal their `startsWith` forms; review r12
+SIMULATE-1.) The lone program `/^foo/` is different because it is a FINAL pattern, searched in the subject: there `^` is the subject's
 start (or a line start under `(?m)`). This RESTORES the 2026-11-13 understanding ("b was in the span context of a",
 CF:56 "in-context stays for pattern-level &") in exactly this sense, and it SUPERSEDES the 2026-11-14 Q1 entry's
 listing of `^`/`$` among the errors (CF:713-717); the foundation stays STRING SETS (CF:761 (1)). A compile-time set
@@ -1912,9 +1936,9 @@ an rx inserted in a hole of the filter's body both read the span of the filter t
 lazy gap, and
 `search(/^err/)` has at most one hit, at the span's start (§2.6, §0.1 L16, L17). This is the owner's rule ("^...$ meant the start and end of the filtered
 condition", CF:761-768) applied to arguments, not a property of `contains`, `startsWith` and `endsWith`. It agrees
-with §2.7's "the argument's own start and end" (`padded(/^5/)` = `padded(startsWith("5"))`): a modifier's argument
-filters the span AS THE MODIFIER READS IT, which is the same span read through the modifier, so its ends are that
-span's ends. In a FINAL pattern a hole's `^`/`$` are the subject's (or a line's) ends, as in the pasted text. Rev 6
+with §2.7's "the argument's own start and end": a modifier's argument filters the span AS THE MODIFIER READS IT,
+which is the same span read through the modifier, so its ends are that span's ends, and, no loosening transform
+wrapping it, it is anchored at both (`padded(/^5/)` = `padded("5")`, §0.1 L13; rev 11, review r12 SIMULATE-1). In a FINAL pattern a hole's `^`/`$` are the subject's (or a line's) ends, as in the pasted text. Rev 6
 read `^` in a hole as the HOLE's own start, which made `contains(/^err/)` accept `xerr` while §0.1 L17 said it was the
 same as a search for `/^err/` (review r8 SIM-1).
 
@@ -2255,8 +2279,9 @@ and 7 do not error; E-CTX-2, 3, 4, 6 do. The answers under the other models are 
     enumerate(/(?<=a)[bc]/)                           # E-CTX-6
     headers & (name: /^[A-Z][\w-]*/)                  # E-CTX-7 (§12.9's headers), `Host: a` / `Host: a\r\nAccept: b`
 
-- E-CTX-1: NO error; `^` is x's start: `a Sab` -> match `a Sab`, same as `(x: startsWith("S"))`. (A/B2: silent no
-  match; B1: match.)
+- E-CTX-1: NO error; the filter is anchored at both ends of x, so x must be ENTIRELY `S\w*` (its `^` is x's start
+  and adds nothing): `a Sab` -> match `a Sab`. Here the answer equals `(x: startsWith("S"))`'s only because x is
+  `\w+`; in general the two differ (§0.1 L7; rev 11, review r12 SIMULATE-1). (A/B2: silent no match; B1: match.)
 - E-CTX-2: compile ERROR (`\b` at both edges of the hole's set). Fix: write the boundaries in the literal around the
   hole, `/a\b${/\d+/}\b/`, which says what the pasted text says: on `a12` it finds nothing (`a` and `1` are both
   word characters). (B1: match, unlike the pasted text.)
@@ -2265,7 +2290,9 @@ and 7 do not error; E-CTX-2, 3, 4, 6 do. The answers under the other models are 
   behaviour is shown by an example subject, not by an assertion (§5.6, §13 O36).
 - E-CTX-4: compile ERROR (`\b` at the end of an `&` operand). Fix `/\w{3}\b/`: on `foobar` it reports `bar` visibly,
   from the final pattern. (A/B2: the reported match silently moves from `foo` to `bar`.)
-- E-CTX-5: NO error; `^` is the start of the modified filter's argument, same as `x & padded(startsWith("5"))`.
+- E-CTX-5: NO error; the modifier's argument is anchored at both ends of the span `padded` reads, so `padded(/^5/)` =
+  `padded("5")` (`5`, `05`, ...). It is NOT `x & padded(startsWith("5"))`, which also accepts `57` (§0.1 L13; rev 10
+  said "same", review r12 SIMULATE-1: the stated equivalence MOVES, the program and its no-error verdict do not).
 - E-CTX-6: compile ERROR (a lookbehind at the start of an `enumerate` argument). Fix `enumerate(/[bc]/)` = `["b",
   "c"]` and put `(?<=a)` in the final pattern.
 - E-CTX-7: NO error; `^` is the start of each `name` value: both subjects -> match, same as `(name: /[A-Z][\w-]*/)` (a
