@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# covs1-cloud: the owed cloud dispatches (owner main), released only once the
+# local pin sections are green (RUNS.md "PIN SECTIONS LOCALLY BEFORE
+# DISPATCH": this change is an abi event). Dispatches and exits; verdicts
+# reach main as CLOUD-DONE through queuewatch.
+set -u
+. /home/pcrec/projects/pcrec/worktrees/covs1/docs/dev/lanes/covs1_evidence/common.sh
+REF=lane/covs1
+ROWS=S693,S1131,S1136,S1139,S3220,S3221,S3222,S3223,S3224,S3225
+CR="$MAIN/scripts/cloudrun"
+case "${1:-}" in
+    --dry-run)
+        bash "$CR" --owner main --kind test --name covs1 --ref "$REF" --dry-run || exit 1
+        echo "would dispatch: test, axes, recidentity, mechrows $ROWS (owner main, ref $REF)"
+        echo "boxqueue: cap 600"; echo "boxqueue: est 60"; echo "boxqueue: patience none"
+        echo "boxqueue: expect dispatched=4 lines=^cloudrun: DONE rc=0 pushed"
+        exit 0 ;;
+    --ready) ready_after covs1-sections ;;
+esac
+rc=0
+bash "$CR" --owner main --kind test --name covs1 --ref "$REF" || rc=1
+bash "$CR" --owner main --kind axes --name covs1-axes --ref "$REF" || rc=1
+bash "$CR" --owner main --kind recidentity --name covs1-recid --ref "$REF" || rc=1
+bash "$CR" --owner main --kind mechrows --rows "$ROWS" --name covs1-rows --ref "$REF" || rc=1
+exit $rc

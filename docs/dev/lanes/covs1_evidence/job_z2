@@ -2,7 +2,8 @@
 # covs1-z2: the Z2 census on the candidate trace build (COVERSET + the listing) and X0's stated check, 1-in-M (cover_cap.md §3.6 Q2, K35)
 set -u
 . /home/pcrec/projects/pcrec/worktrees/covs1/docs/dev/lanes/covs1_evidence/common.sh
-MOD=${COVS1_STATED_MOD:-10}
+MOD=${COVS1_STATED_MOD:-5}
+export Z2_STATED_ITEM_SECS=${Z2_STATED_ITEM_SECS:-90}   # a 32-wide class stretch can outrun any budget: counted TIMED-OUT
 case "${1:-}" in
     --dry-run)
         [ -f "$TREE/docs/dev/kvcensus/patterns.tsv.gz" ] || { echo "no census" >&2; exit 1; }

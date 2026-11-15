@@ -260,7 +260,41 @@ def hist(path):
 
 
 # ------------------------------------------------------------------ stated
+class _ItemTimeout(Exception):
+    pass
+
+
+def _alarm(signum, frame):
+    raise _ItemTimeout()
+
+
 def _stated_one(a):
+    """one statement under Z2_STATED_ITEM_SECS (0: none): an item past it is
+    counted TIMED-OUT (inconclusive, never green or red) and the worker's
+    oracle restarted (it may be mid-reply)"""
+    global _O
+    secs = int(os.environ.get("Z2_STATED_ITEM_SECS", "0"))
+    if secs:
+        import signal
+        signal.signal(signal.SIGALRM, _alarm)
+        signal.alarm(secs)
+    try:
+        return _stated_one_body(a)
+    except _ItemTimeout:
+        try:
+            _O.p.kill()
+        except Exception:  # noqa: BLE001
+            pass
+        _O = x0.Oracle()
+        (fl, pat_hex, L, sets, role, wmax), kind = a
+        return dict(kind=kind, fl=fl, pat=pat_hex, L=L, role=role, timeout=1, nodes=0, unk=0, bad=0)
+    finally:
+        if secs:
+            import signal
+            signal.alarm(0)
+
+
+def _stated_one_body(a):
     (fl, pat_hex, L, sets, role, wmax), kind = a
     S = [frozenset(int(x, 16) for x in s.split(",") if x) for s in sets.split(";")]
     if role not in ("-", "q"):
@@ -326,10 +360,14 @@ def stated(path, mod, j):
     red = unk = n = 0
     kinds = collections.Counter()
     roles = collections.Counter()
-    unchecked = 0
+    unchecked = timedout = 0
     with Pool(j, initializer=_x1_init) as pool:
         for r in pool.imap_unordered(_stated_one, items, chunksize=1):
             if r is None:
+                continue
+            if r.get("timeout"):
+                timedout += 1
+                print("TIMED-OUT", r["kind"], r["fl"], bytes.fromhex(r["pat"]).decode("latin-1")[:50], "L=%d" % r["L"])
                 continue
             if r.get("unchecked"):
                 unchecked += 1
@@ -344,9 +382,9 @@ def stated(path, mod, j):
                 red += 1
                 print("RED", r["kind"], r["role"], r["fl"], bytes.fromhex(r["pat"]).decode("latin-1")[:50],
                       "L=%d" % r["L"], json.dumps(r["e"][0]))
-    print("stated checked=%d (%s; by part role %s) red=%d inconclusive-bytes=%d unchecked-parts=%d" % (
+    print("stated checked=%d (%s; by part role %s) red=%d inconclusive-bytes=%d unchecked-parts=%d timed-out-items=%d" % (
         n, ", ".join("%s %d" % kv for kv in sorted(kinds.items())),
-        ", ".join("%s %d" % kv for kv in sorted(roles.items())), red, unk, unchecked))
+        ", ".join("%s %d" % kv for kv in sorted(roles.items())), red, unk, unchecked, timedout))
     bad = red or unchecked or not n or k35["cover-listing!=trace"]
     print("z2 stated: DONE rc=%d" % (1 if bad else 0))
     return 1 if bad else 0

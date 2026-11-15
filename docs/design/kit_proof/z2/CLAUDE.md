@@ -14,7 +14,8 @@ as box-queue jobs. The `make test` half of Z2 is `tests/kitproof/`.
   [COVER-CAP] stage 1), `hist` (K35's
   why histogram, the C8 control, the agreement with conj.py), `stated` (X0's
   set-equality check on every listing-stated cover row and FIND-site statement,
-  horizon the width maximum, deduplicated, 1-in-M; K35's stated/unstated counts), `x1` (X0's part-2 subject families run through the BUILT artifact),
+  horizon the width maximum, deduplicated, 1-in-M; K35's stated/unstated counts;
+  `Z2_STATED_ITEM_SECS` bounds one item, past it counted TIMED-OUT, inconclusive), `x1` (X0's part-2 subject families run through the BUILT artifact),
   `exh` (ruling 1's exhaustive cell), `summary`.
   The trace records end in the compound part's role (`-`: the compile itself);
   the decision read is the compile's OWN last `KITPROOF` (`decision`), and the
