@@ -629,3 +629,14 @@ cannot drop it (purity visible and checked syntactically); `import(...)` is unpr
 only in the expression language. Grammar: bindings, expressions, calls, `@` statements; NO keywords.
 Addendum (Frank): `import(...)`'s argument is a set of names (an rx over file names, consistent with export); it must
 resolve to EXACTLY ONE file; zero or several matches = compile error listing the candidates.
+
+**2026-11-14 — PULLBACK spelled as a left-to-right pipeline; `&` RIGHT-ASSOCIATIVE (Frank: `unpad(between(1,12))` is pure but reads inside out; `x & unpad & between(1,12)` reads left to right; "why not make & right associative?"; `pad(5)` fixes `9:00 > 10:00`).**
+Lean ADOPT. Meaning (predx S1): a transform t (finite transducer or table: unpad, pad(n), ci, unquoted, length,
+month-name->number) pulls a set back: strings whose t-image lies in S; one construction, regular in, regular out;
+non-finite transforms need `functions`. Spelling: `&` is RIGHT-ASSOCIATIVE (no change for pure rx: intersection is
+associative); a TRANSFORM ON THE LEFT OF `&` = the pullback of the rest (mirror of "a filter on the right applies to the
+target on the left"): `x & unpad & between(1, 12)`, `month: unpad & between(1, 12)`, `t & pad(5) & between("09:00",
+"10:00")`, `msg: unquoted & contains("timeout")`. A transform SCOPES THE REST OF ITS CHAIN (a pipe stage); raw-text tests
+go before it; parentheses end its scope. Errors: a trailing transform (`x & unpad`) = no-op warning; `!transform` = error.
+Fits D196 precedence (`&` tighter than `|`). The variable-width lexicographic lint suggests `pad(n)`. SUPERSEDES the
+function forms `unpad(S)` / `length(<=20)` and the dot-view alternative (`month.unpad: S`).
