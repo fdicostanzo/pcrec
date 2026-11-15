@@ -1762,11 +1762,14 @@ done
 # A later span arms unit adds its arm here (`restore=look`). [FIND-MINW]
 # `--harness=no-min-width` declines the minimum-width stop (tuning.md §2.55),
 # a change with no public deny; its answers must equal the default's.
+# [MEMFN] lane mfind: `--harness=mfind` gives the offset-skip function's
+# one-byte scan the kit's inline one-member finder (a form no table picks
+# yet, the SWAR word at SIMD-off); its answers must equal the default's.
 # Selected by the empty AXES= or by its spelling.
 INTERNAL_ARMS=("--harness=no-compound" "--harness=restore=empty"
                "--harness=restore=zero" "--harness=restore=rep" "--harness=restore=tie"
                "--harness=restore=alt"
-               "--harness=no-min-width")
+               "--harness=no-min-width" "--harness=mfind")
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0
 for arm in "${INTERNAL_ARMS[@]}"; do

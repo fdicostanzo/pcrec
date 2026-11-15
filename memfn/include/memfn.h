@@ -1601,7 +1601,11 @@ int      mf_reach_table(const mf_art *, mf_sink *file_scope);
  * the two-part run). Or it PROBES a
  * decision (R-38 K38-2a): "run-tie-left" breaks the ties of a pre-check
  * run's decision (its scan, its window, the twin's mass, the ranking, the
- * in-run stop) toward the LOWER position. Called before the first define;
+ * in-run stop) toward the LOWER position; or it PROBES a form no selection
+ * table picks yet (lane mfind): "mfind" gives the offset-skip function's
+ * one-byte scan the kit's inline one-member finder (the SWAR word at
+ * SIMD-off; its w16/w32 helpers where the art's target admits them) in
+ * place of the libc stream. Called before the first define;
  * refused after it, or for a name the kit does not list. */
 #define mf_lever          MF_NS(lever)
 int      mf_lever(mf_art *, const char *name);

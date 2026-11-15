@@ -217,6 +217,12 @@ mf_art *pcrec_memfn_art(Ctx *cx)
             mf_lever(job->mf, "run-tie-left"))
             pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the lever "
                            "`run-tie-left`: %s", mf_art_error(job->mf));
+        /* lane mfind: the harness lever's probe of the inline one-member
+           finder (fn-mfind); never on a shipped compile */
+        if (cx->emit_in && cx->emit_in->harness && cx->emit_in->harness->mfind &&
+            mf_lever(job->mf, "mfind"))
+            pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the lever "
+                           "`mfind`: %s", mf_art_error(job->mf));
     }
     return job->mf;
 }
