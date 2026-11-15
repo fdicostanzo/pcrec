@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # S3220 ([COVER-CAP] stage 1, lane covs1; docs/design/cover_cap.md §5.4 plant (a)) -- a length bound is put back on the cover walk (j < 32): the exact stretch of a longer shape is cut at 32 positions and its record states 32
 # Witness: facts `a{40}(?:b|cc)`: statement-fits|41|41|... becomes a 32-position record; no other plant cuts a one-row line short.
+# Shared witness (review r9 covs1 CHECKS-3, cross-plant matrix): S3223 (LOUD) and S3224 flip `a{40}(?:b|cc)` too; detection holds because each row runs its plant alone.
 SAB_ID='S3220-cover_walk_length_bound'
 SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'

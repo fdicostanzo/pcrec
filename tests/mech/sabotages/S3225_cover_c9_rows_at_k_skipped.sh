@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # S3225 ([COVER-CAP] stage 1, lane covs1; docs/design/cover_cap.md §5.4 plant FI-3) -- C9 skips the rows at k: the eol-view check runs only on depths the walk passes without stopping, so a non-identity eol view on the row at k is admitted
 # Witness: verdict `a(?:b|c)(?:$|q(?<=x))` (decline no-eol-view) becomes a cover that misses PCRE2's (0,2) on ab\n.
+# Shared (review r9 covs1 CHECKS-3, cross-plant matrix): its witness is flipped by S1139 too, and this plant also flips S1139's `cat$` under -fno-rev-end (the eol view sits at depth k = 3; 9cat\n: pcrec none, PCRE2 (1,4)).
 SAB_ID='S3225-cover_c9_rows_at_k_skipped'
 SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'

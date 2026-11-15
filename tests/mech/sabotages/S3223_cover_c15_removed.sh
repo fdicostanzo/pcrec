@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # S3223 ([COVER-CAP] stage 1, lane covs1; docs/design/cover_cap.md §5.4 plant (d)) -- C15 statement-fits is removed (stage 1): a stretch past the kit window's 32 positions reaches MkEnd's fill, which refuses it with its named internal error (never an overrun)
 # Witness: verdict 40-letter literal: decline becomes a failed compile (the named internal error); nothing else states a 40-position span at stage 1.
+# Shared (review r9 covs1 CHECKS-3, cross-plant matrix): the facts row `a{40}(?:b|cc)` also goes LOUD under this plant (k = 41), so it is not the only 40+-position statement; the 40-letter verdict is flipped by S3223 alone.
 SAB_ID='S3223-cover_c15_removed'
 SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'

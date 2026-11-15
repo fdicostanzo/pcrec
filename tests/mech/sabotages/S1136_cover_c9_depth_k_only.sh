@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # S1136 ([KIT-VERIFY] Z2, lane z2build; docs/design/kit_proof.md §6.3) -- C9 is tested at depth k only (revision 2's C9), so an eol view on a row before k is admitted
-# kit_proof.md §6.3 S1136 (the K1 plant): `ab|a$\n` on "a\n" from 0: PCRE2 (0,2), the plant NOMATCH.
+# kit_proof.md §6.3 S1136 (the K1 plant): `ab|a$\n` (the K1 plant); the re-anchored plant OVER-matches: on "a\n\n" from 0 it answers (0,2), PCRE2 no match ("a\n" is (0,2) on both; review r9 covs1 CHECKS-4, measured with libpcre2 10.46).
+# Shared (review r9 covs1 CHECKS-3, cross-plant matrix): `ab|a$\n` is flipped by S1139 too.
 # RE-ANCHORED 2026-11-15 (lane covs1, [COVER-CAP] stage 1, cover_cap.md §5.4 R-12/FI-3):
 # C9 is checked by the walk as it passes each depth (`kn_eol_rows`), the rows at k included;
 # the plant clears the mark at every depth, so only the LAST depth's rows (k) count.

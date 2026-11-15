@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # S3224 ([COVER-CAP] stage 1, lane covs1; docs/design/cover_cap.md §5.4 plant (f)) -- a byte is added to the stated S_0 (the walk overstates its first position)
 # Witness: facts `a*?a`: cover|1|1|97 becomes a two-byte S_0; the only plant that widens a set (the trace build's hull check fires on it too).
+# Shared (review r9 covs1 CHECKS-3, cross-plant matrix): `a*?a` is flipped by S3224 alone, but S3224 also flips EVERY facts row with a stated S_0, so it leaves no witness unique to plants (a), (b), (c) or S1131.
 SAB_ID='S3224-cover_set0_widened'
 SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'

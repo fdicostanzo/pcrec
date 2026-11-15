@@ -6,7 +6,7 @@ by the default build since D172 S3 (before it, only by the test harness's lever,
 artifacts here are still compiled by `build/pcrec-harness` through it, which
 since S3 renders the default build's text. A `make test`
 section (about 4 s); mech arm `kitproof` (rows S1130-S1141, S1144, S1148,
-S3220-S3225; S1149 retired with the span slice, `docs/design/cover_cap.md` §5.4).
+S3220-S3226; S1149 retired with the span slice, `docs/design/cover_cap.md` §5.4).
 
 - `run_cover.sh` — the check. Three row kinds from `cases.tsv`: `verdict` (the
   artifact's `RX_DFA_SCAN` reads `cover`, or does not), `facts` (the
@@ -16,7 +16,7 @@ S3220-S3225; S1149 retired with the span slice, `docs/design/cover_cap.md` §5.4
   (`rx_search` at every startoffset and match_api.md §3.1.3's find-all loop,
   every group span, against `answers.tsv`). Every answer pattern must itself
   read `cover` (its REACH), and each row kind's population has a K35 floor
-  literal (47 / 16 / 105) that a change adding rows raises.
+  literal (48 / 19 / 105) that a change adding rows raises.
 - `cases.tsv` — the witnesses, each with the sabotage row or kit_proof clause it
   serves. The verdicts are kit_proof.md's witness list (`conj.txt` D) and
   `cover_cap.md` §5.3's; the facts values are the records `x0.py stated` holds
@@ -32,7 +32,9 @@ S3220-S3225; S1149 retired with the span slice, `docs/design/cover_cap.md` §5.4
   array with a sentinel before every call, so a group left unwritten is seen.
 - `reach.sh` — the sabotage rows' REACH probe: does the witness, compiled
   through the lever on the CLEAN tree, read `cover`; with `--facts`, does the
-  clean tree's `cover` record equal the row's VALUE (a facts-value plant).
+  clean tree's `cover` record equal the row's VALUE (a facts-value plant);
+  with `--why`, one more line `REACH-WHY=[ID]`, the listing's `why`, which the
+  rows pin so a witness is tied to the conjunct its plant moves (review r9 CHECKS-1).
 
 The lever's spelling appears in this directory, which the lever fence
 (`tests/compound/run_lever_fence.sh`) allowlists for that reason.
