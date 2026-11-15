@@ -1781,8 +1781,11 @@ done
 # CHECKS-2/3): read by the preprocessor, the .def's own reader, never a second
 # grammar (comments stripped by "$CC" -E with WALK_ARM left undefined, so any
 # compiler, gcc or clang, leaves the rows as text), and counted both ways --
-# every row the comment-stripped text holds is an arm read, and every arm read is a row -- or FATAL. An arm added there
-# is swept here without a second list to remember.
+# every row the comment-stripped text holds is an arm read, and every arm read
+# is a row -- or FATAL. Both counts read the one file, so this checks the
+# .def's GRAMMAR only: a DELETED row silently leaves the sweep (review r4
+# fixposts2c AXES-1, NOTED; the per-arm mech reach rows are the backstop).
+# An arm added there is swept here without a second list to remember.
 WALK_ARMS_DEF="$ROOT_DIR/src/facts/walk_arms.def"
 walk_arm_names=$(printf '#define WALK_ARM(ID, name, facts) PCREC_ARM name\n#include "%s"\n' \
                    "$WALK_ARMS_DEF" | "$CC" -E -P -x c - | sed -n 's/^PCREC_ARM "\([a-z0-9_]*\)"$/\1/p')

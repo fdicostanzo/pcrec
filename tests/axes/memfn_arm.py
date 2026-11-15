@@ -210,21 +210,24 @@ MEMFN_CLASS = {
     # 12/13 against floors 15/15, pad 10/12 against 13/14). Their siblings without a wide
     # letter are the witnesses below (RUNW_U8: all five rows; the ten-byte run is past
     # vrun-pad's 3 and 5-7, so pad takes the first three), single compiles at lane/s2land
-    # 692e5f431, so the floors hold at their measured values: no floor lowered.
+    # 692e5f431.
     # FLOORS-3/CHECKS-4 (reviews 2026-11-15 r1 posts2, r3 fixposts2): the utf8 floors count CORPUS
-    # patterns only, the witness-only RUNW_U8 patterns being checked one by one as witnesses. That
-    # restates the old floors over a different population without tightening them (old 15 ==
-    # new 11 on the corpus), so they are pinned from the corpus-only counts recorded above (cloud
-    # axes 43535669918: utf8 c-default 12, c-vm 13; pad 10, 12). The exact re-measure (`--measure`,
-    # its `corpus=` column) is owed to boxqueue job 701-main-fixposts2-memarm.
+    # patterns only, the witness-only RUNW_U8 patterns being checked one by one as witnesses. The
+    # old floors (15/15, pad 13/14) counted corpus + witnesses, so the new values are a different
+    # population, not the old one tightened or loosened: utf8 kb/trim/w16/w32 12 (c-default) and
+    # 13 (c-vm), pad 10 and 12. They were first pinned from the corpus-only counts of cloud axes
+    # 43535669918 (an earlier recorded run, not a `--measure` in this change), and boxqueue job
+    # 702-main-fixposts2c-memarm (2026-11-15, at e068c0004) then measured exactly these values in
+    # its `corpus=` column (review r4 fixposts2c AXES-3). Re-measure: plan row [FLOORS-REMEASURE].
     ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-kb", "simd"): ("DIFFER",
         {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 12, ("utf8", "c-vm"): 13},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8 for st in ("c-default", "c-vm")]),
     ("vrun-pad", "default"): ("ASSERT_ZERO", {}, []),
-    # vrun-pad utf8/c-default 14 -> 13 at D172 S3 (job 620, tri620.md): one caseless pattern
-    # became a cover artifact, where the pad deny is inert; its siblings' 15 hold.
+    # History: vrun-pad utf8/c-default 14 -> 13 at D172 S3 (job 620, tri620.md), one caseless
+    # pattern having become a cover artifact where the pad deny is inert; superseded by the
+    # corpus-only pins above (10/12).
     ("vrun-pad", "simd"): ("DIFFER",
         {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 10, ("utf8", "c-vm"): 12},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]

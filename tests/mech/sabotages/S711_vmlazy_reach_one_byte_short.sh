@@ -42,14 +42,22 @@
 # RX_REQ_RUN "7a616161@0"), so detection moved to the file's blocks at rxt:265-282, `(?:a{2,}?|x)[ab]` and
 # `z(?:a{3,}?|x)c?`: on the emitted-C proxy of the plant ("ab", "abx" -> match 0 2; "zaac" -> match 0 4;
 # "zaa" -> match 0 3) four cells flip nomatch -> match.
+# REACH RE-AIMED (lane fixposts2d, 2026-11-15, review r4 fixposts2c SABROWS-1): the probe compiled
+# `(?:ab){3,}?`, a stride-2 (answer-invisible) witness that is pre-check masked (RX_REQ_RUN
+# "616261626162@5") and not in the target .rxt; it now compiles the two detection cells above and
+# asserts both the planted reach line (`+ 2`, `+ 3`) and an UNMASKED pre-check (RX_REQ_RUN "none"),
+# so a future masking of these cells reads UNREACHED instead of a puzzling UNDETECTED.
 SAB_ID="S711-vmlazy-reach-one-byte-short"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="recidentity harness"
 SAB_HARNESS_TARGET="tests/base/vm_lazy_rmin_prefix.rxt"
 SAB_DESC='the VM cursor rung'"'"'s lazy-prefix reach test asks for rmin * stride - 1 bytes: answer-invisible at stride > 1 (lattice), a wrong answer at stride 1; the row proves the recursion-identity gate'"'"'s R-12 vmlazy-prefix bucket does not admit a resembling non-ruled prefix change'
-SAB_DOC_FIGURE="recidentity: SKIPPED-no-git-history inside the mech matrix by construction (varland finding 7); the bucket's non-admission was HAND-MEASURED by lane vmlrid 2026-10-09 (docs/dev/lanes/vmlmerge_report.md, the vmlrid section). STALE FIGURE, SUPERSEDED: the vm_lazy_rmin_prefix.rxt:173 witness quoted at the 2026-10-09 measurement is masked by the pre-check now; the current detection cells are the rxt:265-282 blocks (RE-AIMED comment above), by emitted-C proxy only. Matrix figure at SUBJECT: OWED to the fixposts2 mechrows cloud run. Re-run: bash tests/mech/run_sabotage_matrix.sh S711."
-SAB_REACH='"$PCREC" -p rx --engine=vm --features all -o - --pattern "(?:ab){3,}?"'
-SAB_REACH_EXPECT='slot_values[2] + 6) goto rx_fail;'
+SAB_DOC_FIGURE="recidentity: SKIPPED-no-git-history inside the mech matrix by construction (varland finding 7); the bucket's non-admission was HAND-MEASURED by lane vmlrid 2026-10-09 (docs/dev/lanes/vmlmerge_report.md, the vmlrid section). STALE FIGURE, SUPERSEDED: the vm_lazy_rmin_prefix.rxt:173 witness quoted at the 2026-10-09 measurement is masked by the pre-check now; the current detection cells are the rxt:265-282 blocks (RE-AIMED comment above), by emitted-C proxy only. Matrix figure at SUBJECT: OWED to the fixposts2d mechrows cloud run (scripts/cloudrun --owner main --kind mechrows --rows S474,S711,S3012 --name fixposts2d-mech). Re-run: bash tests/mech/run_sabotage_matrix.sh S711."
+SAB_REACH='"$PCREC" -p rx --engine=vm --features all -o - --pattern "(?:a{2,}?|x)[ab]" | sed "s/^/W1 /"; "$PCREC" -p rx --engine=vm --features all -o - --pattern "z(?:a{3,}?|x)c?" | sed "s/^/W2 /"'
+SAB_REACH_EXPECT='W1 #define RX_REQ_RUN "none"
+slot_values[2] + 2) goto rx_fail;
+W2 #define RX_REQ_RUN "none"
+slot_values[2] + 3) goto rx_fail;'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='            vm_span_reach(v, low, lo_off);
