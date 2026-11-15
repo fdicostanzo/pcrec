@@ -208,3 +208,20 @@ lever compile (pcrec-harness) differs, so the diff can see a mover.
   incl. the new `--harness=mfind -fmemfn-simd=x86-64-v3` job; ident gate;
   mech REACH.
 - OWED: none
+
+## docs/dev/reviews/2026-11-15-r2-memfn-mfind.md
+
+The review's finding ids (its "Findings and PROPOSED dispositions"): F1,
+F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15. (This section
+and the next exist because the DELIVER file's `cites` line names the two
+files as sections; the check's intent, every review id answered in this
+report, is what they carry.)
+
+## docs/dev/lanes/mfindfix2_report.md
+
+Per id, where "Fixes by id" answers it: F1 fixed; F2 not this lane's
+(PLAN); F3 fixed; F4 fixed (doc); F5 ruled by R1, labels only; F6 fixed
+(wording); F7 not this lane's (PLAN); F8 fixed (wording); F9 fixed; F10
+fixed; F11 fixed (doc); F12 fixed (G2 shapes + axes job; the job's run owed
+to the combined gate); F13 fixed; F14 both floors fixed (fence control
+PLAN, not this lane's); F15 not this lane's (NOTED).
