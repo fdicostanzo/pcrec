@@ -27749,3 +27749,12 @@ Next
   Lesson (process): a lane report's "OWED: cloudrun ..." line may be a command it never ran; read OWED as "check the
   run exists" (s486re-rows was dispatched by the manager 40 min late). Lesson: run make test-plan-lint before merging
   ANY lane, docs-only included (file1115's report tripped PL14 and blocked the kit's cloud dispatch).
+- 14:10 (2026-11-15): OWNER ANSWERS on [COVER-CAP] rev 3/4 questions (Frank, verbatim): "1. reading dfa for the span is
+  fine. In my goal of partial span proofs that means either rebuilding the dfa on the remainder or editing out the
+  proven span states. 2. set in limits. If it's a user setting it could be shorter then adjusted by the user per
+  artifact. 3. explain." Reading (mine): (1) the machine reading is ACCEPTED; partial-proof routes noted in
+  EARNED-SKIP.md. (2) the max span lives in the limits table; he is open to a PER-ARTIFACT user setting with a shorter
+  default that the user raises: rev 4.1 has no separate span limit (the anchored state ceiling is the max), so a
+  user-settable span limit is a STAGE 2 item (it only matters past the seam's 32; its default needs the stage-2
+  size/timing data; public options ride [IFACE-PUSH]). (3) explained in chat. The BUILD GO for stage 1 was not given
+  in these words: asked again.
