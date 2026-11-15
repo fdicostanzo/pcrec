@@ -95,10 +95,10 @@ PAB_WIT = ([("byte", "c-default", b"((?:a(?!b)|ab)(?:cd){0,3}b)"), ("utf8", "c-d
            + [("utf8", "c-default", w) for w in PAB_U8])
 MEMFN_CLASS = {
     ("precheck-assign-byte", "default"): ("DIFFER",
-        {("byte", "c-default"): 130, ("byte", "c-vm"): 0, ("utf8", "c-default"): 185, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 122, ("byte", "c-vm"): 0, ("utf8", "c-default"): 176, ("utf8", "c-vm"): 0},
         PAB_WIT),
     ("precheck-assign-byte", "simd"): ("DIFFER",
-        {("byte", "c-default"): 130, ("byte", "c-vm"): 0, ("utf8", "c-default"): 185, ("utf8", "c-vm"): 0},
+        {("byte", "c-default"): 122, ("byte", "c-vm"): 0, ("utf8", "c-default"): 176, ("utf8", "c-vm"): 0},
         PAB_WIT),
     # R17-b' B1's five finder-table denies (lane fdclass, 2026-10-17), MEASURED at
     # lane/b1fix f74bb0b7b (= the B1 tip): `taskset -c 0-7 python3 tests/axes/memfn_arm.py
@@ -152,6 +152,9 @@ MEMFN_CLASS = {
     # Witnesses re-aimed (inert now; single compiles, both sides): fd-pres-g1 utf8
     # `abc+d` -> `ab+c`, pres-set-lead -> `(?i:select)\d+x` (flr2's emit_sweep pin,
     # 68089d755). The other floors still hold (measured above them) and are left as pinned.
+    # RE-PINNED (lane fixposts2c, 2026-11-15) precheck-assign-byte 130/185 -> 122/176: the old
+    # floors were corpus+witness totals; FLOORS-3 made the count corpus-only, MEASURED corpus=
+    # 122 (byte) / 176 (utf8) in job 701's `--measure` log (fixposts2b/job701.log, 5533 patterns).
     # RE-PINNED again (lane axfix, 2026-11-11): fd-pres-pick byte c-default 88 -> 87. The
     # 88 came from the 7d74499bc full-suite axes log, whose compile set also held the OLD
     # witness-only patterns; axtri re-aimed the witnesses and the count differ= is over
@@ -191,8 +194,11 @@ MEMFN_CLASS = {
     # `(?i:select)\d+x` MEASURED to differ in all four cells at both layers by single compiles.
     # Floors AT the measured value (lane s2arms, 2026-11-14, `--measure` at 370aab9fe, both
     # layers identical; was PROVISIONAL 1).
+    # RE-PINNED (lane fixposts2c, 2026-11-15) 58/117/99/181 -> 72/134/113/198: rule (1)
+    # (alt_union ON, 13f46ea50) added movers; MEASURED corpus= in job 701's log
+    # (fixposts2b/job701.log, 5533 patterns, both layers identical).
     **{("run-verify-wide", ly): ("DIFFER",
-        {("byte", "c-default"): 58, ("byte", "c-vm"): 117, ("utf8", "c-default"): 99, ("utf8", "c-vm"): 181},
+        {("byte", "c-default"): 72, ("byte", "c-vm"): 134, ("utf8", "c-default"): 113, ("utf8", "c-vm"): 198},
         [(e, st, b"(?i:select)\\d+x") for e in ("byte", "utf8") for st in ("c-default", "c-vm")]) for ly in ("default", "simd")},
     # The five vrun rows' utf8 witnesses (lane s2axes, 2026-11-13). [RUN-POS-SET] stage 3
     # (the S2 joint landing) states a utf8 caseless `s` or `k` as a WIDE position (`[Ss\xbf]`,
