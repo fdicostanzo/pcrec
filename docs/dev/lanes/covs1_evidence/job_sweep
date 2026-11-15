@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 # covs1-sweep: emit_sweep, baseline (branch point, abi digits 108) vs the candidate; declared facts/dumps deltas (cover_cap.md §5.2)
+# CONTRACT (covs1w): the sweep is the INSTRUMENT, predict.py (job covs1-predict) is the JUDGE of the movers.
+# emit_sweep exits 1 whenever any mover exists, and gained covers legitimately move the scan-route rows
+# (cover_cap.md §5.2), so its raw rc cannot be this job's rc. This job exits 0 iff the instrument ran to
+# completion and found nothing but expected-shaped output: self-check passed, DONE line, movers file
+# written, DELIVER witness OK, every tag floor held, asymmetric=0 in every stream, and movers ONLY in the
+# two streams a gained cover touches (c-default, facts). Anything else (a mover in c-vm, emit-ir-*,
+# stderr, composition or dumps; a failed floor; no DONE line) is red here. Whether a mover is a predicted
+# GAINED cover moving only the declared/route rows is predict.py's verdict, from the baseline build's own
+# decisions, never from this log.
 set -u
 . /home/pcrec/projects/pcrec/worktrees/covs1/docs/dev/lanes/covs1_evidence/common.sh
 case "${1:-}" in
@@ -8,15 +17,17 @@ case "${1:-}" in
         git -C "$MAIN" rev-parse --verify -q "$BASE^{commit}" >/dev/null || { echo "no $BASE" >&2; exit 1; }
         echo "would run in $TREE: ref build of $BASE (abi 108) + emit_sweep.py --ref-bin, movers to $SC/sweep.movers.tsv"
         echo "boxqueue: cap 5400"; echo "boxqueue: est 2400"; echo "boxqueue: patience none"
-        echo "boxqueue: expect none reason=exec'd, so emit_sweep's rc is the job's rc"
+        echo "boxqueue: expect none reason=the job's rc is the instrument verdict (completion, floors, no asymmetry, movers only in c-default/facts); predict judges the movers"
         exit 0 ;;
     --ready) ready_after ;;
 esac
 tree_build || { echo "candidate build failed"; exit 1; }
 ref_build || { echo "ref build failed"; tail -5 "$SC/ref.build.log"; exit 1; }
 cd "$TREE" || exit 1
-exec python3 scripts/emit_sweep.py --ref-bin "$SC/ref/build/pcrec" --tree "$TREE" \
+python3 scripts/emit_sweep.py --ref-bin "$SC/ref/build/pcrec" --tree "$TREE" \
     --out "$SC/sweep" --jobs 12 --movers-out "$SC/sweep.movers.tsv" \
     --facts-declared-moves 'span_facts:row:gone>,cover:section:>new' \
     --dumps-declared-rows='--list-limits:PCREC_ANCHORED_MAX_STATES' \
-    --dumps-declared-gone='--list-limits:PCREC_SPAN_WALK_SUBSETS'
+    --dumps-declared-gone='--list-limits:PCREC_SPAN_WALK_SUBSETS' 2>&1 | tee "$SC/sweep.report.txt"
+sweep_rc=${PIPESTATUS[0]}
+exec python3 -I "$TREE/docs/dev/lanes/covs1_evidence/sweep_verdict.py" "$SC/sweep.report.txt" "$SC/sweep.movers.tsv" "$sweep_rc"
