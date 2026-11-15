@@ -65,7 +65,7 @@ rows); lookaround as a run ([REQ-LOOKAROUND]); captures in a cover body (C1);
 
 ## 1. The owner's model, mapped to the code
 
-| the model (D198) | in pcrec today | rev 3 |
+| the model (D198) | in pcrec today | rev 3, rev 4 |
 |---|---|---|
 | EXACT span: every position proven, the engine does not retest | two producers compared by C8: the NFA slice `span_facts` (`pcrec_span_walk`, `src/facts/kset.c`) and the anchored machine's walk `kn_walk` (`src/gen/known.c`, C7) | ONE producer: the anchored machine's walk, unbounded (§3.1). The slice is deleted |
 | HULL positions: candidates only, the work thrown out | `kset_walk` (assertions passed as if they held, reach `PCREC_PREFIX_K_MAX` = 24) | unchanged, off the cover path (§3.4) |
@@ -556,7 +556,7 @@ twins, default against `--memfn=no-window-search`, on the before compiler. Emitt
 (C bytes, `.text`) per mover is reported beside each timing. Window: at night, cleared with
 the owner, outside 20:00-01:00, after each stage lands.
 
-## 8. The bounds on the cover path (rev 1 §1's inventory; rev 3 verdicts)
+## 8. The bounds on the cover path (rev 1 §1's inventory; rev 4 verdicts)
 
 Rev 1 §1's inventory (in git at `75d365a0b`) stands for its sites. Rev 4's verdicts:
 - THE BOUND THAT BINDS (R-1; omitted from rev 3's inventory): `PCREC_ANCHORED_MAX_STATES`
