@@ -204,13 +204,16 @@ def isa_check(name, obj, target, tfeat, floor):
 
 # [review 2026-11-15 r6 FIDELITY-1] THE TIMED FUNCTION'S CALLEES, per FORM (the cell's form token; first match on
 # its prefix): the externals `_time` may call. pcrec's matcher inlines an mfind site whole (no call at all); the
-# fn-memchr site's one call is libc's memchr. A form no row names (the s2d jobs' forms, outside D197) keeps the r5
-# rule: any external, returned. Every form: no call to a function the object defines, no call or jump through a
+# fn-memchr site's one call is libc's memchr; the mfcard window's other forms as its dry runs found them. A form
+# no row names (the s2d jobs' verify/enter forms) keeps the r5 rule: any external, returned. Every form: no call to a function the object defines, no call or jump through a
 # SECTION symbol (a site gcc placed in another section: `section(...)`, `cold` / .text.unlikely) and no INDIRECT
 # call or jump (a site reached through a pointer)
 TIMED_CALLEES = (
     ("mfind-", ()),
     ("fn-memchr", ("memchr",)),
+    ("libc", ("memchr",)),       # J2's byte row and J2p's pair (dry runs 2026-11-15: memchr only)
+    ("pair", ("memchr",)),
+    ("walk", ()),
 )
 
 def timed_callees(form):

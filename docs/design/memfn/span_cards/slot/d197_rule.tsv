@@ -47,6 +47,8 @@
 # libc arms; plan.py CONFIRM_CELLS, window `mfconfirm`) and count only if they lose again beyond the floor (scored
 # with --confirm); one that does not reproduce scores tie. A confirmation is never re-issued: a confirming record
 # est REFUSED, mis-bound, or missing a loss cell's rows leaves the level INCONCLUSIVE (r6 RULE-5).
+# --confirm re-scores ONLY the levels whose first-pass verdict is CONFIRM; every other level keeps its first-pass
+# verdict, so a 3+ LOSS stands at once even when a confirmed cell is shared with another level (r6 R1).
 # UNPRICED (the cell table's `either-row-unpriced`; r6 RULE-4): a deciding row is unpriced when est's row is ABSENT,
 # its job DRIFTED, or it has no per-launch x (no W). A row est prices NULL or TEXT (est.py's own `unpriced` words)
 # still has its per-launch x and is read here: the rule's statistic is its own x and A/A floor, not est's value.

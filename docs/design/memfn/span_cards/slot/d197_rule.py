@@ -146,6 +146,16 @@ def levels(t, arms_of, second=False, confirming=False):
                     "shipped: %s; avx2: %s" % (s1, s2), cc)
     return out
 
+def score(t, arms_of, second=False, confirming=False):
+    """the per-level verdicts; arms_of(form, which, use_conf) -> arm()'s tuple. [r6 R1, kit manager 2026-11-15] a
+    confirming record re-scores ONLY the levels whose first-pass verdict is CONFIRM: every other level keeps its
+    first-pass verdict (a 3+ LOSS stands at once; a confirmed cell shared with another level never re-scores it)"""
+    v = levels(t, lambda f, w: arms_of(f, w, False), second)
+    if not confirming:
+        return v
+    v2 = levels(t, lambda f, w: arms_of(f, w, True), second, confirming=True)
+    return {l: v2[l] if v[l][0] == "CONFIRM" else v[l] for l in v}
+
 def bound_right(which, run):
     """the arm table's variant row, asked of a record alone (a confirming record's arm)"""
     return not WHEN["memchr-variant-not-the-arms"]({"variant": variant_of(run), "which": which,
@@ -227,21 +237,19 @@ def rule(rundir, avx2dir, second=None, confirm=None):
     recs = {role: meta(t, d) for role, d in roles}
     provenance(record.rule_pins(), recs)
     is_second = second is not None          # [r6 RULE-6] derived: the first run's records passed provenance
-    def arms_of(conf):
-        def f(form, which):
-            m = recs[which]
-            return arm(t, form, m["out"], m["drift"], m["outcome"], m["run"], which, conf.get(which))
-        return f
-    v = levels(t, arms_of({}), is_second)
+    conf = {}
+    def arms_of(form, which, use_conf):
+        m = recs[which]
+        return arm(t, form, m["out"], m["drift"], m["outcome"], m["run"], which, conf.get(which) if use_conf else None)
+    v = score(t, arms_of, is_second)
     if confirm is None:
         return v
     confirm_cells_check({c for x in v.values() for c in x[5]}, recs)
-    conf = {}
     for n in ("shipped", "avx2"):
         m = recs["confirm." + n]
         if m["outcome"] != "REFUSED" and bound_right(n, m["run"]):
             conf[n] = (m["out"], m["drift"])     # a refused or mis-bound confirming record confirms nothing
-    return levels(t, arms_of(conf), is_second, confirming=True)
+    return score(t, arms_of, is_second, confirming=True)
 
 # ---- the drill: CONSTRUCTED outcomes, each with the per-level verdicts the rule must give -----------------------
 def _forms(t):
@@ -346,6 +354,14 @@ def drill(scratch=None):
         ("[r6 RULE-5] three losses with a confirmation given for another level: v3 LOSS at once (no confirmation needed)",
          (_rec(t, L7(1000), allf(990), per_cell=three), "FULL", "evex"), good(), False, v3(Lo),
          {"shipped": None, "avx2": None}),
+        ("[r6 R1] w32 loses 3 cells at once, swar 1 (shared cell 65536.0); the confirm ties that cell: generic's "
+         "CONFIRM resolves (tie, WIN), v3's LOSS stands (never re-scored)",
+         (_rec(t, L7(1000), allf(990), per_cell={**dense(64), **{(f, 65536, 0): L7(1500)
+                                                                for f in ("mfind-swar", "mfind-w32")},
+                                                 **{("mfind-w32", g, r): L7(1500) for g, r in ((65536, 100), (1024, 0))}}),
+          "FULL", "evex"), good(), False, dict(zip(lv, (W, W, Lo))),
+         {"shipped": {k: v for k, v in _rec(t, L7(1000), allf(990)).items() if k.endswith(".65536.0")},
+          "avx2": _rec(t, L7(1000), allf(500))}),
         ("[r6 FIDELITY-2] both records under the AVX2 tunable (EVEX never timed): the shipped arm no verdict, "
          "INCONCLUSIVE", (_rec(t, L7(1000), allf(500)), "FULL", TUN), (_rec(t, L7(1000), allf(500)), "FULL", TUN),
          False, each(T), None),
@@ -358,11 +374,11 @@ def drill(scratch=None):
     bad = 0
     for name, sa, aa, second, want, conf in CASES:
         recs = {"shipped": sa, "avx2": aa}
-        def arms_of(form, which, recs=recs, conf=conf):
+        def arms_of(form, which, use_conf, recs=recs, conf=conf):
             o, outcome, var = recs[which]
             return arm(t, form, o, {}, outcome, run(var) if var else {}, which,
-                       (conf[which], {}) if conf and conf.get(which) is not None else None)
-        v = levels(t, arms_of, second, confirming=conf is not None)
+                       (conf[which], {}) if use_conf and conf and conf.get(which) is not None else None)
+        v = score(t, arms_of, second, confirming=conf is not None)
         got = {l: x[0] for l, x in v.items()}
         ok = got == want
         bad += not ok
