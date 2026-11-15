@@ -755,3 +755,6 @@ with `&` only (`(& f)`, subject on the left; `(& !B)` covered); other operators 
 with NO partial application: a macro call binds every required parameter or is an error naming the missing one;
 sections are the one way to leave a hole (revisit on need). C35: an explicitly written `(?m)` keeps PCRE meaning inside
 a value (`^`/`$` also at line breaks within it); without it `^`/`$` are the value's ends; never reads outside the value.
+RULING (Frank 2026-11-15: "spelling: keep ! out of rx for now"): CLOSES the Boolean-operator spelling question (open
+since 2026-11-12). No standalone `!` in the rx language for now; `!` lives in the predicate/expression language only
+(always a filter). Combined with the 2026-11-14 rulings: `&` intersection, `|` alternation, no alphabetic operators.
