@@ -709,3 +709,12 @@ same `label: expr` form with the same binding (comma separates, `label:` takes u
 `:` constrains, `=` sets a parameter (`sep = "."`). A labelled argument always NARROWS the subject (answers RUL-10 of
 review 2026-11-14-r1-predspec). Pipeline spelling follows the pending ruling on review item OWN-1 (`&` vs a stage
 operator).
+
+**2026-11-14 RULING — Q1 foundation (Frank: "1. agree", on review 2026-11-14-r1-predspec's proposed answer).**
+SUPERSEDES the tentative context-marked-sets lean. Foundation = STRING SETS. In a SET POSITION (an `&` operand, a label
+condition, a filter body, a hole's set, a compile-time set) an EDGE ASSERTION (one that can read outside the value: `^`,
+`$`, `\b`, lookaround reachable at the value's edge through a nullable prefix/suffix) is a COMPILE ERROR naming the fix
+("`^` in the condition on x reads text outside x: write `startsWith("S")`, or put `^` in the pattern that places x").
+Assertions strictly inside a value keep PCRE meaning. Values, transform images and compile-time sets are context-free.
+Nullability (for `empty.search`) is computed IN CONTEXT; only the anchored/whole-string MODE exempts. D193 add. 3 stands.
+A named in-context form only on a measured need (D77). Item 2 (OWN-1: stage operator vs `&`) PENDING.
