@@ -820,3 +820,12 @@ regular; a count bound N multiplies states by about N; comparing two counts is n
 result as a value (an integer after matching; any arithmetic; cheap; but it can only accept or reject afterwards).
 Subject numbers already have both forms (`between(1,12)` as a set, `$y + 1` as a value). On that reading numbers can be
 ONE kind for the user, with the evaluation place decided (and its cost shown) by the compiler.
+**2026-11-15 RULING (lean) — counts: `count()` first, `occurs` as the fallback (Frank, to session 132).** His words:
+"counts: perhaps the solution is both. you can use count() until you can't then you can use 'occurs' as a fallback".
+RECORD: numbers are ONE kind for the user; `count(...)` yields a number used with the ordinary comparisons and
+arithmetic, like a subject number. `occurs.*` stays as the fallback for the cases `count()` cannot serve. Manager's
+reading of "until you can't" (mine; to confirm with him): `count()` is a value computed on the result, so it cannot
+take part in the match itself; where a count test must be compiled into the match (a set position, e.g. an `&`
+operand inside a larger pattern), the compiler refuses the `count()` form with a message naming the `occurs` form,
+whose bounded shape compiles to states (cost shown for large bounds). SUPERSEDES the "OPEN, lean = spell it through
+`occurs`" sentence of the two-kinds entry above. "perhaps" = a lean, not final.
