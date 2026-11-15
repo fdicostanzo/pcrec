@@ -861,7 +861,7 @@ an error showing a dropped witness and the explicit conversion. A condition lite
 check: it always NARROWS the operand (`isodate & (year: <2000)` silently drops `5`, which `/\d{4}/`
 cannot hold). At NARROWING SITES (typed parameters, condition literals, an `&` whose operands come from definitions) an
 empty intersection from pure parts is an ERROR; a dead branch WARNS (`dead.branch`); nothing when emptiness is match-
-or parameter-dependent; NEVER inside an `@assert.*` argument, whose emptiness is the assertion's own subject (§5.6).
+or parameter-dependent; NEVER inside an `@assert.*` argument, whose emptiness is the assertion's own question (§5.6).
 So `:` CHECKS in a head and NARROWS in a condition (§0.1 L49): whether it should do one thing in both, or the check
 get its own spelling, or typed parameters leave phase 1, is OPEN (§13 O48; review r8 P6-4). `m(p: pure)` (a
 match-dependent argument is an error, "pass `pattern($x)`") puts a PROPERTY, not a constraint set, after `:`, a
@@ -1052,22 +1052,28 @@ tagged DFA, [ENG-TDFA], or the VM). The default output is span + accept-class va
 - Structural evaluation is TOTAL over finite things and TERMINATES. Recursion through a PARAMETERIZED definition
   is admitted only when ONE integer parameter is a literal at every call after expansion and STRICTLY DECREASES at
   every recursive call, with a literal base case (`value_depth(0) := json.scalar`, §12.11); any other cycle is
-  refused at load (the error names the cycle). Parameterless pattern bindings may recurse as in PCRE (`balanced :=
-  /\((?:[^()]|(?&balanced))*\)/`, matched at run time, needs `vm`); labels inside recursion refused at first.
-- `file_text(path, sha256 = ...)` = the whole file as one compile-time string; `records(text, rx)` = each
-  compile-time match of rx over a compile-time string is an entry; named groups make entries maps. The record rx is
-  SEARCHED in the text (in context, like a final pattern: its `^`/`$` read the file text); each ENTRY is a plain
-  string (context-free, §11). The record rx's matches must TILE the text (every byte in a record or a declared gap),
+  refused at load (the error names the cycle). A parameterless pattern binding may recurse as in PCRE through its
+  OWN NAME inside its OWN literal (`balanced := /\((?:[^()]|(?&balanced))*\)/`, matched at run time, needs `vm`):
+  the one crossing from rx text to the expression language other than `${}` (§11; CF:113's lean "a pattern binding
+  may call itself via `(?&name)` inside its own literal"; review r8 SIM-9: rev 6 used it without stating it). Labels
+  inside recursion refused at first.
+- `file_text(path, sha256 = ...)` = the whole file as one compile-time string; `records(text, rx)` = an ARRAY (a
+  spelled one, §3.4) with one ITEM per compile-time match of the ITEM RX over a compile-time string (the names
+  `records`/"record rx" are placeholders colliding with RECORD, §0.3, §13 O44). The item rx is SEARCHED in the text
+  (in context, like a final pattern: its `^`/`$` read the file text); each ITEM is the item rx narrowed to that one
+  match, a one-string rx (context-free, §11) whose labels stay reachable by the map view (`r.word`, E-FILE; rev 6
+  said "named groups make entries maps" and "each ENTRY is a plain string", review r8 RUL-12). The item rx's matches
+  must TILE the text (every byte in a record or a declared gap),
   else a compile error naming the untiled byte range ("bytes 0-4 (`foo\r\n`) belong to no record");
-  `records(text, rx, gaps = "allow")` opts out. How a record rx declares its separator bytes: §13 O20 (until it is
+  `records(text, rx, gaps = "allow")` opts out. How an item rx declares its separator bytes: §13 O20 (until it is
   settled, a multi-line file fails tiling on its `\n` terminators). `file_literals(p)` is library sugar over
-  `records` with a NAMED record rx (no hidden default). Record rx restricted to the DFA-able subset; `records` needs
+  `records` with a NAMED item rx (no hidden default). Item rx restricted to the DFA-able subset; `records` needs
   an IN-COMPILER matcher (pcrec has none today) built on [AUTOMATON-KIT].
 - MODULES. `m := import(names, sha256 = ...)` is a built-in FUNCTION; `names` is a CONSTANT set of names (an rx
   over file names, e.g. `"json"`); it must resolve to EXACTLY ONE file in the CONFIGURED library directories (zero
   or several = compile error listing the candidates; a pattern from an untrusted source must not read files). It
   returns a MODULE of the file's exported bindings; member access is navigation by name (`json.row`). WHAT A MODULE
-  IS under the two value kinds is OPEN (§13 O46): rev 5 called it a MAP (the aligned map case), usable whole as a
+  IS under the two value kinds is OPEN (§13 O46; the kind table, §2.1): rev 5 called it a MAP (the aligned map case), usable whole as a
   pattern when every entry is an rx; but a module holds macros, so it is not an rx, and a record (the written map
   view) is never a value (CF:866), yet `json := import("json")` binds it. Lean: a module is a compile-time NAMESPACE
   that `:=` names, not a value (never passed, stored, returned or used whole as a pattern). A library file exports with `@export(names)`: every module label whose NAME is in the rx
@@ -1117,7 +1123,7 @@ OWN-7). Prerequisite list: LEAN (review Q1X-8). The untiled-range wording: LEAN 
 **RULE.** Every warning has a STABLE NAME in dotted families (a contract, stated in the spec): `empty.search`,
 `dead.branch`, `label.unset`, `compare.width`, `label.ambiguous`, `warn.unused`; proposed by review 2026-11-14-r1
 and not adopted: `precedence.section`, `array.hole`, `flag.hole`. Control is by `@` effects, rest of file:
-`@warn.off("compare.width")`, `@warn.off(startsWith("dead."))` (a label-free value filter is a full rx; the look-alike
+`@warn.off("compare.width")`, `@warn.off(startsWith("dead."))` (a label-free library rx is a full rx; the look-alike
 `@warn.off(/^dead\./)` is the same set, `^` being the name's start, §0.1 L15), `@warn.off(/.*/)`; the reverse `@warn.error(/.*/)` (a
 strict build); a per-binding form (spelling OPEN); and a compiler option for a whole build (like `-Wno-`). SELECTORS
 ARE A SET OF NAMES AS AN RX, the same name-selection rule as import and export: no `*` wildcard (`"*"` is the
@@ -1131,8 +1137,11 @@ filter is the unapplied-macro error (§2.3).
 
 ## 8. Libraries
 
-**RULE.** Standard library = prelude text (typed macros) on the foundation; it grows without compiler changes.
-Standard filters: `between` (inclusive), `startsWith(s) := /${s}.*/`, `endsWith`, `contains(s) := /.*${s}.*/`,
+**RULE.** Standard library = prelude text (macros with typed parameters) on the foundation; it grows without
+compiler changes. Standard library sets (each call is a full rx, used in the filter role): `between` (inclusive),
+`startsWith(s) := /${s}.*/`, `endsWith`, `contains(s) := /.*${s}.*/` (`^`/`$` in an argument are the ends of the span
+the call's filter role filters, §11, so `contains(/^err/)` = `startsWith("err")`; the body's hole does not open a span
+of its own),
 `when(c, p)` (`x & when(c, p)` = `(x & c & p) | (x & !c)`). Standard FILTER MODIFIERS (§2.7; each transforms the
 filter, never the subject): `padded(S)` (leading zeros ignored), `unpadded(n, S)` (read as if zero-padded to width
 n), `any_case(S)` (letter case ignored), `quoted(S)` (only the text inside the quotes read), `length(S)` (the
@@ -1143,7 +1152,10 @@ string literal read as its decoded text) lives in the `json` module.
   `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`; `c` is the usual condition, passed as a parenthesised literal
   (`occurs.exactly(1, (name: set))`; C31 RESOLVED); constant (or caller-parameter) n at default; cost = a capped
   counter (n+2 states) multiplied in, shown by [COST-EXPLAIN]; a count against another label's value is a priced
-  relation (§4.6). The module NAME tells the user these are counts of matches.
+  relation (§4.6). The module NAME tells the user these are counts of matches. The owner applies `occurs` and `count`
+  to a SEARCH RESULT too (CF:882-883: "You could use count to check the number of results ... You could use the
+  occurs module"): there they count ENTRIES of a match-time array, a second population beside a repeated label's
+  iterations; whether the two are one rule (a search result as a repeated label) is §13 O50 (a).
 - `count(...)` FIRST, `occurs` AS THE FALLBACK: `count(c)` yields the number of occurrences meeting `c`, a number used
   with the ordinary comparisons and arithmetic like a subject number (`n := count((name: any_case("Host")))`, `headers
   & (n: ==1)`; §0.1 L42). There is NO positional rule against `count()`: it is accepted wherever it is written, and
@@ -1152,12 +1164,14 @@ string literal read as its decoded text) lives in the `json` module.
   states. A later, separate plan item, [COUNT-TO-OCCURS] (not phase 1): where the compiler can PROVE the answers do not
   change, it rewrites a `count()` test into the `occurs` form itself. What `occurs` saves over `count()` for the same
   test belongs to the lowering section of a later revision; the budget: §13 O39.
-- TUPLE COMPARISONS are a library macro, no syntax. The rev 5 spelling `lex_ge([major, minor, patch], [1, 4, 0])`
-  passed tuples as values, which the type picture forbids: a `[ ]` is an alternation (any one entry, so its order is
-  not part of the value) and a record is never a value (CF:863, CF:866). Candidate rewrite (LEAN, §13 C25): `version
-  & lex_ge(1, 4, 0)`, a macro whose call record is the bound tuple and whose SUBJECT, arriving by `&`, supplies the
-  other tuple as its labels in group order (map view), with a compile error when the counts differ; it needs a
-  call record of variable length (§13 O47). The phase-1 spelling needs no tuple: "version at least 1.4" is `semver &
+- TUPLE COMPARISONS are a library macro, no syntax. The defect of the rev 5 spelling `lex_ge([major, minor, patch],
+  [1, 4, 0])` is its BARE LABEL NAMES used as values (`major`, `minor`, `patch`; §13 C13), not its arrays: a `[ ]` has
+  ordered entries that a structural macro reads in order (§3.4, §5.4), exactly as `join([...])` does in six §12
+  cases (CF:548: "join takes an ordinary array"). (Rev 6 said the type picture "forbids" it because "a `[ ]` is an
+  alternation ... its order is not part of the value"; that reason was false, review r8 P6-2.) How a tuple
+  comparison is spelled is OPEN (§13 C25): a structural macro over two arrays, or `version & lex_ge(1, 4, 0)`, a macro
+  whose call record is the bound tuple and whose OPERAND, arriving by `&`, supplies the other tuple as its labels in
+  group order (needing a call record of variable length, §13 O47). The phase-1 spelling needs no tuple: "version at least 1.4" is `semver &
   ((major: >=2) | (major: 1, minor: >=4))`: the record holds its entries together, `|` gives any one (§4.1).
 - `assert` (§5.6): `some`, `none`, `same`.
 Candidate content (a follow-up initiative): network, time, identifiers, communication, checksummed numbers; each
@@ -1177,8 +1191,7 @@ fallback: LEAN (CF:823, "perhaps the solution is both"). `count()` refused only 
 reduce states, no positional rule: RULED (CF:832: "i would refuse count() on budget or as a recommended way to reduce
 states rather than rules"); the budget as a labelled measured quantity: LEAN (manager's note, CF:832; §13 O39). The
 automatic rewrite: RULED as a LATER plan item (CF:840). Tuples as a library macro: RULED (CF:644), SUPERSEDES predx's
-tuple-on-the-left-of-`:` syntax (S12); its placeholder argument spelling is replaced (CF:866; the candidate:
-LEAN, C25). The comma form of the semver condition: RULED (CF:704).
+tuple-on-the-left-of-`:` syntax (S12); its spelling: OPEN (C25). The comma form of the semver condition: RULED (CF:704).
 
 ## 9. Cut from the first spec
 
@@ -1210,8 +1223,8 @@ matcher (§11); self-describing files are a demonstration, not a driver.
 IS EXACTLY TODAY'S PCRE PATTERN: no strict subset, no level beyond today's engine choice, no set position (G3).
 Top-level `:=` replaces DEFINE for new code; DEFINE stays only as PCRE syntax inside a literal with PCRE's meaning.
 The predicate opt-in selects WHICH LANGUAGE a file or API call is in. Library files are expression-language files
-with `@export`. The `.rxt` format is unchanged. Crossings: rx -> expression only by `${...}`; expression -> rx only
-by `/.../`.
+with `@export`. The `.rxt` format is unchanged. Crossings: rx -> expression by `${...}`, and by `(?&name)` naming
+the pattern binding whose own literal it sits in (self-recursion only, §7; CF:113); expression -> rx only by `/.../`.
 
 Literals: full PCRE inside, `\/` escapes; a literal means EXACTLY what PCRE means: NO implicit extended mode
 (`/foo bar/` keeps its space, `#` is literal); extended mode is per literal (`/.../x` or a leading `(?x)`). A literal
@@ -1221,9 +1234,10 @@ pattern keeps its own flags: §13 O32). Inside a LARGER program, literals start 
 defined; unbounded backreferences need `vm`).
 
 STRING SETS. A pattern used as a SET denotes the strings it matches ENTIRELY (keys starting with S are `/S.*/`).
-SET POSITIONS are: an `&` operand, a label condition, a filter body (incl. a modified filter's argument, §2.7), a
-hole's set (together: FILTERS, each applied to a SPAN of the subject), and a compile-time set (an `enumerate` argument,
-an `@assert` argument, a name set for `import`/`@export`/`@warn`, a computed value, a `records` entry).
+SET POSITIONS are: an `&` operand, a label condition, a filter body (incl. a modified filter's argument, §2.7, and
+a filter passed to any macro), a hole's set (together: FILTERS, the first three each applied to a SPAN of the
+subject, the last a part of the filter it sits in), and a compile-time set (an `enumerate` argument, an `@assert`
+argument, a name set for `import`/`@export`/`@warn`, a computed label's value, a `records` item).
 
 THE FILTERED SPAN (stated once; CF:761). In a filter, `^` and `$` mean the START and END OF THE SPAN BEING FILTERED,
 not of the subject. `/\w+/ & /^foo/` accepts the words that start with `foo`, exactly as `/\w+/ & startsWith("foo")`
@@ -1234,6 +1248,19 @@ CF:56 "in-context stays for pattern-level &") in exactly this sense, and it SUPE
 listing of `^`/`$` among the errors (CF:713-717); the foundation stays STRING SETS (CF:761 (1)). A compile-time set
 has no filtered span; there `^`/`$` are the string's own ends (this document's extension, LEAN).
 
+ONE SPAN PER FILTER ROLE (review r8 P6-5; LEAN until the owner confirms, §13 O49). The span is fixed where the FILTER
+ROLE is: the `&` operand's text, the label's value, the value searched by `~`. Nothing written INSIDE a filter opens
+a span of its own: a filter passed as an argument to a macro (`contains(/^err/)`, `padded(/^5/)`, a user macro) and
+an rx inserted in a hole of the filter's body both read the span of the filter they are part of. So `contains(/^err/)`
+= `startsWith("err")` although `contains`'s body puts the argument in a hole after `.*`; `$m !~ /^err/` and `(m:
+!contains(/^err/))` agree (§2.6, §0.1 L17). This is the owner's rule ("^...$ meant the start and end of the filtered
+condition", CF:761-768) applied to arguments, not a property of `contains`, `startsWith` and `endsWith`. It agrees
+with §2.7's "the argument's own start and end" (`padded(/^5/)` = `padded(startsWith("5"))`): a modifier's argument
+filters the span AS THE MODIFIER READS IT, which is the same span read through the modifier, so its ends are that
+span's ends. In a FINAL pattern a hole's `^`/`$` are the subject's (or a line's) ends, as in the pasted text. Rev 6
+read `^` in a hole as the HOLE's own start, which made `contains(/^err/)` accept `xerr` while §0.1 L17 said it was the
+same as a search for `/^err/` (review r8 SIM-1).
+
 An assertion that would READ BEYOND THE FILTERED SPAN is a COMPILE ERROR naming the fix (CF:761 (3)): `\b` at the
 span's start or end, and (LEAN, the manager's reading) a lookaround that can read outside the span, reachable at its
 start through a nullable prefix or at its end through a nullable suffix; the property is decided statically on the
@@ -1243,17 +1270,19 @@ pattern. `^`/`$` are NOT in this class:
 
 Assertions strictly INSIDE the span keep PCRE meaning (`(x: /\d+\b\.\d+/)`: the `\b` reads only x's own characters).
 MULTILINE (C35, CF:753): an explicitly written `(?m)` keeps PCRE's meaning inside the span (`^`/`$` also at line
-breaks within it); without it `^`/`$` are the span's ends; never does either read outside the span. VALUES (`$x`, a
-one-string set), transform images (what a modified filter reads, §2.7) and compile-time sets are CONTEXT-FREE. In a
+breaks within it); without it `^`/`$` are the span's ends; never does either read outside the span. CAPTURED STRINGS
+(`$x`, a one-string set), what a modified filter reads (its reading's output, §2.7) and compile-time sets are
+CONTEXT-FREE. In a
 SEARCH inside a value (`$x ~ rx`, §2.6) the value is the whole subject of that search, so `^`/`$` are the value's ends
-(D193 add. 3). FINAL patterns and `records` record rx are SEARCHED in their subject and keep full PCRE meaning,
+(D193 add. 3). FINAL patterns and a `records` item rx are SEARCHED in their subject and keep full PCRE meaning,
 context assertions included. Nullability for the empty-match rule is computed IN CONTEXT (§7). A named in-context form
 (a library call, no keyword) is added only on a measured need (D77).
 
-HOLES `${expr}`: every hole denotes a SET OF STRINGS and matches one of them: a value inserts LITERAL TEXT (never
-re-parsed), a pattern inserts a sub-pattern (`${isodate & (year: 2000)}` = a sub-pattern insertion); a hole's
-set is a set position (a `\b` or edge lookaround inside it is the error above; write the assertion in the literal around the
-hole). In the inner direction (an API caller passing a PCRE string) a GUARD is written with an explicit `&`:
+HOLES `${expr}`: every hole denotes a SET OF STRINGS and matches one of them: a one-string set (a captured string, a
+quoted literal) inserts LITERAL TEXT (never re-parsed), any other rx inserts a sub-pattern (`${isodate & (year:
+2000)}` = a sub-pattern insertion); a MACRO in a hole is the unapplied-macro error (§2.3; CF:362). A hole's set is a
+set position for the edge-assertion rule (a `\b` or edge lookaround at its edge is the error above, L8; write the
+assertion in the literal around the hole); its `^`/`$` are the enclosing filter's span ends (above). In the inner direction (an API caller passing a PCRE string) a GUARD is written with an explicit `&`:
 `(\d+)&${ <256 }`; a hole after an atom WITHOUT `&` is a FOLLOWING item (`(\d+)${ <256 }` = digits followed by a
 numeral below 256). Generalized backreferences (`(?<y>\d{4})-${$y + 1}`); holes are order-free; holes in typed SYNTAX
 POSITIONS (`\d{${n}}`, `[${a}-${b}]`) supply that position's type from a finite set; holes never change structure
@@ -1269,8 +1298,8 @@ fail SILENTLY (`\w{3} & /\w+\b/` moves the match; a `^` condition on a repeated 
 two); under B1 others do (`n: p` dead for a lookbehind `p`). With `^`/`$` bound to the filtered span (CF:761) the `^`
 look-alikes agree with `startsWith`; every remaining divergence needs an assertion that reads outside the span, a
 static property, and refusing exactly those leaves no silent failure and no unbuilt lowering at the default level
-(G0, G2). Nullability in context is A's one real gain, adopted. The KIND of a hole decides its insertion, never the
-content (no injection); a guard needs `&` so the hole rule has no exception (C4).
+(G0, G2). Nullability in context is A's one real gain, adopted. What a hole holds (one string or a set) decides its
+insertion, never the text's content (no injection); a guard needs `&` so the hole rule has no exception (C4).
 
 **STATUS.** Outer layer: LEAN (CF:564, "Lean ADOPT"). Literal leanings incl. the strict subset: RULED (CF:56, "I like your
 suggestions"); the subset scoped to literals inside a larger program and the one-literal program = today's pattern:
@@ -1279,9 +1308,11 @@ LEAN (review OWN-14). No implicit x-mode: RULED (CF:577, C2). STRING SETS: RULED
 among the errors); its extension to the compile-time sets (no span is filtered there; `^`/`$` = the string's ends):
 LEAN (this document). Assertions reading beyond the filtered span refused: RULED for `\b` (CF:761 (3)); edge
 lookarounds in the same class: LEAN (manager's reading, CF:761). `(?m)` written explicitly: RULED (CF:753, C35).
-Context-free values, transform images and compile-time sets, nullability in context, a named in-context form only on
+Context-free captured strings, modifier readings and compile-time sets, nullability in context, a named in-context form only on
 measured need: RULED (CF:713). The three candidates and the restated reasoning: LEAN (review Q1R-1, Q1X-2, Q1R-12,
-Q1X-1). Guard holes with `&`: RULED (CF:573, C4). Holes: RULED (CF:80, CF:81). Parameters: RULED (CF:84); the
+Q1X-1). Guard holes with `&`: RULED (CF:573, C4); a macro in a hole the unapplied-macro error: RULED (CF:362). One
+span per filter role (an argument or a hole reads the enclosing filter's span): LEAN (review r8 P6-5; §13 O49). The
+`(?&name)` self-recursion crossing: LEAN (CF:113). Holes: RULED (CF:80, CF:81). Parameters: RULED (CF:84); the
 interface rides [IFACE-PUSH]. `&` and `${}` as the only rx additions: RULED (CF:795). Finite-group backreferences as
 regular: a general engine row, [BACKREF-FINITE] (RULED, CF:583, predx Q10: not #6). `&` in rx text: §13 C23.
 
@@ -1406,7 +1437,7 @@ naming `functions`; under `functions` a linear arithmetic check on DFA-validated
 
 ### 12.8 E-FILE: file literals and CSV records
 
-    lines := /^[^\r\n]*$/m                                        # named record rx; no hidden default
+    lines := /^[^\r\n]*$/m                                        # named item rx; no hidden default  
     alts  := records(file_text("w.txt", sha256 = "<pin>"), lines)
              & !startsWith("#") & !"" & length(<=20)              # any order: & is pure intersection
     rows  := records(file_text("w.csv", sha256 = "<pin>"), /^(?<word>[^,]+),(?<w>\d+)$/m)
@@ -1416,13 +1447,13 @@ naming `functions`; under `functions` a linear arithmetic check on DFA-validated
 
 LEVEL: default; nothing happens at match time. Expected, with `w.txt` = `# words`, `foo`, `foobar` and `w.csv` =
 `apple,150`, `pear,90`: `alts` = `foo|foobar` (file order), `heavy` = `apple`. Searching `foobarbaz` reports `foo`
-(sort is semantics). The record rx is searched in the file text (its `^`/`$` read the file); the entries are plain
-strings. A BLANK LINE inside `w.txt` gives an empty entry (without `& !""` the final pattern is nullable and the
+(sort is semantics). The item rx is searched in the file text (its `^`/`$` read the file); the items are one-string
+rx. A BLANK LINE inside `w.txt` gives an empty item (without `& !""` the final pattern is nullable and the
 search program is an error, the `empty.search` hazard, §7); a TRAILING newline gives none (PCRE2's multiline `^`
 does not match after a final newline; Python's `re` differs). A CRLF line `foo\r\n` is not matched at all by `lines`,
 so the tiling error names the whole range `foo\r\n`, not just the `\r`. NOT YET A VALID ACCEPTANCE CASE: the `\n`
 terminators belong to no record, so under the tiling rule as written E-FILE is itself a tiling error until O20
-says how a record rx declares its separators (§13 O20). A changed `w.txt` under its pin is a compile error.
+says how an item rx declares its separators (§13 O20). A changed `w.txt` under its pin is a compile error.
 
 ### 12.9 E-HTTP: header block with occurrence counts
 
@@ -1640,7 +1671,7 @@ Open items (rev 0, still open):
 Open items (rev 2, still open):
 - **O19.** A match-dependent binding is "a computed label of the pattern whose labels it reads": which pattern, when
   the labels it reads occur in several bindings (`$mname` in `textdate`, reached again through `rfcdate.rest`).
-- **O20.** `records` tiling: how a record rx declares its separator/gap bytes (line terminators) so that tiling
+- **O20.** `records` tiling: how an item rx declares its separator/gap bytes (line terminators) so that tiling
   holds without `gaps = "allow"`. CONSEQUENCE (review Q1R-10): until it is settled, E-FILE fails its own tiling rule
   on every `\n` (§12.8); the review suggests a declared separator (`records(text, rx, sep = /\n/)`-shaped).
 - **O21.** Bounded recursion's base case: several definitions of one name by literal argument (`value_depth(0) :=`)
