@@ -17,7 +17,9 @@
 # block twice exceeds it (S703).
 rq3-witness	1700000
 # mfind-w16 / mfind-w32 (lane mfind, the inline one-member finder; reached
-# only under the test-only lever `mfind`): one FUNC's helper block at that
+# only under the test-only lever `mfind`; read by simd_guarded_check.py's
+# LEVER_ARMS, the probe binary `pcrec-harness --harness=mfind` over `foo.*bar` at
+# x86-64 and x86-64-v3, until a table picks the row): one FUNC's helper block at that
 # level, MEASURED by G2's one-member family (memfn/tests/run_g2_mfind.py,
 # `G2M guarded`), each row alone: worst 1,299 (w16) and 1,385 (w32) bytes
 # over 44 generator seeds at 160 sites, rounded up to the next 100 plus 100

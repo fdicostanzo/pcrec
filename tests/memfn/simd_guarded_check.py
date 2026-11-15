@@ -118,6 +118,19 @@ NAMED = [
     ('vrun-long', '(?i)abcdefghijklmnop'),
 ]
 
+# LEVER WITNESSES (lane mfind fix 1): a row the default picks nowhere (the
+# inline one-member finder, rows `mfind-w16`/`mfind-w32`, reached only by the
+# test-only lever `mfind`) is read through the PROBE binary `pcrec-harness`
+# (next to each compiler) with its lever spelled in the arm, over a named
+# pattern that renders it at the `simd:` targets below; the rows then meet
+# their bounds exactly as a picked row does. When a table picks the row, its
+# bound is also read by the ordinary arms and this witness stays as the
+# lever's own control.
+LEVER_ARMS = [('lever:mfind@' + t, ['--harness=mfind', '-fmemfn-simd=' + t])
+              for t in ('x86-64', 'x86-64-v3')]
+LEVER_NAMED = [('mfind', 'foo.*bar')]
+LEVER_PROBE = 'pcrec-harness'
+
 # K35 FLOORS, literal: each population a reader needs, counted over the run.
 FLOORS = {
     'compiled': 600,        # PLAIN artifacts checked
@@ -140,6 +153,8 @@ FLOORS = {
     'simd-form-named': 8,    # fsfix 3: the NAMED witnesses alone that render a SIMD row (4 of 4 at each
                              # level-rendering `simd:` arm, 2 arms since lane u3crit);
                              # the sample-independent control, so 'simd-form' above can drift with the corpus
+    'simd-form-lever': 2,    # lane mfind fix 1: the lever witnesses that render a SIMD row (2 of 2 measured:
+                             # one per level-rendering target in LEVER_ARMS)
     'scaffold-copy': 200,    # [iterpin] witness artifacts whose VM program block sits in the scaffold copy (the ladder named witness; more measured)
 }
 
@@ -235,12 +250,21 @@ def main():
     print('== RQ-3 guarded-bytes check: %d corpus rows, %d sampled, %d named, %d arms =='
           % (len(corpus), len(sample), len(NAMED), len(arms)))
 
-    jobs = [(key, pat, arm, argv) for key, pat in pop for arm, argv in arms]
+    jobs = [(key, pat, arm, argv, False) for key, pat in pop for arm, argv in arms]
+    jobs += [('named:' + n, pat, arm, argv, True)
+             for n, pat in LEVER_NAMED for arm, argv in LEVER_ARMS]
+
+    def probe(binary):
+        return os.path.join(os.path.dirname(os.path.abspath(binary)), LEVER_PROBE)
 
     def one(job):
-        key, pat, arm, argv = job
-        pr = compile_one(a.plain, pat, argv, a.timeout)
-        wr = compile_one(a.witness, pat, argv, a.timeout)
+        key, pat, arm, argv, lever = job
+        pbin, wbin = (probe(a.plain), probe(a.witness)) if lever else (a.plain, a.witness)
+        if lever and not (os.path.exists(pbin) and os.path.exists(wbin)):
+            return {'key': key, 'arm': arm, 'counts': [], 'rows': set(),
+                    'issues': ['lever witness: no %s beside the compilers' % LEVER_PROBE]}
+        pr = compile_one(pbin, pat, argv, a.timeout)
+        wr = compile_one(wbin, pat, argv, a.timeout)
         rec = {'key': key, 'arm': arm, 'issues': [], 'counts': [], 'rows': set()}
         prc, pout, perr = pr
         wrc, wout, werr = wr
@@ -288,9 +312,12 @@ def main():
         if v > total:
             rec['issues'].append('plain stamp %d exceeds the sum of its rows\' bounds %d' % (v, total))
         if sites:
-            rec['counts'].append('simd-form')
-            if rec['key'].startswith('named:'):
-                rec['counts'].append('simd-form-named')
+            if lever:
+                rec['counts'].append('simd-form-lever')
+            else:
+                rec['counts'].append('simd-form')
+                if rec['key'].startswith('named:'):
+                    rec['counts'].append('simd-form-named')
         if PROG.search(pout):
             rec['counts'].append('vm')
         why = UNROLL_WHY.search(pout)
