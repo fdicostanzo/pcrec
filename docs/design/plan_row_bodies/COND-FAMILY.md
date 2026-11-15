@@ -885,3 +885,17 @@ view of an rx, so this is point (5) said from the array side): `count(...)` give
 the other array tools apply, and `occurs.*` applies. He withdraws his earlier "in my mind it's a record". Manager's
 note (mine, to check in the design round): the record-on-the-left binding `(x, y) := rx ~ /.../` then names the fields
 of EACH entry (or of one indexed entry); which, and what `d.year` means across several entries, must be stated once.
+**2026-11-15 RULINGS — answers to the four questions of review r8 (Frank, to session 132).** His words, in full: "1.
+show mean what this would mean. 2. yes keep out of phase 1. I like the idea of types but they need more thinking. 3.
+this leans into the idea of an interface to a type over the type. Array and map are interfaces that can be applied to
+regex but interfaces aren't themselves values that can be created. So what import is is less important than that its
+interface is a map. 4. agree."
+RECORD: (1) the search result at match time: NOT ruled; he asks to be shown what the repeated-label reading would mean
+(the manager answers in chat; his own example, recorded above, stays the required behaviour). (2) TYPED PARAMETERS
+(`m(x: T)`, the containment check in a definition head) are OUT of phase 1; `:` keeps its one meaning (narrows) there;
+types as an idea stay in the design for more thought. (3) ARRAY and MAP are INTERFACES applied to a thing, not values
+that can be created; a module (the result of `import`) is described by its interface, a MAP (members reached as
+fields); what kind of thing it is matters less and is not ruled. (4) `.` has ONE meaning: a field of the map interface
+of the thing on its left (label, module member, metadata and the `$` path are instances); the manager's lean, AGREED.
+Manager's note (mine): "view" in the draft and "interface" in his words name the same thing; the next revision uses one
+word and checks that nothing in the draft creates an array or a map as a free-standing value.
