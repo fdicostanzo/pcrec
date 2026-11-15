@@ -27696,3 +27696,7 @@ Next
   questions (entries at the file's tail). Frank LIFTED the stop: complete the planned sets (S2 leftovers, S3, S4) and
   open work before any next item; kit continues; predicates stay design-only; critics on all work. Launched fixposts2c,
   s486re (sonnet), covcap3 (opus, [COVER-CAP] rev 2 on the exact/hull model). Kit told to resume, fresh code rounds.
+- 12:00 (2026-11-15): Frank ruled the kit's F5: "agree with instrument only": the fused inline finder row stays an
+  unpicked measuring instrument (never a pick, never stage 1); tonight's timing is a one-sided test (loss settles row 1
+  against; a win triggers the ruled split shape, with its own go, then a re-measure). Relayed to the kit.
+  s486re delivered (probe compiled on the detector's own arm, -fno-req-handoff; reach sweep job 650 + cloud mechrows owed).
