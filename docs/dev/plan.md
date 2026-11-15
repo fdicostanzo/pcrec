@@ -289,8 +289,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 - [PREFLIGHT] STATE:not-started — fast checks on what a change touches, run BEFORE queuing heavy runs
   filed: 2026-11-14 Frank ("File it but I don't want to invest more than we save: let's spend hours not days and strive for tweaks or general fixes ie cost related to benefit")
   status (2026-11-14): filed, after S2 close; budget hours not days; reuse checks on the diff. Catchable reds today: duplicated arm floor, --emit-pins ignored under --arms, rxt keyword COLLISION, verify_rxt hang (K145), VRUN_U8 vocabulary; execution-only: S686 no-op plant
-  next: cheapest first: one source per floor; tools refuse ignored flags; rxt + vocabulary checks on changed files; mechrows whose plants touch edited files; Frank: review test-code diffs too (check-adequacy lens)
+  next: cheapest first: one source per floor; tools refuse ignored flags; rxt + vocabulary checks on changed files; mechrows on edited files; review test-code diffs too (Frank); lever-name grep (G7 fence: a comment spelling a test-only lever flag trips it)
   refs: lane/s2land s2tri_report.md (test-island row); docs/spec/limits.md §8.4¶2b; [RUN-POS-SET] (set runs add handoff/verify bytes)
+- [BACKREF-FINITE] STATE:not-started — a backreference to a FINITE group is regular: enumerate and substitute instead of the VM
+  filed: 2026-11-14 Frank (agreed lean on predx_report.md §11 Q10: a general engine question, not #6)
+  status (2026-11-14): filed, unscheduled; e.g. `(\d\d)\1` or `(a|b)x\1` could leave the VM; budget by the group's finite language size; changes engine choice, so answers must stay identical
+  next: when scheduled: census corpus patterns whose every backreferenced group is finite and small; measure VM vs enumerated DFA speed; design the budget
 - [PRED-SPLIT] STATE:not-started — automatically demote an exploding predicate to a verify step; DFA keeps the rest
   filed: 2026-11-13 manager (Frank: "isolate expensive operations ... DFA for most of it but this one check is VM ... a non-manual method?"; "file away for later optimization")
   status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); waits for the predicate base ([COND-FAMILY])

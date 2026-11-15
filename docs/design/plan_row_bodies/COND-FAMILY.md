@@ -560,3 +560,198 @@ for the map perspective: `where(has_member(weekday), types(isodate))` (`&` there
 `where_group(label: startsWith("S"), A)`. (4) `X.name` = LABEL navigation (`A.Saturday`, `alt.repeated[1]`).
 SUPERSEDES: `A["Saturday"]` -> `A.Saturday`; `A[startsWith("S")]` -> where_group; `file_literals(...)[!startsWith("#")]`
 -> `& !startsWith("#")`; `rows[r.w: >100]` -> `rows & (w: >100)`; `types(isodate)[has_member(weekday)]` -> where.
+
+**2026-11-14 — the expression language is the OUTER layer (Frank: the JSONL example suggests the predicate language can stand on its own as the outer layer, without an encapsulating rx).**
+Lean ADOPT (already implied: library files are expression-language with `export`). An rx is a LITERAL inside the
+expression language: a program that is just `/(a|b)+c/` is valid, so every PCRE pattern is a one-literal program
+(no separate PCRE mode). `:=` at top level replaces DEFINE for new code; DEFINE stays only as PCRE syntax inside a
+literal with PCRE's meaning. The predicate opt-in = WHICH LANGUAGE the file/API call is in, not a flag inside a regex
+(x-mode inside literals, as ruled). Holes keep the inner direction for API callers passing a plain PCRE string
+(`(\d+)${ <256 }`). The `.rxt` test format is unchanged: a predicate program is a pattern entry's content (format
+detail = manager's call, settled at build).
+
+**2026-11-14 RULINGS on predicates_draft.md §13 (Frank).** C9: comparisons are on the STRING SET; "number makes sense
+actually. Integers should be \d+ to be variable width. Unpad would be the right approach" (Reading A: explicit
+`unpad`; E-CAL as written with `/\d\d/ & between(1,12)` is wrong, use unpad). C4: the guard hole is written with an
+explicit `&`: `(\d+)&${ <256 }` (a hole after an atom without `&` is a following item, not a guard).
+RULING C2 (Frank 2026-11-14, "I agree... I was mostly thinking about multi line predicate syntax"): an rx literal
+means exactly what PCRE means, NO implicit x-mode (`/foo bar/` keeps its space, `#` is literal); extended mode is
+per literal (`/.../x` or a leading `(?x)`). SUPERSEDES "the predicate opt-in implies x-mode": the intent was
+free-form MULTI-LINE PREDICATE (expression-language) syntax, which the outer layer gives (whitespace and newlines
+free between expression tokens; long logic in `:=` definitions; literals stay short).
+
+**2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11 (Frank: "I agree with your leans excepting explain 6, and show 9 examples").**
+AGREED (manager's leans): Q1 a pattern denotes strings IN CONTEXT (context-marked sets, S2), TENTATIVE: the first
+target of a critic round; Q2 a condition on an ambiguous label passes if SOME parse passes (warning with witness;
+PCRE's parse at `vm`); Q3 no x-mode default (= C2 ruling); Q4 repeated labels by the sequence rule at default (`x:` =
+all iterations, some/count; bare `$x` on a repeated label = error; PCRE last-iteration at `vm`), SUPERSEDES "$x = last
+iteration" at the default level; Q5 default promise = "linear, automaton code only"; Q7 1-based (ruled); Q8 cut
+interfaces/members/UFCS/types() from the first spec (interfaces return as library packaging after a build); Q10
+finite-group backreferences as regular = a GENERAL ENGINE question, to be filed as its own unscheduled plan row (not
+#6); Q11 default output = span + accept-class values, named spans need `captures`; Q12 bounded recursion by a strictly
+decreasing literal parameter (low priority, one example); Q13 `records` must tile the text (`gaps = allow` opt-out);
+Q14 the unverified prior-art details are answered by scratch/predx/fetch_pomsky_hyperscan.md. PENDING: Q6 (one
+condition form; explanation requested), Q9 (compile-time `check`; examples requested).
+Q6 + Q9 (Frank 2026-11-14: "I agree with both excepting the spelling ... no alpha operators ... with, check, in ...
+check is not `x := ...` ... don't want to go into new grammar lightly"). CONCEPTS AGREED (one condition form
+`label: set`; compile-time assertions). SPELLING LEAN with NO new grammar, and a RULE: no alphabetic operators or
+statement keywords; a word is always a NAME (function, label, binding). Computed values = MATCH-DEPENDENT BINDINGS
+(the ruled kind): `d := days($b) - days($a)`, `close := pair & (d: between(-15, 15))`; rule: a match-dependent
+binding is a computed label of the pattern whose labels it reads (E-RFC: `wd := weekday(rest)`,
+`(wname.index: == wd)`). Assertions = named bindings to built-ins over rx: membership is `&` (`"2024" & leap` is
+{"2024"} or empty), inclusion is `A & !B` empty: `leap_2024 := assert_some("2024" & leap)`, `leap_1900 :=
+assert_none("1900" & leap)`, `octets := assert_none(octet & !/\d{1,3}/)`, `refactor := assert_same(old, new)` (library:
+both differences empty), `not_dead := assert_some(slow_errors)`. Named failures; no boolean type; `!` stays a filter.
+Beyond the default level, an unprovable `==`/within reports "can't prove: not regular". Deliberate exceptions to the
+rule so far: `import`/`export` (look later: `export` as a binding attribute, imports as a compilation-unit setting).
+
+**2026-11-14 — import/export as functions (Frank: `assert := import("assert")`, `assert.some("2024" & leap)`, `export([leap])`; "we could allow other forms but I want it considered").**
+Lean: (1) `import("lib", sha256 = ...)` is a built-in FUNCTION returning a NAMESPACE, a third value kind (compile-time
+map of named bindings, may hold macros; not an rx); the argument must be a CONSTANT (no computed imports; terminating,
+pinned); `assert.some` = member lookup. (2) BARE STATEMENTS allowed only for ASSERTIONS (their own value kind); a bare
+rx anywhere but the program's final expression = error ("unused pattern: bind it or make it the result"); named
+assertions (`leap_1900 := assert.none(...)`) remain for named failures; anonymous ones report line + text.
+(3) `export([leap])` CONFLICTS: `[...]` is an array = alternation, so `[leap, weekday]` = `leap | weekday`, names lost.
+Options: (a) `export([leap = leap, ...])` (consistent, repetitive); (b) CONVENTION: every top-level binding is exported
+unless its name starts with `_` (Python/Go style; no call, no grammar; visibility from the name); (c) `export(leap,
+weekday)` receiving names = a macro seeing argument expressions (a meta feature; avoid). Lean (b). Result: grammar =
+bindings, expressions, calls; NO keywords (import/export cease to be exceptions). Export choice PENDING Frank.
+Follow-up (Frank: an import could be an rx, a map of labels to rx, not useful whole, a container; `export(["leap",
+!startsWith("_")])` as a filter on the current module's labels; a prefix designating side-effect macros). Lean:
+(1) MODULE = MAP (the aligned map case), NOT a third value kind; modules hold macros too, so using a module whole as
+a pattern is legal only if every entry is an rx (else the standard "unapplied macro" error); member access = label
+navigation. (2) `export(names)` = export every module label whose NAME is in the rx `names`; the filter must be a set
+of strings, not a target-less filter in an alternation (ruled error), so `export(["leap", /[^_].*/])` or
+`export(/[^_].*/)`; a library file with no export = error ("library exports nothing"; no silent default). (3) `@` marks
+COMPILE-TIME EFFECT macros: `@export(...)`, `@assert.some("2024" & leap)`; only `@` forms may be bare statements; a
+bare statement without `@` is an error (catches the unbound pattern); pure macros cannot take `@`, effect macros
+cannot drop it (purity visible and checked syntactically); `import(...)` is unprefixed (returns a value). `@` exists
+only in the expression language. Grammar: bindings, expressions, calls, `@` statements; NO keywords.
+Addendum (Frank): `import(...)`'s argument is a set of names (an rx over file names, consistent with export); it must
+resolve to EXACTLY ONE file; zero or several matches = compile error listing the candidates.
+
+**2026-11-14 — PULLBACK spelled as a left-to-right pipeline; `&` RIGHT-ASSOCIATIVE (Frank: `unpad(between(1,12))` is pure but reads inside out; `x & unpad & between(1,12)` reads left to right; "why not make & right associative?"; `pad(5)` fixes `9:00 > 10:00`).**
+Lean ADOPT. Meaning (predx S1): a transform t (finite transducer or table: unpad, pad(n), ci, unquoted, length,
+month-name->number) pulls a set back: strings whose t-image lies in S; one construction, regular in, regular out;
+non-finite transforms need `functions`. Spelling: `&` is RIGHT-ASSOCIATIVE (no change for pure rx: intersection is
+associative); a TRANSFORM ON THE LEFT OF `&` = the pullback of the rest (mirror of "a filter on the right applies to the
+target on the left"): `x & unpad & between(1, 12)`, `month: unpad & between(1, 12)`, `t & pad(5) & between("09:00",
+"10:00")`, `msg: unquoted & contains("timeout")`. A transform SCOPES THE REST OF ITS CHAIN (a pipe stage); raw-text tests
+go before it; parentheses end its scope. Errors: a trailing transform (`x & unpad`) = no-op warning; `!transform` = error.
+Fits D196 precedence (`&` tighter than `|`). The variable-width lexicographic lint suggests `pad(n)`. SUPERSEDES the
+function forms `unpad(S)` / `length(<=20)` and the dot-view alternative (`month.unpad: S`).
+
+**2026-11-14 RULINGS on the predx gaps (Frank).** ARRAYS OF FILTERS (Frank: "an array of rx is an rx. An array of
+filters|macros is macro?"): yes, closure one level up: array of rx = rx (alternation); array of filters = a filter
+(pointwise `[f, g](t)` = `f(t) | g(t)`); array of transforms = a transform (union of pullbacks); mixed rx/filter array =
+error (fix: `(& /x/)` as a filter); entries must share arity; `.index` keeps original positions when entries drop.
+TUPLE CONDITIONS: a LIBRARY macro (`lex_ge([major, minor, patch], [1, 4, 0])`), no syntax. ENUMERATE ("I love it.
+Enumerate go." = design adoption; #6 still unscheduled): `enumerate(rx)` = the array of a FINITE rx's strings; uses:
+finite backreferences made regular (`each(date_sep, enumerate(/[-\/.]/))`, `!contains(each(triple, enumerate(/[\x21-
+\x7E]/)))`), matched delimiters (`each(q, enumerate(/["']/))`), which-option-matched via `.index` at default, per-entry
+library assertions (`@each(...)` spelling OPEN). Rules: a BUDGET (infinite or over-budget = compile error with the
+count); entries in PCRE PRIORITY ORDER (leftmost alternative, greedy before lazy) so re-joining preserves which match is
+reported, hence a built-in, not a library. Still PENDING: counting filters (exactly/at_least/none), moving the empty
+error to "final expression nullable in search mode", value-vs-value comparisons typed + class-count priced, `&` at `vm`
+with a non-regular operand = DFA candidates + VM verify ([PRED-SPLIT]).
+RULINGS cont. (Frank 2026-11-14): `&` AT `vm` with a non-regular operand: AGREED = regular operands build the candidate
+automaton, the non-regular operand is verified by the VM on each candidate span, reporting by D196 ([PRED-SPLIT]); the
+spec must state it. VALUE-VS-VALUE comparisons: AGREED, Frank asked how practical. Answer recorded: cost = the class
+count of the earlier label(s): small (calendar 24, state/ZIP ~50, weekday-vs-date, check digits 10/11) = one automaton
+at default; large (times of day 1,440: borderline; dates within 15 days: 3.65M) = default-level error printing the count
+and fixes, or a linear arithmetic check under `functions`; UNBOUNDED (`b: > a` over arbitrary `\d+`) = not regular,
+`functions` only. Present it as "a relation, run the cheapest correct way", never as "always one automaton";
+[COST-EXPLAIN] shows the count. Still PENDING: counting filters, the empty-match error move.
+
+**2026-11-14 RULING — the empty-match hazard (Frank: "I agree but warnings need names and the user must be able to disable them (wildcard?)").**
+DROP the empty-ENTRY error (it rejected legitimate optional parts like `["", "M"]` and missed `/\d*/`). NEW: when the
+program's FINAL pattern is nullable and used in SEARCH mode: an ERROR in predicate programs, a WARNING for a program that
+is one plain PCRE literal (`/a*/` is legal PCRE); no diagnostic when anchored/whole-string (validation), when excluded
+(`& !""`), or opted out. The message names the empty source and the fixes. File blank lines stay covered by
+records-tiling. WARNINGS: every warning has a STABLE NAME in dotted families (contract, in the spec): `empty.search`,
+`dead.branch`, `label.unset`, `transform.noop`, `compare.width`, `label.ambiguous`, `warn.unused`. Control via `@`
+effects (no new grammar): `@warn.off("compare.width")` (rest of file), `@warn.off("dead.*")` (wildcard family),
+`@warn.off("*")`, per-binding form (spelling open), and the compiler option for a whole build (like -Wno-); reverse
+`@warn.error("*")` (a strict build). Errors cannot be disabled. An `@warn.off` that suppresses nothing raises
+`warn.unused` (itself suppressible). Still PENDING: counting filters (exactly/at_least/none).
+Amendment (Frank 2026-11-14: "use an rx instead of wild card purely for consistency"): warning selectors are a SET OF
+NAMES as an rx, like import/export: `@warn.off("compare.width")`, `@warn.off(startsWith("dead."))` (a label-free value
+filter is a full rx), `@warn.off(/.*/)`, `@warn.error(/.*/)`. No `*` wildcard (`"*"` is the literal name `*`, matches
+nothing, so `warn.unused` flags it). One name-selection rule for import, export and warnings.
+
+**2026-11-14 RULING — counting occurrences (Frank: "more obscure but valuable"; concern: confusion with value numbers; put it in a library, e.g. `label.exactly(1, ...)`; otherwise agree).**
+AGREED as a LIBRARY family over a repeated label's occurrences: all, some, none, exactly(n, c), at_least(n, c),
+at_most(n, c); `c` is the usual `label: set` condition; filters, NOT a count value (no number type); constant (or
+caller-parameter) n at default; cost = a capped counter (n+2 states) multiplied in, shown by [COST-EXPLAIN]; a count
+against another label's value is a priced value-vs-value relation. NAMESPACE: lean `occurs` (not `label`, which clashes
+with element metadata `x.label`): `occurs := import("occurs")`, `headers & occurs.exactly(1, name: ci("Host")) &
+occurs.at_most(1, name: ci("Content-Length")) & occurs.none(name: ci("Transfer-Encoding"))`; value comparisons
+(between, <=) stay purely about values. Name open to Frank. All predx gaps now ruled.
+
+**2026-11-14 — Q1 critic framing (Frank: "Agree. From a user perspective, things should work intuitively. But complex context could cause predicates to just not work and it's not clear how the obscure rules impact it. Rx is already hieroglyphics ... that's why it was so important to me that things that look like they should do the same thing actually do.").**
+Critic round on predicates_draft rev 2 compares BOTH models (context-marked sets vs string sets + context-dependent
+values) rule by rule: what changes, which examples need which, cost. STANDING CRITERION (owner, ranked first for this
+design): LOOK-ALIKE CONSISTENCY / INTUITIVE BEHAVIOUR: forms that look like they should do the same thing must do the
+same thing; a rule whose effect a user cannot predict (e.g. context silently making a predicate fail) is a defect even
+when formally sound.
+
+**2026-11-14 RULING — C22, condition binding (Frank: `month: unpad & between(1, 12)` "is somewhat structural because it's combined with the comma. & binds tighter", cf. `point & (x: <100, y: unpad & between(1,4))`).**
+Inside a condition literal `( ... )` the COMMA separates conditions; each `label:` takes the whole expression up to the
+next comma or the closing paren: `&` and `|` bind tighter than `:`, `:` tighter than `,`. SUPERSEDES "`name:` takes one
+term". Consequences: conjunction of conditions = comma (`(major: 1, minor: >=4)`); disjunction = separate literals
+(`(major: 2) | (major: 1, minor: >=4)`); `(major: 1 & minor: >=4)` = `major: (1 & minor: >=4)` = compile error (a label
+inside a value), not a misreading; the pipeline reads the same at top level and after a label (look-alike principle).
+Draft §13 C22 RESOLVED; the semver example needs the comma form. (Arrived mid critic round crit-predspec on rev 2; fold
+with the round's dispositions.)
+C22 addendum (Frank 2026-11-14: "Also isodate(year: unpad & etc) looks the same"): a LABELLED ARGUMENT in a call is the
+same `label: expr` form with the same binding (comma separates, `label:` takes up to the next comma or `)`), and
+`isodate(year: S, month: 2)` = `isodate & (year: S, month: 2)` (currying: the positional argument is the subject).
+`:` constrains, `=` sets a parameter (`sep = "."`). A labelled argument always NARROWS the subject (answers RUL-10 of
+review 2026-11-14-r1-predspec). Pipeline spelling follows the pending ruling on review item OWN-1 (`&` vs a stage
+operator).
+
+**2026-11-14 RULING — Q1 foundation (Frank: "1. agree", on review 2026-11-14-r1-predspec's proposed answer).**
+SUPERSEDES the tentative context-marked-sets lean. Foundation = STRING SETS. In a SET POSITION (an `&` operand, a label
+condition, a filter body, a hole's set, a compile-time set) an EDGE ASSERTION (one that can read outside the value: `^`,
+`$`, `\b`, lookaround reachable at the value's edge through a nullable prefix/suffix) is a COMPILE ERROR naming the fix
+("`^` in the condition on x reads text outside x: write `startsWith("S")`, or put `^` in the pattern that places x").
+Assertions strictly inside a value keep PCRE meaning. Values, transform images and compile-time sets are context-free.
+Nullability (for `empty.search`) is computed IN CONTEXT; only the anchored/whole-string MODE exempts. D193 add. 3 stands.
+A named in-context form only on a measured need (D77). Item 2 (OWN-1: stage operator vs `&`) PENDING.
+
+**2026-11-14 RULING — OWN-1, transforms are FILTER MODIFIERS (Frank: "The problem is the name. Trim or unpad imply they are doing something to the subject. But they are not. They are changing the filter to ignore elements of the subject." ... "I like that. Docs should be clear the transform is transforming the filter").**
+SUPERSEDES the right-associative `&` / pipeline ruling and the `->` / `;` ideas. A transform is a macro FILTER -> FILTER
+(the pullback): `padded(between(1, 12))`, `any_case("host")`, `quoted(contains("timeout"))`, `length(<=64)`,
+`month_numbered(between(1, 6))`; used as `month & padded(between(1, 12))` or `month: padded(...)`; nests in reading
+order (`quoted(any_case("host"))`). `&` is pure intersection again (order- and grouping-free); no new operator.
+NAMING RULE: a modifier's name describes the SUBJECTS IT ACCEPTS (adjective/phrase: padded, any_case, quoted, length),
+never a verb acting on the subject (unpad, trim, lowercase). DOCS RULE (owner): every spec/guide text on transforms says
+the transform TRANSFORMS THE FILTER, not the subject (the subject is never modified; the modified filter ignores
+or reinterprets parts of it). Comma inside `( ... )` keeps its condition-separator meaning (C22).
+
+**2026-11-14 RULINGS on rev 3's contradictions (Frank: "agree all four").** C32: `^`/`$` in a condition mean the
+VALUE's start/end (D193 add. 3 stands; `x: /^S\w*/` works); the edge-assertion ERROR covers `\b` and edge lookarounds
+only. C1: `A & B` and `B & A` accept the same subjects; D196's left operand picks the REPORTED span among overlapping
+qualifiers; look-alike row "same matches, report may differ". C30: modifiers are filter -> filter (subject arrives via
+`&`). C31: counted conditions are passed as a parenthesised literal: `occurs.exactly(1, (name: any_case("Host")))`;
+labelled arguments keep one meaning (narrowing).
+Follow-up (Frank: "between uses position args for high/low. Should those be keywords?"). LEAN (pending): revise the
+currying rule: THE SUBJECT IS NEVER AN ARGUMENT (always via `&` or `label:`); every argument is a PARAMETER: positional
+= required parameters in declared order (`between(1, 12)`, `padded(S)`, `occurs.exactly(1, cond)`), keywords = optional
+settings with defaults (`sep = "."`); ANY parameter may also be passed by name (`between(low = 1, high = 12)`), one rule
+for all macros. Removes C30 and C20 (`p(x) = x & p` withdrawn; application has one spelling `x & f`).
+`isodate(year: S)` (an rx called with conditions) is the separate labelled-argument form.
+Follow-up (Frank: "For the isodate example, we might want to turn it into the & form. It can't take arguments anymore
+correct?"). Correct: a pattern has no parameters; WITHDRAW the call form `isodate(year: S)` (the labelled-argument
+addendum to C22); the one spelling is `isodate & (year: S, month: 2)`. Calling a pattern = compile error with the hint
+"write `isodate & (year: ...)`". A parameterised pattern is a macro: `date_in(years) := isodate & (year: years)`. The
+C22 binding rule stays, for condition literals only.
+RULING (Frank 2026-11-15: "Agree with mapping"): THE SUBJECT IS NEVER AN ARGUMENT (the lean above, adopted). Mapping a
+filter over subjects uses an operator SECTION `(& f)` (`each((& isodate), dates)`; sections compose: `(& isodate &
+(year: 2024))`); mapping a macro over values passes the macro (`each(triple, ...)`, entries are parameters). No lambda
+until an example needs one (D77). C20 and C30 RESOLVED.
+RULINGS on rev 4 (Frank 2026-11-15: "1. start with & and then we'll see. 2. start no, 3. agree"). C33: sections START
+with `&` only (`(& f)`, subject on the left; `(& !B)` covered); other operators "then we'll see" (on need). C34: START
+with NO partial application: a macro call binds every required parameter or is an error naming the missing one;
+sections are the one way to leave a hole (revisit on need). C35: an explicitly written `(?m)` keeps PCRE meaning inside
+a value (`^`/`$` also at line breaks within it); without it `^`/`$` are the value's ends; never reads outside the value.
