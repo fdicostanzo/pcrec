@@ -9,10 +9,11 @@
   TABLE and the typing sentence for `& | !` (P6-8); §3.4 SPELLED vs MATCH-TIME arrays (P6-7); §5.4 rows for `( label:
   S, ... )`, the section `(& f)`, `.` and `$`, and the OTHER MARKS table (P6-3, P6-6, P6-9, P6-12, P6-14); §12 TWO-WAY
   CENSUS (P6-9); §0.1 L48-L51 and a class (ERROR / WARNING / GAP / BY DESIGN) on every DIFFERENT row; §13 O48-O51,
-  O31 widened to the whole dot family, and O52 FAMILIES (P6-4, P6-5, P6-7, P6-12, P6-13, P6-16). Changed: the hole-as-guard clause deleted (P6-1); the `[ ]`
-  meaning stated once and the false tuple reason dropped, C25 back to OPEN, O47 re-argued (P6-2); `^`/`$` of a filter
-  passed as an argument are the ends of the span the call's filter role filters, `contains(/^err/)` = `startsWith("err")`
-  (P6-5, LEAN); `$a.b.c` = `$(a.b.c)` (P6-6); L16/L17 rewritten (a search result is an rx, a test is a condition) and
+  O31 widened to the whole dot family, and O52 FAMILIES (P6-4, P6-5, P6-7, P6-12, P6-13, P6-16). Changed: the
+  hole-as-guard clause deleted (P6-1); the `[ ]` meaning stated once and the false tuple reason dropped, C25 back to
+  OPEN, O47 re-argued (P6-2); `^`/`$` of a filter passed as an argument (or in a hole of a filter's body) are the ends
+  of the span the enclosing filter role filters, `contains(/^err/)` = `startsWith("err")` (P6-5, LEAN, O49); the
+  glossary applied through the text (P6-15: operand, comparison set, entry extent, item rx, effect, captured string); `$a.b.c` = `$(a.b.c)` (P6-6); L16/L17 rewritten (a search result is an rx, a test is a condition) and
   C29's premise corrected (P6-7); RULED marks narrowed to the owner's quoted words (P6-10); ill-formed examples fixed
   (P6-11: L2, L9, L36, L42, C28, §2.5, §7 `balanced` and `records`, E-CAL's bare `dim`).
 - **rev 6 (lane predspec6, 2026-11-15).** Folds the owner's "type picture" ruling (CF:846-878): two value kinds (rx,
@@ -117,7 +118,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L2 | a binding vs its expansion: `m := /\d\d/ & padded(between(1, 12))` then `m & T` vs `/\d\d/ & padded(between(1, 12)) & T` | SAME | | OWN-1 (c) |
 | L3 | `isodate & (year: S, month: 2)` vs `isodate & (year: S) & (month: 2)` | SAME | the `( )` RECORD holds its entries together; the AND comes from the record, not the comma (§4.1, §5.4) | C22, CF:866 |
 | L4 | `(major: 1, minor: >=4)` vs `(major: 1 & minor: >=4)` | DIFFERENT: ERROR | the second is a compile ERROR: a label inside a value (`major: (1 & minor: >=4)`) | C22 |
-| L5 | `x & (a: d)` vs `(a: d)(x)` | DIFFERENT: ERROR | the second is a compile ERROR: the subject is never an argument (hint: "write `x & (a: d)`"); application has one spelling (§2.3) | 2026-11-15 RULING (supersedes OWN-5's two spellings) |
+| L5 | `x & (a: d)` vs `(a: d)(x)` | DIFFERENT: ERROR | the second is a compile ERROR: the operand is never an argument (CF:749's "subject", §0.3; hint: "write `x & (a: d)`"); application has one spelling (§2.3) | 2026-11-15 RULING (supersedes OWN-5's two spellings) |
 | L6 | `x & (a: d)` vs `each((& (a: d)), x)` | DIFFERENT: ERROR | `each` is the STRUCTURAL per-entry map (keeps entries, labels, order; the filter is mapped through the section `(& (a: d))`, §5.3); an alternative lacking `a` is dropped by `&` with `label.unset`, an ERROR naming it under `each` | OWN-5, 2026-11-15 RULING (mapping) |
 | L7 | `x: /^S\w*/` vs `x: startsWith("S")` | SAME | in a filter `^` is the start of the span being filtered (§11) | CF:732, CF:761, D193 add. 3 |
 | L8 | `num := /\b\d+\b/`: `/x${num}/` vs the pasted `/x\b\d+\b/` | DIFFERENT: ERROR | the hole form is the EDGE-ASSERTION ERROR ("put `\b` in the pattern that places num") | Q1X-3 (iv), Q1R-3 |
@@ -132,7 +133,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L17 | `(m: contains(/^err/))` vs `(m: startsWith("err"))` | SAME | a filter passed as an argument filters the span the call's filter role filters, so `^` is m's start in both (§11 THE FILTERED SPAN); `$m !~ /^err/` = `(m: !contains(/^err/))` keeps its meaning (§2.6) | CF:761 (LEAN, r8 P6-5) |
 | L18 | a nullable final search pattern: `/\b/` vs `/a*/` | SAME | both are nullable IN CONTEXT: `empty.search` WARNING for a one-literal program, ERROR in a predicate program (§7) | Q1R-9 |
 | L19 | `(?m)^\d*` searched vs the same pattern in whole-subject mode | DIFFERENT: WARNING | by MODE only: `empty.search` in search mode, none when anchored (a `^` in the pattern does not exempt) | Q1R-9 |
-| L20 | `/\d\d/ & padded(between(1, 12))` vs `/\d\d/ & between(1, 12)` | DIFFERENT: GAP | GAP: the second is {10, 11, 12} by the C9 ruling (string sets, canonical numerals); no warning is named for a padded target against an integer section | C9, OWN-2 |
+| L20 | `/\d\d/ & padded(between(1, 12))` vs `/\d\d/ & between(1, 12)` | DIFFERENT: GAP | GAP: the second is {10, 11, 12} by the C9 ruling (string sets, canonical numerals); no warning is named for a padded target against an integer comparison set | C9, OWN-2 |
 | L21 | `!<200` vs `>=200` | DIFFERENT: GAP | on targets with non-canonical members (`0150`, `abc`: kept by `!<200`, refused by `>=200`): GAP; in where they may stand (`${>=200}` legal, `${!<200}` the unapplied-macro error): the unapplied-macro error. §13 O26 | OWN-2, RUL-2 |
 | L22 | `(x: <200 \| >900)` vs top-level `x & <200 \| >900` | DIFFERENT: GAP | inside a condition `\|` binds tighter than `:` (x in either range); at top level D196 parses `(x & <200) \| >900`, a full rx that widens the program; `precedence.section` (proposed, PLAN) | C22, RUL-15 |
 | L23 | `(x: <200, y: >55)` vs `[(x: <200), (y: >55)]` | DIFFERENT: BY DESIGN | AND vs OR, said by the BRACKET (`( )` all together, `[ ]` any one; §5.4); the comma means "next entry" in both, so the look-alike the review flagged (one comma, two logics) is gone; whether the bracket difference still needs a diagnostic: LEAN no (§13 O30 RESOLVED, O38) | OWN-9, CF:863 |
@@ -1208,7 +1209,7 @@ metadata members are already one: §13 O31).
 
 ## 10. Eval
 
-**RULE.** `x & eval($fmt)` is a CONDITION known only at match time, opaque to analysis; the static matcher finds
+**RULE.** `x & eval($fmt)` is a FILTER (an rx, §2.1) known only at match time, opaque to analysis; the static matcher finds
 candidates and eval filters them. DFA-only, the same automaton code as compile-time `records()`. Only as an
 explicit MODULE ("requires module 'eval'" otherwise; the artifact declares the runtime dependency), with a BUDGET
 (exhaustion is a distinct result) and a cache keyed by pattern string. The workhorse is the caller-PARAMETERISED
@@ -1426,7 +1427,8 @@ fails `startsWith("4")`). Whether `luhn` skips the spaces: §13 O8.
 A value-vs-value relation with class count 24 (§4.6): one automaton. `days_in` is a value macro whose parameters
 are the two captured strings; the leap test (`$year & leap`) sits inside it, so no rx is called with an operand
 (§2.3; rev 4 wrote `days_in($month, leap($year))`, which called the rx `leap` with the operand and used its result
-as a truth value). `<=dim` reads the computed label BARE: §13 C13 (lean `<=$dim`; review r8 SIM-8). LEVEL: default. Expected (whole subject):
+as a truth value). `<=dim` reads the computed label BARE: §13 C13 (lean `<=$dim`; review r8 SIM-8). LEVEL:
+default. Expected (whole subject):
 `2024-02-29` in; `2023-02-29` out; `2024-04-31` out; `2024-13-01` out (not an isodate). The notes' `month: \d\d &
 between(1,12)` is WRONG (only 10, 11, 12 pass): C9, confirmed CF:774; `padded` is the fix (§0.1 L20).
 
@@ -1599,7 +1601,7 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
 - **C32** `^`/`$` and edge assertions in a filter: RULED (CF:732), CONFIRMED and stated by the owner (CF:761): `^`/`$`
   mean the start and end of the span being filtered; `\b` that would read beyond it is refused, §11.
 - **C33** operator sections (rev 5): RULED (CF:753, "start with &"): sections start with `&` only (`(& f)`, the
-  subject on the left; `(& !B)` covered); other operators on need, §5.2.
+  operand on the left; `(& !B)` covered); other operators on need, §5.2.
 - **C34** partial application (rev 5): RULED (CF:753, "start no"; CF:804): phase 1 has none (a call binds every
   required parameter or is an error naming the missing one; sections are the one way to leave a hole); the DESIGN
   keeps currying (CF:308) for after phase 1 (Reading A of rev 4 is the later design, Reading B the phase 1 build),
@@ -1641,9 +1643,10 @@ STILL OPEN (contradictions):
 - **C17. `&`'s structure.** `&` is extensional (§2.2) yet distributes over array entries and drops empty products
   (§3.2), a structural effect (`/a|b/ & /b|a/` gives [a, b] or [b, a] by which side is major). predx C17/S15
   proposes "left-major cross product", which would give the ORDER of an `&` chain a structural effect against the
-  ruled "order- and grouping-free" (CF:722). `.index` after `&` with an array of filters (§3.5) depends on it.
+  ruled "order- and grouping-free" (CF:722). `.index` after `&` with an array of filters (§3.5) depends on it, and
+  so does the owner's search example (§2.6: `d & (g: x)` keeps entries 1 and 3 with their original positions).
 - **C18. Named assertions vs the `@` rule.** Named failures via `leap_1900 := assert_none(...)` (CF:595); the `@`
-  lean (CF:619): effect macros cannot drop `@`, only `@` forms are bare statements. A named assertion is then
+  lean (CF:619): effects cannot drop `@`, only `@` forms are bare statements. A named assertion is then
   `leap_1900 := @assert.none(...)` (an `@` inside an expression), a binding without `@`, or not allowed. Rev 6: a
   binding names an rx or a macro (CF:858) and an assertion is neither (C19), so the binding readings are out. Lean: a
   name is a labelled entry of the assertion's call record, `@assert.none("1900" & leap, name = "leap_1900")`.
@@ -1716,7 +1719,7 @@ Open items (rev 2, still open):
 Open items NEW in rev 3 (review 2026-11-14-r1-predspec items dispositioned OWNER that no ruling covers; each with the
 review's proposed lean, in plain words, NOT resolved):
 - **O26. Is a negated filter with no label a full pattern?** (OWN-2, RUL-2.) `>=200` may stand alone (`${>=200}`,
-  `@warn.off(startsWith("dead."))`) but `!<200` and `!startsWith("dead.")` may not (prefix `!` is always a filter),
+  `@warn.off(startsWith("dead."))`) but `!<200` and `!startsWith("dead.")` may not (prefix `!` always makes a macro, §2.2),
   although both are well-defined regular sets. Lean: yes, a label-free `!f` is a full pattern exactly like a
   label-free `f` (the "useless in a search" worry is what the empty-match rule already catches); plus a warning when a
   negated numeric comparison meets a target with non-canonical members (`0150`, `abc`).
@@ -1771,7 +1774,7 @@ review's proposed lean, in plain words, NOT resolved):
 - **O38. Look-alike rows with no diagnostic.** §0.1 marks GAP rows (rev 7: L20, L21 on answers, L22, L24, L29-L33,
   L35, L51; L23, L25 and L48 are BY DESIGN, the stated meaning of a mark, §5.4):
   DIFFERENT with no named diagnostic, so G0's acceptance fails on them today. Some are open items above; L20 (a padded
-  target against an integer section) and L25 (`/a|b/` vs `/b|a/` under `[]`/`.index`, by design) have no item:
+  target against an integer comparison set) and L25 (`/a|b/` vs `/b|a/` under `[]`/`.index`, by design) have no item:
   whether a documented structural difference (a BY DESIGN row) also needs a diagnostic, and which warning L20 gets,
   are open. Also from OWN-15: whether the goal order G1 > G2 should be stated as G2 > G1 at the default level (what
   the rules do, §0 Goals).
@@ -1929,8 +1932,10 @@ RUL-F5); application spellings (C29, RUL-F6; C20/C30 resolved).
   caller-supplied PATTERNS outside `eval`, no alphabetic keywords, no boolean type (LEAN, CF:595). Numbers are NOT a
   non-goal: they are one kind for the user (§2.1, LEAN).
 - No "best match" overload ranking; no interfaces, members, UFCS or `types()` in the first spec (§9).
-- No third value kind: no record, tuple, boolean or number values (two kinds, rx and macro, RULED CF:858; a record is
-  a shape laid against fields, never a value, RULED CF:866; numbers: §13 O40).
+- No third value kind: no record, boolean or number values (two kinds, rx and macro, RULED CF:858; a record is a
+  shape laid against fields, never a value, RULED CF:851-852; no boolean: LEAN, CF:595; numbers: §13 O40). Tuples:
+  no tuple VALUE kind, but whether a tuple comparison is spelled over arrays is OPEN (§13 C25; review r8 RUL-6).
+  Names that denote non-values (namespaces, run-time parameters): the kind table, §2.1, §13 O46.
 - No change to plain PCRE patterns outside the opt-in; class contents `[...]` keep PCRE2's meaning (synsurv).
 - No in-context reading of a pattern in a set position (refused, §11) until a measured need (D77).
 - No spelling decision beyond the no-keyword rule and the modifier naming rule (placeholder throughout); no build
@@ -1947,6 +1952,7 @@ COND-FAMILY.md notes by date/heading; "11-12" = the 2026-11-12 sections, etc. "p
 
 | section | notes consolidated |
 |---|---|
+| rev 7 (all sections touched) | review `docs/dev/reviews/2026-11-15-r8-predspec6.md` P6-1..P6-18 (critic texts in its directory) with its DISPOSITIONS RULED; CF:880-887 (the search result is the ARRAY of all results) -> §2.6, §3.4, §8, §0.1 L16/L50/L51, O50, and the owner's example (via the predspec7 brief) -> §2.6, O50; CF:761-768 (the filtered span) -> §11 ONE SPAN PER FILTER ROLE, §2.7, §8, L17, O49 (P6-5); CF:362 -> §2.3, §5.1, §11 (the macro-in-a-hole error, P6-1); CF:847-856 (the owner's own words behind the type picture) -> §0 marks table, §2.1, §3.1, §5.4 (P6-10); CF:113 -> §7, §11 (the `(?&name)` crossing, SIM-9); CF:548 -> §8, C25 (P6-2); CF:75 -> O50 (D) |
 | rev 6 (all sections touched) | the type picture, CF:846-878: CF:858 (two kinds, condition = macro, filter a role) -> §2.1, §2.2, §3.5, §14, C19, O40; CF:860 (one input rule) -> §2.1, §2.3, §2.7, §5.2; CF:863 (comma, brackets, `=`, `:`) -> §5.4, §3.1, §3.2, §4.1, L23, C5, C8, O30; CF:866 (record never a value, three positions, map view, one-way, no sequence closure) -> §5.4, §3.1, §4.1, §5.2, §0.2, §7, §8, L43-L47, C25, O41-O47; CF:873 (search returns an rx) -> §2.6, C29; CF:876 (the manager's TO CHECK list) -> O41, O42, C25, O47 |
 | 0 | rev 5: §0.2 from CF:753, CF:795, CF:804, CF:840; legend per the audpred findings; 11-12 base requirements; 11-13 COST METRICS; Frank 11-13 (#6 not scheduled), 11-14 (charter); goals are the manager's draft; rev 2: Q5 (G2), C2 + empty-match (G3), Q12 + enumerate (G4); rev 3: 11-14 Q1 critic framing (G0), r1 OWN-13 (table), OWN-14 (G3), OWN-15; the table's rows from r1 Q1R/Q1X/OWN/RUL |
 | 1 | 11-14 LAYERING; 11-14 predx Q8; r1 RUL-14.4 |
