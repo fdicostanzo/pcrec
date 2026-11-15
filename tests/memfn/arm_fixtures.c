@@ -1747,6 +1747,10 @@ static const struct { const char *id, *cls, *from, *to; } hash_edits[] = {
     { "rc-words",  "w3", "pos + 10",   "pos + 9" },
     { "rc-memcmp", "l1", ", 4)",       ", 3)" },
     { "every-pos", "-",  "pos++",      "pos += 2" },
+    { "mfind-swar", "-", "m &= m - 1", "m &= m - 2" },
+    { "mfind-w16", "-",  "i += 16",    "i += 15" },
+    { "mfind-w32", "-",  "i += 32",    "i += 31" },
+    { "fn-memchr", "-",  "pos = cand + 1", "pos = cand + 2" },
 };
 static const struct { const char *from, *to; } hash_renames[] = {
     { "subject", "buf" }, { "pos", "cursor" }, { "n", "len" },
@@ -1797,7 +1801,8 @@ static char *edit_once(const char *t, const char *from, const char *to)
 static int hash_mode(void)
 {
     static const char *const ids[] = { "walk", "libc", "pair", "settest", "rc-words", "rc-memcmp",
-                                       "every-pos", "V1", "W64", "NONE", "dispatch-twin", NULL };
+                                       "every-pos", "mfind-swar", "mfind-w16", "mfind-w32",
+                                       "fn-memchr", "V1", "W64", "NONE", "dispatch-twin", NULL };
     for (unsigned i = 0; ids[i]; i++) {
         char h[17] = "-";
         int rc = mf_form_hash(ids[i], h);

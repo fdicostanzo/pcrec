@@ -595,7 +595,13 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
         if (mf_emit(art, s, h, &sb, &sf, res) || mf_art_end(art, NULL)) goto out;
         fh_puts(&body, ";\n");
         if (strcmp(art->sites[res->handle - 1].arm->id, "ofsskip")) goto out;
-        *row = art->forms.len ? art->forms.p : art->fn_body;
+        /* the MEMFN_FORMS token lives in the scratch arena: compared here,
+           the entry's own (static) row returned */
+        {
+            const char *got = art->forms.len ? art->forms.p : art->fn_body;
+            if (!got || !e->row || strcmp(got, e->row)) goto out;
+            *row = e->row;
+        }
         break;
     case MF_FH_SETTEST: {
         /* the kit's own membership test of the candidate's byte: a LEAF
