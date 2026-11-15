@@ -70,9 +70,11 @@
 # `find_hit`, find_byte's and find_hit's method (subject, estimator,
 # launches, rounds, A/A) on ONE offset-skip site, its forms the formhash.c
 # instances `mfind-swar` (SIMD-off, the SWAR word), `mfind-w16`, `mfind-w32`
-# (the levels) and `fn-memchr`, the SAME site's libc stream: the like-for-
-# like comparator, so a ver-6 delta names only the search and stream pieces
-# (D190). A new ver: ver 3 is CLOSED. UNMEASURED: no set holds a ver-6 row
+# (the levels) and `fn-memchr`, the SAME site's libc memchr search (and its
+# restart stream). This is the BUNDLE comparison (review 2026-11-15 r2 F6):
+# a ver-6 delta names the call boundary, own code vs library, the search and
+# the stream together, as one; the ruled single-piece cells (SEARCH vs the
+# walk, STREAM RESTART vs MASK, D190) are not built and are owed. A new ver: ver 3 is CLOSED. UNMEASURED: no set holds a ver-6 row
 # and no box has run it; nothing picks the form (it is reached by the
 # test-only lever `mfind`), so UNMEASURED moves no byte. Its timing plan is
 # docs/dev/lanes/mfind_report.md "Owed runs" (the slot harness pieces it

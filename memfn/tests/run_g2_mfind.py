@@ -91,6 +91,11 @@ NEEDS = {'x86-64-v3': 'AVX2'}
 # dev box, 2026-11-14, seed 20261114; 164,654 per site; the default 160
 # sites doubles it); the floor is ~80% of it per 80 sites
 CHECK_FLOOR_80 = 10500000
+# r2 F10 (lane mfindfix2): subjects holding the scanned byte past the last
+# valid candidate, every term that fits below n passing (the driver's
+# `beyond`); ~80% of the measured count
+BEYOND_FLOOR_80 = 2040000   # 2,553,909 measured (Linux dev box, 2026-11-15, seed
+                            # 20261114); the old planter's chance population was 4,463
 # the driver's census populations per build at 80 sites, ~80% of measured
 # (each measurement in a comment); they scale with the sites
 DRV_FLOOR_80 = {
@@ -99,6 +104,7 @@ DRV_FLOOR_80 = {
     'stream2': 440000,     # >= 2 of them: 557,955
     'trap':    1800000,    # the exactness trap present AND the answer not the trap: 2,235,092
     'late':    1300000,    # the answer in the last 8 candidate positions: 1,687,120
+    'beyond':  BEYOND_FLOOR_80,   # r2 F10: a scanned byte in [e, n) whose fitting terms pass
 }
 # the space's populations at 80 sites per file (the same space at each of
 # three targets, so x3; lever 1 only unless stated): ~80% of measured
@@ -120,7 +126,21 @@ POP_FLOOR = {
 }
 # PLANTS: id, name, expected class, {helper kind: (mode, old, new, per)}
 # (mode 'str': plain text, 'rx': a regex over the helper; `per` = exactly
-# this many matches in each helper of the kind it is applied to)
+# this many matches in each helper of the kind it is applied to; a NEGATIVE
+# per = 0 or -per matches in each, at least one helper matched: a spelling
+# only some sites write).
+# S3150/S3151 are RUNAWAY witnesses (review 2026-11-15 r2 F9): their edit
+# breaks the loop's exit (`i += VW` lands past e, `e - i` wraps), so they
+# fault with no guard page at all and prove only that the exit test exists.
+# The one-byte BOUND is S3173 (every spelling of e) and S3174 (the D > 0
+# spelling `n - D` alone, r2 F10): the top bound moved by ONE byte with the
+# loop still terminating, so only the guard page at s + n can see it (S3174
+# through the verify chain's read past n, the driver's `beyond` subjects).
+# S3153 is a SPECIFICITY CONTROL and a text pin (r2 F11), not a check of its
+# property: a lane handed over twice is rejected again by the pure check, so
+# the answers cannot move (SAME); the cost it saves is counted by nothing.
+# A LOUD plant may also FAULT (r2 F13): a wrong lane can send the check's
+# reads out of bounds first (S3158 measured 354 FAULT / 22 MOVE in 1,500).
 PLANTS = [
     ('S3150', 'final-late', 'FAULT', {
         'w16': ('str', 'const size_t f = e - 16;', 'const size_t f = e - 16 + 1;', 1),
@@ -156,7 +176,17 @@ PLANTS = [
     ('S3159', 'endian', 'LOUD', {
         'body': ('str', '__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__',
                  '__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__', 2)}),
+    ('S3173', 'top-one-byte', 'FAULT', {
+        'w16': ('rx', r'^( *const size_t e = n(?: - \d+)?);', r'\1 + 1;', 1),
+        'w32': ('rx', r'^( *const size_t e = n(?: - \d+)?);', r'\1 + 1;', 1),
+        'body': ('rx', r'^( *const size_t e = n(?: - \d+)?);', r'\1 + 1;', 1)}),
+    ('S3174', 'top-one-byte-dpos', 'FAULT', {
+        'w16': ('rx', r'^( *const size_t e = n - \d+);', r'\1 + 1;', -1),
+        'w32': ('rx', r'^( *const size_t e = n - \d+);', r'\1 + 1;', -1),
+        'body': ('rx', r'^( *const size_t e = n - \d+);', r'\1 + 1;', -1)}),
 ]
+# the classes each expected class accepts as RED (r2 F13)
+ACCEPT = {'FAULT': {'FAULT'}, 'LOUD': {'LOUD', 'FAULT'}, 'SAME': {'SAME'}}
 GREEN_STRIDE = '5'       # a SAME plant runs every 5th site
 
 passed = failed = 0
@@ -226,8 +256,10 @@ def plant_text(text, kind, mode, old, new, per):
             rep = m.group(0).replace(old, new)
         else:
             rep, c = re.subn(old, new, m.group(0), flags=re.M)
-        if c != per:
+        if c != per and not (per < 0 and c in (0, -per)):
             return None
+        if c == 0:
+            continue
         nhelp += 1
         out.append(text[last:m.start()])
         out.append(rep)
@@ -439,7 +471,7 @@ def run(a, root, work):
                     t = plant_text(texts[(tg, 1)], kind, mode, old, new, per)
                     if t is None:
                         bad('plant %s %s@%s at %s: the edit does not apply %d time(s) in each helper'
-                            % (sid, pname, kind, tg, per))
+                            % (sid, pname, kind, tg, abs(per)))
                         continue
                     ok()
                     path = os.path.join(work, 'plant-%s-%s-%s.c' % (sid, kind, tg))
@@ -475,13 +507,13 @@ def run(a, root, work):
                 continue
             cls = 'SAME' if rc == 0 else 'FAULT' if rc < 0 else 'LOUD'
             obs.setdefault((sid, pname, expect), set()).add(cls)
-            (ok() if cls == expect else bad('%s: %s, expected %s: %s' % (tag, cls, expect, out)))
+            (ok() if cls in ACCEPT[expect] else bad('%s: %s, expected %s: %s' % (tag, cls, expect, out)))
         for sid, pname, expect, edits in PLANTS:
             got = obs.get((sid, pname, expect))
             if not got:
                 continue
-            if got == {expect}:
-                cls = 'SAME (expected)' if expect == 'SAME' else expect
+            if got <= ACCEPT[expect]:
+                cls = 'SAME (expected)' if expect == 'SAME' else '/'.join(sorted(got))
             elif 'SAME' in got and expect != 'SAME':
                 cls = 'MISSED'
             else:

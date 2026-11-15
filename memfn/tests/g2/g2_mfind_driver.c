@@ -22,6 +22,12 @@
  *   - THE SWAR-EXACTNESS TRAP: a failing hit at c immediately followed by
  *     the byte a ^ 1 at the next scanned position, where every other term
  *     PASSES at c + 1 (the classic borrow trick hands that false lane over);
+ *   - BEYOND THE LAST CANDIDATE (review 2026-11-15 r2 F10): about half the
+ *     subjects hold the scanned byte at b in [e, n), e = n - (maxk - k), so
+ *     its candidate b - k cannot hold one (it would read s[n] and on), with
+ *     every term whose reads fit below n written to PASS there, so a helper
+ *     whose top bound admits b runs the verify chain up to the read past n
+ *     (census `beyond`);
  *   - the filler holds no scanned byte, half of it one bit away from a;
  *   - layout U: subject + n is the first byte of a PROT_NONE page; layout L:
  *     subject + pos is the first byte after a PROT_NONE page (a read below
@@ -176,7 +182,7 @@ static void plant(unsigned char *s, size_t c, int pass)
 }
 
 static unsigned long long checks, failures, st_hits, st_s1, st_s2, st_trap, st_late, st_lo;
-static unsigned long long st_below;
+static unsigned long long st_below, st_beyond;
 static int stop_first;
 
 /* The subject: s[lo..n) written (lo = 0 where s[0..pos) is readable), the
@@ -187,6 +193,19 @@ static void subject(unsigned char *s, size_t n, size_t pos, size_t lo, size_t p)
     if (n <= si.maxk) return;
     size_t hi = n - 1 - si.maxk;                /* the last valid candidate */
     int pv = p <= hi && p >= pos;
+    /* beyond the last candidate: the scanned byte at b in [e, n), half the
+       time at e itself (the one byte a top bound moved by one admits), and
+       the terms whose reads fit below n written to pass at b - k */
+    size_t e = n - (si.maxk - si.k), blo = e > pos + si.k ? e : pos + si.k;
+    if (blo < n && rnd(2)) {
+        size_t b = rnd(2) ? blo : blo + rnd((unsigned)(n - blo));
+        size_t c = b - si.k;
+        for (unsigned i = 0; i < si.s->nterm; i++) {
+            const struct g2m_term *t = &si.s->t[i];
+            if (c + t->off + (t->kind ? t->len : 1) <= n) write_term(s, c, i);
+        }
+        s[b] = (unsigned char)si.a;
+    }
     /* above p: any kind */
     unsigned na = rnd(3);
     for (unsigned j = 0; j < na; j++) {
@@ -224,6 +243,18 @@ static void census(const unsigned char *s, size_t n, size_t pos, size_t want)
         if (want + si.maxk + 8 >= n) st_late++;
     }
     if (n <= si.maxk) return;
+    /* beyond: a scanned byte at b in [e, n), b >= pos + k, whose candidate's
+       every term that fits below n holds (the chain reaches its read past n) */
+    for (size_t b = n - (si.maxk - si.k); b < n; b++) {
+        if (b < pos + si.k || s[b] != si.a) continue;
+        size_t c = b - si.k;
+        int fit = 1;
+        for (unsigned i = 0; i < si.s->nterm && fit; i++) {
+            const struct g2m_term *t = &si.s->t[i];
+            if (c + t->off + (t->kind ? t->len : 1) <= n && !term_holds(s, c, i)) fit = 0;
+        }
+        if (fit) { st_beyond++; break; }
+    }
     size_t hi = n - 1 - si.maxk, top = want < n ? want : hi + 1;
     unsigned rej = 0;
     for (size_t c = want >= 8 && want < n ? want - 7 : pos; c < top; c++)
@@ -315,8 +346,8 @@ int main(int argc, char **argv)
         }
     }
     (void)st_lo; (void)st_below;
-    printf("sites %u\nhits %llu\nstream1 %llu\nstream2 %llu\ntrap %llu\nlate %llu\n", nsites,
-           st_hits, st_s1, st_s2, st_trap, st_late);
+    printf("sites %u\nhits %llu\nstream1 %llu\nstream2 %llu\ntrap %llu\nlate %llu\nbeyond %llu\n",
+           nsites, st_hits, st_s1, st_s2, st_trap, st_late, st_beyond);
     printf("checks %llu\nfailures %llu\n", checks, failures);
     return failures ? 1 : 0;
 }

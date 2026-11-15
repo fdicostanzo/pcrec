@@ -325,8 +325,11 @@ static const mf_form_entry entries[] = {
     { "mfind-swar", "-", 1, MF_FH_OFS,     "fn-mfind",  "x",                  0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, "mfind" },
     { "mfind-w16", "-",  1, MF_FH_OFS,     "mfind@w16", "x",                  0, 0, MF_EMPTY_MISS,     0, NULL,        "x86-64",           NULL, "mfind" },
     { "mfind-w32", "-",  1, MF_FH_OFS,     "mfind@w32+w16", "x",              0, 0, MF_EMPTY_MISS,     0, NULL,        "x86-64-v3",        NULL, "mfind" },
-    /* the same site at no lever: the libc stream (fn-memchr), the like-for-
-       like comparator (D190: only the search and stream pieces differ) */
+    /* the same site at no lever: fn-memchr, the libc memchr search and its
+       restart stream. The BUNDLE comparison (review 2026-11-15 r2 F6): it
+       differs from the finder in the call boundary, own code vs library,
+       the search AND the stream, named as one; the ruled single-piece cells
+       (search vs the walk, stream RESTART vs MASK) are not built */
     { "fn-memchr", "-",  1, MF_FH_OFS,     "fn-memchr", "x",                  0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, NULL },
 };
 #define NENTRIES (sizeof entries / sizeof entries[0])

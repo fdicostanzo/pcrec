@@ -175,7 +175,8 @@ FORM_IDS = {
     "every-pos": ("fn-every-pos", {"-": None}, "-"),
     # lane mfind: the inline one-member finder's forms on one offset-skip
     # site under the lever `mfind` (the BODY row at SIMD-off, the MEMFN_FORMS
-    # token at a level), and the same site's libc stream; cards kit-grid@6
+    # token at a level), and the same site's libc memchr search (and its
+    # restart stream); cards kit-grid@6
     "mfind-swar": ("fn-mfind",      {"-": None}, "-"),
     "mfind-w16":  ("mfind@w16",     {"-": None}, "-"),
     "mfind-w32":  ("mfind@w32+w16", {"-": None}, "-"),

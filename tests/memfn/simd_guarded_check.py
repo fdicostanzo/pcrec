@@ -128,7 +128,14 @@ NAMED = [
 # lever's own control.
 LEVER_ARMS = [('lever:mfind@' + t, ['--harness=mfind', '-fmemfn-simd=' + t])
               for t in ('x86-64', 'x86-64-v3')]
-LEVER_NAMED = [('mfind', 'foo.*bar')]
+LEVER_NAMED = [('mfind', 'foo.*bar'),
+               # review 2026-11-15 r2 F1 (lane mfindfix2): LONG verify chains, the widest
+               # text the row's chain renders on pcrec's own sites (a 12-position table
+               # chain; the pre-check run part's 28 tableless sets). Before the cap they
+               # stamped 4,089 / 2,335 at x86-64 (bound 1,400 + 700); now the row's fit
+               # test declines them and the SWAR body stays alone ('lever-capped')
+               ('mfind-long-tbl', 'a.*\\x7f[acegikmoqsuwy]{12}'),
+               ('mfind-long-run', 'b' + '[0-35-7]' * 28)]
 LEVER_PROBE = 'pcrec-harness'
 
 # K35 FLOORS, literal: each population a reader needs, counted over the run.
@@ -155,6 +162,9 @@ FLOORS = {
                              # the sample-independent control, so 'simd-form' above can drift with the corpus
     'simd-form-lever': 2,    # lane mfind fix 1: the lever witnesses that render a SIMD row (2 of 2 measured:
                              # one per level-rendering target in LEVER_ARMS)
+    'lever-capped': 4,       # lane mfindfix2 (r2 F1): lever witnesses whose helper the row's fit test
+                             # declined (MEMFN_FORMS none at a level-rendering arm): the two long-chain
+                             # witnesses at both LEVER_ARMS, 4 of 4 measured
     'scaffold-copy': 200,    # [iterpin] witness artifacts whose VM program block sits in the scaffold copy (the ladder named witness; more measured)
 }
 
@@ -238,6 +248,26 @@ def main():
         bad('simd_bounds.tsv declares no `rq3-witness` bound')
         bounds['rq3-witness'] = 0
 
+    # THE KIT'S DECLARATION PINNED (review 2026-11-15 r2 F1): every mf_formdecl
+    # in memfn/src/vrun.c, its guarded_max initializer resolved through its
+    # #define, equals its row here, and each such row names a declaration.
+    vsrc = open(os.path.join(TREE, 'memfn', 'src', 'vrun.c')).read()
+    macros = dict((m, int(v)) for m, v in re.findall(r'^#define (\w+_GUARDED_MAX) (\d+)$', vsrc, re.M))
+    decls = re.findall(r'^const mf_formdecl \w+ = \{\s*"([\w-]+)",[^;]*?\b(\w+_GUARDED_MAX)\b', vsrc, re.M | re.S)
+    if len(decls) < 4:
+        bad('vrun.c: %d mf_formdecl guarded_max initializers found (floor 4: vrun-w16/w32, mfind-w16/w32)'
+            % len(decls))
+    for name, mac in decls:
+        if mac not in macros:
+            bad('vrun.c: %s guarded_max %s has no #define' % (name, mac))
+        elif bounds.get(name) != macros[mac]:
+            bad('vrun.c: %s guarded_max %d != simd_bounds.tsv %s' % (name, macros[mac], bounds.get(name)))
+        else:
+            ok('kit guarded_max pinned: %s %d' % (name, macros[mac]))
+    for row in bounds:
+        if (row.startswith('vrun-') or row.startswith('mfind-')) and row not in dict(decls):
+            bad('simd_bounds.tsv row %s names no vrun.c declaration' % row)
+
     arms = ARMS + target_arms(a.plain)
     if len(arms) - len(ARMS) < TARGET_ARMS_FLOOR:
         bad('--list-cpu-targets gave %d targets with a family (floor %d)'
@@ -311,6 +341,8 @@ def main():
             rec['issues'].append('plain stamp %d on a portable-target artifact (no guard, no region)' % v)
         if v > total:
             rec['issues'].append('plain stamp %d exceeds the sum of its rows\' bounds %d' % (v, total))
+        if lever and not sites:
+            rec['counts'].append('lever-capped')
         if sites:
             if lever:
                 rec['counts'].append('simd-form-lever')

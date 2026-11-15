@@ -1604,8 +1604,13 @@ int      mf_reach_table(const mf_art *, mf_sink *file_scope);
  * in-run stop) toward the LOWER position; or it PROBES a form no selection
  * table picks yet (lane mfind): "mfind" gives the offset-skip function's
  * one-byte scan the kit's inline one-member finder (the SWAR word at
- * SIMD-off; its w16/w32 helpers where the art's target admits them) in
- * place of the libc stream. Called before the first define;
+ * SIMD-off; its w16/w32 helpers where the art's target admits them and the
+ * helper fits its guarded bound) in place of the libc memchr search (and its
+ * restart stream). Under "mfind" the window family's frame reply is NOT
+ * updated: it still reports search NONE and stream RESTART for the site
+ * (`mf_wreply`'s frame part), though the rendered text is a MASK stream;
+ * pcrec reads neither field, and the reply states the form when a table
+ * picks it. Called before the first define;
  * refused after it, or for a name the kit does not list. */
 #define mf_lever          MF_NS(lever)
 int      mf_lever(mf_art *, const char *name);

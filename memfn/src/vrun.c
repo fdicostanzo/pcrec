@@ -455,7 +455,8 @@ const mf_formdecl vrun_w32_decl = {
  * block mask"): a find of ONE byte, every candidate it yields handed to the
  * site's own CHECK in place, a rejected candidate followed by the NEXT SET
  * LANE of the same block mask (clear the lowest, count the trailing zeros):
- * no call per hit, and no byte compared twice. The offset-skip function is
+ * no call per hit, and no scanned byte compared twice (a COST claim: no
+ * check counts it; review 2026-11-15 r2 F11). The offset-skip function is
  * its site (fn-memchr's: the scanned position is one byte `a` at offset
  * `k`), its check that function's VERIFY CHAIN (ofsskip.c, every term but
  * the scanned SET), so the answer is fn-memchr's: the leftmost candidate
@@ -504,7 +505,10 @@ const mf_formdecl vrun_w32_decl = {
  *     the FINAL block reads [f, e), f = e - VW >= pos + k (the entry test),
  *     with its lanes below i MASKED OFF: unlike vany's final block, a lane
  *     below i was a candidate of the previous block that the CHECK may have
- *     REJECTED, so it must not be handed over twice. The shift i - f is
+ *     REJECTED: handing it over again costs a second check (the answer
+ *     cannot move: the check is pure, so a re-handed lane is rejected
+ *     again; a COST claim, which G2's plant S3153 pins as text, not as a
+ *     count). The shift i - f is
  *     1..VW - 1 lanes (never the mask's width: no UB).
  *   - A candidate's check reads [c, c + maxk], c >= pos (offsets >= 0,
  *     ofs_fn_applies) and c + maxk < n: inside the subject.
@@ -524,8 +528,9 @@ const mf_formdecl vrun_w32_decl = {
  *              loads from pos + k with no alignment prologue (vrun's and
  *              vany's shape); unrolls are the card's variants, not built.
  * Its card: memfn/data/cards/kit-grid.tsv ver 6, UNMEASURED; its form ids
- * formhash.c's mfind-swar / mfind-w16 / mfind-w32 (fn-memchr the like-for-
- * like libc comparator on the same site). */
+ * formhash.c's mfind-swar / mfind-w16 / mfind-w32 (fn-memchr, the libc
+ * memchr search and its restart stream on the same site: the BUNDLE
+ * comparison, review 2026-11-15 r2 F6). */
 
 /* One form's spellings. `level` LV_* for a SIMD row (its intrinsics are
  * ops_of[level]'s), MF_NLEVEL for the SWAR word. */

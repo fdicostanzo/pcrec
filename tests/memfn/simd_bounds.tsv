@@ -18,12 +18,16 @@
 rq3-witness	1700000
 # mfind-w16 / mfind-w32 (lane mfind, the inline one-member finder; reached
 # only under the test-only lever `mfind`; read by simd_guarded_check.py's
-# LEVER_ARMS, the probe binary `pcrec-harness` under the mfind test lever over `foo.*bar` at
-# x86-64 and x86-64-v3, until a table picks the row): one FUNC's helper block at that
-# level, MEASURED by G2's one-member family (memfn/tests/run_g2_mfind.py,
-# `G2M guarded`), each row alone: worst 1,299 (w16) and 1,385 (w32) bytes
-# over 44 generator seeds at 160 sites, rounded up to the next 100 plus 100
-# of headroom; the kit's guarded_max (memfn/src/vrun.c) equal.
+# LEVER_ARMS, the probe binary `pcrec-harness` under the mfind test lever
+# over LEVER_NAMED at x86-64 and x86-64-v3, until a table picks the row):
+# one FUNC's helper block at that level plus the selector's call line. A
+# CAP, so a BOUND BY CONSTRUCTION (review 2026-11-15 r2 F1, lane mfindfix2):
+# the row's APPLIES renders the helper into a counting sink and declines
+# where it would bracket more (memfn/src/ofsskip.c ofs_fn_fits), so a wide
+# verify chain keeps the SWAR body alone. CHOSEN values admitting every
+# site of G2's one-member family (worst 1,299 w16 / 1,385 w32 over 44
+# seeds, lane mfind) with headroom; the kit's guarded_max (memfn/src/vrun.c
+# MFIND_W*_GUARDED_MAX) is pinned equal by simd_guarded_check.py.
 #
 # vrun-w16 / vrun-w32 (R4e' batch 1, R-13): one FUNC's helper block at that
 # level and, for the top level, the selector's one call line (U2: the
