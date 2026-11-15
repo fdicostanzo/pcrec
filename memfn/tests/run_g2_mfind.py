@@ -24,10 +24,12 @@ WHAT IT CHECKS, AND AGAINST WHAT
      0x01, 0xFE, 'a', 'x', 0x20, 0xDF at four shapes) then random. Rendered
      per target (x86-64-v3, x86-64, generic) with the lever (LEVER 1) and
      without it (LEVER 0, the control: fn-memchr), one file each; the host's
-     frame (family guard, `mf_includes` lines, region) is G2's. STRUCTURAL
+     frame (family guard, `mf_includes` lines, region) is G2's. The site
+     SHAPES (r2 F12): a pre-check composite's FUNC part, policy INLOOP and
+     policy SIZE sites beside the plain FIND, census-floored. STRUCTURAL
      (literals written in the generator, not read from the kit): under the
      lever each site holds the helpers exactly per target (x86-64-v3: w16 +
-     w32; x86-64: w16; generic: none), its __body holds `memcpy(&w` and no
+     w32; x86-64: w16; generic: none; none on an INLOOP site), its __body holds `memcpy(&w` and no
      `memchr(`, no CPU conditional and no `#include`; without it the site's
      function holds `memchr(` and no `memcpy(&w`. The generator prints the
      alone maximum of guarded bytes per level (`G2M guarded <level> N`).
@@ -123,6 +125,11 @@ POP_FLOOR = {
     'caseless': 26,        # 33: a caseless RUN
     'nterm1': 28, 'nterm2': 110, 'nterm3': 33, 'nterm4': 19,   # 36 / 138 / 42 / 24
     'a00': 16, 'a80': 12, 'aff': 14, 'a7f': 21, 'a01': 16, 'afe': 16,   # 21 15 18 27 21 21
+    # r2 F12 (lane mfindfix2): the site shapes beyond FIND/FUNC (g2_mfind_gen.c
+    # THE SITE SHAPES; by id, 5 of each per file at 80 sites, x3 targets)
+    'pre': 12,             # 15: a pre-check composite's FUNC part
+    'inloop': 12,          # 15: policy INLOOP (the SIMD rows decline; helpers absent)
+    'size': 12,            # 15: policy SIZE (served; helpers render)
 }
 # PLANTS: id, name, expected class, {helper kind: (mode, old, new, per)}
 # (mode 'str': plain text, 'rx': a regex over the helper; `per` = exactly
@@ -319,7 +326,7 @@ def main():
 
 def population(meta, pop):
     for line in open(meta):
-        kid, nterm, kind, k, maxk, av, ntbl, nrun, ncl, tg, lv = line.rstrip('\n').split('\t')
+        kid, nterm, kind, k, maxk, av, ntbl, nrun, ncl, tg, lv, shape = line.rstrip('\n').split('\t')
         k, maxk, av = int(k), int(maxk), int(av)
         pop['sites'] += 1
         if lv != '1':
@@ -333,6 +340,8 @@ def population(meta, pop):
         pop['run'] += int(nrun) > 0
         pop['caseless'] += int(ncl) > 0
         pop['nterm' + nterm] += 1
+        if shape != 'fn':
+            pop[shape] += 1
         for key, v in (('a00', 0), ('a80', 0x80), ('aff', 0xFF), ('a7f', 0x7F), ('a01', 1), ('afe', 0xFE)):
             pop[key] += av == v
 

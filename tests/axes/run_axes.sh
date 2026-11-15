@@ -1287,6 +1287,15 @@ giveup1_named() {
 #   MEMFN_EVERY=K        reach over every K-th distinct corpus pattern
 #                        (floors not applied; witnesses and classes still are)
 # ============================================================================
+# The SIMD layer's target (U3): of the one family --list-cpu-targets gives
+# more than one target, the target with the most features; read by the
+# `--memfn=` arm below and the internal arm `--harness=mfind` x SIMD.
+memfn_top_target() {
+    local rows fam
+    rows="$("$TIMEOUT_BIN" 60 "$PCREC" --list-cpu-targets | awk -F'\t' '$1=="target" && $3!=""')"
+    fam="$(printf '%s\n' "$rows" | awk -F'\t' '{n[$3]++} END{for(f in n) if(n[f]>1){print f; exit}}')"
+    printf '%s\n' "$rows" | awk -F'\t' -v f="$fam" '$3==f{print gsub(/,/,",",$6) "\t" $2}' | sort -n | tail -1 | cut -f2
+}
 declare -a memfn_cell_name=() memfn_cell_layer=() memfn_cell_flags=()
 memfn_arm_ran=0
 memfn_verdict="not run (filtered out by AXES=)"
@@ -1304,9 +1313,7 @@ if [ -z "$AXES" ] || printf ' %s ' "$AXES" | grep -q -- ' --memfn' ; then
     # same on every host): of the one family --list-cpu-targets gives more
     # than one target, the target with the most features (it admits every
     # level the floors below were measured with). No token is spelled here.
-    _mf_rows="$("$TIMEOUT_BIN" 60 "$PCREC" --list-cpu-targets | awk -F'\t' '$1=="target" && $3!=""')"
-    _mf_fam="$(printf '%s\n' "$_mf_rows" | awk -F'\t' '{n[$3]++} END{for(f in n) if(n[f]>1){print f; exit}}')"
-    _mf_top="$(printf '%s\n' "$_mf_rows" | awk -F'\t' -v f="$_mf_fam" '$3==f{print gsub(/,/,",",$6) "\t" $2}' | sort -n | tail -1 | cut -f2)"
+    _mf_top="$(memfn_top_target)"
     if [ -z "$_mf_top" ]; then
         echo "run_axes.sh: FATAL: --list-cpu-targets gives no family with two targets -- the SIMD layer has no target" >&2
         exit 1
@@ -1778,7 +1785,13 @@ done
 # [MEMFN] lane mfind: `--harness=mfind` gives the offset-skip function's
 # one-byte scan the kit's inline one-member finder (a form no table picks
 # yet, the SWAR word at SIMD-off); its answers must equal the default's.
-# Selected by the empty AXES= or by its spelling.
+# Selected by the empty AXES= or by its spelling. Its SIMD x lever arm
+# (review 2026-11-15 r2 F12, lane mfindfix2): `--harness=mfind` at the SIMD
+# layer's target (memfn_top_target), so the rows mfind-w16/-w32 are answer-
+# checked on pcrec's own sites (the SIMD-off arm renders the SWAR body only);
+# selected by the empty AXES= or by `--harness=mfind`. Chosen over a corpus
+# sample because this arm is the whole corpus against the default's answers,
+# the same check every axis gets, at the cost of one more job.
 INTERNAL_ARMS=("--harness=no-compound" "--harness=restore=empty"
                "--harness=restore=zero" "--harness=restore=rep" "--harness=restore=tie"
                "--harness=restore=alt"
@@ -1797,6 +1810,21 @@ for arm in "${INTERNAL_ARMS[@]}"; do
     job_bin[$((${#job_label[@]} - 1))]="$HARNESS_BIN"
     [ "$arm" = "--harness=no-compound" ] && lever_ran=1
 done
+if [ -z "$AXES" ] || case " $AXES " in (*" --harness=mfind "*) true ;; (*) false ;; esac; then
+    _mfind_top="$(memfn_top_target)"
+    if [ -z "$_mfind_top" ]; then
+        echo "run_axes.sh: FATAL: --list-cpu-targets gives no family with two targets -- the mfind x SIMD arm has no target" >&2
+        exit 1
+    fi
+    _mfind_simd="${macro_flag[PCREC_FORCE_MEMFN_SIMD]:-}"
+    if [ -z "$_mfind_simd" ]; then
+        echo "run_axes.sh: FATAL: PCREC_FORCE_MEMFN_SIMD has no CLI spelling -- the mfind x SIMD arm cannot be addressed" >&2
+        exit 1
+    fi
+    job_label+=("--harness=mfind $_mfind_simd=$_mfind_top (internal arm x SIMD layer, r2 F12)")
+    job_flags+=("--harness=mfind $_mfind_simd=$_mfind_top"); job_lost_ok+=("0")
+    job_bin[$((${#job_label[@]} - 1))]="$HARNESS_BIN"
+fi
 if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--engine'; then
     job_label+=("--engine=vm (§2.11)");  job_flags+=("--engine=vm");  job_lost_ok+=("1")
     job_savedump[$((${#job_label[@]} - 1))]="$WORKDIR/ss_vm_base.tsv"
