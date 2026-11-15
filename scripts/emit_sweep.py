@@ -1631,6 +1631,17 @@ def dumps_declared_delta(flag, out_a, out_b, declared, gone=frozenset(),
     return problems
 
 
+def facts_declarations(label, spec):
+    """The declared facts moves a sweep labelled `label` judges its facts
+    stream by: `spec`'s parsed moves on the REAL comparison; none on a
+    self-check (`selfcheck`, `selfcheck-NAME`), which compares one revision
+    with itself, so no declared move may be demanded there (a declared GONE
+    fact would read red against an unchanged listing)."""
+    if not spec or label.startswith("selfcheck"):
+        return []
+    return parse_fact_moves(spec)
+
+
 def dumps_declarations(label, rows_arg, gone_arg, new_arg=None):
     """The (declared rows, declared gone rows) a sweep labelled `label`
     judges its dumps by: the declared deltas are the REAL comparison's; a
@@ -3718,11 +3729,9 @@ def main():
                     extra=list(run_extra) + (["-e", "utf8"] if enc == "utf8" else [])),
                 declared_keys={"\t".join(k.split(":", 1)) for k in
                                args.census_facts_keys.split(",")})
-        # a self-check compares one revision with itself, so no declared move
-        # may be demanded there (dumps_declarations does the same for dumps)
-        if args.facts_declared_moves and not label.startswith("selfcheck"):
-            facts_census.setdefault("facts", {})["declared_moves"] = parse_fact_moves(
-                args.facts_declared_moves)
+        fmoves = facts_declarations(label, args.facts_declared_moves)
+        if fmoves:
+            facts_census.setdefault("facts", {})["declared_moves"] = fmoves
         tasks = []
         comp_files_run = []
         comp_out = None
