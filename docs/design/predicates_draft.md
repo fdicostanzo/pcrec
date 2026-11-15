@@ -953,9 +953,9 @@ match (Saturday); `2026-11-13` -> no (Friday); `2024-02-29` -> no (Thursday). We
 
 LEVEL: default. Expected (whole-subject test): `192.168.1.17` in; `256.1.1.1` out; `01.2.3.4` out (canonical rule;
 `padded(between(0, 255))` admits it, a stated library choice). As a SEARCH program, `256.1.1.1` yields `56.1.1.1`
-(held under libpcre2); a boundary is the user's to write, in the final pattern (`/\b${ipv4}\b/` would put `\b` in a
-hole's literal, not in the hole: the boundary reads the subject; on `256.1.1.1 and 10.0.0.1` it finds `10.0.0.1`
-only). The assertions run at compile time and are decided on strings (§5.6).
+(held under libpcre2); a boundary is the user's to write, in the final pattern around the hole: `/\b${ipv4}\b/` on
+`256.1.1.1 and 10.0.0.1` finds `10.0.0.1` only (the `\b` belong to the final pattern, not to the hole's set, §11).
+The assertions run at compile time and are decided on strings (§5.6).
 
 ### 12.4 E-LUHN: checksummed card numbers
 
@@ -1082,15 +1082,16 @@ sets + the edge-assertion error). The answers under the other models are review 
     /\w{3}/ & /\w+\b/                                 # E-CTX-4, subject `foobar`
     x & padded(/^5/)                                  # E-CTX-5
     enumerate(/(?<=a)[bc]/)                           # E-CTX-6
-    headers & (name: /^[A-Z][\w-]*/)                  # E-CTX-7 (E-HTTP's headers), subjects `Host: a`, `Host: a\r\nAccept: b`
+    headers & (name: /^[A-Z][\w-]*/)                  # E-CTX-7 (§12.9's headers), `Host: a` / `Host: a\r\nAccept: b`
 
 - E-CTX-1: compile ERROR (`^` at the start of the condition on x). Fix `(x: startsWith("S"))`: `a Sab` -> match
   `a Sab`. (A/B2: silent no match; B1: match.)
 - E-CTX-2: compile ERROR (`\b` at both edges of the hole's set). Fix: write the boundaries in the literal around the
-  hole (`/a\b${digits}\b/`, which on `a12` finds nothing: `a` and `1` are both word characters). (B1: match.)
+  hole, `/a\b${/\d+/}\b/`, which says what the pasted text says: on `a12` it finds nothing (`a` and `1` are both
+  word characters). (B1: match, unlike the pasted text.)
 - E-CTX-3: compile ERROR (a lookbehind at the start of an assertion argument). Under A the assertion FAILED although
-  the subject `5` never matches. Fix: decide on strings (`@assert.none("5" & /\d+/ & !/\d+/)`-shaped tests), or test
-  search behaviour by an example subject outside assertions (§5.6).
+  the subject `5` never matches. Fix: assert on strings without the lookbehind (`@assert.some("5" & /\d+/)`); search
+  behaviour is shown by an example subject, not by an assertion (§5.6, §13 O36).
 - E-CTX-4: compile ERROR (`\b` at the end of an `&` operand). Fix `/\w{3}\b/`: on `foobar` it reports `bar` visibly,
   from the final pattern. (A/B2: the reported match silently moves from `foo` to `bar`.)
 - E-CTX-5: compile ERROR (`^` at the start of a modified filter's argument). Fix `x & padded(startsWith("5"))`.
