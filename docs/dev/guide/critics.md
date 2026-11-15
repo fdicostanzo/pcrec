@@ -70,6 +70,8 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+Round 2026-11-15 r4 fixposts2c (`docs/dev/reviews/2026-11-15-r4-fixposts2c.md`): a brief that sets a probe matrix states the product next to the cap (`patterns x arm sets x encodings x trees = N compiles; cap M`); the respell critic miscounted its matrix and ran 900+ compiles against a ~600 cap.
+
 Round 2026-11-03 r1, span_pick rev 4 re-check (`docs/dev/reviews/2026-11-03-r1-memfn-spanpick4.md`): (1) a quoted region boundary from a sweep states its grid, and a boundary on a grid point is unproven; (2) a choice rule normalised over the candidate set must state whether it is independent of never-picked candidates (drill: add one); (3) every "owner rulings since rev N" row cites its durable home at the freeze, or is marked PENDING-RECORD.
 
 Round 2026-11-02 r1, kit span_pick rev 1 (`docs/dev/reviews/2026-11-02-r1-memfn-spanpick.md`): (1) a simulate lens recomputes every outcome the design quotes with the design's OWN formula (smp20's quoted win was the evidence study's doubled-hit arithmetic; by the text's formula it loses); (2) give premise/simulate critics the evidence sweep's RAW data as the population; (3) a design's proposed sabotage witness must reach its plant by the design's own arithmetic ([MECH-REACH] applied to a design: drop-F cannot move smp20 because F already agrees there).
