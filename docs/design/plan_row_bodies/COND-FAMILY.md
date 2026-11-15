@@ -810,3 +810,13 @@ secondary." RECORD: (1) the DESIGN keeps currying (2026-11-13/14: "Keywords to m
 function"); C34 does NOT supersede it. (2) PHASE 1 (the base-level predicate build) is built WITHOUT partial
 application, as a scope reduction: a macro call binds every required parameter; revisit after phase 1. (3) No reason
 for dropping currying from the design was ever put to the owner; none is recorded, and none is assumed.
+**2026-11-15 OWNER NOTE — the two-kinds-of-numbers split is NOT his preference (Frank, to session 132; qualifies the
+"two kinds of numbers; the `occurs` module" entry above).** His words: "the idea of separating the numbers was from
+the manager. in my ideal world they would be the same. my understanding is that it becomes a capability problem as the
+number of states to implement counts the same is high". STATUS: OPEN, under discussion. The `occurs` module was his
+answer to a split the manager proposed, not a wish for two kinds. Manager's view put to him (mine, not ruled): the cost
+is not about counts vs digits but about WHERE a number test is evaluated: compiled into the match as a set (must be
+regular; a count bound N multiplies states by about N; comparing two counts is not regular at all) or computed on the
+result as a value (an integer after matching; any arithmetic; cheap; but it can only accept or reject afterwards).
+Subject numbers already have both forms (`between(1,12)` as a set, `$y + 1` as a value). On that reading numbers can be
+ONE kind for the user, with the evaluation place decided (and its cost shown) by the compiler.
