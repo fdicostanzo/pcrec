@@ -119,11 +119,15 @@
 #        refuses (ISA TABLE: planned target x86-64-v3 enables fma ...); no arm emits FMA, so no ISA check can
 #   (e3) S3171 [F5] write_draft's per-ver selection also writes every ver-6 row into ver 3's set (draft_split
 #        untouched): est.py's self-test case "[F5] write_draft on the mfcard window" goes WRONG
-#   (e4) S3172 [F8] write_draft's mixed-target refusal removed: the self-test case "[F8] write_draft refuses a ver-6
-#        set mixing targets" goes WRONG
+#   (e4) S3172 [F8] write_draft's mixed-ISA-level refusal removed: the self-test case "[F8] write_draft refuses a
+#        set mixing ISA levels" goes WRONG
+#   review 2026-11-15 r1 F8 (slotxf8b):
+#   (f8a) S3183 the target table maps x86-64-v3 to the baseline set: the guard refuses (DRAFT-ISA-LEVEL MIXED), the
+#        one-set-per-ISA-level case shows it
+#   (f8b) S3184 the v3 set keeps the baseline class value: that case goes WRONG (a set's class must name its level)
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
 # rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
-# r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's; they
+# r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's; they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
@@ -131,7 +135,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=${SLOT_TREE:-$(cd "$here/../../../../.." && pwd)}   # SLOT_TREE: the tree when slot/ runs from a copy
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -317,8 +321,14 @@ row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT
     e3) job=est want='selftest	\[F5\] write_draft on the mfcard window[^	]*	WRONG'
         patch "$SCR/$row/est.py" '        vrows = split.get(v, [])' \
 '        vrows = split.get(v, []) + (split.get("6", []) if v == "3" else [])   # SABOTAGE S3171' ;;
-    e4) job=est want='selftest	\[F8\] write_draft refuses a ver-6 set mixing targets[^	]*	WRONG'
-        patch "$SCR/$row/est.py" '        if len(tg) > 1:' '        if False:   # SABOTAGE S3172' ;;
+    e4) job=est want='selftest	\[F8\] write_draft refuses a set mixing ISA levels[^	]*	WRONG'
+        patch "$SCR/$row/est.py" '            if cls.split("/")[0] != TARGET_LEVEL[tgt_of[r[0]]]:' '            if False:   # SABOTAGE S3172' ;;
+    f8a) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	\(DRAFT-ISA-LEVEL MIXED'
+        patch "$SCR/$row/est.py" '              "x86-64-v3": ("-v3", "x86_64-v3/zen4")}' \
+'              "x86-64-v3": ("", "x86_64/zen4")}   # SABOTAGE S3183: the v3 target mapped to the baseline set' ;;
+    f8b) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	WRONG'
+        patch "$SCR/$row/est.py" '              "x86-64-v3": ("-v3", "x86_64-v3/zen4")}' \
+'              "x86-64-v3": ("-v3", "x86_64/zen4")}   # SABOTAGE S3184: the v3 set keeps the baseline class' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
 }
