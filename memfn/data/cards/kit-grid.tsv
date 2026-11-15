@@ -76,9 +76,9 @@
 # and no box has run it; nothing picks the form (it is reached by the
 # test-only lever `mfind`), so UNMEASURED moves no byte. Its timing plan is
 # docs/dev/lanes/mfind_report.md "Owed runs" (the slot harness pieces it
-# still lacks are listed there). Lane slotx (before any merge or timing of
-# the row, so no set or record reads its first spelling) gave find_hit@6 a
-# fifth dim, `reject`: the percent of planted hits the site's check rejects
+# still lacks are listed there). Lane slotx gave find_hit@6 a fifth dim
+# while the row was still a draft of its lane chain (when a card row binds:
+# docs/design/measure_sets.md §7.2), `reject`: the percent of planted hits the site's check rejects
 # (the site's run is two bytes, `xy`; a rejected hit lacks its `y`), so the
 # MASK stream's continue-after-reject path is timed, not only accepted
 # hits; the slot plans the card as jobs JMB/JMH (slot/plan.py).
