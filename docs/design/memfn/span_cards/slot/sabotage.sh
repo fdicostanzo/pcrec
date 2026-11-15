@@ -203,8 +203,8 @@ row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT
             raise InputError("%s holds cells of job %s' '        if False:   # SABOTAGE S2936
             raise InputError("%s holds cells of job %s' ;;
     f1) job=est want='selftest	live card/policy edit after the run	WRONG'
-        patch "$SCR/$row/est.py" '            G = card[key.split(".")[1]]["gate"]' \
-'            G = plan.CARD[key.split(".")[1]]["gate"]   # SABOTAGE S2937' ;;
+        patch "$SCR/$row/est.py" '            G = plan.card_of(card, key)["gate"]' \
+'            G = plan.card_of(plan.CARD, key)["gate"]   # SABOTAGE S2937 (re-anchored, slotxfix: the lookup is card_of since slotx)' ;;
     f2) job=J3 want='KEY-ARM MISMATCH kit\.find_hit\.(libc|walk)\.periodic\.one\.[0-9]+: dim landing: the key names periodic, the Arm random'
         patch "$SCR/$row/plan.py" '                row("J3", Arm(k, "J3.hit.%s.%d" % (ld, g), "find", f, landing=ld, split=sp, gap=g,' \
 '                row("J3", Arm(k, "J3.hit.%s.%d" % (ld, g), "find", f, landing="random", split=sp, gap=g,   # SABOTAGE S2938' ;;
