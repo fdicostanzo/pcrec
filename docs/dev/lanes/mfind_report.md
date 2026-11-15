@@ -371,3 +371,35 @@ Local evidence already in hand:
   the 01:00 evening-hold release. The lane does not poll it; the kit manager reads its verdict.
 - Not dispatched: the cloud test, axes and full-mech runs (Owed runs item 2). The timing plan is prepared, not
   queued (item 3).
+
+## Fix 1 (cloud run 43676110332 on 1840f4e81: shards 3 and 15 red)
+
+- **Shard 3, the G7 lever fence** (tests/axes/memfn_arm.py mentioned `--harness=restore=alt` outside its allowlist): main's
+  text, fixed on main at a518df820. Merged alone: `git merge main` conflicted in one file only, the history index
+  docs/dev/history/claude_md/docs__dev__lanes.md (two lanes' new entries at the same tail); resolved by keeping both,
+  main's entries first. Merge commit 4f673eff7 (second parent 4e435603b). `make strict` clean. The merge brings no
+  change under src/, lib/, cli/ or memfn/src (`git diff 1840f4e81 HEAD --stat` over those is empty), so pcrec's abi
+  did not move and nothing of this lane re-pins; no abi reader changed meaning.
+- **Shard 15, `make test-memfn-guarded`** ("simd_bounds.tsv rows no artifact read: mfind-w16, mfind-w32"). The check
+  (tests/memfn/simd_guarded_check.py) reads each row through the MEMFN_FORMS tokens of corpus artifacts; the unpicked
+  rows render in none. CHOSE THE WITNESS, not a declared-unreached marker: the check already runs named witnesses
+  over arms, so the fix is one more arm family and no parallel mechanism. `LEVER_ARMS` (`--harness=mfind` plus
+  `-fmemfn-simd=x86-64` / `x86-64-v3`) over the named pattern `foo.*bar`, compiled by the probe binary
+  `pcrec-harness` that sits beside both the plain and the witness compiler (the lever is a probe flag; build/pcrec
+  refuses it). Those artifacts go through the same PLAIN bound sum, WITNESS arithmetic and NEUTRALITY as every other
+  cell; `foo.*bar` renders `mfind@w16` at x86-64 and `mfind@w32+w16` at x86-64-v3, so both rows are read and their
+  bounds are held. A missing probe binary is a FAIL, not a skip. A new floor `simd-form-lever` (2, measured 2 of 2)
+  counts the cells. When a table later picks the row, the ordinary arms read it too and this witness stays as the
+  lever's own control. simd_bounds.tsv's mfind comment names the reader.
+- **Sabotage S3170** (tests/mech/sabotages/S3170_simdguarded_lever_arm_drops_lever.sh): the lever arm loses
+  `--harness=mfind`, so the rows go unread. Run alone on the committed tree: DETECTED, simdguarded 4 fail / 9 pass
+  (the unread-rows gate and the lever floor, LOUD). The undeclared-unreached case therefore still reds.
+- **Local run** (`run_simd_guarded.sh --every 40`, the mech arm's sampling): "every simd_bounds.tsv row is read by
+  some artifact (6 rows)" PASS; `simd-form-lever` 2 (floor 2). Its two other FAILs at that sampling (`simd-form` 10
+  below 16, `scaffold-copy` 112 below 200) are the floors that need the real `--every 10` population; the gate's
+  `make test` (kit-mfind-test) runs them at that sampling. No full-sampling run of this check was made locally.
+- **Gate re-queued** (owner kit, the same keys kit-mfind-strict, -g2, -ident1..3, -test, -mech, -gate; jobs from
+  `$PCREC_TMPDIR/scratch/memfn/mfind/gate/`, the earlier 620-628 were cancelled by hand on the stale tip). BASE is
+  now 4e435603b, the merged main commit (the identity sweep's frozen reference), set in gate/common.sh. kit-mfind-mech
+  adds S3170 (5 rows). Each `boxqueue add` dry-ran; all eight pending, waiting on the 01:00 hold.
+- OWED: kit-mfind-gate (pending), the cloud test and axes runs (dispatched as this lane's last act, below).
