@@ -1,4 +1,4 @@
-# cover_cap.md — the `cover` route's exact stretch: read from the anchored machine, no length bound, no budget ([COVER-CAP])
+# cover_cap.md — the `cover` route's exact stretch: read from the anchored machine, one safety limit, no budget ([COVER-CAP])
 
 Status: PROPOSED, revision 3 (lane `covcap4`, 2026-11-15). DESIGN ONLY: no build go.
 Plan row: [COVER-CAP] (set S3). Owner criteria: D198. Review of rev 2: round covcap-r2,
@@ -26,15 +26,26 @@ R3, C-24); the re-timing regimes (§7, R3); the delivery bar's instruments, valu
 and outside witnesses (§5, C-13..C-20). Rev 2's text is superseded in place; §10 lists
 what survives. Findings are mapped by id in `docs/dev/lanes/covcap4_report.md`.
 
+**R5 (owner, 2026-11-15, amends "no length bound"; D198 (g)):** "Practically, we might need
+a max span length then. I don't want edge cases to ruin the concept. Something sufficiently
+high that it's rarely seen but that doesn't become a memory problem." Rev 3 therefore
+carries ONE safety limit, `PCREC_MAX_EXACT_SPAN` (proposed 4096, derivation in §3.1, the
+owner confirms the number, §9 Q2). It is the only length limit on the exact path, shared
+by the walk, the cover and the seam statement. It has NO CLIFF: past it the stated stretch
+is its first 4096 positions, still exact; such a pattern is not a whole cover today and is
+the fraction case later. No population pattern reaches it.
+
 ## 0. Goals
 
-**Constraint above the ranking (G4; D198 (c)).** The exact stretch has no length bound, no
-budget and no constant of its own. Its only limits are the machine's size and the pattern's
-language. No goal below may be met by re-adding one; a goal that cannot be met without it
-goes, in order, to the one-pass rule (memory `pcrec-one-pass-loss-chasing`), then to the
-kit (§4.3), then to an owner ruling. Form: §8 lists no pcrec-side row on the exact path
-marked INHERITED or BUDGET, `src/core/limits.def` loses `PCREC_SPAN_WALK_SUBSETS`, and `KN_CAP`
-is gone.
+**Constraint above the ranking (G4; D198 (c), (g)).** The exact stretch has no budget and
+no tuning constant. Its ONE length limit is the safety limit `PCREC_MAX_EXACT_SPAN`, with
+its derivation beside it, reached by no population pattern, and with no cliff (past it,
+the first `MAX` positions are stated). No goal below may be met by adding another bound or
+lowering this one; a goal that cannot be met otherwise goes, in order, to the one-pass rule
+(memory `pcrec-one-pass-loss-chasing`), then to the kit (§4.3), then to an owner ruling.
+Form: §8 lists no other pcrec-side row on the exact path; `src/core/limits.def` loses
+`PCREC_SPAN_WALK_SUBSETS` and gains `PCREC_MAX_EXACT_SPAN` (labelled a safety limit);
+`KN_CAP` is gone; a `MAX + 1` witness states `MAX` positions (§5.3).
 
 Ranked; the higher goal wins a conflict.
 
@@ -67,7 +78,7 @@ rows); lookaround as a run ([REQ-LOOKAROUND]); captures in a cover body (C1);
 | EXACT span: every position proven, the engine does not retest | two producers compared by C8: the NFA slice `span_facts` (`pcrec_span_walk`, `src/facts/kset.c`) and the anchored machine's walk `kn_walk` (`src/gen/known.c`, C7) | ONE producer: the anchored machine's walk, unbounded (§3.1). The slice is deleted |
 | HULL positions: candidates only, the work thrown out | `kset_walk` (assertions passed as if they held, reach `PCREC_PREFIX_K_MAX` = 24) | unchanged, off the cover path (§3.4) |
 | "a branch ends it" | no such rule; the slice proved branching prefixes exact by exploring them | the stretch ends where the next byte's set depends on which bytes came before (§3.2) |
-| "no bound" (c) | `PCREC_SPAN_WALK_SUBSETS` (512), a 48-deep horizon, a 24-deep exact loop, `KN_CAP` (32) | none on the exact path; stage 1 reads the kit's seam bound (C15), stage 2 removes it |
+| "no bound" (c), amended by "a max span length ... sufficiently high that it's rarely seen" (g) | `PCREC_SPAN_WALK_SUBSETS` (512), a 48-deep horizon, a 24-deep exact loop, `KN_CAP` (32) | one safety limit, `PCREC_MAX_EXACT_SPAN` (4096 proposed), no cliff; stage 1 also reads the kit's seam bound (C15), stage 2 replaces that by the shared limit |
 | the kit loops over repeated positions itself | the kit renders one test per position | not asked (R3); the kit gets the span |
 
 ### 1.1 The END STATE (D198 (d); C-25), and the cover as its first case
@@ -82,7 +93,8 @@ On the anchored machine this is ONE walk with one rule per depth (§3.1): while 
 a depth allows the same next-byte set, the position is EXACT; where they differ, the exact
 stretch ends at that depth `L`. What follows reads the same walk's state at `L`:
 - WHOLE: the rows at `L` all accept and none continues (C10): the cover. Built here.
-- FRACTION: the rows at `L` are the machine states an engine resumes from. With one row,
+- FRACTION: the rows at `L` are the machine states an engine resumes from (a stretch cut
+  by the safety limit is one: its rows at `MAX` are the resume state). With one row,
   it is one machine state; with several, the subject's own `L` bytes pick it. Nothing in
   the walk is redone: `L`, `S_0..S_{L-1}` and the rows at `L` are its outputs. Not built
   ([EARNED-SKIP]/[MATCH-KNOWN], PARKED; trigger unchanged).
@@ -161,8 +173,13 @@ At depth `j`:
    the walk records `exact = false` there and goes on to find `k` (C7 still needs the
    width), keeping only the sets, never the rows, past `L`.
 
-`exact_len` is `min(L, k)`. These are rev 1's three outcomes (C-6) without the fourth
-("the loop ends at `H`"), since there is no `H`.
+4. Depth `MAX` (`PCREC_MAX_EXACT_SPAN`) reached with none of the above: the walk ends; `k`
+   is unknown, C7 declines (`fixed-width/over-max`), and the stretch is the first `MAX`
+   positions where they are exact. NO CLIFF: the depth-48 collapse to 0 of today (§2) is
+   the failure this outcome avoids, and the stated prefix is a sound under-statement.
+
+`exact_len` is `min(L, k, MAX)`. These are rev 1's three outcomes (C-6) plus the safety
+limit; the walk itself defines no other bound.
 
 **Why this walk, against the NFA-subset walk of rev 2** (R4; the full comparison is the
 report's WALK CHOICE):
@@ -176,10 +193,12 @@ report's WALK CHOICE):
   the machine's shape (C-4): `-fno-altcls-*` and `-fno-scan-edge` cannot move `L` or `k`.
 - It loses no cover today (§2) and keeps `(?:[a-z]{0,3}\z|x)[0-9]{3}` (Z2 ruling 1, §9).
 
-**TERMINATION AND COST (C-1, C-7).** Let `V` be the machine's virtual-state count (states
-plus the counts inside scan-edge chains: the machine's own size). Every row on the walk is
-live, so from each row some accept is at most `V - 1` bytes away, and the walk follows
-every live successor; so some row accepts, and the walk ends, by depth `V`. Rows per depth
+**TERMINATION AND COST (C-1, C-7; R5 (4)).** The walk takes at most `MAX` steps, so it
+terminates by construction; no cycle rule or reachability argument is needed. (Without the
+limit it would still end by depth `V`, the machine's virtual-state count, since every row is
+live and the walk follows every live successor; R5's limit turns that argument into a
+non-load-bearing remark. The same limit applied to rev 2's NFA walk would let it drop the
+cycle rule and C-1/C-2, but not C-3, C-4 or C-8, so R4's answer is unchanged.) Rows per depth
 are at most `V` (deduplicated). Each depth costs `rows x classes` steps, so the walk is
 O(k x rows x classes), bounded by the machine. MEMORY: today `kn_walk` allocates
 `KN_CAP + 1` row arrays of `4n + 8` entries eagerly; rev 3 keeps two row arrays (this
@@ -188,6 +207,27 @@ for C10/C11, so memory is O(k x 32 + V). C9 (no eol view at any depth) is checke
 walk passes each depth instead of from retained rows. The `rows` detail of C7 (a depth
 over the scratch) retires: census count 0 (`why` = `fixed-width/rows` on no compile).
 UNMEASURED as a comparison: §5.1's compile-cost row reads CPU and max RSS, old against new.
+
+**THE SAFETY LIMIT'S DERIVATION (`PCREC_MAX_EXACT_SPAN`, proposed 4096; R5 (1)-(3)).** What
+one stated position costs:
+- pcrec's memory: 32 bytes of set in the walk and 32 in `MkEnd`; the seam statement and the
+  kit's reply proof hold about 32 bytes each: about 128 bytes per position, 512 KB at 4096.
+  Not the binding cost.
+- compile time: one depth is `rows x classes` steps (at most 256 classes), about 1 M steps
+  per row at 4096. Not the binding cost.
+- the emitted matcher (the binding cost): the kit's per-position text measured 8 to 31
+  `gcc -O2 -S` lines per position (rev 1 §3.4's table: `[0-9a-f]` byte, utf8, ``-bounded),
+  so 4096 positions is roughly 33 k to 127 k lines before any compaction the kit chooses.
+  A larger limit admits matchers whose size, not pcrec's memory, becomes the problem.
+- the population: the longest exact stretch in the census is 1000 (`[ab]{1000}`,
+  `d27_large_counts.rxt:37`); the longest width at all is `counterk.rxt:1807`
+  `((a)|ab){4000}c`, a VM-finished pattern whose stretch ends at depth 2. 0 compiles reach
+  4096 (census `census2.jsonl` `wmin`, prototype `DFALINE`). 4096 is the smallest power of
+  two at least four times the longest stretch in use; it fits a `uint16_t` count, as every
+  counted array on the path will be.
+- naming and row: one `limits.def` row, kind "safety limit" with the derivation above in
+  its rationale column; the walk, C7 and the seam statement all read it (the kit request
+  states it, §4.3).
 
 **WHAT IT DELETES (simplification, the benefit).** The NFA span slice: `pcrec_span_walk`
 and its `sw_*` helpers (`kset.c` from the "THE SPAN SLICE" banner to the end of
@@ -218,7 +258,8 @@ compiles, rev 2's subset reading 4, this reading 0.
 ### 3.3 The cover table and the listing
 
 - C7 `fixed-width`: `k >= 1` and the rows at `k` are not empty; the `k <= KN_CAP - 1` term
-  goes. Stage 1 adds C15 (§3.5).
+  goes; a walk ended by the safety limit declines with detail `over-max`. Stage 1 adds C15
+  (§3.5).
 - C8 `exact`: `exact_len >= k`, i.e. no depth below `k` where the rows' sets differ (today's
   `exact/machine-inexact`). Its kind becomes `machine`; its `span fact` reading goes. C8 keeps
   its id and its `why` `exact/machine-inexact`.
@@ -251,9 +292,9 @@ It is a later row after this one.
   `seam`, read right after C7): `k <= MF_WSPAN_POS`, `k + 1 <= MF_WREACH`, `k < MF_MAX_FWD`,
   read from the kit's constants, so `cover_window` never writes past `mf_wspan.set[]` (K7).
   pcrec has no bound of its own. Cover movers: `k` 25..32, and the 18 k = 1 compiles (§2).
-- **Stage 2 (after the kit's answer to §4.3).** A counted seam; C15 retired like C2 (id
-  kept, absent). `cover_window` and `pcrec_cover_proof_diff` read counted ranges. Movers:
-  every long shape.
+- **Stage 2 (after the kit's answer to §4.3).** A counted seam up to `PCREC_MAX_EXACT_SPAN`;
+  C15 retired like C2 (id kept, absent), the shared limit taking its place. `cover_window` and `pcrec_cover_proof_diff` read counted ranges. Movers:
+  every long shape up to the safety limit.
 
 Each stage is one pcrec `abi` event (§4.4). The listing section (§3.3) lands at stage 1.
 
@@ -281,9 +322,10 @@ Each stage is one pcrec `abi` event (§4.4). The listing section (§3.3) lands a
    decline has fired on 0 compiles in the trace builds that assert it (`z2build_report.md`,
    "producers-disagree internal errors are 0"). K35: the sweeps count the whole census
    population; the kitproof floors are stated in §5.3. [MECH-REACH]: §5.4.
-3. **What moves on regeneration: RELEVANT.** `limits.def` loses a row, so by grep in the
-   same change: `--list-limits`' output, the X-macro list in `src/core/limits.h`,
-   `tests/registry/limits_check.sh`'s count (82 to 81, its two lines) and name list,
+3. **What moves on regeneration: RELEVANT.** `limits.def` loses `PCREC_SPAN_WALK_SUBSETS`
+   and gains `PCREC_MAX_EXACT_SPAN`, so by grep in the same change: `--list-limits`' output,
+   the X-macro list in `src/core/limits.h`, `tests/registry/limits_check.sh`'s count (82
+   stays 82; its two lines re-read) and name list,
    `limits.def`'s own home count, `src/facts/CLAUDE.md`'s bound sentence (C-13). `facts.def`
    loses a row: every reader of the facts table (`src/dump/facts_dump.c`, the listing's
    row order, any check that counts facts), by grep. Regenerated
@@ -310,17 +352,18 @@ the sweep proves them byte-identical.
 
 ### 4.3 KIT REQUEST DRAFT (for main to file; facts only, D157; no build go)
 
-> **R-n (DRAFT, pcrec manager) — a window span of any length ([COVER-CAP] rev 3)**
+> **R-n (DRAFT, pcrec manager) — a window span of up to 4096 positions ([COVER-CAP] rev 3)**
 > - GO: none yet; the kit-side build waits on the owner's go for stage 2 (§9 Q4).
 > - FACT (population). pcrec will state the cover's REPORT window site with span 0 of `k`
->   exact positions, where `k` has no upper bound on pcrec's side. Today's population
+>   exact positions, `1 <= k <= 4096` (pcrec's one safety limit on the exact span,
+>   `PCREC_MAX_EXACT_SPAN`; the number is confirmed by the owner before this is filed). Today's population
 >   (census, both encodings): `k` = 36..500 and 1000 beyond the current 32 (31-32: four bench
 >   shapes and two corpus literals, already inside today's bound; 36: two uuids; 40;
 >   49; 60; 500; 1000), mostly long runs of one byte class. Each has one context position
 >   at -1 and, where stated, one at offset `k`. pcrec reads the per-offset proof at every
 >   offset in `[-1, k]` and checks it equals the statement.
-> - ASK. Can the statement and the reply carry a span of any length? Reply in responses.md
->   with the form you choose.
+> - ASK. Can the statement and the reply carry a span of up to 4096 positions? Reply in
+>   responses.md with the form you choose.
 > - Deliver: a kit branch for merge review, for one landing with pcrec's stage 2.
 
 Struck from rev 2 (R3, C-24): the "compact text for repeated positions" ask and its size
@@ -338,9 +381,11 @@ in it. Stage 2 also moves kit bytes (D146/D147: a pcrec abi event in the same co
 ### 4.5 Spec (D80), in the same change (C-13)
 
 Stage 1:
+- `cli.md`: none for the limit (§2.6 is generic); the new row shows in `--list-limits`.
 - `facts_listing.md` §4.1.2¶7c (`span_facts`) becomes a `— retired` stub (a spec number
   never disappears) and its `decline:` reasons leave §4.1.3¶3; a new section `cover` after §4.4 defines the section of §3.3 with ¶7c's product definition
-  carried over word for word, and §4.1¶2's sentence on the `cover` row's reading of
+  carried over word for word plus one sentence (the stated stretch is at most
+  `PCREC_MAX_EXACT_SPAN` positions, a prefix of the exact stretch past it), and §4.1¶2's sentence on the `cover` row's reading of
   `span_facts` is rewritten to the machine reading.
 - `cli.md` §2.6 describes `--list-limits` generically and names no row: no hunk.
 - `match_api.md` §6.3.4¶2's `"cover"` row names no bound: no hunk.
@@ -370,7 +415,7 @@ The prediction comes from the BASELINE build only, read from the trace build's `
 record (`PCREC_KIT_PROOF_TRACE=1` on the trace binary; `k=0` on a decline, so `k` is read
 from the `width` fact of the same compile): INTO the cover, every decision whose `why` is
 `exact/producer-short`, or `fixed-width` with `width` `[w,w]`, `25 <= w <= 32` at stage 1
-(any `w` at stage 2). That is an UPPER bound: C9-C15 never ran on those decisions, so the
+(`w <= PCREC_MAX_EXACT_SPAN` at stage 2). That is an UPPER bound: C9-C15 never ran on those decisions, so the
 deliverable lists each predicted compile that does not move with the candidate's `why`
 (at stage 1 the bench's `wild-logparse-quotedstring-noatomic` is one, §2). OUT of the cover:
 none. No `k >= 25` floor is claimed for gains below 25 (the 18 k = 1 compiles are in the
@@ -382,7 +427,7 @@ half to "observed, checked against libpcre2").
 
 - `verdict`: a literal and `[0-9a-f]{n}` at 24, 25, 32, 33, 40, 100, 1000; `\b[0-9a-f]{n}\b`
   at 32, 40, 100; `\d{32}` under `u`. Stage 1: cover through 32, decline from 33
-  (`statement-fits`). Stage 2: cover at every length. `ab|abc|ad` cover;
+  (`statement-fits`). Stage 2: cover at every length up to the safety limit. `ab|abc|ad` cover;
   `(?:S(?i:ab)|(?i:sab))` cover (byte); `[a-c]*\ba` cover (a k = 1 gain);
   `a[xy]c|b[xy]d` decline `exact/machine-inexact`. The existing
   `(?:[a-z]{0,3}\z|x)[0-9]{3}` rows (Z2 ruling 1) are unchanged.
@@ -390,7 +435,8 @@ half to "observed, checked against libpcre2").
   reads the new section, a named loader change): the 6 existing rows keep their values on
   the new section; new rows `a{40}(?:b|cc)` `41:` + 40 × `97` + `,[2]` (its `b`/`c` set;
   the build writes the literal value), `a[xy]c|b[xy]d` `2:[2],[2]`, `a{30}(?:b{30}c|d)`
-  `31:` + 30 × `97` + `,[2]`, `ab|abc|ad` `2:97,[2]`, `a*?a` `1:97`, `(?:\bab|\Bac\z)` `0`
+  `31:` + 30 × `97` + `,[2]`, `a{4097}` `4096:` + 4096 × `97` (no cliff, generated by the
+  build), `ab|abc|ad` `2:97,[2]`, `a*?a` `1:97`, `(?:\bab|\Bac\z)` `0`
   (`entry-const/seeds`). Every value is written in full in `cases.tsv` (no prefixes).
 - `answer`: per length `n` of the verdict rows: subjects of `n-1`, `n`, `n+1` bytes, a near
   miss at the last position, a match at the subject end, two adjacent matches, every
@@ -407,6 +453,7 @@ half to "observed, checked against libpcre2").
 | (b) rows compared by identity: a second row ends the stretch | §3.2 | `facts` `a[xy]c|b[xy]d` `2:[2],[2]` → `1:[2]` | the only witness with two rows of equal sets before `L` |
 | (c) liveness dropped (dead rows kept) | §3.1 | `facts` `a(?:b|c\z\W)` `2:97,98` → `2:97,[2]` | (a), (b), (d) keep liveness |
 | (d) C15 removed (stage 1 only) | K7 | the 40-literal `verdict` compile goes red (`window_bounds_check`'s internal error) | nothing else states a 40-position span at stage 1 |
+| (e) the cliff: a walk ended by the safety limit states 0 | R5 (2) | `facts` `a{4097}` `4096:...` → `0` | only a walk reaching `MAX` takes outcome 4; (a) cuts at 32 first and is told apart by its value |
 
 S1131 (C8 skipped) keeps its witness `ac|bd`: the plant now skips the machine's exactness.
 S1149 (`slice ctx passthrough`) plants into the deleted slice: the row retires with its
@@ -456,6 +503,8 @@ the owner, outside 20:00-01:00, after each stage lands.
 ## 8. The bounds on the cover path (rev 1 §1's inventory; rev 3 verdicts)
 
 Rev 1 §1's inventory (in git at `75d365a0b`) stands for its sites. Rev 3's verdicts:
+- ADDED: `PCREC_MAX_EXACT_SPAN` (4096 proposed), OWN, a safety limit with its derivation
+  (§3.1); the only length limit on the exact path.
 - GONE with the slice: P1 (the 24-deep exact loop), P2 (the 48-deep horizon), P3
   (`MkLang.set[24][32]`, `uint8_t exact_len`), P4 (`PCREC_SPAN_WALK_SUBSETS`, a budget that
   never binds on a straight line; its cliff is P2's at 49, §2). GONE: M1 `KN_CAP`; M2 the
@@ -473,7 +522,8 @@ Rev 1 §1's inventory (in git at `75d365a0b`) stands for its sites. Rev 3's verd
 1. *The hidden limit.* Rev 2 said today's code had a hidden length limit "near 511". It
    does not. Today the exact span is worked out to at most 24 positions, and a pattern of
    49 positions or more gets no exact span at all: `a{48}` lists 24 positions and `a{49}`
-   lists none. Either way the fix is the same: the new reading has no limit.
+   lists none. Rev 3's one limit (question 2) has no such drop: past it, the first 4096
+   positions are still stated.
 2. *An earlier ruling.* Rev 2 would have dropped the cover for
    `(?:[a-z]{0,3}\z|x)[0-9]{3}` without saying that keeping it was a decision. On
    2026-10-21 the manager ruled, in the Z2 build lane's rulings file (ruling 1), that this
@@ -493,15 +543,24 @@ Rev 1 §1's inventory (in git at `75d365a0b`) stands for its sites. Rev 3's verd
    against PCRE2 and against a second form of the same machine in the test suite instead of
    on every compile. Also, the listing stops showing an exact span for patterns the cover
    cannot use (nothing reads those values today). Leaning: accept.
-2. **The earlier ruling** (correction 2): it stands under rev 3. Re-decide only if you
+2. **The maximum span length you asked for: 4096 positions.** What sets it is the size of
+   the generated matcher, not pcrec's memory: pcrec needs about 128 bytes per position (half
+   a megabyte at 4096), but the kit's code today is about 8 to 31 assembly lines per
+   position, so a 4096-position matcher is roughly 33,000 to 127,000 lines unless the kit
+   compacts it. The longest exact stretch in all our test and bench patterns is 1000, so
+   4096 is about four times that, and no pattern we have reaches it. Past the limit nothing
+   collapses: the first 4096 positions are still proven, the rest is left to the engine.
+   Leaning: 4096; 1024 would sit too close to the 1000 we already test, and anything much
+   larger only admits bigger matchers.
+3. **The earlier ruling** (correction 2): it stands under rev 3. Re-decide only if you
    would rather not cover that pattern. Leaning: keep it.
-3. **One step or two** (from rev 1, answered by you: "leave that ordering step to you").
+4. **One step or two** (from rev 1, answered by you: "leave that ordering step to you").
    Taken as two: step one changes only pcrec and covers up to 32 positions; step two needs
-   the kit to accept any length. No question left.
-4. **Size.** Stage 1 reports each mover's size beside its timing. If a long cover grows the
+   the kit to accept spans up to the safety limit. No question left.
+5. **Size.** Stage 1 reports each mover's size beside its timing. If a long cover grows the
    matcher enough to lose in the cold-cache timing, the order is: one bounded try, then the
    kit, then you. Leaning: no action until the timing shows it.
-5. **Build go for stage 1** (§3.1-§3.3 plus C15, §5 as the delivery bar), at opus tier,
+6. **Build go for stage 1** (§3.1-§3.3 plus C15, §5 as the delivery bar), at opus tier,
    after the narrow readiness re-check that follows this revision.
 
 For main, not the owner: [DD-11.5]'s part 1 product (the span slice, Z2) is deleted by
