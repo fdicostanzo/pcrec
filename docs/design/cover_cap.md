@@ -193,8 +193,10 @@ It is LABELLED (kind `compile budget`, override `-D`). The row names its role, n
 derivation, which lives in `src/core/limits.h`'s `[ENG-ABS]` block (measured: 2.05x the
 captures-on corpus maximum of 2,001 states; 4.9x below `tests/resource`'s giant repeats,
 whose compile CPU and size it excludes). Proposed stage-1 `desc` text, no derivation
-invented: append "; also the cover's longest exact stretch, 4095 positions
-(docs/design/cover_cap.md); derivation: limits.h [ENG-ABS]". (`compile.c`'s comment calling
+invented: append "; also bounds the exact stretch the cover record states, at most 4095
+positions (docs/design/cover_cap.md); derivation: limits.h [ENG-ABS]" (worded so at both
+stages: at stage 1 a COVER is at most 32 positions (C15) while the record states up to
+4095; review r9 covs1 CONTRACT-2, 2026-11-15). (`compile.c`'s comment calling
 it equal to `PCREC_MAX_DFA_STATES_TABLE` contradicts limits.h's "lower than": stale, §5.5.)
 
 PAST THE CEILING: no anchored machine is built, C4 declines `anchored-A`, no exact stretch
