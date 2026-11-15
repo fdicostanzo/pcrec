@@ -8,6 +8,8 @@
 #                                 instance its KEY names, and records each timed function's address, its hot
 #                                 loop (placement.tsv) and each cell's text facts (cell_text.tsv: the instance
 #                                 and fold hashes est.py writes as the row's dep, r9 G5)
+#   link.py shape-selftest SCRATCH  [review r6 FIDELITY-1] TIMED-SHAPE's own cases (two controls, the critic's
+#                                 out-of-line plants), `== link SHAPE SELFTEST ok` iff all agree
 #   link.py ctl RUNDIR            the control executable `ctl` (the canonical walk at the three find_byte
 #                                 lengths, one placement), built once per window, and its sha-256
 # Cell texts come from tests/memfn/arm_fixtures.c's `--site-parts` (formhash's entry table: the ONE renderer,
@@ -200,12 +202,27 @@ def isa_check(name, obj, target, tfeat, floor):
                          "it: the region did not reach the code" % (name, target, ",".join(sorted(extra))))
     return ",".join(sorted(f for f in need if f in extra)) or "-"
 
-def timed_shape_check(name, obj, sym):
-    """[review 2026-11-15 r5 FIDELITY-1] THE TIMED FUNCTION HOLDS THE SITE: `SYM_time` in the timed object calls (or
-    tail-jumps to) no function the object itself defines. pcrec's matcher inlines the site (one caller), so a site
-    gcc kept out of line (a second caller in the TU: the critic's `_gate`) times a call per hit the artifact does
-    not pay. A call to an external (libc's memchr: a relocation to an undefined symbol) is the site's own call and
-    stays. Returns the externals `_time` calls"""
+# [review 2026-11-15 r6 FIDELITY-1] THE TIMED FUNCTION'S CALLEES, per FORM (the cell's form token; first match on
+# its prefix): the externals `_time` may call. pcrec's matcher inlines an mfind site whole (no call at all); the
+# fn-memchr site's one call is libc's memchr. A form no row names (the s2d jobs' forms, outside D197) keeps the r5
+# rule: any external, returned. Every form: no call to a function the object defines, no call or jump through a
+# SECTION symbol (a site gcc placed in another section: `section(...)`, `cold` / .text.unlikely) and no INDIRECT
+# call or jump (a site reached through a pointer)
+TIMED_CALLEES = (
+    ("mfind-", ()),
+    ("fn-memchr", ("memchr",)),
+)
+
+def timed_callees(form):
+    """the externals form's `_time` may call (a tuple), or None (no row: any external)"""
+    return next((ok for pre, ok in TIMED_CALLEES if (form or "").startswith(pre)), None)
+
+def timed_shape_check(name, obj, sym, form):
+    """[review 2026-11-15 r5 FIDELITY-1, r6 FIDELITY-1] THE TIMED FUNCTION HOLDS THE SITE: `SYM_time` in the timed
+    object calls (or tail-jumps to) no function the object itself defines, nothing through a section symbol or a
+    pointer, and no external outside its form's TIMED_CALLEES row. pcrec's matcher inlines the site (one caller),
+    so a site gcc kept out of line (a second caller in the TU: the critic's `_gate`; a `cold` or `section`
+    placement; a pointer) times a call per hit the artifact does not pay. Returns the externals `_time` calls"""
     defined = set()
     for ln in sh(["nm", "--defined-only", obj]).splitlines():
         p = ln.split()
@@ -214,24 +231,88 @@ def timed_shape_check(name, obj, sym):
     lines = sh(["objdump", "-dr", "--no-show-raw-insn", "--disassemble=%s_time" % sym, obj]).splitlines()
     ext, bad = set(), []
     for i, ln in enumerate(lines):
-        m = re.match(r"\s+[0-9a-f]+:\s+(call|jmp)\w*\s+\S+\s+<([^>+]+)", ln)
+        if re.match(r"\s+[0-9a-f]+:\s+(?:(?:notrack|bnd)\s+)?(call|jmp)\w*\s+\*", ln):
+            bad.append("an indirect %s (%s)" % (ln.split(":", 1)[1].split()[0], ln.split(":", 1)[1].strip()))
+            continue
+        # every branch, conditional ones too: gcc's cold split leaves `_time` a `jne` into .text.unlikely (r6)
+        m = re.match(r"\s+[0-9a-f]+:\s+(?:(?:notrack|bnd)\s+)?(call\w*|j[a-z]+)\s+\S+\s+<([^>+]+)", ln)
         if not m:
             continue
         callee = m.group(2)
         r = re.match(r"\s+[0-9a-f]+: R_X86_64_\w+\s+([^\s+-]+)", lines[i + 1]) if i + 1 < len(lines) else None
         if r:
             callee = r.group(1)
-        if callee == sym + "_time":
+        if callee == sym + "_time" and not r:
             continue                          # a branch inside the timed function itself
-        if callee in defined:
-            bad.append(callee)
+        if callee.startswith("."):
+            bad.append("section %s (code placed in another section: a `section`/`cold` site or `_time`'s own cold "
+                       "split)" % callee)
+        elif callee in defined:
+            bad.append("%s (a function its own object defines)" % callee)
         elif r:
             ext.add(callee)
+    ok = timed_callees(form)
+    if ok is not None:
+        bad += ["external %s (form %s's TIMED_CALLEES row allows %s)" % (x, form, ", ".join(ok) or "none")
+                for x in sorted(ext - set(ok))]
     if bad:
-        raise SystemExit("link: TIMED-SHAPE %s: %s_time calls %s, a function its own object defines: the site is out "
-                         "of line in the timed code, inlined in pcrec's matcher (review r5 FIDELITY-1)"
-                         % (name, sym, ",".join(sorted(set(bad)))))
+        raise SystemExit("link: TIMED-SHAPE %s: %s_time calls %s: the site is not inline in the timed code as in "
+                         "pcrec's matcher (review r5/r6 FIDELITY-1)" % (name, sym, "; ".join(bad)))
     return sorted(ext)
+
+# [r6 FIDELITY-1] THE CHECK'S OWN CASES (`link.py shape-selftest SCRATCH`): one site wrapper shape (a site function,
+# the `_time` loop calling it per hit), the site spelled per case; (name, form, site function attributes, the
+# site body, expected: "ok" or the refusal's words). The plants are the r6 critic's repros
+SHAPE_SITE = r"""#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+%s size_t mf_site(const unsigned char *s, size_t n, size_t pos)
+{
+    %s
+}
+__attribute__((noinline)) uint64_t a64_time(const unsigned char *s, size_t n, const uint32_t *c, size_t nc)
+{
+    (void)c; (void)nc;
+    uint64_t k = 0;
+    for (size_t p = 0; p < n; p++) { %s if (p >= n) break; k++; }
+    return k;
+}
+"""
+SHAPE_LOOP = "for (size_t i = pos; i < n; i++) if (s[i] == 120) return i; return n;"
+SHAPE_CASES = (
+    ("an inline mfind site (the control)", "mfind-w32", "static inline", SHAPE_LOOP, "p = mf_site(s, n, p);", "ok"),
+    ("fn-memchr's libc call (the control)", "fn-memchr", "static inline",
+     "const unsigned char *q = memchr(s + pos, 120, n - pos); return q ? (size_t)(q - s) : n;",
+     "p = mf_site(s, n, p);", "ok"),
+    ("[S3210] a noinline site in its own section", "mfind-w32", "static __attribute__((noinline, section(\".text.site\")))",
+     SHAPE_LOOP, "p = mf_site(s, n, p);", "section .text.site"),
+    ("[S3211] a cold site (gcc's .text.unlikely)", "mfind-w32", "static __attribute__((noinline, cold))", SHAPE_LOOP,
+     "p = mf_site(s, n, p);", "section .text.unlikely"),
+    ("[S3212] the site through a pointer", "mfind-w32", "static inline", SHAPE_LOOP,
+     "{ size_t (*volatile fp)(const unsigned char *, size_t, size_t) = mf_site; p = fp(s, n, p); }", "an indirect"),
+    ("[S3213] the site an external definition", "mfind-w32", "static inline", SHAPE_LOOP,
+     "{ extern size_t mf_ext(const unsigned char *, size_t, size_t); p = mf_ext(s, n, p); }", "external mf_ext"),
+    ("[S3213] fn-memchr calling another external", "fn-memchr", "static inline", SHAPE_LOOP,
+     "p = mf_site(s, n, p) + strlen((const char *)s);", "external strlen"),
+)
+
+def shape_selftest(scratch):
+    os.makedirs(scratch, exist_ok=True)
+    bad = 0
+    for k, (name, form, attrs, body, call, want) in enumerate(SHAPE_CASES):
+        c = os.path.join(scratch, "shape%d.c" % k)
+        open(c, "w").write(SHAPE_SITE % (attrs, body, call))
+        sh(CC + ["-c", c, "-o", c[:-2] + ".o"])
+        try:
+            timed_shape_check(name, c[:-2] + ".o", "a64", form)
+            got = "ok"
+        except SystemExit as e:
+            got = str(e)
+        ok = got == "ok" if want == "ok" else want in got and "TIMED-SHAPE" in got
+        bad += not ok
+        print("shape\t%s\t%s\t%s" % (name, "ok" if ok else "WRONG", got[:200]))
+    print("== link SHAPE SELFTEST %s: %d cases, %d wrong" % ("ok" if not bad else "FAILED", len(SHAPE_CASES), bad))
+    return 1 if bad else 0
 
 def text_bytes(obj, sym):
     """[review 2026-11-15 r5 EMITTED-1] the timed function's size in bytes (nm -S): the site inlined into its one
@@ -587,7 +668,7 @@ def build_objs(job, rundir, arms):
         o = compile_tu(src, os.path.join(d, "arm%d.c" % k), sym)
         if "SLOT_GATE_TU" in src:                 # a site wrapper's TU (not a whole artifact's): its gate apart
             gates.append(compile_tu(src, os.path.join(d, "arm%d.c" % k), sym, gate=True))
-            timed_shape_check(a.name, o, sym)
+            timed_shape_check(a.name, o, sym, fc[0])
         elif a.kind not in ("enter", "j1"):
             raise SystemExit("link: TIMED-SHAPE %s: a site wrapper's TU without the gate split" % a.name)
         tgt = isa = "-"
@@ -745,5 +826,7 @@ def link_ctl(rundir):
 if __name__ == "__main__":
     if sys.argv[1] == "ctl":
         print(link_ctl(sys.argv[2]))
+    elif sys.argv[1] == "shape-selftest":
+        sys.exit(shape_selftest(sys.argv[2]))
     else:
         link_job(sys.argv[1], sys.argv[2], sys.argv[3])
