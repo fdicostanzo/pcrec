@@ -6,8 +6,9 @@ SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'
 SAB_DESC='the walk compares ROWS, not their byte sets: a second row at a depth ends the exact stretch, so a language product reached by two rows is read as a branch'
 SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the cloud mechrows run owed by lane covs1 (docs/dev/lanes/covs1_report.md).'
-SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'a[xy]c|b[xy]d'"'"' '"'"'--facts'"'"''
-SAB_REACH_EXPECT='REACH-FACTS-EQUAL'
+SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'a[xy]c|b[xy]d'"'"' '"'"'--facts'"'"' --why'
+SAB_REACH_EXPECT='REACH-FACTS-EQUAL
+REACH-WHY=[exact/machine-inexact]'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='            if (i == 0) memcpy(first, b32, 32);

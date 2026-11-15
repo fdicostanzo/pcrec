@@ -6,8 +6,9 @@ SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'
 SAB_DESC='C15 statement-fits is removed (stage 1): a stretch past the kit window'"'"'s 32 positions reaches MkEnd'"'"'s fill, which refuses it with its named internal error (never an overrun)'
 SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the cloud mechrows run owed by lane covs1 (docs/dev/lanes/covs1_report.md).'
-SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'abcdefghijklmnopqrstuvwxyzabcdefghijklmn'"'"''
-SAB_REACH_EXPECT='REACH-DECLINE'
+SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'abcdefghijklmnopqrstuvwxyzabcdefghijklmn'"'"' --why'
+SAB_REACH_EXPECT='REACH-DECLINE
+REACH-WHY=[statement-fits]'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (st->w.stop == COVER_STOP_BRANCH) return true;

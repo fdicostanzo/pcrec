@@ -12,8 +12,9 @@ SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'
 SAB_DESC='C8 is skipped: a walk that stopped at a branch is not named exact/machine-inexact, and C10 is left to decline it (end-at-k)'
 SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the matrix run of lane z2build'"'"'s heavy chain (docs/dev/lanes/z2build_report.md), owed at the slot.'
-SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'ac|bd'"'"' --facts'
-SAB_REACH_EXPECT='REACH-FACTS-EQUAL'
+SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'ac|bd'"'"' --facts --why'
+SAB_REACH_EXPECT='REACH-FACTS-EQUAL
+REACH-WHY=[exact/machine-inexact]'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    int k = st->w.k;

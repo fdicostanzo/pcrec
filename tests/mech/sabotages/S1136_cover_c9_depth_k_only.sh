@@ -9,8 +9,9 @@ SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'
 SAB_DESC='C9 is tested at depth k only (revision 2'"'"'s C9), so an eol view on a row before k is admitted'
 SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the matrix run of lane z2build'"'"'s heavy chain (docs/dev/lanes/z2build_report.md), owed at the slot.'
-SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'ab|a$\n'"'"''
-SAB_REACH_EXPECT='REACH-DECLINE'
+SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'ab|a$\n'"'"' --why'
+SAB_REACH_EXPECT='REACH-DECLINE
+REACH-WHY=[no-eol-view]'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    for (int i = 0; i < w->nrow; i++) {

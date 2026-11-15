@@ -6,8 +6,9 @@ SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'
 SAB_DESC='the walk keeps dead rows (liveness dropped): a byte that leads only to a dead state is stated in a set'
 SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the cloud mechrows run owed by lane covs1 (docs/dev/lanes/covs1_report.md).'
-SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'a(?:b|c\z\W)'"'"' '"'"'--facts'"'"''
-SAB_REACH_EXPECT='REACH-FACTS-EQUAL'
+SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'a(?:b|c\z\W)'"'"' '"'"'--facts'"'"' --why'
+SAB_REACH_EXPECT='REACH-FACTS-EQUAL
+REACH-WHY=[cover]'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='static bool kn_live(const KnWalk *w, KnVs v) { return v.s >= 0 && w->live[v.s]; }'
