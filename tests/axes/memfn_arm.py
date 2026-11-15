@@ -205,31 +205,36 @@ MEMFN_CLASS = {
     # letter are the witnesses below (RUNW_U8: all five rows; the ten-byte run is past
     # vrun-pad's 3 and 5-7, so pad takes the first three), single compiles at lane/s2land
     # 692e5f431, so the floors hold at their measured values: no floor lowered.
+    # FLOORS-3 (review 2026-11-15 r1 posts2): the utf8 floors count CORPUS patterns only now, the
+    # witness-only RUNW_U8 patterns being checked as witnesses (the old 15/15 and pad's 13/14 counted
+    # both, so a corpus loss of up to the witness count passed). Each is the old floor less the
+    # witnesses it contained (4; pad 3), a PROVISIONAL bound until `--measure` (its `corpus=`
+    # column) pins the exact corpus-only counts: owed, see lane fixposts2's report.
     ("vrun-kb", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-kb", "simd"): ("DIFFER",
-        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 11, ("utf8", "c-vm"): 11},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8 for st in ("c-default", "c-vm")]),
     ("vrun-pad", "default"): ("ASSERT_ZERO", {}, []),
     # vrun-pad utf8/c-default 14 -> 13 at D172 S3 (job 620, tri620.md): one caseless pattern
     # became a cover artifact, where the pad deny is inert; its siblings' 15 hold.
     ("vrun-pad", "simd"): ("DIFFER",
-        {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 13, ("utf8", "c-vm"): 14},
+        {("byte", "c-default"): 19, ("byte", "c-vm"): 18, ("utf8", "c-default"): 10, ("utf8", "c-vm"): 11},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8_PAD for st in ("c-default", "c-vm")]),
     ("vrun-trim", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-trim", "simd"): ("DIFFER",
-        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 11, ("utf8", "c-vm"): 11},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8 for st in ("c-default", "c-vm")]),
     ("vrun-w16", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-w16", "simd"): ("DIFFER",
-        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 11, ("utf8", "c-vm"): 11},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8 for st in ("c-default", "c-vm")]),
     ("vrun-w32", "default"): ("ASSERT_ZERO", {}, []),
     ("vrun-w32", "simd"): ("DIFFER",
-        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 15, ("utf8", "c-vm"): 15},
+        {("byte", "c-default"): 20, ("byte", "c-vm"): 19, ("utf8", "c-default"): 11, ("utf8", "c-vm"): 11},
         [("byte", "c-default", b"(?i)cat"), ("byte", "c-vm", b"(?i)cat"), ("utf8", "c-default", b"(?i)cat"), ("utf8", "c-vm", b"(?i)cat")]
          + [("utf8", st, w) for w in RUNW_U8 for st in ("c-default", "c-vm")]),
 }
@@ -354,6 +359,7 @@ def main():
     es, pats = corpus_patterns(a.pcrec, a.root, a.every)
     wit = sorted({w[2] for v in MEMFN_CLASS.values() for w in v[2]})
     allpats = sorted(set(pats) | set(w.encode() if isinstance(w, str) else w for w in wit))
+    corpus = set(pats)   # a floor counts THESE only; a witness-only pattern is checked as a witness
     full = a.every == 1
     print(f"memfn arm: {len(rows)} kit rows, {len(cells)} cells, {len(pats)} distinct corpus "
           f"patterns (+{len(set(allpats) - set(pats))} witness-only), every={a.every}")
@@ -390,6 +396,7 @@ def main():
             results[(key, enc, stream)] = (differ, refused, len(outs))
             if a.measure:
                 print(f"{key[0]:22s} {key[1]:8s} {enc:5s} {stream:9s} differ={len(differ):5d} "
+                      f"corpus={sum(1 for d in differ if d in corpus):5d} "
                       f"refused={len(refused):4d} of {len(outs)}  first={differ[:3]!r}", flush=True)
     if a.measure:
         return 0
@@ -406,7 +413,10 @@ def main():
             check(not refused, f"{tag}: {len(refused)} patterns REFUSED under the deny (first {refused[:2]!r})")
             fl = floors.get((enc, stream))
             if full and fl is not None:
-                check(len(differ) >= fl, f"{tag}: DIFFER FLOOR {len(differ)} < {fl}")
+                # corpus patterns only (review 2026-11-15 r1 posts2 FLOORS-3): a witness-only
+                # pattern that differs must not stand in for a corpus pattern that stopped
+                nc = sum(1 for d in differ if d in corpus)
+                check(nc >= fl, f"{tag}: DIFFER FLOOR {nc} corpus patterns < {fl}")
             for (we, ws, wp) in witnesses:
                 if (we, ws) == (enc, stream):
                     wb = wp.encode() if isinstance(wp, str) else wp
@@ -414,7 +424,8 @@ def main():
         else:
             die(f"unknown class {cls!r}")
         print(f"  {tag:46s} {cls:11s} differ={len(differ)} refused={len(refused)} of {n}"
-              + (f" floor={floors.get((enc, stream))}" if cls == "DIFFER" else ""))
+              + (f" corpus={sum(1 for d in differ if d in corpus)} floor={floors.get((enc, stream))}"
+                 if cls == "DIFFER" else ""))
 
     # ---- controls ----------------------------------------------------------
     sample = allpats[:50]
