@@ -214,8 +214,11 @@ static uint32_t reach_w32(const mf_site *s, const mf_pred *p)
 }
 
 /* The site shape both rows take (the module comment's APPLIES). */
-static int vrun_applies(const mf_site *s, const mf_pred *p)
+static int vrun_applies(const fn_in *x, const mf_formdecl *d)
 {
+    (void)d;
+    const mf_site *s = x->site;
+    const mf_pred *p = x->p;
     if (p->nterm != 1 || p->plan_hint != 0) return 0;
     const mf_term *t = &p->term[0];
     if (t->kind != MF_T_RUN || t->offset < 0 || t->run_len < 2 ||
@@ -621,7 +624,12 @@ static int mfind_text(mf_art *art, const mf_hooks *h, const fn_in *x, const mfin
     kit_out(o, ")%s;\n", back);
     o->puts(o->u, ""
                   "            if (");
-    if (ofs_verify_chain(art, h, x, o)) return -1;
+    /* a helper's chain is bracketed text: RUN_WORDS counts no compare in it
+       (compose.c's rule, as vrun_verify keeps it; review 2026-11-15 r2 F3) */
+    long long words = art->words;
+    int rc = ofs_verify_chain(art, h, x, o);
+    if (fall) art->words = words;
+    if (rc) return -1;
     kit_out(o, ") return cand;\n"
                "            m &= m - 1;\n"
                "        }\n"
@@ -662,12 +670,12 @@ static uint32_t mfind_reach_w32(const mf_site *s, const mf_pred *p)
 
 /* APPLIES: every predicate the BODY row fn-mfind took (OVER says so; the
  * scan is one byte by its predicate), on a FIND or a pre-check part, as
- * the body. Nothing narrower: the verify chain is the body's own. */
-static int mfind_applies(const mf_site *s, const mf_pred *p)
+ * the body, whose helper FITS its declared guarded_max (ofs_fn_fits: the
+ * verify chain is the body's own, as wide as the predicate, so a wider site
+ * declines the row and keeps the body alone; review 2026-11-15 r2 F1). */
+static int mfind_applies(const fn_in *x, const mf_formdecl *d)
 {
-    (void)s;
-    (void)p;
-    return 1;
+    return ofs_fn_fits(x, d);
 }
 
 #define MFIND_INSN (MF_I_LOADU | MF_I_CMPEQ | MF_I_MOVEMASK | MF_I_BROADCAST | MF_I_CTZ)
@@ -675,12 +683,17 @@ static int mfind_applies(const mf_site *s, const mf_pred *p)
 static const char *const mfind_over[] = { "fn-mfind", NULL };
 static const char *const mfind_w32_rungs[] = { "mfind-w16", NULL };
 
-/* guarded_max (Q-R9-9): MEASURED over G2's one-member family (run_g2_mfind.py
- * prints the alone maximum per level): worst 1,299 w16 and 1,385 w32 over
- * 44 generator seeds at 160 sites (lane mfind), rounded UP to the next 100
- * plus 100 of headroom (the seed sweep, not a bound on the space); the
- * verify chain is the body's, so the bound grows with the predicate G2
- * draws (up to MF_MAX_TERM terms). */
+/* guarded_max (Q-R9-9): a BOUND BY CONSTRUCTION, the row's CAP (review
+ * 2026-11-15 r2 F1): APPLIES renders the helper into a counting sink
+ * (ofs_fn_fits) and declines the row where it would bracket more, so no
+ * rendering passes it whatever the predicate (up to MF_MAX_TERM terms) or
+ * the names. The values are CHOSEN shape bounds, not tuning constants:
+ * they admit every site of G2's one-member family (its alone maximum, 1,299
+ * w16 and 1,385 w32 over 44 generator seeds at 160 sites, lane mfind) with
+ * headroom; a wider chain (`a.*\x7f[acegikmoqsuwy]{12}`, ~4 KB at w16)
+ * keeps the SWAR body alone. Whether a wider helper pays is the card's
+ * question, UNMEASURED. tests/memfn/simd_bounds.tsv states the same numbers
+ * (pinned equal by tests/memfn/simd_guarded_check.py). */
 #define MFIND_W16_GUARDED_MAX 1400
 #define MFIND_W32_GUARDED_MAX 1500
 

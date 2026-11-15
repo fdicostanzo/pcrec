@@ -851,7 +851,9 @@ typedef struct mf_formdecl {
     uint32_t           insn;        /* MF_I_* the text uses                  */
     uint32_t         (*reach)(const mf_site *s, const mf_pred *p);
     uint32_t           guarded_max;
-    int              (*applies)(const mf_site *s, const mf_pred *p);
+    /* APPLIES over the walk input `x` (its site and predicate; the art and
+       define hooks for a row whose test renders, mfind's fit test) */
+    int              (*applies)(const struct fn_in *x, const struct mf_formdecl *d);
     /* Writes the helper's BODY (after the seam's head): its entry test,
        falling through to `fall` with the head's arguments, its block loop
        and the closing brace. Bytes outside the guard: none. */
@@ -878,6 +880,11 @@ typedef struct fn_in {
     int brackets;
     unsigned levers;        /* the art's test-only levers (KIT_LEVER_*): the
                                BODY row fn-mfind holds only under `mfind` */
+    /* the define's art and hooks: a PREFIX row's APPLIES may render its
+       helper to count it (ofs_fn_fits); NULL on ofs_fn_serves' walk, which
+       asks the BODY slot only */
+    mf_art *art;
+    const mf_hooks *h;
 } fn_in;
 
 #define vrun_w16_decl MF_NS(vrun_w16_decl)
@@ -990,6 +997,16 @@ int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
 int ofs_verify_chain(mf_art *art, const mf_hooks *h, const struct fn_in *x, mf_sink *o);
 int ofs_fn_fall(mf_art *art, const mf_hooks *h, const mf_pred *p, const char *callee,
                 mf_sink *o);
+/* THE FIT TEST of PREFIX row `d` (review 2026-11-15 r2 F1): 1 iff the bytes
+ * one rendering of its helper would bracket, counted by rendering it into a
+ * counting sink (the head and the fall-through at the longest name the seam
+ * writes, `<fn>__body`; the blank line after it; the selector's call line),
+ * are at most d->guarded_max, so a declared guarded_max is a BOUND by
+ * construction: a site whose helper would pass it declines the row. 0 where
+ * the walk input carries no art or hooks. The art's RUN_WORDS count is kept
+ * (the stamp counts no bracketed compare). */
+#define ofs_fn_fits      MF_NS(ofs_fn_fits)
+int ofs_fn_fits(const struct fn_in *x, const struct mf_formdecl *d);
 /* THE PAIR LEAPFROG, one renderer for its two customers: fn-pair's body
  * (ofsskip.c) and the window family's B-pair (window.c). The caller's names
  * and layout: */

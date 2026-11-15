@@ -490,7 +490,7 @@ static int prefix_holds(const mf_formdecl *d, const fn_in *x)
     int over = 0;
     for (const char *const *o = d->over; *o && !over; o++)
         over = x->body_row && strcmp(*o, x->body_row) == 0;
-    return over && d->applies(x->site, x->p);
+    return over && d->applies(x, d);
 }
 
 static const fn_row fn_rows[] = {
@@ -570,7 +570,7 @@ int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
 {
     *pick = FF_UNSTATED;
     if (!ofs_fn_applies(p, h, 0)) return 0;
-    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0, art->levers };
+    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0, art->levers, NULL, NULL };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     gate_in in = { .s = site, .h = h, .art = art };
     gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
@@ -635,6 +635,53 @@ int ofs_fn_fall(mf_art *art, const mf_hooks *h, const mf_pred *p, const char *ca
                 mf_sink *o)
 {
     return fn_call_line(art, h, p, callee, o);
+}
+
+/* THE FIT TEST's counting sink (kit.h ofs_fn_fits): every byte a helper's
+ * render would write, never stored. `cstr` counts 4 per byte, the longest
+ * C-string spelling of one byte (the octal `\ooo` memfn.h's sink contract
+ * names, "as pcrec_sb_cstr does"); a comment counts 0 (cmt_open answers
+ * closed: the finder writes none). */
+static void fit_puts(void *u, const char *s)
+{
+    *(size_t *)u += strlen(s);
+}
+
+static void fit_vprintf(void *u, const char *fmt, va_list ap)
+{
+    int k = vsnprintf(NULL, 0, fmt, ap);
+    if (k > 0) *(size_t *)u += (size_t)k;
+}
+
+static void fit_cstr(void *u, const uint8_t *bytes, size_t len)
+{
+    (void)bytes;
+    *(size_t *)u += 4 * len;
+}
+
+static int fit_cmt_open(void *u, int tier)
+{
+    (void)u;
+    (void)tier;
+    return 0;
+}
+
+/* kit.h: THE FIT TEST. The helper's longest name is `<fn>__body`'s (a level
+ * stamp is shorter: levels.def `w16`/`w32`), so the head, the fall-through
+ * and the selector's call line are counted at x->body_fn. */
+int ofs_fn_fits(const fn_in *x, const mf_formdecl *d)
+{
+    if (!x->art || !x->h || !x->body_fn) return 0;
+    mf_art *art = x->art;
+    size_t n = 0;
+    mf_sink c = { .u = &n, .puts = fit_puts, .vprintf = fit_vprintf,
+                  .cmt_open = fit_cmt_open, .cstr = fit_cstr };
+    long long words = art->words;
+    int rc = fn_head(art, x->h, x->p, x->body_fn, &c) ||
+             d->render(art, x->h, x, d, x->body_fn, &c) ||
+             fn_call_line(art, x->h, x->p, x->body_fn, &c);
+    art->words = words;
+    return !rc && n + 1 <= d->guarded_max;   /* + the blank line after the helper */
 }
 
 /* `<fn>__<level stamp>`, a rung's helper name ([D155]; levels.def's token). */
@@ -726,7 +773,7 @@ static int fn_define(mf_art *art, uint32_t handle, const mf_site *site, const mf
                      const mf_pred *p, const char *fn, mf_sink *o)
 {
     fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, o->simd_open && o->simd_close,
-                art->levers };
+                art->levers, art, h };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     /* the libc note and include are the chosen BODY row's own (note_memchr) */
 
