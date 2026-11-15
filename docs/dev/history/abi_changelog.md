@@ -23,7 +23,18 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `107` on every artifact today ([RUN-POS-SET] stage 2a rule (1), 106 -> 107,
+- **`rx_info.abi` is `108` on every artifact today ([COVER-CAP] stage 1, 107 -> 108, lane covs1
+  2026-11-15; `docs/design/cover_cap.md` rev 4.1).**
+  The `cover` LOCATE row (`<PREFIX>_DFA_SCAN "cover"`) reads its exact stretch off the anchored
+  machine alone, with no length cap of its own (the NFA span slice, its 24-position exact loop and
+  48-deep horizon are deleted); the stretch is bounded by the machine's existing state ceiling and,
+  at this stage, by the kit window's 32 positions (`statement-fits`). Exact fixed shapes of 25..32
+  positions (`[0-9a-f]{32}`, a 31-letter literal) and a few one-position context shapes
+  (`[a-c]*\ba`) now emit the cover window search instead of the unanchored scan; every other
+  artifact is byte-identical except this number. No struct offset moves, no `rx_info` member is
+  added or changed, and no answer moves.
+
+- **`rx_info.abi` was `107` on every artifact ([RUN-POS-SET] stage 2a rule (1), 106 -> 107,
   lane r1on 2026-11-14; `docs/design/alt_normal_form.md` §6 row 1, the manager's ON ruling on the
   s2r1b census).**
   An alternation whose branches each match exactly the same number of bytes and whose runs are

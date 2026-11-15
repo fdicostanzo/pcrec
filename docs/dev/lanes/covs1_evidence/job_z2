@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# covs1-z2: the Z2 census on the candidate trace build (COVERSET + the listing) and X0's stated check, 1-in-M (cover_cap.md §3.6 Q2, K35)
+set -u
+. /home/pcrec/projects/pcrec/worktrees/covs1/docs/dev/lanes/covs1_evidence/common.sh
+MOD=${COVS1_STATED_MOD:-5}
+export Z2_STATED_ITEM_SECS=${Z2_STATED_ITEM_SECS:-90}   # a 32-wide class stretch can outrun any budget: counted TIMED-OUT
+case "${1:-}" in
+    --dry-run)
+        [ -f "$TREE/docs/dev/kvcensus/patterns.tsv.gz" ] || { echo "no census" >&2; exit 1; }
+        echo "would run in $TREE: z2.py census, hist, stated --mod $MOD"
+        echo "boxqueue: cap 3600"; echo "boxqueue: est 2400"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=the stated check's rc is the job's rc (tee'd, then exit with PIPESTATUS: the check's rc unchanged)"
+        exit 0 ;;
+    --ready) ready_after ;;
+esac
+tree_build || exit 1
+mkdir -p "$TREE/build/x0"
+gcc -O2 -std=gnu11 -o "$TREE/build/x0/x0pcre" "$TREE/docs/design/kit_proof/x0/x0pcre.c" -lpcre2-8 || exit 1
+cd "$TREE" || exit 1
+export X0PCRE=build/x0/x0pcre PCREC=build/pcrec HT=build/z2trace/pcrec-harness
+python3 docs/design/kit_proof/z2/z2.py census "$SC/z2census.jsonl" -j 16 || exit 1
+python3 docs/design/kit_proof/z2/z2.py hist "$SC/z2census.jsonl" > "$SC/z2hist.txt" || exit 1
+tail -40 "$SC/z2hist.txt"
+# The deliverable states its population (review r9 covs1 TRADES-3): X0 checks a SAMPLE, the
+# stated rows with index i % MOD == 0, and a TIMED-OUT item (over Z2_STATED_ITEM_SECS) is
+# inconclusive and does NOT redden; both numbers end the log, the stated check's rc is the job's.
+python3 docs/design/kit_proof/z2/z2.py stated "$SC/z2census.jsonl" --mod "$MOD" -j 16 | tee "$SC/z2stated.txt"
+rc=${PIPESTATUS[0]}
+echo "covs1-z2 DELIVERABLE: X0 population = stated rows sampled 1-in-$MOD (i % $MOD == 0), per-item bound ${Z2_STATED_ITEM_SECS}s;" \
+     "$(grep -o 'checked=[0-9]*' "$SC/z2stated.txt" | tail -1) $(grep -o 'timed-out-items=[0-9]*' "$SC/z2stated.txt" | tail -1)" \
+     "(timed-out items are inconclusive, never green or red); rc=$rc"
+exit "$rc"

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# covs1-predict: the mover prediction vs the sweep's observed movers, lost covers, decision census (cover_cap.md §5.2, §3.3)
+set -u
+. /home/pcrec/projects/pcrec/worktrees/covs1f/docs/dev/lanes/covs1_evidence/common.sh
+case "${1:-}" in
+    --dry-run)
+        python3 -I -c "import ast;ast.parse(open('$TREE/docs/dev/lanes/covs1_evidence/predict.py').read())" || exit 1
+        echo "would run: predict.py over the corpus, ref $SC/ref, movers $SC/sweep.movers.tsv"
+        echo "boxqueue: cap 3600"; echo "boxqueue: est 1500"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=exec'd, so predict.py's rc is the job's rc"
+        exit 0 ;;
+    --ready) evening_hold
+        # the sweep's RESULT file, not a queue key (a key dies when cancelled and re-queued)
+        [ -f "$SC/sweep.verdict" ] || { echo "waiting for the sweep's result $SC/sweep.verdict"; exit 75; }
+        [ "$(cat "$SC/sweep.verdict")" = 0 ] || { echo "the sweep verdict is red: predict has no instrument to judge"; exit 77; }
+        exit 0 ;;
+esac
+tree_build || exit 1
+ref_build || exit 1
+cd "$TREE" || exit 1
+exec python3 -I docs/dev/lanes/covs1_evidence/predict.py "$TREE" "$SC/ref/build/pcrec" \
+    "$SC/ref/build/z2trace/pcrec-harness" "$TREE/build/z2trace/pcrec-harness" \
+    "$SC/sweep.movers.tsv" "$SC/predict.tsv" -j 16

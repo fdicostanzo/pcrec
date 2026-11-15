@@ -366,6 +366,9 @@ def part1_site(O, rd, utf, rnd, absent=True):
     only past the floor, z2's split-part statements)"""
     r1 = P1()
     ex = min(rd["exact"], len(rd["S"]))
+    # the witness horizon: the pattern's finite width maximum where the
+    # caller knows it (cover_cap.md §3.3 R-4, FI-5), else exact + 8
+    hz = rd.get("wmax") or ex + 8
     S = [frozenset(x) for x in rd["S"]]
     CT = contexts(utf) if absent else contexts(utf)[1:]
     if rd["seeded"]:
@@ -375,15 +378,15 @@ def part1_site(O, rd, utf, rnd, absent=True):
             cap = 2
         else:
             ctxs, cap = CT, 8
-        explore(O, ctxs, ex, cap, rnd, utf, want=S, r1=r1, horizon=ex + 8, open_h=True, budget=SITE_BUDGET)
+        explore(O, ctxs, ex, cap, rnd, utf, want=S, r1=r1, horizon=hz, open_h=True, budget=SITE_BUDGET)
     else:
         # the reading claims a context-free language: the same sets under each
         # of several contexts, one at a time
         cap = CAP_UTF8 if utf else CAP_NATIVE
         if absent:
-            explore(O, [None], ex, cap, rnd, utf, want=S, r1=r1, horizon=ex + 8, open_h=True, budget=SITE_BUDGET)
+            explore(O, [None], ex, cap, rnd, utf, want=S, r1=r1, horizon=hz, open_h=True, budget=SITE_BUDGET)
         for c in rnd.sample(contexts(utf)[1:], 4):
-            explore(O, [c], ex, CAP_CTX, rnd, utf, want=S, r1=r1, horizon=ex + 8, open_h=True, budget=SITE_BUDGET)
+            explore(O, [c], ex, CAP_CTX, rnd, utf, want=S, r1=r1, horizon=hz, open_h=True, budget=SITE_BUDGET)
     return r1
 
 
@@ -836,7 +839,10 @@ def stated(path):
     """S1150's check: STATED sets (a producer's statement, here the union-
     narrowing plant's and the correct per-thread slice's, ctx_span.md §3.8)
     against libpcre2. Each line: FLAGS TAB PATTERN TAB EXACT_LEN TAB S_0;S_1;..
-    (sets as hex byte lists, comma-separated). HULL: PCRE2's set at every stated
+    TAB LABEL [TAB WMAX] (sets as hex byte lists, comma-separated). WMAX, the
+    pattern's finite width maximum ([COVER-CAP] stage 1, cover_cap.md §3.3
+    R-4 / FI-5), is the search's witness horizon; absent or `-`, the horizon
+    is the stated length (the rows written before it). HULL: PCRE2's set at every stated
     position must lie inside the stated set (an under-stated SENT set lets a
     filter skip a match); EXACT: d < exact_len, every node set equals it."""
     O = Oracle()
@@ -845,13 +851,16 @@ def stated(path):
         ln = ln.rstrip("\n")
         if not ln or ln.startswith("#"):
             continue
-        fl, pat, ex, sets, label = ln.split("\t")
+        f = ln.split("\t")
+        fl, pat, ex, sets, label = f[:5]
+        wmax = int(f[5]) if len(f) > 5 and f[5] not in ("", "-") else None
         S = [frozenset(int(x, 16) for x in s.split(",") if x) for s in sets.split(";")]
         ex = int(ex)
         O.compile(fl, pat.encode("latin-1"))
         rnd = random.Random(7)
         r1 = P1()
-        levels, _ = explore(O, contexts("u" in fl), len(S), 64, rnd, "u" in fl)
+        levels, _ = explore(O, contexts("u" in fl), len(S), 64, rnd, "u" in fl,
+                            horizon=None if wmax is None else max(wmax, len(S)))
         for d, row in enumerate(levels):
             for w, N in row:
                 r1.nodes += 1

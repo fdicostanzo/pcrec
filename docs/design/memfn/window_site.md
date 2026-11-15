@@ -632,7 +632,7 @@ bar ("`dense` not slower than COV"); main AGREED (rev 3.2). In family terms, 581
 
 ## 7. The pcrec producer (D168, `ctx_span.md`)
 
-`MkLang`'s `S_d` are span 0's positions; each `MkCtx` item is one span (least to greatest offset, gaps
+The cover's exact stretch `S_d` (the anchored machine's walk since [COVER-CAP] stage 1, 2026-11-15, `cover_cap.md` rev 4; the NFA slice's record before it) are span 0's positions; each `MkCtx` item is one span (least to greatest offset, gaps
 full-set; FAILS → core, width-1 SATISFIES → empty core; EXACT may be YES, SUPERSET only NO). A longer
 lookaround is a longer span with no new field. What does NOT dissolve: the proof range (§1.1) and the
 SOURCE switch (`(?<=ab)` needs the facts-layer producer as THE context source, pcrec's own event with X1

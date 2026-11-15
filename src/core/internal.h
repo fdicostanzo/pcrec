@@ -9213,6 +9213,11 @@ int pcrec_cand_body_route(Ctx *cx);
  * C1, kit_proof.md §1.1): a DFA body whose caller-facing entries the DFA
  * emitter writes, so no group above 0 is live. */
 bool pcrec_cand_finisher_dfa(Ctx *cx);
+/* [COVER-CAP] the `--emit-facts` `cover` section's cells for this attempt
+ * (docs/spec/facts_listing.md §4.5; src/gen/known.c): `why`, `k`,
+ * `exact_len`, `sets`, read from the LAST cover decision's record (never a
+ * second walk), or `unasked` where no LOCATE ask reached it. */
+void pcrec_cover_listing_cells(Ctx *cx, const char *cells[4]);
 
 /* ---- [LANDWALK] stage 1: the landmark walk (src/gen/lmwalk.c; design
  * docs/dev/lanes/p1dsg3_report.md rev 2 + p1build_report.md rev 3) ----

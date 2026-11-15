@@ -8,14 +8,17 @@ with src/gen/known.c or src/facts/kset.c.
 
   census OUT.jsonl [-j N]   the trace harness over every census pattern at its own
                             flags, plus the -fno-rev-end arm of every DFA one: the
-                            KITPROOF / SPANSET / SITESTATED records, rc, and
-                            conj.py's verdict beside them
+                            KITPROOF / COVERSET / SITESTATED records, the
+                            listing's `cover` row and width, rc, and conj.py's
+                            verdict beside them
   hist CENSUS.jsonl         K35: the why histogram (the denominator), the C8
                             control (producers-disagree internal errors, and how
                             many decisions reached C8), the agreement with conj.py
   stated CENSUS.jsonl [--mod M]   X0's stated-set check on every SENT statement the
-                            census recorded (SPANSET: the slice; SITESTATED: a FIND
-                            site's exact_len), deduplicated; 1-in-M of them
+                            census recorded (cover: the listing's stated rows,
+                            sets from COVERSET, horizon the width maximum;
+                            SITESTATED: a FIND site's exact_len), deduplicated;
+                            1-in-M of them; K35's stated/unstated counts
   x1 POP.jsonl OUT.jsonl [-j N]   X1: X0's part-2 subject families run through the
                             BUILT harness artifact (rx_search at every startoffset,
                             the find-all loop) against pcre2_match; POP is X0's
@@ -40,6 +43,7 @@ import x0    # noqa: E402
 
 H = os.environ.get("H", "build/pcrec-harness")
 HT = os.environ.get("HT", "build/z2trace/pcrec-harness")
+PCREC = os.environ.get("PCREC", "build/pcrec")
 OUT = os.environ.get("Z2OUT", "build/z2x1")
 KV = os.path.join(HERE, "..", "..", "..", "dev", "kvcensus")
 PCRE2_LIBS = ["-lpcre2-8"]
@@ -68,13 +72,15 @@ def records(err):
     """the trace records, each ending in the compound part's role (`-`: the
     compile itself; a part's compile prints its records into its parent's
     stream, so a record is attributed by its role, never by its position)"""
-    kp, sp, st = [], [], []
+    kp, sp, st = [], [], []   # sp: COVERSET (why, exact_len|None, wmax, sets, role)
     for ln in err.decode("latin-1").splitlines():
         f = ln.split("\t")
         if f[0] == "KITPROOF":
             kp.append((f[1], int(f[2][2:]), int(f[3][7:]), f[4]))
-        elif f[0] == "SPANSET":
-            sp.append((int(f[1]), f[2], f[3]))
+        elif f[0] == "COVERSET":
+            # [COVER-CAP] stage 1: the cover record's stretch at full set
+            # fidelity (the listing spells a set by its size); replaced SPANSET
+            sp.append((f[1], None if f[2] == "-" else int(f[2]), f[3], f[4], f[5]))
         elif f[0] == "SITESTATED":
             st.append((int(f[1]), f[2], f[3]))
     return kp, sp, st
@@ -133,15 +139,43 @@ def oracle_pattern(pat, role):
 
 
 # ------------------------------------------------------------------ census
+def listing(fl, pat):
+    """the shipped compiler's `--emit-facts` listing (cover_cap.md §3.6 Q2:
+    X0 is run on the LISTING's stated rows): the `cover` row's why/k/exact_len
+    of the first encoding and the `width` fact's maximum (None: unbounded)"""
+    a = [PCREC, "-p", "rx", "--features", "all", "--emit-facts"]
+    if "i" in fl: a.append("-i")
+    if "u" in fl: a += ["-e", "utf8"]
+    if "R" in fl: a.append("-fno-rev-end")
+    p = run_c(a + ["--pattern"], pat)
+    out = dict(why=None, k=None, exact=None, wmax=None)
+    sec = None
+    for ln in p.stdout.decode("latin-1").splitlines():
+        if ln.startswith("#section "):
+            sec = ln.split()[1]
+            continue
+        if ln.startswith("#") or not ln:
+            continue
+        f = ln.split("\t")
+        if sec == "facts" and len(f) > 6 and f[1] == "width" and out["wmax"] is None:
+            v = f[6]
+            if v.startswith("[") and not v.endswith("inf)"):
+                out["wmax"] = int(v.strip("[]").split(",")[1])
+        elif sec == "cover" and out["why"] is None and len(f) >= 4:
+            out["why"], out["k"], out["exact"] = f[1], f[2], f[3]
+    return out
+
+
 def _census_one(a):
     fl, pat_hex = a
     pat = bytes.fromhex(pat_hex)
     env = dict(os.environ, PCREC_KIT_PROOF_TRACE="1")
     p = run_c(hargs(HT, fl) + ["-o", "-", "--pattern"], pat, env)
     kp, sp, st = records(p.stderr)
-    r = dict(fl=fl, pat=pat_hex, rc=p.returncode, kp=kp, span=sp, site=st)
+    r = dict(fl=fl, pat=pat_hex, rc=p.returncode, kp=kp, cover=sp, site=st)
+    r["listing"] = listing(fl, pat)
     if p.returncode:
-        r["err"] = [l for l in p.stderr.decode("latin-1").splitlines() if not l.startswith(("CANDTRACE", "KITPROOF", "SPANSET", "SITESTATED", "CAND"))][-3:]
+        r["err"] = [l for l in p.stderr.decode("latin-1").splitlines() if not l.startswith(("CANDTRACE", "KITPROOF", "COVERSET", "SITESTATED", "CAND"))][-3:]
     try:
         r["conj"] = conj.verdict(pat.decode("latin-1"), fl)[0]
     except Exception as e:  # noqa: BLE001
@@ -226,8 +260,42 @@ def hist(path):
 
 
 # ------------------------------------------------------------------ stated
+class _ItemTimeout(Exception):
+    pass
+
+
+def _alarm(signum, frame):
+    raise _ItemTimeout()
+
+
 def _stated_one(a):
-    (fl, pat_hex, L, sets, role), kind = a
+    """one statement under Z2_STATED_ITEM_SECS (0: none): an item past it is
+    counted TIMED-OUT (inconclusive, never green or red) and the worker's
+    oracle restarted (it may be mid-reply)"""
+    global _O
+    secs = int(os.environ.get("Z2_STATED_ITEM_SECS", "0"))
+    if secs:
+        import signal
+        signal.signal(signal.SIGALRM, _alarm)
+        signal.alarm(secs)
+    try:
+        return _stated_one_body(a)
+    except _ItemTimeout:
+        try:
+            _O.p.kill()
+        except Exception:  # noqa: BLE001
+            pass
+        _O = x0.Oracle()
+        (fl, pat_hex, L, sets, role, wmax), kind = a
+        return dict(kind=kind, fl=fl, pat=pat_hex, L=L, role=role, timeout=1, nodes=0, unk=0, bad=0)
+    finally:
+        if secs:
+            import signal
+            signal.alarm(0)
+
+
+def _stated_one_body(a):
+    (fl, pat_hex, L, sets, role, wmax), kind = a
     S = [frozenset(int(x, 16) for x in s.split(",") if x) for s in sets.split(";")]
     if role not in ("-", "q"):
         return dict(kind=kind, fl=fl, pat=pat_hex, L=L, role=role, unchecked=1, nodes=0, unk=0, bad=0)
@@ -241,7 +309,7 @@ def _stated_one(a):
     # site's sets both are), so the PCRE2 tree is grown under the union of
     # contexts: x0's seeded site arm, witnesses within exact + 8 bytes; a byte
     # whose witness search runs out is INCONCLUSIVE and compared on neither side
-    r1 = x0.part1_site(_O, dict(S=[sorted(x) for x in S], exact=L, seeded=True), "u" in fl,
+    r1 = x0.part1_site(_O, dict(S=[sorted(x) for x in S], exact=L, seeded=True, wmax=wmax), "u" in fl,
                        random.Random(7), absent=raw or role != "q")
     return dict(kind=kind, fl=fl, pat=pat_hex, L=L, role=role, nodes=r1.nodes, unk=r1.unknown,
                 bad=len(r1.bad), e=r1.bad[:2])
@@ -250,16 +318,37 @@ def _stated_one(a):
 def stated(path, mod, j):
     rs = _load(path)
     seen = {}
+    k35 = collections.Counter()   # over the WHOLE census (K35): every row counted
     for r in rs:
         if r["rc"]:
+            k35["rc!=0"] += 1
             continue
-        for kind, rows in (("slice", r["span"]), ("site", r["site"])):
-            for row in rows:
-                L, sets, role = (list(row) + ["-"])[:3]
-                if L <= 0:
-                    continue
-                fl = r["fl"].replace("R", "") or "-"
-                seen.setdefault((fl, r["pat"], L, sets, role), kind)
+        fl = r["fl"].replace("R", "") or "-"
+        lst = r.get("listing") or {}
+        # the cover row: the LISTING decides stated vs unstated (§3.3 R-4) and
+        # gives the horizon; COVERSET (the compile's own last record of role
+        # `-`) gives the sets the listing spells only by size
+        own = [x for x in r.get("cover", []) if x[4] == "-"]
+        ex = lst.get("exact")
+        if lst.get("why") in (None, "unasked"):
+            k35["cover-unasked"] += 1
+        elif ex in (None, "-", "0") or not own:
+            k35["cover-unstated"] += 1
+        else:
+            why, L, _w, sets, role = own[-1]
+            if L is None or str(L) != ex:
+                k35["cover-listing!=trace"] += 1
+                print("MISMATCH listing exact_len %s vs trace %s" % (ex, L), r["fl"],
+                      bytes.fromhex(r["pat"]).decode("latin-1")[:50])
+            else:
+                k35["cover-stated"] += 1
+                seen.setdefault((fl, r["pat"], L, sets, "-", lst.get("wmax")), "cover")
+        for row in r["site"]:
+            L, sets, role = (list(row) + ["-"])[:3]
+            if L <= 0:
+                continue
+            seen.setdefault((fl, r["pat"], L, sets, role, None), "site")
+    print("## K35 over the census: " + ", ".join("%s %d" % kv for kv in sorted(k35.items())))
     items = sorted(seen.items())
     alln = len(items)
     items = [it for i, it in enumerate(items) if i % mod == 0]
@@ -271,10 +360,14 @@ def stated(path, mod, j):
     red = unk = n = 0
     kinds = collections.Counter()
     roles = collections.Counter()
-    unchecked = 0
+    unchecked = timedout = 0
     with Pool(j, initializer=_x1_init) as pool:
         for r in pool.imap_unordered(_stated_one, items, chunksize=1):
             if r is None:
+                continue
+            if r.get("timeout"):
+                timedout += 1
+                print("TIMED-OUT", r["kind"], r["fl"], bytes.fromhex(r["pat"]).decode("latin-1")[:50], "L=%d" % r["L"])
                 continue
             if r.get("unchecked"):
                 unchecked += 1
@@ -289,11 +382,12 @@ def stated(path, mod, j):
                 red += 1
                 print("RED", r["kind"], r["role"], r["fl"], bytes.fromhex(r["pat"]).decode("latin-1")[:50],
                       "L=%d" % r["L"], json.dumps(r["e"][0]))
-    print("stated checked=%d (%s; by part role %s) red=%d inconclusive-bytes=%d unchecked-parts=%d" % (
+    print("stated checked=%d (%s; by part role %s) red=%d inconclusive-bytes=%d unchecked-parts=%d timed-out-items=%d" % (
         n, ", ".join("%s %d" % kv for kv in sorted(kinds.items())),
-        ", ".join("%s %d" % kv for kv in sorted(roles.items())), red, unk, unchecked))
-    print("z2 stated: DONE rc=%d" % (1 if red or unchecked or not n else 0))
-    return 1 if red or unchecked or not n else 0
+        ", ".join("%s %d" % kv for kv in sorted(roles.items())), red, unk, unchecked, timedout))
+    bad = red or unchecked or not n or k35["cover-listing!=trace"]
+    print("z2 stated: DONE rc=%d" % (1 if bad else 0))
+    return 1 if bad else 0
 
 
 # ------------------------------------------------------------------ X1

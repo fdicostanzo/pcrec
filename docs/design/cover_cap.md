@@ -30,7 +30,7 @@ and the grep rule (READY-4). Mapped by id: `docs/dev/lanes/covcap6_report.md`.
 **R5 (owner, 2026-11-15, amends "no length bound"; D198 (g)):** "Practically, we might need
 a max span length then. I don't want edge cases to ruin the concept. Something sufficiently
 high that it's rarely seen but that doesn't become a memory problem." Rev 4 meets it with a
-limit that already exists: `PCREC_ANCHORED_MAX_STATES` (4096 states, so at most 4095
+limit that already exists: `PCREC_ANCHORED_MAX_STATES` (4096 states at the default, so at most the ceiling less one: 4095
 positions; §3.1). No new constant is added. Past it there is no anchored machine, no stretch
 from this reading, and the pattern runs as it does today (§3.1, §9 Q2).
 
@@ -145,6 +145,22 @@ PROBE_PC SCRATCH`). The bench's one `producer-short` decline,
 `capability/wild-logparse-quotedstring-noatomic` (utf8, k 2), still declines at a later
 conjunct. No bench cover moves out.
 
+*(CORRECTION 2026-11-15, lane covs1f, from the stage-1 sweep triage `docs/dev/lanes/covs1w_report.md`.
+The counts above hold for THEIR population only, and two statements need it named:*
+- *Census population (above): `bench_pop()` + `corpus_pop()`, 11,738 compiles, by
+  `python3 -I /var/tmp/pcrec-pcrec/scratch/covcap3/census.py $PC OUT.jsonl` (a scratch script,
+  not committed): 18 gained k = 1 compiles of 10 patterns, 0 covers lost.*
+- *Sweep population: `emit_sweep.py`'s `enumerate_corpus`, 7,071 corpus rows = 5,516 distinct
+  patterns under both encodings, by `docs/dev/lanes/covs1_evidence/job_sweep` and then
+  `predict.py` (lane/covs1): 20 gained k = 1 compiles of 11 patterns (byte 11, utf8 9; the
+  eleventh is `a*(?<=A)b`, outside the census list), plus 4 long-literal compiles (k 31, 32),
+  24 in all; predict.py `lost=0 unexplained=0`.*
+- *The baseline `why` of the gained decisions on the sweep population is `exact/producer-short`
+  on 12 byte and 10 utf8 decisions, where §5.2 said "expected 0". The census table above
+  already shows them non-zero (its 18 are `exact/producer-short` today); §5.2's "0" is wrong
+  on both populations and is read as "every such decision is predicted INTO the cover".*
+- *"0 covers lost" holds on both populations (census: §2's table; sweep: predict.py `lost=0`).*
+
 - **Every long fixed shape is one machine row per depth to its accept** (prototype
   `DFALINE`, both encodings): `a{1000}` and `[ab]{1000}` L 1000, the uuid shape L 36,
   `a{30}(?:b{30}c|d)` L 31. Today `KN_CAP` stops the machine walk at 32 and C7 declines
@@ -193,8 +209,10 @@ It is LABELLED (kind `compile budget`, override `-D`). The row names its role, n
 derivation, which lives in `src/core/limits.h`'s `[ENG-ABS]` block (measured: 2.05x the
 captures-on corpus maximum of 2,001 states; 4.9x below `tests/resource`'s giant repeats,
 whose compile CPU and size it excludes). Proposed stage-1 `desc` text, no derivation
-invented: append "; also the cover's longest exact stretch, 4095 positions
-(docs/design/cover_cap.md); derivation: limits.h [ENG-ABS]". (`compile.c`'s comment calling
+invented: append "; also bounds the exact stretch the cover record states, at most the ceiling less one
+positions (docs/design/cover_cap.md); derivation: limits.h [ENG-ABS]" (worded so at both
+stages: at stage 1 a COVER is at most 32 positions (C15) while the record states up to
+4095; review r9 covs1 CONTRACT-2, 2026-11-15). (`compile.c`'s comment calling
 it equal to `PCREC_MAX_DFA_STATES_TABLE` contradicts limits.h's "lower than": stale, §5.5.)
 
 PAST THE CEILING: no anchored machine is built, C4 declines `anchored-A`, no exact stretch
@@ -472,7 +490,7 @@ The dumps stream declares `--list-limits`' gone row and its one `desc` cell (§3
 The prediction comes from the BASELINE build only, read from the trace build's `KITPROOF`
 record (`PCREC_KIT_PROOF_TRACE=1` on the trace binary; `k=0` on a decline, so the width is
 read from the `width` fact of the same compile): INTO the cover, every decision whose `why`
-is `exact/producer-short` or `exact/producer-unstated` (expected 0, §3.1 R-9), or
+is `exact/producer-short` or `exact/producer-unstated` (not 0: 12 byte / 10 utf8 on the sweep population, see §2's 2026-11-15 correction), or
 `fixed-width` with the width's LOWER bound `wmin <= 32` at stage 1 (`wmin <= 4095` at
 stage 2; R-8: C7 reads the first-accept depth, so `a{32}|a{32}b` and `x{31}(?:y|yz)`,
 width `[32,33]`, move; READY-5: a dead short arm puts that depth above `wmin`, as in
@@ -546,7 +564,12 @@ At stage 1 these become covers and would go vacuous-green: `tests/codegen/run_of
 witness) and `tests/codegen/run_entry_shape_identity.sh` (`[0-9a-f]{32}`). The build
 re-points each to a shape no stage makes a cover (a capture, which C1 declines, e.g.
 `\b([0-9a-f]{32})\b`, if it still selects the same form; the build checks), and greps
-every non-`.rxt` test for the moving shapes at each stage. Stale text the build owes: the
+every non-`.rxt` test for the moving shapes at each stage. *(Correction 2026-11-15, review r9
+covs1 CHECKS-6: the vacuity premise is false for both scripts. `run_offset_skip.sh`'s
+`emit()` passes `--memfn=no-window-search`, which denies the cover row, so its bare witness
+never became a cover there (the re-point is harmless, kept); `run_entry_shape_identity.sh`
+compiles with `--engine=vm`, so it does not go vacuous either and was rightly not re-pointed.
+The sentence naming it is struck.)* Stale text the build owes: the
 `facts.h` comment naming a FIND-site reader of `MkLang` that does not exist, `known.c`'s
 `KN_CAP` comment, `kit_proof.md`'s sentences on C8's two producers and on `span_facts`' bound,
 `ctx_span.md` §11 N-1, `compile.c`'s comment on `PCREC_ANCHORED_MAX_STATES` (§3.1), and the

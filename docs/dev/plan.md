@@ -281,6 +281,26 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-12, Frank: "Queue that fix"): QUEUED the dense-hit remedy for the handoff rows (bounded and unbounded): after the FIRST failed attempt, obtain the LAST occurrence of the required run at or after (known hit start + 1) ONCE (a kit request R-n stating that FACT only, D157: the kit chooses the method; a backward scan is cheap in RAM but defeats kernel readahead on cold mmapped subjects, a forward keep-latest pass reads in readahead order with no per-hit call; our timing covers warm data only, the cold case is argued, not measured), then each attempt compares its position with that number instead of re-asking the presence site. Expected: the dense-hit loss (1.38 vs 0.81 ms; bounded row 1.56 vs 0.71) goes away, after which the rows may move from the public -fno-req-handoff deny to a test lever (D195 / FLAG-DEMOTE) ONLY IF the method has no losing case (next NOTE).
   NOTE (2026-11-12, no-loss condition): no case slower than the plain loop (Frank 2026-11-12 on cold mmapped subjects): a backward scan loses on cold mapped tails, a forward keep-latest pass loses when a match comes early in a long subject with hits to its end; a lazy re-ask with doubling look-ahead ("any occurrence >= d bytes ahead?", d doubling on yes) reads forward, near the loop, with O(log) calls on dense hits, is the candidate with no constructed losing case. The request states the fact + the no-loss requirement; otherwise the public bit stays. Order: after reqpast lands, K38-2 and set S2; needs a measurement card (new method).
   NOTE (2026-11-12, Frank: blocks instead of doubling, "also helps with streaming"): leading candidate = BLOCKED look-ahead: one presence question per block of B bytes ahead of the loop (yes: the block's attempts run unasked; no: scan forward to the next occurrence, end of subject stops); forward-only, at most one block ahead (stream- and readahead-friendly; doubling can demand unbounded look-ahead a stream cannot supply). B is a tuning constant: derive it from a SYSTEM constant (Frank): the stream's chunk when streaming, else the page size (sysconf(_SC_PAGESIZE), POSIX libc, or a build-time page constant if the measurement shows insensitivity; not the per-device /sys readahead window, not glibc-only cache sizes) and show insensitivity across that range in the measurement.
+- [COVER-CAP] STATE:started — lift the cover route's 24-position cap (long exact literals and fixed shapes finish in the engine)
+  filed: 2026-11-11 manager (lane paper), from the skipmeas measurement; set S3
+  status (2026-11-15): stage 1 building (lane covs1, design docs/design/cover_cap.md rev 4.1; build go Frank 2026-11-15)
+  trigger: FIRED 2026-11-11 (D77, lane skipmeas): ~12 of 356 bench patterns still finish in the engine, 85-88% of instructions on l31/l40 (measurement body below)
+  refs: [EARNED-SKIP] (measurement block); [REQ-LOOKAROUND] waits for set S4 ([EARNED-SKIP] and [MATCH-KNOWN] are PARKED, Frank 2026-11-11 evening); decisions D77
+  Measurement (skipmeas): exact fixed patterns <= 24 positions skip the engine through the cover route (bench 78, corpus ~890). Still finish-bearing: long literals l31/l40, hex32/dig32/uuid, 4 lookaround, `$` tails. Stubbing the finish: lit-l31 match 30.0M -> 4.4M instructions:u, l40 28.6M -> 3.5M. Cause: the 24-position span cap.
+  Set S3 (confirmed by Frank 2026-11-11 evening: the easier win). Next: design the lift (a longer span for the cover route, or a cap that scales with the pattern), answer-identity over the corpus, re-time the ~6 litrun cells; build go by Frank.
+  The cover route skips the engine when a verified run is exact over the whole attempt; it is capped at 24 span positions, so longer exact patterns pay the engine finish for nothing. Lifting the cap is the first, smaller half of what [EARNED-SKIP] aimed at.
+  - [COVER-DEPTHS] STATE:not-started — cover_conj[]: a `depths` column per conjunct, checked against the walk's record
+    filed: 2026-11-15 manager (review 2026-11-15-r7-covcap-r4, standing questions, PLAN; lane covcap6 wrote the row)
+    status (2026-11-15): filed; nothing built
+    trigger: the next conjunct folded into the cover walk, or [MATCH-KNOWN]'s fraction case reading the rows at L
+    refs: docs/design/cover_cap.md §3.1 (rev 4.1); docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-3; [ROWCONJ]
+    The conjuncts folded into the walk each read a DEPTH RANGE (C9 depths 0..k, C10/C11 depth k, C12 depth 0) and nothing states which; rev 4 dropped C9's depth k by restructuring the walk (FI-3, an answer had it been built). One column (`all`, `k`, `0`, `walk`) in `cover_conj[]`, checked against the walk's single record, makes such a drop a red, not a review find.
+  - [NFA-PROV-CONJ] STATE:not-started — one NFA-provenance conjunct kind (erased, island, marked) shared by the conjunct tables
+    filed: 2026-11-15 manager (review 2026-11-15-r7-covcap-r4, standing questions, PLAN; lane covcap6 wrote the row)
+    status (2026-11-15): filed; nothing built
+    trigger: the decisions-why section of cover_cap.md §3.3 NOTED (R-14) is built, which would list the kind once
+    refs: docs/design/cover_cap.md §3.1, §3.3; docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-6; [ROWCONJ]
+    The NFA-provenance facts are read by more than one conjunct table separately: the cover's kept `erased`/`island` guards (rev 4.1) and lmwalk.c's own copy of `nfa->erased`; `split_conj[]` is the third table. One shared row kind, read by `cover_conj[]`, `lmwalk_conj[]` and `split_conj[]`, replaces the per-table copies.
 
 ## Candidates ([OPTLOOP])
 - [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
@@ -494,26 +514,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: (D77) a bench cell with a trailing-anchored backreference
   refs: docs/design/vlookbehind.md §6.2.3; docs/dev/reviews/2026-11-10-r3-vlb2.md F16; [VLOOKBEHIND]
   On the trigger: pass the stage-2 column to `pcrec_cwmax`'s non-lookbehind readers (src/facts/endwin.c `pcrec_end_window`, src/facts/startanch.c); an abi event and a G2 identity re-pin; spec hunk as the facts dictate. Example: `(a|bc)\1$` gets an end window of 4 instead of "none".
-- [COVER-CAP] STATE:not-started — lift the cover route's 24-position cap (long exact literals and fixed shapes finish in the engine)
-  filed: 2026-11-11 manager (lane paper), from the skipmeas measurement; set S3
-  status (2026-11-11): filed; trigger FIRED by the measurement below; no design yet
-  trigger: FIRED 2026-11-11 (D77, lane skipmeas): ~12 of 356 bench patterns still finish in the engine, 85-88% of instructions on l31/l40 (measurement body below)
-  refs: [EARNED-SKIP] (measurement block); [REQ-LOOKAROUND] waits for set S4 ([EARNED-SKIP] and [MATCH-KNOWN] are PARKED, Frank 2026-11-11 evening); decisions D77
-  Measurement (skipmeas): exact fixed patterns <= 24 positions skip the engine through the cover route (bench 78, corpus ~890). Still finish-bearing: long literals l31/l40, hex32/dig32/uuid, 4 lookaround, `$` tails. Stubbing the finish: lit-l31 match 30.0M -> 4.4M instructions:u, l40 28.6M -> 3.5M. Cause: the 24-position span cap.
-  Set S3 (confirmed by Frank 2026-11-11 evening: the easier win). Next: design the lift (a longer span for the cover route, or a cap that scales with the pattern), answer-identity over the corpus, re-time the ~6 litrun cells; build go by Frank.
-  The cover route skips the engine when a verified run is exact over the whole attempt; it is capped at 24 span positions, so longer exact patterns pay the engine finish for nothing. Lifting the cap is the first, smaller half of what [EARNED-SKIP] aimed at.
-  - [COVER-DEPTHS] STATE:not-started — cover_conj[]: a `depths` column per conjunct, checked against the walk's record
-    filed: 2026-11-15 manager (review 2026-11-15-r7-covcap-r4, standing questions, PLAN; lane covcap6 wrote the row)
-    status (2026-11-15): filed; nothing built
-    trigger: the next conjunct folded into the cover walk, or [MATCH-KNOWN]'s fraction case reading the rows at L
-    refs: docs/design/cover_cap.md §3.1 (rev 4.1); docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-3; [ROWCONJ]
-    The conjuncts folded into the walk each read a DEPTH RANGE (C9 depths 0..k, C10/C11 depth k, C12 depth 0) and nothing states which; rev 4 dropped C9's depth k by restructuring the walk (FI-3, an answer had it been built). One column (`all`, `k`, `0`, `walk`) in `cover_conj[]`, checked against the walk's single record, makes such a drop a red, not a review find.
-  - [NFA-PROV-CONJ] STATE:not-started — one NFA-provenance conjunct kind (erased, island, marked) shared by the conjunct tables
-    filed: 2026-11-15 manager (review 2026-11-15-r7-covcap-r4, standing questions, PLAN; lane covcap6 wrote the row)
-    status (2026-11-15): filed; nothing built
-    trigger: the decisions-why section of cover_cap.md §3.3 NOTED (R-14) is built, which would list the kind once
-    refs: docs/design/cover_cap.md §3.1, §3.3; docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-6; [ROWCONJ]
-    The NFA-provenance facts are read by more than one conjunct table separately: the cover's kept `erased`/`island` guards (rev 4.1) and lmwalk.c's own copy of `nfa->erased`; `split_conj[]` is the third table. One shared row kind, read by `cover_conj[]`, `lmwalk_conj[]` and `split_conj[]`, replaces the per-table copies.
 - [EARNED-SKIP] STATE:not-started — a verified run that proves the attempt skips the engine; pcrec states the proof extent
   filed: 2026-11-09 manager (Frank: "Do we send an index into the span that says don't bother proving beyond this point when we know we'll have to check it with engine"; "File the idea")
   status (2026-11-11): PARKED (Frank, evening: wanted eventually; bigger than intended now; not in S4); Part C is one PRODUCER feeding [MATCH-KNOWN]'s walk, not its own mechanism (notes (a)-(e) there)

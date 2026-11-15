@@ -1,6 +1,6 @@
 # docs/design/kit_proof/x0/ — step X0 of `../../kit_proof.md` §7 (spec §6.4)
 
-X0 checks `../conj.py`'s reading (the prototype of `MkEnd` + `MkLang`) against an
+X0 checks `../conj.py`'s reading (the prototype of `MkEnd` + the span slice's record, the slice deleted by [COVER-CAP] stage 1) against an
 INDEPENDENT libpcre2 oracle, before Z2. Nothing here is built or run by `make`, nothing
 reads a clock, nothing under `src/` is touched. Lane `x0oracle`, 2026-10-21, on revision
 2.1 (NOT passed: R1, R2); lane `x0fix`, 2026-10-21, re-run on revision 2.2's fixed
@@ -18,7 +18,9 @@ Results: `results.md` (revision 2.2 section on top, the x0oracle record below it
   the per-position per-byte set equality, and part 2, the differential; `--plant`
   sets one of conj.py's `CONJ_PLANT`s, `--self` one of X0's own plants on the plan);
   `plantpop` writes each plant's mover population; `stated` checks STATED sets
-  (S1150, S1149) against libpcre2; `summary` folds a result file. Docstring = usage.
+  (S1150, S1149) against libpcre2, a row's optional WMAX column its witness horizon
+  ([COVER-CAP] stage 1, FI-5; `part1_site` takes `wmax` the same way); `summary`
+  folds a result file. Docstring = usage.
 - `exposure.py` — lane x0fix (rev 2.2): over every census pattern (and every DFA one
   under `-fno-rev-end`), the machines whose EMITTED entry is not row 0 or is dead (R1's
   reach) and the anchored machines whose language gains a byte through the eol view
