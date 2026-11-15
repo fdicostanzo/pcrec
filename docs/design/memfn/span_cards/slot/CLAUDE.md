@@ -82,8 +82,9 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   any operand through a register derived from `%rdi`), VEX/EVEX decoded, a fused null base refused, the bound's value
   max(0, med); the draft's inputs blob-identical at HEAD (`est_inputs`, `est_commit`, `draft_gate`), timed paths by the
   exclusion table `NON_TIMED`; self-test READING_CASES (assembled functions) and GATE_CASES (a scratch git tree).
-- `d197_rule.tsv`, `d197_rule.py` — [r5 FIDELITY-4] D197's DECLARED decision rule for the mfcard window (first-match
-  tables: deciding cells, fused form by box level, cell/arm/verdict) and its reader (`rule RUNDIR AVX2RUNDIR`,
+- `d197_rule.tsv`, `d197_rule.py` — [r5 FIDELITY-4 + R1] D197's DECLARED decision rule for the mfcard window, ONE
+  VERDICT PER ISA LEVEL (first-match tables: deciding cells, levels (form each level emits, every differing axis),
+  cell/arm/verdict with triggers and the one re-run) and its reader (`rule RUNDIR AVX2RUNDIR [--second]`,
   `drill [SCRATCH]`: constructed outcomes, plus end to end on est's synth).
 - `j1_rule.py` — J1's verdict (a)/(b)/(c) from its cells (m 0.5, k 5), on est.py's primitives.
 - `record.py` — the run record's one writer: per-ver `SETS`/`RULES` (ver 3 keeps the `rules` key, others `rules.<ver>`); [slotx]
@@ -96,7 +97,7 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   (q1) S2944, (b1) S2945, review r10's (n3) S2946, (s3) S2947, (s4) S2948, (s5) S2949, rev 1.5's (x1) S2950, (x2) S2951,
   (x3) S2952, review r11's (y1)-(y11) S2953-S2963, K38-3's (d1) S3105, lane slotx's (t1) S3160, (t2) S3161,
   (r1) S3162, (r2) S3163, (v1) S3164, (v2) S3165, (w1) S3166, (k1) S3167, lane slotxfix's (e1) S3168, (e2) S3169,
-  (e3) S3171, (e4) S3172, lane slotxf8b's (f8a) S3183, (f8b) S3184, lane mcfixa's (i1)-(i9) S3188-S3196, planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
+  (e3) S3171, (e4) S3172, lane slotxf8b's (f8a) S3183, (f8b) S3184, lane mcfixa's (i1)-(i10) S3188-S3197, planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
   selected rows score on first (review r1 F3).
 - `movers.py` — S2e's data-mover census (m0build's method, normalization EMPTY, plus the head-vs-itself pass
   across the two sets); written by S2c, run by S2e.

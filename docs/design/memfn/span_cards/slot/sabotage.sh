@@ -8,7 +8,7 @@
 # a row DETECTED). Each row scores DETECTED (the dry run refused with the expected text) or MISSED; exit 0 iff the
 # control is green and every row is DETECTED.
 #   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 d1
-#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1-i9
+#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1-i10
 #                                         y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
@@ -138,6 +138,7 @@
 #        (x86-64-v3 needs) in the baseline set
 #   (i8) S3195 [FIDELITY-3] every job control in every set: the levels case goes WRONG (JMB/JMH ctl in ver 3's)
 #   (i9) S3196 [FIDELITY-4] the D197 rule's A/A floor dropped: the drill's within-floor tie reads WIN (WRONG)
+#   (i10) S3197 [R3 (1)] a confirming run never clears a loss: the not-reproduced case reads CONFIRM (WRONG)
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
 # rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
 # r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's,
@@ -149,7 +150,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=${SLOT_TREE:-$(cd "$here/../../../../.." && pwd)}   # SLOT_TREE: the tree when slot/ runs from a copy
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9 i10}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -387,6 +388,9 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
     i9) job=d197 want='drill	within-floor tie[^	]*	WRONG'
         patch "$SCR/$row/d197_rule.py" '        lambda c: c["gain"] > c["floor"] and all(x > 0 for x in trim(c["gain_l"])),' \
 '        lambda c: c["gain"] > 0 and all(x > 0 for x in trim(c["gain_l"])),   # SABOTAGE S3196: the A/A floor dropped' ;;
+    i10) job=d197 want='drill	\[R3\] that one-cell loss does NOT reproduce[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '    "loss-not-reproduced": lambda c: c["gain"] < -c["floor"] and c["conf"] is not None' \
+'    "loss-not-reproduced": lambda c: False and c["conf"] is not None   # SABOTAGE S3197: a confirming run never clears a loss' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
 }
