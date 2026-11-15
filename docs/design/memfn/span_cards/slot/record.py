@@ -1,7 +1,10 @@
 # span_cards/slot/record.py — THE RUN RECORD's one writer (span_cards.md §3.5 "The run record", rev 1.3
 # READY-2, [rev1.3 r9-G6]): the window's working copy RUNDIR/run_record.tsv.
 #   record.py window RUNDIR RUN_ID CODE_COMMIT   THE WINDOW FACTS (`set`, `rules`, `run_id`, `code_commit`, `box`,
-#                                                `isa`, `libc`, `gcc`), idempotent: written at every job's start (run.py
+#                                                `isa`, `libc`, `gcc`, [review r6 RULE-3] the sha-256 of D197's
+#                                                declared rule `d197_rule_tsv_sha256` and its reader
+#                                                `d197_rule_py_sha256`, which d197_rule.py rule holds the files it
+#                                                runs with to), idempotent: written at every job's start (run.py
 #                                                run) and at finalize, so a run whose J1 failed still names its
 #                                                run; a record naming another run id or commit REFUSES
 #   record.py j1 RUNDIR RUN_ID CODE_COMMIT       J1's END: the window facts, `j1_verdict`, `j1_widths` and
@@ -19,7 +22,9 @@
 #                                                only these, [rev1.3 r9fc-FIX-1]) and `transcript_sha256`
 #                                                (RUNDIR/transcript.tsv); [rev1.5 r11-REV15-1] `manifest_sha256_<job>`
 #                                                for every ran job's manifest (RUNDIR/JOB/manifest.tsv), which est.py
-#                                                checks the launch executables it reads against
+#                                                checks the launch executables it reads against; [review r6
+#                                                FIDELITY-3] `cells_sha256_<job>` for every ran job's cells file
+#                                                (RUNDIR/cells.JOB.tsv), which est.py's read_cells holds it to
 # table_contract.md's section shape: `#section NAME`, a `#`-header line, TAB fields. Sections in this order:
 # run, jobs, plan, floor, cards, policy, j1_cells, quiet. [rev1.4 R14-3] `quiet`: every quiet check of the window
 # (the transcript's `quiet` lines: job, check, load1 and the top co-runners `pid:comm:%cpu`), copied at finalize;
@@ -176,6 +181,27 @@ def box_facts():
             ("gcc", r.stdout.strip()))
 
 
+# [review 2026-11-15 r6 RULE-3] D197's DECLARED RULE, pinned at `window` time (before any number of the run exists):
+# the table and its reader. d197_rule.py's `rule` refuses a record whose pin differs from the files it runs with
+RULE_PIN_FILES = ("d197_rule.tsv", "d197_rule.py")
+
+def rule_pins(here=HERE):
+    """{record key: sha-256} of the D197 rule's files in `here`"""
+    return {f.replace(".", "_") + "_sha256": hashlib.sha256(open(os.path.join(here, f), "rb").read()).hexdigest()
+            for f in RULE_PIN_FILES}
+
+def cells_pins(rundir, jobs):
+    """[review 2026-11-15 r6 FIDELITY-3] {`cells_sha256_<job>`: sha-256} of every RAN job's cells file: est.py's
+    read_cells refuses a cells file that differs from its pin (two keys' cells swapped after the run keep every
+    cell key unique, so CELL TWICE cannot see them)"""
+    out = {}
+    for j in jobs:
+        p = os.path.join(rundir, "cells.%s.tsv" % j)
+        if os.path.exists(p):
+            out["cells_sha256_" + j] = hashlib.sha256(open(p, "rb").read()).hexdigest()
+    return out
+
+
 def pin(rec, fr):
     """the frozen plan `fr` (plan.read_frozen) into the record: plan, floor, the card and policy rows it was
     planned under, and the two tables' sha-256 from its `inputs` (r9 G3, r9fc FIX-1)"""
@@ -207,6 +233,10 @@ def window(rec, run_id, commit):
     for k, v in box_facts():
         if getrun(rec, k) not in (None, v):
             refuse("the record's %s is %r, this box's %r: one window, one box" % (k, getrun(rec, k), v))
+        setrun(rec, k, v)
+    for k, v in sorted(rule_pins().items()):
+        if getrun(rec, k) not in (None, v):
+            refuse("the record pins %s %s, the tree's file is %s: D197's rule moved inside the window" % (k, getrun(rec, k), v))
         setrun(rec, k, v)
 
 
@@ -271,6 +301,8 @@ def main():
             mp = os.path.join(rundir, j, "manifest.tsv")
             if state == "ran" and os.path.exists(mp):
                 setrun(rec, "manifest_sha256_" + j, hashlib.sha256(open(mp, "rb").read()).hexdigest())
+        for k, v in sorted(cells_pins(rundir, [j for j, state, _c in jobs if state == "ran"]).items()):
+            setrun(rec, k, v)
         tp = os.path.join(rundir, "transcript.tsv")
         setrun(rec, "transcript_sha256", hashlib.sha256(open(tp, "rb").read()).hexdigest() if os.path.exists(tp) else "-")
         rec["quiet"] = quiet_rows(tp)

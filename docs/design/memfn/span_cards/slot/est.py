@@ -537,6 +537,12 @@ def read_cells(rundir, rec):
         j = m.group(1)
         if j not in ran:
             raise InputError("%s holds cells of job %s, which the record says %s" % (f, j, rec["jobs"].get(j, ("unplanned",))[0]))
+        # [review 2026-11-15 r6 FIDELITY-3] the file is the one finalize pinned (record.py cells_pins): a post-run edit
+        # that keeps every cell key unique (two keys' values swapped) is refused here, not by CELL TWICE below
+        got, pin = plan.sha256(os.path.join(rundir, f)), rec["run"].get("cells_sha256_" + j)
+        if got != pin:
+            raise InputError("CELLS PIN %s: sha-256 %s, the record pins %s (a cells file edited after finalize, or a "
+                             "record finalized before r6)" % (f, got[:16], (pin or "none")[:16]))
         lines = open(os.path.join(rundir, f)).read().splitlines()
         if not lines or lines[0] != "#run_id\t%s" % rec["run"]["run_id"]:
             raise InputError("%s's first line %r is not `#run_id<TAB>%s`: a cells file of another run" % (f, lines[:1], rec["run"]["run_id"]))
@@ -557,7 +563,8 @@ def read_cells(rundir, rec):
                 raise InputError("%s: cell %s names base %s, the family rule's is %s" % (f, c["cell"], idf[4:] or "none", want))
             c["job"] = j
             # [review 2026-11-15 r5 FIDELITY-5] one line per (job, arm, length, launch): a second line (a duplicate, or
-            # two keys' cells renamed into each other) would replace the first silently
+            # one key's cells renamed onto another's) would replace the first silently. A FULL swap of two keys' cells
+            # keeps every key unique and passes here: the file's pin above refuses it (review r6 FIDELITY-3)
             ck = (j, c["arm"], c["length"], c["launch"])
             if ck in seen:
                 raise InputError("%s: cell (%s, %s, %d, launch %d) appears twice (CELL TWICE)" % ((f,) + ck))
@@ -1254,7 +1261,19 @@ def _synth(d, run_id="selftest", window="s2d"):
             _synth_pin(d, j)
         else:
             _synth_seal(d, j)          # [r5 FIDELITY-2] every ran job's manifest is checked, not only verify jobs'
+    _synth_cells_pin(d)
     return d
+
+def _synth_cells_pin(d):
+    """[r6 FIDELITY-3] the record's pins of the cells files as they stand (record.py finalize's cells_pins): the
+    self-test's plants model a run that PRODUCED those cells, so each case re-pins after its plant; the post-finalize
+    edit case does not"""
+    import record
+    p = os.path.join(d, "run_record.tsv")
+    rec = record.read(p)          # every cells file present is pinned (a never-ran job's too: its own check refuses it)
+    pins = record.cells_pins(d, sorted(f[6:-4] for f in os.listdir(d) if re.fullmatch(r"cells\.J\w+\.tsv", f)))
+    rec["run"] = [r for r in rec["run"] if not r[0].startswith("cells_sha256_")] + [[k, v] for k, v in sorted(pins.items())]
+    record.write(p, rec)
 
 # [r11-REV15-2..4] the READING cases: hand-written timed functions (assembled, .size set), each with the fact both
 # readings must give; a disagreement or another answer is WRONG
@@ -1530,6 +1549,7 @@ def selftest(scratch):
                 open(os.path.join(d, "J4", f)).read() for f in ("manifest.tsv", os.path.join("obj", "tab.c")))
         before = state()
         plant(d)
+        _synth_cells_pin(d)            # [r6 FIDELITY-3] the plant is the run's own cells: pinned as finalize pins
         after = state()
         if not isinstance(want, str):       # a row predicate over compute()'s rows (rev 1.4)
             try:
@@ -1699,11 +1719,40 @@ def selftest(scratch):
         ln = next(x for x in open(p).read().splitlines() if ("/%s/" % K6) in x)
         f = ln.split("\t")
         open(p, "a").write("\t".join(f[:-1] + [str(int(f[-1]) * 3)]) + "\n")
+        _synth_cells_pin(d)            # a producer that wrote the line twice: the pin holds, CELL TWICE refuses
         try:
             compute(d)
         except InputError as e:
             return "CELL TWICE" in str(e)
         return False
+    def mf_swap(d, repin=False):
+        """[r6 FIDELITY-3] two keys' cells exchanged after finalize, launch by launch (the verifier's plant: every
+        (job, arm, length, launch) stays unique): the record's cells pin refuses it; repin (the control): the same
+        swapped file pinned, as a producer that wrote it, is PRICED, so the pin is what refused"""
+        p = os.path.join(d, "cells.JMH.tsv")
+        ka, kb = ("kit.find_hit.%s.periodic.one.2.0" % f for f in ("mfind-swar", "mfind-w16"))
+        ls = open(p).read().split("\n")
+        at = {}
+        for i, ln in enumerate(ls):
+            c = ln.split("\t")
+            if len(c) == 8 and c[2] in (ka, kb):
+                at[(c[2], c[3], c[4])] = i
+        n = 0
+        for (k, length, l), i in sorted(at.items()):
+            if k == ka and (kb, length, l) in at:
+                j = at[(kb, length, l)]
+                ci, cj = ls[i].split("\t"), ls[j].split("\t")
+                ci[6:], cj[6:] = cj[6:], ci[6:]
+                ls[i], ls[j] = "\t".join(ci), "\t".join(cj)
+                n += 1
+        open(p, "w").write("\n".join(ls))
+        if repin:
+            _synth_cells_pin(d)
+        try:
+            out = compute(d)[0]
+        except InputError as e:
+            return not repin and n >= plan.L_LAUNCHES and "CELLS PIN cells.JMH.tsv" in str(e)
+        return repin and n >= plan.L_LAUNCHES and ka in out and kb in out
     MF_CASES = (
         ("[slotx] window mfcard: kit-grid@6 rows priced, no J3/J4/J5 row this window's", mf_priced),
         ("[slotx] the draft split: every ver-6 row in ver 6's set, the unit in ver 3's, none in ver 4's", mf_split),
@@ -1721,6 +1770,9 @@ def selftest(scratch):
          refused("not one the kit's target facts know", tgt={"mfind-w32": ("x86-64-v4", "avx512f")})),
         ("[r5 DRAFTSETS-2 P9] one key, two cell_text lines: refused", mf_twice),
         ("[r5 FIDELITY-5] one cell, two lines: refused", mf_dupcell),
+        ("[r6 FIDELITY-3] two keys' cells swapped after finalize: refused by the record's cells pin", mf_swap),
+        ("[r6 FIDELITY-3] the control: the same swap pinned as the run's own: priced (the pin refused it)",
+         lambda d: mf_swap(d, repin=True)),
         ("[r5 FIDELITY-2] a mfcard job without its manifest: refused",
          refused("MANIFEST ABSENT job JMB", edit=lambda d: os.remove(os.path.join(d, "JMB", "manifest.tsv")))),
     )
