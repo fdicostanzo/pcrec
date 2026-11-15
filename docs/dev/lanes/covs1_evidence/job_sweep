@@ -18,5 +18,5 @@ cd "$TREE" || exit 1
 exec python3 scripts/emit_sweep.py --ref-bin "$SC/ref/build/pcrec" --tree "$TREE" \
     --out "$SC/sweep" --jobs 12 --movers-out "$SC/sweep.movers.tsv" \
     --facts-declared-moves 'span_facts:row:gone>,cover:section:>new' \
-    --dumps-declared-rows '--list-limits:PCREC_ANCHORED_MAX_STATES' \
-    --dumps-declared-gone '--list-limits:PCREC_SPAN_WALK_SUBSETS'
+    --dumps-declared-rows='--list-limits:PCREC_ANCHORED_MAX_STATES' \
+    --dumps-declared-gone='--list-limits:PCREC_SPAN_WALK_SUBSETS'
