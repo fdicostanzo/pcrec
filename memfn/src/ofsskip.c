@@ -497,7 +497,9 @@ static const fn_row fn_rows[] = {
     { FN_BODY, every_pos_holds, every_pos_body, &fn_every_pos_ct, NULL, FF_NONE },
     { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },
     /* the inline one-member finder (vrun.c's mfind_text, its SWAR word):
-       ahead of fn-memchr, whose site it takes under the lever alone */
+       ahead of fn-memchr, whose site it takes under the lever alone. A
+       measuring instrument only (F5, Frank 2026-11-15): never picked; see
+       review r2-memfn-mfind */
     { FN_BODY, mfind_holds,  mfind_body,  &fn_mfind_ct,  NULL, FF_MFIND },
     { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },
     /* FN_PREFIX (R4e' batch 1, §R4.9.2.4): the SIMD rows, first match, the
@@ -505,7 +507,9 @@ static const fn_row fn_rows[] = {
     { FN_PREFIX, NULL, NULL, &vrun_w32_ct, &vrun_w32_decl, FF_UNSTATED },
     { FN_PREFIX, NULL, NULL, &vrun_w16_ct, &vrun_w16_decl, FF_UNSTATED },
     /* the one-member finder's levels, over fn-mfind only (their OVER), so
-       disjoint from vrun's (over fn-pair): their order decides nothing */
+       disjoint from vrun's (over fn-pair): their order decides nothing. A
+       measuring instrument only (F5, Frank 2026-11-15): never picked; see
+       review r2-memfn-mfind */
     { FN_PREFIX, NULL, NULL, &mfind_w32_ct, &mfind_w32_decl, FF_UNSTATED },
     { FN_PREFIX, NULL, NULL, &mfind_w16_ct, &mfind_w16_decl, FF_UNSTATED },
 };

@@ -672,7 +672,9 @@ typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
  * picks it and no renderer row of window.c's tables names it, so it is
  * renderable on E-func only; the reply's vocabulary (memfn.h mf_wsearch) has
  * no word for it and a reply under the lever reports MF_WSEARCH_NONE, until
- * a selection table picks the form (then a kit-contract change). */
+ * a selection table picks the form (then a kit-contract change). A
+ * measuring instrument only (F5, Frank 2026-11-15): never picked; see
+ * review r2-memfn-mfind. */
 /* T-FRAME's rows, the frames a window or composer site's text is written
  * in (window.c's Table E; plan_frame.md 3.0a): E-func, E-stmt (the
  * composer's PF block), E-find, E-generic (the floor). The renderer tables

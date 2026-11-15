@@ -53,8 +53,8 @@
 # pre-wide-findable, the same run with one findable position: fn-memchr).
 #
 # Lane mfind: `fn fn-mfind`, `fn mfind-w16`, `fn mfind-w32` (the inline
-# one-member finder) are pending-site until a selection table picks the form
-# (D190 Q6: span_pick row 1 waits for it and its card); until then only the
+# one-member finder) are pending-site: a measuring instrument only (F5, Frank
+# 2026-11-15): never picked; see review r2-memfn-mfind. Only the
 # test-only lever `mfind` reaches them, so their witnesses are arm_fixtures
 # fixtures rendered under it (ofs-mfind*), each against the next narrower.
 #

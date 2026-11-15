@@ -1609,8 +1609,8 @@ int      mf_reach_table(const mf_art *, mf_sink *file_scope);
  * restart stream). Under "mfind" the window family's frame reply is NOT
  * updated: it still reports search NONE and stream RESTART for the site
  * (`mf_wreply`'s frame part), though the rendered text is a MASK stream;
- * pcrec reads neither field, and the reply states the form when a table
- * picks it. Called before the first define;
+ * pcrec reads neither field. The form is a measuring instrument only (F5,
+ * Frank 2026-11-15): never picked; see review r2-memfn-mfind. Called before the first define;
  * refused after it, or for a name the kit does not list. */
 #define mf_lever          MF_NS(lever)
 int      mf_lever(mf_art *, const char *name);
