@@ -27636,3 +27636,9 @@ Next
   (c). The kit's cloud axes run exposed main's D27 file under -fno-req-run/-fno-req-byte (a one-sided budget give-up):
   lane axtri1115 triaging.
 - Prune (hk1115): 12 worktrees + 10 branches; it also removed the kit's merged r43 worktree (branch kept; kit told).
+- 01:00-02:00 (2026-11-15): the box hold ended at 01:00. Job 450 (test-axes on lane/axtri1115) started 00:53, seven
+  minutes inside the hold. My re-queued job's `--ready` was `exit 0`, on the wrong belief that the queue enforces the
+  hold; each job's own `--ready` must (not-ready = exit 75). Lesson: a main job's `--ready` always encodes the 20:00-01:00
+  hold. Frank: full suite in the CLOUD, not on the box (scripts/cloudrun's suite covers test, axes, ubsan, asan, mech and
+  recidentity; alloc and lint stay local); one cloud suite on main after the axtri1115 merge covers every landing since
+  11-11. R-40 filed (reply only; build on trigger). Set S3 opened: design lane covcap (opus), [COVER-CAP] design only.
