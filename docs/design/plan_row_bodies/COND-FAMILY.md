@@ -746,3 +746,7 @@ correct?"). Correct: a pattern has no parameters; WITHDRAW the call form `isodat
 addendum to C22); the one spelling is `isodate & (year: S, month: 2)`. Calling a pattern = compile error with the hint
 "write `isodate & (year: ...)`". A parameterised pattern is a macro: `date_in(years) := isodate & (year: years)`. The
 C22 binding rule stays, for condition literals only.
+RULING (Frank 2026-11-15: "Agree with mapping"): THE SUBJECT IS NEVER AN ARGUMENT (the lean above, adopted). Mapping a
+filter over subjects uses an operator SECTION `(& f)` (`each((& isodate), dates)`; sections compose: `(& isodate &
+(year: 2024))`); mapping a macro over values passes the macro (`each(triple, ...)`, entries are parameters). No lambda
+until an example needs one (D77). C20 and C30 RESOLVED.
