@@ -771,3 +771,11 @@ BEING FILTERED: this is C32, and it SUPERSEDES the part of the Q1 entry above th
 compile errors; (3) assertions that would read beyond the filtered span (`\b` named by Frank) are disallowed in a
 filter rx. This RESTORES the pre-11-14 understanding (2026-11-13: b is in the span context of a). Manager's reading,
 not his words: "edge lookarounds" in the C32 entry are the same class as `\b`; C35's explicit `(?m)` rule is unchanged.
+**2026-11-15 CONFIRMATION — numeric ranges are string sets; padding is an explicit transform (Frank, to session 132,
+after the audit asked whether C9 was recorded as he meant).** His words: "for numbers there was a critic complaining
+that \d\d & between(1,12) would only match 10-12 and i said yes, that is correct because the \d\d means two digits. if
+the intention was the numeric range 1-12 then either use \d{1,2} or similar or use a transform like
+padded(between(1,12)) to get between to ignore leading 0". RECORD: C9 as recorded on 11-14 STANDS (the string-set
+reading): `between(1,12)` is the set of the unpadded spellings "1".."12"; `\d\d & between(1,12)` accepts exactly
+10, 11, 12; leading zeros are accepted only through an explicit transform on the filter (`padded(between(1,12))`) or
+by writing the wider pattern (`\d{1,2}`). The "compares by value" reading is NOT adopted.
