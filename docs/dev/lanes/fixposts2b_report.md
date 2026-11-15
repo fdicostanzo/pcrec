@@ -29,3 +29,4 @@ All nine findings applied and committed. `make strict` clean; `make test-codegen
 - mechrows cloud run for S3012/S3129-S3132/S711/S288/S474 (predecessor's, still owed): `scripts/cloudrun --owner main --kind mechrows --rows S3012,S3129,S3130,S3131,S3132,S711,S288,S474 --name fixposts2`.
 - cloud `make test` on lane/fixposts2 (this lane's last act): `--name fixposts2b`.
 - `make test-codegen`: rc 0, `run_group: 21/21 scripts passed`.
+- cloud `make test` dispatched: `cloud/main/test/fixposts2b` at 28686de00 (verdict arrives as CLOUD-DONE via queuewatch). Job 700 re-queued after the commit.
