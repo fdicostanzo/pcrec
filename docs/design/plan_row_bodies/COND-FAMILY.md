@@ -662,3 +662,15 @@ at default; large (times of day 1,440: borderline; dates within 15 days: 3.65M) 
 and fixes, or a linear arithmetic check under `functions`; UNBOUNDED (`b: > a` over arbitrary `\d+`) = not regular,
 `functions` only. Present it as "a relation, run the cheapest correct way", never as "always one automaton";
 [COST-EXPLAIN] shows the count. Still PENDING: counting filters, the empty-match error move.
+
+**2026-11-14 RULING — the empty-match hazard (Frank: "I agree but warnings need names and the user must be able to disable them (wildcard?)").**
+DROP the empty-ENTRY error (it rejected legitimate optional parts like `["", "M"]` and missed `/\d*/`). NEW: when the
+program's FINAL pattern is nullable and used in SEARCH mode: an ERROR in predicate programs, a WARNING for a program that
+is one plain PCRE literal (`/a*/` is legal PCRE); no diagnostic when anchored/whole-string (validation), when excluded
+(`& !""`), or opted out. The message names the empty source and the fixes. File blank lines stay covered by
+records-tiling. WARNINGS: every warning has a STABLE NAME in dotted families (contract, in the spec): `empty.search`,
+`dead.branch`, `label.unset`, `transform.noop`, `compare.width`, `label.ambiguous`, `warn.unused`. Control via `@`
+effects (no new grammar): `@warn.off("compare.width")` (rest of file), `@warn.off("dead.*")` (wildcard family),
+`@warn.off("*")`, per-binding form (spelling open), and the compiler option for a whole build (like -Wno-); reverse
+`@warn.error("*")` (a strict build). Errors cannot be disabled. An `@warn.off` that suppresses nothing raises
+`warn.unused` (itself suppressible). Still PENDING: counting filters (exactly/at_least/none).
