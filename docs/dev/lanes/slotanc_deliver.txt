@@ -1,0 +1,5 @@
+report=docs/dev/lanes/slotanc_report.md
+sections: Summary; Re-anchored rows; Full table; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
