@@ -27771,3 +27771,7 @@ Next
   Stage 1 build lane covs1 (opus) launched on lane/covs1 (abi 107 -> 108 at landing, sabotage ids S3220-S3229).
   Stage 2: kit request to file (span up to 4095; owner's rendering direction; per-artifact span limit) + a short
   stage-2 design addendum and its critic round before the stage-2 build lanes.
+- 15:00 (2026-11-15): Frank on long-span rendering, verbatim: "I predict most all rx will only have a short span and
+  will inline due to being under the inline head portion of the prover. Therefore, this issue is mostly moot". For the
+  stage-2 addendum: size the rendering work to the population (today: 1,852 covering compiles, almost all short; spans
+  of 25+ positions are a few dozen patterns); the loop tail is the rare case; keep the three-way measurement small.
