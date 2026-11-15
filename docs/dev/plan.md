@@ -501,6 +501,18 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Measurement (skipmeas): exact fixed patterns <= 24 positions skip the engine through the cover route (bench 78, corpus ~890). Still finish-bearing: long literals l31/l40, hex32/dig32/uuid, 4 lookaround, `$` tails. Stubbing the finish: lit-l31 match 30.0M -> 4.4M instructions:u, l40 28.6M -> 3.5M. Cause: the 24-position span cap.
   Set S3 (confirmed by Frank 2026-11-11 evening: the easier win). Next: design the lift (a longer span for the cover route, or a cap that scales with the pattern), answer-identity over the corpus, re-time the ~6 litrun cells; build go by Frank.
   The cover route skips the engine when a verified run is exact over the whole attempt; it is capped at 24 span positions, so longer exact patterns pay the engine finish for nothing. Lifting the cap is the first, smaller half of what [EARNED-SKIP] aimed at.
+  - [COVER-DEPTHS] STATE:not-started — cover_conj[]: a `depths` column per conjunct, checked against the walk's record
+    filed: 2026-11-15 manager (review 2026-11-15-r7-covcap-r4, standing questions, PLAN; lane covcap6 wrote the row)
+    status (2026-11-15): filed; nothing built
+    trigger: the next conjunct folded into the cover walk, or [MATCH-KNOWN]'s fraction case reading the rows at L
+    refs: docs/design/cover_cap.md §3.1 (rev 4.1); docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-3; [ROWCONJ]
+    The conjuncts folded into the walk each read a DEPTH RANGE (C9 depths 0..k, C10/C11 depth k, C12 depth 0) and nothing states which; rev 4 dropped C9's depth k by restructuring the walk (FI-3, an answer had it been built). One column (`all`, `k`, `0`, `walk`) in `cover_conj[]`, checked against the walk's single record, makes such a drop a red, not a review find.
+  - [NFA-PROV-CONJ] STATE:not-started — one NFA-provenance conjunct kind (erased, island, marked) shared by the conjunct tables
+    filed: 2026-11-15 manager (review 2026-11-15-r7-covcap-r4, standing questions, PLAN; lane covcap6 wrote the row)
+    status (2026-11-15): filed; nothing built
+    trigger: the decisions-why section of cover_cap.md §3.3 NOTED (R-14) is built, which would list the kind once
+    refs: docs/design/cover_cap.md §3.1, §3.3; docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-6; [ROWCONJ]
+    The NFA-provenance facts are read by more than one conjunct table separately: the cover's kept `erased`/`island` guards (rev 4.1) and lmwalk.c's own copy of `nfa->erased`; `split_conj[]` is the third table. One shared row kind, read by `cover_conj[]`, `lmwalk_conj[]` and `split_conj[]`, replaces the per-table copies.
 - [EARNED-SKIP] STATE:not-started — a verified run that proves the attempt skips the engine; pcrec states the proof extent
   filed: 2026-11-09 manager (Frank: "Do we send an index into the span that says don't bother proving beyond this point when we know we'll have to check it with engine"; "File the idea")
   status (2026-11-11): PARKED (Frank, evening: wanted eventually; bigger than intended now; not in S4); Part C is one PRODUCER feeding [MATCH-KNOWN]'s walk, not its own mechanism (notes (a)-(e) there)
