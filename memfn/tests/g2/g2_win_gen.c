@@ -992,6 +992,7 @@ int main(int argc, char **argv)
     const char *k3n = getenv("G2W_K3_SITES");
     int n7 = k3n ? atoi(k3n) : 200;
     long k3_lever = 0;
+    long k3_rendered = 0, k3_agree = 0;   /* in-run sites rendered; library stop == reference's */
     buf defs = { 0 }, table = { 0 }, data = { 0 };
     long famn[FAM_N] = { 0 }, frames[4] = { 0 };
 
@@ -1291,6 +1292,10 @@ int main(int argc, char **argv)
         mf_class asked;
         mf_result def;
         rendered++;
+        if (k3_inrun) {
+            k3_rendered++;
+            k3_agree += r.has_stop == ref.has_stop && (!r.has_stop || r.stop == ref.stop);
+        }
         if (!strcmp(res.form_id, "window-search")) {
             const char *t = body.p ? body.p : "";
             const char *ft = file.p ? file.p : "";
@@ -1472,8 +1477,9 @@ int main(int argc, char **argv)
     fprintf(f, "const unsigned g2w_nsites = %ld;\n", rendered);
     fclose(f);
     printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d, two-byte %d, "
-           "below-window %d, in-run %d, %ld of them under run-tie-left); families:", rendered,
-           nsites + n3 + n4 + n5 + n6 + n7, n3, n4, n5, n6, n7, k3_lever);
+           "below-window %d, in-run %d, %ld of them under run-tie-left); in-run rendered %ld, "
+           "stop agreeing with the reference %ld; families:", rendered,
+           nsites + n3 + n4 + n5 + n6 + n7, n3, n4, n5, n6, n7, k3_lever, k3_rendered, k3_agree);
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], famn[i]);
     printf("; frames: func=%ld assign=%ld assign_lo=%ld onmiss=%ld; controls refused %ld; "
            "queries agreeing %ld; two runs refused %ld\n", frames[0], frames[1], frames[2],

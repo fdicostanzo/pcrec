@@ -364,8 +364,12 @@ if [ "${1:-}" = "--reach" ]; then
     mkdir -p "$WORK/reach.out"
     "$TIMEOUT_BIN" 300 "$WORK/reach.gen" "$SEED" "$NSITES" "$WORK/reach.out" > "$WORK/reach.gen.log" 2>&1 \
         || { echo "the generator failed"; exit 1; }
-    m=$(grep -oE 'in-run [0-9]+' "$WORK/reach.gen.log" | head -1 | grep -oE '[0-9]+$')
-    [ "${m:-0}" -ge 100 ] && echo "REACH-G2W-INRUN n=$m"
+    # MEASURED, not requested (review 2026-11-15 r1 posts2 PLANTS-1): the in-run sites the
+    # generator rendered, and how many of them the library's stop agrees with the reference's
+    # on; a build that loses the in-run filter (S3012) prints a smaller second figure
+    r=$(grep -oE 'in-run rendered [0-9]+' "$WORK/reach.gen.log" | head -1 | grep -oE '[0-9]+$')
+    m=$(grep -oE 'stop agreeing with the reference [0-9]+' "$WORK/reach.gen.log" | head -1 | grep -oE '[0-9]+$')
+    [ "${r:-0}" -ge 100 ] && echo "REACH-G2W-INRUN rendered=$r agree=${m:-0}"
     exit 0
 fi
 
