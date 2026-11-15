@@ -758,3 +758,16 @@ a value (`^`/`$` also at line breaks within it); without it `^`/`$` are the valu
 RULING (Frank 2026-11-15: "spelling: keep ! out of rx for now"): CLOSES the Boolean-operator spelling question (open
 since 2026-11-12). No standalone `!` in the rx language for now; `!` lives in the predicate/expression language only
 (always a filter). Combined with the 2026-11-14 rulings: `&` intersection, `|` alternation, no alphabetic operators.
+**2026-11-15 CONFIRMATION — `^`/`$` and edge assertions in a filter (Frank, to session 132, after an audit asked
+whether the 11-14 C32 record over-reached).** His words: "a review of the predicate design suggested that rx be
+considered spans 'in context' instead of a set of strings ... when composing rx like 'a & b' we had thought before that
+b was in the span context of a so ^a+$ meant that ^ and $ were the start and end of the a span. but the 'in context'
+span idea seemed to change that or similar things like \bfoo which changes match depending on the context. it was
+decided to drop this interpretation and consider 'a' to instead be the set of strings again so there was a reversal.
+the rulling was to say again that ^...$ meant the start and end of the filtered condition and to disallow certain
+contextual rx like \b in a filter rx that would exceed the span rx that it was filtering". RECORD: (1) foundation =
+string sets (Q1 stands); (2) in a filter (`a & b`, a condition on a value) `^`/`$` mean the start and end of the SPAN
+BEING FILTERED: this is C32, and it SUPERSEDES the part of the Q1 entry above that listed `^` and `$` among the
+compile errors; (3) assertions that would read beyond the filtered span (`\b` named by Frank) are disallowed in a
+filter rx. This RESTORES the pre-11-14 understanding (2026-11-13: b is in the span context of a). Manager's reading,
+not his words: "edge lookarounds" in the C32 entry are the same class as `\b`; C35's explicit `(?m)` rule is unchanged.
