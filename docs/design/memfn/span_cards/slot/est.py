@@ -865,7 +865,7 @@ def write_draft(rundir, path, out, drift, outcome):
     # [r2s1 RK383-3] THE WRITER SPLITS BY VER: one set per method, each with that ver's cards section and rows only
     # (kit-grid@3 keeps zen4-grid3; a ver with no timed row writes no set, so an unmeasured cell stays unmeasured)
     n = str(rec["facts"][2] * rec["facts"][3])
-    rows = []
+    rows, tgt_of = [], {}
     rec_rmax = r_max(rec)[0]
     for k in sorted(out):
         r = out[k]
@@ -881,6 +881,7 @@ def write_draft(rundir, path, out, drift, outcome):
             if form != q[2]:
                 raise InputError("row %s's cell text is form %s's" % (k, form))
             deps = "kit:form.%s=%s" % (form, fh)
+        tgt_of[k] = "generic" if tgt == "-" else tgt     # an unframed TU is the compile floor's: no region
         if r.get("null"):
             rows.append([k, unit, "", str(r["abs"]), "-", n, "null", "-", "-",
                          deps, tags, r["why"]])
@@ -902,7 +903,18 @@ def write_draft(rundir, path, out, drift, outcome):
             return ver_of(a) == v
         return v == "3" or a == "ctl" or any(plan.base_of(r[0]) == a for r in rows if ver_of(r[0]) == v)
     msgs, rc = [], outcome[1]
-    for v in sorted({c["ver"] for c in rec["card"].values()}):
+    vers = sorted({c["ver"] for c in rec["card"].values()})
+    # [review 2026-11-15 r1 F8, INTERIM] A SET IS ONE TARGET (span_cards.md §2.7: `class` is the set's target
+    # identity inside the digest, and a several-target set's spelling is the format event [XARCH-DEV]'s J6 design
+    # makes): a set whose rows were compiled in more than one kit target REFUSES the whole draft, before any file is
+    # written, until main rules per-target sets or the multi-target format
+    for v in vers:
+        tg = sorted({tgt_of[r[0]] for r in split.get(v, [])})
+        if len(tg) > 1:
+            raise InputError("DRAFT-TARGET MIXED ver %s's set would hold rows of targets %s under one class "
+                             "(x86_64/zen4; span_cards.md §2.7: a set is one target): no draft written"
+                             % (v, ", ".join(tg)))
+    for v in vers:
         vrows = split.get(v, [])
         if not vrows:
             print("draft: ver %s: no timed row, no set written (its cards stay UNMEASURED)" % v)
@@ -1374,9 +1386,56 @@ def selftest(scratch):
         six = [r[0] for r in sp.get("6", [])]
         return (K6 in six and all(k.split(".")[2] in plan.FORMS6 for k in six)
                 and plan.UNIT_KEY in [r[0] for r in sp.get("3", [])] and "4" not in sp)
+    def mf_draft(d, tgt):
+        """[review 2026-11-15 r1 F5] write_draft itself on the synth (cell_text.tsv per ran job, the targets `tgt`
+        gives each form; the draft gate stubbed: the synth has no commit), then each written set's row keys"""
+        rec = read_record(d)
+        for j, (s, _c) in rec["jobs"].items():
+            arms = sorted({k for k, _g, jj in rec["plan"] if jj == j and k.startswith("kit.")})
+            os.makedirs(os.path.join(d, j), exist_ok=True)
+            open(os.path.join(d, j, "cell_text.tsv"), "w").write("".join(
+                "%s\t%s\t-\th\tfold.%s\t-\t%s\t-\n" % (k, plan.key_form(k)[0], plan.key_form(k)[0],
+                                                     tgt.get(plan.key_form(k)[0], "generic")) for k in arms))
+        rr = os.path.join(d, "run_record.tsv")
+        txt = open(rr).read().replace("run_id\tselftest\n", "run_id\tselftest\nbox\tselftest\nisa\tselftest\n"
+                                       "libc\tselftest\ngcc\tselftest\n", 1)
+        open(rr, "w").write(txt)
+        out, drift, _ub, outcome, _w, _p = compute(d)
+        gate = globals()["draft_gate"]
+        globals()["draft_gate"] = lambda code_commit, paths=None: "0" * 40
+        try:
+            with open(os.devnull, "w") as dn:
+                so, sys.stdout = sys.stdout, dn
+                try:
+                    write_draft(d, os.path.join(d, "draft.tsv"), out, drift, outcome)
+                finally:
+                    sys.stdout = so
+        finally:
+            globals()["draft_gate"] = gate
+        sets = {}
+        for v, p in (("3", "draft.tsv"), ("4", "draft.v4.tsv"), ("6", "draft.v6.tsv")):
+            if os.path.exists(os.path.join(d, p)):
+                rows = open(os.path.join(d, p)).read().split("#section rows\n", 1)[1].split("#section members", 1)[0]
+                sets[v] = [ln.split("\t")[0] for ln in rows.splitlines()[1:] if ln]
+        return sets
+    def mf_write(d):
+        sets = mf_draft(d, {})        # one target (generic) for every form: the draft is written
+        six = {k for k, _g, _j in read_record(d)["plan"] if k.startswith("kit.") and k.split(".")[2] in plan.FORMS6}
+        return (set(sets.get("6", [])) == six and K6 in six and not six & set(sets.get("3", []))
+                and plan.UNIT_KEY in sets.get("3", []) and "4" not in sets)
+    def mf_mixed(d):
+        try:
+            mf_draft(d, {"mfind-w16": "x86-64", "mfind-w32": "x86-64-v3"})
+        except InputError as e:
+            return "DRAFT-TARGET MIXED ver 6" in str(e) and not os.path.exists(os.path.join(d, "draft.v6.tsv"))
+        return False
     MF_CASES = (
         ("[slotx] window mfcard: kit-grid@6 rows priced, no J3/J4/J5 row this window's", mf_priced),
         ("[slotx] the draft split: every ver-6 row in ver 6's set, the unit in ver 3's, none in ver 4's", mf_split),
+        ("[F5] write_draft on the mfcard window: ver 6's set holds exactly the FORMS6 rows, ver 3's the unit and "
+         "none of them, no ver-4 set", mf_write),
+        ("[F8] write_draft refuses a ver-6 set mixing targets (generic, x86-64, x86-64-v3) and writes no set",
+         mf_mixed),
     )
     for name, pred in MF_CASES:
         d = _synth(os.path.join(scratch, "est_selftest_mf"), window="mfcard")

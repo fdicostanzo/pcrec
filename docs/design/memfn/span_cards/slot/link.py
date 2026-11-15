@@ -17,9 +17,10 @@
 # dim read through plan.DIM_FIELD ([rev1.3 r9fc-FIX-2]: landing, split, gap, pass, kind, entry too). gcc 15.2 -O2 -march=x86-64 -mtune=generic, the declared target
 # (§2.7): THE COMPILE FLOOR of every TU. [lane slotx] THE ARM'S TARGET REGION: an instance whose kit target opens a
 # region (its entry table's `target`, mf_target_c_of) is compiled INSIDE it, as pcrec places one (src/gen/
-# memfn_targets.c): its header lines (mf_form_includes, mf_include_c) at file scope ahead of the region, the region
-# open before the TU's first function, its close after the last (the timed loop is inside, as a matcher is). A
-# target with nothing to enable writes nothing, so every other arm's TU is byte for byte what it was. The target is
+# memfn_targets.c): its family guard (mf_family_c_of) first, ahead of every #include, its header lines
+# (mf_form_includes, mf_include_c) at file scope ahead of the region, the region open before the TU's first
+# function, its close after the last (the timed loop is inside, as a matcher is). The portable target (no family,
+# nothing to enable) writes nothing, so every generic arm's TU is byte for byte what it was. The target is
 # the KEY's (its form token's instance), recorded in cell_text.tsv, and THE ISA CHECK holds the compiled object to
 # it: no instruction needing a feature outside (floor + target), and, where the target enables a feature the floor
 # lacks, at least one instruction needing one (a region that changed nothing is not the keyed target). A PAD is a .text of P bytes, P = 16 x (1 + draw mod 255), so P is a multiple of 16 in [16, 4096); its
@@ -77,13 +78,13 @@ def parts(fx, form, cls):
     return f, b
 
 def frame(fx, form, cls):
-    """(header lines, region open, region close, target token, target features): what a host writes around the
-    instance's site text (arm_fixtures --frame, the kit's own spellings)"""
-    inc, ro, rc, tl = sh([fx, "--frame", form] + ([cls] if cls else [])).split("\f\n")
+    """(header lines, region open, region close, target token, target features, family guard): what a host
+    writes around the instance's site text (arm_fixtures --frame, the kit's own spellings)"""
+    inc, ro, rc, gd, tl = sh([fx, "--frame", form] + ([cls] if cls else [])).split("\f\n")
     tf = tl.strip().split("\t")
     if len(tf) != 3 or tf[0] != "target":
         raise SystemExit("link: --frame %s: no target line (%r)" % (form, tl))
-    return inc, ro, rc, tf[1], set() if tf[2] == "-" else set(tf[2].split(","))
+    return inc, ro, rc, tf[1], set() if tf[2] == "-" else set(tf[2].split(",")), gd
 
 def floor_features(fx):
     """the features the compile floor (CC's -march) supplies, the kit table's row for that token"""
@@ -92,48 +93,98 @@ def floor_features(fx):
     return set() if tf[2] == "-" else set(tf[2].split(","))
 
 def framed(src, fr):
-    """the TU inside its frame: no region, the TU as it is; else the frame's header lines the TU's own prologue
-    does not already hold (pcrec's has_line rule), after the prologue, then the region around the rest"""
-    inc, ro, rc = fr[:3]
+    """the TU inside its frame, in pcrec's order (match_api.md §6.3.10¶15): the family guard first, ahead of
+    every #include (review 2026-11-15 r1 F10); no region, the TU as it is after it; else the frame's header lines
+    the TU's own prologue does not already hold (pcrec's has_line rule), after the prologue, then the region around
+    the rest"""
+    inc, ro, rc, gd = fr[0], fr[1], fr[2], fr[5]
     if not ro:
-        return src
+        return gd + src
     pro, _, rest = src.partition("#define CAT_(a, b) a##b\n")
     if not rest:
         raise SystemExit("link: FRAME: the TU has no prologue mark")
     have = set(pro.splitlines())
     heads = "".join(ln + "\n" for ln in inc.splitlines() if ln not in have)
-    return pro + heads + ro + "#define CAT_(a, b) a##b\n" + rest + rc
+    return gd + pro + heads + ro + "#define CAT_(a, b) a##b\n" + rest + rc
 
-# THE ISA CHECK's table (first match on the mnemonic, then the operands): the feature an instruction needs; a
-# mnemonic no row names needs only the floor. Rows for the features the kit's x86 targets enable (targets.def).
+# THE ISA CHECK's table (first match on the ENCODING, then the mnemonic, then the operands; review 2026-11-15 r1
+# F1): the features an instruction needs; a LEGACY instruction no row names needs only the floor, a VEX or EVEX one
+# no row names is refused (an encoding the table cannot price). The encoding is read off the instruction's bytes
+# (prefixes and REX skipped as est.py's decoder does: 0x62 EVEX, 0xC4/0xC5 VEX), never off the mnemonic or a
+# register name, so AVX-512VL code on %ymm/%xmm reads as AVX-512, not AVX2. `*` is any encoding. F2: every feature a
+# planned target enables above the floor (`--target-facts`) must be some row's (isa_table_check), so a deleted or
+# missing row refuses instead of reading that feature's code as floor.
 ISA_NEEDS = (
-    (r"v\S*", r"%zmm", "avx512f"),
-    (r"v\S*", r"%ymm", "avx2"),
-    (r"v\S*", r"%xmm|%k\d", "avx"),
-    (r"andn|bextr|blsi|blsmsk|blsr", r"", "bmi"),     # not tzcnt: gcc's floor `rep bsf` decodes as tzcnt
-    (r"bzhi|mulx|pdep|pext|rorx|sarx|shlx|shrx", r"", "bmi2"),
-    (r"lzcnt", r"", "lzcnt"),
-    (r"popcnt", r"", "popcnt"),
-    (r"movbe", r"", "movbe"),
-    (r"pshufb|palignr|pabs[bwd]|phadd\w*|phsub\w*|pmaddubsw|pmulhrsw|psign[bwd]", r"", "ssse3"),
-    (r"ptest|pblendvb|pblendw|pmin[su][bdw]|pmax[su][bdw]|pextr[bdq]|pinsr[bdq]|pcmpeqq|pmovzx\w*|pmovsx\w*", r"", "sse4.1"),
-    (r"pcmpgtq|pcmp[ei]str[im]|crc32\w*", r"", "sse4.2"),
+    ("*", r"\S+", r"%[xy]mm(1[6-9]|2[0-9]|3[01])\b", ("avx512f", "avx512vl")),   # EVEX-only registers
+    ("evex", r"\S+", r"%zmm", ("avx512f",)),
+    ("evex", r"\S+", r"", ("avx512f", "avx512vl")),     # EVEX on %xmm/%ymm (or mask registers only)
+    ("*", r"k\S*", r"", ("avx512f",)),                   # the mask-register instructions (VEX-encoded)
+    ("vex", r"vf(n?m(add|sub)|maddsub|msubadd)\S*", r"", ("fma",)),
+    ("vex", r"vcvt(ph2ps|ps2ph)", r"", ("f16c",)),
+    ("vex", r"v\S*", r"%ymm", ("avx2",)),
+    ("vex", r"v\S*", r"", ("avx",)),
+    ("vex", r"andn|bextr|blsi|blsmsk|blsr", r"", ("bmi",)),   # not tzcnt: gcc's floor `rep bsf` decodes as tzcnt
+    ("vex", r"bzhi|mulx|pdep|pext|rorx|sarx|shlx|shrx", r"", ("bmi2",)),
+    ("legacy", r"lzcnt", r"", ("lzcnt",)),
+    ("legacy", r"popcnt", r"", ("popcnt",)),
+    ("legacy", r"movbe", r"", ("movbe",)),
+    ("legacy", r"addsubp[sd]|haddp[sd]|hsubp[sd]|lddqu|movddup|movs[hl]dup|fisttp\S*|monitor|mwait", r"", ("sse3",)),
+    ("legacy", r"pshufb|palignr|pabs[bwd]|phadd\w*|phsub\w*|pmaddubsw|pmulhrsw|psign[bwd]", r"", ("ssse3",)),
+    ("legacy", r"ptest|pblendvb|pblendw|pmin[su][bdw]|pmax[su][bdw]|pextr[bdq]|pinsr[bdq]|pcmpeqq|pmovzx\w*|pmovsx\w*",
+     r"", ("sse4.1",)),
+    ("legacy", r"pcmpgtq|pcmp[ei]str[im]|crc32\w*", r"", ("sse4.2",)),
+    ("legacy", r"cmpxchg16b", r"", ("cx16",)),
+    ("legacy", r"lahf|sahf", r"", ("sahf",)),
+    ("legacy", r"xsave\w*|xrstor\w*|xgetbv|xsetbv", r"", ("xsave",)),
 )
+ENC_PREFIXES = {0x26, 0x2E, 0x36, 0x3E, 0x64, 0x65, 0x66, 0x67, 0xF0, 0xF2, 0xF3}   # est.PREFIXES' legacy prefixes
+
+def encoding(bs):
+    """an instruction's encoding from its bytes: legacy prefixes and a REX skipped, then 0x62 = evex, 0xC4/0xC5 =
+    vex (64-bit mode: never LES/LDS/BOUND), else legacy"""
+    i = 0
+    while i < len(bs) and bs[i] in ENC_PREFIXES:
+        i += 1
+    if i < len(bs) and 0x40 <= bs[i] <= 0x4F:
+        i += 1
+    b = bs[i] if i < len(bs) else None
+    return "evex" if b == 0x62 else "vex" if b in (0xC4, 0xC5) else "legacy"
 
 def isa_needs(obj):
     """{feature: first instruction needing it} over the object's whole .text (every function the TU compiled: the
-    timed loop, its inlined site and any helper gcc kept out of line)"""
+    timed loop, its inlined site and any helper gcc kept out of line), each instruction classified by its encoding
+    (objdump's raw bytes, one line per instruction at --insn-width=16)"""
     need = {}
-    for ln in sh(["objdump", "-d", "--no-show-raw-insn", "-j", ".text", obj]).splitlines():
-        m = re.match(r"\s+[0-9a-f]+:\s+(\S+)\s*(.*)$", ln)
+    for ln in sh(["objdump", "-d", "--insn-width=16", "-j", ".text", obj]).splitlines():
+        m = re.match(r"\s+[0-9a-f]+:\t([0-9a-f ]+?)\s*\t(\S+)\s*(.*)$", ln)
         if not m:
             continue
-        mn, ops = m.group(1), m.group(2)
-        for mrx, orx, feat in ISA_NEEDS:
-            if re.fullmatch(mrx, mn) and (not orx or re.search(orx, ops)):
-                need.setdefault(feat, "%s %s" % (mn, ops))
-                break
+        enc, mn, ops = encoding([int(x, 16) for x in m.group(1).split()]), m.group(2), re.sub(r"\s*#.*$", "", m.group(3))
+        hit = next((feats for e, mrx, orx, feats in ISA_NEEDS
+                    if e in ("*", enc) and re.fullmatch(mrx, mn) and (not orx or re.search(orx, ops))), None)
+        if hit is None and enc != "legacy":
+            raise SystemExit("link: ISA UNCLASSIFIED %s: %s instruction `%s %s` matches no ISA_NEEDS row"
+                             % (obj, enc.upper(), mn, ops))
+        for feat in hit or ():
+            need.setdefault(feat, "%s %s" % (mn, ops))
     return need
+
+def isa_table_check(fx, floor):
+    """[F2] THE TABLE COVERS THE TARGETS: every feature a planned target enables above the floor (the kit's
+    `--target-facts`, over every target any planned arm's instance is keyed to) is some ISA_NEEDS row's; refuses
+    one with no row (a row deleted, or a target gaining a feature the table never learnt)"""
+    rowed = {f for _e, _m, _o, feats in ISA_NEEDS for f in feats}
+    forms = {plan.key_form(a.name) for js in plan.build()[0].values() for a in js if a.kind not in ("enter", "j1")}
+    targets = {}
+    for kf in sorted(f for f in forms if f):
+        fr = frame(fx, kf[0], kf[1])
+        targets.setdefault(fr[3], fr[4])
+    for tgt, feats in sorted(targets.items()):
+        miss = sorted(feats - floor - rowed)
+        if miss:
+            raise SystemExit("link: ISA TABLE: planned target %s enables %s above the floor, and no ISA_NEEDS row "
+                             "names it" % (tgt, ",".join(miss)))
+    return sorted(targets)
 
 def isa_check(name, obj, target, tfeat, floor):
     """[lane slotx] THE TIMED CODE IS THE KEYED TARGET'S: refuse an object needing a feature outside floor +
@@ -473,6 +524,7 @@ def build_objs(job, rundir, arms):
         common.append(compile_tu(open(os.path.join(HERE, c + ".c")).read(), os.path.join(d, c + ".c"), "x"))
     objs, checks, hashes, ctext = [], [], {}, []
     floor = floor_features(fx)
+    isa_table_check(fx, floor)
     for k, a in enumerate(arms):
         src, fc, f = render(fx, a)
         sym = "a%d" % k

@@ -1347,9 +1347,9 @@ static void gate_cases(void)
  *       FILE part, a form-feed line, the BODY part (the slot's wrapper
  *       places them)
  *   arm_fixtures --frame ID [CLS]  the instance's header lines, its
- *       target's region open and close, form-feed separated (the host's
- *       text around a cell, as pcrec places it; lane slotx), then its
- *       target's facts line
+ *       target's region open and close, its family guard, form-feed
+ *       separated (the host's text around a cell, as pcrec places it; lane
+ *       slotx), then its target's facts line
  *   arm_fixtures --target-facts TOKEN  `target<TAB>name<TAB>features`
  *   arm_fixtures --hash-text FILE|-  mf_form_hash_text of a text (the slot's
  *       cell-text check folds a cell TU's site span with it)
@@ -1931,9 +1931,11 @@ static int site_parts_mode(const char *id, const char *cls)
  * `#include` lines of its rendered art's header facts (mf_include_c of each
  * mf_form_includes bit), a form-feed line, its target's region open, a
  * form-feed line, the region close (mf_target_c_of; both "" for a target
- * with nothing to enable), a form-feed line, the target's facts line
- * (--target-facts). The slot harness writes the lines at file scope ahead
- * of the region (span_cards/slot/link.py). */
+ * with nothing to enable), a form-feed line, the family guard
+ * (mf_family_c_of; "" for the portable target, which has no family; review
+ * 2026-11-15 r1 F10), a form-feed line, the target's facts line
+ * (--target-facts). The slot harness writes the guard first in the TU, the
+ * header lines at file scope ahead of the region (span_cards/slot/link.py). */
 static void target_facts(const mf_target *t)
 {
     printf("target\t%s\t%s\n", t->name, *t->features ? t->features : "-");
@@ -1964,7 +1966,8 @@ static int frame_mode(const char *id, const char *cls)
         fputs(line, stdout);
     }
     const mf_target_c *c = mf_target_c_of(t);
-    printf("\f\n%s\f\n%s\f\n", c->region_open, c->region_close);
+    printf("\f\n%s\f\n%s\f\n%s\f\n", c->region_open, c->region_close,
+           t->family ? mf_family_c_of(t->family)->guard : "");
     target_facts(t);
     return 0;
 }
