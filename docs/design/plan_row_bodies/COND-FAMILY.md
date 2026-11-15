@@ -986,3 +986,11 @@ ends" be considered against the `^`/`$` rule and says he likes the control of sp
 in chat. Manager's leans (mine): for (5) the switch is OFF by default so pasted PCRE keeps its meaning, and `\&` is a
 literal in both modes; for (2) a directly applied filter stays anchored at both ends (the string-set foundation), a
 loosening transform (`contains`, `search`) removes that, and `^`/`$` written inside its argument put an end back.
+**2026-11-15 RULING — filters stay anchored at both ends; `^`/`$` in a loosening transform's argument put an end back
+(Frank, to session 132; closes item (2) of the entry above).** His words: "Your examples make me agree. /\d\d/ &
+between(1, 12) Without anchoring it would match "31"". RECORD: a directly applied filter is a set of WHOLE strings
+(anchored at both ends; `m & /^err$/` = `m & /err/`); `contains` and `search` remove that anchoring; inside their
+argument `^` and `$` mean the ends of the value being filtered (`contains(/^err/)` = starts with `err`,
+`contains(/err$/)` = ends with `err`), so `startsWith`/`endsWith` are conveniences. ONE rule: `^`/`$` always mean the
+ends of the value being filtered. The alternative (regex filters unanchored by default, as in PCRE) is REJECTED: his
+own example, `/\d\d/ & between(1, 12)` would then match `31`. Resolves the draft's open item on the span rule.
