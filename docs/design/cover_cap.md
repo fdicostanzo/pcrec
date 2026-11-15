@@ -338,8 +338,8 @@ in it. Stage 2 also moves kit bytes (D146/D147: a pcrec abi event in the same co
 ### 4.5 Spec (D80), in the same change (C-13)
 
 Stage 1:
-- `facts_listing.md` §4.1.2¶7c (`span_facts`) and its `decline:` reasons in §4.1.3¶3 are
-  removed; a new section `cover` after §4.4 defines the section of §3.3 with ¶7c's product definition
+- `facts_listing.md` §4.1.2¶7c (`span_facts`) becomes a `— retired` stub (a spec number
+  never disappears) and its `decline:` reasons leave §4.1.3¶3; a new section `cover` after §4.4 defines the section of §3.3 with ¶7c's product definition
   carried over word for word, and §4.1¶2's sentence on the `cover` row's reading of
   `span_facts` is rewritten to the machine reading.
 - `cli.md` §2.6 describes `--list-limits` generically and names no row: no hunk.
