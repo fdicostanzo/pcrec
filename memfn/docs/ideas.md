@@ -793,3 +793,24 @@ Frank, ruling on [LANDWALK-PRES]: at a found byte (a landmark, a required-run ca
   - Fits the opt-in SIMD thread (each form must beat scalar or name a benefit). Open: the state count Frank's 18 instructions assume; where real automata exceed it (JSON row products, weekday ~100) a split or a state-reduction is needed.
   - NOT scheduled (close-before-start); trigger: a measured scan-bound pattern population where the DFA walk dominates.
 - 2026-11-14 CORRECTION (lane mfind, lane/memfn-mfind report): the 11-07 entry's "{X,x} PAIR (an inline word-at-a-time loop)" is WRONG. Pair is two memchr streams (a libc call per stream), not an inline word loop. The 11-07 per-byte ratio "pair 0.074" therefore prices two libc streams, not inline machinery. The inline one-member finder (fn-mfind / mfind-w16 / mfind-w32, built unpicked by mfind) reuses vrun's levels, spellings and the D155 ladder, not pair.
+
+## 2026-11-15 — long exact spans (relayed by main; raw observations, NO build, NO request, evaluate later)
+Context: main's [COVER-CAP] rev 2 (docs/design/cover_cap.md; design round running) will at its stage 2 state exact
+spans longer than 32 positions (36, 40, 100, 500; mostly long runs of ONE byte class, e.g. [0-9a-f]{n}). The
+capability request (a span of any length) comes later as an R-n after that round. pcrec states sets only; the kit
+sees repeats itself from the sets it is passed (D157: pcrec never states runs or names a form).
+1. Measured by main 2026-11-15: the REPORT window's emitted check is one inline range test per position in an
+   unrolled && chain; [0-9a-f]{8} -> {24} adds ~138 chars of C and ~8 asm lines per position
+   (/var/tmp/pcrec-pcrec/scratch/spanfacts/h8.c, h24.c). The kit never compares adjacent positions' sets today.
+2. Frank (his words): "i am presuming in spans like the example class, kit will be able to use simd instructions to
+   reduce. also, it can consider unrolling by X in the loop as an interrim between inline and loop. but that is an
+   old school optimization- i'm not sure it even applies with modern cpu".
+3. Frank (his words): "if the inline form causes the artifact to bust the L1/L2 cache then they might turn out
+   slower". Main's note: the && chain exits at the first mismatch, so miss-heavy cells hide it; it shows on
+   hit-dense / near-miss subjects and on cold or many-pattern regimes; a one-matcher hot loop flatters the inline form.
+4. Frank (his words): "it might adopt start and later tactics where the first N checks are inline to not spoil
+   prediction then as it gets more likely to be correct it changes to loop". Main's note: N is a tuning constant;
+   the measurable behind it is the depth at which candidates die.
+Kit first reading (not evaluated): a run of one class over n positions is a loop over n bytes against one set (a
+SIMD range/classify block per 16/32 bytes, exact); the measurables are candidate death depth and code size vs the
+inline chain; any N or unroll width is a suspect constant until measured (memory pcrec-suspect-tuning-constants).
