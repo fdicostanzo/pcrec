@@ -20,13 +20,14 @@
 SAB_ID="S288-density-memchr-guard-dropped"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="prechecks"
-SAB_DESC="req_byte_dominated_by drops the density conjunct's !cs->memchr_form guard, so the byte-frequency (ppm) comparison runs for an offset-set (table) candidate scan too -- [ab]\\x80[0-9]*\\x81 flips its one-byte pre-check on 0x81 from REQ_WHY \"emitted\" to \"dominated\" by an offset-set scan of 0x80 that is not a memchr form at all"
+SAB_DESC="req_byte_dominated_by drops the density conjunct's !proof->stop guard (the old !cs->memchr_form), so the byte-frequency (ppm) comparison runs for an offset-set (table) candidate scan too -- [ab]\\x80[0-9]*\\x81 flips its one-byte pre-check on 0x81 from REQ_WHY \"emitted\" to \"dominated\" by an offset-set scan of 0x80 that is not a memchr form at all"
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S288."
 # [MECH-REACH] the witness's one-byte pre-check stays emitted (never
 # dominated by the offset-set scan) on the clean tree.
 # RE-AIMED 2026-10-23 (lane s3fix600, D172 S3 job 600): the witness is a fixed-width
 # window, a `cover` artifact by default (no scan, so not this site); the probe's
 # compile takes the cover row's deny --memfn=no-window-search, the build before S3.
+# (SUPERSEDED 2026-11-14, lane mechund: the re-aimed witness is not fixed-width, so the probe needs no deny.)
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]\x80[0-9]*\x81" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && echo REACH-DENSITY-PRECHECK-NOT-DOMINATED'
 SAB_REACH_EXPECT="REACH-DENSITY-PRECHECK-NOT-DOMINATED"
 SAB_COUNT=1

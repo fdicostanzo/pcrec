@@ -8,7 +8,7 @@
 # --memfn line: the deny arm reaches these blocks through `make test-axes`'
 # memfn arm (docs/testing.md, the --memfn= arm). Answers are arm-independent
 # and python3 `re` verified.
-# arms: --memfn=no-run-verify-wide | --memfn=no-window-search | --memfn=no-run-verify-wide,no-window-search
+# arms: --memfn=no-run-verify-wide | --memfn=no-run-verify-wide,no-window-search (each moves 4 of 4 blocks); no-window-search alone moves 0 of 4; measured 2026-11-15, FLOORS-1)
 
 # route (default arm, this build): _REQ_WHY "emitted" _REQ_HANDOFF "1" _REQ_RUN "[6163][30-39][30-39][30-39]2d[30-39][30-39][30-39][30-39]@4" _ENGINE "vm" _DFA_PREFILTER "handoff" _DFA_PREFILTER_OFFSETS "none"
 pattern (a|bc)\d{3}-\d{4}

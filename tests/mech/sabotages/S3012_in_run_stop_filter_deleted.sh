@@ -16,7 +16,7 @@ SAB_ID="S3012-in-run-stop-filter-deleted"
 SAB_FILE="memfn/src/window.c"
 SAB_SUITES="g2win"
 SAB_DESC="a_mass_choose's in-run filter deleted: the in-run stop reads T_MASS_STRETCH directly, G2's window family must red"
-SAB_DOC_FIGURE="HAND-MEASURED by lane k382afix 2026-11-10 (docs/dev/lanes/k382afix_report.md): memfn/tests/run_g2_pres.sh --plant S3012 RED (the lever pass's generator: mf_define refuses the layout). Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3012."
+SAB_DOC_FIGURE="G2's WINDOW family (memfn/tests/run_g2_win.sh, arm g2win): 86 fails on the plant (lane mechund 2026-11-14). The reach is MEASURED (lane fixposts2 2026-11-15, a hand-built plant lib against the same generator, seed 20261022): clean prints REACH-G2W-INRUN rendered=200 agree=200, the planted build 157 of 200 agreeing. Matrix figure: OWED to the fixposts2 mechrows cloud run. Former detector (g2pres) retired. Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3012."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='        if (r && p->stretch && o >= r->start && o < r->start + r->len && o != rs)
