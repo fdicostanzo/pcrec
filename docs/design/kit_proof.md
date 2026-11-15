@@ -30,7 +30,7 @@ extended `pcrec_kset_walk`, not a new `src/facts/spans.c`). Nothing else in this
 `ctx_span.md` revision 2 (same review file, "Re-check of revision 2", R2 a BLOCKER if
 built) corrects the `[r4 B9]` in-span rule below, each edit marked `[r4rc R2]`: the
 narrowing is PER THREAD, never of the per-offset union (§5.2); the narrowed sets live in
-`MkLang`, and `KsetWalk` stays the hull its consumers read (§5.2); two alternation
+`MkLang`, and `KsetWalk` stays the hull its consumers read (§5.2); two alternation *(superseded by cover_cap.md rev 4, 2026-11-15)*
 witnesses join X0's list (§6.4), `witnesses.txt` and `conj.txt` D as TEXT, verdicts OWED;
 sabotage S1150, the union-narrowing plant, is PROPOSED (§6.3).
 
@@ -61,13 +61,13 @@ each superseded sentence carries `[s3]`.
 |---|---|---|
 | the deny `-fno-kit-proof`, a FACT deny (bit 57) that empties `MkKnown` (§0, §1.1 `fact-denied`, §2.2, fam-M6) | NOT BUILT. The `cover` row's off switch is the kit's `--memfn=no-window-search` (the window search's E-find row, `registry.md` §6¶8a), which declines C13; a pcrec FACT deny is filed under [IFACE-PUSH], named by behaviour (D174) | the `cover` row has no pcrec-side identity of its own: its only off switch also moves every other window site E-find renders, and C13's `refused` detail cannot tell a deny from a kit decline (the stop the kit cannot render) |
 | `--list-axes` gains `cover` and `kit-proof` (§3.6) | `cover` is listed (`locate` 2, `unanchored` re-numbered 3); `kit-proof` is not (no deny to list) | `registry.md` §6¶3a lists `cover` as a row that reads the kit and carries no pcrec deny |
-| `--emit-facts` gains the `MkKnown` member row (§3.6) | NOT BUILT: the `span_facts` slice is the only new row | none for answers; the admission's facts read `span_facts` without a `used` record (`facts_listing.md` §4.1¶2) |
+| `--emit-facts` gains the `MkKnown` member row (§3.6) | NOT BUILT: the `span_facts` slice is the only new row | none for answers; the admission's facts read `span_facts` without a `used` record (`facts_listing.md` §4.1¶2) *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | the kit's REPORT row RPT, held for its preview step `R-26.6`, routed by the harness lever (con-B2, §7) | RPT and the preview RETIRED: a REPORT site is a window site, rendered by the window family's E-find row (`window_site.md` §4); the lever `--harness=kit-proof` changes no byte (its retirement filed under [KIT-VERIFY]) | X5's byte-identity gate is the `--memfn=no-window-search` arm against the build before the window search was the default |
 
 ## §R2.2. What revision 2.2 changed (X0 finding → section)
 
 Step X0 (lane `x0oracle`, `kit_proof/x0/results.md`) did not pass. It found two defects
-in `conj.py`'s reading, which is the prototype of `MkEnd` + `MkLang`, plus a population
+in `conj.py`'s reading, which is the prototype of `MkEnd` + `MkLang`, plus a population *(superseded by cover_cap.md rev 4, 2026-11-15)*
 the table admits that §1.2 did not count. All three are fixed here. The R2 fix follows
 the manager's ruling (2026-10-21): the stated per-position set is the TRUE byte set,
 including bytes reached through a view-gated edge. Nothing under `src/`, `memfn/` or
@@ -76,7 +76,7 @@ including bytes reached through a view-gated edge. Nothing under `src/`, `memfn/
 | finding | disposition | section / file |
 |---|---|---|
 | R1: the reading took an UNSEEDED machine's entry to be row 0 | sound-M1 now holds on BOTH arms: `e(⊥)` and the unseeded entry are the EMITTED constant `X` (`anchored_state = X;`), read by kvdfa (`Machine.entry`, `starts()`) and by C6 in `conj.py`. The X0 premise test `\Zx` read `cover` at main and now reads `entry-const`. So do `\zx`, `\zabc`, `-{0,}?\Z-` (both encodings) and `[ab]*\z\W`. `\w{0,2}?$\W` declines at `no-eol-view` (both flag arms). The same row-0 assumption also sat in kvdfa's seeded `starts()`, which added row 0 for the absent predecessor even when `X` is dead; in `forward_path` (the forward machine's start row); and in `whole()` | §1.1 C6, §6.3 S1140 (now both arms), `conj.py` `k_entry`, `docs/dev/kvcensus/kvdfa.py`, its selftest |
-| R2: the plain walk's hull dropped eol-view bytes (`(a$\n)\|ab`: `S_1 = {b}`, libpcre2 `{b, \n}`) | the TRUE set is now stated. The machine reading adds the byte a row consumes through its eol view at a subject-final `\n` (the emitted loop's own step: `step(eol[q], '\n')` into a row that accepts at the end), counts that path as a match ending at `d + 1`, and treats such rows as live. §5.2's sentence about C8 is corrected, and the requirement on `span_facts` is stated. No shape was found where the true set is unsound, so no conjunct is added. The plant `plain-walk` (no S-id: the S1130-S1150 range is full) restores the old walk, and X0 must read it red | §5.2, `kvdfa.lang` / `Machine.vnl` / `acc_end`, `conj.machine`, `x0.py` |
+| R2: the plain walk's hull dropped eol-view bytes (`(a$\n)\|ab`: `S_1 = {b}`, libpcre2 `{b, \n}`) | the TRUE set is now stated. The machine reading adds the byte a row consumes through its eol view at a subject-final `\n` (the emitted loop's own step: `step(eol[q], '\n')` into a row that accepts at the end), counts that path as a match ending at `d + 1`, and treats such rows as live. §5.2's sentence about C8 is corrected, and the requirement on `span_facts` is stated. No shape was found where the true set is unsound, so no conjunct is added. The plant `plain-walk` (no S-id: the S1130-S1150 range is full) restores the old walk, and X0 must read it red | §5.2, `kvdfa.lang` / `Machine.vnl` / `acc_end`, `conj.machine`, `x0.py` *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | K35: the table admits census DFA patterns outside §1.2's population (99 at X0, 10 of them R1) | §1.2 is recounted from the table itself on the fixed reading (`conj.txt` F, queued job `300-x0fix-recount`): **91** outside the census text classes (49 native, 42 utf8; 99 - the 10 R1 items now declining + 2 newly admitted), so the `cover` population is **79 / 51 bench, 712 / 526 corpus patterns (native / utf8), 1,288 distinct (flags, pattern)**, and B1's movers move with it | §1.2, §7 B1, `docs/design/CLAUDE.md` |
 | the libpcre2 10.46 `MATCH_INVALID_UTF` + `ANCHORED` start past a leading invalid byte | filed as U20, with a probe. It is the DOCUMENTED skip (`pcre2unicode(3)`), applied before the anchor. `\G` does not move with it | `docs/dev/upstream_issues.md` U20, `kit_proof/x0/u20_probe.c` |
 | X0 re-run | both parts, the witnesses, the plants and X0's self-plants, on the fixed reading | §6.4 X0 RESULT, `kit_proof/x0/results.md` |
@@ -93,7 +93,7 @@ carries `[r3rc <id>]`.
 
 | id | disposition | section |
 |---|---|---|
-| K1 (BLOCKER) | C9 becomes "no row at depth 0..k carries a non-identity eol view". `conj.py` implements it (`rows_by_depth`). `ab\|a$\n`, `ab\|a\Z\n` and `ab\|a$\n\z` join `witnesses.txt`, and all three DECLINE at `no-eol-view`. Under the plant "C9 tested at depth k only" (`CONJ_PLANT=c9-depth-k`, revision 2's C9) all three read `cover` and are wrong: `"a\n"` from 0 gives NOMATCH where PCRE2 gives (0,2). The admitted set is unchanged, 1,197 → 1,197 with no row newly declined: the census population is 0, as the critic said. §5.2 states that `span_facts` passes a mid-pattern `$`/`\Z` to the hull. S1136 is re-aimed to this plant. X0 gains a subject family because the critic's random subjects missed the `ab\|a$\n` cell | §1.1 C9, §5.2, §6.3 S1136, §6.4 X0, `kit_proof/conj.py`, `witnesses.txt` |
+| K1 (BLOCKER) | C9 becomes "no row at depth 0..k carries a non-identity eol view". `conj.py` implements it (`rows_by_depth`). `ab\|a$\n`, `ab\|a\Z\n` and `ab\|a$\n\z` join `witnesses.txt`, and all three DECLINE at `no-eol-view`. Under the plant "C9 tested at depth k only" (`CONJ_PLANT=c9-depth-k`, revision 2's C9) all three read `cover` and are wrong: `"a\n"` from 0 gives NOMATCH where PCRE2 gives (0,2). The admitted set is unchanged, 1,197 → 1,197 with no row newly declined: the census population is 0, as the critic said. §5.2 states that `span_facts` passes a mid-pattern `$`/`\Z` to the hull. S1136 is re-aimed to this plant. X0 gains a subject family because the critic's random subjects missed the `ab\|a$\n` cell | §1.1 C9, §5.2, §6.3 S1136, §6.4 X0, `kit_proof/conj.py`, `witnesses.txt` *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | M-A | C2 `origin-start` is RETIRED (UL-n1). It carried no weight, because the REPORT description is read off the machine. Its admitted patterns join U1. `conj.py` applies nothing after the table, so its `why` histogram is first-match in table order. U-ctxorigin's context joins are recounted: 12 / 9 corpus. Whole-cover patterns with no start-origin census site add 5 bench / 27 corpus native and 1 / 7 utf8. S1136 could not go red, and is RE-AIMED to K1's plant | §0, §1.1 C2, §1.2, §6.3 S1136, §8.3 |
 | M-B | the harness lever's KIT-SIDE channel is named: `mf_preview(mf_art *, const char *step)`, a harness-only call on the `mf_reach` precedent. Its fence: only `pcrec_harness_compile` reaches it, which is the compound lever's one-global reserved-prefix entry, and it is not an `options.def` row, so no `--memfn=` spelling reaches it. Its wording is D157-neutral: pcrec names its own routing event, never a row or a form. §7's re-run condition becomes "if pcrec's row OR the kit text differs at B1 from Z2, B4 included" | §7 (Z2, "The harness lever's kit channel"), §4.3 R-26.6 |
 | M-C | S1143 ships declared UNREACHED, with the argument (a nullable body fails C10, or has no span 0 for C13). S1139 is TWO edits: C9 dropped AND the eol view read as the end | §6.3 |
@@ -105,7 +105,7 @@ carries `[r3rc <id>]`.
 | m6 | X5 is byte identity "modulo the abi readers" | §6.4 X5 |
 | m7 | the getwidth superset is stated PER ENCODING. getwidth counts characters, and `é\|ab` is fixed at 2 bytes under utf8 but (1, 2) in characters | §6.4 K35 |
 | m8 | §8.4 Q2's stale PENDING label is deleted and the RULED text kept. fam-M7's claim is corrected: neither A1's verdict nor A5's moves in stage 1, and the field reads are [cand-no-name-strcmp] hygiene. The note now records that `conj.py` has no C5 | §8.4 Q2, §2.6, §1.1 C5, `conj.py` docstring |
-| PARTIAL family M2 | `span_facts`' half of C8 is absent from `conj.py`, so `conj.py`'s C8 is the machine half only. OWED at Z2: the slice built and C8 run as two-producer equality on every admitted artifact | §1.5, §6.4, §7 Z2 |
+| PARTIAL family M2 | `span_facts`' half of C8 is absent from `conj.py`, so `conj.py`'s C8 is the machine half only. OWED at Z2: the slice built and C8 run as two-producer equality on every admitted artifact | §1.5, §6.4, §7 Z2 *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | PARTIAL contract M5 | X0 and X1 (the independent per-position, per-byte libpcre2 oracle) and the getwidth K35 floor have NOT been run. The critic's re-check differential (1,197 patterns, 1,638,884 cells) is a precursor on the critic's instrument, not X0. OWED at step X0, before Z2 | §6.4, §7 X0 |
 | PARTIAL contract B2, sabotage, sound B1 | discharged by M-B, M-C and K1 above | — |
 | UL-n1 | drop C2: done here (trigger met) | §8.3 |
@@ -120,7 +120,7 @@ declined. In `conj.txt` B every pattern that read `no-start-site` now reads `cov
 
 **What revision 2.1 could NOT discharge** (also in the lane report): X0/X1 themselves (a
 heavy differential, not run under the box rule); the getwidth floor's number; the
-`span_facts` half of C8 (it needs the Z2 build); the K96 per-field `serves`/`uses` cells
+`span_facts` half of C8 (it needs the Z2 build); the K96 per-field `serves`/`uses` cells *(superseded by cover_cap.md rev 4, 2026-11-15)*
 (the kit's, at Z1).
 
 ---
@@ -135,8 +135,8 @@ Every finding id in r3, with the section that discharges it. All are ACCEPTED.
 |---|---|---|
 | fam-B1 | `exact_len` is stated over the SENT sets: the largest `L` such that span-0 positions `[0, L)` are all SENT and every sent set equals the producer's `S_d`. On 33 of 66 bench and 129 of 560 corpus stage-1 sites, span 0 sends fewer positions than `k` (`conj.txt` E) | §4.1, §5.2 |
 | fam-M1 (Q2) | rows are distinct by WALK; the FACT (`MkKnown`) and the FINISHER (`FIN2 report`) are source-neutral. [PF-KNOW] det_all, start_landing U1 and U1b are one FINISH-on-VM mechanism, filed as [CAPS-KNOWN]. U-anch is a VERIFY-family member | §2.1, §8.2, §8.4 Q2 |
-| fam-M2 | the producer is split. `S_d`, `exact_len` and the hull are priority-free and are the FIRST SLICE of `span_facts` (`src/facts/spans.c`). Only "the end is decided at `k`" and the context sets read A. Machine `S_d` vs `span_facts` `S_d` is a control | §1.5, §5.2, §6.4 |
-| fam-M3 | `MkLang` is a PATTERN fact (`src/facts`), `MkEnd` a MACHINE fact read off A (gen), `MkKnown` a SUBJECT fact (`src/gen/known.c`) that holds a REFERENCE to the kit's class, keyed `(point, origin)`, with room for `(src, fact)` conjuncts and length bounds at the second member | §5.1 |
+| fam-M2 | the producer is split. `S_d`, `exact_len` and the hull are priority-free and are the FIRST SLICE of `span_facts` (`src/facts/spans.c`). Only "the end is decided at `k`" and the context sets read A. Machine `S_d` vs `span_facts` `S_d` is a control | §1.5, §5.2, §6.4 *(superseded by cover_cap.md rev 4, 2026-11-15)* |
+| fam-M3 | `MkLang` is a PATTERN fact (`src/facts`), `MkEnd` a MACHINE fact read off A (gen), `MkKnown` a SUBJECT fact (`src/gen/known.c`) that holds a REFERENCE to the kit's class, keyed `(point, origin)`, with room for `(src, fact)` conjuncts and length bounds at the second member | §5.1 *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | fam-M4 | the admission is the listed first-match conjunct table `cover_conj[]` (the `split_conj[]` precedent, D163 add. 4). The helper derives knowledge only | §1.1, §5.1 |
 | fam-M5 | stage 1 is `CR_DFA` only: `CR_ATTEMPT` has no counted population | §1.1 C1, §1.2 |
 | fam-M6 (Q4) | `-fno-kit-proof` is a FACT deny (`CandList.fact_deny` precedent) that empties `MkKnown`; every consumer declines naturally; X5 becomes a byte-identity gate | §2.2, §6.4 X5, §8.4 Q4 |
@@ -149,7 +149,7 @@ Every finding id in r3, with the section that discharges it. All are ACCEPTED.
 | fam-m4 | D164's end mark moves A's accept depth, so `cover_conj[]` asserts an unmarked A (C5) | §1.1 |
 | fam-m5 | T-PROOF becomes a fact-family note (window_contract §9 edit) | §2.1, §6.2 |
 | fam-m6 | bit accounting: see con-bits (7 free, 6 after this one) | §6.1 |
-| fam-UL-0..UL-8 | filed with triggers; UL-0 (the `span_facts` slice) is IN U1 | §8.3 |
+| fam-UL-0..UL-8 | filed with triggers; UL-0 (the `span_facts` slice) is IN U1 | §8.3 *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 
 **k3-contract (2 BLOCKER, 5 MAJOR, readers, bits, staging, sabotage, R-26 details)**
 
@@ -200,7 +200,7 @@ for the new fields (named here, the kit's to write at Z1).
 | stage 1 population | `CR_DFA` finisher artifacts only `[r3 snd-M2, fam-M5]`. **66 bench / 560 corpus native sites, 46 / 413 utf8** (census sites, origin start, whole-cover). `cover_conj[]` admits 71 / 585 native and 47 / 420 utf8 whole-cover PATTERNS: the start-origin ones (66 / 558, 46 / 413) plus, with C2 retired, 5 / 27 and 1 / 7 with no start-origin site `[r3rc M-A]`. Context joins add 6 bench / 80 corpus native and 3 / 65 utf8, U-ctxorigin's 12 / 9 included `[r3 snd-M4, r3rc M-A]` (§1.2). Counted from the table at revision 2.2, the `cover` population is 79 / 712 native and 51 / 526 utf8 patterns, 91 of them outside the text classes above `[x0fix K35]` |
 | what the entry loses | the forward machine's tables and scan loop, the start recovery, the K82 handoff and any pre-check (`foobar` twin: `.text` 2,047 → 1,425 B, SIZE ONLY, §2.4) |
 | the `\b` rewrite | READ off the route's anchored machine (seed table, emitted entry constant, class-indexed accept). For stage 1 it is DFA-only. At U1b a facts-layer derivation becomes the context fact and this reading its control `[r3 fam-Q3]` (§3) |
-| the fact producer | split `[r3 fam-M2]`: `span_facts`' first slice gives `S_d`, `exact_len` and the hull, computed by EXTENDING the k-set walk (`pcrec_kset_walk`, `src/facts/kset.c`; priority-free) rather than by a new `src/facts/spans.c` `[r4 Q-r4-3]`. A reading of A gives the end at `k` and the context sets (§5.2) |
+| the fact producer | split `[r3 fam-M2]`: `span_facts`' first slice gives `S_d`, `exact_len` and the hull, computed by EXTENDING the k-set walk (`pcrec_kset_walk`, `src/facts/kset.c`; priority-free) rather than by a new `src/facts/spans.c` `[r4 Q-r4-3]`. A reading of A gives the end at `k` and the context sets (§5.2) *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | facts pcrec states (R-26) | on a BOUNDED span 0: `prefix_stated`, `exact_len` (over the SENT sets `[r3 fam-B1]`), `consumable_len`. In the new carrier `mf_site.ctx[]` `[r3 con-B1]`: CONTEXT spans with `absent` and `consumable`. On the site: `site_kind` `MF_SK_REPORT` with every position REQUIRED `[r3 con-M3]`, and `read_floor` `[r3 con-M4]`. Every enum has an UNSTATED zero, refused where read (§4) |
 | what the kit returns (R-26) | `mf_class.proven[d]` per origin offset; `proven0`/`proven_prev` COPIED from it (§4.2) |
 | the deny | `-fno-kit-proof`, a FACT deny that empties `MkKnown` (one flag bit, 57; 6 left) `[r3 fam-M6, con-bits]`; `[s3]` NOT BUILT: `--memfn=no-window-search` declines C13 (§R2.3) |
@@ -223,13 +223,13 @@ so the sabotage rows and the other notes still cite C3-C14 correctly.
 | # | id | kind | the conjunct | why it is needed |
 |---|---|---|---|---|
 | C1 | `finisher-dfa` | route | `cand_finish_of(cx) == CR_DFA` | on `CR_DFA` a group ≥ 1 is never live, so `FIN2`'s dead-group fill is the whole capture answer. The LOCATOR route would admit hybrids with live groups (5 bench / 126 corpus in revision 1's count) `[r3 snd-M2]`. `CR_ATTEMPT` is out: it has no counted population and no table reader (its machine is computed-goto) `[r3 snd-M3, fam-M5]` |
-| C2 | ~~`origin-start`~~ | — | **RETIRED** `[r3rc M-A]` (was: the site's origin is the match start) | it carried no weight. `cover` does not reuse the census site: the REPORT description (§2.5) is built from `MkLang` and A at the match-start origin, so another origin on the site `cover` replaces changes nothing. Dropping it admits U-ctxorigin's 12 / 9 corpus context joins and 5 bench / 27 corpus native (1 / 7 utf8) whole-cover patterns with no start-origin census site, and all of them are inside the critic's 0-difference run (UL-n1). Its plant S1136 could not go red (0 / 1,221) and is re-aimed (§6.3) |
+| C2 | ~~`origin-start`~~ | — | **RETIRED** `[r3rc M-A]` (was: the site's origin is the match start) | it carried no weight. `cover` does not reuse the census site: the REPORT description (§2.5) is built from `MkLang` and A at the match-start origin, so another origin on the site `cover` replaces changes nothing. Dropping it admits U-ctxorigin's 12 / 9 corpus context joins and 5 bench / 27 corpus native (1 / 7 utf8) whole-cover patterns with no start-origin census site, and all of them are inside the critic's 0-difference run (UL-n1). Its plant S1136 could not go red (0 / 1,221) and is re-aimed (§6.3) *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | C3 | `no-gstart` | machine | the route's NFA holds no `N_GSTART` (no `gstart_seed_state` is emitted) | `\G` makes `search_from` the only start; the machine cannot see it as a byte set `[r3 snd-m3]`. Today every `\G` body takes the attempt route, so C1 declines first and C3's plant is UNREACHED (§6.3 S1142). The row exists so the admission does not rest on that routing fact |
 | C4 | `anchored-A` | machine | A (`job->adfa`) is built | the reading needs it; `anchored_ok` false or over the cap declines (4 corpus patterns, `conj.txt` B) |
 | C5 | `unmarked-A` | machine | A carries no D164 `END_MARK` accept distances (asserted: a `tagged` form's lowering is not on A) | the mark moves A's accept depth, so `k` would not be the match width `[r3 fam-m4]`. Today such bodies are `rev-end` and C5 is an assertion. It is NOT in `conj.py`, which has no population for it `[r3rc m8]` |
 | C6 | `entry-const` | machine | unseeded A: one LIVE entry, the EMITTED constant `X` of `anchored_state = X;` `[x0fix R1]`. Seeded A: every live seeded entry is ONE row `r0`, and `e(⊥)` is the EMITTED entry constant `X` of `search_from ? seed[class(s[search_from − 1])] : X` (`emit_dfa.c:6246`). `X = r0` makes absent-before SATISFIES, `X` dead makes it FAILS; any other `X` declines | `e(⊥)` is not row 0: `(?<=x)cat` has `X` dead, and reading row 0 is wrong on 168 of 3,798 cells (`"cat"` from 0: (0,3) against nomatch) `[r3 snd-M1]`. The unseeded entry is not row 0 either `[x0fix R1]`: `\Zx` emits `anchored_state = 2` (row 1), and row 0 is its eol view's target. Read from row 0, `\Zx` admitted `S_0 = {x}` and answered (1,2) on `"Zx"`, where PCRE2 has no match (X0's R1). The trace build asserts that the `X` the reading used is the one the emitter writes, on both arms |
 | C7 | `fixed-width` | machine | from `r0` there is a depth `k`, `1 ≤ k ≤ MF_MAX_SPAN_POS`, such that no row reached at a depth `< k` accepts in ANY form (plain, class-indexed, end view, eol view), and the rows at `k` are not empty | an accept below `k` is a shorter match. Reading a view accept as "not an end" was rev 1's hole `[r3 snd-B1]`. `k ≥ 1` also declines every nullable body, and C4 and C10 decline them all again, which is why its plant S1143 is UNREACHED `[r3rc M-C]` |
-| C8 | `exact` | span fact | `exact_len ≥ k` on the producer's span 0, and the producer's `S_d` equals A's `S_d` for `d < k` | the language from the origin is `S_0 × … × S_{k−1}` for this artifact's encoding (kvp-contract S1: per encoding). The equality is fam-M2's control (§5.2). The `why` has two details `[r3rc m2]`. `exact/machine-inexact` means A's language from `r0` is not a product. `exact/producers-disagree` means `span_facts`' `S_d` ≠ A's `S_d`, two producers disagreeing about one language, which is a defect: the trace build asserts 0 of it. `conj.py` reads only the machine half (§R2.1, PARTIAL) |
+| C8 | `exact` | span fact | `exact_len ≥ k` on the producer's span 0, and the producer's `S_d` equals A's `S_d` for `d < k` | the language from the origin is `S_0 × … × S_{k−1}` for this artifact's encoding (kvp-contract S1: per encoding). The equality is fam-M2's control (§5.2). The `why` has two details `[r3rc m2]`. `exact/machine-inexact` means A's language from `r0` is not a product. `exact/producers-disagree` means `span_facts`' `S_d` ≠ A's `S_d`, two producers disagreeing about one language, which is a defect: the trace build asserts 0 of it. `conj.py` reads only the machine half (§R2.1, PARTIAL) *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | C9 | `no-eol-view` | machine | no row at ANY depth `0..k` of the walk carries a non-identity eol view `[r3rc K1]` | at `k` an eol view is neither "a byte follows" nor "the subject ends": reading it as the end is wrong on 19 of 3,777 cells (`cat$` under `-fno-rev-end`, `"ccat\n"` from 0: cover none, PCRE2 (1,4)), and not reading it gives NOMATCH on `"cat"` `[r3 snd-B1]`. BELOW `k` a mid-pattern non-multiline `$`/`\Z` followed by a consumed `\n` is a transition only under the eol view, which the plain walk cannot see. Revision 2 tested depth `k` only, so `ab\|a$\n` read `cover` with `k` = 2 and gave NOMATCH on `"a\n"` from 0, where PCRE2 gives (0,2) (likewise `ab\|a\Z\n` and `ab\|a$\n\z`). The census population is 0, so X0 on the admitted set could not have found it `[r3rc K1]` |
 | C10 | `end-at-k` | machine | every row at depth `k` accepts, only through its class-indexed (or plain) accept or its end view, and none has a live successor | the end is `c + k` and no other priority end exists (O2). `abc|ab` and the four lazy context forms (`\w+?(?:)\b`, …) fail here |
 | C11 | `after-agree` | machine | the rows at `k` agree on `C_k` (the bytes before which they accept) and on absent-after, and `C_k ≠ ∅` or absent SATISFIES | the after-context is then one per-position set with one absent rule (§3.2) |
@@ -342,7 +342,7 @@ not of priority. `in|instanceof`'s language has the exact prefix `in` with no pr
 read at all. What priority decides is that the end is at `k` (`in` accepts first, and A
 kills the `instanceof` arm there), and which context the seed table encodes.
 
-- **Priority-free, `span_facts`' first slice** (§5.2): `S_d`, `exact_len` and the hull of
+- **Priority-free, `span_facts`' first slice** (§5.2): `S_d`, `exact_len` and the hull of *(superseded by cover_cap.md rev 4, 2026-11-15)*
   span 0 at the match-start origin, on the lowered machine, computed by the extended
   `pcrec_kset_walk` (`src/facts/kset.c`) `[r4 Q-r4-3]`.
 - **The machine reading** (`MkEnd`, §5.1): C3-C7 and C9-C11 off A. That is `k`, the end
@@ -351,7 +351,7 @@ kills the `instanceof` arm there), and which context the seed table encodes.
 - **The join is C8**: `S_d` from both must agree for `d < k`. Two producers that share no
   code make that equality a real control (§6.4). `conj.py` has only the machine
   producer, so its C8 is `exact/machine-inexact` alone. The two-producer equality is
-  OWED at Z2, when `span_facts`' slice is built, and it runs on every admitted artifact
+  OWED at Z2, when `span_facts`' slice is built, and it runs on every admitted artifact *(superseded by cover_cap.md rev 4, 2026-11-15)*
   `[r3rc PARTIAL fam-M2]`.
 
 **Where to attack §1.** (a) C7-C10 under leftmost-first priority: a body where A keeps a
@@ -677,7 +677,7 @@ REPORT site states SUBJECT (§2.5). MLINE states SUBJECT today, so the rule move
 - **DFA:** a `cover` artifact runs no DFA in `_search`. A non-`cover` artifact sends no
   context span in stage 1, so no kit text moves there (U4 sends them as filters later).
 - **VM:** nothing reads the fact in stage 1.
-- **Listings:** `--emit-ir` is unchanged. `--emit-facts` gains the `span_facts` slice
+- **Listings:** `--emit-ir` is unchanged. `--emit-facts` gains the `span_facts` slice *(superseded by cover_cap.md rev 4, 2026-11-15)*
   (Z2) and the `MkKnown` member row (B1), each with a `facts_listing.md` hunk.
   `--list-axes` gains `cover` and `kit-proof` at B1. `[s3]` Built: `cover` only, and no
   `MkKnown` row (§R2.3).
@@ -873,14 +873,14 @@ point of the emitted matcher". Its trigger is reached: [KIT-VERIFY] is the third
 MACHINE, and what is known about the SUBJECT:
 
 ```c
-/* src/facts/known.h -- a PATTERN fact: span_facts' first slice at the
+/* src/facts/known.h -- a PATTERN fact: span_facts' first slice at the  /* superseded by cover_cap.md rev 4, 2026-11-15 */
    match-start origin (§5.2), filled by the extended pcrec_kset_walk [r4 Q-r4-3].
    Priority-free, on the lowered machine. */
 typedef struct {
     uint8_t  stated;                    /* MK_LANG_UNSTATED 0, MK_LANG_STATED       */
     uint8_t  exact_len;                 /* 0..MF_MAX_SPAN_POS                       */
     uint8_t  set[MF_MAX_SPAN_POS][32];  /* S_d, d < exact_len                       */
-} MkLang;
+} MkLang;  /* superseded by cover_cap.md rev 4, 2026-11-15 */
 
 /* src/gen/known.c -- a MACHINE fact: the end at k and the context, read off the
    route's anchored machine A (C3-C7, C9-C11). */
@@ -911,7 +911,7 @@ typedef struct {
     uint8_t ctx_proven;   /* bit 0: before, bit 1: after                            */
 } MkDerived;
 
-MkDerived pcrec_known_derive(const MkLang *, const MkEnd *, const MkKnown *);
+MkDerived pcrec_known_derive(const MkLang *, const MkEnd *, const MkKnown *);  /* superseded by cover_cap.md rev 4, 2026-11-15 */
 ```
 
 - **Admission is `cover_conj[]`; the helper derives knowledge.** Revision 1's helper
@@ -925,8 +925,8 @@ MkDerived pcrec_known_derive(const MkLang *, const MkEnd *, const MkKnown *);
 
 ### 5.2 The producers `[r3 fam-M2, fam-B1, con-M5]`
 
-**UL-0, `span_facts`' first slice, built IN U1.** `window_contract.md` §5.2 specifies
-`span_facts` (~~owner `src/facts/spans.c`~~, a member of the position-pin family §5.6) as
+**UL-0, `span_facts`' first slice, built IN U1.** `window_contract.md` §5.2 specifies *(superseded by cover_cap.md rev 4, 2026-11-15)*
+`span_facts` (~~owner `src/facts/spans.c`~~, a member of the position-pin family §5.6) as *(superseded by cover_cap.md rev 4, 2026-11-15)*
 HULL spans on the lowered tree. Its first slice is span 0 at the match-start origin of
 the root segment: `S_d` for every position and `exact_len`, the largest `L` for which the
 per-position sets' cross product equals the language's length-`L` prefixes. It is
@@ -945,7 +945,7 @@ The walk's own bound, `PCREC_PREFIX_K_MAX` (24, `limits.def`), is the slice's: a
 §11 N-1 counts them). `req.c` and `widths.c` are the other per-offset walks; the unified
 per-offset table that follows is filed at `ctx_span.md` §9.
 
-**Only POSITION-ONLY kinds pass through to the hull** `[r3rc K1, r4 B9]`. `span_facts`
+**Only POSITION-ONLY kinds pass through to the hull** `[r3rc K1, r4 B9]`. `span_facts` *(superseded by cover_cap.md rev 4, 2026-11-15)*
 reads bytes. A position-only assertion (`$`, `\Z`, `\z`, `^`, `\A`, `\G`, `\K`)
 constrains WHERE a byte may stand, and not WHICH byte, so inside the span it is passed
 through. ~~as every zero-width node is.~~ On `ab|a$\n` the slice states `S_0 = {a}`,
@@ -966,7 +966,7 @@ set: sent, it would let a filter skip the match `"a\n"`. C8 would then read
 happens. Ruling (manager, 2026-10-21): every stated per-position set is the TRUE byte
 set, view-gated bytes included, and the site is not declined for it. Both producers
 must therefore state the true set:
-- **the machine reading** (`MkLang`'s prototype, `kvdfa.lang`) adds the byte `\n` at
+- **the machine reading** (`MkLang`'s prototype, `kvdfa.lang`) adds the byte `\n` at *(superseded by cover_cap.md rev 4, 2026-11-15)*
   depth `d` for every row `q` on the walk whose eol view `eol[q]` steps on `\n` into a
   row that accepts at the subject end. The end test is the emitted one: the end view
   when live, else the eol view, else the plain accept. Such a path is a match ending at
@@ -974,7 +974,7 @@ must therefore state the true set:
   accept (`a$\n`). An END view gates no byte, because nothing follows the subject end,
   so only eol views add bytes. After this change the machine reading states `S_1 = {b, \n}`,
   `exact_len` 2 on `(a$\n)|ab` and on the three K1 witnesses, equal to the slice;
-- **`span_facts`** (the extended `pcrec_kset_walk`) must pass a position-only assertion
+- **`span_facts`** (the extended `pcrec_kset_walk`) must pass a position-only assertion *(superseded by cover_cap.md rev 4, 2026-11-15)*
   through WITH its continuation. The thread that crosses a non-multiline `$`/`\Z` keeps
   its following classes (`\n`, here) in the frontier, exactly as an ordinary edge does,
   because the subject end is not known at compile time. It must not drop the thread
@@ -1018,23 +1018,23 @@ so a prefilter reading them could skip a real match. The rule is `ctx_span.md` �
   otherwise leave it and end `exact_len` at `d − 1`. On `[ab](?<=a)c|bc`: `S_0 = {a, b}`,
   `exact_len` 0.
 
-**Where the narrowed sets live** `[r4rc R2]`: in `MkLang` (`set[]`, `exact_len`) only. The
+**Where the narrowed sets live** `[r4rc R2]`: in `MkLang` (`set[]`, `exact_len`) only. The *(superseded by cover_cap.md rev 4, 2026-11-15)*
 extended walk projects its one frontier twice: `KsetWalk.k[]` with every restriction
-ignored (today's pass-through hull), and `MkLang` with them applied. So the k-set's
+ignored (today's pass-through hull), and `MkLang` with them applied. So the k-set's *(superseded by cover_cap.md rev 4, 2026-11-15)*
 consumers (`prefix_k.c`'s offset-k selection and OFS rows, the run pin, the `--emit-facts`
 k-set rows) read an unchanged `KsetWalk`, and Z2 moves no byte through them. The sent sets
-of §5.2's next paragraph are `MkLang`'s on a `cover` site (the REPORT description sends from
-`MkLang`); on any other start-origin FIND site the `exact_len` statement is checked against
-`MkLang.set[d]` with the narrowed sets, so an over-stated claim still ends it. `conj.py` does
+of §5.2's next paragraph are `MkLang`'s on a `cover` site (the REPORT description sends from *(superseded by cover_cap.md rev 4, 2026-11-15)*
+`MkLang`); on any other start-origin FIND site the `exact_len` statement is checked against *(superseded by cover_cap.md rev 4, 2026-11-15)*
+`MkLang.set[d]` with the narrowed sets, so an over-stated claim still ends it. `conj.py` does *(superseded by cover_cap.md rev 4, 2026-11-15)*
 not model the in-span rule: OWED at Z2 (`ctx_span.md` §3.8).
 
 **Z2's statement on every start-origin FIND site** `[r3 fam-B1]`. `exact_len` is stated
 over the SENT sets, not over the language. It is the largest `L` such that span-0
-positions `[0, L)` are all sent and every sent set equals `MkLang.set[d]`. A site whose
+positions `[0, L)` are all sent and every sent set equals `MkLang.set[d]`. A site whose *(superseded by cover_cap.md rev 4, 2026-11-15)*
 span 0 sends one term (`foobar`'s PF site, or `\d{16}`'s `0R`) states `exact_len ≤ 1`
 however long the exact prefix is. On 33 of 66 bench and 129 of 560 corpus native stage-1
 sites, span 0 sends fewer positions than `k`. This is zero movers while `consumable_len`
-stays 0 there. The REPORT description (§2.5) sends all `k` positions from `MkLang`
+stays 0 there. The REPORT description (§2.5) sends all `k` positions from `MkLang` *(superseded by cover_cap.md rev 4, 2026-11-15)*
 itself, so on a `cover` site the sent span and `S_d` are one producer's output by
 construction. Sites with any other origin state 0.
 
@@ -1059,11 +1059,11 @@ the built machine.
 |---|---|---|
 | the record | `MkKnown` (reference, `(at, src)` with UNSTATED zeros) | the `(point, origin)` key with `(src, fact)` conjuncts and length bounds (UL-7, the second member); other points (a VM pc, a DFA state) |
 | members | `MK_SRC_KIT_PROOF` | [PF-KNOW]'s prefilter proof and [CAPS-KNOWN]'s group map; K23 `minw`; [START-LANDING]; the D164 end set; the K82 landmark |
-| pattern facts | `MkLang` = `span_facts`' first slice | the rest of `span_facts` (window_contract §5.2) |
+| pattern facts | `MkLang` = `span_facts`' first slice | the rest of `span_facts` (window_contract §5.2) *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | derivations | `prefix`, `suffix_lo`, `ctx_proven` | containment ("is X proven at d"), retiring the three "dominated" spellings |
-| listing | the `span_facts` slice (Z2) and the member row (B1) in `--emit-facts` | the record's own section at the second member |
+| listing | the `span_facts` slice (Z2) and the member row (B1) in `--emit-facts` | the record's own section at the second member *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 
-**Where to attack §5.** (a) Does `span_facts`' slice equal the machine's `S_d` on every
+**Where to attack §5.** (a) Does `span_facts`' slice equal the machine's `S_d` on every *(superseded by cover_cap.md rev 4, 2026-11-15)*
 admitted artifact (C8), including caseless utf8? (b) Does any reader compute `prefix`
 privately (G1's domination test, `landing` L4)? (c) `MkKnown` as a reference: is the
 `mf_class` alive for every reader's lifetime (define-time memo)?
@@ -1088,7 +1088,7 @@ privately (G1's domination test, `landing` L4)? (c) `MkKnown` as a reference: is
 ### 6.2 Spec hunks owed (D80), each in its step
 
 - **Z1:** none for callers. The kit's `memfn.h` comments are the contract text.
-- **Z2:** `facts_listing.md`, the `span_facts` slice in `--emit-facts`.
+- **Z2:** `facts_listing.md`, the `span_facts` slice in `--emit-facts`. *(superseded by cover_cap.md rev 4, 2026-11-15)*
 - **B1:**
   - `match_api.md` §3.1¶21 ("four forms to recover the match start" becomes five,
     `cover` recovering nothing);
@@ -1149,7 +1149,7 @@ S1142 and S1143, each with its argument. S1136 is the re-check's K1 plant `[r3rc
 ### 6.4 Checks, each against a source the subject does not share `[r3 con-M5, snd-M2, fam-M2, fam-M6]`
 
 - **X0, the reading against libpcre2, BEFORE Z2** (U-X0). It runs on `conj.py`'s
-  reading (the prototype of `MkEnd` + `MkLang`). Two parts:
+  reading (the prototype of `MkEnd` + `MkLang`). Two parts: *(superseded by cover_cap.md rev 4, 2026-11-15)*
   - **Per-position, per-byte sets.** For every admitted artifact, AND for every site of
     any artifact that states `exact_len > 0` (the statement is made on every start-origin
     FIND site, §5.2, and an over-statement there is on the wire whether or not `cover`
@@ -1268,7 +1268,7 @@ S1142 and S1143, each with its argument. S1136 is the re-check's K1 plant `[r3rc
   strategy mask. Every other byte must be equal. That is stronger
   than answer identity, and it holds because the deny empties the fact that every proof
   consumer reads. `make test-axes` gets the `-fno-kit-proof` arm as well.
-- **The C8 control** `[r3 fam-M2]`: `span_facts`' `S_d` against A's `S_d` on every
+- **The C8 control** `[r3 fam-M2]`: `span_facts`' `S_d` against A's `S_d` on every *(superseded by cover_cap.md rev 4, 2026-11-15)*
   admitted artifact. The two producers share no code.
 - **K35, who counts the population** `[r3 con-M5, snd-M2]`:
   - **an independent denominator**: python's `sre_parse` getwidth gives `(min, max)`
@@ -1315,7 +1315,7 @@ PCRE2-only syntax that python refuses.
 | **Z1** | R-26.1-R-26.5's layout; pcrec states today's truth on every site (`prefix_stated` STATED, `exact_len` 0, `consumable_len` 0, `nctx` 0; MLINE as CONTEXT/FAILS/NO with `read_floor` SUBJECT) | kit (+ the builder lines) | 0 | emit_sweep 0 movers on every arm; G2 extensions; one `MF_SITE_ABI` event |
 | **Zk** | R-26.6: the kit's REPORT row lands UNROUTED (`fd_rows[].routed` false), so the proving TEXT that B1 ships exists from here on | kit | 0 | kit suite; the row's G2 fixtures |
 | **X0** | the libpcre2 oracle on the reading (`conj.py`'s shape, §6.4) | lane | — | set-equality and differential at 0 differences; plants S1130/S1131/S1136/S1139/S1140 red on the reading (S1143 is UNREACHED) `[r3rc]` |
-| **Z2** | pcrec: `span_facts`' first slice, as the extended `pcrec_kset_walk` with `ctx_span.md` §3.3's in-span rule `[r4 Q-r4-3, B9]`; `MkLang`/`MkEnd`/`MkKnown`; `cover_conj[]`; the `cover` row and `emit_cover`; the default-build class check; true `exact_len` over the sent sets on every start-origin FIND site; the `--emit-facts` slice; `compound.c`'s field reads (§2.6). **Routing:** the default build and the trace build both decline `cover` (the trace build decides as the default does). Only `build/pcrec-harness --harness=kit-proof` routes both pcrec's row and the kit's REPORT row (the `--harness=no-compound` lever's shape, `compile.c:3351`); the kit side through `mf_preview` (below) `[r3rc M-B]`. **C17:** `emit_cover`'s door call site lands with a `pending` row in `site_manifest.tsv`, so rule 1 stays green. **`.list`:** the row carries no `.list` at Z2. If the self-check requires one, Z2 is a declared `--list-axes` delta (B3b's precedent) | pcrec | 0 (default build) | emit_sweep 0 movers; X1 and X3 on the harness-routed artifacts, which are B1's artifacts (same pcrec row, same kit text); K35; the agreement assertion |
+| **Z2** | pcrec: `span_facts`' first slice, as the extended `pcrec_kset_walk` with `ctx_span.md` §3.3's in-span rule `[r4 Q-r4-3, B9]`; `MkLang`/`MkEnd`/`MkKnown`; `cover_conj[]`; the `cover` row and `emit_cover`; the default-build class check; true `exact_len` over the sent sets on every start-origin FIND site; the `--emit-facts` slice; `compound.c`'s field reads (§2.6). **Routing:** the default build and the trace build both decline `cover` (the trace build decides as the default does). Only `build/pcrec-harness --harness=kit-proof` routes both pcrec's row and the kit's REPORT row (the `--harness=no-compound` lever's shape, `compile.c:3351`); the kit side through `mf_preview` (below) `[r3rc M-B]`. **C17:** `emit_cover`'s door call site lands with a `pending` row in `site_manifest.tsv`, so rule 1 stays green. **`.list`:** the row carries no `.list` at Z2. If the self-check requires one, Z2 is a declared `--list-axes` delta (B3b's precedent) | pcrec | 0 (default build) | emit_sweep 0 movers; X1 and X3 on the harness-routed artifacts, which are B1's artifacts (same pcrec row, same kit text); K35; the agreement assertion *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | **measure** | directional hand timing on the dev box, in a window cleared with Frank (memory `pcrec-box-shared-with-frank`): harness-routed `cover` artifacts against default on lit-l8, year4, file-ext-order, hex8-bounded, `match`/`search_short`/`throughput` | lane | — | [KIT-VERIFY]'s D77 trigger; GO/NO-GO for B1 |
 | (kit) | R17-b′ B4, the LOCKDOWN (set-site routing, M0's stamp, the size rung) | kit | B4's census | B4's |
 | **B1** | THE ONE BYTE-MOVING EVENT, **after B4**: the REPORT row routed in the default build together with pcrec's row; `PCREC_NO_KIT_PROOF` (bit 57) and the listing's `fact_deny`; `.list`; the `"cover"` stamp; the C17 row `pending` → `delegated`; abi +1 with every §6.1 reader; spec hunks §6.2; S1130-S1148 land (S1149 lands at Z2 with the slice it plants `[r4 B9]`); the bench `[inbox]` note | pcrec + the kit's routing in one commit | the `cover` population (79 bench / 712 corpus native, 51 / 526 utf8 patterns, 1,288 distinct, counted from the table, §1.2) `[r3rc M-A, x0fix K35]` | the full battery (the manager's), mech for every new and moved anchor, `make test-axes` with the new arm, X5 |
@@ -1422,7 +1422,7 @@ proof. (d) Does a kit row added before B4 move B4's `row_floors.tsv` floors?
 - **The absent rule:** `\A`/`^`, `\z`, MLINE's edge, `\G`'s `search_from`, now one enum
   per CONTEXT span.
 - **The proven family** (kvp-unlock's 12 members) belongs under [MATCH-KNOWN] (§5.3).
-- **The position-pin family:** `span_facts`' first slice joins it as its newest member
+- **The position-pin family:** `span_facts`' first slice joins it as its newest member *(superseded by cover_cap.md rev 4, 2026-11-15)*
   (window_contract §5.6), built here (UL-0) as an extension of the family's existing
   per-offset walk, `kset_walk`, so the family gains a projection rather than a walker
   `[r4 Q-r4-3]`.
@@ -1431,7 +1431,7 @@ proof. (d) Does a kit row added before B4 move B4's `row_floors.tsv` floors?
 
 | id | unlock | trigger (D77) |
 |---|---|---|
-| UL-0 | `span_facts`' first slice, built by extending `pcrec_kset_walk` (no `src/facts/spans.c`), WITH the in-span context rule `[r4 Q-r4-3, B9]` | **IN U1** (Z2) |
+| UL-0 | `span_facts`' first slice, built by extending `pcrec_kset_walk` (no `src/facts/spans.c`), WITH the in-span context rule `[r4 Q-r4-3, B9]` | **IN U1** (Z2) *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | UL-1 / U1b → **[CAPS-KNOWN]** | one FINISH `report` on the VM and hybrids with a tag-determinism group map, folding [PF-KNOW] det_all, start_landing U1 and U1b. Frank's PARTIAL determinism: determined groups written, the VM entered after the determined part. `caps == NULL` callers are compound's CAPTURES-ON-DEMAND client. Population: 85 corpus + 3 bench hybrids with fixed-offset groups (`(?'w'cat)`, bench `grp-named-quote`) | the plan row's own: a compile-only census per GROUP (D142's trigger; the census is its first step) |
 | UL-2 | `end-minus-width` reads the priority width (census via kvdfa.whole) | a RECOVER decline counted where the priority width is fixed and the language width is not |
 | UL-3 | X5 as byte identity | **IN U1** (B1) |

@@ -149,7 +149,7 @@ Rulings file entry applied: R1 (the W-T2/W-T3 arithmetic, below).
 | F12 "the kit verifies a candidate against every span" | DOC | "the kit honours each span's verify flag" | §5.3 |
 | F13 `emit_vm.c:4093` is a comment | DOC | `emit_vm.c:4177` | §4.2 |
 | F14 "the match" must mean the attempt span | DOC | defined once in §2; §4.3 and the L2 spec hunk use it | §2, §4.3, §8 L2 |
-| F15 D168 not cited | FIX-NOW | the guard READS D168's producer at its ITEM grain. STOP-RULE finding: the producer's signed-offset half does not exist at `dd2fe2de9`, so the item is designed as its FIRST member, and span_facts' context half becomes its second reader (§5.3) | §5.3, §10, §12 |
+| F15 D168 not cited | FIX-NOW | the guard READS D168's producer at its ITEM grain. STOP-RULE finding: the producer's signed-offset half does not exist at `dd2fe2de9`, so the item is designed as its FIRST member, and span_facts' context half becomes its second reader (§5.3) | §5.3, §10, §12 *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | F16 `ahead` and EXACT/GUARDED have no reader | FIX-NOW | no stored `ahead` (L2 widens the run and the stamp sentence only); no EXACT/GUARDED rule; `exact = false` is kept on a can-fail width-0 group as a sound superset, with no reader | §2, T2, T3, §4.2, §12 |
 | F17 remodel-overlap column missing | FIX-NOW + PLAN | §8 has the column (L3 against A-POSDOM and A-REV; E1/E2 against stage 2a); one fixed-tail producer is named (the description's tail affix of a subtree); the stale gate text of plan rows [REQ-LOOKAROUND] and [RUN-POS-SET] is refreshed | §5.2, §8; plan.md |
 | F18 the lever fires the parent's general form without taking it | FIX-NOW (ruled: take FIX-8's form) | `facts.def`'s deny admits a HARNESS source; the restorable arms are rows of one table; the `--harness=` if-chain is filed as a PLAN member | §3.7, §5.8, §9; plan.md |
@@ -167,7 +167,7 @@ Rulings file entry applied: R1 (the W-T2/W-T3 arithmetic, below).
   `-fno-ctx-node`) lowers `(?=C)`/`(?<=C)` with a body whose language is a set of single
   one-byte characters to `A_CTX(C, CTXFN_NEXT|CTXFN_PREV)`. Measured: `a(?=b)c` lists
   `kinds none` (`facts_listing.md` §4.1.2¶4: a context node is not a `lookaround`),
-  `span_facts 0` and `RX_DFA_SCAN "empty"`; `ab(?<=b)[bc]d\w*e` lists `kinds none` and DFA, and
+  `span_facts 0` and `RX_DFA_SCAN "empty"`; `ab(?<=b)[bc]d\w*e` lists `kinds none` and DFA, and *(superseded by cover_cap.md rev 4, 2026-11-15)*
   under `-fno-ctx-node` `kinds lookaround` and VM, with the same run (`6162`). `req.c:756-761`
   sends `A_CTX` to the same ZERO cut as `A_LOOK`.
 - **The body's description holds EXACT position sets, unmoved by bit 44** `[r2 S8]`.
@@ -196,14 +196,14 @@ Rulings file entry applied: R1 (the W-T2/W-T3 arithmetic, below).
   `rb_walk_at` starts with `rb_init(acc)` (`:677`). So an arm sees "everything to its right" only
   when it is the LEFTMOST element of its spine. Any rule that must see a neighbour therefore lives
   in `rr_cat`, which every concatenation passes through.
-- **The SPAN facts see through repeats; only `span_facts` declines on a lookaround**
+- **The SPAN facts see through repeats; only `span_facts` declines on a lookaround** *(superseded by cover_cap.md rev 4, 2026-11-15)*
   `[r1 F11]`. `kset_walk` reports `A{4}` as `65,65,65,65` and is DERIVED on every lookaround
-  witness: `xyz(?<=yz)abc` gives `120,121,122,97,98,99`, all six consumed bytes. `span_facts`
+  witness: `xyz(?<=yz)abc` gives `120,121,122,97,98,99`, all six consumed bytes. `span_facts` *(superseded by cover_cap.md rev 4, 2026-11-15)*
   DECLINES (`decline:erased-nfa`) on `(?<=foo)bar`, `bar(?=baz)` and `xyz(?<=yz)abc`
   (`span_decline.out`). It states only where the recognizer made an `A_CTX` (`a(?=b)[bc]` gives
   `2:97,98`).
 - **D168's producer at `dd2fe2de9`** `[r1 F15]` (the brief's premise test; §5.3 has the finding).
-  `span_facts` is `MkLang` (`src/facts/facts.h:286-292`): `S_d` at offsets `d >= 0` from the match
+  `span_facts` is `MkLang` (`src/facts/facts.h:286-292`): `S_d` at offsets `d >= 0` from the match *(superseded by cover_cap.md rev 4, 2026-11-15)*
   start only. The context half (`MkCtx`, per-item terms at negative offsets and past the end,
   `docs/design/ctx_span.md` §3.2) is designed and not built ([DD-11.5] part 1, P1a/P1b). `grep -n
   'nctx\|MkCtx' src/facts/facts.h` finds nothing.
@@ -441,7 +441,7 @@ applies to" was ill-formed. Rev 2:
   `req_whole_run` is `derived` (the walk produced a value, `foobaz`; `dead` annotates it), so
   `pf_done_why` (`facts.c:169-182`) takes `dead` and `harness:` out of its `decl` list, and
   `run_facts_checks.sh`'s status/why pairs gain the two. `dead` is not `decline:dead-start`: that
-  is `land_char`'s and `span_facts`' decline (the start machine finds no match; value `0`,
+  is `land_char`'s and `span_facts`' decline (the start machine finds no match; value `0`, *(superseded by cover_cap.md rev 4, 2026-11-15)*
   `facts_listing.md` §4.1.2¶7a/¶7c, status `declined`), while `dead` is the run walk's own
   empty meet on a `derived` fact; neither reads the other, and one pattern can list both on
   different facts. The token closes the invisibility alt_normal_form's stage-2a lever note
@@ -702,8 +702,8 @@ ruling means the attempt-start origin strictly, the guard would read only items 
 offset, and every row of §5.6 after a variable-width piece would lose its mover; the census
 would count that population.
 
-**Where it lives (the D168 addendum L1 files).** D168 named `span_facts` in `src/facts/spans.c`, a
-file that was never built (ctx_span §3.1: span_facts is the extended k-set walk, owner `kset.c`).
+**Where it lives (the D168 addendum L1 files).** D168 named `span_facts` in `src/facts/spans.c`, a *(superseded by cover_cap.md rev 4, 2026-11-15)*
+file that was never built (ctx_span §3.1: span_facts is the extended k-set walk, owner `kset.c`). *(superseded by cover_cap.md rev 4, 2026-11-15)*
 The producer has two halves by PLACEMENT, and one source each:
 
 | half | placement | computed by | reads |
@@ -1158,14 +1158,14 @@ other row `[r4 READY3-4]`. Staged E1, R1, E2, L1, L2, L3, R2, each on its census
 
 **D168 addendum (text L1 files with its build)** `[r2 S8]` `[r3 READY-6]`. "The context producer has two halves
 by placement, one source each. The IN-SPAN half (offsets `d >= 0` inside span 0, per thread) is
-`span_facts`' k-set frontier in `src/facts/kset.c` (D168 named `src/facts/spans.c`, which was
+`span_facts`' k-set frontier in `src/facts/kset.c` (D168 named `src/facts/spans.c`, which was *(superseded by cover_cap.md rev 4, 2026-11-15)*
 never built), reading the lowered `N_CTX` nodes. The ITEM half is one combinator of the fixed-width
 description (`src/facts/desc.c`), called by the run walk (`src/facts/req.c`) at each positive
 one-sided context node: an `A_CTX` NEXT/PREV gives its set at 0/−1, a positive `A_LOOK` its body's
 description placed at the cursor and united per offset across width groups. Each item's terms are
 EXACT byte sets at signed offsets from the item's cursor, with a form (EXACT/SUPERSET) and an
 absent cell. Both halves read `ctxfn.def` for an `A_CTX`, so the node has one definition. Readers
-place an item in their own coordinates: the run against its neighbours (span_arms §5.2), span_facts'
+place an item in their own coordinates: the run against its neighbours (span_arms §5.2), span_facts' *(superseded by cover_cap.md rev 4, 2026-11-15)*
 context records at span 0 (ctx_span P1a/P1b, whose `look-fixed` row reads the item rather than
 walking the body), the window spans ([LOOK-LOCATE]) and the presence `omin` (span_arms L3). No
 reader derives the sets a second way; a reader that narrows them (the run's cube hull within
