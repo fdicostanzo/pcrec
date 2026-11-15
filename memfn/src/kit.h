@@ -665,7 +665,9 @@ int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b);
  * the window family's skip (D-hors, span_pick 1e), is the one pick whose text
  * finds no stop: it probes the window's end and resumes by a shift table. */
 typedef enum { FF_UNSTATED = 0, FF_NONE, FF_LIBC, FF_LIBC_BACK, FF_WALK, FF_V1,
-               FF_W64, FF_A3, FF_PAIR, FF_HORS, FF_MFIND } fd_form;
+               FF_W64, FF_A3, FF_PAIR, FF_HORS, FF_MFIND,
+               FF__COUNT /* not a form: the member count, the bound every
+                            per-form table is held to (review r6 CHECKS-A1) */ } fd_form;
 /* FF_MFIND, THE INLINE ONE-MEMBER FINDER (lane mfind, vrun.c): the pick of
  * the offset-skip function's BODY row `fn-mfind` alone, which holds only on
  * an art carrying the test-only lever `mfind` (mf_lever). No T-FIND row

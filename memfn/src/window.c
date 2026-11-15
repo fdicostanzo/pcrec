@@ -2508,14 +2508,16 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
 
 /* T-FIND's picks as the reply's search piece (mf_wsearch): the built picks;
  * every other pick renders no search, NONE. */
-static const uint8_t wf_wsearch[FF_MFIND + 1] = {
+static const uint8_t wf_wsearch[] = {
     [FF_LIBC] = MF_WSEARCH_LIBC, [FF_LIBC_BACK] = MF_WSEARCH_LIBC_BACK,
     [FF_WALK] = MF_WSEARCH_WALK, [FF_PAIR] = MF_WSEARCH_PAIR, [FF_HORS] = MF_WSEARCH_HORS,
     [FF_MFIND] = MF_WSEARCH_NONE, /* the inline one-member finder renders no search piece */
 };
-/* Keyed to the enum's LAST member, as finder.c's ff_name is: a form added
- * after FF_MFIND must be declared here, not answered NONE by the bounds test. */
-_Static_assert(sizeof wf_wsearch / sizeof wf_wsearch[0] == FF_MFIND + 1,
+/* Sized by its own initializers (the last designated form + 1) and held to
+ * the enum's count FF__COUNT, as finder.c's ff_name is: a form added after
+ * FF_MFIND and not declared here fails the assert, never answered NONE by
+ * the bounds test (review r6 CHECKS-A1). */
+_Static_assert(sizeof wf_wsearch / sizeof wf_wsearch[0] == FF__COUNT,
                "wf_wsearch declares every fd_form");
 
 /* The reply's search piece for pick `f`. */
