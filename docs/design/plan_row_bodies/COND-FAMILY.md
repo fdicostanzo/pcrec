@@ -703,3 +703,9 @@ term". Consequences: conjunction of conditions = comma (`(major: 1, minor: >=4)`
 inside a value), not a misreading; the pipeline reads the same at top level and after a label (look-alike principle).
 Draft §13 C22 RESOLVED; the semver example needs the comma form. (Arrived mid critic round crit-predspec on rev 2; fold
 with the round's dispositions.)
+C22 addendum (Frank 2026-11-14: "Also isodate(year: unpad & etc) looks the same"): a LABELLED ARGUMENT in a call is the
+same `label: expr` form with the same binding (comma separates, `label:` takes up to the next comma or `)`), and
+`isodate(year: S, month: 2)` = `isodate & (year: S, month: 2)` (currying: the positional argument is the subject).
+`:` constrains, `=` sets a parameter (`sep = "."`). A labelled argument always NARROWS the subject (answers RUL-10 of
+review 2026-11-14-r1-predspec). Pipeline spelling follows the pending ruling on review item OWN-1 (`&` vs a stage
+operator).
