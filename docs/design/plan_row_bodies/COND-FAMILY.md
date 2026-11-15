@@ -945,3 +945,17 @@ refuses on budget naming the higher level. (b) `min` = "at least N hits or the v
 `contains(x)` is then `search(x, min = 1)` in what it accepts. `max` under PCRE's reading means "take the first N
 hits" (the rest of the value may hold more), NOT "at most N hits in the value", which stays a count test
 (`occurs.at_most`); the draft must say so in a look-alike row.
+**2026-11-15 RULINGS — ONE reading everywhere (PCRE's); ambiguity is the author's to validate; no `max` on search for
+now (Frank, to session 132; answers the manager's notes (a) and (b) of the entry above).** His words: "1. i'd like to
+know the cost of this, as you say, but I think it will help if our rx is consistent A. If someone is writing ambiguous
+rx they need to think about what that means and validate it with @check() B. if "max" is confusing we could skip it
+for now."
+RECORD: (1) CONSISTENCY: a condition on ANY label, set once or in a loop, follows PCRE's own reading; the 2026-11-14
+some-parse rule (a condition on an ambiguous label passes if some parse passes; predx Q2) is SUPERSEDED. He wants the
+COST of this known: a measurement owed before any build go (how many states the PCRE reading of a condition on an
+ambiguous label costs over the some-parse automaton, on the worked examples and a corpus of ambiguous patterns), filed
+as an open measurement in the draft, not a build. (2) AMBIGUOUS patterns are the author's responsibility: the author
+thinks about what the ambiguity means and VALIDATES it with a compile-time check (his spelling `@check()` is a
+placeholder; the draft's assertion library is the home); the `label.ambiguous` warning stays as the pointer to it.
+(3) `search` gets `min` only for now (default 0; `min = 1` = at least one hit); `max` is LEFT OUT until a case needs
+it ("skip it for now"); "at most N hits" stays a count test.
