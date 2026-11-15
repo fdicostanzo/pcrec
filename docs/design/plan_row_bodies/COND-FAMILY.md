@@ -678,3 +678,12 @@ Amendment (Frank 2026-11-14: "use an rx instead of wild card purely for consiste
 NAMES as an rx, like import/export: `@warn.off("compare.width")`, `@warn.off(startsWith("dead."))` (a label-free value
 filter is a full rx), `@warn.off(/.*/)`, `@warn.error(/.*/)`. No `*` wildcard (`"*"` is the literal name `*`, matches
 nothing, so `warn.unused` flags it). One name-selection rule for import, export and warnings.
+
+**2026-11-14 RULING — counting occurrences (Frank: "more obscure but valuable"; concern: confusion with value numbers; put it in a library, e.g. `label.exactly(1, ...)`; otherwise agree).**
+AGREED as a LIBRARY family over a repeated label's occurrences: all, some, none, exactly(n, c), at_least(n, c),
+at_most(n, c); `c` is the usual `label: set` condition; filters, NOT a count value (no number type); constant (or
+caller-parameter) n at default; cost = a capped counter (n+2 states) multiplied in, shown by [COST-EXPLAIN]; a count
+against another label's value is a priced value-vs-value relation. NAMESPACE: lean `occurs` (not `label`, which clashes
+with element metadata `x.label`): `occurs := import("occurs")`, `headers & occurs.exactly(1, name: ci("Host")) &
+occurs.at_most(1, name: ci("Content-Length")) & occurs.none(name: ci("Transfer-Encoding"))`; value comparisons
+(between, <=) stay purely about values. Name open to Frank. All predx gaps now ruled.
