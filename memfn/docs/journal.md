@@ -4024,3 +4024,10 @@ Main ruled on the four kit findings (D186 add. 2):
   - Accepted; agent stopped. Slotx gate PAUSE released, running on d26bc5751.
   - Queued gate job 642 still named J6B/J6H, and its expect regex [a-zJ0-9] could not match JMB/JMH. Both renamed in place, in the queue copy and the scratch original; the dry run is clean.
   - Still owed before slotx delivers: slotxf8 (F7 + F8 (i)), held by the stop. Stages 642/644 re-run after it.
+
+### 2026-11-15 10:05 — session wake under the stop; mfind gate GREEN; slotx gate RED on a job invocation, re-queued
+- Wake (new kit session). Frank's 03:05 stop is treated as STILL IN FORCE until main says it is lifted: no design, no development, no new lanes; planned tests and merges of proven branches only.
+- mfind gate: 620-628 ALL GREEN on a2b2b2a08 (g2, ident1-3, test, mech, gate) and cloud test a2b2b2a GREEN. Not yet "proven" for a merge: round r2-memfn-mfind's FIX-NOW items (F1 and the check holes) are ruled but unfixed (mfindfix2 held), and cloud axes waits on main's axtri1115.
+- slotx gate on d26bc5751: 640/641/643/644 GREEN. 642 kit-slotx-slot ended outcome=failed (POPULATION-SHORT 3 of 4) and 649 RED from it. Cause read from the 9-line stage output: the JOB called `est.py selftest` with no scratch directory (IndexError, rc=1); JMB, JMH and sabotage (48/48) were rc=0. The monitor's label "work green, the job's expect is stale" was wrong: the expect was right and caught a failed stage that the job's exit code (last stage's rc) hid.
+- Repair (scratch job script only, no repo text; backup 642-kit-slotx-slot.bak-20261115): the self-test gets "$S/st" (as sabotage.sh calls it) and the job exits with the OR of its stages. Direct run of the self-test on d26bc5751: `== est SELFTEST ok: 56 cases, 0 wrong`. 642 and 649 re-queued 10:03 (non-timing, ~27 min).
+- Finding for a later fix lane (HELD by the stop): est.py main() indexes argv[2] with no usage message; other gate job scripts copy the "echo stage rc=$?" shape and rely on the expect line alone for a failed stage.
