@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# covs1-ctime: compile-time census baseline vs candidate + the worst-case witnesses under watchdog, both encodings (cover_cap.md §5.1, R-2)
+set -u
+. /home/pcrec/projects/pcrec/worktrees/covs1/docs/dev/lanes/covs1_evidence/common.sh
+case "${1:-}" in
+    --dry-run)
+        echo "would run in $TREE: compile_time_census.py --ref $BASE --bin build/pcrec, then 3 witnesses x 2 encodings"
+        echo "boxqueue: cap 3600"; echo "boxqueue: est 1800"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=the census's rc, then each witness's rc, decide the job's rc"
+        exit 0 ;;
+    --ready) ready_after ;;
+esac
+tree_build || exit 1
+cd "$TREE" || exit 1
+rc=0
+python3 scripts/compile_time_census.py --ref "$BASE" --bin build/pcrec --out "$SC/ctime.tsv" --top 20 || rc=1
+for enc in byte utf8; do
+    ea=""; [ $enc = utf8 ] && ea="-e utf8"
+    for p in 'a{4095}' '[ab]*a[ab]{10}-{2000}' '[ab]*a[ab]{8}-{300}'; do
+        /usr/bin/time -f "covcost $enc %e s %M KB :: $p" "$MAIN/scripts/watchdog" -s 60 -m 2g -c 60 -S covcost -- \
+            build/pcrec -p rx --features all $ea --emit-main -o "$SC/ct.c" --pattern "$p" || { echo "WITNESS FAILED $enc $p"; rc=1; }
+    done
+done
+echo "covs1-ctime: DONE rc=$rc"
+exit $rc

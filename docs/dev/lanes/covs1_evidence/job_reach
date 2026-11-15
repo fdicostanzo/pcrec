@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# covs1-reach: every sabotage witness still reaches its site on the clean tree (cover_cap.md §5.1, [MECH-REACH])
+set -u
+. /home/pcrec/projects/pcrec/worktrees/covs1/docs/dev/lanes/covs1_evidence/common.sh
+case "${1:-}" in
+    --dry-run)
+        (cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh >/dev/null 2>&1) || { echo "validate failed" >&2; exit 1; }
+        echo "would run in $TREE: REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh"
+        echo "boxqueue: cap 3600"; echo "boxqueue: est 1200"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=exec'd, so the matrix's rc is the job's rc"
+        exit 0 ;;
+    --ready) ready_after ;;
+esac
+cd "$TREE" || exit 1
+make -s -j16 all >/dev/null 2>&1 || exit 1
+exec env REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh
