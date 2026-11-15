@@ -41,6 +41,7 @@ compare (a load kept through an empty asm). Their legitimate callees: NONE — t
 - `sabotage.sh` row (m6) S3221: `timed_form`'s null branch returns None (the null base unkeyed, "any external");
   detected by the shape self-test's S3220 case going WRONG. Row added to the default list.
 - slot/CLAUDE.md: the null row, the selftest's cases, the m6 row.
+- `sabotage.sh` rows k and m1 re-anchored on current text (see Full table).
 
 Validation (logs under `/var/tmp/pcrec-pcrec/scratch/memfn/j4fix/`):
 - est selftest: `== est SELFTEST ok: 68 cases, 0 wrong` (est.out)
@@ -53,7 +54,27 @@ Validation (logs under `/var/tmp/pcrec-pcrec/scratch/memfn/j4fix/`):
 
 ## Full table
 
-FULL_TABLE
+`sabotage.sh` with no row filter, once, in the foreground under `gnutimeout 2700` at eaba9ae9c (log
+`/var/tmp/pcrec-pcrec/scratch/memfn/j4fix/full.log`). Every control GREEN (J2, est, J3, J4, plan, JMB, JMH, d197,
+d197e2e, shape — J4 being the one that had been red). Final line:
+
+    == slot sabotage: 64 DETECTED, 2 MISSED of 66 rows
+
+The two non-detections were neither mine, and both were stale since mcfixb/mcfixc:
+- **k MISSED** (wanted CELL-TEXT MISMATCH). The plant rendered walk's arm from libc's row, and since r6's
+  TIMED_CALLEES the timed-shape check refuses that first (`TIMED-SHAPE ctl: a0_time calls external memchr (form
+  walk's TIMED_CALLEES row allows none)`): a correct refusal, but from a different check than the one the row
+  tests. Re-anchored with the same intent ("an arm rendered from another entry row's text: cell-text refuses"),
+  flipped round: the libc arm rendered from walk's row (its facts too, so walk's `mf_tbl` table is emitted). Walk's
+  inline site calls nothing, so the shape check passes and the cell-text check is what refuses. Re-run alone:
+  `k DETECTED (J2 dry run rc 3: CELL-TEXT MISMATCH kit.find_byte.libc: site text bc7b2e02f06fe955, the hash of the
+  instance its key names (libc -) d7672e87c1dd6d97)`, `1 DETECTED, 0 MISSED of 1 rows` (re2.log).
+- **m1 PLANT FAILED** (counted as MISSED): its anchor `        if got != pin:` became `        elif got != pin:` in
+  mcfixc's r7 RULE-2 (a6b7ea344). Re-anchored on the `elif`. Re-run alone: `m1 DETECTED (est ...: [r6 FIDELITY-3]
+  two keys' cells swapped after finalize: refused by the record's cells pin WRONG)` (re.log).
+
+The new row m6 (S3221) was DETECTED in the full table. With k and m1 re-run, all 66 rows are DETECTED, 0 PLANT
+FAILED, 0 MISSED. (The full table was not re-run after the two re-anchors; per the brief, only those rows were.)
 
 ## STATE AT HANDOFF
 
