@@ -1,0 +1,4 @@
+report=docs/dev/lanes/covcap4_report.md
+sections: STATE AT HANDOFF; FINDINGS APPLIED BY ID; WALK CHOICE; QUESTIONS
+nonempty: all
+commit: yes

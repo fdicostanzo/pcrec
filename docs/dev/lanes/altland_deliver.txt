@@ -1,0 +1,6 @@
+report=docs/dev/lanes/altland_report.md
+sections: Merge; Checks; Plan items filed; STATE AT HANDOFF
+nonempty: all
+commit: yes
+dirty-ok: docs/dev/artifact_size_log.tsv; docs/dev/lanes/; docs/dev/wake.md; docs/dev/owner.md; land1101.done
+owed: main-altland-solo

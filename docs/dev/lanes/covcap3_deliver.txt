@@ -1,0 +1,4 @@
+report=docs/dev/lanes/covcap3_report.md
+sections: STATE AT HANDOFF; CENSUS; DESIGN REV 2; WHAT REV 1 PARTS SURVIVE; KIT REQUEST DRAFT; QUESTIONS
+nonempty: all
+commit: yes

@@ -1,0 +1,5 @@
+report: docs/dev/lanes/krat_report.md
+sections: Ratchet rows; Plan rows; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
