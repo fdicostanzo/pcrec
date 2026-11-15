@@ -1112,6 +1112,27 @@ grep -E '^(space|build|plants|SKIPPED|skipped)' "$work/any.log" | sed 's/^/   /'
 udone any
 fi
 
+# --- 4z. G2's ONE-MEMBER family (lane mfind): its own runner ----------------
+# memfn/tests/run_g2_mfind.py: the inline one-member finder (the test-only
+# lever `mfind`, memfn/src/vrun.c) at the offset-skip FUNC site over a
+# generated one-byte-scan predicate space, every target and lever state, every
+# level and ASan+UBSan, against its own scalar loop with guard pages, the mask
+# stream and the SWAR-exactness trap, plus the plants S3150-S3159 (~60 s quick).
+# It links the PLAIN library: the form is no row of section 4b's registry.
+if want mfind; then
+ustart mfind
+echo "== mfind: G2's one-member family (run_g2_mfind.py)"
+if TMPDIR="$work" "$TO" 900 python3 "$here/run_g2_mfind.py" --root "$root" --lib "$plainlib" $([ "$quick" = 1 ] && echo --quick) > "$work/mfind.log" 2>&1; then
+    passed=$((passed + 1))
+    echo "PASS: one-member family ($(grep '^checks passed' "$work/mfind.log"))"
+else
+    grep -E '^FAIL' "$work/mfind.log" | head -20
+    note_fail 1 "one-member family (run_g2_mfind.py): $(grep '^checks failed' "$work/mfind.log")"
+fi
+grep -E '^(space|build|plants|PLANT|G2M|SKIPPED|skipped)' "$work/mfind.log" | sed 's/^/   /'
+udone mfind
+fi
+
 # --- 4b. --rows: the per-ROW floor, from the kit's own REACH trace ----------
 # Sources: the `MFTRACE REACH table=T row=R chosen=N asked=A` lines of every G2
 # process that SELECTS rows (the generator, once per W2 mutation; K1 calls

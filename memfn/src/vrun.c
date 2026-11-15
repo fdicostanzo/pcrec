@@ -676,11 +676,13 @@ static const char *const mfind_over[] = { "fn-mfind", NULL };
 static const char *const mfind_w32_rungs[] = { "mfind-w16", NULL };
 
 /* guarded_max (Q-R9-9): MEASURED over G2's one-member family (run_g2_mfind.py
- * prints the alone maximum per level), rounded UP to the next 100 bytes; the
+ * prints the alone maximum per level): worst 1,299 w16 and 1,385 w32 over
+ * 44 generator seeds at 160 sites (lane mfind), rounded UP to the next 100
+ * plus 100 of headroom (the seed sweep, not a bound on the space); the
  * verify chain is the body's, so the bound grows with the predicate G2
  * draws (up to MF_MAX_TERM terms). */
-#define MFIND_W16_GUARDED_MAX 2400
-#define MFIND_W32_GUARDED_MAX 2400
+#define MFIND_W16_GUARDED_MAX 1400
+#define MFIND_W32_GUARDED_MAX 1500
 
 const mf_formdecl mfind_w16_decl = {
     "mfind-w16", "mfind", LV_X86_W16, mfind_over, vrun_no_rungs, MFIND_INSN,

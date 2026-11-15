@@ -16,6 +16,13 @@
 # 1,620,166 bytes measured). Under 2x the block, so a bracket that counts a
 # block twice exceeds it (S703).
 rq3-witness	1700000
+# mfind-w16 / mfind-w32 (lane mfind, the inline one-member finder; reached
+# only under the test-only lever `mfind`): one FUNC's helper block at that
+# level, MEASURED by G2's one-member family (memfn/tests/run_g2_mfind.py,
+# `G2M guarded`), each row alone: worst 1,299 (w16) and 1,385 (w32) bytes
+# over 44 generator seeds at 160 sites, rounded up to the next 100 plus 100
+# of headroom; the kit's guarded_max (memfn/src/vrun.c) equal.
+#
 # vrun-w16 / vrun-w32 (R4e' batch 1, R-13): one FUNC's helper block at that
 # level and, for the top level, the selector's one call line (U2: the
 # selector carries no CPU #if, so no arm and no #else/#endif; the bounds
@@ -38,6 +45,8 @@ rq3-witness	1700000
 # (memfn/src/vrun.c VRUN_W*_GUARDED_MAX).
 vrun-w32	2800
 vrun-w16	2400
+mfind-w16	1400
+mfind-w32	1500
 # target-text ([XARCH-DEV] U3): the kit's family guard and one target's
 # region (open + close), written once per artifact for a SIMD target whatever
 # its forms. MEASURED (lane u3tgt, 2026-11-08) over the kit's targets: the
