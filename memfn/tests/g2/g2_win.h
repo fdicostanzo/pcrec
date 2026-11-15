@@ -120,6 +120,7 @@ typedef struct {
        candidate outside the run decision's own competed with R's stop at a
        mass no greater (and won), and the meet moved R's stop */
     int     inrun_set, inrun_set_won, inrun_meet;
+    int     inrun_filt;             /* the in-run filter DECIDES the stop: the scan without it picks another */
     /* R-38 Part D's moved populations (part_d.md §5.1.1 [r3pd FIX-9]), of
        the CHOSEN alternative: R (by role) beside a spelled verify-YES span
        of two or more positions, R the member; R holding a wide position

@@ -1772,14 +1772,34 @@ done
 # predecessor's choice (information, then the first run). [RUN-POS-SET]
 # stage 2a's `restore=alt` (lane r1on) runs an alternation as its common head
 # and tail alone, never `all` (alt_normal_form.md §6 row 2 without row 1).
-# A later span arms unit adds its arm here (`restore=look`). [FIND-MINW]
+# A later span arms unit adds its row to walk_arms.def. [FIND-MINW]
 # `--harness=no-min-width` declines the minimum-width stop (tuning.md §2.55),
 # a change with no public deny; its answers must equal the default's.
 # Selected by the empty AXES= or by its spelling.
-INTERNAL_ARMS=("--harness=no-compound" "--harness=restore=empty"
-               "--harness=restore=zero" "--harness=restore=rep" "--harness=restore=tie"
-               "--harness=restore=alt"
-               "--harness=no-min-width")
+# The restore arms are DERIVED from src/facts/walk_arms.def (the one source of
+# the arm population; reviews 2026-11-15 r1 posts2 CONTRACT-4, r3 fixposts2
+# CHECKS-2/3): read by the preprocessor, the .def's own reader, never a second
+# grammar (comments stripped by "$CC" -E with WALK_ARM left undefined, so any
+# compiler, gcc or clang, leaves the rows as text), and counted both ways --
+# every row the comment-stripped text holds is an arm read, and every arm read
+# is a row -- or FATAL. Both counts read the one file, so this checks the
+# .def's GRAMMAR only: a DELETED row silently leaves the sweep (review r4
+# fixposts2c AXES-1, NOTED; the per-arm mech reach rows are the backstop).
+# An arm added there is swept here without a second list to remember.
+WALK_ARMS_DEF="$ROOT_DIR/src/facts/walk_arms.def"
+walk_arm_names=$(printf '#define WALK_ARM(ID, name, facts) PCREC_ARM name\n#include "%s"\n' \
+                   "$WALK_ARMS_DEF" | "$CC" -E -P -x c - | sed -n 's/^PCREC_ARM "\([a-z0-9_]*\)"$/\1/p')
+walk_arm_read=$(printf '%s\n' "$walk_arm_names" | grep -c .)
+walk_arm_rows=$("$CC" -E -P -x c "$WALK_ARMS_DEF" | grep -o 'WALK_ARM' | grep -c .)
+if [ "$walk_arm_read" -lt 1 ] || [ "$walk_arm_read" != "$walk_arm_rows" ]; then
+    echo "run_axes.sh: FATAL: $walk_arm_read WALK_ARM arms read from src/facts/walk_arms.def, its text holds $walk_arm_rows rows" >&2
+    exit 1
+fi
+INTERNAL_ARMS=("--harness=no-compound")
+while IFS= read -r walk_arm; do
+    INTERNAL_ARMS+=("--harness=restore=$walk_arm")
+done <<< "$walk_arm_names"
+INTERNAL_ARMS+=("--harness=no-min-width")
 HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0
 for arm in "${INTERNAL_ARMS[@]}"; do

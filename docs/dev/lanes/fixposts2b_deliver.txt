@@ -1,0 +1,4 @@
+report=docs/dev/lanes/fixposts2b_report.md
+sections: STATE AT HANDOFF; FIXES BY ID; VALIDATION; OWED
+nonempty: all
+commit: yes

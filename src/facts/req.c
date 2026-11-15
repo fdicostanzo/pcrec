@@ -153,6 +153,7 @@
  * of `req_set` or `req_whole_run`, over the LOWERED tree the E2 seal recorded
  * after `pcrec_lower_enc`; both facts come off one call. */
 
+#include <stddef.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -376,6 +377,26 @@ static RbRun rn_pre(RbRun a, RbRun b)
     return o;
 }
 
+/* THE FIRST-MATCH ROW SCAN, shared by every `{row, arm}` restore table in this
+ * file (`rn_choice_rows`, `rr_alt_rows`, `rb_rep_rows`, `rb_zero_rows`; reviews
+ * 2026-11-15 r1 posts2 CONTRACT-1, r3 fixposts2 CONTRACT-1/3, r4 fixposts2c
+ * RESPELL-2/3). A table holds no CATCH-ALL row: its catch-all is a separate
+ * default, taken when the scan runs off the end, so it is reached by
+ * construction and carries no arm to be wrong (an arm on a last catch-all row
+ * would run the scan off the end; tables without an arm column keep their
+ * always-true row). `RB_ROW_SCAN(i, w, TAB, TEST)` leaves in `i` the index of
+ * the first row of `TAB` that the walk does not restore and for which `TEST`
+ * (which reads the row as `TAB[i]`) holds, or the row count when none does.
+ * `TEST` runs at most once per row, so a row that builds its answer (an
+ * out-parameter, an arena set) is CAPTURED by the test, never called again. */
+#define RB_ROWS(tab) (sizeof (tab) / sizeof (tab)[0])
+#define RB_ROW_SCAN(i, w, tab, test)                                        \
+    do {                                                                    \
+        for ((i) = 0; (i) < RB_ROWS(tab); (i)++)                            \
+            if (!((tab)[i].arm & (w)->restored) && (test))                  \
+                break;                                                      \
+    } while (0)
+
 /* THE RUN CHOICE: which of two candidate runs a subtree keeps as its best.
  * A declared first-match table of comparison rows (`rn_choice_rows`); each
  * row answers > 0 for `a`, < 0 for `b`, or 0 to pass the tie to the next
@@ -439,7 +460,7 @@ static int rn_content(const RbWalk *w, const RbRun *a, const RbRun *b)
     return (int)b->trunc - (int)a->trunc;
 }
 
-/* The last row of the restored tie form: at equal information, `a`. */
+/* The default of `rn_choice_rows`, the restored tie form: at equal information, `a`. */
 static int rn_first(const RbWalk *w, const RbRun *a, const RbRun *b)
 {
     (void)w;
@@ -457,20 +478,19 @@ static const struct {
     { rn_rarer,     PCREC_WALK_ARM(TIE) },
     { rn_nearer,    PCREC_WALK_ARM(TIE) },
     { rn_content,   PCREC_WALK_ARM(TIE) },
-    /* the replaced form, under the restored arm: `a` */
-    { rn_first,     0 },
 };
 
 /* The better of two runs by `rn_choice_rows`, first row that decides and that
- * the walk does not restore. */
+ * the walk does not restore; none deciding, the replaced form (`rn_first`,
+ * the default): `a`. */
 static RbRun rn_better(const RbWalk *w, RbRun a, RbRun b)
 {
-    for (size_t i = 0; i < sizeof rn_choice_rows / sizeof rn_choice_rows[0]; i++) {
-        if (rn_choice_rows[i].arm & w->restored) continue;
-        int c = rn_choice_rows[i].row(w, &a, &b);
-        if (c) return c > 0 ? a : b;
-    }
-    return a;
+    size_t i;
+    int c;
+    RB_ROW_SCAN(i, w, rn_choice_rows,
+                (c = rn_choice_rows[i].row(w, &a, &b)) != 0);
+    if (i == RB_ROWS(rn_choice_rows)) c = rn_first(w, &a, &b);
+    return c >= 0 ? a : b;
 }
 
 static const void *rb_pd_join(Ctx *cx, const void *a, const void *b);
@@ -590,7 +610,9 @@ static RbRuns rr_cat(const RbWalk *w, RbRuns l, RbRuns r)
 
 /* ALTERNATION of runs: only what every branch guarantees. The outcome is a
  * declared first-match table (`rr_alt_rows`, alt_normal_form.md §6); each row
- * answers whether it applies and, if so, fills `*o`. */
+ * answers whether it applies and, if so, fills `*o`; a row that does not
+ * apply leaves `*o` untouched, so the scan hands `*o` to every row and the
+ * applying row's answer is the outcome (RB_ROW_SCAN's capture). */
 typedef bool (*RrAltRow)(const RbWalk *w, const RbRuns *l, const RbRuns *r,
                          RbRuns *o);
 
@@ -635,16 +657,16 @@ static const struct {
     unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
 } rr_alt_rows[] = {
     { rr_alt_union, PCREC_WALK_ARM(ALT) },
-    /* the last row matches every alternation and is never restored */
-    { rr_alt_affix, 0 },
 };
 
+/* Every alternation not taken by a row of `rr_alt_rows`: `rr_alt_affix`, the
+ * default. */
 static RbRuns rr_alt(const RbWalk *w, RbRuns l, RbRuns r)
 {
+    size_t i;
     RbRuns o;
-    for (size_t i = 0; (rr_alt_rows[i].arm & w->restored) ||
-                       !rr_alt_rows[i].row(w, &l, &r, &o); i++)
-        ;
+    RB_ROW_SCAN(i, w, rr_alt_rows, rr_alt_rows[i].row(w, &l, &r, &o));
+    if (i == RB_ROWS(rr_alt_rows)) rr_alt_affix(w, &l, &r, &o);
     return o;
 }
 
@@ -927,7 +949,7 @@ static PCREC_OWN_FRAME void rb_rep_gap_val(RbVal *v, const RbVal *b, int n)
  * design's; the two after them are the forms they replaced (the best-only
  * copy and the min-0 gap), reached only when the walk parameters restore an
  * arm. A row whose `arm` is restored is passed over, so the next row answers
- * in the old form; the last row matches every repeat. */
+ * in the old form; the default (after the table) matches every repeat: a gap. */
 typedef enum {
     RB_REP_UNIT, RB_REP_EXACT, RB_REP_SPLIT, RB_REP_BEST, RB_REP_GAP
 } RbRepRow;
@@ -973,21 +995,15 @@ static const struct {
     { rb_rep_any,    RB_REP_SPLIT, PCREC_WALK_ARM(REP) },
     /* the replaced forms, under a restored arm */
     { rb_rep_min1,   RB_REP_BEST,  0 },
-    { rb_rep_any,    RB_REP_GAP,   0 },
 };
 
 /* The first row of T2 that matches the repeat `a` with body value `b` and
- * that the walk does not restore. */
+ * that the walk does not restore; none, the default: a gap. */
 static RbRepRow rb_rep_row(const RbWalk *w, const Ast *a, const RbVal *b)
 {
-    const size_t last = sizeof rb_rep_rows / sizeof rb_rep_rows[0] - 1;
-    size_t i = 0;
-    /* the last row matches every repeat and is never restored: the scan
-     * stops there whatever the table above it holds */
-    while (i < last && ((rb_rep_rows[i].arm & w->restored) ||
-                        !rb_rep_rows[i].when(a, b)))
-        i++;
-    return rb_rep_rows[i].row;
+    size_t i;
+    RB_ROW_SCAN(i, w, rb_rep_rows, rb_rep_rows[i].when(a, b));
+    return i < RB_ROWS(rb_rep_rows) ? rb_rep_rows[i].row : RB_REP_GAP;
 }
 
 /* `v` := the value of the repeat `a` with body value `b`, by its T2 row. */
@@ -1025,7 +1041,7 @@ static void rb_walk(RbWalk *w, const Ast *a, RbVal *out)
  * is the plain unit until L1 adds its item. E-1 restores under the `empty`
  * arm (span arms E2 took it from alt_normal_form stage 2a), E-4 and E-5
  * under `zero`. A row whose `arm` the walk parameters restore is passed
- * over; the last row (the old cut) matches every node. */
+ * over; the default (after the table, the old cut) matches every node. */
 typedef enum {
     RB_ZERO_EMPTY,   /* the unit, described as the empty string (exact) */
     RB_ZERO_UNIT,    /* the unit, described by desc.c `zero` (not exact) */
@@ -1065,17 +1081,18 @@ static const struct {
     { rb_zero_look_pos, RB_ZERO_UNIT, PCREC_WALK_ARM(ZERO) },
     /* E-4 (span_arms E2): `foo\bbar`, `x(?!ab)ac`, `ab\Kcd` */
     { rb_zero_any,      RB_ZERO_UNIT, PCREC_WALK_ARM(ZERO) },
-    { rb_zero_any,      RB_ZERO_CUT,  0 },   /* E-4 and E-5 restored */
 };
 
 /* `acc` := the zero-width node `a` followed by `acc`, by the first row of T3
- * that matches it and that the walk does not restore. */
+ * that matches it and that the walk does not restore; none, the default (E-4
+ * and E-5 restored): a cut. */
 static void rb_zero_into(const RbWalk *w, RbVal *acc, const Ast *a)
 {
-    size_t i = 0;
-    while ((rb_zero_rows[i].arm & w->restored) || !rb_zero_rows[i].when(a))
-        i++;
-    switch (rb_zero_rows[i].row) {
+    size_t i;
+    RbZeroRow row = RB_ZERO_CUT;
+    RB_ROW_SCAN(i, w, rb_zero_rows, rb_zero_rows[i].when(a));
+    if (i < RB_ROWS(rb_zero_rows)) row = rb_zero_rows[i].row;
+    switch (row) {
     case RB_ZERO_EMPTY: rb_zero_unit_into(w, acc, pcrec_pd_unit()); return;
     case RB_ZERO_UNIT:  rb_zero_unit_into(w, acc, pcrec_pd_zero()); return;
     case RB_ZERO_CUT:   rb_assert_into(w, acc);                     return;
