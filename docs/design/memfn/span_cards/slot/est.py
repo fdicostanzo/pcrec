@@ -353,6 +353,11 @@ def disasm(exe):
 
 MANIFEST_FILES = ("cell_text", "placement")      # [r5 FIDELITY-2] the job files a manifest pins and est re-reads
 
+def legacy_record(rec):
+    """[review 2026-11-15 r8 ADQ-3] a record finalized before r6 (the s2d1/s2d2 windows) carries no `window` key; every
+    window since (mfcard, mfconfirm, ..) names one. A missing pin is tolerated ONLY on such a legacy record"""
+    return "window" not in rec["run"]
+
 def manifest_check(rundir, rec, j, L):
     """[r11-REV15-1] job j's MANIFEST (run.py dry's: the run id and the sha-256 of the frozen plan and of every launch
     executable) against the run directory, and against the record's pin of it (`manifest_sha256_<job>`, from the
@@ -363,6 +368,9 @@ def manifest_check(rundir, rec, j, L):
                          "code through the dry run's pins)" % (j, p))
     m = dict(ln.rstrip("\n").split("\t", 1) for ln in open(p) if ln.strip() and not ln.startswith("#"))
     msha, pin = plan.sha256(p), rec["run"].get("manifest_sha256_" + j)
+    if pin is None and not legacy_record(rec):      # [r8 ADQ-3] a windowed record pins every ran job's manifest
+        raise InputError("MANIFEST PIN absent job %s: the record (window %s) pins no manifest sha-256 (finalize writes it)"
+                         % (j, rec["run"]["window"]))
     if pin is not None and pin != msha:
         raise InputError("MANIFEST MISMATCH job %s: %s's sha-256 is %s, the record pins %s" % (j, p, msha, pin))
     if m.get("run_id") != rec["run"]["run_id"]:
@@ -542,6 +550,9 @@ def read_cells(rundir, rec):
         got, pin = plan.sha256(os.path.join(rundir, f)), rec["run"].get("cells_sha256_" + j)
         # [review 2026-11-15 r7 RULE-2] refused only when a pin is PRESENT and differs; a record with none (finalized
         # before r6: the s2d1/s2d2 windows, rmax_drill.py's re-derivation) reads with a NOTE, as manifest_check does
+        if pin is None and not legacy_record(rec):      # [r8 ADQ-3] only a legacy record may lack the pin
+            raise InputError("CELLS PIN absent %s: the record (window %s) pins no cells sha-256 (finalize writes it)"
+                             % (f, rec["run"]["window"]))
         if pin is None:
             print("est: NOTE %s: the record pins no cells sha-256 (finalized before r6): read unpinned" % f, file=sys.stderr)
         elif got != pin:
@@ -1462,6 +1473,11 @@ def selftest(scratch):
         _synth_launches(d, "J4", j4, (), launches=[3])
     def unpinned(d):           # [r11-REV15-1] a record finalized before the pin (windows 1 and 2): checked as it stands
         _synth_pin(d, drop=True)
+        import record      # [r8 ADQ-3] "before the pin" = a LEGACY record: no window key (s2d1/s2d2)
+        rp = os.path.join(d, "run_record.tsv")
+        rec = record.read(rp)
+        rec["run"] = [r for r in rec["run"] if r[0] != "window"]
+        record.write(rp, rec)
     def stems_swapped(d):      # [r11-REV15-1] P6: obj/tab.c's stems of l1.p0 and w1.p0 swapped
         p = os.path.join(d, "J4", "obj", "tab.c")
         t = open(p).read()
@@ -1758,16 +1774,28 @@ def selftest(scratch):
             return not repin and n >= plan.L_LAUNCHES and "CELLS PIN cells.JMH.tsv" in str(e)
         return repin and n >= plan.L_LAUNCHES and ka in out and kb in out
     def mf_nopin(d):
-        """[r7 RULE-2] a record finalized before r6 (no cells pin): priced, with a NOTE on stderr"""
+        """[r7 RULE-2, r8 ADQ-3] a LEGACY record (no `window` key, no cells pin: finalized before r6): priced, with a NOTE"""
         import io, contextlib, record
         rp = os.path.join(d, "run_record.tsv")
         rec = record.read(rp)
-        rec["run"] = [r for r in rec["run"] if not r[0].startswith("cells_sha256_")]
+        rec["run"] = [r for r in rec["run"] if not r[0].startswith("cells_sha256_") and r[0] != "window"]
         record.write(rp, rec)
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
             out = compute(d)[0]
         return bool(out) and err.getvalue().count("NOTE cells.") >= 1 and "pins no cells sha-256" in err.getvalue()
+    def mf_pinless(d, what="cells_sha256_J2", want="CELLS PIN absent"):
+        """[r8 ADQ-3, S3224] a record WITH a window key and one pin line deleted: refused, never priced"""
+        import record
+        rp = os.path.join(d, "run_record.tsv")
+        rec = record.read(rp)
+        rec["run"] = [r for r in rec["run"] if r[0] != what]
+        record.write(rp, rec)
+        try:
+            compute(d)
+        except InputError as e:
+            return want in str(e)
+        return False
     def mf_badpin(d):
         """[r7 RULE-2] a record whose cells pin is present and WRONG: refused"""
         import record
@@ -1781,7 +1809,10 @@ def selftest(scratch):
             return "CELLS PIN" in str(e)
         return False
     MF_CASES = (
-        ("[r7 RULE-2] a record with no cells pin (pre-r6): priced, with a NOTE", mf_nopin),
+        ("[r7 RULE-2, r8 ADQ-3] a legacy record (no window key) with no cells pin (pre-r6): priced, with a NOTE", mf_nopin),
+        ("[r8 ADQ-3 S3224] an mfcard-window record with one cells pin line deleted: refused", mf_pinless),
+        ("[r8 ADQ-3 S3225] an mfcard-window record with one manifest pin line deleted: refused",
+         lambda d: mf_pinless(d, "manifest_sha256_JMB", "MANIFEST PIN absent")),
         ("[r7 RULE-2] a record whose cells pin is present and different: refused", mf_badpin),
         ("[slotx] window mfcard: kit-grid@6 rows priced, no J3/J4/J5 row this window's", mf_priced),
         ("[slotx] the draft split: every ver-6 row in ver 6's set, the unit in ver 3's, none in ver 4's", mf_split),

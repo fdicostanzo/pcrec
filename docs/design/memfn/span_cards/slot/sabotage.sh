@@ -152,10 +152,13 @@
 #   lane j4fix:
 #   (m6) S3221 a cell-less J4 null base left unkeyed (timed_form returns None: TIMED_CALLEES' "any external"):
 #        link.py shape-selftest's out-of-line null-base plant S3220 goes WRONG (job shape)
+#   lane pinfix:
+#   (m7) S3226 [ADQ-3] est's absent cells pin tolerated on a windowed record again: the mfcard-window
+#        pin-deleted case goes WRONG (job est)
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
 # rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
 # r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's,
-# S3188-S3197 lane mcfixa's, S3207-S3209 S3214 S3215 lane mcfixb's, S3220 S3221 lane j4fix's; they
+# S3188-S3197 lane mcfixa's, S3207-S3209 S3214 S3215 lane mcfixb's, S3220 S3221 lane j4fix's, S3224-S3226 lane pinfix's; they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
@@ -163,7 +166,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=${SLOT_TREE:-$(cd "$here/../../../../.." && pwd)}   # SLOT_TREE: the tree when slot/ runs from a copy
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 m1 m2 m3 m4 m5 m6}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 m1 m2 m3 m4 m5 m6 m7}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -425,6 +428,9 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
         patch "$SCR/$row/link.py" '        return "null"
 ' '        return None   # SABOTAGE S3221: the null base unkeyed
 ' ;;
+    m7) job=est want='selftest	\[r8 ADQ-3 S3224\][^	]*	WRONG'
+        patch "$SCR/$row/est.py" '        if pin is None and not legacy_record(rec):      # [r8 ADQ-3] only a legacy record may lack the pin' \
+'        if False:      # SABOTAGE S3226: a windowed record may lack the cells pin' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
 }
