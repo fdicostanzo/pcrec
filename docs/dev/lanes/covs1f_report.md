@@ -17,11 +17,11 @@
   `bash tests/registry/limits_check.sh` 42/0; `bash tests/ci/cloud_mech_check.sh
   tests/ci/cloud_mech_shards.tsv --selftest` rc 0 (5 plants named); the ten rows' REACH probes all
   `reach:ok`; `VALIDATE_ONLY=1` matrix FIELDS OK for S3225/S3226.
-- `bash scripts/tests/emit_sweep.py.test` (the whole fixture, ~10+ min: it builds references)
-  was still running at handoff, log `/var/tmp/pcrec-pcrec/scratch/covs1f/fixture.log`, green on
-  every line so far; the new block was run standalone green and against five plants (below). Its
-  completion line is OWED (the cloud test run covers the same file).
-- Cloud runs dispatched (owner main): see OWED RUNS for the branch names and run ids.
+- `bash scripts/tests/emit_sweep.py.test` (the whole fixture, the file `make test` chains): `checks failed: 0`,
+  rc 0 (log `/var/tmp/pcrec-pcrec/scratch/covs1f/fixture.log`); the new block was also run against five plants (below).
+- Cloud runs dispatched at 777860944 (owner main; the commit after it is this report only): TEST run 43770768704
+  (`cloud/main/test/HEAD-7778609`), MECHROWS run 43770809120 (`cloud/main/mechrows/HEAD-7778609.rows.S3220_..._S1139`),
+  both seen `in_progress` in `gh run list`.
 
 ## FINDINGS FIXED
 
@@ -122,9 +122,6 @@ Each: the commit, the check that guards it, how it was seen to fail.
 
 ## OWED RUNS
 
-- Cloud TEST run on this branch (`scripts/cloudrun --owner main --kind test`) and cloud MECHROWS
-  over S3220,S3221,S3222,S3223,S3224,S3225,S3226,S1131,S1136,S1139: dispatched as my last act;
-  the branch names and run ids are in the handback message (they exist only after this commit).
-  Green = the test run's verdict GREEN; mechrows: all ten DETECTED with reach ok.
-- `scripts/tests/emit_sweep.py.test` full-file completion, log above (`rc=` line at its end).
+- Cloud TEST run 43770768704 and MECHROWS run 43770809120 (rows S3220-S3226, S1131, S1136, S1139), commit
+  777860944, verdicts via queuewatch to main. Green = TEST GREEN; mechrows all ten DETECTED with reach ok.
 - The manager's fix-induced re-check before landing (ruled).
