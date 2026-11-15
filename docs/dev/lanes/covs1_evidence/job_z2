@@ -9,7 +9,7 @@ case "${1:-}" in
         [ -f "$TREE/docs/dev/kvcensus/patterns.tsv.gz" ] || { echo "no census" >&2; exit 1; }
         echo "would run in $TREE: z2.py census, hist, stated --mod $MOD"
         echo "boxqueue: cap 3600"; echo "boxqueue: est 2400"; echo "boxqueue: patience none"
-        echo "boxqueue: expect none reason=the stated check's rc is the job's rc (exec'd last)"
+        echo "boxqueue: expect none reason=the stated check's rc is the job's rc (tee'd, then exit with PIPESTATUS: the check's rc unchanged)"
         exit 0 ;;
     --ready) ready_after ;;
 esac

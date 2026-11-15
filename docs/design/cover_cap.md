@@ -30,7 +30,7 @@ and the grep rule (READY-4). Mapped by id: `docs/dev/lanes/covcap6_report.md`.
 **R5 (owner, 2026-11-15, amends "no length bound"; D198 (g)):** "Practically, we might need
 a max span length then. I don't want edge cases to ruin the concept. Something sufficiently
 high that it's rarely seen but that doesn't become a memory problem." Rev 4 meets it with a
-limit that already exists: `PCREC_ANCHORED_MAX_STATES` (4096 states, so at most 4095
+limit that already exists: `PCREC_ANCHORED_MAX_STATES` (4096 states at the default, so at most the ceiling less one: 4095
 positions; §3.1). No new constant is added. Past it there is no anchored machine, no stretch
 from this reading, and the pattern runs as it does today (§3.1, §9 Q2).
 
@@ -209,7 +209,7 @@ It is LABELLED (kind `compile budget`, override `-D`). The row names its role, n
 derivation, which lives in `src/core/limits.h`'s `[ENG-ABS]` block (measured: 2.05x the
 captures-on corpus maximum of 2,001 states; 4.9x below `tests/resource`'s giant repeats,
 whose compile CPU and size it excludes). Proposed stage-1 `desc` text, no derivation
-invented: append "; also bounds the exact stretch the cover record states, at most 4095
+invented: append "; also bounds the exact stretch the cover record states, at most the ceiling less one
 positions (docs/design/cover_cap.md); derivation: limits.h [ENG-ABS]" (worded so at both
 stages: at stage 1 a COVER is at most 32 positions (C15) while the record states up to
 4095; review r9 covs1 CONTRACT-2, 2026-11-15). (`compile.c`'s comment calling

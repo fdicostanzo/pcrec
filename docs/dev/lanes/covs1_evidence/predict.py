@@ -42,7 +42,10 @@ DECLARED_ROWS = {"span_facts", "cover"}
 ROUTE_ROWS = {"RX_DFA_SCAN", "RX_DFA_SCAN_EDGE", "RX_DFA_PREFILTER", "RX_DFA_PREFILTER_OFFSETS",
               "RX_DFA_START", "RX_DFA_UNIFORM_FOLDS", "RX_REQ_WHY", "RX_REQ_HANDOFF",
               "end_window", "land_char", "width", "req_set", "req_landmark_maxoff",
-              "run_pin", "finisher-dfa"}
+              "run_pin"}
+# every name above is column 2 of a facts/decisions row of a real `--emit-facts` listing (checked against
+# a built listing, review r11 ADQ-4). "finisher-dfa" was dropped: it is a conjunct name (known.c, lmwalk.c),
+# never a row, so it could never match a moved row.
 
 
 def run(argv, env=None):

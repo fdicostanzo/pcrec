@@ -1,8 +1,8 @@
 # sourced by every covs1 job script (lane covs1, [COVER-CAP] stage 1)
-TREE=/home/pcrec/projects/pcrec/worktrees/covs1
+TREE=/home/pcrec/projects/pcrec/worktrees/covs1f
 MAIN=/home/pcrec/projects/pcrec
 BASE=91bae2d98                      # the lane's branch point (main)
-SC=/var/tmp/pcrec-pcrec/scratch/covs1
+SC=/var/tmp/pcrec-pcrec/scratch/covs1f
 BQ="$MAIN/scripts/boxqueue"
 evening_hold() {   # Frank's 20:00-01:00 hold, exit 75 inside it
     local h=$((10#$(date +%H)))

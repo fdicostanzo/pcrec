@@ -10,17 +10,18 @@
 # GAINED cover moving only the declared/route rows is predict.py's verdict, from the baseline build's own
 # decisions, never from this log.
 set -u
-. /home/pcrec/projects/pcrec/worktrees/covs1/docs/dev/lanes/covs1_evidence/common.sh
+. /home/pcrec/projects/pcrec/worktrees/covs1f/docs/dev/lanes/covs1_evidence/common.sh
 case "${1:-}" in
     --dry-run)
         [ -f "$TREE/scripts/emit_sweep.py" ] || { echo "no emit_sweep.py" >&2; exit 1; }
         git -C "$MAIN" rev-parse --verify -q "$BASE^{commit}" >/dev/null || { echo "no $BASE" >&2; exit 1; }
         echo "would run in $TREE: ref build of $BASE (abi 108) + emit_sweep.py --ref-bin, movers to $SC/sweep.movers.tsv"
         echo "boxqueue: cap 5400"; echo "boxqueue: est 2400"; echo "boxqueue: patience none"
-        echo "boxqueue: expect none reason=the job's rc is the instrument verdict (completion, floors, no asymmetry, movers only in c-default/facts); predict judges the movers"
+        echo "boxqueue: expect none reason=the job's rc is sweep_verdict.py's rc (default RED; red on emit_sweep's failure lines, a missing DONE or tag-floor line), also written to $SC/sweep.verdict; the instrument verdict (completion, floors, no asymmetry, movers only in c-default/facts); predict judges the movers"
         exit 0 ;;
     --ready) ready_after ;;
 esac
+rm -f "$SC/sweep.verdict" "$SC/sweep.movers.tsv"
 tree_build || { echo "candidate build failed"; exit 1; }
 ref_build || { echo "ref build failed"; tail -5 "$SC/ref.build.log"; exit 1; }
 cd "$TREE" || exit 1
@@ -30,4 +31,7 @@ python3 scripts/emit_sweep.py --ref-bin "$SC/ref/build/pcrec" --tree "$TREE" \
     --dumps-declared-rows='--list-limits:PCREC_ANCHORED_MAX_STATES' \
     --dumps-declared-gone='--list-limits:PCREC_SPAN_WALK_SUBSETS' 2>&1 | tee "$SC/sweep.report.txt"
 sweep_rc=${PIPESTATUS[0]}
-exec python3 -I "$TREE/docs/dev/lanes/covs1_evidence/sweep_verdict.py" "$SC/sweep.report.txt" "$SC/sweep.movers.tsv" "$sweep_rc"
+python3 -I "$TREE/docs/dev/lanes/covs1_evidence/sweep_verdict.py" "$SC/sweep.report.txt" "$SC/sweep.movers.tsv" "$sweep_rc"
+vrc=$?
+echo "$vrc" > "$SC/sweep.verdict"   # the RESULT covs1f-predict's --ready reads (never a queue key)
+exit "$vrc"
