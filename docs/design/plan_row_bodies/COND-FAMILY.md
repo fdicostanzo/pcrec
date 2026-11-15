@@ -741,3 +741,8 @@ currying rule: THE SUBJECT IS NEVER AN ARGUMENT (always via `&` or `label:`); ev
 settings with defaults (`sep = "."`); ANY parameter may also be passed by name (`between(low = 1, high = 12)`), one rule
 for all macros. Removes C30 and C20 (`p(x) = x & p` withdrawn; application has one spelling `x & f`).
 `isodate(year: S)` (an rx called with conditions) is the separate labelled-argument form.
+Follow-up (Frank: "For the isodate example, we might want to turn it into the & form. It can't take arguments anymore
+correct?"). Correct: a pattern has no parameters; WITHDRAW the call form `isodate(year: S)` (the labelled-argument
+addendum to C22); the one spelling is `isodate & (year: S, month: 2)`. Calling a pattern = compile error with the hint
+"write `isodate & (year: ...)`". A parameterised pattern is a macro: `date_in(years) := isodate & (year: years)`. The
+C22 binding rule stays, for condition literals only.
