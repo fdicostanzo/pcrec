@@ -27767,3 +27767,7 @@ Next
   loops, inline head then loops); if all-inline proves faster it becomes a performance-dial option, not the default.
   (c) The performance dial ([OPT-DIAL]) may carry kit options. This is the owner's direction for the kit's stage-2
   rendering (relayed to the kit; no build go by it). Stage 1 build go still not given in words.
+- 14:50 (2026-11-15): BUILD GO, Frank verbatim: "Go on all stages" ([COVER-CAP] stage 1 and stage 2, design rev 4.1).
+  Stage 1 build lane covs1 (opus) launched on lane/covs1 (abi 107 -> 108 at landing, sabotage ids S3220-S3229).
+  Stage 2: kit request to file (span up to 4095; owner's rendering direction; per-artifact span limit) + a short
+  stage-2 design addendum and its critic round before the stage-2 build lanes.
