@@ -2,6 +2,20 @@
 
 ## Changelog
 
+- **rev 8 (lane predspec8, 2026-11-15).** Folds the owner's three latest COND-FAMILY.md entries: the search result
+  is the ARRAY of all results (CF:880-887); his answers to review r8's four questions (CF:888-901: typed parameters
+  OUT of phase 1, `:` narrows only; ARRAY and MAP are INTERFACES applied to a thing, never values that can be
+  created; a module is described by its MAP interface; `.` has ONE meaning); and SEARCH IS A TRANSFORM (CF:902-926:
+  `search` a library transform of the `contains` family, `~` and `!~` WITHDRAWN, the hit a REPEATED LABEL,
+  `some(...)`/`all(...)` the one spelling, `occurs` counts only, same hit by record, the definition requirements, the
+  array interface over ANY repeated label's iterations). REWRITTEN: §2.6 (now SEARCH AND CONTAINS ARE TRANSFORMS, with
+  both definitions and their hand checks), §3.4 (spelled arrays vs a repeated label's iterations), §4.3 (repeated
+  labels: the general home of plain conditions, `some`, `all`, `count`, `occurs`, same iteration by record, the
+  array interface over iterations), §8 (`search`, `contains`, `some`, `all`, `count`, `occurs`), G4. "View" becomes
+  INTERFACE throughout (one word, §0.3); §9's cut "interfaces" become DECLARED TYPES (the word now names the array and
+  map interfaces). §0.1: L16, L17, L31, L36, L50, L51 rewritten, L52-L54 new. Mark table: `~` and `!~` leave; `.`
+  RULED one meaning; `:` narrows only in phase 1. §13: O12, O29, O48 (phase 1), C28 RESOLVED; O31, O46, O50, C29,
+  O28, O36, O52 restated; C36 (a CONFLICT: the priority parse vs §4.5's some-parse rule) and O53-O57 new.
 - **rev 7 (lane predspec7, 2026-11-15).** Applies the RULED dispositions of review
   `docs/dev/reviews/2026-11-15-r8-predspec6.md` (P6-1..P6-18) and folds the owner's note "a search result is the
   ARRAY of all results" (CF:880-887), with his own example as §2.6's illustration. NEW: §0.3 WORDS (one word per
@@ -45,7 +59,7 @@
 
 ## 0. Status, goals, standing questions
 
-**Status: DRAFT rev 7 (lane predspec7, 2026-11-15). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
+**Status: DRAFT rev 8 (lane predspec8, 2026-11-15). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
 #6 not scheduled; 2026-11-15, relayed in the predspec5 brief: "the predicate work is not a go to build as we are
 still in design"). Purpose (Frank 2026-11-14): "create a preliminary predicate spec doc with our latest ideas for the
 purpose of critical analysis. Provide reasoning." It consolidates the dated notes in
@@ -62,9 +76,10 @@ fragments are never admitted in the expression language), `:=` define, `,` "next
 one entry) or `( )` (RECORD, all entries together), `=` labels an entry, `:` constrains a label that exists (THE
 grammar summary is §5.4), `==` the equality comparison, `X[...]` positional, `&` (pure intersection) / dot for
 filtering and labels, `where` for structural selection, conditions `(x: S, y: T)`, transforms as FILTER MODIFIERS
-(`x & padded(between(1, 12))`), operator sections `(& f)`, `@` effects, modules as `m := import("m")`, 1-based indexes.
+(`x & padded(between(1, 12))`), operator sections `(& f)`, `@` effects, modules as `m := import("m")`, 1-based indexes,
+search as the library transform `search(rx)` (rev 7's `~`/`!~` are withdrawn, §2.6).
 
-Status marks (rev 7; every mark is one of three):
+Status marks (rev 8; every mark is one of three):
 - **RULED (CF:n)**: the owner's own words at line n of COND-FAMILY.md (or a D-number) cover the rule; it reaches only
   as far as his quoted words, not a manager gloss beside them. THE TYPE PICTURE (CF:846-879) is a manager's RECORD
   (CF:857-875) that the owner ACCEPTED as a whole at CF:851 ("I'm liking your ideas"); a mark "RULED (CF:858)" (or
@@ -77,7 +92,23 @@ Status marks (rev 7; every mark is one of three):
 | (2) one input rule (CF:860) | "Then macro application has a specific meaning" (CF:850-851, the criterion, not the rule) | call = parameters, `&` = the operand slot |
 | (3) comma and brackets (CF:863) | "a consistent grammar over comma where it has a specific meaning" (CF:850) | `[ ]` any one, `( )` all together, `=` labels, `:` constrains |
 | (4) the record (CF:866) | "a purely structural type if it can't be bound directly ie not first class type" (CF:851-852); "We might use it to bind values from a search (x,y) := rx ~ /.../" (CF:852); "You can view a regex as a record but not vice versa" (CF:853-854) | its three positions; "NO third view" (his own words offer "a third view on a regex but an abstract one", CF:853); "phase 1 only if an example needs it" (CF:869-870) |
-| (5) the search result (CF:873) | "Ok. I like this view. Let's fold it in" (CF:854); "an array of all of the results ... use count ... treat it as an array ... use the occurs module" (CF:881-883) | "`d.year` = the set of the occurrences' years" (CF:874) |
+| (5) the search result (CF:873) | "Ok. I like this view. Let's fold it in" (CF:854); "an array of all of the results ... use count ... treat it as an array ... use the occurs module" (CF:881-883) | "`d.year` = the set of the occurrences' years" (CF:874); rev 8: the RESULT-AS-A-VALUE reading of (5) is overtaken by the transform ruling below (CF:902-926) |
+
+  The 2026-11-15 rulings after the type picture (rev 8). The answers to review r8's four questions (CF:888-892) are
+  the owner's own sentences, so a mark citing CF:889-892 is RULED in his words; the manager's RECORD lines beside them
+  (CF:893-901) reach only as far as those sentences. The SEARCH IS A TRANSFORM record (CF:906-926) is the manager's
+  lean the owner approved with "Do it" (CF:905); a mark resting on it says "(CF:n, accepted at CF:905)":
+
+| ruling point | the owner's own sentence behind it, beyond the acceptance | what rests ONLY on the acceptance ("Do it", CF:905) or is the manager's |
+|---|---|---|
+| typed parameters out of phase 1 (CF:895) | "yes keep out of phase 1. I like the idea of types but they need more thinking" (CF:889) | "`:` keeps its one meaning (narrows) there" (the manager's record line, CF:895-896: a consequence, not his words) |
+| array and map are interfaces (CF:896) | "Array and map are interfaces that can be applied to regex but interfaces aren't themselves values that can be created" (CF:890-891) | |
+| a module is described by its map interface (CF:896-898) | "what import is is less important than that its interface is a map" (CF:891-892) | "members reached as fields" |
+| `.` has one meaning (CF:898-899) | "agree" (CF:892), to the manager's lean | the whole content of the point (the lean he agreed to) |
+| search is a transform (CF:907-909) | "What if search was a transform like search(x) := /.*(?:(${x}.*).*/" (CF:903-904; a sketch, his spelling a placeholder) | "of the `contains` family"; `~` and `!~` WITHDRAWN; "an rx over the WHOLE value in which the occurrence group REPEATS" |
+| `some(...)` for some hits (CF:912-914) | "could you use some() to get some hits?" (CF:904-905, a question) | `all(...)` the default; `occurs` keeps counts only; `x & s` re-examined |
+| the hit is a repeated label (CF:910-911); same hit by record (CF:915-917); the definition requirements (CF:918-921); group questions phase 1 (CF:922-924) | none | all of it ("Do it") |
+| one-iteration access at a higher capability level (CF:924-926) | none | the MANAGER'S LEAN, "stated to him twice, not separately ruled" (CF:925-926): LEAN, not RULED |
 - **LEAN**: a manager's reading or proposal, this document's consequence of a ruling, an owner "perhaps", or a
   review fix (the FIX-NOW dispositions of review r1 other than Q1 and OWN-1 carry no owner ruling); the source is
   named in parentheses (review finding id, "manager", "this document").
@@ -92,7 +123,7 @@ Status marks (rev 7; every mark is one of three):
 | G1 | EXPRESSIVENESS over the string: conditions PCRE cannot state (cross-label arithmetic, checksums, calendar validity, key-order independence, computed properties, occurrence counts) are short programs | users writing validators, filters, log/JSONL searches | every §12 acceptance case is written with no construct outside §§2-8 (the cases are chosen by the rules' own author: a control sharing its source, review OWN-15) |
 | G2 | LINEAR, AUTOMATON-CODE-ONLY BY DEFAULT: a program that compiles at the default level runs as automaton code (one pass or an automaton relax-then-verify split; linear time, no backtracking, hostile-input safe, self-contained output) | anyone matching untrusted input; embedders | at design: every §12 case names its level; at build: every default-level §12 case compiles to automaton code only (`RX_ENGINE` stamp); anything else is a compile error naming the construct and the opt-in, never a silent route change |
 | G3 | PCRE COMPATIBILITY: a one-literal program IS today's PCRE pattern, with PCRE's meaning (no subset, no level beyond today's engine choice) | existing PCRE users; the corpus | the whole `.rxt` corpus, each pattern wrapped as `/.../` (with `/` escaped as `\/` and the case's flags transferred to the literal), answers identically to today (a nullable one-literal program gets the `empty.search` WARNING only, §7) |
-| G4 | STRUCTURE OF SPELLED THINGS IS COMPILE-TIME ONLY, TOTAL, TERMINATING: every structural evaluation (each, join, records, indexing, imports, enumerate) over a SPELLED array (§3.4) is finite and ends; a search result is a MATCH-TIME array, outside this goal (§3.4, §13 O50) | the compiler's users (no hang at build), the security story | recursion through parameterized definitions only by a strictly decreasing literal parameter (§7); every structural operator ranges over finite declared things, `enumerate` under a budget; a fuzzer over programs never hangs the compiler (watchdog) |
+| G4 | STRUCTURE OF SPELLED THINGS IS COMPILE-TIME ONLY, TOTAL, TERMINATING: every structural evaluation (each, join, records, indexing, imports, enumerate) over a SPELLED array (§3.4) is finite and ends; a repeated label's ITERATIONS (a search's hits included) exist per match and are questions of the automaton (G2), outside this goal (§3.4, §4.3) | the compiler's users (no hang at build), the security story | recursion through parameterized definitions only by a strictly decreasing literal parameter (§7); every structural operator ranges over finite declared things, `enumerate` under a budget; a fuzzer over programs never hangs the compiler (watchdog) |
 
 Constraints on every goal (ruled RULES, not ranked goals): no alphabetic operators or keywords (§5.1); `&`, `|`,
 `!` extensional (§2.2). Non-goals: §14. G0 is the owner's ("STANDING CRITERION ... ranked first for this design",
@@ -129,8 +160,8 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L13 | `x & padded(/^5/)` vs `x & padded(startsWith("5"))` | SAME | `^` is the start of the span the modified filter reads (§11); `padded(/\b5/)` stays the EDGE-ASSERTION ERROR | CF:761 |
 | L14 | `enumerate(/(?<=a)[bc]/)` vs `enumerate(/[bc]/)` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR | Q1R-8, Q1X-6 (b) |
 | L15 | `@warn.off(/^dead\./)` vs `@warn.off(startsWith("dead."))` | SAME | `^` is the start of the name (§11) | CF:732 (LEAN extension, §11) |
-| L16 | `$m ~ /^err/` vs `(m: startsWith("err"))` | DIFFERENT: BY DESIGN | different KINDS: the first is an rx, the ARRAY of the occurrences of `err` at m's start (one entry or none; `^` is the value's start, D193 add. 3, §2.6), the second a CONDITION (a macro). The condition holds exactly when that array has an entry; what a search result does in the filter role (`P & ($m ~ /^err/)`) is OPEN (§13 O50) | Q1R-6, RUL-1, r8 P6-7 |
-| L17 | `(m: contains(/^err/))` vs `(m: startsWith("err"))` | SAME | a filter passed as an argument filters the span the call's filter role filters, so `^` is m's start in both (§11 THE FILTERED SPAN); `$m !~ /^err/` = `(m: !contains(/^err/))` keeps its meaning (§2.6) | CF:761 (LEAN, r8 P6-5) |
+| L16 | `(m: search(/^err/))` vs `(m: contains(/^err/))` | DIFFERENT: BY DESIGN | `search` NEVER REJECTS (as a set it is every string; what it adds is the repeated label `hit`, one iteration per hit, here at most one, at m's start); `contains` is the TEST (one hit needed). The search filters nothing until a question is asked of its hits (`some(...)`, `count(...)`, a plain condition; §2.6, §4.3) | CF:907-909 (accepted at CF:905); rev 7's `$m ~ /^err/` row withdrawn with `~` |
+| L17 | `(m: contains(/^err/))` vs `(m: startsWith("err"))` | SAME | a filter passed as an argument filters the span the call's filter role filters, so `^` is m's start in both (§11 THE FILTERED SPAN); `(m: !contains(/^err/))` is the negated test (rev 7's `$m !~ /^err/`, withdrawn, §2.6) | CF:761 (LEAN, r8 P6-5) |
 | L18 | a nullable final search pattern: `/\b/` vs `/a*/` | SAME | both are nullable IN CONTEXT: `empty.search` WARNING for a one-literal program, ERROR in a predicate program (§7) | Q1R-9 |
 | L19 | `(?m)^\d*` searched vs the same pattern in whole-subject mode | DIFFERENT: WARNING | by MODE only: `empty.search` in search mode, none when anchored (a `^` in the pattern does not exempt) | Q1R-9 |
 | L20 | `/\d\d/ & padded(between(1, 12))` vs `/\d\d/ & between(1, 12)` | DIFFERENT: GAP | GAP: the second is {10, 11, 12} by the C9 ruling (string sets, canonical numerals); no warning is named for a padded target against an integer comparison set | C9, OWN-2 |
@@ -144,12 +175,12 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L28 | `$x & S` as a condition vs `(x: S)` | DIFFERENT: ERROR | the first is an ERROR "did you mean `x: ...`?" (§4.1) | §4.1 |
 | L29 | `a := 256` vs `b := "256"` under `<a` / `<b` | DIFFERENT: GAP | GAP; OPEN (§13 O27) | OWN-3 |
 | L30 | `!(x: S)` vs `(x: !S)` on a repeated, optional or zero-iteration label | DIFFERENT: GAP | GAP; OPEN (§13 O28) | OWN-4 |
-| L31 | two `occurs.some(...)` filters vs two conditions on one `some(s)` | DIFFERENT: GAP | GAP; OPEN (§13 O29) | OWN-6 |
+| L31 | `some((g: "x", h: 1))` vs `some((g: "x")) & some((h: 1))` over a repeated label (search hits included) | DIFFERENT: BY DESIGN | SAME HIT BY RECORD: one record = all its entries on the SAME iteration; two `some` calls may be met by different iterations (§4.3; on hits `x2 y1` of `/(?<g>[xy])(?<h>\d)/`: the first false, the second true). Replaces rev 7's GAP row (two `occurs.some` vs one `some(s)`); §13 O29 RESOLVED | CF:915-917 (accepted at CF:905) |
 | L32 | `/${q}/m` vs the inlined text of `q` | DIFFERENT: GAP | GAP; `flag.hole` (proposed); OPEN (§13 O32) | Q1R-11 |
 | L33 | `\k<s>` vs `${$s}` vs `each(..., enumerate(...))` on a finite label | DIFFERENT: GAP | different levels today; OPEN (§13 O34) | RUL-7 |
 | L34 | `(a: <5) & (b: <5)` on an ambiguous two-label parse: default level vs `vm` | DIFFERENT: WARNING | `label.ambiguous` WARNING (per label); multi-label reading OPEN (§13 O33) | RUL-3 |
 | L35 | `(?J)` duplicate label vs a repeated label, under `x: S` | DIFFERENT: GAP | GAP; OPEN (§13 O35) | RUL-16 |
-| L36 | `(x: S)` vs `occurs.all((x: S))` on a repeated label | OPEN | §13 C28 | OWN-4, C28 |
+| L36 | `(x: S)` vs `all((x: S))` on a repeated label | SAME | `all(...)` is the default, "rarely written": a plain condition already means every iteration (§4.3); rev 7's `occurs.all` leaves (`occurs` keeps counts only); on ZERO iterations both follow §13 O28 | CF:912-913 (accepted at CF:905); C28 RESOLVED |
 | L37 | `(wname.index: ==wd)` vs `(b: >$a)` | OPEN | a computed label read bare vs with `$` (§13 C13; E-RFC's `==wd` and E-CAL's `<=dim` both rest on it) | OWN-11, r8 P6-11 |
 | L38 | `isodate(x).year` vs `(x & isodate).year` | DIFFERENT: ERROR | the first is a compile ERROR (a pattern takes no arguments; hint "write `x & isodate`"); whether `.year` of `x & isodate` is a value or a pattern: OPEN (§13 C29) | RUL-8, 2026-11-15 RULING |
 | L39 | `A & B` vs `B & A` | SAME | the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2) | C1 ruling |
@@ -162,9 +193,12 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L46 | `isodate & (year: 2000)` vs `c := (year: 2000)` then `isodate & c` | SAME | a condition is a MACRO, a value; binding it is L2's case; the record is its written body, never the bound thing (§2.1; §13 O45) | CF:858, CF:866 (LEAN) |
 | L47 | `[x: S]` vs `[(x: S)]` | DIFFERENT: ERROR | the first is a compile ERROR: `:` constrains a label of what the record is laid against, and an array entry is laid against nothing; hint "write `[(x: S)]`" (§5.4) | CF:863 (LEAN) |
 | L48 | `x := /a\|b\|c/`: `[x, /d/]` vs `x \| /d/` | DIFFERENT: BY DESIGN | SAME under `& \| !` (one language); under structural tools `[x, /d/]` has 2 entries (each entry of `[ ]` is ONE entry, like a group or a hole, §3.3, §5.4) and `x \| /d/` has 4 (`\|` concatenates arrays) | r8 P6-14 |
-| L49 | `m(x: T) := ...` then `m(A)` vs `A & (x: T)` | DIFFERENT: BY DESIGN | `:` in a definition head CHECKS: an argument partly outside T is an ERROR showing a dropped witness; `:` in a condition NARROWS silently (dead-branch / empty-intersection diagnostics only at narrowing sites, §5.2). Whether `:` should have one behaviour in both positions: OPEN (§13 O48) | r8 P6-4 |
-| L50 | `(x, y) := $m ~ /(?<a>\d)(?<b>\d)/` (a record laid over the search pattern's groups) vs the same spelling read as the first two RESULTS (entries are index-labelled, §3.1; Python's `x, y = re.findall(...)`) | OPEN | design only, out of phase 1 (§0.2); the spelling admits both readings under rev 6's rules; §13 O50 (d) | r8 P6-7 (DRIFT-6) |
-| L51 | `!($m ~ r)` vs `$m !~ r` | DIFFERENT: GAP | the first is the complement of an rx (every string that is not an occurrence), the second the condition `(m: !contains(r))`; they look like a pair and are not; §13 O50 (c), O12 | r8 P6-7 (DRIFT-3) |
+| L49 | `m(x: T) := ...` then `m(A)` vs `A & (x: T)` | DIFFERENT: ERROR (phase 1) | typed parameters are OUT of phase 1 (the owner: "keep out of phase 1", CF:889), so in phase 1 the first form is an ERROR ("a parameter takes no constraint in phase 1; constrain where it is used") and `:` has ONE behaviour, it narrows. In the design (types "need more thinking", CF:889) rev 7's difference (`:` checks in a head, narrows in a condition) stays unruled (§13 O48) | r8 P6-4; CF:889 |
+| L50 | a record on the left over a search, rev 8 spelling `(x, y) := $m & search(/(?<a>\d)(?<b>\d)/)`: laid over the search pattern's GROUPS vs read as the first two HITS (Python's `x, y = re.findall(...)`) | OPEN | design only, out of phase 1 (§0.2). Rev 8 removes the second reading's footing (hits are iterations of a label, reached by the array interface over iterations, never entries of a value), so the lean is the first: the record is laid against the map interface (groups); x and y are then REPEATED labels, one iteration per hit, paired by iteration. Whether the form survives the withdrawal of `~` at all: §13 O55 | r8 P6-7 (DRIFT-6); CF:852 |
+| L51 | `(m: !search(r))` vs `(m: !contains(r))` | DIFFERENT: ERROR | `search(r)` accepts every string, so `!search(r)` is EMPTY: the empty-intersection ERROR at a narrowing site (§5.2), hint "for no hit write `!contains(r)`". Replaces rev 7's `!($m ~ r)` vs `$m !~ r` GAP row (both operators withdrawn) | CF:909 (accepted at CF:905); §5.2 (LEAN) |
+| L52 | `(m: search(r) & (g: "x"))` vs `(m: search(r) & some((g: "x")))` | DIFFERENT: BY DESIGN | the LOOK-ALIKE ROW the transform ruling requires: a plain condition on a hit's label means ALL hits (the sequence rule, §4.3); "some hit" is `some(...)`. On `abx aby abx` with `r = /ab(?<g>[xy])/`: the first rejects (hit 2 has g = y), the second accepts. Whether it also gets a named warning: §13 O38 | CF:920-921 (accepted at CF:905) |
+| L53 | `(m: search(/a*/))` vs find-all of `/a*/` (Python's `re.findall("a*", "baa")` = 3 results) | DIFFERENT: ERROR (lean) | the lazy-gap definition stops at an EMPTY hit (PCRE ends a loop whose iteration matched empty: 1 hit on `baa`); rev 8 refuses a search argument that can match empty, naming `x & !""` (§2.6, §13 O53) | CF:919-920 (accepted at CF:905); LEAN |
+| L54 | `x & s` with s an rx vs `some(...)` | DIFFERENT: BY DESIGN | `x & s` is MEMBERSHIP in the rx s (any one entry under `&`, §3.4); `some(...)` asks whether some ITERATION of a repeated label meets a condition (§4.3). Rev 7's three spellings of "some result" (`x & s`, `some(s)`, `occurs.some`) become one: `some(...)` | CF:913-914 (accepted at CF:905) |
 
 **REASONING.** The owner's framing: "complex context could cause predicates to just not work and it's not clear how
 the obscure rules impact it ... that's why it was so important to me that things that look like they should do the
@@ -181,7 +215,9 @@ L39: RULED (CF:732); L41: RULED (CF:761); L42: LEAN (CF:823 "perhaps"; the budge
 RULED (CF:863); L43's error: RULED (CF:866, a record is never a value), the withdrawal of the map literal it names:
 LEAN (§13 O42); L44-L47: LEAN (this document's readings of CF:858-866); L48-L51 (rev 7): BY DESIGN rows state the
 rule of the section cited, OPEN/GAP rows their §13 item; the class on each DIFFERENT row: LEAN (review r8 P6-9); other
-rows state the rule of the section cited.
+rows state the rule of the section cited. Rev 8: L16, L31, L36, L51, L52, L54 rest on the transform ruling as
+accepted ("Do it", CF:905), not on the owner's own words; L53's refusal and L51's error class are this document's
+LEAN; L49's phase-1 verdict is RULED in his words (CF:889); L50 stays OPEN with a lean (§13 O55).
 
 ### 0.2 Phase 1 scope (what the owner said is in and out of the first build)
 
@@ -198,16 +234,24 @@ base-level predicate build whenever it is chartered.
 - OUT: partial application (currying). DEFERRED from phase 1 as a scope reduction, NOT dropped: the design keeps it
   (CF:804: "we can start out phase 1 without currying and revisit later"). RULED.
 - OUT: the automatic `count()` -> `occurs` rewrite: a later optimization plan item, [COUNT-TO-OCCURS] (CF:840). RULED.
-- OUT unless a worked example needs it: a record on the left of a binding, `(x, y) := rx ~ /.../`. In the DESIGN:
-  RULED (CF:852, his words: "We might use it to bind values from a search (x,y) := rx ~ /.../"). Out of phase 1 unless
-  an example needs it: LEAN (the manager's record, CF:869-870, accepted at CF:851; review r8 RUL-4). No §12 case needs
-  it (rev 7 re-check), so it is out.
+- OUT unless a worked example needs it: a record on the left of a binding, rev 7's `(x, y) := rx ~ /.../`. In the
+  DESIGN: RULED (CF:852, his words: "We might use it to bind values from a search (x,y) := rx ~ /.../"). Out of phase 1
+  unless an example needs it: LEAN (the manager's record, CF:869-870, accepted at CF:851; review r8 RUL-4). No §12 case
+  needs it (rev 8 re-check), so it is out. The `~` its spelling used is withdrawn (CF:909); what the form becomes:
+  §13 O55.
+- OUT: TYPED PARAMETERS (`m(x: T)`, the containment check in a definition head). RULED (CF:889: "yes keep out of
+  phase 1. I like the idea of types but they need more thinking"). In phase 1 `:` narrows only (§5.2, §5.4); the
+  property mark `m(p: pure)` and `pattern()` leave with them (§13 O48).
+- IN: the GROUP QUESTIONS on a repeated label, search hits included: a plain condition (all iterations), `some(...)`,
+  `all(...)`, `count(...)`, `occurs.exactly/at_least/at_most/none` ("compile to states and are phase 1": CF:922-924,
+  accepted at CF:905). NOT the default level: access to ONE iteration (`$m.hit[2]`, keep iterations 1 and 3), which
+  needs captures inside a loop (CF:924-926: the MANAGER'S LEAN, LEAN; §4.3).
 - Not stated by the owner: which library pieces (§8) and levels beyond the default (§6.1) phase 1 carries; and, of
-  the constructs NO §12 case uses (the TWO-WAY CENSUS, §12: operator sections in code, search inside a value `~`/`!~`,
-  positional `X[...]`, `where`/`where_group`/`each_group`, typed parameters, `when`, `pure`/`pattern`, `eval`,
-  `@export`/`@warn`, `*`/`%`, `.label`), which stay in phase 1. Sections are IN by ruling (CF:753); search is ruled as
-  a construct (CF:873, CF:880-887) but not as phase 1. Rev 7 invents no case for them (review r8, DISPOSITIONS RULED,
-  P6-9): the owner decides which stay.
+  the constructs NO §12 case uses (the TWO-WAY CENSUS, §12: operator sections in code, the `search` transform and
+  `some`/`all`, positional `X[...]`, `where`/`where_group`/`each_group`, `when`, `eval`, `@export`/`@warn`, `*`/`%`,
+  `.label`), which stay in phase 1. Sections are IN by ruling (CF:753); search is ruled as a library transform
+  (CF:902-909, accepted at CF:905) and its group questions as phase 1 (above), but no case uses it. Rev 8 invents no
+  case for them (review r8, DISPOSITIONS RULED, P6-9): the owner decides which stay.
 
 ### 0.3 Words (one word per thing)
 
@@ -216,7 +260,7 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 
 | word | names | not used for |
 |---|---|---|
-| **subject** | the run-time TEXT being matched (and, inside `$x ~ rx`, the value searched) | the operand of `&` (the type-picture record's "subject slot", CF:860, is the OPERAND slot below; CF:749's ruled phrase "the subject is never an argument" means the operand) |
+| **subject** | the run-time TEXT being matched (a `search` or `contains` filter reads the filtered SPAN of it, §2.6, §11) | the operand of `&` (the type-picture record's "subject slot", CF:860, is the OPERAND slot below; CF:749's ruled phrase "the subject is never an argument" means the operand) |
 | **operand** | what `&` puts into a macro's slot: the rx on the other side (`X & M` fills M's operand with X) | the text |
 | **kind** | rx or macro, the two VALUE kinds (§2.1) | value-vs-pattern; constraint sets |
 | **value** | anything of a kind (an rx or a macro) | a captured substring |
@@ -230,9 +274,12 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 | **binding** | `name := expression` (§5.1); "match-dependent binding" is a binding that reads a captured string | the C22 parse rule (that is ENTRY EXTENT, §5.4) |
 | **entry extent** | how far an entry of `( )` or `[ ]` reaches: to the next comma or the closing bracket, `&`/`\|` tighter than `:` and `=` (C22) | |
 | **label** | a pattern's group name, incl. a computed label (§4.4) | a macro's parameter name (PARAMETER); a module's name (MEMBER); `.index`/`.label` (METADATA) |
-| **parameter** / **member** / **metadata** | a macro's named input / a module's exported name / `.index`, `.label` (§13 O31) | labels |
-| **entry** | one item of a written `[ ]` or `( )`, or of an rx's array view (a top-level alternative) | a module's export (MEMBER); a joined part (PART) |
-| **record** | the written `( ... )` laid against fields (§5.4); never a value | what `records()` returns (an ARRAY of ITEMS; its rx is the ITEM RX; the name `records` is a placeholder to rename, §13 O44) |
+| **parameter** / **member** / **metadata** | a macro's named input / a module's exported name / `.index`, `.label`; members and metadata are reached by the one `.`, a field of the map interface (§5.4, CF:898-899) | labels |
+| **entry** | one item of a written `[ ]` or `( )`, or of an rx's array interface (a top-level alternative) | a module's export (MEMBER); a joined part (PART); one pass of a repeated label (ITERATION) |
+| **interface** | the ARRAY interface (entries in order) or the MAP interface (fields by name) APPLIED TO a thing: to an rx (§3.1), to a repeated label's iterations (array, §4.3), to a module (map, §7). The owner's word ("Array and map are interfaces that can be applied to regex but interfaces aren't themselves values that can be created", CF:890-891; rev 7 said "view"). An interface is never a value: nothing creates an array or a map | a declared type (§9: rev 7's cut "interfaces", now DECLARED TYPES) |
+| **iteration** | one pass of a repeated label in one match (a search's HIT is one iteration of its `hit` label, §2.6) | an entry (spelled) |
+| **hit** | one occurrence found by `search`: an iteration of the repeated label `hit` (§2.6) | rev 7's "result"/"occurrence" as an array entry |
+| **record** | the written `( ... )` laid against fields (§5.4); never a value | what `records()` returns (an rx whose ARRAY interface lists the ITEMS; its pattern is the ITEM RX; the name `records` is a placeholder to rename, §13 O44) |
 | **effect** | an `@` form, a compile-time statement (§5.1), not a value and not a macro | |
 
 ### Standing questions (docs/design/CLAUDE.md)
@@ -250,16 +297,18 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 
 ## 1. Layering
 
-**RULE.** Two layers. FOUNDATION: value kinds (§2), operators and filter modifiers (§2), views (§3), match values and
-computed labels (§4), capability levels and the reporting axis (§6), the compile-time boundary, modules and
-warnings (§7). LIBRARIES, built on the foundation and changeable without it: `each`, `join`, `records`,
-`file_text`, standard filters and filter modifiers (`between`, `startsWith`, `length`, `padded`, `unpadded`,
-`any_case`, `quoted`), `occurs`, `assert`, tuple comparisons, blessed callouts (§8). The ORGANISATIONAL layer
-(interfaces, type members, UFCS, `types()`) is CUT from the first spec (§9); interfaces may return as library
-packaging after a build. Namespaces stay in the foundation (what a module is: §7, §13 O46).
+**RULE.** Two layers. FOUNDATION: value kinds (§2), operators and filter modifiers (§2), the array and map
+interfaces (§3), match values, repeated labels and computed labels (§4), capability levels and the reporting axis
+(§6), the compile-time boundary, modules and warnings (§7). LIBRARIES, built on the foundation and changeable without
+it: `each`, `join`, `records`, `file_text`, standard filters and filter modifiers (`between`, `startsWith`,
+`contains`, `length`, `padded`, `unpadded`, `any_case`, `quoted`), the transform `search`, the group questions
+`some`, `all`, `count` and the `occurs` counts, `assert`, tuple comparisons, blessed callouts (§8). The
+ORGANISATIONAL layer (DECLARED TYPES, type members, UFCS, `types()`; rev 7 called the first "interfaces", a word
+that now names the array and map interfaces, §0.3) is CUT from the first spec (§9); declared types may return as
+library packaging after a build. Modules stay in the foundation (described by their map interface: §7, §13 O46).
 
 **TEST OF THE RANKING.** No worked example needs the cut layer: §12 checks this case by case (E-RFC uses a plain
-macro on the three fields, not an interface member).
+macro on the three fields, not a declared type's member).
 
 **REASONING.** Frank: the purpose is to probe the fundamental structure; unless foundational, lower priority.
 predx §9: none of thirteen further programs needed interfaces, UFCS or `types()`.
@@ -319,16 +368,20 @@ VALUE kinds are unchanged, the other rows are not values):
 
 | thing | what it is | a value? | bound by `:=`? | passed as an argument? | §12 case needing it | status |
 |---|---|---|---|---|---|---|
-| rx (literal, comparison set, binding of an rx, captured string `$x`, search result) | a set of strings | yes | yes | yes | every case | RULED (CF:858) |
+| rx (literal, comparison set, binding of an rx, captured string `$x`, a `search(r)` or `contains(r)` filter) | a set of strings | yes | yes | yes | every case | RULED (CF:858) |
 | macro (condition, section, filter modifier, `!B`, parameterised definition) | awaits input: parameters by a call, operand by `&` | yes | yes | yes | E-WEEKDAY (condition), E-JSONL (`json.row`, modifiers), E-HTTP (condition argument), E-SEP (`date_sep`) | RULED (CF:858, CF:860) |
 | computed label (match-dependent binding) | a macro whose operand is the pattern whose labels it reads (above) | as a macro | yes (that is its spelling) | no case passes one | E-WEEKDAY, E-CAL, E-RFC, E-NEAR (c), E-HTTP (`count`) | LEAN (P6-8 (a)) |
 | record `( ... )` | a shape laid against fields: a call's parameters, a condition's labels, a result's groups (§5.4) | no | no (on the LEFT of `:=` only, design only) | no (it IS the argument list) | every call; every condition | RULED (CF:866) |
-| namespace (module) | `m := import(...)`: a compile-time scope of members | no (lean) | yes, by `:= import(...)` | no (lean) | E-JSONL, E-IPV4, E-HTTP, E-DEPTH | OPEN (§13 O46) |
+| module | `m := import(...)`: described by its MAP INTERFACE, members reached as fields by `.` (CF:891-892: "what import is is less important than that its interface is a map"); what kind of thing it is: not ruled, and matters less | no (lean) | yes, by `:= import(...)` | no (lean) | E-JSONL, E-IPV4, E-HTTP, E-DEPTH | the interface RULED (CF:891-892); the kind not ruled (§13 O46) |
+| array / map INTERFACE | applied to a thing (an rx, a repeated label's iterations, a module); never created (CF:890-891) | NO | no | no | every case that indexes, joins or reads a field | RULED (CF:890-891) |
+| repeated label's iterations | the passes of one label in one match (search hits included), read through the array interface (§4.3) | no (they are parts of a match) | no | no | E-HTTP (`name`) | the group questions: CF:922-924, accepted at CF:905 |
 | run-time parameter | `limit := param(rx)`: an rx whose string the caller fixes per match | as an rx (lean) | yes, by `:= param(...)` | yes, as an rx | E-NEAR (b) | OPEN (§13 O46) |
 | effect | an `@` form, a compile-time statement (§5.1) | no | no | no | E-IPV4, E-CAL (`@assert`) | LEAN (CF:619) |
 
-The map-view tools' results (`where_group`, `each_group`, §3.2, §5.3) are rx (arrays, entries in group order): LEAN
-(this document; review r8 P6-8 (e): the result kind was unstated).
+The map-interface tools' results (`where_group`, `each_group`, §3.2, §5.3) are rx whose array interface lists the
+selected parts in group order: LEAN (this document; review r8 P6-8 (e): the result kind was unstated). Rev 8 (CF:890-891):
+wherever this document says a tool "returns an array", it returns an RX read through the array interface; no tool
+creates an array or a map as a value (the list of places checked: `docs/dev/lanes/predspec8_report.md`).
 
 **REASONING.** The closure (a predicate denotes a pattern, 2026-11-12/13) means one algebra serves patterns,
 values and tests; a condition is a term with a free variable, the same kind as a macro awaiting its operand (via `&`).
@@ -342,7 +395,8 @@ macro", CF:849; his correction that `isodate` is an rx, CF:855); SUPERSEDES the 
 and a binding naming whatever its expression is: RULED (CF:858, on the acceptance alone, §0 marks table). One input
 rule (call = parameters, `&` = the operand slot): RULED (CF:860, on the acceptance alone). `(& M)` = M, the computed
 label as a macro, the typing of `& | !`, the kind table and the map-view result kind: LEAN (this document, review r8
-P6-8). Literals as one-string sets: LEAN. Module: OPEN (§13 O46). Numbers ONE kind for the user: LEAN (CF:823,
+P6-8). Literals as one-string sets: LEAN. Module: its MAP interface RULED (CF:891-892), its kind not ruled (§13
+O46). Array and map are interfaces, never created values: RULED (CF:890-891). Numbers ONE kind for the user: LEAN (CF:823,
 "perhaps"; the owner's ideal, CF:813); the 11-14 "no number type" is WITHDRAWN as over-reach (CF:782 (3)); what a
 number is: §13 O40. No boolean type: LEAN (manager's Q6/Q9 spelling lean, CF:595). No partial application in phase
 1, currying kept by the design: RULED (CF:753, CF:804). The earlier "assertions (their own value kind)": withdrawn by
@@ -441,61 +495,108 @@ expression always starts a binding (one-token look-ahead, §5.1).
 **STATUS.** No concatenation operator: LEAN (CF:69). Arithmetic on subject numbers: RULED (CF:782 (1): "\d+ numbers can
 be added, filtered <256"). Arithmetic result width (`${$y + 1}` on `0099`): §13 O27.
 
-### 2.6 Search
+### 2.6 Search and contains are transforms
 
-**RULE.** `$x ~ rx` = search inside a value (unanchored). A SEARCH RESULT IS THE ARRAY OF ALL THE RESULTS (the
-owner, CF:881-883: "an array of all of the results. You could use count to check the number of results. You could
-treat it as an array. You could use the occurs module"), which is the type picture's point (5) said from the array
-side (CF:873, CF:883-884): a search returns an RX, the OCCURRENCE SET, i.e. the search pattern narrowed to what occurs,
-under PCRE iteration order (non-overlapping, leftmost, continue after the match; the C find-all iterator's order).
-It has the two views of every rx (§3.1): the ARRAY view is the occurrences in order, ONE ENTRY PER OCCURRENCE (two
-equal occurrences are two entries: "the number of results" counts both); the MAP view is the search pattern's labels.
-`d := $m ~ /.../` binds that rx. The VALUE searched is the whole subject of that search: inside the slashes `^` and
-`$` are the value's start and end, and no assertion sees text outside the value (D193 add. 3; `$x` is a one-string
-set, context-free, §4.1, §11). Membership is `x & a`; no `in`.
+**RULE.** SEARCH IS A LIBRARY TRANSFORM of the `contains` family, not an operator: it takes an rx and returns an rx
+over the WHOLE value in which the hit group REPEATS, once per hit, and it is applied like any filter, by `:` or `&`
+(`(m: search(/ab(?<g>[xy])/))`, `P & search(r)`). The operators `~` and `!~` of rev 7 are WITHDRAWN: rev 7's
+`$m !~ r` is `(m: !contains(r))`; rev 7's `$m ~ r` has no one-to-one replacement, because a search result is no
+longer a value: a TEST is `contains`, a QUESTION about the hits is `search` with a group question (§4.3). The hit
+needs no new concept: it is a REPEATED LABEL (§4.3), so a plain condition on a hit's label means ALL hits,
+`some(...)` some hit, `count(...)` and `occurs.*` count them, and one record means one hit (SAME HIT BY RECORD).
 
-THE OWNER'S EXAMPLE: STRUCTURE vs LANGUAGE (his semantics, CF:880-887 and the predspec7 brief; his spelling is a
-placeholder, D193 add. 4). For a subject containing `abx` then `aby`:
+    contains(x) := /(?s).*${x}.*/                   # a TEST: one hit needed
+    search(x)   := /(?s)(?:.*?(?<hit>${x}))*.*/     # every value; each hit is one iteration of the label `hit`
 
-    d := <subject> ~ /ab(?<g>[xy])/     # the ARRAY of the two occurrences, [abx, aby]
-    count(d)                            # 2
-    d[2]                                # the second occurrence, aby
-    d[2].g                              # y
-    d & (g: x)                          # [abx]: the entry at position 1, an ARRAY, its original position kept
+(Library text, §8; spelling placeholder, D193 add. 4. The owner's sketch `search(x) := /.*(?:(${x}.*).*/`, CF:903-904,
+is the idea; the shape is the record's requirement (5), CF:918-919. `(?s)` makes the gaps cross line breaks; it does
+not reach into the hole, a literal's flags are never inherited by a hole's pattern, §11, §13 O32. The label name
+`hit` is a library placeholder, §13 O56.)
 
-and with `abx aby abx`: `count(d)` = 3 (duplicates kept, although as a SET OF STRINGS `d` has two members, `abx` and
-`aby`), and `d & (g: x)` keeps entries 1 and 3. (In this document's spelling the last line is `d & (g: "x")`.) The
-LANGUAGE reading (`& | !`, §3.4) sees `d` as the set {abx, aby}; the STRUCTURAL reading (`count`, `[i]`, §3.4) sees
-the three entries; and `&` on an array keeps entries and their original positions (§3.2 tool 2, §3.5's `.index`).
-This is the owner's INTENDED BEHAVIOUR: any answer to §13 O50 must give exactly these results.
+THE DEFINITION'S REQUIREMENTS (CF:918-921, accepted at CF:905), and how the text above meets each:
+1. LAZY GAPS, so the hits are LEFTMOST and NON-OVERLAPPING. In PCRE's priority parse of `(?:.*?(x))*.*` against the
+   whole value, the outer `*` (greedy) tries one more hit before stopping, and the lazy gap tries the shortest gap
+   first, so each iteration takes the leftmost place where x matches; the rest of the pattern always succeeds (the tail
+   `.*` takes what is left), so nothing backtracks into a hit and each hit is x's own PCRE-preferred match at that
+   place. That is PCRE2's find-all order (the C find-all iterator's), for an argument that cannot match empty.
+2. A REPEATED LABEL'S COUNT FOLLOWS PCRE'S PRIORITY PARSE (which with lazy gaps is find-all order). As a SET the
+   pattern is every string and it has other parses (a gap can swallow a hit), so the hits are the iterations of the
+   PRIORITY parse, not of "some parse". This is a CONFLICT with §4.5's ruled some-parse rule for ambiguous labels: §13
+   C36 gives both readings and does not pick.
+3. THE EMPTY-MATCH ADVANCE. PCRE ends a loop whose iteration matched the empty string, so an argument that can match
+   empty gives at most ONE hit (the first, possibly empty) where find-all advances and continues (`/a*/` on `baa`: one
+   empty hit at 0; Python's `re.findall("a*", "baa")` gives `['', 'aa', '']`, three; §0.1 L53). Rev 8 (LEAN): a
+   search argument that can match empty is a compile ERROR naming the fix `x & !""` (the same hazard the empty-match
+   rule refuses for a predicate program's final pattern, §7); the alternative, PCRE2's find-all advance rule written
+   into the library text, is §13 O53.
+4. THE LOOK-ALIKE ROW: "`(g: x)` on a search result means ALL hits" is §0.1 L52 (BY DESIGN).
 
-WHAT THE DRAFT CANNOT YET SAY (§13 O50, OPEN; review r8 P6-7). `d` exists only per match: it is a MATCH-TIME array
-(§3.4), while every structural tool of §3.2-§3.4 and §5.3 was defined over SPELLED arrays at compile time (G4). So
-the following are OPEN, each with readings in O50: (a) what the array tools (`[i]`, `count`, `&` per entry, `each`,
-`occurs.*`) mean on a match-time array and at what level; (b) what `d.g` means across several entries (rev 6 said "the
-set of the occurrences' years", the manager's gloss at CF:874, not the owner's words); (c) what a search result does
-in the FILTER role (`P & ($m ~ r)`), and so what `$m !~ r` is the negation of (§0.1 L16, L51); (d) a record on the
-left, `(x, y) := $m ~ /.../`: the fields of EACH entry, of one indexed entry, or the first two results (§0.1 L50;
-design only, out of phase 1, §0.2); (e) `some`/`all` over a search result (library names over a set, CF:74), and
-whether two `some(s)` in one predicate denote one occurrence (§13 O29).
+THE ANCHORED ARGUMENT. `^`/`$` in the argument are the ends of the span the enclosing filter role filters (§11 ONE
+SPAN PER FILTER ROLE; §13 O49), not of the hole the body puts the argument in. So `search(/^err/)` can hit only at
+the value's start: AT MOST ONE HIT. This is the rev 7 rule unchanged: `contains(/^err/)` = `startsWith("err")` (L17),
+and `search(/^err/)` has its one hit exactly when `contains(/^err/)` holds. With an explicit `(?m)` in the argument
+`^` also matches after a line break inside the span (C35), one hit per such line.
 
-`$x !~ rx` is a TEST, sugar for the condition `(x: !contains(rx))`; `^`/`$` in `rx` are x's ends (the filtered span of
-the condition, §11; `contains(/^err/)` = `startsWith("err")`, §0.1 L17). Its relation to `~` is (c) above.
+ZERO HITS. `search` NEVER REJECTS (zero iterations always parse; as a set it is every string); `contains` does.
+`(m: search(r))` alone narrows nothing (§0.1 L16); a question narrows: on zero hits `some(...)` fails, `count(...)` is
+0, `occurs.none(...)` holds, and a plain condition or `all(...)` follows §13 O28 (lean: fails, zero iterations being
+"unset"). `!search(r)` is empty, the empty-intersection error (L51).
 
-**REASONING.** Search results are values, not globals (Frank: "Even Perl had the awkward $1"). One quantifier name
-(`some`, not `any`). The value-as-subject reading is D193 add. 3's ruled meaning for a predicate's regex test. The
-owner's example separates the two readings every array has (§3.4), which the draft states once for spelled arrays and
-has not yet stated for a match-time one.
+HAND CHECKS. Each row was derived by hand from the priority parse and then run on the system libpcre2-8 (10.46): the
+pattern `(?s)(?:.*?(X)(?C1))*.*` matched against the whole value (anchored at both ends), a callout recording the
+span of each hit (script and output: `docs/dev/lanes/predspec8_report.md`, EXAMPLES RE-CHECKED).
 
-**STATUS.** Meaning (occurrence set): RULED (CF:74, Frank's proposal); a search returns an rx with its two views:
-RULED (CF:873, accepted at CF:854 "Ok. I like this view"); the search result as the ARRAY of all results, one entry
-per occurrence, `count` and `occurs` applying: RULED (CF:881-883, his words; was LEAN in rev 6, review r8 DRIFT-1);
-the owner's example above: his intended behaviour (relayed in the predspec7 brief, recorded with CF:880-887). What the
-array tools, `d.g`, the filter role and the record on the left mean on a match-time array: OPEN (§13 O50). A record
-on the left in the design: RULED (CF:852); out of phase 1: LEAN (§0.2). The `~` operator: LEAN (review RUL-14.5).
-`^`/`$` bound to the value: RULED (D193 add. 3; CF:732). `!~` as `(x: !contains(rx))`: LEAN (review RUL-5; keep or
-drop: §13 O12). `count` over an occurrence set: §8 (`count()` yields a number, LEAN, CF:823). Binding a name to a
-test: allowed (§13 C6 RESOLVED).
+| value | argument X | hits (the priority parse) | `count` | `search` accepts | `contains` accepts |
+|---|---|---|---|---|---|
+| `abx aby abx` | `/ab(?<g>[xy])/` | `abx`@0 g=x, `aby`@4 g=y, `abx`@8 g=x | 3 | yes | yes |
+| `aaa` | `/aa/` | `aa`@0 (the parse with a hit at 1 has lower priority) | 1 | yes | yes |
+| `baa` | `/a*/` | the empty string @0, then the loop ends | 1 (find-all: 3) | refused (L53, lean) | refused (lean) |
+| `err x err` | `/^err/` | `err`@0 (`^` is the span's start) | 1 | yes | yes |
+| `x err` | `/^err/` | none | 0 | yes | no |
+| `xyz` | `/ab(?<g>[xy])/` | none | 0 | yes | no |
+| `err\nerr x\nok` | `/(?m)^err/` | `err`@0, `err`@4 | 2 | yes | yes |
+
+On the first row: a plain `(g: "x")` fails (hit 2), `some((g: "x"))` holds, `occurs.exactly(2, (g: "x"))` holds,
+`count((g: "y"))` = 1 (§4.3).
+
+THE OWNER'S EXAMPLE (his semantics, CF:880-887 and the predspec7 brief; his `d := <subject> ~ ...` spelling used the
+withdrawn `~`; his example stays the INTENDED BEHAVIOUR). With `r := /ab(?<g>[xy])/` and a pattern P whose label m
+holds `abx aby abx`:
+
+    P & (m: search(r) & occurs.exactly(3, (hit: /(?s).*/)))   # his count(d) = 3: a group question, phase 1
+    P & (m: search(r) & some((g: "x")))                        # some hit has g = x: phase 1
+    P & (m: search(r) & occurs.exactly(2, (g: "x")))           # two hits have g = x: phase 1
+    $m.hit[2]                                                  # his d[2] = aby: ONE iteration, captures level
+    $m.hit[2].g                                                # his d[2].g = y: captures level
+    $m.hit & (g: "x")                                          # his d & (g: x): iterations 1 and 3, positions kept
+
+The first three are GROUP QUESTIONS, which compile to states (phase 1; CF:922-924, accepted at CF:905). The last
+three read ONE ITERATION, which needs captures inside a loop: a higher capability level with its cost shown (the
+MANAGER'S LEAN, CF:924-926, LEAN; §4.3). `(hit: /(?s).*/)` is "every hit" spelled as a condition; a shorter spelling
+is §13 O56. A search result is no longer BOUND: what `d := ...` becomes is §13 O55.
+
+`x & s` with s an rx stays MEMBERSHIP (`x & a`; no `in`): it is not a "some result" spelling (§0.1 L54); over
+iterations the one spelling is `some(...)` (CF:913-914).
+
+**REASONING.** The owner's criterion "few types and few operators that always mean the same thing wherever they are
+used" (CF:847-848): two operators leave, and the one thing rev 7 had to invent for search, a MATCH-TIME array with
+its own rules (rev 7 §3.4, O50), is gone: the hits are the iterations of a repeated label, which the language had
+already (§4.3), and the array interface over them is the general one for ANY repeated label (CF:922-923). A search
+is a filter like `contains`, so it composes by `&` and `:` like every other filter, and `^`/`$` in its argument follow
+the one filtered-span rule (§11). Search results stay values-not-globals in the owner's sense ("Even Perl had the
+awkward $1"): a hit is reached through the label of the match it belongs to, never through a global.
+
+**STATUS.** Search as a library transform of the `contains` family, `~` and `!~` withdrawn, the hit a repeated label,
+the definition requirements (lazy gaps, the count along PCRE's priority parse, the empty-match advance stated, the
+look-alike row): CF:907-921, accepted at CF:905 ("Do it"; the transform idea is his own, CF:903-904). The written
+definitions and the hand checks: this document (LEAN). The refusal of a nullable argument: LEAN (§13 O53). `(?s)` in
+the library bodies: LEAN (this document). The priority parse vs §4.5: CONFLICT (§13 C36). `^`/`$` of the argument =
+the filtered span's ends: RULED (D193 add. 3; CF:761), applied to an argument: LEAN (§13 O49). The group questions
+phase 1: CF:922-924, accepted at CF:905; one-iteration access at captures: LEAN (CF:924-926). The owner's example:
+his intended behaviour. SUPERSEDES rev 7 §2.6 (`$x ~ rx` as an operator, the search result as a match-time ARRAY
+VALUE, `!~` as sugar) and rev 6's "a search returns an rx (the occurrence set)" (CF:873) as a VALUE reading; its
+occurrence order (non-overlapping, leftmost, CF:74) is kept as requirement 1. Binding a test: allowed (§13 C6
+RESOLVED).
 
 ### 2.7 Transforms are FILTER MODIFIERS
 
