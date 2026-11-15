@@ -837,3 +837,9 @@ building it exceeds the budget (the state cost), and the refusal names `occurs` 
 may be RECOMMENDED (a warning or note) as the way to reduce states. Manager's note (mine): this follows the standing
 preference for measured budgets over structural rules; the budget is a labelled, measured quantity, and what `occurs`
 saves over `count()` for the same test is a question for the lowering section of the spec.
+**2026-11-15 OWNER NOTE — `count()` -> `occurs` as a LATER OPTIMIZATION (Frank, to session 132).** His words:
+"Predicate count/occurs issue: it would be a later optimization plan item that if pcrec could show no change in
+semantics that it convert count() into occurs". RECORD: a later, separate plan item (not phase 1, not scheduled): when
+the compiler can PROVE the answers do not change, it rewrites a `count()` test into the `occurs` form itself, so the
+user writes `count()` and gets the cheaper form where it is provably the same. Until then the earlier ruling stands
+(`count()` refused only on budget, `occurs` recommended to reduce states). Plan row to file: [COUNT-TO-OCCURS].
