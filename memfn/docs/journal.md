@@ -4018,3 +4018,9 @@ Main ruled on the four kit findings (D186 add. 2):
   - The fix lane mfindfix2 is HELD by the stop.
   - Gate: 621 g2 GREEN (873 s), 626 mech GREEN (263 s); 622-625 queued.
 - 03:40 main on mfind F5: will confirm after the stop lifts. Main leans to accept, and goes to Frank if the 11-07 shape was his ruling. Lessons noted for critics.md. F1 and the check-hole fixes stay held.
+- 04:00 slotxfix DONE: lane/memfn-slotx @ d26bc5751, report docs/dev/lanes/slotxfix_report.md, lanecheck DONE.
+  - Fixed: F1 (ISA by encoding, S3168), F2 (S3169), F3, F4, F5 (S3171), F8 interim DRAFT-TARGET MIXED (S3172), F9 (JMB/JMH; queue keys now kit-mfcard-JMB/JMH), F10. f1 S2937 re-anchored.
+  - Validation: strict OK, finder/arms/targets green, anchors clean, est selftest 56/0, sabotage 48/48 DETECTED, named-check-disabled 9/9 MISSED.
+  - Accepted; agent stopped. Slotx gate PAUSE released, running on d26bc5751.
+  - Queued gate job 642 still named J6B/J6H, and its expect regex [a-zJ0-9] could not match JMB/JMH. Both renamed in place, in the queue copy and the scratch original; the dry run is clean.
+  - Still owed before slotx delivers: slotxf8 (F7 + F8 (i)), held by the stop. Stages 642/644 re-run after it.
