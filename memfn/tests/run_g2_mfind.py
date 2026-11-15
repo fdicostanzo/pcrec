@@ -126,8 +126,8 @@ POP_FLOOR = {
     'nterm1': 28, 'nterm2': 110, 'nterm3': 33, 'nterm4': 19,   # 36 / 138 / 42 / 24
     'a00': 16, 'a80': 12, 'aff': 14, 'a7f': 21, 'a01': 16, 'afe': 16,   # 21 15 18 27 21 21
     # r2 F12 (lane mfindfix2): the site shapes beyond FIND/FUNC (g2_mfind_gen.c
-    # THE SITE SHAPES; by id, 5 of each per file at 80 sites, x3 targets)
-    'pre': 12,             # 15: a pre-check composite's FUNC part
+    # THE SITE SHAPES; by id, no RNG draw, x3 targets)
+    'pre': 4,              # 6: a pre-check composite's FUNC part (odd RUN-scanned ids: 2 per file)
     'inloop': 12,          # 15: policy INLOOP (the SIMD rows decline; helpers absent)
     'size': 12,            # 15: policy SIZE (served; helpers render)
 }

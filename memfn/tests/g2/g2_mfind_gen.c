@@ -25,8 +25,9 @@
  *                     tables, runs, caseless runs, target, lever, shape.
  * THE SITE SHAPES (review 2026-11-15 r2 F12, lane mfindfix2): beside the
  * plain FIND/FUNC/RETURN site, by id among the random sites (the shape takes
- * no RNG draw of its own): a PRE-CHECK PART (id % 8 == 3: a scanned-RUN
- * predicate, the precheck arm's FUNC-part shape, as the one FUNC part of an
+ * no RNG draw of its own, so the drawn space is the plain family's): a
+ * PRE-CHECK PART (an odd id, not INLOOP, where the draw scanned a RUN, the
+ * precheck arm's FUNC-part shape; even RUN-scanned ids stay plain), the predicate as the one FUNC part of an
  * ALL_PRESENT / STMT / ON_MISS composite, the part function named by fn_ref
  * as a FUNC site's, pcrec's `rx_reqrun` shape; the composite's own
  * statement is discarded, the driver calls the part), a
@@ -224,7 +225,7 @@ static void mk_other(struct gterm *t, int *runs, int allow_run)
     else { mk_run(t, off, 2 + rnd(11), rnd(3) == 0, -1); (*runs)++; }
 }
 
-static void draw(struct gsite *s, unsigned id, uint8_t a_head, int scan_run)
+static void draw(struct gsite *s, unsigned id, uint8_t a_head)
 {
     memset(s, 0, sizeof *s);
     int runs = 0;
@@ -262,7 +263,6 @@ static void draw(struct gsite *s, unsigned id, uint8_t a_head, int scan_run)
     }
     uint8_t a = rnd(3) ? heads[rnd(NHEADS)] : rbyte();
     unsigned ty = rnd(4);
-    if (scan_run) ty = 3;   /* a pre-check FUNC part: its one RUN is the scanned term */
     if (ty < 3) {
         /* a scanned SET {a} at k 0..12, 1..3 other terms */
         unsigned k = rnd(4) ? rnd(13) : (rnd(2) ? 0 : 12);
@@ -344,14 +344,14 @@ static int has_cpu_directive_or_include(const char *t)
 /* the site's shape, by id (THE SITE SHAPES above); the fixed head is plain */
 enum { SH_FN, SH_PRE, SH_INLOOP, SH_SIZE };
 static const char *const sh_name[] = { "fn", "pre", "inloop", "size" };
-static unsigned shape_of(unsigned id)
+static unsigned char *site_shape;   /* per id, set after the site's draw */
+static unsigned shape_of(unsigned id, int scan_is_run)
 {
     if (id < 4 * NHEADS) return SH_FN;
     switch (id % 8) {
-    case 3: return SH_PRE;
     case 5: return SH_INLOOP;
     case 6: return SH_SIZE;
-    default: return SH_FN;
+    default: return scan_is_run && id % 2 ? SH_PRE : SH_FN;
     }
 }
 
@@ -364,7 +364,7 @@ static int check_site(unsigned id, const char *site, const char *target, int lev
     snprintf(hn, sizeof hn, "g2m_%u__w32(", id);
     w32 = count_str(site, hn);
     int want16 = 0, want32 = 0;
-    if (lever && shape_of(id) != SH_INLOOP) {
+    if (lever && site_shape[id] != SH_INLOOP) {
         if (!strcmp(target, "x86-64-v3")) want16 = want32 = 1;
         else if (!strcmp(target, "x86-64")) want16 = 1;
     }
@@ -420,6 +420,7 @@ int main(int argc, char **argv)
     }
     size_t gmax16 = 0, gmax32 = 0, gmaxo = 0;
     size_t *start = calloc(nsites + 1, sizeof *start);
+    site_shape = calloc(nsites + 1, 1);
     static mf_site st;
     static mf_pred part[1];
     static mf_hooks hk;
@@ -428,7 +429,8 @@ int main(int argc, char **argv)
     (void)mask_none;
     for (unsigned id = 0; id < nsites; id++) {
         struct gsite *s = &sites[id];
-        draw(s, id, 0, shape_of(id) == SH_PRE);
+        draw(s, id, 0);
+        site_shape[id] = shape_of(id, s->t[s->scan].kind == 1);
         snprintf(fnname[id], sizeof fnname[id], "g2m_%u", id);
         cur = id;
         memset(&st, 0, sizeof st);
@@ -474,7 +476,7 @@ int main(int argc, char **argv)
         hk.miss = MF_MISS_N;
         hk.fn_name = h_fn;
         hk.table_name = h_tbl;
-        unsigned sh = shape_of(id);
+        unsigned sh = site_shape[id];
         if (sh == SH_PRE) {
             /* the predicate as the composite's one FUNC part (its function
                the part's fn_ref names); site.pred unread on ALL_PRESENT */
@@ -592,7 +594,7 @@ int main(int argc, char **argv)
         unsigned a = sc->kind ? sc->run[s->scanpos] : (unsigned)set_first(sc);
         fprintf(meta, "%u\t%u\t%s\t%u\t%u\t%u\t%u\t%u\t%u\t%s\t%d\t%s\n", id, s->nterm,
                 sc->kind ? "RUN" : "SET", k, maxk, a, ntbl, nrun, ncl, tg->name, lever,
-                sh_name[shape_of(id)]);
+                sh_name[site_shape[id]]);
     }
     fputs("};\n", out);
     fprintf(out, "#define G2M_NSITE %u\n", nsites);
