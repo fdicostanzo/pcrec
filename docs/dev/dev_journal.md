@@ -27647,3 +27647,10 @@ Next
   dig32/hex32-id). Frank: "design and code critics on ALL work" (memory pcrec-critics-on-all-work; kit told).
   Rounds launched: crit-covcap (design, light) and crit-posts2 (code, RETROACTIVE over the code landed after the S2
   close without a round: s2d27, s686, mechund, r43, s2arms, r1on/r1land, ci fixes, axtri1115).
+- 03:00 (2026-11-15): retroactive code round crit-posts2 on the post-S2 landings (docs/dev/reviews/2026-11-15-r1-posts2.md):
+  0 answer findings (rule (1) ON: ~2,000 runs vs libpcre2, restore=alt byte-identical apart from abi; every abi reader on
+  107). FIX-NOW to lane fixposts2 (sonnet): one bounded first-match scan helper for req.c's four restore tables
+  (CONTRACT-1, general form), INTERNAL_ARMS derived from walk_arms.def (CONTRACT-4), S3012's reach on a measured count
+  (PLANTS-1), D27 `# arms:` headers, vrun utf8 floors split corpus/witness, doc items; run-verify-wide floor re-measure
+  queued; EMITTED-1 -> Boonies row. FLOORS-4 (the D3 floor script has no caller) relayed to the kit. Rev 0 covcap round
+  filed as r2-covcap0; its findings fed to covcap2 (rev 1, no length bound, Frank: "avoid arbitrary tuning constants").
