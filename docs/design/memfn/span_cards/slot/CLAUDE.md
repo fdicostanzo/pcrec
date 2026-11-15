@@ -62,7 +62,8 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   policy values read from the record's pinned rows only (r9fc FIX-1), the format-2 draft writer (SPLIT BY VER: one set per method, ver 3 `zen4-grid3`, ver 4 `zen4-grid4` to `<path>.v4`, [slotx] ver 6
   `zen4-grid6` to `.v6`, each set's rows held to its own cards by `draft_split`; only the WINDOW's jobs' rows priced; none for a ver
   with no timed row; no draft on
-  REFUSED; [review r1 F8, interim] no draft while a set would hold rows of more than one kit target (DRAFT-TARGET
+  REFUSED; [review r1 F8] one set per ISA level (`TARGET_SET`: generic + x86-64 `zen4-grid6` `x86_64/zen4`, x86-64-v3
+  `zen4-grid6-v3` `x86_64-v3/zen4`), no draft while a set would mix ISA levels (DRAFT-ISA-LEVEL
   MIXED); the cards as declared, r9fc FIX-8), `selftest SCRATCH` (the input cross-checks, a live table edit,
   rev 1.4's sub-resolution branches); `[rev1.4]` delta rows printed `ungated`, the sub-resolution branch
   (measures.md §3.5¶3a; `[r10]` the all-negative rule, r capped at the pinned policy's `r_max_e6`
@@ -87,7 +88,7 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   (q1) S2944, (b1) S2945, review r10's (n3) S2946, (s3) S2947, (s4) S2948, (s5) S2949, rev 1.5's (x1) S2950, (x2) S2951,
   (x3) S2952, review r11's (y1)-(y11) S2953-S2963, K38-3's (d1) S3105, lane slotx's (t1) S3160, (t2) S3161,
   (r1) S3162, (r2) S3163, (v1) S3164, (v2) S3165, (w1) S3166, (k1) S3167, lane slotxfix's (e1) S3168, (e2) S3169,
-  (e3) S3171, (e4) S3172, planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
+  (e3) S3171, (e4) S3172, lane slotxf8b's (f8a) S3183, (f8b) S3184, planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
   selected rows score on first (review r1 F3).
 - `movers.py` — S2e's data-mover census (m0build's method, normalization EMPTY, plus the head-vs-itself pass
   across the two sets); written by S2c, run by S2e.

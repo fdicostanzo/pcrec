@@ -319,8 +319,8 @@ row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT
         patch "$SCR/$row/link.py" '    ("vex", r"vf(n?m(add|sub)|maddsub|msubadd)\S*", r"", ("fma",)),
 ' '' ;;
     e3) job=est want='selftest	\[F5\] write_draft on the mfcard window[^	]*	WRONG'
-        patch "$SCR/$row/est.py" '        vrows = split.get(v, [])' \
-'        vrows = split.get(v, []) + (split.get("6", []) if v == "3" else [])   # SABOTAGE S3171' ;;
+        patch "$SCR/$row/est.py" '        vrows = groups[(v, suf, cls)]' \
+'        vrows = groups[(v, suf, cls)] + (split.get("6", []) if v == "3" else [])   # SABOTAGE S3171' ;;
     e4) job=est want='selftest	\[F8\] write_draft refuses a set mixing ISA levels[^	]*	WRONG'
         patch "$SCR/$row/est.py" '            if cls.split("/")[0] != TARGET_LEVEL[tgt_of[r[0]]]:' '            if False:   # SABOTAGE S3172' ;;
     f8a) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	\(DRAFT-ISA-LEVEL MIXED'

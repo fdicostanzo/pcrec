@@ -800,6 +800,11 @@ Every fixture (kit arm, driver, `enter` artifact, J1 width) is compiled `gcc 15.
 - **(c)** the rows.
 The spelling of (b) and (c) for a set holding SEVERAL targets' variants (rows per target, a section, header
 keys) is the format event J6's design makes at [XARCH-DEV].
+`[review 2026-11-15 r1 F8]` **One draft set per ISA level.** The ver-6 run's kit targets generic and x86-64 are the
+same baseline code and write `zen4-grid6@1`, class `x86_64/zen4`; x86-64-v3 writes `zen4-grid6-v3@1`, class
+`x86_64-v3/zen4` (a new class VALUE, no new format); est's draft writer REFUSES a set that would hold rows built for
+another ISA level than its class names (`DRAFT-ISA-LEVEL MIXED`), and identical site text from generic and x86-64
+is the same code, so it shares one cell.
 
 **J6 = unit S2g, SEPARABLE and HELD until [XARCH-DEV]'s go (D188 add. 1).** Content once released: vrun only (`vrun-w16`, `vrun-w32`; the kit
 manager's ruling drops vany, §2.5). Its cells cannot come from the scalar builders: vrun renders only through
