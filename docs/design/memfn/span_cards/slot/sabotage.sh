@@ -8,7 +8,7 @@
 # a row DETECTED). Each row scores DETECTED (the dry run refused with the expected text) or MISSED; exit 0 iff the
 # control is green and every row is DETECTED.
 #   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 d1
-#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1-i10
+#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1-i10 m1-m5
 #                                         y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
@@ -139,10 +139,19 @@
 #   (i8) S3195 [FIDELITY-3] every job control in every set: the levels case goes WRONG (JMB/JMH ctl in ver 3's)
 #   (i9) S3196 [FIDELITY-4] the D197 rule's A/A floor dropped: the drill's within-floor tie reads WIN (WRONG)
 #   (i10) S3197 [R3 (1)] a confirming run never clears a loss: the not-reproduced case reads CONFIRM (WRONG)
+#   review 2026-11-15 r6 (lane mcfixb):
+#   (m1) S3207 [FIDELITY-3] est's cells pin not compared: the swapped-cells case is priced (WRONG)
+#   (m2) S3208 [RULE-2] a confirming record's run id not held apart: the first-run-id case passes (WRONG)
+#   (m3) S3209 [RULE-1] the second-run-without-a-verdict row never matches: the second run's refused shipped
+#        record reads INCONCLUSIVE, a third run (WRONG)
+#   (m4) S3214 [RULE-7] the scan reads a key no row has (every ratio `-`): the end-to-end drill's number check
+#        goes WRONG (job d197e2e: the drill with its SCRATCH)
+#   (m5) S3215 [FIDELITY-1] TIMED-SHAPE's section-symbol refusal dropped: link.py shape-selftest's `section`
+#        case goes WRONG (job shape). The four out-of-line plants S3210-S3213 are that self-test's own cases
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
 # rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
 # r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's,
-# S3188-S3197 lane mcfixa's; they
+# S3188-S3197 lane mcfixa's, S3207-S3209 S3214 S3215 lane mcfixb's; they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
@@ -150,7 +159,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=${SLOT_TREE:-$(cd "$here/../../../../.." && pwd)}   # SLOT_TREE: the tree when slot/ runs from a copy
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9 i10}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 m1 m2 m3 m4 m5}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -181,6 +190,10 @@ dry() {    # COPY JOB [NAME]: the job's dry run in the copy COPY (a fresh RUNDIR
         SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/plan.py" report > "$SCR/$n.out" 2>&1
     elif [ "$2" = d197 ]; then        # JOB `d197`: the D197 rule's drill (constructed outcomes)
         SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/d197_rule.py" drill > "$SCR/$n.out" 2>&1
+    elif [ "$2" = d197e2e ]; then     # JOB `d197e2e`: the drill and its end-to-end cases on est's synth (r6)
+        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/d197_rule.py" drill "$SCR/run.$n" > "$SCR/$n.out" 2>&1
+    elif [ "$2" = shape ]; then       # JOB `shape`: link.py's TIMED-SHAPE self-test (r6)
+        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/link.py" shape-selftest "$SCR/run.$n" > "$SCR/$n.out" 2>&1
     elif [ "$2" = est ]; then
         SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/est.py" selftest "$SCR/run.$n" > "$SCR/$n.out" 2>&1
     else
@@ -391,6 +404,18 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
     i10) job=d197 want='drill	\[R3\] that one-cell loss does NOT reproduce[^	]*	WRONG'
         patch "$SCR/$row/d197_rule.py" '    "loss-not-reproduced": lambda c: c["gain"] < -c["floor"] and c["conf"] is not None' \
 '    "loss-not-reproduced": lambda c: False and c["conf"] is not None   # SABOTAGE S3197: a confirming run never clears a loss' ;;
+    m1) job=est want='selftest	\[r6 FIDELITY-3\] two keys. cells swapped after finalize[^	]*	WRONG'
+        patch "$SCR/$row/est.py" '        if got != pin:' '        if False:   # SABOTAGE S3207: the cells pin not compared' ;;
+    m2) job=d197 want='drill	\[r6 provenance\] a confirming record \(window mfconfirm\) carrying[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '        if role.startswith("confirm.") and m["run"].get("run_id") in this | first:' \
+'        if False:   # SABOTAGE S3208: a confirming run id not held apart' ;;
+    m3) job=d197 want='drill	\[r6 RULE-1\] the shipped record REFUSED on the second run[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '    "second-run-without-a-verdict": lambda v: v["second"] and (' \
+'    "second-run-without-a-verdict": lambda v: False and (   # SABOTAGE S3209' ;;
+    m4) job=d197e2e want='drill	end to end on est.s synthetic window	WRONG'
+        patch "$SCR/$row/d197_rule.py" '"kit.%s.%s" % (t["deciding"]["scan"], f)' '"kit.%s_.%s" % (t["deciding"]["scan"], f)   # SABOTAGE S3214' ;;
+    m5) job=shape want='shape	\[S3210\][^	]*	WRONG'
+        patch "$SCR/$row/link.py" '        if callee.startswith("."):' '        if False:   # SABOTAGE S3215: section symbols not refused' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
 }

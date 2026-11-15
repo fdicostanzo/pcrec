@@ -45,7 +45,10 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   planned target's `--target-facts` (a feature above the floor with no row refuses). Review r5 (mcfixa): ONE TEXT,
   TWO OBJECTS (`_time` alone; `_gate` from the same file under `-DSLOT_GATE_TU`, linked after the arms), and
   TIMED-SHAPE refuses a `_time` calling a function its own object defines (the site out of line); cell_text's
-  `text_bytes` (the timed function's size, reported beside the timing).
+  `text_bytes` (the timed function's size, reported beside the timing). Review r6 (mcfixb): TIMED-SHAPE's per-form
+  callee table `TIMED_CALLEES` (mfind-*: none, fn-memchr: memchr), and it refuses any branch through a section
+  symbol (`section`/`cold` sites, `_time`'s own cold split) and indirect call/jmp; `link.py shape-selftest SCRATCH`
+  holds it to two controls and the critic's plants (S3210-S3213).
 - `art.py` — whole-artifact arms for J5 (`enter`; refuses a step-back arm, `no_back`, until t's artifact is specified) and J1 (PAIR width substitution): pcrec artifact + one
   wrapper, symbol localization, subjects, python `re` expectations, all cached by their inputs' sha;
   `art.py check RUNDIR`.
@@ -84,20 +87,25 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   exclusion table `NON_TIMED`; self-test READING_CASES (assembled functions) and GATE_CASES (a scratch git tree).
 - `d197_rule.tsv`, `d197_rule.py` — [r5 FIDELITY-4 + R1] D197's DECLARED decision rule for the mfcard window, ONE
   VERDICT PER ISA LEVEL (first-match tables: deciding cells, levels (form each level emits, every differing axis),
-  cell/arm/verdict with triggers and the one re-run) and its reader (`rule RUNDIR AVX2RUNDIR [--second]`,
-  `drill [SCRATCH]`: constructed outcomes, plus end to end on est's synth).
+  libc_variant, cell/arm/verdict with triggers and the one re-run) and its reader (`rule RUNDIR AVX2RUNDIR [--second
+  FIRST FIRSTAVX2] [--confirm C CAVX2]`, `drill [SCRATCH]`: constructed outcomes, constructed provenance, plus end to
+  end on est's synth). Review r6: every record must pin both files (record.py), and `provenance` refuses records
+  that are not one experiment (windows, run ids, code_commit, plan, kit fold; a confirmation's JMHC cells).
 - `j1_rule.py` — J1's verdict (a)/(b)/(c) from its cells (m 0.5, k 5), on est.py's primitives.
 - `record.py` — the run record's one writer: per-ver `SETS`/`RULES` (ver 3 keeps the `rules` key, others `rules.<ver>`); [slotx]
   `WINDOWS` (a window's job set: `s2d`, `mfcard` = J2 J2p JMB JMH; finalize records `window`), `libc` names any
   GLIBC_TUNABLES and [r5] the memchr variant the process bound (`memchr_variant`, a probe); `window`, `j1`, `ready-j2p`, `finalize` (the CAUSE table; plan,
-  floor, cards and policy pinned from the frozen plan with the tables' sha-256; `[rev1.4 R14-3]` the `quiet`
+  floor, cards and policy pinned from the frozen plan with the tables' sha-256; [r6] `window` pins D197's rule
+  (`d197_rule_tsv_sha256`, `d197_rule_py_sha256`, `rule_pins`), finalize each ran job's cells file
+  (`cells_sha256_<job>`, `cells_pins`; est's read_cells refuses a differing file); `[rev1.4 R14-3]` the `quiet`
   section from the transcript and est's two note keys; `[rev1.5 r11-REV15-1]` `manifest_sha256_<job>` per ran job).
 - `sabotage.sh SCRATCH [ROW..]` — the slot-local sabotage rows (j), (j2), (k), (l1), (l2), (l3) S2934, (g2)
   S2935, (g3) S2936, (f1) S2937, (f2) S2938, (f6) S2939, rev 1.4's (n1) S2940, (n2) S2941, (s1) S2942, (s2) S2943,
   (q1) S2944, (b1) S2945, review r10's (n3) S2946, (s3) S2947, (s4) S2948, (s5) S2949, rev 1.5's (x1) S2950, (x2) S2951,
   (x3) S2952, review r11's (y1)-(y11) S2953-S2963, K38-3's (d1) S3105, lane slotx's (t1) S3160, (t2) S3161,
   (r1) S3162, (r2) S3163, (v1) S3164, (v2) S3165, (w1) S3166, (k1) S3167, lane slotxfix's (e1) S3168, (e2) S3169,
-  (e3) S3171, (e4) S3172, lane slotxf8b's (f8a) S3183, (f8b) S3184, lane mcfixa's (i1)-(i10) S3188-S3197, planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
+  (e3) S3171, (e4) S3172, lane slotxf8b's (f8a) S3183, (f8b) S3184, lane mcfixa's (i1)-(i10) S3188-S3197, lane mcfixb's (m1)-(m5) S3207-S3209 S3214 S3215 (jobs `d197e2e`,
+  `shape` too), planted in scratch copies; DETECTED/MISSED per row; the control runs every job the
   selected rows score on first (review r1 F3).
 - `movers.py` — S2e's data-mover census (m0build's method, normalization EMPTY, plus the head-vs-itself pass
   across the two sets); written by S2c, run by S2e.
