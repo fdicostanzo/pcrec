@@ -654,3 +654,11 @@ count); entries in PCRE PRIORITY ORDER (leftmost alternative, greedy before lazy
 reported, hence a built-in, not a library. Still PENDING: counting filters (exactly/at_least/none), moving the empty
 error to "final expression nullable in search mode", value-vs-value comparisons typed + class-count priced, `&` at `vm`
 with a non-regular operand = DFA candidates + VM verify ([PRED-SPLIT]).
+RULINGS cont. (Frank 2026-11-14): `&` AT `vm` with a non-regular operand: AGREED = regular operands build the candidate
+automaton, the non-regular operand is verified by the VM on each candidate span, reporting by D196 ([PRED-SPLIT]); the
+spec must state it. VALUE-VS-VALUE comparisons: AGREED, Frank asked how practical. Answer recorded: cost = the class
+count of the earlier label(s): small (calendar 24, state/ZIP ~50, weekday-vs-date, check digits 10/11) = one automaton
+at default; large (times of day 1,440: borderline; dates within 15 days: 3.65M) = default-level error printing the count
+and fixes, or a linear arithmetic check under `functions`; UNBOUNDED (`b: > a` over arbitrary `\d+`) = not regular,
+`functions` only. Present it as "a relation, run the cheapest correct way", never as "always one automaton";
+[COST-EXPLAIN] shows the count. Still PENDING: counting filters, the empty-match error move.
