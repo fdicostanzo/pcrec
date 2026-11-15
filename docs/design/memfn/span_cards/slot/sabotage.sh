@@ -321,8 +321,8 @@ row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT
         patch "$SCR/$row/link.py" '    return gd + pro + heads + ro + "#define CAT_(a, b) a##b\n" + rest + rc' \
 '    return gd + pro + heads + "#define CAT_(a, b) a##b\n" + rest   # SABOTAGE S3160' ;;
     t2) job=JMB want='ISA MISMATCH [^ ]+: keyed target generic, its code needs'
-        patch "$SCR/$row/link.py" '    sh(CC + ["-c", "-DSYM=" + sym,' '    # SABOTAGE S3161
-    sh(CC + ["-march=x86-64-v3", "-c", "-DSYM=" + sym,' ;;
+        patch "$SCR/$row/link.py" '    sh(CC + ["-DSLOT_GATE_TU"] * gate + ["-c", "-DSYM=" + sym,' '    # SABOTAGE S3161
+    sh(CC + ["-DSLOT_GATE_TU"] * gate + ["-march=x86-64-v3", "-c", "-DSYM=" + sym,' ;;
     r1) job=JMH want='REJECT-RATE MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.(50|100)'
         patch "$SCR/$row/gen.c" '        uint32_t m = (uint32_t)((uint64_t)E * (uint64_t)a->reject / 100);' \
 '        uint32_t m = 0;   /* SABOTAGE S3162 */' ;;
@@ -330,8 +330,8 @@ row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT
         patch "$SCR/$row/link.py" '               50 if a.pas == "p50" else 0, a.reject or 0, subj, expect))' \
 '               50 if a.pas == "p50" else 0, 0, subj, expect))   # SABOTAGE S3163' ;;
     k1) job=JMH want='KEY-ARM MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.50: dim reject: the key names 50, the Arm 0'
-        patch "$SCR/$row/plan.py" '                               base=base_of(k), events=LEN // g, reject=r), base_of(k))' \
-'                               base=base_of(k), events=LEN // g, reject=0 if r == 50 else r), base_of(k))   # SABOTAGE S3167' ;;
+        patch "$SCR/$row/plan.py" '                           base=base_of(k), events=LEN // g, reject=r), base_of(k))' \
+'                           base=base_of(k), events=LEN // g, reject=0 if r == 50 else r), base_of(k))   # SABOTAGE S3167' ;;
     v1) job=est want='selftest	\[slotx\] the draft split[^	]*	\(DRAFT-VER MISMATCH'
         patch "$SCR/$row/est.py" '            v = plan.card_of(rec["card"], r[0])["ver"]' \
 '            v = plan.card_of(rec["card"], r[0])["ver"]
