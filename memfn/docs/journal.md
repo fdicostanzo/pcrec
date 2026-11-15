@@ -4001,3 +4001,6 @@ Main ruled on the four kit findings (D186 add. 2):
   - F6 follows F8. TO MAIN: F7 (§7.2 general-form sentence) and F8 (per-target sets; kit leans (i)).
   - Lane slotxfix (opus) is fixing in worktrees/slotx; the ruled review is committed there by the lane.
   - Slotx gate 641-649 PAUSED (scratch/memfn/slotx/gate/PAUSE); 640 strict ran on the old tip (left alone: cancelling it cascades). The mfind gate (621+) is running behind it.
+- 03:05 MAIN RULED slotx F7 and F8. F7 AGREED: the measure_sets.md §7.2 sentence says a row binds from its first merge to main or its first set/record, whichever comes first; before that it is a draft of its lane chain and may be respelled. There is no ver-7 row. F8 AGREED, option (i): one set per declared target from the one run, split by (ver, target), with no new format; the refusal of mixed sets stays. That closes F6, since the class carries the target. Both guide lessons are accepted, and main files them in critics.md.
+  - Per no-addenda: F7's sentence and F8 (i) go to a FRESH follow-up lane slotxf8 on lane/memfn-slotx after slotxfix delivers, not as an addendum to slotxfix.
+- 02:54 gates: 620 kit-mfind-strict GREEN (33 s); 640 kit-slotx-strict GREEN (old tip f13a59356; the slotx gate stays paused for the fixes).
