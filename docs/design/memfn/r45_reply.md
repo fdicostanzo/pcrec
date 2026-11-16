@@ -1,7 +1,10 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 4 for the kit manager (lane r45d, 2026-11-16, design only; no code, no
-timing). Rev 4 applies the fix-induced re-check review r23 as ruled
+Status: DRAFT rev 5 for the kit manager (lane r45e, 2026-11-16, design only; no code, no
+timing). Rev 5 applies main's check of rev 4 (`git show lane/r45read:docs/dev/lanes/r45read_report.md`,
+contradictions C1-C11, questions Q1-Q5) through the kit's answers Q2-Q5 that main accepted, and
+records the owner's three rulings and main's five answers as RULED (read "Changes in rev 5"
+first). Plan A (forms now) is the plan of record. Rev 4 (lane r45d) applied the fix-induced re-check review r23 as ruled
 (`docs/dev/reviews/2026-11-16-r23-memfn-r45c.md`, its RULED section; read "Changes in rev 4"
 first). Rev 3 (lane r45c) applied the re-check review r22
 (`docs/dev/reviews/2026-11-16-r22-memfn-r45b.md`) as ruled. Rev 2 (lane r45b) applied review r20 (`docs/dev/reviews/2026-11-16-r20-memfn-r45.md`) as
@@ -32,6 +35,30 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `MF_MAX_FWD` 33); `mf_result` 3,000 B; `mf_wspan` 1,164 B; `mf_wreply` 532 B;
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
+
+## Changes in rev 5 (by main's question id Q and contradiction id C, r45read)
+
+Main's check `r45read` asked Q1-Q5 and listed C1-C11. The kit answered Q2-Q5 and main ACCEPTED
+the answers (2026-11-16); rev 5 writes them in. The owner's rulings (Frank, 2026-11-16, via main):
+**forms-now-or-next** = FORMS NOW (one joint landing); **keep-short-spans** = NO;
+**near-miss-fix-later** = NO. Main's five answers are YES each, and **night-order-edits** is YES
+unconditionally. R1's selection steps (1)-(4) did not change (rev 5 adds its input regimes and
+the twice-void reading only); rev 4's drill script was re-run and its output is byte-identical
+(lane r45e's report).
+
+| id | change | where |
+|---|---|---|
+| Q2 / C10 | The dominance-cycle clause is RULED by the kit manager (2026-11-16): step (3) keeps the members of E dominated by the FEWEST other members. One rule text, committed here; it is the text night order step 1 commits before the run. Every "awaits our ruling" is gone | §0, §3 R1, §8 |
+| Q3 / C1 | The possible-mover population is restated in full: EVERY window site, cover or not, whose stated span has a stretch of one repeated multi-member set reaching an offset at or past h\* (pre-check run spans and reseed alternatives included), not covers only. Since every window span pcrec states today has 32 positions or fewer, nothing moves when h\* >= 32. The facts main's sweep reads to predict the movers, from pcrec's own statements, are named | §3 "The stability trade" (now "Which sites move") |
+| Q3 / C8 | The uuid shapes (`k` = 36) have no cover today, so they are not a form mover. A uuid cover is a WIDTH event (cover_cap.md §11.2's rule), and it renders in H(h\*) from its first appearance | §3 "Which sites move" |
+| Q4 / C6 | R1 reads the NOT-WARM and `short-subject-search` regimes: C1-C2 (and C3, C5) time every cell in cover_cap.md §11.4's five regimes plus uniform random bytes, with §11.4's methods. R1's worst cell ranges over them, so a loss the loop form causes moves h, never main's width default. The added cells and their cost are stated, and a cell missing a regime is handled as §11.4 handles it | §3 the cards, R1, "Why each choice", §6 Q1 |
+| Q5 / C3 | "The procedure" and the old F12 and FREEZE NOTE rows now say what night order step 3 says: the cards run on the frozen lever binary, and the width cells run on the REBUILT binary, after the identity check | §3 "The procedure", change tables, §7 |
+| C4 | §4 states that the forms are not a near-miss fix (an H(h) still restarts one byte later). cover_cap.md's sentence is main's to edit (r45read E7) | §4 |
+| C5 | §7 forms-now (RULED) states the predicted outcome's consequence plainly: on a measured tie, the landing ships today's bytes at every span of 64 or fewer, and loops only past 64 | §7 |
+| C7 | "The option" says why `no-span-loop` is not the dial's always-inline option: it is the deny every byte-moving kit row carries (D144 item 4, pcrec's G1 arm). The dial cell stays separate. cover_cap.md §11.3's sentence is main's to edit (r45read E14) | §3 "The option" |
+| C11 | The §11.6.1 edit text names the rebuild at h\* (one kit constant) and the identity check as their own step between the cards and the width night. Whether that commit takes a code round is main's call, listed in §7 | §3 night order edits, §7 |
+| C2, C9 | Main's (cover_cap.md B4 and B5/§11.6.3 edits, r45read E10, E11, E14). The reply's facts are unchanged: the kit names no 32/64 bound, and the proof witness is two rows. Nothing to change here | none |
+| ruled | §7 and §8 record the owner's three rulings and main's five answers as RULED. "Scope" records plan A as the plan of record; plan B stays as the record of the alternative and of A's fallback | §0, §3 "Scope", §7, §8 |
 
 ## Changes in rev 4 (by r23 finding id)
 
@@ -68,7 +95,7 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
 | F16 | (a) FIX: literal stretches render as one run compare in EVERY form and the head never splits one, so `lit-l31` is not a mover; the mover list is re-derived. (b) DOC: each owner question carries a bold plain-word slug. (c) DOC: plan A/B framed as "same end state, different interim default and cost" | §3 "The forms", stability trade, §7 |
 | F17 | DOC: `mf_rows` named as the third member of the caller-owned output-list family, with the general form and its unlocks (each with a trigger) | §5 "Where the rows live" |
 | F18 | DOC: `cover_window` is `known.c:583`; `:613-628` is `pcrec_cover_site`, which calls it | §1 |
-| FREEZE NOTE | The night order (cards first on the same frozen binary, h frozen by its rule, then the width cells; agreed with main 2026-11-16) is recorded here and in §8 | §3 "What a card needs", §8 |
+| FREEZE NOTE | The night order (cards first on the frozen binary, h frozen by its rule, then the width cells; agreed with main 2026-11-16) is recorded here and in §8. [rev 4 R3-6, rev 5 Q5: the width cells run on the binary REBUILT with h\* compiled in, after the identity check; not on the cards' binary] | §3 "What a card needs", §8 |
 
 ## Changes from rev 1 (by r20 finding id)
 
@@ -85,7 +112,7 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
 | F9 | G2's twins (`G2W_MAXPOS`, `G2W_REACH`, `G2P_MAXRUN`) are movers, each tied to a kit name. The long cases get their own generator rows, and G2's runtime is priced | §3 "Answers", §6 |
 | F10 | The PAIR row's readers are named. The force spelling selects L. A force cell is added to the answer-identity sweep | §3 "The option" |
 | F11 | A combining rule replaces first-match. The default is H(h*). h* is picked by a declared tie-break over a grid that includes 0 and `>= k`. A cell where I wins is dial evidence. "Zero movers at 32" becomes a stability trade offered to the owner in plain words | §3, Goals, Q2 |
-| F12 | h is a KIT constant, independent of pcrec's width default. The cards run first, on the same frozen binary as §11.4's width cells, and set h first. SETTLED with main (ruling R1) | §3 "What a card needs", §7 answered |
+| F12 | h is a KIT constant, independent of pcrec's width default. The cards run first and set h first. SETTLED with main (ruling R1). [rev 5, Q5/C3: rev 1's "on the same frozen binary as §11.4's width cells" is superseded: the width cells run on the binary REBUILT with h\* compiled in, after the identity check (night order step 3)] | §3 "What a card needs", §7 answered |
 | F13 | Plans A and B go to the owner in plain words. The kit recommends A, and B's lower cost is stated | §3 "Scope", open questions |
 | F14 | L/H are defined over the EXISTING segmenter, so C-run stretches stay run compares and lit-l40 stays one compare. The PLAN row (shared segmenter) is stated | §3 "The forms", §7 |
 | F15 | The near-miss skip follows D77 strictly: it is not in the first build. Its trigger is C1's near-miss column, and its form is D-hors generalised to every k | §4, open questions |
@@ -115,7 +142,10 @@ In priority order; a conflict goes to the higher one.
    can make it so).
 4. **Every byte the landing moves is either measured or offered to the owner as a choice.**
    [rev 2, F11: replaces rev 1's "zero movers at 32"]. Who benefits: users wanting stability.
-   Measurable: the stage-2 sweep's mover list equals the list the owner accepted.
+   Measurable: the stage-2 sweep's mover list equals the list the owner accepted. [rev 5: the
+   owner ruled one measured rule at every length (keep-short-spans = NO); the sweep's list is
+   then every moved site inside the possible-mover predicate of §3 "Which sites move", and a
+   moved site outside it is red.]
 
 Non-goals: no near-miss form in the first build (§4; D77); no periodic segment (§3); no timing in
 this lane.
@@ -143,13 +173,13 @@ carrier with no per-site-kind bound.
   with its head MEASURED by cards and chosen among FINITE heads only. A head that another head
   beats in some cell and never loses to is dropped, and ties among the rest go to the longest
   head. On a tie the head is the grid's top, 64, a CHOSEN value [rev 3, F9, F10; rev 4, R3-1,
-  R3-3]. Whether the forms ride the joint landing (plan A, the kit's
-  recommendation) or follow it (plan B) is the owner's choice (§3 "Scope").
-- **Readiness [rev 4].** Plan B alone (the carrier, the kit's per-extent working state, the two
-  witness rows) was READY with rev 3's text fixes (review r22), and review r23 confirmed it.
-  Review r23 found plan A's rule postable after text fixes, which rev 4 applies. The one open
-  point is the dominance-cycle clause (keep the heads beaten by the fewest others), which the
-  lane added for the kit manager to rule (§3).
+  R3-3]. The forms ride the joint landing: plan A, RULED by the owner (forms now, 2026-11-16)
+  [rev 5] (§3 "Scope").
+- **Readiness [rev 5].** Plan B's part (the carrier, the kit's per-extent working state, the
+  two witness rows) was READY with rev 3's text fixes (review r22), and review r23 confirmed
+  it. Plan A's rule is complete: r23's text fixes are applied (rev 4), and the dominance-cycle
+  clause (keep the heads beaten by the fewest others) is RULED by the kit manager [rev 5, Q2].
+  Nothing in the reply is open; §7 lists the rulings.
 - **Dense near misses** (§4) are a complexity-class question: O(n·k) against the engine's O(n).
   Their fix is not built until a card shows the loss.
 
@@ -426,12 +456,13 @@ rows. Rev 2 does not add a second segmenter for L. It generalises this one:
   new card round over longer finite heads): a loss that R5 files against I or L.
 
 **The decision rule: a COMBINING table (every row applies; none stops the others).** It applies
-under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen.
+under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. Plan A is RULED
+(forms now, 2026-11-16) [rev 5], so the rule applies.
 
 | row | input | output |
 |---|---|---|
 | R0 gate | any form whose answers differ from the byte loop (G2) or from libpcre2 (pcrec's answer rows) | that form is DEFECTIVE: it leaves the grid, is filed, and sets nothing |
-| R1 default | every surviving FINITE grid value h; every timed cell c = (`k`, regime, layer) of C1 and C2 ONLY [rev 3, F11] | (1) per h, `W(h)` = max over c of `t(H(h), c) / t(I, c)`, each `t` a raw median. (2) The EQUAL set `E = { h : W(h) <= (1 + f) x min_g W(g) }`, computed once, never chained. (3) DOMINANCE [RULED r23 R3-1]: g DOMINATES h when `t(H(h), c) / t(H(g), c) > 1 + f` in at least one cell c and `t(H(g), c) / t(H(h), c) > 1 + f` in none. The dominated members of E are computed once, all against E, and removed together. In general, step (3) keeps the members of E dominated by the FEWEST other members. That is the undominated ones whenever any exist, which is the ruled step. When none exist (a cycle, possible because "beyond `f`" is a tolerance), it is those dominated least [rev 4, the lane's clause, for the kit manager to rule]. (4) **h\* = the LARGEST kept h** [RULED r22 F10]. The default is H(h\*), labelled MEASURED with its card ids (DERIVED if R3 fires). If h\* is the grid top, the label is "h = grid top (64, CHOSEN), on a measured tie of every finite head" (or "of" the members of E, or "every shorter finite head measured slower beyond `f`") [RULED r23 R3-3] |
+| R1 default | every surviving FINITE grid value h; every timed cell c = (`k`, regime, layer) of C1 and C2 ONLY [rev 3, F11], in EVERY regime of the cards' list, NOT-WARM and `short-subject-search` included [rev 5, Q4/C6]; a cell void twice is read as below the table [rev 5] | (1) per h, `W(h)` = max over c of `t(H(h), c) / t(I, c)`, each `t` a raw median. (2) The EQUAL set `E = { h : W(h) <= (1 + f) x min_g W(g) }`, computed once, never chained. (3) DOMINANCE [RULED r23 R3-1]: g DOMINATES h when `t(H(h), c) / t(H(g), c) > 1 + f` in at least one cell c and `t(H(g), c) / t(H(h), c) > 1 + f` in none. The dominated members of E are computed once, all against E, and removed together. In general, step (3) keeps the members of E dominated by the FEWEST other members. That is the undominated ones whenever any exist, which is the ruled step. When none exist (a cycle, possible because "beyond `f`" is a tolerance), it is those dominated least [RULED by the kit manager 2026-11-16, rev 5 Q2; the lane's rev 4 clause, text unchanged]. (4) **h\* = the LARGEST kept h** [RULED r22 F10]. The default is H(h\*), labelled MEASURED with its card ids (DERIVED if R3 fires). If h\* is the grid top, the label is "h = grid top (64, CHOSEN), on a measured tie of every finite head" (or "of" the members of E, or "every shorter finite head measured slower beyond `f`") [RULED r23 R3-3] |
 | R2 dial evidence | every cell of C1-C3 where I beats H(h\*) beyond `f` | filed as the evidence for the dial's always-inline option (cover_cap.md §11.3, unlock 2). R2 never changes R1's default |
 | R3 derivation | h\* per card class against (a)'s `E[D]` for that class | if h\* tracks `E[D]` in every class, h becomes a derivation from the byte rate (§6 Q3); otherwise it stays a MEASURED constant |
 | R4 near-miss | C1's near-miss column: H(h\*) against C5 | a timed loss beyond `f` is §4's trigger (the skip's build); it never changes h\* |
@@ -465,6 +496,24 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen.
     removes nothing, and h\* is still 64.
   - R1 reads C1-C2 only, because C3 times only I, L and H(h\*): it cannot feed the pick it
     depends on.
+  - **Why R1 reads every regime cover_cap.md §11.4 reads [rev 5, Q4/C6].** A choice must hold
+    in every regime its site can be in (K-1), and §11.4 B times the cover in five regimes:
+    hit-dense, DENSE NEAR-MISS, NOT-WARM, miss-heavy and `short-subject-search`. If R1 read
+    fewer, a loss the loop form causes in a regime R1 skipped would first show in §11.4 B as
+    a width-rule loss (cover against engine, rows 5-6) and would lower main's width default,
+    which is the wrong lever. With every regime in R1's worst cell, that loss raises W(h) for
+    the losing head and moves h instead. The bound that results: at every C1-C2 cell,
+    H(64) renders exactly I, so min W <= W(64), which is 1 within the A/A floor. A kept head
+    therefore has W(h\*) <= (1 + f) x min W, so H(h\*) is no slower than I beyond about the
+    floor in ANY regime at those lengths. §11.4 B's cells are all at those lengths (24-64) or
+    literals (`lit-l40`, `a{500}`, which every form renders alike), so a width-rule loss there
+    is one form I shows too, never one the loop form causes.
+  - **A cell missing a regime [rev 5].** As cover_cap.md §11.4's procedure: a C1-C2 cell
+    missing a regime, or bimodal, is VOID and re-run once, and R1 waits for the re-run only. A
+    cell void twice reads, for every head whose text differs from I in it, as a loss
+    (`t(H(h), c) / t(I, c)` = +infinity, the conservative reading: no head ships on a missing
+    reading). A head whose text IS I in that cell (`h >= k`) reads 1 there. So a twice-void
+    cell can only push h\* toward 64 (fewer movers), never below it.
 - **The floor `f`.** The cards' own A/A floor: the `lit-l16` A/A cells, every regime and layer,
   run with the cards on the same binary, and reduced to one ratio by the procedure cover_cap.md
   §11.4 uses for B's floor. A RATIO (so `1 + f` multiplies), never a difference.
@@ -533,20 +582,57 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   measured tie or loss that put it there: the head's length is then the grid's choice, checked
   only by R5, whose loss is the trigger to extend the grid.
 
-**The stability trade, offered to the owner in plain words (not his direction) [rev 3, F16
-(a); rev 4, R3-1].** Under the rule, a span changes from today's all-inline text only if the
-cards measure a shorter head faster beyond the noise in SOME cell and slower beyond it in NONE
-(it then dominates 64), or a shorter head is the only one within the noise of the best. The possible movers
-are the class covers of 64 or fewer positions: `hex32`, `dig-exact-32`, `hex32-id`, their
-24-position twins, and the uuid shapes. Literal covers (`lit-l31`, `lit-l40`) never move. If
-the owner prefers that this landing change no existing matcher even then, the kit can keep
-every span of 32 or fewer positions all-inline whatever the cards pick. The cost: those spans
-do not get the measured form until a later change, and their cells are then timed as I, not
-as H(h\*).
+**Which sites move: the full possible-mover population [rev 3, F16 (a); rev 4, R3-1; rev 5,
+Q3/C1, C8; was "The stability trade"].** The owner RULED keep-short-spans = NO (2026-11-16):
+spans of 32 or fewer positions move when the cards measure a win, and the kit keeps no
+all-inline exception. Under the rule, a span changes from today's all-inline text only if
+h\* < 64, that is, if the cards measure a shorter head faster beyond the noise in SOME cell and
+slower beyond it in NONE (it then dominates 64), or a shorter head is the only one within the
+noise of the best.
+- **The forms do not ask what kind of site a span belongs to** (§3 "Answers"). So the
+  population is EVERY window site whose stated span the kit renders, cover or not:
+  - REPORT (cover) sites: today `hex32`, `dig-exact-32`, `hex32-id` and every other class
+    cover the corpus and the bench hold;
+  - the pre-check's run spans (R-38 K38-2: the whole stored run, up to
+    `PCREC_MAX_REQ_RUN_SCAN` = 32 positions);
+  - the reseed alternatives and the prefix (k-set) sites' spans, within pcrec's construction
+    bounds (`PCREC_PREFIX_K_MAX` = 24; every other window site at 32 positions, cover_cap.md
+    §11.1 B4), and every other site that states window facts (`WF_STATES`).
+- **The predicate.** A site is a POSSIBLE mover at h\* iff one of its stated spans holds a
+  stretch of two or more CONSECUTIVE positions (stated offsets `o`, `o + 1`, ...) that carry
+  the byte-identical set, that set has two or more members, and the stretch's last offset is
+  at or past h\*. That is the one-class-repeat segment (kind 2) reaching the loop region. A
+  site with no such stretch keeps its text at every h: literal stretches are one run compare
+  in every form (`lit-l31`, `lit-l40` never move), and lone tests render as today.
+- **What follows.** Every window span pcrec states today has 32 positions or fewer (covers at
+  the width default 32; pcrec's construction bounds 32 and 24, held by pcrec's own asserts
+  under other-sites-at-32). So when h\* >= 32, NO site moves, cover or not, and the sweep's
+  prediction is the empty set. Movers exist only when h\* is 0, 1, 2, 4, 8, 16 or 24, and then
+  non-cover sites (pre-check runs and reseed alternatives holding a repeated class past h\*)
+  move beside the covers.
+- **How main's sweep predicts it (the facts that select the sites).** The prediction reads
+  pcrec's OWN statements, never the kit's reply or plan, so it does not share a source with
+  what it controls: per window site, each stated span's positions with their stated offsets
+  and member sets (the `mf_wspan` pcrec writes); the member count of each set; byte equality of
+  adjacent sets; and h\*, the one number the cards publish. The prediction is a SUPERSET by
+  design: a stretch of a two-member, one-bit set (a cube, such as `[aA]`) that C-run groups
+  stays one run compare, so it is predicted and does not move. The sweep's red is a moved site
+  OUTSIDE the prediction; a predicted site that does not move is listed (the kit's MFTRACE
+  names the segment row that took it), never red. This replaces cover_cap.md §11.1's
+  "Non-cover window sites: no predicted move; any move is red" for the joint landing (main's
+  edit, r45read E13).
+- **The uuid shapes are NOT form movers [rev 5, C8].** `k` = 36 takes no cover today (stage 1
+  covers `k <= 32`), so its text today is the engine route's. It gains a cover only if main's
+  width default reaches 36, which is a WIDTH event (cover_cap.md §11.2's rule), predicted by
+  the width sweep. Such a cover renders in H(h\*) from its first appearance; it never moves
+  "from today's all-inline text", because it has none. Rev 3-4 listed it wrongly.
 
-### Scope: plan A or plan B [rev 2, F13; rev 3, F14, F16 (c); for the owner]
+### Scope: plan A or plan B [rev 2, F13; rev 3, F14, F16 (c); RULED: plan A]
 
-The two plans end in the same place; they differ in which landing carries the forms, the
+**RULED (the owner, 2026-11-16, forms-now-or-next = FORMS NOW) [rev 5]: plan A is the plan of
+record, one joint landing.** Every "under plan A" below is therefore the plan; plan B stays as
+the record of the alternative and because A's fallback lands B's interim outcome. The two
+plans end in the same place; they differ in which landing carries the forms, the
 default users get in between, and the cost.
 - **Plan A (owner-literal; the kit RECOMMENDS it).**
   - The kit builds the forms (the segment rows, the option row, the head lever, G2 per form)
@@ -586,21 +672,40 @@ build that adds its form (memory `pcrec-new-method-needs-measurement-card`).
 
 | card | forms | k (shape) | subjects (regimes) | layers | what it decides |
 |---|---|---|---|---|---|
-| C1 crossover | I, and H(h) for every finite grid h (0 = L) | 24, 32 (`[0-9a-f]{k}`, `\d{k}`: the stage-1 movers and their twins) | hit-dense (all members); DENSE NEAR-MISS (`k-1` members then a non-member, repeated: EMITTED-2's shape); miss-heavy (plain text, death at depth 0-1); uniform random bytes | SIMD-off, and SIMD-on where a level admits it | R1 and R3 cells at the shipped default lengths; R4's near-miss column |
+| C1 crossover | I, and H(h) for every finite grid h (0 = L) | 24, 32 (`[0-9a-f]{k}`, `\d{k}`: the stage-1 movers and their twins) | hit-dense (all members); DENSE NEAR-MISS (`k-1` members then a non-member, repeated: EMITTED-2's shape); NOT-WARM (the matcher not in L1/L2) [rev 5]; miss-heavy (plain text, death at depth 0-1); `short-subject-search` [rev 5]; uniform random bytes. The first five are cover_cap.md §11.4's regimes, timed by §11.4's methods | SIMD-off, and SIMD-on where a level admits it | R1 and R3 cells at the shipped default lengths; R4's near-miss column |
 | C2 population | as C1 | 36 (uuid: `hex{8}-hex{4}-hex{4}-hex{4}-hex{12}`), 40 (`lit-l40`, a literal: the run-compare control, one compare in every form), 49, 60 (the census rows' own patterns), 64 (`[0-9a-f]{64}`, §11.4's synthetic width cell) [rev 3, F13] | as C1 | both | R1 and R3 cells at the population's lengths |
-| C3 long | I, L, H(h\*) | 500, 1000 (`[0-9a-f]{k}`, `a{k}`) | as C1 | both | R2's dial cells and R5 at length; NOT-WARM where the bench supplies the method (D198 (f)) |
+| C3 long | I, L, H(h\*) | 500, 1000 (`[0-9a-f]{k}`, `a{k}`) | as C1 | both | R2's dial cells and R5 at length |
 | C4 size | I, L, H(h\*) | 32, 500, 1000, 4095 (`[0-9a-f]{k}`, `a{k}`) | none (compile only) | both | emitted C bytes against 250,000 / 1,000,000 (the size-cap ladder, R-45 FACT cost), `gcc -O2 -c` time, RSS and `.text`. Recorded, no timing |
 | C5 engine reference | none: pcrec's engine route on the same subjects (`--memfn=no-window-search`) | as C1-C3 | as C1 | n/a | the floor every form is read against in the near-miss regime (R4, §4) |
 
 **The procedure** (kit timing, unofficial, per `memfn/CLAUDE.md` standing question 1):
 - Linux, `taskset`-pinned, calibrated loops, at least 5 launches, median, with A/A controls
   (`lit-l16`) for the floor `f`.
-- **Which harness [rev 3, F13].** The cards run on the KIT's harness (the kit's measurement
-  script), in the same window and on the same frozen binary as the width cells, which are the
-  bench's. h is therefore a kit constant set by kit timing, labelled MEASURED with its card
-  ids, not an official bench verdict; its official check is the width night that follows,
-  which times the cover at h\*. If main prefers the bench to run the cards, the rows above are
-  its spec and nothing else changes.
+- **Which harness and which binary [rev 3, F13; rev 5, Q5/C3].** The cards run on the KIT's
+  harness (the kit's measurement script), in the same window as the width cells, which are
+  the bench's, and FIRST. They run on the frozen combined-branch binary, h set through the
+  head lever. The width cells do NOT run on that binary: they run on the binary REBUILT with
+  h\* compiled in, after the identity check passes (night order step 3). h is a kit constant
+  set by kit timing, labelled MEASURED with its card ids, not an official bench verdict; its
+  official check is the width night that follows, which times the cover at h\* on the rebuilt
+  binary. If main prefers the bench to run the cards, the rows above are its spec and nothing
+  else changes.
+- **The regimes' methods [rev 5, Q4/C6].** Each card times every cell in every regime of C1's
+  list, by the method cover_cap.md §11.4 uses for its width cells: NOT-WARM's method is the
+  bench dev's (D198 (f)), and `short-subject-search` is the bench's subject. The kit's card
+  script takes both as the bench names them. If either cannot run on the kit's harness, the
+  cells in that regime run on the bench, from the rows above, in the same window (a
+  bench-only question for main to relay, memory `pcrec-ask-bench-dev`). A cell missing a
+  regime follows R1's void reading ("Why each choice").
+- **The added cells' cost [rev 5, Q4], UNMEASURED.** C1-C2 hold 9 patterns (C1: 4; C2: 5,
+  counting the census rows at 49 and 60 as one pattern each), 10 arms (I and 9 finite heads)
+  and up to 2 layers: 180 arm-cells per regime. Going from 4 regimes to 6 adds 360 arm-cells
+  to C1-C2's 720 (+50 %). C3 adds 4 patterns x 3 arms x 2 layers x 2 regimes = 48, and C5 (the
+  engine, one arm, one layer) adds 13 patterns x 2 regimes = 26. The A/A control (`lit-l16`)
+  gains its two regimes per layer. About 440 added arm-cells in all, each at least 5
+  launches. The cards' wall time is unmeasured, so whether cards and width cells fit one
+  window stays the night order's "one night, or two" question; the added regimes make two
+  nights more likely, not certain.
 - G2's per-form answer check is R0, a precondition, not a card.
 
 ### The head lever and its identity check [RULED r22 F12]
@@ -630,11 +735,9 @@ h is compiled into the kit, so timing the grid on ONE binary needs a lever:
 - **The bench is NOT a reader [rev 4, R3-6].** The width cells do not time through the lever.
   They run on the REBUILT binary with h\* compiled in, after the identity check passes (night
   order step 3). So the bench compiles through `build/pcrec` as §11.4 B already states, needs no
-  harness option, and has nothing to change. This refines step 3 of the order agreed with main,
-  so main confirms it. If main keeps the width cells on the lever binary instead, the bench IS a
-  reader: its width cells must compile through `build/pcrec-harness` with
-  `--harness=span-head=N`. That is a change to §11.4 B's procedure and a bench-only question for
-  the bench dev (memory `pcrec-ask-bench-dev`).
+  harness option, and has nothing to change. This refined step 3 of the order agreed with main,
+  and main CONFIRMED it (night-order-edits YES, 2026-11-16; rev 5, Q5) [rev 5: rev 4's
+  alternative, the width cells on the lever binary, is withdrawn].
 - **The identity check.** After the cards fix h\*, the build compiles h\* in, and a kit test
   asserts that the lever at h\* emits text BYTE-EQUAL to the shipped build at h\*, over every
   card pattern and every census cover. So the timed artifacts are the shipped artifacts, though
@@ -697,6 +800,15 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
   - `--memfn=span-loop`: FORCES L, i.e. H(0) on every span. That is the most loop-rendering
     arm, so it is the answer-identity arm for the loop rows;
   - `--memfn=no-span-loop`: forces I, today's text, and is pcrec's G1 deny.
+- **The deny is not the dial's always-inline option [rev 5, C7].** Every kit change that moves
+  bytes carries its own deny row (D144 item 4; `memfn/CLAUDE.md`): it is the change's OFF arm
+  for pcrec's G1 timing and the identity gates, an escape hatch, not a tuning choice. So
+  `no-span-loop` exists whatever the cards show. The owner's "speed dial option ... always
+  inline" stays a dial cell (`--tune=N`, cover_cap.md §11.3 unlock 2), filled only when R2
+  files evidence. Both select I's text; they differ in purpose and in who reads them (the
+  deny: the gates and any caller; the dial: the dial's cells). cover_cap.md §11.3's "not a
+  `--memfn=` value" then reads true of the dial and false of always-inline as a spelling;
+  that sentence is main's to edit (r45read E14).
 - **The kit's FORCE reader [rev 3, F15].** Today the kit reads options only through
   `kit_opt_denied` (`options.c:73`, matching `no-NAME`; callers `compose.c:171`,
   `presence.c:277`, `vrun.c:239/288/303`). The build adds one three-state read, unset / forced
@@ -728,10 +840,12 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
 
 ### What a card needs from the box: the night order [rev 2, F12; rev 3, F13, FREEZE NOTE]
 
-- **The order of record (plan A only).** Ruling R1 (kit manager, 2026-11-16, AGREED WITH MAIN
-  2026-11-16; this section and §8 are its record):
+- **The order of record (plan A, RULED).** Ruling R1 (kit manager, 2026-11-16, AGREED WITH MAIN
+  2026-11-16; main's night-order-edits YES, unconditional since forms now [rev 5]; this
+  section and §8 are its record):
   1. The form cards C1-C3 and C5 run on the frozen combined-branch binary, h set through the
-     head lever. The rule that picks h (R0-R5 above) is committed before the run.
+     head lever. The rule that picks h (R0-R5 above, the dominance-cycle clause included, as
+     RULED in rev 5) is committed before the run.
   2. h is frozen by that rule's reading.
   3. The build compiles h\* in, and the identity check (above) proves that the rebuilt
      binary emits the same bytes as the lever at h\* on the frozen binary. Only then are the
@@ -742,19 +856,28 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
   If both fit one window, the cards queue first and the width cells are not-before the cards'
   verdict. Otherwise it is two nights. Measured in the other order, two coupled selections
   would be read backwards, and the width evidence would go stale when h moved.
-- **cover_cap.md edits for main, if the owner chooses plan A** [rev 3, F13]:
+- **cover_cap.md edits for main, OWED (the owner chose plan A; main's night-order-edits YES)**
+  [rev 3, F13; rev 5]. These are the reply's own edits; r45read lists more (E6-E14), which are
+  main's:
   - §11.4: the header's "ONE night" becomes "one night, or two if the kit's cards and the width
     cells do not fit one window"; the forms paragraph ("not part of this night unless the kit
     asks for a slot") becomes "the kit's form cards run first in the same window, and gate B's
     cells (not-before their verdict); B's cells run on the binary rebuilt with h\* compiled in,
     after the kit's identity check passes; B's procedure is otherwise unchanged" [rev 4, R3-6];
     `[0-9a-f]{64}` is a card cell (C2) as well as a width cell.
-  - §11.6.1: a step between (4) and (5), "the kit's form cards on the combined branch; h frozen
-    by the kit's rule"; the FALLBACK gains "and the forms land OFF (all-inline), switched on in
-    a later abi event" (plan A's fallback above).
-  - §11.6.4: the line "the kit's three-form cards' timing (kit-side)" is removed; under plan A
-    it is a precondition of stage 2's landing.
-  - Under plan B none of these edits applies.
+  - §11.4 "Regimes" [rev 5, Q4]: the kit's cards time the same five regimes by the same
+    methods (one sentence, so the two lists stay one list).
+  - §11.6.1: TWO steps between (4) and (5) [rev 5, C11: rev 4 named only the first]:
+    "(4a) the kit's form cards on the combined branch; h frozen by the kit's rule" and
+    "(4b) h\* compiled in (one kit constant; any byte it moves, at h\* < 32, rides the joint
+    landing's one pcrec abi event, Q36), then the kit's identity check passes". The width night
+    (5) times (4b)'s binary, which code round (4) did not see; whether (4b) takes a review of
+    its own is main's call (§7). The FALLBACK gains "and the forms land OFF (all-inline),
+    switched on in a later abi event" (plan A's fallback above).
+  - §11.6.4: the line "the kit's three-form cards' timing (kit-side)" is removed: it is a
+    precondition of stage 2's landing.
+  - §11.1 "The prediction" and "Unchanged": the possible-mover predicate of §3 "Which sites
+    move" replaces "Non-cover window sites: no predicted move" (r45read E13; main's to word).
 - C4 is a non-timing job: boxqueue, no window (memory `pcrec-kit-nontiming-runs-no-ask`).
 
 ## 4. ASK (4): the dense near-miss regime (no form asked)
@@ -786,15 +909,22 @@ re-tested about `k/2` times.
   a new mechanism. It belongs to the same deny family (`window-skip`), and it applies to every
   window site at every `k`, not to L/H only.
 
-**Disposition [rev 2, F15: D77 strictly].**
+**Disposition [rev 2, F15: D77 strictly; RULED by the owner 2026-11-16, near-miss-fix-later =
+NO].**
 - The first build carries NO skip.
+- **The forms are not a near-miss fix [rev 5, C4].** Every form, I, L and every H(h), restarts
+  one byte past a failed candidate; a loop tests the same positions a chain does. So the forms
+  change the constant per test, never the O(n·k) count, and no form answers cover_cap.md
+  §11.2's EMITTED-2 "kit" step. Until the skip's trigger fires and the skip is built, that
+  order has no kit step to run (cover_cap.md §11.2 and §11.6.4's "the kit's rendering first"
+  are main's to edit, r45read E7).
 - The only MEASURED loss is EMITTED-2's: x6.65 in instructions at `k` = 32, in form I, inside
   the shipped default. cover_cap.md §11.4 reports instructions and never rules on them. The
   loss at `k` > 32 is an extrapolation.
 - The TRIGGER is C1's near-miss column, H(h\*) against C5 at `k` = 24/32 (row R4 of §3's
   table [rev 3]), together with cover_cap.md §11.4 row 5's near-miss cells. Either one showing a
-  timed loss beyond the floor triggers the fix. Under plan B the C1 column is not run before the
-  landing, so the §11.4 cells are the trigger alone.
+  timed loss beyond the floor triggers the fix. (Plan A is ruled, so the C1 column runs before
+  the landing; only under A's fallback are the §11.4 cells the trigger alone.)
 - The fix is one answer to cover_cap.md §11.2's EMITTED-2 order (one-pass, kit, then §9 Q8):
   D-hors generalised, at every `k`.
 - Until it lands, the option's caller-facing spec hunk (tuning.md §2.43¶3d [rev 3, F15]) names
@@ -1133,11 +1263,12 @@ by `git grep`). They are updated in the build or flagged in its report:
 - **`MF_VOCAB` unchanged**: no op, handoff or term kind.
 - **pcrec's `abi`.** The JOINT landing is ONE pcrec `abi` event, because pcrec's own stage 2
   moves emitted text (cover_cap.md §11.1 "abi events").
-  - Under plan A, H(h\*) moves a stage-1 class cover's bytes only where h\* is below its
-    length, which under the largest-head tie-break happens only on a measured win beyond the
-    noise (§3), in the same commit: a kit byte move is a pcrec abi event (`memfn/CLAUDE.md`).
-    Literal covers never move. If the owner takes the stability trade, spans of 32 or fewer
-    never move.
+  - Under plan A (RULED), H(h\*) moves a window site's bytes only where the site is a
+    possible mover at h\* (§3 "Which sites move": covers and non-cover window sites alike),
+    which under the largest-head tie-break happens only on a measured win beyond the noise
+    (§3), in the same commit: a kit byte move is a pcrec abi event (`memfn/CLAUDE.md`).
+    Literal covers never move. The owner ruled keep-short-spans = NO, so spans of 32 or fewer
+    are not exempt [rev 5].
   - Under plan A's fallback (forms built but off) and under plan B, no kit byte moves at
     today's widths; switching the forms on later is a second pcrec abi event.
   - The head lever and the option row's force read add no layout: they ride in the same
@@ -1149,11 +1280,14 @@ by `git grep`). They are updated in the build or flagged in its report:
 ## 6. The three standing questions (docs/design/CLAUDE.md)
 
 1. **Measurement regime: relevant.**
-   - The cards of §3 name theirs: throughput on Linux, `taskset`-pinned, the four subject
-     regimes, both layers, gcc 15.2, on the kit's harness (§3 "The procedure").
+   - The cards of §3 name theirs: throughput on Linux, `taskset`-pinned, six subject regimes
+     (cover_cap.md §11.4's five, NOT-WARM and `short-subject-search` included, by §11.4's
+     methods, plus uniform random bytes) [rev 5, Q4/C6], both layers, gcc 15.2, on the kit's
+     harness (§3 "The procedure").
    - A choice must hold in every regime its site can be in (K-1). That is why R1 takes the
      WORST cell over all regimes of C1-C2, and why near-miss is a column of every card and
-     never a separate study.
+     never a separate study. Since rev 5 R1's regimes include every regime §11.4's width rule
+     reads, so a regime flips h before it can flip the width default (§3 "Why each choice").
    - Every number in this draft is a `sizeof`, a cited fact, or a labelled extrapolation. None
      is a timing.
 2. **Independent control: relevant.**
@@ -1179,117 +1313,107 @@ by `git grep`). They are updated in the build or flagged in its report:
    an input. A rate change could then move a kit byte, which is an abi event (integration.md
    §21.3). The build's card says so.
 
-## 7. Open questions (for main and the owner), each with a recommendation
+## 7. The questions, all RULED (2026-11-16) [rev 5; was "Open questions"]
 
-Each question carries a bold plain-word slug, reused verbatim in §8 [rev 3, F16 (b)].
+Each keeps its bold plain-word slug, reused verbatim in §8 [rev 3, F16 (b)]. Rev 4's
+recommendations were all taken; the record below says what each ruling settles.
 
-- **other-sites-at-32** (for main): should pcrec keep its other window sites at 32 positions and
-  reach 64 by its own assertions, now that the kit's bounds are general and no longer hold them
-  there?
-  - RECOMMEND: yes, one `_Static_assert` per construction bound pcrec already owns
-    (`PCREC_MAX_REQ_RUN_SCAN`, `PCREC_PREFIX_K_MAX`) at its own writers, not a site kind in
-    `window_bounds_check`. It also gives the now-loose `emit_dfa.c:1446` a binding replacement.
-- **cover-ask-storage** (for main, the kit's proposal under r22): should pcrec's cover ask hand
-  the kit room for the whole proof range (4,104 rows, about 131 KB per compile attempt at every
-  width), so that any kit over-read shows up in pcrec's own proof comparison instead of looking
-  like an ordinary decline?
-  - RECOMMEND: yes. It keeps pcrec's comparison the independent check. The price is about 130 KB
-    more compile memory per cover attempt even for short covers, freed at the end of the
-    compile.
-- **caller-storage** (for main): may the asks take caller-supplied storage for their lists? This
-  adds one parameter to the class ask and the window ask, plus a pure sizing function, in the
-  same seam version step.
-  - RECOMMEND: yes. It keeps the asks pure and the seam a document; pcrec allocates the storage
-    from its compile arena.
-- **row-memory** (for main): are the rows' memory costs acceptable until stage 2's compile-cost
-  record says otherwise? About 291 KB per compile attempt of a 4095-position cover (the ask's
-  rows, the define's rows and the plan), about 133 KB for a short cover, summed over the
-  size-ladder attempts.
-  - RECOMMEND: yes. The run-length form is designed (§5) and filed with its trigger.
-- **night-order-edits** (for main, only if the owner picks the forms now): accept the three
-  cover_cap.md edits listed in §3 (the night may become two, the kit's cards run first and gate
-  the width cells, the fallback also turns the forms off, the "not in stage 2" line goes), with
-  the cards timed on the kit's harness in the same window?
-  - RECOMMEND: yes; it is the order main agreed on 2026-11-16, written into main's plan of
-    record.
-- **forms-now-or-next** (for the owner, via main): should this landing carry the three span forms,
-  measured, with "loops after a measured inline head" as the default, or only let long spans
-  through all-inline as today and bring the forms in the next change? Both end in the same
-  place; they differ in what users get in between and in cost.
-  - Forms now: the default he asked for ships with the landing, and the width timing measures
-    the form that ships. It costs a kit timing slot before the landing (one night, or two if it
-    does not fit beside the width timing), a later landing and a larger one. If that timing
-    cannot happen before the landing, the forms land built but switched off (all-inline, as
-    today) and are switched on later, a second compatibility step. Main decides that with Frank
-    [rev 4, R3-4], together with the matching fallback already in pcrec's plan (cover_cap.md
-    §11.6.1).
-  - Forms next: smaller, sooner, and ready now; but long covers render all-inline, the opposite
-    of his stated default, until the next change.
-  - RECOMMEND: forms now.
-- **keep-short-spans** (for the owner, only with forms now): the head is picked so that, on a
-  tie, today's short spans keep their all-inline text. They change only if the measurement shows
-  a shorter head faster beyond the noise somewhere and slower nowhere [rev 4, R3-1]. On a tie
-  the head is 64, a length the kit CHOSE, and only the long-span check tests it [rev 4, R3-3].
-  Should spans of 32 or fewer positions stay all-inline
-  even then, so that this landing changes no existing matcher?
-  - RECOMMEND: no. Let a measured win move them; without one, nothing moves anyway.
-- **near-miss-fix-later** (for the owner, via main): should the first build also fix the slowdown
-  on text that is almost a match at every byte?
-  - RECOMMEND: no (D77). The only measured loss is in instructions at length 32, and no timing
-    shows it yet. When a timed card does, the fix is the existing last-offset skip table
-    generalised to every offset, for every length and every form. Until then the option's
-    documentation names such text as the slow case.
+**Main's five answers, each YES (main, 2026-11-16):**
+- **other-sites-at-32**: RULED yes. pcrec keeps its other window sites at 32 positions and
+  reach 64 by its own assertions: one `_Static_assert` per construction bound it owns
+  (`PCREC_MAX_REQ_RUN_SCAN`, `PCREC_PREFIX_K_MAX`) at its own writers, not a site kind in
+  `window_bounds_check`, which also replaces the now-loose `emit_dfa.c:1446`. It keeps pcrec's
+  STATEMENTS at 32; it does not keep the kit's FORMS off those sites, which render H(h\*) like
+  every span (§3 "Which sites move") [rev 5, C1]. Naming a pcrec bound for reach 64 is main's
+  (r45read C2).
+- **cover-ask-storage**: RULED yes. The cover ask passes 4,104 rows (about 131 KB per compile
+  attempt at every width), so every over-read below 4096 reaches B5. The one edge (r23 R3-8 (b)):
+  at `k` = 4095 with the after side stated, an over-read at 4096 is a bare refusal, a lost cover,
+  never a wrong answer.
+- **caller-storage**: RULED yes. The asks take caller storage; the cover ask passes the ceiling,
+  the other asks `mf_rows_need`'s minimum.
+- **row-memory**: RULED yes, until stage 2's compile-cost record (`covcost2`) says otherwise:
+  about 291 KB of rows per attempt at 4095 (the statement's host arrays, 147,420 B, come on top,
+  about 438 KB in all; r45read answer 4), about 133 KB at 32, summed over the size-ladder
+  attempts.
+- **night-order-edits**: RULED yes, unconditionally (forms now). The edits are §3's list; rev 5
+  adds the regimes sentence (Q4), the (4a)/(4b) split (C11) and the prediction edit (C1).
 
-**Answered, no longer asked:**
+**The owner's three (Frank, 2026-11-16, via main):**
+- **forms-now-or-next**: RULED forms now, in one joint landing. What it means in the predicted
+  outcome [rev 5, C5]: on a measured tie (drill (i)), h\* = 64, CHOSEN, so the landing ships
+  today's bytes for every span of 64 or fewer positions and loops only past 64; the owner's
+  default reaches the new long covers, and a shorter head ships only on a measured win. If the
+  cards cannot run before the landing, main decides that with Frank, and the forms land built
+  but OFF (all-inline), switched on in a later abi event (cover_cap.md §11.6.1's FALLBACK fires
+  it too).
+- **keep-short-spans**: RULED no. One measured rule at every length: spans of 32 or fewer move
+  on a measured win, covers and non-cover window sites alike (§3 "Which sites move").
+- **near-miss-fix-later**: RULED no fix in the first build until a timed card shows the loss
+  (D77; §4). The option's documentation names dense near-miss text as the slow case.
+
+**The kit manager's:**
+- **dominance-cycle**: RULED (2026-11-16): step (3) keeps the members of E dominated by the
+  FEWEST others (§3 R1) [rev 5, Q2].
+
+**Left with main (facts, not questions for the owner):**
+- Whether step (4b), h\* compiled in and the identity check, takes a review of its own before
+  the width night: it is a commit the code round (4) did not see (r45read C11).
+- The cover_cap.md edits r45read lists beyond the reply's own (E6-E14: B4, B5's plant and
+  §11.6.3's rows, §11.2's near-miss order, §11.3's sentence, §11.7 Q2/Q4).
+- r45read Q1 (who respells pcrec's callers and tests on the kit's build branch) was outside rev
+  5's brief and is not answered here.
+
+**Answered earlier, no longer asked:**
 - **When `MF_MAX_SPAN_POS` retires.** Now: A1 is delivered on `lane/covs2afix`, and the kit
   branch merges only onto A1.
-- **The order of the timings** (ruling R1, AGREED WITH MAIN 2026-11-16; plan A only). The form
-  cards run first on the same frozen combined-branch binary, with h's rule committed before the
-  run; h is frozen by that reading; then, after the identity check, the width cells are
-  measured on the binary rebuilt with h\* compiled in (rev 4, R3-6: a refinement main
-  confirms; §3 "The head lever"): one night if both fit, the width cells not-before the cards' verdict;
-  otherwise two nights (§3).
+- **The order of the timings** (ruling R1, AGREED WITH MAIN 2026-11-16, CONFIRMED with step 3's
+  refinement [rev 5, Q5]). The form cards run first on the frozen combined-branch binary, h
+  set through the lever, with h's rule committed before the run; h is frozen by that reading;
+  h\* is compiled in and the identity check passes; then the width cells are measured on that
+  REBUILT binary, never on the cards' binary: one night if both fit, the width cells
+  not-before the cards' verdict; otherwise two nights (§3).
 - **May the default itself be all-inline?** No, by the kit manager's ruling on r22: all-inline
   is the dial's option, never the rule's default; making it the default is the owner's own call.
 
 ## 8. responses.md-ready block (for the kit manager to post; facts only, D157)
 
 ```
-## R-45 reply (2026-11-16, kit; rev 4 after reviews r20, r22, r23) — window spans up to 4095 positions
-- READY: plan B alone (carrier + kit working state + the two witness rows) is ready now.
-  Plan A's rule has r23's text fixes applied; one added clause (dominance cycles) awaits our ruling.
+## R-45 reply (2026-11-16, kit; rev 5 after reviews r20, r22, r23 and your check r45read) — window spans up to 4095 positions
+- READY; nothing open. Plan A (forms now, one joint landing) is the plan of record.
 - (1) YES on EVERY window span: MF_WSPAN_POS 4095; MF_WREACH = MF_MAX_FWD = 4096. Proof rows
   only for proving classes (window plan, old-field FIND); others proof_n 0. Range [LO, end),
   end = max(last stated position + 2, last tested offset + 1). Kit refusals: tested offset out
   of range; rows past caller storage; range self-check (message via mf_define only).
   Your cover ask passes storage to the ceiling (4,104 rows): every over-read below 4096 reaches
-  B5. Witnesses: a kit row (self-check by message); a pcrec row on [0-9a-f]{32}, nothing after
-  (a cover at width 32, after side unstated; its REACH asserts both).
+  B5. Witnesses: a kit row (self-check by message); a pcrec row on [0-9a-f]{32}, nothing after,
+  R-short removed (a cover at width 32, after side unstated; its REACH asserts both).
 - (2) Decoupled: MF_MAX_TERM 32, MF_WMAX_SPAN 32 stay; MF_MAX_SPAN_POS/MF_MAX_AHEAD retire now
   (merge only onto A1). S526 stays on MF_MAX_TERM; B2's control is your §11.6.3 build.
-- (3) Forms I/L/H(h) over the existing segmenter, at every window span; literals stay one
-  compare. Default H(h*), h* from FINITE heads: W(h) = worst C1-C2 cell of t(H(h))/t(I); E =
-  within the A/A floor of the best W; drop heads another member of E beats somewhere and never
-  loses to; then the LARGEST. On a tie h* = 64, the grid's CHOSEN top, checked only by the
-  long cells, whose loss extends the grid. All-inline is the dial's reference, never the
-  default. A test-only lever sets h on one binary; a check proves the rebuilt binary's bytes
-  equal the lever's. Option span-loop (pair; deny wins); floor 13 -> 14.
-  Night order (agreed 2026-11-16, plan A only): our cards first on the frozen binary, h frozen
-  by its rule, identity check, then your width cells on the rebuilt binary (no harness option).
-  Your cover_cap edits: §11.4, §11.6.1, §11.6.4.
-- (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). No fix in the first build (D77).
+- (3) Forms I/L/H(h) over the existing segmenter, at EVERY window span, cover or not; literals
+  stay one compare. Default H(h*), h* from FINITE heads: W(h) = worst C1-C2 cell of
+  t(H(h))/t(I) in every regime (your §11.4 five by its methods, NOT-WARM and short-subject
+  included, + random bytes); E = within the A/A floor of the best W; keep the members of E
+  beaten by the fewest others (RULED; the unbeaten ones whenever any exist); then the LARGEST.
+  On a tie h* = 64, the grid's CHOSEN top. A form's loss in any regime moves h, never your
+  width default. A twice-void cell reads as a loss for every head that differs from I there.
+  Possible movers: every window site (covers, pre-check runs, reseed/prefix alternatives) with
+  >= 2 consecutive identical multi-member sets reaching offset >= h*. Predict them from your own
+  statements (a superset; red = a move outside it). h* >= 32 moves nothing today. uuid (k=36)
+  has no cover today: a width event, not a form mover.
+  Test-only lever span-head=N; identity check: rebuilt bytes = lever bytes at h*. Option
+  span-loop (pair; deny wins; the deny is the G1 arm, not the dial); floor 13 -> 14.
+  Night order (ruled): our cards first on the frozen binary via the lever, h frozen by the
+  committed rule; h* compiled in + identity check; then your width cells on that REBUILT
+  binary (no harness option). Your cover_cap edits: §11.4 (+ regimes), §11.6.1 (4a cards,
+  4b rebuild + identity; whether 4b gets its own review is yours), §11.6.4, §11.1 prediction.
+- (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). No fix in the first build. The
+  forms are not a near-miss fix (every form restarts one byte later).
 - (5) Arrays leave the seam structs: mf_wspan 1,164 -> 32 B, mf_class 2,932 -> 1,640 B,
   mf_wreply 532 -> 136 B. Lists go into caller storage sized by mf_rows_need. 22 byte compares
   become deep compares; 14 uint8_t casts widen. MF_SITE_ABI 29 -> 30, MF_CLASS_V 10 -> 11.
   Rows per cover attempt: ~291 KB at 4095, ~133 KB at 32. The build starts from main.
-- Questions (our leaning):
-  other-sites-at-32: keep your other window sites at 32 by your own asserts? Yes.
-  cover-ask-storage: give the cover ask room for the whole range? Yes.
-  caller-storage: let the asks take caller storage? Yes.
-  row-memory: accept the rows' memory until your compile-cost record? Yes.
-  night-order-edits: take the cover_cap edits if the owner picks forms now? Yes.
-  For the owner: forms-now-or-next (forms now: costs a timing slot, a later and larger
-  landing; if timing cannot run first, forms land off, decided by main with Frank): forms now.
-  keep-short-spans (keep spans <= 32 all-inline even on a measured win)? No.
-  near-miss-fix-later (fix near misses in the first build)? No, until a timed card shows it.
+- Rulings recorded: yours, YES on other-sites-at-32, cover-ask-storage, caller-storage,
+  row-memory, night-order-edits (unconditional). The owner's: forms-now-or-next = forms now;
+  keep-short-spans = no; near-miss-fix-later = no. Ours: dominance-cycle as above.
 ```
