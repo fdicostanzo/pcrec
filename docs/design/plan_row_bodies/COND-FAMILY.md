@@ -1022,3 +1022,10 @@ transform the library PROVIDES is named for how it changes the FILTER / which va
 (`padded`, `anchored`), never for an action on the subject. To apply in the next revision (manager's note, not ruled):
 audit every provided transform name against this; `search` is a verb acting on the subject and needs a new name
 (candidates to put to him), `contains`/`startsWith`/`endsWith` describe the accepted values and likely stay.
+
+**2026-11-15 RULING — the provided transform `search` is renamed `occurrences` (Frank, to session 133, ~20:40).** Asked
+for a name that passes his naming rule (the entry above, point 5), with candidates occurrences / hits / marked /
+each_occurrence / containing and the manager's lean "occurrences", his words: "1 occurances." RECORD: the library
+transform spelled `search` through rev 12 is `occurrences` from rev 13 on. Not ruled (manager's note): whether the
+`hit` label it exposes is renamed to match; that is a spelling-step question. Still open with him at this entry:
+whether `anchored` is defined with `\A`/`\z` rather than `^`/`$` (he asked for the impact first).
