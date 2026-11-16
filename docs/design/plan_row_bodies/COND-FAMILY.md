@@ -1457,3 +1457,12 @@ omitted macro argument; the spelling `|=` is his example (memory: his examples a
 the draft already has the macro half, spelled `name = default` in a definition head (predicates_draft.md §5.2,
 `occurrences(x, min = 0) :=`), so the unification is either that form extended to the label bracket or one new mark
 in both places; and `|` means "either" in this language, which a default is not (a spelling-step concern).
+
+**2026-11-16 OWNER — the default is written with `=` (Frank, to session 134, box clock 10:37).** Shown the two ways to
+unify a label's default with macro-head defaults (the head's existing `name = value` extended to the label bracket,
+`((h, m = 0): R)`, with its look-alike risk beside `(h, m: 0)`; or one new mark `|=` in both places), his words: "I
+was thinking = but had your concerns. Seeing = in examples I prefer it". RECORD: (1) PREFERENCE: `=`, the existing
+definition-head form, extended to the label bracket; `|=` not adopted. (2) THE MANAGER'S READING (told to him, not
+his words): this is a go to WRITE UP AND TEST the default (design only, lane unsetdef), on his lean "unset fails";
+unset-component is closed only when he says so. The look-alike `(h, m = 0): R` vs `(h, m: 0)` is the write-up's to
+weigh (a diagnostic, not a different mark, unless it finds worse).
