@@ -562,8 +562,18 @@ mf_wspan *pcrec_memfn_walt_spans(Ctx *cx, mf_walt *a, mf_entry entry, int n)
  * 30, r45_reply.md §5 (e)): `len` sets and table offers from the compile's
  * arena, zeroed. The struct's members are `const` to every reader; the
  * writers below store through these, the owner's own pointers. */
-static uint8_t *wpos_set(mf_wspan *w, int j) { return (uint8_t *)w->set[j]; }
 static uint32_t *wpos_table(mf_wspan *w) { return (uint32_t *)w->table_ref; }
+
+/* Position `j`'s set, refused loudly unless `j` lies inside the span's `len`
+ * (cover_cap.md §11.1 B1): the storage is exactly `len` entries, so a
+ * position past it is pcrec's defect, never a write past the arena block. */
+static uint8_t *wpos_set(Ctx *cx, mf_wspan *w, int j)
+{
+    if (j < 0 || j >= (int)w->len)
+        pcrec_ctx_fail(cx, 0, "internal error: a window span position %d lies outside "
+                       "the span's %d positions (src/gen/memfn_sites.c)", j, (int)w->len);
+    return (uint8_t *)w->set[j];
+}
 
 void pcrec_memfn_wspan(Ctx *cx, mf_wspan *w, int start, int len, mf_verify v)
 {
@@ -593,28 +603,28 @@ void pcrec_memfn_wspan_core(mf_wspan *w, int lo, int len)
     w->core_len = (uint16_t)len;
 }
 
-void pcrec_memfn_wpos_table(mf_wspan *w, int j, const uint8_t set[256], uint32_t offer)
+void pcrec_memfn_wpos_table(Ctx *cx, mf_wspan *w, int j, const uint8_t set[256], uint32_t offer)
 {
-    uint8_t *s = wpos_set(w, j);
+    uint8_t *s = wpos_set(cx, w, j);
     memset(s, 0, 32);
     for (int b = 0; b < 256; b++)
         if (set[b]) s[b >> 3] |= (uint8_t)(1u << (b & 7));
     wpos_table(w)[j] = offer;
 }
 
-void pcrec_memfn_wpos_bits(mf_wspan *w, int j, const uint8_t bits[32])
+void pcrec_memfn_wpos_bits(Ctx *cx, mf_wspan *w, int j, const uint8_t bits[32])
 {
-    memcpy(wpos_set(w, j), bits, 32);
+    memcpy(wpos_set(cx, w, j), bits, 32);
 }
 
-void pcrec_memfn_wpos_any(mf_wspan *w, int j)
+void pcrec_memfn_wpos_any(Ctx *cx, mf_wspan *w, int j)
 {
-    memset(wpos_set(w, j), 0xFF, 32);
+    memset(wpos_set(cx, w, j), 0xFF, 32);
 }
 
-void pcrec_memfn_wpos_cube(mf_wspan *w, int j, unsigned byte, unsigned mask)
+void pcrec_memfn_wpos_cube(Ctx *cx, mf_wspan *w, int j, unsigned byte, unsigned mask)
 {
-    uint8_t *s = wpos_set(w, j);
+    uint8_t *s = wpos_set(cx, w, j);
     memset(s, 0, 32);
     for (unsigned b = 0; b < 256; b++)
         if ((b & mask) == (byte & mask)) s[b >> 3] |= (uint8_t)(1u << (b & 7));
@@ -805,6 +815,58 @@ static void pres_record(DelegSite id, const mf_site *s)
             members, runlen, s->pspans[0].need == MF_REQUIRED ? "REQUIRED" : "OPTIONAL",
             (long long)s->head_max);
 }
+
+/* [COVER-CAP] THE WINDOW STATEMENT RECORD (r45_reply.md rev 6 §3 "The record
+ * the prediction reads", R5-5; r45chk P1): the window spans pcrec STATES, read
+ * off the site it defines (never a kit reply or plan), under the same switch,
+ * one line per stated span:
+ * `MFWSTMT<TAB>site<TAB>kind<TAB>owner<TAB>alt<TAB>entry<TAB>reseeds<TAB>span
+ * <TAB>start<TAB>len<TAB>verify<TAB>core_lo<TAB>core_len<TAB>sets`, where
+ * `owner` is `site` (the site's own alternatives, `mf_site.alts`) or `part<I>`
+ * (pre-check part I's, `mf_site.pspans[I].alts`), `reseeds` is 1 where any of
+ * that owner's alternatives enters RESEED, and `sets` is the span's `len`
+ * position sets, comma-separated, each 64 hex digits (the 32 bytes in order).
+ * The cover-cap sweep's mover prediction reads it. Trace build only: no
+ * emitted byte. */
+static const char *const stmt_entry_name[] = {
+    [MF_ENTRY_UNSTATED] = "UNSTATED", [MF_ENTRY_NONE] = "NONE",
+    [MF_ENTRY_PARKED] = "PARKED", [MF_ENTRY_RESEED] = "RESEED" };
+static void stmt_owner_record(const char *site, const char *kind, const char *owner,
+                              const mf_walt *alts, unsigned nalt)
+{
+    int reseeds = 0;
+    for (unsigned a = 0; a < nalt; a++) reseeds |= alts[a].entry == MF_ENTRY_RESEED;
+    for (unsigned a = 0; a < nalt; a++) {
+        const mf_walt *al = &alts[a];
+        const char *en = al->entry < sizeof stmt_entry_name / sizeof stmt_entry_name[0]
+                       ? stmt_entry_name[al->entry] : "?";
+        for (unsigned i = 0; i < al->nspan; i++) {
+            const mf_wspan *w = &al->spans[i];
+            fprintf(stderr, "MFWSTMT\t%s\t%s\t%s\t%u\t%s\t%d\t%u\t%ld\t%u\t%u\t%u\t%u\t",
+                    site, kind, owner, a, en, reseeds, i, (long)w->start, (unsigned)w->len,
+                    (unsigned)w->verify, (unsigned)w->core_lo, (unsigned)w->core_len);
+            for (unsigned j = 0; j < w->len; j++) {
+                if (j) fputc(',', stderr);
+                for (int b = 0; b < 32; b++) fprintf(stderr, "%02x", w->set[j][b]);
+            }
+            fputc('\n', stderr);
+        }
+    }
+}
+static void stmt_record(DelegSite id, const mf_site *s)
+{
+    const char *const *kn = routed_kind_name;
+    const char *kind = s->site_kind < sizeof routed_kind_name / sizeof kn[0]
+                     ? kn[s->site_kind] : "?";
+    if (!getenv("PCREC_MF_ROUTE_TRACE")) return;
+    stmt_owner_record(pcrec_deleg_sites[id].id, kind, "site", s->alts, s->nalt);
+    for (unsigned p = 0; p < s->npspan; p++) {
+        char owner[24];
+        snprintf(owner, sizeof owner, "part%u", p);
+        stmt_owner_record(pcrec_deleg_sites[id].id, kind, owner, s->pspans[p].alts,
+                          s->pspans[p].nalt);
+    }
+}
 #endif
 
 /* [MEMFN] R17-b' B3b THE PRESENCE ROUTED-RECORD (r17b_prime.md §1.6 [rev3
@@ -866,6 +928,7 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
         kit_check(cx, art, mf_defined(art, handle, r));
         routed_record(id, s, r->row);
         pres_record(id, s);
+        stmt_record(id, s);
         if (s->npspan) pcrec_memfn_pres_routed(s, &r->cls);
     }
 #endif

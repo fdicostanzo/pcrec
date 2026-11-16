@@ -19,6 +19,9 @@ SAB_DESC="the RESEED alternative's offset-0 span F0 is stated as the DFA escape 
 SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1418."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        pcrec_memfn_wpos_table(&sp[0], 0, wk->k[0].set,
-                               wk->k[0].count > 1 ? WIN_OFFER_OFS + 0u : 0u);'
-SAB_AFTER='        pcrec_memfn_wpos_table(&sp[0], 0, us->cand.set, 0u);   /* SABOTAGE S1418 */'
+SAB_BEFORE='        pcrec_memfn_wpos_table(cx, &sp[0], 0, wk->k[0].set,
+                                   wk->k[0].count > 1 ? WIN_OFFER_OFS + 0u : 0u);'
+SAB_AFTER='        pcrec_memfn_wpos_table(cx, &sp[0], 0, us->cand.set, 0u);   /* SABOTAGE S1418 */'
+# RE-ANCHORED 2026-11-16 (lane covs2c, cover_cap.md §11.1 B1): the position writers take
+# the compile's `Ctx` (their per-position check against the span's length fails through it);
+# the plant is the same statement with `cx` added.

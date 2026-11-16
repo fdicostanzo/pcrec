@@ -621,12 +621,12 @@ static void cover_window(Ctx *cx, mf_site *s, const MkEnd *e)
     mf_walt *a = pcrec_memfn_walts(cx, 1);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, n);
     pcrec_memfn_wspan(cx, &sp[0], 0, e->k, MF_VERIFY_YES);
-    for (int d = 0; d < e->k; d++) pcrec_memfn_wpos_bits(&sp[0], d, e->set[d]);
+    for (int d = 0; d < e->k; d++) pcrec_memfn_wpos_bits(cx, &sp[0], d, e->set[d]);
     n = 1;
     for (int i = 0; i < 2; i++) {
         if (!cover_side_stated(side[i].set, side[i].absent)) continue;
         pcrec_memfn_wspan(cx, &sp[n], side[i].off, 1, MF_VERIFY_YES);
-        pcrec_memfn_wpos_bits(&sp[n], 0, side[i].set);
+        pcrec_memfn_wpos_bits(cx, &sp[n], 0, side[i].set);
         if (side[i].absent == MK_ABS_SATISFIES) pcrec_memfn_wspan_core(&sp[n], 0, 0);
         n++;
     }

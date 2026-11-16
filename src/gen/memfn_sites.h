@@ -209,11 +209,12 @@ void pcrec_memfn_wspan_core(mf_wspan *w, int lo, int len);
 /* Position `j` of span `w`: the bytes of a 256-entry table (nonzero = in),
  * of a 32-byte bitset, every byte, or the cube {x : (x & mask) == byte}; a
  * nonzero `offer` is pcrec's table for that set, named by the site's
- * `table_name` hook. */
-void pcrec_memfn_wpos_table(mf_wspan *w, int j, const uint8_t set[256], uint32_t offer);
-void pcrec_memfn_wpos_bits(mf_wspan *w, int j, const uint8_t bits[32]);
-void pcrec_memfn_wpos_any(mf_wspan *w, int j);
-void pcrec_memfn_wpos_cube(mf_wspan *w, int j, unsigned byte, unsigned mask);
+ * `table_name` hook. A `j` outside the span's `len` fails the compile as
+ * pcrec's internal error (the host storage holds exactly `len`). */
+void pcrec_memfn_wpos_table(Ctx *cx, mf_wspan *w, int j, const uint8_t set[256], uint32_t offer);
+void pcrec_memfn_wpos_bits(Ctx *cx, mf_wspan *w, int j, const uint8_t bits[32]);
+void pcrec_memfn_wpos_any(Ctx *cx, mf_wspan *w, int j);
+void pcrec_memfn_wpos_cube(Ctx *cx, mf_wspan *w, int j, unsigned byte, unsigned mask);
 /* States alternatives `alts[0..n)` and floor `fl` on site `s`, checking
  * pcrec's own bounds against the kit's shape bounds (MF_WMAX_ALT,
  * MF_WMAX_SPAN, MF_WSPAN_POS, [-MF_MAX_BACK, MF_WREACH)) loudly: a statement
