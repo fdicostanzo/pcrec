@@ -1280,3 +1280,14 @@ as the named form (a parameter bound to a field path on the left of `:` in a mac
 mark binds to when nested or written inside a macro body (lexically, the `&` of the place it is WRITTEN), whether
 the mark may stand alone (the whole other side, against "the operand is never an argument"), and whether `(h: S)`
 is then readable as a condition on `^.h` (fewer, more general primitives).
+
+**2026-11-15 OWNER POINTER — computed labels and the other-side mark (Frank, to session 134, box clock 23:46).** After
+the manager's notes on the mark, his words: "one thing you considered was computed labels". RECORD (the manager's
+READING, to confirm): the mark must be checked against COMPUTED labels (match-dependent bindings such as
+`mnum := $mname.index`, `weekday := weekday_of(...)`), which are bindings by spelling and labels by the glossary.
+The manager's notes (not ruled): a computed label is already "a macro whose operand is the pattern whose labels it
+reads", i.e. a function of the other side, so it can be read off the mark like a group (`^.mnum`); that would give
+bare-versus-`$` for computed labels (the draft's open look-alike row on that pair, and its open item on bare label
+names) one answer consistent with his no-bare-reference ruling, and it gives a compare over a NON-NUMERIC field its
+proper route (compare the computed number: `[^.year, ^.mnum]`). To check in the next revision: whether a computed
+label is a field of the other side's map or stays a binding, and what that does to shadowing.
