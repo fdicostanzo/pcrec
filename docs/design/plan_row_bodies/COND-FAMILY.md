@@ -1489,3 +1489,13 @@ the condition (single or joint) unless the author wrote a default for it; rev 18
 withdrawn. (2) The manager's reading of "agree" (told to him): agreed with the lean, so a never-used default is a
 WARNING. Standing from earlier today: the default is written `name = value`, must be ONE string, a several-string
 default is an error for now (`some(...)` on record as the route).
+
+**2026-11-16 OWNER RULING — joint-loops: agreed, all three parts (Frank, to session 134, box clock 11:17).** Asked
+**joint-loops** (pair the labels of a joint condition per pass of the loop that encloses all of them, the condition
+holding when every pass's tuple is in the set; labels in separate loops a compile error naming the fix; the
+looped-compare warning of 2026-11-16 00:09 moved onto a hand-written `|` of conditions over labels that can repeat,
+keyed off the shape), his words: "I agree. Makes sense." RECORD: RULED as asked: (1) per-pass pairing by the innermost
+loop enclosing every named label, a label outside that loop having its one value on every pass; (2) labels in
+sibling loops: a COMPILE ERROR; (3) the looped warning's subject is now a `|` of conditions whose labels can repeat
+(each alternative is checked over every pass; the message names the joint condition as the per-item form); the joint
+condition itself draws no such warning.
