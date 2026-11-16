@@ -5,8 +5,11 @@
 STATE: done. Design only; no `src/`, `cli/`, `lib/`, `memfn/`, `tests/`, `docs/spec/` or
 plan.md edit. Branch lane/covs2d, cut from main 61f8e9f88; addendum commit 1408c1477 plus
 this report. Rulings file `docs/dev/lanes/covs2d_rulings.md`: empty at every read (before the
-addendum commit, before this report). Validation: `make test-plan-lint` and
-`make test-spec-history` in the worktree (results in the handback). Premise test held:
+addendum commit, before this report). Validation in the worktree: `make test-spec-history` GREEN
+(11 passed, 0 failed); `make test-plan-lint` RED by ONE PRE-EXISTING violation on main
+61f8e9f88, not this lane's: `PL14: docs/dev/plan.md:13: docs/dev/lanes/land1115c_report.md:13
+cites a plan line number` (the land1115c landing report; 357 rows parsed, 1 violation;
+its selftest 45 plants, 0 failures). This lane's files add no violation. Premise test held:
 abi 108 (T1), rev 4.1 with a stage-2 bullet naming 4095, seam max 32 (T2), no existing cover
 width limit (T5). Owed runs: none (every number needing a sweep or timing is written as part
 of the design's plan, not claimed).
