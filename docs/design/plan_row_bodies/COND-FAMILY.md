@@ -1246,3 +1246,9 @@ about times or versions. This replaces the manager's "parameter as a label name"
 notes, not ruled): whether the projection is a plain macro, a small structural primitive, or already spellable by
 writing the values directly (an array of the labels' values, `[$h, $m]`-like), and at which capability level a
 compare over captured values is decided (per match).
+
+**2026-11-15 RULING — tuple compare argument order (Frank, to session 134, box clock 23:25).** Asked under the slug
+**tuple-arg-order** whether the decomposed compare's three arrays read (subject, low, high), e.g.
+`lex_between2([h, m], [9, 0], [10, 0])`, or (subject, high, low) as his earlier sentence had it, with the manager's
+lean the first; his words: "tuple-arg-order: subject low high". RECORD: the order is subject, low, high. To fold in
+rev 17 (lane predspec17, by its rulings file).
