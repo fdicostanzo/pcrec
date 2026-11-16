@@ -13,8 +13,9 @@ merged here with the kit's branch).
 ## STATE AT HANDOFF
 
 - STATE: done. No STOP rule fired.
-- Branch tip: see the handback message (the report's own commit sits on top
-  of the last code commit 8bbac243f).
+- Branch tip: the report's final commit on top of 11cc123a7 (the dispatched
+  commit; the later commit touches only this report). Last code commit
+  8bbac243f.
 - RULINGS FILE: `docs/dev/lanes/covs2b_rulings.md` read before each commit and
   before this report: EMPTY (last read 17:5x box clock).
 - abi taken: 109 (main and both kit branches were at 108; verified by grep
@@ -24,8 +25,12 @@ merged here with the kit's branch).
   465 composition files, all streams): the raise (merge 0a8f70868 vs merge +
   raise 5dd6c4cbf) 0 movers; and the kit's whole branch plus the raise
   (e54de95d9, main + covs2afix, vs 5dd6c4cbf) 0 movers.
-- OWED: `main-test-covs2b` (the cloud TEST kind on the final commit,
-  dispatched as this lane's last act; key in the handback);
+- OWED: `main-test-covs2b` = the cloud TEST kind, DISPATCHED on 11cc123a7:
+  `scripts/cloudrun --owner main --kind test --name covs2b-test --ref
+  lane/covs2b` -> branch `cloud/main/test/covs2b-test`, cloudrun ledger row
+  `main test covs2b-test` (the verdict reaches main as CLOUD-DONE via
+  queuewatch). The run's key is `covs2b-test` in the cloudrun ledger, not a
+  box-queue key (see LEFT OPEN for lanecheck);
   `main-axes-covs2b`: NOT dispatched by this lane, the manager dispatches it
   after the test verdict (brief).
 
@@ -200,7 +205,12 @@ the night (W21, W23-W25, P3, P9) are not units yet.
   main's stage-2 B-list (r27's PLAN). Spec and behaviour disagree at that
   width until it is fixed.
 - P5, P6, P7: the manager's (decision, relay, window).
-- The two owed keys: `main-test-covs2b` dispatched (handback names the key);
-  `main-axes-covs2b` NOT dispatched by this lane: the manager dispatches it
-  after the test verdict (brief).
+- The two owed keys: `main-test-covs2b` dispatched as the cloud run
+  `covs2b-test` (above); `main-axes-covs2b` NOT dispatched by this lane: the
+  manager dispatches it after the test verdict (brief). `scripts/lanecheck`
+  reads owed keys from the BOX QUEUE only, so it objects to both, verbatim:
+  "1. owed job main-test-covs2b is not in the box queue" / "2. owed job
+  main-axes-covs2b is not in the box queue" / "lanecheck: DONE rc=1". The
+  first is a naming gap between the deliver file's key and cloudrun's
+  ledger (the run exists); the second is the brief's instruction.
 - No D/K/R ids were needed.
