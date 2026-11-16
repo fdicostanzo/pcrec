@@ -1755,3 +1755,20 @@ and b > x. NOT covered: `$a` where a is not a label of the condition (`(h?: <$a,
 stands there (an absent a FAILS the condition), unruled. OWED as evidence, by the fix lane after round predspec20:
 every record with an own-label `$` against its joint spelling over the same subjects, 0 differ expected; any
 difference goes back to the owner.
+
+**2026-11-16 OWNER RULING — domain-scope (Frank, to session 136, box clock 16:31).** The question from review r29's
+group A: do CONDITIONS narrow what a marked label "could have had" (DOM), or only the regex? Put with
+`P & (k: "b") & (h?: <5)` on `b` (P = `a` + digits 0-9 or `b` + digits 5-9): regex only HOLDS, conditions too
+FAILS; the manager leaned regex only. His words: "P & (k: \"b\") In my mind this is a different regex than P. It only
+includes the \"b\" track". RECORD: RULED against the manager's lean: a pattern narrowed by a condition IS a
+different pattern; DOM(h) is read from the PROGRAM the condition meets (the regex with the conditions on it), not
+from the bare regex. THE MANAGER'S READINGS of the consequences (his, to be checked by rev 21 and its re-check):
+(1) match-context (16:13, "anywhere") stands for what the program leaves free: `P & (h?: <5)` on `b` still HOLDS;
+(2) a consequence the manager stated to him under "anywhere" is REVERSED: `((k, h?): ("b", <5))` on `b` now FAILS
+(the condition's own entry on k narrows h; a record's entries are `&`-ed conditions, so record = `&` is kept);
+(3) the spelling principle keeps its wording: "patterns" there means programs (a regex with its conditions), no
+narrowing to "regex patterns"; (4) the manager's gloss in the 16:13 record, "one value set per label, fixed when the
+pattern is compiled", is corrected: one value set per label PER PROGRAM; (5) the manager's one-witness reading (a
+stand-in value per condition) is re-examined by rev 21 under this ruling (review r29 says the two-conditions case
+dissolves under the program reading); (6) open for rev 21 to state, not decided: whether another condition on the
+SAME label narrows it, and the "if it is possible" tier for a program whose conditions are not regular.
