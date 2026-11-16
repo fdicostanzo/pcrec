@@ -1,0 +1,145 @@
+predspec22_check: predspec21_check.py exec'd verbatim (481 lines of its output suppressed; its TOTAL line: TOTAL engine-run cases 75530 differ 0; engine disagreements (PCRE2 vs Python `re`) 0; probes 204636)
+
+PART A: EVERY `!` ON A CONDITION WITH A WORKED ANSWER, AGAINST ITS REWRITES (THE RULE)
+
+(A1) L30, one label: /(?<h>\d)?x/, 11 subjects, S = <5
+   rev 21 `!(h: <5)` (unmarked; the plain complement)   DOM(h)={56789} on `x` HOLDS; holds on 6 of 11
+   `(h: !(<5))` (the complement on the set)             DOM(h)={56789} on `x` FAILS; holds on 5 of 11
+   `P & !q`, q := P & (h: <5)                           DOM(h)={56789} on `x` HOLDS; holds on 6 of 11
+   rev 21 `!(h?: <5)` (marked; N1)                      DOM(h)={56789} on `x` HOLDS; holds on 6 of 11
+   `(h?: !(<5))` (the complement on the set)            DOM(h)={56789} on `x` HOLDS; holds on 6 of 11
+   `P & !q`, q := P & (h?: <5)                          DOM(h)={56789} on `x` FAILS; holds on 5 of 11
+   rev 21 `!(h: <5)` vs `(h: !(<5))`: differ 1 of 11 (smallest 'x')
+   rev 21 `!(h: <5)` vs `P & !q`, q := P &: differ 0 of 11
+   rev 21 `!(h?: <5)` vs `(h?: !(<5))`: differ 0 of 11
+   rev 21 `!(h?: <5)` vs `P & !q`, q := P &: differ 1 of 11 (smallest 'x')
+
+(A2) L95, the joint pair on t2 (11,110 subjects), R = padded(>= (9, 30)); then `& (m?: padded(<30))` added
+   rev 21 `!((h, m?): R)` (N1)          on `9` FAILS (DOM(m) 100 values); + (m?: padded(<30)): HOLDS (DOM(m) 30 values); FAIL -> HOLD on 2 subjects (smallest '9')
+   `((h, m?): !R)`                      on `9` HOLDS (DOM(m) 100 values); + (m?: padded(<30)): HOLDS (DOM(m) 30 values); FAIL -> HOLD on 0 subjects
+   `t2 & !q`, q := t2 & ((h, m?): R)    on `9` FAILS (DOM(m) 100 values); + (m?: padded(<30)): FAILS (DOM(m) 30 values); FAIL -> HOLD on 0 subjects
+   rev 21 `!` vs `t2 & !q`: differ 0 of 11110
+
+(A3) "every hit's g is `a`, possibly none" over occurrences(/(?<g>a)?b/), 127 spans over {a,b} to length 6
+   rev 21 `occurs.none(!(g: "a"))`                            vs the intent: differ   0 of 127
+   `occurs.none((g: !"a"))` (set complement)                  vs the intent: differ  94 of 127 (smallest 'b')
+   `occurs.none((g = "": !"a"))` (a default outside S)        vs the intent: differ   0 of 127
+   `(g: "a")` (the plain condition)                           vs the intent: differ   7 of 127 (smallest '')
+
+(A4) `when(c, p)`: rev 21 body `(x & c & p) | (x & !c)` vs rev 22 body `(x & c & p) | (x & !q)`, q := x & c; x = /(?<k>\d)(?:;(?<h>\d))*/ (1,110 subjects), p = (k: 3..7)
+   c = (h: <5)   rev 21 vs rev 22 body: differ 0 of 1110; on `0`: HOLDS / HOLDS; on `9`: HOLDS / HOLDS
+   c = (h?: <5)  rev 21 vs rev 22 body: differ 0 of 1110; on `0`: FAILS / FAILS; on `9`: FAILS / FAILS
+
+PART B: A MARK INSIDE A GROUP QUESTION (mark-in-none, LEFT AS IS); the lists of 0-2 items, 43 lists
+   `occurs.none(((h, m?): m < h))` (marked)                                   on `6,` FAILS (DOM(m) {27}); + (m?: >5): HOLDS (DOM(m) {7}); FAIL -> HOLD on 8 lists (smallest '6,')
+   `occurs.none(((h, m): m < h))` (unmarked, same set)                        on `6,` HOLDS (DOM(m) {27}); + (m?: >5): HOLDS (DOM(m) {7}); FAIL -> HOLD on 0 lists
+   `occurs.none(((h, m): m >= h))` (unmarked, the complement on the set)      on `6,` HOLDS (DOM(m) {2}); + (m?: >5): FAILS (DOM(m) {}); FAIL -> HOLD on 0 lists
+   `occurs.none(((h, m = 0): m < h))` (default 0)                             on `6,` FAILS (DOM(m) {27}); + (m?: >5): FAILS (DOM(m) {7}); FAIL -> HOLD on 0 lists
+   `occurs.none(((h, m = 0): m >= h))` (default 0, the complement on the set) on `6,` HOLDS (DOM(m) {2}); + (m?: >5): FAILS (DOM(m) {}); FAIL -> HOLD on 0 lists
+   marked vs `occurs.none(((h, m): m < h))` (unmarked, same set)                differ 10 of 43 (smallest '6,': marked FAILS, this HOLDS)
+   marked vs `occurs.none(((h, m): m >= h))` (unmarked, the complement on the set) differ 28 of 43 (smallest '6,': marked FAILS, this HOLDS)
+   marked vs `occurs.none(((h, m = 0): m < h))` (default 0)                     differ  8 of 43 (smallest '1,': marked HOLDS, this FAILS)
+   marked vs `occurs.none(((h, m = 0): m >= h))` (default 0, the complement on the set) differ 28 of 43 (smallest '6,': marked FAILS, this HOLDS)
+   `occurs.none(((h, m): m < h))` (unmarked, same set)                        = its per-item reading on 43 of 43 (ENGINE-RUN)
+   `occurs.none(((h, m): m >= h))` (unmarked, the complement on the set)      = its per-item reading on 43 of 43 (ENGINE-RUN)
+   `occurs.none(((h, m = 0): m < h))` (default 0)                             = its per-item reading on 43 of 43 (ENGINE-RUN)
+   `occurs.none(((h, m = 0): m >= h))` (default 0, the complement on the set) = its per-item reading on 43 of 43 (ENGINE-RUN)
+   (B2) "m is absent, or if present m < h" over 91 lists with hours 0, 1, 6 (ENGINE-RUN intent: holds on 21):
+      `occurs.none(((h, m): m >= h))` (unmarked, the complement on the set) differ  0   EXACT
+      `occurs.none(((h, m = 0): m >= h))` (default 0, inside none)         differ  8   (smallest '0,')
+      `((h, m = 0): m < h)` (default 0, the plain per-pass condition)      differ  9   (smallest '')
+
+PART C: THE CLOSING EXAMPLE over /(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/, 1111 lists, R = (<10, <30)
+   I1 every item complete and in R (the empty list passes) (ENGINE-RUN /(?:[0-9]:[0-2][0-9],)*/): holds on 15
+      rev 21 `occurs.none(!((h, m): R))` (now illegal)               differ    0   EXACT
+      `((h, m): R)` (the plain per-pass condition)                   differ    1   (smallest '')
+      `occurs.none(((h, m): !R))` (unmarked, set complement)         differ   70   (smallest '3,')
+      `occurs.none(((h, m = 99): !R))` (a default outside R)         differ    0   EXACT
+      `occurs.none(((h, m = 00): !R))` (a default inside R)          differ   25   (smallest '3,')
+      `((h, m = 99): R)` (plain, default outside R)                  differ    1   (smallest '')
+      `((h, m?): R)` (the marked plain condition, THE RULE)          differ   26   (smallest '')
+      `occurs.none(((h, m?): !R))` (marked, THE RULE)                differ   25   (smallest '3,')
+   I2a every item with minutes in R; an item without minutes acceptable, unchecked (ENGINE-RUN /(?:[0-9]:[0-2][0-9],|\d+,)*/): holds on 85
+      rev 21 `occurs.none(!((h, m): R))` (now illegal)               differ   70   (smallest '3,')
+      `((h, m): R)` (the plain per-pass condition)                   differ   71   (smallest '')
+      `occurs.none(((h, m): !R))` (unmarked, set complement)         differ    0   EXACT
+      `occurs.none(((h, m = 99): !R))` (a default outside R)         differ   70   (smallest '3,')
+      `occurs.none(((h, m = 00): !R))` (a default inside R)          differ   45   (smallest '12,')
+      `((h, m = 99): R)` (plain, default outside R)                  differ   71   (smallest '')
+      `((h, m?): R)` (the marked plain condition, THE RULE)          differ   46   (smallest '')
+      `occurs.none(((h, m?): !R))` (marked, THE RULE)                differ   45   (smallest '12,')
+   I2b every item in R; an item without minutes acceptable when its hour fits (ENGINE-RUN /(?:[0-9](?::[0-2][0-9])?,)*/): holds on 40
+      rev 21 `occurs.none(!((h, m): R))` (now illegal)               differ   25   (smallest '3,')
+      `((h, m): R)` (the plain per-pass condition)                   differ   26   (smallest '')
+      `occurs.none(((h, m): !R))` (unmarked, set complement)         differ   45   (smallest '12,')
+      `occurs.none(((h, m = 99): !R))` (a default outside R)         differ   25   (smallest '3,')
+      `occurs.none(((h, m = 00): !R))` (a default inside R)          differ    0   EXACT
+      `((h, m = 99): R)` (plain, default outside R)                  differ   26   (smallest '')
+      `((h, m?): R)` (the marked plain condition, THE RULE)          differ    1   (smallest '')
+      `occurs.none(((h, m?): !R))` (marked, THE RULE)                differ    0   EXACT
+
+PART D: ONE WITNESS: /(?<j>\d)(?<h>\d)?(?<k>\d)/, 1,100 subjects
+   `(h?: <$k) & (h?: >$j)` (two conditions, two stand-in values): DOM(h)={12345678}, on `12` HOLDS, holds on 184
+   `(h?: >$j & <$k)` (one condition, one stand-in value):        DOM(h)={12345678}, on `12` FAILS, holds on 156
+   differ 28 of 1100 (smallest '12'); every differing subject has h ABSENT: True
+
+PART E: THE MOVING PAIRS RE-RUN (THE RULE; N1/N2 are moot: no `!` on a condition remains)
+   (E0) each rev 21 `!` on a condition of the four pools, ALONE, against its two rewrites (answers per subject)
+      A    !(h?: <5)            complemented `!q[(h?: <5)]` differ 11 of 21 (smallest 'c': rev 21 HOLDS); set `(h?: !(<5))` differ 0 of 21
+      A    !(k?: <5)            complemented `!q[(k?: <5)]` differ 11 of 21 (smallest 'c': rev 21 HOLDS); set `(k?: !(<5))` differ 0 of 21
+      A    !((h?, k): h < k)    complemented `!q[((h?, k): h < k)]` differ 9 of 21 (smallest 'b1': rev 21 FAILS); set `((h?, k): h >= k)` differ 12 of 21 (smallest 'c': rev 21 HOLDS)
+      B    !(h?: <5)            complemented `!q[(h?: <5)]` differ 11 of 121 (smallest '-': rev 21 HOLDS); set `(h?: !(<5))` differ 0 of 121
+      B    !(k?: <5)            complemented `!q[(k?: <5)]` differ 11 of 121 (smallest '-': rev 21 HOLDS); set `(k?: !(<5))` differ 0 of 121
+      B    !((h?, k): h < k)    complemented `!q[((h?, k): h < k)]` differ 0 of 121; set `((h?, k): h >= k)` differ 20 of 121 (smallest '-': rev 21 HOLDS)
+      P    !(h?: <5)            complemented `!q[(h?: <5)]` differ 2 of 17 (smallest 'a': rev 21 HOLDS); set `(h?: !(<5))` differ 0 of 17
+      LST  !((h, m?): m < h)    complemented `!q[((h, m?): m < h)]` differ 0 of 43; set `((h, m?): m >= h)` differ 11 of 43 (smallest '': rev 21 HOLDS)
+   (E1) predspec21's FAIL -> HOLD pairs under N1 (THE RULE), each re-run with every `!` on a condition rewritten:
+      rev 21 kind compound        19 pairs: as complemented patterns still moving  0; as set complements  0
+      rev 21 kind compound+direct 10 pairs: as complemented patterns still moving  0; as set complements  0
+      rev 21 kind compound+group   2 pairs: as complemented patterns still moving  1 (e.g. LST `occurs.none(((h, m?): m < h)) & !q[((h, m?): m < h)]` + `(m?: >5)` on '1,6,'); as set complements  2 (e.g. LST `occurs.none(((h, m?): m < h)) & ((h, m?): m >= h)` + `(m?: >5)` on '6,')
+      rev 21 kind group            3 pairs: as complemented patterns still moving  3 (e.g. LST `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,'); as set complements  3 (e.g. LST `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,')
+      total 34 pairs (the brief's 22 = compound 19 + group 3; the mixed kinds compound+direct 10, compound+group 2 also listed)
+   (E2) every (program, added condition) pair of the rev 22 pools: 3902 pairs over 4 patterns
+      kinds in the program group-marked                           134 pairs, FAIL -> HOLD   5; smallest LST `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,'
+      kinds in the program group-marked+group-unmarked             92 pairs, FAIL -> HOLD   3; smallest LST `occurs.none(((h, m?): m < h))` + `occurs.none(((h, m): m >= h))` on '6,'
+      kinds in the program group-marked+group-unmarked+pattern     12 pairs, FAIL -> HOLD   1; smallest LST `occurs.none(((h, m?): m < h)) & !q[((h, m?): m < h)]` + `occurs.none(((h, m): m >= h))` on '1,6,'
+      kinds in the program group-marked+pattern                    43 pairs, FAIL -> HOLD   1; smallest LST `occurs.none(((h, m?): m < h)) & !q[((h, m?): m < h)]` + `(m?: >5)` on '1,6,'
+      kinds in the program group-unmarked                         134 pairs, FAIL -> HOLD   0
+      kinds in the program group-unmarked+pattern                  43 pairs, FAIL -> HOLD   0
+      kinds in the program none of these                         1764 pairs, FAIL -> HOLD   0
+      kinds in the program pattern                               1680 pairs, FAIL -> HOLD   0
+
+PART F: COMPLEMENTED PATTERNS IN THE CHAIN: well-founded, commutative, record = `&`
+   (F1) 8 complemented patterns x their subjects: an outside DOM consulted 0 times (0 = no circularity: q's DOMs are computed from q alone, before the outside's)
+   (F2) pattern A: 136 programs of 3 conditions holding a complemented pattern x 6 orders: 0 answers differ; nested `A & !q2 & (k?: <5) & (h?: <5)`, q2 := A & !q1 & (h?: >7), q1 := A & ((h?, k): h < k): 6 orders, 0 differ; on `b1`: FAILS
+   (F3) (RZ), 1,110 subjects, three sets x two complemented patterns: record vs `&` split 0
+
+PART G: THE CENSUS of every `!` written in a code span of the draft, rev 21 (03a2ce715) and this tree's rev 22
+   rev 21: on a CONDITION 51, retired lex_ (record) 12, rx literal or withdrawn `!~` 22, on a SET or PATTERN 146; 24 distinct condition spans
+       7  !(x: S)
+       4  !((h, m?): R)
+       4  !(x?: S)
+       4  !c
+       3  !(h?: S)
+       3  occurs.none(!((h, m): R))
+       3  occurs.none(!(g: S))
+       2  !((h, m = 0): R)
+       2  !((h?, k): h < k)
+       2  !(h?: <5)
+       2  /(?<h>\d)?x/ & !(h?: <5)
+       2  P & !(h?: <5)
+       2  occurs.none(!(g: ...))
+       1  !((h?, k): R)
+       1  !(n: <5)
+       1  !some(c)
+       1  ((h?, k?): h < k) & !((h?, k): h < k)
+       1  (x & c & p) | (x & !c)
+       1  /a(?<h>\d)|b(?<k>\d)|c/ & !((h?, k): h < k)
+       1  occurs.none(!(g: "a"))
+       1  occurs.none(!(g: "x"))
+       1  occurs.none(!(n: S))
+       1  occurs.none(!(x: S))
+       1  t2 & !((h, m?): R)
+   rev 22: on a CONDITION 57, retired lex_ (record) 12, rx literal or withdrawn `!~` 22, on a SET or PATTERN 266; 24 distinct condition spans
+
+TOTAL (this script's own) engine-run cases 4104 differ 0; engine disagreements (cumulative) 0; probes 5544
