@@ -40,7 +40,7 @@ Witness row (a) is built: `run_proof.sh` plant S3242.
 | pcrec callers respelled (allocation from `cx->arena`; `pcrec_memfn_rows`; B5 reads `proof` within `proof_n`, all ones outside) | DONE | `src/gen/memfn_sites.c:183`, `:566`; `known.c:418`, `:601`, `:606`, `:657-663`; `emit_dfa.c:1469`, `:6912-6957`, `:7162`, `:7719`, `:7736` (`wreply_same`, PCREC_CAND_TRACE), `:7778`, `:8512`, `:8926`, `:11600`, `:16347` |
 | Witness row (a): the kit row. Plant `end = last_s + 1`; R-short must refuse BY ITS MESSAGE through `mf_define`. The control is the unplanted define of a terms site and a window site | DONE, RED by message | `tests/memfn/run_proof.sh` S3242 + `plant_want`; `tests/memfn/proof_check.c` family A, two "R-short control" accepts |
 | Witness row (b): the pcrec row | **WAITS-ON main B5**, unbuilt | spec below |
-| HELD raise: `MF_WSPAN_POS` 4095 + retirement of `MF_MAX_SPAN_POS`/`MF_MAX_AHEAD` | ONE commit `0234da0e9` on `lane/memfn-span4k-raise`, NOT merged (R2) | validation below |
+| HELD raise: `MF_WSPAN_POS` 4095 + retirement of `MF_MAX_SPAN_POS`/`MF_MAX_AHEAD` | ONE commit, the tip of `lane/memfn-span4k-raise` (its parent: this branch's final tip), NOT merged (R2) | validation below |
 
 **Witness row (b) spec** (r45_reply.md §1, R3-5):
 - Kind and id: a mech row, id from S3243-S3249.
@@ -57,7 +57,7 @@ Witness row (a) is built: `run_proof.sh` plant S3242.
 - REACH: the clean build emits `RX_DFA_SCAN "cover"` for the pattern and the
   after side is unstated.
 
-**HELD raise (child commit `0234da0e9`).** It touches:
+**HELD raise (the child's one commit; validated as `0234da0e9`, the same diff re-parented onto the final tip).** It touches:
 - `memfn.h`: `MF_WSPAN_POS` is its own literal 4095; `MF_MAX_SPAN_POS` and
   `MF_MAX_AHEAD` are deleted.
 - `window.c`:
@@ -179,9 +179,10 @@ Found by grep for every changed name (`proven`, `mf_ask(`, `mf_wdecide(`, `->set
 
 ## STATE AT HANDOFF
 
-- Branch `lane/memfn-span4k` at its tip; the lane commits this report there.
-  Child `lane/memfn-span4k-raise` = one commit on the plan-B tip, NOT merged
-  (R2). Main takes it on the combined branch after covs2afix.
+- Branch `lane/memfn-span4k` at its tip, the commit that carries this
+  report. Child `lane/memfn-span4k-raise` = ONE commit whose parent is that
+  tip, NOT merged (R2). Main takes it on the combined branch after covs2afix.
+  The two tips are in the done message.
 - Rulings file: last entry applied is **R2**. R1 and R2 are both applied.
 - Witness row (b) WAITS-ON main's B5. It is not a lane debt (R1).
 - OWED: none
