@@ -1398,3 +1398,12 @@ side of a binding: on the right its entries are values, `lo := (9, 0)`; on the l
 reading is CONFIRMED as stated. Not settled by this entry: taking apart a SET of tuples that is not one tuple or a
 plain product (what each name then holds), and whether an index or projection is also offered (the lane tupleval's
 subject).
+
+**2026-11-16 OWNER IDEA (offered, not a ruling) — first/rest binding with recursion (Frank, to session 134, box clock
+09:52).** His words: "I don't know if this helps but an idea I had last night was functional style first/ rest binding
+with recursion". RECORD: an IDEA to weigh in the tuple account, not a decision: a binding that takes a tuple apart
+into its first entry and the rest, used by a definition that calls itself on the rest. The manager's first answer
+(the manager's, unchecked) is in the session's reply: it would let the library DEFINE dictionary order for any number
+of fields instead of the language building it in, and it gives the draft's ruled bounded recursion (§7, CF:583;
+waiting on O21 and index arithmetic) a structural form that needs neither a size literal nor an index; its price is a
+rest form on the binding side, a way to build a tuple from a first and a rest on the value side, and a base case.
