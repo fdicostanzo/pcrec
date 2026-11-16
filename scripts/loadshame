@@ -1,20 +1,32 @@
 #!/usr/bin/env python3
-# loadshame — name the live processes that are loading the box, before a timing window.
+# loadshame — name the live processes that are loading the box, and the APPLICATION to close for each.
 #
 # when: before a timing run (the quiet gate wants load1 < 2.0), or when a quiet gate has refused a job:
-#       says WHO is causing the load so the manager can tell the owner (never kills anything).
+#       says WHO is causing the load and WHICH root process to close, so the manager can tell the owner
+#       (a closed window often leaves busy helpers behind; this never kills anything itself).
 # does: samples /proc for --sec seconds (default 10) and prints
 #         line 1: `loadshame: QUIET|LOADED load1 X load5 Y (gate < G) busy-cores Z over Ns`
-#         then one row per offender GROUP (same user + command name), busiest first:
+#         then one row per APPLICATION (every busy process is charged to its root), busiest first:
 #           cores   CPU used over the sample, in cores (1.00 = one core fully busy)
 #           run     average number of its threads found RUNNABLE per look (state R)
 #           wait    average number found in UNINTERRUPTIBLE wait per look (state D: disk or io_uring waits;
 #                   these raise the load average without using CPU, e.g. a terminal's io_uring threads)
-#           pids    how many processes are in the group, and the busiest one's pid
-#       A group is listed when cores >= --min (default 0.02) or run + wait >= 0.10.
+#           user    who owns it
+#           close   the ROOT process: `command (pid N)`; stopping that one ends the whole application.
+#                   A `*` after it means DETACHED: its parent is the system's service manager, so it has
+#                   no shell or launcher above it (what is left when a window was closed but the
+#                   application kept running, or a background service)
+#           unit    the system's own name for the application (its control group), when it has one
+#           busy    how many of its processes were busy, and the busiest one's name if not the root
+#       THE ROOT of a process: climb its parents while the parent is in the SAME control group. In a
+#       group that belongs to one application (started from the desktop, or a service) the climb goes to
+#       the group's top, its launcher script included; in a login or terminal session's group it stops
+#       below a launcher (a shell, a terminal, tmux, sshd). So a browser helper is charged to the browser,
+#       a compiler run to the script or session that started it, never to the shell.
+#       An application is listed when cores >= --min (default 0.02) or run + wait >= 0.10.
 #       Exit 0 when load1 < gate, 1 when not, 2 on a usage error. Reads only; writes nothing.
 # usage: scripts/loadshame [--sec N] [--gate G] [--min C] [--top K] [--all]
-#        --all lists every group above the thresholds (default: the top 10).
+#        --all lists every application above the thresholds (default: the top 10).
 # The gate default (2.0) is the timing harness's own QUIET_LOAD (docs/design/memfn/span_cards/slot/run.py);
 # pass --gate when a job uses another. The load average itself lags by about a minute: a process that
 # has just stopped still shows in load1 for a while, and one that has just started shows here first.
@@ -26,10 +38,14 @@ import time
 
 CLK = os.sysconf("SC_CLK_TCK")
 ME = os.getpid()
+# A parent with one of these names is a launcher, not part of the application below it.
+LAUNCHERS = {"systemd", "init", "tmux: server", "tmux", "screen", "sshd", "sshd-session", "login", "bash", "sh",
+             "zsh", "fish", "dash", "gnome-shell", "gnome-session-b", "ptyxis-agent", "ptyxis", "kitty",
+             "ghostty", "gnome-terminal-", "konsole", "alacritty", "sudo", "su"}
 
 
 def stat_fields(path):
-    """(comm, state, utime+stime ticks, start time) from a /proc stat file; None when the task is gone."""
+    """(comm, state, utime+stime ticks, start time, ppid) from a /proc stat file; None when the task is gone."""
     try:
         with open(path, "rb") as f:
             raw = f.read().decode("utf-8", "replace")
@@ -41,7 +57,7 @@ def stat_fields(path):
     rest = raw[hi + 2:].split()
     if len(rest) < 20:
         return None
-    return raw[lo + 1:hi], rest[0], int(rest[11]) + int(rest[12]), rest[19]
+    return raw[lo + 1:hi], rest[0], int(rest[11]) + int(rest[12]), rest[19], int(rest[1])
 
 
 def pids():
@@ -60,7 +76,7 @@ def cpu_snapshot():
 def thread_states(pid):
     """(threads in state R, threads in state D, the process's own stat fields) right now."""
     run = wait = 0
-    comm = None
+    st = None
     try:
         tids = os.listdir("/proc/%d/task" % pid)
     except OSError:
@@ -71,26 +87,64 @@ def thread_states(pid):
             run += got[1] == "R"
             wait += got[1] == "D"
     if run or wait:
-        comm = stat_fields("/proc/%d/stat" % pid)      # whole-process ticks, for one that ends mid-sample
-    return run, wait, comm
+        st = stat_fields("/proc/%d/stat" % pid)        # whole-process ticks, for one that ends mid-sample
+    return run, wait, st
 
 
-def describe(pid):
-    """(user, short command line) for one pid; best effort."""
+def user_of(pid):
     try:
-        user = pwd.getpwuid(os.stat("/proc/%d" % pid).st_uid).pw_name
+        return pwd.getpwuid(os.stat("/proc/%d" % pid).st_uid).pw_name
     except (OSError, KeyError):
-        user = "?"
+        return "?"
+
+
+def unit_of(pid):
+    """The last component of the process's control group path ('' when unreadable)."""
     try:
-        with open("/proc/%d/cmdline" % pid, "rb") as f:
-            cmd = f.read().replace(b"\0", b" ").decode("utf-8", "replace").strip()
-    except OSError:
-        cmd = ""
-    return user, cmd
+        with open("/proc/%d/cgroup" % pid) as f:
+            line = f.read().strip().splitlines()[-1]
+    except (OSError, IndexError):
+        return ""
+    return line.split(":", 2)[-1].rstrip("/").rsplit("/", 1)[-1]
+
+
+def root_of(pid):
+    """(root pid, root command, unit, user, detached) for the application this process belongs to."""
+    unit = unit_of(pid)
+    # An application started from the desktop (or a service) has a control group of its OWN: climb to its
+    # top, launcher script included. A login or terminal session's group holds everything typed in it, so
+    # there the climb stops below the shell.
+    own_unit = bool(unit) and not unit.startswith("session-") and unit != "init.scope"
+    cur = pid
+    st = stat_fields("/proc/%d/stat" % cur)
+    if not st:
+        return None
+    for _ in range(64):
+        ppid = st[4]
+        if ppid <= 1:
+            break
+        pst = stat_fields("/proc/%d/stat" % ppid)
+        if not pst or pst[0] in ("systemd", "init") or unit_of(ppid) != unit:
+            break
+        if pst[0] in LAUNCHERS and not own_unit:
+            break
+        cur, st = ppid, pst
+    name = st[0]
+    if name in LAUNCHERS:                 # a launcher script on top: name it by the script it runs
+        try:
+            with open("/proc/%d/cmdline" % cur, "rb") as f:
+                argv = [x for x in f.read().decode("utf-8", "replace").split("\0") if x and not x.startswith("-")]
+            if len(argv) > 1:
+                name = os.path.basename(argv[1])
+        except OSError:
+            pass
+    parent = stat_fields("/proc/%d/stat" % st[4]) if st[4] > 1 else None
+    detached = st[4] <= 1 or (parent is not None and parent[0] in ("systemd", "init"))
+    return cur, name, unit, user_of(cur), detached
 
 
 def main():
-    ap = argparse.ArgumentParser(add_help=True, description="Name the processes loading the box.")
+    ap = argparse.ArgumentParser(add_help=True, description="Name the applications loading the box.")
     ap.add_argument("--sec", type=float, default=10.0)
     ap.add_argument("--gate", type=float, default=2.0)
     ap.add_argument("--min", type=float, default=0.02, dest="min_cores")
@@ -107,7 +161,7 @@ def main():
     looks = max(4, int(a.sec * 2))
     t0 = time.monotonic()
     first = cpu_snapshot()
-    run_sum, wait_sum, seen = {}, {}, {}
+    run_sum, wait_sum, seen, roots = {}, {}, {}, {}
     for i in range(looks):
         time.sleep(a.sec / looks)
         for pid in pids():
@@ -115,61 +169,57 @@ def main():
             if r or w:
                 run_sum[pid] = run_sum.get(pid, 0) + r
                 wait_sum[pid] = wait_sum.get(pid, 0) + w
-                if st:                    # a process may be gone before the last snapshot: keep what it
-                    who = seen[pid][1] if pid in seen else describe(pid)      # was when last seen busy
-                    seen[pid] = (st, who)
+                if st:                    # it may be gone before the last snapshot: keep what it was
+                    seen[pid] = st
+                    if pid not in roots:
+                        roots[pid] = root_of(pid)
     last = cpu_snapshot()
     span = time.monotonic() - t0
 
-    groups = {}
-    for pid in set(last) | set(run_sum) | set(wait_sum):
-        end = last.get(pid) or (seen[pid][0] if pid in seen else None)
-        comm = end[0] if end else (first[pid][0] if pid in first else "(gone)")
-        ticks = 0
-        if end and pid not in last:       # ended inside the sample: its ticks up to the last busy look
-            same = pid in first and first[pid][3] == end[3]
-            ticks = end[2] - (first[pid][2] if same else 0)
-        if pid in last:
-            # the same process at both ends (same start time): the difference; a process born inside the
-            # sample: all its ticks; a kernel worker's NAME changes while it lives, so names are not compared
-            same = pid in first and first[pid][3] == last[pid][3]
-            ticks = last[pid][2] - (first[pid][2] if same else 0)
-        cores = max(0, ticks) / CLK / span
+    apps = {}
+    for pid in set(last) | set(seen):
+        end = last.get(pid) or seen.get(pid)
+        # the same process at both ends (same start time): the difference; one born inside the sample: all
+        # its ticks. A kernel worker's NAME changes while it lives, so names are never compared.
+        same = pid in first and first[pid][3] == end[3]
+        cores = max(0, end[2] - (first[pid][2] if same else 0)) / CLK / span
         run = run_sum.get(pid, 0) / looks
         wait = wait_sum.get(pid, 0) / looks
         if cores == 0 and run == 0 and wait == 0:
             continue
-        user, cmd = describe(pid) if pid in last else (seen[pid][1] if pid in seen else ("?", ""))
-        g = groups.setdefault((user, comm), {"cores": 0.0, "run": 0.0, "wait": 0.0, "n": 0, "top": (-1.0, pid, cmd)})
+        root = roots.get(pid) or root_of(pid) or (pid, end[0], "", "?", False)
+        g = apps.setdefault(root[0], {"root": root, "cores": 0.0, "run": 0.0, "wait": 0.0, "n": 0, "top": (-1.0, "")})
         g["cores"] += cores
         g["run"] += run
         g["wait"] += wait
         g["n"] += 1
         weight = cores + run + wait
         if weight > g["top"][0]:
-            g["top"] = (weight, pid, cmd)
+            g["top"] = (weight, end[0])
 
     with open("/proc/loadavg") as f:
         load1, load5 = [float(x) for x in f.read().split()[:2]]
-    busy = sum(g["cores"] for g in groups.values())
+    busy = sum(g["cores"] for g in apps.values())
     quiet = load1 < a.gate
     print("loadshame: %s load1 %.2f load5 %.2f (gate < %.2f) busy-cores %.2f over %.0fs" % (
         "QUIET" if quiet else "LOADED", load1, load5, a.gate, busy, span))
 
-    rows = [(k, g) for k, g in groups.items()
-            if g["cores"] >= a.min_cores or g["run"] + g["wait"] >= 0.10]
-    rows.sort(key=lambda kg: -(kg[1]["cores"] + kg[1]["run"] + kg[1]["wait"]))
+    rows = [g for g in apps.values() if g["cores"] >= a.min_cores or g["run"] + g["wait"] >= 0.10]
+    rows.sort(key=lambda g: -(g["cores"] + g["run"] + g["wait"]))
     if not a.all:
         rows = rows[:a.top]
-    if rows:
-        print("  %-5s %-5s %-5s %-10s %-18s %-12s %s" % ("cores", "run", "wait", "user", "command", "pids", "busiest"))
-    for (user, comm), g in rows:
-        _, pid, cmd = g["top"]
-        print("  %-5.2f %-5.2f %-5.2f %-10s %-18s %-12s %s" % (
-            g["cores"], g["run"], g["wait"], user[:10], comm[:18],
-            "%d (pid %d)" % (g["n"], pid), cmd[:70]))
     if not rows:
-        print("  (no process above the thresholds)")
+        print("  (no application above the thresholds)")
+        return 0 if quiet else 1
+    print("  %-5s %-5s %-5s %-8s %-30s %-34s %s" % ("cores", "run", "wait", "user", "close", "unit", "busy"))
+    for g in rows:
+        rpid, rcomm, unit, user, detached = g["root"]
+        close = "%s (pid %d)%s" % (rcomm[:16], rpid, " *" if detached else "")
+        busy_s = "%d" % g["n"] + ("" if g["top"][1] == rcomm else ", mostly " + g["top"][1][:16])
+        print("  %-5.2f %-5.2f %-5.2f %-8s %-30s %-34s %s" % (
+            g["cores"], g["run"], g["wait"], user[:8], close, unit[:34], busy_s))
+    if any(g["root"][4] for g in rows):
+        print("  * detached: no shell or launcher above it (a closed window that kept running, or a service)")
     return 0 if quiet else 1
 
 
