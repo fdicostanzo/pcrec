@@ -443,12 +443,13 @@ static bool cc_proven(CoverSt *st)
  * `origin-start` is RETIRED [r3rc M-A]. B1's pcrec FACT deny
  * `-fno-kit-proof` (§7) is filed under [IFACE-PUSH], not built: the kit's
  * `--memfn=no-window-search` declines C13 (`refused`), D172 S3. C15
- * `statement-fits` (kind `seam`) is read right after C7 at stage 1 and
- * retires like C2 when the seam carries a counted span (cover_cap.md §3.5). */
+ * `width-limit` (kind `limit`, cover_cap.md §11.2) is read right after C7:
+ * the window search's width, and until the seam carries a counted span the
+ * kit's own shape bounds with it. */
 typedef struct {
     const char *cid;            /* C1..C15                                   */
     const char *id;             /* the `why`                                 */
-    const char *kind;           /* route / machine / seam / kit              */
+    const char *kind;           /* route / machine / limit / kit             */
     bool      (*holds)(CoverSt *st);
 } CoverConj;
 
@@ -459,7 +460,7 @@ static const CoverConj cover_conj[] = {
     { "C5",  "unmarked-A",    "machine",   cc_unmarked },
     { "C6",  "entry-const",   "machine",   cc_entry },
     { "C7",  "fixed-width",   "machine",   cc_width },
-    { "C15", "statement-fits", "seam",     cc_fits },
+    { "C15", "width-limit",   "limit",     cc_fits },
     { "C8",  "exact",         "machine",   cc_exact },
     { "C9",  "no-eol-view",   "machine",   cc_eol },
     { "C10", "end-at-k",      "machine",   cc_end },

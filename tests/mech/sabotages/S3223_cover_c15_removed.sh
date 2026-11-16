@@ -9,11 +9,13 @@ SAB_DESC='C15 statement-fits is removed (stage 1): a stretch past the kit window
 SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the cloud mechrows run owed by lane covs1 (docs/dev/lanes/covs1_report.md).'
 SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'abcdefghijklmnopqrstuvwxyzabcdefghijklmn'"'"' --why'
 SAB_REACH_EXPECT='REACH-DECLINE
-REACH-WHY=[statement-fits]'
+REACH-WHY=[width-limit]'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (st->w.stop == COVER_STOP_BRANCH) return true;
-    return k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD;'
+    return k <= cover_width_limit(st->cx) &&
+           k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD;'
 SAB_AFTER='    if (st) return true;   /* SABOTAGE S3223 */
     if (st->w.stop == COVER_STOP_BRANCH) return true;
-    return k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD;'
+    return k <= cover_width_limit(st->cx) &&
+           k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD;'

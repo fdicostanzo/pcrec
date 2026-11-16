@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # S3220 ([COVER-CAP] stage 1, lane covs1; docs/design/cover_cap.md §5.4 plant (a)) -- a length bound is put back on the cover walk (j < 32): the exact stretch of a longer shape is cut at 32 positions and its record states 32
-# Witness: facts `a{40}(?:b|cc)`: statement-fits|41|41|... becomes a 32-position record; no other plant cuts a one-row line short.
+# Witness: facts `a{600}(?:b|cc)`: width-limit|601|601|... becomes a 32-position record; no other plant cuts a one-row line short.
+# RE-AIMED 2026-11-15 (lane covs2a, [COVER-CAP] stage 2 A4, cover_cap.md §11.2/§11.6.2): C15 is named width-limit and the
+# witness moves from a{40}(?:b|cc) (k = 41, which a default of 41 or more would cover) to a{600}(?:b|cc), past every admissible default.
 # Shared witness (review r9 covs1 CHECKS-3, cross-plant matrix): S3223 (LOUD) and S3224 flip `a{40}(?:b|cc)` too; detection holds because each row runs its plant alone.
 SAB_ID='S3220-cover_walk_length_bound'
 SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'
 SAB_DESC='a length bound is put back on the cover walk (j < 32): the exact stretch of a longer shape is cut at 32 positions and its record states 32'
 SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the cloud mechrows run owed by lane covs1 (docs/dev/lanes/covs1_report.md).'
-SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'a{40}(?:b|cc)'"'"' '"'"'--facts'"'"' --why'
+SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'a{600}(?:b|cc)'"'"' '"'"'--facts'"'"' --why'
 SAB_REACH_EXPECT='REACH-FACTS-EQUAL
-REACH-WHY=[statement-fits]'
+REACH-WHY=[width-limit]'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    for (;; j++) {
