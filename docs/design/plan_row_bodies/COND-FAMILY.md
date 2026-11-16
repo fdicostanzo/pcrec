@@ -1700,3 +1700,20 @@ words: "optional-as-loop: that comment was for discussion. I agree both spelling
 revision): a quantifier with upper bound 1 is NOT a loop for the pairing rule (it pairs nothing: at most one value),
 so a record over two optional fields answers and is not a sibling-loop error. The 13:29 remark is recorded as
 discussion, not a ruling.
+
+**2026-11-16 OWNER RULING — mark-domain, as a PRINCIPLE (Frank, to session 136, box clock 15:27).** Put to him after
+review r28's finding A (the domain of the mark's "some value": any text / the texts the label's group can match, read
+from its own text / the values the label can take in some match of the pattern). His words: "mark-domain: if it is
+possible, the semantic rules should not not depend on the spelling of the regex but on the resulting (graph, behavior,
+semantics, string set)? Not sure the exact phrasing." RECORD: RULED as a principle, with his own qualifier "if it is
+possible" and his phrasing left open: a rule's answer depends on what the pattern MEANS, never on how it is spelled.
+THE MANAGER'S READINGS (his, each to be checked by the fix lane's runs and the next revision): (1) phrasing offered:
+"two patterns that match the same subjects and set their labels the same way answer every condition alike"; (2) the
+group-text domain is OUT (it reads the spelling: 5 of 10 vs 0 of 10 on two spellings of one pattern); (3) the domain
+is the third candidate, the values the label can take in some match of the pattern (a property of the pattern's
+behaviour); "any text" also ignores spelling but stays withdrawn on the round's own ground (a value the label can
+never hold witnesses an answer), which is the manager's judgment, not his; (4) "if it is possible": where that
+value set cannot be computed exactly (to be listed: backreferences, lookarounds, recursion), the note says what the
+compiler does instead and that an approximation must never change an answer silently; undecided, for rev 20; (5) the
+principle is wider than the mark: it is a standing criterion for the predicate design beside "a set never contains
+absence".
