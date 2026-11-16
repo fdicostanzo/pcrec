@@ -1603,3 +1603,14 @@ error. (2) NOT RULED: his remark that an optional is a loop of 0 to 1 passes bea
 boundary of predicates_draft.md §4.2 (CF:997-1000: an optional or `{0,1}` skipped leaves the label UNSET and the
 condition FAILS; a loop with an upper bound of 2 or more that runs zero times HOLDS). The manager put the
 consequences to him (next entry records his answer).
+
+**2026-11-16 OWNER DIRECTION — absent-holds: work out the options (Frank, to session 135, box clock 13:38).**
+After his remarks "Only an alternation would be a complete no set, no?" and "Ok, but then could * be defined as
+/x+|/" (the manager: `x?` = `(?:x|)` and `x*` = `(?:x+|)` = `(?:x+)?`, so EVERY line between "unset: fails" and
+"zero passes: holds" gives two spellings of one pattern different answers, today's ruled line included:
+`/(?<n>\d)*x/` holds and `/(?:(?<n>\d)+)?x/` fails on `x`), asked **absent-holds** (one rule, "a condition holds
+on any absent label", worked through every ruled example before he confirms or drops it), his words: "absents-hold:
+do work it out but consider also the option that missing means failing. Or options where the user can control the
+interpretation". RECORD: NOT A RULING. A design lane works out, side by side: absent always HOLDS; absent always
+FAILS; forms where the AUTHOR controls the reading; and today's line as the baseline. Nothing in the ruled text
+changes until he chooses. pairing-loop parts 2-3 and rev 20 wait on it.
