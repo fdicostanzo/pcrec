@@ -83,3 +83,6 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 - The lens table had no row for a design-to-design FOLD; the coordinator borrowed readiness's reader-grep as a sonnet "rev20 completeness" lens: the cheapest lens and the most raw findings (10). It is now the row "change-table completeness".
 - The ruling and owner lenses both re-checked the same ~19 owner quotes (duplicate work, both 0 drift): quote verification is now given to ONE lens.
 - A ruling (label-twice) landed at 13:16:09, the second the critics returned; the per-return re-diff caught it and the draft's FREEZE DRIFT block carried a hand mapping.
+
+## 2026-11-16 — critic round absfold (review r28)
+- A coordinator with a copied, read-only subject + record + evidence (no repo access needed) ran a 5-lens design round in about 18 minutes wall, zero manager turns. The pattern fits any fold-review of a document against a rulings record.

@@ -70,6 +70,10 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-16 r28, joint_condition.md §4G absent-label rule (`docs/dev/reviews/2026-11-16-r28-absfold.md`), ruled 2026-11-16 (manager): **on a fold that lands after the manager's own later readings (here 14:50, after the note's last commit), keep "readings written after the subject's commit" as an explicit sub-part of the ruling check, with a hand mapping per reading**: it was the most productive part per minute (7 of 9 RULING findings).
+
+2026-11-16 r28, same round, ruled 2026-11-16 (manager): **simulate lens: add a standing DOMAIN drill**: for any "some value" or existential reading, run it against a complement set, a dead branch and a lookbehind-restricted group in two spellings. Three lenses reached the domain (MARK-DOMAIN) from different sides; one drill would have reached all three.
+
 2026-11-16 r26, joint_condition.md design note (`docs/dev/reviews/2026-11-16-r26-jointcond.md`), ruled 2026-11-16 (manager): **simulate lens, design mode: for a design whose values are SETS, two spellings of the SAME set (the empty set above all; product vs dictionary order) must give the same answer in every mode** (ZERO-EMPTY: found by three lenses; an inserted split made the answer depend on how one set was spelled).
 
 2026-11-16 r26, same round, ruled 2026-11-16 (manager): **a design whose deliverable is a CHANGE TABLE against a client document (a fold, here §9) gets a change-table completeness lens: re-derive the client's site list by grep over every term the folded rulings touch, and check each row's cite lands on its whole item** (REV20-1..10: a sonnet critic, 3 minutes, 10 findings, about 45 draft lines the table missed).
