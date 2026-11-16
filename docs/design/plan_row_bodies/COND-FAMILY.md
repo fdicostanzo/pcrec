@@ -1499,3 +1499,14 @@ loop enclosing every named label, a label outside that loop having its one value
 sibling loops: a COMPILE ERROR; (3) the looped warning's subject is now a `|` of conditions whose labels can repeat
 (each alternative is checked over every pass; the message names the joint condition as the per-item form); the joint
 condition itself draws no such warning.
+
+**2026-11-16 OWNER RULING — two-orders: keep both (Frank, to session 134, box clock 11:20).** Asked **two-orders**
+(`>= (9, 30)`, the whole tuple in dictionary order, and `(>= 9, >= 30)`, each part on its own, both legal with
+different answers: keep both with a warning when every part is a same-direction comparison, keep both with no
+warning, or make the per-part form an error; the manager's lean: keep both with the warning), his words: "I agree.
+They look sufficiently different to me and I like the control. Can you think of a use for the second form?" RECORD:
+(1) RULED: BOTH spellings stay legal; an operator outside the bracket compares the whole tuple, inside it compares
+one part. (2) THE WARNING: the manager WITHDREW its own lean in the reply (the per-part form's natural uses, minimum
+width and height, a colour threshold, a bounding box, are all same-direction and would trip it; the compiler cannot
+tell hierarchical fields from independent ones); the manager's reading of his "sufficiently different" (told to
+him, not his words): NO warning, unless confusion shows in use.
