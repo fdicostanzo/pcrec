@@ -1643,3 +1643,11 @@ statements. What was the statement where absence matches made sense?" RECORD: NO
 lean and asks for (1) its impact on every other statement of the language and (2) the statements for which "a
 condition holds over none" was originally chosen. Lane absimpact (opus) censuses both; he locks or changes it with
 that in front of him. Nothing in the ruled text changes until then.
+
+**2026-11-16 OWNER IDEA — the mark and the default as two absence KINDS (Frank, to session 135, box clock 14:15).** His
+words: "What if the mark ? only meant tested but didn't exist. Like x*. Then the default = is never tested,
+alternation. Together they are never tested or tested and empty is this default." RECORD: NOT A RULING: a variant of
+the candidate rule in which the mark `h?` accepts only "reached, no value" and the default `h = v` handles only
+"never reached" (an alternative not taken); both written reads the default on either. The manager's reading, sent to
+lane absimpact as its R1, to be worked beside the intent reading (`h?` = absence is acceptable, `h = v` = absent
+reads as v, each over every kind of absence).
