@@ -1,12 +1,15 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 2 for the kit manager (lane r45b, 2026-11-16, design only; no code, no
-timing). Rev 2 applies design review r20 as ruled
-(`docs/dev/reviews/2026-11-16-r20-memfn-r45.md`, its RULED section). Rev 1 was lane r45's draft
-(commit 280082b45).
+Status: DRAFT rev 3 for the kit manager (lane r45c, 2026-11-16, design only; no code, no
+timing). Rev 3 applies the re-check review r22 as ruled
+(`docs/dev/reviews/2026-11-16-r22-memfn-r45b.md`, its RULED section; read "Changes in rev 3"
+first). Rev 2 (lane r45b) applied review r20 (`docs/dev/reviews/2026-11-16-r20-memfn-r45.md`) as
+ruled. Rev 1 was lane r45's draft (commit 280082b45).
 
-Tree read: main `ea83fbc01` (worktree `worktrees/r45`). Every `file:line` below is main's at that
-commit; each also names its symbol, because lines drift on other branches (r20 F17). The request
+Tree read: main `ea83fbc01` (worktree `worktrees/r45`); rev 3 re-counts every list it touches
+at origin/main `56c315567`, whose code under `src/`, `memfn/`, `lib/`, `tests/` and `cli/` is
+byte-identical to `ea83fbc01` (r22 "Subject"), so the cites hold at both. Every `file:line` below
+also names its symbol, because lines drift on other branches (r20 F17). The request
 is `memfn/docs/requests.md` R-45. pcrec's side is `docs/design/cover_cap.md` §11 (rev 5.2),
 reviews r13 (`docs/dev/reviews/2026-11-15-r13-covs2d.md`) and r15
 (`docs/dev/reviews/2026-11-15-r15-covs2e.md`), and r9's EMITTED-2
@@ -28,6 +31,30 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `MF_MAX_FWD` 33); `mf_result` 3,000 B; `mf_wspan` 1,164 B; `mf_wreply` 532 B;
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
+
+## Changes in rev 3 (by r22 finding id)
+
+| id | change | where |
+|---|---|---|
+| F1 | The kit's THIRD refusal is declared: the range self-check (`end` reaches one past the statement), on the ask path (a bare -1) and the define path (the named message), marked a self-check sharing its source with `end`. Witness row (a) reads the message through `mf_define`; row (b) names an after-UNSTATED cover and a REACH that holds the side unstated | §1 "The kit's refusals", "The short-range internal error" |
+| F2 | RULED (i), the kit's proposal for main to confirm: the COVER ask passes proof storage up to the ceiling `MF_MAX_FWD` (4,104 rows), so every over-read lands where B5 reads it and B5 stays the independent control. The rev 2 sentence "lands inside the range" is corrected: at `mf_rows_need`'s minimum an over-read past the first following offset is a bare refusal, which is why the cover ask does not use the minimum | §1, §5 "Where the rows live", §7 |
+| F3 | The range and its refusals are scoped to the offsets that CONTRIBUTE to a proof: window plan classes and old-field FIND terms. VERIFY, EXPR and other non-proving classes carry `proof_n` 0 (no rows, no refusal), so the 5000-byte VM run compare renders as today. `MF_MAX_FWD`'s derivation is re-worded to that scope. Old-field FIND keeps today's clip, stated as conservative | §1 table, "The proof range" |
+| F4 | The define sizes its rows by the same rule (`proof_n` rows exactly) and refuses exactly where an ask given enough storage refuses; ask and define AGREE whenever the ask's storage holds `proof_n`. The kit's five internal producers are listed. The define's rows are added to the arena price | §5 "Where the rows live", "Stack and arena", §7 |
+| F5 | `formhash.c`'s `fh_work.sp` is a listed kit-internal `mf_wspan` writer. `last_s` is the largest stated POSITION (a RUN term's `offset + run_len - 1`). `proof_n` 0 with `proof` NULL is the legal all-ones class (PRESENCE ask, NONE form, non-FIND class, the zeroed refusal) | §1 "Definitions", §5 (c), (e) |
+| F6 | §5 (a) gains `d27_frame.c:1075, :1084, :1124, :1178`; the count is 22. G2's held reply copies (`g2_win_gen.c:1145, :1290`) are listed as holders sized by `G2W_NOFF`. Test reply rows come from the test's own storage, never the art's arena (`d27_frame.c:1094`) | §5 (a), (e), §8 |
+| F7 | The census probe `docs/design/memfn/span_pick/probe/probe.c:101` is a listed caller (`run_link_checks.sh` compiles it `-Werror`). Only S3097 embeds a call in plant text; S3045 and S3064 need a REACH re-read only | §5 "pcrec's side" |
+| F8 | G2's length DRAWS are the movers, not the twins: the REPORT family's draw (`g2_win_gen.c:433`) first, each draw site with its stated reach; a repeated-class shape straddles every finite grid h; G2-win prints a COUNTED line per grid h that fails at zero. `G2W_MAXPOS` becomes 128 (twice the largest finite h, which rev 2 mis-stated), and `G2W_NOFF`'s holders are listed | §3 "Answers, controlled by G2", §6 |
+| F9 | RULED: the DEFAULT candidates are the FINITE h only. All-inline (`h >= k`) is TIMED as the dial's reference; any cell where it beats H(h\*) is dial evidence. All-inline can never become the default by this rule | §3 the rule (R1, R2), Goal 3 |
+| F10 | RULED: ties break toward the LARGEST finite h among equals (the owner's prediction; the fewest movers; a tie buys no byte move). Every drill is re-run against the rule as written; (i) and (iv) corrected | §3 drills |
+| F11 | R1 is deterministic: the equal set E = { h : W(h) <= (1 + floor) x min W }, non-chaining, over raw medians; W normalised against the always-timed I arm; the floor is the cards' own A/A floor; R1 reads C1-C2 only, C3 feeds R2. Drill (ii) rewritten. §4's trigger joins the table as R4 | §3 |
+| F12 | RULED: a TEST-ONLY lever sets h on one binary (`mf_lever(art, "span-head=N")`, reached through pcrec's harness binary), its readers listed; an identity check (the lever at h\* is byte-equal to the shipped build at h\*) | §3 "The head lever" |
+| F13 | A list of cover_cap.md edits for main (§11.4, §11.6.1, §11.6.4), conditioned on plan A; R1 and the night order apply under plan A only; `[0-9a-f]{64}` joins C2; which harness times the cards is stated | §3 "What a card needs", §7 |
+| F14 | RULED: plan A's fallback, its costs (extra nights, a later and larger landing) and WHO decides "the cards cannot run" (main, with the owner) go inside the plan A question, in plain words, cross-referencing cover_cap.md §11.6.1 | §3 "Scope", §7, §8 |
+| F15 | The kit's FORCE reader is named (a three-state option read; both spellings given: the deny wins, as tuning.md §2.43¶1); the unlisted readers are listed (registry.md §6¶7 and ¶8a's table, the CI shard tables, `cloud_units_plan.py`, `formhash.c`); the spec hunk's homes are named | §3 "The option" |
+| F16 | (a) FIX: literal stretches render as one run compare in EVERY form and the head never splits one, so `lit-l31` is not a mover; the mover list is re-derived. (b) DOC: each owner question carries a bold plain-word slug. (c) DOC: plan A/B framed as "same end state, different interim default and cost" | §3 "The forms", stability trade, §7 |
+| F17 | DOC: `mf_rows` named as the third member of the caller-owned output-list family, with the general form and its unlocks (each with a trigger) | §5 "Where the rows live" |
+| F18 | DOC: `cover_window` is `known.c:583`; `:613-628` is `pcrec_cover_site`, which calls it | §1 |
+| FREEZE NOTE | The night order (cards first on the same frozen binary, h frozen by its rule, then the width cells; agreed with main 2026-11-16) is recorded here and in §8 | §3 "What a card needs", §8 |
 
 ## Changes from rev 1 (by r20 finding id)
 
@@ -65,9 +92,10 @@ In priority order; a conflict goes to the higher one.
    clipped out of B5's view. Who benefits: every compile, and B5.
    Measurable: `sizeof`; `run_link_checks.sh`; the two witness rows of §1 read DETECTED.
 3. **The default long-span form is the one the owner asked for: loops, after an inline head
-   that is MEASURED** [rev 2, F11]. Who benefits: users of long covers; the owner's dial.
-   Measurable: every shipped `h` is labelled MEASURED or DERIVED, with its card. No shipped
-   default is UNMEASURED.
+   that is MEASURED** [rev 2, F11; rev 3, F9]. Who benefits: users of long covers; the owner's
+   dial. Measurable: every shipped `h` is a FINITE grid value labelled MEASURED or DERIVED, with
+   its card. No shipped default is UNMEASURED, and all-inline is never the default by the rule
+   (only the owner can make it so).
 4. **Every byte the landing moves is either measured or offered to the owner as a choice.**
    [rev 2, F11: replaces rev 1's "zero movers at 32"]. Who benefits: users wanting stability.
    Measurable: the stage-2 sweep's mover list equals the list the owner accepted.
@@ -84,7 +112,9 @@ carrier with no per-site-kind bound.
   the CALLER supplies. A pure kit function sizes that storage from the statement, so the asks
   stay pure and the seam stays a document.
 - **The proof range** reaches one past the statement, and also every offset the text tests. A
-  text that tests past the caller's storage is refused, never clipped.
+  text that tests past the caller's storage is refused, never clipped. The cover ask passes
+  storage up to the ceiling, so every over-read of a cover lands where pcrec's B5 reads it
+  [rev 3, F2]. Classes that prove nothing carry no rows [rev 3, F3].
 - **The kit's working state** is sized by each site's extent, never by the ceiling.
 - **`MF_MAX_TERM` and `MF_WMAX_SPAN`** stay 32 and are DECOUPLED from span length.
 - **Sizes.** Every class and statement a host holds gets SMALLER: `mf_class` 2,932 B -> 1,640 B,
@@ -93,8 +123,12 @@ carrier with no per-site-kind bound.
   asks' new parameter, inside the one joint pcrec `abi` event.
 - **The three forms** (all inline, all loops, inline head then loops) sit over the kit's
   existing segmenter. Under the owner's direction the default is the head-then-loops form,
-  with its head MEASURED by cards. Whether the forms ride the joint landing (plan A, the kit's
+  with its head MEASURED by cards and chosen among FINITE heads only; ties go to the longest
+  head [rev 3, F9, F10]. Whether the forms ride the joint landing (plan A, the kit's
   recommendation) or follow it (plan B) is the owner's choice (§3 "Scope").
+- **Readiness [rev 3].** Plan B alone (the carrier, the kit's per-extent working state, the two
+  witness rows) is READY with rev 3's text fixes, as review r22 found. Plan A adds the forms,
+  which rev 3 rewrites (§3) and which take one fix-induced re-check before a build go.
 - **Dense near misses** (§4) are a complexity-class question: O(n·k) against the engine's O(n).
   Their fix is not built until a card shows the loss.
 
@@ -108,8 +142,8 @@ ceiling.**
 |---|---|---|---|---|
 | positions per span | `MF_WSPAN_POS` | 4095 | SHAPE BOUND, CHOSEN: the widest span pcrec states (the cover's `k`, its anchored ceiling less one). TRIGGER: a statement past it, refused naming `len` | every window span |
 | reach | `MF_WREACH` | `MF_WSPAN_POS + 1` = 4096 | SHAPE BOUND, DERIVED: the longest span plus its after-context position, the widest statement pcrec makes. TRIGGER as today: a statement past it, refused naming `start` | every window span |
-| proof range forward (ceiling) | `MF_MAX_FWD` | `MF_WREACH` = 4096 | SHAPE BOUND, DERIVED: every offset a site may state lies below it | every reply |
-| proof range (per reply) | `mf_class.proof_n` | `end - MF_PROOF_LO`, where `end = max(last_s + 2, last_t + 1)`, clipped at `MF_MAX_FWD` [rev 2, F1, F2] | a COUNT per reply; the terms are defined under "The proof range" below | every reply |
+| proof range forward (ceiling) | `MF_MAX_FWD` | `MF_WREACH` = 4096 | SHAPE BOUND, DERIVED: every offset a WINDOW statement may state lies below it, so every offset a window plan class proves does too [rev 3, F3: scoped; an old-field VERIFY run may state 5000 bytes today, and it proves nothing] | every PROVING reply |
+| proof range (per reply) | `mf_class.proof_n` | for a PROVING class: `end - MF_PROOF_LO`, where `end = max(last_s + 2, last_t + 1)`, clipped at `MF_MAX_FWD` [rev 2, F1, F2]; for every other class 0 [rev 3, F3, F5] | a COUNT per reply; the terms are defined under "The proof range" below | every reply |
 
 What this means for pcrec's three conjuncts and its seam assertion:
 - At `k` = 4095, `cc_fits` (`src/gen/known.c:336`) holds: `4095 <= 4095`, `4096 <= 4096`,
@@ -161,34 +195,59 @@ that declines, or a site refusal that names the field. None of them is a seam bo
   `window.c:1354`). Past the cap, positions stay lone tests, which is correct and silent. §3
   re-reads this grouping as the general segmenter the forms use.
 
-**The proof range [rev 2: F1, F2].**
+**The proof range [rev 2: F1, F2; rev 3: F1, F2, F3, F5].**
+- **Which classes have one [rev 3, F3].** Only a PROVING class carries rows: a window plan class
+  (`wf_plan_class`) and an old-field FIND class (`kit_class` proves only `MF_OP_FIND`,
+  `compose.c:397-404`). Every other class (VERIFY, EXPR, a PRESENCE ask, a NONE-form class) has
+  `proof_n` 0 and `proof` NULL, which by "outside the range = all ones" is the legal all-ones
+  class; `proven0`/`proven_prev` are then the all-ones copies, read by value as today
+  (`cand_class_eq`, `emit_dfa.c:7128-7129`). So the VM's 5000-byte run compare
+  (`(x)\1(ab){2500}`'s VERIFY site, DELEG_VMRUN; `mf_term.run_len` has no cap) renders as today,
+  asks for no rows, and meets no refusal.
 - **Definitions.**
-  - `last_s` is the largest offset the site STATES, in any span, after-context included. For
-    an old-field site it is its terms' largest offset.
+  - `last_s` is the largest POSITION the site STATES, in any span, after-context included. For
+    an old-field site it is its terms' largest stated position: a RUN term at `offset` states
+    `offset .. offset + run_len - 1` (`term_prove` walks `offset + j`, `compose.c:378-379`), so
+    its contribution is `offset + run_len - 1` [rev 3, F5 (3)].
   - `last_t` is the largest offset the committed text TESTS: the plan's offsets, the offsets
     `wf_plan_class` loops over (`window.c:3840-3858`).
   - The range is `[MF_PROOF_LO, end)`, with `end = max(last_s + 2, last_t + 1)` clipped at
     `MF_MAX_FWD`.
 - **It always reaches offset `k` (F1).** pcrec states the after-context span only when that
-  side constrains (`cover_side_stated`, `known.c:563-569`; `cover_window`, `known.c:614-625`).
+  side constrains (`cover_side_stated`, `known.c:563-569`; `cover_window`, `known.c:583`, called
+  from `pcrec_cover_site`, `known.c:613-628` [rev 3, F18]).
   - After side unstated: `last_s = k - 1`, so `end >= k + 1`.
   - After side stated: `last_s = k`, so `end >= k + 2`, clipped to 4096 at `k` = 4095.
   - The rule is one past the STATEMENT, whatever the statement holds. It has no REPORT-site
     clause, and pcrec need not state an empty after span.
-- **A tested offset is never clipped (F2).** The rows are computed from what the text TESTS,
-  and the range is sized to hold them. A defective text that tests `k + 1` therefore lands
-  inside the range, where B5 reads `under@k+1`/`over@k+1` and declines C14. That is exactly
-  the over-read cover_cap.md §11.1 B5 struck rev 5's narrower range for missing.
-- **The kit's refusals.** The kit refuses its reply (-1, by name) in two cases:
-  - a tested offset lies outside `[MF_PROOF_LO, MF_MAX_FWD)`;
-  - the range needs more rows than the caller's storage holds (§5 "Where the rows live").
-  The storage the kit's sizing function asks for ends at `min(MF_MAX_FWD, last_s + 2)`. So, at
-  that size:
-  - an over-read at the first offset past the statement is inside the range, where B5 sees it;
-  - an over-read further out is a REFUSAL, and pcrec's `cc_served` (`known.c:413-424`) declines
-    the cover to the engine route, recorded `refused`.
-  Neither is a silent narrower comparison. A caller may pass storage up to the ceiling
-  (4,104 rows) to have every over-read land in B5's view instead.
+- **A tested offset is never clipped (F2).** The rows are computed from what the text TESTS, and
+  the range is sized to hold them. Whether an over-read is SEEN by B5 depends on the caller's
+  storage [rev 3, F2, corrected]:
+  - at `mf_rows_need`'s minimum (storage ending at `min(MF_MAX_FWD, last_s + 2)`), an over-read
+    at the first offset past the statement is inside the range, but one further out needs a row
+    past the storage and the ask REFUSES (a bare -1: the ask is pure and sets no error,
+    `memfn.h:1534-1537`). pcrec's `cc_served` (`known.c:413-424`) then records `refused`, the
+    same detail `--memfn=no-window-search` produces, so a kit over-read defect would read like a
+    legitimate decline;
+  - therefore **the COVER ask passes proof storage up to the ceiling**, `MF_MAX_FWD -
+    MF_PROOF_LO` = 4,104 rows (131,328 B, one cover ask per compile attempt) [RULED r22 F2 (i):
+    the kit's proposal, for main to confirm]. Every over-read below the ceiling then lands inside
+    the range, where B5 reads `under@j`/`over@j` by offset and byte and declines C14, as it does
+    up to offset 32 today. B5 stays the independent control. Only a test at or past 4096 is
+    refused, and no window statement reaches that far.
+  - Other asks may pass the minimum: a non-cover site has no B5, and its refusal declines to the
+    caller's existing route.
+- **The kit's refusals [rev 3, F1: three, declared].** On a PROVING class the kit refuses its
+  reply in three cases:
+  - (R-out) a tested offset lies outside `[MF_PROOF_LO, MF_MAX_FWD)`;
+  - (R-cap) the range needs more rows than the caller's storage holds (asks only: a define's
+    rows are the art's, §5 "Where the rows live");
+  - (R-short) the SELF-CHECK: the computed `end` is below `min(MF_MAX_FWD, last_s + 2)`, message
+    "the proof range ends before the statement's following offset". It shares its source with
+    `end` (the kit checking its own computation), so it is a self-check, not a control (§6 Q2).
+  Each applies on BOTH paths: an ask returns a bare -1 (no message: the ask is pure); a define
+  (`mf_define`/`mf_emit`) fails with the named message in `mf_art_error`, the only place a
+  refusal's text is readable.
 - **What "by construction" now means.** "The text tests no offset past the statement's first
   following offset" is the kit's PROMISE. B5 checks it, from pcrec's own `k` and statement
   (shared source: none). It is no longer a reason the range may stop early.
@@ -196,18 +255,26 @@ that declines, or a site refusal that names the field. None of them is a seam bo
   outside it as all ones. Its want past `k` is all ones too.
 - **The short-range internal error** ("the kit's proof range ends at offset %d, before the
   cover's after-context at %d") stays as pcrec's defence. It is unreachable while the kit
-  keeps the rule above, so it needs a plant. Its control is TWO rows [rev 2, F8]; one plant
-  cannot do both, because the kit's refusal fires first and B5 is then never reached:
+  keeps the rule above, so it needs a plant. Its control is TWO rows [rev 2, F8; rev 3, F1]; one
+  plant cannot do both, because R-short fires first and B5 is then never reached:
   - **(a) Kit row** (kit tests, its sabotage list): plant `end` cut to `last_s + 1`. Expect
-    the kit's own refusal BY ITS MESSAGE ("the proof range ends before the statement's
-    following offset"). Its control: the unplanted kit answers the same site.
-  - **(b) pcrec row** (mech, combined branch, after B5): plant the same cut AND remove the
-    kit's refusal check (`SAB_FILE2`). Expect B5's named internal error BY ITS TEXT.
-    Independence: B5 reads pcrec's `k`, never the kit's `last_s`, so (b) is the row whose
-    expectation shares no source with the plant (learnings §3).
-- **Old-field (non-window) FIND sites** use the same rule over their terms' offsets. Today
-  `term_prove` clips at `MF_MAX_FWD - 1` (`compose.c:406`); under the rule, the clip is the
-  refusal above.
+    R-short BY ITS MESSAGE, read through `mf_define` (`mf_art_error`), never through an ask.
+    Its control: the unplanted kit defines the same site.
+  - **(b) pcrec row** (mech, combined branch, after B5): plant the same cut AND remove R-short
+    (`SAB_FILE2` deletes that one check by its message text). Expect B5's named internal error
+    BY ITS TEXT. It runs on an after-UNSTATED cover, `[0-9a-f]{40}` with nothing after it
+    (`last_s = k - 1`, cut `end = k`, so the range stops before `k` and B5 fires); on an
+    after-stated cover the cut end is `k + 1`, the range still reaches `k`, and the row would
+    read UNDETECTED. Its `SAB_REACH` therefore also asserts the row's cover states no after
+    span (the cover's facts line, spelled at build time). Independence: B5 reads pcrec's `k`,
+    never the kit's `last_s`, so (b) is the row whose expectation shares no source with the
+    plant (learnings §3).
+- **Old-field FIND sites [rev 3, F3].** The same `end` rule over their terms' stated positions.
+  An old-field FIND term's text tests exactly its stated positions, so a position at or past
+  `MF_MAX_FWD` keeps today's CLIP (`term_prove`, `compose.c:380`): the proof says nothing (all
+  ones) there, which is conservative for every reader, and it moves nothing. R-out applies to
+  window plan classes, whose TESTED set can differ from the stated one (the plan); that is
+  where B5 must see an over-read.
 
 **What retires: `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD`, NOW [rev 2, F17/F18: the old Q4 is
 answered].**
