@@ -1,0 +1,4 @@
+report=docs/dev/lanes/land1115c_report.md
+sections: STATE AT HANDOFF; MERGE; PINS AND LEDGER; PUSH AND CI; PRUNE; OWED RUNS
+nonempty: all
+commit: yes
