@@ -18,5 +18,14 @@ SAB_COUNT=1
 # RE-ANCHORED 2026-11-16 (lane span4k, MF_CLASS_V 11): the class's rows are the caller's
 # storage (mf_class.proof, proof_n rows); the plant writes row 0 through the kit's own
 # writable view, the same text as run_proof.sh's plant S1224. Intent unchanged.
-SAB_BEFORE=$'    if (!row || kit_class(row, s, out, stp)) { memset(out, 0, sizeof *out); return -1; }\n    if (fd_pres('
-SAB_AFTER=$'    if (!row || kit_class(row, s, out, stp)) { memset(out, 0, sizeof *out); return -1; }\n    if (kit_target_levels(art->target) && out->proof_n > 0 - MF_PROOF_LO) ((uint8_t (*)[32])out->proof)[0 - MF_PROOF_LO][0] &= 0xFE;\n    if (fd_pres('
+# RE-ANCHORED 2026-11-16 (lane span4kfix, review r27 SEAM-1): after the ask's proving
+# kit_class (its refusals are held first); the plant text unchanged.
+SAB_BEFORE='    if (kit_class(row, s, out, stp) || fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) {
+        memset(out, 0, sizeof *out);
+        return -1;
+    }'
+SAB_AFTER='    if (kit_class(row, s, out, stp) || fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) {
+        memset(out, 0, sizeof *out);
+        return -1;
+    }
+    if (kit_target_levels(art->target) && out->proof_n > 0 - MF_PROOF_LO) ((uint8_t (*)[32])out->proof)[0 - MF_PROOF_LO][0] &= 0xFE;'

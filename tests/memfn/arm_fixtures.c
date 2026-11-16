@@ -194,19 +194,73 @@ static uint8_t (*span_lists(mf_wspan *w, unsigned n))[32]
 #define SPAN_SET(w, j) ((uint8_t *)(w)->set[j])
 
 /* An ask's reply lists (MF_SITE_ABI 30): fresh storage per ask, this test's
- * own, at the ceilings, so no two held replies share rows. */
+ * own, at the ceilings, so no two held replies share rows; every byte the
+ * SENTINEL, so a refused ask's write to them is seen (rows_untouched). */
+#define ROWS_SENTINEL 0xA5
 static mf_rows *ask_rows(void)
 {
     mf_rows *r = calloc(1, sizeof *r);
     if (!r) { perror("calloc"); exit(2); }
     r->proof_cap = MF_MAX_FWD - MF_PROOF_LO;
-    r->proof = calloc(r->proof_cap, 32);
+    r->proof = malloc((size_t)r->proof_cap * 32);
     r->plan_cap = MF_WPLAN_MAX;
-    r->plan = calloc(MF_WPLAN_MAX, sizeof *r->plan);
-    r->plan_term = calloc(MF_WPLAN_MAX, sizeof *r->plan_term);
-    r->plan_test = calloc(MF_WPLAN_MAX, sizeof *r->plan_test);
-    if (!r->proof || !r->plan || !r->plan_term || !r->plan_test) { perror("calloc"); exit(2); }
+    r->plan = malloc(MF_WPLAN_MAX * sizeof *r->plan);
+    r->plan_term = malloc(MF_WPLAN_MAX * sizeof *r->plan_term);
+    r->plan_test = malloc(MF_WPLAN_MAX * sizeof *r->plan_test);
+    if (!r->proof || !r->plan || !r->plan_term || !r->plan_test) { perror("malloc"); exit(2); }
+    memset(r->proof, ROWS_SENTINEL, (size_t)r->proof_cap * 32);
+    memset(r->plan, ROWS_SENTINEL, MF_WPLAN_MAX * sizeof *r->plan);
+    memset(r->plan_term, ROWS_SENTINEL, MF_WPLAN_MAX * sizeof *r->plan_term);
+    memset(r->plan_test, ROWS_SENTINEL, MF_WPLAN_MAX * sizeof *r->plan_test);
     return r;
+}
+
+static void rows_free(mf_rows *r)
+{
+    if (!r) return;
+    free(r->proof); free(r->plan); free(r->plan_term); free(r->plan_test);
+    free(r);
+}
+
+/* 1 iff `n` bytes at `p` are all the sentinel (or `p` is NULL). */
+static int sentinel_only(const void *p, size_t n)
+{
+    const unsigned char *b = p;
+    for (size_t i = 0; b && i < n; i++)
+        if (b[i] != ROWS_SENTINEL) return 0;
+    return 1;
+}
+
+/* 1 iff no list of `r` (an ask_rows block, at the caller's caps) was
+ * written: the clause "on -1 the asks write nothing to rows" (memfn.h
+ * mf_ask/mf_wdecide; review r27 CHECK-4). */
+static int rows_untouched(const mf_rows *r)
+{
+    return sentinel_only(r->proof, (size_t)r->proof_cap * 32) &&
+           sentinel_only(r->plan, (size_t)r->plan_cap * sizeof *r->plan) &&
+           sentinel_only(r->plan_term, (size_t)r->plan_cap * sizeof *r->plan_term) &&
+           sentinel_only(r->plan_test, (size_t)r->plan_cap * sizeof *r->plan_test);
+}
+
+/* NULL iff reply `w`'s counted lists lie in the CALLER's `r` (the clause
+ * "the asks write only *out and the caller's rows": a non-empty list is
+ * r's own; review r27 CHECK-3), else the list that does not. */
+static const char *wrows_owner(const mf_wreply *w, const mf_rows *r)
+{
+    if (!w->nplan) return NULL;
+    if (w->plan != r->plan) return "plan";
+    if (w->plan_term != r->plan_term) return "plan_term";
+    if (w->plan_test && w->plan_test != r->plan_test) return "plan_test";
+    if (w->framed && w->plan_test != r->plan_test) return "plan_test (framed)";
+    return NULL;
+}
+
+/* NULL iff class `c`'s proof rows lie in the caller's `r` (a proof_n of 0
+ * holds none), else why not (CHECK-3's clause for mf_ask). */
+static const char *crows_owner(const mf_class *c, const mf_rows *r)
+{
+    if (!c->proof_n) return NULL;
+    return c->proof == (const uint8_t (*)[32])r->proof ? NULL : "proof";
 }
 
 /* THE DEEP COMPARE of two classes (r45_reply.md §5 (a)), this test's own:
@@ -466,12 +520,14 @@ static void q_proven0(const mf_site *s, uint8_t out[32])
  * what every FIND row proves, `exists` and `proven0`, which is what B2's
  * readers read. */
 static void q_check(const char *name, const mf_site *s, int ask_rc, const mf_class *qa,
-                    const mf_art *art, uint32_t handle, const char *text, int full)
+                    const mf_rows *qrows, const mf_art *art, uint32_t handle, const char *text,
+                    int full)
 {
     mf_result dr;
     uint8_t p0[32];
     const char *why = NULL;
-    if (ask_rc) why = "ASK-REFUSED";
+    if (ask_rc) why = rows_untouched(qrows) ? "ASK-REFUSED" : "ASK-REFUSED-WROTE-ROWS";
+    else if (crows_owner(qa, qrows)) why = "ASK-NOT-CALLER-ROWS";
     else if (mf_defined(art, handle, &dr)) why = "DEFINED-REFUSED";
     else if (full ? !class_same(qa, &dr.cls)
                   : qa->exists != dr.cls.exists || memcmp(qa->proven0, dr.cls.proven0, 32))
@@ -517,7 +573,8 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
     mf_result res = { 0 };
     uint32_t h = 0;
     mf_class qa;
-    int qrc = query_mode ? mf_ask(art, FXW(s), &hd, &qa, ask_rows()) : 0;
+    mf_rows *qrows = query_mode ? ask_rows() : NULL;
+    int qrc = query_mode ? mf_ask(art, FXW(s), &hd, &qa, qrows) : 0;
     int rc = mf_define(art, FXW(s), &hd, &sd, &h) ||
              (s->form == MF_FORM_FUNC ? mf_call(art, h, &hu, &su)
                                       : mf_use(art, h, &hu, &su, &res)) ||
@@ -531,9 +588,10 @@ static int render_h(const char *dir, const char *name, const mf_site *s,
         Text all = { 0 };
         if (def.p) text_put(&all, def.p, def.len);
         if (use.p) text_put(&all, use.p, use.len);
-        q_check(name, s, qrc, &qa, art, h, all.p, 1);
+        q_check(name, s, qrc, &qa, qrows, art, h, all.p, 1);
         free(all.p);
     }
+    rows_free(qrows);
     if (s->form == MF_FORM_FUNC) {
         /* a FUNC site's form id: render its call once more through mf_use */
         Text scratch = { 0 };
@@ -603,7 +661,8 @@ static int render_emit(const char *dir, const char *name, const mf_site *s,
     mf_hooks h = *hp;
     mf_result res = { 0 };
     mf_class qa;
-    int qrc = query_mode ? mf_ask(art, FXW(s), &h, &qa, ask_rows()) : 0;
+    mf_rows *qrows = query_mode ? ask_rows() : NULL;
+    int qrc = query_mode ? mf_ask(art, FXW(s), &h, &qa, qrows) : 0;
     if (mf_emit(art, FXW(s), &h, &su, &sd, &res) || mf_art_end(art, NULL)) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
         return 1;
@@ -614,9 +673,10 @@ static int render_emit(const char *dir, const char *name, const mf_site *s,
         Text all = { 0 };
         if (def.p) text_put(&all, def.p, def.len);
         if (use.p) text_put(&all, use.p, use.len);
-        q_check(name, s, qrc, &qa, art, res.handle, all.p, 0);
+        q_check(name, s, qrc, &qa, qrows, art, res.handle, all.p, 0);
         free(all.p);
     }
+    rows_free(qrows);
     char path[1024];
     snprintf(path, sizeof path, "%s/%s.def", dir, name);
     FILE *f = fopen(path, "w");
@@ -2445,7 +2505,9 @@ static const char *pur_diff_n(const mf_wreply *a, const mf_wreply *b, size_t n)
         memcpy(&la, pa, sizeof la);
         memcpy(&lb, pb, sizeof lb);
         if (a->nplan != b->nplan) return pur_members[i].name;
-        if (a->nplan && la != lb &&
+        /* contents always: two held lists at one address would make the
+           compare vacuous (review r27 CHECK-3); two NULL lists agree */
+        if (a->nplan && (la || lb) &&
             (!la || !lb || memcmp(la, lb, a->nplan * pur_members[i].elem)))
             return pur_members[i].name;
     }
@@ -2516,7 +2578,16 @@ static int pur_ask(const mf_art *art, const mf_site *s, const mf_hooks *h, uint8
 {
     char m[200];
     long a0 = pur_arena_n, h0 = pur_hook_calls;
-    int rc = mf_wdecide(art, s, h, call, out, ask_rows());
+    mf_rows *rows = ask_rows();
+    int rc = mf_wdecide(art, s, h, call, out, rows);
+    const char *own = rc ? NULL : wrows_owner(out, rows);
+    snprintf(m, sizeof m, "%s: the reply's %s list is not the caller's rows (memfn.h mf_rows: "
+             "the asks write only *out and the caller's rows)", what, own ? own : "-");
+    pur_ok(!own, m);
+    snprintf(m, sizeof m, "%s: a refused ask wrote the caller's rows (memfn.h: on -1 the asks "
+             "write nothing to rows)", what);
+    pur_ok(!rc || rows_untouched(rows), m);
+    /* the reply's lists live in `rows`: kept for the caller's compares */
     snprintf(m, sizeof m, "%s: the ask grew the art's arena by %ld (plan_frame.md §2.2: a "
              "phase-1 ask allocates on the heap only)", what, pur_arena_n - a0);
     pur_ok(pur_arena_n == a0, m);
@@ -2610,6 +2681,61 @@ static mf_hooks pur_pf_hooks(void)
     return h;
 }
 
+/* THE REFUSED ASK's rows (memfn.h mf_wdecide / mf_ask: "on -1 the asks
+ * write nothing to rows"; review r27 CHECK-4/SEAM-1): site `s` (its NONE
+ * plan `nplan` entries) asked where its storage refuses AFTER the decision
+ * is made: a framed ask with no plan_test list, a plan_cap one short, and
+ * mf_ask with a proof_cap one short of mf_rows_need's. Each answers -1 and
+ * leaves every list the sentinel; at the need, mf_ask answers in them. */
+static void pur_refusal_rows(const mf_art *art, const mf_site *s, const mf_hooks *h,
+                             unsigned nplan, unsigned i)
+{
+    char m[220];
+    mf_wreply r;
+    mf_class c;
+    uint32_t pc, plc;
+    if (nplan) {
+        mf_rows *rows = ask_rows();
+        free(rows->plan_test);
+        rows->plan_test = NULL;
+        int rc = mf_wdecide(art, s, h, MF_WCALL_DEFINE, &r, rows);
+        snprintf(m, sizeof m, "refusal: site %u: a framed ask with no plan_test list answered "
+                 "%d or wrote the caller's rows", i, rc);
+        pur_ok(rc == -1 && rows_untouched(rows), m);
+        rows_free(rows);
+        rows = ask_rows();
+        rows->plan_cap = nplan - 1;
+        rc = mf_wdecide(art, s, NULL, MF_WCALL_NONE, &r, rows);
+        snprintf(m, sizeof m, "refusal: site %u: a NONE ask at plan_cap %u (need %u) answered "
+                 "%d or wrote the caller's rows", i, nplan - 1, nplan, rc);
+        pur_ok(rc == -1 && rows_untouched(rows), m);
+        rows_free(rows);
+    }
+    snprintf(m, sizeof m, "refusal: site %u: mf_rows_need refused", i);
+    pur_ok(mf_rows_need(s, &pc, &plc) == 0, m);
+    if (!pc) return;
+    /* one short of the need: refused with the rows untouched, or (a class
+       that proves fewer rows than the need: a translated site) answered
+       within the cap, in the caller's rows */
+    mf_rows *rows = ask_rows();
+    rows->proof_cap = pc - 1;
+    int rc = mf_ask(art, s, h, &c, rows);
+    const char *own = rc ? NULL : crows_owner(&c, rows);
+    snprintf(m, sizeof m, "refusal: site %u: mf_ask at proof_cap %u (need %u): rc %d proof_n %u "
+             "%s%s", i, pc - 1, pc, rc, rc ? 0 : c.proof_n,
+             rc && !rows_untouched(rows) ? "wrote the caller's rows" : "",
+             own ? own : "");
+    pur_ok(rc ? rows_untouched(rows) : c.proof_n <= pc - 1 && !own, m);
+    rows_free(rows);
+    rows = ask_rows();
+    rows->proof_cap = pc;
+    rc = mf_ask(art, s, h, &c, rows);
+    own = rc ? "(refused)" : crows_owner(&c, rows);
+    snprintf(m, sizeof m, "refusal: site %u: mf_ask at its need: %s", i, own ? own : "-");
+    pur_ok(!own, m);
+    rows_free(rows);
+}
+
 /* THE CALL's fixtures (plan_frame.md §2.2 contract lines 1-4, §5 rows S, T,
  * U, I, AD) and the counted asks the counting arena must reach (row AC). */
 static void pur_call_fixtures(mf_arena *ar)
@@ -2626,8 +2752,12 @@ static void pur_call_fixtures(mf_arena *ar)
         snprintf(m, sizeof m, "call: site %u: call 0 (UNSTATED) did not answer -1", i);
         pur_ok(pur_ask(art, &site, &h, MF_WCALL_UNSTATED, &r, m) == -1, m);
         int above = 0;
-        for (unsigned c = MF_WCALL_EMIT + 1; c < 256; c++)
-            above += mf_wdecide(art, &site, &h, (uint8_t)c, &r, ask_rows()) != -1;
+        for (unsigned c = MF_WCALL_EMIT + 1; c < 256; c++) {
+            mf_rows *rows = ask_rows();
+            above += mf_wdecide(art, &site, &h, (uint8_t)c, &r, rows) != -1 ||
+                     !rows_untouched(rows);
+            rows_free(rows);
+        }
         snprintf(m, sizeof m, "call: site %u: %d call value(s) above EMIT were not refused", i,
                  above);
         pur_ok(!above, m);
@@ -2637,10 +2767,15 @@ static void pur_call_fixtures(mf_arena *ar)
         pur_ok(pur_ask(art, &site, NULL, MF_WCALL_NONE, &r, m) == 0, m);
         snprintf(m, sizeof m, "call: site %u: NONE's frame part is not zero (framed %u)", i,
                  r.framed);
-        mf_wreply rv = pur_vals(&r);    /* plan_test NULL on NONE: zero too */
+        mf_wreply rv = pur_vals(&r);    /* the list pointer is asserted apart */
         pur_ok(!memcmp((const char *)&rv + offsetof(mf_wreply, framed),
                        zero + offsetof(mf_wreply, framed),
                        sizeof r - offsetof(mf_wreply, framed)), m);
+        /* plan_test NULL on NONE (r45_reply.md §5 (a)): pur_vals sets it
+           aside above, so it is asserted here (review r27 CHECK-2) */
+        snprintf(m, sizeof m, "call: site %u: NONE's reply carries a plan_test list", i);
+        pur_ok(r.plan_test == NULL, m);
+        pur_refusal_rows(art, &site, &h, r.nplan, i);
         mf_site other = site;
         other.form = MF_FORM_STMT;
         other.handoff = MF_H_ON_MISS;
@@ -2886,7 +3021,10 @@ static int purity_mode(void)
             snprintf(m, sizeof m, "sticky-err: site %u's %s plan call after a refused define "
                      "did not answer -1 (breaker (a) is FENCED by the refusal)", i,
                      c ? "framed" : "NONE");
-            pur_ok(mf_wdecide(art, &site[i], &hk, calls[c], &r, ask_rows()) == -1, m);
+            mf_rows *rows = ask_rows();
+            pur_ok(mf_wdecide(art, &site[i], &hk, calls[c], &r, rows) == -1 &&
+                   rows_untouched(rows), m);
+            rows_free(rows);
         }
     printf("checks passed: %ld\n", pur_pass);
     printf("checks failed: %ld\n", pur_fail);

@@ -541,6 +541,7 @@ static int frame_part_zero(const mf_wreply *r)
 #define CITE_L3  "plan_frame §2.2 contract line 3"
 #define CITE_L4  "plan_frame §2.2 contract line 4"
 #define CITE_NONE "plan_frame §2.2 NONE bullet; contract line 4"
+#define CITE_ROWS "memfn.h mf_rows; r45_reply §5 The asks"
 #define CITE_PUR "plan_frame §2.2 Purity"
 #define CITE_OBS "plan_frame §2.3 observable-meaning table"
 #define CITE_WHO "plan_frame §2.3 who-decides table"
@@ -565,11 +566,28 @@ static mf_rows *ask_rows(const mf_site *s)
     free(r->plan); free(r->plan_term); free(r->plan_test);
     memset(r, 0, sizeof *r);
     r->plan_cap = nc;
-    r->plan = calloc(nc + 1, sizeof *r->plan);
-    r->plan_term = calloc(nc + 1, sizeof *r->plan_term);
-    r->plan_test = calloc(nc + 1, sizeof *r->plan_test);
-    if (!r->plan || !r->plan_term || !r->plan_test) { perror("calloc"); exit(2); }
+    r->plan = malloc((nc + 1) * sizeof *r->plan);
+    r->plan_term = malloc((nc + 1) * sizeof *r->plan_term);
+    r->plan_test = malloc((nc + 1) * sizeof *r->plan_test);
+    if (!r->plan || !r->plan_term || !r->plan_test) { perror("malloc"); exit(2); }
+    /* every byte a sentinel: a refused ask's write to them is seen */
+    memset(r->plan, 0xA5, (nc + 1) * sizeof *r->plan);
+    memset(r->plan_term, 0xA5, (nc + 1) * sizeof *r->plan_term);
+    memset(r->plan_test, 0xA5, (nc + 1) * sizeof *r->plan_test);
     return r;
+}
+/* 1 iff no byte of `r`'s three lists (plan_cap + 1 entries) moved off the
+ * sentinel ask_rows wrote. */
+static int rows_untouched(const mf_rows *r)
+{
+    size_t n = (size_t)r->plan_cap + 1;
+    const unsigned char *l[3] = { (const void *)r->plan, (const void *)r->plan_term,
+                                  (const void *)r->plan_test };
+    size_t sz[3] = { n * sizeof *r->plan, n * sizeof *r->plan_term, n * sizeof *r->plan_test };
+    for (int k = 0; k < 3; k++)
+        for (size_t i = 0; i < sz[k]; i++)
+            if (l[k][i] != 0xA5) return 0;
+    return 1;
 }
 static void ring_free(void)
 {
@@ -593,7 +611,9 @@ static mf_wreply rvals(const mf_wreply *r)
  * group). */
 static int list_same(const void *a, const void *b, size_t bytes)
 {
-    if (a == b) return 1;
+    /* contents always, never the pointers' equality: two lists at one
+       address would make the compare vacuous (review r27 CHECK-3) */
+    if (!a && !b) return 1;
     if (!a || !b) return bytes == 0;
     return !memcmp(a, b, bytes);
 }
@@ -616,9 +636,18 @@ static int rsame(const mf_wreply *a, const mf_wreply *b) { return rsame_n(a, b, 
 static int ask(const mf_art *a, const mf_site *s, const mf_hooks *h, unsigned call, mf_wreply *r)
 {
     memset(r, 0xA5, sizeof *r);
-    int rc = mf_wdecide(a, s, h, (uint8_t)call, r, ask_rows(s));
+    mf_rows *rows = ask_rows(s);
+    int rc = mf_wdecide(a, s, h, (uint8_t)call, r, rows);
     if (rc) g_ring_at--;            /* a refusal holds no rows: its slot is free */
     chk("rc_range", "memfn.h mf_wdecide: Returns 0, or -1", rc == 0 || rc == -1, "call %u rc %d", call, rc);
+    /* the asks write only *out and the caller's rows, and nothing to rows
+       on -1 (memfn.h mf_rows / mf_wdecide; review r27 CHECK-3/4) */
+    if (rc) chk("rows_untouched_on_refusal", CITE_ROWS, rows_untouched(rows),
+                "call %u: a refused ask wrote the caller's rows", call);
+    else chk("lists_are_caller_rows", CITE_ROWS,
+             !r->nplan || (r->plan == rows->plan && r->plan_term == rows->plan_term &&
+                           (!r->plan_test || r->plan_test == rows->plan_test)),
+             "call %u: a reply list is not the caller's rows", call);
     if (rc) chk("zero_on_refusal", CITE_L3, !memcmp(r, &g_zero, sizeof *r), "call %u: *out not zero on -1", call);
     chk("padding_zero", CITE_L3, padding_zero(r), "call %u rc %d: a padding byte is nonzero", call, rc);
     return rc;
