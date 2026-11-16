@@ -327,8 +327,10 @@ static bool cc_width(CoverSt *st)
 }
 
 /* C15 (stage 1): the statement fits what the kit's window interface carries
- * today, read from the kit's own shape bounds, so `cover_window` never
- * writes past `mf_wspan.set[]` (K7). pcrec has no bound of its own. */
+ * today, read from the kit's own shape bounds, so `cover_window` states no
+ * span the kit refuses (its refusal bounds MF_WSPAN_POS and MF_WREACH; the
+ * span's rows are pcrec's own storage of exactly its length since
+ * MF_SITE_ABI 30, so no overrun is possible). pcrec has no bound of its own. */
 static bool cc_fits(CoverSt *st)
 {
     int k = st->w.k;
@@ -416,7 +418,7 @@ static bool cc_served(CoverSt *st)
     PcrecMfU u;
     mf_site *s = pcrec_cover_site(st->cx, st->cv, NULL, NULL, &h, &u);
     if (mf_ask(pcrec_memfn_art(st->cx), s, &h, &st->cv->cls,
-               pcrec_memfn_rows(st->cx, s, true))) {
+               pcrec_memfn_rows(st->cx, s, PCREC_ROWS_PROOF_CEILING))) {
         st->detail = "refused";
         return false;
     }
@@ -584,8 +586,8 @@ static const char *cover_fn_name(void *u, uint32_t fn_ref)
 static void cover_window(Ctx *cx, mf_site *s, const MkEnd *e)
 {
     /* the span length first, before any position write (cover_cap.md §3.5
-       R-13): a statement past the kit's bounds is C15's to decline, and its
-       absence is this named error, never an overrun of `mf_wspan.set[]` */
+       R-13): a statement past the kit's refusal bounds is C15's to decline,
+       and its absence is this named error, never a site the kit refuses */
     if (e->k < 1 || e->k > MF_WSPAN_POS || e->k + 1 > MF_WREACH)
         pcrec_ctx_fail(cx, 0, "internal error: a window span of %u positions at "
                        "0 lies outside the kit's shape bounds (MF_WSPAN_POS, "
@@ -647,7 +649,13 @@ const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class
     }
     before = before || e->absent_before != MK_ABS_SATISFIES;
     after = after || e->absent_after != MK_ABS_SATISFIES;
-    for (int d = MF_PROOF_LO; d < MF_MAX_FWD; d++) {
+    /* bounded by the count (r45_reply.md §5 (b); review r27 EMIT-1): past
+       both the kit's counted rows and the window's following offset k, the
+       want and the got are all ones, so no offset there can differ */
+    long end = cls->proof ? MF_PROOF_LO + (long)cls->proof_n : MF_PROOF_LO;
+    if (end < (long)e->k + 1) end = (long)e->k + 1;
+    if (end > MF_MAX_FWD) end = MF_MAX_FWD;
+    for (int d = MF_PROOF_LO; d < end; d++) {
         uint8_t want[32];
         if (d >= 0 && d < e->k)        memcpy(want, e->set[d], 32);
         else if (d == -1 && before)    memcpy(want, e->ctx_before, 32);

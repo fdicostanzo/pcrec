@@ -7159,7 +7159,7 @@ static void cand_asked_verify_emit(Ctx *cx, const PcrecFind *fd)
     PcrecMfU u;
     mf_site *site = find_site(fd);
     find_hooks(fd, site, NULL, &h, &u);
-    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cls, pcrec_memfn_rows(cx, site, false)))
+    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cls, pcrec_memfn_rows(cx, site, PCREC_ROWS_PROOF)))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the %s site "
                        "it is about to write", pcrec_deleg_sites[fd->site].id);
     cand_asked_hold(cx, fd->site, 1, &cls);
@@ -7717,7 +7717,7 @@ static void window_reply_ask(Ctx *cx, UnanchStart *us)
         .miss = MF_MISS_N, .comment_tier = PCREC_CMT_NONESSENTIAL, .u = NULL,
     };
     if (mf_wdecide(pcrec_memfn_art(cx), s, &h, MF_WCALL_DEFINE, &us->wr,
-                   pcrec_memfn_rows(cx, s, false)))
+                   pcrec_memfn_rows(cx, s, PCREC_ROWS_PLAN)))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the window family's "
                        "phase-1 ask on the DFA prefilter (src/gen/emit_dfa.c, "
                        "window_reply_ask)");
@@ -7776,7 +7776,7 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     if (f->us->wr_stated) {
         mf_wreply again;
         if (mf_wdecide(pcrec_memfn_art(f->cx), s, &h, MF_WCALL_DEFINE, &again,
-                       pcrec_memfn_rows(f->cx, s, false)) ||
+                       pcrec_memfn_rows(f->cx, s, PCREC_ROWS_PLAN)) ||
             !wreply_same(&again, &f->us->wr))
             pcrec_fit_invariant_fail("asked-plan-differs", "the define's re-asked reply",
                                      "the phase-1 reply the NEXT rows read",
@@ -8509,7 +8509,7 @@ static void cand_ask(Ctx *cx, CandSlot reader, CandRoute route, const PcrecFind 
     mf_hooks h;
     PcrecMfU u;
     find_hooks(fd, site, NULL, &h, &u);
-    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cs->cls, pcrec_memfn_rows(cx, site, false)))
+    if (mf_ask(pcrec_memfn_art(cx), site, &h, &cs->cls, pcrec_memfn_rows(cx, site, PCREC_ROWS_PROOF)))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the start-search "
                        "site a selection reads (its define would refuse it too)");
 #ifdef PCREC_CAND_TRACE
@@ -8923,7 +8923,7 @@ static mf_site *req_pres_ask(Ctx *cx, const mf_pres_proof *proof, mf_class *cls)
     memset(cls, 0, sizeof *cls);
     if (!s->npspan) return s;
     mf_hooks h = { .comment_tier = PCREC_CMT_NONESSENTIAL, .start = PCREC_MF_ORIGIN };
-    if (mf_ask(pcrec_memfn_art(cx), s, &h, cls, pcrec_memfn_rows(cx, s, false)))
+    if (mf_ask(pcrec_memfn_art(cx), s, &h, cls, pcrec_memfn_rows(cx, s, PCREC_ROWS_PROOF)))
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refuses the pre-check's "
                        "presence spans (its define would refuse them too)");
     return s;
@@ -11598,7 +11598,7 @@ static void req_pick_shadow(Ctx *cx, const mf_site *site)
             mf_class *rc = pcrec_arena_alloc(&cx->arena, sizeof *rc);
             mf_hooks rh = { .comment_tier = PCREC_CMT_NONESSENTIAL, .start = PCREC_MF_ORIGIN };
             int asked = ps->npspan && !mf_ask(pcrec_memfn_art(cx), ps, &rh, rc,
-                                              pcrec_memfn_rows(cx, ps, false));
+                                              pcrec_memfn_rows(cx, ps, PCREC_ROWS_PROOF));
             if (!asked) {
                 fprintf(stderr, "MFPICKSITE\troute-refused\t%s\n", kind);
                 goto out;
@@ -16345,7 +16345,7 @@ static int req_run_at(Ctx *cx, ReqAdmit admit)
          * refusal is pcrec's defect, failed after `done:` restores the trace
          * state (a fail inside would leave the thread's trace quiet) */
         if (mf_wdecide(pcrec_memfn_art(cx), cs, NULL, MF_WCALL_NONE, &w,
-                       pcrec_memfn_rows(cx, cs, false)))
+                       pcrec_memfn_rows(cx, cs, PCREC_ROWS_PLAN)))
             refused = true;
         else if (w.has_stop)
             at = req_run_in_cover(pcrec_fact_req_whole_run_stated(cx), &cv->end, w.stop);

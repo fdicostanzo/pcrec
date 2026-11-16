@@ -180,13 +180,15 @@ static void meas_record(Ctx *cx, const mf_measures *ms)
 }
 #endif
 
-mf_rows *pcrec_memfn_rows(Ctx *cx, const mf_site *s, bool ceiling)
+mf_rows *pcrec_memfn_rows(Ctx *cx, const mf_site *s, PcrecRowsPart part)
 {
     uint32_t proof_cap, plan_cap;
     if (mf_rows_need(s, &proof_cap, &plan_cap))
         pcrec_ctx_fail(cx, 0, "internal error: the kit refuses to size an ask's storage "
                        "(mf_rows_need) (src/gen/memfn_sites.c)");
-    if (ceiling) proof_cap = MF_MAX_FWD - MF_PROOF_LO;
+    if (part == PCREC_ROWS_PROOF_CEILING) proof_cap = MF_MAX_FWD - MF_PROOF_LO;
+    if (part == PCREC_ROWS_PLAN) proof_cap = 0;
+    else plan_cap = 0;
     mf_rows *r = pcrec_arena_alloc(&cx->arena, sizeof *r);
     r->proof_cap = proof_cap;
     r->plan_cap = plan_cap;
@@ -565,6 +567,12 @@ static uint32_t *wpos_table(mf_wspan *w) { return (uint32_t *)w->table_ref; }
 
 void pcrec_memfn_wspan(Ctx *cx, mf_wspan *w, int start, int len, mf_verify v)
 {
+    /* the length is refused HERE, before the storage is sized by it and
+       before the uint16_t fields take it (review r27 HOUSE-4): a later
+       bounds check would read the truncated value */
+    if (len < 0 || len > MF_WSPAN_POS)
+        pcrec_ctx_fail(cx, 0, "internal error: a window span of %d positions lies outside "
+                       "the kit's shape bound MF_WSPAN_POS (src/gen/memfn_sites.c)", len);
     size_t n = len > 0 ? (size_t)len : 1;
     uint8_t (*set)[32] = pcrec_arena_alloc(&cx->arena, n * 32);
     uint32_t *table = pcrec_arena_alloc(&cx->arena, n * sizeof *table);   /* zeroed */
