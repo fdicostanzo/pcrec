@@ -54,3 +54,67 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 - STATUS: OPEN, with no user while item 1 is parked (the manager's note, 2026-11-16; not an owner ruling).
 - WORKED OUT IN: joint_condition.md §4A.3 (both positions; the lean "one tuple only").
 - TRIGGER: item 1 taken up, or an example that needs one part of a tuple value.
+
+## 5. An "unset" member in a value set
+
+- WHAT: a set member that admits a label that is UNSET (its group never reached): `(h: S, m: T | unset)` says "m
+  may be absent" at the label it concerns, in place of today's extra alternative `... | (h: S)` (spelling open;
+  the owner wrote `epsilon`).
+- STATUS: the owner's question, 2026-11-16 ("If we had a 'unset' (epsilon?) matcher ..."), raised under
+  **zero-pass-record**; it does not decide that question (an empty loop is not unset). Not ruled.
+- NOTES: fits a record (each label has its own set) better than a joint comparison (`((h, m): >= (9, 30))`:
+  "unset" has no place in the order; the default does that job); makes three ways to treat a missing field
+  (default, alternative, member), so `label.unset`'s text naming the fixes would change.
+- TRIGGER: the extra-alternative spelling for an optional field shows up in real examples.
+
+## 6. An author-written "ran but no value" (empty) value for `x*` loops
+
+- WHAT: a value for "the loop was reached and ran zero times" that the AUTHOR writes in the set to admit the
+  empty case: `(h: <5 | empty, k: 3 | 4 | 5 | 6 | 7)`.
+- STATUS: the owner's idea, 2026-11-16 ("I meant we had a value to represent 'ran but no value' for x* forms").
+  ADOPTED AS A CONCEPT in the definition (zero-pass-record, ruled the same day: an empty loop gives one tuple whose
+  looped parts are empty, and empty satisfies ANY set without being written); the author-written form is parked.
+  His reason against requiring it: "The author's contribution is the * form so they know they are providing a
+  possibly empty set."
+- NOTES: with the author-written form, every "all items" condition over an `x*` loop fails on the empty list
+  unless the member is added (reverses CF:997-1000). Rejecting the empty case has spellings today: `+` in the
+  pattern, `some((h: S))`, a count (`n := count((h: S))`, `(n: >=1)`). "All are S, and at least one" takes two
+  conditions; a one-word form is not added without examples.
+- TRIGGER: an example where the empty case must be singled out and `+`, `some`, `count` do not serve.
+
+## 7. A default read when a reached loop runs zero times
+
+- WHAT: `(h = 0: 9)` on an empty loop reads h as 0 (fails), `(h = 9: 9)` holds: the default "undoes the `*`" for
+  that condition. One sentence in the empty-value model: empty satisfies any set unless the label has a default,
+  which then stands in.
+- STATUS: the owner's question, 2026-11-16 ("could they use default values to undo their * ?"). Not adopted: the
+  ruled text stays (a default is never read on zero passes, joint_condition.md §4B.1).
+- NOTES: it overloads the default: `m = 0` written to mean "an item with no minutes is :00" would also change the
+  empty list's answer (`list & ((h = 0, m = 0): >= (9, 30))` flips from holds to fails), with no warning. What it
+  adds is "read an empty list as the one value v". The owner's frame: "saving people from themselves".
+- TRIGGER: an example where an empty list should be read as one stated value.
+
+## 8. `count` / `some` over a field reference (`count(^h)`, `some(^h)`)
+
+- WHAT: the paused other-side sigil as the argument of a group question: `count(^h)` = how many times the loop
+  gave h a value; `some(^h)` = h has at least one value (`P & (h: 9) & some(^h)`).
+- STATUS: the owner's question, 2026-11-16 ("If we had something similar, could then & count(^)"). Not ruled.
+- NOTES: fits the sigil's ruled position (an argument of a call). Removes the "set that accepts anything" the
+  draft uses to count every pass (`count((ch: /(?s:.)/))`, `(hit: /(?s).*/)`). Snags: a count is a number, so
+  `& count(^h)` alone would need "non-zero is true" (not proposed; write `some(^h)` or compare the count); a BARE
+  `^` has no label to name. The markless alternative: a named anything-set, `some((h: any))`. BEARS ON the open
+  question **retire-paused**: the first job for the sigil that the joint condition does not take over (the
+  manager's lean moved to: keep the sigil paused, retire the `lex_` names, argument order and first-library slot).
+- OWNER, 2026-11-16 (retire-paused): "the pause on ^ is indefinite and requires real value other than 'override a
+  users own *'". So rejecting the empty case (`some(^h)`) does NOT count toward bringing the sigil back.
+- TRIGGER: a use of a field reference with real value beyond rejecting an empty loop (counting every pass, as in
+  the draft's `length(S)` body, is a candidate to be argued, not a trigger met).
+
+## 9. A meaning for a label named twice in one condition
+
+- WHAT: `(h: <5, h: >2)` / `((h, h): R)` is a compile ERROR (ruled 2026-11-16, **label-twice**), which leaves the
+  spelling free. The one meaning considered so far is the DIAGONAL ((h's text, h's text) in R; for a record, the
+  same as `(h: <5 & >2)`), not adopted: in a joint comparison it is almost always a slip for `(h, m)`.
+- STATUS: the owner, 2026-11-16: "agree an error. And that means it's also unofficially parked in case some other
+  meaning becomes valuable". Not a designed idea; a reserved spelling.
+- TRIGGER: a meaning for the repeated label that has a real use and cannot be written another way.

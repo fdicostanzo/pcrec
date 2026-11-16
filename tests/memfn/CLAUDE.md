@@ -67,6 +67,8 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 ### The position ranking (lane rq2, [MEMFN] RQ-2, D157)
 - **run_rank.sh**, **rank_check.py** — the ranking claim, INVERTED since D172 S2 commit 6: pcrec hands the kit no ranking (every PRE/OFS predicate has rank_n 0); S1420 is the failing direction; N4's door (`find_door`) stays. History: NOTES.md.
 
+- **run_d3floor.sh**, **d3_floor.py**, **d3_floor.tsv**, **d3_census.tsv** — D3 floor gate: `make test-memfn-d3floor`, last step of test-axes; also cloud shard 1; not in `make test`. See NOTES.md.
+
 ## Maintaining it
 
 - **A new search form in an emitter:** add a row, or name the function on
@@ -88,7 +90,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
   dump fails its population, with a scratch control on every run (R4c′).
   Own CLAUDE.md.
 
-- **prov_check.c** — BUILD-ONLY (run_finder.sh compiles it `-fsyntax-only -Werror`, never links or runs it): a static assertion of `mf_akind.digest`'s offset. Reduced at span_pick 1g (MF_SITE_ABI 22) when `mf_prov` and pcrec's stanza mapping left the seam; finder_check L (the seam allowlist, rate-site digest loop with reach control, no-`digest` scan) is the digest check.
+- **prov_check.c** — BUILD-ONLY (run_finder.sh compiles it `-fsyntax-only -Werror`): a static assertion of `mf_akind.digest`'s offset; finder_check L is the digest check.
 - Also (one-line entries for these are in the history file): `c10_onebyte.tsv`, `run_arm_reach.sh`, `run_libc_census.sh`, `run_presence.sh`.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__memfn.md`.

@@ -1,7 +1,7 @@
 # docs/dev/lanes/r33_sim/ — R-33's instruments (lane r33, 2026-11-02)
 
 The simulation of the inner-first "find the span" pick against the kit's answer today. The report is
-`../r33_report.md`. A study only: nothing here is built or run by `make`.
+`../r33_report.md`. A study, except the files the D3 floor gate calls (below).
 
 ## Files
 
@@ -19,10 +19,9 @@ The simulation of the inner-first "find the span" pick against the kit's answer 
   joined to its `run_part_terms` records ON ITS SHIPPED (last) art, collect.py's `arts`, by each record's own `art=`
   (R-43): an `@idx` run has one record with a scan hint, a scan-less run one `hint=-`, a run the kit declines (PD)
   none (plant p14, summarize dropping it, reds). `--self-test fixtures/runpart_c01877.jsonl`: the join's own control.
-- `runpart_floor.py --tree TREE CELL=SWEEP.jsonl .. [--movers CELL=MOVERS.tsv ..]` — D3's pcrec-artifact floor
-  (R-43, RDY-5): per emit_sweep cell (byte|utf8 x c-default|c-vm), the corpus patterns whose shipped art carries a
-  record with an unspelled SET term (census0's parser) >= its measured literal floor >= the
-  `--memfn=no-run-verify-wide` movers; with `--movers`, every mover is in the census.
+- `runpart_floor.py` MOVED (R-44, lane d3wire) to `tests/memfn/d3_floor.py` + `d3_floor.tsv` (the floors' data) and is a gate:
+  `tests/memfn/run_d3floor.sh` (`make test-memfn-d3floor`, last step of `make test-axes`). The gate calls this directory's
+  `build.sh`, `collect.py`, `probe.c` (so they are no longer study-only: change them with that gate in mind).
 - `deny_reach.py` — a measurement: the corpus patterns a deny moves in one cell (plain pcrec, emit_sweep's argv).
   collect.py's `--flags` makes one sweep one cell.
 - `fixtures/runpart_c01877.jsonl` — one real collect.py line: a record on a declined compound part's art and one on

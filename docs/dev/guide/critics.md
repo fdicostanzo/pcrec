@@ -70,6 +70,12 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-16 r26, joint_condition.md design note (`docs/dev/reviews/2026-11-16-r26-jointcond.md`), ruled 2026-11-16 (manager): **simulate lens, design mode: for a design whose values are SETS, two spellings of the SAME set (the empty set above all; product vs dictionary order) must give the same answer in every mode** (ZERO-EMPTY: found by three lenses; an inserted split made the answer depend on how one set was spelled).
+
+2026-11-16 r26, same round, ruled 2026-11-16 (manager): **a design whose deliverable is a CHANGE TABLE against a client document (a fold, here §9) gets a change-table completeness lens: re-derive the client's site list by grep over every term the folded rulings touch, and check each row's cite lands on its whole item** (REV20-1..10: a sonnet critic, 3 minutes, 10 findings, about 45 draft lines the table missed).
+
+2026-11-16 r26, same round, ruled 2026-11-16 (manager): **when a ruling's record says the WORDING is the manager's "to be checked by the critic round", the ruling lens diffs every quoted copy of that wording against the record verbatim** (RULING-1: an inserted clause created the contradiction it was asked to check). Give owner-quote verification to ONE lens; the others cite without re-checking.
+
 2026-11-16 r19, predicates_draft rev 19 (`docs/dev/reviews/2026-11-16-r19-predspec19.md`), ruled 2026-11-16 (manager): **when a round may straddle a box script deadline, the coordinator pre-creates each critic's findings file with its headings and a `CRITIC COMPLETE` marker line the critic writes last** (both fix-induced critics ended with no findings file, and an empty file is visibly empty where a missing one is not).
 
 2026-11-15 r17, predicates_draft revs 16-17 confirming re-check (`docs/dev/reviews/2026-11-15-r17-predspec17.md`), ruled 2026-11-15 (manager): **when a revision moves a fact's PRODUCER from library text to the author's input (labels, fields, separators), re-run every derived form using `!` over author inputs with an optional, a repeated and a non-conforming field** (F1: rev 16's always-set helper labels hid a strict-form inversion; two lenses found it in minutes).

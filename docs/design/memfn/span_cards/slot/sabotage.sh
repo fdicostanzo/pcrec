@@ -8,7 +8,7 @@
 # a row DETECTED). Each row scores DETECTED (the dry run refused with the expected text) or MISSED; exit 0 iff the
 # control is green and every row is DETECTED.
 #   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 d1
-#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1-i10 m1-m5
+#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1-i10 m1-m7 z1-z4
 #                                         y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
@@ -155,10 +155,18 @@
 #   lane pinfix:
 #   (m7) S3226 [ADQ-3] est's absent cells pin tolerated on a windowed record again: the mfcard-window
 #        pin-deleted case goes WRONG (job est)
+#   lane scanrow (review 2026-11-16 r13 JF-4 (a): a refused find_byte@6 SCAN row never vetoes a level's verdict):
+#   (z1) S3238 every refusal read as scan-only: the drill's "a DECIDING row's clause refused" case reads WIN (WRONG)
+#   (z2) S3239 the old veto back (any REFUSED outcome refuses the arm): the CLI case "the scan row refused in both
+#        records" (only the scan row noisy, est's real refusal) reads INCONCLUSIVE (WRONG; job d197e2e)
+#   (z3) S3240 the scan line ignores est's gate (prints a gate-FAILED row's value and a ratio): the same CLI case's
+#        `scan unpriced (gate FAIL: ...)` count goes WRONG (job d197e2e)
+#   (z4) S3241 est's refusals name no keys: est's self-test case "the scan row ... noisy alone" goes WRONG (job est)
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
 # rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
 # r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's,
-# S3188-S3197 lane mcfixa's, S3207-S3209 S3214 S3215 lane mcfixb's, S3220 S3221 lane j4fix's, S3224-S3226 lane pinfix's; they
+# S3188-S3197 lane mcfixa's, S3207-S3209 S3214 S3215 lane mcfixb's, S3220 S3221 lane j4fix's, S3224-S3226 lane pinfix's,
+# S3238-S3241 lane scanrow's; they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
@@ -166,7 +174,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TREE=${SLOT_TREE:-$(cd "$here/../../../../.." && pwd)}   # SLOT_TREE: the tree when slot/ runs from a copy
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 m1 m2 m3 m4 m5 m6 m7}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 m1 m2 m3 m4 m5 m6 m7 z1 z2 z3 z4}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -421,7 +429,7 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
         patch "$SCR/$row/d197_rule.py" '    "second-run-without-a-verdict": lambda v: v["second"] and (' \
 '    "second-run-without-a-verdict": lambda v: False and v["second"] and (' ;;   # SABOTAGE S3209 (the plant carries no comment: the line continues)
     m4) job=d197e2e want='drill	end to end on est.s synthetic window	WRONG'
-        patch "$SCR/$row/d197_rule.py" '"kit.%s.%s" % (t["deciding"]["scan"], f)' '"kit.%s_.%s" % (t["deciding"]["scan"], f)' ;;   # SABOTAGE S3214 (the plant carries no comment: mid-line)
+        patch "$SCR/$row/d197_rule.py" 'scan_of(out, drift, "kit.%s.%s" % (t["deciding"]["scan"], f))' 'scan_of(out, drift, "kit.%s_.%s" % (t["deciding"]["scan"], f))' ;;   # SABOTAGE S3214 (no comment: mid-line; [scanrow] re-aimed at the scan line's read, scan_keys now spells the same key)
     m5) job=shape want='shape	\[S3210\][^	]*	WRONG'
         patch "$SCR/$row/link.py" '        if callee.startswith("."):' '        if False:   # SABOTAGE S3215: section symbols not refused' ;;
     m6) job=shape want='shape	\[S3220\][^	]*	WRONG'
@@ -431,6 +439,19 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
     m7) job=est want='selftest	\[r8 ADQ-3 S3224\][^	]*	WRONG'
         patch "$SCR/$row/est.py" '        if pin is None and not legacy_record(rec):      # [r8 ADQ-3] only a legacy record may lack the pin' \
 '        if False:      # SABOTAGE S3226: a windowed record may lack the cells pin' ;;
+    z1) job=d197 want='drill	\[r13 JF-4\] a DECIDING row.s clause refused[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '    "every-refusal-names-only-scan-rows": lambda f: bool(f["refusals"]) and all(' \
+'    "every-refusal-names-only-scan-rows": lambda f: True or all(' ;;   # SABOTAGE S3238 (no comment: the line continues)
+    z2) job=d197e2e want='drill	\[r13 JF-4\] CLI: the scan row refused in both records[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '    "run-refused": lambda a: a["refusal"] == "run-refused",' \
+'    "run-refused": lambda a: a["outcome"] == "REFUSED",   # SABOTAGE S3239: any REFUSED record vetoes' ;;
+    z3) job=d197e2e want='drill	\[r13 JF-4\] CLI: the scan row refused in both records[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '    if r.get("gate") is False:
+        return None, r.get("gate_why", "gate FAIL")' '    if False:   # SABOTAGE S3240: the scan line ignores est'"'"'s gate
+        return None, r.get("gate_why", "gate FAIL")' ;;
+    z4) job=est want='selftest	\[r13 JF-4\] the scan row kit\.find_byte\.mfind-swar noisy alone[^	]*	WRONG'
+        patch "$SCR/$row/est.py" '                                  for cl in failed], [("floor:" + cl, sorted(clauses[cl])) for cl in failed])' \
+'                                  for cl in failed], [("floor:" + cl, []) for cl in failed])   # SABOTAGE S3241' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
 }

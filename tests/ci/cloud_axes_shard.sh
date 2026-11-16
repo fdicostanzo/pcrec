@@ -4,7 +4,7 @@
 # together). Same environment as the battery's run (AXES_FULL=1, HARNESS_BATCH=64). Run from the repo root (the
 # workflow's cwd). Every shard computes its own baseline (the dump each job is compared against). Shard 1 alone also
 # runs what is no unit: the giveup1 key check, the PC-4 oracle cross-check (the other shards set SKIP_ORACLE=1 and
-# say so) and the form census. tests/ci/cloud_axes_check.sh holds the shards' sum to the unsplit population.
+# say so), the form census and the D3 floor gate (tests/memfn/run_d3floor.sh, ~125 s; weigh it at the next re-weight). tests/ci/cloud_axes_check.sh holds the shards' sum to the unsplit population.
 set -u
 here=$(cd "$(dirname "$0")" && pwd); root=$(cd "$here/../.." && pwd)
 tab=${1:?TABLE}; shard=${2:?K/N}; k=${shard%/*}
@@ -22,4 +22,6 @@ fi
 bash "$root/tests/axes/run_axes.sh" || exit 1
 if [ "$k" = 1 ]; then
     PROCS=${PROCS:-$(bash "$root/tests/lib/procs_default.sh")} bash "$root/tests/codegen/run_form_census.sh" || exit 1
+    # the D3 floor gate (R-44; review r10 D3W-4): the last step of `make test-axes`, so the shard that stands for it runs it
+    bash "$root/tests/memfn/run_d3floor.sh" || exit 1
 fi

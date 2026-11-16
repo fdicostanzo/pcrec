@@ -1540,3 +1540,77 @@ for." RECORD: RULED: the joint condition is the ONE mechanism; the record is DEF
 written beside its label), so every rule of the joint condition (unset labels and defaults, per-pass pairing in
 loops, the colon's scope, modifiers on every part) holds for the record by definition, stated once. His criterion,
 in his words, for the record: "simplifying semantics".
+
+**2026-11-16 OWNER RULING — zero-pass-record: the outside label is tested (Frank, to session 135, box clock 12:45).**
+Asked **zero-pass-record** (a record whose labels sit at different depths, the deeper loop running zero passes:
+`/(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: 3 | 4 | 5 | 6 | 7)` on `9`; the per-pass rule read literally HOLDS
+vacuously, the draft's "a record is the AND of its parts" FAILS; the manager's lean the AND reading), after his
+questions on an "unset"/empty value in the set, a default undoing the `*`, and `count(^)`, his words:
+"zero-pass-record: I agree but save the notes in the future file. The issue falls into the 'saving people from
+themselves' category that tools need to realistically consider". RECORD: RULED, the manager's lean as stated to
+him: a label outside the pairing loop is tested once even when the loop runs zero passes (`9` FAILS in the
+example); the draft's equality `(a: S, b: T)` = `(a: S) & (b: T)` holds at every depth. THE MANAGER'S WORDING
+(his "agree" covers the answer; the wording is the manager's, to be checked by the critic round and rev 20): a
+reached loop that runs zero times gives ONE tuple whose looped parts are EMPTY; empty satisfies any set (for a
+joint set R: the outside labels' values must be possible under R for some value of the looped parts); a default
+is NOT read there (§4B.1 unchanged); a plain single-label condition still HOLDS on zero passes (CF:997-1000
+unchanged); "unset" (never reached) keeps its meaning. His criterion for the record: "saving people from
+themselves". The four ideas raised on the way are PARKED in docs/design/predicates_future.md items 5-8.
+
+**2026-11-16 OWNER RULING — library-not-syntax: the 11-14 ruling is withdrawn (Frank, to session 135, box clock 12:48).**
+Asked **library-not-syntax** (withdraw by name the ruling of 2026-11-14, "TUPLE CONDITIONS: a LIBRARY macro
+(`lex_ge([major, minor, patch], [1, 4, 0])`), no syntax", CF:644-650, now that the joint condition
+`((major, minor, patch): >= (1, 4, 0))` is syntax and "the one mechanism"; the manager's lean: yes), his words:
+"library-not-syntax: agree. we've replaced the idea and I think with something much better". RECORD: RULED: the
+2026-11-14 ruling (CF:644-650) is WITHDRAWN BY NAME; with it the draft's status line "Tuples as a library macro:
+RULED (CF:644), SUPERSEDES predx's tuple-on-the-left-of-`:` syntax (S12)" goes to the superseded record, and a
+tuple on the left of `:` is ruled syntax (the joint condition, J1-J9). THE MANAGER'S READING of "agree" (the lean
+as stated; to be checked by rev 20): the middle path (keeping `lex_ge` and friends as ordinary library macros
+over the joint condition) is NOT taken; they are left out of the first library until someone asks. What becomes of
+the sigil, the `lex_` names, their argument order and the first-library slot is the separate open question
+**retire-paused**.
+
+**2026-11-16 OWNER RULING — retire-paused: split; the sigil's pause is indefinite (Frank, to session 135, box clock 12:51).**
+Asked **retire-paused** (the paused direction's four RULED items: the other-side sigil `^h`, the `lex_` names, the
+argument order subject-low-high, the fixed-size tuple compares' first-library slot; retire or keep paused; the
+manager's lean: SPLIT, retire the names, the order and the slot, keep the sigil paused and out of rev 20's language
+text, the first-library slot going to the joint condition), his words: "retire-paused: agree to split. But the
+pause on ^ is indefinite and requires real value other than 'override a users own *'". RECORD: RULED: (1) RETIRED
+to the superseded-direction record: the `lex_` names (CF:1226), the argument order (CF:1253), the fixed-size
+compares in the first library (CF:1166); the joint condition takes that first-library slot. (2) The other-side
+sigil (CF 00:06) is PAUSED INDEFINITELY: it is not in rev 20's language; it returns only for a use with REAL VALUE,
+and rejecting the empty case of the author's own `*` loop (`some(^h)`) is NOT such a use (his bar, his words).
+(3) The suspended questions reference-index and bound-reference stay suspended with the sigil.
+
+**2026-11-16 OWNER RULING — label-twice: an error (Frank, to session 135, box clock 13:16).**
+Asked **label-twice** (a label written twice on the left, `((h, h): R)`, and so in a record, `(h: <5, h: >2)`: a
+compile ERROR naming the fix, or the DIAGONAL reading "(h's text, h's text) in R"; the manager's and the folding
+lane's lean: error), his words: "label-twice: agree an error. And that means it's also unofficially parked in case
+some other meaning becomes valuable". RECORD: RULED: a label named twice in one condition is a COMPILE ERROR in
+both forms (the record being the product case), its message naming the fix (illustrative, D26: "h is named twice;
+for two tests on one label write `(h: <5 & >2)`"). The spelling stays FREE for a later meaning (his
+"unofficially parked"): noted in docs/design/predicates_future.md item 9; the diagonal is not adopted.
+
+**2026-11-16 OWNER RULING — pairing-loop, part 1: the wording confirmed; his remark on optionals (Frank, to session 135, box clock 13:29).**
+Asked **pairing-loop** in parts (1: the precise wording of the pairing loop; 2: zero passes of a nested loop read
+per reach, `4:;` fails, `5:;` and `6:;` hold; 3, added by review r26: an outer pass that never reaches the
+pairing loop), his words, first: "is this the same issue we were just talking about? The inner loop runs so it's
+'set' but to nothing. Then the 'or epsilon' logic makes it pass" (the manager: yes, for part 2), then: "pairing-loop:
+I agree part 1. part 2. the issue is that 'optional pass' is still a loop. Even /x?/ is a loop from 0 to 1."
+RECORD: (1) RULED: part 1, the wording: the pairing loop is the DEEPEST loop that encloses any named label; every
+other named label lies in the same pass of it or outside it with one value per pass; otherwise the sibling-loop
+error. (2) NOT RULED: his remark that an optional is a loop of 0 to 1 passes bears on parts 2-3 AND on the ruled
+boundary of predicates_draft.md §4.2 (CF:997-1000: an optional or `{0,1}` skipped leaves the label UNSET and the
+condition FAILS; a loop with an upper bound of 2 or more that runs zero times HOLDS). The manager put the
+consequences to him (next entry records his answer).
+
+**2026-11-16 OWNER DIRECTION — absent-holds: work out the options (Frank, to session 135, box clock 13:38).**
+After his remarks "Only an alternation would be a complete no set, no?" and "Ok, but then could * be defined as
+/x+|/" (the manager: `x?` = `(?:x|)` and `x*` = `(?:x+|)` = `(?:x+)?`, so EVERY line between "unset: fails" and
+"zero passes: holds" gives two spellings of one pattern different answers, today's ruled line included:
+`/(?<n>\d)*x/` holds and `/(?:(?<n>\d)+)?x/` fails on `x`), asked **absent-holds** (one rule, "a condition holds
+on any absent label", worked through every ruled example before he confirms or drops it), his words: "absents-hold:
+do work it out but consider also the option that missing means failing. Or options where the user can control the
+interpretation". RECORD: NOT A RULING. A design lane works out, side by side: absent always HOLDS; absent always
+FAILS; forms where the AUTHOR controls the reading; and today's line as the baseline. Nothing in the ruled text
+changes until he chooses. pairing-loop parts 2-3 and rev 20 wait on it.
