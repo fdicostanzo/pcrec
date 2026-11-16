@@ -1994,6 +1994,9 @@ VALUES (5 of 310 per pair), so the check can fail.
 
 ### 4H.1 THE DOMAIN OF "SOME VALUE" (**mark-domain**, RULED 15:27 as a PRINCIPLE)
 
+[2026-11-16: the domain's SCOPE was ruled later, see COND-FAMILY **domain-scope** (16:31: DOM is read from the
+PROGRAM, the regex with its conditions) and **mark-narrows** (16:44); predicates_draft.md rev 21 §4.2.]
+
 The mark reads "some value would put the tuple in the set" (CF 14:31); WHICH values was not ruled. Put to him after
 review r28's finding A, the owner answered with a PRINCIPLE (CF 15:27, COND-FAMILY.md on main, CF:1704-1720 there),
 his words: "mark-domain: if it is possible, the semantic rules should not not depend on the spelling of the regex but
@@ -2119,12 +2122,19 @@ THE MANAGER'S READING (dispositions E): 14:50 (d) (a compile error) is WITHDRAWN
 `count`, `occurs.*` and inside `all` alike, and through expansion (a macro or a record expands first, then the same
 rule). The group questions range over the PASSES of the pairing loop; zero passes give no pass to count (the lane's
 statement, as review r28's verify derived it). No new diagnostic.
-14:50 (f) RESTATED: the all-looped record with an optional field per item (§4G.6 (5)) HAS a one-condition spelling,
-`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/ & occurs.none(((h, m?): !R))`, R = `(h: <10, m: <30)` ("the empty list passes, an
-item without minutes fails"): 0 of 259 from the wanted answers under each of ANY, GROUP and VALUES (ENGINE-RUN under
-GROUP); with the mark NOT counted (14:31) 36 of 259 (`3,`); unmarked 36. Its answer depends on DOM(h) in general:
-with R' = `(h: <10, m: padded(<100))`, on `3,` it FAILS under ANY (m = `x` lies outside R') and HOLDS under GROUP and
-VALUES. §4G.6 (4)'s surprise closes: `occurrences(/ab(?<g>[xy])?/)` on `ab`, `(g?: "x")` and `some((g?: "x"))` both
+14:50 (f) RESTATED: the all-looped record with an optional field per item (§4G.6 (5)) HAS a one-condition spelling.
+[2026-11-16, rev 21 of predicates_draft.md, review r29 group H: R is written `(<10, <30)` (a tuple set; `(h: <10,
+m: <30)` is a labelled record, ill-formed as a set), and the worked spelling is the DOM-free
+`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/ & occurs.none(!((h, m): R))` ("the empty list passes, an item without minutes
+fails"; an item without minutes is absent in m, so `(h, m): R` FAILS there and its complement counts it): 0 of 1,111
+lists from the wanted answers (`predspec21_check.out` PART 4 (D5)). The MARKED form below is kept only as the line
+that shows DOM-dependence: `occurs.none(((h, m?): !R))` gave 0 of 1,111 with R under the regex DOM, but 71 of 1,111
+with R' = `(<10, padded(<100))` (`3,`: no minute value lies outside R'), and under the program DOM ruled since
+(predicates_draft.md §4.2) it misses with R too, 25 of 1,111 (`3,`); `all(((h, m): R))` gives 11 of 259 (`3,`;
+§4H.3).] The marked form as first written: `occurs.none(((h, m?): !R))`, R = `(h: <10, m: <30)`: 0 of 259 from the
+wanted answers under each of ANY, GROUP and VALUES (ENGINE-RUN under GROUP); with the mark NOT counted (14:31) 36 of
+259 (`3,`); unmarked 36. Its answer depends on DOM(h) in general: with R' = `(h: <10, m: padded(<100))`, on `3,` it
+FAILS under ANY (m = `x` lies outside R') and HOLDS under GROUP and VALUES. §4G.6 (4)'s surprise closes: `occurrences(/ab(?<g>[xy])?/)` on `ab`, `(g?: "x")` and `some((g?: "x"))` both
 HOLD, under each domain.
 
 ### 4H.5 Is `?` a loop for the pairing rule? (**optional-as-loop**, RULED 15:23)
