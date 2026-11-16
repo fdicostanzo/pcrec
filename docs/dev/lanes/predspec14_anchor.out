@@ -1,0 +1,76 @@
+# THE AMPERSAND RULE BY POSITION (searched final programs unless the row says otherwise)
+(i) final, searched                            /^\d+$/  (no &: the subject's ends)                                      on 'x300 12'  pcre2: no match
+(i) final, searched                            /^\d+$/ & <256                                                           on 'x300 12'  pcre2: match (1,3) [ends at 1 qualifying: 3,2]
+(i) final, searched                            /\d+/ & <256  (the same answer: the anchors add nothing)                 on 'x300 12'  pcre2: match (1,3) [ends at 1 qualifying: 3,2]
+(i) look-alike P vs P & /(?s).*/               /^foo/                                                                   on 'xfoo'     pcre2: no match
+(i) look-alike P vs P & /(?s).*/               /^foo/ & /(?s).*/                                                        on 'xfoo'     pcre2: match (1,4)
+(i) look-alike P vs P & /(?s).*/               /foo$/                                                                   on 'foox'     pcre2: no match
+(i) look-alike P vs P & /(?s).*/               /foo$/ & /(?s).*/                                                        on 'foox'     pcre2: match (0,3)
+(ii) final under anchored                      anchored(/^\d+$/ & <256) = /\A${...}\z/                                  on 'x300 12'  pcre2: no match
+(ii) final under anchored                      anchored(/^\d+$/ & <256)                                                 on '200'      pcre2: match (0,3)
+(ii) final under anchored                      anchored(/^\d+$/ & <256)                                                 on '200\n'    pcre2: no match
+(ii) final under anchored                      anchored(/\d+/ & <256)  (same answers without the operand anchors)       on '200\n'    pcre2: no match
+(iii) & in a hole                              /port=${ /^\d+$/ & <256 }/                                               on 'port=80'  pcre2: match (0,7) [ends at 0 qualifying: 7,6]
+(iii) & in a hole                              /port=${ /^\d+$/ & <256 }/                                               on 'port=300' pcre2: match (0,7) [ends at 0 qualifying: 7,6]
+(iii) & in a hole                              /port=${ /\d+/ & <256 }\b/  (author's fix for 'the whole number')        on 'port=300' pcre2: no match
+(iii) the owner's acceptance row (CF:1078-1079 on main) /999${ /\d+/ & <100 }999/                                                on '99945999' pcre2: match (0,8)
+(iii) its near row                             /999${ /\d+/ & <100 }999/                                                on '99912345999' pcre2: no match
+(iii) alt. reading: anchors read the SUBJECT   /port=${/^\d+$/}/ spliced (= /port=^\d+$/)                               on 'port=80'  pcre2: no match
+(iii) hole look-alike, no &                    /x${/^a/}/  (a hole opens no scope: ^ = the subject's start)             on 'xa'       pcre2: no match
+(iii) hole look-alike, with &                  /x${/^a/ & /(?s).*/}/                                                    on 'xa'       pcre2: match (0,2)
+(iv) & nested in a hole of an & operand        /\w+/ & /a${ /^\d$/ & <5 }b/                                             on 'a3b'      pcre2: match (0,3)
+(iv) alt. reading: inner ^ reads the OUTER operand's span /\w+/ & /a^\d$b/                                                         on 'a3b'      pcre2: no match
+(iv) condition inside a hole                   P := /(?<w>\w)-(?<v>\w+)/; /k=${ P & (v: /^a\w*/) }/                     on 'k=x-ab'   pcre2: match (0,6) [ends at 0 qualifying: 6,5]
+(iv) condition inside a hole                   P := /(?<w>\w)-(?<v>\w+)/; /k=${ P & (v: /^a\w*/) }/                     on 'k=x-ba'   pcre2: no match
+(v) label: condition                           P := /(?<w>\w) (?<x>\w+)/; P & (x: /^S\w*/)                              on 'a Sab'    pcre2: match (0,5) [ends at 0 qualifying: 5,4,3]
+(v) label: condition                           P & (x: /^S\w*/)                                                         on 'a xSab'   pcre2: no match
+(vi) operand is an & chain                     (/^\d+/ & /\d+$/) & <256                                                 on 'x300 12'  pcre2: match (1,3) [ends at 1 qualifying: 3,2]
+(vi) operand is an & chain                     /^\d+/ & (/\d+$/ & <256)                                                 on 'x300 12'  pcre2: match (1,3) [ends at 1 qualifying: 3,2]
+(vii) edge assertion: why it is an ERROR       /\w+/ & /\bfoo/ read as plain PCRE on the span                           on 'xfoo'     pcre2: match (1,4)
+(vii) edge assertion: the pasted text          /\w*\bfoo/  (\b reads the real context)                                  on 'xfoo'     pcre2: no match
+(vii) (?m) in an operand                       /\w+/ & /(?m)^foo/                                                       on 'xfoo'     pcre2: match (1,4)
+(viii) rx-text & (switch ON)                   /^\d+&${<256}$/  (operands ^\d+ and ${<256}$)                            on 'x300 12'  pcre2: match (1,3) [ends at 1 qualifying: 3,2]
+(viii) rx-text & (switch ON)                   /^(?:\d+&${<256})$/  (anchors outside the group read the subject)        on 'x300 12'  pcre2: no match
+(viii) rx-text & (switch ON)                   /^(?:\d+&${<256})$/                                                      on '200'      pcre2: match (0,3)
+(viii) rx-text & (switch ON)                   /a|^b&\w+/  (| outside: ^b is an & operand)                              on 'xb'       pcre2: match (1,2)
+
+# anchored(P): the ruled text \A(?:P)\z vs two readings of 'P in filter role on the enclosing scope':
+#   scope = P whole on the innermost scoped match; where-it-stands = P whole on the span it takes
+a final pattern                                          on 'foo\n' \A..\z: no match     | scope: no match     SAME | where-it-stands: match (0,3)  DIFF
+a final pattern                                          on 'foo'   \A..\z: match (0,3)  | scope: match (0,3)  SAME | where-it-stands: match (0,3)  SAME
+a final pattern, $ in P                                  on 'foo\n' \A..\z: no match     | scope: no match     SAME | where-it-stands: match (0,3)  DIFF
+a final pattern, alternation at P's top                  on 'ab'    \A..\z: no match     | scope: no match     SAME | where-it-stands: match (0,1)  DIFF
+a final pattern, alternation at P's top                  on 'ab'    \A..\z: match (0,2)  | scope: match (0,2)  SAME | where-it-stands: match (0,2) [ends at 0 qualifying: 2,1] DIFF
+a final pattern, (?m) inside P                           on 'a\n'   \A..\z: no match     | scope: no match     SAME | where-it-stands: match (0,1)  DIFF
+a final pattern, (?m) inside P                           on 'a\nb'  \A..\z: match (0,3)  | scope: match (0,3)  SAME | where-it-stands: match (0,3)  SAME
+inside a filter: x & anchored(P), x := /\w+/             on 'xfoo'  \A..\z: match (1,4)  | scope: match (1,4)  SAME | where-it-stands: match (1,4)  SAME
+inside a filter, (?m) and alternation                    on 'a\n'   \A..\z: match (0,1)  | scope: match (0,1)  SAME | where-it-stands: match (0,1)  SAME
+a label: condition                                       on 'z ab'  \A..\z: match (0,4)  | scope: match (0,4)  SAME | where-it-stands: match (0,4)  SAME
+in a HOLE: /x${anchored(/a/)}/                           on 'xa'    \A..\z: no match     | scope: no match     SAME | where-it-stands: match (0,2)  DIFF
+in a HOLE at the scope's start: /${anchored(/a/)}b/      on 'ab'    \A..\z: no match     | scope: no match     SAME | where-it-stands: match (0,2)  DIFF
+in a hole of an & operand: /\w+/ & /x${anchored(/a/)}/   on 'xa'    \A..\z: no match     | scope: no match     SAME | where-it-stands: match (0,2)  DIFF
+
+# (B) anchored in a hole: the macro's text vs plain PCRE (searched, the subject's ends)
+/x${anchored(/a/)}/  (the macro's text in the hole)          on 'xa'    pcre2: no match
+/x\Aa\z/  (plain PCRE, written by hand)                      on 'xa'    pcre2: no match
+/x${anchored(/a/)}/                                          on 'a'     pcre2: no match
+/x\Aa\z/                                                     on 'a'     pcre2: no match
+/${anchored(/a/)}b/  (at the subject's start: \z still fails) on 'ab'    pcre2: no match
+/\Aa\zb/                                                     on 'ab'    pcre2: no match
+
+# (C) the whole-match warning by place: the pattern WITH its edge anchor vs WITHOUT it
+#   fires = the place matches its pattern whole; the anchor adds nothing there exactly when the answers agree
+a side of &                        fires=yes /\w+/ & /^foo/                           match (1,4)    | /\w+/ & /foo/                        match (1,4)    on 'xfoo'    anchor adds nothing: YES
+a side of &                        fires=yes /\w+/ & /foo$/                           match (0,3)    | /\w+/ & /foo/                        match (0,3)    on 'foox'    anchor adds nothing: YES
+a side of & (in a hole)            fires=yes /k=${/^\d+$/ & <256}/                    match (0,4) [ends at 0 qualifying: 4,3] | /k=${/\d+/ & <256}/                  match (0,4) [ends at 0 qualifying: 4,3] on 'k=80'    anchor adds nothing: YES
+a label: condition                 fires=yes P & (x: /^S\w*/)                         match (0,5) [ends at 0 qualifying: 5,4,3] | P & (x: /S\w*/)                      match (0,5) [ends at 0 qualifying: 5,4,3] on 'a Sab'   anchor adds nothing: YES
+a label: condition                 fires=yes P & (x: /^S\w*/)                         no match       | P & (x: /S\w*/)                      no match       on 'a xSab'  anchor adds nothing: YES
+a modifier's argument              fires=yes /\d+/ & padded(/^5/)                     match (1,4)    | /\d+/ & padded(/5/)                  match (1,4)    on 'x005'    anchor adds nothing: YES
+a modifier's argument              fires=yes /\d+/ & padded(/^5/)                     match (0,2)    | /\d+/ & padded(/5/)                  match (0,2)    on '057'     anchor adds nothing: YES
+a warning-name set                 fires=yes @warn.off(/^dead\./)                     dead.          | @warn.off(/dead\./)                  dead.          on 'names'   anchor adds nothing: YES
+a library gap: contains            fires=no  /\w+ \w+/ & contains(/^err/)             no match       | /\w+ \w+/ & contains(/err/)          match (0,5)    on 'x err'   anchor adds nothing: NO
+a final pattern's own anchors      fires=no  /^foo/                                   no match       | /foo/                                match (1,4)    on 'xfoo'    anchor adds nothing: NO
+a hole in a final pattern          fires=no  /x${/^a/}/                               no match       | /x${/a/}/                            match (0,2)    on 'xa'      anchor adds nothing: NO
+anchored(...): the macro's ends    fires=no  anchored(/foo/)                          no match       | /foo/                                match (1,4)    on 'xfoo'    anchor adds nothing: NO
+
+engines disagree on 0 rows
