@@ -729,8 +729,9 @@
 #undef PCREC_LIMIT_LIMITS_H_BUILD_D
 #undef PCREC_LIMIT_LIMITS_H_FLAG_D
 
-/* The six rows below (two BUILD_D-only, four FLAG_D since [LIM-OVR]
- * 2026-09-22 — see limits.def's own header for the token split) need a
+/* The eight rows below (three BUILD_D-only, five FLAG_D: four since [LIM-OVR]
+ * 2026-09-22, PCREC_DEFAULT_WINDOW_SEARCH_WIDTH since [COVER-CAP] stage 2 —
+ * see limits.def's own header for the token split) need a
  * REAL `#ifndef`/`#define`/`#endif` at their site — a preprocessor
  * DIRECTIVE, which no macro expansion can generate, is the one shape
  * limits.def's table rows cannot produce by themselves. This wiring is
@@ -764,5 +765,17 @@
 #ifndef PCREC_MAX_AUTO_DFA_ELEMS
 #define PCREC_MAX_AUTO_DFA_ELEMS PCREC_MAX_AUTO_DFA_ELEMS_DEFAULT
 #endif
+#ifndef PCREC_DEFAULT_WINDOW_SEARCH_WIDTH
+#define PCREC_DEFAULT_WINDOW_SEARCH_WIDTH PCREC_DEFAULT_WINDOW_SEARCH_WIDTH_DEFAULT
+#endif
+
+/* [COVER-CAP] stage 2 (docs/design/cover_cap.md §11.2): the window search's
+ * built-in width must be a legal width, 1 .. the anchored ceiling less one
+ * (the cover walk ends by then). A `_Static_assert`, never `#if`: the
+ * ceiling is an `enum` at the default and reads as 0 in `#if`. A builder
+ * who lowers the ceiling by `-D` lowers this default with it. */
+_Static_assert(PCREC_DEFAULT_WINDOW_SEARCH_WIDTH >= 1 &&
+               PCREC_DEFAULT_WINDOW_SEARCH_WIDTH <= PCREC_ANCHORED_MAX_STATES - 1,
+               "PCREC_DEFAULT_WINDOW_SEARCH_WIDTH must lie in 1 .. PCREC_ANCHORED_MAX_STATES - 1");
 
 #endif /* PCREC_LIMITS_H */

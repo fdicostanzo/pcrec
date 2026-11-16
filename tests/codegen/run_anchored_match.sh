@@ -420,7 +420,7 @@ REF_SRCS="$(pcrec_lib_srcs "$ROOT_DIR")"
 if [ -z "$REF_SRCS" ]; then
     bad "§4b found no compiler sources under $ROOT_DIR/src for the reference build"
 elif ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
-        -DPCREC_ANCHORED_MAX_STATES=6 \
+        -DPCREC_ANCHORED_MAX_STATES=6 -DPCREC_DEFAULT_WINDOW_SEARCH_WIDTH=5 \
         -o "$REF" "$ROOT_DIR"/cli/main.c $REF_SRCS 2>"$WORKDIR/refbuild.log"; then
     bad "§4b could not build the -DPCREC_ANCHORED_MAX_STATES=6 reference compiler: $(head -3 "$WORKDIR/refbuild.log")"
 else

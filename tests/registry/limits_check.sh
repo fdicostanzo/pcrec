@@ -126,6 +126,7 @@ PCREC_UPROP_NAME_MAX
 PCREC_MAX_SPLICE_NODES
 PCREC_MAX_SPLICE_TOTAL
 PCREC_ANCHORED_MAX_STATES
+PCREC_DEFAULT_WINDOW_SEARCH_WIDTH
 PCREC_MARK_PRIO_MAX_STATES
 PCREC_MAX_VM_EMIT_CODE_BYTES
 PCREC_MAX_FIND_COUNT
@@ -179,8 +180,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 81 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then   # 81 at [COVER-CAP] stage 1 (the span slice's subset budget retired with the slice, cover_cap.md §3.1); 82 at R-38 K38-2 (PCREC_MAX_REQ_RUN_EMIT retired, span_runs_sheet.md §4.3; restored to the count by lane k382m); 82 at the [RUN-POS-SET] catch-up merge (lane altcatch): both sides took 78 -> 80 with different rows, git kept the shared LA_* pair once; 84 at [UCP] U3 (PCREC_MAX_CHAR_STEP_SETS, PCREC_MAX_CHAR_STEP_ATOMS); 83 at review r4 ucpu3 RULES-9 (PCREC_UCP_NARROW_MAX_INTERVALS retired: every UCP set compiles, the knee routed nothing)
-    ok "[count] --list-limits reports all 81 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 82 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then   # 82 at [COVER-CAP] stage 2 (PCREC_DEFAULT_WINDOW_SEARCH_WIDTH, cover_cap.md §11.2); 81 at [COVER-CAP] stage 1 (the span slice's subset budget retired with the slice, cover_cap.md §3.1); 82 at R-38 K38-2 (PCREC_MAX_REQ_RUN_EMIT retired, span_runs_sheet.md §4.3; restored to the count by lane k382m); 82 at the [RUN-POS-SET] catch-up merge (lane altcatch): both sides took 78 -> 80 with different rows, git kept the shared LA_* pair once; 84 at [UCP] U3 (PCREC_MAX_CHAR_STEP_SETS, PCREC_MAX_CHAR_STEP_ATOMS); 83 at review r4 ucpu3 RULES-9 (PCREC_UCP_NARROW_MAX_INTERVALS retired: every UCP set compiles, the knee routed nothing)
+    ok "[count] --list-limits reports all 82 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true
@@ -666,7 +667,7 @@ fi
 # override token, K35's "a control must not share a source with what it
 # controls") and cross-checks BOTH directions against the dump.
 #
-# Scoped to the FLAG_D/BUILD_D population (the six rows the [LIM-OVR] token
+# Scoped to the FLAG_D/BUILD_D population (the BUILD_D/FLAG_D rows the [LIM-OVR] token
 # split concerns), not to every "flag"-rendering row in the table: eleven
 # rows render bare "flag" and five of those six have no `-D` machinery at
 # all (a caller flag with no build-time-movable default is not this arm's
@@ -698,18 +699,28 @@ else
     diff <(printf '%s\n' "$EXPECT_RAISE_ONLY") <(printf '%s\n' "$RAISE_ONLY_NAMES") >&2 || true
 fi
 
-# (b) the one BESPOKE (non-table) caller lever among the FLAG_D population:
-#     --warn-emit-bytes= sets pcrec_options.warn_emit_bytes directly in
-#     cli_parse's own else-if chain, never through the table above, because
-#     it is SETTABLE rather than raise-only (docs/spec/limits.md's "the one
-#     size option that is not raise-only" section) and so does not fit that
-#     table's shape. Verified live rather than assumed.
+# (b) the two BESPOKE (non-table) caller levers among the FLAG_D population:
+#     --warn-emit-bytes= sets pcrec_options.warn_emit_bytes and
+#     --window-search-width= sets pcrec_options.window_search_width
+#     ([COVER-CAP] stage 2, cover_cap.md §11.2.1) directly in cli_parse's own
+#     else-if chain, never through the table above, because each is SETTABLE
+#     rather than raise-only (docs/spec/match_api.md's "`warn_emit_bytes` is
+#     not raise-only"; tuning.md section 2.56 for the width) and so does not
+#     fit that table's shape. Verified live rather than assumed, each its own
+#     ok/bad pair.
 BESPOKE_FLAG_NAMES=""
 if grep -q '"--warn-emit-bytes=' "$ROOT_DIR/cli/main.c"; then
     ok "[override-src] cli/main.c still carries the bespoke --warn-emit-bytes= flag (PCREC_DEFAULT_WARN_EMIT_BYTES's caller lever)"
     BESPOKE_FLAG_NAMES="PCREC_DEFAULT_WARN_EMIT_BYTES"
 else
     bad "[override-src] --warn-emit-bytes= is gone from cli/main.c -- PCREC_DEFAULT_WARN_EMIT_BYTES's FLAG_D override is now UNVERIFIED against a real site"
+fi
+if grep -q '"--window-search-width=' "$ROOT_DIR/cli/main.c"; then
+    ok "[override-src] cli/main.c still carries the bespoke --window-search-width= flag (PCREC_DEFAULT_WINDOW_SEARCH_WIDTH's caller lever)"
+    BESPOKE_FLAG_NAMES="$BESPOKE_FLAG_NAMES
+PCREC_DEFAULT_WINDOW_SEARCH_WIDTH"
+else
+    bad "[override-src] --window-search-width= is gone from cli/main.c -- PCREC_DEFAULT_WINDOW_SEARCH_WIDTH's FLAG_D override is now UNVERIFIED against a real site"
 fi
 
 CALLER_LEVER_NAMES="$(printf '%s\n%s\n' "$RAISE_ONLY_NAMES" "$BESPOKE_FLAG_NAMES" | grep -v '^$' | sort -u)"
