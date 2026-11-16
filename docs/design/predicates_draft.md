@@ -4,7 +4,9 @@
 
 - **rev 13 (lane predspec13, 2026-11-15).** Applies the confirming review r14 on rev 12 (draft
   `$PCREC_TMPDIR/scratch/crit-predspec12/review.md`, filed by another lane) and folds the owner's three entries after
-  rev 12 (CF:1026-1062 on main). RULINGS: `search` is renamed `occurrences` everywhere outside quotations and history
+  rev 12 (CF:1026-1062 on main) and the fourth that arrived during it (CF:1068-1081 on main, rulings R-1: a per-call hit
+  label name, O55 (i) RESOLVED; NO count warning, O63 CLOSED, L66 GAP -> BY DESIGN; the owner's hole example
+  `999${/\d+/ & <100}999` an acceptance row). RULINGS: `search` is renamed `occurrences` everywhere outside quotations and history
   (§2.6, §8, §0.3; O61 CLOSED; the label `hit` kept, its name not ruled); `anchored` has the EXACT ends,
   `anchored(rx) := /\A(?:${rx})\z/` (§8; O62 CLOSED; L68 moves DIFFERENT -> SAME; E-HTTP respelled `anchored(block)`,
   the same text); under the rx-`&` switch ON `&` is the operator exactly where `|` means alternation, a literal is
@@ -18,7 +20,7 @@
   in O61, `capture` classed), and DOC CENSUS-2 ("span" in the draft's voice), CENSUS-8 ("searched" for the mode),
   `\Z` in the list of ends. §0.1: L68 SAME; L11, L41 BY DESIGN -> WARNING; NEW L70 (`P` vs `P & /(?s).*/`), L71 (the
   same in a hole). §13: NEW O64 (`anchored` in a hole: the "filter role" wording differs there, so the definition is
-  the `\A`/`\z` text), O65 (the warning in every filter role); owner questions (2), (4) carried; DECIDED BY THIS LANE
+  the `\A`/`\z` text), O65 (the warning in every filter role); owner questions (2), (4) ANSWERED; DECIDED BY THIS LANE
   (22)-(29).
 - **rev 12 (lane predspec12, 2026-11-15).** Folds the owner's evening ruling ONE ANCHORING RULE, `anchored()`, AND
   THE NAMING OF PROVIDED TRANSFORMS (CF:1001-1024; the manager's advice he agreed to, CF:1009, "Ok I agree"). (A)
@@ -236,7 +238,8 @@ Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 | the lean to fold `startsWith`/`endsWith` into `search` WITHDRAWN; the alternative (an explicit anchor switching the implicit one off) REJECTED (CF:1019-1020) | (the record's) | |
 | every PROVIDED transform is named for how it changes the FILTER, never for an action on the subject (CF:1020-1022) | "the name transform seemed to imply you were transforming the subject, but of course you're transforming the filter ... We should consider this in the naming of formal transforms that we provide" (CF:1006-1010) | the audit and that `search` needs a new name ("manager's note, not ruled", CF:1022-1024): §2.7, §13 O61 |
 
-  The THREE entries after rev 12 (rev 13; CF:1026-1062 on main). Each is the owner's own short answer to a question
+  The FOUR entries after rev 12 (rev 13; CF:1026-1062 and CF:1068-1081 on main, the last arriving during this
+  revision as rulings R-1). Each is the owner's own short answer to a question
   the manager put; a point reaches as far as the question he answered, and the ~21:20 entry CORRECTS part (a) of the
   ~20:55 one (CF:1048-1053):
 
@@ -246,6 +249,9 @@ Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 | `anchored` has EXACT ends (`\A`/`\z`): `anchored(/foo/)` as a final pattern does not match `foo\n` (CF:1050-1052) | "Anchored def: agree" (CF:1037), to the manager's `\A`/`\z` lean, as CORRECTED: "The anchored comment was to a previous statement" (CF:1049-1050) | defining `anchored(P)` as "P in filter role on the enclosing scope": NOT ruled (CF:1052-1053); not used, a reading of it differs in a hole (§11, §13 O64) |
 | under the rx-`&` switch ON, `&` is the operator EXACTLY where `\|` means alternation; a literal ampersand is `\&` or `[&]` (CF:1043-1046) | "agree. Limited to where \| is used to mean alternation. Also, \& should work as escape. Why not?" (CF:1041-1042) | the list of positions where PCRE's reading stands (the record's) |
 | BOTH operands of `&` are filter roles (the operator stays symmetric); an explicit anchor in an `&` operand draws a WARNING (CF:1059-1060) | "&: both sides filter and warn if anchor. Agree but test if it makes sense. Like in a hole, what does it mean that they are anchored?" (CF:1057-1058) | the CONDITION: test in every position, bring him any without a sensible meaning (CF:1060-1062): §11 THE AMPERSAND RULE TESTED BY POSITION; the warning's name `anchor.operand`, text and reach (LEAN, §13 O65); the general form of what opens a scoped match (LEAN, review r14 F2) |
+| a call may NAME its hit label; two calls exposing the same hit label in one chain are the ambiguity error, the per-call name its fix (CF:1070-1072) | `occurrences(x, label = "foo")` (CF:1070) | the spelling `label =` (a placeholder; `label` is reserved metadata, review r10 CENSUS-14): the spelling step |
+| NO warning for a count filter in a searched program; the trap and its fix stated where counts are documented (CF:1075-1077) | "Host count warn: agree" (CF:1075); confirmed "Count warning: yes I agree with that interpretation" (CF:1081) | |
+| an `&` in a hole: the stretch the hole consumes is the scope both operands match whole; `999${/\d+/ & <100}999` matches `99945999`, an acceptance row (CF:1079-1080) | "so the match span that the & expression creates anchors for is the ${} hole. 999${/\d+/ & <100}999 matches 99945999" (CF:1078-1079) | the near row `99912345999` (no match) and the other positions: §11 THE AMPERSAND RULE TESTED BY POSITION |
 
 - **LEAN**: a manager's reading or proposal, this document's consequence of a ruling, an owner "perhaps", or a
   review fix (the FIX-NOW dispositions of review r1 other than Q1 and OWN-1 carry no owner ruling); the source is
@@ -349,7 +355,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L64 | `alt.x[1]` vs `(x[1]: S)` (and `$x[1]`) on `alt := /(?J)(?:(?<x>a)\|(?<x>b))+/` | DIFFERENT: BY DESIGN | `[n]` reads BY POSITION (§5.4 `[ ]` row): in VALUE position (`alt.x[1]`, the rx of the groups labelled x) it is ENTRY 1 of that rx's array interface, the first group in the PATTERN (`a`); on the left of `:` and under `$` (match positions) it is ITERATION 1 of the label in the MATCH (`b` on `ba`) | review r10 FIXA-2, CENSUS-10; LEAN |
 | L65 | `/x\|(?<n>\d)+/` vs `/(?<n>\d)*x/` under `(n: <5)`, on the span `x` | DIFFERENT: WARNING | PER MATCH (§4.2): in the first the match took the other alternative and never REACHED n's loop, so n is UNSET and the condition FAILS (`label.unset`), although the loop's own `+` is never consulted; in the second the loop was REACHED and ran zero times, so it HOLDS. PCRE reports n unset in both: the zero-iteration rule is a condition rule laid over PCRE's parse (where the match stopped short of the label), not a capture state | review r10 FIXB-2; RULED BY ACCEPTANCE (CF:997-1000 on main, "Agree with lean"; rulings R-1) |
 | L67 | `/(\d+)&${<256}/` vs `/port=(\d+)&${<256}/` vs `/port=(?:(\d+)&${<256})/`, with the rx-`&` switch ON | DIFFERENT: GAP | D196's precedence (concatenation, then `&`) makes an rx-text `&` cover the WHOLE CONCATENATION on each side within its alternative: the first guards the number; the second is `/port=(\d+)/ & <256`, EMPTY (no string starting `port=` is a numeral); the third guards one atom by grouping it and matches `port=80`. An empty-intersection diagnostic at an rx-text `&` is not stated (§5.2 names narrowing sites only; proposed: the empty-intersection error at every `&` whose result is empty, not adopted) | review r12 CENSUS-5; LEAN (this document) |
-| L66 | `headers & occurs.exactly(1, (name: any_case("Host")))` SEARCHED vs the same program on the WHOLE SUBJECT, on `Host: a\r\nhost: b` | DIFFERENT: GAP | a count filter is NOT UPWARD-CLOSED: searched, D196 tries shorter ends and the one-header span `Host: a` passes (match), while the whole block has two Host headers (no match). A count over a block means "the whole block" only when the program anchors (§12.9 is anchored in rev 10); a warning for a count filter in a searched program (`count.searched`, proposed) is not adopted; rev 12: the owner question, §13 O63 | review r10 SIM-6; §13 O38, O63 |
+| L66 | `headers & occurs.exactly(1, (name: any_case("Host")))` SEARCHED vs the same program on the WHOLE SUBJECT, on `Host: a\r\nhost: b` | DIFFERENT: BY DESIGN | rev 13: the owner ruled NO warning (CF:1073-1081 on main; §13 O63 CLOSED), so the difference is the stated meaning of a searched program, told where counts are documented (rev 10-12: GAP). A count filter is NOT UPWARD-CLOSED: searched, D196 tries shorter ends and the one-header span `Host: a` passes (match), while the whole block has two Host headers (no match). A count over a block means "the whole block" only when the program anchors (§12.9 is anchored in rev 10); a warning for a count filter in a searched program (`count.searched`, proposed) is REFUSED by the owner (rev 13); the fix is `anchored(...)` | review r10 SIM-6; §13 O38, O63; CF:1073-1081 on main |
 | L68 | `anchored(x)` as a FINAL pattern vs `/\A${x}\z/`, on a subject ending in a newline (`x := /foo/`, subject `foo\n`) | SAME | rev 13: `anchored` has the EXACT ends (RULED, CF:1048-1053 on main: "`anchored(/foo/)` as a final pattern does not match `foo\n`"), `anchored(rx) := /\A(?:${rx})\z/`, so the two are one text: both find nothing in `foo\n` (`predspec13_anchor.out`). Rev 12 said DIFFERENT: BY DESIGN under the owner's placeholder `/^${rx}$/` (PCRE's `$` held before the final newline; §13 O62 CLOSED). In a HOLE `anchored` reads the enclosing scope like any anchor (`/x${anchored(/a/)}/` never matches `xa`): §13 O64 | CF:1005, CF:1014-1015 (accepted at CF:1006); exact ends: CF:1048-1053 on main |
 | L69 | `x & anchored(r)` vs `x & r` vs `x & /^(?:r)$/` (and `x & /\A(?:r)\z/`) (and `/^5/` vs `/5/` in a filter) | SAME | (rev 13: SAME answers; `anchor.operand` fires on the third and fourth forms, written anchors, and not on `anchored(r)`) a filter role matches its WHOLE span, and an anchor at a whole match's own start or end always holds there, so `anchored` in filter position is the identity (the record's "identity in filter position"); an explicit anchor never SWITCHES OFF the implicit whole-value rule (`/^5/` accepts no more than `/5/`: it rejects `57`), the alternative the owner rejected (CF:1019-1020). Hence `startsWith(rx) := /^${rx}/` (the owner's first sketch) would mean exactly rx in a filter, and the library body is the plain gap `/${rx}.*/` (§8). libpcre2 10.46 whole-value: `^(?:foo)$` accepts `foo`, rejects `foo\n`, as `foo` does; `^5` rejects `57` | CF:1011-1020 (accepted at CF:1006) |
 | L70 | `P` vs `P & /(?s).*/` as a FINAL program (intersection with every string): `/^foo/` vs `/^foo/ & /(?s).*/` on `xfoo`; `/foo$/` vs `/foo$/ & /(?s).*/` on `foox`; `/^\d+$/` vs `/^\d+$/ & <256` on `x300 12` | DIFFERENT: WARNING | both operands of `&` are filter roles (RULED, CF:1054-1062 on main), so an anchor in an operand reads the span both match, not the subject: `/^foo/` finds nothing in `xfoo`, `/^foo/ & /(?s).*/` finds `foo` at 1-4; `/foo$/` nothing in `foox`, the `&` form `foo` at 0-3; `/^\d+$/` nothing in `x300 12`, `/^\d+$/ & <256` finds `30` at 1-3 (libpcre2 10.46 and Python `re`, `predspec13_anchor.out`). `anchor.operand` fires on the `&` forms (§11 THE AMPERSAND RULE TESTED BY POSITION); to pin the subject: `anchored(/\d+/ & <256)` | review r14 F1; the ruling CF:1054-1062 on main; the warning's name and text: LEAN |
@@ -435,7 +441,7 @@ SWEEP.
 EVERY ROW RE-APPLIED UNDER REV 13'S RULINGS (CF:1026-1062 on main: `occurrences`; `anchored`'s exact ends; rx-text
 `&` where `|` alternates; both `&` operands filter roles with the `anchor.operand` warning). ANSWER MOVES: L68 (SAME:
 `anchored` is now the `\A`/`\z` text). CLASS MOVES (no answer moves): L11, L41 BY DESIGN -> WARNING (`anchor.operand`
-on an anchor in an `&` operand). NEW: L70, L71 (DIFFERENT: WARNING, the look-alikes the ruling creates). NOTED: L7,
+on an anchor in an `&` operand); L66 GAP -> BY DESIGN (the owner ruled no count warning, CF:1073-1081 on main). NEW: L70, L71 (DIFFERENT: WARNING, the look-alikes the ruling creates). NOTED: L7,
 L13, L15 stay BY DESIGN unless the owner extends the warning (§13 O65); L69's answers unchanged, the warning fires on
 its written-anchor forms; L39's SAME now rests on the ruling (both operands filter roles). Unchanged in answer: every
 row naming `occurrences` (respelled from `search`: L16, L31, L50-L53, L55, L57, L58, L61, L62; the same transform),
@@ -824,7 +830,13 @@ with g = x existed) and rejects from rev 9 (hit 2 has g = y). Rev 8's meaning is
 the argument, `contains(r & (g: "x"))`, which narrows what is searched for (§0.1 L61), or `contains(r) & some((g:
 "x"))`. So every `contains` exposes the repeated label `hit` and makes its argument's labels repeated: two
 transforms in one `&` chain then both offer `hit`, and a label set once in the argument (`contains(/(?<k>\d)/)`'s k)
-is repeated in the result (a bare `$k` is the §4.3 error at the default level); readings and a lean: §13 O55. Cost:
+is repeated in the result (a bare `$k` is the §4.3 error at the default level); §13 O55. RULED in rev 13 (CF:1068-1072
+on main, his words `occurrences(x, label = "foo")`, CF:1070): a call may NAME its hit label, two calls exposing the
+same hit label in one chain are the ambiguity ERROR naming both, and the per-call name is the fix:
+`(m: contains("a", label = "ha") & contains("b", label = "hb") & some((ha: ...)))`. The SPELLING `label =` is the
+owner's placeholder (his examples' spellings are placeholders, 2026-11-10): rev 9 dropped `label =` because `label`
+is a reserved metadata name (§5.4 `.` row; review r10 CENSUS-14), so the setting's name is a spelling-step item, not
+ruled; this document writes his spelling, marked placeholder. Cost:
 where no question reads x's labels, the compiler may build `contains` as the plain set (an optimisation that changes
 no answer and does not change which labels exist).
 
@@ -2269,7 +2281,7 @@ docs/dev/lanes/predspec13_anchor.py`). Searched rows report the leftmost start, 
 |---|---|---|---|---|
 | (i) a final program, searched | each candidate stretch of the subject the search tries, in D196's order; the stretch reported is the one both accept | `/^\d+$/ & <256`, `x300 12`: `30` at 1-3 (`/^\d+$/` alone: no match; `/\d+/ & <256`: `30`, the same) | YES: "a numeral below 256 somewhere"; the anchors add nothing | fires (at `^` and `$`) |
 | (ii) a final program under `anchored` | the whole subject, exact ends (`anchored(P) = /\A(?:P)\z/`) | `anchored(/^\d+$/ & <256)`: `x300 12` no match; `200` match 0-3; `200\n` no match (the same without the operand anchors) | YES: the anchors coincide with the subject's ends and add nothing | fires |
-| (iii) inside a hole of an rx | the text the hole takes; the rx around the hole reads the enclosing scope | `/port=${ /^\d+$/ & <256 }/`: `port=80` match 0-7; `port=300` match 0-7 (`port=30`: nothing after the hole stops the number); `/port=${ /\d+/ & <256 }\b/`: `port=300` no match | YES: the hole's text is the only stretch both can share; reading `^` as the subject's start would make the hole unmatchable (`/port=^\d+$/`: never) | fires |
+| (iii) inside a hole of an rx | the text the hole takes; the rx around the hole reads the enclosing scope (the owner's own reading, CF:1078-1080 on main: "the match span that the & expression creates anchors for is the ${} hole") | ACCEPTANCE ROW (the owner's, CF:1079): `/999${ /\d+/ & <100 }999/`: `99945999` match 0-8 (the hole's text `45`); near row `99912345999`: no match (`12345` is not below 100, and no other `999` pair brackets a numeral). `/port=${ /^\d+$/ & <256 }/`: `port=80` match 0-7; `port=300` match 0-7 (`port=30`: nothing after the hole stops the number); `/port=${ /\d+/ & <256 }\b/`: `port=300` no match | YES: the hole's text is the only stretch both can share; reading `^` as the subject's start would make the hole unmatchable (`/port=^\d+$/`: never) | fires |
 | (iv) a filter nested inside a hole | the INNERMOST filter role's span: an inner `&` in a hole of an outer operand reads the inner hole's text; a condition in a hole reads its label's text | `/\w+/ & /a${ /^\d$/ & <5 }b/`, `a3b`: match 0-3 (the inner `^` read as the outer operand's start: no match); `P := /(?<w>\w)-(?<v>\w+)/`, `/k=${ P & (v: /^a\w*/) }/`: `k=x-ab` match 0-6, `k=x-ba` no match | YES: each `&` has its own span; an anchor reads the nearest | fires (inner operands); for the condition: §13 O65 |
 | (v) a `label:` condition | the label's text in this match | `P := /(?<w>\w) (?<x>\w+)/`, `P & (x: /^S\w*/)`: `a Sab` match 0-5, `a xSab` no match | YES (E-CTX-1; unchanged since rev 11) | by the ruling's words NO (the anchor is in a condition, not directly in the operand); LEAN yes, §13 O65 |
 | (vi) an operand that is itself an `&` chain | the same span for every operand of the chain (`&` is associative, L1) | `(/^\d+/ & /\d+$/) & <256` and `/^\d+/ & (/\d+$/ & <256)`, `x300 12`: both `30` at 1-3 | YES: grouping changes nothing | fires (each anchor) |
@@ -2994,7 +3006,8 @@ review's proposed lean, in plain words, NOT resolved):
   `&`, proposed, not adopted); rev 12: L63 moves from SAME to BY DESIGN (PCRE's `$` before a final newline; whether
   a warning should name a `$` inside `contains`/`occurrences` that a gap can follow is this item's question), L68 was BY
   DESIGN (`anchored` vs `\A...\z`), SAME from rev 13 (exact ends, §13 O62 CLOSED), L69 SAME; rev 13: L11, L41 move
-  from BY DESIGN to WARNING (`anchor.operand`), L70, L71 new WARNING rows; rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
+  from BY DESIGN to WARNING (`anchor.operand`), L70, L71 new WARNING rows, L66 from GAP to BY DESIGN (no count
+  warning, RULED, CF:1073-1081 on main); rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
   stated meaning of a mark or a library name, §5.4, §4.3; L52, "a plain condition on a hit means ALL hits", is the one
   rev 8 row where a warning could pay, since the owner's own first question was about it, CF:904):
   DIFFERENT with no named diagnostic, so G0's acceptance fails on them today. Some are open items above; L20 (a padded
@@ -3197,8 +3210,12 @@ here):
   decided here (the manager's ruling on FIXB-4). REV 12: put to the owner as question (2) of OWNER QUESTIONS AFTER
   REV 12 (lean: (A'), the ERROR, with (B'), a per-call hit name, as its fix). `startsWith`/`endsWith`/`anchored` add
   no `hit` (plain gap bodies, §8), so only `occurrences` and `contains` meet this. REV 13: `search` is renamed
-  `occurrences` (CF:1028); whether `hit` is renamed to match is NOT ruled (CF:1029-1030), a spelling-step note; the
-  question stays the owner's (OWNER QUESTIONS AFTER REV 13, (2)).
+  `occurrences` (CF:1028); whether the default name `hit` is renamed to match is NOT ruled (CF:1029-1030), a
+  spelling-step note. (i) is RESOLVED in rev 13 (RULED, CF:1068-1072 on main; rulings R-1): reading (A') with (B') as
+  its fix, (B') OPTIONAL (a call MAY name its hit label, `occurrences(x, label = "foo")`, his placeholder spelling;
+  `label` is reserved metadata since rev 9, review r10 CENSUS-14, so the setting's name waits for the spelling step);
+  two calls exposing the same hit label in one chain are the ambiguity ERROR naming both. Still open: (A)/(B)/(C) of
+  the label's default name and the "every hit" spelling, both spelling-step questions.
 - **O56. Which iteration a record or an index means.** (1) Same iteration by record when the labels sit at
   DIFFERENT depths (`some((g: "x", k: 1))`, g inside the loop, k outside it, or two nested loops). Lean: the
   innermost loop that encloses every label of the record; a label outside it has one value for every iteration of
@@ -3364,8 +3381,11 @@ Items NEW in rev 12 (the owner's 2026-11-15 evening ruling, CF:1001-1024):
   /\A(?:${rx})\z/` (§8); L68 is SAME; E-HTTP is written `anchored(block)`. The "P in filter role on the enclosing
   scope" wording (review r14's general form) is NOT ruled (CF:1050-1053) and is not used as the definition: one of
   its readings differs in a hole (O64).
-- **O63. Warn when a count sits in a program whose final pattern is searched?** (Review r10 SIM-6, L66; carried
-  from O38 as an owner question, unchanged in substance.) Under the one rule the wording still makes sense, restated:
+- **O63. Warn when a count sits in a program whose final pattern is searched?** CLOSED in rev 13: NO warning
+  (RULED, CF:1073-1077 and CF:1081 on main, "Host count warn: agree", confirmed "Count warning: yes I agree with that
+  interpretation"; rulings R-1); the trap and its fix (`anchored(...)`) stay stated where counts are documented (§4.3,
+  §8, §12.9; L66 moves from GAP to BY DESIGN). The item
+  as asked (review r10 SIM-6, L66; carried from O38): Under the one rule the wording still makes sense, restated:
   the count FILTER is a filter and matches its whole span, but a SEARCHED final pattern (the one place an rx is
   unanchored) picks the span, and a shorter span can pass a count the whole block fails (`Host: a\r\nhost: b`
   reports `Host: a`). The fix has a library spelling: `anchored(...)` around the final pattern (exact ends since rev
@@ -3393,10 +3413,11 @@ the `&` ruling; §11 THE AMPERSAND RULE TESTED BY POSITION):
 
 OWNER QUESTIONS AFTER REV 13 (the open small ones, each in one line with its lean; the plain-words version with an
 example each is in `docs/dev/lanes/predspec13_report.md`, QUESTIONS FOR THE OWNER). Rev 12's (1), (5), (6) are
-ANSWERED (CF:1026-1062 on main: rx-text `&` where `|` alternates, `occurrences`, exact ends); (3) was withdrawn.
-- (2) Two `occurrences`/`contains` calls in one `&` chain both expose `hit`: an ERROR naming both, fixed by a
-  per-call hit name: lean YES (O55 (A') with (B') as the fix). Carried unchanged.
-- (4) Warn when a count sits in a program whose final pattern is searched: lean NO (O63). Carried unchanged.
+ANSWERED (CF:1026-1062 on main: rx-text `&` where `|` alternates, `occurrences`, exact ends); (3) was withdrawn;
+(2) and (4) were answered on the evening of rev 13 (CF:1068-1081 on main; rulings R-1).
+- (2) ANSWERED in rev 13 (CF:1068-1072 on main): the ambiguity ERROR, fixed by a per-call hit label name
+  (`occurrences(x, label = "foo")`, spelling a placeholder; O55).
+- (4) ANSWERED in rev 13 (CF:1073-1081 on main): NO warning (O63).
 - (7) `anchored(...)` inside a hole: reads the scope around the hole and so cannot match after other text; a
   compile error when it provably cannot: lean YES (O64).
 - (8) The anchor warning in a `label:` condition, a modifier's argument and a name set too: lean YES (O65).
@@ -3432,7 +3453,7 @@ COND-FAMILY.md notes by date/heading; "11-12" = the 2026-11-12 sections, etc. "p
 
 | section | notes consolidated |
 |---|---|
-| rev 13 (rulings and review r14 sites) | CF:1026-1031 on main (`occurrences`) -> §2.6, §8, §0.3, §2.7, O61, every row and case naming the transform; CF:1033-1053 on main (`anchored`'s exact ends, as corrected; rx-text `&` where `\|` alternates) -> §8, §11, L68, E-HTTP, O60 (d), O62, O64, §0 G3, §5.4 `&` row; CF:1054-1062 on main (both `&` operands filter roles; the warning; the condition) -> §11 THE ONE ANCHORING RULE and THE AMPERSAND RULE TESTED BY POSITION, §7.1, L11, L39, L41, L70, L71, O65. Review r14 (F1, F2, CENSUS-1..8, `\Z`) -> §0.1, §0.3, §2.6, §2.7, §8, §11, §12, §13. Oracle runs: `docs/dev/lanes/predspec13_anchor.py`/`.out` |
+| rev 13 (rulings and review r14 sites) | CF:1026-1031 on main (`occurrences`) -> §2.6, §8, §0.3, §2.7, O61, every row and case naming the transform; CF:1033-1053 on main (`anchored`'s exact ends, as corrected; rx-text `&` where `\|` alternates) -> §8, §11, L68, E-HTTP, O60 (d), O62, O64, §0 G3, §5.4 `&` row; CF:1054-1062 on main (both `&` operands filter roles; the warning; the condition) -> §11 THE ONE ANCHORING RULE and THE AMPERSAND RULE TESTED BY POSITION, §7.1, L11, L39, L41, L70, L71, O65. CF:1068-1081 on main (rulings R-1: per-call hit label; no count warning; the hole example) -> §2.6, O55, O63, L66, §11 table (iii), owner questions. Review r14 (F1, F2, CENSUS-1..8, `\Z`) -> §0.1, §0.3, §2.6, §2.7, §8, §11, §12, §13. Oracle runs: `docs/dev/lanes/predspec13_anchor.py`/`.out` |
 | rev 12 (anchoring and naming sites) | CF:1001-1024 (ONE anchoring rule, `anchored()`, the naming of provided transforms): CF:1011-1014 -> §11 THE ONE ANCHORING RULE, §0.3 "scoped match", §0 rulings table, L63, L69, §2.6 ANCHORS IN THE ARGUMENT, §2.7, §12 REV 12, O49; CF:1014-1015 -> §8 `anchored`, L68, L69, O62; CF:1016-1019 -> §8 gap bodies, L17, FIXB-9 (2) withdrawn; CF:1019-1020 -> §11 REJECTED, L69; CF:1020-1024 -> §0 naming rule, §0.3, §2.6, §2.7, §8, O61. The brief's carried owner questions -> §13 OWNER QUESTIONS AFTER REV 12, O63. Oracle runs: `docs/dev/lanes/predspec12_anchor.py`/`.out` |
 | rev 9 (all sections touched) | CF:927-947 (search follows PCRE's matching; a bound name holds the transformed rx; min/max settings): CF:929 -> §2.6 owner's example, §5.1, O54; CF:932-936 -> §2.6, §4.3, §8, C36; CF:933-940 -> §2.6 `min` and ZERO HITS, §4.2 boundary, §4.3 table, L36, L55, L56, O28; CF:941-944 (the manager's note (a)) -> §4.5 build-or-refuse (LEAN), §6.1; CF:944-947 (note (b)) -> §2.6 `contains` = `search(x, min = 1)`, L58, O58. CF:948-961 (ONE reading everywhere; ambiguity the author's; no `max`): CF:950, CF:953-955 -> §4.5 rewritten, §0.3 glossary, L34, L59, C36, O33, C11; CF:949-950, CF:955-957 -> O57, §0 standing questions; CF:950-951, CF:957-959 -> §5.6 validation example, §7.1 `label.ambiguous`, §4.5; CF:951-952, CF:960-961 -> §2.6, §8, §0.2, O58. The brief's manager's calls -> O53, O31, C7, §2.6/§8 `(?s)` and the DECIDED BY THE MANAGER list. CF:180 -> O28 |
 | rev 10 (all sections touched) | review `docs/dev/reviews/2026-11-15-r10-predspec9.md` (DISPOSITIONS RULED) -> §0.1 L17, L25, L34, L48-L59, L60-L66, §2.6, §3.2, §3.4, §4.2-§4.5, §5.1-§5.6, §7, §7.1, §8, §11, §12, §13. CF:962-971 (`min` 0 or 1; the warning for the author's own text) -> §2.6, §4.5, §7.1, O58, O59; CF:972-988 (captures for one hit; one budget; count a numeral; `&` all or nothing) -> §4.3, §4.6, §8, §2.1, §11, C23, O39, O40, O50, O60; CF:989-996 (filters anchored at both ends) -> §11, §2.6, §8, L17, O49; CF:997-1000 (per match, on main after the lane's base; rulings R-1) -> §4.2, §4.3, §2.6, L55, L56, L65, O28 |

@@ -13,6 +13,8 @@
 (iii) & in a hole                              /port=${ /^\d+$/ & <256 }/                                               on 'port=80'  pcre2: match (0,7) [ends at 0 qualifying: 7,6]
 (iii) & in a hole                              /port=${ /^\d+$/ & <256 }/                                               on 'port=300' pcre2: match (0,7) [ends at 0 qualifying: 7,6]
 (iii) & in a hole                              /port=${ /\d+/ & <256 }\b/  (author's fix for 'the whole number')        on 'port=300' pcre2: no match
+(iii) the owner's acceptance row (CF:1078-1079 on main) /999${ /\d+/ & <100 }999/                                                on '99945999' pcre2: match (0,8)
+(iii) its near row                             /999${ /\d+/ & <100 }999/                                                on '99912345999' pcre2: no match
 (iii) alt. reading: anchors read the SUBJECT   /port=${/^\d+$/}/ spliced (= /port=^\d+$/)                               on 'port=80'  pcre2: no match
 (iii) hole look-alike, no &                    /x${/^a/}/  (a hole opens no scope: ^ = the subject's start)             on 'xa'       pcre2: no match
 (iii) hole look-alike, with &                  /x${/^a/ & /(?s).*/}/                                                    on 'xa'       pcre2: match (0,2)

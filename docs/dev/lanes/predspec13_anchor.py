@@ -129,6 +129,8 @@ ROWS = [
  ("(iii) & in a hole", "/port=${ /^\\d+$/ & <256 }/", Seq(Frag("port="), Amp(Frag(r"^\d+$"), num())), "port=80"),
  ("(iii) & in a hole", "/port=${ /^\\d+$/ & <256 }/", Seq(Frag("port="), Amp(Frag(r"^\d+$"), num())), "port=300"),
  ("(iii) & in a hole", "/port=${ /\\d+/ & <256 }\\b/  (author's fix for 'the whole number')", Seq(Frag("port="), Amp(Frag(r"\d+"), num()), Frag(r"\b")), "port=300"),
+ ("(iii) the owner's acceptance row (CF:1078-1079 on main)", "/999${ /\\d+/ & <100 }999/", Seq(Frag("999"), Amp(Frag(r"\d+"), Frag("(?:0|[1-9]\\d?)")), Frag("999")), "99945999"),
+ ("(iii) its near row", "/999${ /\\d+/ & <100 }999/", Seq(Frag("999"), Amp(Frag(r"\d+"), Frag("(?:0|[1-9]\\d?)")), Frag("999")), "99912345999"),
  ("(iii) alt. reading: anchors read the SUBJECT", "/port=${/^\\d+$/}/ spliced (= /port=^\\d+$/)", Frag(r"port=^\d+$"), "port=80"),
  ("(iii) hole look-alike, no &", "/x${/^a/}/  (a hole opens no scope: ^ = the subject's start)", Seq(Frag("x"), Frag("^a")), "xa"),
  ("(iii) hole look-alike, with &", "/x${/^a/ & /(?s).*/}/", Seq(Frag("x"), Amp(Frag("^a"), Frag(r"(?s).*"))), "xa"),
