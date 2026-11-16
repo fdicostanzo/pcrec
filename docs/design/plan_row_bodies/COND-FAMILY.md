@@ -1358,3 +1358,15 @@ RECORD: GO for the exploration (lane jointexp, design only). The hand-waving is 
 settled by this entry: what a tuple of values is beside "an array is an alternation"; what a set of tuples is and
 which existing sets extend to it; dictionary order on comparison sets; loops, unset and non-numeric fields; relations
 between fields; the look-alike with the record; what the larger language gains.
+
+**2026-11-16 OWNER RULING + REQUEST — the tuple as a value: OK, to be fleshed out (Frank, to session 134, box clock
+09:42).** Asked **tuple-value** (may a positional `(9, 0)` in value position be a value, beside "a record is never a
+value"), his words: "A pair as a value: I am ok with the tuple as a value. My request is that it's fleshed out and not
+the slice of an idea. How is it related to conditions as we'd defined them(sounds like there was thinking there), is x
+a single tuple (x), how can I access parts or can I, what is the definition, how can I use it generally". RECORD: (1)
+the tuple as a value is ACCEPTED in principle; (2) it is NOT yet a design: he asks for a full account answering, in
+his order: its relation to conditions as defined (the record), whether a plain value `x` is the one-entry tuple
+`(x)`, whether and how its parts are reached, its definition, its general use beyond the compare. (3) The other five
+joint-condition questions (set-arity, unset-component, joint-loops, modifier-lift, record-is-product) are NOT answered
+by this entry. The manager's first answers in the session's reply are the MANAGER'S (not ruled), to be tested by the
+fleshing-out lane (tupleval).
