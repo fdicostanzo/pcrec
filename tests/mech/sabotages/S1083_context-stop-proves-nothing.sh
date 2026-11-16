@@ -21,6 +21,6 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 # RE-ANCHORED 2026-11-16 (lane span4k, MF_CLASS_V 11): the copy moved into kit_proof_close
 # and reads the caller's rows (proof[-1 - MF_PROOF_LO]); the plant still writes all ones
-# instead of the copy, the same intent.
+# instead of the copy (the copy's branch is disabled, so its else writes them), the same intent.
 SAB_BEFORE='    if (out->proof && (uint32_t)im < out->proof_n) memcpy(out->proven_prev, out->proof[im], 32);'
-SAB_AFTER='    memset(out->proven_prev, 0xFF, sizeof out->proven_prev);   /* SABOTAGE S1083 */'
+SAB_AFTER='    if (0) memcpy(out->proven_prev, out->proof[im], 32);   /* SABOTAGE S1083: the else branch writes all ones */'

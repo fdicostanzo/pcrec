@@ -2788,15 +2788,15 @@ static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks
     const char *why;
     int rc = -1;
     if (d && w && L && fx && fp &&
-        !wf_plan_site(art, &heap, site, def, gphases, 1, d, w, L, fx, &r, &why) &&
-        (fp->plan_test = wd_alloc(&blks, (size_t)d->np + 1))) {
+        !wf_plan_site(art, &heap, site, def, gphases, 1, d, w, L, fx, &r, &why)) {
         unsigned eb;
+        fp->plan_test = wd_alloc(&blks, (size_t)d->np + 1);  /* the decision's np */
         /* the translation the define renders E-func/E-stmt from (wf_prepare) */
         if (r == E_FUNC || r == E_STMT) {
             legacy_ok(d, w, &eb);
             translate(d, w, eb, L);
         }
-        if (!wf_frame_of(art, def, gphases, r, d, w, fx, L, fp) &&
+        if (fp->plan_test && !wf_frame_of(art, def, gphases, r, d, w, fx, L, fp) &&
             !(use && emit_use_refused(fp->ren, site, def)) &&
             !reply_of(d, out, rows) && !reply_frame(fp, out, rows))
             rc = 0;

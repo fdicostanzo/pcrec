@@ -14,11 +14,9 @@ SAB_REACH_POP='tests/memfn/run_finder.sh|"\$WORK/fx" --purity >|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 # RE-ANCHORED 2026-11-16 (lane span4k, MF_SITE_ABI 30): reply_of writes the caller's rows
-# and returns a verdict; intent unchanged.
-SAB_BEFORE='    decide(art, site, 1, d);
-    int rc = reply_of(d, out, rows);
-    free(d);'
-SAB_AFTER='    decide(art, site, 1, d);
-    int rc = reply_of(d, out, rows);
-    out->framed = 1;   /* SABOTAGE S3086 */
-    free(d);'
+# and returns a verdict, and the decision's working state is a heap block per ask; intent unchanged.
+SAB_BEFORE='    int rc = d && !decide(art, site, 1, &heap, d) ? reply_of(d, out, rows) : -1;
+    if (rc) memset(out, 0, sizeof *out);'
+SAB_AFTER='    int rc = d && !decide(art, site, 1, &heap, d) ? reply_of(d, out, rows) : -1;
+    if (rc) memset(out, 0, sizeof *out);
+    out->framed = 1;   /* SABOTAGE S3086 */'
