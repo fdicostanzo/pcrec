@@ -1569,3 +1569,15 @@ as stated; to be checked by rev 20): the middle path (keeping `lex_ge` and frien
 over the joint condition) is NOT taken; they are left out of the first library until someone asks. What becomes of
 the sigil, the `lex_` names, their argument order and the first-library slot is the separate open question
 **retire-paused**.
+
+**2026-11-16 OWNER RULING — retire-paused: split; the sigil's pause is indefinite (Frank, to session 135, box clock 12:51).**
+Asked **retire-paused** (the paused direction's four RULED items: the other-side sigil `^h`, the `lex_` names, the
+argument order subject-low-high, the fixed-size tuple compares' first-library slot; retire or keep paused; the
+manager's lean: SPLIT, retire the names, the order and the slot, keep the sigil paused and out of rev 20's language
+text, the first-library slot going to the joint condition), his words: "retire-paused: agree to split. But the
+pause on ^ is indefinite and requires real value other than 'override a users own *'". RECORD: RULED: (1) RETIRED
+to the superseded-direction record: the `lex_` names (CF:1226), the argument order (CF:1253), the fixed-size
+compares in the first library (CF:1166); the joint condition takes that first-library slot. (2) The other-side
+sigil (CF 00:06) is PAUSED INDEFINITELY: it is not in rev 20's language; it returns only for a use with REAL VALUE,
+and rejecting the empty case of the author's own `*` loop (`some(^h)`) is NOT such a use (his bar, his words).
+(3) The suspended questions reference-index and bound-reference stay suspended with the sigil.

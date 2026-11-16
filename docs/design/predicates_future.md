@@ -105,4 +105,7 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   `^` has no label to name. The markless alternative: a named anything-set, `some((h: any))`. BEARS ON the open
   question **retire-paused**: the first job for the sigil that the joint condition does not take over (the
   manager's lean moved to: keep the sigil paused, retire the `lex_` names, argument order and first-library slot).
-- TRIGGER: counting every pass in real examples (the draft's own `length(S)` body arguably meets it).
+- OWNER, 2026-11-16 (retire-paused): "the pause on ^ is indefinite and requires real value other than 'override a
+  users own *'". So rejecting the empty case (`some(^h)`) does NOT count toward bringing the sigil back.
+- TRIGGER: a use of a field reference with real value beyond rejecting an empty loop (counting every pass, as in
+  the draft's `length(S)` body, is a candidate to be argued, not a trigger met).
