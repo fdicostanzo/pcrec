@@ -20,7 +20,7 @@ compiles, failed compiles (exact), run_part_terms records, and the census (>= ce
 census_band: "census rose: re-pin tests/memfn/d3_floor.tsv"); census_floor >= emit_sweep's live DIFFER_PINS floor for the
 cell (read from TREE: ONE source for the movers number, no copy here). `--movers CELL=MOVERS.tsv` (deny_reach.py's
 output): every mover is in the census, else `MOVER-WITHOUT-RECORD` and red. Not part of the gate (a second sweep per cell;
-the set relation movers <= census is checked on demand, the counts suffice in the gate: pin <= census_floor <= census).
+the set relation movers <= census is checked on demand, the gate pins the counts EXACTLY; a swap that keeps the counts is D3F-2's set pin).
 SELF-TEST (default on; every plant is derived from the MEASURED sweep, not from the floor): S3228 loses one census
 pattern's records (below the floor), and a floor left behind a census that rose (above the band); S3229 an empty and a
 truncated sweep; S3230 a floor below emit_sweep's DIFFER floor; S3231 a lost corpus pattern and a crash wave of failed
@@ -36,6 +36,7 @@ CELLS = ("byte/c-default", "byte/c-vm", "utf8/c-default", "utf8/c-vm")
 DENY = "--memfn=no-run-verify-wide"
 INTCOLS = ("census_floor", "census_band", "compiles", "failed", "pop_band", "records", "records_band")
 PLANTS = 8  # per cell; run_d3floor.sh counts PLANTS x 4 "D3-FLOOR-PLANT ... ok" lines
+REPIN = "census changed: re-pin tests/memfn/d3_floor.tsv"
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -118,6 +119,8 @@ def verdict(cell, fl, hit, n, nrec, nfail, pin):
     elif len(hit) > fl["census_floor"] + fl["census_band"]:
         why.append("census rose: %d above %d+%d, re-pin tests/memfn/d3_floor.tsv" % (len(hit), fl["census_floor"],
                                                                                    fl["census_band"]))
+    if why:
+        why.append(REPIN)  # any census or population change names its remedy itself (never via a plant going WRONG)
     if pin is None:
         why.append("emit_sweep DIFFER_PINS has no (%s, %s) cell" % (cell, DENY))
     elif fl["census_floor"] < pin:
@@ -192,7 +195,7 @@ def main():
     sweeps, movers = pairs(a.sweeps, "sweep"), pairs(a.movers, "--movers")
     floors = load_floors(a.floors)
     c0 = load_census0(a.tree)
-    fails = []
+    fails, nplant_bad = [], 0
     for cell in CELLS:
         if cell not in sweeps:
             fails.append("FAIL: cell %s: no sweep given (the population is all four cells)" % cell)
@@ -220,8 +223,12 @@ def main():
             if not a.no_self_test:
                 print("D3-FLOOR-PLANTS-SKIPPED %s (the cell is red; the plants run on a green cell only)" % cell)
         elif not a.no_self_test:
-            fails += self_test(floors, a.tree, c0, cell, recs, hit, pin)
-    print("D3-FLOOR cells=%d failed=%d" % (len(CELLS), len(fails)))
+            bad = self_test(floors, a.tree, c0, cell, recs, hit, pin)
+            for b in bad:
+                print("D3-FLOOR-PLANT-WRONG " + b)
+            fails += bad
+            nplant_bad += len(bad)
+    print("D3-FLOOR cells=%d failed_cells=%d failed_plants=%d" % (len(CELLS), len(fails) - nplant_bad, nplant_bad))
     sys.exit(1 if fails else 0)
 
 
