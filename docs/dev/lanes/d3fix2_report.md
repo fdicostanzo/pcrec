@@ -30,4 +30,5 @@ No change under src/ or memfn/src/, no emitted byte.
 - Untested end to end: the shell `D3FLOOR_REPIN=1` path (the python --repin was run directly and produced d3_census.tsv).
 
 ## STATE AT HANDOFF
-Branch lane/memfn-d3wire, all committed. Rulings applied: none (file empty). OWED: none
+Branch lane/memfn-d3wire, all committed. Rulings applied: none (file empty).
+OWED: none
