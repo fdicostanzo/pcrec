@@ -1122,3 +1122,16 @@ as plain is the **primitive-transforms** check.
 ADDED (Frank, box clock 20:48) on the `padded` entry above: "Give or take details." RECORD: the body is the SHAPE (a plain
 macro, zeros then the spliced rx); details such as a group around the splice (`/0*(?:${rx})/`, so a top-level
 alternation stays inside) are the spec writer's; the manager's call: grouped.
+
+**2026-11-15 RULING — `unpadded` is cut from the first spec (Frank, to session 133, box clock 20:57).** Context, his
+words: "I remember when it was introduced but I see the problem now. The issue is numbers compare right aligned and
+strings left." Asked "cut-unpadded: remove `unpadded` and its lint from the first spec, show the split-fields form
+where the draft used it, and file the natural-order range as a later item", his words: "cut-unpadded: agree". RECORD:
+`unpadded(n, S)` and the lint that suggests it (`compare.width`'s suggestion) leave the first spec; it was never a
+plain macro (the zeros are not in the text, so there is nothing to splice; the draft's pullback did the work) and it
+was the draft's addition, not his ruling. Where the draft used it (a time range), the example is written with
+split fields and number conditions (`/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: between(9, 10))` plus the minute condition
+the range's end needs). LATER ITEM (not in the first spec; trigger: a real example where splitting fields is too
+clumsy): a NATURAL-ORDER range, comparing digit runs as numbers and everything else as text (so
+`between("9:00", "10:00")` and versions `1.9` < `1.10` work), a way of comparing chosen where the range is written,
+not a transform; cost unexamined.
