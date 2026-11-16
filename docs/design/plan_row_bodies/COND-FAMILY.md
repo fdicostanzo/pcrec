@@ -1556,3 +1556,16 @@ joint set R: the outside labels' values must be possible under R for some value 
 is NOT read there (§4B.1 unchanged); a plain single-label condition still HOLDS on zero passes (CF:997-1000
 unchanged); "unset" (never reached) keeps its meaning. His criterion for the record: "saving people from
 themselves". The four ideas raised on the way are PARKED in docs/design/predicates_future.md items 5-8.
+
+**2026-11-16 OWNER RULING — library-not-syntax: the 11-14 ruling is withdrawn (Frank, to session 135, box clock 12:48).**
+Asked **library-not-syntax** (withdraw by name the ruling of 2026-11-14, "TUPLE CONDITIONS: a LIBRARY macro
+(`lex_ge([major, minor, patch], [1, 4, 0])`), no syntax", CF:644-650, now that the joint condition
+`((major, minor, patch): >= (1, 4, 0))` is syntax and "the one mechanism"; the manager's lean: yes), his words:
+"library-not-syntax: agree. we've replaced the idea and I think with something much better". RECORD: RULED: the
+2026-11-14 ruling (CF:644-650) is WITHDRAWN BY NAME; with it the draft's status line "Tuples as a library macro:
+RULED (CF:644), SUPERSEDES predx's tuple-on-the-left-of-`:` syntax (S12)" goes to the superseded record, and a
+tuple on the left of `:` is ruled syntax (the joint condition, J1-J9). THE MANAGER'S READING of "agree" (the lean
+as stated; to be checked by rev 20): the middle path (keeping `lex_ge` and friends as ordinary library macros
+over the joint condition) is NOT taken; they are left out of the first library until someone asks. What becomes of
+the sigil, the `lex_` names, their argument order and the first-library slot is the separate open question
+**retire-paused**.
