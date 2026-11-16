@@ -1717,3 +1717,9 @@ value set cannot be computed exactly (to be listed: backreferences, lookarounds,
 compiler does instead and that an approximation must never change an answer silently; undecided, for rev 20; (5) the
 principle is wider than the mark: it is a standing criterion for the predicate design beside "a set never contains
 absence".
+
+**2026-11-16 OWNER RULING — spelling-phrasing (Frank, to session 136, box clock 15:29).** The wording of his mark-domain
+principle, offered by the manager: "two patterns that match the same subjects and set their labels the same way
+answer every condition alike" (*). His words: "spelling-phrasing: that sounds good. I agree. Put an asterisk next to
+it in case it needs adjustment". RECORD: RULED, PROVISIONAL WORDING: the sentence carries an asterisk wherever it is
+quoted ((*) the wording may be adjusted; the principle is ruled, the sentence is not final).
