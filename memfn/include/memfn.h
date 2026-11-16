@@ -317,7 +317,9 @@
  * states as a window span since D172 S2). CHOSEN at 1 (D77); the context
  * spans (`mf_site.ctx`) that once sat in it retired at D172 S2 commit 6.
  * TRIGGER: a stated span position past MF_MAX_FWD that a consumer needs
- * proven. */
+ * proven. Read by no code since MF_SITE_ABI 30 (MF_MAX_FWD no longer
+ * derives from it); it retires with MF_MAX_SPAN_POS, held for pcrec's
+ * [COVER-CAP] stage 2 A1/A3 (lane span4k's report). */
 #define MF_MAX_AHEAD 1
 /* The per-offset proof's range CEILING (mf_class.proof, R-26.4; a per-reply
  * COUNT under it since MF_CLASS_V 11): offsets from the candidate in
@@ -665,7 +667,10 @@ typedef enum { MF_WFLOOR_UNSTATED = 0, MF_WFLOOR_SUBJECT, MF_WFLOOR_EXPR } mf_wf
 
 /* Positions one span states: a SHAPE BOUND, DERIVED as MF_MAX_SPAN_POS is
  * (the longest piece pcrec states is a run its analysis truncates to
- * PCREC_MAX_REQ_RUN_SCAN, 32 positions). */
+ * PCREC_MAX_REQ_RUN_SCAN, 32 positions). Since MF_SITE_ABI 30 a span's
+ * lists are the host's storage (mf_wspan), so the bound sizes no struct;
+ * its raise (r45_reply.md rev 4: 4095) waits on pcrec's [COVER-CAP] stage
+ * 2 A1/A3, whose cover check reads it (lane span4k's report). */
 #define MF_WSPAN_POS MF_MAX_SPAN_POS
 /* Spans one alternative states: a SHAPE BOUND, DERIVED from pcrec's widest
  * statement, the reseed alternative: one span per walked offset (at most
@@ -681,8 +686,10 @@ typedef enum { MF_WFLOOR_UNSTATED = 0, MF_WFLOOR_SUBJECT, MF_WFLOOR_EXPR } mf_wf
 /* The offsets a span position may lie at: [-MF_MAX_BACK, MF_WREACH). A SHAPE
  * BOUND, CHOSEN at 64 (D77): twice the longest piece (MF_WSPAN_POS) past the
  * longest walk; TRIGGER: a pcrec statement past it, refused naming `start`.
- * Positions outside the proof range [MF_PROOF_LO, MF_MAX_FWD) are tested,
- * never proven (window_site.md §1.1). */
+ * Since MF_SITE_ABI 30 the proof range's ceiling MF_MAX_FWD IS this bound,
+ * so every offset a window plan tests is inside it (R-out refuses one that
+ * is not; r45_reply.md rev 4 §1). The raise to 4096 waits with
+ * MF_WSPAN_POS's (lane span4k's report). */
 #define MF_WREACH 64
 
 /* Since MF_SITE_ABI 30 (R-45) the per-position facts are COUNTED LISTS in
@@ -1327,7 +1334,9 @@ typedef struct {
                               at every candidate contribute (R-25): a term
                               the form may skip (OPTIONAL, untested) proves
                               nothing, whatever its need. Since MF_CLASS_V 5
-                              a COPY of proven[0 - MF_PROOF_LO]             */
+                              a COPY of the per-offset proof's offset-0 row
+                              (MF_CLASS_V 11: proof[0 - MF_PROOF_LO], all
+                              ones where proof_n does not reach it)        */
     uint32_t includes;     /* MF_INC_* bits the text needs                     */
     uint16_t npres;        /* presence spans answered (= npspan since B3b)     */
     mf_link  pres[MF_MAX_PRES];
@@ -1337,9 +1346,10 @@ typedef struct {
        follows a member, so a member occurs at or after the site's `lo`. A
        FIND whose term reads one byte below the candidate proves it, when
        the text tests that term (R-25); every other site proves nothing
-       here. Since MF_CLASS_V 5 a COPY of proven[-1 - MF_PROOF_LO] (a tested
-       term at -1 of the predicate the site's candidates satisfy: span 0 or
-       a context stop) */
+       here. Since MF_CLASS_V 5 a COPY of the per-offset proof's offset -1
+       row (MF_CLASS_V 11: proof[-1 - MF_PROOF_LO], all ones where proof_n
+       does not reach it; a tested term at -1 of the predicate the site's
+       candidates satisfy: span 0 or a context stop) */
     uint8_t  proven_prev[32];
     /* (MF_CLASS_V 4) THE DECIDING ROWS of pres[i], read by the host's
        records (b3brev U5: never inferred from a link's shape): pres_row[i]
@@ -1349,8 +1359,9 @@ typedef struct {
        at the head. 0: no row (no link; no order row) */
     uint8_t  pres_row[MF_MAX_PRES];
     uint8_t  pres_led[MF_MAX_PRES];
-    /* (MF_CLASS_V 5, R-26.4; kit_proof.md §4.2) THE PER-OFFSET PROOF:
-       proven[d - MF_PROOF_LO] is a bitset (mf_term.set's layout) such that
+    /* (MF_CLASS_V 5, R-26.4; kit_proof.md §4.2; the array `proven[]`
+       REPLACED by the counted `proof` below at MF_CLASS_V 11, its meaning
+       kept) THE PER-OFFSET PROOF: proven[d - MF_PROOF_LO] is a bitset (mf_term.set's layout) such that
        at EVERY candidate the site yields, the byte at offset d from the
        candidate lies in it (a window site's plan: off the subject only
        outside a span's core, window_site.md §1.2). All ones = nothing

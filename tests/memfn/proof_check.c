@@ -346,6 +346,14 @@ static void family_a(void)
     s = win_site();
     s.pred.plan_hint = MF_NO_PRED;
     accept("a window site with plan_hint MF_NO_PRED (no term named)", &s);
+    /* R-45 (MF_CLASS_V 11) R-short's control, witness row (a) of
+       r45_reply.md §1 (run_proof.sh's plant S3242 cuts the range's `end` to
+       last_s + 1): the unplanted kit defines a terms site and a window site,
+       each class's range reaching one past its statement */
+    s = span_site();
+    accept("R-short control: a terms site's range reaches one past its statement", &s);
+    s = win_site();
+    accept("R-short control: a window site's range reaches one past its statement", &s);
 
     /* R-26.1/R-26.2: the class of a forward FIND's `pred` */
     s = span_site();

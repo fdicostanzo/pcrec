@@ -22,7 +22,8 @@
 #                  R-26.6's S1251-S1256 and the unnumbered ZK6/ZK7 retired at
 #                  D172 S3 with RPT and mf_preview, window_site.md §4); S1408,
 #                  D172 S2's witness that proof_run's read-limit layouts
-#                  catch an over-read; the table below): the run must go red. Writes only the work
+#                  catch an over-read; S3242, R-45's witness row (a): R-short refuses by its
+#                  message, plant_want; the table below): the run must go red. Writes only the work
 #                  directory. --plants runs them all and reports each.
 #
 # Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR.
@@ -53,10 +54,20 @@ plant_spec() {
     S1408) # an over-read past n (D172 S2 review S2's witness for proof_run's read-limit layouts):
         # a term's read bound one byte loose, so the generic row reads s[n]
         echo 'generic.c@@                at(b, cand, off + len);\n                kb_printf(b, " <= %s", rc->N);@@                at(b, cand, off + len);\n                kb_printf(b, " <= %s + 1", rc->N);' ;;
+    S3242) # R-45 witness row (a) (r45_reply.md §1, "The short-range internal error"): the
+        # proof range's `end` cut to last_s + 1; the kit's self-check R-short must refuse the
+        # define BY ITS MESSAGE (plant_want), read through mf_define, never an ask
+        echo 'compose.c@@    long end = last_s + 2 > last_t + 1 ? last_s + 2 : last_t + 1;@@    long end = last_s + 1;' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1221 S1224 S1225 S1419 S1408"
+PLANTS="S1221 S1224 S1225 S1419 S1408 S3242"
+# The text a plant's red must carry (empty: any FAIL line is red).
+plant_want() {
+    case "$1" in
+    S3242) echo "the proof range ends before the statement's following offset" ;;
+    esac
+}
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -116,7 +127,13 @@ EOF
         kit_objs "$WORK/src" "$WORK/pk_$id" || fail_setup "$id: the planted kit does not compile"
         one_run "plant_$id" "$WORK/pk_$id"/*.o
         c="$(counts "$WORK/plant_$id.chk.log") / $(counts "$WORK/plant_$id.run.log")"
-        red=$(grep -h '^FAIL' "$WORK/plant_$id.chk.log" "$WORK/plant_$id.run.log" 2>/dev/null | head -1)
+        want="$(plant_want "$id")"
+        if [ -n "$want" ]; then
+            red=$(grep -h '^FAIL' "$WORK/plant_$id.chk.log" "$WORK/plant_$id.run.log" 2>/dev/null \
+                  | grep -F "$want" | head -1)
+        else
+            red=$(grep -h '^FAIL' "$WORK/plant_$id.chk.log" "$WORK/plant_$id.run.log" 2>/dev/null | head -1)
+        fi
         if [ -n "$red" ]; then
             echo "PLANT $id RED   (proof_check / proof_run passed failed: $c): $red"
         else
