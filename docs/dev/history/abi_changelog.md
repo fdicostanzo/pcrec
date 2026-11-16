@@ -23,7 +23,17 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `108` on every artifact today ([COVER-CAP] stage 1, 107 -> 108, lane covs1
+- **`rx_info.abi` is `109` on every artifact today ([COVER-CAP] stage 2, 108 -> 109, lane covs2b
+  2026-11-16, the combined branch; `docs/design/cover_cap.md` §11, R-45).**
+  The ONE `abi` event of the stage-2 joint landing. The memfn kit's window statement became a
+  counted list in storage pcrec owns (`MF_SITE_ABI` 29 -> 30, `MF_CLASS_V` 10 -> 11: the per-offset
+  proof is a counted range) and the kit's window bounds rose to 4,095 positions per span and
+  offsets below 4,096 (`MF_WSPAN_POS`, `MF_WREACH`). At the bump every artifact is byte-identical
+  to abi 108 except this number (`scripts/emit_sweep.py`, 0 movers on all streams at the default
+  width 32); the joint landing's later byte moves (the kit's long-span forms, a measured width
+  default) ride this same number. No struct offset moves and no `rx_info` member changes.
+
+- **`rx_info.abi` was `108` on every artifact ([COVER-CAP] stage 1, 107 -> 108, lane covs1
   2026-11-15; `docs/design/cover_cap.md` rev 4.1).**
   The `cover` LOCATE row (`<PREFIX>_DFA_SCAN "cover"`) reads its exact stretch off the anchored
   machine alone, with no length cap of its own (the NFA span slice, its 24-position exact loop and
