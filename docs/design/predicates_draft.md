@@ -1942,17 +1942,48 @@ but NOT in `P & (k: "b") & (h?: <5)`: once a mark is involved, `P & A & B` is no
 `P & B` (each condition reads the program it stands in; §2.2's extensional `&` holds for the program's subjects as a
 whole, not condition by condition; L1 restated). `&` STAYS COMMUTATIVE AND ASSOCIATIVE: DOM reads the chain's SET of
 conditions, so every order and grouping answers alike (the six orders of the three conditions above, under each of
-the six candidate domains below, over the 222 subjects: 0 differ; by construction). ADDING A CONDITION CAN TURN A
-FAIL INTO A HOLD, and only where a mark stands under `!`: over every program of 1-3 conditions from a pool on three
-patterns (637 programs), with no mark under `!` 0 of 698 (program, added condition) pairs move FAIL to HOLD; with
-one, 28 pairs do. Smallest, on A = `/a(?<h>\d)|b(?<k>\d)|c/`, subject `b1` (h absent, k = 1): `!((h?, k): h < k)`
-FAILS (DOM(h) = 0-9; h = 0 would put (h, 1) in the set, so its complement fails); adding `(h?: >7)` narrows DOM(h) to
-8-9, no value is below 1, the complement HOLDS, and so does the program. Narrowing a domain shrinks an existential
-and `!` of an existential grows: every program domain does it (least and greatest fixed points: 25 and 26 pairs), so
-it is a property of reading DOM from the program, not of the variant. This is the one place the owner's assumption
-("I'm assuming such logic is possible") is not met as stated by the brief's expectation (conditions only narrow);
-reported to him (§13 **mark-narrows**). Commands: `timeout 300 python3 -I docs/dev/lanes/predspec21_check.py`,
-PART 1 (EB1), (EBK), (EB2), (INDEP), (SEARCH); `predspec21_check.out`.
+the six candidate domains below, over the 222 subjects: 0 differ; by construction).
+
+A MARK UNDER NEGATIVE POLARITY: ADDING A CONDITION CAN TURN A FAIL INTO A HOLD (rulings R4; OPEN WITH THE OWNER, slug
+**mark-under-not**; this supersedes the expectation "conditions only narrow"). A mark stands under NEGATIVE polarity
+when its condition is read through `!` (directly, `!(h?: S)`, or over a compound holding it, `!((h?, k): R)`), or
+through a group question that counts it DOWNWARD (`occurs.none(...)`, `occurs.at_most(...)`, `count(...)` under an
+upper bound; `when(c, p)`'s `!c` side, §8). There, narrowing DOM shrinks an existential and the complement grows, so
+a program can GAIN a subject when a condition is added: `(X & C)` is not a subset of `X`. Without such a mark it never
+happens (0 of 698 (program, added condition) pairs under the rule; PART 1 (SEARCH), (NEGPOL)). The ruling's text
+(16:44) speaks of positive conditions only; what the rule does with a NEGATED marked condition while a DOM is computed
+has two readings (an UNMARKED negated condition narrows as the filter it is under both):
+- N1 (the lane's lean; the ruled text read literally, "where its label is present it is an ordinary filter"): it
+  NARROWS through the matches where its marked label is present, as the filter it is; where absent, transparent.
+- N2: it is TRANSPARENT wherever its label stands (no narrowing at all).
+
+| witness (FAIL, then the added condition) | N1 | N2 |
+|---|---|---|
+| DIRECT, P (above): `P & !(h?: <5)` on `b`, then `(k: "b")` (the manager's R4 example) | DOM(h) 5-9 both times: HOLDS, HOLDS (no move) | DOM(h) 0-9 then 5-9: FAILS, then HOLDS |
+| DIRECT, A = `/a(?<h>\d)\|b(?<k>\d)\|c/`: `!(h?: <5)` on `c`, then `(h?: >7)` | no move (0 pairs with only direct marks) | FAILS, then HOLDS (39 pairs) |
+| COMPOUND, A: `!((h?, k): h < k)` on `b1` (h absent, k = 1), then `(h?: >7)` | DOM(h) 0-9: h = 0 would do, so FAILS; then 8-9: HOLDS (19 pairs) | the same (13 pairs) |
+| GROUP QUESTION, `/(?:(?<h>\d)(?::(?<m>\d))?,)*/`: `occurs.none(((h, m?): m < h))` on `6,` (m absent), then `(m?: >5)` | DOM(m) {2, 7}: m = 2 is below 6, the pass counts, FAILS; then {7}: HOLDS (3 pairs) | the same (3 pairs) |
+
+Under N1 a DIRECT one-label `!(h?: S)` never moves (its own complement narrows DOM(h) to values outside S, so on an
+absent h it always HOLDS, whatever else the program says); compounds and group questions move under both. Every
+program domain run does this (the least and greatest fixed points: 25 and 26 pairs in (SEARCH)): it is a property of
+reading DOM from the program, not of the variant. The lane's lean is N1 (fewer moves; the ruled text read as written);
+the choice, and whether a negative-polarity mark should draw a diagnostic or be refused, is the owner's (§13
+**mark-under-not**). The owner's assumption at 16:44 ("I'm assuming such logic is possible") HOLDS on
+well-foundedness, record = `&`, equal-behaviour programs and commutativity; it does not give "adding a condition only
+narrows" under negative polarity. Commands: `timeout 300 python3 -I docs/dev/lanes/predspec21_check.py`, PART 1
+(EB1), (EBK), (EB2), (INDEP), (SEARCH), (NEGPOL); `predspec21_check.out`.
+
+THE WORKED EXAMPLES THAT PUT A MARK UNDER NEGATIVE POLARITY (rulings R4 (3)), and whether their stated answers depend
+on the program's other conditions:
+
+| site | example | depends on other conditions? |
+|---|---|---|
+| §0.1 L30, §4.2 NEGATION, §13 O28 | `/(?<h>\d)?x/ & !(h?: <5)` on `x` | N1: no (HOLDS on any absence); N2: yes |
+| §0.1 L95, §4.2 NEGATION, §13 O28 | `t2 & !((h, m?): R)` on `9` (compound) | yes, under both: FAILS alone, HOLDS with `(m?: padded(<30))` added (DOM(m) 100 values, then 30; (NEGPOL)) |
+| §4.3 THE CLOSING EXAMPLE (the marked line), joint_condition.md §4H.4 | `occurs.none(((h, m?): !R))` (group, downward) | yes, under both: already its own condition moves it (25 of 1,111 under the rule vs 0 under the regex DOM, PART 4 (D5)) |
+| §4.2 above, (SEARCH)/(NEGPOL) witnesses | `!((h?, k): h < k)`, `occurs.none(((h, m?): m < h))` | yes (they are the witnesses) |
+| §8 `when(c, p)` | no worked example puts a mark in c | (the `!c` side would) |
 
 THE CANDIDATES RUN SIDE BY SIDE (rulings R1 (b), R2; evidence, the rule above is ruled). Each over the populations of
 rev 20's tables and review r29's drills (PART 1 (SUMMARY)): (i) an answer witnessed only by a value the label never

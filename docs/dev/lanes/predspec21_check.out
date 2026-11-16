@@ -289,6 +289,31 @@ PART 1: THE PROGRAM DOMAIN
    [LFP    ] adding a condition turns a FAIL into a HOLD in 25 (program, added condition) pairs; smallest: pattern A, `!((h?, k): h < k)` + `(h?: >7)` on 'b1'; no fixed point in 3 programs; e.g. A `(k?: >7) & !((h?, k): h < k)`
    [GFP    ] adding a condition turns a FAIL into a HOLD in 26 (program, added condition) pairs; smallest: pattern A, `!((h?, k): h < k)` + `(h?: >7)` on 'b1'; no fixed point in 15 programs; e.g. A `(k?: >7) & !((h?, k): h < k)`
 
+(NEGPOL) rulings R4: a mark under NEGATIVE polarity (`!` on a marked condition, `!` over a compound holding one, a group question that counts a mark downward). Two candidates for what THE RULE does with such a condition while a DOM is computed: N1 it narrows where its marked label is PRESENT, as the filter it is (= MANAGER above); N2 it is TRANSPARENT (no narrowing at all). Unmarked negated conditions narrow as filters under both.
+   [REGEX  ] P & !(h?: <5) on `b`: DOM(h)={0123456789} FAILS;   P & (k: "b") & !(h?: <5) on `b`: DOM(h)={0123456789} FAILS
+   [MANAGER] P & !(h?: <5) on `b`: DOM(h)={56789} HOLDS;   P & (k: "b") & !(h?: <5) on `b`: DOM(h)={56789} HOLDS
+   [MGR-N2 ] P & !(h?: <5) on `b`: DOM(h)={0123456789} FAILS;   P & (k: "b") & !(h?: <5) on `b`: DOM(h)={56789} HOLDS   -> FAIL to HOLD by adding (k: "b")
+   [REGEX  ] A & !((h?, k): h < k) on `b1`: DOM(h)={0123456789} FAILS;   + (h?: >7): DOM(h)={0123456789} FAILS
+   [MANAGER] A & !((h?, k): h < k) on `b1`: DOM(h)={0123456789} FAILS;   + (h?: >7): DOM(h)={89} HOLDS   -> FAIL to HOLD
+   [MGR-N2 ] A & !((h?, k): h < k) on `b1`: DOM(h)={0123456789} FAILS;   + (h?: >7): DOM(h)={89} HOLDS   -> FAIL to HOLD
+   [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound       :  19 pairs; smallest: pattern A, `!((h?, k): h < k)` + `(h?: >7)` on 'b1'
+   [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound       :  13 pairs; smallest: pattern A, `!((h?, k): h < k)` + `(h?: >7)` on 'b1'
+   [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+direct:  10 pairs; smallest: pattern A, `!(h?: <5) & !((h?, k): h < k)` + `(h?: >7)` on 'b6'
+   [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+direct:  11 pairs; smallest: pattern A, `!(h?: <5) & !((h?, k): h < k)` + `(h?: >7)` on 'c'
+   [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+group :   2 pairs; smallest: pattern LST, `occurs.none(((h, m?): m < h)) & !((h, m?): m < h)` + `(m?: >5)` on '6,'
+   [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+group :   2 pairs; smallest: pattern LST, `occurs.none(((h, m?): m < h)) & !((h, m?): m < h)` + `(m?: >5)` on '6,'
+   [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only direct         :   0 pairs
+   [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only direct         :  39 pairs; smallest: pattern A, `!(h?: <5)` + `(h?: >7)` on 'c'
+   [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only group          :   3 pairs; smallest: pattern LST, `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,'
+   [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only group          :   3 pairs; smallest: pattern LST, `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,'
+   [MGR-N2 ] no negative-polarity mark: FAIL to HOLD in 0 of 698 (program, added condition) pairs
+   [REGEX  ] L95 t2 & !((h, m?): R) on `9`: DOM(m)={100 values} FAILS;   + (m?: padded(<30)): DOM(m)={100 values} FAILS
+   [MANAGER] L95 t2 & !((h, m?): R) on `9`: DOM(m)={100 values} FAILS;   + (m?: padded(<30)): DOM(m)={30 values} HOLDS
+   [MGR-N2 ] L95 t2 & !((h, m?): R) on `9`: DOM(m)={100 values} FAILS;   + (m?: padded(<30)): DOM(m)={30 values} HOLDS
+   [REGEX  ] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={27} FAILS;   + (m?: >5): DOM(m)={27} FAILS
+   [MANAGER] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={27} FAILS;   + (m?: >5): DOM(m)={7} HOLDS
+   [MGR-N2 ] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={27} FAILS;   + (m?: >5): DOM(m)={7} HOLDS
+
 (MOVES) the answers that move from REGEX, per table and domain (the smallest witness each)
    A  P & (k: "b") & (h?: <5)                                     SAME-NO        1 of    222  smallest 'b' (REGEX HOLDS)
    A  P & (k: "b") & (h?: <5)                                     OWNER          1 of    222  smallest 'b' (REGEX HOLDS)
@@ -443,4 +468,4 @@ PART 4: the other counts rev 21 quotes (review r29's drills, recomputed)
    (S1) on '9:15': plain None  mark ('9', 0)  def0 ('15', 2)
    (PRIO) /(?:(?<h>a|ab)(?<k>b*))?x/ vs /(?:(?<h>a)(?<k>b*))?x/: 3280 subjects, differ 0; `ab` is never h's value in PCRE's parse
 
-TOTAL engine-run cases 75530 differ 0; engine disagreements (PCRE2 vs Python `re`) 0; probes 204515
+TOTAL engine-run cases 75530 differ 0; engine disagreements (PCRE2 vs Python `re`) 0; probes 204636

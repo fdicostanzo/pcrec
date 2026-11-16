@@ -67,10 +67,11 @@ def pgroups(p, t, names):
 class Fac:
     """one `&`-ed condition of the flattened chain: the labels it names, the labels it MARKS (a `$x` reading a marked
     label of its own record counts: it reads the mark's witness), and fn(s, DOM) -> bool"""
-    def __init__(self, names, fn, marks=None):
+    def __init__(self, names, fn, marks=None, negmark=False):
         self.names = frozenset(names)
         self.marks = frozenset(names[:1] if marks is None else marks)   # convention: the marked label is named first
         self.fn = fn
+        self.negmark = negmark      # a mark under NEGATIVE polarity (`!`, occurs.none, an upper bound): rulings R4
 
 
 class Consult(Exception):
@@ -120,6 +121,11 @@ def doms(pop, labels, vals, facs, var):
     regex = {h: {v for s in pop for v in vals(s, h)} for h in labels}
     if var == "REGEX":
         return regex
+    if var == "MGR-N2":
+        # rulings R4 candidate N2: THE RULE (MANAGER) except that a condition holding a mark under NEGATIVE polarity is
+        # TRANSPARENT while a DOM is computed, wherever its label stands (MANAGER itself is N1: it narrows where present)
+        return {h: {v for s in pop if vals(s, h) and all(no_dom(f, s, True) for f in facs if not f.negmark)
+                    for v in vals(s, h)} for h in labels}
     if var in ("OWNER", "MANAGER"):
         out = {}
         for h in labels:
@@ -505,7 +511,7 @@ def pool_one(lab, S, sname, marked, neg):
         v = rec[lab]
         r = S(v) if v is not None else (any(S(d) for d in Dm[lab]) if marked else False)
         return (not r) if neg else r
-    return nm, Fac(lab, fn, marks=lab if marked else "")
+    return nm, Fac(lab, fn, marks=lab if marked else "", negmark=bool(neg and marked))
 
 
 def pool_joint():
@@ -522,7 +528,7 @@ def pool_njoint():
             return True                       # k unmarked: the inner condition fails, so `!` holds
         hs = [rec["h"]] if rec["h"] is not None else sorted(Dm["h"])
         return not any(canon(x) and int(x) < int(rec["k"]) for x in hs)
-    return "!((h?, k): h < k)", Fac("hk", fn, marks="h")
+    return "!((h?, k): h < k)", Fac("hk", fn, marks="h", negmark=True)
 
 
 POOLS = []
@@ -551,7 +557,7 @@ for pname, pat, pop, recs, pool in POOLS:
         for combo in itertools.combinations(range(len(pool)), n):
             NPROG += 1
             facs = [Fac(pool[i][1].names, (lambda f: (lambda s, Dm: f.fn(recs[s], Dm)))(pool[i][1]),
-                        marks=pool[i][1].marks) for i in combo]
+                        marks=pool[i][1].marks, negmark=pool[i][1].negmark) for i in combo]
             for v in VARS:
                 try:
                     ans[(combo, v)] = answers(pop, ["h", "k"], vrec, facs, v)[0]
@@ -604,6 +610,186 @@ for v in VARS:
     print("   [%-7s] adding a condition turns a FAIL into a HOLD in %d (program, added condition) pairs%s; no fixed point "
           "in %d programs%s" % (v, F2H[v][0], "" if F2H[v][1] is None else "; smallest: pattern %s, `%s` + `%s` on %r" %
                                 F2H[v][1][1:], NOFP[v][0], "" if NOFP[v][1] is None else "; e.g. %s `%s`" % NOFP[v][1]))
+
+# -----------------------------------------------------------------------------------------------------------------
+print("\n(NEGPOL) rulings R4: a mark under NEGATIVE polarity (`!` on a marked condition, `!` over a compound holding "
+      "one, a group question that counts a mark downward). Two candidates for what THE RULE does with such a condition "
+      "while a DOM is computed: N1 it narrows where its marked label is PRESENT, as the filter it is (= MANAGER above); "
+      "N2 it is TRANSPARENT (no narrowing at all). Unmarked negated conditions narrow as filters under both.")
+NEGV = (("N1", "MANAGER"), ("N2", "MGR-N2"))
+
+
+def prog_ans(pop, labels, vals, facs, var):
+    return answers(pop, labels, vals, facs, var)
+
+
+# (1a) `!` directly on a marked condition: the manager's R4 witness on the branch-reset P
+pb = dict(pool_br)
+vbr = lambda s, lab: [recs_br[s][lab]] if recs_br[s][lab] is not None else []
+wrapb = lambda f: Fac(f.names, (lambda s, Dm: f.fn(recs_br[s], Dm)), marks=f.marks, negmark=f.negmark)
+popb = sorted(recs_br)
+for v in ("REGEX",) + tuple(x[1] for x in NEGV):
+    a1, d1 = prog_ans(popb, ["h", "k"], vbr, [wrapb(pb["!(h?: <5)"])], v)
+    a2, d2 = prog_ans(popb, ["h", "k"], vbr, [wrapb(pb["(k: \"b\")"]), wrapb(pb["!(h?: <5)"])], v)
+    print("   [%-7s] P & !(h?: <5) on `b`: DOM(h)={%s} %s;   P & (k: \"b\") & !(h?: <5) on `b`: DOM(h)={%s} %s%s" %
+          (v, dstr(d1["h"]), hfx(a1["b"]), dstr(d2["h"]), hfx(a2["b"]),
+           "   -> FAIL to HOLD by adding (k: \"b\")" if not a1["b"] and a2["b"] else ""))
+
+# (1b) `!` over a compound: pattern A, `!((h?, k): h < k)` then + `(h?: >7)`, on `b1`
+pA = dict(POOLS[0][4])
+recA = POOLS[0][3]
+vA = lambda s, lab: [recA[s][lab]] if recA[s][lab] is not None else []
+wrapA = lambda f: Fac(f.names, (lambda s, Dm: f.fn(recA[s], Dm)), marks=f.marks, negmark=f.negmark)
+for v in ("REGEX",) + tuple(x[1] for x in NEGV):
+    a1, d1 = prog_ans(POOLS[0][2], ["h", "k"], vA, [wrapA(pA["!((h?, k): h < k)"])], v)
+    a2, d2 = prog_ans(POOLS[0][2], ["h", "k"], vA, [wrapA(pA["!((h?, k): h < k)"]), wrapA(pA["(h?: >7)"])], v)
+    print("   [%-7s] A & !((h?, k): h < k) on `b1`: DOM(h)={%s} %s;   + (h?: >7): DOM(h)={%s} %s%s" %
+          (v, dstr(d1["h"]), hfx(a1["b1"]), dstr(d2["h"]), hfx(a2["b1"]),
+           "   -> FAIL to HOLD" if not a1["b1"] and a2["b1"] else ""))
+
+# (1c) group questions with a mark inside, over a looped label: LST := /(?:(?<h>\d)(?::(?<m>\d))?,)*/, the lists of
+# 0-2 items from h in {1, 6}, m in {absent, 2, 7}; each list's passes read item by item from the engine
+LST = r"(?:(?<h>\d)(?::(?<m>\d))?,)*"
+ITM = r"(?<h>\d)(?::(?<m>\d))?,"
+its = [h + ("" if m is None else ":" + m) + "," for h in ("1", "6") for m in (None, "2", "7")]
+POPL = ["".join(c) for k in range(3) for c in itertools.product(its, repeat=k)]
+PS = {}
+for s in POPL:
+    assert whole(LST, s)
+    PS[s] = [(g["h"], g["m"]) for g in (groups(ITM, x + ",", ["h", "m"]) for x in s.split(",")[:-1])]
+vL = lambda s, lab: [m for h, m in PS[s] if m is not None] if lab == "m" else [h for h, m in PS[s]]
+
+
+def pv(ps, f, Dm):
+    """per pass, F1 on an absent marked m; a pass whose test would consult a DOM is SKIPPED while a DOM is computed"""
+    out = []
+    for h, m in ps:
+        try:
+            out.append(f(h, m, Dm))
+        except Consult:
+            pass
+    return out
+
+
+def jt(R):
+    return lambda h, m, Dm: R(h, m) if m is not None else any(R(h, d) for d in Dm["m"])
+
+
+MLTH = lambda h, m: int(m) < int(h)
+LT5m = lambda h, m: int(m) < 5
+GT5m = lambda h, m: int(m) > 5
+
+
+def lplain(f):
+    def fn(s, Dm):
+        ps = PS[s]
+        if not ps:
+            return False            # h unmarked: absent on zero passes
+        r = pv(ps, f, Dm)
+        return all(r)
+    return fn
+
+
+def lmark1(S):
+    def fn(s, Dm):
+        ps = PS[s]
+        if not ps:
+            return any(S("0", d) for d in Dm["m"])     # zero passes: m absent once, F1
+        return all(pv(ps, jt(S), Dm))
+    return fn
+
+
+poolL = [
+    ("occurs.none(((h, m?): m < h))", Fac("hm", lambda s, Dm: not any(pv(PS[s], jt(MLTH), Dm)), marks="m", negmark=True)),
+    ("occurs.at_most(1, ((h, m?): m < h))", Fac("hm", lambda s, Dm: sum(pv(PS[s], jt(MLTH), Dm)) <= 1, marks="m",
+                                                 negmark=True)),
+    ("!((h, m?): m < h)", Fac("hm", (lambda f: lambda s, Dm: not f(s, Dm))(lplain(jt(MLTH))), marks="m", negmark=True)),
+    ("some(((h, m?): m < h))", Fac("hm", lambda s, Dm: any(pv(PS[s], jt(MLTH), Dm)), marks="m")),
+    ("((h, m?): m < h)", Fac("hm", lplain(jt(MLTH)), marks="m")),
+    ("(m?: <5)", Fac("m", lmark1(LT5m), marks="m")),
+    ("(m?: >5)", Fac("m", lmark1(GT5m), marks="m")),
+    ("(h: <5)", Fac("h", lambda s, Dm: bool(PS[s]) and all(int(h) < 5 for h, m in PS[s]), marks="")),
+]
+CAT = lambda name: ("group" if name.startswith(("occurs.", "count")) else "compound" if name.startswith("!((") else
+                    "direct" if name.startswith("!(") else None)
+NEGPOOLS = [("A", POOLS[0][2], POOLS[0][3], POOLS[0][4], ["h", "k"]),
+            ("B", POOLS[1][2], POOLS[1][3], POOLS[1][4], ["h", "k"]),
+            ("P", POOLS[2][2], POOLS[2][3], POOLS[2][4], ["h", "k"]),
+            ("LST", POPL, None, poolL, ["m"])]
+F2HN = {}          # (the negative-polarity kinds the program holds, candidate) -> [pairs, smallest]
+for pname, pop, recs, pool, labs in NEGPOOLS:
+    if recs is None:
+        vv, wrap = vL, (lambda f: f)
+    else:
+        vv = (lambda recs: lambda s, lab: [recs[s][lab]] if recs[s][lab] is not None else [])(recs)
+        wrap = (lambda recs: lambda f: Fac(f.names, (lambda s, Dm: f.fn(recs[s], Dm)), marks=f.marks,
+                                          negmark=f.negmark))(recs)
+    for _, v in NEGV:
+        cache = {}
+
+        def A_(combo):
+            if combo not in cache:
+                cache[combo] = prog_ans(pop, labs, vv, [wrap(pool[i][1]) for i in combo], v)[0]
+            return cache[combo]
+        for n in (1, 2):
+            for combo in itertools.combinations(range(len(pool)), n):
+                cats = {CAT(pool[i][0]) for i in combo} - {None}
+                if not cats:
+                    continue
+                a = A_(combo)
+                for j in range(len(pool)):
+                    if j in combo:
+                        continue
+                    b = A_(tuple(sorted(combo + (j,))))
+                    d = [s for s in pop if not a[s] and b[s]]
+                    if d:
+                        for c in ("+".join(sorted(cats)),):
+                            e = F2HN.setdefault((c, v), [0, None])
+                            e[0] += 1
+                            cand = (n, len(sm(d)), pname, " & ".join(pool[i][0] for i in combo), pool[j][0], sm(d))
+                            if e[1] is None or cand[:2] < e[1][:2]:
+                                e[1] = cand
+for c in ("direct", "compound", "group"):
+    for _, v in NEGV:
+        F2HN.setdefault((c, v), [0, None])
+for (c, v), (n, best) in sorted(F2HN.items()):
+    print("   [%-7s] FAIL to HOLD by adding a condition, the program's negative-polarity marks only %-15s: %3d pairs%s" %
+          (v, c, n, "" if best is None else "; smallest: pattern %s, `%s` + `%s` on %r" % best[2:]))
+# the R4 witness under N2 also covers the positive-polarity question: does a program with NO negative-polarity mark ever
+# move FAIL -> HOLD under N2? (under N1 = MANAGER: 0 of 698, (SEARCH))
+n2pos = [0, 0]
+for pname, pop, recs, pool, labs in NEGPOOLS[:3]:
+    vv = (lambda recs: lambda s, lab: [recs[s][lab]] if recs[s][lab] is not None else [])(recs)
+    wrap = (lambda recs: lambda f: Fac(f.names, (lambda s, Dm: f.fn(recs[s], Dm)), marks=f.marks,
+                                      negmark=f.negmark))(recs)
+    posi = [i for i in range(len(pool)) if not pool[i][1].negmark]
+    for n in (1, 2):
+        for combo in itertools.combinations(posi, n):
+            a = prog_ans(pop, labs, vv, [wrap(pool[i][1]) for i in combo], "MGR-N2")[0]
+            for j in posi:
+                if j in combo:
+                    continue
+                b = prog_ans(pop, labs, vv, [wrap(pool[i][1]) for i in sorted(combo + (j,))], "MGR-N2")[0]
+                n2pos[0] += 1
+                n2pos[1] += any(not a[s] and b[s] for s in pop)
+print("   [MGR-N2 ] no negative-polarity mark: FAIL to HOLD in %d of %d (program, added condition) pairs" %
+      (n2pos[1], n2pos[0]))
+# (1d) the draft's own compound example, L95: t2 & !((h, m?): R) on `9`, then + (m?: padded(<30))
+l95 = Fac("m", lambda s, Dm: not jm(GE930)[0].fn(s, Dm), negmark=True)
+m30 = Fac("m", lambda s, Dm: mk(G_T2[s]["m"], lambda x: num(x) and int(x) < 30, Dm["m"]))
+for v in ("REGEX",) + tuple(x[1] for x in NEGV):
+    a1, d1 = prog_ans(POP_T2, ["m"], v_t2, [l95], v)
+    a2, d2 = prog_ans(POP_T2, ["m"], v_t2, [l95, m30], v)
+    print("   [%-7s] L95 t2 & !((h, m?): R) on `9`: DOM(m)={%s} %s;   + (m?: padded(<30)): DOM(m)={%s} %s" %
+          (v, dstr(d1["m"]), hfx(a1["9"]), dstr(d2["m"]), hfx(a2["9"])))
+# (2) the list witnesses, both candidates, on the smallest subject each
+for nm_ in ("occurs.none(((h, m?): m < h))",):
+    f0 = dict(poolL)[nm_]
+    for v in ("REGEX",) + tuple(x[1] for x in NEGV):
+        a1, d1 = prog_ans(POPL, ["m"], vL, [f0], v)
+        a2, d2 = prog_ans(POPL, ["m"], vL, [f0, dict(poolL)["(m?: >5)"]], v)
+        print("   [%-7s] LST & %s on `6,`: DOM(m)={%s} %s;   + (m?: >5): DOM(m)={%s} %s" %
+              (v, nm_, dstr(d1["m"]), hfx(a1["6,"]), dstr(d2["m"]), hfx(a2["6,"])))
 
 # -----------------------------------------------------------------------------------------------------------------
 print("\n(MOVES) the answers that move from REGEX, per table and domain (the smallest witness each)")
