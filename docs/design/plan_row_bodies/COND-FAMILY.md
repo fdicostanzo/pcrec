@@ -1590,3 +1590,27 @@ some other meaning becomes valuable". RECORD: RULED: a label named twice in one 
 both forms (the record being the product case), its message naming the fix (illustrative, D26: "h is named twice;
 for two tests on one label write `(h: <5 & >2)`"). The spelling stays FREE for a later meaning (his
 "unofficially parked"): noted in docs/design/predicates_future.md item 9; the diagonal is not adopted.
+
+**2026-11-16 OWNER RULING — pairing-loop, part 1: the wording confirmed; his remark on optionals (Frank, to session 135, box clock 13:29).**
+Asked **pairing-loop** in parts (1: the precise wording of the pairing loop; 2: zero passes of a nested loop read
+per reach, `4:;` fails, `5:;` and `6:;` hold; 3, added by review r26: an outer pass that never reaches the
+pairing loop), his words, first: "is this the same issue we were just talking about? The inner loop runs so it's
+'set' but to nothing. Then the 'or epsilon' logic makes it pass" (the manager: yes, for part 2), then: "pairing-loop:
+I agree part 1. part 2. the issue is that 'optional pass' is still a loop. Even /x?/ is a loop from 0 to 1."
+RECORD: (1) RULED: part 1, the wording: the pairing loop is the DEEPEST loop that encloses any named label; every
+other named label lies in the same pass of it or outside it with one value per pass; otherwise the sibling-loop
+error. (2) NOT RULED: his remark that an optional is a loop of 0 to 1 passes bears on parts 2-3 AND on the ruled
+boundary of predicates_draft.md §4.2 (CF:997-1000: an optional or `{0,1}` skipped leaves the label UNSET and the
+condition FAILS; a loop with an upper bound of 2 or more that runs zero times HOLDS). The manager put the
+consequences to him (next entry records his answer).
+
+**2026-11-16 OWNER DIRECTION — absent-holds: work out the options (Frank, to session 135, box clock 13:38).**
+After his remarks "Only an alternation would be a complete no set, no?" and "Ok, but then could * be defined as
+/x+|/" (the manager: `x?` = `(?:x|)` and `x*` = `(?:x+|)` = `(?:x+)?`, so EVERY line between "unset: fails" and
+"zero passes: holds" gives two spellings of one pattern different answers, today's ruled line included:
+`/(?<n>\d)*x/` holds and `/(?:(?<n>\d)+)?x/` fails on `x`), asked **absent-holds** (one rule, "a condition holds
+on any absent label", worked through every ruled example before he confirms or drops it), his words: "absents-hold:
+do work it out but consider also the option that missing means failing. Or options where the user can control the
+interpretation". RECORD: NOT A RULING. A design lane works out, side by side: absent always HOLDS; absent always
+FAILS; forms where the AUTHOR controls the reading; and today's line as the baseline. Nothing in the ruled text
+changes until he chooses. pairing-loop parts 2-3 and rev 20 wait on it.
