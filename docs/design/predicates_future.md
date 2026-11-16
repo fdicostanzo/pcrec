@@ -28,6 +28,9 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   first/last to a 'predicate future consideration' document to consider finer grain transforms. However the form is
   'do everything to both' so the logic makes sense". The ruled rule: a modifier around a set of tuples acts on
   every part.
+- THE LIFT TODAY (the manager's reading of "do everything to both", review r26 OWNER-5; not the owner's words): a
+  macro whose result DISTRIBUTES over `|` lifts to tuples, which is checkable from its body; a finer-grained
+  transform would be the first modifier that does not.
 - THE GAP IT WOULD CLOSE: `((h, name): padded(>= (9, "M")))` pads the name too (`0Mary` passes). A plain product can
   already be selective (`(padded(S), T)`); a dictionary-order set cannot. Workarounds today: the pattern refuses
   leading zeros on that field, or a computed number stands in for the non-numeric field
@@ -42,6 +45,10 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   (any value fits).
 - STATUS: the owner, 2026-11-16: "We can punt, as you say, and throw an error. Perhaps a reason will open to
   reconsider. Then there is a = some(between(...))". A several-string default is a compile error today.
+- 2026-11-16, AFTER absent-rule (14:31) AND review r28 item K: the general form of the absent rule makes this item
+  the open member of one family. An absent label reads as a candidate set D: unmarked D is empty, `m = v` is {v},
+  the optional mark is every value the label can take; `m = some(S)` would be D = S. The mark already gives the
+  "any value fits" reading over the label's own values. Still parked on its own trigger.
 - WORKED OUT IN: joint_condition.md §4B (the two readings on the time example; the "every" reading matches rev
   18's answers on 9:30..11:00 but not in general).
 - TRIGGER: a problem where a missing field means "any of these" or "does not matter" and the explicit alternative
@@ -62,6 +69,8 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   the owner wrote `epsilon`).
 - STATUS: the owner's question, 2026-11-16 ("If we had a 'unset' (epsilon?) matcher ..."), raised under
   **zero-pass-record**; it does not decide that question (an empty loop is not unset). Not ruled.
+- CLOSED 2026-11-16 by the owner's principle "a set never contains absence" (13:52) and absent-rule (14:31): the
+  job is done ON THE LABEL by the optional mark (`m?`, placeholder spelling), never by a set member. Kept as record.
 - NOTES: fits a record (each label has its own set) better than a joint comparison (`((h, m): >= (9, 30))`:
   "unset" has no place in the order; the default does that job); makes three ways to treat a missing field
   (default, alternative, member), so `label.unset`'s text naming the fixes would change.
@@ -76,6 +85,9 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   looped parts are empty, and empty satisfies ANY set without being written); the author-written form is parked.
   His reason against requiring it: "The author's contribution is the * form so they know they are providing a
   possibly empty set."
+- OVERTAKEN 2026-11-16 by absent-rule (14:31): there is ONE kind of absence and a condition on an absent label
+  FAILS, the empty list included, so "empty satisfies any set" no longer holds and no empty value exists to write;
+  the author's control is the optional mark or a default on the label. Kept as record.
 - NOTES: with the author-written form, every "all items" condition over an `x*` loop fails on the empty list
   unless the member is added (reverses CF:997-1000). Rejecting the empty case has spellings today: `+` in the
   pattern, `some((h: S))`, a count (`n := count((h: S))`, `(n: >=1)`). "All are S, and at least one" takes two
@@ -89,6 +101,9 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   which then stands in.
 - STATUS: the owner's question, 2026-11-16 ("could they use default values to undo their * ?"). Not adopted: the
   ruled text stays (a default is never read on zero passes, joint_condition.md §4B.1).
+- BECAME THE RULE 2026-11-16 (absent-rule, 14:31, which reverses joint_condition.md §4B.1's "never read on zero
+  passes"): a default is read on EVERY absence, the empty list included. The overloading noted below is now the
+  ruled behaviour; the author who wants "absence is acceptable" writes the mark. Kept as record.
 - NOTES: it overloads the default: `m = 0` written to mean "an item with no minutes is :00" would also change the
   empty list's answer (`list & ((h = 0, m = 0): >= (9, 30))` flips from holds to fails), with no warning. What it
   adds is "read an empty list as the one value v". The owner's frame: "saving people from themselves".
