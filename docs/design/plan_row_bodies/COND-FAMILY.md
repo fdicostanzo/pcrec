@@ -1407,3 +1407,12 @@ into its first entry and the rest, used by a definition that calls itself on the
 of fields instead of the language building it in, and it gives the draft's ruled bounded recursion (§7, CF:583;
 waiting on O21 and index arithmetic) a structural form that needs neither a size literal nor an index; its price is a
 rest form on the binding side, a way to build a tuple from a first and a rest on the value side, and a base case.
+
+**2026-11-16 OWNER — reaching a tuple's parts is REOPENED; he wants the "use it whole" case heard (Frank, to session
+134, box clock 09:58).** Told that lane tupleval leaned to "a tuple's parts are not reachable at all; use it whole",
+against his "Yes" of 09:50 to taking a tuple apart in a binding, his words: "Nothing is set in stone. I'd like to hear
+it out. So It's the set that makes it an item so you can't break it apart without changing its meaning. Like 9:30,
+10:00 broken apart is 9,10 and 30, 00 which is gibberish. Makes sense". RECORD: (1) the 09:50 confirmation is NOT a
+closed ruling: both positions (parts by a binding; no access, the tuple used whole) are to be laid out and he
+decides; (2) his own statement of the reason against access: the SET is what makes the pairing, so breaking a set of
+tuples apart changes its meaning (the pairs 9:30 and 10:00 become {9, 10} and {30, 00}).
