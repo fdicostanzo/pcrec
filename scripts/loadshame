@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+# loadshame — name the live processes that are loading the box, before a timing window.
+#
+# when: before a timing run (the quiet gate wants load1 < 2.0), or when a quiet gate has refused a job:
+#       says WHO is causing the load so the manager can tell the owner (never kills anything).
+# does: samples /proc for --sec seconds (default 10) and prints
+#         line 1: `loadshame: QUIET|LOADED load1 X load5 Y (gate < G) busy-cores Z over Ns`
+#         then one row per offender GROUP (same user + command name), busiest first:
+#           cores   CPU used over the sample, in cores (1.00 = one core fully busy)
+#           run     average number of its threads found RUNNABLE per look (state R)
+#           wait    average number found in UNINTERRUPTIBLE wait per look (state D: disk or io_uring waits;
+#                   these raise the load average without using CPU, e.g. a terminal's io_uring threads)
+#           pids    how many processes are in the group, and the busiest one's pid
+#       A group is listed when cores >= --min (default 0.02) or run + wait >= 0.10.
+#       Exit 0 when load1 < gate, 1 when not, 2 on a usage error. Reads only; writes nothing.
+# usage: scripts/loadshame [--sec N] [--gate G] [--min C] [--top K] [--all]
+#        --all lists every group above the thresholds (default: the top 10).
+# The gate default (2.0) is the timing harness's own QUIET_LOAD (docs/design/memfn/span_cards/slot/run.py);
+# pass --gate when a job uses another. The load average itself lags by about a minute: a process that
+# has just stopped still shows in load1 for a while, and one that has just started shows here first.
+import argparse
+import os
+import pwd
+import sys
+import time
+
+CLK = os.sysconf("SC_CLK_TCK")
+ME = os.getpid()
+
+
+def stat_fields(path):
+    """(comm, state, utime+stime ticks, start time) from a /proc stat file; None when the task is gone."""
+    try:
+        with open(path, "rb") as f:
+            raw = f.read().decode("utf-8", "replace")
+    except OSError:
+        return None
+    lo, hi = raw.find("("), raw.rfind(")")
+    if lo < 0 or hi < 0:
+        return None
+    rest = raw[hi + 2:].split()
+    if len(rest) < 20:
+        return None
+    return raw[lo + 1:hi], rest[0], int(rest[11]) + int(rest[12]), rest[19]
+
+
+def pids():
+    return [int(d) for d in os.listdir("/proc") if d.isdigit() and int(d) != ME]
+
+
+def cpu_snapshot():
+    snap = {}
+    for pid in pids():
+        got = stat_fields("/proc/%d/stat" % pid)
+        if got:
+            snap[pid] = got
+    return snap
+
+
+def thread_states(pid):
+    """(threads in state R, threads in state D, the process's own stat fields) right now."""
+    run = wait = 0
+    comm = None
+    try:
+        tids = os.listdir("/proc/%d/task" % pid)
+    except OSError:
+        return 0, 0, None
+    for tid in tids:
+        got = stat_fields("/proc/%d/task/%s/stat" % (pid, tid))
+        if got:
+            run += got[1] == "R"
+            wait += got[1] == "D"
+    if run or wait:
+        comm = stat_fields("/proc/%d/stat" % pid)      # whole-process ticks, for one that ends mid-sample
+    return run, wait, comm
+
+
+def describe(pid):
+    """(user, short command line) for one pid; best effort."""
+    try:
+        user = pwd.getpwuid(os.stat("/proc/%d" % pid).st_uid).pw_name
+    except (OSError, KeyError):
+        user = "?"
+    try:
+        with open("/proc/%d/cmdline" % pid, "rb") as f:
+            cmd = f.read().replace(b"\0", b" ").decode("utf-8", "replace").strip()
+    except OSError:
+        cmd = ""
+    return user, cmd
+
+
+def main():
+    ap = argparse.ArgumentParser(add_help=True, description="Name the processes loading the box.")
+    ap.add_argument("--sec", type=float, default=10.0)
+    ap.add_argument("--gate", type=float, default=2.0)
+    ap.add_argument("--min", type=float, default=0.02, dest="min_cores")
+    ap.add_argument("--top", type=int, default=10)
+    ap.add_argument("--all", action="store_true")
+    try:
+        a = ap.parse_args()
+    except SystemExit as e:
+        return 0 if e.code == 0 else 2
+    if a.sec <= 0 or a.gate <= 0:
+        print("loadshame: --sec and --gate must be positive", file=sys.stderr)
+        return 2
+
+    looks = max(4, int(a.sec * 2))
+    t0 = time.monotonic()
+    first = cpu_snapshot()
+    run_sum, wait_sum, seen = {}, {}, {}
+    for i in range(looks):
+        time.sleep(a.sec / looks)
+        for pid in pids():
+            r, w, st = thread_states(pid)
+            if r or w:
+                run_sum[pid] = run_sum.get(pid, 0) + r
+                wait_sum[pid] = wait_sum.get(pid, 0) + w
+                if st:                    # a process may be gone before the last snapshot: keep what it
+                    who = seen[pid][1] if pid in seen else describe(pid)      # was when last seen busy
+                    seen[pid] = (st, who)
+    last = cpu_snapshot()
+    span = time.monotonic() - t0
+
+    groups = {}
+    for pid in set(last) | set(run_sum) | set(wait_sum):
+        end = last.get(pid) or (seen[pid][0] if pid in seen else None)
+        comm = end[0] if end else (first[pid][0] if pid in first else "(gone)")
+        ticks = 0
+        if end and pid not in last:       # ended inside the sample: its ticks up to the last busy look
+            same = pid in first and first[pid][3] == end[3]
+            ticks = end[2] - (first[pid][2] if same else 0)
+        if pid in last:
+            # the same process at both ends (same start time): the difference; a process born inside the
+            # sample: all its ticks; a kernel worker's NAME changes while it lives, so names are not compared
+            same = pid in first and first[pid][3] == last[pid][3]
+            ticks = last[pid][2] - (first[pid][2] if same else 0)
+        cores = max(0, ticks) / CLK / span
+        run = run_sum.get(pid, 0) / looks
+        wait = wait_sum.get(pid, 0) / looks
+        if cores == 0 and run == 0 and wait == 0:
+            continue
+        user, cmd = describe(pid) if pid in last else (seen[pid][1] if pid in seen else ("?", ""))
+        g = groups.setdefault((user, comm), {"cores": 0.0, "run": 0.0, "wait": 0.0, "n": 0, "top": (-1.0, pid, cmd)})
+        g["cores"] += cores
+        g["run"] += run
+        g["wait"] += wait
+        g["n"] += 1
+        weight = cores + run + wait
+        if weight > g["top"][0]:
+            g["top"] = (weight, pid, cmd)
+
+    with open("/proc/loadavg") as f:
+        load1, load5 = [float(x) for x in f.read().split()[:2]]
+    busy = sum(g["cores"] for g in groups.values())
+    quiet = load1 < a.gate
+    print("loadshame: %s load1 %.2f load5 %.2f (gate < %.2f) busy-cores %.2f over %.0fs" % (
+        "QUIET" if quiet else "LOADED", load1, load5, a.gate, busy, span))
+
+    rows = [(k, g) for k, g in groups.items()
+            if g["cores"] >= a.min_cores or g["run"] + g["wait"] >= 0.10]
+    rows.sort(key=lambda kg: -(kg[1]["cores"] + kg[1]["run"] + kg[1]["wait"]))
+    if not a.all:
+        rows = rows[:a.top]
+    if rows:
+        print("  %-5s %-5s %-5s %-10s %-18s %-12s %s" % ("cores", "run", "wait", "user", "command", "pids", "busiest"))
+    for (user, comm), g in rows:
+        _, pid, cmd = g["top"]
+        print("  %-5.2f %-5.2f %-5.2f %-10s %-18s %-12s %s" % (
+            g["cores"], g["run"], g["wait"], user[:10], comm[:18],
+            "%d (pid %d)" % (g["n"], pid), cmd[:70]))
+    if not rows:
+        print("  (no process above the thresholds)")
+    return 0 if quiet else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
