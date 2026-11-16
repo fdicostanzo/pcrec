@@ -37,13 +37,14 @@ ok()  { pass=$((pass + 1)); }
 bad() { fail=$((fail + 1)); echo "FAIL: $*"; }
 [ -x "$H" ] || { echo "FAIL: $H is not built (make)"; echo "test-kitproof: FAIL"; exit 1; }
 
-flags() {   # FLAGS -> pcrec arguments
-    local a=""
-    case "$1" in *i*) a="$a -i" ;; esac
-    case "$1" in *u*) a="$a -e utf8" ;; esac
-    case "$1" in *R*) a="$a -fno-rev-end" ;; esac
-    echo "$a"
-}
+# the ONE reading of FLAGS/PATTERN (loader.sh, shared with reach.sh): the
+# W letter and the @D/@D1/@LD/@LD1 forms read the shipped width default and
+# ceiling from --list-limits, failing loud (cover_cap.md §11.6.2)
+. "$here/loader.sh"
+if ! kp_limits "$P"; then
+    echo "FAIL: $KP_ERR"; echo "test-kitproof: FAIL"; exit 1
+fi
+flags() { kp_flags "$1"; }   # FLAGS -> pcrec arguments
 
 # one artifact per (flags, pattern), compiled once
 declare -A ART=()
@@ -69,6 +70,8 @@ scan() { sed -n 's/^#define RX_DFA_SCAN "\([^"]*\)".*/\1/p' "$1/a.c"; }
 nv=0; nf=0
 while IFS=$'\t' read -r kind fl pat val why; do
     case "$kind" in '#'*|'') continue ;; esac
+    pat="$(kp_pat "$pat")"
+    case "$val" in width=*) val="$(kp_width_verdict "${val#width=}")" ;; esac
     case "$kind" in
         verdict)
             nv=$((nv + 1))
@@ -137,8 +140,22 @@ print("ok %d" % len(wa))' "$want" "$got")"
     esac
 done < "$here/answers.tsv"
 
+# ---- the option, library side ([COVER-CAP] stage 2, A3) --------------------
+# width_opt.c links build/libpcrec.a: an out-of-range window_search_width is
+# refused (-1), 0/1/ceiling-1 compile, and the field moves the route.
+if "$TIMEOUT_BIN" 120 "$CC" -O1 -std=gnu11 -I"$root/lib" -o "$tmp/width_opt" "$here/width_opt.c" \
+       "$root/build/libpcrec.a" > "$tmp/width_opt.gcc" 2>&1; then
+    nw=0
+    while IFS= read -r line; do
+        case "$line" in ok*) ok; nw=$((nw + 1)) ;; *) bad "width_opt: $line" ;; esac
+    done < <("$TIMEOUT_BIN" 60 "$tmp/width_opt" "$KP_CEIL" 2>&1)
+    [ "$nw" -ge 8 ] && ok || bad "width_opt: only $nw checks passed (floor 8)"
+else
+    bad "width_opt.c does not build: $(head -3 "$tmp/width_opt.gcc")"
+fi
+
 # K35: the populations are counted, never assumed
-[ "$nv" -ge 48 ] && ok || bad "only $nv verdict rows (floor 48)"
+[ "$nv" -ge 49 ] && ok || bad "only $nv verdict rows (floor 49)"
 [ "$nf" -ge 19 ] && ok || bad "only $nf facts rows (floor 19)"
 [ "$na" -ge 105 ] && ok || bad "only $na answer rows (floor 105)"
 echo "kitproof: $nv verdicts, $nf facts, $na answers ($ncell cells)"
