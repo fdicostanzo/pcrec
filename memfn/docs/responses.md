@@ -3561,3 +3561,15 @@ No byte under src/ or memfn/src moved; no abi event. Reports: docs/dev/lanes/d3f
   row-memory, night-order-edits (unconditional). The owner's: forms-now-or-next = forms now;
   keep-short-spans = no; near-miss-fix-later = no. Ours: dominance-cycle as above.
   Supersedes the rev 4 block above. Design of record: docs/design/memfn/r45_reply.md rev 6, lane/memfn-r45 @ 69acf5376; reviews r20, r22, r23, r25 filed there (all RULED).
+
+done: R-45 plan B (window-span carrier + kit working state + witness row (a)) — branch lane/memfn-span4k @ 60c2958ae (from main a66bf0877,
+origin/main 02bbd527f merged). MF_SITE_ABI 29 -> 30, MF_CLASS_V 10 -> 11; MF_WREACH = MF_MAX_FWD = 4096; MF_WSPAN_POS stays 32 here.
+Zero emitted-byte movers (code round r27: 724 compiles 0 diff; 70 ASan/UBSan 0). Reviews r27 (code, RULED) + r28 (re-check) on the branch.
+Validation: cloud test GREEN (run 43955426138) and axes GREEN (run 43955499773) on 60c2958ae; locally strict, codegen, registry,
+rxtsource, link, g2, finder, d27frame, test-resource (allocation injector absorbs 0), arch-blind; moved sabotage rows DETECTED.
+HELD RAISE: lane/memfn-span4k-raise @ 9d4907a16 = 60c2958ae + ONE commit (MF_WSPAN_POS 4095; MF_MAX_SPAN_POS/MF_MAX_AHEAD retired;
+READ-1's declining contract + witnesses S3254/S3258). Builds only over lane/covs2afix (A1 + A3); validated on a combined approximation
+tree (0 movers at width 32; ASan/UBSan clean). Lands on main's combined branch WITH main's half: READ-2 (pcrec's asserts at 32 incl.
+PCREC_PREFIX_K_MAX, a pcrec name for the reach-64 bound) and CHECK-1 (their witness). Witness row (b) follows main's stage-2 B5 text.
+OWED (kit, next seam touch = the forms build): R28-2, R28-3 witness rows. Reports: docs/dev/lanes/span4k_report.md, span4kfix_report.md,
+raisefix_report.md (on the raise branch).
