@@ -73,3 +73,8 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 
 ## 2026-11-15 — critic round predspec14 (review r16)
 - Three opus critics on a ~3,700-line design doc, all done in under 10 min with complete files, from a COMMON that pointed at read-only round-dir copies: no repo access needed, no denylist exposure. Inline verification was cheaper than a verifier agent for quote/one-script findings (second round in a row).
+
+## 2026-11-15 — critic round covs2a (review r18)
+- Coordinator pattern worked with no manager wake-ups; the only round-trip was the single hand-back. Inline verification (16 quote/one-call checks in one command) was right-sized; a verifier agent would have cost more.
+- For a staged change against a named item list, the conformance lens was the most productive (8 findings, 17 compiles) and earns its own lens.
+- A box deadline was easy to meet: zero-mover code rounds at -j2 with prebuilt plants finish probing in about 10 minutes.
