@@ -735,6 +735,11 @@ def compute(rundir):
             G = plan.card_of(card, key)["gate"]
             half = 2 if key == plan.UNIT_KEY else 1
             r["gate"] = r["value"] > 0 and half * r["noise"] * 10**6 <= G * r["value"]
+            if not r["gate"]:
+                # [r13 JF-4] the failed gate's numbers, for a reader that prints the row unpriced (d197's scan line)
+                r["gate_why"] = ("gate FAIL: value %d not positive" % r["value"] if r["value"] <= 0 else
+                                 "gate FAIL: noise %d is %d e6 of value %d, over the card gate %d e6"
+                                 % (r["noise"], rhafz(half * r["noise"] * 10**6, r["value"]), r["value"], G))
     unit = out.get(plan.UNIT_KEY, {})
     unit_bad = None
     if "absent" in unit or not unit or W is None or W <= 0:
@@ -774,15 +779,18 @@ def compute(rundir):
     failed = [cl for cl, ks in sorted(clauses.items()) if all(unpriced(k) for k in ks)]
     absent = [k for k in out if "absent" in out[k] or drift.get(out[k]["job"], (0, 0, False))[2]
               or out[k].get("gate") is False]
+    # the outcome (word, exit, causes, REFUSALS): [r13 JF-4] the refusals as data, (cause, the keys it names) per
+    # cause (`unit` names none), so a reader can tell WHICH rows refused (d197_rule.tsv's `refusal` table); the draft
+    # reads only the word: REFUSED writes no draft, whichever rows refused
     if unit_bad:
-        outcome = ("REFUSED", 3, ["unit"])
+        outcome = ("REFUSED", 3, ["unit"], [("unit", [])])
     elif failed:
         outcome = ("REFUSED", 3, ["floor:%s (%s)" % (cl, ",".join(sorted({unpriced(k) for k in clauses[cl]})))
-                                  for cl in failed])
+                                  for cl in failed], [("floor:" + cl, sorted(clauses[cl])) for cl in failed])
     elif absent:
-        outcome = ("PARTIAL", 4, sorted(absent))
+        outcome = ("PARTIAL", 4, sorted(absent), [])
     else:
-        outcome = ("FULL", 0, [])
+        outcome = ("FULL", 0, [], [])
     return out, drift, unit_bad, outcome, W, pins
 
 def notes(rundir, out=None):
@@ -1289,6 +1297,33 @@ def _synth_cells_pin(d):
     pins = record.cells_pins(d, sorted(f[6:-4] for f in os.listdir(d) if re.fullmatch(r"cells\.J\w+\.tsv", f)))
     rec["run"] = [r for r in rec["run"] if not r[0].startswith("cells_sha256_")] + [[k, v] for k, v in sorted(pins.items())]
     record.write(p, rec)
+
+def _synth_edit_cells(d, j, f):
+    """rewrite job j's cells: f(arm, launch, ns_e6) -> ns_e6, then re-pin (a run that PRODUCED those cells)"""
+    p = os.path.join(d, "cells.%s.tsv" % j)
+    ls = []
+    for ln in open(p).read().split("\n"):
+        c = ln.split("\t")
+        if len(c) == 8 and not ln.startswith("#"):
+            c[7] = str(f(c[2], int(c[4]), int(c[7])))
+        ls.append("\t".join(c))
+    open(p, "w").write("\n".join(ls))
+    _synth_cells_pin(d)
+
+def _plant_scan_noise(d, form="mfind-swar"):
+    """[r13 JF-4] the find_byte@6 row of `form` (a SCAN row, never deciding) noisy as last night's swar: the arm and
+    its twin scaled apart by 5 % on two launches in three, so its paired A/A is ~10 % of its value (gate 3 %)"""
+    k = "kit.find_byte.%s" % form
+    s = lambda l: (l % 3) - 1
+    _synth_edit_cells(d, "JMB", lambda a, l, ns: ns * (100 + 5 * s(l)) // 100 if a == k else
+                      ns * (100 - 5 * s(l)) // 100 if a == k + "#b" else ns)
+
+def _plant_deciding_unpriced(d, form="mfind-w32"):
+    """[r13 JF-4] every reject-0 find_hit@6 row of `form` (DECIDING rows) costs less than its own base on every
+    launch: est's NULL rule makes each unpriced (a fixture defect), so its floor clause hit6.<form> refuses"""
+    pre = "kit.find_hit.%s.periodic.one." % form
+    _synth_edit_cells(d, "JMH", lambda a, l, ns: 8000000 * 1000 + l if a.startswith(pre) and a.rstrip("#b").endswith(".0")
+                      else ns)
 
 # [r11-REV15-2..4] the READING cases: hand-written timed functions (assembled, .size set), each with the fact both
 # readings must give; a disagreement or another answer is WRONG
@@ -1808,7 +1843,25 @@ def selftest(scratch):
         except InputError as e:
             return "CELLS PIN" in str(e)
         return False
+    def mf_refusals(plant, want):
+        """[r13 JF-4] the outcome's REFUSALS as data: after `plant`, REFUSED, its refusals exactly `want`
+        [(cause, keys)], every deciding (find_hit@6) row still carrying its per-launch x"""
+        def pred(d):
+            plant(d)
+            out, _dr, _ub, outcome, _w, _p = compute(d)
+            hit6 = [k for k in out if k.startswith("kit.find_hit.") and k.split(".")[2] in plan.FORMS6]
+            return (outcome[0] == "REFUSED" and outcome[3] == want(out) and hit6 and all("x" in out[k] for k in hit6)
+                    and all(out[k].get("gate") is not False or "gate FAIL" in out[k].get("gate_why", "") for k in out))
+        return pred
     MF_CASES = (
+        ("[r13 JF-4] the scan row kit.find_byte.mfind-swar noisy alone: REFUSED by ONE refusal, "
+         "floor:byte.mfind-swar naming that key only; every find_hit@6 row keeps its x",
+         mf_refusals(_plant_scan_noise, lambda out: [("floor:byte.mfind-swar", ["kit.find_byte.mfind-swar"])])),
+        ("[r13 JF-4] every reject-0 mfind-w32 find_hit@6 row unpriced: REFUSED by floor:hit6.mfind-w32 naming those "
+         "deciding keys", mf_refusals(_plant_deciding_unpriced, lambda out: [("floor:hit6.mfind-w32", sorted(
+             k for k in out if k.startswith("kit.find_hit.mfind-w32.") and k.endswith(".0")))])),
+        ("[r13 JF-4] the control: the unplanted mfcard window is FULL, no refusals",
+         lambda d: compute(d)[3] == ("FULL", 0, [], [])),
         ("[r7 RULE-2, r8 ADQ-3] a legacy record (no window key) with no cells pin (pre-r6): priced, with a NOTE", mf_nopin),
         ("[r8 ADQ-3 S3224] an mfcard-window record with one cells pin line deleted: refused", mf_pinless),
         ("[r8 ADQ-3 S3225] an mfcard-window record with one manifest pin line deleted: refused",
