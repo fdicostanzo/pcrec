@@ -3521,3 +3521,43 @@ No byte under src/ or memfn/src moved; no abi event. Reports: docs/dev/lanes/d3f
   keep-short-spans (keep spans <= 32 all-inline even on a measured win)? No.
   near-miss-fix-later (fix near misses in the first build)? No, until a timed card shows it.
   Design of record: docs/design/memfn/r45_reply.md rev 4, branch lane/memfn-r45 @ fee80b67b; reviews r20, r22, r23 filed there (all RULED).
+
+## R-45 reply (2026-11-16, kit; rev 6 after reviews r20, r22, r23, r25 and your check r45read) — window spans up to 4095 positions
+- READY; nothing open. Plan A (forms now, one joint landing) is the plan of record.
+- (1) YES on EVERY window span: MF_WSPAN_POS 4095; MF_WREACH = MF_MAX_FWD = 4096. Proof rows
+  only for proving classes (window plan, old-field FIND); others proof_n 0. Range [LO, end),
+  end = max(last stated position + 2, last tested offset + 1). Kit refusals: tested offset out
+  of range; rows past caller storage; range self-check (message via mf_define only).
+  Your cover ask passes storage to the ceiling (4,104 rows): every over-read below 4096 reaches
+  B5. Witnesses: a kit row (self-check by message); a pcrec row on [0-9a-f]{32}, nothing after,
+  R-short removed (a cover at width 32, after side unstated; its REACH asserts both).
+- (2) Decoupled: MF_MAX_TERM 32, MF_WMAX_SPAN 32 stay; MF_MAX_SPAN_POS/MF_MAX_AHEAD retire now
+  (merge only onto A1). S526 stays on MF_MAX_TERM; B2's control is your §11.6.3 build.
+- (3) Forms I/L/H(h) over the existing segmenter, at EVERY window span; literals stay one
+  compare. Default H(h*), h* from FINITE heads: W(h) = worst C1-C2 cell of t(H(h))/t(I) in
+  every regime (your §11.4 five by its methods + random bytes); E = within the A/A floor of the
+  best W; keep the members of E dominated (faster beyond f in at least one cell and never
+  slower beyond f) by the fewest others (RULED); then the LARGEST. On a tie h* = 64, CHOSEN. A
+  loss in any regime moves h, never your width default. Any C1-C2 cell void twice: h* = 64,
+  the read cells' pick recorded (a void never helps a head). Possible movers: every window
+  alternative (covers, pre-check runs, reseed/prefix) with >= 2 consecutive offsets of one
+  identical multi-member set (the per-offset meet, ACROSS span boundaries) whose last offset
+  is >= h*. Witness: \w{32}\B (its after side continues \w to offset 32). At width 32, h* = 64
+  moves nothing; h* = 32 moves only that kin. Predict from a NEW trace record of your own
+  statements (MFWSTMT, your build; a superset; red = a move outside it). uuid: a width event.
+  Test-only lever span-head=N (bench reads it only if a regime must run there); identity
+  check over every predicted mover + cards + census covers. Option span-loop (pair; deny wins;
+  the deny is the G1 arm, not the dial); memfn floor 13 -> 14. Night order (ruled): cards first via the lever; h*
+  compiled in + identity check; then your width cells on that REBUILT binary. Your cover_cap
+  edits: §11.4 (+ regimes), §11.6.1 (4a cards, 4b rebuild + identity; whether 4b gets its own
+  review is yours), §11.6.4, §11.1 prediction + the MFWSTMT record.
+- (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). No fix in the first build. The
+  forms are not a near-miss fix (every form restarts one byte later).
+- (5) Arrays leave the seam structs: mf_wspan 1,164 -> 32 B, mf_class 2,932 -> 1,640 B,
+  mf_wreply 532 -> 136 B. Lists go into caller storage sized by mf_rows_need. 22 byte compares
+  become deep compares; 14 uint8_t casts widen. MF_SITE_ABI 29 -> 30, MF_CLASS_V 10 -> 11.
+  Rows per cover attempt: ~291 KB at 4095, ~133 KB at 32. The build starts from main.
+- Rulings recorded: yours, YES on other-sites-at-32, cover-ask-storage, caller-storage,
+  row-memory, night-order-edits (unconditional). The owner's: forms-now-or-next = forms now;
+  keep-short-spans = no; near-miss-fix-later = no. Ours: dominance-cycle as above.
+  Supersedes the rev 4 block above. Design of record: docs/design/memfn/r45_reply.md rev 6, lane/memfn-r45 @ 69acf5376; reviews r20, r22, r23, r25 filed there (all RULED).
