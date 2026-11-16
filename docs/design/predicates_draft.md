@@ -28,7 +28,7 @@
   verbatim to the new §16 (the record), §5.4's `^` row and §3.2/§3.5's reference text marked PAUSED in place; review
   r19 CENSUS-4, CENSUS-5 + SIMULATE-1 and CENSUS-8 applied there. (F) §0: the entries after rev 19 (00:06-15:29) with
   his words and the manager's readings labelled; STANDING CRITERIA (his principles, unranked); rows overtaken 14:31
-  marked. §0.1: L37 ERROR, L45 BY DESIGN, L72-L81 PAUSED, new L82-L95. §0.3: new words (tuple, tuple set, arity,
+  marked. §0.1: L37 ERROR, L45 BY DESIGN, L72-L81 PAUSED, new L82-L97. §0.3: new words (tuple, tuple set, arity,
   joint condition, absent, optional mark, default, pass, DOM). §5.4: the value tuple, the joint condition and the
   label controls rows; `=` at a label; the comparison atom a tuple. §6.1: the joint condition at the default level.
   §7.1: `label.unset` (three fixes), `default.unused`, the never-absent-mark warning, `compare.looped` moved,
@@ -696,11 +696,13 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L88 | `list & ((h, m): R)` vs a hand-written `list & ((h: >9) \| (h: 9, m: >=30))` over looped h, m | DIFFERENT: WARNING | the joint condition tests EACH PASS; each alternative of the `\|` must hold on EVERY pass, so the `\|` is not a per-item test; the moved looped warning fires on the second (§7.1) | joint-loops CF 11:17 |
 | L89 | `(9, 0)` vs `f(9, 0)` vs `(h: 9, m: 0)` vs `((h, m): ...)` | DIFFERENT: BY DESIGN | the bracket's POSITION decides: a value tuple, a call's arguments, a condition record, a joint entry (§5.4) | J1-J3 |
 | L90 | `t2 & ((h, m = 0): R)` vs `t2 & (((h, m): R) \| (h: 10))` | DIFFERENT: BY DESIGN | a default is read on EVERY absence and tested like a value; a hand alternative names one case (joint_condition.md §4B.4) | J6 |
-| L91 | `[(9, 0), (10, 30)]` vs `([9, 10], [0, 30])` | DIFFERENT: BY DESIGN | a union of two tuples vs the product of two arity-1 sets (four tuples) | set-arity CF 10:26 |
+| L91 | `[(9, 0), (10, 30)]` vs `([9, 10], [0, 30])` | DIFFERENT: BY DESIGN | a union of two tuples vs the product of two arity-1 sets (four tuples): 3 vs 6 of 11,000 padded `t` subjects (table (DM)) | set-arity CF 10:26 |
 | L92 | `(h: A, h: B)` vs `(h: A & B)` | DIFFERENT: ERROR | a label named twice in one condition is a compile ERROR ("label-twice: agree an error"); `(h: A) & (h: B)` and `(h: A & B)` are the spellings | label-twice CF 13:16 |
 | L93 | `all((x: S))` vs `(x?: S)` | SAME | `all(c)` is c with every label marked (the manager's reading, r28 C); a defaulted label inside `all` keeps its default (§4.2 (c), the manager's reading) | absent-rule CF 14:31; r28 C |
 | L94 | `/(?<k>\d)?-(?<h>\d)?/` vs `/(?:(?<k>\d)\|)-(?:(?<h>\d)\|)/` under `(h: <5, k?: between(3, 7))` | SAME | `x?` and `(?:x\|)` answer alike under the pairing rule; a quantifier with upper bound 1 is not a loop for it (the manager's reading of how): 0 of 121 differ | optional-as-loop CF 15:23 |
 | L95 | `!((h, m?): R)` vs `((h, m?): !R)` on `t2` | DIFFERENT: BY DESIGN | the mark is on the label: `!` outside is the plain complement of the marked condition, `!R` inside a second condition; on `9` (R = `padded(>= (9, 30))`): FAILS / HOLDS (the manager's call, review r28 G; §4.2) | absent-rule CF 14:31 |
+| L96 | `t2 & [m = 0]` vs `t2 & (m = 0: S)` | DIFFERENT: BY DESIGN | an array's `=` NAMES a label (the alternative `0` labelled m); a condition's default READS one: 244 of 11,110 `t2` subjects differ (joint_condition.md table (DK)); the lane unsetdef's WARNING `label.both_sides` is PROPOSED, NOT RULED (§7.1) | J6 |
+| L97 | `t2 & (((h, m): R) \| (h: 10 \| 11))` (an unguarded hand slice) vs `t2 & ((h, m = 0): R)` | DIFFERENT: GAP | with R = `padded(between((9, 30), (11, 0)))`: without a guard "m absent" the slice also admits a PRESENT m (`11:45` passes by h = 11, though 11:45 is past 11:00): 99 of 11,110 differ (joint_condition.md table (DG)); both are legal programs, so no diagnostic is possible; `label.unset`'s text names the default as the fix | J6 |
 
 **REASONING.** The owner's framing: "complex context could cause predicates to just not work and it's not clear how
 the obscure rules impact it ... that's why it was so important to me that things that look like they should do the
@@ -838,9 +840,9 @@ kind of absence, both FAIL), L30 (the unset half ANSWERED; on zero iterations th
 their verdicts with restated reasons (a plain condition needs a hit; answers move on zero passes). CLASS MOVES by
 other rulings: L37 (OPEN becomes ERROR, **colon-scope**), L45 (ERROR becomes BY DESIGN, **tuple-value**). L72-L81
 lose their subject: PAUSED with the sigil or RETIRED with the `lex_` names (**retire-paused**, CF 12:51), kept marked
-as the record. NEW rows L82-L95 (the controls, the product, the two orders, the arity, the reference list, the moved
+as the record. NEW rows L82-L97 (the controls, the product, the two orders, the arity, the reference list, the moved
 warning, position, default vs a hand alternative, union vs product, label-twice, `all` vs the mark, `?` vs
-`(?:x|)`, `!` over a marked label). The STATUS sentences above that rest L36's zero-iteration clause, L55, L56 and
+`(?:x|)`, `!` over a marked label, an array's `=` vs a default, an unguarded hand slice). The STATUS sentences above that rest L36's zero-iteration clause, L55, L56 and
 L65 on the PER-MATCH RULE (CF:997-1000, RULED BY ACCEPTANCE) and L55's zero-hit answer on the "+ or * control"
 (CF:933) are OVERTAKEN 14:31 (**absent-rule** REVERSES the zero-passes-hold half of CF:997-1000; CF:933 is no longer
 the absence control); they are kept as history.
@@ -2148,7 +2150,10 @@ E-RFC's `==$wd`, §13 C13 RESOLVED by **colon-scope**, CF 11:32). ABSENT INPUTS 
 ruled, §4.2 (e1)): a computed label reading an ABSENT label is ABSENT itself, and its own controls apply, the mark
 over DOM of the computed label (the image of its mapping over the values its inputs can take) and a default:
 `mnum := $mname.index` over `/(?<mname>Jan|Feb|Mar)?-(?<d>\d)/` on `-5`: `(mnum: <3)` FAILS, `(mnum?: <3)` HOLDS,
-`(mnum = 9: <3)` FAILS. Through a filter modifier a value condition becomes a pattern: `month_numbered(<3)` =
+`(mnum = 9: <3)` FAILS. A COMPUTED LABEL IS ARITY 1 (rev 20; the manager's reading, round jointcond,
+TUPLE-BINDING): a match-dependent tuple (`($sh, $sm)`) is written inline in a condition or passed as an argument,
+never bound (`lo := ($sh, $sm)` is an error naming the inline form, `> ($sh, $sm)`); a CONSTANT tuple binds like any
+value (`lo := (9, 30)`, **tuple-anywhere**, CF 09:49). Through a filter modifier a value condition becomes a pattern: `month_numbered(<3)` =
 `/Jan(uary)?|Feb(ruary)?/` (§2.7).
 
 **REASONING.** Lets non-numeric layouts (month names) comply with numeric fields; a weekday or a Luhn check is a
