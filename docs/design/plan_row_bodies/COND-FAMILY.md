@@ -1206,3 +1206,7 @@ variants from a case-pair table (a spelled array, like the month names), joined 
 character becomes one class. Limits to examine in the follow-up: a filter that is not finite (`any_case(/\w+/)`)
 has no enumeration; the table (ASCII is 26 pairs; Unicode case folding is official UCD data). It joins the
 follow-up's routes beside the option-setting primitive and the blessed callout.
+ADDED (Frank, box clock 22:00) on the `enumerate` entry above: "Also, enumerate() is a primitive". RECORD: building
+`any_case` on `enumerate` does not make it primitive-free; it replaces a SPECIAL-PURPOSE primitive (`any_case`) by
+a GENERAL one already adopted (`enumerate`), which is the direction he asked for ("more fundamental"). The follow-up
+counts primitives that way: fewer and more general, not zero.
