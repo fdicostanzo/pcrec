@@ -1813,3 +1813,18 @@ with both rulings no added condition turns a FAIL into a HOLD (the 22 pairs re-r
 owner wrote: "mark-in-none: sorry, I meant, explain this one". His "yes agree" on mark-in-none is WITHDRAWN by him;
 the entry above stands for **not-is-complement** only. mark-in-none is an OPEN owner question; the manager's lean
 (a compile error) and readings (3)-(4) above apply to it only if he rules it so.
+
+**2026-11-16 OWNER RULING — mark-in-none: LEFT AS IS (Frank, to session 136, box clock 17:42).** After the manager's
+explanation (the `6,` example: `occurs.none(((h, m?): m < h))` FAILS on `6,`, and HOLDS once `(m?: >5)` is added)
+and his question "how would you write this as 'm is absent or if present, it is m < h'" (the manager:
+`occurs.none(((h, m): m >= h))`, unmarked, the complement on the set; under "none" an item lacking the label is
+simply not counted), his words: "mark-in-none: I'd leave it. It's obscure and there are ways to get the intended
+question. The issue with your compiler error is that it treats the none as a special item instead of a macro. If
+there was a structural reason I might agree like ! on a condition. You could also use defaults m = 0 then the test
+would be true whenever m is absent." RECORD: RULED against the manager's lean: NO compile error and no special rule
+for a mark inside `none` or a count; `none` is a macro like any other. CONSEQUENCE, the manager's statement (his;
+for rev 22 to state plainly, with the table): with a mark inside a group question that can turn true when fewer
+passes satisfy it, an added condition can admit a subject (3 program pairs in lane predspec21's run; 0 with a
+default; 0 unmarked); the draft documents it as a known property and names the two spellings that avoid it: the
+unmarked question with the complement on the set, and a default. The 14:50/r28 reading "a marked absence is COUNTED by
+the mark's one meaning" stands unchanged.
