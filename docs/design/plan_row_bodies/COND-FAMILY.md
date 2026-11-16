@@ -1252,3 +1252,15 @@ compare over captured values is decided (per match).
 `lex_between2([h, m], [9, 0], [10, 0])`, or (subject, high, low) as his earlier sentence had it, with the manager's
 lean the first; his words: "tuple-arg-order: subject low high". RECORD: the order is subject, low, high. To fold in
 rev 17 (lane predspec17, by its rulings file).
+
+**2026-11-15 OWNER LEAN (not a ruling) — the projection's spelling (Frank, to session 134, box clock 23:35-23:41).** Asked
+**label-section** (should `(h:)`, "the condition on h, its set to come", spell the per-label accessor, e.g.
+`lex_between2([(h:), (m:)], [9, 0], [10, 0])`), he first asked "so (h:) is a new form or a degenerate condition"
+(manager's answer: neither; a new SPELLING of an existing kind, the first section that is not of `&`; the hazard is
+reading it as "h unconstrained"), then offered (illustrative)
+"p = /(?<h>\d{1,2}):(?<m>\d\d)/ & lex_between2([p.h, p.m], [9, 0], [10, 0])  thoughts?", and after the manager's
+reply (paths passed as arguments; one rule change, a parameter on the left of `:`), his words: "i'm not sold on
+\"p =\". i do kind of like your spelling and the fact that h: _has_ to come from the left side". RECORD: a LEAN toward
+the section form `(h:)` (the manager's READING of "your spelling"; the bare `[h, m]` is the other candidate, to
+confirm), and a PROPERTY he values whatever the spelling: the compared field can only be a label of the operand on
+the left of `&`; nothing names another map. The named-map form (`p.h`) is not adopted. Not ruled; rev 18 carries it.
