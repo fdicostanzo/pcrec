@@ -135,7 +135,12 @@ LEVER_NAMED = [('mfind', 'foo.*bar'),
                # stamped 4,089 / 2,335 at x86-64 (bound 1,400 + 700); now the row's fit
                # test declines them and the SWAR body stays alone ('lever-capped')
                ('mfind-long-tbl', 'a.*\\x7f[acegikmoqsuwy]{12}'),
-               ('mfind-long-run', 'b' + '[0-35-7]' * 28)]
+               # 28 -> 32 sets at the merge of main fff636eda ([COVER-CAP] stage 1, abi 108) with
+               # the kit's mfind instrument: from there a run of 28..31 tableless sets is taken by the
+               # inline cover finder (rx_mf1_*, memchr + inline verify) before the kit's row is asked,
+               # so the witness stopped reaching the fit test ('lever-capped' 2 of 4); 32 sets reach it
+               # again (measured: 12..31 inline, 32/40/64 SWAR body alone; same at x86-64-v3)
+               ('mfind-long-run', 'b' + '[0-35-7]' * 32)]
 LEVER_PROBE = 'pcrec-harness'
 
 # K35 FLOORS, literal: each population a reader needs, counted over the run.

@@ -1,0 +1,4 @@
+report=docs/dev/lanes/tri1115d_report.md
+sections: STATE AT HANDOFF; WHAT FAILED; CAUSE; FIX; OWED RUNS
+nonempty: all
+commit: yes
