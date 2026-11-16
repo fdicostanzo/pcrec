@@ -415,7 +415,8 @@ static bool cc_served(CoverSt *st)
     mf_hooks h;
     PcrecMfU u;
     mf_site *s = pcrec_cover_site(st->cx, st->cv, NULL, NULL, &h, &u);
-    if (mf_ask(pcrec_memfn_art(st->cx), s, &h, &st->cv->cls)) {
+    if (mf_ask(pcrec_memfn_art(st->cx), s, &h, &st->cv->cls,
+               pcrec_memfn_rows(st->cx, s, true))) {
         st->detail = "refused";
         return false;
     }
@@ -597,12 +598,12 @@ static void cover_window(Ctx *cx, mf_site *s, const MkEnd *e)
     for (int i = 0; i < 2; i++) n += cover_side_stated(side[i].set, side[i].absent);
     mf_walt *a = pcrec_memfn_walts(cx, 1);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, n);
-    pcrec_memfn_wspan(&sp[0], 0, e->k, MF_VERIFY_YES);
+    pcrec_memfn_wspan(cx, &sp[0], 0, e->k, MF_VERIFY_YES);
     for (int d = 0; d < e->k; d++) pcrec_memfn_wpos_bits(&sp[0], d, e->set[d]);
     n = 1;
     for (int i = 0; i < 2; i++) {
         if (!cover_side_stated(side[i].set, side[i].absent)) continue;
-        pcrec_memfn_wspan(&sp[n], side[i].off, 1, MF_VERIFY_YES);
+        pcrec_memfn_wspan(cx, &sp[n], side[i].off, 1, MF_VERIFY_YES);
         pcrec_memfn_wpos_bits(&sp[n], 0, side[i].set);
         if (side[i].absent == MK_ABS_SATISFIES) pcrec_memfn_wspan_core(&sp[n], 0, 0);
         n++;
@@ -652,7 +653,14 @@ const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class
         else if (d == -1 && before)    memcpy(want, e->ctx_before, 32);
         else if (d == e->k && after)   memcpy(want, e->ctx_after, 32);
         else                           memset(want, 0xff, 32);
-        const uint8_t *got = cls->proven[d - MF_PROOF_LO];
+        /* the kit's counted rows (MF_CLASS_V 11): every offset outside
+           [MF_PROOF_LO, MF_PROOF_LO + proof_n) proves nothing, all ones */
+        static const uint8_t ones[32] = {
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+        long row = (long)d - MF_PROOF_LO;
+        const uint8_t *got = cls->proof && row < (long)cls->proof_n ? cls->proof[row] : ones;
         for (int b = 0; b < 256; b++) {
             bool w = kn_has(want, b), g = kn_has(got, b);
             if (w != g)

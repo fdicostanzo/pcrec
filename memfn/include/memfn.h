@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 29  /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 30  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -261,7 +261,19 @@
                            is a stated "unbounded" K. Kit bytes move only
                            on runs holding a position of three or more
                            members (pcrec's [RUN-POS-SET] stage 3, which
-                           carries the pcrec abi event). */
+                           carries the pcrec abi event). 30 (R-45 plan B,
+                           docs/design/memfn/r45_reply.md rev 4 §1, §5;
+                           lane span4k): the per-position arrays leave the
+                           seam structs. mf_wspan's len/core_lo/core_len
+                           widen to uint16_t and its set/table_ref point at
+                           HOST storage (len entries each); mf_wreply's
+                           plan/plan_term/plan_test point at the CALLER's
+                           storage (nplan entries; nplan, plan_term and
+                           run_len widen to uint16_t); mf_rows (caller
+                           storage) and the PURE mf_rows_need size it; the
+                           new `rows` parameter of mf_ask and mf_wdecide;
+                           MF_WMAX_SPAN spelled on its own derivation.
+                           MF_CLASS_V 11 inside it. No pcrec byte moved. */
 #define MF_VOCAB    4   /* the operation vocabulary: op x handoff x term kinds,
                            and the use kinds. 3 (M7 prep, R-8): MISMATCH /
                            ON_DIFF / REF. 4 (R17-b' B3b, Q-R17P-18):
@@ -307,12 +319,16 @@
  * TRIGGER: a stated span position past MF_MAX_FWD that a consumer needs
  * proven. */
 #define MF_MAX_AHEAD 1
-/* The per-offset proof's range (mf_class.proven[], R-26.4): offsets from
- * the candidate in [MF_PROOF_LO, MF_MAX_FWD), DERIVED from the read bounds:
- * the most negative term offset, and span 0's positions plus the reach
- * after it. */
+/* The per-offset proof's range CEILING (mf_class.proof, R-26.4; a per-reply
+ * COUNT under it since MF_CLASS_V 11): offsets from the candidate in
+ * [MF_PROOF_LO, MF_MAX_FWD). MF_PROOF_LO is DERIVED from the most negative
+ * term offset. MF_MAX_FWD is a SHAPE BOUND, DERIVED (r45_reply.md rev 4 §1):
+ * every offset a WINDOW statement may state lies below MF_WREACH, so every
+ * offset a window plan class proves does too; equal to it since MF_SITE_ABI
+ * 30, decoupled from MF_MAX_SPAN_POS and MF_MAX_AHEAD (whose retirement
+ * waits on pcrec's [COVER-CAP] stage 2 A1/A3; lane span4k's report). */
 #define MF_PROOF_LO (-MF_MAX_BACK)
-#define MF_MAX_FWD  (MF_MAX_SPAN_POS + MF_MAX_AHEAD)
+#define MF_MAX_FWD  MF_WREACH
 #define MF_SPAN_UNBOUNDED UINT64_MAX  /* span_hi when nothing is proven        */
 #define MF_PPM_FULL       1000000u    /* density hint default: [0, 1e6]        */
 #define MF_NO_PRED        0xFFu       /* ret_pred / plan_hint: none            */
@@ -655,7 +671,10 @@ typedef enum { MF_WFLOOR_UNSTATED = 0, MF_WFLOOR_SUBJECT, MF_WFLOOR_EXPR } mf_wf
  * statement, the reseed alternative: one span per walked offset (at most
  * PCREC_PREFIX_K_MAX, 24, offset 0's F0 included) plus the run R, inside
  * MF_MAX_TERM. pcrec asserts its own bound <= this where it states spans. */
-#define MF_WMAX_SPAN MF_MAX_TERM
+#define MF_WMAX_SPAN 32   /* DERIVED 25 (24 walked offsets + R) plus 7 of
+                             UNMEASURED slack, kept so mf_walt and its readers
+                             do not move (r45_reply.md §2); a COUNT of spans,
+                             independent of MF_MAX_TERM since MF_SITE_ABI 30 */
 /* Alternatives one site states (window_site.md §0: an unordered set of 1 or
  * 2). A SHAPE BOUND, not a tuning constant. */
 #define MF_WMAX_ALT 2
@@ -666,9 +685,13 @@ typedef enum { MF_WFLOOR_UNSTATED = 0, MF_WFLOOR_SUBJECT, MF_WFLOOR_EXPR } mf_wf
  * never proven (window_site.md §1.1). */
 #define MF_WREACH 64
 
+/* Since MF_SITE_ABI 30 (R-45) the per-position facts are COUNTED LISTS in
+ * storage the HOST owns (the writer of the statement), `len` entries each:
+ * the struct carries no per-position array, so a holder's size does not
+ * depend on MF_WSPAN_POS. */
 typedef struct {
     int32_t  start;                     /* offset of position 0 from c        */
-    uint8_t  len;                       /* 1..MF_WSPAN_POS                    */
+    uint16_t len;                       /* 1..MF_WSPAN_POS                    */
     uint8_t  verify;                    /* mf_verify. In a window site's
                                            alternative a verify-NO span of
                                            two or more positions IS the run
@@ -676,12 +699,14 @@ typedef struct {
                                            alternative, MF_SITE_ABI 29); a
                                            presence site's run span is not R */
     uint8_t  core;                      /* mf_core                            */
-    uint8_t  core_lo, core_len;         /* the core: positions [core_lo,
+    uint16_t core_lo, core_len;         /* the core: positions [core_lo,
                                            core_lo + core_len) of the span;
                                            core_len 0 is the empty core       */
-    uint8_t  set[MF_WSPAN_POS][32];     /* position j's set, mf_term.set's
+    const uint8_t  (*set)[32];          /* `len` entries, HOST storage:
+                                           position j's set, mf_term.set's
                                            layout                             */
-    uint32_t table_ref[MF_WSPAN_POS];   /* position j's table offer, 0: none  */
+    const uint32_t *table_ref;          /* `len` entries, HOST storage:
+                                           position j's table offer, 0: none  */
 } mf_wspan;
 
 typedef struct {
@@ -1188,7 +1213,7 @@ extern const char mf_miss_n[];
  * the OFF (SIMD-off) variant, which every layer inherits (§1.5 rule 1): a
  * SIMD rendering is the SIMD-off one plus guarded text, so it proves the
  * same. */
-#define MF_CLASS_V 10  /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
+#define MF_CLASS_V 11  /* 2 (MF_SITE_ABI 13): proven_prev, appended LAST.
                           3 (MF_SITE_ABI 16, B3a): npres uint16_t over
                           MF_MAX_PRES 257. 4 (inside MF_SITE_ABI 17, B3b,
                           unreleased; b3brev U5): pres_row and pres_led,
@@ -1218,7 +1243,12 @@ extern const char mf_miss_n[];
                           untested outside P2 (the decline, proven_by 0);
                           a NEW read state, a tested run with has_scan 0
                           and ver_len > 0 (P0's scan-less whole run); no
-                          layout move */
+                          layout move. 11 (MF_SITE_ABI 30, R-45 plan B;
+                          r45_reply.md rev 4 §1, §5): proven[] REMOVED;
+                          proof_n/proof, the per-offset proof as a COUNTED
+                          list in the caller's (an ask) or the art's (a
+                          define) storage, appended LAST; mf_run_reply's
+                          four fields widen to uint16_t */
 /* Presence spans one site states (npspan) and one class answers (npres). A
  * SHAPE BOUND, not a tuning constant, DERIVED at B3a (PR-5's unpicked
  * spans): a necessary set has at most 256 members, each its own span, and a
@@ -1277,11 +1307,13 @@ typedef struct {
  * positions of any number of members (part_d.md §3.3): each is tested
  * against its FULL stated set, never a cover of it. It describes EVERY text
  * the define may render for the site (each admitted level of each target). */
-typedef struct {
-    uint8_t has_scan;
-    uint8_t scan;
-    uint8_t ver_lo;
-    uint8_t ver_len;
+typedef struct {                /* uint16_t since MF_CLASS_V 11 (R-45): no
+                                   padding byte, so a by-value compare reads
+                                   only the four fields                     */
+    uint16_t has_scan;
+    uint16_t scan;
+    uint16_t ver_lo;
+    uint16_t ver_len;
 } mf_run_reply;
 typedef struct {
     uint8_t  v;            /* MF_CLASS_V, written by the kit                     */
@@ -1337,9 +1369,30 @@ typedef struct {
        proves nothing at any offset). A MEMBERSHIP fact: pcrec reads it as a
        language proof only inside the span it knows exact (its own cover
        decision's k). */
-    uint8_t  proven[MF_MAX_FWD - MF_PROOF_LO][32];
     /* (MF_CLASS_V 9) the run's one decision, above */
     mf_run_reply run;
+    /* (MF_CLASS_V 11, R-45; r45_reply.md rev 4 §1) THE PER-OFFSET PROOF as
+       a COUNTED list: proof[i] is the row for offset MF_PROOF_LO + i, for i
+       in [0, proof_n); every offset OUTSIDE [MF_PROOF_LO, MF_PROOF_LO +
+       proof_n) proves nothing (all ones). Its meaning is MF_CLASS_V 5's
+       proven[] above, unchanged. Only a PROVING class carries rows (a
+       window plan class; an old-field FIND class); every other class (a
+       VERIFY, an EXPR, the PRESENCE ask, a refusal's zeroed class) has
+       proof_n 0 and proof NULL, the legal all-ones class. On a proving
+       class the range is [MF_PROOF_LO, end), end = max(last stated
+       position + 2, last tested offset + 1), clipped at MF_MAX_FWD: it
+       always reaches one past the statement. The storage is the CALLER's
+       mf_rows on mf_ask, the ART's arena on a define (mf_result.cls, valid
+       until that arena dies). A pointer is never compared: two classes
+       agree iff their by-value members are equal and their rows are equal
+       over proof_n. THE KIT'S REFUSALS on a proving class (an ask: -1, no
+       message; a define: mf_art_error names it): a tested offset outside
+       [MF_PROOF_LO, MF_MAX_FWD) (a window plan class only; an old-field
+       FIND term keeps the clip, conservative); more rows than the caller's
+       storage holds (an ask only); and the SELF-CHECK "the proof range ends
+       before the statement's following offset" */
+    uint32_t       proof_n;
+    const uint8_t (*proof)[32];
 } mf_class;
 
 /* ---- the result and the per-artifact state (§14.0, §14.8) ---------------- */
@@ -1522,6 +1575,31 @@ int mf_use   (mf_art *, uint32_t handle, const mf_hooks *use,
  * naming it). The order on every route: mf_define (file scope) -> mf_locals
  * -> pcrec's table iff mf_defined says the form reads it -> mf_use. */
 int mf_locals(mf_art *, uint32_t handle, const mf_hooks *at, mf_sink *body);
+/* CALLER-OWNED STORAGE for an ask's counted lists (MF_SITE_ABI 30, R-45;
+ * r45_reply.md rev 4 §5 "Where the rows live"): the kit writes into it and
+ * never allocates. `proof`/`proof_cap` serve mf_ask (mf_class.proof),
+ * `plan`/`plan_term`/`plan_test`/`plan_cap` serve mf_wdecide (mf_wreply's
+ * plan lists); a part a call does not read may be NULL/0. The rows' lifetime
+ * is the caller's: two asks given the same storage overwrite each other. */
+typedef struct {
+    uint8_t  (*proof)[32];
+    uint32_t  proof_cap;
+    int32_t  *plan;
+    uint16_t *plan_term;
+    uint8_t  *plan_test;
+    uint32_t  plan_cap;
+} mf_rows;
+/* PURE: the MINIMUM storage a reply for `site` needs, a function of the
+ * statement alone: *proof_cap = min(MF_MAX_FWD, last stated position + 2) -
+ * MF_PROOF_LO for a site whose class proves (a FIND: a window site or an
+ * old-field FIND), 0 for any other; *plan_cap = the offsets a window site
+ * states (0 for a site that states no window). A caller may pass more; the
+ * ceiling is MF_MAX_FWD - MF_PROOF_LO proof rows. Returns 0, or -1 for a
+ * NULL argument. A text that tests past the minimum is refused at the
+ * minimum and answered at the ceiling (where a host's own control reads the
+ * over-read). */
+#define mf_rows_need MF_NS(rows_need)
+int mf_rows_need(const mf_site *site, uint32_t *proof_cap, uint32_t *plan_cap);
 /* What site `handle`'s define chose (mf_result: form_id, handle,
  * reads_table, includes, cls; `moved` 0). Valid from the define on. */
 int mf_defined(const mf_art *, uint32_t handle, mf_result *out);
@@ -1534,8 +1612,13 @@ int mf_defined(const mf_art *, uint32_t handle, mf_result *out);
  * for what is RENDERED: before a finder row routes, the pre-table form.
  * Returns 0, or exactly the refusal mf_define would return (the art's
  * error is NOT set: the query is pure, so the caller reads the text from
- * mf_art_error only after a define). */
-int mf_ask(const mf_art *, const mf_site *site, const mf_hooks *def, mf_class *out);
+ * mf_art_error only after a define). PURE also means it writes only `*out`
+ * and the caller's `rows` (MF_SITE_ABI 30): a PROVING class's rows go into
+ * `rows->proof`, at most `rows->proof_cap` of them; more needed is a
+ * refusal (-1), and so is a NULL `rows` on a proving class. On -1 `*out`
+ * is zeroed (proof_n 0, proof NULL). */
+int mf_ask(const mf_art *, const mf_site *site, const mf_hooks *def, mf_class *out,
+           mf_rows *rows);
 /* = mf_define + mf_use, for a site whose parts all sit at one point */
 int mf_emit  (mf_art *, const mf_site *, const mf_hooks *,
               mf_sink *body, mf_sink *file_scope, mf_result *res);
@@ -1674,7 +1757,8 @@ int      mf_lever(mf_art *, const char *name);
  *               offers a table whose set is the set tested there, and the
  *               text tests plan[i] alone; else OWN, a position E-find tests
  *               inside a run compare included (the compare reads no table);
- *               NONE past nplan and off the composing frames
+ *               NONE off the composing frames (a counted list: nothing
+ *               lies past nplan)
  *   stop_test   the stop's test kind by C-table's rule alone (the find tests
  *               the stop), on E-find's composed rows where the window has a
  *               stop; NONE elsewhere (E-generic included)
@@ -1698,14 +1782,15 @@ typedef struct {
     uint8_t  has_stop;
     int32_t  stop;
     uint8_t  stop_set[32];
-    uint8_t  nplan;
-    int32_t  plan[MF_WPLAN_MAX];
-    uint8_t  plan_term[MF_WPLAN_MAX];
+    uint16_t nplan;
+    const int32_t  *plan;               /* nplan entries, CALLER storage
+                                           (mf_rows, MF_SITE_ABI 30)          */
+    const uint16_t *plan_term;          /* nplan entries, CALLER storage      */
     uint8_t  pinned;
     uint8_t  run_stated;
     int32_t  run_member;
     int32_t  run_lo;
-    uint8_t  run_len;
+    uint16_t run_len;
     char     path[16];
     /* the frame part (MF_SITE_ABI 28), appended LAST */
     uint8_t  framed;
@@ -1714,7 +1799,9 @@ typedef struct {
     uint8_t  search;                    /* mf_wsearch */
     uint8_t  stream;                    /* mf_wstream */
     uint8_t  fused;                     /* mf_wfused  */
-    uint8_t  plan_test[MF_WPLAN_MAX];   /* mf_wtest, aligned with plan[] */
+    const uint8_t *plan_test;           /* mf_wtest, aligned with plan[]: nplan
+                                           entries, CALLER storage; NULL on a
+                                           NONE ask (the frame part is zero) */
     uint8_t  stop_test;                 /* mf_wtest */
 } mf_wreply;
 /* THE PHASE-1 ASK: the family's reply for window site `site` on `art`, any
@@ -1732,10 +1819,12 @@ typedef struct {
  * or by that defect path, which POISONS the art as the define would; a site
  * the family does not describe; a frame the define refuses; under EMIT a
  * `decl_point` 1 site or a use mf_emit refuses at its text; out of
- * memory). */
+ * memory; since MF_SITE_ABI 30 a NULL `rows`, or a plan longer than
+ * `rows->plan_cap`). The plan's lists are written into the caller's
+ * `rows` (mf_rows) and nowhere else. */
 #define mf_wdecide MF_NS(wdecide)
 int      mf_wdecide(const mf_art *, const mf_site *site, const mf_hooks *def, uint8_t call,
-                    mf_wreply *out);
+                    mf_wreply *out, mf_rows *rows);
 /* Records that the artifact's text calls libc function `name` (§R4.3.3
  * "Coverage"). The kit itself calls it as it RENDERS a libc call (memchr,
  * memcmp), once the call's text is written to a sink; a constant 2-8 byte
