@@ -1,6 +1,9 @@
 # cover_cap.md — the `cover` route's exact stretch: read from the anchored machine, bounded by that machine's own state ceiling, no budget ([COVER-CAP])
 
-Status: PROPOSED, revision 4.1 (lane `covcap6`, 2026-11-15). DESIGN ONLY: no build go.
+Status: stage 1 BUILT (rev 4.1, lanes covs1/covs1f/covs1g, merge fff636eda, abi 108). Stage 2:
+PROPOSED, revision 5 (lane `covs2d`, 2026-11-15): the STAGE 2 ADDENDUM, §11, design only; the
+owner's build go covers both stages ("Go on all stages", 14:50) and the stage-2 build waits
+for §11's critic round.
 Plan row: [COVER-CAP] (set S3). Owner criteria: D198. Reviews: round covcap-r2
 (`docs/dev/reviews/2026-11-15-r5-covcap-r2.md`, C-1..C-25) and round covcap-r3
 (`docs/dev/reviews/2026-11-15-r6-covcap-r3.md`, R-1..R-14) and round covcap-r4
@@ -46,6 +49,10 @@ the one-pass rule (memory `pcrec-one-pass-loss-chasing`), then to the kit (§4.3
 owner ruling. Form: §8 lists no other pcrec-side row on the exact path; `src/core/limits.def`
 loses `PCREC_SPAN_WALK_SUBSETS` and gains nothing; `KN_CAP` is gone; `a{4095}` states 4095
 positions and `a{4096}` reads `anchored-A` (§5.3).
+*(Rev 5, owner 2026-11-15 14:10: "set in limits. If it's a user setting it could be shorter
+then adjusted by the user per artifact." The STRETCH stays unbounded as above; the COVER
+route, what pcrec states to the kit, gains one user-settable width limit with a measured
+default, §11.2. It bounds a route, not the walk or the listing.)*
 
 Ranked; the higher goal wins a conflict.
 
@@ -357,10 +364,13 @@ It is a later row after this one.
   `k <= MF_MAX_SPAN_POS`, else the same named internal error, so plant (d) and
   `a{40}(?:b|cc)` (k = 41) never write past `MkEnd.set`.
   Cover movers: `k` 25..32, and the 18 k = 1 compiles (§2).
-- **Stage 2 (after the kit's answer to §4.3).** A counted seam up to 4095 positions (the
-  state ceiling, §3.1); C15 retired like C2 (id kept, absent). `cover_window` and
-  `pcrec_cover_proof_diff` read counted ranges. Movers: every long shape the anchored
-  machine holds.
+- **Stage 2 (after the kit's answer to §11.5; rev 5 replaces rev 4's bullet).** A counted
+  seam up to 4095 positions (the state ceiling, §3.1). C15 is RE-READ, not retired: it
+  becomes the cover width limit (§11.2), and the seam's bound becomes a build-time assertion.
+  `MkEnd` points at the record's sets (no copy); `cover_window` and
+  `pcrec_cover_proof_diff` read counted ranges (§11.1). Movers: the long shapes the
+  anchored machine holds, up to the measured default (§11.2, §11.4); past it, at the
+  user's raise.
 
 Each stage is one pcrec `abi` event (§4.4). The listing section (§3.3) lands at stage 1.
 
@@ -417,22 +427,11 @@ loops over the reply's counted proof range; `window_bounds_check` mirrors the ki
 statement check; C15 retires. The other window sites state what they state today, and
 the sweep proves them byte-identical.
 
-### 4.3 KIT REQUEST DRAFT (for main to file; facts only, D157; no build go)
+### 4.3 KIT REQUEST DRAFT
 
-> **R-n (DRAFT, pcrec manager) — a window span of up to 4095 positions ([COVER-CAP] rev 4)**
-> - GO: none yet; the kit-side build waits on the owner's go for stage 2 (§9 Q4).
-> - FACT (population). pcrec will state the cover's REPORT window site with span 0 of `k`
->   exact positions, `1 <= k <= 4095` (by derivation: the stretch is read from pcrec's
->   anchored machine, whose existing ceiling is 4096 states; the owner confirms before this
->   is filed). Today's population
->   (census, both encodings): `k` = 36..500 and 1000 beyond the current 32 (31-32: four bench
->   shapes and two corpus literals, already inside today's bound; 36: two uuids; 40;
->   49; 60; 500; 1000), mostly long runs of one byte class. Each has one context position
->   at -1 and, where stated, one at offset `k`. pcrec reads the per-offset proof at every
->   offset in `[-1, k]` and checks it equals the statement.
-> - ASK. Can the statement and the reply carry a span of up to 4095 positions? Reply in
->   responses.md with the form you choose.
-> - Deliver: a kit branch for merge review, for one landing with pcrec's stage 2.
+*(Rev 5: rev 4's draft is SUPERSEDED by §11.5, which adds the owner's 2026-11-15 rendering
+direction, the width limit's effect on the population and the EMITTED-2 fact. Rev 4's text is
+in git at 61f8e9f88.)*
 
 Struck from rev 2 (R3, C-24): the "compact text for repeated positions" ask and its size
 fact (the observation is already in the kit's ideas log), the G2-cases ask, the list of
@@ -603,6 +602,10 @@ beside it, and the grep counts unmarked mentions.
 
 ## 7. Re-timing plan (not run; R3)
 
+*(Rev 5: the stage-1 night timing below is still owed; §11.4 merges it with stage 2's timing
+into ONE plan (adding the dense near-miss witnesses of review r9 EMITTED-2 and the cells that
+set the width limit's default). §11.4 is the plan of record; this section stays as its base.)*
+
 Cells: §5.2's OBSERVED movers × both encodings, confirmed with the bench dev. Before and
 after differ in one variable: main at the stage's base against main with the stage, same
 box, pin, toolchain and night. Regimes, each mover in each:
@@ -692,3 +695,220 @@ needs re-scoping. [DEC-LIMITS]'s trigger does not fire (a row is removed). The N
   (C-9) and four cover losses; rev 3's `PCREC_MAX_EXACT_SPAN`, outcome 4, plant (e) (R-1).
 - Earlier dispositions: `docs/dev/reviews/2026-11-15-r2-covcap0.md`, `2026-11-15-r5-covcap-r2.md`,
   `2026-11-15-r6-covcap-r3.md`, `2026-11-15-r7-covcap-r4.md`.
+
+## 11. STAGE 2 ADDENDUM (rev 5, lane covs2d, 2026-11-15; design only)
+
+Owner's words this section answers (journal 2026-11-15, verbatim there): 14:10 "set in limits.
+If it's a user setting it could be shorter then adjusted by the user per artifact"; 14:35 the
+long-span rendering direction (quoted in §11.3); 14:50 "Go on all stages"; 15:00 "I predict
+most all rx will only have a short span and will inline due to being under the inline head
+portion of the prover. Therefore, this issue is mostly moot". `$PC` below is
+`worktrees/covs2d/build/pcrec` at 61f8e9f88 (stage 1, abi 108); every today-number carries its
+command in `docs/dev/lanes/covs2d_report.md` (TODAY NUMBERS), T-n there.
+
+PREMISE (held). The seam stops at 32 today: C15 `cc_fits` (`src/gen/known.c`) admits
+`k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD`, and `memfn/include/memfn.h` has
+`MF_WSPAN_POS` = `MF_MAX_SPAN_POS` = `MF_MAX_TERM` = 32, `MF_WREACH` 64, `MF_MAX_FWD` 33
+(T2). `a{32}` is `cover`, `a{33}` declines `statement-fits` at `k` 33, `a{4095}` declines
+`statement-fits` at 4095, `a{4096}` reads `anchored-A` (T3). No cover width limit exists
+(`grep -n COVER src/core/limits.def`: none; T5).
+
+### 11.1 The counted seam (what pcrec states, what changes on pcrec's side)
+
+- **What pcrec states (facts, D157):** unchanged in kind from stage 1. One REPORT window site,
+  span 0 of `k` exact positions `S_0..S_{k-1}`, `1 <= k <= 4095`, plus the context positions
+  at -1 and `k` where they constrain (`cover_side_stated`). pcrec reads the per-offset proof
+  over `[-1, k]` and checks it EQUALS the statement (C14). Nothing about repeats, runs or
+  forms is stated: the kit sees repeated sets in the sets it is passed (D198 (b)).
+- **pcrec's side** (each found again by grep at build time; today's readers of the seam
+  bounds in `src/` are `known.c` (`cc_fits`, `cc_exact`, `cover_window`,
+  `pcrec_cover_proof_diff`), `known.h` (`MkEnd.set[MF_MAX_SPAN_POS]`, `uint8_t k`),
+  `memfn_sites.c`'s generic window check, and `emit_dfa.c`'s `PCREC_MAX_REQ_RUN_SCAN <=
+  MF_WSPAN_POS` assertion):
+  1. `MkEnd` stops copying: `k` becomes `uint16_t` and `set` points at the cover record's
+     arena sets (§3.3), so `cc_exact`'s copy and its READY-3 internal error go
+     (simplification). `req_run_in_cover` reads the same pointer.
+  2. C15 is re-read as the width limit (§11.2). The seam fit becomes a BUILD-TIME assertion:
+     `PCREC_ANCHORED_MAX_STATES - 1` <= the kit's declared most positions per stated span,
+     so a `-D` raise of the ceiling past the seam fails the build, never a compile.
+  3. `cover_window` states the counted span through the kit's new carrier; its length check
+     stays FIRST (R-13), now against the kit's declared bound, still a named internal error.
+  4. `pcrec_cover_proof_diff` loops over `[MF_PROOF_LO, k + 1)`, the reply's counted range,
+     instead of the fixed `[MF_PROOF_LO, MF_MAX_FWD)`.
+  5. The other window sites state what they state today; the sweep proves them identical.
+- **abi events.** ONE pcrec `abi` event (108 -> next) at the JOINT landing (§11.6): the kit's
+  bytes move with it (D146/D147) and the identity gate re-pins (§4.4, D94's grep of every
+  reader of the current number). Whether the kit's carrier change is an `MF_SITE_ABI` event
+  is the kit's to say. If the default is set AFTER the landing (§11.2's fallback), the default
+  move is a second `abi` event (its corpus movers move the identity gate's (B) pins).
+- **Answer identity.** The checks of §5.1, run at the stage-2 build, plus:
+  - the kitproof `answer` rows at `n >= 33` that stage 1 deferred (§5.3), compiled with the
+    width lever raised to the ceiling (§11.2) so they cover whatever the default is;
+  - one `test-axes` arm: the whole corpus with the lever at the ceiling against the engine
+    route, so long covers stay checked when the default is short;
+  - compile cost: the §5.1 witnesses, plus `a{4095}` and `[0-9a-f]{1000}` taken to the
+    cover at the lever's ceiling, each `gcc -O2 -c` on the emitted file under `scripts/watchdog
+    -s 120 -m 4g -c 120`, and `req_run_in_cover`'s loop (its cost is k x run length x 256);
+  - ASan `run_cover.sh` (the counted arrays), and the REACH-only sabotage matrix.
+- **The prediction (stage 1's check, re-pointed).** From the BASELINE (main before stage 2)
+  listing's `cover` section, no trace build needed: INTO the cover, every row whose `why` is
+  `statement-fits` with `k` <= the stage's width default (an UPPER bound: C9-C14 never ran on
+  them; e.g. `a{40}(?:b|cc)` reads `statement-fits` at 41 today (T3) and will decline at
+  C10). OUT: none while the default is >= 32; with a default below 32, every baseline
+  `cover` row with `k` above it. Each predicted-but-unmoved row is listed with the
+  candidate's `why`; LOST or UNEXPLAINED is red (`predict.py` as at stage 1). Non-cover
+  window sites: no predicted move; any move is red.
+
+### 11.2 The per-artifact cover width limit
+
+- **What it bounds.** The cover ROUTE only: C15 declines a cover whose `k` exceeds it, and
+  that pattern runs on today's route (the engine), as `a{33}` does now. The walk, the record
+  and the listing are not bounded by it: `exact_len` and the sets are still stated up to the
+  ceiling, so D198's "no cliff" holds for what is stated; the cliff is a route choice the
+  user can move. Past it nothing new happens: a prefix-only cover is the PARKED fraction
+  case ([EARNED-SKIP]), not a stage-2 item.
+- **Where.** One `src/core/limits.def` row, home `LIMITS_H` (its derivation block in
+  `limits.h`, as `[ENG-ABS]`'s is): unit `bytes`, kind `selection knee`, override `-D`
+  until the interface push, then `flag+-D`. The registry count goes 81 -> 82
+  (`tests/registry/limits_check.sh`, T5) and `limits.md` §3 gains the row by its dump check
+  (D80). Legal values `1 .. PCREC_ANCHORED_MAX_STATES - 1`; a value outside is REFUSED with
+  a named error, never clamped (no silent default).
+- **Name (D174, behaviour).** Proposed `PCREC_MAX_WINDOW_MATCH`: the widest fixed-width match
+  the artifact finds by testing its window alone, with no matching engine; future flag
+  `--max-window-match=N`. ("window search" is already the caller's word, `tuning.md`
+  §2.43¶3d; "cover" is the stamp value.) C15 keeps its id; its name becomes `width-limit`,
+  kind `limit` (the `why` vocabulary is advisory, `facts_listing.md` §4.5¶2, no `abi`
+  event; its example list names `statement-fits` and gets a one-word hunk).
+- **How it reaches a caller before [IFACE-PUSH].** (i) the built-in default, moved only by a
+  `-D` at pcrec's own build (`--list-limits` shows it); (ii) a TEST-ONLY lever
+  `--harness=window-match=N` in `build/pcrec-harness` (the lever rules of `cli/CLAUDE.md`:
+  one global, no `lib/` declaration, inside the fence allowlist), used by the kitproof rows,
+  the `test-axes` arm and the timing. DEFERRED to the push: the CLI flag, a
+  `pcrec_options` field (a struct layout change), the config line, and a stamp of the value
+  in force. Stage 2 adds NO stamp: `rx_info.scan` already says whether the artifact took the
+  cover, and the listing's `cover` row says why not (`width-limit`, with `k`).
+- **How the default is chosen (measured, never presumed).** Rule, one declared row: the
+  default is the LONGEST cover width `k` among the timed movers such that every timed mover
+  with width `<= k` is not slower than its engine route beyond the A/A noise floor in ANY
+  regime of §11.4. Widths longer than the longest timed mover are unmeasured and so off by
+  default: the user raises the limit for them. That is the owner's "shorter default the user
+  raises", derived rather than picked. Size is reported beside each timing (G6) and is the
+  owner's to accept once (§9 Q5); it does not enter the rule.
+  - UNMEASURED until §11.4 runs. The build needs a value before the timing: it uses 32,
+    labelled `UNMEASURED: stage 1's seam reach, kept so the stage-2 build is route-identical
+    to main until §11.4 sets it`. That 32 is today's behaviour, not a tuning claim.
+- **EMITTED-2 and the owner's remedy ("lower the class-run cover length", old 24).** The limit
+  subsumes it only BLUNTLY: it is one width for every cover, so lowering it to 24 also sends
+  the winning long literals (`lit-l31`, `lit-l40`: the instruction counts of [COVER-CAP]'s
+  skipmeas block) back to the engine. A class-only length would be a special case keyed on
+  set size (memory `pcrec-general-mechanisms-not-special-cases`). So, if dense near misses
+  lose: first the one-pass rule (memory `pcrec-one-pass-loss-chasing`), then the kit, which
+  already holds the fact (ideas log 2026-11-15; §11.5 carries it), then the owner, whose
+  fallback is the default rule above applied as it stands (it would land at 24 or below).
+
+### 11.3 Long-span rendering is the kit's (the owner's direction, quoted)
+
+Frank, 2026-11-15 14:35, verbatim: "we have a performance dial for pcrec. it could include some
+options for the kit. Also, I would default to sub span loops (excepting the measured head
+inline ) then measure if inline was faster than the other way around. Measure three: all
+inline, all loops, header inline then loops. Then the speed dial option can be always inline
+should it prove that is faster". This is the OWNER's direction to the kit, carried in the
+request (§11.5) as his words; pcrec designs no form, states no run and names no method
+(D157). The measurement stays small (15:00, "mostly moot"): the long tail is the few
+dozen patterns at 25+ positions among 1,852 covering compiles (§2 census, before stage 1); stage 1 measured
+a hex class cover at +208 bytes of `.text` from `[0-9a-f]{24}` to `{32}` (1,752 -> 1,960,
+about 26 bytes per position; T4), so an all-inline `[0-9a-f]{1000}` would be about 26 KB of
+`.text` by linear extrapolation (UNMEASURED). The three forms' cards and their lengths are
+the kit's (memory `pcrec-new-method-needs-measurement-card`). [OPT-DIAL] is CLOSED as a plan
+row; the dial carrying kit options is a later item, and until then an all-inline option would
+ride the existing `--memfn=` carrier (`cli.md` §1.16).
+
+### 11.4 The timing plan: stage-1 owed + stage 2, one night
+
+ONE night window, cleared with the owner, outside 20:00-01:00, at the box's quietest.
+One variable per comparison (memory `pcrec-speed-compare-apples-to-apples`):
+- **A. Stage 1 (owed):** main before stage 1 (91bae2d98) against main with it, its movers
+  (`lit-l31`, `hex32`, `dig-exact-32`, `hex32-id`, both encodings), as §7.
+- **B. Stage 2:** the stage-2 build, each long mover at the lever's ceiling against the same
+  binary's `--memfn=no-window-search` (the engine route): `lit-l40`, `loglines/uuid`,
+  `wild-validator-uuid-grok`, both encodings. These cells set §11.2's default.
+- **Regimes, each cell in each:** hit-dense; DENSE NEAR-MISS (review r9 EMITTED-2's
+  witnesses: `dig-exact-32` on 31 digits + a letter, repeated; `hex32` on digit runs; for
+  the stage-2 movers, the same shape: the pattern's `k - 1` positions then a miss); NOT-WARM
+  (the matcher not in L1/L2, method the bench dev's, D198 (f)); miss-heavy
+  throughput; `short-subject-search`. A/A controls: `lit-l16` and one non-mover engine cell.
+- **Size beside each timing:** emitted C bytes and `gcc -O2` `.text` per mover, both forms.
+- **The three rendering forms** (§11.3): the kit's cards, on the kit's harness; not part of
+  this night unless the kit asks for a slot (they are kit timing, the kit's window request).
+- **Outcome table** (declared, first match): every cell not slower -> default per §11.2;
+  a stage-1 class cell slower in near-miss only -> §11.2's EMITTED-2 order (one-pass, kit,
+  owner), stage 1 stays landed meanwhile (owner: "land, then time"); any cell slower in
+  not-warm -> report size beside it, owner's call (§9 Q5); A/A noise above the floor ->
+  night void, re-run.
+
+### 11.5 KIT REQUEST DRAFT (for the manager to file as R-n, next after R-44; facts only)
+
+> **R-n (DRAFT, pcrec manager) — window spans of up to 4095 positions ([COVER-CAP] stage 2)**
+> - GO: the owner's build go covers stage 2 ("Go on all stages", Frank 2026-11-15); pcrec's
+>   stage-2 design (cover_cap.md §11) passes its critic round before the build starts.
+> - FACT (statement). pcrec states one REPORT window site per cover: span 0 of `k` exact
+>   positions, `1 <= k <= 4095` (4095 = pcrec's anchored-machine ceiling, 4096 states, less
+>   one), with a context position at -1 and at `k` where they constrain. pcrec reads the
+>   per-offset proof over `[-1, k]` and checks it equals the statement. Today the statement
+>   stops at 32 positions.
+> - FACT (population, census of 11,738 compiles, both encodings, before pcrec's stage 1).
+>   1,852 compiles took the cover; almost all are short. Beyond 32 today: `k` = 36 (two uuid shapes), 40, 49, 60,
+>   500, 1000, mostly runs of one byte class; the bench's are `lit-l40` and two uuid shapes.
+>   pcrec states a span longer than its width limit (default set by measurement, user-raisable
+>   per compile) to no one: such a pattern runs pcrec's engine route.
+> - FACT (cost, stage 1). `[0-9a-f]{24}` -> `{32}` cover: `.text` 1,752 -> 1,960 bytes (gcc
+>   15.2 -O2). Review r9 EMITTED-2: `dig-exact-32` on (31 digits + `g`) repeated,
+>   instructions:u 230.7 M (engine route) vs 1,534.8 M (cover), x6.65; +14 % on `z`*n. The
+>   statement gives every position's set.
+> - OWNER DIRECTION (Frank 2026-11-15, verbatim): "we have a performance dial for pcrec. it
+>   could include some options for the kit. Also, I would default to sub span loops
+>   (excepting the measured head inline ) then measure if inline was faster than the other
+>   way around. Measure three: all inline, all loops, header inline then loops. Then the speed
+>   dial option can be always inline should it prove that is faster". And (15:00): "I predict
+>   most all rx will only have a short span and will inline due to being under the inline head
+>   portion of the prover. Therefore, this issue is mostly moot". Size the measurement to that.
+> - ASK. (1) Can the statement and the reply carry spans up to 4095 positions? Name the bound
+>   you declare (pcrec asserts its ceiling against it at build time). (2) The three forms'
+>   cards per the owner's direction, at lengths of your choosing within the population above.
+>   (3) Your reading of the dense near-miss regime above (no form asked). Reply in
+>   responses.md with the form you choose before building.
+> - Deliver: a kit branch for merge review, for ONE joint landing with pcrec's stage 2.
+
+### 11.6 Staging, sabotage, and what stage 2 is not
+
+- **Order.** (1) File §11.5; the kit replies with its form. (2) Kit branch and pcrec branch
+  built in parallel; pcrec's tests run at width 32 (route-identical to main) and through the
+  lever at the ceiling. (3) Code round on both. (4) Joint landing, one `abi` event, default
+  32 UNMEASURED. (5) §11.4's night on landed main. (6) The default set by §11.2's rule: one
+  `limits.def` value, its desc's derivation, the movers' re-pins, a second `abi` event. If
+  the night can run on the joint branch before (4), (6) folds into (4): one `abi` event (a
+  manager choice).
+- **Sabotage rows (ids at build time): 3 new, 1 re-aimed.** New: the limit bypassed (C15
+  always passes; witness a kitproof `verdict` row just past the build's default, which must
+  decline `width-limit`); the limit off by one (`k <` for `k <=`; witness the row AT the
+  default); the proof diff range left at `MF_MAX_FWD` (witness: a long cover whose stated
+  set past offset 33 differs from the reply, made by a paired statement plant). Re-aimed:
+  plant (d) (C15 removed): its witness becomes the build-time assertion's `-D` raise test.
+  Kit-side rows are the kit's.
+- **NOT in stage 2:** the hull and N (§3.4); the fraction case ([EARNED-SKIP]/[MATCH-KNOWN],
+  PARKED); the public option, `pcrec_options` field and stamp ([IFACE-PUSH]); a class-only
+  width; raising `PCREC_ANCHORED_MAX_STATES`; any rendering form designed by pcrec; the
+  kit's three-form cards' timing (kit-side).
+
+### 11.7 The standing questions (stage 2)
+
+1. **Measurement regime: RELEVANT.** The default IS a measured selection, and the near-miss
+   and not-warm regimes can flip it, so the rule takes every regime's worst (§11.2, §11.4).
+2. **Independent control: RELEVANT.** §3.6 Q2's table holds; added: libpcre2 answers at
+   `n >= 33` (independent), the `test-axes` lever arm against the engine route (shares the
+   emitted tables), the build-time seam assertion (shares the kit's declared bound only).
+   K35: the prediction counts the whole baseline listing.
+3. **What moves on regeneration: RELEVANT.** The row's value: re-measurement moves the
+   routes of every cover with width between the old and new default: an `abi` event, the
+   identity gate's re-pin, the start-set manifest if it moves, `answers.tsv`; `limits.md`
+   §3 by its dump check (D80). The registry count 81 -> 82.
