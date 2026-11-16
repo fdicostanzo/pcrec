@@ -1,0 +1,312 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+PART 1: THE PROGRAM DOMAIN
+
+(AR) table (AR)'s marked cells on a concrete pattern /(?<h>\d)?-(?<k>\d)/ (110 subjects; h absent on `-k`)
+   one (h?: <5): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 110 move
+      PROG-ALL   vs REGEX: 0 of 110 move
+      on '-6'     REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   one (h?: !(<10)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 110 move
+      PROG-ALL   vs REGEX: 0 of 110 move
+      on '-6'     REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   record (h?: <5, k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 110 move
+      PROG-ALL   vs REGEX: 0 of 110 move
+      on '-6'     REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   record (h?: !(<10), k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 110 move
+      PROG-ALL   vs REGEX: 0 of 110 move
+      on '-6'     REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   joint ((h?, k): >= (5, 3)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={56789}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 110 move
+      PROG-ALL   vs REGEX: 0 of 110 move
+      on '-6'     REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+
+(TM2) t2 := /(?<h>\d{1,2})(?::(?<m>\d\d))?/, 11,110 subjects; R = padded(>= (9, 30)), office = padded(between((9, 0), (17, 0)))
+   ((h, m?): R): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={100 values}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 11110 move
+      PROG-ALL   vs REGEX: 0 of 11110 move
+      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+      on '10'     REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   ((h, m?): !R): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={100 values}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 11110 move
+      PROG-ALL   vs REGEX: 0 of 11110 move
+      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+      on '10'     REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   ((h, m?): !office): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={100 values}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 11110 move
+      PROG-ALL   vs REGEX: 0 of 11110 move
+      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+      on '10'     REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+
+(RZ) /(?<k>\d)(?:;(?<h>\d))*/, 1,110 subjects: (h?: S, k: 3..7) as the record (tuples, cond()) and as `&`
+   (h?: <5, k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+      on '3'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   record (tuples) vs & [REGEX]                                           differ     0 of   1110
+   record (tuples) vs & [PROG-OTHER]                                      differ     0 of   1110
+   record (tuples) vs & [PROG-ALL]                                        differ     0 of   1110
+   (h?: 5..9, k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={56789}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+      on '3'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   record (tuples) vs & [REGEX]                                           differ     0 of   1110
+   record (tuples) vs & [PROG-OTHER]                                      differ     0 of   1110
+   record (tuples) vs & [PROG-ALL]                                        differ     0 of   1110
+   (h?: !(<10), k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+      on '3'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   record (tuples) vs & [REGEX]                                           differ     0 of   1110
+   record (tuples) vs & [PROG-OTHER]                                      differ     0 of   1110
+   record (tuples) vs & [PROG-ALL]                                        differ     0 of   1110
+
+(ZJ) jcfold2's non-product sets on (RZ)'s pattern, h MARKED (one joint condition naming h and k); answers on the 10 zero-pass subjects
+   ((h?, k): >= (5, 3)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={56789}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+      zero-pass subjects HOLDING: REGEX 0123456789  PROG-OTHER 0123456789  PROG-ALL 0123456789
+   ((h?, k): (0|1|2, 3|4) | (5, 5)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={0125}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+      zero-pass subjects HOLDING: REGEX 345  PROG-OTHER 345  PROG-ALL 345
+   ((h?, k): ("x", 3) | (0, 5)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={0}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+      zero-pass subjects HOLDING: REGEX 5  PROG-OTHER 5  PROG-ALL 5
+   ((h?, k): < (0, 3)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={0}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+      zero-pass subjects HOLDING: REGEX 012  PROG-OTHER 012  PROG-ALL 012
+
+(ZE) /(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/, 11,100 subjects, the set empty through $a; h MARKED
+   C1 (h?: <$a, k: 3): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={012345678}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 11100 move
+      PROG-ALL   vs REGEX: 0 of 11100 move
+      on '0-3'    REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+      on '5-3'    REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   C2 ((h?, k): < ($a, 0)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={012345678}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 11100 move
+      PROG-ALL   vs REGEX: 0 of 11100 move
+      on '0-3'    REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+      on '5-3'    REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   a = 0, both spellings EMPTY: C1 vs C2 [REGEX]                          differ     0 of   1110
+   C1 record (tuples) vs (h?: <$a) & (k: 3) [REGEX]                       differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 [PROG-OTHER]                     differ     0 of   1110
+   C1 record (tuples) vs (h?: <$a) & (k: 3) [PROG-OTHER]                  differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 [PROG-ALL]                       differ     0 of   1110
+   C1 record (tuples) vs (h?: <$a) & (k: 3) [PROG-ALL]                    differ     0 of  11100
+
+(2SP) two spellings of one pattern (absfix's P1-P3), (h?: 5..9, k: 3..7), the 310 matching (RZ) subjects
+   P1 (?<k>\d)(?:;(?<h>\d)(?<=[0-4]))*: DOM REGEX h={01234}; PROG-OTHER h={01234}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 310 move
+      PROG-ALL   vs REGEX: 0 of 310 move
+   P2 (?<k>\d)(?:;(?<h>[0-4]))*: DOM REGEX h={01234}; PROG-OTHER h={01234}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 310 move
+      PROG-ALL   vs REGEX: 0 of 310 move
+   P3 (?<k>\d)(?:;(?=[0-4])(?<h>\d))*: DOM REGEX h={01234}; PROG-OTHER h={01234}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 310 move
+      PROG-ALL   vs REGEX: 0 of 310 move
+   P1 vs P2 [REGEX]                                                       differ     0 of    310
+   P3 vs P2 [REGEX]                                                       differ     0 of    310
+   P1 vs P2 [PROG-OTHER]                                                  differ     0 of    310
+   P3 vs P2 [PROG-OTHER]                                                  differ     0 of    310
+   P1 vs P2 [PROG-ALL]                                                    differ     0 of    310
+   P3 vs P2 [PROG-ALL]                                                    differ     0 of    310
+   (the three spellings' REGEX DOMs are equal here: h's VALUES, not its group text; rev 20's GROUP split is absfix's)
+
+(SET) two spellings of one set, and two sets equal on every holdable value; (RZ)
+   (h?: <5): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+   (h?: 0|1|2|3|4): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+   (h?: <5) vs (h?: 0|1|2|3|4) [REGEX]                                    differ     0 of   1110
+   (h?: <5) vs (h?: 0|1|2|3|4) [PROG-OTHER]                               differ     0 of   1110
+   (h?: <5) vs (h?: 0|1|2|3|4) [PROG-ALL]                                 differ     0 of   1110
+   (h?: <0): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+   (h?: !(<10)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 1110 move
+      PROG-ALL   vs REGEX: 0 of 1110 move
+   (h?: <0) vs (h?: !(<10)) [REGEX]                                       differ     0 of   1110
+   (h?: <0) vs (h?: !(<10)) [PROG-OTHER]                                  differ     0 of   1110
+   (h?: <0) vs (h?: !(<10)) [PROG-ALL]                                    differ     0 of   1110
+   (both `(h?: <0)` and `(h?: !(<10))` are a constant set disjoint from \d: by §5.2 a compile ERROR, not FAILS)
+
+(EB1) review r29's branch-reset pair: P = /(?|(?<k>a)(?:;(?<h>\d))*|(?<k>b)(?:;(?<h>[5-9]))*)/ (PCRE2 only), Q2 = /(?<k>b)(?:;(?<h>[5-9]))*/; 222 subjects
+   `P & (k: "b")` and Q2 accept the same subjects (h's passes read off the subject) on 222 of 222
+   A  P & (k: "b") & (h?: <5): DOM REGEX h={0123456789}; PROG-OTHER h={56789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-OTHER FAILS)
+      PROG-ALL   vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-ALL FAILS)
+      on 'b'      REGEX HOLDS  PROG-OTHER FAILS  PROG-ALL FAILS
+   B  Q2 & (h?: <5): DOM REGEX h={56789}; PROG-OTHER h={56789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 222 move
+      PROG-ALL   vs REGEX: 0 of 222 move
+      on 'b'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   A vs B (Bq = A by binding, L2) [REGEX]                                 differ     1 of    222   smallest 'b' (A HOLDS, B FAILS)
+   A vs B (Bq = A by binding, L2) [PROG-OTHER]                            differ     0 of    222
+   A vs B (Bq = A by binding, L2) [PROG-ALL]                              differ     0 of    222
+   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product split]: DOM REGEX h={0123456789}; PROG-OTHER h={56789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-OTHER FAILS)
+      PROG-ALL   vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-ALL FAILS)
+      on 'b'      REGEX HOLDS  PROG-OTHER FAILS  PROG-ALL FAILS
+   J  P & ((k, h?): ("b", <5)) left UNSPLIT (a control, not a reading; not tallied): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 222 move
+      PROG-ALL   vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-ALL FAILS)
+      on 'b'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL FAILS
+   C record vs A `&` [REGEX]                                              differ     0 of    222
+   C record vs J the joint product UNSPLIT [REGEX] (record-is-product needs the split) differ     0 of    222
+   C record vs A `&` [PROG-OTHER]                                         differ     0 of    222
+   C record vs J the joint product UNSPLIT [PROG-OTHER] (record-is-product needs the split) differ     1 of    222   smallest 'b' (C FAILS, J HOLDS)
+   C record vs A `&` [PROG-ALL]                                           differ     0 of    222
+   C record vs J the joint product UNSPLIT [PROG-ALL] (record-is-product needs the split) differ     0 of    222
+   P & (h?: <5)  (anywhere, 16:13): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 222 move
+      PROG-ALL   vs REGEX: 0 of 222 move
+      on 'b'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   P & ((k, h?): ("a", <5) | ("b", >=5))  (the 16:13 example): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={0123456789}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 222 move
+      PROG-ALL   vs REGEX: 0 of 222 move
+      on 'b'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   P & ((k, h?): ("a", <5))  (the 16:13 example): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 222 move
+      PROG-ALL   vs REGEX: 0 of 222 move
+      on 'b'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+
+(EB2) review r29's t2m := t2 & (m?: padded(<60)) vs t2x := /(?<h>\d{1,2})(?::(?<m>[0-5]\d))?/, then & (m?: padded(>=60)); 11,110 subjects
+   t2m = t2 & (m?: padded(<60)): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={60 values}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 11110 move
+      PROG-ALL   vs REGEX: 0 of 11110 move
+      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   t2x: DOM REGEX m={60 values}; PROG-OTHER m={60 values}; PROG-ALL m={60 values}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 11110 move
+      PROG-ALL   vs REGEX: 0 of 11110 move
+      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   t2m vs t2x as programs (same subjects, same labels expected) [REGEX]   differ     0 of  11110
+   t2m vs t2x as programs (same subjects, same labels expected) [PROG-OTHER] differ     0 of  11110
+   t2m vs t2x as programs (same subjects, same labels expected) [PROG-ALL] differ     0 of  11110
+   t2m & (m?: padded(>=60)): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 11110 move
+      PROG-ALL   vs REGEX: 110 of 11110 move, smallest '0' (REGEX HOLDS, PROG-ALL FAILS)
+      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL FAILS
+   t2x & (m?: padded(>=60)): DOM REGEX m={60 values}; PROG-OTHER m={60 values}; PROG-ALL m={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 11110 move
+      PROG-ALL   vs REGEX: 0 of 11110 move
+      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [REGEX]           differ   110 of  11110   smallest '0' (t2m HOLDS, t2x FAILS)
+   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [PROG-OTHER]      differ   110 of  11110   smallest '0' (t2m HOLDS, t2x FAILS)
+   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [PROG-ALL]        differ     0 of  11110
+
+(EB3) review r29's AND-DEAD: /(?:(?<h>\d|zz))?x/ & /[^z]*/ vs /(?:(?<h>\d))?x/, then & (h?: "zz"); subjects over {1,z,x} to length 4
+   the chain and P3: same subjects and labels on 121 of 121
+   P3 & (h?: "zz"): DOM REGEX h={1}; PROG-OTHER h={1}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
+      PROG-OTHER vs REGEX: 0 of 121 move
+      PROG-ALL   vs REGEX: 0 of 121 move
+      on 'x'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   chain & (h?: "zz") on `x`: REGEX HOLDS  PROG-OTHER FAILS  PROG-ALL FAILS   (REGEX = the defining operand's values {1,zz})
+   chain vs P3 under (h?: "zz") [REGEX]                                   differ     1 of    121   smallest 'x' (chain HOLDS, P3 FAILS)
+   chain vs P3 under (h?: "zz") [PROG-OTHER]                              differ     0 of    121
+   chain vs P3 under (h?: "zz") [PROG-ALL]                                differ     0 of    121
+
+(MOVES) the answers that move from REGEX, per table and domain (the smallest witness each)
+   A  P & (k: "b") & (h?: <5)                                     PROG-OTHER     1 of    222  smallest 'b' (REGEX HOLDS)
+   A  P & (k: "b") & (h?: <5)                                     PROG-ALL       1 of    222  smallest 'b' (REGEX HOLDS)
+   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product  PROG-OTHER     1 of    222  smallest 'b' (REGEX HOLDS)
+   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product  PROG-ALL       1 of    222  smallest 'b' (REGEX HOLDS)
+   t2m & (m?: padded(>=60))                                       PROG-ALL     110 of  11110  smallest '0' (REGEX HOLDS)
+   every other table: 0 move under both program domains
+
+(SUMMARY) per domain: (i) an answer witnessed only by a value the label never holds in a match of the program (measured against PROG-ALL's set, so PROG-ALL's 0 is by construction); (ii) two spellings of one program split (2SP, EB1 A/B, EB2, EB3); (iii) two spellings of one set split (SET <5, ZE a = 0); (iv) record = & (RZ, ZE, EB1 C/A); the fixed point (TOP vs BOTTOM) over PART 1
+   REGEX      (i) YES   113   (ii) YES   112   (iii) no   0   (iv) KEPT (0 split)   fixed point: unique
+   PROG-OTHER (i) YES   110   (ii) YES   110   (iii) no   0   (iv) KEPT (0 split)   fixed point: unique
+   PROG-ALL   (i) no      0   (ii) no      0   (iii) no   0   (iv) KEPT (0 split)   fixed point: unique
+
+PART 2: ONE WITNESS
+
+(W3) FIXIND-3: `(h?: <5) & (h?: >5)` as two conditions, each its own witness (PER-CONDITION), vs one witness for both (SHARED, = the joined `(h?: <5 & >5)`'s answer; the joined spelling with constant sets is a §5.2 ERROR)
+   (?<h>\d)?x         DOM(h)={0123456789} PER-CONDITION vs SHARED [REGEX] differ     1 of     11   smallest 'x' (per HOLDS, shared FAILS)
+   (?<h>\d)?x         DOM(h)={0123456789} PER-CONDITION vs SHARED [PROG-OTHER] differ     1 of     11   smallest 'x' (per HOLDS, shared FAILS)
+   (?<h>\d)?x         DOM(h)={} PER-CONDITION vs SHARED [PROG-ALL]        differ     0 of     11
+   (?:(?<h>\d),)*     DOM(h)={0123456789} PER-CONDITION vs SHARED [REGEX] differ     1 of    111   smallest '' (per HOLDS, shared FAILS)
+   (?:(?<h>\d),)*     DOM(h)={0123456789} PER-CONDITION vs SHARED [PROG-OTHER] differ     1 of    111   smallest '' (per HOLDS, shared FAILS)
+   (?:(?<h>\d),)*     DOM(h)={} PER-CONDITION vs SHARED [PROG-ALL]        differ     0 of    111
+
+(W6) FIXIND-6: /(?<a>\d)?-(?<b>\d)/, 110 subjects: `$a` reads the tuple's own a (SHARED, the default-reaches-dollar derivation) vs its own witness (INDEPENDENT) vs no reach (`$a` empty)
+   (a?: <3, b: >$a)   [REGEX     ] DOM(a)={0123456789} holds: shared 33, independent 33, no-reach 24 of 110
+         shared vs independent [REGEX]                                    differ     0 of    110
+   (a?: <3, b: >$a)   [PROG-OTHER] DOM(a)={0123456789} holds: shared 33, independent 33, no-reach 24 of 110
+         shared vs independent [PROG-OTHER]                               differ     0 of    110
+   (a?: <3, b: >$a)   [PROG-ALL  ] DOM(a)={012} holds: shared 33, independent 33, no-reach 24 of 110
+         shared vs independent [PROG-ALL]                                 differ     0 of    110
+   (a?: >7, b: >$a)   [REGEX     ] DOM(a)={0123456789} holds: shared 2, independent 10, no-reach 1 of 110
+         shared vs independent [REGEX]                                    differ     8 of    110   smallest '-1' (shared FAILS, indep HOLDS)
+   (a?: >7, b: >$a)   [PROG-OTHER] DOM(a)={0123456789} holds: shared 2, independent 10, no-reach 1 of 110
+         shared vs independent [PROG-OTHER]                               differ     8 of    110   smallest '-1' (shared FAILS, indep HOLDS)
+   (a?: >7, b: >$a)   [PROG-ALL  ] DOM(a)={8} holds: shared 2, independent 2, no-reach 1 of 110
+         shared vs independent [PROG-ALL]                                 differ     0 of    110
+
+(WX) a MATCH-DEPENDENT pair on one label: two conditions whose sets read other labels
+   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={0123456789} PER-CONDITION vs SHARED [REGEX] differ     8 of    110   smallest '-1' (per HOLDS, shared FAILS)
+   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={0123456789} PER-CONDITION vs SHARED [PROG-OTHER] differ     8 of    110   smallest '-1' (per HOLDS, shared FAILS)
+   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={} PER-CONDITION vs SHARED [PROG-ALL] differ     0 of    110
+   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={0123456789} PER-CONDITION vs SHARED [REGEX] differ    45 of   1100   smallest '01' (per HOLDS, shared FAILS)
+   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={0123456789} PER-CONDITION vs SHARED [PROG-OTHER] differ    45 of   1100   smallest '01' (per HOLDS, shared FAILS)
+   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={12345678} PER-CONDITION vs SHARED [PROG-ALL] differ    28 of   1100   smallest '12' (per HOLDS, shared FAILS)
+
+(FP) the fixed-point residue: /a(?<h>\d)|b(?<k>\d)/ & (h?: <5) & (k?: <5); each mark's DOM is read over matches where the OTHER mark is consulted
+   [REGEX     ] TOP DOM h={0123456789} k={0123456789}; BOTTOM h={0123456789} k={0123456789}
+         answers TOP vs BOTTOM [REGEX]                                    differ     0 of     20
+   [PROG-OTHER] TOP DOM h={0123456789} k={0123456789}; BOTTOM h={} k={}
+         answers TOP vs BOTTOM [PROG-OTHER]                               differ    10 of     20   smallest 'a0' (top HOLDS, bottom FAILS)
+   [PROG-ALL  ] TOP DOM h={01234} k={01234}; BOTTOM h={} k={}
+         answers TOP vs BOTTOM [PROG-ALL]                                 differ    10 of     20   smallest 'a0' (top HOLDS, bottom FAILS)
+
+PART 3: RECORD VERSUS JOINT WITH DOLLAR (own-label `$a`; defaulted and marked), per domain
+   (a = 0: <10, b: >$a)   [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a = 0: <10, b: >$a)   [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a = 0: <10, b: >$a)   [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={012345678}; L 0/1981 DOM(a)={012345678}
+   (a = 5: <3, b: >$a)    [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a = 5: <3, b: >$a)    [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a = 5: <3, b: >$a)    [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
+   (a = 7: <10, b: ==$a)  [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a = 7: <10, b: ==$a)  [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a = 7: <10, b: ==$a)  [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
+   (a?: <3, b: >$a)       [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: <3, b: >$a)       [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: <3, b: >$a)       [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
+   (a?: >7, b: >$a)       [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: >7, b: >$a)       [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: >7, b: >$a)       [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={8}; L 0/1981 DOM(a)={8}
+   (a?: <10, b: ==$a)     [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: <10, b: ==$a)     [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: <10, b: ==$a)     [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
+   on `-5`: (a = 0: <10, b: >$a) HOLDS (the default fills $a: 5 > 0); (a?: <3, b: >$a) HOLDS; (a?: >7, b: >$a) FAILS
+   TOTAL [REGEX     ] record vs joint: 0 of 12546 differ
+   TOTAL [PROG-OTHER] record vs joint: 0 of 12546 differ
+   TOTAL [PROG-ALL  ] record vs joint: 0 of 12546 differ
+
+PART 4: the other counts rev 21 quotes (review r29's drills, recomputed)
+   (D2) occurrences(/(?<g>a)?b/), 127 spans over {a,b} to length 6, DOM(g) = ['a']: 'every hit\'s g is a, possibly none' vs (g?: "a") differ 94 (e.g. 'b', 'abb'); vs occurs.none(!(g: "a")) differ 0
+   (D5) R = (<10, <30)             over 1111 lists: occurs.none(((h, m?): !R)) vs wanted 0 []; occurs.none(!((h, m): R)) 0
+   (D5) R' = (<10, padded(<100))   over 1111 lists: occurs.none(((h, m?): !R)) vs wanted 71 ['3,', '3,3,']; occurs.none(!((h, m): R)) 0
+   (D6) [x = /\d/, y = /[a-z]/] & (x?: /[0-5]/) as /(?<x>\d)|(?<y>[a-z])/, 36 subjects: unmarked 6, marked (absent x) 32, the entry DROPPED 6
+   (LOOP) /(?<k>\d)?-(?<h>\d)?/ vs /(?:(?<k>\d)(?=-))*-(?:(?<h>\d)(?!\d))*/: 781 subjects, match differ 0, capture differ 0
+   (SEQ) /(?<n>\d)+/ vs /\d*(?<n>\d)/: 84 subjects, PCRE-reported captures differ 0; (n: <5) by the sequence rule differs on 28 (first '70'; '993': True)
+   (50;) /(?<k>\d+);(?:(?<n>\d),)*/ on '50;': n absent, k = 50; DOM(n) = 0123456789; values > 50: [] -> (n?: >$k) / all((n: >$k)) FAILS
+   (BREF) 'aaba' in DOM(h) of /(?<h>(?<a>a+)b\k<a>)?x/: False (run on the group); so (h?: "aaba") FAILS exactly
+   (DEFINE) /(?(DEFINE)(?<o>\d{1,3}))(?&o)\.(?&o)/ on '1.2', '192.168': o = None, None (PCRE2 only): DOM(o) = {}
+   (S1) t2 & ((h, m): padded(>= (9, 30))) whole vs SEARCHED differ on 0 of 11110
+   (S1) t2 & ((h, m?): padded(>= (9, 30))) whole vs SEARCHED differ on 1698 of 11110, e.g. '0:09' -> ('09', 2)
+   (S1) t2 & ((h, m = 0): padded(>= (9, 30))) whole vs SEARCHED differ on 1660 of 11110, e.g. '0:10' -> ('10', 2)
+   (S1) on '9:15': plain None  mark ('9', 0)  def0 ('15', 2)
+   (PRIO) /(?:(?<h>a|ab)(?<k>b*))?x/ vs /(?:(?<h>a)(?<k>b*))?x/: 3280 subjects, differ 0; `ab` is never h's value in PCRE's parse
+
+TOTAL engine-run cases 37892 differ 0; engine disagreements (PCRE2 vs Python `re`) 0; probes 166724
