@@ -19,5 +19,8 @@ SAB_DESC="kit_class writes no proven_prev for a context stop: G1/R4 on ENG_ATTEM
 SAB_DOC_FIGURE="MEASURED 2026-10-17 by lane fdb2land, solo (run_sabotage_matrix.sh S1083) at B2 merged onto the new kit base, after run_finder.sh's summed-count fix: DETECTED, memfnfinder 1fail/901pass (docs/dev/lanes/fdb2land_report.md)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    memcpy(out->proven_prev, out->proven[-1 - MF_PROOF_LO], sizeof out->proven_prev);'
+# RE-ANCHORED 2026-11-16 (lane span4k, MF_CLASS_V 11): the copy moved into kit_proof_close
+# and reads the caller's rows (proof[-1 - MF_PROOF_LO]); the plant still writes all ones
+# instead of the copy, the same intent.
+SAB_BEFORE='    if (out->proof && (uint32_t)im < out->proof_n) memcpy(out->proven_prev, out->proof[im], 32);'
 SAB_AFTER='    memset(out->proven_prev, 0xFF, sizeof out->proven_prev);   /* SABOTAGE S1083 */'

@@ -15,5 +15,8 @@ SAB_DESC=$'a proof bit set only by a SIMD layer: compose.c\'s ask clears proven[
 SAB_DOC_FIGURE="Plant run 2026-10-21 (lane r26z1, build/r26/plants.log): run_proof.sh --plant S1224 goes red. The mech figure is OWED to the heavy job 500-kit-r26z1-heavy; read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S1224."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE=$'    if (!row || kit_class(row, s, out)) return -1;\n    if (fd_pres('
-SAB_AFTER=$'    if (!row || kit_class(row, s, out)) return -1;\n    if (kit_target_levels(art->target)) out->proven[0 - MF_PROOF_LO][0] &= 0xFE;\n    if (fd_pres('
+# RE-ANCHORED 2026-11-16 (lane span4k, MF_CLASS_V 11): the class's rows are the caller's
+# storage (mf_class.proof, proof_n rows); the plant writes row 0 through the kit's own
+# writable view, the same text as run_proof.sh's plant S1224. Intent unchanged.
+SAB_BEFORE=$'    if (!row || kit_class(row, s, out, stp)) { memset(out, 0, sizeof *out); return -1; }\n    if (fd_pres('
+SAB_AFTER=$'    if (!row || kit_class(row, s, out, stp)) { memset(out, 0, sizeof *out); return -1; }\n    if (kit_target_levels(art->target) && out->proof_n > 0 - MF_PROOF_LO) ((uint8_t (*)[32])out->proof)[0 - MF_PROOF_LO][0] &= 0xFE;\n    if (fd_pres('

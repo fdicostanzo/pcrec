@@ -152,7 +152,12 @@ int kit_pick_takes(const kit_pick *b, unsigned long long v, int r, int32_t key)
 /* ---- THE DECISION's working state ----------------------------------------- */
 
 #define WF_LO   (-MF_MAX_BACK)          /* the least offset a position may take  */
-#define WF_NPOS MF_WPLAN_MAX            /* positions, offset - WF_LO             */
+#define WF_NPOS MF_WPLAN_MAX            /* the CEILING on positions (offset -
+                                           WF_LO): a guard only; the working
+                                           state is sized by each alternative's
+                                           stated EXTENT (wf_extent), allocated
+                                           per decision (r45_reply.md, the
+                                           kit's own working state)            */
 
 /* One OFFSET of an alternative after C-meet: the intersection of every
  * covering span's set (`set`, `core`) and of the verify-YES ones (`yset`,
@@ -180,7 +185,9 @@ typedef struct {
 
 typedef struct {
     const mf_walt *alt;
-    wf_pos   p[WF_NPOS];
+    wf_pos  *p;                 /* npos positions, offset - WF_LO: the
+                                   alternative's extent (wf_extent)          */
+    unsigned npos;
     /* THE CANDIDATE LIST (`cands`, span_pick.md §The shape step 2): the
        positions above, the walked offsets, F0, and what Table A's rows ask
        of them */
@@ -215,9 +222,9 @@ typedef struct {
     int             reseed, pinned;
     int             run_stated, run_len;
     int32_t         member, run_lo;
-    unsigned        np;
-    int32_t         poff[WF_NPOS];
-    uint8_t         pterm[WF_NPOS];
+    unsigned        np, pcap;       /* the plan's entries; poff/pterm hold pcap */
+    int32_t        *poff;
+    uint8_t        *pterm;
     char            path[16];
 } wf_dec;
 
@@ -278,7 +285,7 @@ static int full(const uint8_t s[32])
 
 static wf_pos *pos_at(wf_alt *m, int32_t off)
 {
-    return off >= WF_LO && off - WF_LO < WF_NPOS ? &m->p[off - WF_LO] : NULL;
+    return off >= WF_LO && (unsigned)(off - WF_LO) < m->npos ? &m->p[off - WF_LO] : NULL;
 }
 
 static int span_in_core(const mf_wspan *sp, unsigned j)
@@ -309,13 +316,31 @@ static int pinned_yes(const mf_wspan *sp)
     return 1;
 }
 
-/* C-MEET (step 1): every offset the alternative states, as one position. */
-static void merge(const mf_walt *alt, wf_alt *m)
+/* The alternative's EXTENT: positions from WF_LO up to its largest stated
+ * offset, offset 0 always inside (A-parked reads it), never above the
+ * ceiling WF_NPOS (wf_check refuses an offset outside the reach). */
+static unsigned wf_extent(const mf_walt *alt)
+{
+    int32_t hi = 1;
+    for (unsigned i = 0; i < alt->nspan; i++) {
+        int32_t e = alt->spans[i].start + (int32_t)alt->spans[i].len;
+        if (e > hi) hi = e;
+    }
+    unsigned n = (unsigned)(hi - WF_LO);
+    return n < WF_NPOS ? n : WF_NPOS;
+}
+
+/* C-MEET (step 1): every offset the alternative states, as one position,
+ * into `store` (wf_extent(alt) of them). */
+static void merge(const mf_walt *alt, wf_alt *m, wf_pos *store)
 {
     memset(m, 0, sizeof *m);
     m->alt = alt;
     m->run = -1;
-    for (unsigned k = 0; k < WF_NPOS; k++) {
+    m->p = store;
+    m->npos = wf_extent(alt);
+    memset(store, 0, m->npos * sizeof *store);
+    for (unsigned k = 0; k < m->npos; k++) {
         memset(m->p[k].set, 0xFF, 32);
         memset(m->p[k].yset, 0xFF, 32);
     }
@@ -391,10 +416,10 @@ static int in_stretch(const wf_pos *p)
 
 /* THE CANDIDATE BUILDER: alternative `alt`'s C-meet into `m`, then its
  * candidate list under the handed rates `rate` (NULL: the NONE row). */
-static void cands(const mf_walt *alt, const uint32_t *rate, wf_alt *m)
+static void cands(const mf_walt *alt, const uint32_t *rate, wf_alt *m, wf_pos *store)
 {
-    merge(alt, m);
-    for (unsigned k = 0; k < WF_NPOS; k++) {
+    merge(alt, m, store);
+    for (unsigned k = 0; k < m->npos; k++) {
         wf_pos *p = &m->p[k];
         if (!p->present) continue;
         p->mass = kit_mass(rate, p->set, 1, KIT_MASS_SUM);
@@ -704,7 +729,7 @@ static void a_mass_choose(wf_x *x)
             if (p0[rr.scan].stop_ok && p0[rr.scan].stretch) rs = r->start + rr.scan;
         }
     }
-    for (unsigned k = 0; k < WF_NPOS; k++) {
+    for (unsigned k = 0; k < m->npos; k++) {
         const wf_pos *p = &m->p[k];
         if (!p->stop_ok) continue;
         int32_t o = (int32_t)k + WF_LO;
@@ -898,7 +923,7 @@ static int in_plan(const wf_dec *d, int32_t off)
  * (`in_plan`, `tested_elsewhere`, `in_pinned`); C-run and C-asc order it. */
 static void plan_add(wf_dec *d, int32_t off)
 {
-    if (!in_plan(d, off) && d->np < WF_NPOS) d->poff[d->np++] = off;
+    if (!in_plan(d, off) && d->np < d->pcap) d->poff[d->np++] = off;
 }
 
 static void plan_drop(wf_dec *d, int32_t off)
@@ -1014,7 +1039,7 @@ static void c_floor(wf_dec *d)
     for (unsigned i = 0; i < m->alt->nspan; i++)
         if (m->alt->spans[i].verify == MF_VERIFY_NO && m->alt->entry == MF_ENTRY_PARKED)
             d->reseed = 1;
-    for (unsigned k = 0; k < WF_NPOS; k++)
+    for (unsigned k = 0; k < m->npos; k++)
         if (m->p[k].present) plan_add(d, (int32_t)k + WF_LO);
 }
 
@@ -1022,7 +1047,7 @@ static void c_floor(wf_dec *d)
 static void c_yes(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
-    for (unsigned k = 0; k < WF_NPOS; k++)
+    for (unsigned k = 0; k < m->npos; k++)
         if (m->p[k].present && m->p[k].yes) plan_add(d, (int32_t)k + WF_LO);
 }
 
@@ -1218,7 +1243,7 @@ static void trace_cands(const wf_dec *d, const gate_tctx *tm)
     tc.table = "wfA";               /* KEY's candidates */
     for (unsigned ai = 0; ai < d->na; ai++) {
         const wf_alt *m = &d->a[ai];
-        for (unsigned k = 0; k < WF_NPOS; k++) {
+        for (unsigned k = 0; k < m->npos; k++) {
             const wf_pos *p = &m->p[k];
             if (!p->present) continue;
             gate_cand c = { .src = GATE_CAND_POS, .alt = ai, .off = (int32_t)k + WF_LO,
@@ -1245,15 +1270,27 @@ static void trace_cands(const wf_dec *d, const gate_tctx *tm)
 
 /* Tables A, M and C over window site `s` (wf_check'd) into `d`; the walks are
  * traced unless `quiet`. */
-static void decide(const mf_art *art, const mf_site *s, int quiet, wf_dec *d)
+static int decide(const mf_art *art, const mf_site *s, int quiet, mf_arena *al, wf_dec *d)
 {
     memset(d, 0, sizeof *d);
     d->art = art;
     d->s = s;
     d->rate = kit_byte_rate(art);
     d->na = s->nalt;
+    /* the working state, sized by each alternative's extent (never by the
+       ceiling), from `al`: the plan holds one alternative's positions */
+    wf_pos *pos[MF_WMAX_ALT];
     for (unsigned ai = 0; ai < d->na; ai++) {
-        cands(&s->alts[ai], d->rate, &d->a[ai]);
+        unsigned n = wf_extent(&s->alts[ai]);
+        pos[ai] = al->alloc(al->u, n * sizeof *pos[ai]);
+        if (!pos[ai]) return -1;
+        if (n > d->pcap) d->pcap = n;
+    }
+    d->poff = al->alloc(al->u, (d->pcap ? d->pcap : 1) * sizeof *d->poff);
+    d->pterm = al->alloc(al->u, d->pcap ? d->pcap : 1);
+    if (!d->poff || !d->pterm) return -1;
+    for (unsigned ai = 0; ai < d->na; ai++) {
+        cands(&s->alts[ai], d->rate, &d->a[ai], pos[ai]);
         wf_facts f = { s, &s->alts[ai] };
         gate_in in = { .s = s, .wf = &f };
         gate_tctx tc = { art, "wfA", art->nsites + 1, MF_PH_DEFINE, &in, 0, quiet, 0 };
@@ -1285,6 +1322,7 @@ static void decide(const mf_art *art, const mf_site *s, int quiet, wf_dec *d)
     snprintf(d->path, sizeof d->path, "%s%s", wf_arows[d->a[d->ch].arow].path,
              d->pinned ? "+pin" : "");
     trace_cands(d, &tc);
+    return 0;
 }
 
 /* The reply's DECISION GROUP (`alt` .. `path`) from decision `d`, the reply
@@ -1328,10 +1366,13 @@ static int reply_of(const wf_dec *d, mf_wreply *out, const mf_rows *rows)
 
 struct wf_plan {
     unsigned n;                         /* tested positions: the stop and the plan */
-    int32_t  off[WF_NPOS];
-    uint8_t  set[WF_NPOS][32];
-    uint8_t  core[WF_NPOS];
-    uint32_t table[WF_NPOS];            /* C-table's offer, 0: C-own            */
+    /* n entries each (at most the decision's plan and its stop), allocated
+       per plan by plan_of: the kit's working state is sized by the extent */
+    int32_t  *off;
+    uint8_t (*set)[32];
+    uint8_t  *core;
+    uint32_t *table;                    /* C-table's offer, 0: C-own            */
+    int32_t  *key;                      /* find_groups' compare key per entry   */
     int      ncore;                     /* the hoisted bound: core positions'   */
     int32_t  clo, chi;                  /* least and largest offset             */
     int      hy_set;                    /* THE EMPTY RANGE: the largest offset  */
@@ -1359,7 +1400,7 @@ struct wf_plan {
     const struct ren_check_row  *chk;
     const mf_site *fsite;               /* B-fn: the plan as the offset-skip
                                            function's site and predicate       */
-    int8_t   grp[WF_NPOS];              /* C-run's compare: a run term of
+    int8_t   *grp;                      /* C-run's compare: a run term of
                                            `runs`, -1 a lone position          */
     unsigned nrun;
     mf_pred *runs;                      /* the run compares' terms (runcmp.c),
@@ -1383,14 +1424,23 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
     return 0;
 }
 
-static void plan_of(const wf_dec *d, const mf_hooks *def, struct wf_plan *w)
+static int plan_of(const wf_dec *d, const mf_hooks *def, mf_arena *al, struct wf_plan *w)
 {
     const wf_alt *m = &d->a[d->ch];
     memset(w, 0, sizeof *w);
     w->wfloor = d->s->wfloor;
     w->row = &wf_floor_arm;
     w->stop_ix = -1;
-    int32_t offs[WF_NPOS + 1];
+    /* the plan's entries and the stop: d->np + 1 at most */
+    size_t cap = (size_t)d->np + 1;
+    w->off = al->alloc(al->u, cap * sizeof *w->off);
+    w->set = al->alloc(al->u, cap * sizeof *w->set);
+    w->core = al->alloc(al->u, cap * sizeof *w->core);
+    w->table = al->alloc(al->u, cap * sizeof *w->table);
+    w->key = al->alloc(al->u, cap * sizeof *w->key);
+    w->grp = al->alloc(al->u, cap * sizeof *w->grp);
+    if (!w->off || !w->set || !w->core || !w->table || !w->key || !w->grp) return -1;
+    int32_t *offs = w->off;             /* gathered and sorted in place */
     unsigned n = 0;
     for (unsigned i = 0; i < d->np; i++) offs[n++] = d->poff[i];
     if (m->has_stop && !in_plan(d, m->stop)) offs[n++] = m->stop;
@@ -1417,7 +1467,7 @@ static void plan_of(const wf_dec *d, const mf_hooks *def, struct wf_plan *w)
     /* THE BOUND also spans every verify-YES core position the plan does not
        test (C-bound's full-set positions: a D11 `{1: any}` is the bound
        alone), since every yielded candidate must hold it inside the subject */
-    for (unsigned k = 0; k < WF_NPOS; k++) {
+    for (unsigned k = 0; k < m->npos; k++) {
         const wf_pos *p = &m->p[k];
         int32_t o = (int32_t)k + WF_LO;
         if (!p->present || !p->yes || !p->ycore) continue;
@@ -1429,6 +1479,7 @@ static void plan_of(const wf_dec *d, const mf_hooks *def, struct wf_plan *w)
             w->hy_set = 1;
         }
     }
+    return 0;
 }
 
 /* ---- TABLE E's legacy rows: the plan as today's row's site ----------------
@@ -1780,7 +1831,7 @@ static int run_group_ok(const struct wf_plan *w, unsigned from, unsigned to)
 _Static_assert(MF_MAX_TERM - 1 <= INT8_MAX, "a C-run term index (< MF_MAX_TERM) is an int8_t: w->grp[k] = (int8_t)nterm");
 static void find_groups(const wf_dec *d, struct wf_plan *w)
 {
-    int key[WF_NPOS];
+    int32_t *key = w->key;              /* the plan's own (plan_of), not a stack array */
     for (unsigned i = 0; i < w->n; i++) {
         key[i] = -1;
         w->grp[i] = -1;
@@ -2394,8 +2445,7 @@ static int wf_plan_site(const mf_art *art, mf_arena *al, const mf_site *s,
                         struct wf_plan *w, wf_legacy *L, wf_fx *fx, size_t *erow,
                         const char **why)
 {
-    decide(art, s, quiet, d);
-    plan_of(d, def, w);
+    if (decide(art, s, quiet, al, d) || plan_of(d, def, al, w)) { *why = "out of memory"; return -1; }
     fx->fn = NULL;
     if (wf_find_decide(art, al, d, w, def, 1, fx)) { *why = "out of memory"; return -1; }
     wf_facts f = { s, d->a[d->ch].alt };
@@ -2561,7 +2611,8 @@ typedef struct {
     wf_frame_row erow;
     const char  *method;
     uint8_t      search, stream, fused;
-    uint8_t      plan_test[MF_WPLAN_MAX];
+    uint8_t     *plan_test;     /* the decision's np entries (the caller's
+                                   allocation, kept by wf_frame_of)         */
     uint8_t      stop_test;
     const arm   *ren;       /* the row whose use renders the site (the
                                family's, or E-func/E-stmt's composer arm) */
@@ -2599,7 +2650,10 @@ static int wf_frame_of(const mf_art *art, const mf_hooks *def, unsigned gphases,
                        const wf_dec *d, const struct wf_plan *w, const wf_fx *fx,
                        const wf_legacy *L, wf_fpart *fp)
 {
+    uint8_t *pt = fp->plan_test;
     memset(fp, 0, sizeof *fp);
+    fp->plan_test = pt;
+    if (d->np) memset(pt, 0, d->np);
     fp->erow = (wf_frame_row)r;
     fp->method = "";
     fp->ren = w->row;
@@ -2734,7 +2788,8 @@ static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks
     const char *why;
     int rc = -1;
     if (d && w && L && fx && fp &&
-        !wf_plan_site(art, &heap, site, def, gphases, 1, d, w, L, fx, &r, &why)) {
+        !wf_plan_site(art, &heap, site, def, gphases, 1, d, w, L, fx, &r, &why) &&
+        (fp->plan_test = wd_alloc(&blks, (size_t)d->np + 1))) {
         unsigned eb;
         /* the translation the define renders E-func/E-stmt from (wf_prepare) */
         if (r == E_FUNC || r == E_STMT) {
@@ -2775,14 +2830,15 @@ int mf_wdecide(const mf_art *art, const mf_site *site, const mf_hooks *def, uint
     /* NONE: the decision reads no frame fact (§0), so only the window facts
        are held, and `def` is not read */
     if (wf_check(site, 0)) return -1;
-    /* the decision is ~10 KB, so it lives on the heap (R-28: a stack frame
-       above 4 KB is a kit defect); the ask is pure, so not the art's
+    /* the decision and its working state live on the heap (R-28: a stack
+       frame above 4 KB is a kit defect); the ask is pure, so not the art's
        arena; a refused allocation is -1 */
-    wf_dec *d = calloc(1, sizeof *d);
-    if (!d) return -1;
-    decide(art, site, 1, d);
-    int rc = reply_of(d, out, rows);
-    free(d);
+    wd_blk *blks = NULL;
+    mf_arena heap = { &blks, wd_alloc };
+    wf_dec *d = wd_alloc(&blks, sizeof *d);
+    int rc = d && !decide(art, site, 1, &heap, d) ? reply_of(d, out, rows) : -1;
+    if (rc) memset(out, 0, sizeof *out);
+    wd_free(blks);
     return rc;
 }
 
@@ -2855,6 +2911,8 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
                    calloc(cap + 1, 1), cap };
     const char *res = NULL;
     wf_dec *d = NULL;
+    wd_blk *blks = NULL;
+    mf_arena heap = { &blks, wd_alloc };
     if (!ra.plan || !ra.plan_term || !ra.plan_test || !rh.plan || !rh.plan_term ||
         !rh.plan_test) {
         res = "(out of memory)";
@@ -2864,9 +2922,8 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
         res = "the framed ask's refusal";
         goto out;
     }
-    d = calloc(1, sizeof *d);
-    if (!d) { res = "(out of memory)"; goto out; }
-    decide(art, ws, 1, d);
+    d = wd_alloc(&blks, sizeof *d);
+    if (!d || decide(art, ws, 1, &heap, d)) { res = "(out of memory)"; goto out; }
     if (reply_of(d, &held, &rh)) { res = "(the held reply's storage)"; goto out; }
     const struct wf_plan *w = r->wplan;
     wf_frame_row erow = w ? (w->row == &wf_find_arm ? E_FIND : E_GENERIC)
@@ -2907,7 +2964,7 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
     held.plan_test = rh.plan_test;
     res = wr_first_diff(&asked, &held);
 out:
-    free(d);
+    wd_free(blks);
     free(ra.plan); free(ra.plan_term); free(ra.plan_test);
     free(rh.plan); free(rh.plan_term); free(rh.plan_test);
     return res;

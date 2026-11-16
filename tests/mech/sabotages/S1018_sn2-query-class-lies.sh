@@ -23,8 +23,10 @@ SAB_DESC="the define-time query reports a proven0 byte set the rendered form doe
 SAB_DOC_FIGURE="HAND-MEASURED by lane fdb1: see docs/dev/lanes/fdb1_report.md (the solo mech run of this row)."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (!row || kit_class(row, s, out)) return -1;
-    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;'
-SAB_AFTER='    if (!row || kit_class(row, s, out)) return -1;
+# RE-ANCHORED 2026-11-16 (lane span4k, MF_CLASS_V 11): kit_class takes the proof storage
+# and a refusal zeroes *out; the lie (one proven0 bit flipped in the query) unchanged.
+SAB_BEFORE='    if (!row || kit_class(row, s, out, stp)) { memset(out, 0, sizeof *out); return -1; }
+    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ||'
+SAB_AFTER='    if (!row || kit_class(row, s, out, stp)) { memset(out, 0, sizeof *out); return -1; }
     out->proven0[0] ^= 1u;   /* SABOTAGE S1018 */
-    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) return -1;'
+    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ||'

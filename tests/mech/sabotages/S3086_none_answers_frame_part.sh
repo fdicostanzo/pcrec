@@ -13,10 +13,12 @@ SAB_DOC_FIGURE='Validated by plant at 3.0b (lane b30b, docs/dev/lanes/b30b_repor
 SAB_REACH_POP='tests/memfn/run_finder.sh|"\$WORK/fx" --purity >|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
+# RE-ANCHORED 2026-11-16 (lane span4k, MF_SITE_ABI 30): reply_of writes the caller's rows
+# and returns a verdict; intent unchanged.
 SAB_BEFORE='    decide(art, site, 1, d);
-    reply_of(d, out);
+    int rc = reply_of(d, out, rows);
     free(d);'
 SAB_AFTER='    decide(art, site, 1, d);
-    reply_of(d, out);
+    int rc = reply_of(d, out, rows);
     out->framed = 1;   /* SABOTAGE S3086 */
     free(d);'
