@@ -998,3 +998,27 @@ own example, `/\d\d/ & between(1, 12)` would then match `31`. Resolves the draft
 lean: a condition on a label FAILS when the match never reached the label's group or loop; a loop that was REACHED and
 ran zero times satisfies a plain condition (`/x|(?<n>\d)+/ & (n: <5)` on `x` fails, like the set-once form;
 `(?:(?<n>\d),)*` on an empty value holds). His words: "Agree with lean". RULED as stated; review r10's FIXB-2/FIXB-8.
+**2026-11-15 RULING — ONE anchoring rule, `anchored()`, and the naming of provided transforms (Frank, to session 132,
+evening).** His words: "Anchoring. We need consistent rules around when rx is anchored and to what. I don't want to
+have a bunch of "primitive" functions have special cases concerning that. I'm referring to startsWith, etc."; his
+example: "rx is not anchored unless it is in the filter position of & or transformed with anchored() which is:
+anchored(rx) := /^${rx}$/ ^ $ refer to the scoped match Then startsWith(rx) := /^${rx}/". On the manager's advice
+(below): "Ok I agree." On naming: "the name transform seemed to imply you were transforming the subject, but of course
+you're transforming the filter ... we used to have a transform called "unpad" which sounds like it strips away 0
+padding from integers but really it changed a filter to accept them. What helped was calling it "padded" ... Which is
+why I named it anchored to show that you are changing the rx filter to make it anchored. We should consider this in
+the naming of formal transforms that we provide."
+RECORD (the manager's advice he agreed to): (1) ONE rule: a FILTER (the filter side of `&`, a `label:` condition) must
+match the WHOLE value; everywhere else an rx is unanchored as in PCRE (a program's final pattern is searched).
+`^`/`$` are the ends of the SCOPED match (the value in a filter, the subject in a final pattern): plain PCRE with the
+value as the subject, no extra rule. (2) `anchored(rx) := /^${rx}$/` is ADDED: identity in filter position, its use is
+outside one (a final pattern: `anchored(block)` instead of `\A...\z`). (3) `startsWith(rx) := /^${rx}/` does NOT work
+in filter position (it means exactly rx; `/^5/` rejects `57`); the library definitions are plain GAPS with no anchors:
+`startsWith(rx) := /${rx}.*/`, `endsWith(rx) := /.*${rx}/`, `contains(rx) := /.*${rx}.*/` (gaps cross line breaks);
+`contains(/^err/)` = starts with `err` falls out of PCRE. No primitive carries an anchoring special case. The
+manager's earlier lean to fold startsWith/endsWith into search with an anchored argument is WITHDRAWN. (4) REJECTED
+alternative: an explicit anchor switching off the implicit ones (`/^5/` would accept more than `/5/`). (5) NAMING: every
+transform the library PROVIDES is named for how it changes the FILTER / which values the changed filter accepts
+(`padded`, `anchored`), never for an action on the subject. To apply in the next revision (manager's note, not ruled):
+audit every provided transform name against this; `search` is a verb acting on the subject and needs a new name
+(candidates to put to him), `contains`/`startsWith`/`endsWith` describe the accepted values and likely stay.
