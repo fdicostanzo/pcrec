@@ -38,7 +38,8 @@ What this lane did and did not do:
   - A COMBINING rule: the default is H(h\*); h\* is the grid value with the smallest worst-cell
     slowdown, ties going to the smaller head; the grid includes 0 (L) and `>= k` (I).
   - Cells where I wins are dial evidence.
-  - h is a kit constant, independent of pcrec's width default.
+  - h is a kit constant, independent of pcrec's width default. The cards run first on the same
+    frozen binary, and then the width cells (ruling R1, settled with main).
   - Plans A and B go to the owner in plain words; the kit recommends A.
   - "Zero movers at 32" becomes a stability trade offered to the owner.
   - The interim UNMEASURED h = 32 is withdrawn: no outcome ships an unmeasured h.
@@ -68,7 +69,7 @@ What this lane did and did not do:
 | F9 | FIX-NOW | `G2W_MAXPOS` 64 / `G2W_REACH` 128 / `G2P_MAXRUN` 64 (CHOSEN), each `_Static_assert`ed against the kit name; 500/4095 as own rows; readers listed; runtime priced (UNMEASURED estimate, plus a record and a split rule) | §3 "Answers" |
 | F10 | FIX-NOW | registry.md §6¶8a sentence, §6¶8b floor 13 -> 14, `memfn_arm.py:346-349` class entry, `:452-460` plus a force cell; force spelling = L | §3 "The option" |
 | F11 | FIX-NOW (ruled) | combining table R0-R3; tie-break declared; grid includes 0 and `>= k`; the four r20 drills re-run in the text; stability trade in plain words | §3, Goals 3-4 |
-| F12 | FIX-NOW (ruled) | h independent of the width default; cards before, or on the same binary as, §11.4's night, setting h first: a question to main | §3, §7 |
+| F12 | FIX-NOW (ruled) | h independent of the width default; order SETTLED with main per ruling R1: form cards first on the same frozen binary with h's rule committed before the run, h frozen, then the width cells (one night if both fit, else two) | §3, §7 "Answered" |
 | F13 | FIX-NOW (ruled) | plans A and B in plain words; kit recommends A, with reasons; B's lower cost stated; A falls back to B's shape, never to an unmeasured h | §3 "Scope", §7 |
 | F14 | FIX-NOW + PLAN | L/H over `find_groups` with segment kinds; PLAN row "SHARED SEGMENTER ... TRIGGER: the first build of L" stated for main to file; the other unlocks with triggers | §3 "The forms" |
 | F15 | FIX-NOW | no skip in the first build; trigger = C1's near-miss column / §11.4 row 5; the fix = generalised D-hors, one answer to §11.2's EMITTED-2 order; spec hunk names the slow regime | §4, §7 |
@@ -101,8 +102,8 @@ Each is for main unless it says the owner; each carries a recommendation in the 
 - **For the owner: plan A or plan B.** A: forms built, measured before the landing, and shipped
   as his stated default. B: long spans all-inline now, forms next, cheaper. Recommend A.
   Inside A: keep spans of 32 or fewer unchanged as a stability trade? Recommend no.
-- **The order of the timings.** The kit's form timings should run before §11.4's width cells,
-  or first on the same binary, to set h first. Recommend yes. This needs a night-order ruling.
+- **The order of the timings** is no longer open: it was settled with main by ruling R1 and
+  stated in the reply as settled (§3, §7 "Answered").
 - **For the owner: the dense near-miss fix.** Should the first build carry it? Recommend no
   (D77) until a timed card shows the loss.
 - **Caller storage.** May the asks take caller-supplied storage for their lists (one new
@@ -113,8 +114,9 @@ Each is for main unless it says the owner; each carries a recommendation in the 
 ## STATE AT HANDOFF
 
 - STATE: done. Design only. Branch `lane/memfn-r45`, all work committed.
-- Rulings file `docs/dev/lanes/r45b_rulings.md`: empty at every checkpoint. Last entry
-  applied: none.
+- Rulings file `docs/dev/lanes/r45b_rulings.md`: R1 arrived before the report's final check
+  (F12's night order, settled with main). It is applied in §3, §7 and §8. Last entry applied:
+  R1.
 - Next step: the short re-check round r20 recommends (premise + owner criteria) on rev 2,
   then the kit manager posts §8.
 - Not checked by this lane: whether pcrec's B5 (on `lane/covs2afix` or later) already

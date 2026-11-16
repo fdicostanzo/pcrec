@@ -44,7 +44,7 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
 | F9 | G2's twins (`G2W_MAXPOS`, `G2W_REACH`, `G2P_MAXRUN`) are movers, each tied to a kit name. The long cases get their own generator rows, and G2's runtime is priced | §3 "Answers", §6 |
 | F10 | The PAIR row's readers are named. The force spelling selects L. A force cell is added to the answer-identity sweep | §3 "The option" |
 | F11 | A combining rule replaces first-match. The default is H(h*). h* is picked by a declared tie-break over a grid that includes 0 and `>= k`. A cell where I wins is dial evidence. "Zero movers at 32" becomes a stability trade offered to the owner in plain words | §3, Goals, Q2 |
-| F12 | h is a KIT constant, independent of pcrec's width default. The cards run before, or on the same binary as, §11.4's night and set h first. This is a question to main | §3, open questions |
+| F12 | h is a KIT constant, independent of pcrec's width default. The cards run first, on the same frozen binary as §11.4's width cells, and set h first. SETTLED with main (ruling R1) | §3 "What a card needs", §7 answered |
 | F13 | Plans A and B go to the owner in plain words. The kit recommends A, and B's lower cost is stated | §3 "Scope", open questions |
 | F14 | L/H are defined over the EXISTING segmenter, so C-run stretches stay run compares and lit-l40 stays one compare. The PLAN row (shared segmenter) is stated | §3 "The forms", §7 |
 | F15 | The near-miss skip follows D77 strictly: it is not in the first build. Its trigger is C1's near-miss column, and its form is D-hors generalised to every k | §4, open questions |
@@ -435,12 +435,17 @@ checked over zero long keys. In the build:
 - **The dial.** pcrec's `--tune=N` can carry the always-inline option as a cell once R2 files
   evidence (cover_cap.md §11.3, unlock 2). The kit never reads the dial.
 
-**What a card needs from the box: OPEN (a question to main, §7).**
-- **The order** [rev 2, F12]. The cards C1-C3 and C5 must run BEFORE §11.4's B cells, or first
-  on the same night and the same combined-branch binary, so that h\* is set first. The B cells
-  then time the cover at H(h\*), and the width default is set on the form that ships. In the
-  other order, two coupled selections are measured backwards, and the width evidence goes
-  stale when h moves.
+**What a card needs from the box.**
+- **The order: SETTLED with main** [rev 2, F12; ruling R1, kit manager 2026-11-16, agreed with
+  main]. The form cards run BEFORE cover_cap.md §11.4's width cells, on the SAME frozen
+  combined-branch binary. The order of record:
+  1. The form cards C1-C3 and C5 run. The rule that picks h (R0-R3 above) is committed before
+     the run.
+  2. h is frozen by that rule's reading.
+  3. The width cells are measured with that h, so the width night varies ONE thing.
+  If both fit one window, the cards queue first and the width cells are not-before the cards'
+  verdict. Otherwise it is two nights. Measured in the other order, two coupled selections
+  would be read backwards, and the width evidence would go stale when h moved.
 - C4 is a non-timing job: boxqueue, no window (memory `pcrec-kit-nontiming-runs-no-ask`).
 
 ## 4. ASK (4): the dense near-miss regime (no form asked)
@@ -795,13 +800,6 @@ by `git grep`). They are updated in the build or flagged in its report:
   - Inside A, a second choice: should spans of 32 or fewer keep today's all-inline text, so this
     landing changes no existing matcher, at the price of those spans not getting the measured
     form yet? RECOMMEND: no. Let the measurement decide, and accept the measured movers.
-- **For main: in what order should the kit's form timings and the width night run?**
-  - RECOMMEND: the kit's form cards first, either on an earlier night or at the start of the
-    same night on the same combined-branch binary. Then the width cells time the cover in the
-    measured form.
-  - This may lengthen the night or add one. It is outside 20:00-01:00, and a window cleared
-    with the owner.
-  - The compile-size card is a plain queued job.
 - **For the owner, via main: should the first build also fix the dense near-miss slowdown?**
   - RECOMMEND: no (D77). The only measured loss is in instructions at length 32, and timing
     does not yet show it.
@@ -818,8 +816,13 @@ by `git grep`). They are updated in the build or flagged in its report:
   compile and summed over the size-ladder attempts.
   - RECOMMEND: yes. The run-length form is designed (§5) and filed with its trigger.
 
-**Answered, no longer asked:** the old question on when `MF_MAX_SPAN_POS` retires. It retires
-now: A1 is delivered on `lane/covs2afix`, and the kit branch merges only onto A1.
+**Answered, no longer asked:**
+- **When `MF_MAX_SPAN_POS` retires.** Now: A1 is delivered on `lane/covs2afix`, and the kit
+  branch merges only onto A1.
+- **The order of the timings** (ruling R1, settled with main). The form cards run first on the
+  same frozen combined-branch binary, with h's rule committed before the run. h is frozen by
+  that reading, and then the width cells are measured with it: one night if both fit, the
+  width cells not-before the cards' verdict; otherwise two nights (§3).
 
 ## 8. responses.md-ready block (for the kit manager to post; facts only, D157)
 
@@ -839,7 +842,8 @@ now: A1 is delivered on `lane/covs2afix`, and the kit branch merges only onto A1
   I all inline, L loops, H(h) inline head then loops. Default H(h*): the grid value with the
   smallest worst-cell slowdown, ties to the smaller head, grid incl. 0 and >= k; cells where I
   wins are dial evidence. h is the kit's own constant, not tied to your width default.
-  Option span-loop (pair: force = all loops, deny = all inline); registry floor 13 -> 14.
+  Order (settled with you): our form cards first on the same frozen binary, rule committed
+  first, h frozen, then your width cells with that h. Option span-loop (pair: force = all loops, deny = all inline); registry floor 13 -> 14.
 - (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). Not in the first build (D77); the
   fix is the last-offset skip table generalised to every offset, on a card's trigger.
 - (5) Arrays leave the seam structs. mf_wspan 1,164 -> 32 B (host-owned arrays). mf_class
@@ -851,7 +855,6 @@ now: A1 is delivered on `lane/covs2afix`, and the kit branch merges only onto A1
   Keep your other window sites at 32 by your own asserts? We lean yes.
   For the owner: forms measured and shipped as his default now (A), or long spans all-inline
   now and forms next (B, cheaper)? We lean A; keep spans <= 32 unchanged? We lean no.
-  Run our form timings before your width timings, same binary? We lean yes.
   Fix dense near misses in the first build? We lean no, until a timed card shows it.
   Let the asks take caller storage for their lists? We lean yes.
   About 160 KB of rows per ask of a 4095 cover, per compile: acceptable for now? We lean yes.
