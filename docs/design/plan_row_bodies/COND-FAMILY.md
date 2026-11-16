@@ -1772,3 +1772,17 @@ pattern is compiled", is corrected: one value set per label PER PROGRAM; (5) the
 stand-in value per condition) is re-examined by rev 21 under this ruling (review r29 says the two-conditions case
 dissolves under the program reading); (6) open for rev 21 to state, not decided: whether another condition on the
 SAME label narrows it, and the "if it is possible" tier for a program whose conditions are not regular.
+
+**2026-11-16 OWNER RULING — mark-narrows (Frank, to session 136, box clock 16:44).** In the discussion of domain-scope
+the manager named a reservation: DOM(h) is read from the program, but the program's marked conditions consult DOMs
+(a circular definition). His question: "Would it not be true then that (x: ...) can restrict the regex but (x?: ...)
+can not?" The manager put two versions back: the LITERAL one (only unmarked conditions narrow a DOM) and a VARIANT
+(unmarked conditions narrow; a marked condition narrows only through the matches where its label is PRESENT, where it
+is an ordinary filter; where its label is absent it is transparent while a DOM is computed), with the case that
+separates them (`P & (k?: "b") & (h?: <5)` on `b`, k never absent in P: literal HOLDS and splits it from the
+`(k: "b")` spelling; variant FAILS like it). His words: "I agree with your variant. I'm assuming such logic is
+possible". RECORD: RULED: the VARIANT. No DOM is consulted while a DOM is computed. HIS ASSUMPTION IS RECORDED AS AN
+ASSUMPTION: at the time of the ruling neither version had been run; lane predspec21 runs both (with the least and
+greatest fixed points as references) and the manager reports to him if the variant is not well-founded, breaks record
+= `&`, or splits equal-behaviour programs. WITHDRAWN the same hour, the manager's earlier lean "DOM over matches
+where every named label is present" (empty on `(?:(?<h>\d)|(?<m>\d))`).
