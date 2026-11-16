@@ -1520,3 +1520,14 @@ everything to both"). (2) A per-part (finer-grained) transform is NOT designed n
 DOCUMENT at his request: docs/design/predicates_future.md, the list of parked predicate ideas with their triggers;
 first/rest (his "first/last": read as first/rest, parked earlier today) and finer-grained transforms are its first
 two items.
+
+**2026-11-16 OWNER RULING — colon-scope: yes, with a refinement for a default (Frank, to session 134, box clock 11:32).**
+Asked **colon-scope** (left of the colon a name is always a label of the intersected pattern, computed labels
+included, never a plain binding; right of the colon and in any tuple value a bare name is always a binding, a
+label's value read with `$`), his words: "colon-scope: yes with refinement: (a, b = c): ... the 'c' is a binding et
+al". RECORD: (1) RULED as asked. (2) REFINEMENT: in the bracket left of the colon, the names being constrained (`a`,
+`b`) are labels; a DEFAULT written after `=` (`c`) is in VALUE position although it stands left of the colon: a
+bare name there is a binding (or a literal; "et al": the value side's rules, so a label's value is `$x`). THE
+MANAGER'S CONSEQUENCES (to be checked by rev 20): the draft's open item C13 closes as "`$` to read a computed label
+on the value side" (E-CAL's `<=dim` becomes `<=$dim`, E-RFC's `==wd` becomes `==$wd`); a default still must be ONE
+string (ruled earlier today).
