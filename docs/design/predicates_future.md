@@ -109,3 +109,12 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   users own *'". So rejecting the empty case (`some(^h)`) does NOT count toward bringing the sigil back.
 - TRIGGER: a use of a field reference with real value beyond rejecting an empty loop (counting every pass, as in
   the draft's `length(S)` body, is a candidate to be argued, not a trigger met).
+
+## 9. A meaning for a label named twice in one condition
+
+- WHAT: `(h: <5, h: >2)` / `((h, h): R)` is a compile ERROR (ruled 2026-11-16, **label-twice**), which leaves the
+  spelling free. The one meaning considered so far is the DIAGONAL ((h's text, h's text) in R; for a record, the
+  same as `(h: <5 & >2)`), not adopted: in a joint comparison it is almost always a slip for `(h, m)`.
+- STATUS: the owner, 2026-11-16: "agree an error. And that means it's also unofficially parked in case some other
+  meaning becomes valuable". Not a designed idea; a reserved spelling.
+- TRIGGER: a meaning for the repeated label that has a real use and cannot be written another way.
