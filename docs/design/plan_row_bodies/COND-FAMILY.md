@@ -1634,3 +1634,12 @@ RECORD: NOT A RULING: an author-controlled option for absent labels (the author 
 base rule is then "a condition needs a text"). Spelling a placeholder (D193 add. 4). Sent to lane absent as its R2,
 with the manager's addition that the same control be worked on the LABEL side too (`(h?: <100)`), since by his
 principle of the same hour a set never contains absence.
+
+**2026-11-16 OWNER LEAN, NOT LOCKED — absent-rule (Frank, to session 135, box clock 14:09).** Shown lane absent's
+comparison (today's line; absent holds; absent fails; his optional mark over "fails"; only-alternatives-fail) and
+the manager's lean (his optional mark, on the LABEL, `m?`, over "absent fails" everywhere, empty lists included),
+his words: "absent-rule: I agree with your lean but before we lock it in, what is the impact across other
+statements. What was the statement where absence matches made sense?" RECORD: NOT A RULING: he agrees with the
+lean and asks for (1) its impact on every other statement of the language and (2) the statements for which "a
+condition holds over none" was originally chosen. Lane absimpact (opus) censuses both; he locks or changes it with
+that in front of him. Nothing in the ruled text changes until then.
