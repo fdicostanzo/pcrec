@@ -778,5 +778,43 @@ for label, pop, Rf, mdom, tgt, form in (
     print("     %s %s with h%s, m = %s vs %s with no default: differ %d of %d  e.g. %s" %
           (label, o, "" if dh is None else " = " + dh, dm, tgt, len(d), len(pop), d[:3]))
 
+# =================================================================================================================
+# (ZE) jcfix's zero-pass-empty corner under each option: /(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/, a = 0 makes both sets
+# EMPTY: C1 `(h: <$a, k: 3)` (a record), C2 `((h, k): < ($a, 0))`, and C1's `&` form `(h: <$a) & (k: 3)`.
+# NOTE: every option here reads a one-label condition's absent part by the SAME projection as a joint one (EMPTY ranges
+# over the group's strings); today's ruled single-label zero-pass rule is "holds" (vacuous). The two agree except on a
+# set that is empty for this match; the row "T (vacuous)" shows today's ruled `&` there.
+print("\n(ZE) zero-pass-empty under each option (a = 0: both sets empty); 11,100 subjects, a, k in 0..9, 0-2 passes")
+SUBJ_ZE = ["%d-%d" % (a, k) + "".join(";%d" % h for h in hs) for a in range(10) for k in range(10) for n in range(3)
+           for hs in itertools.product(range(10), repeat=n)]
+in_pattern(r"(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*", SUBJ_ZE[::7])
+A0 = [x for x in SUBJ_ZE if x.startswith("0-")]
+
+
+def ze(o, x, which):
+    head, *hs = x.split(";")
+    a, k = head.split("-")
+    lt = lambda h: canon(h) and int(h) < int(a)
+    if which == "C1":
+        Rf = lambda t: lt(t[0]) and t[1] == "3"
+    elif which == "C2":
+        Rf = lambda t: canon(t[0]) and (int(t[0]), int(t[1])) < (int(a), 0)
+    else:  # the `&` of C1's one-label conditions
+        hpart = all(lt(h) for h in hs) if hs else tuple_ok(lambda t: lt(t[0]), [resolve(o, "Z")], [D])
+        return hpart and k == "3"
+    if not hs:
+        return tuple_ok(Rf, [resolve(o, "Z"), k], [D, None])
+    return all(Rf((h, k)) for h in hs)
+
+
+for o in OPTIONS:
+    c1c2 = [x for x in A0 if ze(o, x, "C1") != ze(o, x, "C2")]
+    c1amp = [x for x in SUBJ_ZE if ze(o, x, "C1") != ze(o, x, "AMP")]
+    print("     %-7s C1 vs C2 at a = 0: %d of %d differ %s; C1 vs its & form: %d of %d differ; '0-3': C1 %s, C2 %s"
+          % (o, len(c1c2), len(A0), c1c2[:2], len(c1amp), len(SUBJ_ZE), hf(ze(o, "0-3", "C1")), hf(ze(o, "0-3", "C2"))))
+vac = lambda x: (x.split(";")[0].split("-")[1] == "3") and all(int(h) < int(x[0]) for h in x.split(";")[1:])
+print("     T (vacuous one-label rule, today's ruled `&`) on '0-3': %s; C1 under T's projection vs it: %d of %d differ"
+      % (hf(vac("0-3")), sum(ze("T-pass", x, "C1") != vac(x) for x in SUBJ_ZE), len(SUBJ_ZE)))
+
 print("\nCONTROL comparisons %d differ %d" % (T["control"], T["control_differ"]))
 print("TOTAL engine cases %d differ %d engine-disagreements %d" % (T["cases"], T["differ"], DISAGREE[0]))

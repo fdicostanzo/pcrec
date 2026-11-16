@@ -275,5 +275,14 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
      (DL) H with h, m = x vs T-pass with no default: differ 1 of 585  e.g. ['']
      (DL) F with h = 10, m = 0 vs H with no default: differ 71 of 585  e.g. ['9,', '9,9,', '10,9,']
 
+(ZE) zero-pass-empty under each option (a = 0: both sets empty); 11,100 subjects, a, k in 0..9, 0-2 passes
+     T-pass  C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     T-match C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     X1      C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     H       C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     H-d2    C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     F       C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
+     T (vacuous one-label rule, today's ruled `&`) on '0-3': HOLDS; C1 under T's projection vs it: 1 of 11100 differ
+
 CONTROL comparisons 53366 differ 0
 TOTAL engine cases 72196 differ 0 engine-disagreements 0
