@@ -146,3 +146,19 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   made a product; its natural home is beside `--explain` and [COST-EXPLAIN], and it should be designed WITH the
   first predicate build, not after it (every absence answer is otherwise invisible to the author).
 - TRIGGER: the first build go for any predicate piece (the explainer's design then rides with it).
+
+## 11. Restricting a default to the values the label could hold
+
+- WHAT: require (or warn unless) a default `m = v` names a value in the label's own value set, so the three
+  controls form one family: no control = the empty set, a default = one possible value, the mark = every possible
+  value.
+- STATUS: the owner's remark, 2026-11-16 ("One interesting point is if the default should be restricted to the set
+  of values it could have if it were there"). Not ruled. The manager's judgment, given to him: NOT as a restriction.
+  The default is the author's stated value (the objection to the withdrawn "any text" domain was a witness the
+  COMPILER invented); out-of-range defaults are a deliberate use (a sentinel: "no port reads as 0" where the
+  pattern matches 1-65535; `m = 0` against a two-digit group); and a legality test against the value set would
+  cost the default its independence from the program's other conditions (the set is per program, domain-scope) and
+  drag it into the cannot-compute-exactly tier.
+- THE MIDDLE GROUND: a warning, "this default is a value the label can never match" (the slip `m = 60`); it also
+  fires on every deliberate sentinel.
+- TRIGGER: an example of an author bitten by an out-of-range default.
