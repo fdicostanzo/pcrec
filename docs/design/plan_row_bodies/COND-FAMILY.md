@@ -1146,3 +1146,17 @@ fields it expands to a few number conditions (interior hours, the low edge, the 
 macro with no new mechanism; a variable number of fields would need bounded recursion or a primitive. To do in the
 next revision: a sketch (is it a plain macro for 2 and 3 fields in today's language; the time example written with
 it), in §13 as the preferred later item, NOT added to the first spec unless he says so.
+
+**2026-11-15 RULING — the anchor warning has no exemption for macro-body text (Frank, to session 133, box clock 21:21).**
+Also on record, his earlier remark the same evening: "With that definition of how & matches each other, anchored()
+isn't as important". On "should the anchor warning also fire for anchors written inside a macro's own body (so
+`x & anchored(r)` warns), or never for macro-body text? lean: it fires, no exemption by who wrote it", his words:
+"warn-in-macro-body: yes but is that an identity? The anchored and & are not the same". RECORD: RULED yes, no
+exemption by authorship; the warning's criterion (review r16 W2: an anchor that provably sits at the edge of a
+whole-match role's stretch) is applied to the expanded text. His QUESTION, answered by the manager (to be shown with
+worked rows in the next revision): the two notions ARE different in general (`anchored` reads the ends of the scoped
+match; `&` ties its sides to one stretch), and they COINCIDE exactly where `anchored(r)` stands directly in a
+whole-match role (a side of `&`, a label condition), because there the role's stretch IS the scoped match its
+`\A`/`\z` read; so `x & anchored(r)` accepts what `x & r` accepts. They do not coincide in a hole that is not a
+role: `x${anchored(/a/)}` reads the enclosing scope's ends and never matches `xa`, and draws no warning. The message
+must say that, not "identity" unqualified.
