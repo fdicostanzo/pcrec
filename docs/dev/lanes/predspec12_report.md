@@ -23,7 +23,7 @@ OWED: none
   primitive carries an anchoring special case"); the answers coincide except `$` (below).
 - Validation (in the worktree): `make test-spec-history` 11 passed, 0 failed. `make test-plan-lint` FAILS on a
   PRE-EXISTING violation that is on main at the base and not in any file this lane touches: `PL14:
-  docs/dev/plan.md:13: docs/dev/lanes/land1115c_report.md:13 cites a plan line number` (plan_lint: 357 rows, 1
+  docs/dev/plan.md (line elided): docs/dev/lanes/land1115c_report.md (line elided) cites a plan line number` (plan_lint: 357 rows, 1
   violation; its selftest passes, 45 plants). `git diff 61f8e9f88 -- docs/dev/plan.md
   docs/dev/lanes/land1115c_report.md` is empty on this branch; the fix belongs to the manager (main's
   land1115c report). No suites owed (design only; the box is in the owner's evening hold).
