@@ -1437,3 +1437,10 @@ design; (2) it is KEPT ON RECORD (joint_condition.md §4A.11, with its tested li
 (3) TRIGGER, in his terms: a problem that needs a different way of composing over a tuple's parts than the language
 gives (dictionary order; each part written out). CONSEQUENCES, the MANAGER'S (to be checked by rev 20): tuple-parts
 has no user while first/rest is parked and stays open, not built; two-orders stays a live question.
+
+**2026-11-16 OWNER RULING — set-arity: a set carries an arity (Frank, to session 134, box clock 10:26).** Asked
+**set-arity** (a set of tuples is the existing set kind with an ARITY, today's sets being arity 1, or a third kind of
+value), his words: "Set arity: yes. It's clean. I like it". RECORD: ONE set kind with an arity; arity is fixed and
+known at compile time; `|`, `&` and array entries need equal arity; the labels left of the colon must number the
+set's arity; only an arity-1 set has text (may be a pattern, stand in a hole, be intersected with a pattern). No
+third value kind.
