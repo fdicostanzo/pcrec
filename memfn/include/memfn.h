@@ -306,29 +306,16 @@
  * term at -1, its range read-bounded, Q-R7-1); G2's generated space reaches
  * -2. */
 #define MF_MAX_BACK 8
-/* The positions span 0 may state facts for (R-26.5, kit_proof.md §4.2): a
- * SHAPE BOUND, DERIVED from MF_MAX_TERM (span 0 is one predicate, at most
- * MF_MAX_TERM terms, so at most that many SENT positions can begin a
- * prefix). A window span states at most this many positions
- * (MF_WSPAN_POS). */
-#define MF_MAX_SPAN_POS MF_MAX_TERM
-/* The proof range's reach past span 0's positions, in bytes (R-26.5): one
- * position after them (kit_proof.md §3.2's `C_k`, the after-context a cover
- * states as a window span since D172 S2). CHOSEN at 1 (D77); the context
- * spans (`mf_site.ctx`) that once sat in it retired at D172 S2 commit 6.
- * TRIGGER: a stated span position past MF_MAX_FWD that a consumer needs
- * proven. Read by no code since MF_SITE_ABI 30 (MF_MAX_FWD no longer
- * derives from it); it retires with MF_MAX_SPAN_POS, held for pcrec's
- * [COVER-CAP] stage 2 A1/A3 (lane span4k's report). */
-#define MF_MAX_AHEAD 1
+/* MF_MAX_SPAN_POS and MF_MAX_AHEAD (R-26.5) RETIRED at MF_SITE_ABI 30's
+ * raise (r45_reply.md rev 4 §1): a window span's bound is MF_WSPAN_POS, the
+ * proof range's ceiling MF_MAX_FWD, neither derived from them. */
 /* The per-offset proof's range CEILING (mf_class.proof, R-26.4; a per-reply
  * COUNT under it since MF_CLASS_V 11): offsets from the candidate in
  * [MF_PROOF_LO, MF_MAX_FWD). MF_PROOF_LO is DERIVED from the most negative
  * term offset. MF_MAX_FWD is a SHAPE BOUND, DERIVED (r45_reply.md rev 4 §1):
  * every offset a WINDOW statement may state lies below MF_WREACH, so every
  * offset a window plan class proves does too; equal to it since MF_SITE_ABI
- * 30, decoupled from MF_MAX_SPAN_POS and MF_MAX_AHEAD (whose retirement
- * waits on pcrec's [COVER-CAP] stage 2 A1/A3; lane span4k's report). */
+ * 30 (no longer MF_MAX_SPAN_POS + MF_MAX_AHEAD, both retired). */
 #define MF_PROOF_LO (-MF_MAX_BACK)
 #define MF_MAX_FWD  MF_WREACH
 #define MF_SPAN_UNBOUNDED UINT64_MAX  /* span_hi when nothing is proven        */
@@ -665,13 +652,17 @@ typedef enum { MF_ENTRY_UNSTATED = 0, MF_ENTRY_NONE, MF_ENTRY_PARKED,
                MF_ENTRY_RESEED } mf_entry;
 typedef enum { MF_WFLOOR_UNSTATED = 0, MF_WFLOOR_SUBJECT, MF_WFLOOR_EXPR } mf_wfloor;
 
-/* Positions one span states: a SHAPE BOUND, DERIVED as MF_MAX_SPAN_POS is
- * (the longest piece pcrec states is a run its analysis truncates to
- * PCREC_MAX_REQ_RUN_SCAN, 32 positions). Since MF_SITE_ABI 30 a span's
- * lists are the host's storage (mf_wspan), so the bound sizes no struct;
- * its raise (r45_reply.md rev 4: 4095) waits on pcrec's [COVER-CAP] stage
- * 2 A1/A3, whose cover check reads it (lane span4k's report). */
-#define MF_WSPAN_POS MF_MAX_SPAN_POS
+/* Positions one span states: a SHAPE BOUND, CHOSEN (D77) at 4095 since
+ * MF_SITE_ABI 30's raise (r45_reply.md rev 4 §1): MF_WREACH - 1, so the
+ * longest piece pcrec's cover may state, plus its following offset, lies
+ * inside the reach (32 before, MF_MAX_TERM's derivation). A span's lists are
+ * the host's storage (mf_wspan) and the kit's working state is sized per
+ * extent, so the bound sizes no struct: it is a REFUSAL bound. One row
+ * declines below it (review 2026-11-16 r27 READ-1): a presence RUN span
+ * whose derived run part would rank a scan stretch of over MF_RANK_MAX
+ * positions, or write more than MF_MAX_TERM terms, is refused at its define
+ * (window.c run_part_terms); pcrec's pre-check run is 32 or fewer today. */
+#define MF_WSPAN_POS 4095
 /* Spans one alternative states: a SHAPE BOUND, DERIVED from pcrec's widest
  * statement, the reseed alternative: one span per walked offset (at most
  * PCREC_PREFIX_K_MAX, 24, offset 0's F0 included) plus the run R, inside

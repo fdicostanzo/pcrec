@@ -244,6 +244,10 @@ static void cb_on_cand(void *u, mf_sink *k, const char *cand)
 /* ---- my generator: window sites in MY alphabet --------------------------- */
 
 #define MAXSP 4
+#define KPOS  32    /* positions per span this generator states (its longest
+                       is 12): the kase's own list storage, not the kit's
+                       bound MF_WSPAN_POS (a kase is copied by value) */
+_Static_assert(KPOS <= MF_WSPAN_POS, "a generated span is a legal span");
 static const uint8_t ALPH[] = { 0x00, 0x01, '\n', '\t', ' ', '"', '\\', '0', '7', '9', 'A',
                                 'Q', 'Z', 'a', 'q', 'z', '_', '.', 0x7f, 0x80, 0xa0,
                                 0xc3, 0xe2, 0xfe, 0xff };
@@ -275,8 +279,8 @@ typedef struct {
     mf_wspan sp[2][MAXSP];
     /* each span's per-position lists (MF_SITE_ABI 30): this test's own
        storage, attached by kase_attach (re-attached after a struct copy) */
-    uint8_t  sset[2][MAXSP][MF_WSPAN_POS][32];
-    uint32_t stab[2][MAXSP][MF_WSPAN_POS];
+    uint8_t  sset[2][MAXSP][KPOS][32];
+    uint32_t stab[2][MAXSP][KPOS];
     mf_walt  alt[2];
     mf_site  site;
     int      frame;             /* 0 FUNC/RETURN, 1 STMT/ASSIGN, 2 STMT/ON_MISS */
@@ -316,8 +320,8 @@ static void span_clear(mf_wspan *w)
     const uint8_t (*set)[32] = w->set;
     const uint32_t *tab = w->table_ref;
     memset(w, 0, sizeof *w);
-    memset((uint8_t (*)[32])set, 0, MF_WSPAN_POS * 32);
-    memset((uint32_t *)tab, 0, MF_WSPAN_POS * sizeof *tab);
+    memset((uint8_t (*)[32])set, 0, KPOS * 32);
+    memset((uint32_t *)tab, 0, KPOS * sizeof *tab);
     w->set = set;
     w->table_ref = tab;
 }
