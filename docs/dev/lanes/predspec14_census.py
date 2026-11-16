@@ -1,11 +1,13 @@
+# predspec14: census of anchor* words in predicates_draft.md by meaning (heuristic classes; usage: python3 -I THIS OLD NEW)
 import re,sys
 def classify(path):
     L=open(path).read().split('\n')
+    cut=[i for i,l in enumerate(L,1) if l.startswith('## 0. Status')][0]
     c={}
     for i,l in enumerate(L,1):
         for m in re.finditer(r'(?i)\b(un)?anchor[a-z]*(\.[a-z]+)?', l):
             w=m.group(0); pre=l[max(0,m.start()-1):m.start()]; post=l[m.end():m.end()+1]
-            if i<=137: k='history: changelog'
+            if i<cut: k='history: changelog'
             elif re.match(r'anchor\.(operand|whole)',w): k='the warning name'
             elif w.lower()=='anchored' and (pre=='`' or post=='('): k='the macro anchored'
             elif w.lower() in ('anchor','anchors') and re.search(r'param\(isodate\)|of = anchor|anchor \+-|three anchor|anchor := ', l): k='other: E-NEAR date'

@@ -552,7 +552,7 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 | **kind** | rx or macro, the two VALUE kinds (§2.1) | value-vs-pattern; constraint sets |
 | **value** | anything of a kind (an rx or a macro) | a captured substring; the filtered text (that is the SPAN; the owner's "the value being filtered", CF:994, is kept in quotes) |
 | **span** | the text a set position filters: an `&` operand's text, a label's text in this match, the text an `occurrences`/`contains` filter reads (§11); the draft's own word for "the value being filtered" (rev 13, review r14 CENSUS-2) | a value |
-| **scoped match** | the text an rx is matched against, whose ends `^`/`$` (and `\A`/`\z`/`\Z`) are. Exactly two things OPEN one (rev 13, review r14 F2): the PROGRAM (its subject, searched; or a `records` item rx's file text) and every FILTER ROLE wherever it stands (its span, matched WHOLE: an `&` operand, both sides, a `label:` condition, a modifier's argument); a hole never opens one; an anchor reads the INNERMOST (the owner's word, CF:1005; §11 THE ONE WHOLE-MATCH RULE) | a hole (a hole is part of the rx around it and has no scoped match of its own) |
+| **scoped match** | the text an rx is matched against, whose ends `^`/`$` (and `\A`/`\z`/`\Z`) are. Exactly two things OPEN one (rev 13, review r14 F2): the PROGRAM (its subject, searched; or a `records` item rx's file text) and every FILTER ROLE wherever it stands (its span, matched WHOLE: either side of `&`, a `label:` condition, a compile-time set, a parameter a macro's body puts in one of these); a hole never opens one; an anchor reads the INNERMOST (the owner's word, CF:1005; §11 THE ONE WHOLE-MATCH RULE) | a hole (a hole is part of the rx around it and has no scoped match of its own) |
 | **matches its stretch whole** / **anchored** | (rev 14, RULED 2026-11-15 20:43 on main, "That's a good clarification") a filter role MATCHES ITS STRETCH WHOLE; the two sides of `&` match THE SAME stretch whole, tied to each other (where it sits is decided by what surrounds the `&`) / "anchored" names ONLY the macro `anchored(...)`, which pins its argument to the ends of its scope (§8), and the real assertions `\A`, `\z`, `\Z`, `^`, `$` | "anchored" for the `&` tie or for a filter role's whole-match requirement (rev 12-13 wrote it so; quotations and history keep it) |
 | **captured string** | `$x` for a GROUP label: the text it captured in this match (a one-string rx with no labels) | the value `$` reads from metadata or a computed label (`$mname.index`, `$d`): a VALUE of the path, not captured text (§5.4 `$` row; review r12 CENSUS-11) |
 | **constraint set** | the rx after `:` (`x: S`; in the design only, `m(x: T)`, an ERROR in phase 1, §5.2), the set a label must lie in (rev 6 said "type" or "value type") | the kinds |
@@ -1114,7 +1114,7 @@ transform's whole-match behaviour cannot be derived from a body written in the l
 
 | transform | its body in the language | where the parameter lands |
 |---|---|---|
-| `padded(S)` | `/0*(?:${S})/` (RULED shape, CF on main 2026-11-15 20:48; the group: manager's detail) | hole |
+| `padded(S)` | `/0*(?:${S})/` (RULED shape, CF:1113-1124 on main; the group: the manager's detail) | hole |
 | `anchored(S)` | `/\A(?:${S})\z/` (RULED, CF:1048-1053) | hole |
 | `startsWith(S)`, `endsWith(S)` | `/(?:${S})(?s:.*)/`, `/(?s:.*?)(?:${S})/` (§8) | hole |
 | `occurrences(S, min)`, `contains(S)` | the loop body of §2.6 around `(?<hit>(?:${S}))`; `contains(S) := occurrences(S, min = 1)` | hole |
@@ -2266,9 +2266,9 @@ subject, a compile-time set over each whole string. A computed label's value is 
 HOLE'S SET is a set position (the edge-assertion error applies to it, L8) but NOT a filter role: it is a part of the
 rx it sits in, opens no scoped match, and its anchors read the enclosing one. A macro's PARAMETER is in whichever of
 these its BODY puts it, after expansion (rev 14, RULED 2026-11-15 20:45 on main: the role, never the name): the
-argument of `contains`, `startsWith`, `endsWith`, `anchored` and `occurrences` lands in a hole of the body; the
-argument of `padded` or `quoted` lands in a `label:` condition of the body, a filter role (§2.7 BODIES OF THE
-PROVIDED TRANSFORMS). (Rev 12 called all four "filters"; review r14 CENSUS-5 / F2: the word is reserved for the
+argument of `padded`, `contains`, `startsWith`, `endsWith`, `anchored` and `occurrences` lands in a hole of the body;
+the argument of `quoted` or `left`/`right`/`mid` lands beside an `&` inside a hole of the body, a filter role (§2.7
+BODIES OF THE PROVIDED TRANSFORMS). (Rev 12 called all four "filters"; review r14 CENSUS-5 / F2: the word is reserved for the
 filter roles. Rev 13 listed "a filter body (incl. a modified filter's argument)" as a role of its own; rev 14 drops
 the clause: the body says where the argument lands.)
 
@@ -2336,9 +2336,10 @@ the hole takes: rev 13, review r14 F2): an rx in a hole of a filter's body (the 
 `^`/`$` are the span's ends, as PCRE gives them. So `contains(/^err/)` = `startsWith("err")` although `contains`'s body
 (`occurrences`'s) puts the argument in a hole inside its loop, after a lazy gap, and `occurrences(/^err/)` has at most one hit,
 at the span's start (§2.6, §0.1 L16, L17). A modifier's argument is NOT a separate case (rev 14, RULED 2026-11-15
-20:45 on main): `padded`'s body puts its argument in a `label:` condition on the digits after the leading zeros, a
-filter role, so it matches that stretch whole (`padded(/^5/)` = `padded("5")`, §0.1 L13); a user macro with the same
-body behaves the same (§2.7 BODIES OF THE PROVIDED TRANSFORMS). In a FINAL pattern a hole's `^`/`$` are the subject's (or a line's) ends, as in the pasted text. Rev 6
+20:45 on main): where the argument lands is decided by the body. `padded(rx) := /0*(?:${rx})/` (RULED, 20:48)
+splices it into a HOLE, so a `^` in it reads the body's stretch after the zeros and forbids them (`padded(/^5/)`
+accepts only `5`, §0.1 L13); a user macro with the same body behaves the same (§2.7 BODIES OF THE PROVIDED
+TRANSFORMS). In a FINAL pattern a hole's `^`/`$` are the subject's (or a line's) ends, as in the pasted text. Rev 6
 read `^` in a hole as the HOLE's own start, which made `contains(/^err/)` accept `xerr` while §0.1 L17 said it was the
 same as a search for `/^err/` (review r8 SIM-1).
 
