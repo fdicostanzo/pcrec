@@ -120,5 +120,66 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
    ((h?, m): ...) vs ((h, m): ...) under R (h never absent)   moves     0 of  11110
    (h, m? = 0): D2 (default read) vs D3 (mark read)           moves     1 of  11110   smallest: '9' (D2 FAILS, D3 HOLDS)
 
+(RK) R-kinds beside R-intent (rulings R1): what each control does per absence kind
+   RE  nothing -> FAIL  n? -> PROJ  n = 3 -> FAIL  n? = 3 -> v read
+   NR  nothing -> FAIL  n? -> FAIL  n = 3 -> v read  n? = 3 -> v read
+   (?<n>\d)?x                         'x'       O   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:(?<n>\d)|)x                     'x'       A   accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?<n>\d){0,1}x                     'x'       O   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?<n>\d)??x                        'x'       O   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?<n>\d)*x                         'x'       Z   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:(?<n>\d)+)?x                    'x'       EO  accepted by: R-kinds K1 [n?,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:(?<n>\d)+|)x                    'x'       EA  accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:(?<n>\d)*)?x                    'x'       Z   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:(?<n>\d)*)??x                   'x'       EO  accepted by: R-kinds K1 [n?,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?<n>\d){0,2}x                     'x'       Z   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:(?<n>\d){1,2})?x                'x'       EO  accepted by: R-kinds K1 [n?,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:(?<n>\d)|y)                     'y'       A   accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?<n>\d)?,)*                   'a,'      O   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:(?<n>\d)|),)*               'a,'      A   accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?<n>\d)?,)*                   'a3,a,'   O   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:(?<n>\d)|),)*               'a3,a,'   A   accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?<n>\d)*,)*                   'a,'      Z   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:(?<n>\d)+)?,)*              'a,'      EO  accepted by: R-kinds K1 [n?,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:(?<n>\d)+|),)*              'a,'      EA  accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?<n>\d)*,)*                   'a3,a,'   Z   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:(?<n>\d)+)?,)*              'a3,a,'   EO  accepted by: R-kinds K1 [n?,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:(?<n>\d)+|),)*              'a3,a,'   EA  accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:-(?:(?<n>\d),)*)?;)*        'a-;'     Z   accepted by: R-kinds K1 [n?,n? = 3]  K2 [n?,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:-|-(?:(?<n>\d),)+)?;)*      'a-;'     EA  accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:-(?:(?<n>\d),)*)?;)*        'a;'      EO  accepted by: R-kinds K1 [n?,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:-(?:(?<n>\d),)*|);)*        'a;'      EA  accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:-(?:(?<n>\d),)*)?;)*        'a-3,;a;' EO  accepted by: R-kinds K1 [n?,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   (?:a(?:-(?:(?<n>\d),)*|);)*        'a-3,;a;' EA  accepted by: R-kinds K1 [n = 3,n? = 3]  K2 [n = 3,n? = 3]  R-intent [n?,n = 3,n? = 3]
+   split groups, K1     with nothing written: 0 of 11
+   split groups, K1     with n?      written: 9 of 11
+   split groups, K1     with n = 3   written: 9 of 11
+   split groups, K1     with n? = 3  written: 0 of 11
+   split groups, K2     with nothing written: 0 of 11
+   split groups, K2     with n?      written: 8 of 11
+   split groups, K2     with n = 3   written: 8 of 11
+   split groups, K2     with n? = 3  written: 0 of 11
+   split groups, intent with nothing written: 0 of 11
+   split groups, intent with n?      written: 0 of 11
+   split groups, intent with n = 3   written: 0 of 11
+   split groups, intent with n? = 3  written: 0 of 11
+   time example ((h, m ...): >= (9, 30)) on `9`, `10` (minutes absent), two spellings of the optional part
+     t2 optional `(?::(?<m>\d\d))?`     nothing  R-kinds 9:FAILS 10:FAILS | R-intent 9:FAILS 10:FAILS
+     t2 optional `(?::(?<m>\d\d))?`     m?       R-kinds 9:HOLDS 10:HOLDS | R-intent 9:HOLDS 10:HOLDS
+     t2 optional `(?::(?<m>\d\d))?`     m = 0    R-kinds 9:FAILS 10:FAILS | R-intent 9:FAILS 10:HOLDS
+     t2 optional `(?::(?<m>\d\d))?`     m? = 0   R-kinds 9:FAILS 10:HOLDS | R-intent 9:FAILS 10:HOLDS
+     o'clock alternation                nothing  R-kinds 9:FAILS 10:FAILS | R-intent 9:FAILS 10:FAILS
+     o'clock alternation                m?       R-kinds 9:FAILS 10:FAILS | R-intent 9:HOLDS 10:HOLDS
+     o'clock alternation                m = 0    R-kinds 9:FAILS 10:HOLDS | R-intent 9:FAILS 10:HOLDS
+     o'clock alternation                m? = 0   R-kinds 9:FAILS 10:HOLDS | R-intent 9:FAILS 10:HOLDS
+   [x = /(?:(?<n>\d),)*/, y = /[a-z]+/] & (n?: <5): 'an x record whose list may be empty, not a y record'
+     ''     x=''     y=None intended HOLDS | R-kinds (n?: <5) HOLDS | R-intent (n?: <5) HOLDS, (n?: <5, x: /(?s).*/) HOLDS
+     '1,'   x='1,'   y=None intended HOLDS | R-kinds (n?: <5) HOLDS | R-intent (n?: <5) HOLDS, (n?: <5, x: /(?s).*/) HOLDS
+     '7,'   x='7,'   y=None intended FAILS | R-kinds (n?: <5) FAILS | R-intent (n?: <5) FAILS, (n?: <5, x: /(?s).*/) FAILS
+     '1,2,' x='1,2,' y=None intended HOLDS | R-kinds (n?: <5) HOLDS | R-intent (n?: <5) HOLDS, (n?: <5, x: /(?s).*/) HOLDS
+     '1,7,' x='1,7,' y=None intended FAILS | R-kinds (n?: <5) FAILS | R-intent (n?: <5) FAILS, (n?: <5, x: /(?s).*/) FAILS
+     'a'    x=None   y='a'  intended FAILS | R-kinds (n?: <5) FAILS | R-intent (n?: <5) HOLDS, (n?: <5, x: /(?s).*/) FAILS
+     'bc'   x=None   y='bc' intended FAILS | R-kinds (n?: <5) FAILS | R-intent (n?: <5) HOLDS, (n?: <5, x: /(?s).*/) FAILS
+
 SUMMARY
-engine cases: 27487, differ: 0; probes/whole-matches: 41141; engine disagreements: 0
+engine cases: 27487, differ: 0; probes/whole-matches: 41148; engine disagreements: 0

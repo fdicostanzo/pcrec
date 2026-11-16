@@ -196,7 +196,7 @@ ns = {}
 exec(src[a0:src.index("\n]\n", a0) + 3], ns)
 SP = ns["SP"]
 S5 = lambda x: canon(x) and int(x) < 5
-sp_t, sp_r, sp_m, keys = {}, {}, {}, []
+sp_t, sp_r, sp_m, keys, SP_KIND = {}, {}, {}, [], {}
 for g, pat, probe, pg, subj, k_set, k_unset, scope in SP:
     assert whole(pat, subj)
     if probe is None:
@@ -208,6 +208,7 @@ for g, pat, probe, pg, subj, k_set, k_unset, scope in SP:
     k = "Z" if kind == "Z" else ("P" if scope != "match" else "U")
     key = (pat, subj)
     keys.append(key)
+    SP_KIND[key] = kind
     # rows whose subject has n in another pass (`a3,`) carry n = 3 there (< 5): the answer is the absent pass's
     sp_t[key] = tup(lambda t: S5(t[0]), [part("T", k)], [D])
     sp_r[key] = tup(lambda t: S5(t[0]), [part("R", k)], [D])
@@ -285,12 +286,12 @@ for rule in ("T", "R"):
 # ENGINE-RUN: R's plain = (?:[0-4],)+ ; today's = (?:[0-4],)* ; R's mark = today's; R's default 9 = (?:[0-4],)+
 LT = "(?:[0-4],)"
 for s in SUBJ_LI:
-    check("LI R plain", LT + ("+" if not SAB else "*"), s, LIA["plain (n: <5)"][1][s])
+    check("LI R plain", LT + "+", s, LIA["plain (n: <5)"][1][s])
     check("LI T plain", LT + "*", s, LIA["plain (n: <5)"][0][s])
     check("LI R mark", LT + "*", s, mk[s])
     check("LI R n=0", LT + "*", s, d0[s])
-    check("LI R n=9", LT + ("+" if not SAB else "*"), s, LIA["(n = 9: <5)"][1][s])
-    check("LI R !plain", "(?!" + LT + ("+" if not SAB else "*") + "$)(?:\\d,)*", s, LIA["!(n: <5)"][1][s])
+    check("LI R n=9", LT + "+", s, LIA["(n = 9: <5)"][1][s])
+    check("LI R !plain", "(?!" + LT + "+" + "$)(?:\\d,)*", s, LIA["!(n: <5)"][1][s])
 
 # =================================================================================================================
 # (OC) occurrences: r := /ab(?<g>[xy])/ over every span on {a,b,x,y} of length 0-6 (5,461). Hits RUN from PCRE2.
@@ -339,7 +340,7 @@ tally("OC", "sub-choice A: all((g: \"x\")) A1 (= plain) vs A2 ('possibly none') 
 mko = {s: plain("R", OC[s], X, G, mark=True) for s in SUBJ_OC}
 tally("OC", "(g?: \"x\") under R vs L52a today", SUBJ_OC, OCA["L52a (m: occurrences(r) & (g: \"x\"))"][0], mko)
 for s in SUBJ_OC:  # ENGINE-RUN: R's L52a = has abx and no aby ; today's = no aby ; R's mark = no aby
-    check("OC R L52a", "(?!(?s:.*)aby)" + ("(?s:.*)abx" if not SAB else "") + "(?s:.*)", s,
+    check("OC R L52a", "(?!(?s:.*)aby)" + "(?s:.*)abx" + "(?s:.*)", s,
           OCA["L52a (m: occurrences(r) & (g: \"x\"))"][1][s])
     check("OC T L52a", "(?!(?s:.*)aby)(?s:.*)", s, OCA["L52a (m: occurrences(r) & (g: \"x\"))"][0][s])
     check("OC R mark", "(?!(?s:.*)aby)(?s:.*)", s, mko[s])
@@ -413,9 +414,9 @@ eq = sum(op_rec("R", s) != op_amp("R", s) for s in SUBJ_OP)
 print("   record vs `&` of its entries under R: %d of %d differ (L3, J9)" % (eq, len(SUBJ_OP)))
 MOVES[("OP", "EQ R")] = (eq, len(SUBJ_OP))
 for s in SUBJ_OP:   # ENGINE-RUN
-    check("OP R rec", "(?:3:15,)" + ("+" if not SAB else "*"), s, OPA["record (h: <10, m: <30)"][1][s])
+    check("OP R rec", "(?:3:15,)" + "+", s, OPA["record (h: <10, m: <30)"][1][s])
     check("OP T rec", "(?:3:15,)*", s, OPA["record (h: <10, m: <30)"][0][s])
-    check("OP R m?", "(?:3(?::15)?,)" + ("+" if not SAB else "*"), s, OPA["record with m? (h: <10, m?: <30)"][1][s])
+    check("OP R m?", "(?:3(?::15)?,)" + "+", s, OPA["record with m? (h: <10, m?: <30)"][1][s])
     check("OP R h?m?", "(?:3(?::15)?,)*", s, OPA["record with h?, m?"][1][s])
 
 # =================================================================================================================
@@ -459,10 +460,10 @@ tally("RZ", "L23 array [(h: <5), (k: 3..7)] (R vs today)", SUBJ_RZ, RZA["arr T"]
 tally("RZ", "P & when((h: <5), (k: 3)) (R vs today)", SUBJ_RZ, RZA["when T"], RZA["when R"])
 Trx, Srx = alt([x for x in D if T37(x)]), alt([x for x in D if S5(x)])
 for s in SUBJ_RZ:   # ENGINE-RUN
-    check("RZ R rec", Trx + "(?:;" + Srx + ")" + ("+" if not SAB else "*"), s, RZA["(h: <5, k: 3..7)"][1][s])
+    check("RZ R rec", Trx + "(?:;" + Srx + ")" + "+", s, RZA["(h: <5, k: 3..7)"][1][s])
     check("RZ R h?", Trx + "(?:;" + Srx + ")*", s, RZA["(h?: <5, k: 3..7)"][1][s])
     # R: when = (h has passes, all < 5, and k = 3) or not (that): zero passes, or some h >= 5
-    check("RZ R when", "3(?:;[0-4])+|\\d(?:;\\d)*;[5-9](?:;\\d)*|" + ("\\d" if not SAB else "3"), s, RZA["when R"][s])
+    check("RZ R when", "3(?:;[0-4])+|\\d(?:;\\d)*;[5-9](?:;\\d)*|" + "\\d", s, RZA["when R"][s])
 
 # (ZE) zero-pass-empty, the corner for a MARKED label: /(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/ & (h?: <$a, k: 3)
 print("\n(ZE) /(?<a>\\d)-(?<k>\\d)(?:;(?<h>\\d))*/ & (h?: <$a, k: 3): the set for h is EMPTY when a = 0")
@@ -527,6 +528,88 @@ hmk = {s: t2("R", s) for s in SUBJ_T2}
 tally("T2", "((h?, m): ...) vs ((h, m): ...) under R (h never absent)", SUBJ_T2, b, hmk, la="h", lb="h?")
 # sub-choice (d): `m? = 0`: D2 the default wins (= m = 0), D3 the mark wins (= m?)
 tally("T2", "(h, m? = 0): D2 (default read) vs D3 (mark read)", SUBJ_T2, d, c, la="D2", lb="D3")
+
+
+# =================================================================================================================
+# (RK) RULINGS R1 (14:15): R-KINDS beside R-INTENT. The manager's reading of the owner's words: two absence kinds,
+# each with its own control. REACHED-EMPTY (RE: a quantifier reached and run zero times, `x*` and, by his 13:29
+# remark, `x?` skipped) is accepted only by the mark `h?`; NEVER-REACHED (NR: an alternative not taken) is handled only
+# by the default `h = v`; `h? = v` reads v on either kind; nothing written: FAIL. A loop never reached because an
+# optional AROUND it was skipped (EO) has two readings: K1 by the optional (RE), K2 by the label's own loop (NR).
+print("\n(RK) R-kinds beside R-intent (rulings R1): what each control does per absence kind")
+
+
+def part_kinds(cls, mark=False, default=None):
+    if mark and default is not None:
+        return ("val", default)
+    if cls == "RE":
+        return PROJ if mark else FAIL
+    if cls == "NR":
+        return ("val", default) if default is not None else FAIL
+    raise KeyError(cls)
+
+
+def kclass(kind, reading):
+    if kind in ("Z", "O"):
+        return "RE"
+    if kind in ("A", "EA"):
+        return "NR"
+    if kind == "EO":
+        return "RE" if reading == "K1" else "NR"
+    raise KeyError(kind)
+
+
+CTRL = [("nothing", False, None), ("n?", True, None), ("n = 3", False, "3"), ("n? = 3", True, "3")]
+for cls in ("RE", "NR"):
+    print("   %-3s %s" % (cls, "  ".join("%s -> %s" % (nm, (lambda r: "v read" if isinstance(r, tuple) else r)(
+        part_kinds(cls, mk, dv))) for nm, mk, dv in CTRL)))
+SPK = {}
+for g, pat, probe, pg, subj, k_set, k_unset, scope in SP:
+    key = (pat, subj)
+    kind = [r for r in SP if (r[1], r[4]) == key][0]
+    # re-read the probed kind from the (SP) pass above (sp_kind)
+    kind = SP_KIND[key]
+    row = {}
+    for reading in ("K1", "K2"):
+        for nm, mk, dv in CTRL:
+            row[(reading, nm)] = tup(lambda t: S5(t[0]), [part_kinds(kclass(kind, reading), mk, dv)], [D])
+    for nm, mk, dv in CTRL:
+        row[("intent", nm)] = tup(lambda t: S5(t[0]), [part("R", "P", mk, dv) if not (mk and dv) else ("val", dv)],
+                                  [D])
+    SPK[key] = row
+    acc = lambda rd: ",".join(nm for nm, _m, _d in CTRL[1:] if row[(rd, nm)]) or "-"
+    print("   %-34s %-9r %-3s accepted by: R-kinds K1 [%s]  K2 [%s]  R-intent [%s]" %
+          (pat, subj, kind, acc("K1"), acc("K2"), acc("intent")))
+for rd in ("K1", "K2", "intent"):
+    for nm, _m, _d in CTRL:
+        split = sum(len({SPK[(p, _r[2])][(rd, nm)] for gg, p, *_r in SP if gg == g}) > 1 for g in {r[0] for r in SP})
+        MOVES[("RK", rd + " " + nm)] = (split, len({r[0] for r in SP}))
+        print("   split groups, %-6s with %-7s written: %d of %d" % (rd, nm, split, len({r[0] for r in SP})))
+
+# the time example: optional minutes (`?`, RE) vs the alternation spelling `(?::(?<m>\d\d)| o'clock)` (NR)
+print("   time example ((h, m ...): >= (9, 30)) on `9`, `10` (minutes absent), two spellings of the optional part")
+for lab, cls in (("t2 optional `(?::(?<m>\\d\\d))?`", "RE"), ("o'clock alternation", "NR")):
+    for nm, mk, dv in (("nothing", False, None), ("m?", True, None), ("m = 0", False, "0"), ("m? = 0", True, "0")):
+        rk = [tup(RT2, [h, part_kinds(cls, mk, dv)], [None, M2]) for h in ("9", "10")]
+        ri = [tup(RT2, [h, ("val", dv) if dv is not None else (PROJ if mk else FAIL)], [None, M2]) for h in ("9", "10")]
+        print("     %-34s %-8s R-kinds 9:%s 10:%s | R-intent 9:%s 10:%s" % (lab, nm, hf(rk[0]), hf(rk[1]),
+                                                                          hf(ri[0]), hf(ri[1])))
+
+# a labelled alternation with a list-valued entry: x records whose list may be empty, never y records
+print("   [x = /(?:(?<n>\\d),)*/, y = /[a-z]+/] & (n?: <5): 'an x record whose list may be empty, not a y record'")
+P_XY = r"(?<x>(?:(?<n>\d),)*)|(?<y>[a-z]+)"
+SUBJ_XY = ["", "1,", "7,", "1,2,", "1,7,", "a", "bc"]
+want = {"": True, "1,": True, "7,": False, "1,2,": True, "1,7,": False, "a": False, "bc": False}
+for s in SUBJ_XY:
+    g = groups(P_XY, s, ["x", "n", "y"])
+    ns_ = s.split(",")[:-1] if g["x"] is not None else []
+    cls = None if ns_ else ("RE" if g["x"] is not None else "NR")
+    rk = all(S5(v) for v in ns_) if ns_ else tup(lambda t: S5(t[0]), [part_kinds(cls, True)], [D])
+    ri = all(S5(v) for v in ns_) if ns_ else tup(lambda t: S5(t[0]), [part("R", "Z", True)], [D])
+    ri2 = ri and g["x"] is not None          # R-intent: (n?: <5, x: /(?s).*/)  (x must have a text, possibly empty)
+    MOVES[("RK", "xy " + s)] = (int(rk != want[s]) + int(ri2 != want[s]), 2)
+    print("     %-6r x=%-6r y=%-4r intended %s | R-kinds (n?: <5) %s | R-intent (n?: <5) %s, (n?: <5, x: /(?s).*/) %s"
+          % (s, g["x"], g["y"], hf(want[s]), hf(rk), hf(ri), hf(ri2)))
 
 # =================================================================================================================
 print("\nSUMMARY")
