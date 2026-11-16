@@ -1,41 +1,47 @@
 # memfn kit — wake-up brief
 
-Rewritten 2026-11-16 03:10 by the kit session (pcrec-memfn): the first mfcard window ended WITHOUT a verdict (see TIMING).
+Rewritten 2026-11-16 17:30 by the kit session (pcrec-memfn). Tonight: the mfcard timing window from 01:00.
 
 ## Who you are
 The kit manager (`/pcrec-memfn-manager`). Main = session `pcrec-main`. Frank rules, mostly via main.
-Ledger/journal branch: worktrees/memfn on lane/memfn-k1108. Delivered unit: lane/memfn-mfind @ 363fec82e (worktrees/mfind).
+Ledger/journal branch: worktrees/memfn on lane/memfn-k1108. Heartbeat cron `17,47` (OWNER=kit); waiting list
+worktrees/.mgr/waiting_on.kit; sabotage ids worktrees/.mgr/sabotage_ids.txt (next free S3260).
 
 ## Read in order
-1. This file. 2. memfn/docs/journal.md, 2026-11-15 entries. 3. responses.md's last `done:` (the unit, flags, validation).
-4. D197 (main decisions.md): the fused mfind row is an UNPICKED measuring instrument; the timing is one-sided.
+1. This file. 2. memfn/docs/journal.md, 2026-11-16 entries. 3. responses.md's last two `done:` lines (R-44, R-45 plan B)
+and the R-45 reply block (rev 6). 4. D197 (the mfind instrument; one-sided timing).
 
-## CURRENT STATE (2026-11-15 19:20)
-- DELIVERED to main: mfind+slotx combined unit, lane/memfn-mfind @ 363fec82e (reviews r5-r9 committed there). All gate
-  stages green (the 628 summary red = a superseded slot stage; ruled green, main told).
-- TIMING (window 11-15 -> 11-16, RUN_ID mfcard-zen4-1): 600-607 GREEN; 608 JMH-avx2libc RED (quiet-gate wait-timeout:
-  load 2.07 vs 2.0, Frank's Steam + claude/code); 609 RED with TWO defects: the avx2libc finalize runs without env $LIBC_ENV
-  (record refuses its own avx2 pin; would fail even with 608 green) and the default JMB card's est rows are noise-REFUSED.
-  Triage: /var/tmp/pcrec-pcrec/scratch/memfn/mfctri/triage.md. NO VERDICT. NEXT: fix jobs/609 (wrap the avx2libc finalize +
-  est calls in env $LIBC_ENV; add a dry-run step that finalizes each arm under its own env) + a one-critic check; then a FRESH
-  window (new RUN_ID, all 10 jobs; not D197's one re-run, there was no verdict) on a night main clears with Frank, Steam closed.
-  Rules for the window itself unchanged: CONFIRM -> CONFIRM_CELLS + 610 only; INCONCLUSIVE -> the one re-run with FIRST_RUNDIR;
-  LOSS settles span_pick row 1 at that level; WIN -> the ruled split shape under its own go.
-- D3 (R-44): lane/memfn-d3wire @ 6af642db1 (worktrees/d3wire); r12 FIX-NOW D3G-1/2/3/4/6 owed (one sonnet lane, then one
-  critic), then deliver to main. Cloud test 505f4d631 GREEN, axes GREEN.
-- R-45 (spans to 4095): READ + acked; reply in responses.md BEFORE any build: one opus design lane + a design critic round.
-- OWED after the window: ADQ-3-3 (a slot sabotage row m8 for the manifest pin site); the guarded witness mfind-long-run wants a shape the cover
-  route never takes (main re-aimed it to 32 sets, f74793d69; stage 2 moves the edge again).
-- worktrees/mfind is pinned in worktrees/.wtprune.keep (timing tree): remove that line after the D197 verdict, then prune.
-- Ideas logged today (memfn/docs/ideas.md): long-span (1)-(4), COVER-CAP stage-2 owner direction (sub-span loops
-  default; three cards; all-inline only as a dial option), covs1 EMITTED-2 near-miss x6.65 fact.
+## CURRENT STATE (2026-11-16 17:30)
+- TIMING TONIGHT: jobs 600-609 QUEUED (box queue, not-before 2026-11-17T01:00, RUN_ID mfcard-zen4-2, FROZEN f6274c11b =
+  lane/memfn-scanrow, merged on main as c9ff8b53d; worktrees/mfind fast-forwarded and pinned in .wtprune.keep). Job set
+  /var/tmp/pcrec-pcrec/scratch/memfn/mcfixa/jobs/ (JF-1 unset GLIBC_TUNABLES; 609 rc follows d197; a refused NON-DECIDING scan
+  row prints "scan unpriced" and never vetoes). Main keeps the box clear from 00:30, load check 00:27; Frank asked to close Steam.
+  If the quiet gate refuses on Frank's processes: REPORT, never retry around it. Verdicts via `scripts/monread kit` (one
+  --wait armed). Rules: CONFIRM -> set CONFIRM_CELLS, queue 610 only; INCONCLUSIVE -> this was the FIRST run (zen4-1 ruled not
+  a run): the ONE re-run with FIRST_RUNDIR(_AVX2)=zen4-2 and a new RUN_ID; a second INCONCLUSIVE = NOT-WIN; LOSS settles
+  span_pick row 1 at that level; WIN -> the ruled split shape under its own go. Replay of zen4-1 under the fixed rule:
+  slot/replay_zen4-1.txt (generic CONFIRM, x86-64/v3 INCONCLUSIVE only because avx2 JMH never ran).
+- DELIVERED + MERGED today: R-44 D3 floor gate (c38f4362b), scanrow harness fix (c9ff8b53d).
+- DELIVERED, awaiting main: R-45 PLAN B lane/memfn-span4k @ 60c2958ae (cloud test + axes GREEN; reviews r27, r28) and the
+  HELD RAISE lane/memfn-span4k-raise @ 9d4907a16 (= 60c2958ae + 1; lands only on main's combined branch over covs2afix, with
+  main's READ-2 asserts + CHECK-1 witness). Witness row (b) follows main's stage-2 B5 text.
+- R-45 FORMS (plan A): GO EFFECTIVE (main, after r45chk) on design rev 6 @ 69acf5376 (lane/memfn-r45). NEXT: brief the forms
+  build lane cut from lane/memfn-span4k 60c2958ae; its first doc edit folds main's K1 (Q1's answer into the reply + which
+  "pcrec's side" items leave the combined branch) and K2 (a bench-run regime's lit-l16 A/A floor cells move to the bench);
+  it also owes R28-2/R28-3 witness rows. Owner rulings: forms now (one joint landing), keep-short-spans NO, near-miss later.
+  Night order: kit form cards first, h frozen by its rule, identity check, then main's width cells on the REBUILT binary.
+  Main asked the bench dev how NOT-WARM/short-subject cells are timed via pcrec-harness --harness=span-head=N.
+- OWED after tonight's verdict: r24 SR-1..SR-4 (scan-row harness notes; never on the frozen tree during the window);
+  ADQ-3-3 (slot sabotage row m8); the mfind-long-run witness shape; remove worktrees/mfind from .wtprune.keep after the verdict.
+- Worktrees to prune when their mtimes age (>120 min): scanrow, tri-span4kax, raisefix (wtprune --apply --force NAME).
 
 ## Lessons (today)
-- A harness-changing lane runs the FULL slot sabotage table before delivery (mcfixa/mcfixb broke anchors + a J4 crash
-  that no review saw).
-- Drill the entry point the window runs (the CLI, by subprocess), not only the imported function (r7 RULE-1).
-- When a fix tolerates a missing field, plant that field deleted from a new-shape record (r8 ADQ-3).
-- A rulings entry written while a lane is finishing is easily missed: check the deliverable applied it.
-- Lanes idle on background watchers despite the brief: nudge them to wait in the foreground with a bound.
-- The box queue orders ready jobs by row length, not by the name's priority number.
-- A job's `expect stages=N` must be counted from the script's echo lines (I miscounted 7 for 6).
+- A timing job set's queue-time check must EXECUTE the job's own calls (an arm_check that re-implements them shares a source
+  with what it controls; r13 JF-2).
+- A refused non-deciding row must never veto a verdict; read "deciding" from one declared source (r13 JF-4).
+- A held commit that builds only on a future combined branch gets reviewed on a combined APPROXIMATION tree (r27: all three
+  blockers were found there).
+- After merging main into a branch that changed a seam signature, grep EVERY caller across the whole tree (lane probes too):
+  r33_sim/probe.c broke cloud axes (AX-1).
+- A new sizing helper's fallback on allocation failure is an absorbed OOM: test-resource's injector caught it (TRI-1).
+- Design replies converge in several short single-critic rounds; drill the rule as WRITTEN each time (r23 dominance, r25 voids).
