@@ -35,6 +35,10 @@ Always on, whatever the situation:
 - **Ask for replies unconditionally** (Frank 2026-11-07): a message that
   needs anything back ends "REPLY: one line, either way"; never "reply only
   if" (peers.md §1).
+- **Questions to the owner carry a word SLUG** (Frank 2026-11-15: "Use slugs for your questions so I can refer
+  exactly"): bold, plain words (`**route-or-stretch**`), reused unchanged in chat and owner.md; he answers
+  "slug: ...". Say which reading of a bare "agree" you took; a consequence YOU derive from his ruling is recorded
+  as yours and checked by the next revision (two derived consequences were wrong that evening).
 - **Purpose over wording** (Frank 2026-11-07: "too literal with exact
   wording compliance"): when a rule's wording and its evident purpose
   diverge, follow the purpose and say so in one line.

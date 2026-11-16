@@ -27847,3 +27847,9 @@ Next
   marked as mine and get checked by the next revision (two were wrong: the padded group, `padded(/\b5/)`).
   (5) A landing lane with no worktree reads GONE in lanewatch --follow; a lane that ends on lanecheck may not have
   dispatched its owed cloud run: check `gh run list --branch` before accepting.
+- LATE (box clock to 23:13): predicate rev 16 merged and pushed (8df2e9da5, CI GREEN); owner rulings after it, all at
+  the tail of COND-FAMILY.md and NOT yet folded (rev 17): tuple compare names = the `lex_` stem with a size suffix
+  over arrays; the compare DECOMPOSED into a projection (map + labels -> array) and an array compare; his
+  exposed-options pointer `(?i=${case})`; **tuple-arg-order** still open with him. Frank lifted the evening hold for
+  this night only; the kit keeps 01:00 for its timing run. Session closed at /close; wake.md rewritten; the slug rule
+  added to the manager skill.
