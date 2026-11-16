@@ -6,6 +6,8 @@ was the latest; the last entry of COND-FAMILY.md is the 2026-11-15 anchoring rul
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - DONE. `docs/design/predicates_draft.md` is rev 12 on branch `lane/predspec12`: the owner's ONE ANCHORING RULE,
   `anchored()` and the naming ruling (CF:1001-1024) folded everywhere the draft spoke of anchoring; `search` marked
   OPEN (name under review) at its definition (§2.6, §8) and in §13 (O61); the open small owner questions carried
