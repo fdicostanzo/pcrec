@@ -2,6 +2,8 @@
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Branch `lane/predspec20`, cut from main aef673e62. Commits: 85cee1967 (evidence), a09f4514d, 655aa0c4c,
   69993e798 (WIP draft), and the final commit carrying this report.
 - Deliverable: `docs/design/predicates_draft.md` rev 20; evidence `docs/dev/lanes/predspec20_check.py`/`.out`.
