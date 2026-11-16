@@ -2374,7 +2374,12 @@ bodies above, with no `hit` label. Under the ONE READING (§4.5) a library body'
 labels read, so the bodies are written for the reading a user expects (rev 9, LEAN): `endsWith`'s gap is LAZY, so its
 argument starts as far LEFT as it can (`endsWith(/(?<n>\d+)/)` on `ab123`: n = `123`; rev 8's greedy `.*` gave n = `3`,
 libpcre2), and `contains` is `occurrences` (§2.6: leftmost hits; rev 8's greedy-lead body read the RIGHTMOST occurrence).
-As SETS nothing changes (a lazy and a greedy gap admit the same strings). `when(c, p)` (`x & when(c, p)` = `(x & c & p) | (x & !c)`). Standard FILTER MODIFIERS (§2.7; each transforms the
+As SETS nothing changes (a lazy and a greedy gap admit the same strings). `when(c, p)` (`x & when(c, p)` = `(x & c & p) | (x & !c)`;
+rev 20: the body is unchanged, its answers move through `!c` where c's label is absent ON A LOOP'S ZERO PASSES:
+lane absimpact's (RZ) 9 of 1,110, `0` FAILED before 14:31 and HOLDS now, and a caller wanting the old answer marks
+c's label. On a SET-ONCE optional label, or a pass that skips it, the mark MOVES the answer instead: unmarked, `(h:
+<5)` FAILS on an absent h before and after 14:31, so `when` = `x & !c` HOLDS; marked, c HOLDS by F1 and `when` = `x &
+p`; joint_condition.md §4H.8). Standard FILTER MODIFIERS (§2.7; each transforms the
 filter, never the subject): `padded(S) := /0*${S}/` (leading zeros before S; rev 14, the owner's body, verbatim; §2.7 BODIES OF THE PROVIDED TRANSFORMS), `any_case(S)` (letter case ignored; a primitive for now, no body, §2.7, §13 O70), `quoted(S)` (only the text inside the quotes read), `length(S)` (the
 subject's length read; a body since rev 15, §2.7), `month_numbered(S)` (a month name read as its number; a body since rev 15, §2.7), string positions `left/right/mid`
 with literal positions (units = characters per the encoding mode; out-of-range: §13 O14). (`json.quoted(S)`, a JSON
@@ -2392,8 +2397,8 @@ string literal read as its decoded text, is CUT in rev 16, §9; the `json` modul
   one-hit TEST of the family, ONE definition (§2.6, §0.1 L58; it also equals `occurrences(x) & some((hit: /(?s).*/))`);
   where no question reads x's labels the compiler may build it as the plain set. The negated test is `!contains(x)`
   (rev 7's `!~`, withdrawn).
-- THE GROUP QUESTIONS over any repeated label (§4.3, stated there once): `some(c)`, `all(c)` (= the plain condition,
-  rarely written), `count(c)`, and the `occurs` module (`occurs := import("occurs")`), which keeps the COUNTS ONLY
+- THE GROUP QUESTIONS over any repeated label (§4.3, stated there once): `some(c)`, `all(c)` (rev 20: c with every
+  label it names MARKED, read F1, the manager's reading; not the plain condition, §4.3), `count(c)`, and the `occurs` module (`occurs := import("occurs")`), which keeps the COUNTS ONLY
   (CF:913): `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`; rev 7's `occurs.some` and `occurs.all` are
   withdrawn (lean: removed, not aliased). `c` is the usual condition, passed as a parenthesised literal
   (`occurs.exactly(1, (name: set))`; C31 RESOLVED); one record = one iteration (SAME ITERATION BY RECORD, §4.3);
@@ -2412,331 +2417,50 @@ string literal read as its decoded text, is CUT in rev 16, §9; the `json` modul
   test belongs to the lowering section of a later revision; the budget is ONE measured quantity shared with the
   class-count refusal, no thresholds in the spec (RULED, CF:977; §13 O39 RESOLVED). A count over a whole block is
   written with the final pattern pinned by `anchored(...)`: searched, a shorter span can pass it (§4.3, §0.1 L66).
-- TUPLE COMPARISONS (rev 16; DECOMPOSED in rev 17; rev 18 applies review r17; rev 19 names the compared fields by
-  the other-side sigil, RULED). The FIXED-SIZE tuple compares, for 2
-  and 3 fields, are IN THE FIRST LIBRARY (RULED, CF:1166 on main: "tuple-compare: agree"); a tuple compare is a library
-  macro, no syntax (RULED, CF:644). NAMES RULED (CF:1223-1227 on main, "tuple_names: a"): the `lex_` stem with a size
-  suffix, over arrays: `lex_ge2`, `lex_le2`, `lex_between2`, `lex_ge3`, `lex_le3`, `lex_between3`. ARGUMENT ORDER
-  RULED (CF:1250-1254 on main, box clock 23:25: "tuple-arg-order: subject low high"): (compared fields, low, high);
-  the at-least and at-most halves take (compared fields, bound).
-  DECOMPOSED (the owner's direction, CF:1229-1248 on main: "that feels like lex_between2 is doing a lot of work. can it
-  be decomposed? to 3 arrays. subject, hi, low", and "what would be needed is a macro that takes a map and produces an
-  array given labels"). PARSING and COMPARING are separate. The AUTHOR's own pattern parses the text and labels the
-  fields; the compare is the composition of two general units, neither of which knows about times or versions:
-  (1) THE PROJECTION, the array of the labels to compare, in the order the compare reads them; (2) THE ARRAY COMPARE,
-  first entry first, over that array and two arrays of numbers. Rev 16's bundled form (field patterns and a separator
-  as arguments, the body's own labels `t1`..`t3`) is WITHDRAWN.
-  WHY A TUPLE COMPARE AND NOT A STRING RANGE (rev 16's reason, restored in rev 18, review r17 F17): as strings `"1.10"`
-  sorts before `"1.4"`, so `between("1.4", "1.10")` is EMPTY, and `between("1.4", "1.9")` also accepts `1.45`; the
-  time range gives the same answers as §2.7's split-fields form (§9).
+- THE JOINT CONDITION'S COMPARISON SETS, IN THE FIRST LIBRARY'S SLOT (rev 20; **retire-paused**, RULED CF 12:51:
+  "retire-paused: agree to split. But the pause on ^ is indefinite and requires real value other than 'override a
+  users own *'"; the record: "the joint condition takes that first-library slot"). Nothing here is a library MACRO:
+  the tuple compare is the comparison sets of §2.4 on a TUPLE ATOM, laid against labels by the joint condition of
+  §4.1. The worked family:
 
-      lex_ge2(s, lo) := [(s[1]: padded(>lo[1])),
-                         (s[1]: padded(==lo[1]), s[2]: padded(>=lo[2]))]
-      lex_le2(s, hi) := [(s[1]: padded(<hi[1])),
-                         (s[1]: padded(==hi[1]), s[2]: padded(<=hi[2]))]
-      lex_between2(s, lo, hi) := lex_ge2(s, lo) & lex_le2(s, hi)
-      lex_ge3(s, lo) := [(s[1]: padded(>lo[1])),
-                         (s[1]: padded(==lo[1]), s[2]: padded(>lo[2])),
-                         (s[1]: padded(==lo[1]), s[2]: padded(==lo[2]), s[3]: padded(>=lo[3]))]
-      lex_le3(s, hi) := the mirror of lex_ge3 (`<` for `>`, `<=` for `>=`)
-      lex_between3(s, lo, hi) := lex_ge3(s, lo) & lex_le3(s, hi)
+      t := /(?<h>\d{1,2}):(?<m>\d\d)/
+      t & ((h, m): padded(between((9, 0), (10, 0))))      # 9:00 to 10:00 inclusive
+      t & ((h, m): padded(>= (9, 30)))                     # at or after 9:30
+      t & ((h, m): padded(> (9, 30)))                      # strictly after 9:30: just `>`
+      semver & ((major, minor, patch): >= (1, 4, 0))       # at least 1.4.0: any number of fields
+      office_hours := padded(between((9, 0), (17, 0)))     # a LIBRARY set: it names no label
+      t & ((h, m): office_hours)
 
-  `s` is THE PROJECTION (rev 19): a spelled array of FIELD REFERENCES written at the call, one per compared field,
-  in the order the compare reads them (`[^h, ^m]`: "h, then m, of the other side of the `&`"; §5.4 `^` row). `lo`
-  and `hi` are arrays of numbers. Each bound is the usual prefix expansion: one `[ ]` read as any one entry (§3.5: an
-  array of conditions is a macro), each entry ONE condition RECORD whose entries are all its tests (the record holds
-  them together, §4.1); between is the two halves joined by `&` (macro & macro, pointwise, §2.1). Rev 16's
-  conditions are unchanged; only where the labels come from moved (rev 17), and how they are named (rev 19).
-  WHAT THE BODIES USE, each against this document's rules (rev 19): (1) `(s[1]: ...)`, a field-reference
-  parameter on the left of `:` in a macro body: §4.1's ONE EXCEPTION, the manager's consequence of the sigil ruling
-  (CF:1311-1313 on main), checked: it collides with no ruled text (§4.1 STATUS); (2) `s[1]`, picking an entry of a
-  spelled array of references by position: §3.2 tool 1 on an array whose entries are references, OPEN as owner
-  question **reference-index** (§13 O75; the owner's test, rulings R-1, is below); (3) `lo[1]` on a spelled array of
-  numerals (an rx, §3.4): §3.2 tool 1 as it stands (RULED CF:553); (4) `padded(>lo[1])`, a parameter as a
-  comparison's atom (§2.4; LEAN, unchanged from rev 16). Nothing is called: no macro is passed, indexed or applied in
-  a body, so rev 18's readings (a) and (b) are NOT ADOPTED (§13 O73: **macro-arguments** answered NO by the owner,
-  rulings R-1).
-  THE OWNER'S TEST APPLIED (rulings R-1: "the general path is that an array of something is that something ... what
-  otherwise is an array of macros?"). By the general path an array of field references IS a field reference, "any one
-  of these fields" (§3.5): `[^h, ^m]` is "h or m", and a body writing `(s: S)` with `s` bound to it means `(h: S) |
-  (m: S)`, the same answer as `[(h: S), (m: S)]` in a filter role (§0.1 L74). That is not what a compare needs: it
-  must read h, THEN m. Picking the k-th written entry (`s[1]`) is what an rx gets from §3.2 tool 1 (`[/a/, /b/]` IS
-  `/a|b/` and its `[1]` is `/a/`, positions kept): applied to an array of references it is the same index on a new
-  kind of entry. Whether that is the existing tool or the "mechanism for very specific use" he refused for macros is
-  HIS call (O75); this document leans EXISTING (the index reads the written entries of a spelled array, which a
-  reference array is; nothing is called, so the fence his answer kept stays untouched), and says plainly that without
-  it the six names have no body: the compare must pick fields in order, and the general path alone gives only "any
-  one". THE PER-LABEL ACCESSORS (`h_is(S) := (h: S)`) and the SECTION `(h:)` LEAVE the examples (CF:1316 on main);
-  the section is recorded under THE PROJECTION (iv).
-  THE COMPARED FIELD COMES FROM THE OTHER SIDE OF THE `&` (the owner's property, CF:1256-1266 on main: "the fact
-  that h: _has_ to come from the left side"; `&` is symmetric, so "left" reads as "the other side"): the sigil
-  says so in its meaning, and nothing names another map; the named-map form `p.h` is NOT adopted ("i'm not sold on
-  \"p =\"", CF:1262). A BARE compared field `[h, m]` is OUT (RULED, CF:1268-1282 on main: "definitely not a bare
-  reference. it might shadow a binding and it wouldn't be clear where it was coming from"; §0.1 L72).
-
-  WORKED EXAMPLES (each subject matched WHOLE by the filter; `docs/dev/lanes/predspec19_check.out` table (W), 60 rows, 0
-  differ from the stated answers; run: `timeout 300 python3 -I docs/dev/lanes/predspec19_check.py`):
-
-      /(?<h>\d{1,2}):(?<m>\d\d)/ & lex_between2([^h, ^m], [9, 0], [10, 0])                  # 9:00 to 10:00
-      /(?<m>\d\d) past (?<h>\d{1,2})/ & lex_between2([^h, ^m], [9, 0], [10, 0])             # the same range, other text order
-      /(?<h>\d{1,2}):(?<m>\d\d):(?<sec>\d\d)/ & lex_between3([^h, ^m, ^sec], [9, 30, 5], [10, 0, 0])
-      /(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)/ & lex_between2([^major, ^minor], [1, 4], [1, 10])   # versions
-      semver & lex_ge3([^major, ^minor, ^patch], [1, 4, 0])                              # the 2026-11-14 record's shape
-      /(?<major>\d+)\.(?<minor>\d+)/ & lex_between2([^major, ^minor], [1, 4], [1, 10])   # \d+ fields (rev 16's row)
-      /(?<h>\d{1,2})(?::(?<m>\d\d))?/ & lex_between2([^h, ^m], [9, 30], [11, 0])           # minutes OPTIONAL (rev 18)
-      P & lex_ge2([^h, ^m], [9, 30]) & !lex_le2([^h, ^m], [9, 30])                    # STRICTLY above 9:30 (rev 18)
-
-  | filter | accepts | rejects |
-  |---|---|---|
-  | the time range | `9:00`, `09:30`, `9:59`, `10:00` | `10:01`, `8:59`, `11:00`, `9:5` (the author's minute field is `\d\d`) |
-  | the same range, labels in the other order | `30 past 9`, `00 past 10` | `01 past 10`, `59 past 8` |
-  | the h:m:s range | `9:30:05`, `09:30:05`, `9:59:59`, `10:00:00` | `9:30:04`, `10:00:01`, `8:59:59`, `9:30` |
-  | the version range | `1.4`, `1.9`, `1.10` | `1.3`, `1.11`, `2.0`, `0.9`, `1.04` (the author's field refuses a leading zero), `1x4` |
-  | semver at least 1.4.0 (`semver` = the three-field canonical pattern) | `1.4.0`, `1.10.2`, `2.0.0` | `1.3.99`, `0.9.9`, `1.04.0` |
-  | the version range with `\d+` fields (restored, review r17 F17) | `1.04`, `01.10`, `1.010` (`padded` ignores leading zeros) | `1.011` |
-  | minutes optional, 9:30 to 11:00 | `10` (decided by h; m never read), `9:45`, `11:00` | `9` (h equals the bound, so m is read, and it is unset), `11` (likewise at the high bound) |
-  | strictly above 9:30, P = the optional-minutes pattern | `9:31`, `10` | `9:30`, `9` (incomparable), `8` |
-  | the time range with bounds written `[09, 00]`, `[10, 00]` | `9:30`, `09:30`, `9:00` | `10:01` |
-
-  The second row is what the decomposition buys: the PROJECTION's order, not the pattern's group order, is the
-  compare's order, so the minutes-first text compares hours first. SEARCHED (rev 18, review r17 F5): every row above
-  is the filter applied to a WHOLE value; a program line is SEARCHED (§2.2, D196), and searched these programs accept
-  out-of-range neighbours through a shorter span: `19:30` (span `9:30`), `10:00:01` (span `10:00`), `19:30:05`, `1.40`
-  and `11.4` (span `1.4`), `1.100` (span `1.10`), `0.1.4.0` (span `1.4.0`) (table (S)), as E-IPV4 states for
-  `256.1.1.1` (§12.3). To compare whole fields, pin the program: `anchored(...)` for the whole subject, or the author's
-  own boundaries in the pattern (`/(?<![\d:])(?<h>\d{1,2}):(?<m>\d\d)(?![\d:])/`, `/(?<![\d.])...(?![\d.])/` for
-  versions): pinned, `19:30`, `10:00:01`, `1.40`, `11.4`, `1.100`, `0.1.4.0` reject, `at 9:30 ok` and `v1.9` accept,
-  and over (D)'s time and version subjects the pinned searched answer equals the whole-value answer (190 cases, 0
-  differ, table (S)).
-  THE RULE CHECK of every example (rev 17, by hand against this document; rev 18 re-checked; rev 19 re-checked over
-  references): `&` of an rx and a macro applies the macro (§2.1); the call record's positional entries fill the
-  required parameters in order (§5.2); `[^h, ^m]` is a spelled array of field references in an argument position
-  (§5.4 `^` row, position (2)); each reference finds its label where a condition written in place of the call would
-  (§4.1's chain lookup), so a projection naming a label the pattern lacks is §4.1's unknown-label error AT THE CALL,
-  listing those available, and a label in two operands of one chain its ambiguity error; in the body `(s[k]: S)` is
-  §4.1's one exception and `s[k]` the index of O75; `[9, 0]` is a spelled array of numerals (§3.4) and `lo[1]` reads
-  it by position (§3.2, RULED CF:553); `padded(>lo[1])` has a parameter as the comparison's atom (§2.4; LEAN); the
-  body's conditions are laid against the call's operand, the very operand the references were resolved against (so
-  §5.4's "another operand" error cannot fire for a call written at the `&`); `semver` is a binding of an rx (§5.1).
-  REV 18'S TWO READINGS, NOT ADOPTED (rev 19): (a) `s[k]` on an array of MACROS is a macro, and (b) a parameter bound
-  to a macro may be CALLED in a plain macro's body (they AMENDED §3.2 tool 1 and §5.3's fence, review r17 F7). The
-  owner answered **macro-arguments** NO (rulings R-1: "i feel like this is creating a bunch of mechanism for very
-  specific use"), and the bodies over references call nothing. §5.3's fence and §5.2's "a section is the one way to
-  leave a hole" stand as written. What the reference bodies need instead is listed above (WHAT THE BODIES USE): one
-  ruled-in change and one open question (O75).
-  EVIDENCE: the family over author patterns (2 and 3 fields, the halves, between, equality and both strict spellings;
-  one population with the labels in the other group order) against integer lexicographic order in PROJECTION order:
-  25,848 cases, 0 differ (table (D), rev 17's populations, every compared label set and digits) and 2,936 for rev 18's
-  strict spelling (table (D')); OPTIONAL and NON-DIGIT compared labels (minutes optional, seconds optional, `\w`
-  fields) against the DECIDED-PREFIX order (caveat (5)): 13,384 cases of the halves, between and equality, 0 differ;
-  rev 18's strict spelling 3,152 cases, 0 differ, rev 17's `P & !lex_le2` / `P & !lex_ge2` 3,152 cases, 230 differ
-  (table (U)); rev 16's bundled bodies against the decomposed form: 7,528 cases, 0 differ (table (R)); a computed
-  label as a field (table (C), 300 cases, 0 differ); libpcre2-8 10.46 and Python 3.14 `re`, 0 engine disagreements.
-  REV 19 (`docs/dev/lanes/predspec19_check.py`/`.out`): every population above RE-RUN with the bodies re-expressed over
-  field references (`(s[k]: ...)`, each reference resolved where written, a reference laid against another operand
-  refused): every table's counts identical to rev 18's, and rev 19's form against rev 18's label-name form on every
-  call: 48,797 calls, 0 differ (table (X)); THE BINDING RULE (table (B)): a reference written at a NESTED `&` (B1, 48
-  cases, 0 differ; the outer operand's fields would differ in 22), passed through a body to the same operand (B2,
-  828, 0 differ), written inside a library body (B3, 1,656, 0 differ), a bound call (B4, 1,656, 0 differ from the
-  direct call, under the lean of O76), passed into a body that lays it against another operand (B5: 828 of 828
-  refused at compile time); worked rows 60, 0 differ (rev 18's 53 and seven LOOPED rows, caveat (6)).
-  THE FAMILY IS SMALL ON PURPOSE (rev 16; the strict spelling CORRECTED in rev 18, review r17 F1): a between and its
-  two halves per size. STRICTLY ABOVE lo is `lex_ge2(s, lo) & !lex_le2(s, lo)`; STRICTLY BELOW hi is
-  `lex_le2(s, hi) & !lex_ge2(s, hi)`; equality is `lex_between2(s, t, t)` (or plain conditions). Rev 16-17's
-  `P & !lex_le2(s, lo)` (P = the author's pattern) is WITHDRAWN: a `!` of a compare is TRUE on a match the compare
-  cannot read (`!` of a failed condition is true, §4.2), so with the minutes optional it accepted `9` as both strictly
-  above AND strictly below 9:30, and with a `\w` field it accepted `ab:00` as above 9:00 (table (U)). The halves gate
-  the negation: the positive half fails on such a match first. THE LANE'S GENERAL FORM: over AUTHOR labels, a `!` of a
-  compare stands only beside the compare's other half.
-  BOUNDS AND LEVELS (rev 17; rev 18 states the bound's reading). The compared side is a projection of LABELS
-  (constrained) and the bounds are VALUES (used): this is §4.1's split, `x:` constrains, `$x` reads. A bound may be a
-  constant (above), a run-time input (`param(...)`, §6.1) or a value of the same match (`lex_ge2([^b1, ^b2], [$a1,
-  $a2])`, which makes each entry a value-vs-value relation, `(b1: padded(>$a1))`, §4.6). HOW A BOUND IS READ (rev 18,
-  review r17 F3; LEAN, this document): a bound is an INTEGER ATOM, read by its VALUE, so its leading zeros do not
-  matter: the literal `09` is 9 (`[09, 00]` = `[9, 0]`), and a captured `$a1` of text `09` is 9. This is this
-  document's reading of §2.4's "no leading zeros ... unless the literal has them", which rev 17 left ambiguous: under
-  the other reading (the literal's own WIDTH: `09` = exactly two digits) `[09, 00]..[10, 00]` silently drops `9:30` and
-  `9:00` (the compared side is padded, the bound is not), and a zero-padded captured bound misorders 30 of 144
-  same-match cases (table (Z)); under the value reading every case agrees (558 cases, 0 differ). §2.4's clause keeps
-  sign and decimal point; a fixed-width comparison is written as a string (`"09"`) or as a pattern. A captured bound
-  has no literal to fix the reading at all (§2.4 REASONING: value vs value needs a declared reading, §13 O27, O48), so
-  for match bounds the value reading is a stated choice, not a consequence: LEAN until O27 is ruled. The compare is
-  DECIDED PER MATCH, at the level its bounds need: with constant bounds every entry is a condition on a label against
-  a fixed set, so the compare is automaton states at the DEFAULT level (§6.1; the one reading, §6.1, prices an
-  ambiguous label), no captured text is read (`captures` is for OUTPUT of spans, §6.2) and no callout runs; with
-  `param` bounds, parametric automata at the default level (§6.1); with bounds from the same match, a relation priced
-  by its class count (§4.6): small at the default level, too large a default-level error naming `functions`,
-  unbounded fields (`\d+`) not regular, `functions` only. The projection itself is compile-time: it expands away into
-  conditions and leaves nothing to run. The default-level claim is REV 17'S OWN (LEAN, DECIDED (52); rev 16 made no
-  level claim for the tuple family; review r17 F14), resting on §6.1 and §4.1 (conditions against fixed sets); table
-  (R) shows ANSWER identity with rev 16's bodies, not the level. The bound kinds are §4.6's and §6.1's existing rules
-  plus the integer reading above.
-  CAVEATS (rev 18; rev 19 re-spelled over references, every answer unchanged, table (X)): (1) rev 16's helper labels `t1`..`t3` are GONE: the compare adds no label, it writes conditions on
-  the author's; the per-call `label =` setting rev 16 proposed for them (decision (46)) is WITHDRAWN. (2) WRONG LENGTH
-  (rev 18, review r17 F6): NOTHING IN THE BODIES REFUSES IT. By §3.2's absent-entry rule a projection or bound SHORTER
-  than the name's size makes the conditions on the missing entry false, so the call silently means something else:
-  `lex_ge3([^h, ^m], [9, 0, 0])` is "strictly above 9:00", `lex_ge2([^h, ^m], [9])` is "h > 9"; a LONGER one
-  has its trailing entries never read (`lex_ge2([^h, ^m, ^sec], [9, 30])` compares h and m only); table (N), 436
-  cases, 0 differ from those readings. Rev 17's "a COMPILE ERROR ... table (W) shows the refusal" had no mechanism:
-  the refusal was the evidence script's own `raise`. The mechanism is OPEN (§13 O72; the lean there: an index past the
-  end of a SPELLED array in a VALUE position is a compile error, which catches the short case). (3) The separator is
-  the author's rx text: rev 16's string-in-a-hole caveat is gone, and `/./` for `/\./` is the author's ordinary rx
-  mistake (it would accept `1x4`). (4) NON-DIGIT FIELDS: a label's text compares as a number only if it is digits (a
-  comparison set holds numerals, §2.4); leading zeros are ignored (`padded`, the `\d+` row above), and an author
-  pattern that must refuse them says so (`/0|[1-9]\d*/`, above). A label whose text is not digits fails every
-  comparison on it, exactly like an unset label (5). The route for a NON-NUMERIC field is to compare a COMPUTED number
-  (§4.4): `mnum := $mname.index`, then `lex_between2([^year, ^mnum], [2024, 3], [2025, 2])` (table (C), 150
-  cases, 0 differ; comparing the month NAME itself never reads past the year). (5) UNSET AND NON-DIGIT FIELDS, ONE
-  READING (rev 18, review r17 F2; LEAN, this document, resting on §4.2): the compare reads a field only when every
-  EARLIER field EQUALS its bound (that is what the prefix expansion does), so an unset or non-digit field makes the
-  match fail the compare ONLY WHEN THE COMPARE REACHES IT; when an earlier field decides, the field is never read.
-  With the minutes optional, `10` IS in 9:30..11:00 and `9` is NOT (table (W)). The order this gives is
-  the DECIDED-PREFIX order (fields first to last; a field that is unset or not digits, reached before the order is
-  decided, makes the match INCOMPARABLE and every form, strict ones included, rejects it): table (U), 0 differ. An
-  author who wants every compared label present says so in the pattern or with a condition (`P & (m: /\d\d/)` fails
-  when m is unset, §4.2); `label.unset` warns. Rev 17's "makes its conditions false, so the compare rejects that
-  match" held only for a field the compare reaches. (6) REPEATED LABELS (rev 18, review r17 F4). (i) A label NAMED
-  TWICE in the projection (`[^h, ^h]`, a slip for `[^h, ^m]`): the conditions are h's twice, so the compare
-  collapses to h alone (`lex_ge2([^h, ^h], [9, 30])` = `h > 9`: `9:45` rejects; with [9, 5] it is `h >= 9`);
-  nothing refuses it, and the dead-branch warning (§5.2) fires only when an entry's two conditions on h cannot both
-  hold (with [9, 30], not with [9, 5]) (table (L1)). Rev 18 said a dedicated diagnostic would need the library to see
-  label names inside the macros it is passed; with references (rev 19) the slip is VISIBLE AT THE CALL, two references
-  to one field in one spelled array, so a warning (`compare.repeated`, proposed) needs no library insight (LEAN: none
-  until a case needs it, D77; §0.1 L75, GAP). (ii) A LOOPED
-  label (a label inside a loop): by the SEQUENCE RULE (RULED, CF:583, predx Q4; §4.3) each condition holds for EVERY
-  iteration and each condition quantifies its own label, so the compare is not a tuple compare per iteration:
-  `/(?:(?<h>\d{1,2}):(?<m>\d\d),)*/ & lex_ge2([^h, ^m], [9, 0])` REJECTS `10:00,9:30,` although every tuple is at
-  least 9:00 (the entry `h == 9 & m >= 0` needs EVERY h to be 9) and accepts the empty list (zero iterations of a
-  reached loop, §4.2) (table (L2): the bodies differ from "every tuple in range" in 16 of 114 cases); the per-tuple
-  compare is the call INSIDE the loop's item (`list_of(P & lex_ge2(...))`-shaped: 0 differ). RULED (rulings R-2,
-  box clock 00:09: "looped-compare: warn"; §13 O74 CLOSED): the meaning above STAYS, and the compiler WARNS,
-  `compare.looped` (§7.1; the name and text LEAN), whenever a compared field can hold more than one occurrence (a
-  reference to a REPEATED label, §4.2's boundary), the hint naming the fix: write the compare inside the loop's item.
-  Worked rows (table (W)): `/(?:(?<h>\d{1,2}):(?<m>\d\d),)*/ & lex_ge2([^h, ^m], [9, 0])` rejects `10:00,9:30,` and
-  `9:30,10:00,`, accepts `10:00,11:00,` and the empty list, and warns `compare.looped` ("h and m can repeat: this
-  compares each field over every iteration; to compare each time, put the compare inside the loop's item"); the fix,
-  the compare inside the item, accepts `10:00,9:30,` and the empty list and rejects `8:59,10:00,`. (7) Cost: one bound is n
-  entries over n labels; the automaton size is UNMEASURED (§13 O57's regime would measure it).
-  ANY NUMBER OF FIELDS is a later item (§13 O69 (3)); rev 18 (review r17 F11) names its GENERAL FORM, which the draft
-  already has: ruled BOUNDED RECURSION by a strictly decreasing literal parameter (§7 STATUS, CF:583; E-DEPTH), with
-  the size passed as a literal, gives the array compare for any n:
-
-      lg(1, n, s, lo) := (s[n]: padded(>=lo[n]))
-      lg(j, n, s, lo) := [(s[n-j+1]: padded(>lo[n-j+1])), (s[n-j+1]: padded(==lo[n-j+1])) & lg(j - 1, n, s, lo)]
-      lex_ge(n, s, lo) := lg(n, n, s, lo)
-
-  whose n = 2 and n = 3 expansions are the bodies above (`&` distributes over an array's entries, §3.2 tool 2); the
-  six sized names become instances (`lex_ge2(s, lo) := lex_ge(2, s, lo)`). It recurses on an OFFSET, not a slice,
-  because indexing keeps original positions (§3.2 tool 1). What it waits on is narrower than rev 17 said ("a
-  structural macro with a running prefix"): O21 (a base case by literal argument as a general feature) and
-  compile-time ARITHMETIC ON A LITERAL PARAMETER INSIDE AN INDEX (`s[n-j+1]`; E-DEPTH does `k - 1` only as an
-  argument; rev 19: on the left of `:` that index is also outside §4.1's one exception, which admits a LITERAL index
-  only, so the trigger widens that exception too). The natural-order range (§13 O68) stays a later item, behind the tuple compare. The phase-1 spelling
-  WITHOUT the library still works: "version at least 1.4" is `semver & ((major: >=2) | (major: 1, minor: >=4))` (§4.1).
-  NAMING: settled (above). Rev 16's candidates (b) `pair_between`/`triple_between`, positional, and (c)
-  `tuple_between2` are not adopted. The 2026-11-14 record's spelling `lex_ge([major, minor, patch], [1, 4, 0])` (CF:648)
-  wrote the labels bare, as values (§13 C13); a bare compared field is now RULED out (CF:1268-1282 on main), and the
-  decomposed form reaches the record's shape with each label named by the other-side sigil (RULED, CF:1304-1316 on
-  main), `lex_ge3([^major, ^minor, ^patch], [1, 4, 0])`: the record's shape with one mark per field.
-
-  THE PROJECTION (rev 17; the owner's "a macro that takes a map and produces an array given labels", CF:1241 on main;
-  "map is an interface in his model", the record, CF:1243). Ways it could exist, against this document's rules:
-  (i) A PLAIN MACRO taking label NAMES, `project(names)` giving the array: NOT EXPRESSIBLE UNDER THIS DOCUMENT'S
-  READING. A label name would be a value (§13 C13, open, the lean against: values are `$x`), and the body would need a
-  label path built from a parameter. The premise that the left of `:` is "a path written in the program, never an
-  expression" is THIS DOCUMENT'S READING (LEAN), not a ruling (rev 18, review r17 F8; rev 17 marked it RULED CF:595):
-  CF:595-597 rules the CONCEPT, one condition form `label: set`; the path on the left of `:` is the manager's proposal
-  (CF:275), and no owner sentence says a label position cannot take a macro PARAMETER; the record itself left "a
-  PARAMETER AS A LABEL NAME" to check (CF:1239-1240), and the named-map form and the other-side mark (iv) need exactly
-  that change; rev 19 ADOPTS it in its narrowest form (§4.1's one exception: a parameter bound to a field REFERENCE,
-  written as a path at the call), which still builds no name from a value, so (i) stays NOT EXPRESSIBLE. The only place a name is built from a value today is a GROUP-NAME hole in rx text (§5.4 `${ }` row),
-  which DEFINES a group and reads none. It would also buy nothing here: the author names the labels either way.
-  (ii) A SMALL STRUCTURAL PRIMITIVE reading the operand's map interface at the given labels: NOT NEEDED for labels the
-  author names. It would be needed only to COMPUTE the label list from a pattern ("all of v's labels in group order",
-  §13 C25 reading (B)), a later need with that trigger (D77).
-  (iii) SPELLED DIRECTLY: YES, in the FIELD form, now as FIELD REFERENCES (rev 19). The map is never passed: an
-  interface is never a value (RULED, CF:890-891) and the operand is never an argument (RULED, CF:749), so the map
-  ARRIVES THROUGH `&` when the composed condition meets the author's pattern; the projection is the array of the
-  compared fields, each a reference `^h` naming one field of that operand (rev 17-18: each the label's condition with
-  its set open, an accessor `h_is` or the section `(h:)`). The VALUES form `[$h, $m]` is writable (each `$h` a
-  one-string set, §5.4) but cannot be the compared side: a value is never constrained (§4.1), and a compare must
-  constrain what it compares (§0.1 L73). It is the right form for BOUNDS taken from the match (BOUNDS AND LEVELS).
-  (iv) THE SPELLING, RULED (rev 19; CF:1304-1316 on main): the compared fields are named by a SIGIL before a label
-  path, "this label, of the other side of the `&`" (placeholder `^h`; his idea at CF:1295-1302 reshaped rev 18's
-  mark plus `.`, `^.h`, into a sigil, so the other side is never a thing in its own right and the question of the mark
-  standing alone does not arise). CONSIDERED AND NOT ADOPTED: the SECTION OF THE CONDITION `(h:)` (rev 17-18; the
-  owner's earlier lean, CF:1262-1266, and this document's rev 18 lean). His reason, his words: "i like a lot about the
-  section but its re-using a syntax for a different purpose" (CF:1307). The DOOR HE LEFT OPEN: "the save would be if
-  the section syntax were defined in such a way that that worked. but i don't see it" (CF:1307-1308): a definition of
-  sections under which `(h:)` follows (a section of the condition operator whose open part is the set) would reopen it;
-  none is proposed here, and its two novelties (the first section of an operator other than `&`, and the first open
-  on the RIGHT, review r17 F12) and its look-alike with §2.3's `(a: digit)(x)` (review r17 F21) stay on record for
-  whoever tries. The superseded `^.h` and the section are §0.1 L77's errors.
-  RECOMMENDATION: none needed for the spelling (ruled). Reading the owner's "produces an array" as an array of field
-  REFERENCES (rev 17-18: label CONDITIONS) rather than of VALUES is this document's consequence of §4.1's split
-  (`x:` constrains, `$x` reads, and now `^x` refers), not his words.
-
-  THE FIELD REFERENCE (rev 19; the sigil ruling, CF:1304-1316 on main; defined once in §5.4's `^` row, with §4.1's
-  one exception and §3.2 tool 1 / §3.5 for arrays of them). Summary: `^h` (also `^d.year`, `^mnum`) is a compile-time
-  NAME OF ONE FIELD OF ONE OPERAND, neither a value nor a condition; it stands only as a call's argument or an entry of
-  a spelled array that is one; it is resolved WHERE IT IS WRITTEN, to the field a condition `(h: S)` written in place
-  of the call would read; a body may only pass it along or put it on the left of `:` (through its parameter, literal
-  index only), against the same operand. Each label then has three spellings with one role each: `h:` constrains,
-  `$h` reads, `^h` refers (the manager's note, CF:1299-1302 on main). `^` inside `/.../` stays PCRE's anchor; the
-  symbol is the spelling step's.
-  BINDING, WRITTEN versus PASSED. The owner's value: the reader can see where the field comes from ("it wouldn't be
-  clear where it was coming from", CF:1270-1271). The manager's lean (CF:1280, not ruled): lexically, the `&` of the
-  place it is WRITTEN. This document states it as: the operand a condition written in place of the CALL the reference
-  stands in would read. The two agree wherever the call is written as an `&` operand (every row of this section and of
-  table (B) but B4): at a nested `&` the inner one (B1: `P & (t: Q & lex_ge2([^h, ^m], lo))` reads Q's h; reading P's
-  would differ in 22 of 48 cases); written inside a library body (`at_least(x, lo) := x & lex_ge2([^h, ^m], lo)`), the
-  body's own `&` (B3, 0 differ); written at the call site and PASSED into a body (`wrap(s, lo) := lex_ge2(s, lo)`), it
-  keeps the caller's operand (B2, 0 differ), and a body that lays it against ANOTHER operand (`inner(s, lo) := Q &
-  lex_ge2(s, lo)`) is a compile error naming both (B5: 828 of 828 refused, none answered). They DIFFER for a call
-  bound by name before it meets `&` (`late := lex_ge2([^h, ^m], [9, 30])`, then `P & late`): this document resolves
-  it where the bound macro's operand is filled (B4: 1,656 cases, 0 differ from the direct call), as a bound condition
-  `c := (h: >9)` already reads whatever operand fills it, keeping §0.1 L2 (a binding = its expansion); the strictly
-  visible-`&` reading refuses it ("no `&` in sight"). Owner question **bound-reference** (§13 O76; §0.1 L81).
-  NO `&` IN SIGHT. A reference whose call never meets an operand is the unapplied-macro error of the call (§2.3:
-  `lex_ge2([^h], [9])` alone as a program); a reference outside the two positions is the `^` row's error with its fix.
-  UNSET, REPEATED, COMPUTED. A reference to an UNSET label is legal; the conditions on it fail per match (§4.2), only
-  when the compare reaches the field (caveat (5)). To a REPEATED label: the sequence rule, `compare.looped` warns
-  (caveat (6), RULED R-2). To a COMPUTED label (`mnum := $mname.index`; the owner's pointer, CF:1284-1293 on main,
-  LOW WEIGHT, he does not recall asking; rev 18 had checked it): a computed label IS a label of the pattern whose
-  labels it reads (§4.4) and a field of its map (§0.3 "label", §3.2 tool 4), so `^mnum` is found by the same lookup as
-  `(mnum: S)`: `ym & lex_between2([^year, ^mnum], [2024, 3], [2025, 2])` (table (C), 0 differ). SHADOWING: the bare
-  `mnum` names the BINDING, `^mnum` the field of the other side, `$mnum` its value: three spellings, three roles, and
-  no bare reference (RULED); if the operand has no such computed label (a binding attached elsewhere, §13 O19) the
-  lookup's unknown-label error fires at the call. For VALUES (§0.1 L37, §13 C13: `==wd` vs `==$wd`) the owner's two
-  reasons apply equally (THE LANE'S CONSEQUENCE, LEAN, rev 18; unchanged).
-  THE CENSUS (G0b: every occurrence has ONE meaning), run over every `^` this document writes outside rx text (rev 19,
-  by hand; the occurrences are this section's rows, caveats, table (B)'s programs and §0.1 L72-L81):
-
-  | occurrence (shape) | position (`^` row) | names | one meaning? |
-  |---|---|---|---|
-  | `P & lex_between2([^h, ^m], ...)`, every worked row, the `past` row, h:m:s, versions, semver, `\d+` fields, optional minutes, leading-zero bounds | (2) entries of an argument array | P's h, m (the other side of that `&`) | yes |
-  | `P & lex_ge2([^h, ^m], lo) & !lex_le2([^h, ^m], lo)` (strict) | (2), twice, the second under prefix `!` | P's h, m in both: `!` makes a macro with its operand open (§2.2), filled by the same chain (§4.1's lookup) | yes |
-  | `ym & lex_between2([^year, ^mnum], ...)` | (2) | ym's group year, its computed label mnum | yes |
-  | `lex_ge2([^b1, ^b2], [$a1, $a2])` | (2); the bounds are values | the operand's b1, b2; `$a1` reads a1's text | yes |
-  | `/(?:...)*/ & lex_ge2([^h, ^m], [9, 0])` (looped) | (2) | the loop's h, m, every iteration; `compare.looped` | yes |
-  | `lex_ge2([^h, ^h], lo)`, `lex_ge3([^h, ^m], [9, 0, 0])`, `lex_ge2([^h, ^m, ^sec], [9, 30])` (slips, wrong length) | (2) | the operand's fields; the slip's meaning is caveat (2), (6) | yes |
-  | `P & (t: Q & lex_ge2([^h, ^m], lo))` (B1) | (2), inside a condition's set | Q's h, m | yes |
-  | `at_least(x, lo) := x & lex_ge2([^h, ^m], lo)` (B3) | (2), written in a body | x's h, m | yes |
-  | `P & wrap([^h, ^m], lo)` (B2); `P & inner([^h, ^m], lo)` (B5) | (2), passed into a body | P's h, m in both; B5 is the error, not a second meaning | yes |
-  | `late := lex_ge2([^h, ^m], [9, 30])` (B4) | (2), in a bound call | the field of whatever fills late's operand | yes under the lean; the strict reading makes it an error (O76) |
-  | `is_late(^h)` (§0.1 L76) | (1) an argument | the operand's h | yes |
-  | `(^h: S)`, `P & ^h`, `[^a1, ^a2]` as bounds, `${^h}`, `r := ^h`, `^.h`, `(h:)` | none (errors, §0.1 L73, L77, L78) | | errors, so no meaning to split |
-  | `(s[k]: S)` in a body, `s` bound to `[^h, ^m]` | §4.1's one exception | entry k of the array, a reference | ONE meaning only if `[k]` after a reference PARAMETER is the entry pick; §3.2 tool 1 reads `[n]` on the left of `:` as an ITERATION index (`(x[2]: S)`), so this is the collision of O75 |
-
-  The last row is the one point where the census does NOT pass under the rules as written: `[n]` on the left of `:`
-  reads ITERATIONS by §3.2 tool 1's position rule (LEAN, review r10 FIXA-2), while the bodies need it to pick an
-  ENTRY of the reference array. With a parameter `f` bound to the single reference `^h` of a repeated label,
-  `(f[2]: S)` would read either "iteration 2 of h" (the position rule) or "entry 2 of a one-entry array" (absent,
-  false). This document's lean resolves it with rules it already has: a passed reference cannot be EXTENDED (§4.1:
-  the path is whole where written), so after a reference parameter `[k]` can only be the entry pick, and an iteration
-  index is written in the path at the call (`^h[2]`); that gives one meaning per occurrence, at the price of one
-  more stated exception to the position rule. STOP-RULE ITEM (the brief's): it is brought to the owner as part of
-  **reference-index** (§13 O75), not adopted quietly.
+  (1) RETIRED (CF 12:51): the six names `lex_ge2` .. `lex_between3` (CF:1226), their argument order (CF:1253), the
+  fixed-size compares' first-library slot (CF:1166), and with them rev 16-19's bodies, the projection, the strict
+  spelling `lex_ge2(s, lo) & !lex_le2(s, lo)` (now `>`), and the any-number recursion `lex_ge(n, s, lo)` (any arity
+  is native, §2.4; **first-rest** PARKED, `predicates_future.md` item 1). They are NOT kept as library macros over the
+  joint condition (the manager's reading of "agree", **library-not-syntax**, CF 12:48: "they are left out of the first
+  library until someone asks"). Their text is the record in §16.
+  (2) THE DECIDED-PREFIX ORDER (rev 18 caveat (5): a field read only when every earlier field equals its bound) is
+  WITHDRAWN (RULED, **unset-component**, CF 11:05: "unset-component: yes"): every component is read (§2.4, DOM) and an
+  absent label FAILS the condition unless the author marks it or gives it a default (§4.2). Answers MOVE: `t2 & ((h,
+  m): padded(between((9, 30), (11, 0))))` on `10` was accepted by rev 18-19 and FAILS now; `((h, m = 0): ...)` and
+  `((h, m?): ...)` are the author's two controls (table (TM2), §4.2).
+  (3) A BOUND FROM THE MATCH, `> ($sh, $sm)`: a §4.6 relation priced by class count (joint_condition.md table (SE):
+  168 classes, 13,328 cases, 0 differ, `jcfold_check.out`); a `$` component is read by its VALUE, leading zeros
+  ignored (§2.4; rev 18's LEAN for bounds, pending O27, survives here).
+  (4) OVER A LOOP (rev 19 caveat (6), restated): a joint condition over looped labels is tested PER PASS of the
+  pairing loop (§4.3, RULED **joint-loops** CF 11:17): `list := /(?:(?<h>\d{1,2}):(?<m>\d\d),)*/`, `list & ((h, m):
+  padded(>= (9, 0)))` is "every time in the list", and it draws NO warning. ZERO PASSES: rev 19's "accept the empty
+  list" becomes FAIL ON THE EMPTY LIST UNLESS THE LOOPED LABEL IS MARKED (**absent-rule**, CF 14:31): on
+  `/(?:(?<h>\d{1,2})(?::(?<m>\d\d))?,)*/` the subjects `''` / `10,` / `9,` / `9:45,` / `10,9:15,` give, with R =
+  `padded(>= (9, 30))`: `((h, m): R)` F F F H F; `((h, m?): R)` F H H H F; `((h?, m = 0): R)` H H F H F; `((h?, m?):
+  R)` H H H H F (joint_condition.md table (TM2-L), `absfold_check.out`). The empty list needs the mark on h, the label
+  the zero passes leave absent. The looped warning (rulings R-2, CF 00:09: "looped-compare: warn") MOVED onto a
+  hand-written `|` of conditions whose labels can repeat (§7.1).
+  (5) LEVEL: default. With constant bounds the SET of every joint condition is a FINITE UNION OF PRODUCTS of
+  per-label constant sets (§6.1); `>= (b1, ..., bk)` is k products (table (X): 24,420 cases, 0 differ,
+  `jointexp_check.out`); `between(lo, hi)` at most 2k - 1 after merging the shared prefix (table (RC): k = 2, 3, 4
+  over 5,491 bound pairs, the maximum reached and never exceeded, 0 differ, `jcfold_check.out`). All re-run byte for
+  byte in `predspec20_check.out` PART A.
+  (6) THE BOUNDARY with a function of the fields (weekday, day differences): out of reach of a set written in the
+  language; computed labels keep it (§4.4).
 
 - `assert` (§5.6): `some`, `none`, `same`.
 Candidate content (a follow-up initiative): network, time, identifiers, communication, checksummed numbers; each
@@ -2756,8 +2480,13 @@ memfn/. A callout in DFA context returns a DFA-friendly verb; plain FAIL needs t
 fallback: LEAN (CF:823, "perhaps the solution is both"). `count()` refused only on BUDGET, `occurs` recommended to
 reduce states, no positional rule: RULED (CF:832: "i would refuse count() on budget or as a recommended way to reduce
 states rather than rules"); the budget as ONE labelled measured quantity, no thresholds in the spec: RULED (CF:977, to CF:974-975; §13 O39). The
-automatic rewrite: RULED as a LATER plan item (CF:840). Tuples as a library macro: RULED (CF:644), SUPERSEDES predx's
-tuple-on-the-left-of-`:` syntax (S12); the fixed-size compares (2 and 3 fields) in the first library: RULED (rev 16,
+automatic rewrite: RULED as a LATER plan item (CF:840). REV 20: the joint condition's comparison sets in the
+first-library slot: RULED (**retire-paused** CF 12:51; the sets themselves J1-J9, §4.1, §2.4); a tuple left of `:`
+is ruled syntax (**library-not-syntax** CF 12:48, which WITHDRAWS BY NAME the 2026-11-14 TUPLE CONDITIONS sentence,
+CF:648; the rest of the CF:644-650 entry, ARRAYS OF FILTERS and ENUMERATE, STANDS); the `lex_` names, the order and
+the slot RETIRED, the sigil PAUSED INDEFINITELY (CF 12:51); the record of all of it: §16. The rev 16-19 status
+below is HISTORY: "Tuples as a library macro: RULED (CF:644), SUPERSEDES predx's
+tuple-on-the-left-of-`:` syntax (S12)" moves to the superseded record (§16); the fixed-size compares (2 and 3 fields) in the first library: RULED (rev 16,
 CF:1166 on main); the names, the `lex_` stem with a size suffix over arrays: RULED (rev 17, CF:1226 on main,
 "tuple_names: a"); the argument order (compared fields, low, high): RULED (rev 17, CF:1250-1254 on main,
 "tuple-arg-order: subject low high"); the DECOMPOSITION into a projection and an array compare over the author's own
@@ -2807,8 +2536,8 @@ Where the draft used it (a time range) the example is written with SPLIT FIELDS 
 `/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: padded(between(9, 10))) & when((h: padded(==10)), (m: "00"))`, which accepts
 `9:00`, `09:30`, `10:00` and rejects `10:01`, `8:59`, the same answers as the cut form on every subject tried;
 libpcre2-8 10.46 and Python `re`, `docs/dev/lanes/predspec14_anchor.out`, R-4 table); `compare.width` keeps its
-warning and suggests that form or, since rev 16, the tuple compare (§8 TUPLE COMPARISONS; rev 18, review r17 F18:
-§2.7 already said both). The natural-order range is a later item (§13 O68).
+warning and suggests that form or (rev 20) the joint condition's comparison set, `t & ((h, m): padded(between((9,
+0), (10, 0))))` (§8, §2.4; rev 16-19 named the retired tuple compare here, §16). The natural-order range is a later item (§13 O68).
 
 ALSO CUT (rev 16; RULED, CF:1180-1181 on main, "cut-json-quoted: agree"): the transform `json.quoted(S)` ("the
 filter reads a JSON string literal as its decoded text"; rev 2's `jstr`). The reason, in this document's voice: its
@@ -3227,8 +2956,8 @@ is an array of ordered entries, read as any one entry under `&` (an alternation 
 or needs a record on the left of a binding (§0.2); no case uses search (`~`: 0 uses), so the owner's search-result
 note (CF:880-887) changes none of them. OPEN items that touch cases without changing their spelling: the module
 bindings (`json := import("json")`, E-JSONL, E-IPV4, E-HTTP, E-DEPTH; §13 O46); a condition passed as an argument
-(E-HTTP; now stated in §5.4's `( label: S, ... )` row, §13 O45); a computed label read BARE as an operand (E-CAL's
-`<=dim`, E-RFC's `==wd`; §13 C13, lean `<=$dim`, `==$wd`); the dot family (E-RFC's `.index`, `$rest.year`; §13 O31).
+(E-HTTP; now stated in §5.4's `( label: S, ... )` row, §13 O45); a computed label read as an operand (E-CAL's
+`<=$dim`, E-RFC's `==$wd`; §13 C13 RESOLVED in rev 20, **colon-scope** CF 11:32; rev 19 wrote both bare); the dot family (E-RFC's `.index`, `$rest.year`; §13 O31).
 E-RFC's `$mname.index` now has one parse, `$(mname.index)` (§5.4 `$` row; review r8 P6-6).
 
 REV 8 RE-CHECK (per-case record in `docs/dev/lanes/predspec8_report.md`, EXAMPLES RE-CHECKED): all twelve cases are
@@ -3273,7 +3002,9 @@ MARKED: E-DEPTH needs the unruled multi-clause definition (§13 O21; review r10 
 scoped body and exposes `hit` (no condition reads it); no case reads a label inside an optional part of a repeated
 group (the per-iteration reading, SIM-2), an argument with a backreference or conditional (SIM-1), a `$` before a
 final newline in a filter (SIM-5), or two spellings of one labelled operand (FIXB-1); E-HTTP's `name` loop is always
-REACHED (the block is the loop), so the per-match zero-iteration rule changes nothing there.
+REACHED (the block is the loop), so the per-match zero-iteration rule changes nothing there. [REV 20: the
+absent-label rule (**absent-rule**, CF 14:31) changes nothing there either: 0 of the twelve worked answers move
+(lane absimpact's census, `absimpact_check.out`, re-run byte for byte in `predspec20_check.out`).]
 
 REV 11 RE-APPLIED UNDER THE ANCHORING RULING, EACH CASE IN ITS REAL MODE (review r12 SIMULATE-1; per-case table in
 `docs/dev/lanes/predspec11_report.md`, ROWS AND EXAMPLES RE-APPLIED). The ruling (CF:991-996) changes a case only
@@ -3317,7 +3048,7 @@ CONSISTENCY SWEEP). CODE LINES: unchanged. ANSWERS: E-CTX-5's stated equivalence
 `5`, the `^` sitting in a hole of `padded`'s ruled body; still no error, and the program has no subject). WARNINGS:
 E-CTX-1 and E-CTX-7 now draw `anchor.whole` (an anchor in a `label:` condition, every filter role RULED); their
 answers and no-error verdicts stand. Every other case: unchanged (`padded(between(...))` in E-WEEKDAY and E-IPV4's prose (it admits `01`), and
-`padded(<=dim)` in E-CAL accept the same strings under the body: digits with leading zeros, `predspec14_anchor.out`
+`padded(<=dim)` (rev 20: `padded(<=$dim)`) in E-CAL accept the same strings under the body: digits with leading zeros, `predspec14_anchor.out`
 R-2 table; E-HTTP's `anchored(block)` is a final pattern, no warning; no case writes `anchored` in a hole).
 
 REV 15 RE-APPLIED (review r16; CF:1150-1162 on main; per-case list in `docs/dev/lanes/predspec15_report.md`, FINDINGS
@@ -3341,6 +3072,10 @@ transform staying a primitive; no case used a tuple compare, and the tuple famil
 §8). The two-way census: `contains(...)` still has E-JSONL; the tuple compares have no §12 case (§8's rows).
 REV 17 RE-APPLIED: no case changes (no case uses a tuple compare; the decomposition and the names move §8 only); the
 census row for the tuple compares names the ruled names and the decomposed shape.
+REV 20 RE-APPLIED: E-CAL's `<=dim` and E-RFC's `==wd` become `<=$dim`, `==$wd` (C13 RESOLVED); E-CAL gains the
+declared-table second spelling (§12.5); no other case changes. The absent-label rule moves 0 of the twelve worked
+answers. The census rows for the tuple compares and the field reference are restated: the joint condition replaces
+the first, the second is PAUSED (§16); no §12 case used either.
 
 THE TWO-WAY CENSUS (G0b; review r8 P6-9, OWNER-12). G1's check runs case -> construct (every case uses only §§2-8);
 this table runs construct -> case. Counts are uses in §12's code lines, comments stripped (command in
@@ -3357,9 +3092,10 @@ the owner decides which stay in phase 1 (§0.2).
 | `some(...)`, `all(...)` | none (the two `some(` hits are `@assert.some`) | CF:912-914 (accepted at CF:905; `some()` is his own question, CF:904-905) |
 | `contains(...)` | E-JSONL | standard library (§8) |
 | `anchored(...)` | E-HTTP (rev 13) | standard library (§8); RULED (CF:1005, exact ends CF:1048-1053 on main) |
-| the fixed-size tuple compares (`lex_between2` and family, decomposed: a projection of the author's labels and an array compare) | none (§8 carries their worked rows, rev 16-19) | in the first library: RULED (CF:1166 on main); names and argument order: RULED (rev 17, CF:1226 and CF:1250-1254 on main); the family, bodies and projection's field form: LEAN (§8); the compared fields named by the other-side sigil (never bare): RULED (CF:1268-1282, CF:1304-1316 on main) |
-| the field reference `^h` (rev 19) | none (§8's tuple rows and table (B)) | RULED with the tuple compares (CF:1304-1316 on main); its positions and binding: LEAN (§5.4 `^` row) |
-| positional `X[...]` | none (the tuple compares' bodies use it on spelled arrays, §8, rev 18; on an array of field references, rev 19, OPEN O75) | RULED (CF:553); the owner's search example reads one iteration by it (`$m.hit[2]`, §2.6), at the `captures` level (LEAN) |
+| the joint condition `((p1, ..., pk): R)` and its comparison sets on tuple atoms (rev 20; rev 16-19's `lex_` family RETIRED, §16) | E-CAL's second spelling (§12.5) | RULED (**record-is-product** CF 11:35, **colon-scope** 11:32, **set-arity** 10:26, **two-orders** 11:20, **modifier-lift** 11:27, **joint-loops** 11:17; §4.1, §2.4) |
+| the label controls `h?` (the mark) and `h = v` (the default) (rev 20) | none | RULED (**absent-rule** CF 14:31; the default 10:37-11:05); spellings placeholders (§4.2) |
+| the field reference `^h` (rev 19) | none | PAUSED INDEFINITELY (**retire-paused** CF 12:51); out of rev 20's language (§16) |
+| positional `X[...]` | none (rev 18-19's tuple bodies used it, RETIRED with them, §16) | RULED (CF:553); the owner's search example reads one iteration by it (`$m.hit[2]`, §2.6), at the `captures` level (LEAN) |
 | `where`, `where_group`, `each_group` | none | LEAN (§3.2, §5.3); candidate cut |
 | `when(c, p)` | none | RULED (CF:184, "Add when") |
 | typed parameters `m(x: T)`, `pure`, `pattern()` | none | OUT of phase 1 (CF:889); in the design for "more thinking"; §13 O48 |
@@ -3440,7 +3176,7 @@ fails `startsWith("4")`). Whether `luhn` skips the spaces: §13 O8.
 
     # isodate as in 12.2
     dim   := days_in($year, $month)             # computed label: 24 classes (12 months x leap)
-    valid := isodate & (day: padded(<=dim))
+    valid := isodate & (day: padded(<=$dim))
     @assert.some("2024-02-29" & valid)
     @assert.none("2023-02-29" & valid)
     valid
@@ -3448,7 +3184,17 @@ fails `startsWith("4")`). Whether `luhn` skips the spaces: §13 O8.
 A value-vs-value relation with class count 24 (§4.6): one automaton. `days_in` is a value macro whose parameters
 are the two captured strings; the leap test (`$year & leap`) sits inside it, so no rx is called with an operand
 (§2.3; rev 4 wrote `days_in($month, leap($year))`, which called the rx `leap` with the operand and used its result
-as a truth value). `<=dim` reads the computed label BARE: §13 C13 (lean `<=$dim`; review r8 SIM-8). LEVEL:
+as a truth value). REV 20: `<=$dim` reads the computed label with `$` (§13 C13 RESOLVED, **colon-scope** CF 11:32;
+rev 19 wrote the bare `<=dim`, review r8 SIM-8). A SECOND SPELLING (rev 20; joint_condition.md §5 problem 4, table
+(C4): 468 cases, 0 differ, `jointexp_check.out`, re-run byte for byte in `predspec20_check.out`), a DECLARED TABLE
+of products, the label-free library SET the joint condition makes possible:
+
+    month_days := (padded(1 | 3 | 5 | 7 | 8 | 10 | 12), padded(between(1, 31)))
+                | (padded(4 | 6 | 9 | 11),              padded(between(1, 30)))
+                | (padded(2),                           padded(between(1, 28)))
+    valid2 := isodate & (((month, day): month_days) | (year: leap, month: padded(2), day: 29))
+
+`month_days` names no label: the author names them in the condition. LEVEL:
 default. Expected (whole subject):
 `2024-02-29` in; `2023-02-29` out; `2024-04-31` out; `2024-13-01` out (not an isodate). The notes' `month: \d\d &
 between(1,12)` is WRONG (only 10, 11, 12 pass): C9, confirmed CF:774; `padded` is the fix (§0.1 L20).
@@ -3461,12 +3207,14 @@ between(1,12)` is WRONG (only 10, 11, 12 pass): C9, confirmed CF:774; `padded` i
     month    := $mname.index                    # computed label of textdate (1-based index = month number)
     rfcdate  := join([wname = weekday_abbrevs, rest = textdate], sep = ", ")
     wd       := weekday_of($rest.year, $rest.month, $rest.day)
-    rfcdate & (wname.index: ==wd)
+    rfcdate & (wname.index: ==$wd)
 
 LEVEL: default (a 7-class relation). Expected: `Sat, 14 Nov 2026` -> match; `Fri, 14 Nov 2026` -> no. The note's
 `wd := weekday(rest)` assumes a member on a `date` type (cut, §9); the plain macro on the fields is this document's
 rewrite. `month := $mname.index` is this document's rewrite of rev 0's `with month = mname.index` under §4.4 (the
-same mapping as the `month_numbered` modifier, §2.7; family note, §13). `==wd` vs `==$wd`: §13 C13.
+same mapping as the `month_numbered` modifier, §2.7; family note, §13). REV 20: `==$wd` (§13 C13 RESOLVED,
+**colon-scope** CF 11:32: on the value side a bare `wd` is a binding, the computed label's macro, an error naming
+`$wd`; rev 19 wrote `==wd`).
 
 ### 12.7 E-NEAR: date within 15 days of another (three reference-date cases)
 
@@ -3662,6 +3410,10 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
 - **C28** `occurs.all` vs the sequence rule (rev 8): RESOLVED by the transform ruling (CF:912-913, accepted at
   CF:905): `occurs` keeps the COUNTS only, so `occurs.all` (and `occurs.some`) leave; `all((x: S))` is the plain
   condition, the default, rarely written (§0.1 L36 SAME). Removed rather than aliased: LEAN. Zero iterations: both hold (rev 9, §4.2).
+  [REV 20: OVERTAKEN 14:31 in its `all` half. `all(c)` is c with every label it names MARKED, read F1 (the manager's
+  reading, review r28 disposition C; §4.3), so `all((x: S))` = `(x?: S)`: neither the plain condition nor the
+  default. "Zero iterations: both hold" is FALSE under **absent-rule**: on zero passes the plain condition FAILS and
+  `all` holds exactly when some value in DOM(x) is in S (§4.2). `occurs.all` stays removed.]
 - **O12** `!~` (rev 8): RESOLVED: WITHDRAWN with `~` (CF:909, accepted at CF:905); the negated test is
   `!contains(rx)` (§2.6). L51 is restated on `!occurrences(r)` vs `!contains(r)`.
 - **O29** does each `some` pick its own occurrence (rev 8): RESOLVED by SAME HIT BY RECORD (CF:915-917, accepted at
@@ -3687,7 +3439,10 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
   when the match never reached the label's group or loop (`/x|(?<n>\d)+/ & (n: <5)` on `x`), and a loop REACHED and
   run zero times satisfies a plain condition (`/(?:(?<n>\d),)*/` on the empty span); the quantifier (for `occurrences`,
   `min`) decides whether zero is allowed. Rev 8's lean (fail) withdrawn. The rest of O28 stays open below. §4.2,
-  §4.3, §2.6, §0.1 L36, L55, L56, L65.
+  §4.3, §2.6, §0.1 L36, L55, L56, L65. [REV 20: this RESOLVED entry is OVERTAKEN 14:31: **absent-rule** REVERSES "the
+  zero-passes-hold half of CF:997-1000" (CF 14:31 record): a condition on an absent label FAILS, zero passes
+  included; "possibly none" is the mark `n?` (§4.2). The pointers now read: §4.2 (the rule), §4.3 (the group
+  questions), §2.6 (zero hits), §0.1 L36, L55, L56, L65 (restated), O28 below (its unset half ANSWERED).]
 - **C23** `&` in rx text (rev 10): RESOLVED by the owner (CF:978-979: "5. no. I thought we were going to add & to pcre
   but conditionally with a module or option? Also, fully yes or no. If no put the whole rx in the hole. Like ${// &
   blah}"; record CF:981-984): `&` in rx text is ALL OR NOTHING by a module or option; ON, the intersection everywhere
@@ -3742,6 +3497,12 @@ STILL OPEN (contradictions):
   01:00: values always `$x`. `(wname.index: ==wd)` (E-RFC) and `(day: padded(<=dim))` (E-CAL) use a bare computed
   label as an operand while `(b: >$a)` uses `$` (§0.1 L37); rev 5's tuple `lex_ge([major, minor, patch], ...)` did the
   same with plain labels (§8). Review OWN-11's lean: computed labels follow labels, `x:` to constrain, `$x` to read (so `==$wd`).
+  REV 20: RESOLVED (**colon-scope**, RULED CF 11:32, his words: "colon-scope: yes with refinement: (a, b = c): ... the
+  'c' is a binding et al"): LEFT of `:` a name is always a LABEL of the intersected pattern, computed labels included;
+  on the VALUE side a bare name is always a BINDING (or a literal), and a label's value is read `$x`. So E-RFC's
+  `==wd` is `==$wd` and E-CAL's `<=dim` is `<=$dim` (§12.5, §12.6); a bare `wd` there names a binding, the
+  computed label's macro, which no comparison atom takes: a compile ERROR naming `$wd` (the manager's consequence,
+  CF 11:32 record, "to be checked by rev 20": checked, joint_condition.md §7 item 11).
 - **C16. Precedence example.** D196 (`&` tighter than `|`) parses the 00:10 example `x & <256 | >300` (CF:251) as
   `(x & <256) | >300`, silently WIDENING the program; WITHDRAWN (LEAN, review RUL-15): write `(x: <256 | >300)`
   (§4.1); a `precedence.section` warning is PLAN (§0.1 L22).
@@ -3757,7 +3518,12 @@ STILL OPEN (contradictions):
   `leap_1900 := @assert.none(...)` (an `@` inside an expression), a binding without `@`, or not allowed. Rev 6: a
   binding names an rx or a macro (CF:858) and an assertion is neither (C19), so the binding readings are out. Lean: a
   name is a labelled entry of the assertion's call record, `@assert.none("1900" & leap, name = "leap_1900")`.
-- **C25. Tuple comparison arrays.** `lex_ge([major, minor, patch], [1, 4, 0])` (CF:648). RULED from CF:644: "a library
+- **C25. Tuple comparison arrays.** REV 20: RESOLVED BY THE JOINT CONDITION. Its premise "a library macro, no
+  syntax" (CF:648) is WITHDRAWN BY NAME (**library-not-syntax**, RULED CF 12:48, his words: "library-not-syntax:
+  agree. we've replaced the idea and I think with something much better"; the rest of the CF:644-650 entry, ARRAYS OF
+  FILTERS and ENUMERATE, STANDS). A tuple left of `:` is ruled syntax: `semver & ((major, minor, patch): >= (1, 4,
+  0))` (§2.4, §4.1). The REV 16/17 text below (the first library, the names, the projection, O71) is the record of
+  the retired direction (§16). The item as it stood: `lex_ge([major, minor, patch], [1, 4, 0])` (CF:648). RULED from CF:644: "a library
   macro, no syntax". Rev 6 closed the array spelling on a false reason (that a `[ ]` has no order; review r8 P6-2):
   a `[ ]` has ordered entries that structural tools read in order (§3.4, §5.4; `join` does exactly this), and a
   record is never a value only as a RECORD (CF:866), which an array is not. The real defect of the rev 5 spelling is
@@ -3849,6 +3615,16 @@ review's proposed lean, in plain words, NOT resolved):
   5" matches, "each not below 5" does not; L30, GAP), and `(x: !<5)` on an unset set-once x (the two sentences of
   §4.2). Lean for those: `!(x: S)` is the plain complement, `(x: !S)` = every iteration outside S, with a warning and
   a witness where the two differ for the pattern at hand.
+  REV 20 (**absent-rule**, CF 14:31). THE UNSET HALF IS ANSWERED: on an absent, UNMARKED x, `(x: !S)` FAILS (a
+  condition needs a text, ruled point (2)) and `!(x: S)` HOLDS (the plain complement). The ZERO-ITERATION half,
+  RESOLVED in rev 9-10 as "a plain condition HOLDS", is REVERSED (14:31): a plain condition FAILS over zero
+  iterations, and the RESOLVED entry above is marked overtaken. On a MARKED x the pair turns over: `!(x?: S)` FAILS
+  and `(x?: !S)` HOLDS wherever DOM(x) reaches both S and its complement (`t2` on `9`, R = `padded(>= (9, 30))`:
+  `((h, m?): R)` HOLDS, so `!((h, m?): R)` FAILS, and `((h, m?): !R)` HOLDS by m = `00`): DIFFERENT: BY DESIGN, the
+  manager's call (review r28 disposition G): the mark is on the label, so `!` outside and `!R` inside are two
+  conditions; `!` of a marked condition is the plain complement (the manager's reading (14:31)). STILL OPEN: `!(x:
+  S)` vs `(x: !S)` on a REPEATED label (`1,7,`), with rev 3's lean above (plain complement; every iteration outside
+  S; a warning with a witness).
 - **O31. The dot family, and level selection.** (OWN-7, RUL-12; WIDENED in rev 7 by review r8 P6-12, CENSUS-24.)
   One `.` carries four resolutions: (1) a LABEL of the map interface (`d.year`, `rest.year`); (2) a module MEMBER
   (`json.row`), which is name resolution if a module is a namespace (O46's lean), not navigation on a value;
@@ -3989,7 +3765,9 @@ the brief's; each with a lean, none decided here):
   4, 0)`, or the FAMILIES unlock (O52 (a)) moves `join`'s ordered parts into a call record. §5.2's macros have a fixed
   parameter list. Readings: (A) a library-only variadic form (a declared "rest" parameter), (B) fixed-arity variants
   (`lex_ge3`), (C) none. Lean: C until C25 or O52 (a) needs it (D77); then A. REV 17: C25 is resolved by fixed-size
-  macros over arrays (§8), so nothing here needs a variable-length record; still (C).
+  macros over arrays (§8), so nothing here needs a variable-length record; still (C). REV 20: CLOSED as moot. Its
+  premise (C25 reading (B), `lex_ge3`) is gone: a comparison set takes a tuple atom of any arity (§2.4), so no call
+  record carries a tuple; (C) stands for O52 (a) alone.
 
 Open items NEW in rev 7 (review r8 2026-11-15-r8-predspec6, its PLAN items and the owner's search note; each with
 its readings and a lean, NONE decided here):
@@ -4033,8 +3811,10 @@ its readings and a lean, NONE decided here):
   rejects; the TEST is
   `contains(r)` and its negation `!contains(r)` (§2.6; L16, L51).
   (d) THE RECORD ON THE LEFT: moved to O54 with the binding of a search.
-  (e) `some`/`all`: decided: `some(...)` is the one spelling of "some" (CF:912-914), `all(...)` the default, and the
-  witness rule is SAME ITERATION BY RECORD (O29 RESOLVED).
+  (e) `some`/`all`: decided: `some(...)` is the one spelling of "some" (CF:912-914), and the witness rule is SAME
+  ITERATION BY RECORD (O29 RESOLVED). [REV 20: "`all(...)` the default" is OVERTAKEN 14:31: `all(c)` is c with
+  every label it names marked, read F1 (the manager's reading, review r28 disposition C; §4.3), not the plain
+  condition and not the default.]
   What stayed open here, the level of one-iteration access, is RULED in rev 10 (`captures`, CF:977; the RESOLVED
   list). C36 (the
   priority parse), which the whole restatement rested on, is RESOLVED in rev 9 by the one reading (CF:953-955).
@@ -4122,7 +3902,16 @@ here):
   a countdown of ~k states) it is regular and needs no captures, while the transform record puts `d[2]` at a higher
   level (CF:924-926; rev 10: RULED for READING one hit, CF:977, which does not say whether a test reads it). Lean: a TEST on iteration i is a group question at the default level (it
   reads no text out); READING iteration i's text (`$x[2]`, `${$x[2]}`) is the `captures` level. Both leans are this
-  document's.
+  document's. REV 20: (1) RULED, through **joint-loops** (CF 11:17: per-pass pairing), **record-is-product** (CF
+  11:35) and **pairing-loop** (CF 13:29, his words: "pairing-loop: I agree part 1"; the wording: "the pairing loop
+  is the DEEPEST loop that encloses any named label; every other named label lies in the same pass of it or outside
+  it with one value per pass; otherwise the sibling-loop error"; parts 2-3 settled by **absent-rule**, CF 14:31: "an
+  unmarked absent label fails the pass; marked: the others are tested"), with **optional-as-loop** (CF 15:23: "I agree
+  both spellings should answer alike"; THE MANAGER'S READING of how: a quantifier with an upper bound of 1 is not a
+  loop for the pairing rule). His 13:29 remark "Even /x?/ is a loop from 0 to 1" is recorded as discussion ("that
+  comment was for discussion", CF 15:23). Stated in §4.3 PER-PASS PAIRING; record = `&` on joint_condition.md's (UP)
+  population, 0 of 241 (`jcfix_check.out`, `absfold_check.out`, re-run byte for byte in `predspec20_check.out`). (2)
+  unchanged.
 
 Items NEW in rev 9 (the owner's last two 2026-11-15 entries, CF:927-961; each with its readings and a lean):
 - **O57. OWED MEASUREMENT: what does the one reading cost?** (CF:949-950: "i'd like to know the cost of this";
@@ -4284,6 +4073,23 @@ twice is now visible at the call, `compare.repeated` proposed and not adopted (�
 failing row (`[k]` on the left of `:` after a reference parameter) is resolved, LEAN, by "a passed reference cannot be
 extended", and brought to the owner inside **reference-index** (O75).
 
+REV 20, THE DECISIONS ABOVE UNDER THE JOINT CONDITION (each kept as the record; joint_condition.md §9 row 42):
+(45) RETIRED with the `lex_` names (**retire-paused**, CF 12:51); (46) and (57) the wrong-length call: an ARITY error
+at the condition (O72 CLOSED, **set-arity**); (49)-(53) and (60) the projection, the bodies' index, their bounds and
+levels, and the section lean: RETIRED with the bodies (§16); (54) the strict spelling: RETIRED (`>` is a comparison
+set, §2.4); (55) the DECIDED-PREFIX order: WITHDRAWN BY RULING (**unset-component**, CF 11:05: an absent label FAILS
+unless the author wrote a control, §4.2); (56) a bound read by its VALUE, leading zeros ignored, SURVIVES for a `$`
+component of a tuple atom (§2.4, rev 18's LEAN pending O27); (58) a label named twice: a COMPILE ERROR at the
+condition (RULED, **label-twice**, CF 13:16); (59) any number of fields: native (O69 CLOSED); (61)-(64), (66) the
+field reference: PAUSED INDEFINITELY with the sigil (§16); (65) `compare.looped`: MOVED (O74). (44), (47), (48) stand.
+
+DECIDED BY THIS LANE (rev 20; each LEAN or the manager's reading, labelled; none an owner ruling): (67) the record is
+stated as the joint condition's product case and its own rules become pointers (§4.1); (68) the absent-label rule is
+stated in its GENERAL FORM, a candidate set per absent label (the manager's ruling of review r28 K, §4.2); (69) the
+manager's readings (a)-(d) of §4.2 THE UNDEFINED ITEMS, each to be attacked by the round on rev 20; (70) the lane's
+proposals (e1)-(e3) and (f) of the same section, NOT RULED; (71) the paused and retired field-reference text moves to
+§16, marked, not deleted.
+
 DECIDED BY THE MANAGER (rev 9; the manager's calls, each LEAN (manager), none an owner ruling; listed so the owner
 sees them): (1) an `occurrences` argument that can match the empty string is REFUSED with the fix `x & !""` (O53 reading A;
 §2.6, §8); (2) a user label named `index` or `label` is a compile ERROR naming the reserved field of the map
@@ -4300,7 +4106,11 @@ GENERAL FORM: every label is a sequence of 0..n iterations in PCRE's parse (UNSE
 condition is "every iteration" everywhere, "at least one" is always spelled (`some`, `min = 1`, `+`). Unlocks: one rule
 instead of §4.2's boundary paragraph. Cost: it flips "a condition on an unset label fails" (CF:173). Its trigger was
 the owner's answer on zero iterations, and that answer (CF:997-1000) took the OTHER side: a label the match never
-reached FAILS. So the general form is recorded and not adopted. (2) The four library sets (`startsWith`, `endsWith`,
+reached FAILS. So the general form is recorded and not adopted. [REV 20: OVERTAKEN IN PART by **absent-rule**
+(LOCKED, CF 14:31): its one-state half is now the rule, ONE kind of absence ("a label is absent when it has no value
+where the condition looks at it, whatever the cause"); its "a plain condition is 'every iteration' everywhere" is NOT
+(a condition on an absent label FAILS; "possibly none" is written with the mark). The rule's own general form is
+§4.2's candidate sets.] (2) The four library sets (`startsWith`, `endsWith`,
 `contains`, `occurrences`): one body (`occurrences`) plus the argument's own anchors, `startsWith(x)` = `occurrences(/^(?:x)/, min =
 1)`, `endsWith(x)` = `occurrences(/(?:x)$/, min = 1)`, same sets AND the same label readings as the written bodies (the
 critic's hand trace). Unlocks: one hand-check table and one reading for the family. Cost: each such filter then
@@ -4422,8 +4232,16 @@ Items NEW in rev 14 (the owner's four 2026-11-15 entries after rev 13, box clock
   `between("9:00", "10:00")` and versions (`1.9` < `1.10`) work without splitting fields; a way of comparing, not a
   transform; cost unexamined. TRIGGER (D77): a real example where splitting fields is too clumsy. The manager's
   judgment, not ruled (CF:1144; review r16 FIXIND-6): O69 is the better general form of the two (the fields are
-  named, not guessed from digit runs).
-- **O69. A TUPLE COMPARE over parsed number fields (**tuple-compare**).** CLOSED in rev 16 FOR THE FIXED SIZES
+  named, not guessed from digit runs). REV 20: "BEHIND the tuple compare, which is in the first library" now reads
+  BEHIND THE JOINT CONDITION's comparison sets, which take the first-library slot (**retire-paused**, CF 12:51): the
+  time range is `t & ((h, m): padded(between((9, 0), (10, 0))))` and a version `((major, minor, patch): >= (1, 4,
+  0))` (§2.4). The `tuple_between2(...)` sketch below and its C13 remark are HISTORY: the comparison sets need no
+  body and no field patterns as arguments, and C13 is RESOLVED (a label's value is read `$x` on the value side).
+- **O69. A TUPLE COMPARE over parsed number fields (**tuple-compare**).** REV 20: CLOSED WHOLE, the any-number-of-
+  fields item (3) included: a comparison set takes a TUPLE ATOM of any arity, read in dictionary order (§2.4, J4 of
+  joint_condition.md; **first-rest** PARKED, CF 10:22: "Let's park first/rest but keep it in the wings in case we
+  find a problem that needs a different way of composing"; `predicates_future.md` item 1). No recursion, no size
+  suffix, no O21 or index arithmetic needed. The text below is the record. CLOSED in rev 16 FOR THE FIXED SIZES
   (RULED, CF:1166 on main: "tuple-compare: agree"): the 2- and 3-field compares are in the first library, the family,
   bodies, worked rows and caveats in §8 TUPLE COMPARISONS; the names RULED in rev 17 (was OPEN as **tuple-names**;
   CF:1226 on main). REV 17: the bundled sketch below (field patterns and a separator as arguments, labels `t1`, `t2` of
@@ -4521,7 +4339,10 @@ Items NEW in rev 17 (the owner's entries after rev 16, CF:1214-1248 on main, and
   other side of the `&`" (placeholder `^h`; §5.4 `^` row, §8 THE FIELD REFERENCE). The SECTION `(h:)` is NOT ADOPTED,
   his reason and his open door recorded in §8 THE PROJECTION (iv); the accessors `h_is` leave the examples. Rev 17-18's
   text of this item (two candidates, the section the lean) is superseded; its checks of the section stay in §8 (iv).
-  The sigil's own open points are O75 and O76.
+  The sigil's own open points are O75 and O76. REV 20: OVERTAKEN. "RESOLVED in rev 19 ... by a SIGIL" stands as
+  history; the sigil is PAUSED INDEFINITELY (**retire-paused**, CF 12:51: "the pause on ^ is indefinite and requires
+  real value other than 'override a users own *'") and is out of rev 20's language; the compared fields are the
+  labels left of `:` in a joint condition (§4.1). The sigil's text: §16.
 
 Items NEW in rev 18 (review r17; the owner's entries after rev 17, CF:1256-1293 on main):
 - **O72. The wrong-length tuple call.** Rev 17 claimed a compile error naming both counts; no mechanism gave it (the
@@ -4531,7 +4352,10 @@ Items NEW in rev 18 (review r17; the owner's entries after rev 17, CF:1256-1293 
   a SPELLED array in a VALUE position is a compile error naming the index and the size (general; §3.2's absent rule
   stays for MATCH positions, where iteration counts vary per match); catches the short case only; (b) a compile-time
   size the body can test, which the language lacks; (c) leave it, documented. Lean (this document): (a) now, (b) on
-  need (D77). Not an owner question yet (a manager's call on a LEAN rule; raised if (a) is contested).
+  need (D77). Not an owner question yet (a manager's call on a LEAN rule; raised if (a) is contested). REV 20:
+  CLOSED. A wrong length is an ARITY error at the condition (RULED, **set-arity**, CF 10:26: the labels left of the
+  colon must number the set's arity; `((h, m): >= (9, 0, 0))` is the error naming both counts, §2.1); no call, no
+  projection, no index remains to be short.
 - **O73. Macros as arguments of a plain macro (**macro-arguments**).** ANSWERED NO by the owner (rev 19; rulings R-1,
   box clock 00:08: "macro-arguments: the general path is that an array of something is that something. i feel like
   this is creating a bunch of mechanism for very specific use. what otherwise is an array of macros?"). No mechanism
@@ -4543,9 +4367,15 @@ Items NEW in rev 18 (review r17; the owner's entries after rev 17, CF:1256-1293 
 - **O74. A compare over a LOOPED label (**looped-compare**).** CLOSED in rev 19 (RULED, rulings R-2, box clock 00:09:
   "looped-compare: warn"): the meaning stays (per label over every iteration, the sequence rule, CF:583); the compiler
   WARNS, `compare.looped` (§7.1), when a compared field can hold more than one occurrence, naming the fix (the compare
-  inside the loop's item). Not an error. Worked rows: §8 caveat (6), table (W).
+  inside the loop's item). Not an error. Worked rows: §8 caveat (6), table (W). REV 20: O73 stays ANSWERED. O74's
+  warning MOVED (RULED, **joint-loops**, CF 11:17: "I agree. Makes sense."): a joint condition pairs its labels per
+  pass and draws no warning; the warning's subject is now a hand-written `|` of conditions whose labels can repeat
+  (§4.3, §7.1); its rev 19 subject (a compare over a looped field) is gone with the `lex_` names.
 
-Items NEW in rev 19 (the sigil ruling, CF:1304-1316 on main, and rulings R-1, R-2):
+Items NEW in rev 19 (the sigil ruling, CF:1304-1316 on main, and rulings R-1, R-2). REV 20: O75 and O76 are
+SUSPENDED with the sigil, PAUSED INDEFINITELY and out of rev 20's language (**retire-paused**, CF 12:51: "(3) The
+suspended questions reference-index and bound-reference stay suspended with the sigil"); their text below is the
+record:
 - **O75. Picking an entry of an array of field references (**reference-index**).** OPEN, an owner question. The tuple
   bodies read their fields IN ORDER: `(s[1]: ...)`, then `(s[1]: ..., s[2]: ...)`. By the owner's general path
   (rulings R-1) `[^h, ^m]` is a reference, "h or m" (§3.5), which a compare cannot use; it needs entry 1, then entry
@@ -4573,6 +4403,11 @@ ANSWERED (CF:1026-1062 on main: rx-text `&` where `|` alternates, `occurrences`,
 - (4) ANSWERED in rev 13 (CF:1073-1081 on main): NO warning (O63).
 - (7) ANSWERED in rev 14 (2026-11-15 20:44 (a) on main): no `anchored`-specific error; the macro is plain (O64).
 - (8) ANSWERED in rev 14 (20:44 (b) and 20:45 on main): one warning in every filter role, keyed off the role (O65).
+REV 20 (the field-reference direction PAUSED, CF 00:31; **retire-paused** RULED CF 12:51): (10) and (12) are
+RETIRED with the `lex_` names, the argument order and the first-library slot (the joint condition takes the slot);
+(13) is OVERTAKEN (the sigil it chose is PAUSED INDEFINITELY); (15)'s warning MOVED onto a hand-written `|` of
+conditions (**joint-loops**, CF 11:17; O74); (16) and (17) are SUSPENDED with the sigil. Each ANSWERED record below
+stays as history; the superseded-by pointer is §16. The 2026-11-16 answers are listed after (17).
 - (10) ANSWERED in rev 16 (**tuple-compare**, CF:1166 on main: "tuple-compare: agree"): in the first library at
   fixed sizes (§8; O69 closed for them). New: **tuple-names** (12) below. The question as asked: a 2- and 3-field tuple compare is a plain macro with nothing missing
   (O69; the 3-field sketch corrected in rev 15, every comparison padded, re-oracled); should it join the first spec's
@@ -4607,6 +4442,32 @@ ANSWERED (CF:1026-1062 on main: rx-text `&` where `|` alternates, `occurrences`,
   padded(>=lo[2]))]`. Lean: yes (O75).
 - (17) NEW in rev 19 (**bound-reference**): may a compare call holding references be bound by name and applied later
   (`late := lex_ge2([^h, ^m], [9, 30])`, `P & late`), reading P's fields? Lean: yes (O76).
+- THE 2026-11-16 ANSWERS (rev 20; his words, CF hh:mm; each folded where the list after it says; the derivation
+  record is `docs/design/joint_condition.md`): **tuple-value** (09:42) and **tuple-anywhere** (09:49) -> §2.1, §5.4;
+  **first-rest** PARKED (10:22) -> §2.4, `predicates_future.md` item 1; **set-arity** (10:26) -> §2.1; the default's
+  mark `=` (10:37) and **default-set** (10:43) -> §4.2, §5.2; **unset-component** and **default-unused** (11:05) ->
+  §4.2, §7.1; **joint-loops** (11:17) -> §4.3; **two-orders** (11:20) -> §2.4; **modifier-lift** (11:27) -> §2.7;
+  **colon-scope** (11:32) -> §4.1, C13; **record-is-product** (11:35) -> §4.1; **zero-pass-record** (12:45) -> §4.3
+  (its wording since reversed, 14:31); **library-not-syntax** (12:48) -> C25, §8, §16; **retire-paused** (12:51) ->
+  §16; **label-twice** (13:16) -> §4.1; **pairing-loop** (13:29 + 14:31) -> §4.3, O56; **absent-rule** LOCKED (14:31)
+  -> §4.2; **optional-as-loop** (15:23) -> §4.3; **mark-domain** (15:27) and **spelling-phrasing** (15:29) -> §0
+  STANDING CRITERIA, §4.2. The whole table with his words: §0 THE ENTRIES AFTER REV 19.
+
+OPEN ITEMS NEW IN REV 20 (each: reply either way; the plain-words drafts are in `docs/dev/lanes/predspec20_report.md`):
+- **tuple-parts** (joint_condition.md §4A.3): (A) a tuple used whole, or (B1) ONE tuple taken apart on the left of a
+  binding, `(a, b) := lo`. NO USER while first/rest is parked; nothing is built either way. Lean: (B1) on record (his
+  "Yes", CF 09:50), (A) in practice (his "Nothing is set in stone. I'd like to hear it out", CF 09:58); asked again
+  when a use appears.
+- **zero-pass-empty** (marked labels only since 14:31): THE MANAGER'S READING 14:50 (b), "The mark means ONE thing in
+  every shape" (F1, §4.2), under which it CLOSES: `/(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/ & (h?: <$a, k: 3)` on `0-3`
+  FAILS, as `((h?, k): < ($a, 0))` does (`predspec20_check.out` (RD)). Told to the owner; ON HIS LIST until he
+  assents (the lock left it open: "LEAVES: zero-pass-empty only on marked labels", CF 14:31).
+- **match-context** (NEW, rev 20): the CONTEXT of DOM(h)'s "some match" (§4.2 THE UNDEFINED ITEMS (b)). THE MANAGER'S
+  READING: some match OF THE PATTERN (one value set per label, fixed at compile time), not "some match agreeing with
+  this match's other labels". The branch-reset example and both answers: §4.2.
+- The lane's proposals (e1)-(e3) and (f) of §4.2 THE UNDEFINED ITEMS: NOT RULED, to be attacked by the round on rev 20.
+- `list_of`'s minimum (whether a `list_of` part admits zero items): a gap in the draft, not in the rule; OPEN (lane
+  absfold's finding, joint_condition.md §4G.5 (d)).
 
 ## 14. Non-goals
 
@@ -4618,10 +4479,13 @@ ANSWERED (CF:1026-1062 on main: rx-text `&` where `|` alternates, `occurrences`,
   non-goal: they are one kind for the user (§2.1, LEAN).
 - No "best match" overload ranking; no interfaces, members, UFCS or `types()` in the first spec (§9).
 - No third value kind: no record, boolean or number values (two kinds, rx and macro, RULED CF:858; a record is a
-  shape laid against fields, never a value, RULED CF:851-852; no boolean: LEAN, CF:595; numbers: §13 O40). Tuples:
-  no tuple VALUE kind; a tuple comparison is spelled over arrays at fixed sizes: RULED (rev 16-17: library macros,
-  names and order RULED, the compared side a projection of the author's labels, §8; §13 C25 RESOLVED for them); any
-  number of fields later (§13 O69 (3)); no tuple value is created (rev 18, review r17 F15).
+  shape laid against fields, never a value, RULED CF:851-852; no boolean: LEAN, CF:595; numbers: §13 O40). Tuples
+  (rev 20): a TUPLE SET is a value, the one set kind with an ARITY k (RULED, **tuple-value** CF 09:42,
+  **set-arity** CF 10:26: "Set arity: yes. It's clean. I like it"; §2.1); it is NOT a third value kind. Rev 16-19's
+  sentence ("no tuple VALUE kind; a tuple comparison is spelled over arrays at fixed sizes ... no tuple value is
+  created") is withdrawn with the 2026-11-14 library ruling (CF:648, WITHDRAWN BY NAME, **library-not-syntax** CF
+  12:48); any number of fields is native (§2.4; §13 O69 CLOSED). Taking one tuple apart (**tuple-parts**, §13) is not
+  designed.
   Names that denote non-values (modules, described by their map interface; run-time inputs): the kind table,
   §2.1, §13 O46. No array or map VALUE: array and map are interfaces applied to a thing, never created (RULED,
   CF:890-891). No search-result value: `occurrences` is a filter and its hits are a label's iterations (§2.6, §4.3).
@@ -4641,6 +4505,7 @@ COND-FAMILY.md notes by date/heading; "11-12" = the 2026-11-12 sections, etc. "p
 
 | section | notes consolidated |
 |---|---|
+| rev 20 (the joint condition and the absent-label rule) | the COND-FAMILY entries of 2026-11-16 from 00:31 to 15:29 ("CF hh:mm"; CF:1336-1725 on main), through their derivation record `docs/design/joint_condition.md` (§2 J1-J9 -> §2.1, §2.4, §2.7, §3.5, §4.1, §4.3, §5.4, §6.1, §8, §13; §4A -> §2.1, §5.4; §4B -> §4.2, §5.2, §7.1; §4D -> §4.1; §4G-§4H -> §4.2, §4.3, §2.6, §0.1, §7.1, §13; §9 rows 1-73 -> every site, table in `docs/dev/lanes/predspec20_report.md`); reviews r26 (`2026-11-16-r26-jointcond.md`) and r28 (`2026-11-16-r28-absfold.md`) as the manager ruled them; review r19's carried items CENSUS-4, -5, -8, SIMULATE-1 -> §3.5, §16; the lane's readings and proposals -> §4.2 THE UNDEFINED ITEMS. Evidence: `docs/dev/lanes/predspec20_check.py`/`.out` (the earlier lanes' twelve scripts re-run byte for byte, and the new blocks) |
 | rev 19 (the entries after rev 18 and rulings R-1, R-2) | CF:1284-1293 on main (computed labels, low weight) -> §8 THE FIELD REFERENCE, table (C); CF:1295-1302 (the scoping sigil) -> §0 rulings table, §5.4 `^` row, §0.3; CF:1304-1316 (the sigil ruled; the manager's consequences) -> §0 rulings table, §0.1 L72-L81, §0.2, §0.3, §2.7, §3.2 tool 1, §3.5, §4.1, §5.4, §8 TUPLE COMPARISONS, THE PROJECTION and THE FIELD REFERENCE, §12 census, §13 O71, O75, O76, owner questions (13), (16), (17), DECIDED (61)-(66); rulings R-1 (**macro-arguments**: NO) -> §0 rulings table, §3.2, §3.5, §8, O73, owner question (14); rulings R-2 (**looped-compare**: warn) -> §7.1, §8 caveat (6), O74, owner question (15); evidence `docs/dev/lanes/predspec19_check.py`/`.out` |
 | rev 17 (the entries after rev 16) | CF:1214-1221 on main (options as settable values) -> §0 rulings table, O70 route (a), plan row [PRED-REREAD]; CF:1223-1227 (names) -> §0 rulings table, §8 TUPLE COMPARISONS, §12 census, C25, O69, owner question (12); CF:1229-1248 (the decomposition) -> §0 rulings table, §0.3, §1, §2.7, §8 TUPLE COMPARISONS and THE PROJECTION, §12 census, §14, C25, O47, O69, O71, owner question (13), DECIDED (49)-(53); the 23:25 order ruling (CF:1250-1254 on main) -> §0 rulings table, §8, C25, owner question (12). Oracle runs: `docs/dev/lanes/predspec17_check.py`/`.out` |
 | rev 18 (review r17 and the entries after rev 17) | review `docs/dev/reviews/2026-11-15-r17-predspec17.md` F1-F22 -> §0, §0.1 (L72-L75), §0.2, §0.3, §2.7, §5.4, §8 TUPLE COMPARISONS and THE PROJECTION, §9, §11, §12 census, §13 C25, O69, O70, O71-O74, owner questions (13)-(15), DECIDED (54)-(60), §14; CF:1256-1266 (the owner's lean on the spelling) -> §0 rulings table, §8, O71, owner question (13); CF:1268-1282 on main (no bare field; the other-side mark) -> §0 rulings table, §0.1 L72, §8 THE PROJECTION (iv), §12 census, C25, O71, owner question (13); CF:1284-1293 on main (computed labels) -> §0 rulings table, §8 caveat (4) and THE PROJECTION (iv), O71. Oracle runs: `docs/dev/lanes/predspec18_check.py`/`.out` |
@@ -4677,3 +4542,369 @@ Background documents: `cond_family.md` (members, machinery M1-M12, D193 answers)
 `cond_family_syntax_survey.md`'s `&!` and `=~` spellings are superseded (`!` filter; rev 7's `~`, itself withdrawn in rev 8 for the
 `search` transform), its "opt-in, not default"
 and "do not touch class contents" recommendations stand.
+
+## 16. The superseded and paused field-reference direction (rev 16-19), kept as the record
+
+NOT PART OF REV 20'S LANGUAGE. The owner PAUSED this direction (CF 00:31, his words: "we are putting a lot of special
+syntax and values to handle an obscure case. for instance, we have sigils, arrays of sigils which are an entirely
+new type, then dynamic labels. all without a clear understanding of how it would help the larger language against
+other problems. i want to pause this direction and consider a different one that is more inline with existing
+concepts"), and then SPLIT its ruled items (**retire-paused**, RULED CF 12:51: "retire-paused: agree to split. But
+the pause on ^ is indefinite and requires real value other than 'override a users own *'"). Rev 19 of this document
+(git, `docs/design/predicates_draft.md` at aef673e62) is the complete record; this section keeps what rev 20 moved
+out of the body, marked, so no paused text is deleted and none is presented as current.
+
+| item | ruled where | state in rev 20 | by |
+|---|---|---|---|
+| the `lex_` names `lex_ge2` .. `lex_between3` | CF:1226 ("tuple_names: a") | RETIRED | **retire-paused** CF 12:51 |
+| the argument order (compared fields, low, high) | CF:1253 ("tuple-arg-order: subject low high") | RETIRED | **retire-paused** CF 12:51 |
+| the fixed-size tuple compares in the FIRST LIBRARY | CF:1166 ("tuple-compare: agree") | RETIRED; the joint condition takes the slot (§8) | **retire-paused** CF 12:51 |
+| "TUPLE CONDITIONS: a LIBRARY macro (`lex_ge([major, minor, patch], [1, 4, 0])`), no syntax" (2026-11-14) | CF:648 | WITHDRAWN BY NAME; the rest of the CF:644-650 entry (ARRAYS OF FILTERS, ENUMERATE) STANDS | **library-not-syntax** CF 12:48: "library-not-syntax: agree. we've replaced the idea and I think with something much better" |
+| the other-side SIGIL `^h` (and with it §4.1's ONE EXCEPTION, arrays of references, the projection) | CF 00:06 ("label-section: i think the sigil mark is better ...") | PAUSED INDEFINITELY, out of rev 20's language; returns only for a use with REAL VALUE; "rejecting the empty case of the author's own `*` loop (`some(^h)`) is NOT such a use" (the record) | **retire-paused** CF 12:51 |
+| **reference-index** (O75), **bound-reference** (O76) | rev 19 owner questions (16), (17) | SUSPENDED with the sigil | **retire-paused** CF 12:51 (3) |
+| the looped-compare warning (rulings R-2, CF 00:09) | "looped-compare: warn" | MOVED onto a hand-written `\|` of conditions over labels that can repeat (§4.3, §7.1) | **joint-loops** CF 11:17 |
+| `predicates_future.md` item 8 (`count(^h)`) | parked | untouched (the sigil stays paused) | — |
+
+### 16.1 Rev 19's §8 TUPLE COMPARISONS, THE PROJECTION and THE FIELD REFERENCE (moved verbatim; RETIRED or PAUSED)
+
+Moved in rev 20 from §8 (rev 19 lines 2415-2740). Two carried review r19 findings are applied in place, each
+marked "[REV 20, review r19 ...]": CENSUS-5 + SIMULATE-1 (the B-rows are the model of the stated rule, not evidence)
+and CENSUS-8 (the standalone other side DEFERRED with a trigger). Every other sentence is rev 19's, and its section
+pointers (§4.1's one exception, §5.4's `^` row, §3.2 tool 1, O75, O76) name rev 19's text, which for §4.1, §5.4 and
+§3.2 is in 16.2 below.
+
+- TUPLE COMPARISONS (rev 16; DECOMPOSED in rev 17; rev 18 applies review r17; rev 19 names the compared fields by
+  the other-side sigil, RULED). The FIXED-SIZE tuple compares, for 2
+  and 3 fields, are IN THE FIRST LIBRARY (RULED, CF:1166 on main: "tuple-compare: agree"); a tuple compare is a library
+  macro, no syntax (RULED, CF:644). NAMES RULED (CF:1223-1227 on main, "tuple_names: a"): the `lex_` stem with a size
+  suffix, over arrays: `lex_ge2`, `lex_le2`, `lex_between2`, `lex_ge3`, `lex_le3`, `lex_between3`. ARGUMENT ORDER
+  RULED (CF:1250-1254 on main, box clock 23:25: "tuple-arg-order: subject low high"): (compared fields, low, high);
+  the at-least and at-most halves take (compared fields, bound).
+  DECOMPOSED (the owner's direction, CF:1229-1248 on main: "that feels like lex_between2 is doing a lot of work. can it
+  be decomposed? to 3 arrays. subject, hi, low", and "what would be needed is a macro that takes a map and produces an
+  array given labels"). PARSING and COMPARING are separate. The AUTHOR's own pattern parses the text and labels the
+  fields; the compare is the composition of two general units, neither of which knows about times or versions:
+  (1) THE PROJECTION, the array of the labels to compare, in the order the compare reads them; (2) THE ARRAY COMPARE,
+  first entry first, over that array and two arrays of numbers. Rev 16's bundled form (field patterns and a separator
+  as arguments, the body's own labels `t1`..`t3`) is WITHDRAWN.
+  WHY A TUPLE COMPARE AND NOT A STRING RANGE (rev 16's reason, restored in rev 18, review r17 F17): as strings `"1.10"`
+  sorts before `"1.4"`, so `between("1.4", "1.10")` is EMPTY, and `between("1.4", "1.9")` also accepts `1.45`; the
+  time range gives the same answers as §2.7's split-fields form (§9).
+
+      lex_ge2(s, lo) := [(s[1]: padded(>lo[1])),
+                         (s[1]: padded(==lo[1]), s[2]: padded(>=lo[2]))]
+      lex_le2(s, hi) := [(s[1]: padded(<hi[1])),
+                         (s[1]: padded(==hi[1]), s[2]: padded(<=hi[2]))]
+      lex_between2(s, lo, hi) := lex_ge2(s, lo) & lex_le2(s, hi)
+      lex_ge3(s, lo) := [(s[1]: padded(>lo[1])),
+                         (s[1]: padded(==lo[1]), s[2]: padded(>lo[2])),
+                         (s[1]: padded(==lo[1]), s[2]: padded(==lo[2]), s[3]: padded(>=lo[3]))]
+      lex_le3(s, hi) := the mirror of lex_ge3 (`<` for `>`, `<=` for `>=`)
+      lex_between3(s, lo, hi) := lex_ge3(s, lo) & lex_le3(s, hi)
+
+  `s` is THE PROJECTION (rev 19): a spelled array of FIELD REFERENCES written at the call, one per compared field,
+  in the order the compare reads them (`[^h, ^m]`: "h, then m, of the other side of the `&`"; §5.4 `^` row). `lo`
+  and `hi` are arrays of numbers. Each bound is the usual prefix expansion: one `[ ]` read as any one entry (§3.5: an
+  array of conditions is a macro), each entry ONE condition RECORD whose entries are all its tests (the record holds
+  them together, §4.1); between is the two halves joined by `&` (macro & macro, pointwise, §2.1). Rev 16's
+  conditions are unchanged; only where the labels come from moved (rev 17), and how they are named (rev 19).
+  WHAT THE BODIES USE, each against this document's rules (rev 19): (1) `(s[1]: ...)`, a field-reference
+  parameter on the left of `:` in a macro body: §4.1's ONE EXCEPTION, the manager's consequence of the sigil ruling
+  (CF:1311-1313 on main), checked: it collides with no ruled text (§4.1 STATUS); (2) `s[1]`, picking an entry of a
+  spelled array of references by position: §3.2 tool 1 on an array whose entries are references, OPEN as owner
+  question **reference-index** (§13 O75; the owner's test, rulings R-1, is below); (3) `lo[1]` on a spelled array of
+  numerals (an rx, §3.4): §3.2 tool 1 as it stands (RULED CF:553); (4) `padded(>lo[1])`, a parameter as a
+  comparison's atom (§2.4; LEAN, unchanged from rev 16). Nothing is called: no macro is passed, indexed or applied in
+  a body, so rev 18's readings (a) and (b) are NOT ADOPTED (§13 O73: **macro-arguments** answered NO by the owner,
+  rulings R-1).
+  THE OWNER'S TEST APPLIED (rulings R-1: "the general path is that an array of something is that something ... what
+  otherwise is an array of macros?"). By the general path an array of field references IS a field reference, "any one
+  of these fields" (§3.5): `[^h, ^m]` is "h or m", and a body writing `(s: S)` with `s` bound to it means `(h: S) |
+  (m: S)`, the same answer as `[(h: S), (m: S)]` in a filter role (§0.1 L74). That is not what a compare needs: it
+  must read h, THEN m. Picking the k-th written entry (`s[1]`) is what an rx gets from §3.2 tool 1 (`[/a/, /b/]` IS
+  `/a|b/` and its `[1]` is `/a/`, positions kept): applied to an array of references it is the same index on a new
+  kind of entry. Whether that is the existing tool or the "mechanism for very specific use" he refused for macros is
+  HIS call (O75); this document leans EXISTING (the index reads the written entries of a spelled array, which a
+  reference array is; nothing is called, so the fence his answer kept stays untouched), and says plainly that without
+  it the six names have no body: the compare must pick fields in order, and the general path alone gives only "any
+  one". THE PER-LABEL ACCESSORS (`h_is(S) := (h: S)`) and the SECTION `(h:)` LEAVE the examples (CF:1316 on main);
+  the section is recorded under THE PROJECTION (iv).
+  THE COMPARED FIELD COMES FROM THE OTHER SIDE OF THE `&` (the owner's property, CF:1256-1266 on main: "the fact
+  that h: _has_ to come from the left side"; `&` is symmetric, so "left" reads as "the other side"): the sigil
+  says so in its meaning, and nothing names another map; the named-map form `p.h` is NOT adopted ("i'm not sold on
+  \"p =\"", CF:1262). A BARE compared field `[h, m]` is OUT (RULED, CF:1268-1282 on main: "definitely not a bare
+  reference. it might shadow a binding and it wouldn't be clear where it was coming from"; §0.1 L72).
+
+  WORKED EXAMPLES (each subject matched WHOLE by the filter; `docs/dev/lanes/predspec19_check.out` table (W), 60 rows, 0
+  differ from the stated answers; run: `timeout 300 python3 -I docs/dev/lanes/predspec19_check.py`):
+
+      /(?<h>\d{1,2}):(?<m>\d\d)/ & lex_between2([^h, ^m], [9, 0], [10, 0])                  # 9:00 to 10:00
+      /(?<m>\d\d) past (?<h>\d{1,2})/ & lex_between2([^h, ^m], [9, 0], [10, 0])             # the same range, other text order
+      /(?<h>\d{1,2}):(?<m>\d\d):(?<sec>\d\d)/ & lex_between3([^h, ^m, ^sec], [9, 30, 5], [10, 0, 0])
+      /(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)/ & lex_between2([^major, ^minor], [1, 4], [1, 10])   # versions
+      semver & lex_ge3([^major, ^minor, ^patch], [1, 4, 0])                              # the 2026-11-14 record's shape
+      /(?<major>\d+)\.(?<minor>\d+)/ & lex_between2([^major, ^minor], [1, 4], [1, 10])   # \d+ fields (rev 16's row)
+      /(?<h>\d{1,2})(?::(?<m>\d\d))?/ & lex_between2([^h, ^m], [9, 30], [11, 0])           # minutes OPTIONAL (rev 18)
+      P & lex_ge2([^h, ^m], [9, 30]) & !lex_le2([^h, ^m], [9, 30])                    # STRICTLY above 9:30 (rev 18)
+
+  | filter | accepts | rejects |
+  |---|---|---|
+  | the time range | `9:00`, `09:30`, `9:59`, `10:00` | `10:01`, `8:59`, `11:00`, `9:5` (the author's minute field is `\d\d`) |
+  | the same range, labels in the other order | `30 past 9`, `00 past 10` | `01 past 10`, `59 past 8` |
+  | the h:m:s range | `9:30:05`, `09:30:05`, `9:59:59`, `10:00:00` | `9:30:04`, `10:00:01`, `8:59:59`, `9:30` |
+  | the version range | `1.4`, `1.9`, `1.10` | `1.3`, `1.11`, `2.0`, `0.9`, `1.04` (the author's field refuses a leading zero), `1x4` |
+  | semver at least 1.4.0 (`semver` = the three-field canonical pattern) | `1.4.0`, `1.10.2`, `2.0.0` | `1.3.99`, `0.9.9`, `1.04.0` |
+  | the version range with `\d+` fields (restored, review r17 F17) | `1.04`, `01.10`, `1.010` (`padded` ignores leading zeros) | `1.011` |
+  | minutes optional, 9:30 to 11:00 | `10` (decided by h; m never read), `9:45`, `11:00` | `9` (h equals the bound, so m is read, and it is unset), `11` (likewise at the high bound) |
+  | strictly above 9:30, P = the optional-minutes pattern | `9:31`, `10` | `9:30`, `9` (incomparable), `8` |
+  | the time range with bounds written `[09, 00]`, `[10, 00]` | `9:30`, `09:30`, `9:00` | `10:01` |
+
+  The second row is what the decomposition buys: the PROJECTION's order, not the pattern's group order, is the
+  compare's order, so the minutes-first text compares hours first. SEARCHED (rev 18, review r17 F5): every row above
+  is the filter applied to a WHOLE value; a program line is SEARCHED (§2.2, D196), and searched these programs accept
+  out-of-range neighbours through a shorter span: `19:30` (span `9:30`), `10:00:01` (span `10:00`), `19:30:05`, `1.40`
+  and `11.4` (span `1.4`), `1.100` (span `1.10`), `0.1.4.0` (span `1.4.0`) (table (S)), as E-IPV4 states for
+  `256.1.1.1` (§12.3). To compare whole fields, pin the program: `anchored(...)` for the whole subject, or the author's
+  own boundaries in the pattern (`/(?<![\d:])(?<h>\d{1,2}):(?<m>\d\d)(?![\d:])/`, `/(?<![\d.])...(?![\d.])/` for
+  versions): pinned, `19:30`, `10:00:01`, `1.40`, `11.4`, `1.100`, `0.1.4.0` reject, `at 9:30 ok` and `v1.9` accept,
+  and over (D)'s time and version subjects the pinned searched answer equals the whole-value answer (190 cases, 0
+  differ, table (S)).
+  THE RULE CHECK of every example (rev 17, by hand against this document; rev 18 re-checked; rev 19 re-checked over
+  references): `&` of an rx and a macro applies the macro (§2.1); the call record's positional entries fill the
+  required parameters in order (§5.2); `[^h, ^m]` is a spelled array of field references in an argument position
+  (§5.4 `^` row, position (2)); each reference finds its label where a condition written in place of the call would
+  (§4.1's chain lookup), so a projection naming a label the pattern lacks is §4.1's unknown-label error AT THE CALL,
+  listing those available, and a label in two operands of one chain its ambiguity error; in the body `(s[k]: S)` is
+  §4.1's one exception and `s[k]` the index of O75; `[9, 0]` is a spelled array of numerals (§3.4) and `lo[1]` reads
+  it by position (§3.2, RULED CF:553); `padded(>lo[1])` has a parameter as the comparison's atom (§2.4; LEAN); the
+  body's conditions are laid against the call's operand, the very operand the references were resolved against (so
+  §5.4's "another operand" error cannot fire for a call written at the `&`); `semver` is a binding of an rx (§5.1).
+  REV 18'S TWO READINGS, NOT ADOPTED (rev 19): (a) `s[k]` on an array of MACROS is a macro, and (b) a parameter bound
+  to a macro may be CALLED in a plain macro's body (they AMENDED §3.2 tool 1 and §5.3's fence, review r17 F7). The
+  owner answered **macro-arguments** NO (rulings R-1: "i feel like this is creating a bunch of mechanism for very
+  specific use"), and the bodies over references call nothing. §5.3's fence and §5.2's "a section is the one way to
+  leave a hole" stand as written. What the reference bodies need instead is listed above (WHAT THE BODIES USE): one
+  ruled-in change and one open question (O75).
+  EVIDENCE: the family over author patterns (2 and 3 fields, the halves, between, equality and both strict spellings;
+  one population with the labels in the other group order) against integer lexicographic order in PROJECTION order:
+  25,848 cases, 0 differ (table (D), rev 17's populations, every compared label set and digits) and 2,936 for rev 18's
+  strict spelling (table (D')); OPTIONAL and NON-DIGIT compared labels (minutes optional, seconds optional, `\w`
+  fields) against the DECIDED-PREFIX order (caveat (5)): 13,384 cases of the halves, between and equality, 0 differ;
+  rev 18's strict spelling 3,152 cases, 0 differ, rev 17's `P & !lex_le2` / `P & !lex_ge2` 3,152 cases, 230 differ
+  (table (U)); rev 16's bundled bodies against the decomposed form: 7,528 cases, 0 differ (table (R)); a computed
+  label as a field (table (C), 300 cases, 0 differ); libpcre2-8 10.46 and Python 3.14 `re`, 0 engine disagreements.
+  REV 19 (`docs/dev/lanes/predspec19_check.py`/`.out`): every population above RE-RUN with the bodies re-expressed over
+  field references (`(s[k]: ...)`, each reference resolved where written, a reference laid against another operand
+  refused): every table's counts identical to rev 18's, and rev 19's form against rev 18's label-name form on every
+  call: 48,797 calls, 0 differ (table (X)); THE BINDING RULE (table (B)): a reference written at a NESTED `&` (B1, 48
+  cases, 0 differ; the outer operand's fields would differ in 22), passed through a body to the same operand (B2,
+  828, 0 differ), written inside a library body (B3, 1,656, 0 differ), a bound call (B4, 1,656, 0 differ from the
+  direct call, under the lean of O76), passed into a body that lays it against another operand (B5: 828 of 828
+  refused at compile time); worked rows 60, 0 differ (rev 18's 53 and seven LOOPED rows, caveat (6)). [REV 20,
+  review r19 CENSUS-5 + SIMULATE-1, carried: these B-rows are THE MODEL OF THE STATED RULE, not independent evidence
+  for it. B5's "828 of 828 refused" is the script's own `RefError` (`predspec19_check.py`, its resolver), and in (X),
+  B2, B3 and B4 the reference is constructed against the same operand it is laid on, so those rows compare the code
+  with itself. The binding rule as text (resolution at the call's place) has no resolver in the script; only B1 and
+  B5's population are informative, and B5 only as the model's output.]
+  THE FAMILY IS SMALL ON PURPOSE (rev 16; the strict spelling CORRECTED in rev 18, review r17 F1): a between and its
+  two halves per size. STRICTLY ABOVE lo is `lex_ge2(s, lo) & !lex_le2(s, lo)`; STRICTLY BELOW hi is
+  `lex_le2(s, hi) & !lex_ge2(s, hi)`; equality is `lex_between2(s, t, t)` (or plain conditions). Rev 16-17's
+  `P & !lex_le2(s, lo)` (P = the author's pattern) is WITHDRAWN: a `!` of a compare is TRUE on a match the compare
+  cannot read (`!` of a failed condition is true, §4.2), so with the minutes optional it accepted `9` as both strictly
+  above AND strictly below 9:30, and with a `\w` field it accepted `ab:00` as above 9:00 (table (U)). The halves gate
+  the negation: the positive half fails on such a match first. THE LANE'S GENERAL FORM: over AUTHOR labels, a `!` of a
+  compare stands only beside the compare's other half.
+  BOUNDS AND LEVELS (rev 17; rev 18 states the bound's reading). The compared side is a projection of LABELS
+  (constrained) and the bounds are VALUES (used): this is §4.1's split, `x:` constrains, `$x` reads. A bound may be a
+  constant (above), a run-time input (`param(...)`, §6.1) or a value of the same match (`lex_ge2([^b1, ^b2], [$a1,
+  $a2])`, which makes each entry a value-vs-value relation, `(b1: padded(>$a1))`, §4.6). HOW A BOUND IS READ (rev 18,
+  review r17 F3; LEAN, this document): a bound is an INTEGER ATOM, read by its VALUE, so its leading zeros do not
+  matter: the literal `09` is 9 (`[09, 00]` = `[9, 0]`), and a captured `$a1` of text `09` is 9. This is this
+  document's reading of §2.4's "no leading zeros ... unless the literal has them", which rev 17 left ambiguous: under
+  the other reading (the literal's own WIDTH: `09` = exactly two digits) `[09, 00]..[10, 00]` silently drops `9:30` and
+  `9:00` (the compared side is padded, the bound is not), and a zero-padded captured bound misorders 30 of 144
+  same-match cases (table (Z)); under the value reading every case agrees (558 cases, 0 differ). §2.4's clause keeps
+  sign and decimal point; a fixed-width comparison is written as a string (`"09"`) or as a pattern. A captured bound
+  has no literal to fix the reading at all (§2.4 REASONING: value vs value needs a declared reading, §13 O27, O48), so
+  for match bounds the value reading is a stated choice, not a consequence: LEAN until O27 is ruled. The compare is
+  DECIDED PER MATCH, at the level its bounds need: with constant bounds every entry is a condition on a label against
+  a fixed set, so the compare is automaton states at the DEFAULT level (§6.1; the one reading, §6.1, prices an
+  ambiguous label), no captured text is read (`captures` is for OUTPUT of spans, §6.2) and no callout runs; with
+  `param` bounds, parametric automata at the default level (§6.1); with bounds from the same match, a relation priced
+  by its class count (§4.6): small at the default level, too large a default-level error naming `functions`,
+  unbounded fields (`\d+`) not regular, `functions` only. The projection itself is compile-time: it expands away into
+  conditions and leaves nothing to run. The default-level claim is REV 17'S OWN (LEAN, DECIDED (52); rev 16 made no
+  level claim for the tuple family; review r17 F14), resting on §6.1 and §4.1 (conditions against fixed sets); table
+  (R) shows ANSWER identity with rev 16's bodies, not the level. The bound kinds are §4.6's and §6.1's existing rules
+  plus the integer reading above.
+  CAVEATS (rev 18; rev 19 re-spelled over references, every answer unchanged, table (X)): (1) rev 16's helper labels `t1`..`t3` are GONE: the compare adds no label, it writes conditions on
+  the author's; the per-call `label =` setting rev 16 proposed for them (decision (46)) is WITHDRAWN. (2) WRONG LENGTH
+  (rev 18, review r17 F6): NOTHING IN THE BODIES REFUSES IT. By §3.2's absent-entry rule a projection or bound SHORTER
+  than the name's size makes the conditions on the missing entry false, so the call silently means something else:
+  `lex_ge3([^h, ^m], [9, 0, 0])` is "strictly above 9:00", `lex_ge2([^h, ^m], [9])` is "h > 9"; a LONGER one
+  has its trailing entries never read (`lex_ge2([^h, ^m, ^sec], [9, 30])` compares h and m only); table (N), 436
+  cases, 0 differ from those readings. Rev 17's "a COMPILE ERROR ... table (W) shows the refusal" had no mechanism:
+  the refusal was the evidence script's own `raise`. The mechanism is OPEN (§13 O72; the lean there: an index past the
+  end of a SPELLED array in a VALUE position is a compile error, which catches the short case). (3) The separator is
+  the author's rx text: rev 16's string-in-a-hole caveat is gone, and `/./` for `/\./` is the author's ordinary rx
+  mistake (it would accept `1x4`). (4) NON-DIGIT FIELDS: a label's text compares as a number only if it is digits (a
+  comparison set holds numerals, §2.4); leading zeros are ignored (`padded`, the `\d+` row above), and an author
+  pattern that must refuse them says so (`/0|[1-9]\d*/`, above). A label whose text is not digits fails every
+  comparison on it, exactly like an unset label (5). The route for a NON-NUMERIC field is to compare a COMPUTED number
+  (§4.4): `mnum := $mname.index`, then `lex_between2([^year, ^mnum], [2024, 3], [2025, 2])` (table (C), 150
+  cases, 0 differ; comparing the month NAME itself never reads past the year). (5) UNSET AND NON-DIGIT FIELDS, ONE
+  READING (rev 18, review r17 F2; LEAN, this document, resting on §4.2): the compare reads a field only when every
+  EARLIER field EQUALS its bound (that is what the prefix expansion does), so an unset or non-digit field makes the
+  match fail the compare ONLY WHEN THE COMPARE REACHES IT; when an earlier field decides, the field is never read.
+  With the minutes optional, `10` IS in 9:30..11:00 and `9` is NOT (table (W)). The order this gives is
+  the DECIDED-PREFIX order (fields first to last; a field that is unset or not digits, reached before the order is
+  decided, makes the match INCOMPARABLE and every form, strict ones included, rejects it): table (U), 0 differ. An
+  author who wants every compared label present says so in the pattern or with a condition (`P & (m: /\d\d/)` fails
+  when m is unset, §4.2); `label.unset` warns. Rev 17's "makes its conditions false, so the compare rejects that
+  match" held only for a field the compare reaches. (6) REPEATED LABELS (rev 18, review r17 F4). (i) A label NAMED
+  TWICE in the projection (`[^h, ^h]`, a slip for `[^h, ^m]`): the conditions are h's twice, so the compare
+  collapses to h alone (`lex_ge2([^h, ^h], [9, 30])` = `h > 9`: `9:45` rejects; with [9, 5] it is `h >= 9`);
+  nothing refuses it, and the dead-branch warning (§5.2) fires only when an entry's two conditions on h cannot both
+  hold (with [9, 30], not with [9, 5]) (table (L1)). Rev 18 said a dedicated diagnostic would need the library to see
+  label names inside the macros it is passed; with references (rev 19) the slip is VISIBLE AT THE CALL, two references
+  to one field in one spelled array, so a warning (`compare.repeated`, proposed) needs no library insight (LEAN: none
+  until a case needs it, D77; §0.1 L75, GAP). (ii) A LOOPED
+  label (a label inside a loop): by the SEQUENCE RULE (RULED, CF:583, predx Q4; §4.3) each condition holds for EVERY
+  iteration and each condition quantifies its own label, so the compare is not a tuple compare per iteration:
+  `/(?:(?<h>\d{1,2}):(?<m>\d\d),)*/ & lex_ge2([^h, ^m], [9, 0])` REJECTS `10:00,9:30,` although every tuple is at
+  least 9:00 (the entry `h == 9 & m >= 0` needs EVERY h to be 9) and accepts the empty list (zero iterations of a
+  reached loop, §4.2) (table (L2): the bodies differ from "every tuple in range" in 16 of 114 cases); the per-tuple
+  compare is the call INSIDE the loop's item (`list_of(P & lex_ge2(...))`-shaped: 0 differ). RULED (rulings R-2,
+  box clock 00:09: "looped-compare: warn"; §13 O74 CLOSED): the meaning above STAYS, and the compiler WARNS,
+  `compare.looped` (§7.1; the name and text LEAN), whenever a compared field can hold more than one occurrence (a
+  reference to a REPEATED label, §4.2's boundary), the hint naming the fix: write the compare inside the loop's item.
+  Worked rows (table (W)): `/(?:(?<h>\d{1,2}):(?<m>\d\d),)*/ & lex_ge2([^h, ^m], [9, 0])` rejects `10:00,9:30,` and
+  `9:30,10:00,`, accepts `10:00,11:00,` and the empty list, and warns `compare.looped` ("h and m can repeat: this
+  compares each field over every iteration; to compare each time, put the compare inside the loop's item"); the fix,
+  the compare inside the item, accepts `10:00,9:30,` and the empty list and rejects `8:59,10:00,`. (7) Cost: one bound is n
+  entries over n labels; the automaton size is UNMEASURED (§13 O57's regime would measure it).
+  ANY NUMBER OF FIELDS is a later item (§13 O69 (3)); rev 18 (review r17 F11) names its GENERAL FORM, which the draft
+  already has: ruled BOUNDED RECURSION by a strictly decreasing literal parameter (§7 STATUS, CF:583; E-DEPTH), with
+  the size passed as a literal, gives the array compare for any n:
+
+      lg(1, n, s, lo) := (s[n]: padded(>=lo[n]))
+      lg(j, n, s, lo) := [(s[n-j+1]: padded(>lo[n-j+1])), (s[n-j+1]: padded(==lo[n-j+1])) & lg(j - 1, n, s, lo)]
+      lex_ge(n, s, lo) := lg(n, n, s, lo)
+
+  whose n = 2 and n = 3 expansions are the bodies above (`&` distributes over an array's entries, §3.2 tool 2); the
+  six sized names become instances (`lex_ge2(s, lo) := lex_ge(2, s, lo)`). It recurses on an OFFSET, not a slice,
+  because indexing keeps original positions (§3.2 tool 1). What it waits on is narrower than rev 17 said ("a
+  structural macro with a running prefix"): O21 (a base case by literal argument as a general feature) and
+  compile-time ARITHMETIC ON A LITERAL PARAMETER INSIDE AN INDEX (`s[n-j+1]`; E-DEPTH does `k - 1` only as an
+  argument; rev 19: on the left of `:` that index is also outside §4.1's one exception, which admits a LITERAL index
+  only, so the trigger widens that exception too). The natural-order range (§13 O68) stays a later item, behind the tuple compare. The phase-1 spelling
+  WITHOUT the library still works: "version at least 1.4" is `semver & ((major: >=2) | (major: 1, minor: >=4))` (§4.1).
+  NAMING: settled (above). Rev 16's candidates (b) `pair_between`/`triple_between`, positional, and (c)
+  `tuple_between2` are not adopted. The 2026-11-14 record's spelling `lex_ge([major, minor, patch], [1, 4, 0])` (CF:648)
+  wrote the labels bare, as values (§13 C13); a bare compared field is now RULED out (CF:1268-1282 on main), and the
+  decomposed form reaches the record's shape with each label named by the other-side sigil (RULED, CF:1304-1316 on
+  main), `lex_ge3([^major, ^minor, ^patch], [1, 4, 0])`: the record's shape with one mark per field.
+
+  THE PROJECTION (rev 17; the owner's "a macro that takes a map and produces an array given labels", CF:1241 on main;
+  "map is an interface in his model", the record, CF:1243). Ways it could exist, against this document's rules:
+  (i) A PLAIN MACRO taking label NAMES, `project(names)` giving the array: NOT EXPRESSIBLE UNDER THIS DOCUMENT'S
+  READING. A label name would be a value (§13 C13, open, the lean against: values are `$x`), and the body would need a
+  label path built from a parameter. The premise that the left of `:` is "a path written in the program, never an
+  expression" is THIS DOCUMENT'S READING (LEAN), not a ruling (rev 18, review r17 F8; rev 17 marked it RULED CF:595):
+  CF:595-597 rules the CONCEPT, one condition form `label: set`; the path on the left of `:` is the manager's proposal
+  (CF:275), and no owner sentence says a label position cannot take a macro PARAMETER; the record itself left "a
+  PARAMETER AS A LABEL NAME" to check (CF:1239-1240), and the named-map form and the other-side mark (iv) need exactly
+  that change; rev 19 ADOPTS it in its narrowest form (§4.1's one exception: a parameter bound to a field REFERENCE,
+  written as a path at the call), which still builds no name from a value, so (i) stays NOT EXPRESSIBLE. The only place a name is built from a value today is a GROUP-NAME hole in rx text (§5.4 `${ }` row),
+  which DEFINES a group and reads none. It would also buy nothing here: the author names the labels either way.
+  (ii) A SMALL STRUCTURAL PRIMITIVE reading the operand's map interface at the given labels: NOT NEEDED for labels the
+  author names. It would be needed only to COMPUTE the label list from a pattern ("all of v's labels in group order",
+  §13 C25 reading (B)), a later need with that trigger (D77).
+  (iii) SPELLED DIRECTLY: YES, in the FIELD form, now as FIELD REFERENCES (rev 19). The map is never passed: an
+  interface is never a value (RULED, CF:890-891) and the operand is never an argument (RULED, CF:749), so the map
+  ARRIVES THROUGH `&` when the composed condition meets the author's pattern; the projection is the array of the
+  compared fields, each a reference `^h` naming one field of that operand (rev 17-18: each the label's condition with
+  its set open, an accessor `h_is` or the section `(h:)`). The VALUES form `[$h, $m]` is writable (each `$h` a
+  one-string set, §5.4) but cannot be the compared side: a value is never constrained (§4.1), and a compare must
+  constrain what it compares (§0.1 L73). It is the right form for BOUNDS taken from the match (BOUNDS AND LEVELS).
+  (iv) THE SPELLING, RULED (rev 19; CF:1304-1316 on main): the compared fields are named by a SIGIL before a label
+  path, "this label, of the other side of the `&`" (placeholder `^h`; his idea at CF:1295-1302 reshaped rev 18's
+  mark plus `.`, `^.h`, into a sigil). [REV 20, review r19 CENSUS-8, carried: rev 19 went on "so the other side is
+  never a thing in its own right and the question of the mark standing alone does not arise"; that clause is the
+  MANAGER'S NOTE (CF:1302), not the owner's idea, which was CONDITIONAL ("if the otherside mark can't be used alone, it
+  could just be a scoping sigil like ^h", CF:1297), and the 00:06 ruling picks the sigil over the section only. The
+  STANDALONE OTHER SIDE is DEFERRED, not settled: TRIGGER, a use in which the other side of an `&` is wanted as a
+  thing in its own right (review r19 CENSUS-10 U1), met only if the sigil itself returns from its pause.] CONSIDERED AND NOT ADOPTED: the SECTION OF THE CONDITION `(h:)` (rev 17-18; the
+  owner's earlier lean, CF:1262-1266, and this document's rev 18 lean). His reason, his words: "i like a lot about the
+  section but its re-using a syntax for a different purpose" (CF:1307). The DOOR HE LEFT OPEN: "the save would be if
+  the section syntax were defined in such a way that that worked. but i don't see it" (CF:1307-1308): a definition of
+  sections under which `(h:)` follows (a section of the condition operator whose open part is the set) would reopen it;
+  none is proposed here, and its two novelties (the first section of an operator other than `&`, and the first open
+  on the RIGHT, review r17 F12) and its look-alike with §2.3's `(a: digit)(x)` (review r17 F21) stay on record for
+  whoever tries. The superseded `^.h` and the section are §0.1 L77's errors.
+  RECOMMENDATION: none needed for the spelling (ruled). Reading the owner's "produces an array" as an array of field
+  REFERENCES (rev 17-18: label CONDITIONS) rather than of VALUES is this document's consequence of §4.1's split
+  (`x:` constrains, `$x` reads, and now `^x` refers), not his words.
+
+  THE FIELD REFERENCE (rev 19; the sigil ruling, CF:1304-1316 on main; defined once in §5.4's `^` row, with §4.1's
+  one exception and §3.2 tool 1 / §3.5 for arrays of them). Summary: `^h` (also `^d.year`, `^mnum`) is a compile-time
+  NAME OF ONE FIELD OF ONE OPERAND, neither a value nor a condition; it stands only as a call's argument or an entry of
+  a spelled array that is one; it is resolved WHERE IT IS WRITTEN, to the field a condition `(h: S)` written in place
+  of the call would read; a body may only pass it along or put it on the left of `:` (through its parameter, literal
+  index only), against the same operand. Each label then has three spellings with one role each: `h:` constrains,
+  `$h` reads, `^h` refers (the manager's note, CF:1299-1302 on main). `^` inside `/.../` stays PCRE's anchor; the
+  symbol is the spelling step's.
+  BINDING, WRITTEN versus PASSED. The owner's value: the reader can see where the field comes from ("it wouldn't be
+  clear where it was coming from", CF:1270-1271). The manager's lean (CF:1280, not ruled): lexically, the `&` of the
+  place it is WRITTEN. This document states it as: the operand a condition written in place of the CALL the reference
+  stands in would read. The two agree wherever the call is written as an `&` operand (every row of this section and of
+  table (B) but B4): at a nested `&` the inner one (B1: `P & (t: Q & lex_ge2([^h, ^m], lo))` reads Q's h; reading P's
+  would differ in 22 of 48 cases); written inside a library body (`at_least(x, lo) := x & lex_ge2([^h, ^m], lo)`), the
+  body's own `&` (B3, 0 differ); written at the call site and PASSED into a body (`wrap(s, lo) := lex_ge2(s, lo)`), it
+  keeps the caller's operand (B2, 0 differ), and a body that lays it against ANOTHER operand (`inner(s, lo) := Q &
+  lex_ge2(s, lo)`) is a compile error naming both (B5: 828 of 828 refused, none answered; the model's own refusal,
+  not evidence, review r19 CENSUS-5). They DIFFER for a call
+  bound by name before it meets `&` (`late := lex_ge2([^h, ^m], [9, 30])`, then `P & late`): this document resolves
+  it where the bound macro's operand is filled (B4: 1,656 cases, 0 differ from the direct call), as a bound condition
+  `c := (h: >9)` already reads whatever operand fills it, keeping §0.1 L2 (a binding = its expansion); the strictly
+  visible-`&` reading refuses it ("no `&` in sight"). Owner question **bound-reference** (§13 O76; §0.1 L81).
+  NO `&` IN SIGHT. A reference whose call never meets an operand is the unapplied-macro error of the call (§2.3:
+  `lex_ge2([^h], [9])` alone as a program); a reference outside the two positions is the `^` row's error with its fix.
+  UNSET, REPEATED, COMPUTED. A reference to an UNSET label is legal; the conditions on it fail per match (§4.2), only
+  when the compare reaches the field (caveat (5)). To a REPEATED label: the sequence rule, `compare.looped` warns
+  (caveat (6), RULED R-2). To a COMPUTED label (`mnum := $mname.index`; the owner's pointer, CF:1284-1293 on main,
+  LOW WEIGHT, he does not recall asking; rev 18 had checked it): a computed label IS a label of the pattern whose
+  labels it reads (§4.4) and a field of its map (§0.3 "label", §3.2 tool 4), so `^mnum` is found by the same lookup as
+  `(mnum: S)`: `ym & lex_between2([^year, ^mnum], [2024, 3], [2025, 2])` (table (C), 0 differ). SHADOWING: the bare
+  `mnum` names the BINDING, `^mnum` the field of the other side, `$mnum` its value: three spellings, three roles, and
+  no bare reference (RULED); if the operand has no such computed label (a binding attached elsewhere, §13 O19) the
+  lookup's unknown-label error fires at the call. For VALUES (§0.1 L37, §13 C13: `==wd` vs `==$wd`) the owner's two
+  reasons apply equally (THE LANE'S CONSEQUENCE, LEAN, rev 18; unchanged).
+  THE CENSUS (G0b: every occurrence has ONE meaning), run over every `^` this document writes outside rx text (rev 19,
+  by hand; the occurrences are this section's rows, caveats, table (B)'s programs and §0.1 L72-L81):
+
+  | occurrence (shape) | position (`^` row) | names | one meaning? |
+  |---|---|---|---|
+  | `P & lex_between2([^h, ^m], ...)`, every worked row, the `past` row, h:m:s, versions, semver, `\d+` fields, optional minutes, leading-zero bounds | (2) entries of an argument array | P's h, m (the other side of that `&`) | yes |
+  | `P & lex_ge2([^h, ^m], lo) & !lex_le2([^h, ^m], lo)` (strict) | (2), twice, the second under prefix `!` | P's h, m in both: `!` makes a macro with its operand open (§2.2), filled by the same chain (§4.1's lookup) | yes |
+  | `ym & lex_between2([^year, ^mnum], ...)` | (2) | ym's group year, its computed label mnum | yes |
+  | `lex_ge2([^b1, ^b2], [$a1, $a2])` | (2); the bounds are values | the operand's b1, b2; `$a1` reads a1's text | yes |
+  | `/(?:...)*/ & lex_ge2([^h, ^m], [9, 0])` (looped) | (2) | the loop's h, m, every iteration; `compare.looped` | yes |
+  | `lex_ge2([^h, ^h], lo)`, `lex_ge3([^h, ^m], [9, 0, 0])`, `lex_ge2([^h, ^m, ^sec], [9, 30])` (slips, wrong length) | (2) | the operand's fields; the slip's meaning is caveat (2), (6) | yes |
+  | `P & (t: Q & lex_ge2([^h, ^m], lo))` (B1) | (2), inside a condition's set | Q's h, m | yes |
+  | `at_least(x, lo) := x & lex_ge2([^h, ^m], lo)` (B3) | (2), written in a body | x's h, m | yes |
+  | `P & wrap([^h, ^m], lo)` (B2); `P & inner([^h, ^m], lo)` (B5) | (2), passed into a body | P's h, m in both; B5 is the error, not a second meaning | yes |
+  | `late := lex_ge2([^h, ^m], [9, 30])` (B4) | (2), in a bound call | the field of whatever fills late's operand | yes under the lean; the strict reading makes it an error (O76) |
+  | `is_late(^h)` (§0.1 L76) | (1) an argument | the operand's h | yes |
+  | `(^h: S)`, `P & ^h`, `[^a1, ^a2]` as bounds, `${^h}`, `r := ^h`, `^.h`, `(h:)` | none (errors, §0.1 L73, L77, L78) | | errors, so no meaning to split |
+  | `(s[k]: S)` in a body, `s` bound to `[^h, ^m]` | §4.1's one exception | entry k of the array, a reference | ONE meaning only if `[k]` after a reference PARAMETER is the entry pick; §3.2 tool 1 reads `[n]` on the left of `:` as an ITERATION index (`(x[2]: S)`), so this is the collision of O75 |
+
+  The last row is the one point where the census does NOT pass under the rules as written: `[n]` on the left of `:`
+  reads ITERATIONS by §3.2 tool 1's position rule (LEAN, review r10 FIXA-2), while the bodies need it to pick an
+  ENTRY of the reference array. With a parameter `f` bound to the single reference `^h` of a repeated label,
+  `(f[2]: S)` would read either "iteration 2 of h" (the position rule) or "entry 2 of a one-entry array" (absent,
+  false). This document's lean resolves it with rules it already has: a passed reference cannot be EXTENDED (§4.1:
+  the path is whole where written), so after a reference parameter `[k]` can only be the entry pick, and an iteration
+  index is written in the path at the call (`^h[2]`); that gives one meaning per occurrence, at the price of one
+  more stated exception to the position rule. STOP-RULE ITEM (the brief's): it is brought to the owner as part of
+  **reference-index** (§13 O75), not adopted quietly.
