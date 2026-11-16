@@ -3,10 +3,11 @@
 # gate's own sweep (d3fix, 2026-11-15, on 466d8e8ee's tree = d2496010e's compiler + the d3wire wiring; `make
 # test-memfn-d3floor`, the D3-FLOOR lines), with every band 0 (the measured spread over four
 # sweeps -- r10 critic, d3fix, r11 critic, d3fix2 -- is 0: the sweep is compile-only and deterministic): below the value = a
-# loss, above = a gain nobody re-pinned (both red: "census changed: re-pin tests/memfn/d3_floor.tsv"), so a floor cannot go
-# loose behind a growing census
-# (review r10 D3W-1/2/5). To re-pin after a deliberate change: rerun the gate, read its D3-FLOOR lines, copy the numbers,
-# say in the provenance column which change moved them.
+# loss, above = a gain nobody re-pinned (both red: "census changed: re-pin with D3FLOOR_REPIN=1 bash tests/memfn/run_d3floor.sh"),
+# so a floor cannot go loose behind a growing census (review r10 D3W-1/2/5). To re-pin after a deliberate change: run
+# `D3FLOOR_REPIN=1 D3FLOOR_NOTE="which change moved them" bash tests/memfn/run_d3floor.sh`; it rewrites d3_census.tsv AND the
+# four data rows here (bands 0, provenance "repin <note>"; this comment block and the header are kept), prints the member diff,
+# and REFUSES an empty/short sweep (a deliberate shrink: D3FLOOR_REPIN_SHRINK=1). Review the diff, commit both files.
 # columns (tab-separated): cell, census_floor, census_band, compiles, failed, pop_band, records, records_band, provenance
 #   census_floor  distinct corpus patterns whose SHIPPED art carries a run_part_terms record with an unspelled SET term.
 #                 (r43 measured 58/143/99/216 on an earlier base; d3wire's census on d2496010e was 78/174/119/247 = these.)

@@ -55,6 +55,7 @@ skipped=$(grep -c '^D3-FLOOR-PLANTS-SKIPPED ' "$WORK/floor.out")
 per=$(sed -n 's/^PLANTS = \([0-9]*\) .*/\1/p' "$TREE/tests/memfn/d3_floor.py")   # one source: d3_floor.py
 want=$(( (4 - skipped) * per ))
 if [ "$skipped" -gt 0 ]; then echo "d3floor: plants skipped on $skipped red cell(s); the red cell is the failure"
-elif [ "$n" -lt "$want" ]; then echo "FAIL: [d3floor] only $n of $want plants ran and went as expected"; rc=1; fi
+elif [ "$n" -ne "$want" ]; then echo "FAIL: [d3floor] $n plants ran and went as expected, want exactly $want (a lost plant, or PLANTS in d3_floor.py not updated)"; rc=1; fi
+echo "d3floor: $n plants ok of $want"
 if [ "$rc" -eq 0 ]; then echo "checks passed: 1"; echo "checks failed: 0"; else echo "checks passed: 0"; echo "checks failed: 1"; fi
 exit "$rc"

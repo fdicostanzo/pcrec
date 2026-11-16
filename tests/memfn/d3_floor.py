@@ -23,7 +23,7 @@ output): every mover is in the census, else `MOVER-WITHOUT-RECORD` and red. Not 
 the set relation movers <= census is checked on demand, the gate pins the counts EXACTLY; a swap that keeps the counts is D3F-2's set pin).
 REPIN (`--repin`, via D3FLOOR_REPIN=1 run_d3floor.sh) rewrites BOTH d3_census.tsv and d3_floor.tsv (D3G-3) and REFUSES (rc 1,
 nothing written) an empty sweep, a census below the live DIFFER pin, or fewer compiles than pinned (--shrink / D3FLOOR_REPIN_SHRINK=1
-allows only the last) (D3G-2). One function, cell_why, is the per-cell verdict for main() and the plants (D3G-1).
+allows only the last) (D3G-2). One function, cell_why, is the per-cell verdict for main() and the plants (D3G-1); repin_decide is the refuse-or-write decision and rc for --repin and the plants (D3H-2).
 SELF-TEST (default on; every plant is derived from the MEASURED sweep, not from the floor): S3228 loses one census
 pattern's records (below the floor), and a floor left behind a census that rose (above the band); S3229 an empty and a
 truncated sweep; S3230 a floor below emit_sweep's DIFFER floor; S3231 a lost corpus pattern and a crash wave of failed
@@ -39,7 +39,7 @@ import sys
 CELLS = ("byte/c-default", "byte/c-vm", "utf8/c-default", "utf8/c-vm")
 DENY = "--memfn=no-run-verify-wide"
 INTCOLS = ("census_floor", "census_band", "compiles", "failed", "pop_band", "records", "records_band")
-PLANTS = 13  # per cell; run_d3floor.sh reads this line and counts PLANTS x 4 "D3-FLOOR-PLANT ... ok" lines
+PLANTS = 15  # per cell (12 record plants + 3 repin refusals); run_d3floor.sh reads this line and wants EXACTLY PLANTS x 4 "D3-FLOOR-PLANT ... ok" lines
 REMEDY = ("census changed: re-pin with D3FLOOR_REPIN=1 bash tests/memfn/run_d3floor.sh (rewrites d3_census.tsv and "
           "d3_floor.tsv; review the printed diff, commit both)")
 REPIN = REMEDY  # named once per cell by cell_why, never inline in a count's own text
@@ -243,6 +243,19 @@ def repin_refusals(floors, sets, pins, shrink, cells=CELLS):
     return bad
 
 
+def repin_decide(floors, sets, pins, shrink, write, cells=CELLS):
+    """THE refuse-or-write decision and its exit code (D3H-2), the ONE function main() --repin and the S3235-S3237
+    plants both call: refused = print the reasons, call nothing, rc 1; accepted = call write(), rc 0."""
+    refused = repin_refusals(floors, sets, pins, shrink, cells)
+    if refused:
+        for r in refused:
+            print("D3-REPIN-REFUSED " + r)
+        print("d3_floor: --repin refused; nothing written")
+        return 1, refused
+    write()
+    return 0, refused
+
+
 def pairs(xs, what):
     out = {}
     for x in xs:
@@ -309,14 +322,17 @@ def self_test(floors, tree, c0, cell, recs, hit, pin, pinned):
     gain = [dict(r, sites=vsites) if r.get("pat_hex") == other else r for r in recs]  # +1: a non-member gets a hit's sites
     run("S3234-gained-named", fl, gain, True, "census members GAINED (1): %r" % pat_text(other))
 
-    # S3235-S3237 (D3G-2): --repin refuses an empty, a sub-pin and a short sweep; the refusal function is main()'s own
+    # S3235-S3237 (D3G-2, D3H-2): --repin refuses an empty, a sub-pin and a short sweep; repin_decide is main()'s own
+    # decision (refuse-or-write and the rc), so a plant sees the guard unwired: it must be rc 1 AND write() never called
     def refuse(tag, x, shrink, want):
-        got = repin_refusals({cell: fl}, {cell: x}, {cell: pin}, shrink, (cell,))
-        ok = bool(got) == want
-        print("D3-FLOOR-PLANT %s %s refusals=%d -> %s %s" % (tag, cell, len(got), "REFUSED" if got else "accepted",
-                                                            "ok" if ok else "WRONG"))
+        wrote = []
+        rc, got = repin_decide({cell: fl}, {cell: x}, {cell: pin}, shrink, lambda: wrote.append(1), (cell,))
+        ok = (rc == 1 and not wrote and bool(got)) if want else (rc == 0 and bool(wrote))
+        print("D3-FLOOR-PLANT %s %s refusals=%d rc=%d wrote=%d -> %s %s" % (tag, cell, len(got), rc, len(wrote),
+                                                                          "REFUSED" if rc else "accepted", "ok" if ok else "WRONG"))
         if not ok:
-            bad.append("%s %s: wanted %s, got %r" % (tag, cell, "a refusal" if want else "acceptance", got))
+            bad.append("%s %s: wanted %s, got rc=%d wrote=%d %r" % (tag, cell, "a refusal" if want else "acceptance", rc,
+                                                                    len(wrote), got))
     refuse("S3235-repin-empty", {"hit": set(), "n": 0}, True, True)
     refuse("S3236-repin-subpin", {"hit": set(sorted(hit)[:pin - 1]), "n": len(recs)}, False, True)
     refuse("S3237-repin-short", {"hit": hit, "n": fl["compiles"] - 1}, False, True)
@@ -347,14 +363,9 @@ def main():
             recs = [json.loads(ln) for ln in open(sweeps[cell]) if ln.strip()]
             hit, n, nrec = census(recs, c0)
             sets[cell] = {"hit": hit, "n": n, "nrec": nrec, "nfail": failed_count(recs)}
-        refused = repin_refusals(floors, sets, {c: pin_floor(a.tree, c) for c in CELLS}, a.shrink)
-        if refused:
-            for r in refused:
-                print("D3-REPIN-REFUSED " + r)
-            print("d3_floor: --repin refused; nothing written")
-            sys.exit(1)
-        repin(a.census, a.floors, sets, old, a.note or "unspecified")
-        sys.exit(0)
+        rc, _ = repin_decide(floors, sets, {c: pin_floor(a.tree, c) for c in CELLS}, a.shrink,
+                             lambda: repin(a.census, a.floors, sets, old, a.note or "unspecified"))
+        sys.exit(rc)
     pinned_sets = load_census_set(a.census)
     fails, nplant_bad = [], 0
     for cell in CELLS:
