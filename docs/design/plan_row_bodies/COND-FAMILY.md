@@ -1627,3 +1627,10 @@ predicates_future.md items 5-6's in-set forms (`| unset`, an author-written empt
 principle; (3) the principle does not by itself decide whether a condition on an absent label holds or fails: that
 is the choice between reading `(h: S)` as "h's text is in S" (needs a text) and "every text h has is in S".
 Sent to lane absent as its R1.
+
+**2026-11-16 OWNER IDEA — a transform that makes a filter optional (Frank, to session 135, box clock 13:52).** His words:
+"To be easier, we could have a transform ? (Spelling Conflicts) this changes a filter to be optional like <100?".
+RECORD: NOT A RULING: an author-controlled option for absent labels (the author marks "absence is acceptable"; the
+base rule is then "a condition needs a text"). Spelling a placeholder (D193 add. 4). Sent to lane absent as its R2,
+with the manager's addition that the same control be worked on the LABEL side too (`(h?: <100)`), since by his
+principle of the same hour a set never contains absence.
