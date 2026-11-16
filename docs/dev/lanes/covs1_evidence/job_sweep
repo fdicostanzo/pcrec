@@ -29,9 +29,16 @@ python3 scripts/emit_sweep.py --ref-bin "$SC/ref/build/pcrec" --tree "$TREE" \
     --out "$SC/sweep" --jobs 12 --movers-out "$SC/sweep.movers.tsv" \
     --facts-declared-moves 'span_facts:row:gone>,cover:section:>new' \
     --dumps-declared-rows='--list-limits:PCREC_ANCHORED_MAX_STATES' \
-    --dumps-declared-gone='--list-limits:PCREC_SPAN_WALK_SUBSETS' 2>&1 | tee "$SC/sweep.report.txt"
+    --dumps-declared-gone='--list-limits:PCREC_SPAN_WALK_SUBSETS' 2>&1 | tee "$SC/sweep.report.txt" \
+    | sed -E 's/^([A-Za-z0-9_.-]+): DONE rc=/\1: finished, instrument rc=/'
+# WHY the sed: emit_sweep prints `emit_sweep: DONE rc=1` whenever a mover exists (expected here), and the
+# queue's log scanner (scripts/verdict) reads any `TOOL: DONE rc=N`, N != 0, as a RED line (job
+# 200-covs1f-sweep, 2026-11-15, judged green by sweep_verdict.py). The raw line stays in $SC/sweep.report.txt
+# (sweep_verdict.py needs it); only the job LOG's copy is reworded. The job's own trailer below is the one
+# `DONE rc=` line in the log and carries the judged verdict.
 sweep_rc=${PIPESTATUS[0]}
 python3 -I "$TREE/docs/dev/lanes/covs1_evidence/sweep_verdict.py" "$SC/sweep.report.txt" "$SC/sweep.movers.tsv" "$sweep_rc"
 vrc=$?
 echo "$vrc" > "$SC/sweep.verdict"   # the RESULT covs1f-predict's --ready reads (never a queue key)
+echo "covs1-sweep: DONE rc=$vrc (judged by sweep_verdict.py; emit_sweep's own rc was $sweep_rc)"
 exit "$vrc"
