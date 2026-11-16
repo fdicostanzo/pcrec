@@ -1723,3 +1723,15 @@ principle, offered by the manager: "two patterns that match the same subjects an
 answer every condition alike" (*). His words: "spelling-phrasing: that sounds good. I agree. Put an asterisk next to
 it in case it needs adjustment". RECORD: RULED, PROVISIONAL WORDING: the sentence carries an asterisk wherever it is
 quoted ((*) the wording may be adjusted; the principle is ruled, the sentence is not final).
+
+**2026-11-16 OWNER RULING — match-context (Frank, to session 136, box clock 16:13).** The question from lane absfix
+(joint_condition.md §4H.1, the CONTEXT row): is the mark's "a value the label can take in a match" taken over any
+match of the pattern, or only over matches agreeing with this match's other labels? Put with the branch-reset example
+(`(h?: <5)` on `b`: HOLDS / FAILS). His first reply sketched the author's own spelling of the dependence: "So in
+that pattern, you might (k,h?): ((\"a\", <5) | etc". The manager's reading of it, put back to him: the domain is what
+the label can hold ANYWHERE in the pattern, and dependence between labels is the author's to write as a joint
+condition (the two readings then agree: `((k, h?): ("a", <5) | ("b", >=5))` holds on `b` under both;
+`((k, h?): ("a", <5))` fails under both). His words: "match-context: anywhere. This does need some sort of debugger
+for writing these." RECORD: RULED: DOM(h) is taken over ANY match of the pattern (one value set per label, fixed
+when the pattern is compiled); labels that go together are written together, in a joint condition. His second
+sentence is a REMARK, not a directive (recorded in predicates_future.md as a parked item with a trigger).

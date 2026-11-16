@@ -133,3 +133,16 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 - STATUS: the owner, 2026-11-16: "agree an error. And that means it's also unofficially parked in case some other
   meaning becomes valuable". Not a designed idea; a reserved spelling.
 - TRIGGER: a meaning for the repeated label that has a real use and cannot be written another way.
+
+## 10. A debugger (explainer) for writing conditions
+
+- WHAT: a tool that, for one pattern, one condition and one subject, shows WHY the condition holds or fails: each
+  label's value or its absence (and why absent: optional skipped, zero passes, branch not taken), which control
+  applied (the optional mark, a default, none), the value that witnessed a marked absence, the pairing of looped
+  labels pass by pass, and which part of a record or which tuple of a set decided.
+- STATUS: the owner's remark, 2026-11-16, on ruling **match-context** ("This does need some sort of debugger for
+  writing these."). A remark, not a directive: nothing designed, nothing scheduled. The manager's note: the design
+  already rests on evidence scripts that compute exactly these facts per subject, so the explainer is that model
+  made a product; its natural home is beside `--explain` and [COST-EXPLAIN], and it should be designed WITH the
+  first predicate build, not after it (every absence answer is otherwise invisible to the author).
+- TRIGGER: the first build go for any predicate piece (the explainer's design then rides with it).
