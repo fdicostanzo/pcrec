@@ -1614,3 +1614,16 @@ do work it out but consider also the option that missing means failing. Or optio
 interpretation". RECORD: NOT A RULING. A design lane works out, side by side: absent always HOLDS; absent always
 FAILS; forms where the AUTHOR controls the reading; and today's line as the baseline. Nothing in the ruled text
 changes until he chooses. pairing-loop parts 2-3 and rev 20 wait on it.
+
+**2026-11-16 OWNER PRINCIPLE — a set never contains absence (Frank, to session 135, box clock 13:52).**
+While the absent-label options were being worked out, his words: "In my mind <100 is defined as the set of all
+positive integer strings less than 100. Absence is not part of that set". RECORD: a PRINCIPLE for the predicate
+language, constraining every option: sets are sets of strings (or tuples of them); absence is never a member. THE
+MANAGER'S CONSEQUENCES (his, to be checked): (1) the zero-pass wording "empty satisfies any set" is restated on the
+condition side (a condition quantifies over the values a label has; with no pass there is nothing to test for the
+looped label, and the outside label is still tested), answers unchanged; (2) author control of absence lives on
+the label / condition side (the default, a label marker, quantifier words), never as a set member, so
+predicates_future.md items 5-6's in-set forms (`| unset`, an author-written empty value) are closed by this
+principle; (3) the principle does not by itself decide whether a condition on an absent label holds or fails: that
+is the choice between reading `(h: S)` as "h's text is in S" (needs a text) and "every text h has is in S".
+Sent to lane absent as its R1.
