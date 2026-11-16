@@ -32,4 +32,21 @@
   a label condition (w: "ho")            | 781 strings | document reading:   3 differ | raw paste:   3 differ
   a nested transform startsWith("h")     | 781 strings | document reading: 156 differ | raw paste:   0 differ
 
+(I) rulings R-1 (warn-in-macro-body RULED; the owner asked "is that an identity?"): where `anchored(r)` and
+    the whole-match tie coincide (it stands DIRECTLY in a whole-match role) and where they do not
+  side of & (final)      | /\w+/ & anchored(/foo/) vs /\w+/ & /foo/                   | 'xfoo'     | 1-4      | 1-4      | same; warns
+  side of & (final)      | /[\w\n]+/ & anchored(/foo$/) vs /[\w\n]+/ & /foo$/         | 'xfoo\n'   | 1-4      | 1-4      | same; warns
+  side of & (final)      | /[\w\n]+/ & anchored(/foo\n?/) vs /[\w\n]+/ & /foo\n?/     | 'xfoo\n'   | 1-5      | 1-5      | same; warns
+  side of & (final)      | /[\w\n]+/ & anchored(/(?m:a$\n^b)/) vs /[\w\n]+/ & /(?m:a$\n^b)/ | 'xa\nb'    | 1-4      | 1-4      | same; warns
+  side of & (final)      | /(?s).+/ & anchored(/a$/) vs /(?s).+/ & /a$/               | 'ba\n'     | 1-2      | 1-2      | same; warns
+  side of & (final)      | x & anchored(/\d+/ & <256) vs x & (/\d+/ & <256)           | 'x300 12'  | 1-3      | 1-3      | same; warns
+  label: condition       | (x: anchored(/S\w*/)) vs (x: /S\w*/)                       | 'Sab'      | True     | True     | same; warns
+  label: condition       | (x: anchored(/S\w*/)) vs (x: /S\w*/)                       | 'S-1'      | False    | False    | same; warns
+  label: condition       | (x: anchored(/S\w*/)) vs (x: /S\w*/)                       | 'xS'       | False    | False    | same; warns
+  final: P&anchored(Q)   | /\d+/ & anchored(<256) vs anchored(/\d+/ & <256)           | 'x300 12'  | 1-3      | no match | DIFFERENT (the first is a side: the stretch; the second pins the subject)
+  final: P&anchored(Q)   | /\d+/ & anchored(<256) vs anchored(/\d+/ & <256)           | '200'      | 0-3      | 0-3      | same
+  & side in a hole       | /999${/\d+/ & anchored(<100)}999/ vs ... & <100 ...        | '99945999' | 0-8      | 0-8      | same; warns
+  & side in a hole       | /999${/\d+/ & anchored(<100)}999/ vs ... & <100 ...        | '99912345999' | no match | no match | same; warns
+  hole (no role), final  | /x${anchored(/a/)}/ = /x\A(?:a)\z/ vs /x${/a/}/            | 'xa'       | no match | match    | DIFFERENT; no warning (a hole is no role)
+
 engine disagreements (libpcre2-8 vs Python re): 0

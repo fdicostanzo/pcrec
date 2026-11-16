@@ -263,5 +263,77 @@ for name, arg, doc, paste in KINDS:
     p = members(paste)
     print("  %-38s | %3d strings | document reading: %3d differ | raw paste: %3d differ" % (
         name, len(U), len(want ^ d), len(want ^ p)))
+# ---------------------------------------------------------------------------------------------------- table (I)
+print()
+print("(I) rulings R-1 (warn-in-macro-body RULED; the owner asked \"is that an identity?\"): where `anchored(r)` and")
+print("    the whole-match tie coincide (it stands DIRECTLY in a whole-match role) and where they do not")
+
+
+def anch(r):
+    return r"\A(?:%s)\z" % r
+
+
+LT100 = "(?:" + "|".join(str(v) for v in range(100)) + ")"
+LT256 = "(?:" + "|".join(str(v) for v in range(256)) + ")"
+# x & anchored(r) vs x & r, searched, for several r (incl. a trailing-newline `$`, (?m), and an & chain as r)
+for x, r, s in ((r"\w+", "foo", "xfoo"), (r"[\w\n]+", "foo$", "xfoo\n"), (r"[\w\n]+", r"foo\n?", "xfoo\n"),
+                (r"[\w\n]+", r"(?m:a$\n^b)", "xa\nb"), (r"(?s).+", r"a$", "ba\n"),
+                (r"\d+", None, "x300 12")):
+    if r is None:   # r is itself an & chain: anchored(/\d+/ & <256): the & in the hole opens a role over the hole's
+        #           text, which \A/\z pin to the whole stretch; emulated as both sides whole on the stretch
+        a = search_amp([x, r"\d+", LT256], s)
+        b = search_amp([x, r"\d+", LT256], s)
+        name = "x & anchored(/\\d+/ & <256) vs x & (/\\d+/ & <256)"
+    else:
+        a = search_amp([x, anch(r)], s)
+        b = search_amp([x, r], s)
+        name = "/%s/ & anchored(/%s/) vs /%s/ & /%s/" % (x, r, x, r)
+    print("  side of & (final)      | %-58s | %-10r | %-8s | %-8s | %s" % (name, s, show(a), show(b),
+                                                                         "same; warns" if a == b else "DIFFERENT"))
+for t_ in ("Sab", "S-1", "xS"):
+    a = whole(anch(r"S\w*"), t_)
+    b = whole(r"S\w*", t_)
+    print("  label: condition       | %-58s | %-10r | %-8s | %-8s | %s" % ("(x: anchored(/S\\w*/)) vs (x: /S\\w*/)", t_,
+                                                                         a, b, "same; warns" if a == b else "DIFFERENT"))
+
+
+for s in ("x300 12", "200"):
+    a = search_amp([r"\d+", anch(LT256)], s)           # P & anchored(Q), searched: anchored(Q) is a side
+    b = (0, len(s)) if whole(r"\d+", s) and whole(LT256, s) else None   # anchored(P & Q): the whole subject
+    print("  final: P&anchored(Q)   | %-58s | %-10r | %-8s | %-8s | %s" % (
+        "/\\d+/ & anchored(<256) vs anchored(/\\d+/ & <256)", s, show(a), show(b),
+        "same" if a == b else "DIFFERENT (the first is a side: the stretch; the second pins the subject)"))
+
+
+def hole999(side_extra, s):
+    for i in range(len(s) + 1):
+        if not s.startswith("999", i):
+            continue
+        for j in range(len(s), i + 5, -1):
+            if not s.endswith("999", 0, j):
+                continue
+            st = s[i + 3:j - 3]
+            if st and whole(r"\d+", st) and whole(side_extra, st):
+                return (i, j)
+    return None
+
+
+for s in ("99945999", "99912345999"):
+    a = hole999(anch(LT100), s)
+    b = hole999(LT100, s)
+    print("  & side in a hole       | %-58s | %-10r | %-8s | %-8s | %s" % (
+        "/999${/\\d+/ & anchored(<100)}999/ vs ... & <100 ...", s, show(a), show(b), "same; warns" if a == b else "DIFFERENT"))
+# x${anchored(/a/)}: a hole is no role; its \A/\z read the enclosing scope (the subject): never matches
+r1 = re.search(r"x\A(?:a)\Z", "xa")
+c = _code(r"x\A(?:a)\z")
+md = L.pcre2_match_data_create_from_pattern_8(c, None)
+rc = L.pcre2_match_8(c, b"xa", 2, 0, 0, md, None)
+L.pcre2_match_data_free_8(md)
+if (rc >= 0) != (r1 is not None):
+    DISAGREE[0] += 1
+print("  hole (no role), final  | %-58s | %-10r | %-8s | %-8s | %s" % (
+    "/x${anchored(/a/)}/ = /x\\A(?:a)\\z/ vs /x${/a/}/", "xa", "match" if rc >= 0 else "no match",
+    "match" if re.search("xa", "xa") else "no match", "DIFFERENT; no warning (a hole is no role)"))
+
 print()
 print("engine disagreements (libpcre2-8 vs Python re): %d" % DISAGREE[0])
