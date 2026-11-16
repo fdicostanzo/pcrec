@@ -17,7 +17,7 @@ THE CENSUS (per cell): the DISTINCT corpus patterns (`pat_hex`) that compiled an
 THE CHECK, per cell: the sweep is a POPULATION that is counted and printed, each count pinned to its MEASURED value with a
 small band above (below = a loss, above = a gain nobody re-pinned; both red, learnings §3 and review r10 D3W-1/2/5):
 compiles, failed compiles (exact), run_part_terms records, and the census (>= census_floor, <= census_floor +
-census_band: "census rose: re-pin tests/memfn/d3_floor.tsv"); census_floor >= emit_sweep's live DIFFER_PINS floor for the
+census_band: "census rose: re-pin tests/memfn/d3_floor.tsv"); the census is ALSO pinned as a SET (d3_census.tsv, D3F-2; --repin rewrites it and prints the diff); census_floor >= emit_sweep's live DIFFER_PINS floor for the
 cell (read from TREE: ONE source for the movers number, no copy here). `--movers CELL=MOVERS.tsv` (deny_reach.py's
 output): every mover is in the census, else `MOVER-WITHOUT-RECORD` and red. Not part of the gate (a second sweep per cell;
 the set relation movers <= census is checked on demand, the gate pins the counts EXACTLY; a swap that keeps the counts is D3F-2's set pin).
@@ -35,9 +35,19 @@ import sys
 CELLS = ("byte/c-default", "byte/c-vm", "utf8/c-default", "utf8/c-vm")
 DENY = "--memfn=no-run-verify-wide"
 INTCOLS = ("census_floor", "census_band", "compiles", "failed", "pop_band", "records", "records_band")
-PLANTS = 8  # per cell; run_d3floor.sh counts PLANTS x 4 "D3-FLOOR-PLANT ... ok" lines
+PLANTS = 10  # per cell; run_d3floor.sh reads this line and counts PLANTS x 4 "D3-FLOOR-PLANT ... ok" lines
 REPIN = "census changed: re-pin tests/memfn/d3_floor.tsv"
 HERE = os.path.dirname(os.path.abspath(__file__))
+CENSUS_FILE = os.path.join(HERE, "d3_census.tsv")
+CENSUS_HEAD = """# tests/memfn/d3_census.tsv -- the D3 floor's CENSUS AS A SET (review r11 D3F-2): per cell, every corpus pattern (pat_hex,
+# sorted) whose SHIPPED art carries a run_part_terms record with an unspelled SET term, as measured by `make
+# test-memfn-d3floor`. d3_floor.py holds the measured census EQUAL to this set: a lost member is red and named, a gained one
+# is red and named (a re-pin must show what it absorbs). Re-pin: `D3FLOOR_REPIN=1 bash tests/memfn/run_d3floor.sh` rewrites
+# this file and prints the member diff plus the d3_floor.tsv numbers; review the diff, then commit both. d3_floor.tsv's
+# census_floor column must equal the row count here (checked).
+# Provenance of this pin: %s
+# columns (tab-separated): cell, pat_hex
+"""
 
 
 def load_floors(path):
@@ -58,6 +68,56 @@ def load_floors(path):
         if c not in rows:
             sys.exit("d3_floor: %s has no row for cell %s" % (path, c))
     return rows
+
+
+def load_census_set(path):
+    out = {c: set() for c in CELLS}
+    for ln in open(path):
+        ln = ln.rstrip("\n")
+        if not ln or ln.startswith("#"):
+            continue
+        cell, _, h = ln.partition("\t")
+        if cell not in out or not h:
+            sys.exit("d3_floor: %s: bad row %r" % (path, ln))
+        out[cell].add(h)
+    return out
+
+
+def pat_text(h):
+    return bytes.fromhex(h).decode("latin-1")
+
+
+def set_why(fl, pinned, hit):
+    """the census as a SET (D3F-2): every pinned member still hits (lost = red, named), nothing unpinned hits (gained =
+    red, named), and the tsv's census_floor equals the pinned set's size. Empty list = green."""
+    why = []
+    lost, gained = sorted(pinned - hit), sorted(hit - pinned)
+    if lost:
+        why.append("census members LOST (%d): %s" % (len(lost), ", ".join(repr(pat_text(h)) for h in lost[:8])))
+    if gained:
+        why.append("census members GAINED (%d): %s" % (len(gained), ", ".join(repr(pat_text(h)) for h in gained[:8])))
+    if len(pinned) != fl["census_floor"]:
+        why.append("d3_census.tsv has %d members for the cell, d3_floor.tsv census_floor is %d" % (len(pinned), fl["census_floor"]))
+    if why:
+        why.append(REPIN)
+    return why
+
+
+def repin(path, sets, old, a_note):
+    """--repin: rewrite d3_census.tsv from the measured sets; print the member diff and the d3_floor.tsv numbers"""
+    with open(path, "w") as f:
+        f.write(CENSUS_HEAD % a_note)
+        for c in CELLS:
+            for h in sorted(sets[c]["hit"]):
+                f.write("%s\t%s\n" % (c, h))
+    for c in CELLS:
+        for h in sorted(old[c] - sets[c]["hit"]):
+            print("D3-REPIN %s - %r" % (c, pat_text(h)))
+        for h in sorted(sets[c]["hit"] - old[c]):
+            print("D3-REPIN %s + %r" % (c, pat_text(h)))
+        x = sets[c]
+        print("D3-REPIN-ROW %s census_floor=%d compiles=%d failed=%d records=%d (d3_floor.tsv: set these, bands 0)"
+              % (c, len(x["hit"]), x["n"], x["nfail"], x["nrec"]))
 
 
 def load_census0(tree):
@@ -152,7 +212,7 @@ def with_rc(recs, pats, rc):
     return [dict(r, rc=rc) if r.get("pat_hex") in pats else r for r in recs]
 
 
-def self_test(floors, tree, c0, cell, recs, hit, pin):
+def self_test(floors, tree, c0, cell, recs, hit, pin, pinned):
     """every plant must go RED and its control GREEN; returns the failure texts. Every plant is derived from the
     MEASURED sweep (the census, the counts), never from the floor under test (learnings 3, D3W-2)."""
     bad = []
@@ -181,6 +241,21 @@ def self_test(floors, tree, c0, cell, recs, hit, pin):
     # S3231: a lost corpus pattern / a crash wave, neither touching the census
     run("S3231-lost-pattern", fl, [r for r in recs if r.get("pat_hex") != ok_pats[0]], True, "compiles counted, below")
     run("S3231-fail-wave", fl, with_rc(recs, set(ok_pats[:5]), "timeout"), True, "failed compiles")
+    # S3232: an in-place swap (one witness lost, another gained, every count unchanged) is red and names both; the
+    # control (the measured set against itself) is green
+    def run_set(tag, hit_, want):
+        why = set_why(fl, pinned, hit_)
+        got = "; ".join(why)
+        ok = (bool(why) == bool(want)) and all(w in got for w in want)
+        print("D3-FLOOR-PLANT %s %s members=%d pinned=%d -> %s %s" % (tag, cell, len(hit_), len(pinned),
+                                                                      "RED" if why else "green", "ok" if ok else "WRONG"))
+        if not ok:
+            bad.append("%s %s: wanted %s, got %r" % (tag, cell, "red " + str(want) if want else "green", got))
+
+    victim = sorted(hit)[0]
+    run_set("S3232-swap", (hit - {victim}) | {"ab" * 5}, ["LOST", "GAINED", pat_text(victim)])
+    # S3233: a pure loss names the lost pattern; a pure gain names the gained one
+    run_set("S3233-lost-named", hit - {victim}, ["LOST", pat_text(victim)])
     return bad
 
 
@@ -189,12 +264,25 @@ def main():
     ap.add_argument("--tree", required=True)
     ap.add_argument("--floors", default=os.path.join(HERE, "d3_floor.tsv"))
     ap.add_argument("--no-self-test", action="store_true")
+    ap.add_argument("--repin", action="store_true", help="rewrite d3_census.tsv from the sweeps and print the diff")
+    ap.add_argument("--census", default=CENSUS_FILE, help="the pinned census set (default tests/memfn/d3_census.tsv)")
+    ap.add_argument("--note", default="", help="--repin: the provenance text for the file header")
     ap.add_argument("sweeps", nargs="+", metavar="CELL=SWEEP.jsonl")
     ap.add_argument("--movers", action="append", default=[], metavar="CELL=MOVERS.tsv")
     a = ap.parse_args()
     sweeps, movers = pairs(a.sweeps, "sweep"), pairs(a.movers, "--movers")
     floors = load_floors(a.floors)
     c0 = load_census0(a.tree)
+    if a.repin:
+        old = load_census_set(a.census) if os.path.exists(a.census) else {c: set() for c in CELLS}
+        sets = {}
+        for cell in CELLS:
+            recs = [json.loads(ln) for ln in open(sweeps[cell])]
+            hit, n, nrec = census(recs, c0)
+            sets[cell] = {"hit": hit, "n": n, "nrec": nrec, "nfail": failed_count(recs)}
+        repin(a.census, sets, old, a.note or "unspecified")
+        sys.exit(0)
+    pinned_sets = load_census_set(a.census)
     fails, nplant_bad = [], 0
     for cell in CELLS:
         if cell not in sweeps:
@@ -206,6 +294,7 @@ def main():
         nfail = failed_count(recs)
         fl, pin = floors[cell], pin_floor(a.tree, cell)
         why = verdict(cell, fl, hit, n, nrec, nfail, pin)
+        why += [w for w in set_why(fl, pinned_sets[cell], hit) if w not in why]
         out_of = ""
         if cell in movers:
             mset = {f[4] for f in (ln.rstrip("\n").split("\t") for ln in open(movers[cell])) if f[3] == "1"}
@@ -223,7 +312,7 @@ def main():
             if not a.no_self_test:
                 print("D3-FLOOR-PLANTS-SKIPPED %s (the cell is red; the plants run on a green cell only)" % cell)
         elif not a.no_self_test:
-            bad = self_test(floors, a.tree, c0, cell, recs, hit, pin)
+            bad = self_test(floors, a.tree, c0, cell, recs, hit, pin, pinned_sets[cell])
             for b in bad:
                 print("D3-FLOOR-PLANT-WRONG " + b)
             fails += bad

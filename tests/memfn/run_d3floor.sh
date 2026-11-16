@@ -11,7 +11,7 @@
 #
 # Usage: bash tests/memfn/run_d3floor.sh [TREE]
 # Env: PROCS (collect workers AND the probe build's make -j; default: half of tests/lib/procs_default.sh, at least 1),
-#      D3FLOOR_KEEP=1 (keep the scratch dir, printed, for a re-count). Scratch lives under $PCREC_TMPDIR (scripts/tmpdir.sh), never /tmp.
+#      D3FLOOR_REPIN=1 (re-pin tests/memfn/d3_census.tsv instead of checking; D3FLOOR_NOTE=provenance text), D3FLOOR_KEEP=1 (keep the scratch dir, printed, for a re-count). Scratch lives under $PCREC_TMPDIR (scripts/tmpdir.sh), never /tmp.
 set -u
 export LC_ALL=C
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -40,13 +40,17 @@ for c in "byte/c-default|" "byte/c-vm|--engine=vm" "utf8/c-default|-e utf8" "utf
     args+=("$cell=$WORK/$t.jsonl")
 done
 
+if [ "${D3FLOOR_REPIN:-0}" = 1 ]; then   # rewrite tests/memfn/d3_census.tsv, print the member diff + the d3_floor.tsv numbers
+    exec "$TIMEOUT_BIN" 600 python3 -I "$TREE/tests/memfn/d3_floor.py" --tree "$TREE" --repin --note "${D3FLOOR_NOTE:-$(git -C "$TREE" rev-parse --short HEAD 2>/dev/null) tree, $(date +%F)}" "${args[@]}"
+fi
 "$TIMEOUT_BIN" 600 python3 -I "$TREE/tests/memfn/d3_floor.py" --tree "$TREE" "${args[@]}" | tee "$WORK/floor.out"
 rc=${PIPESTATUS[0]}
 n=$(grep -c '^D3-FLOOR-PLANT .* ok$' "$WORK/floor.out")
 # the plants are counted: PLANTS per cell x 4 cells; they are skipped by design on a red cell (d3_floor.py says so),
 # so a short count is only a second failure when every cell was green
 skipped=$(grep -c '^D3-FLOOR-PLANTS-SKIPPED ' "$WORK/floor.out")
-want=$(( (4 - skipped) * 8 ))
+per=$(sed -n 's/^PLANTS = \([0-9]*\) .*/\1/p' "$TREE/tests/memfn/d3_floor.py")   # one source: d3_floor.py
+want=$(( (4 - skipped) * per ))
 if [ "$skipped" -gt 0 ]; then echo "d3floor: plants skipped on $skipped red cell(s); the red cell is the failure"
 elif [ "$n" -lt "$want" ]; then echo "FAIL: [d3floor] only $n of $want plants ran and went as expected"; rc=1; fi
 if [ "$rc" -eq 0 ]; then echo "checks passed: 1"; echo "checks failed: 0"; else echo "checks passed: 0"; echo "checks failed: 1"; fi
