@@ -335,5 +335,64 @@ print("  hole (no role), final  | %-58s | %-10r | %-8s | %-8s | %s" % (
     "/x${anchored(/a/)}/ = /x\\A(?:a)\\z/ vs /x${/a/}/", "xa", "match" if rc >= 0 else "no match",
     "match" if re.search("xa", "xa") else "no match", "DIFFERENT; no warning (a hole is no role)"))
 
+# ---------------------------------------------------------------------------------------------------- table (B)
+print()
+print("(B) rulings R-2 (the owner's usage question): looking for WORDS, \\b(a|boo|great)\\b, with and without a filter")
+print("    F = /.{3,}/ (a word of at least three characters), a stand-in for any filter on the word")
+
+
+def at(p, s, k):
+    """p matches at offset k of the WHOLE subject s (reading s's real text around k), both engines."""
+    c = _code(p)
+    md = L.pcre2_match_data_create_from_pattern_8(c, None)
+    rc = L.pcre2_match_8(c, s.encode(), len(s.encode()), k, ANCH, md, None)
+    L.pcre2_match_data_free_8(md)
+    b = re.compile(py(p)).match(s, k) is not None
+    if (rc >= 0) != b:
+        DISAGREE[0] += 1
+    return rc >= 0
+
+
+def search_plain(p, s):
+    c = _code(p)
+    md = L.pcre2_match_data_create_from_pattern_8(c, None)
+    rc = L.pcre2_match_8(c, s.encode(), len(s.encode()), 0, 0, md, None)
+    ov = None
+    if rc >= 0:
+        L.pcre2_get_ovector_pointer_8.restype = ctypes.POINTER(ctypes.c_size_t)
+        L.pcre2_get_ovector_pointer_8.argtypes = [ctypes.c_void_p]
+        o = L.pcre2_get_ovector_pointer_8(md)
+        ov = (o[0], o[1])
+    L.pcre2_match_data_free_8(md)
+    m = re.search(py(p), s)
+    if (m.span() if m else None) != ov:
+        DISAGREE[0] += 1
+    return ov
+
+
+def hole_words(s, sides):
+    """/\\b${ A & B ... }\\b/ searched: the \\b read the REAL text around the hole; the sides match the hole's text whole."""
+    for i in range(len(s) + 1):
+        if not at(r"\b", s, i):
+            continue
+        for j in range(len(s), i - 1, -1):
+            if at(r"\b", s, j) and all(whole(q, s[i:j]) for q in sides):
+                return (i, j)
+    return None
+
+
+WORDS = "a|boo|great"
+FF = r".{3,}"
+for s in ("a boo greatness", "xboo", "boo."):
+    r1 = search_plain(r"\b(?:%s)\b" % WORDS, s)
+    r2 = hole_words(s, [WORDS, FF])
+    r3 = hole_words(s, [r"(?<w>%s)" % WORDS, FF])     # /\b${ /(?<w>a|boo|great)/ & (w: F) }\b/: w is the whole stretch
+    print("  %-17r | (1) /\\b(a|boo|great)\\b/ alone: %-8s | (2) /\\b${ /a|boo|great/ & F }\\b/: %-8s | "
+          "(3') /\\b${ /(?<w>a|boo|great)/ & (w: F) }\\b/: %s" % (s, show(r1), show(r2), show(r3)))
+print("  (3) /\\b(?<w>a|boo|great)\\b/ & (w: F) and (4) /\\b(a|boo|great)\\b/ & F: the EDGE-ASSERTION ERROR (a \\b at")
+print("      the edge of an & side reads outside the stretch; CF:761 (3)); emulated on the stretch alone the \\b would")
+print("      read 'no character' there, e.g. (4) on 'xboo':",
+      show(search_amp([r"\b(?:%s)\b" % WORDS, FF], "xboo")), "though no WORD boo is in 'xboo' (that is why it is refused)")
+
 print()
 print("engine disagreements (libpcre2-8 vs Python re): %d" % DISAGREE[0])

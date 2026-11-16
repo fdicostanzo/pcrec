@@ -49,4 +49,13 @@
   & side in a hole       | /999${/\d+/ & anchored(<100)}999/ vs ... & <100 ...        | '99912345999' | no match | no match | same; warns
   hole (no role), final  | /x${anchored(/a/)}/ = /x\A(?:a)\z/ vs /x${/a/}/            | 'xa'       | no match | match    | DIFFERENT; no warning (a hole is no role)
 
+(B) rulings R-2 (the owner's usage question): looking for WORDS, \b(a|boo|great)\b, with and without a filter
+    F = /.{3,}/ (a word of at least three characters), a stand-in for any filter on the word
+  'a boo greatness' | (1) /\b(a|boo|great)\b/ alone: 0-1      | (2) /\b${ /a|boo|great/ & F }\b/: 2-5      | (3') /\b${ /(?<w>a|boo|great)/ & (w: F) }\b/: 2-5
+  'xboo'            | (1) /\b(a|boo|great)\b/ alone: no match | (2) /\b${ /a|boo|great/ & F }\b/: no match | (3') /\b${ /(?<w>a|boo|great)/ & (w: F) }\b/: no match
+  'boo.'            | (1) /\b(a|boo|great)\b/ alone: 0-3      | (2) /\b${ /a|boo|great/ & F }\b/: 0-3      | (3') /\b${ /(?<w>a|boo|great)/ & (w: F) }\b/: 0-3
+  (3) /\b(?<w>a|boo|great)\b/ & (w: F) and (4) /\b(a|boo|great)\b/ & F: the EDGE-ASSERTION ERROR (a \b at
+      the edge of an & side reads outside the stretch; CF:761 (3)); emulated on the stretch alone the \b would
+      read 'no character' there, e.g. (4) on 'xboo': 1-4 though no WORD boo is in 'xboo' (that is why it is refused)
+
 engine disagreements (libpcre2-8 vs Python re): 0
