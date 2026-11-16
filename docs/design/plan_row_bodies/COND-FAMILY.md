@@ -1479,3 +1479,13 @@ RECORD: (1) RULED for now: a label default must be ONE string; a default that is
 COMPILE ERROR; open to reconsider on a reason. (2) An IDEA, not a ruling: the reading written out by the author with
 the quantifier word, `m = some(between(...))` (and by symmetry the every form): the route by which a several-string
 default could later be admitted without the language choosing a reading.
+
+**2026-11-16 OWNER RULINGS — unset-component: yes; default-unused: agree (Frank, to session 134, box clock 11:05).**
+Asked **unset-component** (close it as "a condition naming an unset label FAILS, unless the author gives that label a
+default", `(h, m = 0): R`, joint_condition.md §4B; lean yes), his words: "unset-component: yes". Asked
+**default-unused** (a default that can never change an answer, the label never unset or the default outside the set,
+is a WARNING not an error; lean warning), his words: "default-unused: agree". RECORD: (1) RULED: an unset label fails
+the condition (single or joint) unless the author wrote a default for it; rev 18's decided-prefix reading is
+withdrawn. (2) The manager's reading of "agree" (told to him): agreed with the lean, so a never-used default is a
+WARNING. Standing from earlier today: the default is written `name = value`, must be ONE string, a several-string
+default is an error for now (`some(...)` on record as the route).
