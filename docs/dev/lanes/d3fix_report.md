@@ -16,4 +16,5 @@ d3_floor.tsv now pins every value to the MEASURED count with a band above it; d3
 nice, -j4, gnutimeout: make test-memfn-d3floor body (run_d3floor.sh) green, 32/32 plants, rerun after the last edit; witness-deletion repro RED; make strict clean; make test-codegen green (K37 caught a PCREC_TMPDIR line, fixed by using TMPDIR); tests/memfn/run_arch_blind.sh 17/0; commit hooks (CLAUDE.md size) pass. Not run: make test, axes, mech (per brief).
 
 ## STATE AT HANDOFF
-Branch lane/memfn-d3wire, tip 75d9477fe plus the report commit. Rulings file: empty, none applied. Nothing left. OWED: none
+Branch lane/memfn-d3wire, tip 75d9477fe plus the report commit. Rulings file: empty, none applied. Nothing left.
+OWED: none
