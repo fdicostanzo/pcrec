@@ -2,6 +2,25 @@
 
 ## Changelog
 
+- **rev 16 (lane predspec16, 2026-11-15).** Folds the owner's entries after rev 15 (CF:1164-1208 on main, box clock
+  21:50-21:59): **tuple-compare** RULED ("tuple-compare: agree"), **cut-json-quoted** RULED ("cut-json-quoted:
+  agree"), the answer on **primitive-transforms** (`any_case` stays a primitive for now; a more fundamental basis is a
+  follow-up), his pointer on DFA callouts ("blessed" callouts) and his pointer "What about "enumerate"" (both
+  arriving during this revision as rulings R-1 to R-3). (A) THE TUPLE FAMILY joins the first library (§8 TUPLE
+  COMPARISONS): for 2 and 3 fields, a between, an at-least and an at-most (six plain macros, rev 15's O69 bodies,
+  every comparison padded); strict comparisons and equality are derived by `!` and `&`, not carried; the names are
+  OPEN (owner question **tuple-names**; lean: the owner's own `lex_` spelling of the 2026-11-14 record, CF:648, with
+  an arity suffix); worked rows: the time range 9:00..10:00, an h:m:s range, versions 1.4..1.10 (15,336 cases against
+  integer order and 29 worked rows, 0 differ; `docs/dev/lanes/predspec16_anchor.out` tables (F), (X)). O69 CLOSED for
+  the fixed sizes; any number of fields stays later (O69 (3)); O68 stays later, behind tuple compare. (B) `json.quoted`
+  CUT (§9): removed from §2.7, §8, the naming lists and THE ROLE TABLE; E-JSONL rewritten with `quoted(...)` and
+  `json.string & contains(...)` (its stated answers unchanged; four escaped values read differently, table (J));
+  O37 CLOSED (no name of this document's choosing remains). (C) `any_case` stays the ONE provided transform without
+  a body, a primitive FOR NOW (§2.7; THE ROLE TABLE row 8); O67 CLOSED with the owner's words; the follow-up is §13
+  O70 (three routes: an option-setting primitive, a blessed DFA callout, `enumerate` for finite filters; the last
+  sketched and tested, 0 differ, table (E), one structural tool missing) and plan row [PRED-REREAD]; blessed DFA
+  callouts get their own plan row [BLESSED-CALLOUTS]. §0.1: no row moves. §12: E-JSONL's code lines change, no
+  stated answer moves. DECIDED (44)-(48).
 - **rev 15 (lane predspec15, 2026-11-15).** Applies review `docs/dev/reviews/2026-11-15-r16-predspec14.md` (critic
   texts in its directory) with its DISPOSITIONS RULED, and folds the owner's entry after rev 14 (CF:1150-1162 on main,
   box clock 21:21, arriving during this revision as rulings R-1: **warn-in-macro-body** RULED, no exemption by
@@ -208,7 +227,7 @@ filtering and labels, `where` for structural selection, conditions `(x: S, y: T)
 kind of transform (`x & padded(between(1, 12))`), operator sections `(& f)`, `@` effects, modules as `m := import("m")`, 1-based indexes,
 the library transform `occurrences(rx)` (rev 7's `~`/`!~` are withdrawn, §2.6; spelled `search` through rev 12).
 Line numbers "CF:n" up to CF:1024 hold on this branch's copy and on main; "CF:n on main" (n >= 1026) are the rev 13,
-rev 14 and rev 15 rulings (rev 14: CF:1083-1148; rev 15: CF:1150-1162), on main only.
+rev 14, rev 15 and rev 16 rulings (rev 14: CF:1083-1148; rev 15: CF:1150-1162; rev 16: CF:1164-1208), on main only.
 
 Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 - **RULED (CF:n)**: the owner's own words at line n of COND-FAMILY.md (or a D-number) cover the rule; it reaches only
@@ -324,6 +343,17 @@ Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 |---|---|---|
 | the anchor warning has NO EXEMPTION for text a macro body writes: its criterion is applied to the expanded text whoever wrote it, so `x & anchored(r)` warns (CF:1154-1156) | "warn-in-macro-body: yes but is that an identity? The anchored and & are not the same" (CF:1154) | the answer to his question (the manager's, CF:1156-1162, "to be shown with worked rows"): `anchored` and the whole-match tie differ in general and COINCIDE exactly where `anchored(r)` stands directly in a whole-match role; the worked rows, §8 ANCHORED AND THE TIE; the warning's wording for this case (this document, §11 THE WARNING) |
 | (a remark, not a ruling) `anchored` matters less once the tie is defined (CF:1151-1152) | "With that definition of how & matches each other, anchored() isn't as important" (CF:1151-1152) | the consequence (the manager's, told to him, not a ruling): `anchored` is a one-line library convenience for the OUTER edge (a final pattern matching the whole text; the named fix of the count trap); no rule or table of this document depends on it (§8, §11) |
+
+  The entries after rev 15 (rev 16; CF:1164-1208 on main, box clock 21:50-21:59; the last two arrived during this
+  revision as rulings R-1 to R-3). Each is the owner's short answer to a question of the manager's, or a pointer:
+
+| ruling point | the owner's own sentence behind it | what rests only on the record or is the manager's / this document's |
+|---|---|---|
+| the fixed-size tuple compares (2 and 3 fields) join the first library as plain macros; any number of fields waits (CF:1164-1168) | "tuple-compare: agree" (CF:1166), to "put the fixed-size tuple compares (two and three fields) in the first library? lean yes; any number of fields waits" | the family (between, at-least, at-most; strict and equal derived), the names (OPEN, **tuple-names**) and the worked rows (this document, §8 TUPLE COMPARISONS); the shape of the owner's 2026-11-14 record, `lex_ge([major, minor, patch], [1, 4, 0])` (CF:648), as the first naming candidate (rulings R-3) |
+| `any_case` stays a primitive in the first spec for now; a more fundamental basis is a FOLLOW-UP; the "one reading primitive" proposal (§13 O67) is not adopted (CF:1169-1176) | "I understand why any_case is currently a primitive. I'd like to look for more fundamental ways of reducing that like some option setting primitive that any_case is built on or something else. I am ok with that being a followup." (CF:1170-1172) | the follow-up's questions and routes (§13 O70; plan row [PRED-REREAD]); that the argument is a whole-match role on the case-folded reading (the manager's LEAN, §2.7) |
+| `json.quoted` is CUT from the first spec (CF:1178-1188) | "cut-json-quoted: agree. It would necessitate a callout or similar? We have unrelated plans for dfa compatible callouts and that could be one" (CF:1180-1181) | the reason in this document's voice (its filter is tested against the DECODED string, which is not in the text; §9); the manager's answer that a callout is not strictly required (decoding is a finite-state rewrite) but is the simpler build (CF:1185-1188, the record) |
+| (a pointer, not a ruling) "blessed" callouts on the DFA path (CF:1190-1199) | "Dfa callouts: Not sure it was made into a plan item. Idea was "blessed" callouts that guaranteed certain characteristics could be exposed to dfa." (CF:1191-1192) | where the idea already lived (the 2026-11-14 entries "a standard library of blessed callouts" and "capability levels", CF:461-480; §8 BLESSED CALLOUTS, §6.1 `functions`); its own plan row [BLESSED-CALLOUTS] (the manager's filing) |
+| (a pointer, not a ruling) `enumerate` as a basis for `any_case` (CF:1201-1208) | "What about "enumerate"" (CF:1202) | the sketch and its test (this document, §13 O70 route (c); the manager's untested reading in the record, CF:1202-1208) |
 
 - **LEAN**: a manager's reading or proposal, this document's consequence of a ruling, an owner "perhaps", or a
   review fix (the FIX-NOW dispositions of review r1 other than Q1 and OWN-1 carry no owner ruling); the source is
@@ -544,6 +574,10 @@ before); L13, L17, L63 (their anchors sit in a hole: silent as before); L66 (`an
 No row writes a NON-edge anchor in a filter role, so none moves from WARNING to silent. Per-row table:
 `docs/dev/lanes/predspec15_report.md`, FINDINGS FIXED (rows that moved).
 
+EVERY ROW RE-APPLIED UNDER REV 16 (CF:1164-1208 on main): NO ROW MOVES. No row uses `json.quoted` (cut) or a
+tuple compare (now in the library); L66 keeps `any_case("Host")`, which stays a primitive with the same meaning; L20
+is unchanged (the tuple bodies pad every comparison, so its bare-comparison trap does not arise in them).
+
 ### 0.2 Phase 1 scope (what the owner said is in and out of the first build)
 
 Nothing is scheduled and there is no build go (Status above); "phase 1" is the owner's name for the first,
@@ -610,7 +644,7 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 | **section** | `(& B)`, the macro with only its operand open (§5.2) | comparisons (those are COMPARISON SETS) |
 | **comparison set** | `<256`, `>=lo`, `==5`, `between(1, 12)`: a full rx (§2.4) | |
 | **transform** | ANY macro filter -> filter (the owner's word, CF:903, CF:929; in this document's terms a macro rx -> rx whose RESULT is used in a filter role, its argument landing where its body puts it, §11 THE ROLE TABLE; rev 15, review r16 CENSUS-3): the filter modifiers, and the library's gap-bodied transforms `occurrences`/`contains`/`startsWith`/`endsWith`, whose bodies put plain gaps around the argument, and `anchored`, whose body puts the exact ends `\A`/`\z` around it (rev 13, CF:1048-1053 on main); `occurrences`/`contains` also add the repeated label `hit` (§2.6, §8). Rev 11 said `search`/`contains` "loosen the anchoring"; rev 12: no transform changes whether a pattern is matched whole, the one rule does (§11). Every PROVIDED transform obeys the naming rule (§2.7, CF:1020-1022) | |
-| **filter modifier** | (rev 15, review r16 CENSUS-2) a transform that changes WHAT THE FILTER READS (§2.7's list), whether by a BODY in the language (`padded`, `quoted`, `left`/`right`/`mid`, `length`, `month_numbered`) or by the PULLBACK primitive (`any_case`, `json.quoted`, pending §13 O67); "pullback" names the primitive only (rev 7-14: "the pullback kind of transform"); the NAMING RULE (a name describes the subjects it accepts) bound modifiers only in rev 10-11 (review r10 FIXA-1); rev 12 (CF:1020-1022) widens it to every provided transform (§2.7) | `occurrences`, `contains` (transforms, not modifiers); the map `t` itself (that is the modifier's READING, and its output is "what the modified filter reads") |
+| **filter modifier** | (rev 15, review r16 CENSUS-2) a transform that changes WHAT THE FILTER READS (§2.7's list), whether by a BODY in the language (`padded`, `quoted`, `left`/`right`/`mid`, `length`, `month_numbered`) or by the PULLBACK primitive (`any_case`, a primitive for now, §13 O70; `json.quoted` CUT in rev 16, §9); "pullback" names the primitive only (rev 7-14: "the pullback kind of transform"); the NAMING RULE (a name describes the subjects it accepts) bound modifiers only in rev 10-11 (review r10 FIXA-1); rev 12 (CF:1020-1022) widens it to every provided transform (§2.7) | `occurrences`, `contains` (transforms, not modifiers); the map `t` itself (that is the modifier's READING, and its output is "what the modified filter reads") |
 | **`occurrences`** / **searched** | `occurrences(x)`, the library TRANSFORM (§2.6; spelled `search` through rev 12, renamed CF:1028) / the MODE in which a FINAL pattern or a `records` item rx is applied to its subject (leftmost match, D196; §7, §11); `empty.search` names the MODE's hazard (review r10 CENSUS-16); "search" alone is used only in quotations and history (review r14 CENSUS-8) | each other |
 | **binding** | `name := expression` (§5.1); "match-dependent binding" is a binding that reads a captured string | the C22 parse rule (that is ENTRY EXTENT, §5.4) |
 | **entry extent** | how far an entry of `( )` or `[ ]` reaches: to the next comma or the closing bracket, `&`/`\|` tighter than `:` and `=` (C22) | |
@@ -660,8 +694,8 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 interfaces (§3), match values, repeated labels and computed labels (§4), capability levels and the reporting axis
 (§6), the compile-time boundary, modules and warnings (§7). LIBRARIES, built on the foundation and changeable without
 it: `each`, `join`, `records`, `file_text`, standard filters and filter modifiers (`between`, `startsWith`,
-`endsWith`, `contains`, `anchored`, `length`, `padded`, `any_case`, `quoted`; `unpadded` CUT in rev 14), the transform `occurrences`, the group questions
-`some`, `all`, `count` and the `occurs` counts, `assert`, tuple comparisons, blessed callouts (§8). The
+`endsWith`, `contains`, `anchored`, `length`, `padded`, `any_case`, `quoted`; `unpadded` CUT in rev 14, `json.quoted` in rev 16), the transform `occurrences`, the group questions
+`some`, `all`, `count` and the `occurs` counts, `assert`, the fixed-size tuple compares (2 and 3 fields, rev 16), blessed callouts (§8). The
 ORGANISATIONAL layer (DECLARED TYPES, type members, UFCS, `types()`; rev 7 called the first "interfaces", a word
 that now names the array and map interfaces, §0.3) is CUT from the first spec (§9); declared types may return as
 library packaging after a build. Modules stay in the foundation (described by their map interface: §7, §13 O46).
@@ -1119,8 +1153,9 @@ whose body says what is read: where the reading SELECTS a stretch of the subject
 tested by a `label:` condition, rev 15, review r16 FIXIND-3). Only a reading that yields text neither the subject nor
 the match contains needs the PULLBACK primitive: the modified filter is the pullback of S under the READING t, a finite
 transducer or a finite table (the strings whose reading lies in S), one construction, regular in, regular out
-(inverse image under a rational relation; a non-finite t needs `functions`). Since rev 15 two provided transforms are
-of that kind, `any_case` and `json.quoted` (BODIES OF THE PROVIDED TRANSFORMS, below; §13 O67).
+(inverse image under a rational relation; a non-finite t needs `functions`). Since rev 16 ONE provided transform is
+of that kind, `any_case`, a primitive FOR NOW (RULED, CF:1170-1172 on main; BODIES OF THE PROVIDED TRANSFORMS, below;
+the follow-up §13 O70); `json.quoted`, the other one of rev 15, is CUT (§9).
 
     month & padded(between(1, 12))                 # accepts "05", "5", "12": leading zeros ignored by the filter
     hm := /(?<h>\d{1,2}):(?<m>\d\d)/                # a time range by SPLIT FIELDS (rev 14; `unpadded` is cut, §9):
@@ -1176,19 +1211,17 @@ brought to him", the manager's sentence, not the owner's words; review r16 FIXIN
 | `quoted(S)` | `/"${S & /[^"]*/}"/` while the quoted text holds no escape (LEAN, this document: "only the text inside the quotes" IS a stretch of the subject, so an `&` inside the hole makes S match that stretch whole; a plain splice `/"(?:${S})"/` would let `quoted(/^a/)` never match, its `^` reading the stretch before the quote) | a side of `&` inside the hole: filter role |
 | `left(n, S)`, `right(n, S)`, `mid(i, n, S)` | `left(n, S) := /${S & /(?s:.){${n}}/}(?s:.*)/` (LEAN; out of range: §13 O14), the others alike | a side of `&` inside the hole: filter role |
 | `unpadded(n, S)` | CUT by the owner (rev 14, CF:1125-1136 on main, "cut-unpadded: agree"; §9). It was NOT EXPRESSIBLE: it reads the subject AS IF zero-padded, i.e. tests S against text the subject does not contain (`9:00` is tested as `09:00`); a body over the subject would have to be `/${S'}/` where S' is S with up to n-1 leading zeros REMOVED from each of its strings, a transform OF THE SET S (a left quotient), which the language has no spelling for | (the pullback primitive) |
-| `any_case(S)` | NO BODY (rev 15 re-test, `docs/dev/lanes/predspec15_anchor.out` table (A)): it accepts a string equal to some member of S up to letter case. The candidate `any_case(rx) := /(?i:${rx})/` is not it: under this document's hole rule a hole keeps its own flags (§11, NO INHERITED FLAGS; §13 O32), so the body is S itself and differs for EVERY argument holding a cased letter (`/ho/`: 3 of 781 strings differ, e.g. `HO`); only a number filter or comparison set (`<12`: 0 differ) passes, trivially. Even a raw textual paste (every hole pasted as text, so `(?i)` reaches it) passes only for a single literal and for gap-bodied nested transforms (`startsWith("h")`), and still fails where the argument holds a FILTER ROLE, which is a separate whole match with its own literal: an `&` (`/[a-z]+/ & /h\w*/`: 155 differ), a `label:` condition (`(w: "ho")`: 3 differ), and so `quoted`, `left`/`right`/`mid` and the `length`/`month_numbered` bodies | (the pullback primitive) |
+| `any_case(S)` | A PRIMITIVE FOR NOW, the one provided transform without a body (rev 16, RULED, CF:1170-1172 on main: "I understand why any_case is currently a primitive ... I am ok with that being a followup"; the follow-up for a more fundamental basis is §13 O70 and plan row [PRED-REREAD]). Its argument: a whole-match role on the CASE-FOLDED READING of the stretch (the manager's LEAN; below the table; THE ROLE TABLE row 8). NO BODY (rev 15 re-test, `docs/dev/lanes/predspec15_anchor.out` table (A)): it accepts a string equal to some member of S up to letter case. The candidate `any_case(rx) := /(?i:${rx})/` is not it: under this document's hole rule a hole keeps its own flags (§11, NO INHERITED FLAGS; §13 O32), so the body is S itself and differs for EVERY argument holding a cased letter (`/ho/`: 3 of 781 strings differ, e.g. `HO`); only a number filter or comparison set (`<12`: 0 differ) passes, trivially. Even a raw textual paste (every hole pasted as text, so `(?i)` reaches it) passes only for a single literal and for gap-bodied nested transforms (`startsWith("h")`), and still fails where the argument holds a FILTER ROLE, which is a separate whole match with its own literal: an `&` (`/[a-z]+/ & /h\w*/`: 155 differ), a `label:` condition (`(w: "ho")`: 3 differ), and so `quoted`, `left`/`right`/`mid` and the `length`/`month_numbered` bodies | (the pullback primitive) |
 | `length(S)` | rev 15 (review r16 FIXIND-3): `length(S) := chars & (nchars: S)` with `chars := /(?:(?<ch>(?s:.)))*/`, `nchars := count((ch: /(?s:.)/))` (a count is a canonical numeral, RULED CF:977-978; §4.3, §4.4); for EVERY S, the loop's parse is unique (one character per iteration). Caveats: two helper bindings beside the body (or a binding inside a body: unspecified), `count`'s budget applies to `nchars` (the cost the primitive would also pay), and the label `ch` is visible in the result (the per-call label question of `hit`, §13 O55). Emulated over 27 cases (S in `<=20`, `==3`, even; empty, newline, 20/21 characters): 0 differ (review r16 `bodies_check.out`) | a `label:` condition: filter role |
 | `month_numbered(S)` | rev 15 (review r16 FIXIND-3): `month_numbered(S) := months & (mnum: S)` with `months := join([mname = [/Jan(?:uary)?/, ..., /Dec(?:ember)?/]])`, `mnum := $mname.index` (a computed label, §4.4; `.index` 1-based, §3.2), as E-RFC already writes the mapping (§12.6); the condition tests the index at match time. Caveats as for `length` (helper bindings; the label `mname` visible, §13 O55). Emulated over 170 cases (five ranges x 34 names and near-names): 0 differ (review r16 `bodies_check.out`; it rests on the emulated `.index` semantics) | a `label:` condition: filter role |
-| `json.quoted(S)` | NOT EXPRESSIBLE: it tests S against the DECODED string (`A` read as `A`) | (the pullback primitive) |
+| `json.quoted(S)` | CUT in rev 16 (RULED, CF:1180-1181 on main, "cut-json-quoted: agree"; §9). It was NOT EXPRESSIBLE: it tests S against the DECODED string (the escape `\u0041` read as `A`), which is not in the text | (was: the pullback primitive) |
 
-So rev 14 counted five provided transforms that were NOT plain macros; the owner CUT `unpadded` (rev 14, CF:1125-1136 on main), and rev 15 writes bodies for `length` and `month_numbered` (review r16 FIXIND-3: both read a value the MATCH yields, a count or an index, which a `label:` condition tests). TWO remain without a body, `any_case` and `json.quoted`: each tests its argument against text that neither the subject nor the match contains (a case-folded or a decoded string), so no body over the subject can say it (`any_case`'s candidate body was re-tested and fails, the table above).
-A BODYLESS TRANSFORM'S ARGUMENT (stated once, here; LEAN pending the owner's answer to §13 O67,
-**primitive-transforms**): it is a FILTER ROLE whose stretch is the transform's READING of the stretch the transform
-stands on (not text of the subject): S is matched whole on that reading, so an explicit anchor at the edge of S
-draws `anchor.whole` like any filter role (§11 THE ROLE TABLE, the row for it). The lean for the owner: ONE primitive
-with a body-free meaning, "S matched whole on the reading t of the stretch" (the pullback, defined once above), and each
-of the two a plain macro over it, so the whole-match rule and the warning name roles only. (L66's `any_case("Host")`
-holds no anchor; no row rests on the lean.) The variable-width lexicographic lint (`compare.width`) suggests the SPLIT-FIELDS form (rev 14: `unpadded` cut; the time-range example above).
+So rev 14 counted five provided transforms that were NOT plain macros; the owner CUT `unpadded` (rev 14, CF:1125-1136 on main), rev 15 writes bodies for `length` and `month_numbered` (review r16 FIXIND-3: both read a value the MATCH yields, a count or an index, which a `label:` condition tests), and the owner CUT `json.quoted` (rev 16, CF:1180-1181 on main; §9). ONE remains without a body, `any_case`: it tests its argument against text that neither the subject nor the match contains (a case-folded string), so no body over the subject can say it (its candidate body was re-tested and fails, the table above). It stays a PRIMITIVE FOR NOW (RULED, rev 16); a more fundamental basis is a follow-up (§13 O70), and the "one reading primitive" this document proposed in rev 15 (§13 O67 as asked) is NOT adopted.
+`any_case`'S ARGUMENT (stated once, here; the manager's LEAN, not ruled): it is a WHOLE-MATCH ROLE whose stretch is the
+CASE-FOLDED READING of the stretch `any_case` stands on (not text of the subject): S is matched whole on that reading,
+so an explicit anchor at the edge of S draws `anchor.whole` like any filter role (§11 THE ROLE TABLE, row 8). (L66's
+`any_case("Host")` holds no anchor; no row rests on the lean.) The variable-width lexicographic lint (`compare.width`) suggests the SPLIT-FIELDS form (rev 14: `unpadded` cut; the time-range example above) or, since rev 16, the
+library's tuple compare (§8 TUPLE COMPARISONS), which writes the same range in one call.
 
 **REASONING.** One mechanism (the pullback) collapses rev 0's transform sections, pattern -> value mappings, `jstr(p)`
 and the binary forms into one closure theorem (predx S1, §8.2). Frank: "The problem is the name. Trim or unpad imply
@@ -1201,8 +1234,9 @@ docs rule; "filter modifier" as a word for every transform that changes what the
 pullback: LEAN, rev 15, review r16 CENSUS-2), the bodies of `length` and `month_numbered`: LEAN (rev 15, review r16
 FIXIND-3), SUPERSEDES the right-associative `&` pipeline (`x & unpad & between(1, 12)`), the `->` / `;` stage ideas,
 and the earlier function forms `unpad(S)` / `length(<=20)` read as images. Names `padded`, `any_case`, `quoted`,
-`length`, `month_numbered`: RULED (CF:722). `json.quoted`: LEAN (this document's name under the
-naming rule, §13 O37); `unpadded(n, S)`: CUT (rev 14, CF:1125-1136 on main). The naming rule over every provided transform: RULED BY ACCEPTANCE (CF:1020-1022, accepted at
+`length`, `month_numbered`: RULED (CF:722). `any_case` a primitive for now, its basis a follow-up: RULED (rev 16,
+CF:1170-1172 on main; §13 O70); its argument a whole-match role on the reading: LEAN (manager). `json.quoted`: CUT
+(rev 16, CF:1180-1181 on main; §9); `unpadded(n, S)`: CUT (rev 14, CF:1125-1136 on main). The naming rule over every provided transform: RULED BY ACCEPTANCE (CF:1020-1022, accepted at
 CF:1006; rev 12); `anchored`: RULED (the owner's own name, CF:1005, CF:1009); `occurrences`: RULED (CF:1028, rev 13);
 the "or what it reads" clause: LEAN (this document, from `length`, CF:722; review r14 CENSUS-6).
 
@@ -2172,10 +2206,10 @@ labels read, so the bodies are written for the reading a user expects (rev 9, LE
 argument starts as far LEFT as it can (`endsWith(/(?<n>\d+)/)` on `ab123`: n = `123`; rev 8's greedy `.*` gave n = `3`,
 libpcre2), and `contains` is `occurrences` (§2.6: leftmost hits; rev 8's greedy-lead body read the RIGHTMOST occurrence).
 As SETS nothing changes (a lazy and a greedy gap admit the same strings). `when(c, p)` (`x & when(c, p)` = `(x & c & p) | (x & !c)`). Standard FILTER MODIFIERS (§2.7; each transforms the
-filter, never the subject): `padded(S) := /0*${S}/` (leading zeros before S; rev 14, the owner's body, verbatim; §2.7 BODIES OF THE PROVIDED TRANSFORMS), `any_case(S)` (letter case ignored; no body, §13 O67), `quoted(S)` (only the text inside the quotes read), `length(S)` (the
+filter, never the subject): `padded(S) := /0*${S}/` (leading zeros before S; rev 14, the owner's body, verbatim; §2.7 BODIES OF THE PROVIDED TRANSFORMS), `any_case(S)` (letter case ignored; a primitive for now, no body, §2.7, §13 O70), `quoted(S)` (only the text inside the quotes read), `length(S)` (the
 subject's length read; a body since rev 15, §2.7), `month_numbered(S)` (a month name read as its number; a body since rev 15, §2.7), string positions `left/right/mid`
-with literal positions (units = characters per the encoding mode; out-of-range: §13 O14); `json.quoted(S)` (a JSON
-string literal read as its decoded text) lives in the `json` module.
+with literal positions (units = characters per the encoding mode; out-of-range: §13 O14). (`json.quoted(S)`, a JSON
+string literal read as its decoded text, is CUT in rev 16, §9; the `json` module keeps `json.string`, the literal's rx.)
 - THE `occurrences` TRANSFORM (§2.6; CF:907-909, accepted at CF:905; spelled `search` through rev 12, renamed by the
   owner, CF:1028, rev 13): `occurrences(x, min = 0) :=
   /(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)/`, of the `contains` family: each hit, leftmost and non-overlapping along PCRE's
@@ -2209,34 +2243,106 @@ string literal read as its decoded text) lives in the `json` module.
   test belongs to the lowering section of a later revision; the budget is ONE measured quantity shared with the
   class-count refusal, no thresholds in the spec (RULED, CF:977; §13 O39 RESOLVED). A count over a whole block is
   written with the final pattern pinned by `anchored(...)`: searched, a shorter span can pass it (§4.3, §0.1 L66).
-- TUPLE COMPARISONS are a library macro, no syntax. The defect of the rev 5 spelling `lex_ge([major, minor, patch],
-  [1, 4, 0])` is its BARE LABEL NAMES used as values (`major`, `minor`, `patch`; §13 C13), not its arrays: a `[ ]` has
-  ordered entries that a structural macro reads in order (§3.4, §5.4), exactly as `join([...])` does in six §12
-  cases (CF:548: "join takes an ordinary array"). (Rev 6 said the type picture "forbids" it because "a `[ ]` is an
-  alternation ... its order is not part of the value"; that reason was false, review r8 P6-2.) How a tuple
-  comparison is spelled is OPEN (§13 C25): a structural macro over two arrays, or `version & lex_ge(1, 4, 0)`, a macro
-  whose call record is the bound tuple and whose OPERAND, arriving by `&`, supplies the other tuple as its labels in
-  group order (needing a call record of variable length, §13 O47). The phase-1 spelling needs no tuple: "version at least 1.4" is `semver &
-  ((major: >=2) | (major: 1, minor: >=4))`: the record holds its entries together, `|` gives any one (§4.1).
+- TUPLE COMPARISONS (rev 16). The FIXED-SIZE tuple compares, for 2 and 3 fields, are IN THE FIRST LIBRARY as plain
+  macros (RULED, CF:1166 on main: "tuple-compare: agree"); a tuple compare is a library macro, no syntax (RULED,
+  CF:644). The owner's record of 2026-11-14 already named one, `lex_ge([major, minor, patch], [1, 4, 0])` (CF:648:
+  "TUPLE CONDITIONS: a LIBRARY macro ... no syntax"); its SHAPE and NAME are the first naming candidate below. What
+  rev 16 adds to that record: the compares are in the first library, at FIXED sizes, with bodies, and the record's
+  defect is avoided: rev 5 wrote bare label names as values (§13 C13), while these macros take the field PATTERNS and
+  NUMBERS and the labels are the body's own. The bodies are rev 15's O69 sketch (every comparison PADDED, review r16
+  FIXIND-1), written here in the lean naming scheme; NAMES ARE PLACEHOLDERS, OPEN (owner question **tuple-names**):
+
+      lex_between2(f, sep, lo, hi) :=
+          /(?<t1>${f[1]})${sep}(?<t2>${f[2]})/
+        & [(t1: padded(>lo[1])), (t1: padded(==lo[1]), t2: padded(>=lo[2]))]      # (t1, t2) >= lo
+        & [(t1: padded(<hi[1])), (t1: padded(==hi[1]), t2: padded(<=hi[2]))]      # (t1, t2) <= hi
+      lex_ge2(f, sep, lo) := /(?<t1>${f[1]})${sep}(?<t2>${f[2]})/ & [ the lo entries above ]
+      lex_le2(f, sep, hi) := /(?<t1>${f[1]})${sep}(?<t2>${f[2]})/ & [ the hi entries above ]
+      lex_between3(f, sep, lo, hi) :=
+          /(?<t1>${f[1]})${sep}(?<t2>${f[2]})${sep}(?<t3>${f[3]})/
+        & [(t1: padded(>lo[1])), (t1: padded(==lo[1]), t2: padded(>lo[2])),
+           (t1: padded(==lo[1]), t2: padded(==lo[2]), t3: padded(>=lo[3]))]
+        & [(t1: padded(<hi[1])), (t1: padded(==hi[1]), t2: padded(<hi[2])),
+           (t1: padded(==hi[1]), t2: padded(==hi[2]), t3: padded(<=hi[3]))]
+      lex_ge3, lex_le3: the fields line and one bound's entries, as for 2 fields
+
+  `f` is the array of the field patterns, `lo` and `hi` arrays of numbers; each bound is the usual prefix expansion,
+  one `[ ]` read as any one entry, a record as all its conditions (§3.4, §4.1). THE FAMILY IS SMALL ON PURPOSE: the
+  library carries exactly what the bodies give for free, a between and its two halves (at least, at most) for each
+  size; between is literally the two halves on one field line. The other comparisons are one `!` or one call away and
+  are NOT carried: strictly above lo is `fields & !lex_le2(f, sep, lo)` (fields = the field line), strictly below hi
+  is `fields & !lex_ge2(f, sep, hi)`, equality is `lex_between2(f, sep, t, t)` (or plain conditions). Checked against
+  integer lexicographic order, all six macros and the three derived forms, both sizes: 15,336 cases, 0 differ
+  (libpcre2-8 10.46 and Python 3.14 `re`, `docs/dev/lanes/predspec16_anchor.out` table (F); run: `timeout 300
+  python3 -I docs/dev/lanes/predspec16_anchor.py`).
+
+  WORKED EXAMPLES (each subject matched whole by the filter; table (X), 29 rows, 0 differ from the stated answers):
+
+      t & lex_between2([/\d{1,2}/, /\d\d/], ":", [9, 0], [10, 0])                # the time range 9:00 to 10:00
+      t & lex_between3([/\d{1,2}/, /\d\d/, /\d\d/], ":", [9, 30, 5], [10, 0, 0])   # h:m:s, 9:30:05 to 10:00:00
+      v & lex_between2([/0|[1-9]\d*/, /0|[1-9]\d*/], ".", [1, 4], [1, 10])      # versions 1.4 to 1.10
+
+  | filter | accepts | rejects |
+  |---|---|---|
+  | the time range | `9:00`, `09:30`, `9:59`, `10:00` | `10:01`, `8:59`, `11:00`, `9:5` (the minute field is `\d\d`) |
+  | the h:m:s range | `9:30:05`, `09:30:05`, `9:59:59`, `10:00:00` | `9:30:04`, `10:00:01`, `8:59:59`, `9:30` |
+  | the version range | `1.4`, `1.9`, `1.10` | `1.3`, `1.11`, `2.0`, `0.9`, `1.04` (the field pattern refuses a leading zero), `1x4` |
+  | the version range with `\d+` fields | `1.04`, `01.10`, `1.010` (`padded` ignores leading zeros) | `1.011` |
+
+  The time range gives the same answers as §2.7's split-fields form (the R-5 table of `docs/dev/lanes/predspec14_anchor.out`, for `tuple_between2`).
+  Why a tuple compare and not a string range: as strings `"1.10"` sorts before `"1.4"`, so `between("1.4", "1.10")`
+  is EMPTY, and `between("1.4", "1.9")` also accepts `1.45` (table (X), the language's string order). CAVEATS, none
+  new (review r16 FIXIND-1 and FIXIND-3 for the shape): (1) the helper labels `t1`, `t2`, `t3` are VISIBLE in the
+  result, and two calls in one `&` chain expose the same labels: the per-call label question of `occurrences`'s
+  `hit` (§13 O55; the owner ruled the ambiguity error with a per-call label name for `occurrences`, CF:1068-1072 on
+  main; giving these macros the same `label =` setting: LEAN); (2) a PARAMETER, here an array entry `lo[1]`, is an
+  atom of a comparison (§2.4 admits a binding; a parameter bound per call is read as one, LEAN), and `f[1]`, `lo[1]`
+  read the array BY POSITION (`X[...]`, RULED CF:553; 1-based); an array of the wrong length would make a test on an
+  absent entry false (§3.2), so a wrong-length call is a COMPILE ERROR naming both counts (LEAN, as `each`'s zip
+  of unequal arrays, §5.3); (3) a string in a hole is literal text: `${sep}` with `"."` matches only `.` (a
+  one-string set, §3.3), while rx text `/./` would accept `1x4` (table (X)); (4) a field compares as a number only if
+  its text is digits (a comparison set holds numerals, §2.4): a field pattern that admits other text makes the
+  compare reject it; leading zeros are ignored (`padded`), and a field pattern that must refuse them says so
+  (`/0|[1-9]\d*/`, above); (5) cost: one bound is n entries over n labels; the automaton size is UNMEASURED (§13 O57's
+  regime would measure it). ANY NUMBER OF FIELDS is a later item (§13 O69 (3)): it needs a structural macro with a
+  running prefix over array positions; `each` maps entries one at a time and cannot. The natural-order range (§13
+  O68) stays a later item, behind the tuple compare. The phase-1 spelling WITHOUT the library still works: "version
+  at least 1.4" is `semver & ((major: >=2) | (major: 1, minor: >=4))` (§4.1).
+  NAMING CANDIDATES (**tuple-names**; each must pass the naming rule, §2.7: a provided name says which values the
+  filter accepts, never an action on the subject): (a) THE RECORD'S, `lex_ge`/`lex_le`/`lex_between` with the size
+  as a suffix (`lex_ge2`, `lex_between3`; §13 O47 reading (B)'s `lex_ge3`), over ARRAYS of fields and bounds: "the
+  values lexicographically at least lo" describes accepted values; for: the owner's own stem (CF:648), the arrays
+  keep a tuple's parts visibly together, and `lex` names the ORDER, which is what differs from `between`; against:
+  `ge`/`le` are operator abbreviations where the library otherwise spells words (`occurs.at_least`), and the size
+  suffix is a digit in a name. (b) `pair_between`/`pair_at_least`/`pair_at_most` and `triple_...`, POSITIONAL
+  parameters (rev 15's sketch: `pair_between(/\d{1,2}/, ":", /\d\d/, 9, 0, 10, 0)`): for: words, no digit, the size
+  in a noun; against: seven to ten positional parameters (§13 C25, O47), and the words stop at three (the any-n form
+  needs another name anyway). (c) `tuple_between2`/`tuple_at_least2`/`tuple_at_most2` (rev 14-15's placeholder),
+  positional or over arrays: for: says "tuple"; against: "tuple" names no order, and the digit suffix. LEAN: (a), the
+  owner's own spelling, sized; the call shape (arrays vs positional) is §13 C25's question and is answered with the
+  names.
 - `assert` (§5.6): `some`, `none`, `same`.
 Candidate content (a follow-up initiative): network, time, identifiers, communication, checksummed numbers; each
 tested against the standard's OWN vectors (as `@assert` statements), the callout oracle and the laws; each shows
 its DFA column.
 
-BLESSED CALLOUTS: emitted C text, so the artifact stays self-contained. Blessed = PURE, BOUNDED, TOTAL,
+BLESSED CALLOUTS (the 2026-11-14 record, CF:461-470; its own plan row [BLESSED-CALLOUTS] since rev 16, where the owner's
+2026-11-15 pointer is recorded: "Idea was "blessed" callouts that guaranteed certain characteristics could be exposed
+to dfa", CF:1191-1192 on main): emitted C text, so the artifact stays self-contained. Blessed = PURE, BOUNDED, TOTAL,
 ORACLE-TESTED, and DECLARES ITS REGULAR TWIN where one exists (luhn, weekday, days_in), with its class count
 (§4.6): the compiler picks automaton vs callout. First contents: numbers, dates, checksums, network, text; Unicode
 normalisation deferred. The unblessed escape hatch is PCRE `(?C)`. Home: its own directory/tests/journal like
 memfn/. A callout in DFA context returns a DFA-friendly verb; plain FAIL needs the VM.
 
 **STATUS.** Standard library: RULED as a follow-up initiative (CF:38). Blessed callouts: LEAN (CF:461, "Lean ADOPT").
-`when`: RULED (CF:184, "Add when"). Filter modifiers and their names: RULED (CF:722; `json.quoted`: §13
-O37; `unpadded`: CUT, rev 14, §9). `occurs` family: RULED as a library (CF:682); the name: RULED in use (CF:782). `count()` first, `occurs` the
+`when`: RULED (CF:184, "Add when"). Filter modifiers and their names: RULED (CF:722; `json.quoted`: CUT, rev 16, §9; `unpadded`: CUT, rev 14, §9). `occurs` family: RULED as a library (CF:682); the name: RULED in use (CF:782). `count()` first, `occurs` the
 fallback: LEAN (CF:823, "perhaps the solution is both"). `count()` refused only on BUDGET, `occurs` recommended to
 reduce states, no positional rule: RULED (CF:832: "i would refuse count() on budget or as a recommended way to reduce
 states rather than rules"); the budget as ONE labelled measured quantity, no thresholds in the spec: RULED (CF:977, to CF:974-975; §13 O39). The
 automatic rewrite: RULED as a LATER plan item (CF:840). Tuples as a library macro: RULED (CF:644), SUPERSEDES predx's
-tuple-on-the-left-of-`:` syntax (S12); its spelling: OPEN (C25). The comma form of the semver condition: RULED (CF:704).
+tuple-on-the-left-of-`:` syntax (S12); the fixed-size compares (2 and 3 fields) in the first library: RULED (rev 16,
+CF:1166 on main); the family (between and its two halves), the bodies over arrays, the caveats' answers: LEAN (this
+document); the names and call shape: OPEN (**tuple-names**, C25). The comma form of the semver condition: RULED (CF:704).
 Rev 8: `occurrences` as a library transform of the `contains` family, `occurs` keeping counts only, `some`/`all` the one
 spelling: CF:907-914 (accepted at CF:905); the written bodies, the law, and the removal (not aliasing) of
 `occurs.some`/`occurs.all`: LEAN (this document). Rev 9: the hits on PCRE's parse: RULED (CF:932-933); `min`: the
@@ -2276,8 +2382,22 @@ Where the draft used it (a time range) the example is written with SPLIT FIELDS 
 libpcre2-8 10.46 and Python `re`, `docs/dev/lanes/predspec14_anchor.out`, R-4 table); `compare.width` keeps its
 warning and suggests that form. The natural-order range is a later item (§13 O68).
 
+ALSO CUT (rev 16; RULED, CF:1180-1181 on main, "cut-json-quoted: agree"): the transform `json.quoted(S)` ("the
+filter reads a JSON string literal as its decoded text"; rev 2's `jstr`). The reason, in this document's voice: its
+filter is tested against the DECODED string (an escaped `\u0041` read as `A`), which is NOT IN THE TEXT, so it was never a
+plain macro; only the pullback primitive could say it, and it was the one transform needing a real decoding mechanism.
+The owner's pointer, his own sentence: "It would necessitate a callout or similar? We have unrelated plans for dfa
+compatible callouts and that could be one" (CF:1180-1181 on main). The record's answer to his question (the
+manager's, CF:1185-1188, not a ruling): a callout is not strictly required (decoding JSON escapes is a finite-state
+rewrite, so the filter could be compiled through it), but that is a new compiler construction, and a callout that
+decodes the matched literal and tests the filter on the result is the simpler build. It may return through the
+follow-up on transforms that re-read the text (§13 O70; plan row [PRED-REREAD]) or a blessed DFA callout
+([BLESSED-CALLOUTS]; §8 BLESSED CALLOUTS). Where the draft used it (E-JSONL, the one example) the case is rewritten with
+`quoted(...)` and `json.string & contains(...)`, reading the RAW literal text (§12.1, with the subjects on which
+the two readings differ).
+
 **STATUS.** RULED (CF:583, predx Q8). SUPERSEDES rev 0 §9's interface, member, UFCS and `types()` rules. `unpadded`'s
-cut: RULED (CF:1125-1136 on main).
+cut: RULED (CF:1125-1136 on main). `json.quoted`'s cut: RULED (CF:1180-1181 on main).
 
 ## 10. Eval
 
@@ -2364,7 +2484,7 @@ macro's PARAMETER is not a position: it is in whichever position its BODY puts i
 PROVIDED TRANSFORMS); a parameter used twice is in each place its occurrences are. (Rev 12 called all four set
 positions "filters"; review r14 CENSUS-5 / F2: the word is reserved for the filter roles.)
 
-THE ROLE TABLE (rev 15; first match by row; the FILTER ROLES are rows 1-4, and row 8 by the LEAN of §2.7):
+THE ROLE TABLE (rev 15, row 8 narrowed in rev 16; first match by row; the FILTER ROLES are rows 1-4, and row 8 by the LEAN of §2.7):
 
 | # | position after expansion | set position (the edge-assertion error) | opens a scoped match over | its `^`/`$`/`\A`/`\z`/`\Z` read | `anchor.whole` on an edge anchor in its own text | fix hint the warning names |
 |---|---|---|---|---|---|---|
@@ -2375,7 +2495,7 @@ THE ROLE TABLE (rev 15; first match by row; the FILTER ROLES are rows 1-4, and r
 | 5 | a HOLE `${...}`, outside any filter role written inside it | yes (L8) | nothing: a hole never opens one | the innermost scoped match around it | never (a hole is no role: the 20:45 record, CF:1110; review r16 W4) | (none) |
 | 6 | a program's FINAL pattern | no | the subject (searched) | the subject | never (plain PCRE) | (none) |
 | 7 | a `records` item rx | no | its file text (searched, §7) | the file text | never; a narrowed ITEM beside `&` is a one-string set, so its rx's anchors never reach a filter role (review r16 SIMULATE-7) | (none) |
-| 8 | the argument of a transform WITHOUT a body (`any_case`, `json.quoted`) | yes | the transform's READING of the stretch it stands on (not text of the subject) | that reading's ends | fires (LEAN, pending §13 O67) | "the argument is matched whole on the <reading>; drop the anchor" |
+| 8 | the argument of `any_case`, the one provided transform WITHOUT a body (a primitive for now, RULED rev 16; `json.quoted` CUT, §9) | yes | its CASE-FOLDED READING of the stretch it stands on (not text of the subject) | that reading's ends | fires (the manager's LEAN; the follow-up §13 O70 may give `any_case` a body, and then its argument lands where the body puts it) | "the argument is matched whole on the case-folded text; drop the anchor" |
 
 Text a MACRO BODY writes stands in the position the body stands in: it is that row's own text (RULED, CF:1154 on
 main, **warn-in-macro-body**: no exemption by who wrote it), so `x & anchored(r)` is row 1 and fires (hint: "here
@@ -2781,6 +2901,16 @@ a filter role (a narrowed item is a one-string set, THE ROLE TABLE row 7; review
 mapping is now also `month_numbered`'s body (§2.7); `padded`'s body verbatim leaves E-WEEKDAY, E-IPV4's prose and
 E-CAL unchanged (a hole is one entry).
 
+REV 16 RE-APPLIED (CF:1164-1208 on main; per-case list in `docs/dev/lanes/predspec16_report.md`, WHAT REV 16
+CHANGES). CODE LINES: one case changes, E-JSONL (the only case that used `json.quoted`): its three `json.quoted(...)`
+calls become `quoted(...)` (ts, level) and `json.string & contains(...)` (msg), and the module comment names
+`string` for `quoted`. ANSWERS: E-JSONL's three stated subjects keep their answers under the raw reading (table (J),
+end to end), and a fourth subject is added (an escaped quote in the message, match); the subjects on which the raw
+and the decoded readings differ are listed in §12.1. WARNINGS: none moves (E-JSONL's `quoted` argument holds no
+anchor). Every other case: unchanged (no other case uses `json.quoted`; E-HTTP's `any_case("Host")` is unchanged, the
+transform staying a primitive; no case used a tuple compare, and the tuple family adds none: its worked rows are in
+§8). The two-way census: `contains(...)` still has E-JSONL; the tuple compares have no §12 case (§8's rows).
+
 THE TWO-WAY CENSUS (G0b; review r8 P6-9, OWNER-12). G1's check runs case -> construct (every case uses only §§2-8);
 this table runs construct -> case. Counts are uses in §12's code lines, comments stripped (command in
 `docs/dev/lanes/predspec7_report.md`; rev 8's re-run: `docs/dev/lanes/predspec8_report.md`). A construct with no case is LISTED, not cut and not given an invented case:
@@ -2796,6 +2926,7 @@ the owner decides which stay in phase 1 (§0.2).
 | `some(...)`, `all(...)` | none (the two `some(` hits are `@assert.some`) | CF:912-914 (accepted at CF:905; `some()` is his own question, CF:904-905) |
 | `contains(...)` | E-JSONL | standard library (§8) |
 | `anchored(...)` | E-HTTP (rev 13) | standard library (§8); RULED (CF:1005, exact ends CF:1048-1053 on main) |
+| the fixed-size tuple compares (`lex_between2` and family; names OPEN) | none (§8 carries their worked rows, rev 16) | in the first library: RULED (CF:1166 on main); the family and bodies: LEAN (§8) |
 | positional `X[...]` | none | RULED (CF:553); the owner's search example reads one iteration by it (`$m.hit[2]`, §2.6), at the `captures` level (LEAN) |
 | `where`, `where_group`, `each_group` | none | LEAN (§3.2, §5.3); candidate cut |
 | `when(c, p)` | none | RULED (CF:184, "Add when") |
@@ -2810,21 +2941,30 @@ the owner decides which stay in phase 1 (§0.2).
 
 ### 12.1 E-JSONL: flat JSONL, date range + string match (key-order independence)
 
-    json  := import("json")    # ws, jchar, quoted, num, value, member_any, member(k, v), row(k, v)
+    json  := import("json")    # ws, jchar, string, num, value, member_any, member(k, v), row(k, v)
     dates := import("dates")
-    q := json.row("ts",    json.quoted(dates.isodate & between("2024-01-01", "2024-03-31")))
-       & json.row("level", json.quoted("error"))
-       & json.row("msg",   json.quoted(contains("timeout")))
+    q := json.row("ts",    quoted(dates.isodate & between("2024-01-01", "2024-03-31")))
+       & json.row("level", quoted("error"))
+       & json.row("msg",   json.string & contains("timeout"))
     /^${q}$/m
 
-`row(k, v)` aligns one member to the member grid; `&` of three rows accepts the members in any order. `json.quoted`
-is the JSON-string filter modifier (§2.7): `json.quoted(p)` is the filter p changed to read a JSON string literal as
-its decoded text (rev 2's `json.jstr & p` pipeline is superseded). Quoted literals compare as strings; fixed-width
-ISO dates order correctly that way. `^`/`$` sit in the FINAL pattern and read the subject's lines (§11); `q` holds no
-assertion. LEVEL: default (every binding is pure; cost = the product of the `row` automata). Expected:
+`row(k, v)` aligns one member to the member grid; `&` of three rows accepts the members in any order; `v` is matched
+whole on the member's VALUE TEXT (the literal with its quotes). REV 16: `json.quoted` is CUT (§9), so the case reads
+the RAW text: `quoted(S)` (the library's, §2.7: S matched whole on the text inside the quotes, while it holds no
+escape) for the date and the level, and for the message `json.string & contains("timeout")` (`json.string`, the
+module's rx for a JSON string literal, escapes included; `contains` on the raw literal, so an escaped quote inside
+the message does not break it). Quoted literals compare as strings; fixed-width ISO dates order correctly that way.
+`^`/`$` sit in the FINAL pattern and read the subject's lines (§11); `q` holds no assertion. LEVEL: default (every
+binding is pure; cost = the product of the `row` automata). Expected:
 - `{"ts":"2024-02-10","level":"error","msg":"db timeout"}` -> match;
 - `{"msg":"timeout","level":"error","ts":"2024-02-10"}` -> match (order independent);
-- `{"ts":"2024-05-01","level":"error","msg":"timeout"}` -> no match (date out of range).
+- `{"ts":"2024-05-01","level":"error","msg":"timeout"}` -> no match (date out of range);
+- `{"ts":"2024-02-10","level":"error","msg":"db \"pool\" timeout"}` -> match (rev 16: an escaped quote in the message).
+WHERE THE RAW READING DIFFERS from the cut transform's (S tested on the DECODED string;
+`docs/dev/lanes/predspec16_anchor.out` table (J), libpcre2-8 10.46 and Python `re`, 4 of 12 value texts): a value written with an
+escape, `"2024\u002d02-10"`, `"err\u006fr"`, `"time\u006fut"` (rejected; the decoded reading accepts), and
+`"x\timeout"` (accepted: the raw text holds `timeout`; the decoded text is `x`, a tab, `imeout`). The stated subjects'
+answers are the same under both readings. The decoded reading returns with the follow-up (§13 O70).
 Duplicate keys: `row` holds if ANY member with that key matches. Nesting: §12.11 or `vm`.
 
 ### 12.2 E-WEEKDAY: ISO date + weekday as a computed label
@@ -3195,7 +3335,9 @@ STILL OPEN (contradictions):
   side as its labels in group order, with a compile error when the counts differ; it needs a variable-length call
   record (O47). (The `&`-equality of `[1, 4, 0]` and `[0, 1, 4]`, review OWN-9, is the language reading; a structural
   macro reads the order, so it does not decide.) No lean in rev 7: no worked example needs a tuple (rev 7 check of
-  §8 and §12), and phase 1 can rely on the condition spelling of §8.
+  §8 and §12), and phase 1 can rely on the condition spelling of §8. REV 16: the fixed-size compares are IN the
+  first library (RULED, CF:1166 on main; §8); reading (A) over arrays with a size suffix is the LEAN of owner question
+  **tuple-names** (it needs no variable-length call record, so O47 stays at (C)); still OPEN with the names.
 - **C26. The empty-match ERROR "opted out".** §7: in a predicate program the nullable-search case is an ERROR, with
   "no diagnostic ... when opted out"; §7.1: "Errors cannot be disabled". How a predicate program opts out of an
   error (other than `& !""` or pinning the program with `anchored(...)`) is not stated.
@@ -3307,8 +3449,10 @@ review's proposed lean, in plain words, NOT resolved):
   assertion can state what `occurrences` finds INSIDE A VALUE, decided on strings (`@assert.some("256.1.1.1" & occurrences(ipv4)
   & some((hit: "56.1.1.1")))`); the FINAL pattern's searched mode (where in the subject a match is reported) is still
   outside every assertion. Lean: this narrows O36 to that remainder; no new assertion until a measured need (D77).
-- **O37. Two modifier names this document chose.** REV 14: `unpadded` is CUT (CF:1125-1136 on main; §9), so only
-  `json.quoted` remains here. `unpadded(n, S)` (rev 2's `pad(n)`: the filter reads a subject
+- **O37. Two modifier names this document chose.** CLOSED in rev 16: both are CUT (`unpadded` in rev 14,
+  CF:1125-1136 on main; `json.quoted` in rev 16, CF:1180-1181 on main; §9), so no name of this document's choosing
+  remains. REV 14: `unpadded` is CUT (CF:1125-1136 on main; §9), so only
+  `json.quoted` remained here. `unpadded(n, S)` (rev 2's `pad(n)`: the filter reads a subject
   as if zero-padded to width n) and `json.quoted(S)` (rev 2's `jstr`) are placeholders under the naming rule; the
   ruling named `padded`, `any_case`, `quoted`, `length`, `month_numbered` only.
 - **O38. Look-alike rows with no diagnostic.** §0.1 marks GAP rows (rev 8: L20, L21 on answers, L22, L24, L29, L30,
@@ -3656,6 +3800,16 @@ occurrence (review r16 SIMULATE-6); a narrowed `records` item is a one-string se
 -6, -7); (43) `anchored` is a library convenience for the outer edge; no rule or table depends on it (the manager's
 consequence of the owner's remark, CF:1151-1152 on main).
 
+DECIDED BY THIS LANE OR THE MANAGER (rev 16; each LEAN, none an owner ruling; listed so the owner sees them): (44) the
+tuple family is SMALL: a between and its two halves per size, the strict comparisons and equality derived by `!` and
+`&`, not carried (§8); (45) the lean naming scheme is the owner's own 2026-11-14 stem, sized (`lex_ge2`,
+`lex_between3`), over arrays of fields and bounds (rulings R-3 (ii); OPEN as **tuple-names**); (46) a wrong-length
+array in a tuple call is a compile error naming both counts, and the helper labels get the same per-call `label =`
+setting as `occurrences` (§8 caveats); (47) `any_case`'s argument is a whole-match role on the case-folded reading
+(the manager's LEAN, THE ROLE TABLE row 8); (48) E-JSONL reads the raw literal text after the cut: `quoted(...)` for
+the date and the level, `json.string & contains(...)` for the message (§12.1), the module's string rx named
+`json.string`.
+
 DECIDED BY THE MANAGER (rev 9; the manager's calls, each LEAN (manager), none an owner ruling; listed so the owner
 sees them): (1) an `occurrences` argument that can match the empty string is REFUSED with the fix `x & !""` (O53 reading A;
 §2.6, §8); (2) a user label named `index` or `label` is a compile ERROR naming the reserved field of the map
@@ -3709,7 +3863,7 @@ Items NEW in rev 12 (the owner's 2026-11-15 evening ruling, CF:1001-1024):
   noun for what the changed filter reads, the clause this document derives from `length` (CF:722), LEAN (§2.7;
   review r14 CENSUS-6), or as a description of the accepted values read occurrence by occurrence. THE AUDIT (review
   r14 CENSUS-7: every provided macro whose input and output are filters, graded here, not by pointer). PASS:
-  `padded`, `unpadded` (CUT in rev 14), `any_case`, `quoted`, `json.quoted`, `month_numbered`, `anchored`, `contains`, `startsWith`,
+  `padded`, `unpadded` (CUT in rev 14), `any_case`, `quoted`, `json.quoted` (CUT in rev 16), `month_numbered`, `anchored`, `contains`, `startsWith`,
   `endsWith`, `occurrences`, `json.row`; `length`, `left`/`right`/`mid` (through the "what it reads" clause, LEAN);
   `when` (a conjunction), `some`, `all` (quantifiers over iterations), `occurs.exactly`/`at_least`/`at_most`/`none`
   ("c occurs n times" describes values), `list_of`, `any_order` (descriptions of the accepted values). NOT
@@ -3770,7 +3924,12 @@ Items NEW in rev 14 (the owner's four 2026-11-15 entries after rev 13, box clock
   Rev 15 TRIGGER WITNESS (review r16 SIMULATE-6): a parameter a body uses in a hole AND in a filter role,
   `tagged(S) := /<(?<t>${S})>/ & (t: S)`: `tagged(/^a/)` is EMPTY (the hole copy's `^` reads the stretch starting at
   `<`), while `anchor.whole` can only say that the `t:` copy's `^` adds nothing (§11 THE WARNING).
-- **O67. Transforms that are not plain macros (**primitive-transforms**).** The manager's record of the 20:45 ruling
+- **O67. Transforms that are not plain macros (**primitive-transforms**).** CLOSED in rev 16, NOT as asked: the
+  owner's words, "I understand why any_case is currently a primitive. I'd like to look for more fundamental ways of
+  reducing that like some option setting primitive that any_case is built on or something else. I am ok with that
+  being a followup." (CF:1170-1172 on main). `any_case` stays a primitive in the first spec for now; reading (A)
+  below, ONE reading primitive for both, is NOT adopted; `json.quoted` is CUT (CF:1180-1181 on main, §9); the
+  follow-up is O70. The item as asked: The manager's record of the 20:45 ruling
   (CF:1110-1111, the manager's sentence, not the owner's words; review r16 FIXIND-5): "If any provided transform's
   whole-match behaviour cannot be derived from a body written in the language, that is brought to him". Rev 14
   counted five without a body; `unpadded` is CUT (CF:1125-1136 on main), and rev 15 writes bodies for `length` and
@@ -3782,14 +3941,19 @@ Items NEW in rev 14 (the owner's four 2026-11-15 entries after rev 13, box clock
   filter role like a `label:` condition's set; each of the two is then a plain macro over it, and the whole-match rule
   and the warning name roles only; (B) keep the two as built-in transforms, each with its own sentence. Lean: (A)
   (one role, no names, the owner's "no special cases", CF:1002-1004). Until ruled, their argument is THE ROLE TABLE's
-  row 8 (LEAN): `anchor.whole` fires on an edge anchor in it.
-- **O68. A NATURAL-ORDER range.** A LATER ITEM, not in the first spec (RULED as later, CF:1133-1136 on main): a way of
+  row 8 (LEAN): `anchor.whole` fires on an edge anchor in it. (Rev 16: row 8 now names `any_case` only.)
+- **O68. A NATURAL-ORDER range.** A LATER ITEM, not in the first spec (RULED as later, CF:1133-1136 on main); since
+  rev 16 it stands BEHIND the tuple compare, which is in the first library (§8; O69): a way of
   comparing chosen where the range is written, digit runs compared as numbers and everything else as text, so
   `between("9:00", "10:00")` and versions (`1.9` < `1.10`) work without splitting fields; a way of comparing, not a
   transform; cost unexamined. TRIGGER (D77): a real example where splitting fields is too clumsy. The manager's
   judgment, not ruled (CF:1144; review r16 FIXIND-6): O69 is the better general form of the two (the fields are
   named, not guessed from digit runs).
-- **O69. A TUPLE COMPARE over parsed number fields (**tuple-compare**).** An owner IDEA, not a ruling (CF:1139-1148
+- **O69. A TUPLE COMPARE over parsed number fields (**tuple-compare**).** CLOSED in rev 16 FOR THE FIXED SIZES
+  (RULED, CF:1166 on main: "tuple-compare: agree"): the 2- and 3-field compares are in the first library, the family,
+  bodies, worked rows and caveats in §8 TUPLE COMPARISONS; the names are OPEN (**tuple-names**). STILL LATER: (3)
+  below, ANY NUMBER OF FIELDS, TRIGGER (D77): a real use with four or more fields, or a looping structural macro (a
+  running prefix over array positions) or a library primitive built for another need. The item as it stood: An owner IDEA, not a ruling (CF:1139-1148
   on main: "Perhaps a macro that lets you compare an array of numbers. Then parse the elements and use the array
   compare."); the manager's judgment, not ruled: the better general form than O68 (CF:1144); a SKETCH, NOT in the first spec's library. Names are placeholders. (1) For a FIXED
   number of fields it is a PLAIN MACRO in today's language: the author's field patterns go into the body's own
@@ -3817,6 +3981,45 @@ Items NEW in rev 14 (the owner's four 2026-11-15 entries after rev 13, box clock
   structural macro with a running prefix over array positions (bounded recursion over the array's length, or a
   library primitive); today's `each` maps entries one at a time (§5.3) and cannot.
 
+Items NEW in rev 16 (the owner's entries after rev 15, CF:1164-1208 on main):
+- **O70. A more fundamental basis for transforms that test a filter against a RE-READING of the text.** A LATER ITEM
+  (RULED as a follow-up, CF:1170-1172 on main; plan row [PRED-REREAD]). Members: `any_case` (in the first spec, a
+  primitive for now) and `json.quoted` (CUT in rev 16, §9; it returns here or by a callout). The owner's words: "I'd
+  like to look for more fundamental ways of reducing that like some option setting primitive that any_case is built
+  on or something else" (CF:1170-1172); his pointer for `json.quoted`: "We have unrelated plans for dfa compatible
+  callouts and that could be one" (CF:1181); his pointer "What about "enumerate"" (CF:1202). WHAT IT MUST ANSWER:
+  (i) can a primitive that applies a PCRE OPTION THROUGH A HOLE (case-insensitivity first) give `any_case` a body,
+  and which other options would it carry (candidates to examine, none proposed: `(?x)` is spelling only; `(?s)`,
+  `(?m)` change what `.`/`^`/`$` read; `(?u)`-style Unicode case and class options: UNVERIFIED which PCRE2 options
+  have a meaning through a hole); (ii) what that does to "a hole keeps its own flags" (§11 NO INHERITED FLAGS, §13
+  O32): an option-setting primitive is a DELIBERATE, named exception the hole rule must state, or the rule changes;
+  the rev 15 test (`predspec15_anchor.out` table (A)) shows why plain `/(?i:${rx})/` is not it, and the same table
+  shows a filter role inside the argument (`&`, a `label:` condition) keeps its own literal even under a raw paste, so
+  the primitive must reach into filter roles, not only holes; (iii) whether the same basis reaches DECODING
+  (`json.quoted`), or that needs the callout route. ROUTES: (a) an option-setting primitive (the owner's example);
+  (b) a blessed callout callable on the DFA path ([BLESSED-CALLOUTS]): decode the matched literal and test the filter
+  on the result (the record's simpler build for `json.quoted`, CF:1185-1188); (c) `enumerate` for a FINITE filter
+  (rulings R-3; the owner's pointer, CF:1202). ROUTE (c) SKETCHED AND TESTED (rev 16):
+
+      lowers := ["a", "b", ..., "z"]      uppers := ["A", "B", ..., "Z"]        # a spelled ASCII case-pair table
+      fold(c)   := c | uppers[(lowers & c).index] | lowers[(uppers & c).index]  # a character with its case variants
+      folded(w) := join(each(fold, chars(w)))                                    # chars(w): NOT IN THE LANGUAGE
+      any_case(S) := each(folded, enumerate(S))
+
+  Emulated against the meaning ("equal to some member of S up to ASCII letter case") for five finite filters (a
+  literal, an alternation, a class under `&`, a literal with a digit and `-`, the number filter `<12`): 0 differ
+  (`docs/dev/lanes/predspec16_anchor.out` table (E), libpcre2-8 10.46 and Python `re`). IT IS NOT A BODY IN TODAY'S
+  LANGUAGE: it uses `enumerate` (§5.5), `each` and `join` (§5.3), a spelled table, `X & f` keeping original
+  positions and `.index` (§3.2; reading a filtered entry's `.index` as a position: LEAN), and ONE MISSING TOOL, a
+  string's characters as an array (`chars(w)`, a placeholder; a string's array interface has one entry, §3.2, so
+  positional `w[k]` does not split it). With that one structural tool it would be a body for finite filters. Outside
+  it in any case: a filter that is not finite (`any_case(/\w+/)`, which `enumerate` refuses, §5.5), and an argument
+  that is a `label:` condition (a macro, nothing to enumerate). Cost: the enumerated set under the `enumerate` budget;
+  one class per character, no product blow-up. Unicode: the case-pair table from official UCD case-folding data only.
+  Since it covers only finite filters it does not by itself replace the primitive; no owner question is raised on it
+  (rulings R-3: raised only if the sketch were a complete body). TRIGGER (D77): predicates are next scheduled for a
+  build design, or a second re-reading transform is asked for.
+
 OWNER QUESTIONS AFTER REV 13 (the open small ones, each in one line with its lean; the plain-words version with an
 example each is in `docs/dev/lanes/predspec13_report.md`, QUESTIONS FOR THE OWNER). Rev 12's (1), (5), (6) are
 ANSWERED (CF:1026-1062 on main: rx-text `&` where `|` alternates, `occurrences`, exact ends); (3) was withdrawn;
@@ -3826,16 +4029,23 @@ ANSWERED (CF:1026-1062 on main: rx-text `&` where `|` alternates, `occurrences`,
 - (4) ANSWERED in rev 13 (CF:1073-1081 on main): NO warning (O63).
 - (7) ANSWERED in rev 14 (2026-11-15 20:44 (a) on main): no `anchored`-specific error; the macro is plain (O64).
 - (8) ANSWERED in rev 14 (20:44 (b) and 20:45 on main): one warning in every filter role, keyed off the role (O65).
-- (10) OPEN since rev 14 (**tuple-compare**): a 2- and 3-field tuple compare is a plain macro with nothing missing
+- (10) ANSWERED in rev 16 (**tuple-compare**, CF:1166 on main: "tuple-compare: agree"): in the first library at
+  fixed sizes (§8; O69 closed for them). New: **tuple-names** (12) below. The question as asked: a 2- and 3-field tuple compare is a plain macro with nothing missing
   (O69; the 3-field sketch corrected in rev 15, every comparison padded, re-oracled); should it join the first spec's
   library? Lean: YES as fixed-arity library macros (no new mechanism, it covers the range `unpadded` was for and
   versions), the variable-arity form later.
-- (9) OPEN since rev 14, premise corrected in rev 15 (**primitive-transforms**): TWO provided transforms
+- (9) ANSWERED in rev 16, not as asked (**primitive-transforms**, CF:1170-1172 on main): `any_case` stays a primitive
+  for now, a more fundamental basis is a follow-up (O70); `json.quoted` CUT (**cut-json-quoted**, CF:1180-1181). The
+  question as asked: TWO provided transforms
   (`any_case`, `json.quoted`) read text neither the subject nor the match contains and cannot be plain macros
   (`length`, `month_numbered` now have bodies; `any_case(rx) := /(?i:${rx})/` re-tested, not a body); one primitive
   (the pullback) under them, its argument a filter role: lean YES (O67).
 - (11) ANSWERED in rev 15 (**warn-in-macro-body**, CF:1154 on main): no exemption by authorship; `x & anchored(r)`
   warns. His question "is that an identity?" is answered in §8 ANCHORED AND THE TIE.
+- (12) OPEN since rev 16 (**tuple-names**): the names and call shape of the tuple family. Lean: the owner's own
+  2026-11-14 stem, sized, over arrays (`lex_between2([/\d{1,2}/, /\d\d/], ":", [9, 0], [10, 0])`, `lex_ge3`,
+  `lex_le2`); the alternatives `pair_between`/`triple_between` (positional) and `tuple_between2` (§8 NAMING
+  CANDIDATES).
 
 ## 14. Non-goals
 
@@ -3848,7 +4058,8 @@ ANSWERED (CF:1026-1062 on main: rx-text `&` where `|` alternates, `occurrences`,
 - No "best match" overload ranking; no interfaces, members, UFCS or `types()` in the first spec (§9).
 - No third value kind: no record, boolean or number values (two kinds, rx and macro, RULED CF:858; a record is a
   shape laid against fields, never a value, RULED CF:851-852; no boolean: LEAN, CF:595; numbers: §13 O40). Tuples:
-  no tuple VALUE kind, but whether a tuple comparison is spelled over arrays is OPEN (§13 C25; review r8 RUL-6).
+  no tuple VALUE kind, but whether a tuple comparison is spelled over arrays is OPEN (§13 C25; review r8 RUL-6;
+  rev 16: the fixed-size compares are library macros, §8, their call shape OPEN with their names, **tuple-names**).
   Names that denote non-values (modules, described by their map interface; run-time inputs): the kind table,
   §2.1, §13 O46. No array or map VALUE: array and map are interfaces applied to a thing, never created (RULED,
   CF:890-891). No search-result value: `occurrences` is a filter and its hits are a label's iterations (§2.6, §4.3).
@@ -3868,6 +4079,7 @@ COND-FAMILY.md notes by date/heading; "11-12" = the 2026-11-12 sections, etc. "p
 
 | section | notes consolidated |
 |---|---|
+| rev 16 (the entries after rev 15) | CF:1164-1168 on main (tuple compare) -> §0 rulings table, §1, §2.7 (the `compare.width` pointer), §8 TUPLE COMPARISONS, §12 census, §14, C25, O68, O69, owner questions (10), (12); CF:1169-1176 (`any_case` a primitive for now, the follow-up) -> §0 rulings table, §0.3, §2.7, §8, §11 THE ROLE TABLE row 8, O67, O70, owner question (9); CF:1178-1188 (`json.quoted` cut) -> §0 rulings table, §0.3, §1, §2.7, §8, §9, §11 row 8, §12.1 and REV 16 RE-APPLIED, O37, O61's audit, O67, O70; CF:1190-1199 (blessed DFA callouts) -> §0 rulings table, §8 BLESSED CALLOUTS, §9, O70; CF:1201-1208 (`enumerate`) -> §0 rulings table, O70 route (c). Plan rows [PRED-REREAD], [BLESSED-CALLOUTS]. Oracle runs: `docs/dev/lanes/predspec16_anchor.py`/`.out` |
 | rev 15 (review r16 and the 21:21 entry) | review `docs/dev/reviews/2026-11-15-r16-predspec14.md` (W1-W4, SIMULATE-5/6/7, FIXIND-1..7, CENSUS-1..8, -10, -11, DISPOSITIONS RULED) -> §0 rulings tables, §0.1 L13, L69 and the REV 15 paragraph, §0.3, §2.1-§2.3, §2.6, §2.7, §5.4, §7.1, §8, §9, §11 THE ROLE TABLE and THE WARNING, §12, §13 O66-O69 and owner questions; CF:1150-1162 on main (no authorship exemption; "is that an identity?"; the `anchored` remark) -> §0 rulings table, L69, §8 ANCHORED AND THE TIE, §11. Oracle runs: `docs/dev/lanes/predspec15_anchor.py`/`.out` |
 | rev 14 (the four entries after rev 13) | CF:1083-1091 on main (the words) -> §0.3, §11 THE ONE WHOLE-MATCH RULE, §8, every draft-voice use (census in `docs/dev/lanes/predspec14_report.md`); CF:1093-1098 (no `anchored` error in a hole) -> §8, §11, L68, O64, O66; CF:1098-1111 (one warning, by role) -> §7.1, §11 THE WARNING `anchor.whole`, §11 STRING SETS, §0.3, L7, L11, L15, L41, L69-L71, E-CTX-1/7, O65; CF:1113-1124 (`padded`'s body) -> §2.7 BODIES OF THE PROVIDED TRANSFORMS, §8, §11, L13, E-CTX-5, O67; CF:1125-1136 (`unpadded` cut) -> §2.7, §8, §9, §1, O37, O61, O67, O68 |
 | rev 13 (rulings and review r14 sites) | CF:1026-1031 on main (`occurrences`) -> §2.6, §8, §0.3, §2.7, O61, every row and case naming the transform; CF:1033-1053 on main (`anchored`'s exact ends, as corrected; rx-text `&` where `\|` alternates) -> §8, §11, L68, E-HTTP, O60 (d), O62, O64, §0 G3, §5.4 `&` row; CF:1054-1062 on main (both `&` operands filter roles; the warning; the condition) -> §11 THE ONE ANCHORING RULE and THE AMPERSAND RULE TESTED BY POSITION, §7.1, L11, L39, L41, L70, L71, O65. CF:1068-1081 on main (rulings R-1: per-call hit label; no count warning; the hole example) -> §2.6, O55, O63, L66, §11 table (iii), owner questions. Review r14 (F1, F2, CENSUS-1..8, `\Z`) -> §0.1, §0.3, §2.6, §2.7, §8, §11, §12, §13. Oracle runs: `docs/dev/lanes/predspec13_anchor.py`/`.out` |
