@@ -10,8 +10,7 @@
 
 #define PM_MAXT  6      /* terms per predicate in the generated space          */
 #define PM_MAXP  3      /* span 0 (or a context stop) and up to two ctx items  */
-#define PM_NPROOF 41    /* MF_MAX_FWD - MF_PROOF_LO, checked by the generator  */
-#define PM_PROOF_LO (-8)
+#define PM_PROOF_LO (-8)   /* MF_PROOF_LO, checked by the generator           */
 
 enum { PM_SET = 0, PM_RUN = 1 };
 enum { PM_REQ = 1, PM_OPT = 2 };
@@ -39,7 +38,11 @@ typedef struct {
     int stop;                   /* a context stop: range [lo, n]             */
     int npred;                  /* p[0] the site's pred, p[1..] its ctx      */
     pm_pred p[PM_MAXP];
-    unsigned char proven[PM_NPROOF][32];   /* the kit's class (the claim)    */
+    int nproof;                 /* the kit's class (the claim): a COUNTED     */
+    const unsigned char (*proven)[32];  /* list (MF_CLASS_V 11), row k the
+                                   offset PM_PROOF_LO + k; every offset
+                                   outside [PM_PROOF_LO, PM_PROOF_LO +
+                                   nproof) proves nothing (all ones)      */
     unsigned char alpha[8];     /* the subject alphabet                      */
     int nalpha;
 } pm_site;

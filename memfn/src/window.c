@@ -2806,8 +2806,8 @@ static const struct { const char *name; size_t off, size, elem; } wr_members[] =
 
 /* The name of the first member at which `a` and `b` differ ("padding"
  * where only padding does). A list member differs where the counts differ
- * or an entry below the count does (a NULL list holds no entry: equal to
- * any list at count 0). */
+ * or an entry below the count does (two NULL lists agree; one NULL list
+ * differs from a held one at a nonzero count). */
 static const char *wr_first_diff(const mf_wreply *a, const mf_wreply *b)
 {
     for (size_t i = 0; i < sizeof wr_members / sizeof *wr_members; i++) {
@@ -2822,7 +2822,7 @@ static const char *wr_first_diff(const mf_wreply *a, const mf_wreply *b)
         memcpy(&lb, pb, sizeof lb);
         if (a->nplan != b->nplan) return wr_members[i].name;
         if (!a->nplan) continue;
-        if (!la || !lb || memcmp(la, lb, a->nplan * wr_members[i].elem))
+        if (la != lb && (!la || !lb || memcmp(la, lb, a->nplan * wr_members[i].elem)))
             return wr_members[i].name;
     }
     mf_wreply x = *a, y = *b;           /* the padding, pointers set aside */

@@ -124,6 +124,9 @@ static mf_site base_site(void)
  * reply as the class carries it (`mf_class.run`, fd_pres_run: the routed
  * PRES rows' own ask). */
 static mf_wspan pwsp;
+static uint8_t pwsp_set[MF_WSPAN_POS][32];  /* pwsp's lists, this test's own
+                                               storage (MF_SITE_ABI 30) */
+static uint32_t pwsp_tab[MF_WSPAN_POS];
 static mf_walt pwalt;
 
 static mf_pres_picks ports_rr(const mf_analysis *a, const char *run, long long k,
@@ -133,12 +136,15 @@ static mf_pres_picks ports_rr(const mf_analysis *a, const char *run, long long k
     unsigned n = (unsigned)strlen(run);
     memset(&span, 0, sizeof span);
     memset(&pwsp, 0, sizeof pwsp);
-    pwsp.len = (uint8_t)n;
+    memset(pwsp_set, 0, sizeof pwsp_set);
+    pwsp.set = (const uint8_t (*)[32])pwsp_set;
+    pwsp.table_ref = pwsp_tab;
+    pwsp.len = (uint16_t)n;
     pwsp.verify = MF_VERIFY_NO;
     pwsp.core = MF_CORE_STATED;
-    pwsp.core_len = (uint8_t)n;
+    pwsp.core_len = (uint16_t)n;
     for (unsigned j = 0; j < n; j++)
-        pwsp.set[j][(unsigned char)run[j] >> 3] |= (uint8_t)(1u << ((unsigned char)run[j] & 7));
+        pwsp_set[j][(unsigned char)run[j] >> 3] |= (uint8_t)(1u << ((unsigned char)run[j] & 7));
     pwalt = (mf_walt){ MF_ENTRY_NONE, 1, &pwsp };
     span.need = MF_OPTIONAL;
     span.plan_hint = MF_NO_PRED;
@@ -172,20 +178,25 @@ static mf_pres_picks ports_rr(const mf_analysis *a, const char *run, long long k
 /* A FIND site stating `run` as one verify-YES span (a pre-check run part's
  * statement: the run must hold whole). */
 static mf_wspan wsp;
+static uint8_t wsp_set[MF_WSPAN_POS][32];   /* wsp's lists, this test's own */
+static uint32_t wsp_tab[MF_WSPAN_POS];
 static mf_walt walt;
 
 static mf_site run_find_site(const char *run)
 {
     unsigned n = (unsigned)strlen(run);
     memset(&wsp, 0, sizeof wsp);
+    memset(wsp_set, 0, sizeof wsp_set);
+    wsp.set = (const uint8_t (*)[32])wsp_set;
+    wsp.table_ref = wsp_tab;
     wsp.start = 0;
-    wsp.len = (uint8_t)n;
+    wsp.len = (uint16_t)n;
     wsp.verify = MF_VERIFY_YES;
     wsp.core = MF_CORE_STATED;
     wsp.core_lo = 0;
-    wsp.core_len = (uint8_t)n;
+    wsp.core_len = (uint16_t)n;
     for (unsigned j = 0; j < n; j++)
-        wsp.set[j][(unsigned char)run[j] >> 3] |= (uint8_t)(1u << ((unsigned char)run[j] & 7));
+        wsp_set[j][(unsigned char)run[j] >> 3] |= (uint8_t)(1u << ((unsigned char)run[j] & 7));
     walt = (mf_walt){ MF_ENTRY_NONE, 1, &wsp };
     mf_site s = base_site();
     s.pred.need = 0;
@@ -204,7 +215,12 @@ static int wreply(const mf_analysis *a, const char *run, mf_wreply *r)
 {
     mf_site s = run_find_site(run);
     mf_art *art = art_of(a);
-    if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, r) || !r->run_stated) {
+    /* the reply's plan lists in this test's own storage (MF_SITE_ABI 30) */
+    static int32_t plan[MF_WPLAN_MAX];
+    static uint16_t plan_term[MF_WPLAN_MAX];
+    static uint8_t plan_test[MF_WPLAN_MAX];
+    mf_rows rows = { NULL, 0, plan, plan_term, plan_test, MF_WPLAN_MAX };
+    if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, r, &rows) || !r->run_stated) {
         printf("FAIL: mf_wdecide names no run member for %s (%s)\n", run, mf_art_error(art));
         failed++;
         return -1;

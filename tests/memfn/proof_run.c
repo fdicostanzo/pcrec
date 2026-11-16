@@ -144,7 +144,7 @@ static int term_proven(const pm_site *x, const pm_term *t)
 {
     for (int j = 0; j < t->len; j++) {
         int k = t->off + j - PM_PROOF_LO;
-        if (k >= 0 && k < PM_NPROOF && !all_ones(x->proven[k])) return 1;
+        if (k >= 0 && k < x->nproof && !all_ones(x->proven[k])) return 1;
     }
     return 0;
 }
@@ -202,7 +202,7 @@ static int absent_satisfies(const pm_site *x, int d)
 /* The first offset the class proves that does not hold at c, or 9999. */
 static int proof_fails(const pm_site *x, const unsigned char *s, long n, long c)
 {
-    for (int k = 0; k < PM_NPROOF; k++) {
+    for (int k = 0; k < x->nproof; k++) {
         if (all_ones(x->proven[k])) continue;
         int d = k + PM_PROOF_LO;
         long at = c + d;
@@ -351,7 +351,16 @@ static void site_static(unsigned si)
             if (tm->need != PM_REQ) continue;
             for (int j = 0; j < tm->len; j++) {
                 int d = tm->off + j, k = d - PM_PROOF_LO;
-                if (k < 0 || k >= PM_NPROOF) continue;
+                /* outside the counted range nothing is proven: the
+                   position-wise superset below reads that as "not
+                   proven" */
+                if (k < 0) continue;
+                if (k >= x->nproof) {
+                    if (++failed <= 30)
+                        printf("FAIL: site %s: REQUIRED position %d not proven (past the "
+                               "class's range)\n", x->name, d);
+                    return;
+                }
                 for (unsigned b = 0; b < 256; b++) {
                     int inset = tm->kind == PM_SET ? in_set(tm->set, b) : b == tm->run[j];
                     if (in_set(x->proven[k], b) && !inset) {
