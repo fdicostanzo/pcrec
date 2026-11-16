@@ -16,7 +16,7 @@ Lane covs2c (opus), 2026-11-16, for the manager. Branch `lane/covs2c`, cut from
   scratch `$PCREC_TMPDIR/scratch/covs2c/sweep.txt`). No abi move.
 - RULINGS FILE `docs/dev/lanes/covs2c_rulings.md`: EMPTY at every read (last
   read before this report, 18:46 box clock).
-- OWED (cloud, dispatched as this lane's last act, verdicts reach main as
+- OWED: none in the box queue. Cloud runs (dispatched as this lane's last act, verdicts reach main as
   CLOUD-DONE): `covs2c-test` = `scripts/cloudrun --owner main --kind test
   --name covs2c-test --ref lane/covs2c`; `covs2c-rows` = `scripts/cloudrun
   --owner main --kind mechrows --rows S3263,S1418,S3048 --name covs2c-rows
