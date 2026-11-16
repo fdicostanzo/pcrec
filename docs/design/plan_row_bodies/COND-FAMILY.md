@@ -1540,3 +1540,19 @@ for." RECORD: RULED: the joint condition is the ONE mechanism; the record is DEF
 written beside its label), so every rule of the joint condition (unset labels and defaults, per-pass pairing in
 loops, the colon's scope, modifiers on every part) holds for the record by definition, stated once. His criterion,
 in his words, for the record: "simplifying semantics".
+
+**2026-11-16 OWNER RULING — zero-pass-record: the outside label is tested (Frank, to session 135, box clock 12:45).**
+Asked **zero-pass-record** (a record whose labels sit at different depths, the deeper loop running zero passes:
+`/(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: 3 | 4 | 5 | 6 | 7)` on `9`; the per-pass rule read literally HOLDS
+vacuously, the draft's "a record is the AND of its parts" FAILS; the manager's lean the AND reading), after his
+questions on an "unset"/empty value in the set, a default undoing the `*`, and `count(^)`, his words:
+"zero-pass-record: I agree but save the notes in the future file. The issue falls into the 'saving people from
+themselves' category that tools need to realistically consider". RECORD: RULED, the manager's lean as stated to
+him: a label outside the pairing loop is tested once even when the loop runs zero passes (`9` FAILS in the
+example); the draft's equality `(a: S, b: T)` = `(a: S) & (b: T)` holds at every depth. THE MANAGER'S WORDING
+(his "agree" covers the answer; the wording is the manager's, to be checked by the critic round and rev 20): a
+reached loop that runs zero times gives ONE tuple whose looped parts are EMPTY; empty satisfies any set (for a
+joint set R: the outside labels' values must be possible under R for some value of the looped parts); a default
+is NOT read there (§4B.1 unchanged); a plain single-label condition still HOLDS on zero passes (CF:997-1000
+unchanged); "unset" (never reached) keeps its meaning. His criterion for the record: "saving people from
+themselves". The four ideas raised on the way are PARKED in docs/design/predicates_future.md items 5-8.
