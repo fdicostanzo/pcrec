@@ -1429,3 +1429,11 @@ now, first/rest recorded with its trigger; not a closed ruling until he says so.
 correct of the design: without first/rest the walk over a tuple's parts in order is prescribed by the language (the
 compiler unfolds a comparison on a tuple of any length); a macro is length-independent only while it uses tuples
 whole. Answered in the session's reply.
+
+**2026-11-16 OWNER RULING — first-rest: PARKED, kept in the wings (Frank, to session 134, box clock 10:22).** His words:
+"Let's park first/rest but keep it in the wings in case we find a problem that needs a different way of composing".
+RECORD: (1) first/rest binding with recursion is PARKED: the built-in dictionary order for a tuple atom is the
+design; (2) it is KEPT ON RECORD (joint_condition.md §4A.11, with its tested library clauses and its five pieces);
+(3) TRIGGER, in his terms: a problem that needs a different way of composing over a tuple's parts than the language
+gives (dictionary order; each part written out). CONSEQUENCES, the MANAGER'S (to be checked by rev 20): tuple-parts
+has no user while first/rest is parked and stays open, not built; two-orders stays a live question.
