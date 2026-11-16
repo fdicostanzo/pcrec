@@ -1044,3 +1044,19 @@ where `|` means alternation (so never inside a class, quoted text, a callout's t
 name, or after a backslash); everywhere else PCRE's reading stands. A literal ampersand is `\&` or `[&]`, both plain
 PCRE. (Rev 11 withdrew only an automatic REWRITE of every `&` to `\&` when moving a pattern across the switch, which
 breaks `(?&a)`; the escape itself was never refused.)
+
+**2026-11-15 CORRECTION and RULING (Frank, to session 133, ~21:20).** (a) CORRECTION of the entry above, part (a): his
+"Anchored def: agree" answered the manager's EARLIER statement (the `\A`/`\z` lean with its impact), not the
+confirming round's "P in filter role" wording; his words: "The anchored comment was to a previous statement. What
+does new anchored suggestion mean." RECORD: RULED = `anchored` has EXACT ends (`\A`/`\z`, not PCRE's `$`);
+`anchored(/foo/)` as a final pattern does not match `foo\n`. NOT ruled: defining `anchored(P)` as "P in filter role on
+the enclosing scope"; it is a wording of the same answers as far as review r14 checked, explained to him, and stays
+the spec writer's choice only while no case differs (a differing case goes to him). (b) On review r14's F1 (in
+`rx & rx` both operands are filters, so an author's `^`/`$` in an operand mean the candidate stretch's ends:
+`/^\d+$/` finds nothing in `x300 12`, `/^\d+$/ & <256` finds `30`), offered "accept, both sides whole-match the
+stretch, and warn on an explicit anchor in an operand" against "make `&` one-sided", his words: "&: both sides filter
+and warn if anchor. Agree but test if it makes sense. Like in a hole, what does it mean that they are anchored?"
+RECORD: both operands of `&` are filter roles (the operator stays symmetric); an explicit anchor in an `&` operand
+draws a WARNING; CONDITION: the next revision TESTS the rule for sense in every position an `&` can stand (a final
+program, a hole, a filter inside a hole, a `label:` condition), with worked rows, and brings him any position where
+"anchored" has no sensible meaning.
