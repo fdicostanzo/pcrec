@@ -520,7 +520,7 @@ typedef enum { MF_BODY_UNSTATED, MF_BODY_ONESHOT, MF_BODY_PARAM } mf_body;
  *                window site E-find does not render (its deny `window-search`; a
  *                frame other than STMT/ASSIGN; no stop), since the floor
  *                serves no REPORT site. On a site it renders, the class's
- *                proven[d] is the set the text tests at d (R-25), which on a
+ *                proof row for offset d is the set the text tests at d (R-25), which on a
  *                REPORT site is every span's set (the host checks EQUALITY,
  *                C14) */
 typedef enum { MF_SK_UNSTATED, MF_SK_DFA_SCAN, MF_SK_DFA_HAT, MF_SK_HYB_PF,
@@ -1361,9 +1361,10 @@ typedef struct {
        at the head. 0: no row (no link; no order row) */
     uint8_t  pres_row[MF_MAX_PRES];
     uint8_t  pres_led[MF_MAX_PRES];
-    /* (MF_CLASS_V 5, R-26.4; kit_proof.md §4.2; the array `proven[]`
-       REPLACED by the counted `proof` below at MF_CLASS_V 11, its meaning
-       kept) THE PER-OFFSET PROOF: proven[d - MF_PROOF_LO] is a bitset (mf_term.set's layout) such that
+    /* (MF_CLASS_V 5, R-26.4; kit_proof.md §4.2; carried since MF_CLASS_V
+       11 by the counted `proof` below) THE PER-OFFSET PROOF: the row for
+       offset d (proof[d - MF_PROOF_LO]; all ones outside the counted rows)
+       is a bitset (mf_term.set's layout) such that
        at EVERY candidate the site yields, the byte at offset d from the
        candidate lies in it (a window site's plan: off the subject only
        outside a span's core, window_site.md §1.2). All ones = nothing
@@ -1371,13 +1372,13 @@ typedef struct {
        candidate (R-25): the intersection over the TESTED terms of span 0
        (or a context stop's `pred`), per position (a SET term's set; a RUN
        term's position j under its mask).
-       Byte-wise, proven[d] is a SUBSET of the set of any REQUIRED term at
+       Byte-wise, the row for d is a SUBSET of the set of any REQUIRED term at
        d (binding makes that true); position-wise, the proven positions are
        a SUPERSET of the REQUIRED ones. Equal under -fno-memfn-simd,
        -fmemfn-simd at every level and every layer: LAYER-INVARIANT (a SIMD
        rendering proves what its SIMD-off one does). A --memfn= deny may
        change it: DENY-VARIANT. proven0 and proven_prev are COPIED from
-       proven[0] and proven[-1] by the kit, so they are equal by
+       the rows for offsets 0 and -1 by the kit, so they are equal by
        construction; the trace build checks every d (Q-R17P-25: exists 0
        proves nothing at any offset). A MEMBERSHIP fact: pcrec reads it as a
        language proof only inside the span it knows exact (its own cover
@@ -1387,13 +1388,14 @@ typedef struct {
     /* (MF_CLASS_V 11, R-45; r45_reply.md rev 4 §1) THE PER-OFFSET PROOF as
        a COUNTED list: proof[i] is the row for offset MF_PROOF_LO + i, for i
        in [0, proof_n); every offset OUTSIDE [MF_PROOF_LO, MF_PROOF_LO +
-       proof_n) proves nothing (all ones). Its meaning is MF_CLASS_V 5's
-       proven[] above, unchanged. Only a PROVING class carries rows (a
+       proof_n) proves nothing (all ones). Its meaning is the per-offset
+       proof above, unchanged. Only a PROVING class carries rows (a
        window plan class; an old-field FIND class); every other class (a
        VERIFY, an EXPR, the PRESENCE ask, a refusal's zeroed class) has
        proof_n 0 and proof NULL, the legal all-ones class. On a proving
        class the range is [MF_PROOF_LO, end), end = max(last stated
-       position + 2, last tested offset + 1), clipped at MF_MAX_FWD: it
+       position + 2, last tested offset + 1), clipped at MF_MAX_FWD and
+       never below 1 (rows -1 and 0, the copies, always lie inside): it
        always reaches one past the statement. The storage is the CALLER's
        mf_rows on mf_ask, the ART's arena on a define (mf_result.cls, valid
        until that arena dies). A pointer is never compared: two classes
@@ -1602,19 +1604,25 @@ typedef struct {
     uint8_t  *plan_test;
     uint32_t  plan_cap;
 } mf_rows;
-/* PURE: the MINIMUM storage a reply for `site` needs, a function of the
- * statement alone: *proof_cap = min(MF_MAX_FWD, last stated position + 2) -
+/* PURE (no allocation, no failure path but a NULL argument): the MINIMUM
+ * storage a reply for `site` needs, a function of the statement alone:
+ * *proof_cap = max(1, min(MF_MAX_FWD, last stated position + 2)) -
  * MF_PROOF_LO for a site whose class proves (a FIND: a window site or an
- * old-field FIND), 0 for any other; *plan_cap = the offsets a window site
- * states (0 for a site that states no window). A caller may pass more; the
- * ceiling is MF_MAX_FWD - MF_PROOF_LO proof rows. Returns 0, or -1 for a
- * NULL argument. A text that tests past the minimum is refused at the
- * minimum and answered at the ceiling (where a host's own control reads the
- * over-read). */
+ * old-field FIND), 0 for any other; *plan_cap = the distinct offsets a
+ * window site states (0 for a site that states no window). It suffices for
+ * every ask of the site; an ask whose rendered class proves fewer rows (a
+ * window plan translated into an older row's site) uses fewer. A caller may
+ * pass more; the ceiling is MF_MAX_FWD - MF_PROOF_LO proof rows. Returns 0,
+ * or -1 for a NULL argument. A text that tests past the minimum is refused
+ * at the minimum and answered at the ceiling (where a host's own control
+ * reads the over-read). */
 #define mf_rows_need MF_NS(rows_need)
 int mf_rows_need(const mf_site *site, uint32_t *proof_cap, uint32_t *plan_cap);
 /* What site `handle`'s define chose (mf_result: form_id, handle,
- * reads_table, includes, cls; `moved` 0). Valid from the define on. */
+ * reads_table, includes, cls; `moved` 0). Valid from the define on. Its
+ * class's proof rows are an ART-OWNED counted list (the art's arena, valid
+ * until that arena dies): the fourth output shape beside a reply's caller
+ * rows (review r27 SEAM-6). */
 int mf_defined(const mf_art *, uint32_t handle, mf_result *out);
 /* THE DEFINE-TIME QUERY (r17b_prime.md §4.5, PR-9; Q-R17P-15): the CLASS of
  * the text mf_define WOULD render for `site` under the define hooks `def`
@@ -1629,7 +1637,11 @@ int mf_defined(const mf_art *, uint32_t handle, mf_result *out);
  * and the caller's `rows` (MF_SITE_ABI 30): a PROVING class's rows go into
  * `rows->proof`, at most `rows->proof_cap` of them; more needed is a
  * refusal (-1), and so is a NULL `rows` on a proving class. On -1 `*out`
- * is zeroed (proof_n 0, proof NULL). */
+ * is zeroed (proof_n 0, proof NULL) and nothing is written to `rows`:
+ * every refusal precedes the first write to them. One residue: a window
+ * site's ask leaves its decision's working state in the art's arena (sized
+ * by the alternatives' extent, about 7.8 KB at a small extent; review r27
+ * MEM-3), as a define does. */
 int mf_ask(const mf_art *, const mf_site *site, const mf_hooks *def, mf_class *out,
            mf_rows *rows);
 /* = mf_define + mf_use, for a site whose parts all sit at one point */
@@ -1832,9 +1844,11 @@ typedef struct {
  * or by that defect path, which POISONS the art as the define would; a site
  * the family does not describe; a frame the define refuses; under EMIT a
  * `decl_point` 1 site or a use mf_emit refuses at its text; out of
- * memory; since MF_SITE_ABI 30 a NULL `rows`, or a plan longer than
- * `rows->plan_cap`). The plan's lists are written into the caller's
- * `rows` (mf_rows) and nowhere else. */
+ * memory; since MF_SITE_ABI 30 a NULL `rows`, a NULL `plan` or `plan_term`
+ * list (and on a DEFINE / EMIT call a NULL `plan_test` list) for a
+ * non-empty plan, or a plan longer than `rows->plan_cap`). The plan's lists
+ * are written into the caller's `rows` (mf_rows) and nowhere else, and only
+ * on 0: on -1 nothing is written to `rows`. */
 #define mf_wdecide MF_NS(wdecide)
 int      mf_wdecide(const mf_art *, const mf_site *site, const mf_hooks *def, uint8_t call,
                     mf_wreply *out, mf_rows *rows);

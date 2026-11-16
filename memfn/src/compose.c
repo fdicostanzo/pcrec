@@ -1241,8 +1241,9 @@ int mf_ask(const mf_art *art, const mf_site *site, const mf_hooks *def, mf_class
 {
     int rc = ask_sel(art, site, def, MF_PH_DEFINE, out, rows);
 #ifdef MF_TRACE
-    fprintf(stderr, "MFTRACE ASK art=%u rc=%d exists=%d libc_free=%d includes=%u\n",
-            art->trace_id, rc, out->exists, out->libc_free, (unsigned)out->includes);
+    fprintf(stderr, "MFTRACE ASK art=%u rc=%d exists=%d libc_free=%d includes=%u proof_n=%u\n",
+            art->trace_id, rc, out->exists, out->libc_free, (unsigned)out->includes,
+            (unsigned)out->proof_n);
     /* R17-b' B3b: a presence site's links, recorded (phase SHADOW: never
        counted as chosen); a site whose every span P2 drops is asked and never
        defined, so this is its only observation */
