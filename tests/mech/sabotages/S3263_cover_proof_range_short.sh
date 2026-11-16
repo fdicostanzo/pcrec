@@ -27,7 +27,7 @@ SAB_ID='S3263-cover-proof-range-short'
 SAB_FILE='memfn/src/compose.c'
 SAB_SUITES='kitproof'
 SAB_DESC='the kit'"'"'s proof range is cut to last_s + 1 and its R-short self-check deleted: an after-unstated cover at the default width must fail the compile on pcrec'"'"'s B5 short-range internal error'
-SAB_DOC_FIGURE='HAND-PROBED by lane covs2c 2026-11-16 on a planted tree (both plants): build/pcrec on [0-9a-f]{32} fails with "internal error: the kit'"'"'s proof range ends at offset 31, before the cover'"'"'s after-context at 32 (src/gen/known.c)" (docs/dev/lanes/covs2c_report.md THE ROWS). Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3263.'
+SAB_DOC_FIGURE='HAND-PROBED by lane covs2c 2026-11-16 on a planted tree (both plants): its compiler, given the pattern [0-9a-f]{32}, fails with "internal error: the kit'"'"'s proof range ends at offset 31, before the cover'"'"'s after-context at 32 (src/gen/known.c)" (docs/dev/lanes/covs2c_report.md THE ROWS). Exact re-run: bash tests/mech/run_sabotage_matrix.sh S3263.'
 SAB_REACH='"$PCREC" --list-limits | grep -q "^PCREC_DEFAULT_WINDOW_SEARCH_WIDTH	32	" && "$PCREC" --features all --emit-facts --pattern "[0-9a-f]{32}" | grep -q "^byte	cover	32	32	" && echo REACH-WIDTH-32-K-32 && bash "$TREE/tests/kitproof/reach.sh" "$TREE" - "[0-9a-f]{32}" --why'
 SAB_REACH_EXPECT='REACH-WIDTH-32-K-32
 REACH-COVER
