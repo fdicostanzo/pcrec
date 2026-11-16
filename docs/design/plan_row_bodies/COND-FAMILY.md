@@ -1064,3 +1064,17 @@ program, a hole, a filter inside a hole, a `label:` condition), with worked rows
 CLOCK NOTE (manager, 2026-11-15): the three session-133 entries above carry the labels ~20:40, ~20:55 and ~21:20; the
 box clock read 20:09 to 20:22 when they were written. The labels are kept as the entries' names (a lane brief cites
 them); the times are wrong by the manager's estimate, not by the owner.
+
+**2026-11-15 RULINGS — a per-call hit name; no count warning; the hole is the scope an `&` in it anchors to (Frank, to
+session 133, box clock 20:33).** (a) On "two `occurrences`/`contains` calls in one chain both expose the library's
+`hit` label: an error naming both, fixed by a per-call hit name", his words: "occurrences(x, label = \"foo\")". RECORD:
+a call may NAME its hit label; two calls exposing the same hit label in one chain are the ambiguity error, and the
+per-call name is its fix. His spelling `label =` is an example (his examples' spellings are placeholders, 2026-11-10);
+the spec writer notes that rev 9 dropped `label =` because `label` is a reserved metadata name (review r10
+CENSUS-14) and brings the spelling choice at the spelling step. (b) On "warn when a count filter sits in a searched
+program (the two-Host-headers case)", manager's lean NO warning, his words: "Host count warn: agree." RECORD (the
+manager's reading: he agrees with the lean): NO warning; the trap and its fix (`anchored(...)`) are stated where
+counts are documented. If he meant "agree, warn", this entry is corrected. (c) On what an `&` inside a hole anchors
+to, his words: "so the match span that the & expression creates anchors for is the ${} hole.
+999${/\d+/ & <100}999 matches 99945999". RECORD: confirmed by the manager; the stretch the hole consumes is the scope
+both operands match whole (`45` here); this example is an acceptance row.
