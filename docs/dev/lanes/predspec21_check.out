@@ -2,296 +2,428 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
 PART 1: THE PROGRAM DOMAIN
 
 (AR) table (AR)'s marked cells on a concrete pattern /(?<h>\d)?-(?<k>\d)/ (110 subjects; h absent on `-k`)
-   one (h?: <5): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 110 move
-      PROG-ALL   vs REGEX: 0 of 110 move
-      on '-6'     REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-   one (h?: !(<10)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 110 move
-      PROG-ALL   vs REGEX: 0 of 110 move
-      on '-6'     REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
-   record (h?: <5, k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 110 move
-      PROG-ALL   vs REGEX: 0 of 110 move
-      on '-6'     REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-   record (h?: !(<10), k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 110 move
-      PROG-ALL   vs REGEX: 0 of 110 move
-      on '-6'     REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
-   joint ((h?, k): >= (5, 3)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={56789}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 110 move
-      PROG-ALL   vs REGEX: 0 of 110 move
-      on '-6'     REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   one (h?: <5): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={01234}; LFP h={01234}; GFP h={01234}
+      vs REGEX over 110 subjects: 0 move under every program domain
+      on '-6'     REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+   one (h?: !(<10)): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 110 subjects: 0 move under every program domain
+      on '-6'     REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   record (h?: <5, k: 3..7): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={01234}; LFP h={01234}; GFP h={01234}
+      vs REGEX over 110 subjects: 0 move under every program domain
+      on '-6'     REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+   record (h?: !(<10), k: 3..7): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 110 subjects: 0 move under every program domain
+      on '-6'     REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   joint ((h?, k): >= (5, 3)): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={56789}; LFP h={56789}; GFP h={56789}
+      vs REGEX over 110 subjects: 0 move under every program domain
+      on '-6'     REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
 
 (TM2) t2 := /(?<h>\d{1,2})(?::(?<m>\d\d))?/, 11,110 subjects; R = padded(>= (9, 30)), office = padded(between((9, 0), (17, 0)))
-   ((h, m?): R): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={100 values}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 11110 move
-      PROG-ALL   vs REGEX: 0 of 11110 move
-      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-      on '10'     REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-   ((h, m?): !R): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={100 values}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 11110 move
-      PROG-ALL   vs REGEX: 0 of 11110 move
-      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-      on '10'     REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
-   ((h, m?): !office): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={100 values}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 11110 move
-      PROG-ALL   vs REGEX: 0 of 11110 move
-      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
-      on '10'     REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   ((h, m?): R): DOM REGEX m={100 values}; SAME-NO m={100 values}; OWNER m={100 values}; MANAGER m={100 values}; LFP m={100 values}; GFP m={100 values}
+      vs REGEX over 11110 subjects: 0 move under every program domain
+      on '9'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+      on '10'     REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+   ((h, m?): !R): DOM REGEX m={100 values}; SAME-NO m={100 values}; OWNER m={100 values}; MANAGER m={100 values}; LFP m={100 values}; GFP m={100 values}
+      vs REGEX over 11110 subjects: 0 move under every program domain
+      on '9'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+      on '10'     REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   ((h, m?): !office): DOM REGEX m={100 values}; SAME-NO m={100 values}; OWNER m={100 values}; MANAGER m={100 values}; LFP m={100 values}; GFP m={100 values}
+      vs REGEX over 11110 subjects: 0 move under every program domain
+      on '9'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+      on '10'     REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
 
 (RZ) /(?<k>\d)(?:;(?<h>\d))*/, 1,110 subjects: (h?: S, k: 3..7) as the record (tuples, cond()) and as `&`
-   (h?: <5, k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
-      on '3'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   (h?: <5, k: 3..7): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={01234}; LFP h={01234}; GFP h={01234}
+      vs REGEX over 1110 subjects: 0 move under every program domain
+      on '3'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+      on '9'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
    record (tuples) vs & [REGEX]                                           differ     0 of   1110
-   record (tuples) vs & [PROG-OTHER]                                      differ     0 of   1110
-   record (tuples) vs & [PROG-ALL]                                        differ     0 of   1110
-   (h?: 5..9, k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={56789}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
-      on '3'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   record (tuples) vs & [SAME-NO]                                         differ     0 of   1110
+   record (tuples) vs & [OWNER]                                           differ     0 of   1110
+   record (tuples) vs & [MANAGER]                                         differ     0 of   1110
+   record (tuples) vs & [LFP]                                             differ     0 of   1110
+   record (tuples) vs & [GFP]                                             differ     0 of   1110
+   (h?: 5..9, k: 3..7): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={56789}; LFP h={56789}; GFP h={56789}
+      vs REGEX over 1110 subjects: 0 move under every program domain
+      on '3'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+      on '9'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
    record (tuples) vs & [REGEX]                                           differ     0 of   1110
-   record (tuples) vs & [PROG-OTHER]                                      differ     0 of   1110
-   record (tuples) vs & [PROG-ALL]                                        differ     0 of   1110
-   (h?: !(<10), k: 3..7): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
-      on '3'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
-      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   record (tuples) vs & [SAME-NO]                                         differ     0 of   1110
+   record (tuples) vs & [OWNER]                                           differ     0 of   1110
+   record (tuples) vs & [MANAGER]                                         differ     0 of   1110
+   record (tuples) vs & [LFP]                                             differ     0 of   1110
+   record (tuples) vs & [GFP]                                             differ     0 of   1110
+   (h?: !(<10), k: 3..7): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 1110 subjects: 0 move under every program domain
+      on '3'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+      on '9'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
    record (tuples) vs & [REGEX]                                           differ     0 of   1110
-   record (tuples) vs & [PROG-OTHER]                                      differ     0 of   1110
-   record (tuples) vs & [PROG-ALL]                                        differ     0 of   1110
+   record (tuples) vs & [SAME-NO]                                         differ     0 of   1110
+   record (tuples) vs & [OWNER]                                           differ     0 of   1110
+   record (tuples) vs & [MANAGER]                                         differ     0 of   1110
+   record (tuples) vs & [LFP]                                             differ     0 of   1110
+   record (tuples) vs & [GFP]                                             differ     0 of   1110
 
 (ZJ) jcfold2's non-product sets on (RZ)'s pattern, h MARKED (one joint condition naming h and k); answers on the 10 zero-pass subjects
-   ((h?, k): >= (5, 3)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={56789}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
-      zero-pass subjects HOLDING: REGEX 0123456789  PROG-OTHER 0123456789  PROG-ALL 0123456789
-   ((h?, k): (0|1|2, 3|4) | (5, 5)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={0125}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
-      zero-pass subjects HOLDING: REGEX 345  PROG-OTHER 345  PROG-ALL 345
-   ((h?, k): ("x", 3) | (0, 5)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={0}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
-      zero-pass subjects HOLDING: REGEX 5  PROG-OTHER 5  PROG-ALL 5
-   ((h?, k): < (0, 3)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={0}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
-      zero-pass subjects HOLDING: REGEX 012  PROG-OTHER 012  PROG-ALL 012
+   ((h?, k): >= (5, 3)): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={56789}; LFP h={56789}; GFP h={56789}
+      vs REGEX over 1110 subjects: 0 move under every program domain
+      zero-pass subjects HOLDING: REGEX 0123456789  SAME-NO 0123456789  OWNER 0123456789  MANAGER 0123456789  LFP 0123456789  GFP 0123456789
+   ((h?, k): (0|1|2, 3|4) | (5, 5)): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={0125}; LFP h={0125}; GFP h={0125}
+      vs REGEX over 1110 subjects: 0 move under every program domain
+      zero-pass subjects HOLDING: REGEX 345  SAME-NO 345  OWNER 345  MANAGER 345  LFP 345  GFP 345
+   ((h?, k): ("x", 3) | (0, 5)): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={0}; LFP h={0}; GFP h={0}
+      vs REGEX over 1110 subjects: 0 move under every program domain
+      zero-pass subjects HOLDING: REGEX 5  SAME-NO 5  OWNER 5  MANAGER 5  LFP 5  GFP 5
+   ((h?, k): < (0, 3)): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={0}; LFP h={0}; GFP h={0}
+      vs REGEX over 1110 subjects: 0 move under every program domain
+      zero-pass subjects HOLDING: REGEX 012  SAME-NO 012  OWNER 012  MANAGER 012  LFP 012  GFP 012
 
 (ZE) /(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/, 11,100 subjects, the set empty through $a; h MARKED
-   C1 (h?: <$a, k: 3): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={012345678}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 11100 move
-      PROG-ALL   vs REGEX: 0 of 11100 move
-      on '0-3'    REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
-      on '5-3'    REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-   C2 ((h?, k): < ($a, 0)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={012345678}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 11100 move
-      PROG-ALL   vs REGEX: 0 of 11100 move
-      on '0-3'    REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
-      on '5-3'    REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   C1 (h?: <$a, k: 3): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={012345678}; LFP h={012345678}; GFP h={012345678}
+      vs REGEX over 11100 subjects: 0 move under every program domain
+      on '0-3'    REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+      on '5-3'    REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+   C2 ((h?, k): < ($a, 0)): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={012345678}; LFP h={012345678}; GFP h={012345678}
+      vs REGEX over 11100 subjects: 0 move under every program domain
+      on '0-3'    REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+      on '5-3'    REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
    a = 0, both spellings EMPTY: C1 vs C2 [REGEX]                          differ     0 of   1110
    C1 record (tuples) vs (h?: <$a) & (k: 3) [REGEX]                       differ     0 of  11100
-   a = 0, both spellings EMPTY: C1 vs C2 [PROG-OTHER]                     differ     0 of   1110
-   C1 record (tuples) vs (h?: <$a) & (k: 3) [PROG-OTHER]                  differ     0 of  11100
-   a = 0, both spellings EMPTY: C1 vs C2 [PROG-ALL]                       differ     0 of   1110
-   C1 record (tuples) vs (h?: <$a) & (k: 3) [PROG-ALL]                    differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 [SAME-NO]                        differ     0 of   1110
+   C1 record (tuples) vs (h?: <$a) & (k: 3) [SAME-NO]                     differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 [OWNER]                          differ     0 of   1110
+   C1 record (tuples) vs (h?: <$a) & (k: 3) [OWNER]                       differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 [MANAGER]                        differ     0 of   1110
+   C1 record (tuples) vs (h?: <$a) & (k: 3) [MANAGER]                     differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 [LFP]                            differ     0 of   1110
+   C1 record (tuples) vs (h?: <$a) & (k: 3) [LFP]                         differ     0 of  11100
+   a = 0, both spellings EMPTY: C1 vs C2 [GFP]                            differ     0 of   1110
+   C1 record (tuples) vs (h?: <$a) & (k: 3) [GFP]                         differ     0 of  11100
 
 (2SP) two spellings of one pattern (absfix's P1-P3), (h?: 5..9, k: 3..7), the 310 matching (RZ) subjects
-   P1 (?<k>\d)(?:;(?<h>\d)(?<=[0-4]))*: DOM REGEX h={01234}; PROG-OTHER h={01234}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 310 move
-      PROG-ALL   vs REGEX: 0 of 310 move
-   P2 (?<k>\d)(?:;(?<h>[0-4]))*: DOM REGEX h={01234}; PROG-OTHER h={01234}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 310 move
-      PROG-ALL   vs REGEX: 0 of 310 move
-   P3 (?<k>\d)(?:;(?=[0-4])(?<h>\d))*: DOM REGEX h={01234}; PROG-OTHER h={01234}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 310 move
-      PROG-ALL   vs REGEX: 0 of 310 move
+   P1 (?<k>\d)(?:;(?<h>\d)(?<=[0-4]))*: DOM REGEX h={01234}; SAME-NO h={01234}; OWNER h={01234}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 310 subjects: 0 move under every program domain
+   P2 (?<k>\d)(?:;(?<h>[0-4]))*: DOM REGEX h={01234}; SAME-NO h={01234}; OWNER h={01234}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 310 subjects: 0 move under every program domain
+   P3 (?<k>\d)(?:;(?=[0-4])(?<h>\d))*: DOM REGEX h={01234}; SAME-NO h={01234}; OWNER h={01234}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 310 subjects: 0 move under every program domain
    P1 vs P2 [REGEX]                                                       differ     0 of    310
    P3 vs P2 [REGEX]                                                       differ     0 of    310
-   P1 vs P2 [PROG-OTHER]                                                  differ     0 of    310
-   P3 vs P2 [PROG-OTHER]                                                  differ     0 of    310
-   P1 vs P2 [PROG-ALL]                                                    differ     0 of    310
-   P3 vs P2 [PROG-ALL]                                                    differ     0 of    310
+   P1 vs P2 [SAME-NO]                                                     differ     0 of    310
+   P3 vs P2 [SAME-NO]                                                     differ     0 of    310
+   P1 vs P2 [OWNER]                                                       differ     0 of    310
+   P3 vs P2 [OWNER]                                                       differ     0 of    310
+   P1 vs P2 [MANAGER]                                                     differ     0 of    310
+   P3 vs P2 [MANAGER]                                                     differ     0 of    310
+   P1 vs P2 [LFP]                                                         differ     0 of    310
+   P3 vs P2 [LFP]                                                         differ     0 of    310
+   P1 vs P2 [GFP]                                                         differ     0 of    310
+   P3 vs P2 [GFP]                                                         differ     0 of    310
    (the three spellings' REGEX DOMs are equal here: h's VALUES, not its group text; rev 20's GROUP split is absfix's)
 
 (SET) two spellings of one set, and two sets equal on every holdable value; (RZ)
-   (h?: <5): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
-   (h?: 0|1|2|3|4): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
+   (h?: <5): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={01234}; LFP h={01234}; GFP h={01234}
+      vs REGEX over 1110 subjects: 0 move under every program domain
+   (h?: 0|1|2|3|4): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={01234}; LFP h={01234}; GFP h={01234}
+      vs REGEX over 1110 subjects: 0 move under every program domain
    (h?: <5) vs (h?: 0|1|2|3|4) [REGEX]                                    differ     0 of   1110
-   (h?: <5) vs (h?: 0|1|2|3|4) [PROG-OTHER]                               differ     0 of   1110
-   (h?: <5) vs (h?: 0|1|2|3|4) [PROG-ALL]                                 differ     0 of   1110
-   (h?: <0): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
-   (h?: !(<10)): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 1110 move
-      PROG-ALL   vs REGEX: 0 of 1110 move
+   (h?: <5) vs (h?: 0|1|2|3|4) [SAME-NO]                                  differ     0 of   1110
+   (h?: <5) vs (h?: 0|1|2|3|4) [OWNER]                                    differ     0 of   1110
+   (h?: <5) vs (h?: 0|1|2|3|4) [MANAGER]                                  differ     0 of   1110
+   (h?: <5) vs (h?: 0|1|2|3|4) [LFP]                                      differ     0 of   1110
+   (h?: <5) vs (h?: 0|1|2|3|4) [GFP]                                      differ     0 of   1110
+   (h?: <0): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 1110 subjects: 0 move under every program domain
+   (h?: !(<10)): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 1110 subjects: 0 move under every program domain
    (h?: <0) vs (h?: !(<10)) [REGEX]                                       differ     0 of   1110
-   (h?: <0) vs (h?: !(<10)) [PROG-OTHER]                                  differ     0 of   1110
-   (h?: <0) vs (h?: !(<10)) [PROG-ALL]                                    differ     0 of   1110
+   (h?: <0) vs (h?: !(<10)) [SAME-NO]                                     differ     0 of   1110
+   (h?: <0) vs (h?: !(<10)) [OWNER]                                       differ     0 of   1110
+   (h?: <0) vs (h?: !(<10)) [MANAGER]                                     differ     0 of   1110
+   (h?: <0) vs (h?: !(<10)) [LFP]                                         differ     0 of   1110
+   (h?: <0) vs (h?: !(<10)) [GFP]                                         differ     0 of   1110
    (both `(h?: <0)` and `(h?: !(<10))` are a constant set disjoint from \d: by §5.2 a compile ERROR, not FAILS)
 
 (EB1) review r29's branch-reset pair: P = /(?|(?<k>a)(?:;(?<h>\d))*|(?<k>b)(?:;(?<h>[5-9]))*)/ (PCRE2 only), Q2 = /(?<k>b)(?:;(?<h>[5-9]))*/; 222 subjects
    `P & (k: "b")` and Q2 accept the same subjects (h's passes read off the subject) on 222 of 222
-   A  P & (k: "b") & (h?: <5): DOM REGEX h={0123456789}; PROG-OTHER h={56789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-OTHER FAILS)
-      PROG-ALL   vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-ALL FAILS)
-      on 'b'      REGEX HOLDS  PROG-OTHER FAILS  PROG-ALL FAILS
-   B  Q2 & (h?: <5): DOM REGEX h={56789}; PROG-OTHER h={56789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 222 move
-      PROG-ALL   vs REGEX: 0 of 222 move
-      on 'b'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   A  P & (k: "b") & (h?: <5): DOM REGEX h={0123456789}; SAME-NO h={56789}; OWNER h={56789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 222 subjects: SAME-NO 1 (smallest 'b': REGEX HOLDS, SAME-NO FAILS); OWNER 1 (smallest 'b': REGEX HOLDS, OWNER FAILS); MANAGER 1 (smallest 'b': REGEX HOLDS, MANAGER FAILS); LFP 1 (smallest 'b': REGEX HOLDS, LFP FAILS); GFP 1 (smallest 'b': REGEX HOLDS, GFP FAILS)
+      on 'b'      REGEX HOLDS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   B  Q2 & (h?: <5): DOM REGEX h={56789}; SAME-NO h={56789}; OWNER h={56789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 222 subjects: 0 move under every program domain
+      on 'b'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
    A vs B (Bq = A by binding, L2) [REGEX]                                 differ     1 of    222   smallest 'b' (A HOLDS, B FAILS)
-   A vs B (Bq = A by binding, L2) [PROG-OTHER]                            differ     0 of    222
-   A vs B (Bq = A by binding, L2) [PROG-ALL]                              differ     0 of    222
-   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product split]: DOM REGEX h={0123456789}; PROG-OTHER h={56789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-OTHER FAILS)
-      PROG-ALL   vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-ALL FAILS)
-      on 'b'      REGEX HOLDS  PROG-OTHER FAILS  PROG-ALL FAILS
-   J  P & ((k, h?): ("b", <5)) left UNSPLIT (a control, not a reading; not tallied): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 222 move
-      PROG-ALL   vs REGEX: 1 of 222 move, smallest 'b' (REGEX HOLDS, PROG-ALL FAILS)
-      on 'b'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL FAILS
+   A vs B (Bq = A by binding, L2) [SAME-NO]                               differ     0 of    222
+   A vs B (Bq = A by binding, L2) [OWNER]                                 differ     0 of    222
+   A vs B (Bq = A by binding, L2) [MANAGER]                               differ     0 of    222
+   A vs B (Bq = A by binding, L2) [LFP]                                   differ     0 of    222
+   A vs B (Bq = A by binding, L2) [GFP]                                   differ     0 of    222
+   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product split]: DOM REGEX h={0123456789}; SAME-NO h={56789}; OWNER h={56789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 222 subjects: SAME-NO 1 (smallest 'b': REGEX HOLDS, SAME-NO FAILS); OWNER 1 (smallest 'b': REGEX HOLDS, OWNER FAILS); MANAGER 1 (smallest 'b': REGEX HOLDS, MANAGER FAILS); LFP 1 (smallest 'b': REGEX HOLDS, LFP FAILS); GFP 1 (smallest 'b': REGEX HOLDS, GFP FAILS)
+      on 'b'      REGEX HOLDS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   J  P & ((k, h?): ("b", <5)) left UNSPLIT (a control, not a reading; not tallied): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 222 subjects: MANAGER 1 (smallest 'b': REGEX HOLDS, MANAGER FAILS); LFP 1 (smallest 'b': REGEX HOLDS, LFP FAILS); GFP 1 (smallest 'b': REGEX HOLDS, GFP FAILS)
+      on 'b'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER FAILS  LFP FAILS  GFP FAILS
    C record vs A `&` [REGEX]                                              differ     0 of    222
    C record vs J the joint product UNSPLIT [REGEX] (record-is-product needs the split) differ     0 of    222
-   C record vs A `&` [PROG-OTHER]                                         differ     0 of    222
-   C record vs J the joint product UNSPLIT [PROG-OTHER] (record-is-product needs the split) differ     1 of    222   smallest 'b' (C FAILS, J HOLDS)
-   C record vs A `&` [PROG-ALL]                                           differ     0 of    222
-   C record vs J the joint product UNSPLIT [PROG-ALL] (record-is-product needs the split) differ     0 of    222
-   P & (h?: <5)  (anywhere, 16:13): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 222 move
-      PROG-ALL   vs REGEX: 0 of 222 move
-      on 'b'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-   P & ((k, h?): ("a", <5) | ("b", >=5))  (the 16:13 example): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={0123456789}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 222 move
-      PROG-ALL   vs REGEX: 0 of 222 move
-      on 'b'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-   P & ((k, h?): ("a", <5))  (the 16:13 example): DOM REGEX h={0123456789}; PROG-OTHER h={0123456789}; PROG-ALL h={01234}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 222 move
-      PROG-ALL   vs REGEX: 0 of 222 move
-      on 'b'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   C record vs A `&` [SAME-NO]                                            differ     0 of    222
+   C record vs J the joint product UNSPLIT [SAME-NO] (record-is-product needs the split) differ     1 of    222   smallest 'b' (C FAILS, J HOLDS)
+   C record vs A `&` [OWNER]                                              differ     0 of    222
+   C record vs J the joint product UNSPLIT [OWNER] (record-is-product needs the split) differ     1 of    222   smallest 'b' (C FAILS, J HOLDS)
+   C record vs A `&` [MANAGER]                                            differ     0 of    222
+   C record vs J the joint product UNSPLIT [MANAGER] (record-is-product needs the split) differ     0 of    222
+   C record vs A `&` [LFP]                                                differ     0 of    222
+   C record vs J the joint product UNSPLIT [LFP] (record-is-product needs the split) differ     0 of    222
+   C record vs A `&` [GFP]                                                differ     0 of    222
+   C record vs J the joint product UNSPLIT [GFP] (record-is-product needs the split) differ     0 of    222
+   P & (h?: <5)  (anywhere, 16:13): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={01234}; LFP h={01234}; GFP h={01234}
+      vs REGEX over 222 subjects: 0 move under every program domain
+      on 'b'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+   P & ((k, h?): ("a", <5) | ("b", >=5))  (the 16:13 example): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={0123456789}; LFP h={0123456789}; GFP h={0123456789}
+      vs REGEX over 222 subjects: 0 move under every program domain
+      on 'b'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+   P & ((k, h?): ("a", <5))  (the 16:13 example): DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={01234}; LFP h={01234}; GFP h={01234}
+      vs REGEX over 222 subjects: 0 move under every program domain
+      on 'b'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
 
 (EB2) review r29's t2m := t2 & (m?: padded(<60)) vs t2x := /(?<h>\d{1,2})(?::(?<m>[0-5]\d))?/, then & (m?: padded(>=60)); 11,110 subjects
-   t2m = t2 & (m?: padded(<60)): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={60 values}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 11110 move
-      PROG-ALL   vs REGEX: 0 of 11110 move
-      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
-   t2x: DOM REGEX m={60 values}; PROG-OTHER m={60 values}; PROG-ALL m={60 values}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 11110 move
-      PROG-ALL   vs REGEX: 0 of 11110 move
-      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL HOLDS
+   t2m = t2 & (m?: padded(<60)): DOM REGEX m={100 values}; SAME-NO m={100 values}; OWNER m={100 values}; MANAGER m={60 values}; LFP m={60 values}; GFP m={60 values}
+      vs REGEX over 11110 subjects: 0 move under every program domain
+      on '9'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+   t2x: DOM REGEX m={60 values}; SAME-NO m={60 values}; OWNER m={60 values}; MANAGER m={60 values}; LFP m={60 values}; GFP m={60 values}
+      vs REGEX over 11110 subjects: 0 move under every program domain
+      on '9'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
    t2m vs t2x as programs (same subjects, same labels expected) [REGEX]   differ     0 of  11110
-   t2m vs t2x as programs (same subjects, same labels expected) [PROG-OTHER] differ     0 of  11110
-   t2m vs t2x as programs (same subjects, same labels expected) [PROG-ALL] differ     0 of  11110
-   t2m & (m?: padded(>=60)): DOM REGEX m={100 values}; PROG-OTHER m={100 values}; PROG-ALL m={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 11110 move
-      PROG-ALL   vs REGEX: 110 of 11110 move, smallest '0' (REGEX HOLDS, PROG-ALL FAILS)
-      on '9'      REGEX HOLDS  PROG-OTHER HOLDS  PROG-ALL FAILS
-   t2x & (m?: padded(>=60)): DOM REGEX m={60 values}; PROG-OTHER m={60 values}; PROG-ALL m={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 11110 move
-      PROG-ALL   vs REGEX: 0 of 11110 move
-      on '9'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
+   t2m vs t2x as programs (same subjects, same labels expected) [SAME-NO] differ     0 of  11110
+   t2m vs t2x as programs (same subjects, same labels expected) [OWNER]   differ     0 of  11110
+   t2m vs t2x as programs (same subjects, same labels expected) [MANAGER] differ     0 of  11110
+   t2m vs t2x as programs (same subjects, same labels expected) [LFP]     differ     0 of  11110
+   t2m vs t2x as programs (same subjects, same labels expected) [GFP]     differ     0 of  11110
+   t2m & (m?: padded(>=60)): DOM REGEX m={100 values}; SAME-NO m={100 values}; OWNER m={100 values}; MANAGER m={}; LFP m={}; GFP m={}
+      vs REGEX over 11110 subjects: MANAGER 110 (smallest '0': REGEX HOLDS, MANAGER FAILS); LFP 110 (smallest '0': REGEX HOLDS, LFP FAILS); GFP 110 (smallest '0': REGEX HOLDS, GFP FAILS)
+      on '9'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   t2x & (m?: padded(>=60)): DOM REGEX m={60 values}; SAME-NO m={60 values}; OWNER m={60 values}; MANAGER m={}; LFP m={}; GFP m={}
+      vs REGEX over 11110 subjects: 0 move under every program domain
+      on '9'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
    t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [REGEX]           differ   110 of  11110   smallest '0' (t2m HOLDS, t2x FAILS)
-   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [PROG-OTHER]      differ   110 of  11110   smallest '0' (t2m HOLDS, t2x FAILS)
-   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [PROG-ALL]        differ     0 of  11110
+   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [SAME-NO]         differ   110 of  11110   smallest '0' (t2m HOLDS, t2x FAILS)
+   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [OWNER]           differ   110 of  11110   smallest '0' (t2m HOLDS, t2x FAILS)
+   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [MANAGER]         differ     0 of  11110
+   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [LFP]             differ     0 of  11110
+   t2m & (m?: padded(>=60)) vs t2x & (m?: padded(>=60)) [GFP]             differ     0 of  11110
 
 (EB3) review r29's AND-DEAD: /(?:(?<h>\d|zz))?x/ & /[^z]*/ vs /(?:(?<h>\d))?x/, then & (h?: "zz"); subjects over {1,z,x} to length 4
    the chain and P3: same subjects and labels on 121 of 121
-   P3 & (h?: "zz"): DOM REGEX h={1}; PROG-OTHER h={1}; PROG-ALL h={}; TOP vs BOTTOM fixed point differ: 0/0/0
-      PROG-OTHER vs REGEX: 0 of 121 move
-      PROG-ALL   vs REGEX: 0 of 121 move
-      on 'x'      REGEX FAILS  PROG-OTHER FAILS  PROG-ALL FAILS
-   chain & (h?: "zz") on `x`: REGEX HOLDS  PROG-OTHER FAILS  PROG-ALL FAILS   (REGEX = the defining operand's values {1,zz})
+   P3 & (h?: "zz"): DOM REGEX h={1}; SAME-NO h={1}; OWNER h={1}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 121 subjects: 0 move under every program domain
+      on 'x'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   chain & (h?: "zz") on `x`: REGEX HOLDS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS   (REGEX = the defining operand's values {1,zz})
    chain vs P3 under (h?: "zz") [REGEX]                                   differ     1 of    121   smallest 'x' (chain HOLDS, P3 FAILS)
-   chain vs P3 under (h?: "zz") [PROG-OTHER]                              differ     0 of    121
-   chain vs P3 under (h?: "zz") [PROG-ALL]                                differ     0 of    121
+   chain vs P3 under (h?: "zz") [SAME-NO]                                 differ     0 of    121
+   chain vs P3 under (h?: "zz") [OWNER]                                   differ     0 of    121
+   chain vs P3 under (h?: "zz") [MANAGER]                                 differ     0 of    121
+   chain vs P3 under (h?: "zz") [LFP]                                     differ     0 of    121
+   chain vs P3 under (h?: "zz") [GFP]                                     differ     0 of    121
+
+(EBK) rulings R2: `P & (k?: "b") & (h?: <5)` vs `P & (k: "b") & (h?: <5)` (k is never absent in P, so the two programs behave alike); the branch-reset P of EB1
+   K? P & (k?: "b") & (h?: <5): DOM REGEX h={0123456789}; SAME-NO h={56789}; OWNER h={0123456789}; MANAGER h={}; LFP h={}; GFP h={}
+      vs REGEX over 222 subjects: SAME-NO 1 (smallest 'b': REGEX HOLDS, SAME-NO FAILS); MANAGER 1 (smallest 'b': REGEX HOLDS, MANAGER FAILS); LFP 1 (smallest 'b': REGEX HOLDS, LFP FAILS); GFP 1 (smallest 'b': REGEX HOLDS, GFP FAILS)
+      on 'b'      REGEX HOLDS  SAME-NO FAILS  OWNER HOLDS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   K? vs A  P & (k: "b") & (h?: <5) [REGEX]                               differ     0 of    222
+   K? vs A  P & (k: "b") & (h?: <5) [SAME-NO]                             differ     0 of    222
+   K? vs A  P & (k: "b") & (h?: <5) [OWNER]                               differ     1 of    222   smallest 'b' (k? HOLDS, k FAILS)
+   K? vs A  P & (k: "b") & (h?: <5) [MANAGER]                             differ     0 of    222
+   K? vs A  P & (k: "b") & (h?: <5) [LFP]                                 differ     0 of    222
+   K? vs A  P & (k: "b") & (h?: <5) [GFP]                                 differ     0 of    222
+
+(NEG) a mark under `!` (rev 20 §0.1 L30, L95): the condition's own complement is one of the program's conditions, so the domains that narrow by it read DOM(h) without S
+   L30 !(h?: <5) on /(?<h>\d)?x/: DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={56789}; LFP h={56789}; GFP h={56789}
+      vs REGEX over 11 subjects: MANAGER 1 (smallest 'x': REGEX FAILS, MANAGER HOLDS); LFP 1 (smallest 'x': REGEX FAILS, LFP HOLDS); GFP 1 (smallest 'x': REGEX FAILS, GFP HOLDS)
+      on 'x'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+   L30 (h?: !(<5)) on /(?<h>\d)?x/: DOM REGEX h={0123456789}; SAME-NO h={0123456789}; OWNER h={0123456789}; MANAGER h={56789}; LFP h={56789}; GFP h={56789}
+      vs REGEX over 11 subjects: 0 move under every program domain
+      on 'x'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+   L95 !((h, m?): R) on t2: DOM REGEX m={100 values}; SAME-NO m={100 values}; OWNER m={100 values}; MANAGER m={100 values}; LFP m={100 values}; GFP m={100 values}
+      vs REGEX over 11110 subjects: 0 move under every program domain
+      on '9'      REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   L95 ((h, m?): !R) on t2: DOM REGEX m={100 values}; SAME-NO m={100 values}; OWNER m={100 values}; MANAGER m={100 values}; LFP m={100 values}; GFP m={100 values}
+      vs REGEX over 11110 subjects: 0 move under every program domain
+      on '9'      REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP HOLDS  GFP HOLDS
+
+(INDEP) rulings R1 (a): `b` against P & (k: "b"), P & (h?: <5) and P & (k: "b") & (h?: <5), per domain
+   [REGEX  ] P & (k: "b") HOLDS   P & (h?: <5) HOLDS   P & (k: "b") & (h?: <5) HOLDS   -> the intersection of the first two = the third
+   [SAME-NO] P & (k: "b") HOLDS   P & (h?: <5) HOLDS   P & (k: "b") & (h?: <5) FAILS   -> the intersection of the first two != the third
+   [OWNER  ] P & (k: "b") HOLDS   P & (h?: <5) HOLDS   P & (k: "b") & (h?: <5) FAILS   -> the intersection of the first two != the third
+   [MANAGER] P & (k: "b") HOLDS   P & (h?: <5) HOLDS   P & (k: "b") & (h?: <5) FAILS   -> the intersection of the first two != the third
+   [LFP    ] P & (k: "b") HOLDS   P & (h?: <5) HOLDS   P & (k: "b") & (h?: <5) FAILS   -> the intersection of the first two != the third
+   [GFP    ] P & (k: "b") HOLDS   P & (h?: <5) HOLDS   P & (k: "b") & (h?: <5) FAILS   -> the intersection of the first two != the third
+   order: the 6 orders of EB1's three conditions x 6 domains x 222 subjects: 0 differ (by construction: DOM reads the chain's SET of conditions)
+
+(SEARCH) every program of 1-3 conditions from a small pool, on three patterns: where the candidate domains answer differently (the smallest program and subject each), where ADDING a condition turns a FAIL into a HOLD, and where the fixed-point iteration finds no fixed point
+   637 programs over 3 patterns (A = /a(?<h>\d)|b(?<k>\d)|c/, B = /(?<h>\d)?-(?<k>\d)?/, P = (?|(?<k>a)(?:;(?<h>\d))*|(?<k>b)(?:;(?<h>[5-9]))*) (0-1 passes))
+   REGEX   vs SAME-NO:   92 programs answer differently; smallest: pattern P, `(k: "b") & (h?: <5)` on 'b' (REGEX HOLDS, SAME-NO FAILS)
+   REGEX   vs OWNER  :   75 programs answer differently; smallest: pattern P, `(k: "b") & (h?: <5)` on 'b' (REGEX HOLDS, OWNER FAILS)
+   REGEX   vs MANAGER:  231 programs answer differently; smallest: pattern A, `!(h?: <5)` on 'c' (REGEX FAILS, MANAGER HOLDS)
+   REGEX   vs LFP    :  245 programs answer differently; smallest: pattern A, `!(h?: <5)` on 'c' (REGEX FAILS, LFP HOLDS)
+   REGEX   vs GFP    :  224 programs answer differently; smallest: pattern A, `!(h?: <5)` on 'c' (REGEX FAILS, GFP HOLDS)
+   SAME-NO vs OWNER  :   17 programs answer differently; smallest: pattern P, `(k?: "b") & (h?: <5)` on 'b' (SAME-NO FAILS, OWNER HOLDS)
+   SAME-NO vs MANAGER:  135 programs answer differently; smallest: pattern A, `!(h?: <5)` on 'c' (SAME-NO FAILS, MANAGER HOLDS)
+   SAME-NO vs LFP    :  142 programs answer differently; smallest: pattern A, `!(h?: <5)` on 'c' (SAME-NO FAILS, LFP HOLDS)
+   SAME-NO vs GFP    :  132 programs answer differently; smallest: pattern A, `!(h?: <5)` on 'c' (SAME-NO FAILS, GFP HOLDS)
+   OWNER   vs MANAGER:  156 programs answer differently; smallest: pattern A, `!(h?: <5)` on 'c' (OWNER FAILS, MANAGER HOLDS)
+   OWNER   vs LFP    :  170 programs answer differently; smallest: pattern A, `!(h?: <5)` on 'c' (OWNER FAILS, LFP HOLDS)
+   OWNER   vs GFP    :  149 programs answer differently; smallest: pattern A, `!(h?: <5)` on 'c' (OWNER FAILS, GFP HOLDS)
+   MANAGER vs LFP    :   43 programs answer differently; smallest: pattern A, `((h?, k?): h < k)` on 'c' (MANAGER HOLDS, LFP FAILS)
+   MANAGER vs GFP    :   17 programs answer differently; smallest: pattern A, `((h?, k?): h < k) & !((h?, k): h < k)` on 'c' (MANAGER HOLDS, GFP FAILS)
+   LFP     vs GFP    :   14 programs answer differently; smallest: pattern A, `((h?, k?): h < k)` on 'c' (LFP FAILS, GFP HOLDS)
+   [REGEX  ] no mark under `!`: adding a condition turns a FAIL into a HOLD in 0 of 698 (program, added condition) pairs
+   [SAME-NO] no mark under `!`: adding a condition turns a FAIL into a HOLD in 0 of 698 (program, added condition) pairs
+   [OWNER  ] no mark under `!`: adding a condition turns a FAIL into a HOLD in 0 of 698 (program, added condition) pairs
+   [MANAGER] no mark under `!`: adding a condition turns a FAIL into a HOLD in 0 of 698 (program, added condition) pairs
+   [LFP    ] no mark under `!`: adding a condition turns a FAIL into a HOLD in 0 of 698 (program, added condition) pairs
+   [GFP    ] no mark under `!`: adding a condition turns a FAIL into a HOLD in 0 of 698 (program, added condition) pairs
+   [REGEX  ] adding a condition turns a FAIL into a HOLD in 0 (program, added condition) pairs; no fixed point in 0 programs
+   [SAME-NO] adding a condition turns a FAIL into a HOLD in 18 (program, added condition) pairs; smallest: pattern P, `!(h?: <5)` + `(k: "b")` on 'b'; no fixed point in 17 programs; e.g. A `(h?: <5) & !(k?: <5)`
+   [OWNER  ] adding a condition turns a FAIL into a HOLD in 22 (program, added condition) pairs; smallest: pattern P, `!(h?: <5)` + `(k: "b")` on 'b'; no fixed point in 0 programs
+   [MANAGER] adding a condition turns a FAIL into a HOLD in 28 (program, added condition) pairs; smallest: pattern A, `!((h?, k): h < k)` + `(h?: >7)` on 'b1'; no fixed point in 0 programs
+   [LFP    ] adding a condition turns a FAIL into a HOLD in 25 (program, added condition) pairs; smallest: pattern A, `!((h?, k): h < k)` + `(h?: >7)` on 'b1'; no fixed point in 3 programs; e.g. A `(k?: >7) & !((h?, k): h < k)`
+   [GFP    ] adding a condition turns a FAIL into a HOLD in 26 (program, added condition) pairs; smallest: pattern A, `!((h?, k): h < k)` + `(h?: >7)` on 'b1'; no fixed point in 15 programs; e.g. A `(k?: >7) & !((h?, k): h < k)`
 
 (MOVES) the answers that move from REGEX, per table and domain (the smallest witness each)
-   A  P & (k: "b") & (h?: <5)                                     PROG-OTHER     1 of    222  smallest 'b' (REGEX HOLDS)
-   A  P & (k: "b") & (h?: <5)                                     PROG-ALL       1 of    222  smallest 'b' (REGEX HOLDS)
-   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product  PROG-OTHER     1 of    222  smallest 'b' (REGEX HOLDS)
-   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product  PROG-ALL       1 of    222  smallest 'b' (REGEX HOLDS)
-   t2m & (m?: padded(>=60))                                       PROG-ALL     110 of  11110  smallest '0' (REGEX HOLDS)
-   every other table: 0 move under both program domains
+   A  P & (k: "b") & (h?: <5)                                     SAME-NO        1 of    222  smallest 'b' (REGEX HOLDS)
+   A  P & (k: "b") & (h?: <5)                                     OWNER          1 of    222  smallest 'b' (REGEX HOLDS)
+   A  P & (k: "b") & (h?: <5)                                     MANAGER        1 of    222  smallest 'b' (REGEX HOLDS)
+   A  P & (k: "b") & (h?: <5)                                     LFP            1 of    222  smallest 'b' (REGEX HOLDS)
+   A  P & (k: "b") & (h?: <5)                                     GFP            1 of    222  smallest 'b' (REGEX HOLDS)
+   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product  SAME-NO        1 of    222  smallest 'b' (REGEX HOLDS)
+   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product  OWNER          1 of    222  smallest 'b' (REGEX HOLDS)
+   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product  MANAGER        1 of    222  smallest 'b' (REGEX HOLDS)
+   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product  LFP            1 of    222  smallest 'b' (REGEX HOLDS)
+   C  P & (h?: <5, k: "b")  [= ((k, h?): ("b", <5)), the product  GFP            1 of    222  smallest 'b' (REGEX HOLDS)
+   t2m & (m?: padded(>=60))                                       MANAGER      110 of  11110  smallest '0' (REGEX HOLDS)
+   t2m & (m?: padded(>=60))                                       LFP          110 of  11110  smallest '0' (REGEX HOLDS)
+   t2m & (m?: padded(>=60))                                       GFP          110 of  11110  smallest '0' (REGEX HOLDS)
+   K? P & (k?: "b") & (h?: <5)                                    SAME-NO        1 of    222  smallest 'b' (REGEX HOLDS)
+   K? P & (k?: "b") & (h?: <5)                                    MANAGER        1 of    222  smallest 'b' (REGEX HOLDS)
+   K? P & (k?: "b") & (h?: <5)                                    LFP            1 of    222  smallest 'b' (REGEX HOLDS)
+   K? P & (k?: "b") & (h?: <5)                                    GFP            1 of    222  smallest 'b' (REGEX HOLDS)
+   every other table: 0 move under every program domain
 
-(SUMMARY) per domain: (i) an answer witnessed only by a value the label never holds in a match of the program (measured against PROG-ALL's set, so PROG-ALL's 0 is by construction); (ii) two spellings of one program split (2SP, EB1 A/B, EB2, EB3); (iii) two spellings of one set split (SET <5, ZE a = 0); (iv) record = & (RZ, ZE, EB1 C/A); the fixed point (TOP vs BOTTOM) over PART 1
-   REGEX      (i) YES   113   (ii) YES   112   (iii) no   0   (iv) KEPT (0 split)   fixed point: unique
-   PROG-OTHER (i) YES   110   (ii) YES   110   (iii) no   0   (iv) KEPT (0 split)   fixed point: unique
-   PROG-ALL   (i) no      0   (ii) no      0   (iii) no   0   (iv) KEPT (0 split)   fixed point: unique
+(SUMMARY) per domain: (i) an answer witnessed only by a value the label never holds in a match the same domain accepts (self-consistency); (ii) two spellings of one program split (2SP, EB1 A/B, EKB k?/k, EB2, EB3); (iii) two spellings of one set split (SET <5, ZE a = 0); (iv) record = & (RZ, ZE, EB1 C/A); WELL-FOUNDED = computed once, no DOM read while a DOM is computed
+   REGEX   (i) YES  114   (ii) YES  112   (iii) no  0   (iv) KEPT (0 split)   well-founded: yes (no program read)
+   SAME-NO (i) YES  110   (ii) YES  110   (iii) no  0   (iv) KEPT (0 split)   well-founded: no (a fixed point)
+   OWNER   (i) YES  111   (ii) YES  111   (iii) no  0   (iv) KEPT (0 split)   well-founded: yes
+   MANAGER (i) no     0   (ii) no     0   (iii) no  0   (iv) KEPT (0 split)   well-founded: yes
+   LFP     (i) no     0   (ii) no     0   (iii) no  0   (iv) KEPT (0 split)   well-founded: no (a fixed point)
+   GFP     (i) no     0   (ii) no     0   (iii) no  0   (iv) KEPT (0 split)   well-founded: no (a fixed point)
 
 PART 2: ONE WITNESS
 
 (W3) FIXIND-3: `(h?: <5) & (h?: >5)` as two conditions, each its own witness (PER-CONDITION), vs one witness for both (SHARED, = the joined `(h?: <5 & >5)`'s answer; the joined spelling with constant sets is a §5.2 ERROR)
    (?<h>\d)?x         DOM(h)={0123456789} PER-CONDITION vs SHARED [REGEX] differ     1 of     11   smallest 'x' (per HOLDS, shared FAILS)
-   (?<h>\d)?x         DOM(h)={0123456789} PER-CONDITION vs SHARED [PROG-OTHER] differ     1 of     11   smallest 'x' (per HOLDS, shared FAILS)
-   (?<h>\d)?x         DOM(h)={} PER-CONDITION vs SHARED [PROG-ALL]        differ     0 of     11
+   (?<h>\d)?x         DOM(h)={0123456789} PER-CONDITION vs SHARED [SAME-NO] differ     1 of     11   smallest 'x' (per HOLDS, shared FAILS)
+   (?<h>\d)?x         DOM(h)={0123456789} PER-CONDITION vs SHARED [OWNER] differ     1 of     11   smallest 'x' (per HOLDS, shared FAILS)
+   (?<h>\d)?x         DOM(h)={} PER-CONDITION vs SHARED [MANAGER]         differ     0 of     11
+   (?<h>\d)?x         DOM(h)={} PER-CONDITION vs SHARED [LFP]             differ     0 of     11
+   (?<h>\d)?x         DOM(h)={} PER-CONDITION vs SHARED [GFP]             differ     0 of     11
    (?:(?<h>\d),)*     DOM(h)={0123456789} PER-CONDITION vs SHARED [REGEX] differ     1 of    111   smallest '' (per HOLDS, shared FAILS)
-   (?:(?<h>\d),)*     DOM(h)={0123456789} PER-CONDITION vs SHARED [PROG-OTHER] differ     1 of    111   smallest '' (per HOLDS, shared FAILS)
-   (?:(?<h>\d),)*     DOM(h)={} PER-CONDITION vs SHARED [PROG-ALL]        differ     0 of    111
+   (?:(?<h>\d),)*     DOM(h)={0123456789} PER-CONDITION vs SHARED [SAME-NO] differ     1 of    111   smallest '' (per HOLDS, shared FAILS)
+   (?:(?<h>\d),)*     DOM(h)={0123456789} PER-CONDITION vs SHARED [OWNER] differ     1 of    111   smallest '' (per HOLDS, shared FAILS)
+   (?:(?<h>\d),)*     DOM(h)={} PER-CONDITION vs SHARED [MANAGER]         differ     0 of    111
+   (?:(?<h>\d),)*     DOM(h)={} PER-CONDITION vs SHARED [LFP]             differ     0 of    111
+   (?:(?<h>\d),)*     DOM(h)={} PER-CONDITION vs SHARED [GFP]             differ     0 of    111
 
 (W6) FIXIND-6: /(?<a>\d)?-(?<b>\d)/, 110 subjects: `$a` reads the tuple's own a (SHARED, the default-reaches-dollar derivation) vs its own witness (INDEPENDENT) vs no reach (`$a` empty)
    (a?: <3, b: >$a)   [REGEX     ] DOM(a)={0123456789} holds: shared 33, independent 33, no-reach 24 of 110
          shared vs independent [REGEX]                                    differ     0 of    110
-   (a?: <3, b: >$a)   [PROG-OTHER] DOM(a)={0123456789} holds: shared 33, independent 33, no-reach 24 of 110
-         shared vs independent [PROG-OTHER]                               differ     0 of    110
-   (a?: <3, b: >$a)   [PROG-ALL  ] DOM(a)={012} holds: shared 33, independent 33, no-reach 24 of 110
-         shared vs independent [PROG-ALL]                                 differ     0 of    110
+   (a?: <3, b: >$a)   [SAME-NO   ] DOM(a)={0123456789} holds: shared 33, independent 33, no-reach 24 of 110
+         shared vs independent [SAME-NO]                                  differ     0 of    110
+   (a?: <3, b: >$a)   [OWNER     ] DOM(a)={0123456789} holds: shared 33, independent 33, no-reach 24 of 110
+         shared vs independent [OWNER]                                    differ     0 of    110
+   (a?: <3, b: >$a)   [MANAGER   ] DOM(a)={012} holds: shared 33, independent 33, no-reach 24 of 110
+         shared vs independent [MANAGER]                                  differ     0 of    110
+   (a?: <3, b: >$a)   [LFP       ] DOM(a)={012} holds: shared 33, independent 33, no-reach 24 of 110
+         shared vs independent [LFP]                                      differ     0 of    110
+   (a?: <3, b: >$a)   [GFP       ] DOM(a)={012} holds: shared 33, independent 33, no-reach 24 of 110
+         shared vs independent [GFP]                                      differ     0 of    110
    (a?: >7, b: >$a)   [REGEX     ] DOM(a)={0123456789} holds: shared 2, independent 10, no-reach 1 of 110
          shared vs independent [REGEX]                                    differ     8 of    110   smallest '-1' (shared FAILS, indep HOLDS)
-   (a?: >7, b: >$a)   [PROG-OTHER] DOM(a)={0123456789} holds: shared 2, independent 10, no-reach 1 of 110
-         shared vs independent [PROG-OTHER]                               differ     8 of    110   smallest '-1' (shared FAILS, indep HOLDS)
-   (a?: >7, b: >$a)   [PROG-ALL  ] DOM(a)={8} holds: shared 2, independent 2, no-reach 1 of 110
-         shared vs independent [PROG-ALL]                                 differ     0 of    110
+   (a?: >7, b: >$a)   [SAME-NO   ] DOM(a)={0123456789} holds: shared 2, independent 10, no-reach 1 of 110
+         shared vs independent [SAME-NO]                                  differ     8 of    110   smallest '-1' (shared FAILS, indep HOLDS)
+   (a?: >7, b: >$a)   [OWNER     ] DOM(a)={0123456789} holds: shared 2, independent 10, no-reach 1 of 110
+         shared vs independent [OWNER]                                    differ     8 of    110   smallest '-1' (shared FAILS, indep HOLDS)
+   (a?: >7, b: >$a)   [MANAGER   ] DOM(a)={8} holds: shared 2, independent 2, no-reach 1 of 110
+         shared vs independent [MANAGER]                                  differ     0 of    110
+   (a?: >7, b: >$a)   [LFP       ] DOM(a)={8} holds: shared 2, independent 2, no-reach 1 of 110
+         shared vs independent [LFP]                                      differ     0 of    110
+   (a?: >7, b: >$a)   [GFP       ] DOM(a)={8} holds: shared 2, independent 2, no-reach 1 of 110
+         shared vs independent [GFP]                                      differ     0 of    110
 
 (WX) a MATCH-DEPENDENT pair on one label: two conditions whose sets read other labels
    /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={0123456789} PER-CONDITION vs SHARED [REGEX] differ     8 of    110   smallest '-1' (per HOLDS, shared FAILS)
-   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={0123456789} PER-CONDITION vs SHARED [PROG-OTHER] differ     8 of    110   smallest '-1' (per HOLDS, shared FAILS)
-   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={} PER-CONDITION vs SHARED [PROG-ALL] differ     0 of    110
+   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={0123456789} PER-CONDITION vs SHARED [SAME-NO] differ     8 of    110   smallest '-1' (per HOLDS, shared FAILS)
+   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={0123456789} PER-CONDITION vs SHARED [OWNER] differ     8 of    110   smallest '-1' (per HOLDS, shared FAILS)
+   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={} PER-CONDITION vs SHARED [MANAGER] differ     0 of    110
+   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={} PER-CONDITION vs SHARED [LFP] differ     0 of    110
+   /(?<h>\d)?-(?<k>\d)/ (h?: <$k) & (h?: >$k) DOM(h)={} PER-CONDITION vs SHARED [GFP] differ     0 of    110
    /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={0123456789} PER-CONDITION vs SHARED [REGEX] differ    45 of   1100   smallest '01' (per HOLDS, shared FAILS)
-   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={0123456789} PER-CONDITION vs SHARED [PROG-OTHER] differ    45 of   1100   smallest '01' (per HOLDS, shared FAILS)
-   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={12345678} PER-CONDITION vs SHARED [PROG-ALL] differ    28 of   1100   smallest '12' (per HOLDS, shared FAILS)
+   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={0123456789} PER-CONDITION vs SHARED [SAME-NO] differ    45 of   1100   smallest '01' (per HOLDS, shared FAILS)
+   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={0123456789} PER-CONDITION vs SHARED [OWNER] differ    45 of   1100   smallest '01' (per HOLDS, shared FAILS)
+   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={12345678} PER-CONDITION vs SHARED [MANAGER] differ    28 of   1100   smallest '12' (per HOLDS, shared FAILS)
+   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={12345678} PER-CONDITION vs SHARED [LFP] differ    28 of   1100   smallest '12' (per HOLDS, shared FAILS)
+   /(?<j>\d)(?<h>\d)?(?<k>\d)/ (h?: <$k) & (h?: >$j) DOM(h)={12345678} PER-CONDITION vs SHARED [GFP] differ    28 of   1100   smallest '12' (per HOLDS, shared FAILS)
 
-(FP) the fixed-point residue: /a(?<h>\d)|b(?<k>\d)/ & (h?: <5) & (k?: <5); each mark's DOM is read over matches where the OTHER mark is consulted
-   [REGEX     ] TOP DOM h={0123456789} k={0123456789}; BOTTOM h={0123456789} k={0123456789}
-         answers TOP vs BOTTOM [REGEX]                                    differ     0 of     20
-   [PROG-OTHER] TOP DOM h={0123456789} k={0123456789}; BOTTOM h={} k={}
-         answers TOP vs BOTTOM [PROG-OTHER]                               differ    10 of     20   smallest 'a0' (top HOLDS, bottom FAILS)
-   [PROG-ALL  ] TOP DOM h={01234} k={01234}; BOTTOM h={} k={}
-         answers TOP vs BOTTOM [PROG-ALL]                                 differ    10 of     20   smallest 'a0' (top HOLDS, bottom FAILS)
+(FP) the well-foundedness witness: /a(?<h>\d)|b(?<k>\d)/ & (h?: <5) & (k?: <5); each mark's DOM is read over matches where the OTHER mark is consulted
+   (h?: <5) & (k?: <5): DOM REGEX h={0123456789} k={0123456789}; SAME-NO h={0123456789} k={0123456789}; OWNER h={0123456789} k={0123456789}; MANAGER h={01234} k={01234}; LFP h={} k={}; GFP h={01234} k={01234}
+      vs REGEX over 20 subjects: LFP 10 (smallest 'a0': REGEX HOLDS, LFP FAILS)
+      on 'a0'     REGEX HOLDS  SAME-NO HOLDS  OWNER HOLDS  MANAGER HOLDS  LFP FAILS  GFP HOLDS
+      on 'b9'     REGEX FAILS  SAME-NO FAILS  OWNER FAILS  MANAGER FAILS  LFP FAILS  GFP FAILS
+   LFP vs GFP                                                             differ    10 of     20   smallest 'a0' (LFP FAILS, GFP HOLDS)
 
 PART 3: RECORD VERSUS JOINT WITH DOLLAR (own-label `$a`; defaulted and marked), per domain
    (a = 0: <10, b: >$a)   [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a = 0: <10, b: >$a)   [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a = 0: <10, b: >$a)   [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={012345678}; L 0/1981 DOM(a)={012345678}
+   (a = 0: <10, b: >$a)   [SAME-NO   ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a = 0: <10, b: >$a)   [OWNER     ] record vs joint differ: E 0/110 DOM(a)={012345678}; L 0/1981 DOM(a)={012345678}
+   (a = 0: <10, b: >$a)   [MANAGER   ] record vs joint differ: E 0/110 DOM(a)={012345678}; L 0/1981 DOM(a)={012345678}
+   (a = 0: <10, b: >$a)   [LFP       ] record vs joint differ: E 0/110 DOM(a)={012345678}; L 0/1981 DOM(a)={012345678}
+   (a = 0: <10, b: >$a)   [GFP       ] record vs joint differ: E 0/110 DOM(a)={012345678}; L 0/1981 DOM(a)={012345678}
    (a = 5: <3, b: >$a)    [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a = 5: <3, b: >$a)    [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a = 5: <3, b: >$a)    [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
+   (a = 5: <3, b: >$a)    [SAME-NO   ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a = 5: <3, b: >$a)    [OWNER     ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
+   (a = 5: <3, b: >$a)    [MANAGER   ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
+   (a = 5: <3, b: >$a)    [LFP       ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
+   (a = 5: <3, b: >$a)    [GFP       ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
    (a = 7: <10, b: ==$a)  [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a = 7: <10, b: ==$a)  [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a = 7: <10, b: ==$a)  [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
+   (a = 7: <10, b: ==$a)  [SAME-NO   ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a = 7: <10, b: ==$a)  [OWNER     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
+   (a = 7: <10, b: ==$a)  [MANAGER   ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
+   (a = 7: <10, b: ==$a)  [LFP       ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
+   (a = 7: <10, b: ==$a)  [GFP       ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
    (a?: <3, b: >$a)       [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a?: <3, b: >$a)       [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a?: <3, b: >$a)       [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
+   (a?: <3, b: >$a)       [SAME-NO   ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: <3, b: >$a)       [OWNER     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: <3, b: >$a)       [MANAGER   ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={0123456789}
+   (a?: <3, b: >$a)       [LFP       ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
+   (a?: <3, b: >$a)       [GFP       ] record vs joint differ: E 0/110 DOM(a)={012}; L 0/1981 DOM(a)={012}
    (a?: >7, b: >$a)       [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a?: >7, b: >$a)       [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a?: >7, b: >$a)       [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={8}; L 0/1981 DOM(a)={8}
+   (a?: >7, b: >$a)       [SAME-NO   ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: >7, b: >$a)       [OWNER     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: >7, b: >$a)       [MANAGER   ] record vs joint differ: E 0/110 DOM(a)={8}; L 0/1981 DOM(a)={0123456789}
+   (a?: >7, b: >$a)       [LFP       ] record vs joint differ: E 0/110 DOM(a)={8}; L 0/1981 DOM(a)={8}
+   (a?: >7, b: >$a)       [GFP       ] record vs joint differ: E 0/110 DOM(a)={8}; L 0/1981 DOM(a)={8}
    (a?: <10, b: ==$a)     [REGEX     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a?: <10, b: ==$a)     [PROG-OTHER] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
-   (a?: <10, b: ==$a)     [PROG-ALL  ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
+   (a?: <10, b: ==$a)     [SAME-NO   ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: <10, b: ==$a)     [OWNER     ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: <10, b: ==$a)     [MANAGER   ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0123456789}
+   (a?: <10, b: ==$a)     [LFP       ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
+   (a?: <10, b: ==$a)     [GFP       ] record vs joint differ: E 0/110 DOM(a)={0123456789}; L 0/1981 DOM(a)={0359}
    on `-5`: (a = 0: <10, b: >$a) HOLDS (the default fills $a: 5 > 0); (a?: <3, b: >$a) HOLDS; (a?: >7, b: >$a) FAILS
    TOTAL [REGEX     ] record vs joint: 0 of 12546 differ
-   TOTAL [PROG-OTHER] record vs joint: 0 of 12546 differ
-   TOTAL [PROG-ALL  ] record vs joint: 0 of 12546 differ
+   TOTAL [SAME-NO   ] record vs joint: 0 of 12546 differ
+   TOTAL [OWNER     ] record vs joint: 0 of 12546 differ
+   TOTAL [MANAGER   ] record vs joint: 0 of 12546 differ
+   TOTAL [LFP       ] record vs joint: 0 of 12546 differ
+   TOTAL [GFP       ] record vs joint: 0 of 12546 differ
 
 PART 4: the other counts rev 21 quotes (review r29's drills, recomputed)
    (D2) occurrences(/(?<g>a)?b/), 127 spans over {a,b} to length 6, DOM(g) = ['a']: 'every hit\'s g is a, possibly none' vs (g?: "a") differ 94 (e.g. 'b', 'abb'); vs occurs.none(!(g: "a")) differ 0
@@ -309,4 +441,4 @@ PART 4: the other counts rev 21 quotes (review r29's drills, recomputed)
    (S1) on '9:15': plain None  mark ('9', 0)  def0 ('15', 2)
    (PRIO) /(?:(?<h>a|ab)(?<k>b*))?x/ vs /(?:(?<h>a)(?<k>b*))?x/: 3280 subjects, differ 0; `ab` is never h's value in PCRE's parse
 
-TOTAL engine-run cases 37892 differ 0; engine disagreements (PCRE2 vs Python `re`) 0; probes 166724
+TOTAL engine-run cases 75530 differ 0; engine disagreements (PCRE2 vs Python `re`) 0; probes 204515

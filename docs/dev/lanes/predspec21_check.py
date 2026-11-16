@@ -3,22 +3,24 @@
 #
 # THE QUESTION. The owner ruled domain-scope (COND-FAMILY, 16:31): DOM(h), the values a marked absent label "could have
 # had", is read from the PROGRAM the condition meets (the regex with the conditions on it), not from the bare regex.
-# The ruling leaves open whether another condition on the SAME label narrows h's DOM. So three domains are computed
-# side by side, each over the same populations:
-#   REGEX       the values h takes in some whole match of the REGEX (rev 20's VALUES; the defining operand's matches)
-#   PROG-OTHER  the values h takes in some match of the PROGRAM where h is present, every condition that does NOT name
-#               h applied (a record's entries are separate `&`-ed conditions; a PRODUCT tuple set splits into its
-#               entries, record-is-product; a non-product joint set, or an entry reading `$h`, names h): open
-#               reading (i)-NO ("another condition on the same label does not narrow")
-#   PROG-ALL    the same, EVERY condition of the flattened chain applied, the ones naming h included (over matches
-#               where h is present, so no mark on h is ever consulted): open reading (i)-YES
-# Marks on OTHER labels inside the program are consulted while a DOM is computed; the DOMs are therefore a FIXED
-# POINT. Each is computed twice, descending from the regex's values (TOP) and ascending from the empty set (BOTTOM);
-# every table prints whether the two agree. Answers use TOP.
+# Which conditions narrow a DOM, and how, is OPEN (the brief's item (i); the manager's rulings R1, R2 in the lane's
+# rulings file). Six domains are computed side by side over the same populations; every program domain reads matches
+# where h is PRESENT:
+#   REGEX    the values h takes in some whole match of the REGEX (rev 20's VALUES; for `&` of rx, the defining operand)
+#   SAME-NO  the brief's reading (i)-NO: every condition NOT naming h narrows; a greatest fixed point (marks on other
+#            labels are consulted while a DOM is computed)
+#   OWNER    R2 (i), the owner's question read literally: the regex narrowed by the UNMARKED conditions only
+#   MANAGER  R2 (ii), the manager's lean: every condition narrows; where a mark would be consulted (its label absent)
+#            the condition is TRANSPARENT; no DOM is read while a DOM is computed
+#   LFP/GFP  R2 (iii)/(iv): every condition narrows, marks consulted; the least / greatest fixed point (iterated from
+#            the empty set / from the regex's values; "no fixed point" = the iteration oscillates)
+# A record's entries are separate `&`-ed conditions; a PRODUCT tuple set splits into its entries (record-is-product);
+# a non-product joint set, or an entry reading `$h`, names h.
 #
 # PARTS: (1) THE PROGRAM DOMAIN: rev 20's tables (AR), (TM2), (RZ), (ZJ), (ZE), the two-spellings tables (2SP, SET),
 #   review r29's equal-behaviour pairs (EB1 the branch-reset `q := P & (k: "b")` vs the narrowed regex; EB2 t2m vs t2x;
-#   EB3 the extra `&` operand), then the four tests per domain. (2) ONE WITNESS: FIXIND-3's and FIXIND-6's populations
+#   EB3 the extra `&` operand), R2's `(k?: "b")` pair (EBK), the mark under `!` (NEG), R1's independence and order
+#   (INDEP), a search over small programs (SEARCH), then the four tests per domain. (2) ONE WITNESS: FIXIND-3's and FIXIND-6's populations
 #   and a match-dependent pair, per domain; the fixed-point residue. (3) RECORD VERSUS JOINT WITH DOLLAR: every record
 #   with an own-label `$` against its joint spelling, defaulted and marked, plus an ENGINE-RUN regex built from the
 #   joint set. (4) the other counts rev 21 quotes (review r29's drills, recomputed here so the draft can cite one command).
@@ -30,8 +32,8 @@
 #   drills of PART 4 are review r29's critics' (fixind D2/D5/D6, ruling DRILL 1-4, simulate S1/S2), re-coded on these
 #   engines with their populations unchanged.
 # Run from the scratch dir: `timeout 300 python3 -I /abs/path/docs/dev/lanes/predspec21_check.py`.
-# Sabotage: `PREDSPEC21_SABOTAGE=1` makes PROG-ALL skip the conditions naming h (= PROG-OTHER) and makes the record
-#   read `$a` with its own witness; the EB2 PROG-ALL split count and the record-vs-joint differ count must then be > 0.
+# Sabotage: `PREDSPEC21_SABOTAGE=1` makes MANAGER skip the conditions naming h and makes the record read `$a` with its
+#   own witness; the EB2 MANAGER split count and the record-vs-joint differ count must then be > 0.
 import os, re, itertools, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -40,7 +42,7 @@ exec(_src[:_src.index('print("\\n(AR) THE RULE')], globals())     # absfold's pr
 SAB21 = os.environ.get("PREDSPEC21_SABOTAGE") == "1"
 if SAB21:
     print("SABOTAGE ON (PREDSPEC21_SABOTAGE=1)")
-VARS = ("REGEX", "PROG-OTHER", "PROG-ALL")
+VARS = ("REGEX", "SAME-NO", "OWNER", "MANAGER", "LFP", "GFP")
 NOTLT10 = lambda x: not (canon(x) and int(x) < 10)
 S59 = lambda x: canon(x) and 5 <= int(x) <= 9
 
@@ -63,10 +65,39 @@ def pgroups(p, t, names):
 
 
 class Fac:
-    """one `&`-ed condition of the flattened chain: the labels it names, and fn(s, DOM) -> bool"""
-    def __init__(self, names, fn):
+    """one `&`-ed condition of the flattened chain: the labels it names, the labels it MARKS (a `$x` reading a marked
+    label of its own record counts: it reads the mark's witness), and fn(s, DOM) -> bool"""
+    def __init__(self, names, fn, marks=None):
         self.names = frozenset(names)
+        self.marks = frozenset(names[:1] if marks is None else marks)   # convention: the marked label is named first
         self.fn = fn
+
+
+class Consult(Exception):
+    pass
+
+
+class _Poison:
+    def __iter__(self):
+        raise Consult()
+
+
+class _PoisonDom(dict):
+    def __getitem__(self, k):
+        return _Poison()
+
+
+POISON = _PoisonDom()
+
+
+def no_dom(f, s, transparent):
+    """evaluate f on s without any DOM: a mark that would be consulted is TRANSPARENT (True) or a bug (raises)"""
+    try:
+        return f.fn(s, POISON)
+    except Consult:
+        if transparent:
+            return True
+        raise
 
 
 def mk(v, S, dom):
@@ -74,35 +105,50 @@ def mk(v, S, dom):
     return S(v) if v is not None else any(S(d) for d in dom)
 
 
+class NoFixedPoint(Exception):
+    pass
+
+
 def doms(pop, labels, vals, facs, var):
-    """DOM per label under one domain; returns (TOP, BOTTOM) fixed points (dicts label -> set)"""
+    """DOM per label under one domain (dict label -> set); every program domain reads matches where h is PRESENT.
+    REGEX    the regex's values (rev 20)
+    SAME-NO  the brief's open reading (i)-NO: every condition NOT naming h applied; greatest fixed point
+    OWNER    the owner's question, literal (R2 (i)): the regex narrowed by the UNMARKED conditions only; computed once
+    MANAGER  R2 (ii), the manager's lean: every condition applied; a mark that would be consulted is transparent;
+             computed once, no DOM read while a DOM is computed
+    LFP/GFP  every condition applied, the least / greatest fixed point (R2 (iii), (iv))"""
     regex = {h: {v for s in pop for v in vals(s, h)} for h in labels}
     if var == "REGEX":
-        return regex, regex
+        return regex
+    if var in ("OWNER", "MANAGER"):
+        out = {}
+        for h in labels:
+            if var == "OWNER":
+                keep = [f for f in facs if not f.marks]
+            else:
+                keep = [f for f in facs if not (SAB21 and h in f.names)]
+            out[h] = {v for s in pop if vals(s, h) and all(no_dom(f, s, var == "MANAGER") for f in keep)
+                      for v in vals(s, h)}
+        return out
 
     def step(cur):
         new = {}
         for h in labels:
-            narrow_same = var == "PROG-ALL" and not SAB21
-            keep = [f for f in facs if narrow_same or h not in f.names]
+            keep = [f for f in facs if var != "SAME-NO" or h not in f.names]
             new[h] = {v for s in pop if vals(s, h) and all(f.fn(s, cur) for f in keep) for v in vals(s, h)}
         return new
-
-    def fix(cur):
-        for _ in range(60):
-            nxt = step(cur)
-            if nxt == cur:
-                return cur
-            cur = nxt
-        raise RuntimeError("no fixed point")
-    return fix({h: set(regex[h]) for h in labels}), fix({h: set() for h in labels})
+    cur = {h: set() for h in labels} if var == "LFP" else {h: set(regex[h]) for h in labels}
+    for _ in range(60):
+        nxt = step(cur)
+        if nxt == cur:
+            return cur
+        cur = nxt
+    raise NoFixedPoint()
 
 
 def answers(pop, labels, vals, facs, var):
-    top, bot = doms(pop, labels, vals, facs, var)
-    a = {s: all(f.fn(s, top) for f in facs) for s in pop}
-    b = {s: all(f.fn(s, bot) for f in facs) for s in pop}
-    return a, top, sum(a[s] != b[s] for s in pop)
+    dm = doms(pop, labels, vals, facs, var)
+    return {s: all(f.fn(s, dm) for f in facs) for s in pop}, dm
 
 
 def sm(xs):
@@ -122,33 +168,32 @@ def dstr(d):
         "%d values" % len(d)
 
 
-MOVES = []          # (table, variant, n, smallest)
-FPRES = {v: 0 for v in VARS}     # TOP vs BOTTOM disagreements per variant over PART 1
+MOVES = []          # (table, variant, n, total, smallest, REGEX answer there)
 WIT = {v: 0 for v in VARS}       # (i)
 SPL = {v: 0 for v in VARS}       # (ii)
 SETS = {v: 0 for v in VARS}      # (iii)
 RAMP = {v: 0 for v in VARS}      # (iv)
-HELD = {}                        # the values each label holds in the program (PROG-ALL TOP), per table, for (i)
 
 
 def run_table(title, pop, labels, vals, facs, show=None, tally=True):
-    """answers per variant; the moves against REGEX; the witnesses (i) against PROG-ALL's held values"""
+    """answers per domain; the moves against REGEX; (i) SELF-CONSISTENCY: a subject HOLDS but FAILS when every DOM is
+    replaced by the values the label holds in the matches this same domain ACCEPTS (a value never held witnessed it)"""
     res = {}
     for v in VARS:
-        a, top, fp = answers(pop, labels, vals, facs, v)
-        res[v] = (a, top, fp)
-        FPRES[v] += fp
-    print("   %s: DOM %s; TOP vs BOTTOM fixed point differ: %s" % (
-        title, "; ".join("%s %s" % (v, " ".join("%s={%s}" % (h, dstr(res[v][1][h])) for h in labels)) for v in VARS),
-        "/".join(str(res[v][2]) for v in VARS)))
+        res[v] = answers(pop, labels, vals, facs, v)
+    print("   %s: DOM %s" % (title, "; ".join("%s %s" % (v, " ".join("%s={%s}" % (h, dstr(res[v][1][h])) for h in labels))
+                                            for v in VARS)))
+    mv = []
     for v in VARS[1:]:
         d = [s for s in pop if res[v][0][s] != res["REGEX"][0][s]]
         if tally:
             MOVES.append((title, v, len(d), len(pop), sm(d), res["REGEX"][0].get(sm(d)) if d else None))
-        print("      %-10s vs REGEX: %d of %d move%s" % (v, len(d), len(pop), "" if not d else ", smallest %r (REGEX %s, %s %s)"
-                                                    % (sm(d), hfx(res["REGEX"][0][sm(d)]), v, hfx(res[v][0][sm(d)]))))
-    held = res["PROG-ALL"][1]
+        if d:
+            mv.append("%s %d (smallest %r: REGEX %s, %s %s)" % (v, len(d), sm(d), hfx(res["REGEX"][0][sm(d)]), v,
+                                                                 hfx(res[v][0][sm(d)])))
+    print("      vs REGEX over %d subjects: %s" % (len(pop), "; ".join(mv) if mv else "0 move under every program domain"))
     for v in VARS:
+        held = {h: {x for s in pop if res[v][0][s] for x in vals(s, h)} for h in labels}
         w = [s for s in pop if res[v][0][s] and not all(f.fn(s, held) for f in facs)]
         WIT[v] += len(w) if tally else 0
     if show:
@@ -169,9 +214,9 @@ kv = lambda s: G_AR[s]["k"]
 AR_SHAPES = [
     ("one (h?: <5)", [Fac("h", lambda s, Dm: mk(hv(s), S5, Dm["h"]))]),
     ("one (h?: !(<10))", [Fac("h", lambda s, Dm: mk(hv(s), NOTLT10, Dm["h"]))]),
-    ("record (h?: <5, k: 3..7)", [Fac("h", lambda s, Dm: mk(hv(s), S5, Dm["h"])), Fac("k", lambda s, Dm: T37(kv(s)))]),
+    ("record (h?: <5, k: 3..7)", [Fac("h", lambda s, Dm: mk(hv(s), S5, Dm["h"])), Fac("k", lambda s, Dm: T37(kv(s)), marks="")]),
     ("record (h?: !(<10), k: 3..7)", [Fac("h", lambda s, Dm: mk(hv(s), NOTLT10, Dm["h"])),
-                                      Fac("k", lambda s, Dm: T37(kv(s)))]),
+                                      Fac("k", lambda s, Dm: T37(kv(s)), marks="")]),
     ("joint ((h?, k): >= (5, 3))", [Fac("hk", lambda s, Dm: any(canon(x) and (int(x), int(kv(s))) >= (5, 3) for x in
                                                                ([hv(s)] if hv(s) is not None else Dm["h"])))]),
 ]
@@ -214,7 +259,7 @@ def hpass(S):
     return Fac("h", lambda s, Dm: all(S(x) for x in RZ[s][1]) if RZ[s][1] else any(S(d) for d in Dm["h"]))
 
 
-KF = Fac("k", lambda s, Dm: T37(RZ[s][0]))
+KF = Fac("k", lambda s, Dm: T37(RZ[s][0]), marks="")
 for sname, S in (("<5", S5), ("5..9", S59), ("!(<10)", NOTLT10)):
     facs = [hpass(S), KF]
     res = run_table("(h?: %s, k: 3..7)" % sname, POP_RZ, ["h"], v_rz, facs, show=["3", "9"])
@@ -255,7 +300,7 @@ for s in POP_ZE:
 v_ze = lambda s, lab: ZE[s][2] if lab == "h" else [ZE[s][0 if lab == "a" else 1]]
 C1h = Fac("ha", lambda s, Dm: all(canon(x) and int(x) < int(ZE[s][0]) for x in ZE[s][2]) if ZE[s][2] else
           any(canon(d) and int(d) < int(ZE[s][0]) for d in Dm["h"]))
-C1k = Fac("k", lambda s, Dm: ZE[s][1] == "3")
+C1k = Fac("k", lambda s, Dm: ZE[s][1] == "3", marks="")
 C2f = lambda t, a: canon(t[0]) and canon(t[1]) and (int(t[0]), int(t[1])) < (int(a), 0)
 C2 = Fac("hka", lambda s, Dm: all(C2f((x, ZE[s][1]), ZE[s][0]) for x in ZE[s][2]) if ZE[s][2] else
          any(C2f((d, ZE[s][1]), ZE[s][0]) for d in Dm["h"]))
@@ -316,7 +361,7 @@ def br_vals(G):
 
 
 hb = lambda S: Fac("h", lambda s, Dm: all(S(x) for x in BRK[s][1]) if BRK[s][1] else any(S(d) for d in Dm["h"]))
-kb = Fac("k", lambda s, Dm: BRK[s][0] == "b")
+kb = Fac("k", lambda s, Dm: BRK[s][0] == "b", marks="")
 mP = Fac("", lambda s, Dm: GP[s] is not None)
 mQ = Fac("", lambda s, Dm: GQ[s] is not None)
 eb = {}
@@ -389,7 +434,7 @@ regdom = {v for s in POP_Z for v in v_pz(s, "h")}
 chainA = {}
 for v in VARS:
     dom_ = regdom if v == "REGEX" else doms(POP_Z, ["h"], v_pi, [Fac("h", lambda s, Dm: GI[s] is not None and
-                                                                     mk(GI[s]["h"], ZZ, Dm["h"]))], v)[0]["h"]
+                                                                     mk(GI[s]["h"], ZZ, Dm["h"]))], v)["h"]
     chainA[v] = {s: GI[s] is not None and mk(GI[s]["h"], ZZ, dom_) for s in POP_Z}
 r3 = run_table("P3 & (h?: \"zz\")", POP_Z, ["h"], v_p3, [Fac("h", lambda s, Dm: G3[s] is not None and
                                                               mk(G3[s]["h"], ZZ, Dm["h"]))], show=["x"])
@@ -402,20 +447,181 @@ for v in VARS:
         WIT[v] += sum(1 for s in POP_Z if chainA[v][s] and not r3[v][0][s])
 
 # -----------------------------------------------------------------------------------------------------------------
+print("\n(EBK) rulings R2: `P & (k?: \"b\") & (h?: <5)` vs `P & (k: \"b\") & (h?: <5)` (k is never absent in P, so the two "
+      "programs behave alike); the branch-reset P of EB1")
+kbm = Fac("k", lambda s, Dm: BRK[s][0] == "b")          # (k?: "b"): k is never absent in P, so no DOM is consulted
+rKM = run_table("K? P & (k?: \"b\") & (h?: <5)", POP_BR, ["h"], br_vals(GP), [mP, kbm, hb(S5)], show=["b"])
+for v in VARS:
+    SPL[v] += cmp("K? vs A  P & (k: \"b\") & (h?: <5) [%s]" % v, POP_BR, rKM[v][0],
+                  eb["A  P & (k: \"b\") & (h?: <5)"][v][0], "k?", "k")
+
+# -----------------------------------------------------------------------------------------------------------------
+print("\n(NEG) a mark under `!` (rev 20 §0.1 L30, L95): the condition's own complement is one of the program's "
+      "conditions, so the domains that narrow by it read DOM(h) without S")
+P_N = r"(?<h>\d)?x"
+POP_N = ["x"] + [d + "x" for d in D]
+GN = {s: groups(P_N, s, ["h"]) for s in POP_N}
+v_n = lambda s, lab: [GN[s]["h"]] if GN[s]["h"] is not None else []
+run_table("L30 !(h?: <5) on /(?<h>\\d)?x/", POP_N, ["h"], v_n, [Fac("h", lambda s, Dm: not mk(GN[s]["h"], S5, Dm["h"]))],
+          show=["x"], tally=False)
+run_table("L30 (h?: !(<5)) on /(?<h>\\d)?x/", POP_N, ["h"], v_n, [Fac("h", lambda s, Dm: mk(GN[s]["h"], lambda x: not
+                                                                                            S5(x), Dm["h"]))],
+          show=["x"], tally=False)
+run_table("L95 !((h, m?): R) on t2", POP_T2, ["m"], v_t2, [Fac("m", lambda s, Dm: not jm(GE930)[0].fn(s, Dm))],
+          show=["9"], tally=False)
+run_table("L95 ((h, m?): !R) on t2", POP_T2, ["m"], v_t2, jm(lambda t: not GE930(t)), show=["9"], tally=False)
+
+# -----------------------------------------------------------------------------------------------------------------
+print("\n(INDEP) rulings R1 (a): `b` against P & (k: \"b\"), P & (h?: <5) and P & (k: \"b\") & (h?: <5), per domain")
+for v in VARS:
+    a1 = answers(POP_BR, ["h"], br_vals(GP), [mP, kb], v)[0]["b"]
+    a2 = answers(POP_BR, ["h"], br_vals(GP), [mP, hb(S5)], v)[0]["b"]
+    a3 = answers(POP_BR, ["h"], br_vals(GP), [mP, kb, hb(S5)], v)[0]["b"]
+    print("   [%-7s] P & (k: \"b\") %s   P & (h?: <5) %s   P & (k: \"b\") & (h?: <5) %s   -> the intersection of the "
+          "first two %s" % (v, hfx(a1), hfx(a2), hfx(a3), "= the third" if (a1 and a2) == a3 else "!= the third"))
+# order and grouping: DOM reads the SET of conditions of the flattened chain, so neither can enter; the run checks the
+# six orders of EB1's three conditions and the binding `q := P & (k: "b"); q & (h?: <5)` (the same set, L2)
+ordn = 0
+for v in VARS:
+    base = answers(POP_BR, ["h"], br_vals(GP), [mP, kb, hb(S5)], v)[0]
+    for perm in itertools.permutations([mP, kb, hb(S5)]):
+        a_ = answers(POP_BR, ["h"], br_vals(GP), list(perm), v)[0]
+        ordn += sum(a_[s] != base[s] for s in POP_BR)
+print("   order: the 6 orders of EB1's three conditions x %d domains x %d subjects: %d differ (by construction: DOM reads "
+      "the chain's SET of conditions)" % (len(VARS), len(POP_BR), ordn))
+
+# -----------------------------------------------------------------------------------------------------------------
+print("\n(SEARCH) every program of 1-3 conditions from a small pool, on three patterns: where the candidate domains "
+      "answer differently (the smallest program and subject each), where ADDING a condition turns a FAIL into a HOLD, "
+      "and where the fixed-point iteration finds no fixed point")
+LT5 = lambda x: canon(x) and int(x) < 5
+GT7 = lambda x: canon(x) and int(x) > 7
+
+
+def pool_one(lab, S, sname, marked, neg):
+    nm = ("!" if neg else "") + "(%s%s: %s)" % (lab, "?" if marked else "", sname)
+
+    def fn(rec, Dm):
+        v = rec[lab]
+        r = S(v) if v is not None else (any(S(d) for d in Dm[lab]) if marked else False)
+        return (not r) if neg else r
+    return nm, Fac(lab, fn, marks=lab if marked else "")
+
+
+def pool_joint():
+    def fn(rec, Dm):
+        hs = [rec["h"]] if rec["h"] is not None else sorted(Dm["h"])
+        ks = [rec["k"]] if rec["k"] is not None else sorted(Dm["k"])
+        return any(canon(x) and canon(y) and int(x) < int(y) for x in hs for y in ks)
+    return "((h?, k?): h < k)", Fac("hk", fn, marks="hk")
+
+
+def pool_njoint():
+    def fn(rec, Dm):
+        if rec["k"] is None:
+            return True                       # k unmarked: the inner condition fails, so `!` holds
+        hs = [rec["h"]] if rec["h"] is not None else sorted(Dm["h"])
+        return not any(canon(x) and int(x) < int(rec["k"]) for x in hs)
+    return "!((h?, k): h < k)", Fac("hk", fn, marks="h")
+
+
+POOLS = []
+for pname, pat, pop, kvals in (("A", r"a(?<h>\d)|b(?<k>\d)|c", ["a" + d for d in D] + ["b" + d for d in D] + ["c"], None),
+                               ("B", r"(?<h>\d)?-(?<k>\d)?", [h + "-" + k for h in [""] + D for k in [""] + D], None)):
+    recs = {s: groups(pat, s, ["h", "k"]) for s in pop}
+    pool = [pool_one(lab, S, sn, mkd, False) for lab in "hk" for S, sn in ((LT5, "<5"), (GT7, ">7")) for mkd in
+            (False, True)] + [pool_one(lab, LT5, "<5", True, True) for lab in "hk"] + [pool_joint(), pool_njoint()]
+    POOLS.append((pname, pat, pop, recs, pool))
+recs_br = {s: {"k": BRK[s][0], "h": (BRK[s][1][0] if BRK[s][1] else None)} for s in POP_BR
+           if GP[s] is not None and len(BRK[s][1]) <= 1}
+pool_br = [("(k: \"b\")", Fac("k", lambda rec, Dm: rec["k"] == "b", marks="")),
+           ("(k?: \"b\")", Fac("k", lambda rec, Dm: mk(rec["k"], lambda x: x == "b", Dm["k"]), marks="k")),
+           pool_one("h", LT5, "<5", False, False), pool_one("h", LT5, "<5", True, False),
+           pool_one("h", GT7, ">7", True, False), pool_one("h", LT5, "<5", True, True)]
+POOLS.append(("P", P_BR + " (0-1 passes)", sorted(recs_br), recs_br, pool_br))
+DIFF = {}          # (v1, v2) -> (count of programs, smallest (size, pattern, program, subject, a1, a2))
+F2H = {v: [0, None] for v in VARS}
+F2HPOS = {v: [0, 0] for v in VARS}     # pairs with no mark under `!`: [pairs checked, FAIL -> HOLD]
+NOFP = {v: [0, None] for v in VARS}
+NPROG = 0
+for pname, pat, pop, recs, pool in POOLS:
+    vrec = lambda s, lab, recs=recs: [recs[s][lab]] if recs[s][lab] is not None else []
+    ans = {}
+    for n in (1, 2, 3):
+        for combo in itertools.combinations(range(len(pool)), n):
+            NPROG += 1
+            facs = [Fac(pool[i][1].names, (lambda f: (lambda s, Dm: f.fn(recs[s], Dm)))(pool[i][1]),
+                        marks=pool[i][1].marks) for i in combo]
+            for v in VARS:
+                try:
+                    ans[(combo, v)] = answers(pop, ["h", "k"], vrec, facs, v)[0]
+                except NoFixedPoint:
+                    ans[(combo, v)] = None
+                    NOFP[v][0] += 1
+                    NOFP[v][1] = NOFP[v][1] or (pname, " & ".join(pool[i][0] for i in combo))
+    for (combo, v), a in ans.items():
+        if a is None:
+            continue
+        for v2 in VARS:
+            if VARS.index(v2) <= VARS.index(v) or ans.get((combo, v2)) is None:
+                continue
+            b = ans[(combo, v2)]
+            d = [s for s in pop if a[s] != b[s]]
+            if d:
+                key = (v, v2)
+                cnt, best = DIFF.get(key, (0, None))
+                cand = (len(combo), pname, " & ".join(pool[i][0] for i in combo), sm(d), hfx(a[sm(d)]), hfx(b[sm(d)]))
+                DIFF[key] = (cnt + 1, cand if best is None or cand[:1] + (len(cand[3]),) < best[:1] + (len(best[3]),)
+                             else best)
+        if len(combo) <= 2:
+            for j in range(len(pool)):
+                if j in combo:
+                    continue
+                c2 = tuple(sorted(combo + (j,)))
+                b = ans.get((c2, v))
+                if b is None:
+                    continue
+                d = [s for s in pop if not a[s] and b[s]]
+                if not any(pool[i][0].startswith("!") and pool[i][1].marks for i in c2):
+                    F2HPOS[v][0] += 1
+                    F2HPOS[v][1] += bool(d)
+                if d:
+                    F2H[v][0] += 1
+                    cand = (len(c2), pname, " & ".join(pool[i][0] for i in combo), pool[j][0], sm(d))
+                    if F2H[v][1] is None or (cand[0], len(cand[4])) < (F2H[v][1][0], len(F2H[v][1][4])):
+                        F2H[v][1] = cand
+print("   %d programs over %d patterns (A = /%s/, B = /%s/, P = %s)" % (NPROG, len(POOLS), POOLS[0][1], POOLS[1][1],
+                                                                       POOLS[2][1]))
+for v1, v2 in itertools.combinations(VARS, 2):
+    cnt, best = DIFF.get((v1, v2), (0, None))
+    print("   %-7s vs %-7s: %4d programs answer differently%s" % (v1, v2, cnt, "" if best is None else
+                                                                  "; smallest: pattern %s, `%s` on %r (%s %s, %s %s)" %
+                                                                  (best[1], best[2], best[3], v1, best[4], v2, best[5])))
+for v in VARS:
+    print("   [%-7s] no mark under `!`: adding a condition turns a FAIL into a HOLD in %d of %d (program, added "
+          "condition) pairs" % (v, F2HPOS[v][1], F2HPOS[v][0]))
+for v in VARS:
+    print("   [%-7s] adding a condition turns a FAIL into a HOLD in %d (program, added condition) pairs%s; no fixed point "
+          "in %d programs%s" % (v, F2H[v][0], "" if F2H[v][1] is None else "; smallest: pattern %s, `%s` + `%s` on %r" %
+                                F2H[v][1][1:], NOFP[v][0], "" if NOFP[v][1] is None else "; e.g. %s `%s`" % NOFP[v][1]))
+
+# -----------------------------------------------------------------------------------------------------------------
 print("\n(MOVES) the answers that move from REGEX, per table and domain (the smallest witness each)")
 for t, v, n, tot, ex, regans in MOVES:
     if n:
         print("   %-62s %-10s %5d of %6d  smallest %r (REGEX %s)" % (t[:62], v, n, tot, ex, hfx(regans)))
-print("   every other table: 0 move under both program domains")
+print("   every other table: 0 move under every program domain")
 
-print("\n(SUMMARY) per domain: (i) an answer witnessed only by a value the label never holds in a match of the program "
-      "(measured against PROG-ALL's set, so PROG-ALL's 0 is by construction); (ii) two spellings of one program split "
-      "(2SP, EB1 A/B, EB2, EB3); (iii) two spellings of one set split (SET <5, ZE a = 0); (iv) record = & (RZ, ZE, EB1 "
-      "C/A); the fixed point (TOP vs BOTTOM) over PART 1")
+print("\n(SUMMARY) per domain: (i) an answer witnessed only by a value the label never holds in a match the same domain "
+      "accepts (self-consistency); (ii) two spellings of one program split (2SP, EB1 A/B, EKB k?/k, EB2, EB3); (iii) two "
+      "spellings of one set split (SET <5, ZE a = 0); (iv) record = & (RZ, ZE, EB1 C/A); WELL-FOUNDED = computed once, no "
+      "DOM read while a DOM is computed")
 for v in VARS:
-    print("   %-10s (i) %-4s %4d   (ii) %-4s %4d   (iii) %-4s %d   (iv) %s (%d split)   fixed point: %s" %
+    print("   %-7s (i) %-3s %4d   (ii) %-3s %4d   (iii) %-3s %d   (iv) %s (%d split)   well-founded: %s" %
           (v, "YES" if WIT[v] else "no", WIT[v], "YES" if SPL[v] else "no", SPL[v], "YES" if SETS[v] else "no", SETS[v],
-           "KEPT" if RAMP[v] == 0 else "BROKEN", RAMP[v], "unique" if FPRES[v] == 0 else "%d differ" % FPRES[v]))
+           "KEPT" if RAMP[v] == 0 else "BROKEN", RAMP[v],
+           {"REGEX": "yes (no program read)", "SAME-NO": "no (a fixed point)", "OWNER": "yes", "MANAGER": "yes",
+            "LFP": "no (a fixed point)", "GFP": "no (a fixed point)"}[v]))
 
 # =================================================================================================================
 print("\nPART 2: ONE WITNESS")
@@ -436,7 +642,7 @@ for P, pop, loop in ((r"(?<h>\d)?x", ["x"] + [d + "x" for d in D], False),
     fA = Fac("h", lambda s, Dm, A=A5: all(A(x) for x in PS[s]) if PS[s] else any(A(d) for d in Dm["h"]))
     fB = Fac("h", lambda s, Dm, B=B5: all(B(x) for x in PS[s]) if PS[s] else any(B(d) for d in Dm["h"]))
     for v in VARS:
-        top = doms(pop, ["h"], vv, [fA, fB], v)[0]
+        top = doms(pop, ["h"], vv, [fA, fB], v)
         per = {s: fA.fn(s, top) and fB.fn(s, top) for s in pop}
         sha = {s: all(A5(x) and B5(x) for x in PS[s]) if PS[s] else any(A5(d) and B5(d) for d in top["h"])
                for s in pop}
@@ -452,7 +658,7 @@ for name, Sa in (("(a?: <3, b: >$a)", lambda x: int(x) < 3), ("(a?: >7, b: >$a)"
     fb = Fac("ab", lambda s, Dm: any(int(GE[s]["b"]) > int(x) for x in ([GE[s]["a"]] if GE[s]["a"] is not None else
                                                                        Dm["a"])))
     for v in VARS:
-        top = doms(POP_E, ["a"], v_e, [fa, fb], v)[0]["a"]
+        top = doms(POP_E, ["a"], v_e, [fa, fb], v)["a"]
         sh, ind, nr = {}, {}, {}
         for s in POP_E:
             a, b = GE[s]["a"], int(GE[s]["b"])
@@ -480,14 +686,14 @@ for P, pop, conds in (
     f2 = Fac(conds[1][2], lambda s, Dm, G=G, c=conds[1][1]: (lambda h: c(h, G[s]) if h is not None else
                                                                  any(c(d, G[s]) for d in Dm["h"]))(G[s]["h"]))
     for v in VARS:
-        top = doms(pop, ["h"], vv, [f1, f2], v)[0]
+        top = doms(pop, ["h"], vv, [f1, f2], v)
         per = {s: f1.fn(s, top) and f2.fn(s, top) for s in pop}
         sha = {s: (conds[0][1](G[s]["h"], G[s]) and conds[1][1](G[s]["h"], G[s])) if G[s]["h"] is not None else
                any(conds[0][1](d, G[s]) and conds[1][1](d, G[s]) for d in top["h"]) for s in pop}
         cmp("/%s/ %s & %s DOM(h)={%s} PER-CONDITION vs SHARED [%s]" % (P, conds[0][0], conds[1][0], dstr(top["h"]), v),
             pop, per, sha, "per", "shared")
 
-print("\n(FP) the fixed-point residue: /a(?<h>\\d)|b(?<k>\\d)/ & (h?: <5) & (k?: <5); each mark's DOM is read over "
+print("\n(FP) the well-foundedness witness: /a(?<h>\\d)|b(?<k>\\d)/ & (h?: <5) & (k?: <5); each mark's DOM is read over "
       "matches where the OTHER mark is consulted")
 P_FP = r"a(?<h>\d)|b(?<k>\d)"
 POP_FP = ["a" + d for d in D] + ["b" + d for d in D]
@@ -495,13 +701,8 @@ GF_ = {s: groups(P_FP, s, ["h", "k"]) for s in POP_FP}
 v_fp = lambda s, lab: [GF_[s][lab]] if GF_[s][lab] is not None else []
 ffh = Fac("h", lambda s, Dm: mk(GF_[s]["h"], S5, Dm["h"]))
 ffk = Fac("k", lambda s, Dm: mk(GF_[s]["k"], S5, Dm["k"]))
-for v in VARS:
-    top, bot = doms(POP_FP, ["h", "k"], v_fp, [ffh, ffk], v)
-    at = {s: ffh.fn(s, top) and ffk.fn(s, top) for s in POP_FP}
-    ab = {s: ffh.fn(s, bot) and ffk.fn(s, bot) for s in POP_FP}
-    print("   [%-10s] TOP DOM h={%s} k={%s}; BOTTOM h={%s} k={%s}" % (v, dstr(top["h"]), dstr(top["k"]), dstr(bot["h"]),
-                                                                    dstr(bot["k"])))
-    cmp("      answers TOP vs BOTTOM [%s]" % v, POP_FP, at, ab, "top", "bottom")
+rfp = run_table("(h?: <5) & (k?: <5)", POP_FP, ["h", "k"], v_fp, [ffh, ffk], show=["a0", "b9"], tally=False)
+cmp("LFP vs GFP", POP_FP, rfp["LFP"][0], rfp["GFP"][0], "LFP", "GFP")
 
 # =================================================================================================================
 print("\nPART 3: RECORD VERSUS JOINT WITH DOLLAR (own-label `$a`; defaulted and marked), per domain")
@@ -558,9 +759,10 @@ for name, Sa, Tb, dflt, marked in RECS:
     for v in VARS:
         out = []
         for tag, pop, vals_ in (("E", POP_E, lambda s: PASSES[("E", s)]), ("L", POP_L, lambda s: PASSES[("L", s)])):
-            fac = Fac("ab", lambda s, Dm, vals_=vals_: rec_slot(vals_(s), Sa, Tb, dflt, marked, Dm["a"]))
+            fac = Fac("ab", lambda s, Dm, vals_=vals_: rec_slot(vals_(s), Sa, Tb, dflt, marked, Dm["a"]),
+                      marks="a" if marked else "")
             vv = lambda s, lab, vals_=vals_: [a for a, _ in vals_(s) if a is not None]
-            dom_ = doms(pop, ["a"], vv, [fac], v)[0]["a"]
+            dom_ = doms(pop, ["a"], vv, [fac], v)["a"]
             ra = {s: rec_slot(vals_(s), Sa, Tb, dflt, marked, dom_) for s in pop}
             ja = {s: joint_gf(vals_(s), Rset, dflt, marked, dom_) for s in pop}
             n = sum(ra[s] != ja[s] for s in pop)
