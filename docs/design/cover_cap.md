@@ -1,9 +1,11 @@
 # cover_cap.md — the `cover` route's exact stretch: read from the anchored machine, bounded by that machine's own state ceiling, no budget; at stage 2 the cover ROUTE gains one per-compile width limit ([COVER-CAP])
 
 Status: stage 1 BUILT (rev 4.1, lanes covs1/covs1f/covs1g, merge fff636eda, abi 108). Stage 2:
-PROPOSED, revision 5.2 (lane `covs2f`, 2026-11-15; rev 5.1 by lane `covs2e`, rev 5 by lane
-`covs2d`): the STAGE 2 ADDENDUM, §11, design only; the owner's build go covers both stages ("Go
-on all stages", 14:50). Rev 5's critic round r13 (`docs/dev/reviews/2026-11-15-r13-covs2d.md`)
+PROPOSED, revision 5.3 (lane `covs2e`, 2026-11-16: the kit's R-45 reply applied, corrections
+tagged `[R-45 reply]`; rev 5.2 by lane `covs2f`, 2026-11-15; rev 5.1 by lane `covs2e`, rev 5 by
+lane `covs2d`): the STAGE 2 ADDENDUM, §11, design only; the owner's build go covers both stages
+("Go on all stages", 14:50). The stage-2 build is under way on the combined branch
+(`lane/covs2b`; the kit's reply is filed as R-45 and answered, §11.6; see REVISION 5.3). Rev 5's critic round r13 (`docs/dev/reviews/2026-11-15-r13-covs2d.md`)
 and rev 5.1's readiness re-check r15 (`docs/dev/reviews/2026-11-15-r15-covs2e.md`, every unit
 READY WITH LISTED TEXT FIXES) are applied; the stage-2 build waits for the kit's reply to
 §11.5, filed as R-45 (§11.6).
@@ -14,6 +16,43 @@ Plan row: [COVER-CAP] (set S3). Owner criteria: D198. Reviews: round covcap-r2
 Compiler read: worktree at main `ac91d48bb` (no `src/`, `lib/`, `cli/` change since rev 3's
 `4ccd97ca7`). Every "today" number below carries its command;
 `$PC` is that worktree's `build/pcrec` and `SF() { $PC -p rx --features all --emit-facts --pattern "$1" | awk -F'\t' '$1=="byte"&&$2=="span_facts"{print $7}'; }`.
+
+**REVISION 5.3 (the kit's R-45 reply applied, lane covs2e, 2026-11-16; design only, text only).**
+One deliberate revision (docs/design/CLAUDE.md: a design note's own revision is its own change;
+the build is recorded first in the lane reports). Each correction is marked `[R-45 reply]` in
+place. Sources, in order: the kit's reply rev 6 (`memfn/docs/responses.md` on `lane/memfn-k1108`,
+"R-45 reply ... rev 6"; design of record `docs/design/memfn/r45_reply.md` rev 6, `lane/memfn-r45`
+@ 69acf5376, cited below as "the reply of record"); the rulings under R-45 in
+`memfn/docs/requests.md` (other-sites-at-32, cover-ask-storage, caller-storage, row-memory,
+night-order-edits: YES; the owner's forms now, keep-short-spans NO, near-miss-fix-later NO);
+`docs/dev/lanes/r45read_report.md` E1-E14 and `docs/dev/lanes/r45chk_report.md` P4 (E4 and E13
+replaced, E15 and E16 new). The by-id map (E1-E16 and what each became) is the rev 5.3
+section of `docs/dev/lanes/covs2e_report.md` (the lane name was reused: that file's second part is
+rev 5.1's report, kept verbatim). What changed in the plan:
+- The kit RAISED the seam: `MF_WSPAN_POS` 4095, `MF_WREACH` = `MF_MAX_FWD` = 4096 on EVERY window
+  span, a per-reply proof range (`proof_n`); `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` are RETIRED
+  (raise commit 9d4907a16); `MF_MAX_TERM` and `MF_WMAX_SPAN` stay 32 (decoupled);
+  `MF_SITE_ABI` 29 -> 30 and `MF_CLASS_V` 10 -> 11. Sentences of §3-§11.1 that cite the retired
+  names or the 32-position carrier are rev 5.2's compiler read (a dated record) and stay; where
+  one is now false it carries an inline `[R-45 reply]` note.
+- The forms (I, L, H(h)) land NOW, in the one joint landing, at every window span: the possible
+  movers are every window site whose stated span the kit renders, cover or not (E13); the night
+  gains the cards first and a rebuild at h\* (E1-E5, E15, E16).
+- pcrec's own side, as built on the combined branch (`docs/dev/lanes/covs2b_report.md`): pcrec
+  names its non-cover statement bounds itself, `PCREC_WSTMT_POS` 32 and `PCREC_WSTMT_REACH` 64
+  (`src/gen/memfn_sites.h`, asserted inside the kit's `MF_WSPAN_POS` / `MF_WREACH`), with a
+  `_Static_assert` per construction bound at its writer (`PCREC_MAX_REQ_RUN_SCAN` beside
+  `req_pres_spans`, `PCREC_PREFIX_K_MAX` beside `pf_window_of`); B5's short-range internal
+  error was RESTORED after the kit's loop had widened the range to `k + 1` instead of naming the
+  fault; `abi` 109 was taken ONCE on the combined branch (main and both kit branches were at
+  108); the sweep reads 0 movers at width 32 (two comparisons, the raise and the kit's whole
+  branch, over the full corpus).
+- OPEN, being worked by lane `covs2c` (no fix described here): review r27 READ-3. A legal
+  `--window-search-width=4095` on `[0-9a-f]{4095}` FAILS the compile on
+  `PCREC_MAX_VM_EMIT_CODE_BYTES` (rc 0 -> 1, recorded in the raise commit's own message), while
+  `docs/spec/limits.md` §3.12¶4 says a width whose artifact exceeds a size cap runs the engine
+  and "the compile does not fail" (its text names `PCREC_MAX_EMIT_BYTES`; the code-bytes cap is
+  the one that fails). Spec and behaviour disagree at that width until it is closed.
 
 **REVISION 5.2 (review r15 applied, lane covs2f; design only, text only).** Every FIX-NOW of
 the readiness re-check r15 (`docs/dev/reviews/2026-11-15-r15-covs2e.md`, DISPOSITIONS RULED)
@@ -422,7 +461,9 @@ It is a later row after this one.
   missing C15 is the named internal error, not an overrun of `mf_wspan.set[32..]`. Named
   build item (READY-3): the `MkEnd` fill from the record copies only for
   `k <= MF_MAX_SPAN_POS`, else the same named internal error, so plant (d) and
-  `a{40}(?:b|cc)` (k = 41) never write past `MkEnd.set`.
+  `a{40}(?:b|cc)` (k = 41) never write past `MkEnd.set`. *(`[R-45 reply]` `MF_MAX_SPAN_POS` is
+  retired by the kit's raise, and A1 already removed the copy: `MkEnd.set` points at the cover
+  record's sets, never a copy.)*
   Cover movers: `k` 25..32, and the 18 k = 1 compiles (§2).
 - **Stage 2 (after the kit's answer to §11.5; rev 5 replaces rev 4's bullet).** A counted
   seam up to 4095 positions (the state ceiling, §3.1). C15 is RE-READ, not retired: it
@@ -781,7 +822,10 @@ from libpcre2 in 66,243,390 cells, `docs/dev/lanes/z2build_report.md`), which re
    a width only for character-class runs keeps them, but it is a special rule keyed on what
    the positions contain. Leaning: first ask the kit to render class runs so a near miss does
    not re-test the whole run (its reply to §11.5 ASK (3) is the general fix); your class-run
-   width if that does not close the loss.
+   width if that does not close the loss. *(`[R-45 reply]` FALSE as written: the kit's reply says
+   "Dense near miss is O(n*k) ... No fix in the first build. The forms are not a near-miss fix
+   (every form restarts one byte later)"; the owner ruled near-miss-fix-later = NO until a timed
+   card shows it. There is no kit rendering to ask first; see §11.2 EMITTED-2.)*
 9. **FYI, a ruling of the manager's (2026-11-15):** the per-artifact option you asked for is
    added NOW with stage 2, not at the interface push (§11.2.1). Say if it should wait. (Told to
    the owner; recorded in D198 addendum 1: "the per-compile option is added with stage 2, not at
@@ -825,7 +869,9 @@ tar -x -C $PCREC_TMPDIR/scratch/covs2e/main`, then `nice make -j2 build/pcrec` t
 PREMISE (held). The seam stops at 32 today: C15 `cc_fits` (`src/gen/known.c:332-337`) admits
 `k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD`, and `memfn/include/memfn.h` has
 `MF_WSPAN_POS` = `MF_MAX_SPAN_POS` = `MF_MAX_TERM` = 32 (`:653`, `:302`, `:277`), `MF_WREACH` 64
-(`:667`), `MF_MAX_FWD` 33 (`:315`) (T2). `a{32}` is `cover`, `a{33}` declines `statement-fits` at
+(`:667`), `MF_MAX_FWD` 33 (`:315`) (T2). *(`[R-45 reply]` rev 5.2's read of main, kept as the
+record. After the kit's raise: `MF_WSPAN_POS` 4095, `MF_WREACH` = `MF_MAX_FWD` 4096,
+`MF_MAX_TERM` 32 decoupled, `MF_MAX_SPAN_POS` retired.)* `a{32}` is `cover`, `a{33}` declines `statement-fits` at
 `k` 33, `a{4095}` declines `statement-fits` at 4095, `a{4096}` reads `anchored-A` (T3). No
 `limits.def` row bounds the cover ROUTE's width; the record's stretch is bounded by
 `PCREC_ANCHORED_MAX_STATES` (`src/core/limits.def:186`, its `desc` says so since stage 1) (rev 5.1,
@@ -905,6 +951,13 @@ F31: rev 5's grep `grep -n COVER src/core/limits.def` was too narrow for its sen
     on `memfn.h`'s `MF_WSPAN_POS MF_MAX_SPAN_POS` derivation and `emit_dfa.c:1446`'s assertion
     at `:54`, `SAB_EXPECT=BUILD-REFUSED`: it moves under EITHER answer to §11.5 ASK (2), coupled
     and raised (the `32` anchor moves) or decoupled (the REACH and the refusal go); B6).
+    *(`[R-45 reply]` ANSWERED: decoupled, `MF_MAX_TERM` 32 and `MF_WMAX_SPAN` 32 stay, and
+    S526 "STAYS on `MF_MAX_TERM`". It returns to its pre-k382mech shape: plant `MF_MAX_TERM`
+    32 -> 31, `SAB_FILE2` removes `emit_vm.c`'s stride assert, `SAB_EXPECT` DETECTED by C14's
+    stride clause in `memfnforms`; its REACH greps `#define MF_MAX_TERM 32`, the stride assert
+    and C14's stride clause. The refusal through `emit_dfa.c:1446` and the REACH on
+    `MF_WSPAN_POS MF_MAX_SPAN_POS` are gone (reply of record §2). Built by the kit's raise
+    commit 9d4907a16.)*
   - pcrec's OWN kit-bound pins under `tests/memfn/` (rev 5.2 FIND-4; the widened grep finds
     them): `proof_meta.h:13` `#define PM_NPROOF 41` with `proof_check.c:48-49`'s
     `_Static_assert(PM_NPROOF == MF_MAX_FWD - MF_PROOF_LO, ...)`, `:404` (`MF_MAX_FWD - 1`),
@@ -972,7 +1025,15 @@ F31: rev 5's grep `grep -n COVER src/core/limits.def` was too narrow for its sen
     EVERY position writer (`wpos_table` with its `table_ref[j]`, `wpos_bits`, `wpos_any`,
     `wpos_cube`; `memfn_sites.c:557-580`; rev 5.2 FIND-10) checks `j` against the span's length
     before the write (a named internal error), so a long statement can never truncate or overrun
-    silently; `table_ref` is sized by the kit's carrier like `set`.
+    silently; `table_ref` is sized by the kit's carrier like `set`. *(`[R-45 reply]` FALSE: the
+    reply moves both out of the kit's struct. `mf_wspan`'s `set` and `table_ref` become
+    host-owned pointers of `len` entries each, "storage the WRITER owns"; pcrec's
+    `pcrec_memfn_wspan` gains the `Ctx` and allocates them from `cx->arena`, and the
+    `pcrec_memfn_wpos_*` writers store through the writer's own non-const pointer (reply of
+    record §5 (e)). "The width type holds 4095" stands: `len` is `uint16_t`. The per-position
+    `j` check against `len` still applies; as built, `pcrec_memfn_wspan` allocates and refuses a
+    length first, and the four `wpos_*` writers' per-position check is the combined branch's
+    remaining item, lane covs2c.)*
   - B2. The seam assertion (F3, F18): ONE `_Static_assert` (never `#if`: the ceiling is an
     `enum` at the default, `limits.h:723`, and evaluates to 0 in `#if`), beside `cc_fits` in
     `known.c`: `PCREC_ANCHORED_MAX_STATES - 1 <=` the kit's declared positions per span,
@@ -993,7 +1054,18 @@ F31: rev 5's grep `grep -n COVER src/core/limits.def` was too narrow for its sen
     `pcrec_memfn_part_window_stated` (`:618`); the check reads its bounds by name and takes no
     site kind, so if the kit raises `MF_WSPAN_POS`/`MF_WREACH` themselves, every non-cover
     site's bound would silently become 4095/4096 unless B4 threads the site kind in (rev 5.2
-    FIND-11). B4 is written from the kit's per-bound answer.
+    FIND-11). B4 is written from the kit's per-bound answer. *(`[R-45 reply]` The answer: the three
+    bounds are declared for EVERY window span, not only a cover's ("YES on EVERY window span":
+    `MF_WSPAN_POS` 4095, `MF_WREACH` = `MF_MAX_FWD` = 4096), so the kit gives NO names for a
+    32-position / 64-reach bound and B4 as written above has no input. The ruled answer
+    (other-sites-at-32, YES): pcrec asserts its own construction bounds at its own writers, one
+    `_Static_assert` per bound, "not a site kind in `window_bounds_check`" (which stays without
+    one). As built: `PCREC_WSTMT_POS` 32 and `PCREC_WSTMT_REACH` 64, pcrec's own names for the
+    non-cover statement bounds, in `src/gen/memfn_sites.h`, asserted inside `MF_WSPAN_POS` /
+    `MF_WREACH`; `PCREC_MAX_REQ_RUN_SCAN` asserted beside `req_pres_spans` and
+    `PCREC_PREFIX_K_MAX` beside `pf_window_of`. The reply notes the reach-64 bound has no pcrec
+    construction bound of its own and "naming a pcrec bound for reach 64 is main's"; the name is
+    `PCREC_WSTMT_REACH`.)*
   - B5. `pcrec_cover_proof_diff` compares the reply's WHOLE counted range (F1): for every
     offset `d` in it, `want` is `S_d` for `0 <= d < k`, the stated context at -1 and `k`, and
     ALL ONES everywhere else, every `d > k` included. The reply's range must reach `k + 1`
@@ -1014,20 +1086,53 @@ F31: rev 5's grep `grep -n COVER src/core/limits.def` was too narrow for its sen
     (`>=` ceiling), the error is unreachable and B2's assertion is its control; if the range is
     a per-reply count, the error gets a kit-tree plant on the combined branch (a reply range
     cut below `k + 1`), filed with §11.6.3's rows. Which one is the kit's reply to §11.5 ASK (1).
+    *(`[R-45 reply]` ANSWERED: "The proof range is a per-reply count under a build-time ceiling"
+    (`proof_n`, range `[LO, end)`, `end = max(last stated position + 2, last tested offset +
+    1)`). B5 compares `[MF_PROOF_LO, MF_PROOF_LO + proof_n)` with all ones outside it and past
+    `k`; the short-range error stays as pcrec's defence and is unreachable while the kit keeps
+    its rule, so it needs a plant, and ONE plant cannot do both jobs: the kit's own self-check
+    (R-short) fires first and B5 is then never reached. Its control is TWO rows. (a) a kit row
+    (plant `end` cut to `last_s + 1`, expect R-short by its message through `mf_define`); (b) a
+    pcrec mech row, after B5: the same cut AND R-short removed (`SAB_FILE2` deletes that one
+    check by its message text), expecting B5's named error by its text, on an after-UNSTATED
+    cover, `[0-9a-f]{32}` with nothing after it (on an after-stated cover the cut end is `k + 1`
+    and the row would read UNDETECTED); its `SAB_REACH` asserts the cover at the default width
+    and the unstated after side. As built: B5 restored the error, which the kit's loop had
+    silently widened to `k + 1`; row (b) is the combined branch's remaining item, lane
+    covs2c.)*
   - B6. The `MF_MAX_TERM` and `MF_WMAX_SPAN` readers, the by-value and arena `mf_class`
     holders, `tests/memfn`'s kit-bound pins (`PM_NPROOF` and its assertion, C14's header parse
     in `form_checks.py`, `d27_frame.c`, `arm_fixtures.c`) and mech row S526, as the kit's reply
     decides (coupled or not; inline or not; the carrier and its abi event, §11.5 ASK (5)).
+    *(`[R-45 reply]` DECIDED: decoupled, not inline. `MF_MAX_TERM` 32 and `MF_WMAX_SPAN` 32
+    stay, so the three `MF_MAX_TERM` readers do not move and `form_checks.py` needs no change
+    (it parses a literal `#define MF_MAX_TERM 32`); `PM_NPROOF` and its assertion are retired
+    (the proof range is counted, `proof_n`); the arrays leave the seam structs (`mf_wspan` 1,164
+    -> 32 B, `mf_class` 2,932 -> 1,640 B, `mf_wreply` 532 -> 136 B) for caller storage sized by
+    `mf_rows_need`; S526 per its entry above. The carrier IS an event: `MF_SITE_ABI` 29 -> 30
+    carrying `MF_CLASS_V` 10 -> 11, inside the one joint pcrec `abi` event.)*
   - B7. Every check past 32: the `n >= 33` kitproof rows (the end-at-`k` rows included), the
     `test-axes` arm, the compile-cost record, the proof-range sabotage rows (§11.6.3).
   - Unchanged: the other window sites state what they state today; the sweep proves them
-    identical.
+    identical. *(`[R-45 reply]` FALSE for the joint landing under plan A: the forms render at
+    EVERY window span ("the forms do not ask what kind of site a span belongs to"), so a
+    non-cover window site is a POSSIBLE mover when its text can change at h\* < 32; what the
+    sweep proves identical is every site OUTSIDE the prediction of "The prediction" below. The
+    statements themselves are unchanged: pcrec still states at most 32 positions and reach 64
+    at its non-cover sites, by its own bounds (B4).)*
 - **abi events.** ONE pcrec `abi` event (108 -> next) at the JOINT landing (§11.6.1): the kit's
   bytes move with it (D146/D147) and the identity gate re-pins (§4.4, D94's grep of every
   reader of the current number). Whether the kit's carrier change is an `MF_SITE_ABI` /
-  `MF_CLASS_V` event is the kit's to say, and §11.5 ASK (5) asks it (rev 5.2 FIND-12). The plan of record lands ONCE with the measured default (§11.6.1, F16); only
+  `MF_CLASS_V` event is the kit's to say, and §11.5 ASK (5) asks it (rev 5.2 FIND-12).
+  *(`[R-45 reply]` ANSWERED: yes, `MF_SITE_ABI` 29 -> 30 carrying `MF_CLASS_V` 10 -> 11, inside
+  the ONE joint pcrec `abi` event; "No reader pins 29 outside `memfn.h`". As built, pcrec `abi`
+  109 was taken once on the combined branch, readers found by grep of the number, the identity
+  gate self-pinned; the manager re-pins to the landing merge.)* The plan of record lands ONCE with the measured default (§11.6.1, F16); only
   the fallback (land at 32, then move the default) costs a second `abi` event (its corpus
-  movers move the identity gate's (B) pins). The per-compile option adds no emitted scaffolding
+  movers move the identity gate's (B) pins). *(`[R-45 reply]` Incomplete: the forms' fallback
+  is a second event too. "Under plan A's fallback (forms built but off) and under plan B, no
+  kit byte moves at today's widths; switching the forms on later is a second pcrec abi event".
+  The head lever and the option row's force read add no layout and ride in the same commits.)* The per-compile option adds no emitted scaffolding
   (§11.2.1) and is not an `abi` event of its own.
 - **Answer identity.** The checks of §5.1, run at the stage-2 build, plus:
   - the kitproof `answer` rows at `n >= 33` that stage 1 deferred (§5.3), on the `W` arm (the
@@ -1079,7 +1184,32 @@ F31: rev 5's grep `grep -n COVER src/core/limits.def` was too narrow for its sen
   candidate's `why`; LOST or UNEXPLAINED is red (`predict.py` as at stage 1, A6). At default 32
   the INTO set is empty by construction (stage 1 admits every `k <= 32`), so the prediction is
   "no artifact moves", and any move is red. Non-cover window sites: no predicted move; any
-  move is red. PER SWEEP VARIANT (rev 5.2 FIND-1/FIND-10): `scripts/emit_sweep.py`'s `lowsize`
+  move is red. *(`[R-45 reply]` The last two sentences are FALSE for the joint landing (plan A,
+  forms now): the kit's reply replaces them with its POSSIBLE-MOVER predicate, "main's edit,
+  r45read E13". A site is a possible mover at h\* iff one of its alternatives has a run of two
+  or more CONSECUTIVE stated offsets `o .. o + n - 1` whose positions carry one byte-identical
+  set under either meet (over every span, and over the verify-YES spans only), that set has two
+  or more members, and the run's LAST offset is at or past h\*; span boundaries do not end a
+  run (a cover's after side at offset `k`, and its before side at -1, joins the `0 .. k - 1`
+  run when its set is the same). The unit is every window alternative, the site's own and each
+  pre-check part's. Covers, pre-check runs and reseed or prefix alternatives are all in the
+  population. Witness: `\w{32}\B` (`RX_DFA_SCAN "cover"`, its after side continues `\w` to
+  offset 32), a possible mover at every h\* <= 32. At width 32: h\* = 64 (the predicted tie)
+  moves NO site, the prediction is empty and any move is red as before; h\* = 32 moves only that
+  cover kin; h\* <= 24 moves every alternative with a run reaching h\*. The prediction is a
+  superset: red is a moved site OUTSIDE it; a predicted site that does not move is listed,
+  never red. The input is a NEW pcrec trace record, working name `MFWSTMT`, one line per stated
+  span (site id and kind, `site` or `part <i>`, alternative index, entry and reseed, span
+  index, `start`, `len`, verify, `core_lo`, `core_len`, and the span's sets as 64 hex digits
+  each), written beside `MFPRES` in the same trace build from the `mf_site` pcrec defines, never
+  from a kit reply (it is not emitted text: no `abi` event); the predictor reads it instead of
+  the `--emit-facts` `cover` section alone, over a trace-build pass of the sweep's corpus. The
+  same predicate, on the rebuilt binary, predicts the covers a raised width default adds:
+  they are width events, and each renders in H(h\*) from its first appearance (E16), so the
+  width night's prediction for such a cover expects H(h\*) text, not the all-inline text. The
+  uuid shapes (`k` = 36) are NOT form movers: they take no cover today, so they gain one only
+  if the default reaches 36, a width event. As built, `MFWSTMT` and the predictor change are
+  the combined branch's remaining items (lane covs2c, lane covs2d).)* PER SWEEP VARIANT (rev 5.2 FIND-1/FIND-10): `scripts/emit_sweep.py`'s `lowsize`
   and `lowboth` variants build both sides with `-DPCREC_MAX_EMIT_BYTES=60000` (`:662-666`); at
   ~151 C bytes per position a class cover past about 300 positions exceeds that cap and meets
   the size-cap ladder (linear from the two measured points above, 17,710 B at 24 and 18,918 B at
@@ -1250,7 +1380,15 @@ the edges review r15 names.
   one-pass rule (memory `pcrec-one-pass-loss-chasing`), then the kit, whose reply to §11.5 ASK
   (3) is the general form of the fix (a near miss need not re-test the whole run; the kit
   holds the fact, ideas log 2026-11-15), then §9 Q8. Leaning: the kit's rendering first; the
-  owner's class-run width if that does not close the loss.
+  owner's class-run width if that does not close the loss. *(`[R-45 reply]` The "kit" step does
+  not exist yet, and "ASK (3)" is the wrong ask (the near-miss reading is ASK (4)). The reply:
+  "Dense near miss is O(n*k) (16.5 tests/byte at k=32). No fix in the first build. The forms are
+  not a near-miss fix (every form restarts one byte later)"; "the forms change the constant per
+  test, never the O(n*k) count, and no form answers EMITTED-2's 'kit' step. Until the skip's
+  trigger fires and the skip is built, that order has no kit step to run." Ruled: near-miss-fix-
+  later = NO fix in the first build until a timed card shows it (the trigger: §11.4's
+  near-miss cells, or the kit's near-miss column). The order that runs on the night is the
+  one-pass rule, then §9 Q8.)*
 
 ### 11.3 Long-span rendering is the kit's (the owner's direction, quoted)
 
@@ -1276,12 +1414,23 @@ carries `limits.def` selection knees as cells and states that a dial cell may se
 cannot spell (§1¶9); its λ "kit" row is the class-matcher kit (`clskit`), not the memfn search
 kit. So: the width limit is a candidate §5.4 knee row once §11.4 measures a rate (§11.7 unlock
 1); the owner's "speed dial option ... always inline" is a dial cell when the kit's cards show
-inline faster (unlock 2), not a `--memfn=` value.
+inline faster (unlock 2), not a `--memfn=` value. *(`[R-45 reply]` Amended: the DIAL cell stays
+exactly that, filled only when the kit's cards show inline faster. But the forms land with a
+public pair row of their own, `--memfn=span-loop` / `no-span-loop` ("Option span-loop (pair;
+deny wins; the deny is the G1 arm, not the dial)"; the memfn registry floor 13 -> 14): the deny
+forces I, today's text, and "exists whatever the cards show", for pcrec's G1 timing and the
+identity gates. So "always inline" as a SPELLING is now the deny; "always inline" as the
+owner's dial option is still a cell, not that value. Also a test-only lever `span-head=N`
+on `build/pcrec-harness`.)*
 
-### 11.4 The timing plan: stage-1 owed + stage 2, one night
+### 11.4 The timing plan: stage-1 owed + stage 2, one night, or two *(`[R-45 reply]`)*
 
 ONE night window, cleared with the owner, outside 20:00-01:00, at the box's quietest, on the
-COMBINED branch before the joint landing (the plan of record, §11.6.1).
+COMBINED branch before the joint landing (the plan of record, §11.6.1). *(`[R-45 reply]`
+Amended: "one night, or two if the kit's cards and the width cells do not fit one window". The
+kit's reply adds about 440 arm-cells of at least 5 launches each; "the added regimes make two
+nights more likely, not certain" (UNMEASURED wall time). Clear the window(s) with the owner,
+overnight preferred.)*
 - **A. Stage 1 (owed), as a BUNDLE:** main before stage 1 (91bae2d98) against main with it
   (95 commits, abi 107 -> 108; MEASURE-6), its movers (`lit-l31`, `hex32`, `dig-exact-32`,
   `hex32-id`, both encodings), as §7. The A/A non-mover cell is timed on the same two
@@ -1303,12 +1452,23 @@ COMBINED branch before the joint landing (the plan of record, §11.6.1).
   forward DFA and removes the kit's span site (review r13 MEASURE-5 on `lit-l31`: 21,993 vs
   32,965 C bytes). That is the intended A/B (the route as a whole); the axes are named so no
   win is explained by one of them alone (memory `pcrec-speed-compare-apples-to-apples`).
+  *(`[R-45 reply]` B's binary is NOT the frozen combined-branch build: the width cells "run on
+  the binary REBUILT with h\* compiled in, after the identity check passes" and on the build
+  at which the cards' pick is frozen; B runs through `build/pcrec` with no harness option and
+  its procedure is otherwise unchanged. `[0-9a-f]{64}` is also a card cell (the kit's C2). A
+  cover the width night adds is predicted by the same predicate and expects H(h\*) text, §11.1
+  "The prediction" (E16).)*
 - **Regimes, each cell in each:** hit-dense; DENSE NEAR-MISS (review r9 EMITTED-2's
   witnesses: `dig-exact-32` on 31 digits + a letter, repeated; `hex32` on digit runs; for the
   other cells, the same shape: the pattern's `k - 1` positions then a miss); NOT-WARM (the
   matcher not in L1/L2, method the bench dev's, D198 (f)); miss-heavy throughput;
   `short-subject-search`. A/A controls: `lit-l16` and one non-mover engine cell, in every
-  regime. A cell missing any regime is VOID for the rule (never "not slower").
+  regime. A cell missing any regime is VOID for the rule (never "not slower"). *(`[R-45 reply]`
+  The kit's cards time the same five regimes by the same methods (the bench dev's NOT-WARM
+  method, D198 (f), and the bench's `short-subject-search` subject), plus uniform random bytes
+  for the cards' own C1 cell: one sentence, so the two lists stay one list. The kit's head
+  rule reads the worst cell over EVERY regime, so a loss in any regime moves h, never the width
+  default.)*
 - **Size beside each timing:** emitted C bytes and `gcc -O2` `.text` per cell, both routes.
 - **The procedure (F20).** Unit: the bench's wall-clock time metric, which the rule reads;
   instructions:u (EMITTED-2's unit: 230.7 M engine vs 1,534.8 M cover) are reported beside,
@@ -1324,6 +1484,17 @@ COMBINED branch before the joint landing (the plan of record, §11.6.1).
   (memory `pcrec-ask-bench-dev`).
 - **The three rendering forms** (§11.3): the kit's cards, on the kit's harness; not part of
   this night unless the kit asks for a slot (they are kit timing, the kit's window request).
+  *(`[R-45 reply]` Replaced, the forms land NOW (the owner's ruling): the kit's form cards run
+  FIRST in the same window, on the kit's harness and the frozen combined-branch binary with h
+  set through the head lever; gate B's cells are not-before their verdict; B's cells run on the
+  binary rebuilt with h\* compiled in, after the kit's identity check passes (identity check
+  population: every predicted mover at h\*, cover or not, plus every card pattern and every
+  census cover; at h\* = 64 the prediction is empty). The cards' pick is made by the kit's rule
+  committed BEFORE the run (largest head within the A/A floor of the best worst cell, the
+  dominance-cycle clause ruled); a cell void twice sets h\* = 64, "CHOSEN", the read pick only
+  recorded. Where a regime's method cannot run on the kit's harness, the bench compiles those
+  cells through the test-only lever, a bench-only question relayed to the bench dev. The cards'
+  timing is therefore a precondition of the landing, not kit-side extra.)*
 - **Outcome table (declared, FIRST MATCH; F19).** The interim default, wherever a row says
   "owner's call", is 32: route-identical to landed main, which the owner accepted as "land,
   then time".
@@ -1334,7 +1505,7 @@ COMBINED branch before the joint landing (the plan of record, §11.6.1).
   | 2 | a cell's candidate artifact does not take the cover at the measuring setting | the cell leaves the rule, listed with its `why` (before any re-run: its timing can never count) |
   | 3 | a counted cell is missing a regime, or is VOID (bimodal) for the FIRST time | that cell is re-run once; the rule waits for the re-run only |
   | 4 | no counted cell is slower in any regime (a cell void twice reads SLOWER, procedure) | default = the rule's value (the longest counted width) |
-  | 5 | some counted cell is slower (void twice included), and the rule's set is not empty | default = the rule's value (it excludes the slower widths); size reported beside each slower cell; if a slower cell is a stage-1 class cover slower in near-miss: also §11.2's EMITTED-2 order (one-pass, kit, then §9 Q8); stage 1 stays landed meanwhile (owner: "land, then time") |
+  | 5 | some counted cell is slower (void twice included), and the rule's set is not empty | default = the rule's value (it excludes the slower widths); size reported beside each slower cell; if a slower cell is a stage-1 class cover slower in near-miss: also §11.2's EMITTED-2 order (one-pass, kit, then §9 Q8; `[R-45 reply]` no kit step exists, see §11.2); stage 1 stays landed meanwhile (owner: "land, then time") |
   | 6 | the rule's set is empty (a 24-wide cell is slower) | owner's call; interim default 32; stage 1 stays landed; §11.2's EMITTED-2 order runs |
 
   (Rev 5.2 FIND-7: rev 5.1's row 2 sent a cell void twice back to "re-run, the rule waits",
@@ -1375,11 +1546,19 @@ R-45; the kit replies with its form.
 (2) In parallel: the kit builds its branch; pcrec builds the A items (§11.1) on its lane branch,
 route-identical to main at the default 32. (3) The COMBINED branch (pcrec's branch with the
 kit's merged in; the manager names it): the B items, then every check past 32. (4) Code round
-on both. (5) §11.4's night on the combined branch. (6) The default set by §11.2's rule: one
+on both. *(`[R-45 reply]` (4a) the kit's form cards on the combined branch, h frozen by the
+kit's rule; (4b) h\* compiled in (one kit constant; any byte it moves, at h\* < 32, rides the
+joint landing's one pcrec `abi` event), then the kit's identity check passes. Two steps, not
+one: the kit's rev 4 named only the first. The width night (5) times (4b)'s binary, which code
+round (4) did not see; whether (4b) takes a review of its own is the manager's call (left
+open in the kit's reply). Before (4b), pcrec's `MFWSTMT` record and the predictor's change
+(§11.1 "The prediction") are in, and the predicted-mover list at h\* goes to the kit's identity
+check.)* (5) §11.4's night on the combined branch. (6) The default set by §11.2's rule: one
 `limits.def` value, its `desc`'s derivation (UNMEASURED label replaced), `limits.md` section 3.12 (new)'s
 number, the movers' re-pins. (7) Joint landing: ONE `abi` event, with the measured default.
 FALLBACK (a manager choice, if the night cannot run before (4) clears): land at 32 UNMEASURED,
-time on landed main, and move the default in a second `abi` event. No generated witness needs
+time on landed main, and move the default in a second `abi` event *(`[R-45 reply]` "and the
+forms land OFF (all-inline), switched on in a later abi event")*. No generated witness needs
 re-pointing when the default moves within the rule's admissible widths (24..500), drilled per
 row KIND (rev 5.2 FIND-2): `verdict` rows by `@D`/`@D1`/`@LD`/`@LD1`/`width=N`; the `facts`
 `width-limit` witness and S3220's REACH by a pattern past every admissible default
@@ -1438,7 +1617,7 @@ pins move in any case.
   twins), answer + the `n >= 33` rows on `W` (the end-at-`k` rows included) plus the two
   proof-range witnesses of §11.6.3 (the build counts and states each new floor as old + added).
 
-#### 11.6.3 Sabotage rows (ids at build time): 4 new, 1 re-aimed (F8, F9, F1)
+#### 11.6.3 Sabotage rows (ids at build time): 4 new, 1 re-aimed (F8, F9, F1); `[R-45 reply]` plus row (b), S526 re-aimed (below)
 
 | plant | waits for | unique witness | control / why only it flips |
 |---|---|---|---|
@@ -1453,13 +1632,34 @@ pattern moved (§11.2, §11.6.2); S1131, S1148, S1144, S1135 re-anchored where A
 anchor text, S3223 where A4 moves `cc_fits`' return line (§11.1); S526 re-aimed per the kit's
 answer to §11.5 ASK (2) (B6; rev 5.2 FIND-4). Kit-side rows are the kit's.
 
+`[R-45 reply]` Additions and answers. (i) PCREC ROW (b), the short-range control: one more new
+row, after B5, on `[0-9a-f]{32}` with nothing after it (a cover at the default width, after side
+unstated): plant `end` cut to `last_s + 1` AND remove the kit's R-short by its message
+(`SAB_FILE2`), `SAB_EXPECT` B5's named internal error by its text, `SAB_REACH` asserting the
+cover and the unstated after side. The row of P3/P4 above is a different plant (the opposite
+error); the single "kit-tree plant" those rows allow is the kit's row (a) of the same control.
+(ii) S526 is re-aimed per the kit's answer: decoupled, back to its pre-k382mech shape
+(§11.1 B6), expected DETECTED by C14's stride clause. (iii) The seam-assertion row's control is
+the §11.6.3 reference compile in `run_anchored_match.sh` §4c, checked by message; a kit-side
+`MF_WSPAN_POS` 4095 -> 4094 plant, if wanted, is a new row after it with a REACH on the
+assertion's text, not S526. (iv) Re-anchored by the kit's carrier change (each gets
+`REACH_ONLY=1`): S1224 and its twin `tests/memfn/run_proof.sh` (onto the kit's writable row
+pointer), S1083 (the `proven_prev` memcpy line), S3097 (embeds an `mf_wdecide` call), S1148,
+S1018 and S3086 (the kit's own re-anchors); REACH re-read for S1221, S3045 and S3064. (v) Two
+witnesses added on the combined branch: S3261/S3262, BUILD-REFUSED, one per construction bound
+(`PCREC_MAX_REQ_RUN_SCAN` 32 -> 33, `PCREC_PREFIX_K_MAX` 24 -> 33), each failing `emit_dfa.c` on
+exactly its own assertion; S3260, the default's fallback in `cover_width_limit`, on
+`[0-9a-f]{@D1}`. (vi) The identity check's population, and the sweep's prediction, are
+§11.1's; they are controls of the forms, not of the width.
+
 #### 11.6.4 NOT in stage 2
 
 The hull and N (§3.4); the fraction case ([EARNED-SKIP]/[MATCH-KNOWN], PARKED); raising
 `PCREC_ANCHORED_MAX_STATES`; any rendering form designed by pcrec; the kit's three-form cards'
-timing (kit-side); a dial cell for the width (unlock 1, on its trigger); a `.rxt` line for the
+timing (kit-side; `[R-45 reply]` struck: it is a precondition of the landing, §11.4); a dial cell for the width (unlock 1, on its trigger); a `.rxt` line for the
 option. NOT pre-declined (F25): a class-only width, which is §9 Q8, asked only if §11.4's
-near-miss cells lose (leaning: the kit's rendering first). Moved IN since rev 5 (F21): the
+near-miss cells lose (leaning: the kit's rendering first; `[R-45 reply]` withdrawn: the kit's
+rendering is not a near-miss fix and the first build carries none, §11.2). Moved IN since rev 5 (F21): the
 per-compile option and its `pcrec_options` field (§11.2.1).
 
 ### 11.7 The standing questions (stage 2)
@@ -1495,7 +1695,9 @@ per-compile option and its `pcrec_options` field (§11.2.1).
    and its dial home is [OPT-DIAL]'s exchange-rate cells (`tuning.md` §5.4; unlock 1). Its
    WIDTH SIBLINGS, which share its artifacts: `PCREC_MAX_REQ_RUN_SCAN` (32; the required run read
    beside the cover by `req_run_in_cover`, `emit_dfa.c:16278`, and pinned against the kit's span
-   bound by `emit_dfa.c:1446`'s `_Static_assert`) and `PCREC_PREFIX_K_MAX` (24, the hull's reach,
+   bound by `emit_dfa.c:1446`'s `_Static_assert`; `[R-45 reply]` at `MF_WSPAN_POS` 4095 that
+   pin is non-binding (32 <= 4095) and loses its witness: pcrec's own `PCREC_WSTMT_POS` bound
+   now binds it, asserted beside `req_pres_spans`) and `PCREC_PREFIX_K_MAX` (24, the hull's reach,
    §3.4). PLAN for main: none on [SIZE-KNEE]; the sibling note goes on [COVER-CAP]'s row if main
    wants it recorded. General form: "how far a proven span stands in for the engine, per
    artifact", one dial row whose cells are measured exchange rates; the whole-or-nothing cover is

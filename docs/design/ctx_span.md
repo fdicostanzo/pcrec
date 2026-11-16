@@ -260,7 +260,7 @@ typedef struct {
   rule (§3.6), and `form` is a property of one item. A whole artifact's context is exact iff
   every item is.
 - **The bounds are the producer's own** `[r4 B10]`. Revision 1 sized the record by the
-  kit's carrier constants (`MF_MAX_BACK`, `MF_MAX_AHEAD`, `MF_MAX_CTX`). That contradicted
+  kit's carrier constants (`MF_MAX_BACK`, `MF_MAX_AHEAD`, `MF_MAX_CTX`) *(covs2e: `MF_MAX_AHEAD` is retired by the R-45 raise 9d4907a16 (held for the joint landing; `MF_WSPAN_POS` 4095, `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` RETIRED, `MF_MAX_TERM` 32 decoupled); this is a record of rev 1's mistake and the argument stands)*. That contradicted
   its own rule that "the producer states what the item gives and the carrier truncates".
   The walk's bound is `PCREC_PREFIX_K_MAX`. `PCREC_CTX_ITEM_TERMS`, the widest item, is
   DERIVED from it: an item's offsets lie within `PCREC_PREFIX_K_MAX` of the span edge on its
@@ -1426,11 +1426,11 @@ the step's lane report.
 - **F-5 (add. 1's measure):** the "38 `A_EOL` references under `src/opt/`" are case labels
   that survive the fold (§4.4 D).
 - **N-1 (new): the walk's bound is below the carrier's.** *(Superseded by cover_cap.md rev 4, 2026-11-15: the slice and its bound are deleted; the cover's stretch is the anchored machine's, bounded by its state ceiling.)* `PCREC_PREFIX_K_MAX` is 24, while
-  kit_proof's `MkLang` and `MF_MAX_SPAN_POS` assume 32. With the slice as the extended k-set *(superseded by cover_cap.md rev 4, 2026-11-15)*
+  kit_proof's `MkLang` and `MF_MAX_SPAN_POS` *(retired, covs2e: the R-45 raise 9d4907a16 (held for the joint landing; `MF_WSPAN_POS` 4095, `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` RETIRED, `MF_MAX_TERM` 32 decoupled))* assume 32. With the slice as the extended k-set *(superseded by cover_cap.md rev 4, 2026-11-15)*
   walk, a whole-cover body with `k` > 24 can state `exact_len` at most 24, and declines C8.
   kvcensus's `whole` column counts such bodies at 1 bench / 2 corpus native and 1 / 1 utf8.
   That is an upper bound, since conj.py's admitted subset is not split by `k`. Either the
-  walk's limit is raised to a value derived from `MF_MAX_SPAN_POS` (a compile-budget
+  walk's limit is raised to a value derived from `MF_MAX_SPAN_POS` *(retired, covs2e; moot since the slice is deleted)* (a compile-budget
   re-measure, D90) or the four decline. That is the build's choice, with the count re-taken
   on the admitted set.
 - **N-2 (new): the derived sabotage population is larger than any hand list** (§4.5.4). There

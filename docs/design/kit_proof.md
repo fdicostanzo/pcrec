@@ -703,7 +703,7 @@ utf8.
 | fact | carrier | values (UNSTATED zero, refused where read) | Z1 (today's truth) | a `cover` site (B1) |
 |---|---|---|---|---|
 | `prefix_stated` | `mf_pred` of a BOUNDED span 0 | `MF_PREFIX_UNSTATED` 0 (refused on a FIND site's BOUNDED span 0), `MF_PREFIX_STATED`. On any other predicate (MLINE's CONTEXT stop, a `ctx[]` entry, a `pspans` entry) it is a wildcard and must be 0 (refused otherwise) | STATED on every BOUNDED span 0 | STATED |
-| `exact_len` | the same | read only when STATED: `0..MF_MAX_SPAN_POS`. The largest `L` such that span-0 positions `[0, L)` are all SENT and the cross product of the SENT sets over `[0, d]` equals the sub-problem's length-`(d+1)` prefixes for every `d < L`, for this artifact's encoding `[r3 fam-B1]`. An under-statement is sound | 0 on every site (sound) | `k` |
+| `exact_len` | the same | read only when STATED: `0..MF_MAX_SPAN_POS` *(covs2e: MF_MAX_SPAN_POS is retired by the R-45 raise 9d4907a16 (held for the joint landing; `MF_WSPAN_POS` 4095, `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` RETIRED, `MF_MAX_TERM` 32 decoupled); the bound is now `MF_WSPAN_POS`, and pcrec's own non-cover statement bound is `PCREC_WSTMT_POS` 32)*. The largest `L` such that span-0 positions `[0, L)` are all SENT and the cross product of the SENT sets over `[0, d]` equals the sub-problem's length-`(d+1)` prefixes for every `d < L`, for this artifact's encoding `[r3 fam-B1]`. An under-statement is sound | 0 on every site (sound) | `k` |
 | `consumable_len` | the same | read only when STATED: `0..exact_len` (more is refused): "if you prove `[0, N)`, my consumer will not re-test those positions" | 0 everywhere | `k` |
 | `ctx[]`, `nctx` | `mf_site`, NEW (appended last), spelled `const mf_pred *ctx; uint8_t nctx;` `[r3 con-B1, r3rc m4]` | `nctx` 0 = no context span; else `ctx[0..nctx)` are `mf_pred`s with `span_class` CONTEXT, each term at an offset in `[−MF_MAX_BACK, 0)` or `[k, k + MF_MAX_AHEAD)`, at most `MF_MAX_CTX` entries. A `ctx[]` entry on a site with no BOUNDED span 0 is refused | `nctx` 0 on every site | one entry per context ITEM (stage 1: at most one before and one after, the machine reading's `C_{−1}` and `C_k`), EXACT items only `[r4 B1]` |
 | `span_class` CONTEXT | `mf_pred` | the reserved value, now built: on MLINE's stop predicate and on `ctx[]` entries, nowhere else | MLINE | each `ctx[]` entry |
@@ -732,7 +732,7 @@ BOUNDED on span 0 is R17-b′ B3b's statement (memfn.h: "span 0's class from B3b
 lands after B3b (§7).
 
 **The term cap.** Span 0 holds at most `MF_MAX_TERM` (32) terms and `k ≤
-MF_MAX_SPAN_POS`. Revision 1 needed `k = 32` plus two context terms in one predicate.
+MF_MAX_SPAN_POS` *(retired, covs2e: the R-45 raise 9d4907a16 (held for the joint landing; `MF_WSPAN_POS` 4095, `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` RETIRED, `MF_MAX_TERM` 32 decoupled); the kit's span bound is `MF_WSPAN_POS` and the term cap `MF_MAX_TERM` stays 32)*. Revision 1 needed `k = 32` plus two context terms in one predicate.
 With `ctx[]` each context item is its own predicate, so the cap is per predicate:
 `MF_MAX_CTX` entries, each at most `MF_MAX_TERM` terms. ~~`MF_MAX_CTX` is a SHAPE bound,
 derived as `MF_MAX_BACK + MF_MAX_AHEAD` (one entry per offset).~~
@@ -787,7 +787,7 @@ uint8_t proven[MF_MAX_FWD - MF_PROOF_LO][32];
 caller's `mf_rows` on `mf_ask` and the art's arena on a define; `MF_MAX_FWD` is `MF_WREACH` (4096), a
 ceiling, not an array bound. The meaning below is unchanged; the sizes are not. memfn.h `mf_class`.)*
 
-- **Bounds.** `MF_MAX_SPAN_POS` is a SHAPE bound DERIVED from `MF_MAX_TERM` (`#define
+- **Bounds.** *(superseded by the R-45 raise 9d4907a16 (held for the joint landing; `MF_WSPAN_POS` 4095, `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` RETIRED, `MF_MAX_TERM` 32 decoupled): `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` no longer exist, `MF_WSPAN_POS` is 4095 on every window span, `MF_WREACH` = `MF_MAX_FWD` = 4096, and the array size below is gone with `proven[]`; pcrec asserts its own construction bounds at its writers, cover_cap.md §11.1 B4.)* `MF_MAX_SPAN_POS` is a SHAPE bound DERIVED from `MF_MAX_TERM` (`#define
   MF_MAX_SPAN_POS MF_MAX_TERM`), and pcrec asserts `PCREC_MAX_REQ_RUN_SCAN ≤
   MF_MAX_SPAN_POS` where it fills span 0. Revision 1 said the two were "equal"; the
   relation that matters is `≥`, with one 32 derived from the other. `MF_MAX_BACK` is 8
@@ -821,7 +821,7 @@ ceiling, not an array bound. The meaning below is unchanged; the sizes are not. 
 > | R-26.2 | `mf_site.ctx[]`/`nctx` (appended last): CONTEXT predicates with `absent` and `consumable` (UNSTATED refused there, 0 required elsewhere), offsets in `[−MF_MAX_BACK, 0)` or `[k, k + MF_MAX_AHEAD)`, at most `MF_MAX_CTX`, refused on a site with no BOUNDED span 0. MLINE's stop predicate states `span_class` CONTEXT, `absent` FAILS, `consumable` NO. COMPLETENESS and BINDING read `absent`: under SATISFIES a candidate whose context offset lies outside the subject is yielded when the other spans hold, under FAILS it is not. `read_floor` (enum, §3.5): reads lie in `[floor, n)`; `MF_FLOOR_LO` with a CONTEXT term at a negative offset is refused, since such a term has no verdict inside the subject `[r3rc m5]` | MLINE's restatement: zero movers. A G2 fixture per `absent` value at `c = 0` and at `c + k = n`, completeness checked by the byte-loop oracle. A refusal fixture per UNSTATED field (`absent`, `consumable`, `read_floor`, `prefix_stated`), including "UNSTATED `absent` read as 0" |
 > | R-26.3 | `site_kind` `MF_SK_REPORT`: the candidate is the answer, with no engine behind it; the site states `consumer` `MF_C_RESULT` (refused otherwise) `[r3rc m3]`. Every span-0 and context term is REQUIRED (refused otherwise). NONE is not a legal reply: a row that cannot serve every REQUIRED term does not apply (K96). On a REPORT site binding and completeness together make `proven[d]` EQUAL to the REQUIRED term's set at every `d`; the host checks equality (C14) `[r3rc m1]` | refused before R-26. The finder gate (`finder.c`) admits it wherever a REPORT row exists. A fixture with one OPTIONAL term on a REPORT site, refused |
 > | R-26.4 | `mf_class.proven[]` (kit_proof.md §4.2). `kit_class` COPIES `proven0`/`proven_prev` from it | `MF_CLASS_V` 4. G2: at every candidate of every generated site, every proven offset holds, including negative offsets, offsets after the span, and the absent rule. **COMPLETENESS**: a site whose form proves an OPTIONAL position yields every covered position where all spans hold (obligation 1), with an over-filter plant (a form testing a narrower set than the term) caught by the byte-loop oracle `[r3 snd-m5]`. C-PROOF: identical across SIMD off and every live level. The Q-R17P-25 trace check is extended to every `d` |
-> | R-26.5 | declarations: `MF_MAX_SPAN_POS` (derived from `MF_MAX_TERM`; pcrec asserts `PCREC_MAX_REQ_RUN_SCAN ≤` it), `MF_MAX_AHEAD` 1 (D77, labelled with its trigger), `MF_MAX_CTX` 2 (items, derived from stage 1's source: one before, one after; trigger UL-8) `[r4 B1]`, `MF_PROOF_LO`, `MF_MAX_FWD` | declarations only |
+> | R-26.5 | *(`MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` retired by the R-45 raise 9d4907a16 (held for the joint landing; `MF_WSPAN_POS` 4095, `MF_MAX_SPAN_POS` and `MF_MAX_AHEAD` RETIRED, `MF_MAX_TERM` 32 decoupled))* declarations: `MF_MAX_SPAN_POS` (derived from `MF_MAX_TERM`; pcrec asserts `PCREC_MAX_REQ_RUN_SCAN ≤` it), `MF_MAX_AHEAD` 1 (D77, labelled with its trigger), `MF_MAX_CTX` 2 (items, derived from stage 1's source: one before, one after; trigger UL-8) `[r4 B1]`, `MF_PROOF_LO`, `MF_MAX_FWD` | declarations only |
 > | R-26.6 | the kit's REPORT row lands UNROUTED (`fd_rows[].routed` false, `finder.c:964`). The host states, through `mf_preview(art, "R-26.6")` (kit_proof.md §7, `[r3rc M-B]`), that an art is a harness PREVIEW of that routing step and is never shipped; on such an art the kit decides as it will once the step routes | zero movers on every arm; `mf_preview` refused after the first define, twice, or for a step the kit does not name; no `options.def` row for it, so `mf_opts_check` refuses any `--memfn=` spelling of it; the row's G2 fixtures run in the kit's suite |
 >
 > **Grain and exactness** `[r4 B1]`: one `ctx[]` entry per context ITEM (§4.1); pcrec
@@ -894,7 +894,7 @@ typedef struct {
     uint8_t  k;                         /* 0 = no fixed end (declined)              */
     uint8_t  ctx_before[32], ctx_after[32];
     uint8_t  absent_before, absent_after;   /* MK_ABS_UNSTATED 0, SATISFIES, FAILS  */
-    uint8_t  set[MF_MAX_SPAN_POS][32];  /* A's S_d, the C8 control                  */
+    uint8_t  set[MF_MAX_SPAN_POS][32];  /* A's S_d, the C8 control  (covs2e: since cover_cap.md A1 `set` is a pointer to the cover record's sets, `k` is `uint16_t`, and MF_MAX_SPAN_POS is retired) */
     const char *why;                    /* the failing cover_conj[] id, or NULL     */
 } MkEnd;  /* superseded by cover_cap.md rev 5.2 §11 A1 (built: k uint16_t, set POINTS at the cover record's arena sets, no why member) */
 
@@ -1056,7 +1056,7 @@ on admitted artifacts. X0's set equality therefore runs on every site that state
 `exact_len > 0` (§6.4).
 
 **The machine reading (`MkEnd`)** is the walk of §1.1 C3-C11 over A, once per artifact,
-at most `MF_MAX_SPAN_POS` + 1 deep. It runs in gen, beside the emitter, because it reads
+at most `MF_MAX_SPAN_POS` + 1 deep *(covs2e: the walk's depth is the anchored machine's state ceiling, cover_cap.md §3.1, and `MF_MAX_SPAN_POS` is retired)*. It runs in gen, beside the emitter, because it reads
 the built machine.
 
 ### 5.3 What of [MATCH-KNOWN] this builds, and what it defers
