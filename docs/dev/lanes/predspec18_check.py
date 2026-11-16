@@ -23,6 +23,7 @@
 #      the sequence rule, against "every tuple in range" and against the in-item spelling (the call inside the loop).
 # (N)  WRONG-LENGTH calls (F6): what the bodies give by §3.2's absent-entry rule.
 # (S)  the worked example PROGRAMS SEARCHED (F5): some span matched whole by the program; the pinned forms.
+# (C)  a COMPUTED label as a compared field (rulings R-2): a month name's index beside a year.
 # (W)  the worked rows of §8 rev 18 (rev 17's 35 rows, the restored `\d+`-fields row, the new rows).
 import ctypes, itertools, json, re
 
@@ -96,7 +97,7 @@ def comparison_set(op, atom, reading):
         w = len(atom)
         vs = ["%0*d" % (w, x) for x in range(10 ** w) if OPS[op](x, v)]
         return "(?:" + "|".join(vs) + ")" if vs else "(?!)"
-    return canon(lambda x: OPS[op](x, v))
+    return canon(lambda x: OPS[op](x, v), top=max(130, 2 * v + 2))   # every numeral up to twice the bound
 
 
 def padded(op, atom, reading="value"):
@@ -393,6 +394,34 @@ for title, P, proj, lo, hi, pin, subs in [("time", HM, ["h", "m"], ["9", "0"], [
         bad += (searched(P, proj, lo, hi, s, pin=pin) is not None) != (v is not None and ge(v, proj, lo) and
                                                                           le(v, proj, hi))
 print("  pinned searched vs whole-value answer on (D)'s time and version subjects: %d cases, %d differ" % (n, bad))
+
+# ---------------------------------------------------------------------------------------------------- table (C)
+print()
+print("(C) a COMPUTED label as a compared field (rulings R-2): ym & lex_between2([(year:), (mnum:)], lo, hi),")
+print("    mnum := $mname.index (the month name's 1-based position, §4.4), emulated as a label holding that numeral")
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+YM = r"(?<year>\d{4})-(?<mname>%s)" % "|".join(MONTHS)
+
+
+def ym_labels(s):
+    v = labels(YM, s)
+    if v is not None:
+        v["mnum"] = [str(MONTHS.index(v["mname"][0]) + 1)]       # the computed label: a canonical numeral
+    return v
+
+
+subsy = ["%d-%s" % (y, m) for y in (2023, 2024, 2025, 2026) for m in MONTHS] + ["2024-Foo", "24-Mar"]
+for lo, hi in [((2024, 3), (2025, 2)), ((2024, 12), (2025, 1)), ((2023, 1), (2023, 1))]:
+    for s in subsy:
+        v = ym_labels(s)
+        c = None if v is None else (cmp_prefix(v, ["year", "mnum"], lo), cmp_prefix(v, ["year", "mnum"], hi))
+        tally("C", "[%d, %d]..[%d, %d] vs (year, month number) order" % (lo + hi),
+              v is not None and ge(v, ["year", "mnum"], S(lo)) and le(v, ["year", "mnum"], S(hi)),
+              c is not None and c[0] in (">", "=") and c[1] in ("<", "="))
+        tally("C", "the month NAME compared directly, [(year:), (mname:)] (non-digit: never read past year)",
+              v is not None and ge(v, ["year", "mname"], S(lo)) and le(v, ["year", "mname"], S(hi)),
+              c is not None and v is not None and int(v["year"][0]) > lo[0] and int(v["year"][0]) < hi[0])
+report("C")
 
 # ---------------------------------------------------------------------------------------------------- table (W)
 print()

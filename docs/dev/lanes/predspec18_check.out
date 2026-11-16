@@ -115,6 +115,14 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
   semver >= 1.4.0          'v1.4.0'     searched -> accept (span '1.4.0'  ) | pinned -> accept
   pinned searched vs whole-value answer on (D)'s time and version subjects: 190 cases, 0 differ
 
+(C) a COMPUTED label as a compared field (rulings R-2): ym & lex_between2([(year:), (mnum:)], lo, hi),
+    mnum := $mname.index (the month name's 1-based position, §4.4), emulated as a label holding that numeral
+  [2023, 1]..[2023, 1] vs (year, month number) order            50 cases, 0 differ
+  [2024, 12]..[2025, 1] vs (year, month number) order           50 cases, 0 differ
+  [2024, 3]..[2025, 2] vs (year, month number) order            50 cases, 0 differ
+  the month NAME compared directly, [(year:), (mname:)] (non-digit: never read past year)   150 cases, 0 differ
+  total: 300 cases, 0 differ
+
 (W) the worked rows of §8 (rev 18), each subject matched WHOLE by the filter
   /(?<h>\d{1,2}):(?<m>\d\d)/ & lex_between2([(h:), (m:)], [9, 0], [10, 0])
     '9:00'         -> accept 
