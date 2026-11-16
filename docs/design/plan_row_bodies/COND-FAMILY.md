@@ -1786,3 +1786,25 @@ ASSUMPTION: at the time of the ruling neither version had been run; lane predspe
 greatest fixed points as references) and the manager reports to him if the variant is not well-founded, breaks record
 = `&`, or splits equal-behaviour programs. WITHDRAWN the same hour, the manager's earlier lean "DOM over matches
 where every named label is present" (empty on `(?:(?<h>\d)|(?<m>\d))`).
+
+**2026-11-16 OWNER RULINGS — not-is-complement and mark-in-none (Frank, to session 136, box clock 17:29).** Background:
+lane predspec21 confirmed by run that, with DOM read per program (domain-scope), a mark under negative polarity lets
+an ADDED condition admit a subject (smallest: `/a(?<h>\d)|b(?<k>\d)|c/ & !((h?, k): h < k)` FAILS on `b1`; adding
+`(h?: >7)` makes it HOLD; 22 program pairs move, 0 with a default, 0 of 698 with no mark under a negation). The
+manager leaned "a mark under a not is a compile error". His words on the cause: "I think I see the problem. We are
+working with a confusing definition of ! In my reading, ! takes an rx and gives the complement set of strings. That
+has no meaning on a condition." The manager put two statements back for a yes/no:
+**not-is-complement**: `!` applies to a pattern or a set of strings, never to a condition; on a condition it is a
+compile error naming the two rewrites (the complement on the set, `(h: !S)`; or name the pattern and complement
+that). His words: "not-is-complement: yes agree". RULED.
+**mark-in-none**: a mark inside "none" or an upper-bounded count is a compile error. His words: "mark-in-none: yes
+agree". RULED.
+THE MANAGER'S READINGS (his; to be checked by rev 22 and its round): (1) a complemented pattern is a COMPLETE program
+with its own value sets; conditions outside it do not narrow them (the hand derivation given to him: `P & !Q`,
+`Q := P & ((h?, k): h < k)`, keeps `b1` before and after `(h?: >7)` is added; unrun at the ruling); (2) answers
+change where the draft wrote `!` on a condition (the worked case: `b1` was rejected, is accepted under
+`P & !Q`); the old trap "`!(h: S)` holds when h is absent" goes with it; (3) "none or an upper-bounded count"
+means every group question whose truth can turn TRUE when fewer passes satisfy the inner condition (`occurs.none`,
+`count(...) = 0`, `<= n`, `< n`, an exact count); `all(c)` is defined through marks, so `all` inside such a
+question, and a complemented pattern containing a mark, need rev 22's explicit statement; (4) expected, to be run:
+with both rulings no added condition turns a FAIL into a HOLD (the 22 pairs re-run after rewriting; 0 move).
