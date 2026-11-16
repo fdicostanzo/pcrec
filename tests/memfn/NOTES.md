@@ -74,3 +74,6 @@ define, its STMT EMIT replies, and the PF site's. run_finder.sh also runs `fxt -
 MF_TRACE kit: the agreement at every purity define) and pins its E-func (81) and E-generic (8)
 define counts EXACT; its control (E-func declined in `e_legacy_holds`) moved no purity check and
 took E-func to 0 (b30b_report.md).
+
+## The D3 floor gate (lane d3wire, R-44)
+`run_d3floor.sh` builds r33_sim's traced probe (build.sh), runs collect.py's corpus sweep per emit_sweep cell (byte|utf8 x c-default|c-vm) and feeds d3_floor.py, which reads d3_floor.tsv (floors, movers, population minimums, provenance) and runs plants S3228 (drop mover records), S3229 (empty/truncated sweep), S3230 (floor below movers) on every run. Measured 125 s at -j4, hence test-axes / opt-in, not `make test`. collect.py, build.sh, probe.c stay in docs/dev/lanes/r33_sim and are gate dependencies.
