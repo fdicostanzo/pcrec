@@ -27984,3 +27984,36 @@ Next
   conflicts for EVERY index file a landing's branches touch, not only the lanes history index. (4) A check lane before
   a build go was worth it twice (r45read, r45chk): the peer's own three critic rounds had not compared its design
   with ours.
+
+## 2026-11-16 (session 135, second half, 13:50-15:00 box clock) — the absent-label rule LOCKED and folded; ledger reset; close
+
+- ABSENT LABELS, the session's design result. From Frank's remarks ("'optional pass' is still a loop", "could * be
+  defined as /x+|/") the options were worked side by side by lane absent (opus; 72,196 engine cases): today's line
+  splits 5 of 11 groups of EQUAL spellings (and greedy/lazy `(?:(n)*)?x` / `(?:(n)*)??x`); "absent holds" moves 56
+  answers; "absent fails" moves 131 (all empty lists/reaches); "only alternatives fail" splits 9. His inputs on the
+  way: the PRINCIPLE "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence
+  is not part of that set" (so no in-set marker; my "empty satisfies any set" wording was wrongly framed), the
+  optional transform `<100?`, and a two-kinds variant (mark = reached-empty, default = never reached; NOT taken: it
+  splits 8-9 of 11 groups). Lane absimpact (opus; 27,487 cases) censused the impact and found where "holds over
+  none" had been chosen (CF:933, CF:997-1000, 12:45): each comes back with one mark, 0 differ. RULED, "absent-rule:
+  lock": ONE kind of absence; a condition on an absent label FAILS (empty lists included); two author controls ON
+  THE LABEL, the optional mark `m?` (placeholder) and the default `m = v`, never both; a set never contains absence.
+  It reverses "an empty list holds" and my 12:45 zero-pass wording (the answer `9` fails and record = & kept) and
+  settles pairing-loop parts 2-3. Lane absfold (opus; 69,441 cases) folded it into joint_condition.md §4G; merged to
+  local main. Its corners in MY sub-choices are settled as the manager's readings (the last COND-FAMILY entry: `all`
+  over none for every absence alike; the mark always = "some value would fit", closing zero-pass-empty; any text;
+  the mark inside some/count an error; per pass). Critic round crit-absfold launched on the folded note.
+- LEDGER: lane ledg1116 recorded the green cloud full suite on e43603862 and reset D177's counters (major 0, minor
+  1; no suite due). Pushed with the journal at 14:20 (origin/main 02d39611e, CI green).
+- KIT: its plan B code round (r27) reads LAND AFTER FIXES, 0 movers. The held raise has two halves: the kit's
+  (run_part_terms unbounded past 32, ASan overflow at L=100; an OOM success in wf_stated_offsets found by cloud
+  shards of span4k-test) and MINE in the same landing (READ-2: no assert enforces other-sites-at-32 once the kit's
+  bound rises; CHECK-1 its witness row; READ-3 a plan row for the code-bytes cap at 4095).
+- TOOLING FINDINGS, not fixed: `scripts/cloudrun --prune` runs the pre-push check per deleted branch and times out
+  (~140 cloud branches on origin); I chained a second `monread main --wait` with its output to /dev/null into
+  another command and had to safekill it (it could have swallowed a verdict line): arm the waiter ALONE, always.
+- LESSONS. (1) Four owner rulings in one day were reversed by a fifth because each was taken at the corner where
+  it was asked; the general question (what does a condition do with NO value) should have been asked first. When
+  three questions in a row are corners of one rule, ask for the rule. (2) A lean stated with "it rests on X" let
+  Frank and me drop it cleanly when X fell, twice. (3) An options lane that runs every candidate over the same
+  populations (the spelling test above all) turned a two-hour argument into one table; do that before leaning.
