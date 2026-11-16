@@ -59,6 +59,7 @@
   - [§2.53](#s2-53) `--part-residual=V` — the layout of every other part
   - [§2.54](#s2-54) `-fno-landmark-walk` — `PCREC_NO_LANDMARK_WALK` (bit 57)
   - [§2.55](#s2-55) The minimum-width stop (no flag)
+  - [§2.56](#s2-56) `--window-search-width=N` — the window search's width
 - [§3](#s3) The DFA scan's stamps
   - [§3.1](#s3-1) A VM hybrid carries the scan's stamps
   - [§3.2](#s3-2) `rx_info` carries the same facts at run time
@@ -163,6 +164,7 @@
 | 2.53 | `--part-residual=V` | — | unset (`auto`) | answer-identical | — | `<PREFIX>_PART_LAYOUT` |
 | 2.54 | `-fno-landmark-walk` | 57 | on | answer-identical | masked | `<PREFIX>_DFA_SCAN` |
 | 2.55 | (no flag: the minimum-width stop) | — | — | answer-identical | — | — |
+| 2.56 | `--window-search-width=N` | — | `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH` (`limits.md` §3.12) | answer-identical | — | `<PREFIX>_DFA_SCAN` |
 
 <a id="s2-1"></a>
 ### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
@@ -986,7 +988,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 - <a id="s2-43-p3b"></a>[2.43¶3b] **Its per-form switches** are the kit's `--memfn=` rows: `--memfn=no-vrun-w32` denies the 32-byte row (the 16-byte one is then the top level) and `--memfn=no-vrun-w16` the 16-byte row (the 32-byte level then falls straight to `<fn>__body`). By default the 32-byte row's candidate mask also tests a second filter position (the kit chooses it from the rarity ranking pcrec states, D157) and the 16-byte row's, standalone or as the 32-byte row's fall-through, tests the scanned position alone; `--memfn=no-vrun-kb` keeps both rows and drops the second position, so every block's candidate mask tests the scanned position alone. `--memfn=no-vrun-trim` keeps both rows and their filter but verifies each candidate over the whole run; by default the verify skips the run positions the candidate mask already tested, and a run the mask covers whole (a two-byte run with its second position read) has no verify at all. `--memfn=no-vrun-pad` keeps that verify everywhere; by default, in the main block loop, a run of 3 or 5 to 7 bytes is verified as one wider masked word (4 or 8 bytes) whose bytes past the run are masked off, the loop stopping that many bytes earlier so the read stays inside the subject (the final block keeps the run compare). Given at the default `-fno-memfn-simd`, a SIMD row's deny is accepted and does nothing.
 - <a id="s2-43-p3c"></a>[2.43¶3c] **The kit's scalar rows' switches** are `--memfn=` rows too, of layer `scalar` (`registry.md` §6¶8a), and they are live at BOTH settings of this axis: a scalar row is the SIMD-off layer's own form, so its deny moves the artifact whether or not `-fmemfn-simd` is given. The one today is `--memfn=no-precheck-assign-byte`: where the pre-check keeps the position of its first byte for the handoff, the kit finds it with one `memchr` behind the empty test, and the deny leaves the site to the kit's generic row (a byte-at-a-time loop), the same answer. pcrec's site of that shape is `[REQ-HANDOFF-L1]`'s byte landmark (the handoff's entry and its re-entry), where the deny reproduces the generic loop; on a run-landmark pre-check (a different row) the deny is accepted and moves no artifact.
 
-- <a id="s2-43-p3d"></a>[2.43¶3d] **The window search's denies** (D172; `registry.md` §6¶8a): `--memfn=no-window-search` turns the window search off, so the `cover` LOCATE row declines and every `<PREFIX>_DFA_SCAN "cover"` artifact becomes the `"unanchored"` one (`match_api.md` §6.3.4¶2); `--memfn=no-window-skip` keeps the window search but drops its skip for a common byte set, the search then jumping to its chosen bytes and resuming one byte on. Both are live at both settings of this axis and both answer-identical; the two together render each artifact as the build before the window search was the default did, but for its `abi` digits and the two-stream find's bounded look-ahead (§2.39¶2: every two-stream pre-check and offset-skip function).
+- <a id="s2-43-p3d"></a>[2.43¶3d] **The window search's denies** (D172; `registry.md` §6¶8a): `--memfn=no-window-search` turns the window search off, so the `cover` LOCATE row declines and every `<PREFIX>_DFA_SCAN "cover"` artifact becomes the `"unanchored"` one (`match_api.md` §6.3.4¶2); `--memfn=no-window-skip` keeps the window search but drops its skip for a common byte set, the search then jumping to its chosen bytes and resuming one byte on. Both are live at both settings of this axis and both answer-identical; the widest fixed width the window search reports is §2.56's; the two together render each artifact as the build before the window search was the default did, but for its `abi` digits and the two-stream find's bounded look-ahead (§2.39¶2: every two-stream pre-check and offset-skip function).
 
 - <a id="s2-43-p3e"></a>[2.43¶3e] **The CPU target set** is the one first-match table `src/gen/memfn_targets.c` declares over the flag word and the list text: SIMD off with a list is refused; SIMD off is the kit's portable target; SIMD on with a list is exactly that list (a family token expanding to the kit's default list for it); SIMD on with no list is the host family's default list. Every token is the kit's, parsed by the kit, and opaque to pcrec; the set holds one target for now (`cli.md` §1.24¶3). `pcrec_options.memfn_simd` carries the list; the flag bits keep their meaning. The set's one member is the artifact's target (¶3).
 
@@ -1166,6 +1168,17 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 <a id="s2-55-p2"></a>[2.55¶2] **Where it does not reach.** The searches of the delegated search sites (the candidate-start filter's own find, the pre-check's scans) still run to the subject's end, less their own term's offset; the DFA search bodies other than the forward-then-reverse search (`<PREFIX>_DFA_SCAN` `"attempt"`, whose route has no `width` fact, `"rev-end"`, `"cover"`, `"landmark-walk"`, `"char-step"`) check no width; the forward scan without a candidate-start filter stops only at its entry; and the VM hybrid's DFA prefilter checks none (the VM entry checks it once).
 
+<a id="s2-56"></a>
+### 2.56 `--window-search-width=N` — the window search's width
+
+<a id="s2-56-p1"></a>[2.56¶1] Not a bit of `pcrec_options.flags`: the separate field `window_search_width`, 0 = the built-in default `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH` (`limits.md` §3.12, its value and its legal range). It sets the widest fixed-width match the window search reports (`<PREFIX>_DFA_SCAN "cover"`, `match_api.md` §6.3.4¶2) for one compile. A pattern of a wider fixed width runs the engine; the `--emit-facts` listing's `cover` section names that decline `width-limit` with the width (`facts_listing.md` §4.5¶2). ANSWER-IDENTICAL: both routes answer the same.
+
+<a id="s2-56-p2"></a>[2.56¶2] **A cliff.** The width is all or nothing: at a width of 32, `[0-9a-f]{32}` takes the window search and `[0-9a-f]{33}` runs the engine for all 33 positions. A width whose artifact exceeds the emitted-size cap also runs the engine (`limits.md` §3.12¶4).
+
+<a id="s2-56-p3"></a>[2.56¶3] **Settable both ways.** The value may be lower or higher than the default; out of the legal range it is refused, never clamped (`limits.md` §3.12¶3). `--memfn=no-window-search` (§2.43¶3d) declines the window search at any width. A compound artifact's parts compile with their parent's value.
+
+<a id="s2-56-p4"></a>[2.56¶4] **Dial:** no cell (§5.4). Where a dial cell for the width is ever measured, an explicit `--window-search-width=N` beats it, as `--vm-entry-shape=N` beats the dial (`limits.md` §8b¶2). **Stamp:** none of its own; the outcome is `<PREFIX>_DFA_SCAN` (`"cover"` or another scan).
+
 <a id="s3"></a>
 ## 3. The DFA scan's stamps
 
@@ -1269,6 +1282,7 @@ $ build/pcrec -p rx -o - --pattern 'a(b|c)+d' | grep -E '^#define RX_(ENGINE |VM
 | `flags` bit `PCREC_NO_LANDMARK_WALK` | `-fno-landmark-walk` | §2.54 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
+| `window_search_width` (0 = `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH`) | `--window-search-width=N` | §2.56 |
 | `engine` (`PCREC_ENGINE_AUTO` / `_DFA` / `_VM`) | `--engine=E` | §2.11 |
 | `part_layout` (`PCREC_PART_*` slots, one 2-bit slot per class; `PCREC_PART_LAYOUT_GET`/`_SET`) | `--part-layout=CLASS:V` | §2.51 |
 | `part_inline_rank` (`PCREC_PART_RANK_*`) | `--part-inline-rank=R` | §2.52 |

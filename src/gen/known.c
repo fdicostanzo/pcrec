@@ -326,14 +326,25 @@ static bool cc_width(CoverSt *st)
     return st->w.k >= 1 && st->w.nrow > 0;
 }
 
-/* C15 (stage 1): the statement fits what the kit's window interface carries
- * today, read from the kit's own shape bounds, so `cover_window` never
- * writes past `mf_wspan.set[]` (K7). pcrec has no bound of its own. */
+/* The window search's width for this compile: the caller's
+ * `window_search_width`, or the built-in default where it is 0
+ * (`pcrec_compile` has refused any other value outside the legal range). */
+static int cover_width_limit(const Ctx *cx)
+{
+    int w = cx->opt->window_search_width;
+    return w ? w : PCREC_DEFAULT_WINDOW_SEARCH_WIDTH;
+}
+
+/* C15: the cover's width is within the window search's width limit
+ * (cover_cap.md §11.2) and the statement fits what the kit's window
+ * interface carries, read from the kit's own shape bounds, so
+ * `cover_window` never writes past `mf_wspan.set[]` (K7). */
 static bool cc_fits(CoverSt *st)
 {
     int k = st->w.k;
     if (st->w.stop == COVER_STOP_BRANCH) return true;
-    return k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD;
+    return k <= cover_width_limit(st->cx) &&
+           k <= MF_WSPAN_POS && k + 1 <= MF_WREACH && k < MF_MAX_FWD;
 }
 
 /* C8: the language from r0 is S_0 x .. x S_{k-1}: the walk did not stop at

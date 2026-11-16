@@ -1448,6 +1448,19 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
             }
             opt.vm_entry_shape = (int)v;
         }
+        /* [COVER-CAP] stage 2 `--window-search-width=N`: the widest fixed
+         * width the window search reports (lib/pcrec.h's
+         * `window_search_width`; docs/spec/tuning.md §2.56). Settable both
+         * ways; out of range is refused, never clamped. */
+        else if (!strncmp(a, "--window-search-width=", 22)) {
+            long long v;
+            if (cli_int_value(a + 22, 1, PCREC_ANCHORED_MAX_STATES - 1, &v) != 0) {
+                cli_err("--window-search-width wants an integer in %d..%d "
+                                "(got '%s')", 1, PCREC_ANCHORED_MAX_STATES - 1, a + 22);
+                return 1;
+            }
+            opt.window_search_width = (int)v;
+        }
         /* [OPT-DIAL] `--tune=N` — the speed-vs-size dial, an ORDINAL in
          * -2..+2 with five mnemonic aliases accepted on equal terms
          * (`src/core/tune.c` owns both spellings, so the CLI cannot drift

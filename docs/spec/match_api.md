@@ -2130,7 +2130,7 @@ apart. Mirrored by `rx_info.scan`.
 |---|---|
 | `"unanchored"` | the O(n) forward scan from `search_from` (D7), followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"` |
 | `"rev-end"` | every match ends at the subject's end or just before a final newline (`tuning.md` §2.46): the artifact's reverse machine walks back from each possible end, and the smallest accepting position is the match start; no forward scan runs unless a tie between the two ends needs one forward run from that start |
-| `"cover"` | every match is one fixed-width window of `k` bytes, and the compiler PROVES that testing every position of that window, plus the one context byte before and after it, decides a match exactly: the artifact's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. On by default (`tuning.md` §2.43¶3d); `--memfn=no-window-search` denies it, and the artifact is then the `"unanchored"` one |
+| `"cover"` | every match is one fixed-width window of `k` bytes, up to the window search's width (`tuning.md` §2.56), and the compiler PROVES that testing every position of that window, plus the one context byte before and after it, decides a match exactly: the artifact's window search yields candidates in order, the first IS the leftmost match, and the artifact reports `[c, c + k)` with no machine run, forward or reverse. On by default (`tuning.md` §2.43¶3d); `--memfn=no-window-search` denies it, and the artifact is then the `"unanchored"` one |
 | `"landmark-walk"` | the pattern's one branch passes a byte class L whose bytes the part before it can never consume (`tuning.md` §2.54): the search finds each occurrence of L from `search_from` up, walks the artifact's reverse machine of that prefix and L back from it to the smallest possible start, and runs the anchored machine once from there; where that run already read past the next occurrence, it continues as the `"unanchored"` scan from that start |
 | `"char-step"` | the pattern needs a character set that is not byte-expressible under `-e utf8` (UCP `\b`/`\B`, `cli.md` §1.9¶7): the forward machine steps an ASCII byte through its table and a whole non-ASCII character (or one ill-formed byte) as one symbol, the end is found by that walk, and the start by the reverse machine stepping back the same way (`<PREFIX>_DFA_START "reverse-pass"`); no prefilter, skip or scan edge runs in front of it at this build, and a failing `<prefix>_match` runs the whole walk (`<PREFIX>_DFA_MATCH "search-filter"`, §3.2¶6) |
 | `"attempt"` | the per-start-position computed-goto loop a `^`/`\A`-bearing pattern takes |
@@ -3291,6 +3291,9 @@ typedef struct {
     int         vm_entry_shape; /* PCREC_VM_ENTRY_AUTO (0) / _PLAIN / _SHARED
                                     / _FORWARD / _INLINE — an ORDINAL rung,
                                     not a bit; tuning.md §2.21 */
+    int         window_search_width; /* 0 = PCREC_DEFAULT_WINDOW_SEARCH_WIDTH,
+                                    else 1 .. PCREC_ANCHORED_MAX_STATES - 1;
+                                    tuning.md §2.56, limits.md §3.12 */
     int         frame_capacity; /* 0 = let the compiler size it. NOT the
                                     same sentinel as rx_info's field of the
                                     same name, which uses -1 for unbounded */
