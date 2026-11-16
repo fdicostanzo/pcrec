@@ -3482,3 +3482,42 @@ Reviews r10, r11, r12, r14 (filed as 2026-11-16-r21-memfn-d3fix3) all RULED; las
 Validation: gate green, exactly 60 plants of 60 (a deleted plant -> red; an unwired refusal -> plants WRONG, rc 1); make strict rc 0;
 arch_blind 17/0; cloud test + axes GREEN at 505f4d631 (the later commits touch only tests/memfn/d3_floor.*, run_d3floor.sh, docs).
 No byte under src/ or memfn/src moved; no abi event. Reports: docs/dev/lanes/d3fix3_report.md, d3fix4_report.md.
+
+## R-45 reply (2026-11-16, kit; rev 4 after reviews r20, r22, r23) — window spans up to 4095 positions
+- READY: plan B alone (carrier + kit working state + the two witness rows) is ready now.
+  Plan A's rule has r23's text fixes applied, plus a kit-ruled clause for dominance cycles (keep the heads beaten by the fewest others).
+- (1) YES on EVERY window span: MF_WSPAN_POS 4095; MF_WREACH = MF_MAX_FWD = 4096. Proof rows
+  only for proving classes (window plan, old-field FIND); others proof_n 0. Range [LO, end),
+  end = max(last stated position + 2, last tested offset + 1). Kit refusals: tested offset out
+  of range; rows past caller storage; range self-check (message via mf_define only).
+  Your cover ask passes storage to the ceiling (4,104 rows): every over-read below 4096 reaches
+  B5. Witnesses: a kit row (self-check by message); a pcrec row on [0-9a-f]{32}, nothing after
+  (a cover at width 32, after side unstated; its REACH asserts both).
+- (2) Decoupled: MF_MAX_TERM 32, MF_WMAX_SPAN 32 stay; MF_MAX_SPAN_POS/MF_MAX_AHEAD retire now
+  (merge only onto A1). S526 stays on MF_MAX_TERM; B2's control is your §11.6.3 build.
+- (3) Forms I/L/H(h) over the existing segmenter, at every window span; literals stay one
+  compare. Default H(h*), h* from FINITE heads: W(h) = worst C1-C2 cell of t(H(h))/t(I); E =
+  within the A/A floor of the best W; drop heads another member of E beats somewhere and never
+  loses to; then the LARGEST. On a tie h* = 64, the grid's CHOSEN top, checked only by the
+  long cells, whose loss extends the grid. All-inline is the dial's reference, never the
+  default. A test-only lever sets h on one binary; a check proves the rebuilt binary's bytes
+  equal the lever's. Option span-loop (pair; deny wins); floor 13 -> 14.
+  Night order (agreed 2026-11-16, plan A only): our cards first on the frozen binary, h frozen
+  by its rule, identity check, then your width cells on the rebuilt binary (no harness option).
+  Your cover_cap edits: §11.4, §11.6.1, §11.6.4.
+- (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). No fix in the first build (D77).
+- (5) Arrays leave the seam structs: mf_wspan 1,164 -> 32 B, mf_class 2,932 -> 1,640 B,
+  mf_wreply 532 -> 136 B. Lists go into caller storage sized by mf_rows_need. 22 byte compares
+  become deep compares; 14 uint8_t casts widen. MF_SITE_ABI 29 -> 30, MF_CLASS_V 10 -> 11.
+  Rows per cover attempt: ~291 KB at 4095, ~133 KB at 32. The build starts from main.
+- Questions (our leaning):
+  other-sites-at-32: keep your other window sites at 32 by your own asserts? Yes.
+  cover-ask-storage: give the cover ask room for the whole range? Yes.
+  caller-storage: let the asks take caller storage? Yes.
+  row-memory: accept the rows' memory until your compile-cost record? Yes.
+  night-order-edits: take the cover_cap edits, and run your width cells on the REBUILT binary after the identity check (refines the agreed step 3), if the owner picks forms now? Yes.
+  For the owner: forms-now-or-next (forms now: costs a timing slot, a later and larger
+  landing; if timing cannot run first, forms land off, decided by main with Frank): forms now.
+  keep-short-spans (keep spans <= 32 all-inline even on a measured win)? No.
+  near-miss-fix-later (fix near misses in the first build)? No, until a timed card shows it.
+  Design of record: docs/design/memfn/r45_reply.md rev 4, branch lane/memfn-r45 @ fee80b67b; reviews r20, r22, r23 filed there (all RULED).
