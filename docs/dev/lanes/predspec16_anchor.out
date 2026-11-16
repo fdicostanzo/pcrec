@@ -1,0 +1,79 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+
+(F) the tuple family (2 and 3 fields; between / at_least / at_most), bodies as written, vs integer lex order
+  2 fields  above  = fields & !at_most         828 cases, 0 differ
+  2 fields  at_least                           828 cases, 0 differ
+  2 fields  at_most                            828 cases, 0 differ
+  2 fields  below  = fields & !at_least        828 cases, 0 differ
+  2 fields  between                           4968 cases, 0 differ
+  2 fields  between (versions, sep '.')        468 cases, 0 differ
+  2 fields  equal  = between(lo, lo)           828 cases, 0 differ
+  3 fields  above  = fields & !at_most         640 cases, 0 differ
+  3 fields  at_least                           640 cases, 0 differ
+  3 fields  at_most                            640 cases, 0 differ
+  3 fields  below  = fields & !at_least        640 cases, 0 differ
+  3 fields  between                           2560 cases, 0 differ
+  3 fields  equal  = between(lo, lo)           640 cases, 0 differ
+  total: 15336 cases, 0 differ
+
+(X) the worked examples (§8): each subject matched WHOLE by the filter
+  pair_between(/\d{1,2}/, ":", /\d\d/, 9, 0, 10, 0)   (the time range 9:00 to 10:00)
+    '9:00'       -> accept 
+    '09:30'      -> accept 
+    '9:59'       -> accept 
+    '10:00'      -> accept 
+    '10:01'      -> reject 
+    '8:59'       -> reject 
+    '11:00'      -> reject 
+    '9:5'        -> reject 
+  triple_between(/\d{1,2}/, ":", /\d\d/, /\d\d/, 9, 30, 5, 10, 0, 0)   (h:m:s, 9:30:05 to 10:00:00)
+    '9:30:05'    -> accept 
+    '09:30:05'   -> accept 
+    '9:59:59'    -> accept 
+    '10:00:00'   -> accept 
+    '9:30:04'    -> reject 
+    '10:00:01'   -> reject 
+    '8:59:59'    -> reject 
+    '9:30'       -> reject 
+  pair_between(/0|[1-9]\d*/, ".", /0|[1-9]\d*/, 1, 4, 1, 10)   (versions 1.4 to 1.10)
+    '1.4'        -> accept 
+    '1.9'        -> accept 
+    '1.10'       -> accept 
+    '1.3'        -> reject 
+    '1.11'       -> reject 
+    '2.0'        -> reject 
+    '0.9'        -> reject 
+    '1.04'       -> reject 
+    '1x4'        -> reject 
+  pair_between(/\d+/, ".", /\d+/, 1, 4, 1, 10)   (the same with \d+ fields: padded reads 1.04 as 1.4)
+    '1.04'       -> accept 
+    '01.10'      -> accept 
+    '1.010'      -> accept 
+    '1.011'      -> reject 
+  contrast: the separator as rx text /./ instead of the string "." (accepts 1x4)
+    '1.4'        -> accept 
+    '1x4'        -> accept 
+    contrast: a STRING range between("1.4", "1.10") (the language's string order, Python str compare): "1.4" <= "1.10" is False -> the set is EMPTY; and between("1.4", "1.9") accepts ['1.4', '1.5', '1.9', '1.45']
+  worked rows not as stated: 0
+
+(J) E-JSONL without json.quoted: the rewrite's value filters vs the cut transform's meaning (S on the DECODED string)
+  ts    "2024-02-10"             rewrite: accept cut json.quoted: accept same
+  ts    "2024-05-01"             rewrite: reject cut json.quoted: reject same
+  ts    "2024\u002d02-10"        rewrite: reject cut json.quoted: accept DIFFERS (raw text vs decoded)
+  level "error"                  rewrite: accept cut json.quoted: accept same
+  level "err\u006fr"             rewrite: reject cut json.quoted: accept DIFFERS (raw text vs decoded)
+  level "warn"                   rewrite: reject cut json.quoted: reject same
+  msg   "db timeout"             rewrite: accept cut json.quoted: accept same
+  msg   "timeout"                rewrite: accept cut json.quoted: accept same
+  msg   "db \"pool\" timeout"    rewrite: accept cut json.quoted: accept same
+  msg   "time\u006fut"           rewrite: reject cut json.quoted: accept DIFFERS (raw text vs decoded)
+  msg   "x\timeout"              rewrite: accept cut json.quoted: reject DIFFERS (raw text vs decoded)
+  msg   "no news"                rewrite: reject cut json.quoted: reject same
+  value rows that differ: 4 of 12 (each is an escape: the rewrite reads the raw text)
+  the §12.1 subject lines (row(k, v) = ANY member with key k whose value text v accepts):
+    {"ts":"2024-02-10","level":"error","msg":"db timeout"}         rewrite: match    cut form: match    (stated: match)
+    {"msg":"timeout","level":"error","ts":"2024-02-10"}            rewrite: match    cut form: match    (stated: match)
+    {"ts":"2024-05-01","level":"error","msg":"timeout"}            rewrite: no match cut form: no match (stated: no match)
+    {"ts":"2024-02-10","level":"error","msg":"db \"pool\" timeout"} rewrite: match    cut form: match    (stated: match)
+
+engine disagreements (libpcre2-8 vs Python re): 0
