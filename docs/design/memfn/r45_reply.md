@@ -335,7 +335,7 @@ derivation. `MF_WSPAN_POS` becomes 4095, and `MF_MAX_SPAN_POS` retires (§1).**
 
 ## 3. ASK (3): the three forms, their cards, and the default
 
-### The forms [rev 2: F14, defined over the existing segmenter]
+### The forms [rev 2: F14, defined over the existing segmenter; rev 3: F16 (a)]
 
 The kit already has a span SEGMENTER: C-run's `find_groups` (`window.c:1766-1793`). It turns a
 maximal stretch of plan positions sharing one compare into one RUN term, rendered by runcmp's
@@ -348,13 +348,15 @@ rows. Rev 2 does not add a second segmenter for L. It generalises this one:
   A periodic segment, such as `(ab){500}`, is a fourth kind, NOT built. It is UNMEASURED.
   TRIGGER: a census row with a periodic span of 36 or more positions (36: DERIVED, the
   smallest census `k` past 32, uuid).
-- **One knob, the inline head `h`.** Positions before offset `h` render as today: lone tests
-  and C-run compares in one `&&` chain. Segments from `h` on render by their kind's row: a
-  literal stretch is still one run compare, and a one-class repeat becomes a loop.
+- **One knob, the inline head `h`.** Lone tests and one-class repeats at offsets before `h`
+  render as today, in one `&&` chain. From `h` on, a one-class repeat becomes a loop.
+- **Literal stretches are outside the knob [rev 3, F16 (a)].** A segment of kind 1 renders as
+  ONE run compare in EVERY form, wherever it lies, and `h` never splits it: a literal stretch
+  that straddles `h` stays one run compare. So a literal span is byte-identical in I, L and
+  every H(h): `lit-l31` and `lit-l40` are never movers, and C2's `lit-l40` cell is the
+  run-compare control (it measures the form, not a regression the kit built; r20 F14).
 - **I = H(`h >= k`)**: today's text.
 - **L = H(0)**: e.g. `hex{8}-hex{4}-hex{4}-hex{4}-hex{12}` is 5 loops and 4 one-byte tests.
-  `lit-l40` stays ONE run compare in EVERY form, so C2's run-compare control measures the
-  form and not a regression the kit built (r20 F14).
 - **The general form's other unlocks** (filed with triggers; none in the first build):
   - a SIMD one-class-repeat segment reusing vrun's block/mask machinery. TRIGGER: C3 shows the
     scalar loop slower than I or than the engine at 500/1000 on hit-dense;
@@ -366,7 +368,7 @@ rows. Rev 2 does not add a second segmenter for L. It generalises this one:
   first build of L." It is one unit, built once, with the build of L. It is not built as a
   separate refactor ahead of L.
 
-### The head `h` and the default [rev 2: F11, F12, F16]
+### The head `h` and the default [rev 2: F11, F12, F16; rev 3: F9, F10, F11, F12]
 
 - **h is a KIT constant** (D149: the cards' output, never a guess). It is INDEPENDENT of
   pcrec's width default (`PCREC_DEFAULT_WINDOW_SEARCH_WIDTH`, `limits.def:187` on
@@ -380,66 +382,113 @@ rows. Rev 2 does not add a second segmenter for L. It generalises this one:
   - **(b) code size.** h near the length below which the inline chain's size costs nothing
     measurable. The kit has no number for it: UNMEASURED.
 - **The owner's words**, kept separate from the kit's: "default to sub span loops (excepting
-  the measured head inline) then measure if inline was faster", and at 15:00, "most all rx ...
-  will inline due to being under the inline head portion". His words name no number. Rev 1's
-  "about 32" was the kit's, and it is withdrawn.
-- **The h grid**: {0, 1, 2, 4, 8, 16, 24, 32, 64, `>= k`}. UNMEASURED: a grid, CHOSEN to resolve
-  (a)'s predicted knee (1-2), to bracket the census lengths (24-64), and to include both
-  endpoints, 0 (L) and `>= k` (I).
+  the measured head inline) then measure if inline was faster", "Then the speed dial option can
+  be always inline should it prove that is faster", and at 15:00, "most all rx ... will inline
+  due to being under the inline head portion". His words name no number. Rev 1's "about 32"
+  was the kit's, and it is withdrawn.
+- **The grid.** The DEFAULT candidates are the FINITE heads {0, 1, 2, 4, 8, 16, 24, 32, 64}
+  [RULED r22 F9]. All-inline, I (`h >= k`), is TIMED in every cell as the REFERENCE: the
+  denominator of R1's ratios and R2's dial arm. It is never a default candidate, so all-inline
+  can become the default only as the owner's own ruled event. The grid is UNMEASURED: CHOSEN to
+  resolve (a)'s predicted knee (1-2), to bracket the census lengths (24-64), and to include L
+  (0). Note: at every C1-C2 length (64 or less), H(64) renders exactly I.
 
-**The decision rule: a COMBINING table (every row applies; none stops the others).**
+**The decision rule: a COMBINING table (every row applies; none stops the others).** It applies
+under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen.
 
 | row | input | output |
 |---|---|---|
 | R0 gate | any form whose answers differ from the byte loop (G2) or from libpcre2 (pcrec's answer rows) | that form is DEFECTIVE: it leaves the grid, is filed, and sets nothing |
-| R1 default | every surviving grid value h, every timed cell (`k`, regime, layer) of C1-C3 | **h\*** = the grid value with the smallest WORST-CELL ratio, time(H(h)) / the fastest grid value's time in that cell. TIE-BREAK, declared: ratios within the A/A noise floor are equal, and among equals the SMALLEST h wins (less text, and the owner's "default to loops"). The default is H(h\*), labelled MEASURED with its card ids, or DERIVED if R3 fires |
-| R2 dial evidence | every cell where I (h `>= k`) beats H(h\*) beyond the floor | filed as the evidence for the dial's always-inline option (cover_cap.md §11.3, unlock 2). R2 never changes R1's default |
+| R1 default | every surviving FINITE grid value h; every timed cell c = (`k`, regime, layer) of C1 and C2 ONLY [rev 3, F11] | per h, `W(h)` = max over c of `t(H(h), c) / t(I, c)`, each `t` a raw median. The EQUAL set `E = { h : W(h) <= (1 + f) x min_g W(g) }`, computed once, never chained. **h\* = the LARGEST h in E** [RULED r22 F10]. The default is H(h\*), labelled MEASURED with its card ids, or DERIVED if R3 fires |
+| R2 dial evidence | every cell of C1-C3 where I beats H(h\*) beyond `f` | filed as the evidence for the dial's always-inline option (cover_cap.md §11.3, unlock 2). R2 never changes R1's default |
 | R3 derivation | h\* per card class against (a)'s `E[D]` for that class | if h\* tracks `E[D]` in every class, h becomes a derivation from the byte rate (§6 Q3); otherwise it stays a MEASURED constant |
+| R4 near-miss | C1's near-miss column: H(h\*) against C5 | a timed loss beyond `f` is §4's trigger (the skip's build); it never changes h\* |
+| R5 long sanity | C3's cells: H(h\*) against L and I at 500/1000 | a loss beyond `f` is FILED (with R2's evidence); it never re-picks h\* |
 
-Drilled on r20's four constructed outcomes:
-- **(i) I and H equal at `k` <= 32.** Every ratio is within the floor; the tie-break gives the
-  smallest h, so the default is loops after a short head. The owner's direction holds,
-  measured.
-- **(ii) I faster in one regime at `k` = 24.** R1 still sets h\*, minimising the worst-cell
-  loss, so h\* rises only if that loss beats every other cell's. R2 files the cell as dial
-  evidence.
-- **(iii) L faster everywhere.** h = 0 is in the grid, so R1 picks L.
-- **(iv) All within noise.** As (i).
-- In every outcome but R0's, no UNMEASURED h ships.
+- **Why each choice [rev 3, F11].**
+  - The ratio is against I, an arm timed in every cell, so the pick cannot move when a
+    never-picked grid value is added or dropped (r22's drill: adding a losing h = 4 moved a
+    best-normalised pick from 8 to 0; against I it stays 8).
+  - E is one threshold from the minimum, never a chain, so it is transitive by construction.
+  - R1 reads C1-C2 only, because C3 times only I, L and H(h\*): it cannot feed the pick it
+    depends on.
+- **The floor `f`.** The cards' own A/A floor: the `lit-l16` A/A cells, every regime and layer,
+  run with the cards on the same binary, and reduced to one ratio by the procedure cover_cap.md
+  §11.4 uses for B's floor. A RATIO (so `1 + f` multiplies), never a difference.
+- **Why the largest h among equals [RULED r22 F10].** It is the owner's prediction (short spans
+  stay inline under the head) and the fewest movers: a tie buys no byte move. "Less text" (rev
+  2's reason for the smallest h) was asserted, never measured, and C4 is not an input to the
+  rule.
 
-**The stability trade, offered to the owner in plain words (not his direction).** The cards may
-pick a short head, so spans of 32 or fewer positions (today's covers: `lit-l31`, `hex32`,
-`dig-exact-32`, `hex32-id`) would change from all-inline to loops. If the owner prefers that
-this landing change no existing matcher, the kit can keep every span of 32 or fewer positions
-all-inline, whatever the cards pick. The cost: those short spans do not get the measured form
-until a later change, and their cells are then timed as I, not as H(h\*).
+**Drills, re-run against the rule as written [rev 3, F10, F11].** `f` = 0.025 unless stated.
+- **(i) I and H equal at `k` <= 32** (every ratio within `f`). E = every finite h; the largest
+  is 64. h\* = 64: every span of 64 or fewer positions stays all-inline (no byte moves at
+  today's covers), and longer spans loop after a 64-position head. [rev 2 said "loops after a
+  short head": wrong under its own smallest-h tie-break, which gave h = 0.]
+- **(ii) I faster beyond `f` in ONE cell (`k` = 24, one regime), ties elsewhere.** For h < 24,
+  W(h) = that cell's ratio, above 1 + `f`; for h in {24, 32, 64}, H(h) is I at `k` = 24, so W =
+  1. E = {24, 32, 64}, h\* = 64. R2 finds nothing in C1-C2 (H(64) is I there) and reads C3 for
+  dial evidence. [rev 2 said h\* "rises only if that loss beats every other cell's": wrong.]
+- **(iii) L faster everywhere beyond `f`.** W(0) is the minimum and every other W is beyond
+  `(1 + f) x W(0)`: E = {0}, h\* = 0, the default is L.
+- **(iv) All within noise.** As (i): h\* = 64.
+- **(v) I faster beyond `f` in some cells, tied elsewhere** (r22 F9's case). I is not a
+  candidate. At C1-C2 lengths H(64) is I, so h\* = 64 and the default is inline up to 64
+  positions and loops past it; R2 then files every C3 cell where I beats H(64) as dial
+  evidence. All-inline at every length is reached only by the owner choosing the dial option.
+- **(vi) Near-equal chain** (`f` = 0.025; W(0) = 1.04, W(1) = 1.02, W(2) = 1.00, others above
+  1.10). E = { h : W <= 1.025 } = {1, 2}; h\* = 2. No chaining reading exists.
+- **(vii) A never-picked value added** (`f` = 0.01; two cells; I's times (1.20, 1.20); h = 0
+  at (1.00, 1.10), h = 8 at (1.08, 1.00)): W(0) = 0.917, W(8) = 0.900; E = {8}, h\* = 8. Adding
+  h = 4 at (0.80, 2.00) gives W(4) = 1.667; E and h\* are unchanged.
+- **(viii) A form fails G2.** R0 removes it; R1 picks among the rest. If every finite h fails,
+  no form ships and plan A falls back (below).
+- In every outcome but (viii)'s last, a MEASURED finite h ships; no UNMEASURED h ships.
 
-### Scope: plan A or plan B [rev 2, F13; for the owner, inside the question on the default]
+**The stability trade, offered to the owner in plain words (not his direction) [rev 3, F16
+(a)].** Under the largest-head tie-break, a span changes from today's all-inline text only if
+the cards measure a shorter head FASTER beyond the noise in every regime. The possible movers
+are the class covers of 64 or fewer positions: `hex32`, `dig-exact-32`, `hex32-id`, their
+24-position twins, and the uuid shapes. Literal covers (`lit-l31`, `lit-l40`) never move. If
+the owner prefers that this landing change no existing matcher even then, the kit can keep
+every span of 32 or fewer positions all-inline whatever the cards pick. The cost: those spans
+do not get the measured form until a later change, and their cells are then timed as I, not
+as H(h\*).
 
+### Scope: plan A or plan B [rev 2, F13; rev 3, F14, F16 (c); for the owner]
+
+The two plans end in the same place; they differ in which landing carries the forms, the
+default users get in between, and the cost.
 - **Plan A (owner-literal; the kit RECOMMENDS it).**
-  - The kit builds the forms (the segment rows, the option row, G2 per form) as instruments.
+  - The kit builds the forms (the segment rows, the option row, the head lever, G2 per form)
+    as instruments.
   - The cards run BEFORE the joint landing, on the combined-branch binary, and set h\*.
   - The landing ships H(h\*) as the default.
-  - Reasons: the owner's direction names the default ("default to sub span loops"). Plan B
-    ships the opposite default (all inline) for at least one landing. And §11.4's night then
+  - Reasons: the owner's direction names the default ("default to sub span loops"); plan B
+    ships the opposite default (all inline) for at least one landing; and §11.4's night then
     times the cover in the form that will ship.
-  - If the cards cannot run before the landing, plan A falls back to plan B's shape for that
-    landing: the forms stay off and I renders. It never ships an unmeasured h (memory
-    `pcrec-no-silent-defaults`).
+  - **A's costs [rev 3, F14]:** a kit timing slot BEFORE the landing (one night if the cards and
+    the width cells fit one window, otherwise two); the landing waits for it; and the landing
+    is larger (the forms, the option row, the head lever, G2's new rows, the card rows).
+  - **A's fallback [rev 3, F14].** If the cards cannot run before the landing, A lands with the
+    forms BUILT but OFF (every span all-inline, as today), and switches them on in a later
+    change, which is a second pcrec abi event. That is rev 1's withdrawn hybrid minus the
+    unmeasured head: A's cost with B's interim outcome. **Who decides** that the cards cannot
+    run: main, with the owner told. It is the same call as cover_cap.md §11.6.1's FALLBACK
+    (land at 32 UNMEASURED, time on landed main); under A the cards precede the width night, so
+    that fallback also fires this one.
 - **Plan B (stage-2 minimal; cheaper).**
-  - The joint landing carries the carrier (§1, §5), the per-extent working state, and form I
-    only. Kit bytes are unmoved at every width that covers today.
-  - The forms, the option row and the cards are the NEXT kit unit.
-  - B's honest advantage: it is smaller and lands sooner. It drops the forms, their option
-    row, their G2 rows and every timing card from the joint landing, and it needs no kit
-    timing slot before it.
+  - The joint landing carries the carrier (§1, §5), the per-extent working state, the two
+    witness rows, and form I only. Kit bytes are unmoved at every width that covers today.
+  - The forms, the option row, the lever and the cards are the NEXT kit unit.
+  - B's honest advantage: it is smaller, it needs no kit timing slot before the landing, and
+    it is READY NOW with rev 3's text fixes (review r22).
   - Form I alone keeps the cover legal at every width: R-45 FACT's ~151 emitted C bytes per
     position extrapolates to ~630 KB at 4095, under `PCREC_MAX_EMIT_BYTES` 1,000,000
     (UNMEASURED, an extrapolation; C4 confirms).
   - B's cost: until the next unit lands, users get all-inline on long covers, the opposite of
-    the owner's stated default.
-- Rev 1's hybrid is withdrawn: forms built and landed but defaulted away by an unmeasured h = 32,
-  which carried A's cost with B's outcome.
+    the owner's stated default; and the width night times form I, not the form that will
+    ship.
 
 ### The cards
 
@@ -448,40 +497,87 @@ build that adds its form (memory `pcrec-new-method-needs-measurement-card`).
 
 | card | forms | k (shape) | subjects (regimes) | layers | what it decides |
 |---|---|---|---|---|---|
-| C1 crossover | H(h) for h over the grid (0 = L, `>= k` = I) | 24, 32 (`[0-9a-f]{k}`, `\d{k}`: the stage-1 movers and their twins) | hit-dense (all members); DENSE NEAR-MISS (`k-1` members then a non-member, repeated: EMITTED-2's shape); miss-heavy (plain text, death at depth 0-1); uniform random bytes | SIMD-off, and SIMD-on where a level admits it | R1-R3 cells at the shipped default lengths; its near-miss column (H(h) against C5) is §4's trigger |
-| C2 population | as C1 | 36 (uuid: `hex{8}-hex{4}-hex{4}-hex{4}-hex{12}`), 40 (`lit-l40`, a literal: the run-compare control, one compare in every form), 49, 60 (the census rows' own patterns) | as C1 | both | R1-R3 cells at the population's lengths |
-| C3 long | I, L, H(h\* of C1-C2) | 500, 1000 (`[0-9a-f]{k}`, `a{k}`) | as C1 | both | R2's dial cells at length; NOT-WARM where the bench supplies the method (D198 (f)) |
+| C1 crossover | I, and H(h) for every finite grid h (0 = L) | 24, 32 (`[0-9a-f]{k}`, `\d{k}`: the stage-1 movers and their twins) | hit-dense (all members); DENSE NEAR-MISS (`k-1` members then a non-member, repeated: EMITTED-2's shape); miss-heavy (plain text, death at depth 0-1); uniform random bytes | SIMD-off, and SIMD-on where a level admits it | R1 and R3 cells at the shipped default lengths; R4's near-miss column |
+| C2 population | as C1 | 36 (uuid: `hex{8}-hex{4}-hex{4}-hex{4}-hex{12}`), 40 (`lit-l40`, a literal: the run-compare control, one compare in every form), 49, 60 (the census rows' own patterns), 64 (`[0-9a-f]{64}`, §11.4's synthetic width cell) [rev 3, F13] | as C1 | both | R1 and R3 cells at the population's lengths |
+| C3 long | I, L, H(h\*) | 500, 1000 (`[0-9a-f]{k}`, `a{k}`) | as C1 | both | R2's dial cells and R5 at length; NOT-WARM where the bench supplies the method (D198 (f)) |
 | C4 size | I, L, H(h\*) | 32, 500, 1000, 4095 (`[0-9a-f]{k}`, `a{k}`) | none (compile only) | both | emitted C bytes against 250,000 / 1,000,000 (the size-cap ladder, R-45 FACT cost), `gcc -O2 -c` time, RSS and `.text`. Recorded, no timing |
-| C5 engine reference | none: pcrec's engine route on the same subjects (`--memfn=no-window-search`) | as C1-C3 | as C1 | n/a | the floor every form is read against in the near-miss regime (§4) |
+| C5 engine reference | none: pcrec's engine route on the same subjects (`--memfn=no-window-search`) | as C1-C3 | as C1 | n/a | the floor every form is read against in the near-miss regime (R4, §4) |
 
 **The procedure** (kit timing, unofficial, per `memfn/CLAUDE.md` standing question 1):
 - Linux, `taskset`-pinned, calibrated loops, at least 5 launches, median, with A/A controls
-  (`lit-l16`) for the noise floor R1 uses.
+  (`lit-l16`) for the floor `f`.
+- **Which harness [rev 3, F13].** The cards run on the KIT's harness (the kit's measurement
+  script), in the same window and on the same frozen binary as the width cells, which are the
+  bench's. h is therefore a kit constant set by kit timing, labelled MEASURED with its card
+  ids, not an official bench verdict; its official check is the width night that follows,
+  which times the cover at h\*. If main prefers the bench to run the cards, the rows above are
+  its spec and nothing else changes.
 - G2's per-form answer check is R0, a precondition, not a card.
 
-**Answers, controlled by G2 [rev 2, F9].** G2's own twins of the kit bounds do not move by
-themselves, and none is asserted against the kit's name:
-- `G2W_MAXPOS 32` (`memfn/tests/g2/g2_win.h:17`), `G2W_REACH 64` (`:20`);
-- `G2P_MAXRUN 32` (`memfn/tests/g2/g2_pres.h:19`).
-Left alone, G2 never generates a span past 32 positions, and L/H with a short head would be
-checked over zero long keys. In the build:
-- **Random space.** `G2W_MAXPOS` 64 and `G2W_REACH` 128, CHOSEN (twice the grid's largest
-  finite h, so every grid h has positions on both sides; reach twice the span, as today). Each
-  carries `_Static_assert(G2W_MAXPOS <= MF_WSPAN_POS)` /
-  `_Static_assert(G2W_REACH <= MF_WREACH)`, so a lowered kit bound fails G2's build.
-  `G2P_MAXRUN` 64 with `_Static_assert(G2P_MAXRUN <= MF_WSPAN_POS)`.
+### The head lever and its identity check [RULED r22 F12]
+
+h is compiled into the kit, so timing the grid on ONE binary needs a lever:
+- **The lever.** `mf_lever(art, "span-head=N")` (N in 0..4095), the kit's test-only lever
+  family (R-30, `memfn.h:1596-1617`): never called by a shipped compile, no `options.def` row
+  (memory `pcrec-flag-follows-caller-effect`: no public flag for it). It sets h on that art. It
+  is the family's first VALUED lever.
+- **pcrec's reach.** A harness option on `build/pcrec-harness` only (`--harness=span-head=N`),
+  a new field in the harness struct beside `run_tie_left` and `mfind`
+  (`src/core/internal.h:176-206`), passed at the lever site in `memfn_sites.c:210-226`. Off on
+  every shipped compile.
+- **Its readers, each changed in the build:** `mf_lever`'s parse and its `memfn.h` comment (the
+  list of lever names); the form renderer that reads h; pcrec's harness option parse, its
+  struct field and the lever call; `cli/CLAUDE.md`'s harness-option line; G2 (one pass per grid
+  h, §3 "Answers"); the kit's card script (C1-C2 time I, L and each H(h) through the lever).
+  The answer-identity sweep does not read it (it reads `--memfn=` cells).
+- **The identity check.** After the cards fix h\*, the build compiles h\* in, and a kit test
+  asserts that the lever at h\* emits text BYTE-EQUAL to the shipped build at h\*, over every
+  card pattern and every census cover. So the timed artifacts are the shipped artifacts, though
+  the shipped compiler is a rebuild.
+
+### Answers, controlled by G2 [rev 2, F9; rev 3, F8]
+
+G2's twins of the kit bounds do not move by themselves, and none is asserted against the kit's
+name: `G2W_MAXPOS 32` (`memfn/tests/g2/g2_win.h:17`), `G2W_REACH 64` (`:20`); `G2P_MAXRUN 32`
+(`memfn/tests/g2/g2_pres.h:19`). And raising them alone changes no generated span: in G2-win the
+twins only SIZE arrays (`g2_win_gen.c:126-127`, and via `G2W_NOFF` below); every span length is
+a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS:
+- **The draw sites and their stated reach.**
+  - FAM_REPORT, the cover's family (`g2_win_gen.c:433`, `2 + rnd(7)` / `1 + rnd(8)` /
+    `1 + rnd(5)` today): draws `k` in `1 .. G2W_MAXPOS`, so its spans straddle every finite
+    grid h.
+  - A NEW repeated-class shape in FAM_REPORT: one multi-member set over a stretch, at lengths
+    `h - 1`, `h` and `h + 1` for every finite grid h >= 1 (a loop row's trigger; the random
+    `rand_set` draw, `:216-231`, rarely repeats one class).
+  - The other families' literal draws (the reseed, pre-check and run families; `:291-:539`,
+    listed by line in review r22's fixind file, FIXIND-6) keep today's reach: pcrec states those
+    sites at 32 positions or fewer by its own bounds (§7), and their reach (up to 9) already
+    places positions on both sides of heads 0-8.
+- **The twins.** `G2W_MAXPOS` 128 and `G2W_REACH` 256, CHOSEN: twice the largest finite h (64),
+  so h = 64 has positions on both sides [rev 3: rev 2's 64 was twice 32, not twice the grid's
+  largest]; reach twice the span, as today. Each carries
+  `_Static_assert(G2W_MAXPOS <= MF_WSPAN_POS)` / `_Static_assert(G2W_REACH <= MF_WREACH)`.
+  `G2P_MAXRUN` 64 with `_Static_assert(G2P_MAXRUN <= MF_WSPAN_POS)`; its draw already reads the
+  twin (`g2_pres_gen.c:333`).
+- **The COUNTED line (K35).** G2-win prints, per finite grid h, "sites with a looped segment
+  past h", and FAILS at zero for any h. The population is counted by the generator's own
+  output, not assumed from the draw.
 - **Long cases.** `k` = 500 and 4095 are their OWN generator rows: a fixed handful of sites
   each, every form, not part of the random space.
 - **Readers that size from the twins:** `g2_win_gen.c:126-127` (`set[G2W_MAXPOS][32]`,
-  `table[G2W_MAXPOS]`); `g2_win_ref.c:168-176, :199, :273-291, :398-405, :474, :492`;
-  `g2_pres.h:61`; `g2_pres_gen.c:187-188, :295, :333`. The long rows need their own storage,
-  because the arrays are sized by the twins.
-- **Runtime, UNMEASURED.** `g2_win_ref.c` loops O(reach) per offset, so the random space costs
-  about 2x today per site, and each long row about 4096/64 = 64x a random site, times a handful
-  of sites. The build records G2-win's wall time before and after as a non-timing record. If it
-  more than doubles, the long rows move to a separate opt-in G2 section.
+  `table[G2W_MAXPOS]`); `g2_win.h:21` (`G2W_NOFF = G2W_REACH - G2W_LO`) and its holders
+  `g2_win.h:50-51, :59` (`g2w_reply`'s `plan`/`plan_term`/`plan_test`) and `:108-115` (the
+  reference's `plan`, `plan_term`, `toff`, `tset`, `tcore`); the copies into them,
+  `g2_win_gen.c:1145` and `:1290` (bounded by the kit's `nplan`); `g2_win_ref.c:168-176, :199,
+  :273-291, :398-405, :474, :492`; `g2_pres.h:61`; `g2_pres_gen.c:187-188, :295, :333`. The
+  long rows (reach 4096) need their own storage, sized by their `nplan`.
+- **Runtime, UNMEASURED.** `g2_win_ref.c` loops O(reach) per offset. With the REPORT draw
+  reaching 128, a REPORT site costs about 4x today's at most; each long row about 4096/128 = 32x
+  a random site, times a handful. The build records G2-win's wall time before and after as a
+  non-timing record. If it more than doubles, the long rows move to a separate opt-in G2
+  section.
 
-### The option [rev 2, F10]
+### The option [rev 2, F10; rev 3, F15]
 
 - **The row.** The forms get the kit's FIRST `options.def` PAIR row (the kind is already parsed,
   `options.c:65`, and dumped, `src/dump/axes_dump.c:977/:1025`). Working name `span-loop`
@@ -490,29 +586,60 @@ checked over zero long keys. In the build:
   - `--memfn=span-loop`: FORCES L, i.e. H(0) on every span. That is the most loop-rendering
     arm, so it is the answer-identity arm for the loop rows;
   - `--memfn=no-span-loop`: forces I, today's text, and is pcrec's G1 deny.
+- **The kit's FORCE reader [rev 3, F15].** Today the kit reads options only through
+  `kit_opt_denied` (`options.c:73`, matching `no-NAME`; callers `compose.c:171`,
+  `presence.c:277`, `vrun.c:239/288/303`). The build adds one three-state read, unset / forced
+  / denied, over the same `opts` string, with `memfn.h:1922`'s doc. When both spellings are
+  given the DENY wins, as pcrec's own pair rule (tuning.md §2.43¶1).
 - **Its readers, each changed in the same build:**
-  - `docs/spec/registry.md` §6¶8a: "The section's rows, each a `deny` row" becomes false. The
-    spec hunk names the pair row (D80).
+  - `docs/spec/registry.md` §6¶8a: the sentence "The section's rows, each a `deny` row" and the
+    section's `| name | denies |` table, which gains the pair row with its force described;
+    §6¶7, whose identity gates read their rows from that section [rev 3]. The spec hunk names
+    the pair row (D80).
   - §6¶8b: the `memfn` section floor 13 -> 14 (read by `tests/registry/axes_registry_check.sh:186-192`).
   - `tests/axes/memfn_arm.py:346-349`: a `MEMFN_CLASS` entry for `span-loop`, with its measured
     DIFFER/SAME counts per cell.
   - `tests/axes/memfn_arm.py:452-460` handles the force spelling only as the REFUSES control for
-    `deny` rows. The build adds a FORCE cell, `--memfn=span-loop`, to the answer-identity sweep,
-    so L runs over the whole corpus at pcrec level, not only in G2.
+    `deny` rows (a pair row is correctly exempt). The build adds a FORCE cell,
+    `--memfn=span-loop`, to the answer-identity sweep, so L runs over the whole corpus at pcrec
+    level, not only in G2.
+  - `tests/ci/measured_axes.tsv` and `cloud_axes_shards.tsv`: a deny cell and a force cell
+    [rev 3]. `tests/ci/cloud_units_plan.py:64` may key memfn cells by a `no-` token
+    (SUSPECTED in r22); the build checks it against the force spelling.
+  - `memfn/src/formhash.c:425` (`s->opts = e->deny`): the force spelling gets its own form-hash
+    instance, so measurement-set staleness sees L's bytes; H at h\* is the default instance
+    [rev 3].
+- **The spec hunks' homes [rev 3, F15].** The row and its states: registry.md §6¶8a. The
+  caller-facing behaviour (what the force and the deny do, and dense near-miss subjects as the
+  cover's known slow regime, §4): tuning.md §2.43¶3d, beside the window search's denies.
 - **The dial.** pcrec's `--tune=N` can carry the always-inline option as a cell once R2 files
   evidence (cover_cap.md §11.3, unlock 2). The kit never reads the dial.
 
-**What a card needs from the box.**
-- **The order: SETTLED with main** [rev 2, F12; ruling R1, kit manager 2026-11-16, agreed with
-  main]. The form cards run BEFORE cover_cap.md §11.4's width cells, on the SAME frozen
-  combined-branch binary. The order of record:
-  1. The form cards C1-C3 and C5 run. The rule that picks h (R0-R3 above) is committed before
-     the run.
+### What a card needs from the box: the night order [rev 2, F12; rev 3, F13, FREEZE NOTE]
+
+- **The order of record (plan A only).** Ruling R1 (kit manager, 2026-11-16, AGREED WITH MAIN
+  2026-11-16; this section and §8 are its record):
+  1. The form cards C1-C3 and C5 run on the frozen combined-branch binary, h set through the
+     head lever. The rule that picks h (R0-R5 above) is committed before the run.
   2. h is frozen by that rule's reading.
-  3. The width cells are measured with that h, so the width night varies ONE thing.
+  3. The width cells (cover_cap.md §11.4 B) are measured on the SAME frozen binary with the
+     lever at h\*, so the width night varies ONE thing. The identity check (above) ties those
+     bytes to the shipped build.
   If both fit one window, the cards queue first and the width cells are not-before the cards'
   verdict. Otherwise it is two nights. Measured in the other order, two coupled selections
   would be read backwards, and the width evidence would go stale when h moved.
+- **cover_cap.md edits for main, if the owner chooses plan A** [rev 3, F13]:
+  - §11.4: the header's "ONE night" becomes "one night, or two if the kit's cards and the width
+    cells do not fit one window"; the forms paragraph ("not part of this night unless the kit
+    asks for a slot") becomes "the kit's form cards run first in the same window, on the same
+    binary, and gate B's cells (not-before their verdict); B's cells run with the head lever at
+    h\*"; `[0-9a-f]{64}` is a card cell (C2) as well as a width cell.
+  - §11.6.1: a step between (4) and (5), "the kit's form cards on the combined branch; h frozen
+    by the kit's rule"; the FALLBACK gains "and the forms land OFF (all-inline), switched on in
+    a later abi event" (plan A's fallback above).
+  - §11.6.4: the line "the kit's three-form cards' timing (kit-side)" is removed; under plan A
+    it is a precondition of stage 2's landing.
+  - Under plan B none of these edits applies.
 - C4 is a non-timing job: boxqueue, no window (memory `pcrec-kit-nontiming-runs-no-ask`).
 
 ## 4. ASK (4): the dense near-miss regime (no form asked)
