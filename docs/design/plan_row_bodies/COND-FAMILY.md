@@ -1194,3 +1194,6 @@ under that name at this entry (grep of plan.md, decisions.md and the row bodies 
 that GUARANTEES certain characteristics (to be defined: e.g. no side effects on the match state, a bounded read of
 the span it is handed, a yes/no answer) may be called from the DFA engine, not only the VM. It is filed as a plan
 row with the re-reading-transforms follow-up as its first named client (`json.quoted`).
+CORRECTION (manager, box clock 21:58) to the entry above: the idea IS on record, in THIS file: the 2026-11-14 entries "a
+standard library of blessed callouts (Frank)" and "capability levels" (search this file for "blessed"). What did not
+exist is a plan.md row of its own. The guarantees are the ones recorded there, not the manager's candidates above.
