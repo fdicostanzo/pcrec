@@ -3,7 +3,9 @@
 ## STATE AT HANDOFF
 Branch lane/file28 from main 6f480b35b. Commits: bcbb5233b (review r28 filed + index), 5e37d4af4 (process changes), plus this
 report's commit (the branch tip). Rulings file docs/dev/lanes/file28_rulings.md: EMPTY at 15:16 on the box clock (read before
-each commit and before this report). No build, no suite run (docs/skill text only). Premise note: `ls docs/dev/reviews | grep r28`
+each commit and before this report). No build, no suite run (docs/skill text only).
+OWED: none
+Premise note: `ls docs/dev/reviews | grep r28`
 printed the older `2026-08-17-r28-mrl-landing.md`; review numbers are already reused across dates (r26 has two files), so r28
 was used as briefed.
 
@@ -50,5 +52,5 @@ read-only, so `chmod -R u+w` on those three trees preceded the plain `rm -r`; cr
 ## OPEN ITEMS
 - The six LEFT lanes (jcfix, revjc, ledg1116, absent, absimpact, absfold) are merged and clean apart from their deliver
   files; re-run `scripts/wtprune --apply --force NAME..` and `scripts/branchprune --apply lane/NAME..` once each has been
-  quiet for 120 minutes (absfold about 15:52+ ... 17:20 on the box clock).
+  quiet for 120 minutes (the latest, absfold, about 17:20 on the box clock).
 - The r28 number duplicates the 2026-08-17 r28 filing; the manager may want to renumber.
