@@ -49,6 +49,8 @@ WHAT COMPUTING THE RULE TAKES (R3; draft l.2093):
   l.2141, L82 and L95.
 - Validation: `timeout 600 make test-spec-history test-doc-lint`; the verdict is under VALIDATION at the end.
 
+OWED: none (the re-check round on rev 21 and the owner's answer on mark-under-not are the manager's, not this lane's).
+
 ## DISPOSITIONS APPLIED (review r29; one line per group and per Q row)
 
 - A (DOM over the program): done. THE DOMAIN l.1984; WHICH CONDITIONS NARROW l.1999; the table l.2012; §0.3 DOM row;
