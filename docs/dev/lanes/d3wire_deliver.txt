@@ -1,0 +1,5 @@
+report=docs/dev/lanes/d3wire_report.md
+sections: Summary; Choice; Wiring; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
