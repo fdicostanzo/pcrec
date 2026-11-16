@@ -1186,3 +1186,11 @@ could be the mechanism. The manager's answer given to him: a callout is not stri
 is a finite-state rewrite, so the filter could be compiled through it), but that is a new compiler construction; a
 callout that decodes the matched literal and tests the filter on the result is the simpler build, and would make
 `json.quoted` a client of the callout work.
+
+**2026-11-15 OWNER IDEA on record — "blessed" callouts for the DFA (Frank, to session 133, box clock 21:58).** Asked where
+his DFA-compatible callout plan lives, his words: "Dfa callouts: Not sure it was made into a plan item. Idea was
+\"blessed\" callouts that guaranteed certain characteristics could be exposed to dfa." RECORD: no plan row existed
+under that name at this entry (grep of plan.md, decisions.md and the row bodies for "blessed"). The idea: a callout
+that GUARANTEES certain characteristics (to be defined: e.g. no side effects on the match state, a bounded read of
+the span it is handed, a yes/no answer) may be called from the DFA engine, not only the VM. It is filed as a plan
+row with the re-reading-transforms follow-up as its first named client (`json.quoted`).
