@@ -173,12 +173,21 @@ FORM_IDS = {
     # R-38 Part D (part_d.md §5.3 [r3pd FIX-5]): the scan-less BODY, its row
     # the fn walk's (the define's own record), its card kit-grid@5 UNMEASURED
     "every-pos": ("fn-every-pos", {"-": None}, "-"),
+    # lane mfind: the inline one-member finder's forms on one offset-skip
+    # site under the lever `mfind` (the BODY row at SIMD-off, the MEMFN_FORMS
+    # token at a level), and the same site's libc memchr search (and its
+    # restart stream); cards kit-grid@6
+    "mfind-swar": ("fn-mfind",      {"-": None}, "-"),
+    "mfind-w16":  ("mfind@w16",     {"-": None}, "-"),
+    "mfind-w32":  ("mfind@w32+w16", {"-": None}, "-"),
+    "fn-memchr":  ("fn-memchr",     {"-": None}, "-"),
 }
-FORM_INSTANCE_FLOOR = 10
+FORM_INSTANCE_FLOOR = 14
 # span_cards.md §2.4 [rev1.2 READY-2; rev1.3 r9-CHECKS-3]: the card guard's
 # population, EXACT (kit-grid@1 9, kit-kernels@1 5, kit-synthetic 0, kit-grid@3
 # 3): a card added with a kit:form. dep bumps it in the same change
-CARD_FORMDEP_COUNT = 18     # 18 at R-38 Part D: kit-grid@5's every_pos
+CARD_FORMDEP_COUNT = 20     # 18 at R-38 Part D: kit-grid@5's every_pos; 20 at
+                            # lane mfind: kit-grid@6's find_byte and find_hit
 # span_cards.md §2.4 (S2e): the measure_store pass's population floor, pinned
 # at landing as zen4-grid3@1's form-bearing row count (38 rows, 5 `enter`)
 STORE_FORMROW_FLOOR = 33

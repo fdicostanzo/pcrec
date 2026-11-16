@@ -1,7 +1,10 @@
 # span_cards/slot/record.py — THE RUN RECORD's one writer (span_cards.md §3.5 "The run record", rev 1.3
 # READY-2, [rev1.3 r9-G6]): the window's working copy RUNDIR/run_record.tsv.
 #   record.py window RUNDIR RUN_ID CODE_COMMIT   THE WINDOW FACTS (`set`, `rules`, `run_id`, `code_commit`, `box`,
-#                                                `isa`, `libc`, `gcc`), idempotent: written at every job's start (run.py
+#                                                `isa`, `libc`, `gcc`, [review r6 RULE-3] the sha-256 of D197's
+#                                                declared rule `d197_rule_tsv_sha256` and its reader
+#                                                `d197_rule_py_sha256`, which d197_rule.py rule holds the files it
+#                                                runs with to), idempotent: written at every job's start (run.py
 #                                                run) and at finalize, so a run whose J1 failed still names its
 #                                                run; a record naming another run id or commit REFUSES
 #   record.py j1 RUNDIR RUN_ID CODE_COMMIT       J1's END: the window facts, `j1_verdict`, `j1_widths` and
@@ -19,13 +22,15 @@
 #                                                only these, [rev1.3 r9fc-FIX-1]) and `transcript_sha256`
 #                                                (RUNDIR/transcript.tsv); [rev1.5 r11-REV15-1] `manifest_sha256_<job>`
 #                                                for every ran job's manifest (RUNDIR/JOB/manifest.tsv), which est.py
-#                                                checks the launch executables it reads against
+#                                                checks the launch executables it reads against; [review r6
+#                                                FIDELITY-3] `cells_sha256_<job>` for every ran job's cells file
+#                                                (RUNDIR/cells.JOB.tsv), which est.py's read_cells holds it to
 # table_contract.md's section shape: `#section NAME`, a `#`-header line, TAB fields. Sections in this order:
 # run, jobs, plan, floor, cards, policy, j1_cells, quiet. [rev1.4 R14-3] `quiet`: every quiet check of the window
 # (the transcript's `quiet` lines: job, check, load1 and the top co-runners `pid:comm:%cpu`), copied at finalize;
 # [rev1.4 R14-3, R14-4] finalize also writes est.py's two NOTE lines (`run` keys note_box_state, note_bimodal).
 # Exit 2 on a refused input.
-import hashlib, os, platform, re, subprocess, sys
+import hashlib, os, platform, re, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -36,9 +41,15 @@ SECTIONS = [("run", ["key", "value"]), ("jobs", ["job", "state", "cause"]), ("pl
             ("j1_cells", ["cell", "pattern", "subject", "regime", "width", "launch", "ns_e6"]),
             ("quiet", ["job", "check", "load1", "corunners"])]
 JOBS = ("J1", "J2", "J2p", "J3", "J4", "J5")
+# [lane slotx] THE WINDOWS: each window's job set, one row per window. finalize holds STATES to exactly one of them
+# (recorded as `window`), and est.py prices only the rows of the window's jobs (the frozen plan holds every job's
+# rows; a row of a job outside the window is not this window's, never `never-ran`). `mfcard`: kit-grid@6's card
+# (JMB, JMH) with J2 (the unit and libc's byte row) and J2p (pair, the ver-3 anchor)
+WINDOWS = {"s2d": JOBS, "mfcard": ("J2", "J2p", "JMB", "JMH"),
+           "mfconfirm": ("J2", "JMHC")}   # [r5 R3 (1)] D197's confirming re-run (plan.py CONFIRM_CELLS)
 # PER VER ([r2s1 RK383-3]): the set a ver's rows are written to and the owner of the rules that ver is scored by
 # (measures.md §3.5¶8a: span_cards). Ver 3's keys stay `set` / `rules`; any other ver's are `rules.<ver>` (rules_key)
-SETS = {"3": "zen4-grid3@1", "4": "zen4-grid4@1"}
+SETS = {"3": "zen4-grid3@1", "4": "zen4-grid4@1", "6": "zen4-grid6@1"}
 RULES = {v: "kit-grid@" + v for v in plan.METHOD_VERS}
 SET = SETS["3"]
 assert set(SETS) == set(RULES)
@@ -110,6 +121,39 @@ def quiet_rows(tp):
     return rows
 
 
+MEMCHR_PROBE = r"""#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stdio.h>
+int main(void) { const unsigned char *p = dlsym(RTLD_DEFAULT, "memchr"); if (!p) return 1; fwrite(p, 1, 128, stdout); return 0; }
+"""
+
+def memchr_variant():
+    """[review 2026-11-15 r5 FIDELITY-4] THE MEMCHR VARIANT glibc's ifunc binds in THIS process (the timing job's own
+    environment, GLIBC_TUNABLES included): a probe resolves memchr (dlsym returns the ifunc's pick) and its first
+    vector instruction's ENCODING names the class: `evex` (AVX-512VL code), `avx2` (VEX), `sse2` (legacy). The
+    tunable alone is not the fact: on glibc 2.43 `hwcaps=-AVX512F` still binds the EVEX variant (`-AVX512VL` binds
+    the AVX2 one), measured 2026-11-15 by lane mcfixa"""
+    import tempfile
+    from link import encoding
+    d = tempfile.mkdtemp(prefix="memchr.", dir=os.environ.get("PCREC_TMPDIR") or os.environ.get("TMPDIR"))
+    try:
+        open(os.path.join(d, "p.c"), "w").write(MEMCHR_PROBE)
+        r = subprocess.run(["gcc", "-O1", "-o", os.path.join(d, "p"), os.path.join(d, "p.c"), "-ldl"],
+                           capture_output=True, text=True)
+        b = subprocess.run([os.path.join(d, "p")], capture_output=True) if not r.returncode else None
+        if b is None or b.returncode:
+            refuse("the memchr probe did not run (%s)" % ((r.stderr or "rc %s" % (b and b.returncode)).strip()[:120]))
+        open(os.path.join(d, "b"), "wb").write(b.stdout)
+        dis = subprocess.run(["objdump", "-D", "-b", "binary", "-mi386:x86-64", "--insn-width=16", os.path.join(d, "b")],
+                             capture_output=True, text=True).stdout
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+    for ln in dis.splitlines():
+        m = re.match(r"\s+[0-9a-f]+:\t([0-9a-f ]+?)\s*\t(\S+)\s*(.*)$", ln)
+        if m and re.search(r"%[xyz]mm", m.group(3)):
+            return {"evex": "evex", "vex": "avx2", "legacy": "sse2"}[encoding([int(x, 16) for x in m.group(1).split()])]
+    refuse("the memchr probe's first 128 bytes hold no vector instruction: no variant named")
+
 def box_facts():
     """the box, its ISA features (cpuid's flags the kit's arms and gcc's levels read), libc and gcc"""
     cpu = {}
@@ -125,11 +169,37 @@ def box_facts():
     isa = " ".join([lvl] + [f.replace("sse4_2", "sse4.2") for f in ("avx512f", "avx2", "sse4_2", "popcnt", "bmi2")
                             if f in fl])
     lib, ver = platform.libc_ver()
+    # [lane slotx] glibc's ifunc picks memchr's variant per PROCESS from GLIBC_TUNABLES: part of the libc fact, so
+    # one record never mixes two libc arms (window() refuses a second value)
+    tun = os.environ.get("GLIBC_TUNABLES")
     r = subprocess.run(["gcc", "-dumpfullversion"], capture_output=True, text=True)
     if r.returncode or not r.stdout.strip():
         refuse("gcc -dumpfullversion: rc %d" % r.returncode)
     return (("box", "%s, CPU %s" % (cpu.get("model name", "?"), plan.TIMING_CPU)), ("isa", isa),
-            ("libc", "%s %s" % (lib, ver) if lib else "-"), ("gcc", r.stdout.strip()))
+            ("libc", ("%s %s" % (lib, ver) if lib else "-") + " memchr=%s" % memchr_variant()
+                     + (" GLIBC_TUNABLES=%s" % tun if tun else "")),
+            ("gcc", r.stdout.strip()))
+
+
+# [review 2026-11-15 r6 RULE-3] D197's DECLARED RULE, pinned at `window` time (before any number of the run exists):
+# the table and its reader. d197_rule.py's `rule` refuses a record whose pin differs from the files it runs with
+RULE_PIN_FILES = ("d197_rule.tsv", "d197_rule.py")
+
+def rule_pins(here=HERE):
+    """{record key: sha-256} of the D197 rule's files in `here`"""
+    return {f.replace(".", "_") + "_sha256": hashlib.sha256(open(os.path.join(here, f), "rb").read()).hexdigest()
+            for f in RULE_PIN_FILES}
+
+def cells_pins(rundir, jobs):
+    """[review 2026-11-15 r6 FIDELITY-3] {`cells_sha256_<job>`: sha-256} of every RAN job's cells file: est.py's
+    read_cells refuses a cells file that differs from its pin (two keys' cells swapped after the run keep every
+    cell key unique, so CELL TWICE cannot see them)"""
+    out = {}
+    for j in jobs:
+        p = os.path.join(rundir, "cells.%s.tsv" % j)
+        if os.path.exists(p):
+            out["cells_sha256_" + j] = hashlib.sha256(open(p, "rb").read()).hexdigest()
+    return out
 
 
 def pin(rec, fr):
@@ -163,6 +233,10 @@ def window(rec, run_id, commit):
     for k, v in box_facts():
         if getrun(rec, k) not in (None, v):
             refuse("the record's %s is %r, this box's %r: one window, one box" % (k, getrun(rec, k), v))
+        setrun(rec, k, v)
+    for k, v in sorted(rule_pins().items()):
+        if getrun(rec, k) not in (None, v):
+            refuse("the record pins %s %s, the tree's file is %s: D197's rule moved inside the window" % (k, getrun(rec, k), v))
         setrun(rec, k, v)
 
 
@@ -204,11 +278,16 @@ def main():
             if ln.strip() and not ln.startswith("#"):
                 f = ln.rstrip("\n").split("\t")
                 st[f[0]] = f[1]
-        if sorted(st) != sorted(JOBS):
-            refuse("STATES names %s, the window's jobs are %s" % (sorted(st), sorted(JOBS)))
+        win = next((w for w, js in sorted(WINDOWS.items()) if sorted(st) == sorted(js)), None)
+        if win is None:
+            refuse("STATES names %s, no window's jobs (%s)" % (sorted(st), "; ".join(
+                "%s %s" % (w, ",".join(js)) for w, js in sorted(WINDOWS.items()))))
+        if getrun(rec, "window") not in (None, win):
+            refuse("the record names window %s, STATES window %s" % (getrun(rec, "window"), win))
+        setrun(rec, "window", win)
         v = getrun(rec, "j1_verdict")
         jobs = []
-        for j in JOBS:
+        for j in WINDOWS[win]:
             hit = next((c for s, test, c in CAUSE if s == st[j] and test(j, v)), None)
             if not hit:
                 refuse("job %s's state %r is in no CAUSE line" % (j, st[j]))
@@ -222,6 +301,8 @@ def main():
             mp = os.path.join(rundir, j, "manifest.tsv")
             if state == "ran" and os.path.exists(mp):
                 setrun(rec, "manifest_sha256_" + j, hashlib.sha256(open(mp, "rb").read()).hexdigest())
+        for k, v in sorted(cells_pins(rundir, [j for j, state, _c in jobs if state == "ran"]).items()):
+            setrun(rec, k, v)
         tp = os.path.join(rundir, "transcript.tsv")
         setrun(rec, "transcript_sha256", hashlib.sha256(open(tp, "rb").read()).hexdigest() if os.path.exists(tp) else "-")
         rec["quiet"] = quiet_rows(tp)

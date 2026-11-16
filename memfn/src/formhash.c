@@ -255,6 +255,11 @@ static void fh_cstr(void *u, const uint8_t *b, size_t n)
 /* The site's function name (a WINDOW site's handle prefix asks for one). */
 static const char *fh_fn(void *u, uint32_t ref) { (void)u; (void)ref; return "mf_fn"; }
 
+/* The bracket ops (memfn.h): a level's text is bracketed; the instance's
+ * text is the kit's, the region around it the host's (none here). */
+static void fh_simd_open(void *u, int level) { (void)u; (void)level; }
+static void fh_simd_close(void *u) { (void)u; }
+
 /* ---- THE ENTRY TABLE (span_cards.md §3.2, unit S2c) -------------------------
  *
  * One row per INSTANCE: an id's canonical instance (`canon` 1; `cls` "-" for
@@ -302,18 +307,34 @@ static const char DIGITS[] = "0123456789";
 static const char WORD[]   = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
 static const mf_form_entry entries[] = {
-    /* id          cls  canon shape          row          bytes                case tbl empty              leaves on_miss      target              deny */
-    { "walk",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        "generic",          NULL },
-    { "libc",      "-",  1, MF_FH_FIND,    "pf_memchr", "x",                  0, 0, MF_EMPTY_EXCLUDED, 1, "return 0;", "generic",          NULL },
-    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL },
-    { "settest",   "c1", 0, MF_FH_SETTEST, NULL,        "/",                  0, 0, 0,                 0, NULL,        "generic",          NULL },
-    { "settest",   "c2", 1, MF_FH_SETTEST, NULL,        "Xx",                 0, 0, 0,                 0, NULL,        "generic",          NULL },
-    { "settest",   "cn", 0, MF_FH_SETTEST, NULL,        WORD,                 0, 0, 0,                 0, NULL,        "generic",          NULL },
-    { "rc-words",  "w1", 0, MF_FH_RUNCMP,  "words",     "USER",               1, 0, 0,                 0, NULL,        "generic",          NULL },
-    { "rc-words",  "w2", 1, MF_FH_RUNCMP,  "words",     "ABC",                1, 0, 0,                 0, NULL,        "generic",          NULL },
-    { "rc-words",  "w3", 0, MF_FH_RUNCMP,  "words",     "ABCDEFGHIJKLMNOPQR", 1, 0, 0,                 0, NULL,        "generic",          NULL },
-    { "rc-memcmp", "l1", 1, MF_FH_RUNCMP,  "memcmp",    "/use",               0, 0, 0,                 0, NULL,        "generic",          NULL },
-    { "every-pos", "-",  1, MF_FH_RUNPART, "fn-every-pos", DIGITS,            0, 0, 0,                 0, NULL,        "generic",          NULL },
+    /* id          cls  canon shape          row          bytes                case tbl empty              leaves on_miss      target              deny  lever */
+    { "walk",      "-",  1, MF_FH_FIND,    "pf_walk",   DIGITS,               0, 1, MF_EMPTY_NOP,      0, NULL,        "generic",          NULL, NULL },
+    { "libc",      "-",  1, MF_FH_FIND,    "pf_memchr", "x",                  0, 0, MF_EMPTY_EXCLUDED, 1, "return 0;", "generic",          NULL, NULL },
+    { "pair",      "-",  1, MF_FH_WINDOW,  "PAIR",      "Xx",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, NULL },
+    { "settest",   "c1", 0, MF_FH_SETTEST, NULL,        "/",                  0, 0, 0,                 0, NULL,        "generic",          NULL, NULL },
+    { "settest",   "c2", 1, MF_FH_SETTEST, NULL,        "Xx",                 0, 0, 0,                 0, NULL,        "generic",          NULL, NULL },
+    { "settest",   "cn", 0, MF_FH_SETTEST, NULL,        WORD,                 0, 0, 0,                 0, NULL,        "generic",          NULL, NULL },
+    { "rc-words",  "w1", 0, MF_FH_RUNCMP,  "words",     "USER",               1, 0, 0,                 0, NULL,        "generic",          NULL, NULL },
+    { "rc-words",  "w2", 1, MF_FH_RUNCMP,  "words",     "ABC",                1, 0, 0,                 0, NULL,        "generic",          NULL, NULL },
+    { "rc-words",  "w3", 0, MF_FH_RUNCMP,  "words",     "ABCDEFGHIJKLMNOPQR", 1, 0, 0,                 0, NULL,        "generic",          NULL, NULL },
+    { "rc-memcmp", "l1", 1, MF_FH_RUNCMP,  "memcmp",    "/use",               0, 0, 0,                 0, NULL,        "generic",          NULL, NULL },
+    { "every-pos", "-",  1, MF_FH_RUNPART, "fn-every-pos", DIGITS,            0, 0, 0,                 0, NULL,        "generic",          NULL, NULL },
+    /* the inline one-member finder (lane mfind), each form on ONE offset-skip
+       site (MF_FH_OFS), reached through the test-only lever `mfind`; its
+       row the BODY row (SIMD-off) or the MEMFN_FORMS token (a level). The
+       run is TWO bytes (lane slotx): `x` scanned, `y` the check at offset 1,
+       so a hit the subject plants without its `y` is a candidate the
+       check REJECTS (find_hit@6's `reject` dim, the MASK stream's
+       continue-after-reject path) */
+    { "mfind-swar", "-", 1, MF_FH_OFS,     "fn-mfind",  "xy",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, "mfind" },
+    { "mfind-w16", "-",  1, MF_FH_OFS,     "mfind@w16", "xy",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "x86-64",           NULL, "mfind" },
+    { "mfind-w32", "-",  1, MF_FH_OFS,     "mfind@w32+w16", "xy",             0, 0, MF_EMPTY_MISS,     0, NULL,        "x86-64-v3",        NULL, "mfind" },
+    /* the same site at no lever: fn-memchr, the libc memchr search and its
+       restart stream. The BUNDLE comparison (review 2026-11-15 r2 F6): it
+       differs from the finder in the call boundary, own code vs library,
+       the search AND the stream, named as one; the ruled single-piece cells
+       (search vs the walk, stream RESTART vs MASK) are not built */
+    { "fn-memchr", "-",  1, MF_FH_OFS,     "fn-memchr", "xy",                 0, 0, MF_EMPTY_MISS,     0, NULL,        "generic",          NULL, NULL },
 };
 #define NENTRIES (sizeof entries / sizeof entries[0])
 
@@ -331,6 +352,8 @@ static const mf_form_shape shapes[] = {
                         "subject", NULL, NULL, NULL, "pos" },
     [MF_FH_RUNPART] = { "pres-stmt",   "mf_emit (presence STMT/ALL_PRESENT, precheck; P0's scan-less run, ofsskip's BODY)",
                         "subject", "n", "pos", NULL, NULL },
+    [MF_FH_OFS]     = { "find-fn",     "mf_emit (offset-skip FUNC/FIND/RETURN, ofsskip; its call assigned to pos)",
+                        "subject", "n", "pos", "pos", NULL },
 };
 
 /* kit.h: the i-th instance, NULL past the last. */
@@ -408,7 +431,8 @@ static void fh_site(const mf_form_entry *e, mf_site *s)
  * body's) into `all`, and the kit row its facts reached into *row (NULL:
  * the shape has no row). 0, or -1 (a kit refusal, a scratch failure, or a
  * row other than the entry's). */
-static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t *flen)
+static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t *flen,
+                     uint32_t *inc)
 {
     fh_work *w = calloc(1, sizeof *w);
     if (!w) return -1;
@@ -416,9 +440,9 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
     mf_arena ar = { &fa, fh_alloc };
     nbuf body = { 0 }, file = { 0 };
     mf_sink sb = { .u = &body, .puts = fh_puts, .vprintf = fh_vprintf, .cmt_open = fh_cmt_open,
-                   .cstr = fh_cstr };
+                   .cstr = fh_cstr, .simd_open = fh_simd_open, .simd_close = fh_simd_close };
     mf_sink sf = { .u = &file, .puts = fh_puts, .vprintf = fh_vprintf, .cmt_open = fh_cmt_open,
-                   .cstr = fh_cstr };
+                   .cstr = fh_cstr, .simd_open = fh_simd_open, .simd_close = fh_simd_close };
     const mf_form_shape *sh = &shapes[e->shape];
     mf_site *s = &w->s;
     mf_hooks *h = &w->h;
@@ -428,6 +452,7 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
     mf_art *art = mf_art_begin(&ar, "mf", 0, NULL, NULL);
     if (!art) goto out;
     if (mf_art_target(art, mf_target_parse(e->target, strlen(e->target), NULL, 0))) goto out;
+    if (e->lever && mf_lever(art, e->lever)) goto out;
     h->s = sh->s;
     h->n = sh->n;
     h->lo = e->shape == MF_FH_RUNCMP ? sh->cand : sh->lo;
@@ -554,6 +579,39 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
         *row = art->fn_body;
         break;
     }
+    case MF_FH_OFS:
+        /* the offset-skip site (FIND/FUNC/RETURN) over ONE RUN term, the
+           entry's bytes at offset 0, scanned at its position 0: the verify
+           chain compares the run (a scanned run is compared whole), so a
+           planted hit is an answer exactly when the run's later bytes
+           follow it; the body assigns the call to pos */
+        fh_site(e, s);
+        s->form = MF_FORM_FUNC;
+        s->op = MF_OP_FIND;
+        s->handoff = MF_H_RETURN;
+        s->empty = e->empty;
+        s->pred.fn_ref = 1;
+        s->pred.nterm = 1;
+        s->pred.need = MF_REQUIRED;
+        if (strlen(e->bytes) > sizeof w->mask) goto out;
+        fh_run(e, &s->pred.term[0], w->mask);
+        s->pred.plan_hint = 0;
+        s->pred.plan_pos = 0;
+        s->pred.span_class = MF_SPAN_BOUNDED;       /* span 0 (MF_SITE_ABI 18) */
+        h->miss = MF_MISS_N;
+        h->fn_name = fh_fn;
+        fh_puts(&body, "pos = ");
+        if (mf_emit(art, s, h, &sb, &sf, res) || mf_art_end(art, NULL)) goto out;
+        fh_puts(&body, ";\n");
+        if (strcmp(art->sites[res->handle - 1].arm->id, "ofsskip")) goto out;
+        /* the MEMFN_FORMS token lives in the scratch arena: compared here,
+           the entry's own (static) row returned */
+        {
+            const char *got = art->forms.len ? art->forms.p : art->fn_body;
+            if (!got || !e->row || strcmp(got, e->row)) goto out;
+            *row = e->row;
+        }
+        break;
     case MF_FH_SETTEST: {
         /* the kit's own membership test of the candidate's byte: a LEAF
            render, no site and no selection (row NULL: no row to reach) */
@@ -570,6 +628,7 @@ static int fh_render(const mf_form_entry *e, nbuf *all, const char **row, size_t
     }
     }
     if (e->row && (!*row || strcmp(*row, e->row))) goto out;    /* reached another row */
+    if (inc) *inc = mf_includes(art);
     rc = fa.full || body.oom || file.oom;
     if (!rc) {
         if (file.len) nb_put(all, file.p, file.len);
@@ -593,7 +652,7 @@ int mf_form_site_split(const char *id, const char *cls, char **out, size_t *file
     nbuf all = { 0 };
     *out = NULL;
     *file_len = 0;
-    if (!e || fh_render(e, &all, &row, file_len)) {
+    if (!e || fh_render(e, &all, &row, file_len, NULL)) {
         free(all.p);
         return -1;
     }
@@ -617,9 +676,23 @@ const char *mf_form_row(const char *id, const char *cls)
     const mf_form_entry *e = mf_form_entry_of(id, cls);
     const char *row;
     nbuf all = { 0 };
-    int rc = !e || fh_render(e, &all, &row, NULL);
+    int rc = !e || fh_render(e, &all, &row, NULL, NULL);
     free(all.p);
     return rc ? NULL : row ? row : "-";
+}
+
+/* kit.h: the MF_INC_* bits the instance's rendered art needs (mf_includes
+ * at its end), into *inc; renders the whole site (a test entry: the slot
+ * harness places the headers ahead of the target's region, as pcrec does). */
+int mf_form_includes(const char *id, const char *cls, uint32_t *inc)
+{
+    const mf_form_entry *e = mf_form_entry_of(id, cls);
+    const char *row;
+    nbuf all = { 0 };
+    *inc = 0;
+    int rc = !e || fh_render(e, &all, &row, NULL, inc);
+    free(all.p);
+    return rc ? -1 : 0;
 }
 
 /* kit.h: the hash of ONE instance's site text (the cell-text check's). */

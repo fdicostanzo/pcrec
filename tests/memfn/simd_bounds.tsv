@@ -16,6 +16,21 @@
 # 1,620,166 bytes measured). Under 2x the block, so a bracket that counts a
 # block twice exceeds it (S703).
 rq3-witness	1700000
+# mfind-w16 / mfind-w32 (lane mfind, the inline one-member finder; reached
+# only under the test-only lever `mfind`; read by simd_guarded_check.py's
+# LEVER_ARMS, the probe binary `pcrec-harness` under the mfind test lever
+# over LEVER_NAMED at x86-64 and x86-64-v3):
+# one FUNC's helper block at that level plus the selector's call line. A
+# CAP, so a BOUND BY CONSTRUCTION (review 2026-11-15 r2 F1, lane mfindfix2):
+# the row's APPLIES renders the helper into a counting sink and declines
+# where it would bracket more (memfn/src/ofsskip.c ofs_fn_fits), so a wide
+# verify chain keeps the SWAR body alone. CHOSEN values admitting every
+# site of G2's one-member family (worst 1,299 w16 / 1,385 w32 over 44
+# seeds, lane mfind) with headroom; the kit's guarded_max (memfn/src/vrun.c
+# MFIND_W*_GUARDED_MAX) is pinned equal by simd_guarded_check.py. The rows are a
+# measuring instrument only (F5, Frank 2026-11-15): never picked; see review
+# r2-memfn-mfind.
+#
 # vrun-w16 / vrun-w32 (R4e' batch 1, R-13): one FUNC's helper block at that
 # level and, for the top level, the selector's one call line (U2: the
 # selector carries no CPU #if, so no arm and no #else/#endif; the bounds
@@ -38,6 +53,8 @@ rq3-witness	1700000
 # (memfn/src/vrun.c VRUN_W*_GUARDED_MAX).
 vrun-w32	2800
 vrun-w16	2400
+mfind-w16	1400
+mfind-w32	1500
 # target-text ([XARCH-DEV] U3): the kit's family guard and one target's
 # region (open + close), written once per artifact for a SIMD target whatever
 # its forms. MEASURED (lane u3tgt, 2026-11-08) over the kit's targets: the

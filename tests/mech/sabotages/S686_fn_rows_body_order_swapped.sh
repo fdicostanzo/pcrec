@@ -32,8 +32,9 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 # Re-aimed by lane r13 (R-13, 2026-10-09): its anchor moved with the R4e' batch 1 seam
 # (kit_walk's per-row step / fn_rows[]'s decl column / the seam's level blocks); same intent.
-SAB_BEFORE='    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },
-    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },'
+# RE-AIMED 2026-11-14 (lane mfind): fn-mfind's row now sits between pair and memchr, so the
+# plant writes memchr's row AHEAD of pair's (first match takes it; its own later row is unreached).
+SAB_BEFORE='    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },'
 SAB_AFTER='    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },   /* SABOTAGE S686 */
     { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },'
 # RE-AIMED 2026-11-14 (lane s686): [RUN-POS-SET] partd added fn-every-pos ABOVE both rows and

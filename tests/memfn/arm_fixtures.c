@@ -151,11 +151,28 @@ static void c_stamp_int(void *u, const char *name, long long value)
     (void)u; (void)name; (void)value;
 }
 
+/* Lane mfind's fixtures: the art's CPU target (a kit token; NULL the
+ * portable one) and a test-only lever (NULL none), set around one render;
+ * a fixture at a target admitting a level gets the bracket ops, written as
+ * markers (the host's region is not the fixture's). */
+static const char *fx_target, *fx_lever;
+static void s_simd_open(void *u, int level)
+{
+    char b[48];
+    snprintf(b, sizeof b, "/* simd_open %d */\n", level);
+    s_puts(u, b);
+}
+static void s_simd_close(void *u) { s_puts(u, "/* simd_close */\n"); }
+
 static mf_sink sink_of(Text *t)
 {
     mf_sink s = { .u = t, .puts = s_puts, .vprintf = s_vprintf,
                   .cmt_open = s_cmt_open, .cmt_close = s_cmt_close,
                   .cstr = s_cstr, .legend_byte = s_legend };
+    if (fx_target) {
+        s.simd_open = s_simd_open;
+        s.simd_close = s_simd_close;
+    }
     return s;
 }
 
@@ -167,7 +184,10 @@ static mf_art *art_begin(mf_arena *a, const char *pfx, uint64_t denies,
                          const mf_measures *ms, const mf_analysis *an)
 {
     mf_art *art = mf_art_begin(a, pfx, denies, ms, an);
-    return art && !mf_art_target(art, mf_portable_target()) ? art : NULL;
+    const mf_target *t = fx_target ? mf_target_parse(fx_target, strlen(fx_target), NULL, 0)
+                                   : mf_portable_target();
+    if (!art || mf_art_target(art, t)) return NULL;
+    return !fx_lever || !mf_lever(art, fx_lever) ? art : NULL;
 }
 
 /* ---- the hooks ------------------------------------------------------------ */
@@ -1326,6 +1346,11 @@ static void gate_cases(void)
  *   arm_fixtures --site-parts ID [CLS]  the same text in two parts: the
  *       FILE part, a form-feed line, the BODY part (the slot's wrapper
  *       places them)
+ *   arm_fixtures --frame ID [CLS]  the instance's header lines, its
+ *       target's region open and close, its family guard, form-feed
+ *       separated (the host's text around a cell, as pcrec places it; lane
+ *       slotx), then its target's facts line
+ *   arm_fixtures --target-facts TOKEN  `target<TAB>name<TAB>features`
  *   arm_fixtures --hash-text FILE|-  mf_form_hash_text of a text (the slot's
  *       cell-text check folds a cell TU's site span with it)
  *   arm_fixtures --facts ID [CLS]  `key<TAB>value` lines the slot harness
@@ -1747,6 +1772,10 @@ static const struct { const char *id, *cls, *from, *to; } hash_edits[] = {
     { "rc-words",  "w3", "pos + 10",   "pos + 9" },
     { "rc-memcmp", "l1", ", 4)",       ", 3)" },
     { "every-pos", "-",  "pos++",      "pos += 2" },
+    { "mfind-swar", "-", "m &= m - 1", "m &= m - 2" },
+    { "mfind-w16", "-",  "i += 16",    "i += 15" },
+    { "mfind-w32", "-",  "i += 32",    "i += 31" },
+    { "fn-memchr", "-",  "pos = cand + 1", "pos = cand + 2" },
 };
 static const struct { const char *from, *to; } hash_renames[] = {
     { "subject", "buf" }, { "pos", "cursor" }, { "n", "len" },
@@ -1797,7 +1826,8 @@ static char *edit_once(const char *t, const char *from, const char *to)
 static int hash_mode(void)
 {
     static const char *const ids[] = { "walk", "libc", "pair", "settest", "rc-words", "rc-memcmp",
-                                       "every-pos", "V1", "W64", "NONE", "dispatch-twin", NULL };
+                                       "every-pos", "mfind-swar", "mfind-w16", "mfind-w32",
+                                       "fn-memchr", "V1", "W64", "NONE", "dispatch-twin", NULL };
     for (unsigned i = 0; ids[i]; i++) {
         char h[17] = "-";
         int rc = mf_form_hash(ids[i], h);
@@ -1896,6 +1926,52 @@ static int site_parts_mode(const char *id, const char *cls)
     return 0;
 }
 
+/* --frame: what a HOST writes around the instance's site text, as pcrec
+ * places it (match_api.md §6.3.10¶15; src/gen/memfn_targets.c): the
+ * `#include` lines of its rendered art's header facts (mf_include_c of each
+ * mf_form_includes bit), a form-feed line, its target's region open, a
+ * form-feed line, the region close (mf_target_c_of; both "" for a target
+ * with nothing to enable), a form-feed line, the family guard
+ * (mf_family_c_of; "" for the portable target, which has no family; review
+ * 2026-11-15 r1 F10), a form-feed line, the target's facts line
+ * (--target-facts). The slot harness writes the guard first in the TU, the
+ * header lines at file scope ahead of the region (span_cards/slot/link.py). */
+static void target_facts(const mf_target *t)
+{
+    printf("target\t%s\t%s\n", t->name, *t->features ? t->features : "-");
+}
+/* --target-facts TOKEN: `target<TAB>name<TAB>features` (`-` none), the kit
+ * table's row for a token (the slot harness's ISA check reads the features
+ * its compile floor, -march=x86-64, supplies) */
+static int target_facts_mode(const char *tok)
+{
+    const mf_target *t = mf_target_parse(tok, strlen(tok), NULL, 0);
+    if (!t) { fprintf(stderr, "arm_fixtures: no target %s\n", tok); return 1; }
+    target_facts(t);
+    return 0;
+}
+static int frame_mode(const char *id, const char *cls)
+{
+    const mf_form_entry *e = mf_form_entry_of(id, cls);
+    uint32_t inc;
+    const mf_target *t = e ? mf_target_parse(e->target, strlen(e->target), NULL, 0) : NULL;
+    if (!t || mf_form_includes(id, cls, &inc)) {
+        fprintf(stderr, "arm_fixtures: no rendered instance %s %s\n", id, cls ? cls : "(canonical)");
+        return 1;
+    }
+    for (uint32_t bit = 1; bit; bit <<= 1) {
+        if (!(inc & bit)) continue;
+        const char *line = mf_include_c(bit);
+        if (!line) { fprintf(stderr, "arm_fixtures: no C spelling for header fact 0x%x\n", (unsigned)bit); return 1; }
+        fputs(line, stdout);
+    }
+    const mf_target_c *c = mf_target_c_of(t);
+    printf("\f\n%s\f\n%s\f\n%s\f\n", c->region_open, c->region_close,
+           t->family ? mf_family_c_of(t->family)->guard : "");
+    target_facts(t);
+    return 0;
+}
+
 /* --hash-text FILE|-: mf_form_hash_text of a whole text (the slot harness's
  * cell-text check folds a cell TU's site span with it; check B folds the
  * instances' texts with it). */
@@ -1943,9 +2019,13 @@ static void f_hex(Text *o, const uint8_t *b, size_t n)
     if (!n) f_str(o, NULL);
 }
 static int f_set_shape(const FactIn *x) { return x->e->shape != MF_FH_RUNCMP; }
+/* the offset-skip site's ONE RUN term (lane slotx): scanned at its position
+   0 (its `members`, the byte a hit plants), the whole run its verify chain
+   compares (L, run, mask: a hit is an answer iff the run follows it) */
+static int f_ofs_shape(const FactIn *x) { return x->e->shape == MF_FH_OFS; }
 static int f_find_shape(const FactIn *x)
 {
-    return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW;
+    return x->e->shape == MF_FH_FIND || x->e->shape == MF_FH_WINDOW || x->e->shape == MF_FH_OFS;
 }
 /* the run's mask byte at i: 0xDF at a caseless letter, else 0xFF (fh_run's) */
 static uint8_t f_mask(const mf_form_entry *e, size_t i)
@@ -2008,7 +2088,8 @@ static void f_table_value(const FactIn *x, Text *o)
 }
 static void f_members(const FactIn *x, Text *o)
 {
-    if (f_set_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
+    if (f_ofs_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, 1);
+    else if (f_set_shape(x)) f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
     else f_str(o, NULL);
 }
 /* the first byte from 'a' up (mod 256) outside the set, or one failing the
@@ -2028,25 +2109,26 @@ static void f_L(const FactIn *x, Text *o)
 {
     char buf[24];
     snprintf(buf, sizeof buf, "%zu", strlen(x->e->bytes));
-    f_str(o, f_set_shape(x) ? NULL : buf);
+    f_str(o, f_set_shape(x) && !f_ofs_shape(x) ? NULL : buf);
 }
 static void f_run(const FactIn *x, Text *o)
 {
-    if (f_set_shape(x)) f_str(o, NULL);
+    if (f_set_shape(x) && !f_ofs_shape(x)) f_str(o, NULL);
     else f_hex(o, (const uint8_t *)x->e->bytes, strlen(x->e->bytes));
 }
 static void f_runmask(const FactIn *x, Text *o)
 {
     uint8_t m[64];
     size_t L = strlen(x->e->bytes);
-    if (f_set_shape(x) || L > sizeof m) { f_str(o, NULL); return; }
+    if ((f_set_shape(x) && !f_ofs_shape(x)) || L > sizeof m) { f_str(o, NULL); return; }
     for (size_t i = 0; i < L; i++) m[i] = f_mask(x->e, i);
     f_hex(o, m, L);
 }
 static void f_hit(const FactIn *x, Text *o)
 {
-    f_str(o, f_set_shape(x) ? "a byte of `members`"
-                            : "the bytes b[0..L) with (b[i] & mask[i]) == run[i]");
+    f_str(o, f_ofs_shape(x) ? "a byte of `members` at the candidate; an answer iff the run holds there"
+             : f_set_shape(x) ? "a byte of `members`"
+                              : "the bytes b[0..L) with (b[i] & mask[i]) == run[i]");
 }
 static void f_reads(const FactIn *x, Text *o)
 {
@@ -2795,7 +2877,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2) { fputs("usage: arm_fixtures OUTDIR [--perturb] [--query] | --gate [--gate-only CASE] | "
                           "--fd-site SITE [--fd-set FILE] [--fd-an DIGEST] | --finder-rows | --hash | "
-                          "--site-text ID [CLS] | --site-parts ID [CLS] | --hash-text FILE|- | --facts ID [CLS] | "
+                          "--site-text ID [CLS] | --site-parts ID [CLS] | --frame ID [CLS] | --target-facts TOKEN | --hash-text FILE|- | --facts ID [CLS] | "
                           "--purity | --purity-control\n", stderr); return 2; }
     if (!strcmp(argv[1], "--fd-site") && argc > 2) {
         const char *set = NULL, *opts = NULL, *digest = NULL;
@@ -2812,6 +2894,8 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "--site-text") && argc > 2) return site_text_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--site-parts") && argc > 2) return site_parts_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--hash-text") && argc > 2) return hash_text_mode(argv[2]);
+    if (!strcmp(argv[1], "--frame") && argc > 2) return frame_mode(argv[2], argc > 3 ? argv[3] : NULL);
+    if (!strcmp(argv[1], "--target-facts") && argc > 2) return target_facts_mode(argv[2]);
     if (!strcmp(argv[1], "--facts") && argc > 2) return facts_mode(argv[2], argc > 3 ? argv[3] : NULL);
     if (!strcmp(argv[1], "--purity")) return purity_mode();
     if (!strcmp(argv[1], "--purity-control")) return purity_control_mode();
@@ -2866,6 +2950,26 @@ int main(int argc, char **argv)
     t_byte(&s.pred.term[1], 1, 'e');
     s.pred.plan_hint = 0;
     bad |= render(dir, "ofs-scan0", &s, "rx_ofsskip");
+
+    /* lane mfind: the inline one-member finder, reached by the test-only
+     * lever `mfind` alone (rows.tsv's fn-mfind, mfind-w16, mfind-w32): a
+     * byte at 0 scanned, a byte at 2 verified; at the portable target the
+     * SWAR body, at x86-64 its w16 helper, at x86-64-v3 w32 over w16; the
+     * control the same site with no lever (fn-memchr) */
+    for (int f = 0; f < 4; f++) {
+        static const char *const nm[] = { "ofs-mfind-off", "ofs-mfind", "ofs-mfind-w16",
+                                          "ofs-mfind-w32" };
+        static const char *const tg[] = { NULL, NULL, "x86-64", "x86-64-v3" };
+        s = ofs_site();
+        s.pred.nterm = 2;
+        t_byte(&s.pred.term[0], 0, '.');
+        t_byte(&s.pred.term[1], 2, 'z');
+        s.pred.plan_hint = 0;
+        fx_target = tg[f];
+        fx_lever = f ? "mfind" : NULL;
+        bad |= render(dir, nm[f], &s, "rx_mfind");
+        fx_target = fx_lever = NULL;
+    }
 
     /* ofsskip: a masked run scanned on a two-member cube: the pair leapfrog */
     s = ofs_site();

@@ -236,6 +236,12 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const fn_in *x,
     return first ? kit_fail(art, "ofsskip: an empty verify chain") : 0;
 }
 
+/* kit.h: the chain for a row of another file (vrun.c's one-member finder). */
+int ofs_verify_chain(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
+{
+    return verify_chain(art, h, x, o);
+}
+
 /* ---- THE FUNCTION'S BODY, a selected row table: fn_rows[] -----------------
  *
  * integration.md §R4.9.2.1, step R4e'.0 (the seam): the function's text is
@@ -454,7 +460,17 @@ static int memchr_holds(const fn_in *x)
     return x->a >= 0 && x->b < 0;
 }
 
-static const gate_contract fn_every_pos_ct, fn_pair_ct, fn_memchr_ct;
+/* fn-memchr's site on an art carrying the test-only lever `mfind` (lane
+ * mfind): the inline one-member finder takes it. UNPICKED (D197): no shipped
+ * compile sets the lever, so the row moves no byte and has no deny (memory
+ * pcrec-flag-follows-caller-effect: a test-only lever, never a public
+ * flag); no selection table picks the form. */
+static int mfind_holds(const fn_in *x)
+{
+    return memchr_holds(x) && (x->levers & KIT_LEVER_MFIND);
+}
+
+static const gate_contract fn_every_pos_ct, fn_pair_ct, fn_memchr_ct, fn_mfind_ct;
 
 /* A PREFIX row's predicate, walk tests 3-5 of §R4.9.2.3 over its
  * declaration (tests 1-2, the deny and the gate, are kit_walk's): REACH,
@@ -474,17 +490,26 @@ static int prefix_holds(const mf_formdecl *d, const fn_in *x)
     int over = 0;
     for (const char *const *o = d->over; *o && !over; o++)
         over = x->body_row && strcmp(*o, x->body_row) == 0;
-    return over && d->applies(x->site, x->p);
+    return over && d->applies(x, d);
 }
 
 static const fn_row fn_rows[] = {
     { FN_BODY, every_pos_holds, every_pos_body, &fn_every_pos_ct, NULL, FF_NONE },
     { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL, FF_PAIR },
+    /* the inline one-member finder (vrun.c's mfind_text, its SWAR word):
+       ahead of fn-memchr, whose site it takes under the lever alone. A
+       measuring instrument only (D197): unpicked, never a pick */
+    { FN_BODY, mfind_holds,  mfind_body,  &fn_mfind_ct,  NULL, FF_MFIND },
     { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL, FF_LIBC },
     /* FN_PREFIX (R4e' batch 1, §R4.9.2.4): the SIMD rows, first match, the
        widest level first; a chosen row's narrower rungs are its NAMED ones */
     { FN_PREFIX, NULL, NULL, &vrun_w32_ct, &vrun_w32_decl, FF_UNSTATED },
     { FN_PREFIX, NULL, NULL, &vrun_w16_ct, &vrun_w16_decl, FF_UNSTATED },
+    /* the one-member finder's levels, over fn-mfind only (their OVER), so
+       disjoint from vrun's (over fn-pair): their order decides nothing. A
+       measuring instrument only (D197): unpicked, never a pick */
+    { FN_PREFIX, NULL, NULL, &mfind_w32_ct, &mfind_w32_decl, FF_UNSTATED },
+    { FN_PREFIX, NULL, NULL, &mfind_w16_ct, &mfind_w16_decl, FF_UNSTATED },
 };
 #define NFN (sizeof fn_rows / sizeof fn_rows[0])
 
@@ -547,7 +572,7 @@ int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
 {
     *pick = FF_UNSTATED;
     if (!ofs_fn_applies(p, h, 0)) return 0;
-    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0 };
+    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0, art->levers, NULL, NULL };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     gate_in in = { .s = site, .h = h, .art = art };
     gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
@@ -605,6 +630,60 @@ static int fn_call_line(mf_art *art, const mf_hooks *h, const mf_pred *p,
     if (table_params(art, h, p, 0, o)) return -1;
     o->puts(o->u, ");\n");
     return 0;
+}
+
+/* kit.h: a fall-through line for a row of another file (vrun.c). */
+int ofs_fn_fall(mf_art *art, const mf_hooks *h, const mf_pred *p, const char *callee,
+                mf_sink *o)
+{
+    return fn_call_line(art, h, p, callee, o);
+}
+
+/* THE FIT TEST's counting sink (kit.h ofs_fn_fits): every byte a helper's
+ * render would write, never stored. `cstr` counts 4 per byte, the longest
+ * C-string spelling of one byte (the octal `\ooo` memfn.h's sink contract
+ * names, "as pcrec_sb_cstr does"); a comment counts 0 (cmt_open answers
+ * closed: the finder writes none). */
+static void fit_puts(void *u, const char *s)
+{
+    *(size_t *)u += strlen(s);
+}
+
+static void fit_vprintf(void *u, const char *fmt, va_list ap)
+{
+    int k = vsnprintf(NULL, 0, fmt, ap);
+    if (k > 0) *(size_t *)u += (size_t)k;
+}
+
+static void fit_cstr(void *u, const uint8_t *bytes, size_t len)
+{
+    (void)bytes;
+    *(size_t *)u += 4 * len;
+}
+
+static int fit_cmt_open(void *u, int tier)
+{
+    (void)u;
+    (void)tier;
+    return 0;
+}
+
+/* kit.h: THE FIT TEST. The helper's longest name is `<fn>__body`'s (a level
+ * stamp is shorter: levels.def `w16`/`w32`), so the head, the fall-through
+ * and the selector's call line are counted at x->body_fn. */
+int ofs_fn_fits(const fn_in *x, const mf_formdecl *d)
+{
+    if (!x->art || !x->h || !x->body_fn) return 0;
+    mf_art *art = x->art;
+    size_t n = 0;
+    mf_sink c = { .u = &n, .puts = fit_puts, .vprintf = fit_vprintf,
+                  .cmt_open = fit_cmt_open, .cstr = fit_cstr };
+    long long words = art->words;
+    int rc = fn_head(art, x->h, x->p, x->body_fn, &c) ||
+             d->render(art, x->h, x, d, x->body_fn, &c) ||
+             fn_call_line(art, x->h, x->p, x->body_fn, &c);
+    art->words = words;
+    return !rc && n + 1 <= d->guarded_max;   /* + the blank line after the helper */
 }
 
 /* `<fn>__<level stamp>`, a rung's helper name ([D155]; levels.def's token). */
@@ -695,7 +774,8 @@ int ofs_fn_define_at(mf_art *art, uint32_t handle, const mf_site *site, const mf
 static int fn_define(mf_art *art, uint32_t handle, const mf_site *site, const mf_hooks *h,
                      const mf_pred *p, const char *fn, mf_sink *o)
 {
-    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, o->simd_open && o->simd_close };
+    fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, o->simd_open && o->simd_close,
+                art->levers, art, h };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     /* the libc note and include are the chosen BODY row's own (note_memchr) */
 
@@ -1036,6 +1116,13 @@ const arm ofsskip_arm = {
 
 static const gate_contract fn_every_pos_ct = {
     "fn", "fn-every-pos", NULL, 0, {
+    FN_BODY_SERVES
+}};
+
+/* fn-mfind reads what fn-memchr reads (its scanned byte, then the verify
+ * chain) and writes no libc call: FN_BODY_SERVES, like its two siblings. */
+static const gate_contract fn_mfind_ct = {
+    "fn", "fn-mfind", NULL, 0, {
     FN_BODY_SERVES
 }};
 

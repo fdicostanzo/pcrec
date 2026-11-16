@@ -12,6 +12,10 @@ Hand-written, append-only by version (a committed row never changes):
   `kit-grid@4` (K38-3, `span_runs_sheet.md` §5.2): `enter_back` (kind;entry;back,
   the step-back t in {0,3,8,16,32}), PLANNED by the slot, UNMEASURED, no set under it;
   `kit-grid@5` (R-38 Part D, `part_d.md` §5.3): `every_pos`, the fn-every-pos body, UNMEASURED;
+  `kit-grid@6` (lane mfind): `find_byte`, `find_hit` over the inline one-member finder's forms
+  (`mfind-swar/w16/w32`) and the same site's libc memchr search (and its restart
+  stream) `fn-memchr`, the bundle comparison (review r2 F6), UNMEASURED; find_hit@6 carries a
+  `reject` dim (lane slotx, a respelling of a draft row: `measure_sets.md` §7.2 says when a row binds): the percent of hits the site's check rejects;
   their `deps` name formhash.c's entry-table ids (`walk-set` folded into
   `walk`), `enter` none.
 - `kit-synthetic.tsv` — `kit-synthetic@1` and `@2`: the cards of the synthetic sets
@@ -33,6 +37,6 @@ reads EVERY table here (by listing), holds each row's shape, every set's keys
 to a card and every card's `deps` to the form hashes; its CARD GUARD (S2c):
 a card naming a `kit:form.` dep has `form` as its first dim and every
 named (non-template) `kit:form.<id>` resolves to a form hash, the count
-printed and pinned EXACTLY at 17 (kit-grid 12, kit-kernels 5; a card adding
+printed and pinned EXACTLY at 20 (kit-grid 15, kit-kernels 5; a card adding
 one bumps `CARD_FORMDEP_COUNT`). `ver 3` cards state `gate_e6` `-`:
 their gate is `../policy.tsv`'s `gate_default_e6` (R-35 (e), r9 SLOT-17).

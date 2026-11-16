@@ -8,6 +8,8 @@
 #                                 instance its KEY names, and records each timed function's address, its hot
 #                                 loop (placement.tsv) and each cell's text facts (cell_text.tsv: the instance
 #                                 and fold hashes est.py writes as the row's dep, r9 G5)
+#   link.py shape-selftest SCRATCH  [review r6 FIDELITY-1] TIMED-SHAPE's own cases (two controls, the critic's
+#                                 out-of-line plants), `== link SHAPE SELFTEST ok` iff all agree
 #   link.py ctl RUNDIR            the control executable `ctl` (the canonical walk at the three find_byte
 #                                 lengths, one placement), built once per window, and its sha-256
 # Cell texts come from tests/memfn/arm_fixtures.c's `--site-parts` (formhash's entry table: the ONE renderer,
@@ -15,7 +17,15 @@
 # a row key's (form, cls) is read off its tokens (plan.key_form), the render uses it, and an Arm whose own form
 # or class disagrees REFUSES (KEY-ARM MISMATCH); so does an Arm disagreeing with ANY token of its key, each card
 # dim read through plan.DIM_FIELD ([rev1.3 r9fc-FIX-2]: landing, split, gap, pass, kind, entry too). gcc 15.2 -O2 -march=x86-64 -mtune=generic, the declared target
-# (§2.7). A PAD is a .text of P bytes, P = 16 x (1 + draw mod 255), so P is a multiple of 16 in [16, 4096); its
+# (§2.7): THE COMPILE FLOOR of every TU. [lane slotx] THE ARM'S TARGET REGION: an instance whose kit target opens a
+# region (its entry table's `target`, mf_target_c_of) is compiled INSIDE it, as pcrec places one (src/gen/
+# memfn_targets.c): its family guard (mf_family_c_of) first, ahead of every #include, its header lines
+# (mf_form_includes, mf_include_c) at file scope ahead of the region, the region open before the TU's first
+# function, its close after the last (the timed loop is inside, as a matcher is). The portable target (no family,
+# nothing to enable) writes nothing, so every generic arm's TU is byte for byte what it was. The target is
+# the KEY's (its form token's instance), recorded in cell_text.tsv, and THE ISA CHECK holds the compiled object to
+# it: no instruction needing a feature outside (floor + target), and, where the target enables a feature the floor
+# lacks, at least one instruction needing one (a region that changed nothing is not the keyed target). A PAD is a .text of P bytes, P = 16 x (1 + draw mod 255), so P is a multiple of 16 in [16, 4096); its
 # draw is seeded by (run id, job, l, arm, d) (MEAS-1, READY-8).
 import hashlib, os, re, shutil, subprocess, sys
 
@@ -69,6 +79,272 @@ def parts(fx, form, cls):
     f, _, b = out.partition("\f\n")
     return f, b
 
+def frame(fx, form, cls):
+    """(header lines, region open, region close, target token, target features, family guard): what a host
+    writes around the instance's site text (arm_fixtures --frame, the kit's own spellings)"""
+    inc, ro, rc, gd, tl = sh([fx, "--frame", form] + ([cls] if cls else [])).split("\f\n")
+    tf = tl.strip().split("\t")
+    if len(tf) != 3 or tf[0] != "target":
+        raise SystemExit("link: --frame %s: no target line (%r)" % (form, tl))
+    return inc, ro, rc, tf[1], set() if tf[2] == "-" else set(tf[2].split(",")), gd
+
+def floor_features(fx):
+    """the features the compile floor (CC's -march) supplies, the kit table's row for that token"""
+    tok = next(x.split("=", 1)[1] for x in CC if x.startswith("-march="))
+    tf = sh([fx, "--target-facts", tok]).strip().split("\t")
+    return set() if tf[2] == "-" else set(tf[2].split(","))
+
+def framed(src, fr):
+    """the TU inside its frame, in pcrec's order (match_api.md §6.3.10¶15): the family guard first, ahead of
+    every #include (review 2026-11-15 r1 F10); no region, the TU as it is after it; else the frame's header lines
+    the TU's own prologue does not already hold (pcrec's has_line rule), after the prologue, then the region around
+    the rest"""
+    inc, ro, rc, gd = fr[0], fr[1], fr[2], fr[5]
+    if not ro:
+        return gd + src
+    pro, _, rest = src.partition("#define CAT_(a, b) a##b\n")
+    if not rest:
+        raise SystemExit("link: FRAME: the TU has no prologue mark")
+    have = set(pro.splitlines())
+    heads = "".join(ln + "\n" for ln in inc.splitlines() if ln not in have)
+    return gd + pro + heads + ro + "#define CAT_(a, b) a##b\n" + rest + rc
+
+# THE ISA CHECK's table (first match on the ENCODING, then the mnemonic, then the operands; review 2026-11-15 r1
+# F1): the features an instruction needs; a LEGACY instruction no row names needs only the floor, a VEX or EVEX one
+# no row names is refused (an encoding the table cannot price). The encoding is read off the instruction's bytes
+# (prefixes and REX skipped as est.py's decoder does: 0x62 EVEX, 0xC4/0xC5 VEX), never off the mnemonic or a
+# register name, so AVX-512VL code on %ymm/%xmm reads as AVX-512, not AVX2. `*` is any encoding. F2: every feature a
+# planned target enables above the floor (`--target-facts`) must be some row's (isa_table_check), so a deleted or
+# missing row refuses instead of reading that feature's code as floor.
+ISA_NEEDS = (
+    ("*", r"\S+", r"%[xy]mm(1[6-9]|2[0-9]|3[01])\b", ("avx512f", "avx512vl")),   # EVEX-only registers
+    ("evex", r"\S+", r"%zmm", ("avx512f",)),
+    ("evex", r"\S+", r"", ("avx512f", "avx512vl")),     # EVEX on %xmm/%ymm (or mask registers only)
+    ("*", r"k\S*", r"", ("avx512f",)),                   # the mask-register instructions (VEX-encoded)
+    ("vex", r"vf(n?m(add|sub)|maddsub|msubadd)\S*", r"", ("fma",)),
+    ("vex", r"vcvt(ph2ps|ps2ph)", r"", ("f16c",)),
+    ("vex", r"v\S*", r"%ymm", ("avx2",)),
+    ("vex", r"v\S*", r"", ("avx",)),
+    ("vex", r"andn|bextr|blsi|blsmsk|blsr", r"", ("bmi",)),   # not tzcnt: gcc's floor `rep bsf` decodes as tzcnt
+    ("vex", r"bzhi|mulx|pdep|pext|rorx|sarx|shlx|shrx", r"", ("bmi2",)),
+    ("legacy", r"lzcnt", r"", ("lzcnt",)),
+    ("legacy", r"popcnt", r"", ("popcnt",)),
+    ("legacy", r"movbe", r"", ("movbe",)),
+    ("legacy", r"addsubp[sd]|haddp[sd]|hsubp[sd]|lddqu|movddup|movs[hl]dup|fisttp\S*|monitor|mwait", r"", ("sse3",)),
+    ("legacy", r"pshufb|palignr|pabs[bwd]|phadd\w*|phsub\w*|pmaddubsw|pmulhrsw|psign[bwd]", r"", ("ssse3",)),
+    ("legacy", r"ptest|pblendvb|pblendw|pmin[su][bdw]|pmax[su][bdw]|pextr[bdq]|pinsr[bdq]|pcmpeqq|pmovzx\w*|pmovsx\w*",
+     r"", ("sse4.1",)),
+    ("legacy", r"pcmpgtq|pcmp[ei]str[im]|crc32\w*", r"", ("sse4.2",)),
+    ("legacy", r"cmpxchg16b", r"", ("cx16",)),
+    ("legacy", r"lahf|sahf", r"", ("sahf",)),
+    ("legacy", r"xsave\w*|xrstor\w*|xgetbv|xsetbv", r"", ("xsave",)),
+)
+ENC_PREFIXES = {0x26, 0x2E, 0x36, 0x3E, 0x64, 0x65, 0x66, 0x67, 0xF0, 0xF2, 0xF3}   # est.PREFIXES' legacy prefixes
+
+def encoding(bs):
+    """an instruction's encoding from its bytes: legacy prefixes and a REX skipped, then 0x62 = evex, 0xC4/0xC5 =
+    vex (64-bit mode: never LES/LDS/BOUND), else legacy"""
+    i = 0
+    while i < len(bs) and bs[i] in ENC_PREFIXES:
+        i += 1
+    if i < len(bs) and 0x40 <= bs[i] <= 0x4F:
+        i += 1
+    b = bs[i] if i < len(bs) else None
+    return "evex" if b == 0x62 else "vex" if b in (0xC4, 0xC5) else "legacy"
+
+def isa_needs(obj):
+    """{feature: first instruction needing it} over the object's whole .text (every function the TU compiled: the
+    timed loop, its inlined site and any helper gcc kept out of line), each instruction classified by its encoding
+    (objdump's raw bytes, one line per instruction at --insn-width=16)"""
+    need = {}
+    for ln in sh(["objdump", "-d", "--insn-width=16", "-j", ".text", obj]).splitlines():
+        m = re.match(r"\s+[0-9a-f]+:\t([0-9a-f ]+?)\s*\t(\S+)\s*(.*)$", ln)
+        if not m:
+            continue
+        enc, mn, ops = encoding([int(x, 16) for x in m.group(1).split()]), m.group(2), re.sub(r"\s*#.*$", "", m.group(3))
+        hit = next((feats for e, mrx, orx, feats in ISA_NEEDS
+                    if e in ("*", enc) and re.fullmatch(mrx, mn) and (not orx or re.search(orx, ops))), None)
+        if hit is None and enc != "legacy":
+            raise SystemExit("link: ISA UNCLASSIFIED %s: %s instruction `%s %s` matches no ISA_NEEDS row"
+                             % (obj, enc.upper(), mn, ops))
+        for feat in hit or ():
+            need.setdefault(feat, "%s %s" % (mn, ops))
+    return need
+
+def isa_table_check(fx, floor):
+    """[F2] THE TABLE COVERS THE TARGETS: every feature a planned target enables above the floor (the kit's
+    `--target-facts`, over every target any planned arm's instance is keyed to) is some ISA_NEEDS row's; refuses
+    one with no row (a row deleted, or a target gaining a feature the table never learnt)"""
+    rowed = {f for _e, _m, _o, feats in ISA_NEEDS for f in feats}
+    forms = {plan.key_form(a.name) for js in plan.build()[0].values() for a in js if a.kind not in ("enter", "j1")}
+    targets = {}
+    for kf in sorted(f for f in forms if f):
+        fr = frame(fx, kf[0], kf[1])
+        targets.setdefault(fr[3], fr[4])
+    for tgt, feats in sorted(targets.items()):
+        miss = sorted(feats - floor - rowed)
+        if miss:
+            raise SystemExit("link: ISA TABLE: planned target %s enables %s above the floor, and no ISA_NEEDS row "
+                             "names it" % (tgt, ",".join(miss)))
+    return sorted(targets)
+
+def isa_check(name, obj, target, tfeat, floor):
+    """[lane slotx] THE TIMED CODE IS THE KEYED TARGET'S: refuse an object needing a feature outside floor +
+    target, or (a target enabling something the floor lacks) needing none of what it enables"""
+    need = isa_needs(obj)
+    out = sorted(f for f in need if f not in floor | tfeat)
+    if out:
+        raise SystemExit("link: ISA MISMATCH %s: keyed target %s, its code needs %s (%s)"
+                         % (name, target, ",".join(out), need[out[0]]))
+    extra = tfeat - floor
+    if extra and not any(f in extra for f in need):
+        raise SystemExit("link: ISA MISMATCH %s: keyed target %s enables %s above the floor, its code needs none of "
+                         "it: the region did not reach the code" % (name, target, ",".join(sorted(extra))))
+    return ",".join(sorted(f for f in need if f in extra)) or "-"
+
+# [review 2026-11-15 r6 FIDELITY-1] THE TIMED FUNCTION'S CALLEES, per FORM (the cell's form token; first match on
+# its prefix): the externals `_time` may call. pcrec's matcher inlines an mfind site whole (no call at all); the
+# fn-memchr site's one call is libc's memchr; the mfcard window's other forms as its dry runs found them. A form
+# no row names (the s2d jobs' verify/enter forms) keeps the r5 rule: any external, returned. Every form: no call to a function the object defines, no call or jump through a
+# SECTION symbol (a site gcc placed in another section: `section(...)`, `cold` / .text.unlikely) and no INDIRECT
+# call or jump (a site reached through a pointer)
+TIMED_CALLEES = (
+    ("mfind-", ()),
+    ("fn-memchr", ("memchr",)),
+    ("libc", ("memchr",)),       # J2's byte row and J2p's pair (dry runs 2026-11-15: memchr only)
+    ("pair", ("memchr",)),
+    ("walk", ()),
+    ("null", ()),                # [j4fix] J4's null verify bases: the class arm's loop, the compare removed (no call)
+)
+
+def timed_callees(form):
+    """the externals form's `_time` may call (a tuple), or None (no row: any external)"""
+    return next((ok for pre, ok in TIMED_CALLEES if (form or "").startswith(pre)), None)
+
+def timed_form(a, fc):
+    """[j4fix] the form TIMED_CALLEES keys an arm's `_time` on: its cell's form (render's fc), or for an arm with
+    no cell, what the arm IS: a J4 null base (`base.null.CLS`, form `null`). Any other cell-less site wrapper
+    refuses (never an unkeyed, silently looser check)"""
+    if fc:
+        return fc[0]
+    if a.kind == "verify" and a.form == "null":
+        return "null"
+    raise SystemExit("link: TIMED-SHAPE %s: a site wrapper with no cell and no TIMED_CALLEES key (kind %s, form %s)"
+                     % (a.name, a.kind, a.form))
+
+def timed_shape_check(name, obj, sym, form):
+    """[review 2026-11-15 r5 FIDELITY-1, r6 FIDELITY-1] THE TIMED FUNCTION HOLDS THE SITE: `SYM_time` in the timed
+    object calls (or tail-jumps to) no function the object itself defines, nothing through a section symbol or a
+    pointer, and no external outside its form's TIMED_CALLEES row. pcrec's matcher inlines the site (one caller),
+    so a site gcc kept out of line (a second caller in the TU: the critic's `_gate`; a `cold` or `section`
+    placement; a pointer) times a call per hit the artifact does not pay. Returns the externals `_time` calls"""
+    defined = set()
+    for ln in sh(["nm", "--defined-only", obj]).splitlines():
+        p = ln.split()
+        if len(p) == 3 and p[1] in "tTwW":
+            defined.add(p[2])
+    lines = sh(["objdump", "-dr", "--no-show-raw-insn", "--disassemble=%s_time" % sym, obj]).splitlines()
+    ext, bad = set(), []
+    for i, ln in enumerate(lines):
+        if re.match(r"\s+[0-9a-f]+:\s+(?:(?:notrack|bnd)\s+)?(call|jmp)\w*\s+\*", ln):
+            bad.append("an indirect %s (%s)" % (ln.split(":", 1)[1].split()[0], ln.split(":", 1)[1].strip()))
+            continue
+        # every branch, conditional ones too: gcc's cold split leaves `_time` a `jne` into .text.unlikely (r6)
+        m = re.match(r"\s+[0-9a-f]+:\s+(?:(?:notrack|bnd)\s+)?(call\w*|j[a-z]+)\s+\S+\s+<([^>+]+)", ln)
+        if not m:
+            continue
+        callee = m.group(2)
+        r = re.match(r"\s+[0-9a-f]+: R_X86_64_\w+\s+([^\s+-]+)", lines[i + 1]) if i + 1 < len(lines) else None
+        if r:
+            callee = r.group(1)
+        if callee == sym + "_time" and not r:
+            continue                          # a branch inside the timed function itself
+        if callee.startswith("."):
+            bad.append("section %s (code placed in another section: a `section`/`cold` site or `_time`'s own cold "
+                       "split)" % callee)
+        elif callee in defined:
+            bad.append("%s (a function its own object defines)" % callee)
+        elif r:
+            ext.add(callee)
+    ok = timed_callees(form)
+    if ok is not None:
+        bad += ["external %s (form %s's TIMED_CALLEES row allows %s)" % (x, form, ", ".join(ok) or "none")
+                for x in sorted(ext - set(ok))]
+    if bad:
+        raise SystemExit("link: TIMED-SHAPE %s: %s_time calls %s: the site is not inline in the timed code as in "
+                         "pcrec's matcher (review r5/r6 FIDELITY-1)" % (name, sym, "; ".join(bad)))
+    return sorted(ext)
+
+# [r6 FIDELITY-1] THE CHECK'S OWN CASES (`link.py shape-selftest SCRATCH`): one site wrapper shape (a site function,
+# the `_time` loop calling it per hit), the site spelled per case; (name, form, site function attributes, the
+# site body, expected: "ok" or the refusal's words). The plants are the r6 critic's repros
+SHAPE_SITE = r"""#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+%s size_t mf_site(const unsigned char *s, size_t n, size_t pos)
+{
+    %s
+}
+__attribute__((noinline)) uint64_t a64_time(const unsigned char *s, size_t n, const uint32_t *c, size_t nc)
+{
+    (void)c; (void)nc;
+    uint64_t k = 0;
+    for (size_t p = 0; p < n; p++) { %s if (p >= n) break; k++; }
+    return k;
+}
+"""
+SHAPE_NULL = plan.Arm("base.null.c1", "J4.base", "verify", "null", cls="c1", events=0, of=("settest", "c1"))
+SHAPE_LOOP = "for (size_t i = pos; i < n; i++) if (s[i] == 120) return i; return n;"
+SHAPE_CASES = (
+    ("an inline mfind site (the control)", "mfind-w32", "static inline", SHAPE_LOOP, "p = mf_site(s, n, p);", "ok"),
+    ("fn-memchr's libc call (the control)", "fn-memchr", "static inline",
+     "const unsigned char *q = memchr(s + pos, 120, n - pos); return q ? (size_t)(q - s) : n;",
+     "p = mf_site(s, n, p);", "ok"),
+    ("[S3210] a noinline site in its own section", "mfind-w32", "static __attribute__((noinline, section(\".text.site\")))",
+     SHAPE_LOOP, "p = mf_site(s, n, p);", "section .text.site"),
+    ("[S3211] a cold site (gcc's .text.unlikely)", "mfind-w32", "static __attribute__((noinline, cold))", SHAPE_LOOP,
+     "p = mf_site(s, n, p);", "section .text.unlikely"),
+    ("[S3212] the site through a pointer", "mfind-w32", "static inline", SHAPE_LOOP,
+     "{ size_t (*volatile fp)(const unsigned char *, size_t, size_t) = mf_site; p = fp(s, n, p); }", "an indirect"),
+    ("[S3213] the site an external definition", "mfind-w32", "static inline", SHAPE_LOOP,
+     "{ extern size_t mf_ext(const unsigned char *, size_t, size_t); p = mf_ext(s, n, p); }", "external mf_ext"),
+    ("[S3213] fn-memchr calling another external", "fn-memchr", "static inline", SHAPE_LOOP,
+     "p = mf_site(s, n, p) + strlen((const char *)s);", "external strlen"),
+    # [j4fix] a CELL-LESS arm (render's fc None): the form is timed_form's, as build_objs resolves it; J4's null base
+    ("a J4 null base, its load inline (the control)", SHAPE_NULL, "static inline", SHAPE_LOOP, "p = mf_site(s, n, p);",
+     "ok"),
+    ("[S3220] a J4 null base with an out-of-line callee", SHAPE_NULL, "static inline", SHAPE_LOOP,
+     "{ extern size_t mf_ext(const unsigned char *, size_t, size_t); p = mf_ext(s, n, p); }", "external mf_ext"),
+)
+
+def shape_selftest(scratch):
+    os.makedirs(scratch, exist_ok=True)
+    bad = 0
+    for k, (name, form, attrs, body, call, want) in enumerate(SHAPE_CASES):
+        c = os.path.join(scratch, "shape%d.c" % k)
+        open(c, "w").write(SHAPE_SITE % (attrs, body, call))
+        sh(CC + ["-c", c, "-o", c[:-2] + ".o"])
+        try:
+            timed_shape_check(name, c[:-2] + ".o", "a64", form if isinstance(form, str) else timed_form(form, None))
+            got = "ok"
+        except SystemExit as e:
+            got = str(e)
+        ok = got == "ok" if want == "ok" else want in got and "TIMED-SHAPE" in got
+        bad += not ok
+        print("shape\t%s\t%s\t%s" % (name, "ok" if ok else "WRONG", got[:200]))
+    print("== link SHAPE SELFTEST %s: %d cases, %d wrong" % ("ok" if not bad else "FAILED", len(SHAPE_CASES), bad))
+    return 1 if bad else 0
+
+def text_bytes(obj, sym):
+    """[review 2026-11-15 r5 EMITTED-1] the timed function's size in bytes (nm -S): the site inlined into its one
+    caller, so the EMITTED SIZE the timing is reported beside (a one-site timing cannot see a larger artifact's
+    cache cost, D198 (f))"""
+    for ln in sh(["nm", "-S", obj]).splitlines():
+        p = ln.split()
+        if len(p) == 4 and p[3] == sym + "_time":
+            return int(p[1], 16)
+    raise SystemExit("link: %s has no sized %s_time" % (obj, sym))
+
 def form_hash(fx, form, cls):
     """(the instance's hash, the form's FOLD hash mf_form_hash(form)): cls None names the canonical instance"""
     inst = fold = None
@@ -90,6 +366,9 @@ def hexbytes(s):
 
 # ---- the wrappers: ONE text per site shape ----------------------------------------------------------------
 # SYM is the arm's symbol stem (-DSYM=a<k>), so an arm's and its twin's sources are byte-identical.
+# [review 2026-11-15 r5 FIDELITY-1] ONE TEXT, TWO OBJECTS: the timed object (armK.o) holds `_time` alone, the gate
+# object (armK_g.o, the same file compiled with -DSLOT_GATE_TU) `_gate` alone, so the site has ONE caller in the
+# timed TU, as in pcrec's matcher (a second caller kept a static finder out of line); timed_shape_check holds it.
 WRAP_FIND = """#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -108,6 +387,7 @@ static inline __attribute__((always_inline)) int step(const unsigned char *subje
     *io = pos;
     return pos < n;
 }
+#ifndef SLOT_GATE_TU
 __attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc)
 {
     (void)c; (void)nc;
@@ -115,6 +395,8 @@ __attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_
     for (size_t p = 0; p < n && step(s, n, &p); p++) k++;
     return k;
 }
+#endif
+#ifdef SLOT_GATE_TU
 __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
                                                    uint64_t *sum, uint64_t *h)
 {
@@ -127,6 +409,7 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
     }
     return k;
 }
+#endif
 """
 
 WRAP_CMP = """#include <stddef.h>
@@ -145,6 +428,7 @@ static inline __attribute__((always_inline)) int test(const unsigned char *subje
 /* SITE BODY END */
     ;
 }
+#ifndef SLOT_GATE_TU
 __attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc)
 {
     (void)n;
@@ -152,6 +436,8 @@ __attribute__((noinline)) uint64_t CAT(SYM, _time)(const unsigned char *s, size_
     for (const uint32_t *p = c, *e = c + nc; p < e; p++) k += test(s, *p) != 0;   /* a pointer bump: R14-1 */
     return k;
 }
+#endif
+#ifdef SLOT_GATE_TU
 __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
                                                    uint64_t *sum, uint64_t *h)
 {
@@ -165,6 +451,7 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
         }
     return k;
 }
+#endif
 """
 
 # [rev1.4 R14-1] THE NULL VERIFY BASE IS ITS CLASS ARM'S OWN LOOP WITH THE COMPARE REMOVED: the base's TU is the
@@ -251,13 +538,17 @@ def render(fx, a):
     form, cls = kf
     f = facts(fx, form, cls)
     fi, bo = parts(fx, form, cls)
+    fr = frame(fx, form, cls)
+    if fr[3] != f["target"]:
+        raise SystemExit("link: FRAME %s: the frame's target %s is not the instance's %s" % (a.name, fr[3], f["target"]))
+    f = dict(f, frame=fr)
     if f["shape"] == "cmp-expr":
-        return WRAP_CMP % {"helpers": SLOT_HELPERS, "file": fi, "body": bo}, (form, cls), f
+        return framed(WRAP_CMP % {"helpers": SLOT_HELPERS, "file": fi, "body": bo}, fr), (form, cls), f
     table = ""
     if f.get("table", "-") != "-":
         m = set(hexbytes(f["table_members"]))
         table = "static const unsigned char %s[256] = { %s };" % (f["table"], cbytes(1 if i in m else 0 for i in range(256)))
-    return WRAP_FIND % {"table": table, "file": fi, "body": bo}, (form, cls), f
+    return framed(WRAP_FIND % {"table": table, "file": fi, "body": bo}, fr), (form, cls), f
 
 def span(src, what):
     m = re.search(r"/\* SITE %s BEGIN \*/\n(.*?)/\* SITE %s END \*/" % (what, what), src, re.S)
@@ -285,6 +576,11 @@ def arm_entry(a, sym, f, rundir):
     hit = hexbytes(f.get("members", "-")) if a.kind in ("find", "ctl") else []
     member = [0] * 32
     run, mask, L = [0] * 32, [0] * 32, 0
+    if a.kind in ("find", "ctl") and f.get("shape") == "find-fn" and f.get("L", "-") != "-":
+        # [lane slotx] the offset-skip site's check: its run (the hit is run[0]; gen.c plants run[1..L) after it)
+        L = int(f["L"])
+        run[:L] = hexbytes(f["run"])
+        mask[:L] = hexbytes(f["mask"])
     if a.kind == "verify":
         if f.get("L", "-") != "-":
             L = int(f["L"])
@@ -296,19 +592,21 @@ def arm_entry(a, sym, f, rundir):
     if a.kind in ("enter", "j1"):
         import art
         subj, expect = art.subject(a, rundir)
-    return ("    { \"%s\", %s, %s_time, %s_gate, %d, { %s }, %s, %d, %d, { %s }, { %s }, %d, { %s }, { %s }, %d, %s, %s },"
+    return ("    { \"%s\", %s, %s_time, %s_gate, %d, { %s }, %s, %d, %d, { %s }, { %s }, %d, { %s }, { %s }, %d, %d, %s, %s },"
             % (a.name, kind, sym, sym, len(a.lengths), lens, LANDING[a.landing], 1 if a.split == "alt" else 0,
                a.gap or 0, cbytes(hit) or "0", cbytes(member), L, cbytes(run), cbytes(mask),
-               50 if a.pas == "p50" else 0, subj, expect))
+               50 if a.pas == "p50" else 0, a.reject or 0, subj, expect))
 
 def seed_pad(run_id, job, l, arm, d):
     h = hashlib.sha256(("%s|%s|%d|%s|%d" % (run_id, job, l, arm, d)).encode()).digest()
     return PAD_STEP * (1 + int.from_bytes(h[:8], "little") % PAD_UNITS)
 
-def compile_tu(src, path, sym):
-    open(path, "w").write(src)
-    obj = path[:-2] + ".o"
-    sh(CC + ["-c", "-DSYM=" + sym, "-DCAND_STRIDE=%du" % plan.CAND_STRIDE, "-DPOOL_BYTES=%du" % plan.POOL_BYTES,
+def compile_tu(src, path, sym, gate=False):
+    """the TU's object; gate: the same file's GATE object (-DSLOT_GATE_TU, `_g.o`), the text already written"""
+    if not gate:
+        open(path, "w").write(src)
+    obj = path[:-2] + ("_g.o" if gate else ".o")
+    sh(CC + ["-DSLOT_GATE_TU"] * gate + ["-c", "-DSYM=" + sym, "-DCAND_STRIDE=%du" % plan.CAND_STRIDE, "-DPOOL_BYTES=%du" % plan.POOL_BYTES,
              "-I" + HERE, path, "-o", obj])
     return obj
 
@@ -382,11 +680,22 @@ def build_objs(job, rundir, arms):
     common = []
     for c in ("drv", "gen"):
         common.append(compile_tu(open(os.path.join(HERE, c + ".c")).read(), os.path.join(d, c + ".c"), "x"))
-    objs, checks, hashes, ctext = [], [], {}, []
+    objs, checks, hashes, ctext, gates = [], [], {}, [], []
+    floor = floor_features(fx)
+    isa_table_check(fx, floor)
     for k, a in enumerate(arms):
         src, fc, f = render(fx, a)
         sym = "a%d" % k
         o = compile_tu(src, os.path.join(d, "arm%d.c" % k), sym)
+        if "SLOT_GATE_TU" in src:                 # a site wrapper's TU (not a whole artifact's): its gate apart
+            gates.append(compile_tu(src, os.path.join(d, "arm%d.c" % k), sym, gate=True))
+            timed_shape_check(a.name, o, sym, timed_form(a, fc))
+        elif a.kind not in ("enter", "j1"):
+            raise SystemExit("link: TIMED-SHAPE %s: a site wrapper's TU without the gate split" % a.name)
+        tgt = isa = "-"
+        if "frame" in f:
+            tgt = f["frame"][3]
+            isa = isa_check(a.name, o, tgt, f["frame"][4], floor)
         if a.kind in ("enter", "j1"):             # whole artifacts share one prefix: keep only SYM's two globals
             import art
             art.localize(o, sym)
@@ -395,7 +704,7 @@ def build_objs(job, rundir, arms):
             got = sh([fx, "--hash-text", "-"], input=span(src, "FILE") + span(src, "BODY")).strip()
             want, fold = hashes.setdefault(fc, form_hash(fx, fc[0], fc[1]))
             checks.append((a.name, fc, got, want))
-            ctext.append([a.name, fc[0], fc[1] or "-", got, fold, shape_tag(a, f)])
+            ctext.append([a.name, fc[0], fc[1] or "-", got, fold, shape_tag(a, f), tgt, isa, str(text_bytes(o, sym))])
     bad = [c for c in checks if c[2] != c[3]]
     for c in bad:
         print("CELL-TEXT MISMATCH %s: site text %s, the hash of the instance its key names (%s %s) %s"
@@ -403,8 +712,11 @@ def build_objs(job, rundir, arms):
     if bad:
         raise SystemExit(3)
     print("cell-text: %d cell TUs, every site-text hash equals the hash of the instance its KEY names" % len(checks))
+    regs = sorted({(r[6], r[7]) for r in ctext if r[6] != "-"})
+    print("target: every cell TU compiled in its KEY's target (%s); the ISA check holds each object to it"
+          % "; ".join("%s uses %s" % tr for tr in regs))
     open(os.path.join(rundir, job, "cell_text.tsv"), "w").write(
-        "#arm\tform\tcls\tinstance_hash\tfold_hash\ttags\n" + "".join("\t".join(r) + "\n" for r in ctext))
+        "#arm\tform\tcls\tinstance_hash\tfold_hash\ttags\ttarget\ttarget_isa\ttext_bytes\n" + "".join("\t".join(r) + "\n" for r in ctext))
     # arm vs twin: the sources byte-identical (cmp)
     by = {a.name: src for a, _s, _o, _f, src in objs}
     # [rev1.4 R14-1] every null base against its class arm: they differ only in the compare
@@ -430,17 +742,17 @@ def build_objs(job, rundir, arms):
         + "\n};\nconst int slot_narms = %d;\n" % len(objs)
         + "const unsigned char slot_find_members[32] = { %s };\n" % cbytes(find_members(fx)))
     common.append(compile_tu(open(tab).read(), tab, "x"))
-    return common, objs
+    return common, objs, gates
 
-def link_launch(job, rundir, run_id, l, common, objs, d):
-    """d: the draw index per arm name (0 if absent)"""
+def link_launch(job, rundir, run_id, l, common, objs, d, gates=()):
+    """d: the draw index per arm name (0 if absent); the gate objects link after every arm (no arm moves for them)"""
     ld = os.path.join(rundir, job, "L%d" % l)
     os.makedirs(ld, exist_ok=True)
     cmd = []
     for k, (a, _s, o, _f, _src) in enumerate(objs):
         cmd += [pad_obj(ld, seed_pad(run_id, job, l, a.name, d.get(a.name, 0)), k), o]
     exe = os.path.join(ld, "%s.L%d" % (job, l))
-    sh(["gcc", "-o", exe] + common + cmd)
+    sh(["gcc", "-o", exe] + common + cmd + list(gates))
     return exe
 
 def text_align(obj):
@@ -459,7 +771,7 @@ def link_job(job, rundir, run_id):
     draws; exhausting a bound REFUSES naming the launch, the arm and the constraint."""
     jobs, _rows, _floor, _un = plan.build()
     arms = [a for a in jobs[job] if a.kind != "ctl"]   # the control is its own executable (link_ctl)
-    common, objs = build_objs(job, rundir, arms)
+    common, objs, gates = build_objs(job, rundir, arms)
     names = {a.name: s for a, s, _o, _f, _src in objs}
     order = [a.name for a, _s, _o, _f, _src in objs]
     draws = {l: {} for l in range(1, 8)}
@@ -474,7 +786,7 @@ def link_job(job, rundir, run_id):
                              % (job, l, name, MAXDRAW, why))
     def fix_launch(l):
         while True:
-            exes[l] = link_launch(job, rundir, run_id, l, common, objs, draws[l])
+            exes[l] = link_launch(job, rundir, run_id, l, common, objs, draws[l], gates)
             addrs[l] = nm_addrs(exes[l])
             bad = next((n for n in order if n.endswith("#b") and need[names[n]] > 1
                         and addrs[l][names[n]] % 64 == addrs[l][names[n[:-2]]] % 64), None)
@@ -523,8 +835,8 @@ def link_ctl(rundir):
     kp = os.path.join(d, "inputs.sha256")
     if not os.path.exists(exe):
         os.makedirs(d, exist_ok=True)
-        common, objs = build_objs("ctl", rundir, [plan.Arm("ctl", "ctl", "ctl", "walk", lengths=plan.LENGTHS)])
-        shutil.move(link_launch("ctl", rundir, "ctl", 1, common, objs, {}), exe)
+        common, objs, gates = build_objs("ctl", rundir, [plan.Arm("ctl", "ctl", "ctl", "walk", lengths=plan.LENGTHS)])
+        shutil.move(link_launch("ctl", rundir, "ctl", 1, common, objs, {}, gates), exe)
         open(os.path.join(rundir, "ctl.sha256"), "w").write(hashlib.sha256(open(exe, "rb").read()).hexdigest() + "\n")
         open(kp, "w").write(key + "\n")
     elif not os.path.exists(kp) or open(kp).read().strip() != key:
@@ -535,5 +847,7 @@ def link_ctl(rundir):
 if __name__ == "__main__":
     if sys.argv[1] == "ctl":
         print(link_ctl(sys.argv[2]))
+    elif sys.argv[1] == "shape-selftest":
+        sys.exit(shape_selftest(sys.argv[2]))
     else:
         link_job(sys.argv[1], sys.argv[2], sys.argv[3])

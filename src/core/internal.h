@@ -196,6 +196,13 @@ typedef struct {
      * at the minimum width and the answer-identity sweep can still produce
      * the form before it. Off on every shipped compile. */
     unsigned no_min_width : 1;
+    /* [MEMFN] lane mfind: the eleventh, `--harness=mfind`, the kit's PROBE
+     * lever (mf_lever(art, "mfind")): the offset-skip function's one-byte
+     * scan takes the kit's INLINE ONE-MEMBER FINDER (its BODY row fn-mfind,
+     * the SWAR word; at an art target admitting a level, its mfind-w16 /
+     * mfind-w32 helpers) instead of fn-memchr, an unpicked measuring
+     * instrument (D197). Off on every shipped compile. */
+    unsigned mfind : 1;
     /* [RUN-POS-SET] stage 2a: the ninth, `run-pos-sets`, and the tenth,
      * `alt-union-run`, both RETIRED (lanes s2land, r1on) when what they
      * turned on became the default; the tenth's restore is the walk arm

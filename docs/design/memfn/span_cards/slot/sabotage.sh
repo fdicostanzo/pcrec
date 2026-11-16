@@ -3,16 +3,20 @@
 # READY-5): their detectors run only in the slot harness's dry run (`run.py dry`), which no make suite runs, so this
 # runner plants each in a SCRATCH COPY of slot/, runs the named job's dry run there under run id s2c-dry, and
 # expects the named refusal (precedent: docs/design/r17b_prime/b3a/sabotage/run_skb3a.sh). A control run of
-# the unplanted copy must be green first. Each row scores DETECTED (the dry run refused with the expected
-# text) or MISSED; exit 0 iff the control is green and every row is DETECTED.
+# the unplanted copy must be green first, ON EVERY JOB THE SELECTED ROWS SCORE ON (review 2026-11-15 r1 F3: J2 and
+# the est self-test always, plus each other job a row names, so an unplanted regression of that job cannot score
+# a row DETECTED). Each row scores DETECTED (the dry run refused with the expected text) or MISSED; exit 0 iff the
+# control is green and every row is DETECTED.
 #   slot/sabotage.sh SCRATCH [ROW..]      rows: j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 d1
+#                                         t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1-i10 m1-m5
 #                                         y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 (default all)
 #   (j)  the placement draw ignores the launch (and so its re-draw index): every launch links the same pads;
 #        the cross-launch constraint on `nm` of the seven executables refuses after the bounded re-draw
 #   (j2) a twin linked at its arm's phase (its pad sized to land it there): the per-launch constraint
 #        refuses, after the bounded re-draw
-#   (k)  the walk's arm rendered from another entry row (libc's): its site-text hash differs from
-#        mf_form_hash(walk): the cell-text check refuses
+#   (k)  the libc arm rendered from another entry row (walk's): its site-text hash differs from
+#        mf_form_hash(libc) (its facts walk's too, so walk's table compiles): the cell-text check refuses
+#        (j4fix: was walk-from-libc, which since r6's TIMED_CALLEES the timed-shape check refuses first)
 #   (l1) the generator plants libc's hits as another byte: the count gate (count 0 vs E; the libc base's
 #        sentinel subject misses first since r9)
 #   (l2) the find wrapper returns each hit one byte late (count kept): the POSITION sum and FNV-1a-64 gate
@@ -88,17 +92,81 @@
 #   (d1) S3105 the DIM_FIELD line for `back` removed with the kit-grid@4 `enter_back` rows still planned: plan.py's
 #        build()-time dim check refuses (`plan.py report` is the dry run here: no compile, no render). Without the
 #        check the planner runs on (the refusal was link time only, and a card with no planned row loaded silently)
+#   lane slotx (kit-grid@6's pieces: the per-arm target region, the reject dim, ver-6 planning; harness fidelity):
+#   (t1) S3160 the w32 arm compiled at the DEFAULT target while keyed x86-64-v3: the frame's header lines kept, its
+#        region dropped (every TU at -march=x86-64 alone): gcc refuses the AVX2 intrinsics outside the region
+#   (t2) S3161 every cell TU compiled at -march=x86-64-v3 (a stray flag; the declared floor unchanged): the generic
+#        arms keyed generic run v3 code; link.py's ISA check refuses (ISA MISMATCH ... keyed target generic)
+#   (r1) S3162 the generator plants NO rejected hit (the reject rate dropped to 0) while the key, the table entry and
+#        the record say 50/100: run.py's realized-reject check on the gate's `reject` lines refuses (the answer gate
+#        alone is blind: gen.c's own expectation moves with it)
+#   (r2) S3163 the table entry (tab.c) states reject 0 for every arm, the key 50/100: the generator plants 0; the
+#        realized-reject check, holding the bytes to the KEY's percent, refuses
+#   (k1) S3167 plan.py builds the reject-50 Arms with reject 0 (their keys keep 50): KEY-ARM MISMATCH on dim reject
+#   (v1) S3164 a ver-6 card's rows written to ver 4's set (the writer's split moves a ver-6 key to ver 4): the split's
+#        own per-set card check refuses (DRAFT-VER MISMATCH); the want names that refusal's text, not the case's
+#        WRONG, which the case's own predicate gives without the check (review 2026-11-15 r1 F4)
+#   (v2) S3165 card_of resolves by QUANTITY alone (deps ignored, the first card: ver 3's): a ver-6 key priced by the
+#        ver-3 card of the same quantity; the plan's build-time key check refuses (a find_hit@6 key's 5 tokens
+#        against find_hit@3's 4 dims; find_byte's equal dims alone would price it silently, so the dims are the
+#        witness, and est's draft split checks the set's cards again)
+#   (w1) S3166 est.py prices every frozen row, the window's or not: the mfcard self-test refuses (J3-J5 rows read
+#        never-ran, their floor clauses fail)
+#   review 2026-11-15 r1 (slotxfix):
+#   (e1) S3168 [F1] the w32 TU (keyed x86-64-v3) compiled in a region that also enables AVX-512F/VL: gcc emits EVEX
+#        code on %ymm, which a mnemonic/register reading takes for AVX2; the ISA check, classifying by ENCODING,
+#        refuses (ISA MISMATCH ... keyed target x86-64-v3, its code needs avx512f,avx512vl)
+#   (e2) S3169 [F2] the ISA table's `fma` row deleted: the table check over every planned target's --target-facts
+#        refuses (ISA TABLE: planned target x86-64-v3 enables fma ...); no arm emits FMA, so no ISA check can
+#   (e3) S3171 [F5] write_draft's per-ver selection also writes every ver-6 row into ver 3's set (draft_split
+#        untouched): est.py's self-test case "[F5] write_draft on the mfcard window" goes WRONG
+#   (e4) S3172 [F8] write_draft's mixed-ISA-level refusal removed: the self-test case "[F8] write_draft refuses a
+#        set mixing ISA levels" goes WRONG
+#   review 2026-11-15 r1 F8 (slotxf8b):
+#   (f8a) S3183 [re-aimed r5] the level derivation files x86-64-v3 at the floor's level (the baseline set): the
+#        guard, reading the needs link.py recorded, refuses (DRAFT-ISA-LEVEL MIXED) in the one-set-per-level case
+#   (f8b) S3184 [re-aimed r5] the v3 set keeps the baseline class value: the guard reads the class back and refuses
+#   review 2026-11-15 r5 memfn-mfindcomb (mcfixa):
+#   (i1) S3188 [FIDELITY-1] the find wrapper's gate compiled back INTO the timed TU, no gate object (the critic's
+#        shape: two callers of `step`): gcc keeps the w16/w32 finder out of line; the timed-shape check refuses (TIMED-SHAPE ...
+#        calls mf_fn__w16)
+#   (i2) S3189 [FIDELITY-2] est checks the manifests of verify jobs only (as before r5): the P11 case goes WRONG
+#   (i3) S3190 [FIDELITY-2] the manifest's cell_text pin not compared: the P11 case goes WRONG
+#   (i4) S3191 [FIDELITY-5] the duplicate-cell refusal removed: the one-cell-two-lines case goes WRONG
+#   (i5) S3192 [DRAFTSETS-2] the cell_text-twice refusal removed: the P9 case goes WRONG
+#   (i6) S3193 [contract-2] the unit row not repeated in the ver-6 sets: the tree's loader refuses them (LOAD)
+#   (i7) S3194 [FIDELITY-3] a base's cells filed with every set: the guard refuses base.mfind-w32's
+#        (x86-64-v3 needs) in the baseline set
+#   (i8) S3195 [FIDELITY-3] every job control in every set: the levels case goes WRONG (JMB/JMH ctl in ver 3's)
+#   (i9) S3196 [FIDELITY-4] the D197 rule's A/A floor dropped: the drill's within-floor tie reads WIN (WRONG)
+#   (i10) S3197 [R3 (1)] a confirming run never clears a loss: the not-reproduced case reads CONFIRM (WRONG)
+#   review 2026-11-15 r6 (lane mcfixb):
+#   (m1) S3207 [FIDELITY-3] est's cells pin not compared: the swapped-cells case is priced (WRONG)
+#   (m2) S3208 [RULE-2] a confirming record's run id not held apart: the first-run-id case passes (WRONG)
+#   (m3) S3209 [RULE-1] the second-run-without-a-verdict row never matches: the second run's refused shipped
+#        record reads INCONCLUSIVE, a third run (WRONG)
+#   (m4) S3214 [RULE-7] the scan reads a key no row has (every ratio `-`): the end-to-end drill's number check
+#        goes WRONG (job d197e2e: the drill with its SCRATCH)
+#   (m5) S3215 [FIDELITY-1] TIMED-SHAPE's section-symbol refusal dropped: link.py shape-selftest's `section`
+#        case goes WRONG (job shape). The four out-of-line plants S3210-S3213 are that self-test's own cases
+#   lane j4fix:
+#   (m6) S3221 a cell-less J4 null base left unkeyed (timed_form returns None: TIMED_CALLEES' "any external"):
+#        link.py shape-selftest's out-of-line null-base plant S3220 goes WRONG (job shape)
+#   lane pinfix:
+#   (m7) S3226 [ADQ-3] est's absent cells pin tolerated on a windowed record again: the mfcard-window
+#        pin-deleted case goes WRONG (job est)
 # `want` is an extended regex (grep -E). Ids S2934-S2939 are the kit's (span_cards §R1.3 r9 and r9fc rows), S2940-S2945
 # rev 1.4's (§R1.4), S2946-S2949 review r10's (§R1.4's r10 table), S2950-S2952 rev 1.5's (§R1.5), S2953-S2963 review
-# r11's (§R1.5's r11 table), S3105 K38-3's; they
+# r11's (§R1.5's r11 table), S3105 K38-3's, S3160-S3167 lane slotx's, S3168 S3169 S3171 S3172 lane slotxfix's, S3183 S3184 lane slotxf8b's,
+# S3188-S3197 lane mcfixa's, S3207-S3209 S3214 S3215 lane mcfixb's, S3220 S3221 lane j4fix's, S3224-S3226 lane pinfix's; they
 # are slot-local rows, not tests/mech rows (no make suite runs their detectors).
 set -u
 export LC_ALL=C
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-TREE=$(cd "$here/../../../../.." && pwd)
+TREE=${SLOT_TREE:-$(cd "$here/../../../../.." && pwd)}   # SLOT_TREE: the tree when slot/ runs from a copy
 SCR=${1:?usage: sabotage.sh SCRATCH [ROW..]}
 shift
-ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1}
+ROWS=${*:-j j2 k l1 l2 l3 g2 g3 f1 f2 f6 n1 n2 n3 s1 s2 s3 s4 s5 q1 b1 x1 x2 x3 y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 d1 t1 t2 r1 r2 k1 v1 v2 w1 e1 e2 e3 e4 f8a f8b i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 m1 m2 m3 m4 m5 m6 m7}
 . "$TREE/tests/lib/timeout_bin.sh"
 TO=$TIMEOUT_BIN
 mkdir -p "$SCR"
@@ -108,7 +176,8 @@ copy() {   # a fresh copy of slot/ in $SCR/$1
     cp -r "$here" "$SCR/$1/"
 }
 
-patch() {  # FILE OLD NEW: exactly one occurrence, else the plant itself fails (loud)
+patch() {  # FILE OLD NEW: exactly one occurrence, else the plant itself fails (loud); PLANT=0: plants nothing
+    [ "${PLANT:-1}" = 1 ] || return 0
     python3 -I - "$1" "$2" "$3" <<'PY'
 import sys
 p, a, b = sys.argv[1:4]
@@ -126,6 +195,12 @@ dry() {    # COPY JOB [NAME]: the job's dry run in the copy COPY (a fresh RUNDIR
     rm -rf "$SCR/run.$n"
     if [ "$2" = plan ]; then          # JOB `plan`: the planner's report (build() and its checks), no render
         SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/plan.py" report > "$SCR/$n.out" 2>&1
+    elif [ "$2" = d197 ]; then        # JOB `d197`: the D197 rule's drill (constructed outcomes)
+        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/d197_rule.py" drill > "$SCR/$n.out" 2>&1
+    elif [ "$2" = d197e2e ]; then     # JOB `d197e2e`: the drill and its end-to-end cases on est's synth (r6)
+        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/d197_rule.py" drill "$SCR/run.$n" > "$SCR/$n.out" 2>&1
+    elif [ "$2" = shape ]; then       # JOB `shape`: link.py's TIMED-SHAPE self-test (r6)
+        SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/link.py" shape-selftest "$SCR/run.$n" > "$SCR/$n.out" 2>&1
     elif [ "$2" = est ]; then
         SLOT_TREE=$TREE "$TO" 900 python3 -I "$SCR/$1/est.py" selftest "$SCR/run.$n" > "$SCR/$n.out" 2>&1
     else
@@ -133,21 +208,8 @@ dry() {    # COPY JOB [NAME]: the job's dry run in the copy COPY (a fresh RUNDIR
     fi
 }
 
-pass=0 fail=0
-copy control
-dry control J2
-if [ $? -ne 0 ]; then
-    echo "sabotage: CONTROL red (the unplanted copy's J2 dry run):"; tail -5 "$SCR/control.out"; exit 2
-fi
-echo "control   J2 dry run green"
-dry control est control.est
-if [ $? -ne 0 ]; then
-    echo "sabotage: CONTROL red (the unplanted copy's est.py self-test):"; tail -5 "$SCR/control.est.out"; exit 2
-fi
-echo "control   est.py self-test green"
-
-for row in $ROWS; do
-    copy "$row"
+row_def() {   # ROW: sets `job` and `want` and plants the row in $SCR/ROW (PLANT=0: sets them only)
+    local row=$1
     case $row in
     j)  job=J2 want="the cross-launch constraint"
         patch "$SCR/$row/link.py" '("%s|%s|%d|%s|%d" % (run_id, job, l, arm, d))' '("%s|%s|%s" % (run_id, job, arm))' ;;
@@ -158,7 +220,8 @@ for row in $ROWS; do
             P = 64 + (-int(sh(["size", "-A", objs[k - 1][2]]).split(".text")[1].split()[0])) % 64
         cmd += [pad_obj(ld, P, k), o]' ;;
     k)  job=J2 want="CELL-TEXT MISMATCH"
-        patch "$SCR/$row/link.py" '    fi, bo = parts(fx, form, cls)' '    fi, bo = parts(fx, {"walk": "libc"}.get(form, form), cls)' ;;
+        patch "$SCR/$row/link.py" '    f = facts(fx, form, cls)' '    f = facts(fx, {"libc": "walk"}.get(form, form), cls)'
+        patch "$SCR/$row/link.py" '    fi, bo = parts(fx, form, cls)' '    fi, bo = parts(fx, {"libc": "walk"}.get(form, form), cls)' ;;
     l1) job=J3 want='GATE MISS (base|kit\.find_hit)\.libc'
         patch "$SCR/$row/gen.c" '            buf[p] = a->hit[a->split ? (k & 1) : 0];' \
 '            buf[p] = (unsigned char)(a->hit[a->split ? (k & 1) : 0] + (a->hit[0] == 120));' ;;
@@ -182,8 +245,8 @@ for row in $ROWS; do
             raise InputError("%s holds cells of job %s' '        if False:   # SABOTAGE S2936
             raise InputError("%s holds cells of job %s' ;;
     f1) job=est want='selftest	live card/policy edit after the run	WRONG'
-        patch "$SCR/$row/est.py" '            G = card[key.split(".")[1]]["gate"]' \
-'            G = plan.CARD[key.split(".")[1]]["gate"]   # SABOTAGE S2937' ;;
+        patch "$SCR/$row/est.py" '            G = plan.card_of(card, key)["gate"]' \
+'            G = plan.card_of(plan.CARD, key)["gate"]   # SABOTAGE S2937 (re-anchored, slotxfix: the lookup is card_of since slotx)' ;;
     f2) job=J3 want='KEY-ARM MISMATCH kit\.find_hit\.(libc|walk)\.periodic\.one\.[0-9]+: dim landing: the key names periodic, the Arm random'
         patch "$SCR/$row/plan.py" '                row("J3", Arm(k, "J3.hit.%s.%d" % (ld, g), "find", f, landing=ld, split=sp, gap=g,' \
 '                row("J3", Arm(k, "J3.hit.%s.%d" % (ld, g), "find", f, landing="random", split=sp, gap=g,   # SABOTAGE S2938' ;;
@@ -262,8 +325,135 @@ for row in $ROWS; do
     d1) job=plan want='plan: card enter_back@4 dim back has no DIM_FIELD line'
         patch "$SCR/$row/plan.py" '    ("back",    lambda a: None if a.back is None else str(a.back)),    # kit-grid@4: the step-back t
 ' '' ;;
+    t1) job=JMB want='inlining failed in call to .*target specific option mismatch'
+        patch "$SCR/$row/link.py" '    return gd + pro + heads + ro + "#define CAT_(a, b) a##b\n" + rest + rc' \
+'    return gd + pro + heads + "#define CAT_(a, b) a##b\n" + rest   # SABOTAGE S3160' ;;
+    t2) job=JMB want='ISA MISMATCH [^ ]+: keyed target generic, its code needs'
+        patch "$SCR/$row/link.py" '    sh(CC + ["-DSLOT_GATE_TU"] * gate + ["-c", "-DSYM=" + sym,' '    # SABOTAGE S3161
+    sh(CC + ["-DSLOT_GATE_TU"] * gate + ["-march=x86-64-v3", "-c", "-DSYM=" + sym,' ;;
+    r1) job=JMH want='REJECT-RATE MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.(50|100)'
+        patch "$SCR/$row/gen.c" '        uint32_t m = (uint32_t)((uint64_t)E * (uint64_t)a->reject / 100);' \
+'        uint32_t m = 0;   /* SABOTAGE S3162 */' ;;
+    r2) job=JMH want='REJECT-RATE MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.(50|100)'
+        patch "$SCR/$row/link.py" '               50 if a.pas == "p50" else 0, a.reject or 0, subj, expect))' \
+'               50 if a.pas == "p50" else 0, 0, subj, expect))   # SABOTAGE S3163' ;;
+    k1) job=JMH want='KEY-ARM MISMATCH kit\.find_hit\.[a-z0-9-]+\.periodic\.one\.[0-9]+\.50: dim reject: the key names 50, the Arm 0'
+        patch "$SCR/$row/plan.py" '                           base=base_of(k), events=LEN // g, reject=r), base_of(k))' \
+'                           base=base_of(k), events=LEN // g, reject=0 if r == 50 else r), base_of(k))   # SABOTAGE S3167' ;;
+    v1) job=est want='selftest	\[slotx\] the draft split[^	]*	\(DRAFT-VER MISMATCH'
+        patch "$SCR/$row/est.py" '            v = plan.card_of(rec["card"], r[0])["ver"]' \
+'            v = plan.card_of(rec["card"], r[0])["ver"]
+            v = "4" if v == "6" else v   # SABOTAGE S3164' ;;
+    v2) job=plan want='plan: key kit\.find_hit\.[a-z0-9.-]+ has 5 tokens, its card.s dims'
+        patch "$SCR/$row/plan.py" '           and (card_forms(c) is None or (len(q) > 2 and q[2] in card_forms(c)))]' \
+'           ][:1]   # SABOTAGE S3165' ;;
+    w1) job=est want='selftest	\[slotx\] window mfcard[^	]*	WRONG'
+        patch "$SCR/$row/est.py" '    win = [(k, g, j) for k, g, j in rec["plan"] if j in rec["jobs"]]' \
+'    win = [(k, g, j) for k, g, j in rec["plan"]]   # SABOTAGE S3166' ;;
+    e1) job=JMB want='ISA MISMATCH kit\.find_byte\.mfind-w32(#b)?: keyed target x86-64-v3, its code needs avx512f,avx512vl'
+        patch "$SCR/$row/link.py" '    return gd + pro + heads + ro + "#define CAT_(a, b) a##b\n" + rest + rc' \
+'    return gd + pro + heads + ro.replace('"'"'target("avx2'"'"', '"'"'target("avx512f,avx512vl,avx2'"'"') + "#define CAT_(a, b) a##b\n" + rest + rc   # SABOTAGE S3168' ;;
+    e2) job=J2 want='ISA TABLE: planned target x86-64-v3 enables fma above the floor'
+        patch "$SCR/$row/link.py" '    ("vex", r"vf(n?m(add|sub)|maddsub|msubadd)\S*", r"", ("fma",)),
+' '' ;;
+    e3) job=est want='selftest	\[F5\] write_draft on the mfcard window[^	]*	WRONG'
+        patch "$SCR/$row/est.py" '        vrows = groups[(v, suf, cls)]' \
+'        vrows = groups[(v, suf, cls)] + (split.get("6", []) if v == "3" else [])   # SABOTAGE S3171' ;;
+    e4) job=est want='selftest	\[F8, r5 P4\] write_draft refuses a set mixing ISA levels[^	]*	WRONG'
+        # [r5] re-anchored: the guard's over-the-class test never refuses
+        patch "$SCR/$row/est.py" '        if over:
+            raise InputError("DRAFT-ISA-LEVEL MIXED' '        if False:   # SABOTAGE S3172
+            raise InputError("DRAFT-ISA-LEVEL MIXED' ;;
+    f8a) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	\(DRAFT-ISA-LEVEL MIXED'
+        # [r5] re-anchored: the level derivation files every target at the floor's level (the baseline set)
+        patch "$SCR/$row/est.py" '        return self.floor if self.feats(tok) <= self.feats(self.floor) else tok' \
+'        return self.floor   # SABOTAGE S3183: every target at the floor level' ;;
+    f8b) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	\(DRAFT-ISA-LEVEL MIXED'
+        # [r5] re-anchored: the v3 set keeps the baseline class; the guard, reading the class back, refuses
+        patch "$SCR/$row/est.py" '        return suf, "%s/%s" % (lvl.replace(self.floor, self.floor.replace("-", "_"), 1), BOX_UARCH)' \
+'        return suf, "%s/%s" % (self.floor.replace("-", "_"), BOX_UARCH)   # SABOTAGE S3184' ;;
+    i1) job=JMB want='TIMED-SHAPE kit\.find_byte\.mfind-w(16|32)(#b)?: a[0-9]+_time calls mf_fn__w(16|32)'
+        patch "$SCR/$row/link.py" '#endif
+#ifdef SLOT_GATE_TU
+__attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
+                                                   uint64_t *sum, uint64_t *h)
+{
+    (void)c; (void)nc;' '#endif
+#if 1   /* SABOTAGE S3188: the gate back in the timed TU */
+__attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_t n, const uint32_t *c, size_t nc,
+                                                   uint64_t *sum, uint64_t *h)
+{
+    (void)c; (void)nc;'
+        patch "$SCR/$row/link.py" '            gates.append(compile_tu(src, os.path.join(d, "arm%d.c" % k), sym, gate=True))' \
+'            pass   # SABOTAGE S3188: no gate object (the timed TU holds the gate)' ;;
+    i2) job=est want='selftest	\[r5 P11\][^	]*	WRONG'
+        patch "$SCR/$row/est.py" '    pins = {j: manifest_check(rundir, rec, j, L) for j in sorted(ran)}' \
+'    pins = {}   # SABOTAGE S3189: the manifests checked for verify jobs only (fused_facts), as before r5' ;;
+    i3) job=est want='selftest	\[r5 P11\][^	]*	WRONG'
+        patch "$SCR/$row/est.py" 'MANIFEST_FILES = ("cell_text", "placement")' 'MANIFEST_FILES = ("placement",)   # SABOTAGE S3190' ;;
+    i4) job=est want='selftest	\[r5 FIDELITY-5\] one cell, two lines: refused	WRONG'
+        patch "$SCR/$row/est.py" '            if ck in seen:' '            if False:   # SABOTAGE S3191' ;;
+    i5) job=est want='selftest	\[r5 DRAFTSETS-2 P9\] one key, two cell_text lines: refused	WRONG'
+        patch "$SCR/$row/est.py" '            if key in out:
+                raise InputError("CELL-TEXT TWICE' '            if False:   # SABOTAGE S3192
+                raise InputError("CELL-TEXT TWICE' ;;
+    i6) job=est want='selftest	\[r5 contract-2\][^	]*	\(LOAD draft\.v6'
+        patch "$SCR/$row/est.py" '        groups[g] = sorted(unit + groups[g], key=lambda r: r[0])' \
+'        groups[g] = sorted((unit if g[0] == "3" and not g[1] else []) + groups[g], key=lambda r: r[0])   # SABOTAGE S3193' ;;
+    i7) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	\(DRAFT-ISA-LEVEL MIXED.*base base\.mfind-w32'
+        patch "$SCR/$row/est.py" '        hs = [g for g, vr in groups.items() if any(plan.base_of(r[0]) == a and job_of[r[0]] == c["job"] for r in vr)]' \
+'        hs = list(groups)   # SABOTAGE S3194: a base with every set' ;;
+    i8) job=est want='selftest	\[F8\] write_draft writes one ver-6 set per ISA level[^	]*	WRONG'
+        patch "$SCR/$row/est.py" '            return [g for g, vr in groups.items() if any(job_of[r[0]] == c["job"] for r in vr)]' \
+'            return list(groups)   # SABOTAGE S3195: every job control in every set' ;;
+    i9) job=d197 want='drill	within-floor tie[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '        lambda c: c["gain"] > c["floor"] and all(x > 0 for x in trim(c["gain_l"])),' \
+'        lambda c: c["gain"] > 0 and all(x > 0 for x in trim(c["gain_l"])),   # SABOTAGE S3196: the A/A floor dropped' ;;
+    i10) job=d197 want='drill	\[R3\] that one-cell loss does NOT reproduce[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '    "loss-not-reproduced": lambda c: c["gain"] < -c["floor"] and c["conf"] is not None' \
+'    "loss-not-reproduced": lambda c: False and c["conf"] is not None   # SABOTAGE S3197: a confirming run never clears a loss' ;;
+    m1) job=est want='selftest	\[r6 FIDELITY-3\] two keys. cells swapped after finalize[^	]*	WRONG'
+        patch "$SCR/$row/est.py" '        elif got != pin:' '        elif False:   # SABOTAGE S3207: the cells pin not compared' ;;
+    m2) job=d197 want='drill	\[r6 provenance\] a confirming record \(window mfconfirm\) carrying[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '        if role.startswith("confirm.") and m["run"].get("run_id") in this | first:' \
+'        if False:   # SABOTAGE S3208: a confirming run id not held apart' ;;
+    m3) job=d197 want='drill	\[r6 RULE-1\] the shipped record REFUSED on the second run[^	]*	WRONG'
+        patch "$SCR/$row/d197_rule.py" '    "second-run-without-a-verdict": lambda v: v["second"] and (' \
+'    "second-run-without-a-verdict": lambda v: False and v["second"] and (' ;;   # SABOTAGE S3209 (the plant carries no comment: the line continues)
+    m4) job=d197e2e want='drill	end to end on est.s synthetic window	WRONG'
+        patch "$SCR/$row/d197_rule.py" '"kit.%s.%s" % (t["deciding"]["scan"], f)' '"kit.%s_.%s" % (t["deciding"]["scan"], f)' ;;   # SABOTAGE S3214 (the plant carries no comment: mid-line)
+    m5) job=shape want='shape	\[S3210\][^	]*	WRONG'
+        patch "$SCR/$row/link.py" '        if callee.startswith("."):' '        if False:   # SABOTAGE S3215: section symbols not refused' ;;
+    m6) job=shape want='shape	\[S3220\][^	]*	WRONG'
+        patch "$SCR/$row/link.py" '        return "null"
+' '        return None   # SABOTAGE S3221: the null base unkeyed
+' ;;
+    m7) job=est want='selftest	\[r8 ADQ-3 S3224\][^	]*	WRONG'
+        patch "$SCR/$row/est.py" '        if pin is None and not legacy_record(rec):      # [r8 ADQ-3] only a legacy record may lack the pin' \
+'        if False:      # SABOTAGE S3226: a windowed record may lack the cells pin' ;;
     *)  echo "sabotage: unknown row $row"; exit 2 ;;
     esac
+}
+
+pass=0 fail=0
+# [F3] THE CONTROL RUNS EVERY JOB THE ROWS SCORE ON: each selected row's job read off row_def (nothing planted)
+cjobs="J2 est"
+for row in $ROWS; do
+    PLANT=0 row_def "$row"
+    case " $cjobs " in *" $job "*) ;; *) cjobs="$cjobs $job" ;; esac
+done
+copy control
+for j in $cjobs; do
+    dry control "$j" "control.$j"
+    if [ $? -ne 0 ]; then
+        echo "sabotage: CONTROL red (the unplanted copy's $j dry run):"; tail -5 "$SCR/control.$j.out"; exit 2
+    fi
+    echo "control   $j green (unplanted)"
+done
+
+for row in $ROWS; do
+    copy "$row"
+    row_def "$row"
     [ $? -eq 0 ] || { echo "$row  PLANT FAILED"; fail=$((fail + 1)); continue; }
     dry "$row" "$job"
     rc=$?

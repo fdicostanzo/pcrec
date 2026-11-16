@@ -1895,13 +1895,13 @@ static void s_shift_prepare(struct wf_plan *w, const wf_fx *fx)
  * is special-cased. */
 
 /* A renderer row opens with its ren_key (kit.h). The three key spaces are
- * disjoint bits: a pick's (REN_PICK, bits 1..FF_HORS: FF_UNSTATED, a
+ * disjoint bits: a pick's (REN_PICK, bits 1..FF_MFIND: FF_UNSTATED, a
  * refusal's pick, keys nothing), a stream's (WF_ST_*, on stream rows) and
  * REN_FRAME, a bit no pick or stream takes. */
 #define REN_FRAME   (1u << 31)          /* a row keyed by its frame alone      */
 #define REN_PICK(f) (1u << (f))         /* a search's key: its T-FIND pick     */
 #define REN_ROWS(t) (t), sizeof (t) / sizeof *(t), sizeof *(t)
-_Static_assert(FF_HORS < 31 && WF_ST_SHIFT < REN_FRAME, "the renderer key spaces are disjoint");
+_Static_assert(FF__COUNT <= 31 && WF_ST_SHIFT < REN_FRAME, "the renderer key spaces are disjoint");
 
 /* The key a lookup by T-FIND pick `f` asks: none for FF_UNSTATED (a refusal
  * leaves it), so no row renders a refused decision. */
@@ -2508,15 +2508,22 @@ int wf_prepare(const mf_art *art, const mf_site *s, const mf_hooks *def,
 
 /* T-FIND's picks as the reply's search piece (mf_wsearch): the built picks;
  * every other pick renders no search, NONE. */
-static const uint8_t wf_wsearch[FF_HORS + 1] = {
+static const uint8_t wf_wsearch[] = {
     [FF_LIBC] = MF_WSEARCH_LIBC, [FF_LIBC_BACK] = MF_WSEARCH_LIBC_BACK,
     [FF_WALK] = MF_WSEARCH_WALK, [FF_PAIR] = MF_WSEARCH_PAIR, [FF_HORS] = MF_WSEARCH_HORS,
+    [FF_MFIND] = MF_WSEARCH_NONE, /* the inline one-member finder renders no search piece */
 };
+/* Sized by its own initializers (the last designated form + 1) and held to
+ * the enum's count FF__COUNT, as finder.c's ff_name is: a form added after
+ * FF_MFIND and not declared here fails the assert, never answered NONE by
+ * the bounds test (review r6 CHECKS-A1). */
+_Static_assert(sizeof wf_wsearch / sizeof wf_wsearch[0] == FF__COUNT,
+               "wf_wsearch declares every fd_form");
 
 /* The reply's search piece for pick `f`. */
 static uint8_t wsearch_of(fd_form f)
 {
-    return (unsigned)f <= FF_HORS ? wf_wsearch[f] : MF_WSEARCH_NONE;
+    return (unsigned)f < sizeof wf_wsearch / sizeof wf_wsearch[0] ? wf_wsearch[f] : MF_WSEARCH_NONE;
 }
 
 /* The reply's candidate stream (mf_wstream) for a stream row's key or a

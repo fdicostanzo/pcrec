@@ -1469,6 +1469,10 @@ static const struct {
     /* presence.c kit_run_opts_of: the run decision's ties go LEFTMOST, for
        every reader of it on the art (span_runs_sheet.md §2.4 C4, §5) */
     { "run-tie-left", KIT_LEVER_RUN_LEFT },
+    /* ofsskip.c fn_rows[]: the BODY row fn-mfind (the inline one-member
+       finder, vrun.c's mfind_text) holds where fn-memchr would: a PROBE of
+       an unpicked measuring instrument, D197 (lane mfind) */
+    { "mfind",        KIT_LEVER_MFIND },
 };
 
 int mf_lever(mf_art *art, const char *name)

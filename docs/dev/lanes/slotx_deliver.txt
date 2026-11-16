@@ -1,0 +1,5 @@
+report=docs/dev/lanes/slotx_report.md
+sections: Summary; Harness pieces; Fidelity; Checks and plants; Timing jobs; Owed runs
+nonempty: all
+commit: yes
+owed: kit-slotx-gate

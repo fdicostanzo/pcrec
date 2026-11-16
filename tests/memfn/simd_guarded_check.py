@@ -118,6 +118,26 @@ NAMED = [
     ('vrun-long', '(?i)abcdefghijklmnop'),
 ]
 
+# LEVER WITNESSES (lane mfind fix 1): a row the default picks nowhere (the
+# inline one-member finder, rows `mfind-w16`/`mfind-w32`, reached only by the
+# test-only lever `mfind`) is read through the PROBE binary `pcrec-harness`
+# (next to each compiler) with its lever spelled in the arm, over a named
+# pattern that renders it at the `simd:` targets below; the rows then meet
+# their bounds exactly as a picked row does. When a table picks the row, its
+# bound is also read by the ordinary arms and this witness stays as the
+# lever's own control.
+LEVER_ARMS = [('lever:mfind@' + t, ['--harness=mfind', '-fmemfn-simd=' + t])
+              for t in ('x86-64', 'x86-64-v3')]
+LEVER_NAMED = [('mfind', 'foo.*bar'),
+               # review 2026-11-15 r2 F1 (lane mfindfix2): LONG verify chains, the widest
+               # text the row's chain renders on pcrec's own sites (a 12-position table
+               # chain; the pre-check run part's 28 tableless sets). Before the cap they
+               # stamped 4,089 / 2,335 at x86-64 (bound 1,400 + 700); now the row's fit
+               # test declines them and the SWAR body stays alone ('lever-capped')
+               ('mfind-long-tbl', 'a.*\\x7f[acegikmoqsuwy]{12}'),
+               ('mfind-long-run', 'b' + '[0-35-7]' * 28)]
+LEVER_PROBE = 'pcrec-harness'
+
 # K35 FLOORS, literal: each population a reader needs, counted over the run.
 FLOORS = {
     'compiled': 600,        # PLAIN artifacts checked
@@ -140,6 +160,11 @@ FLOORS = {
     'simd-form-named': 8,    # fsfix 3: the NAMED witnesses alone that render a SIMD row (4 of 4 at each
                              # level-rendering `simd:` arm, 2 arms since lane u3crit);
                              # the sample-independent control, so 'simd-form' above can drift with the corpus
+    'simd-form-lever': 2,    # lane mfind fix 1: the lever witnesses that render a SIMD row (2 of 2 measured:
+                             # one per level-rendering target in LEVER_ARMS)
+    'lever-capped': 4,       # lane mfindfix2 (r2 F1): lever witnesses whose helper the row's fit test
+                             # declined (MEMFN_FORMS none AND the fn-mfind body present, r5 CHECKS-3): the two long-chain
+                             # witnesses at both LEVER_ARMS, 4 of 4 measured
     'scaffold-copy': 200,    # [iterpin] witness artifacts whose VM program block sits in the scaffold copy (the ladder named witness; more measured)
 }
 
@@ -223,6 +248,26 @@ def main():
         bad('simd_bounds.tsv declares no `rq3-witness` bound')
         bounds['rq3-witness'] = 0
 
+    # THE KIT'S DECLARATION PINNED (review 2026-11-15 r2 F1): every mf_formdecl
+    # in memfn/src/vrun.c, its guarded_max initializer resolved through its
+    # #define, equals its row here, and each such row names a declaration.
+    vsrc = open(os.path.join(TREE, 'memfn', 'src', 'vrun.c')).read()
+    macros = dict((m, int(v)) for m, v in re.findall(r'^#define (\w+_GUARDED_MAX) (\d+)$', vsrc, re.M))
+    decls = re.findall(r'^const mf_formdecl \w+ = \{\s*"([\w-]+)",[^;]*?\b(\w+_GUARDED_MAX)\b', vsrc, re.M | re.S)
+    if len(decls) < 4:
+        bad('vrun.c: %d mf_formdecl guarded_max initializers found (floor 4: vrun-w16/w32, mfind-w16/w32)'
+            % len(decls))
+    for name, mac in decls:
+        if mac not in macros:
+            bad('vrun.c: %s guarded_max %s has no #define' % (name, mac))
+        elif bounds.get(name) != macros[mac]:
+            bad('vrun.c: %s guarded_max %d != simd_bounds.tsv %s' % (name, macros[mac], bounds.get(name)))
+        else:
+            ok('kit guarded_max pinned: %s %d' % (name, macros[mac]))
+    for row in bounds:
+        if (row.startswith('vrun-') or row.startswith('mfind-')) and row not in dict(decls):
+            bad('simd_bounds.tsv row %s names no vrun.c declaration' % row)
+
     arms = ARMS + target_arms(a.plain)
     if len(arms) - len(ARMS) < TARGET_ARMS_FLOOR:
         bad('--list-cpu-targets gave %d targets with a family (floor %d)'
@@ -235,12 +280,21 @@ def main():
     print('== RQ-3 guarded-bytes check: %d corpus rows, %d sampled, %d named, %d arms =='
           % (len(corpus), len(sample), len(NAMED), len(arms)))
 
-    jobs = [(key, pat, arm, argv) for key, pat in pop for arm, argv in arms]
+    jobs = [(key, pat, arm, argv, False) for key, pat in pop for arm, argv in arms]
+    jobs += [('named:' + n, pat, arm, argv, True)
+             for n, pat in LEVER_NAMED for arm, argv in LEVER_ARMS]
+
+    def probe(binary):
+        return os.path.join(os.path.dirname(os.path.abspath(binary)), LEVER_PROBE)
 
     def one(job):
-        key, pat, arm, argv = job
-        pr = compile_one(a.plain, pat, argv, a.timeout)
-        wr = compile_one(a.witness, pat, argv, a.timeout)
+        key, pat, arm, argv, lever = job
+        pbin, wbin = (probe(a.plain), probe(a.witness)) if lever else (a.plain, a.witness)
+        if lever and not (os.path.exists(pbin) and os.path.exists(wbin)):
+            return {'key': key, 'arm': arm, 'counts': [], 'rows': set(),
+                    'issues': ['lever witness: no %s beside the compilers' % LEVER_PROBE]}
+        pr = compile_one(pbin, pat, argv, a.timeout)
+        wr = compile_one(wbin, pat, argv, a.timeout)
         rec = {'key': key, 'arm': arm, 'issues': [], 'counts': [], 'rows': set()}
         prc, pout, perr = pr
         wrc, wout, werr = wr
@@ -287,10 +341,18 @@ def main():
             rec['issues'].append('plain stamp %d on a portable-target artifact (no guard, no region)' % v)
         if v > total:
             rec['issues'].append('plain stamp %d exceeds the sum of its rows\' bounds %d' % (v, total))
+        # r5 CHECKS-3: capped = the fit test DECLINED: the SWAR body is the
+        # fn-mfind body (`memcpy(&w, subject`) and no level helper rendered; a
+        # lever that never reached the row, or no lever at all, has no such body
+        if lever and not sites and b'memcpy(&w, subject' in pout:
+            rec['counts'].append('lever-capped')
         if sites:
-            rec['counts'].append('simd-form')
-            if rec['key'].startswith('named:'):
-                rec['counts'].append('simd-form-named')
+            if lever:
+                rec['counts'].append('simd-form-lever')
+            else:
+                rec['counts'].append('simd-form')
+                if rec['key'].startswith('named:'):
+                    rec['counts'].append('simd-form-named')
         if PROG.search(pout):
             rec['counts'].append('vm')
         why = UNROLL_WHY.search(pout)

@@ -1,45 +1,43 @@
-# pinfix: emit_sweep orphan DIFFER_PINS manifest `a.{1,5}z`
+# pinfix report (round r8-memfn-mcfixc, FIX-NOW: ADQ-3, ADQ-2)
 
-## Cause
-`scripts/emit_sweep.py` `report_arms` (about line 1560): when a DIFFER_PINS
-cell names a manifest pattern and `full_population` is true but the pattern
-is not in the swept population, the cell gets the verdict "MANIFEST ... NOT IN
-THE POPULATION (K35)" and the run exits 1. B3b's cells for
-`--memfn=no-fd-pres-pick` (scripts/emit_sweep.py:565-566, 903f94667) name
-`a.{1,5}z`, which occurred only in tests/memfn/rows.tsv and
-pres_pick_witnesses.tsv, in no .rxt, so the pin had no population. Not a byte
-mover: both sides read identical counts.
+## Summary
+ADQ-3: est.py now refuses a missing cells pin or manifest pin on any record that carries a `window` key. A legacy
+record (no `window` key: s2d1/s2d2) still prices, with the NOTE. ADQ-2: 609 and 610 pass
+`--second FIRST_RUNDIR FIRST_RUNDIR_AVX2` to d197_rule.py when those two optional window.vars entries are set. No
+change to what a valid pinned record scores; no emitted byte.
 
-## Fix
-- tests/litscan/gen_presence_deny.py: one new CASE, `a.{1,5}z` (byte, 9
-  subjects); regenerated tests/litscan/presence_deny.rxt (+1 block, +59 case
-  lines, appended; python3 re AND libpcre2 agree, generator exits on
-  disagreement). `--check-pcrec build/pcrec`: 0 failures under default and
-  each of the three denies.
-- Pins moved by that corpus edit (found by running the suites):
-  - emit_sweep DIFFER_PINS no-fd-pres-pick c-default: 187 -> 188 (byte),
-    262 -> 263 (utf8); the manifest pattern is now itself a mover.
-  - tests/rxtsource/run_rxtsource_tests.sh: CENSUS_BLOCKS/RUNSH_BLOCKS
-    5801 -> 5802, CENSUS_LINES/RUNSH_LINES 71070 -> 71129, C3_PASS 20306 ->
-    20365, C3_VERIFIABLE 22466 -> 22525.
-  - tests/startset/manifests/manifest_s2_vm_forced.tsv: +1 row
-    (presence_deny.rxt:643), as the vmhat mover check demanded.
-  - tests/litscan/CLAUDE.md entry updated. The check itself is not weakened.
+## Fixes by id
+- ADQ-3 (est.py, sabotage.sh; commit 628487669). PREMISE: reproduced on 38869c333 (an mfcard-window synth with
+  `cells_sha256_J2` deleted: priced, rc 0, NOTE only). RED then GREEN: now `CELLS PIN absent cells.J2.tsv ...` refused.
+  `legacy_record(rec)` = `"window" not in rec["run"]` gates both tolerances: read_cells' cells pin and
+  manifest_check's manifest pin (`MANIFEST PIN absent`). Selftest: `mf_nopin` retargeted to a window-less synth
+  (still priced with the NOTE); new cases S3224 (cells pin line deleted from an mfcard record: refused) and S3225
+  (manifest pin line deleted: refused); the r11-REV15-1 `unpinned` case now also drops the window key (it models a
+  legacy record). Sabotage row m7 (S3226): the cells-pin refusal off -> the S3224 case goes WRONG.
+- ADQ-2 (job files, kit scratch jobs/; backup in scratch/memfn/pinfix/jobs.bak/; diff stat: common.sh +11,
+  609-kit-mfcard-time +2/-2, 610-kit-mfcard-confirm +2/-2, window.vars.example +4). common.sh header documents
+  FIRST_RUNDIR and FIRST_RUNDIR_AVX2 (both or neither, else exit 1) and builds `SECOND_ARGS`; 609's and 610's
+  d197_rule.py calls (the echoed would-run line and the real call) append it. 610's first-run arguments still come
+  from window.vars (RUN_ID-derived RUNDIR plus the optional FIRST_*).
+  Dry-run d197 lines (copy of the jobs dir, own window.vars, MFCARD_TREE=this worktree; R = scratch rundir path):
+  - 609 unset: `d197_rule.py rule R/pinfix-dry R/pinfix-dry.avx2libc`
+  - 609 set: `d197_rule.py rule R/pinfix-dry R/pinfix-dry.avx2libc --second R/mfcard-zen4-1 R/mfcard-zen4-1.avx2libc`
+  - 610 unset: `... rule R/pinfix-dry R/pinfix-dry.avx2libc  --confirm R/pinfix-dry.confirm R/pinfix-dry.confirm.avx2libc`
+  - 610 set: `... rule R/pinfix-dry R/pinfix-dry.avx2libc --second R/mfcard-zen4-1 R/mfcard-zen4-1.avx2libc --confirm
+    R/pinfix-dry.confirm R/pinfix-dry.confirm.avx2libc`
+  - one of the two vars set: exit 1 with a message.
+- r8 review filed at docs/dev/reviews/2026-11-15-r8-memfn-mcfixc(.md|/), indexed in reviews/CLAUDE.md.
+- IDs used: S3224, S3225 (selftest cases), S3226 (sabotage m7). S3227 unused.
 
-## Reach
-`emit_sweep --arms start` log: `byte --memfn=no-fd-pres-pick c-default
-differ=188/188 floor=188/0`, utf8 `263/263 floor=263/0`; no MANIFEST verdict
-lines. The manifest check requires `manifest_hit` on both sides, so the 188
-includes the pattern differing. Before: floor 187 was met by 187 other
-patterns while the manifest was an orphan.
+## Validation
+- est selftest: 70 cases, 0 wrong (68 before; +S3224, +S3225).
+- d197 drill: 51 cases, 0 wrong.
+- sabotage.sh m7 and m1 (with the control run): 2 DETECTED, 0 MISSED.
+- tests/memfn/run_arch_blind.sh: 17 passed, 0 failed.
+- make strict: clean.
+- dry JMH (run.py dry JMH, scratch): rc 0; GATE ok 172 arms, ROUND CHECK ok 172 points, 0 misses.
+- Not run (per brief): box jobs, make test, run_axes, mech.
 
-## Commands and verdicts
-- `python3 -I scripts/emit_sweep.py --bin build/pcrec --ref-bin build/pcrec --tree <wt> --no-self-check --streams c-default,c-vm --arms start`: rc=0 (build/pf/sweep2.log, 262 s, 4627 distinct patterns).
-- `make test-startset`: green after the manifest row (before: 1 mover not in manifest, as expected).
-- `make test-rxtsource`: red on census moves, then 0 failed after re-pin.
-- `bash tests/memfn/run_presence.sh deny-answers`: rc 0, 24 passed.
-
-## OWED
-Full `make test` (box rule: not run); axes allowances / size tripwires not
-checked beyond a grep for the old census numbers (none found); codegen and
-registry suites not run (no emitter change, corpus-only edit).
+## STATE AT HANDOFF
+Rulings applied: none (pinfix_rulings.md empty).
+OWED: none
