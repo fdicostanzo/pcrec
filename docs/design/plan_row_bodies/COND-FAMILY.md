@@ -1808,3 +1808,8 @@ means every group question whose truth can turn TRUE when fewer passes satisfy t
 `count(...) = 0`, `<= n`, `< n`, an exact count); `all(c)` is defined through marks, so `all` inside such a
 question, and a complemented pattern containing a mark, need rev 22's explicit statement; (4) expected, to be run:
 with both rulings no added condition turns a FAIL into a HOLD (the 22 pairs re-run after rewriting; 0 move).
+
+**2026-11-16 CORRECTION — mark-in-none is NOT ruled (session 136, box clock 17:29).** Minutes after the entry above the
+owner wrote: "mark-in-none: sorry, I meant, explain this one". His "yes agree" on mark-in-none is WITHDRAWN by him;
+the entry above stands for **not-is-complement** only. mark-in-none is an OPEN owner question; the manager's lean
+(a compile error) and readings (3)-(4) above apply to it only if he rules it so.
