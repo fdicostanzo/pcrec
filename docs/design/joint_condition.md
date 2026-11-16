@@ -1605,6 +1605,205 @@ Evidence: `jcfix_check.py` (header). Every changed sentence is marked "[§4F]" i
 NOT CHANGED here (the brief): `predicates_draft.md`, the rulings record, `predicates_future.md`. The D27 recommendation
 (a spec-first author when the joint condition gets a build go) is NOTED for that day.
 
+## 4G. The absent-label rule (RULED 2026-11-16) and corrections by lane absfold
+
+Lane absfold (2026-11-16), applying the owner's entry of 14:31 (**absent-rule**, CF:1655-1680). Shown lane absent's
+options and lane absimpact's census (`docs/dev/lanes/absent_report.md`, `absimpact_report.md`), he asked "? Or = but
+not both. Both meanings of absence are the same?" (the manager: yes, ONE kind of absence, two responses, the author
+picks one), then: "absent-rule: lock". The same afternoon, on record and folded here: his PRINCIPLE (13:52) "In my
+mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set"; his
+IDEA (13:52) "To be easier, we could have a transform ? (Spelling Conflicts) this changes a filter to be optional like
+<100?" (taken onto the LABEL as the mark); his LEAN (14:09, not locked) "absent-rule: I agree with your lean but before
+we lock it in, what is the impact across other statements", overtaken by the lock; his two-kinds VARIANT (14:15, "What
+if the mark ? only meant tested but didn't exist. Like x*. ...") NOT TAKEN. Rulings file `absfold_rulings.md`: empty
+at every read. Every changed sentence elsewhere in this note is marked "[§4G]" in place; superseded text is kept,
+marked "superseded 14:31". Every sentence not quoted or cited is the lane's.
+
+EVIDENCE. `docs/dev/lanes/absfold_check.py` / `.out` (`timeout 120 python3 -I docs/dev/lanes/absfold_check.py`, 0.7 s;
+libpcre2-8 10.46, Python 3.14.4). It REUSES lane absimpact's machinery (`absimpact_check.py`'s engines, `part()`,
+`tup()`, `plain()`, exec'd verbatim; the ruled rule is absimpact's R, "R-INTENT") and re-runs every table this note
+quotes under the ruled rule. 69,441 ENGINE-RUN cases (the ruled answer built as a regex from the rule stated over
+sets, never from `part()`, run in both engines against the computed answer), 0 differ, 0 engine disagreements, 88,275
+whole-match probes; OLD-OUT controls (a column compared with the earlier lane's committed `.out`): (U) 0 of 7, (S) 0 of
+6, (D1) 0 of 3 counts. SABOTAGED (`ABSFOLD_SABOTAGE=1`: the ruled zero-pass entry flipped back to today's): 160
+differ, so the check can fail.
+
+### 4G.1 The rule as ruled, stated once
+
+RULED (CF 14:31, the record's numbered points, verbatim): "(1) ONE KIND OF ABSENCE: a label is absent when it has no
+value where the condition looks at it, whatever the cause (an optional skipped, a loop that ran zero times, an
+alternative not taken, a pass that did not set it). (2) ONE READING: a condition needs a text; on an absent label it
+FAILS. Empty lists included; over several values it holds when every value is in the set and there is at least one.
+(3) TWO AUTHOR CONTROLS, ON THE LABEL, each over every absence: the OPTIONAL MARK (placeholder spelling `m?`, D193
+add. 4): absence is acceptable, the condition is satisfied; in a joint condition a marked absent label reads 'some
+value would put the tuple in the set' (the other labels are still tested); the DEFAULT `m = v`: the absent label
+reads as v and is tested like any value (so it is read on the empty list too). NOT BOTH on one label: a compile error
+naming the choice. (4) A set never contains absence (his principle, 13:52)."
+
+THE MANAGER'S READING of "lock" (CF 14:31, labelled; "to be checked by the fold and its critic round"; not the
+owner's words): "`all(...)` over no values HOLDS (the spelled-out 'every, possibly none'); `!` of a marked condition
+is the plain complement; a mark on a label that can never be absent is a warning; a marked absence is not counted by
+`some`/`count`." Where these enter this note they say "the manager's reading (14:31)".
+
+THE MARK'S SPELLING. `m?` is a PLACEHOLDER (D193 add. 4; his own "(Spelling Conflicts)": `?` already means "optional"
+inside rx text). This note writes it `h?` / `m?` after a label name LEFT of `:`, in a single-label entry (`(h?: S)`), a
+record (`(h?: S, k: T)`) and a reference tuple (`((h?, k): R)`), and nowhere else.
+
+THE NOT-BOTH ERROR (text illustrative, D26): "`m? = 0`: m is both marked optional and given a default; write one:
+`m?` (an absent m is acceptable) or `m = 0` (an absent m reads as 0)." Decided from the text, so a present label
+draws it too (table (AR), the `h? = 9` rows).
+
+Table (AR), THE RULE, one declared table (COMPUTED by `part()`, printed as the `.out`'s (AR) block; h's group `\d`,
+S = `<5`, k = `6`, R = `>= (5, 3)`, a present h is `3`):
+
+| h in this pass (the pairing loop's pass; a set-once label: the match) | nothing written | `h?` | `h = v` | `h? = v` |
+|---|---|---|---|---|
+| has a text t | t is tested | t is tested | t is tested; v unread | COMPILE ERROR |
+| ABSENT, whatever the cause (optional skipped, alternative not taken, a loop never reached, a loop run zero times, a pass that did not set h) | FAILS: one label, record and joint alike | one label `(h?: S)`: holds when SOME string of h's group is in S; record `(h?: S, k: T)`: h's part satisfied, k still tested; joint `((h?, k): R)`: holds when some value of h puts (h, k) in R, k still tested | v is read and tested like a text, every cause, the empty list included | COMPILE ERROR |
+
+The (AR) block's 15 cells for "zero passes", "never reached" and "missing in a pass" are IDENTICAL row for row (one
+kind of absence); today's line differed from them in the zero-pass row only (one label, record and joint HELD with
+nothing written, and with `h = 9` the default went unread). OVER A LOOP the condition is tested per PASS of the
+pairing loop (J7); ZERO PASSES give one tuple whose looped labels are ABSENT, the outside labels still tested; so an
+unmarked looped label FAILS on zero passes and a marked one reads "some value would do". The ONE-LABEL mark is read as
+the joint sentence's k = 1 case ("some value of the group would do"; the lane calls this F1), because J1 makes the
+single-label entry the joint condition's one-label case and J9 the record its product case; the outright reading of
+"the condition is satisfied" (F2) differs from F1 only when no value of h's group is in the set (4G.6 (2)).
+
+Table (TM2), THE TIME EXAMPLE, `t2 := /(?<h>\d{1,2})(?::(?<m>\d\d))?/ & ((h, m ...): padded(>= (9, 30)))` (RUN, COMPUTED;
+the three spellings ENGINE-RUN over all 11,110 `t2` subjects):
+
+| subject | `((h, m): ...)` | `((h, m?): ...)` | `((h, m = 0): ...)` | `((h, m? = 0): ...)` | before 14:31, nothing / `m = 0` |
+|---|---|---|---|---|---|
+| `9` | FAILS | HOLDS (some minutes, 9:30.., would do) | FAILS (9:00) | COMPILE ERROR | FAILS / FAILS |
+| `10` | FAILS | HOLDS | HOLDS (10:00) | COMPILE ERROR | FAILS / HOLDS |
+| `11` | FAILS | HOLDS | HOLDS | COMPILE ERROR | FAILS / HOLDS |
+| `9:15` | FAILS | FAILS | FAILS | COMPILE ERROR | FAILS / FAILS |
+| `9:45` | HOLDS | HOLDS | HOLDS | COMPILE ERROR | HOLDS / HOLDS |
+
+Over the 11,110: nothing vs `m?` differ on 92, nothing vs `m = 0` on 90, `m?` vs `m = 0` on 2 (`9`, `09`). On set-once
+minutes nothing moves at 14:31; the mark is new. The same in a LIST, `/(?:(?<h>\d{1,2})(?::(?<m>\d\d))?,)*/`, both
+labels looped (`.out` block (TM2-L), 21 lists RUN, two forms ENGINE-RUN), on `''` / `10,` / `9,` / `9:45,` / `10,9:15,`:
+`((h, m): R)` F F F H F (before 14:31: H F F H F); `((h, m?): R)` F H H H F; `((h, m = 0): R)` F H F H F; `((h?, m = 0):
+R)` H H F H F ("an empty list is fine, a missing minute is 0"); `((h?, m?): R)` H H H H F. The empty list needs the
+mark on h, the label the loop's zero passes leave absent.
+
+### 4G.2 Every quoted table, re-run under the ruled rule
+
+| table (where quoted) | population | moves from the answer quoted | record = `&` under the ruled rule | notes |
+|---|---|---|---|---|
+| (U) item 6 | 7 subjects, optional seconds | 0 (set-once; OLD-OUT 0 of 7) | — | `s?`: `9:00`, `10:00`, `9:01` HOLD; `s = 0`: `10:00`, `9:01` HOLD |
+| (S) item 3, item 6 | 6 subjects, strict, minutes optional | 0 (OLD-OUT 0 of 6) | — | `m?`: `9`, `10` HOLD; `m = 0`: `10` HOLDS |
+| (RZ) J7, J9, §4D, §6 B6 | 1,110, `/(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: 3..7)` | 5 of 1,110 vs today (`3`: HELD, now FAILS); `9` FAILS as ruled at 12:45 | 0 of 1,110; marked, `(h?: ...)` vs `(h?: <5) & (k: ...)`: 0 | `(h?: <5, k: 3..7)` = today on 0 of 1,110 differ; `h = 9`: 5 move vs (ZD a), 0 vs `(h = 9: <5) & (k: ..)`; `h = 0` = today |
+| (Z1) §4E | (RZ)'s pattern `& (h: <5)`; the list; `/x\|(?<n>\d)+/` | 10 of 1,110 (every zero-pass subject, `0`); `''` of the list now FAILS; `x` FAILS as before | — | the single-label zero-pass HOLD of CF:997-1000 is the reversed half |
+| (ZN) §4E | 2,526, nested `(c: 3..7, h: 0..4, k: 2..6)` | 69 of 2,526 vs today (`3`) | 0 of 2,526 with each single-label condition read PER PASS of its own loop (k per reach of the inner loop); 48 with k's values pooled over the match (`3;0:2;0`) | the per-pass reading is ruled point (1)'s "a pass that did not set it" |
+| (NL) item 5, §4E corner 3 | 73, `((h, k): >= (5, 3))`, h outer, k inner | 19 of 73 vs jcfold's (NL), 9 vs jcfold2's (ZN-NL) (`''` HELD, now FAILS; `4:;` FAILS as at 12:45) | — (non-product) | `((h?, k?): ...)` reproduces jcfold2's answers on all 73; `((h, k?): ...)` on 72 (`''`: h absent) |
+| (ZJ) §4E | 5 non-product sets, 10 zero-pass subjects each | every zero-pass subject now FAILS unmarked (0 of 10 hold, each set) | marked `h?`: the joint condition = its hand expansion into records with `h?` on 10 of 10, each set, either domain | the domain corner survives for the mark: `(("x", 3) \| (0, 5))` on `3`: over `\d` FAILS, over every string HOLDS |
+| (ZJ-E) §4E | the empty set of pairs, three spellings, `3` | all three FAIL unmarked (were HOLDS, HOLDS, FAILS) | — | `h?` F1: FAILS, FAILS, FAILS; `h?` F2: HOLDS, HOLDS, FAILS |
+| (ZE) §4F, §8 | 11,100, the set empty through `$a` | — (computed only for the readings) | 0 of 11,100 (C1 vs `(h: <$a) & (k: 3)`); C2 = its hand expansion, 0 | a = 0 (both spellings empty): C1 vs C2 differ 0 unmarked, 0 under F1, 1 under F2 (`0-3`) |
+| (ZD) §4B.1, §4E | (a) (RZ) with `h = 9`; (b) never reached vs zero passes; (c) 91 lists, `((h, m = 0): >= (5, 3))` | (a) 5 of 1,110; (b) `5` / `5-` now AGREE under each default (none: FAILS, FAILS; `h = 9`: FAILS, FAILS; `h = 2`: HOLDS, HOLDS); (c) 1 of 91 (`''`) | (a) 0 | (c) `((h?, m = 0): ...)` = the answers quoted, 0 of 91 |
+| (OP) §4D D3, §4F | 259 lists, `(h: <10, m: <30)`, minutes optional per item | 1 of 259 (`''`) | 0 per pass; 8 with m's values pooled (`3,3:15,`) | THE SHAPE WITH NO ONE-MARK FIX (4G.6 (5)) |
+| (UP) item 5, §4F, §8 | 241, a pass that never reaches the pairing loop | 15 of 241 vs today (`''`; `3;`) | 0 of 241; with `k?`: 0 | **pairing-loop** (3) SETTLED: an unmarked absent k fails the pass (the old candidate Y); `k?` tests h alone (W) |
+| (D1) §4B.1 | 11,110 `t2`; 11,000 `t` | 0 (set-once; the three counts 11,000 / 11,110 / 11,110 and 11,000 reproduced, OLD-OUT) | — | a LOOPED default: `(n = 0: <5)` on absimpact's list is now USED (1 of 1,111, the empty list), `(n = 9: <5)` unused (clause (b)) |
+| (DL) §4B.1 | 585 lists, `((h, m = 0): padded(between(...)))` | 1 of 585 (`''` HELD, now FAILS: h has no text) | — | `((h?, m = 0): ...)` = the answers quoted, 0 of 585 |
+| (DD) §4B.4, §4B.5 | `2024-MM`, no day, R = 2024-02-15..2024-04-01 | — | — | `((y, mo, d?): ...)` admits `02`, `03`, `04`: the "does not matter" answer no default day gives |
+
+### 4G.3 Corrections, place by place (each marked "[§4G]" in place)
+
+| place | what changes |
+|---|---|
+| header STATUS, lanes, evidence | entries through 14:31; absent-rule and pairing-loop ANSWERED; still open: tuple-parts, zero-pass-empty (marked labels only); `absfold_check.py` |
+| J6 | "UNSET in a match" becomes "ABSENT" (ruled point (1)); the default is read on EVERY absence; the mark as the second control; not both |
+| J7 | the 12:45 MANAGER'S WORDING (quoted) is REVERSED by the ruling except its ANSWER (`9` FAILS) and the `&` equality; restated on the condition side (13:52): zero passes leave the looped labels absent, which fails unless marked or defaulted; the outside labels are still tested. GROUP-ZERO superseded (the plain condition FAILS on zero passes; `all` per the manager's reading); "never reached" no longer a separate state; **pairing-loop** (3) SETTLED |
+| J9, §4D | (RZ) re-run: 0 of 1,110 from `&`; D3, D7, D8, D9, D11, D13, D23, D25 restated; tally |
+| §3 tables | "unset fields" row; COUNTED ALIKE: the new rule column (one absence and two controls, not three absence states), the mark as a new mark position, the not-both error, open items |
+| item 3 (`!` paragraph), item 8 | §13 O28's unset half is ANSWERED by the rule (`((h, m): !R)` FAILS on an absent label: it needs a text; `!((h, m): R)` HOLDS) |
+| item 5 | the (NL) and ZERO PASSES bullets; the reference model's "LEFT JOIN ... `ALL` over zero rows is true" |
+| item 6 | the unset bullet; the three meanings of a missing field; `label.unset` names three fixes |
+| §4B | 4B.1 MEANING (every absence), `default.unused` clause (a), `label.unset`, the LOOPED row; 4B.2 the guard is "m absent"; 4B.4 the mark beside the default and the alternative; 4B.5 the date row SIMPLER; 4B.6 SOME is the mark; 4B.7 |
+| §4E, §4F | each corner marked CLOSED / MOVED / STILL OPEN (4G.4) |
+| §6 B2, B6; §7 | the mark as the second author control; B6's answer kept for the new reason; §7 items 8, 15, 16 restated, item 17 new |
+| §8 | absent-rule, pairing-loop ANSWERED; zero-pass-empty restated; PARKED items 5-7 closed or overtaken |
+| §9 | rows 2, 6, 15, 16, 27, 43, 44, 45, 54 restated; rows 55-67 new |
+
+### 4G.4 The corners of §4E and §4F under the ruling
+
+| corner | state | why (table) |
+|---|---|---|
+| §4E corner 1, AN EMPTY PART (and §4F RULING-2's clash among set-arity, record-is-product and the `&` equality) | CLOSED for unmarked labels; MOVED to marked labels | unmarked: every spelling of the empty set FAILS on zero passes, so equal sets give equal answers and record = `&` (ZJ-E; (ZE) 0 of 11,100). Marked: closed under F1 (all three spellings FAIL), reopened under F2 (HOLDS, HOLDS, FAILS): **zero-pass-empty**, now marked labels only (§8) |
+| §4E corner 2, THE DOMAIN OF "SOME VALUE" | MOVED to the mark; STILL OPEN | unmarked absence fails whatever the domain; with `h?` the domain decides `(("x", 3) \| (0, 5))` on `3` (ZJ) |
+| §4E corner 3, THE NESTED ANSWERS MOVE | CLOSED as a question (an absent k fails the pass, settles **pairing-loop** (2)); the answers moved AGAIN | (NL) 19 of 73 vs jcfold, 9 vs jcfold2; `((h?, k?): ...)` gives jcfold2's 73 answers |
+| §4E corner 4, A DEFAULT THAT IS NOT READ | CLOSED | the default is read on every absence: `5` and `5-` agree under each default ((ZD) b); `predicates_future.md` item 7 is the rule |
+| §4F RULING-1, OWNER-2, SIM-6 (ZERO-EMPTY: the manager's 12:45 wording quoted verbatim, the split as jcfold2's repair) | the wording SUPERSEDED 14:31 (kept quoted as the record); the split moot for unmarked labels | ruled point (2) |
+| §4F RULING-3 (GROUP-ZERO) | SUPERSEDED 14:31 | the plain condition FAILS on zero passes; `all` HOLDS (the manager's reading, 4G.6 (1)); `some`/`count`/`occurs` unchanged |
+| §4F SIM-2 (UNREACHED-PAIRING, "never reached" in §4.2's sense) | CLOSED as a distinction | one kind of absence: "never reached" and "zero passes" answer alike; the nested witness `(c: 3..7, k = 9: <5)` on `5` now reads 9 and FAILS by either reading of "reached" (DERIVED from (AR)) |
+| §4F SIM-5 (**pairing-loop** (3)) | SETTLED by the ruling ("SETTLES pairing-loop parts 2 and 3") | (UP): the pass fails (Y); `k?` tests h (W); record = `&` 0 of 241 both ways |
+| §4F OWNER-6 (one declared absence table in §4.2) | MOVED: it is table (AR), with ONE absence row | no answer the plan named survives as a separate cell |
+
+### 4G.5 What the ruling leaves undefined (for rev 20; none chosen here)
+
+From absimpact's SUB-CHOICES (h) and IM10, each stated by the ruling's own LEAVES list or found there: (a) a COMPUTED
+label reading an absent label (`mnum := $mname.index`, mname absent): absent itself (its conditions fail unless marked
+or defaulted; §4B.1's lane reading, table (DC)), or a compile error (§4.4 asks a mapping to be total on its pattern);
+(b) `$h`, a hole `${$h}` and a bound `>$a` on an absent label: no entry, so the set is empty and the condition fails,
+or a compile error where the label can be absent (the "the default `$x` can itself be absent" error, widened); (c) the
+mark through a macro's label parameter: no spelling while the field reference is paused; (d) `list_of`'s minimum
+(whether a `list_of` part admits zero items: a gap in the draft, not in the rule).
+
+### 4G.6 Contradictions and unexpected answers under the ruling (the lane's; NOT repaired; both sides each)
+
+1. `all(...)` OVER NONE. The manager's reading "`all(...)` over no values HOLDS" has three readings, and they part
+   exactly where ruled point (1) says absence is ONE kind. A2v: HOLDS when the pairing loop ran no pass (the outside
+   label NOT tested). A2z: zero passes read as before 14:31 (the looped part projected, the outside label tested);
+   any other absence fails. A2m: `all(c)` is c with every label marked ("possibly none" per label). Smallest example,
+   L56's pair: `/(?<n>\d)?x/ & all((n: <5))` and `/(?<n>\d)*x/ & all((n: <5))` on `x`: A2v and A2z FAIL, HOLD (the
+   split ruled point (1) removed comes back, 5 of absent's 11 groups of equal patterns split under `all`); A2m HOLDS,
+   HOLDS (0 split). A2v also breaks record = `&` under `all`: `/(?<k>\d)(?:;(?<h>\d))*/ & all((h: <5, k: 3..7))` on
+   `0` HOLDS, `all((h: <5)) & all((k: 3..7))` FAILS (5 of 1,110), and it HOLDS on the ruled `9` (the outside label
+   never tested). A2z and A2m keep `9` FAILING and the `&` equality (0 of 1,110). Side A: the ruled "one kind of absence"
+   (A2m). Side B: the shape of (5), which only A2v/A2z serve.
+2. THE MARK'S TWO SENTENCES. "absence is acceptable, the condition is satisfied" read alone (F2) and "some value would
+   put the tuple in the set" (F1) part when NO value of the group would do. Smallest: `/(?:(?<h>\d),)*/ & (h?: <0)` on
+   the empty list: F1 FAILS, F2 HOLDS; with a match value, `/(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/ & (h?: <$a, k: 3)` on
+   `0-3` F1 FAILS, F2 HOLDS, while `((h?, k): < ($a, 0))`, the same (empty) set, FAILS under both (ruled: the joint
+   sentence): under F2 equal sets give different answers (1 of 1,110 a = 0 subjects). J1 and J9 make the one-label and
+   record cases the joint condition's, which reads F1; the constant spellings are compile errors by the draft's
+   narrowing-site rule (`predicates_draft.md:1941-1942`, LEAN). This is **zero-pass-empty**, on marked labels only.
+3. THE DOMAIN OF "SOME VALUE" for the mark (§4E corner 2, moved): `/(?<k>\d)(?:;(?<h>\d))*/ & ((h?, k): ("x", 3) |
+   (0, 5))` on `3`: over h's group (`\d`) FAILS, over every string HOLDS. The record's hand expansion agrees with the
+   joint condition under EITHER domain (10 of 10 each), so the domain no longer splits spellings; it only decides the
+   answer.
+4. A MARKED ABSENCE IN `some`/`count` (the manager's reading: not counted). `occurrences(/ab(?<g>[xy])?/) & (g?: "x")`
+   on `ab` HOLDS (the one hit lacks g; some g would do), while `some((g?: "x"))` FAILS: `some` false where the plain
+   condition holds on a non-empty list (absimpact (OG): 885 of 5,461 differ between counting and not; DERIVED here,
+   not re-run). A reader expects `some(c)` to follow from `c` on one item.
+5. THE SHAPE WITH NO ONE-MARK FIX: an all-looped record with an optional field per item.
+   `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/ & (h: <10, m: <30)`, wanted "the empty list passes, an item without minutes
+   fails" (the answers before 14:31). No mark or default on h, m gives it: `(h?: .., m?: ..)` 11 of 259 differ (`3,`
+   passes), `(h?: .., m = 0: ..)` 11, `(h: .., m = 0: ..)` 12 (`''`). `all((h: <10, m: <30))` gives it on 0 of 259 under
+   A2v and A2z, on 11 under A2m. So the shape's one-word fix exists exactly under the `all` readings (1) puts against
+   one kind of absence. OPEN, tied to (1). Otherwise an explicit alternative (absimpact IM4', DERIVED).
+6. `all` BESIDE THE PLAIN CONDITION (the draft's L36 said SAME). Exactly: `all((x: S))` and `(x: S)` agree on every
+   match where x has at least one value; where x has none, `all` HOLDS and the plain condition FAILS ((LI): 1 of
+   1,111, `''`). Under A2m `all((x: S))` = `(x?: S)` except when no value of x's group is in S (F1: `(n?: <0)` FAILS,
+   `all((n: <0))` HOLDS on `''`; 1 of 1,111). L36 becomes DIFFERENT: BY DESIGN.
+7. RECORD = `&` NEEDS THE PER-PASS SINGLE-LABEL READING. `(h: S, m: T)` = `(h: S) & (m: T)` holds at every depth (0
+   differ: (RZ), (ZN), (OP), (UP), (ZE)) only when `(m: T)` reads m per pass of its own loop, a pass without m being an
+   absence (ruled point (1): "a pass that did not set it"); with m's values pooled over the match, 8 of 259 ((OP),
+   `3,3:15,`) and 48 of 2,526 ((ZN)) differ. The draft's per-iteration sentence (`predicates_draft.md:1694`, LEAN)
+   becomes required.
+8. THREE MEANINGS OF A MISSING FIELD, not two (§4B.4): the default (a stated value), the mark (some value would do:
+   exactly §4B.6's SOME reading over the label's group), the explicit alternative `| (h: 10)` (near §4B.6's EVERY).
+   `11` of `t2` under `padded(between((9, 30), (11, 0)))`: `m = 0` HOLDS, `m?` HOLDS, `| (h: 10)` FAILS; `9`: `m = 0`
+   FAILS, `m?` HOLDS (DERIVED from (TM2)'s rows and §4B.4's (DN)).
+9. `label.unset` NAMES A STATE THE RULE NO LONGER HAS, and fires on every condition over a `*` loop (absimpact
+   SUB-CHOICES (g): 15 programs in the two documents, 1 before 14:31) unless the label is marked or defaulted; its text
+   names three fixes. A name for the spelling step.
+
+No ruled point (1)-(4) contradicts an owner ruling still in force that the 14:31 REVERSES list does not name (the
+lane's check of every 2026-11-16 entry and CF:933, CF:997-1000, the L-rows' rulings); the contradictions above are
+among the manager's sub-choices and the rule, or reader surprises.
+
 ## 5. Problems tried
 
 Each in full; `t`, `semver`, `ip`, `isodate`, `textdate` as defined; what is REUSED and what is NEW per line.
