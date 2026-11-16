@@ -729,9 +729,8 @@
 #undef PCREC_LIMIT_LIMITS_H_BUILD_D
 #undef PCREC_LIMIT_LIMITS_H_FLAG_D
 
-/* The eight rows below (three BUILD_D-only, five FLAG_D: four since [LIM-OVR]
- * 2026-09-22, PCREC_DEFAULT_WINDOW_SEARCH_WIDTH since [COVER-CAP] stage 2 —
- * see limits.def's own header for the token split) need a
+/* The eight rows below (three BUILD_D-only, five FLAG_D; see limits.def's own
+ * header for the token split) need a
  * REAL `#ifndef`/`#define`/`#endif` at their site — a preprocessor
  * DIRECTIVE, which no macro expansion can generate, is the one shape
  * limits.def's table rows cannot produce by themselves. This wiring is

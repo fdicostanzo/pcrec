@@ -60,7 +60,7 @@ typedef struct PcrecCover {
      * ended at ACCEPT or VIEW), the exact stretch `exact_len` (`L` on a
      * BRANCH, `k` otherwise; known wherever a walk ran) and its sets
      * `S_0..S_{exact_len-1}` in the Job's arena. The listing's `cover`
-     * section and C12 read it; `MkEnd` is filled from it (C8). */
+     * section and C12 read it; `MkEnd.set` points at it (C8). */
     uint8_t         stop;
     bool            k_known, exact_known;
     uint16_t        k, exact_len;

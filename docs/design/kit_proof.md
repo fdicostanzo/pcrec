@@ -891,7 +891,7 @@ typedef struct {
     uint8_t  absent_before, absent_after;   /* MK_ABS_UNSTATED 0, SATISFIES, FAILS  */
     uint8_t  set[MF_MAX_SPAN_POS][32];  /* A's S_d, the C8 control                  */
     const char *why;                    /* the failing cover_conj[] id, or NULL     */
-} MkEnd;
+} MkEnd;  /* superseded by cover_cap.md rev 5.2 §11 A1 (built: k uint16_t, set POINTS at the cover record's arena sets, no why member) */
 
 /* src/gen/known.c -- a SUBJECT fact: what is known at one point, relative to an
    origin. A REFERENCE to the kit's answer, never a 1,312 B copy. Keyed (point,

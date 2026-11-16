@@ -50,12 +50,12 @@
 #      §3(a) found (four rows rendered `-D`, "never a caller lever", while
 #      each one has a real cli/main.c flag) and that nothing in this file
 #      checked before. Independent-source discipline again: this part reads
-#      cli/main.c's `raise_only_limits[]` table BY GREP, plus one named
-#      bespoke flag site verified the same way, never limits.def's own
+#      cli/main.c's `raise_only_limits[]` table BY GREP, plus the named
+#      bespoke flag sites (two today) verified the same way, never limits.def's own
 #      claim about itself. Two directions: every row whose override
 #      CONTAINS "flag" must have a real cli/main.c site, and every row with
 #      a real site must claim one. Scoped to the FLAG_D/BUILD_D population
-#      specifically (the six rows the token split concerns), not to every
+#      specifically (the eight BUILD_D/FLAG_D rows), not to every
 #      "flag" row in the table — see the arm's own header for why.
 #
 # Usage: bash tests/registry/limits_check.sh
@@ -669,7 +669,7 @@ fi
 #
 # Scoped to the FLAG_D/BUILD_D population (the BUILD_D/FLAG_D rows the [LIM-OVR] token
 # split concerns), not to every "flag"-rendering row in the table: eleven
-# rows render bare "flag" and five of those six have no `-D` machinery at
+# rows render bare "flag" and five of those have no `-D` machinery at
 # all (a caller flag with no build-time-movable default is not this arm's
 # question), so widening the manifest below to cover them would be a
 # different, larger claim this row's charter never asked for.
