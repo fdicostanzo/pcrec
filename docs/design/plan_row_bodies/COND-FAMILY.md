@@ -1332,3 +1332,20 @@ index, which must be shown to be an existing tool and not a new one; the next re
 naming the in-loop spelling), his words: "looped-compare: warn". RECORD: the meaning stays as the sequence rule gives
 it (per label over every iteration), and the compiler WARNS when a compared field can hold more than one occurrence,
 the warning naming the fix (write the compare inside the loop's item). Not an error.
+
+**2026-11-16 OWNER DIRECTION — PAUSE the field-reference direction; consider a condition over several labels at once
+(Frank, to session 134, box clock 00:31).** His words: "lets think about this. trying to work this out is more important
+than just the between macro for 2+ args. it tests the language on an interesting problem. that said, we are putting a
+lot of special syntax and values to handle an obscure case. for instance, we have sigils, arrays of sigils which are an
+entirely new type, then dynamic labels. all without a clear understanding of how it would help the larger language
+against other problems. i want to pause this direction and consider a different one that is more inline with existing
+concepts. we have conditions but the problem is that they are on individual records. what if we could define a syntax
+that applied multiple labels in conditionals at the same time. like (h,m): blah. can we use that ?" RECORD: (1) the
+direction of the 2026-11-15/16 entries on the projection (the other-side sigil, arrays of field references, a
+handed-in field on the left of `:`, and the open questions reference-index and bound-reference) is PAUSED, not
+reversed; rev 19 of the draft stands as the record of that direction. (2) His criteria, in his words: in line with
+existing concepts; a clear account of how a mechanism helps the larger language against other problems; the tuple
+compare matters as a TEST of the language, not for itself. (3) IDEA to consider (spelling illustrative): a condition
+whose left side names several labels at once, `(h, m): ...`. The manager's first answer (not ruled) is recorded in
+the session's reply: the right side is then a set of TUPLES; a product of sets gives back the 2026-11-14 record
+`(h: S, m: T)`, and the comparison sets read in dictionary order give the tuple compare with no library family.
