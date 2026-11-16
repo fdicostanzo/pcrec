@@ -1160,3 +1160,17 @@ whole-match role (a side of `&`, a label condition), because there the role's st
 `\A`/`\z` read; so `x & anchored(r)` accepts what `x & r` accepts. They do not coincide in a hole that is not a
 role: `x${anchored(/a/)}` reads the enclosing scope's ends and never matches `xa`, and draws no warning. The message
 must say that, not "identity" unqualified.
+
+**2026-11-15 RULINGS — tuple compare in the first library; `any_case` stays a primitive for now, a more fundamental
+basis is a FOLLOW-UP (Frank, to session 133, box clock 21:50).** (a) On "put the fixed-size tuple compares (two and three
+fields) in the first library? lean yes; any number of fields waits", his words: "tuple-compare: agree". RECORD: the
+first library carries the fixed-size tuple compares for 2 and 3 fields (plain macros, the bodies of rev 15's sketch;
+names are placeholders); a version for any number of fields waits for a looping macro or a primitive. (b) On
+"should `any_case` and `json.quoted` rest on ONE primitive ('S matched whole on what the transform reads')", his
+words: "primitive-transforms: I understand why any_case is currently a primitive. I'd like to look for more
+fundamental ways of reducing that like some option setting primitive that any_case is built on or something else. I
+am ok with that being a followup. Why is json.quoted?" RECORD: NOT ruled as asked. `any_case` stays a primitive in
+the first spec for now; a FOLLOW-UP looks for a more fundamental basis (his example: an option-setting primitive that
+`any_case` is built on, i.e. something that applies a PCRE option such as case-insensitivity THROUGH a hole); the
+"one reading primitive" proposal is not adopted. `json.quoted`: he asked why it is a primitive; answered in chat
+(below in the next entry if he rules on it).
