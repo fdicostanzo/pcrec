@@ -1135,3 +1135,14 @@ the range's end needs). LATER ITEM (not in the first spec; trigger: a real examp
 clumsy): a NATURAL-ORDER range, comparing digit runs as numbers and everything else as text (so
 `between("9:00", "10:00")` and versions `1.9` < `1.10` work), a way of comparing chosen where the range is written,
 not a transform; cost unexamined.
+
+**2026-11-15 IDEA from the owner (not a ruling) — compare an ARRAY of numbers (Frank, to session 133, box clock 20:58).**
+On the gap `unpadded` leaves (a time range), his words: "Perhaps a macro that lets you compare an array of numbers.
+Then parse the elements and use the array compare." RECORD (the manager's reading): the author parses the fields
+(`h`, `m`) and a library macro compares the TUPLE of numbers in order, first field first (so `(9, 0) <= (h, m) <=
+(10, 0)`); it says which parts are numbers explicitly, where the natural-order range of the entry above would guess
+them from digit runs. The manager's judgment given to him: the better general form of the two; for a FIXED number of
+fields it expands to a few number conditions (interior hours, the low edge, the high edge), so it may be a plain
+macro with no new mechanism; a variable number of fields would need bounded recursion or a primitive. To do in the
+next revision: a sketch (is it a plain macro for 2 and 3 fields in today's language; the time example written with
+it), in §13 as the preferred later item, NOT added to the first spec unless he says so.
