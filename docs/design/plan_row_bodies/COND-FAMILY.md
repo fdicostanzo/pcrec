@@ -1174,3 +1174,15 @@ the first spec for now; a FOLLOW-UP looks for a more fundamental basis (his exam
 `any_case` is built on, i.e. something that applies a PCRE option such as case-insensitivity THROUGH a hole); the
 "one reading primitive" proposal is not adopted. `json.quoted`: he asked why it is a primitive; answered in chat
 (below in the next entry if he rules on it).
+
+**2026-11-15 RULING — `json.quoted` is cut from the first spec (Frank, to session 133, box clock 21:54).** On "cut
+`json.quoted` from the first spec, like `unpadded`; it is the only transform needing a real decoding mechanism; it
+returns when the follow-up finds a general basis or a real case needs it", his words: "cut-json-quoted: agree. It
+would necessitate a callout or similar? We have unrelated plans for dfa compatible callouts and that could be one".
+RECORD: `json.quoted` leaves the first spec (§9, with the reason: its filter is tested against the DECODED string,
+which is not in the text). The follow-up on a basis for re-reading transforms (the entry above: `any_case`'s more
+fundamental basis) also names `json.quoted` and records his pointer: a DFA-compatible callout (his separate plans)
+could be the mechanism. The manager's answer given to him: a callout is not strictly required (decoding JSON escapes
+is a finite-state rewrite, so the filter could be compiled through it), but that is a new compiler construction; a
+callout that decodes the matched literal and tests the filter on the result is the simpler build, and would make
+`json.quoted` a client of the callout work.
