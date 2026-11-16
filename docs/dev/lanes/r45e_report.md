@@ -102,4 +102,8 @@ the kit's answers Q2-Q5 that main accepted, the owner's three rulings and main's
 - RULINGS FILE: `docs/dev/lanes/r45e_rulings.md` was empty at start and empty when re-read
   before handoff. Last entry applied: none.
 - No `memfn/docs/requests.md` or `responses.md` edits, no code, no timing, no box jobs.
+- lanecheck: rc=1 on ONE issue only: the untracked `r45d.done` at the worktree root. It is a
+  prior lane's pass record, not this lane's, and it was present at start. The lane neither
+  commits nor deletes it (the deliver file has no `dirty-ok`). The manager removes it or adds
+  `dirty-ok: r45d.done`, and lanecheck then has nothing else to report.
 - OWED: none
