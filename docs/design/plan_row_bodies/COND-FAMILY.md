@@ -1300,3 +1300,17 @@ SIGIL before a label path meaning "this label, of the other side of the `&`" (`[
 gives each label three spellings with one role each: `h:` constrains, `$h` reads the value, `^h` refers to the
 field; no question of the mark standing alone arises, and `.` keeps its one meaning inside the path (`^d.year`).
 Given up: the other side as a thing in its own right. Not ruled; the next revision carries it as the mark's form.
+
+**2026-11-16 RULING — a compare names its fields with the other-side sigil (Frank, to session 134, box clock 00:06).**
+Asked **label-section** (the section `[(h:), (m:)]` or the other-side sigil `[^h, ^m]`; the lane's lean the
+section, the manager's the sigil), his words: "label-section: i think the sigil mark is better. i like a lot about
+the section but its re-using a syntax for a different purpose. the save would be if the section syntax were defined
+in such a way that that worked. but i don't see it." RECORD: RULED: the compared fields are named by a SIGIL before a
+label path meaning "this label, of the other side of the `&`" (placeholder spelling `^h`; the symbol is a later
+syntax step). His reason against the section: it re-uses the condition's syntax for a different purpose; he left one
+door open (a definition of sections under which the form follows), and sees none. THE MANAGER'S CONSEQUENCES (mine,
+to be checked by the next revision, not his words): (1) the one rule change the sigil needs is adopted with it: in a
+macro body a parameter bound to a field reference may stand on the left of `:`; (2) the question **macro-arguments**
+(macros as arguments, indexed and called) is WITHDRAWN as unneeded: the tuple bodies no longer need it, and the
+current rules (an index gives an rx; passed macros only for structural tools) stand; (3) the per-label accessor
+bindings (`h_is(S) := (h: S)`) leave the tuple examples.
