@@ -1,0 +1,4 @@
+report=docs/dev/lanes/covs2afix_report.md
+sections: STATE AT HANDOFF; FINDINGS APPLIED; REVIEW FILED; ROUTE IDENTITY; OWED RUNS
+nonempty: all
+commit: yes
