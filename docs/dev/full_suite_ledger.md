@@ -17,9 +17,9 @@ studies; listed, not counted).
 Baseline: run 2026-11-05 daf6f002b, the first fully green full suite on record (log `build/full_suite/20261104_daf6f002b/`).
 Every earlier landing is listed under "Covered by run 2026-11-05 daf6f002b" in the Runs section.
 
-**major: 1, minor: 4** (plus 3 no-code/instrument landings, not counted). Class is set by the manager at each landing.
+**major: 1, minor: 5** (plus 5 no-code/instrument landings, not counted). Class is set by the manager at each landing.
 
-Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it); 1 major since the baseline (row 4 needs 2-3: un-fired; row 3 is a refactor of a shared mechanism, not claimed for a new capability); rows 1-2 un-fired. No full suite queued by the landing lane; the manager schedules one after the alternation landing. Row 1 (tonight, 2026-10-23) was discharged by this run; row 2 not applicable until a major version shift is named; row 3 fires when a major refactor lands; row 4 when 2-3 majors have landed since this baseline; row 5 when 4-6 minors have landed since it.
+Trigger state (D177): row 5 FIRES (5 minors, within the 4-6 that fire it); 1 major since the baseline (row 4 needs 2-3: un-fired; row 3 is a refactor of a shared mechanism, not claimed for a new capability); rows 1-2 un-fired. No full suite queued by the landing lane; the manager schedules one after the alternation landing. Row 1 (tonight, 2026-10-23) was discharged by this run; row 2 not applicable until a major version shift is named; row 3 fires when a major refactor lands; row 4 when 2-3 majors have landed since this baseline; row 5 when 4-6 minors have landed since it.
 
 ### major
 
@@ -409,3 +409,9 @@ Landing 2026-11-15 4c8cf3c38: lane/memfn-mfind (kit tip 363fec82e), the kit's fi
 LOCAL STAGES GREEN: 2026-11-16 db7aab3de alloc=green lint=green (job 300-main-alloclint, docs/dev/lanes/alloclint_job; log build/alloclint/20261116_db7aab3de). Covers the alloc and lint stages owed since the 2026-11-15 cloud full suite on 2275777e0; main at db7aab3de carries [COVER-CAP] stage 1 and the kit finder unit. The other stages at this commit are NOT run: a full suite is still due (stage 1 was a major landing).
 
 Landing 2026-11-16 7875d630d: lane/shardfix, tests/ci/cloud_mech_shards.tsv regenerated from the committed measurements (S3170, S3198 had been dropped; cloud_mech_check red on main). Test table only; none.
+
+Landing 2026-11-16 ce6bfe8d5: lane/memfn-d3wire, the kit's R-44 D3 floor gate (tests/memfn, tests/lib, tests/ci, Makefile, reviews; tests only, no emitted byte, no abi event; cloud make test and axes sweep GREEN on this tip, runs 43908143424 and 43908234585). MINOR.
+
+Landing 2026-11-16 f6274c11b: lane/memfn-scanrow, the kit's timing-harness scan-row fix (docs/design/memfn/span_cards/slot harness + docs; no src/lib/cli/memfn/src change). None.
+
+Landing 2026-11-16 591ed0f5a: lane/r45chk, lane/revjc, lane/jcfix (with lane/jcfold2): read-only R-45 check reports, critic review r26 jointcond + critic-skill process changes, docs/design/joint_condition.md and its reports/evidence scripts (docs and design only). None, one line for the three.
