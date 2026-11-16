@@ -1651,3 +1651,30 @@ the candidate rule in which the mark `h?` accepts only "reached, no value" and t
 "never reached" (an alternative not taken); both written reads the default on either. The manager's reading, sent to
 lane absimpact as its R1, to be worked beside the intent reading (`h?` = absence is acceptable, `h = v` = absent
 reads as v, each over every kind of absence).
+
+**2026-11-16 OWNER RULING — absent-rule: LOCKED (Frank, to session 135, box clock 14:31).** After lane absent's options
+comparison and lane absimpact's census (docs/dev/lanes/absent_report.md, absimpact_report.md), and his
+clarification question ("? Or = but not both. Both meanings of absence are the same?"; the manager: yes, ONE kind
+of absence, two responses, the author picks one), his words: "absent-rule: lock". RECORD: RULED, the manager's
+recommendation as put to him:
+(1) ONE KIND OF ABSENCE: a label is absent when it has no value where the condition looks at it, whatever the cause
+(an optional skipped, a loop that ran zero times, an alternative not taken, a pass that did not set it).
+(2) ONE READING: a condition needs a text; on an absent label it FAILS. Empty lists included; over several values
+it holds when every value is in the set and there is at least one.
+(3) TWO AUTHOR CONTROLS, ON THE LABEL, each over every absence: the OPTIONAL MARK (placeholder spelling `m?`, D193
+add. 4): absence is acceptable, the condition is satisfied; in a joint condition a marked absent label reads "some
+value would put the tuple in the set" (the other labels are still tested); the DEFAULT `m = v`: the absent label
+reads as v and is tested like any value (so it is read on the empty list too). NOT BOTH on one label: a compile
+error naming the choice. (4) A set never contains absence (his principle, 13:52).
+THE MANAGER'S READING of "lock" (the sub-choices as presented, the lane's picks; to be checked by the fold and its
+critic round): `all(...)` over no values HOLDS (the spelled-out "every, possibly none"); `!` of a marked
+condition is the plain complement; a mark on a label that can never be absent is a warning; a marked absence is not
+counted by `some`/`count`. NOT TAKEN: his two-kinds variant (mark = reached-empty, default = never reached).
+REVERSES: the zero-passes-hold half of CF:997-1000 (and L36's zero clause except through `all`), the unset/empty
+boundary of predicates_draft.md §4.2, the manager's 12:45 zero-pass wording (the ANSWER `9` FAILS and record = &
+are kept), §4B.1's "a default is never read on zero passes" (predicates_future.md item 7 becomes the rule), the
+"+ or * control" as the absence control (CF:933; `+` still forces one). SETTLES pairing-loop parts 2 and 3 (an
+unmarked absent label fails the pass; marked: the others are tested). LEAVES: zero-pass-empty only on marked
+labels; UNDEFINED, for rev 20: a computed label reading an absent label, `$h` / a hole on an absent label, the
+mark through a macro's label parameter; the one shape with no one-mark fix (an all-looped record with an optional
+field per item).
