@@ -1,7 +1,9 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 5 for the kit manager (lane r45e, 2026-11-16, design only; no code, no
-timing). Rev 5 applies main's check of rev 4 (`git show lane/r45read:docs/dev/lanes/r45read_report.md`,
+Status: DRAFT rev 6 for the kit manager (lane r45f, 2026-11-16, design only; no code, no
+timing). Rev 6 applies the fix-induced re-check of rev 5, review r25
+(`docs/dev/reviews/2026-11-16-r25-memfn-r45e.md`, its RULED section: R5-1..R5-6 fixed, R5-7
+and R5-8 noted; read "Changes in rev 6" first). Rev 5 (lane r45e) applied main's check of rev 4 (`git show lane/r45read:docs/dev/lanes/r45read_report.md`,
 contradictions C1-C11, questions Q1-Q5) through the kit's answers Q2-Q5 that main accepted, and
 records the owner's three rulings and main's five answers as RULED (read "Changes in rev 5"
 first). Plan A (forms now) is the plan of record. Rev 4 (lane r45d) applied the fix-induced re-check review r23 as ruled
@@ -36,6 +38,23 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
 
+## Changes in rev 6 (by r25 finding id)
+
+Code facts are re-read at origin/main `ed9677782` (fetched 2026-11-16 by lane r45f): the
+segmenter in `memfn/src/window.c` (`merge`, `c_run`, `find_groups`), the cover statement in
+`src/gen/known.c` (`cover_window`), and the trace records in `src/gen/memfn_sites.c`. Every drill
+was re-run by lane r45f's script against the rule as written here (lane report, "Drills").
+
+| id | change | where |
+|---|---|---|
+| R5-1 | RULED: the mover predicate is stated in the SEGMENTER's terms. Its unit is an ALTERNATIVE's positions keyed by offset, each the MEET of every span that states that offset (`merge`), not one stated span. A one-class-repeat segment is a maximal run of consecutive offsets carrying one byte-identical multi-member set, ACROSS span boundaries and into the after side. The bound is the largest stated OFFSET (32 today, the cover's after side), not "32 positions". Witnesses: `\w{32}\B` (offsets 0..32 carry `\w`, so it moves at h\* <= 32) and its kin. Re-derived: at the default width, nothing moves at h\* = 64; at h\* = 32 only the cover kin move; at h\* <= 24 every alternative whose run reaches h\* is a possible mover. "h\* >= 32 moves nothing" is withdrawn | §3 "Which sites move", Goal 4, §8 |
+| R5-2 | RULED: a void cell never helps another head. Step (5) is new: steps (1)-(4) run over the cells READ, a void cell removes no head (it gives each head whose text is I there its ratio 1, and every other head no term), and their pick is RECORDED; but if any C1-C2 cell is void twice, h\* = 64, labelled with the void cells. So a void can never lower h\*, and it can never move a competitor. Rev 5's reading lowered h\* from 32 to 24 on r25's drill V; a "skip the void cell" variant lowered it in 35 of 200,000 random cases; step (5) lowered it in none | §3 R1, "A cell missing a regime", drills, §8 |
+| R5-3 | RULED: the regimes fallback's lever reader is listed. If a regime's method cannot run on the kit's harness, the BENCH times that regime's card cells through `build/pcrec-harness --harness=span-head=N` (test-only, never a shipped compile); it is then a lever reader, with the bench-only question for main to relay. "The bench is NOT a reader" now reads "of the width cells" | §3 "The regimes' methods", "Its readers", "The bench" |
+| R5-4 | RULED: the identity check's population is EVERY predicted mover at h\* (cover or not, from the sweep's prediction), plus every card pattern and every census cover. It compiles at pcrec level, so non-cover sites are inside it | §3 "The identity check", §6 Q2 |
+| R5-5 | RULED: the predictor's input record does not exist on main. It is a NEW pcrec-side record, `MFWSTMT` (main's build), its fields listed, beside `MFPRES` under `PCREC_MF_ROUTE_TRACE`, plus the predictor's change and a trace-build pass in the sweep. It is on main's list | §3 "Which sites move", night order edits, §7 |
+| R5-6 | RULED: §8 says "dominated (faster beyond `f` in at least one cell and never slower beyond `f`)", the body's wording; §0 likewise | §0, §8 |
+| R5-7, R5-8 | NOTED. Step (5) also settles R5-7 (a), the label when a void forces h\*, and (b), dominance reads no void cell. R5-7 (c), the A/A floor with a regime missing, stays as cover_cap.md §11.4 row 1 rules it for B's floor (the night is void); the kit's cards follow that row | §3 R1 |
+
 ## Changes in rev 5 (by main's question id Q and contradiction id C, r45read)
 
 Main's check `r45read` asked Q1-Q5 and listed C1-C11. The kit answered Q2-Q5 and main ACCEPTED
@@ -49,7 +68,7 @@ the twice-void reading only); rev 4's drill script was re-run and its output is 
 | id | change | where |
 |---|---|---|
 | Q2 / C10 | The dominance-cycle clause is RULED by the kit manager (2026-11-16): step (3) keeps the members of E dominated by the FEWEST other members. One rule text, committed here; it is the text night order step 1 commits before the run. Every "awaits our ruling" is gone | §0, §3 R1, §8 |
-| Q3 / C1 | The possible-mover population is restated in full: EVERY window site, cover or not, whose stated span has a stretch of one repeated multi-member set reaching an offset at or past h\* (pre-check run spans and reseed alternatives included), not covers only. Since every window span pcrec states today has 32 positions or fewer, nothing moves when h\* >= 32. The facts main's sweep reads to predict the movers, from pcrec's own statements, are named | §3 "The stability trade" (now "Which sites move") |
+| Q3 / C1 | The possible-mover population is restated in full: EVERY window site, cover or not, whose stated span has a stretch of one repeated multi-member set reaching an offset at or past h\* (pre-check run spans and reseed alternatives included), not covers only. Since every window span pcrec states today has 32 positions or fewer, nothing moves when h\* >= 32 [superseded in rev 6, R5-1: the unit is the alternative's positions keyed by offset, and `\w{32}\B` moves at h\* = 32]. The facts main's sweep reads to predict the movers, from pcrec's own statements, are named | §3 "The stability trade" (now "Which sites move") |
 | Q3 / C8 | The uuid shapes (`k` = 36) have no cover today, so they are not a form mover. A uuid cover is a WIDTH event (cover_cap.md §11.2's rule), and it renders in H(h\*) from its first appearance | §3 "Which sites move" |
 | Q4 / C6 | R1 reads the NOT-WARM and `short-subject-search` regimes: C1-C2 (and C3, C5) time every cell in cover_cap.md §11.4's five regimes plus uniform random bytes, with §11.4's methods. R1's worst cell ranges over them, so a loss the loop form causes moves h, never main's width default. The added cells and their cost are stated, and a cell missing a regime is handled as §11.4 handles it | §3 the cards, R1, "Why each choice", §6 Q1 |
 | Q5 / C3 | "The procedure" and the old F12 and FREEZE NOTE rows now say what night order step 3 says: the cards run on the frozen lever binary, and the width cells run on the REBUILT binary, after the identity check | §3 "The procedure", change tables, §7 |
@@ -145,7 +164,8 @@ In priority order; a conflict goes to the higher one.
    Measurable: the stage-2 sweep's mover list equals the list the owner accepted. [rev 5: the
    owner ruled one measured rule at every length (keep-short-spans = NO); the sweep's list is
    then every moved site inside the possible-mover predicate of §3 "Which sites move", and a
-   moved site outside it is red.]
+   moved site outside it is red. Rev 6, R5-1: the predicate is stated in the segmenter's
+   terms, over each alternative's positions keyed by offset.]
 
 Non-goals: no near-miss form in the first build (§4; D77); no periodic segment (§3); no timing in
 this lane.
@@ -173,12 +193,15 @@ carrier with no per-site-kind bound.
   with its head MEASURED by cards and chosen among FINITE heads only. A head that another head
   beats in some cell and never loses to is dropped, and ties among the rest go to the longest
   head. On a tie the head is the grid's top, 64, a CHOSEN value [rev 3, F9, F10; rev 4, R3-1,
-  R3-3]. The forms ride the joint landing: plan A, RULED by the owner (forms now, 2026-11-16)
+  R3-3]. A cell with no reading never helps a head: if any is void twice, the head is 64
+  [rev 6, R5-2]. The forms ride the joint landing: plan A, RULED by the owner (forms now, 2026-11-16)
   [rev 5] (§3 "Scope").
 - **Readiness [rev 5].** Plan B's part (the carrier, the kit's per-extent working state, the
   two witness rows) was READY with rev 3's text fixes (review r22), and review r23 confirmed
   it. Plan A's rule is complete: r23's text fixes are applied (rev 4), and the dominance-cycle
-  clause (keep the heads beaten by the fewest others) is RULED by the kit manager [rev 5, Q2].
+  clause (keep the heads dominated (faster beyond `f` in at least one cell and never slower
+  beyond `f`) by the fewest others) is RULED by the kit manager [rev 5, Q2; rev 6, R5-6].
+  Rev 6 applies r25's text fixes (the mover predicate in the segmenter's terms, the void step).
   Nothing in the reply is open; §7 lists the rulings.
 - **Dense near misses** (§4) are a complexity-class question: O(n·k) against the engine's O(n).
   Their fix is not built until a card shows the loss.
@@ -399,10 +422,17 @@ derivation. `MF_WSPAN_POS` becomes 4095, and `MF_MAX_SPAN_POS` retires (§1).**
 The kit already has a span SEGMENTER: C-run's `find_groups` (`window.c:1766-1793`). It turns a
 maximal stretch of plan positions sharing one compare into one RUN term, rendered by runcmp's
 rows. Rev 2 does not add a second segmenter for L. It generalises this one:
-- **Segments.** A span is a sequence of segments, each of one KIND, chosen by one first-match
-  row table:
-  1. a LITERAL or cube stretch: today's C-run run compare, unchanged;
-  2. a ONE-CLASS REPEAT: positions sharing one multi-member set, the new loop row;
+- **Segments.** The segmenter's unit is the chosen ALTERNATIVE's plan positions in offset
+  order, each the MEET of every span that states its offset (`merge`, C-MEET, and `plan_of`
+  at origin/main `ed9677782`), not one stated span [rev 6, R5-1]. They form a sequence of
+  segments, each of one KIND, chosen by one first-match row table:
+  1. a LITERAL or cube stretch: today's C-run run compare, unchanged (`c_run` joins two
+     positions only inside ONE stated span of two or more, never through a one-position span);
+  2. a ONE-CLASS REPEAT: a maximal run of consecutive offsets whose positions carry one
+     byte-identical multi-member set, the new loop row. It runs ACROSS stated-span boundaries,
+     into a cover's before and after sides (RULED by the kit manager, 2026-11-16, r25 R5-1): a
+     loop tests one set at every offset it covers, so a span boundary changes nothing it
+     renders;
   3. a LONE test: anything else.
   A periodic segment, such as `(ab){500}`, is a fourth kind, NOT built. It is UNMEASURED.
   TRIGGER: a census row with a periodic span of 36 or more positions (36: DERIVED, the
@@ -462,7 +492,7 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
 | row | input | output |
 |---|---|---|
 | R0 gate | any form whose answers differ from the byte loop (G2) or from libpcre2 (pcrec's answer rows) | that form is DEFECTIVE: it leaves the grid, is filed, and sets nothing |
-| R1 default | every surviving FINITE grid value h; every timed cell c = (`k`, regime, layer) of C1 and C2 ONLY [rev 3, F11], in EVERY regime of the cards' list, NOT-WARM and `short-subject-search` included [rev 5, Q4/C6]; a cell void twice is read as below the table [rev 5] | (1) per h, `W(h)` = max over c of `t(H(h), c) / t(I, c)`, each `t` a raw median. (2) The EQUAL set `E = { h : W(h) <= (1 + f) x min_g W(g) }`, computed once, never chained. (3) DOMINANCE [RULED r23 R3-1]: g DOMINATES h when `t(H(h), c) / t(H(g), c) > 1 + f` in at least one cell c and `t(H(g), c) / t(H(h), c) > 1 + f` in none. The dominated members of E are computed once, all against E, and removed together. In general, step (3) keeps the members of E dominated by the FEWEST other members. That is the undominated ones whenever any exist, which is the ruled step. When none exist (a cycle, possible because "beyond `f`" is a tolerance), it is those dominated least [RULED by the kit manager 2026-11-16, rev 5 Q2; the lane's rev 4 clause, text unchanged]. (4) **h\* = the LARGEST kept h** [RULED r22 F10]. The default is H(h\*), labelled MEASURED with its card ids (DERIVED if R3 fires). If h\* is the grid top, the label is "h = grid top (64, CHOSEN), on a measured tie of every finite head" (or "of" the members of E, or "every shorter finite head measured slower beyond `f`") [RULED r23 R3-3] |
+| R1 default | every surviving FINITE grid value h; every timed cell c = (`k`, regime, layer) of C1 and C2 ONLY [rev 3, F11], in EVERY regime of the cards' list, NOT-WARM and `short-subject-search` included [rev 5, Q4/C6]; a cell void twice is read by step (5) [rev 6, R5-2] | (1) per h, `W(h)` = max over the cells READ of `t(H(h), c) / t(I, c)`, each `t` a raw median; a twice-void cell adds the term 1 for each head whose text is I there (`h >= k`) and no term for any other head. (2) The EQUAL set `E = { h : W(h) <= (1 + f) x min_g W(g) }`, computed once, never chained. (3) DOMINANCE [RULED r23 R3-1]: g DOMINATES h when `t(H(h), c) / t(H(g), c) > 1 + f` in at least one cell c READ and `t(H(g), c) / t(H(h), c) > 1 + f` in none. The dominated members of E are computed once, all against E, and removed together. In general, step (3) keeps the members of E dominated (faster beyond `f` in at least one cell and never slower beyond `f`) by the fewest others [rev 6, R5-6: one wording everywhere]. That is the undominated ones whenever any exist, which is the ruled step. When none exist (a cycle, possible because "beyond `f`" is a tolerance), it is those dominated least [RULED by the kit manager 2026-11-16, rev 5 Q2; the lane's rev 4 clause; rev 6 words "dominated" as above]. (4) **h\* = the LARGEST kept h** [RULED r22 F10]. The default is H(h\*), labelled MEASURED with its card ids (DERIVED if R3 fires). If h\* is the grid top, the label is "h = grid top (64, CHOSEN), on a measured tie of every finite head" (or "of" the members of E, or "every shorter finite head measured slower beyond `f`") [RULED r23 R3-3]. (5) **VOID** [rev 6, RULED r25 R5-2: a void cell never helps another head]: if any C1-C2 cell is void twice, steps (1)-(4)'s pick is RECORDED with the card ids (it does not ship) and h\* = 64, labelled "h = grid top (64, CHOSEN): cell(s) <ids> void twice; the cells read picked H(<pick>)". No void cell removes a head from E or from the dominance count, so a void can neither lower h\* nor move a competitor. Otherwise h\* is step (4)'s |
 | R2 dial evidence | every cell of C1-C3 where I beats H(h\*) beyond `f` | filed as the evidence for the dial's always-inline option (cover_cap.md §11.3, unlock 2). R2 never changes R1's default |
 | R3 derivation | h\* per card class against (a)'s `E[D]` for that class | if h\* tracks `E[D]` in every class, h becomes a derivation from the byte rate (§6 Q3); otherwise it stays a MEASURED constant |
 | R4 near-miss | C1's near-miss column: H(h\*) against C5 | a timed loss beyond `f` is §4's trigger (the skip's build); it never changes h\* |
@@ -508,12 +538,28 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     floor in ANY regime at those lengths. §11.4 B's cells are all at those lengths (24-64) or
     literals (`lit-l40`, `a{500}`, which every form renders alike), so a width-rule loss there
     is one form I shows too, never one the loop form causes.
-  - **A cell missing a regime [rev 5].** As cover_cap.md §11.4's procedure: a C1-C2 cell
-    missing a regime, or bimodal, is VOID and re-run once, and R1 waits for the re-run only. A
-    cell void twice reads, for every head whose text differs from I in it, as a loss
-    (`t(H(h), c) / t(I, c)` = +infinity, the conservative reading: no head ships on a missing
-    reading). A head whose text IS I in that cell (`h >= k`) reads 1 there. So a twice-void
-    cell can only push h\* toward 64 (fewer movers), never below it.
+  - **A cell missing a regime [rev 5; rev 6, R5-2, R5-7].** As cover_cap.md §11.4's procedure:
+    a C1-C2 cell missing a regime, or bimodal, is VOID and re-run once, and R1 waits for the
+    re-run only. A cell still void after the re-run is read by step (5): h\* = 64, and the
+    pick of the cells read is recorded, not shipped (no head ships on a missing reading).
+    - **Why not rev 5's reading.** Rev 5 read a twice-void cell as a loss (+infinity) for every
+      head whose text differs from I there. That REMOVES the head from E, and through the
+      fewest-dominators clause a removed head can free another: on r25's drill V (heads 8, 24
+      and 32 in a dominance cycle, a `k` = 24 cell void twice), removing 8 broke the cycle and
+      lowered h\* from 32 (the same cell read clean) to 24. Rev 5's claim "never below it" was
+      false.
+    - **Why not "skip the void cell".** Reading only the other cells and refusing a pick whose
+      text differs from I in the void cell still lets a void HELP a head: a head whose loss was
+      in the void cell drops its worst term, joins E and dominates a larger head. Lane r45f's
+      search found 35 such cases in 200,000 random 4-cell outcomes (h\* below the same cells
+      read clean); step (5) gave none, since it never ships anything but 64 under a void.
+    - **What it costs.** A twice-void cell forfeits the cards' win for that night. The recorded
+      pick says what the cells read showed; a later card night that reads the cell replaces
+      the reading. If a regime's method is missing everywhere, every cell in it is void twice
+      and step (5) fires on every head with the label above (R5-7 (a)). Dominance reads no void
+      cell (R5-7 (b)). If a regime is missing from the `lit-l16` A/A cells, the floor `f` is not
+      computable, and the cards follow cover_cap.md §11.4 row 1's reading for B's floor (the
+      night is void) (R5-7 (c), noted).
 - **The floor `f`.** The cards' own A/A floor: the `lit-l16` A/A cells, every regime and layer,
   run with the cards on the same binary, and reduced to one ratio by the procedure cover_cap.md
   §11.4 uses for B's floor. A RATIO (so `1 + f` multiplies), never a difference.
@@ -522,9 +568,11 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
   2's reason for the smallest h) was asserted, never measured, and C4 is not an input to the
   rule.
 
-**Drills, re-run against the rule as written [rev 3, F10, F11; rev 4, R3-1, R3-2, R3-3].**
-Rev 4 re-ran every drill with a script that implements R0-R1 exactly as the table states them.
-The script and its output are in lane r45d's report, "Drills". `f` = 0.025 unless stated. A
+**Drills, re-run against the rule as written [rev 3, F10, F11; rev 4, R3-1, R3-2, R3-3; rev
+6, R5-2].** Rev 4 re-ran every drill with a script that implements R0-R1 exactly as the table
+states them; rev 6 re-ran every drill with a script that implements steps (1)-(5) as written
+here, and drills (i)-(xi) give the results below unchanged (no drill has a void cell). The
+scripts and their output are in lane r45d's and lane r45f's reports, "Drills". `f` = 0.025 unless stated. A
 cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
 - **(i) I and H equal at `k` <= 32** (every ratio 1.00). E = every finite h, nothing is
   dominated, and h\* = 64, labelled "h = grid top (64, CHOSEN), on a measured tie of every
@@ -577,10 +625,26 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   = (0.97, 0.97), H(16) = (0.99, 0.99), H(24..64) = (1.00, 1.00)). E = {8, 16}, h\* = 16.
   Adding h = 12 at (0.985, 0.95), with W(12) = 0.985 and not the minimum: 12 dominates 16 (at
   c2), so E = {8, 12, 16}, survivors {8, 12}, h\* = 12.
+- **(xii) r25's drill V: a void cell in a dominance cycle [rev 6, R5-2]** (`f` = 0.04; cells at
+  `k` = 36, 40, 49 with H(8) = (0.90, 0.93, 0.95), H(24) = (0.95, 0.90, 0.93), H(32) = (0.93,
+  0.95, 0.90), heads 0-4 and 16 at 1.20, plus a `k` = 24 cell). Read clean (every head ties I
+  at `k` = 24): E = {8, 24, 32, 64}, the cycle keeps {8, 24, 32}, h\* = 32, MEASURED. The
+  `k` = 24 cell void twice: under rev 5's reading E = {24, 32, 64}, kept {24}, h\* = 24 (the
+  defect); under step (5) the cells read pick 8 (recorded) and h\* = 64, labelled "cell(s)
+  `k` = 24 void twice". The `k` = 40 cell void twice instead: the cells read pick 32
+  (recorded), h\* = 64.
+- **(xiii) r25's drill N: a NOT-WARM-only loss** (`f` = 0.02; `k` = 32; H(8) 0.90 hit-dense and
+  1.20 NOT-WARM, H(16) and H(24) 0.99 hit-dense). W(8) = 1.20, so 8 is out of E; nothing in E
+  is dominated, and h\* = 64, labelled "on a measured tie of {0, 1, 2, 4, 16, 24, 32, 64}". The
+  loss moved h, not the width default.
+- **(xiv) A regime's method missing** (drill N's hit-dense cell read; its NOT-WARM cells at
+  `k` = 32 and 24 void twice). The cells read pick 8 (recorded); h\* = 64, labelled with both
+  cells (R5-7 (a)).
 - **Summary [rev 4, R3-3].** In every outcome but (viii)'s last, a FINITE h ships with its card
   ids. Below 64 it is MEASURED. At 64 it is labelled "h = grid top (64, CHOSEN)" with the
   measured tie or loss that put it there: the head's length is then the grid's choice, checked
-  only by R5, whose loss is the trigger to extend the grid.
+  only by R5, whose loss is the trigger to extend the grid. Under a twice-void cell (xii, xiv)
+  the label names the void cells and the recorded pick [rev 6].
 
 **Which sites move: the full possible-mover population [rev 3, F16 (a); rev 4, R3-1; rev 5,
 Q3/C1, C8; was "The stability trade"].** The owner RULED keep-short-spans = NO (2026-11-16):
@@ -598,27 +662,65 @@ noise of the best.
   - the reseed alternatives and the prefix (k-set) sites' spans, within pcrec's construction
     bounds (`PCREC_PREFIX_K_MAX` = 24; every other window site at 32 positions, cover_cap.md
     §11.1 B4), and every other site that states window facts (`WF_STATES`).
-- **The predicate.** A site is a POSSIBLE mover at h\* iff one of its stated spans holds a
-  stretch of two or more CONSECUTIVE positions (stated offsets `o`, `o + 1`, ...) that carry
-  the byte-identical set, that set has two or more members, and the stretch's last offset is
-  at or past h\*. That is the one-class-repeat segment (kind 2) reaching the loop region. A
-  site with no such stretch keeps its text at every h: literal stretches are one run compare
-  in every form (`lit-l31`, `lit-l40` never move), and lone tests render as today.
-- **What follows.** Every window span pcrec states today has 32 positions or fewer (covers at
-  the width default 32; pcrec's construction bounds 32 and 24, held by pcrec's own asserts
-  under other-sites-at-32). So when h\* >= 32, NO site moves, cover or not, and the sweep's
-  prediction is the empty set. Movers exist only when h\* is 0, 1, 2, 4, 8, 16 or 24, and then
-  non-cover sites (pre-check runs and reseed alternatives holding a repeated class past h\*)
-  move beside the covers.
+- **The predicate, in the segmenter's terms [rev 6, R5-1; rev 5's per-span predicate was too
+  narrow].** The unit is an ALTERNATIVE, not a span: every window alternative pcrec states,
+  the site's own (`pcrec_memfn_window_stated`) and each pre-check part's
+  (`pcrec_memfn_part_window_stated`). For an alternative, its position at offset `o` is the MEET
+  (bitwise AND) of the sets of every span that states `o`, as the kit's `merge` computes it;
+  pcrec states both meets the kit may test there, over every span and over the verify-YES spans
+  only (`rd_set` tests the second on a PARKED-entry alternative without reseed). A site is a
+  POSSIBLE mover at h\* iff one of its alternatives has a run of two or more CONSECUTIVE stated
+  offsets `o .. o + n - 1` whose positions carry one byte-identical set under either meet, that
+  set has two or more members, and the run's LAST offset is at or past h\*. Span boundaries do
+  not end a run: a cover's after side at offset `k` (and its before side at -1) joins the
+  `0 .. k - 1` run when its set is the same. A site with no such run keeps its text at every h:
+  literal stretches are one run compare in every form (`lit-l31`, `lit-l40` never move), and
+  lone tests render as today.
+- **Named witnesses [rev 6, R5-1].** `\w{32}\B`: the cover states span `0 .. 31` with `\w` and
+  its after side at 32 with `\w` (a non-boundary after a word byte needs a word byte; end of
+  subject fails, so the side is core). Its positions `0 .. 32` are one run of `\w`. Checked
+  read-only on the main tree's `build/pcrec` (`-p rx --features assertions,classes`): it emits
+  `RX_DFA_SCAN "cover"`, and the chain tests `s[c + 32]` with the same `\w` range test as
+  `+ 30`. It is a possible mover at every h\* <= 32. Its kin: `\w{k}\B` and `\W{k}\B` at
+  every cover width `k` (possible movers at h\* <= `k`), and any cover whose after side's set
+  equals its last class. Not kin: `\d{32}\B` (cover; its after side is `\w`, not `\d`, so the
+  run ends at 31) and `\B\w{32}` (no cover today; a before side at -1 never extends a run
+  forward).
+- **What follows: the largest stated OFFSET, not the span length [rev 6, R5-1].** The bound a
+  run can reach is the largest offset pcrec states, not "32 positions": at the width default
+  32, a cover's after side sits at offset 32 (`cover_window`); the pre-check run states
+  `0 .. 31`; the prefix walk stays below `PCREC_PREFIX_K_MAX` (24); each window statement is
+  bounded by `start + len <= MF_WREACH` (`window_bounds_check`). So the largest stated offset
+  today is 32. Re-derived, at today's width default 32:
+  - h\* = 64 (the predicted tie): NO site moves, cover or not; the sweep's prediction is empty.
+  - h\* = 32: only the cover kin above move (a run reaching offset 32 needs the after side).
+  - h\* <= 24: every alternative with a run reaching h\* is a possible mover, covers, pre-check
+    runs and reseed or prefix alternatives alike. No value below 32 is claimed to move
+    nothing.
+  A width default raised past 32 by the width night adds covers whose runs reach `k` (and
+  `k` itself, through an after side); those are width events (cover_cap.md §11.2), predicted by
+  the same predicate on the rebuilt binary. Rev 5's "h\* >= 32 moves nothing" is withdrawn.
 - **How main's sweep predicts it (the facts that select the sites).** The prediction reads
   pcrec's OWN statements, never the kit's reply or plan, so it does not share a source with
-  what it controls: per window site, each stated span's positions with their stated offsets
-  and member sets (the `mf_wspan` pcrec writes); the member count of each set; byte equality of
-  adjacent sets; and h\*, the one number the cards publish. The prediction is a SUPERSET by
-  design: a stretch of a two-member, one-bit set (a cube, such as `[aA]`) that C-run groups
-  stays one run compare, so it is predicted and does not move. The sweep's red is a moved site
-  OUTSIDE the prediction; a predicted site that does not move is listed (the kit's MFTRACE
-  names the segment row that took it), never red. This replaces cover_cap.md §11.1's
+  what it controls: per window alternative, each stated span's offsets, verify and member sets
+  (the `mf_wspan` pcrec writes), the alternative's entry and reseed facts, and h\*, the one
+  number the cards publish. The predictor computes both meets per offset itself. The prediction
+  is a SUPERSET by design: the plan tests a subset of the stated offsets (a dropped offset only
+  splits a run into runs that end no later), the kit chooses one alternative of those
+  predicted, and a run of a two-member, one-bit set (a cube, such as `[aA]`) stays a kind-1 run
+  compare. The sweep's red is a moved site OUTSIDE the prediction; a predicted site that does
+  not move is listed (the kit's MFTRACE names the segment row that took it), never red.
+- **The record the prediction reads is NEW [rev 6, R5-5].** No record exposes these facts on
+  main: the only statement record under `PCREC_MF_ROUTE_TRACE` in `src/gen/memfn_sites.c` is
+  `MFPRES` (counts only), and `span_facts` is gone (cover_cap.md §3). So main's build adds one
+  pcrec-side trace record, working name `MFWSTMT`, beside `MFPRES` in the same trace build and
+  under the same switch, written from the `mf_site` pcrec defines (never from a kit reply). One
+  line per stated span: site id; site kind; `site` or `part <i>`; alternative index; its entry
+  (`MF_ENTRY_*`) and whether the site reseeds; span index; `start`; `len`; verify; `core_lo`;
+  `core_len`; and the span's `len` sets, each as 64 hex digits. Main's build also changes the
+  predictor (today `lane/covs2afix`'s `predict.py`, reading the `--emit-facts` `cover` section
+  only) to read this record, and adds a trace-build pass over the sweep's corpus. It is on
+  main's list (§7) beside E13. This replaces cover_cap.md §11.1's
   "Non-cover window sites: no predicted move; any move is red" for the joint landing (main's
   edit, r45read E13).
 - **The uuid shapes are NOT form movers [rev 5, C8].** `k` = 36 takes no cover today (stage 1
@@ -694,9 +796,20 @@ build that adds its form (memory `pcrec-new-method-needs-measurement-card`).
   list, by the method cover_cap.md §11.4 uses for its width cells: NOT-WARM's method is the
   bench dev's (D198 (f)), and `short-subject-search` is the bench's subject. The kit's card
   script takes both as the bench names them. If either cannot run on the kit's harness, the
-  cells in that regime run on the bench, from the rows above, in the same window (a
-  bench-only question for main to relay, memory `pcrec-ask-bench-dev`). A cell missing a
-  regime follows R1's void reading ("Why each choice").
+  cells in that regime run on the bench, from the rows above, in the same window. A cell
+  missing a regime follows R1's void reading, step (5) ("Why each choice").
+  - **In that branch the bench READS the head lever [rev 6, R5-3].** The card cells time each
+    H(h) on the frozen binary, so the bench compiles those cells through
+    `build/pcrec-harness --harness=span-head=N`, the TEST-ONLY lever (never a shipped compile,
+    no public flag). The bench is then a lever reader for those cells only; its width cells
+    stay on the rebuilt binary through `build/pcrec` ("The bench" below).
+  - **The bench-only question** (for main to relay, memory `pcrec-ask-bench-dev`): can the
+    bench run its regime's method on cells compiled by `build/pcrec-harness` with that option,
+    and if not, can the method be ported to the kit's card script? If neither, those cells are
+    void twice, and step (5) reads them (h\* = 64, labelled).
+  - **The G7 fence** does not scan pcrec-bench (a separate repository), so a bench-side
+    spelling of `--harness=span-head=` needs no `ALLOW` entry; a pcrec-side script that spells
+    it under a fenced directory does (below).
 - **The added cells' cost [rev 5, Q4], UNMEASURED.** C1-C2 hold 9 patterns (C1: 4; C2: 5,
   counting the census rows at 49 and 60 as one pattern each), 10 arms (I and 9 finite heads)
   and up to 2 layers: 180 arm-cells per regime. Going from 4 regimes to 6 adds 360 arm-cells
@@ -722,8 +835,10 @@ h is compiled into the kit, so timing the grid on ONE binary needs a lever:
 - **Its readers, each changed in the build:** `mf_lever`'s parse and its `memfn.h` comment (the
   list of lever names); the form renderer that reads h; pcrec's harness option parse, its
   struct field and the lever call; `cli/CLAUDE.md`'s harness-option line; G2 (one pass per grid
-  h, §3 "Answers"); the kit's card script (C1-C2 time I, L and each H(h) through the lever).
-  The answer-identity sweep does not read it (it reads `--memfn=` cells).
+  h, §3 "Answers"); the kit's card script (C1-C2 time I, L and each H(h) through the lever);
+  the identity check (below); and, ONLY in the regimes fallback, the bench's card cells for a
+  regime the kit's harness cannot run [rev 6, R5-3]. The answer-identity sweep does not read it
+  (it reads `--memfn=` cells).
 - **The G7 fence is a reader too [rev 4, R3-6].** `cli/CLAUDE.md` binds every new harness option
   to the lever rules: one global under `pcrec_harness_`, no `lib/` header declaration, and no
   mention outside the fence allowlist. `tests/compound/run_lever_fence.sh` (c) reds on any
@@ -732,16 +847,27 @@ h is compiled into the kit, so timing the grid on ONE binary needs a lever:
   those directories (a pcrec-side row, a script), the `ALLOW` regex and its comment gain that
   path in the same change. The kit's own card script and identity check live under `memfn/`,
   which the fence does not scan.
-- **The bench is NOT a reader [rev 4, R3-6].** The width cells do not time through the lever.
+- **The bench is NOT a reader for the WIDTH cells [rev 4, R3-6; rev 6, R5-3: in the regimes
+  fallback it reads the lever for its card cells only, above].** The width cells do not time
+  through the lever.
   They run on the REBUILT binary with h\* compiled in, after the identity check passes (night
   order step 3). So the bench compiles through `build/pcrec` as §11.4 B already states, needs no
   harness option, and has nothing to change. This refined step 3 of the order agreed with main,
   and main CONFIRMED it (night-order-edits YES, 2026-11-16; rev 5, Q5) [rev 5: rev 4's
   alternative, the width cells on the lever binary, is withdrawn].
-- **The identity check.** After the cards fix h\*, the build compiles h\* in, and a kit test
-  asserts that the lever at h\* emits text BYTE-EQUAL to the shipped build at h\*, over every
-  card pattern and every census cover. So the timed artifacts are the shipped artifacts, though
-  the shipped compiler is a rebuild.
+- **The identity check.** After the cards fix h\*, the build compiles h\* in, and a check
+  asserts that the lever at h\* emits text BYTE-EQUAL to the shipped build at h\*. So the timed
+  artifacts are the shipped artifacts, though the shipped compiler is a rebuild.
+  - **Its population [rev 6, R5-4]: EVERY predicted mover at h\*, cover or not** (the sweep's
+    prediction, §3 "Which sites move", over its corpus), plus every card pattern and every
+    census cover. The lever is art-level (`memfn_sites.c`, the `mf_lever` call on the art), so
+    it reaches pre-check runs, reseed and prefix alternatives and the cross-span covers too, and
+    a divergence there must be seen. At h\* = 64 the prediction is empty and the population is
+    the cards and the census covers.
+  - **How.** It compiles each pattern twice at pcrec level, the frozen binary's
+    `build/pcrec-harness --harness=span-head=<h*>` and the rebuilt `build/pcrec`, and compares
+    the emitted C bytes. It lives with the kit's card script under `memfn/` (outside the G7
+    fence); a pcrec-side copy under a fenced directory takes an `ALLOW` entry.
 
 ### Answers, controlled by G2 [rev 2, F9; rev 3, F8]
 
@@ -878,6 +1004,11 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
     precondition of stage 2's landing.
   - §11.1 "The prediction" and "Unchanged": the possible-mover predicate of §3 "Which sites
     move" replaces "Non-cover window sites: no predicted move" (r45read E13; main's to word).
+    [rev 6, R5-1, R5-5] The predicate is over each alternative's positions keyed by offset
+    (runs cross span boundaries; `\w{32}\B` is its witness), and its input is the NEW
+    `MFWSTMT` trace record, a main-side build item with the predictor change and a trace-build
+    pass in the sweep (§3 "Which sites move"). The identity check reads the same prediction
+    [rev 6, R5-4].
 - C4 is a non-timing job: boxqueue, no window (memory `pcrec-kit-nontiming-runs-no-ask`).
 
 ## 4. ASK (4): the dense near-miss regime (no form asked)
@@ -1303,7 +1434,13 @@ by `git grep`). They are updated in the build or flagged in its report:
      the kit checking its own computation, and so shares a source with `proof_n`. That is why
      the pcrec row (b) of §1 bypasses it and expects B5's text on an after-unstated cover, while
      the kit row (a) only witnesses that R-short exists [rev 3, F1].
-   - **The head** is tied to the shipped bytes by the lever's identity check (§3) [rev 3, F12].
+   - **The head** is tied to the shipped bytes by the lever's identity check (§3) [rev 3, F12],
+     over every predicted mover at h\* as well as the cards and census covers [rev 6, R5-4].
+   - **The movers** are predicted from pcrec's own statements (the new `MFWSTMT` record, §3
+     "Which sites move"), never from the kit's plan; the sweep reds on a move outside the
+     prediction [rev 6, R5-1, R5-5].
+   - **The void step** shares no source with the timings: it reads only whether a cell has a
+     reading, and a void cell never helps a head (§3 R1 step (5)) [rev 6, R5-2].
    - **Timing** is checked by pcrec's G1 (`no-span-loop`) and by the engine-route reference C5.
    - **Populations are counted.** G2's long rows are named rows; G2-win's per-family, per-h
      line counts the looped sites. The force cell's population is the whole corpus.
@@ -1353,14 +1490,21 @@ recommendations were all taken; the record below says what each ruling settles.
   (D77; §4). The option's documentation names dense near-miss text as the slow case.
 
 **The kit manager's:**
-- **dominance-cycle**: RULED (2026-11-16): step (3) keeps the members of E dominated by the
-  FEWEST others (§3 R1) [rev 5, Q2].
+- **dominance-cycle**: RULED (2026-11-16): step (3) keeps the members of E
+  dominated (faster beyond `f` in at least one cell and never slower beyond `f`) by the fewest others (§3 R1) [rev 5, Q2; rev 6, R5-6].
 
 **Left with main (facts, not questions for the owner):**
 - Whether step (4b), h\* compiled in and the identity check, takes a review of its own before
   the width night: it is a commit the code round (4) did not see (r45read C11).
 - The cover_cap.md edits r45read lists beyond the reply's own (E6-E14: B4, B5's plant and
   §11.6.3's rows, §11.2's near-miss order, §11.3's sentence, §11.7 Q2/Q4).
+- **A main-side BUILD item [rev 6, R5-5]:** the `MFWSTMT` trace record (fields in §3 "Which
+  sites move"), the predictor reading it, and a trace-build pass in the stage-2 sweep. The
+  sweep's prediction and the identity check's population (R5-4) both need it, so it lands
+  before the cards' identity check runs.
+- **A bench-only question, only if the regimes fallback fires [rev 6, R5-3]:** whether the
+  bench can time its regime's card cells through the test-only `--harness=span-head=N` (§3
+  "The regimes' methods").
 - r45read Q1 (who respells pcrec's callers and tests on the kit's build branch) was outside rev
   5's brief and is not answered here.
 
@@ -1379,7 +1523,7 @@ recommendations were all taken; the record below says what each ruling settles.
 ## 8. responses.md-ready block (for the kit manager to post; facts only, D157)
 
 ```
-## R-45 reply (2026-11-16, kit; rev 5 after reviews r20, r22, r23 and your check r45read) — window spans up to 4095 positions
+## R-45 reply (2026-11-16, kit; rev 6 after reviews r20, r22, r23, r25 and your check r45read) — window spans up to 4095 positions
 - READY; nothing open. Plan A (forms now, one joint landing) is the plan of record.
 - (1) YES on EVERY window span: MF_WSPAN_POS 4095; MF_WREACH = MF_MAX_FWD = 4096. Proof rows
   only for proving classes (window plan, old-field FIND); others proof_n 0. Range [LO, end),
@@ -1390,23 +1534,24 @@ recommendations were all taken; the record below says what each ruling settles.
   R-short removed (a cover at width 32, after side unstated; its REACH asserts both).
 - (2) Decoupled: MF_MAX_TERM 32, MF_WMAX_SPAN 32 stay; MF_MAX_SPAN_POS/MF_MAX_AHEAD retire now
   (merge only onto A1). S526 stays on MF_MAX_TERM; B2's control is your §11.6.3 build.
-- (3) Forms I/L/H(h) over the existing segmenter, at EVERY window span, cover or not; literals
-  stay one compare. Default H(h*), h* from FINITE heads: W(h) = worst C1-C2 cell of
-  t(H(h))/t(I) in every regime (your §11.4 five by its methods, NOT-WARM and short-subject
-  included, + random bytes); E = within the A/A floor of the best W; keep the members of E
-  beaten by the fewest others (RULED; the unbeaten ones whenever any exist); then the LARGEST.
-  On a tie h* = 64, the grid's CHOSEN top. A form's loss in any regime moves h, never your
-  width default. A twice-void cell reads as a loss for every head that differs from I there.
-  Possible movers: every window site (covers, pre-check runs, reseed/prefix alternatives) with
-  >= 2 consecutive identical multi-member sets reaching offset >= h*. Predict them from your own
-  statements (a superset; red = a move outside it). h* >= 32 moves nothing today. uuid (k=36)
-  has no cover today: a width event, not a form mover.
-  Test-only lever span-head=N; identity check: rebuilt bytes = lever bytes at h*. Option
-  span-loop (pair; deny wins; the deny is the G1 arm, not the dial); floor 13 -> 14.
-  Night order (ruled): our cards first on the frozen binary via the lever, h frozen by the
-  committed rule; h* compiled in + identity check; then your width cells on that REBUILT
-  binary (no harness option). Your cover_cap edits: §11.4 (+ regimes), §11.6.1 (4a cards,
-  4b rebuild + identity; whether 4b gets its own review is yours), §11.6.4, §11.1 prediction.
+- (3) Forms I/L/H(h) over the existing segmenter, at EVERY window span; literals stay one
+  compare. Default H(h*), h* from FINITE heads: W(h) = worst C1-C2 cell of t(H(h))/t(I) in
+  every regime (your §11.4 five by its methods + random bytes); E = within the A/A floor of the
+  best W; keep the members of E dominated (faster beyond f in at least one cell and never
+  slower beyond f) by the fewest others (RULED); then the LARGEST. On a tie h* = 64, CHOSEN. A
+  loss in any regime moves h, never your width default. Any C1-C2 cell void twice: h* = 64,
+  the read cells' pick recorded (a void never helps a head). Possible movers: every window
+  alternative (covers, pre-check runs, reseed/prefix) with >= 2 consecutive offsets of one
+  identical multi-member set (the per-offset meet, ACROSS span boundaries) whose last offset
+  is >= h*. Witness: \w{32}\B (its after side continues \w to offset 32). At width 32, h* = 64
+  moves nothing; h* = 32 moves only that kin. Predict from a NEW trace record of your own
+  statements (MFWSTMT, your build; a superset; red = a move outside it). uuid: a width event.
+  Test-only lever span-head=N (bench reads it only if a regime must run there); identity
+  check over every predicted mover + cards + census covers. Option span-loop (pair; deny wins;
+  the deny is the G1 arm, not the dial); memfn floor 13 -> 14. Night order (ruled): cards first via the lever; h*
+  compiled in + identity check; then your width cells on that REBUILT binary. Your cover_cap
+  edits: §11.4 (+ regimes), §11.6.1 (4a cards, 4b rebuild + identity; whether 4b gets its own
+  review is yours), §11.6.4, §11.1 prediction + the MFWSTMT record.
 - (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). No fix in the first build. The
   forms are not a near-miss fix (every form restarts one byte later).
 - (5) Arrays leave the seam structs: mf_wspan 1,164 -> 32 B, mf_class 2,932 -> 1,640 B,
