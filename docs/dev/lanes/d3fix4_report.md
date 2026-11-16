@@ -16,4 +16,5 @@ The ruled r21 review (D3H-1/2/3) is fixed in tests/memfn/d3_floor.py, run_d3floo
 - tests/memfn/run_arch_blind.sh: 17 passed, 0 failed.
 
 ## STATE AT HANDOFF
-Last ruling applied: none (d3fix4_rulings.md empty). Tip is the commit after 251a79c57 (this report). OWED: none
+Last ruling applied: none (d3fix4_rulings.md empty). Tip is the commit after 251a79c57 (this report). 
+OWED: none
