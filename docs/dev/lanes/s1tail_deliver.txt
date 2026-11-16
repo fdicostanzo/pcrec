@@ -1,0 +1,4 @@
+report=docs/dev/lanes/s1tail_report.md
+sections: STATE AT HANDOFF; PLAN ROWS; SWEEP JOB FIX; SCRATCH CLEANUP
+nonempty: all
+commit: yes
