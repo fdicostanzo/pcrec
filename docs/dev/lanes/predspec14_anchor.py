@@ -268,6 +268,19 @@ def rev13_unpadded(w):   # the cut transform's reading, for comparison: zero-pad
     v = w.rjust(5, "0")
     return "09:00" <= v <= "10:00" and re.fullmatch(r"\d{1,2}:\d\d", w) is not None
 
+# R-5 (2026-11-15 20:58, an owner IDEA, not a ruling): a tuple compare as a PLAIN MACRO, 2 fields (sketch, §13 O69):
+#   tuple_between2(a, sep, b, lo1, lo2, hi1, hi2) :=
+#       /(?<t1>${a})${sep}(?<t2>${b})/
+#     & [(t1: padded(>lo1)), (t1: padded(==lo1), t2: padded(>=lo2))]
+#     & [(t1: padded(<hi1)), (t1: padded(==hi1), t2: padded(<=hi2))]
+#   t & tuple_between2(/\d{1,2}/, ":", /\d\d/, 9, 0, 10, 0)
+# Comparison sets written out as canonical-numeral rx for these constants (C9): >9, ==9, >=0, <10, ==10, <=0.
+TP = r"(?<t1>\d{1,2}):(?<t2>\d\d)"
+def C(l, rx): return Cond(TP, l, padded(Frag(rx)))
+GT9, EQ9, GE0, LT10, EQ10, LE0 = "[1-9]\\d+", "9", "(?:0|[1-9]\\d*)", "\\d", "10", "0"
+TUPLE = Amp(Alt(C("t1", GT9), Amp(C("t1", EQ9), C("t2", GE0))),
+            Alt(C("t1", LT10), Amp(C("t1", EQ10), C("t2", LE0))))
+
 def main():
     global ENGINE
     print("# THE AMPERSAND RULE BY POSITION (searched final programs unless the row says otherwise)")
@@ -336,6 +349,16 @@ def main():
         u = rev13_unpadded(w)
         print("%-7r split fields: %-6s | unpadded(5, between(\"09:00\", \"10:00\")) (cut): %-6s %s" % (
               w, "accept" if res["pcre2"] else "reject", "accept" if u else "reject", "SAME" if u == res["pcre2"] else "DIFF"))
+    print()
+    print("# R-5: the same range by the tuple-compare sketch tuple_between2(/\\d{1,2}/, \":\", /\\d\\d/, 9, 0, 10, 0)")
+    for w in TIME_SUBJ:
+        res = {}
+        for ENGINE in ("pcre2", "re"):
+            res[ENGINE] = (TUPLE.ev(w, 0, len(w), 0, len(w)), TIME.ev(w, 0, len(w), 0, len(w)))
+        bad += res["pcre2"] != res["re"]
+        a, b = res["pcre2"]
+        print("%-7r tuple compare: %-6s | split fields (R-4): %-6s %s" % (w, "accept" if a else "reject",
+              "accept" if b else "reject", "SAME" if a == b else "DIFF"))
     print()
     print("engines disagree on %d rows" % bad)
     return 1 if bad else 0

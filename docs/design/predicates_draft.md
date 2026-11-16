@@ -20,7 +20,8 @@
   `label:` condition, a compile-time set; a parameter lands where its body puts it. §0.1: L13 ANSWER MOVES (BY
   DESIGN stays); L7, L15 BY DESIGN -> WARNING; L11, L41, L69, L70, L71 renamed diagnostic; L66, L68 reworded. §12:
   E-CTX-5's equivalence moves; E-CTX-1, E-CTX-7 draw the warning. CUT (CF:1125-1136): `unpadded` and the lint's
-  suggestion of it (§9; the time-range example by split fields, §2.7; §13 O68 natural-order range, later). Evidence: `docs/dev/lanes/predspec14_anchor.py`
+  suggestion of it (§9; the time-range example by split fields, §2.7; §13 O68 natural-order range, later; §13 O69 the owner's tuple-compare
+  idea, sketched, preferred). Evidence: `docs/dev/lanes/predspec14_anchor.py`
   / `.out` (0 disagreements, libpcre2-8 10.46 vs Python 3.14 `re`). DECIDED (30)-(35).
 - **rev 13 (lane predspec13, 2026-11-15).** Applies the confirming review r14 on rev 12 (draft
   `$PCREC_TMPDIR/scratch/crit-predspec12/review.md`, filed by another lane) and folds the owner's three entries after
@@ -3604,7 +3605,30 @@ Items NEW in rev 14 (the owner's four 2026-11-15 entries after rev 13, box clock
 - **O68. A NATURAL-ORDER range.** A LATER ITEM, not in the first spec (RULED as later, CF:1133-1136 on main): a way of
   comparing chosen where the range is written, digit runs compared as numbers and everything else as text, so
   `between("9:00", "10:00")` and versions (`1.9` < `1.10`) work without splitting fields; a way of comparing, not a
-  transform; cost unexamined. TRIGGER (D77): a real example where splitting fields is too clumsy.
+  transform; cost unexamined. TRIGGER (D77): a real example where splitting fields is too clumsy. The PREFERRED
+  later item is O69 (the fields are named, not guessed from digit runs).
+- **O69. A TUPLE COMPARE over parsed number fields (**tuple-compare**).** An owner IDEA, not a ruling (CF:1139-1148
+  on main: "Perhaps a macro that lets you compare an array of numbers. Then parse the elements and use the array
+  compare."); PREFERRED over O68; a SKETCH, NOT in the first spec's library. Names are placeholders. (1) For a FIXED
+  number of fields it is a PLAIN MACRO in today's language: the author's field patterns go into the body's own
+  labelled groups, and the order test is the usual prefix expansion, each bound a separate `[ ]` (any one entry):
+
+      tuple_between2(a, sep, b, lo1, lo2, hi1, hi2) :=
+          /(?<t1>${a})${sep}(?<t2>${b})/
+        & [(t1: padded(>lo1)), (t1: padded(==lo1), t2: padded(>=lo2))]     # (t1, t2) >= (lo1, lo2)
+        & [(t1: padded(<hi1)), (t1: padded(==hi1), t2: padded(<=hi2))]     # (t1, t2) <= (hi1, hi2)
+
+  Three fields add one entry per bound (`(t1: ==lo1, t2: ==lo2, t3: padded(>=lo3))` and the strict ones before it).
+  Nothing is missing for a fixed count: a parameter is an atom of a comparison (§2.4 admits a binding; a parameter bound per call is read as one, LEAN), `${sep}` inserts literal
+  text, the conditions read the body's own labels (§4.1). Two caveats, neither new: the labels `t1`, `t2` are visible
+  in the result (the per-call label question of `hit`, O55), and the call has seven positional parameters (the
+  spelling, §13 C25, O47). It avoids rev 5's defect (bare label names as values, C13): the macro takes PATTERNS and
+  numbers, never a label name. (2) The time range with it, `t & tuple_between2(/\d{1,2}/, ":", /\d\d/, 9, 0, 10,
+  0)`, gives the same answers as §2.7's split-fields form on `9:00`, `09:30`, `10:00` (accept) and `10:01`, `8:59`
+  (reject), and on `9:59`, `10:59`, `11:00` (libpcre2-8 10.46 and Python `re`, `docs/dev/lanes/predspec14_anchor.out`,
+  R-5 table). (3) A VARIABLE number of fields needs the n prefix-equal entries built from two arrays, i.e. a
+  structural macro with a running prefix over array positions (bounded recursion over the array's length, or a
+  library primitive); today's `each` maps entries one at a time (§5.3) and cannot.
 
 OWNER QUESTIONS AFTER REV 13 (the open small ones, each in one line with its lean; the plain-words version with an
 example each is in `docs/dev/lanes/predspec13_report.md`, QUESTIONS FOR THE OWNER). Rev 12's (1), (5), (6) are
@@ -3615,6 +3639,9 @@ ANSWERED (CF:1026-1062 on main: rx-text `&` where `|` alternates, `occurrences`,
 - (4) ANSWERED in rev 13 (CF:1073-1081 on main): NO warning (O63).
 - (7) ANSWERED in rev 14 (2026-11-15 20:44 (a) on main): no `anchored`-specific error; the macro is plain (O64).
 - (8) ANSWERED in rev 14 (20:44 (b) and 20:45 on main): one warning in every filter role, keyed off the role (O65).
+- (10) NEW in rev 14 (**tuple-compare**): a 2- and 3-field tuple compare is a plain macro with nothing missing
+  (O69); should it join the first spec's library? Lean: YES as fixed-arity library macros (no new mechanism, it
+  covers the range `unpadded` was for and versions), the variable-arity form later.
 - (9) NEW in rev 14 (**primitive-transforms**): five provided transforms read text the subject does not contain and
   cannot be plain macros; one primitive (the pullback) under them, its argument a filter role: lean YES (O67).
 

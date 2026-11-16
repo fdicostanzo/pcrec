@@ -93,4 +93,14 @@ padded(between(0, 255)) body accepts 5,05,005,0,00,000,50,057,12,012,0012,13,02 
 '10:59' split fields: reject | unpadded(5, between("09:00", "10:00")) (cut): reject SAME
 '11:00' split fields: reject | unpadded(5, between("09:00", "10:00")) (cut): reject SAME
 
+# R-5: the same range by the tuple-compare sketch tuple_between2(/\d{1,2}/, ":", /\d\d/, 9, 0, 10, 0)
+'9:00'  tuple compare: accept | split fields (R-4): accept SAME
+'09:30' tuple compare: accept | split fields (R-4): accept SAME
+'10:00' tuple compare: accept | split fields (R-4): accept SAME
+'10:01' tuple compare: reject | split fields (R-4): reject SAME
+'8:59'  tuple compare: reject | split fields (R-4): reject SAME
+'9:59'  tuple compare: accept | split fields (R-4): accept SAME
+'10:59' tuple compare: reject | split fields (R-4): reject SAME
+'11:00' tuple compare: reject | split fields (R-4): reject SAME
+
 engines disagree on 0 rows
