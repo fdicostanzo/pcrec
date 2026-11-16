@@ -271,6 +271,7 @@ CASES_A = [
     ("(padded(between(1, 12)), padded(between(1, 28)))", {(m, d) for m in range(1, 13) for d in range(1, 29)}),
     ("[(1, 2), (1, 3)]  (spelled as an array, a product)", {(1, 2), (1, 3)}),
     ("[(9, 0), (17, 30)]", {(9, 0), (17, 30)}),
+    ("[(9, 30), (10, 0)]  (the owner's 09:58 example)", {(9, 30), (10, 0)}),
     ("month_days", month_days),
     (">= (9, 30) over hours 0..23, minutes 0..59", {(h, m) for h in range(24) for m in range(60) if (h, m) >= (9, 30)}),
 ]
