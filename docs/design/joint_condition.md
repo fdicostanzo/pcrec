@@ -531,8 +531,8 @@ them names would be the record as a value. So `.` never applies to a tuple set a
 components (4A.3).
 
 THE RECORD CONDITION `(h: S, m: T)` gives the same answers as `((h, m): (S, T))` on every population tried (table (P)
-of §2, 2,409 cases); whether the record is DEFINED as that product case is the open **record-is-product**. Nothing
-here depends on the answer.
+of §2, 2,409 cases), and the record is DEFINED as that product case (RULED, J9, record-is-product, CF 11:35);
+§4D derives it and checks the draft's record rules against it [§4C].
 
 ### 4A.2 Is a plain value x the one-entry tuple (x)?
 
@@ -550,9 +550,7 @@ literal, every condition's right side) is a set of 1-tuples, and a set of 1-tupl
 same information: no operator, position or tool could tell them apart, so keeping two would be a distinction with no
 consequence. One-entry parentheses are therefore GROUPING on both sides of the colon: `((h): S)` is `(h: S)`. The
 draft's existing lean already says this for values (`predicates_draft.md:542`, L44; `:3935`, O41), and nothing here
-changes it. The rule holds under either answer to **set-arity**: under ARITY, today's rx are the arity-1 sets; under
-a THIRD KIND, the third kind starts at k = 2, and `(x)` is still grouping. [§4A.10, unsetdef] set-arity is RULED, ARITY
-(10:26): today's rx are the arity-1 sets.
+changes it. Under the ruled ARITY (J3, set-arity, CF 10:26) today's rx are the arity-1 sets [§4C].
 
 ARITY 0. `()` would be the set of 0-tuples: either {()} (holds always) or {} (holds never). No example needs either
 (D77): an error in every position. (A call with no arguments is not affected: phase 1 has no zero-parameter macro;
@@ -654,7 +652,7 @@ silent on a many-string atom); `between(lo, hi)` is `>=lo & <=hi` unchanged [§4
 first/rest idea would instead DEFINE this order in a library, the comparison set keeping its one-value atom; worked
 and tested in 4A.11, PARKED by the owner (10:22) [§4A.10, unsetdef]: this producer is the design]; (5) a macro whose body yields one, and a
 binding of any of these (a binding names whatever its expression is, §2.1); (6) a FILTER MODIFIER applied to one
-(`padded(t)`), acting on each component (**modifier-lift**, open; without it an error). EQUALITY: two tuple sets are
+(`padded(t)`), acting on every component (RULED, J8, modifier-lift, CF 11:27) [§4C]. EQUALITY: two tuple sets are
 equal when they hold the same tuples; two tuples are equal when their components are equal STRINGS, so the literal
 `(9, 0)` is the text pair ("9", "0") and admits no `t` subject (table (E): 0 of 11,000; minutes are two digits),
 while `padded(== (9, 0))` admits `9:00` and `09:00` (2), as `(m: 0)` and `(m: padded(==0))` differ today. ACCEPTED
@@ -663,7 +661,7 @@ plain `h: S`); an ARGUMENT of a call (a parameter takes any value); the right of
 under position (B) of the open **tuple-parts** (4A.3), a colon-less tuple of k NEW NAMES on the left of `:=` takes
 it apart, each name bound to its position's component (the lane's lean (B1): one tuple only); an entry of `[ ]` beside
 entries of its arity; an operand of `&`, `|` beside one of its arity; the atom of a comparison; the argument of a
-filter modifier (under modifier-lift); `!R` on the right of `:` (the complement over all k-tuples of strings in the
+filter modifier (J8); `!R` on the right of `:` (the complement over all k-tuples of strings in the
 filter role, §2.2; `!((h, m): R)` vs `((h, m): !R)` inherits §13 O28 unchanged). ERRORS, each naming its fix: an
 ARITY MISMATCH (between the two sides of `:`, the operands of `&`/`|`, an array's entries: `[(9, 0), 5]`); a tuple
 where an arity-1 set is required: an rx HOLE (`/${t}/`), the program's final pattern, an `&` with a pattern operand
@@ -750,10 +748,10 @@ THE LOOK-ALIKES the addition creates or touches:
 | `((h, m): R)` vs `((h, m))` | the first: references, a condition; the second: grouping of a tuple of the BINDINGS h, m | one-token difference (the colon), the owner's discriminator; the second is an error if h, m are labels and no bindings (bare names are bindings there, CF:1268-1282) |
 | `f(1, 2)` vs `f((1, 2))` | two arguments vs one pair | NEVER BOTH LEGAL for one macro: positional arguments are exactly the required parameters (§5.2), so one of the two is always the wrong-count error. G4 holds (§1 Goals) |
 | `(9, 0)` vs `[9, 0]` | one pair vs "9 or 0" | different arities; the slip is an arity error (§4 item 2 (c)) |
-| `(h: 9, m: 0)` vs `((h, m): (9, 0))` | the same answers (table (P)) | record-is-product (open) |
+| `(h: 9, m: 0)` vs `((h, m): (9, 0))` | the same answers (table (P)) | the same by definition (J9, record-is-product, CF 11:35) [§4C] |
 | `(a, b) := t` vs `((a, b): t)` | NEW NAMES taking t apart vs references to labels a, b laid against t | `:=` vs `:`, the owner's two marks; under (B) both legal, meanings stated by the mark (on a t that is not one tuple the first is an error under the lean (B1)); under (A) the first is an error (**tuple-parts**) [§4A.10, tupleval2] |
 | `((h, m): (9, 0))` vs `((h, m): padded(== (9, 0)))` | text pair vs numeric pair: 0 vs 2 of 11,000 `t` subjects (table (E)) | the existing `(m: 0)` vs `(m: padded(==0))` story; the first is the empty-intersection error at a narrowing site (§5.2) |
-| `>= (9, 30)` vs `(>= 9, >= 30)` | dictionary order vs product order: they differ on 2,700 of 11,000 `t` subjects (table (O); `10:00` is in the first only) | BOTH LEGAL, DIFFERENT: the one pair in this census that is neither the same answer nor an error. The operator's place (outside or inside the bracket) says which; owner question **two-orders** |
+| `>= (9, 30)` vs `(>= 9, >= 30)` | dictionary order vs product order: they differ on 2,700 of 11,000 `t` subjects (table (O); `10:00` is in the first only) | BOTH LEGAL, DIFFERENT: the one pair in this census that is neither the same answer nor an error. The operator's place (outside or inside the bracket) says which; RULED both legal, no warning (J5, two-orders, CF 11:20) [§4C] |
 
 Count (the lane's): `( )` has nine value-or-statement rows (rev 19's §5.4 has four `( )` rows plus the head and the
 left of `:=` folded into them); the addition is TWO rows (the reference tuple before `:`, the value tuple), and no
@@ -767,30 +765,23 @@ the right) and a tuple of names inside a definition head.
 | answer | verdict | reason |
 |---|---|---|
 | (m1) every tuple-valued expression denotes a SET of tuples, as an rx denotes a set of strings; `(9, 0)` the one-pair set, `(S, T)` the product | HOLDS, INCOMPLETE | the reading is the brackets' ruled "all together" in value position (4A.1); missing: the arity is static and every entry arity 1 (no nesting), a comparison atom's components must be one-string sets, a `$` component gives one pair per match only on set-once labels (table (Q)), equality is string equality per component (table (E)) |
-| (m2) the record is not a value still holds; a tuple set has no names; the joint condition is where the two meet; `(h: S, m: T)` is `((h, m): (S, T))` | HOLDS, INCOMPLETE | the ruling is untouched (4A.1), but three LEAN sentences of the draft that inferred an error from it move (L45, the §5.4 `( e1, ... )` row, the condition row's "any other record"); and "is" is the open **record-is-product**: the ANSWERS are equal (table (P)), the definition is not ruled |
-| (m3) `x` and `(x)` are the same; one-entry parentheses are grouping; every existing set has arity 1; `((h): S)` is `(h: S)` | HOLDS | 4A.2; holds under either **set-arity** answer. Added: `()`, `(e,)` and nested entries are errors |
+| (m2) the record is not a value still holds; a tuple set has no names; the joint condition is where the two meet; `(h: S, m: T)` is `((h, m): (S, T))` | HOLDS, INCOMPLETE | the ruling is untouched (4A.1), but three LEAN sentences of the draft that inferred an error from it move (L45, the §5.4 `( e1, ... )` row, the condition row's "any other record"); and "is" is now RULED (J9, record-is-product, CF 11:35) [§4C] |
+| (m3) `x` and `(x)` are the same; one-entry parentheses are grouping; every existing set has arity 1; `((h): S)` is `(h: S)` | HOLDS | 4A.2; set-arity RULED, ARITY [§4C]. Added: `()`, `(e,)` and nested entries are errors |
 | (m4) parts are reached by destructuring `(a, b) := t`, NOT by an index; on a non-product set a part is a projection and loses the pairing | OPEN (**tuple-parts**, 4A.3). Lane tupleval judged it PARTLY WRONG (parts named left of the colon, a tuple value used whole); the owner then said "Yes" to taking apart (09:50) and "Nothing is set in stone. I'd like to hear it out" with his reason for no access (09:58) [§4A.10, tupleval2] | the index rejection and the projection loss HOLD under both positions (tables (D), (A); his own example `9:30, 10:00` gives back 4 pairs) |
 | (m5) general uses: lookup tables, multi-field allowlists, library constraints over unnamed fields, bounds `($sh, $sm)` | HOLDS, INCOMPLETE | lookup tables and library sets hold (E-CAL, (C4)); the multi-field allowlist has no §12 case; `($sh, $sm)` (tested since: table (SE) [§4C]) must be refused over repeated labels (table (Q)); missed: CIDR block lists (§3.5's `cidrs`, table (R)) and version-policy arrays |
 | (m6) a tuple set is never a pattern: no text of its own, so `${t}`, `P & t` and concatenation are errors | HOLDS, INCOMPLETE | missed: the final expression, a single-reference condition, `join` entries, index brackets, arithmetic, mixed arity; and `&` is an error only with a PATTERN: `t & u` of one arity is legal (intersection) |
-| R-1 manager's reading (i): a name left of the colon is never looked up as a binding | INCOMPLETE | a COMPUTED label is a binding by spelling and a label of its pattern (§4.4, `predicates_draft.md:1722-1737`; the owner's pointer, CF 2026-11-15 23:46), and it stands left of the colon today (`isodate & (weekday: 6)`); the scope left of the colon is the operand's labels, computed labels included; a PURE binding is never looked up there; owner question **colon-scope** |
-| R-1 (ii): a name in a right-hand tuple is never looked up as a label [§4A.10, tupleval2: "right-hand" read here as right of the COLON; R-2 says his sides are the binding sign's. Restated: a name in a colon-less VALUE tuple (right of `:`, right of `:=`, an argument) is never looked up as a label; a name in a tuple LEFT of `:=` (under (B) of **tuple-parts**) is a new binding, never a lookup at all] | HOLDS, with a dependence | labels are read by `$` there (§4.1); the draft's bare `<=dim`, `==wd` (§13 C13, lean `<=$dim`) is the one open spot; under C13's lean it holds |
+| R-1 manager's reading (i): a name left of the colon is never looked up as a binding | INCOMPLETE | a COMPUTED label is a binding by spelling and a label of its pattern (§4.4, `predicates_draft.md:1722-1737`; the owner's pointer, CF 2026-11-15 23:46), and it stands left of the colon today (`isodate & (weekday: 6)`); the scope left of the colon is the operand's labels, computed labels included; a PURE binding is never looked up there; RULED as so restated (J2, colon-scope, CF 11:32), with his refinement: a default after `=` there is on the value side [§4C] |
+| R-1 (ii): a name in a right-hand tuple is never looked up as a label [§4A.10, tupleval2: "right-hand" read here as right of the COLON; R-2 says his sides are the binding sign's. Restated: a name in a colon-less VALUE tuple (right of `:`, right of `:=`, an argument) is never looked up as a label; a name in a tuple LEFT of `:=` (under (B) of **tuple-parts**) is a new binding, never a lookup at all] | HOLDS (J2, colon-scope, CF 11:32) [§4C] | labels are read by `$` there (§4.1); the draft's bare `<=dim`, `==wd` (§13 C13) become `<=$dim`, `==$wd` (THE MANAGER'S consequence, CF 11:32, tested in §4C) |
 | R-1 (iii): a colon-less tuple may stand wherever a value may (bound, passed, returned) | HOLDS, ANSWERED YES by the owner (R-2, **tuple-anywhere**) [§4A.10, tupleval2] | wherever an arity-k value may: not where an arity-1 set is required (4A.6); and, under (B) of the open **tuple-parts**, on the left of a binding as new names |
 
-### 4A.9 What the account depends on (open questions, not assumed)
+### 4A.9 What the account depends on
 
-- **set-arity**: RULED, ARITY (10:26) [§4A.10, unsetdef]; none of the answers above changed.
-- **modifier-lift**: `padded((9, 0))` and `padded(open_at)` are legal under it, errors without it.
-- **unset-component** (the owner's LEAN "unset fails", 10:35; an author-written default, §4B [§4A.10, unsetdef]),
-  **joint-loops**: they fix the per-match meaning of a joint condition (does a tuple exist, how
-  iterations pair), not what a tuple VALUE is. The `$`-tuple refusal over repeated labels (4A.4) holds under either.
-- **record-is-product**: the record's answers equal the product's (P); the definition is not assumed.
-- §13 C13 (bare computed labels on the right): R-1 (ii) above.
-- **tuple-parts** [tupleval2, reopened]: no access (A) or taking apart on the left of a binding (B), and under (B)
-  which values may be taken apart (4A.3). Nothing else in the account depends on it; first/rest (4A.11) needs (B). [§4A.10, unsetdef] No user while first/rest
-  is parked.
-- **first-rest** [tupleval2]: whether dictionary order stays a rule of comparison sets (4A.4 producer (4)) or moves
-  to a library written with first/rest (4A.11); the rest of the account holds under either answer. [§4A.10, unsetdef]
-  ANSWERED: PARKED (10:22); the built-in order stays.
+[§4C: REWRITTEN; every question it listed is answered except **tuple-parts**.] RULED and applied above: set-arity
+(J3), modifier-lift (J8), unset-component and default-unused (J6), joint-loops (J7), record-is-product (J9),
+colon-scope (J2, which also settles §13 C13 on the value side: `$dim`), first-rest PARKED (J4). The `$`-tuple refusal
+over repeated labels (4A.4) is unaffected by any of them. STILL OPEN, with no user: **tuple-parts** (4A.3): no access
+(A) or taking ONE tuple apart on the left of a binding (B1); nothing in the account depends on it, and first/rest
+(4A.11), the only use found, is parked (`predicates_future.md` items 1 and 4).
 
 ### 4A.10 Corrections to this note's earlier text
 
@@ -945,8 +936,8 @@ COMPARED with the built-in order (4A.4 producer (4); §2 COMPARISON SETS):
 | new concepts | ONE: a tuple atom in a comparison set, read in dictionary order (§2.4's ONE ATOM read per component) | FIVE (P1-P5; P4, P5 widen an open and a ruled draft item), minus the built-in's one |
 | any number of fields | native | native |
 | names | none | six library names (`all`, `ge`, `gt`, `le`, `lt`, `between`, the last existing) |
-| the two-orders look-alike: `>= (9, 30)` vs `(>= 9, >= 30)`, 2,700 of 11,000 `t` subjects differ (table (O)) | both legal, different, told apart by the operator's place (**two-orders**) | GONE: `>= (9, 30)` is an error naming `ge`; dictionary order is a NAME, the product order the bracket |
-| `padded` components | needs **modifier-lift** | the library writes `padded` into each component it builds (table (F), 1,800 cases); modifier-lift still needed for `padded(open_at)` |
+| the two-orders look-alike: `>= (9, 30)` vs `(>= 9, >= 30)`, 2,700 of 11,000 `t` subjects differ (table (O)) | both legal, different, told apart by the operator's place (RULED, J5, CF 11:20) [§4C] | GONE: `>= (9, 30)` is an error naming `ge`; dictionary order is a NAME, the product order the bracket |
+| `padded` components | modifier-lift (RULED, J8) [§4C] | the library writes `padded` into each component it builds (table (F), 1,800 cases); modifier-lift still needed for `padded(open_at)` |
 | reader slips | the two-orders slip is silent; `>= [9, 0]` an arity error | a user's `>= (9, 30)` is an error; an author's slips are refused (FS) |
 | G4 | nothing to check | P5 |
 | taking a set apart | not involved | first/rest NEEDS taking apart: under (A) of **tuple-parts** it cannot be written; (B1), one tuple only, is ENOUGH (every bound is one tuple: a literal tuple, or `($sh, $sm)`, one per match); a head given a set (`ge(month_days)`) is refused under (B1) exactly as a statement is: one rule |
@@ -980,8 +971,10 @@ had the operator |= 'or equals' we could use it as for default macro arguments";
 thinking = but had your concerns. Seeing = in examples I prefer it"; on what the value is (10:40, rulings R-1, a
 question), "Also, the m = x there means the x is an rx. I don't have an intuitive sense of what that means"; and
 (10:43, rulings R-2, a ruling for now) "We can punt, as you say, and throw an error. Perhaps a reason will open to
-reconsider. Then there is a = some(between(...))". The base rule is unchanged and is his LEAN, not closed: a
-condition naming an unset label FAILS (`predicates_draft.md:1590-1592`, §4.2; lifted to several labels in item 6).
+reconsider. Then there is a = some(between(...))". Then (11:05) RULED, J6: "unset-component: yes" (a condition
+naming an unset label FAILS unless the author wrote a default; `predicates_draft.md:1590-1592`, §4.2, for any number
+of labels) and "default-unused: agree" (a never-used default is a WARNING: the manager's reading of "agree"); and
+(11:32) the default's scope, J2: "(a, b = c): ... the 'c' is a binding et al" [§4C].
 The default is OPT-IN, written by the author at the label; the language never presumes one. Spellings are
 placeholders (D193 add. 4). Every sentence not quoted or cited is the LANE'S. Evidence:
 `docs/dev/lanes/unsetdef_check.py` / `.out` (`timeout 120 python3 -I docs/dev/lanes/unsetdef_check.py`; libpcre2-8
@@ -1035,6 +1028,8 @@ WHAT v MAY BE (RULED for now, R-2: "We can punt, as you say, and throw an error"
 | a `$` value of a REPEATED label | ERROR (the existing bare-`$` error, `predicates_draft.md:1632-1634`) | many strings |
 | a set of several strings (`between(0, 59)`, `0 \| 30`, `/\d\d/`) | ERROR (R-2); text below | a label holds one string; "any of these" has two readings (4B.6) |
 | a tuple, a condition, a macro | ERROR: "a label's default is one string" | arity, kind |
+| a bare LABEL name (`(h, m = h): R`, h a label, no binding h) | ERROR: "`h` here is a binding (a default is on the value side); for the label's value write `$h`" | J2's refinement (CF 11:32): the default is on the value side, where a bare name is a binding [§4C] |
+| a bare name that is BOTH a binding and a label (a binding `h := 7` and a label h) | the BINDING (7) | J2: on the value side a bare name is always a binding; no shadowing question arises, the position decides [§4C] |
 
 THE ERROR for a several-string default (wording illustrative, D26): "`m = between(0, 59)`: a default stands in for
 ONE missing text, and this set holds 60. Give one value (`m = 0`); or, if an absent m should not matter, add an
@@ -1044,8 +1039,9 @@ WHERE `= v` MAY STAND: only on a name left of `:` in a condition entry. Elsewher
 (`((h, m): R = 0)`: "a default is written at the label: `(h, m = 0)`"), inside `$` (`$m = 0`: "`$` reads a value; a
 default is written at the label"). A PATH may carry one (`(d.year = 0: S)`: the path names one label).
 
-COMPILE-TIME DIAGNOSTICS (names LEAN, the lane's; texts illustrative):
-- `default.unused` (WARNING, as `dead.branch` is a warning: the answers do not change): (a) the label is set in every
+COMPILE-TIME DIAGNOSTICS (texts illustrative; the names are the spelling step's):
+- `default.unused`, a WARNING (RULED, J6, CF 11:05: "default-unused: agree", WARNING the manager's reading of
+  "agree"; as `dead.branch` is a warning: the answers do not change) [§4C]: (a) the label is set in every
   match of its pattern (`t & ((h, m = 0): R)`, m required: identical answers to no default on 11,000 of 11,000
   subjects, table (D1)); (b) the default never admits: the slice at the default is EMPTY (`(m = 45: <30)`: identical
   on 11,110 of 11,110, table (D1); `(m = 00: <30)`: `00` is not a canonical numeral, so it lies outside `<30`, the same
@@ -1188,8 +1184,7 @@ of m', write `m = some(...)`".
 
 ### 4B.7 What the default does NOT change
 
-- The base rule: without a default, a condition naming an unset label FAILS (the owner's lean; unset-component stays
-  open until he closes it).
+- The base rule: without a default, a condition naming an unset label FAILS (RULED, J6, CF 11:05) [§4C].
 - No value-level "or else" (s5): every case tried puts the fallback at a condition's label; a computed label that
   READS an unset label is itself unset and takes ITS default (table (DC)). A value-level `$m else 0` INSIDE a computed
   label's formula (`total := $h * 60 + ($m else 0)`) has no §12 or §5 example: NOT PROPOSED (D77); trigger: a
@@ -1197,6 +1192,144 @@ of m', write `m = some(...)`".
 - §13 O28 (`!(x: S)` vs `(x: !S)` on an unset label): untouched; a default makes the label "present" for that
   condition only, so `((h, m = 0): !R)` reads `(h, 0)` against `!R`.
 - Group questions: `count(((h, m = 0): R))` counts the iterations whose tuple, with the default read, is in R.
+
+## 4C. Corrections by lane jcfold (the entries of 11:05-11:35)
+
+Lane jcfold (2026-11-16), applying the owner's entries of 11:05 (unset-component: "unset-component: yes";
+default-unused: "default-unused: agree"), 11:17 (joint-loops: "I agree. Makes sense."), 11:20 (two-orders: "I agree.
+They look sufficiently different to me and I like the control."), 11:27 (modifier-lift: "modifier-lift: yes. Add this
+as another item like first/last to a 'predicate future consideration' document to consider finer grain transforms.
+However the form is 'do everything to both' so the logic makes sense"), 11:32 (colon-scope: "colon-scope: yes with
+refinement: (a, b = c): ... the 'c' is a binding et al") and 11:35 (record-is-product: "record-is-product:
+absolutely. This is precisely the sort of simplifying semantics I'm looking for."). Rulings file
+`jcfold_rulings.md`: empty at every read. Every changed sentence, marked "[§4C]" in place:
+
+- TITLE and HEADER: "(EXPLORATION)" becomes "(RULED)"; the STATUS paragraph REWRITTEN (all questions answered,
+  tuple-parts open with no user, the lane list, the §4C/§4D/§9 pointers, the three contradictions in §8, the
+  `CF hh:mm` convention); the evidence paragraph gains the re-run of `jointexp_check.py` and `jcfold_check.py`.
+- Goals: the non-goal "any-arity recursion (not needed ...) [two bracketed notes]" becomes one sentence (the built-in
+  order serves any k; first/rest parked, `predicates_future.md` item 1). Standing question (2) names the later
+  scripts and their sabotage runs.
+- §1: four example lines added (the default, a record as the product case, the per-part form).
+- §2: REWRITTEN as J1-J9, each ruled point stated ONCE with the owner's words and its CF time; the exploration's
+  bullets ("THE LEFT ... a fourth position", "THE RIGHT ... NEW", "COMPARISON SETS", "MEANING PER MATCH ... (§4.2
+  lifted) [unset: the owner's LEAN]", "THE RECORD IS THE PRODUCT CASE ... (lane's)", "LEVEL ... at most 2k - 1"
+  UNTESTED) are replaced by J1 (form), J2 (colon scope), J3 (value, arity), J4 (order), J5 (two orders), J6 (unset,
+  default), J7 (loops), J8 (modifiers), J9 (record), LEVEL (now tested, (RC), (SE)); "What it costs (N1)-(N4)" gains
+  (N5), the default, and the order sentence, and loses "meets the RULED 'a record is never a value' head on" (settled,
+  §4A.1).
+- §3: the table REWRITTEN with a "ruling" column entry per row (colon-scope, tuple-value/tuple-anywhere, set-arity,
+  first-rest, two-orders, modifier-lift, unset-component/default-unused, joint-loops, record-is-product); "Collides
+  with 'a record is never a value' ... unless" removed (settled); "the lift: ... labels in SIBLING loops have no
+  pairing (a break, §6)" becomes the ruled error; "the `compare.looped` warning ... its subject goes" becomes "MOVED";
+  "Counted: ... N1 and N2 are the expensive ones; they are one decision (question **tuple-value**) [settled]" becomes
+  "N1-N5 and one sentence of §2.4, each now ruled".
+- Item 1: the opening "It is the RECORD bracket ... in a new position" restated in the owner's terms (a tuple of
+  references) with J2 ruled; the label-twice bullet gains the record consequence and open item **label-twice**; the
+  shadowing bullet cites J2 instead of §4.1 and adds the value side.
+- Item 2 (d): "RECOMMENDED" becomes "ADOPTED"; "Owner question **tuple-value**" becomes "SETTLED".
+- Item 3: "The lane leaned ARITY; RULED by the owner" restated as RULED (J3); the `padded` and modifier rows'
+  "NEW lift rule" / "follows N4" become RULED (J8).
+- Item 4: REWRITTEN: title; the order as RULED (J4); the two orders both legal, RULED (J5); the per-part form's uses
+  (his question); the manager's "no warning" reading tested (HOLDS, INCOMPLETE).
+- Item 5: REWRITTEN: per-pass pairing RULED; the pairing loop stated precisely (the lane's; open item
+  **pairing-loop**; table (NL)); the sibling-loop ERROR with its text ("The lane leans ERROR" removed); the looped
+  WARNING moved with its text ("Not a new ruling; a reading to confirm (question **joint-loops**)" removed).
+- Item 6: the unset bullet RULED (J6); "The lane leans TUPLE-EXISTS ... Owner question **unset-component**. [the
+  owner LEANS ... not closed]" replaced by the two meanings (default vs alternative) and "decided-prefix WITHDRAWN";
+  the `label.unset` bullet names both fixes.
+- Item 7: the E-CAL row writes `<=$dim` (J2, C13); the start/end row cites table (SE).
+- §4 item 7's expansion paragraph: "at most 2k - 1 rows ... is UNTESTED" becomes TESTED (table (RC)).
+- Item 8: the record row "(question **record-is-product**)" becomes "the same by definition (J9)"; the looped row
+  names the moved warning; rows added (the two orders, the default vs `m: 0`); the CENSUS gains `=` (N5): "two
+  positions are new (N1, N3)" becomes three (N1, N3, N5).
+- Item 9: "REMOVED" becomes "NO JOB LEFT" with the paused-not-reversed caveat (open item **retire-paused**); the
+  decided-prefix order "WITHDRAWN by ruling", `compare.looped` "MOVED by ruling"; CF:1164 corrected to CF:1166.
+- §4A.1, last paragraph: "whether the record is DEFINED as that product case is the open **record-is-product**.
+  Nothing here depends on the answer" becomes RULED (J9) with a pointer to §4D.
+- §4A.2: "The rule holds under either answer to **set-arity** ... [set-arity is RULED]" becomes one sentence (RULED).
+- §4A.4: producer (6) "(**modifier-lift**, open; without it an error)" becomes RULED (J8); ACCEPTED POSITIONS "(under
+  modifier-lift)" becomes "(J8)".
+- §4A.5: the bounds row "UNTESTED (as in §5)" becomes table (SE).
+- §4A.7: the record look-alike "record-is-product (open)" and the two-orders row "owner question **two-orders**"
+  become RULED.
+- §4A.8: (m2) "'is' is the open **record-is-product**" becomes RULED; (m3) "holds under either **set-arity**
+  answer" becomes RULED; (m5) "`($sh, $sm)` is UNTESTED" now tested; R-1 (i) "owner question **colon-scope**" becomes
+  RULED as restated, with the refinement; R-1 (ii) "the one open spot; under C13's lean it holds" becomes HOLDS (J2),
+  C13 settled as `$dim` (the manager's consequence, tested below).
+- §4A.9: REWRITTEN to the one open point (tuple-parts).
+- §4A.11: the comparison table's "(**two-orders**)" and "needs **modifier-lift**" become RULED.
+- §4B opening: "The base rule is unchanged and is his LEAN, not closed" becomes RULED (11:05), with default-unused
+  (11:05) and the default's scope (11:32) quoted.
+- §4B.1: WHAT v MAY BE gains two rows (a bare label name: an error naming `$h`; a name that is both a binding and a
+  label: the binding), from J2's refinement; "COMPILE-TIME DIAGNOSTICS (names LEAN, the lane's ...)" becomes the
+  ruled warning, the names the spelling step's.
+- §4B.7: "the owner's lean; unset-component stays open until he closes it" becomes RULED.
+- §4C (this list) and §4D: NEW.
+- §5: problems 5 and 8 "UNTESTED" become TESTED (tables (SE), (MN)); problem 7's "[§4A.10, unsetdef]" folded; the
+  tally restated as one sentence (simpler 7, same 6, worse 0).
+- §6: REWRITTEN: B1 settled; B2 ruled; B3 ruled and parked; B4 ruled error; B6 NEW (the zero-pass corner).
+- §7: REWRITTEN to the ruled state; items 1, 5, 6, 8, 10 restated; items 11-14 NEW.
+- §8: REWRITTEN: answered list complete; CONTRADICTIONS FOUND (three); open items (tuple-parts and the lane's
+  four); parked ideas point at `predicates_future.md`.
+- §9: NEW, what rev 20 of the draft must change.
+
+THE MANAGER'S READINGS AND CONSEQUENCES in the entries folded here, each TESTED (HOLDS / WRONG / INCOMPLETE):
+
+| entry | the manager's reading or consequence (not the owner's words) | verdict | why |
+|---|---|---|---|
+| CF 10:22 | "tuple-parts has no user while first/rest is parked and stays open, not built" | HOLDS | no case in §5, §4A.5 or the draft's §12 takes one tuple apart (§4A.3) |
+| CF 10:22 | "two-orders stays a live question" | HOLDS, then ANSWERED | it was live until CF 11:20 ruled it |
+| CF 10:37 | the default is a go to WRITE UP AND TEST (lane unsetdef); unset-component closed only when he says so | HOLDS | he closed it at 11:05 after §4B |
+| CF 11:05 | "agree" on default-unused = a WARNING | HOLDS | the question asked was "a WARNING not an error; lean warning"; agreeing with the question's lean is the warning; an error would refuse a library condition laid over patterns where the field is sometimes required (§4B.1, table (D1)) |
+| CF 11:20 | "sufficiently different" = NO warning, unless confusion shows in use | HOLDS, INCOMPLETE | item 4: the trigger the withdrawn lean proposed fires on legitimate per-part uses (minimum width and height) and the compiler cannot tell hierarchical fields from independent ones; INCOMPLETE: the slip `(>= 9, >= 30)` for "at or after 9:30" is then silent (2,700 of 11,000, table (O)), a BY DESIGN look-alike row the draft must carry (§9) |
+| CF 11:32 | C13 closes as "`$` to read a computed label on the value side": `<=dim` becomes `<=$dim`, `==wd` becomes `==$wd` | HOLDS, INCOMPLETE | J2 puts both on the value side, where a bare name is a binding; a computed label IS a binding (§4.4, `predicates_draft.md:1724-1726`, "a match-dependent binding ... a macro whose operand is that pattern"), so bare `dim` there names that macro, and a comparison set's atom must be a one-string set (§2.4): bare `<=dim` becomes an ERROR naming `<=$dim` (the lane's), not a second spelling. Missing from the consequence: that error text, and that `$dim` is already the draft's lean (§4.4 :1737-1738) |
+| CF 11:32 | "a default still must be ONE string (ruled earlier today)" | HOLDS | J2's refinement puts the default on the value side, where any value may stand; the one-string limit is CF 10:43's, unchanged; the two new §4B.1 rows (a bare label name; a binding-and-label name) follow from the refinement |
+| CF 11:17, 11:27, 11:35 | (none: the record of each states the ruling as asked) | — | the wording of 11:17's pairing loop is INCOMPLETE on its own terms (item 5, **pairing-loop**) |
+
+The earlier entries' manager readings (00:06 consequences (1)-(3), 00:08 notes, 09:47, 09:49, 10:18) were tested by
+the lanes that folded them (§4A.8, §4A.10) or belong to the paused direction; their verdicts are in
+`docs/dev/lanes/jcfold_report.md` (CONSEQUENCES DERIVED BY THE LANE).
+
+## 4D. The record, derived: each record rule of the draft as the k-label rule specialised
+
+RULED (J9, record-is-product, CF 11:35): the record `(p1: S1, ..., pk: Sk)` IS the joint condition
+`((p1, ..., pk): (S1, ..., Sk))`, and with defaults `(p1: S1, p2 = v: S2)` IS `((p1, p2 = v): (S1, S2))`. So every
+record rule of `predicates_draft.md` must be what J1-J8 say for a product right side. Checked one by one (the
+lane's):
+
+| # | the draft's record rule (rev 19) | J1-J8 specialised to a product | verdict |
+|---|---|---|---|
+| D1 | `x: S` = the whole matches whose label x is in S (§4.1, `predicates_draft.md:1521-1522`) | J1 with k = 1 | FOLLOWS |
+| D2 | a record holds its entries together, "the AND comes from the record, not the comma" (§4.1 :1541-1543, RULED CF:863, CF:866 (b)) | (t1, ..., tk) in S1 x ... x Sk iff each ti in Si: the AND is the product's | FOLLOWS (per pass) |
+| D3 | "all of several conditions = one record: `(major: 1, minor: >=4)` = `(major: 1) & (minor: >=4)`" (§4.1 :1546) | FOLLOWS when the labels are set once or in the same pass; at DIFFERENT DEPTHS the product is per pass of the deeper label's loop (J7), and on ZERO passes no tuple exists and the record HOLDS, while `(h: S) & (k: T)` still tests the once-set k | CONTRADICTION (§8 **zero-pass-record**): table (RZ), `/(?<k>\d)(?:;(?<h>\d))*/` with S = 0..4, T = 3..7: the two readings differ on 5 of 1,110 subjects, all zero-pass subjects whose k is outside T (`9`: & reading false, per-pass true) |
+| D4 | an entry runs to the next comma; `&`, `\|` bind tighter than `:` (§4.1 :1543-1545) | a spelling of the product's parts | FOLLOWS (spelling) |
+| D5 | `:` outside a record is an error; a condition in value position is a macro, never the record (§4.1 :1552-1556) | the same for `((h, m): R)` | FOLLOWS |
+| D6 | the chain lookup, ambiguity and unknown-label errors (§4.1 :1557-1559) | J2 | FOLLOWS |
+| D7 | a condition naming an unset label FAILS (§4.2 :1590-1591, RULED by acceptance :1613-1615) | J6: no tuple exists, the joint condition fails | FOLLOWS; with a default, `(h: S, m = v: T)` = `((h, m = v): (S, T))`: table (RD), 76,860 cases (18 combinations of S, T and the default, both routes engine-run), 0 differ |
+| D8 | "a comparison on an UNSET label is false (its `!` true)" (§4.2 :1590, LEAN) | `!((h, m): R)` true on a match with no tuple | FOLLOWS; §13 O28's `!(x: S)` vs `(x: !S)` inherited unchanged |
+| D9 | zero iterations of a REACHED loop: a plain condition HOLDS (§4.2 :1600-1602, RULED) | J7: zero passes, no tuple, holds | FOLLOWS at one depth; at different depths it is D3's corner |
+| D10 | the sequence rule: `x: S` constrains ALL iterations (§4.3 :1632, RULED CF:583) | J7 with k = 1 | FOLLOWS |
+| D11 | the group questions `some`, `all`, `count`, `occurs.*` over a record (§4.3 :1653-1666) | they count PASSES whose tuple is in R | FOLLOWS |
+| D12 | SAME ITERATION BY RECORD (§4.3 :1668-1673, CF:915-917 accepted) | J7's per-pass pairing IS this rule | FOLLOWS (the rule is the product case of J7) |
+| D13 | "For `all`/the plain condition the two spellings always agree (every iteration has both = every iteration has g and every iteration has h)" (§4.3 :1674-1675) | true when g and h are in the same pass; at different depths with zero passes the plain record holds and `(g: S) & (k: T)` tests k | CONTRADICTION, the same corner as D3 (§8 **zero-pass-record**) |
+| D14 | labels at different depths: §13 O56 (:4118-4121, LEAN: "the innermost loop that encloses every label of the record; a label outside it has one value for every iteration of that loop") | J7 (RULED, CF 11:17) | FOLLOWS; O56 (1) becomes RULED through J7 + J9; the same wording gap (item 5, **pairing-loop**) |
+| D15 | a literal-index test `(x[2]: S)` (§4.3 :1690-1693, LEAN) | a path on the left (item 1) | FOLLOWS |
+| D16 | each iteration's labels read within that iteration (§4.3 :1694-1695) | per pass | FOLLOWS |
+| D17 | §5.4 `( e1, e2, ... )` row: a RECORD, never a value, in positions (a) call, (b) condition, (c) left of `:=` (:2013) | position (b) is the joint condition's product case; the record is still never a value (the tuple set `(S, T)` is a value and not a record, §4A.1) | FOLLOWS; the row's position (b) is restated as J9 (§9) |
+| D18 | §5.4 `( label: S, ... )` in value position is a CONDITION, a macro (:2014) | the same for any joint condition | FOLLOWS; "Any other record in value position is an error" narrows to labelled entries (L43), since a colon-less positional tuple is a value (§4A.1) |
+| D19 | §5.4 `=` row: `name = e` names an entry; in a head, a default (:2017) | J6 adds a fourth position, a default at a label left of `:`, same meaning (§4B.3) | FOLLOWS (one more position) |
+| D20 | §5.4 `:` row: the left is a field path (:2018) | J1: a path or a tuple of references | FOLLOWS (one more form) |
+| D21 | §0.1 L23 (:521): `(x: <200, y: >55)` vs `[(x: <200), (y: >55)]`, AND vs OR by the bracket | a product vs a union of two 1-label conditions | FOLLOWS |
+| D22 | §0.1 L31 (:529): `some((g: "x", h: 1))` vs `some((g: "x")) & some((h: 1))` differ | one pass with both vs two passes | FOLLOWS |
+| D23 | §0.1 L36 (:534): `(x: S)` = `all((x: S))` | k = 1 | FOLLOWS |
+| D24 | §0.1 L43-L47 (:541-545): record in value position an error; `(x)` grouping; `f((1, 2))` an error; a bound condition; `[x: S]` an error | L43, L44, L46, L47 unchanged; L45 changes (`f((1, 2))` is one argument, a pair: §4A.1), which is the TUPLE's consequence, not the record's | FOLLOWS (L45 moves for J3, not J9) |
+| D25 | §0.1 L56, L65 (:554, :563): per-match unset vs zero iterations | J6, J7 at k = 1 | FOLLOWS |
+| D26 | a label written twice in one record (`(h: <5, h: >2)`): the draft has NO sentence (`grep -n 'label twice\|named twice' predicates_draft.md`: only the projection's L75 :573 and DECIDED (58) :4270-4271) | by J9 it is `((h, h): (<5, >2))`, which item 1 makes an error | NOT a contradiction (no ruled text); a NEW CONSEQUENCE: open item **label-twice** (§8) |
+
+Tally: 26 rules; 23 follow (one of them as a spelling only); 2 contradict, both the same corner (D3, D13: labels at
+different depths, zero passes); 1 new consequence (D26). Nothing else in the draft's record rules needs its own
+statement once J9 holds: the record is the product case.
 
 ## 5. Problems tried
 
