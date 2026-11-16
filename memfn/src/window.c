@@ -1504,10 +1504,16 @@ static int plan_of(const wf_dec *d, const mf_hooks *def, mf_arena *al, struct wf
  * fails, as a core position does), a full-set position is only the bounded
  * range's end (`end_back`), and its empty range is the plan's: `legacy_ok`. */
 
+/* A legacy RUN term's positions: DERIVED, MF_MAX_TERM. legacy_ok admits at
+ * most MF_MAX_TERM non-full plan positions and a grouped stretch holds only
+ * spelled (so non-full) positions (run_bytes refuses any other), so no
+ * stretch translate() writes is longer; the legacy rows keep this bound
+ * whatever MF_WSPAN_POS is (r45_reply.md rev 4 §1). */
+#define WF_LEGACY_POS MF_MAX_TERM
 typedef struct {
     mf_site  site;
-    uint8_t  run[MF_MAX_TERM][MF_WSPAN_POS];
-    uint8_t  mask[MF_MAX_TERM][MF_WSPAN_POS];
+    uint8_t  run[MF_MAX_TERM][WF_LEGACY_POS];
+    uint8_t  mask[MF_MAX_TERM][WF_LEGACY_POS];
 } wf_legacy;
 
 /* 1 iff the plan translates into a legacy site with the plan's semantics;
@@ -1916,12 +1922,14 @@ static int hors_window(const wf_dec *d, int32_t *lo, int32_t *hi)
  * TESTS at offset whi - t (every byte where an offset is untested), else the
  * window's length: a candidate c + u, 0 < u < sh[b], would need b at its
  * own offset whi - u, which no tested set there holds. */
-_Static_assert(MF_MAX_SPAN_POS < 256, "a D-hors shift (at most a window's length) is a uint8_t: sh[b] = (uint8_t)t");
+/* A shift is a uint8_t: one over a window longer than 255 is CAPPED at
+ * 255, a shorter shift (any shift below the least unsafe one is safe; at
+ * every window of 255 or fewer positions the table is unchanged). */
 static void hors_table(const struct wf_plan *w, int32_t wlo, int32_t whi, uint8_t sh[256])
 {
     for (unsigned b = 0; b < 256; b++) {
         int32_t t = 1;
-        for (; whi - t >= wlo; t++) {
+        for (; whi - t >= wlo && t < 255; t++) {
             int tested = 0, in = 0;
             for (unsigned i = 0; i < w->n; i++)
                 if (w->off[i] == whi - t) { tested = 1; in = in_set(w->set[i], b); }
@@ -3123,6 +3131,22 @@ static int run_part_terms(const mf_art *art, const mf_site *s, unsigned part, in
         b = (unsigned)rr.scan + 1;
         while (a > lo && kit_pos_spelled(run->set[a - 1])) a--;
         while (b < hi && kit_pos_spelled(run->set[b])) b++;
+    }
+    /* THE DECLINING ROW CONTRACT (review r27 READ-1): the part is one RUN
+       term over the scan stretch [a, b) plus one SET term per other verified
+       position, and the RUN term's ranking has one entry per stretch
+       position. A stretch over MF_RANK_MAX positions, or more than
+       MF_MAX_TERM terms, has no spelling in mf_pred (rank_pos[], term[]):
+       refused here, before any term or ranking entry is written */
+    unsigned nterms = (hi - lo) - (b - a) + (rr.has_scan ? 1u : 0u);
+    if (b - a > MF_RANK_MAX) {
+        *why = "a derived run part whose scan stretch is over MF_RANK_MAX positions (its "
+               "ranking has no spelling)";
+        return -1;
+    }
+    if (nterms > MF_MAX_TERM) {
+        *why = "a derived run part of more than MF_MAX_TERM terms";
+        return -1;
     }
     q->nterm = 0;
     memset(q->term, 0, sizeof q->term);

@@ -2736,6 +2736,111 @@ static void pur_refusal_rows(const mf_art *art, const mf_site *s, const mf_hooks
     rows_free(rows);
 }
 
+/* THE LONG RUN PART (review 2026-11-16 r27 READ-1, the raise's declining row
+ * contract): an ALL_PRESENT site whose one presence span is a RUN of `L`
+ * one-byte positions, defined with its derived run part (`fn_ref` 1). Its
+ * scan stretch is the whole run, so at L = MF_RANK_MAX + 1 run_part_terms
+ * must REFUSE it, naming the stretch, before any ranking entry is written
+ * (rank_pos[MF_RANK_MAX]); at L = MF_RANK_MAX it defines. The define's
+ * error text is the witness. 0, or -1 with `err` the art's error.
+ * THE TERM RULE (review r28 R28-1): positions from `M` on carry many bytes
+ * (unspelled), so each is its own SET term outside any scan stretch; at
+ * M = 0 the part is L SET terms and no RUN term, so at L = MF_MAX_TERM + 8
+ * (the stretch is empty, well within MF_RANK_MAX) only the TERM rule refuses
+ * it, before term[MF_MAX_TERM] is written; at L = MF_MAX_TERM it defines.
+ * M = L is the all-spelled run of the stretch rule. */
+static int pur_long_run(mf_arena *ar, unsigned L, unsigned M, char *err, size_t errn)
+{
+    mf_art *art = art_begin(ar, "plr", 0, NULL, NULL);
+    uint8_t (*set)[32] = calloc(L, 32);
+    uint32_t *tab = calloc(L, sizeof *tab);
+    if (!set || !tab) { perror("calloc"); exit(2); }
+    for (unsigned j = 0; j < L; j++) {
+        unsigned b = 'a' + j % 26;
+        set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
+        if (j >= M) {                   /* unspelled: '0'-'7' and 'A'-'C' too */
+            set[j]['0' >> 3] |= 0xFF;
+            set[j]['A' >> 3] |= 0x0E;
+        }
+    }
+    mf_wspan w;
+    memset(&w, 0, sizeof w);
+    w.start = 0;
+    w.len = (uint16_t)L;
+    w.verify = MF_VERIFY_NO;
+    w.core = MF_CORE_STATED;
+    w.core_len = (uint16_t)L;
+    w.set = (const uint8_t (*)[32])set;
+    w.table_ref = tab;
+    mf_walt a = { MF_ENTRY_NONE, 1, &w };
+    mf_pred ps;
+    memset(&ps, 0, sizeof ps);
+    ps.nalt = 1;
+    ps.alts = &a;
+    ps.wfloor = MF_WFLOOR_SUBJECT;
+    ps.need = MF_REQUIRED;
+    ps.plan_hint = MF_NO_PRED;
+    ps.span_class = MF_SPAN_PRESENCE;
+    mf_pred part;
+    memset(&part, 0, sizeof part);
+    part.fn_ref = 1;                    /* the derived run part */
+    mf_site s;
+    memset(&s, 0, sizeof s);
+    s.abi = MF_SITE_ABI;
+    s.ret_pred = MF_NO_PRED;
+    s.span_hi = MF_SPAN_UNBOUNDED;
+    s.cand_ppm_hi = MF_PPM_FULL;
+    s.pred.plan_hint = MF_NO_PRED;
+    s.body = MF_BODY_ONESHOT;
+    s.form = MF_FORM_STMT;
+    s.op = MF_OP_ALL_PRESENT;
+    s.handoff = MF_H_ON_MISS;
+    s.empty = MF_EMPTY_MISS;
+    s.use = MF_USE_ENTRY;
+    s.site_kind = MF_SK_VM_ATTEMPT;
+    s.on_miss_leaves = 1;
+    s.npspan = 1;
+    s.pspans = &ps;
+    s.pres_proof = (mf_pres_proof){ -1, 0, 0, 1 };
+    s.npred = 1;
+    s.preds = &part;
+    Text def = { 0 };
+    mf_sink sd = sink_of(&def);
+    Fx fx = { &s, "rx_plr", NULL };
+    mf_hooks h = { .fn_name = h_fn_name, .start = "search_from", .u = &fx };
+    uint32_t hd = 0;
+    int rc = mf_define(art, &s, &h, &sd, &hd);
+    snprintf(err, errn, "%s", rc ? mf_art_error(art) : "");
+    free(def.p);
+    free(set);
+    free(tab);
+    return rc;
+}
+
+static void pur_long_run_fixtures(mf_arena *ar)
+{
+    char err[400], m[600];
+    int rc = pur_long_run(ar, MF_RANK_MAX, MF_RANK_MAX, err, sizeof err);
+    snprintf(m, sizeof m, "long run: a run part of MF_RANK_MAX (%d) positions refused: %s",
+             MF_RANK_MAX, err);
+    pur_ok(rc == 0, m);
+    rc = pur_long_run(ar, MF_RANK_MAX + 1, MF_RANK_MAX + 1, err, sizeof err);
+    snprintf(m, sizeof m, "long run: a run part of MF_RANK_MAX + 1 positions answered rc %d, "
+             "not run_part_terms' stretch refusal (READ-1): %s", rc, err);
+    pur_ok(rc == -1 && strstr(err, "over MF_RANK_MAX positions"), m);
+    /* the term rule (R28-1): MF_MAX_TERM unspelled positions define (the
+       control: the fixture's shape is admitted at the bound), MF_MAX_TERM + 8
+       are refused naming the term count */
+    rc = pur_long_run(ar, MF_MAX_TERM, 0, err, sizeof err);
+    snprintf(m, sizeof m, "long run: a part of MF_MAX_TERM (%d) unspelled positions refused: %s",
+             MF_MAX_TERM, err);
+    pur_ok(rc == 0, m);
+    rc = pur_long_run(ar, MF_MAX_TERM + 8, 0, err, sizeof err);
+    snprintf(m, sizeof m, "long run: a part of MF_MAX_TERM + 8 unspelled positions answered rc %d, "
+             "not run_part_terms' term refusal (READ-1, R28-1): %s", rc, err);
+    pur_ok(rc == -1 && strstr(err, "more than MF_MAX_TERM terms"), m);
+}
+
 /* THE CALL's fixtures (plan_frame.md §2.2 contract lines 1-4, §5 rows S, T,
  * U, I, AD) and the counted asks the counting arena must reach (row AC). */
 static void pur_call_fixtures(mf_arena *ar)
@@ -3008,6 +3113,7 @@ static int purity_mode(void)
         }
     }
     pur_call_fixtures(&ar);
+    pur_long_run_fixtures(&ar);
     /* THE STICKY-ERR CASE: breaker (a), FENCED (no reply after a refusal
        reaches an artifact); equal replies are asserted only once a later
        unit makes the refusal non-sticky */
