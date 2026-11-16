@@ -162,3 +162,22 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
 - THE MIDDLE GROUND: a warning, "this default is a value the label can never match" (the slip `m = 60`); it also
   fires on every deliberate sentinel.
 - TRIGGER: an example of an author bitten by an out-of-range default.
+
+## 12. A warning a macro raises about its own arguments
+
+- WHAT: a library macro's body can raise a compile-time warning when a stated fact holds of what it was passed, so
+  a diagnostic like "a mark inside `none`" lives in `none`'s own definition, not in the compiler's knowledge of one
+  macro's name. The owner's sketch (a placeholder spelling, D193 add. 4): `@compiler.warn(cond, "! In none")`.
+- STATUS: the owner's remark, 2026-11-16, after ruling **mark-in-none** (left as is: "it treats the none as a
+  special item instead of a macro"): "If there is a way to describe it, we might put together
+  @compiler.warn(cond, ...)". Not ruled, nothing designed. The manager's note: the draft already has `@warn` as an
+  effect built-in, but only to switch EXISTING warnings (`@warn.off(...)`, `@warn.error(...)`); this would be its
+  raising form. The open part is his "if there is a way to describe it": the `cond` is a COMPILE-TIME fact about an
+  argument's shape (carries a mark, carries a default, names a looped label, is a constant set), and the language
+  has no vocabulary for such facts today. Rev 18's `compare.repeated` note met the same wall ("the library would
+  need to see label names inside the macros it is passed").
+- WHAT IT WOULD UNLOCK: every warning that is about ONE macro's use moves from the compiler into the library that
+  defines the macro (the mark under `none` or a bounded count; `count.searched`; `compare.repeated`), and library
+  authors get the same tool.
+- TRIGGER: a second library-macro diagnostic wanted beside the mark-in-none one, or the first predicate build go
+  (the diagnostics list is then designed as a whole, item 10's explainer with it).
