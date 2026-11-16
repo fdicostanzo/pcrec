@@ -3987,10 +3987,14 @@ const char *wf_plan_class(const struct wf_plan *w, const mf_site *ws, mf_class *
 
 uint32_t wf_stated_offsets(const mf_site *s)
 {
-    /* the offsets lie in [-MF_MAX_BACK, MF_WREACH) (wf_check): a bitmap over
-       that range, on the heap (R-28) */
+    /* the offsets lie in [-MF_MAX_BACK, MF_WREACH) (wf_check): a BIT set over
+       that range on the stack (MF_WPLAN_MAX bits, 520 B at 4104: inside
+       R-28's frame bar), so mf_rows_need, its sizing caller, stays PURE: no
+       allocation, no failure path (review r27 TRI-1/HOUSE-5). An offset off
+       the range (a site wf_check would refuse) counts once per statement, an
+       over-estimate the caller may pass. */
     if (!s->nalt || !s->alts) return 0;
-    uint8_t *seen = calloc(MF_WPLAN_MAX, 1);
+    uint64_t seen[(MF_WPLAN_MAX + 63) / 64] = { 0 };
     uint32_t n = 0;
     for (unsigned i = 0; i < s->nalt; i++)
         for (unsigned j = 0; j < s->alts[i].nspan; j++) {
@@ -3998,11 +4002,10 @@ uint32_t wf_stated_offsets(const mf_site *s)
             for (unsigned k = 0; k < sp->len; k++) {
                 long off = (long)sp->start + k + MF_MAX_BACK;
                 if (off < 0 || off >= MF_WPLAN_MAX) { n++; continue; }
-                if (seen && !seen[off]) { seen[off] = 1; n++; }
-                else if (!seen) n++;
+                uint64_t bit = (uint64_t)1 << (off % 64);
+                if (!(seen[off / 64] & bit)) { seen[off / 64] |= bit; n++; }
             }
         }
-    free(seen);
     return n;
 }
 
