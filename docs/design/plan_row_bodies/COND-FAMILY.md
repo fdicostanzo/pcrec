@@ -1078,3 +1078,4 @@ counts are documented. If he meant "agree, warn", this entry is corrected. (c) O
 to, his words: "so the match span that the & expression creates anchors for is the ${} hole.
 999${/\d+/ & <100}999 matches 99945999". RECORD: confirmed by the manager; the stretch the hole consumes is the scope
 both operands match whole (`45` here); this example is an acceptance row.
+CONFIRMED (Frank, box clock 20:35) on part (b) above: "Count warning: yes I agree with that interpretation". NO warning.
