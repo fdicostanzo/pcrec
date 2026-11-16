@@ -107,7 +107,7 @@ Modules (design notes with `*_measurements/` siblings)
 - `extension_design.md` — module/extension architecture (D34; Part II is the redesign of record); `design_notes_mod06.md` (`unicode-props`), `design_notes_mod07.md` (`--explain`).
 - `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind; stage 1 built, stage 2 rev 5.2) + `vlookbehind_pieces.md`; `subroutines_design.md` + `subroutines_measurements/`; `frame_buffer_design.md`.
 - `feature_families.md` — [FEAT-FAMILIES] basic/extended/pcre2 families over D37 (PROPOSED rev 0).
-- `cond_family.md` — [COND-FAMILY] survey: members, machinery, first piece; `cond_family_syntax_survey.md` — spelling survey; `predicates_draft.md` — #6 predicate language spec (DRAFT); `joint_condition.md` — joint condition (exploration); `fact_consumers_inventory.md` — [FACT-READS] fact consumers.
+- `cond_family.md` — [COND-FAMILY] survey: members, machinery, first piece; `cond_family_syntax_survey.md` — spelling survey; `predicates_draft.md` — predicate spec (DRAFT); `joint_condition.md` — (exploration); `predicates_future.md` — parked ideas; `fact_consumers_inventory.md` — [FACT-READS].
 - `dfa_captures_research.md` — [ENG-TDFA] captures without the VM.
 - `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
 - `uprop_more.md` — [UPROP-MORE] `\p{}` binary properties + Bidi_Class (PCRE2 catch-up) and Block/Age (extension) design (PROPOSED).

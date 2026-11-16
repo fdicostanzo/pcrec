@@ -1510,3 +1510,13 @@ one part. (2) THE WARNING: the manager WITHDREW its own lean in the reply (the p
 width and height, a colour threshold, a bounding box, are all same-direction and would trip it; the compiler cannot
 tell hierarchical fields from independent ones); the manager's reading of his "sufficiently different" (told to
 him, not his words): NO warning, unless confusion shows in use.
+
+**2026-11-16 OWNER RULING — modifier-lift: yes; a "future consideration" document (Frank, to session 134, box clock
+11:27).** Asked **modifier-lift** (a modifier such as `padded` around a set of tuples applies to every part; it cannot
+pick parts of a dictionary-order set), his words: "modifier-lift: yes. Add this as another item like first/last to a
+'predicate future consideration' document to consider finer grain transforms. However the form is 'do everything to
+both' so the logic makes sense". RECORD: (1) RULED: a modifier around a set of tuples acts on EVERY part ("do
+everything to both"). (2) A per-part (finer-grained) transform is NOT designed now; it is recorded for later. (3) NEW
+DOCUMENT at his request: docs/design/predicates_future.md, the list of parked predicate ideas with their triggers;
+first/rest (his "first/last": read as first/rest, parked earlier today) and finer-grained transforms are its first
+two items.
