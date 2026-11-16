@@ -1743,3 +1743,15 @@ against a set empty through a match value FAILS, in both spellings), put to him 
 differ). His words: "zero-pass-empty: agree. If nothing could pass then some absent value of present couldn't either.
 I agree with your reading." RECORD: RULED: F1 is the mark's one meaning; zero-pass-empty is CLOSED; the "awaiting
 the owner's assent" labels come off in the next revision.
+
+**2026-11-16 MANAGER'S DERIVATION — default-reaches-dollar, closed by consequence (session 136, box clock 16:23; NOT an
+owner ruling).** The question from rev 20's undefined item (e2): in `(a = 0: <10, b: >$a)` on `-5`, does the
+default fill `$a`? Put to the owner, whose reply was a question: "Isn't that form a rewrite of the (a,b): form ? We
+unified those correct?" THE MANAGER'S DERIVATION from the ruled unification (a record is the joint condition over
+its labels): a `$a` naming one of the condition's OWN labels makes the record a non-product set over the tuple,
+`((a, b): {(x, y): x < 10, y > x})`; the tuple has ONE value per label, the default fills a's slot, so (0, 5) is
+tested and HOLDS: yes. The same derivation gives the marked case: `(a?: <10, b: >$a)` = some x in DOM(a) with x < 10
+and b > x. NOT covered: `$a` where a is not a label of the condition (`(h?: <$a, k: 3)`): rev 20's proposal
+stands there (an absent a FAILS the condition), unruled. OWED as evidence, by the fix lane after round predspec20:
+every record with an own-label `$` against its joint spelling over the same subjects, 0 differ expected; any
+difference goes back to the owner.
