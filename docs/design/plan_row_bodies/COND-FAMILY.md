@@ -1060,3 +1060,7 @@ RECORD: both operands of `&` are filter roles (the operator stays symmetric); an
 draws a WARNING; CONDITION: the next revision TESTS the rule for sense in every position an `&` can stand (a final
 program, a hole, a filter inside a hole, a `label:` condition), with worked rows, and brings him any position where
 "anchored" has no sensible meaning.
+
+CLOCK NOTE (manager, 2026-11-15): the three session-133 entries above carry the labels ~20:40, ~20:55 and ~21:20; the
+box clock read 20:09 to 20:22 when they were written. The labels are kept as the entries' names (a lane brief cites
+them); the times are wrong by the manager's estimate, not by the owner.
