@@ -1416,3 +1416,16 @@ it out. So It's the set that makes it an item so you can't break it apart withou
 closed ruling: both positions (parts by a binding; no access, the tuple used whole) are to be laid out and he
 decides; (2) his own statement of the reason against access: the SET is what makes the pairing, so breaking a set of
 tuples apart changes its meaning (the pairs 9:30 and 10:00 become {9, 10} and {30, 00}).
+
+**2026-11-16 OWNER — on first-rest: the built-in tuple mechanism is simpler, "which I like"; and a question (Frank, to
+session 134, box clock 10:18).** Shown the first/rest account (joint_condition.md §4A.11: dictionary order as library
+clauses, five new pieces) beside the built-in dictionary order for a tuple atom, his words: "I think the tuple
+mechanism as otherwise described handled the problem more simply which I like. One thing is that I understand how
+tuples of different length work with first/rest recursion, but I don't otherwise. The examples you provided seemed
+like static by length definitions. For instance, gt tested pieces in order but it seems that is proscribed by the
+language rather than composition of the macro". RECORD: (1) a stated PREFERENCE for the built-in mechanism over
+first/rest on simplicity. THE MANAGER'S READING (not his words; told to him): first-rest = keep the built-in order
+now, first/rest recorded with its trigger; not a closed ruling until he says so. (2) His observation, which is
+correct of the design: without first/rest the walk over a tuple's parts in order is prescribed by the language (the
+compiler unfolds a comparison on a tuple of any length); a macro is length-independent only while it uses tuples
+whole. Answered in the session's reply.
