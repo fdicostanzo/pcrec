@@ -7,6 +7,8 @@
 # the why (exact/machine-inexact -> end-at-k under the plant). The plant skips C8's test and
 # keeps its MkEnd fill, the record's counted copy (the slice comparison it used to skip is
 # deleted).
+# RE-ANCHORED 2026-11-15 (lane covs2a, [COVER-CAP] stage 2 A1, cover_cap.md §11.1): MkEnd no
+# longer copies; the plant's fill is the pointer fill (end.set = the record's arena sets).
 SAB_ID='S1131-cover_c8_skipped'
 SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'
@@ -20,5 +22,5 @@ SAB_COUNT=1
 SAB_BEFORE='    int k = st->w.k;
     if (st->w.stop == COVER_STOP_BRANCH) { st->detail = "machine-inexact"; return false; }'
 SAB_AFTER='    int k = st->w.k;
-    if (1) { st->cv->end.k = (uint8_t)(k <= MF_MAX_SPAN_POS ? k : 0); memcpy(st->cv->end.set, st->w.set, (size_t)st->cv->end.k * 32); return true; }   /* SABOTAGE S1131 */
+    if (1) { st->cv->end.k = (uint16_t)k; st->cv->end.set = st->cv->sets; return true; }   /* SABOTAGE S1131 */
     if (st->w.stop == COVER_STOP_BRANCH) { st->detail = "machine-inexact"; return false; }'

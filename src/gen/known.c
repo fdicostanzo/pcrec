@@ -339,18 +339,14 @@ static bool cc_fits(CoverSt *st)
 /* C8: the language from r0 is S_0 x .. x S_{k-1}: the walk did not stop at
  * a branch. Decision-redundant since the walk stops at `L` (the rows at a
  * branch never accept, so C10 declines whatever C8 does); it names the
- * `why`. Fills `MkEnd` from the record, bounded by its own array. */
+ * `why`. Points `MkEnd` at the record's sets (cover_cap.md §11.1 A1): no
+ * copy, so no bound of its own; the walk's depth is the only length. */
 static bool cc_exact(CoverSt *st)
 {
     int k = st->w.k;
     if (st->w.stop == COVER_STOP_BRANCH) { st->detail = "machine-inexact"; return false; }
-    if (k > MF_MAX_SPAN_POS)
-        pcrec_ctx_fail(st->cx, 0, "internal error: [COVER-CAP] the cover's exact "
-                       "stretch of %d positions exceeds MkEnd's %d (C15 statement-fits "
-                       "admits no more; docs/design/cover_cap.md section 3.5)",
-                       k, MF_MAX_SPAN_POS);
-    st->cv->end.k = (uint8_t)k;
-    memcpy(st->cv->end.set, st->w.set, (size_t)k * 32);
+    st->cv->end.k = (uint16_t)k;
+    st->cv->end.set = st->cv->sets;
     return true;
 }
 

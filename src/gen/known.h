@@ -20,11 +20,12 @@
 typedef enum { MK_ABS_UNSTATED = 0, MK_ABS_SATISFIES, MK_ABS_FAILS } MkAbsent;
 
 typedef struct {
-    uint8_t  k;                          /* the fixed width; 0 = no fixed end */
+    uint16_t k;                          /* the fixed width; 0 = no fixed end */
     uint8_t  ctx_before[32];             /* C_{-1}: bytes whose entry is live  */
     uint8_t  ctx_after[32];              /* C_k: bytes before which k accepts  */
     uint8_t  absent_before, absent_after;  /* MkAbsent                         */
-    uint8_t  set[MF_MAX_SPAN_POS][32];   /* A's S_d, d < k (the walk's record)  */
+    const uint8_t (*set)[32];            /* A's S_d, d < k: the record's arena
+                                            sets (`PcrecCover.sets`), never a copy */
     int      x;                          /* the EMITTED entry constant (s0)    */
     int      r0;                         /* the walk's one live entry row      */
 } MkEnd;
