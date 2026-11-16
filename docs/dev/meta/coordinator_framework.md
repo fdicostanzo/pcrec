@@ -86,3 +86,6 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 
 ## 2026-11-16 — critic round absfold (review r28)
 - A coordinator with a copied, read-only subject + record + evidence (no repo access needed) ran a 5-lens design round in about 18 minutes wall, zero manager turns. The pattern fits any fold-review of a document against a rulings record.
+
+## 2026-11-16 — critic round predspec20 (review r29)
+- A 5-critic + 1-verifier design re-check ran in ~25 min wall with zero coordinator interventions; the coordinator's main value was the freeze-drift hand mapping (two owner rulings landed mid-round and settled or reshaped 6 findings) and the consolidation of 50 findings into 17 groups. The pattern fits any fold re-check where rulings are moving the same afternoon.
