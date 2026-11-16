@@ -1380,3 +1380,13 @@ operand; (3) on the right-hand side the symbols are bindings (and values: "et al
 words, to be checked): a name inside the left bracket is never looked up as a binding, a name inside a right-hand
 tuple is never looked up as a label; a bare `(x, y)` with no colon is the tuple VALUE and may stand wherever a value
 may (bound, passed, returned), not only directly right of a colon.
+
+**2026-11-16 OWNER CLARIFICATION + ANSWER — "left/right" was about the binding sign; tuple-anywhere: yes (Frank, to
+session 134, box clock 09:49).** Asked **tuple-anywhere** (may a colon-less tuple be bound, passed and returned like any
+value, or only written directly right of a colon), his words: "I meant left right in the expression sense around =
+You could use them as you say". RECORD: (1) tuple-anywhere: YES, a colon-less tuple is used as a value where values
+are used; (2) the "left hand side" and "right hand side" of his statement above are the two sides of the BINDING sign,
+not of the colon; the manager's reading in the entry above mislabelled them. THE MANAGER'S READING of the corrected
+statement (not his words, to be checked): the colon form `(h, m):` holds scoped references to the intersected
+operand's labels; the colon-less form stands on either side of a binding: on its left the entries are NAMES BEING
+BOUND (the tuple taken apart), on its right they are values.
