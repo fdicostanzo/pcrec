@@ -1291,3 +1291,12 @@ bare-versus-`$` for computed labels (the draft's open look-alike row on that pai
 names) one answer consistent with his no-bare-reference ruling, and it gives a compare over a NON-NUMERIC field its
 proper route (compare the computed number: `[^.year, ^.mnum]`). To check in the next revision: whether a computed
 label is a field of the other side's map or stays a binding, and what that does to shadowing.
+
+**2026-11-15 OWNER IDEA — the other-side mark as a scoping sigil (Frank, to session 134, box clock 23:56).** After the
+manager's note that the mark would start as field access only (not standing alone), his words: "if the otherside mark
+can't be used alone, it could just be a scoping sigil like ^h". RECORD: candidate spelling shape (illustrative): a
+SIGIL before a label path meaning "this label, of the other side of the `&`" (`[^h, ^m]`), in place of a mark plus
+`.`. The manager's notes (not ruled): it has the same grammatical shape as `$` (a sigil before a label PATH), which
+gives each label three spellings with one role each: `h:` constrains, `$h` reads the value, `^h` refers to the
+field; no question of the mark standing alone arises, and `.` keeps its one meaning inside the path (`^d.year`).
+Given up: the other side as a thing in its own right. Not ruled; the next revision carries it as the mark's form.
