@@ -1225,3 +1225,16 @@ does to that rule. Not yet in the rev 16 lane's brief: the next revision or the 
 2026-11-14 stem), (b) `pair_between`/`triple_between`, positional, (c) `tuple_between2`, with the manager's lean
 (a), his words: "tuple_names: a". RECORD: the tuple compares in the first library are named by scheme (a), over
 arrays. To fold in the next revision (rev 17), with the exposed-options pointer above.
+
+**2026-11-15 OWNER DIRECTION — decompose the tuple compare: three arrays, subject, low, high (Frank, to session 133,
+box clock 23:07).** Shown `lex_between2([/\d{1,2}/, /\d\d/], ":", [9, 0], [10, 0])` (field patterns, separator, low,
+high), his words: "that feels like lex_between2 is doing a lot of work. can it be decomposed? to 3 arrays. subject,
+hi, low". RECORD (the manager's answer, agreed direction for rev 17, to be checked there): YES. Parsing and comparing
+separate: the AUTHOR's own pattern parses and labels the fields, and the compare is a condition over an array of
+those labels and two arrays of numbers, e.g. `/(?<h>\d{1,2}):(?<m>\d\d)/ & lex_between2([h, m], [9, 0], [10, 0])`
+(argument order subject, low, high in this example; his sentence says "subject, hi, low": the ORDER is a spelling
+detail to confirm with him). This is his original idea ("parse the elements and use the array compare") and the
+2026-11-14 record's shape (`lex_ge([major, minor, patch], [1, 4, 0])`); rev 16's form bundled the parsing in, which
+is what he objects to. Gains: no field-pattern or separator arguments, no hidden helper labels. TO CHECK in rev 17:
+whether a macro body may use a PARAMETER AS A LABEL NAME in a condition (`(a: ...)` with `a` passed in); if it can,
+this is a plain macro; if not, say exactly what is missing and bring it to him.
