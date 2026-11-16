@@ -2000,13 +2000,18 @@ his words: "mark-domain: if it is possible, the semantic rules should not not de
 on the resulting (graph, behavior, semantics, string set)? Not sure the exact phrasing." RECORD: "RULED as a
 principle, with his own qualifier 'if it is possible' and his phrasing left open: a rule's answer depends on what the
 pattern MEANS, never on how it is spelled." THE MANAGER'S READINGS of it (his, CF 15:27, "each to be checked by the
-fix lane's runs and the next revision"; not the owner's words): (1) a phrasing, "two patterns that match the same
-subjects and set their labels the same way answer every condition alike"; (2) the GROUP candidate is OUT ("it reads
+fix lane's runs and the next revision"; not the owner's words): (1) a phrasing, offered by the manager and AGREED by
+the owner as provisional wording at 15:29 (below); (2) the GROUP candidate is OUT ("it reads
 the spelling"); (3) the domain is the VALUES candidate, and ANY "stays withdrawn on the round's own ground (a value
 the label can never hold witnesses an answer), which is the manager's judgment, not his"; (4) where VALUES "cannot be
 computed exactly ... the note says what the compiler does instead and that an approximation must never change an
 answer silently; undecided, for rev 20"; (5) the principle is a standing criterion beside "a set never contains
 absence" (4H.9).
+
+THE PRINCIPLE'S WORDING (RULED, PROVISIONAL, CF 15:29 on main, **spelling-phrasing**; his words: "spelling-phrasing:
+that sounds good. I agree. Put an asterisk next to it in case it needs adjustment"): "two patterns that match the
+same subjects and set their labels the same way answer every condition alike" (*).
+(*) wording agreed by the owner 2026-11-16 as provisional: it may be adjusted; the principle is ruled.
 
 THE DOMAIN, stated ONCE (the manager's reading (3) of 15:27): DOM(h) is the set of VALUES h can take in some match of
 the pattern (h's value language in its context, a fact about the pattern's behaviour, not its text). Every other
@@ -2047,8 +2052,9 @@ The four questions the dispositions ask, per candidate (absfix `.out` (DOM-SUMMA
 Under every candidate F1 (4H.2), record = `&` and the general form (4H.6) hold: the domain moves answers only where
 a set reaches outside the values h can hold (a complement, a dead branch, a group narrowed by a lookaround or by its
 context). THE STOP CHECK (R2 (3): stop if the third candidate splits equal spellings or equal sets anywhere): it
-splits NEITHER on any population run (0 and 0 above); the manager's reading (3) stands on these runs. His principle
-read as the manager's phrasing (1) is what drill (ii) tests: P1, P2, P3 match the same subjects and set h the same
+splits NEITHER on any population run (0 and 0 above); the manager's reading (3) stands on these runs. The principle's
+wording, "two patterns that match the same subjects and set their labels the same way answer every condition
+alike" (*), is what drill (ii) tests: P1, P2, P3 match the same subjects and set h the same
 way, and only GROUP answers them differently.
 
 WHERE VALUES IS NOT READ OFF THE GROUP'S TEXT ("if it is possible", R2 (4); absfix `.out` (DOM-COMP), each RUN by
@@ -2202,7 +2208,7 @@ turns on it once **mark-domain** and the counting rule rest on their drills). Th
 | SIMPLIFYING SEMANTICS | CF 11:35: "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking for." | meanings per construct: one meaning in every shape; a sub-choice that adds a shape-specific rule counts against it |
 | SAVING PEOPLE FROM THEMSELVES | CF 12:45: "The issue falls into the 'saving people from themselves' category that tools need to realistically consider" | per new construct, the author's natural misuse and whether it draws an error or warning or answers silently (`((h, m?): !office)` admitting `10` under DOM = ANY answers silently) |
 | A SET NEVER CONTAINS ABSENCE | CF 13:52: "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set" | no construct gives a set an "absence" member; author control lives on the label |
-| MEANING, NOT SPELLING (RULED as a principle, CF 15:27, his qualifier "if it is possible") | "the semantic rules should not not depend on the spelling of the regex but on the resulting (graph, behavior, semantics, string set)? Not sure the exact phrasing." | the manager's phrasing (15:27 (1)): "two patterns that match the same subjects and set their labels the same way answer every condition alike"; drill: equal spellings answer alike (§4H.1's two-spellings drill) |
+| MEANING, NOT SPELLING (RULED as a principle, CF 15:27, his qualifier "if it is possible") | "the semantic rules should not not depend on the spelling of the regex but on the resulting (graph, behavior, semantics, string set)? Not sure the exact phrasing." | its wording (RULED, provisional, CF 15:29): "two patterns that match the same subjects and set their labels the same way answer every condition alike" (*); drill: equal spellings answer alike (§4H.1's two-spellings drill). (*) wording agreed by the owner 2026-11-16 as provisional: it may be adjusted; the principle is ruled. |
 
 ### 4H.10 Corrections, place by place (each marked "[§4H]" in place)
 
