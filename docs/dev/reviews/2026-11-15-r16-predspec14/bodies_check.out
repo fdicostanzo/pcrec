@@ -1,0 +1,2 @@
+month_numbered(between(lo, hi)) as months & (mnum: S): 170 cases, 0 differ from the stated meaning
+length(S) as chars & (nchars: S): 27 cases, 0 differ from 'S on the length'
