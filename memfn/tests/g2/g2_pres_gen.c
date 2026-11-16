@@ -484,7 +484,23 @@ static int in_run_set(const gsite *g, unsigned j, unsigned b)
    nterm 0, and the generated omin (either sign) */
 static mf_pred g_ps[5];
 static mf_walt g_ra;
+/* An ask's proof rows (MF_SITE_ABI 30): G2's own storage, sized by the
+   kit's own minimum (mf_rows_need). */
+static mf_rows *ask_rows(const mf_site *s)
+{
+    static mf_rows r;
+    free(r.proof);
+    memset(&r, 0, sizeof r);
+    uint32_t pc = 0, nc = 0;
+    if (mf_rows_need(s, &pc, &nc)) pc = 0;
+    r.proof_cap = pc;
+    r.proof = calloc(pc + 1, sizeof *r.proof);
+    if (!r.proof) { perror("calloc"); exit(2); }
+    return &r;
+}
 static mf_wspan g_rw;
+static uint8_t g_rw_set[MF_WSPAN_POS][32];      /* g_rw's lists (MF_SITE_ABI 30) */
+static uint32_t g_rw_tab[MF_WSPAN_POS];
 static unsigned state_spans(const gsite *g, mf_need need)
 {
     unsigned k = 0;
@@ -506,14 +522,17 @@ static unsigned state_spans(const gsite *g, mf_need need)
     }
     memset(&g_rw, 0, sizeof g_rw);
     g_rw.start = 0;
-    g_rw.len = (uint8_t)g->L;
+    g_rw.set = (const uint8_t (*)[32])g_rw_set;
+    g_rw.table_ref = g_rw_tab;
+    memset(g_rw_set, 0, sizeof g_rw_set);
+    g_rw.len = (uint16_t)g->L;
     g_rw.verify = MF_VERIFY_NO;
     g_rw.core = MF_CORE_STATED;
     g_rw.core_lo = 0;
-    g_rw.core_len = (uint8_t)g->L;
+    g_rw.core_len = (uint16_t)g->L;
     for (unsigned j = 0; j < g->L; j++)
         for (unsigned b = 0; b < 256; b++)
-            if (in_run_set(g, j, b)) set_add(g_rw.set[j], b);
+            if (in_run_set(g, j, b)) set_add(g_rw_set[j], b);
     g_ra = (mf_walt){ MF_ENTRY_NONE, 1, &g_rw };
     g_ps[k].nterm = 0;
     g_ps[k].nalt = 1;
@@ -744,7 +763,7 @@ static void one_site(gsite *g, buf *fs, gout *o)
     if (g->want == G2P_P2) {
         mf_pres_picks pk;
         if (mf_pres_ports(art, &s, NULL, NULL, &pk)) { fail(g->id, "mf_pres_ports", "refused"); return; }
-        if (mf_ask(art, &s, &h, &c)) { fail(g->id, "mf_ask (P2's lead)", "refused"); return; }
+        if (mf_ask(art, &s, &h, &c, ask_rows(&s))) { fail(g->id, "mf_ask (P2's lead)", "refused"); return; }
         int sc = c.pres[run].verify && c.run.has_scan ? c.run.scan : -1;
         int lead = -1;
         if (sc >= 0 && set_count(g->set[sc]) == 1) lead = set_first(g->set[sc]);
@@ -757,7 +776,7 @@ static void one_site(gsite *g, buf *fs, gout *o)
         if (lead >= 0) s.pres_proof = (mf_pres_proof){ (int16_t)lead, 0, (uint8_t)!nofind, 1 };
     }
 
-    if (mf_ask(art, &s, &h, &c)) { fail(g->id, "mf_ask (the presence links)", "refused"); return; }
+    if (mf_ask(art, &s, &h, &c, ask_rows(&s))) { fail(g->id, "mf_ask (the presence links)", "refused"); return; }
     o->route = route_of(&c, run);
     if (o->route < 0) { fail(g->id, "the run's link", "no P0/P2/P3/P9 row decided it"); return; }
     g_route_sites[o->route]++;

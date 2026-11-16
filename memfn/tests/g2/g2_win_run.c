@@ -20,7 +20,7 @@
  *           largest verify-YES core offset's, wsc1_report.md);
  *   BIND    a yielded candidate satisfies every verify-YES span of the chosen
  *           alternative, read straight off the facts;
- *   PROOF   every offset the define's class proves (mf_class.proven[],
+ *   PROOF   every offset the define's class proves (mf_class.proof[],
  *           R-25) holds at the yielded candidate inside the subject;
  *   COMPL   no candidate where EVERY span of the chosen alternative holds
  *           (none of their reads inside [0, F)) lies before the answer;
@@ -185,7 +185,7 @@ static void judge(unsigned si, const g2w_dec *d, const unsigned char *s, long n,
     hits++;
     /* PROOF (R-25): every offset the define's class proves holds at the
        yielded candidate wherever it lies inside the subject */
-    for (int k = 0; k < G2W_NPROOF; k++) {
+    for (int k = 0; k < x->nproof; k++) {
         long p = want + k + G2W_PROOF_LO;
         if (p < 0 || p >= n) continue;
         if (!has(x->proven[k], s[p])) {

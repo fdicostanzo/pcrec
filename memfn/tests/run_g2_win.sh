@@ -152,7 +152,9 @@ plant_spec() {
     S1406) # C-pin splitting the stretch: the pinned positions not one compare
         echo 'window.c@@                join = in_pinned(d, o) \&\& in_pinned(d, o - 1);@@                join = 0;' ;;
     S1407) # an untested offset claimed: the class proves one past each tested position
-        echo 'window.c@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];@@        for (unsigned x = 0; x < 32; x++) out->proven[d - MF_PROOF_LO][x] \&= w->set[i][x];\n        if (d + 1 < MF_MAX_FWD) for (unsigned x = 0; x < 32; x++) out->proven[d + 1 - MF_PROOF_LO][x] \&= w->set[i][x];' ;;
+        # RE-ANCHORED 2026-11-16 (lane span4k, MF_CLASS_V 11): the class's rows are the caller's
+        # storage `rows`, proof_n of them
+        echo 'window.c@@        for (unsigned x = 0; x < 32; x++) rows[d - MF_PROOF_LO][x] \&= w->set[i][x];@@        for (unsigned x = 0; x < 32; x++) rows[d - MF_PROOF_LO][x] \&= w->set[i][x];\n        if (d + 1 - MF_PROOF_LO < (int32_t)out->proof_n) for (unsigned x = 0; x < 32; x++) rows[d + 1 - MF_PROOF_LO][x] \&= w->set[i][x];' ;;
     S1409) # two spans of R's shape in one alternative not refused (the F-8 ruling: R is unique)
         echo 'window.c@@        if (nrun > 1)\n            return "an alternative states two verify-NO spans@@        if (0)\n            return "an alternative states two verify-NO spans' ;;
         # RE-ANCHORED 2026-11-13 (lane partd, R-38 Part D [r3pd FIX-9]): R is identified by ROLE
@@ -232,7 +234,9 @@ plant_spec() {
     S3091) # 3.0b (Z): fused left NO on B-fn: G2's class (the text calls _ofsskip) is red
         echo 'window.c@@        fp->fused = MF_WFUSED_FN;\n        fp->search = wsearch_of(fx->fused->search);@@        fp->fused = MF_WFUSED_NO;\n        fp->search = wsearch_of(fx->fused->search);' ;;
     S3092) # 3.0b (AA): frame_row swapped E-find <-> E-generic on REPORT sites: G2's form class is red
-        echo 'window.c@@            reply_frame(fp, out);@@            reply_frame(fp, out);\n            if (site->site_kind == MF_SK_REPORT \&\& (r == E_FIND || r == E_GENERIC)) snprintf(out->frame_row, sizeof out->frame_row, "%s", r == E_FIND ? "E-generic" : "E-find");' ;;
+        # RE-ANCHORED 2026-11-16 (lane span4k, MF_SITE_ABI 30): reply_frame writes the caller's rows
+        # and returns a verdict, so the swap rides the answered branch
+        echo 'window.c@@            !reply_of(d, out, rows) \&\& !reply_frame(fp, out, rows))\n            rc = 0;\n        else@@            !reply_of(d, out, rows) \&\& !reply_frame(fp, out, rows)) {\n            rc = 0;\n            if (site->site_kind == MF_SK_REPORT \&\& (r == E_FIND || r == E_GENERIC)) snprintf(out->frame_row, sizeof out->frame_row, "%s", r == E_FIND ? "E-generic" : "E-find");\n        } else' ;;
     S3093) # 3.0b (AB): plan_test always OWN: G2's table_name population (the hook's own marker
         # g2w_t<id>_<ref>[ matched by offset) is red
         echo 'window.c@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = test_of(w, k);@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = MF_WTEST_OWN;' ;;
