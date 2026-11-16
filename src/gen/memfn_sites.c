@@ -180,6 +180,27 @@ static void meas_record(Ctx *cx, const mf_measures *ms)
 }
 #endif
 
+mf_rows *pcrec_memfn_rows(Ctx *cx, const mf_site *s, PcrecRowsPart part)
+{
+    uint32_t proof_cap, plan_cap;
+    if (mf_rows_need(s, &proof_cap, &plan_cap))
+        pcrec_ctx_fail(cx, 0, "internal error: the kit refuses to size an ask's storage "
+                       "(mf_rows_need) (src/gen/memfn_sites.c)");
+    if (part == PCREC_ROWS_PROOF_CEILING) proof_cap = MF_MAX_FWD - MF_PROOF_LO;
+    if (part == PCREC_ROWS_PLAN) proof_cap = 0;
+    else plan_cap = 0;
+    mf_rows *r = pcrec_arena_alloc(&cx->arena, sizeof *r);
+    r->proof_cap = proof_cap;
+    r->plan_cap = plan_cap;
+    if (proof_cap) r->proof = pcrec_arena_alloc(&cx->arena, (size_t)proof_cap * 32);
+    if (plan_cap) {
+        r->plan = pcrec_arena_alloc(&cx->arena, plan_cap * sizeof *r->plan);
+        r->plan_term = pcrec_arena_alloc(&cx->arena, plan_cap * sizeof *r->plan_term);
+        r->plan_test = pcrec_arena_alloc(&cx->arena, plan_cap * sizeof *r->plan_test);
+    }
+    return r;
+}
+
 mf_art *pcrec_memfn_art(Ctx *cx)
 {
     Job *job = cx->job;
@@ -537,46 +558,66 @@ mf_wspan *pcrec_memfn_walt_spans(Ctx *cx, mf_walt *a, mf_entry entry, int n)
     return w;
 }
 
-void pcrec_memfn_wspan(mf_wspan *w, int start, int len, mf_verify v)
+/* The span's per-position lists live in storage pcrec owns (MF_SITE_ABI
+ * 30, r45_reply.md §5 (e)): `len` sets and table offers from the compile's
+ * arena, zeroed. The struct's members are `const` to every reader; the
+ * writers below store through these, the owner's own pointers. */
+static uint8_t *wpos_set(mf_wspan *w, int j) { return (uint8_t *)w->set[j]; }
+static uint32_t *wpos_table(mf_wspan *w) { return (uint32_t *)w->table_ref; }
+
+void pcrec_memfn_wspan(Ctx *cx, mf_wspan *w, int start, int len, mf_verify v)
 {
+    /* the length is refused HERE, before the storage is sized by it and
+       before the uint16_t fields take it (review r27 HOUSE-4): a later
+       bounds check would read the truncated value */
+    if (len < 0 || len > MF_WSPAN_POS)
+        pcrec_ctx_fail(cx, 0, "internal error: a window span of %d positions lies outside "
+                       "the kit's shape bound MF_WSPAN_POS (src/gen/memfn_sites.c)", len);
+    size_t n = len > 0 ? (size_t)len : 1;
+    uint8_t (*set)[32] = pcrec_arena_alloc(&cx->arena, n * 32);
+    uint32_t *table = pcrec_arena_alloc(&cx->arena, n * sizeof *table);   /* zeroed */
     memset(w, 0, sizeof *w);
     w->start = start;
-    w->len = (uint8_t)len;
+    w->len = (uint16_t)len;
     w->verify = (uint8_t)v;
     w->core = MF_CORE_STATED;
     w->core_lo = 0;
-    w->core_len = (uint8_t)len;
+    w->core_len = (uint16_t)len;
+    w->set = (const uint8_t (*)[32])set;
+    w->table_ref = table;
 }
 
 void pcrec_memfn_wspan_core(mf_wspan *w, int lo, int len)
 {
-    w->core_lo = (uint8_t)(len ? lo : 0);
-    w->core_len = (uint8_t)len;
+    w->core_lo = (uint16_t)(len ? lo : 0);
+    w->core_len = (uint16_t)len;
 }
 
 void pcrec_memfn_wpos_table(mf_wspan *w, int j, const uint8_t set[256], uint32_t offer)
 {
-    memset(w->set[j], 0, 32);
+    uint8_t *s = wpos_set(w, j);
+    memset(s, 0, 32);
     for (int b = 0; b < 256; b++)
-        if (set[b]) w->set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
-    w->table_ref[j] = offer;
+        if (set[b]) s[b >> 3] |= (uint8_t)(1u << (b & 7));
+    wpos_table(w)[j] = offer;
 }
 
 void pcrec_memfn_wpos_bits(mf_wspan *w, int j, const uint8_t bits[32])
 {
-    memcpy(w->set[j], bits, 32);
+    memcpy(wpos_set(w, j), bits, 32);
 }
 
 void pcrec_memfn_wpos_any(mf_wspan *w, int j)
 {
-    memset(w->set[j], 0xFF, 32);
+    memset(wpos_set(w, j), 0xFF, 32);
 }
 
 void pcrec_memfn_wpos_cube(mf_wspan *w, int j, unsigned byte, unsigned mask)
 {
-    memset(w->set[j], 0, 32);
+    uint8_t *s = wpos_set(w, j);
+    memset(s, 0, 32);
     for (unsigned b = 0; b < 256; b++)
-        if ((b & mask) == (byte & mask)) w->set[j][b >> 3] |= (uint8_t)(1u << (b & 7));
+        if ((b & mask) == (byte & mask)) s[b >> 3] |= (uint8_t)(1u << (b & 7));
 }
 
 /* Fails loudly where window statement `alts[0..n)` lies outside the kit's

@@ -20,7 +20,6 @@
 #define G2W_REACH   64      /* offsets lie below it (MF_WREACH)                 */
 #define G2W_NOFF    (G2W_REACH - G2W_LO)
 #define G2W_PROOF_LO (-8)   /* memfn.h MF_PROOF_LO                             */
-#define G2W_NPROOF  41      /* MF_MAX_FWD - MF_PROOF_LO: the proof's offsets   */
 
 enum { G2W_YES = 1, G2W_NO = 2 };                       /* verify            */
 enum { G2W_E_NONE = 1, G2W_E_PARKED = 2, G2W_E_RESEED = 3 };  /* entry         */
@@ -81,7 +80,8 @@ typedef struct {
     int         rate_kind;      /* 0: no byte-rate (NONE), 1 skewed, 2 ties   */
     const uint32_t *rate;       /* the analysis object's byte-rate, or NULL   */
     g2w_reply   reply;
-    const uint8_t (*proven)[32];/* the define's class, proven[d - PROOF_LO]   */
+    int         nproof;         /* the define's class: proof_n rows           */
+    const uint8_t (*proven)[32];/* its rows, proven[d - PROOF_LO], d < nproof */
     const char *form_id;        /* mf_result.form_id (opaque: counted only)   */
     const char *row;            /* mf_result.row                              */
     int         pair;           /* the text keeps two memchr streams (PAIR):

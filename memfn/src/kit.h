@@ -601,13 +601,51 @@ enum {
                                REQUIRED: an OPTIONAL term may go untested    */
 };
 
+/* WHERE A PROVING CLASS'S ROWS GO (MF_CLASS_V 11, R-45; r45_reply.md rev 4
+ * §1, §5): `rows`/`cap`, the caller's storage (an ask: R-cap refuses more
+ * than `cap`); else `a`, the art's arena, EXACTLY proof_n rows (a define);
+ * else neither: the VERDICT only (kit_legacy_arm), no rows written and
+ * proof NULL. */
+typedef struct {
+    uint8_t        (*rows)[32];
+    uint32_t         cap;
+    const mf_arena  *a;
+} kit_proof_st;
+#define kit_proof_open  MF_NS(kit_proof_open)
+#define kit_proof_close MF_NS(kit_proof_close)
+#define kit_last_stated MF_NS(kit_last_stated)
+/* THE PROOF RANGE (r45_reply.md §1): opens `out`'s proof over [MF_PROOF_LO,
+ * end), end = max(last_s + 2, last_t + 1) clipped at MF_MAX_FWD, every row
+ * all ones, and returns its writable rows in *w (NULL in verdict-only mode).
+ * NULL, or the refusal: R-out (a tested offset outside [MF_PROOF_LO,
+ * MF_MAX_FWD), checked where `tested_lo`/`last_t` are the TESTED set's, i.e.
+ * `check_out` 1: a window plan class), R-cap (more rows than st->cap), R-short
+ * (the SELF-CHECK: end below min(MF_MAX_FWD, last_s + 2); it shares its
+ * source with `end`), or out of memory. */
+const char *kit_proof_open(mf_class *out, long last_s, long tested_lo, long last_t,
+                           int check_out, const kit_proof_st *st, uint8_t (**w)[32]);
+/* proven0/proven_prev, COPIED from the rows for offsets 0 and -1 (all ones
+ * outside the range). */
+void kit_proof_close(mf_class *out);
+/* The largest POSITION site `s` STATES: a window site's spans (every
+ * alternative, the after-context included), else span 0's terms (a RUN term
+ * at `offset` states offset .. offset + run_len - 1); -1 where it states
+ * none at or after 0. */
+long kit_last_stated(const mf_site *s);
+#define kit_class_same MF_NS(kit_class_same)
+/* THE DEEP COMPARE (r45_reply.md §5 (a)): 1 iff two classes agree, every
+ * by-value member equal and the proof rows equal over an equal proof_n; the
+ * `proof` pointer is never compared. */
+int kit_class_same(const mf_class *x, const mf_class *y);
+
 #define kit_class MF_NS(kit_class)
 /* The form CLASS of row `a`'s text for site `s` into *out (compose.c): what
- * the text proves, as facts (D157). NULL, or why the row cannot say (a FIND
- * row whose `tests` is UNSTATED; *out then proves nothing). One function
- * serves mf_define and mf_ask; external so tests/memfn/proven_check.c can ask
- * it of a test-only row. */
-const char *kit_class(const arm *a, const mf_site *s, mf_class *out);
+ * the text proves, as facts (D157), its rows placed by `st`. NULL, or why the
+ * row cannot say (a FIND row whose `tests` is UNSTATED; *out then proves
+ * nothing), or a proof-range refusal (kit_proof_open). One function serves
+ * mf_define and mf_ask; external so tests/memfn/proven_check.c can ask it of
+ * a test-only row. */
+const char *kit_class(const arm *a, const mf_site *s, mf_class *out, const kit_proof_st *st);
 
 #define generic_arm         MF_NS(generic_arm)
 #define ofsskip_arm         MF_NS(ofsskip_arm)
@@ -1193,7 +1231,13 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
  * for THIS plan, not the row's widest), the row itself (E-find's or the
  * floor's: mf_define's arm), and whether that text reads a table of pcrec's
  * (mf_defined's `reads_table`). */
-void wf_plan_class(const struct wf_plan *plan, mf_class *out);
+const char *wf_plan_class(const struct wf_plan *plan, const mf_site *ws, mf_class *out,
+                          const kit_proof_st *st);
+#define wf_stated_offsets MF_NS(wf_stated_offsets)
+/* The distinct offsets window site `s` states over its alternatives: the
+ * longest plan its reply can carry (mf_rows_need's plan_cap); 0 where it
+ * states no window. */
+uint32_t wf_stated_offsets(const mf_site *s);
 const struct arm *wf_plan_row(const struct wf_plan *plan);
 /* The FIND slot's row deciding E-find's stop (T-FIND: fd_find; D-hors
  * included since span_pick 1e), or NULL (the floor). */

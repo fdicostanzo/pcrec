@@ -22,7 +22,8 @@ compiles with -fno-scan-edge for every table it reads.
 """
 import re
 
-CAP = 32  # MF_MAX_SPAN_POS's derivation (PCREC_MAX_REQ_RUN_SCAN, window_contract §4.3)
+CAP = 32  # MF_MAX_SPAN_POS's derivation (PCREC_MAX_REQ_RUN_SCAN, window_contract §4.3); the census's own
+          # cap, frozen with its data: R-45 plan B's MF_WSPAN_POS (and the held raise's 4095) do not move it
 W = frozenset(list(range(48, 58)) + list(range(65, 91)) + list(range(97, 123)) + [95])
 
 

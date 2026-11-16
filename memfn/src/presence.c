@@ -184,7 +184,7 @@ static void stretch_window(const uint32_t *rate, kit_pos_at *at, const void *src
         uint32_t wm = kit_mass(rate, win[0], MF_PRES_WINDOW, KIT_MASS_SUM);
         if (kit_pick_takes(&bw, wm, T_WINDOW, w)) bw = (kit_pick){ w, w, wm };
     }
-    r->ver_lo = (uint8_t)bw.pos;
+    r->ver_lo = (uint16_t)bw.pos;
     r->ver_len = MF_PRES_WINDOW;
 }
 
@@ -205,8 +205,8 @@ static void stretch_exact(const uint32_t *rate, kit_pos_at *at, const void *src,
     unsigned lo = r->scan, hi = (unsigned)r->scan + 1;
     while (lo > 0 && one_member(at(src, lo - 1, buf))) lo--;
     while (hi < n && one_member(at(src, hi, buf))) hi++;
-    r->ver_lo = (uint8_t)lo;
-    r->ver_len = (uint8_t)(hi - lo);
+    r->ver_lo = (uint16_t)lo;
+    r->ver_len = (uint16_t)(hi - lo);
 }
 
 /* THE MODE TABLE, first match on (mode, the run's length): each row's
@@ -238,8 +238,8 @@ static void clip_findable(kit_pos_at *at, const void *src, unsigned n, kit_run_r
     while (hi < n && kit_pos_spelled(at(src, hi, buf))) hi++;
     unsigned vlo = r->ver_lo > lo ? r->ver_lo : lo;
     unsigned vhi = (unsigned)r->ver_lo + r->ver_len < hi ? (unsigned)r->ver_lo + r->ver_len : hi;
-    r->ver_lo = (uint8_t)vlo;
-    r->ver_len = (uint8_t)(vhi - vlo);
+    r->ver_lo = (uint16_t)vlo;
+    r->ver_len = (uint16_t)(vhi - vlo);
 }
 
 kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_opts o, kit_pos_at *at,
@@ -258,8 +258,8 @@ kit_run_reply kit_run_decide(const uint32_t *rate, kit_run_opts o, kit_pos_at *a
     kit_run_reply r = KIT_RUN_NONE;
     if (sc.pos < 0) return r;
     r.has_scan = 1;
-    r.scan = (uint8_t)sc.pos;
-    r.ver_len = (uint8_t)n;
+    r.scan = (uint16_t)sc.pos;
+    r.ver_len = (uint16_t)n;
     if (!after && run_modes[m].stretch) run_modes[m].stretch(rate, at, src, n, &r);
     if (!after && o.clip) clip_findable(at, src, n, &r);
     return r;

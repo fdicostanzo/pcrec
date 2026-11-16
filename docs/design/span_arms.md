@@ -208,7 +208,7 @@ Rulings file entry applied: R1 (the W-T2/W-T3 arithmetic, below).
   `docs/design/ctx_span.md` §3.2) is designed and not built ([DD-11.5] part 1, P1a/P1b). `grep -n
   'nctx\|MkCtx' src/facts/facts.h` finds nothing.
 - **What the window site carries today (D172).** Span starts in `[-MF_MAX_BACK, MF_WREACH)` =
-  `[-8, 64)` (`memfn/include/memfn.h:235`, `:586-591`), checked at `src/gen/memfn_sites.c:587-592`.
+  `[-8, 64)` *(`[-8, 4096)` since R-45 plan B: MF_WREACH 4096, a refusal bound only)* (`memfn/include/memfn.h:235`, `:586-591`), checked at `src/gen/memfn_sites.c:587-592`.
   pcrec states two negative starts, both `-1`: MLINE's predecessor stop (`src/gen/emit_dfa.c:8393`)
   and the cover site's context-before side (`src/gen/known.c:465`, `MkEnd.ctx_before`,
   `src/gen/known.h:25-27` with `absent_*`). The run span R never starts below 0 (`walk_proves`

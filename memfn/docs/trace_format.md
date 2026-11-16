@@ -200,6 +200,23 @@ selections the gate changed, plus refused uses. `chosen=-` lines are the
 define/run refusals; `chosen=none` lines are not (an optional slot that
 chose nothing).
 
+## The ask (mf_ask)
+
+Every `mf_ask` (the define-time query; the MF_TRACE define's own re-ask,
+r17b_prime.md §4.5 rule 2, included) writes one line after it answers:
+
+    MFTRACE ASK art=A rc=R exists=E libc_free=L includes=I proof_n=N
+
+- `rc`: 0, or -1 (a refusal: every other field then reads the zeroed
+  class).
+- `exists`, `libc_free`, `includes`: the class's members of those names.
+- `proof_n` (review 2026-11-16 r27 SEAM-5): the count of proof rows the
+  class carries (MF_CLASS_V 11's counted `proof`; 0 on a class that proves
+  nothing), the per-reply fact R-45 plan B turns on.
+
+A presence ask (`out->npres` > 0) also records its links as `MFTRACE FD`
+lines with `phase=ask`.
+
 ## Reach (at exit)
 
 At process exit, one line per row of each table, in table order, one

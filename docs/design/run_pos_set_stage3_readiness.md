@@ -58,7 +58,8 @@ The rulings that moved since rev 3 was written, and which this memo applies:
 ### 2.1 pcrec side: no new field; every reader of the run's positions
 
 The fields that carry a wide position's byte set ALREADY EXIST at K38-2:
-`mf_wspan.set[MF_WSPAN_POS][32]` (`MF_WSPAN_POS` = `MF_MAX_SPAN_POS`, the
+`mf_wspan.set[MF_WSPAN_POS][32]` *(since MF_SITE_ABI 30, R-45 plan B: a
+pointer to host storage of `len` rows)* (`MF_WSPAN_POS` = `MF_MAX_SPAN_POS`, the
 stored run's bound `PCREC_MAX_REQ_RUN_SCAN` 32, asserted at
 `lane/memfn-k382:src/gen/emit_dfa.c:1403`), filled per position by a
 `pcrec_memfn_wpos_*` helper. Size limits: 32 positions per run (unchanged);

@@ -202,7 +202,7 @@ for the new fields (named here, the kit's to write at Z1).
 | the `\b` rewrite | READ off the route's anchored machine (seed table, emitted entry constant, class-indexed accept). For stage 1 it is DFA-only. At U1b a facts-layer derivation becomes the context fact and this reading its control `[r3 fam-Q3]` (§3) |
 | the fact producer | split `[r3 fam-M2]`: `span_facts`' first slice gives `S_d`, `exact_len` and the hull, computed by EXTENDING the k-set walk (`pcrec_kset_walk`, `src/facts/kset.c`; priority-free) rather than by a new `src/facts/spans.c` `[r4 Q-r4-3]`. A reading of A gives the end at `k` and the context sets (§5.2) *(superseded by cover_cap.md rev 4, 2026-11-15)* |
 | facts pcrec states (R-26) | on a BOUNDED span 0: `prefix_stated`, `exact_len` (over the SENT sets `[r3 fam-B1]`), `consumable_len`. In the new carrier `mf_site.ctx[]` `[r3 con-B1]`: CONTEXT spans with `absent` and `consumable`. On the site: `site_kind` `MF_SK_REPORT` with every position REQUIRED `[r3 con-M3]`, and `read_floor` `[r3 con-M4]`. Every enum has an UNSTATED zero, refused where read (§4) |
-| what the kit returns (R-26) | `mf_class.proven[d]` per origin offset; `proven0`/`proven_prev` COPIED from it (§4.2) |
+| what the kit returns (R-26) | `mf_class.proven[d]` per origin offset; `proven0`/`proven_prev` COPIED from it (§4.2) *(since MF_CLASS_V 11, R-45 plan B: the counted `mf_class.proof`, `proof_n` rows; memfn.h)* |
 | the deny | `-fno-kit-proof`, a FACT deny that empties `MkKnown` (one flag bit, 57; 6 left) `[r3 fam-M6, con-bits]`; `[s3]` NOT BUILT: `--memfn=no-window-search` declines C13 (§R2.3) |
 | captures | OUT of U1: [CAPS-KNOWN] (§8.3, §8.4 Q1, RULED) |
 | events | Z0 R-25 → Z1 R-26's layout at zero movers → Zk the kit's REPORT row UNROUTED → X0 the libpcre2 oracle on the reading → Z2 pcrec's producer, row and emitter, routed only by the harness lever → `measure` → **B1** (after R17-b′ B4), the one byte-moving event (§7) |
@@ -781,6 +781,11 @@ predicates, so pcrec states no stacking rule (an intersection at a shared offset
 #define MF_MAX_FWD  (MF_MAX_SPAN_POS + MF_MAX_AHEAD)
 uint8_t proven[MF_MAX_FWD - MF_PROOF_LO][32];
 ```
+
+*(superseded by R-45 plan B, MF_CLASS_V 11 / MF_SITE_ABI 30: `proven[]` is retired for a COUNTED list,
+`const uint8_t (*proof)[32]` with `proof_n` rows from MF_PROOF_LO, all ones outside them, in the
+caller's `mf_rows` on `mf_ask` and the art's arena on a define; `MF_MAX_FWD` is `MF_WREACH` (4096), a
+ceiling, not an array bound. The meaning below is unchanged; the sizes are not. memfn.h `mf_class`.)*
 
 - **Bounds.** `MF_MAX_SPAN_POS` is a SHAPE bound DERIVED from `MF_MAX_TERM` (`#define
   MF_MAX_SPAN_POS MF_MAX_TERM`), and pcrec asserts `PCREC_MAX_REQ_RUN_SCAN ≤

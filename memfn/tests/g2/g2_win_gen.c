@@ -107,6 +107,51 @@ static mf_sink mk_sink(buf *b)
 static void *ar_alloc(void *u, size_t n) { (void)u; return calloc(1, n ? n : 1); }
 static mf_arena g_arena = { NULL, ar_alloc };
 
+/* The reply/class lists (MF_SITE_ABI 30): G2's OWN storage, one slot per
+ * ask kind so a reply's lists outlive the next ask, each sized by the kit's
+ * own minimum (mf_rows_need). */
+enum { RW_NONE, RW_FRAMED, RW_CTL, RW_ASK, RW_N };
+static mf_rows g_rw_slot[RW_N];
+static mf_rows *rows_for(const mf_site *s, int slot)
+{
+    mf_rows *r = &g_rw_slot[slot];
+    free(r->proof); free(r->plan); free(r->plan_term); free(r->plan_test);
+    memset(r, 0, sizeof *r);
+    uint32_t pc = 0, nc = 0;
+    if (mf_rows_need(s, &pc, &nc)) { pc = 0; nc = MF_WPLAN_MAX; }
+    r->proof_cap = pc;
+    r->plan_cap = nc;
+    r->proof = calloc(pc + 1, sizeof *r->proof);
+    r->plan = calloc(nc + 1, sizeof *r->plan);
+    r->plan_term = calloc(nc + 1, sizeof *r->plan_term);
+    r->plan_test = calloc(nc + 1, sizeof *r->plan_test);
+    if (!r->proof || !r->plan || !r->plan_term || !r->plan_test) { perror("calloc"); exit(2); }
+    return r;
+}
+/* Two replies' members below offset `n` agree: by-value bytes with the list
+ * pointers set aside, and each counted list over nplan (r45_reply.md §5 (a)). */
+static int wreply_same_n(const mf_wreply *a, const mf_wreply *b, size_t n)
+{
+    mf_wreply x = *a, y = *b;
+    x.plan = y.plan = NULL; x.plan_term = y.plan_term = NULL; x.plan_test = y.plan_test = NULL;
+    if (memcmp(&x, &y, n) || a->nplan != b->nplan) return 0;
+    for (int i = 0; i < a->nplan; i++)
+        if (a->plan[i] != b->plan[i] || a->plan_term[i] != b->plan_term[i]) return 0;
+    if (n > offsetof(mf_wreply, plan_test))
+        for (int i = 0; i < a->nplan; i++)
+            if (!a->plan_test || !b->plan_test || a->plan_test[i] != b->plan_test[i]) return 0;
+    return 1;
+}
+/* Two classes agree: by-value bytes with the proof pointer aside, and the
+ * proof rows over proof_n. */
+static int class_same(const mf_class *a, const mf_class *b)
+{
+    mf_class x = *a, y = *b;
+    x.proof = y.proof = NULL;
+    if (memcmp(&x, &y, sizeof x)) return 0;
+    return !a->proof_n || !memcmp(a->proof, b->proof, a->proof_n * sizeof *a->proof);
+}
+
 /* Every art G2 begins states its target (unit U2): the portable one unless a
  * caller wants SIMD (g2_gen's odd batches state the host's own): an unstated
  * art is refused at its first define. */
@@ -609,14 +654,14 @@ static void to_kit(const gfacts *x, mf_site *s, mf_walt *alts, mf_wspan (*spans)
             mf_wspan *w = &spans[ai][i];
             memset(w, 0, sizeof *w);
             w->start = g->start;
-            w->len = (uint8_t)g->len;
+            w->len = (uint16_t)g->len;
             w->verify = g->verify == G2W_YES ? MF_VERIFY_YES : MF_VERIFY_NO;
             w->core = MF_CORE_STATED;
-            w->core_lo = (uint8_t)g->core_lo;
-            w->core_len = (uint8_t)g->core_len;
+            w->core_lo = (uint16_t)g->core_lo;
+            w->core_len = (uint16_t)g->core_len;
             if (!w->core_len) w->core_lo = 0;
-            memcpy(w->set, g->set, sizeof g->set);
-            memcpy(w->table_ref, g->table, sizeof g->table);
+            w->set = (const uint8_t (*)[32])g->set;     /* G2's own facts: the lists */
+            w->table_ref = g->table;
         }
         alts[ai].entry = a->entry == G2W_E_PARKED ? MF_ENTRY_PARKED
                        : a->entry == G2W_E_RESEED ? MF_ENTRY_RESEED : MF_ENTRY_NONE;
@@ -823,8 +868,7 @@ static void frame_classes(int id, const g2w_site *x, const g2w_dec *d, const mf_
         if (w->plan_test[i] == MF_WTEST_TABLE) { tn_table++; if (w->plan[i] > maxtab) maxtab = w->plan[i]; }
         else tn_own++;
     }
-    for (int i = w->nplan; i < MF_WPLAN_MAX; i++)
-        if (w->plan_test[i]) { fail(id, "table_name", "plan_test past nplan"); break; }
+    /* "plan_test past nplan" retired: a counted list has no past (MF_SITE_ABI 30) */
     if (!w->has_stop) {
         if (w->stop_test) fail(id, "table_name", "stop_test without a stop");
         return;
@@ -868,17 +912,22 @@ static int ctl_render(int kind, int form, int handoff, const char *opts, int k, 
                       const char *members, int dense, const char **form_id, buf *text)
 {
     static mf_wspan sp;
+    static uint8_t sp_set[G2W_MAXPOS][32];
+    static uint32_t sp_tab[G2W_MAXPOS];
     static mf_walt al;
     static uint32_t rate[256];
     memset(&sp, 0, sizeof sp);
+    memset(sp_set, 0, sizeof sp_set);
+    sp.set = (const uint8_t (*)[32])sp_set;
+    sp.table_ref = sp_tab;
     sp.start = 0;
-    sp.len = (uint8_t)k;
+    sp.len = (uint16_t)k;
     sp.verify = MF_VERIFY_YES;
     sp.core = MF_CORE_STATED;
     sp.core_lo = 0;
-    sp.core_len = (uint8_t)kc;
+    sp.core_len = (uint16_t)kc;
     for (int j = 0; j < k; j++)
-        for (const char *m = members; *m; m++) set_add(sp.set[j], (unsigned char)*m);
+        for (const char *m = members; *m; m++) set_add(sp_set[j], (unsigned char)*m);
     memset(&al, 0, sizeof al);
     al.entry = MF_ENTRY_NONE;
     al.nspan = 1;
@@ -923,7 +972,7 @@ static int ctl_render(int kind, int form, int handoff, const char *opts, int k, 
     mf_class c;
     int rc = mf_emit(art, &s, &h, &sb, &sf, &res);
     mf_art *aq = g2_art_begin(&g_arena, "g2c", 0, NULL, dense ? &an : NULL);
-    int qc = mf_ask(aq, &s, &h, &c);
+    int qc = mf_ask(aq, &s, &h, &c, rows_for(&s, RW_ASK));
     if (b2.p) bputs(text, b2.p);
     free(b2.p);
     if (!rc != !qc) return -2;          /* the query and the define disagree */
@@ -1012,7 +1061,7 @@ int main(int argc, char **argv)
         s.empty = MF_EMPTY_MISS; s.body = MF_BODY_ONESHOT;
         mf_art *art = g2_art_begin(&g_arena, "g2w", 0, NULL, NULL);
         mf_wreply r;
-        if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, &r))
+        if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, &r, rows_for(&s, RW_CTL)))
             fail(-1, "control", "mf_wdecide refused on a plain art");
         else refused_ok++;
         buf b1 = { 0 }, b2 = { 0 };
@@ -1073,7 +1122,7 @@ int main(int argc, char **argv)
             t.op = MF_OP_FIND;
             mf_art *ar = g2_art_begin(&g_arena, "g2w", 0, NULL, NULL);
             mf_wreply tr;
-            if (!mf_wdecide(ar, &t, NULL, MF_WCALL_NONE, &tr))
+            if (!mf_wdecide(ar, &t, NULL, MF_WCALL_NONE, &tr, rows_for(&t, RW_CTL)))
                 fail(id, "two runs", "an alternative stating two R spans or two whole-compared verify-YES spans was decided");
             else { refused_ok++; two_run_refused++; }
             two_runs(&gf, 1);
@@ -1137,7 +1186,7 @@ int main(int argc, char **argv)
                                    x.rate_kind ? &an : NULL);
         if (art && x.run_left && mf_lever(art, "run-tie-left")) { fail(id, "mf_lever", mf_art_error(art)); continue; }
         mf_wreply r;
-        if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, &r)) { fail(id, "mf_wdecide refused", art ? mf_art_error(art) : NULL); continue; }
+        if (mf_wdecide(art, &s, NULL, MF_WCALL_NONE, &r, rows_for(&s, RW_NONE))) { fail(id, "mf_wdecide refused", art ? mf_art_error(art) : NULL); continue; }
         /* the reply, field by field */
         x.reply.alt = r.alt; x.reply.reseed = r.reseed; x.reply.has_stop = r.has_stop;
         x.reply.stop = r.stop; memcpy(x.reply.stop_set, r.stop_set, 32);
@@ -1268,11 +1317,11 @@ int main(int argc, char **argv)
            rendered in (EMIT: mf_emit's walk), before the render; its decision
            group is the NONE ask's (§2.3, R27) */
         mf_wreply fw;
-        if (mf_wdecide(art, &s, &h, MF_WCALL_EMIT, &fw)) {
+        if (mf_wdecide(art, &s, &h, MF_WCALL_EMIT, &fw, rows_for(&s, RW_FRAMED))) {
             fail(id, "the framed ask refused", mf_art_error(art));
             continue;
         }
-        if (memcmp(&r, &fw, offsetof(mf_wreply, framed)))
+        if (!wreply_same_n(&r, &fw, offsetof(mf_wreply, framed)))
             fail(id, "framed ask", "the decision group differs from the NONE ask's");
         buf body = { 0 }, file = { 0 };
         mf_sink sb = mk_sink(&body), sf = mk_sink(&file);
@@ -1355,7 +1404,7 @@ int main(int argc, char **argv)
             mf_result dd;
             if (mf_define(ad, &s, &h, &s3, &hd) || mf_defined(ad, hd, &dd)) {
                 fail(id, "mf_define", mf_art_error(ad));
-            } else if (mf_ask(aq, &s, &h, &asked) || memcmp(&asked, &dd.cls, sizeof asked)) {
+            } else if (mf_ask(aq, &s, &h, &asked, rows_for(&s, RW_ASK)) || !class_same(&asked, &dd.cls)) {
                 fail(id, "mf_ask", "the query's class differs from the define's");
             } else {
                 asked_ok++;
@@ -1432,8 +1481,9 @@ int main(int argc, char **argv)
             }
             bputs(&defs, "};\n");
         }
-        bprintf(&defs, "static const uint8_t g2w_pv%d[%d][32] = {", id, G2W_NPROOF);
-        for (int k = 0; k < G2W_NPROOF; k++) { if (k) bputs(&defs, ","); emit_set(&defs, def.cls.proven[k]); }
+        bprintf(&defs, "static const uint8_t g2w_pv%d[%u][32] = {", id, def.cls.proof_n ? def.cls.proof_n : 1u);
+        for (uint32_t k = 0; k < def.cls.proof_n; k++) { if (k) bputs(&defs, ","); emit_set(&defs, def.cls.proof[k]); }
+        if (!def.cls.proof_n) bputs(&defs, "{0}");
         bputs(&defs, "};\n");
         if (x.rate_kind) {
             bprintf(&defs, "static const uint32_t g2w_r%d[256] = {", id);
@@ -1462,7 +1512,7 @@ int main(int argc, char **argv)
                 x.reply.stream, x.reply.fused);
         for (int i = 0; i < r.nplan; i++) bprintf(&data, "%s%d", i ? "," : "", x.reply.plan_test[i]);
         if (!r.nplan) bputs(&data, "0");
-        bprintf(&data, "}, %d }, g2w_pv%d, \"%s\", \"%s\", %d, %d },\n", x.reply.stop_test, id,
+        bprintf(&data, "}, %d }, %u, g2w_pv%d, \"%s\", \"%s\", %d, %d },\n", x.reply.stop_test, def.cls.proof_n, id,
                 res.form_id, res.row, x.pair, x.run_left);
         bprintf(&table, "    g2w_call%d,\n", id);
         free(body.p);

@@ -51,6 +51,19 @@ extern const DelegRow pcrec_deleg_sites[DELEG_NSITES];
  * size ladder's re-emission starts clean), its CPU target stated at once
  * (`mf_art_target`, before any define or emit). */
 mf_art *pcrec_memfn_art(Ctx *cx);
+/* Storage for one ask's counted lists (MF_SITE_ABI 30, memfn.h `mf_rows`),
+ * from `cx`'s arena: the minimum `mf_rows_need` names for `s`, or, at
+ * PCREC_ROWS_PROOF_CEILING, the whole proof range (the cover ask: every kit
+ * over-read then lands where the proof comparison reads it, r45_reply.md
+ * §1). Only the `part` the ask reads is allocated (mf_ask reads the proof,
+ * mf_wdecide the plan lists; review r27 SEAM-2); the other's cap is 0. Each
+ * ask takes its own: two asks given one storage overwrite each other. */
+typedef enum {
+    PCREC_ROWS_PROOF,                   /* mf_ask: the proof rows, at the minimum */
+    PCREC_ROWS_PROOF_CEILING,           /* mf_ask: the whole proof range          */
+    PCREC_ROWS_PLAN,                    /* mf_wdecide: plan, plan_term, plan_test */
+} PcrecRowsPart;
+mf_rows *pcrec_memfn_rows(Ctx *cx, const mf_site *s, PcrecRowsPart part);
 
 /* [XARCH-DEV] U3 the compile's one CPU target as `pcrec_memfn_target_derive`
  * put it on the Ctx (src/gen/memfn_targets.c): the kit's row, and its
@@ -171,8 +184,10 @@ mf_walt *pcrec_memfn_walts(Ctx *cx, int n);
 mf_wspan *pcrec_memfn_walt_spans(Ctx *cx, mf_walt *a, mf_entry entry, int n);
 /* Fills span `w`: `len` positions from `start`, verify `v`, its core every
  * position (narrow it with pcrec_memfn_wspan_core); every set empty until a
- * position setter below fills it. */
-void pcrec_memfn_wspan(mf_wspan *w, int start, int len, mf_verify v);
+ * position setter below fills it. The span's per-position lists (`len`
+ * sets and table offers) are allocated here from `cx`'s arena: the host
+ * owns them (MF_SITE_ABI 30). */
+void pcrec_memfn_wspan(Ctx *cx, mf_wspan *w, int start, int len, mf_verify v);
 /* Narrows span `w`'s core to positions [lo, lo + len) (len 0: the empty
  * core, the absence-satisfies case). */
 void pcrec_memfn_wspan_core(mf_wspan *w, int lo, int len);

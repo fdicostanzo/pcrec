@@ -1350,7 +1350,10 @@ kit keeps the freedom to skip a dense span.
     mask; the mask's information is which OPTIONAL positions also hold.
   - The positions per span are bounded by a shape bound `MF_MAX_SPAN_POS`,
     derived from `PCREC_MAX_REQ_RUN_SCAN` (32) and asserted where pcrec
-    builds a span, on `MF_RANK_MAX`'s precedent.
+    builds a span, on `MF_RANK_MAX`'s precedent. *(R-45 plan B, MF_SITE_ABI 30:
+    a span's sets are HOST storage of exactly `len` rows, so the bound is the
+    kit's refusal bound `MF_WSPAN_POS` only; the held raise lifts it to 4095
+    and retires `MF_MAX_SPAN_POS`)*
 - **Layer invariance** (the floor rule's condition). The proof is the kit's
   statement for the SITE REQUEST (the site fields and its analysis object). It
   is the SAME under `-fno-memfn-simd`, `-fmemfn-simd` at every level, and every
