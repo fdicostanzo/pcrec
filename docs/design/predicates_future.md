@@ -181,3 +181,12 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   authors get the same tool.
 - TRIGGER: a second library-macro diagnostic wanted beside the mark-in-none one, or the first predicate build go
   (the diagnostics list is then designed as a whole, item 10's explainer with it).
+- THE OWNER'S FOLLOW-UP, same hour: "It might be a property of the sets. <200 is a fixed set of strings but !<200
+  is an infinite set". The manager's note: this answers "a way to describe it" better than facts about an
+  argument's SPELLING (carries a mark): a constant set is a compile-time value with decidable properties (empty,
+  one member, finite, the complement of a finite set), and a property of the set follows the spelling principle
+  where "the argument is written with a `!`" does not. Two cautions for whoever designs it: (1) the draft lets
+  numerals be signed, so whether `<200` is finite needs checking against its numeral rule; (2) the property that
+  matters for a mark is relative to the label's value set: the set covers ALL of it (the mark is then always
+  satisfied on absence: vacuous), NONE of it (already the empty-intersection error) or a proper part (a real test);
+  finite vs infinite alone does not catch the `6,` flip (its set, `m < h`, is finite).
