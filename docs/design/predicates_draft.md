@@ -2153,49 +2153,61 @@ Inside a LARGER program, literals start from the STRICT PURE SUBSET (refuse
 defined; unbounded backreferences need `vm`).
 
 STRING SETS. A pattern used as a SET denotes the strings it matches ENTIRELY (keys starting with S are `/S.*/`).
-SET POSITIONS are: an `&` operand (either side), a label condition, a filter body (incl. a modified filter's
-argument, §2.7, and a filter a macro uses as a filter), a hole's set, and a compile-time set (an `enumerate`
-argument, an `@assert` argument, a name set for `import`/`@export`/`@warn`, a computed label's value). The first three
-are FILTER ROLES (§0.3): each is applied to a SPAN and opens a scoped match over it. A HOLE'S SET is a set position
-(the edge-assertion error applies to it, L8) but NOT a filter role: it is a part of the rx it sits in, opens no scoped
-match, and its anchors read the enclosing one; an argument a macro's BODY puts in a hole, as `contains`,
-`startsWith`, `endsWith`, `anchored` and `occurrences` do, is such a part (§8). (Rev 12 called all four "filters";
-review r14 CENSUS-5 / F2: the word is reserved for the first three.)
+SET POSITIONS are: a side of `&` (either side), a `label:` condition, a compile-time set (an `enumerate` argument,
+an `@assert` argument, a name set for `import`/`@export`/`@warn`), and a hole's set. The first three are FILTER ROLES
+(§0.3): each matches its stretch WHOLE; a side of `&` and a condition open a scoped match over a stretch of the
+subject, a compile-time set over each whole string. A computed label's value is a VALUE, not a pattern (§4.4). A
+HOLE'S SET is a set position (the edge-assertion error applies to it, L8) but NOT a filter role: it is a part of the
+rx it sits in, opens no scoped match, and its anchors read the enclosing one. A macro's PARAMETER is in whichever of
+these its BODY puts it, after expansion (rev 14, RULED 2026-11-15 20:45 on main: the role, never the name): the
+argument of `contains`, `startsWith`, `endsWith`, `anchored` and `occurrences` lands in a hole of the body; the
+argument of `padded` or `quoted` lands in a `label:` condition of the body, a filter role (§2.7 BODIES OF THE
+PROVIDED TRANSFORMS). (Rev 12 called all four "filters"; review r14 CENSUS-5 / F2: the word is reserved for the
+filter roles. Rev 13 listed "a filter body (incl. a modified filter's argument)" as a role of its own; rev 14 drops
+the clause: the body says where the argument lands.)
 
-THE ONE ANCHORING RULE (stated once; rev 12, completed in rev 13; the owner's ruling CF:1001-1020, the manager's
-advice he agreed to, CF:1006: "Ok I agree", and CF:1048-1062 on main (`anchored`'s exact ends; both `&` operands
-filter roles, the warning); it RESTATES CF:761 and CF:991-996 without changing their answers except `$`, below). The
-owner's request: "We need consistent rules around when rx is anchored and to what. I don't want to have a bunch of
-"primitive" functions have special cases concerning that" (CF:1002-1004).
-- A FILTER ROLE MUST MATCH ITS WHOLE SPAN: BOTH operands of `&` (RULED, CF:1054-1062 on main, rev 13: "&: both sides
-  filter and warn if anchor"; the operator stays symmetric, L39; rev 12's "the filter side of `&`" presumed an
-  asymmetry `rx & rx` does not have, review r14 F1), a `label:` condition, and so a modified filter's argument and any
-  filter a macro uses as one: a set of WHOLE strings (`m & /^err$/` = `m & /err/`; the owner's reason for anchoring
-  filters: `/\d\d/ & between(1, 12)` unanchored "would match "31"", CF:990-991).
-- WHAT OPENS A SCOPED MATCH (the general form, rev 13, review r14 F2): exactly two things, the PROGRAM (its subject,
-  searched) and every FILTER ROLE wherever it stands (its span, matched whole), in a final program, under
-  `anchored`, inside a hole, inside another filter. A HOLE NEVER OPENS ONE. Every anchor reads the INNERMOST scoped
-  match around it. Checked against every position an `&` can stand: THE AMPERSAND RULE TESTED BY POSITION, below.
-- EVERYWHERE ELSE an rx is UNANCHORED, AS IN PCRE: a program's FINAL pattern is searched in the subject, and so is a
-  `records` item rx in its file text (§7); an rx in a HOLE, outside any filter role written inside the hole, is part
-  of the rx around it and has no anchoring of its own.
-- `^` and `$` (and `\A`, `\z`, `\Z`, and `(?m)`'s line ends) are the ends of the SCOPED MATCH (§0.3): in a filter role
-  its span, in a final pattern the subject. This is PLAIN PCRE WITH THE SPAN AS THE SUBJECT, no extra rule
-  (CF:1013-1014). So `$` (and `\Z`) is PCRE's: the span's end or just before a final newline of the span; the exact
-  end is `\z`.
-- NO PRIMITIVE CARRIES AN ANCHORING SPECIAL CASE (CF:1018). The library's gap-bodied transforms are plain bodies (§8):
-  `contains`, `occurrences`, `startsWith`, `endsWith` put gaps around the argument; `anchored(rx) := /\A(?:${rx})\z/`
-  puts the scoped match's EXACT ends around it (RULED, CF:1048-1053 on main; identity in filter position; its use is
-  a final pattern, §0.1 L68, L69).
-- REJECTED (CF:1019-1020): an explicit anchor that SWITCHES OFF the implicit one (under it `/^5/` would accept more
-  than `/5/`). An explicit anchor in a filter never widens it (L69).
-- AN EXPLICIT ANCHOR IN AN `&` OPERAND DRAWS A WARNING (RULED, CF:1054-1062 on main; the name and text are this
-  document's, LEAN): `anchor.operand`, below.
-- A COMPILE-TIME SET (an `enumerate` or `@assert` argument, a name set) is read as a filter over whole strings: its
+THE ONE WHOLE-MATCH RULE (stated once; rev 12, completed in rev 13, re-worded in rev 14; the owner's ruling
+CF:1001-1020, the manager's advice he agreed to, CF:1006: "Ok I agree", CF:1048-1062 on main (`anchored`'s exact
+ends; both `&` operands filter roles, the warning), and the three 2026-11-15 entries after rev 13 on main (the
+wording, "That's a good clarification"; no `anchored`-specific error in a hole; one warning keyed off the ROLE); it
+RESTATES CF:761 and CF:991-996 without changing their answers except `$`, below). The owner's request: "We need
+consistent rules around when rx is anchored and to what. I don't want to have a bunch of "primitive" functions have
+special cases concerning that" (CF:1002-1004). WORDS (rev 14, RULED, "That's a good clarification"): a filter role
+"matches its stretch whole"; the two sides of `&` match THE SAME STRETCH WHOLE, tied to each other (where that
+stretch sits is decided by what surrounds the `&`); the word "anchored" is kept for the macro `anchored(...)` (§8)
+and for the real assertions `\A`, `\z`, `\Z`, `^`, `$`. The rule, in three sentences:
+- A FILTER ROLE MATCHES ITS STRETCH WHOLE. A filter role is decided by the ROLE an rx stands in AFTER MACROS ARE
+  EXPANDED, never by a macro's name (RULED, 2026-11-15 20:45 on main: "padded is a simple macro so the warning
+  shouldn't key off of the name"): BOTH sides of `&` (RULED, CF:1054-1062 on main: "&: both sides filter and warn if
+  anchor"; the operator stays symmetric, L39), a `label:` condition, and a compile-time set; an rx passed as a
+  macro's PARAMETER is in a filter role exactly when the macro's BODY puts it in one (beside `&`, after `label:`),
+  and in a hole when the body splices it into a hole (§2.7 BODIES OF THE PROVIDED TRANSFORMS). Its set is a set of
+  WHOLE strings (`m & /^err$/` = `m & /err/`; the owner's reason: `/\d\d/ & between(1, 12)` not matched whole "would
+  match "31"", CF:990-991).
+- EVERYWHERE ELSE AN RX IS SEARCHED OR SPLICED AS IN PCRE: a program's FINAL pattern is searched in the subject, and
+  so is a `records` item rx in its file text (§7); an rx in a HOLE, outside any filter role written inside the hole,
+  is part of the rx around it and has no whole-match requirement of its own.
+- AN EXPLICIT ANCHOR READS THE INNERMOST SCOPED MATCH. `^` and `$` (and `\A`, `\z`, `\Z`, and `(?m)`'s line ends)
+  are the ends of the SCOPED MATCH (§0.3): exactly two things OPEN one (rev 13, review r14 F2), the PROGRAM (its
+  subject) and every FILTER ROLE wherever it stands (its stretch), in a final program, under `anchored`, inside a
+  hole, inside another filter role; A HOLE NEVER OPENS ONE. This is PLAIN PCRE WITH THE STRETCH AS THE SUBJECT, no
+  extra rule (CF:1013-1014). So `$` (and `\Z`) is PCRE's: the stretch's end or just before a final newline of it; the
+  exact end is `\z`. Checked against every position an `&` can stand: THE AMPERSAND RULE TESTED BY POSITION, below.
+Consequences, each a sentence of the rule, not a further rule:
+- NO PRIMITIVE CARRIES A WHOLE-MATCH SPECIAL CASE (CF:1018). The library's gap-bodied transforms are plain bodies (§8):
+  `contains`, `occurrences`, `startsWith`, `endsWith` put gaps around a hole holding the argument; `anchored(rx) :=
+  /\A(?:${rx})\z/` puts the scoped match's EXACT ends around it (RULED, CF:1048-1053 on main), a PLAIN MACRO (rev 14,
+  RULED: no `anchored`-specific error anywhere, §8).
+- REJECTED (CF:1019-1020): an explicit anchor that SWITCHES OFF the whole-match requirement (under it `/^5/` would
+  accept more than `/5/`). An explicit anchor in a filter role never widens it (L69).
+- AN EXPLICIT ANCHOR IN A FILTER ROLE DRAWS ONE WARNING, `anchor.whole` (RULED that it exists, CF:1054-1062 on main;
+  RULED that it covers every place a pattern must match its stretch whole and keys off the role, 2026-11-15 20:44 (b)
+  and 20:45 on main; its name and text are this document's, LEAN): below.
+- A COMPILE-TIME SET (an `enumerate` or `@assert` argument, a name set) is a filter role over whole strings: its
   `^`/`$` are the string's own ends (this document's reading of the one rule, LEAN; rev 11 called it an extension).
 
-What follows, every answer as rev 11 gave it except `$`. Because a filter role matches its whole span, a `^` or `$` written
-in a filter ADDS NOTHING: `/\w+/ & /^foo/` = `/\w+/ & /foo/`, the one word `foo`, NOT the words that start with
+What follows, every answer as rev 11 gave it except `$`. Because a filter role matches its stretch whole, a `^` or `$` written
+at the edge of a filter role ADDS NOTHING: `/\w+/ & /^foo/` = `/\w+/ & /foo/`, the one word `foo`, NOT the words that start with
 `foo` (that is `/\w+/ & startsWith("foo")` = `/\w+/ & contains(/^foo/)`; §0.1 L41); `P & (x: /^S\w*/)` makes x
 ENTIRELY `S\w*` (L7); `alts & !/^#.*/` drops the entries that are entirely `#` and non-line-break characters (L11).
 "Starts with" is a gap after the argument: `startsWith("foo")`, or `contains(/^foo/)`, where only an empty lead gap
@@ -2217,9 +2229,10 @@ the hole takes: rev 13, review r14 F2): an rx in a hole of a filter's body (the 
 `occurrences`, `startsWith`, `endsWith`, a user macro's hole) is matched as part of that body, against the span, so its
 `^`/`$` are the span's ends, as PCRE gives them. So `contains(/^err/)` = `startsWith("err")` although `contains`'s body
 (`occurrences`'s) puts the argument in a hole inside its loop, after a lazy gap, and `occurrences(/^err/)` has at most one hit,
-at the span's start (§2.6, §0.1 L16, L17). A modifier's argument is different only in WHAT it filters: it is a filter
-of its own over the span AS THE MODIFIER READS IT, so it matches that whole reading (`padded(/^5/)` = `padded("5")`,
-§0.1 L13). In a FINAL pattern a hole's `^`/`$` are the subject's (or a line's) ends, as in the pasted text. Rev 6
+at the span's start (§2.6, §0.1 L16, L17). A modifier's argument is NOT a separate case (rev 14, RULED 2026-11-15
+20:45 on main): `padded`'s body puts its argument in a `label:` condition on the digits after the leading zeros, a
+filter role, so it matches that stretch whole (`padded(/^5/)` = `padded("5")`, §0.1 L13); a user macro with the same
+body behaves the same (§2.7 BODIES OF THE PROVIDED TRANSFORMS). In a FINAL pattern a hole's `^`/`$` are the subject's (or a line's) ends, as in the pasted text. Rev 6
 read `^` in a hole as the HOLE's own start, which made `contains(/^err/)` accept `xerr` while §0.1 L17 said it was the
 same as a search for `/^err/` (review r8 SIM-1).
 
