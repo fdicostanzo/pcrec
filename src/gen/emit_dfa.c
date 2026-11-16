@@ -1472,7 +1472,7 @@ static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
         mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
         pcrec_memfn_wspan(cx, sp, 0, run->whole_len, MF_VERIFY_NO);
         for (int j = 0; j < run->whole_len; j++)
-            pcrec_memfn_wpos_bits(sp, j, run->pos[j]);
+            pcrec_memfn_wpos_bits(cx, sp, j, run->pos[j]);
         pcrec_memfn_part_window_stated(cx, &p[k], a, 1, MF_WFLOOR_SUBJECT);
         k++;    /* nterm 0: the run states no term */
     }
@@ -6922,21 +6922,21 @@ static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
     mf_walt *a = pcrec_memfn_walts(cx, n);
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, &a[0], MF_ENTRY_PARKED, 1 + parked_r);
     pcrec_memfn_wspan(cx, &sp[0], 0, z, MF_VERIFY_YES);
-    pcrec_memfn_wpos_table(&sp[0], 0, parked, offer);
-    if (bounded) pcrec_memfn_wpos_any(&sp[0], 1);
+    pcrec_memfn_wpos_table(cx, &sp[0], 0, parked, offer);
+    if (bounded) pcrec_memfn_wpos_any(cx, &sp[0], 1);
     mf_wspan *rsp[2] = { parked_r ? &sp[1] : NULL, NULL };
     if (reseed) {
         int nw = wk->nwalk - 1;
         sp = pcrec_memfn_walt_spans(cx, &a[1], MF_ENTRY_RESEED, 1 + nw + (r != NULL));
         pcrec_memfn_wspan(cx, &sp[0], 0, z, MF_VERIFY_YES);
-        pcrec_memfn_wpos_table(&sp[0], 0, wk->k[0].set,
-                               wk->k[0].count > 1 ? WIN_OFFER_OFS + 0u : 0u);
-        if (bounded) pcrec_memfn_wpos_any(&sp[0], 1);
+        pcrec_memfn_wpos_table(cx, &sp[0], 0, wk->k[0].set,
+                                   wk->k[0].count > 1 ? WIN_OFFER_OFS + 0u : 0u);
+        if (bounded) pcrec_memfn_wpos_any(cx, &sp[0], 1);
         for (int j = 1; j < wk->nwalk; j++) {
             const PrefixK *k = &wk->k[j];
             pcrec_memfn_wspan(cx, &sp[j], k->k, 1, MF_VERIFY_NO);
-            pcrec_memfn_wpos_table(&sp[j], 0, k->set,
-                                   k->count > 1 ? WIN_OFFER_OFS + (uint32_t)k->k : 0u);
+            pcrec_memfn_wpos_table(cx, &sp[j], 0, k->set,
+                                       k->count > 1 ? WIN_OFFER_OFS + (uint32_t)k->k : 0u);
         }
         if (r) rsp[1] = &sp[1 + nw];
     }
@@ -6944,7 +6944,7 @@ static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
         if (!rsp[i]) continue;
         pcrec_memfn_wspan(cx, rsp[i], w + lo, hi - lo, MF_VERIFY_NO);
         for (int j = lo; j < hi; j++)
-            pcrec_memfn_wpos_bits(rsp[i], j - lo, r->pos[j]);
+            pcrec_memfn_wpos_bits(cx, rsp[i], j - lo, r->pos[j]);
     }
     *out = a;
     return n;
@@ -6968,10 +6968,10 @@ static void find_window(const PcrecFind *f, mf_site *s)
     mf_wspan *sp = pcrec_memfn_walt_spans(cx, a, MF_ENTRY_NONE, 1);
     pcrec_memfn_wspan(cx, sp, f->offset, f->holdback ? 2 : 1, MF_VERIFY_YES);
     if (f->table != PCREC_FIND_NO_TABLE)
-        pcrec_memfn_wpos_table(sp, 0, f->set, WIN_OFFER_FIND + (uint32_t)f->table);
+        pcrec_memfn_wpos_table(cx, sp, 0, f->set, WIN_OFFER_FIND + (uint32_t)f->table);
     else
-        pcrec_memfn_wpos_cube(sp, 0, (unsigned)f->byte, 0xFFu);
-    if (f->holdback) pcrec_memfn_wpos_any(sp, 1);
+        pcrec_memfn_wpos_cube(cx, sp, 0, (unsigned)f->byte, 0xFFu);
+    if (f->holdback) pcrec_memfn_wpos_any(cx, sp, 1);
     pcrec_memfn_window_stated(cx, s, a, 1, f->floor ? MF_WFLOOR_EXPR : MF_WFLOOR_SUBJECT);
 }
 
