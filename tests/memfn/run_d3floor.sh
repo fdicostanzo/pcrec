@@ -7,11 +7,11 @@
 # Builds the traced probe compiler (docs/dev/lanes/r33_sim/build.sh: libpcrec with -DMF_TRACE -DPCREC_CAND_TRACE
 # into a scratch dir, no source edit), runs collect.py's corpus sweep once per emit_sweep (base, stream) cell, and
 # hands the four sweeps to d3_floor.py, which counts them against d3_floor.tsv (the floors' one home) and runs its
-# own plants (S3228-S3230) so a gate that cannot fail shows. Compile-only, no timing.
+# own plants (S3228-S3237) so a gate that cannot fail shows. Compile-only, no timing.
 #
 # Usage: bash tests/memfn/run_d3floor.sh [TREE]
 # Env: PROCS (collect workers AND the probe build's make -j; default: half of tests/lib/procs_default.sh, at least 1),
-#      D3FLOOR_REPIN=1 (re-pin tests/memfn/d3_census.tsv instead of checking; D3FLOOR_NOTE=provenance text), D3FLOOR_KEEP=1 (keep the scratch dir, printed, for a re-count). Scratch lives under $PCREC_TMPDIR (scripts/tmpdir.sh), never /tmp.
+#      D3FLOOR_REPIN=1 (re-pin tests/memfn/d3_census.tsv AND d3_floor.tsv instead of checking, refusing an empty/short sweep; D3FLOOR_REPIN_SHRINK=1 allows fewer compiles; D3FLOOR_NOTE=provenance text), D3FLOOR_KEEP=1 (keep the scratch dir, printed, for a re-count). Scratch lives under $PCREC_TMPDIR (scripts/tmpdir.sh), never /tmp.
 set -u
 export LC_ALL=C
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -41,7 +41,10 @@ for c in "byte/c-default|" "byte/c-vm|--engine=vm" "utf8/c-default|-e utf8" "utf
 done
 
 if [ "${D3FLOOR_REPIN:-0}" = 1 ]; then   # rewrite tests/memfn/d3_census.tsv, print the member diff + the d3_floor.tsv numbers
-    exec "$TIMEOUT_BIN" 600 python3 -I "$TREE/tests/memfn/d3_floor.py" --tree "$TREE" --repin --note "${D3FLOOR_NOTE:-$(git -C "$TREE" rev-parse --short HEAD 2>/dev/null) tree, $(date +%F)}" "${args[@]}"
+    shrink=(); [ "${D3FLOOR_REPIN_SHRINK:-0}" = 1 ] && shrink=(--shrink)
+    # no exec: the EXIT trap must remove the scratch dir (D3G-4); describe --dirty names an uncommitted tree (D3G-5)
+    "$TIMEOUT_BIN" 600 python3 -I "$TREE/tests/memfn/d3_floor.py" --tree "$TREE" --repin "${shrink[@]}" --note "${D3FLOOR_NOTE:-$(git -C "$TREE" describe --always --dirty 2>/dev/null) tree, $(date +%F)}" "${args[@]}"
+    exit $?
 fi
 "$TIMEOUT_BIN" 600 python3 -I "$TREE/tests/memfn/d3_floor.py" --tree "$TREE" "${args[@]}" | tee "$WORK/floor.out"
 rc=${PIPESTATUS[0]}
