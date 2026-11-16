@@ -27801,3 +27801,20 @@ Next
   a worktree that queued box jobs build in: cut a new branch/worktree. (4) I stamped notes with a clock 20-60 min
   ahead of the box three times: read `date` before stamping. (5) Holding a design critic round until the owner's live
   answers settle saved a round (rev 8); running one on rev 9 found four answer-level defects three re-checks missed.
+
+## 2026-11-15 (session 132, evening close; box clock 17:45-19:45)
+
+- [COVER-CAP] STAGE 1 LANDED and pushed: origin/main a3de2ec57 (merge fff636eda, abi 108). Path: code round r9
+  (9 fixes; the answer-level one a test gap) -> fix lane covs1f -> re-check r11 (3 job/check-script defects, among
+  them a new verdict script that read GREEN on four failure kinds) -> lane covs1g -> landing lane land1115c. Evidence
+  on the final commit: cloud test, mech rows and identity gate green; prediction check lost=0 unexplained=0 with 13
+  gained covers; asan green on the commit before the last small fixes (accepted; the next full battery re-runs it).
+  The sweep job was marked red by the queue's log scan only (a printed "DONE rc=1"); ruled green on the judge's
+  result. Owed: CI 43778599555 and full cloud mech 43778668392 on the merge; night timing incl. dense near misses
+  (review r9 EMITTED-2: x6.65 instructions on a 32-position class cover; Frank: land, then time).
+- KIT delivered the finder + slot harness unit (lane/memfn-mfind 363fec82e); its timing run is queued for after
+  01:00. To merge next.
+- PREDICATES: spec revs 10 and 11 merged (rounds r10 and r12 ruled). Frank's evening ruling, not yet folded: one
+  anchoring rule (a filter matches the whole value; `^`/`$` = ends of the scoped match), `anchored()`, gap
+  definitions for startsWith/endsWith/contains, and provided transforms named for how they change the filter.
+- Session closed at Frank's /close with the context full; wake.md rewritten from scratch.
