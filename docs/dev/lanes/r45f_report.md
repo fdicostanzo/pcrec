@@ -149,5 +149,9 @@ Readings:
   - step (5) is the lane's form of the ruled "a void cell never helps another head". Its cost
     is stated in §3: one twice-void cell forfeits that night's win.
 - An untracked `r45d.done` file at the worktree root is stale and not this lane's. It was
-  left alone.
+  left alone. `scripts/lanecheck --deliver WT/docs/dev/lanes/r45f_deliver.txt --dir WT r45f`
+  reports exactly one issue: "the tree is not clean: r45d.done". Lane r45e hit the same
+  issue. The lane does not commit or delete another lane's file, and it does not edit the
+  manager's deliver file to add a dirty-ok line. So lanecheck ends at rc=1 on that one
+  issue; every other check passes.
 - OWED: none
