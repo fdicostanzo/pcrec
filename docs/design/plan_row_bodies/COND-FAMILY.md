@@ -1109,3 +1109,13 @@ condition, or passed as a parameter that the macro's BODY uses in a filter role)
 `unpadded`, ...) and no "modifier argument" clause appears in the rule; a user macro with the same body behaves the
 same; a parameter the body splices into a hole is NOT in a filter role and draws no warning there. If any provided
 transform's whole-match behaviour cannot be derived from a body written in the language, that is brought to him.
+
+**2026-11-15 RULING — `padded` is the plain macro `padded(rx) := /0*${rx}/` (Frank, to session 133, box clock 20:48).**
+His words, in full: "padded(rx) := /0*${rx}/". RECORD: `padded` has that body and nothing else; its parameter is
+SPLICED INTO A HOLE, so it is not in a filter role of its own. Consequences drawn by the manager (told to him; to be
+checked by the next revision): `x & padded(/5/)` is `x & /0*5/` (accepts `5`, `05`, `005`); `x & padded(/^5/)` is
+`x & /0*^5/`, where `^` is the start of x's value and so forbids the zeros (accepts only `5`): the anchor is
+MEANINGFUL there, plain PCRE, no "adds nothing" warning; this REPLACES the draft's row L13 reading ("a modifier's
+argument is itself a filter matched whole", `padded(/^5/)` = `padded("5")`) and its edge-assertion error for
+`padded(/\b5/)` (now plain PCRE `/0*\b5/`). Whether `unpadded(n, ...)` and the other provided transforms have bodies
+as plain is the **primitive-transforms** check.
