@@ -189,7 +189,7 @@ for kind in ("Z", "U", "P"):
 
 # =================================================================================================================
 # (SP) lane absent's spelling rows, `(n: <5)` with n absent (exec'd list; kinds re-probed here)
-print("\n(SP) lane absent's 27 spelling rows, `(n: <5)` on a subject where n has no value")
+print("\n(SP) lane absent's 28 spelling rows (11 groups), `(n: <5)` on a subject where n has no value")
 src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "absent_check.py")).read()
 a0 = src.index("SP = [")
 ns = {}

@@ -5,7 +5,7 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
    U  T: plain FAIL  default default  | R: plain FAIL  mark PROJ  default default
    P  T: plain FAIL  default default  | R: plain FAIL  mark PROJ  default default
 
-(SP) lane absent's 27 spelling rows, `(n: <5)` on a subject where n has no value
+(SP) lane absent's 28 spelling rows (11 groups), `(n: <5)` on a subject where n has no value
    (?<n>\d)?x                         'x'       kind O   today FAILS  R FAILS  R with n? HOLDS
    (?:(?<n>\d)|)x                     'x'       kind A   today FAILS  R FAILS  R with n? HOLDS
    (?<n>\d){0,1}x                     'x'       kind O   today FAILS  R FAILS  R with n? HOLDS
