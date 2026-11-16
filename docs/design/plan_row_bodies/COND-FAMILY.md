@@ -1314,3 +1314,14 @@ macro body a parameter bound to a field reference may stand on the left of `:`; 
 (macros as arguments, indexed and called) is WITHDRAWN as unneeded: the tuple bodies no longer need it, and the
 current rules (an index gives an rx; passed macros only for structural tools) stand; (3) the per-label accessor
 bindings (`h_is(S) := (h: S)`) leave the tuple examples.
+
+**2026-11-16 OWNER DIRECTION — arrays of macros: the general path, no special mechanism (Frank, to session 134, box
+clock 00:08).** On **macro-arguments** (may a library macro take macros as arguments, index an array of them and call
+one), his words: "macro-arguments: the general path is that an array of something is that something. i feel like this
+is creating a bunch of mechanism for very specific use. what otherwise is an array of macros?" RECORD: NO to the
+special mechanism (index an array of macros, then call the entry) built for the tuple compare. The general path
+holds: an array of X is an X (his 2026-11-14 "an array/map IS a labelled alternation"); an array of macros is
+therefore a macro, nothing more. Consistent with the manager's withdrawal of the question after the sigil ruling.
+The manager's notes (not ruled): the SAME test applies to the sigil route's own array, `[^h, ^m]`: by the general
+path an array of field references is a field reference ("h or m"), and picking an entry is the existing structural
+index, which must be shown to be an existing tool and not a new one; the next revision states both.
