@@ -1692,3 +1692,11 @@ the constant cases where that differs are the draft's empty-intersection error. 
 earlier sub-choice "not counted". (e) "Absent where the condition looks at it" is judged PER PASS for a label
 inside a loop (the reading record = & needs: pooled, (OP) 8 and (ZN) 48 differ). (f) The all-looped record with an
 optional field per item has no one-mark fix; listed as an open item for rev 20, not repaired.
+
+**2026-11-16 OWNER RULING — optional-as-loop (Frank, to session 136, box clock 15:23).** Put to him after review r28's
+finding D (is `x?` a loop for the pairing rule; his 13:29 remark "Even /x?/ is a loop from 0 to 1" was unruled). His
+words: "optional-as-loop: that comment was for discussion. I agree both spellings should answer alike." RECORD: RULED:
+`x?` and `(?:x|)` answer alike under the pairing rule. THE MANAGER'S READING of how (his, to be checked by the next
+revision): a quantifier with upper bound 1 is NOT a loop for the pairing rule (it pairs nothing: at most one value),
+so a record over two optional fields answers and is not a sibling-loop error. The 13:29 remark is recorded as
+discussion, not a ruling.
