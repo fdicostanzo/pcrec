@@ -1018,10 +1018,15 @@ by `git grep`). They are updated in the build or flagged in its report:
 - **`MF_VOCAB` unchanged**: no op, handoff or term kind.
 - **pcrec's `abi`.** The JOINT landing is ONE pcrec `abi` event, because pcrec's own stage 2
   moves emitted text (cover_cap.md §11.1 "abi events").
-  - Under plan A, H(h\*) moves the stage-1 covers' bytes wherever h\* is below their length, in
-    the same commit: a kit byte move is a pcrec abi event (`memfn/CLAUDE.md`). If the owner
-    takes the stability trade, they do not move.
-  - Under plan B, no kit byte moves at today's widths.
+  - Under plan A, H(h\*) moves a stage-1 class cover's bytes only where h\* is below its
+    length, which under the largest-head tie-break happens only on a measured win beyond the
+    noise (§3), in the same commit: a kit byte move is a pcrec abi event (`memfn/CLAUDE.md`).
+    Literal covers never move. If the owner takes the stability trade, spans of 32 or fewer
+    never move.
+  - Under plan A's fallback (forms built but off) and under plan B, no kit byte moves at
+    today's widths; switching the forms on later is a second pcrec abi event.
+  - The head lever and the option row's force read add no layout: they ride in the same
+    commits, and no reader pins a lever name's count [rev 3, F12, F15].
 - **Stamps.** L and H at SIMD-off are scalar forms, so `<PREFIX>_MEMFN_FORMS` reads `none` at
   SIMD-off as today (integration.md §18.1). A SIMD-on loop is a carried level like any vrun
   row.
@@ -1030,24 +1035,28 @@ by `git grep`). They are updated in the build or flagged in its report:
 
 1. **Measurement regime: relevant.**
    - The cards of §3 name theirs: throughput on Linux, `taskset`-pinned, the four subject
-     regimes, both layers, gcc 15.2.
-   - A choice must hold in every regime its site can be in (K-1). That is why R1 minimises the
-     WORST cell over all regimes, and why near-miss is a column of every card and never a
-     separate study.
+     regimes, both layers, gcc 15.2, on the kit's harness (§3 "The procedure").
+   - A choice must hold in every regime its site can be in (K-1). That is why R1 takes the
+     WORST cell over all regimes of C1-C2, and why near-miss is a column of every card and
+     never a separate study.
    - Every number in this draft is a `sizeof`, a cited fact, or a labelled extrapolation. None
      is a timing.
 2. **Independent control: relevant.**
    - **The forms' answers** are checked by G2 against the byte loop over a GENERATED span
-     space: lengths 1..64 at random (twins asserted against the kit's names, §3), plus 500
-     and 4095 as their own rows. They are also checked by pcrec's answer-identity sweep with
-     the force cell, against libpcre2 (§3 "The option"). Neither reads the kit's plan.
-   - **The proof** is checked by pcrec's B5, against its OWN statement and `k`. The kit's
-     refusal is the kit checking its own computation, and so shares a source with `proof_n`.
-     That is why the pcrec row (b) of §1 bypasses it and expects B5's text, while the kit row
-     (a) only witnesses that the refusal exists.
+     space whose lengths come from the DRAWS, not the twins [rev 3, F8]: the REPORT family at
+     `1 .. 128`, a repeated-class shape straddling every finite grid h, and 500 and 4095 as
+     their own rows; G2-win's counted line per grid h fails at zero (K35). They are also
+     checked by pcrec's answer-identity sweep with the force cell, against libpcre2 (§3 "The
+     option"). Neither reads the kit's plan.
+   - **The proof** is checked by pcrec's B5, against its OWN statement and `k`, and the cover
+     ask's ceiling storage puts every over-read in B5's view [rev 3, F2]. The kit's R-short is
+     the kit checking its own computation, and so shares a source with `proof_n`. That is why
+     the pcrec row (b) of §1 bypasses it and expects B5's text on an after-unstated cover, while
+     the kit row (a) only witnesses that R-short exists [rev 3, F1].
+   - **The head** is tied to the shipped bytes by the lever's identity check (§3) [rev 3, F12].
    - **Timing** is checked by pcrec's G1 (`no-span-loop`) and by the engine-route reference C5.
-   - **Populations are counted.** G2's long rows are named rows. The force cell's population is
-     the whole corpus.
+   - **Populations are counted.** G2's long rows are named rows; G2-win's per-h line counts the
+     looped sites. The force cell's population is the whole corpus.
 3. **What moves when data is regenerated: relevant if R3 fires.** The forms read no measured
    data. h is a MEASURED constant with its card ids. If R3 shows the death-depth reading, h
    becomes a derivation from the art's byte rate, which is pcrec's analysis object and already
@@ -1056,81 +1065,108 @@ by `git grep`). They are updated in the build or flagged in its report:
 
 ## 7. Open questions (for main and the owner), each with a recommendation
 
-- **For main: should pcrec keep its other window sites at 32 positions and reach 64, by its own
-  assertions?** Now that the kit's bounds are general, the kit no longer holds those sites
-  there.
-  - RECOMMEND: yes, as one `_Static_assert` per construction bound pcrec already owns
-    (`PCREC_MAX_REQ_RUN_SCAN`, `PCREC_PREFIX_K_MAX`) at its own writers, not as a site kind in
-    `window_bounds_check`.
-  - It also gives the now-loose `emit_dfa.c:1446` a binding replacement.
-- **For the owner, via main: which shape should the long-span forms take in this landing?**
-  - Plan A: the kit builds the three forms, measures them before the landing, and ships
-    "loops after a measured inline head" as the default, as he directed.
-  - Plan B: this landing only lets long spans through, rendered all-inline as today, and the
-    forms come next.
-  - RECOMMEND A: it ships the default he asked for, and the width night then measures the form
-    that ships.
-  - B is honestly cheaper and lands sooner: no form code, no option row and no kit timing
-    before the landing. But it ships the opposite default until the next unit.
-  - Inside A, a second choice: should spans of 32 or fewer keep today's all-inline text, so this
-    landing changes no existing matcher, at the price of those spans not getting the measured
-    form yet? RECOMMEND: no. Let the measurement decide, and accept the measured movers.
-- **For the owner, via main: should the first build also fix the dense near-miss slowdown?**
-  - RECOMMEND: no (D77). The only measured loss is in instructions at length 32, and timing
-    does not yet show it.
-  - When a timed card shows it, the fix is the existing last-offset skip table generalised to
-    every offset, for every length and every form.
-  - Meanwhile the option's documentation names dense near-miss subjects as the slow case.
-- **For main: may the asks take caller-supplied storage for their lists?** This adds one
-  parameter to the class ask and the window ask, plus a pure sizing function, in the same seam
-  version step.
-  - RECOMMEND: yes. It keeps the asks pure and the seam a document. pcrec allocates the storage
+Each question carries a bold plain-word slug, reused verbatim in §8 [rev 3, F16 (b)].
+
+- **other-sites-at-32** (for main): should pcrec keep its other window sites at 32 positions and
+  reach 64 by its own assertions, now that the kit's bounds are general and no longer hold them
+  there?
+  - RECOMMEND: yes, one `_Static_assert` per construction bound pcrec already owns
+    (`PCREC_MAX_REQ_RUN_SCAN`, `PCREC_PREFIX_K_MAX`) at its own writers, not a site kind in
+    `window_bounds_check`. It also gives the now-loose `emit_dfa.c:1446` a binding replacement.
+- **cover-ask-storage** (for main, the kit's proposal under r22): should pcrec's cover ask hand
+  the kit room for the whole proof range (4,104 rows, about 131 KB per compile attempt at every
+  width), so that any kit over-read shows up in pcrec's own proof comparison instead of looking
+  like an ordinary decline?
+  - RECOMMEND: yes. It keeps pcrec's comparison the independent check. The price is about 130 KB
+    more compile memory per cover attempt even for short covers, freed at the end of the
+    compile.
+- **caller-storage** (for main): may the asks take caller-supplied storage for their lists? This
+  adds one parameter to the class ask and the window ask, plus a pure sizing function, in the
+  same seam version step.
+  - RECOMMEND: yes. It keeps the asks pure and the seam a document; pcrec allocates the storage
     from its compile arena.
-- **For main: are the proof rows' memory costs acceptable until stage 2's compile-cost record
-  says otherwise?** They are about 160 KB per ask of a 4095-position cover, kept for the whole
-  compile and summed over the size-ladder attempts.
+- **row-memory** (for main): are the rows' memory costs acceptable until stage 2's compile-cost
+  record says otherwise? About 291 KB per compile attempt of a 4095-position cover (the ask's
+  rows, the define's rows and the plan), about 133 KB for a short cover, summed over the
+  size-ladder attempts.
   - RECOMMEND: yes. The run-length form is designed (§5) and filed with its trigger.
+- **night-order-edits** (for main, only if the owner picks the forms now): accept the three
+  cover_cap.md edits listed in §3 (the night may become two, the kit's cards run first and gate
+  the width cells, the fallback also turns the forms off, the "not in stage 2" line goes), with
+  the cards timed on the kit's harness in the same window?
+  - RECOMMEND: yes; it is the order main agreed on 2026-11-16, written into main's plan of
+    record.
+- **forms-now-or-next** (for the owner, via main): should this landing carry the three span forms,
+  measured, with "loops after a measured inline head" as the default, or only let long spans
+  through all-inline as today and bring the forms in the next change? Both end in the same
+  place; they differ in what users get in between and in cost.
+  - Forms now: the default he asked for ships with the landing, and the width timing measures
+    the form that ships. It costs a kit timing slot before the landing (one night, or two if it
+    does not fit beside the width timing), a later landing and a larger one. If that timing
+    cannot happen before the landing, the forms land built but switched off (all-inline, as
+    today) and are switched on later, a second compatibility step; main decides that, with the
+    owner told, together with the matching fallback already in pcrec's plan (cover_cap.md
+    §11.6.1).
+  - Forms next: smaller, sooner, and ready now; but long covers render all-inline, the opposite
+    of his stated default, until the next change.
+  - RECOMMEND: forms now.
+- **keep-short-spans** (for the owner, only with forms now): the head is picked so that, on a
+  tie, today's short spans keep their all-inline text; they change only if the measurement shows
+  a shorter head faster beyond the noise. Should spans of 32 or fewer positions stay all-inline
+  even then, so that this landing changes no existing matcher?
+  - RECOMMEND: no. Let a measured win move them; without one, nothing moves anyway.
+- **near-miss-fix-later** (for the owner, via main): should the first build also fix the slowdown
+  on text that is almost a match at every byte?
+  - RECOMMEND: no (D77). The only measured loss is in instructions at length 32, and no timing
+    shows it yet. When a timed card does, the fix is the existing last-offset skip table
+    generalised to every offset, for every length and every form. Until then the option's
+    documentation names such text as the slow case.
 
 **Answered, no longer asked:**
 - **When `MF_MAX_SPAN_POS` retires.** Now: A1 is delivered on `lane/covs2afix`, and the kit
   branch merges only onto A1.
-- **The order of the timings** (ruling R1, settled with main). The form cards run first on the
-  same frozen combined-branch binary, with h's rule committed before the run. h is frozen by
-  that reading, and then the width cells are measured with it: one night if both fit, the
-  width cells not-before the cards' verdict; otherwise two nights (§3).
+- **The order of the timings** (ruling R1, AGREED WITH MAIN 2026-11-16; plan A only). The form
+  cards run first on the same frozen combined-branch binary, with h's rule committed before the
+  run; h is frozen by that reading; then the width cells are measured on the same binary with
+  the head lever at h\*: one night if both fit, the width cells not-before the cards' verdict;
+  otherwise two nights (§3).
+- **May the default itself be all-inline?** No, by the kit manager's ruling on r22: all-inline
+  is the dial's option, never the rule's default; making it the default is the owner's own call.
 
 ## 8. responses.md-ready block (for the kit manager to post; facts only, D157)
 
 ```
-## R-45 reply (2026-11-16, kit; rev 2 after review r20) — window spans up to 4095 positions
-- (1) YES, on EVERY window span (one carrier, no site kind): MF_WSPAN_POS 4095 (CHOSEN);
-  MF_WREACH = MF_MAX_FWD = 4096 (DERIVED; for your _Static_assert). Proof range per reply:
-  [MF_PROOF_LO, end), end = max(last stated offset + 2, last tested offset + 1), clipped at
-  MF_MAX_FWD: always reaches offset k, after side stated or not. A tested offset past your
-  storage or MF_MAX_FWD is a kit REFUSAL, never clipped; an over-read at the first offset past
-  the statement lands in B5's view. Witnesses: a kit row (refusal by message) and a pcrec mech
-  row that bypasses the refusal and expects B5's text.
-- (2) NO, they decouple: MF_MAX_TERM 32 and MF_WMAX_SPAN 32 (derived 25 + labelled slack)
-  stay; MF_MAX_SPAN_POS and MF_MAX_AHEAD retire NOW (merge only onto A1). S526 stays on
-  MF_MAX_TERM (detected by C14's stride clause); B2's control is your §11.6.3 reference build.
-- (3) Forms over the kit's existing segmenter (literal stretches stay one run compare):
-  I all inline, L loops, H(h) inline head then loops. Default H(h*): the grid value with the
-  smallest worst-cell slowdown, ties to the smaller head, grid incl. 0 and >= k; cells where I
-  wins are dial evidence. h is the kit's own constant, not tied to your width default.
-  Order (settled with you): our form cards first on the same frozen binary, rule committed
-  first, h frozen, then your width cells with that h. Option span-loop (pair: force = all loops, deny = all inline); registry floor 13 -> 14.
-- (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). Not in the first build (D77); the
-  fix is the last-offset skip table generalised to every offset, on a card's trigger.
-- (5) Arrays leave the seam structs. mf_wspan 1,164 -> 32 B (host-owned arrays). mf_class
-  2,932 -> 1,640 B (proof_n + rows). mf_wreply 532 -> 136 B (plan lists). Lists go into
-  CALLER storage passed to mf_ask/mf_wdecide, sized by a pure mf_rows_need(site). Deep
-  compares replace 15+ byte compares; 14 uint8_t casts widen. MF_SITE_ABI 29 -> 30 with
-  MF_CLASS_V 10 -> 11. The build starts from main.
-- Questions for you (each with our leaning):
-  Keep your other window sites at 32 by your own asserts? We lean yes.
-  For the owner: forms measured and shipped as his default now (A), or long spans all-inline
-  now and forms next (B, cheaper)? We lean A; keep spans <= 32 unchanged? We lean no.
-  Fix dense near misses in the first build? We lean no, until a timed card shows it.
-  Let the asks take caller storage for their lists? We lean yes.
-  About 160 KB of rows per ask of a 4095 cover, per compile: acceptable for now? We lean yes.
+## R-45 reply (2026-11-16, kit; rev 3 after reviews r20 + r22) — window spans up to 4095 positions
+- READY: plan B alone (carrier + kit working state + the two witness rows) is ready now with
+  rev 3's text fixes (r22). The forms (plan A) were rewritten in rev 3; one short re-check first.
+- (1) YES on EVERY window span: MF_WSPAN_POS 4095; MF_WREACH = MF_MAX_FWD = 4096. Proof rows
+  only for proving classes (window plan, old-field FIND); others proof_n 0. Range [LO, end),
+  end = max(last stated position + 2, last tested offset + 1). Kit refusals: tested offset out
+  of range; rows past caller storage; range self-check (message via mf_define only).
+  Your cover ask passes storage to the ceiling (4,104 rows): every over-read reaches B5.
+  Witnesses: a kit row (self-check by message) and a pcrec row on an after-unstated cover.
+- (2) Decoupled: MF_MAX_TERM 32, MF_WMAX_SPAN 32 stay; MF_MAX_SPAN_POS/MF_MAX_AHEAD retire now
+  (merge only onto A1). S526 stays on MF_MAX_TERM; B2's control is your §11.6.3 build.
+- (3) Forms I/L/H(h) over the existing segmenter; literals stay one compare in every form.
+  Default H(h*), h* from FINITE heads only: W(h) = worst C1-C2 cell of t(H(h))/t(I); ties
+  within the cards' A/A floor go to the LARGEST h. All-inline is timed as the dial's
+  reference, never the default. A test-only lever sets h on one binary; a check proves the
+  lever's bytes equal the shipped build's. Option span-loop (pair; deny wins); floor 13 -> 14.
+  Night order (agreed 2026-11-16, plan A only): our cards first on the frozen binary, h frozen
+  by its rule, then your width cells with that h. Your cover_cap edits: §11.4, §11.6.1, §11.6.4.
+- (4) Dense near miss is O(n*k) (16.5 tests/byte at k=32). No fix in the first build (D77).
+- (5) Arrays leave the seam structs: mf_wspan 1,164 -> 32 B, mf_class 2,932 -> 1,640 B,
+  mf_wreply 532 -> 136 B. Lists go into caller storage sized by mf_rows_need. 22 byte compares
+  become deep compares; 14 uint8_t casts widen. MF_SITE_ABI 29 -> 30, MF_CLASS_V 10 -> 11.
+  Rows per cover attempt: ~291 KB at 4095, ~133 KB at 32. The build starts from main.
+- Questions (our leaning):
+  other-sites-at-32: keep your other window sites at 32 by your own asserts? Yes.
+  cover-ask-storage: give the cover ask room for the whole range? Yes.
+  caller-storage: let the asks take caller storage? Yes.
+  row-memory: accept the rows' memory until your compile-cost record? Yes.
+  night-order-edits: take the cover_cap edits if the owner picks forms now? Yes.
+  For the owner: forms-now-or-next (forms now: costs a timing slot, a later and larger
+  landing; if timing cannot run first, forms land off, main decides): forms now.
+  keep-short-spans (keep spans <= 32 all-inline even on a measured win)? No.
+  near-miss-fix-later (fix near misses in the first build)? No, until a timed card shows it.
 ```
