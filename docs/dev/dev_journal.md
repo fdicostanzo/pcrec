@@ -27887,3 +27887,55 @@ Next
   (2) Critic coordinators ENDED before their critics finished, twice (predspec17, predspec19): critics then relay to
   the manager; a SendMessage resumes the coordinator. (3) A leftover `monread --wait` from the previous session
   consumed a verdict line: check for one at wake. (4) `scripts/lanewatch --follow` takes ONE lane name.
+
+## 2026-11-16 (session 134, second half, 09:30-12:00 box clock; manager fable, lanes opus/sonnet) — the joint condition RULED in one sitting; full suite in the cloud; loadshame
+
+- PREDICATES (design only). Frank reviewed the joint-condition note and answered EVERY question, in conversation,
+  one at a time (his words: 24 entries dated 2026-11-16 at the tail of docs/design/plan_row_bodies/COND-FAMILY.md).
+  RULED: a tuple is a value, usable wherever a value is; `(h, m):` with the colon holds scoped references to the
+  intersected pattern's labels; ONE set kind with an ARITY; dictionary order on a tuple atom is built in and
+  first/rest with recursion is PARKED ("keep it in the wings"); an unset label FAILS the condition unless the author
+  writes a default, spelled with the macro-head form `(h, m = 0): R`, one string only (a several-string default is an
+  error for now; `some(...)` recorded), a never-used default a warning; loops pair per pass, sibling loops an error,
+  the looped warning moved onto a hand-written `|` of conditions; both `>= (9, 30)` and `(>= 9, >= 30)` stay; a
+  modifier around a tuple set acts on every part; left of the colon = labels, the value side = bindings (`$` reads a
+  label), a default's value is on the value side; THE RECORD IS THE JOINT CONDITION'S PRODUCT CASE ("precisely the
+  sort of simplifying semantics I'm looking for"). New file docs/design/predicates_future.md (parked ideas with
+  triggers) at his request.
+- LANES (all merged, pushed up to 56c315567; the last merge 38f20e4e2 is local at this entry, pushed with it):
+  tupleval + tupleval2 (opus; §4A the tuple as a value, parts both ways, first/rest worked through; 42,079 cases 0
+  differ), unsetdef (opus; §4B the default; 233,720 cases 0 differ), jcfold (opus; the note at the RULED state, the
+  record derived rule by rule in §4D, §9 = 44 rows of what rev 20 must change; 2,019,088 new cases 0 differ; the three
+  claims the first lane left untested are now tested). jcfold found THREE CONTRADICTIONS it did not resolve (owner):
+  zero-pass-record (per-pass pairing + record-is-product vs the draft's "(a: S, b: T) = (a: S) & (b: T)" when the
+  deeper loop runs zero passes: 5 of 1,110 differ), library-not-syntax (CF:644 "tuple conditions: a library macro, no
+  syntax" was never withdrawn by name), retire-paused (the sigil, the lex_ names, argument order and the first-library
+  slot are RULED but only PAUSED). Plus label-twice and pairing-loop (wording). NO critic round has yet read any of
+  it: that is next, before rev 20.
+- ADMIN (lane admin1116, sonnet): review r19 filed (docs/dev/reviews/2026-11-16-r19-predspec19.md; 12 findings moot
+  while paused, CENSUS-5/SIMULATE-1/CENSUS-4/CENSUS-8 carried to rev 20, fix-induced lens NOT COVERED; the "14 of 114"
+  probe exists only in the unverified relayed text, not ruled); the critic process change (pre-created findings files,
+  CRITIC COMPLETE marker) applied; [DD-11.5] re-scoped by my ruling to its part (a), part (b) filed as
+  [CTX-FACTS-NEG]; cloud_mech_check.sh is reached only through the opt-in `make cloud-check` (gate census addendum).
+  12 worktrees and 9 branches pruned.
+- FULL SUITE: I first read the pcrec-test skill's `full` mode (the 16 h local battery) and nearly asked Frank for a
+  box window; the ledger showed the suite now runs in the CLOUD (`scripts/cloudrun --suite`), with alloc + lint the
+  only local stages (already green on db7aab3de, no code since). Dispatched on e43603862: test, ubsan, recidentity,
+  asan GREEN by 11:48; axes and mech pending at this entry.
+- KIT. Timing triage: last night's refusal sat on a SCAN row that never decides and scatters by alignment, not load;
+  kit ruling (agreed, with my two conditions: deciding cells keep their own noise gate and the row stays visible; the
+  rule text and a replay on last night's records are committed BEFORE tonight's jobs): a refused non-deciding row
+  prints "scan unpriced" and never vetoes. Window 01:00 on 11-17 confirmed (Frank: "timing-tonight: your decision").
+  R-44 (the D3 floor gate) DELIVERED on lane/memfn-d3wire ce6bfe8d5, tests only; cloud test + axes dispatched on the
+  tip, merge on green. R-45 reply slipped to the evening (its own round read NOT READY). Agreed order for stage 2's
+  measurements: the kit's form cards first, head length frozen by a pre-committed rule, then the width cells.
+- NEW TOOL scripts/loadshame (Frank's request): samples /proc, prints load1 against the quiet gate and charges every
+  busy process to its APPLICATION, naming the root process to close (climb parents inside the same control group); a
+  detached root is marked. No self-test, no critic round (read-only, run against the live box only).
+- LESSONS. (1) Three follow-up rulings reached lane tupleval after it had finished (ten minutes after launch): in a
+  live design conversation the lane is briefed on a moving target; a FRESH follow-up lane was right, and the rulings
+  file was read only because the second lane re-read it before each commit. (2) Reading a skill's mode table is not
+  reading the ledger: check how the LAST run of a thing was done before asking the owner for a window. (3) Three more
+  consequences I had labelled mine were INCOMPLETE (the slice needs its unset guard; "no warning" needs a by-design
+  look-alike row; bare `<=dim` becomes an error, not a synonym) and my own warning lean on two-orders did not survive
+  his question "can you think of a use": ask for the uses before leaning on a diagnostic.
