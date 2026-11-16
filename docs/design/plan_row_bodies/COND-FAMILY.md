@@ -1349,3 +1349,12 @@ compare matters as a TEST of the language, not for itself. (3) IDEA to consider 
 whose left side names several labels at once, `(h, m): ...`. The manager's first answer (not ruled) is recorded in
 the session's reply: the right side is then a set of TUPLES; a product of sets gives back the 2026-11-14 record
 `(h: S, m: T)`, and the comparison sets read in dictionary order give the tuple compare with no library family.
+
+**2026-11-16 OWNER GO (design exploration only) — the joint condition (Frank, to session 134, box clock 00:35).** Asked
+**joint-condition** (one design exploration, a note not a draft revision, testing a condition over several labels at
+once against his criteria on a spread of problems; then critics; only then a revision), his words: "joint-condition:
+lets explore that idea. it seems cleaner in many ways. there is some serious hand-waving to figure out however".
+RECORD: GO for the exploration (lane jointexp, design only). The hand-waving is the exploration's subject, not
+settled by this entry: what a tuple of values is beside "an array is an alternation"; what a set of tuples is and
+which existing sets extend to it; dictionary order on comparison sets; loops, unset and non-numeric fields; relations
+between fields; the look-alike with the record; what the larger language gains.
