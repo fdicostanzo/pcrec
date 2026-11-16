@@ -284,5 +284,32 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
      F       C1 vs C2 at a = 0: 0 of 1110 differ []; C1 vs its & form: 0 of 11100 differ; '0-3': C1 FAILS, C2 FAILS
      T (vacuous one-label rule, today's ruled `&`) on '0-3': HOLDS; C1 under T's projection vs it: 1 of 11100 differ
 
+(R2) optional mark on t2 & ((h, m): padded(between((9, 30), (11, 0)))) and on ((h, m): >= (9, 30)), DOM
+     R = between((9,30),(11,0)) padded
+       8     neither=F dflt0=F mark_label=F mark_filter_vacuous=H hand=F H=F
+       9     neither=F dflt0=F mark_label=H mark_filter_vacuous=H hand=F H=H
+       10    neither=F dflt0=H mark_label=H mark_filter_vacuous=H hand=H H=H
+       11    neither=F dflt0=H mark_label=H mark_filter_vacuous=H hand=F H=H
+       9:15  neither=F dflt0=F mark_label=F mark_filter_vacuous=F hand=F H=F
+       9:45  neither=H dflt0=H mark_label=H mark_filter_vacuous=H hand=H H=H
+       mark_label           vs H                    differ    0 of 11110  e.g. []
+       mark_label           vs hand                 differ    3 of 11110  e.g. ['9', '09', '11']
+       mark_label           vs mark_filter_vacuous  differ  106 of 11110  e.g. ['0', '1', '2', '3']
+       mark_label           vs dflt0                differ    2 of 11110  e.g. ['9', '09']
+       neither              vs hand                 differ    1 of 11110  e.g. ['10']
+     R = >= (9, 30)
+       8     neither=F dflt0=F mark_label=F mark_filter_vacuous=H hand=F H=F
+       9     neither=F dflt0=F mark_label=H mark_filter_vacuous=H hand=F H=H
+       10    neither=F dflt0=H mark_label=H mark_filter_vacuous=H hand=H H=H
+       11    neither=F dflt0=H mark_label=H mark_filter_vacuous=H hand=F H=H
+       9:15  neither=F dflt0=F mark_label=F mark_filter_vacuous=F hand=F H=F
+       9:45  neither=H dflt0=H mark_label=H mark_filter_vacuous=H hand=H H=H
+       mark_label           vs H                    differ    0 of 11110  e.g. []
+       mark_label           vs hand                 differ   90 of 11110  e.g. ['9', '11', '12', '13']
+       mark_label           vs mark_filter_vacuous  differ   19 of 11110  e.g. ['0', '1', '2', '3']
+       mark_label           vs dflt0                differ    1 of 11110  e.g. ['9']
+       neither              vs hand                 differ    1 of 11110  e.g. ['10']
+     (OP) (h: <10, m?: <30) vs (h: <10) & (m?: <30), base F: differ 0 of 259; the EVERY reading of m? vs SOME: differ 11 (e.g. '3,': SOME HOLDS, EVERY FAILS)
+
 CONTROL comparisons 53366 differ 0
 TOTAL engine cases 72196 differ 0 engine-disagreements 0

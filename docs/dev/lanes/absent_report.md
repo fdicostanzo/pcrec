@@ -14,7 +14,7 @@ from that output unless another command is named. Its kinds of result:
   engines: 0 pairs differ), and the parse fact each row rests on (which construct the match entered) is read from
   PCRE2's capture state through probe groups.
 - COMPUTED: each option's answer, from the option's one declared table (`resolve()` in the script: absence kind x
-  option -> the default's text, EMPTY, or FAIL), on the subject split by string code.
+  option -> the default's text, MISSING, or FAIL), on the subject split by string code.
 - ENGINE-RUN: for (TM), (RZ), (OP), (DL) the H, F and T answers are also built as regexes from the rule stated over
   intervals and run against the computed answer: 72,196 engine cases, 0 differ, 0 engine disagreements.
 - CONTROL: the T columns are compared with the earlier lanes' own functions (jcfix's (OP) record and its (UP) readings
@@ -32,10 +32,13 @@ for that match (section THE OPEN CORNERS UNDER EACH).
 
 - STATE: done. Commits on `lane/absent`: the evidence script and its output (two WIP commits), this report, the
   history-index line.
-- Rulings file `docs/dev/lanes/absent_rulings.md`: EMPTY at every read (before each commit, before the runs, before
-  this report). Last entry applied: none.
+- Rulings file `docs/dev/lanes/absent_rulings.md`: empty at the first reads; R1 and R2 found at the lanecheck before
+  the first handoff, applied, re-read before the final commit. Last entry applied: R2.
 - OWED: none.
 - Nothing ruled was edited. `docs/design/CLAUDE.md` not touched; no file added under `docs/design/`.
+- Rulings applied: R1 (13:52, a set never contains absence: the condition-side wording throughout; in-set markers
+  rejected in AUTHOR-CONTROLLED FORMS; each option's reading of `(h: S)` in FOR THE OWNER) and R2 (13:52, the owner's
+  optional mark, worked as U5 in AUTHOR-CONTROLLED FORMS, both attachment points). The last entry applied: R2.
 - Deviations from the brief, named: (1) H is worked in two sub-readings (H, H-d2) because the default's reach under H
   is a real choice; (2) one option of the lane's own is added, X1 (the owner's 13:29 remark taken literally); (3) three
   populations not in the brief's list are added and their counts kept apart (marked ADDED): (D1) without a default,
@@ -48,19 +51,26 @@ construct entered"): O an optional or `{0,1}` skipped; A an alternative not take
 reached and run zero times; EO an optional around the label's loop skipped; EA an alternative around the loop not
 taken. Inside a loop a label may also be missing from ONE pass while set in another (scope "in a pass").
 
-Results of an absent part: the DEFAULT's text read; EMPTY (the part ranges over its group's strings: for a product the
-other parts are tested on their own, for any other set the outside parts must be possible for some value: the
-projection, J7's manager's wording); FAIL.
+Results of an absent part: the DEFAULT's text read; MISSING; FAIL. MISSING is a verdict of the CONDITION, never a
+member of a set (rulings R1, the owner, 13:52: "In my mind <100 is defined as the set of all positive integer strings
+less than 100. Absence is not part of that set"). The condition reads a MISSING part by quantifying it over its
+group's strings: it holds if SOME text the label's group could have would put the tuple in R (the projection). For a
+product this is "the other parts are tested on their own" (given the absent part's set is not empty). Where this
+report cites J7's manager's wording "empty satisfies any set", read it, as R1 requires, as "a condition over a reached
+loop that ran zero times holds, the outside labels tested"; no answer changes.
+
+TWO READINGS OF `(h: S)` (R1 (c)), used in FOR THE OWNER: NEEDS-A-TEXT, "h's text is in S" (no text: fails); EVERY,
+"every text h has is in S" (no text: holds, over none). An option is one reading, or a mix.
 
 ### T, today's ruled line, and its two sub-readings
 
-RULE: Z gives EMPTY and never reads a default (J7, CF 12:45; §4B.1); O, A, EO, EA leave the label UNSET: FAIL unless a
+RULE: Z gives MISSING and never reads a default (J7, CF 12:45; §4B.1); O, A, EO, EA leave the label UNSET: FAIL unless a
 default, then the default is read (J6, CF 11:05; §4.2 per match, CF:997-1000). The open sub-choice, for a label
 missing in one pass of an enclosing loop (jcfix's THE OPTIONAL-IN-A-PASS CASE):
 
 - T-pass: unset is judged PER PASS (the draft's :1694 "a label the iteration did not set is unset in it", §2.6 LEAN;
   §4B.1's LOOPED row). That pass FAILS, or reads the default. jcfix's (A) and (Y).
-- T-match: unset is judged PER MATCH. The pass reads like a zero-pass reach (EMPTY, default NOT read); only a label
+- T-match: unset is judged PER MATCH. The pass reads like a zero-pass reach (MISSING, default NOT read); only a label
   with no value in the whole match is unset. jcfix's (B) and (W').
 
 | state | plain condition / record, no default | with `= v` | `some` / `count` |
@@ -77,7 +87,7 @@ default rules (read on unset, not on zero passes). Review OWNER-6 counted 7 live
 
 ### H: absent HOLDS
 
-RULE (one sentence): a condition tests the values that exist; an absent label's part is EMPTY (it ranges over its
+RULE (one sentence): a condition tests the values that exist; an absent label's part is MISSING (it ranges over its
 group's strings, so a joint condition asks that the present parts be possible); "unset" disappears; presence is
 required with `some(...)`, a count, or the pattern itself; a default gives an absent label a value.
 
@@ -92,7 +102,7 @@ The default's reach is a real choice, so two sub-readings:
 | state | no default | with `= v` | `some` / `count` |
 |---|---|---|---|
 | a value | tested | tested | counted |
-| absent (any kind, any scope) | part EMPTY: holds unless no value of the group could satisfy | v read (H-d2: not on an empty loop) | not counted |
+| absent (any kind, any scope) | part MISSING: holds unless no value of the group could satisfy | v read (H-d2: not on an empty loop) | not counted |
 
 Concept count: 1 absence state, 1 rule, 1 default rule (H) or 2 (H-d2). Needs one sentence the draft lacks: a
 set-once label is a list of 0 or 1 values for the group questions (the owner's "Even /x?/ is a loop from 0 to 1").
@@ -127,14 +137,14 @@ value"), so the domain of "some value" (jcfold2 corner 2) never arises.
 ### X1 (the lane's addition): every quantifier with minimum 0 is a loop; only an alternative is "a complete no set"
 
 The owner's remarks (CF 13:29, 13:38), "Even /x?/ is a loop from 0 to 1" and "Only an alternation would be a complete
-no set, no?", taken literally. RULE: O, Z, EO (a quantifier ran zero times, `?` included) give EMPTY; A, EA (an
+no set, no?", taken literally. RULE: O, Z, EO (a quantifier ran zero times, `?` included) give MISSING; A, EA (an
 alternative not taken) FAIL. A default must be read on the zero-run kinds too, otherwise `(h, m = 0)` on optional
 minutes would never be read (the whole of §4B dies); so X1 adopts item 7.
 
 | state | no default | with `= v` |
 |---|---|---|
 | a value | tested | tested |
-| a quantifier ran zero times (`?`, `{0,1}`, `*`, `{0,n}`, an optional around a loop) | EMPTY | v read |
+| a quantifier ran zero times (`?`, `{0,1}`, `*`, `{0,n}`, an optional around a loop) | MISSING | v read |
 | an alternative not taken (around the label or its loop) | FAILS | v read |
 
 Concept count: 2 absence states, told apart by quantifier vs alternation (no upper-bound rule).
@@ -145,9 +155,11 @@ Survey of the candidates (each worked in section AUTHOR-CONTROLLED FORMS):
 
 - U1: the existing default `(m = v: S)` as the ONLY control, over H or over F. One concept.
 - U2: a marker meaning "absent is acceptable" / "absent is not acceptable". Placeholders, NOT spellings: `ABSENT-OK`,
-  `ABSENT-FAILS`. Three positions: (U2a) a set member on the value side (`predicates_future.md` items 5-6, the owner's
-  `epsilon` / "unset"); (U2b) a mark at the label, left of the colon, in the slot the default uses; (U2c) the owner's
-  own `m = some(S)` (default-set, CF 10:43) read as the marker, `m = some(<the group's strings>)` = ABSENT-OK.
+  `ABSENT-FAILS`. On the label side: (U2b) a mark at the label, left of the colon, in the slot the default uses; (U2c)
+  the owner's own `m = some(S)` (default-set, CF 10:43) read as the marker, `m = some(<the group's strings>)` =
+  ABSENT-OK. (U2a), a member inside the set, is REJECTED BY R1.
+- U5 (rulings R2, the owner's form): base "a condition needs a text", and an OPTIONAL MARK the author writes, on the
+  filter (`(h: <100?)`) or on the label (`(h?: <100)`). Placeholders: `S?` / `optional(S)` and `h?`.
 - U3: ONE fixed base rule, with the existing group questions (`all`, `some`, `count`) as the control.
 - U4: the pattern's spelling as the control (`+` vs `*`, the draft's "+ or * control", CF:933). This IS T.
 
@@ -304,9 +316,10 @@ is the one that warns.
 
 **U2, a marker.** Two concepts (the default and the marker), unless merged into one slot (U2b/U2c).
 
-- (U2a) a set member on the value side, `(h: S, m: T | ABSENT-OK)` (items 5-6). It fits a record (each label its
-  own set) and has no place in a joint order: `((h, m): >= (9, 30) | ABSENT-OK)` has no meaning for one component.
-  Item 5's note: it makes three ways to treat a missing field (default, alternative, member).
+- REJECTED BY R1 (a set never contains absence), one line each:
+  - (U2a) a member inside the set, `(h: S, m: T | ABSENT-OK)`: puts absence in a set.
+  - `predicates_future.md` item 5, an "unset" / `epsilon` member (`m: T | unset`): the same.
+  - item 6, an author-written "ran but no value" member for `x*` loops (`h: <5 | empty`): the same.
 - (U2b) a mark at the label, left of the colon, in the default's slot: `(h, m ABSENT-OK): R`. The slot then has three
   fills: `= v` (read v), ABSENT-OK (the projection: "does not matter"), ABSENT-FAILS (fail). Over F only
   ABSENT-OK is needed; over H only ABSENT-FAILS. ONE place for every absence decision, per label, in every condition
@@ -333,6 +346,80 @@ is the one that warns.
 one"). Its cost is the spelling test: 5 split groups of 11 under T-pass, 4 under T-match, among them a pair that
 differs only in laziness. Behind each split is a refactor that changes no match and flips a condition.
 
+**U5, the owner's optional mark (rulings R2).** Evidence: table (R2) in `absent_check.py` (COMPUTED; `t2` population,
+11,110 subjects, DOM). Spellings are placeholders: `S?` / `optional(S)` on the filter, `h?` on the label.
+
+THE BASE when nothing is written: "a condition needs a text: absent FAILS". The empty list, both ways:
+- "fails too": the base is F. Then no spelling group splits (F's column of (SP)), and an empty list fails every
+  unmarked condition; `(n?: <5)` accepts it.
+- "holds as ruled at CF:997-1000": the base is T (set-once absence fails, a reached loop run zero times holds, an
+  optional or alternative around the loop fails). The mark is then added on top of today's line, and T's split groups
+  stay (5 of 11 unmarked). This is today's line plus one mark.
+
+WHAT THE MARK MEANS (both attachment points; R1: no set contains absence): when a marked label has no text, the
+CONDITION quantifies its part over the texts the label's group could have and holds if SOME of them satisfies. This is
+the projection, the reading every option above already uses for a zero-pass part. For a record it reduces to "test the
+other labels" (`(h: <10, m?: <30)` on `3,`: holds). The other reading, EVERY text must satisfy, makes a mark on a
+record useless: on (OP) it differs from SOME on 11 of 259 subjects (`3,`: SOME holds, EVERY fails, since not every
+`\d\d` is < 30). So the mark is read SOME.
+
+(ii) ON THE LABEL: `(h?: <100)`, `((h, m?): R)`, `(h: S, m?: T)`.
+- It stands in the slot of the default `m = v`. The slot has three fills: nothing (the base), `= v` (read v), `?`
+  (some text would do). `m? = v` together is an error (two answers to one question).
+- Joint: `((h, m?): R)` marks one part, whatever R is (product or not). Results:
+  - it equals H's answers on all 11,110 subjects, for `padded(between((9, 30), (11, 0)))` and for `>= (9, 30)`;
+  - it differs from `m = 0` on 2 (`9`, `09`) and on 1 (`9`) respectively.
+- Record equality: `(h: <10, m?: <30)` = `(h: <10) & (m?: <30)`, 0 of 259 differ on (OP) (base F). The mark travels
+  with the label, so the equality is by construction.
+- Spelling test: the mark does not look at the pattern, so a marked condition answers alike on every row of (SP); an
+  unmarked one answers per the base.
+
+(i) ON THE FILTER, his form, `(h: <100?)`. By R1 its result is not a set containing absence. Its KIND is therefore a
+new one: a condition's right side carrying an absence verdict (a set plus "and absent is acceptable"). Where may it
+stand?
+- Directly right of a label's colon, `(h: S?)`: the same as `(h?: S)`.
+- As a COMPONENT of a product, `((h, m): (S, T?))` / `(h: S, m: T?)`: the same as marking m.
+- Over a whole tuple set, `((h, m): R?)`: it marks EVERY label at once and cannot mark only m when R is not a
+  product (`>= (9, 30)` has no m component). Two readings, which differ:
+  - SOME (as the label mark, every label marked): on `8` of `t2` it FAILS, since no minute makes 8:mm >= 9:30.
+  - "the condition holds outright when a marked label is absent": `8` HOLDS. It differs from the label mark on 106 of
+    11,110 subjects for `between`, and on 19 for `>= (9, 30)`.
+- In a binding, `small := <100?`: a value of the new kind. Then `x & small` and `small | T` need meanings. `x & S?`
+  has no label to be absent, so it is an error or plain `S`.
+- Under `&` / `|` / `padded(...)` with plain sets: `S? & T` and `S? | T` need a three-valued table for absence (SQL's
+  NULL logic); `padded(S?)` needs a lift rule (`padded(S)?`). Each position needs a rule that the label form never
+  needs. The narrowest form that needs none is "only directly right of a colon, or as a product component", and that
+  is the label mark spelled on the other side.
+
+DOES IT REPLACE THE EXTRA ALTERNATIVE `... | (h: S)` ("the missing field does not matter", §4B.4)? Not in general.
+They are two readings of "does not matter":
+- the mark is SOME: "some minute would put it in range";
+- unsetdef's hand alternative `| (h: 10)` on `between((9, 30), (11, 0))` is EVERY (§4B.6): "every minute would".
+- They differ on 3 of 11,110: `9`, `09` and `11`. The mark admits `11` (11:00 is in range); the alternative does not.
+- The mark replaces the alternative exactly where the author meant SOME. The date case (§4B.4, table (DD)) is SOME,
+  and the mark serves it. EVERY keeps its hand spelling, which needs no guard (§4B.6).
+
+The time example under U5 (base F; `t2 & ((h, m): >= (9, 30))`):
+
+| form | `9` | `10` | `9:15` | `9:45` |
+|---|---|---|---|---|
+| neither | fails | fails | fails | holds |
+| `m = 0` | fails | holds | fails | holds |
+| `m?` (the label mark, SOME) | holds | holds | fails | holds |
+
+What U5 reverses:
+- Base F: F's column, with the mark as the way back to H's answers per label.
+- Base T: nothing ruled. It adds one mark and takes the place items 5-6 aimed at (which R1 rejects).
+
+Diagnostics:
+- `label.unset`'s text names three fixes (`m = 0`, `m?`, an alternative).
+- New errors:
+  - `m? = v`;
+  - a mark on a label that is never absent (or a warning, as `default.unused`);
+  - for the filter form, every position outside a colon or a product component.
+
+Concept count (label form, base F): one absence state, one slot with three fills.
+
 ## WHAT EACH REVERSES
 
 Rulings and ruled sentences, per option (his words in quotes; "kept" = unchanged).
@@ -342,7 +429,7 @@ Rulings and ruled sentences, per option (his words in quotes; "kept" = unchanged
 | unset-component, CF 11:05, "unset-component: yes" (J6: unset FAILS unless a default) | kept | kept | REVERSED for `?`-skips | REVERSED | kept, widened to zero passes |
 | per-match boundary, CF:997-1000, "Agree with lean" (§4.2: never reached FAILS; reached zero times HOLDS) | kept (J6 per pass) | kept literally | line MOVED (optionals hold) | "never reached fails" REVERSED | "zero times holds" REVERSED |
 | the "+ or * control", CF:933 ("What's missing is the + or * control"), §4.2 :1601-1602 | kept | kept | kept for quantifiers | dropped as the absent control | dropped as the absent control (`+` still forces one) |
-| zero-pass-record, CF 12:45, "zero-pass-record: I agree ..." | kept | kept | kept | answer kept (`9` FAILS), `&` equality kept; "'unset' keeps its meaning" goes | answer kept, `&` equality kept; the wording's "empty satisfies any set", "a plain single-label condition still HOLDS on zero passes" and "a default is NOT read there" REVERSED |
+| zero-pass-record, CF 12:45, "zero-pass-record: I agree ..." | kept | kept | kept | answer kept (`9` FAILS), `&` equality kept; "'unset' keeps its meaning" goes | answer kept, `&` equality kept; the wording's "a condition over a reached loop run zero times holds" (its "empty satisfies any set", restated per R1), "a plain single-label condition still HOLDS on zero passes" and "a default is NOT read there" REVERSED |
 | §4B.1 "a default is never read on zero passes"; item 7 not adopted (12:45 notes) | kept | kept | REVERSED | REVERSED (H); kept (H-d2) | REVERSED |
 | §4B.1 LOOPED row (default read per iteration; lane reading) | kept | CHANGED ((DL) 46) | kept | kept | kept |
 | default-unused, CF 11:05, "default-unused: agree" | kept | kept | clause (b) inverts | clause (b) inverts | kept |
@@ -351,6 +438,7 @@ Rulings and ruled sentences, per option (his words in quotes; "kept" = unchanged
 | L36 / §4.3 :1659-1660 ("on ZERO iterations both HOLD") | kept | kept | kept | kept | REVERSED (both fail) |
 | GROUP-ZERO (manager's reading, not ruled) | kept | kept | kept | kept ("some" = presence) | "tested by the plain condition and `all`" becomes "fails them" |
 | default-set, CF 10:43, "We can punt, as you say, and throw an error" | kept | kept | kept | kept | kept (U2c alone reopens it) |
+| `predicates_future.md` items 5-6 (a member for "unset" / "empty" in a set) | stay parked | stay parked | stay parked | stay parked | stay parked; under every option REJECTED by R1 (13:52) |
 | record-is-product (11:35), joint-loops (11:17), pairing-loop part 1 (13:29), set-arity (10:26), label-twice (13:16), defaults one string | kept | kept | kept | kept | kept |
 
 STOP-RULE check: every option can be stated as one rule; none contradicts an unlisted ruling. X1 is stateable only
@@ -379,13 +467,17 @@ D26), and what each lets through silently:
 
 | open question | T-pass | T-match | X1 | H | F |
 |---|---|---|---|---|---|
-| pairing-loop part 2 (zero passes per reach) | the per-reach reading stands as drafted | same | same | answered by the rule (EMPTY per reach) | answered: every empty reach FAILS (`3-;` of (UP)) |
+| pairing-loop part 2 (zero passes per reach) | the per-reach reading stands as drafted | same | same | answered by the rule (MISSING per reach) | answered: every empty reach FAILS (`3-;` of (UP)) |
 | pairing-loop part 3 (a pass that never reaches the pairing loop) | (Y): FAILS | (W'): h tested; k unset only if no pass reaches | (W) for an optional, Y-like for an alternative | (W): h tested | FAILS |
 | THE OPTIONAL-IN-A-PASS CASE | (A) | (B) | (B)-like (holds) | holds (`3:15,3,`) | FAILS |
 | zero-pass-empty | open | open | open | CLOSED if H's one-label rule is the projection (below) | CLOSED |
 | the domain of "some value" (jcfold2 corner 2) | a zero-pass corner | same | wider (every `?`) | EVERY optional field, not a corner | never arises |
 | GROUP-ZERO | the manager's reading | same | same | follows ("some" = presence) | plain and `all` fail on zero |
 | tuple-parts | untouched | untouched | untouched | untouched | untouched |
+
+U5 (the optional mark): with base "fails too" every corner reads as F's column for unmarked labels and as H's for
+marked ones; with base "as ruled" it reads as T's column for unmarked labels. Pairing-loop part 3 under U5: an
+unmarked k FAILS the pass (as F); `k?` gives (W).
 
 Table (ZE) (jcfix's zero-pass-empty population, 11,100 subjects): with the one-label condition read by projection,
 `(h: <$a, k: 3)` and `((h, k): < ($a, 0))` agree on all 1,110 subjects with a = 0, and `(h: <$a, k: 3)` and
@@ -396,56 +488,67 @@ of the group could satisfy" (the projection). Read as "holds whenever absent" it
 
 ## FOR THE OWNER
 
-You asked for three options worked side by side, plus today's line. Each is below in one paragraph, with its rule.
+Your direction asked for three options side by side, plus today's line; your 13:52 remarks added a fourth (the
+optional mark) and a rule for all of them: no set contains absence. Each option below gets one paragraph, with which
+reading of `(h: S)` it is. The two readings are: "h's text is in S" (it NEEDS a text), and "EVERY text h has is in S"
+(true when it has none).
 
-**Today's line.** A loop of two or more that ran zero times passes. A skipped optional, an alternative not taken, or
-an optional around a loop fails, unless there is a default. Equal patterns split: `(?<n>\d)*x` holds on `x`, while
-`(?:(?<n>\d)+)?x` fails. So do greedy `(?:(?<n>\d)*)?x` (holds) and lazy `(?:(?<n>\d)*)??x` (fails). Five of eleven
-groups of equal spellings split. Inside a loop it still owes you a choice: is a missing field judged per item or per
-match? The two readings differ on 76 of the 48,180 answers tested.
+**Today's line** (a mix). Needs-a-text for an optional or an alternative; every-text for a loop of two or more. Equal
+patterns split: `(?<n>\d)*x` holds on `x` and `(?:(?<n>\d)+)?x` fails; greedy `(?:(?<n>\d)*)?x` holds and lazy
+`(?:(?<n>\d)*)??x` fails. 5 of 11 groups of equal spellings split. It still owes a per-item vs per-match choice
+inside loops (76 of 48,180 answers differ).
 
-**Absent holds.** A condition tests the values that exist; a missing one never fails it. No group splits. For a
-condition over several labels, a missing field means "could it fit?". You give up unset-fails (11:05), half of the
-per-match line (11-15), and "the alternative lacking x drops" when you filter a labelled alternation. A default is
-read on every absence, the empty list's included (your item 7 becomes the rule). Presence is asked with
-`some(...)`, a count, or the pattern.
+**Absent holds** (every-text, everywhere). A missing value never fails a condition. Over several labels a missing
+field is read "could some value fit?". No group splits. You give up unset-fails (11:05), half of the 11-15 line, and
+"the alternative lacking x drops" when you filter a labelled alternation. A default is read on every absence, the
+empty list's included (item 7 becomes the rule). Presence is asked with `some(...)`, a count, or the pattern.
 
-**Absent fails.** A condition naming a label with no value fails, the empty list included, unless a default supplies
-one. No group splits, and there is no "could it fit" anywhere. You give up the other half of the 11-15 line:
-`/(?<n>\d)*x/` on `x` and the empty list now fail. A default inside the set is the way to accept absence, and it must
-be read on the empty list. A missing field that "does not matter" across several labels has no one-default spelling
-(the date case).
+**Absent fails** (needs-a-text, everywhere, empty lists included). No group splits, and nothing is ever read "could
+it fit". You give up the other half of the 11-15 line: `/(?<n>\d)*x/` on `x`, and every empty list, now fail. A
+default inside the set accepts absence, and it must be read on the empty list. A field that "does not matter" across
+several labels has no one-default spelling.
 
-**You control it.** (a) The default alone, on top of either base. Under "holds", "must be present" is a default
-outside the set, an opaque idiom. (b) A mark at the label, in the default's slot: `(h, m ABSENT-OK): R`. This is your
-own `m = some(...)` with "any value of m", one slot for every absence decision. (c) Your `some`, `all` and `count`,
-over "absent holds": `(n: S)` is "all of them", `some(...)` is "and at least one". (d) The pattern, as today.
+**Your optional mark** (needs-a-text unless marked). Base: absent fails. Marked: absent passes if some value would
+fit. Two places to write it:
+- on the label, `(h?: <100)`, `((h, m?): R)`: the default's slot, filled with "any value would do";
+- on the filter, `(h: <100?)`: by your 13:52 rule its result is not a set. It is the label mark wherever it stands
+  right of a colon or as one part of a record. Anywhere else (a binding, under `&`, `|` or `padded`, over a whole
+  `>= (9, 30)`) it needs rules of its own; over the whole set it marks every label.
+
+With base "fails too" nothing splits. With base "the empty list holds as ruled" it is today's line plus a mark. The
+mark covers "does not matter" when that means "some value fits" (the date case). The hand alternative `| (h: 10)`
+means "every value fits", and the two differ on `11` against 9:30-11:00.
+
+**The default and quantifier words alone** (other author controls). The default `m = v` over either base; under
+"holds", "must be present" becomes a default outside the set, an opaque idiom. Under "holds", `some(...)` is "and at
+least one". The pattern itself is today's control.
 
 The time example, `((h, m): >= (9, 30))`, minutes optional:
 
 | | `9` | `10` | `9:15` | `9:45` |
 |---|---|---|---|---|
-| today, and absent fails, no default | fails | fails | fails | holds |
-| absent holds, no default | holds | holds | fails | holds |
-| any option, with `m = 0` | fails | holds | fails | holds |
+| today, absent fails, the mark's base | fails | fails | fails | holds |
+| absent holds; or the mark `m?` | holds | holds | fails | holds |
+| any option with `m = 0` | fails | holds | fails | holds |
 
 The facts that separate them:
 
-- **Equal spellings give equal answers:** under "holds" and "fails" always; today, not in 5 of 11 groups; "only
-  alternatives fail" (your 13:38 remark taken literally), not in 9.
+- **Equal spellings, equal answers:** holds, fails, the mark over fails: always. Today: not in 5 of 11 groups.
+  "Only alternatives fail" (your 13:38 remark taken literally): not in 9.
 - **Answers that move**, of 48,180 tested:
-  - "holds" moves 56: missing fields and alternatives (`9:00` of the seconds table, `3;`), plus 5 empty lists
-    that carry a default (it is now read there);
-  - "fails" moves 131, all empty lists or empty inner loops (`''`, `3`), none of them optional fields;
-  - your 12:45 answer (`9` fails) and the record = `&` equality survive under every option (0 differ).
-- **"Fails" never needs "could it fit"**, so the open question on empty sets (zero-pass-empty) disappears. "Holds"
-  makes "could it fit" an everyday reading for every optional field.
+  - "holds" moves 56: missing fields and alternatives (`9:00` of the seconds table, `3;`), plus 5 empty lists that
+    carry a default;
+  - "fails" moves 131, all empty lists or empty inner loops (`''`, `3`);
+  - your 12:45 answer (`9` fails) and record = `&` survive under every option.
+- **"Fails" never asks "could it fit"**, and the empty-set question (zero-pass-empty) disappears with it. Under the
+  mark, "could it fit" is asked only where the author wrote `?`. Under "holds" it is asked for every optional field.
 - **The default:** under "holds" a default inside the set changes nothing (the unused warning flips sides); under
-  "fails" it is the main tool.
+  "fails" and the mark it is a main tool.
 
 ---
 What the evidence favours on each of his two stated criteria (the lane's, not a recommendation):
-- Simplifying semantics: "holds" and "fails" each have one absence state and pass the spelling test; "fails" has no
-  projection anywhere.
-- Saving people from themselves: "fails" never passes a value that is not there; "holds" lets `9` through
-  "at or after 9:30"; today's line lets a refactor between equal patterns flip answers silently.
+- Simplifying semantics: "holds", "fails" and the mark over "fails" each have one absence state and pass the spelling
+  test; "fails" has no "could it fit" anywhere, the mark only where written.
+- Saving people from themselves: "fails" never passes a value that is not there and the mark does so only where
+  written; "holds" lets `9` through "at or after 9:30"; today's line lets a refactor between equal patterns flip
+  answers.

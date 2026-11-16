@@ -816,5 +816,58 @@ vac = lambda x: (x.split(";")[0].split("-")[1] == "3") and all(int(h) < int(x[0]
 print("     T (vacuous one-label rule, today's ruled `&`) on '0-3': %s; C1 under T's projection vs it: %d of %d differ"
       % (hf(vac("0-3")), sum(ze("T-pass", x, "C1") != vac(x) for x in SUBJ_ZE), len(SUBJ_ZE)))
 
+# =================================================================================================================
+# (R2) the owner's optional mark (rulings R2): base "a condition needs a text" (absent FAILS); the author marks
+# absence acceptable. Placeholders: on the FILTER `(h: S?)` / `((h, m): R?)`, on the LABEL `(h?: S)` / `((h, m?): R)`.
+# A marked absent part is read by the CONDITION (R1: no set holds absence): SOME reading = the condition holds if
+# some text of the label's group would satisfy it (the projection); VACUOUS reading of a whole-filter mark = the
+# condition holds outright when a marked label is absent. Compared with the hand alternative `| (h: 10)` (unsetdef's
+# "does not matter", the EVERY reading of §4B.6) and with H. COMPUTED; t2 population as (TM), plus `8`, `11`.
+print("\n(R2) optional mark on t2 & ((h, m): padded(between((9, 30), (11, 0)))) and on ((h, m): >= (9, 30)), DOM")
+GE930 = RT
+BTW = RB
+forms = {}
+for rname, Rf in (("between((9,30),(11,0)) padded", BTW), (">= (9, 30)", GE930)):
+    res = {}
+    for sbj in SUBJ_T2:
+        p = sbj.split(":")
+        h, m = p[0], (p[1] if len(p) == 2 else None)
+        if m is not None:
+            v = Rf((h, m))
+            res[sbj] = dict(neither=v, dflt0=v, mark_label=v, mark_filter_vacuous=v, hand=v, H=v)
+            continue
+        res[sbj] = dict(
+            neither=False,                                                   # base: absent FAILS
+            dflt0=Rf((h, "0")),                                              # m = 0
+            mark_label=tuple_ok(Rf, [h, EMPTY], [None, M2]),                 # (h, m?): R, the SOME reading
+            mark_filter_vacuous=True,                                        # ((h, m): R?) read as "holds outright"
+            hand=(h.isdigit() and int(h) == 10),                             # ... | (h: 10), unsetdef's spelling
+            H=tuple_ok(Rf, [h, resolve("H", "O")], [None, M2]))
+    forms[rname] = res
+    keys = ["neither", "dflt0", "mark_label", "mark_filter_vacuous", "hand", "H"]
+    print("     R = %s" % rname)
+    for sbj in ("8", "9", "10", "11", "9:15", "9:45"):
+        print("       %-5s %s" % (sbj, " ".join("%s=%s" % (k, "H" if res[sbj][k] else "F") for k in keys)))
+    for a_, b_ in (("mark_label", "H"), ("mark_label", "hand"), ("mark_label", "mark_filter_vacuous"),
+                   ("mark_label", "dflt0"), ("neither", "hand")):
+        d = sorted([x for x in SUBJ_T2 if res[x][a_] != res[x][b_]], key=lambda x: (len(x), x))
+        print("       %-20s vs %-20s differ %4d of %d  e.g. %s" % (a_, b_, len(d), len(SUBJ_T2), d[:4]))
+# the record (a product) with a marked label: (h: <10, m?: <30) vs (h: <10) & (m?: <30) on (OP)'s population, the
+# mark read by SOME; base F; and the EVERY reading for comparison (every text of m's group must satisfy)
+eq_some = eq_every = 0
+for x in SUBJ_OP:
+    its = split_op(x)
+    rec = (all(tuple_ok(lambda t: Sh(t[0]) and Tm(t[1]), [h, m if m is not None else EMPTY], [None, M2])
+               for h, m in its)) if its else False                      # base F: the empty list fails (unmarked h)
+    amp = (all(Sh(h) for h, _ in its) and all(Tm(m) if m is not None else any(Tm(z) for z in M2) for _, m in its)) \
+        if its else False
+    every = all(Sh(h) and (Tm(m) if m is not None else all(Tm(z) for z in M2)) for h, m in its) if its else False
+    eq_some += rec != amp
+    eq_every += rec != every
+print("     (OP) (h: <10, m?: <30) vs (h: <10) & (m?: <30), base F: differ %d of %d; the EVERY reading of m? vs SOME: "
+      "differ %d (e.g. '3,': SOME %s, EVERY %s)" % (eq_some, len(SUBJ_OP), eq_every,
+                                                   hf(tuple_ok(lambda t: Sh(t[0]) and Tm(t[1]), ["3", EMPTY], [None, M2])),
+                                                   hf(all(Tm(z) for z in M2))))
+
 print("\nCONTROL comparisons %d differ %d" % (T["control"], T["control_differ"]))
 print("TOTAL engine cases %d differ %d engine-disagreements %d" % (T["cases"], T["differ"], DISAGREE[0]))
