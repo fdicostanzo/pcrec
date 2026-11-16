@@ -197,5 +197,5 @@ The manager's default-reaches-dollar derivation is confirmed on these population
 
 ## VALIDATION
 
-`timeout 600 make test-spec-history test-doc-lint` from the worktree. The verdict is make's `*** [` lines: see the
-lane's reply (recorded below after the run).
+`timeout 600 make test-spec-history test-doc-lint` from the worktree: rc 0, no `*** [` line in the log (GREEN).
+Run before the last draft fix (one reference, "L1 restated" -> "§0.1 L100"); re-run by lanecheck at the end.

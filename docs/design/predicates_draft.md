@@ -2024,7 +2024,7 @@ or `b` then digits 5-9), on the subject `b` (zero passes: h absent), 222 subject
 A MARKED CONDITION IS NOT AN INDEPENDENT FILTER (rulings R1 (a)). `b` is in `P & (k: "b")` and in `P & (h?: <5)`,
 but NOT in `P & (k: "b") & (h?: <5)`: once a mark is involved, `P & A & B` is not the intersection of `P & A` and
 `P & B` (each condition reads the program it stands in; §2.2's extensional `&` holds for the program's subjects as a
-whole, not condition by condition; L1 restated). `&` STAYS COMMUTATIVE AND ASSOCIATIVE: DOM reads the chain's SET of
+whole, not condition by condition; §0.1 L100). `&` STAYS COMMUTATIVE AND ASSOCIATIVE: DOM reads the chain's SET of
 conditions, so every order and grouping answers alike (the six orders of the three conditions above, under each of
 the six candidate domains below, over the 222 subjects: 0 differ; by construction).
 
