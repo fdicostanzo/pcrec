@@ -1735,3 +1735,11 @@ condition (the two readings then agree: `((k, h?): ("a", <5) | ("b", >=5))` hold
 for writing these." RECORD: RULED: DOM(h) is taken over ANY match of the pattern (one value set per label, fixed
 when the pattern is compiled); labels that go together are written together, in a joint condition. His second
 sentence is a REMARK, not a directive (recorded in predicates_future.md as a parked item with a trigger).
+
+**2026-11-16 OWNER RULING — zero-pass-empty (Frank, to session 136, box clock 16:20).** The manager's 14:50 reading (b)
+(the mark means ONE thing in every shape, "some value would put the tuple in the set"; so a marked absent label
+against a set empty through a match value FAILS, in both spellings), put to him with the example
+`(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*` & `(h?: <$a, k: 3)` on `0-3` (FAILS; the other reading HOLDS; 1 of 11,100
+differ). His words: "zero-pass-empty: agree. If nothing could pass then some absent value of present couldn't either.
+I agree with your reading." RECORD: RULED: F1 is the mark's one meaning; zero-pass-empty is CLOSED; the "awaiting
+the owner's assent" labels come off in the next revision.
