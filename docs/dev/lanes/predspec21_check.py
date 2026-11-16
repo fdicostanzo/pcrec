@@ -832,6 +832,21 @@ for rname, Rm in (("R = (<10, <30)", lambda v: int(v) < 30), ("R' = (<10, padded
             ex.append(s)
     print("   (D5) %-26s over %d lists: occurs.none(((h, m?): !R)) vs wanted %d %s; occurs.none(!((h, m): R)) %d" %
           (rname, len(SUBO), cm, ex, cp))
+    # the same marked form under THE RULE (mark-narrows, the variant): the condition narrows DOM(m) through the
+    # passes where m is PRESENT (an ordinary filter there: no such pass has its tuple outside R), so DOM(m) = the
+    # minutes some h < 10 pairs with inside R; the passes with m absent are transparent while DOM is computed
+    DOMv = {d for d in DOMm if Rm(d)}
+    cv, exv = 0, []
+    for s in SUBO:
+        ps = [(x.split(":")[0], x.split(":")[1] if ":" in x else None) for x in s.split(",") if x]
+        inR = lambda h, m: int(h) < 10 and Rm(m)
+        want = all(m is not None and inR(h, m) for h, m in ps)
+        markedv = not any((not inR(h, m)) if m is not None else any(not inR(h, d) for d in DOMv) for h, m in ps)
+        cv += markedv != want
+        if markedv != want and len(exv) < 2:
+            exv.append(s)
+    print("   (D5) %-26s under the RULE (program DOM, DOM(m) = %d values): occurs.none(((h, m?): !R)) vs wanted %d %s" %
+          (rname, len(DOMv), cv, exv))
 # fixind D6: an array alternative lacking the label
 PX = r"(?<x>\d)|(?<y>[a-z])"
 SUBX = D + [chr(c) for c in range(97, 123)]

@@ -428,7 +428,9 @@ PART 3: RECORD VERSUS JOINT WITH DOLLAR (own-label `$a`; defaulted and marked), 
 PART 4: the other counts rev 21 quotes (review r29's drills, recomputed)
    (D2) occurrences(/(?<g>a)?b/), 127 spans over {a,b} to length 6, DOM(g) = ['a']: 'every hit\'s g is a, possibly none' vs (g?: "a") differ 94 (e.g. 'b', 'abb'); vs occurs.none(!(g: "a")) differ 0
    (D5) R = (<10, <30)             over 1111 lists: occurs.none(((h, m?): !R)) vs wanted 0 []; occurs.none(!((h, m): R)) 0
+   (D5) R = (<10, <30)             under the RULE (program DOM, DOM(m) = 30 values): occurs.none(((h, m?): !R)) vs wanted 25 ['3,', '3,3,']
    (D5) R' = (<10, padded(<100))   over 1111 lists: occurs.none(((h, m?): !R)) vs wanted 71 ['3,', '3,3,']; occurs.none(!((h, m): R)) 0
+   (D5) R' = (<10, padded(<100))   under the RULE (program DOM, DOM(m) = 100 values): occurs.none(((h, m?): !R)) vs wanted 71 ['3,', '3,3,']
    (D6) [x = /\d/, y = /[a-z]/] & (x?: /[0-5]/) as /(?<x>\d)|(?<y>[a-z])/, 36 subjects: unmarked 6, marked (absent x) 32, the entry DROPPED 6
    (LOOP) /(?<k>\d)?-(?<h>\d)?/ vs /(?:(?<k>\d)(?=-))*-(?:(?<h>\d)(?!\d))*/: 781 subjects, match differ 0, capture differ 0
    (SEQ) /(?<n>\d)+/ vs /\d*(?<n>\d)/: 84 subjects, PCRE-reported captures differ 0; (n: <5) by the sequence rule differs on 28 (first '70'; '993': True)
