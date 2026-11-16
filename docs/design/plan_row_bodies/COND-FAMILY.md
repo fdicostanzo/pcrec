@@ -1210,3 +1210,12 @@ ADDED (Frank, box clock 22:00) on the `enumerate` entry above: "Also, enumerate(
 `any_case` on `enumerate` does not make it primitive-free; it replaces a SPECIAL-PURPOSE primitive (`any_case`) by
 a GENERAL one already adopted (`enumerate`), which is the direction he asked for ("more fundamental"). The follow-up
 counts primitives that way: fewer and more general, not zero.
+
+**2026-11-15 OWNER POINTER — exposing options as settable values (Frank, to session 133, box clock 22:03).** His words:
+"One thing we talked about was exposing options like (illustrative example) /(?i=${case})fred/". RECORD: the
+option-setting route of the re-reading follow-up has this shape: a PCRE option whose value comes from a parameter or
+binding (the spelling is illustrative, his word). The manager's note for the follow-up (not ruled): by itself it
+makes the option a VALUE; for `any_case(rx)` to be a body over it, the option must also REACH INTO the hole that
+holds `rx`, which today's rule forbids (a hole keeps its own flags, the draft's NO INHERITED FLAGS, its open item on
+flags); so the follow-up's first question is whether an option set this way applies through a hole, and what that
+does to that rule. Not yet in the rev 16 lane's brief: the next revision or the follow-up row picks it up.
