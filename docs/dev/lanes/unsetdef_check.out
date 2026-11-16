@@ -1,0 +1,19 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+(DF) t2 & ((h, m = 0): padded(between((9, 30), (11, 0)))): 11110 subjects, rows 3, slice rows 2, differ 0
+(DF) the sketch's s3 points: 9 out, 09 out, 10 IN, 11 IN, 12 out, 9:29 out, 9:30 IN, 11:00 IN, 11:01 out, 10:59 IN
+(DG) unguarded hand unfold ((h, m): R) | (h: slice): engine == its own meaning; differs from the default on 99 of 11110 subjects (e.g. 11:45 IN)
+(DN) vs the default: no default differs on 2; `| (h: 10)` differs on 1 (11)
+(D1) t2 & (m = 0: <30): unset branch HOLDS; same answers as no default on 11000 of 11110
+(D1) t2 & (m = 45: <30): unset branch FAILS (the default is outside the set); same answers as no default on 11110 of 11110
+(D1) t2 & (m = 00: <30): unset branch FAILS (the default is outside the set); same answers as no default on 11110 of 11110
+(D1) t (m never unset) & ((h, m = 0): R): identical to no default on 11000 of 11000: the default is never used
+(DS) t3 & ((h, m = 0, s = 0): padded(>= (9, 0, 30))): 4206 subjects, branches 3 (rows 3/2/1); §5 problem 7's form differs on 2 (all minutes-absent: True; e.g. 10, 11)
+(DV) semver2 & ((major, minor, patch = 0): >= (1, 4, 2)): 728 subjects; slice rows 2; the UNGUARDED hand form differs on 0
+(DV) semver2 & ((major, minor, patch = 0): >= (1, 4, 0)): 728 subjects; slice rows 3; the UNGUARDED hand form differs on 0
+(DV) semver2 & ((major, minor, patch = 0): between((1, 4, 0), (1, 9, 9))): 728 subjects; slice rows 3; the UNGUARDED hand form differs on 3
+(DD) 2024-MM with no day: the 'don't care' months ['02', '03', '04']; the best default day differs on 1 of 12 months (no default reproduces it)
+(DL) looped, per item: 585 lists of 0..3 items; empty list (zero iterations) HOLDS; '10,9:15,' out
+(DA) the other alternative taken (` o'clock`): 11110 subjects
+(DC) computed label, (year, mnum = 1): >= (2024, 3): 65 subjects; '2024' out, '2025' IN
+(DK) t2 & [m = 0] admits ['0']; differs from t2 & ((h, m = 0): R) on 244 of 11110
+TOTAL cases 122608 differ 0 engine-disagreements 0
