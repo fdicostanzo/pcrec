@@ -1219,3 +1219,9 @@ makes the option a VALUE; for `any_case(rx)` to be a body over it, the option mu
 holds `rx`, which today's rule forbids (a hole keeps its own flags, the draft's NO INHERITED FLAGS, its open item on
 flags); so the follow-up's first question is whether an option set this way applies through a hole, and what that
 does to that rule. Not yet in the rev 16 lane's brief: the next revision or the follow-up row picks it up.
+
+**2026-11-15 RULING — tuple compare names (Frank, to session 133, box clock 23:06).** Offered (a) `lex_ge2`, `lex_le2`,
+`lex_between2` and the `...3` forms, taking arrays (`lex_between2([/\d{1,2}/, /\d\d/], ":", [9, 0], [10, 0])`; his
+2026-11-14 stem), (b) `pair_between`/`triple_between`, positional, (c) `tuple_between2`, with the manager's lean
+(a), his words: "tuple_names: a". RECORD: the tuple compares in the first library are named by scheme (a), over
+arrays. To fold in the next revision (rev 17), with the exposed-options pointer above.
