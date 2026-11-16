@@ -94,6 +94,8 @@ KEYED and RECORDED (span_cards §R1.3's r9 table).
   that are not one experiment (windows, run ids, code_commit, plan, kit fold; a confirmation's JMHC cells).
   [r13 JF-4] the `refusal` table reads est's REFUSALS (cause, keys): a refusal naming only find_byte@6 scan rows
   never vetoes a level's verdict (the scan line prints the row `scan unpriced (<est's reason>)`); any other refuses.
+- `replay_zen4-1.txt` — [r13 JF-4, R1 cond. B] the fixed rule on COPIES of mfcard-zen4-1's records, via job 609, made
+  before mfcard-zen4-2 (header: how, the files' sha-256); evidence, never a verdict.
 - `j1_rule.py` — J1's verdict (a)/(b)/(c) from its cells (m 0.5, k 5), on est.py's primitives.
 - `record.py` — the run record's one writer: per-ver `SETS`/`RULES` (ver 3 keeps the `rules` key, others `rules.<ver>`); [slotx]
   `WINDOWS` (a window's job set: `s2d`, `mfcard` = J2 J2p JMB JMH; finalize records `window`), `libc` names any
