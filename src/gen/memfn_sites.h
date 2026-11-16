@@ -182,6 +182,21 @@ mf_walt *pcrec_memfn_walts(Ctx *cx, int n);
  * the caller fills in order (the walked offsets in walk-index order, §1.1's
  * obligation); returns them. */
 mf_wspan *pcrec_memfn_walt_spans(Ctx *cx, mf_walt *a, mf_entry entry, int n);
+/* pcrec's own bounds on every window statement OTHER than the cover (the
+ * pre-check's run, the prefilter's walked offsets and run, the FIND seek):
+ * at most PCREC_WSTMT_POS positions per span, every stated offset below
+ * PCREC_WSTMT_REACH. They are the kit's pre-R-45 bounds (32 positions,
+ * reach 64), kept by pcrec when the kit's own bounds rose to 4095/4096 for
+ * the cover (R-45, the manager's other-sites-at-32 ruling, 2026-11-16).
+ * Construction keeps every such statement inside them, and each writer
+ * asserts the construction bound it states from against them at build time
+ * (`req_pres_spans`, `pf_window_of` in emit_dfa.c); the run-time check
+ * (`window_bounds_check`) reads only the kit's bounds and takes no site
+ * kind. Raising one of these is a kit-visible change of what pcrec states. */
+#define PCREC_WSTMT_POS   32
+#define PCREC_WSTMT_REACH 64
+_Static_assert(PCREC_WSTMT_POS <= MF_WSPAN_POS && PCREC_WSTMT_REACH <= MF_WREACH,
+               "pcrec's non-cover window statement bounds lie inside the kit's");
 /* Fills span `w`: `len` positions from `start`, verify `v`, its core every
  * position (narrow it with pcrec_memfn_wspan_core); every set empty until a
  * position setter below fills it. The span's per-position lists (`len`

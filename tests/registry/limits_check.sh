@@ -335,6 +335,13 @@ done <<< "$anchored"
 #   SELECT_MAX_ROUNDS (select_engine.c) — a bounded-loop iteration cap with a
 #     from-day-one-bound argument at the loop itself (src/core/CLAUDE.md's
 #     [SEL-1] section), not a value a pattern can be measured against
+#   PCREC_WSTMT_POS, PCREC_WSTMT_REACH (src/gen/memfn_sites.h, [COVER-CAP]
+#     stage 2) -- pcrec's construction bounds on its non-cover window
+#     statements, a seam invariant between pcrec and the memfn kit asserted
+#     at build time at each writer (`_Static_assert` beside req_pres_spans
+#     and pf_window_of) with its argument beside it; the bounds a pattern is
+#     measured against are the writers' own rows (PCREC_MAX_REQ_RUN_SCAN,
+#     PCREC_PREFIX_K_MAX), never these
 #   (C_MEMCHR, C_BITMAP, C_VERIFY, C_ENTER, C_MISPRED, MATERIAL_NUM and
 #     MATERIAL_DEN, src/opt/prefix_k.c's cost model, left this list with that
 #     file at D172 S2 commit 6: the selection is the memfn kit's, its
@@ -564,7 +571,9 @@ VM_MAX_STRIDE
 VM_FAST_TIER_BYTES
 VM_FAST_TIER_MIN
 VM_MRL_DYN_MAX
-SELECT_MAX_ROUNDS"
+SELECT_MAX_ROUNDS
+PCREC_WSTMT_POS
+PCREC_WSTMT_REACH"
 
 NONLIMIT_ALLOWLIST="PREMUL_DEAD
 REG_SEL_ANY

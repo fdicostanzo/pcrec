@@ -341,6 +341,18 @@ static int cover_width_limit(const Ctx *cx)
  * `cover_window` states no span the kit refuses (its refusal bounds
  * MF_WSPAN_POS and MF_WREACH; the span's rows are pcrec's own storage of
  * exactly its length since MF_SITE_ABI 30, so no overrun is possible). */
+/* THE SEAM (cover_cap.md §11.1 B2): the cover walk ends before the anchored
+ * machine's ceiling, so a cover states at most the ceiling less one
+ * positions, its after side at offset k reaches the ceiling, and its proof
+ * range must reach offset k. Each must fit the kit's declared bounds, or the
+ * BUILD fails: a `-D` may lower PCREC_ANCHORED_MAX_STATES, never raise it
+ * past them (limits.md §3.12¶3). `_Static_assert`, never `#if`: the ceiling
+ * is an `enum` at the default and reads as 0 in `#if`. */
+_Static_assert(PCREC_ANCHORED_MAX_STATES - 1 <= MF_WSPAN_POS &&
+               PCREC_ANCHORED_MAX_STATES <= MF_WREACH &&
+               PCREC_ANCHORED_MAX_STATES <= MF_MAX_FWD,
+               "the cover seam: PCREC_ANCHORED_MAX_STATES exceeds the memfn kit's declared "
+               "window bounds (MF_WSPAN_POS, MF_WREACH, MF_MAX_FWD); a -D may only lower it");
 static bool cc_fits(CoverSt *st)
 {
     int k = st->w.k;
@@ -657,11 +669,16 @@ const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class
     }
     before = before || e->absent_before != MK_ABS_SATISFIES;
     after = after || e->absent_after != MK_ABS_SATISFIES;
-    /* bounded by the count (r45_reply.md §5 (b); review r27 EMIT-1): past
-       both the kit's counted rows and the window's following offset k, the
-       want and the got are all ones, so no offset there can differ */
+    /* the kit's counted range must reach the after-context at offset k
+       (cover_cap.md §11.1 B5): a shorter range is the kit's defect, named,
+       never a narrower comparison. Past the range both the want and the got
+       are all ones (the want is all ones past k), so the loop stops there
+       (r45_reply.md §5 (b); review r27 EMIT-1). */
     long end = cls->proof ? MF_PROOF_LO + (long)cls->proof_n : MF_PROOF_LO;
-    if (end < (long)e->k + 1) end = (long)e->k + 1;
+    if (end < (long)e->k + 1)
+        pcrec_ctx_fail(cx, 0, "internal error: the kit's proof range ends at offset %ld, "
+                       "before the cover's after-context at %d (src/gen/known.c)",
+                       end - 1, (int)e->k);
     if (end > MF_MAX_FWD) end = MF_MAX_FWD;
     for (int d = MF_PROOF_LO; d < end; d++) {
         uint8_t want[32];

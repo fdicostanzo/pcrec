@@ -1443,8 +1443,12 @@ static uint8_t site_kind_of(Ctx *cx, SiteKindSite site)
  * the statement before B3b, so `used` stays today's. The ONE constructor:
  * the define states it, and the trace build's five-pick shadow describes a
  * declined pre-check with it. NULL with *n 0 where nothing is necessary. */
-_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= MF_WSPAN_POS,
-               "the run the analysis stores is stated uncut as one memfn window span");
+/* The run is stated whole, positions 0 .. whole_len - 1, so the analysis's
+ * bound is both its span length and its reach (memfn_sites.h, PCREC_WSTMT_*). */
+_Static_assert(PCREC_MAX_REQ_RUN_SCAN <= PCREC_WSTMT_POS &&
+               PCREC_MAX_REQ_RUN_SCAN <= PCREC_WSTMT_REACH,
+               "the run the analysis stores is stated uncut as one window span within "
+               "pcrec's non-cover statement bounds (PCREC_WSTMT_POS, PCREC_WSTMT_REACH)");
 static const mf_pred *req_pres_spans(Ctx *cx, uint16_t *n)
 {
     const ReqSet *set = pcrec_fact_req_set_stated(cx);
@@ -6877,6 +6881,14 @@ static bool walk_proves(const KsetWalk *wk, int d, const ReqRun *r, int i)
     return true;
 }
 
+/* Every offset the prefilter's statement names is a walked offset, below the
+ * walk's depth (the run R is extended only where the walk proves it, and its
+ * pinned stretch is checked inside the walk below), and offset 0's span is
+ * at most 2 positions: the walk's bound is its span length and its reach
+ * (memfn_sites.h, PCREC_WSTMT_*). */
+_Static_assert(PCREC_PREFIX_K_MAX <= PCREC_WSTMT_POS && PCREC_PREFIX_K_MAX <= PCREC_WSTMT_REACH,
+               "the k-set walk's depth lies within pcrec's non-cover statement bounds "
+               "(PCREC_WSTMT_POS, PCREC_WSTMT_REACH)");
 static int pf_window_of(Ctx *cx, const UnanchStart *us, const uint8_t *parked,
                         uint32_t offer, bool bounded, mf_walt **out)
 {

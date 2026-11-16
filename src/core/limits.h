@@ -641,6 +641,13 @@
  * `-DPCREC_NO_ENDVAR` (`src/ir/dfa.c`'s header states the rule); never
  * overridden in a shipped build.
  *
+ * LOWER-ONLY BY `-D` ([COVER-CAP] stage 2, docs/design/cover_cap.md §11.1
+ * B2). The ceiling also bounds the cover: the cover walk ends before it, so
+ * a cover states at most the ceiling less one positions to the memfn kit.
+ * A `-D` may lower the ceiling; a raise past the kit's declared bounds
+ * (MF_WSPAN_POS 4095, MF_WREACH and MF_MAX_FWD 4096) fails the build, at
+ * the seam assertion beside `cc_fits` in src/gen/known.c.
+ *
  * IT IS AT THE ACTION. The value is read at the one `pcrec_build_dfa` call
  * that builds the optional machine, not at a flag some other edit could
  * cancel — the placement lesson of the [M6.2] repair slice.
