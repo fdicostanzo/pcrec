@@ -1264,3 +1264,19 @@ reply (paths passed as arguments; one rule change, a parameter on the left of `:
 the section form `(h:)` (the manager's READING of "your spelling"; the bare `[h, m]` is the other candidate, to
 confirm), and a PROPERTY he values whatever the spelling: the compared field can only be a label of the operand on
 the left of `&`; nothing names another map. The named-map form (`p.h`) is not adopted. Not ruled; rev 18 carries it.
+
+**2026-11-15 RULING + OWNER IDEA — no bare field reference; a mark for the other side of the intersection (Frank, to
+session 134, box clock 23:44).** Told the spelling stayed open between the section `[(h:), (m:)]` and the bare
+`[h, m]`, his words: "definitely not a bare reference. it might shadow a binding and it wouldn't be clear where it
+was coming from. if we are building new syntax, what about a symbol that represents the other side of the
+intersection. ^.h or something like that." RECORD: (1) RULED: a compared field is never written as a bare label name
+(`[h, m]` is out), for two reasons of his: it could shadow a binding, and the reader cannot see where it comes from.
+(2) IDEA (illustrative spelling, his "or something like that"): a MARK that stands for the other side of the `&`,
+with the field read off it by the existing `.` (`^.h`). Candidate beside the section `(h:)`; not ruled. The
+manager's notes for the next revision (not ruled): the mark is the anonymous form of the named-map idea, so it keeps
+`.`'s one meaning and reads as a noun, and it keeps his left-side property (now: "the other side"; `&` is
+symmetric by his earlier ruling, so the other side is defined from either side); it needs the same one rule change
+as the named form (a parameter bound to a field path on the left of `:` in a macro body); to state: which `&` the
+mark binds to when nested or written inside a macro body (lexically, the `&` of the place it is WRITTEN), whether
+the mark may stand alone (the whole other side, against "the operand is never an argument"), and whether `(h: S)`
+is then readable as a condition on `^.h` (fewer, more general primitives).
