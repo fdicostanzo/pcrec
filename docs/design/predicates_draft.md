@@ -2,6 +2,21 @@
 
 ## Changelog
 
+- **rev 12 (lane predspec12, 2026-11-15).** Folds the owner's evening ruling ONE ANCHORING RULE, `anchored()`, AND
+  THE NAMING OF PROVIDED TRANSFORMS (CF:1001-1024; the manager's advice he agreed to, CF:1009, "Ok I agree"). (A)
+  ANCHORING, restated everywhere the draft spoke of it: ONE rule, a FILTER (the filter side of `&`, a `label:`
+  condition) matches the WHOLE value, everywhere else an rx is unanchored as in PCRE (a final pattern is searched);
+  `^`/`$` are the ends of the SCOPED MATCH, plain PCRE with the value as the subject (§11 THE ONE ANCHORING RULE, §0.3
+  "scoped match"). No transform "removes" anchoring any more: `contains`/`search`/`startsWith`/`endsWith` are plain
+  GAP bodies (§2.6, §8). `anchored(rx) := /^${rx}$/` ADDED (§8; identity in filter position, L69). The lean to fold
+  `startsWith`/`endsWith` into `search` is WITHDRAWN (§8, §13 FIXB-9 (2)); the rejected alternative (an explicit
+  anchor switching the implicit one off) recorded (§11, L69). ANSWER MOVED: L63 (`$` is PCRE's, so `contains(/err$/)`
+  accepts `err\n`; rev 10's exact-end lean, SIM-5, withdrawn as an extra rule); NEW L68 (`anchored(x)` vs `\A...\z`
+  in a final pattern, on a final newline) and L69; every other row and §12 case re-applied, unchanged in answer
+  (§0.1, §12 REV 12). (B) NAMING: the naming rule now binds every PROVIDED transform (§2.7); `search` fails it and is
+  marked OPEN, name under review, spelling kept (§2.6, §8, §13 O61). (C) §13: owner questions carried (O60 (d), O55,
+  O63), question (3) withdrawn by the ruling; new O61 (a name for `search`), O62 (`anchored`'s ends), O63 (the count
+  warning, restated under the one rule). Oracle runs: `docs/dev/lanes/predspec12_anchor.py` / `.out`.
 - **rev 11 (lane predspec11, 2026-11-15).** Applies review `docs/dev/reviews/2026-11-15-r12-predspec10.md` (critic
   texts in its directory): its 15 FIX-NOW findings with the picks of its DISPOSITIONS RULED (manager); the refuted
   part of CENSUS-6 (a) left as it stood. ANSWER-LEVEL (SIMULATE-1): under the ruled anchoring a directly applied
@@ -102,7 +117,7 @@
 
 ## 0. Status, goals, standing questions
 
-**Status: DRAFT rev 11 (lane predspec11, 2026-11-15). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
+**Status: DRAFT rev 12 (lane predspec12, 2026-11-15). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
 #6 not scheduled; 2026-11-15, relayed in the predspec5 brief: "the predicate work is not a go to build as we are
 still in design"). Purpose (Frank 2026-11-14): "create a preliminary predicate spec doc with our latest ideas for the
 purpose of critical analysis. Provide reasoning." It consolidates the dated notes in
@@ -113,15 +128,17 @@ D193) and `docs/design/cond_family_syntax_survey.md` (lane synsurv), is cited wh
 a note, a ruling or a review finding (§15); where they are silent or disagree, §13 lists both readings.
 
 **SYNTAX IS PLACEHOLDER THROUGHOUT.** The owner rules semantics; spelling is a later design step (D193 add. 4).
-One spelling RULE is ruled (§5.1): no alphabetic operators or statement keywords; and one NAMING rule (§2.7):
-a FILTER MODIFIER's name describes the subjects it accepts (§0.3: a filter modifier is the pullback kind of
-transform; `search` and `contains` are transforms that are not modifiers). Examples use the latest spellings: `/.../` rx literals (bare rx
+One spelling RULE is ruled (§5.1): no alphabetic operators or statement keywords; and one NAMING rule (§2.7;
+widened in rev 12 by CF:1020-1022): every transform the library PROVIDES is named for how it changes the FILTER,
+which values the changed filter accepts (`padded`, `anchored`), never for an action on the subject; `search` fails
+it and is OPEN, name under review (§13 O61). Examples use the latest spellings: `/.../` rx literals (bare rx
 fragments are never admitted in the expression language), `:=` define, `,` "next entry" inside `[ ]` (ARRAY, any
 one entry) or `( )` (RECORD, all entries together), `=` labels an entry, `:` constrains a label that exists (THE
 grammar summary is §5.4), `==` the equality comparison, `X[...]` positional, `&` (pure intersection) / dot for
 filtering and labels, `where` for structural selection, conditions `(x: S, y: T)`, FILTER MODIFIERS, the pullback
 kind of transform (`x & padded(between(1, 12))`), operator sections `(& f)`, `@` effects, modules as `m := import("m")`, 1-based indexes,
-search as the library transform `search(rx)` (rev 7's `~`/`!~` are withdrawn, §2.6).
+search as the library transform `search(rx)` (rev 7's `~`/`!~` are withdrawn, §2.6; the NAME `search` is under
+review, §13 O61).
 
 Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 - **RULED (CF:n)**: the owner's own words at line n of COND-FAMILY.md (or a D-number) cover the rule; it reaches only
@@ -182,8 +199,23 @@ Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 | ONE measured budget for "too many classes" and the `count()` refusal, no fixed thresholds in the spec (CF:974-975, 980) | "3. agree" (CF:977) | |
 | a count is a canonical numeral string, no new value kind; ordinary filters apply (CF:975, 980-981) | "4. agree. Allows "even()" or other checks for count." (CF:977-978) | |
 | `&` in rx text ALL OR NOTHING by a module or option; no position-dependent meaning (CF:981-984) | "5. no. I thought we were going to add & to pcre but conditionally with a module or option? Also, fully yes or no. If no put the whole rx in the hole. Like ${// & blah}." (CF:978-979) | the switch OFF by default, `\&` a literal in both modes (the manager's leans, CF:986-987): LEAN; rev 11: the literal spelled `[&]`, and which `&` is the mark under ON (PCRE's own constructs keep their meaning), LEAN, review r12 CENSUS-3, an owner question (§13 O60) |
-| filters anchored at both ends; `contains`/`search` remove that; `^`/`$` in their argument are the ends of the span being filtered (his "value", §0.3) (CF:991-996) | "Your examples make me agree. /\d\d/ & between(1, 12) Without anchoring it would match "31"" (CF:990-991): RULED BY ACCEPTANCE of the manager's lean (CF:987-988) | "`startsWith`/`endsWith` are conveniences" (the record, CF:994) |
+| filters anchored at both ends; `contains`/`search` remove that; `^`/`$` in their argument are the ends of the span being filtered (his "value", §0.3) (CF:991-996) | "Your examples make me agree. /\d\d/ & between(1, 12) Without anchoring it would match "31"" (CF:990-991): RULED BY ACCEPTANCE of the manager's lean (CF:987-988) | "`startsWith`/`endsWith` are conveniences" (the record, CF:994). REV 12: RESTATED by the later ruling (CF:1011-1019): no transform "removes" anchoring; the filter (the transform's BODY) still matches the whole value and its plain gaps let the argument sit anywhere; same accepted sets except `$`, now PCRE's (L63) |
 | a condition on a label that never ran is decided PER MATCH: it FAILS when the match never reached the label's group or loop; a loop REACHED and run zero times satisfies a plain condition (CF:997-1000 on main, after this lane's base; rulings R-1) | "Agree with lean" (CF:1000), to the manager's lean with its two witnesses | the wording of "reached" (§4.2: the deepest construct the match entered) |
+
+  The LAST 2026-11-15 entry (rev 12): ONE ANCHORING RULE, `anchored()`, AND THE NAMING OF PROVIDED TRANSFORMS
+  (CF:1001-1024). The owner's own words (CF:1002-1010) are a request ("We need consistent rules around when rx is
+  anchored and to what. I don't want to have a bunch of "primitive" functions have special cases"), his own sketch,
+  and the naming remark; the RECORD (CF:1011-1022) is the manager's advice he agreed to ("Ok I agree", CF:1006), so
+  its points are RULED BY ACCEPTANCE, "(CF:n, accepted at CF:1006)", and reach as far as the record's words:
+
+| ruling point | the owner's own sentence behind it | what rests only on the record or is the manager's |
+|---|---|---|
+| ONE rule: a FILTER (the filter side of `&`, a `label:` condition) matches the WHOLE value; everywhere else an rx is unanchored as in PCRE (a final pattern is searched) (CF:1011-1012) | "rx is not anchored unless it is in the filter position of & or transformed with anchored()" (CF:1004-1005) | that a COMPILE-TIME SET (an `enumerate` or `@assert` argument, a name set) is read as a filter over whole strings: this document's reading (LEAN, §11) |
+| `^`/`$` are the ends of the SCOPED match (the value in a filter, the subject in a final pattern): plain PCRE with the value as the subject, no extra rule (CF:1013-1014) | "^ $ refer to the scoped match" (CF:1005) | that "no extra rule" withdraws rev 10's exact-end `$` (SIM-5), so `$` also holds before a final newline of the value (L63): this document's reading (LEAN) |
+| `anchored(rx) := /^${rx}$/` ADDED; identity in filter position; its use is outside one (CF:1014-1015) | "anchored(rx) := /^${rx}$/" (CF:1005) | "`anchored(block)` instead of `\A...\z`" (the record): not exact on a subject ending in a newline (L68, §13 O62) |
+| the library definitions are plain GAPS with no anchors (`startsWith(rx) := /${rx}.*/`, `endsWith(rx) := /.*${rx}/`, `contains(rx) := /.*${rx}.*/`, gaps cross line breaks); no primitive carries an anchoring special case (CF:1016-1019) | "I don't want to have a bunch of "primitive" functions have special cases concerning that" (CF:1003-1004) | the bodies' exact text: rev 9-11's lazy `endsWith` gap and `contains := search(x, min = 1)` are kept (gap-only bodies, the same SETS as the record's; §8) |
+| the lean to fold `startsWith`/`endsWith` into `search` WITHDRAWN; the alternative (an explicit anchor switching the implicit one off) REJECTED (CF:1019-1020) | (the record's) | |
+| every PROVIDED transform is named for how it changes the FILTER, never for an action on the subject (CF:1020-1022) | "the name transform seemed to imply you were transforming the subject, but of course you're transforming the filter ... We should consider this in the naming of formal transforms that we provide" (CF:1006-1010) | the audit and that `search` needs a new name ("manager's note, not ruled", CF:1022-1024): §2.7, §13 O61 |
 
 - **LEAN**: a manager's reading or proposal, this document's consequence of a ruling, an owner "perhaps", or a
   review fix (the FIX-NOW dispositions of review r1 other than Q1 and OWN-1 carry no owner ruling); the source is
@@ -227,17 +259,17 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L4 | `(major: 1, minor: >=4)` vs `(major: 1 & minor: >=4)` | DIFFERENT: ERROR | the second is a compile ERROR: a label inside a value (`major: (1 & minor: >=4)`) | C22 |
 | L5 | `x & (a: d)` vs `(a: d)(x)` | DIFFERENT: ERROR | the second is a compile ERROR: the operand is never an argument (CF:749's "subject", §0.3; hint: "write `x & (a: d)`"); application has one spelling (§2.3) | 2026-11-15 RULING (supersedes OWN-5's two spellings) |
 | L6 | `x & (a: d)` vs `each((& (a: d)), x)` | DIFFERENT: ERROR | `each` is the STRUCTURAL per-entry map (keeps entries, labels, order; the filter is mapped through the section `(& (a: d))`, §5.3); an alternative lacking `a` is dropped by `&` with `label.unset`, an ERROR naming it under `each` | OWN-5, 2026-11-15 RULING (mapping) |
-| L7 | `x: /^S\w*/` vs `x: startsWith("S")` | DIFFERENT: BY DESIGN | a filter applied directly is ANCHORED AT BOTH ENDS (§11 THE FILTERED SPAN), so `/^S\w*/` is the strings that are ENTIRELY `S\w*` (its `^` adds nothing), while `startsWith("S")` is every string that starts with `S`: on the span `S-1` the first rejects, the second accepts. The two agree only where the span is word characters (E-CTX-1's x is `\w+`). "Starts with" is `startsWith("S")` or `contains(/^S/)` (L17). Rev 10 said SAME (review r12 SIMULATE-1) | CF:732, CF:761, D193 add. 3; the anchoring: CF:991-993 (accepted at CF:990) |
+| L7 | `x: /^S\w*/` vs `x: startsWith("S")` | DIFFERENT: BY DESIGN | a filter applied directly is ANCHORED AT BOTH ENDS (§11 THE FILTERED SPAN), so `/^S\w*/` is the strings that are ENTIRELY `S\w*` (its `^` adds nothing), while `startsWith("S")` is every string that starts with `S`: on the span `S-1` the first rejects, the second accepts. The two agree only where the span is word characters (E-CTX-1's x is `\w+`). "Starts with" is `startsWith("S")` or `contains(/^S/)` (L17). Rev 10 said SAME (review r12 SIMULATE-1) | CF:732, CF:761, D193 add. 3; the anchoring: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
 | L8 | `num := /\b\d+\b/`: `/x${num}/` vs the pasted `/x\b\d+\b/` | DIFFERENT: ERROR | the hole form is the EDGE-ASSERTION ERROR ("put `\b` in the pattern that places num") | Q1X-3 (iv), Q1R-3 |
 | L9 | `p := /(?<=\$)\d+/`: the program `p` (searched) vs `[n = /\d+/] & (n: p)` | DIFFERENT: ERROR | the condition is the EDGE-ASSERTION ERROR; the searched final pattern keeps PCRE meaning | Q1X-3 (iii), Q1X-1 |
 | L10 | `\w{3} & /\w+\b/` vs `/\w{3}\b/` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR (no silent move foo -> bar) | Q1X-2 |
-| L11 | `alts & !/^#.*/` vs `alts & !startsWith("#")` | DIFFERENT: BY DESIGN | the directly applied `/^#.*/` is anchored at both ends and its `.` has no `(?s)`, so it is the entries that are ENTIRELY `#` and non-line-break characters; `startsWith("#")` is every entry starting `#`: the entry `#a\nb` is kept by the first, dropped by the second. They agree on entries without a line break (E-FILE's `alts` are lines). Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990) |
+| L11 | `alts & !/^#.*/` vs `alts & !startsWith("#")` | DIFFERENT: BY DESIGN | the directly applied `/^#.*/` is anchored at both ends and its `.` has no `(?s)`, so it is the entries that are ENTIRELY `#` and non-line-break characters; `startsWith("#")` is every entry starting `#`: the entry `#a\nb` is kept by the first, dropped by the second. They agree on entries without a line break (E-FILE's `alts` are lines). Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
 | L12 | `"5" & /(?<=\$)\d+/` in `@assert.none(...)` vs `"5" & /\d+/` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR (an assertion argument is a set position, §5.6) | Q1X-5 |
-| L13 | `x & padded(/^5/)` vs `x & padded(startsWith("5"))` | DIFFERENT: BY DESIGN | a modifier's argument filters the span AS THE MODIFIER READS IT, anchored at both ends like any filter that no loosening transform wraps (§2.7, §11): `padded(/^5/)` = `padded("5")` (`5`, `05`, ...), while `padded(startsWith("5"))` also accepts `57` and `057`. `padded(/\b5/)` stays the EDGE-ASSERTION ERROR. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring of a macro's argument: this document's application of CF:991-994 (LEAN, §13 O49) |
+| L13 | `x & padded(/^5/)` vs `x & padded(startsWith("5"))` | DIFFERENT: BY DESIGN | a modifier's argument filters the span AS THE MODIFIER READS IT, and is itself a FILTER, so it matches that whole reading (THE ONE ANCHORING RULE, §2.7, §11): `padded(/^5/)` = `padded("5")` (`5`, `05`, ...), while `padded(startsWith("5"))` also accepts `57` and `057`. `padded(/\b5/)` stays the EDGE-ASSERTION ERROR. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring of a modifier's argument: this document's application of CF:991-994 and of the ONE rule (CF:1011; a modifier's argument is a filter, §2.7) (LEAN, §13 O49) |
 | L14 | `enumerate(/(?<=a)[bc]/)` vs `enumerate(/[bc]/)` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR | Q1R-8, Q1X-6 (b) |
-| L15 | `@warn.off(/^dead\./)` vs `@warn.off(startsWith("dead."))` | DIFFERENT: BY DESIGN | a name set is a compile-time set of WHOLE strings (§11 STRING SETS; there `^`/`$` are the string's own ends): `/^dead\./` is the ONE name `dead.`, `startsWith("dead.")` every name starting `dead.`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:713 (string sets); `^` in a compile-time set: LEAN (§11) |
+| L15 | `@warn.off(/^dead\./)` vs `@warn.off(startsWith("dead."))` | DIFFERENT: BY DESIGN | a name set is a compile-time set of WHOLE strings (§11 STRING SETS; there `^`/`$` are the string's own ends): `/^dead\./` is the ONE name `dead.`, `startsWith("dead.")` every name starting `dead.`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:713 (string sets); `^` in a compile-time set: LEAN (§11; rev 12: a name set read as a filter over whole names under the ONE rule, CF:1011, LEAN) |
 | L16 | `(m: search(/^err/))` vs `(m: contains(/^err/))` | DIFFERENT: BY DESIGN | `search` with its default `min = 0` NEVER REJECTS (as a set it is every string; what it adds is the repeated label `hit`, one iteration per hit, here at most one, at m's start); `contains` is the TEST (one hit needed). The search filters nothing until a question is asked of its hits (`some(...)`, `count(...)`, a plain condition; §2.6, §4.3). With `min = 1` the two are SAME (L58) | CF:907-909 (accepted at CF:905); rev 7's `$m ~ /^err/` row withdrawn with `~`; `min`: CF:960 |
-| L17 | `(m: contains(/^err/))` vs `(m: startsWith("err"))` | SAME | `contains` removes the filter's anchoring and `^` in its argument puts the start back: `^` is m's start in both (§11 THE FILTERED SPAN); `(m: !contains(/^err/))` is the negated test (rev 7's `$m !~ /^err/`, withdrawn, §2.6) | CF:761; RULED BY ACCEPTANCE (CF:991-994, accepted at CF:990: filters stay anchored, `contains`/`search` remove it, `^`/`$` in their argument are the value's ends) |
+| L17 | `(m: contains(/^err/))` vs `(m: startsWith("err"))` | SAME | it "falls out of PCRE" (rev 12): `contains`'s body is plain gaps around its argument, matched against the WHOLE value, so the `^` in its argument is PCRE's `^`, the start of the scoped match (m's value), and only an empty lead gap reaches it: `/.*^err.*/` accepts what `/err.*/` accepts, gaps crossing line breaks (§11 THE ONE ANCHORING RULE; libpcre2 10.46 and Python `re`: `err x` accepted, `x err` rejected by both forms, `predspec12_anchor.out`); `(m: !contains(/^err/))` is the negated test (rev 7's `$m !~ /^err/`, withdrawn, §2.6) | CF:761; CF:991-994 (accepted at CF:990); rev 12: "`contains(/^err/)` = starts with `err` falls out of PCRE" (CF:1018, accepted at CF:1006) |
 | L18 | a nullable final search pattern: `/\b/` vs `/a*/` | SAME | both are nullable IN CONTEXT: `empty.search` WARNING for a one-literal program, ERROR in a predicate program (§7) | Q1R-9 |
 | L19 | `(?m)^\d*` searched vs the same pattern in whole-subject mode | DIFFERENT: WARNING | by MODE only: `empty.search` in searched mode, none when anchored (a `^` in the pattern does not exempt) | Q1R-9 |
 | L20 | `/\d\d/ & padded(between(1, 12))` vs `/\d\d/ & between(1, 12)` | DIFFERENT: GAP | GAP: the second is {10, 11, 12} by the C9 ruling (string sets, canonical numerals); no warning is named for a padded target against an integer comparison set | C9, OWN-2 |
@@ -261,7 +293,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L38 | `isodate(x).year` vs `(x & isodate).year` | DIFFERENT: ERROR | the first is a compile ERROR (a pattern takes no arguments; hint "write `x & isodate`"); whether `.year` of `x & isodate` is a value or a pattern: OPEN (§13 C29) | RUL-8, 2026-11-15 RULING |
 | L39 | `A & B` vs `B & A` | SAME | the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2) | C1 ruling |
 | L40 | `isodate(year: S)` vs `isodate & (year: S)` | DIFFERENT: ERROR | the first is a compile ERROR: a pattern has no parameters; hint "write `isodate & (year: ...)`"; a parameterised pattern is a macro, `date_in(years) := isodate & (year: years)` (§5.2) | CF:744 |
-| L41 | `/\w+/ & /^foo/` vs `/\w+/ & startsWith("foo")` | DIFFERENT: BY DESIGN | the directly applied `/^foo/` is anchored at both ends, so the first is the ONE word `foo` (its `^` is the word's start, never the subject's, and adds nothing); the second is every word starting `foo`. Searched in `foobar` the first reports `foo` (D196 tries the shorter end), the second `foobar`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990) |
+| L41 | `/\w+/ & /^foo/` vs `/\w+/ & startsWith("foo")` | DIFFERENT: BY DESIGN | the directly applied `/^foo/` is anchored at both ends, so the first is the ONE word `foo` (its `^` is the word's start, never the subject's, and adds nothing); the second is every word starting `foo`. Searched in `foobar` the first reports `foo` (D196 tries the shorter end), the second `foobar`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
 | L42 | `n := count((name: S))` then `headers & (n: ==1)` vs `headers & occurs.exactly(1, (name: S))` | SAME | one count, two spellings; `count()` is refused only over the BUDGET, naming the `occurs` form (§8) | CF:823 (LEAN), CF:832 |
 | L43 | `[x = /foo/, y = /bar/]` vs `(x = /foo/, y = /bar/)` in value position | DIFFERENT: ERROR | the second is a compile ERROR: "a record is not a value; for any one of the entries write `[ ... ]`" (§3.1, §5.4); the rev 5 map literal `(x = /foo/ \| y = /bar/)` is withdrawn (§13 O42) | CF:863, CF:866 |
 | L44 | `(x)` vs `x` in value position | SAME | parentheses with one unlabelled entry are GROUPING; a one-entry record exists only where a record stands (a call `f(x)`, the left of a binding), so no value is ever a one-entry record (§5.4; §13 O41) | CF:866 (LEAN) |
@@ -283,11 +315,13 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L60 | `/(?<a>\d+)(?<b>\d+)/ & (a: "1")` vs `/(?<a>\d+?)(?<b>\d+)/ & (a: "1")` on the span `123`; `A \| B` vs `B \| A` under `(l: "a")` with `A := /(?<l>a)a/`, `B := /(?<l>aa)/`, on `aa` | DIFFERENT: WARNING | ONE LANGUAGE, TWO SPELLINGS, TWO PARSES (review r10 FIXB-1): membership is extensional (§2.2), but a CONDITION reads the parse of the spelling it is laid against (§4.5), so greedy vs lazy (a = `12` vs `1`: the first rejects, the second accepts) and union order (l = `a` vs `aa`: the first accepts, the second rejects) give different answers. `label.ambiguous` names a (resp. l) in both programs. A CONSEQUENCE of the ruled one reading, told to the owner (not asked). libpcre2 10.46 anchored at both ends | CF:953-955 (the one reading); the statement: LEAN (this document) |
 | L61 | `(m: contains(r & (g: "x")))` vs `(m: contains(r) & (g: "x"))`, `r := /ab(?<g>[xy])/`, on `abx aby` | DIFFERENT: BY DESIGN | a condition INSIDE the argument narrows WHAT IS SEARCHED FOR (the hits are the occurrences of `abx`: one hit, accepts); a condition on the OPERAND side reads EVERY hit (hit 2 has g = y: rejects). The same pair for `search`: `search(r & (g: S))` changes the hits, `search(r) & (g: S)` tests every hit. The existential spelling over the hits is `some((g: "x"))` (L52) | review r10 FIXB-3 (manager's pick); LEAN |
 | L62 | `search(/(?:(?<c>a)\|b)c(?(<c>)a\|d)/)` vs find-all of the same pattern on `acabcd` | DIFFERENT: ERROR | PCRE's loop carries a group's capture from an EARLIER iteration into a backreference or conditional of a later one (the loop finds ONE hit `aca`; find-all finds `aca`@0 and `bcd`@3), so a search argument with a backreference or conditional that can run while its group is UNSET IN THE CURRENT HIT (here `(?(<c>)...)` on the `b` path) is REFUSED, the nullable refusal's sibling (§2.6 THE TWO ARGUMENT REFUSALS); an argument whose group is set before its reader on every path (`/(.)\1/`) is admitted (rev 11, review r12 SIMULATE-2) | review r10 SIM-1 (manager's pick); the narrowing: review r12 SIMULATE-2; LEAN |
-| L63 | `contains(/err$/)` vs `endsWith("err")` on the span `err\n` | SAME | `$` in a set position is the END of the span being filtered EXACTLY (no before-final-newline reading; §11): both reject. PCRE's own `$` in the loop would accept (`err` before the final newline); the filter does not take that reading | CF:994 ("`^`/`$` always mean the ends of the value being filtered", accepted at CF:990); the exact end: LEAN (review r10 SIM-5) |
+| L63 | `contains(/err$/)` vs `endsWith("err")` on the span `err\n` | DIFFERENT: BY DESIGN | `$` is PCRE's `$` with the value as the subject (§11 THE ONE ANCHORING RULE): it holds at the value's end AND before a final newline, so `contains(/err$/)` ACCEPTS `err\n` (the hit `err`, then the tail gap takes the `\n`), while `endsWith("err")` must END with `err` and REJECTS it (libpcre2 10.46 and Python `re`, `predspec12_anchor.out`). The exact end is PCRE's own `\z`: `contains(/err\z/)` = `endsWith("err")` (both reject `err\n`). Rev 10/11 said SAME, by an exact-end reading of `$` (review r10 SIM-5) that rev 12 withdraws as an extra rule; whether a warning should name a `$` that can meet a final newline: §13 O38 | rev 12: "plain PCRE with the value as the subject, no extra rule" (CF:1013-1014, accepted at CF:1006); the withdrawal of the exact end: LEAN (this document) |
 | L64 | `alt.x[1]` vs `(x[1]: S)` (and `$x[1]`) on `alt := /(?J)(?:(?<x>a)\|(?<x>b))+/` | DIFFERENT: BY DESIGN | `[n]` reads BY POSITION (§5.4 `[ ]` row): in VALUE position (`alt.x[1]`, the rx of the groups labelled x) it is ENTRY 1 of that rx's array interface, the first group in the PATTERN (`a`); on the left of `:` and under `$` (match positions) it is ITERATION 1 of the label in the MATCH (`b` on `ba`) | review r10 FIXA-2, CENSUS-10; LEAN |
 | L65 | `/x\|(?<n>\d)+/` vs `/(?<n>\d)*x/` under `(n: <5)`, on the span `x` | DIFFERENT: WARNING | PER MATCH (§4.2): in the first the match took the other alternative and never REACHED n's loop, so n is UNSET and the condition FAILS (`label.unset`), although the loop's own `+` is never consulted; in the second the loop was REACHED and ran zero times, so it HOLDS. PCRE reports n unset in both: the zero-iteration rule is a condition rule laid over PCRE's parse (where the match stopped short of the label), not a capture state | review r10 FIXB-2; RULED BY ACCEPTANCE (CF:997-1000 on main, "Agree with lean"; rulings R-1) |
 | L67 | `/(\d+)&${<256}/` vs `/port=(\d+)&${<256}/` vs `/port=(?:(\d+)&${<256})/`, with the rx-`&` switch ON | DIFFERENT: GAP | D196's precedence (concatenation, then `&`) makes an rx-text `&` cover the WHOLE CONCATENATION on each side within its alternative: the first guards the number; the second is `/port=(\d+)/ & <256`, EMPTY (no string starting `port=` is a numeral); the third guards one atom by grouping it and matches `port=80`. An empty-intersection diagnostic at an rx-text `&` is not stated (§5.2 names narrowing sites only; proposed: the empty-intersection error at every `&` whose result is empty, not adopted) | review r12 CENSUS-5; LEAN (this document) |
-| L66 | `headers & occurs.exactly(1, (name: any_case("Host")))` SEARCHED vs the same program on the WHOLE SUBJECT, on `Host: a\r\nhost: b` | DIFFERENT: GAP | a count filter is NOT UPWARD-CLOSED: searched, D196 tries shorter ends and the one-header span `Host: a` passes (match), while the whole value has two Host headers (no match). A count over a block means "the whole block" only when the program anchors (§12.9 is anchored in rev 10); a warning for a count filter in a searched program (`count.searched`, proposed) is not adopted | review r10 SIM-6; §13 O38 |
+| L66 | `headers & occurs.exactly(1, (name: any_case("Host")))` SEARCHED vs the same program on the WHOLE SUBJECT, on `Host: a\r\nhost: b` | DIFFERENT: GAP | a count filter is NOT UPWARD-CLOSED: searched, D196 tries shorter ends and the one-header span `Host: a` passes (match), while the whole value has two Host headers (no match). A count over a block means "the whole block" only when the program anchors (§12.9 is anchored in rev 10); a warning for a count filter in a searched program (`count.searched`, proposed) is not adopted; rev 12: the owner question, §13 O63 | review r10 SIM-6; §13 O38, O63 |
+| L68 | `anchored(x)` as a FINAL pattern vs `/\A${x}\z/`, on a subject ending in a newline (`x := /foo/`, subject `foo\n`) | DIFFERENT: BY DESIGN | `anchored(rx) := /^${rx}$/` (the owner's text, CF:1005) uses PCRE's `$`, which holds before a final newline: searched in `foo\n` the first matches `foo` at 0-3, the second finds nothing (libpcre2 10.46 and Python `re`, `predspec12_anchor.out`). They agree on every subject that does not end in a newline. The record's "`anchored(block)` instead of `\A...\z`" is exact only there. In FILTER position the two are both the identity (L69). Whether `anchored` should use the exact ends: §13 O62 (lean: yes) | CF:1005, CF:1014-1015 (accepted at CF:1006); the difference: this document (rev 12) |
+| L69 | `x & anchored(r)` vs `x & r` vs `x & /^(?:r)$/` (and `/^5/` vs `/5/` in a filter) | SAME | a filter matches the WHOLE value, and an anchor at a whole match's own start or end always holds there, so `anchored` in filter position is the identity (the record's "identity in filter position"); an explicit anchor never SWITCHES OFF the implicit whole-value rule (`/^5/` accepts no more than `/5/`: it rejects `57`), the alternative the owner rejected (CF:1019-1020). Hence `startsWith(rx) := /^${rx}/` (the owner's first sketch) would mean exactly rx in a filter, and the library body is the plain gap `/${rx}.*/` (§8). libpcre2 10.46 whole-value: `^(?:foo)$` accepts `foo`, rejects `foo\n`, as `foo` does; `^5` rejects `57` | CF:1011-1020 (accepted at CF:1006) |
 
 **REASONING.** The owner's framing: "complex context could cause predicates to just not work and it's not clear how
 the obscure rules impact it ... that's why it was so important to me that things that look like they should do the
@@ -318,7 +352,11 @@ accepted at CF:1000, "Agree with lean"; rulings R-1); the wording of "reached" (
 LEAN (review r10 picks, this document). Rev 11 (review r12 SIMULATE-1): L7, L11, L13, L15 and L41 move from SAME to
 DIFFERENT: BY DESIGN under the anchoring ruling (RULED BY ACCEPTANCE, CF:991-993, accepted at CF:990, for the
 directly applied filters of L7, L11, L41; L13's modifier argument and L15's compile-time set by this document's
-application of the same rule, LEAN); the class BY DESIGN on each: LEAN. L67 (review r12 CENSUS-5): LEAN.
+application of the same rule, LEAN); the class BY DESIGN on each: LEAN. L67 (review r12 CENSUS-5): LEAN. Rev 12
+(CF:1001-1024): L7, L11, L41 keep their verdicts, now under the ONE rule (CF:1011, accepted at CF:1006); L13, L15
+by this document's application of it (LEAN); L17's reason "falls out of PCRE" (CF:1018, accepted at CF:1006); L63
+moves SAME -> DIFFERENT: BY DESIGN (PCRE's `$`, "no extra rule", CF:1013-1014; the withdrawal of the exact end:
+LEAN); L68's difference: this document (LEAN, §13 O62); L69: RULED BY ACCEPTANCE (CF:1014-1020, at CF:1006).
 
 MODE OF THE ANSWERS (rev 10, review r10 SIM-6, FIXB-7 (d)). A row's answer is on the VALUE a set position filters
 (the whole span, as a condition reads it) unless the row says SEARCHED. A searched program may report a SHORTER span
@@ -345,6 +383,17 @@ set, not "starts with" (each row now states its witness). L17 and L63 put the an
 L18, L26, L27, L34, L36, L39, L42, L44, L46, L58 write no `^`/`$` in a filter (L18's `/\b/` and `/a*/` are FINAL
 patterns, searched): they HOLD. Each row in its real mode (searched only where the row says SEARCHED): the per-row
 table is in `docs/dev/lanes/predspec11_report.md`, ROWS AND EXAMPLES RE-APPLIED.
+
+EVERY ROW RE-APPLIED UNDER THE ONE ANCHORING RULE (rev 12; CF:1011-1020: a filter matches the whole value, everywhere
+else an rx is unanchored as in PCRE, `^`/`$` are PCRE's with the scoped match as the subject, library bodies are plain
+gaps). Against rev 11 the rule changes an answer only where (a) rev 11 had an anchoring rule PCRE does not have, or
+(b) a form is newly written (`anchored`). (a): rev 11's one extra rule was the EXACT-END `$` (review r10 SIM-5); its
+only row is L63, which MOVES to DIFFERENT. Rev 11's other anchoring statements give PCRE's answer with the value as
+the subject: a directly applied filter matched whole (L7, L11, L13, L15, L41: verdicts unchanged), `^` inside
+`contains`/`search` reached only by an empty lead gap (L16, L17: unchanged), final patterns searched (L8, L9, L18,
+L19: unchanged). (b): L68, L69 new. Every other row writes no `^`, `$`, `\A`, `\z` and no anchoring transform, or
+writes one only in a final pattern: unchanged. Per-row table: `docs/dev/lanes/predspec12_report.md`, CONSISTENCY
+SWEEP.
 
 ### 0.2 Phase 1 scope (what the owner said is in and out of the first build)
 
@@ -403,14 +452,15 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 | **kind** | rx or macro, the two VALUE kinds (§2.1) | value-vs-pattern; constraint sets |
 | **value** | anything of a kind (an rx or a macro) | a captured substring; the filtered text (that is the SPAN; the owner's "the value being filtered", CF:994, is kept in quotes) |
 | **span** | the text a set position filters: an `&` operand's text, a label's text in this match, the text a `search`/`contains` filter reads (§11) | a value |
+| **scoped match** | the text an rx is matched against, whose ends `^`/`$` (and `\A`/`\z`) are: in a FILTER the span, matched WHOLE; in a FINAL pattern (or a `records` item rx) the subject (or file text), searched (the owner's word, CF:1005; §11 THE ONE ANCHORING RULE, rev 12) | a hole (a hole is part of the rx around it and has no scoped match of its own) |
 | **captured string** | `$x` for a GROUP label: the text it captured in this match (a one-string rx with no labels) | the value `$` reads from metadata or a computed label (`$mname.index`, `$d`): a VALUE of the path, not captured text (§5.4 `$` row; review r12 CENSUS-11) |
 | **constraint set** | the rx after `:` (`x: S`; in the design only, `m(x: T)`, an ERROR in phase 1, §5.2), the set a label must lie in (rev 6 said "type" or "value type") | the kinds |
 | **filter role** | what stands on the filtering side of `&` (CF:858); "a filter" = a thing in that role | a kind; structural selection (`where` SELECTS) |
 | **condition** | the macro written `( label: S, ... )`, laid against an operand's labels (§4.1) | a single `label: S` entry (an ENTRY of a condition); any filter |
 | **section** | `(& B)`, the macro with only its operand open (§5.2) | comparisons (those are COMPARISON SETS) |
 | **comparison set** | `<256`, `>=lo`, `==5`, `between(1, 12)`: a full rx (§2.4) | |
-| **transform** | ANY macro filter -> filter (the owner's word, CF:903, CF:929): the filter modifiers, and `search`/`contains`, which loosen the anchoring and add the repeated label `hit` (§2.6) | |
-| **filter modifier** | the PULLBACK kind of transform (§2.7): the filter changed to read the subject through a READING t; the NAMING RULE (a name describes the subjects it accepts) binds modifiers only (review r10 FIXA-1) | `search`, `contains` (transforms, not modifiers); the map `t` itself (that is the modifier's READING, and its output is "what the modified filter reads") |
+| **transform** | ANY macro filter -> filter (the owner's word, CF:903, CF:929): the filter modifiers, and the library's GAP transforms `search`/`contains`/`startsWith`/`endsWith`/`anchored`, whose bodies put plain gaps (or, for `anchored`, `^`/`$`) around the argument; `search`/`contains` also add the repeated label `hit` (§2.6, §8). Rev 11 said `search`/`contains` "loosen the anchoring"; rev 12: no transform changes anchoring, the one rule does (§11). Every PROVIDED transform obeys the naming rule (§2.7, CF:1020-1022) | |
+| **filter modifier** | the PULLBACK kind of transform (§2.7): the filter changed to read the subject through a READING t; the NAMING RULE (a name describes the subjects it accepts) bound modifiers only in rev 10-11 (review r10 FIXA-1); rev 12 (CF:1020-1022) widens it to every provided transform (§2.7) | `search`, `contains` (transforms, not modifiers); the map `t` itself (that is the modifier's READING, and its output is "what the modified filter reads") |
 | **search** / **searched** | `search(x)`, the library TRANSFORM (§2.6) / the MODE in which a FINAL pattern or a `records` item rx is applied to its subject (leftmost match, D196; §7, §11); `empty.search` names the MODE's hazard (review r10 CENSUS-16) | each other |
 | **binding** | `name := expression` (§5.1); "match-dependent binding" is a binding that reads a captured string | the C22 parse rule (that is ENTRY EXTENT, §5.4) |
 | **entry extent** | how far an entry of `( )` or `[ ]` reaches: to the next comma or the closing bracket, `&`/`\|` tighter than `:` and `=` (C22) | |
@@ -460,7 +510,7 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 interfaces (§3), match values, repeated labels and computed labels (§4), capability levels and the reporting axis
 (§6), the compile-time boundary, modules and warnings (§7). LIBRARIES, built on the foundation and changeable without
 it: `each`, `join`, `records`, `file_text`, standard filters and filter modifiers (`between`, `startsWith`,
-`contains`, `length`, `padded`, `unpadded`, `any_case`, `quoted`), the transform `search`, the group questions
+`endsWith`, `contains`, `anchored`, `length`, `padded`, `unpadded`, `any_case`, `quoted`), the transform `search`, the group questions
 `some`, `all`, `count` and the `occurs` counts, `assert`, tuple comparisons, blessed callouts (§8). The
 ORGANISATIONAL layer (DECLARED TYPES, type members, UFCS, `types()`; rev 7 called the first "interfaces", a word
 that now names the array and map interfaces, §0.3) is CUT from the first spec (§9); declared types may return as
@@ -667,8 +717,11 @@ be added, filtered <256"). Arithmetic result width (`${$y + 1}` on `0099`): §13
 
 **RULE.** SEARCH IS A LIBRARY TRANSFORM of the `contains` family, not an operator: it takes an rx and returns an rx
 over the WHOLE span in which the hit group REPEATS, once per hit, and it is applied like any filter, by `:` or `&`
-(`(m: search(/ab(?<g>[xy])/))`, `P & search(r)`). It is a TRANSFORM but not a FILTER MODIFIER (§0.3): it removes the
-filter's anchoring and adds the label `hit`, so the modifiers' naming rule (§2.7) does not bind its name. The
+(`(m: search(/ab(?<g>[xy])/))`, `P & search(r)`). It is a TRANSFORM but not a FILTER MODIFIER (§0.3): its body puts
+plain gaps around the argument (rev 12: it removes no anchoring; the body, a filter, matches the whole value, §11) and
+adds the label `hit`. Since rev 12 the naming rule binds EVERY provided transform (CF:1020-1022, §2.7), and `search`,
+a verb acting on the subject, FAILS it: the name is OPEN, under review, the spelling kept until the owner rules
+(§13 O61; this document writes `search` throughout). The
 operators `~` and `!~` of rev 7 are WITHDRAWN: rev 7's `$m !~ r` is `(m: !contains(r))`; rev 7's `$m ~ r` has no
 one-to-one replacement, because a search result is no longer a value: a TEST is `contains`, a QUESTION about the hits
 is `search` with a group question (§4.3). The hit needs no new concept: it is a REPEATED LABEL (§4.3), so a plain
@@ -676,7 +729,7 @@ condition on a hit's label means ALL hits, `some(...)` some hit, `count(...)` an
 record means one hit (SAME HIT BY RECORD). The hits are those of PCRE's OWN matching of the body, "always" (the
 owner, CF:932-933): the ONE READING of §4.5.
 
-    search(x, min = 0) := /(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)/   # each hit is one iteration of the label `hit`
+    search(x, min = 0) := /(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)/   # each hit is one iteration of the label `hit`; NAME OPEN (O61)
     contains(x)        := search(x, min = 1)                              # a TEST: at least one hit
 
 (Library text, §8; spelling placeholder, D193 add. 4. The owner's sketch `search(x) := /.*(?:(${x}.*).*/`, CF:903-904,
@@ -772,14 +825,17 @@ PCRE's raw capture state, not from PCRE's parse: the parse (which path each iter
 iteration did not set, it does not have. The same root as the second refusal above, which is why that one is a
 refusal: a backreference INSIDE the body reads the raw state, which no per-iteration reading can change.
 
-THE ANCHORED ARGUMENT (RULED BY ACCEPTANCE, CF:991-994, accepted at CF:990: "Your examples make me agree"). A filter
-applied directly is anchored at both ends (a set of WHOLE strings); `contains` and `search` REMOVE that anchoring, and
-`^`/`$` written inside their argument put an end back: they are the ENDS OF THE SPAN BEING FILTERED (§11), never the
-hole's own ends. So `search(/^err/)` can hit only at the span's start: AT MOST ONE HIT. `contains(/^err/)` =
-`startsWith("err")` (L17), and `search(/^err/)` has its one hit exactly when `contains(/^err/)` holds. `$` is the
-span's end EXACTLY, never "before a final newline" (`contains(/err$/)` rejects `err\n`, as `endsWith("err")` does:
-§0.1 L63; PCRE's own `$` in the loop would accept it; LEAN, review r10 SIM-5). With an explicit `(?m)` in the
-argument `^` also matches after a line break inside the span (C35), one hit per such line.
+ANCHORS IN THE ARGUMENT (rev 12, THE ONE ANCHORING RULE, §11; CF:1011-1019, accepted at CF:1006; rev 10-11's
+"`contains` and `search` REMOVE the anchoring", CF:991-994, is RESTATED by it). The body of `search` (and so of
+`contains`) is a FILTER: it matches the WHOLE span. Its argument sits in a HOLE inside that body, after a plain gap,
+so it is not a filter of its own and carries no anchoring of its own; nothing is removed or put back. A `^` or `$`
+written in the argument is PCRE's, with the span as the subject: `^` is the span's start (or, under an explicit
+`(?m)`, a line start inside it, C35), so only an empty lead gap reaches it and `search(/^err/)` has AT MOST ONE HIT,
+at the span's start; `contains(/^err/)` = `startsWith("err")` "falls out of PCRE" (CF:1018; L17). `$` is PCRE's `$`:
+the span's end OR just before a final newline of the span, so `contains(/err$/)` ACCEPTS `err\n` while
+`endsWith("err")` rejects it (§0.1 L63; libpcre2 10.46 and Python `re`, `docs/dev/lanes/predspec12_anchor.out`); the
+exact end is PCRE's `\z` (`contains(/err\z/)` = `endsWith("err")`). Rev 10-11 read `$` as the exact end (review r10
+SIM-5); rev 12 withdraws that as an extra rule ("no extra rule", CF:1014; LEAN, this document).
 
 ZERO HITS (CF:933 "What's missing is the + or * control"; the record, CF:937-940; RULED BY ACCEPTANCE (CF:997-1000 on main, "Agree with lean"; rulings R-1), §4.2). The quantifier the user chose decides, as for any loop the match reached (§4.2 states the boundary with an
 UNSET label once). `search`'s loop is always reached (it is the body's first construct):
@@ -854,8 +910,8 @@ iterations the one spelling is `some(...)` (CF:913-914).
 used" (CF:847-848): two operators leave, and the one thing rev 7 had to invent for search, a MATCH-TIME array with
 its own rules (rev 7 §3.4, O50), is gone: the hits are the iterations of a repeated label, which the language had
 already (§4.3), and the array interface over them is the general one for ANY repeated label (CF:922-923). A search
-is a filter like `contains`, so it composes by `&` and `:` like every other filter, and `^`/`$` in its argument follow
-the one filtered-span rule (§11). `min` is the loop's own lower bound, so zero hits follow the rule of every loop
+is a filter like `contains`, so it composes by `&` and `:` like every other filter, and `^`/`$` in its argument are
+PCRE's with the span as the subject, the one anchoring rule (§11). `min` is the loop's own lower bound, so zero hits follow the rule of every loop
 (§4.2) and `contains` is no longer a second body with a second reading of its argument's labels. The two refusals
 keep "the hits are find-all order" true for every argument that compiles, so one sentence describes what a search
 finds. Search results stay values-not-globals in the owner's sense ("Even Perl had the awkward $1"): a hit is reached
@@ -876,8 +932,9 @@ nullable argument and the scoped `(?s:...)` gaps: LEAN (manager, rev 9; §13 O53
 its own group (narrowed in rev 11 to a reader that can run with the group unset in this hit, review r12 SIMULATE-2),
 and the iteration's own values: LEAN (the manager's picks on review r10 SIM-1, SIM-2; the narrowing: this lane's
 pick). `^`/`$` of the
-argument = the ends of the span being filtered: RULED BY ACCEPTANCE (CF:991-994, accepted at CF:990; D193 add. 3;
-CF:761); `$` the exact end: LEAN (review r10 SIM-5). The group questions phase 1: CF:922-924, accepted at CF:905;
+argument = PCRE's, with the span as the subject: RULED BY ACCEPTANCE (CF:991-994, accepted at CF:990; restated by
+CF:1011-1019, accepted at CF:1006; D193 add. 3; CF:761); rev 10's exact-end `$` (review r10 SIM-5) WITHDRAWN in rev 12
+(LEAN, this document's reading of "no extra rule"). The NAME `search`: OPEN (CF:1020-1024; §13 O61). The group questions phase 1: CF:922-924, accepted at CF:905;
 one-iteration access at captures: RULED BY ACCEPTANCE (CF:977). The owner's example: his intended behaviour; its
 `$` reading: LEAN (review r10 FIXA-3); the selection spelled in the path, `$m.hit[(g: "x")]`: LEAN (review r12
 CENSUS-1). SUPERSEDES rev 8's `contains(x) := /(?s).*${x}.*/` body, rev 8's zero-hit lean
@@ -905,15 +962,21 @@ construction, regular in, regular out (inverse image under a rational relation);
     mname & month_numbered(between(1, 6))           # month names whose number is 1..6: "Jan" .. "Jun"
     quoted(any_case("host"))                        # modifiers nest, in reading order
 
-NAMING RULE (filter modifiers; review r10 FIXA-1): a modifier's name describes the SUBJECTS IT ACCEPTS (an adjective or phrase: `padded`, `unpadded`,
-`any_case`, `quoted`, `length`, `month_numbered`), never a verb acting on the subject (`unpad`, `trim`,
-`lowercase`). A modifier is applied to a filter by a call and the result is used like any filter: `x &
+NAMING RULE (rev 12: EVERY TRANSFORM THE LIBRARY PROVIDES, the owner's ruling CF:1020-1022, accepted at CF:1006;
+rev 10-11 bound modifiers only, review r10 FIXA-1): a provided transform is named for HOW IT CHANGES THE FILTER, which
+values the changed filter accepts or what it reads (an adjective or phrase: `padded`, `unpadded`, `any_case`,
+`quoted`, `length`, `month_numbered`, `anchored`; a predicate on the value: `contains`, `startsWith`, `endsWith`),
+never a verb acting on the subject (`unpad`, `trim`, `lowercase`, `search`). The owner's words: "the name transform
+seemed to imply you were transforming the subject, but of course you're transforming the filter ... What helped was
+calling it "padded"" (CF:1006-1008). `search` FAILS the rule and its name is OPEN (§13 O61); the audit of every
+provided name: `docs/dev/lanes/predspec12_report.md`, TRANSFORM NAME AUDIT. A modifier is applied to a filter by a call and the result is used like any filter: `x &
 padded(S)`, `(x: padded(S))` (the operand arrives via `&` or `label:`, never as an argument, §2.3); `&` stays pure intersection (§2.2), so a modified filter may stand
 anywhere in a chain. A modifier without its filter argument where a filter is needed is the unapplied-macro error
 (§2.3). `!padded(S)` is an ordinary filter (the complement of a filter). A modified filter's argument is a SET
 POSITION (§11): `^`/`$` inside it are the ends of the span the modified filter filters, AS THE MODIFIER READS IT (the
 argument's "own" start and end in rev 6's words: the argument filters what the reading yields, so its ends are that
-span's ends). Like every filter no loosening transform wraps, the argument is ANCHORED at both of those ends, so a `^`
+span's ends). The argument is a FILTER (the modified filter tests whether the reading lies in it), so under THE ONE
+ANCHORING RULE (§11, CF:1011, rev 12) it matches the WHOLE reading, and a `^`
 in it adds nothing: `padded(/^5/)` = `padded("5")`, NOT `padded(startsWith("5"))` (§0.1 L13; rev 10 said the
 opposite, review r12 SIMULATE-1). This is the one filtered-span rule of §11 applied to an
 argument (review r8 P6-5: an argument never opens a span of its own, whether the macro is a modifier, `contains` or a
@@ -929,7 +992,8 @@ grouping-free (G0, review OWN-1/RUL-11), and C1/C20/C22's transform cases dissol
 docs rule), SUPERSEDES the right-associative `&` pipeline (`x & unpad & between(1, 12)`), the `->` / `;` stage ideas,
 and the earlier function forms `unpad(S)` / `length(<=20)` read as images. Names `padded`, `any_case`, `quoted`,
 `length`, `month_numbered`: RULED (CF:722). `unpadded(n, S)` and `json.quoted`: LEAN (this document's names under the
-naming rule, §13 O37).
+naming rule, §13 O37). The naming rule over every provided transform: RULED BY ACCEPTANCE (CF:1020-1022, accepted at
+CF:1006; rev 12); `anchored`: RULED (the owner's own name, CF:1005, CF:1009); `search`: fails, OPEN (§13 O61).
 
 ## 3. The array and map interfaces
 
@@ -1813,14 +1877,30 @@ filter is the unapplied-macro error (§2.3).
 
 **RULE.** Standard library = prelude text (macros; typed parameters are out of phase 1, §5.2) on the foundation; it
 grows without compiler changes. Standard library sets (each call is a full rx, used in the filter role): `between`
-(inclusive), `startsWith(s) := /(?:${s})(?s:.*)/`, `endsWith(s) := /(?s:.*?)(?:${s})/`, `contains(s) := search(s,
-min = 1)` (`contains`/`search` remove the filter's anchoring and `^`/`$` in their argument are the ends of the span
-being filtered, RULED BY ACCEPTANCE, CF:991-994, so `contains(/^err/)` = `startsWith("err")`; the body's hole does not
-open a span of its own; the gaps are SCOPED `(?s:...)` so they cross a line break inside the span and nothing leaks
-into the hole: the manager's call, LEAN, rev 9; the holes are written `(?:${s})` so the text means what the hole
-semantics says, review r10 SIM-3). The owner's record calls `startsWith`/`endsWith` CONVENIENCES (CF:994): as sets
-they are `contains(/^(?:s)/)` and `contains(/(?:s)$/)`; whether they become those definitions (one body for the
-family, at the cost of a `hit` label on each) is FAMILIES below, not decided here. Under the ONE READING (§4.5) a library body's gaps decide how the argument's
+(inclusive), and the GAP TRANSFORMS, plain bodies with NO ANCHORS of their own (rev 12, the owner's ruling,
+CF:1016-1019, accepted at CF:1006: "No primitive carries an anchoring special case"):
+
+    startsWith(s)  := /(?:${s})(?s:.*)/            # the record: /${rx}.*/
+    endsWith(s)    := /(?s:.*?)(?:${s})/           # the record: /.*${rx}/ (lazy gap: LEAN, rev 9, below)
+    contains(s)    := search(s, min = 1)           # the record: /.*${rx}.*/ (the same SET; one definition: LEAN, §2.6)
+    anchored(s)    := /^(?:${s})$/                 # ADDED (CF:1005, CF:1014): identity in filter position (L69)
+
+Each body is a FILTER where it is used, so it matches the WHOLE span (THE ONE ANCHORING RULE, §11); the argument
+sits in a hole of the body, part of the body's rx, so `^`/`$` in it are PCRE's with the span as the subject:
+`contains(/^err/)` = `startsWith("err")` falls out of PCRE (CF:1018), `contains(/err$/)` also accepts a span ending
+`err\n` (PCRE's `$`; `\z` for the exact end; §0.1 L63). The gaps are SCOPED `(?s:...)` so they cross a line break inside
+the span ("gaps cross line breaks", CF:1017) and nothing leaks into the hole (the manager's call, LEAN, rev 9); the
+holes are written `(?:${s})` so the text means what the hole semantics says (review r10 SIM-3). `anchored` is for a
+position OUTSIDE a filter: a final pattern, `anchored(block)` (the record's use, CF:1015), where `^`/`$` are the
+subject's; its `$` is PCRE's, so it also accepts a match that ends just before a final newline of the subject, which
+`\A...\z` does not (L68; whether it should use the exact ends: §13 O62). The owner's first sketch
+`startsWith(rx) := /^${rx}/` does NOT work in filter position (there it means exactly rx: `/^5/` rejects `57`; L69).
+DIFFERENCES FROM THE RECORD'S TEXT, kept and listed (rev 12): the record writes `contains(rx) := /.*${rx}.*/` and
+`endsWith(rx) := /.*${rx}/`; this document keeps `contains := search(x, min = 1)` and a LAZY `endsWith` gap
+(rev 9-10, LEAN): the same SETS (a gap is a gap; the record's point is "no anchors"), chosen for how the ARGUMENT's
+labels read under the one reading (below; L58). The lean to fold `startsWith`/`endsWith` into `search` with an
+anchored argument (review r10 FIXB-9 (2), rev 10's "FAMILIES below") is WITHDRAWN (CF:1019): they stay the plain
+bodies above, with no `hit` label. Under the ONE READING (§4.5) a library body's gaps decide how the argument's
 labels read, so the bodies are written for the reading a user expects (rev 9, LEAN): `endsWith`'s gap is LAZY, so its
 argument starts as far LEFT as it can (`endsWith(/(?<n>\d+)/)` on `ab123`: n = `123`; rev 8's greedy `.*` gave n = `3`,
 libpcre2), and `contains` is `search` (§2.6: leftmost hits; rev 8's greedy-lead body read the RIGHTMOST occurrence).
@@ -1830,7 +1910,8 @@ n), `any_case(S)` (letter case ignored), `quoted(S)` (only the text inside the q
 subject's length read), `month_numbered(S)` (a month name read as its number), string positions `left/right/mid`
 with literal positions (units = characters per the encoding mode; out-of-range: §13 O14); `json.quoted(S)` (a JSON
 string literal read as its decoded text) lives in the `json` module.
-- THE SEARCH TRANSFORM (§2.6; CF:907-909, accepted at CF:905): `search(x, min = 0) :=
+- THE SEARCH TRANSFORM (§2.6; CF:907-909, accepted at CF:905; its NAME fails the naming rule and is OPEN, §13 O61,
+  the spelling `search` kept until the owner rules): `search(x, min = 0) :=
   /(?:(?s:.*?)(?<hit>${x})){${min},}(?s:.*)/`, of the `contains` family: each hit, leftmost and non-overlapping along PCRE's
   own parse (the one reading, §4.5; "always", CF:932-933), is one iteration of the repeated label `hit` (§4.3), with
   the argument's labels inside it. `min` (0 or 1, RULED, CF:963-966; default 0): with 0 it never rejects, with 1 a span with no
@@ -1896,7 +1977,11 @@ spelling: CF:907-914 (accepted at CF:905); the written bodies, the law, and the 
 owner's LEAN (CF:933-934), 0 or 1 RULED (CF:963-966), no `max`: RULED (CF:951-952); `contains` by `search` and the lazy `endsWith`: LEAN (this
 document); the `(?s)` gaps and the nullable refusal: LEAN (manager). Rev 10: scoped gaps and grouped holes, the second
 refusal: LEAN (review r10 SIM-3, SIM-1). SUPERSEDES rev 7's "`occurs`: `all`, `some`, `none`,
-..." and its search result as a second population.
+..." and its search result as a second population. Rev 12: plain gap bodies with no anchoring special case, `anchored`
+added, the fold of `startsWith`/`endsWith` into `search` withdrawn, the naming rule over every provided transform:
+RULED BY ACCEPTANCE (CF:1011-1022, accepted at CF:1006); keeping `contains := search(x, min = 1)` and the lazy
+`endsWith` against the record's `/.*${rx}.*/` and `/.*${rx}/` (same sets): LEAN (this document); `anchored`'s `$`
+before a final newline: OPEN (§13 O62); the name `search`: OPEN (§13 O61).
 
 ## 9. Cut from the first spec
 
@@ -1991,45 +2076,67 @@ defined; unbounded backreferences need `vm`).
 
 STRING SETS. A pattern used as a SET denotes the strings it matches ENTIRELY (keys starting with S are `/S.*/`).
 SET POSITIONS are: an `&` operand, a label condition, a filter body (incl. a modified filter's argument, §2.7, and
-a filter passed to any macro), a hole's set (together: FILTERS, the first three each applied to a SPAN of the
-subject, the last a part of the filter it sits in), and a compile-time set (an `enumerate` argument, an `@assert`
-argument, a name set for `import`/`@export`/`@warn`, a computed label's value, a `records` item).
+a filter a macro uses as a filter), a hole's set (together: FILTERS, the first three each applied to a SPAN of the
+subject, the last a part of the filter it sits in; an argument a macro's BODY puts in a hole, as `contains`,
+`startsWith`, `endsWith`, `anchored` and `search` do, is such a part, §8), and a compile-time set (an `enumerate`
+argument, an `@assert` argument, a name set for `import`/`@export`/`@warn`, a computed label's value).
 
-THE FILTERED SPAN (stated once; CF:761; CF:991-996). A filter applied directly is ANCHORED AT BOTH ENDS (a set of
-WHOLE strings: `m & /^err$/` = `m & /err/`); `contains` and `search` REMOVE that anchoring (RULED BY ACCEPTANCE,
-CF:991-994, accepted at CF:990; the owner's reason: `/\d\d/ & between(1, 12)` unanchored "would match "31""). In a
-filter, `^` and `$` mean the START and END OF THE SPAN BEING FILTERED, not of the subject ("ONE rule: `^`/`$` always
-mean the ends of the value being filtered", CF:994-995). `$` there is the span's end EXACTLY: never PCRE's "before a
-final newline" (`contains(/err$/)` rejects `err\n`, like `endsWith("err")`, §0.1 L63; LEAN, review r10 SIM-5). Because a directly applied filter is anchored, a `^` or `$` written in it ADDS NOTHING:
-`/\w+/ & /^foo/` = `/\w+/ & /foo/`, the one word `foo`, NOT the words that start with `foo` (that is `/\w+/ &
-startsWith("foo")` = `/\w+/ & contains(/^foo/)`; §0.1 L41); `P & (x: /^S\w*/)` makes x ENTIRELY `S\w*` (L7); `alts &
-!/^#.*/` drops the entries that are entirely `#` and non-line-break characters (L11). "Starts with" needs the
-loosening transform: `contains(/^foo/)` (L17). (Rev 10 said the first three equal their `startsWith` forms; review r12
-SIMULATE-1.) The lone program `/^foo/` is different because it is a FINAL pattern, searched in the subject: there `^` is the subject's
-start (or a line start under `(?m)`). This RESTORES the 2026-11-13 understanding ("b was in the span context of a",
-CF:56 "in-context stays for pattern-level &") in exactly this sense, and it SUPERSEDES the 2026-11-14 Q1 entry's
-listing of `^`/`$` among the errors (CF:713-717); the foundation stays STRING SETS (CF:761 (1)). A compile-time set
-has no filtered span; there `^`/`$` are the string's own ends (this document's extension, LEAN).
+THE ONE ANCHORING RULE (stated once; rev 12; the owner's ruling CF:1001-1020, the manager's advice he agreed to,
+CF:1006: "Ok I agree"; it RESTATES CF:761 and CF:991-996 without changing their answers except `$`, below). The
+owner's request: "We need consistent rules around when rx is anchored and to what. I don't want to have a bunch of
+"primitive" functions have special cases concerning that" (CF:1002-1004).
+- A FILTER (the filter side of `&`, a `label:` condition, and so a modified filter's argument and any filter a macro
+  uses as one) MUST MATCH THE WHOLE VALUE: a set of WHOLE strings (`m & /^err$/` = `m & /err/`; the owner's reason
+  for anchoring filters: `/\d\d/ & between(1, 12)` unanchored "would match "31"", CF:990-991).
+- EVERYWHERE ELSE an rx is UNANCHORED, AS IN PCRE: a program's FINAL pattern is searched in the subject, and so is a
+  `records` item rx in its file text (§7); an rx in a HOLE is part of the rx around it and has no anchoring of its
+  own.
+- `^` and `$` (and `\A`, `\z`, and `(?m)`'s line ends) are the ends of the SCOPED MATCH (§0.3): in a filter the span,
+  in a final pattern the subject. This is PLAIN PCRE WITH THE VALUE AS THE SUBJECT, no extra rule (CF:1013-1014).
+  So `$` is PCRE's `$`: the span's end or just before a final newline of the span; the exact end is `\z`.
+- NO PRIMITIVE CARRIES AN ANCHORING SPECIAL CASE (CF:1018). The library's gap transforms are plain bodies (§8):
+  `contains`, `search`, `startsWith`, `endsWith` put gaps around the argument; `anchored(rx) := /^${rx}$/` puts the
+  scoped match's ends around it (identity in filter position; its use is a final pattern, §0.1 L68, L69).
+- REJECTED (CF:1019-1020): an explicit anchor that SWITCHES OFF the implicit one (under it `/^5/` would accept more
+  than `/5/`). An explicit anchor in a filter never widens it (L69).
+- A COMPILE-TIME SET (an `enumerate` or `@assert` argument, a name set) is read as a filter over whole strings: its
+  `^`/`$` are the string's own ends (this document's reading of the one rule, LEAN; rev 11 called it an extension).
 
-ONE SPAN PER FILTER ROLE (review r8 P6-5; for the arguments of `contains`/`search` RULED BY ACCEPTANCE, CF:993-994;
-for other macros' arguments and holes, this document's application of the same "ONE rule", LEAN; §13 O49 RESOLVED). The span is fixed where the FILTER
-ROLE is: the `&` operand's text, the label's value (a `search` or `contains` filter reads that span too). Nothing written INSIDE a filter opens
-a span of its own: a filter passed as an argument to a macro (`contains(/^err/)`, `padded(/^5/)`, a user macro) and
-an rx inserted in a hole of the filter's body both read the span of the filter they are part of. So `contains(/^err/)`
-= `startsWith("err")` although `contains`'s body (`search`'s) puts the argument in a hole inside its loop, after a
-lazy gap, and
-`search(/^err/)` has at most one hit, at the span's start (§2.6, §0.1 L16, L17). This is the owner's rule ("^...$ meant the start and end of the filtered
-condition", CF:761-768) applied to arguments, not a property of `contains`, `startsWith` and `endsWith`. It agrees
-with §2.7's "the argument's own start and end": a modifier's argument filters the span AS THE MODIFIER READS IT,
-which is the same span read through the modifier, so its ends are that span's ends, and, no loosening transform
-wrapping it, it is anchored at both (`padded(/^5/)` = `padded("5")`, §0.1 L13; rev 11, review r12 SIMULATE-1). In a FINAL pattern a hole's `^`/`$` are the subject's (or a line's) ends, as in the pasted text. Rev 6
+What follows, every answer as rev 11 gave it except `$`. Because a filter matches the whole value, a `^` or `$` written
+in a filter ADDS NOTHING: `/\w+/ & /^foo/` = `/\w+/ & /foo/`, the one word `foo`, NOT the words that start with
+`foo` (that is `/\w+/ & startsWith("foo")` = `/\w+/ & contains(/^foo/)`; §0.1 L41); `P & (x: /^S\w*/)` makes x
+ENTIRELY `S\w*` (L7); `alts & !/^#.*/` drops the entries that are entirely `#` and non-line-break characters (L11).
+"Starts with" is a gap after the argument: `startsWith("foo")`, or `contains(/^foo/)`, where only an empty lead gap
+reaches the `^` (L17). The lone program `/^foo/` is different because it is a FINAL pattern, searched in the subject:
+there `^` is the subject's start (or a line start under `(?m)`). `$` is PCRE's: `contains(/err$/)` ACCEPTS `err\n`
+while `endsWith("err")` rejects it (L63; libpcre2 10.46 and Python `re`, `docs/dev/lanes/predspec12_anchor.out`).
+Rev 10-11 read `$` in a filter as the span's end EXACTLY (review r10 SIM-5): an extra rule, WITHDRAWN in rev 12
+(LEAN, this document's reading of "no extra rule"). The answer moves only where something after the `$` can consume
+the final newline: `/err$/` as a filter rejects `err\n` under both readings (the whole value must be matched), while
+`/err$\n/` now accepts it and `contains(/err$/)` (whose tail gap takes the `\n`) now accepts it. This RESTORES the 2026-11-13 understanding ("b was in the span context
+of a", CF:56 "in-context stays for pattern-level &") in exactly this sense, and it SUPERSEDES the 2026-11-14 Q1
+entry's listing of `^`/`$` among the errors (CF:713-717); the foundation stays STRING SETS (CF:761 (1)).
+
+ONE SPAN PER FILTER ROLE, now a CONSEQUENCE of the one rule (review r8 P6-5; RULED BY ACCEPTANCE for the arguments of
+`contains`/`search`, CF:993-994, and as plain PCRE by CF:1013-1014; §13 O49 RESOLVED). The span is fixed where the
+FILTER ROLE is: the `&` operand's text, the label's value. Nothing written INSIDE a filter opens a span of its own,
+because a hole has no scoped match of its own: an rx in a hole of a filter's body (the argument of `contains`,
+`search`, `startsWith`, `endsWith`, a user macro's hole) is matched as part of that body, against the span, so its
+`^`/`$` are the span's ends, as PCRE gives them. So `contains(/^err/)` = `startsWith("err")` although `contains`'s body
+(`search`'s) puts the argument in a hole inside its loop, after a lazy gap, and `search(/^err/)` has at most one hit,
+at the span's start (§2.6, §0.1 L16, L17). A modifier's argument is different only in WHAT it filters: it is a filter
+of its own over the span AS THE MODIFIER READS IT, so it matches that whole reading (`padded(/^5/)` = `padded("5")`,
+§0.1 L13). In a FINAL pattern a hole's `^`/`$` are the subject's (or a line's) ends, as in the pasted text. Rev 6
 read `^` in a hole as the HOLE's own start, which made `contains(/^err/)` accept `xerr` while §0.1 L17 said it was the
 same as a search for `/^err/` (review r8 SIM-1).
 
 An assertion that would READ BEYOND THE FILTERED SPAN is a COMPILE ERROR naming the fix (CF:761 (3)): `\b` at the
 span's start or end, and (LEAN, the manager's reading) a lookaround that can read outside the span, reachable at its
 start through a nullable prefix or at its end through a nullable suffix; the property is decided statically on the
-pattern. `^`/`$` are NOT in this class:
+pattern. `^`/`$` are NOT in this class. (Rev 12: plain PCRE with the value as the subject would give `\b` at the
+span's edge a meaning, the subject edge read as a non-word character; that is not the text's real context, so the
+ruled refusal stands, CF:761 (3). The one anchoring rule speaks of anchors, `^`/`$`, only, and an anchor reads no
+character, so it is not an anchoring special case.)
 
     "`\b` in the condition on x reads text outside x: put `\b` in the pattern that places x"
 
@@ -2039,7 +2146,8 @@ breaks within it); without it `^`/`$` are the span's ends; never does either rea
 (`$x`, a one-string set) and every other value `$` reads (metadata, a computed label; §5.4), what a modified filter reads (its reading's output, §2.7) and compile-time sets are
 CONTEXT-FREE. A
 SEARCH inside a span (`(m: search(rx))`, §2.6) is a filter like any other: its argument's `^`/`$` are the ends of
-the filtered span (D193 add. 3, which says the same of a predicate's regex test; CF:993-994). FINAL patterns and a `records` item rx are SEARCHED in their subject and keep full PCRE meaning,
+the filtered span, PCRE's with the span as the subject (D193 add. 3, which says the same of a predicate's regex test;
+CF:993-994; CF:1013-1014). FINAL patterns and a `records` item rx are SEARCHED in their subject and keep full PCRE meaning,
 context assertions included. Nullability for the empty-match rule is computed IN CONTEXT (§7). A named in-context form
 (a library call, no keyword) is added only on a measured need (D77).
 
@@ -2048,7 +2156,8 @@ positions, below, take one value from a finite set): a one-string set (a capture
 quoted literal) inserts LITERAL TEXT (never re-parsed), any other rx inserts a sub-pattern (`${isodate & (year:
 2000)}` = a sub-pattern insertion); a MACRO in a hole is the unapplied-macro error (§2.3; CF:362). A hole's set is a
 set position for the edge-assertion rule (a `\b` or edge lookaround at its edge is the error above, L8; write the
-assertion in the literal around the hole); its `^`/`$` are the enclosing filter's span ends (above). In the inner direction (an API caller passing a PCRE string) a GUARD is written with an explicit `&`
+assertion in the literal around the hole); its `^`/`$` are the ends of the scoped match of the rx it sits in, the
+enclosing filter's span or a final pattern's subject (THE ONE ANCHORING RULE, above). In the inner direction (an API caller passing a PCRE string) a GUARD is written with an explicit `&`
 when the rx-`&` switch is ON: `(\d+)&${ <256 }` (with it OFF, the whole rx in the hole: `${/(\d+)/ & <256}`); a hole
 after an atom WITHOUT `&` is a FOLLOWING item (`(\d+)${ <256 }` = digits followed by a numeral below 256). The guard
 covers the whole concatenation on each side of its `&` within the alternative (D196 precedence, above): inside a
@@ -2067,8 +2176,12 @@ discriminate (its cases are FINAL patterns, searched under every model; Q1R-12, 
 fail SILENTLY (`\w{3} & /\w+\b/` moves the match; a `^` condition on a repeated label passes one header and fails
 two); under B1 others do (`n: p` dead for a lookbehind `p`). With `^`/`$` bound to the filtered span (CF:761) a `^`
 never reads the subject's start; under the anchoring (CF:991-993) a `^` in a directly applied filter adds nothing, and
-"starts with" is the loosening `contains(/^.../)` = `startsWith(...)` (rev 10 said the `^` look-alikes agree with
-`startsWith`; review r12 SIMULATE-1); every remaining divergence needs an assertion that reads outside the span, a
+"starts with" is the gap body `startsWith(...)` = `contains(/^.../)` (rev 10 said the `^` look-alikes agree with
+`startsWith`; review r12 SIMULATE-1). Rev 12's one anchoring rule (CF:1011-1020) takes the last special case out:
+where an rx is anchored is decided by its POSITION (filter or not), and `^`/`$` are PCRE's in the scoped match, so a
+reader predicts every anchor from PCRE plus one sentence, and no library primitive needs its own anchoring clause (the
+owner's "consistent rules ... no special cases", CF:1002-1004); the price is PCRE's `$` before a final newline (L63),
+which `\z` avoids; every remaining divergence needs an assertion that reads outside the span, a
 static property, and refusing exactly those leaves no silent failure and no unbuilt lowering at the default level
 (G0, G2). Nullability in context is A's one real gain, adopted. What a hole holds (one string or a set) decides its
 insertion, never the text's content (no injection); a guard needs `&` so the hole rule has no exception (C4).
@@ -2077,15 +2190,19 @@ insertion, never the text's content (no injection); a guard needs `&` so the hol
 suggestions"); the subset scoped to literals inside a larger program and the one-literal program = today's pattern:
 LEAN (review OWN-14). No implicit x-mode: RULED (CF:577, C2). STRING SETS: RULED (CF:713, CF:761 (1)). In a filter
 `^`/`$` = the ends of the span being filtered: RULED (CF:761 (2), SUPERSEDES the part of CF:713 that listed `^`/`$`
-among the errors); its extension to the compile-time sets (no span is filtered there; `^`/`$` = the string's ends):
-LEAN (this document). Assertions reading beyond the filtered span refused: RULED for `\b` (CF:761 (3)); edge
+among the errors). THE ONE ANCHORING RULE (a filter matches the whole value, everywhere else unanchored as in PCRE,
+`^`/`$` the scoped match's ends as plain PCRE, no primitive with an anchoring special case, the explicit-anchor
+switch rejected): RULED BY ACCEPTANCE (CF:1011-1020, accepted at CF:1006; rev 12); its reading of the compile-time
+sets as filters over whole strings: LEAN (this document). Assertions reading beyond the filtered span refused: RULED for `\b` (CF:761 (3)); edge
 lookarounds in the same class: LEAN (manager's reading, CF:761). `(?m)` written explicitly: RULED (CF:753, C35).
 Context-free captured strings, modifier readings and compile-time sets, nullability in context, a named in-context form only on
 measured need: RULED (CF:713). The three candidates and the restated reasoning: LEAN (review Q1R-1, Q1X-2, Q1R-12,
 Q1X-1). Guard holes with `&`: RULED (CF:573, C4); a macro in a hole the unapplied-macro error: RULED (CF:362). One
 span per filter role (an argument or a hole reads the enclosing filter's span): RULED BY ACCEPTANCE for the
-arguments of `contains`/`search` (CF:991-994, accepted at CF:990), LEAN for the rest (§13 O49 RESOLVED); filters
-anchored at both ends: RULED BY ACCEPTANCE (same cite); `$` the exact end: LEAN (review r10 SIM-5). The
+arguments of `contains`/`search` (CF:991-994, accepted at CF:990), and, since rev 12, a consequence of plain PCRE
+with the value as the subject (CF:1013-1014) for every hole (§13 O49 RESOLVED); filters anchored at both ends: RULED
+BY ACCEPTANCE (same cite; restated by CF:1011); `$` the exact end (review r10 SIM-5): WITHDRAWN in rev 12, `$` is
+PCRE's (LEAN, this document's reading of "no extra rule"). The
 self-recursion through the literal's own named group, with no crossing (rev 10: `(?&name)` naming the binding, a
 crossing): LEAN (CF:113; review r12 CENSUS-2, the manager's pick). Holes: RULED (CF:80, CF:81). Run-time inputs ("parameters" in CF:84): RULED (CF:84); the
 interface rides [IFACE-PUSH]. `&` and `${}` as the only rx additions: RULED (CF:795). `&` in rx text all or nothing by a module or option: RULED
@@ -2174,6 +2291,20 @@ touch no case: the narrowed second argument refusal (no case passes a backrefere
 selection spelling `$m.hit[(g: "x")]` (no case reads iterations out), `balanced`'s respelling (not a case), the
 rx-`&` reading under ON (G3 runs OFF; no case uses rx-text `&`), and the duplicate-in-a-loop rule (no case has
 `(?J)`).
+
+REV 12 RE-APPLIED UNDER THE ONE ANCHORING RULE, EACH CASE IN ITS REAL MODE (CF:1011-1020; per-case table in
+`docs/dev/lanes/predspec12_report.md`, CONSISTENCY SWEEP). The rule moves an answer only where a `$` in a filter or a
+filter's hole can meet a final newline that something after it consumes (rev 11's exact-end `$` is withdrawn), or
+where a case would use `anchored`. CODE LINES: unchanged token for token. ANSWERS: unchanged in every case. E-JSONL
+(`^`/`$` in the FINAL pattern under `m`, searched line by line, as before; its `contains("timeout")` holds no anchor),
+E-HTTP (`\A`/`\z` in the final pattern: the exact ends; the record's suggested `anchored(block)` would ALSO accept a
+block followed by one final newline, L68, so the case keeps `\A...\z`), E-FILE (the item rx `/^[^\r\n]*$/m` is
+searched in the file text, an "everywhere else" position, as before; `!startsWith("#")` is a gap body), E-LUHN
+(`startsWith("4")`, a gap body), E-CTX-1, 5, 7 (a `^` in a filter or a modifier's argument adds nothing, the reason
+now the one rule), E-CTX-2, 3, 4, 6 (compile errors; the edge-assertion error is not an anchoring rule, §11),
+E-WEEKDAY, E-IPV4 (`/\b${ipv4}\b/` a final pattern), E-CAL, E-RFC, E-NEAR, E-SEP, E-DEPTH (no anchor in a filter) and
+the agreeing look-alike. Rev 12's other change (the naming rule; `search` OPEN) touches no case: no case writes
+`search` (E-JSONL's `contains` passes the rule).
 
 THE TWO-WAY CENSUS (G0b; review r8 P6-9, OWNER-12). G1's check runs case -> construct (every case uses only §§2-8);
 this table runs construct -> case. Counts are uses in §12's code lines, comments stripped (command in
@@ -2376,7 +2507,8 @@ O21; no new grammar in rev 10 (the manager's pick).
 ### 12.12 E-CTX: assertions in set positions (the cases that decide Q1)
 
 Each case puts an assertion where the three candidate models (§11) disagree; the answer is the RULED one (string
-sets, `^`/`$` = the filtered span's ends, the edge-assertion error for `\b` and edge lookarounds; CF:761). E-CTX-1, 5
+sets, `^`/`$` = the filtered span's ends, the edge-assertion error for `\b` and edge lookarounds; CF:761; rev 12:
+THE ONE ANCHORING RULE, CF:1011-1020, the same answers). E-CTX-1, 5
 and 7 do not error; E-CTX-2, 3, 4, 6 do. The answers under the other models are review Q1X-2's table. LEVEL: none applies
 (compile errors).
 
@@ -2518,6 +2650,9 @@ RESOLVED (one line each; the rule now stands in the section named; RULED marks c
   CF:991-996): filters are anchored at both ends; `contains`/`search` remove that; `^`/`$` in their argument are the
   ends of the span being filtered, `contains(/^err/)` = starts with `err`. The alternative (filters unanchored as in
   PCRE) REJECTED by his `31` example. Other macros' arguments and holes follow the same "ONE rule" (LEAN). §11, L17.
+  REV 12: RESTATED by THE ONE ANCHORING RULE (CF:1011-1020, accepted at CF:1006): no transform removes anchoring (the
+  bodies are plain gaps), a hole's `^`/`$` are the scoped match's as plain PCRE gives them, so one span per filter
+  role is a consequence, not a rule; `$` is PCRE's (L63).
 - **O50** what a search result is at match time (rev 10): its last open part, the LEVEL of one-iteration access, is
   RULED (CF:977, "1. agree", to CF:972-973): reading ONE hit needs captures, a higher level with its cost shown;
   count/some/all in phase 1. (Rev 9's (c), "a search never rejects", holds for the default `min = 0` only; `min = 1`
@@ -2699,7 +2834,9 @@ review's proposed lean, in plain words, NOT resolved):
   rev 11 (review r12): L7, L11, L13, L15, L41 move from SAME to BY DESIGN (a `^` in a directly applied filter adds
   nothing; whether a warning should say so, since the form LOOKS like "starts with", is this item's question), and
   L67 is a NEW GAP (an rx-text `&` whose concatenation makes the result empty; the empty-intersection error at every
-  `&`, proposed, not adopted); rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
+  `&`, proposed, not adopted); rev 12: L63 moves from SAME to BY DESIGN (PCRE's `$` before a final newline; whether
+  a warning should name a `$` inside `contains`/`search` that a gap can follow is this item's question), L68 is BY
+  DESIGN (`anchored` vs `\A...\z`; §13 O62), L69 SAME; rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
   stated meaning of a mark or a library name, §5.4, §4.3; L52, "a plain condition on a hit means ALL hits", is the one
   rev 8 row where a warning could pay, since the owner's own first question was about it, CF:904):
   DIFFERENT with no named diagnostic, so G0's acceptance fails on them today. Some are open items above; L20 (a padded
@@ -2899,7 +3036,10 @@ here):
   order rule, against the order-free `&`, G0). Lean: (A') for phase 1, which needs no new rule (it is §4.1's), with
   (B') as its named fix when a case needs two hit labels; for (ii) the consequence is stated, not avoided: the
   arguments' labels ARE repeated, and "the compiler may build `contains` as the plain set" changes no label. Not
-  decided here (the manager's ruling on FIXB-4).
+  decided here (the manager's ruling on FIXB-4). REV 12: put to the owner as question (2) of OWNER QUESTIONS AFTER
+  REV 12 (lean: (A'), the ERROR, with (B'), a per-call hit name, as its fix). `startsWith`/`endsWith`/`anchored` add
+  no `hit` (plain gap bodies, §8), so only `search` and `contains` meet this; if `search` is renamed (O61) the label
+  name follows at the spelling step.
 - **O56. Which iteration a record or an index means.** (1) Same iteration by record when the labels sit at
   DIFFERENT depths (`some((g: "x", k: 1))`, g inside the loop, k outside it, or two nested loops). Lean: the
   innermost loop that encloses every label of the record; a label outside it has one value for every iteration of
@@ -2979,6 +3119,13 @@ put to the owner as O60 (d)); (16) an rx-text `&` takes the whole concatenation,
 manager's pick on CENSUS-5; L67); (17) a duplicate label inside a loop is a repeated label (this lane's pick on
 CENSUS-12; §4.3).
 
+DECIDED BY THIS LANE (rev 12, readings of the one anchoring rule; each LEAN, none an owner ruling; listed so the
+owner sees them): (18) "no extra rule" withdraws rev 10's exact-end `$` (SIM-5): `$` in a filter and its holes is
+PCRE's, so `contains(/err$/)` accepts `err\n` (L63; `\z` for the exact end); (19) a compile-time set (an `enumerate`
+or `@assert` argument, a name set) is read as a filter over whole strings (§11); (20) the library bodies keep
+`contains := search(x, min = 1)` and the lazy `endsWith` gap against the record's `/.*${rx}.*/` and `/.*${rx}/`,
+the same sets (§8); (21) E-HTTP keeps `\A...\z` rather than the record's `anchored(block)` (L68, O62).
+
 DECIDED BY THE MANAGER (rev 9; the manager's calls, each LEAN (manager), none an owner ruling; listed so the owner
 sees them): (1) a search argument that can match the empty string is REFUSED with the fix `x & !""` (O53 reading A;
 §2.6, §8); (2) a user label named `index` or `label` is a compile ERROR naming the reserved field of the map
@@ -3001,7 +3148,10 @@ reached FAILS. So the general form is recorded and not adopted. (2) The four lib
 critic's hand trace). Unlocks: one hand-check table and one reading for the family. Cost: each such filter then
 carries `hit` (O55 rev 10). Its trigger, the anchored-argument ruling, FIRED in rev 10 (CF:990-996, whose record
 calls the two "conveniences", CF:994): the unification is now the manager's to schedule, not done here (lean: adopt
-once O55's two-transforms question is answered, since every `startsWith` would add a `hit`).
+once O55's two-transforms question is answered, since every `startsWith` would add a `hit`). REV 12: WITHDRAWN by the
+owner's ruling (CF:1019: "The manager's earlier lean to fold startsWith/endsWith into search with an anchored argument
+is WITHDRAWN"): `startsWith`/`endsWith` stay plain gap bodies with no `hit` (§8), and the owner question that rested
+on this lean is withdrawn with it.
 
 Items NEW in rev 10:
 - **O60. The rx-`&` switch: its default and its spelling.** The owner ruled `&` in rx text ALL OR NOTHING by a module
@@ -3023,6 +3173,52 @@ Items NEW in rev 10:
   pattern stays OFF and puts its intersections in holes). Lean: (A') (the manager's, review r12 dispositions), as the
   reading that keeps "fully yes or no" for the operator while leaving PCRE's own constructs whole. Lean overall: (a)
   (A), (b) `[&]`, (c) at the spelling step, (d) (A'). §11.
+
+Items NEW in rev 12 (the owner's 2026-11-15 evening ruling, CF:1001-1024):
+- **O61. A name for `search`.** (CF:1020-1024: "every transform the library PROVIDES is named for how it changes the
+  FILTER ... never for an action on the subject"; the record: "`search` is a verb acting on the subject and needs a
+  new name (candidates to put to him)".) What the transform does to the filter x: the changed filter accepts EVERY
+  value (default `min = 0`) and reads each occurrence of x in it as one iteration of the label `hit`. Candidates:
+  (a) `occurrences(x)`: FOR, a noun for what the changed filter reads, exactly as `length(S)` names the value's
+  length; it reads with the group questions (`(m: occurrences(r) & some((g: "x")))`). AGAINST: close to the `occurs`
+  module's name, two words of one family with different jobs. (b) `hits(x)`: FOR, short, names the label it adds.
+  AGAINST: jargon; says nothing of which values pass; the draft's own example binds the name `hits`. (c) `marked(x)`:
+  FOR, a participle like `padded`/`anchored` (the filter changed so each occurrence is marked). AGAINST: reads as
+  marking the SUBJECT, the very reading the rule forbids. (d) `each_occurrence(x)`: FOR, says a plain condition reads
+  EVERY occurrence. AGAINST: reuses `each`, the structural macro's name (one word, two meanings, G0b). (e)
+  `containing(x)`: FOR, the participle of `contains`, the family's kept name; `containing(x, min = 1)` = `contains(x)`.
+  AGAINST: at the default `min = 0` it accepts values containing NO x, so the name misstates which values pass.
+  Lean: (a), with the label `hit` renamed to match at the spelling step (O55). The NAME stays `search` in this
+  document until the owner rules (OPEN). No other provided transform fails the rule (the audit:
+  `docs/dev/lanes/predspec12_report.md`, TRANSFORM NAME AUDIT; `count` returns a number and `sort`/`unique`/`join`/
+  `each` are structural tools, not transforms).
+- **O62. `anchored`'s ends: PCRE's `^`/`$`, or the exact ends?** (CF:1005, CF:1014-1015.) The owner wrote
+  `anchored(rx) := /^${rx}$/`, and the record says its use is a final pattern "`anchored(block)` instead of
+  `\A...\z`". PCRE's `$` also holds before a final newline, so as a final pattern `anchored(/foo/)` finds `foo` in
+  `foo\n` where `/\A(?:foo)\z/` finds nothing (§0.1 L68; libpcre2 10.46, Python `re`). Readings: (A) keep `^`/`$` (the
+  owner's text; differs from `\A...\z` on a subject ending in a newline); (B) `anchored(rx) := /\A(?:${rx})\z/` (the
+  exact ends; the record's "instead of `\A...\z`" then holds exactly). In filter position both are the identity
+  (L69), so only final patterns are affected. Lean: (B) (an author who writes `anchored` means the whole subject;
+  `^`/`$` in the owner's sketch named the scoped match's ends, which `\A`/`\z` also are). Until he rules, the draft
+  writes his text (A) and E-HTTP keeps `\A...\z`.
+- **O63. Warn when a count sits in a program whose final pattern is searched?** (Review r10 SIM-6, L66; carried
+  from O38 as an owner question, unchanged in substance.) Under the one rule the wording still makes sense, restated:
+  the count FILTER is a filter and matches its whole span, but a SEARCHED final pattern (the one place an rx is
+  unanchored) picks the span, and a shorter span can pass a count the whole block fails (`Host: a\r\nhost: b`
+  reports `Host: a`). Rev 12 gives the fix a library spelling: `anchored(...)` around the final pattern (or
+  `\A...\z`; O62). Lean: no warning (carried): counting inside the spans a search finds is a legitimate program, and
+  the fix is stated where counts are documented (§4.3, §8, §12.9).
+
+OWNER QUESTIONS AFTER REV 12 (the open small ones, each in one line with its lean; the plain-words version with an
+example each is in `docs/dev/lanes/predspec12_report.md`, QUESTIONS FOR THE OWNER):
+- (1) With the rx-`&` switch ON, PCRE's own constructs (`(?&name)`) keep their meaning, `&` is the operator only
+  where it stands alone, a literal `&` is `[&]`: lean YES (O60 (d)).
+- (2) Two searches in one `&` chain both expose `hit`: an ERROR naming both, fixed by a per-call hit name: lean YES
+  (O55 (A') with (B') as the fix).
+- (3) WITHDRAWN by the ruling (the fold of `startsWith`/`endsWith` into `search`, FIXB-9 (2), CF:1019).
+- (4) Warn when a count sits in a program whose final pattern is searched: lean NO (O63).
+- (5) A name for `search`: lean `occurrences` (O61).
+- (6) `anchored` with the exact ends `\A`/`\z`: lean YES (O62).
 
 ## 14. Non-goals
 
@@ -3055,6 +3251,7 @@ COND-FAMILY.md notes by date/heading; "11-12" = the 2026-11-12 sections, etc. "p
 
 | section | notes consolidated |
 |---|---|
+| rev 12 (anchoring and naming sites) | CF:1001-1024 (ONE anchoring rule, `anchored()`, the naming of provided transforms): CF:1011-1014 -> §11 THE ONE ANCHORING RULE, §0.3 "scoped match", §0 rulings table, L63, L69, §2.6 ANCHORS IN THE ARGUMENT, §2.7, §12 REV 12, O49; CF:1014-1015 -> §8 `anchored`, L68, L69, O62; CF:1016-1019 -> §8 gap bodies, L17, FIXB-9 (2) withdrawn; CF:1019-1020 -> §11 REJECTED, L69; CF:1020-1024 -> §0 naming rule, §0.3, §2.6, §2.7, §8, O61. The brief's carried owner questions -> §13 OWNER QUESTIONS AFTER REV 12, O63. Oracle runs: `docs/dev/lanes/predspec12_anchor.py`/`.out` |
 | rev 9 (all sections touched) | CF:927-947 (search follows PCRE's matching; a bound name holds the transformed rx; min/max settings): CF:929 -> §2.6 owner's example, §5.1, O54; CF:932-936 -> §2.6, §4.3, §8, C36; CF:933-940 -> §2.6 `min` and ZERO HITS, §4.2 boundary, §4.3 table, L36, L55, L56, O28; CF:941-944 (the manager's note (a)) -> §4.5 build-or-refuse (LEAN), §6.1; CF:944-947 (note (b)) -> §2.6 `contains` = `search(x, min = 1)`, L58, O58. CF:948-961 (ONE reading everywhere; ambiguity the author's; no `max`): CF:950, CF:953-955 -> §4.5 rewritten, §0.3 glossary, L34, L59, C36, O33, C11; CF:949-950, CF:955-957 -> O57, §0 standing questions; CF:950-951, CF:957-959 -> §5.6 validation example, §7.1 `label.ambiguous`, §4.5; CF:951-952, CF:960-961 -> §2.6, §8, §0.2, O58. The brief's manager's calls -> O53, O31, C7, §2.6/§8 `(?s)` and the DECIDED BY THE MANAGER list. CF:180 -> O28 |
 | rev 10 (all sections touched) | review `docs/dev/reviews/2026-11-15-r10-predspec9.md` (DISPOSITIONS RULED) -> §0.1 L17, L25, L34, L48-L59, L60-L66, §2.6, §3.2, §3.4, §4.2-§4.5, §5.1-§5.6, §7, §7.1, §8, §11, §12, §13. CF:962-971 (`min` 0 or 1; the warning for the author's own text) -> §2.6, §4.5, §7.1, O58, O59; CF:972-988 (captures for one hit; one budget; count a numeral; `&` all or nothing) -> §4.3, §4.6, §8, §2.1, §11, C23, O39, O40, O50, O60; CF:989-996 (filters anchored at both ends) -> §11, §2.6, §8, L17, O49; CF:997-1000 (per match, on main after the lane's base; rulings R-1) -> §4.2, §4.3, §2.6, L55, L56, L65, O28 |
 | rev 8 (all sections touched) | CF:880-887 (the search result as the ARRAY of all results) -> §2.6's owner's example, O50; CF:888-901 (the four answers): CF:889 -> §0.2, §5.2, §5.4 `:`, L49, O48, O52 (c); CF:890-891 -> §0.3 interface, §1, §2.1 kind table, §3.1, §3.2, §3.4, §5.4, §9, §14; CF:891-892 -> §7, O46, kind table; CF:892/CF:898-899 -> §3.2 tool 4, §5.4 `.`, O31, C29; CF:902-926 (SEARCH IS A TRANSFORM) -> §0 rulings table, §0.1 L16, L17, L31, L36, L50-L54, §0.2, §2.6, §3.4, §4.3, §4.5, §5.1, §5.3, §5.4, §8, §11, §12, C17, C28, O12, O28, O29, O36, O38, O50, O52, C36, O53-O56; CF:62 -> §4.3, O56 (2); CF:180 -> O28 |
