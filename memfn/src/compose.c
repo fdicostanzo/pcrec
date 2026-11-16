@@ -409,6 +409,18 @@ long kit_last_stated(const mf_site *s)
     return last;
 }
 
+/* The proof range's least END (one past its last row) for a site whose last
+ * stated offset is `last_s`: one past the statement's following offset,
+ * clipped to MF_MAX_FWD, and never below 1 (rows -1 and 0, the copies, always
+ * lie inside). THE MINIMUM's one spelling: mf_rows_need sizes the caller's
+ * storage by it and kit_proof_open's R-short checks against it (review r27
+ * HOUSE-2). */
+static long proof_min_end(long last_s)
+{
+    long end = last_s + 2 < MF_MAX_FWD ? last_s + 2 : MF_MAX_FWD;
+    return end < 1 ? 1 : end;
+}
+
 const char *kit_proof_open(mf_class *out, long last_s, long tested_lo, long last_t,
                            int check_out, const kit_proof_st *st, uint8_t (**w)[32])
 {
@@ -424,8 +436,7 @@ const char *kit_proof_open(mf_class *out, long last_s, long tested_lo, long last
     if (end < 1) end = 1;           /* rows -1 and 0 always lie inside: the copies */
     /* (R-short) THE SELF-CHECK: the range reaches one past the statement. It
        shares its source with `end` (the kit checking its own computation) */
-    long want = last_s + 2 < MF_MAX_FWD ? last_s + 2 : MF_MAX_FWD;
-    if (end < want)
+    if (end < proof_min_end(last_s))
         return "the proof range ends before the statement's following offset";
     uint32_t n = (uint32_t)(end - MF_PROOF_LO);
     uint8_t (*rows)[32] = NULL;
@@ -1183,15 +1194,31 @@ static int ask_sel(const mf_art *art, const mf_site *s, const mf_hooks *def,
         /* proof_n 0, proof NULL: the legal all-ones class */
         memset(out->proven0, 0xFF, sizeof out->proven0);
         memset(out->proven_prev, 0xFF, sizeof out->proven_prev);
-        return fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ? -1 : 0;
+        if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) {
+            memset(out, 0, sizeof *out);    /* On -1 *out is zeroed (memfn.h) */
+            return -1;
+        }
+        return 0;
     }
     gate_verdict declined = { 0, 0 };
     const char *rid;
     const ren_key *ren;
     const arm *row = select_arm(art, s, def, gphases, &declined, 1, &rid, &ren);
-    if (!row || kit_class(row, s, out, stp)) { memset(out, 0, sizeof *out); return -1; }
-    if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ||
+    if (!row) return -1;
+    /* every refusal before the first write to `rows` (review r27 SEAM-1): the
+       presence decision and the layout read no proof row, so they are held
+       on the class's verdict first; only then is the proof written */
+    const kit_proof_st verdict = { NULL, 0, NULL };
+    if (kit_class(row, s, out, &verdict) ||
+        fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why) ||
         (s->npspan && pres_layout_check(art, s, out))) {
+        memset(out, 0, sizeof *out);
+        return -1;
+    }
+    /* the proving class into the caller's rows (R-cap and a NULL `rows`
+       refuse before any write, kit_proof_open), then the same presence
+       decision again: kit_class rewrote the whole class */
+    if (kit_class(row, s, out, stp) || fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, &why)) {
         memset(out, 0, sizeof *out);
         return -1;
     }
@@ -1203,10 +1230,7 @@ int mf_rows_need(const mf_site *site, uint32_t *proof_cap, uint32_t *plan_cap)
     if (!site || !proof_cap || !plan_cap) return -1;
     *proof_cap = *plan_cap = 0;
     if (site->nalt || site->op == MF_OP_FIND) {
-        long last = kit_last_stated(site);
-        long end = last + 2 < MF_MAX_FWD ? last + 2 : MF_MAX_FWD;
-        if (end < 1) end = 1;
-        *proof_cap = (uint32_t)(end - MF_PROOF_LO);
+        *proof_cap = (uint32_t)(proof_min_end(kit_last_stated(site)) - MF_PROOF_LO);
     }
     *plan_cap = wf_stated_offsets(site);
     return 0;
@@ -1377,8 +1401,8 @@ static int define_sel(mf_art *art, const mf_site *s, const mf_hooks *def,
         mf_class q;
         mf_rows qr = { calloc(MF_MAX_FWD - MF_PROOF_LO, 32), MF_MAX_FWD - MF_PROOF_LO,
                        NULL, NULL, NULL, 0 };
-        int differs = !qr.proof || ask_sel(art, ws, def, gphases, &q, &qr) ||
-                      !kit_class_same(&q, &r->cls);
+        if (!qr.proof) return kit_fail(art, "mf_define: out of memory");
+        int differs = ask_sel(art, ws, def, gphases, &q, &qr) || !kit_class_same(&q, &r->cls);
         free(qr.proof);
         if (differs)
             return kit_fail(art, "mf_define: the define-time query's class differs "

@@ -1326,17 +1326,27 @@ static int decide(const mf_art *art, const mf_site *s, int quiet, mf_arena *al, 
     return 0;
 }
 
+/* 1 iff the caller's `rows` can hold decision `d`'s plan lists: plan and
+ * plan_term, plus plan_test where the ask is `framed`, each of plan_cap >=
+ * np entries (an empty plan needs no list). THE STORAGE PRECONDITION: an
+ * ask checks it before its first write to `rows`, so a refused ask writes
+ * nothing there (memfn.h mf_wdecide; review r27 SEAM-1). */
+static int rows_hold(const wf_dec *d, const mf_rows *rows, int framed)
+{
+    if (!rows) return 0;
+    if (!d->np) return 1;
+    return rows->plan && rows->plan_term && (!framed || rows->plan_test) &&
+           d->np <= rows->plan_cap;
+}
+
 /* The reply's DECISION GROUP (`alt` .. `path`) from decision `d`, the reply
  * zeroed whole first (padding and the frame part included), its plan lists
- * written into the caller's `rows` (MF_SITE_ABI 30). 0, or -1 where `rows`
- * cannot hold the plan (NULL lists, or more than plan_cap entries); the
- * reply is then zero. */
-static int reply_of(const wf_dec *d, mf_wreply *out, const mf_rows *rows)
+ * written into the caller's `rows` (MF_SITE_ABI 30). The caller has checked
+ * rows_hold. */
+static void reply_of(const wf_dec *d, mf_wreply *out, const mf_rows *rows)
 {
     const wf_alt *m = &d->a[d->ch];
     memset(out, 0, sizeof *out);
-    if (!rows || (d->np && (!rows->plan || !rows->plan_term || d->np > rows->plan_cap)))
-        return -1;
     out->alt = (uint8_t)d->ch;
     out->reseed = (uint8_t)d->reseed;
     out->has_stop = (uint8_t)m->has_stop;
@@ -1359,7 +1369,6 @@ static int reply_of(const wf_dec *d, mf_wreply *out, const mf_rows *rows)
         out->run_len = (uint16_t)d->run_len;
     }
     snprintf(out->path, sizeof out->path, "%s", d->path);
-    return 0;
 }
 
 
@@ -2695,11 +2704,9 @@ static int wf_frame_of(const mf_art *art, const mf_hooks *def, unsigned gphases,
 
 /* The reply's FRAME PART from `fp` (`out`'s decision group already
  * written): framed 1, the ids spelled, the pieces copied, plan_test into the
- * caller's `rows` (nplan entries). 0, or -1 where `rows` has no plan_test
- * list for a non-empty plan. */
-static int reply_frame(const wf_fpart *fp, mf_wreply *out, const mf_rows *rows)
+ * caller's `rows` (nplan entries). The caller has checked rows_hold, framed. */
+static void reply_frame(const wf_fpart *fp, mf_wreply *out, const mf_rows *rows)
 {
-    if (out->nplan && !rows->plan_test) return -1;
     out->framed = 1;
     snprintf(out->frame_row, sizeof out->frame_row, "%s", wf_frame_name(fp->erow));
     snprintf(out->method, sizeof out->method, "%s", fp->method ? fp->method : "");
@@ -2709,7 +2716,6 @@ static int reply_frame(const wf_fpart *fp, mf_wreply *out, const mf_rows *rows)
     if (out->nplan) memcpy(rows->plan_test, fp->plan_test, out->nplan);
     out->plan_test = rows->plan_test;
     out->stop_test = fp->stop_test;
-    return 0;
 }
 
 /* mf_wdecide's ALLOCATOR: C-heap blocks chained through `*u`, each freed by
@@ -2797,12 +2803,15 @@ static int wdecide_framed(const mf_art *art, const mf_site *site, const mf_hooks
             legacy_ok(d, w, &eb);
             translate(d, w, eb, L);
         }
-        if (fp->plan_test && !wf_frame_of(art, def, gphases, r, d, w, fx, L, fp) &&
-            !(use && emit_use_refused(fp->ren, site, def)) &&
-            !reply_of(d, out, rows) && !reply_frame(fp, out, rows))
+        /* every refusal first, then the writes, as statements (review r27
+           SEAM-1/HOUSE-1): a refused ask writes nothing to `rows` */
+        int ok = fp->plan_test && !wf_frame_of(art, def, gphases, r, d, w, fx, L, fp);
+        if (ok && use && emit_use_refused(fp->ren, site, def)) ok = 0;
+        if (ok && !art->err[0] && rows_hold(d, rows, 1)) {
+            reply_of(d, out, rows);
+            reply_frame(fp, out, rows);
             rc = 0;
-        else
-            memset(out, 0, sizeof *out);
+        }
     }
     wd_free(blks);
     /* the fenced defect path (§2.2 Purity) set the art's error: the define
@@ -2837,8 +2846,11 @@ int mf_wdecide(const mf_art *art, const mf_site *site, const mf_hooks *def, uint
     wd_blk *blks = NULL;
     mf_arena heap = { &blks, wd_alloc };
     wf_dec *d = wd_alloc(&blks, sizeof *d);
-    int rc = d && !decide(art, site, 1, &heap, d) ? reply_of(d, out, rows) : -1;
-    if (rc) memset(out, 0, sizeof *out);
+    int rc = -1;
+    if (d && !decide(art, site, 1, &heap, d) && rows_hold(d, rows, 0)) {
+        reply_of(d, out, rows);
+        rc = 0;
+    }
     wd_free(blks);
     return rc;
 }
@@ -2925,7 +2937,8 @@ const char *wf_agree(const mf_art *art, const mf_site *ws, const mf_hooks *def,
     }
     d = wd_alloc(&blks, sizeof *d);
     if (!d || decide(art, ws, 1, &heap, d)) { res = "(out of memory)"; goto out; }
-    if (reply_of(d, &held, &rh)) { res = "(the held reply's storage)"; goto out; }
+    if (!rows_hold(d, &rh, 1)) { res = "(the held reply's storage)"; goto out; }
+    reply_of(d, &held, &rh);
     const struct wf_plan *w = r->wplan;
     wf_frame_row erow = w ? (w->row == &wf_find_arm ? E_FIND : E_GENERIC)
                           : r->site.form == MF_FORM_FUNC ? E_FUNC : E_STMT;
