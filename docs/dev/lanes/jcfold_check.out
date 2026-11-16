@@ -1,0 +1,25 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+
+(RD) record = product with a default: t2 & (h: S, m = v: T) vs ((h, m = v): (S, T))
+(RD) 18 (S, T, v) combinations x 2135 subjects x 2 routes: cases 76860
+
+(RZ) record at different depths: P & (h: S, k: T), k outside h's loop
+(RZ) subjects 1110; readings A and B differ on 5, all 5 of them zero-pass subjects (k outside T, no h)
+     e.g. '9': A (record as the & of its entries) False, B (per-pass pairing) True
+
+(SE) $-bound pair: span & ((eh, em): padded(> ($sh, $sm)))
+(SE) classes 168 (24 hours x 7 minutes); cases 13328
+
+(MN) three fields with a month name: textdate & ((year, mnum, day): between((2024, 3, 15), (2025, 2, 1)))
+(MN) rows 4; cases 2232 (years 2022-2027, 12 names, days 1-31)
+
+(RC) rows of between(lo, hi) after merging the shared prefix, k = 2, 3, 4 (fields 0..4)
+(RC) k=2: bound pairs 325, max rows 3 (2k - 1 = 3), pairs over the bound 0
+(RC) k=3: bound pairs 2625, max rows 5 (2k - 1 = 5), pairs over the bound 0
+(RC) k=4: bound pairs 2541, max rows 7 (2k - 1 = 7), pairs over the bound 0
+(RC) cases 1924375, of which engine-run 220750 (the rest: the rows' union checked in Python)
+
+(NL) nested loops: h in the outer item, k in an inner loop; pairing per pass of k's loop
+(NL) subjects 73 (an outer item with no k pairs nothing: holds)
+
+TOTAL cases 2019088 differ 0 engine-disagreements 0
