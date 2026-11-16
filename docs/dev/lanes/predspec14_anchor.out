@@ -65,20 +65,22 @@ a side of &                        fires=yes /\w+/ & /foo$/                     
 a side of & (in a hole)            fires=yes /k=${/^\d+$/ & <256}/                    match (0,4) [ends at 0 qualifying: 4,3] | /k=${/\d+/ & <256}/                  match (0,4) [ends at 0 qualifying: 4,3] on 'k=80'    anchor adds nothing: YES
 a label: condition                 fires=yes P & (x: /^S\w*/)                         match (0,5) [ends at 0 qualifying: 5,4,3] | P & (x: /S\w*/)                      match (0,5) [ends at 0 qualifying: 5,4,3] on 'a Sab'   anchor adds nothing: YES
 a label: condition                 fires=yes P & (x: /^S\w*/)                         no match       | P & (x: /S\w*/)                      no match       on 'a xSab'  anchor adds nothing: YES
-a parameter the BODY puts in a filter role (user macro, padded's body) fires=yes /\d+/ & my_padded(/^5/)                  match (1,4)    | /\d+/ & my_padded(/5/)               match (1,4)    on 'x005'    anchor adds nothing: YES
-a parameter the BODY puts in a filter role (user macro, padded's body) fires=yes /\d+/ & my_padded(/^5/)                  match (0,2)    | /\d+/ & my_padded(/5/)               match (0,2)    on '057'     anchor adds nothing: YES
+a parameter the BODY puts in a filter role (user macro value_of) fires=yes value_of(/^a\w*/)                        match (0,4) [ends at 0 qualifying: 4,3] | value_of(/a\w*/)                     match (0,4) [ends at 0 qualifying: 4,3] on 'k=ab'    anchor adds nothing: YES
+a parameter the BODY puts in a filter role (user macro value_of) fires=yes value_of(/^a\w*/)                        no match       | value_of(/a\w*/)                     no match       on 'k=ba'    anchor adds nothing: YES
 a warning-name set                 fires=yes @warn.off(/^dead\./)                     dead.          | @warn.off(/dead\./)                  dead.          on 'names'   anchor adds nothing: YES
 a library gap: contains            fires=no  /\w+ \w+/ & contains(/^err/)             no match       | /\w+ \w+/ & contains(/err/)          match (0,5)    on 'x err'   anchor adds nothing: NO
 a final pattern's own anchors      fires=no  /^foo/                                   no match       | /foo/                                match (1,4)    on 'xfoo'    anchor adds nothing: NO
 a hole in a final pattern          fires=no  /x${/^a/}/                               no match       | /x${/a/}/                            match (0,2)    on 'xa'      anchor adds nothing: NO
-a parameter the BODY splices into a hole (user macro) fires=no  /\d+/ & lead0(/^5/)                      match (3,4)    | /\d+/ & lead0(/5/)                   match (1,4)    on 'x005'    anchor adds nothing: NO
+a parameter the BODY splices into a hole (padded = user macro my_padded) fires=no  /\d+/ & padded(/^5/)                     match (3,4)    | /\d+/ & padded(/5/)                  match (1,4)    on 'x005'    anchor adds nothing: NO
 anchored(...): the macro's ends    fires=no  anchored(/foo/)                          no match       | /foo/                                match (1,4)    on 'xfoo'    anchor adds nothing: NO
 
-# R-1: padded as the pullback of the reading 'leading zeros ignored' vs the user macro my_padded's body
-#   (whole-match on each string; S in {/5/, /^5/, /5\d*/, /0/})
-S = /5/     pullback accepts 5,05,005                     body accepts 5,05,005                     SAME
-S = /^5/    pullback accepts 5,05,005                     body accepts 5,05,005                     SAME
-S = /5\d*/  pullback accepts 5,05,005,50,057              body accepts 5,05,005,50,057              SAME
-S = /0/     pullback accepts 0,00                         body accepts 0,00                         SAME
+# R-2: padded(S) := /0*(?:${S})/ (the ruled body), matched whole on each string, vs rev 13's reading
+#   (a filter over the string with its leading zeros ignored); and the ungrouped splice /0*${S}/
+padded(/5/)            body accepts 5,05,005                           bare splice SAME | rev 13 reading: 5,05,005                       SAME
+padded(/^5/)           body accepts 5                                  bare splice SAME | rev 13 reading: 5,05,005                       MOVES
+padded(between(1, 12)) body accepts 5,05,005,12,012,0012,02            bare splice SAME | rev 13 reading: 5,05,005,12,012,0012,02        SAME
+padded(/0/)            body accepts 0,00,000                           bare splice SAME | rev 13 reading: 0,00,000                       SAME
+padded(/1|2/)          body accepts 02                                 bare splice DIFFERS:  | rev 13 reading: 02                             SAME
+padded(between(0, 255)) body accepts 5,05,005,0,00,000,50,057,12,012,0012,13,02 bare splice SAME | rev 13 reading: 5,05,005,0,00,000,50,057,12,012,0012,13,02 SAME
 
 engines disagree on 0 rows

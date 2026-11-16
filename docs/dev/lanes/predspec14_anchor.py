@@ -211,12 +211,13 @@ def S(node): return lambda sub: searched(node, sub)             # a final progra
 def NAMESET(p, names):                                           # a compile-time name set: whole names
     return lambda _sub: ",".join(n for n in names if Filt(Frag(p)).ev(n, 0, len(n), 0, len(n))) or "(none)"
 NAMES = ["dead.", "dead.x", "x.dead."]
-# R-1 (2026-11-15 20:45): `padded` as a SIMPLE MACRO written in the language, and a second user macro that splices its
-# parameter into a hole:
-#   my_padded(S) := /0*(?<v>[^0](?s:.*)|0)/ & (v: S)    # S lands in a label: condition -> a filter role
-#   lead0(S)     := /0*${S}/                            # S lands in a hole -> not a filter role
-PADBODY = r"0*(?<v>[^0](?s:.*)|0)"
-PAD_ROWS = ["5", "05", "005", "0", "00", "50", "057", "x5"]
+# R-1 (2026-11-15 20:45): the warning keys off the ROLE after macros are expanded, never a name. R-2/R-3 (20:48): the
+# owner ruled `padded(rx) := /0*${rx}/`, grouped by the manager's call: /0*(?:${rx})/. Two user macros:
+#   value_of(S)  := /\w+=(?<v>\w*)/ & (v: S)    # S lands in a label: condition -> a filter role -> warns
+#   my_padded(S) := /0*(?:${S})/                # padded's own body: S lands in a hole -> no warning
+VALBODY = r"\w+=(?<v>\w*)"
+def padded(node): return Seq(Frag("0*"), node)   # the ruled body, S in a hole
+PAD_ROWS = ["5", "05", "005", "0", "00", "000", "50", "057", "12", "012", "0012", "13", "02", "x5"]
 SUBST = r"(?<w>\w) (?<x>\w+)"
 WARN_ROWS = [
  ("a side of &", "yes", ("/\\w+/ & /^foo/", S(Amp(Frag(r"\w+"), Frag("^foo")))),
@@ -229,12 +230,12 @@ WARN_ROWS = [
                        ("P & (x: /S\\w*/)", S(Cond(SUBST, "x", Frag(r"S\w*")))), "a Sab"),
  ("a label: condition", "yes", ("P & (x: /^S\\w*/)", S(Cond(SUBST, "x", Frag(r"^S\w*")))),
                        ("P & (x: /S\\w*/)", S(Cond(SUBST, "x", Frag(r"S\w*")))), "a xSab"),
- ("a parameter the BODY puts in a filter role (user macro, padded's body)", "yes",
-                       ("/\\d+/ & my_padded(/^5/)", S(Amp(DIG(), Cond(PADBODY, "v", Frag("^5"))))),
-                       ("/\\d+/ & my_padded(/5/)", S(Amp(DIG(), Cond(PADBODY, "v", Frag("5"))))), "x005"),
- ("a parameter the BODY puts in a filter role (user macro, padded's body)", "yes",
-                       ("/\\d+/ & my_padded(/^5/)", S(Amp(DIG(), Cond(PADBODY, "v", Frag("^5"))))),
-                       ("/\\d+/ & my_padded(/5/)", S(Amp(DIG(), Cond(PADBODY, "v", Frag("5"))))), "057"),
+ ("a parameter the BODY puts in a filter role (user macro value_of)", "yes",
+                       ("value_of(/^a\\w*/)", S(Cond(VALBODY, "v", Frag(r"^a\w*")))),
+                       ("value_of(/a\\w*/)", S(Cond(VALBODY, "v", Frag(r"a\w*")))), "k=ab"),
+ ("a parameter the BODY puts in a filter role (user macro value_of)", "yes",
+                       ("value_of(/^a\\w*/)", S(Cond(VALBODY, "v", Frag(r"^a\w*")))),
+                       ("value_of(/a\\w*/)", S(Cond(VALBODY, "v", Frag(r"a\w*")))), "k=ba"),
  ("a warning-name set", "yes", ("@warn.off(/^dead\\./)", NAMESET(r"^dead\.", NAMES)),
                        ("@warn.off(/dead\\./)", NAMESET(r"dead\.", NAMES)), "names"),
  ("a library gap: contains", "no", ("/\\w+ \\w+/ & contains(/^err/)", S(Amp(Frag(r"\w+ \w+"),
@@ -244,9 +245,9 @@ WARN_ROWS = [
  ("a final pattern's own anchors", "no", ("/^foo/", S(Frag("^foo"))), ("/foo/", S(Frag("foo"))), "xfoo"),
  ("a hole in a final pattern", "no", ("/x${/^a/}/", S(Seq(Frag("x"), Frag("^a")))),
                        ("/x${/a/}/", S(Seq(Frag("x"), Frag("a")))), "xa"),
- ("a parameter the BODY splices into a hole (user macro)", "no",
-                       ("/\\d+/ & lead0(/^5/)", S(Amp(DIG(), Seq(Frag("0*"), Frag("^5"))))),
-                       ("/\\d+/ & lead0(/5/)", S(Amp(DIG(), Seq(Frag("0*"), Frag("5"))))), "x005"),
+ ("a parameter the BODY splices into a hole (padded = user macro my_padded)", "no",
+                       ("/\\d+/ & padded(/^5/)", S(Amp(DIG(), padded(Frag("^5"))))),
+                       ("/\\d+/ & padded(/5/)", S(Amp(DIG(), padded(Frag("5"))))), "x005"),
  ("anchored(...): the macro's ends", "no", ("anchored(/foo/)", S(A_text("foo"))), ("/foo/", S(Frag("foo"))), "xfoo"),
 ]
 
@@ -292,18 +293,22 @@ def main():
               place, fires, with_a[0], a, without_a[0], b, sub, "YES" if a == b else "NO",
               "" if res["pcre2"] == res["re"] else "  | re DIFFERS: %r" % (res["re"],)))
     print()
-    print("# R-1: padded as the pullback of the reading 'leading zeros ignored' vs the user macro my_padded's body")
-    print("#   (whole-match on each string; S in {/5/, /^5/, /5\\d*/, /0/})")
-    for sp in ["5", "^5", r"5\d*", "0"]:
+    print("# R-2: padded(S) := /0*(?:${S})/ (the ruled body), matched whole on each string, vs rev 13's reading")
+    print("#   (a filter over the string with its leading zeros ignored); and the ungrouped splice /0*${S}/")
+    for lab, sp in [("/5/", "5"), ("/^5/", "^5"), ("between(1, 12)", "(?:[1-9]|1[0-2])"), ("/0/", "0"),
+                    ("/1|2/", "1|2"), ("between(0, 255)", LT256)]:
         for ENGINE in ("pcre2", "re"):
+            body = [w for w in PAD_ROWS if padded(Frag(sp)).ev(w, 0, len(w), 0, len(w))]
+            bare = [w for w in PAD_ROWS if Frag("0*" + sp).ev(w, 0, len(w), 0, len(w))]
             pull = [w for w in PAD_ROWS if Read(unpad, Frag(sp)).ev(w, 0, len(w), 0, len(w))]
-            body = [w for w in PAD_ROWS if Cond(PADBODY, "v", Frag(sp)).ev(w, 0, len(w), 0, len(w))]
             if ENGINE == "pcre2":
-                first = (pull, body)
+                first = (body, bare, pull)
             else:
-                bad += (pull, body) != first
-        print("S = /%-6s pullback accepts %-28s body accepts %-28s %s" % (sp + "/", ",".join(first[0]),
-              ",".join(first[1]), "SAME" if first[0] == first[1] else "DIFF"))
+                bad += (body, bare, pull) != first
+        b, u, r = first
+        print("padded(%-15s body accepts %-34s %s | rev 13 reading: %-30s %s" % (lab + ")", ",".join(b),
+              "bare splice SAME" if u == b else "bare splice DIFFERS: " + ",".join(u), ",".join(r),
+              "SAME" if r == b else "MOVES"))
     print()
     print("engines disagree on %d rows" % bad)
     return 1 if bad else 0
