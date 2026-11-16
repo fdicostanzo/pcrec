@@ -2,26 +2,35 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
 
 (ZE) zero-pass-empty: P := /(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/, a set EMPTY only through the match value $a
 (ZE) subjects 11100 per condition (a, k in 0..9; 0-2 passes; zero-pass subjects 100)
-     0-3     C1: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=FAILS LEAN=FAILS; C2: AMP=HOLDS SPLIT=FAILS UNSPLIT-any=FAILS LEAN=FAILS
-     3-3     C1: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=HOLDS LEAN=HOLDS; C2: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=HOLDS LEAN=HOLDS
-     0-3;0   C1: AMP=FAILS SPLIT=FAILS UNSPLIT-any=FAILS LEAN=FAILS; C2: AMP=FAILS SPLIT=FAILS UNSPLIT-any=FAILS LEAN=FAILS
-     3-3;1   C1: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=HOLDS LEAN=HOLDS; C2: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=HOLDS LEAN=HOLDS
+     0-3     C1: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=FAILS LEAN=FAILS EMPTY-HOLDS=HOLDS; C2: AMP=HOLDS SPLIT=FAILS UNSPLIT-any=FAILS LEAN=FAILS EMPTY-HOLDS=HOLDS
+     3-3     C1: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=HOLDS LEAN=HOLDS EMPTY-HOLDS=HOLDS; C2: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=HOLDS LEAN=HOLDS EMPTY-HOLDS=HOLDS
+     0-3;0   C1: AMP=FAILS SPLIT=FAILS UNSPLIT-any=FAILS LEAN=FAILS EMPTY-HOLDS=FAILS; C2: AMP=FAILS SPLIT=FAILS UNSPLIT-any=FAILS LEAN=FAILS EMPTY-HOLDS=FAILS
+     3-3;1   C1: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=HOLDS LEAN=HOLDS EMPTY-HOLDS=HOLDS; C2: AMP=HOLDS SPLIT=HOLDS UNSPLIT-any=HOLDS LEAN=HOLDS EMPTY-HOLDS=HOLDS
      C1 (h: <$a, k: 3)        AMP         vs SPLIT       differ    0  e.g. []
      C1 (h: <$a, k: 3)        AMP         vs UNSPLIT-any differ    1  e.g. ['0-3']
      C1 (h: <$a, k: 3)        AMP         vs LEAN        differ    1  e.g. ['0-3']
+     C1 (h: <$a, k: 3)        AMP         vs EMPTY-HOLDS differ    9  e.g. ['0-0', '0-1', '0-2']
      C1 (h: <$a, k: 3)        SPLIT       vs UNSPLIT-any differ    1  e.g. ['0-3']
      C1 (h: <$a, k: 3)        SPLIT       vs LEAN        differ    1  e.g. ['0-3']
+     C1 (h: <$a, k: 3)        SPLIT       vs EMPTY-HOLDS differ    9  e.g. ['0-0', '0-1', '0-2']
      C1 (h: <$a, k: 3)        UNSPLIT-any vs LEAN        differ    0  e.g. []
+     C1 (h: <$a, k: 3)        UNSPLIT-any vs EMPTY-HOLDS differ   10  e.g. ['0-0', '0-1', '0-2']
+     C1 (h: <$a, k: 3)        LEAN        vs EMPTY-HOLDS differ   10  e.g. ['0-0', '0-1', '0-2']
      C2 ((h, k): < ($a, 0))   AMP         vs SPLIT       differ   10  e.g. ['0-0', '0-1', '0-2']
      C2 ((h, k): < ($a, 0))   AMP         vs UNSPLIT-any differ   10  e.g. ['0-0', '0-1', '0-2']
      C2 ((h, k): < ($a, 0))   AMP         vs LEAN        differ   10  e.g. ['0-0', '0-1', '0-2']
+     C2 ((h, k): < ($a, 0))   AMP         vs EMPTY-HOLDS differ    0  e.g. []
      C2 ((h, k): < ($a, 0))   SPLIT       vs UNSPLIT-any differ    0  e.g. []
      C2 ((h, k): < ($a, 0))   SPLIT       vs LEAN        differ    0  e.g. []
+     C2 ((h, k): < ($a, 0))   SPLIT       vs EMPTY-HOLDS differ   10  e.g. ['0-0', '0-1', '0-2']
      C2 ((h, k): < ($a, 0))   UNSPLIT-any vs LEAN        differ    0  e.g. []
+     C2 ((h, k): < ($a, 0))   UNSPLIT-any vs EMPTY-HOLDS differ   10  e.g. ['0-0', '0-1', '0-2']
+     C2 ((h, k): < ($a, 0))   LEAN        vs EMPTY-HOLDS differ   10  e.g. ['0-0', '0-1', '0-2']
      a = 0 (both spellings the EMPTY set, 1110 subjects): C1 vs C2 under AMP         differ   9  e.g. ['0-0', '0-1', '0-2']
      a = 0 (both spellings the EMPTY set, 1110 subjects): C1 vs C2 under SPLIT       differ   1  e.g. ['0-3']
      a = 0 (both spellings the EMPTY set, 1110 subjects): C1 vs C2 under UNSPLIT-any differ   0  e.g. []
      a = 0 (both spellings the EMPTY set, 1110 subjects): C1 vs C2 under LEAN        differ   0  e.g. []
+     a = 0 (both spellings the EMPTY set, 1110 subjects): C1 vs C2 under EMPTY-HOLDS differ   0  e.g. []
      constant (h: <0, k: 3)        R x (\d, \d) EMPTY -> compile ERROR (:1941, LEAN)
      constant ((h, k): < (0, 0))   R x (\d, \d) EMPTY -> compile ERROR (:1941, LEAN)
      constant (h: <3, k: 3)        R x (\d, \d) non-empty -> compiles
@@ -37,34 +46,40 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
 (ZJ) total: zero passes lean vs hand expansion 8 of 50, vs split 1 of 50; with passes vs hand 56 of 5500, vs split 0 of 5500
 
 (UP) P := /(?:(?<h>\d)(?:-(?:(?<k>\d),)*)?;)*/: an outer pass may skip the optional, so k's loop (the pairing loop) is never reached in that pass
-(UP) 241 subjects (0-2 outer passes; h in 3, 4, 9; k's optional skipped, empty, or 1-2 values); W and Y engine-run, X and the & readings computed
+(UP) 241 subjects (0-2 outer passes; h in 3, 4, 9; k's optional skipped, empty, or 1-2 values); W and Y engine-run, X, W' and the & readings computed
      X    vs W    differ  14  e.g. ['3;', '4;', '3;3;']
+     X    vs W'   differ   8  e.g. ['3-;9;', '3-2,;9;', '4-;9;']
      X    vs Y    differ  24  e.g. ['3;3-;', '3;3-2,;', '3;4-;']
      X    vs &W1  differ  14  e.g. ['3;', '4;', '3;3;']
      X    vs &Y1  differ  24  e.g. ['3;3-;', '3;3-2,;', '3;4-;']
      X    vs &M0  differ   8  e.g. ['3-;9;', '3-2,;9;', '4-;9;']
+     W    vs W'   differ   6  e.g. ['3;', '4;', '3;3;']
      W    vs Y    differ  22  e.g. ['3;', '4;', '3;3;']
      W    vs &W1  differ   0  e.g. []
      W    vs &Y1  differ  22  e.g. ['3;', '4;', '3;3;']
      W    vs &M0  differ   6  e.g. ['3;', '4;', '3;3;']
+     W'   vs Y    differ  16  e.g. ['3;3-;', '3;3-2,;', '3;4-;']
+     W'   vs &W1  differ   6  e.g. ['3;', '4;', '3;3;']
+     W'   vs &Y1  differ  16  e.g. ['3;3-;', '3;3-2,;', '3;4-;']
+     W'   vs &M0  differ   0  e.g. []
      Y    vs &W1  differ  22  e.g. ['3;', '4;', '3;3;']
      Y    vs &Y1  differ   0  e.g. []
      Y    vs &M0  differ  16  e.g. ['3;3-;', '3;3-2,;', '3;4-;']
      &W1  vs &Y1  differ  22  e.g. ['3;', '4;', '3;3;']
      &W1  vs &M0  differ   6  e.g. ['3;', '4;', '3;3;']
      &Y1  vs &M0  differ  16  e.g. ['3;3-;', '3;3-2,;', '3;4-;']
-     '3-2,;9;' X=HOLDS W=FAILS Y=FAILS &W1=FAILS &Y1=FAILS &M0=FAILS
-     '3-2,;4;' X=HOLDS W=HOLDS Y=FAILS &W1=HOLDS &Y1=FAILS &M0=HOLDS
-     '3-2,;3;' X=HOLDS W=HOLDS Y=FAILS &W1=HOLDS &Y1=FAILS &M0=HOLDS
-     '3-;9;'   X=HOLDS W=FAILS Y=FAILS &W1=FAILS &Y1=FAILS &M0=FAILS
-     '9;'      X=FAILS W=FAILS Y=FAILS &W1=FAILS &Y1=FAILS &M0=FAILS
-     '3;'      X=FAILS W=HOLDS Y=FAILS &W1=HOLDS &Y1=FAILS &M0=FAILS
-     ''        X=HOLDS W=HOLDS Y=HOLDS &W1=HOLDS &Y1=HOLDS &M0=HOLDS
-     ((h, k): >= (5, 3)) on '3-2,;9;' X=FAILS W=FAILS Y=FAILS
-     ((h, k): >= (5, 3)) on '3-2,;4;' X=FAILS W=FAILS Y=FAILS
-     ((h, k): >= (5, 3)) on '9-;9;'   X=HOLDS W=HOLDS Y=FAILS
-     ((h, k): >= (5, 3)) on '9-5,;9;' X=HOLDS W=HOLDS Y=FAILS
-     ((h, k): >= (5, 3)) on '9-5,;4;' X=HOLDS W=FAILS Y=FAILS
+     '3-2,;9;' X=HOLDS W=FAILS W'=FAILS Y=FAILS &W1=FAILS &Y1=FAILS &M0=FAILS
+     '3-2,;4;' X=HOLDS W=HOLDS W'=HOLDS Y=FAILS &W1=HOLDS &Y1=FAILS &M0=HOLDS
+     '3-2,;3;' X=HOLDS W=HOLDS W'=HOLDS Y=FAILS &W1=HOLDS &Y1=FAILS &M0=HOLDS
+     '3-;9;'   X=HOLDS W=FAILS W'=FAILS Y=FAILS &W1=FAILS &Y1=FAILS &M0=FAILS
+     '9;'      X=FAILS W=FAILS W'=FAILS Y=FAILS &W1=FAILS &Y1=FAILS &M0=FAILS
+     '3;'      X=FAILS W=HOLDS W'=FAILS Y=FAILS &W1=HOLDS &Y1=FAILS &M0=FAILS
+     ''        X=HOLDS W=HOLDS W'=HOLDS Y=HOLDS &W1=HOLDS &Y1=HOLDS &M0=HOLDS
+     ((h, k): >= (5, 3)) on '3-2,;9;' X=FAILS W=FAILS W'=FAILS Y=FAILS
+     ((h, k): >= (5, 3)) on '3-2,;4;' X=FAILS W=FAILS W'=FAILS Y=FAILS
+     ((h, k): >= (5, 3)) on '9-;9;'   X=HOLDS W=HOLDS W'=HOLDS Y=FAILS
+     ((h, k): >= (5, 3)) on '9-5,;9;' X=HOLDS W=HOLDS W'=HOLDS Y=FAILS
+     ((h, k): >= (5, 3)) on '9-5,;4;' X=HOLDS W=FAILS W'=FAILS Y=FAILS
 
 (OP) P := /(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/ & (h: <10, m: <30); an item may have no minutes
 (OP) 259 subjects (0-3 items; h 3 or 12; minutes absent, 15 or 45); REC engine-run, the & readings computed
@@ -88,5 +103,8 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
      (O) padded   DOM: >= (9, 30) vs (>= 9, >= 30) differ 2700 of 11000; '10:00' in the first: True
      ((h, m = 00): >= (9, 0)) EXP: the slice at m = '00' holds 90 h texts -> no warning
      ((h, m = 00): >= (9, 0)) DOM: the slice at m = '00' holds 0 h texts -> default.unused (b) fires (slice EMPTY)
+     look-alike padded([(9, 0), (10, 30)])         admits 3 of 11000: ['9:00', '09:00', '10:30']
+     look-alike (padded(9 | 10), padded(0 | 30))   admits 6 of 11000: ['9:00', '9:30', '09:00', '09:30', '10:00', '10:30']
+     look-alike union of tuples vs tuple of unions: differ 3  ['9:30', '09:30', '10:00']
 
-TOTAL cases 164527 differ 0 engine-disagreements 0
+TOTAL cases 186727 differ 0 engine-disagreements 0

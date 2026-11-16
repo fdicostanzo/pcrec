@@ -37,10 +37,10 @@ docs/dev/lanes/jcfold2_check.py`): 14,937 cases, 0 differ, 0 engine disagreement
 (ZD), (Z1); SABOTAGED (`JCFOLD2_SABOTAGE=1`: every zero-pass piece of the unfolds made vacuous): 2,444 differ [§4E];
 its (ZJ-E) rows are the wording's answers COMPUTED in Python, not engine-run and not among the 14,937 [§4F].
 Lane jcfix's `docs/dev/lanes/jcfix_check.py` / `.out` (same method and engines; `timeout 120 python3 -I
-docs/dev/lanes/jcfix_check.py`): 164,527 cases, 0 differ, 0 engine disagreements; tables (ZE), (UP), (OP), (DM)
+docs/dev/lanes/jcfix_check.py`): 186,727 cases, 0 differ, 0 engine disagreements; tables (ZE), (UP), (OP), (DM)
 (the brief's letter (DD) is unsetdef's date table, so the dictionary-domain table is (DM)); every row it calls
 COMPUTED is a Python comparison, not engine-run; SABOTAGED (`JCFIX_SABOTAGE=1`: every zero-pass or unreached piece of
-the unfolds made vacuous): 497 differ [§4F].
+the unfolds made vacuous): 578 differ [§4F].
 
 ## Goals
 
@@ -1815,11 +1815,14 @@ STILL OPEN (each: reply either way):
    (NL): 73 subjects, 0 differ)"].
    (3) A PASS THAT NEVER REACHES THE PAIRING LOOP (round jointcond, SIM-5): `/(?:(?<h>\d)(?:-(?:(?<k>\d),)*)?;)*/ &
    (h: <5, k: <5)` on `3-2,;9;`: the text as written pairs nothing in the second pass and HOLDS, while the ruled
-   `(h: <5) & (k: <5)` FAILS. Two candidate sentences, each with its matching single-label sentence: (W) "as a
-   zero-pass reach: (h, EMPTY)", with "such a pass gives k zero iterations"; (Y) "k is unset in that pass: the pass
-   FAILS (J6)", with "such a pass FAILS `(k: T)`". Table (UP), 241 subjects: W = `&` under its sentence (0 differ),
-   Y = `&` under its sentence (0 differ); W vs Y 22; the text as written vs §4.2's per-match reading 8. `3-2,;4;`:
-   W HOLDS, Y FAILS. Leaning: none stated here (the manager's).
+   `(h: <5) & (k: <5)` FAILS. Two candidate sentences: (W) "as a zero-pass reach: (h, EMPTY)", h tested; (Y) "k is
+   unset in that pass: the pass FAILS (J6)". Each keeps the `&` equality only with its matching single-label
+   sentence. Table (UP), 241 subjects: W, with k unset in the match when NO pass reaches its loop (W'), equals `&`
+   under TODAY's per-match single-label rule (§4.2, RULED BY ACCEPTANCE; 0 differ), so it needs no new single-label
+   sentence; W without that clause needs "a pass that skips k's loop gives k zero iterations" (0 differ; it departs
+   from §4.2 on `3;`); Y needs "a pass that did not set k FAILS `(k: T)`" (draft :1694's per-iteration reading,
+   LEAN; 0 differ), and differs from today's per-match rule on 16. `3-2,;4;`: W HOLDS, Y FAILS. The same root at one
+   depth, an optional label inside a pass: table (OP).
 3. **zero-pass-empty** (NEW, round jointcond: RULING-1/2, OWNER-2, SIM-6; the full draft in the jcfix report): when
    the joint set is EMPTY only through a value of the match, does a zero-pass match test the outside label? Smallest
    example, `/(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/`, subject `0-3` (a = 0, zero passes): `(h: <$a, k: 3)` HOLDS by the `&`
@@ -1831,7 +1834,9 @@ STILL OPEN (each: reply either way):
    constant spellings; the `&` equality then has one documented exception (a part empty only through a match value,
    on zero passes, FAILS). On jcfold2's populations the lean differs from the `&` reading on 0 of 1,110 (RZ) and 0 of
    2,526 (ZN), and from jcfold2's split on 0, 0 and 1 of (ZJ)'s 50 zero-pass subjects (`("x", 3) | (0, 5)` on `3`:
-   the domain).
+   the domain). The fourth clause "R empty: holds" makes both spellings HOLD on `0-3` but also holds `(h: <$a, k: 3)`
+   on `0-5` (an empty set has no k to test): it keeps set-arity and not the `&` equality (9 of the 1,110 a = 0
+   subjects differ from `&`, table (ZE)); no set-only rule keeps all three rulings.
 
 ## 9. What rev 20 must change in predicates_draft.md
 

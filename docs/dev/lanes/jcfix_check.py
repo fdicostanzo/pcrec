@@ -145,6 +145,8 @@ RULES = {
     "UNSPLIT-any": lambda c, a, k: possible(c["R"], a, k, ANYS),
     # the manager's lean: ONE rule, projection with the looped values drawn from their groups' strings (`\d`)
     "LEAN": lambda c, a, k: possible(c["R"], a, k, D),
+    # RULING-2's fourth clause, for comparison: R empty (for this match, over the groups' strings): HOLDS; else LEAN
+    "EMPTY-HOLDS": lambda c, a, k: (not any(c["R"](a, h, kk) for h in D for kk in D)) or possible(c["R"], a, k, D),
 }
 ZE_RES = {}
 for cname, c in CONDS.items():
@@ -349,7 +351,9 @@ def up_joint(its, reading, R, poss):
                 continue
             if reading == "Y":                        # k unset in that pass: J6 fails it
                 return False
-            if reading == "W":                        # as a zero-pass reach: (h, EMPTY); h must be possible
+            if reading in ("W", "W'"):                # as a zero-pass reach: (h, EMPTY); h must be possible
+                if reading == "W'" and never:         # W': k's loop reached in NO pass: k unset in the match (§4.2), J6
+                    return False
                 if not poss(h):
                     return False
                 continue
@@ -374,7 +378,7 @@ def up_single_k(its, reading, Tk):
 
 S5 = lambda x: x < 5
 UPR = {}
-for r in ("X", "W", "Y"):
+for r in ("X", "W", "W'", "Y"):
     UPR[r] = {s: up_joint(split_up(s), r, lambda h, k: S5(h) and S5(k), lambda h: S5(h) and any(S5(k) for k in D))
               for s in SUBJ_UP}
 for r in ("W1", "Y1", "M0"):
@@ -387,7 +391,7 @@ for s in SUBJ_UP:
     check("UP W", rx_W, s, UPR["W"][s])
     check("UP Y", rx_Y, s, UPR["Y"][s])
 print("(UP) %d subjects (0-2 outer passes; h in 3, 4, 9; k's optional skipped, empty, or 1-2 values); W and Y "
-      "engine-run, X and the & readings computed" % len(SUBJ_UP))
+      "engine-run, X, W' and the & readings computed" % len(SUBJ_UP))
 keys = list(UPR)
 for i in range(len(keys)):
     for j in range(i + 1, len(keys)):
@@ -401,7 +405,7 @@ for s in ("3-2,;9;", "3-2,;4;", "9-;9;", "9-5,;9;", "9-5,;4;"):
     its = split_up(s)
     print("     ((h, k): >= (5, 3)) on %-9r" % s, " ".join(
         "%s=%s" % (r, "HOLDS" if up_joint(its, r, R53, lambda h: any(R53(h, k) for k in D)) else "FAILS")
-        for r in ("X", "W", "Y")))
+        for r in ("X", "W", "W'", "Y")))
 
 # =================================================================================================================
 # (OP) optional label inside a pass
@@ -516,5 +520,16 @@ for rd in ("EXP", "DOM"):
     sl = [h for h in H_T if dict_has(">=", (9, 0), (h, "00"), rd, False)]
     print("     ((h, m = 00): >= (9, 0)) %s: the slice at m = '00' holds %d h texts -> %s" %
           (rd, len(sl), "default.unused (b) fires (slice EMPTY)" if not sl else "no warning"))
+
+# the look-alike round jointcond found unlisted (CENSUS-4): a union of tuples vs a tuple of unions, both padded;
+# COMPUTED (integer pairs from the subject's text), not engine-run
+U = {(9, 0), (10, 30)}
+in_u = lambda s: tuple(val(x, True) for x in s.split(":")) in U
+in_p = lambda s: val(s.split(":")[0], True) in (9, 10) and val(s.split(":")[1], True) in (0, 30)
+for name, f in (("padded([(9, 0), (10, 30)])", in_u), ("(padded(9 | 10), padded(0 | 30))", in_p)):
+    acc = [s for s in SUBJ_T if f(s)]
+    print("     look-alike %-34s admits %d of %d: %s" % (name, len(acc), len(SUBJ_T), acc))
+d = [s for s in SUBJ_T if in_u(s) != in_p(s)]
+print("     look-alike union of tuples vs tuple of unions: differ %d  %s" % (len(d), d))
 
 print("\nTOTAL cases %d differ %d engine-disagreements %d" % (T["cases"], T["differ"], DISAGREE[0]))
