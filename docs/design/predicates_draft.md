@@ -2407,22 +2407,74 @@ looked up in its operand as for any condition (§4.1).
 Over zero iterations of `/(?:(?<n>\d),)*/` (the empty span): `(n: <5)` FAILS, `(n?: <5)` and `all((n: <5))` HOLD,
 `some((n: <5))` FAILS, `count((n: <5))` = 0; `all((n: <0))` is a COMPILE ERROR (the empty-intersection error of
 §5.2: `<0` meets no value n can hold; review r29 D; rev 20 wrote FAILS). "EVERY ITERATION, POSSIBLY NONE" (rev 21,
-review r29 C) is NOT `all` and NOT the mark (both consult DOM): it is `occurs.none(!(g: S))` ("no iteration whose g
-is outside S"), DOM-free. Over the 127 spans over {a, b} to length 6 of `occurrences(/(?<g>a)?b/)` (DOM(g) = {a}),
-"every hit's g is `a`, possibly none" vs `(g?: "a")` differ on 94 (`b`, `abb`: a hit with no g reads DOM and passes),
-vs `occurs.none(!(g: "a"))` on 0 (PART 4 (D2)). SILENT under SAVING PEOPLE FROM THEMSELVES (§0 STANDING CRITERIA): an
+review r29 C) is NOT `all` and NOT the mark (both consult DOM). REV 22: it is `occurs.none((g = d: !S))` with d ONE
+string outside S ("no iteration whose g, or d where g is absent, is outside S"), DOM-free; rev 21 wrote
+`occurs.none(!(g: S))`, a `!` on a condition (**not-is-complement**). Over the 127 spans over {a, b} to length 6 of
+`occurrences(/(?<g>a)?b/)` (DOM(g) = {a}), "every hit's g is `a`, possibly none" vs `occurs.none((g = "": !"a"))` differ
+on 0, vs `(g?: "a")` on 94 (`b`, `abb`: a hit with no g reads DOM and passes), vs the set complement alone,
+`occurs.none((g: !"a"))`, on 94 (a hit without g is not counted), vs the plain `(g: "a")` on 7 (`''` and the other
+spans with no hit) (`predspec22_check.out` PART A (A3), ENGINE-RUN; rev 21's form gave 0, PART 4 (D2)). SILENT under SAVING PEOPLE FROM THEMSELVES (§0 STANDING CRITERIA): an
 author who writes `all(((h, m): R))` for "every item" has incomplete items ACCEPTED wherever some minute value would
 do; no diagnostic.
 
-THE CLOSING EXAMPLE (rev 21, review r29 group H; joint_condition.md §4H.4 amended alike). "The empty list passes, an
-item without minutes fails" over `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/`, with R written `(<10, <30)` (a tuple set; rev 20
-wrote `(h: <10, m: <30)`, a labelled record, ill-formed as a set): its one-condition spelling is the DOM-free
-`occurs.none(!((h, m): R))` ("no item whose pair is outside R"; an item without minutes is absent in m, so `(h, m):
-R` FAILS there and its complement counts it): 0 of 1,111 lists from the wanted answers (PART 4 (D5)). The MARKED form
-`occurs.none(((h, m?): !R))` is kept only as the line that shows DOM-dependence: under rev 20's regex DOM it gave 0
-of 1,111 with R, but 71 with R' = `(<10, padded(<100))` (`3,`: no minute value lies outside R'); under the rule
-(the program DOM, **mark-narrows**) it misses with R too, 25 of 1,111 (`3,`: the condition narrows DOM(m) to 00-29,
-inside R) (PART 4 (D5)). `all(((h, m): R))` gives 11 of 259 (`3,`; joint_condition.md §4H.3).
+THE CLOSING EXAMPLE (rev 22; rev 21, review r29 group H; joint_condition.md §4H.4). Over
+`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/` with R = `(<10, <30)` (a tuple set), rev 21 wrote the one-condition spelling
+`occurs.none(!((h, m): R))`, a `!` on a condition, now an ERROR (**not-is-complement**). Its spelling per INTENT, each
+candidate run over the same 1,111 lists (hours `3`, `12`; minutes absent, `15`, `45`, `05`, `99`; 0-3 items) against
+an ENGINE-RUN regex of the intent (`predspec22_check.out` PART C):
+
+| candidate | I1 "every item is complete and fits R" (the empty list passes; rev 21's intent) | I2a "every item with minutes fits R; an item without minutes is acceptable" | I2b "every item fits R; an item without minutes is acceptable when its hour fits" |
+|---|---|---|---|
+| `((h, m): R)` (the plain per-pass condition) | 1 (`''`: the plain condition needs a pass) | 71 | 26 |
+| `occurs.none(((h, m): !R))` (unmarked; the complement on the set) | 70 (`3,`) | **0, EXACT** | 45 |
+| `occurs.none(((h, m = 99): !R))` (a default OUTSIDE R) | **0, EXACT** | 70 | 25 |
+| `occurs.none(((h, m = 00): !R))` (a default INSIDE R) | 25 | 45 | **0, EXACT** |
+| `((h, m?): R)` (the marked plain condition) | 26 | 46 | 1 (`''`) |
+| `occurs.none(((h, m?): !R))` (marked, under THE RULE) | 25 | 45 | 0 (DOM-dependent: rev 21 PART 4 (D5)) |
+| rev 21's `occurs.none(!((h, m): R))` (now an error), for reference | 0 | 70 | 25 |
+
+So: "every item is complete and fits R" is `occurs.none(((h, m = 99): !R))` (any default whose tuple lies outside R
+for every hour: the item without minutes is COUNTED; the plain `((h, m): R)` is exact except on the empty list);
+"every item with minutes fits R, an item without minutes is acceptable" is `occurs.none(((h, m): !R))` (the item
+lacking m is NOT counted); and with "acceptable when its hour fits", `occurs.none(((h, m = 00): !R))` (a default
+inside R). Each is DOM-free. The marked `occurs.none(((h, m?): !R))` happens to answer I2b under THE RULE but its
+answer depends on the program's DOM (under rev 20's regex DOM it answered I1; with R' = `(<10, padded(<100))` the
+regex DOM gave 71 off), and it is a marked group question of the downward kind (below), so it is not the spelling
+given. `all(((h, m): R))` gives 11 of 259 (`3,`; joint_condition.md §4H.3).
+
+A MARK INSIDE A GROUP QUESTION (rev 22; RULED, **mark-in-none**, CF 17:42: LEFT AS IS, against the manager's lean of
+a compile error; his words: "mark-in-none: I'd leave it. It's obscure and there are ways to get the intended
+question. The issue with your compiler error is that it treats the none as a special item instead of a macro. If
+there was a structural reason I might agree like ! on a condition. You could also use defaults m = 0 then the test
+would be true whenever m is absent."). NO error and NO special rule: `none` is a macro like any other, and a marked
+absence inside it is counted by the mark's one meaning (F1, as in `some`, `count`, `occurs.*`). THE PROPERTY,
+documented: with a mark inside a group question that can turn TRUE when FEWER passes satisfy its inner condition
+(`occurs.none`, `occurs.at_most`, an exact count, `count(...)` under an upper bound), an ADDED condition can ADMIT a
+subject: the added condition narrows DOM, the marked absence then counts less often, and the count falls. Worked,
+step by step, over `/(?:(?<h>\d)(?::(?<m>\d))?,)*/` (the lists of 0-2 items, h in {1, 6}, m absent, `2` or `7`; 43
+lists; `predspec22_check.out` PART B):
+1. `occurs.none(((h, m?): m < h))` on `6,`: one item, h = 6, m ABSENT. DOM(m) under THE RULE = the m values in the
+   program's matches where m is present, the group question applied there as a filter: {2, 7} (`6:2,` is
+   rejected, but `1:2,` keeps 2). The absent m is counted when some value in DOM(m) puts the tuple in the set: m = 2 < 6,
+   so the item counts, `count` is 1, `none` FAILS.
+2. Add `(m?: >5)`. It narrows DOM(m) through the matches where m is present: DOM(m) = {7}. Now no value in DOM(m) is
+   below 6: the item does not count, `count` is 0, `none` HOLDS. The added condition ADMITTED `6,` (8 of the 43 lists
+   go from FAILS to HOLDS this way).
+THE SPELLINGS THAT AVOID IT (each DOM-free; neither moves when any condition is added: 0 of 43 lists with `(m?: >5)`,
+0 of 177 pairs over the rev 22 pools, PART E (E2)):
+- the UNMARKED question with the complement on the set: `occurs.none(((h, m): m >= h))` = "every item: m is absent,
+  or if present m < h", EXACTLY (an item lacking the label is not counted; 43 of 43, and 91 of 91 lists that include
+  the hour 0, ENGINE-RUN); against the marked form it differs on 28 of 43 (`6,`: the marked FAILS, this HOLDS);
+- a DEFAULT: `m = 0` gives each item one definite value, no DOM consulted. The owner's spelling "the test would be
+  true whenever m is absent" is exact where every hour is above 0: `occurs.none(((h, m = 0): m >= h))` = the
+  unmarked line above on the 43 lists (it differs from the marked form on the same 28), and the plain
+  `((h, m = 0): m < h)` adds "at least one item"; over the 91 lists with hour 0 the default parts from "m is
+  absent, or m < h" on 8 (`0,`: 0 is not below 0) and the plain form on 9 (`''`, `0,`). Inside the marked form's own
+  set, `occurs.none(((h, m = 0): m < h))` counts every item without minutes (0 < h): it differs from the marked form
+  on 8 of 43 (`1,`: the marked HOLDS, no value of DOM(m) is below 1; the default FAILS).
+No warning is defined for this property. The owner's remark (CF 17:46, not a ruling): "If there is a way to describe
+it, we might put together @compiler.warn(cond, \"! In none\")"; a macro raising its own warning about its arguments
+is parked as `predicates_future.md` item 12 (no mechanism or spelling designed here).
 `occurs` keeps the COUNTS only (CF:913): `occurs.some` and `occurs.all` are withdrawn. The record allows "goes away
 or becomes an alias"; rev 8's lean is GONE, not aliased (one spelling for one question, G0b; nothing in §12 uses them).
 
