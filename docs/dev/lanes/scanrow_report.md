@@ -164,7 +164,17 @@ What this means for the manager:
   - 600-609: every one rc 0.
   - 609 prints arm_check's green line and the rc-mapping line.
   - 610: rc 1 without CONFIRM_CELLS, which is by design; rc 0 with CONFIRM_CELLS=65536.0.
+- Slot dry runs (`run.py dry JOB .../scanrow/dry/rd scanrow-dry`): JMB, JMH and J4 each rc 0.
+  - JMB: GATE ok on 8 arms, 0 misses; ROUND CHECK ok.
+  - JMH: GATE ok on 172 arms, 0 misses; ROUND CHECK ok on 172 points.
+  - J4: GATE ok on 35 arms, 0 misses; ROUND CHECK ok on 35 points.
+  - Logs: /var/tmp/pcrec-pcrec/scratch/memfn/scanrow/dry/.
 - Slot sabotage, z1-z4 with their control (J2, est, d197, d197e2e): 4 DETECTED, 0 MISSED.
+- Full slot sabotage table, first run (`gnutimeout 2700`): `== slot sabotage: 70 DETECTED, 1 MISSED of 71 rows`.
+  The miss was m4 (S3214), `PLANT FAILED`: its anchor `"kit.%s.%s" % (t["deciding"]["scan"], f)` is now spelled
+  twice, because `scan_keys` builds the same key. I re-aimed it at the scan line's read,
+  `scan_of(out, drift, "kit.%s.%s" ...)`. After that, m4, z2 and z3 gave 3 DETECTED, 0 MISSED.
+- Full table, second run on the fixed sabotage.sh, in the foreground under `gnutimeout 2700`, about 23 min: `== slot sabotage: 71 DETECTED, 0 MISSED of 71 rows` (log: /var/tmp/pcrec-pcrec/scratch/memfn/scanrow/val/sabotage_full2.log).
 - Not run, per the brief: make test, box jobs, run_axes, mech, timing.
 
 ## STATE AT HANDOFF
