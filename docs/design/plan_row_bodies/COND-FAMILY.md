@@ -1531,3 +1531,12 @@ bare name there is a binding (or a literal; "et al": the value side's rules, so 
 MANAGER'S CONSEQUENCES (to be checked by rev 20): the draft's open item C13 closes as "`$` to read a computed label
 on the value side" (E-CAL's `<=dim` becomes `<=$dim`, E-RFC's `==wd` becomes `==$wd`); a default still must be ONE
 string (ruled earlier today).
+
+**2026-11-16 OWNER RULING — record-is-product: yes (Frank, to session 134, box clock 11:35).** Asked
+**record-is-product** (define the record `(h: S, m: T)` as shorthand for the joint condition over a product,
+`((h, m): (S, T))`, one mechanism with the record as its special case, or keep two separate constructs with matching
+rules), his words: "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking
+for." RECORD: RULED: the joint condition is the ONE mechanism; the record is DEFINED as its product case (each part
+written beside its label), so every rule of the joint condition (unset labels and defaults, per-pass pairing in
+loops, the colon's scope, modifiers on every part) holds for the record by definition, stated once. His criterion,
+in his words, for the record: "simplifying semantics".
