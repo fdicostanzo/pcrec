@@ -51,4 +51,4 @@
 7. NOTED for the interface push: `vm_entry_shape` sits mid-struct against lib/CLAUDE.md's append rule.
 
 ## OWED RUNS
-Dispatched to the cloud as this lane's last act (names `covs2afix-test`, `covs2afix-recidentity`, `covs2afix-mech`, ref lane/covs2afix, owner main); see the list line filled in below after dispatch.
+Dispatched to the cloud from head c67e5355e (owner main), confirmed in `scripts/cloudrun --list`: `covs2afix-test` (kind test), `covs2afix-recidentity` (kind recidentity), `covs2afix-mech` (kind mech; the mech run is also the first run of the regenerated shard table). Verdicts arrive via queuewatch; this lane does not wait. The ROUTE IDENTITY sample above is the local stand-in; the recidentity run is the full gate.
