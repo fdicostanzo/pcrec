@@ -1,17 +1,20 @@
 # The joint condition: a condition over several labels at once (RULED)
 
 STATUS: RULED, design only, no build go. The owner has answered every question this note posed, in the COND-FAMILY
-entries of 2026-11-16 from 00:31 to 11:35 (CF:1336-1542; `grep -c '^\*\*2026-11-16'
-docs/design/plan_row_bodies/COND-FAMILY.md` = 24, the first three, 00:06-00:09, the paused field-reference direction). ONE
-point stays OPEN, with no user: **tuple-parts** (§4A.3; recorded as item 4 of `docs/design/predicates_future.md`).
+entries of 2026-11-16 from 00:31 to 12:51 (CF:1336-1583; `grep -c '^\*\*2026-11-16'
+docs/design/plan_row_bodies/COND-FAMILY.md` = 27, the first three, 00:06-00:09, the paused field-reference direction)
+[§4E: was "to 11:35 (CF:1336-1542; ... = 24"]. The three contradictions lane jcfold reported (§8) are ANSWERED (CF
+12:45, 12:48, 12:51) [§4E]. STILL OPEN: **tuple-parts** (§4A.3, no user; item 4 of
+`docs/design/predicates_future.md`), and the lane's **label-twice** and **pairing-loop** (§8).
 Lanes: jointexp (the exploration), tupleval (§4A, the tuple as a value), tupleval2 (09:49-09:58; §4A.11), unsetdef
 (§4B, the default; 10:18-10:43), jcfold (the entries of 11:05-11:35; every ruled point stated ONCE, as ruled, in §2;
-the record DERIVED as the product case and checked rule by rule, §4D; what rev 20 of the draft must change, §9).
-Changed sentences: §4A.10 (tupleval, tupleval2, unsetdef) and §4C (jcfold). NOT a revision of
+the record DERIVED as the product case and checked rule by rule, §4D; what rev 20 of the draft must change, §9),
+jcfold2 (the entries of 12:45-12:51; the manager's zero-pass wording tested, §4E) [§4E].
+Changed sentences: §4A.10 (tupleval, tupleval2, unsetdef), §4C (jcfold) and §4E (jcfold2). NOT a revision of
 `predicates_draft.md`: rev 19 stands as the record of the field-reference direction, which the owner PAUSED (CF
-00:31: "i want to pause this direction and consider a different one that is more inline with existing concepts").
-Three places where the rulings meet a RULED sentence of the draft that no entry addresses are reported in §8
-(CONTRADICTIONS), not resolved. Spellings are placeholders (the owner's `(h,m): blah` is illustrative; D193 add. 4).
+00:31: "i want to pause this direction and consider a different one that is more inline with existing concepts");
+since CF 12:51 its `lex_` names, argument order and first-library slot are RETIRED and its sigil PAUSED INDEFINITELY
+[§4E]. Spellings are placeholders (the owner's `(h,m): blah` is illustrative; D193 add. 4).
 Section numbers `§n.m` are `predicates_draft.md` rev 19's; this note's own parts are named `§4A`, `§4B`, `§4C`, `§4D`,
 "item n" (of §4) and "this note's §n"; `CF hh:mm` is the COND-FAMILY entry of 2026-11-16 at that box-clock time,
 `CF:n` a line of that file. Every sentence that is a LANE'S own consequence says so; the owner's words are quoted;
@@ -24,7 +27,9 @@ Lane jcfold's `docs/dev/lanes/jcfold_check.py` / `.out` (same engines; `timeout 
 docs/dev/lanes/jcfold_check.py`): 2,019,088 cases, 0 differ, 0 engine disagreements (1,924,375 of them table (RC),
 220,750 of those engine-run, the rest the rows' union checked in Python); tables (RD), (RZ), (SE), (MN), (RC), (NL);
 SABOTAGED (`JCFOLD_SABOTAGE=1`: (RD) without the "m unset" guard, (SE) with `>=` for `>`): 3,825 differ, so it can
-fail.
+fail. Lane jcfold2's `docs/dev/lanes/jcfold2_check.py` / `.out` (same method and engines; `timeout 120 python3 -I
+docs/dev/lanes/jcfold2_check.py`): 14,937 cases, 0 differ, 0 engine disagreements; tables (RZ) re-run, (ZN), (ZJ),
+(ZD), (Z1); SABOTAGED (`JCFOLD2_SABOTAGE=1`: every zero-pass piece of the unfolds made vacuous): 2,444 differ [§4E].
 
 ## Goals
 
@@ -118,8 +123,16 @@ it work it out and cite it as J1-J9.
   WITHDRAWN (CF 11:05, the record). Worked: §4B.
 - J7 LOOPS (RULED, **joint-loops**, CF 11:17: "I agree. Makes sense."). The tuples are paired per PASS of the
   innermost loop enclosing the named labels, a label outside that loop having its one value on every pass; the
-  condition holds when every pass's tuple is in R (zero passes of a reached loop: holds, §4.2). Labels in SIBLING
-  loops: a COMPILE ERROR naming the fix. The looped warning (CF 00:09: "looped-compare: warn") MOVES onto a
+  condition holds when every pass's tuple is in R. ZERO PASSES (RULED, **zero-pass-record**, CF 12:45:
+  "zero-pass-record: I agree but save the notes in the future file. The issue falls into the 'saving people from
+  themselves' category that tools need to realistically consider"): a label outside the pairing loop is tested once
+  even when the loop runs zero passes; `/(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: 3 | 4 | 5 | 6 | 7)` on `9` FAILS; the
+  draft's `(a: S, b: T)` = `(a: S) & (b: T)` holds at every depth. THE MANAGER'S WORDING (CF 12:45 record; not the
+  owner's words; tested in §4E): "a reached loop that runs zero times gives ONE tuple whose looped parts are EMPTY;
+  empty satisfies any set; for a joint set R that is not a product, the outside labels' values must be possible
+  under R for some value of the looped parts; a default is NOT read there (§4B.1 unchanged); a plain single-label
+  condition still HOLDS on zero passes; 'unset' (never reached) keeps its meaning." [§4E: was "(zero passes of a
+  reached loop: holds, §4.2)"] Labels in SIBLING loops: a COMPILE ERROR naming the fix. The looped warning (CF 00:09: "looped-compare: warn") MOVES onto a
   hand-written `|` of conditions whose labels can repeat; the joint condition draws none. The ruled words read
   literally leave the nested case unstated; the lane's precise statement and both texts: item 5.
 - J8 MODIFIERS (RULED, **modifier-lift**, CF 11:27: "modifier-lift: yes. ... However the form is 'do everything to
@@ -127,8 +140,9 @@ it work it out and cite it as J1-J9.
   modifier is not designed: `predicates_future.md` item 2.
 - J9 THE RECORD IS THE PRODUCT CASE (RULED, CF 11:35). `(h: S, m: T)` is DEFINED as `((h, m): (S, T))`; with a
   default, `(h: S, m = 0: T)` as `((h, m = 0): (S, T))`. Every rule above holds for the record by definition. §4D
-  checks the draft's record rules one by one: all but one follow; the one that does not (labels at different depths,
-  zero passes) is a CONTRADICTION (§8), table (RZ).
+  checks the draft's record rules one by one: with J7's zero-pass sentence (CF 12:45) all follow [§4E: was "all but
+  one follow; the one that does not (labels at different depths, zero passes) is a CONTRADICTION (§8), table
+  (RZ)"]; table (RZ) re-run under the ruled rule: 0 of 1,110 differ from the `&` reading.
 
 LEVEL (the lane's, engine-checked). With constant bounds every joint condition is a FINITE UNION OF PRODUCTS of
 per-label constant sets, i.e. a `|` of single-label condition records: default level, automaton code (§6.1).
@@ -330,8 +344,17 @@ loops a compile error; the looped warning moved onto a hand-written `|` [§4C].
   ONE value per pass (it is set once per pass of the pairing loop); otherwise (the labels' loops do not nest in one
   chain) it is the sibling-loop error. This matches §13 O56's lean (g inside the loop, k outside) and every case the
   ruling names; table (NL) runs the nested case (h in the outer item, k in an inner loop, `((h, k): >= (5, 3))`): 73
-  subjects, 0 differ; an outer pass with no k pairs nothing and holds. Open item **pairing-loop** (§8): a wording
-  confirmation, no answer changes on any case the owner was shown.
+  subjects, 0 differ [§4E: "an outer pass with no k pairs nothing and holds" is WITHDRAWN by the zero-pass ruling:
+  the inner loop reached in that pass and run zero times gives one tuple (h, EMPTY), and h must be possible under R;
+  10 of (NL)'s 73 answers move (table (ZN), `4:;` held, now FAILS: no k makes (4, k) >= (5, 3))]. Open item
+  **pairing-loop** (§8): a wording confirmation, no answer changes on any case the owner was shown.
+- ZERO PASSES (RULED, J7, CF 12:45, "zero-pass-record: I agree ..."; the wording the MANAGER'S) [§4E]. A reached
+  loop that runs zero times gives ONE tuple whose looped parts are EMPTY; empty satisfies any set; for a joint set
+  that is not a product the outside labels' values must be possible under R for some value of the looped parts.
+  So a label outside the pairing loop is tested once on zero passes: `/(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: 3 | 4
+  | 5 | 6 | 7)` on `9` FAILS, as `(h: <5) & (k: 3 | 4 | 5 | 6 | 7)` does (table (RZ) re-run: 0 of 1,110 differ). The
+  rule applies to EVERY reach of a loop, so in the nested case it applies per outer pass to the inner loop too
+  (table (ZN): 2,526 subjects, 0 differ from the `&` reading). Tested and the corners it leaves: §4E.
 - SIBLING LOOPS: a COMPILE ERROR (RULED). Text (wording illustrative, D26): "h and k sit in different loops
   (`(?:(?<h>\d),)*` and `(?:(?<k>\d),)*`): no pass pairs one h with one k. Write one condition per loop,
   `P & (h: S) & (k: T)`, or ask a group question, `some((h: ...))`, `count(...)`." Smallest example: `/(?:(?<h>\d),)*;
@@ -413,8 +436,12 @@ already had; three positions are new (N1, N3, N5) [§4C]. The full census: §4A.
 ### Item 9. What it removes from rev 19, and what it cannot replace
 
 NO JOB LEFT (each is rev 19 text the joint condition does not need; "removed" in the exploration's word, but the
-direction is PAUSED, not reversed, CF 00:31, so whether rev 20 RETIRES the ruled items among them is the owner's:
-open item **retire-paused**, §8 [§4C]): the other-side sigil `^` and its §5.4 row;
+direction is PAUSED, not reversed, CF 00:31; RULED, **retire-paused**, CF 12:51: "retire-paused: agree to split. But
+the pause on ^ is indefinite and requires real value other than 'override a users own *'": the `lex_` names, the
+argument order and the first-library slot are RETIRED to a superseded-direction record, the joint condition taking
+that slot; the sigil is PAUSED INDEFINITELY, out of rev 20's language, with **reference-index** and
+**bound-reference** suspended with it [§4E: was "whether rev 20 RETIRES the ruled items among them is the owner's:
+open item **retire-paused**, §8 [§4C]"]): the other-side sigil `^` and its §5.4 row;
 arrays of field references and the question whether indexing them is an existing tool (§13 O75
 **reference-index**); §4.1's ONE EXCEPTION (a parameter on the left of `:`); the binding of a bound call (§13 O76
 **bound-reference**); the wrong-length mechanism (§13 O72: a k-ary left with a j-ary set is an arity error, so it
@@ -422,7 +449,9 @@ cannot be written); the six `lex_` names and their bodies; the any-n recursion a
 arithmetic in an index); the strict spelling caveat; the DECIDED-PREFIX order (WITHDRAWN by ruling, CF 11:05);
 `compare.repeated` (a repeated label on the left is an error at the condition); `compare.looped`'s subject (the
 warning MOVED by ruling, CF 11:17, item 5). The owner's "tuple-compare: agree" (CF:1166) is met by the comparison
-sets themselves; a library still MAY name `lex`-style helpers, but none is needed.
+sets themselves; `lex_ge` and friends are NOT kept as library macros over the joint condition (THE MANAGER'S
+reading of "agree", **library-not-syntax**, CF 12:48; left out of the first library until someone asks) [§4E: was
+"a library still MAY name `lex`-style helpers, but none is needed"].
 
 CANNOT REPLACE: anything that needs a FIELD as a thing passed to a macro, rather than a field constrained by a set.
 A library macro cannot write a condition on a caller's label it is not told about; it can only return a SET the
@@ -1057,7 +1086,7 @@ THE CASES THE BRIEF NAMES, each:
 |---|---|---|
 | single label `(m = 0: <30)` | holds on a match with m unset exactly when "0" is in the set; so a single-label default is a compile-time choice between "an absent m passes" and "fails" (the latter draws `default.unused`) | (D1): `(m = 0: <30)` differs from no default on the 110 minutes-absent subjects only |
 | a label that can never be unset | WARNING `default.unused` (a); an error would refuse a library condition laid over several patterns, some with the field optional | (D1) 11,000 of 11,000 identical |
-| a LOOPED label | per ITERATION: an iteration whose item skipped the label reads the default (`list & ((h, m = 0): R)` with `(?::(?<m>\d\d))?` in the item). ZERO ITERATIONS of a reached loop are NOT unset (`predicates_draft.md:554`, L56; `:563`, L65): there is no tuple, the plain condition HOLDS over none, and the default is never read. A loop NEVER REACHED leaves its labels unset: the default is read as for a set-once label (the lane's reading: one tuple with the default; UNTESTED) | (DL) 585 lists, 0 differ; the empty list HOLDS |
+| a LOOPED label | per ITERATION: an iteration whose item skipped the label reads the default (`list & ((h, m = 0): R)` with `(?::(?<m>\d\d))?` in the item). ZERO ITERATIONS of a reached loop are NOT unset (`predicates_draft.md:554`, L56; `:563`, L65): the looped part is EMPTY, which satisfies any set (J7, CF 12:45), and the default is never read [§4E: was "there is no tuple, the plain condition HOLDS over none"]; a label OUTSIDE the loop is still tested (J7). A loop NEVER REACHED leaves its labels unset: the default is read as for a set-once label (the lane's reading: one tuple with the default; TESTED by lane jcfold2, table (ZD) b [§4E: was UNTESTED]) | (DL) 585 lists, 0 differ; the empty list HOLDS; (ZD) a, c: a looped default on zero passes unread, the empty list HOLDS [§4E] |
 | a COMPUTED label (`mnum := $mname.index`) | the lane's reading of §4.4 (which is silent): a computed label is UNSET in a match where a label it reads is unset; its default then stands in (`((year, mnum = 1): >= (2024, 3))`: `2024` out, `2025` in) | (DC) 65 subjects, 0 differ |
 | unset because another ALTERNATIVE was taken (`/(?<h>\d{1,2})(?::(?<m>\d\d)\| o'clock)/`) | the same as an optional skipped (§4.2: never reached) | (DA) 11,110, 0 differ |
 | SEVERAL defaults in one bracket | each absent label reads its own default; the unfold has one branch per REACHABLE combination of absent labels (3 of 4 for `t3`: s cannot be present without m) | (DS) 4,206 subjects, 0 differ |
@@ -1302,17 +1331,17 @@ lane's):
 |---|---|---|---|
 | D1 | `x: S` = the whole matches whose label x is in S (§4.1, `predicates_draft.md:1521-1522`) | J1 with k = 1 | FOLLOWS |
 | D2 | a record holds its entries together, "the AND comes from the record, not the comma" (§4.1 :1541-1543, RULED CF:863, CF:866 (b)) | (t1, ..., tk) in S1 x ... x Sk iff each ti in Si: the AND is the product's | FOLLOWS (per pass) |
-| D3 | "all of several conditions = one record: `(major: 1, minor: >=4)` = `(major: 1) & (minor: >=4)`" (§4.1 :1546) | FOLLOWS when the labels are set once or in the same pass; at DIFFERENT DEPTHS the product is per pass of the deeper label's loop (J7), and on ZERO passes no tuple exists and the record HOLDS, while `(h: S) & (k: T)` still tests the once-set k | CONTRADICTION (§8 **zero-pass-record**): table (RZ), `/(?<k>\d)(?:;(?<h>\d))*/` with S = 0..4, T = 3..7: the two readings differ on 5 of 1,110 subjects, all zero-pass subjects whose k is outside T (`9`: & reading false, per-pass true) |
+| D3 | "all of several conditions = one record: `(major: 1, minor: >=4)` = `(major: 1) & (minor: >=4)`" (§4.1 :1546) | FOLLOWS when the labels are set once or in the same pass; at DIFFERENT DEPTHS the product is per pass of the deeper label's loop (J7); on ZERO passes ONE tuple with the looped part EMPTY, so the once-set k is still tested (J7, CF 12:45) | FOLLOWS [§4E: was CONTRADICTION (§8 **zero-pass-record**), 5 of 1,110 differing under the vacuous reading]: table (RZ) re-run under the ruled rule, `/(?<k>\d)(?:;(?<h>\d))*/` with S = 0..4, T = 3..7: 0 of 1,110 differ from `(h: S) & (k: T)` (`9` FAILS by both); nested, table (ZN): 0 of 2,526 |
 | D4 | an entry runs to the next comma; `&`, `\|` bind tighter than `:` (§4.1 :1543-1545) | a spelling of the product's parts | FOLLOWS (spelling) |
 | D5 | `:` outside a record is an error; a condition in value position is a macro, never the record (§4.1 :1552-1556) | the same for `((h, m): R)` | FOLLOWS |
 | D6 | the chain lookup, ambiguity and unknown-label errors (§4.1 :1557-1559) | J2 | FOLLOWS |
 | D7 | a condition naming an unset label FAILS (§4.2 :1590-1591, RULED by acceptance :1613-1615) | J6: no tuple exists, the joint condition fails | FOLLOWS; with a default, `(h: S, m = v: T)` = `((h, m = v): (S, T))`: table (RD), 76,860 cases (18 combinations of S, T and the default, both routes engine-run), 0 differ |
 | D8 | "a comparison on an UNSET label is false (its `!` true)" (§4.2 :1590, LEAN) | `!((h, m): R)` true on a match with no tuple | FOLLOWS; §13 O28's `!(x: S)` vs `(x: !S)` inherited unchanged |
-| D9 | zero iterations of a REACHED loop: a plain condition HOLDS (§4.2 :1600-1602, RULED) | J7: zero passes, no tuple, holds | FOLLOWS at one depth; at different depths it is D3's corner |
+| D9 | zero iterations of a REACHED loop: a plain condition HOLDS (§4.2 :1600-1602, RULED) | J7: zero passes, one tuple with the looped part empty, which satisfies any set: holds [§4E: was "no tuple, holds"] | FOLLOWS at every depth (table (Z1); at different depths D3's rule tests the outside label) [§4E] |
 | D10 | the sequence rule: `x: S` constrains ALL iterations (§4.3 :1632, RULED CF:583) | J7 with k = 1 | FOLLOWS |
 | D11 | the group questions `some`, `all`, `count`, `occurs.*` over a record (§4.3 :1653-1666) | they count PASSES whose tuple is in R | FOLLOWS |
 | D12 | SAME ITERATION BY RECORD (§4.3 :1668-1673, CF:915-917 accepted) | J7's per-pass pairing IS this rule | FOLLOWS (the rule is the product case of J7) |
-| D13 | "For `all`/the plain condition the two spellings always agree (every iteration has both = every iteration has g and every iteration has h)" (§4.3 :1674-1675) | true when g and h are in the same pass; at different depths with zero passes the plain record holds and `(g: S) & (k: T)` tests k | CONTRADICTION, the same corner as D3 (§8 **zero-pass-record**) |
+| D13 | "For `all`/the plain condition the two spellings always agree (every iteration has both = every iteration has g and every iteration has h)" (§4.3 :1674-1675) | true when g and h are in the same pass; at different depths with zero passes the record tests the outside label once, as `(g: S) & (k: T)` does (J7, CF 12:45) | FOLLOWS, as D3 [§4E: was CONTRADICTION, the same corner as D3] |
 | D14 | labels at different depths: §13 O56 (:4118-4121, LEAN: "the innermost loop that encloses every label of the record; a label outside it has one value for every iteration of that loop") | J7 (RULED, CF 11:17) | FOLLOWS; O56 (1) becomes RULED through J7 + J9; the same wording gap (item 5, **pairing-loop**) |
 | D15 | a literal-index test `(x[2]: S)` (§4.3 :1690-1693, LEAN) | a path on the left (item 1) | FOLLOWS |
 | D16 | each iteration's labels read within that iteration (§4.3 :1694-1695) | per pass | FOLLOWS |
@@ -1327,9 +1356,84 @@ lane's):
 | D25 | §0.1 L56, L65 (:554, :563): per-match unset vs zero iterations | J6, J7 at k = 1 | FOLLOWS |
 | D26 | a label written twice in one record (`(h: <5, h: >2)`): the draft has NO sentence (`grep -n 'label twice\|named twice' predicates_draft.md`: only the projection's L75 :573 and DECIDED (58) :4270-4271) | by J9 it is `((h, h): (<5, >2))`, which item 1 makes an error | NOT a contradiction (no ruled text); a NEW CONSEQUENCE: open item **label-twice** (§8) |
 
-Tally: 26 rules; 23 follow (one of them as a spelling only); 2 contradict, both the same corner (D3, D13: labels at
-different depths, zero passes); 1 new consequence (D26). Nothing else in the draft's record rules needs its own
+Tally: 26 rules; 25 follow (one of them as a spelling only); 0 contradict since CF 12:45 [§4E: was "23 follow ...; 2
+contradict, both the same corner (D3, D13: labels at different depths, zero passes)"]; 1 new consequence (D26). Nothing else in the draft's record rules needs its own
 statement once J9 holds: the record is the product case.
+
+## 4E. Corrections by lane jcfold2 (the entries of 12:45-12:51)
+
+Lane jcfold2 (2026-11-16), applying the owner's entries of 12:45 (zero-pass-record: "zero-pass-record: I agree but
+save the notes in the future file. The issue falls into the 'saving people from themselves' category that tools need
+to realistically consider"), 12:48 (library-not-syntax: "library-not-syntax: agree. we've replaced the idea and I think
+with something much better") and 12:51 (retire-paused: "retire-paused: agree to split. But the pause on ^ is
+indefinite and requires real value other than 'override a users own *'"). Rulings file `jcfold2_rulings.md`: empty
+at every read. Every changed sentence, marked "[§4E]" in place:
+
+- HEADER: the STATUS paragraph (entries through 12:51, `grep -c` = 27; the three contradictions answered; still open
+  tuple-parts, label-twice, pairing-loop; lane jcfold2; the retired and paused items); the evidence paragraph gains
+  `jcfold2_check.py`.
+- J7: the zero-pass sentence, the owner's words and the MANAGER'S wording, replacing "(zero passes of a reached
+  loop: holds, §4.2)". J9: "all but one follow ... a CONTRADICTION" becomes "all follow", (RZ) re-run.
+- Item 5: (NL)'s "an outer pass with no k pairs nothing and holds" WITHDRAWN (10 of 73 answers move, table (ZN)); a
+  ZERO PASSES bullet added.
+- Item 9: retire-paused RULED (retired / paused indefinitely); "a library still MAY name `lex`-style helpers" becomes
+  "NOT kept" (library-not-syntax, the manager's reading).
+- §4B.1, the LOOPED-label row: "there is no tuple" becomes "the looped part is EMPTY"; the never-reached reading
+  TESTED (table (ZD)). The rule itself (a default is never read on zero passes) is unchanged, as the ruling says.
+- §4D: D3, D13 CONTRADICTION become FOLLOWS; D9 restated; the tally 25 follow, 0 contradict.
+- §6 B6: RULED. §7: item 14 restated, item 15 NEW.
+- §8: zero-pass-record, library-not-syntax, retire-paused moved to ANSWERED with his words and clock times; the
+  CONTRADICTIONS list kept as the record of the questions, each marked ANSWERED; PARKED gains `predicates_future.md`
+  items 5-8. The STILL OPEN items (tuple-parts, label-twice, pairing-loop) are untouched.
+- §9: the intro (no row hangs on a contradiction); rows 1, 2, 5, 7, 12, 13, 14, 16, 23, 25, 28, 30, 31, 36, 41, 42,
+  43, 44 restated; rows 45 (the zero-pass sentence in §4.2/§4.3) and 46 (the superseded-direction record) NEW.
+- §4E (this section): NEW.
+
+THE MANAGER'S WORDING TESTED (`jcfold2_check.py`; M = the wording evaluated on the split subject, engine-run against
+its unfold into a regex; 14,937 cases, 0 differ, 0 engine disagreements; sabotaged, zero passes made vacuous: 2,444
+differ):
+
+| table | case | result | verdict |
+|---|---|---|---|
+| (RZ) | jcfold's population, `/(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: 3..7)` | M vs `(h: <5) & (k: 3..7)`: 0 of 1,110 differ; M vs jcfold's vacuous reading: 5 (`9` FAILS by M) | HOLDS: the ruled answer |
+| (ZN) | NESTED, `/(?<c>\d)(?:;(?<h>\d)(?::(?<k>\d))*)*/ & (c: 3..7, h: 0..4, k: 2..6)`: c outside every loop, h in the outer item, k in an inner loop; 6 subjects with a zero-pass OUTER loop, 888 with a zero-pass inner reach | M vs the `&` reading: 0 of 2,526 differ; M vs the vacuous reading: 153. `5` (outer zero) holds; `5;9` (inner zero, h = 9 not in 0..4) FAILS | HOLDS, read PER REACH: the inner loop's zero passes in each outer pass give their own tuple (c, h, EMPTY); only that reading equals `&` at every depth |
+| (ZN) | jcfold's (NL) population re-run, non-product `((h, k): >= (5, 3))`, h in the outer item, k in the inner loop | 10 of 73 answers MOVE from (NL): `4:;` held (no k, nothing paired), now FAILS (no k makes (4, k) >= (5, 3)) | an answer CHANGE on a case the owner was not shown; see CONTRADICTIONS (3) |
+| (ZJ) | NON-PRODUCT sets, zero passes: `((h, k): >= (5, 3))`, `((k, h): >= (5, 3))`, `((h, k): (0\|1\|2, 3\|4) \| (5, 5))`, `((h, k): ("x", 3) \| (0, 5))`, `((h, k): < (0, 3))` | possible k: all; 5..9; {3, 4, 5}; {3, 5} (any string) or {5} (`\d`'s strings); {0, 1, 2}. On zero passes M equals the hand expansion into a `\|` of records on 43 of 50; the 7 that differ are below | the rule answers R's PROJECTION onto the outside labels. `9` FAILS under `(0\|1\|2, 3\|4) \| (5, 5)`: no h makes 9 possible. No ruled sentence covers a non-product set on zero passes; the nearest, the `&` equality, has no non-product form |
+| (ZJ) | the projection vs the hand expansion when an expansion row has an EMPTY part: `((h, k): < (0, 3))` expands to `(h: <0) \| (h: 0, k: <3)` | 7 of 10 zero-pass subjects differ: the row `(h: <0)` holds vacuously on zero passes (single-label rule), M requires k in {0, 1, 2} | CORNER (1) below |
+| (ZJ) | the EMPTY set, zero passes, `3`: `(h: <0, k: 3)` and `((h, k): (<0, 3))` (product clause) vs `((h, k): < (0, 0))` (non-product clause) | HOLDS, HOLDS, FAILS: three spellings of the same (empty) set of pairs | CORNER (1) below |
+| (ZD) | a looped default on zero passes, `(h = 9: <5, k: 3..7)` on (RZ)'s pattern | default NOT read: 0 of 1,110 differ from `(h = 9: <5) & (k: 3..7)`; reading it would move 5 (the zero-pass subjects with k in 3..7) | HOLDS: §4B.1 unchanged |
+| (ZD) | the loop NEVER REACHED, `/(?<k>\d)(?:-(?:;(?<h>\d))*)?/` on `5` vs `5-` | no default: `5` FAILS (unset), `5-` holds; `h = 9`: `5` FAILS (9 read, not <5); `h = 2`: `5` holds (2 read) | HOLDS: "unset" keeps its meaning; §4B.1's never-reached reading now TESTED |
+| (ZD) | all-looped list with a default, `/(?:(?<h>\d)(?::(?<m>\d))?,)*/ & ((h, m = 0): >= (5, 3))` | 91 subjects, 0 differ; the empty list HOLDS | HOLDS: (DL) unchanged |
+| (Z1) | single label: (RZ)'s pattern `& (h: <5)`; `/(?:(?<n>\d),)*/ & (n: <5)` on the empty span; `/x\|(?<n>\d)+/ & (n: <5)` on `x` | zero passes HOLD (1,110 + 4 subjects); never reached FAILS | HOLDS: CF:997-1000 |
+
+CONTRADICTIONS AND UNEXPECTED ANSWERS (the lane's; NOT repaired; each with both sides):
+
+1. AN EMPTY PART. The wording has two clauses: "empty satisfies any set" (a product) and "possible under R for some
+   value of the looped parts" (not a product). They agree whenever every part of every product is non-empty, and
+   disagree on an EMPTY part. Smallest example, zero passes, subject `3` of `/(?<k>\d)(?:;(?<h>\d))*/`: `(h: <0, k:
+   3)` HOLDS (product clause; and the ruled `(h: <0) & (k: 3)` holds too, since a single-label condition holds on
+   zero passes), while `((h, k): < (0, 0))`, the same empty set of pairs, FAILS (no h possible). Side A: J3 makes
+   every value a SET of tuples, so equal sets should give equal answers. Side B: the ruled answer keeps `(a: S, b: T)`
+   = `(a: S) & (b: T)` at every depth, which forces the product clause even when S is empty. The same corner makes
+   the projection differ from a hand expansion whose row has an empty part (`< (0, 3)` vs `(h: <0) | (h: 0, k: <3)`:
+   7 of 10 zero-pass subjects). Reachable only through an empty set, which `<0` over numerals is.
+2. THE DOMAIN OF "SOME VALUE". "Possible ... for some value of the looped parts" does not say over WHICH values: every
+   string, or the strings the looped label's group can match. Smallest example: `((h, k): ("x", 3) | (0, 5))` with h
+   `\d`, zero passes, subject `3`: over every string it HOLDS (h = `x`), over `\d`'s strings it FAILS. The hand
+   expansion `(h: "x", k: 3) | (h: 0, k: 5)` holds, so "every string" is the reading that agrees with the record
+   rule; a reader thinking of the pattern would expect FAILS.
+3. THE NESTED ANSWERS MOVE. For a product the ruled answer forces the per-reach reading (each zero-pass reach of an
+   inner loop gives its own tuple; (ZN) 0 of 2,526 differ from `&`). Carried to the non-product (NL) case, 10 of its 73
+   answers move: `/(?:(?<h>\d):(?:(?<k>\d),)*;)*/ & ((h, k): >= (5, 3))` on `4:;` HELD (lane jcfold, item 5) and now
+   FAILS. Not against a ruled sentence: (NL)'s answer was the lane's, and §8 **pairing-loop** cites (NL) as "73
+   subjects, 0 differ" for its own wording, which is still true; but the open question's text no longer states every
+   answer the owner would be confirming. The §8 text is left as it stands (the brief).
+4. A DEFAULT THAT IS NOT READ. `(h = 9: <5, k: 3..7)` on `5-` of `/(?<k>\d)(?:-(?:;(?<h>\d))*)?/` (loop reached,
+   zero passes) HOLDS while on `5` (loop never reached) it FAILS (9 read, not <5) (table (ZD)). Consistent with §4B.1 and the ruling
+   ("a default is NOT read there"); a reader who writes the default to mean "no h means 9" would expect FAILS in both.
+   The owner's idea to read it was parked (`predicates_future.md` item 7).
+
+No wording CONTRADICTS a RULED sentence on any case the ruling names: (RZ), (Z1) and the default rows hold exactly.
 
 ## 5. Problems tried
 
@@ -1409,8 +1513,11 @@ explicit alternative (B2) [§4C].
 - B6 (NEW, lane jcfold) THE RECORD AT DIFFERENT DEPTHS, ZERO PASSES. Smallest example: `/(?<k>\d)(?:;(?<h>\d))*/ &
   (h: <5, k: 3 | 4 | 5 | 6 | 7)` on `9`: as the product case (J9 with J7's per-pass pairing) no pass, no tuple, HOLDS;
   as the draft's "`(major: 1, minor: >=4)` = `(major: 1) & (minor: >=4)`" (§4.1 :1546) and "the two spellings always
-  agree" (§4.3 :1674) the once-set k is still tested, FAILS. 5 of 1,110 subjects differ (table (RZ)). A
-  CONTRADICTION between the 11:17 + 11:35 rulings and ruled draft text: §8 **zero-pass-record**, not resolved here.
+  agree" (§4.3 :1674) the once-set k is still tested, FAILS. 5 of 1,110 subjects differ (table (RZ)). RULED (J7,
+  **zero-pass-record**, CF 12:45): FAILS; the outside label is tested once on zero passes, the draft's equality holds
+  at every depth [§4E: was "A CONTRADICTION between the 11:17 + 11:35 rulings and ruled draft text: §8
+  **zero-pass-record**, not resolved here"]. The ruled wording's own corners (an EMPTY set, the domain of "some
+  value", the nested (NL) answers that move): §4E.
 
 ## 7. Consequences derived by the lane
 
@@ -1443,8 +1550,12 @@ so.
     `$x`, and a name that is both a binding and a label means the binding there (§4B.1).
 13. (jcfold) The per-part form has real uses (item 4) and cannot be told from a dictionary-order slip by the compiler;
     the slip is a BY DESIGN look-alike the draft must list (§9).
-14. (jcfold) The k-label rule specialised to products reproduces every record rule of the draft but one corner (§4D):
-    the record's semantics shrink to "J9", and the draft's record sentences become pointers.
+14. (jcfold) The k-label rule specialised to products reproduces every record rule of the draft (§4D; the one corner,
+    zero passes at different depths, closed by J7's ruled sentence, CF 12:45 [§4E: was "but one corner"]): the
+    record's semantics shrink to "J9", and the draft's record sentences become pointers.
+15. (jcfold2) On zero passes a joint condition over a NON-product set reads as R's PROJECTION onto the labels
+    outside the loop, which equals the hand expansion into a `|` of records on every case tried except a row with an
+    EMPTY part (table (ZJ); §4E) [§4E].
 
 ## 8. Questions for the owner
 
@@ -1459,15 +1570,26 @@ but keep it in the wings in case we find a problem that needs a different way of
 yes"); **default-unused** (11:05, "default-unused: agree"); **joint-loops** (11:17, "I agree. Makes sense.");
 **two-orders** (11:20, "I agree. They look sufficiently different to me and I like the control."); **modifier-lift**
 (11:27, "modifier-lift: yes"); **colon-scope** (11:32, "colon-scope: yes with refinement: (a, b = c): ... the 'c' is a
-binding et al"); **record-is-product** (11:35, "record-is-product: absolutely").
+binding et al"); **record-is-product** (11:35, "record-is-product: absolutely"); and, the three contradictions
+below, [§4E] **zero-pass-record** (12:45, "zero-pass-record: I agree but save the notes in the future file. The issue
+falls into the 'saving people from themselves' category that tools need to realistically consider": the outside
+label is tested; J7, the wording the manager's, tested in §4E); **library-not-syntax** (12:48, "library-not-syntax:
+agree. we've replaced the idea and I think with something much better": the 2026-11-14 ruling CF:644-650 WITHDRAWN
+BY NAME; `lex_ge` and friends not kept as library macros, the manager's reading of "agree"); **retire-paused** (12:51,
+"retire-paused: agree to split. But the pause on ^ is indefinite and requires real value other than 'override a
+users own *'": the `lex_` names, the argument order and the first-library slot RETIRED to the superseded-direction
+record, the joint condition taking the slot; the sigil PAUSED INDEFINITELY, out of rev 20's language;
+reference-index and bound-reference suspended with it).
 
 PARKED (not questions; each with its trigger in `docs/design/predicates_future.md`): first/rest (item 1),
 finer-grained transforms (item 2), a several-string default with `some(...)`/`all(...)` (item 3), taking one tuple
-apart (item 4, which is **tuple-parts**).
+apart (item 4, which is **tuple-parts**); and the four ideas raised on the way to **zero-pass-record** (items 5-8)
+[§4E].
 
-CONTRADICTIONS FOUND (lane jcfold; each states both texts and is NOT resolved; the rest of the fold proceeds):
+CONTRADICTIONS FOUND (lane jcfold; each states both texts; [§4E] ALL THREE ANSWERED, CF 12:45-12:51, above; kept as
+the record of the question asked):
 
-1. **zero-pass-record**. The rulings: joint-loops (CF 11:17, record: "per-pass pairing by the innermost loop
+1. **zero-pass-record** [§4E: ANSWERED, reading (b)]. The rulings: joint-loops (CF 11:17, record: "per-pass pairing by the innermost loop
    enclosing every named label, a label outside that loop having its one value on every pass"; "the condition holding
    when every pass's tuple is in the set") with record-is-product (CF 11:35: "every rule of the joint condition (...
    per-pass pairing in loops ...) holds for the record by definition"). The draft: "all of several conditions = one
@@ -1479,14 +1601,14 @@ CONTRADICTIONS FOUND (lane jcfold; each states both texts and is NOT resolved; t
    (the rulings as written; the draft's two sentences gain "at one depth"); (b) a label outside the pairing loop is
    tested once even when the loop runs zero times (the draft's equality kept; J7 gains a clause). The lane takes
    neither.
-2. **library-not-syntax**. The ruling of 2026-11-14 (CF:644-650: "TUPLE CONDITIONS: a LIBRARY macro (`lex_ge([major,
+2. **library-not-syntax** [§4E: ANSWERED, withdrawn by name]. The ruling of 2026-11-14 (CF:644-650: "TUPLE CONDITIONS: a LIBRARY macro (`lex_ge([major,
    minor, patch], [1, 4, 0])`), no syntax"), carried in the draft as "Tuples as a library macro: RULED (CF:644),
    SUPERSEDES predx's tuple-on-the-left-of-`:` syntax (S12)" (§8 STATUS, `predicates_draft.md:2760-2761`), against
    record-is-product (CF 11:35: "the joint condition is the ONE mechanism"), whose left side IS a tuple on the left of
    `:` and whose order is built into comparison sets (J4, after CF 10:18, 10:22). The 00:31 entry (his own `(h,m):
    blah`) and the 00:35 GO come closest, but no entry withdraws CF:644 or S12's supersession by name. Not resolved:
    rev 20 needs a sentence from the owner (or the manager's reading of 00:31 + 11:35 as that withdrawal, labelled).
-3. **retire-paused**. The direction of 00:06-00:09 was PAUSED, not reversed (CF 00:31: "rev 19 of the draft stands
+3. **retire-paused** [§4E: ANSWERED, split]. The direction of 00:06-00:09 was PAUSED, not reversed (CF 00:31: "rev 19 of the draft stands
    as the record of that direction"). Its RULED items: the other-side sigil (CF 00:06, "i think the sigil mark is
    better"), the `lex_` names (CF:1226, "tuple_names: a"), the argument order (CF:1253, "tuple-arg-order: subject low
    high"), the fixed-size compares in the first library (CF:1166, "tuple-compare: agree"), and the looped warning on
@@ -1514,52 +1636,55 @@ STILL OPEN (each: reply either way):
 
 One row per draft section or numbered item, cited at rev 19 (`predicates_draft.md:N`, this worktree, cut from main
 4ae1f9bdc). "Ruling" names the CF entry of 2026-11-16 (`CF hh:mm`) or this note's J-rule; rows that hang on a
-CONTRADICTION (§8) say so and must not be written until the owner answers. Every row is the lane's reading of what
+CONTRADICTION (§8) say so and must not be written until the owner answers [§4E: none is left; the three were answered
+CF 12:45-12:51, and every row that hung on one is restated, marked "[§4E]"]. Every row is the lane's reading of what
 the rulings require; the manager drafts rev 20.
 
 | # | draft site | what changes | under |
 |---|---|---|---|
-| 1 | Changelog (`:3`) | a rev 20 entry: the joint condition as the one condition mechanism; the field-reference direction's status per **retire-paused** | all |
-| 2 | §0 ruled-points tables (`:422-461`) | a new table "the entries after rev 19" with the 24 entries of 2026-11-16 (00:06-11:35), his words, what is the manager's | all |
+| 1 | Changelog (`:3`) | a rev 20 entry: the joint condition as the one condition mechanism; the field-reference direction: the `lex_` names, argument order and first-library slot RETIRED, the sigil PAUSED INDEFINITELY (**retire-paused**, CF 12:51) [§4E] | all |
+| 2 | §0 ruled-points tables (`:422-461`) | a new table "the entries after rev 19" with the 27 entries of 2026-11-16 (00:06-12:51), his words, what is the manager's [§4E: was 24, 00:06-11:35] | all |
 | 3 | §0.1 L37 (`:535`) | OPEN becomes DIFFERENT: ERROR: `(wname.index: ==wd)` is the bare-binding error, write `==$wd` | colon-scope 11:32 (C13) |
 | 4 | §0.1 L45 (`:543`) | `f((1, 2))`: ERROR becomes "one argument, a pair" | tuple-value 09:42, tuple-anywhere 09:49 (§4A.1) |
-| 5 | §0.1 L72-L81 (`:570-579`) | the ten field-reference rows lose their subject; per **retire-paused** they move to a superseded-direction record or stay as PAUSED | 00:31 + §8 3 |
+| 5 | §0.1 L72-L81 (`:570-579`) | the ten field-reference rows lose their subject: those on the `lex_` names, the argument order or the first library move to the superseded-direction record; those on the sigil, reference-index and bound-reference are marked PAUSED INDEFINITELY, out of rev 20's language [§4E] | 00:31; retire-paused 12:51 |
 | 6 | §0.1 new rows | `((h, m): (S, T))` vs `(h: S, m: T)` SAME (J9); `>= (9, 30)` vs `(>= 9, >= 30)` DIFFERENT: BY DESIGN (2,700 of 11,000, table (O)); `(9, 0)` vs `[9, 0]` ERROR (arity); `((h, m): R)` vs `(h, m: R)` ERROR; `(h, m = 0): R` vs `(h, m: 0): R` ERROR; `((h, m): R)` vs a hand `\|` of records over looped labels DIFFERENT: WARNING (the moved warning); `(9, 0)` vs `f(9, 0)` vs `(h: 9, m: 0)` vs `((h, m): ...)` BY DESIGN (position); `t2 & ((h, m = 0): R)` vs `t2 & ((h, m): R) \| (h: 10)` DIFFERENT: BY DESIGN (§4B.4) | J1-J9 |
-| 7 | §0.2 phase 1 (`:751-756`) | "the fixed-size tuple compares ARE in the first library ... and their bodies use ... the field reference `^h`": rewritten to the joint condition's place in phase 1, PENDING **retire-paused** (CF:1166's slot) | §8 3 |
+| 7 | §0.2 phase 1 (`:751-756`) | "the fixed-size tuple compares ARE in the first library ... and their bodies use ... the field reference `^h`": RETIRED (CF:1166's slot); the joint condition takes that first-library slot in phase 1 [§4E: was PENDING **retire-paused**] | retire-paused 12:51 |
 | 8 | §0.3 words (`:777`) | the **field reference** word row goes or is marked paused; new words: TUPLE SET, ARITY, JOINT CONDITION, DEFAULT (of a label), PASS | J1-J7 |
 | 9 | §2.1 two value kinds (`:848-852`) | every value is a set of tuples with an arity; today's rx are arity 1; still two kinds | set-arity 10:26 |
 | 10 | §2.4 comparisons (`:994-1017`) | a tuple atom, dictionary order, each part by its literal; the per-part form is the product | first-rest 10:22 (J4), two-orders 11:20 (J5) |
 | 11 | §2.7 (`:1358`) | the rev 19 example `lex_between2([^h, ^m], ...)` becomes `((h, m): padded(between((9, 0), (10, 0))))` | J4 |
-| 12 | §3.5 (`:1506-1507`) | "an ARRAY OF FIELD REFERENCES ... is a field reference": goes with the sigil (per **retire-paused**); an array of tuples IS a tuple set (an array of X is an X) | 00:08 + J3 |
-| 13 | §4.1 THE ONE EXCEPTION (`:1528-1539`) and its STATUS (`:1575-1579`) | REMOVED (no parameter on the left of `:`); the entry form becomes `(p1, ..., pk): R` with the colon's scope (J2) and a default `name = v` (J6) | colon-scope 11:32, unset-component 11:05; PENDING **retire-paused** for the removal |
-| 14 | §4.1 records (`:1541-1556`) | the record DEFINED as the product case (J9); "`(major: 1, minor: >=4)` = `(major: 1) & (minor: >=4)`" (`:1546`) restated PENDING **zero-pass-record** | record-is-product 11:35; §8 1 |
+| 12 | §3.5 (`:1506-1507`) | "an ARRAY OF FIELD REFERENCES ... is a field reference": goes with the sigil, PAUSED INDEFINITELY, out of rev 20's language [§4E]; an array of tuples IS a tuple set (an array of X is an X) | 00:08 + J3; retire-paused 12:51 |
+| 13 | §4.1 THE ONE EXCEPTION (`:1528-1539`) and its STATUS (`:1575-1579`) | REMOVED (no parameter on the left of `:`); the entry form becomes `(p1, ..., pk): R` with the colon's scope (J2) and a default `name = v` (J6) | colon-scope 11:32, unset-component 11:05; retire-paused 12:51 (the exception's only use, a parameter bound to a field reference, goes with the paused sigil) [§4E] |
+| 14 | §4.1 records (`:1541-1556`) | the record DEFINED as the product case (J9); "`(major: 1, minor: >=4)` = `(major: 1) & (minor: >=4)`" (`:1546`) KEPT, holding at every depth (J7's zero-pass sentence) [§4E: was PENDING **zero-pass-record**] | record-is-product 11:35; zero-pass-record 12:45 |
 | 15 | §4.2 (`:1590-1592`, STATUS `:1613-1625`) | "a condition naming an unset label fails" for any k, "unless the author wrote a default"; `label.unset`'s text names both fixes; `default.unused` added | unset-component, default-unused 11:05 |
-| 16 | §4.3 SAME ITERATION BY RECORD (`:1668-1677`) | per-pass pairing (J7) as the rule, the record its product case; `:1674`'s "always agree" PENDING **zero-pass-record**; `:1677`'s pointer to O56 becomes J7 | joint-loops 11:17; §8 1 |
+| 16 | §4.3 SAME ITERATION BY RECORD (`:1668-1677`) | per-pass pairing (J7) as the rule, the record its product case; `:1674`'s "always agree" KEPT (true at every depth under J7's zero-pass sentence) [§4E: was PENDING **zero-pass-record**]; `:1677`'s pointer to O56 becomes J7 | joint-loops 11:17; zero-pass-record 12:45 |
 | 17 | §4.4 (`:1737-1738`) | "the bare spellings in E-CAL and E-RFC (`<=dim`, `==wd`) are §13 C13" becomes: read with `$`; bare is the binding error | colon-scope 11:32 |
 | 18 | §5.2 heads (`:1937-1938`) | one sentence: a label default is the same `name = v` in a condition's reference list (§4B.3's single rule) | `=` 10:37 |
 | 19 | §5.4 `( e1, e2, ... )` row (`:2013`) | position (b) restated: a record in a condition is the joint condition's product case; still never a value | record-is-product 11:35 |
 | 20 | §5.4 `( label: S, ... )` row (`:2014`) | "Any other record in value position is an error" narrowed to labelled entries; the joint condition in value position is a macro too | tuple-value 09:42 |
 | 21 | §5.4 new rows (after `:2016`) | `( p1, ..., pk ) :` a tuple of references; `( e1, ..., ek )`, k >= 2, in value position, a TUPLE SET; the head count "`( )` has four rows" (`:1998`) updated (§4A.7) | J1, J3 |
 | 22 | §5.4 `=` row (`:2017`) | a fourth position: a default at a label left of `:` (value side, J2's refinement) | 10:37, 11:32 |
-| 23 | §5.4 `:` row (`:2018`) | the left: a path or a tuple of references; "in a macro body the path may arrive through a parameter bound to a field reference" removed | J1; PENDING **retire-paused** |
+| 23 | §5.4 `:` row (`:2018`) | the left: a path or a tuple of references; "in a macro body the path may arrive through a parameter bound to a field reference" removed (the sigil PAUSED INDEFINITELY, out of rev 20's language) [§4E] | J1; retire-paused 12:51 |
 | 24 | §5.4 comparison row (`:2030`) | "before ONE atom": the atom may be a tuple (dictionary order) | J4 |
-| 25 | §5.4 `^` row (`:2035`) and STATUS (`:2048-2052`) | the other-side sigil `^h`: REMOVED or marked PAUSED | §8 3 (**retire-paused**) |
+| 25 | §5.4 `^` row (`:2035`) and STATUS (`:2048-2052`) | the other-side sigil `^h`: out of rev 20's language, recorded as PAUSED INDEFINITELY, returning only for a use with real value; rejecting the empty case of the author's own `*` loop (`some(^h)`) is not such a use (CF 12:51) [§4E: was "REMOVED or marked PAUSED"] | retire-paused 12:51 |
 | 26 | §6.1 levels (`:2139`) | a joint condition on a constant tuple set is default level (a finite union of products); with `$` parts a §4.6 relation | LEVEL (§2 here; tables (X), (RC), (SE)) |
 | 27 | §7.1 warnings (`:2270-2272`) | `compare.looped` (a compare's field can repeat) becomes the warning on a hand-written `\|` of conditions whose labels can repeat (its name the spelling step's); `default.unused` added; `compare.repeated` (proposed) gone (an error at the condition) | joint-loops 11:17, default-unused 11:05 |
-| 28 | §8 TUPLE COMPARISONS (`:2415-2620`): the six `lex_` names and bodies (`:2433-2442`), worked rows (`:2480-2487`), the strict spelling (`:2544-2546`), CAVEATS (`:2574-2619`) incl. caveat (5) the DECIDED-PREFIX order (`:2594`) and caveat (6) looped (`:2608-2616`) | the family becomes the comparison sets: `>= (9, 0)`, `between((9, 0), (10, 0))`, `> (9, 30)`; the decided-prefix order WITHDRAWN; the looped caveat restated per pass; the names PENDING **retire-paused** (a library may still name `lex`-style helpers, none needed) | J4-J7; 11:05; §8 2, 3 |
+| 28 | §8 TUPLE COMPARISONS (`:2415-2620`): the six `lex_` names and bodies (`:2433-2442`), worked rows (`:2480-2487`), the strict spelling (`:2544-2546`), CAVEATS (`:2574-2619`) incl. caveat (5) the DECIDED-PREFIX order (`:2594`) and caveat (6) looped (`:2608-2616`) | the family becomes the comparison sets: `>= (9, 0)`, `between((9, 0), (10, 0))`, `> (9, 30)`; the decided-prefix order WITHDRAWN; the looped caveat restated per pass (zero passes: J7's sentence); the six names and their bodies RETIRED to the superseded-direction record, not kept as library macros [§4E: was PENDING **retire-paused** (a library may still name `lex`-style helpers, none needed)] | J4-J7; 11:05; library-not-syntax 12:48, retire-paused 12:51 |
 | 29 | §8 ANY NUMBER OF FIELDS (`:2620-2641`) | the recursion form `lex_ge(n, s, lo)` / `lg` has no job: any k is native (J4); first/rest parked (`predicates_future.md` item 1) | first-rest 10:22 |
-| 30 | §8 THE PROJECTION (`:2642-2678`) and THE FIELD REFERENCE (`:2679-2745`, table (B), the census) | no job; PENDING **retire-paused** | 00:31; §8 3 |
-| 31 | §8 STATUS (`:2757-2771`) | "Tuples as a library macro: RULED (CF:644), SUPERSEDES predx's tuple-on-the-left-of-`:` syntax (S12)" PENDING **library-not-syntax**; the rest restated to the joint condition | §8 2 |
+| 30 | §8 THE PROJECTION (`:2642-2678`) and THE FIELD REFERENCE (`:2679-2745`, table (B), the census) | no job: the projection and the field reference go with the sigil, PAUSED INDEFINITELY (out of rev 20's language) [§4E: was PENDING **retire-paused**] | 00:31; retire-paused 12:51 |
+| 31 | §8 STATUS (`:2757-2771`) | "Tuples as a library macro: RULED (CF:644), SUPERSEDES predx's tuple-on-the-left-of-`:` syntax (S12)" moves to the superseded record: CF:644-650 WITHDRAWN BY NAME, a tuple left of `:` is ruled syntax (J1-J9) [§4E: was PENDING **library-not-syntax**]; the rest restated to the joint condition | library-not-syntax 12:48 |
 | 32 | §12 census and E-CAL (`:3231`, `:3439-3455`) | `<=dim` becomes `<=$dim` (C13 closed); optionally the declared-table form `((month, day): month_days) \| (year: leap, month: padded(2), day: 29)` as a second spelling (table (C4), SIMPLER) | colon-scope 11:32; §5 problem 4 |
 | 33 | §12.6 E-RFC (`:3456-3469`) | `==wd` becomes `==$wd` | colon-scope 11:32 |
 | 34 | §12 two-way census rows (`:3360-3361`) | the tuple-compare and field-reference rows restated (no §12 case uses either) | J1-J4 |
 | 35 | §13 C13 (`:3741-3744`) | RESOLVED: values with `$` on the value side; bare is the binding error | colon-scope 11:32 |
-| 36 | §13 C25 (`:3760`) | RESOLVED by the joint condition, PENDING **library-not-syntax** (C25's "a library macro, no syntax" premise) | §8 2 |
+| 36 | §13 C25 (`:3760`) | RESOLVED by the joint condition; its "a library macro, no syntax" premise WITHDRAWN (CF 12:48) [§4E: was PENDING **library-not-syntax**] | library-not-syntax 12:48 |
 | 37 | §13 O56 (`:4118-4125`) | (1) RULED via J7 + J9 (with **pairing-loop**'s wording); (2) unchanged | joint-loops 11:17 |
 | 38 | §13 O69 (`:4426`) | the any-number-of-fields item CLOSED: native in the built-in order | J4 |
 | 39 | §13 O72 (`:4527-4534`) | CLOSED: a wrong length is an arity error | set-arity 10:26 |
 | 40 | §13 O73, O74 (`:4535-4547`) | O73 stays ANSWERED; O74's warning MOVED (J7) | 11:17 |
-| 41 | §13 O75, O76 (`:4549-4565`) | WITHDRAWN as moot (no references to index or bind), PENDING **retire-paused** | §8 3 |
-| 42 | §13 DECIDED (45), (54), (55), (58), (59), (61)-(66) (`:4244-4245`, `:4265-4271`, `:4275-4285`) | each restated or withdrawn: (55) the decided-prefix order withdrawn by ruling (11:05); (58) a label twice becomes an error at the condition (**label-twice**); (65) `compare.looped` moved; the field-reference ones PENDING **retire-paused** | 11:05, 11:17; §8 3 |
-| 43 | §13 owner questions (16), (17) (`:4604-4610`) | moot with O75, O76 (PENDING **retire-paused**); new entries for the 2026-11-16 answers (tuple-value through record-is-product) | all |
-| 44 | §13 new items | **tuple-parts** (open, no user); **label-twice**, **pairing-loop** (the lane's); the three CONTRADICTIONS until answered | §8 |
+| 41 | §13 O75, O76 (`:4549-4565`) | SUSPENDED with the sigil (**reference-index**, **bound-reference**), out of rev 20's language [§4E: was "WITHDRAWN as moot ..., PENDING **retire-paused**"] | retire-paused 12:51 |
+| 42 | §13 DECIDED (45), (54), (55), (58), (59), (61)-(66) (`:4244-4245`, `:4265-4271`, `:4275-4285`) | each restated or withdrawn: (55) the decided-prefix order withdrawn by ruling (11:05); (58) a label twice becomes an error at the condition (**label-twice**); (65) `compare.looped` moved; the field-reference ones: those on the `lex_` names, argument order or first library RETIRED, those on the sigil PAUSED INDEFINITELY [§4E: was PENDING **retire-paused**] | 11:05, 11:17; retire-paused 12:51 |
+| 43 | §13 owner questions (16), (17) (`:4604-4610`) | suspended with O75, O76 (the sigil PAUSED INDEFINITELY); new entries for the 2026-11-16 answers (tuple-value through retire-paused) [§4E: was "moot ... (PENDING **retire-paused**)", "through record-is-product"] | all; 12:45-12:51 |
+| 44 | §13 new items | **tuple-parts** (open, no user); **label-twice**, **pairing-loop** (the lane's) [§4E: "the three CONTRADICTIONS until answered" removed: answered CF 12:45-12:51] | §8 |
+| 45 | §4.2 THE BOUNDARY (`:1595-1606`) and §4.3 (`:1659-1660`) [§4E: NEW row] | the zero-pass sentence for several labels: a reached loop that runs zero times gives ONE tuple whose looped parts are EMPTY, satisfying any set; a non-product set requires the outside labels' values possible under R for some value of the looped parts; a default is not read; the single-label rule unchanged. The MANAGER'S wording; §4E's three corners (an EMPTY set, the domain of "some value", the nested answers that move) want a sentence each | zero-pass-record 12:45 |
+| 46 | a superseded-direction record (new appendix or history file) [§4E: NEW row] | the `lex_` names (CF:1226), the argument order (CF:1253), the fixed-size compares in the first library (CF:1166), and the 2026-11-14 "TUPLE CONDITIONS: a LIBRARY macro ..., no syntax" (CF:644-650), each with the ruling that retired or withdrew it; the sigil (CF 00:06) listed as PAUSED INDEFINITELY with its bar (CF 12:51) | library-not-syntax 12:48, retire-paused 12:51 |
