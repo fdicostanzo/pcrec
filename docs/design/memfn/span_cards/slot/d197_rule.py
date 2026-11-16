@@ -15,6 +15,9 @@
 # Prints one line per deciding cell and arm, then per level `d197_scan` (find_byte@6 form/libc, never deciding) and
 # `d197_verdict LEVEL FORM RESULT (when) -> trigger`; a CONFIRM names its cells (`d197_confirm_cells GAP.REJECT..`,
 # the SLOT_CONFIRM_CELLS value of job 610). Exit 0 on verdicts, 2 on a refused input.
+# [r13 JF-4] est REFUSES a record when the unit or any floor clause fails and names each refusal's keys; the
+# `refusal` table lets a refusal naming only find_byte@6 SCAN rows (never deciding) stand the arm, the scan line
+# printing the row `scan unpriced (<est's reason>)`; every other refusal refuses the arm, as before.
 import os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -51,7 +54,12 @@ WHEN = {
     "gain-below-minus-floor": lambda c: c["gain"] < -c["floor"],
     "loss-not-reproduced": lambda c: c["gain"] < -c["floor"] and c["conf"] is not None
                                      and not c["conf"]["gain"] < -c["conf"]["floor"],
-    "run-refused": lambda a: a["outcome"] == "REFUSED",
+    # [r13 JF-4] the `refusal` table: est's refusals as data (cause, keys); a refusal with no keys (the unit) is never
+    # a scan row's
+    "record-not-refused": lambda f: f["outcome"] != "REFUSED",
+    "every-refusal-names-only-scan-rows": lambda f: bool(f["refusals"]) and all(
+        keys and set(keys) <= f["scan_keys"] for _cause, keys in f["refusals"]),
+    "run-refused": lambda a: a["refusal"] == "run-refused",
     # the AVX2 arm bound memchr's avx2 variant; [r6 FIDELITY-2] the shipped arm ran WITHOUT a tunable and bound
     # something other than the AVX2 arm's variant
     "memchr-variant-not-the-arms": lambda a: a["variant"] is None
@@ -80,6 +88,27 @@ def first(t, table, x):
             return row
     raise InputError("d197_rule.tsv: table %s has no row for %r" % (table, x))
 
+def scan_keys(t):
+    """the find_byte@6 SCAN rows this rule reads (the levels' forms and libc_form): NOT deciding"""
+    return {"kit.%s.%s" % (t["deciding"]["scan"], f) for f in _forms(t) + [t["deciding"]["libc_form"]]}
+
+def refusal(t, outcome, refusals):
+    """[r13 JF-4] the `refusal` table's result for one record: priced, scan-unpriced or run-refused"""
+    return first(t, "refusal", {"outcome": outcome, "refusals": list(refusals or ()), "scan_keys": scan_keys(t)})[0]
+
+def scan_of(out, drift, k):
+    """[r13 JF-4] one scan row's value for the scan line, or None and est's reason it is unpriced"""
+    r = out.get(k)
+    if not r or "absent" in r:
+        return None, "absent" + (": " + r["absent"] if r else "")
+    if drift.get(r.get("job"), (0, 0, False))[2]:
+        return None, "drift:%s" % r["job"]
+    if r.get("gate") is False:
+        return None, r.get("gate_why", "gate FAIL")
+    if r.get("null") or "value" not in r:
+        return None, r.get("why", "null")
+    return r["value"], None
+
 def row_x(out, drift, k):
     """the row's per-launch x and A/A, or None (absent, drifted, or no W)"""
     r = out.get(k)
@@ -101,10 +130,10 @@ def gain(t, form, out, drift, g, r):
     gl = [a["x"][i] - b["x"][i] for i in range(len(a["x"]))]
     return {"gain_l": gl, "gain": med(gl), "floor": a["aa"] + b["aa"]}
 
-def arm(t, form, out, drift, outcome, run, which, conf=None):
+def arm(t, form, out, drift, outcome, run, which, conf=None, refusals=()):
     """(arm result, loss comparisons [((gap, reject), confirmed)], scan, lines): one level's form against libc in
-    one finalized record (`which`: shipped or avx2), through the cell and arm tables; conf (out, drift) is the
-    confirming record of this arm"""
+    one finalized record (`which`: shipped or avx2), through the cell, refusal and arm tables; conf (out, drift) is
+    the confirming record of this arm; refusals: est's (cause, keys) of a REFUSED outcome (none given: run-refused)"""
     libc = t["deciding"]["libc_form"]
     var = variant_of(run)
     n, losses, lines = {"win": 0, "loss": 0, "tie": 0, "unresolved": 0}, [], []
@@ -118,32 +147,41 @@ def arm(t, form, out, drift, outcome, run, which, conf=None):
         lines.append("cell\tgap %d reject %d\t%s vs %s\t%s\tgain %s floor %s%s\t(%s)" % (
             g, r, form, libc, res, c.get("gain", "-"), c.get("floor", "-"),
             "" if c["conf"] is None else " confirming gain %s floor %s" % (c["conf"]["gain"], c["conf"]["floor"]), why))
-    sc = [row_x(out, drift, "kit.%s.%s" % (t["deciding"]["scan"], f)) for f in (form, libc)]
-    sv = [s["value"] if s and "value" in s else None for s in sc]
-    scan = "%s %s, %s %s, ratio %s" % (form, "-" if sv[0] is None else sv[0], libc, "-" if sv[1] is None else sv[1],
-                                       "%.2f" % (sv[0] / sv[1]) if sv[0] is not None and sv[1] else "-")
-    av = {"outcome": outcome, "variant": var, "which": which, "tunables": tunables_of(run), "n": n,
+    # [r13 JF-4] a scan row est did not price prints `scan unpriced (<reason>)`, never a value or a ratio
+    sc = [scan_of(out, drift, "kit.%s.%s" % (t["deciding"]["scan"], f)) for f in (form, libc)]
+    sv = [v for v, _why in sc]
+    scan = "%s, ratio %s" % (", ".join("%s %s" % (f, v if v is not None else "scan unpriced (%s)" % why)
+                                       for f, (v, why) in zip((form, libc), sc)),
+                             "%.2f" % (sv[0] / sv[1]) if sv[0] is not None and sv[1] else "-")
+    rf = refusal(t, outcome, refusals)
+    av = {"outcome": outcome, "refusal": rf, "variant": var, "which": which, "tunables": tunables_of(run), "n": n,
           "n_cells": len(cells(t))}
     res, why = first(t, "arm", av)[:2]
     # [r6 RULE-8(b)] libc's vector printed from the variant the RECORD names, never asserted by the levels' axes
-    lines.append("arm\t%s vs %s (memchr=%s: %s)\t%s\t%s\t(%s)" % (
+    lines.append("arm\t%s vs %s (memchr=%s: %s)\t%s\t%s\t(%s)%s" % (
         form, libc, var, t["libc_variant"].get(var, "a variant the table does not name"), res,
-        " ".join("%s %d" % kv for kv in sorted(n.items())), why))
-    return res, ([] if res == "no-verdict" else losses), scan, lines
+        " ".join("%s %d" % kv for kv in sorted(n.items())), why,
+        "" if rf == "priced" else "\t[record REFUSED: %s: %s]" % (rf, "; ".join(c for c, _k in refusals) or "no cause given")))
+    # [r13 JF-4, R1 condition A] the record's est outcome, NAMED on the verdict line: a refused scan row with est's
+    # reason (its noise, value and the gate it failed), never dropped silently
+    unpr = {k: scan_of(out, drift, k)[1] for _c, ks in refusals for k in ks} if rf == "scan-unpriced" else {}
+    note = "%s est %s%s" % (which, outcome, "" if rf == "priced" else " (%s: %s)" % (rf, "; ".join(
+        c + "".join(" %s %s" % (k, unpr[k]) for k in ks if k in unpr) for c, ks in refusals) or "no cause given"))
+    return res, ([] if res == "no-verdict" else losses), scan, lines, note
 
 def levels(t, arms_of, second=False, confirming=False):
-    """{level: (result, when, trigger, lines, scan, confirm cells)}; arms_of(form, "shipped"|"avx2") -> arm()'s
+    """{level: (result, when, trigger, lines, scan, confirm cells, the records' est outcomes)}; arms_of(form, "shipped"|"avx2") -> arm()'s
     tuple. The losses count over BOTH libc rows (the level's 36 comparisons); an arm without a verdict counts none.
     confirming: a confirming run's records were given (--confirm), usable or not"""
     out = {}
     for lvl, _build, form, _axes in t["levels"]:
-        r1, x1, s1, l1 = arms_of(form, "shipped")
-        r2, x2, s2, l2 = arms_of(form, "avx2")
+        r1, x1, s1, l1, n1 = arms_of(form, "shipped")
+        r2, x2, s2, l2, n2 = arms_of(form, "avx2")
         v = {"shipped": r1, "avx2": r2, "second": second, "confirming": confirming, "losses": x1 + x2}
         res, when, trig = first(t, "verdict", v)
         cc = sorted({c for c, confirmed in x1 + x2 if not confirmed}) if res == "CONFIRM" else []
         out[lvl] = (res, when, trig, ["shipped\t" + x for x in l1] + ["avx2\t" + x for x in l2],
-                    "shipped: %s; avx2: %s" % (s1, s2), cc)
+                    "shipped: %s; avx2: %s" % (s1, s2), cc, "%s; %s" % (n1, n2))
     return out
 
 def score(t, arms_of, second=False, confirming=False):
@@ -169,7 +207,8 @@ def meta(t, d):
     forms = {t["deciding"]["libc_form"]} | set(_forms(t))
     folds = {x[0]: x[1] for x in cell_texts(d, rec).values() if x[0] in forms}   # one fold per form: est refuses two
     q = "kit.%s." % t["deciding"]["quantity"]
-    return {"dir": d, "out": o, "drift": drift, "outcome": outcome[0], "run": rec["run"], "plan": sorted(rec["plan"]),
+    return {"dir": d, "out": o, "drift": drift, "outcome": outcome[0], "refusals": outcome[3], "run": rec["run"],
+            "plan": sorted(rec["plan"]),
             "folds": folds,
             "confirm_cells": {tuple(int(v) for v in k.split(".")[-2:]) for k, _g, j in rec["plan"]
                               if j == "JMHC" and k.startswith(q)}}
@@ -240,15 +279,18 @@ def rule(rundir, avx2dir, second=None, confirm=None):
     conf = {}
     def arms_of(form, which, use_conf):
         m = recs[which]
-        return arm(t, form, m["out"], m["drift"], m["outcome"], m["run"], which, conf.get(which) if use_conf else None)
+        return arm(t, form, m["out"], m["drift"], m["outcome"], m["run"], which, conf.get(which) if use_conf else None,
+                   m["refusals"])
     v = score(t, arms_of, is_second)
     if confirm is None:
         return v
     confirm_cells_check({c for x in v.values() for c in x[5]}, recs)
     for n in ("shipped", "avx2"):
         m = recs["confirm." + n]
-        if m["outcome"] != "REFUSED" and bound_right(n, m["run"]):
-            conf[n] = (m["out"], m["drift"])     # a refused or mis-bound confirming record confirms nothing
+        # a refused or mis-bound confirming record confirms nothing ([r13 JF-4] refused by the `refusal` table: a
+        # refusal naming only scan rows leaves its deciding rows standing)
+        if refusal(t, m["outcome"], m["refusals"]) != "run-refused" and bound_right(n, m["run"]):
+            conf[n] = (m["out"], m["drift"])
     return score(t, arms_of, is_second, confirming=True)
 
 # ---- the drill: CONSTRUCTED outcomes, each with the per-level verdicts the rule must give -----------------------
@@ -282,6 +324,9 @@ def drill(scratch=None):
     v3 = lambda x: dict(zip(lv, (W, W, x)))
     good = lambda: (_rec(t, L7(1000), allf(500)), "FULL", "avx2")
     TUN = "avx2 GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX512VL"
+    SWAR = [("floor:byte.mfind-swar", ["kit.find_byte.mfind-swar"])]                    # [r13 JF-4] est's refusals
+    MEMCHR = [("floor:byte.fn-memchr", ["kit.find_byte.fn-memchr"])]
+    HIT6 = [("floor:hit6.mfind-w32", sorted(key(t, "mfind-w32", g, 0) for g, r in cells(t) if r == 0))]
     CASES = (   # (name, shipped (out, outcome, variant), avx2 (out, outcome, variant), second, {level: expected},
                 #  confirming outs {arm: out, or None for a confirming record refused or mis-bound} or None)
         ("clean win at every level, both libc rows", (_rec(t, L7(1000), allf(500)), "FULL", "evex"), good(), False,
@@ -367,6 +412,25 @@ def drill(scratch=None):
          False, each(T), None),
         ("[r6 FIDELITY-2] the shipped record bound the avx2 memchr with no tunable: INCONCLUSIVE",
          (_rec(t, L7(1000), allf(500)), "FULL", "avx2"), good(), False, each(T), None),
+        # [r13 JF-4] est REFUSED the record; WHICH rows refused (est's refusals, (cause, keys)) is the refusal table's
+        ("[r13 JF-4] both records REFUSED on the swar scan row alone (byte.mfind-swar), deciding rows priced: the "
+         "verdict from the deciding rows (WIN)", (_rec(t, L7(1000), allf(500)), ("REFUSED", SWAR), "evex"),
+         (_rec(t, L7(1000), allf(500)), ("REFUSED", SWAR), "avx2"), False, each(W), None),
+        ("[r13 JF-4] the shipped record REFUSED on two scan rows (swar and libc's fn-memchr), a clean loss: LOSS",
+         (_rec(t, L7(1000), allf(1500)), ("REFUSED", SWAR + MEMCHR), "evex"),
+         (_rec(t, L7(1000), allf(1500)), "FULL", "avx2"), False, each(Lo), None),
+        ("[r13 JF-4] a DECIDING row's clause refused (hit6.mfind-w32) on the shipped record: INCONCLUSIVE, as before",
+         (_rec(t, L7(1000), allf(500)), ("REFUSED", HIT6), "evex"), good(), False, each(T), None),
+        ("[r13 JF-4] the scan row AND a deciding clause refused: INCONCLUSIVE (one refusal not a scan row's)",
+         (_rec(t, L7(1000), allf(500)), ("REFUSED", SWAR + HIT6), "evex"), good(), False, each(T), None),
+        ("[r13 JF-4] the unit refused (no keys): INCONCLUSIVE",
+         (_rec(t, L7(1000), allf(500)), ("REFUSED", [("unit", [])]), "evex"), good(), False, each(T), None),
+        ("[r13 JF-4] a row this rule does not read refused (J2's byte.libc, a ver-3 find_byte row): INCONCLUSIVE "
+         "(only the find_byte@6 scan rows are never deciding here)",
+         (_rec(t, L7(1000), allf(500)), ("REFUSED", [("floor:byte.libc", ["kit.find_byte.libc"])]), "evex"), good(),
+         False, each(T), None),
+        ("[r13 JF-4] a REFUSED record that names no refusal: INCONCLUSIVE (never read as scan-only)",
+         (_rec(t, L7(1000), allf(500)), ("REFUSED", []), "evex"), good(), False, each(T), None),
         ("deciding rows absent on 10 of 18 cells (gaps >= 32), the rest wins: INCONCLUSIVE",
          ({k: v for k, v in _rec(t, L7(1000), allf(500)).items() if int(k.split(".")[-2]) < 32}, "PARTIAL", "evex"),
          good(), False, each(T), None),
@@ -376,8 +440,9 @@ def drill(scratch=None):
         recs = {"shipped": sa, "avx2": aa}
         def arms_of(form, which, use_conf, recs=recs, conf=conf):
             o, outcome, var = recs[which]
+            outcome, refusals = outcome if isinstance(outcome, tuple) else (outcome, ())
             return arm(t, form, o, {}, outcome, run(var) if var else {}, which,
-                       (conf[which], {}) if use_conf and conf and conf.get(which) is not None else None)
+                       (conf[which], {}) if use_conf and conf and conf.get(which) is not None else None, refusals)
         v = score(t, arms_of, second, confirming=conf is not None)
         got = {l: x[0] for l, x in v.items()}
         ok = got == want
@@ -508,6 +573,47 @@ def drill(scratch=None):
         n += 1
         print("drill\t[r7 RULE-1] CLI --second FIRST FIRSTAVX2 parses (the second run scores NOT-WIN)\t%s\trc %d %s" % (
             "ok" if ok else "WRONG", rc, verdicts(o) or o[-160:]))
+        # [r13 JF-4] BY SUBPROCESS on est's synth, est's real refusals: the swar SCAN row noisy in both records (est
+        # REFUSES each, floor:byte.mfind-swar) leaves every level's verdict the unplanted pair's, the scan line printing
+        # it `scan unpriced (gate FAIL: ...)`; every reject-0 mfind-w32 DECIDING row unpriced in the shipped record
+        # (est refuses floor:hit6.mfind-w32) leaves every level INCONCLUSIVE, as before
+        rc0, o0 = cli(sd, ad)
+        import shutil
+        def planted(name, plants):
+            out = []
+            for src, pl in zip((sd, ad), plants):
+                dst = os.path.join(scratch, "d197_%s_%s" % (name, os.path.basename(src)))
+                if os.path.exists(dst):
+                    shutil.rmtree(dst)
+                shutil.copytree(src, dst, symlinks=True)
+                if pl:
+                    pl(dst)
+                out.append(dst)
+            return out
+        scan_lines = lambda o: [ln for ln in o.splitlines() if ln.startswith("d197_scan\t")]
+        rc, o = cli(*planted("scanrow", (est._plant_scan_noise, est._plant_scan_noise)))
+        sl = scan_lines(o)
+        ok = (rc == 0 and rc0 == 0 and verdicts(o) == verdicts(o0) and len(verdicts(o)) == len(lv)
+              and len(sl) == len(lv) and all(ln.count("scan unpriced (gate FAIL: ") == (2 if "\tgeneric\t" in ln else 0)
+                                             for ln in sl)
+              and o.count("[record REFUSED: scan-unpriced: floor:byte.mfind-swar]") == 2 * len(lv)
+              # [R1 condition A] the refused scan row NAMED on every verdict line, its noise and the gate it failed
+              and all(ln.count("est REFUSED (scan-unpriced: floor:byte.mfind-swar kit.find_byte.mfind-swar gate FAIL: noise ") == 2
+                      for ln in o.splitlines() if ln.startswith("d197_verdict\t")))
+        bad += not ok
+        n += 1
+        print("drill\t[r13 JF-4] CLI: the scan row refused in both records, deciding rows priced -> the verdicts stand, "
+              "scan printed unpriced\t%s\trc %d %s (unplanted %s); %s" % ("ok" if ok else "WRONG", rc, verdicts(o),
+                                                                          verdicts(o0), (sl or [o[-160:]])[0][:200]))
+        for how in ("defect", "noisy"):     # [R1 condition A] the deciding rows' own NULL rule, unchanged, still refuses
+            rc, o = cli(*planted("decrow_" + how, (lambda d, how=how: est._plant_deciding_unpriced(d, how=how), None)))
+            ok = (rc == 0 and verdicts(o) == ["INCONCLUSIVE"] * len(lv) and "[record REFUSED: run-refused: floor:hit6.mfind-w32]" in o
+                  and all("shipped est REFUSED (run-refused: floor:hit6.mfind-w32)" in ln
+                          for ln in o.splitlines() if ln.startswith("d197_verdict\t")))
+            bad += not ok
+            n += 1
+            print("drill\t[r13 JF-4] CLI: a DECIDING row's clause refused (%s) in the shipped record -> INCONCLUSIVE, as "
+                  "before\t%s\trc %d %s" % (how, "ok" if ok else "WRONG", rc, verdicts(o) or o[-160:]))
         for name, args in (("--second with one rundir", (p1, ad, "--second", sd)),
                            ("--confirm with one rundir", (p1, ad, "--confirm", sd)),
                            ("one positional rundir", (p1,)), ("an unknown flag", (p1, ad, "--third"))):
@@ -545,11 +651,11 @@ def main():
         return 2
     cc = set()
     for lvl, _b, form, _axes in load()["levels"]:
-        res, when, trig, lines, scan, cells_ = v[lvl]
+        res, when, trig, lines, scan, cells_, recs = v[lvl]
         for ln in lines:
             print("%s\t%s" % (lvl, ln))
         print("d197_scan\t%s\tfind_byte@6 (miss-only per byte, NOT deciding): %s" % (lvl, scan))
-        print("d197_verdict\t%s\t%s\t%s\t(%s) -> %s" % (lvl, form, res, when, trig))
+        print("d197_verdict\t%s\t%s\t%s\t(%s) -> %s\t[records: %s]" % (lvl, form, res, when, trig, recs))
         cc.update(cells_)
     if cc:
         print("d197_confirm_cells\t%s" % " ".join("%d.%d" % c for c in sorted(cc)))
