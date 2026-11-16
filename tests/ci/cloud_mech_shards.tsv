@@ -110,6 +110,7 @@ S207	9	47.5	runner measured
 S230	9	60.5	runner measured
 S286	9	23	runner measured
 S3223	9	95.6	ESTIMATE mean measured row 95.5979s
+S3234	9	95.6	ESTIMATE mean measured row 95.5979s
 S341	9	19.5	runner measured
 S393	9	11.5	runner measured
 S606	9	30.2	runner measured
@@ -1313,3 +1314,5 @@ S587	90	13.5	runner measured
 S63	90	73	runner measured
 S696	90	155.5	runner measured
 S805	90	43.5	runner measured
+S3170	10	95.6	ESTIMATE mean measured row 95.5979s
+S3198	11	95.6	ESTIMATE mean measured row 95.5979s

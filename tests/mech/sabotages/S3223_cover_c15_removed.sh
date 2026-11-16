@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
-# S3223 ([COVER-CAP] stage 1, lane covs1; docs/design/cover_cap.md §5.4 plant (d)) -- C15 statement-fits is removed (stage 1): a stretch past the kit window's 32 positions reaches MkEnd's fill, which refuses it with its named internal error (never an overrun)
-# Witness: verdict 40-letter literal: decline becomes a failed compile (the named internal error); nothing else states a 40-position span at stage 1.
-# Shared (review r9 covs1 CHECKS-3, cross-plant matrix): the facts row `a{40}(?:b|cc)` also goes LOUD under this plant (k = 41), so it is not the only 40+-position statement; the 40-letter verdict is flipped by S3223 alone.
+# S3223 ([COVER-CAP] stage 1, lane covs1; docs/design/cover_cap.md §5.4 plant (d); RE-AIMED at stage 2 as the BYPASS row, lane covs2a, cover_cap.md §11.6.3) -- C15 width-limit always passes: a cover past the window search's width is admitted on the default arm
+# Witness: verdict `[0-9a-f]{@D1}` (one past the shipped width default, loader.sh) on the default arm: decline becomes a cover past the default (with the kit's
+# bounds still at 32, the same plant reddens through cover_window's named internal error, a failed compile: detected either way, READYLIMIT-7).
+# Shared (review r9 covs1 CHECKS-3, cross-plant matrix): the facts rows `a{600}(?:b|cc)` and `a{4095}` also lose width-limit under this plant;
+# `[0-9a-f]{@D1}` is flipped by S3223 alone (the off-by-one row S3234 leaves it declined).
+# RE-AIMED 2026-11-15 (lane covs2a, A4/A7): plant text re-anchored on cc_fits' return line with the width conjunct; REACH moved from the
+# 40-letter literal (a cover at any default >= 40) to `[0-9a-f]{@D1}`, REACH-WHY width-limit.
 SAB_ID='S3223-cover_c15_removed'
 SAB_FILE='src/gen/known.c'
 SAB_SUITES='kitproof'
-SAB_DESC='C15 statement-fits is removed (stage 1): a stretch past the kit window'"'"'s 32 positions reaches MkEnd'"'"'s fill, which refuses it with its named internal error (never an overrun)'
-SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh); the measured figure is the cloud mechrows run owed by lane covs1 (docs/dev/lanes/covs1_report.md).'
-SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'abcdefghijklmnopqrstuvwxyzabcdefghijklmn'"'"' --why'
+SAB_DESC='C15 width-limit always passes (the bypass): a cover past the window search'"'"'s width is admitted on the default arm, past the default'
+SAB_DOC_FIGURE='Expected DETECTED by the kitproof arm (tests/kitproof/run_cover.sh, the verdict row [0-9a-f]{@D1}); the measured figure is the cloud mech run owed by lane covs2a (docs/dev/lanes/covs2a_report.md).'
+SAB_REACH='bash "$TREE/tests/kitproof/reach.sh" "$TREE" '"'"'-'"'"' '"'"'[0-9a-f]{@D1}'"'"' --why'
 SAB_REACH_EXPECT='REACH-DECLINE
 REACH-WHY=[width-limit]'
 SAB_EXPECT=DETECTED

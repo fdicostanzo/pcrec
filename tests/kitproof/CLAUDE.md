@@ -6,7 +6,7 @@ by the default build since D172 S3 (before it, only by the test harness's lever,
 artifacts here are still compiled by `build/pcrec-harness` through it, which
 since S3 renders the default build's text. A `make test`
 section (about 4 s); mech arm `kitproof` (rows S1130-S1141, S1144, S1148,
-S3220-S3226; S1149 retired with the span slice, `docs/design/cover_cap.md` §5.4).
+S3220-S3226, S3234; S1149 retired with the span slice, `docs/design/cover_cap.md` §5.4).
 
 - `run_cover.sh` — the check. Three row kinds from `cases.tsv`: `verdict` (the
   artifact's `RX_DFA_SCAN` reads `cover`, or does not), `facts` (the
