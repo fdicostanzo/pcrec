@@ -1238,3 +1238,11 @@ detail to confirm with him). This is his original idea ("parse the elements and 
 is what he objects to. Gains: no field-pattern or separator arguments, no hidden helper labels. TO CHECK in rev 17:
 whether a macro body may use a PARAMETER AS A LABEL NAME in a condition (`(a: ...)` with `a` passed in); if it can,
 this is a plain macro; if not, say exactly what is missing and bring it to him.
+ADDED (Frank, box clock 23:10) on the decomposition entry above: "what would be needed is a macro that takes a map and
+produces an array given labels". RECORD: the decomposition has TWO units, each general: (1) a PROJECTION, map (the
+match, labels -> values; map is an interface in his model) plus an array of labels -> the array of those values;
+(2) an ARRAY COMPARE over arrays (first entry first). The tuple compare is their composition; neither unit knows
+about times or versions. This replaces the manager's "parameter as a label name" check. TO CHECK in rev 17 (manager's
+notes, not ruled): whether the projection is a plain macro, a small structural primitive, or already spellable by
+writing the values directly (an array of the labels' values, `[$h, $m]`-like), and at which capability level a
+compare over captured values is decided (per match).
