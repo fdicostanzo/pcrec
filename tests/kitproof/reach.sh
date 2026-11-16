@@ -44,6 +44,7 @@ done
 if ! kp_limits "$root/build/pcrec"; then
     echo "reach.sh: $KP_ERR" >&2; echo REACH-LIMITS-UNREAD; exit 0
 fi
+if ! kp_row_check "$fl"; then echo "reach.sh: $KP_ERR" >&2; echo REACH-USAGE; exit 0; fi
 a="$(kp_flags "$fl")"
 rawpat="$pat"; pat="$(kp_pat "$pat")"
 enc=byte; case "$fl" in *u*) enc=utf8 ;; esac

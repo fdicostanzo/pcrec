@@ -16,7 +16,7 @@ S3220-S3226, S3234; S1149 retired with the span slice, `docs/design/cover_cap.md
   (`rx_search` at every startoffset and match_api.md §3.1.3's find-all loop,
   every group span, against `answers.tsv`). Every answer pattern must itself
   read `cover` (its REACH), and each row kind's population has a K35 floor
-  literal (49 / 19 / 105) that a change adding rows raises. Also runs
+  literal (50 / 19 / 105) that a change adding rows raises. Also runs
   `width_opt.c` (the library side of `window_search_width`).
 - `cases.tsv` — the witnesses, each with the sabotage row or kit_proof clause it
   serves. The verdicts are kit_proof.md's witness list (`conj.txt` D) and
@@ -32,7 +32,7 @@ S3220-S3226, S3234; S1149 retired with the span slice, `docs/design/cover_cap.md
 - `drv.c` — pcrec's side: linked with one built artifact; pre-fills the caps
   array with a sentinel before every call, so a group left unwritten is seen.
 - `loader.sh` — sourced by `run_cover.sh` and `reach.sh`: the ONE reading of a
-  FLAGS/PATTERN pair ([COVER-CAP] stage 2, `cover_cap.md` §11.6.2): the `W`
+  FLAGS/PATTERN pair ([COVER-CAP] stage 2, `cover_cap.md` §11.6.2; fails loud on an unknown FLAGS letter or a malformed `width=N`): the `W`, `N`
   letter, `@D`/`@D1`/`@LD`/`@LD1` and verdict `width=N`, read from
   `--list-limits` and failing loud on a missing row.
 - `width_opt.c` — `window_search_width` through the library: refusal out of

@@ -66,10 +66,22 @@ build() {   # FLAGS PATTERN -> BUILT: the artifact's dir, or "" on a compile fai
 }
 scan() { sed -n 's/^#define RX_DFA_SCAN "\([^"]*\)".*/\1/p' "$1/a.c"; }
 
+# ---- the loader's own refusals (review r18 CHECKS-3, K35): a malformed row is
+# a FAIL that stops the run, never a silent decline. The self-test rows: the
+# refusal fires on an unknown FLAGS letter and a non-decimal width=N, and the
+# legal spellings pass (so the refusal is not a blanket).
+for t in "w:" "iX:" ":" "-:width=4O" "-:width=" "-:width=-3"; do
+    if kp_row_check "${t%%:*}" "${t#*:}"; then bad "loader self-test: '$t' was NOT refused"; else ok; fi
+done
+for t in "-:cover" "iuRWN:width=24" "u:decline"; do
+    if kp_row_check "${t%%:*}" "${t#*:}"; then ok; else bad "loader self-test: '$t' was refused ($KP_ERR)"; fi
+done
+
 # ---- verdict and facts rows ------------------------------------------------
 nv=0; nf=0
 while IFS=$'\t' read -r kind fl pat val why; do
     case "$kind" in '#'*|'') continue ;; esac
+    if ! kp_row_check "$fl" "$val"; then echo "FAIL: $KP_ERR"; echo "test-kitproof: FAIL"; exit 1; fi
     pat="$(kp_pat "$pat")"
     case "$val" in width=*) val="$(kp_width_verdict "${val#width=}")" ;; esac
     case "$kind" in
@@ -106,6 +118,7 @@ na=0; ncell=0
 while IFS=$'\t' read -r fl phex shex want; do
     case "$fl" in '#'*|'') continue ;; esac
     na=$((na + 1))
+    if ! kp_row_check "$fl"; then echo "FAIL: answers.tsv: $KP_ERR"; echo "test-kitproof: FAIL"; exit 1; fi
     pat="$(printf '%s' "$phex" | xxd -r -p)"
     build "$fl" "$pat"; d="$BUILT"
     if [ -z "$d" ]; then bad "answer $fl $pat: the harness compile failed"; continue; fi
@@ -141,10 +154,12 @@ print("ok %d" % len(wa))' "$want" "$got")"
 done < "$here/answers.tsv"
 
 # ---- the option, library side ([COVER-CAP] stage 2, A3) --------------------
-# width_opt.c links build/libpcrec.a: an out-of-range window_search_width is
-# refused (-1), 0/1/ceiling-1 compile, and the field moves the route.
-if "$TIMEOUT_BIN" 120 "$CC" -O1 -std=gnu11 -I"$root/lib" -o "$tmp/width_opt" "$here/width_opt.c" \
-       "$root/build/libpcrec.a" > "$tmp/width_opt.gcc" 2>&1; then
+# width_opt.c links $LIBPCREC (build/libpcrec.a by default): an out-of-range
+# window_search_width is refused (-1), 0/1/ceiling-1 compile, and the field moves the route.
+# built through the house unit_build (tests/lib/unit_cc.sh: $SANFLAGS, $LIBPCREC,
+# -Werror), so a sanitizer tree builds this half as it builds the CLI half
+. "$root/tests/lib/unit_cc.sh"
+if unit_build "$tmp/width_opt" "$here/width_opt.c" > "$tmp/width_opt.gcc" 2>&1; then
     nw=0
     while IFS= read -r line; do
         case "$line" in ok*) ok; nw=$((nw + 1)) ;; *) bad "width_opt: $line" ;; esac
@@ -155,7 +170,7 @@ else
 fi
 
 # K35: the populations are counted, never assumed
-[ "$nv" -ge 49 ] && ok || bad "only $nv verdict rows (floor 49)"
+[ "$nv" -ge 50 ] && ok || bad "only $nv verdict rows (floor 50)"
 [ "$nf" -ge 19 ] && ok || bad "only $nf facts rows (floor 19)"
 [ "$na" -ge 105 ] && ok || bad "only $na answer rows (floor 105)"
 echo "kitproof: $nv verdicts, $nf facts, $na answers ($ncell cells)"

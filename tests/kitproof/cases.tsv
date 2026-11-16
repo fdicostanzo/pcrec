@@ -1,6 +1,6 @@
 # tests/kitproof/cases.tsv -- the witnesses run_cover.sh reads ([KIT-VERIFY] Z2, kit_proof.md §6.3/§6.4).
 # KIND<TAB>FLAGS<TAB>PATTERN<TAB>VALUE<TAB>WHY. FLAGS: - or any of i, u (-e utf8), R (-fno-rev-end),
-#   W (--window-search-width=<PCREC_ANCHORED_MAX_STATES - 1>). PATTERN may spell the shipped width
+#   W (--window-search-width=<PCREC_ANCHORED_MAX_STATES - 1>), N (--window-search-width=<D - 1>, the narrower lever). PATTERN may spell the shipped width
 #   default D (`--list-limits` PCREC_DEFAULT_WINDOW_SEARCH_WIDTH): @D / @D1 = D / D + 1, @LD / @LD1 =
 #   the first D / D + 1 letters of a..z, cyclic (loader.sh; docs/design/cover_cap.md §11.6.2).
 #   verdict  VALUE cover|decline: RX_DFA_SCAN of the artifact compiled through the harness lever
@@ -54,6 +54,7 @@ verdict	-	\b[0-9a-f]{40}\b	width=40	COVER-CAP stage 1/2: k+1 context position; c
 verdict	-	\b[0-9a-f]{100}\b	width=100	COVER-CAP stage 1/2: k+1 context position; cover iff the width 100 <= the default
 verdict	u	\d{32}	width=32	COVER-CAP stage 1/2: utf8; cover iff the width 32 <= the default
 verdict	W	[0-9a-f]{24}	cover	COVER-CAP stage 2: the W arm (the option at the ceiling less one) admits what the default does; the n >= 33 W twins wait for the kit (B7)
+verdict	N	[0-9a-f]{@D}	decline	COVER-CAP stage 2 review r18 CHECKS-2: the CLI value takes effect: a width one below the default declines a pattern of width D (a CLI that drops the value reads cover)
 verdict	-	ab|abc|ad	cover	COVER-CAP §3.2: no language branch
 verdict	-	(?:S(?i:ab)|(?i:sab))	cover	COVER-CAP §2: a rev-2 loss kept
 verdict	-	[a-c]*\ba	cover	COVER-CAP §2: a k = 1 gain

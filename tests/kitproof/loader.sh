@@ -10,7 +10,11 @@
 #                     or not a bare decimal, never an empty substitution
 #                     (`[0-9a-f]{}`) or `--window-search-width=-1` (K35).
 #   kp_flags FLAGS    the pcrec arguments: i -> -i, u -> -e utf8,
-#                     R -> -fno-rev-end, W -> --window-search-width=<KP_CEIL - 1>.
+#                     R -> -fno-rev-end, W -> --window-search-width=<KP_CEIL - 1>,
+#                     N -> --window-search-width=<KP_D - 1> (the NARROWER width:
+#                     a pattern of width D must decline).
+#   kp_row_check FLAGS [VALUE]   fail loud (return 1, KP_ERR) on an unknown
+#                     FLAGS letter or a malformed `width=N`; callers stop the run.
 #   kp_pat PATTERN    the pattern with @LD1 / @LD (the first D + 1 / D
 #                     letters of a..z, cyclic) and @D1 / @D (D + 1 / D)
 #                     substituted, D = KP_D.
@@ -34,7 +38,24 @@ kp_flags() {
     case "$1" in *u*) a="$a -e utf8" ;; esac
     case "$1" in *R*) a="$a -fno-rev-end" ;; esac
     case "$1" in *W*) a="$a --window-search-width=$((KP_CEIL - 1))" ;; esac
+    case "$1" in *N*) a="$a --window-search-width=$((KP_D - 1))" ;; esac
     echo "$a"
+}
+
+# kp_row_check FLAGS [VALUE]: fail loud on a row the loader would otherwise
+# read silently wrong (K35): FLAGS must be `-` or letters of i u R W N only
+# (an unknown letter, a typo'd `w`, ran the row on the default arm), and a
+# VALUE `width=N` must have N a bare decimal (`width=4O` read `decline`).
+# Returns 1 with KP_ERR set.
+kp_row_check() {
+    case "$1" in
+        -) ;;
+        ''|*[!iuRWN]*) KP_ERR="cases.tsv: FLAGS '$1' is not '-' or letters of iuRWN"; return 1 ;;
+    esac
+    case "${2-}" in
+        width=*) case "${2#width=}" in ''|*[!0-9]*) KP_ERR="cases.tsv: VALUE '$2' is not width=<decimal>"; return 1 ;; esac ;;
+    esac
+    return 0
 }
 
 kp_letters() {   # N -> the first N letters of a..z, cyclic
@@ -53,5 +74,6 @@ kp_pat() {
 }
 
 kp_width_verdict() {
+    case "$1" in ''|*[!0-9]*) return 1 ;; esac   # kp_row_check refuses it first
     [ "$1" -le "$KP_D" ] && echo cover || echo decline
 }

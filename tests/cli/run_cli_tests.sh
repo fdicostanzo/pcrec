@@ -2174,6 +2174,25 @@ case15
 case16
 case17
 
+# [COVER-CAP] stage 2, review r18 CHECKS-2: `--window-search-width=N` refuses an
+# out-of-range value (1 .. PCREC_ANCHORED_MAX_STATES - 1) with a nonzero exit
+# and no artifact, and accepts the edges; its EFFECT on the route is the
+# kitproof `N` verdict row.
+for wv in 0 -1 4096 x ""; do
+    wout="$WORKDIR/width_refuse.c"; rm -f "$wout"
+    pcrec_run "$PCREC" -p rx --window-search-width="$wv" -o "$wout" --pattern 'abc' >/dev/null 2>"$WORKDIR/width_refuse.err"
+    wrc=$?
+    if [ "$wrc" -ne 0 ] && [ ! -s "$wout" ]; then pass "window-search-width=$wv refused (rc $wrc)"
+    else fail "window-search-width=$wv refused" "rc $wrc, artifact written: $([ -s "$wout" ] && echo yes || echo no)"; fi
+done
+for wv in 1 2047; do
+    wout="$WORKDIR/width_accept.c"; rm -f "$wout"
+    pcrec_run "$PCREC" -p rx --window-search-width="$wv" -o "$wout" --pattern 'abc' >/dev/null 2>&1
+    wrc=$?
+    if [ "$wrc" -eq 0 ] && [ -s "$wout" ]; then pass "window-search-width=$wv accepted"
+    else fail "window-search-width=$wv accepted" "rc $wrc"; fi
+done
+
 echo
 echo "== Summary =="
 echo "cases passed: $total_pass"
