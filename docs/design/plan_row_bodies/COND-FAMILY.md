@@ -1390,3 +1390,11 @@ not of the colon; the manager's reading in the entry above mislabelled them. THE
 statement (not his words, to be checked): the colon form `(h, m):` holds scoped references to the intersected
 operand's labels; the colon-less form stands on either side of a binding: on its left the entries are NAMES BEING
 BOUND (the tuple taken apart), on its right they are values.
+
+**2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart (Frank, to session 134, box clock
+09:50).** Shown the manager's reading (the colon form holds scoped label references; a colon-less tuple stands on either
+side of a binding: on the right its entries are values, `lo := (9, 0)`; on the left they are names being bound,
+`(a, b) := lo`, which is how the parts are reached, with no index and no new operator), his word: "Yes". RECORD: the
+reading is CONFIRMED as stated. Not settled by this entry: taking apart a SET of tuples that is not one tuple or a
+plain product (what each name then holds), and whether an index or projection is also offered (the lane tupleval's
+subject).
