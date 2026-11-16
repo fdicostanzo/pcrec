@@ -19,6 +19,10 @@
 #     `json.string & contains("timeout")` for msg, against the cut transform's meaning (S tested on the DECODED
 #     string), on member value texts; then the three §12.1 subject lines end to end (a flat object's members
 #     extracted, `row(k, v)` = ANY member with key k whose value text v accepts, the case's stated semantics).
+# (E) rulings R-3 (i): the owner's pointer "What about enumerate" for `any_case`: for a FINITE filter, enumerate its
+#     strings, spell each character as the class of its case variants from a spelled ASCII case-pair table, join
+#     back. The emulation builds that body (assuming the one missing tool, a string's characters as an array) and
+#     compares it with the meaning over finite universes holding every case variant plus near misses.
 import ctypes, itertools, json, re
 
 L = ctypes.CDLL("libpcre2-8.so.0")
@@ -290,6 +294,57 @@ for line, want in [('{"ts":"2024-02-10","level":"error","msg":"db timeout"}', Tr
     a, b = program(line, rewrite), program(line, cut_meaning)
     print("    %-62s rewrite: %-8s cut form: %-8s %s" % (line, "match" if a else "no match", "match" if b else "no match",
           "(stated: %s)" % ("match" if want else "no match") if a == want else "UNEXPECTED"))
+
+# ---------------------------------------------------------------------------------------------------- table (E)
+print()
+print("(E) rulings R-3 (i): `any_case` by `enumerate` for a FINITE filter, ASCII case-pair table")
+print("    sketch: any_case(S) := each(folded, enumerate(S)); folded(w) := join(each(fold, chars(w)));")
+print("            fold(c) := c | uppers[(lowers & c).index] | lowers[(uppers & c).index]   (chars(w): NOT in the language)")
+print("    meaning: s accepted iff s equals some member of S up to ASCII letter case")
+LOWERS = [chr(c) for c in range(ord("a"), ord("z") + 1)]
+UPPERS = [c.upper() for c in LOWERS]
+
+
+def fold(c):            # c | uppers[(lowers & c).index] | lowers[(uppers & c).index]; an absent entry adds nothing
+    alts = [c] + [UPPERS[i] for i, x in enumerate(LOWERS) if x == c] + [LOWERS[i] for i, x in enumerate(UPPERS) if x == c]
+    return "(?:" + "|".join(re.escape(a) for a in alts) + ")"
+
+
+def enumerate_finite(S_rx, universe):
+    """enumerate(S): S's strings (finite), found by whole-matching S over a universe that holds all of them"""
+    return [u for u in universe if whole(S_rx, u)]
+
+
+def variants(w):
+    return {"".join(t) for t in itertools.product(*[(ch.lower(), ch.upper()) if ch.isalpha() else (ch,) for ch in w])}
+
+
+CASES = [("one literal /ho/", "ho", ["ho"]),
+         ("an alternation /get|post|Q/", "get|post|Q", ["get", "post", "Q"]),
+         ("a class and & /[a-c]x/ & /[bc]./", "(?=[bc].$)[a-c]x", ["bx", "cx"]),
+         ("a literal with a digit and '-' \"Content-Length2\"", "Content-Length2", ["Content-Length2"]),
+         ("a number filter <12 (no letters)", "|".join(str(i) for i in range(12)), [str(i) for i in range(12)])]
+ebad = 0
+for name, S_rx, members_ in CASES:
+    seed = set()
+    for m in members_:
+        seed |= variants(m)
+    near = {m + "x" for m in members_} | {m[:-1] for m in members_ if m} | {"hp", "HQ", "q", "gets", "bX ", "ax", "Ax",
+                                                                            "12", "011", "content-length"}
+    universe = sorted(seed | near | set(members_))
+    ws = enumerate_finite(S_rx, universe)
+    assert sorted(ws) == sorted(members_), (name, ws)
+    body = "(?:" + "|".join("".join(fold(c) for c in w) for w in ws) + ")"
+    diff = 0
+    for u in universe:
+        got = whole(body, u)
+        want = any(u.lower() == t.lower() for t in members_)
+        diff += got != want
+    ebad += diff
+    print("  %-50s | %3d strings | enumerated %d | %d differ" % (name, len(universe), len(ws), diff))
+print("  sketch rows that differ from the meaning: %d" % ebad)
+print("  outside it: a filter that is not finite (any_case(/\\w+/): enumerate refuses it, §5.5), and a `label:`")
+print("  condition as the argument (a macro, not an rx: nothing to enumerate)")
 
 print()
 print("engine disagreements (libpcre2-8 vs Python re): %d" % DISAGREE[0])

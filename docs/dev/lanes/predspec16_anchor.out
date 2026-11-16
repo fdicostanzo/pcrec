@@ -76,4 +76,17 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
     {"ts":"2024-05-01","level":"error","msg":"timeout"}            rewrite: no match cut form: no match (stated: no match)
     {"ts":"2024-02-10","level":"error","msg":"db \"pool\" timeout"} rewrite: match    cut form: match    (stated: match)
 
+(E) rulings R-3 (i): `any_case` by `enumerate` for a FINITE filter, ASCII case-pair table
+    sketch: any_case(S) := each(folded, enumerate(S)); folded(w) := join(each(fold, chars(w)));
+            fold(c) := c | uppers[(lowers & c).index] | lowers[(uppers & c).index]   (chars(w): NOT in the language)
+    meaning: s accepted iff s equals some member of S up to ASCII letter case
+  one literal /ho/                                   |  16 strings | enumerated 1 | 0 differ
+  an alternation /get|post|Q/                        |  41 strings | enumerated 3 | 0 differ
+  a class and & /[a-c]x/ & /[bc]./                   |  22 strings | enumerated 2 | 0 differ
+  a literal with a digit and '-' "Content-Length2"   | 8204 strings | enumerated 1 | 0 differ
+  a number filter <12 (no letters)                   |  35 strings | enumerated 12 | 0 differ
+  sketch rows that differ from the meaning: 0
+  outside it: a filter that is not finite (any_case(/\w+/): enumerate refuses it, §5.5), and a `label:`
+  condition as the argument (a macro, not an rx: nothing to enumerate)
+
 engine disagreements (libpcre2-8 vs Python re): 0
