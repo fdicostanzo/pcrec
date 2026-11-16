@@ -39,7 +39,7 @@ empty), so main's version stands.
   text verbatim plus a pointer to where each was applied.
 - `docs/dev/reviews/2026-11-15-r15-covs2e/`: `COMMON.md`, `fixinduced.md`, `readyA.md`,
   `readyB.md`, `process.md` (critic texts verbatim, except one respelling in fixinduced.md:
-  `[SIZE-KNEE] (plan.md:608)` -> `(plan.md, row [SIZE-KNEE])`).
+  the plan cite after `[SIZE-KNEE]` became a row-tag cite).
 - Indexed in `docs/dev/reviews/CLAUDE.md` (now 8,902 B, under 12 KB, so no entries needed moving
   to NOTES.md).
 - Process changes (all three accepted), worded as process.md proposes:
