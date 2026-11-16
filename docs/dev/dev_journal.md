@@ -27818,3 +27818,32 @@ Next
   anchoring rule (a filter matches the whole value; `^`/`$` = ends of the scoped match), `anchored()`, gap
   definitions for startsWith/endsWith/contains, and provided transforms named for how they change the filter.
 - Session closed at Frank's /close with the context full; wake.md rewritten from scratch.
+
+## 2026-11-15 (session 133, evening; box clock 19:50-22:09; the owner's evening hold, light work only)
+
+- KIT UNIT LANDED AND PUSHED: lane/memfn-mfind merged (4c8cf3c38, landing lane land1115d; three doc/axes conflicts,
+  axes script resolved per the kit's own guidance). Cloud identity and axes GREEN on the merge; cloud test RED on one
+  check (test-memfn-guarded: the kit witness mfind-long-run, 28 sets, is taken by stage 1's inline cover finder in the
+  union, runs of 12..31 tableless sets); triage lane tri1115d re-aimed it to 32 sets (test only), cloud test GREEN on
+  f74793d69. Pushed d2496010e, CI GREEN. Stage 1's owed CI and full cloud mech: both GREEN. Plan row [CELLS-PIN].
+- [COVER-CAP] STAGE 2 DESIGN CLOSED: cover_cap.md rev 5 (covs2d) -> round r13 (1 answer-level hole, 4 latent build
+  breaks) -> rev 5.1 (covs2e; the per-compile option --window-search-width=N added now, the manager's ruling on F21)
+  -> readiness re-check r15 (ready with text fixes) -> rev 5.2 (covs2f), merged. Owner: "route-or-stretch: agree" =
+  the width limit bounds the cover ROUTE, cliff stated (D198 addendum 1). Kit request R-45 FILED; the kit acked,
+  reply expected 2026-11-16, no stage-2 code before it.
+- PREDICATES (design only), revs 12 -> 16 merged and pushed (8df2e9da5), rounds r14 and r16 filed. Every owner ruling
+  of the evening is at the tail of docs/design/plan_row_bodies/COND-FAMILY.md with his words: `search` ->
+  `occurrences`; `anchored` = exact ends, a plain macro, no special error in a hole, "isn't as important"; rx-text
+  `&` where `|` alternates, `\&` literal; both sides of `&` "match the same stretch whole" (the word anchored
+  reserved for the macro); a per-call hit label; no count warning; the anchor warning keyed off the ROLE, one
+  criterion (an anchor at the edge of a whole-match stretch), no authorship exemption; `padded(rx) := /0*${rx}/`
+  verbatim (a hole is one entry); `unpadded` and `json.quoted` CUT; tuple compare IN the first library;
+  `any_case` a primitive for now with follow-up [PRED-REREAD] (routes: exposed options `(?i=${case})`, `enumerate`,
+  blessed callouts [BLESSED-CALLOUTS]).
+- LESSONS. (1) I over-read "agree" twice when my numbered questions had been renumbered: questions now carry word
+  SLUGS (memory updated). (2) I stamped rulings 30-60 min ahead of the box clock again: stamp with $(date) in the
+  command itself. (3) I wrote "no record exists" before reading my own grep (blessed callouts were recorded
+  2026-11-14): read the search output before committing a record. (4) Consequences I derive from an owner ruling are
+  marked as mine and get checked by the next revision (two were wrong: the padded group, `padded(/\b5/)`).
+  (5) A landing lane with no worktree reads GONE in lanewatch --follow; a lane that ends on lanecheck may not have
+  dispatched its owed cloud run: check `gh run list --branch` before accepting.
