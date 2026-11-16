@@ -67,7 +67,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 ### The position ranking (lane rq2, [MEMFN] RQ-2, D157)
 - **run_rank.sh**, **rank_check.py** — the ranking claim, INVERTED since D172 S2 commit 6: pcrec hands the kit no ranking (every PRE/OFS predicate has rank_n 0); S1420 is the failing direction; N4's door (`find_door`) stays. History: NOTES.md.
 
-- **run_d3floor.sh**, **d3_floor.py**, **d3_floor.tsv** — R-44's D3 floor gate: `make test-memfn-d3floor`, last step of `make test-axes`; not in `make test` (~125 s). Detail: NOTES.md.
+- **run_d3floor.sh**, **d3_floor.py**, **d3_floor.tsv** — R-44's D3 floor gate: `make test-memfn-d3floor`, last step of `make test-axes`; also cloud axes shard 1; not in `make test`. Detail: NOTES.md.
 
 ## Maintaining it
 

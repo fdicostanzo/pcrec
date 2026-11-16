@@ -14,14 +14,17 @@ THE FLOORS are DATA, not literals here: d3_floor.tsv (its header names the censu
 THE CENSUS (per cell): the DISTINCT corpus patterns (`pat_hex`) that compiled and carry at least one
 `run_part_terms` record ON THE SHIPPED (last) art holding an UNSPELLED SET term (census0.py's parser and
 `run_part_unspelled`: members not one byte and not a cube).
-THE CHECK, per cell: the sweep is a POPULATION that is counted and printed (compiles >= min_compiles, records >=
-min_records: a zero or short sweep reds, learnings §3); census >= census_floor; census_floor >= movers; and
-census_floor >= emit_sweep's live DIFFER_PINS floor for the cell (read from TREE, so a pcrec re-pin above the census
-reds here and is looked at). `--movers CELL=MOVERS.tsv` (deny_reach.py's output): every mover is in the census, else
-`MOVER-WITHOUT-RECORD` and red. Not part of the gate (it needs a second sweep per cell).
-SELF-TEST (default on; the plants live here so the gate shows it can fail): S3228 drops mover patterns' records from
-the real sweep (census = floor-1 reds; census = floor stays green: the control), S3229 an empty and a truncated
-sweep (the population check reds), S3230 a floor table with census_floor below its movers (reds).
+THE CHECK, per cell: the sweep is a POPULATION that is counted and printed, each count pinned to its MEASURED value with a
+small band above (below = a loss, above = a gain nobody re-pinned; both red, learnings §3 and review r10 D3W-1/2/5):
+compiles, failed compiles (exact), run_part_terms records, and the census (>= census_floor, <= census_floor +
+census_band: "census rose: re-pin tests/memfn/d3_floor.tsv"); census_floor >= emit_sweep's live DIFFER_PINS floor for the
+cell (read from TREE: ONE source for the movers number, no copy here). `--movers CELL=MOVERS.tsv` (deny_reach.py's
+output): every mover is in the census, else `MOVER-WITHOUT-RECORD` and red. Not part of the gate (a second sweep per cell;
+the set relation movers <= census is checked on demand, the counts suffice in the gate: pin <= census_floor <= census).
+SELF-TEST (default on; every plant is derived from the MEASURED sweep, not from the floor): S3228 loses one census
+pattern's records (below the floor), and a floor left behind a census that rose (above the band); S3229 an empty and a
+truncated sweep; S3230 a floor below emit_sweep's DIFFER floor; S3231 a lost corpus pattern and a crash wave of failed
+compiles (neither touches the census). PLANTS per cell, all must go red as named, the control green.
 Exit 0 green, 1 red (a cell, or a plant that did NOT go red).
 """
 import argparse
@@ -31,6 +34,8 @@ import sys
 
 CELLS = ("byte/c-default", "byte/c-vm", "utf8/c-default", "utf8/c-vm")
 DENY = "--memfn=no-run-verify-wide"
+INTCOLS = ("census_floor", "census_band", "compiles", "failed", "pop_band", "records", "records_band")
+PLANTS = 8  # per cell; run_d3floor.sh counts PLANTS x 4 "D3-FLOOR-PLANT ... ok" lines
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -45,7 +50,7 @@ def load_floors(path):
             cols = f
             continue
         r = dict(zip(cols, f))
-        for k in ("census_floor", "movers", "min_compiles", "min_records"):
+        for k in INTCOLS:
             r[k] = int(r[k])
         rows[r["cell"]] = r
     for c in CELLS:
@@ -78,6 +83,11 @@ def census(lines, c0):
     return hit, n, nrec
 
 
+def failed_count(lines):
+    """compiles that did not succeed (rc != 0, or 'timeout'): census() skips them silently, so they are counted here"""
+    return sum(1 for rec in lines if rec.get("rc") != 0)
+
+
 def pin_floor(tree, cell):
     sys.path.insert(0, os.path.join(tree, "scripts"))
     import emit_sweep  # noqa: E402
@@ -86,17 +96,28 @@ def pin_floor(tree, cell):
     return None if v is None else v[0]
 
 
-def verdict(cell, fl, hit, n, nrec, pin):
-    """the reasons a cell is red (empty list = green)"""
+def verdict(cell, fl, hit, n, nrec, nfail, pin):
+    """the reasons a cell is red (empty list = green). Every pinned number is a MEASURED value with a band above it:
+    below = a loss (the thing the gate guards), above the band = a gain nobody re-pinned (the floor would go loose)."""
     why = []
-    if n < fl["min_compiles"]:
-        why.append("population: %d compiles counted, below the %d the sweep must hold" % (n, fl["min_compiles"]))
-    if nrec < fl["min_records"]:
-        why.append("population: %d run_part_terms records counted, below %d" % (nrec, fl["min_records"]))
+    if n < fl["compiles"]:
+        why.append("population: %d compiles counted, below the %d measured" % (n, fl["compiles"]))
+    elif n > fl["compiles"] + fl["pop_band"]:
+        why.append("population: %d compiles counted, above %d+%d: corpus grew, re-pin tests/memfn/d3_floor.tsv"
+                   % (n, fl["compiles"], fl["pop_band"]))
+    if nfail != fl["failed"]:
+        why.append("population: %d failed compiles counted, the pinned count is %d (a crash wave or a lost/new reject: "
+                   "look, then re-pin tests/memfn/d3_floor.tsv)" % (nfail, fl["failed"]))
+    if nrec < fl["records"]:
+        why.append("population: %d run_part_terms records counted, below the %d measured" % (nrec, fl["records"]))
+    elif nrec > fl["records"] + fl["records_band"]:
+        why.append("population: %d records counted, above %d+%d: re-pin tests/memfn/d3_floor.tsv"
+                   % (nrec, fl["records"], fl["records_band"]))
     if len(hit) < fl["census_floor"]:
         why.append("census %d below its floor %d" % (len(hit), fl["census_floor"]))
-    if fl["census_floor"] < fl["movers"]:
-        why.append("the census floor %d is below the deny's movers %d" % (fl["census_floor"], fl["movers"]))
+    elif len(hit) > fl["census_floor"] + fl["census_band"]:
+        why.append("census rose: %d above %d+%d, re-pin tests/memfn/d3_floor.tsv" % (len(hit), fl["census_floor"],
+                                                                                   fl["census_band"]))
     if pin is None:
         why.append("emit_sweep DIFFER_PINS has no (%s, %s) cell" % (cell, DENY))
     elif fl["census_floor"] < pin:
@@ -124,14 +145,19 @@ def drop_records(recs, pats):
     return out
 
 
-def self_test(floors, tree, c0, cell, recs, hit, n, nrec, pin):
-    """every plant must go RED and its control GREEN; returns the failure texts"""
+def with_rc(recs, pats, rc):
+    return [dict(r, rc=rc) if r.get("pat_hex") in pats else r for r in recs]
+
+
+def self_test(floors, tree, c0, cell, recs, hit, pin):
+    """every plant must go RED and its control GREEN; returns the failure texts. Every plant is derived from the
+    MEASURED sweep (the census, the counts), never from the floor under test (learnings 3, D3W-2)."""
     bad = []
     fl = floors[cell]
 
     def run(tag, fl_, recs_, want_red, needle=""):
         h, n_, r_ = census(recs_, c0)
-        why = verdict(cell, fl_, h, n_, r_, pin)
+        why = verdict(cell, fl_, h, n_, r_, failed_count(recs_), pin)
         got = "; ".join(why)
         ok = (bool(why) == want_red) and (not want_red or needle in got)
         print("D3-FLOOR-PLANT %s %s compiles=%d records=%d census=%d floor=%d -> %s %s"
@@ -140,14 +166,18 @@ def self_test(floors, tree, c0, cell, recs, hit, n, nrec, pin):
             bad.append("%s %s: wanted %s%s, got %r" % (tag, cell, "red" if want_red else "green",
                                                       " (%s)" % needle if needle else "", got))
 
-    slack = len(hit) - fl["census_floor"]
-    order = sorted(hit)
+    ok_pats = sorted({r["pat_hex"] for r in recs if r.get("rc") == 0} - hit)  # compiled, no unspelled record
     run("control", fl, recs, False)
-    run("S3228-at-floor", fl, drop_records(recs, set(order[:slack])), False)
-    run("S3228-below-floor", fl, drop_records(recs, set(order[:slack + 1])), True, "below its floor")
+    # S3228: the real census loses one pattern's records (the witness-deletion shape): below the measured floor
+    run("S3228-lose-one", fl, drop_records(recs, {sorted(hit)[0]}), True, "below its floor")
+    # S3228b: the census gains past the band against a floor that was not re-pinned
+    run("S3228-rose", dict(fl, census_floor=len(hit) - fl["census_band"] - 1), recs, True, "census rose")
     run("S3229-empty", fl, [], True, "population")
     run("S3229-truncated", fl, recs[:100], True, "population")
-    run("S3230-floor-below-movers", dict(fl, census_floor=fl["movers"] - 1), recs, True, "below the deny's movers")
+    run("S3230-floor-below-pin", dict(fl, census_floor=pin - 1), recs, True, "below emit_sweep's DIFFER floor")
+    # S3231: a lost corpus pattern / a crash wave, neither touching the census
+    run("S3231-lost-pattern", fl, [r for r in recs if r.get("pat_hex") != ok_pats[0]], True, "compiles counted, below")
+    run("S3231-fail-wave", fl, with_rc(recs, set(ok_pats[:5]), "timeout"), True, "failed compiles")
     return bad
 
 
@@ -170,8 +200,9 @@ def main():
             continue
         recs = [json.loads(ln) for ln in open(sweeps[cell])]
         hit, n, nrec = census(recs, c0)
+        nfail = failed_count(recs)
         fl, pin = floors[cell], pin_floor(a.tree, cell)
-        why = verdict(cell, fl, hit, n, nrec, pin)
+        why = verdict(cell, fl, hit, n, nrec, nfail, pin)
         out_of = ""
         if cell in movers:
             mset = {f[4] for f in (ln.rstrip("\n").split("\t") for ln in open(movers[cell])) if f[3] == "1"}
@@ -181,13 +212,15 @@ def main():
             if miss:
                 why.append("%d of %d movers carry no shipped-art record with an unspelled SET term" % (len(miss), len(mset)))
             out_of = " movers_measured=%d movers_in_census=%d" % (len(mset), len(mset) - len(miss))
-        print("D3-FLOOR %s compiles=%d records=%d census=%d floor=%d movers=%d pin=%s%s %s"
-              % (cell, n, nrec, len(hit), fl["census_floor"], fl["movers"], pin, out_of,
+        print("D3-FLOOR %s compiles=%d failed=%d records=%d census=%d floor=%d band=%d pin=%s%s %s"
+              % (cell, n, nfail, nrec, len(hit), fl["census_floor"], fl["census_band"], pin, out_of,
                  "RED: " + "; ".join(why) if why else "ok"))
         if why:
             fails.append(cell)
+            if not a.no_self_test:
+                print("D3-FLOOR-PLANTS-SKIPPED %s (the cell is red; the plants run on a green cell only)" % cell)
         elif not a.no_self_test:
-            fails += self_test(floors, a.tree, c0, cell, recs, hit, n, nrec, pin)
+            fails += self_test(floors, a.tree, c0, cell, recs, hit, pin)
     print("D3-FLOOR cells=%d failed=%d" % (len(CELLS), len(fails)))
     sys.exit(1 if fails else 0)
 

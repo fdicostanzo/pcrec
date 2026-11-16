@@ -1,21 +1,22 @@
-# tests/memfn/d3_floor.tsv -- THE D3 PCREC-ARTIFACT FLOOR's data (part_d.md §5.1 D3 [r3pd RDY-5]; R-43, R-44), the ONE
-# place its numbers live; d3_floor.py reads it, no number is a literal there. Raise a value only in the change that
-# shows the new measurement; the provenance columns say which census/measurement and who set it.
-# columns (tab-separated): cell, census_floor, movers, min_compiles, min_records, provenance
-#   census_floor  distinct corpus patterns whose SHIPPED art carries a run_part_terms record with an unspelled SET term
-#                 (the census must be >= it). MEASURED, lane r43 job kit-r43-measure, corpus sweeps on 5,489 patterns
-#                 (5,003/5,004/5,073/5,050 compiled): 58/143/99/216. Set by the kit (lane r43, 2026-11-14).
-#   movers        the deny --memfn=no-run-verify-wide's DIFFER movers per cell: emit_sweep --arms start on main
-#                 370aab9fe (box batch b202611140752593761835), R-43's FACT. census_floor must be >= movers. Set by
-#                 pcrec (R-43), carried by the kit. Not re-measured since rule (1) ON (review FLOORS-2): a stale
-#                 literal is why census_floor >= movers is one-sided.
-#   min_compiles  the POPULATION: compiled corpus patterns the sweep must count (learnings §3: populations nobody
-#                 counts). Rounded DOWN from 5,003..5,073 (lane d3wire measured 5,030 on d2496010e); a short or empty
-#                 sweep reds, it never passes on what little it saw. Set by lane d3wire (R-44).
-#   min_records   run_part_terms records on the shipped arts the sweep must see: rounded down from d3wire's measured
-#                 380/1055/501/1177 (a sweep whose summarize dropped the record again, p14, reds here too).
-cell	census_floor	movers	min_compiles	min_records	provenance
-byte/c-default	58	58	4500	250	r43 kit-r43-measure; movers 370aab9fe; compiles/records d3wire d2496010e
-byte/c-vm	143	117	4500	700	r43 kit-r43-measure; movers 370aab9fe; compiles/records d3wire d2496010e
-utf8/c-default	99	99	4500	350	r43 kit-r43-measure; movers 370aab9fe; compiles/records d3wire d2496010e
-utf8/c-vm	216	181	4500	800	r43 kit-r43-measure; movers 370aab9fe; compiles/records d3wire d2496010e
+# tests/memfn/d3_floor.tsv -- THE D3 PCREC-ARTIFACT FLOOR's data (part_d.md §5.1 D3 [r3pd RDY-5]; R-43, R-44, d3fix), the ONE
+# place its numbers live; d3_floor.py reads it, no number is a literal there. EVERY value is the MEASURED count of the
+# gate's own sweep (d3fix, 2026-11-15, on 466d8e8ee's tree = d2496010e's compiler + the d3wire wiring; `make
+# test-memfn-d3floor`, the D3-FLOOR lines), with a band ABOVE it: below the value = a loss (red), above value+band = a
+# gain nobody re-pinned (red: "re-pin tests/memfn/d3_floor.tsv"), so a floor cannot go loose behind a growing census
+# (review r10 D3W-1/2/5). To re-pin after a deliberate change: rerun the gate, read its D3-FLOOR lines, copy the numbers,
+# say in the provenance column which change moved them.
+# columns (tab-separated): cell, census_floor, census_band, compiles, failed, pop_band, records, records_band, provenance
+#   census_floor  distinct corpus patterns whose SHIPPED art carries a run_part_terms record with an unspelled SET term.
+#                 (r43 measured 58/143/99/216 on an earlier base; d3wire's census on d2496010e was 78/174/119/247 = these.)
+#                 Must also be >= emit_sweep's live DIFFER_PINS floor for the cell (read there: the movers number has ONE home).
+#   census_band   allowed gain over census_floor before the gate asks for a re-pin.
+#   compiles      the POPULATION: corpus patterns that compiled (rc 0); fewer = a lost .rxt file / a crash wave; more than
+#                 compiles+pop_band = the corpus grew, re-pin. failed = compiles that did not succeed (rc != 0 or timeout:
+#                 deliberate rejects of the corpus, EXACT), so a crash wave names itself.
+#   records       run_part_terms records on the shipped arts the sweep must see (a sweep whose summarize dropped the record
+#                 again, p14, reds here too); records_band as pop_band.
+cell	census_floor	census_band	compiles	failed	pop_band	records	records_band	provenance
+byte/c-default	78	3	5030	486	60	380	100	d3fix measured 2026-11-15 (466d8e8ee tree)
+byte/c-vm	174	3	5031	485	60	1055	100	d3fix measured 2026-11-15 (466d8e8ee tree)
+utf8/c-default	119	3	5100	416	60	501	100	d3fix measured 2026-11-15 (466d8e8ee tree)
+utf8/c-vm	247	3	5077	439	60	1177	100	d3fix measured 2026-11-15 (466d8e8ee tree)

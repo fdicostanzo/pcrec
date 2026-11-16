@@ -9,16 +9,22 @@
 # hands the four sweeps to d3_floor.py, which counts them against d3_floor.tsv (the floors' one home) and runs its
 # own plants (S3228-S3230) so a gate that cannot fail shows. Compile-only, no timing.
 #
-# Usage: bash tests/memfn/run_d3floor.sh [TREE]      Env: PROCS (collect workers; default tests/lib/procs_default.sh)
+# Usage: bash tests/memfn/run_d3floor.sh [TREE]
+# Env: PROCS (collect workers AND the probe build's make -j; default: half of tests/lib/procs_default.sh, at least 1),
+#      D3FLOOR_KEEP=1 (keep the scratch dir, printed, for a re-count). Scratch lives under $PCREC_TMPDIR (scripts/tmpdir.sh), never /tmp.
 set -u
 export LC_ALL=C
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TREE="$(cd "${1:-$here/../..}" && pwd)"
 . "$TREE/tests/lib/timeout_bin.sh"
 SIM="$TREE/docs/dev/lanes/r33_sim"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/d3floor.XXXXXX")" || exit 2
-trap 'rm -rf "$WORK"' EXIT
-JOBS="${PROCS:-$(sh "$TREE/tests/lib/procs_default.sh")}"
+. "$TREE/scripts/tmpdir.sh"
+mkdir -p "$TMPDIR/scratch" || exit 2   # scripts/tmpdir.sh forced TMPDIR to the temp root
+WORK="$(mktemp -d "$TMPDIR/scratch/d3floor.XXXXXX")" || exit 2
+if [ "${D3FLOOR_KEEP:-0}" = 1 ]; then echo "d3floor: scratch kept at $WORK"; else trap 'rm -rf "$WORK"' EXIT; fi
+JOBS="${PROCS:-$(( $(sh "$TREE/tests/lib/procs_default.sh") / 2 ))}"
+[ "$JOBS" -ge 1 ] 2>/dev/null || JOBS=1
+export BUILD_JOBS="$JOBS"
 
 fail() { echo "FAIL: [d3floor] $*"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -37,7 +43,11 @@ done
 "$TIMEOUT_BIN" 600 python3 -I "$TREE/tests/memfn/d3_floor.py" --tree "$TREE" "${args[@]}" | tee "$WORK/floor.out"
 rc=${PIPESTATUS[0]}
 n=$(grep -c '^D3-FLOOR-PLANT .* ok$' "$WORK/floor.out")
-# the plants are counted: 6 per cell x 4 cells; fewer means a cell skipped them or the plants were dropped
-[ "$n" -ge 24 ] || { echo "FAIL: [d3floor] only $n of 24 plants ran and went as expected"; rc=1; }
+# the plants are counted: PLANTS per cell x 4 cells; they are skipped by design on a red cell (d3_floor.py says so),
+# so a short count is only a second failure when every cell was green
+skipped=$(grep -c '^D3-FLOOR-PLANTS-SKIPPED ' "$WORK/floor.out")
+want=$(( (4 - skipped) * 8 ))
+if [ "$skipped" -gt 0 ]; then echo "d3floor: plants skipped on $skipped red cell(s); the red cell is the failure"
+elif [ "$n" -lt "$want" ]; then echo "FAIL: [d3floor] only $n of $want plants ran and went as expected"; rc=1; fi
 if [ "$rc" -eq 0 ]; then echo "checks passed: 1"; echo "checks failed: 0"; else echo "checks passed: 0"; echo "checks failed: 1"; fi
 exit "$rc"
