@@ -27853,3 +27853,37 @@ Next
   exposed-options pointer `(?i=${case})`; **tuple-arg-order** still open with him. Frank lifted the evening hold for
   this night only; the kit keeps 01:00 for its timing run. Session closed at /close; wake.md rewritten; the slug rule
   added to the manager skill.
+
+## 2026-11-15/16 (session 134, night; box clock 23:15-00:50; evening hold lifted by the owner for this night; kit timing run from 01:00)
+
+- [COVER-CAP] STAGE 2 UNIT A BUILT: lane covs2a (opus) built items A1-A7 of cover_cap.md §11.1 on lane/covs2a
+  (1d6b0502d): the width limit row (registry 81 -> 82), `--window-search-width=N` / `pcrec_options.window_search_width`
+  with spec hunks (limits.md 3.12, tuning.md 2.56), `MkEnd` as a pointer, the `width-limit` why, the kitproof loader
+  (`W`, `@D` forms), S3223 re-aimed + S3234. Route identity: 7,071 corpus rows, 0 artifact movers (10 listing rows =
+  the rename). Manager ruling: the option is NOT stamped. Code critic round r18 (4 opus lenses): no answer or speed
+  findings, 17 small ones, all ruled; fix lane covs2afix (sonnet) applied them on lane/covs2afix (7983d4798):
+  width field moved to the END of pcrec_options (lib append rule; vm_entry_shape's earlier breach noted for the
+  interface push), CLI effect + refusal tests, loader fails loud, review filed on that branch. Cloud: covs2a test
+  GREEN; covs2a recidentity/axes/mech and covs2afix test/recidentity/mech OWED (verdicts via monread). Deferred to
+  the combined branch with the kit: CHECKS-1, CONFORM-8, EMITTED-1, and a `W` row at n >= 33 reading `cover`.
+  The branch lands only JOINTLY with the kit's (one abi event).
+- MAIN'S CLOUD MECH SHARD TABLE was missing S3170 and S3198 (cloud_mech_check red on main; found by covs2a): regenerated
+  from the committed measurements, merged and pushed. Unconfirmed: nothing in the Makefile/CI seems to call that check.
+- STAGE 1 TAILS (lane s1tail): dated notes on [DD-11.5] (+ a lane re-scope proposal, unruled) and [EARNED-SKIP];
+  covs1's sweep job trailer now states the judged verdict (not re-run); 4.5 GB scratch freed. 10 worktrees and 11
+  branches pruned.
+- PREDICATES (design only), revs 17 -> 19 merged and pushed (31a30f32c), review r17 filed. Rev 17 decomposed the
+  tuple compare (projection + array compare); round r17 found answer-level holes (strict forms built by negation
+  accept unset/non-digit fields); rev 18 fixed them; the owner ruled the other-side SIGIL (`^h`), macro-arguments NO
+  ("an array of something is that something"), looped-compare WARN; rev 19 wrote the field reference. Its confirm
+  round (crit-predspec19) found the direction's contradictions (a third value kind against a ruling, bindings no
+  longer their expansion, strict looped compares wrong in 14 of 114 cases); draft review still owed by the coordinator.
+- OWNER DIRECTION 00:40: the field-reference direction is PAUSED (not reversed): "a lot of special syntax and values to
+  handle an obscure case ... more inline with existing concepts"; his idea: a condition over several labels at once,
+  `(h, m): ...`. GO for a design exploration (lane jointexp, opus): docs/design/joint_condition.md, a note, not a
+  draft revision. He reviews it 2026-11-16. Every ruling of the night is at the tail of COND-FAMILY.md with his words.
+- LESSONS. (1) Two of my derived consequences were wrong again and the lanes caught them (the "current rules stand"
+  claim; notes credited to the owner): the "consequences are mine, checked by the next revision" rule earned its keep.
+  (2) Critic coordinators ENDED before their critics finished, twice (predspec17, predspec19): critics then relay to
+  the manager; a SendMessage resumes the coordinator. (3) A leftover `monread --wait` from the previous session
+  consumed a verdict line: check for one at wake. (4) `scripts/lanewatch --follow` takes ONE lane name.
