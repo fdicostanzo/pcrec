@@ -1,0 +1,3 @@
+2 fields: 2208 cases, 0 differ from lexicographic order
+3 fields LITERAL (==lo unpadded): 448 cases, 60 differ; e.g. [('09:30:05', (9, 30, 5), (10, 0, 0), 'reject'), ('09:30:06', (9, 30, 5), (10, 0, 0), 'reject'), ('09:30:59', (9, 30, 5), (10, 0, 0), 'reject'), ('09:31:00', (9, 30, 5), (10, 0, 0), 'reject')]
+3 fields ALL PADDED: 448 cases, 0 differ; e.g. []

@@ -1,0 +1,77 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+
+(D) the decomposed family over AUTHOR patterns vs integer lexicographic order (projection order)
+  2 h:m      [h, m]  above = P & !lex_le           828 cases, 0 differ
+  2 h:m      [h, m]  below = P & !lex_ge           828 cases, 0 differ
+  2 h:m      [h, m]  equal = lex_between(lo, lo)   828 cases, 0 differ
+  2 h:m      [h, m]  lex_between                  4968 cases, 0 differ
+  2 h:m      [h, m]  lex_ge                        828 cases, 0 differ
+  2 h:m      [h, m]  lex_le                        828 cases, 0 differ
+  2 m past h [h, m]  above = P & !lex_le           828 cases, 0 differ
+  2 m past h [h, m]  below = P & !lex_ge           828 cases, 0 differ
+  2 m past h [h, m]  equal = lex_between(lo, lo)   828 cases, 0 differ
+  2 m past h [h, m]  lex_between                  4968 cases, 0 differ
+  2 m past h [h, m]  lex_ge                        828 cases, 0 differ
+  2 m past h [h, m]  lex_le                        828 cases, 0 differ
+  2 versions [major, minor]  above = P & !lex_le   208 cases, 0 differ
+  2 versions [major, minor]  below = P & !lex_ge   208 cases, 0 differ
+  2 versions [major, minor]  equal = lex_between(lo, lo)   208 cases, 0 differ
+  2 versions [major, minor]  lex_between           832 cases, 0 differ
+  2 versions [major, minor]  lex_ge                208 cases, 0 differ
+  2 versions [major, minor]  lex_le                208 cases, 0 differ
+  3 h:m:s    [h, m, sec]  above = P & !lex_le      640 cases, 0 differ
+  3 h:m:s    [h, m, sec]  below = P & !lex_ge      640 cases, 0 differ
+  3 h:m:s    [h, m, sec]  equal = lex_between(lo, lo)   640 cases, 0 differ
+  3 h:m:s    [h, m, sec]  lex_between             2560 cases, 0 differ
+  3 h:m:s    [h, m, sec]  lex_ge                   640 cases, 0 differ
+  3 h:m:s    [h, m, sec]  lex_le                   640 cases, 0 differ
+  total: 25848 cases, 0 differ
+
+(R) rev 16's bundled body vs the decomposed form (author pattern = the same field patterns and separator)
+  7528 cases, 0 differ
+
+(W) the worked rows of §8 (rev 17), each subject matched WHOLE by the filter
+  /(?<h>\d{1,2}):(?<m>\d\d)/ & lex_between2([(h:), (m:)], [9, 0], [10, 0])
+    '9:00'         -> accept 
+    '09:30'        -> accept 
+    '9:59'         -> accept 
+    '10:00'        -> accept 
+    '10:01'        -> reject 
+    '8:59'         -> reject 
+    '11:00'        -> reject 
+    '9:5'          -> reject 
+  /(?<m>\d\d) past (?<h>\d{1,2})/ & lex_between2([(h:), (m:)], [9, 0], [10, 0])  (labels in the other order)
+    '30 past 9'    -> accept 
+    '00 past 10'   -> accept 
+    '01 past 10'   -> reject 
+    '59 past 8'    -> reject 
+  /(?<h>\d{1,2}):(?<m>\d\d):(?<sec>\d\d)/ & lex_between3([(h:), (m:), (sec:)], [9, 30, 5], [10, 0, 0])
+    '9:30:05'      -> accept 
+    '09:30:05'     -> accept 
+    '9:59:59'      -> accept 
+    '10:00:00'     -> accept 
+    '9:30:04'      -> reject 
+    '10:00:01'     -> reject 
+    '8:59:59'      -> reject 
+    '9:30'         -> reject 
+  /(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)/ & lex_between2([(major:), (minor:)], [1, 4], [1, 10])
+    '1.4'          -> accept 
+    '1.9'          -> accept 
+    '1.10'         -> accept 
+    '1.3'          -> reject 
+    '1.11'         -> reject 
+    '2.0'          -> reject 
+    '0.9'          -> reject 
+    '1.04'         -> reject 
+    '1x4'          -> reject 
+  semver & lex_ge3([(major:), (minor:), (patch:)], [1, 4, 0])  (the 2026-11-14 record's shape)
+    '1.4.0'        -> accept 
+    '1.10.2'       -> accept 
+    '2.0.0'        -> accept 
+    '1.3.99'       -> reject 
+    '0.9.9'        -> reject 
+    '1.04.0'       -> reject 
+    wrong-length call lex_ge3([(h:), (m:)], [9, 0, 0]) -> refused: wrong-length array: 2 vs 3 (a compile error)
+  worked rows not as stated: 0
+
+engine disagreements: 0

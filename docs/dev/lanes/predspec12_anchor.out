@@ -1,0 +1,16 @@
+contains(/err$/)  filter                         '(?:(?s:.*?)(?<hit>(?:err$))){1,}(?s:.*)'      on 'err\n'   pcre2: match (0,4)    | re: match (0,4)
+contains(/err\z/) filter                         '(?:(?s:.*?)(?<hit>(?:err\\z))){1,}(?s:.*)'    on 'err\n'   pcre2: no match       | re: no match
+endsWith("err")   filter                         '(?s:.*?)(?:err)'                              on 'err\n'   pcre2: no match       | re: no match
+contains(/^err/)  filter                         '(?:(?s:.*?)(?<hit>(?:^err))){1,}(?s:.*)'      on 'x err'   pcre2: no match       | re: no match
+contains(/^err/)  filter                         '(?:(?s:.*?)(?<hit>(?:^err))){1,}(?s:.*)'      on 'err x'   pcre2: match (0,5)    | re: match (0,5)
+startsWith("err") filter                         '(?:err)(?s:.*)'                               on 'err x'   pcre2: match (0,5)    | re: match (0,5)
+/err$/ directly   filter                         'err$'                                         on 'err\n'   pcre2: no match       | re: no match
+/err$\n/ directly filter                         'err$\n'                                       on 'err\n'   pcre2: match (0,4)    | re: match (0,4)
+anchored(/foo/)   filter                         '^(?:foo)$'                                    on 'foo'     pcre2: match (0,3)    | re: match (0,3)
+anchored(/foo/)   filter                         '^(?:foo)$'                                    on 'foo\n'   pcre2: no match       | re: no match
+/foo/ directly    filter                         'foo'                                          on 'foo\n'   pcre2: no match       | re: no match
+anchored(/foo/)   final                          '^(?:foo)$'                                    on 'foo\n'   pcre2: match (0,3)    | re: match (0,3)
+/\Afoo\z/         final                          '\\A(?:foo)\\z'                                on 'foo\n'   pcre2: no match       | re: no match
+anchored(/foo/)   final                          '^(?:foo)$'                                    on 'xfoo'    pcre2: no match       | re: no match
+startsWith("5") as /^5/ filter (rejected form)   '^5'                                           on '57'      pcre2: no match       | re: no match
+startsWith("5") = /5.*/  filter                  '(?:5)(?s:.*)'                                 on '57'      pcre2: match (0,2)    | re: match (0,2)

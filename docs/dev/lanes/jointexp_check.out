@@ -1,0 +1,29 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+(X) time h:m  cases 22484
+(X) version   cases 1734
+(X) ipv4      cases 202
+(U) optional  cases 7   joint / its ! per subject:
+     9:00      joint=False !joint=True 
+     9:00:29   joint=False !joint=True 
+     9:00:30   joint=True  !joint=False
+     10:00     joint=False !joint=True 
+     10:00:00  joint=True  !joint=False
+     8:59:59   joint=False !joint=True 
+     9:01      joint=False !joint=True 
+     looped '10:00,9:30,'  per-item=True  per-label-sequence=False
+     looped '10:15,9:45,'  per-item=True  per-label-sequence=False
+     looped '10:45,9:35,'  per-item=True  per-label-sequence=False
+(L) looped    cases 10   per-label sequence reading differs on 3
+(C) calendar rectangles: 13
+(C) calendar  cases 432
+(C4) calendar, 4 product rows: cases 468
+(S) strict above 9:30, minutes optional:
+     subject  joint>  decided-prefix>  negation(!<=)
+     9        False   False            True
+     10       False   True             True
+     8        False   False            False
+     9:31     True    True             True
+     9:30     False   False            False
+     10:00    True    True             True
+(P) product = record: cases 2409
+TOTAL cases 27752 differ 0 engine-disagreements 0

@@ -70,3 +70,10 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 ## 2026-11-15 — critic round covs2e (review r15)
 - The coordinator pattern handled a mid-round ruling cheaply: one `git diff` of decisions.md at hand-back found D198 addendum 1, and the hand mapping took one paragraph. Without the freeze-drift step the draft would have carried a stale "owner question open".
 - Nested critics' final replies were again lost; the files-plus-lanecheck contract made it irrelevant.
+
+## 2026-11-15 — critic round predspec14 (review r16)
+- Three opus critics on a ~3,700-line design doc, all done in under 10 min with complete files, from a COMMON that pointed at read-only round-dir copies: no repo access needed, no denylist exposure. Inline verification was cheaper than a verifier agent for quote/one-script findings (second round in a row).
+
+## 2026-11-15 — critic round predspec17 (review r17)
+- A confirm round over a ~600-line two-revision delta ran end to end in ~15 minutes (launch 23:32 box clock, draft about 23:45) with zero coordinator interventions: three opus critics, all returned in the launch turn (6-8 min), files complete, lanecheck DONE. Evidence: `docs/dev/reviews/2026-11-15-r17-predspec17.md` "Round process".
+- The frozen-copy + diffs pack (rev 15/16/17 copies plus both diffs in the round dir) is what made the critics self-contained: no repo reads, no blinding exposure. The text-first simulate and the fix-induced lens converged on the one answer finding (F1) from different directions (rule emulation vs "what did moving the labels to the author change").
