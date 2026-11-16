@@ -1,6 +1,8 @@
 # The joint condition: a condition over several labels at once (EXPLORATION)
 
-STATUS: EXPLORATION (lane jointexp, 2026-11-16; design only, no build go). NOT a revision of
+STATUS: EXPLORATION (lane jointexp, 2026-11-16; design only, no build go). §4A (lane tupleval, 2026-11-16) is the
+full account of the tuple as a value the owner accepted in principle (CF:1362-1372); its §4A.10 lists the earlier
+sentences it corrects, each marked "[§4A.10]" in place. NOT a revision of
 `predicates_draft.md` (rev 19 stands as the record of the field-reference direction, which the owner PAUSED, not
 reversed: COND-FAMILY 2026-11-16 00:31). Spellings are placeholders (the owner's `(h,m): blah` is illustrative;
 memory: his examples are not syntax). Section numbers `§n` are `predicates_draft.md` rev 19's; `CF` entries are
@@ -57,13 +59,13 @@ A condition entry today is `path: S`: the whole matches whose label `path` has i
 The JOINT entry is `(p1, ..., pk): R`, k >= 2: the whole matches whose labels p1..pk have texts (t1, ..., tk), the
 TUPLE, in R, a set of k-tuples of strings. Everything else is an existing rule applied one level up:
 
-- THE LEFT `(p1, ..., pk)` is a positional record of label PATHS, laid against the operand's fields: the record
+- THE LEFT `(p1, ..., pk)` [§4A.10: in the owner's terms a TUPLE OF REFERENCES, the colon its mark] is a positional record of label PATHS, laid against the operand's fields: the record
   bracket (§5.4, "all entries together, laid against something with fields") in a fourth position, the left of `:`.
   Each path is looked up exactly as the left of `:` is today (§4.1's chain lookup, ambiguity and unknown-label
   errors; `d.year`, `wname.index`, a computed label, `x[2]` all allowed). Bare label names are fine HERE: this is
   the condition's own, ruled position, where `h` already means the operand's label (CF:1268-1282 ruled bare names
   out of ARGUMENT positions; nothing is passed here).
-- THE RIGHT is a set of k-tuples. NEW: a positional `( e1, ..., ek )` in VALUE position is the PRODUCT of its entries
+- THE RIGHT is a set of k-tuples [§4A.10: the value is a set of tuples; the product is one producer of six]. NEW: a positional `( e1, ..., ek )` in VALUE position is the PRODUCT of its entries
   (each an rx): `(S, T)` = every pair (s, t), s in S, t in T; `(9, 0)` = the product of two one-string sets = the one
   pair ("9", "0"). The existing set operators keep their meaning on sets of k-tuples of one arity: `|` union, `&`
   intersection, an array `[(9, 0), (17, 30)]` any one of its entries (an array of pairs IS a set of pairs: "an array
@@ -97,7 +99,7 @@ then `P & ((h, m): office_hours)`): the author names the labels in the one place
 | concept | existing rule it reuses | what is new | what of rev 19 it replaces |
 |---|---|---|---|
 | left `(p1, ..., pk)` | the left of `:` is a label path (§4.1); the record bracket "laid against fields" (§5.4); the chain lookup and its errors (§4.1) | a fourth position for `( )`: the left of `:` (N3). Errors: a repeated label on the left, a nested tuple | the other-side sigil `^h` (§5.4 `^` row), arrays of references `[^h, ^m]`, §4.1's ONE EXCEPTION (a parameter on the left of `:`) |
-| the tuple `(9, 0)` | literals are one-string rx (§2.1) | the PRODUCT as a value (N1): a positional `( , )` in value position, k >= 2. Collides with "a record is never a value" (RULED CF:851) unless a product is ruled not to be a record | bounds as arrays read by index (`lo[1]`, §3.2 tool 1); the wrong-length gap (§13 O72) becomes an arity error |
+| the tuple `(9, 0)` | literals are one-string rx (§2.1) | the PRODUCT as a value (N1): a positional `( , )` in value position, k >= 2. Collides with "a record is never a value" (RULED CF:851) unless a product is ruled not to be a record [§4A.10: accepted, CF:1362; the ruling untouched, §4A.1] | bounds as arrays read by index (`lo[1]`, §3.2 tool 1); the wrong-length gap (§13 O72) becomes an arity error |
 | a set of tuples | rx kind and `& \| !` extensional (§2.1, §2.2); "an array of X is an X" (CF 2026-11-14 00:10, 11-16 00:08) | an ARITY on sets (N2): arity 1 is today's rx; mixing arities is an error | nothing in rev 19 (it had no set of tuples; the bodies were alternations of records) |
 | tuple comparison sets `>= (9, 0)` | unary comparison sets, one atom, the literal decides (§2.4) | the dictionary order for a tuple atom (the one total order extending each component's; the product order is the product `(<=a, <=b)`, already writable) | the six names `lex_ge2` .. `lex_between3` and their bodies (§8); the any-n recursion `lg` (§8, O69 (3)); the strict spelling `lex_ge2 & !lex_le2` (just `>`) |
 | `between`, `\|`, `&` on tuple sets | `between(lo, hi)` inclusive (§2.4); macro bodies over parameters as atoms (§2.4 LEAN) | nothing (arity follows the arguments) | `lex_between2`, `lex_between3` |
@@ -163,7 +165,7 @@ cannot be bound or provided by a library apart from a pattern, which loses G2's 
 comparison would give `>=` two meanings by context. Under the arity rule (N2) the slip `((h, m): >= [9, 0])` is a
 compile ERROR (a set of arity 1 on a 2-ary left), with the hint "write `(9, 0)`" (lane's).
 
-(d) THE PRODUCT, `(9, 0)`: RECOMMENDED. A positional `( e1, ..., ek )` in value position, k >= 2, denotes the
+(d) THE PRODUCT, `(9, 0)`: RECOMMENDED [§4A.10: owner-accepted; the value is a SET of tuples, §4A.4]. A positional `( e1, ..., ek )` in value position, k >= 2, denotes the
 product of its entries; with one-string entries that is ONE tuple. This needs nothing beyond sets: a "tuple of
 values" is not a new value shape, it is a product of one-string sets, and products are what records already do to
 labels (the record `(h: S, m: T)` admits exactly the product S x T on (h, m), table (P)). NOTE on table (U): its
@@ -300,7 +302,7 @@ form, and its level is the relation's, whatever the spelling.
 | `((h, m): (S, T))` vs `(h: S, m: T)` | SAME answer (table (P); looped: §4.3 same iteration by record) | two spellings, one meaning; the lane would define the record as the product case (question **record-is-product**) |
 | `((h, m): R)` vs `(h: R1) \| (h: R2, m: R3)` (R = R1 x any \| R2 x R3) | same on set-once labels; DIFFERENT on looped labels (table (L)) | a real look-alike, the existing hazard of item 5; the generalised warning covers it |
 | `(9, 0)` (a pair) vs `[9, 0]` ("9 or 0") | different | `((h, m): >= [9, 0])` is an ARITY ERROR ("write `(9, 0)`"), never a silent answer |
-| `(9, 0)` (a pair, value position) vs `f(9, 0)` (a call's record) vs `(h: 9, m: 0)` (a condition) vs `((h, m): ...)` (a left) | four uses of `( , )`, told apart by POSITION and by the `:`/`=` marks inside | one meaning per position (§5.4's rule for brackets); the table grows from four `( )` rows to six (N1, N3) |
+| `(9, 0)` (a pair, value position) vs `f(9, 0)` (a call's record) vs `(h: 9, m: 0)` (a condition) vs `((h, m): ...)` (a left) | four uses of `( , )`, told apart by POSITION and by the `:`/`=` marks inside | one meaning per position (§5.4's rule for brackets); the table grows from four `( )` rows to six (N1, N3) [§4A.10: full census §4A.7] |
 | `((h, m): R)` vs `(h, m: R)` | the second is an error (an entry without `:`) | error, names the double parentheses |
 | `!((h, m): R)` vs `((h, m): !R)` | differ on an unset label | inherited §13 O28 (L30), no new case |
 | `t & ((h, m): >= (9, 0))` vs `t & ((h, m): padded(>= (9, 0)))` | the first rejects `9:00` (canonical `00`?) | the existing C9 behaviour; `label.padding`-style hints are the existing story |
@@ -330,6 +332,295 @@ match, computed-label fields) is a set laid against written labels, so nothing i
 the paused direction could ALSO have grown into (a macro taking `^h` and using it in several conditions, or in a
 structural tool) has no example; D77 says wait. Relations that need a function of fields (weekday, day
 differences) were never the reference's job: computed labels keep them (§4.4).
+
+## 4A. The tuple as a value: the full account
+
+Lane tupleval, 2026-11-16, design only. It answers the owner's request at CF:1362-1372 (2026-11-16 09:42), in his
+words: "A pair as a value: I am ok with the tuple as a value. My request is that it's fleshed out and not the slice of
+an idea. How is it related to conditions as we'd defined them(sounds like there was thinking there), is x a single
+tuple (x), how can I access parts or can I, what is the definition, how can I use it generally". It applies his
+clarification of 09:47 (relayed in the lane's rulings file, R-1), his words: "In my mind (x, y) is different than
+(x,y): because the colon. So tuples need a left hand side with colon which mean the symbols are scoped references to
+the intersected labels, and a right hand side which says the are bindings et al". The answers follow his order; each
+part opens with examples. Every sentence not quoted from him or cited to a ruling is the LANE'S. Evidence:
+`docs/dev/lanes/tupleval_check.py` / `.out` (libpcre2-8 10.46 and Python 3.14.4 `re`, both engines on every case;
+expectations from Python integer tuples, `datetime.date`, `ipaddress`, plain string equality, never from the regex
+under test): 47,357 cases, 0 differ, 0 engine disagreements; tables (D), (R), (Q), (E), (O) below. Placeholder
+spellings throughout (D193 add. 4).
+
+### 4A.0 Examples first
+
+    t := /(?<h>\d{1,2}):(?<m>\d\d)/
+    office_hours := padded(between((9, 0), (17, 0)))      # a colon-less tuple: values. Bound, then passed
+    t & ((h, m): office_hours)                            # a tuple WITH a colon: references to t's labels h, m
+    open_at := [(9, 0), (13, 30)]                         # an array of pairs IS a set of pairs (two entries)
+    t & ((h, m): padded(open_at))                         # 9:00 or 13:30, padded per component
+    t & (h: 9, m: 0)                                      # the record ...
+    t & ((h, m): (9, 0))                                  # ... and the joint form: same answers (table (P))
+    supported := [between((1, 4, 0), (1, 9, 99)), >= (2, 0, 0)]
+    semver & ((major, minor, patch): supported)           # a version policy, a library value over unnamed fields
+    private := [between((10, 0, 0, 0), (10, 255, 255, 255)), between((172, 16, 0, 0), (172, 31, 255, 255))]
+    ip & ((a, b, c, d): private)                          # a CIDR list is an array of tuple ranges (table (R))
+    span & ((eh, em): padded(> ($sh, $sm)))               # a tuple of this match's values: one pair per match
+    x,  (x),  ((x))                                       # one thing: one entry in parentheses is grouping
+    (h: S),  ((h): S)                                     # one thing: one reference left of ':' is the plain condition
+    f((1, 2))                                             # ONE argument, a pair (was an error: L45, see 4A.1)
+    t & (9, 0)          # ERROR: a set of pairs has no text; write t & ((h, m): (9, 0))
+    /${(9, 0)}/         # ERROR: the same
+    (9, 0)[1]           # ERROR: `[n]` reads ENTRIES; (9, 0) has one entry, the pair; parts are named (4A.3)
+
+### 4A.1 How the tuple relates to conditions as defined (the record)
+
+THE OWNER'S COLON IS THE DISCRIMINATOR. `(h, m):` and `(9, 0)` share a bracket and differ by the colon after it. A
+bracket FOLLOWED BY `:` holds SCOPED REFERENCES to the intersected operand's labels (the left of a condition entry,
+§4.1: "a label PATH ... never an expression", `predicates_draft.md:1526`); a bracket NOT followed by `:` in value
+position holds VALUES (bindings, literals, `$` values, calls). Both are tuples in his words; only the right-hand one
+is a value. So a condition entry `h: S` is the ONE-REFERENCE case of `(h, m): R`, and a condition entry relates a
+tuple of references to a set of value tuples: "the labels' texts, read together, are one of these tuples".
+
+THE BRACKETS KEEP THEIR RULED MEANINGS (CF:863: `[ ]` any one entry, `( )` all entries together; the comma only
+"next entry"). In value position over sets, "any one entry" is the union (today's alternation) and "all entries
+together" is the PRODUCT: `(S, T)` is every pair (s, t). No bracket gains a second meaning; the colon-less `( , )`
+in value position, an ERROR in rev 19, becomes "all together" applied to values. A literal is a one-string set (§2.1,
+`predicates_draft.md:853-854`), so `(9, 0)` is the product of {"9"} and {"0"}: the one pair. A value is a SET, as an
+rx is a set of strings: a tuple-valued expression denotes a SET OF k-TUPLES, never a lone tuple, and one tuple is
+the one-element case, as one string is the one-string set.
+
+THE RECORD RULING STANDS UNTOUCHED, and the tuple is not a record. The owner's words: "I'm ok with a purely
+structural type if it can't be bound directly ie not first class type" (CF:851-852); the record of his acceptance
+(CF:866): "A RECORD is NOT a value: it cannot be bound, stored or returned. It appears only laid against something
+with fields". A record is defined by what it is LAID AGAINST (a macro's parameters, a pattern's labels, a result's
+groups); a colon-less tuple in value position is laid against nothing, its components have no names, and it is
+bound, passed and returned like any value. Nothing that was a record becomes a value. What moves are the draft's
+LEAN inferences that "any colon-less `( , )` in value position would be a record used as a value, hence an error"
+(none is the owner's text): §0.1 L45 (`predicates_draft.md:543`: `f((1, 2))` an ERROR) becomes "one argument, a
+pair"; the §5.4 `( e1, e2, ... )` row ("ONLY laid against something with fields", `predicates_draft.md:2013`) and
+the condition row's "Any other record in value position is an error" (`:2014`) gain the tuple row beside them (4A.7).
+UNCHANGED: L43 (`:541`), `(x = /a/, y = /b/)` in value position is still an error, because labelled entries in value
+position would be the withdrawn map literal (§3.1, `:1401`; §13 O42), a record used as a value; a tuple's
+components are positional only.
+
+THE ONE-WAY RULE, extended in its own direction. His words: "You can view a regex as a record but not vice versa as
+what does that even mean?" (CF:853-854). The joint condition IS a regex viewed as a record (its labels, named left of
+the colon) tested against a tuple set; a tuple set is never read as a regex (it has no text: 4A.6). The closure the
+owner's record declined, "a record of rx = their sequence" ("loses boundaries, `(1, 40)` vs `(14, 0)`", CF:866 (4)),
+does not return: a tuple keeps its components apart, and `(1, 40)` and `(14, 0)` are different pairs.
+
+THE TWO INTERFACES (CF:890-891: "Array and map are interfaces that can be applied to regex"). A tuple set has the
+ARRAY interface over its spelled entries (`[(9, 0), (13, 30)]` has two entries, each a pair; "an array of something
+is that something", CF 2026-11-14 00:10, 11-16 00:08) and NO map interface: its components have no names, and giving
+them names would be the record as a value. So `.` never applies to a tuple set and `[n]` reads entries, never
+components (4A.3).
+
+THE RECORD CONDITION `(h: S, m: T)` gives the same answers as `((h, m): (S, T))` on every population tried (table (P)
+of §2, 2,409 cases); whether the record is DEFINED as that product case is the open **record-is-product**. Nothing
+here depends on the answer.
+
+### 4A.2 Is a plain value x the one-entry tuple (x)?
+
+    x,  (x),  ((x))                 # one thing: grouping, as today (§0.1 L44, §13 O41 lean)
+    ((h): S),  (h: S)               # one thing: one reference left of ':' (grouping on the reference side too)
+    ((9, 0)),  (9, 0)               # one thing: grouping of a pair; NOT a one-tuple holding a pair
+    [9, 0]                          # "9 or 0": an arity-1 set with two entries
+    (9, 0)                          # one pair: an arity-2 set with one entry
+    ()                              # ERROR: an empty tuple has no use (no example; D77)
+    (9,)                            # ERROR: no one-tuple distinct from its entry
+    ((9, 0), 1)                     # ERROR: a tuple entry must be arity 1 (no nesting; see below)
+
+YES: `x` and `(x)` are the same thing, and there is no separate one-tuple. Every existing set (every rx, every
+literal, every condition's right side) is a set of 1-tuples, and a set of 1-tuples and a set of strings carry the
+same information: no operator, position or tool could tell them apart, so keeping two would be a distinction with no
+consequence. One-entry parentheses are therefore GROUPING on both sides of the colon: `((h): S)` is `(h: S)`. The
+draft's existing lean already says this for values (`predicates_draft.md:542`, L44; `:3935`, O41), and nothing here
+changes it. The rule holds under either answer to **set-arity**: under ARITY, today's rx are the arity-1 sets; under
+a THIRD KIND, the third kind starts at k = 2, and `(x)` is still grouping.
+
+ARITY 0. `()` would be the set of 0-tuples: either {()} (holds always) or {} (holds never). No example needs either
+(D77): an error in every position. (A call with no arguments is not affected: phase 1 has no zero-parameter macro;
+a binding without a head is a name.)
+
+NESTING. `((9, 0), 1)` could mean the flattened triple `(9, 0, 1)` or a pair whose first part is a pair. Flattening
+would let a library compose a k-ary set from a smaller one (`(years, month_days)`), but every such set in the
+examples is writable with arity-1 entries row by row (§5 problem 4's `valid_ymd`: the four rows of §1, each entry
+arity 1), so the lane leans ERROR ("a tuple entry is one field; write the components out") and names the trigger: a
+library set that can only be written by composing tuple sets.
+
+### 4A.3 Can the parts be reached, and how?
+
+    t & ((h, m): office_hours)  then  $h, $m          # (a) THROUGH THE LABELS: name the parts left of ':'
+    (lo_h, lo_m) := (9, 0)                            # (b) destructuring: position (c), the left of ':='
+    part(lo, 1)                                       # (c) a projection built-in
+    lo[1]                                             # (d) an index: COLLIDES
+    lo.1                                              # (e) the map interface: COLLIDES
+                                                      # (f) no access
+
+| option | new concepts | collides with | verdict |
+|---|---|---|---|
+| (a) through the labels: the condition names each component (`((h, m): R)`), the match's values are read by `$h`, `$m` | none (§4.1, §5.4 `$` row) | nothing | THE ANSWER for a MATCH's tuple: the colon is where parts get names |
+| (b) destructuring by the record on the left of `:=`, `(a, b) := lo` | the left of `:=` (design only, out of phase 1, `predicates_draft.md:726-730`) takes a tuple set on its right, its components playing the role of a result's groups; plus §13 O51's statement-start parse | on a set that is NOT a product it is a PROJECTION and loses the pairing: table (D), `month_days` (365 pairs) projects to 12 months x 31 days = 372 pairs, so `((month, day): (m1, d1))` after `(m1, d1) := month_days` admits 7 subjects the table refuses (`04-31`, `02-29`, `02-30`, ...); `[(9, 0), (17, 30)]` projects to 4 pairs. A round trip `(a, b) := t` then `(a, b)` silently differs from `t` | the one collision-free route; NOT PROPOSED (no example needs a component of a tuple value). If a case appears: admitted only where the right side is a PRODUCT (then exact: table (D)'s product case), an error otherwise naming the loss |
+| (c) a projection built-in `part(t, i)` | a name on the closed built-in list (§5.1); a library cannot write it | the same loss as (b) | REJECTED: (b)'s cost plus a name |
+| (d) an index `t[i]` | none in spelling | `[n]` reads ENTRIES of the array interface (§3.2 tool 1): `[(9, 0), (17, 30)][1]` is `(9, 0)`; reading components would give `[ ]` two meanings | REJECTED: `(9, 0)[1]` is `(9, 0)` (its one entry); `(9, 0)[2]` is the out-of-range absent entry (§3.2); a hint names (a) |
+| (e) the map interface `t.1`, `t.h` | named or numbered components | `.name` is never digits (§3.2 tool 4); named components are the record as a value (CF:866) | REJECTED |
+| (f) no access at compile time | none | nothing | THE ANSWER for a tuple VALUE, with (b) held as the route if a case needs it |
+
+LEAN (the lane's): a tuple VALUE is used whole (compared, combined, laid against labels); its parts are reached by
+NAMING them left of the colon, which gives the MATCH's parts as `$h`, `$m`. Every example was searched for a use of
+a component of a tuple value: rev 19's `lo[1]` (the `lex_` bodies, `predicates_draft.md` §8) was the only one, and
+the comparison sets replace those bodies (§4 item 9). PARTS OF A SET OF TUPLES (which hours occur in `month_days`)
+are projections and lose the pairing (table (D)); no example asks for one. Owner question **tuple-parts**.
+
+### 4A.4 THE DEFINITION
+
+A TUPLE SET of arity k (k >= 2) is a set of k-tuples of strings; it is the value of a TUPLE-VALUED expression, whose
+arity is fixed at compile time (after macro expansion), and every other value is arity 1 (a set of strings; under
+**set-arity** either "the rx kind with arity 1" or "the rx kind" beside a third kind: the answers below are the same).
+PRODUCERS: (1) the TUPLE BRACKET `( e1, ..., ek )`, k >= 2, in VALUE position (no `:` after the closing bracket, no
+`:` or `=` inside), each ei an arity-1 expression: the product e1 x ... x ek (one-string entries give one tuple; a
+`$` entry of a set-once label gives one string per match); (2) `A | B` and `A & B` with A, B of the same arity:
+union, intersection; (3) an array `[t1, ..., tn]` of entries of one arity: any one entry (the union), entries kept in
+order for the structural tools; (4) a COMPARISON SET with a tuple atom, `op (b1, ..., bk)` with op in `<` `<=` `>`
+`>=` `==`: the k-tuples in DICTIONARY order (first component first) relative to the atom, component i compared by
+bi's literal reading under §2.4 (a numeral: canonical integers; a quoted string: string order), each bi a one-string
+set (a literal, a `$` value of a set-once label, a binding of one; a many-string component is an error, §2.4 being
+silent on a many-string atom); `between(lo, hi)` is `>=lo & <=hi` unchanged; (5) a macro whose body yields one, and a
+binding of any of these (a binding names whatever its expression is, §2.1); (6) a FILTER MODIFIER applied to one
+(`padded(t)`), acting on each component (**modifier-lift**, open; without it an error). EQUALITY: two tuple sets are
+equal when they hold the same tuples; two tuples are equal when their components are equal STRINGS, so the literal
+`(9, 0)` is the text pair ("9", "0") and admits no `t` subject (table (E): 0 of 11,000; minutes are two digits),
+while `padded(== (9, 0))` admits `9:00` and `09:00` (2), as `(m: 0)` and `(m: padded(==0))` differ today. ACCEPTED
+POSITIONS: the right of `:` in a condition entry whose left names k references (`((h, m): R)`; one reference is the
+plain `h: S`); an ARGUMENT of a call (a parameter takes any value); the right of `:=`; an entry of `[ ]` beside
+entries of its arity; an operand of `&`, `|` beside one of its arity; the atom of a comparison; the argument of a
+filter modifier (under modifier-lift); `!R` on the right of `:` (the complement over all k-tuples of strings in the
+filter role, §2.2; `!((h, m): R)` vs `((h, m): !R)` inherits §13 O28 unchanged). ERRORS, each naming its fix: an
+ARITY MISMATCH (between the two sides of `:`, the operands of `&`/`|`, an array's entries: `[(9, 0), 5]`); a tuple
+where an arity-1 set is required: an rx HOLE (`/${t}/`), the program's final pattern, an `&` with a pattern operand
+(`P & t`: "write `P & ((h, m): t)`"), a single-reference condition (`(h: (9, 0))`), a `join` entry, an index bracket
+(`X[(1, 2)]`), arithmetic (`t + 1`), a nested tuple entry (`((9, 0), 1)`); the empty `()` and a one-entry `(e,)`;
+labelled entries (`(x = 1, y = 2)`, L43 unchanged) and a mix of `:` and plain entries (`(h: 9, 0)`); a component
+read by `[n]` or `.` (4A.3); a `$` tuple over a REPEATED label (`($h, $m)` with h, m in a loop: at the default level
+the bare `$h` is already the repeated-label error, `predicates_draft.md:1632-1634`; at `captures` it would be the
+product of every h with every m, which loses the iterations' pairing, table (Q): 5 of 11 subjects differ from the
+per-iteration pairs, so it stays an error naming the joint condition).
+
+The class this produces, with constant entries, is the finite unions of products of regular sets: closed under `|`,
+`&` and the filter-role `!`, and each one a finite `|` of condition records over single labels, so every joint
+condition on a constant tuple set compiles at the DEFAULT level (§6.1); with `$` components it is a §4.6 relation,
+priced by class count (the lane's consequence; the expansions are engine-checked in §2's (X), (C4) and here in (R);
+the closure under `!` is UNTESTED).
+
+### 4A.5 General use beyond the compare
+
+| problem (draft or this note) | use of the tuple value | vs today | evidence |
+|---|---|---|---|
+| E-CAL (§12.5) | `month_days`, a declared 3-row table of products; `isodate & (((month, day): month_days) \| (year: leap, month: padded(2), day: 29))` | SIMPLER: no `days_in`, no relation (§5 problem 4) | (C4) 468 cases |
+| E-IPV4 (§12.3) and its `cidrs` (§3.5: "`ipv4 & cidrs` reports which entry admitted the match") | a CIDR block is ONE dictionary range `between(network, broadcast)` over the four octets, whether or not its prefix falls on an octet boundary; a list of blocks is an array of them | NEW GROUND: E-IPV4 checks octet validity only; ranges and block lists need labels on the octets (an existing `=`). Whether `.index` reports the admitting entry of an array on the RIGHT of `:` is not stated by the draft for single labels either: not claimed | (R) 6 blocks, 1 on an octet boundary, 5 not, 2,422 cases, expectation by `ipaddress` |
+| version policies (§8's tuple rows, §5 problem 2) | `supported := [between((1, 4, 0), (1, 9, 99)), >= (2, 0, 0)]`, laid against any version pattern's labels | SIMPLER than six `lex_` names | (X) of §2 for single ranges; the array is `\|` (UNTESTED as an array) |
+| time windows (§5 problems 1, 6, 7) | `office_hours`, `open_at` bound once, passed, reused | SIMPLER | (X), (L), (U) of §2 |
+| a library constraint over unnamed fields | `dates.valid_ymd`, `office_hours`: the library names no label; the caller names them left of the colon | NEW: the mechanism's main gain (§2) | as above |
+| bounds from the same match (§5 problem 5) | `> ($sh, $sm)`: a tuple of this match's values, one pair per match (set-once labels only) | SAME level as any spelling (§4.6) | UNTESTED (as in §5) |
+| a multi-field allowlist (`((level, service): [("error", "db"), ("warn", "auth")])`) | a finite set of pairs | NO §12 CASE has one (E-JSONL tests each key alone); a real use, recorded, not an example | none |
+| group questions (§4.3) | `count(((h, m): R))`, `some(((h, m): R))`: the iterations whose pair is in R | SAME machinery, one more condition shape | (L) of §2 |
+| E-WEEKDAY, E-RFC, E-NEAR (c) | a function of the fields (weekday, day difference) | SAME: computed labels (§4.4); a tuple set defined by a function is not proposed (B5) | — |
+| E-JSONL, E-LUHN, E-FILE, E-HTTP, E-SEP, E-DEPTH, E-CTX | no several-field value | SAME | — |
+| results / outputs (§6.2) | a match reported as a tuple of its labels | NOT PROPOSED: the report already carries the labels; no example asks for a tuple | — |
+| a MATCH viewed as a tuple (its labels read out as one) | `($h, $m)` already is that, per match, with existing marks | NOT PROPOSED as a separate form (`$(h, m)` or the like): §5 problem 5 is the one use and `($sh, $sm)` covers it | — |
+| a FILE of combinations (an allowlist CSV as a tuple set) | `records(...)` yields an rx with labels; reading it as a k-ary set would view an rx's labels as tuple components | NOT PROPOSED: a new form (an rx's labels projected to a tuple set); no example; trigger: a case loading a combination list | — |
+
+Tally (the lane's): 2 of the twelve §12 cases gain (E-CAL simpler, E-IPV4 new ground with ranges and block lists);
+10 are the same; none worse. The gains beyond §12 are the library-set uses (a constraint shipped without naming
+fields), which is what the owner's criterion asks of the mechanism (CF:1336-1352: "how it would help the larger
+language against other problems").
+
+### 4A.6 What it cannot do
+
+| position | example | error (wording illustrative, D26) |
+|---|---|---|
+| a pattern or the program's final expression | `(9, 0)` as the last line | "a set of pairs has no text; lay it against labels: `P & ((h, m): ...)`" |
+| an rx hole | `/${(9, 0)}/`, `/${office_hours}/` | the same |
+| `&` with a pattern | `t & (9, 0)`, `t & office_hours` | "`&` fills an operand of strings; write `t & ((h, m): office_hours)`" |
+| concatenation | none exists (§2.5); `join([(9, 0), ...])` | "a join entry is a string set" |
+| a single-reference condition | `(h: (9, 0))` | "h is one label; the set holds pairs" |
+| mixed arity | `[(9, 0), 5]`, `(9, 0) \| 5`, `((h, m): >= [9, 0])` | "arity 2 beside arity 1"; for the last, "write `(9, 0)`: `[9, 0]` is 9 or 0" |
+| a component read | `lo[1]`, `lo.1` | "`[n]` reads entries; name the parts left of `:`" |
+| a `$` tuple over repeated labels | `($h, $m)` with h, m in a loop | "h and m repeat; their values do not pair; write the joint condition" |
+| arithmetic, index brackets | `(9, 0) + 1`, `X[(1, 2)]` | "a number is a string set" |
+| labels in a value tuple | `(h = 9, m = 0)` | L43's error, unchanged |
+| a reference tuple without its colon used as references | `between((h, m), ...)` with h, m labels | the bare-reference ruling (CF:1268-1282: "it might shadow a binding"): right of a colon or in an argument, `h` is a binding; "for the label's value write `$h`" |
+
+### 4A.7 The mark census for `( )` and `,` after the addition
+
+Every position, one meaning; a `( )`'s position is decided by what PRECEDES it (an expression: a call), what FOLLOWS
+it (`:` or `:=`), and what is INSIDE it (`:` entries, `=` entries, a leading `&`, a comma). Inside `/.../` neither mark
+is the language's (PCRE's own, §5.4).
+
+| form | position | meaning | told apart by |
+|---|---|---|---|
+| `f( e1, ... )` | after an expression | a CALL: one record against the parameters (§5.2) | the preceding expression |
+| `m( p1, ... ) :=` | statement head | a DEFINITION head | followed by `:=` after a name |
+| `( p1, ..., pk ) :` | left of `:` inside a condition | a TUPLE OF REFERENCES to the operand's labels (the owner's colon, R-1); k = 1 is grouping, so `((h): S)` = `(h: S)` | followed by `:` |
+| `( label: S, ... )` | value position | a CONDITION (a macro, §4.1); its record is laid against the operand's labels | `:` entries inside |
+| `( x, y ) :=` | statement start | a record on the left of a binding: NEW NAMES laid against a result's groups (design only, §13 O54) | followed by `:=` (not `:`) |
+| `(& f)` | value position | a SECTION (§5.2) | leading `&` |
+| `( e )` | value position | GROUPING (§0.1 L44) | one entry, no `:`, `=`, `&` |
+| `( e1, ..., ek )`, k >= 2 | value position | NEW: a TUPLE SET (the product of its entries) | comma, no `:` after it, no `:`/`=` inside |
+| `( x = e, ... )` | value position | ERROR (L43, unchanged) | `=` entries |
+| `()`, `( e, )`, `( a: S, e )` | anywhere | ERROR | — |
+| `,` | between entries of any of the above or of `[ ]` | "next entry", never logic (CF:863), unchanged | — |
+
+THE LOOK-ALIKES the addition creates or touches:
+
+| pair | answer | verdict |
+|---|---|---|
+| `((h, m): R)` vs `((h, m))` | the first: references, a condition; the second: grouping of a tuple of the BINDINGS h, m | one-token difference (the colon), the owner's discriminator; the second is an error if h, m are labels and no bindings (bare names are bindings there, CF:1268-1282) |
+| `f(1, 2)` vs `f((1, 2))` | two arguments vs one pair | NEVER BOTH LEGAL for one macro: positional arguments are exactly the required parameters (§5.2), so one of the two is always the wrong-count error. G4 holds (§1 Goals) |
+| `(9, 0)` vs `[9, 0]` | one pair vs "9 or 0" | different arities; the slip is an arity error (§4 item 2 (c)) |
+| `(h: 9, m: 0)` vs `((h, m): (9, 0))` | the same answers (table (P)) | record-is-product (open) |
+| `(a, b) := t` vs `((a, b): t)` | a binding (design only, 4A.3 (b)) vs a condition | `:=` vs `:`; the first is not proposed |
+| `((h, m): (9, 0))` vs `((h, m): padded(== (9, 0)))` | text pair vs numeric pair: 0 vs 2 of 11,000 `t` subjects (table (E)) | the existing `(m: 0)` vs `(m: padded(==0))` story; the first is the empty-intersection error at a narrowing site (§5.2) |
+| `>= (9, 30)` vs `(>= 9, >= 30)` | dictionary order vs product order: they differ on 2,700 of 11,000 `t` subjects (table (O); `10:00` is in the first only) | BOTH LEGAL, DIFFERENT: the one pair in this census that is neither the same answer nor an error. The operator's place (outside or inside the bracket) says which; owner question **two-orders** |
+
+Count (the lane's): `( )` has nine value-or-statement rows (rev 19's §5.4 has four `( )` rows plus the head and the
+left of `:=` folded into them); the addition is TWO rows (the reference tuple before `:`, the value tuple), and no
+existing row changes meaning; `,` is unchanged.
+
+### 4A.8 The manager's first answers, tested
+
+| answer | verdict | reason |
+|---|---|---|
+| (m1) every tuple-valued expression denotes a SET of tuples, as an rx denotes a set of strings; `(9, 0)` the one-pair set, `(S, T)` the product | HOLDS, INCOMPLETE | the reading is the brackets' ruled "all together" in value position (4A.1); missing: the arity is static and every entry arity 1 (no nesting), a comparison atom's components must be one-string sets, a `$` component gives one pair per match only on set-once labels (table (Q)), equality is string equality per component (table (E)) |
+| (m2) the record is not a value still holds; a tuple set has no names; the joint condition is where the two meet; `(h: S, m: T)` is `((h, m): (S, T))` | HOLDS, INCOMPLETE | the ruling is untouched (4A.1), but three LEAN sentences of the draft that inferred an error from it move (L45, the §5.4 `( e1, ... )` row, the condition row's "any other record"); and "is" is the open **record-is-product**: the ANSWERS are equal (table (P)), the definition is not ruled |
+| (m3) `x` and `(x)` are the same; one-entry parentheses are grouping; every existing set has arity 1; `((h): S)` is `(h: S)` | HOLDS | 4A.2; holds under either **set-arity** answer. Added: `()`, `(e,)` and nested entries are errors |
+| (m4) parts are reached by destructuring `(a, b) := t`, NOT by an index; on a non-product set a part is a projection and loses the pairing | PARTLY WRONG | the index rejection and the projection loss HOLD (table (D): 7 extra subjects on `month_days`); but destructuring is not THE way: no example needs a component of a tuple value, it is out of phase 1 with position (c) itself, and its round trip silently changes a non-product set. The lane's answer: parts are reached by NAMING them left of the colon (the match's `$h`, `$m`); a tuple value is used whole; destructuring held, products only, until a case needs it |
+| (m5) general uses: lookup tables, multi-field allowlists, library constraints over unnamed fields, bounds `($sh, $sm)` | HOLDS, INCOMPLETE | lookup tables and library sets hold (E-CAL, (C4)); the multi-field allowlist has no §12 case; `($sh, $sm)` is UNTESTED and must be refused over repeated labels (table (Q)); missed: CIDR block lists (§3.5's `cidrs`, table (R)) and version-policy arrays |
+| (m6) a tuple set is never a pattern: no text of its own, so `${t}`, `P & t` and concatenation are errors | HOLDS, INCOMPLETE | missed: the final expression, a single-reference condition, `join` entries, index brackets, arithmetic, mixed arity; and `&` is an error only with a PATTERN: `t & u` of one arity is legal (intersection) |
+| R-1 manager's reading (i): a name left of the colon is never looked up as a binding | INCOMPLETE | a COMPUTED label is a binding by spelling and a label of its pattern (§4.4, `predicates_draft.md:1722-1737`; the owner's pointer, CF 2026-11-15 23:46), and it stands left of the colon today (`isodate & (weekday: 6)`); the scope left of the colon is the operand's labels, computed labels included; a PURE binding is never looked up there; owner question **colon-scope** |
+| R-1 (ii): a name in a right-hand tuple is never looked up as a label | HOLDS, with a dependence | labels are read by `$` there (§4.1); the draft's bare `<=dim`, `==wd` (§13 C13, lean `<=$dim`) is the one open spot; under C13's lean it holds |
+| R-1 (iii): a colon-less tuple may stand wherever a value may (bound, passed, returned) | HOLDS, with the exception list | wherever an arity-k value may: not where an arity-1 set is required (4A.6) |
+
+### 4A.9 What the account depends on (open questions, not assumed)
+
+- **set-arity**: none of the answers above change; only the kind table's wording (a column vs a row).
+- **modifier-lift**: `padded((9, 0))` and `padded(open_at)` are legal under it, errors without it.
+- **unset-component**, **joint-loops**: they fix the per-match meaning of a joint condition (does a tuple exist, how
+  iterations pair), not what a tuple VALUE is. The `$`-tuple refusal over repeated labels (4A.4) holds under either.
+- **record-is-product**: the record's answers equal the product's (P); the definition is not assumed.
+- §13 C13 (bare computed labels on the right): R-1 (ii) above.
+
+### 4A.10 Corrections to this note's earlier text
+
+- §2 (THE LEFT): "a positional record of label PATHS ... the record bracket ... in a fourth position" is restated in
+  the owner's terms (R-1): a TUPLE OF REFERENCES, the colon its mark (4A.7). The meaning is unchanged.
+- §2 (THE RIGHT) and §4 item 2 (d): "a 'tuple of values' is not a new value shape, it is a product of one-string
+  sets": the VALUE is a set of tuples (4A.4); products are one producer among six, and `[(9, 0), (17, 30)]` or
+  `>= (9, 0)` are not products. Item 2's two readings of the ruling are settled by 4A.1 (the second: a different
+  thing that shares the bracket).
+- §3 table, row "the tuple `(9, 0)`" ("Collides with 'a record is never a value' ... unless a product is ruled not to
+  be a record") and §6 B1: the owner accepted the tuple as a value (CF:1362); 4A.1 gives why the ruling is untouched,
+  and names the three draft LEAN sentences that move.
+- §4 item 8 CENSUS ("the table grows from four `( )` rows to six"): the full census is 4A.7 (two new rows; the count
+  of rows depends on whether heads and the left of `:=` are counted apart).
+- §8 question 1 **tuple-value**: ANSWERED by the owner (CF:1362-1372); kept for the record, not re-asked.
 
 ## 5. Problems tried
 
@@ -381,7 +672,7 @@ case, B2).
 
 ## 6. Where it breaks
 
-- B1 THE TUPLE MEETS "A RECORD IS NEVER A VALUE" (RULED, CF:851-852). Smallest example: `between((9, 0), (10, 0))`.
+- B1 THE TUPLE MEETS "A RECORD IS NEVER A VALUE" (RULED, CF:851-852) [§4A.10: the tuple as a value accepted, CF:1362; settled by §4A.1]. Smallest example: `between((9, 0), (10, 0))`.
   The compare needs an ordered tuple of values as an argument; under the current rulings `( , )` in value position
   is an error, `[ , ]` is an alternation and a labelled record is a condition. NEW CONCEPT needed: the PRODUCT as a
   value (N1), with sets carrying an arity (N2). Price: two `( )` rows in the mark table, an arity check on every set
@@ -430,7 +721,7 @@ Each is the lane's, not a ruling.
 
 Ranked, most consequential first. Each: reply either way.
 
-1. **tuple-value**: may a positional `( , )` with no `:` stand in value position as a PRODUCT, a set of tuples,
+1. **tuple-value** [§4A.10: ANSWERED, CF:1362-1372, "I am ok with the tuple as a value"; the full account is §4A]: may a positional `( , )` with no `:` stand in value position as a PRODUCT, a set of tuples,
    given "a record is never a value"? Example: `t & ((h, m): between((9, 0), (10, 0)))`. Forces: without it there is
    no tuple bound, so no tuple compare and no `between` over fields (B1); with it, `( , )` gains a value-position
    meaning beside the call, the condition and the left. Leaning: YES, ruled as "a product is a set, not a record";
@@ -453,3 +744,12 @@ Ranked, most consequential first. Each: reply either way.
 6. **record-is-product**: define the record `(h: S, m: T)` as the product case `((h, m): (S, T))` (same answers,
    one mechanism)? Example: the two filters agree on 2,409 cases. Forces: fewer primitives, against touching a ruled
    form's wording. Leaning: yes, as an explanation, not a change.
+
+Added by lane tupleval (§4A; full text with forces and leanings in `docs/dev/lanes/tupleval_report.md`):
+
+7. **tuple-parts**: a tuple value's parts unreachable at compile time, reached by naming them left of the colon
+   (§4A.3). Leaning: yes; destructuring kept for products only, waiting for a case.
+8. **colon-scope**: left of the colon a name is one of the operand's labels (computed labels included), right of it
+   a binding, a label's value read with `$` (§4A.8, R-1 (i)). Leaning: yes.
+9. **two-orders**: `>= (9, 30)` and `(>= 9, >= 30)` both legal with different answers (§4A.7, table (O)). Leaning:
+   keep both.
