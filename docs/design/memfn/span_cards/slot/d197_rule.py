@@ -15,6 +15,9 @@
 # Prints one line per deciding cell and arm, then per level `d197_scan` (find_byte@6 form/libc, never deciding) and
 # `d197_verdict LEVEL FORM RESULT (when) -> trigger`; a CONFIRM names its cells (`d197_confirm_cells GAP.REJECT..`,
 # the SLOT_CONFIRM_CELLS value of job 610). Exit 0 on verdicts, 2 on a refused input.
+# [r13 JF-4] est REFUSES a record when the unit or any floor clause fails and names each refusal's keys; the
+# `refusal` table lets a refusal naming only find_byte@6 SCAN rows (never deciding) stand the arm, the scan line
+# printing the row `scan unpriced (<est's reason>)`; every other refusal refuses the arm, as before.
 import os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
