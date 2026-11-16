@@ -224,7 +224,7 @@ typedef struct {
     int32_t         member, run_lo;
     unsigned        np, pcap;       /* the plan's entries; poff/pterm hold pcap */
     int32_t        *poff;
-    uint8_t        *pterm;
+    uint16_t       *pterm;     /* mf_wreply.plan_term's width (review r27 MEM-1) */
     char            path[16];
 } wf_dec;
 
@@ -1138,10 +1138,11 @@ static void c_asc(wf_dec *d)
  * of two or more positions, never through a position a one-position span
  * covers ([rev3.1 W2]: ofs_test_model's one term per selected offset).
  * Grouping reads adjacency, so it orders first (C-asc is idempotent). */
+_Static_assert(MF_WPLAN_MAX <= UINT16_MAX, "a plan's compare index (< np <= MF_WPLAN_MAX) is a uint16_t: pterm, mf_wreply.plan_term");
 static void c_run(wf_dec *d)
 {
     const wf_alt *m = chosen(d);
-    uint8_t term = 0;
+    uint16_t term = 0;
     c_asc(d);
     for (unsigned i = 0; i < d->np; i++) {
         if (i && d->poff[i] == d->poff[i - 1] + 1) {
@@ -1287,7 +1288,7 @@ static int decide(const mf_art *art, const mf_site *s, int quiet, mf_arena *al, 
         if (n > d->pcap) d->pcap = n;
     }
     d->poff = al->alloc(al->u, (d->pcap ? d->pcap : 1) * sizeof *d->poff);
-    d->pterm = al->alloc(al->u, d->pcap ? d->pcap : 1);
+    d->pterm = al->alloc(al->u, (d->pcap ? d->pcap : 1) * sizeof *d->pterm);
     if (!d->poff || !d->pterm) return -1;
     for (unsigned ai = 0; ai < d->na; ai++) {
         cands(&s->alts[ai], d->rate, &d->a[ai], pos[ai]);
