@@ -1,0 +1,17 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+(D) month_days: 365 tuples; pi1 x pi2 = 372 tuples (7 extra)
+(D) month_days rows checked against datetime(2023): 365 of 365 valid
+(D) subjects 462: joint differs 0 expected; projection admits 7 subjects the table does not (e.g. 04-31, 02-30)
+(D) product (1..12) x (1..28): pi1 x pi2 == the set: True
+(D) [(9, 0), (17, 30)]: pi1 x pi2 = [(9, 0), (9, 30), (17, 0), (17, 30)] (4 tuples, the set has 2)
+(D) cases 924
+(R) 6 CIDR blocks (1 on an octet boundary, 5 not), 346 subjects, 30 in the array; cases 2422
+     '10:00,9:30,'      per-iteration pairs=True  product of $h x $m=False
+     '10:00,9:45,'      per-iteration pairs=True  product of $h x $m=False
+     '10:15,9:45,'      per-iteration pairs=True  product of $h x $m=False
+     '9:45,10:00,'      per-iteration pairs=True  product of $h x $m=False
+     '10:05,9:40,12:00,' per-iteration pairs=True  product of $h x $m=False
+(Q) subjects 11: the unpaired product differs on 5; cases 11
+(E) t population 11000: literal (9, 0) admits 0, padded(== (9, 0)) admits 2; cases 22000
+(O) subjects 11000: `>= (9, 30)` and `(>= 9, >= 30)` differ on 2700 (e.g. 10:00); cases 22000
+TOTAL cases 47357 differ 0 engine-disagreements 0
