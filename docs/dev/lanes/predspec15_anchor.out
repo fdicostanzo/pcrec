@@ -1,0 +1,35 @@
+(W) anchor.whole: the edge criterion, with a counter-case for the message's claim in every place it fires
+    columns: place | program | subject | with the anchor | without | edge? | warns (rule) | claim holds
+  side of & (final)          | /\d+/ & /^5/  vs  /\d+/ & /5/                | 'x55'     | 1-2      | 1-2      | yes  | yes   | yes
+  side of & (final)          | /\d+/ & /0*^5/  vs  /\d+/ & /0*5/            | 'x005'    | 3-4      | 1-4      | no   | no    | (differs: the anchor means something)
+  side of & (final)          | /\w+/ & /a?^b/  vs  /\w+/ & /a?b/            | 'ab'      | 1-2      | 0-2      | no   | no    | (differs: the anchor means something)
+  side of & (final)          | /\w+/ & /foo$(?s:.*)/ vs no $                | 'foobar'  | 0-3      | 0-6      | no   | no    | (differs: the anchor means something)
+  side of & (final)          | /[\w\n]+/ & /(?m)^foo/ vs /foo/              | 'xfoo'    | 1-4      | 1-4      | yes  | yes   | yes
+  side of & (final)          | /[\w\n]+/ & /(?ms).*^foo.*/ vs no ^          | 'xfoo'    | 1-4      | 0-4      | no   | no    | (differs: the anchor means something)
+  label: condition           | (x: /^S\w*/)  vs  (x: /S\w*/)                | 'S-1'     | False    | False    | yes  | yes   | yes
+  label: condition           | (x: /^S\w*/)  vs  (x: /S\w*/)                | 'Sab'     | True     | True     | yes  | yes   | yes
+  label: condition           | (x: /.*^err.*/)  vs  (x: /.*err.*/)          | 'x err'   | False    | True     | no   | no    | (differs: the anchor means something)
+  compile-time set           | @warn.off(/^dead\./) vs /dead\./             | 'names'   | ['dead.'] | ['dead.'] | yes  | yes   | yes
+  compile-time set           | @warn.off(/a?^b/)  vs  /a?b/                 | 'names'   | ['b']    | ['ab', 'b'] | no   | no    | (differs: the anchor means something)
+  side of & in a hole        | /port=${ /^\d+$/ & <256 }/ vs no ^$          | 'port=80' | 0-7      | 0-7      | yes  | yes   | yes
+  side of & in a hole        | /port=${ /\d*^5\d*/ & <256 }/ vs no ^        | 'port=15' | no match | 0-7      | no   | no    | (differs: the anchor means something)
+  macro body (anchored)      | /\w+/ & anchored(/foo/) vs & /foo/           | 'xfoo'    | 1-4      | 1-4      | yes  | yes   | yes
+  macro body (user, same)    | /\w+/ & my_anch(/foo/) vs & /foo/            | 'xfoo'    | 1-4      | 1-4      | yes  | yes   | yes
+  hole param (padded)        | /\d+/ & padded(/^5/) vs padded(/5/)          | 'x005'    | 3-4      | 1-4      | no   | no    | (silent: a hole is no role, ruled)
+  written hole = macro       | /\d+/ & /0*${/^5/}/ vs /0*${/5/}/            | 'x005'    | 3-4      | 1-4      | no   | no    | (silent: a hole is no role, ruled)
+  hand expansion = macro     | /\d+/ & /0*^5/ vs /0*5/                      | 'x005'    | 3-4      | 1-4      | no   | no    | (differs: the anchor means something)
+  hole param at body edge    | /\w+/ & startsWith(/^foo/) vs (/foo/)        | 'xfoobar' | 1-7      | 1-7      | no   | no    | (silent: a hole is no role, ruled)
+  claim true at every place the rule warns: True (19 rows)
+
+(T) O69 tuple compare (review r16 FIXIND-1): conditions (l: padded(cmp)) = whole match of /0*(?:SET)/
+  2 fields (as written): 2208 cases, 0 differ
+  3 fields (every comparison padded, rev 15): 448 cases, 0 differ
+
+(A) is any_case(rx) := /(?i:${rx})/ a plain body?  meaning: s accepted iff s equals some member of S up to case
+  one literal /ho/                       | 781 strings | document reading:   3 differ | raw paste:   0 differ
+  number filter <12                      | 781 strings | document reading:   0 differ | raw paste:   0 differ
+  a set with & /[a-z]+/ & /h\w*/         | 781 strings | document reading: 155 differ | raw paste: 155 differ
+  a label condition (w: "ho")            | 781 strings | document reading:   3 differ | raw paste:   3 differ
+  a nested transform startsWith("h")     | 781 strings | document reading: 156 differ | raw paste:   0 differ
+
+engine disagreements (libpcre2-8 vs Python re): 0
