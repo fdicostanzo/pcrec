@@ -11,8 +11,8 @@ addendum commit, before this report). Validation in the worktree: `make test-spe
 cites a plan line number` (the land1115c landing report; 357 rows parsed, 1 violation;
 its selftest 45 plants, 0 failures). This lane's files add no violation. Premise test held:
 abi 108 (T1), rev 4.1 with a stage-2 bullet naming 4095, seam max 32 (T2), no existing cover
-width limit (T5). Owed runs: none (every number needing a sweep or timing is written as part
-of the design's plan, not claimed).
+width limit (T5). OWED: none (every number needing a sweep or timing is written into the
+design's plan for the build, not claimed here).
 
 ## WHAT THE ADDENDUM SAYS
 
