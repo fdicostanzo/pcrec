@@ -429,7 +429,7 @@ __attribute__((noinline)) uint64_t CAT(SYM, _gate)(const unsigned char *s, size_
         patch "$SCR/$row/d197_rule.py" '    "second-run-without-a-verdict": lambda v: v["second"] and (' \
 '    "second-run-without-a-verdict": lambda v: False and v["second"] and (' ;;   # SABOTAGE S3209 (the plant carries no comment: the line continues)
     m4) job=d197e2e want='drill	end to end on est.s synthetic window	WRONG'
-        patch "$SCR/$row/d197_rule.py" '"kit.%s.%s" % (t["deciding"]["scan"], f)' '"kit.%s_.%s" % (t["deciding"]["scan"], f)' ;;   # SABOTAGE S3214 (the plant carries no comment: mid-line)
+        patch "$SCR/$row/d197_rule.py" 'scan_of(out, drift, "kit.%s.%s" % (t["deciding"]["scan"], f))' 'scan_of(out, drift, "kit.%s_.%s" % (t["deciding"]["scan"], f))' ;;   # SABOTAGE S3214 (no comment: mid-line; [scanrow] re-aimed at the scan line's read, scan_keys now spells the same key)
     m5) job=shape want='shape	\[S3210\][^	]*	WRONG'
         patch "$SCR/$row/link.py" '        if callee.startswith("."):' '        if False:   # SABOTAGE S3215: section symbols not refused' ;;
     m6) job=shape want='shape	\[S3220\][^	]*	WRONG'

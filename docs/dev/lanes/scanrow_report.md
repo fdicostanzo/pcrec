@@ -105,7 +105,10 @@ Replay of last night's records, through job 609 itself, with the fixed rule:
   - The dry run prints the rc mapping line, and the expect is now `verdicts=3 lines=^d197_verdict\t`.
   - DEVIATION from R2's text: est draft rc **4** is also accepted (R2 said {0,3}). `write_draft` returns
     `outcome[1]`, so a PARTIAL night writes its draft and returns 4. Under {0,3} that normal night would be RED. The
-    old job had the same latent defect: `draft || rc=1`. Revert to {0,3} if you meant it.
+    old job had the same latent defect: `draft || rc=1`. ACCEPTED by the kit manager (R2 follow-up: PARTIAL is a
+    declared outcome). Where est declares it: est.py `compute`'s outcome table, `outcome = ("PARTIAL", 4, ...)`.
+    `write_draft` starts `msgs, rc = [], outcome[1]` and ends `return rc`, and `main`'s `draft` returns it.
+    REFUSED is 3, from `outcome = ("REFUSED", 3, ...)` and `draft`'s `return outcome[1]`.
   - d197 on an input error. Directly, on last night's UNFINALIZED avx2 record: rc 2, 0 verdict lines (`is not
     finalized`). Directly, on an absent dir: rc 2, 0 verdict lines. Through 609, with the avx2 copy's plan.tsv
     removed (finalize refuses): job rc 1, d197_verdict.txt holds only `d197: REFUSED input: ... is not finalized`.
