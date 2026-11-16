@@ -15,4 +15,5 @@ D3G-1/2/3/4/6 fixed, D3G-5 noted-and-done (cheap). Merged origin/main (ea83fbc01
 make -j4 up to date; `make test-memfn-d3floor`-equivalent (run_d3floor.sh) rc 0, 4 cells ok, 52/52 plants ok; the repros above; make strict rc 0; tests/memfn/run_arch_blind.sh 17/0. Full REPIN run reverted (checkout) since numbers equal the pins. No make test, no box jobs.
 
 ## STATE AT HANDOFF
-Branch lane/memfn-d3wire, rulings file empty (no entry applied). Ready for the one-critic check. OWED: none
+Branch lane/memfn-d3wire, rulings file empty (no entry applied). Ready for the one-critic check.
+OWED: none
