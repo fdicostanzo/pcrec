@@ -1678,3 +1678,17 @@ unmarked absent label fails the pass; marked: the others are tested). LEAVES: ze
 labels; UNDEFINED, for rev 20: a computed label reading an absent label, `$h` / a hole on an absent label, the
 mark through a macro's label parameter; the one shape with no one-mark fix (an all-looped record with an optional
 field per item).
+
+**2026-11-16 MANAGER'S READINGS after the fold of absent-rule (session 135, box clock 14:50; NOT the owner's words;
+told to him; each to be attacked by the critic round on the folded note and stated in rev 20 as the manager's).**
+From lane absfold's corners (docs/dev/lanes/absfold_report.md, CONTRADICTIONS AND CORNERS): (a) `all(...)` over no
+values holds for EVERY absence alike (the lane's A2m), never "an empty list only": the other readings bring the
+`?`/`*` spelling split back (5 of 11 groups) and one breaks record = &. (b) The mark means ONE thing in every
+shape: "some value would put the tuple in the set" (the lane's F1; for one label with a non-empty set that is the
+same as "satisfied"); so zero-pass-empty closes: a marked absent label against a set empty through a match value
+FAILS in both spellings. (c) "Some value" ranges over ANY text, not only the texts the label's group can match;
+the constant cases where that differs are the draft's empty-intersection error. (d) The mark inside
+`some(...)`/`count(...)` is a compile ERROR naming the fix (those count values that exist), replacing the
+earlier sub-choice "not counted". (e) "Absent where the condition looks at it" is judged PER PASS for a label
+inside a loop (the reading record = & needs: pooled, (OP) 8 and (ZN) 48 differ). (f) The all-looped record with an
+optional field per item has no one-mark fix; listed as an open item for rev 20, not repaired.
