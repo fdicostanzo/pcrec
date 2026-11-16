@@ -1325,3 +1325,10 @@ therefore a macro, nothing more. Consistent with the manager's withdrawal of the
 The manager's notes (not ruled): the SAME test applies to the sigil route's own array, `[^h, ^m]`: by the general
 path an array of field references is a field reference ("h or m"), and picking an entry is the existing structural
 index, which must be shown to be an existing tool and not a new one; the next revision states both.
+
+**2026-11-16 RULING — a compare over looped labels warns (Frank, to session 134, box clock 00:09).** Asked
+**looped-compare** (compared labels inside a loop are checked per label over all iterations, not per tuple:
+`/(?:(?<h>\d{1,2}):(?<m>\d\d),)*/` with "at least 9:00" rejects `10:00,9:30,`; keep, error, or warn; lean: warn,
+naming the in-loop spelling), his words: "looped-compare: warn". RECORD: the meaning stays as the sequence rule gives
+it (per label over every iteration), and the compiler WARNS when a compared field can hold more than one occurrence,
+the warning naming the fix (write the compare inside the loop's item). Not an error.
