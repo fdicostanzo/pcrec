@@ -1,7 +1,8 @@
 # land1116 report: five reviewed branches landed (2026-11-16, sonnet landing lane)
 
 ## STATE AT HANDOFF
-Rulings applied: R1 (reviews/CLAUDE.md index-append conflict resolved keep-every-line). OWED: none.
+Rulings applied: R1 (reviews/CLAUDE.md index-append conflict resolved keep-every-line).
+OWED: none
 Pushed sha: given in the lane message to the manager (the report cannot name its own commit).
 D177 trigger state: row 5 FIRES (5 minors now); row 4 un-fired (1 major); no queue action taken by this lane.
 
