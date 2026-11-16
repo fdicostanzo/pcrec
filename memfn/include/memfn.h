@@ -684,13 +684,15 @@ typedef enum { MF_WFLOOR_UNSTATED = 0, MF_WFLOOR_SUBJECT, MF_WFLOOR_EXPR } mf_wf
  * 2). A SHAPE BOUND, not a tuning constant. */
 #define MF_WMAX_ALT 2
 /* The offsets a span position may lie at: [-MF_MAX_BACK, MF_WREACH). A SHAPE
- * BOUND, CHOSEN at 64 (D77): twice the longest piece (MF_WSPAN_POS) past the
- * longest walk; TRIGGER: a pcrec statement past it, refused naming `start`.
- * Since MF_SITE_ABI 30 the proof range's ceiling MF_MAX_FWD IS this bound,
- * so every offset a window plan tests is inside it (R-out refuses one that
- * is not; r45_reply.md rev 4 §1). The raise to 4096 waits with
- * MF_WSPAN_POS's (lane span4k's report). */
-#define MF_WREACH 64
+ * BOUND, CHOSEN (D77) at 4096 since MF_SITE_ABI 30 (r45_reply.md rev 4 §1:
+ * the largest piece pcrec's cover may state, MF_WSPAN_POS at its raise to
+ * 4095, plus its following offset; 64 before, twice the longest piece past
+ * the longest walk); TRIGGER: a pcrec statement past it, refused naming
+ * `start`. It sizes no struct and no working state (the kit's is per
+ * extent): it is a REFUSAL bound. The proof range's ceiling MF_MAX_FWD IS
+ * this bound, so every offset a window plan tests is inside it (R-out
+ * refuses one that is not). */
+#define MF_WREACH 4096
 
 /* Since MF_SITE_ABI 30 (R-45) the per-position facts are COUNTED LISTS in
  * storage the HOST owns (the writer of the statement), `len` entries each:
