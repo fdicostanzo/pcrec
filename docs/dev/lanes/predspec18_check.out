@@ -1,0 +1,191 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+
+(D) rev 17's populations (every compared label set, digits) vs integer lexicographic order; rev 17's rows
+  2 h:m      [h, m]  above, rev 17: P & !lex_le                828 cases, 0 differ
+  2 h:m      [h, m]  below, rev 17: P & !lex_ge                828 cases, 0 differ
+  2 h:m      [h, m]  equal = lex_between(lo, lo)               828 cases, 0 differ
+  2 h:m      [h, m]  lex_between                              4968 cases, 0 differ
+  2 h:m      [h, m]  lex_ge                                    828 cases, 0 differ
+  2 h:m      [h, m]  lex_le                                    828 cases, 0 differ
+  2 m past h [h, m]  above, rev 17: P & !lex_le                828 cases, 0 differ
+  2 m past h [h, m]  below, rev 17: P & !lex_ge                828 cases, 0 differ
+  2 m past h [h, m]  equal = lex_between(lo, lo)               828 cases, 0 differ
+  2 m past h [h, m]  lex_between                              4968 cases, 0 differ
+  2 m past h [h, m]  lex_ge                                    828 cases, 0 differ
+  2 m past h [h, m]  lex_le                                    828 cases, 0 differ
+  2 versions [major, minor]  above, rev 17: P & !lex_le        208 cases, 0 differ
+  2 versions [major, minor]  below, rev 17: P & !lex_ge        208 cases, 0 differ
+  2 versions [major, minor]  equal = lex_between(lo, lo)       208 cases, 0 differ
+  2 versions [major, minor]  lex_between                       832 cases, 0 differ
+  2 versions [major, minor]  lex_ge                            208 cases, 0 differ
+  2 versions [major, minor]  lex_le                            208 cases, 0 differ
+  3 h:m:s    [h, m, sec]  above, rev 17: P & !lex_le           640 cases, 0 differ
+  3 h:m:s    [h, m, sec]  below, rev 17: P & !lex_ge           640 cases, 0 differ
+  3 h:m:s    [h, m, sec]  equal = lex_between(lo, lo)          640 cases, 0 differ
+  3 h:m:s    [h, m, sec]  lex_between                         2560 cases, 0 differ
+  3 h:m:s    [h, m, sec]  lex_ge                               640 cases, 0 differ
+  3 h:m:s    [h, m, sec]  lex_le                               640 cases, 0 differ
+  total: 25848 cases, 0 differ
+(D') the same populations, rev 18's strict spelling (lex_ge & !lex_le, lex_le & !lex_ge)
+  2 h:m      [h, m]  above, rev 18: lex_ge & !lex_le           828 cases, 0 differ
+  2 h:m      [h, m]  below, rev 18: lex_le & !lex_ge           828 cases, 0 differ
+  3 h:m:s    [h, m, sec]  above, rev 18: lex_ge & !lex_le      640 cases, 0 differ
+  3 h:m:s    [h, m, sec]  below, rev 18: lex_le & !lex_ge      640 cases, 0 differ
+  total: 2936 cases, 0 differ
+
+(R) rev 16's bundled body vs the decomposed form (author pattern = the same field patterns and separator)
+  7528 cases, 0 differ
+
+(U) OPTIONAL and NON-DIGIT compared labels vs the decided-prefix order (incomparable = every form rejects)
+  nond \w h:\w m      [h, m]  above, rev 17: P & !lex_le       210 cases, 100 differ
+  nond \w h:\w m      [h, m]  above, rev 18: lex_ge & !lex_le   210 cases, 0 differ
+  nond \w h:\w m      [h, m]  below, rev 17: P & !lex_ge       210 cases, 100 differ
+  nond \w h:\w m      [h, m]  below, rev 18: lex_le & !lex_ge   210 cases, 0 differ
+  nond \w h:\w m      [h, m]  equal = lex_between(lo, lo)      210 cases, 0 differ
+  nond \w h:\w m      [h, m]  lex_between                     1260 cases, 0 differ
+  nond \w h:\w m      [h, m]  lex_ge                           210 cases, 0 differ
+  nond \w h:\w m      [h, m]  lex_le                           210 cases, 0 differ
+  opt  h(:m)?        [h, m]  above, rev 17: P & !lex_le        966 cases, 10 differ
+  opt  h(:m)?        [h, m]  above, rev 18: lex_ge & !lex_le   966 cases, 0 differ
+  opt  h(:m)?        [h, m]  below, rev 17: P & !lex_ge        966 cases, 10 differ
+  opt  h(:m)?        [h, m]  below, rev 18: lex_le & !lex_ge   966 cases, 0 differ
+  opt  h(:m)?        [h, m]  equal = lex_between(lo, lo)       966 cases, 0 differ
+  opt  h(:m)?        [h, m]  lex_between                      5796 cases, 0 differ
+  opt  h(:m)?        [h, m]  lex_ge                            966 cases, 0 differ
+  opt  h(:m)?        [h, m]  lex_le                            966 cases, 0 differ
+  opt3 h:m(:sec)?    [h, m, sec]  above, rev 17: P & !lex_le   400 cases, 5 differ
+  opt3 h:m(:sec)?    [h, m, sec]  above, rev 18: lex_ge & !lex_le   400 cases, 0 differ
+  opt3 h:m(:sec)?    [h, m, sec]  below, rev 17: P & !lex_ge   400 cases, 5 differ
+  opt3 h:m(:sec)?    [h, m, sec]  below, rev 18: lex_le & !lex_ge   400 cases, 0 differ
+  opt3 h:m(:sec)?    [h, m, sec]  equal = lex_between(lo, lo)   400 cases, 0 differ
+  opt3 h:m(:sec)?    [h, m, sec]  lex_between                 1600 cases, 0 differ
+  opt3 h:m(:sec)?    [h, m, sec]  lex_ge                       400 cases, 0 differ
+  opt3 h:m(:sec)?    [h, m, sec]  lex_le                       400 cases, 0 differ
+  total: 19688 cases, 230 differ
+  witness '9' (m unset), bound [9, 30]: lex_ge2 False, lex_le2 False; rev 17 above True and below True at once; rev 18 above False, below False
+  witness '10' (m unset): lex_between2([(h:), (m:)], [9, 30], [11, 0]) -> accept (decided by h; m never read)
+  witness 'ab:00' (\w field), bound [9, 0]: rev 17 above True, rev 18 above False
+
+(Z) bound literals with LEADING ZEROS, and bounds from the same match, under the two readings of an atom
+  reading=value  [09, 00]..[10, 00]                            138 cases, 0 differ
+  reading=value  [09, 30]..[09, 59]                            138 cases, 0 differ
+  reading=value  [9, 0]..[10, 0]                               138 cases, 0 differ
+  reading=value  lex_ge2([(b1:), (b2:)], [$a1, $a2])           144 cases, 0 differ
+  reading=width  [09, 00]..[10, 00]                            138 cases, 6 differ
+  reading=width  [09, 30]..[09, 59]                            138 cases, 3 differ
+  reading=width  [9, 0]..[10, 0]                               138 cases, 0 differ
+  reading=width  lex_ge2([(b1:), (b2:)], [$a1, $a2])           144 cases, 30 differ
+  total: 1116 cases, 39 differ
+  witness '9:30' in [09, 00]..[10, 00]: width reading reject, value reading accept
+
+(L) REPEATED compared labels
+  (L1) a label twice in the projection: /(?<h>\d{1,2}):(?<m>\d\d)/ & lex_ge2([(h:), (h:)], lo)
+    lo [9, 30]  accepts  18 of 138; = 'h > 9': True; = 'h >= 9': False; = the meant [h, m] compare: False; entry 2 (h == 9 & h >= 30) empty (dead.branch fires): True
+    lo [9, 5]   accepts  30 of 138; = 'h > 9': False; = 'h >= 9': True; = the meant [h, m] compare: False; entry 2 (h == 9 & h >= 5) empty (dead.branch fires): False
+    lo [9, 0]   accepts  30 of 138; = 'h > 9': False; = 'h >= 9': True; = the meant [h, m] compare: True; entry 2 (h == 9 & h >= 0) empty (dead.branch fires): False
+    '9:45' with lo [9, 30]: reject (the meant [(h:), (m:)] compare: accept)
+  (L2) a LOOPED label: (?:(?<h>\d{1,2}):(?<m>\d\d),)* & lex_ge2([(h:), (m:)], lo), the sequence rule (§4.3, RULED CF:583)
+  in-item list_of(P & lex_ge2(...)) vs 'EVERY tuple >= lo'     114 cases, 0 differ
+  the body vs 'EVERY tuple >= lo'                              114 cases, 16 differ
+  the body vs 'SOME tuple >= lo'                               114 cases, 62 differ
+  total: 342 cases, 78 differ
+    ''               body (lex_ge2 [9, 0]) -> accept
+    '10:00,9:30,'    body (lex_ge2 [9, 0]) -> reject
+    '9:30,10:00,'    body (lex_ge2 [9, 0]) -> reject
+    '10:00,11:00,'   body (lex_ge2 [9, 0]) -> accept
+
+(N) WRONG-LENGTH calls, run by §3.2's absent-entry rule (no refusal exists in the bodies)
+  lex_ge2([(h:), (m:), (sec:)], [9, 30]) vs '[h, m] >= 9:30'   160 cases, 0 differ
+  lex_ge2([(h:), (m:)], [9]) vs 'h > 9'                        138 cases, 0 differ
+  lex_ge3([(h:), (m:)], [9, 0, 0]) vs 'strictly above 9:00'    138 cases, 0 differ
+  total: 436 cases, 0 differ
+
+(S) the example PROGRAMS SEARCHED (some span matched whole by the program, §2.2); pinned by author boundaries
+  time 9:00..10:00         '19:30'      searched -> accept (span '9:30'   ) | pinned -> reject
+  time 9:00..10:00         '10:001'     searched -> accept (span '10:00'  ) | pinned -> reject
+  time 9:00..10:00         '9:30'       searched -> accept (span '9:30'   ) | pinned -> accept
+  time 9:00..10:00         'at 9:30 ok' searched -> accept (span '9:30'   ) | pinned -> accept
+  time 9:00..10:00         '10:00:01'   searched -> accept (span '10:00'  ) | pinned -> reject
+  h:m:s 9:30:05..10:00:00  '19:30:05'   searched -> accept (span '9:30:05') | pinned -> reject
+  versions 1.4..1.10       '1.40'       searched -> accept (span '1.4'    ) | pinned -> reject
+  versions 1.4..1.10       '11.4'       searched -> accept (span '1.4'    ) | pinned -> reject
+  versions 1.4..1.10       '1.100'      searched -> accept (span '1.10'   ) | pinned -> reject
+  versions 1.4..1.10       'v1.9'       searched -> accept (span '1.9'    ) | pinned -> accept
+  semver >= 1.4.0          '0.1.4.0'    searched -> accept (span '1.4.0'  ) | pinned -> reject
+  semver >= 1.4.0          'v1.4.0'     searched -> accept (span '1.4.0'  ) | pinned -> accept
+  pinned searched vs whole-value answer on (D)'s time and version subjects: 190 cases, 0 differ
+
+(C) a COMPUTED label as a compared field (rulings R-2): ym & lex_between2([(year:), (mnum:)], lo, hi),
+    mnum := $mname.index (the month name's 1-based position, §4.4), emulated as a label holding that numeral
+  [2023, 1]..[2023, 1] vs (year, month number) order            50 cases, 0 differ
+  [2024, 12]..[2025, 1] vs (year, month number) order           50 cases, 0 differ
+  [2024, 3]..[2025, 2] vs (year, month number) order            50 cases, 0 differ
+  the month NAME compared directly, [(year:), (mname:)] (non-digit: never read past year)   150 cases, 0 differ
+  total: 300 cases, 0 differ
+
+(W) the worked rows of §8 (rev 18), each subject matched WHOLE by the filter
+  /(?<h>\d{1,2}):(?<m>\d\d)/ & lex_between2([(h:), (m:)], [9, 0], [10, 0])
+    '9:00'         -> accept 
+    '09:30'        -> accept 
+    '9:59'         -> accept 
+    '10:00'        -> accept 
+    '10:01'        -> reject 
+    '8:59'         -> reject 
+    '11:00'        -> reject 
+    '9:5'          -> reject 
+  /(?<m>\d\d) past (?<h>\d{1,2})/ & lex_between2([(h:), (m:)], [9, 0], [10, 0])  (labels in the other order)
+    '30 past 9'    -> accept 
+    '00 past 10'   -> accept 
+    '01 past 10'   -> reject 
+    '59 past 8'    -> reject 
+  /(?<h>\d{1,2}):(?<m>\d\d):(?<sec>\d\d)/ & lex_between3([(h:), (m:), (sec:)], [9, 30, 5], [10, 0, 0])
+    '9:30:05'      -> accept 
+    '09:30:05'     -> accept 
+    '9:59:59'      -> accept 
+    '10:00:00'     -> accept 
+    '9:30:04'      -> reject 
+    '10:00:01'     -> reject 
+    '8:59:59'      -> reject 
+    '9:30'         -> reject 
+  /(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)/ & lex_between2([(major:), (minor:)], [1, 4], [1, 10])
+    '1.4'          -> accept 
+    '1.9'          -> accept 
+    '1.10'         -> accept 
+    '1.3'          -> reject 
+    '1.11'         -> reject 
+    '2.0'          -> reject 
+    '0.9'          -> reject 
+    '1.04'         -> reject 
+    '1x4'          -> reject 
+  semver & lex_ge3([(major:), (minor:), (patch:)], [1, 4, 0])  (the 2026-11-14 record's shape)
+    '1.4.0'        -> accept 
+    '1.10.2'       -> accept 
+    '2.0.0'        -> accept 
+    '1.3.99'       -> reject 
+    '0.9.9'        -> reject 
+    '1.04.0'       -> reject 
+  /(?<major>\d+)\.(?<minor>\d+)/ & lex_between2([(major:), (minor:)], [1, 4], [1, 10])  (rev 16 row, restored)
+    '1.04'         -> accept 
+    '01.10'        -> accept 
+    '1.010'        -> accept 
+    '1.011'        -> reject 
+  /(?<h>\d{1,2})(?::(?<m>\d\d))?/ & lex_between2([(h:), (m:)], [9, 30], [11, 0])  (m OPTIONAL; rev 18)
+    '10'           -> accept 
+    '9:45'         -> accept 
+    '9'            -> reject 
+    '11'           -> reject 
+    '11:00'        -> accept 
+  strictly above 9:30: P & lex_ge2(s, [9, 30]) & !lex_le2(s, [9, 30]), P = the optional-minutes pattern (rev 18)
+    '9:31'         -> accept 
+    '10'           -> accept 
+    '9:30'         -> reject 
+    '9'            -> reject 
+    '8'            -> reject 
+  /(?<h>\d{1,2}):(?<m>\d\d)/ & lex_between2([(h:), (m:)], [09, 00], [10, 00])  (leading-zero bounds; rev 18)
+    '9:30'         -> accept 
+    '09:30'        -> accept 
+    '9:00'         -> accept 
+    '10:01'        -> reject 
+  53 worked rows, 0 not as stated
+
+engine disagreements: 0

@@ -1,0 +1,14 @@
+(U) optional label m: author pattern /(?<h>\d{1,2})(?::(?<m>\d\d))?/, bound [9, 0]
+  9     ge2=False le2=False above=P&!le2=True  below=P&!ge2=True  equal=between(t,t)=False
+  10    ge2=True  le2=False above=P&!le2=True  below=P&!ge2=False equal=between(t,t)=False
+  8     ge2=False le2=True  above=P&!le2=False below=P&!ge2=True  equal=between(t,t)=False
+  9:00  ge2=True  le2=True  above=P&!le2=False below=P&!ge2=False equal=between(t,t)=True
+  9:30  ge2=True  le2=False above=P&!le2=True  below=P&!ge2=False equal=between(t,t)=False
+  8:59  ge2=False le2=True  above=P&!le2=False below=P&!ge2=True  equal=between(t,t)=False
+(L) repeated labels h, m in a loop /(?:(?<h>\d{1,2}):(?<m>\d\d),)*/, lex_ge2 bound [9, 0]
+  ''             lex_ge2=True  every tuple >= 9:00: True
+  '10:00,9:30,'  lex_ge2=False every tuple >= 9:00: True
+  '9:30,10:00,'  lex_ge2=False every tuple >= 9:00: True
+  '8:00,'        lex_ge2=False every tuple >= 9:00: False
+  '9:15,'        lex_ge2=True  every tuple >= 9:00: True
+  '10:00,11:00,' lex_ge2=True  every tuple >= 9:00: True
