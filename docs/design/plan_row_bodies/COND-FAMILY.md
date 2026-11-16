@@ -1370,3 +1370,13 @@ his order: its relation to conditions as defined (the record), whether a plain v
 joint-condition questions (set-arity, unset-component, joint-loops, modifier-lift, record-is-product) are NOT answered
 by this entry. The manager's first answers in the session's reply are the MANAGER'S (not ruled), to be tested by the
 fleshing-out lane (tupleval).
+
+**2026-11-16 OWNER STATEMENT — the colon tells the two brackets apart (Frank, to session 134, box clock 09:47).** His
+words: "In my mind (x, y) is different than (x,y): because the colon. So tuples need a left hand side with colon which
+mean the symbols are scoped references to the intersected labels, and a right hand side which says the are bindings et
+al". RECORD: (1) `(x, y):` (a bracket FOLLOWED by a colon) and `(x, y)` (no colon) are different things, told apart
+by the colon; (2) in the bracket left of the colon the symbols are SCOPED REFERENCES to the labels of the intersected
+operand; (3) on the right-hand side the symbols are bindings (and values: "et al"). THE MANAGER'S READING (not his
+words, to be checked): a name inside the left bracket is never looked up as a binding, a name inside a right-hand
+tuple is never looked up as a label; a bare `(x, y)` with no colon is the tuple VALUE and may stand wherever a value
+may (bound, passed, returned), not only directly right of a colon.
