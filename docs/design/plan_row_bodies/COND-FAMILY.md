@@ -1197,3 +1197,12 @@ row with the re-reading-transforms follow-up as its first named client (`json.qu
 CORRECTION (manager, box clock 21:58) to the entry above: the idea IS on record, in THIS file: the 2026-11-14 entries "a
 standard library of blessed callouts (Frank)" and "capability levels" (search this file for "blessed"). What did not
 exist is a plan.md row of its own. The guarantees are the ones recorded there, not the manager's candidates above.
+
+**2026-11-15 OWNER POINTER — `enumerate` as a basis for `any_case` (Frank, to session 133, box clock 21:59).** On the
+follow-up for a more fundamental basis for `any_case`, his words: "What about \"enumerate\"". RECORD (the manager's
+reading and untested answer): `enumerate(rx)` (adopted earlier in this file: the array of a FINITE rx's strings)
+gives `any_case` a body for FINITE filters: enumerate the strings, and spell each character as the class of its case
+variants from a case-pair table (a spelled array, like the month names), joined back; no product blow-up, since each
+character becomes one class. Limits to examine in the follow-up: a filter that is not finite (`any_case(/\w+/)`)
+has no enumeration; the table (ASCII is 26 pairs; Unicode case folding is official UCD data). It joins the
+follow-up's routes beside the option-setting primitive and the blessed callout.
