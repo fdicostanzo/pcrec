@@ -1581,3 +1581,12 @@ compares in the first library (CF:1166); the joint condition takes that first-li
 sigil (CF 00:06) is PAUSED INDEFINITELY: it is not in rev 20's language; it returns only for a use with REAL VALUE,
 and rejecting the empty case of the author's own `*` loop (`some(^h)`) is NOT such a use (his bar, his words).
 (3) The suspended questions reference-index and bound-reference stay suspended with the sigil.
+
+**2026-11-16 OWNER RULING — label-twice: an error (Frank, to session 135, box clock 13:16).**
+Asked **label-twice** (a label written twice on the left, `((h, h): R)`, and so in a record, `(h: <5, h: >2)`: a
+compile ERROR naming the fix, or the DIAGONAL reading "(h's text, h's text) in R"; the manager's and the folding
+lane's lean: error), his words: "label-twice: agree an error. And that means it's also unofficially parked in case
+some other meaning becomes valuable". RECORD: RULED: a label named twice in one condition is a COMPILE ERROR in
+both forms (the record being the product case), its message naming the fix (illustrative, D26: "h is named twice;
+for two tests on one label write `(h: <5 & >2)`"). The spelling stays FREE for a later meaning (his
+"unofficially parked"): noted in docs/design/predicates_future.md item 9; the diagonal is not adopted.
