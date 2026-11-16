@@ -28017,3 +28017,38 @@ Next
   three questions in a row are corners of one rule, ask for the rule. (2) A lean stated with "it rests on X" let
   Frank and me drop it cleanly when X fell, twice. (3) An options lane that runs every candidate over the same
   populations (the spelling test above all) turned a two-hour argument into one table; do that before leaning.
+
+## 2026-11-16 (session 136, first part, box clock 15:10-17:53; manager = fable; written IN FLIGHT, context near compaction)
+
+- PREDICATES (design only), three revisions and two critic rounds in one afternoon. Review r28 (round absfold on
+  joint_condition.md §4G) ruled: all accepted; lane absfix (opus) applied it (§4H) and ran the three candidate domains
+  for the mark's "some value" (any text / the group's own text / the values the label can take): only the third
+  passes all four tests. Lane predspec20 (opus) wrote rev 20 of predicates_draft.md from the note's 73-row change
+  list; review r29 (round predspec20, 50 findings in 17 groups) ruled; lane predspec21 wrote rev 21; lane predspec22
+  (rev 22) is RUNNING at this entry. Filing lanes file28, file29 (sonnet) filed r28 and r29 and their process changes.
+- OWNER RULINGS today (all in docs/design/plan_row_bodies/COND-FAMILY.md's tail, his words quoted): optional-as-loop
+  (`x?` and `(?:x|)` answer alike); mark-domain as a PRINCIPLE (semantics follow what the pattern means, never its
+  spelling), wording provisional with an asterisk ("two patterns that match the same subjects and set their labels
+  the same way answer every condition alike" (*)); match-context: anywhere; zero-pass-empty: agreed (the mark's one
+  meaning); domain-scope, AGAINST my lean: a pattern narrowed by a condition is a different pattern, the value set is
+  read from the PROGRAM; mark-narrows: my variant (unmarked conditions narrow; a marked one only where its label is
+  present); not-is-complement: `!` applies to a pattern or a set of strings, never a condition; mark-in-none: LEFT AS
+  IS, against my lean (none is a macro, no special error). default-reaches-dollar closed by MY derivation from the
+  record/joint unification (0 of 12,546 differ, lane predspec21).
+- MY READINGS THAT FELL today: "any text" (the complement trap); "the mark inside some/count is an error"; "regex
+  only" for the domain's scope; "DOM over matches where every named label is present" (empty on two labels that never
+  co-occur); "conditions only ever narrow" (FALSE under negative polarity: a mark under a not/none lets an added
+  condition admit a subject; 22 program pairs, 0 with a default). LESSON: a domain read per program makes a marked
+  condition depend on its neighbours; I accepted domain-scope without naming that cost and the owner had to ask
+  "do you have reservations?". State the costs of a ruling you lost when it is made, not when asked.
+- Owner remarks PARKED in docs/design/predicates_future.md: item 10 (a debugger/explainer for writing conditions),
+  11 (restricting a default to the label's possible values; my judgment: no), 12 (a warning a macro raises about its
+  own arguments, `@compiler.warn(cond, ...)`; his follow-up: the condition as a PROPERTY OF THE SET).
+- [COVER-CAP] STAGE 2: the kit DELIVERED plan B (lane/memfn-span4k @ 60c2958ae + the held raise
+  lane/memfn-span4k-raise @ 9d4907a16; its cloud test and axes green). Owner: "Cover-build-go: go" (~17:30). Lane
+  covs2b (opus) RUNNING: the combined branch (lane/covs2afix + main + the kit's branch + the raise), the inventory of
+  r45read W1-W27 / r45chk P1-P9 against the merged tree, the core items, the ONE abi event; cloud test as its last
+  act; S3260-S3275 reserved. Follow-up units, a code round, then the timing nights.
+- Housekeeping: 7 worktrees pruned by file28; owed (quiet gate): jcfix, revjc, ledg1116, absent, absimpact, absfold,
+  file28, absfix, predspec20, file29, predspec21. Kit timing window 01:00 on 11-17 (10 jobs queued); a one-shot load
+  check at 00:27. main pushed through 62fbef5ab, CI green on 13c13efde.
