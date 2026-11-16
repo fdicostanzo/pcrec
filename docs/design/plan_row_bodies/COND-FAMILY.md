@@ -1029,3 +1029,18 @@ each_occurrence / containing and the manager's lean "occurrences", his words: "1
 transform spelled `search` through rev 12 is `occurrences` from rev 13 on. Not ruled (manager's note): whether the
 `hit` label it exposes is renamed to match; that is a spelling-step question. Still open with him at this entry:
 whether `anchored` is defined with `\A`/`\z` rather than `^`/`$` (he asked for the impact first).
+
+**2026-11-15 RULINGS — `anchored` has exact ends; which `&` is the operator in rx text (Frank, to session 133,
+~20:55).** (a) Asked whether `anchored` should use `\A`/`\z` rather than `^`/`$` (impact given: they differ only on a
+value ending in a newline, where PCRE's `$` also holds before it), and shown the confirming round's general form
+(define `anchored(P)` as "P in filter role on the enclosing scope" instead of the text splice `/^${rx}$/`, which gives
+exact ends with no new rule), his words: "Anchored def: agree." RECORD (the manager's reading of which text he agreed
+to: both give the same answers): `anchored(P)` matches its scope WHOLE with exact ends, defined as P in filter role;
+`anchored(/foo/)` as a final pattern does not match `foo\n`. His earlier example spelling `/^${rx}$/` was a
+placeholder. (b) On "with the `&`-in-rx switch ON, PCRE's own constructs such as `(?&name)` keep their meaning, `&` is
+the operator only where it stands alone, a literal `&` is `[&]`", his words: "agree. Limited to where | is used to mean
+alternation. Also, \& should work as escape. Why not?" RECORD: under ON, `&` is the operator exactly in the positions
+where `|` means alternation (so never inside a class, quoted text, a callout's text, a `(?...` opener, a property
+name, or after a backslash); everywhere else PCRE's reading stands. A literal ampersand is `\&` or `[&]`, both plain
+PCRE. (Rev 11 withdrew only an automatic REWRITE of every `&` to `\&` when moving a pattern across the switch, which
+breaks `(?&a)`; the escape itself was never refused.)
