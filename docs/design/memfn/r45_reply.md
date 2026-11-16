@@ -676,13 +676,14 @@ re-tested about `k/2` times.
 - The only MEASURED loss is EMITTED-2's: x6.65 in instructions at `k` = 32, in form I, inside
   the shipped default. cover_cap.md §11.4 reports instructions and never rules on them. The
   loss at `k` > 32 is an extrapolation.
-- The TRIGGER is C1's near-miss column, H(h\*) against C5 at `k` = 24/32, together with
-  cover_cap.md §11.4 row 5's near-miss cells. Either one showing a timed loss beyond the floor
-  triggers the fix.
+- The TRIGGER is C1's near-miss column, H(h\*) against C5 at `k` = 24/32 (row R4 of §3's
+  table [rev 3]), together with cover_cap.md §11.4 row 5's near-miss cells. Either one showing a
+  timed loss beyond the floor triggers the fix. Under plan B the C1 column is not run before the
+  landing, so the §11.4 cells are the trigger alone.
 - The fix is one answer to cover_cap.md §11.2's EMITTED-2 order (one-pass, kit, then §9 Q8):
   D-hors generalised, at every `k`.
-- Until it lands, the option's spec hunk names dense near-miss subjects as the cover's known
-  slow regime.
+- Until it lands, the option's caller-facing spec hunk (tuning.md §2.43¶3d [rev 3, F15]) names
+  dense near-miss subjects as the cover's known slow regime.
 - The idea is logged in the kit's ideas log, unevaluated.
 
 ## 5. ASK (5): how the statement and the reply carry the longer span, and the abi events
@@ -701,7 +702,7 @@ re-tested about `k/2` times.
 | `mf_wreply` (`memfn.h:1695-1719`) | `uint8_t nplan`; `plan[72]`, `plan_term[72]`, `plan_test[72]` inline; `uint8_t run_len` | `uint16_t nplan`; `const int32_t *plan`, `const uint16_t *plan_term`, `const uint8_t *plan_test` (`nplan` entries); `uint16_t run_len`; a NONE ask leaves `plan_test` NULL (it is the frame part's) | the CALLER's `mf_rows` | 532 B -> 136 B; 7 B per plan entry: 287 B at k=32, 28,728 B at 4095 |
 | `mf_walt`, `mf_pred`, `mf_term`, `mf_site` | — | unchanged (`MF_MAX_TERM` 32, `MF_WMAX_SPAN` 32) | — | unchanged |
 
-### Where the rows live [rev 2, F3: a real mechanism]
+### Where the rows live [rev 2, F3: a real mechanism; rev 3: F2, F4, F5, F6, F7, F17]
 
 Today the asks are PURE on a const art, and they have no arena parameter. `mf_ask` and
 `mf_defined` take `const mf_art *` (`memfn.h:1527-1538`), and so does `mf_wdecide`
@@ -728,14 +729,20 @@ int mf_ask(const mf_art *, const mf_site *, const mf_hooks *def, mf_class *out, 
 int mf_wdecide(const mf_art *, const mf_site *, const mf_hooks *def, uint8_t call,
                mf_wreply *out, mf_rows *rows);
 ```
-- **`mf_rows_need`** gives:
-  - `proof_cap = min(MF_MAX_FWD, last_s + 2) - MF_PROOF_LO`;
+- **`mf_rows_need`** gives the MINIMUM a correct text needs:
+  - `proof_cap = min(MF_MAX_FWD, last_s + 2) - MF_PROOF_LO` for a proving class (§1), 0 for any
+    other [rev 3, F3];
   - `plan_cap` = the number of distinct offsets the site states, which is <= `MF_WPLAN_MAX`,
     since plan offsets are stated positions.
-- **The asks** write only `*out` and the caller's `rows`. They refuse (-1) if the reply needs
-  more than the caps (§1), and on -1 they write nothing to `rows`. A part a call does not
-  fill may be NULL/0: `mf_ask` reads only the proof part, and `mf_wdecide` only the plan part.
-  A NULL `rows` refuses.
+  A caller may pass MORE. The ceiling is the constant `MF_MAX_FWD - MF_PROOF_LO` (4,104 rows).
+  **pcrec's cover ask passes the ceiling** [RULED r22 F2 (i), main to confirm], so every
+  over-read reaches B5 (§1); every other caller may pass the minimum.
+- **The asks** write only `*out` and the caller's `rows`. They refuse (-1) by §1's three
+  refusals (R-out, R-cap, R-short), and on -1 they write nothing to `rows` and leave `*out`
+  zeroed (`ask_sel`'s `memset`, `compose.c:1068`): `proof_n` 0 and `proof` NULL [rev 3, F5
+  (4)]. A part a call does not fill may be NULL/0: `mf_ask` reads only the proof part, and
+  `mf_wdecide` only the plan part. A NULL `rows` refuses, except for a non-proving class asked
+  through `mf_ask`, which needs none.
 - **The rows' lifetime is the caller's.** Two asks given the same storage overwrite each
   other, so a re-ask that must compare against an earlier reply (§5 (a)) uses its own
   storage.
@@ -744,6 +751,43 @@ int mf_wdecide(const mf_art *, const mf_site *, const mf_hooks *def, uint8_t cal
 - **The define side is not an ask.** `mf_define`/`mf_emit` (`mf_result`) and `mf_defined` take
   their rows from the ART's arena, which the art has held since `mf_art_begin`, so no new
   callback. Those rows are valid until that arena dies, as every other define product is.
+  [rev 3, F4] The define allocates EXACTLY `proof_n` rows by §1's rule (no caller cap, so R-cap
+  cannot fire there), and refuses by R-out and R-short with their messages. Hence an ask and a
+  define of the same site AGREE (the deep-compare rule below) whenever the ask's storage holds
+  `proof_n`: always at the ceiling, and at the minimum whenever the text keeps the kit's
+  promise. A disagreement at the minimum is a promise breach, which is what the ask-vs-define
+  tests (`arm_fixtures.c:432`, `g2_win_gen.c:1358`) exist to see; they pass the ceiling only
+  where they need agreement on a defective text.
+- **The kit's internal producers [rev 3, F4].** Five kit paths make a class or a reply outside
+  the two public asks, and each gets storage by one rule:
+  - `define_sel` (`compose.c:1176-1209`: a stack `mf_class` filled by `wf_plan_class` or
+    `kit_class`, then `r->cls = cls`): its rows come from the art's arena, sized `proof_n`;
+  - `kit_legacy_arm` (`compose.c:325-339`: a stack class computed only to test that `kit_class`
+    succeeds, then discarded): a kit-internal scratch of the ceiling size, freed before it
+    returns. Its verdict does not move: old-field FIND keeps the clip (§1), so `kit_class`
+    gains no new refusal;
+  - `wdecide_framed` (`window.c:2708`, its `reply_of` at `:2733`): writes into the caller's
+    `rows` it was handed;
+  - `wf_agree`'s two holders `asked` and `held` (`window.c:2812-2839`; `held.plan_test[i]` is
+    written at `:2836-2839`): each gets its own `calloc` plan storage of `nplan` entries, freed
+    with `d`. The kit writes through its own non-const pointer; the reply's members stay `const`
+    to every reader.
+  - `formhash.c`'s `fh_work` (`:410-415`): see (e).
+- **The family this joins [rev 3, F17, DOC].** `mf_rows` is the THIRD shape of caller-owned
+  output lists in `memfn.h`: (1) an inline fixed-cap struct the caller owns (`mf_finder_listing`,
+  `MF_FINDER_MAX` 32; and today's `proven[]`/`plan[]`); (2) a caller buffer plus its size (`char
+  *err, size_t n`: `mf_opts_check`, `mf_target_parse`, `mf_family_parse`); (3) caller pointers
+  plus caps with a pure need query (`mf_rows`/`mf_rows_need`). The next variable-length reply
+  list picks one of these three, never a fourth shape. The general form is (3): `need(site) ->
+  caps; ask(..., rows)`, with "outside the count = the list's neutral value" (all ones for proof
+  rows). Its unlocks, none built now, each with its trigger:
+  - `mf_finder_listing` onto rows+need. TRIGGER: the finder table reaching `MF_FINDER_MAX`;
+  - `mf_class.pres[]` as a counted list. TRIGGER: a presence site stating more than
+    `MF_MAX_PRES` spans;
+  - the run-length proof (below, "Stack and arena") as a second ELEMENT KIND of the same list.
+    TRIGGER: `covcost2`'s RSS share;
+  - one serializer for every reply. TRIGGER: the first out-of-process kit consumer (the plan as
+    a text seam).
 - **Principle 9, checked.**
   - The request side carries two NUMBERS (the caps), which the reader can compute from the
     statement with `mf_rows_need`.
@@ -754,8 +798,8 @@ int mf_wdecide(const mf_art *, const mf_site *, const mf_hooks *def, uint8_t cal
   - Unchanged and out of scope: `mf_art_begin`'s `mf_arena` and `mf_hooks`' callbacks are
     existing seam debt. This change adds none.
 - **pcrec's side.**
-  - pcrec allocates `rows` from `cx->arena` at each ask (the same accounting as rev 1's
-    arena rows).
+  - pcrec allocates `rows` from `cx->arena` at each ask: the ceiling for the cover ask
+    (`known.c:418`), `mf_rows_need`'s minimum for every other.
   - Callers on main: `emit_dfa.c:7162, :8491, :8905, :11579` and `known.c:418` (`mf_ask`), and
     `emit_dfa.c:7719, :7758, :16325` (`mf_wdecide`). The `memfn_sites.h` prototype comment
     changes too.
@@ -764,12 +808,20 @@ int mf_wdecide(const mf_art *, const mf_site *, const mf_hooks *def, uint8_t cal
   - Tests: `g2_pres_gen.c:747, :760`; `g2_win_gen.c:926, :1015, :1076, :1140, :1271, :1358`;
     `arm_fixtures.c:476, :562, :1455, :2443, :2554, :2812, :2841-2842, :2860, :2870`;
     `d27_frame.c:527`; `proof_check.c:283, :526`; `proven_check.c:251`;
-    `run_decide_check.c:207`.
-  - Mech rows whose text names these calls, re-anchored and REACH re-read: S3045, S3064,
-    S3097.
+    `run_decide_check.c:207`. A test's reply rows come from the test's OWN storage, never the
+    art's arena: `d27_frame.c:1094` (`ask_arena_no_growth`) counts the art arena's blocks
+    across asks and would read red otherwise [rev 3, F6].
+  - A design probe the link checks compile [rev 3, F7]:
+    `docs/design/memfn/span_pick/probe/probe.c:101` (`mf_wdecide`, then `r.plan[i]` /
+    `r.plan_term[i]` to `r.nplan`), compiled `-fsyntax-only -Wall -Werror` against
+    `memfn/include` by `tests/memfn/run_link_checks.sh:264-275` on every run. It gains the
+    `rows` argument in the same build, or the link check reds.
+  - Mech rows [rev 3, F7]: S3097 embeds an `mf_wdecide` call in its plant text
+    (`SAB_BEFORE`, the `emit_dfa.c:16325` line) and is RE-ANCHORED; S3045 and S3064 name the
+    asks only in comments and DESC, so they need a REACH re-read only.
 - **abi**: inside `MF_SITE_ABI` 29 -> 30 (below).
 
-### Readers that move [rev 2, F4, F5, F6: found by grep at main ea83fbc01]
+### Readers that move [rev 2, F4, F5, F6: found by grep at main ea83fbc01; rev 3, F5, F6: re-counted at origin/main 56c315567]
 
 **The deep-compare rule (F4).** Two classes, or two replies, AGREE iff:
 - every by-value member is equal; and
@@ -795,9 +847,16 @@ own compare, so a control never borrows the kit's.
   - `d27_frame.c:529` (zero on refusal: holds, since pointers are NULL);
   - `d27_frame.c:1028, :1050, :1052, :1105` (repeated-ask whole compares) [rev 2: not in r20's
     list];
+  - `d27_frame.c:1075` (`purity_same_class_text`, two compares), `:1084` (`purity_miss_class`),
+    `:1124` (`purity_after_define`), `:1178` (`purity_after_unrelated_define`): whole-reply
+    compares, which would read FALSE red once two asks use separate storage [rev 3, F6];
   - `d27_frame.c:1062, :1064` (`offsetof(mf_wreply, framed)`: `plan`/`plan_term` lie before
     `framed`).
 - By value, unchanged but padding-free (§1): `emit_dfa.c:1665` and `g2_pres_gen.c:980` (`cls.run`).
+- COUNT [rev 3, F6]: 22 compare sites (the 18 above r22 and its 4 added, `d27_frame.c:529`'s
+  zero compare included, the by-value `cls.run` pair excluded), by `grep -rnE
+  'memcmp\s*\(\s*&'` plus the `offsetof(mf_wreply|mf_class|mf_result|mf_wspan)` grep over
+  `src memfn tests` at origin/main.
 
 **(b) Loops bounded by an old constant, which become loops bounded by the count:**
 - `compose.c:1267` (`MF_MAX_FWD - MF_PROOF_LO` over `proven`);
@@ -819,6 +878,10 @@ own compare, so a control never borrows the kit's.
   Inside the kit the writer holds a non-const pointer to the caller's or the art's storage;
   the struct's member is `const` to every reader.
 - pcrec: `known.c:655` (B5).
+- classes that prove nothing [rev 3, F5 (4)]: the PRESENCE ask (`compose.c:1086-1092`, "every
+  proof all ones"), a NONE-form class (the MF_TRACE check `compose.c:1266-1271` loops the whole
+  range for it today), a non-FIND class, and the zeroed refusal: each has `proof_n` 0 and
+  `proof` NULL, and every loop above runs zero times on it.
 - tests:
   - `proof_check.c:404` (the want `{ MF_MAX_FWD - 1, "ALL" }`: becomes "the last row in the
     range"), `:409-419`, `:729, :735` (the LAYER-INVARIANT compare: a deep compare over
@@ -851,6 +914,15 @@ Each re-anchored row's REACH is re-run (`REACH_ONLY=1`) in the build.
   `d27_frame.c:299-311, :344-345, :361, :1267-1268`, `arm_fixtures.c:324-327, :2228-2232`,
   `run_decide_check.c:136-139, :182-186`, `g2_pres_gen.c:509-513` and
   `g2_win_gen.c:612-616, :875-879` (with its local arrays `:126-127`).
+- A KIT-INTERNAL writer [rev 3, F5 (1)]: `memfn/src/formhash.c`'s `fh_work` (`:410-415`, calloc'd
+  at `:437`) holds an inline `mf_wspan sp`, written at `:496-502` (`fh_set` into `sp.set[0]`)
+  and after, and an `mf_result res` whose rows now live in the scratch art's arena. `fh_work`
+  gains `set`/`table_ref` arrays sized by the span's `len`. It is kit code (the form-hash
+  renderer that measurement-set staleness reads), not a test.
+- Reply HOLDERS sized by a fixed bound [rev 3, F6]: G2's own `g2w_reply`
+  (`memfn/tests/g2/g2_win.h:46-61`, `plan`/`plan_term`/`plan_test[G2W_NOFF]`) is filled by copies
+  bounded by the kit's `nplan` (`g2_win_gen.c:1145`, `:1290`); it grows with `G2W_REACH` (§3
+  "Answers"), and the long rows get storage sized by their `nplan`.
 
 **(f) Casts that truncate SILENTLY after the widening (F6).** Each is respelled to the widened
 type, or declined above the row's contract:
@@ -879,7 +951,7 @@ by `git grep`). They are updated in the build or flagged in its report:
 `docs/spec/` has none. `memfn.h`'s own comments (`:147-148`, `:297-316`, `:650-667`,
 `:1320-1340`) are the contract text and move with the code.
 
-### Stack and arena (pcrec's holders) [rev 2, F19]
+### Stack and arena (pcrec's holders) [rev 2, F19; rev 3, F2, F4]
 
 - **The 8 by-value `mf_class` stack holders** (7 CandScan locals in every build, plus 1 in the
   PCREC_CAND_TRACE build) take 13,120 B, down from 23,456 B.
@@ -888,9 +960,18 @@ by `git grep`). They are updated in the build or flagged in its report:
   `:7757` and `:16318`. Each shrinks by 396 B.
   - A by-value copy shares the rows. Every holder lives within one compile's `cx->arena`, so no
     holder outlives its rows.
-- **Arena.** pcrec's `rows` take `proof_n x 32` B per class ask, plus 7 B per plan entry per
-  window ask.
-  - At `k` = 4095 that is 131,328 B + 28,728 B per ask of the cover site.
+- **Arena** [rev 3, F2, F4: the cover ask's ceiling storage and the define's rows added]. pcrec's
+  art arena IS `cx->arena` (`memfn_sites.c:187-189`), so it carries three kinds of rows:
+  - ASK rows: `proof_n x 32` B per class ask at `mf_rows_need`'s minimum, EXCEPT the cover ask,
+    which takes the ceiling, 4,104 x 32 = 131,328 B at EVERY `k`; plus 7 B per plan entry per
+    window ask (28,728 B at 4095);
+  - DEFINE rows: `proof_n x 32` B per define of a proving class (1,312-1,344 B at `k` = 32;
+    131,328 B at 4095), 0 for a non-proving class (so the 5000-byte VM run compare adds none);
+  - the statement's host arrays (§5 (e)): 36 B per position, 147,420 B at 4095.
+  - Per compile attempt of a cover, that is about 291 KB of rows at `k` = 4095 (131,328 ask +
+    131,328 define + 28,728 plan), and about 133 KB at `k` = 32 (131,328 ask + about 1,600
+    define and plan), against today's class held inline (a 3,000 B `mf_result`). The short-cover
+    growth is the price of the ceiling storage (r22 F2 (i)); it is main's to confirm (§7).
   - `cx->arena` is freed at Ctx teardown (`compile.c:332`), so these accumulate PER COMPILE,
     SUMMED OVER the size-ladder attempts.
 - **For comparison**, an inline layout at 4095 would make the class 132,948 B: 8 x that is
