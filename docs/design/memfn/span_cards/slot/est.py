@@ -738,7 +738,7 @@ def compute(rundir):
             if not r["gate"]:
                 # [r13 JF-4] the failed gate's numbers, for a reader that prints the row unpriced (d197's scan line)
                 r["gate_why"] = ("gate FAIL: value %d not positive" % r["value"] if r["value"] <= 0 else
-                                 "gate FAIL: noise %d is %d e6 of value %d, over the card gate %d e6"
+                                 "gate FAIL: noise %d is %d ppm of value %d, over the card gate %d ppm"
                                  % (r["noise"], rhafz(half * r["noise"] * 10**6, r["value"]), r["value"], G))
     unit = out.get(plan.UNIT_KEY, {})
     unit_bad = None
