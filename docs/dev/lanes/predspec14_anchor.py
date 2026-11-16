@@ -251,6 +251,23 @@ WARN_ROWS = [
  ("anchored(...): the macro's ends", "no", ("anchored(/foo/)", S(A_text("foo"))), ("/foo/", S(Frag("foo"))), "xfoo"),
 ]
 
+# R-4 (2026-11-15 20:57, "cut-unpadded: agree"): `unpadded` is cut; the time range is written with SPLIT FIELDS:
+#   hm := /(?<h>\d{1,2}):(?<m>\d\d)/
+#   t & hm & (h: padded(between(9, 10))) & when((h: padded(==10)), (m: "00"))
+# `when(c, p)`: `x & when(c, p)` = `(x & c & p) | (x & !c)` (§8). padded(S) := /0*(?:${S})/.
+class Not:
+    def __init__(s, x): s.x = x
+    def ev(s, sub, k, m, I, J): return not s.x.ev(sub, k, m, I, J)
+HM = r"(?<h>\d{1,2}):(?<m>\d\d)"
+H910 = Cond(HM, "h", padded(Frag("(?:9|10)")))
+H10 = Cond(HM, "h", padded(Frag("10")))
+M00 = Cond(HM, "m", Frag("00"))
+TIME = Amp(H910, Alt(Amp(H10, M00), Not(H10)))
+TIME_SUBJ = ["9:00", "09:30", "10:00", "10:01", "8:59", "9:59", "10:59", "11:00"]
+def rev13_unpadded(w):   # the cut transform's reading, for comparison: zero-pad to width 5, compare as text
+    v = w.rjust(5, "0")
+    return "09:00" <= v <= "10:00" and re.fullmatch(r"\d{1,2}:\d\d", w) is not None
+
 def main():
     global ENGINE
     print("# THE AMPERSAND RULE BY POSITION (searched final programs unless the row says otherwise)")
@@ -309,6 +326,16 @@ def main():
         print("padded(%-15s body accepts %-34s %s | rev 13 reading: %-30s %s" % (lab + ")", ",".join(b),
               "bare splice SAME" if u == b else "bare splice DIFFERS: " + ",".join(u), ",".join(r),
               "SAME" if r == b else "MOVES"))
+    print()
+    print("# R-4: the time range 09:00..10:00 with split fields (whole-match on each subject) vs the cut unpadded reading")
+    for w in TIME_SUBJ:
+        res = {}
+        for ENGINE in ("pcre2", "re"):
+            res[ENGINE] = TIME.ev(w, 0, len(w), 0, len(w))
+        bad += res["pcre2"] != res["re"]
+        u = rev13_unpadded(w)
+        print("%-7r split fields: %-6s | unpadded(5, between(\"09:00\", \"10:00\")) (cut): %-6s %s" % (
+              w, "accept" if res["pcre2"] else "reject", "accept" if u else "reject", "SAME" if u == res["pcre2"] else "DIFF"))
     print()
     print("engines disagree on %d rows" % bad)
     return 1 if bad else 0

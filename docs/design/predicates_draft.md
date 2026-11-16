@@ -2,8 +2,8 @@
 
 ## Changelog
 
-- **rev 14 (lane predspec14, 2026-11-15).** Folds the owner's four entries after rev 13 (CF:1083-1124 on main, box
-  clock 20:43-20:48; the 20:45 and 20:48 entries arrived during it as rulings R-1 to R-3). (A) WORDS: a filter role
+- **rev 14 (lane predspec14, 2026-11-15).** Folds the owner's five entries after rev 13 (CF:1083-1136 on main, box
+  clock 20:43-20:57; the 20:45, 20:48 and 20:57 entries arrived during it as rulings R-1 to R-4). (A) WORDS: a filter role
   "matches its stretch whole", the sides of `&` match THE SAME stretch whole, tied to each other; "anchored" is kept
   for the macro and real `\A`/`\z`/`^`/`$` (§0.3 new row, §11 renamed THE ONE WHOLE-MATCH RULE, stated in three
   sentences; the draft's own voice respelled by census, quotations and history kept). §8 states the contrast
@@ -14,11 +14,13 @@
   never by a name (§11 table of where it fires and why; §7.1; §13 O65 CLOSED). `padded(rx) := /0*(?:${rx})/` (the
   owner's body, grouped by the manager's call): its parameter sits in a HOLE, so `padded(/^5/)` accepts only `5`
   and draws no warning; §2.7's "a modifier's argument is itself a filter" WITHDRAWN; §2.7 BODIES OF THE PROVIDED
-  TRANSFORMS: five transforms (`unpadded`, `any_case`, `length`, `month_numbered`, `json.quoted`) are NOT plain
-  macros (§13 O67, owner question **primitive-transforms**). §11 STRING SETS: filter roles are a side of `&`, a
+  TRANSFORMS: `unpadded` was not a plain macro and the owner CUT it (CF:1125-1136, "cut-unpadded: agree"; §9; the time
+  range rewritten by split fields; the natural-order range a later item, §13 O68); four more (`any_case`, `length`,
+  `month_numbered`, `json.quoted`) are NOT plain macros (§13 O67, owner question **primitive-transforms**). §11 STRING SETS: filter roles are a side of `&`, a
   `label:` condition, a compile-time set; a parameter lands where its body puts it. §0.1: L13 ANSWER MOVES (BY
   DESIGN stays); L7, L15 BY DESIGN -> WARNING; L11, L41, L69, L70, L71 renamed diagnostic; L66, L68 reworded. §12:
-  E-CTX-5's equivalence moves; E-CTX-1, E-CTX-7 draw the warning. Evidence: `docs/dev/lanes/predspec14_anchor.py`
+  E-CTX-5's equivalence moves; E-CTX-1, E-CTX-7 draw the warning. CUT (CF:1125-1136): `unpadded` and the lint's
+  suggestion of it (§9; the time-range example by split fields, §2.7; §13 O68 natural-order range, later). Evidence: `docs/dev/lanes/predspec14_anchor.py`
   / `.out` (0 disagreements, libpcre2-8 10.46 vs Python 3.14 `re`). DECIDED (30)-(35).
 - **rev 13 (lane predspec13, 2026-11-15).** Applies the confirming review r14 on rev 12 (draft
   `$PCREC_TMPDIR/scratch/crit-predspec12/review.md`, filed by another lane) and folds the owner's three entries after
@@ -271,8 +273,8 @@ Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 | NO warning for a count filter in a searched program; the trap and its fix stated where counts are documented (CF:1075-1077) | "Host count warn: agree" (CF:1075); confirmed "Count warning: yes I agree with that interpretation" (CF:1081) | |
 | an `&` in a hole: the stretch the hole consumes is the scope both operands match whole; `999${/\d+/ & <100}999` matches `99945999`, an acceptance row (CF:1079-1080) | "so the match span that the & expression creates anchors for is the ${} hole. 999${/\d+/ & <100}999 matches 99945999" (CF:1078-1079) | the near row `99912345999` (no match) and the other positions: §11 THE AMPERSAND RULE TESTED BY POSITION |
 
-  The FOUR entries after rev 13 (rev 14; CF:1083-1124 on main, box clock 20:43-20:48; the last two arrived during this
-  revision as rulings R-1 to R-3). Each is the owner's short answer to a question or remark of the manager's; the
+  The FIVE entries after rev 13 (rev 14; CF:1083-1136 on main, box clock 20:43-20:57; the last three arrived during
+  this revision as rulings R-1 to R-4). Each is the owner's short answer to a question or remark of the manager's; the
   20:45 entry narrows the 20:44 one (the place is the ROLE, so "a modifier argument" is not a place of its own) and
   the 20:48 entry gives `padded` a body:
 
@@ -282,6 +284,7 @@ Status marks (rev 10, unchanged in rev 11; every mark is one of three):
 | NO compile error specific to `anchored` in a hole; `x${anchored(/a/)}` never matches, as plain PCRE's `/x\Aa\z/` (CF:1093-1098) | "anchored-in-hole: agree" (CF:1097) | a general "can never match" warning: NOT ruled, §13 O66 |
 | ONE warning for an explicit anchor in every place a pattern must match its stretch whole (CF:1098-1101) | "anchor-warn-scope: agree" (CF:1100) | the name `anchor.whole` (rev 13: `anchor.operand`), its text, and that every compile-time set counts (LEAN) |
 | the warning, and the whole-match requirement, key off the ROLE after macros are expanded, never a transform's name; a parameter the body splices into a hole is not in a filter role (CF:1103-1111) | "But! padded is a simple macro so the warning shouldn't key off of the name" (CF:1105) | the bodies table and the five transforms that are not plain macros (§2.7; §13 O67, **primitive-transforms**) |
+| `unpadded(n, S)` CUT from the first spec with the `compare.width` suggestion pointing at it; the time range by split fields; a natural-order range a LATER item (CF:1125-1136) | "cut-unpadded: agree" (CF:1129), after "The issue is numbers compare right aligned and strings left" (CF:1127-1128) | the worked split-fields example and its minute clause (this document, §2.7, §9) |
 | `padded(rx) := /0*${rx}/`, a plain macro; its parameter is in a hole (CF:1113-1124) | "padded(rx) := /0*${rx}/" (CF:1114); "Give or take details." (CF:1122) | the group `/0*(?:${rx})/` (the manager's call, CF:1123-1124); the manager's consequence that `padded(/\b5/)` is plain PCRE: NOT followed, the hole's edge-assertion error (L8) stands (§13 decision (34)) |
 
 - **LEAN**: a manager's reading or proposal, this document's consequence of a ruling, an owner "perhaps", or a
@@ -607,7 +610,7 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
 interfaces (§3), match values, repeated labels and computed labels (§4), capability levels and the reporting axis
 (§6), the compile-time boundary, modules and warnings (§7). LIBRARIES, built on the foundation and changeable without
 it: `each`, `join`, `records`, `file_text`, standard filters and filter modifiers (`between`, `startsWith`,
-`endsWith`, `contains`, `anchored`, `length`, `padded`, `unpadded`, `any_case`, `quoted`), the transform `occurrences`, the group questions
+`endsWith`, `contains`, `anchored`, `length`, `padded`, `any_case`, `quoted`; `unpadded` CUT in rev 14), the transform `occurrences`, the group questions
 `some`, `all`, `count` and the `occurs` counts, `assert`, tuple comparisons, blessed callouts (§8). The
 ORGANISATIONAL layer (DECLARED TYPES, type members, UFCS, `types()`; rev 7 called the first "interfaces", a word
 that now names the array and map interfaces, §0.3) is CUT from the first spec (§9); declared types may return as
@@ -1068,7 +1071,9 @@ construction, regular in, regular out (inverse image under a rational relation);
 whose reading yields text the subject does not contain: BODIES OF THE PROVIDED TRANSFORMS, below, §13 O67.)
 
     month & padded(between(1, 12))                 # accepts "05", "5", "12": leading zeros ignored by the filter
-    t & unpadded(5, between("09:00", "10:00"))      # accepts "9:00": the filter reads it as if zero-padded to width 5
+    hm := /(?<h>\d{1,2}):(?<m>\d\d)/                # a time range by SPLIT FIELDS (rev 14; `unpadded` is cut, §9):
+    t & hm & (h: padded(between(9, 10)))            #   09:00..10:00 accepts "9:00", "09:30", "10:00"
+          & when((h: padded(==10)), (m: "00"))      #   the range's end: at hour 10 only minute 00 ("10:01" rejected)
     (msg: quoted(contains("timeout")))              # the filter reads only the text inside the quotes
     (host: any_case("example.com"))                 # the filter ignores letter case
     alts & !startsWith("#") & length(<=20)          # the filter reads the subject's length
@@ -1078,7 +1083,7 @@ whose reading yields text the subject does not contain: BODIES OF THE PROVIDED T
 NAMING RULE (rev 12: EVERY TRANSFORM THE LIBRARY PROVIDES, the owner's ruling CF:1020-1022, accepted at CF:1006;
 rev 10-11 bound modifiers only, review r10 FIXA-1): a provided transform is named for HOW IT CHANGES THE FILTER, which
 values the changed filter accepts, or (LEAN, this document's reading, derived from the owner-ruled name `length`,
-CF:722; not part of CF:1020-1022's words) what it reads (an adjective or phrase: `padded`, `unpadded`, `any_case`,
+CF:722; not part of CF:1020-1022's words) what it reads (an adjective or phrase: `padded`, `any_case`,
 `quoted`, `length`, `month_numbered`, `anchored`, `occurrences`; a predicate on the value: `contains`, `startsWith`,
 `endsWith`), never a verb acting on the subject (`unpad`, `trim`, `lowercase`, rev 12's `search`). The owner's words: "the name transform
 seemed to imply you were transforming the subject, but of course you're transforming the filter ... What helped was
@@ -1114,20 +1119,20 @@ transform's whole-match behaviour cannot be derived from a body written in the l
 | `occurrences(S, min)`, `contains(S)` | the loop body of §2.6 around `(?<hit>(?:${S}))`; `contains(S) := occurrences(S, min = 1)` | hole |
 | `quoted(S)` | `/"${S & /[^"]*/}"/` while the quoted text holds no escape (LEAN, this document: "only the text inside the quotes" IS a stretch of the subject, so an `&` inside the hole makes S match that stretch whole; a plain splice `/"(?:${S})"/` would let `quoted(/^a/)` never match, its `^` reading the stretch before the quote) | a side of `&` inside the hole: filter role |
 | `left(n, S)`, `right(n, S)`, `mid(i, n, S)` | `left(n, S) := /${S & /(?s:.){${n}}/}(?s:.*)/` (LEAN; out of range: §13 O14), the others alike | a side of `&` inside the hole: filter role |
-| `unpadded(n, S)` | NOT EXPRESSIBLE: it reads the subject AS IF zero-padded, i.e. tests S against text the subject does not contain (`9:00` is tested as `09:00`); a body over the subject would have to be `/${S'}/` where S' is S with up to n-1 leading zeros REMOVED from each of its strings, a transform OF THE SET S (a left quotient), which the language has no spelling for | (the pullback primitive) |
+| `unpadded(n, S)` | CUT by the owner (rev 14, CF:1125-1136 on main, "cut-unpadded: agree"; §9). It was NOT EXPRESSIBLE: it reads the subject AS IF zero-padded, i.e. tests S against text the subject does not contain (`9:00` is tested as `09:00`); a body over the subject would have to be `/${S'}/` where S' is S with up to n-1 leading zeros REMOVED from each of its strings, a transform OF THE SET S (a left quotient), which the language has no spelling for | (the pullback primitive) |
 | `any_case(S)` | NOT EXPRESSIBLE: it tests S against the case-folded subject; `/(?i:${S})/` is not it, a hole inserts a SET, not text for `(?i)` to re-read, and S may hold labels, comparisons or `&` | (the pullback primitive) |
 | `length(S)` | NOT EXPRESSIBLE in general: it tests S against the subject's LENGTH as a numeral, text the subject does not contain; for a finite S, an alternation of `/(?s:.){k}/` over its members | (the pullback primitive) |
 | `month_numbered(S)` | NOT EXPRESSIBLE: it tests S against a month's NUMBER (`Jan` read as `1`); a finite table, but keeping a row only when its number lies in S is a compile-time test the language does not spell | (the pullback primitive) |
 | `json.quoted(S)` | NOT EXPRESSIBLE: it tests S against the DECODED string (`A` read as `A`) | (the pullback primitive) |
 
-So five provided transforms are NOT plain macros: each tests its argument against text that is not a stretch of
+So five provided transforms were NOT plain macros; the owner CUT `unpadded` (rev 14, CF:1125-1136 on main), and four remain: each tests its argument against text that is not a stretch of
 the subject (a READING, the pullback of this section), so no body written over the subject can say it, and today
 their argument is matched whole by this section's sentence about modifiers, not by a body. That is a question for
 the owner (§13 O67, **primitive-transforms**): lean, ONE primitive with a body-free meaning, "S matched whole on
 the reading t of the stretch" (the pullback, which this section already defines once), its S a filter role like a
-`label:` condition's set; each of the five is then a plain macro over it, and the whole-match rule and the warning
+`label:` condition's set; each of the four is then a plain macro over it, and the whole-match rule and the warning
 name roles only. Until he rules, an explicit anchor in their argument draws the warning (LEAN, the same role) and
-the rows that rest on it say so (L66's `any_case("Host")` holds no anchor). The variable-width lexicographic lint (`compare.width`) suggests `unpadded(n, ...)`.
+the rows that rest on it say so (L66's `any_case("Host")` holds no anchor). The variable-width lexicographic lint (`compare.width`) suggests the SPLIT-FIELDS form (rev 14: `unpadded` cut; the time-range example above).
 
 **REASONING.** One mechanism (the pullback) collapses rev 0's transform sections, pattern -> value mappings, `jstr(p)`
 and the binary forms into one closure theorem (predx S1, §8.2). Frank: "The problem is the name. Trim or unpad imply
@@ -1138,8 +1143,8 @@ grouping-free (G0, review OWN-1/RUL-11), and C1/C20/C22's transform cases dissol
 **STATUS.** RULED (CF:722, OWN-1: filter -> filter, the pullback, nesting in reading order, the naming rule, the
 docs rule), SUPERSEDES the right-associative `&` pipeline (`x & unpad & between(1, 12)`), the `->` / `;` stage ideas,
 and the earlier function forms `unpad(S)` / `length(<=20)` read as images. Names `padded`, `any_case`, `quoted`,
-`length`, `month_numbered`: RULED (CF:722). `unpadded(n, S)` and `json.quoted`: LEAN (this document's names under the
-naming rule, §13 O37). The naming rule over every provided transform: RULED BY ACCEPTANCE (CF:1020-1022, accepted at
+`length`, `month_numbered`: RULED (CF:722). `json.quoted`: LEAN (this document's name under the
+naming rule, §13 O37); `unpadded(n, S)`: CUT (rev 14, CF:1125-1136 on main). The naming rule over every provided transform: RULED BY ACCEPTANCE (CF:1020-1022, accepted at
 CF:1006; rev 12); `anchored`: RULED (the owner's own name, CF:1005, CF:1009); `occurrences`: RULED (CF:1028, rev 13);
 the "or what it reads" clause: LEAN (this document, from `length`, CF:722; review r14 CENSUS-6).
 
@@ -2073,8 +2078,7 @@ labels read, so the bodies are written for the reading a user expects (rev 9, LE
 argument starts as far LEFT as it can (`endsWith(/(?<n>\d+)/)` on `ab123`: n = `123`; rev 8's greedy `.*` gave n = `3`,
 libpcre2), and `contains` is `occurrences` (§2.6: leftmost hits; rev 8's greedy-lead body read the RIGHTMOST occurrence).
 As SETS nothing changes (a lazy and a greedy gap admit the same strings). `when(c, p)` (`x & when(c, p)` = `(x & c & p) | (x & !c)`). Standard FILTER MODIFIERS (§2.7; each transforms the
-filter, never the subject): `padded(S) := /0*(?:${S})/` (leading zeros before S; rev 14, the owner's body, §2.7 BODIES OF THE PROVIDED TRANSFORMS), `unpadded(n, S)` (read as if zero-padded to width
-n), `any_case(S)` (letter case ignored), `quoted(S)` (only the text inside the quotes read), `length(S)` (the
+filter, never the subject): `padded(S) := /0*(?:${S})/` (leading zeros before S; rev 14, the owner's body, §2.7 BODIES OF THE PROVIDED TRANSFORMS), `any_case(S)` (letter case ignored), `quoted(S)` (only the text inside the quotes read), `length(S)` (the
 subject's length read), `month_numbered(S)` (a month name read as its number), string positions `left/right/mid`
 with literal positions (units = characters per the encoding mode; out-of-range: §13 O14); `json.quoted(S)` (a JSON
 string literal read as its decoded text) lives in the `json` module.
@@ -2132,8 +2136,8 @@ normalisation deferred. The unblessed escape hatch is PCRE `(?C)`. Home: its own
 memfn/. A callout in DFA context returns a DFA-friendly verb; plain FAIL needs the VM.
 
 **STATUS.** Standard library: RULED as a follow-up initiative (CF:38). Blessed callouts: LEAN (CF:461, "Lean ADOPT").
-`when`: RULED (CF:184, "Add when"). Filter modifiers and their names: RULED (CF:722; `unpadded`, `json.quoted`: §13
-O37). `occurs` family: RULED as a library (CF:682); the name: RULED in use (CF:782). `count()` first, `occurs` the
+`when`: RULED (CF:184, "Add when"). Filter modifiers and their names: RULED (CF:722; `json.quoted`: §13
+O37; `unpadded`: CUT, rev 14, §9). `occurs` family: RULED as a library (CF:682); the name: RULED in use (CF:782). `count()` first, `occurs` the
 fallback: LEAN (CF:823, "perhaps the solution is both"). `count()` refused only on BUDGET, `occurs` recommended to
 reduce states, no positional rule: RULED (CF:832: "i would refuse count() on budget or as a recommended way to reduce
 states rather than rules"); the budget as ONE labelled measured quantity, no thresholds in the spec: RULED (CF:977, to CF:974-975; §13 O39). The
@@ -2166,7 +2170,19 @@ for that return. Modules stay (§7, §13 O46; a definition's labels are dotted p
 **REASONING.** predx §9: none of thirteen programs needed them; UFCS would add a second resolution rule to `.`, whose
 ONE meaning is now ruled (a field of the map interface, CF:892, CF:898-899).
 
-**STATUS.** RULED (CF:583, predx Q8). SUPERSEDES rev 0 §9's interface, member, UFCS and `types()` rules.
+ALSO CUT (rev 14; RULED, CF:1125-1136 on main, "cut-unpadded: agree"): the transform `unpadded(n, S)` ("the
+filter reads it as if zero-padded to width n") and the `compare.width` suggestion that pointed at it. Reason: it was
+never a plain macro. The zeros it reads are not in the text, so there is nothing to splice; only the pullback of
+§2.7 could do it (§2.7 BODIES OF THE PROVIDED TRANSFORMS), and it was this document's addition (rev 2's `pad(n)`),
+not the owner's ruling. The owner's diagnosis: "numbers compare right aligned and strings left" (CF:1127-1128).
+Where the draft used it (a time range) the example is written with SPLIT FIELDS and number conditions (§2.7:
+`/(?<h>\d{1,2}):(?<m>\d\d)/ & (h: padded(between(9, 10))) & when((h: padded(==10)), (m: "00"))`, which accepts
+`9:00`, `09:30`, `10:00` and rejects `10:01`, `8:59`, the same answers as the cut form on every subject tried;
+libpcre2-8 10.46 and Python `re`, `docs/dev/lanes/predspec14_anchor.out`, R-4 table); `compare.width` keeps its
+warning and suggests that form. The natural-order range is a later item (§13 O68).
+
+**STATUS.** RULED (CF:583, predx Q8). SUPERSEDES rev 0 §9's interface, member, UFCS and `types()` rules. `unpadded`'s
+cut: RULED (CF:1125-1136 on main).
 
 ## 10. Eval
 
@@ -2419,7 +2435,7 @@ pattern with and without its edge anchor give the same answer; where it does not
 | `anchored(...)` | no | the author writes no anchor; the macro's `\A`/`\z` pin its argument to the scope's ends, which is the macro's purpose (in a filter role it is the identity, L69) | `anchored(/foo/)` vs `/foo/` on `xfoo`: no match vs 1-4 |
 | a final pattern's own anchors | no | a final pattern is searched; its anchors are the subject's ends, plain PCRE | `/^foo/` vs `/foo/` on `xfoo`: no match vs 1-4 |
 | a hole in a final pattern (`/x${/^a/}/`) | no | the hole opens no scope; the anchor is the subject's start, plain PCRE (that this program can never match is the unruled general warning, §13 O66) | `/x${/^a/}/` vs `/x${/a/}/` on `xa`: no match vs 0-2 |
-| the argument of `unpadded`, `any_case`, `length`, `month_numbered`, `json.quoted` | yes (LEAN) | the argument is matched whole on the transform's reading, a role the language has no body for (§2.7, §13 O67, **primitive-transforms**) | (no witness: the reading is not a stretch of the subject) |
+| the argument of `any_case`, `length`, `month_numbered`, `json.quoted` | yes (LEAN) | the argument is matched whole on the transform's reading, a role the language has no body for (§2.7, §13 O67, **primitive-transforms**) | (no witness: the reading is not a stretch of the subject) |
 
 One warning per anchor, at the anchor, naming the place:
 
@@ -3130,7 +3146,8 @@ review's proposed lean, in plain words, NOT resolved):
   assertion can state what a search finds INSIDE A VALUE, decided on strings (`@assert.some("256.1.1.1" & occurrences(ipv4)
   & some((hit: "56.1.1.1")))`); the FINAL pattern's searched mode (where in the subject a match is reported) is still
   outside every assertion. Lean: this narrows O36 to that remainder; no new assertion until a measured need (D77).
-- **O37. Two modifier names this document chose.** `unpadded(n, S)` (rev 2's `pad(n)`: the filter reads a subject
+- **O37. Two modifier names this document chose.** REV 14: `unpadded` is CUT (CF:1125-1136 on main; §9), so only
+  `json.quoted` remains here. `unpadded(n, S)` (rev 2's `pad(n)`: the filter reads a subject
   as if zero-padded to width n) and `json.quoted(S)` (rev 2's `jstr`) are placeholders under the naming rule; the
   ruling named `padded`, `any_case`, `quoted`, `length`, `month_numbered` only.
 - **O38. Look-alike rows with no diagnostic.** §0.1 marks GAP rows (rev 8: L20, L21 on answers, L22, L24, L29, L30,
@@ -3517,7 +3534,7 @@ Items NEW in rev 12 (the owner's 2026-11-15 evening ruling, CF:1001-1024):
   noun for what the changed filter reads, the clause this document derives from `length` (CF:722), LEAN (§2.7;
   review r14 CENSUS-6), or as a description of the accepted values read occurrence by occurrence. THE AUDIT (review
   r14 CENSUS-7: every provided macro whose input and output are filters, graded here, not by pointer). PASS:
-  `padded`, `unpadded`, `any_case`, `quoted`, `json.quoted`, `month_numbered`, `anchored`, `contains`, `startsWith`,
+  `padded`, `unpadded` (CUT in rev 14), `any_case`, `quoted`, `json.quoted`, `month_numbered`, `anchored`, `contains`, `startsWith`,
   `endsWith`, `occurrences`, `json.row`; `length`, `left`/`right`/`mid` (through the "what it reads" clause, LEAN);
   `when` (a conjunction), `some`, `all` (quantifiers over iterations), `occurs.exactly`/`at_least`/`at_most`/`none`
   ("c occurs n times" describes values), `list_of`, `any_order` (descriptions of the accepted values). NOT
@@ -3577,13 +3594,17 @@ Items NEW in rev 14 (the owner's four 2026-11-15 entries after rev 13, box clock
   the same decision, "is this set empty", on an `&`). Until then a never-matching program is plain PCRE's answer.
 - **O67. Transforms that are not plain macros (**primitive-transforms**).** The owner (20:45): "If any provided
   transform's whole-match behaviour cannot be derived from a body written in the language, that is brought to him".
-  Five cannot (§2.7 BODIES OF THE PROVIDED TRANSFORMS): `unpadded`, `any_case`, `length`, `month_numbered`,
-  `json.quoted`; each tests its argument against text the subject does not contain (`any_case("host")` tests `HOST`
-  as `host`; `unpadded(5, ...)` tests `9:00` as `09:00`). Readings: (A) ONE primitive, the pullback of §2.7 ("S
+  Five could not (§2.7 BODIES OF THE PROVIDED TRANSFORMS); `unpadded` is CUT (CF:1125-1136 on main), four remain:
+  `any_case`, `length`, `month_numbered`, `json.quoted`; each tests its argument against text the subject does not
+  contain (`any_case("host")` tests `HOST` as `host`; `month_numbered(<3)` tests `Feb` as `2`). Readings: (A) ONE primitive, the pullback of §2.7 ("S
   matched whole on the reading t of the stretch"), whose S is a filter role like a `label:` condition's set; each of
-  the five is then a plain macro over it, and the whole-match rule and the warning name roles only; (B) keep the five
+  the four is then a plain macro over it, and the whole-match rule and the warning name roles only; (B) keep the four
   as built-in transforms, each with its own sentence. Lean: (A) (one role, no names, the owner's "no special cases",
   CF:1002-1004). Until ruled, `anchor.whole` fires on an explicit anchor in their argument (LEAN; §11 table).
+- **O68. A NATURAL-ORDER range.** A LATER ITEM, not in the first spec (RULED as later, CF:1133-1136 on main): a way of
+  comparing chosen where the range is written, digit runs compared as numbers and everything else as text, so
+  `between("9:00", "10:00")` and versions (`1.9` < `1.10`) work without splitting fields; a way of comparing, not a
+  transform; cost unexamined. TRIGGER (D77): a real example where splitting fields is too clumsy.
 
 OWNER QUESTIONS AFTER REV 13 (the open small ones, each in one line with its lean; the plain-words version with an
 example each is in `docs/dev/lanes/predspec13_report.md`, QUESTIONS FOR THE OWNER). Rev 12's (1), (5), (6) are
@@ -3628,7 +3649,7 @@ COND-FAMILY.md notes by date/heading; "11-12" = the 2026-11-12 sections, etc. "p
 
 | section | notes consolidated |
 |---|---|
-| rev 14 (the four entries after rev 13) | CF:1083-1091 on main (the words) -> §0.3, §11 THE ONE WHOLE-MATCH RULE, §8, every draft-voice use (census in `docs/dev/lanes/predspec14_report.md`); CF:1093-1098 (no `anchored` error in a hole) -> §8, §11, L68, O64, O66; CF:1098-1111 (one warning, by role) -> §7.1, §11 THE WARNING `anchor.whole`, §11 STRING SETS, §0.3, L7, L11, L15, L41, L69-L71, E-CTX-1/7, O65; CF:1113-1124 (`padded`'s body) -> §2.7 BODIES OF THE PROVIDED TRANSFORMS, §8, §11, L13, E-CTX-5, O67 |
+| rev 14 (the four entries after rev 13) | CF:1083-1091 on main (the words) -> §0.3, §11 THE ONE WHOLE-MATCH RULE, §8, every draft-voice use (census in `docs/dev/lanes/predspec14_report.md`); CF:1093-1098 (no `anchored` error in a hole) -> §8, §11, L68, O64, O66; CF:1098-1111 (one warning, by role) -> §7.1, §11 THE WARNING `anchor.whole`, §11 STRING SETS, §0.3, L7, L11, L15, L41, L69-L71, E-CTX-1/7, O65; CF:1113-1124 (`padded`'s body) -> §2.7 BODIES OF THE PROVIDED TRANSFORMS, §8, §11, L13, E-CTX-5, O67; CF:1125-1136 (`unpadded` cut) -> §2.7, §8, §9, §1, O37, O61, O67, O68 |
 | rev 13 (rulings and review r14 sites) | CF:1026-1031 on main (`occurrences`) -> §2.6, §8, §0.3, §2.7, O61, every row and case naming the transform; CF:1033-1053 on main (`anchored`'s exact ends, as corrected; rx-text `&` where `\|` alternates) -> §8, §11, L68, E-HTTP, O60 (d), O62, O64, §0 G3, §5.4 `&` row; CF:1054-1062 on main (both `&` operands filter roles; the warning; the condition) -> §11 THE ONE ANCHORING RULE and THE AMPERSAND RULE TESTED BY POSITION, §7.1, L11, L39, L41, L70, L71, O65. CF:1068-1081 on main (rulings R-1: per-call hit label; no count warning; the hole example) -> §2.6, O55, O63, L66, §11 table (iii), owner questions. Review r14 (F1, F2, CENSUS-1..8, `\Z`) -> §0.1, §0.3, §2.6, §2.7, §8, §11, §12, §13. Oracle runs: `docs/dev/lanes/predspec13_anchor.py`/`.out` |
 | rev 12 (anchoring and naming sites) | CF:1001-1024 (ONE anchoring rule, `anchored()`, the naming of provided transforms): CF:1011-1014 -> §11 THE ONE ANCHORING RULE, §0.3 "scoped match", §0 rulings table, L63, L69, §2.6 ANCHORS IN THE ARGUMENT, §2.7, §12 REV 12, O49; CF:1014-1015 -> §8 `anchored`, L68, L69, O62; CF:1016-1019 -> §8 gap bodies, L17, FIXB-9 (2) withdrawn; CF:1019-1020 -> §11 REJECTED, L69; CF:1020-1024 -> §0 naming rule, §0.3, §2.6, §2.7, §8, O61. The brief's carried owner questions -> §13 OWNER QUESTIONS AFTER REV 12, O63. Oracle runs: `docs/dev/lanes/predspec12_anchor.py`/`.out` |
 | rev 9 (all sections touched) | CF:927-947 (search follows PCRE's matching; a bound name holds the transformed rx; min/max settings): CF:929 -> §2.6 owner's example, §5.1, O54; CF:932-936 -> §2.6, §4.3, §8, C36; CF:933-940 -> §2.6 `min` and ZERO HITS, §4.2 boundary, §4.3 table, L36, L55, L56, O28; CF:941-944 (the manager's note (a)) -> §4.5 build-or-refuse (LEAN), §6.1; CF:944-947 (note (b)) -> §2.6 `contains` = `search(x, min = 1)`, L58, O58. CF:948-961 (ONE reading everywhere; ambiguity the author's; no `max`): CF:950, CF:953-955 -> §4.5 rewritten, §0.3 glossary, L34, L59, C36, O33, C11; CF:949-950, CF:955-957 -> O57, §0 standing questions; CF:950-951, CF:957-959 -> §5.6 validation example, §7.1 `label.ambiguous`, §4.5; CF:951-952, CF:960-961 -> §2.6, §8, §0.2, O58. The brief's manager's calls -> O53, O31, C7, §2.6/§8 `(?s)` and the DECIDED BY THE MANAGER list. CF:180 -> O28 |

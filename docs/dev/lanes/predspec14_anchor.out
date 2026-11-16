@@ -83,4 +83,14 @@ padded(/0/)            body accepts 0,00,000                           bare spli
 padded(/1|2/)          body accepts 02                                 bare splice DIFFERS:  | rev 13 reading: 02                             SAME
 padded(between(0, 255)) body accepts 5,05,005,0,00,000,50,057,12,012,0012,13,02 bare splice SAME | rev 13 reading: 5,05,005,0,00,000,50,057,12,012,0012,13,02 SAME
 
+# R-4: the time range 09:00..10:00 with split fields (whole-match on each subject) vs the cut unpadded reading
+'9:00'  split fields: accept | unpadded(5, between("09:00", "10:00")) (cut): accept SAME
+'09:30' split fields: accept | unpadded(5, between("09:00", "10:00")) (cut): accept SAME
+'10:00' split fields: accept | unpadded(5, between("09:00", "10:00")) (cut): accept SAME
+'10:01' split fields: reject | unpadded(5, between("09:00", "10:00")) (cut): reject SAME
+'8:59'  split fields: reject | unpadded(5, between("09:00", "10:00")) (cut): reject SAME
+'9:59'  split fields: accept | unpadded(5, between("09:00", "10:00")) (cut): accept SAME
+'10:59' split fields: reject | unpadded(5, between("09:00", "10:00")) (cut): reject SAME
+'11:00' split fields: reject | unpadded(5, between("09:00", "10:00")) (cut): reject SAME
+
 engines disagree on 0 rows
