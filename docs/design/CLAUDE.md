@@ -107,7 +107,7 @@ Modules (design notes with `*_measurements/` siblings)
 - `extension_design.md` — module/extension architecture (D34; Part II is the redesign of record); `design_notes_mod06.md` (`unicode-props`), `design_notes_mod07.md` (`--explain`).
 - `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind; stage 1 built, stage 2 rev 5.2) + `vlookbehind_pieces.md`; `subroutines_design.md` + `subroutines_measurements/`; `frame_buffer_design.md`.
 - `feature_families.md` — [FEAT-FAMILIES] basic/extended/pcre2 families over D37 (PROPOSED rev 0).
-- `cond_family.md` — [COND-FAMILY] survey: members, machinery, first piece; `cond_family_syntax_survey.md` — its spelling survey (synsurv); `predicates_draft.md` — #6 predicate language, preliminary spec (DRAFT); `fact_consumers_inventory.md` — [FACT-READS] fact consumers, orderings, checks.
+- `cond_family.md` — [COND-FAMILY] survey: members, machinery, first piece; `cond_family_syntax_survey.md` — spelling survey; `predicates_draft.md` — #6 predicate language spec (DRAFT); `joint_condition.md` — joint condition (exploration); `fact_consumers_inventory.md` — [FACT-READS] fact consumers.
 - `dfa_captures_research.md` — [ENG-TDFA] captures without the VM.
 - `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
 - `uprop_more.md` — [UPROP-MORE] `\p{}` binary properties + Bidi_Class (PCRE2 catch-up) and Block/Age (extension) design (PROPOSED).
@@ -123,5 +123,5 @@ Modules (design notes with `*_measurements/` siblings)
 
 - `APPROACH.md`, `docs/dev/decisions.md` (D-ids cited per note), `docs/dev/plan.md` rows, `docs/dev/reviews/` (panel files), `docs/dev/lanes/` (lane reports), `docs/spec/` (the contract, D80), `docs/dev/learnings.md` §3, `memfn/CLAUDE.md`.
 
-History (long narrative, dated notes, measurements, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__design.md
+History (narrative, dated notes, per-lane records; not auto-injected): docs/dev/history/claude_md/docs__design.md
 - `findall_iter_i2.md` (+ r1 panel) — [FINDALL-NEXT] I4 `_next_n` and `RX_FOREACH` design.
