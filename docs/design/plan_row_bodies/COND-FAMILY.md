@@ -1099,3 +1099,13 @@ the 'anchor adds nothing' warning also fire in a label condition (`(x: /^S\w*/)`
 (`padded(/^5/)`) and a warning-name set, as it does in a side of `&`? lean yes, one rule", his words:
 "anchor-warn-scope: agree". RECORD: ONE warning for an explicit anchor in every place a pattern must match its
 stretch whole (a side of `&`, a label condition, a modifier argument, a warning-name set).
+
+**2026-11-15 RULING — the anchor warning keys off the ROLE, never a transform's name (Frank, to session 133, box
+clock 20:45).** On the manager's list of places for the warning, which named "a modifier argument (`padded(/^5/)`)", his
+words: "But! padded is a simple macro so the warning shouldn't key off of the name". RECORD: the warning (and the
+whole-match requirement it reports on) is decided by the ROLE the rx ends up in after macros are expanded: it fires
+on an explicit anchor in an rx that stands in a filter role, however it got there (written beside `&`, in a label
+condition, or passed as a parameter that the macro's BODY uses in a filter role). No library name (`padded`,
+`unpadded`, ...) and no "modifier argument" clause appears in the rule; a user macro with the same body behaves the
+same; a parameter the body splices into a hole is NOT in a filter role and draws no warning there. If any provided
+transform's whole-match behaviour cannot be derived from a body written in the language, that is brought to him.
