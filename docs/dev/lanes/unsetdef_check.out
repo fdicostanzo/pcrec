@@ -16,4 +16,10 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
 (DA) the other alternative taken (` o'clock`): 11110 subjects
 (DC) computed label, (year, mnum = 1): >= (2024, 3): 65 subjects; '2024' out, '2025' IN
 (DK) t2 & [m = 0] admits ['0']; differs from t2 & ((h, m = 0): R) on 244 of 11110
-TOTAL cases 122608 differ 0 engine-disagreements 0
+(DE) between((9, 30), (11, 0))   m = any \d\d: EVERY admits 10           SOME admits 9,10,11      | vs decided-prefix on the 110 minutes-absent subjects: EVERY differs 0, SOME 3 | unguarded hand form: EVERY 0, SOME 159 differ
+(DE) between((9, 0), (10, 0))    m = any \d\d: EVERY admits 9            SOME admits 9,10         | vs decided-prefix on the 110 minutes-absent subjects: EVERY differs 2, SOME 3 | unguarded hand form: EVERY 0, SOME 99 differ
+(DE) >= (9, 30)                  m = any \d\d: EVERY admits 10,11,12     SOME admits 9,10,11,12   | vs decided-prefix on the 110 minutes-absent subjects: EVERY differs 0, SOME 2 | unguarded hand form: EVERY 0, SOME 60 differ
+(DE) > (9, 0)                    m = any \d\d: EVERY admits 10,11,12     SOME admits 9,10,11,12   | vs decided-prefix on the 110 minutes-absent subjects: EVERY differs 0, SOME 2 | unguarded hand form: EVERY 0, SOME 2 differ
+(DE) between((9, 0), (11, 59))   m = any \d\d: EVERY admits 9,10         SOME admits 9,10,11      | vs decided-prefix on the 110 minutes-absent subjects: EVERY differs 2, SOME 3 | unguarded hand form: EVERY 0, SOME 40 differ
+(DE) 2024-MM, d = any day, SOME: admits ['02', '03', '04'] (= the 'don't care' months)
+TOTAL cases 233720 differ 0 engine-disagreements 0

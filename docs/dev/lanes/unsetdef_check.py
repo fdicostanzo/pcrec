@@ -365,4 +365,81 @@ adm = [s for s in SUBJ_T2 if check("DK", rx_arr, s, s == "0")]
 dk = sum(whole(rx_arr, s) != whole(rx_default, s) for s in SUBJ_T2)
 print("(DK) t2 & [m = 0] admits %s; differs from t2 & ((h, m = 0): R) on %d of %d" % (adm, dk, len(SUBJ_T2)))
 
+# (DE) R-1 (owner question 10:40): a default that is a SET of several strings. Two readings, each an unfold:
+#      EVERY: holds when every member would fit (the intersection of the slices); SOME: when any member would (the
+#      union). D = m's own pattern's strings (\d\d). Compared on the minutes-absent subjects with rev 18's
+#      DECIDED-PREFIX order (§8 caveat (5): a field is read only when the earlier ones equal the bound; an unset field
+#      read makes the match incomparable: rejected), modelled here in Python.
+def decided_prefix(h, rng):
+    """the decided-prefix answer for minutes UNSET: each bound's compare decides on h alone or reads m (reject)"""
+    if not (h.isdigit()):
+        return False
+    hv = int(h)
+    for kind, b in rng:
+        if kind in (">=", ">"):
+            if hv < b[0]:
+                return False
+            if hv == b[0]:
+                return False          # reaches the unset m: incomparable
+        else:
+            if hv > b[0]:
+                return False
+            if hv == b[0]:
+                return False
+    return True
+
+
+RANGES = [("between((9, 30), (11, 0))", [(">=", (9, 30)), ("<=", (11, 0))], LO, HI, False),
+          ("between((9, 0), (10, 0))", [(">=", (9, 0)), ("<=", (10, 0))], (9, 0), (10, 0), False),
+          (">= (9, 30)", [(">=", (9, 30))], (9, 30), None, False),
+          ("> (9, 0)", [(">", (9, 0))], (9, 0), None, True),
+          ("between((9, 0), (11, 59))", [(">=", (9, 0)), ("<=", (11, 59))], (9, 0), (11, 59), False)]
+DSET = M
+for name, rng, lo, hi, strict in RANGES:
+    if hi is None:
+        rows = ge(lo, strict=strict)
+    else:
+        rows = between(lo, hi)
+    every = None
+    some = []
+    for v in DSET:
+        s1 = slice_rows(rows, 1, v, True)
+        every = s1 if every is None else inter(every, s1)
+        some = sorted(set(some + s1))
+    rx_e = "(?:" + rows_rx(rows, [H, M], [":"], True) + "|" + rows_rx(every, [H], [], True) + ")"
+    rx_s = "(?:" + rows_rx(rows, [H, M], [":"], True) + "|" + rows_rx(some, [H], [], True) + ")"
+    rx_eu = "(?:" + rows_rx(rows, [H, M], [":"], True) + "|" + rows_rx(every, [H], [], True) + "(?::\\d\\d)?)"
+    rx_su = "(?:" + rows_rx(rows, [H, M], [":"], True) + "|" + rows_rx(some, [H], [], True) + "(?::\\d\\d)?)"
+    ed = sd = e_vs_dp = s_vs_dp = eu = su = 0
+    for s in SUBJ_T2:
+        h, m = split_t2(s)
+        inr = lambda mm: in_range((h, mm), lo, hi, True, lo_strict=strict)
+        if m is None:
+            we, ws = all(inr(v) for v in DSET), any(inr(v) for v in DSET)
+        else:
+            we = ws = inr(m)
+        check("DE-every", rx_e, s, we)
+        check("DE-some", rx_s, s, ws)
+        eu += whole(rx_eu, s) != we
+        su += whole(rx_su, s) != ws
+        if m is None:
+            dp = decided_prefix(h, rng)
+            e_vs_dp += we != dp
+            s_vs_dp += ws != dp
+    ein = [h for h in ["8", "9", "10", "11", "12"] if whole(rx_e, h)]
+    sin = [h for h in ["8", "9", "10", "11", "12"] if whole(rx_s, h)]
+    print("(DE) %-27s m = any \\d\\d: EVERY admits %-12s SOME admits %-12s | vs decided-prefix on the 110 "
+          "minutes-absent subjects: EVERY differs %d, SOME %d | unguarded hand form: EVERY %d, SOME %d differ"
+          % (name, ",".join(ein) or "-", ",".join(sin) or "-", e_vs_dp, s_vs_dp, eu, su))
+# the date: SOME over every day = the 'don't care' (overlap) months
+rd = between(DLO, DHI)
+some_d = []
+for d in range(1, 32):
+    some_d = sorted(set(some_d + slice_rows(rd, 2, "%02d" % d, True)))
+rxsd = rows_rx(some_d, [["2024"], months], ["-"], True)
+for mo in months:
+    check("DE-date", rxsd, "2024-" + mo, mo in overlap)
+print("(DE) 2024-MM, d = any day, SOME: admits %s (= the 'don't care' months)"
+      % [mo for mo in months if whole(rxsd, "2024-" + mo)])
+
 print("TOTAL cases %d differ %d engine-disagreements %d" % (T["cases"], T["differ"], DISAGREE[0]))
