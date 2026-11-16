@@ -295,15 +295,15 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L4 | `(major: 1, minor: >=4)` vs `(major: 1 & minor: >=4)` | DIFFERENT: ERROR | the second is a compile ERROR: a label inside a value (`major: (1 & minor: >=4)`) | C22 |
 | L5 | `x & (a: d)` vs `(a: d)(x)` | DIFFERENT: ERROR | the second is a compile ERROR: the operand is never an argument (CF:749's "subject", §0.3; hint: "write `x & (a: d)`"); application has one spelling (§2.3) | 2026-11-15 RULING (supersedes OWN-5's two spellings) |
 | L6 | `x & (a: d)` vs `each((& (a: d)), x)` | DIFFERENT: ERROR | `each` is the STRUCTURAL per-entry map (keeps entries, labels, order; the filter is mapped through the section `(& (a: d))`, §5.3); an alternative lacking `a` is dropped by `&` with `label.unset`, an ERROR naming it under `each` | OWN-5, 2026-11-15 RULING (mapping) |
-| L7 | `x: /^S\w*/` vs `x: startsWith("S")` | DIFFERENT: BY DESIGN | (rev 13: WARNING `anchor.operand` if the owner extends the warning to every filter role, §13 O65, lean yes; the anchor is not in an `&` operand's own text, so the ruled warning does not reach it) a filter applied directly is ANCHORED AT BOTH ENDS (§11 THE FILTERED SPAN), so `/^S\w*/` is the strings that are ENTIRELY `S\w*` (its `^` adds nothing), while `startsWith("S")` is every string that starts with `S`: on the span `S-1` the first rejects, the second accepts. The two agree only where the span is word characters (E-CTX-1's x is `\w+`). "Starts with" is `startsWith("S")` or `contains(/^S/)` (L17). Rev 10 said SAME (review r12 SIMULATE-1) | CF:732, CF:761, D193 add. 3; the anchoring: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
+| L7 | `x: /^S\w*/` vs `x: startsWith("S")` | DIFFERENT: WARNING | `anchor.whole` fires on the `^` (rev 14: an explicit anchor in a `label:` condition, a filter role; RULED 2026-11-15 20:44 (b) on main, "anchor-warn-scope: agree"; rev 11-13 class BY DESIGN). A `label:` condition matches its label's text WHOLE (§11 THE ONE WHOLE-MATCH RULE), so `/^S\w*/` is the strings that are ENTIRELY `S\w*` (its `^` adds nothing), while `startsWith("S")` is every string that starts with `S`: on the span `S-1` the first rejects, the second accepts. The two agree only where the span is word characters (E-CTX-1's x is `\w+`). "Starts with" is `startsWith("S")` or `contains(/^S/)` (L17). Rev 10 said SAME (review r12 SIMULATE-1) | CF:732, CF:761, D193 add. 3; whole-match: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12); the warning: 2026-11-15 20:44 (b) on main |
 | L8 | `num := /\b\d+\b/`: `/x${num}/` vs the pasted `/x\b\d+\b/` | DIFFERENT: ERROR | the hole form is the EDGE-ASSERTION ERROR ("put `\b` in the pattern that places num") | Q1X-3 (iv), Q1R-3 |
 | L9 | `p := /(?<=\$)\d+/`: the program `p` (searched) vs `[n = /\d+/] & (n: p)` | DIFFERENT: ERROR | the condition is the EDGE-ASSERTION ERROR; the searched final pattern keeps PCRE meaning | Q1X-3 (iii), Q1X-1 |
 | L10 | `\w{3} & /\w+\b/` vs `/\w{3}\b/` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR (no silent move foo -> bar) | Q1X-2 |
-| L11 | `alts & !/^#.*/` vs `alts & !startsWith("#")` | DIFFERENT: WARNING | `anchor.operand` fires on the `^` (rev 13: an explicit anchor in an `&` operand, here inside the complement `!/^#.*/`, CF:1054-1062 on main; rev 11-12 class BY DESIGN). The directly applied `/^#.*/` is anchored at both ends and its `.` has no `(?s)`, so it is the entries that are ENTIRELY `#` and non-line-break characters; `startsWith("#")` is every entry starting `#`: the entry `#a\nb` is kept by the first, dropped by the second. They agree on entries without a line break (E-FILE's `alts` are lines). Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
+| L11 | `alts & !/^#.*/` vs `alts & !startsWith("#")` | DIFFERENT: WARNING | `anchor.whole` fires on the `^` (rev 13 as `anchor.operand`: an explicit anchor in a side of `&`, here inside the complement `!/^#.*/`, CF:1054-1062 on main; rev 11-12 class BY DESIGN). The directly applied `/^#.*/` matches its stretch whole and its `.` has no `(?s)`, so it is the entries that are ENTIRELY `#` and non-line-break characters; `startsWith("#")` is every entry starting `#`: the entry `#a\nb` is kept by the first, dropped by the second. They agree on entries without a line break (E-FILE's `alts` are lines). Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
 | L12 | `"5" & /(?<=\$)\d+/` in `@assert.none(...)` vs `"5" & /\d+/` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR (an assertion argument is a set position, §5.6) | Q1X-5 |
-| L13 | `x & padded(/^5/)` vs `x & padded(startsWith("5"))` | DIFFERENT: BY DESIGN | (rev 13: WARNING `anchor.operand` if the owner extends the warning to every filter role, §13 O65, lean yes; the anchor is not in an `&` operand's own text, so the ruled warning does not reach it) a modifier's argument filters the span AS THE MODIFIER READS IT, and is itself a FILTER, so it matches that whole reading (THE ONE ANCHORING RULE, §2.7, §11): `padded(/^5/)` = `padded("5")` (`5`, `05`, ...), while `padded(startsWith("5"))` also accepts `57` and `057`. `padded(/\b5/)` stays the EDGE-ASSERTION ERROR. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring of a modifier's argument: this document's application of CF:991-994 and of the ONE rule (CF:1011; a modifier's argument is a filter, §2.7) (LEAN, §13 O49) |
+| L13 | `x & padded(/^5/)` vs `x & padded("5")` (and vs `x & padded(startsWith("5"))`) | DIFFERENT: BY DESIGN | rev 14 (RULED body, 2026-11-15 20:48 on main: `padded(rx) := /0*${rx}/`, grouped `/0*(?:${rx})/`, §2.7): the argument is spliced into a HOLE of the body, so the `^` reads the stretch the body matches whole, at the point after the zeros: `padded(/^5/)` = `/0*(?:^5)/` accepts only `5` (the `^` forbids the zeros; `05` rejected), while `padded("5")` accepts `5`, `05`, `005`, and `padded(startsWith("5"))` also `57`, `057`. The anchor is MEANINGFUL, plain PCRE: NO warning (the parameter is in a hole, not a filter role; RULED 20:45, the role decides). libpcre2 10.46 and Python `re`, `predspec14_anchor.out` (R-2 table; searched `/\d+/ & padded(/^5/)` on `x005`: `5` at 3-4). ANSWER MOVES from rev 11-13 (there `padded(/^5/)` = `padded("5")`, by a rule that a modifier's argument is a filter over the reading, withdrawn); rev 10 said SAME as `startsWith` | the body: 2026-11-15 20:48 on main (with "Give or take details"); the role rule: 20:45 on main; the group: manager's detail (rulings R-3) |
 | L14 | `enumerate(/(?<=a)[bc]/)` vs `enumerate(/[bc]/)` | DIFFERENT: ERROR | the first is the EDGE-ASSERTION ERROR | Q1R-8, Q1X-6 (b) |
-| L15 | `@warn.off(/^dead\./)` vs `@warn.off(startsWith("dead."))` | DIFFERENT: BY DESIGN | (rev 13: WARNING `anchor.operand` if the owner extends the warning to every filter role, §13 O65, lean yes; the anchor is not in an `&` operand's own text, so the ruled warning does not reach it) a name set is a compile-time set of WHOLE strings (§11 STRING SETS; there `^`/`$` are the string's own ends): `/^dead\./` is the ONE name `dead.`, `startsWith("dead.")` every name starting `dead.`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:713 (string sets); `^` in a compile-time set: LEAN (§11; rev 12: a name set read as a filter over whole names under the ONE rule, CF:1011, LEAN) |
+| L15 | `@warn.off(/^dead\./)` vs `@warn.off(startsWith("dead."))` | DIFFERENT: WARNING | `anchor.whole` fires on the `^` (rev 14: a warning-name set is a compile-time set, a filter role over whole names; RULED 2026-11-15 20:44 (b) on main; rev 11-13 class BY DESIGN). A name set is a compile-time set of WHOLE strings (§11 STRING SETS; there `^`/`$` are the string's own ends): `/^dead\./` is the ONE name `dead.`, `startsWith("dead.")` every name starting `dead.` (`predspec14_anchor.out`, table (C)). Rev 10 said SAME (review r12 SIMULATE-1) | CF:713 (string sets); `^` in a compile-time set: LEAN (§11; rev 12: a name set read as a filter over whole names under the ONE rule, CF:1011, LEAN); the warning: 20:44 (b) on main |
 | L16 | `(m: occurrences(/^err/))` vs `(m: contains(/^err/))` | DIFFERENT: BY DESIGN | `occurrences` with its default `min = 0` NEVER REJECTS (as a set it is every string; what it adds is the repeated label `hit`, one iteration per hit, here at most one, at m's start); `contains` is the TEST (one hit needed). The search filters nothing until a question is asked of its hits (`some(...)`, `count(...)`, a plain condition; §2.6, §4.3). With `min = 1` the two are SAME (L58) | CF:907-909 (accepted at CF:905); rev 7's `$m ~ /^err/` row withdrawn with `~`; `min`: CF:960 |
 | L17 | `(m: contains(/^err/))` vs `(m: startsWith("err"))` | SAME | it "falls out of PCRE" (rev 12): `contains`'s body is plain gaps around its argument, matched against the WHOLE span, so the `^` in its argument is PCRE's `^`, the start of the scoped match (m's span), and only an empty lead gap reaches it: `/.*^err.*/` accepts what `/err.*/` accepts, gaps crossing line breaks (§11 THE ONE ANCHORING RULE; libpcre2 10.46 and Python `re`: `err x` accepted, `x err` rejected by both forms, `predspec12_anchor.out`); `(m: !contains(/^err/))` is the negated test (rev 7's `$m !~ /^err/`, withdrawn, §2.6) | CF:761; CF:991-994 (accepted at CF:990); rev 12: "`contains(/^err/)` = starts with `err` falls out of PCRE" (CF:1018, accepted at CF:1006) |
 | L18 | a nullable final search pattern: `/\b/` vs `/a*/` | SAME | both are nullable IN CONTEXT: `empty.search` WARNING for a one-literal program, ERROR in a predicate program (§7) | Q1R-9 |
@@ -329,7 +329,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L38 | `isodate(x).year` vs `(x & isodate).year` | DIFFERENT: ERROR | the first is a compile ERROR (a pattern takes no arguments; hint "write `x & isodate`"); whether `.year` of `x & isodate` is a value or a pattern: OPEN (§13 C29) | RUL-8, 2026-11-15 RULING |
 | L39 | `A & B` vs `B & A` | SAME | BOTH operands are filter roles, matched whole on the same span (RULED, CF:1054-1062 on main, rev 13; review r14 F1: a one-sided "filter side" would break this row), so the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2) | C1 ruling |
 | L40 | `isodate(year: S)` vs `isodate & (year: S)` | DIFFERENT: ERROR | the first is a compile ERROR: a pattern has no parameters; hint "write `isodate & (year: ...)`"; a parameterised pattern is a macro, `date_in(years) := isodate & (year: years)` (§5.2) | CF:744 |
-| L41 | `/\w+/ & /^foo/` vs `/\w+/ & startsWith("foo")` | DIFFERENT: WARNING | `anchor.operand` fires on the `^` of `/^foo/` (rev 13, CF:1054-1062 on main; rev 11-12 class BY DESIGN). The directly applied `/^foo/` is anchored at both ends, so the first is the ONE word `foo` (its `^` is the word's start, never the subject's, and adds nothing); the second is every word starting `foo`. Searched in `foobar` the first reports `foo` (D196 tries the shorter end), the second `foobar`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
+| L41 | `/\w+/ & /^foo/` vs `/\w+/ & startsWith("foo")` | DIFFERENT: WARNING | `anchor.whole` fires on the `^` of `/^foo/` (rev 13 as `anchor.operand`, CF:1054-1062 on main; rev 11-12 class BY DESIGN). The directly applied `/^foo/` matches its stretch whole, so the first is the ONE word `foo` (its `^` is the word's start, never the subject's, and adds nothing); the second is every word starting `foo`. Searched in `foobar` the first reports `foo` (D196 tries the shorter end), the second `foobar`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; the anchoring: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
 | L42 | `n := count((name: S))` then `headers & (n: ==1)` vs `headers & occurs.exactly(1, (name: S))` | SAME | one count, two spellings; `count()` is refused only over the BUDGET, naming the `occurs` form (§8) | CF:823 (LEAN), CF:832 |
 | L43 | `[x = /foo/, y = /bar/]` vs `(x = /foo/, y = /bar/)` in value position | DIFFERENT: ERROR | the second is a compile ERROR: "a record is not a value; for any one of the entries write `[ ... ]`" (§3.1, §5.4); the rev 5 map literal `(x = /foo/ \| y = /bar/)` is withdrawn (§13 O42) | CF:863, CF:866 |
 | L44 | `(x)` vs `x` in value position | SAME | parentheses with one unlabelled entry are GROUPING; a one-entry record exists only where a record stands (a call `f(x)`, the left of a binding), so no value is ever a one-entry record (§5.4; §13 O41) | CF:866 (LEAN) |
@@ -355,11 +355,11 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L64 | `alt.x[1]` vs `(x[1]: S)` (and `$x[1]`) on `alt := /(?J)(?:(?<x>a)\|(?<x>b))+/` | DIFFERENT: BY DESIGN | `[n]` reads BY POSITION (§5.4 `[ ]` row): in VALUE position (`alt.x[1]`, the rx of the groups labelled x) it is ENTRY 1 of that rx's array interface, the first group in the PATTERN (`a`); on the left of `:` and under `$` (match positions) it is ITERATION 1 of the label in the MATCH (`b` on `ba`) | review r10 FIXA-2, CENSUS-10; LEAN |
 | L65 | `/x\|(?<n>\d)+/` vs `/(?<n>\d)*x/` under `(n: <5)`, on the span `x` | DIFFERENT: WARNING | PER MATCH (§4.2): in the first the match took the other alternative and never REACHED n's loop, so n is UNSET and the condition FAILS (`label.unset`), although the loop's own `+` is never consulted; in the second the loop was REACHED and ran zero times, so it HOLDS. PCRE reports n unset in both: the zero-iteration rule is a condition rule laid over PCRE's parse (where the match stopped short of the label), not a capture state | review r10 FIXB-2; RULED BY ACCEPTANCE (CF:997-1000 on main, "Agree with lean"; rulings R-1) |
 | L67 | `/(\d+)&${<256}/` vs `/port=(\d+)&${<256}/` vs `/port=(?:(\d+)&${<256})/`, with the rx-`&` switch ON | DIFFERENT: GAP | D196's precedence (concatenation, then `&`) makes an rx-text `&` cover the WHOLE CONCATENATION on each side within its alternative: the first guards the number; the second is `/port=(\d+)/ & <256`, EMPTY (no string starting `port=` is a numeral); the third guards one atom by grouping it and matches `port=80`. An empty-intersection diagnostic at an rx-text `&` is not stated (§5.2 names narrowing sites only; proposed: the empty-intersection error at every `&` whose result is empty, not adopted) | review r12 CENSUS-5; LEAN (this document) |
-| L66 | `headers & occurs.exactly(1, (name: any_case("Host")))` SEARCHED vs the same program on the WHOLE SUBJECT, on `Host: a\r\nhost: b` | DIFFERENT: BY DESIGN | rev 13: the owner ruled NO warning (CF:1073-1081 on main; §13 O63 CLOSED), so the difference is the stated meaning of a searched program, told where counts are documented (rev 10-12: GAP). A count filter is NOT UPWARD-CLOSED: searched, D196 tries shorter ends and the one-header span `Host: a` passes (match), while the whole block has two Host headers (no match). A count over a block means "the whole block" only when the program anchors (§12.9 is anchored in rev 10); a warning for a count filter in a searched program (`count.searched`, proposed) is REFUSED by the owner (rev 13); the fix is `anchored(...)` | review r10 SIM-6; §13 O38, O63; CF:1073-1081 on main |
-| L68 | `anchored(x)` as a FINAL pattern vs `/\A${x}\z/`, on a subject ending in a newline (`x := /foo/`, subject `foo\n`) | SAME | rev 13: `anchored` has the EXACT ends (RULED, CF:1048-1053 on main: "`anchored(/foo/)` as a final pattern does not match `foo\n`"), `anchored(rx) := /\A(?:${rx})\z/`, so the two are one text: both find nothing in `foo\n` (`predspec13_anchor.out`). Rev 12 said DIFFERENT: BY DESIGN under the owner's placeholder `/^${rx}$/` (PCRE's `$` held before the final newline; §13 O62 CLOSED). In a HOLE `anchored` reads the enclosing scope like any anchor (`/x${anchored(/a/)}/` never matches `xa`): §13 O64 | CF:1005, CF:1014-1015 (accepted at CF:1006); exact ends: CF:1048-1053 on main |
-| L69 | `x & anchored(r)` vs `x & r` vs `x & /^(?:r)$/` (and `x & /\A(?:r)\z/`) (and `/^5/` vs `/5/` in a filter) | SAME | (rev 13: SAME answers; `anchor.operand` fires on the third and fourth forms, written anchors, and not on `anchored(r)`) a filter role matches its WHOLE span, and an anchor at a whole match's own start or end always holds there, so `anchored` in filter position is the identity (the record's "identity in filter position"); an explicit anchor never SWITCHES OFF the implicit whole-value rule (`/^5/` accepts no more than `/5/`: it rejects `57`), the alternative the owner rejected (CF:1019-1020). Hence `startsWith(rx) := /^${rx}/` (the owner's first sketch) would mean exactly rx in a filter, and the library body is the plain gap `/${rx}.*/` (§8). libpcre2 10.46 whole-value: `^(?:foo)$` accepts `foo`, rejects `foo\n`, as `foo` does; `^5` rejects `57` | CF:1011-1020 (accepted at CF:1006) |
-| L70 | `P` vs `P & /(?s).*/` as a FINAL program (intersection with every string): `/^foo/` vs `/^foo/ & /(?s).*/` on `xfoo`; `/foo$/` vs `/foo$/ & /(?s).*/` on `foox`; `/^\d+$/` vs `/^\d+$/ & <256` on `x300 12` | DIFFERENT: WARNING | both operands of `&` are filter roles (RULED, CF:1054-1062 on main), so an anchor in an operand reads the span both match, not the subject: `/^foo/` finds nothing in `xfoo`, `/^foo/ & /(?s).*/` finds `foo` at 1-4; `/foo$/` nothing in `foox`, the `&` form `foo` at 0-3; `/^\d+$/` nothing in `x300 12`, `/^\d+$/ & <256` finds `30` at 1-3 (libpcre2 10.46 and Python `re`, `predspec13_anchor.out`). `anchor.operand` fires on the `&` forms (§11 THE AMPERSAND RULE TESTED BY POSITION); to pin the subject: `anchored(/\d+/ & <256)` | review r14 F1; the ruling CF:1054-1062 on main; the warning's name and text: LEAN |
-| L71 | `/x${/^a/}/` vs `/x${/^a/ & /(?s).*/}/` (a hole without and with a filter role inside it), on `xa` | DIFFERENT: WARNING | a hole opens no scoped match, so in the first `^` is the SUBJECT's start and the program never matches `xa`; in the second the `&` operands are filter roles over the text the hole takes, `^` is that text's start, and it matches 0-2 (`predspec13_anchor.out`). `anchor.operand` fires on the second | review r14 F2; CF:1054-1062 on main; the general form: LEAN |
+| L66 | `headers & occurs.exactly(1, (name: any_case("Host")))` SEARCHED vs the same program on the WHOLE SUBJECT, on `Host: a\r\nhost: b` | DIFFERENT: BY DESIGN | rev 13: the owner ruled NO warning (CF:1073-1081 on main; §13 O63 CLOSED), so the difference is the stated meaning of a searched program, told where counts are documented (rev 10-12: GAP). A count filter is NOT UPWARD-CLOSED: searched, D196 tries shorter ends and the one-header span `Host: a` passes (match), while the whole block has two Host headers (no match). A count over a block means "the whole block" only when the final pattern is pinned to the subject's ends (§12.9: `\A...\z` in rev 10-12, `anchored(block)` since rev 13); a warning for a count filter in a searched program (`count.searched`, proposed) is REFUSED by the owner (rev 13); the fix is `anchored(...)` | review r10 SIM-6; §13 O38, O63; CF:1073-1081 on main |
+| L68 | `anchored(x)` as a FINAL pattern vs `/\A${x}\z/`, on a subject ending in a newline (`x := /foo/`, subject `foo\n`) | SAME | rev 13: `anchored` has the EXACT ends (RULED, CF:1048-1053 on main: "`anchored(/foo/)` as a final pattern does not match `foo\n`"), `anchored(rx) := /\A(?:${rx})\z/`, so the two are one text: both find nothing in `foo\n` (`predspec13_anchor.out`). Rev 12 said DIFFERENT: BY DESIGN under the owner's placeholder `/^${rx}$/` (PCRE's `$` held before the final newline; §13 O62 CLOSED). In a HOLE `anchored` reads the enclosing scope like any anchor (`/x${anchored(/a/)}/` never matches `xa`, as plain PCRE's `/x\Aa\z/`): no `anchored`-specific error (RULED rev 14, §13 O64 CLOSED) | CF:1005, CF:1014-1015 (accepted at CF:1006); exact ends: CF:1048-1053 on main |
+| L69 | `x & anchored(r)` vs `x & r` vs `x & /^(?:r)$/` (and `x & /\A(?:r)\z/`) (and `/^5/` vs `/5/` in a filter) | SAME | (rev 13: SAME answers; `anchor.whole` fires on the third and fourth forms, written anchors, and not on `anchored(r)`) a filter role matches its WHOLE span, and an anchor at a whole match's own start or end always holds there, so `anchored` in filter position is the identity (the record's "identity in filter position"); an explicit anchor never SWITCHES OFF the implicit whole-value rule (`/^5/` accepts no more than `/5/`: it rejects `57`), the alternative the owner rejected (CF:1019-1020). Hence `startsWith(rx) := /^${rx}/` (the owner's first sketch) would mean exactly rx in a filter, and the library body is the plain gap `/${rx}.*/` (§8). libpcre2 10.46 whole-value: `^(?:foo)$` accepts `foo`, rejects `foo\n`, as `foo` does; `^5` rejects `57` | CF:1011-1020 (accepted at CF:1006) |
+| L70 | `P` vs `P & /(?s).*/` as a FINAL program (intersection with every string): `/^foo/` vs `/^foo/ & /(?s).*/` on `xfoo`; `/foo$/` vs `/foo$/ & /(?s).*/` on `foox`; `/^\d+$/` vs `/^\d+$/ & <256` on `x300 12` | DIFFERENT: WARNING | both operands of `&` are filter roles (RULED, CF:1054-1062 on main), so an anchor in an operand reads the span both match, not the subject: `/^foo/` finds nothing in `xfoo`, `/^foo/ & /(?s).*/` finds `foo` at 1-4; `/foo$/` nothing in `foox`, the `&` form `foo` at 0-3; `/^\d+$/` nothing in `x300 12`, `/^\d+$/ & <256` finds `30` at 1-3 (libpcre2 10.46 and Python `re`, `predspec13_anchor.out`). `anchor.whole` fires on the `&` forms (§11 THE AMPERSAND RULE TESTED BY POSITION); to pin the subject: `anchored(/\d+/ & <256)` | review r14 F1; the ruling CF:1054-1062 on main; the warning's name and text: LEAN |
+| L71 | `/x${/^a/}/` vs `/x${/^a/ & /(?s).*/}/` (a hole without and with a filter role inside it), on `xa` | DIFFERENT: WARNING | a hole opens no scoped match, so in the first `^` is the SUBJECT's start and the program never matches `xa`; in the second the `&` operands are filter roles over the text the hole takes, `^` is that text's start, and it matches 0-2 (`predspec13_anchor.out`). `anchor.whole` fires on the second | review r14 F2; CF:1054-1062 on main; the general form: LEAN |
 
 **REASONING.** The owner's framing: "complex context could cause predicates to just not work and it's not clear how
 the obscure rules impact it ... that's why it was so important to me that things that look like they should do the
@@ -397,7 +397,7 @@ moves SAME -> DIFFERENT: BY DESIGN (PCRE's `$`, "no extra rule", CF:1013-1014; t
 LEAN); L68's difference: this document (LEAN, §13 O62); L69: RULED BY ACCEPTANCE (CF:1014-1020, at CF:1006). Rev 13
 (CF:1026-1062 on main): L68 SAME, RULED (CF:1048-1053); L39's reason and L70/L71's answers RULED (CF:1054-1062; L71
 also rests on this document's general form, LEAN); the WARNING class of L11, L41, L70, L71: the warning RULED
-(CF:1057-1061), its name `anchor.operand`: LEAN.
+(CF:1057-1061), its name `anchor.operand`: LEAN. Rev 14 (2026-11-15 20:44-20:48 on main): the warning, renamed `anchor.whole` (LEAN), covers every filter role (RULED), so L7 and L15 move to WARNING; L13's answer moves under `padded`'s ruled body (RULED) and its class stays BY DESIGN (no warning: a hole).
 
 MODE OF THE ANSWERS (rev 10, review r10 SIM-6, FIXB-7 (d)). A row's answer is on the VALUE a set position filters
 (the whole span, as a condition reads it) unless the row says SEARCHED. A searched program may report a SHORTER span
@@ -448,6 +448,17 @@ row naming `occurrences` (respelled from `search`: L16, L31, L50-L53, L55, L57, 
 L17 (no warning: the anchor sits in `contains`'s hole), L63 (`$` stays PCRE's), L67 (rx-text `&` positions: its `&`
 stands where `|` would alternate), every other row (no anchor in an `&` operand, no `anchored`). Per-row table:
 `docs/dev/lanes/predspec13_report.md`, CONSISTENCY SWEEP.
+
+EVERY ROW RE-APPLIED UNDER REV 14'S RULINGS (2026-11-15 20:43-20:48 on main: the words "match the same stretch
+whole", `anchored` a plain macro with no hole-specific error, ONE warning for every filter role keyed off the role,
+`padded(rx) := /0*${rx}/`). ANSWER MOVES: L13 (`padded(/^5/)` accepts only `5`, no longer `padded("5")`; the anchor
+sits in a hole of `padded`'s body). CLASS MOVES (no answer moves): L7, L15 BY DESIGN -> WARNING (`anchor.whole` in a
+`label:` condition and in a name set). RENAMED DIAGNOSTIC (no class move): L11, L41, L69, L70, L71 (`anchor.operand`
+-> `anchor.whole`). REWORDED (no answer, no class move): L66 (the program pinned by `anchored(...)`), L68 (O64
+closed), every row whose reason said "anchored at both ends" for a filter role. Unchanged: L17 and L63 (their anchors
+sit in a hole of `contains`, no warning), L20 (`padded(between(1, 12))` accepts the same strings under the body,
+`predspec14_anchor.out` R-2 table), every row without an anchor in a filter role and without `padded`. Per-row table:
+`docs/dev/lanes/predspec14_report.md`, CONSISTENCY SWEEP.
 
 ### 0.2 Phase 1 scope (what the owner said is in and out of the first build)
 
@@ -900,7 +911,7 @@ the span's end OR just before a final newline of the span, so `contains(/err$/)`
 `endsWith("err")` rejects it (§0.1 L63; libpcre2 10.46 and Python `re`, `docs/dev/lanes/predspec12_anchor.out`); the
 exact end is PCRE's `\z` (`contains(/err\z/)` = `endsWith("err")`). Rev 10-11 read `$` as the exact end (review r10
 SIM-5); rev 12 withdraws that as an extra rule ("no extra rule", CF:1014; LEAN, this document). Rev 13: an anchor in the
-argument sits in a HOLE of the body, so the `anchor.operand` warning does not fire on it (`x & contains(/^err/)` is the
+argument sits in a HOLE of the body, so the `anchor.whole` warning (rev 13: `anchor.operand`) does not fire on it (`x & contains(/^err/)` is the
 documented "starts with", §11).
 
 ZERO HITS (CF:933 "What's missing is the + or * control"; the record, CF:937-940; RULED BY ACCEPTANCE (CF:997-1000 on main, "Agree with lean"; rulings R-1), §4.2). The quantifier the user chose decides, as for any loop the match reached (§4.2 states the boundary with an
@@ -1020,6 +1031,9 @@ SUBJECT: the subject is never modified; the modified filter reads it differently
 is the pullback of S under the modifier's READING t, a finite transducer or a finite table (the strings whose reading
 lies in S): one
 construction, regular in, regular out (inverse image under a rational relation); a non-finite t needs `functions`.
+(Rev 14: where the reading only SELECTS a stretch of the subject, the transform is a plain macro whose body says so,
+`padded(rx) := /0*(?:${rx})/` (RULED, 2026-11-15 20:48 on main); the pullback proper is needed only by the transforms
+whose reading yields text the subject does not contain: BODIES OF THE PROVIDED TRANSFORMS, below, §13 O68.)
 
     month & padded(between(1, 12))                 # accepts "05", "5", "12": leading zeros ignored by the filter
     t & unpadded(5, between("09:00", "10:00"))      # accepts "9:00": the filter reads it as if zero-padded to width 5
@@ -1041,15 +1055,47 @@ calling it "padded"" (CF:1006-1008). Rev 12's `search` FAILED the rule; the owne
 accepted values read occurrence by occurrence. The audit of every provided name is in §13 O61. A modifier is applied to a filter by a call and the result is used like any filter: `x &
 padded(S)`, `(x: padded(S))` (the operand arrives via `&` or `label:`, never as an argument, §2.3); `&` stays pure intersection (§2.2), so a modified filter may stand
 anywhere in a chain. A modifier without its filter argument where a filter is needed is the unapplied-macro error
-(§2.3). `!padded(S)` is an ordinary filter (the complement of a filter). A modified filter's argument is a SET
-POSITION (§11): `^`/`$` inside it are the ends of the span the modified filter filters, AS THE MODIFIER READS IT (the
-argument's "own" start and end in rev 6's words: the argument filters what the reading yields, so its ends are that
-span's ends). The argument is a FILTER (the modified filter tests whether the reading lies in it), so under THE ONE
-ANCHORING RULE (§11, CF:1011, rev 12) it matches the WHOLE reading, and a `^`
-in it adds nothing: `padded(/^5/)` = `padded("5")`, NOT `padded(startsWith("5"))` (§0.1 L13; rev 10 said the
-opposite, review r12 SIMULATE-1). This is the one filtered-span rule of §11 applied to an
-argument (review r8 P6-5: an argument never opens a span of its own, whether the macro is a modifier, `contains` or a
-user macro); `\b` and edge lookarounds are the edge-assertion error (§11). The variable-width lexicographic lint (`compare.width`) suggests `unpadded(n, ...)`.
+(§2.3). `!padded(S)` is an ordinary filter (the complement of a filter). A modified filter's argument is NOT a role of its own (rev 14; RULED 2026-11-15 20:45 on main: "padded is a simple
+macro so the warning shouldn't key off of the name"; and 20:48: "padded(rx) := /0*${rx}/ ... Give or take
+details"). Where the argument lands, and so what its `^`/`$` read and whether it matches anything whole, follows
+from the transform's BODY after expansion and THE ONE WHOLE-MATCH RULE (§11), exactly as for a user macro with the
+same body. `padded(rx) := /0*(?:${rx})/` (the owner's body; the group is the manager's detail, RULED as a detail,
+because without it a top-level alternation in rx would split the body: `/0*1|2/` rejects `02`, `/0*(?:1|2)/` accepts
+it; `predspec14_anchor.out`, R-2 table) splices its argument into a HOLE, so the argument is part of the body's rx:
+the body as a whole stands in the filter role (beside `&`, after `label:`), and a `^` in the argument reads THAT
+stretch's start, after the zeros: `padded(/^5/)` = `/0*(?:^5)/` accepts only `5` (the `^` forbids the zeros), while
+`padded("5")` accepts `5`, `05`, `005` (§0.1 L13; libpcre2 10.46 and Python `re`, `predspec14_anchor.out`). No
+warning fires there (the anchor is meaningful, plain PCRE); `\b` and edge lookarounds at the hole's edge are the
+edge-assertion error, as in every hole (§11, L8). A value of all zeros needs no clause: `padded(between(0, 255))`
+accepts `000` (`0*` takes `00`, the hole `0`), `padded(between(1, 12))` rejects `00`.
+
+BODIES OF THE PROVIDED TRANSFORMS (rev 14, the check the owner asked for, 2026-11-15 20:45 on main: "If any provided
+transform's whole-match behaviour cannot be derived from a body written in the language, that is brought to him").
+"Hole" = the parameter is spliced into the body's rx (no whole-match of its own, anchors read the body's stretch);
+"filter role" = the body puts it after `label:` or beside `&` (matched whole, the warning applies).
+
+| transform | its body in the language | where the parameter lands |
+|---|---|---|
+| `padded(S)` | `/0*(?:${S})/` (RULED shape, CF on main 2026-11-15 20:48; the group: manager's detail) | hole |
+| `anchored(S)` | `/\A(?:${S})\z/` (RULED, CF:1048-1053) | hole |
+| `startsWith(S)`, `endsWith(S)` | `/(?:${S})(?s:.*)/`, `/(?s:.*?)(?:${S})/` (§8) | hole |
+| `occurrences(S, min)`, `contains(S)` | the loop body of §2.6 around `(?<hit>(?:${S}))`; `contains(S) := occurrences(S, min = 1)` | hole |
+| `quoted(S)` | `/"${S & /[^"]*/}"/` while the quoted text holds no escape (LEAN, this document: "only the text inside the quotes" IS a stretch of the subject, so an `&` inside the hole makes S match that stretch whole; a plain splice `/"(?:${S})"/` would let `quoted(/^a/)` never match, its `^` reading the stretch before the quote) | a side of `&` inside the hole: filter role |
+| `left(n, S)`, `right(n, S)`, `mid(i, n, S)` | `left(n, S) := /${S & /(?s:.){${n}}/}(?s:.*)/` (LEAN; out of range: §13 O14), the others alike | a side of `&` inside the hole: filter role |
+| `unpadded(n, S)` | NOT EXPRESSIBLE: it reads the subject AS IF zero-padded, i.e. tests S against text the subject does not contain (`9:00` is tested as `09:00`); a body over the subject would have to be `/${S'}/` where S' is S with up to n-1 leading zeros REMOVED from each of its strings, a transform OF THE SET S (a left quotient), which the language has no spelling for | (the pullback primitive) |
+| `any_case(S)` | NOT EXPRESSIBLE: it tests S against the case-folded subject; `/(?i:${S})/` is not it, a hole inserts a SET, not text for `(?i)` to re-read, and S may hold labels, comparisons or `&` | (the pullback primitive) |
+| `length(S)` | NOT EXPRESSIBLE in general: it tests S against the subject's LENGTH as a numeral, text the subject does not contain; for a finite S, an alternation of `/(?s:.){k}/` over its members | (the pullback primitive) |
+| `month_numbered(S)` | NOT EXPRESSIBLE: it tests S against a month's NUMBER (`Jan` read as `1`); a finite table, but keeping a row only when its number lies in S is a compile-time test the language does not spell | (the pullback primitive) |
+| `json.quoted(S)` | NOT EXPRESSIBLE: it tests S against the DECODED string (`A` read as `A`) | (the pullback primitive) |
+
+So five provided transforms are NOT plain macros: each tests its argument against text that is not a stretch of
+the subject (a READING, the pullback of this section), so no body written over the subject can say it, and today
+their argument is matched whole by this section's sentence about modifiers, not by a body. That is a question for
+the owner (§13 O68, **primitive-transforms**): lean, ONE primitive with a body-free meaning, "S matched whole on
+the reading t of the stretch" (the pullback, which this section already defines once), its S a filter role like a
+`label:` condition's set; each of the five is then a plain macro over it, and the whole-match rule and the warning
+name roles only. Until he rules, an explicit anchor in their argument draws the warning (LEAN, the same role) and
+the rows that rest on it say so (L66's `any_case("Host")` holds no anchor). The variable-width lexicographic lint (`compare.width`) suggests `unpadded(n, ...)`.
 
 **REASONING.** One mechanism (the pullback) collapses rev 0's transform sections, pattern -> value mappings, `jstr(p)`
 and the binary forms into one closure theorem (predx S1, §8.2). Frank: "The problem is the name. Trim or unpad imply
@@ -1687,7 +1733,7 @@ THE OTHER MARKS:
 
 | mark | where it may appear | its one meaning | §12 case |
 |---|---|---|---|
-| `&` | between two expressions; in rx text ONLY with the rx-`&` switch ON, then exactly where `\|` would mean alternation (PCRE's own constructs keep their meaning, `(?&name)` included; a literal `&` is `\&` or `[&]`: RULED, CF:1041-1046 on main, rev 13); BOTH operands are filter roles matched whole on one span, an anchor in an operand drawing `anchor.operand` (RULED, CF:1054-1062 on main) (§11; CF:981-984); in rx text it takes the whole concatenation on each side (§0.1 L67) | fills the operand slot: rx & rx = intersection, rx & macro = the macro applied to the rx, macro & macro = pointwise (§2.1, §2.2) | every case but E-SEP, E-DEPTH |
+| `&` | between two expressions; in rx text ONLY with the rx-`&` switch ON, then exactly where `\|` would mean alternation (PCRE's own constructs keep their meaning, `(?&name)` included; a literal `&` is `\&` or `[&]`: RULED, CF:1041-1046 on main, rev 13); BOTH sides are filter roles matching the same stretch whole, an anchor in a side drawing `anchor.whole` (RULED, CF:1054-1062 on main; rev 14: renamed, every filter role) (§11; CF:981-984); in rx text it takes the whole concatenation on each side (§0.1 L67) | fills the operand slot: rx & rx = intersection, rx & macro = the macro applied to the rx, macro & macro = pointwise (§2.1, §2.2) | every case but E-SEP, E-DEPTH |
 | `\|` | between two expressions | ANY ONE: union of rx, concatenation of entries (§3.3), pointwise on macros; rx \| macro is an error (§2.1) | E-FILE, E-DEPTH |
 | prefix `!` | before an expression (expression language only, §2.2) | the complement in the filter role: a macro with its operand open | E-FILE |
 | `<` `<=` `>` `>=` `==` | prefix, before ONE atom | a COMPARISON SET (a full rx, §2.4) | E-CAL (`<=`), E-RFC (`==`), E-FILE (`<=`, `>`) |
@@ -1927,10 +1973,12 @@ OWN-7). Prerequisite list: LEAN (review Q1X-8). The untiled-range wording: LEAN 
 **RULE.** Every warning has a STABLE NAME in dotted families (a contract, stated in the spec): `empty.search`,
 `dead.branch`, `label.unset`, `compare.width`, `label.ambiguous` (rev 9: the pointer to the author's validation of an
 ambiguous label, never a report that the levels differ: they read one parse, §4.5; it fires only for ambiguity in the
-author's OWN pattern text, RULED, CF:964), `warn.unused`, `anchor.operand` (rev 13: an explicit `^`, `$`, `\A`, `\z`
-or `\Z` written in an `&` operand's own rx text reads the span both operands match, not the subject; the warning is
-RULED, CF:1057-1061 on main, its name and text LEAN; text and reach: §11 THE AMPERSAND RULE TESTED BY POSITION;
-whether it reaches every filter role: §13 O65); proposed by review 2026-11-14-r1
+author's OWN pattern text, RULED, CF:964), `warn.unused`, `anchor.whole` (rev 14; rev 13's `anchor.operand`: an explicit `^`, `$`, `\A`, `\z` or `\Z`
+written in the own rx text of an rx that stands in a FILTER ROLE once macros are expanded, a side of `&`, a `label:`
+condition, a compile-time set, a parameter a body puts in one of these; it reads the stretch the pattern matches
+whole, not the subject; RULED that it exists, CF:1057-1061 on main, that it covers every filter role and keys off the
+role, 2026-11-15 20:44 (b) and 20:45 on main; its name and text LEAN; where it fires and where not: §11 THE WARNING
+`anchor.whole`); proposed by review 2026-11-14-r1
 and not adopted: `precedence.section`, `array.hole`, `flag.hole`. Control is by `@` effects, rest of file:
 `@warn.off("compare.width")`, `@warn.off(startsWith("dead."))` (a label-free library rx is a full rx; the look-alike
 `@warn.off(/^dead\./)` is NOT the same set: a name set holds whole strings, so it is the one name `dead.`, §0.1 L15), `@warn.off(/.*/)`; the reverse `@warn.error(/.*/)` (a
@@ -1959,20 +2007,29 @@ CF:1016-1019, accepted at CF:1006: "No primitive carries an anchoring special ca
     contains(s)    := occurrences(s, min = 1)           # the record: /.*${rx}.*/ (the same SET; one definition: LEAN, §2.6)
     anchored(s)    := /\A(?:${s})\z/               # ADDED (CF:1005, CF:1014); EXACT ends, rev 13 (CF:1048-1053); identity in filter position (L69)
 
-Each body is a FILTER where it is used, so it matches the WHOLE span (THE ONE ANCHORING RULE, §11); the argument
-sits in a hole of the body, part of the body's rx, so `^`/`$` in it are PCRE's with the span as the subject:
+Each body stands in a filter role where it is used, so it matches its stretch whole (THE ONE WHOLE-MATCH RULE, §11);
+the argument sits in a hole of the body, part of the body's rx, so `^`/`$` in it are PCRE's with the span as the subject:
 `contains(/^err/)` = `startsWith("err")` falls out of PCRE (CF:1018), `contains(/err$/)` also accepts a span ending
 `err\n` (PCRE's `$`; `\z` for the exact end; §0.1 L63). The gaps are SCOPED `(?s:...)` so they cross a line break inside
 the span ("gaps cross line breaks", CF:1017) and nothing leaks into the hole (the manager's call, LEAN, rev 9); the
 holes are written `(?:${s})` so the text means what the hole semantics says (review r10 SIM-3). `anchored` is for a
-position OUTSIDE a filter: a final pattern, `anchored(block)` (the record's use, CF:1015), where its ends are the
+position OUTSIDE a filter role: a final pattern, `anchored(block)` (the record's use, CF:1015), where its ends are the
 subject's. Its ends are EXACT, `\A`/`\z` (RULED, CF:1048-1053 on main: "`anchored(/foo/)` as a final pattern does not
 match `foo\n`"; rev 12 wrote the owner's placeholder `/^${rx}$/`, whose `$` also held before a final newline, L68,
-§13 O62 CLOSED), so `anchored(block)` and `/\A${block}\z/` are one text. Read as "P matched WHOLE on the innermost
-scoped match" it gives the same answer in every position tested (a final pattern, a filter, a `label:` condition, an
-alternation at P's top, `(?m)` inside P); read as "P in filter role on the span it takes" it DIFFERS in a hole
-(`/x${anchored(/a/)}/` on `xa`: `\A`/`\z` no match, that reading (0,2); `docs/dev/lanes/predspec13_anchor.out`), so
-the definition is the `\A`/`\z` text and the hole case is an owner question (§13 O64). The owner's first sketch
+§13 O62 CLOSED), so `anchored(block)` and `/\A${block}\z/` are one text.
+`anchored` IS A PLAIN MACRO with no special case anywhere (rev 14, RULED, 2026-11-15 20:44 (a) on main:
+"anchored-in-hole: agree"): what it does in any position is what its text does there under THE ONE WHOLE-MATCH RULE.
+The group `(?:...)` is there because rx may have a top-level alternation: `/\Aa|b\z/` would be "`a` at the start, or
+`b` at the end", while `/\A(?:a|b)\z/` is "exactly `a` or `b`" (`anchored(/a|b/)` on `ab`: no match,
+`predspec13_anchor.out`). TWO DIFFERENT TIES, which the words keep apart (rev 14, RULED, "That's a good
+clarification"): `${a & b}` ties a and b TO EACH OTHER, both matching the same stretch whole, the stretch the hole
+takes (where that stretch sits is decided by the rx around the hole); `anchored(x)` PINS x to the ends of its scope,
+the innermost scoped match (§11): the subject for a final pattern, the stretch of the enclosing filter role
+otherwise. In a HOLE no scope is opened, so `\A`/`\z` are the ends of the scope around the hole and
+`/x${anchored(/a/)}/` never matches, exactly as plain PCRE's `/x\Aa\z/` (on `xa` and on `a`: both no match;
+`/${anchored(/a/)}b/` on `ab`: no match, as `/\Aa\zb/`; `predspec14_anchor.out`, table (B)). No compile error
+specific to `anchored` is given there (RULED; §13 O64 CLOSED); a general "this pattern can never match" warning is
+not ruled (§13 O67, a possible later item). The owner's first sketch
 `startsWith(rx) := /^${rx}/` does NOT work in filter position (there it means exactly rx: `/^5/` rejects `57`; L69).
 DIFFERENCES FROM THE RECORD'S TEXT, kept and listed (rev 12): the record writes `contains(rx) := /.*${rx}.*/` and
 `endsWith(rx) := /.*${rx}/`; this document keeps `contains := occurrences(x, min = 1)` and a LAZY `endsWith` gap
@@ -1984,7 +2041,7 @@ labels read, so the bodies are written for the reading a user expects (rev 9, LE
 argument starts as far LEFT as it can (`endsWith(/(?<n>\d+)/)` on `ab123`: n = `123`; rev 8's greedy `.*` gave n = `3`,
 libpcre2), and `contains` is `occurrences` (§2.6: leftmost hits; rev 8's greedy-lead body read the RIGHTMOST occurrence).
 As SETS nothing changes (a lazy and a greedy gap admit the same strings). `when(c, p)` (`x & when(c, p)` = `(x & c & p) | (x & !c)`). Standard FILTER MODIFIERS (§2.7; each transforms the
-filter, never the subject): `padded(S)` (leading zeros ignored), `unpadded(n, S)` (read as if zero-padded to width
+filter, never the subject): `padded(S) := /0*(?:${S})/` (leading zeros before S; rev 14, the owner's body, §2.7 BODIES OF THE PROVIDED TRANSFORMS), `unpadded(n, S)` (read as if zero-padded to width
 n), `any_case(S)` (letter case ignored), `quoted(S)` (only the text inside the quotes read), `length(S)` (the
 subject's length read), `month_numbered(S)` (a month name read as its number), string positions `left/right/mid`
 with literal positions (units = characters per the encoding mode; out-of-range: §13 O14); `json.quoted(S)` (a JSON
@@ -2290,13 +2347,13 @@ docs/dev/lanes/predspec13_anchor.py`). Searched rows report the leftmost start, 
 (D196; the greedy operands here prefer the longest that qualifies). `<256` is the comparison set, canonical numerals
 0-255 (C9).
 
-| position | the span the operands match whole (and their anchors read) | example, subject: answer | sensible | `anchor.operand` |
+| position | the stretch both sides match whole (and their anchors read) | example, subject: answer | sensible | `anchor.whole` (rev 13: `anchor.operand`) |
 |---|---|---|---|---|
 | (i) a final program, searched | each candidate stretch of the subject the search tries, in D196's order; the stretch reported is the one both accept | `/^\d+$/ & <256`, `x300 12`: `30` at 1-3 (`/^\d+$/` alone: no match; `/\d+/ & <256`: `30`, the same) | YES: "a numeral below 256 somewhere"; the anchors add nothing | fires (at `^` and `$`) |
 | (ii) a final program under `anchored` | the whole subject, exact ends (`anchored(P) = /\A(?:P)\z/`) | `anchored(/^\d+$/ & <256)`: `x300 12` no match; `200` match 0-3; `200\n` no match (the same without the operand anchors) | YES: the anchors coincide with the subject's ends and add nothing | fires |
 | (iii) inside a hole of an rx | the text the hole takes; the rx around the hole reads the enclosing scope (the owner's own reading, CF:1078-1080 on main: "the match span that the & expression creates anchors for is the ${} hole") | ACCEPTANCE ROW (the owner's, CF:1079): `/999${ /\d+/ & <100 }999/`: `99945999` match 0-8 (the hole's text `45`); near row `99912345999`: no match (`12345` is not below 100, and no other `999` pair brackets a numeral). `/port=${ /^\d+$/ & <256 }/`: `port=80` match 0-7; `port=300` match 0-7 (`port=30`: nothing after the hole stops the number); `/port=${ /\d+/ & <256 }\b/`: `port=300` no match | YES: the hole's text is the only stretch both can share; reading `^` as the subject's start would make the hole unmatchable (`/port=^\d+$/`: never) | fires |
-| (iv) a filter nested inside a hole | the INNERMOST filter role's span: an inner `&` in a hole of an outer operand reads the inner hole's text; a condition in a hole reads its label's text | `/\w+/ & /a${ /^\d$/ & <5 }b/`, `a3b`: match 0-3 (the inner `^` read as the outer operand's start: no match); `P := /(?<w>\w)-(?<v>\w+)/`, `/k=${ P & (v: /^a\w*/) }/`: `k=x-ab` match 0-6, `k=x-ba` no match | YES: each `&` has its own span; an anchor reads the nearest | fires (inner operands); for the condition: §13 O65 |
-| (v) a `label:` condition | the label's text in this match | `P := /(?<w>\w) (?<x>\w+)/`, `P & (x: /^S\w*/)`: `a Sab` match 0-5, `a xSab` no match | YES (E-CTX-1; unchanged since rev 11) | by the ruling's words NO (the anchor is in a condition, not directly in the operand); LEAN yes, §13 O65 |
+| (iv) a filter nested inside a hole | the INNERMOST filter role's span: an inner `&` in a hole of an outer operand reads the inner hole's text; a condition in a hole reads its label's text | `/\w+/ & /a${ /^\d$/ & <5 }b/`, `a3b`: match 0-3 (the inner `^` read as the outer operand's start: no match); `P := /(?<w>\w)-(?<v>\w+)/`, `/k=${ P & (v: /^a\w*/) }/`: `k=x-ab` match 0-6, `k=x-ba` no match | YES: each `&` has its own span; an anchor reads the nearest | fires (inner sides; the condition too, rev 14) |
+| (v) a `label:` condition | the label's text in this match | `P := /(?<w>\w) (?<x>\w+)/`, `P & (x: /^S\w*/)`: `a Sab` match 0-5, `a xSab` no match | YES (E-CTX-1; unchanged since rev 11) | fires (rev 14, RULED: every filter role; rev 13: by the first ruling's words no) |
 | (vi) an operand that is itself an `&` chain | the same span for every operand of the chain (`&` is associative, L1) | `(/^\d+/ & /\d+$/) & <256` and `/^\d+/ & (/\d+$/ & <256)`, `x300 12`: both `30` at 1-3 | YES: grouping changes nothing | fires (each anchor) |
 | (vii) an operand with an edge assertion that looks OUTSIDE the span (`\b`, a lookaround at the edge) | the span; but the assertion would read the character before or after it, which plain PCRE on the span sees as "no character" | `/\w+/ & /\bfoo/`, `xfoo`: read as plain PCRE on the span it would match `foo` at 1-4, while `/\w*\bfoo/` (where `\b` reads the real text) does not match | NO for `\b`/lookarounds: they have no meaning confined to the span; that is why they are the EDGE-ASSERTION ERROR (CF:761 (3), L10, E-CTX-4), unchanged. Anchors read no character outside the span (`$` reads only a final newline inside it), so they are not in this class | no (the ERROR instead). `(?m)^foo` in an operand: the span's start counts as a line start (`/\w+/ & /(?m)^foo/`, `xfoo`: `foo` at 1-4): fires |
 | (viii) rx-text `&`, switch ON | D196 precedence: each side is the WHOLE CONCATENATION of its alternative (L67), so the span is the text that alternative takes; `^`/`$` written OUTSIDE a group around the `&` read the enclosing scope | `/^\d+&${<256}$/`, `x300 12`: `30` at 1-3 (operands `^\d+` and `${<256}$`); `/^(?:\d+&${<256})$/`: `x300 12` no match, `200` match 0-3; `/a\|^b&\w+/`, `xb`: `b` at 1-2 (`^b` is an operand) | YES by the same rule, and the MOST surprising position: an author who writes `^...$` around a whole rx-text pattern means the subject; the warning names the grouped fix | fires; text names `/^(?:...)$/` |
@@ -2307,21 +2364,38 @@ differ exactly when P writes an anchor: `/^foo/` on `xfoo` no match, `/^foo/ & /
 `^` is the subject's start), `/x${/^a/ & /(?s).*/}/` match 0-2. The warning fires on the second form of each, so the
 rows are DIFFERENT: WARNING.
 
-THE WARNING `anchor.operand` (§7.1's naming; RULED that it exists, CF:1057-1061; name, text and reach LEAN, this
-document). IT FIRES on `^`, `$`, `\A`, `\z`, `\Z` (with or without `(?m)`) written in an `&` operand's OWN rx text,
-i.e. an anchor whose innermost scoped match is that operand's span: a literal operand, a binding used as one (its
-text, L2), either side, at any depth of an `&` chain, in rx-text `&` under ON. IT DOES NOT FIRE on an anchor inside a
-HOLE that a macro body puts the argument into (`x & contains(/^err/)`: that `^` follows the body's gap and is the
-documented spelling of "starts with", L17), nor on `anchored(...)` (no anchor is written; in filter position it is
-the identity, L69). One warning per anchor, at the anchor, naming the `&`:
+THE WARNING `anchor.whole` (rev 14; §7.1's naming; rev 13 named it `anchor.operand`, renamed because it no longer
+fires only in an operand: a name says what the author sees, an anchor where the pattern is matched whole. RULED that
+it exists, CF:1057-1061; RULED that it is ONE warning for every place a pattern must match its stretch whole,
+2026-11-15 20:44 (b) on main: "anchor-warn-scope: agree"; RULED that the place is decided by the ROLE after macros
+are expanded, never by a name, 20:45: "padded is a simple macro so the warning shouldn't key off of the name". Name,
+text and the reach below: LEAN, this document). IT FIRES on `^`, `$`, `\A`, `\z`, `\Z` (with or without `(?m)`)
+written in the OWN rx text of an rx that stands in a FILTER ROLE once macros are expanded, i.e. an anchor whose
+innermost scoped match is that filter role's stretch; however the rx got there: written beside `&` (either side, at
+any depth of an `&` chain, in rx-text `&` under ON, inside a hole), after `label:`, in a compile-time set, a binding
+used there (its text, L2), or passed as a PARAMETER that a macro's BODY puts in one of these. Where it fires and
+where it does not (each row oracled in `docs/dev/lanes/predspec14_anchor.py` / `.out`, table (C): where it fires the
+pattern with and without its edge anchor give the same answer; where it does not, they differ):
 
-    "`^` in this operand of `&` is the start of the text both operands must match whole (here: <the reported match |
-     the text the hole takes | the text of the enclosing operand>), not of the subject, so it always holds and adds
-     nothing; to pin the subject's start, write the final pattern as `anchored(...)` (in rx text: `/^(?:...&...)$/`)"
+| place (after expansion) | fires | reason | witness (with / without the anchor) |
+|---|---|---|---|
+| a side of `&` (any position: final, under `anchored`, in a hole, nested, rx-text `&`) | yes | the side matches its stretch whole; an edge anchor there always holds | `/\w+/ & /^foo/` vs `/\w+/ & /foo/` on `xfoo`: both 1-4 |
+| a `label:` condition | yes | the condition matches the label's text whole | `P & (x: /^S\w*/)` vs `P & (x: /S\w*/)`: `a Sab` both match, `a xSab` neither |
+| a parameter the macro's body puts beside `&` or after `label:` | yes | it is that role, by the body (user macro `value_of(S) := /\w+=(?<v>\w*)/ & (v: S)`; provided: `quoted`, `left`/`right`/`mid`, §2.7) | `value_of(/^a\w*/)` vs `value_of(/a\w*/)`: `k=ab` both 0-4, `k=ba` neither |
+| a compile-time set (a warning-name set, `import`/`@export` names, `enumerate`, `@assert`) | yes | matched whole on each string | `@warn.off(/^dead\./)` vs `@warn.off(/dead\./)`: both select only `dead.` of `dead.`, `dead.x`, `x.dead.` |
+| a parameter the body splices into a HOLE (`padded`, `contains`, `occurrences`, `startsWith`, `endsWith`; a user macro `my_padded(S) := /0*(?:${S})/`) | no | the hole is part of the body's rx; the anchor reads the body's stretch at a point that need not be its edge, so it MEANS something: `contains(/^err/)` is "starts with `err`" (L17), `padded(/^5/)` forbids the zeros (L13) | `/\w+ \w+/ & contains(/^err/)` vs `contains(/err/)` on `x err`: no match vs 0-5; `/\d+/ & padded(/^5/)` vs `padded(/5/)` on `x005`: `5` at 3-4 vs `005` at 1-4 |
+| `anchored(...)` | no | the author writes no anchor; the macro's `\A`/`\z` pin its argument to the scope's ends, which is the macro's purpose (in a filter role it is the identity, L69) | `anchored(/foo/)` vs `/foo/` on `xfoo`: no match vs 1-4 |
+| a final pattern's own anchors | no | a final pattern is searched; its anchors are the subject's ends, plain PCRE | `/^foo/` vs `/foo/` on `xfoo`: no match vs 1-4 |
+| a hole in a final pattern (`/x${/^a/}/`) | no | the hole opens no scope; the anchor is the subject's start, plain PCRE (that this program can never match is the unruled general warning, §13 O67) | `/x${/^a/}/` vs `/x${/a/}/` on `xa`: no match vs 0-2 |
+| the argument of `unpadded`, `any_case`, `length`, `month_numbered`, `json.quoted` | yes (LEAN) | the argument is matched whole on the transform's reading, a role the language has no body for (§2.7, §13 O68, **primitive-transforms**) | (no witness: the reading is not a stretch of the subject) |
 
-(`$`, `\z`, `\Z`: "end" for "start"; `(?m)`: "a line start" and the span's start counts as one.) Whether the same
-warning fires for an anchor in a `label:` condition, a modifier's argument or a compile-time name set, where the
-anchor adds nothing for the same reason (§0.1 L7, L13, L15): §13 O65 (lean: yes, one warning for every filter role).
+One warning per anchor, at the anchor, naming the place:
+
+    "`^` here is the start of the text this pattern must match whole (here: <the reported match | the text the
+     hole takes | the label's text | each name>), not of the subject, so it always holds and adds nothing; to pin
+     the subject's start, write the final pattern as `anchored(...)` (in rx text: `/^(?:...&...)$/`)"
+
+(`$`, `\z`, `\Z`: "end" for "start"; `(?m)`: "a line start" and the stretch's start counts as one.)
 
 `anchored(P)` CHECKED THE SAME WAY (CF:1048-1053: the "P in filter role on the enclosing scope" wording may stand only
 if no case differs from `\A(?:P)\z`; `predspec13_anchor.out`, second table). Read as "P matched WHOLE on the
@@ -2331,7 +2405,9 @@ match; `anchored(/a|ab/)`: 0-2), `(?m)` inside P (`anchored(/(?m)^a$/)` on `a\n`
 (`/\w+/ & anchored(/foo/)` on `xfoo`: 1-4), a `label:` condition, and a hole (`/x${anchored(/a/)}/` on `xa`: no match,
 the hole opens no scope). Read as "P in filter role ON THE SPAN IT TAKES", it DIFFERS in a hole (`/x${anchored(/a/)}/`
 on `xa`: match 0-2; `/${anchored(/a/)}b/` on `ab`: match 0-2). The wording has both readings, so the DEFINITION is the
-text `/\A(?:${rx})\z/` and the hole case is an owner question (§13 O64).
+text `/\A(?:${rx})\z/`. Rev 14 (RULED, "anchored-in-hole: agree"): the hole case is what the text gives, with no
+`anchored`-specific error; the macro is plain (§8; §13 O64 CLOSED; the worked row stays: `/x${anchored(/a/)}/` never
+matches, as `/x\Aa\z/`, `predspec14_anchor.out` table (B)).
 
 **REASONING.** Making PCRE text a literal gives G3 without a mode switch; free-form multi-line layout belongs to the
 expression language, not to literals (C2); the strict subset applies only where a literal sits inside a larger
@@ -2484,6 +2560,14 @@ patterns; E-FILE's `^`/`$` in the searched item rx), so `anchor.operand` fires i
 anchor in a `label:` condition) and E-CTX-5 (in a modifier's argument) would draw it only if the owner extends it
 (§13 O65). No case uses `search`/`occurrences` by name (E-JSONL's `contains` is `occurrences(x, min = 1)`), nor
 rx-text `&`.
+
+REV 14 RE-APPLIED (2026-11-15 20:43-20:48 on main; per-case table in `docs/dev/lanes/predspec14_report.md`,
+CONSISTENCY SWEEP). CODE LINES: unchanged. ANSWERS: E-CTX-5's stated equivalence MOVES (`padded(/^5/)` accepts only
+`5`, the `^` sitting in a hole of `padded`'s ruled body; still no error, and the program has no subject). WARNINGS:
+E-CTX-1 and E-CTX-7 now draw `anchor.whole` (an anchor in a `label:` condition, every filter role RULED); their
+answers and no-error verdicts stand. Every other case: unchanged (`padded(between(...))` in E-WEEKDAY and E-IPV4's prose (it admits `01`), and
+`padded(<=dim)` in E-CAL accept the same strings under the body: digits with leading zeros, `predspec14_anchor.out`
+R-2 table; E-HTTP's `anchored(block)` is a final pattern, no warning; no case writes `anchored` in a hole).
 
 THE TWO-WAY CENSUS (G0b; review r8 P6-9, OWNER-12). G1's check runs case -> construct (every case uses only §§2-8);
 this table runs construct -> case. Counts are uses in §12's code lines, comments stripped (command in
@@ -2691,7 +2775,7 @@ Each case puts an assertion where the three candidate models (§11) disagree; th
 sets, `^`/`$` = the filtered span's ends, the edge-assertion error for `\b` and edge lookarounds; CF:761; rev 12:
 THE ONE ANCHORING RULE, CF:1011-1020, the same answers). E-CTX-1, 5
 and 7 do not error; E-CTX-2, 3, 4, 6 do. The answers under the other models are review Q1X-2's table. LEVEL: none applies
-(compile errors).
+(compile errors). Rev 14: E-CTX-1 and E-CTX-7 draw the warning `anchor.whole`; E-CTX-5 draws none.
 
     P := /(?<w>\w) (?<x>\w+)/
     P & (x: /^S\w*/)                                  # E-CTX-1, subject `a Sab`
@@ -2703,8 +2787,8 @@ and 7 do not error; E-CTX-2, 3, 4, 6 do. The answers under the other models are 
     enumerate(/(?<=a)[bc]/)                           # E-CTX-6
     headers & (name: /^[A-Z][\w-]*/)                  # E-CTX-7 (§12.9's headers), `Host: a` / `Host: a\r\nAccept: b`
 
-- E-CTX-1: NO error; the filter is anchored at both ends of x, so x must be ENTIRELY `S\w*` (its `^` is x's start
-  and adds nothing): `a Sab` -> match `a Sab`. Here the answer equals `(x: startsWith("S"))`'s only because x is
+- E-CTX-1: NO error, the WARNING `anchor.whole` (rev 14: an anchor in a `label:` condition); the condition matches
+  x WHOLE, so x must be ENTIRELY `S\w*` (its `^` is x's start and adds nothing): `a Sab` -> match `a Sab`. Here the answer equals `(x: startsWith("S"))`'s only because x is
   `\w+`; in general the two differ (§0.1 L7; rev 11, review r12 SIMULATE-1). (A/B2: silent no match; B1: match.)
 - E-CTX-2: compile ERROR (`\b` at both edges of the hole's set). Fix: write the boundaries in the literal around the
   hole, `/a\b${/\d+/}\b/`, which says what the pasted text says: on `a12` it finds nothing (`a` and `1` are both
@@ -2714,12 +2798,15 @@ and 7 do not error; E-CTX-2, 3, 4, 6 do. The answers under the other models are 
   searched program finds is shown by an example subject, not by an assertion (§5.6, §13 O36).
 - E-CTX-4: compile ERROR (`\b` at the end of an `&` operand). Fix `/\w{3}\b/`: on `foobar` it reports `bar` visibly,
   from the final pattern. (A/B2: the reported match silently moves from `foo` to `bar`.)
-- E-CTX-5: NO error; the modifier's argument is anchored at both ends of the span `padded` reads, so `padded(/^5/)` =
-  `padded("5")` (`5`, `05`, ...). It is NOT `x & padded(startsWith("5"))`, which also accepts `57` (§0.1 L13; rev 10
-  said "same", review r12 SIMULATE-1: the stated equivalence MOVES, the program and its no-error verdict do not).
+- E-CTX-5: NO error and NO warning (rev 14): `padded(rx) := /0*(?:${rx})/` (RULED body, §2.7) splices the argument
+  into a hole, so `x & padded(/^5/)` is `x & /0*(?:^5)/`: the `^` is the start of x's stretch and forbids the zeros,
+  so it accepts only `5` (`05` rejected), while `x & padded("5")` accepts `5`, `05`, `005` (§0.1 L13;
+  `predspec14_anchor.out`). Rev 11-13 said `padded(/^5/)` = `padded("5")` (a modifier's argument read as a filter of
+  its own, withdrawn); rev 10 said "same" as `startsWith`. The stated equivalence MOVES again; the program and its
+  no-error verdict do not.
 - E-CTX-6: compile ERROR (a lookbehind at the start of an `enumerate` argument). Fix `enumerate(/[bc]/)` = `["b",
   "c"]` and put `(?<=a)` in the final pattern.
-- E-CTX-7: NO error; `^` is the start of each `name` value: both subjects -> match, same as `(name: /[A-Z][\w-]*/)` (a
+- E-CTX-7: NO error, the WARNING `anchor.whole` (rev 14: an anchor in a `label:` condition); `^` is the start of each `name` value: both subjects -> match, same as `(name: /[A-Z][\w-]*/)` (a
   set is matched ENTIRELY). (A/B2: the one-header block matches, the two-header block silently
   fails, and adding `m` to the condition flips it; review Q1R-4.)
 Agreeing look-alike (no error): an assertion strictly inside a value, `/(?<v>[\d.]+)/ & (v: /\d+\b\.\d+/)` on
@@ -3020,7 +3107,8 @@ review's proposed lean, in plain words, NOT resolved):
   a warning should name a `$` inside `contains`/`occurrences` that a gap can follow is this item's question), L68 was BY
   DESIGN (`anchored` vs `\A...\z`), SAME from rev 13 (exact ends, §13 O62 CLOSED), L69 SAME; rev 13: L11, L41 move
   from BY DESIGN to WARNING (`anchor.operand`), L70, L71 new WARNING rows, L66 from GAP to BY DESIGN (no count
-  warning, RULED, CF:1073-1081 on main); rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
+  warning, RULED, CF:1073-1081 on main); rev 14: L7, L15 move from BY DESIGN to WARNING (`anchor.whole`, the
+  warning now in every filter role, RULED), L13 stays BY DESIGN with a moved answer (`padded`'s ruled body); rev 8 moved L31 to BY DESIGN and L51 to ERROR; L16, L23, L25, L31, L48, L52, L54 are BY DESIGN, the
   stated meaning of a mark or a library name, §5.4, §4.3; L52, "a plain condition on a hit means ALL hits", is the one
   rev 8 row where a warning could pay, since the owner's own first question was about it, CF:904):
   DIFFERENT with no named diagnostic, so G0's acceptance fails on them today. Some are open items above; L20 (a padded
