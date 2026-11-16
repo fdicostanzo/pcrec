@@ -1466,3 +1466,7 @@ definition-head form, extended to the label bracket; `|=` not adopted. (2) THE M
 his words): this is a go to WRITE UP AND TEST the default (design only, lane unsetdef), on his lean "unset fails";
 unset-component is closed only when he says so. The look-alike `(h, m = 0): R` vs `(h, m: 0)` is the write-up's to
 weigh (a diagnostic, not a different mark, unless it finds worse).
+
+**2026-11-16 OWNER QUESTION — what a default that is an rx means (Frank, to session 134, box clock 10:40).** His words:
+"Also, the m = x there means the x is an rx. I don't have an intuitive sense of what that means". RECORD: a question,
+not a ruling; passed to lane unsetdef (its R-1). The manager's answer in the session's reply is the manager's.
