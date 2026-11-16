@@ -27939,3 +27939,48 @@ Next
   consequences I had labelled mine were INCOMPLETE (the slice needs its unset guard; "no warning" needs a by-design
   look-alike row; bare `<=dim` becomes an error, not a synonym) and my own warning lean on two-orders did not survive
   his question "can you think of a use": ask for the uses before leaning on a diagnostic.
+
+## 2026-11-16 (session 135, 12:00-13:50 box clock; manager fable, lanes opus/sonnet) — full suite green, five landings, R-45 go, joint condition through its critic round
+
+- FULL SUITE GREEN on main e43603862, the first since 2026-11-05: cloud test, ubsan, asan, recidentity (morning),
+  axes 12:24, mech 13:44; alloc + lint local on db7aab3de (no src byte between). Lane ledg1116 (sonnet) records it and
+  resets D177's counters (in flight at this entry).
+- LANDED and PUSHED (lane land1116, sonnet; origin/main 02bbd527f; strict, plan-lint, doc-lint, size check, sabotage
+  anchors green; no src/lib/cli/memfn/src byte): lane/memfn-d3wire ce6bfe8d5 (kit R-44, merge c38f4362b; cloud test +
+  axes GREEN on its tip), lane/memfn-scanrow f6274c11b (merge c9ff8b53d), lane/r45chk (r45read + r45chk reports),
+  lane/revjc (review r26 + four critic-skill process changes), lane/jcfix (joint_condition.md after jcfold2 + jcfix).
+  The landing STOPPED once on a conflict I had not predicted (docs/dev/reviews/CLAUDE.md, two branches appending at
+  one spot); ruled keep-every-line by the rulings file + a message. CI on ed9677782 read GREEN.
+- KIT R-45 (window spans to 4095, [COVER-CAP] stage 2). Reply rev 4 arrived; my five interface answers YES; Frank:
+  "agree with your leans on all three" (forms now; no short-span exception; no near-miss fix in the first build), then
+  "kit-build-go: go". I applied the go in two steps: plan B (carrier + working state) after check lane r45read (11
+  contradictions C1-C11 between the reply and cover_cap §11, 14 note edits, 27 work items), the FORMS after the kit's
+  rev 6 @ 69acf5376 and check lane r45chk (9 of 16 items fixed kit-side; the rest are cover_cap's). All in
+  memfn/docs/requests.md under R-45. Kit facts since: the raise to 4095 is ONE HELD kit commit, applied on the COMBINED
+  branch once covs2afix's A1 + A3 are there; witness row (b) waits for my B5 text; the kit branch respells pcrec's
+  callers; the head rule reads all six regimes (~440 more arm-cells, two nights likely) and a twice-void cell forces
+  h* = 64. MINE before the code round: the MFWSTMT trace record + predictor (the kit's mover predicate is per
+  alternative across span boundaries), 16 cover_cap edits, a review of night step (4b). Bench asked (inbox I-178,
+  pcrec-bench 0746c679) whether its NOT-WARM / short-subject methods run on kit-timed cells.
+- PREDICATES (design only). Frank ruled, all in COND-FAMILY.md with his words: zero-pass-record (the outside label is
+  tested when the loop is empty; wording mine), library-not-syntax (the 11-14 ruling withdrawn by name),
+  retire-paused (split; the sigil paused INDEFINITELY, "requires real value other than 'override a users own *'"),
+  label-twice (an error; spelling reserved), pairing-loop part 1 (the wording). predicates_future.md items 5-9 added.
+  Lane jcfold2 folded the first three and tested my zero-pass wording (14,937 cases); CRITIC ROUND r26 jointcond (5
+  critics, 37 findings, all ruled; coordinator pattern, ~35 min) found the note sound but incomplete: my wording had
+  been quoted with an inserted clause (ZERO-EMPTY: no rule meets set-arity + record-is-product + the & equality on a
+  set empty through a match value), GROUP-ZERO, UNREACHED-PAIRING, DICT-DOMAIN (900 of 11,000), and §9 missing ~45
+  draft lines. Lane jcfix applied everything (186,727 cases, 0 differ) and drafted two owner questions.
+- THE OPEN DESIGN QUESTION (absent labels). Frank: "'optional pass' is still a loop. Even /x?/ is a loop from 0 to
+  1"; "Only an alternation would be a complete no set, no?"; "could * be defined as /x+|/". Since x? = (?:x|) and
+  x* = (?:x+|) = (?:x+)?, EVERY line between "unset fails" and "zero passes holds" gives two spellings of one pattern
+  different answers, the ruled §4.2 line included (its own witnesses). His direction: "absents-hold: do work it out
+  but consider also the option that missing means failing. Or options where the user can control the
+  interpretation". Lane absent (opus) works T / H / F / U side by side (in flight). Rev 20 waits on his choice.
+- LESSONS. (1) I leaned twice on a claim I had not checked: "today's line keeps x? and (x|) together, so it is free of
+  the spelling defect" (it splits x* from (x+)?), and "the pending fact decides it" (it did not: per-pass unset keeps
+  record = AND). State what a lean RESTS on, and retract the lean with the fact. (2) A lane that quotes the manager's
+  wording can alter it; the ruling lens now diffs such quotes verbatim (skill change). (3) Predict index-append
+  conflicts for EVERY index file a landing's branches touch, not only the lanes history index. (4) A check lane before
+  a build go was worth it twice (r45read, r45chk): the peer's own three critic rounds had not compared its design
+  with ours.
