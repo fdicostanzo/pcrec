@@ -1444,3 +1444,16 @@ value), his words: "Set arity: yes. It's clean. I like it". RECORD: ONE set kind
 known at compile time; `|`, `&` and array entries need equal arity; the labels left of the colon must number the
 set's arity; only an arity-1 set has text (may be a pattern, stand in a hole, be intersected with a pattern). No
 third value kind.
+
+**2026-11-16 OWNER — unset-component: leaning to "unset fails", wants a default worked out; idea: one "or equals"
+operator shared with default macro arguments (Frank, to session 134, box clock 10:35).** Asked **unset-component**
+(a joint condition fails when one of its labels is unset, or a missing later field is ignored when earlier ones
+decide), his words: "I'm leaning to agree with you but want to work out the middle ground. How could we do a 'default
+value'?" Shown the manager's sketch (an opt-in default for an absent field, written at the label left of the colon,
+unfolding to a slice of the set; placeholder spelling `m else 0`), his words: "If we had the operator |= 'or equals'
+we could use it as for default macro arguments". RECORD: (1) a LEAN, not a ruling: unset fails; (2) an IDEA: ONE
+"or-equals" concept (a name with a value used when none is given) serving both an absent label in a condition and an
+omitted macro argument; the spelling `|=` is his example (memory: his examples are not syntax). NOTE (the manager's):
+the draft already has the macro half, spelled `name = default` in a definition head (predicates_draft.md §5.2,
+`occurrences(x, min = 0) :=`), so the unification is either that form extended to the label bracket or one new mark
+in both places; and `|` means "either" in this language, which a default is not (a spelling-step concern).
