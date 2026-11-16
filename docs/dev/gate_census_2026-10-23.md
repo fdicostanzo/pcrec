@@ -44,3 +44,7 @@ Already moved INTO make test since D136: test-encoding-checks (it is in TEST_SEC
 - Pins: recursion-identity mixes a never-moving pin (A, ac4917d) with a per-abi re-pin (B); the others are never-moving (refuse), same-tree comparisons (axes, ksweep, tiered-entry), or external-oracle (libpcre2, oracle store).
 
 Patterns: gates that sit outside make test depend on a human launching battery.sh, leave no retained verdict, and carry a per-change re-pin (or a never-moving reference that has since been retired) that nothing exercises between launches.
+
+## Addendum 2026-11-16 (admin1116, facts only, no fix): `cloud_mech_check.sh` has no automatic runner
+- `tests/ci/cloud_mech_check.sh` is named in exactly one live place: the `population` column of the `mech` row of `tests/ci/cloud_kinds.tsv` (line 32). That column is run by `tests/ci/cloud_check.sh` (lines 28-34, through `cloud_kinds.sh population`), whose only caller is the opt-in Makefile target `cloud-check` ("NOT a TEST_SECTIONS member ... run on change"). `grep -rn 'cloud-check' .github scripts tests Makefile` finds no workflow, battery stage, hook or cloud script that runs that target; `cloud_reweight.sh` only tells a human to run it afterwards. So the check runs when a human runs `make cloud-check`.
+- Incident, 2026-11-16: main's `tests/ci/cloud_mech_shards.tsv` had dropped S3170 and S3198 unnoticed (the population check was red on main, found by lane covs2a); repaired by 7875d630d (lane shardfix).

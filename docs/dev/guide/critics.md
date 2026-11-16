@@ -70,6 +70,8 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-16 r19, predicates_draft rev 19 (`docs/dev/reviews/2026-11-16-r19-predspec19.md`), ruled 2026-11-16 (manager): **when a round may straddle a box script deadline, the coordinator pre-creates each critic's findings file with its headings and a `CRITIC COMPLETE` marker line the critic writes last** (both fix-induced critics ended with no findings file, and an empty file is visibly empty where a missing one is not).
+
 2026-11-15 r17, predicates_draft revs 16-17 confirming re-check (`docs/dev/reviews/2026-11-15-r17-predspec17.md`), ruled 2026-11-15 (manager): **when a revision moves a fact's PRODUCER from library text to the author's input (labels, fields, separators), re-run every derived form using `!` over author inputs with an optional, a repeated and a non-conforming field** (F1: rev 16's always-set helper labels hid a strict-form inversion; two lenses found it in minutes).
 
 2026-11-15 r17, same round, ruled 2026-11-15 (manager): **an evidence row that shows a refusal or an error names the mechanism that refuses; an emulator's own raise is not evidence** (F6: the wrong-length "compile error" table showed the script's own `raise`).

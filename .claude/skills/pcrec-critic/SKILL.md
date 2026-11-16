@@ -167,6 +167,8 @@ and redirect writes out of denied dirs and out of the main tree (set
 `PCREC_TMPDIR` to the critic's own dir; set `LANEWATCH_LOG` under `.coord/`)
 or forbid the mode (2026-10-31 bakeoff3).
 
+When the round may straddle a box script deadline (no lanecheck/lanewatch after it), the coordinator PRE-CREATES each critic's findings file with its headings and names a `CRITIC COMPLETE` line the critic writes last as the completion marker (2026-11-16 r19 predspec19: both fix-induced critics produced no file, and a missing file cannot be told from a critic still working).
+
 Launch all critics in one message, background, UNNAMED (a teammate cannot name agents). No addenda to a running
 critic; a missed input goes to a fresh critic.
 
