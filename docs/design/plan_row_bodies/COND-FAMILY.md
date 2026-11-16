@@ -1119,3 +1119,6 @@ MEANINGFUL there, plain PCRE, no "adds nothing" warning; this REPLACES the draft
 argument is itself a filter matched whole", `padded(/^5/)` = `padded("5")`) and its edge-assertion error for
 `padded(/\b5/)` (now plain PCRE `/0*\b5/`). Whether `unpadded(n, ...)` and the other provided transforms have bodies
 as plain is the **primitive-transforms** check.
+ADDED (Frank, box clock 20:48) on the `padded` entry above: "Give or take details." RECORD: the body is the SHAPE (a plain
+macro, zeros then the spliced rx); details such as a group around the splice (`/0*(?:${rx})/`, so a top-level
+alternation stays inside) are the spec writer's; the manager's call: grouped.
