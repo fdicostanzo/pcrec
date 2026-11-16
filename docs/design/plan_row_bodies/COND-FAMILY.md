@@ -1089,3 +1089,13 @@ whole" and reserves "anchored" for the macro and for real `\A`/`\z`. His words: 
 RECORD: that wording is adopted from rev 14 on. Also told to him the same evening (not ruled): the manager's lean on
 an `anchored` inside a hole changed to NO anchored-specific compile error (it behaves as plain PCRE's `/x\Aa\z/`);
 a general "can never match" warning would be a separate item.
+
+**2026-11-15 RULINGS — no anchored-specific error in a hole; the anchor warning covers every whole-match place (Frank,
+to session 133, box clock 20:44).** (a) On "`x${anchored(/a/)}` never matches, the same as plain PCRE's `/x\Aa\z/`;
+leave it at that, with no error specific to `anchored`? lean yes, no special error", his words: "anchored-in-hole:
+agree". RECORD: no compile error specific to `anchored` in a hole; it follows the macro and the one anchoring rule.
+A general "this pattern can never match" warning is NOT ruled and is a separate item if ever wanted. (b) On "should
+the 'anchor adds nothing' warning also fire in a label condition (`(x: /^S\w*/)`), a modifier argument
+(`padded(/^5/)`) and a warning-name set, as it does in a side of `&`? lean yes, one rule", his words:
+"anchor-warn-scope: agree". RECORD: ONE warning for an explicit anchor in every place a pattern must match its
+stretch whole (a side of `&`, a label condition, a modifier argument, a warning-name set).
