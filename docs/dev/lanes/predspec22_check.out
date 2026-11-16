@@ -105,4 +105,32 @@ PART F: COMPLEMENTED PATTERNS IN THE CHAIN: well-founded, commutative, record = 
    (F2) pattern A: 136 programs of 3 conditions holding a complemented pattern x 6 orders: 0 answers differ; nested `A & !q2 & (k?: <5) & (h?: <5)`, q2 := A & !q1 & (h?: >7), q1 := A & ((h?, k): h < k): 6 orders, 0 differ; on `b1`: FAILS
    (F3) (RZ), 1,110 subjects, three sets x two complemented patterns: record vs `&` split 0
 
+PART G: THE CENSUS of every `!` written in a code span of the draft, rev 21 (03a2ce715) and this tree's rev 22
+   rev 21: on a CONDITION 51, retired lex_ (record) 12, rx literal or withdrawn `!~` 22, on a SET or PATTERN 146; 24 distinct condition spans
+       7  !(x: S)
+       4  !((h, m?): R)
+       4  !(x?: S)
+       4  !c
+       3  !(h?: S)
+       3  occurs.none(!((h, m): R))
+       3  occurs.none(!(g: S))
+       2  !((h, m = 0): R)
+       2  !((h?, k): h < k)
+       2  !(h?: <5)
+       2  /(?<h>\d)?x/ & !(h?: <5)
+       2  P & !(h?: <5)
+       2  occurs.none(!(g: ...))
+       1  !((h?, k): R)
+       1  !(n: <5)
+       1  !some(c)
+       1  ((h?, k?): h < k) & !((h?, k): h < k)
+       1  (x & c & p) | (x & !c)
+       1  /a(?<h>\d)|b(?<k>\d)|c/ & !((h?, k): h < k)
+       1  occurs.none(!(g: "a"))
+       1  occurs.none(!(g: "x"))
+       1  occurs.none(!(n: S))
+       1  occurs.none(!(x: S))
+       1  t2 & !((h, m?): R)
+   rev 22: on a CONDITION 55, retired lex_ (record) 12, rx literal or withdrawn `!~` 22, on a SET or PATTERN 257; 24 distinct condition spans
+
 TOTAL (this script's own) engine-run cases 4104 differ 0; engine disagreements (cumulative) 0; probes 5544

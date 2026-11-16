@@ -2,6 +2,28 @@
 
 ## Changelog
 
+- **rev 22 (lane predspec22, 2026-11-16).** Folds the owner's 17:29-17:46 answers. (A) **not-is-complement** (CF
+  17:29, RULED): `!` takes a PATTERN (a regex, a label-free filter, a named program) or a SET, never a CONDITION; on a
+  condition a compile ERROR naming the two rewrites, the complement on the set or the complemented pattern `q := P &
+  c; P & !q` (§2.2 WHAT `!` TAKES; §2.1 typing; §4.1 ERRORS; §5.4). The manager's readings of a complemented pattern
+  (its own DOMs, no labels, a label-free filter in the chain) checked: no outside DOM read, orders and nesting answer
+  alike, record = `&` kept (§2.2). CENSUS of every `!` (the report's table): on sets and patterns unchanged; on a
+  condition rewritten case by case: L30 (ERROR; the marked complemented pattern FAILS on `x`, MOVED for that rewrite),
+  L95 (same answers, no longer moved by an added condition), "every iteration, possibly none" (`occurs.none((g = d:
+  !S))`, d outside S: 0 of 127), `none` = `count` is 0 (L102), `when`'s body (`(x & !q)`, 0 of 1,110 differ), O28
+  RESOLVED. (B) **mark-in-none** (CF 17:42, RULED, LEFT AS IS against the manager's lean): no error, no special rule;
+  the property documented with the `6,` example step by step and the two avoiding spellings, run (§4.3 A MARK INSIDE
+  A GROUP QUESTION; L103); his "m = 0" exact where every hour is above 0 (8 of 91 lists with hour 0 part); the 17:46
+  remark parked (`predicates_future.md` item 12). (C) THE CLOSING EXAMPLE per intent over the 1,111 lists: "every item
+  complete" = `occurs.none(((h, m = 99): !R))`, "an item without minutes acceptable" = `occurs.none(((h, m): !R))`, or
+  with its hour checked `occurs.none(((h, m = 00): !R))`, each EXACT (§4.3). (D) **one-witness** a STATED RULE, the
+  manager's reading (not ruled): two marked conditions, two stand-in values; one value, one condition (`12`: HOLDS /
+  FAILS, 28 of 1,100; §4.2 (e2), L104). (E) "adding a condition never admits a subject" holds without a marked group
+  question of the downward kind (0 of 3,621 pairs) and fails only through one (10 of 281); rev 21's 29 compound
+  pairs, rewritten, 0 move (§4.2 ADDING A CONDITION). §13: mark-under-not and one-witness CLOSED; the lane's readings
+  (what counts as a condition; the closing example's intent) listed. Evidence: `docs/dev/lanes/predspec22_check.py`/
+  `.out` (reuses predspec21_check.py verbatim; this script's own 4,104 engine-run cases, 0 differ, 0 engine
+  disagreements; `PREDSPEC22_SABOTAGE=1` gives back the 29 moving pairs).
 - **rev 21 (lane predspec21, 2026-11-16).** Applies review r29 (round predspec20, groups A-Q, 50 findings; the
   manager's dispositions and their 16:31 ADDENDUM) and the owner's 16:13-16:44 answers. (A) THE DOMAIN (§4.2): DOM(h)
   = the values h takes in ANY match of the PROGRAM the condition meets (**match-context** 16:13, **domain-scope**
@@ -1200,7 +1222,8 @@ FAILS (a condition needs a text) while `P & !q` HOLDS (q fails there, so its com
 holds when h is absent" is gone with the spelling; the author who wants it writes the complemented pattern (on
 `/(?<h>\d)?x/` with S = `<5`: `P & !q` gives rev 21's `!(h: <5)` on 11 of 11 subjects, `(h: !(<5))` parts on `x`;
 `predspec22_check.out` PART A (A1)). For a group question the library already has the complement's spelling:
-`!some(c)` is `occurs.none(c)` (§0.1 L102).
+`!some(c)` is `occurs.none(c)` (§0.1 L102). Written inline, `P & !(P & c)` is the same complemented pattern as the
+named `q` (the lane's reading, §13: naming is the error's hint, not a requirement).
 
 A COMPLEMENTED PATTERN (THE MANAGER'S READINGS, CF 17:29 record, his; checked by rev 22's run, not ruled):
 (1) q is a COMPLETE PROGRAM with its own value sets: its DOMs are read from q alone (§4.2 THE DOMAIN); conditions

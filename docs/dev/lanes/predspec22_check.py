@@ -461,5 +461,41 @@ for qn_, qin in (("(h: <5)", Fac("h", lambda s, Dm: bool(RZ[s][1]) and all(S5(x)
         rsp += sum(r1_[s] != r2_[s] for s in POP_RZ)
 print("   (F3) (RZ), 1,110 subjects, three sets x two complemented patterns: record vs `&` split %d" % rsp)
 
+# =================================================================================================================
+print("\nPART G: THE CENSUS of every `!` written in a code span of the draft, rev 21 (03a2ce715) and this tree's rev 22")
+import subprocess
+CONDRX = re.compile(r"!(?:\(\(|\([a-z_.\[\]0-9]+\??(?: = [^:)]*)?:|some\(|c\b)")
+
+
+def census(text):
+    out = {"on a CONDITION": 0, "retired lex_ (record)": 0, "rx literal or withdrawn `!~`": 0, "on a SET or PATTERN": 0}
+    spans = {}
+    for sp in re.findall(r"`([^`\n]*)`", text):
+        for m in re.finditer(r"!(?!=)", sp):
+            rest = sp[m.start():]
+            inlit = any(a.start() < m.start() < a.end() for a in re.finditer(r"/(?:\\.|[^/])+/", sp))
+            if inlit or rest.startswith("!~"):
+                k = "rx literal or withdrawn `!~`"
+            elif rest.startswith("!lex_"):
+                k = "retired lex_ (record)"
+            elif CONDRX.match(rest):
+                k = "on a CONDITION"
+                spans[sp] = spans.get(sp, 0) + 1
+            else:
+                k = "on a SET or PATTERN"
+            out[k] += 1
+    return out, spans
+
+
+r21 = subprocess.run(["git", "-C", HERE, "show", "03a2ce715:docs/design/predicates_draft.md"], capture_output=True,
+                     text=True).stdout
+r22 = open(os.path.join(HERE, "..", "..", "design", "predicates_draft.md")).read()
+for tag, text in (("rev 21", r21), ("rev 22", r22)):
+    c, sp = census(text)
+    print("   %s: %s; %d distinct condition spans" % (tag, ", ".join("%s %d" % kv for kv in c.items()), len(sp)))
+    if tag == "rev 21":
+        for k, v in sorted(sp.items(), key=lambda kv: (-kv[1], kv[0])):
+            print("      %2d  %s" % (v, k[:100]))
+
 print("\nTOTAL (this script's own) engine-run cases %d differ %d; engine disagreements (cumulative) %d; probes %d" %
       (TOT["cases"] - T0["cases"], TOT["differ"] - T0["differ"], DIS[0], TOT["probes"] - T0["probes"]))
