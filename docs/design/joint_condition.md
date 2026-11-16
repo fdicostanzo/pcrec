@@ -1090,8 +1090,8 @@ rev 7's `some(s)` on a SET ("Rev 7's three spellings of 'some result' (`x & s`, 
 with a new argument KIND (a set, not a condition), quantifying over a new domain (a set's members, not a label's
 iterations), in a new position (a default). The meanings rhyme ("some one of several") and the owner's "an array of X
 is an X" makes a set's members and a label's iterations both entries of an array interface (the lane's), but it
-reopens L54's withdrawal. NOT PROPOSED NOW. TRIGGER: a problem where a missing field means "any of these" (SOME) and
-the pattern cannot be split by hand (the date case CAN be split). With it, the error text would add: "for 'some value
+reopens L54's withdrawal. NOT PROPOSED NOW. TRIGGER (R-2's): a problem where a missing field means "any of these" or "does
+not matter" and the pattern cannot be split by hand (the date case CAN be split). With it, the error text would add: "for 'some value
 of m', write `m = some(...)`".
 
 ### 4B.7 What the default does NOT change
