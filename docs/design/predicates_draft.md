@@ -914,6 +914,15 @@ witnesses' marked answers HOLD: DOM is the regex's where nothing else narrows). 
 BY DESIGN), L101 (a record reading its own label with `$` vs its joint spelling, SAME). Per-table evidence:
 `predspec21_check.out` PART 1 (MOVES).
 
+EVERY ROW RE-APPLIED UNDER REV 22 (**not-is-complement**, CF 17:29; **mark-in-none**, CF 17:42). A CENSUS of every
+`!` in the rows: on a SET or a PATTERN (L1, L11, L17, L21, L25, L48, L51, L53, L82): UNCHANGED (`!` there already
+took a set or a pattern). On a CONDITION: L30 (CLASS MOVES to ERROR; its two rewrites are the two readings of rev 3,
+and the marked complemented pattern MOVES on `x`, FAILS where rev 21 HOLDS), L95 (the `!` outside becomes a
+complemented pattern: same answers alone, and no longer moved by an added condition). REWORDED, no answer moves:
+L16 ("every hit, possibly none" with a default outside S), L100 (where an added condition can still admit). NEW:
+L102 (`!some(c)` vs `occurs.none(c)`, ERROR), L103 (a mark inside `none` vs the unmarked and defaulted spellings, BY
+DESIGN), L104 (two marked conditions vs one, BY DESIGN, one-witness). Evidence: `predspec22_check.out` PART A, B, D.
+
 ### 0.2 Phase 1 scope (what the owner said is in and out of the first build)
 
 Nothing is scheduled and there is no build go (Status above); "phase 1" is the owner's name for the first,
@@ -2127,7 +2136,7 @@ split; (iv) record = `&`; well-founded = computed once, no DOM read while a DOM 
 | least fixed point (all conditions, marks consulted) | 0 | 0 | 0 | KEPT | no (3 programs; and it is not unique: 10 of 20 differ from the greatest, `a0` of `/a(?<h>\d)\|b(?<k>\d)/ & (h?: <5) & (k?: <5)`) |
 | greatest fixed point | 0 | 0 | 0 | KEPT | no (15 programs) |
 
-Smallest programs where they part (SEARCH): the literal form and the variant, 156 programs, smallest `!(h?: <5)` on
+Smallest programs where they part (SEARCH; rev 21's pools, where a `!` on a condition is now an ERROR, §2.2): the literal form and the variant, 156 programs, smallest `!(h?: <5)` on
 `c` of A (literal FAILS, variant HOLDS); the variant and the least fixed point, 43, smallest `((h?, k?): h < k)` on
 `c` (variant HOLDS, least FAILS); the variant and the greatest, 17, smallest `((h?, k?): h < k) & !((h?, k): h < k)`
 on `c` (variant HOLDS, greatest FAILS).
@@ -4542,6 +4551,13 @@ review's proposed lean, in plain words, NOT resolved):
   the joint pair (`t2` on `9`) keeps FAILS / HOLDS. STILL OPEN: `!(x:
   S)` vs `(x: !S)` on a REPEATED label (`1,7,`), with rev 3's lean above (plain complement; every iteration outside
   S; a warning with a witness).
+  REV 22 (**not-is-complement**, CF 17:29): RESOLVED, this document's consequence of the ruling. `!(x: S)` is a
+  compile ERROR (`!` on a condition, §2.2), so the pair no longer exists to warn about: the author writes ONE of the
+  two questions rev 3 named. "Not all iterations in S" (rev 3's plain complement) is the complemented pattern `P & !q`,
+  `q := P & (x: S)` (on `1,7,`: q fails, its complement holds; on zero iterations q fails, so it holds); "every
+  iteration outside S" is `(x: !S)` (on `1,7,`: FAILS). On an absent x: `(x: !S)` FAILS, `P & !q` HOLDS; marked:
+  `(x?: !S)`, or `P & !q` with `q := P & (x?: S)`, whose DOM is q's own (§0.1 L30). The look-alike rows L30, L95
+  are restated; the warning of rev 3's lean is not needed.
 - **O31. The dot family, and level selection.** (OWN-7, RUL-12; WIDENED in rev 7 by review r8 P6-12, CENSUS-24.)
   One `.` carries four resolutions: (1) a LABEL of the map interface (`d.year`, `rest.year`); (2) a module MEMBER
   (`json.row`), which is name resolution if a module is a namespace (O46's lean), not navigation on a value;
@@ -5391,21 +5407,24 @@ OPEN ITEMS NEW IN REV 20 (each: reply either way; the plain-words drafts are in 
   then that (x: ...) can restrict the regex but (x?: ...) can not?" recorded as a question, its literal form not
   taken). His assumption ("I'm assuming such logic is possible") checked by rev 21: well-founded, record = `&` kept,
   equal-behaviour programs not split, `&` commutative and associative; NOT "conditions only narrow" (next item).
-- **mark-under-not** (NEW, rev 21, rulings R4): OPEN WITH THE OWNER. A mark under NEGATIVE polarity (`!` over a
-  marked condition or a compound holding one; a group question counting it downward, `occurs.none`, `occurs.at_most`,
-  `count` under an upper bound; `when`'s `!c` side) lets an ADDED condition turn a FAIL into a HOLD (smallest:
-  `/a(?<h>\d)|b(?<k>\d)|c/ & !((h?, k): h < k)` on `b1` FAILS, `& (h?: >7)` added HOLDS; the group form
-  `/(?:(?<h>\d)(?::(?<m>\d))?,)*/ & occurs.none(((h, m?): m < h))` on `6,`, `& (m?: >5)` added). Two readings of the
-  ruled variant for a NEGATED marked condition while a DOM is computed: N1 it narrows where its label is present, as
-  the filter it is (the lane's lean: a direct one-label `!(h?: S)` then never moves); N2 it is transparent (the
-  direct form moves too: `P & !(h?: <5)` on `b` FAILS, `& (k: "b")` added HOLDS). Questions: N1 or N2; and whether a
-  mark under negative polarity should be ACCEPTED as is (the answer depends on the rest of the program, stated), WARN
-  (naming the dependence), or be REFUSED (the author writes the dependence out, as a joint condition). The table and
-  the list of worked examples it touches: §4.2. Reply either way.
-- **one-witness** (review r29 group K; not relayed by the dispositions; re-examined by rev 21): THE MANAGER'S READING,
-  a witness PER CONDITION. Under the program DOM FIXIND-3's pair dissolves and FIXIND-6 is answered by
-  default-reaches-dollar; OPEN on a MATCH-DEPENDENT pair: `/(?<j>\d)(?<h>\d)?(?<k>\d)/ & (h?: <$k) & (h?: >$j)` on
-  `12`: per condition HOLDS, one shared witness FAILS (28 of 1,100; §4.2 (e2)).
+- **mark-under-not** (rev 21, rulings R4): CLOSED in rev 22 by two rulings. **not-is-complement** (CF 17:29, "not-is-
+  complement: yes agree"): `!` takes a pattern or a set, never a condition (§2.2); its rewrites never let an added
+  condition admit a subject (rev 21's 29 compound and compound+direct pairs: 0 move, either rewrite). **mark-in-none**
+  (CF 17:42, "mark-in-none: I'd leave it. ..."): a mark inside a group question of the downward kind is LEFT AS IS,
+  no error, no special rule; the property is documented (§4.3 A MARK INSIDE A GROUP QUESTION; the 3 group pairs still
+  move; 10 of 281 such pairs over the rev 22 pools, 0 of 3,621 without one). N1 vs N2 is MOOT. The owner's 17:46
+  remark (a macro raising its own warning) is parked, `predicates_future.md` item 12.
+- **one-witness** (review r29 group K): CLOSED as a STATED RULE, the manager's reading as told to the owner (NOT
+  ruled by him): two separate marked conditions on one label are two tests, each with its own stand-in value; the
+  author who means one value writes one condition. `/(?<j>\d)(?<h>\d)?(?<k>\d)/ & (h?: <$k) & (h?: >$j)` on `12`
+  HOLDS; `(h?: >$j & <$k)` FAILS (28 of 1,100 differ, all with h absent; §4.2 (e2), §0.1 L104).
+- NEW in rev 22, THE LANE'S READINGS (not ruled; for the round on rev 22): (i) WHAT COUNTS AS A CONDITION for the `!`
+  error: a test of a label its operand defines (a record, a joint condition, a group question, a macro whose body is
+  one); a macro whose body DEFINES its labels (`q := P & c`) is a pattern; written inline, `P & !(P & c)` is the same
+  complemented pattern as the named `q` (the error's "name the pattern" is a hint, not a requirement), and inside
+  `!( ... )` the labels are looked up in that program only (a complemented pattern is complete, §2.2). (ii) The
+  closing example's intent: rev 21's text ("the empty list passes, an item without minutes fails") is I1, spelled
+  with a default outside R (§4.3); I2a/I2b are given beside it, not chosen.
 - **default-reaches-dollar** (CF 16:23, THE MANAGER'S DERIVATION, not an owner ruling): a `$a` naming one of the
   condition's own labels is the tuple's own part; a default fills it, a mark reads it existentially (§4.2 (e2.1);
   record vs joint 0 of 12,546 differ). A `$a` outside the condition: rev 20's proposal stands (an absent a FAILS),
@@ -5465,6 +5484,7 @@ COND-FAMILY.md notes by date/heading; "11-12" = the 2026-11-12 sections, etc. "p
 
 | section | notes consolidated |
 |---|---|
+| rev 22 (not-is-complement, mark-in-none, one-witness) | CF 17:29 (**not-is-complement**; the CORRECTION entry) -> §2.2 WHAT `!` TAKES and A COMPLEMENTED PATTERN, §2.1 typing, §4.1 ERRORS, §5.4 prefix `!`, §0.1 L30, L95, L102, §4.2 ADDING A CONDITION and NEGATION, §4.3 (the `none` row, "possibly none", THE CLOSING EXAMPLE), §8 `when`, §13 O28, mark-under-not; CF 17:42 (**mark-in-none**) -> §4.3 A MARK INSIDE A GROUP QUESTION, §0.1 L103, §13; the manager's one-witness reading -> §4.2 (e2), §0.1 L104, §13; the 17:46 remark (rulings R1) -> §4.3, `predicates_future.md` item 12; evidence `docs/dev/lanes/predspec22_check.py`/`.out` |
 | rev 20 (the joint condition and the absent-label rule) | the COND-FAMILY entries of 2026-11-16 from 00:31 to 15:29 ("CF hh:mm"; CF:1336-1725 on main), through their derivation record `docs/design/joint_condition.md` (§2 J1-J9 -> §2.1, §2.4, §2.7, §3.5, §4.1, §4.3, §5.4, §6.1, §8, §13; §4A -> §2.1, §5.4; §4B -> §4.2, §5.2, §7.1; §4D -> §4.1; §4G-§4H -> §4.2, §4.3, §2.6, §0.1, §7.1, §13; §9 rows 1-73 -> every site, table in `docs/dev/lanes/predspec20_report.md`); reviews r26 (`2026-11-16-r26-jointcond.md`) and r28 (`2026-11-16-r28-absfold.md`) as the manager ruled them; review r19's carried items CENSUS-4, -5, -8, SIMULATE-1 -> §3.5, §16; the lane's readings and proposals -> §4.2 THE UNDEFINED ITEMS. Evidence: `docs/dev/lanes/predspec20_check.py`/`.out` (the earlier lanes' twelve scripts re-run byte for byte, and the new blocks) |
 | rev 19 (the entries after rev 18 and rulings R-1, R-2) | CF:1284-1293 on main (computed labels, low weight) -> §8 THE FIELD REFERENCE, table (C); CF:1295-1302 (the scoping sigil) -> §0 rulings table, §5.4 `^` row, §0.3; CF:1304-1316 (the sigil ruled; the manager's consequences) -> §0 rulings table, §0.1 L72-L81, §0.2, §0.3, §2.7, §3.2 tool 1, §3.5, §4.1, §5.4, §8 TUPLE COMPARISONS, THE PROJECTION and THE FIELD REFERENCE, §12 census, §13 O71, O75, O76, owner questions (13), (16), (17), DECIDED (61)-(66); rulings R-1 (**macro-arguments**: NO) -> §0 rulings table, §3.2, §3.5, §8, O73, owner question (14); rulings R-2 (**looped-compare**: warn) -> §7.1, §8 caveat (6), O74, owner question (15); evidence `docs/dev/lanes/predspec19_check.py`/`.out` |
 | rev 17 (the entries after rev 16) | CF:1214-1221 on main (options as settable values) -> §0 rulings table, O70 route (a), plan row [PRED-REREAD]; CF:1223-1227 (names) -> §0 rulings table, §8 TUPLE COMPARISONS, §12 census, C25, O69, owner question (12); CF:1229-1248 (the decomposition) -> §0 rulings table, §0.3, §1, §2.7, §8 TUPLE COMPARISONS and THE PROJECTION, §12 census, §14, C25, O47, O69, O71, owner question (13), DECIDED (49)-(53); the 23:25 order ruling (CF:1250-1254 on main) -> §0 rulings table, §8, C25, owner question (12). Oracle runs: `docs/dev/lanes/predspec17_check.py`/`.out` |

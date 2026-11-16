@@ -1966,6 +1966,10 @@ among the manager's sub-choices and the rule, or reader surprises.
 
 ## 4H. Corrections after round absfold (review r28; lane absfix)
 
+[2026-11-16, lane predspec22: the `!` on a condition used below (§4H.4's closing example, §4H.8) was later ruled out:
+`!` takes a pattern or a set, never a condition (COND-FAMILY **not-is-complement**, CF 17:29); the rewrites are in
+predicates_draft.md rev 22 §2.2 and §4.3.]
+
 Lane absfix (2026-11-16), applying the manager's dispositions of critic round absfold (review r28,
 `docs/dev/reviews/2026-11-16-r28-absfold.md`, findings A-L; the dispositions, session 136, are the MANAGER'S rulings
 of critic findings, not the owner's words). Two findings were OWNER QUESTIONS, and he ANSWERED both while the lane
