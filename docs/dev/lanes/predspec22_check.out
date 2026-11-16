@@ -84,6 +84,15 @@ PART D: ONE WITNESS: /(?<j>\d)(?<h>\d)?(?<k>\d)/, 1,100 subjects
    differ 28 of 1100 (smallest '12'); every differing subject has h ABSENT: True
 
 PART E: THE MOVING PAIRS RE-RUN (THE RULE; N1/N2 are moot: no `!` on a condition remains)
+   (E0) each rev 21 `!` on a condition of the four pools, ALONE, against its two rewrites (answers per subject)
+      A    !(h?: <5)            complemented `!q[(h?: <5)]` differ 11 of 21 (smallest 'c': rev 21 HOLDS); set `(h?: !(<5))` differ 0 of 21
+      A    !(k?: <5)            complemented `!q[(k?: <5)]` differ 11 of 21 (smallest 'c': rev 21 HOLDS); set `(k?: !(<5))` differ 0 of 21
+      A    !((h?, k): h < k)    complemented `!q[((h?, k): h < k)]` differ 9 of 21 (smallest 'b1': rev 21 FAILS); set `((h?, k): h >= k)` differ 12 of 21 (smallest 'c': rev 21 HOLDS)
+      B    !(h?: <5)            complemented `!q[(h?: <5)]` differ 11 of 121 (smallest '-': rev 21 HOLDS); set `(h?: !(<5))` differ 0 of 121
+      B    !(k?: <5)            complemented `!q[(k?: <5)]` differ 11 of 121 (smallest '-': rev 21 HOLDS); set `(k?: !(<5))` differ 0 of 121
+      B    !((h?, k): h < k)    complemented `!q[((h?, k): h < k)]` differ 0 of 121; set `((h?, k): h >= k)` differ 20 of 121 (smallest '-': rev 21 HOLDS)
+      P    !(h?: <5)            complemented `!q[(h?: <5)]` differ 2 of 17 (smallest 'a': rev 21 HOLDS); set `(h?: !(<5))` differ 0 of 17
+      LST  !((h, m?): m < h)    complemented `!q[((h, m?): m < h)]` differ 0 of 43; set `((h, m?): m >= h)` differ 11 of 43 (smallest '': rev 21 HOLDS)
    (E1) predspec21's FAIL -> HOLD pairs under N1 (THE RULE), each re-run with every `!` on a condition rewritten:
       rev 21 kind compound        19 pairs: as complemented patterns still moving  0; as set complements  0
       rev 21 kind compound+direct 10 pairs: as complemented patterns still moving  0; as set complements  0
@@ -131,6 +140,6 @@ PART G: THE CENSUS of every `!` written in a code span of the draft, rev 21 (03a
        1  occurs.none(!(n: S))
        1  occurs.none(!(x: S))
        1  t2 & !((h, m?): R)
-   rev 22: on a CONDITION 55, retired lex_ (record) 12, rx literal or withdrawn `!~` 22, on a SET or PATTERN 257; 24 distinct condition spans
+   rev 22: on a CONDITION 57, retired lex_ (record) 12, rx literal or withdrawn `!~` 22, on a SET or PATTERN 266; 24 distinct condition spans
 
 TOTAL (this script's own) engine-run cases 4104 differ 0; engine disagreements (cumulative) 0; probes 5544

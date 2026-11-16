@@ -7,7 +7,10 @@
   condition a compile ERROR naming the two rewrites, the complement on the set or the complemented pattern `q := P &
   c; P & !q` (§2.2 WHAT `!` TAKES; §2.1 typing; §4.1 ERRORS; §5.4). The manager's readings of a complemented pattern
   (its own DOMs, no labels, a label-free filter in the chain) checked: no outside DOM read, orders and nesting answer
-  alike, record = `&` kept (§2.2). CENSUS of every `!` (the report's table): on sets and patterns unchanged; on a
+  alike, record = `&` kept (§2.2); a MARK INSIDE a complemented pattern reads its label's values inside q only, so
+  the complemented pattern of a marked condition parts from rev 21's `!` on it (alone: 11 of 21 subjects one-label,
+  9 of 21 compound, on A), while the complement on the set keeps rev 21's one-label answers (§2.2 (4)). CENSUS of
+  every `!` (the report's table): on sets and patterns unchanged; on a
   condition rewritten case by case: L30 (ERROR; the marked complemented pattern FAILS on `x`, MOVED for that rewrite),
   L95 (same answers, no longer moved by an added condition), "every iteration, possibly none" (`occurs.none((g = d:
   !S))`, d outside S: 0 of 127), `none` = `count` is 0 (L102), `when`'s body (`(x & !q)`, 0 of 1,110 differ), O28
@@ -1234,7 +1237,21 @@ of the outside. Checked (`predspec22_check.out` PART E, F): over 8 complemented 
 (q's DOMs are computed before, and apart from, the outside's: no circularity); 136 programs of three conditions
 holding one, in all 6 orders, and a NESTED one (`q2 := A & !q1 & (h?: >7)`), answer alike in every order; record =
 `&` beside one (0 split); and no program whose only negative piece is a complemented pattern turns a FAIL into a HOLD
-when a condition is added (0 of 1,680 pairs; rev 21's 19 compound pairs, rewritten, 0). Rev 21's N1 / N2 question (what
+when a condition is added (0 of 1,680 pairs; rev 21's 19 compound pairs, rewritten, 0).
+(4) A MARK INSIDE q (rev 22's statement, asked for by the 17:29 record's reading (3); this document's consequence of
+(1) and **mark-narrows**, checked, not ruled). q's own conditions narrow q's DOMs through q's matches where the
+label is present, so in `q := P & (h?: S)` every value of DOM_q(h) is in S: wherever DOM_q(h) is non-empty, q HOLDS
+on every absence of h, and `P & !q` FAILS on every absence. Where q's condition never holds with its marked label
+present, DOM_q is EMPTY, q holds on no absence, and `P & !q` holds on every one (`A := /a(?<h>\d)|b(?<k>\d)|c/`,
+`q := A & ((h?, k): h < k)`: h and k are never set together, q is empty, `A & !q` = A). So the complemented
+pattern of a MARKED condition asks a different question from rev 21's `!` on it, whose DOM was the outside's: alone,
+over the rev 21 pools, `!(h?: <5)` vs `A & !q` differ on 11 of 21 (`c`: rev 21 HOLDS, now FAILS), on 11 of 121 of
+`/(?<h>\d)?-(?<k>\d)?/` (`-`), on 2 of 17 of the branch reset (`a`); the compound `!((h?, k): h < k)` on 9 of 21 of A
+(`b1`: FAILS, now HOLDS), 0 of 121 where h and k are set together; the unmarked and the list compound 0
+(`predspec22_check.out` PART E (E0)). The complement ON THE SET keeps rev 21's one-label marked answers (0 differ in
+all four pools; `(h?: !(<5))`); for a compound it is the other question again (12 of 21, 20 of 121). The author who
+wants "some value h could have had in the WHOLE program" writes the complement on the set; the complemented pattern
+reads h's values inside q only. Rev 21's N1 / N2 question (what
 a NEGATED marked condition does while a DOM is computed) is MOOT: no `!` reaches a condition.
 
 `!<200` and `>=200` are NOT interchangeable: `!<200` keeps every target string that is not a canonical numeral
@@ -2115,8 +2132,10 @@ that can turn true when fewer passes satisfy its inner condition (3 pairs; 2 mor
   (compound 19, compound+direct 10, compound+group 2, group 3) is re-run with every `!` on a condition replaced by
   its complemented pattern, then by its complement on the set: of the 29 compound and compound+direct pairs, 0 still
   move under either rewrite (`predspec22_check.out` PART E (E1)). The smallest rev 21 witness,
-  `/a(?<h>\d)|b(?<k>\d)|c/ & !((h?, k): h < k)` on `b1`, written `A & !q` with `q := A & ((h?, k): h < k)`, FAILS,
-  and still FAILS with `(h?: >7)` added: q's DOM(h) is q's own, and the added condition stands outside q. The
+  `/a(?<h>\d)|b(?<k>\d)|c/ & !((h?, k): h < k)` on `b1` (FAILS), written `A & !q` with `q := A & ((h?, k): h < k)`,
+  HOLDS, and still HOLDS with `(h?: >7)` added: q's DOM(h) is q's own and EMPTY (in A, h and k are never set
+  together, so no match of q has h present), q holds on no subject, and `A & !q` is A; the added condition stands
+  outside q (§2.2 A COMPLEMENTED PATTERN (4)). The
   SABOTAGE run (`PREDSPEC22_SABOTAGE=1`: a complemented pattern reading the OUTSIDE's DOM, which is rev 21's `!`)
   gives back all 29 moving pairs, so the run can fail.
 - A MARK INSIDE A GROUP QUESTION that can turn true with fewer passes (`occurs.none`, `occurs.at_most`, an exact
@@ -2143,7 +2162,7 @@ THE WORKED EXAMPLES THAT PUT A MARK UNDER NEGATIVE POLARITY IN REV 21, and their
 | §4.3 THE CLOSING EXAMPLE, joint_condition.md §4H.4 | `occurs.none(!((h, m): R))` | per intent, §4.3 (a default outside R for "every item complete") | 0 of 1,111 for the intent it served |
 | §4.3 "every iteration, possibly none", §2.6, L16 | `occurs.none(!(g: "a"))` | `occurs.none((g = "": !"a"))` (a default outside the set) | 0 of 127 differ (`(g: !"a")` without the default: 94) |
 | §8 `when(c, p)` | `(x & c & p) \| (x & !c)` | `(x & c & p) \| (x & !q)`, `q := x & c` | 0 of 1,110 differ, c unmarked and c marked |
-| (SEARCH)/(NEGPOL) witnesses | `!((h?, k): h < k)`; `occurs.none(((h, m?): m < h))` | `A & !q`; the group form unchanged | the first no longer moves; the second does (documented, §4.3) |
+| (SEARCH)/(NEGPOL) witnesses | `!((h?, k): h < k)` on `b1` FAILS; `occurs.none(((h, m?): m < h))` | `A & !q`; the group form unchanged | the first HOLDS on `b1` (q is empty, §2.2 (4)) and no added condition moves it; the second still moves (documented, §4.3) |
 
 THE CANDIDATES RUN SIDE BY SIDE (rulings R1 (b), R2; evidence, the rule above is ruled). Each over the populations of
 rev 20's tables and review r29's drills (PART 1 (SUMMARY)): (i) an answer witnessed only by a value the label never

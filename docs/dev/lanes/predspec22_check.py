@@ -318,6 +318,22 @@ def rewrite(pool, recs, pop, labs, how):
     return out
 
 
+print("   (E0) each rev 21 `!` on a condition of the four pools, ALONE, against its two rewrites (answers per subject)")
+for pn, pop, recs, pool, labs in OLDP:
+    vv, wrap = vw(recs)
+    PR0 = {how: dict(enumerate(rewrite(pool, recs, pop, labs, how))) for how in ("pat", "set")}
+    for i, (nm, f) in enumerate(pool):
+        if not (nm.startswith("!(") and f.marks):
+            continue
+        old_ = run(pop, labs, vv, [wrap(f)])[0]
+        outs = []
+        for how in ("pat", "set"):
+            new_ = run(pop, labs, vv, [PR0[how][i][1]])[0]
+            n_, ex_ = ndiff(old_, new_, pop)
+            outs.append("%s `%s` differ %d of %d%s" % ("complemented" if how == "pat" else "set", PR0[how][i][0], n_,
+                                                     len(pop), "" if ex_ is None else " (smallest %r: rev 21 %s)" %
+                                                     (ex_, hfx(old_[ex_]))))
+        print("      %-4s %-20s %s" % (pn, nm, "; ".join(outs)))
 MAPPED = {}         # (old category, how) -> [pairs, still moving, smallest]
 OLDN = {}
 for pn, pop, recs, pool, labs in OLDP:
