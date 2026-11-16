@@ -16,4 +16,14 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
 (L) looped    cases 10   per-label sequence reading differs on 3
 (C) calendar rectangles: 13
 (C) calendar  cases 432
-TOTAL cases 24869 differ 0 engine-disagreements 0
+(C4) calendar, 4 product rows: cases 468
+(S) strict above 9:30, minutes optional:
+     subject  joint>  decided-prefix>  negation(!<=)
+     9        False   False            True
+     10       False   True             True
+     8        False   False            False
+     9:31     True    True             True
+     9:30     False   False            False
+     10:00    True    True             True
+(P) product = record: cases 2409
+TOTAL cases 27752 differ 0 engine-disagreements 0

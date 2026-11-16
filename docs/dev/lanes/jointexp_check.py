@@ -228,4 +228,56 @@ for s in csub:
     check("calendar", cal, s, want)
 print("(C) calendar  cases %d" % (T["cases"] - before))
 
+
+# (C4) the calendar as a FOUR-ROW declared table of products over (year, month, day), month a padded `\d\d`:
+#   (padded(1|3|5|7|8|10|12), padded(between(1, 31))) | (padded(4|6|9|11), padded(between(1, 30)))
+#   | (padded(2), padded(between(1, 28))) | (year: leap, month: padded(2), day: 29)
+before = T["cases"]
+def pset(vals):
+    return "0*(?:" + "|".join(str(v) for v in vals) + ")"
+rows4 = [yany + "-" + pset([1, 3, 5, 7, 8, 10, 12]) + "-" + pset(range(1, 32)),
+         yany + "-" + pset([4, 6, 9, 11]) + "-" + pset(range(1, 31)),
+         yany + "-" + pset([2]) + "-" + pset(range(1, 29)),
+         yleap + "-" + pset([2]) + "-" + "0*29"]
+cal4 = "(?:" + "|".join(rows4) + ")"
+c4sub = csub + ["%d-%d-%d" % (y, m, d) for y in (1900, 2024, 2023) for m in (2, 4, 12) for d in (9, 29, 30, 31)]
+for s in c4sub:
+    y, m, d = map(int, s.split("-"))
+    try:
+        datetime.date(y, m, d); want = True
+    except ValueError:
+        want = False
+    check("calendar4", "(?:19|20)\\d\\d-\\d{1,2}-\\d{1,2}", s, True) if False else None
+    check("calendar4", cal4, s, want)
+print("(C4) calendar, 4 product rows: cases %d" % (T["cases"] - before))
+
+# (S) STRICT on an OPTIONAL later field: pattern h(:m)?, bound (9, 30).
+#   joint `(h, m): > (9, 30)`  (tuple must exist)  vs rev 18's decided-prefix order (10 accepted, m never read)
+#   vs rev 16-17's `P & !lex_le2` (negation: true where the compare cannot read).
+P2 = r"(?<h>\d{1,2})(?::(?<m>\d\d))?"
+print("(S) strict above 9:30, minutes optional:")
+print("     subject  joint>  decided-prefix>  negation(!<=)")
+for s in ["9", "10", "8", "9:31", "9:30", "10:00"]:
+    mm = re.fullmatch(P2, s.replace("(?<", "(?P<")) if False else re.fullmatch(py(P2), s)
+    h, m = mm.group("h"), mm.group("m")
+    joint = m is not None and (int(h), int(m)) > (9, 30)
+    if int(h) != 9:
+        dp = int(h) > 9
+    else:
+        dp = m is not None and int(m) > 30
+    le_ok = (int(h) < 9) or (int(h) == 9 and m is not None and int(m) <= 30)
+    neg = not le_ok
+    rx = rect_regex(rects(">", (9, 30), (100, 100)), [":"])
+    check("strict-joint", rx, s, joint)
+    print("     %-8s %-7s %-16s %s" % (s, joint, dp, neg))
+
+# (P) PRODUCT = RECORD: `(h, m): (S, T)` and `(h: S, m: T)` are one filter (both = the per-field product).
+before = T["cases"]
+for S_, T_ in [((">=", 9), ("<", 30)), (("==", 12), (">", 0)), (("<", 3), (">=", 45))]:
+    prod = cset(S_[0], S_[1], 100) + ":" + cset(T_[0], T_[1], 100)
+    for s in subjects_t:
+        h, m = nums(s)
+        check("product", prod, s, OPS[S_[0]](h, S_[1]) and OPS[T_[0]](m, T_[1]))
+print("(P) product = record: cases %d" % (T["cases"] - before))
+
 print("TOTAL cases %d differ %d engine-disagreements %d" % (T["cases"], T["differ"], DISAGREE[0]))
