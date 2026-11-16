@@ -1,0 +1,6 @@
+report=docs/dev/lanes/d3fix4_report.md
+sections: Summary; Fixes by id; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
+dirty-ok: d3fix3.done
