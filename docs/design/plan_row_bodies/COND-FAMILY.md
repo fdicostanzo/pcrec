@@ -1079,3 +1079,13 @@ to, his words: "so the match span that the & expression creates anchors for is t
 999${/\d+/ & <100}999 matches 99945999". RECORD: confirmed by the manager; the stretch the hole consumes is the scope
 both operands match whole (`45` here); this example is an acceptance row.
 CONFIRMED (Frank, box clock 20:35) on part (b) above: "Count warning: yes I agree with that interpretation". NO warning.
+
+**2026-11-15 RULING — the sides of `&` "match the same stretch whole"; the word "anchored" is kept for the macro
+(Frank, to session 133, box clock 20:43).** His question: "So ${a & b} Is anchored but not like the anchored() macro.
+Just to each other?" The manager's answer: yes; the two sides are tied to EACH OTHER (the same stretch, end to end;
+where it sits is decided by what surrounds it), while `anchored(x) := /\A(?:${x})\z/` (a plain macro, no special
+case) pins x to the ends of its scope; proposed wording: the spec says the sides of `&` "match the same stretch
+whole" and reserves "anchored" for the macro and for real `\A`/`\z`. His words: "That's a good clarification".
+RECORD: that wording is adopted from rev 14 on. Also told to him the same evening (not ruled): the manager's lean on
+an `anchored` inside a hole changed to NO anchored-specific compile error (it behaves as plain PCRE's `/x\Aa\z/`);
+a general "can never match" warning would be a separate item.
