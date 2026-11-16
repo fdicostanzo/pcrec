@@ -1318,12 +1318,19 @@ def _plant_scan_noise(d, form="mfind-swar"):
     _synth_edit_cells(d, "JMB", lambda a, l, ns: ns * (100 + 5 * s(l)) // 100 if a == k else
                       ns * (100 - 5 * s(l)) // 100 if a == k + "#b" else ns)
 
-def _plant_deciding_unpriced(d, form="mfind-w32"):
-    """[r13 JF-4] every reject-0 find_hit@6 row of `form` (DECIDING rows) costs less than its own base on every
-    launch: est's NULL rule makes each unpriced (a fixture defect), so its floor clause hit6.<form> refuses"""
+def _plant_deciding_unpriced(d, form="mfind-w32", how="defect"):
+    """[r13 JF-4] every reject-0 find_hit@6 row of `form` (DECIDING rows) unpriced by est's own NULL rule, so its floor
+    clause hit6.<form> refuses: `defect` below its own base on every launch; `noisy` (R1 condition A) its per-launch
+    cost swinging +-20 % of the cell around its base, arm and twin opposite: signs mixed, its paired A/A above its resolution"""
     pre = "kit.find_hit.%s.periodic.one." % form
-    _synth_edit_cells(d, "JMH", lambda a, l, ns: 8000000 * 1000 + l if a.startswith(pre) and a.rstrip("#b").endswith(".0")
-                      else ns)
+    def f(a, l, ns):
+        if not (a.startswith(pre) and a.rstrip("#b").endswith(".0")):
+            return ns
+        if how == "defect":
+            return 8000000 * 1000 + l
+        s = (1 if l % 2 else -1) * (-1 if a.endswith("#b") else 1)
+        return 9000000 * 1000 + s * 1800000 * 1000
+    _synth_edit_cells(d, "JMH", f)
 
 # [r11-REV15-2..4] the READING cases: hand-written timed functions (assembled, .size set), each with the fact both
 # readings must give; a disagreement or another answer is WRONG
@@ -1859,6 +1866,9 @@ def selftest(scratch):
          mf_refusals(_plant_scan_noise, lambda out: [("floor:byte.mfind-swar", ["kit.find_byte.mfind-swar"])])),
         ("[r13 JF-4] every reject-0 mfind-w32 find_hit@6 row unpriced: REFUSED by floor:hit6.mfind-w32 naming those "
          "deciding keys", mf_refusals(_plant_deciding_unpriced, lambda out: [("floor:hit6.mfind-w32", sorted(
+             k for k in out if k.startswith("kit.find_hit.mfind-w32.") and k.endswith(".0")))])),
+        ("[r13 JF-4, R1 condition A] every reject-0 mfind-w32 row NOISY (signs mixed): REFUSED by floor:hit6.mfind-w32",
+         mf_refusals(lambda d: _plant_deciding_unpriced(d, how="noisy"), lambda out: [("floor:hit6.mfind-w32", sorted(
              k for k in out if k.startswith("kit.find_hit.mfind-w32.") and k.endswith(".0")))])),
         ("[r13 JF-4] the control: the unplanted mfcard window is FULL, no refusals",
          lambda d: compute(d)[3] == ("FULL", 0, [], [])),
