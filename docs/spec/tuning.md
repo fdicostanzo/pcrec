@@ -1171,7 +1171,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 <a id="s2-56"></a>
 ### 2.56 `--window-search-width=N` — the window search's width
 
-<a id="s2-56-p1"></a>[2.56¶1] Not a bit of `pcrec_options.flags`: the separate field `window_search_width`, 0 = the built-in default `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH` (`limits.md` §3.12, its value and its legal range). It sets the widest fixed-width match the window search reports (`<PREFIX>_DFA_SCAN "cover"`, `match_api.md` §6.3.4¶2) for one compile. A pattern of a wider fixed width runs the engine; the `--emit-facts` listing's `cover` section names that decline `width-limit` with the width (`facts_listing.md` §4.5¶2). ANSWER-IDENTICAL: both routes answer the same.
+<a id="s2-56-p1"></a>[2.56¶1] Not a bit of `pcrec_options.flags`: the separate field `window_search_width`, 0 = the built-in default `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH` (`limits.md` §3.12, its value and its legal range). It sets the widest fixed-width match the window search reports, counted in BYTES of the subject (under `-e utf8` a character counts its encoded length; `é{4}` has width 8) (`<PREFIX>_DFA_SCAN "cover"`, `match_api.md` §6.3.4¶2) for one compile. A pattern of a wider fixed width runs the engine; the `--emit-facts` listing's `cover` section names that decline `width-limit` with the width (`facts_listing.md` §4.5¶2). ANSWER-IDENTICAL: both routes answer the same.
 
 <a id="s2-56-p2"></a>[2.56¶2] **A cliff.** The width is all or nothing: at a width of 32, `[0-9a-f]{32}` takes the window search and `[0-9a-f]{33}` runs the engine for all 33 positions. A width whose artifact exceeds the emitted-size cap also runs the engine (`limits.md` §3.12¶4).
 
@@ -1282,12 +1282,12 @@ $ build/pcrec -p rx -o - --pattern 'a(b|c)+d' | grep -E '^#define RX_(ENGINE |VM
 | `flags` bit `PCREC_NO_LANDMARK_WALK` | `-fno-landmark-walk` | §2.54 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
-| `window_search_width` (0 = `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH`) | `--window-search-width=N` | §2.56 |
 | `engine` (`PCREC_ENGINE_AUTO` / `_DFA` / `_VM`) | `--engine=E` | §2.11 |
 | `part_layout` (`PCREC_PART_*` slots, one 2-bit slot per class; `PCREC_PART_LAYOUT_GET`/`_SET`) | `--part-layout=CLASS:V` | §2.51 |
 | `part_inline_rank` (`PCREC_PART_RANK_*`) | `--part-inline-rank=R` | §2.52 |
 | `part_residual` (`PCREC_PART_UNSET` / `_AUTO` / `_SHARED` / `_INLINE`) | `--part-residual=V` | §2.53 |
 | `tune` (`PCREC_TUNE_MIN_SIZE` … `PCREC_TUNE_MAX_SPEED`, `-2..+2`) | `--tune=N` | §5 |
+| `window_search_width` (0 = `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH`) | `--window-search-width=N` | §2.56 |
 
 <a id="s4-p2"></a>[4¶2] **The `flags` bits that are not tuning axes:** `PCREC_CASELESS`, `PCREC_EMIT_MAIN` and `PCREC_NO_CAPTURES` are semantic and output options (`match_api.md` §8.2, `cli.md`); `PCREC_UCP` (`--ucp`) is a semantic axis — it changes what `\d`, `\s`, `\w` and the POSIX classes match, so it is reflected in `rx_info.flags` unmasked, no `--tune` position sets it, and `make test-axes` does not sweep it (`cli.md` §1.9); `PCREC_TRACE` (`--trace`) selects an instrumented matcher that writes an event stream to stderr, which changes what the artifact does at run time (`table_contract.md` §1¶3); and `PCREC_SIZE_CAP_REFUSE` (`--size-cap=refuse`) decides only whether a slower artifact that fits ships or the compile refuses (`limits.md` §8.4), and is masked out of `rx_info.flags`.
 

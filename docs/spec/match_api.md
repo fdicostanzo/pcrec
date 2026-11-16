@@ -3291,9 +3291,6 @@ typedef struct {
     int         vm_entry_shape; /* PCREC_VM_ENTRY_AUTO (0) / _PLAIN / _SHARED
                                     / _FORWARD / _INLINE — an ORDINAL rung,
                                     not a bit; tuning.md §2.21 */
-    int         window_search_width; /* 0 = PCREC_DEFAULT_WINDOW_SEARCH_WIDTH,
-                                    else 1 .. PCREC_ANCHORED_MAX_STATES - 1;
-                                    tuning.md §2.56, limits.md §3.12 */
     int         frame_capacity; /* 0 = let the compiler size it. NOT the
                                     same sentinel as rx_info's field of the
                                     same name, which uses -1 for unbounded */
@@ -3344,6 +3341,9 @@ typedef struct {
     const char        *allow_code;          /* the CODE GRANT: languages of
                                                embedded code this call may
                                                compile ("c"); NULL = none */
+    int                window_search_width; /* 0 = PCREC_DEFAULT_WINDOW_SEARCH_WIDTH,
+                                               else 1 .. PCREC_ANCHORED_MAX_STATES - 1;
+                                               tuning.md §2.56, limits.md §3.12 */
 } pcrec_options;
 ```
 

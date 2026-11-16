@@ -1457,16 +1457,6 @@ typedef struct {
      * documented at docs/spec/tuning.md §2.21 with the measurement that
      * placed the size term. */
     int         vm_entry_shape;
-    /* [COVER-CAP] stage 2 THE WINDOW SEARCH'S WIDTH: the widest fixed-width
-     * match the window search reports with no matching engine (the artifact
-     * stamped `<PREFIX>_DFA_SCAN "cover"`); a wider one runs the engine, with
-     * the same answers. 0 = the built-in PCREC_DEFAULT_WINDOW_SEARCH_WIDTH
-     * (`pcrec_limits_tsv`); otherwise 1 .. PCREC_ANCHORED_MAX_STATES - 1,
-     * and a value outside that is a malformed option (`pcrec_compile`
-     * returns -1), never clamped. Settable both ways, not raise-only. A
-     * compound part compiles with its parent's value. docs/spec/limits.md
-     * §3.12, docs/spec/tuning.md §2.56. */
-    int         window_search_width;
     int         frame_capacity; /* [M4.5b] <PREFIX>_BT_FRAMES, the resume-stack
                                  capacity (engine_m4.md §4.5's SECOND bound);
                                  0 = let the compiler size it (exactly, where
@@ -1739,6 +1729,17 @@ typedef struct {
      * CLI sets it from `-fmemfn-simd=LIST`; the flag is renamed at
      * [IFACE-PUSH]. */
     const char        *memfn_simd;
+
+    /* [COVER-CAP] stage 2 THE WINDOW SEARCH'S WIDTH: the widest fixed-width
+     * match the window search reports with no matching engine (the artifact
+     * stamped `<PREFIX>_DFA_SCAN "cover"`); a wider one runs the engine, with
+     * the same answers. 0 = the built-in PCREC_DEFAULT_WINDOW_SEARCH_WIDTH
+     * (`pcrec_limits_tsv`); otherwise 1 .. PCREC_ANCHORED_MAX_STATES - 1,
+     * and a value outside that is a malformed option (`pcrec_compile`
+     * returns -1), never clamped. Settable both ways, not raise-only. A
+     * compound part compiles with its parent's value. docs/spec/limits.md
+     * §3.12, docs/spec/tuning.md §2.56. */
+    int         window_search_width;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos
