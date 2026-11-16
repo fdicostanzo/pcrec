@@ -32,3 +32,10 @@
 
 - `2026-11-06-r9-memfn-s2c.md` (+ dir) — CODE round on span_pick stage 2 unit S2c (the producer): emission byte-identical; harness-fidelity findings G1-G4 + window items; NOT READY until the FIX-NOW set lands; new lens row.
 - `2026-11-06-r10-memfn-s2rev14.md` — one critic on span_cards rev 1.4 (fix-induced + fidelity + simulate), relayed by message: READY for window 2 with listed fixes; REV14-1 a consistent negative sign passes as zero, REV14-2 uncapped r, REV14-3 null_check substring; fixes on lane/memfn-s2c14fix.
+
+## Index entries moved out of CLAUDE.md (lane file29, 2026-11-16; size limit)
+
+- `2026-11-07-r11-memfn-s2rev15.md` — span_cards rev 1.5 critic (fused fact fidelity, est-commit bypass, value = max(0, med)); window 2 FULL accepted.
+- `2026-11-07-r12-memfn-planframe1.md` (+ `2026-11-07-r12-memfn-planframe1/`) — plan_frame rev 1 (span_pick unit 3.0) critic: 5 opus lenses + verifier, F1-F34; not ready, rev 2 with text fixes; search/stream/check triple confirmed.
+- `2026-11-07-r13-memfn-planframe2.md` (+ `2026-11-07-r13-memfn-planframe2/`) — plan_frame rev 2.1 readiness re-check: one readiness critic per unit plus fix-induced, R1-R28; 3.0a ready with text fixes, 3.0b after the R1/R2 shape rulings.
+- `2026-11-08-r1-spanarms.md` (+ dir) — DESIGN round on docs/design/span_arms.md rev 0 (REP/EMPTY/LOOKAROUND arms): REP+EMPTY ready with text fixes; LOOKAROUND not ready (F1 guard met at the arm, F2 propagation, F15 D168); rev 1 by lane spanarms2.

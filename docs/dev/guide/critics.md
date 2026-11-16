@@ -70,6 +70,14 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-16 r29, predicates_draft.md rev 20 re-check (`docs/dev/reviews/2026-11-16-r29-predspec20.md`), ruled 2026-11-16 (manager): **a revision that WITHDRAWS a manager's reading must re-check every KEPT reading whose stated equivalence rested on it** (V4: 14:50 (b) "same as satisfied" was true only under (c) "any text", withdrawn in the same revision).
+
+2026-11-16 r29, same round, ruled 2026-11-16 (manager): **"apply each acceptance case in its REAL MODE" extends to every NEW worked table the revision adds, not only the acceptance cases** (SIMULATE-1/6: both new tables stated whole-value answers that move when searched).
+
+2026-11-16 r29, same round, ruled 2026-11-16 (manager): **the DOMAIN drill gains an equal-behaviour pair built by a CONDITION (`rx & (cond)` vs the narrowed rx) and by a second `&` operand** (FIXIND-7, AND-DEAD).
+
+2026-11-16 r29, same round, ruled 2026-11-16 (manager): **verifier model: opus when the CONFIRMED findings are interlocking semantic claims; give it same-root groups as one item** (V2/V9 unified four findings and corrected three; 16 items, 5 PARTLY corrections).
+
 2026-11-16 r28, joint_condition.md §4G absent-label rule (`docs/dev/reviews/2026-11-16-r28-absfold.md`), ruled 2026-11-16 (manager): **on a fold that lands after the manager's own later readings (here 14:50, after the note's last commit), keep "readings written after the subject's commit" as an explicit sub-part of the ruling check, with a hand mapping per reading**: it was the most productive part per minute (7 of 9 RULING findings).
 
 2026-11-16 r28, same round, ruled 2026-11-16 (manager): **simulate lens: add a standing DOMAIN drill**: for any "some value" or existential reading, run it against a complement set, a dead branch and a lookbehind-restricted group in two spellings. Three lenses reached the domain (MARK-DOMAIN) from different sides; one drill would have reached all three.
