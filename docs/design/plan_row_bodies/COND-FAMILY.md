@@ -1470,3 +1470,12 @@ weigh (a diagnostic, not a different mark, unless it finds worse).
 **2026-11-16 OWNER QUESTION — what a default that is an rx means (Frank, to session 134, box clock 10:40).** His words:
 "Also, the m = x there means the x is an rx. I don't have an intuitive sense of what that means". RECORD: a question,
 not a ruling; passed to lane unsetdef (its R-1). The manager's answer in the session's reply is the manager's.
+
+**2026-11-16 OWNER RULING — default-set: a default of several strings is an error, for now; idea: `some(...)` (Frank,
+to session 134, box clock 10:43).** Shown the two readings of a default that is a set of several strings (every member
+must fit; some member fits) and the manager's lean (require a one-string default, error otherwise), his words: "We can
+punt, as you say, and throw an error. Perhaps a reason will open to reconsider. Then there is a = some(between(...))".
+RECORD: (1) RULED for now: a label default must be ONE string; a default that is a set of several strings is a
+COMPILE ERROR; open to reconsider on a reason. (2) An IDEA, not a ruling: the reading written out by the author with
+the quantifier word, `m = some(between(...))` (and by symmetry the every form): the route by which a several-string
+default could later be admitted without the language choosing a reading.
