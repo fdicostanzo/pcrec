@@ -101,6 +101,22 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
    (h?: <5) vs (h?: 0|1|2|3|4)  [one set, two spellings; VALUES]      differ     0 of   1110
    (h?: <0) vs (h?: !(<10))  [both hold no \d; VALUES]                differ     0 of   1110
 
+(DOM-COMP) ruling R2 (4): where VALUES (the values h takes in some match) is NOT read off the group's text; each RUN by enumeration, PCRE2 only (Python `re` lacks branch reset and recursion)
+   LOOKAROUND (regular; a product with the lookaround's language)
+      /(?<h>\d)(?<=[0-4])/               group text \d                     VALUES (subjects to length 1): '0' '1' '2' '3' '4'
+   ATOMIC / POSSESSIVE (the group can match, the match never keeps it)
+      /(?<h>\d++)5|x/                    group text \d++                   VALUES (subjects to length 3):   (EMPTY)
+   CONDITIONAL on another label (the branch read depends on the match)
+      /(?<a>x)?(?<h>(?(a)[0-4]|[5-9]))/  group text (?(a)[0-4]|[5-9])      VALUES (subjects to length 2): '0' '4' '5' '9'
+   BACKREFERENCE (the value set is not regular: a^n b a^n)
+      /(?<h>(?<a>a+)b\k<a>)/             group text (?<a>a+)b\k<a>         VALUES (subjects to length 7): 'aba' 'aabaa' 'aaabaaa'
+   RECURSION (the value set is context-free: balanced parentheses)
+      /(?<h>\((?:x|(?&h))*\))/           group text \((?:x|(?&h))*\)       VALUES (subjects to length 6): '()' '(x)' '(())' '(xx)' '(()x)' '((x))' '(x())' '(xxx)' '((()))' '(()())' '(()xx)' '((x)x)' ...
+      BACKREFERENCE check: every value is a^n b a^n: True; RECURSION check: every value balanced: True
+   CONTEXT (R2's "some match of the pattern": any match, or a match agreeing with this one's other labels?)
+      /(?|(?<k>a)(?:;(?<h>\d))*|(?<k>b)(?:;(?<h>[5-9]))*)/ (branch reset): VALUES of h over the pattern 0123456789; given k = b: 56789
+      (h?: <5) on 'b' (zero passes): over the pattern's VALUES HOLDS (h = 0 is a value of SOME match); given k = b FAILS
+
 (DOM-SUMMARY) per candidate: (i) a never-holdable value witnesses an answer; (ii) two spellings of one pattern split; (iii) two spellings of one set split [(iii') sets equal on every holdable value split]; (iv) record = &
    ANY    (i) YES (112 answers in 7 tables; e.g. AR one (h?: !(<10)) on '-')  (ii) no  (0)  (iii) no  (0) [(iii') 10]  (iv) KEPT (0 split)
           (i) AR one (h?: !(<10))                              1 of      1  smallest '-'
@@ -173,4 +189,4 @@ libpcre2-8 10.46 2025-08-27 | Python 3.14.4
 (GF) ruling K: the general form (a candidate set D per absent label), written without part()/tup(), vs the ruled engine
    (AR) 4 kinds x 4 controls x 3 shapes, (TM2) 11,110 x 3, (ZJ) 10 x 4 sets x 2, (ZE) 11,100 x 2 x 2; each under ANY, GROUP, VALUES: 233574 cases, differ 0
 
-TOTAL engine-run cases 14014 differ 0 engine-disagreements 0 probes 56038
+TOTAL engine-run cases 14014 differ 0 engine-disagreements 0 probes 58976

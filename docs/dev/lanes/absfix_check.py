@@ -243,6 +243,71 @@ for c in CANDS:
     SETV[c] += count("(h?: <0) vs (h?: !(<10))  [both hold no \\d; %s]" % c, SUBJ_RZ, e, d, "<0", "!(<10)")
 
 # =================================================================================================================
+print("\n(DOM-COMP) ruling R2 (4): where VALUES (the values h takes in some match) is NOT read off the group's text; "
+      "each RUN by enumeration, PCRE2 only (Python `re` lacks branch reset and recursion)")
+
+
+def pc(p, t, names):
+    """PCRE2-only whole match: None or {name: text or None} (the probes groups() cross-checks cannot take)"""
+    c = _code(p)
+    md = L.pcre2_match_data_create_from_pattern_8(c, None)
+    rc = L.pcre2_match_8(c, t.encode(), len(t.encode()), 0, ANCH | ENDANCH, md, None)
+    out = None
+    if rc >= 0:
+        ov = L.pcre2_get_ovector_pointer_8(md)
+        out = {}
+        for nm in names:
+            n = L.pcre2_substring_number_from_name_8(c, nm.encode())
+            out[nm] = None if ov[2 * n] == UNSET else t.encode()[ov[2 * n]:ov[2 * n + 1]].decode()
+    L.pcre2_match_data_free_8(md)
+    TOT["probes"] += 1
+    return out
+
+
+def vals(p, subjects, label="h", given=None):
+    out = set()
+    for s in subjects:
+        g = pc(p, s, [label] + ([given[0]] if given else []))
+        if g is not None and g[label] is not None and (given is None or g[given[0]] == given[1]):
+            out.add(g[label])
+    return sorted(out, key=lambda s: (len(s), s))
+
+
+def strs(alpha, n):
+    return [""] + ["".join(c) for k in range(1, n + 1) for c in itertools.product(alpha, repeat=k)]
+
+
+COMP = [
+    ("LOOKAROUND (regular; a product with the lookaround's language)", r"(?<h>\d)(?<=[0-4])",
+     strs("0123456789", 1), "\\d"),
+    ("ATOMIC / POSSESSIVE (the group can match, the match never keeps it)", r"(?<h>\d++)5|x", strs("0159x", 3),
+     "\\d++"),
+    ("CONDITIONAL on another label (the branch read depends on the match)", r"(?<a>x)?(?<h>(?(a)[0-4]|[5-9]))",
+     strs("0459x", 2), "(?(a)[0-4]|[5-9])"),
+    ("BACKREFERENCE (the value set is not regular: a^n b a^n)", r"(?<h>(?<a>a+)b\k<a>)", strs("ab", 7),
+     "(?<a>a+)b\\k<a>"),
+    ("RECURSION (the value set is context-free: balanced parentheses)", r"(?<h>\((?:x|(?&h))*\))", strs("()x", 6),
+     "\\((?:x|(?&h))*\\)"),
+]
+for title, p, subj, gtext in COMP:
+    v = vals(p, subj)
+    print("   %s\n      %-34s group text %-22s VALUES (subjects to length %d): %s" %
+          (title, "/" + p + "/", gtext, max(len(s) for s in subj), " ".join(repr(x) for x in v[:12]) +
+           (" ..." if len(v) > 12 else "") + ("  (EMPTY)" if not v else "")))
+bv = vals(r"(?<h>(?<a>a+)b\k<a>)", strs("ab", 7))
+print("      BACKREFERENCE check: every value is a^n b a^n: %s; RECURSION check: every value balanced: %s" %
+      (all(re.fullmatch(r"(a+)b\1", x) for x in bv),
+       all(x.count("(") == x.count(")") for x in vals(r"(?<h>\((?:x|(?&h))*\))", strs("()x", 6)))))
+print("   CONTEXT (R2's \"some match of the pattern\": any match, or a match agreeing with this one's other labels?)")
+PBR = r"(?|(?<k>a)(?:;(?<h>\d))*|(?<k>b)(?:;(?<h>[5-9]))*)"
+SUBJ_BR = [k + "".join(";" + h for h in hs) for k in "ab" for n in range(2) for hs in itertools.product(D, repeat=n)]
+v_all = vals(PBR, SUBJ_BR)
+v_b = vals(PBR, SUBJ_BR, given=("k", "b"))
+print("      /%s/ (branch reset): VALUES of h over the pattern %s; given k = b: %s" % (PBR, "".join(v_all), "".join(v_b)))
+print("      (h?: <5) on 'b' (zero passes): over the pattern's VALUES %s (h = 0 is a value of SOME match); given k = b "
+      "%s" % (hfx(any(S5(x) for x in v_all)), hfx(any(S5(x) for x in v_b))))
+
+# =================================================================================================================
 print("\n(DOM-SUMMARY) per candidate: (i) a never-holdable value witnesses an answer; (ii) two spellings of one "
       "pattern split; (iii) two spellings of one set split [(iii') sets equal on every holdable value split]; "
       "(iv) record = &")
