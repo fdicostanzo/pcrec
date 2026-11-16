@@ -121,6 +121,9 @@ def doms(pop, labels, vals, facs, var):
     regex = {h: {v for s in pop for v in vals(s, h)} for h in labels}
     if var == "REGEX":
         return regex
+    if var == "DEFAULT0":
+        # rulings R5: every mark read as the DEFAULT `= 0` instead (a default never consults a DOM: D = {"0"})
+        return {h: {"0"} for h in labels}
     if var == "MGR-N2":
         # rulings R4 candidate N2: THE RULE (MANAGER) except that a condition holding a mark under NEGATIVE polarity is
         # TRANSPARENT while a DOM is computed, wherever its label stands (MANAGER itself is N1: it narrows where present)
@@ -616,7 +619,7 @@ print("\n(NEGPOL) rulings R4: a mark under NEGATIVE polarity (`!` on a marked co
       "one, a group question that counts a mark downward). Two candidates for what THE RULE does with such a condition "
       "while a DOM is computed: N1 it narrows where its marked label is PRESENT, as the filter it is (= MANAGER above); "
       "N2 it is TRANSPARENT (no narrowing at all). Unmarked negated conditions narrow as filters under both.")
-NEGV = (("N1", "MANAGER"), ("N2", "MGR-N2"))
+NEGV = (("N1", "MANAGER"), ("N2", "MGR-N2"), ("DEF", "DEFAULT0"))   # DEF: rulings R5, each mark as `= 0`
 
 
 def prog_ans(pop, labels, vals, facs, var):
@@ -749,7 +752,7 @@ for pname, pop, recs, pool, labs in NEGPOOLS:
                             cand = (n, len(sm(d)), pname, " & ".join(pool[i][0] for i in combo), pool[j][0], sm(d))
                             if e[1] is None or cand[:2] < e[1][:2]:
                                 e[1] = cand
-for c in ("direct", "compound", "group"):
+for c in ("direct", "compound", "group", "compound+direct", "compound+group"):
     for _, v in NEGV:
         F2HN.setdefault((c, v), [0, None])
 for (c, v), (n, best) in sorted(F2HN.items()):
@@ -788,8 +791,15 @@ for nm_ in ("occurs.none(((h, m?): m < h))",):
     for v in ("REGEX",) + tuple(x[1] for x in NEGV):
         a1, d1 = prog_ans(POPL, ["m"], vL, [f0], v)
         a2, d2 = prog_ans(POPL, ["m"], vL, [f0, dict(poolL)["(m?: >5)"]], v)
-        print("   [%-7s] LST & %s on `6,`: DOM(m)={%s} %s;   + (m?: >5): DOM(m)={%s} %s" %
+        print("   [%-8s] LST & %s on `6,`: DOM(m)={%s} %s;   + (m?: >5): DOM(m)={%s} %s" %
               (v, nm_, dstr(d1["m"]), hfx(a1["6,"]), dstr(d2["m"]), hfx(a2["6,"])))
+# rulings R5: the mark is EXISTENTIAL, the default CLASSICAL: on t2, `((h, m?): R)` and `((h, m?): !R)` both hold on
+# some subjects; with the default `m = 0` exactly one of R / !R holds, so `!` outside = `!R` inside
+both_m = sum(1 for s in POP_T2 if jm(GE930)[0].fn(s, {"m": set(M)}) and jm(lambda t: not GE930(t))[0].fn(s, {"m": set(M)}))
+both_d = sum(1 for s in POP_T2 if jm(GE930)[0].fn(s, {"m": {"0"}}) and jm(lambda t: not GE930(t))[0].fn(s, {"m": {"0"}}))
+out_in = sum(1 for s in POP_T2 if (not jm(GE930)[0].fn(s, {"m": {"0"}})) != jm(lambda t: not GE930(t))[0].fn(s, {"m": {"0"}}))
+print("   (R5) t2, 11,110 subjects: ((h, m?): R) and ((h, m?): !R) BOTH hold on %d (the mark: existential); with m = 0 on %d; "
+      "!((h, m = 0): R) vs ((h, m = 0): !R) differ on %d (the default: classical)" % (both_m, both_d, out_in))
 
 # -----------------------------------------------------------------------------------------------------------------
 print("\n(MOVES) the answers that move from REGEX, per table and domain (the smallest witness each)")

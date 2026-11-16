@@ -293,26 +293,36 @@ PART 1: THE PROGRAM DOMAIN
    [REGEX  ] P & !(h?: <5) on `b`: DOM(h)={0123456789} FAILS;   P & (k: "b") & !(h?: <5) on `b`: DOM(h)={0123456789} FAILS
    [MANAGER] P & !(h?: <5) on `b`: DOM(h)={56789} HOLDS;   P & (k: "b") & !(h?: <5) on `b`: DOM(h)={56789} HOLDS
    [MGR-N2 ] P & !(h?: <5) on `b`: DOM(h)={0123456789} FAILS;   P & (k: "b") & !(h?: <5) on `b`: DOM(h)={56789} HOLDS   -> FAIL to HOLD by adding (k: "b")
+   [DEFAULT0] P & !(h?: <5) on `b`: DOM(h)={0} FAILS;   P & (k: "b") & !(h?: <5) on `b`: DOM(h)={0} FAILS
    [REGEX  ] A & !((h?, k): h < k) on `b1`: DOM(h)={0123456789} FAILS;   + (h?: >7): DOM(h)={0123456789} FAILS
    [MANAGER] A & !((h?, k): h < k) on `b1`: DOM(h)={0123456789} FAILS;   + (h?: >7): DOM(h)={89} HOLDS   -> FAIL to HOLD
    [MGR-N2 ] A & !((h?, k): h < k) on `b1`: DOM(h)={0123456789} FAILS;   + (h?: >7): DOM(h)={89} HOLDS   -> FAIL to HOLD
+   [DEFAULT0] A & !((h?, k): h < k) on `b1`: DOM(h)={0} FAILS;   + (h?: >7): DOM(h)={0} FAILS
+   [DEFAULT0] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound       :   0 pairs
    [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound       :  19 pairs; smallest: pattern A, `!((h?, k): h < k)` + `(h?: >7)` on 'b1'
    [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound       :  13 pairs; smallest: pattern A, `!((h?, k): h < k)` + `(h?: >7)` on 'b1'
+   [DEFAULT0] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+direct:   0 pairs
    [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+direct:  10 pairs; smallest: pattern A, `!(h?: <5) & !((h?, k): h < k)` + `(h?: >7)` on 'b6'
    [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+direct:  11 pairs; smallest: pattern A, `!(h?: <5) & !((h?, k): h < k)` + `(h?: >7)` on 'c'
+   [DEFAULT0] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+group :   0 pairs
    [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+group :   2 pairs; smallest: pattern LST, `occurs.none(((h, m?): m < h)) & !((h, m?): m < h)` + `(m?: >5)` on '6,'
    [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only compound+group :   2 pairs; smallest: pattern LST, `occurs.none(((h, m?): m < h)) & !((h, m?): m < h)` + `(m?: >5)` on '6,'
+   [DEFAULT0] FAIL to HOLD by adding a condition, the program's negative-polarity marks only direct         :   0 pairs
    [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only direct         :   0 pairs
    [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only direct         :  39 pairs; smallest: pattern A, `!(h?: <5)` + `(h?: >7)` on 'c'
+   [DEFAULT0] FAIL to HOLD by adding a condition, the program's negative-polarity marks only group          :   0 pairs
    [MANAGER] FAIL to HOLD by adding a condition, the program's negative-polarity marks only group          :   3 pairs; smallest: pattern LST, `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,'
    [MGR-N2 ] FAIL to HOLD by adding a condition, the program's negative-polarity marks only group          :   3 pairs; smallest: pattern LST, `occurs.none(((h, m?): m < h))` + `(m?: >5)` on '6,'
    [MGR-N2 ] no negative-polarity mark: FAIL to HOLD in 0 of 698 (program, added condition) pairs
    [REGEX  ] L95 t2 & !((h, m?): R) on `9`: DOM(m)={100 values} FAILS;   + (m?: padded(<30)): DOM(m)={100 values} FAILS
    [MANAGER] L95 t2 & !((h, m?): R) on `9`: DOM(m)={100 values} FAILS;   + (m?: padded(<30)): DOM(m)={30 values} HOLDS
    [MGR-N2 ] L95 t2 & !((h, m?): R) on `9`: DOM(m)={100 values} FAILS;   + (m?: padded(<30)): DOM(m)={30 values} HOLDS
-   [REGEX  ] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={27} FAILS;   + (m?: >5): DOM(m)={27} FAILS
-   [MANAGER] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={27} FAILS;   + (m?: >5): DOM(m)={7} HOLDS
-   [MGR-N2 ] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={27} FAILS;   + (m?: >5): DOM(m)={7} HOLDS
+   [DEFAULT0] L95 t2 & !((h, m?): R) on `9`: DOM(m)={0} HOLDS;   + (m?: padded(<30)): DOM(m)={0} HOLDS
+   [REGEX   ] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={27} FAILS;   + (m?: >5): DOM(m)={27} FAILS
+   [MANAGER ] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={27} FAILS;   + (m?: >5): DOM(m)={7} HOLDS
+   [MGR-N2  ] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={27} FAILS;   + (m?: >5): DOM(m)={7} HOLDS
+   [DEFAULT0] LST & occurs.none(((h, m?): m < h)) on `6,`: DOM(m)={0} FAILS;   + (m?: >5): DOM(m)={0} FAILS
+   (R5) t2, 11,110 subjects: ((h, m?): R) and ((h, m?): !R) BOTH hold on 2 (the mark: existential); with m = 0 on 0; !((h, m = 0): R) vs ((h, m = 0): !R) differ on 0 (the default: classical)
 
 (MOVES) the answers that move from REGEX, per table and domain (the smallest witness each)
    A  P & (k: "b") & (h?: <5)                                     SAME-NO        1 of    222  smallest 'b' (REGEX HOLDS)

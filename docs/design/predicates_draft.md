@@ -1997,14 +1997,16 @@ has two readings (an UNMARKED negated condition narrows as the filter it is unde
   NARROWS through the matches where its marked label is present, as the filter it is; where absent, transparent.
 - N2: it is TRANSPARENT wherever its label stands (no narrowing at all).
 
-| witness (FAIL, then the added condition) | N1 | N2 |
-|---|---|---|
-| DIRECT, P (above): `P & !(h?: <5)` on `b`, then `(k: "b")` (the manager's R4 example) | DOM(h) 5-9 both times: HOLDS, HOLDS (no move) | DOM(h) 0-9 then 5-9: FAILS, then HOLDS |
-| DIRECT, A = `/a(?<h>\d)\|b(?<k>\d)\|c/`: `!(h?: <5)` on `c`, then `(h?: >7)` | no move (0 pairs with only direct marks) | FAILS, then HOLDS (39 pairs) |
-| COMPOUND, A: `!((h?, k): h < k)` on `b1` (h absent, k = 1), then `(h?: >7)` | DOM(h) 0-9: h = 0 would do, so FAILS; then 8-9: HOLDS (19 pairs) | the same (13 pairs) |
-| GROUP QUESTION, `/(?:(?<h>\d)(?::(?<m>\d))?,)*/`: `occurs.none(((h, m?): m < h))` on `6,` (m absent), then `(m?: >5)` | DOM(m) {2, 7}: m = 2 is below 6, the pass counts, FAILS; then {7}: HOLDS (3 pairs) | the same (3 pairs) |
+| witness (FAIL, then the added condition) | N1 | N2 | the DEFAULT `= 0` in place of every mark (rulings R5) |
+|---|---|---|---|
+| DIRECT, P (above): `P & !(h?: <5)` on `b`, then `(k: "b")` (the manager's R4 example) | DOM(h) 5-9 both times: HOLDS, HOLDS (no move) | DOM(h) 0-9 then 5-9: FAILS, then HOLDS | FAILS, FAILS (no move) |
+| DIRECT, A = `/a(?<h>\d)\|b(?<k>\d)\|c/`: `!(h?: <5)` on `c`, then `(h?: >7)` | no move (0 pairs with only direct marks) | FAILS, then HOLDS (39 pairs) | 0 pairs |
+| COMPOUND, A: `!((h?, k): h < k)` on `b1` (h absent, k = 1), then `(h?: >7)` | DOM(h) 0-9: h = 0 would do, so FAILS; then 8-9: HOLDS (19 pairs) | the same (13 pairs) | FAILS, FAILS; 0 pairs |
+| GROUP QUESTION, `/(?:(?<h>\d)(?::(?<m>\d))?,)*/`: `occurs.none(((h, m?): m < h))` on `6,` (m absent), then `(m?: >5)` | DOM(m) {2, 7}: m = 2 is below 6, the pass counts, FAILS; then {7}: HOLDS (3 pairs) | the same (3 pairs) | FAILS, FAILS; 0 pairs |
 
-Under N1 a DIRECT one-label `!(h?: S)` never moves (its own complement narrows DOM(h) to values outside S, so on an
+(Pairs counted over the (SEARCH) pools plus the list pool; programs mixing kinds: compound+direct 10 / 11 / 0,
+compound+group 2 / 2 / 0.) A DEFAULT never consults a DOM, so no added condition moves a program through it: 0 pairs
+in every kind (the manager's expectation, rulings R5, now run). Under N1 a DIRECT one-label `!(h?: S)` never moves (its own complement narrows DOM(h) to values outside S, so on an
 absent h it always HOLDS, whatever else the program says); compounds and group questions move under both. Every
 program domain run does this (the least and greatest fixed points: 25 and 26 pairs in (SEARCH)): it is a property of
 reading DOM from the program, not of the variant. The lane's lean is N1 (fewer moves; the ruled text read as written);
@@ -2092,7 +2094,14 @@ equal `(x?: S)`'s (L93 SAME), but no written mark exists for the never-absent-ma
 over a label that is never absent draws NO warning (the warning reads a mark the author wrote on the label, never one `all` implies). And `all` is
 CHANGED by 14:31 (via r28 C and 16:20), not restated: it is no longer "every, possibly none" (below, §4.3).
 
-NEGATION OVER A MARKED LABEL (the manager's call, review r28 disposition G). On an UNMARKED absent label, `(x: !S)`
+NEGATION OVER A MARKED LABEL (the manager's call, review r28 disposition G). THE MARK IS EXISTENTIAL, THE DEFAULT
+CLASSICAL (rev 21, rulings R5). The owner's REMARK (not a ruling; 17:02, on the marked pair both holding): "This makes
+sense however. It's not the complementary condition that's making them hold. It's the mark. Logic aside, the default
+value provides the correct result". The mark reads "some value would do", so `((h, m?): R)` and `((h, m?): !R)` can
+BOTH hold (on 2 of 11,110 `t2` subjects, `9` and `09`), and `!` outside and `!R` inside are different conditions. The
+default supplies ONE value and is read like a present text, so exactly one of `((h, m = 0): R)` and
+`((h, m = 0): !R)` holds (both on 0 of 11,110), and `!((h, m = 0): R)` = `((h, m = 0): !R)` (0 of 11,110 differ)
+(PART 1 (NEGPOL), (R5)). On an UNMARKED absent label, `(x: !S)`
 FAILS (a condition needs a text) and `!(x: S)` HOLDS (the plain complement). On a MARKED one the pair turns over:
 `t2` on `9` with R = `padded(>= (9, 30))`: `((h, m?): R)` HOLDS (some minutes, 30..59), so `!((h, m?): R)` FAILS
 (the manager's reading (14:31): `!` of a marked condition is the plain complement), and `((h, m?): !R)` HOLDS (m =
