@@ -13,7 +13,9 @@ commit and before this report). Validation at the branch head, all GREEN: `make 
 `scripts/check_claudemd_size.sh --all` (370 files within limits); the pre-commit staged checks
 passed on every commit (52 passed, 0 failed). Probes run (evening hold respected): one `nice make
 -j2 build/pcrec` in the worktree (rc 0), 4 `--emit-facts` compiles, one `sizeof` probe. No suite,
-no sweep, no timing, no box-queue job. Owed: none.
+no sweep, no timing, no box-queue job.
+
+OWED: none
 
 Mergeability: `git merge-tree --write-tree main HEAD` with main at `38f6db8db` (two COND-FAMILY
 commits past this branch's base) is CLEAN; no conflict expected.
