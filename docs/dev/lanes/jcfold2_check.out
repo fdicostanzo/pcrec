@@ -1,0 +1,37 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+
+(RZ) re-run: P & (h: <5, k: 3..7), k outside h's loop, under the manager's wording (M)
+(RZ) subjects 1110; M vs the & reading differ on 0; M vs jcfold's reading B (vacuous) differ on 5
+     '9': M False, & reading False
+
+(ZN) nested: P & (c: 3..7, h: 0..4, k: 2..6); c outside every loop, h in the outer item, k in an inner loop
+(ZN) subjects 2526 (outer zero passes 6; with at least one inner zero-pass reach 888); M vs & differ 0; M vs vacuous per-pass differ 153
+     '5' (outer zero): M True; '5;9' (inner zero, h=9 not in H): M False, vacuous True
+(ZN-NL) jcfold's (NL) population under M: ((h, k): >= (5, 3)), h in the outer item, k in the inner loop
+(ZN-NL) subjects 73; answers that MOVE from jcfold's (NL) (an outer item with no k: held, now tests h) 10; e.g. '4:;'
+
+(ZJ) non-product joint sets on P := /(?<k>\d)(?:;(?<h>\d))*/
+(ZJ) ((h, k): >= (5, 3))                possible k (any string) [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; (capture language of \d) [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; zero-pass vs hand expansion differ 0 of 10; with passes differ 56 of 1100
+(ZJ) ((k, h): >= (5, 3))                possible k (any string) [5, 6, 7, 8, 9]; (capture language of \d) [5, 6, 7, 8, 9]; zero-pass vs hand expansion differ 0 of 10; with passes differ 0 of 1100
+(ZJ) ((h, k): (0|1|2, 3|4) | (5, 5))    possible k (any string) [3, 4, 5]; (capture language of \d) [3, 4, 5]; zero-pass vs hand expansion differ 0 of 10; with passes differ 0 of 1100
+(ZJ) ((h, k): ("x", 3) | (0, 5))        possible k (any string) [3, 5]; (capture language of \d) [5]; zero-pass vs hand expansion differ 0 of 10; with passes differ 0 of 1100
+(ZJ) ((h, k): < (0, 3))                 possible k (any string) [0, 1, 2]; (capture language of \d) [0, 1, 2]; zero-pass vs hand expansion differ 7 of 10; with passes differ 0 of 1100
+(ZJ-E) the EMPTY set of pairs, zero passes, subject '3':
+       (h: <0, k: 3)  [product clause: empty h satisfies <0]      HOLDS
+       ((h, k): (<0, 3))  [the same, as a tuple set: product clause] HOLDS
+       ((h, k): < (0, 0))  [non-product clause: no h possible]    FAILS
+       single label (h: <0) on '3': HOLDS (CF:997-1000)
+
+(ZD) defaults on zero passes
+(ZD a) P & (h = 9: <5, k: 3..7): 1110 subjects; M vs 'default read on zero passes' differ 5 (the zero-pass subjects with k in T); M vs & (default unread) differ 0
+(ZD b) P2 & (h: <5, k: 3..7): '5' (never reached) False, '5-' (zero passes) True
+(ZD b) P2 & (h = 9: <5, k: 3..7): '5' (never reached) False, '5-' (zero passes) True
+(ZD b) P2 & (h = 2: <5, k: 3..7): '5' (never reached) True, '5-' (zero passes) True
+(ZD c) L & ((h, m = 0): >= (5, 3)): 91 subjects; the empty list HOLDS
+
+(Z1) single label
+(Z1) /(?<k>\d)(?:;(?<h>\d))*/ & (h: <5)     1110 subjects (zero passes hold; never reached fails)
+(Z1) /(?:(?<n>\d),)*/ & (n: <5)             4 subjects (zero passes hold; never reached fails)
+(Z1) /x|(?<n>\d)+/ & (n: <5)                3 subjects (zero passes hold; never reached fails)
+
+TOTAL cases 14937 differ 0 engine-disagreements 0

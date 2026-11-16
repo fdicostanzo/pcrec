@@ -71,6 +71,29 @@ applies, beyond `architecture.md`:
 ## Lessons from review rounds
 
 Round 2026-11-15 r18, covs2a code round (`docs/dev/reviews/2026-11-15-r18-covs2a.md`); process changes ruled 2026-11-15 (manager): (1) **plants for a REACH-using row are built with `build/pcrec build/pcrec-harness`** (reach.sh read REACH-FAILED on every compiler-only plant); (2) **for a staged subject COMMON quotes every interim wrongness the design accepts for the stage** (CONTRACT-1 rediscovered 'wrong there until B').
+2026-11-16 r29, predicates_draft.md rev 20 re-check (`docs/dev/reviews/2026-11-16-r29-predspec20.md`), ruled 2026-11-16 (manager): **a revision that WITHDRAWS a manager's reading must re-check every KEPT reading whose stated equivalence rested on it** (V4: 14:50 (b) "same as satisfied" was true only under (c) "any text", withdrawn in the same revision).
+
+2026-11-16 r29, same round, ruled 2026-11-16 (manager): **"apply each acceptance case in its REAL MODE" extends to every NEW worked table the revision adds, not only the acceptance cases** (SIMULATE-1/6: both new tables stated whole-value answers that move when searched).
+
+2026-11-16 r29, same round, ruled 2026-11-16 (manager): **the DOMAIN drill gains an equal-behaviour pair built by a CONDITION (`rx & (cond)` vs the narrowed rx) and by a second `&` operand** (FIXIND-7, AND-DEAD).
+
+2026-11-16 r29, same round, ruled 2026-11-16 (manager): **verifier model: opus when the CONFIRMED findings are interlocking semantic claims; give it same-root groups as one item** (V2/V9 unified four findings and corrected three; 16 items, 5 PARTLY corrections).
+
+2026-11-16 r28, joint_condition.md §4G absent-label rule (`docs/dev/reviews/2026-11-16-r28-absfold.md`), ruled 2026-11-16 (manager): **on a fold that lands after the manager's own later readings (here 14:50, after the note's last commit), keep "readings written after the subject's commit" as an explicit sub-part of the ruling check, with a hand mapping per reading**: it was the most productive part per minute (7 of 9 RULING findings).
+
+2026-11-16 r28, same round, ruled 2026-11-16 (manager): **simulate lens: add a standing DOMAIN drill**: for any "some value" or existential reading, run it against a complement set, a dead branch and a lookbehind-restricted group in two spellings. Three lenses reached the domain (MARK-DOMAIN) from different sides; one drill would have reached all three.
+
+2026-11-16 r26, joint_condition.md design note (`docs/dev/reviews/2026-11-16-r26-jointcond.md`), ruled 2026-11-16 (manager): **simulate lens, design mode: for a design whose values are SETS, two spellings of the SAME set (the empty set above all; product vs dictionary order) must give the same answer in every mode** (ZERO-EMPTY: found by three lenses; an inserted split made the answer depend on how one set was spelled).
+
+2026-11-16 r26, same round, ruled 2026-11-16 (manager): **a design whose deliverable is a CHANGE TABLE against a client document (a fold, here §9) gets a change-table completeness lens: re-derive the client's site list by grep over every term the folded rulings touch, and check each row's cite lands on its whole item** (REV20-1..10: a sonnet critic, 3 minutes, 10 findings, about 45 draft lines the table missed).
+
+2026-11-16 r26, same round, ruled 2026-11-16 (manager): **when a ruling's record says the WORDING is the manager's "to be checked by the critic round", the ruling lens diffs every quoted copy of that wording against the record verbatim** (RULING-1: an inserted clause created the contradiction it was asked to check). Give owner-quote verification to ONE lens; the others cite without re-checking.
+
+2026-11-16 r19, predicates_draft rev 19 (`docs/dev/reviews/2026-11-16-r19-predspec19.md`), ruled 2026-11-16 (manager): **when a round may straddle a box script deadline, the coordinator pre-creates each critic's findings file with its headings and a `CRITIC COMPLETE` marker line the critic writes last** (both fix-induced critics ended with no findings file, and an empty file is visibly empty where a missing one is not).
+
+2026-11-15 r17, predicates_draft revs 16-17 confirming re-check (`docs/dev/reviews/2026-11-15-r17-predspec17.md`), ruled 2026-11-15 (manager): **when a revision moves a fact's PRODUCER from library text to the author's input (labels, fields, separators), re-run every derived form using `!` over author inputs with an optional, a repeated and a non-conforming field** (F1: rev 16's always-set helper labels hid a strict-form inversion; two lenses found it in minutes).
+
+2026-11-15 r17, same round, ruled 2026-11-15 (manager): **an evidence row that shows a refusal or an error names the mechanism that refuses; an emulator's own raise is not evidence** (F6: the wrong-length "compile error" table showed the script's own `raise`).
 
 Round 2026-11-15 r16, predicates_draft rev 14 confirming re-check (`docs/dev/reviews/2026-11-15-r16-predspec14.md`); process changes ruled 2026-11-15 (manager): (1) **for a diagnostic whose message makes a semantic claim ('adds nothing', 'never matches'), plant a counter-case for the CLAIM in each place it fires (a non-edge anchor), not only the evidence's own population** (SIMULATE-1: the evidence table tested only edge anchors); (2) **when a revision RESTATES an earlier revision's decision, diff the two sentences; a dropped exclusion is a finding** (FIXIND-8: rev 13's 'not inside a hole' lost in rev 14).
 

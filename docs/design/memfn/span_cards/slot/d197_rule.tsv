@@ -63,6 +63,12 @@
 # CONFIRM's cells; `--second FIRST FIRSTAVX2` names the first run's records (window `mfcard`, another run id): a
 # second run is derived from those records, never asserted by a bare flag. A refused provenance is no verdict
 # (exit 2), never a row.
+# A REFUSED RECORD (review 2026-11-16 r13 JF-4, the kit manager's ruling (a)): est's OUTCOME is REFUSED when the unit or
+# any floor clause fails, and names each refusal with the keys it reads. The `refusal` table reads WHICH rows refused:
+# a refusal naming only find_byte@6 SCAN rows (the `scan` quantity of the levels' forms and libc_form: NOT deciding,
+# above) leaves the deciding rows and every level's verdict standing, and the scan line prints that row `scan unpriced
+# (<est's reason>)`; any other refusal (the unit, a deciding row's clause, a row this rule does not read) refuses the
+# arm, as before. No gate moves: est still refuses the record (no draft), the rule reads only what decides.
 #section deciding
 #key	value
 quantity	find_hit
@@ -90,6 +96,11 @@ win	gain-beyond-floor-and-every-trimmed-launch-positive
 tie	loss-not-reproduced
 loss	gain-below-minus-floor
 tie	always
+#section refusal
+#result	when
+priced	record-not-refused
+scan-unpriced	every-refusal-names-only-scan-rows
+run-refused	always
 #section arm
 #result	when
 no-verdict	run-refused

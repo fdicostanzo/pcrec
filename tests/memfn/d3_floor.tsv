@@ -1,0 +1,25 @@
+# tests/memfn/d3_floor.tsv -- THE D3 PCREC-ARTIFACT FLOOR's data (part_d.md §5.1 D3 [r3pd RDY-5]; R-43, R-44, d3fix), the ONE
+# place its numbers live; d3_floor.py reads it, no number is a literal there. EVERY value is the MEASURED count of the
+# gate's own sweep (d3fix, 2026-11-15, on 466d8e8ee's tree = d2496010e's compiler + the d3wire wiring; `make
+# test-memfn-d3floor`, the D3-FLOOR lines), with every band 0 (the measured spread over four
+# sweeps -- r10 critic, d3fix, r11 critic, d3fix2 -- is 0: the sweep is compile-only and deterministic): below the value = a
+# loss, above = a gain nobody re-pinned (both red: "census changed: re-pin with D3FLOOR_REPIN=1 bash tests/memfn/run_d3floor.sh"),
+# so a floor cannot go loose behind a growing census (review r10 D3W-1/2/5). To re-pin after a deliberate change: run
+# `D3FLOOR_REPIN=1 D3FLOOR_NOTE="which change moved them" bash tests/memfn/run_d3floor.sh`; it rewrites d3_census.tsv AND the
+# four data rows here (bands 0, provenance "repin <note>"; this comment block and the header are kept), prints the member diff,
+# and REFUSES an empty/short sweep (a deliberate shrink: D3FLOOR_REPIN_SHRINK=1). Review the diff, commit both files.
+# columns (tab-separated): cell, census_floor, census_band, compiles, failed, pop_band, records, records_band, provenance
+#   census_floor  distinct corpus patterns whose SHIPPED art carries a run_part_terms record with an unspelled SET term.
+#                 (r43 measured 58/143/99/216 on an earlier base; d3wire's census on d2496010e was 78/174/119/247 = these.)
+#                 Must also be >= emit_sweep's live DIFFER_PINS floor for the cell (read there: the movers number has ONE home).
+#   census_band   allowed gain over census_floor (0 = exact).
+#   compiles      the POPULATION: corpus patterns that compiled (rc 0); fewer = a lost .rxt file / a crash wave; more than
+#                 compiles+pop_band = the corpus grew, re-pin. failed = compiles that did not succeed (rc != 0 or timeout:
+#                 deliberate rejects of the corpus, EXACT), so a crash wave names itself.
+#   records       run_part_terms records on the shipped arts the sweep must see (a sweep whose summarize dropped the record
+#                 again, p14, reds here too); records_band as pop_band.
+cell	census_floor	census_band	compiles	failed	pop_band	records	records_band	provenance
+byte/c-default	78	0	5030	486	0	380	0	d3fix measured 2026-11-15 (466d8e8ee tree)
+byte/c-vm	174	0	5031	485	0	1055	0	d3fix measured 2026-11-15 (466d8e8ee tree)
+utf8/c-default	119	0	5100	416	0	501	0	d3fix measured 2026-11-15 (466d8e8ee tree)
+utf8/c-vm	247	0	5077	439	0	1177	0	d3fix measured 2026-11-15 (466d8e8ee tree)

@@ -1,0 +1,192 @@
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+
+(AR) THE RULE TABLE: absence x what the author wrote x condition shape -> answer (COMPUTED from part())
+    one label (h: <5); record (h: <5, k: 3..7) with k = 6; joint ((h, k): >= (5, 3)) with k = 6; h's group \d
+    v = 9 (outside <5) and v = 2 (inside); a present h is `3`
+   a value (h = 3)      nothing  AR: one HOLDS  record HOLDS  joint FAILS  | today: one HOLDS  record HOLDS  joint FAILS
+   a value (h = 3)      h?       AR: one HOLDS  record HOLDS  joint FAILS  | today: one -      record -      joint -
+   a value (h = 3)      h = 9    AR: one HOLDS  record HOLDS  joint FAILS  | today: one HOLDS  record HOLDS  joint FAILS
+   a value (h = 3)      h = 2    AR: one HOLDS  record HOLDS  joint FAILS  | today: one HOLDS  record HOLDS  joint FAILS
+   a value (h = 3)      h? = 9   AR: one ERROR  record ERROR  joint ERROR  | today: one -      record -      joint -
+   Z zero passes        nothing  AR: one FAILS  record FAILS  joint FAILS  | today: one HOLDS  record HOLDS  joint HOLDS
+   Z zero passes        h?       AR: one HOLDS  record HOLDS  joint HOLDS  | today: one -      record -      joint -
+   Z zero passes        h = 9    AR: one FAILS  record FAILS  joint HOLDS  | today: one HOLDS  record HOLDS  joint HOLDS
+   Z zero passes        h = 2    AR: one HOLDS  record HOLDS  joint FAILS  | today: one HOLDS  record HOLDS  joint HOLDS
+   Z zero passes        h? = 9   AR: one ERROR  record ERROR  joint ERROR  | today: one -      record -      joint -
+   U never reached      nothing  AR: one FAILS  record FAILS  joint FAILS  | today: one FAILS  record FAILS  joint FAILS
+   U never reached      h?       AR: one HOLDS  record HOLDS  joint HOLDS  | today: one -      record -      joint -
+   U never reached      h = 9    AR: one FAILS  record FAILS  joint HOLDS  | today: one FAILS  record FAILS  joint HOLDS
+   U never reached      h = 2    AR: one HOLDS  record HOLDS  joint FAILS  | today: one HOLDS  record HOLDS  joint FAILS
+   U never reached      h? = 9   AR: one ERROR  record ERROR  joint ERROR  | today: one -      record -      joint -
+   P missing in a pass  nothing  AR: one FAILS  record FAILS  joint FAILS  | today: one FAILS  record FAILS  joint FAILS
+   P missing in a pass  h?       AR: one HOLDS  record HOLDS  joint HOLDS  | today: one -      record -      joint -
+   P missing in a pass  h = 9    AR: one FAILS  record FAILS  joint HOLDS  | today: one FAILS  record FAILS  joint HOLDS
+   P missing in a pass  h = 2    AR: one HOLDS  record HOLDS  joint FAILS  | today: one HOLDS  record HOLDS  joint FAILS
+   P missing in a pass  h? = 9   AR: one ERROR  record ERROR  joint ERROR  | today: one -      record -      joint -
+   NOT BOTH: `(m? = 0: S)` refused on every absence kind and on a present label alike (a compile error, decided from the text, not the match)
+
+(TM2) THE TIME EXAMPLE: t2 := /(?<h>\d{1,2})(?::(?<m>\d\d))?/ & ((h, m ...): padded(>= (9, 30)))
+   subject  nothing   m?        m = 0     m? = 0    today(nothing)  today(m = 0)
+   9        FAILS     HOLDS     FAILS     ERROR     FAILS           FAILS
+   10       FAILS     HOLDS     HOLDS     ERROR     FAILS           HOLDS
+   11       FAILS     HOLDS     HOLDS     ERROR     FAILS           HOLDS
+   9:15     FAILS     FAILS     FAILS     ERROR     FAILS           FAILS
+   9:45     HOLDS     HOLDS     HOLDS     ERROR     HOLDS           HOLDS
+   ENGINE-RUN over 11110 t2 subjects (nothing, m?, m = 0)
+   t2: nothing vs m?                                                  differ    92 of  11110   smallest '9' (nothing FAILS, m? HOLDS)
+   t2: nothing vs m = 0                                               differ    90 of  11110   smallest '10' (nothing FAILS, m = 0 HOLDS)
+   t2: m? vs m = 0                                                    differ     2 of  11110   smallest '9' (m? HOLDS, m = 0 FAILS)
+
+(TM2-L) the same in a LIST: /(?:(?<h>\d{1,2})(?::(?<m>\d\d))?,)*/ & ... (both labels looped)
+   form                  ''        '10,'     '9,'      '9:45,'   '10,9:15,'
+   ((h, m): R)           FAILS     FAILS     FAILS     HOLDS     FAILS     
+   ((h, m?): R)          FAILS     HOLDS     HOLDS     HOLDS     FAILS     
+   ((h, m = 0): R)       FAILS     HOLDS     FAILS     HOLDS     FAILS     
+   ((h?, m = 0): R)      HOLDS     HOLDS     FAILS     HOLDS     FAILS     
+   ((h?, m?): R)         HOLDS     HOLDS     HOLDS     HOLDS     FAILS     
+   all(((h, m): R)) A2v  HOLDS     FAILS     FAILS     HOLDS     FAILS     
+   all(((h, m): R)) A2m  HOLDS     HOLDS     HOLDS     HOLDS     FAILS     
+   today ((h, m): R)     HOLDS     FAILS     FAILS     HOLDS     FAILS     
+   21 lists (0-2 items) RUN; two forms ENGINE-RUN
+
+(U) jointexp's optional seconds, /(?<h>\d{1,2}):(?<m>\d\d)(?::(?<s>\d\d))?/ & ((h, m, s): padded(>= (9, 0, 30)))
+   9:00      AR nothing FAILS  s? HOLDS  s = 0 FAILS  | today FAILS  | jointexp's .out FAILS
+   9:00:29   AR nothing FAILS  s? FAILS  s = 0 FAILS  | today FAILS  | jointexp's .out FAILS
+   9:00:30   AR nothing HOLDS  s? HOLDS  s = 0 HOLDS  | today HOLDS  | jointexp's .out HOLDS
+   10:00     AR nothing FAILS  s? HOLDS  s = 0 HOLDS  | today FAILS  | jointexp's .out FAILS
+   10:00:00  AR nothing HOLDS  s? HOLDS  s = 0 HOLDS  | today HOLDS  | jointexp's .out HOLDS
+   8:59:59   AR nothing FAILS  s? FAILS  s = 0 FAILS  | today FAILS  | jointexp's .out FAILS
+   9:01      AR nothing FAILS  s? HOLDS  s = 0 HOLDS  | today FAILS  | jointexp's .out FAILS
+   OLD-OUT control: AR nothing vs jointexp's printed joint column differ 0 of 7 (set-once: no move)
+
+(S) jointexp's strict compare, minutes optional: t2 & ((h, m ...): > (9, 30))
+   9      AR nothing FAILS  m? HOLDS  m = 0 FAILS  | jointexp's .out joint FAILS
+   10     AR nothing FAILS  m? HOLDS  m = 0 HOLDS  | jointexp's .out joint FAILS
+   8      AR nothing FAILS  m? FAILS  m = 0 FAILS  | jointexp's .out joint FAILS
+   9:31   AR nothing HOLDS  m? HOLDS  m = 0 HOLDS  | jointexp's .out joint HOLDS
+   9:30   AR nothing FAILS  m? FAILS  m = 0 FAILS  | jointexp's .out joint FAILS
+   10:00  AR nothing HOLDS  m? HOLDS  m = 0 HOLDS  | jointexp's .out joint HOLDS
+   OLD-OUT control: AR nothing vs jointexp's printed joint column differ 0 of 6
+
+(RZ) /(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: 3..7): k outside h's loop
+   AR vs today (the zero-pass subjects with k in 3..7)                differ     5 of   1110   smallest '3' (today HOLDS, AR FAILS)
+   AR record vs AR (h: <5) & (k: 3..7)  [record = &]                  differ     0 of   1110
+   AR (h?: <5, k: 3..7) vs today                                      differ     0 of   1110
+   AR (h?: <5, k: ..) vs (h?: <5) & (k: ..)  [record = &, marked]     differ     0 of   1110
+   AR (h = 9: <5, k: ..) vs today's (ZD a) (default unread on zero)   differ     5 of   1110   smallest '3' (today HOLDS, AR FAILS)
+   AR (h = 9: <5, k: ..) vs (h = 9: <5) & (k: ..)                     differ     0 of   1110
+   AR (h = 0: <5, k: ..) vs today                                     differ     0 of   1110
+   all(record) A2v vs today                                           differ     5 of   1110   smallest '0' (today FAILS, A2v HOLDS)
+   all(record) A2v vs all((h: <5)) & all((k: 3..7)) A2v  [record = & under all] differ     5 of   1110   smallest '0' (all(rec) HOLDS, all&all FAILS)
+   all(record) A2z vs today                                           differ     0 of   1110
+   all(record) A2m vs today                                           differ     0 of   1110
+   '9': AR FAILS, today FAILS, h? FAILS, all A2v HOLDS, all A2z FAILS, all A2m FAILS
+
+(Z1) single label on the same population: (h: <5)
+   AR (h: <5) vs today (zero passes now FAIL)                         differ    10 of   1110   smallest '0' (today HOLDS, AR FAILS)
+   /(?:(?<n>\d),)*/ & (n: <5): '' FAILS, '3,' HOLDS, '7,' FAILS, '3,7,' FAILS
+   /x|(?<n>\d)+/ & (n: <5): 'x' FAILS, '3' HOLDS, '37' FAILS
+
+(ZN) nested: /(?<c>\d)(?:;(?<h>\d)(?::(?<k>\d))*)*/ & (c: 3..7, h: 0..4, k: 2..6)
+   2526 subjects RUN; AR ENGINE-RUN
+   AR vs today                                                        differ    69 of   2526   smallest '3' (today HOLDS, AR FAILS)
+   AR record vs & (k read PER REACH)  [record = &]                    differ     0 of   2526
+   AR record vs & (k's values POOLED over the match)                  differ    48 of   2526   smallest '3;0:2;0' (record FAILS, &pool HOLDS)
+
+(NL) jcfold's nested non-product: /(?:(?<h>\d):(?:(?<k>\d),)*;)*/ & ((h, k): >= (5, 3))
+   73 subjects RUN; AR ENGINE-RUN
+   AR vs jcfold's (NL) answers                                        differ    19 of     73   smallest '' (NL HOLDS, AR FAILS)
+   AR vs jcfold2's (ZN-NL) answers (M)                                differ     9 of     73   smallest '' (M HOLDS, AR FAILS)
+   AR ((h, k?): ..) vs jcfold2's M                                    differ     1 of     73   smallest '' (M HOLDS, k? FAILS)
+   AR ((h?, k?): ..) vs jcfold2's M                                   differ     0 of     73
+
+(ZJ) jcfold2's non-product sets on (RZ)'s pattern, zero passes (10 subjects per set)
+   ((h, k): >= (5, 3))                AR zero-pass HOLDS on 0 of 10; h? (\d) ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']; h? (every string) ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+      zero passes: h? joint vs h? hand expansion, \d domain           differ     0 of     10
+      zero passes: h? joint vs h? hand expansion, every-string domain differ     0 of     10
+   ((k, h): >= (5, 3))                AR zero-pass HOLDS on 0 of 10; h? (\d) ['5', '6', '7', '8', '9']; h? (every string) ['5', '6', '7', '8', '9']
+      zero passes: h? joint vs h? hand expansion, \d domain           differ     0 of     10
+      zero passes: h? joint vs h? hand expansion, every-string domain differ     0 of     10
+   ((h, k): (0|1|2, 3|4) | (5, 5))    AR zero-pass HOLDS on 0 of 10; h? (\d) ['3', '4', '5']; h? (every string) ['3', '4', '5']
+      zero passes: h? joint vs h? hand expansion, \d domain           differ     0 of     10
+      zero passes: h? joint vs h? hand expansion, every-string domain differ     0 of     10
+   ((h, k): ("x", 3) | (0, 5))        AR zero-pass HOLDS on 0 of 10; h? (\d) ['5']; h? (every string) ['3', '5']
+      zero passes: h? joint vs h? hand expansion, \d domain           differ     0 of     10
+      zero passes: h? joint vs h? hand expansion, every-string domain differ     0 of     10
+   ((h, k): < (0, 3))                 AR zero-pass HOLDS on 0 of 10; h? (\d) ['0', '1', '2']; h? (every string) ['0', '1', '2']
+      zero passes: h? joint vs h? hand expansion, \d domain           differ     0 of     10
+      zero passes: h? joint vs h? hand expansion, every-string domain differ     0 of     10
+(ZJ-E) the EMPTY set of pairs, zero passes, subject '3':
+   (h: <0, k: 3)          unmarked FAILS   h? read F1 (some value) FAILS   h? read F2 (satisfied outright) HOLDS
+   ((h, k): (<0, 3))      unmarked FAILS   h? read F1 (some value) FAILS   h? read F2 (satisfied outright) HOLDS
+   ((h, k): < (0, 0))     unmarked FAILS   h? read F1 (some value) FAILS   h? read F2 (satisfied outright) FAILS
+
+(ZE) jcfix's zero-pass-empty: /(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/, the set empty only through $a
+   11100 subjects; C1 = (h: <$a, k: 3), C2 = ((h, k): < ($a, 0)); C1 AR ENGINE-RUN
+   C1 AR record vs (h: <$a) & (k: 3)  [record = &]                    differ     0 of  11100
+   C2 AR joint vs its hand expansion into records                     differ     0 of  11100
+   a = 0 (both spellings EMPTY): C1 vs C2, unmarked                   differ     0 of   1110
+   a = 0: C1 vs C2, h? read F1 (some value would do)                  differ     0 of   1110
+   a = 0: C1 vs C2, h? read F2 (satisfied outright; joint keeps F1)   differ     1 of   1110   smallest '0-3' (C1 HOLDS, C2 FAILS)
+   C1: h? F1 vs F2                                                    differ     1 of  11100   smallest '0-3' (F1 FAILS, F2 HOLDS)
+   0-3   C1 AR FAILS  C2 AR FAILS  C1 h? F1 FAILS  C2 h? F1 FAILS  C1 h? F2 HOLDS
+   3-3   C1 AR FAILS  C2 AR FAILS  C1 h? F1 HOLDS  C2 h? F1 HOLDS  C1 h? F2 HOLDS
+   0-5   C1 AR FAILS  C2 AR FAILS  C1 h? F1 FAILS  C2 h? F1 FAILS  C1 h? F2 FAILS
+   one label: (h?: <0) on the empty list of /(?:(?<h>\d),)*/: F1 FAILS, F2 HOLDS (the same corner, k = 1)
+
+(ZD) jcfold2's defaults
+   (ZD b) P2 & (h: <5, k: 3..7): '5' (never reached) FAILS, '5-' (zero passes) FAILS  [jcfold2: FAILS, HOLDS]
+   (ZD b) P2 & (h = 9: <5, k: 3..7): '5' (never reached) FAILS, '5-' (zero passes) FAILS  [jcfold2: FAILS, HOLDS]
+   (ZD b) P2 & (h = 2: <5, k: 3..7): '5' (never reached) HOLDS, '5-' (zero passes) HOLDS  [jcfold2: HOLDS, HOLDS]
+   (ZD c) 91 lists, /(?:(?<h>\d)(?::(?<m>\d))?,)*/ & ((h, m = 0): >= (5, 3)): the empty list AR FAILS, (h?, m = 0) HOLDS
+   (ZD c) AR vs today                                                 differ     1 of     91   smallest '' (today HOLDS, AR FAILS)
+   (ZD c) AR ((h?, m = 0): ..) vs today                               differ     0 of     91
+
+(OP) jcfix's optional-in-a-pass: /(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/ & (h: <10, m: <30)
+   259 lists RUN; AR and all A2v ENGINE-RUN
+   AR record vs today                                                 differ     1 of    259   smallest '' (today HOLDS, AR FAILS)
+   AR record vs & (each label per pass of its loop)  [record = &]     differ     0 of    259
+   AR record vs & (m's values pooled over the match)                  differ     8 of    259   smallest '3,3:15,' (record FAILS, &pool HOLDS)
+   today's answer kept by (h?, m?)?                                   differ    11 of    259   smallest '3,' (today FAILS, (h?, m?) HOLDS)
+   today's answer kept by (h?, m = 0)?                                differ    11 of    259   smallest '3,' (today FAILS, (h?, m = 0) HOLDS)
+   today's answer kept by (h, m = 0)?                                 differ    12 of    259   smallest '' (today HOLDS, (h, m = 0) FAILS)
+   today's answer kept by all A2v?                                    differ     0 of    259
+   today's answer kept by all A2z?                                    differ     0 of    259
+   today's answer kept by all A2m?                                    differ    11 of    259   smallest '3,' (today FAILS, all A2m HOLDS)
+
+(UP) jcfix's unreached pairing: /(?:(?<h>\d)(?:-(?:(?<k>\d),)*)?;)*/ & (h: <5, k: <5)
+   241 subjects RUN; AR and k? ENGINE-RUN
+   AR vs today                                                        differ    15 of    241   smallest '' (today HOLDS, AR FAILS)
+   AR record vs (h: <5) & (k: <5)  [record = &]                       differ     0 of    241
+   AR (h: <5, k?: <5) vs (h: <5) & (k?: <5)                           differ     0 of    241
+   '3-2,;9;' AR FAILS  k? FAILS  today FAILS
+   '3-2,;4;' AR FAILS  k? HOLDS  today FAILS
+   '3-;4;'   AR FAILS  k? HOLDS  today FAILS
+   '3;'      AR FAILS  k? HOLDS  today FAILS
+   ''        AR FAILS  k? FAILS  today HOLDS
+
+(D1) unsetdef's single-label defaults on t2 (set-once m) and default.unused
+   t2 & (m = 0 : <30): same answers as no default on 11000 of 11110
+   t2 & (m = 45: <30): same answers as no default on 11110 of 11110
+   t2 & (m = 00: <30): same answers as no default on 11110 of 11110
+   OLD-OUT control: unsetdef printed [11000, 11110, 11110]; AR [11000, 11110, 11110]
+   default.unused (a) on a LOOPED label (absimpact's (LI) list): `(n = 0: <5)` vs `(n: <5)` differ 1 of 1111 under AR (used: the empty list); `(n = 9: <5)` differ 0 (unused: clause (b))
+
+(DL) unsetdef's looped list: /(?:(?<h>\d{1,2})(?::(?<m>\d\d))?,)*/ & ((h, m = 0): padded(between((9, 30), (11, 0))))
+   585 lists; the empty list: AR FAILS, today HOLDS, ((h?, m = 0): R) HOLDS; '10,9:15,' AR FAILS
+   AR vs today                                                        differ     1 of    585   smallest '' (today HOLDS, AR FAILS)
+   AR ((h?, m = 0): R) vs today                                       differ     0 of    585
+
+(DD) unsetdef's date without a day, now with the mark: ym := /(?<y>\d{4})-(?<mo>\d\d)(?:-(?<d>\d\d))?/ & ((y, mo, d?): padded(between((2024, 2, 15), (2024, 4, 1))))
+   months admitted with no day: 02, 03, 04 (unsetdef's 'does not matter' answer: 02, 03, 04; no default day gives it)
+
+(L36) `all` beside the plain condition, over lane absent's 28 spelling rows (11 groups), `(n: <5)`, n absent
+   (n: <5)                      groups of equal spellings that SPLIT: 0 of 11
+   all((n: <5)) A2v (no pass)   groups of equal spellings that SPLIT: 5 of 11
+   all((n: <5)) A2z (zero only) groups of equal spellings that SPLIT: 5 of 11
+   all((n: <5)) A2m (any absence) groups of equal spellings that SPLIT: 0 of 11
+   (LI) (n: <5) vs all((n: <5)) [A2 any reading]                      differ     1 of   1111   smallest '' (plain FAILS, all HOLDS)
+   (LI) all((n: <5)) vs (n?: <5)                                      differ     0 of   1111
+   (LI) all((n: <0)) vs (n?: <0)  [the empty-set corner]              differ     1 of   1111   smallest '' (all HOLDS, n? FAILS)
+
+TOTAL cases 69441 differ 0 engine-disagreements 0 probes 88275

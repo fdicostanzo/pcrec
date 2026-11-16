@@ -2279,7 +2279,7 @@ cloudgate-lint:
 # chainrun heavy stage; PCREC_BOXLOCK=0 opts out).
 test-axes: all
 	bash tests/axes/giveup1_key_check.sh
-	bash scripts/boxlock run --label test-axes -- bash -c 'bash tests/axes/run_axes.sh && PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh'
+	bash scripts/boxlock run --label test-axes -- bash -c 'bash tests/axes/run_axes.sh && PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh && bash tests/memfn/run_d3floor.sh'
 
 # [ART-SIZE] THE K-SWEEP IDENTITY GATE. `--unroll=K` is a VALUE axis, not a
 # `PCREC_(NO|FORCE)_*` bit, so `run_axes.sh` — which derives its list from
@@ -2289,6 +2289,11 @@ test-axes: all
 # row is its named trigger and this target is the gate meanwhile.
 test-ksweep: all
 	bash scripts/boxlock run --label test-ksweep -- bash tests/axes/run_ksweep.sh
+
+# [MEMFN] R-44: THE D3 PCREC-ARTIFACT FLOOR (tests/memfn/run_d3floor.sh, d3_floor.tsv). Opt-in like test-axes, whose
+# recipe also runs it (the battery's axes stage): MEASURED about 120 s at -j4, over a `make test` section's 60 s.
+test-memfn-d3floor: all
+	bash scripts/boxlock run --label test-memfn-d3floor -- bash tests/memfn/run_d3floor.sh
 
 # The sabotage detection matrix (MECH-1): applies every encoded sabotage to a
 # pristine `git archive HEAD` copy, builds it there, runs the relevant suites
@@ -2333,7 +2338,7 @@ clean:
 	rm -rf build $(UBSAN_DIR) $(ASAN_DIR)
 
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
-        test-ksweep \
+        test-ksweep test-memfn-d3floor \
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
         test-counterk test-mrl test-prefilter test-altcls test-island test-assertions \
         test-known-fail test-thread test-atomic test-atomic-identity \

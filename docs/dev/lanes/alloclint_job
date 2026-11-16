@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# 300-main-alloclint: the full suite's two LOCAL-only stages (alloc, lint) on main at a FROZEN commit.
+# Same machinery as scripts/fullsuite_job.sh (detached worktree at `git rev-parse main`, scripts/battery.sh
+# there, wait for its `== BATTERY DONE` trailer) with BATTERY_STAGES="alloc lint". Not a full-suite run:
+# logdir build/alloclint/<date>_<sha>/ (nothing reading build/full_suite/ sees it); never touches
+# docs/dev/full_suite_ledger.md. The worktree worktrees/alloclint-run-<date>_<sha> is left for scripts/wtprune.
+# Verdict: the LAST line is `alloclint: DONE rc=N battery_rc=M` (preceded by `alloclint: stages=K green of 2`, the counted line) (N=0 only if both stages rc=0 and the
+# trailer says BATTERY DONE rc=0); the job exits with N. Log: <logdir>/trailer.log, alloc.log, lint.log, summary.txt.
+set -u
+MAIN=/home/pcrec/projects/pcrec
+. "$MAIN/scripts/tmpdir.sh"
+STAGES="alloc lint"
+case "${1:-}" in
+    --dry-run)
+        sha=$(git -C "$MAIN" rev-parse --short=9 main) || { echo "cannot resolve main" >&2; exit 1; }
+        [ -x "$MAIN/scripts/battery.sh" ] || { echo "no scripts/battery.sh" >&2; exit 1; }
+        echo "would run: freeze main at $sha; git worktree add --detach $MAIN/worktrees/alloclint-run-<date>_<sha>; BATTERY_STAGES=\"$STAGES\" scripts/battery.sh $MAIN/build/alloclint/<date>_<sha> there"
+        echo "stages: $STAGES (not a full-suite run; no ledger write)"
+        echo "boxqueue: cap 1800"
+        echo "boxqueue: est 300"
+        echo "boxqueue: patience none"
+        echo "boxqueue: expect stages=2 last=^alloclint: stages="
+        echo "boxqueue: witness stages=alloclint: stages=2 green of 2"
+        exit 0 ;;
+    --ready)
+        st=$(bash "$MAIN/scripts/boxlock" status 2>&1 | head -1)
+        case $st in free*) ;; *) echo "box lock not free: $st"; exit 75 ;; esac
+        r=$(ls -A "$(bash "${BOXQUEUE:-$MAIN/scripts/boxqueue}" path)/running" 2>/dev/null | head -1)
+        [ -z "$r" ] || { echo "a queue job is running: $r"; exit 75; }
+        exit 0 ;;
+    "") ;;
+    *) echo "alloclint: unknown argument '$1'" >&2; exit 64 ;;
+esac
+unset BATTERY_SIMULATE
+full=$(git -C "$MAIN" rev-parse main) || exit 1
+sha=${full:0:9}
+tag="$(date +%Y%m%d)_$sha"
+LOGDIR=$MAIN/build/alloclint/$tag
+TREE=$MAIN/worktrees/alloclint-run-$tag
+mkdir -p "$LOGDIR" || exit 1
+git -C "$MAIN" worktree add --detach "$TREE" "$full" > "$LOGDIR/worktree.log" 2>&1 || { echo "alloclint: DONE rc=1 (worktree add failed)"; exit 1; }
+echo "== alloclint $tag frozen at $full tree $TREE" > "$LOGDIR/frozen.txt"
+echo "== logdir $LOGDIR"
+export BATTERY_STAGES="$STAGES"
+bash "$TREE/scripts/battery.sh" "$LOGDIR" || { echo "alloclint: DONE rc=1 (battery.sh failed to start)"; exit 1; }
+tr=$LOGDIR/trailer.log
+while ! command grep -q '^== BATTERY DONE rc=' "$tr" 2>/dev/null; do
+    sleep 10
+    if [ -s "$LOGDIR/battery.pid" ] && ! kill -0 "$(cat "$LOGDIR/battery.pid")" 2>/dev/null &&
+       ! command grep -q '^== BATTERY DONE rc=' "$tr" 2>/dev/null; then
+        echo "battery died without a DONE trailer" >&2; break
+    fi
+done
+n=0; line="$(date +%F) $sha"
+for s in $STAGES; do
+    rc=$(sed -n "s/^== stage $s rc=\([0-9]*\) END.*/\1/p" "$tr" | tail -1)
+    case $rc in 0) v=green; n=$((n+1)) ;; "") v=MISSING ;; *) v="RED(rc=$rc)" ;; esac
+    line="$line $s=$v"
+done
+done_rc=$(sed -n 's/^== BATTERY DONE rc=\([0-9]*\).*/\1/p' "$tr" | tail -1)
+echo "$line log=${LOGDIR#$MAIN/}" > "$LOGDIR/summary.txt"
+cat "$LOGDIR/summary.txt"
+if [ "$n" = 2 ] && [ "${done_rc:-1}" = 0 ]; then rc=0; else rc=1; fi
+echo "alloclint: stages=$n green of 2"
+echo "alloclint: DONE rc=$rc battery_rc=${done_rc:-none}"
+exit $rc

@@ -27853,3 +27853,167 @@ Next
   exposed-options pointer `(?i=${case})`; **tuple-arg-order** still open with him. Frank lifted the evening hold for
   this night only; the kit keeps 01:00 for its timing run. Session closed at /close; wake.md rewritten; the slug rule
   added to the manager skill.
+
+## 2026-11-15/16 (session 134, night; box clock 23:15-00:50; evening hold lifted by the owner for this night; kit timing run from 01:00)
+
+- [COVER-CAP] STAGE 2 UNIT A BUILT: lane covs2a (opus) built items A1-A7 of cover_cap.md §11.1 on lane/covs2a
+  (1d6b0502d): the width limit row (registry 81 -> 82), `--window-search-width=N` / `pcrec_options.window_search_width`
+  with spec hunks (limits.md 3.12, tuning.md 2.56), `MkEnd` as a pointer, the `width-limit` why, the kitproof loader
+  (`W`, `@D` forms), S3223 re-aimed + S3234. Route identity: 7,071 corpus rows, 0 artifact movers (10 listing rows =
+  the rename). Manager ruling: the option is NOT stamped. Code critic round r18 (4 opus lenses): no answer or speed
+  findings, 17 small ones, all ruled; fix lane covs2afix (sonnet) applied them on lane/covs2afix (7983d4798):
+  width field moved to the END of pcrec_options (lib append rule; vm_entry_shape's earlier breach noted for the
+  interface push), CLI effect + refusal tests, loader fails loud, review filed on that branch. Cloud: covs2a test
+  GREEN; covs2a recidentity/axes/mech and covs2afix test/recidentity/mech OWED (verdicts via monread). Deferred to
+  the combined branch with the kit: CHECKS-1, CONFORM-8, EMITTED-1, and a `W` row at n >= 33 reading `cover`.
+  The branch lands only JOINTLY with the kit's (one abi event).
+- MAIN'S CLOUD MECH SHARD TABLE was missing S3170 and S3198 (cloud_mech_check red on main; found by covs2a): regenerated
+  from the committed measurements, merged and pushed. Unconfirmed: nothing in the Makefile/CI seems to call that check.
+- STAGE 1 TAILS (lane s1tail): dated notes on [DD-11.5] (+ a lane re-scope proposal, unruled) and [EARNED-SKIP];
+  covs1's sweep job trailer now states the judged verdict (not re-run); 4.5 GB scratch freed. 10 worktrees and 11
+  branches pruned.
+- PREDICATES (design only), revs 17 -> 19 merged and pushed (31a30f32c), review r17 filed. Rev 17 decomposed the
+  tuple compare (projection + array compare); round r17 found answer-level holes (strict forms built by negation
+  accept unset/non-digit fields); rev 18 fixed them; the owner ruled the other-side SIGIL (`^h`), macro-arguments NO
+  ("an array of something is that something"), looped-compare WARN; rev 19 wrote the field reference. Its confirm
+  round (crit-predspec19) found the direction's contradictions (a third value kind against a ruling, bindings no
+  longer their expansion, strict looped compares wrong in 14 of 114 cases); draft review still owed by the coordinator.
+- OWNER DIRECTION 00:40: the field-reference direction is PAUSED (not reversed): "a lot of special syntax and values to
+  handle an obscure case ... more inline with existing concepts"; his idea: a condition over several labels at once,
+  `(h, m): ...`. GO for a design exploration (lane jointexp, opus): docs/design/joint_condition.md, a note, not a
+  draft revision. He reviews it 2026-11-16. Every ruling of the night is at the tail of COND-FAMILY.md with his words.
+- LESSONS. (1) Two of my derived consequences were wrong again and the lanes caught them (the "current rules stand"
+  claim; notes credited to the owner): the "consequences are mine, checked by the next revision" rule earned its keep.
+  (2) Critic coordinators ENDED before their critics finished, twice (predspec17, predspec19): critics then relay to
+  the manager; a SendMessage resumes the coordinator. (3) A leftover `monread --wait` from the previous session
+  consumed a verdict line: check for one at wake. (4) `scripts/lanewatch --follow` takes ONE lane name.
+
+## 2026-11-16 (session 134, second half, 09:30-12:00 box clock; manager fable, lanes opus/sonnet) — the joint condition RULED in one sitting; full suite in the cloud; loadshame
+
+- PREDICATES (design only). Frank reviewed the joint-condition note and answered EVERY question, in conversation,
+  one at a time (his words: 24 entries dated 2026-11-16 at the tail of docs/design/plan_row_bodies/COND-FAMILY.md).
+  RULED: a tuple is a value, usable wherever a value is; `(h, m):` with the colon holds scoped references to the
+  intersected pattern's labels; ONE set kind with an ARITY; dictionary order on a tuple atom is built in and
+  first/rest with recursion is PARKED ("keep it in the wings"); an unset label FAILS the condition unless the author
+  writes a default, spelled with the macro-head form `(h, m = 0): R`, one string only (a several-string default is an
+  error for now; `some(...)` recorded), a never-used default a warning; loops pair per pass, sibling loops an error,
+  the looped warning moved onto a hand-written `|` of conditions; both `>= (9, 30)` and `(>= 9, >= 30)` stay; a
+  modifier around a tuple set acts on every part; left of the colon = labels, the value side = bindings (`$` reads a
+  label), a default's value is on the value side; THE RECORD IS THE JOINT CONDITION'S PRODUCT CASE ("precisely the
+  sort of simplifying semantics I'm looking for"). New file docs/design/predicates_future.md (parked ideas with
+  triggers) at his request.
+- LANES (all merged, pushed up to 56c315567; the last merge 38f20e4e2 is local at this entry, pushed with it):
+  tupleval + tupleval2 (opus; §4A the tuple as a value, parts both ways, first/rest worked through; 42,079 cases 0
+  differ), unsetdef (opus; §4B the default; 233,720 cases 0 differ), jcfold (opus; the note at the RULED state, the
+  record derived rule by rule in §4D, §9 = 44 rows of what rev 20 must change; 2,019,088 new cases 0 differ; the three
+  claims the first lane left untested are now tested). jcfold found THREE CONTRADICTIONS it did not resolve (owner):
+  zero-pass-record (per-pass pairing + record-is-product vs the draft's "(a: S, b: T) = (a: S) & (b: T)" when the
+  deeper loop runs zero passes: 5 of 1,110 differ), library-not-syntax (CF:644 "tuple conditions: a library macro, no
+  syntax" was never withdrawn by name), retire-paused (the sigil, the lex_ names, argument order and the first-library
+  slot are RULED but only PAUSED). Plus label-twice and pairing-loop (wording). NO critic round has yet read any of
+  it: that is next, before rev 20.
+- ADMIN (lane admin1116, sonnet): review r19 filed (docs/dev/reviews/2026-11-16-r19-predspec19.md; 12 findings moot
+  while paused, CENSUS-5/SIMULATE-1/CENSUS-4/CENSUS-8 carried to rev 20, fix-induced lens NOT COVERED; the "14 of 114"
+  probe exists only in the unverified relayed text, not ruled); the critic process change (pre-created findings files,
+  CRITIC COMPLETE marker) applied; [DD-11.5] re-scoped by my ruling to its part (a), part (b) filed as
+  [CTX-FACTS-NEG]; cloud_mech_check.sh is reached only through the opt-in `make cloud-check` (gate census addendum).
+  12 worktrees and 9 branches pruned.
+- FULL SUITE: I first read the pcrec-test skill's `full` mode (the 16 h local battery) and nearly asked Frank for a
+  box window; the ledger showed the suite now runs in the CLOUD (`scripts/cloudrun --suite`), with alloc + lint the
+  only local stages (already green on db7aab3de, no code since). Dispatched on e43603862: test, ubsan, recidentity,
+  asan GREEN by 11:48; axes and mech pending at this entry.
+- KIT. Timing triage: last night's refusal sat on a SCAN row that never decides and scatters by alignment, not load;
+  kit ruling (agreed, with my two conditions: deciding cells keep their own noise gate and the row stays visible; the
+  rule text and a replay on last night's records are committed BEFORE tonight's jobs): a refused non-deciding row
+  prints "scan unpriced" and never vetoes. Window 01:00 on 11-17 confirmed (Frank: "timing-tonight: your decision").
+  R-44 (the D3 floor gate) DELIVERED on lane/memfn-d3wire ce6bfe8d5, tests only; cloud test + axes dispatched on the
+  tip, merge on green. R-45 reply slipped to the evening (its own round read NOT READY). Agreed order for stage 2's
+  measurements: the kit's form cards first, head length frozen by a pre-committed rule, then the width cells.
+- NEW TOOL scripts/loadshame (Frank's request): samples /proc, prints load1 against the quiet gate and charges every
+  busy process to its APPLICATION, naming the root process to close (climb parents inside the same control group); a
+  detached root is marked. No self-test, no critic round (read-only, run against the live box only).
+- LESSONS. (1) Three follow-up rulings reached lane tupleval after it had finished (ten minutes after launch): in a
+  live design conversation the lane is briefed on a moving target; a FRESH follow-up lane was right, and the rulings
+  file was read only because the second lane re-read it before each commit. (2) Reading a skill's mode table is not
+  reading the ledger: check how the LAST run of a thing was done before asking the owner for a window. (3) Three more
+  consequences I had labelled mine were INCOMPLETE (the slice needs its unset guard; "no warning" needs a by-design
+  look-alike row; bare `<=dim` becomes an error, not a synonym) and my own warning lean on two-orders did not survive
+  his question "can you think of a use": ask for the uses before leaning on a diagnostic.
+
+## 2026-11-16 (session 135, 12:00-13:50 box clock; manager fable, lanes opus/sonnet) — full suite green, five landings, R-45 go, joint condition through its critic round
+
+- FULL SUITE GREEN on main e43603862, the first since 2026-11-05: cloud test, ubsan, asan, recidentity (morning),
+  axes 12:24, mech 13:44; alloc + lint local on db7aab3de (no src byte between). Lane ledg1116 (sonnet) records it and
+  resets D177's counters (in flight at this entry).
+- LANDED and PUSHED (lane land1116, sonnet; origin/main 02bbd527f; strict, plan-lint, doc-lint, size check, sabotage
+  anchors green; no src/lib/cli/memfn/src byte): lane/memfn-d3wire ce6bfe8d5 (kit R-44, merge c38f4362b; cloud test +
+  axes GREEN on its tip), lane/memfn-scanrow f6274c11b (merge c9ff8b53d), lane/r45chk (r45read + r45chk reports),
+  lane/revjc (review r26 + four critic-skill process changes), lane/jcfix (joint_condition.md after jcfold2 + jcfix).
+  The landing STOPPED once on a conflict I had not predicted (docs/dev/reviews/CLAUDE.md, two branches appending at
+  one spot); ruled keep-every-line by the rulings file + a message. CI on ed9677782 read GREEN.
+- KIT R-45 (window spans to 4095, [COVER-CAP] stage 2). Reply rev 4 arrived; my five interface answers YES; Frank:
+  "agree with your leans on all three" (forms now; no short-span exception; no near-miss fix in the first build), then
+  "kit-build-go: go". I applied the go in two steps: plan B (carrier + working state) after check lane r45read (11
+  contradictions C1-C11 between the reply and cover_cap §11, 14 note edits, 27 work items), the FORMS after the kit's
+  rev 6 @ 69acf5376 and check lane r45chk (9 of 16 items fixed kit-side; the rest are cover_cap's). All in
+  memfn/docs/requests.md under R-45. Kit facts since: the raise to 4095 is ONE HELD kit commit, applied on the COMBINED
+  branch once covs2afix's A1 + A3 are there; witness row (b) waits for my B5 text; the kit branch respells pcrec's
+  callers; the head rule reads all six regimes (~440 more arm-cells, two nights likely) and a twice-void cell forces
+  h* = 64. MINE before the code round: the MFWSTMT trace record + predictor (the kit's mover predicate is per
+  alternative across span boundaries), 16 cover_cap edits, a review of night step (4b). Bench asked (inbox I-178,
+  pcrec-bench 0746c679) whether its NOT-WARM / short-subject methods run on kit-timed cells.
+- PREDICATES (design only). Frank ruled, all in COND-FAMILY.md with his words: zero-pass-record (the outside label is
+  tested when the loop is empty; wording mine), library-not-syntax (the 11-14 ruling withdrawn by name),
+  retire-paused (split; the sigil paused INDEFINITELY, "requires real value other than 'override a users own *'"),
+  label-twice (an error; spelling reserved), pairing-loop part 1 (the wording). predicates_future.md items 5-9 added.
+  Lane jcfold2 folded the first three and tested my zero-pass wording (14,937 cases); CRITIC ROUND r26 jointcond (5
+  critics, 37 findings, all ruled; coordinator pattern, ~35 min) found the note sound but incomplete: my wording had
+  been quoted with an inserted clause (ZERO-EMPTY: no rule meets set-arity + record-is-product + the & equality on a
+  set empty through a match value), GROUP-ZERO, UNREACHED-PAIRING, DICT-DOMAIN (900 of 11,000), and §9 missing ~45
+  draft lines. Lane jcfix applied everything (186,727 cases, 0 differ) and drafted two owner questions.
+- THE OPEN DESIGN QUESTION (absent labels). Frank: "'optional pass' is still a loop. Even /x?/ is a loop from 0 to
+  1"; "Only an alternation would be a complete no set, no?"; "could * be defined as /x+|/". Since x? = (?:x|) and
+  x* = (?:x+|) = (?:x+)?, EVERY line between "unset fails" and "zero passes holds" gives two spellings of one pattern
+  different answers, the ruled §4.2 line included (its own witnesses). His direction: "absents-hold: do work it out
+  but consider also the option that missing means failing. Or options where the user can control the
+  interpretation". Lane absent (opus) works T / H / F / U side by side (in flight). Rev 20 waits on his choice.
+- LESSONS. (1) I leaned twice on a claim I had not checked: "today's line keeps x? and (x|) together, so it is free of
+  the spelling defect" (it splits x* from (x+)?), and "the pending fact decides it" (it did not: per-pass unset keeps
+  record = AND). State what a lean RESTS on, and retract the lean with the fact. (2) A lane that quotes the manager's
+  wording can alter it; the ruling lens now diffs such quotes verbatim (skill change). (3) Predict index-append
+  conflicts for EVERY index file a landing's branches touch, not only the lanes history index. (4) A check lane before
+  a build go was worth it twice (r45read, r45chk): the peer's own three critic rounds had not compared its design
+  with ours.
+
+## 2026-11-16 (session 135, second half, 13:50-15:00 box clock) — the absent-label rule LOCKED and folded; ledger reset; close
+
+- ABSENT LABELS, the session's design result. From Frank's remarks ("'optional pass' is still a loop", "could * be
+  defined as /x+|/") the options were worked side by side by lane absent (opus; 72,196 engine cases): today's line
+  splits 5 of 11 groups of EQUAL spellings (and greedy/lazy `(?:(n)*)?x` / `(?:(n)*)??x`); "absent holds" moves 56
+  answers; "absent fails" moves 131 (all empty lists/reaches); "only alternatives fail" splits 9. His inputs on the
+  way: the PRINCIPLE "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence
+  is not part of that set" (so no in-set marker; my "empty satisfies any set" wording was wrongly framed), the
+  optional transform `<100?`, and a two-kinds variant (mark = reached-empty, default = never reached; NOT taken: it
+  splits 8-9 of 11 groups). Lane absimpact (opus; 27,487 cases) censused the impact and found where "holds over
+  none" had been chosen (CF:933, CF:997-1000, 12:45): each comes back with one mark, 0 differ. RULED, "absent-rule:
+  lock": ONE kind of absence; a condition on an absent label FAILS (empty lists included); two author controls ON
+  THE LABEL, the optional mark `m?` (placeholder) and the default `m = v`, never both; a set never contains absence.
+  It reverses "an empty list holds" and my 12:45 zero-pass wording (the answer `9` fails and record = & kept) and
+  settles pairing-loop parts 2-3. Lane absfold (opus; 69,441 cases) folded it into joint_condition.md §4G; merged to
+  local main. Its corners in MY sub-choices are settled as the manager's readings (the last COND-FAMILY entry: `all`
+  over none for every absence alike; the mark always = "some value would fit", closing zero-pass-empty; any text;
+  the mark inside some/count an error; per pass). Critic round crit-absfold launched on the folded note.
+- LEDGER: lane ledg1116 recorded the green cloud full suite on e43603862 and reset D177's counters (major 0, minor
+  1; no suite due). Pushed with the journal at 14:20 (origin/main 02d39611e, CI green).
+- KIT: its plan B code round (r27) reads LAND AFTER FIXES, 0 movers. The held raise has two halves: the kit's
+  (run_part_terms unbounded past 32, ASan overflow at L=100; an OOM success in wf_stated_offsets found by cloud
+  shards of span4k-test) and MINE in the same landing (READ-2: no assert enforces other-sites-at-32 once the kit's
+  bound rises; CHECK-1 its witness row; READ-3 a plan row for the code-bytes cap at 4095).
+- TOOLING FINDINGS, not fixed: `scripts/cloudrun --prune` runs the pre-push check per deleted branch and times out
+  (~140 cloud branches on origin); I chained a second `monread main --wait` with its output to /dev/null into
+  another command and had to safekill it (it could have swallowed a verdict line): arm the waiter ALONE, always.
+- LESSONS. (1) Four owner rulings in one day were reversed by a fifth because each was taken at the corner where
+  it was asked; the general question (what does a condition do with NO value) should have been asked first. When
+  three questions in a row are corners of one rule, ask for the rule. (2) A lean stated with "it rests on X" let
+  Frank and me drop it cleanly when X fell, twice. (3) An options lane that runs every candidate over the same
+  populations (the spelling test above all) turned a two-hour argument into one table; do that before leaning.

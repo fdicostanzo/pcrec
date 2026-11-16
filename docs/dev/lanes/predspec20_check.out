@@ -1,0 +1,72 @@
+PART A: the earlier lanes' scripts re-run, stdout vs the committed .out (byte for byte)
+   jointexp    rc 0  SAME  sha256 b52e48690af8524d  (1252 bytes)
+   tupleval    rc 0  SAME  sha256 8cfaf9f04933c003  (1220 bytes)
+   tupleval2   rc 0  SAME  sha256 3cb66e479c1fe5cb  (1741 bytes)
+   unsetdef    rc 0  SAME  sha256 ba60f64d770253cb  (3224 bytes)
+   jcfold      rc 0  SAME  sha256 02f7f1a31ad7448f  (1356 bytes)
+   jcfold2     rc 0  SAME  sha256 0fd81e6f95506f3a  (3051 bytes)
+   jcfix       rc 0  SAME  sha256 590f8dd54f674beb  (8921 bytes)
+   absent      rc 0  SAME  sha256 631986df39aa3595  (26300 bytes)
+   absimpact   rc 0  SAME  sha256 7268edbff64de9c9  (17567 bytes)
+   absfold     rc 0  SAME  sha256 79f1a49d6ab839a0  (16988 bytes)
+   absfix      rc 0  SAME  sha256 a2e154a26761f2dc  (18706 bytes)
+   predspec19  rc 0  SAME  sha256 84f4c43c9f34b6d8  (13862 bytes)
+   12 of 12 SAME
+libpcre2-8 10.46 2025-08-27 | Python 3.14.4
+
+(RA) reading (a): DOM(h) not computable exactly. P = /(?<h>(?<a>a+)b\k<a>)?x/ (a backreference), h absent on `x`
+   VALUES run in PCRE2 over 36 candidates a^i b a^j (i, j <= 6): ['aba', 'aabaa', 'aaabaaa', 'aaaabaaaa', 'aaaaabaaaaa', 'aaaaaabaaaaaa']
+   (h?: /a+ba+/)      under True  over True  exact True  -> HOLDS        
+   (h?: "aaba")       under False over True  exact False -> COMPILE ERROR
+   (h?: "aabaa")      under True  over True  exact True  -> HOLDS        
+   (h?: /a+b/)        under False over False exact False -> FAILS        
+   (h?: /a{3}ba*/)    under True  over True  exact True  -> HOLDS        
+   (h?: !/a+ba+/)     under False over False exact False -> FAILS        
+   answers that differ from the exact DOM without a diagnostic: 0 (must be 0; > 0 under sabotage)
+   control, P2 = /(?<h>a+ba+)?x/ (regular): DOM computable; under (run) = 36 values, over = a+ba+; every SETS row answers without an error: True
+
+(RB) reading (b): the CONTEXT of "some match". P = /(?|(?<k>a)(?:;(?<h>\d))*|(?<k>b)(?:;(?<h>[5-9]))*)/ (branch reset; PCRE2 only)
+   142 subjects match; DOM(h) over the pattern ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']; given k = a ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']; given k = b ['5', '6', '7', '8', '9']
+   (h?: <5): 'some match of the pattern' vs 'some match agreeing with k' differ on 1 of 142: ['b']
+   on `b`: pattern reading HOLDS (h = 0 is a value of SOME match, never of one with k = b); context reading FAILS
+   ENGINE-RUN (pattern reading, regex from the set) over 142 subjects
+
+(RC) reading (c): a DEFAULTED label inside `all`. P = /(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/, 259 lists
+   ''       all((h: <10, m = 0: <30)) HOLDS   (h: <10, m = 0: <30) FAILS
+   '3,'     all((h: <10, m = 0: <30)) HOLDS   (h: <10, m = 0: <30) HOLDS
+   '3:15,'  all((h: <10, m = 0: <30)) HOLDS   (h: <10, m = 0: <30) HOLDS
+   '3:45,'  all((h: <10, m = 0: <30)) FAILS   (h: <10, m = 0: <30) FAILS
+   '12,'    all((h: <10, m = 0: <30)) FAILS   (h: <10, m = 0: <30) FAILS
+   all((h, m = 0)) vs the plain (h, m = 0) record                     differ     1 of    259   smallest '' (all HOLDS, plain FAILS)
+   ENGINE-RUN: all((h: <10, m = 0: <30)) over the 259 (regex from the set)
+   the other reading (all marks m too: `m? = 0`) is the not-both compile error: REFUSED by the engine, as written
+
+(RD) reading (d): zero-pass-empty under F1. /(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*/ on `0-3`
+   (h?: <$a, k: 3) FAILS   ((h?, k): < ($a, 0)) FAILS   (F1: no value of h would do; both FAIL)
+
+(E1) proposal (e1): a computed label reading an absent label. P = /(?<mname>Jan|Feb|Mar)?-(?<d>\d)/, mnum := $mname.index
+   40 subjects RUN; DOM(mnum) = the values mnum takes in some match: ['1', '2', '3'] (the map's image of DOM(mname))
+   (mnum: <3)       on `-5` FAILS; holds on 20 of 40
+   (mnum?: <3)      on `-5` HOLDS; holds on 30 of 40
+   (mnum = 9: <3)   on `-5` FAILS; holds on 20 of 40
+   (mnum = 1: <3)   on `-5` HOLDS; holds on 30 of 40
+   (mnum?: >5)      on `-5` FAILS; holds on  0 of 40
+   the compile-error alternative would refuse all five programs (mname can be absent); the proposal answers them by ruled point (1) and the general form, with no new rule
+
+(E2) proposal (e2): `$a` on an absent a. P = /(?<a>\d)?-(?<b>\d)/
+   (b: >$a)       holds on 45 of 110; on the 10 subjects with a absent: 0 hold (D = {}: FAILS)
+   (b: /${$a}/)   holds on 10 of 110; on the 10 subjects with a absent: 0 hold (D = {}: FAILS)
+   NOT DECIDED by the general form: whether a default written for a in the same condition, `(a = 0: <10, b: >$a)`, also reaches `$a`. On `-5`: if it reaches, HOLDS; if not, FAILS
+
+(E3) proposal (e3): the mark through a macro. office_c := ((h, m): padded(between((9, 0), (17, 0)))); t2 & all(office_c)
+   t2 & all(office_c) vs t2 & ((h, m?): office)                       differ     0 of  11110
+   h is absent in 0 of 11110 t2 matches: the mark `all` puts on h is never consulted (the merged warning, (F))
+   a per-label mark on a PASSED condition (mark m but not h inside office_c from outside): no spelling in rev 20's language (no label parameter, the field reference paused): OPEN, not decided by the general form
+
+(F) proposal (f): ONE warning, "the candidate set of label x is never consulted" (a mark or a default on a label that is never absent where the condition reads it)
+   t := /(?<h>\d{1,2}):(?<m>\d\d)/          label m absent in    0 of 11000 matches -> `m?` / `m = v`: WARN (never consulted)
+   t2 (m optional)                          label m absent in  110 of 11110 matches -> `m?` / `m = v`: no warning
+   list (?:(?<h>\d+)(?::(?<m>\d\d))?,)*     label m absent in  175 of   259 matches -> `m?` / `m = v`: no warning
+   list, h                                  label h absent in    1 of   259 matches -> `h?` / `h = v`: no warning
+
+TOTAL PART B: 821 ENGINE-RUN cases, 0 differ; 0 engine disagreements (PCRE2 vs Python `re`); 56564 whole-match probes

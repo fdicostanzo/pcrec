@@ -78,3 +78,18 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 - Coordinator pattern worked with no manager wake-ups; the only round-trip was the single hand-back. Inline verification (16 quote/one-call checks in one command) was right-sized; a verifier agent would have cost more.
 - For a staged change against a named item list, the conformance lens was the most productive (8 findings, 17 compiles) and earns its own lens.
 - A box deadline was easy to meet: zero-mover code rounds at -j2 with prebuilt plants finish probing in about 10 minutes.
+## 2026-11-15 — critic round predspec17 (review r17)
+- A confirm round over a ~600-line two-revision delta ran end to end in ~15 minutes (launch 23:32 box clock, draft about 23:45) with zero coordinator interventions: three opus critics, all returned in the launch turn (6-8 min), files complete, lanecheck DONE. Evidence: `docs/dev/reviews/2026-11-15-r17-predspec17.md` "Round process".
+- The frozen-copy + diffs pack (rev 15/16/17 copies plus both diffs in the round dir) is what made the critics self-contained: no repo reads, no blinding exposure. The text-first simulate and the fix-induced lens converged on the one answer finding (F1) from different directions (rule emulation vs "what did moving the labels to the author change").
+
+## 2026-11-16 — critic round jointcond (review r26)
+- A design-only fold needed no build and no verifier agent: about 35 minutes wall from freeze (13:01 box clock) to draft, five critics in parallel (4 opus, 1 sonnet), all evidence as files, all five finished in 3-12 minutes with complete files (a pre-created findings file plus a `CRITIC COMPLETE` line plus lanecheck). All five Agent results came back in the launch turn as "no report delivered"; the file channel was the only channel, as the skill expects. Inline verification (quote claims re-read at their lines, two script re-runs) sufficed. The pattern fits any "fold N rulings into a client doc" step (the predicates_draft revisions especially), where the change table is the seam to check. Evidence: `docs/dev/reviews/2026-11-16-r26-jointcond.md`, its sibling directory (process.md).
+- The lens table had no row for a design-to-design FOLD; the coordinator borrowed readiness's reader-grep as a sonnet "rev20 completeness" lens: the cheapest lens and the most raw findings (10). It is now the row "change-table completeness".
+- The ruling and owner lenses both re-checked the same ~19 owner quotes (duplicate work, both 0 drift): quote verification is now given to ONE lens.
+- A ruling (label-twice) landed at 13:16:09, the second the critics returned; the per-return re-diff caught it and the draft's FREEZE DRIFT block carried a hand mapping.
+
+## 2026-11-16 — critic round absfold (review r28)
+- A coordinator with a copied, read-only subject + record + evidence (no repo access needed) ran a 5-lens design round in about 18 minutes wall, zero manager turns. The pattern fits any fold-review of a document against a rulings record.
+
+## 2026-11-16 — critic round predspec20 (review r29)
+- A 5-critic + 1-verifier design re-check ran in ~25 min wall with zero coordinator interventions; the coordinator's main value was the freeze-drift hand mapping (two owner rulings landed mid-round and settled or reshaped 6 findings) and the consolidation of 50 findings into 17 groups. The pattern fits any fold re-check where rulings are moving the same afternoon.

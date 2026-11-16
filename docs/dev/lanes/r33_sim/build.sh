@@ -7,7 +7,7 @@ set -eu
 tree=$1; out=$2
 here="$(dirname "$(readlink -f "$0")")"
 mkdir -p "$out"
-make -C "$tree" -j16 BUILD_DIR="$out" CFLAGS="-O2 -g -DMF_TRACE -DPCREC_CAND_TRACE" "$out/libpcrec.a" >"$out/make.log" 2>&1
+make -C "$tree" -j"${BUILD_JOBS:-$(( $(nproc) / 2 > 0 ? $(nproc) / 2 : 1 ))}" BUILD_DIR="$out" CFLAGS="-O2 -g -DMF_TRACE -DPCREC_CAND_TRACE" "$out/libpcrec.a" >"$out/make.log" 2>&1
 gcc -O2 -g -std=gnu11 -I"$tree/lib" -I"$tree/src" -I"$tree/memfn/include" \
     -o "$out/pcrec-r33" "$tree/cli/main.c" "$here/probe.c" "$out/libpcrec.a" \
     -Wl,--wrap=pcrec_mf_define,--wrap=pcrec_mf_emit,--wrap=pcrec_mf_art_begin

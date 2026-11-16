@@ -12,6 +12,8 @@ short brief, reads nothing else, and lets scripts do the waiting.
 
 ## 1. Modes
 
+FIRST (2026-11-16): the full suite's correctness stages run in the CLOUD, `scripts/cloudrun --suite --owner main --ref main` (six kinds, verdicts by `scripts/monread main`), with NO box window; only alloc + lint stay local (the job file docs/dev/lanes/alloclint_job, minutes). Read the tail of docs/dev/full_suite_ledger.md for how the last run was done before asking the owner for a window. The local `full` row below is the fallback.
+
 | mode | job | target | runtime | when |
 |---|---|---|---|---|
 | `full` | `scripts/fullsuite_job.sh` (battery: test strict axes san alloc lint mech recidentity) | main, frozen at queue start | many hours (stage sum ~46,000 s; cap 16 h) | D177's triggers (docs/dev/full_suite_ledger.md), in a box window cleared with Frank |

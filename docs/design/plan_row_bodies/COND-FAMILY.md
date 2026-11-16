@@ -1246,3 +1246,570 @@ about times or versions. This replaces the manager's "parameter as a label name"
 notes, not ruled): whether the projection is a plain macro, a small structural primitive, or already spellable by
 writing the values directly (an array of the labels' values, `[$h, $m]`-like), and at which capability level a
 compare over captured values is decided (per match).
+
+**2026-11-15 RULING — tuple compare argument order (Frank, to session 134, box clock 23:25).** Asked under the slug
+**tuple-arg-order** whether the decomposed compare's three arrays read (subject, low, high), e.g.
+`lex_between2([h, m], [9, 0], [10, 0])`, or (subject, high, low) as his earlier sentence had it, with the manager's
+lean the first; his words: "tuple-arg-order: subject low high". RECORD: the order is subject, low, high. To fold in
+rev 17 (lane predspec17, by its rulings file).
+
+**2026-11-15 OWNER LEAN (not a ruling) — the projection's spelling (Frank, to session 134, box clock 23:35-23:41).** Asked
+**label-section** (should `(h:)`, "the condition on h, its set to come", spell the per-label accessor, e.g.
+`lex_between2([(h:), (m:)], [9, 0], [10, 0])`), he first asked "so (h:) is a new form or a degenerate condition"
+(manager's answer: neither; a new SPELLING of an existing kind, the first section that is not of `&`; the hazard is
+reading it as "h unconstrained"), then offered (illustrative)
+"p = /(?<h>\d{1,2}):(?<m>\d\d)/ & lex_between2([p.h, p.m], [9, 0], [10, 0])  thoughts?", and after the manager's
+reply (paths passed as arguments; one rule change, a parameter on the left of `:`), his words: "i'm not sold on
+\"p =\". i do kind of like your spelling and the fact that h: _has_ to come from the left side". RECORD: a LEAN toward
+the section form `(h:)` (the manager's READING of "your spelling"; the bare `[h, m]` is the other candidate, to
+confirm), and a PROPERTY he values whatever the spelling: the compared field can only be a label of the operand on
+the left of `&`; nothing names another map. The named-map form (`p.h`) is not adopted. Not ruled; rev 18 carries it.
+
+**2026-11-15 RULING + OWNER IDEA — no bare field reference; a mark for the other side of the intersection (Frank, to
+session 134, box clock 23:44).** Told the spelling stayed open between the section `[(h:), (m:)]` and the bare
+`[h, m]`, his words: "definitely not a bare reference. it might shadow a binding and it wouldn't be clear where it
+was coming from. if we are building new syntax, what about a symbol that represents the other side of the
+intersection. ^.h or something like that." RECORD: (1) RULED: a compared field is never written as a bare label name
+(`[h, m]` is out), for two reasons of his: it could shadow a binding, and the reader cannot see where it comes from.
+(2) IDEA (illustrative spelling, his "or something like that"): a MARK that stands for the other side of the `&`,
+with the field read off it by the existing `.` (`^.h`). Candidate beside the section `(h:)`; not ruled. The
+manager's notes for the next revision (not ruled): the mark is the anonymous form of the named-map idea, so it keeps
+`.`'s one meaning and reads as a noun, and it keeps his left-side property (now: "the other side"; `&` is
+symmetric by his earlier ruling, so the other side is defined from either side); it needs the same one rule change
+as the named form (a parameter bound to a field path on the left of `:` in a macro body); to state: which `&` the
+mark binds to when nested or written inside a macro body (lexically, the `&` of the place it is WRITTEN), whether
+the mark may stand alone (the whole other side, against "the operand is never an argument"), and whether `(h: S)`
+is then readable as a condition on `^.h` (fewer, more general primitives).
+
+**2026-11-15 OWNER POINTER — computed labels and the other-side mark (Frank, to session 134, box clock 23:46).** After
+the manager's notes on the mark, his words: "one thing you considered was computed labels". RECORD (the manager's
+READING, to confirm): the mark must be checked against COMPUTED labels (match-dependent bindings such as
+`mnum := $mname.index`, `weekday := weekday_of(...)`), which are bindings by spelling and labels by the glossary.
+The manager's notes (not ruled): a computed label is already "a macro whose operand is the pattern whose labels it
+reads", i.e. a function of the other side, so it can be read off the mark like a group (`^.mnum`); that would give
+bare-versus-`$` for computed labels (the draft's open look-alike row on that pair, and its open item on bare label
+names) one answer consistent with his no-bare-reference ruling, and it gives a compare over a NON-NUMERIC field its
+proper route (compare the computed number: `[^.year, ^.mnum]`). To check in the next revision: whether a computed
+label is a field of the other side's map or stays a binding, and what that does to shadowing.
+
+**2026-11-15 OWNER IDEA — the other-side mark as a scoping sigil (Frank, to session 134, box clock 23:56).** After the
+manager's note that the mark would start as field access only (not standing alone), his words: "if the otherside mark
+can't be used alone, it could just be a scoping sigil like ^h". RECORD: candidate spelling shape (illustrative): a
+SIGIL before a label path meaning "this label, of the other side of the `&`" (`[^h, ^m]`), in place of a mark plus
+`.`. The manager's notes (not ruled): it has the same grammatical shape as `$` (a sigil before a label PATH), which
+gives each label three spellings with one role each: `h:` constrains, `$h` reads the value, `^h` refers to the
+field; no question of the mark standing alone arises, and `.` keeps its one meaning inside the path (`^d.year`).
+Given up: the other side as a thing in its own right. Not ruled; the next revision carries it as the mark's form.
+
+**2026-11-16 RULING — a compare names its fields with the other-side sigil (Frank, to session 134, box clock 00:06).**
+Asked **label-section** (the section `[(h:), (m:)]` or the other-side sigil `[^h, ^m]`; the lane's lean the
+section, the manager's the sigil), his words: "label-section: i think the sigil mark is better. i like a lot about
+the section but its re-using a syntax for a different purpose. the save would be if the section syntax were defined
+in such a way that that worked. but i don't see it." RECORD: RULED: the compared fields are named by a SIGIL before a
+label path meaning "this label, of the other side of the `&`" (placeholder spelling `^h`; the symbol is a later
+syntax step). His reason against the section: it re-uses the condition's syntax for a different purpose; he left one
+door open (a definition of sections under which the form follows), and sees none. THE MANAGER'S CONSEQUENCES (mine,
+to be checked by the next revision, not his words): (1) the one rule change the sigil needs is adopted with it: in a
+macro body a parameter bound to a field reference may stand on the left of `:`; (2) the question **macro-arguments**
+(macros as arguments, indexed and called) is WITHDRAWN as unneeded: the tuple bodies no longer need it, and the
+current rules (an index gives an rx; passed macros only for structural tools) stand; (3) the per-label accessor
+bindings (`h_is(S) := (h: S)`) leave the tuple examples.
+
+**2026-11-16 OWNER DIRECTION — arrays of macros: the general path, no special mechanism (Frank, to session 134, box
+clock 00:08).** On **macro-arguments** (may a library macro take macros as arguments, index an array of them and call
+one), his words: "macro-arguments: the general path is that an array of something is that something. i feel like this
+is creating a bunch of mechanism for very specific use. what otherwise is an array of macros?" RECORD: NO to the
+special mechanism (index an array of macros, then call the entry) built for the tuple compare. The general path
+holds: an array of X is an X (his 2026-11-14 "an array/map IS a labelled alternation"); an array of macros is
+therefore a macro, nothing more. Consistent with the manager's withdrawal of the question after the sigil ruling.
+The manager's notes (not ruled): the SAME test applies to the sigil route's own array, `[^h, ^m]`: by the general
+path an array of field references is a field reference ("h or m"), and picking an entry is the existing structural
+index, which must be shown to be an existing tool and not a new one; the next revision states both.
+
+**2026-11-16 RULING — a compare over looped labels warns (Frank, to session 134, box clock 00:09).** Asked
+**looped-compare** (compared labels inside a loop are checked per label over all iterations, not per tuple:
+`/(?:(?<h>\d{1,2}):(?<m>\d\d),)*/` with "at least 9:00" rejects `10:00,9:30,`; keep, error, or warn; lean: warn,
+naming the in-loop spelling), his words: "looped-compare: warn". RECORD: the meaning stays as the sequence rule gives
+it (per label over every iteration), and the compiler WARNS when a compared field can hold more than one occurrence,
+the warning naming the fix (write the compare inside the loop's item). Not an error.
+
+**2026-11-16 OWNER DIRECTION — PAUSE the field-reference direction; consider a condition over several labels at once
+(Frank, to session 134, box clock 00:31).** His words: "lets think about this. trying to work this out is more important
+than just the between macro for 2+ args. it tests the language on an interesting problem. that said, we are putting a
+lot of special syntax and values to handle an obscure case. for instance, we have sigils, arrays of sigils which are an
+entirely new type, then dynamic labels. all without a clear understanding of how it would help the larger language
+against other problems. i want to pause this direction and consider a different one that is more inline with existing
+concepts. we have conditions but the problem is that they are on individual records. what if we could define a syntax
+that applied multiple labels in conditionals at the same time. like (h,m): blah. can we use that ?" RECORD: (1) the
+direction of the 2026-11-15/16 entries on the projection (the other-side sigil, arrays of field references, a
+handed-in field on the left of `:`, and the open questions reference-index and bound-reference) is PAUSED, not
+reversed; rev 19 of the draft stands as the record of that direction. (2) His criteria, in his words: in line with
+existing concepts; a clear account of how a mechanism helps the larger language against other problems; the tuple
+compare matters as a TEST of the language, not for itself. (3) IDEA to consider (spelling illustrative): a condition
+whose left side names several labels at once, `(h, m): ...`. The manager's first answer (not ruled) is recorded in
+the session's reply: the right side is then a set of TUPLES; a product of sets gives back the 2026-11-14 record
+`(h: S, m: T)`, and the comparison sets read in dictionary order give the tuple compare with no library family.
+
+**2026-11-16 OWNER GO (design exploration only) — the joint condition (Frank, to session 134, box clock 00:35).** Asked
+**joint-condition** (one design exploration, a note not a draft revision, testing a condition over several labels at
+once against his criteria on a spread of problems; then critics; only then a revision), his words: "joint-condition:
+lets explore that idea. it seems cleaner in many ways. there is some serious hand-waving to figure out however".
+RECORD: GO for the exploration (lane jointexp, design only). The hand-waving is the exploration's subject, not
+settled by this entry: what a tuple of values is beside "an array is an alternation"; what a set of tuples is and
+which existing sets extend to it; dictionary order on comparison sets; loops, unset and non-numeric fields; relations
+between fields; the look-alike with the record; what the larger language gains.
+
+**2026-11-16 OWNER RULING + REQUEST — the tuple as a value: OK, to be fleshed out (Frank, to session 134, box clock
+09:42).** Asked **tuple-value** (may a positional `(9, 0)` in value position be a value, beside "a record is never a
+value"), his words: "A pair as a value: I am ok with the tuple as a value. My request is that it's fleshed out and not
+the slice of an idea. How is it related to conditions as we'd defined them(sounds like there was thinking there), is x
+a single tuple (x), how can I access parts or can I, what is the definition, how can I use it generally". RECORD: (1)
+the tuple as a value is ACCEPTED in principle; (2) it is NOT yet a design: he asks for a full account answering, in
+his order: its relation to conditions as defined (the record), whether a plain value `x` is the one-entry tuple
+`(x)`, whether and how its parts are reached, its definition, its general use beyond the compare. (3) The other five
+joint-condition questions (set-arity, unset-component, joint-loops, modifier-lift, record-is-product) are NOT answered
+by this entry. The manager's first answers in the session's reply are the MANAGER'S (not ruled), to be tested by the
+fleshing-out lane (tupleval).
+
+**2026-11-16 OWNER STATEMENT — the colon tells the two brackets apart (Frank, to session 134, box clock 09:47).** His
+words: "In my mind (x, y) is different than (x,y): because the colon. So tuples need a left hand side with colon which
+mean the symbols are scoped references to the intersected labels, and a right hand side which says the are bindings et
+al". RECORD: (1) `(x, y):` (a bracket FOLLOWED by a colon) and `(x, y)` (no colon) are different things, told apart
+by the colon; (2) in the bracket left of the colon the symbols are SCOPED REFERENCES to the labels of the intersected
+operand; (3) on the right-hand side the symbols are bindings (and values: "et al"). THE MANAGER'S READING (not his
+words, to be checked): a name inside the left bracket is never looked up as a binding, a name inside a right-hand
+tuple is never looked up as a label; a bare `(x, y)` with no colon is the tuple VALUE and may stand wherever a value
+may (bound, passed, returned), not only directly right of a colon.
+
+**2026-11-16 OWNER CLARIFICATION + ANSWER — "left/right" was about the binding sign; tuple-anywhere: yes (Frank, to
+session 134, box clock 09:49).** Asked **tuple-anywhere** (may a colon-less tuple be bound, passed and returned like any
+value, or only written directly right of a colon), his words: "I meant left right in the expression sense around =
+You could use them as you say". RECORD: (1) tuple-anywhere: YES, a colon-less tuple is used as a value where values
+are used; (2) the "left hand side" and "right hand side" of his statement above are the two sides of the BINDING sign,
+not of the colon; the manager's reading in the entry above mislabelled them. THE MANAGER'S READING of the corrected
+statement (not his words, to be checked): the colon form `(h, m):` holds scoped references to the intersected
+operand's labels; the colon-less form stands on either side of a binding: on its left the entries are NAMES BEING
+BOUND (the tuple taken apart), on its right they are values.
+
+**2026-11-16 OWNER CONFIRMATION — a tuple on the left of a binding takes it apart (Frank, to session 134, box clock
+09:50).** Shown the manager's reading (the colon form holds scoped label references; a colon-less tuple stands on either
+side of a binding: on the right its entries are values, `lo := (9, 0)`; on the left they are names being bound,
+`(a, b) := lo`, which is how the parts are reached, with no index and no new operator), his word: "Yes". RECORD: the
+reading is CONFIRMED as stated. Not settled by this entry: taking apart a SET of tuples that is not one tuple or a
+plain product (what each name then holds), and whether an index or projection is also offered (the lane tupleval's
+subject).
+
+**2026-11-16 OWNER IDEA (offered, not a ruling) — first/rest binding with recursion (Frank, to session 134, box clock
+09:52).** His words: "I don't know if this helps but an idea I had last night was functional style first/ rest binding
+with recursion". RECORD: an IDEA to weigh in the tuple account, not a decision: a binding that takes a tuple apart
+into its first entry and the rest, used by a definition that calls itself on the rest. The manager's first answer
+(the manager's, unchecked) is in the session's reply: it would let the library DEFINE dictionary order for any number
+of fields instead of the language building it in, and it gives the draft's ruled bounded recursion (§7, CF:583;
+waiting on O21 and index arithmetic) a structural form that needs neither a size literal nor an index; its price is a
+rest form on the binding side, a way to build a tuple from a first and a rest on the value side, and a base case.
+
+**2026-11-16 OWNER — reaching a tuple's parts is REOPENED; he wants the "use it whole" case heard (Frank, to session
+134, box clock 09:58).** Told that lane tupleval leaned to "a tuple's parts are not reachable at all; use it whole",
+against his "Yes" of 09:50 to taking a tuple apart in a binding, his words: "Nothing is set in stone. I'd like to hear
+it out. So It's the set that makes it an item so you can't break it apart without changing its meaning. Like 9:30,
+10:00 broken apart is 9,10 and 30, 00 which is gibberish. Makes sense". RECORD: (1) the 09:50 confirmation is NOT a
+closed ruling: both positions (parts by a binding; no access, the tuple used whole) are to be laid out and he
+decides; (2) his own statement of the reason against access: the SET is what makes the pairing, so breaking a set of
+tuples apart changes its meaning (the pairs 9:30 and 10:00 become {9, 10} and {30, 00}).
+
+**2026-11-16 OWNER — on first-rest: the built-in tuple mechanism is simpler, "which I like"; and a question (Frank, to
+session 134, box clock 10:18).** Shown the first/rest account (joint_condition.md §4A.11: dictionary order as library
+clauses, five new pieces) beside the built-in dictionary order for a tuple atom, his words: "I think the tuple
+mechanism as otherwise described handled the problem more simply which I like. One thing is that I understand how
+tuples of different length work with first/rest recursion, but I don't otherwise. The examples you provided seemed
+like static by length definitions. For instance, gt tested pieces in order but it seems that is proscribed by the
+language rather than composition of the macro". RECORD: (1) a stated PREFERENCE for the built-in mechanism over
+first/rest on simplicity. THE MANAGER'S READING (not his words; told to him): first-rest = keep the built-in order
+now, first/rest recorded with its trigger; not a closed ruling until he says so. (2) His observation, which is
+correct of the design: without first/rest the walk over a tuple's parts in order is prescribed by the language (the
+compiler unfolds a comparison on a tuple of any length); a macro is length-independent only while it uses tuples
+whole. Answered in the session's reply.
+
+**2026-11-16 OWNER RULING — first-rest: PARKED, kept in the wings (Frank, to session 134, box clock 10:22).** His words:
+"Let's park first/rest but keep it in the wings in case we find a problem that needs a different way of composing".
+RECORD: (1) first/rest binding with recursion is PARKED: the built-in dictionary order for a tuple atom is the
+design; (2) it is KEPT ON RECORD (joint_condition.md §4A.11, with its tested library clauses and its five pieces);
+(3) TRIGGER, in his terms: a problem that needs a different way of composing over a tuple's parts than the language
+gives (dictionary order; each part written out). CONSEQUENCES, the MANAGER'S (to be checked by rev 20): tuple-parts
+has no user while first/rest is parked and stays open, not built; two-orders stays a live question.
+
+**2026-11-16 OWNER RULING — set-arity: a set carries an arity (Frank, to session 134, box clock 10:26).** Asked
+**set-arity** (a set of tuples is the existing set kind with an ARITY, today's sets being arity 1, or a third kind of
+value), his words: "Set arity: yes. It's clean. I like it". RECORD: ONE set kind with an arity; arity is fixed and
+known at compile time; `|`, `&` and array entries need equal arity; the labels left of the colon must number the
+set's arity; only an arity-1 set has text (may be a pattern, stand in a hole, be intersected with a pattern). No
+third value kind.
+
+**2026-11-16 OWNER — unset-component: leaning to "unset fails", wants a default worked out; idea: one "or equals"
+operator shared with default macro arguments (Frank, to session 134, box clock 10:35).** Asked **unset-component**
+(a joint condition fails when one of its labels is unset, or a missing later field is ignored when earlier ones
+decide), his words: "I'm leaning to agree with you but want to work out the middle ground. How could we do a 'default
+value'?" Shown the manager's sketch (an opt-in default for an absent field, written at the label left of the colon,
+unfolding to a slice of the set; placeholder spelling `m else 0`), his words: "If we had the operator |= 'or equals'
+we could use it as for default macro arguments". RECORD: (1) a LEAN, not a ruling: unset fails; (2) an IDEA: ONE
+"or-equals" concept (a name with a value used when none is given) serving both an absent label in a condition and an
+omitted macro argument; the spelling `|=` is his example (memory: his examples are not syntax). NOTE (the manager's):
+the draft already has the macro half, spelled `name = default` in a definition head (predicates_draft.md §5.2,
+`occurrences(x, min = 0) :=`), so the unification is either that form extended to the label bracket or one new mark
+in both places; and `|` means "either" in this language, which a default is not (a spelling-step concern).
+
+**2026-11-16 OWNER — the default is written with `=` (Frank, to session 134, box clock 10:37).** Shown the two ways to
+unify a label's default with macro-head defaults (the head's existing `name = value` extended to the label bracket,
+`((h, m = 0): R)`, with its look-alike risk beside `(h, m: 0)`; or one new mark `|=` in both places), his words: "I
+was thinking = but had your concerns. Seeing = in examples I prefer it". RECORD: (1) PREFERENCE: `=`, the existing
+definition-head form, extended to the label bracket; `|=` not adopted. (2) THE MANAGER'S READING (told to him, not
+his words): this is a go to WRITE UP AND TEST the default (design only, lane unsetdef), on his lean "unset fails";
+unset-component is closed only when he says so. The look-alike `(h, m = 0): R` vs `(h, m: 0)` is the write-up's to
+weigh (a diagnostic, not a different mark, unless it finds worse).
+
+**2026-11-16 OWNER QUESTION — what a default that is an rx means (Frank, to session 134, box clock 10:40).** His words:
+"Also, the m = x there means the x is an rx. I don't have an intuitive sense of what that means". RECORD: a question,
+not a ruling; passed to lane unsetdef (its R-1). The manager's answer in the session's reply is the manager's.
+
+**2026-11-16 OWNER RULING — default-set: a default of several strings is an error, for now; idea: `some(...)` (Frank,
+to session 134, box clock 10:43).** Shown the two readings of a default that is a set of several strings (every member
+must fit; some member fits) and the manager's lean (require a one-string default, error otherwise), his words: "We can
+punt, as you say, and throw an error. Perhaps a reason will open to reconsider. Then there is a = some(between(...))".
+RECORD: (1) RULED for now: a label default must be ONE string; a default that is a set of several strings is a
+COMPILE ERROR; open to reconsider on a reason. (2) An IDEA, not a ruling: the reading written out by the author with
+the quantifier word, `m = some(between(...))` (and by symmetry the every form): the route by which a several-string
+default could later be admitted without the language choosing a reading.
+
+**2026-11-16 OWNER RULINGS — unset-component: yes; default-unused: agree (Frank, to session 134, box clock 11:05).**
+Asked **unset-component** (close it as "a condition naming an unset label FAILS, unless the author gives that label a
+default", `(h, m = 0): R`, joint_condition.md §4B; lean yes), his words: "unset-component: yes". Asked
+**default-unused** (a default that can never change an answer, the label never unset or the default outside the set,
+is a WARNING not an error; lean warning), his words: "default-unused: agree". RECORD: (1) RULED: an unset label fails
+the condition (single or joint) unless the author wrote a default for it; rev 18's decided-prefix reading is
+withdrawn. (2) The manager's reading of "agree" (told to him): agreed with the lean, so a never-used default is a
+WARNING. Standing from earlier today: the default is written `name = value`, must be ONE string, a several-string
+default is an error for now (`some(...)` on record as the route).
+
+**2026-11-16 OWNER RULING — joint-loops: agreed, all three parts (Frank, to session 134, box clock 11:17).** Asked
+**joint-loops** (pair the labels of a joint condition per pass of the loop that encloses all of them, the condition
+holding when every pass's tuple is in the set; labels in separate loops a compile error naming the fix; the
+looped-compare warning of 2026-11-16 00:09 moved onto a hand-written `|` of conditions over labels that can repeat,
+keyed off the shape), his words: "I agree. Makes sense." RECORD: RULED as asked: (1) per-pass pairing by the innermost
+loop enclosing every named label, a label outside that loop having its one value on every pass; (2) labels in
+sibling loops: a COMPILE ERROR; (3) the looped warning's subject is now a `|` of conditions whose labels can repeat
+(each alternative is checked over every pass; the message names the joint condition as the per-item form); the joint
+condition itself draws no such warning.
+
+**2026-11-16 OWNER RULING — two-orders: keep both (Frank, to session 134, box clock 11:20).** Asked **two-orders**
+(`>= (9, 30)`, the whole tuple in dictionary order, and `(>= 9, >= 30)`, each part on its own, both legal with
+different answers: keep both with a warning when every part is a same-direction comparison, keep both with no
+warning, or make the per-part form an error; the manager's lean: keep both with the warning), his words: "I agree.
+They look sufficiently different to me and I like the control. Can you think of a use for the second form?" RECORD:
+(1) RULED: BOTH spellings stay legal; an operator outside the bracket compares the whole tuple, inside it compares
+one part. (2) THE WARNING: the manager WITHDREW its own lean in the reply (the per-part form's natural uses, minimum
+width and height, a colour threshold, a bounding box, are all same-direction and would trip it; the compiler cannot
+tell hierarchical fields from independent ones); the manager's reading of his "sufficiently different" (told to
+him, not his words): NO warning, unless confusion shows in use.
+
+**2026-11-16 OWNER RULING — modifier-lift: yes; a "future consideration" document (Frank, to session 134, box clock
+11:27).** Asked **modifier-lift** (a modifier such as `padded` around a set of tuples applies to every part; it cannot
+pick parts of a dictionary-order set), his words: "modifier-lift: yes. Add this as another item like first/last to a
+'predicate future consideration' document to consider finer grain transforms. However the form is 'do everything to
+both' so the logic makes sense". RECORD: (1) RULED: a modifier around a set of tuples acts on EVERY part ("do
+everything to both"). (2) A per-part (finer-grained) transform is NOT designed now; it is recorded for later. (3) NEW
+DOCUMENT at his request: docs/design/predicates_future.md, the list of parked predicate ideas with their triggers;
+first/rest (his "first/last": read as first/rest, parked earlier today) and finer-grained transforms are its first
+two items.
+
+**2026-11-16 OWNER RULING — colon-scope: yes, with a refinement for a default (Frank, to session 134, box clock 11:32).**
+Asked **colon-scope** (left of the colon a name is always a label of the intersected pattern, computed labels
+included, never a plain binding; right of the colon and in any tuple value a bare name is always a binding, a
+label's value read with `$`), his words: "colon-scope: yes with refinement: (a, b = c): ... the 'c' is a binding et
+al". RECORD: (1) RULED as asked. (2) REFINEMENT: in the bracket left of the colon, the names being constrained (`a`,
+`b`) are labels; a DEFAULT written after `=` (`c`) is in VALUE position although it stands left of the colon: a
+bare name there is a binding (or a literal; "et al": the value side's rules, so a label's value is `$x`). THE
+MANAGER'S CONSEQUENCES (to be checked by rev 20): the draft's open item C13 closes as "`$` to read a computed label
+on the value side" (E-CAL's `<=dim` becomes `<=$dim`, E-RFC's `==wd` becomes `==$wd`); a default still must be ONE
+string (ruled earlier today).
+
+**2026-11-16 OWNER RULING — record-is-product: yes (Frank, to session 134, box clock 11:35).** Asked
+**record-is-product** (define the record `(h: S, m: T)` as shorthand for the joint condition over a product,
+`((h, m): (S, T))`, one mechanism with the record as its special case, or keep two separate constructs with matching
+rules), his words: "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking
+for." RECORD: RULED: the joint condition is the ONE mechanism; the record is DEFINED as its product case (each part
+written beside its label), so every rule of the joint condition (unset labels and defaults, per-pass pairing in
+loops, the colon's scope, modifiers on every part) holds for the record by definition, stated once. His criterion,
+in his words, for the record: "simplifying semantics".
+
+**2026-11-16 OWNER RULING — zero-pass-record: the outside label is tested (Frank, to session 135, box clock 12:45).**
+Asked **zero-pass-record** (a record whose labels sit at different depths, the deeper loop running zero passes:
+`/(?<k>\d)(?:;(?<h>\d))*/ & (h: <5, k: 3 | 4 | 5 | 6 | 7)` on `9`; the per-pass rule read literally HOLDS
+vacuously, the draft's "a record is the AND of its parts" FAILS; the manager's lean the AND reading), after his
+questions on an "unset"/empty value in the set, a default undoing the `*`, and `count(^)`, his words:
+"zero-pass-record: I agree but save the notes in the future file. The issue falls into the 'saving people from
+themselves' category that tools need to realistically consider". RECORD: RULED, the manager's lean as stated to
+him: a label outside the pairing loop is tested once even when the loop runs zero passes (`9` FAILS in the
+example); the draft's equality `(a: S, b: T)` = `(a: S) & (b: T)` holds at every depth. THE MANAGER'S WORDING
+(his "agree" covers the answer; the wording is the manager's, to be checked by the critic round and rev 20): a
+reached loop that runs zero times gives ONE tuple whose looped parts are EMPTY; empty satisfies any set (for a
+joint set R: the outside labels' values must be possible under R for some value of the looped parts); a default
+is NOT read there (§4B.1 unchanged); a plain single-label condition still HOLDS on zero passes (CF:997-1000
+unchanged); "unset" (never reached) keeps its meaning. His criterion for the record: "saving people from
+themselves". The four ideas raised on the way are PARKED in docs/design/predicates_future.md items 5-8.
+
+**2026-11-16 OWNER RULING — library-not-syntax: the 11-14 ruling is withdrawn (Frank, to session 135, box clock 12:48).**
+Asked **library-not-syntax** (withdraw by name the ruling of 2026-11-14, "TUPLE CONDITIONS: a LIBRARY macro
+(`lex_ge([major, minor, patch], [1, 4, 0])`), no syntax", CF:644-650, now that the joint condition
+`((major, minor, patch): >= (1, 4, 0))` is syntax and "the one mechanism"; the manager's lean: yes), his words:
+"library-not-syntax: agree. we've replaced the idea and I think with something much better". RECORD: RULED: the
+2026-11-14 ruling (CF:644-650) is WITHDRAWN BY NAME; with it the draft's status line "Tuples as a library macro:
+RULED (CF:644), SUPERSEDES predx's tuple-on-the-left-of-`:` syntax (S12)" goes to the superseded record, and a
+tuple on the left of `:` is ruled syntax (the joint condition, J1-J9). THE MANAGER'S READING of "agree" (the lean
+as stated; to be checked by rev 20): the middle path (keeping `lex_ge` and friends as ordinary library macros
+over the joint condition) is NOT taken; they are left out of the first library until someone asks. What becomes of
+the sigil, the `lex_` names, their argument order and the first-library slot is the separate open question
+**retire-paused**.
+
+**2026-11-16 OWNER RULING — retire-paused: split; the sigil's pause is indefinite (Frank, to session 135, box clock 12:51).**
+Asked **retire-paused** (the paused direction's four RULED items: the other-side sigil `^h`, the `lex_` names, the
+argument order subject-low-high, the fixed-size tuple compares' first-library slot; retire or keep paused; the
+manager's lean: SPLIT, retire the names, the order and the slot, keep the sigil paused and out of rev 20's language
+text, the first-library slot going to the joint condition), his words: "retire-paused: agree to split. But the
+pause on ^ is indefinite and requires real value other than 'override a users own *'". RECORD: RULED: (1) RETIRED
+to the superseded-direction record: the `lex_` names (CF:1226), the argument order (CF:1253), the fixed-size
+compares in the first library (CF:1166); the joint condition takes that first-library slot. (2) The other-side
+sigil (CF 00:06) is PAUSED INDEFINITELY: it is not in rev 20's language; it returns only for a use with REAL VALUE,
+and rejecting the empty case of the author's own `*` loop (`some(^h)`) is NOT such a use (his bar, his words).
+(3) The suspended questions reference-index and bound-reference stay suspended with the sigil.
+
+**2026-11-16 OWNER RULING — label-twice: an error (Frank, to session 135, box clock 13:16).**
+Asked **label-twice** (a label written twice on the left, `((h, h): R)`, and so in a record, `(h: <5, h: >2)`: a
+compile ERROR naming the fix, or the DIAGONAL reading "(h's text, h's text) in R"; the manager's and the folding
+lane's lean: error), his words: "label-twice: agree an error. And that means it's also unofficially parked in case
+some other meaning becomes valuable". RECORD: RULED: a label named twice in one condition is a COMPILE ERROR in
+both forms (the record being the product case), its message naming the fix (illustrative, D26: "h is named twice;
+for two tests on one label write `(h: <5 & >2)`"). The spelling stays FREE for a later meaning (his
+"unofficially parked"): noted in docs/design/predicates_future.md item 9; the diagonal is not adopted.
+
+**2026-11-16 OWNER RULING — pairing-loop, part 1: the wording confirmed; his remark on optionals (Frank, to session 135, box clock 13:29).**
+Asked **pairing-loop** in parts (1: the precise wording of the pairing loop; 2: zero passes of a nested loop read
+per reach, `4:;` fails, `5:;` and `6:;` hold; 3, added by review r26: an outer pass that never reaches the
+pairing loop), his words, first: "is this the same issue we were just talking about? The inner loop runs so it's
+'set' but to nothing. Then the 'or epsilon' logic makes it pass" (the manager: yes, for part 2), then: "pairing-loop:
+I agree part 1. part 2. the issue is that 'optional pass' is still a loop. Even /x?/ is a loop from 0 to 1."
+RECORD: (1) RULED: part 1, the wording: the pairing loop is the DEEPEST loop that encloses any named label; every
+other named label lies in the same pass of it or outside it with one value per pass; otherwise the sibling-loop
+error. (2) NOT RULED: his remark that an optional is a loop of 0 to 1 passes bears on parts 2-3 AND on the ruled
+boundary of predicates_draft.md §4.2 (CF:997-1000: an optional or `{0,1}` skipped leaves the label UNSET and the
+condition FAILS; a loop with an upper bound of 2 or more that runs zero times HOLDS). The manager put the
+consequences to him (next entry records his answer).
+
+**2026-11-16 OWNER DIRECTION — absent-holds: work out the options (Frank, to session 135, box clock 13:38).**
+After his remarks "Only an alternation would be a complete no set, no?" and "Ok, but then could * be defined as
+/x+|/" (the manager: `x?` = `(?:x|)` and `x*` = `(?:x+|)` = `(?:x+)?`, so EVERY line between "unset: fails" and
+"zero passes: holds" gives two spellings of one pattern different answers, today's ruled line included:
+`/(?<n>\d)*x/` holds and `/(?:(?<n>\d)+)?x/` fails on `x`), asked **absent-holds** (one rule, "a condition holds
+on any absent label", worked through every ruled example before he confirms or drops it), his words: "absents-hold:
+do work it out but consider also the option that missing means failing. Or options where the user can control the
+interpretation". RECORD: NOT A RULING. A design lane works out, side by side: absent always HOLDS; absent always
+FAILS; forms where the AUTHOR controls the reading; and today's line as the baseline. Nothing in the ruled text
+changes until he chooses. pairing-loop parts 2-3 and rev 20 wait on it.
+
+**2026-11-16 OWNER PRINCIPLE — a set never contains absence (Frank, to session 135, box clock 13:52).**
+While the absent-label options were being worked out, his words: "In my mind <100 is defined as the set of all
+positive integer strings less than 100. Absence is not part of that set". RECORD: a PRINCIPLE for the predicate
+language, constraining every option: sets are sets of strings (or tuples of them); absence is never a member. THE
+MANAGER'S CONSEQUENCES (his, to be checked): (1) the zero-pass wording "empty satisfies any set" is restated on the
+condition side (a condition quantifies over the values a label has; with no pass there is nothing to test for the
+looped label, and the outside label is still tested), answers unchanged; (2) author control of absence lives on
+the label / condition side (the default, a label marker, quantifier words), never as a set member, so
+predicates_future.md items 5-6's in-set forms (`| unset`, an author-written empty value) are closed by this
+principle; (3) the principle does not by itself decide whether a condition on an absent label holds or fails: that
+is the choice between reading `(h: S)` as "h's text is in S" (needs a text) and "every text h has is in S".
+Sent to lane absent as its R1.
+
+**2026-11-16 OWNER IDEA — a transform that makes a filter optional (Frank, to session 135, box clock 13:52).** His words:
+"To be easier, we could have a transform ? (Spelling Conflicts) this changes a filter to be optional like <100?".
+RECORD: NOT A RULING: an author-controlled option for absent labels (the author marks "absence is acceptable"; the
+base rule is then "a condition needs a text"). Spelling a placeholder (D193 add. 4). Sent to lane absent as its R2,
+with the manager's addition that the same control be worked on the LABEL side too (`(h?: <100)`), since by his
+principle of the same hour a set never contains absence.
+
+**2026-11-16 OWNER LEAN, NOT LOCKED — absent-rule (Frank, to session 135, box clock 14:09).** Shown lane absent's
+comparison (today's line; absent holds; absent fails; his optional mark over "fails"; only-alternatives-fail) and
+the manager's lean (his optional mark, on the LABEL, `m?`, over "absent fails" everywhere, empty lists included),
+his words: "absent-rule: I agree with your lean but before we lock it in, what is the impact across other
+statements. What was the statement where absence matches made sense?" RECORD: NOT A RULING: he agrees with the
+lean and asks for (1) its impact on every other statement of the language and (2) the statements for which "a
+condition holds over none" was originally chosen. Lane absimpact (opus) censuses both; he locks or changes it with
+that in front of him. Nothing in the ruled text changes until then.
+
+**2026-11-16 OWNER IDEA — the mark and the default as two absence KINDS (Frank, to session 135, box clock 14:15).** His
+words: "What if the mark ? only meant tested but didn't exist. Like x*. Then the default = is never tested,
+alternation. Together they are never tested or tested and empty is this default." RECORD: NOT A RULING: a variant of
+the candidate rule in which the mark `h?` accepts only "reached, no value" and the default `h = v` handles only
+"never reached" (an alternative not taken); both written reads the default on either. The manager's reading, sent to
+lane absimpact as its R1, to be worked beside the intent reading (`h?` = absence is acceptable, `h = v` = absent
+reads as v, each over every kind of absence).
+
+**2026-11-16 OWNER RULING — absent-rule: LOCKED (Frank, to session 135, box clock 14:31).** After lane absent's options
+comparison and lane absimpact's census (docs/dev/lanes/absent_report.md, absimpact_report.md), and his
+clarification question ("? Or = but not both. Both meanings of absence are the same?"; the manager: yes, ONE kind
+of absence, two responses, the author picks one), his words: "absent-rule: lock". RECORD: RULED, the manager's
+recommendation as put to him:
+(1) ONE KIND OF ABSENCE: a label is absent when it has no value where the condition looks at it, whatever the cause
+(an optional skipped, a loop that ran zero times, an alternative not taken, a pass that did not set it).
+(2) ONE READING: a condition needs a text; on an absent label it FAILS. Empty lists included; over several values
+it holds when every value is in the set and there is at least one.
+(3) TWO AUTHOR CONTROLS, ON THE LABEL, each over every absence: the OPTIONAL MARK (placeholder spelling `m?`, D193
+add. 4): absence is acceptable, the condition is satisfied; in a joint condition a marked absent label reads "some
+value would put the tuple in the set" (the other labels are still tested); the DEFAULT `m = v`: the absent label
+reads as v and is tested like any value (so it is read on the empty list too). NOT BOTH on one label: a compile
+error naming the choice. (4) A set never contains absence (his principle, 13:52).
+THE MANAGER'S READING of "lock" (the sub-choices as presented, the lane's picks; to be checked by the fold and its
+critic round): `all(...)` over no values HOLDS (the spelled-out "every, possibly none"); `!` of a marked
+condition is the plain complement; a mark on a label that can never be absent is a warning; a marked absence is not
+counted by `some`/`count`. NOT TAKEN: his two-kinds variant (mark = reached-empty, default = never reached).
+REVERSES: the zero-passes-hold half of CF:997-1000 (and L36's zero clause except through `all`), the unset/empty
+boundary of predicates_draft.md §4.2, the manager's 12:45 zero-pass wording (the ANSWER `9` FAILS and record = &
+are kept), §4B.1's "a default is never read on zero passes" (predicates_future.md item 7 becomes the rule), the
+"+ or * control" as the absence control (CF:933; `+` still forces one). SETTLES pairing-loop parts 2 and 3 (an
+unmarked absent label fails the pass; marked: the others are tested). LEAVES: zero-pass-empty only on marked
+labels; UNDEFINED, for rev 20: a computed label reading an absent label, `$h` / a hole on an absent label, the
+mark through a macro's label parameter; the one shape with no one-mark fix (an all-looped record with an optional
+field per item).
+
+**2026-11-16 MANAGER'S READINGS after the fold of absent-rule (session 135, box clock 14:50; NOT the owner's words;
+told to him; each to be attacked by the critic round on the folded note and stated in rev 20 as the manager's).**
+From lane absfold's corners (docs/dev/lanes/absfold_report.md, CONTRADICTIONS AND CORNERS): (a) `all(...)` over no
+values holds for EVERY absence alike (the lane's A2m), never "an empty list only": the other readings bring the
+`?`/`*` spelling split back (5 of 11 groups) and one breaks record = &. (b) The mark means ONE thing in every
+shape: "some value would put the tuple in the set" (the lane's F1; for one label with a non-empty set that is the
+same as "satisfied"); so zero-pass-empty closes: a marked absent label against a set empty through a match value
+FAILS in both spellings. (c) "Some value" ranges over ANY text, not only the texts the label's group can match;
+the constant cases where that differs are the draft's empty-intersection error. (d) The mark inside
+`some(...)`/`count(...)` is a compile ERROR naming the fix (those count values that exist), replacing the
+earlier sub-choice "not counted". (e) "Absent where the condition looks at it" is judged PER PASS for a label
+inside a loop (the reading record = & needs: pooled, (OP) 8 and (ZN) 48 differ). (f) The all-looped record with an
+optional field per item has no one-mark fix; listed as an open item for rev 20, not repaired.
+
+**2026-11-16 OWNER RULING — optional-as-loop (Frank, to session 136, box clock 15:23).** Put to him after review r28's
+finding D (is `x?` a loop for the pairing rule; his 13:29 remark "Even /x?/ is a loop from 0 to 1" was unruled). His
+words: "optional-as-loop: that comment was for discussion. I agree both spellings should answer alike." RECORD: RULED:
+`x?` and `(?:x|)` answer alike under the pairing rule. THE MANAGER'S READING of how (his, to be checked by the next
+revision): a quantifier with upper bound 1 is NOT a loop for the pairing rule (it pairs nothing: at most one value),
+so a record over two optional fields answers and is not a sibling-loop error. The 13:29 remark is recorded as
+discussion, not a ruling.
+
+**2026-11-16 OWNER RULING — mark-domain, as a PRINCIPLE (Frank, to session 136, box clock 15:27).** Put to him after
+review r28's finding A (the domain of the mark's "some value": any text / the texts the label's group can match, read
+from its own text / the values the label can take in some match of the pattern). His words: "mark-domain: if it is
+possible, the semantic rules should not not depend on the spelling of the regex but on the resulting (graph, behavior,
+semantics, string set)? Not sure the exact phrasing." RECORD: RULED as a principle, with his own qualifier "if it is
+possible" and his phrasing left open: a rule's answer depends on what the pattern MEANS, never on how it is spelled.
+THE MANAGER'S READINGS (his, each to be checked by the fix lane's runs and the next revision): (1) phrasing offered:
+"two patterns that match the same subjects and set their labels the same way answer every condition alike"; (2) the
+group-text domain is OUT (it reads the spelling: 5 of 10 vs 0 of 10 on two spellings of one pattern); (3) the domain
+is the third candidate, the values the label can take in some match of the pattern (a property of the pattern's
+behaviour); "any text" also ignores spelling but stays withdrawn on the round's own ground (a value the label can
+never hold witnesses an answer), which is the manager's judgment, not his; (4) "if it is possible": where that
+value set cannot be computed exactly (to be listed: backreferences, lookarounds, recursion), the note says what the
+compiler does instead and that an approximation must never change an answer silently; undecided, for rev 20; (5) the
+principle is wider than the mark: it is a standing criterion for the predicate design beside "a set never contains
+absence".
+
+**2026-11-16 OWNER RULING — spelling-phrasing (Frank, to session 136, box clock 15:29).** The wording of his mark-domain
+principle, offered by the manager: "two patterns that match the same subjects and set their labels the same way
+answer every condition alike" (*). His words: "spelling-phrasing: that sounds good. I agree. Put an asterisk next to
+it in case it needs adjustment". RECORD: RULED, PROVISIONAL WORDING: the sentence carries an asterisk wherever it is
+quoted ((*) the wording may be adjusted; the principle is ruled, the sentence is not final).
+
+**2026-11-16 OWNER RULING — match-context (Frank, to session 136, box clock 16:13).** The question from lane absfix
+(joint_condition.md §4H.1, the CONTEXT row): is the mark's "a value the label can take in a match" taken over any
+match of the pattern, or only over matches agreeing with this match's other labels? Put with the branch-reset example
+(`(h?: <5)` on `b`: HOLDS / FAILS). His first reply sketched the author's own spelling of the dependence: "So in
+that pattern, you might (k,h?): ((\"a\", <5) | etc". The manager's reading of it, put back to him: the domain is what
+the label can hold ANYWHERE in the pattern, and dependence between labels is the author's to write as a joint
+condition (the two readings then agree: `((k, h?): ("a", <5) | ("b", >=5))` holds on `b` under both;
+`((k, h?): ("a", <5))` fails under both). His words: "match-context: anywhere. This does need some sort of debugger
+for writing these." RECORD: RULED: DOM(h) is taken over ANY match of the pattern (one value set per label, fixed
+when the pattern is compiled); labels that go together are written together, in a joint condition. His second
+sentence is a REMARK, not a directive (recorded in predicates_future.md as a parked item with a trigger).
+
+**2026-11-16 OWNER RULING — zero-pass-empty (Frank, to session 136, box clock 16:20).** The manager's 14:50 reading (b)
+(the mark means ONE thing in every shape, "some value would put the tuple in the set"; so a marked absent label
+against a set empty through a match value FAILS, in both spellings), put to him with the example
+`(?<a>\d)-(?<k>\d)(?:;(?<h>\d))*` & `(h?: <$a, k: 3)` on `0-3` (FAILS; the other reading HOLDS; 1 of 11,100
+differ). His words: "zero-pass-empty: agree. If nothing could pass then some absent value of present couldn't either.
+I agree with your reading." RECORD: RULED: F1 is the mark's one meaning; zero-pass-empty is CLOSED; the "awaiting
+the owner's assent" labels come off in the next revision.
+
+**2026-11-16 MANAGER'S DERIVATION — default-reaches-dollar, closed by consequence (session 136, box clock 16:23; NOT an
+owner ruling).** The question from rev 20's undefined item (e2): in `(a = 0: <10, b: >$a)` on `-5`, does the
+default fill `$a`? Put to the owner, whose reply was a question: "Isn't that form a rewrite of the (a,b): form ? We
+unified those correct?" THE MANAGER'S DERIVATION from the ruled unification (a record is the joint condition over
+its labels): a `$a` naming one of the condition's OWN labels makes the record a non-product set over the tuple,
+`((a, b): {(x, y): x < 10, y > x})`; the tuple has ONE value per label, the default fills a's slot, so (0, 5) is
+tested and HOLDS: yes. The same derivation gives the marked case: `(a?: <10, b: >$a)` = some x in DOM(a) with x < 10
+and b > x. NOT covered: `$a` where a is not a label of the condition (`(h?: <$a, k: 3)`): rev 20's proposal
+stands there (an absent a FAILS the condition), unruled. OWED as evidence, by the fix lane after round predspec20:
+every record with an own-label `$` against its joint spelling over the same subjects, 0 differ expected; any
+difference goes back to the owner.
+
+**2026-11-16 OWNER RULING — domain-scope (Frank, to session 136, box clock 16:31).** The question from review r29's
+group A: do CONDITIONS narrow what a marked label "could have had" (DOM), or only the regex? Put with
+`P & (k: "b") & (h?: <5)` on `b` (P = `a` + digits 0-9 or `b` + digits 5-9): regex only HOLDS, conditions too
+FAILS; the manager leaned regex only. His words: "P & (k: \"b\") In my mind this is a different regex than P. It only
+includes the \"b\" track". RECORD: RULED against the manager's lean: a pattern narrowed by a condition IS a
+different pattern; DOM(h) is read from the PROGRAM the condition meets (the regex with the conditions on it), not
+from the bare regex. THE MANAGER'S READINGS of the consequences (his, to be checked by rev 21 and its re-check):
+(1) match-context (16:13, "anywhere") stands for what the program leaves free: `P & (h?: <5)` on `b` still HOLDS;
+(2) a consequence the manager stated to him under "anywhere" is REVERSED: `((k, h?): ("b", <5))` on `b` now FAILS
+(the condition's own entry on k narrows h; a record's entries are `&`-ed conditions, so record = `&` is kept);
+(3) the spelling principle keeps its wording: "patterns" there means programs (a regex with its conditions), no
+narrowing to "regex patterns"; (4) the manager's gloss in the 16:13 record, "one value set per label, fixed when the
+pattern is compiled", is corrected: one value set per label PER PROGRAM; (5) the manager's one-witness reading (a
+stand-in value per condition) is re-examined by rev 21 under this ruling (review r29 says the two-conditions case
+dissolves under the program reading); (6) open for rev 21 to state, not decided: whether another condition on the
+SAME label narrows it, and the "if it is possible" tier for a program whose conditions are not regular.
+
+**2026-11-16 OWNER RULING — mark-narrows (Frank, to session 136, box clock 16:44).** In the discussion of domain-scope
+the manager named a reservation: DOM(h) is read from the program, but the program's marked conditions consult DOMs
+(a circular definition). His question: "Would it not be true then that (x: ...) can restrict the regex but (x?: ...)
+can not?" The manager put two versions back: the LITERAL one (only unmarked conditions narrow a DOM) and a VARIANT
+(unmarked conditions narrow; a marked condition narrows only through the matches where its label is PRESENT, where it
+is an ordinary filter; where its label is absent it is transparent while a DOM is computed), with the case that
+separates them (`P & (k?: "b") & (h?: <5)` on `b`, k never absent in P: literal HOLDS and splits it from the
+`(k: "b")` spelling; variant FAILS like it). His words: "I agree with your variant. I'm assuming such logic is
+possible". RECORD: RULED: the VARIANT. No DOM is consulted while a DOM is computed. HIS ASSUMPTION IS RECORDED AS AN
+ASSUMPTION: at the time of the ruling neither version had been run; lane predspec21 runs both (with the least and
+greatest fixed points as references) and the manager reports to him if the variant is not well-founded, breaks record
+= `&`, or splits equal-behaviour programs. WITHDRAWN the same hour, the manager's earlier lean "DOM over matches
+where every named label is present" (empty on `(?:(?<h>\d)|(?<m>\d))`).
+
+**2026-11-16 OWNER RULINGS — not-is-complement and mark-in-none (Frank, to session 136, box clock 17:29).** Background:
+lane predspec21 confirmed by run that, with DOM read per program (domain-scope), a mark under negative polarity lets
+an ADDED condition admit a subject (smallest: `/a(?<h>\d)|b(?<k>\d)|c/ & !((h?, k): h < k)` FAILS on `b1`; adding
+`(h?: >7)` makes it HOLD; 22 program pairs move, 0 with a default, 0 of 698 with no mark under a negation). The
+manager leaned "a mark under a not is a compile error". His words on the cause: "I think I see the problem. We are
+working with a confusing definition of ! In my reading, ! takes an rx and gives the complement set of strings. That
+has no meaning on a condition." The manager put two statements back for a yes/no:
+**not-is-complement**: `!` applies to a pattern or a set of strings, never to a condition; on a condition it is a
+compile error naming the two rewrites (the complement on the set, `(h: !S)`; or name the pattern and complement
+that). His words: "not-is-complement: yes agree". RULED.
+**mark-in-none**: a mark inside "none" or an upper-bounded count is a compile error. His words: "mark-in-none: yes
+agree". RULED.
+THE MANAGER'S READINGS (his; to be checked by rev 22 and its round): (1) a complemented pattern is a COMPLETE program
+with its own value sets; conditions outside it do not narrow them (the hand derivation given to him: `P & !Q`,
+`Q := P & ((h?, k): h < k)`, keeps `b1` before and after `(h?: >7)` is added; unrun at the ruling); (2) answers
+change where the draft wrote `!` on a condition (the worked case: `b1` was rejected, is accepted under
+`P & !Q`); the old trap "`!(h: S)` holds when h is absent" goes with it; (3) "none or an upper-bounded count"
+means every group question whose truth can turn TRUE when fewer passes satisfy the inner condition (`occurs.none`,
+`count(...) = 0`, `<= n`, `< n`, an exact count); `all(c)` is defined through marks, so `all` inside such a
+question, and a complemented pattern containing a mark, need rev 22's explicit statement; (4) expected, to be run:
+with both rulings no added condition turns a FAIL into a HOLD (the 22 pairs re-run after rewriting; 0 move).
+
+**2026-11-16 CORRECTION — mark-in-none is NOT ruled (session 136, box clock 17:29).** Minutes after the entry above the
+owner wrote: "mark-in-none: sorry, I meant, explain this one". His "yes agree" on mark-in-none is WITHDRAWN by him;
+the entry above stands for **not-is-complement** only. mark-in-none is an OPEN owner question; the manager's lean
+(a compile error) and readings (3)-(4) above apply to it only if he rules it so.

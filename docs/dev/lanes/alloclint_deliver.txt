@@ -1,0 +1,4 @@
+report=docs/dev/lanes/alloclint_report.md
+sections: STATE AT HANDOFF; THE JOB; OWED RUNS
+nonempty: all
+commit: yes

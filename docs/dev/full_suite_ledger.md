@@ -14,37 +14,24 @@ studies; listed, not counted).
 
 ## Since the last green full suite
 
-Baseline: run 2026-11-05 daf6f002b, the first fully green full suite on record (log `build/full_suite/20261104_daf6f002b/`).
-Every earlier landing is listed under "Covered by run 2026-11-05 daf6f002b" in the Runs section.
+Baseline: run 2026-11-16 e43603862, the CLOUD full suite (`scripts/cloudrun --suite`, run names suite-e436038, six cloud stages all green) plus the local alloc + lint stages green on db7aab3de (no src/lib/cli/memfn diff to e43603862). It is the first green full suite since 2026-11-05 daf6f002b. Every landing up to and including e43603862 is listed under "Covered by run 2026-11-16 e43603862" in the Runs section (and earlier ones under "Covered by run 2026-11-05 daf6f002b").
 
-**major: 1, minor: 4** (plus 3 no-code/instrument landings, not counted). Class is set by the manager at each landing.
+**major: 0, minor: 1** (plus 3 no-code/instrument landings, not counted). Class is set by the manager at each landing. Landings after the reset were recorded as loose `Landing 2026-11-16 ...` lines at the end of the Runs section (the ledger's practice since 2026-11-05); the lines below are the 2026-11-16 additions that count them, by pointer (the loose lines stay where they are).
 
-Trigger state (D177): row 5 FIRES (4 minors, within the 4-6 that fire it); 1 major since the baseline (row 4 needs 2-3: un-fired; row 3 is a refactor of a shared mechanism, not claimed for a new capability); rows 1-2 un-fired. No full suite queued by the landing lane; the manager schedules one after the alternation landing. Row 1 (tonight, 2026-10-23) was discharged by this run; row 2 not applicable until a major version shift is named; row 3 fires when a major refactor lands; row 4 when 2-3 majors have landed since this baseline; row 5 when 4-6 minors have landed since it.
+Trigger state (D177), recounted 2026-11-16: row 1 (tonight, 2026-10-23) discharged long ago; row 2 (a major version shift) not applicable until one is named; row 3 (a major refactor lands) un-fired, none since the baseline; row 4 (2-3 majors since the last green run) un-fired, 0 majors; row 5 (4-6 minors since the last green run) un-fired, 1 minor. No full suite is due.
 
 ### major
 
-- 2026-11-07 c44649a69 major — [VLOOKBEHIND] stage 1 merge (lane vlbbuild, landed by vlbland): bounded variable-width lookbehind, a new construct class (supersedes [DD-14.LB]'s refusal), abi 95 -> 96, new seam entry fwd_step; recursion-identity (B) pins re-pinned to the merge; post-merge test-registry, test-codegen, test-plan-lint green; branch validation: make test, mech 1-4, reach, abisweep, axes 495 green
-
-- 2026-11-09 cf578177e major — merge lane/u3mech edf78bcbf ([XARCH-DEV] kit U2 per-CPU SIMD seam + pcrec U3 targets), abi 98, MF_SITE_ABI 26; review 2026-11-08 r5 xarch ruled, fixes in; landing lane landu3; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge; lane gates: make test, strict, axes, mech, movers, sections, sweep (landsweep 080 green on edf78bcbf), kit 560-569 + 089
-
-- 2026-11-14 9cecc3caa major — merge lane/s2land (23700b344, [RUN-POS-SET] stage 3 S2 + kit Part D + R-41), abi 106; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge (65ef919fc); landing lane s2fin; lane gates: cloud test GREEN at 692e5f431, cloud axes GREEN at 23700b344; post-merge make and make strict green, test-codegen/test-registry/test-rxtsource per the s2fin report
-- 2026-11-14 e711c6fe6 major — merge lane/r1on (14325654b, [RUN-POS-SET] stage 2a rule (1) alt_union default ON), abi 106 -> 107; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge (ceaa058c9); landing lane r1land; lane gates: cloud test, axes r1on-axes2 and mechrows GREEN at 14325654b; post-merge make strict green, test-codegen/test-registry/test-rxtsource/test-startset/test-cand-oracle per the r1land deliver
-
 ### minor
 
-- 2026-11-08 bfecd6143 minor — merge lane/p1cpu ([XARCH-DEV] P1: -fmemfn-simd[=TOKEN,..] option, kit token parse at option parse, --list-cpu-targets, pcrec_options.memfn_simd; 0 emitted bytes (sweep GREEN); its make test (p1tri re-run) and 6-row mech GREEN)
-- 2026-11-08 25d80f2c0 minor — merge lane/mechtri (battery mech triage: 3 witness re-aims/new cells, test-only; its 3-row mech GREEN)
-- 2026-11-08 d9df92c0d minor — merge lane/memfn-k0 (kit unit K0, R-36: the CPU target table, new kit TU memfn/src/targets.c + table check at make/strict + 7 sabotage rows S2975-S2981; no emitted byte, no abi event; its gates strict/sections/make test/mech GREEN)
-- 2026-11-06 e7341f87e minor — span_pick stage 2 unit S2a merge (kit measurement set format 2 / loader change, limits_check moved; no pcrec abi; test-registry and test-plan-lint green at the landing)
-- 2026-11-06 6b04768ed minor — span_pick stage 1 unit 1e merge (fd_route merged into fd_find, renderer rows declared, MF_CLASS_V 7 -> 8; zero movers, MF_SITE_ABI 23, no pcrec abi; its gates 430-439 green; kit k1102 merge is docs)
-- 2026-11-05 39e7b20c5 minor — span_pick stage 1 unit 1d merge (memfn/src/window.c planning core; byte-identical kit refactor, zero movers, MF_SITE_ABI 23, no pcrec abi; like 1a/1c)
-- 2026-11-05 564b0e804 minor — lane/mechfix2 merge ([MECH-NOCOMPILE]: sabotage plants fixed/declared, test-only; its own full mech GREEN, job 433: 1102 rows, 0 unexpected, 0 anomalies)
+- 2026-11-16 ce6bfe8d5 minor — lane/memfn-d3wire, the kit's R-44 D3 floor gate (tests only; no emitted byte, no abi event); full line: the loose `Landing 2026-11-16 ce6bfe8d5` line at the end of the Runs section. Not an ancestor of e43603862, so it stays counted.
 
 ### none (not counted)
 
-- 2026-11-06 3686da9be none — span_pick stage 2 unit S2b merge (instruments only; strict and build clean)
-- 2026-11-05 f8ba7021c none — ledger: full suite green (docs)
-- 2026-11-05 442686b7b none — journal: session 129 evening close (docs)
+- 2026-11-16 f6274c11b none — lane/memfn-scanrow, the kit's timing-harness scan-row fix (docs/harness; not an ancestor of e43603862); full line: the loose `Landing 2026-11-16 f6274c11b` line at the end of the Runs section
+- 2026-11-16 591ed0f5a none — lane/r45chk, lane/revjc, lane/jcfix/jcfold2 (read-only reports, critic review r26, joint_condition design; docs only; not an ancestor of e43603862); full line: the loose `Landing 2026-11-16 591ed0f5a` line at the end of the Runs section
+- 2026-11-16 02bbd527f none — land1116 (ledger lines, report, index line for the three landings above; docs only)
+
 
 ## Runs
 
@@ -58,6 +45,7 @@ duration. Retained logs live under `build/full_suite/<date>_<sha>/` (gitignored,
 | 2026-11-04 | 4bd002e20 | green | green | RED (rc=2) | RED (rc=2) | green | green | RED (rc=2) | RED (rc=2) | build/full_suite/20261103_4bd002e20/ | 44409 s |
 | 2026-11-05 | daf6f002b | green | green | green | green | green | green | green | green | build/full_suite/20261104_daf6f002b/ | 44139 s |
 | 2026-11-08 | a0a829246 | green | green | green | green | green | green | RED (rc=2) | green | build/full_suite/20261108_a0a829246/ | 45761 s |
+| 2026-11-16 | e43603862 | green (cloud) | per CI (see below) | green (cloud) | ubsan green, asan green (cloud) | green (local, db7aab3de) | green (local, db7aab3de) | green (cloud, 90/90 shards) | green (cloud) | cloud runs suite-e436038: test 43901153190, axes 43901245088, ubsan 43901330292, asan 43901415085, mech 43901505325, recidentity 43901596882; alloc+lint build/alloclint/20261116_db7aab3de | cloud, sharded |
 
 RED run (2026-11-08 a0a829246): counters do not reset. mech = 3 UNEXPECTED rows of 1167 (S50, S806, S-U10; 0 anomalies; undetected/unreached otherwise identical to daf6f002b), all stale witnesses moved by the [ALT-NF] folds and variable lookbehind, no src gap and no miscompile. FIXED by lane/mechtri (merge 25d80f2c0; its build/test/3-row mech 460-462 GREEN, 3 DETECTED). Every other stage green, including recidentity. Next: a mech-only re-run on main (the san-only re-run precedent), counters reset if green.
 
@@ -403,3 +391,51 @@ Landing 2026-11-15 c6308ddc8: lane/fixposts2 (825af3c1e), post-S2 review fixes (
 Landing 2026-11-15 fff636eda: lane/covs1f (tip 0be2db691, contains lane/covs1), [COVER-CAP] stage 1, abi 107 -> 108. MAJOR: a default route changes (the cover's exact stretch is read off the anchored machine, the NFA span slice is deleted). Proven on code commit 0fd00688f by cloud make test (run 43773092490), cloud mech rows (43770809120), box prediction check (lost=0 unexplained=0, 13 gained movers), sanitizer battery, sections/reach/ctime/z2; code round r9 and re-check r11. Identity gate re-pinned to the merge (afb80ba68). D177 trigger fires: offer the owner the full suite.
 
 Landing 2026-11-15 4c8cf3c38: lane/memfn-mfind (kit tip 363fec82e), the kit's finder instrument (fused inline one-member finder, an UNPICKED measuring instrument, Frank 2026-11-15) plus the slot harness extension. No abi event (abi stays 108), 0 emitted-byte movers against the kit's base; the identity gate's pins untouched. MINOR. Three conflicts resolved (two index files kept both sides; tests/axes/run_axes.sh kept main's walk_arms.def derivation plus the `--harness=mfind` arm, ruling R-1). Post-merge make, make strict and make test-plan-lint clean. Cloud evidence OWED on 4c8cf3c38: test run 43783139214 (cloud/main/test/land1115d-test), recidentity run 43783186359 (cloud/main/recidentity/land1115d-recid), axes run 43783234904 (cloud/main/axes/land1115d-axes).
+
+2026-11-16 db7aab3de alloc=green lint=green log=build/alloclint/20261116_db7aab3de
+
+LOCAL STAGES GREEN: 2026-11-16 db7aab3de alloc=green lint=green (job 300-main-alloclint, docs/dev/lanes/alloclint_job; log build/alloclint/20261116_db7aab3de). Covers the alloc and lint stages owed since the 2026-11-15 cloud full suite on 2275777e0; main at db7aab3de carries [COVER-CAP] stage 1 and the kit finder unit. The other stages at this commit are NOT run: a full suite is still due (stage 1 was a major landing).
+
+Landing 2026-11-16 7875d630d: lane/shardfix, tests/ci/cloud_mech_shards.tsv regenerated from the committed measurements (S3170, S3198 had been dropped; cloud_mech_check red on main). Test table only; none.
+
+Landing 2026-11-16 ce6bfe8d5: lane/memfn-d3wire, the kit's R-44 D3 floor gate (tests/memfn, tests/lib, tests/ci, Makefile, reviews; tests only, no emitted byte, no abi event; cloud make test and axes sweep GREEN on this tip, runs 43908143424 and 43908234585). MINOR.
+
+Landing 2026-11-16 f6274c11b: lane/memfn-scanrow, the kit's timing-harness scan-row fix (docs/design/memfn/span_cards/slot harness + docs; no src/lib/cli/memfn/src change). None.
+
+Landing 2026-11-16 591ed0f5a: lane/r45chk, lane/revjc, lane/jcfix (with lane/jcfold2): read-only R-45 check reports, critic review r26 jointcond + critic-skill process changes, docs/design/joint_condition.md and its reports/evidence scripts (docs and design only). None, one line for the three.
+
+2026-11-16 e43603862 test=green(cloud) strict=per CI axes=green(cloud) san=green(cloud ubsan+asan) alloc=green(local db7aab3de) lint=green(local db7aab3de) mech=green(cloud) recidentity=green(cloud) log=cloud runs suite-e436038 duration=cloud-sharded
+
+This is the CLOUD full suite (`scripts/cloudrun --suite`, run names suite-e436038, six stages) plus the two stages the cloud does not run, alloc and lint, run locally on db7aab3de (`git diff --stat db7aab3de e43603862 -- src lib cli memfn` is empty, so that verdict speaks for e43603862). strict: not run by the suite; CI's strict step is green on ed9677782, a descendant of e43603862 (CI run 43912647999); CI on e43603862 itself was cancelled by later pushes (main CI cancels on push). mech counts not extracted (cloud mech run 43901505325: 90 of 90 shards green, 0 red).
+
+GREEN run 2026-11-16 e43603862: the first fully green full suite since 2026-11-05 daf6f002b, and the first green CLOUD full suite; counters reset (D177). Landings covered: the block below.
+
+2026-11-16 note on the RED line of 2026-11-15 (cloud full suite on 2275777e0): its owed items are discharged. alloc and lint: yes, by the db7aab3de LOCAL STAGES GREEN line above (and this run's table row). The S486 re-aim: `git log --oneline 2275777e0..e43603862 --grep S486` finds ac91d48bb (merge lane/s486re: S486 reach probe on the detector's own arm; reach sweep 1299 rows 0 unreached; cloud mechrows S486 green) and 3e58cf0de, both ancestors of e43603862, and this run's mech was green on all 90 shards. The 2275777e0 red is closed.
+
+### Covered by run 2026-11-16 e43603862
+
+The first green cloud full suite: every landing up to and including e43603862 is covered. The lines below moved here verbatim from "Since the last green full suite" (the D177 reset). The loose `Landing ...` lines of 2026-11-15 and 2026-11-16 earlier in this section whose commits are ancestors of e43603862 (ac91d48bb, c6308ddc8, fff636eda, 4c8cf3c38, db7aab3de, 7875d630d) are covered too and stay where they were recorded; the ones for ce6bfe8d5, f6274c11b and 591ed0f5a are not ancestors and are counted in "Since the last green full suite".
+
+**major**
+
+- 2026-11-07 c44649a69 major — [VLOOKBEHIND] stage 1 merge (lane vlbbuild, landed by vlbland): bounded variable-width lookbehind, a new construct class (supersedes [DD-14.LB]'s refusal), abi 95 -> 96, new seam entry fwd_step; recursion-identity (B) pins re-pinned to the merge; post-merge test-registry, test-codegen, test-plan-lint green; branch validation: make test, mech 1-4, reach, abisweep, axes 495 green
+- 2026-11-09 cf578177e major — merge lane/u3mech edf78bcbf ([XARCH-DEV] kit U2 per-CPU SIMD seam + pcrec U3 targets), abi 98, MF_SITE_ABI 26; review 2026-11-08 r5 xarch ruled, fixes in; landing lane landu3; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge; lane gates: make test, strict, axes, mech, movers, sections, sweep (landsweep 080 green on edf78bcbf), kit 560-569 + 089
+- 2026-11-14 9cecc3caa major — merge lane/s2land (23700b344, [RUN-POS-SET] stage 3 S2 + kit Part D + R-41), abi 106; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge (65ef919fc); landing lane s2fin; lane gates: cloud test GREEN at 692e5f431, cloud axes GREEN at 23700b344; post-merge make and make strict green, test-codegen/test-registry/test-rxtsource per the s2fin report
+- 2026-11-14 e711c6fe6 major — merge lane/r1on (14325654b, [RUN-POS-SET] stage 2a rule (1) alt_union default ON), abi 106 -> 107; recursion-identity FILEPIN/ABASEPIN re-pinned to the merge (ceaa058c9); landing lane r1land; lane gates: cloud test, axes r1on-axes2 and mechrows GREEN at 14325654b; post-merge make strict green, test-codegen/test-registry/test-rxtsource/test-startset/test-cand-oracle per the r1land deliver
+
+**minor**
+
+- 2026-11-08 bfecd6143 minor — merge lane/p1cpu ([XARCH-DEV] P1: -fmemfn-simd[=TOKEN,..] option, kit token parse at option parse, --list-cpu-targets, pcrec_options.memfn_simd; 0 emitted bytes (sweep GREEN); its make test (p1tri re-run) and 6-row mech GREEN)
+- 2026-11-08 25d80f2c0 minor — merge lane/mechtri (battery mech triage: 3 witness re-aims/new cells, test-only; its 3-row mech GREEN)
+- 2026-11-08 d9df92c0d minor — merge lane/memfn-k0 (kit unit K0, R-36: the CPU target table, new kit TU memfn/src/targets.c + table check at make/strict + 7 sabotage rows S2975-S2981; no emitted byte, no abi event; its gates strict/sections/make test/mech GREEN)
+- 2026-11-06 e7341f87e minor — span_pick stage 2 unit S2a merge (kit measurement set format 2 / loader change, limits_check moved; no pcrec abi; test-registry and test-plan-lint green at the landing)
+- 2026-11-06 6b04768ed minor — span_pick stage 1 unit 1e merge (fd_route merged into fd_find, renderer rows declared, MF_CLASS_V 7 -> 8; zero movers, MF_SITE_ABI 23, no pcrec abi; its gates 430-439 green; kit k1102 merge is docs)
+- 2026-11-05 39e7b20c5 minor — span_pick stage 1 unit 1d merge (memfn/src/window.c planning core; byte-identical kit refactor, zero movers, MF_SITE_ABI 23, no pcrec abi; like 1a/1c)
+- 2026-11-05 564b0e804 minor — lane/mechfix2 merge ([MECH-NOCOMPILE]: sabotage plants fixed/declared, test-only; its own full mech GREEN, job 433: 1102 rows, 0 unexpected, 0 anomalies)
+
+**none**
+
+- 2026-11-06 3686da9be none — span_pick stage 2 unit S2b merge (instruments only; strict and build clean)
+- 2026-11-05 f8ba7021c none — ledger: full suite green (docs)
+- 2026-11-05 442686b7b none — journal: session 129 evening close (docs)
+
