@@ -96,6 +96,8 @@ relaunch on CAP); read any log's verdict with `scripts/verdict LOG`.
 A full-suite run: the `/pcrec-test` skill (it queues the job and names the
 monitor); it adds a one-shot alarm at the expected end + 2 h.
 
+6. `boxqueue retry` re-runs the queue's STORED copy of a job: after fixing a job script use `boxqueue add --name KEY SCRIPT` (2026-11-15). A job that exits non-zero on the very thing the next job is meant to judge can never pass: dry-run a chain's contract on a branch that is SUPPOSED to move things (2026-11-15).
+
 ## 3. Lane liveness (what the manager watches; lanes never watch)
 
 - A lane's long validation is its LAST act (DO-THEN-FINISH, Frank
@@ -121,6 +123,7 @@ monitor); it adds a one-shot alarm at the expected end + 2 h.
 - Before finishing an "idle" lane's landing, check the worktree for fresh
   mtimes AND send a status message first; take over only on silence or an
   explicit handback.
+- `scripts/lanewatch --follow NAME` reads GONE at once for a lane with no worktree of its own (a main-tree landing lane); for those pass `--dir build/lanecheck` to the one-shot check only and rely on the lane's final message plus the heartbeat (2026-11-15, land1115d).
 - Before TaskStop of a lane: `scripts/boxlock status` for that lane's waiters
   (a stopped lane can leave a boxlock waiter that later takes the box,
   trailgc2-sections 2026-10-29), and confirm any detached run it owns

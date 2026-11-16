@@ -44,3 +44,5 @@ merge VERDICT and a sonnet landing lane does merge/strict/index/push/prune
   `rm -rf` (memory pcrec-wtprune-force-never-rmrf). Never remove a
   delivered lane's worktree while a message you sent it may be unread (it
   resurrects and re-creates the tree).
+- Run the identity gate in the CLOUD (kind recidentity via `scripts/cloudrun` on the local merge) when the box queue is long or the evening hold is near; an idle landing lane does not self-wake: message it when the verdict lands (2026-11-15).
+- Before launching a landing lane run `make test-plan-lint` on main yourself: land1115d stopped at step 1 on a violation an earlier landing's report had left on main (2026-11-15).

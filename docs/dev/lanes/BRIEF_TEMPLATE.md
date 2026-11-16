@@ -33,7 +33,7 @@ A field with nothing to say is written "none", never dropped.
     any run over ~2 min, and before writing its report; the report's
     STATE AT HANDOFF names the last entry it applied (R-n), and the
     manager checks that against the file at acceptance (u25, 2026-11-07,
-    reported "empty" over R1 and R2). A change bigger than
+    reported "empty" over R1 and R2). The rulings file is GITIGNORED, so the lane looks for it with `ls`, not `git status` (land1115d reported "does not exist", 2026-11-15). A change bigger than
     a clarification (new scope, a reversed design) still goes to a FRESH
     lane.
 
@@ -82,3 +82,5 @@ A field with nothing to say is written "none", never dropped.
     complete on its own, then END. Any question the manager asks the lane
     (and any the lane asks back) wants a reply EITHER WAY; never phrase a
     request as "reply only if ..." (Frank 2026-11-07).
+
+Two more traps (2026-11-15): never run a fix lane in a worktree that queued box jobs build in (cut a new branch/worktree); and a prepare command chained with `&&` after a commit loses the deliver/rulings files when a hook rejects the commit (write them in their own command).

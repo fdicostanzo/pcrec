@@ -62,3 +62,7 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 - Freeze to draft took ~36 min, with no resends.
 - The verifier reused a critic's plant directory read-only, which saved builds. Worth stating in the verifier brief template.
 - Reading found the one gate defect (F1) that ~2k byte-identical compiles could not: on a zero-mover unit, probes confirm the bar and reading finds the defects.
+
+## 2026-11-15 — critic rounds covs2d (review r13) and predspec12 (review r14)
+- r13 covs2d (design, 5 critics + sonnet verifier): the coordinator pattern held cleanly at small scale: one freeze, one build, one kit, five parallel critics, one verifier, draft in about 20 minutes of wall time; the manager saw nothing until the hand-back. The verifier's value was concentrated: of 23 items the one REFUTED (MEASURE-4, shell quoting dropped a `\b`) was the only critic error, and it would otherwise have entered the draft as a design finding. All critics returned within the launch turn (2-7 min); the sonnet measurement critic was fastest and least careful.
+- r14 predspec12 (design, 2 opus critics, inline verification): for a short re-check the pattern's overhead (COMMON, deliver files, lanecheck) is about 5 min of setup against about 5 min of critic time; still worth it for the blinding and the census counts. Freeze to draft about 11 min; the coordinator verified inline (quotes + 4 oracle calls) because every finding was a quote claim or a one-call repro.
