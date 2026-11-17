@@ -155,11 +155,16 @@ static int class_same(const mf_class *a, const mf_class *b)
 /* Every art G2 begins states its target (unit U2): the portable one unless a
  * caller wants SIMD (g2_gen's odd batches state the host's own): an unstated
  * art is refused at its first define. */
+/* R-45: the lever every art takes (`span-head=N`, from G2W_SPAN_HEAD), or
+ * empty */
+static char g_span_lever[32];
+
 static mf_art *g2_art_begin(mf_arena *a, const char *prefix, uint64_t denies,
                             const mf_measures *ms, const mf_analysis *an)
 {
     mf_art *art = mf_art_begin(a, prefix, denies, ms, an);
     if (art && mf_art_target(art, mf_portable_target())) return NULL;
+    if (art && g_span_lever[0] && mf_lever(art, g_span_lever)) return NULL;
     return art;
 }
 
@@ -203,7 +208,8 @@ static void view(const gfacts *f, g2w_site *x, g2w_span (*v)[G2W_MAXSPAN])
  * stream of their own, so every site the space generated before S3 is
  * generated unchanged (S2's floors were measured on it). */
 static unsigned long long rng, rng3 = 0xD172535ull, rng4 = 0xC1CA5E1E55ull,
-                          rng5 = 0x2B1A1250ull, rng6 = 0x40B5EB1ull, rng7 = 0x3822E3ull;
+                          rng5 = 0x2B1A1250ull, rng6 = 0x40B5EB1ull, rng7 = 0x3822E3ull,
+                          rng8 = 0x5A45F0125ull;
 static unsigned long long *rngp = &rng;
 static int s3_dense;                    /* generating S3's dense sites */
 /* THE CASELESS SITES (code review r1 C1/C13, after the dense ones, from a
@@ -240,6 +246,20 @@ static int h2_below;
  * narrowed to a member, so the run decision over the meet differs from one
  * over R's own sets). */
 static int k3_inrun;
+/* THE REPEATED-CLASS SITES (R-45 r45_reply rev 6 §3 "Answers, controlled by
+ * G2"; after the in-run ones, from a stream of their own): a REPORT window
+ * whose positions carry ONE multi-member set (three or four of the subject
+ * alphabet's bytes, the span forms' kind 2) over a stretch of h - 1, h or
+ * h + 1 positions for a grid head h, stated as consecutive spans of at most
+ * G2W_MAXPOS positions (a loop runs across span boundaries), one in four
+ * with a lone position of another set inside or after it, so the stretch
+ * straddles every head G2's reach admits (heads 1..32 at G2W_REACH 64; the
+ * heads 64 and past are the raise's, MF_WSPAN_POS 4095). Under the lever
+ * G2W_SPAN_HEAD=N every art renders H(N), and the loops are counted per
+ * family (K35). */
+static int rc_rep;
+static const int RC_HEADS[] = { 1, 2, 4, 8, 16, 24, 32 };
+#define NRC_HEADS (sizeof RC_HEADS / sizeof RC_HEADS[0])
 static const uint8_t TWOB[] = { 'a', 'b', 'c', '0', '1', '\n', 'x', 0xC4 };
 #define NTWOB (sizeof TWOB / sizeof TWOB[0])
 static unsigned rnd(unsigned n)
@@ -413,6 +433,41 @@ static void inrun_alt(galt *a)
     }
 }
 
+/* A repeated-class site's alternative (rc_rep, above). */
+static void rc_alt(galt *a)
+{
+    int h = RC_HEADS[rnd(NRC_HEADS)];
+    int k = h - 1 + (int)rnd(3);
+    if (k < 2) k = 2;
+    if (k > G2W_REACH - 4) k = G2W_REACH - 4;
+    uint8_t cls[32] = { 0 };
+    for (unsigned m = 3 + rnd(2), i = 0; i < m;) {
+        int b = ALPHA[rnd(NALPHA)];
+        if (!(cls[b >> 3] >> (b & 7) & 1)) { set_add(cls, b); i++; }
+    }
+    for (int start = 0; start < k && a->nspan < G2W_MAXSPAN - 1;) {
+        gspan *sp = &a->span[a->nspan++];
+        memset(sp, 0, sizeof *sp);
+        sp->start = start;
+        sp->len = k - start > G2W_MAXPOS ? G2W_MAXPOS : k - start;
+        sp->verify = G2W_YES;
+        sp->core_lo = 0;
+        sp->core_len = sp->len;
+        for (int j = 0; j < sp->len; j++) memcpy(sp->set[j], cls, 32);
+        start += sp->len;
+    }
+    if (rnd(4) == 0) {      /* a lone position of another set, inside or just after */
+        gspan *q = &a->span[a->nspan++];
+        memset(q, 0, sizeof *q);
+        q->start = (int)rnd((unsigned)k + 1);
+        q->len = 1;
+        q->verify = G2W_YES;
+        q->core_lo = 0;
+        q->core_len = 1;
+        set_add(q->set[0], ALPHA[rnd(NALPHA)]);
+    }
+}
+
 static void gen_facts(int fam, gfacts *x)
 {
     memset(x, 0, sizeof *x);
@@ -475,6 +530,10 @@ static void gen_facts(int fam, gfacts *x)
     case FAM_REPORT: {
         galt *a = &x->alt[0];
         a->entry = G2W_E_NONE;
+        if (rc_rep) {
+            rc_alt(a);
+            break;
+        }
         int k = c1_caseless ? 2 + (int)rnd(7) : r2_two ? 1 + (int)rnd(8) : 1 + (int)rnd(5);
         rand_span(&a->span[a->nspan++], 0, k, G2W_YES, 0);
         a->span[0].core_lo = 0;
@@ -1040,6 +1099,11 @@ int main(int argc, char **argv)
     int n6 = h2n ? atoi(h2n) : 100;
     const char *k3n = getenv("G2W_K3_SITES");
     int n7 = k3n ? atoi(k3n) : 200;
+    const char *rcn = getenv("G2W_RC_SITES");
+    int n8 = rcn ? atoi(rcn) : 150;
+    const char *shn = getenv("G2W_SPAN_HEAD");
+    if (shn && *shn) snprintf(g_span_lever, sizeof g_span_lever, "span-head=%s", shn);
+    long loops[FAM_N + 1] = { 0 };      /* sites whose text loops, per family (+ the repeated-class) */
     long k3_lever = 0;
     long k3_rendered = 0, k3_agree = 0, k3_filt = 0;   /* in-run sites rendered; library stop == reference's; the in-run filter decides */
     buf defs = { 0 }, table = { 0 }, data = { 0 };
@@ -1080,7 +1144,7 @@ int main(int argc, char **argv)
 
     bputs(&defs, "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
                  "#include \"g2_win.h\"\n#define G2W_UNWRITTEN ((size_t)-2)\n\n");
-    for (int id = 0; id < nsites + n3 + n4 + n5 + n6 + n7; id++) {
+    for (int id = 0; id < nsites + n3 + n4 + n5 + n6 + n7 + n8; id++) {
         if (id == nsites) {             /* D172 S3's dense sites: their own stream */
             rngp = &rng3;
             s3_dense = 1;
@@ -1105,7 +1169,12 @@ int main(int argc, char **argv)
             h2_below = 0;
             k3_inrun = 1;
         }
-        int fam = k3_inrun ? FAM_MASS : s3_dense || c1_caseless || r2_two || h2_below ? FAM_REPORT
+        if (id == nsites + n3 + n4 + n5 + n6 + n7) {   /* the repeated-class sites: theirs */
+            rngp = &rng8;
+            k3_inrun = 0;
+            rc_rep = 1;
+        }
+        int fam = k3_inrun ? FAM_MASS : s3_dense || c1_caseless || r2_two || h2_below || rc_rep ? FAM_REPORT
                 : id < FAM_N * 4 ? id % FAM_N : (int)rnd(FAM_N);
         gfacts gf;
         gen_facts(fam, &gf);
@@ -1387,6 +1456,10 @@ int main(int argc, char **argv)
             }
         }
         x.pair = strstr(body.p ? body.p : "", "_ha < ") || strstr(file.p ? file.p : "", "ha < pos");
+        /* a span form's loop (window.c wf_loop: `<J> == <end>; })`), counted
+           per family, the repeated-class sites apart (K35) */
+        if (strstr(body.p ? body.p : "", "_j == ") || strstr(file.p ? file.p : "", "_j == "))
+            loops[rc_rep ? FAM_N : fam]++;
         /* the define-time query agrees with a define over the SAME phases
            (§4.5 rule 2: mf_ask answers mf_define's selection, MF_PH_DEFINE;
            mf_emit's also reads the use hooks, so it may choose otherwise) */
@@ -1530,7 +1603,7 @@ int main(int argc, char **argv)
     printf("g2_win_gen: %ld sites rendered of %d (S3 dense %d, caseless %d, two-byte %d, "
            "below-window %d, in-run %d, %ld of them under run-tie-left); in-run rendered %ld, "
            "filter-decisive %ld, stop agreeing with the reference %ld; families:", rendered,
-           nsites + n3 + n4 + n5 + n6 + n7, n3, n4, n5, n6, n7, k3_lever, k3_rendered, k3_filt, k3_agree);
+           nsites + n3 + n4 + n5 + n6 + n7 + n8, n3, n4, n5, n6, n7, k3_lever, k3_rendered, k3_filt, k3_agree);
     for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], famn[i]);
     printf("; frames: func=%ld assign=%ld assign_lo=%ld onmiss=%ld; controls refused %ld; "
            "queries agreeing %ld; two runs refused %ld\n", frames[0], frames[1], frames[2],
@@ -1546,6 +1619,9 @@ int main(int argc, char **argv)
            "table %ld own %ld noffer %ld meet %ld term %ld below %ld stop_own %ld af_walk %ld af_other %ld stop_run %ld\n", fc_fn,
            fc_pair, fc_hors, fc_libc, fc_walk, fc_method, tn_table, tn_own, tn_noffer, tn_meet, tn_term, tn_below,
            tn_stop_own, af_walk, af_other, tn_stop_run);
+    printf("g2_win_gen: loops head=%s", g_span_lever[0] ? g_span_lever + 10 : "default");
+    for (int i = 0; i < FAM_N; i++) printf(" %s=%ld", fam_name[i], loops[i]);
+    printf(" repeated=%ld (of %d repeated-class sites)\n", loops[FAM_N], n8);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }

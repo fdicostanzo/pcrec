@@ -301,6 +301,40 @@ static void run_long(unsigned si, const g2w_dec *d, const uint8_t *alpha, int na
         }
 }
 
+/* THE PLANTED SUBJECTS of a window that reaches past the short subjects
+ * (a tested offset at 12 or more: R-45's span forms loop over such
+ * stretches): 16 subjects, the candidate at 8..10 (room for every negative
+ * offset), each tested offset given a member of its set (the reference's
+ * meet), the rest a byte no set holds, and every other subject one tested
+ * offset broken to that byte, so a loop is seen both to pass and to stop;
+ * lo up to the candidate. Counted in `nplanted`. */
+static unsigned long long rngp_ = 0x45F01AA7ull;   /* the planted subjects' own stream */
+static long nplanted;
+static unsigned rnd_p(unsigned n)
+{
+    rngp_ ^= rngp_ << 13; rngp_ ^= rngp_ >> 7; rngp_ ^= rngp_ << 17;
+    return (unsigned)(rngp_ % n);
+}
+static void run_planted(unsigned si, const g2w_dec *d, uint8_t fill, const uint8_t sentinel[2])
+{
+    int hi = 0;
+    for (int t = 0; t < d->ntest; t++) if (d->toff[t] > hi) hi = d->toff[t];
+    if (hi < 12) return;
+    unsigned char subj[16 + G2W_REACH + 8];
+    nplanted++;
+    for (int k = 0; k < 16 && !site_failed; k++) {
+        long c = 8 + k % 3, n = c + hi + 1 + (k / 3) % 2;
+        memset(subj, fill, sizeof subj);
+        for (int t = 0; t < d->ntest; t++) {
+            int mem[256], nm = 0;
+            for (int b = 0; b < 256; b++) if (has(d->tset[t], b) && b != fill) mem[nm++] = b;
+            if (nm && c + d->toff[t] >= 0) subj[c + d->toff[t]] = (unsigned char)mem[rnd_p((unsigned)nm)];
+        }
+        if (k % 2) subj[c + d->toff[rnd_p((unsigned)d->ntest)]] = fill;
+        run_subject_to(si, d, subj, n, sentinel, c);
+    }
+}
+
 int main(int argc, char **argv)
 {
     if (argc == 3 && !strcmp(argv[1], "--ref-defect")) g2w_ref_defect = atoi(argv[2]);
@@ -403,6 +437,7 @@ int main(int argc, char **argv)
             run_subject(si, &d, subj, len, sentinel);
         }
         if (x->pair) { run_long(si, &d, alpha, na, sentinel); nlong++; }
+        if (!site_failed) run_planted(si, &d, alpha[na - 1], sentinel);
         if (!site_failed) passed++;
     }
     printf("G2W sites %u calls %ld hits %ld\n", g2w_nsites, calls, hits);
@@ -413,6 +448,7 @@ int main(int argc, char **argv)
     printf("G2W cells edge_rejects=%ld core_off=%ld noncore_off=%ld neg_reads=%ld nop_empty=%ld\n",
            edge_rejects, core_off, noncore_off, neg_reads, nop_empty);
     printf("G2W long pair=%ld\n", nlong);
+    printf("G2W planted sites=%ld\n", nplanted);
     printf("G2W partd r_yes=%ld r_wide=%ld\n", r_yes, r_wide);
     printf("G2W inrun lever=%ld set=%ld set_won=%ld meet=%ld\n", in_lever, in_set, in_set_won, in_meet);
     printf("G2W forms");

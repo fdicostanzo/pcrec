@@ -97,6 +97,16 @@ FORM_FLOORS="window-search:630 wf-floor:486 generic:380 pf_memchr:215 ofsskip:27
 # two-stream sites' LONG SUBJECTS (`long pair`, measured 406), each floor the measure less ~10%.
 EFIND_FLOORS="libc:320 walk:103 hors:110 run:115 below:95 report:370 refused:17 pair:316 fn:48 hwin:146"
 FLOOR_LONG_PAIR=365             # two-stream sites given the long subjects (406)
+# R-45's span forms (lane forms, 2026-11-17, seed 20261022, less ~10%): the
+# repeated-class sites (G2W_RC_SITES, 150, their own stream) and every other
+# site whose window reaches offset 12 get the planted subjects (63); per head
+# pass, the sites whose text loops, per family (measured at 0: mass 34, report
+# 199, random 17, repeated 59; at 8: mass 1, random 3, repeated 24; at 24:
+# repeated 9). A family with no loop at a head has no floor there.
+FLOOR_PLANTED=56
+LOOP_FLOORS_0="mass:30 report:179 random:15 repeated:53"
+LOOP_FLOORS_8="repeated:21"
+LOOP_FLOORS_24="repeated:8"
 # plan_frame.md 3.0b: the framed EMIT ask's (frame_row, stream) cells and the
 # frame part's classes, each at the measured count less ~10% (seed 20261022,
 # 1500 sites: E-func/none 233, E-func/restart 38, E-stmt/none 355,
@@ -453,6 +463,31 @@ if [ -n "${G2W_TRACE:-}" ]; then
     done
 fi
 for inf in $INRUN_FLOORS; do floor "inrun ${inf%%:*}" "$(val inrun "${inf%%:*}")" "${inf#*:}"; done
+floor "planted sites" "$(val planted sites)" "$FLOOR_PLANTED"
+
+# --- R-45's SPAN FORMS: one pass per head (the lever span-head=N on every
+# art; r45_reply rev 6 §3 "Answers, controlled by G2") -----------------------
+# The default pass above renders the shipped head (window.c WF_SPAN_HEAD, 64),
+# past every offset G2 states (G2W_REACH 64): it loops NOTHING, read below as an
+# equality. Each head in G2W_HEADS (default 0 8 24: L, a short head, a head
+# inside the repeated-class stretches) re-runs the whole space, the driver
+# plain (ASan+UBSan is the default pass's), and its loops are counted per
+# family from the generator's own `loops` line, each floored (K35): a family
+# whose stretches stopped looping at a head is red.
+lp() { grep -h '^g2_win_gen: loops' "$1" | grep -oE " $2=[0-9]+" | head -1 | cut -d= -f2; }
+dl=0
+for fam in parked pair mass mline part report random repeated; do dl=$((dl + $(lp "$WORK/plain.gen.log" "$fam"))); done
+if [ "$dl" -eq 0 ]; then tp=$((tp + 1)); else note "the default head looped $dl G2 sites (WF_SPAN_HEAD 64 >= G2W_REACH: none may)"; fi
+for h in ${G2W_HEADS:-0 8 24}; do
+    G2W_SPAN_HEAD="$h" G2W_NOASAN=1 one_run "head$h" "$LIB"
+    read -r p f < <(counts "$WORK/head$h.run.log")
+    if [ "$p" = x ] || [ "$f" = x ]; then note "head $h: the driver printed no counts"; else tp=$((tp + p)); tf=$((tf + f)); fi
+    grep -h '^FAIL' "$WORK/head$h.gen.log" "$WORK/head$h.run.log" | head -10
+    gf=$(grep -h '^g2_win_gen failures:' "$WORK/head$h.gen.log" | grep -oE '[0-9]+$')
+    if [ "${gf:-x}" != 0 ]; then note "head $h: the generator failed ${gf:-?} sites"; else tp=$((tp + 1)); fi
+    grep -h '^g2_win_gen: loops' "$WORK/head$h.gen.log"
+    for lf in $(eval echo "\${LOOP_FLOORS_$h:-}"); do floor "head $h loops ${lf%%:*}" "$(lp "$WORK/head$h.gen.log" "${lf%%:*}")" "${lf#*:}"; done
+done
 
 echo "checks passed: $tp"
 echo "checks failed: $tf"
