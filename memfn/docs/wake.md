@@ -29,7 +29,13 @@ and the R-45 reply block (rev 6). 4. D197 (the mfind instrument; one-sided timin
   700-704 (README has the queue lines; window.vars RUN_ID=fcards-zen4-1, FROZEN=main's sha; worktrees/fcards-night clean at
   FROZEN, pin it in .wtprune.keep). 704 identity runs only at h*=64; h*<64 -> kit commit + abi event after the night. Send main
   the keys when queued, and 'h* frozen' after 702.
-- Sabotage ids: next free S3320. Main accepted the critic-skill change (simulate drills each pooled level + order step).
+- 14:25 ADD: round 5 (r39) on 1aec5d4d3 RULED: K1 LAYOUT TWIN (between-binary noise), K4 reading B, K6 one owed-confirm list,
+  + small items. formsfixj DONE @ 2f3c964fc (K7/K10/K11; its mech shard table is REGENERATED wholesale: tell main to
+  regenerate after merging, not line-merge). formsfixi (opus) running, due by 19:30. NEXT: landing lane merges formsfixi +
+  formsfixj into lane/memfn-forms; round 6 (sized) + cloud on that tip; job-set update (700 runs G2 head passes on FROZEN ->
+  G2 file; 701 calls `cards.py rule RUNDIR --g2 FILE` once before its loop; dry checks the file); by 14:00 11-18 deliver to
+  main. Main accepted both critic-skill proposals (each pooled level; comparison kinds).
+- Sabotage ids: next free S3330. Main accepted the critic-skill change (simulate drills each pooled level + order step).
 ## CURRENT STATE (2026-11-16 17:30)
 - TIMING TONIGHT: jobs 600-609 QUEUED (box queue, not-before 2026-11-17T01:00, RUN_ID mfcard-zen4-2, FROZEN f6274c11b =
   lane/memfn-scanrow, merged on main as c9ff8b53d; worktrees/mfind fast-forwarded and pinned in .wtprune.keep). Job set
