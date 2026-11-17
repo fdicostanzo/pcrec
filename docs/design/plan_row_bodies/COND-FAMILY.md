@@ -1969,3 +1969,19 @@ problems. / Default-value: yes / Source-row: yes". RECORD, each as asked to him 
   has its own costs (the default reaches conditions that did not write it; a second default is an error; 333 of 335
   programs rewrite under it).
 No rev 23 until default-scope is ruled and a critic round has run on the note.
+
+**2026-11-16 OWNER RULING — default-scope: per test (Frank, to session 137, box clock 22:30; after
+docs/design/condition_kind.md Part III).** Asked "**default-scope**: per test, with `$a` reading the real label:
+yes, or do you want another option?", HIS WORDS: "default-scope: yes per test". RECORD: a default is a stand-in for
+its label in the ONE test that writes it (COALESCE inside that test), not the label's value for the statement. THE
+READING THE MANAGER TOOK of "yes per test" (his; said to the owner in the same reply): the per-ENTRY form the
+question named (Part III's (a2)): a `$a` always reads the real label (absent stays absent), so a record is
+exactly the AND of its entries; the author who wants one entry to see another's default writes one joint
+condition. As put to him before he answered: two different defaults on one label stay legal (`(h = 0: <5) & (h =
+9: >7)` holds on the h-absent subjects; in SQL, `coalesce(h,0) < 5 and coalesce(h,9) > 7`); the manager's
+earlier reading default-reaches-dollar (16:23) REVERSES. MINE, restated without his word and to be checked by the
+critic round: "all" = every pass passes the condition, and there may be none (Part III.3, A2).
+STATE OF THE MODEL after this evening: a pattern is a statement; the source row is the whole subject; a condition
+is a three-valued test of one result row; absent is null and never matches; no optional mark; a default is per
+test and may be any text; the complement of a statement is the source rows it did not match; `!` on a condition
+stays an error. NEXT: a critic round on condition_kind.md (Parts I-III), then rev 23 of predicates_draft.md.
