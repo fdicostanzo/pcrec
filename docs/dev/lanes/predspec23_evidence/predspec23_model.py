@@ -162,6 +162,14 @@ EX = [
              (int(r["a"] or "0") < 10 and int(r["b"]) > int(r["a"] or "0"))]), ["/5", "x/5", "2/5"]),
     ("D9 two defaults on one label (h = 0: <5) & (h = 9: >7)", Prog(SV, [test("h", lt(5), "0"), test("h", lambda v: numeral(v) and int(v) > 7, "9")]), ["x", "3x", "a x"]),
 ]
+AH = r"a(?P<h>\d)|b(?P<k>\d)|c"                              # rev 22 §2.2's A
+EX += [
+    ("D10 /a/ & /b/ (a join on the stretch)", Prog("a", [], [], [lambda s, i, j: re.fullmatch("b", s[i:j]) is not None]), ["ab"]),
+    ("D11 t2 & contains(t2 & !q) (nested-complement)", Prog(T2, [], [], [lambda s, i, j: any(accept(Prog(T2, [], [q]), s, k, l)
+        for k in range(i, j + 1) for l in range(k + 1, j + 1))]), ["9:30"]),
+    ("D12 A & (h = 0: <5) & (k: <5), A = /a(?<h>\\d)|b(?<k>\\d)|c/", Prog(AH, [test("h", lt(5), "0"), test("k", lt(5))]), ["b3", "a3", "c"]),
+    ("D13 A & (h: <5) & (k: <5) (the mark merely deleted)", Prog(AH, [test("h", lt(5)), test("k", lt(5))]), ["b3"]),
+]
 for name, P, subs in EX:
     for s in subs:
         emit((1, name, s), "  %s on `%s`: WHOLE %s | SEARCHED %s" % (name, s, rep("WHOLE", P, s), rep("SEARCHED", P, s)))

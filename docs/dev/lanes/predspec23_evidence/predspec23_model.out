@@ -2,6 +2,12 @@ ORDER: forward
   D1 t2 & !q (q := t2 & late) on `9:15`: WHOLE HOLDS | SEARCHED HOLDS `9:15`@0
   D1 t2 & !q (q := t2 & late) on `9:30`: WHOLE FAILS | SEARCHED HOLDS `9`@0
   D1 t2 & !q (q := t2 & late) on `9:30 1`: WHOLE FAILS | SEARCHED HOLDS `9`@0
+  D10 /a/ & /b/ (a join on the stretch) on `ab`: WHOLE FAILS | SEARCHED FAILS
+  D11 t2 & contains(t2 & !q) (nested-complement) on `9:30`: WHOLE HOLDS | SEARCHED HOLDS `9:30`@0
+  D12 A & (h = 0: <5) & (k: <5), A = /a(?<h>\d)|b(?<k>\d)|c/ on `a3`: WHOLE FAILS | SEARCHED FAILS
+  D12 A & (h = 0: <5) & (k: <5), A = /a(?<h>\d)|b(?<k>\d)|c/ on `b3`: WHOLE HOLDS | SEARCHED HOLDS `b3`@0
+  D12 A & (h = 0: <5) & (k: <5), A = /a(?<h>\d)|b(?<k>\d)|c/ on `c`: WHOLE FAILS | SEARCHED FAILS
+  D13 A & (h: <5) & (k: <5) (the mark merely deleted) on `b3`: WHOLE FAILS | SEARCHED FAILS
   D2 /\d+/ & !/0+/ (11-15 20:43 tie) on `0`: WHOLE FAILS | SEARCHED FAILS
   D2 /\d+/ & !/0+/ (11-15 20:43 tie) on `0 7`: WHOLE FAILS | SEARCHED HOLDS `7`@2
   D3 t2 & NOT late on `9`: WHOLE FAILS | SEARCHED FAILS
