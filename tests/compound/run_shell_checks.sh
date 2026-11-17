@@ -138,7 +138,9 @@ for v in -0 +8 " 8" 4096 "" 8x; do
 done
 # The ACCEPTED rows assert the value FORWARDED to the kit (review r37 H8; the CLI stores n + 1,
 # memfn_sites.c sends span_head - 1): the artifact at the spelling is compared with the artifact at
-# the head it names, and with a KNOWN-DIFFERENT head, so an off-by-one in either half goes red.
+# the head it names, and with a KNOWN-DIFFERENT head. Those comparisons render both sides through the
+# same CLI-store / sites-send pair, so they check the PARSE only (r38 J5); the VALUE check is the
+# absolute grep below (`_j = 8; for (`), which goes red on a wrong forwarded head or a lost reach.
 # `-o -` is load-bearing: with `-o FILE` every artifact differs through its #include line.
 # Width 32: `08` names head 8 (a loop from position 8; head 7 and 9 differ); 4095 is past this
 # width's reach, so it names the same artifact as 4094 (and 64) and differs from head 8.
@@ -146,11 +148,11 @@ SHPAT='[0-9a-f]{32}'
 shart() { pcrec_run "$HARNESS" -p rx --features assertions,classes "--harness=span-head=$1" -o - --pattern "$SHPAT" 2>"$W/sh.err"; }
 a8="$(shart 8)"; a08="$(shart 08)"; a7="$(shart 7)"; a9="$(shart 9)"; a4095="$(shart 4095)"; a4094="$(shart 4094)"
 if [ -n "$a8" ] && printf '%s' "$a8" | grep -q '_j = 8; for ('; then ok "(4) head 8 renders a loop from position 8 (the reach: the artifact reads the head)"
-else bad "(4) --harness=span-head=8 renders no '_j = 8; for (' loop on $SHPAT: the forwarded-value rows below are vacuous"; fi
+else bad "(4) --harness=span-head=8 renders no '_j = 8; for (' loop on $SHPAT: the forwarded head is wrong (an off-by-one in the CLI store or the sites send) or the lever's reach is lost; the comparisons below only check the parse"; fi
 [ "$a08" = "$a8" ] && [ -n "$a08" ] && ok "(4) --harness=span-head=08 is accepted and forwards head 8 (artifact == head 8's)" \
     || bad "(4) --harness=span-head=08 does not give head 8's artifact: $(head -1 "$W/sh.err")"
 { [ "$a08" != "$a7" ] && [ "$a08" != "$a9" ] && [ -n "$a7" ] && [ -n "$a9" ]; } \
-    && ok "(4) control: heads 7 and 9 give artifacts different from head 8's (an off-by-one would show)" \
+    && ok "(4) control: heads 7 and 9 give artifacts different from head 8's (the parse differs by value; the forwarded value is the grep above)" \
     || bad "(4) control: head 7 or 9 gives head 8's artifact: the forwarded-value row cannot fail"
 [ -n "$a4095" ] && [ "$a4095" = "$a4094" ] && [ "$a4095" != "$a8" ] \
     && ok "(4) --harness=span-head=4095 is accepted and forwards a head past this width's reach (== head 4094, != head 8)" \

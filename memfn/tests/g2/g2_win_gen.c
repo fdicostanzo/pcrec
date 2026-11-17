@@ -1350,7 +1350,7 @@ static void loops_check(int id, const g2w_site *x, const g2w_dec *d, const char 
  * pass's head. */
 static const int LONG_K[] = { 500, G2W_MAXSPAN * G2W_MAXPOS < 4095 ? G2W_MAXSPAN * G2W_MAXPOS : 4095 };
 static const char *const LONG_A = "abc", *const LONG_B = "01x\n";
-static long long_rendered, long_deny, long_looped, long_pinned, long_pinned_force;
+static long long_rendered, long_deny, long_looped, long_pinned, long_pinned_def, long_pinned_force;
 
 static void long_rows(buf *defs, buf *ld, long *nl)
 {
@@ -1457,7 +1457,7 @@ static void long_rows(buf *defs, buf *ld, long *nl)
                             snprintf(m, sizeof m, "k %d mid %d head %d (%s): first loop [%d,%d), G2's [%d,%d), %d vs %d loops",
                                      k, mid, hp, res.form_id, lo[0], end[0], xn ? xlo[0] : -1, xn ? xend[0] : -1, n, xn);
                             if (!same) fail(id, "long row pin", m);
-                            else { long_pinned++; long_pinned_force += st == 2; }
+                            else { long_pinned++; long_pinned_def += st == 0; long_pinned_force += st == 2; }
                         }
                     }
                     bputs(defs, ft);
@@ -2071,8 +2071,8 @@ int main(int argc, char **argv)
     printf(" repeated=%ld (of %d repeated-class sites) mixed=%ld (of %ld mixed sites)\n", loops[FAM_N], n8,
            mixed_looped, mixed_sites);
     printf("g2_win_gen: span loops legit=%ld pinned_sites=%ld pinned_loops=%ld; long rendered=%ld looped=%ld "
-           "deny_witness=%ld pinned=%ld pinned_force=%ld\n", legit_loops, pin_sites, pin_loops, long_rendered, long_looped,
-           long_deny, long_pinned, long_pinned_force);
+           "deny_witness=%ld pinned=%ld pinned_def=%ld pinned_force=%ld\n", legit_loops, pin_sites, pin_loops, long_rendered,
+           long_looped, long_deny, long_pinned, long_pinned_def, long_pinned_force);
     printf("g2_win_gen: lever controls ok=%ld of %ld\n", lever_ok, lever_n);
     printf("g2_win_gen: wide-report rendered=%ld past64=%ld\n", wr_rendered, wr_past64);
     printf("g2_win_gen failures: %ld\n", fails);
