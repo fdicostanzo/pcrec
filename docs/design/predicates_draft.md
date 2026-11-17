@@ -533,7 +533,8 @@ R.1.4 THE OPERATORS ON PATTERNS.
   DIFFERENCE, the rows of A whose stretch B does not match whole (rev 22 §2.2 (3), "narrows the outside program's
   matches like any filter"; candidate R22, now the ruled reading under row-is-match: "a complement after `&` all
   filter potential matches").
-  WHERE A COMPLEMENT STANDS (rev 23.1, review r33 F6 (d), (e); the manager's disposition of F6): a complement
+  WHERE A COMPLEMENT STANDS (rev 23.1, review r33 F6 (d), (e); the manager's disposition of F6; rev 23.2: THE DRAFT'S
+  READING, listed as **complement-place**, §R.8 item 10): a complement
   ANYWHERE in an `&` chain filters the rows of the chain's NON-COMPLEMENT operands, and the chain must have one; the
   first non-complement operand takes the left operand's part in reporting (R.1.9). So `!q & t2` = `t2 & !q`, and
   `!startsWith("#") & alts` = `alts & !startsWith("#")` (§0.1 L1, L39: `&` is order-free, CF:722). After `label:`
@@ -547,6 +548,19 @@ R.1.4 THE OPERATORS ON PATTERNS.
   rows, read under his 20:41 guess as "all the matches from the table that didn't get matched", are every stretch
   that is not a row of B, which asks "some stretch is not a B", not "no B anywhere" (§R.4; §R.8 **whole-text** lists
   it as the record's third candidate).
+  REV 23.2 (review r34 D4; STATED, NOTHING DECIDED; it depends on **whole-text** and **complement-place**, §R.8):
+  (1) the reasons above are SEARCHED-mode reasons. In WHOLE mode and in every whole-value place (R.1.1: either side
+  of `&`, a `label:` set) a lone `!B` has an obvious reading, "the value is not a B", which is exactly the legal `(x:
+  !B)` one place over; so the error removes a spelling there that the `label:` rule keeps. (2) "Read under his 20:41
+  guess" reads the 20:41 SOURCE table (the text's stretches), which R.1.3 has just set aside for the per-pattern
+  table of potential matches; under R.1.2's per-pattern table "all the matches from the table that didn't get
+  matched by the uncomplemented" statement is EMPTY for a lone `!B` (B's table holds only B's rows), not "some
+  stretch is not a B". So §R.8 item 1's account of the record's first candidate is one reading of his guess, under
+  one of the two tables. (3) The chain rule ("the chain must have a non-complement operand") and the `label:` rule
+  ("after `label:` the left operand is the label's text") COLLIDE on `(x: !B & !C)` and `(m: !contains(r) &
+  !contains(s))`: an ERROR by the first (no non-complement operand), legal by the second if the label's text is the
+  chain's implicit first operand; and whether a condition counts as a "non-complement operand" (a chain of only
+  conditions and complements) is unsaid. No answer printed in this draft moves either way (review r34's mode-closure critic, PROBED-AND-HELD).
 - A label-free filter (`startsWith`, `contains(r)`, `!contains(r)`, a comparison set used as a pattern) is a pattern
   like any other: it keeps the rows whose stretch it matches whole.
 
@@ -1696,7 +1710,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 
 | # | forms | verdict | diagnostic / reason | source |
 |---|---|---|---|---|
-| L1 | `a & b & c` in any order or grouping, incl. transforms: `alts & !startsWith("#") & length(<=20)` vs `alts & length(<=20) & !startsWith("#")`; `(x & padded(S)) & T` vs `x & (padded(S) & T)` | SAME | `&` is pure intersection (§2.2, OWN-1 ruling). Rev 23.1 (review r33 F6 (d); fix-induced sweep): with a complement or a NOT condition anywhere in the chain it stays SAME: a complement filters the rows of the chain's non-complement operands wherever it is written (§R.1.4), and Kleene AND is order-free | OWN-1, RUL-11 |
+| L1 | `a & b & c` in any order or grouping, incl. transforms: `alts & !startsWith("#") & length(<=20)` vs `alts & length(<=20) & !startsWith("#")`; `(x & padded(S)) & T` vs `x & (padded(S) & T)` | SAME | `&` is pure intersection (§2.2, OWN-1 ruling). Rev 23.1 (review r33 F6 (d); fix-induced sweep): with a complement or a NOT condition anywhere in the chain it stays SAME: a complement filters the rows of the chain's non-complement operands wherever it is written (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10), and Kleene AND is order-free | OWN-1, RUL-11 |
 | L2 | a binding vs its expansion: `m := /\d\d/ & padded(between(1, 12))` then `m & T` vs `/\d\d/ & padded(between(1, 12)) & T` | SAME | | OWN-1 (c) |
 | L3 | `isodate & (year: S, month: 2)` vs `isodate & (year: S) & (month: 2)` | SAME | the `( )` RECORD holds its entries together; the AND comes from the record, not the comma (§4.1, §5.4) | C22, CF:866 |
 | L4 | `(major: 1, minor: >=4)` vs `(major: 1 & minor: >=4)` | DIFFERENT: ERROR | the second is a compile ERROR: a label inside a value (`major: (1 & minor: >=4)`) | C22 |
@@ -1734,7 +1748,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L36 | `(x: S)` vs `(x = d: S)` (d in S) on a repeated label (rev 23; rev 22's row compared `all((x: S))`, retired 23:18) | DIFFERENT: BY DESIGN | the default spells "every pass, possibly none": on zero passes and on a pass lacking x the default reads d (§R.1.7; `(n: <5)` vs `(n = 0: <5)` on the empty text: FAILS / HOLDS in both modes, `predspec23_model.out` PART 5) | all-question 23:18 |
 | L37 | `(wname.index: ==wd)` vs `(b: >$a)` | DIFFERENT: ERROR | REV 20: `(wname.index: ==wd)` is the bare-binding error: on the value side a bare name is a BINDING (here the computed label's macro, which no comparison atom takes), and a label's value is read `$wd`; so E-RFC writes `==$wd` and E-CAL `<=$dim` (§13 C13 RESOLVED) | OWN-11, r8 P6-11 |; colon-scope CF 11:32
 | L38 | `isodate(x).year` vs `(x & isodate).year` | DIFFERENT: ERROR | the first is a compile ERROR (a pattern takes no arguments; hint "write `x & isodate`"); whether `.year` of `x & isodate` is a value or a pattern: OPEN (§13 C29) | RUL-8, 2026-11-15 RULING |
-| L39 | `A & B` vs `B & A` | SAME | BOTH operands are filter roles, matched whole on the same span (RULED, CF:1054-1062 on main, rev 13; review r14 F1: a one-sided "filter side" would break this row), so the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2). Rev 23.1 (review r33 F6 (d)): a complement on either side (`!q & t2` vs `t2 & !q`) is the same program; the first non-complement operand reports (§R.1.4) | C1 ruling |
+| L39 | `A & B` vs `B & A` | SAME | BOTH operands are filter roles, matched whole on the same span (RULED, CF:1054-1062 on main, rev 13; review r14 F1: a one-sided "filter side" would break this row), so the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2). Rev 23.1 (review r33 F6 (d)): a complement on either side (`!q & t2` vs `t2 & !q`) is the same program; the first non-complement operand reports (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10) | C1 ruling |
 | L40 | `isodate(year: S)` vs `isodate & (year: S)` | DIFFERENT: ERROR | the first is a compile ERROR: a pattern has no parameters; hint "write `isodate & (year: ...)`"; a parameterised pattern is a macro, `date_in(years) := isodate & (year: years)` (§5.2) | CF:744 |
 | L41 | `/\w+/ & /^foo/` vs `/\w+/ & startsWith("foo")` | DIFFERENT: WARNING | `anchor.whole` fires on the `^` of `/^foo/` (rev 13 as `anchor.operand`, CF:1054-1062 on main; rev 11-12 class BY DESIGN). The directly applied `/^foo/` matches its stretch whole, so the first is the ONE word `foo` (its `^` is the word's start, never the subject's, and adds nothing); the second is every word starting `foo`. Searched in `foobar` the first reports `foo` (D196 tries the shorter end), the second `foobar`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; whole-match: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
 | L42 | `n := count((name: S))` then `headers & (n: ==1)` vs `headers & occurs.exactly(1, (name: S))` | SAME | one count, two spellings; `count()` is refused only over the BUDGET, naming the `occurs` form (§8) | CF:823 (LEAN), CF:832 |
@@ -2170,7 +2184,8 @@ when its labels occur in several: §13 O19.
 TYPING OF `& | !` (review r8 P6-8 (b); LEAN, this document's consequence of CF:858-860; REV 23.1, review r33 F9, by
 THREE kinds): an rx R standing in the filter role acts as its section `(& R)`; on PATTERNS `&` is the join on the
 stretch, `|` PCRE's one parse and `!` the complement used as pattern difference (§R.1.4); on CONDITIONS `&`, `|` and
-`!` are Kleene's AND, OR and NOT (§R.1.5; `!` on a condition is NOT "neither": an absent label stays UNKNOWN and the
+`!` are Kleene's AND, OR and NOT (the OR: THE DRAFT'S READING, OPEN, **condition-or**, §R.8 item 5; rev 23.2, review
+r34 F-DOC-2; §R.1.5; `!` on a condition is NOT "neither": an absent label stays UNKNOWN and the
 row is dropped, where rev 22's pointwise "neither" kept it, `x` on `/(?<h>\d)?x/`: HOLDS vs FAILS, §R.3); `X & M`
 with X an rx fills M's operand with X (and `X & R` with R an rx is the intersection, the same thing as `X & (& R)`).
 A MACRO whose body applies `!` to a PARAMETER (`m(f) := x & !f`) takes the meaning of what the call passes: Kleene NOT
@@ -2248,9 +2263,10 @@ transform, a filter modifier or `occurrences`/`contains`, §2.6, §2.7, is a mac
 with a position in the chain). Prefix `!B` on a pattern is its
 complement, used after `&` (rev 23 §R.1.4: `A & !B` = PATTERN DIFFERENCE, the rows of A whose stretch B does not match
 whole); `&!` is not a separate operator; a complement anywhere in an `&` chain filters the chain's non-complement
-operands, so `!B & A` = `A & !B` (rev 23.1, review r33 F6 (d), §R.1.4). A standalone `!B` where an rx is needed
+operands, so `!B & A` = `A & !B` (rev 23.1, review r33 F6 (d), §R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10). A standalone `!B` where an rx is needed
 (`${!B}`, `C | !B`) is a compile error (the MANAGER'S CALL, rev 23.1, §R.1.4). On a condition `!` is the three-valued
-NOT (rev 23, condition-not 23:48). Conditions in the filter role combine by Kleene's `&`, `|`, NOT, and macros by
+NOT (rev 23, condition-not 23:48). Conditions in the filter role combine by Kleene's `&`, `|`, NOT (the OR: THE DRAFT'S
+READING, OPEN, **condition-or**, §R.8 item 5; rev 23.2, review r34 F-DOC-2), and macros by
 what they expand to (rev 23.1, review r33 F9: rev 22's "macros combine pointwise", with `!M` = "neither", is no
 longer the rule for a condition; the typing sentence, §2.1). `!` lives in the
 expression language only: inside a normal rx literal it keeps PCRE's meaning (`/!foo/` matches the text `!foo`); a
