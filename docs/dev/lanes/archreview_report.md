@@ -229,7 +229,7 @@ greps (scratch `landing.md`), spot-checked where marked.
 - Compound parts do not inherit the harness word (compound.c:58-76): (c).
 - The force/deny refusals (chain 3) must be re-expressed: (b), five arms in select_engine.c:1079-1107 alone.
 
-**[S4] lookaround set** ([REQ-LOOKAROUND], [CTX-FACTS-NEG], [LOOK-LOCATE]; plan.md:107, 300, 540; design
+**[S4] lookaround set** ([REQ-LOOKAROUND], [CTX-FACTS-NEG], [LOOK-LOCATE]; plan.md, 300, 540; design
 docs/design/span_arms.md).
 - Required runs seeing through positive lookaround: `case A_LOOK:` in src/facts/req.c:1204 (rr_cat): (b), in the same
   pass that [RUN-POS-SET], [REQ-EMPTYCAT], [REQ-PAST-LAST] also edit (INFERRED serialization risk).
@@ -257,11 +257,11 @@ docs/design/span_arms.md).
   (c). It is the strongest worked precedent for the A1/A6 retro test.
 
 **Started rows touching src/** (`grep -nE "STATE:started" docs/dev/plan.md`, helper).
-- [UCP] (plan.md:104): char-step `\b` as a ctxfn.def row: (a).
-- [VMREC] (plan.md:206): migrating ad-hoc prints to record kinds in emit_vm.c / vm_stmt.c: (b) -> (a) in progress.
-- [RUN-POS-SET] / [REQ-EMPTYCAT] / [REQ-PAST-LAST] (plan.md:234, 254, 285): all arms in req.c's rr_cat family (b).
-- [MEASURE-SET] (plan.md:158): data rows in measure_store (a).
-- [FINDALL-NEXT] (plan.md:177): entries.c / emit_iter.c rows (a), waiting on kit kinds.
+- [UCP]: char-step `\b` as a ctxfn.def row: (a).
+- [VMREC]: migrating ad-hoc prints to record kinds in emit_vm.c / vm_stmt.c: (b) -> (a) in progress.
+- [RUN-POS-SET] / [REQ-EMPTYCAT] / [REQ-PAST-LAST]: all arms in req.c's rr_cat family (b).
+- [MEASURE-SET]: data rows in measure_store (a).
+- [FINDALL-NEXT]: entries.c / emit_iter.c rows (a), waiting on kit kinds.
 
 **Unit costs** (helper greps, spot-checked):
 - A new AST kind: kindrow.def row (a) + 27 files with `case A_*` labels (b) + the NFA lowering (nfa.c) + VM emission
