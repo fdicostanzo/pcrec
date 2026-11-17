@@ -1,0 +1,296 @@
+ORDER: rxmodel ; libpcre2-8 10.46 2025-08-27
+== PREMISE
+  P0 PASS NO_AUTO_POSSESS (0x4000): `a+(?C)b` on `aaac` callouts with the option 6, without 3 (expect 6 and 3)
+  P0 PASS NO_START_OPTIMIZE (0x10000): `(?C)abc` on `xxabd` callouts 6 (expect 6: every start tried)
+  P0 PASS MATCH_UNSET_BACKREF (0x200): `(?:(?<a>a)|x)\k<a>b` on `xb` default None, with the option (0, 2, {'a': None}) (expect None, a match)
+  P0 PASS callout as a condition, callout TRUE: bare `x(?(?C)(?=)a|b)` matches xa/xb True/False ; inside a lookahead `x(?(?=(?C))a|b)` True/False (expect T/F, T/F)
+  P0 PASS callout as a condition, callout FALSE: bare `x(?(?C)(?=)a|b)` matches xa/xb False/False ; inside a lookahead `x(?(?=(?C))a|b)` False/True (expect F/F, F/T)
+  P0 PASS ANCHORED|ENDANCHORED (WHOLE): `\d+` whole on `12` True, on `12x` False, on `x12` False
+  P1 PASS `(?:(?<g1>\d\d)|(?<g2>\d)\d)(?C)` on `25`, the callout failing when g1 = 25: (0, 2, {'g1': None, 'g2': '2'}) (expect g2 = 2: the second branch)
+== BASE: the ruled rule (reading (ii)) as callouts; engine = pathimpact's RULE
+  B1 MODEL `(B | A) & (l: <20)`  /(?|(?<l>\d\d)|(?<l>\d)\d)(?C"l<20")/
+  B1   PCRE2: WHOLE `25` HOLDS ; SEARCHED `25` `25`@0 l=2 ; FIND-ALL `25 13` [`25`@0 l=2, `13`@3 l=13]
+  B1   vs engine (ii): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  B2 MODEL L60 `(B | A) & (l: "a")`  /(?|(?<l>aa)|(?<l>a)a)(?C"l=a")/
+  B2   PCRE2: WHOLE `aa` HOLDS ; SEARCHED `aa` `aa`@0 l=a ; FIND-ALL `aaaa` [`aa`@0 l=a, `aa`@2 l=a]
+  B2   vs engine (ii): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 31
+  B3 MODEL note (a) `P & (a: "1")`  /(?<a>\d+)(?<b>\d+)(?C"a=1")/
+  B3   PCRE2: WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=1 b=23 ; FIND-ALL `123 9 12` [`123`@0 a=1 b=23, `12`@6 a=1 b=2]
+  B3   vs engine (ii): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+== a unknown-backtracks (E6): a test on an ABSENT label
+  a1 MODEL callout, absent = fail here  /(?<b>\d+)(?<a>\d)?(?C"a<5")/
+  a1   PCRE2: WHOLE `12` HOLDS ; SEARCHED `12` `12`@0 a=2 b=1 ; FIND-ALL `12 1 19 3` [`12`@0 a=2 b=1]
+  a1   vs engine U1: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  a1   vs engine U2: same lines DIFFER (WHOLE `12` FAILS ; SEARCHED `12` FAILS ; FIND-ALL `12 1 19 3` []) ; over the set: WHOLE 240 (first `11`: regex HOLDS, engine FAILS); SEARCHED 1038 (first `11`: regex `11`@0 a=1 b=1, engine FAILS); FIND-ALL 1038 (first `11`: regex [`11`@0 a=1 b=1], engine []) of 1365
+  a2 MODEL pure regex: a conditional on the unset group, its no-branch (*FAIL)  /(?<b>\d+)(?<a>\d)?(?(<a>)(?<=[0-4])|(*FAIL))/
+  a2   PCRE2: WHOLE `12` HOLDS ; SEARCHED `12` `12`@0 a=2 b=1 ; FIND-ALL `12 1 19 3` [`12`@0 a=2 b=1]
+  a2   vs engine U1: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  a2   vs engine U2: same lines DIFFER (WHOLE `12` FAILS ; SEARCHED `12` FAILS ; FIND-ALL `12 1 19 3` []) ; over the set: WHOLE 240 (first `11`: regex HOLDS, engine FAILS); SEARCHED 1038 (first `11`: regex `11`@0 a=1 b=1, engine FAILS); FIND-ALL 1038 (first `11`: regex [`11`@0 a=1 b=1], engine []) of 1365
+  a3 MODEL pure regex: a BACKREFERENCE to the unset group, `(a: = z)`  /(?<b>\d+)(?<a>\d)?;(?=\k<a>)(?<z>\d)/
+  a3   PCRE2: WHOLE `12;2` HOLDS ; SEARCHED `12;2` `12;2`@0 a=2 b=1 z=2 ; FIND-ALL `12;2 1;1 11;1` [`12;2`@0 a=2 b=1 z=2, `11;1`@9 a=1 b=1 z=1]
+  a3   vs engine U1: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  a3   vs engine U2: same lines DIFFER (WHOLE `12;2` FAILS ; SEARCHED `12;2` FAILS ; FIND-ALL `12;2 1;1 11;1` []) ; over the set: WHOLE 12 (first `11;1`: regex HOLDS, engine FAILS); SEARCHED 28 (first `11;1`: regex `11;1`@0 a=1 b=1 z=1, engine FAILS); FIND-ALL 28 (first `11;1`: regex [`11;1`@0 a=1 b=1 z=1], engine []) of 364
+  a4 MODEL U2 spelled in regex: the no-branch (*PRUNE)(*FAIL) (end this start)  /(?<b>\d+)(?<a>\d)?(?(<a>)(?<=[0-4])|(*PRUNE)(*FAIL))/
+  a4   PCRE2: WHOLE `12` FAILS ; SEARCHED `12` FAILS ; FIND-ALL `12 1 19 3` []
+  a4   vs engine U1: same lines DIFFER (WHOLE `12` HOLDS ; SEARCHED `12` `12`@0 a=2 b=1 ; FIND-ALL `12 1 19 3` [`12`@0 a=2 b=1]) ; over the set: WHOLE 240 (first `11`: regex FAILS, engine HOLDS); SEARCHED 1038 (first `11`: regex FAILS, engine `11`@0 a=1 b=1); FIND-ALL 1038 (first `11`: regex [], engine [`11`@0 a=1 b=1]) of 1365
+  a4   vs engine U2: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+== b condition-not: NOT on a test of an ABSENT label (ruled 11-16 23:48: three-valued, absence never matches)
+  b1 MODEL regex's NOT: a negative lookahead around the callout  /(?<b>\d+)(?<a>\d)?(?!(?C"a<5"))/
+  b1   PCRE2: WHOLE `1` HOLDS ; SEARCHED `1` `1`@0 a=None b=1 ; FIND-ALL `1 12 19 3` [`1`@0 a=None b=1, `12`@2 a=None b=12, `19`@5 a=None b=19, `3`@8 a=None b=3]
+  b1   vs engine RULED three-valued NOT: same lines DIFFER (WHOLE `1` FAILS ; SEARCHED `1` FAILS ; FIND-ALL `1 12 19 3` [`19`@5 a=9 b=1]) ; over the set: WHOLE 243 (first `1`: regex HOLDS, engine FAILS); SEARCHED 1359 (first `1`: regex `1`@0 a=None b=1, engine FAILS); FIND-ALL 1359 (first `1`: regex [`1`@0 a=None b=1], engine []) of 1365
+  b1   vs engine two-valued NOT (NOT TRUE): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  b2 MODEL pure regex: a negative lookahead around the conditional test  /(?<b>\d+)(?<a>\d)?(?!(?(<a>)(?<=[0-4])|(*FAIL)))/
+  b2   PCRE2: WHOLE `1` HOLDS ; SEARCHED `1` `1`@0 a=None b=1 ; FIND-ALL `1 12 19 3` [`1`@0 a=None b=1, `12`@2 a=None b=12, `19`@5 a=None b=19, `3`@8 a=None b=3]
+  b2   vs engine RULED three-valued NOT: same lines DIFFER (WHOLE `1` FAILS ; SEARCHED `1` FAILS ; FIND-ALL `1 12 19 3` [`19`@5 a=9 b=1]) ; over the set: WHOLE 243 (first `1`: regex HOLDS, engine FAILS); SEARCHED 1359 (first `1`: regex `1`@0 a=None b=1, engine FAILS); FIND-ALL 1359 (first `1`: regex [`1`@0 a=None b=1], engine []) of 1365
+  b2   vs engine two-valued NOT (NOT TRUE): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  b3 MODEL the RULED NOT spelled in regex: a guard on the group, then the negative lookahead  /(?<b>\d+)(?<a>\d)?(?(<a>)(?!(?<=[0-4]))|(*FAIL))/
+  b3   PCRE2: WHOLE `1` FAILS ; SEARCHED `1` FAILS ; FIND-ALL `1 12 19 3` [`19`@5 a=9 b=1]
+  b3   vs engine RULED three-valued NOT: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  b3   vs engine two-valued NOT (NOT TRUE): same lines DIFFER (WHOLE `1` HOLDS ; SEARCHED `1` `1`@0 a=None b=1 ; FIND-ALL `1 12 19 3` [`1`@0 a=None b=1, `12`@2 a=None b=12, `19`@5 a=None b=19, `3`@8 a=None b=3]) ; over the set: WHOLE 243 (first `1`: regex FAILS, engine HOLDS); SEARCHED 1359 (first `1`: regex FAILS, engine `1`@0 a=None b=1); FIND-ALL 1359 (first `1`: regex [], engine [`1`@0 a=None b=1]) of 1365
+  b4 MODEL a negative lookahead around a BACKREFERENCE to the unset group, `NOT (a: = z)`  /(?<b>\d+)(?<a>\d)?;(?!\k<a>)(?<z>\d)/
+  b4   PCRE2: WHOLE `1;2` HOLDS ; SEARCHED `1;2` `1;2`@0 a=None b=1 z=2 ; FIND-ALL `1;2 12;2 11;1` [`1;2`@0 a=None b=1 z=2, `12;2`@4 a=None b=12 z=2, `11;1`@9 a=None b=11 z=1]
+  b4   vs engine RULED three-valued NOT: same lines DIFFER (WHOLE `1;2` FAILS ; SEARCHED `1;2` FAILS ; FIND-ALL `1;2 12;2 11;1` []) ; over the set: WHOLE 16 (first `1;1`: regex HOLDS, engine FAILS); SEARCHED 128 (first `1;1`: regex `1;1`@0 a=None b=1 z=1, engine FAILS); FIND-ALL 128 (first `1;1`: regex [`1;1`@0 a=None b=1 z=1], engine []) of 364
+  b4   vs engine two-valued NOT: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  b5 the same with PCRE2_MATCH_UNSET_BACKREF (an unset group matches empty, so `(?!\k<a>)` FAILS on an absent a): on `1;2` None ; on `12;3` (0, 4, {'b': '1', 'a': '2', 'z': '3'})
+== c loop-condition (E2), pass-table, pass-and: a condition on a label set inside a loop
+  c loop /(?:(?<h>\d);)*/, `(h: <5)`
+  c1 MODEL the callout WRITTEN INSIDE the body (right after h's group)  /(?:(?<h>\d)(?C"h<5");)*/
+  c1   PCRE2: WHOLE `7;3;` FAILS ; SEARCHED `7;3;` ``@0 h=None ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, ``@2 h=None, ``@3 h=None, ``@4 h=None, ``@5 h=None, `3;`@6 h=3, ``@8 h=None]
+  c1   vs engine L1 (the pass table, Kleene AND, judged after the loop): same lines DIFFER (WHOLE `7;3;` FAILS ; SEARCHED `7;3;` `3;`@2 h=3 ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, `3;`@6 h=3]) ; over the set: WHOLE 1 (first ``: regex HOLDS, engine FAILS); SEARCHED 324 (first ``: regex ``@0 h=None, engine FAILS); FIND-ALL 364 (first ``: regex [``@0 h=None], engine []) of 364
+  c1   vs engine L2 (a piece in each pass): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  c1   vs engine LAST (PCRE's last capture): same lines DIFFER (WHOLE `7;3;` HOLDS ; SEARCHED `7;3;` `7;3;`@0 h=3 ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, `3;`@6 h=3]) ; over the set: WHOLE 2 (first ``: regex HOLDS, engine FAILS); SEARCHED 324 (first ``: regex ``@0 h=None, engine FAILS); FIND-ALL 364 (first ``: regex [``@0 h=None], engine []) of 364
+  c2 MODEL the callout written AFTER the loop  /(?:(?<h>\d);)*(?C"h<5")/
+  c2   PCRE2: WHOLE `7;3;` HOLDS ; SEARCHED `7;3;` `7;3;`@0 h=3 ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, `3;`@6 h=3]
+  c2   vs engine L1 (the pass table, Kleene AND, judged after the loop): same lines DIFFER (WHOLE `7;3;` FAILS ; SEARCHED `7;3;` `3;`@2 h=3 ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, `3;`@6 h=3]) ; over the set: WHOLE 1 (first `7;3;`: regex HOLDS, engine FAILS); SEARCHED 7 (first `7;3;`: regex `7;3;`@0 h=3, engine `3;`@2 h=3); FIND-ALL 7 (first `7;3;`: regex [`7;3;`@0 h=3], engine [`3;`@2 h=3]) of 364
+  c2   vs engine L2 (a piece in each pass): same lines DIFFER (WHOLE `7;3;` FAILS ; SEARCHED `7;3;` ``@0 h=None ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, ``@2 h=None, ``@3 h=None, ``@4 h=None, ``@5 h=None, `3;`@6 h=3, ``@8 h=None]) ; over the set: WHOLE 2 (first ``: regex FAILS, engine HOLDS); SEARCHED 324 (first ``: regex FAILS, engine ``@0 h=None); FIND-ALL 364 (first ``: regex [], engine [``@0 h=None]) of 364
+  c2   vs engine LAST (PCRE's last capture): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  c3 MODEL the pass table's Kleene AND as regex: in the body, a pass lacking h fails, at least one pass  /(?:(?<h>\d)(?C"h<5");)*(?(<h>)|(*FAIL))/
+  c3   PCRE2: WHOLE `7;3;` FAILS ; SEARCHED `7;3;` `3;`@2 h=3 ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, `3;`@6 h=3]
+  c3   vs engine L1 (the pass table, Kleene AND, judged after the loop): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  c3   vs engine L2 (a piece in each pass): same lines DIFFER (WHOLE `7;3;` FAILS ; SEARCHED `7;3;` ``@0 h=None ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, ``@2 h=None, ``@3 h=None, ``@4 h=None, ``@5 h=None, `3;`@6 h=3, ``@8 h=None]) ; over the set: WHOLE 1 (first ``: regex FAILS, engine HOLDS); SEARCHED 324 (first ``: regex FAILS, engine ``@0 h=None); FIND-ALL 364 (first ``: regex [], engine [``@0 h=None]) of 364
+  c3   vs engine LAST (PCRE's last capture): same lines DIFFER (WHOLE `7;3;` HOLDS ; SEARCHED `7;3;` `7;3;`@0 h=3 ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, `3;`@6 h=3]) ; over the set: WHOLE 1 (first `7;3;`: regex FAILS, engine HOLDS); SEARCHED 7 (first `7;3;`: regex `3;`@2 h=3, engine `7;3;`@0 h=3); FIND-ALL 7 (first `7;3;`: regex [`3;`@2 h=3], engine [`7;3;`@0 h=3]) of 364
+  c loop /(?:(?<h>\d)?;)*/, `(h: <5)`
+  c1 MODEL the callout WRITTEN INSIDE the body (right after h's group)  /(?:(?:(?<h>\d)(?C"h<5"))?;)*/
+  c1   PCRE2: WHOLE `7;3;` FAILS ; SEARCHED `7;3;` ``@0 h=None ; FIND-ALL `3;;7;;3;` [`3;;`@0 h=3, ``@3 h=None, `;;3;`@4 h=3, ``@8 h=None]
+  c1   vs engine L1 (the pass table, Kleene AND, judged after the loop): same lines DIFFER (WHOLE `7;3;` FAILS ; SEARCHED `7;3;` `3;`@2 h=3 ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, `3;`@6 h=3]) ; over the set: WHOLE 18 (first ``: regex HOLDS, engine FAILS); SEARCHED 338 (first ``: regex ``@0 h=None, engine FAILS); FIND-ALL 364 (first ``: regex [``@0 h=None], engine []) of 364
+  c1   vs engine L2 (a piece in each pass): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  c1   vs engine LAST (PCRE's last capture): same lines DIFFER (WHOLE `7;3;` HOLDS ; SEARCHED `7;3;` `7;3;`@0 h=3 ; FIND-ALL `3;;7;;3;` [`3;;7;;3;`@0 h=3]) ; over the set: WHOLE 10 (first ``: regex HOLDS, engine FAILS); SEARCHED 306 (first ``: regex ``@0 h=None, engine FAILS); FIND-ALL 364 (first ``: regex [``@0 h=None], engine []) of 364
+  c2 MODEL the callout written AFTER the loop  /(?:(?<h>\d)?;)*(?C"h<5")/
+  c2   PCRE2: WHOLE `7;3;` HOLDS ; SEARCHED `7;3;` `7;3;`@0 h=3 ; FIND-ALL `3;;7;;3;` [`3;;7;;3;`@0 h=3]
+  c2   vs engine L1 (the pass table, Kleene AND, judged after the loop): same lines DIFFER (WHOLE `7;3;` FAILS ; SEARCHED `7;3;` `3;`@2 h=3 ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, `3;`@6 h=3]) ; over the set: WHOLE 16 (first `3;;`: regex HOLDS, engine FAILS); SEARCHED 54 (first `3;;`: regex `3;;`@0 h=3, engine `3;`@0 h=3); FIND-ALL 54 (first `3;;`: regex [`3;;`@0 h=3], engine [`3;`@0 h=3]) of 364
+  c2   vs engine L2 (a piece in each pass): same lines DIFFER (WHOLE `7;3;` FAILS ; SEARCHED `7;3;` ``@0 h=None ; FIND-ALL `3;;7;;3;` [`3;;`@0 h=3, ``@3 h=None, `;;3;`@4 h=3, ``@8 h=None]) ; over the set: WHOLE 10 (first ``: regex FAILS, engine HOLDS); SEARCHED 306 (first ``: regex FAILS, engine ``@0 h=None); FIND-ALL 364 (first ``: regex [], engine [``@0 h=None]) of 364
+  c2   vs engine LAST (PCRE's last capture): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  c3 MODEL the pass table's Kleene AND as regex: in the body, a pass lacking h fails, at least one pass  /(?:(?<h>\d)(?C"h<5");)+/
+  c3   PCRE2: WHOLE `7;3;` FAILS ; SEARCHED `7;3;` `3;`@2 h=3 ; FIND-ALL `3;;7;;3;` [`3;`@0 h=3, `3;`@6 h=3]
+  c3   vs engine L1 (the pass table, Kleene AND, judged after the loop): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  c3   vs engine L2 (a piece in each pass): same lines DIFFER (WHOLE `7;3;` FAILS ; SEARCHED `7;3;` ``@0 h=None ; FIND-ALL `3;;7;;3;` [`3;;`@0 h=3, ``@3 h=None, `;;3;`@4 h=3, ``@8 h=None]) ; over the set: WHOLE 18 (first ``: regex FAILS, engine HOLDS); SEARCHED 338 (first ``: regex FAILS, engine ``@0 h=None); FIND-ALL 364 (first ``: regex [], engine [``@0 h=None]) of 364
+  c3   vs engine LAST (PCRE's last capture): same lines DIFFER (WHOLE `7;3;` HOLDS ; SEARCHED `7;3;` `7;3;`@0 h=3 ; FIND-ALL `3;;7;;3;` [`3;;7;;3;`@0 h=3]) ; over the set: WHOLE 16 (first `3;;`: regex FAILS, engine HOLDS); SEARCHED 54 (first `3;;`: regex `3;`@0 h=3, engine `3;;`@0 h=3); FIND-ALL 54 (first `3;;`: regex [`3;`@0 h=3], engine [`3;;`@0 h=3]) of 364
+  c pass-and: `NOT (h: <5)` on /(?:(?<h>\d)?;)*/
+  c4 MODEL regex's NOT after the loop (reads the last capture, two-valued)  /(?:(?<h>\d)?;)*(?!(?C"h<5"))/
+  c4   PCRE2: WHOLE `7;;` HOLDS ; SEARCHED `7;;` `7;;`@0 h=7 ; FIND-ALL `7;;3;7;;` [`7;;3;7;;`@0 h=7, ``@8 h=None]
+  c4   vs engine Kleene AND (today): same lines DIFFER (WHOLE `7;;` HOLDS ; SEARCHED `7;;` `7;;`@0 h=7 ; FIND-ALL `7;;3;7;;` [`7;;3;7;;`@0 h=7]) ; over the set: WHOLE 10 (first ``: regex HOLDS, engine FAILS); SEARCHED 306 (first ``: regex ``@0 h=None, engine FAILS); FIND-ALL 364 (first ``: regex [``@0 h=None], engine []) of 364
+  c4   vs engine a pass lacking h makes it UNKNOWN: same lines DIFFER (WHOLE `7;;` FAILS ; SEARCHED `7;;` `7;`@0 h=7 ; FIND-ALL `7;;3;7;;` [`7;`@0 h=7, `3;7;`@3 h=7]) ; over the set: WHOLE 22 (first ``: regex HOLDS, engine FAILS); SEARCHED 339 (first ``: regex ``@0 h=None, engine FAILS); FIND-ALL 364 (first ``: regex [``@0 h=None], engine []) of 364
+  c5 MODEL Kleene NOT-AND as regex: a flag group set in a pass whose h is not <5, required at the end  /(?:(?:(?<h>\d)(?(?=(?C"h<5"))|(?<bad>)))?;)*(?(<bad>)|(*FAIL))/
+  c5   PCRE2: WHOLE `7;;` HOLDS ; SEARCHED `7;;` `7;;`@0 h=7 ; FIND-ALL `7;;3;7;;` [`7;;3;7;;`@0 h=7]
+  c5   vs engine Kleene AND (today): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  c5   vs engine a pass lacking h makes it UNKNOWN: same lines DIFFER (WHOLE `7;;` FAILS ; SEARCHED `7;;` `7;`@0 h=7 ; FIND-ALL `7;;3;7;;` [`7;`@0 h=7, `3;7;`@3 h=7]) ; over the set: WHOLE 18 (first `7;;`: regex HOLDS, engine FAILS); SEARCHED 50 (first `7;;`: regex `7;;`@0 h=7, engine `7;`@0 h=7); FIND-ALL 50 (first `7;;`: regex [`7;;`@0 h=7], engine [`7;`@0 h=7]) of 364
+  c6 MODEL the alternative as regex: the same, a pass lacking h fails  /(?:(?<h>\d)(?(?=(?C"h<5"))|(?<bad>));)*(?(<bad>)|(*FAIL))/
+  c6   PCRE2: WHOLE `7;;` FAILS ; SEARCHED `7;;` `7;`@0 h=7 ; FIND-ALL `7;;3;7;;` [`7;`@0 h=7, `3;7;`@3 h=7]
+  c6   vs engine Kleene AND (today): same lines DIFFER (WHOLE `7;;` HOLDS ; SEARCHED `7;;` `7;;`@0 h=7 ; FIND-ALL `7;;3;7;;` [`7;;3;7;;`@0 h=7]) ; over the set: WHOLE 18 (first `7;;`: regex FAILS, engine HOLDS); SEARCHED 50 (first `7;;`: regex `7;`@0 h=7, engine `7;;`@0 h=7); FIND-ALL 50 (first `7;;`: regex [`7;`@0 h=7], engine [`7;;`@0 h=7]) of 364
+  c6   vs engine a pass lacking h makes it UNKNOWN: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+== d complement-paths (E3): `P & !(P & (a: "1"))`, the complement tied to the same stretch
+  d1 MODEL negative lookahead tied to the stretch (napla + captured rest)  /(*napla:(?<a>\d+)(?<b>\d+)(?<T>[\s\S]*+))(?!(?<a2>\d+)(?<b2>\d+)(?C"a2=1")\k<T>\z)(?:(?!\k<T>\z)[\s\S])*+/
+  d1   PCRE2: WHOLE `123` FAILS ; SEARCHED `123` `23`@1 a=2 b=3 ; FIND-ALL `123 9 113` [`23`@1 a=2 b=3]
+  d1   vs engine C1 (some surviving path of B): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  d1   vs engine C2 (B's one parse judged): same lines DIFFER (WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=12 b=3 ; FIND-ALL `123 9 113` [`123`@0 a=12 b=3, `113`@6 a=11 b=3]) ; over the set: WHOLE 117 (first `111`: regex FAILS, engine HOLDS); SEARCHED 270 (first `111`: regex FAILS, engine `111`@0 a=11 b=1); FIND-ALL 270 (first `111`: regex [], engine [`111`@0 a=11 b=1]) of 1365
+  d2 MODEL C2 as regex: B's first parse of the stretch made atomic, then judged  /(*napla:(?<a>\d+)(?<b>\d+)(?<T>[\s\S]*+))(?!(?>(?<a2>\d+)(?<b2>\d+)\k<T>\z)(?C"a2=1"))(?:(?!\k<T>\z)[\s\S])*+/
+  d2   PCRE2: WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=12 b=3 ; FIND-ALL `123 9 113` [`123`@0 a=12 b=3, `113`@6 a=11 b=3]
+  d2   vs engine C1 (some surviving path of B): same lines DIFFER (WHOLE `123` FAILS ; SEARCHED `123` `23`@1 a=2 b=3 ; FIND-ALL `123 9 113` [`23`@1 a=2 b=3]) ; over the set: WHOLE 117 (first `111`: regex HOLDS, engine FAILS); SEARCHED 270 (first `111`: regex `111`@0 a=11 b=1, engine FAILS); FIND-ALL 270 (first `111`: regex [`111`@0 a=11 b=1], engine []) of 1365
+  d2   vs engine C2 (B's one parse judged): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  d3 MODEL the UNTIED negative lookahead `(?!B)P` (no B from this start, any end)  /(?!(?<a2>\d+)(?<b2>\d+)(?C"a2=1"))(?<a>\d+)(?<b>\d+)/
+  d3   PCRE2: WHOLE `123` FAILS ; SEARCHED `123` `23`@1 a=2 b=3 ; FIND-ALL `123 9 113` [`23`@1 a=2 b=3]
+  d3   vs engine C1 (some surviving path of B): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  d3   vs engine C2 (B's one parse judged): same lines DIFFER (WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=12 b=3 ; FIND-ALL `123 9 113` [`123`@0 a=12 b=3, `113`@6 a=11 b=3]) ; over the set: WHOLE 117 (first `111`: regex FAILS, engine HOLDS); SEARCHED 270 (first `111`: regex FAILS, engine `111`@0 a=11 b=1); FIND-ALL 270 (first `111`: regex [], engine [`111`@0 a=11 b=1]) of 1365
+  d5 MODEL tied vs untied on a short complement: `/\d+/ & !/1/`, tied  /(*napla:\d+(?<T>[\s\S]*+))(?!1\k<T>\z)(?:(?!\k<T>\z)[\s\S])*+/
+  d5   PCRE2: WHOLE `12` HOLDS ; SEARCHED `12` `12`@0 ; FIND-ALL `12 1 31` [`12`@0, `31`@5]
+  d5   vs engine `/\d+/ & !/1/`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  d6 MODEL the same, UNTIED `(?!1)\d+`  /(?!1)\d+/
+  d6   PCRE2: WHOLE `12` FAILS ; SEARCHED `12` `2`@1 ; FIND-ALL `12 1 31` [`2`@1, `31`@5]
+  d6   vs engine `/\d+/ & !/1/`: same lines DIFFER (WHOLE `12` HOLDS ; SEARCHED `12` `12`@0 ; FIND-ALL `12 1 31` [`12`@0, `31`@5]) ; over the set: WHOLE 120 (first `11`: regex FAILS, engine HOLDS); SEARCHED 357 (first `11`: regex FAILS, engine `11`@0); FIND-ALL 417 (first `11`: regex [], engine [`11`@0]) of 1365
+  d complement-place: a lone `!q` in a WHOLE place ("the value is not a late time")
+  d4 MODEL `(?!q\z)[\s\S]*` WHOLE: on `9:30` FAILS, `9` HOLDS, `10:45` FAILS ; vs engine `not whole(q)` over the time texts: WHOLE 0 of 3906
+== e lookahead-reentry (E4, E4'), lookahead-labels
+  e1 MODEL PCRE's ordinary positive lookahead  /(?=(?<x>\d+))\d(?C"x=1")/
+  e1   PCRE2: WHOLE `12` FAILS ; SEARCHED `12` FAILS ; FIND-ALL `112 12 1` [`1`@7 x=1]
+  e1   vs engine LA1 (atomic): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  e1   vs engine LA2 (re-entered): same lines DIFFER (WHOLE `12` FAILS ; SEARCHED `12` `1`@0 x=1 ; FIND-ALL `112 12 1` [`1`@0 x=1, `1`@1 x=1, `1`@4 x=1, `1`@7 x=1]) ; over the set: WHOLE 0; SEARCHED 660 (first `11`: regex `1`@1 x=1, engine `1`@0 x=1); FIND-ALL 693 (first `11`: regex [`1`@1 x=1], engine [`1`@0 x=1, `1`@1 x=1]) of 1365
+  e2 MODEL PCRE2's NON-ATOMIC lookahead (*napla:)  /(*napla:(?<x>\d+))\d(?C"x=1")/
+  e2   PCRE2: WHOLE `12` FAILS ; SEARCHED `12` `1`@0 x=1 ; FIND-ALL `112 12 1` [`1`@0 x=1, `1`@1 x=1, `1`@4 x=1, `1`@7 x=1]
+  e2   vs engine LA1 (atomic): same lines DIFFER (WHOLE `12` FAILS ; SEARCHED `12` FAILS ; FIND-ALL `112 12 1` [`1`@7 x=1]) ; over the set: WHOLE 0; SEARCHED 660 (first `11`: regex `1`@0 x=1, engine `1`@1 x=1); FIND-ALL 693 (first `11`: regex [`1`@0 x=1, `1`@1 x=1], engine [`1`@1 x=1]) of 1365
+  e2   vs engine LA2 (re-entered): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  e3 MODEL negative lookahead holding a condition (whole-text route (i))  /(?![\s\S]*?(?<h2>\d{1,2})(?::(?<m2>\d\d))?(?C"late2"))(?<h>\d{1,2})(?::(?<m>\d\d))?/
+  e3   PCRE2: WHOLE `9:15` HOLDS ; SEARCHED `9:15 10:45` `0:45`@6 h=0 m=45 ; FIND-ALL `9:15 10:45 1` [`0:45`@6 h=0 m=45, `1`@11 h=1 m=None]
+  e3   vs engine NA1 (inner condition backtracks inside): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+  e3   vs engine NA2 (inner first path judged): same lines DIFFER (WHOLE `9:15` HOLDS ; SEARCHED `9:15 10:45` `9:15`@0 h=9 m=15 ; FIND-ALL `9:15 10:45 1` [`9:15`@0 h=9 m=15, `0:45`@6 h=0 m=45, `1`@11 h=1 m=None]) ; over the set: WHOLE 6 (first `09:50`: regex FAILS, engine HOLDS); SEARCHED 6 (first `09:50`: regex `50`@3 h=50 m=None, engine `09:50`@0 h=09 m=50); FIND-ALL 6 (first `09:50`: regex [`50`@3 h=50 m=None], engine [`09:50`@0 h=09 m=50]) of 3906
+  e4 MODEL NA2 as regex: the inner first path made atomic, then judged  /(?!(?>[\s\S]*?(?<h2>\d{1,2})(?::(?<m2>\d\d))?)(?C"late2"))(?<h>\d{1,2})(?::(?<m>\d\d))?/
+  e4   PCRE2: WHOLE `9:15` HOLDS ; SEARCHED `9:15 10:45` `9:15`@0 h=9 m=15 ; FIND-ALL `9:15 10:45 1` [`9:15`@0 h=9 m=15, `0:45`@6 h=0 m=45, `1`@11 h=1 m=None]
+  e4   vs engine NA1 (inner condition backtracks inside): same lines DIFFER (WHOLE `9:15` HOLDS ; SEARCHED `9:15 10:45` `0:45`@6 h=0 m=45 ; FIND-ALL `9:15 10:45 1` [`0:45`@6 h=0 m=45, `1`@11 h=1 m=None]) ; over the set: WHOLE 6 (first `09:50`: regex HOLDS, engine FAILS); SEARCHED 6 (first `09:50`: regex `09:50`@0 h=09 m=50, engine `50`@3 h=50 m=None); FIND-ALL 6 (first `09:50`: regex [`09:50`@0 h=09 m=50], engine [`50`@3 h=50 m=None]) of 3906
+  e4   vs engine NA2 (inner first path judged): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+  e5 MODEL lookahead-labels: a positive lookahead's capture read outside it  /(?=[\s\S]*?\d\d:(?<lm>\d\d)(?C"lm>=30"))(?<h>\d{1,2})(?::(?<m>\d\d))?(?C"lm=50")/
+  e5   PCRE2: WHOLE `9:15` FAILS ; SEARCHED `9:15 10:45 11:50` `0:45`@6 h=0 lm=50 ; FIND-ALL `9:15 10:45 11:50 1` [`0:45`@6 h=0 lm=50, `11:50`@11 h=11 lm=50]
+  e5   vs engine LA1 (PCRE's): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+  e5   vs engine LA2 (re-entered): same lines DIFFER (WHOLE `9:15` FAILS ; SEARCHED `9:15 10:45 11:50` `9:15`@0 h=9 lm=50 ; FIND-ALL `9:15 10:45 11:50 1` [`9:15`@0 h=9 lm=50, `10:45`@5 h=10 lm=50, `11:50`@11 h=11 lm=50]) ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+  e6 MODEL lookahead-labels with (*napla:)  /(*napla:[\s\S]*?\d\d:(?<lm>\d\d)(?C"lm>=30"))(?<h>\d{1,2})(?::(?<m>\d\d))?(?C"lm=50")/
+  e6   PCRE2: WHOLE `9:15` FAILS ; SEARCHED `9:15 10:45 11:50` `9:15`@0 h=9 lm=50 ; FIND-ALL `9:15 10:45 11:50 1` [`9:15`@0 h=9 lm=50, `10:45`@5 h=10 lm=50, `11:50`@11 h=11 lm=50]
+  e6   vs engine LA1 (PCRE's): same lines DIFFER (WHOLE `9:15` FAILS ; SEARCHED `9:15 10:45 11:50` `0:45`@6 h=0 lm=50 ; FIND-ALL `9:15 10:45 11:50 1` [`0:45`@6 h=0 lm=50, `11:50`@11 h=11 lm=50]) ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+  e6   vs engine LA2 (re-entered): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+== f hits-reentry (E5), hit-list: `occurrences(/\d+/)` with `(hit: <100)` (WHOLE); a filtered argument's hit list
+  f1 MODEL each hit committed: possessive gaps and hits, the callout after each  /\A(?:\D*+(?<hit>\d++)(?C"hit<100"))++\D*+\z/
+  f1   PCRE2 WHOLE: `1234` FAILS, `x300 12` FAILS, `5 123` FAILS
+  f1   vs engine H1 (hits fixed, judged): WHOLE 0 of 341
+  f1   vs engine H2 (re-enters the body): WHOLE 56 (first `111`: regex FAILS, engine HOLDS) of 341
+  f2 MODEL the body with the callout inside each pass (re-entered)  /\A(?:[\s\S]*?(?<hit>\d+)(?C"hit<100"))+[\s\S]*\z/
+  f2   PCRE2 WHOLE: `1234` HOLDS, `x300 12` HOLDS, `5 123` HOLDS
+  f2   vs engine H1 (hits fixed, judged): WHOLE 56 (first `111`: regex HOLDS, engine FAILS) of 341
+  f2   vs engine H2 (re-enters the body): WHOLE 0 of 341
+  f3 MODEL two steps: PCRE2 find-all of /\d+/, then every hit judged: vs engine H1: WHOLE 0 of 341 ; vs engine H2: WHOLE 56 (first `111`: regex FAILS, engine HOLDS) of 341
+  f4 MODEL hit-list: the callout inside the searched pattern, find-all  /(?<n>\d+)(?C"n<100")/
+  f4   PCRE2: WHOLE `1234` FAILS ; SEARCHED `1234` `12`@0 n=12 ; FIND-ALL `5 123 1234` [`5`@0 n=5, `12`@2 n=12, `3`@4 n=3, `12`@6 n=12, `34`@8 n=34]
+  f4   vs engine hit list (R.1.9): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+== f (rulings R1, R2) the owner's model of occurrences: one regex, `(?:.*?(rx))*.*`, rx = /\d+/
+  fR1 MODEL HIS MODEL (lazy gap), no condition  /(?:(?<g>)[\s\S]*?(?<hit>\d+)(?C"rec"))*[\s\S]*(?C"end")/: hits of the first (reported) path on `12 34` ['12', '34'] ; `1234` ['1234'] ; `x300 12` ['300', '12'] ; `5 123` ['5', '123'] ; vs the GLOBAL search's hits over {1, 2, space, x} to length 4 (341): differ 0
+  fR2 MODEL comparison: greedy gap, no condition  /(?:(?<g>)[\s\S]*(?<hit>\d+)(?C"rec"))*[\s\S]*(?C"end")/: hits of the first (reported) path on `12 34` ['4'] ; `1234` ['4'] ; `x300 12` ['2'] ; `5 123` ['3'] ; vs the GLOBAL search's hits over {1, 2, space, x} to length 4 (341): differ 212 (first `11`: loop ['1'], global ['11'])
+  fR3 MODEL his model, `(hit: <100)` written INSIDE the body (after the hit group), zero passes allowed  /(?:(?<g>)[\s\S]*?(?<hit>\d+)(?C"rec")(?C"hit<100"))*[\s\S]*(?C"end")/
+  fR3   PCRE2 WHOLE (hits of the reported path): `12 34` HOLDS ['12', '34'] ; `1234` HOLDS ['12', '34'] ; `x300 12` HOLDS ['30', '0', '12'] ; `5 123` HOLDS ['5', '12', '3'] ; `x` HOLDS []
+  fR3   vs engine H1 (hits fixed, judged): WHOLE 87 (first ``: regex HOLDS, engine FAILS) of 341
+  fR3   vs engine H2 (re-enters the body): WHOLE 31 (first ``: regex HOLDS, engine FAILS) of 341
+  fR4 MODEL his model, `(hit: <100)` INSIDE the body, at least one pass `{1,}`  /(?:(?<g>)[\s\S]*?(?<hit>\d+)(?C"rec")(?C"hit<100")){1,}[\s\S]*(?C"end")/
+  fR4   PCRE2 WHOLE (hits of the reported path): `12 34` HOLDS ['12', '34'] ; `1234` HOLDS ['12', '34'] ; `x300 12` HOLDS ['30', '0', '12'] ; `5 123` HOLDS ['5', '12', '3'] ; `x` FAILS
+  fR4   vs engine H1 (hits fixed, judged): WHOLE 56 (first `111`: regex HOLDS, engine FAILS) of 341
+  fR4   vs engine H2 (re-enters the body): WHOLE 0 of 341
+  fR5 MODEL his model, `(hit: <100)` written AFTER the loop (reads the last pass's capture)  /(?:(?<g>)[\s\S]*?(?<hit>\d+)(?C"rec"))*[\s\S]*(?C"hit<100")(?C"end")/
+  fR5   PCRE2 WHOLE (hits of the reported path): `12 34` HOLDS ['12', '34'] ; `1234` HOLDS ['123', '4'] ; `x300 12` HOLDS ['300', '12'] ; `5 123` HOLDS ['5', '12', '3'] ; `x` FAILS
+  fR5   vs engine H1 (hits fixed, judged): WHOLE 56 (first `111`: regex HOLDS, engine FAILS) of 341
+  fR5   vs engine H2 (re-enters the body): WHOLE 0 of 341
+  fR6 MODEL `min = 2` as `{2,}` in his model  /(?:[\s\S]*?(?<hit>\d+)){2,}[\s\S]*/: `1234` HOLDS, `12 34` HOLDS, `1` FAILS ; vs the GLOBAL search's count >= 2: WHOLE 124 (first `11`: regex HOLDS, engine FAILS) of 341
+  fR7 EMPTY hits, rx = /\d*/: his model on `1 2` ['1', ''], on `a1` [''] ; the GLOBAL search's hits on `1 2` ['1', '', '2', ''], on `a1` ['', '1', ''] (a loop ends on an empty pass; a global search steps on)
+== g join-order (E1): `(P & Q) & ((a: "1") | (c: "1"))`, P = /(?<a>\d+)(?<b>\d+)/, Q = /(?<c>\d+)(?<d>\d+)/
+  g1 MODEL P in a non-atomic lookahead (outer), Q consumed to the same end  /(*napla:(?<a>\d+)(?<b>\d+)(?<T>[\s\S]*+))(?<c>\d+)(?<d>\d+)(?=\k<T>\z)(?C"a=1|c=1")/
+  g1   PCRE2: WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=12 b=3 c=1 d=23 ; FIND-ALL `123 1121` [`123`@0 a=12 b=3 c=1 d=23, `1121`@4 a=112 b=1 c=1 d=121]
+  g1   vs engine left-outer: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  g1   vs engine right-outer: same lines DIFFER (WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=1 b=23 c=12 d=3 ; FIND-ALL `123 1121` [`123`@0 a=1 b=23 c=12 d=3, `1121`@4 a=1 b=121 c=112 d=1]) ; over the set: WHOLE 0; SEARCHED 414 (first `111`: regex `111`@0 a=11 b=1 c=1 d=11, engine `111`@0 a=1 b=11 c=11 d=1); FIND-ALL 414 (first `111`: regex [`111`@0 a=11 b=1 c=1 d=11], engine [`111`@0 a=1 b=11 c=11 d=1]) of 1365
+  g2 MODEL Q in the lookahead (outer), P consumed  /(*napla:(?<c>\d+)(?<d>\d+)(?<T>[\s\S]*+))(?<a>\d+)(?<b>\d+)(?=\k<T>\z)(?C"a=1|c=1")/
+  g2   PCRE2: WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=1 b=23 c=12 d=3 ; FIND-ALL `123 1121` [`123`@0 a=1 b=23 c=12 d=3, `1121`@4 a=1 b=121 c=112 d=1]
+  g2   vs engine left-outer: same lines DIFFER (WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=12 b=3 c=1 d=23 ; FIND-ALL `123 1121` [`123`@0 a=12 b=3 c=1 d=23, `1121`@4 a=112 b=1 c=1 d=121]) ; over the set: WHOLE 0; SEARCHED 414 (first `111`: regex `111`@0 a=1 b=11 c=11 d=1, engine `111`@0 a=11 b=1 c=1 d=11); FIND-ALL 414 (first `111`: regex [`111`@0 a=1 b=11 c=11 d=1], engine [`111`@0 a=11 b=1 c=1 d=11]) of 1365
+  g2   vs engine right-outer: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  g3 MODEL the usual idiom with an ORDINARY (atomic) lookahead: P gets one path  /(?=(?<a>\d+)(?<b>\d+)(?<T>[\s\S]*+))(?<c>\d+)(?<d>\d+)(?=\k<T>\z)(?C"a=1|c=1")/
+  g3   PCRE2: WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=12 b=3 c=1 d=23 ; FIND-ALL `123 1121` [`123`@0 a=12 b=3 c=1 d=23, `1121`@4 a=112 b=1 c=1 d=121]
+  g3   vs engine left-outer: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  g3   vs engine right-outer: same lines DIFFER (WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=1 b=23 c=12 d=3 ; FIND-ALL `123 1121` [`123`@0 a=1 b=23 c=12 d=3, `1121`@4 a=1 b=121 c=112 d=1]) ; over the set: WHOLE 0; SEARCHED 414 (first `111`: regex `111`@0 a=11 b=1 c=1 d=11, engine `111`@0 a=1 b=11 c=11 d=1); FIND-ALL 414 (first `111`: regex [`111`@0 a=11 b=1 c=1 d=11], engine [`111`@0 a=1 b=11 c=11 d=1]) of 1365
+  g4 MODEL `(P & Q) & (a: "1")`, the usual idiom (ordinary atomic lookahead on P)  /(?=(?<a>\d+)(?<b>\d+)(?<T>[\s\S]*+))(?<c>\d+)(?<d>\d+)(?=\k<T>\z)(?C"a=1")/
+  g4   PCRE2: WHOLE `123` FAILS ; SEARCHED `123` FAILS ; FIND-ALL `123 1121` []
+  g4   vs engine left-outer: same lines DIFFER (WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=1 b=23 c=12 d=3 ; FIND-ALL `123 1121` [`123`@0 a=1 b=23 c=12 d=3, `1121`@4 a=1 b=121 c=112 d=1]) ; over the set: WHOLE 117 (first `111`: regex FAILS, engine HOLDS); SEARCHED 414 (first `111`: regex `11`@1 a=1 b=1 c=1 d=1, engine `111`@0 a=1 b=11 c=11 d=1); FIND-ALL 414 (first `111`: regex [`11`@1 a=1 b=1 c=1 d=1], engine [`111`@0 a=1 b=11 c=11 d=1]) of 1365
+  g4   vs engine right-outer: same lines DIFFER (WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=1 b=23 c=12 d=3 ; FIND-ALL `123 1121` [`123`@0 a=1 b=23 c=12 d=3, `1121`@4 a=1 b=121 c=112 d=1]) ; over the set: WHOLE 117 (first `111`: regex FAILS, engine HOLDS); SEARCHED 414 (first `111`: regex `11`@1 a=1 b=1 c=1 d=1, engine `111`@0 a=1 b=11 c=11 d=1); FIND-ALL 414 (first `111`: regex [`11`@1 a=1 b=1 c=1 d=1], engine [`111`@0 a=1 b=11 c=11 d=1]) of 1365
+  g5 MODEL `(P & Q) & (a: "1")`, P in (*napla:)  /(*napla:(?<a>\d+)(?<b>\d+)(?<T>[\s\S]*+))(?<c>\d+)(?<d>\d+)(?=\k<T>\z)(?C"a=1")/
+  g5   PCRE2: WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=1 b=23 c=12 d=3 ; FIND-ALL `123 1121` [`123`@0 a=1 b=23 c=12 d=3, `1121`@4 a=1 b=121 c=112 d=1]
+  g5   vs engine left-outer: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  g5   vs engine right-outer: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+== h `A & B` vs `A & (0: B)`: does B see the text around the stretch?
+  h1 MODEL `/\d+/ & /^\d+/`: B consumed in the subject, tied to A's end  /(*napla:\d+(?<T>[\s\S]*+))^\d+(?=\k<T>\z)/
+  h1   PCRE2: WHOLE `1` HOLDS ; SEARCHED ` 1` FAILS ; FIND-ALL ` 1 12` []
+  h1   vs engine IN-CONTEXT `&`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h1   vs engine SPAN `&` (the draft's filter role): same lines DIFFER (WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]) ; over the set: WHOLE 0; SEARCHED 336 (first ` 1`: regex FAILS, engine `1`@1); FIND-ALL 822 (first ` 1`: regex [], engine [`1`@1]) of 1365
+  h1   vs engine `& (0: B)`: same lines DIFFER (WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]) ; over the set: WHOLE 0; SEARCHED 336 (first ` 1`: regex FAILS, engine `1`@1); FIND-ALL 822 (first ` 1`: regex [], engine [`1`@1]) of 1365
+  h1z MODEL `/\d+/ & (0: /^\d+/)`: a callout that matches B WHOLE against the stretch alone  /\d+(?C"0:^\d+")/
+  h1z   PCRE2: WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]
+  h1z   vs engine IN-CONTEXT `&`: same lines DIFFER (WHOLE `1` HOLDS ; SEARCHED ` 1` FAILS ; FIND-ALL ` 1 12` []) ; over the set: WHOLE 0; SEARCHED 336 (first ` 1`: regex `1`@1, engine FAILS); FIND-ALL 822 (first ` 1`: regex [`1`@1], engine []) of 1365
+  h1z   vs engine SPAN `&` (the draft's filter role): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h1z   vs engine `& (0: B)`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h2 MODEL `/\d+/ & /\b\d+/`: B consumed in the subject, tied to A's end  /(*napla:\d+(?<T>[\s\S]*+))\b\d+(?=\k<T>\z)/
+  h2   PCRE2: WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]
+  h2   vs engine IN-CONTEXT `&`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h2   vs engine SPAN `&` (the draft's filter role): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h2   vs engine `& (0: B)`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h2z MODEL `/\d+/ & (0: /\b\d+/)`: a callout that matches B WHOLE against the stretch alone  /\d+(?C"0:\b\d+")/
+  h2z   PCRE2: WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]
+  h2z   vs engine IN-CONTEXT `&`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h2z   vs engine SPAN `&` (the draft's filter role): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h2z   vs engine `& (0: B)`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h3 MODEL `/\d+/ & /\d+$/`: B consumed in the subject, tied to A's end  /(*napla:\d+(?<T>[\s\S]*+))\d+$(?=\k<T>\z)/
+  h3   PCRE2: WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`12`@3]
+  h3   vs engine IN-CONTEXT `&`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h3   vs engine SPAN `&` (the draft's filter role): same lines DIFFER (WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]) ; over the set: WHOLE 0; SEARCHED 822 (first `1 `: regex FAILS, engine `1`@0); FIND-ALL 822 (first `1 `: regex [], engine [`1`@0]) of 1365
+  h3   vs engine `& (0: B)`: same lines DIFFER (WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]) ; over the set: WHOLE 0; SEARCHED 822 (first `1 `: regex FAILS, engine `1`@0); FIND-ALL 822 (first `1 `: regex [], engine [`1`@0]) of 1365
+  h3z MODEL `/\d+/ & (0: /\d+$/)`: a callout that matches B WHOLE against the stretch alone  /\d+(?C"0:\d+$")/
+  h3z   PCRE2: WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]
+  h3z   vs engine IN-CONTEXT `&`: same lines DIFFER (WHOLE `1` HOLDS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`12`@3]) ; over the set: WHOLE 0; SEARCHED 822 (first `1 `: regex `1`@0, engine FAILS); FIND-ALL 822 (first `1 `: regex [`1`@0], engine []) of 1365
+  h3z   vs engine SPAN `&` (the draft's filter role): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h3z   vs engine `& (0: B)`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h4 MODEL `/\d+/ & /(?<= )\d+/`: B consumed in the subject, tied to A's end  /(*napla:\d+(?<T>[\s\S]*+))(?<= )\d+(?=\k<T>\z)/
+  h4   PCRE2: WHOLE `1` FAILS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]
+  h4   vs engine IN-CONTEXT `&`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h4   vs engine SPAN `&` (the draft's filter role): same lines DIFFER (WHOLE `1` FAILS ; SEARCHED ` 1` FAILS ; FIND-ALL ` 1 12` []) ; over the set: WHOLE 0; SEARCHED 822 (first ` 1`: regex `1`@1, engine FAILS); FIND-ALL 822 (first ` 1`: regex [`1`@1], engine []) of 1365
+  h4   vs engine `& (0: B)`: same lines DIFFER (WHOLE `1` FAILS ; SEARCHED ` 1` FAILS ; FIND-ALL ` 1 12` []) ; over the set: WHOLE 0; SEARCHED 822 (first ` 1`: regex `1`@1, engine FAILS); FIND-ALL 822 (first ` 1`: regex [`1`@1], engine []) of 1365
+  h4z MODEL `/\d+/ & (0: /(?<= )\d+/)`: a callout that matches B WHOLE against the stretch alone  /\d+(?C"0:(?<= )\d+")/
+  h4z   PCRE2: WHOLE `1` FAILS ; SEARCHED ` 1` FAILS ; FIND-ALL ` 1 12` []
+  h4z   vs engine IN-CONTEXT `&`: same lines DIFFER (WHOLE `1` FAILS ; SEARCHED ` 1` `1`@1 ; FIND-ALL ` 1 12` [`1`@1, `12`@3]) ; over the set: WHOLE 0; SEARCHED 822 (first ` 1`: regex FAILS, engine `1`@1); FIND-ALL 822 (first ` 1`: regex [], engine [`1`@1]) of 1365
+  h4z   vs engine SPAN `&` (the draft's filter role): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  h4z   vs engine `& (0: B)`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+== i the other open slugs
+  i1 MODEL record-under-not: regex NOT around the record's two tests  /(?<h>\d{1,2})(?::(?<m>\d\d))?(?!(?C"h<9")(?C"m<30"))/
+  i1   PCRE2: WHOLE `10` HOLDS ; SEARCHED `10` `10`@0 h=10 m=None ; FIND-ALL `10 9 10:15` [`10`@0 h=10 m=None, `9`@3 h=9 m=None, `10:15`@5 h=10 m=15]
+  i1   vs engine today: joint UNKNOWN on an absent part: same lines DIFFER (WHOLE `10` FAILS ; SEARCHED `10` FAILS ; FIND-ALL `10 9 10:15` [`10:15`@5 h=10 m=15]) ; over the set: WHOLE 12 (first `0`: regex HOLDS, engine FAILS); SEARCHED 3546 (first `0`: regex `0`@0 h=0 m=None, engine FAILS); FIND-ALL 3627 (first `0`: regex [`0`@0 h=0 m=None], engine []) of 3906
+  i1   vs engine completion (item 18): same lines EQUAL ; over the set: WHOLE 2 (first `0`: regex HOLDS, engine FAILS); SEARCHED 918 (first `0`: regex `0`@0 h=0 m=None, engine FAILS); FIND-ALL 2010 (first `0`: regex [`0`@0 h=0 m=None], engine []) of 3906
+  i1   vs engine the record (h: <9, m: <30): same lines EQUAL ; over the set: WHOLE 2 (first `0`: regex HOLDS, engine FAILS); SEARCHED 918 (first `0`: regex `0`@0 h=0 m=None, engine FAILS); FIND-ALL 2010 (first `0`: regex [`0`@0 h=0 m=None], engine []) of 3906
+  i2 MODEL record-under-not: regex NOT around the joint test  /(?<h>\d{1,2})(?::(?<m>\d\d))?(?!(?C"joint"))/
+  i2   PCRE2: WHOLE `10` HOLDS ; SEARCHED `10` `10`@0 h=10 m=None ; FIND-ALL `10 9 10:15` [`10`@0 h=10 m=None, `9`@3 h=9 m=None, `10:15`@5 h=10 m=15]
+  i2   vs engine today: joint UNKNOWN on an absent part: same lines DIFFER (WHOLE `10` FAILS ; SEARCHED `10` FAILS ; FIND-ALL `10 9 10:15` [`10:15`@5 h=10 m=15]) ; over the set: WHOLE 12 (first `0`: regex HOLDS, engine FAILS); SEARCHED 3546 (first `0`: regex `0`@0 h=0 m=None, engine FAILS); FIND-ALL 3627 (first `0`: regex [`0`@0 h=0 m=None], engine []) of 3906
+  i2   vs engine completion (item 18): same lines EQUAL ; over the set: WHOLE 2 (first `0`: regex HOLDS, engine FAILS); SEARCHED 918 (first `0`: regex `0`@0 h=0 m=None, engine FAILS); FIND-ALL 2010 (first `0`: regex [`0`@0 h=0 m=None], engine []) of 3906
+  i2   vs engine the record (h: <9, m: <30): same lines EQUAL ; over the set: WHOLE 2 (first `0`: regex HOLDS, engine FAILS); SEARCHED 918 (first `0`: regex `0`@0 h=0 m=None, engine FAILS); FIND-ALL 2010 (first `0`: regex [`0`@0 h=0 m=None], engine []) of 3906
+  i3 MODEL group-truth `NOT some((h: <5))`: a flag group set in a pass whose h is <5, forbidden at the end  /(?:(?:(?<h>\d)(?(?=(?C"h<5"))(?<hit>)|))?;)*(?(<hit>)(*FAIL)|)/
+  i3   PCRE2: WHOLE `;` HOLDS ; SEARCHED `;` `;`@0 h=None ; FIND-ALL `;;3;7;` [`;;`@0 h=None, ``@2 h=None, `;7;`@3 h=7, ``@6 h=None]
+  i3   vs engine EXISTS two-valued (today): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 364
+  i3   vs engine three-valued some: same lines DIFFER (WHOLE `;` FAILS ; SEARCHED `;` ``@0 h=None ; FIND-ALL `;;3;7;` [``@0 h=None, ``@1 h=None, ``@2 h=None, ``@3 h=None, `7;`@4 h=7, ``@6 h=None]) ; over the set: WHOLE 17 (first `;`: regex HOLDS, engine FAILS); SEARCHED 135 (first `;`: regex `;`@0 h=None, engine ``@0 h=None); FIND-ALL 245 (first `;`: regex [`;`@0 h=None, ``@1 h=None], engine [``@0 h=None, ``@1 h=None]) of 364
+  i4 MODEL condition-or `NOT ((h: <5) | (k: <5))`: a negative lookahead around an alternation of callouts  /(?:a(?<h>\d)|b(?<k>\d)|c)(?!(?C"h<5")|(?C"k<5"))/
+  i4   PCRE2: WHOLE `b7` HOLDS ; SEARCHED `b7` `b7`@0 h=None k=7 ; FIND-ALL `b7 a3 c a9` [`b7`@0 h=None k=7, `c`@6 h=None k=None, `a9`@8 h=9 k=None]
+  i4   vs engine Kleene OR (today): same lines DIFFER (WHOLE `b7` FAILS ; SEARCHED `b7` FAILS ; FIND-ALL `b7 a3 c a9` []) ; over the set: WHOLE 3 (first `c`: regex HOLDS, engine FAILS); SEARCHED 89 (first `c`: regex `c`@0 h=None k=None, engine FAILS); FIND-ALL 89 (first `c`: regex [`c`@0 h=None k=None], engine []) of 156
+  i4   vs engine two-valued OR (rev 22): same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 156
+  i5 MODEL when-meaning: PCRE's CONDITIONAL GROUP, `x(?(?=(?C c))(?C p)|)`  /(?<k>\d)(?:;(?<h>\d))*(?(?=(?C"c"))(?C"p")|)/
+  i5   PCRE2: WHOLE `5;1;9` HOLDS ; SEARCHED `5;1;9` `5;1;9`@0 k=5 ; FIND-ALL `3;0;5 5;1;9` [`3;0;5`@0 k=3, `5;1;9`@6 k=5]
+  i5   vs engine filter form `x & when(c, p)`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1110
+  i5   vs engine body `(x & c & p) | (x & !(x & c))`: same lines DIFFER (WHOLE `5;1;9` HOLDS ; SEARCHED `5;1;9` `5;1`@0 k=5 ; FIND-ALL `3;0;5 5;1;9` [`3;0`@0 k=3, `5`@4 k=5, `5;1`@6 k=5, `9`@10 k=9]) ; over the set: WHOLE 0; SEARCHED 125 (first `3;0;5`: regex `3;0;5`@0 k=3, engine `3;0`@0 k=3); FIND-ALL 125 (first `3;0;5`: regex [`3;0;5`@0 k=3], engine [`3;0`@0 k=3, `5`@4 k=5]) of 1110
+  i6 MODEL when-meaning: the body as a regex alternation (complement tied to the stretch)  /(?|(?<k>\d)(?:;(?<h>\d))*(?C"c")(?C"p")|(*napla:(?<k>\d)(?:;(?<h>\d))*(?<T>[\s\S]*+))(?!(?<k2>\d)(?:;(?<h2>\d))*(?C"c")\k<T>\z)(?:(?!\k<T>\z)[\s\S])*+)/
+  i6   PCRE2: WHOLE `5;1;9` HOLDS ; SEARCHED `5;1;9` `5;1`@0 k=5 ; FIND-ALL `3;0;5 5;1;9` [`3;0`@0 k=3, `5`@4 k=5, `5;1`@6 k=5, `9`@10 k=9]
+  i6   vs engine filter form `x & when(c, p)`: same lines DIFFER (WHOLE `5;1;9` HOLDS ; SEARCHED `5;1;9` `5;1;9`@0 k=5 ; FIND-ALL `3;0;5 5;1;9` [`3;0;5`@0 k=3, `5;1;9`@6 k=5]) ; over the set: WHOLE 0; SEARCHED 125 (first `3;0;5`: regex `3;0`@0 k=3, engine `3;0;5`@0 k=3); FIND-ALL 125 (first `3;0;5`: regex [`3;0`@0 k=3, `5`@4 k=5], engine [`3;0;5`@0 k=3]) of 1110
+  i6   vs engine body `(x & c & p) | (x & !(x & c))`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1110
+  i7 MODEL repeated-means: `(?:(?<h>\d);)+` & `\d;` & `(h: <5)`  /(*napla:\d;(?<T>[\s\S]*+))(?:(?<h>\d);)+(?=\k<T>\z)(?C"h<5")/: WHOLE `3;` HOLDS ; SEARCHED `7;3;` `3;`@2 h=3 ; FIND-ALL `3;7;3;` [`3;`@0 h=3, `3;`@4 h=3]
+  i8 MODEL repeated-means: `(?<h>\d);` & `(h: <5)`  /(?<h>\d);(?C"h<5")/: WHOLE `3;` HOLDS ; SEARCHED `7;3;` `3;`@2 h=3 ; FIND-ALL `3;7;3;` [`3;`@0 h=3, `3;`@4 h=3]
+  i9 MODEL whole-text route (ii) as a callout reading the whole subject (q's own regex model)  /(?C"noq")(?<h>\d{1,2})(?::(?<m>\d\d))?/
+  i9   PCRE2: WHOLE `9:30` FAILS ; SEARCHED `9:30` FAILS ; FIND-ALL `9:15 9:30 1` []
+  i9   vs engine today `t2 & !q`: same lines DIFFER (WHOLE `9:30` FAILS ; SEARCHED `9:30` `9`@0 h=9 m=None ; FIND-ALL `9:15 9:30 1` [`9:15`@0 h=9 m=15, `9`@5 h=9 m=None, `30`@7 h=30 m=None, `1`@10 h=1 m=None]) ; over the set: WHOLE 6 (first `09:50`: regex FAILS, engine HOLDS); SEARCHED 90 (first `9:50`: regex FAILS, engine `9`@0 h=9 m=None); FIND-ALL 90 (first `9:50`: regex [], engine [`9`@0 h=9 m=None, `50`@2 h=50 m=None]) of 3906
+  i9   vs engine route (ii) `t2 & text.none(q)`: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+  i9   vs engine route (i) NA1: same lines DIFFER (WHOLE `9:30` FAILS ; SEARCHED `9:30` `30`@2 h=30 m=None ; FIND-ALL `9:15 9:30 1` [`30`@7 h=30 m=None, `1`@10 h=1 m=None]) ; over the set: WHOLE 0; SEARCHED 90 (first `9:50`: regex FAILS, engine `50`@2 h=50 m=None); FIND-ALL 90 (first `9:50`: regex [], engine [`50`@2 h=50 m=None]) of 3906
+  i10 MODEL whole-text gated at the text start, `\A(?![\s\S]*q)` then `\K`  /\A(?![\s\S]*?(?<h2>\d{1,2})(?::(?<m2>\d\d))?(?C"late2"))[\s\S]*?\K(?<h>\d{1,2})(?::(?<m>\d\d))?/
+  i10   PCRE2: WHOLE `9:30` FAILS ; SEARCHED `9:30` FAILS ; FIND-ALL `9:15 9:30 1` []
+  i10   vs engine today `t2 & !q`: same lines DIFFER (WHOLE `9:30` FAILS ; SEARCHED `9:30` `9`@0 h=9 m=None ; FIND-ALL `9:15 9:30 1` [`9:15`@0 h=9 m=15, `9`@5 h=9 m=None, `30`@7 h=30 m=None, `1`@10 h=1 m=None]) ; over the set: SEARCHED 90 (first `9:50`: regex FAILS, engine `9`@0 h=9 m=None) of 3906
+  i10   vs engine route (ii) `t2 & text.none(q)`: same lines EQUAL ; over the set: SEARCHED 0 of 3906
+  i10   vs engine route (i) NA1: same lines DIFFER (WHOLE `9:30` FAILS ; SEARCHED `9:30` `30`@2 h=30 m=None ; FIND-ALL `9:15 9:30 1` [`30`@7 h=30 m=None, `1`@10 h=1 m=None]) ; over the set: SEARCHED 90 (first `9:50`: regex FAILS, engine `50`@2 h=50 m=None) of 3906
+  i11 REFUSED by PCRE2 (no unbounded lookbehind, so "no q BEHIND this start" has no plain spelling): compile '(?<![\\s\\S]*(?<h2>\\d{1,2})(?::(?<m2>\\d\\d))?)(?<h>\\d{1,2})(?::(?<m>\\d\\d))?' at 0: length of lookbehind assertion is not limited
+  i11 REFUSED by PCRE2 (no unbounded lookbehind, so "no q BEHIND this start" has no plain spelling): compile '(?<!.{0,300})x' at 0: branch too long in variable-length lookbehind assertion
+== j E7 atomic: PCRE's atomic group vs pathimpact's labelled extra
+  j1 MODEL `t2 & q` atomic  /(?>(?<h>\d{1,2})(?::(?<m>\d\d))?)(?C"late")/
+  j1   PCRE2: WHOLE `9:30` HOLDS ; SEARCHED `9:30` `9:30`@0 h=9 m=30 ; FIND-ALL `9:30 10:15` [`9:30`@0 h=9 m=30, `10:15`@5 h=10 m=15]
+  j1   vs engine atomic: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+  j2 MODEL `t2 & !q` atomic (item 14)  /(*napla:(?>(?<h>\d{1,2})(?::(?<m>\d\d))?)(?<T>[\s\S]*+))(?!(?<h2>\d{1,2})(?::(?<m2>\d\d))?(?C"late2")\k<T>\z)(?:(?!\k<T>\z)[\s\S])*+/
+  j2   PCRE2: WHOLE `9:30` FAILS ; SEARCHED `9:30` `30`@2 h=30 m=None ; FIND-ALL `9:30 10:15` [`30`@2 h=30 m=None, `0:15`@6 h=0 m=15]
+  j2   vs engine atomic: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 3906
+  j3 MODEL `(B | A) & (l: <20)` atomic  /(?>(?|(?<l>\d\d)|(?<l>\d)\d))(?C"l<20")/
+  j3   PCRE2: WHOLE `25` FAILS ; SEARCHED `25` FAILS ; FIND-ALL `25 13` [`13`@3 l=13]
+  j3   vs engine atomic: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  j4 MODEL `P & (a: "1")` atomic  /(?>(?<a>\d+)(?<b>\d+))(?C"a=1")/
+  j4   PCRE2: WHOLE `123` FAILS ; SEARCHED `123` FAILS ; FIND-ALL `123 9 113` [`13`@7 a=1 b=3]
+  j4   vs engine atomic: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+  j5 MODEL `atomic(P & (a: "1"))`: the condition INSIDE the atomic group  /(?>(?<a>\d+)(?<b>\d+)(?C"a=1"))/
+  j5   PCRE2: WHOLE `123` HOLDS ; SEARCHED `123` `123`@0 a=1 b=23 ; FIND-ALL `123 9 113` [`123`@0 a=1 b=23, `113`@6 a=1 b=13]
+  j5   vs engine atomic: same lines EQUAL ; over the set: WHOLE 0; SEARCHED 0; FIND-ALL 0 of 1365
+== END
