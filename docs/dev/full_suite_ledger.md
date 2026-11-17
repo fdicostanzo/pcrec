@@ -466,3 +466,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-17 b23e05000 none — lane archgoals2: architecture goals revised to the owner's review (docs, skills)
 - 2026-11-17 a4e27e3bf none — lane archgoals3: four architecture goals + the judgement section (docs, skills)
 - 2026-11-17 90e24afcd none — review r40 filed (predicates_draft.md rev 24), critic-skill process changes (docs)
+- 2026-11-17 b0d6890d1 none — predicates_draft.md rev 24.1 (review r40 fixes) (docs)
