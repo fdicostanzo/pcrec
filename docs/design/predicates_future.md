@@ -271,3 +271,35 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   can admit, F11) stated per row.
 - TRIGGER (any one): the owner unparks **whole-text**; a second nested place gains conditions (a positive
   lookahead's labels, a `records` item with NOT); the per-place prose drifts again.
+
+## 17. An ordered table: a filtered program keeps its row order in every place
+
+- WHAT: the rows of a program's table carry an ORDER (PCRE's preference order: the leftmost start, then the ends the
+  pattern prefers there), and every place a filtered program stands (a hole in a library body, a `|` branch, a
+  `contains`/`occurs` argument, a `records` item) keeps that order. Then a library macro's body means what the macro
+  means again: `when(c, p)`'s expansion `(x & c & p) | (x & !q)` would report and count x's rows in x's order (today
+  it parts from the filter form on 125 / 310 of 1,110 texts in a find-all place), and `occurrences` over a filtered
+  argument would be its body (today R.1.9's hit list is not the hole's string set). A same-ordered-table law ("two
+  programs with the same ordered table answer every question alike, in every mode") would replace the narrower
+  same-table re-derivation of R.1.3, and the withdrawn **branch-order** would be a corollary rather than a rule.
+- SOURCE: review r34 (round predspec231 on predicates_draft.md rev 23.1), finding D1 and its GENERAL FORM note (a), a
+  PLAN item by the manager's disposition. Not ruled by the owner; predicates are design only, no plan row (D77).
+- WHAT IT WOULD UNLOCK: "a macro is just a convenience" (19:31) held for every library body; one order table for the
+  five ORDER members (regex, `&`, `|`, find-all, lookahead labels) review r34 counted.
+- TRIGGER (any one): the owner's answer to **branch-scope**; the next library body that puts a FILTERED argument in a
+  hole; **when-meaning** answered "its body".
+
+## 18. The Kleene completion rule for a joint condition with an absent part
+
+- WHAT: a joint condition `((p1, ..., pk): R)` with some parts ABSENT is UNKNOWN only if some value of the missing
+  parts (from each label's value set) could change the answer; otherwise it takes the answer every completion gives.
+  On `t2` with R = `(<9, <30)` and the text `10` (h = 10 already fails), the joint is FALSE, so under NOT it agrees
+  with the record of the same tests: record-is-product (11:35) would hold under NOT too (0 / 0 of 11,110 differ, both
+  modes, `predspec23d_model.out` PART Y; today 101 / 281).
+- ITS COST: a POSITIVE joint test can pass with a part absent: `t2 & ((h, m): padded(>= (9, 30)))` on `10` HOLDS / HOLDS
+  (every minute completes it to a late time), against 23:48's "absence never matches, negated or not"; with R
+  unpadded (§2.2) the same program stays FAILS / FAILS. The rule's domain (each label's value set) is the per-program
+  DOM rev 23 retired from conditions, so it would bring a value-set reader back.
+- SOURCE: review r34 finding A4 and its GENERAL FORM note (c), a PLAN item by the manager's disposition. Not ruled.
+- TRIGGER: the owner's answer to **record-under-not** (predicates_draft.md §R.8 item 7), if it asks for the record to
+  equal the AND of its entries under NOT.
