@@ -1928,3 +1928,15 @@ rows; the one thing it leaves undefined is WHAT A ROW OF THE SOURCE IS (a whole 
 one design lane start from his model as it stands), HIS WORDS: "Go. Purely exploration". RECORD: lane condkind
 (opus, design only) starts; its output is an EXPLORATION document, rules nothing, edits neither predicates_draft.md
 nor any ruling; what it finds comes back to him as named questions.
+
+**2026-11-16 OWNER REMARK — drop the optional mark? (Frank, to session 137, box clock 21:16; a question to the manager
+after the exploration docs/design/condition_kind.md and its **mark-range** question; not a ruling).** HIS WORDS:
+"What if we got rid of the mark? I think it's a large source of issues. Absence is a \"null\" which never matches.
+Use the default to get past it. Thoughts?" THE MANAGER'S JUDGMENT given to him (his, unrun): in favour. The mark is
+an existential ("some value would do") and so the one construct that is not a test of one row; a default is the
+same thing with the AUTHOR supplying the witness, a one-row test (COALESCE). Dropping the mark retires mark-range,
+mark-narrows, mark-in-none, zero-pass-empty's corner, one-witness, not-of-marked and the value set's use by a mark
+(domain-scope as far as it served the mark), none reversed; absent-rule stands minus its mark clause. Named costs:
+(1) a condition against a value not known when written (`< $k`) may have no fixed default that passes; (2) the
+default's scope (dollar-across-and; one default per label or per condition) becomes the load-bearing open item;
+(3) a default that stops satisfying an edited condition fails silently. Asked as **drop-mark**.
