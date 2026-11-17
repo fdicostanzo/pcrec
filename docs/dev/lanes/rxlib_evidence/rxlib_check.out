@@ -118,6 +118,10 @@ PART G  the note's section 7 examples, each candidate run (WHOLE / SEARCHED / FI
   separator-label: rx.loop([h = rx.digit], sep = ",") & (h: <5)
     two-copy (PCRE: first item)      (?:(?<h1>\d)(?:,(?<h2>\d))*)?(?C"t")           WHOLE '7,3' False | SEARCHED '7,3' (2, 3, ('3',)) | FIND-ALL '7,3 1,9' ((2, 3, ('3',)), (4, 7, ('1',)))
     one-copy (last pass)             (?:(?(<s>),)(?<h>\d)(?<s>))*(?C"t")            WHOLE '7,3' True | SEARCHED '7,3' (0, 3, ('3',)) | FIND-ALL '7,3 1,9' ((0, 3, ('3',)), (4, 5, ('1',)))
+  label-flow: stamp := "T" € t2 (t2 of B2), F1 flat: stamp & (h: <13)
+    F1 flat                          T(?<h>\d{1,2})(?::(?<m>\d\d))?(?C"t")          WHOLE 'T14:30' False | SEARCHED 'T14:30' (0, 2, ('1', None)) | FIND-ALL 'T9:30 T14:00' ((0, 5, ('9', '30')), (6, 8, ('1', None)))
+  label-mark: octet := rx.digits(1, 3); octet € "." € octet & (octet: <10), L3 with PCRE's first-set rule
+    L3 + D2 (first octet)            (?<o1>\d{1,3})\.(?<o2>\d{1,3})(?C"t")          WHOLE '5.200' True | SEARCHED '250.3' (2, 5, ('0', '3')) | FIND-ALL '5.1 50.2' ((0, 3, ('5', '1')), (5, 8, ('0', '2')))
   count-argument: rx.digits(n, n) with n := [2, 4] (an enumeration of two members)
     C1 union, enumeration order      \d{2}|\d{4}                                    WHOLE '1234' True | SEARCHED '12345' (0, 2, ()) | FIND-ALL '12345' ((0, 2, ()), (2, 4, ()))
     C1 whole on 123                  \d{2}|\d{4}                                    WHOLE '123' False | SEARCHED 'x' None | FIND-ALL 'x' ()
