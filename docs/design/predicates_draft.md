@@ -1,8 +1,29 @@
 # The predicate language ([COND-FAMILY] #6): a preliminary specification for critical analysis
 
-**rev 24: the owner's 2026-11-17 rulings (regex behaviour); NOT STABLE pending the open table** (§R.8).
+**rev 24.1: review r40's fixes; NOT STABLE pending the owner's answers** (§R.8).
 
 ## Changelog
+
+- **rev 24.1: review r40's fixes; NOT STABLE pending the owner's answers (lane predspec241, 2026-11-17).** Applies
+  the manager's dispositions of review r40 (`docs/dev/reviews/2026-11-17-r40-predspec24.md`). EVIDENCE FIRST
+  (`docs/dev/lanes/predspec241_evidence/`): the engine fixed where it disagreed with the text and with PCRE2 (A1 a
+  body condition reads the labels set so far, PCRE2's W1c 5 / 34 / 34 -> 0; A2 a loop exports every label it sets,
+  300 / 693 -> 0; A3 `&` and `!B` run the operand on the stretch's own text, the anchored LAW pair 1,344 -> 0; A5
+  WHOLE keys carry labels, E5 0 -> 117, E1 243 -> 363; C1 the order swap replaced by an ORDER CHECK that must
+  differ, 3 of 3); libpcre2 models 20 -> 38, all equal; sabotage caught (19 of 38, order check 0 of 3); the rev 23.2
+  switch reproduces rev 23.2's 109 printed answers. TEXT (§R): join order moves labels and, with a lazy operand, the
+  stretch; `&` distributes over a LEFT `|` only; "never admits" scoped (atomic admits 12 / 156); the spelling
+  principle reworded "the same paths with the same labels"; a bare joint over a loop reads each label's last setting
+  (joint-loops (1) reversed for bare joints); absent-rule narrowed; exact owner quotes; §R.11 rebuilt one row per
+  entry; goals' measurable forms (G24-1 term list + per-entry ruling table, G24-5 every model-less item a slugged
+  question); §R.4 every member RUN or NOT RUN with its reason (W6d, W6e, W7b added); records and defaults leave the
+  exception list (regex models, 0 differ). OWNER (applied from the lane's rulings file): **exception-rule** RULED
+  (§R.6: regex by default, an exception proves its worth and is requested by its own feature; whole-text ADOPTED as
+  a requested feature; the list of every place that looks like regex but behaves otherwise); **pass-own-labels**
+  asked with **joint-last-pass** and its RAMIFICATIONS run (17 of 68 catalogue lines move). §R.8 asks: hits-text,
+  atomic-search, joint-last-pass, pass-own-labels, hits-committed, join-order, polarity-rule, pass-list-read,
+  zero-place, operand-context, shared-label; none chosen. Kept sentences falsified by rev 24 marked "[REV 24.1]"
+  (§R.9). 6,762 lines (797,544 bytes) before, 7,083 lines (847,257 bytes) after.
 
 - **rev 24: the owner's 2026-11-17 rulings, regex behaviour (lane predspec24, 2026-11-17); NOT STABLE pending §R.8.**
   §R REPLACED (rev 23.2's §R is the record, §16.7): a condition is one more piece of the pattern and a rejecting one
@@ -406,191 +427,311 @@
   ruling and the adopted parts of `docs/dev/lanes/predx_report.md`.
 - **rev 0 (lane predspec, 2026-11-14).** First consolidation of the notes through the outer-layer note.
 
-## R. Rev 24: the condition model under regex behaviour (READ FIRST; where any later section disagrees, this section wins)
+## R. Rev 24.1: the condition model under regex behaviour (READ FIRST; where any later section disagrees, this section wins)
 
-Rev 24 (lane predspec24, 2026-11-17) applies the owner's rulings of 2026-11-17 (COND-FAMILY.md, the entries from
-"OWNER LEAN — branch-scope" to the end of the file). His direction for the whole revision: "regex behavior ... should
-be the general behavior" (11:50), and "can we come up with a regex model for each and use that to explain it. At
-least, where it is able to" (12:55); the regex model EXPLAINS and does not EXCLUDE ("It's an exception that should be
-noted but no excluded for purity", 13:20). Rev 23.2's §R (the three-valued model, reading (iii) of branch-scope, the
-every-pass pass table) is REPLACED wholesale; its text is the record at `git show
-9b61e41e9:docs/design/predicates_draft.md` (§16.7). SPELLINGS ARE PLACEHOLDERS (D193 addendum 4): `!`, `NOT`, `h =
-v`, `some`, `occurs.none`, `hits`, `atomic`, `when` name meanings, not syntax. Every answer below is a line of
-`docs/dev/lanes/predspec24_evidence/predspec24_model.out` (PART and tag named), produced by
+Rev 24 (lane predspec24) applied the owner's rulings of 2026-11-17 (COND-FAMILY.md, the entries from "OWNER LEAN —
+branch-scope" to the end of the file); REV 24.1 (lane predspec241, 2026-11-17) applies the fixes of review r40
+(`docs/dev/reviews/2026-11-17-r40-predspec24.md`) as the manager disposed them: the evidence engine is fixed FIRST
+where it disagreed with this text and with PCRE2 (§R.10), every number re-run, and every rule rev 24 had picked
+without a ruling is now marked THE DRAFT'S READING, asked, with its owner question in §R.8. His direction for the
+revision, in his words: on the backtracking a rejecting condition causes, "However, it is in line with regex
+behavior so I do like it and think it should be the general behavior" (11:50; its subject is that backtracking);
+"can we come up with a regex model for each and use that to explain it. At least, where it is able to" (12:55);
+and the regex model EXPLAINS without EXCLUDING ("It's an exception that should be noted but no excluded for
+purity", 13:20). The same evening he RULED **exception-rule** (COND-FAMILY, "OWNER RULING — exception-rule"):
+"exception-rule: everything that looks like regex should behave like regex unless we explicitly allow. This is the
+prove itself portion in that an exception has to be either so useful or the "expected understanding" whereas the
+actual regex behavior is obscure so as to be useless. Exceptions should be requested by using those features
+explicitly. If requested (and optioned in if needed), they don't have to be regular regex or even legal regex."
+(§R.6 applies it and lists every place the draft makes something that looks like regex behave otherwise), and gave
+a LEAN, not a ruling, on what a loop pass starts with (**pass-own-labels**, §R.8, with its ramifications). Rev 23.2's §R is the record at `git show 9b61e41e9:docs/design/predicates_draft.md` (§16.7).
+SPELLINGS ARE PLACEHOLDERS (D193 addendum 4): `!`, `NOT`, `h = v`, `some`, `occurs.none`, `hits`, `atomic`, `when`
+name meanings, not syntax. Every answer below is a line of `docs/dev/lanes/predspec241_evidence/predspec241_model.out`
+(PART and tag named), produced by
 
-    (cd $PCREC_TMPDIR/scratch/predspec24 && timeout 1800 python3 -I \
-        <worktree>/docs/dev/lanes/predspec24_evidence/predspec24_model.py)
+    (cd $PCREC_TMPDIR/scratch/predspec241 && timeout 1800 python3 -I -B \
+        <worktree>/docs/dev/lanes/predspec241_evidence/predspec241_model.py)
 
 and every answer names its MODE: WHOLE (the program matched against a whole value), SEARCHED (the first match in a
-subject) and FIND-ALL (every match, left to right). Numerals are canonical (§2.2: `0|[1-9]\d*`). Rules that decide
-answers and are NOT the owner's words are marked THE MANAGER'S READING (handed to this lane) or THE DRAFT'S READING
-(this lane's), each run in the engine and listed in §R.8.
+subject) and FIND-ALL (every match, left to right). Numerals are canonical (§2.2: `0|[1-9]\d*`). EVERY COUNT names
+its rules (rev 24.1's unless said), its metric ("holds" = whether the program holds; "reported row" = holds, the
+stretch and, where "labels compared" is said, the reported labels, in every mode, WHOLE included) and its text pool
+(by size: 85, 121, 156, 341, 364, 1,110, 1,111, 1,365, 3,906 texts; the engine names each pool). Rules that decide
+answers and are NOT the owner's words are marked THE DRAFT'S READING, asked (a question for the owner with a slug,
+§R.8) or THE MANAGER'S READING (handed to the lane; closed only where a regex model entails it, §R.8).
 CROSS-REFERENCES: a `§R.n` cite in text written for rev 23-23.2 (outside this section, in a REV 23 / 23.1 / 23.2
-paragraph or a §13 block) names REV 23.2's §R (§16.7), whose numbering this section does not keep; a cite in a
-"[REV 24]" mark or this section names rev 24's.
+paragraph or a §13 block) names REV 23.2's §R (§16.7); a cite in a "[REV 24]" or "[REV 24.1]" mark or this section
+names this section.
 
-### R.0 Goals of rev 24 (ranked; the highest wins a conflict)
+### R.0 Goals of rev 24.1 (ranked; the highest wins a conflict)
 
 | # | goal | who benefits | measurable form |
 |---|---|---|---|
-| G24-1 | every 2026-11-17 ruling applied, quoted where it changes text, and no live sentence contradicting it unmarked | the owner reading for rulings | §R.9 lists every reversed ruling and every marked section; a grep for the retired terms outside §R, §13's dated blocks, §16 and the changelog finds only marked text |
-| G24-2 | no functionality lost by last-pass-default ("so we don't lose that functionality") | the owner; a future user | §R.4: every row of lane lastpass's table "WHAT THE NAMED REQUEST MUST COVER" defined and run against rev 23.2's reading: 0 texts differ, every mode |
-| G24-3 | the engine is the regex model, checked against PCRE2 itself | the owner (12:55, 13:25) | PART C: every callout model equal to the engine on every text of its set, every mode; an order-swap run identical; a sabotage that the checks catch; a switch back to rev 23.2's rules that reproduces rev 23.2's printed answers |
-| G24-4 | every remaining open item shown with every candidate's answers | the owner, deciding | §R.8: each item with WHOLE, SEARCHED and several-match examples and per-candidate counts |
+| G24-1 | every 2026-11-17 ruling applied, quoted EXACTLY where it changes text, and no live sentence contradicting it unmarked | the owner reading for rulings | (a) the term list (UNKNOWN, three-valued, Kleene, every pass / all passes, ONE READING, "PCRE's parse", reading (iii), condition-OR, "a plain condition = every hit", "never re-split") grepped outside §R, §13's dated blocks, §16 and the changelog finds only marked text; (b) §R.11's per-entry ruling table (one row per COND-FAMILY 2026-11-17 entry) diffed against §R.9: every reversed, narrowed or reopened ruling or lean is listed in §R.9 |
+| G24-2 | no functionality lost by last-pass-default (14:30: "defined and tested so we don't lose that functionality") | the owner; a future user | §R.4: every member of lane lastpass's table WHAT THE NAMED REQUEST MUST COVER either RUN against rev 23.2's reading (0 texts differ, every mode) or listed NOT RUN with its reason; never counted as covered because a sibling ran |
+| G24-3 | the engine is the regex model, checked against PCRE2 itself | the owner (12:55, 13:25) | PART C: every callout model equal to the engine on every text of its set, every mode, labels compared; the models of `&` and `!B` run the operand as their OWN pattern on the extracted stretch (no construction shared with the engine); a place-by-operator grid (a label set in a loop place read inside and outside it); the ORDER CHECK (each `&` model against the engine with its operands swapped) DIFFERS; a sabotage the checks catch; a switch back to rev 23.2's rules that reproduces rev 23.2's printed answers |
+| G24-4 | every remaining open item shown with every candidate's answers | the owner, deciding | §R.8: each item with WHOLE, SEARCHED and several-match examples and per-candidate counts from the engine |
+| G24-5 | every item with no regex model, or whose model contradicts a ruling, is a QUESTION FOR THE OWNER with a slug (12:55's second half: "where it is able to") | the owner | §R.8's OWNER QUESTIONS table: one row per such item, its current definition labelled THE DRAFT'S READING, never a pick |
 
-Non-goals: no build (DESIGN ONLY; no build go); no syntax (D193 add. 4); no new rulings (where the rulings leave a
-point undecided, §R.8 lists it with its candidates; nothing is chosen here).
+Non-goals: no build (DESIGN ONLY; no build go); no syntax (D193 add. 4); no new rulings and no picks: where the
+rulings leave a point undecided, §R.8 lists it with its candidates, and where rev 24 had silently chosen, the text
+says "THE DRAFT'S READING, asked". The place table (review r40 C6) is the skeleton of the NEXT full revision, not of
+this fix (R.1.1 PLACES, `predicates_future.md` item 22).
 
 Standing questions (docs/design/CLAUDE.md): (1) measurement regime: NOT RELEVANT (no timing; the counts are answers
 over generated text sets); (2) independent control: RELEVANT for the evidence: libpcre2-8 10.46 run with callouts is
-the control the engine is checked against (PART C), and the engine's rev 23.2 switch is checked against the answers
-rev 23.2 PRINTED (PART A's PRINTED CHECK), two sources the engine does not share (§R.10); (3) what moves when data is
-regenerated: NOT RELEVANT (no table, stamp or generated file reaches a product).
+the control (PART C), and rev 24's models of `&` and `!B` SHARED the engine's construction (a tied-end lookahead in
+the subject, review r40 A3); rev 24.1's models run the operand as a separate libpcre2 pattern on the stretch a
+callout extracts, so they no longer do; the rev 23.2 switch is checked against the answers rev 23.2 PRINTED (PART A's
+PRINTED CHECK); (3) what moves when data is regenerated: NOT RELEVANT (no table, stamp or generated file reaches a
+product).
 
 ### R.1 The definition
 
 PLAIN WORDS. A program is a pattern with conditions written into it. A condition is ONE MORE PIECE OF THE PATTERN
-(branch-scope, 11:35, RECORD (1)): it sits at a place in the pattern, reads the labels set so far, and either lets
-the match go on or rejects; when it rejects, the pattern does what a regex does when any piece fails: it goes back to
-its most recent choice and tries the next path, in PCRE's own preference order, into another branch of `|` as into
-any other choice, whether the condition is written inside the `|` or after it. The answer is the first path that
-gets through every piece. Nothing is "unknown": a test either passes or fails, as a regex piece does.
+(branch-scope, 11:35, RECORD (1)): it sits at a place in the pattern, reads the labels set so far (PCRE's capture
+state at that point: inside a loop body, a label the current pass did not set still holds the value an earlier pass
+set: THE DRAFT'S READING, asked as **pass-own-labels**, §R.8, where the owner leans the other way), and either lets the match go on or rejects; when it rejects, the pattern does what a regex does when any piece
+fails: it goes back to its most recent choice and tries the next path, in PCRE's own preference order, into another
+branch of `|` as into any other choice, whether the condition is written inside the `|` or after it. The answer is
+the first path that gets through every piece. Nothing is "unknown": a test either passes or fails, as a regex piece
+does. A condition written in an `&` chain stands AFTER every pattern operand of that chain (it reads the labels of
+all of them), wherever it is written in the chain: `(a: "1") & P` is `P & (a: "1")` (review r40 SIMULATE-8).
 
 R.1.1 PLACES AND MODES. The subject is the search text (row-is-match, 11-16 23:46, STANDS). A nested program stands
 in a PLACE that fixes its text and mode: either side of `&`, and a `label:` set, are WHOLE-value places (the text is
-the stretch, or the label's text); an `occurrences`/`contains` argument and a `records` item are searched within
-their stretch by the one-pattern model (R.1.9); the program's final pattern is SEARCHED (or WHOLE when the caller
-matches a whole value). Vocabulary: SUBJECT (the text), PATH (one complete way the pattern matches: a stretch, the
-value of every label, and for a loop the passes it ran), STRETCH (a path's text).
+the stretch's OWN text, its ends being the ends `^`, `$`, `\b` and lookarounds see, §11's scoped match; or the
+label's text); an `occurrences`/`contains` argument is searched within its stretch by the one-pattern model (R.1.9);
+a `records` item (§7) is §7's COMPILE-TIME find-all of a condition-free, DFA-able item rx over a compile-time string,
+its result a spelled array (a VALUE): nothing outside re-enters it, so the one-pattern model and the committed
+find-all give the same items (PART D D20: 0 of 1,365 hit lists differ) and the choice decides no answer (rev 24's
+R.1.1 said one-pattern while §R.6 and §7 said find-all; review r40 C2); the program's final pattern is SEARCHED (or
+WHOLE when the caller matches a whole value). Vocabulary: SUBJECT (the text), PATH (one complete way the pattern
+matches: a stretch, the value of every label, and for a loop the passes it ran), STRETCH (a path's text).
+PLACES (review r40 C6; the full table is the NEXT revision's skeleton, `predicates_future.md` item 22, after item
+16): what this section still states place by place and the table would state once, per place: its TEXT (stretch,
+hit, label text, subject, file), its MODE, whether a condition outside RE-ENTERS it (a loop and `occurrences`: yes;
+a lookahead and an atomic part: no; a `records` item and a `hits(r)` list: no), what `0` names there (**zero-place**,
+§R.8), which labels it EXPORTS (a loop, an `occurrences` argument and an atomic part: every label set inside, the
+last setting, R.1.7) and where adding a condition can ADMIT (R.1.3).
 
 R.1.2 THE TABLE AND ITS ORDER. The table of a program on a text holds EVERY PATH of the pattern, ordered by PCRE's
 preference (leftmost start; at a start, the order PCRE tries its choices), each path remembering which branch of
 each `|` it took. Conditions filter the paths; the report is the FIRST PATH THAT SURVIVES (SEARCHED: the first
-surviving path; FIND-ALL: the first surviving path at each start, PCRE's own advance after a match; WHOLE: holds when
-a surviving path spans the whole text). This is THE MANAGER'S RESTATEMENT of the SQL picture (11:50, "the table holds
-every path, each row remembers its branch; filter, then first row"), carried in §R.8 as **sql-picture**: the engine
-CONFIRMS it as written (a table that forgets the branch, filtering every condition over every row, differs on 16 /
-336 / 336 of 341 texts, PART E E8), and REFUTES its atomic clause for a condition written INSIDE the atomic part
-(R.1.4, PART E E8b).
+surviving path; FIND-ALL: the first surviving path at each start, again from the reported end, an empty report
+stepping one character, as the engine and the libpcre2 harness both do (review r40 C3: PCRE's own empty-match retry
+is not modelled; no answer here depends on it); WHOLE: holds when a surviving path spans the whole text). This is
+THE MANAGER'S RESTATEMENT of the SQL picture (the 11:50 entry's MANAGER'S FRAMING, MINE there: "the table holds
+EVERY path of the pattern ... and 'first row' is taken AFTER the conditions filter"; "each row remembers its
+branch" is lane pathimpact's finding, not his words, review r40 B4), carried in §R.8 as **sql-picture**: the engine
+CONFIRMS it (a table that forgets the branch differs on 16 / 336 / 336 of 341, reported row, labels compared, PART
+E E8) and REFUTES its atomic clause for a condition written INSIDE the atomic part (R.1.4, PART E E8b).
 
-R.1.3 THE SPELLING PRINCIPLE (15:29, with its asterisk) STANDS, now with regex's own reading: two patterns that
-match the same subjects and set their labels the same way answer every condition alike (*); since a condition
-re-enters the pattern, PCRE's preference order decides only WHICH path is reported, and whether a single match
-holds is "some path survives" (adding a condition never admits a text in a single match at a positive place: 0 of 341,
-WHOLE and SEARCHED, at the top of the chain, inside a `|` branch and on P; under NOT or inside a complement it can,
-by De Morgan: 3 / 3 and 83 / 11 of 341; PART D D2). It is the 2026-11-14 some-parse rule for holding, with
-PCRE's order choosing the report (11:35, RECORD, MINE: "the 2026-11-14 some-parse rule again").
+R.1.3 THE SPELLING PRINCIPLE (11-16 15:29, with its asterisk) STANDS, read under regex behaviour as: two patterns
+that have THE SAME PATHS WITH THE SAME LABELS answer every condition alike (*). Rev 24 wrote "match the same subjects
+and set their labels the same way", which is false now that a condition re-enters the pattern:
+`/(?<a>\d)|(?<b>\d)/` and `/(?<a>\d)/` match the same subjects with the same labels on their first path, yet `&
+(b: "1")` differs on 1 / 220 / 220 of 341 (reported row, labels compared; first `1`: the dead branch's path b =
+`1` survives; PART D D19; review r40 A6 (b)). The asterisk is the OWNER'S; this rewording is THE DRAFT'S READING of
+it, told to him with **atomic-search** (§R.8). Since a condition re-enters the pattern, PCRE's preference order
+decides only WHICH path is reported, and whether a single match holds is "some path survives", in a place with no
+atomic part and no lookahead: there adding a condition never admits a text in a single match at a positive place
+(0 of 341, WHOLE and SEARCHED, holds, at the top of the chain, inside a `|` branch and on P; PART D D2). It CAN
+admit (each holds, 341 texts): under NOT or inside a complement, by De Morgan (3 / 3 and 83 / 11, D2); and INSIDE
+AN ATOMIC PART, where a condition is a piece of the part and changes which path it commits to:
+`atomic((B & (l: <20)) | A) & (l: <20)` admits over `atomic(B | A) & (l: <20)` on 12 WHOLE / 156 SEARCHED (first
+`00`; D18; review r40 A6 (a)); a lookahead's labels added to a condition admitted none (0 / 0, D18). It is the
+2026-11-14 some-parse rule for holding, with PCRE's order choosing the report (11:35, RECORD, MINE: "the 2026-11-14
+some-parse rule again").
 
 R.1.4 THE OPERATORS ON PATTERNS.
-- `P & Q`: the paths of P whose stretch Q also matches whole (one stretch, 11-15 20:43, STANDS); the row's labels are
-  both sides'. JOIN ORDER (**join-order**, THE MANAGER'S READING, told 13:45): the left side's paths are the outer
-  loop (P's first path with every path of Q, then P's next). It moves only WHICH LABELS a reported row carries,
-  never whether a program holds or the stretch it reports: left-outer vs right-outer, 0 / 0 / 0 of 1,365 texts on
-  holds and stretch, 0 / 414 / 414 with labels compared (first `111`: a = `11` vs a = `1`; PART E E5). Its regex
-  model is `(*napla:P(?<T>...))Q(?=\k<T>\z)`, the left side in a non-atomic lookahead (PART C V19, 0 differ, every
-  mode).
+- `P & Q`: the paths of P whose stretch Q also matches WHOLE, Q run on the stretch's OWN text (one stretch, 11-15
+  20:43, STANDS; its `$`, `\b` and lookarounds read the stretch, §11). Rev 24's engine ran Q in the subject with a
+  tied end, so an anchored Q read past the stretch: `/\d/ & /\d$/` on `12` SEARCHED reported `2`@1 where this text
+  gives `1`@0 (1,344 of 1,365 SEARCHED differed from `A & (0: B)`, review r40 A3). Rev 24.1's engine: the anchored,
+  lookahead, `\b` and lookbehind operands of D5 agree with the LAW on 0 / 0 / 0 of 1,365 (reported row), and their
+  libpcre2 models, which run Q as its own pattern on the extracted stretch, agree with the engine (PART C V23-V25).
+  The row's labels are both sides'. JOIN ORDER (**join-order**, THE DRAFT'S READING, asked; the manager's "left side
+  first", told at 13:45, is WITHDRAWN as a told rule): P's paths are the outer loop (P's first path with every path
+  of Q, then P's next). It decides WHICH LABELS a reported row carries (left vs right outer: 117 / 414 / 414 of 1,365,
+  reported row, labels compared, first `111`; PART E E5) AND, with a lazy operand, WHICH STRETCH is reported: `G &
+  L` vs `L & G`, G := `/(?<a>\d+)/`, L := `/(?<c>\d+?)/`, 0 / 1,008 / 1,197 of 1,365 (first `11`: `11`@0 vs `1`@0;
+  PART Q join-order). Rev 24 said it moves "never whether a program holds or the stretch it reports"; that is false
+  (review r40 A5). Regex does not decide it: each order has its own PCRE2 model, equal to the engine run in that
+  order (PART C V19, V21, V22: 0 differ), and the ORDER CHECK shows each model DIFFERS from the engine run in the
+  other order (V19 117 / 414 / 414; V21, V22 0 / 1,008 / 1,197).
 - THE LAW (the owner's question, 12:25, "is A & B The same as (new) A & (0: B) Where 0: is the whole match"; the
   11-15 `&` ruling stands and this is a law about it, not a language change): `A & B` holds exactly when `A & (0: B)`
-  holds, on the same stretch; `&` also joins B's labels. Checked (PART D D5): over four pairs (a lazy B, a
-  conditioned B, `t2` and `q` among them) 0 texts differ in any mode on holding and stretch, and `A & !B` = `A & NOT
-  (0: B)` likewise 0; the labels part shows the one difference: `(/\d+/ & P) & (a: "1")` vs `(/\d+/ & (0: P)) & (a:
-  "1")` differ on 84 / 180 / 180 of 341 (first `10`), since only `&` gives the outer row P's label a.
+  holds, on the same stretch; `&` also joins B's labels. Checked (PART D D5, holds and stretch, reported row without
+  labels): over eight pairs (a lazy B, a conditioned B, `t2` and `q`, an anchored, a lookahead, a `\b` and a
+  lookbehind B) 0 texts differ in any mode, and `A & !B` = `A & NOT (0: B)` likewise 0; the labels part shows the
+  one difference: `(/\d+/ & P) & (a: "1")` vs `(/\d+/ & (0: P)) & (a: "1")` differ on 84 / 180 / 180 of 341 (first
+  `10`), since only `&` gives the outer row P's label a. THE LAW'S PLACES: it is checked at the top of a program
+  (where `0` is the stretch). Inside a nested place it holds when `0` names the INNERMOST stretch (`occurrences(/\d+/
+  & /1\d*/)` vs `occurrences(/\d+/ & (0: /1\d*/))`, 0 of 1,365) and fails when `0` is PCRE's group 0 (the program's
+  match start to here: 738 / 738 / 738 of 1,365, hit lists compared, first ` 1`); what `0` names there is
+  **zero-place** (§R.8). The LAW holds under the draft's join order only: with the right side outer and a lazy B it
+  fails on 0 / 1,008 / 1,197 of 1,365 (PART Q join-order).
 - `P | Q`: regex's alternation; a condition anywhere after a choice can send the pattern into the next branch.
-  `&` DISTRIBUTES over `|` (`(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))`: 0 / 0 / 0 of 341, PART D D1;
-  rev 23.2's reading (iii) differed on 12 / 252 / 300). With A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`: `(B | A) &
-  (l: <20)` on `25` HOLDS / `25`@0 l = `2` / on `25 13` [`25`@0, `13`@3] (PART A B1; libpcre2 V1).
+  `&` DISTRIBUTES over a `|` on its LEFT: `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))`: 0 / 0 / 0 of
+  341 (PART D D1; rev 23.2's reading (iii) differed on 12 / 252 / 300), and `(B | A) & X` vs `(B & X) | (A & X)` 0 /
+  0 / 0 of 1,365. Over a `|` on its RIGHT it does NOT, under the draft's join order: `X & (B | A)` vs `(X & B) | (X &
+  A)`, X := `/\d+/`, B := `/\d/`, A := `/\d\d/`: 0 / 1,008 / 1,197 of 1,365 (first `11`: `11`@0 vs `1`@0); with the
+  right side outer the mirror holds (PART Q join-order; review r40 A5 (b)). With A := `/(?<l>\d)\d/`, B :=
+  `/(?<l>\d\d)/`: `(B | A) & (l: <20)` on `25` HOLDS / `25`@0 l = `2` / on `25 13` [`25`@0, `13`@3] (PART A B1;
+  libpcre2 V1).
 - `!B` (the complement; not-is-complement's first half, 11-16 17:29, STANDS): `A & !B` keeps a path of A when NO
-  PATH of B survives over its stretch (regex-settles (2): "the complement `!B` holds when NO path of B survives over
-  the stretch"). Its regex model is a negative lookahead tied to the stretch (PART C V11, V20: 0 differ). `P & !(P &
-  (a: "1"))` on `123` FAILS (P has the path a = `1`, b = `23`) / `23`@1 (PART A K1; rev 23.2: HOLDS / `123`@0).
+  PATH of B survives WHOLE on its stretch's own text (regex-settles (2): "the complement `!B` holds when NO path of
+  B survives over the stretch"). Its libpcre2 models run B as its own pattern on the extracted stretch (PART C V11,
+  V20, V24: 0 differ). `P & !(P & (a: "1"))` on `123` FAILS (P has the path a = `1`, b = `23`) / `23`@1 (PART A K1;
+  rev 23.2: HOLDS / `123`@0).
 - LOOKAHEAD (regex-settles (3)): a condition outside a lookahead never re-enters it, and a negative lookahead tries
   every inner path before it succeeds. `/(?=(?<x>\d+))\d/ & (x: "1")` on `12` FAILS (the lookahead's one path x =
   `12` is not re-entered) / FAILS / on `112 12 1` [`1`@7] (PART A K3; V12).
 - ATOMIC (regex-settles (5): "atomic MEANS what PCRE's atomic group means"; spelling OPEN, `predicates_future.md`
   item 19; the manager's `(?>...)` is NOT adopted, 11:35): no path inside the atomic part is retried once it has
-  matched, BUT conditions written INSIDE it are pieces of it and re-enter it before it commits. `atomic(B | A) & (l:
-  <20)` on `25` FAILS / FAILS / [`13`@3] (B8; V17). `atomic(P & (a: "1"))` on `123` HOLDS a = `1`, b = `23` (B9;
-  V18). It gives his other reading of a searched condition (`predicates_future.md` item 14: "the pattern returns
-  `9:30`, then the condition judges it"): `atomic(t2) & !q` on `9:30` SEARCHED reports `30`@2, against `t2 & !q`'s
-  `9`@0 (84 of 3,906 SEARCHED, 0 WHOLE; PART E E14b).
+  matched, BUT conditions written INSIDE it are pieces of it and re-enter it before it commits (so they can admit,
+  R.1.3). `atomic(B | A) & (l: <20)` on `25` FAILS / FAILS / [`13`@3] (B8; V17). `atomic(P & (a: "1"))` on `123`
+  HOLDS a = `1`, b = `23` (B9; V18). His other reading of a searched condition (`predicates_future.md` item 14, his
+  words: "the pattern returns 9:30. done. ... Then, instead, the not late time is applied to the pattern. Now the
+  pattern returns nothing.") is what atomic gives in WHOLE mode only: in SEARCHED, `atomic(t2) & !q` on `9:30`
+  reports `30`@2 (the search moves on to a later start), against `t2 & !q`'s `9`@0 (0 / 84 / 84 of 3,906, reported
+  row, labels compared; PART E E14b). Whether atomic in a search should also stop at the first match start is
+  **atomic-search** (§R.8; review r40 A6 (c)).
 
 R.1.5 CONDITIONS ARE TWO-VALUED.
 - A test on an ABSENT label FAILS, and the pattern tries its next path (regex-settles (1)). `/(?<b>\d+)(?<a>\d)?/ &
   (a: <5)` on `12` HOLDS with a = `2`, b = `1` (the first path, b = `12` with a absent, fails; the next path sets a)
   / `12`@0 / on `12 1 19 3` [`12`@0] (PART A U1; V4; rev 23.2: FAILS, the row was dropped).
 - `NOT c` is regex's negative lookahead around the test: it holds exactly when c fails, an absent label included
-  (absent-under-not, 13:25: "Absent under not: use regex rules"). `/(?<b>\d+)(?<a>\d)?/ & NOT (a: <5)` on `1` HOLDS
-  (U2; V5).
-- `c | d` between conditions is the ONE `|` of regex: an alternation of two zero-width tests at one place (when-
-  meaning, 13:55: "there is ONE `|`, regex's alternation"). `NOT ((h: <5) | (k: <5))` on `b7` HOLDS (U3).
+  (absent-under-not, 13:25: "Absent under not: use regex rules."). `/(?<b>\d+)(?<a>\d)?/ & NOT (a: <5)` on `1`
+  HOLDS (U2; V5).
+- `c | d` between conditions is the ONE `|` of regex: an alternation of two zero-width tests at one place (the
+  MANAGER'S wording, which he agreed to in the when-meaning entry: "when-meaning: agree"; that entry is stamped
+  13:55 but follows the 14:25 questions, COND-FAMILY's CORRECTION). `NOT ((h: <5) | (k: <5))` on `b7` HOLDS (U3).
 - A RECORD `(h: S, m: T)` is the `&` of its entries, with or without NOT: the joint `t2 & NOT ((h, m): (<9, <30))`
-  and the record `t2 & NOT (h: <9, m: <30)` agree on 0 / 0 / 0 of 3,906 texts, labels compared (PART E E2; U4, U5).
-- Three-valued logic is RETIRED (**three-valued**, THE MANAGER'S READING, 13:25 MINE: "with no test left UNKNOWN,
-  three-valued logic is retired everywhere"); the Kleene alternative differs from regex on 243 / 1,359 / 1,359 of
-  1,365 texts for `NOT (a: <5)` (E1). So record-under-not DISSOLVES (E2) and the separate condition-OR rule is
-  DELETED (E3).
+  and the record `t2 & NOT (h: <9, m: <30)` agree on 0 / 0 / 0 of 3,906 (reported row, labels compared, WHOLE
+  included; PART E E2; U4, U5).
+- Three-valued logic is RETIRED (**three-valued**, THE MANAGER'S READING, closed: the regex model entails it; 13:25
+  MINE: "with no test left UNKNOWN, three-valued logic is retired everywhere"); the Kleene alternative differs from
+  regex on 363 / 1,359 / 1,359 of 1,365 for `NOT (a: <5)` (reported row, labels compared; rev 24 printed 243 WHOLE,
+  holds only; E1). So record-under-not DISSOLVES (E2) and the separate condition-OR rule is DELETED (E3).
 
 R.1.6 DEFAULTS. The DEFAULT `h = v` written in a test stands in for an absent h in that test only; `$a` reads the
-real label (default-scope, 11-16 22:30, STANDS; U6-U9 unchanged). With NOT two-valued, "present and not under 5" is
-`(h: !<5)` (the set complement holds only on a present value) or a default chosen outside the set: `(h = "x":
-!<5)`.
+real label (default-scope, 11-16 22:30, STANDS; U6-U9 unchanged). A default HAS a regex model: PCRE's conditional
+group on the label, `(?(<h>)test-h|test-v)` (PART C V26-V29: a default inside the set, outside it, under NOT, and a
+joint with defaults over a loop: 0 differ, 341 and 1,111 texts), so DEFAULTS are no longer a noted exception
+(§R.6; review r40 C6). Under two-valued tests a default OUTSIDE the test's set reads exactly as no default at every
+polarity: `NOT (h = 9: <5)` vs `NOT (h: <5)` on `/(?<h>\d)?x/` 0 / 0 / 0 of 341 (reported row, labels compared; rev
+23.2's rules: 1 / 175 / 185; PART D D15; review r40 A9). With NOT two-valued, "present and not under 5" is `(h:
+!<5)` (the set complement holds only on a present value) or a default chosen outside the set: `(h = "x": !<5)`.
 
-R.1.7 LOOPS: THE LAST PASS (last-pass-default, 14:30: "last-pass-default: regex"). A bare label set in a loop, read
-by a condition written after the loop, means what regex means: the LAST pass that set it (a pass that sets nothing
-keeps the earlier value; no value when none did). `/(?:(?<h>\d);)*/ & (h: <5)` on `7;3;` HOLDS, h = `3` / `7;3;`@0 /
-on `7;3; 3;7;` [`7;3;`@0, `3;`@5] (PART A L1; V6; rev 23.2: FAILS / `3;`@2). On `3;;` with REP :=
-`/(?:(?<h>\d)?;)*/`, `REP & (h: <5)` HOLDS, h = `3` kept from the first pass (R13;;; V7). A condition written INSIDE
-the loop body is a piece of every pass: `/(?:${item})+/` with item := `/(?<h>\d);/ & (h: <5)` (§11's hole rule)
-holds only when every pass passes (V10). The every-pass and other old meanings are written as §R.4 shows. A
-compile WARNING when a bare condition reads a looped label is THE MANAGER'S PROPOSAL (14:30, "proposed to him twice,
-not answered"), carried as **looped-warning** (§R.8); it moves no answer.
+R.1.7 LOOPS: THE LAST SETTING (last-pass-default, 14:30: "last-pass-default: regex."). A bare label set in a loop,
+read by a condition written after the loop, means what regex means: the LAST pass that set it (no value when none did). "A pass that sets nothing keeps the
+earlier value" is the MANAGER'S RECORD of the regex model in that entry, not the owner's words ("last-pass-default:
+regex. I want to have the method of achieving the alternative meanings defined and tested so we don't lose that
+functionality"); it is THE DRAFT'S READING and is asked as **pass-own-labels** (§R.8): under the pass-own candidate
+the bare label reads the LAST PASS's own value, absent when that pass did not set it. `/(?:(?<h>\d);)*/ & (h: <5)` on `7;3;` HOLDS, h = `3` /
+`7;3;`@0 / on `7;3; 3;7;` [`7;3;`@0, `3;`@5] (PART A L1; V6; rev 23.2: FAILS / `3;`@2). On `3;;` with REP :=
+`/(?:(?<h>\d)?;)*/`, `REP & (h: <5)` HOLDS, h = `3` kept from the first pass (R13;;; V7; under pass-own: FAILS).
+- INSIDE THE BODY. A condition written INSIDE the loop body (§11's hole rule, `/(?:${item})+/`) or inside an
+  `occurrences` argument is a piece of every pass and reads the labels set SO FAR: a label this pass did not set
+  reads the value an earlier pass set, as PCRE's callout does. item := `/(?<h>\d)?;/ & (h: <5)` on `3;;` HOLDS (the
+  second pass reads h = `3`; PART C G1; PCRE2 equal), and `occurrences(/(?<x>(?<g>a)?b)/ & (g: "a"), min = 1)` on
+  `abb` holds with the hit `b` (G2). Rev 24's engine read only the pass's own values (FAILS on `3;;`: 5 / 34 / 34
+  of 364 differed from PCRE2, review r40 A1); no sentence of rev 24 stated that per-pass scope. Rev 24.1's engine fix is
+  the regex model and is THE DRAFT'S READING; the per-pass scope is NOT retired: it is the second candidate of
+  **pass-own-labels** (§R.8; §2.6's THE ITERATION'S OWN VALUES, a rev 10 LEAN, is that candidate, marked there), kept
+  runnable in the engine. With a mandatory label the item `/(?<h>\d);/ & (h: <5)` holds only when every pass passes
+  (V10), under both candidates.
+- EXPORTED LABELS. A loop and an `occurrences` argument export EVERY label set inside them, the last setting
+  overall, a label looped at two depths and a label set inside an atomic part included:
+  `occurrences(/(?:(?<h>\d);)+/, min = 1) & (h: <5)` on `3;` HOLDS h = `3` (PART C G6; rev 24's engine exported no
+  such label and FAILED: 300 of 1,365 per mode differed from PCRE2; `occurrences(atomic(B | A), min = 1) & (l: <20)`
+  693, G8; review r40 A2). The place-by-operator grid G1-G9 (an optional label, a label at two depths, an atomic
+  item; in a hole loop and in `occurrences`; read inside and outside) agrees with PCRE2 on every text.
+- A JOINT OVER A LOOP. A bare joint or record reads EACH label's last setting, possibly from different passes:
+  `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/ & ((h, m): == (10, 45))` on `9:45,10,` HOLDS with h = `10`, m = `45`, a tuple no
+  pass held (PCRE2 equal on 85 texts). This REVERSES joint-loops (1) (11-16 11:17, per-pass pairing) for bare
+  joints, as last-pass-default read literally entails; whether a joint keeps per-pass pairing as an allowed exception
+  is **joint-last-pass**, THE DRAFT'S READING, asked (§R.8; review r40 A7), presented with **pass-own-labels**: under
+  pass-own a bare joint reads the last pass's own tuple (`9:45,10,` FAILS, m absent in the last pass), the same
+  answers as joint-last-pass's "last pass's own tuple" candidate on all 85 texts.
+- ABSENCE. It also narrows the LOCKED absent-rule (11-16 14:31) for bare conditions: clause (1)'s "a pass that did
+  not set it" is no longer an absence after the loop (only "no pass set it" is; under pass-own it is again), and clause (2)'s "over several
+  values it holds when every value is in the set and there is at least one" is reversed; clause (2)'s "on an absent
+  label it FAILS" holds for the TEST (NOT inverts it, R.1.5). The all-question's premise "ONE kind of absence" (23:18)
+  is gone: W2's "possibly none" and W3's "a pass lacking h not" (§R.4) are two absences again (review r40 B5).
+The every-pass and other old meanings are written as §R.4 shows. A compile WARNING when a bare condition reads a
+looped label is THE MANAGER'S PROPOSAL (14:30, "proposed to him twice, not answered"), carried as **looped-warning**
+(§R.8); it moves no answer.
 
 R.1.8 REPEATEDNESS. A label is REPEATED when its operand regex sets it in a loop (repeated-means, the manager's
-ruling, owner told 11-16 22:58 (4)); under last-pass-default a bare condition reads its last pass, so repeatedness
-no longer moves a bare condition's answer: `(h: <5)` on `/(?:(?<h>\d);)+/ & /\d;/` and on `/(?<h>\d);/` agree on 0
-/ 0 / 0 of 364, labels compared (PART D D10; E11). It now decides only the looped-warning and which group questions
-apply (§R.8 **repeated-means**).
+ruling, owner told 11-16 22:58 (4)); under last-pass-default a bare condition reads its last setting, so
+repeatedness no longer moves a bare condition's answer: `(h: <5)` on `/(?:(?<h>\d);)+/ & /\d;/` and on
+`/(?<h>\d);/` agree on 0 / 0 / 0 of 364 (reported row, labels compared; E11). It now decides only the looped-warning
+and which group questions apply (§R.8 **repeated-means**).
 
 R.1.9 OCCURRENCES AND THE HITS. `occurrences(r)` is the owner's ONE-PATTERN lazy-gap model over its stretch
-(regex-settles (4); 13:10, "It's essentially /(.*(${rx}))*.*/ So not global", read with the gap lazy, 13:15): its
-first path has the global search's hits, and a condition INSIDE it re-enters it. `occurrences(/(?<n>\d+)/ & (n:
-<100))` on `1234` HOLDS with the hits `12`, `34` (H1; V16). A bare condition after it reads the LAST hit (R.1.7):
-`occurrences(/\d+/) & (hit: <100)` on `1234` HOLDS (the pattern backs off until its last hit is under 100;
-H2; rev 23.2: FAILS). The hits are re-split whenever a condition rejects (PART D D3: 810 of 1,365
-texts for `(l: <100)` on `/(?<l>\d+)/` find-all).
-THE HIT LIST (a NOTED EXCEPTION, §R.6; "being able to access all the hits of a search is helpful. It's an exception
-that should be noted but no excluded for purity", 13:20; asked for BY NAME, 13:30 (B), `all_matches(rx)` his
-placeholder, written `hits(r)` here): the committed hits of a GLOBAL search, hit by hit, never re-split by a later
-condition. A group question over it reads that committed list (**hits-committed**, THE MANAGER'S READING, 13:45 /
-14:35): `hits(/(?<n>\d+)/) & occurs.none(NOT (n: <100))` on `1234` FAILS (the one hit `1234`), where the one-pattern
-form HOLDS (H3; E4: 56 / 56 / 56 of 341 differ, first `111`).
+(regex-settles (4), "the lazy-gap loop over the span", shown to him and "yes settled"; his 13:10 model "It's
+essentially /(.*(${rx}))*.*/ So not global", whose text his formatting altered, 13:15, "Formatting lost some
+operators"): its first path has the global search's hits, and a condition INSIDE it re-enters it, reading the
+labels set so far (R.1.7). `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with the hits `12`, `34` (H1;
+V16). A bare condition after it reads the LAST hit (R.1.7): `occurrences(/\d+/) & (hit: <100)` on `1234` HOLDS (the
+pattern backs off until its last hit is under 100; H2; rev 23.2: FAILS). The hits are re-split whenever a condition
+rejects (PART D D3: 810 of 1,365 FIND-ALL texts for `(l: <100)` on `/(?<l>\d+)/` report a hit the plain pattern
+never does).
+THE HIT LIST (an ALLOWED EXCEPTION, requested by its own feature, §R.6; 13:20: "being able to access all the hits of a search is helpful. It's an
+exception that should be noted but no excluded for purity"; written `hits(r)` here, `all_matches(rx)` his
+placeholder at 13:30; admitted without a regularity proof by **exception-rule**): the committed hits of a GLOBAL search, hit by hit. WHOSE search is THE DRAFT'S READING,
+asked (**hits-text**, review r40 A4): the global search of the MATCHED STRETCH, re-run inside each stretch the
+pattern tries, so in SEARCHED and FIND-ALL the hits ARE re-split by the stretch: `hits(/(?<n>\d+)/) &
+occurs.none(NOT (n: <100))` on `x300 12` SEARCHED reports `x30`@0 with the hit `30`, which no search of the subject
+gives, and FIND-ALL on `1234 5 300` reports hits `12`, then `34`, `5`, `30` (PART Q hits-text). "Never re-split by a
+later condition" holds in WHOLE only. A group question over the list reads that committed list (**hits-committed**,
+THE DRAFT'S READING, asked; told at 13:45 / 14:35): `hits(/(?<n>\d+)/) & occurs.none(NOT (n: <100))` on `1234`
+FAILS (the one hit `1234`), where the one-pattern form HOLDS (H3; E4: 56 / 56 / 56 of 341, reported row, hit lists
+compared, first `111`). That `hits` exists at all is settled by **exception-rule** (RULED, the evening of 11-17:
+"Exceptions should be requested by using those features explicitly").
 
-R.1.10 `when` (when-meaning, 13:55: "when-meaning: agree"): `when(c, p)` is a LIBRARY DEFINITION, `x & (NOT c | p)`,
-with x written once and ONE `|`; no primitive. Its regex model is the pattern followed by an alternation of two
-tests, equal to PCRE's conditional group (PART C V13, V14: 0 differ, 1,110 texts, every mode; "UNVERIFIED" at 14:25,
-now run). An else is `x & ((c & p) | (NOT c & q))` (V15). `KH & when((h: <5), (k: between(3, 7)))`, KH :=
-`/(?<k>\d)(?:;(?<h>\d))*/`, on `5;1;9` HOLDS / `5;1;9`@0 / on `3;0;5 5;1;9` [`3;0;5`@0, `5;1;9`@6] (WH1). The
-conditional's SPELLING is open; `?` is not assumed (14:20: "? Has a meaning in regex"). Against rev 23.2's filter
-form the definition differs on 125 / 125 / 125 of 1,110 (first `0;5;0`; PART D D8), because c now reads the LAST
-pass.
+R.1.10 `when` (when-meaning: "when-meaning: agree", the entry stamped 13:55 that follows the 14:25 questions):
+`when(c, p)` is a LIBRARY DEFINITION, `x & (NOT c | p)`, with x written once and ONE `|`; no primitive. Its regex
+model is the pattern followed by an alternation of two tests, equal to PCRE's conditional group (PART C V13, V14: 0
+differ, 1,110 texts, every mode, labels compared; "UNVERIFIED" at 14:25, now run). An else is `x & ((c & p) | (NOT c
+& q))` (V15). `KH & when((h: <5), (k: between(3, 7)))`, KH := `/(?<k>\d)(?:;(?<h>\d))*/`, on `5;1;9` HOLDS /
+`5;1;9`@0 / on `3;0;5 5;1;9` [`3;0;5`@0, `5;1;9`@6] (WH1). The conditional's SPELLING is open; `?` is not assumed
+(14:20: "? Has a meaning in regex"). Against rev 23.2's filter form the definition differs on 125 / 125 / 125 of
+1,110 (reported row, first `0;5;0`; PART D D8), because c now reads the LAST pass. The complement body `(x & c & p)
+| (x & !(x & c))` (§8's rev 20-23 text) equals the NOT body under rev 24 (0 / 0 / 0 of 1,110) and differs from
+`x & (NOT c | p)` on 0 / 125 / 125 (D14): it is not `when`.
 
-R.1.11 WHOLE-TEXT (14:05: "Whole text: adopt it if it's legal"; his model, 13:55: "J & C ? J & M : fail"): a parser
-J of the whole text, a check C on J's result, and the matches of M reported only when C holds. LEGAL in the WHOLE
-mode with ruled pieces only, no `fail` (§R.5).
+R.1.11 WHOLE-TEXT (14:05: "Whole text: adopt it if it's legal. Not sure about the "fail" part"; his model, 13:55:
+"J & C ? J & M : fail"): a parser J of the whole text, a check C on J's result, and the matches of M reported only
+when C holds. ADOPTED AS A REQUESTED FEATURE (review r40 B3; **exception-rule**, RULED: "If requested (and optioned
+in if needed), they don't have to be regular regex or even legal regex"): legal in WHOLE mode with ruled pieces and
+no `fail` (§R.5), reading M's matches through the hit list, which is requested by its own feature and needs no
+regularity proof (its level is whatever its reads need); the SEARCHED shape of his model has no ruled spelling
+(§R.5 (b): the missing rule is named, not invented) and comes back to him if wanted.
 
 R.1.12 LEVELS. RULED (12:10): using a library element that needs more than the level the user asked for (the
 default, automaton code only, included) is a COMPILE ERROR, never a silent lift. RULED (12:15): "a constant is an rx
-where the count of the enumeration is 1". Options written in the source, their scope and a host cap are ideas,
+where the count of the enumeration is 1". A FACT for it (14:25 entry, checked on the built compiler): PCRE's
+conditional group is NOT BUILT in pcrec and is planned VM-only, so it is the MODEL of `when` and of defaults
+(R.1.6, R.1.10), never their mechanism. Options written in the source, their scope and a host cap are ideas,
 `predicates_future.md` item 20 (§6.1).
 
 ### R.2 Compile checks under two-valued logic
 
 The §5.2 error stands on a test written WITHOUT NOT that no path of the program's `&` operands can make pass (the
-label's value set and the test's set do not meet). Rev 23.2's LOCAL / OVERALL polarity extension is WITHDRAWN with
-three-valued logic: under regex behaviour a test under NOT, or inside a complement, gets no error and no warning
-(**polarity-rule**, THE MANAGER'S READING, 13:25 MINE: "no error or warning"). No answer depends on it: `t2 & NOT (h:
-<0)` and `t2 & !(t2 & (h: <0))` (rev 23.2: an ERROR) both equal plain `t2` on 0 / 0 / 0 of 3,906 (E6, E6b).
-`default.unused` (b) fires on a default whose text is outside every set it meets, in a test without NOT.
+label's value set and the test's set do not meet). Under NOT, or inside a complement, such a test gets no error and
+no warning: **polarity-rule**, THE DRAFT'S READING, asked (13:25 MINE: "polarity-rule has no regex model and, under
+regex behaviour, no error or warning (still his to confirm)"). It moves no answer of a program that compiles (`t2 &
+NOT (h: <0)` and `t2 & !(t2 & (h: <0))` equal plain `t2` on 0 / 0 / 0 of 3,906, reported row, labels compared; E6,
+E6b) but it decides which programs compile, and it leaves an asymmetry no live rule explains: `(h: !<10)` on a digit
+h is the error, while `NOT (h: <10)` (holds only on an absent h, 1 of 341 WHOLE) and the always-TRUE `NOT (h: <0)`
+are silent, so a typo in a negated test is silent (§5.2 marked; review r40 A9). `default.unused` (b) fires on a
+default whose text is outside every set it meets, at EVERY polarity (R.1.6: such a default reads as absence, D15;
+rev 24's "in a test without NOT" was three-valued logic's scope, review r40 A9).
 
 ### R.3 The three spellings of "not" (rev 24)
 
@@ -598,27 +739,29 @@ three-valued logic: under regex behaviour a test under NOT, or inside a compleme
 |---|---|---|
 | `NOT (h: <5)` | the test fails (absent included) | HOLDS / FAILS / HOLDS |
 | `(h: !<5)` | h is present and in the complement set | FAILS / FAILS / HOLDS |
-| `P & !(P & (h: <5))` | no path of `P & (h: <5)` over the stretch | HOLDS / FAILS / HOLDS |
+| `P & !(P & (h: <5))` | no path of `P & (h: <5)` on the stretch | HOLDS / FAILS / HOLDS |
 | `(h = "x": !<5)` | absent reads `x`, which is not under 5 | HOLDS / FAILS / HOLDS |
 
 On a set-once label NOT and the complement agree; they part when the pattern has another path: `P & NOT (a: "1")`
-vs `P & !(P & (a: "1"))`, P := `/(?<a>\d+)(?<b>\d+)/`, differ on 80 / 80 / 80 of 341 (first `100`: NOT holds on
-PCRE's first path a = `10`, the complement sees the path a = `1`; PART D D4).
+vs `P & !(P & (a: "1"))`, P := `/(?<a>\d+)(?<b>\d+)/`, differ on 80 / 80 / 80 of 341 (reported row, first `100`:
+NOT holds on PCRE's first path a = `10`, the complement sees the path a = `1`; PART D D4).
 
 ### R.4 THE WAYS TO WRITE THE OLD MEANINGS (last-pass-default's requirement)
 
 The owner (14:30): "I want to have the method of achieving the alternative meanings defined and tested so we don't
-lose that functionality." Every row of lane lastpass's table WHAT THE NAMED REQUEST MUST COVER is written below with
-ruled pieces and run against rev 23.2's reading of the old program (OLD under rev 23.2's rules, NEW under rev 24's):
-PART B, 20 rows, 0 texts differ in every mode on each. REP := `/(?:(?<h>\d)?;)*/`, KH :=
-`/(?<k>\d)(?:;(?<h>\d))*/`; `${item}` is §11's hole rule; `some`, `occurs.none`, `occurs.exactly` are the group
-questions (two-valued: PCRE can count passes that pass a test).
+lose that functionality." Every member of lane lastpass's table WHAT THE NAMED REQUEST MUST COVER is written below
+with ruled pieces and RUN against rev 23.2's reading of the old program (OLD under rev 23.2's rules, NEW under rev
+24.1's; reported row, labels not compared since the spellings set different labels), or listed NOT RUN with its
+reason. PART B: 23 rows, 0 texts differ in every mode on each. REP := `/(?:(?<h>\d)?;)*/`, KH :=
+`/(?<k>\d)(?:;(?<h>\d))*/`; `${item}` is §11's hole rule, with the loop quantifier written (`+` where at least one
+pass is meant, `*` where none is allowed; review r40 C3); `some`, `occurs.none`, `occurs.exactly`,
+`occurs.at_least`, `occurs.at_most` are the group questions (two-valued: PCRE can count passes that pass a test).
 
-| lastpass row | old program (rev 23.2) | rev 24 spelling | texts | differ |
+| lastpass row | old program (rev 23.2) | rev 24.1 spelling | texts | differ |
 |---|---|---|---|---|
 | every pass, at least one (W1a) | `/(?:(?<h>\d);)*/ & (h: <5)` | `/(?:${item})+/`, item := `/(?<h>\d);/ & (h: <5)` | 364 | 0 |
 | the same by group questions (W1b) | as W1a | `/(?:(?<h>\d);)*/ & some((h: <5)) & occurs.none(NOT (h: <5))` | 364 | 0 |
-| every pass, a pass may lack h (W1c, W1d) | `REP & (h: <5)` | item := `/(?<h>\d)?;/ & (h: <5)`; or `REP & some((h: <5)) & occurs.none(NOT (h: <5))` | 364 | 0, 0 |
+| every pass, a pass may lack h (W1c, W1d) | `REP & (h: <5)` | W1c RE-SPELLED: `/(?:${item})+/`, item := `/(?<h>\d);/ & (h: <5)` (a pass lacking h is not a pass of the item, so the loop ends there as the old meaning's failing pass does); W1d: `REP & some((h: <5)) & occurs.none(NOT (h: <5))` | 364 | 0, 0 |
 | every pass, possibly none (W2a, W2b) | `REP & (h = 0: <5)` | `/(?:${item})*/`, item := `/(?<h>\d)?;/ & (h = 0: <5)`; or `REP & occurs.none(NOT (h = 0: <5))` | 364 | 0, 0 |
 | zero passes fine, a pass lacking h not (W3) | `REP & occurs.none((h = "x": !<5))` | the same | 364 | 0 |
 | a record per pass with a label outside the loop (W4a) | `KH & (h: <5, k: between(3, 7))` | `KH & (k: between(3, 7)) & some((h: <5)) & occurs.none(NOT (h: <5))` | 1,110 | 0 |
@@ -628,85 +771,134 @@ questions (two-valued: PCRE can count passes that pass a test).
 | not every pass (W5a) | `REP & NOT (h: <5)` | `REP & some((h: !<5))` | 364 | 0 |
 | every pass in !S (W5b) | `REP & (h: !<5)` | `REP & some((h: !<5)) & occurs.none(NOT (h: !<5))` | 364 | 0 |
 | the pattern difference over every pass (W5c) | `REP & !(REP & (h: <5))` | `REP & !(REP & some((h: <5)) & occurs.none(NOT (h: <5)))` | 364 | 0 |
-| some / exactly / NOT some (W6a-c) | `some(..)`, `occurs.exactly(2, ..)`, `NOT some(..)` | the same; `NOT some(c)` = `occurs.none(c)` | 364 | 0, 0, 0 |
+| some / exactly / NOT some / at_least / at_most (W6a-e) | `some(..)`, `occurs.exactly(2, ..)`, `NOT some(..)`, `occurs.at_least(2, ..)`, `occurs.at_most(1, ..)` | the same; `NOT some(c)` = `occurs.none(c)` | 364 | 0 each |
 | one pass by literal index (W7) | `REP & (h[2]: <5)` | the same | 364 | 0 |
+| one hit's label by literal index, `$m.hit[2].g` as a test (W7b) | `hits(/ab(?<g>[xy])/) & (g[2]: "x")` | the same | 85 | 0 |
 | the committed hit list, every hit (W8) | `occurrences(/(?<n>\d+)/) & (n: <100)` | `hits(/(?<n>\d+)/) & some((n: <100)) & occurs.none(NOT (n: <100))` | 341 | 0 |
 | every hit is `abx` (W9) | `occurrences(/ab(?<g>[xy])/) & (g: "x")` | `hits(..) & some((g: "x")) & occurs.none(NOT (g: "x"))` | 85 | 0 |
 | reading a pass's value `$h[2]` (W10; the captures level) | `$h[2]` | the same | 364 | 0 |
 
-COVERAGE of lastpass's ten rows: every pass at least one (W1a-d); every pass possibly none (W2a-b); the sentinel
-(W3); joint or record per pass, a label outside the loop (W4a-c); not every / every in !S / the pattern difference
-(W5a-c); some / count / exactly (W6a-c); a literal index (W7); reading a pass's value (W10); a pass compared with a
-label outside (W4d); the committed hits (W8, W9). ONE PART NOT RUN, stated: a pass compared with ANOTHER pass
-(`sorted`, `distinct`, §4.6) is written over the pass list `$h` (the pass-table exception, §R.6), whose spelling and
-meaning rev 24 does not touch (it is never a bare condition); the engine has no node for it, so it is defined but
-not tested here.
-
-CONTROLS (PART B, the comparison can fail): the BARE old spellings read under rev 24 differ from the old meanings:
-W1a's on 1 / 7 / 7 of 364 (first `7;3;`), W2b's on 4 / 6 / 8, W4a's on 125 / 125 / 125 of 1,110 (first `3;5;0`),
-W4c's on 130 / 210 / 336 of 1,111, W8's on 56 / 56 / 56 of 341 (first `111`). The every-pass form `occurs.none(NOT
-c)` alone also admits zero passes, which `some(c)` excludes (E12: 21 / 201 / 301 of 364 from `NOT some(c)`).
-No new every-pass spelling is designed here; a named shorthand for `some(c) & occurs.none(NOT c)` is OPEN
-(**every-pass-spelling**, §R.8), and the retired `all` (11-16 23:18) is revisited by it.
+W2a stays 0 under the carry (R.1.7): a pass lacking h now reads the earlier pass's h instead of the default, and
+that earlier value already passed the same test. NOT RUN, each with its reason (review r40 B9): SELECTING passes,
+`$m.hit[(g: "x")]` (a filter over the pass list that yields a list VALUE; the engine has no value-level node, and
+what a list value is on a value side is **pass-list-read**, §R.8); a pass compared with ANOTHER pass (`sorted`,
+`distinct`, §4.6: a relation between passes over the list `$h`, no engine node); the list `$x` itself (a bare `$h`
+on a value side: last setting, as regex's `\k<h>`, or the pass list, is **pass-list-read**; rev 24 silently read
+the pass list). W8 and W9 hold under the draft's readings of **hits-text** and **hits-committed**: with the
+SUBJECT's hits W8 differs on 0 / 56 / 56 of 341 (PART Q hits-text), and over the one-pattern hits W9 differs on 20
+/ 20 / 20 of 85 (PART Q hits-committed).
+CONTROLS (PART B, the comparison can fail): rev 24's W1c spelling, item := `/(?<h>\d)?;/ & (h: <5)`, now differs
+from the old meaning on 5 / 34 / 34 of 364 (first `3;;`: under the carry the second pass reads h = `3`); the BARE
+old spellings read under rev 24.1: W1a's on 1 / 7 / 7 of 364 (first `7;3;`), W2b's on 4 / 6 / 8, W4a's on 125 /
+125 / 125 of 1,110 (first `3;5;0`), W4c's on 130 / 210 / 336 of 1,111, W8's on 56 / 56 / 56 of 341 (first `111`).
+The every-pass form `occurs.none(NOT c)` alone also admits zero passes, which `some(c)` excludes (E12: 21 / 201 / 301
+of 364 from `NOT some(c)`). No new every-pass spelling is designed here; a named shorthand for `some(c) &
+occurs.none(NOT c)` is OPEN (**every-pass-spelling**, §R.8; his `loop` construct over a conditioned item, item 21,
+is a candidate), and the retired `all` (11-16 23:18) is REVISITED by it, not reversed.
 
 ### R.5 WHOLE-TEXT: the legality check
 
-His model (13:55): "a larger parser like the json parser configured J, then used two paths: check C the overall fail
-against the json then search for the match M"; ruled (14:05) "adopt it if it's legal. Not sure about the "fail"
-part". Written with RULED PIECES ONLY and matched WHOLE (the caller's whole-value mode): `J & C & occurrences(M)`,
-with C a condition or a label-free filter on J's stretch and M's matches the hits of `occurrences(M)` (regex-settles
-(4)). No `fail` is needed: a failing C fails the program. Run against route (ii) (the meaning the question asks: all
-of M's matches when the text passes C, none otherwise; PART F):
+His model (13:55): "If we had a larger parser like the json parser configured J, then used two paths: check C the
+overall fail against the json then search for the match M  J & C ? J & M : fail"; ruled (14:05) "Whole text: adopt
+it if it's legal. Not sure about the "fail" part". Written with RULED PIECES ONLY and matched WHOLE (the caller's
+whole-value mode): `J & C & occurrences(M)`, with C a condition or a label-free filter on J's stretch and M's matches
+the hits of `occurrences(M)` (regex-settles (4)). No `fail` is needed: a failing C fails the program. Run against
+route (ii) (the meaning the question asks: all of M's matches when the text passes C, none otherwise; PART F, holds
+and hit lists):
 - F1: J := `/[\s\S]*/`, C := `!contains(q)`, M := `t2`: `9:15 1` HOLDS, hits `9:15`, `1`; `9:30 1` FAILS; `` HOLDS
-  with no hits; 0 of 3,906 texts differ from route (ii) on holding and hits.
+  with no hits; 0 of 3,906 texts differ from route (ii).
 - F2: J := TML (a comma list of times), C := `occurs.none(((h, m): >= (9, 30)))` on J's passes, M :=
   `/(?<hh>\d{1,2})(?::(?<mm>\d\d))?/` (labels renamed: a label in both `&` sides is §4.1's error): `9,9:15,` HOLDS,
   hits `9`, `9:15`; `9:15,9:45,` FAILS; 0 of 156 differ.
-VERDICT: LEGAL in WHOLE mode. Two conditions on that verdict, both stated, neither a new rule: (a) READING the hit
-list as values is the all-hits NOTED EXCEPTION at the captures level (§R.6); whether the program holds and the hit
-COUNT are regular (lane rxmodel found the gate regular); (b) the SEARCHED form, where each match of M is reported as
-a match of the program, is NOT expressible with ruled pieces: the nearest, `t2 & !contains(q)`, reads the path's
-stretch, not the subject, and differs from route (ii) on 90 of 3,906 SEARCHED (first `9:50`; F3). THE MISSING RULE
-for that form: a test of the WHOLE SUBJECT from inside a searched program (route (ii)'s text-level test,
-`text.none(q)`); not invented here; it comes back to the owner only if the searched form is wanted.
+VERDICT: ADOPTED, as a REQUESTED feature (**exception-rule**, RULED the evening of 11-17), in WHOLE mode: (a)
+READING the hit list is the all-hits exception, requested by name, at the captures level (§R.6); regularity is no
+longer the bar (whether the program holds and the hit COUNT are regular is a FACT about its level: lane rxmodel found
+the gate regular); (b) the SEARCHED shape of his model, where each match of M is reported as a match of the
+program, is NOT expressible with ruled pieces: the nearest, `t2 & !contains(q)`, reads the path's stretch, not the
+subject, and differs from route (ii) on 0 / 90 / 90 of 3,906 (reported row, first `9:50`; F3). THE MISSING RULE for
+that shape: a test of the WHOLE SUBJECT from inside a searched program (route (ii)'s `text.none(q)`, the same piece
+**hits-text**'s subject reading lacks); not invented here; it comes back to the owner if the searched shape is
+wanted.
 
-### R.6 NOTED EXCEPTIONS (13:20: noted, not excluded; 13:30: proven or asked for by name)
+### R.6 EXCEPTIONS (exception-rule, RULED the evening of 2026-11-17)
 
-| exception | what it gives | what regex alone gives | its tests regular? | level to read values out |
-|---|---|---|---|---|
-| the HIT LIST, `hits(r)` (asked for by name, 13:30 (B)) | every committed hit of a global search, in order, never re-split | the last pass of the one-pattern loop (R.1.9) | for `ab[xy]` yes (lane lastpass, 0 of 85 as a plain regex); for any rx UNPROVEN (lane rxmodel) | `captures` (reading a hit's text) |
-| the PASS TABLE of a loop (group questions, a literal index `h[2]`) | every pass's values | the last pass only | yes for the group questions (a count of passes that pass a test) and for a literal index test | `captures` for `$h[2]` (W10) |
-| RECORDS (`records` item, §7) | one record per match | find-all matches | yes | `captures` |
-| DEFAULTS (`h = v`) | a stand-in text for an absent label | none (a test on an absent group fails) | yes (an alternation: the label set, or absent and v in the set) | none |
+THE RULE, his words (COND-FAMILY, "OWNER RULING — exception-rule"): "exception-rule: everything that looks like
+regex should behave like regex unless we explicitly allow. This is the prove itself portion in that an exception has
+to be either so useful or the "expected understanding" whereas the actual regex behavior is obscure so as to be
+useless. Exceptions should be requested by using those features explicitly. If requested (and optioned in if
+needed), they don't have to be regular regex or even legal regex." Read as: (1) the DEFAULT is regex behaviour for
+anything that looks like regex; (2) the bar for ALLOWING an exception is its WORTH (so useful, or the expected
+understanding where regex's behaviour is obscure to the point of uselessness), NOT regularity; (3) an exception is
+REQUESTED through its own explicit feature, opted in where a capability level requires it (12:10), and need not be
+regular or even expressible in regex. Regularity stays a FACT about each exception (the level it sits at), never its
+condition. It settles 13:30's two alternatives (review r40 B2) and supersedes the manager's reading of "converted to
+regular language" as "must reduce to an automaton".
 
-Each is the owner's to confirm as an exception (13:20 MINE: "the loop's pass table, records and defaults are
-candidates for the same list, each still the owner's to confirm").
+ALLOWED EXCEPTIONS (each requested by its own feature):
 
-### R.7 EXAMPLES THAT MOVED (rev 23.2 answer -> rev 24 answer)
+| exception | its feature | what it gives | what regex alone gives | allowed by | its level (a fact) |
+|---|---|---|---|---|---|
+| the HIT LIST | `hits(r)` (`all_matches(rx)` his placeholder) | every committed hit of a global search, in order (whose search: **hits-text**) | the last pass of the one-pattern loop (R.1.9) | 13:20 ("being able to access all the hits of a search is helpful"), exception-rule | `captures` to read a hit; its tests regular for `ab[xy]` (0 of 85 as a plain regex, lane lastpass), otherwise unproven and no longer required |
+| the PASS TABLE of a loop | the group questions (`some`, `occurs.*`), a literal index `h[2]`, `$h[2]` | every pass's values | the last setting only | 14:30 ("the method of achieving the alternative meanings defined and tested"), exception-rule | regular for the group questions and a literal-index test; `captures` for `$h[2]` (W10) |
+| WHOLE-TEXT | `J & C & occurrences(M)` matched WHOLE, reading M's hit list | M's matches when C holds, none otherwise | (reads the hit list) | 14:05 ("adopt it if it's legal"), exception-rule | the gate regular (lane rxmodel); the list at `captures` |
 
-PART A, 68 catalogue lines, each run under rev 24 (NOW) and rev 23.2 (BEFORE), every mode: MOVED 28: B1, B3, B4,
-B5, B9 (branch-scope, atomic inner condition); U1, U2, U3, U4 (two-valued); N1x, N13x, N17x (NOT around an absent
-label); R13;;, R2e, R23;, R23;7;, R27;;, R23;;, R3e, R33;, R33;7;, R37;;, R33;;, R43;; (REP under the last pass); L1,
-L7 (last pass); K1 (complement sees every path of B); H2 (the last hit). The live examples that rev 23.2 printed
-elsewhere and that move:
+LEFT THE LIST in rev 24.1, each because a regex model gives it: DEFAULTS (PCRE's conditional group on the label,
+R.1.6; PART C V26-V29, 0 differ); RECORDS (§7's compile-time find-all equals the one-pattern model, PART D D20, 0 of
+1,365).
+
+LOOKS LIKE REGEX, BEHAVES OTHERWISE (exception-rule's first sentence; rulings R1 (c)): every place the draft makes
+something that looks like plain regex behave differently from regex, each allowed by the owner (cited) or NOT YET
+ALLOWED, asked (slug, §R.8); a candidate that would CREATE such a difference is listed with its question. Counts are
+the engine's (PART Q), reported row, labels compared.
+
+| the place | regex's behaviour | the draft's | status |
+|---|---|---|---|
+| `^`/`$` in an `&` operand or a `label:` set | the ends of the whole subject searched | the ends of the stretch (the scoped match, §11) | ALLOWED: "^ $ refer to the scoped match" (CF:1005); "&: both sides filter and warn if anchor" (CF:1059-1060) |
+| lookarounds and `\b` in an `&` operand | they see the subject around the stretch | they see only the stretch's text: `/\d+/ & /\b\d+/` on `a1` SEARCHED `1`@1 vs FAILS; 0 / 90 / 132 of 364; a lookbehind the same, a lookahead 0 / 122 / 132 | NOT YET ALLOWED: asked, **operand-context** (the manager's extension of the scoped-match ruling, FIX-A3) |
+| a label read inside a loop body that this pass did not set | the earlier pass's value (PCRE's capture state) | the same (THE DRAFT'S READING) | regex; the other candidate (each pass starts unset, the owner's LEAN) is an exception to be allowed: **pass-own-labels** |
+| a bare joint over a loop | each label's last setting, possibly from different passes | the same | regex; per-pass pairing would be an exception: **joint-last-pass** |
+| atomic in a search | PCRE's atomic group, the search moves on | the same | regex; "stop at the first start" (item 14) would be an exception: **atomic-search** |
+| a positive lookahead's labels | visible after it | the same | regex; "never visible outside" would be an exception: **lookahead-labels** |
+| a label named in both `&` operands | PCRE accepts duplicate names under `(?J)` | a compile ERROR (§4.1, as rev 24's §R.5 cites it); its ruling not located by this lane | NOT YET ALLOWED: asked, **shared-label** |
+| a test no value can pass (§5.2's empty intersection), and the same under NOT | regex compiles a piece that can never match | a compile ERROR without NOT; silent under NOT | a diagnostic (no compiled program's answer moves); NOT YET ALLOWED: asked with **polarity-rule** |
+| FIND-ALL after an empty match | PCRE2 retries at the same place, then advances | not stated; the evidence steps one character (review r40 C3) | the language follows PCRE2 (regex, the default); the evidence's simplification decides no answer here |
+
+### R.7 EXAMPLES THAT MOVED
+
+REV 23.2 -> REV 24 (PART A, 68 catalogue lines, each run under rev 24.1's rules (NOW) and rev 23.2's (BEFORE),
+every mode; rev 24.1's engine fixes move none of them): MOVED 28: B1, B3, B4, B5, B9 (branch-scope, atomic inner
+condition); U1, U2, U3, U4 (two-valued); N1x, N13x, N17x (NOT around an absent label); R13;;, R2e, R23;, R23;7;,
+R27;;, R23;;, R3e, R33;, R33;7;, R37;;, R33;;, R43;; (REP under the last pass); L1, L7 (last pass); K1 (complement
+sees every path of B); H2 (the last hit). The live examples that rev 23.2 printed elsewhere and that move:
 - §0.1 L60 `(B | A) & (l: "a")`, B := `/(?<l>aa)/`, A := `/(?<l>a)a/`, on `aa`: rev 23.2 REJECTS; rev 24 HOLDS, l =
   `a` (B3; V2).
 - §4.5 note (a), `/(?<a>\d+)(?<b>\d+)/ & (a: "1")` on `123`: rev 23.2 FAILS; rev 24 HOLDS a = `1`, b = `23` (B4; V3).
-- `KH & (h: <5, k: between(3, 7))` on `3;5;0` (the pairing loop): rev 23.2 FAILS (every pass: h = `5` fails);
-  rev 24 HOLDS (the last pass, h = `0`) / `3;5;0`@0 (rev 23.2: `5;0`@2); 125 / 125 / 125 of 1,110 texts move (PART D
-  D11); its old meaning is §R.4 W4a.
+- `KH & (h: <5, k: between(3, 7))` on `3;5;0` (the pairing loop): rev 23.2 FAILS (every pass: h = `5` fails); rev 24
+  HOLDS (the last pass, h = `0`) / `3;5;0`@0 (rev 23.2: `5;0`@2); 125 / 125 / 125 of 1,110 move (PART D D11); its old
+  meaning is §R.4 W4a.
 - `occurrences(/(?<n>\d+)/) & (n: <100)` on `1234`: rev 23.2 FAILS (ALL hits); rev 24 HOLDS (the last hit after
   re-entry) (H2, W8-bare).
+- `contains(r) & (g: "x")`, r := `/ab(?<g>[xy])/`, on `abx aby` (§0.1 L58): rev 23.2 FAILS; rev 24 HOLDS g = `x`;
+  L61's pair is now SAME (0 / 0 / 0 of 85; rev 23.2: 20 / 20 / 20; PART D D13).
+- `P & A & B` against "P & A holds and P & B holds" (§0.1 L100), P := `/(?<a>\d+)(?<b>\d+)/`, A := `(a: <5)`, B :=
+  `(a: >10)`: rev 23.2 0 of 341 WHOLE; rev 24 156 (first `110`: each half holds by a different path; D12).
+- §4.4 `NOT (mnum: <3)` on `-5` (mnum absent with mname): rev 23.2 FAILS / FAILS; rev 24 HOLDS / `-5`@0 (D17).
 Every other line of PART A is unchanged (40 of 68). PART A's PRINTED CHECK: the 109 answers rev 23.2 printed for
 these lines, recomputed under the engine's rev 23.2 switch: 0 mismatches.
+REV 24 -> REV 24.1 (what rev 24 PRINTED and rev 24.1's fixed engine or text changes; the report lists each with
+its command): W1c's spelling (0 -> 5 / 34 / 34; re-spelled, 0); §R.1.4's join-order "0 / 414 / 414 ... never the
+stretch" -> 117 / 414 / 414 and the lazy-operand stretch 0 / 1,008 / 1,197; "`&` DISTRIBUTES over `|`" -> on a
+left `|` only; E1's 243 WHOLE -> 363 (labels compared); the D5 LAW now on the stretch's own text (an anchored B:
+rev 24's engine 0 / 1,344 / 1,344 of 1,365 -> 0); PART C 20 models -> 38, 20 equal -> 38 equal; G1 (rev 24's
+engine: 5 / 34 / 34 against PCRE2) -> 0; G6 (300 per mode) -> 0; G8 (693 per mode) -> 0; the occurrences twin G2
+(42 per mode) -> 0.
 
-### R.8 THE OPEN TABLE (every item left; each candidate run; WHOLE / SEARCHED / FIND-ALL; PART E)
+### R.8 THE OPEN TABLE (every item left; each candidate run; WHOLE / SEARCHED / FIND-ALL; PARTS E and Q)
 
 DISSOLVED by the 2026-11-17 rulings (removed from the table):
 - **branch-scope**: ruled reading (ii) (11:35).
 - **branch-order** (rev 23.1's withdrawn ruling): dead with readings (i) and (iii) (11:35, RECORD (2)).
-- **when-meaning**: ruled, `x & (NOT c | p)` (13:55).
-- **whole-text**: adopted if legal (14:05); legal in WHOLE mode (§R.5).
+- **when-meaning**: ruled, `x & (NOT c | p)` (the entry after 14:25).
 - **pass-and** (Kleene AND over passes): last-pass-default (14:30) and three-valued's retirement.
 - **pass-table** as the meaning of a bare condition: last-pass-default; the pass table survives only inside the
   named forms (below).
@@ -714,95 +906,224 @@ DISSOLVED by the 2026-11-17 rulings (removed from the table):
 - **condition-not**'s absence clause: absent-under-not (13:25).
 - **lookahead-labels** as a whole-text route: whole-text took the gate form; the lookahead question stays (below)
   as a plain regex question.
+RULED since rev 24 (removed from the questions): **exception-rule** (the evening of 11-17, §R.6); with it
+**whole-text** is ADOPTED as a requested feature (R.1.11, §R.5; rev 24 had it DISSOLVED, review r40 B3).
+MANAGER'S READINGS WITH A REGEX MODEL, closed by the 12:55 direction (the model entails them): **three-valued**
+(retired: E1, V5), **record-under-not** (dissolved: E2), **condition-or** (deleted: E3, V13).
 
-REMAINING:
+OWNER QUESTIONS (G24-5: no regex model decides them, or the model the draft gives has a twin with the opposite
+answer; each with the draft's current reading LABELLED, never chosen; every answer is from the fixed engine, PART Q
+unless named; "rr" = reported row, labels compared, every mode; a "REJECTED" candidate makes the program a compile
+error):
+
+| slug | the question | THE DRAFT'S READING (current) | WHOLE / SEARCHED / several matches, per candidate | the texts that differ from the draft's reading | what each costs; the earlier rulings it touches, RE-RUN |
+|---|---|---|---|---|---|
+| **hits-text** (A4) | "all the hits of a search": the hits of the MATCHED STRETCH or of the SUBJECT? | the stretch: the global search re-run inside each stretch the pattern tries | H3 `hits(/(?<n>\d+)/) & occurs.none(NOT (n: <100))`: STRETCH `1234` FAILS / `x300 12` -> `x30`@0 hits [`30`] / `1234 5 300` -> [`12`@0 [`12`], `34 5 30`@2 [`34`,`5`,`30`], `0`@9 [`0`], ``@10]; SUBJECT FAILS / `x30`@0 hits [] / [`123`@0 [], `4 5 30`@3 [`5`], `0`@9 [], ``@10]; WHOLE-ONLY FAILS / REJECTED / REJECTED | subject 0 / 56 / 56 of 341 (first `111`: hits [`11`] vs []); WHOLE-only 0 / 341 / 341 | stretch: hits no search of the subject gives (`30` in `x300`); subject: needs the missing subject-level piece of §R.5 (b) (`text.none`); WHOLE-only: `hits` gone from searched programs. RE-RUN W8: 0 (stretch) vs 0 / 56 / 56 (subject); W9 0 vs 0 |
+| **atomic-search** (A6 (c)) | in a search, does atomic also stop at the first start where the atomic part matches ("Now the pattern returns nothing", item 14)? | PCRE's atomic group: no retry inside, the search moves to the next start | `atomic(t2) & !q`: PCRE `9:30` FAILS / `9:30` -> `30`@2 / `9:30 9:15` -> [`30`@2, `9:15`@5]; FIRST-START FAILS / FAILS / [] | 0 / 84 / 84 of 3,906 rr (first `9:50`) | PCRE: regex-settles (5) as shown to him; item 14's "nothing" only in WHOLE. First start: a new search rule (no PCRE construct does it; the nearest is an anchored retry), atomic's meaning stops being PCRE's in a search. RE-RUN B8 `atomic(B \| A) & (l: <20)`: 0 / 294 / 312 of 1,365 rr; B9 (condition inside) 0 |
+| **joint-last-pass** (A7) | a joint or record over a loop reads each label's last setting (possibly from different passes): yes, or keep per-pass pairing for joints as an allowed exception (§R.6)? | each label's last setting (PCRE; libpcre2 equal, 85 texts) | `CLOSE & ((h, m): == (10, 45))`: LAST SETTINGS `9:45,10,` HOLDS h = `10` m = `45` / `10,9:45,` FAILS / `9:45,10, 10:45,` [`9:45,10,`@0, `10:45,`@9]; LAST PASS'S TUPLE FAILS / FAILS / [`10:45,`@9]; SOME PASS FAILS / FAILS / [`10:45,`@9]; EVERY PASS (rev 23.2) FAILS / FAILS / [`10:45,`@9] | last pass's tuple 14 / 18 / 18; some pass 22 / 24 / 24; every pass 32 / 42 / 42; of 85 rr | last settings: a tuple no pass held can satisfy it; reverses joint-loops (1) and makes sibling loops legal for a bare joint. Per-pass pairing: a noted exception with no regex model. RE-RUN W4b (its spelling `some(J) & occurs.none(NOT J)`): 0 under every candidate |
+| **pass-own-labels** (rulings R2, R3; asked WITH joint-last-pass) | does a loop pass start with its body's labels UNSET? | no: PCRE's capture state (a pass reads an earlier pass's value; after the loop each label's last setting). The owner's LEAN, not a ruling: "joint-last-pass: I think the expectation is that each loop has its own. The ramifications should be determined. Implementation details aside, I think most would expect that a missing group would unset" | CLOSE := `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*/`, WHOLE on `9:45,10,` / `10,9:45,` / `10:45,10,`: `CLOSE & ((h, m): == (10, 45))` CARRY HOLDS h = `10` m = `45` / FAILS / HOLDS; PASS-OWN FAILS / FAILS / FAILS. With `(h, m = 00)` the same (under carry the default never fires: m is set); `((h, m = 00): == (10, 00))` CARRY FAILS / FAILS / FAILS, PASS-OWN HOLDS / FAILS / HOLDS. The joint on the item inside the loop (`/(?:${item})*/`): CARRY FAILS / FAILS / HOLDS; PASS-OWN FAILS / FAILS / FAILS (the second pass's m is absent). SEARCHED `10,9:45,`: both FAILS (bare); FIND-ALL `9:45,10, 10:45,10,`: carry [`9:45,10,`@0, `10:45,10,`@9], pass-own [`10:45,`@9] | bare joint 14 / 18 / 18 of 85; joint on the item 4 / 6 / 9 of 85 | carry: regex (PCRE2 equal); a stale value can satisfy a test the reader meant for this pass. Pass-own: an ALLOWED EXCEPTION it would need (§R.6), with a callout model (RAMIFICATIONS (3)). RE-RUN below |
+| **hits-committed** (B1) | a group question over the named hit list reads the committed list, or the one-pattern hits? | the committed list | every hit of `/(?<n>\d+)/` under 100: COMMITTED `1234` FAILS / `x300 12` -> `x30`@0 [`30`] / three matches; ONE PATTERN HOLDS hits [`12`, `34`] / ... (E4) | 56 / 56 / 56 of 341 rr (first `111`) | committed: W8, W9 hold at 0; one pattern: drops the hit list's reason to exist (W9's old meaning differs 20 / 20 / 20 of 85) |
+| **join-order** (A5, B1) | `P & Q`: whose paths are the outer loop? | the LEFT side's | `G & L`: LEFT `11` HOLDS a = c = `11` / `11`@0 / `11 123` [`11`@0, `123`@3]; RIGHT HOLDS / `1`@0 / [`1`@0, `1`@1, `1`@3, `2`@4, `3`@5] | `G & L` 0 / 1,008 / 1,197 of 1,365 rr; `(P & Q) & ((a: "1") \| (c: "1"))` 117 / 414 / 414 (E5) | either order has its PCRE2 model (V19, V21, V22). RE-RUN, left / right: `X & (B \| A)` distributes 0 / 1,008 / 1,197 vs 0; `(B \| A) & X` 0 vs 0 / 1,008 / 1,197; the LAW with a lazy B 0 vs 0 / 1,008 / 1,197 (the LAW holds only with the left outer) |
+| **polarity-rule** (B1, A9; widened by exception-rule) | a test that can never pass, under NOT or in a complement: no error, a warning, or the §5.2 error as without NOT? (and, since regex compiles a never-matching piece, is §5.2's error WITHOUT NOT itself an allowed exception?) | no error, no warning (13:25 MINE) | `t2 & NOT (h: <0)`: NONE and WARNING `9:30` HOLDS / `x9:30` -> `9:30`@1 / [`9:30`@0, `1`@5]; ERROR REJECTED | warning 0; error: every text (the program does not compile) | none: a typo under NOT is silent (the §5.2 asymmetry, R.2); error: symmetric with §5.2, rejects programs that mean "always". RE-RUN E6, E6b: plain `t2`, 0 of 3,906 |
+| **pass-list-read** (B9) | a bare `$h` on a value side when h is looped: the last setting (as regex's `\k<h>`) or the pass list? | the pass list (§R.4's `sorted`/`distinct` read it); a scalar comparison with a list has no stated meaning | `/(?:(?<h>\d);)*(?<k>\d)/ & (k: == $h)`: PASS LIST REJECTED; LAST `3;7;7` HOLDS h = k = `7` / `3;7;3` FAILS / `3;7;7 7;3;3` [`3;7;7`@0, `7;3;3`@6]; SOME PASS HOLDS / `3;7;3`@0 / two; EVERY PASS FAILS / FAILS / [`7;7`@2, `3;3`@8] | every candidate vs REJECTED: all 364 | last: equals libpcre2's backreference `\k<h>` (0 of 364), matches the bare `h:` rule (R.1.7); the list then needs its own spelling (`$h[*]`-like, a placeholder). Pass list: `sorted($h)` stays as written; a scalar comparison needs a rule (some / every). RE-RUN U6 (`$a` set once): unchanged under every candidate |
+| **zero-place** (C4) | what `0` ("the whole match", 12:25) names inside a nested place: the INNERMOST stretch, or PCRE's group 0? | not stated (rev 24 stated the LAW at the top level only) | `occurrences(/\d+/ & (0: /1\d*/), min = 1)`: INNERMOST ` 1` HOLDS hits [`1`] / ` 1`@0 / [` 1 12`@0 hits [`1`, `12`]]; GROUP 0 FAILS / `1`@1 / [`1 12`@1 hits [`1`]] | innermost 0 of 1,365 from `occurrences(/\d+/ & /1\d*/)`; group 0 738 / 738 / 738 rr | innermost: the LAW holds in every place; group 0: libpcre2's group 0 at a callout (equal to the engine, holds and stretch, 0 of 1,365), the LAW a top-level law only. RE-RUN D5 (top level): one reading, 0 |
+| **operand-context** (TENTH: R1 (c)) | do an `&` operand's lookarounds and `\b` see only the stretch's text, or the subject around it? | the stretch's text (FIX-A3; the owner ruled `^`/`$` only, "^ $ refer to the scoped match") | `/\d+/ & /\b\d+/`: STRETCH `1` HOLDS / `a1 1` -> `1`@1 / `a11 1a1` -> [`11`@1, `1`@4, `1`@6]; SUBJECT HOLDS / `1`@3 / [`1`@4] | `\b` and a lookbehind 0 / 90 / 132; a lookahead `\d+(?![a-z])` 0 / 122 / 132; of 364 | stretch: the LAW (`A & B` = `A & (0: B)`) holds with any operand (D5); subject: the operand reads like the same regex searched, the LAW fails for these operands. Each has a libpcre2 callout model (0 differ). RE-RUN D5's lookaround pairs: 0 under the stretch only |
+| **shared-label** (ELEVENTH: R1 (c)) | a label named in both `&` operands: an error (the draft), or PCRE's duplicate-name reading under `(?J)`? | the error (§4.1, as rev 24's §R.5 cites it; no ruling located) | not run (the engine has no duplicate-name join; §R.5's F2 renames to avoid it) | not run | error: one value per label; PCRE's reading: which operand's value a condition reads needs a rule (join-order decides the outer row) |
+
+REMAINING (open, not owner questions here, or already asked):
 
 | slug | state | current definition | example (WHOLE / SEARCHED / several matches) | candidates and their answers |
 |---|---|---|---|---|
-| **three-valued** | MANAGER'S READING (13:25 MINE) | retired: every test two-valued | `/(?<b>\d+)(?<a>\d)?/ & NOT (a: <5)`: `1` HOLDS / `1`@0 / on `1 12 19 3` four matches | Kleene: FAILS / FAILS / [`19`@5]; differs 243 / 1,359 / 1,359 of 1,365 (E1). Engine and PCRE2 (V5) CONFIRM two-valued |
-| **record-under-not** | MANAGER'S READING: dissolved | a record is the `&` of its entries under NOT | `t2 & NOT ((h, m): (<9, <30))`: `10` HOLDS / `10`@0 / on `10 9 10:15` three | joint vs record two-valued: 0 / 0 / 0 of 3,906 (E2) CONFIRMED; under Kleene the joint differed (12 / 3,546 / 3,627) |
-| **condition-or** | MANAGER'S READING: deleted | one `\|`, an alternation of two tests | `NOT ((h: <5) \| (k: <5))`: `b7` HOLDS / `b7`@0 / on `b7 a3 c` [`b7`, `c`] | Kleene OR: FAILS / FAILS / []; 3 / 89 / 89 of 156 (E3); CONFIRMED (V13 runs the alternation) |
-| **hits-committed** | MANAGER'S READING (13:45, 14:35) | a group question over `hits(r)` reads the committed global-search list; the one-pattern form is a condition inside `occurrences` | every hit of `/(?<n>\d+)/` under 100: `1234` FAILS / on `x300 12` `x30`@0 / on `1234 5 300` three matches | one pattern (H2), or the condition inside: `1234` HOLDS / `x300 12`@0 / one match; 56 / 56 / 56 of 341 (E4). Consistent; the two are different meanings, both kept |
-| **join-order** | MANAGER'S READING (13:45) | the left side's paths outer | `(P & Q) & ((a: "1") \| (c: "1"))`, Q := `/(?<c>\d+)(?<d>\d+)/`: `123` HOLDS / `123`@0 a = `12` / on `123 1121` two | right outer: holds and stretches identical, labels differ 0 / 414 / 414 of 1,365 (E5); CONFIRMED by PCRE2's lookahead model (V19) |
-| **polarity-rule** | MANAGER'S READING | no error, no warning under NOT or a complement | `t2 & !(t2 & (h: <0))`: `9:30` HOLDS / `9:30`@1 in `x9:30` / on `9:30 1` two | = plain `t2`, 0 / 0 / 0 of 3,906 (E6, E6b); rev 23.2's ERROR is the other candidate; no answer depends |
-| **looped-warning** | MANAGER'S PROPOSAL (14:30) | WARN when a bare condition reads a looped label | `/(?:(?<h>\d);)*/ & (h: <5)`: `7;3;` HOLDS / `7;3;`@0 / on `7;3; 3;7;` two | no warning: same answers; the every-pass spelling the warning would point to differs 1 / 7 / 7 of 364 (E7) |
-| **sql-picture** | MANAGER'S RESTATEMENT (11:50) | every path a row, the branch remembered; filter, then the first row; atomic = the first row before the filter | `((B & (l: >50)) \| A) & (l: <10)`: `12` HOLDS / `12`@0 / on `12 25 13` three | naive filtering: 16 / 336 / 336 of 341 (E8). ATOMIC CLAUSE REFUTED for a condition inside: `atomic(P & (a: "1"))` vs the first row before the filter, 117 / 414 / 414 of 1,365 (E8b; PCRE2 V18 sides with the atomic group); outside the atomic part they agree (0, PART D D9). FLAGGED |
-| **complement-place** | OPEN | where may `!B` stand; is a lone `!B` an ERROR | `!q` as a whole value read as `/[\s\S]*/ & !q`: `9:30` FAILS / on `9` `9`@0 / on `9 9:30 10` [`9 9:30 10`@0, ``@9] | ERROR (rev 23.2) vs the whole-value reading (E9); a SEARCHED lone `!B` has no reading (no path gives its stretch or order) |
-| **nested-complement** | OPEN (11-16 23:46 MINE) | a `contains` argument filters paths like a program | `t2 & contains(t2 & !q)`: `9:30` HOLDS / `9:30`@0 / on `9:30 1` two | one-pattern vs committed hits: 0 / 0 / 0 of 3,906, hit lists compared (E10): no answer depends today |
-| **repeated-means** | MANAGER'S RULING, owner told (11-16 22:58 (4)) | repeated = set in a loop by its operand regex | `(h: <5)` on `/(?:(?<h>\d);)+/ & /\d;/`: `3;` HOLDS / on `7;3;` `3;`@2 / two | vs set once: 0 / 0 / 0 of 364 (E11); now decides only the warning and which group questions apply |
-| **group-truth / pass-table** (inside the named forms) | OPEN | group questions read the pass table, two-valued (EXISTS / NONE) | REP & `NOT some((h: <5))`: `;` HOLDS / on `7;;` `7;;`@0 / on `; 3;7;; 3;` eight | = `occurs.none((h: <5))` 0 / 0 / 0; `occurs.none(NOT (h: <5))` (every pass, possibly none) differs 21 / 201 / 301 of 364 (E12) |
-| **lookahead-labels** | OPEN | a positive lookahead's labels are the outer path's (PCRE) | `/(?=[\s\S]*?\d\d:(?<lm>\d\d))(?<h>\d{1,2})(?::\d\d)?/ & (lm: >= 30)`: `10:45` HOLDS / on `9:15 10:45` `9:15`@0 lm = `45` / two | never visible outside: 54 / 54 / 54 of 3,906 (E13) |
-| **atomic-spelling** | OPEN (`predicates_future.md` item 19) | the meaning is PCRE's atomic group | `atomic(B \| A) & (l: <20)`: `25` FAILS / FAILS / [`13`@3] | plain: 6 / 798 / 924 of 1,365 (E14); item 14's form 0 / 84 / 84 of 3,906 (E14b) |
+| **looped-warning** | MANAGER'S PROPOSAL (14:30) | WARN when a bare condition reads a looped label | `/(?:(?<h>\d);)*/ & (h: <5)`: `7;3;` HOLDS / `7;3;`@0 / on `7;3; 3;7;` two | no warning: same answers; the every-pass spelling the warning would point to differs 1 / 7 / 7 of 364 rr (E7) |
+| **sql-picture** | MANAGER'S RESTATEMENT (the 11:50 entry's MANAGER'S FRAMING) | every path a row, the branch remembered; filter, then the first row; atomic = the first row before the filter | `((B & (l: >50)) \| A) & (l: <10)`: `12` HOLDS / `12`@0 / on `12 25 13` three | naive filtering: 16 / 336 / 336 of 341 rr (E8). ATOMIC CLAUSE REFUTED for a condition inside: 117 / 414 / 414 of 1,365 rr (E8b; PCRE2 V18 sides with the atomic group); outside the atomic part they agree (0, D9). FLAGGED |
+| **complement-place** | OPEN | where may `!B` stand; is a lone `!B` an ERROR | `!q` as a whole value read as `/[\s\S]*/ & !q`: `9:30` FAILS / on `9` `9`@0 / on `9 9:30 10` [`9 9:30 10`@0, ``@9] | ERROR (rev 23.2) vs the whole-value reading (E9); a SEARCHED lone `!B` has no reading |
+| **nested-complement** | OPEN (11-16 23:46 MINE) | a `contains` argument filters paths like a program | `t2 & contains(t2 & !q)`: `9:30` HOLDS / `9:30`@0 / on `9:30 1` two | one-pattern vs committed hits: 0 / 0 / 0 of 3,906 rr, hit lists compared (E10) |
+| **repeated-means** | MANAGER'S RULING, owner told (11-16 22:58 (4)) | repeated = set in a loop by its operand regex | `(h: <5)` on `/(?:(?<h>\d);)+/ & /\d;/`: `3;` HOLDS / on `7;3;` `3;`@2 / two | vs set once: 0 / 0 / 0 of 364 rr (E11) |
+| **group-truth / pass-table** (inside the named forms) | OPEN | group questions read the pass table, two-valued | REP & `NOT some((h: <5))`: `;` HOLDS / on `7;;` `7;;`@0 / on `; 3;7;; 3;` eight | = `occurs.none((h: <5))` 0 / 0 / 0; `occurs.none(NOT (h: <5))` differs 21 / 201 / 301 of 364 rr (E12) |
+| **lookahead-labels** | OPEN | a positive lookahead's labels are the outer path's (PCRE) | `/(?=[\s\S]*?\d\d:(?<lm>\d\d))(?<h>\d{1,2})(?::\d\d)?/ & (lm: >= 30)`: `10:45` HOLDS / on `9:15 10:45` `9:15`@0 lm = `45` / two | never visible outside: 54 / 54 / 54 of 3,906 rr (E13) |
+| **atomic-spelling** | OPEN (`predicates_future.md` item 19) | the meaning is PCRE's atomic group | `atomic(B \| A) & (l: <20)`: `25` FAILS / FAILS / [`13`@3] | plain: 6 / 798 / 924 of 1,365 rr (E14); with **atomic-search** above |
 | **options-spelling** | IDEA (item 20) | opt-ins declared in the source; scope; host cap | none (moves no answer) | not run |
-| **conditional-spelling** | OPEN (14:20) | `when(c, p)` and the else form | `KH & when((h: <5), p, (k: <3))`: `5;1;9` FAILS / on `1;0;9` `1;0;9`@0 / three | two-argument form: 392 / 502 / 556 of 1,110 (E15): the else changes answers, its spelling does not |
-| **every-pass-spelling** | OPEN (14:30) | a named shorthand for `some(c) & occurs.none(NOT c)` | §R.4 W1b | none designed; §R.4 rows are its tests |
-| **rx-module** | FILED (item 21) | an `rx` module and a concatenation operator | none | design note next (lane rxlib) |
+| **conditional-spelling** | OPEN (14:20) | `when(c, p)` and the else form | `KH & when((h: <5), p, (k: <3))`: `5;1;9` FAILS / on `1;0;9` `1;0;9`@0 / three | two-argument form: 392 / 502 / 556 of 1,110 rr (E15); `?` is taken by item 21's addendum idea |
+| **every-pass-spelling** | OPEN (14:30) | a named shorthand for `some(c) & occurs.none(NOT c)` | §R.4 W1b | candidates: W1a's hole loop, W1b's group questions, his `loop` over a conditioned item (item 21) |
+| **rx-module** | FILED (item 21) | an `rx` module and a concatenation operator; reopens §2.5's lean | none | design note (lane rxlib) |
 
-STOP RULE: no two RULINGS decide an answer differently. One manager's restatement conflicts with a ruling:
-sql-picture's atomic clause against regex-settles (5); the ruling wins, the clause is flagged above.
+PASS-OWN-LABELS: RAMIFICATIONS (rulings R3; PART Q, the engine run both ways; nothing chosen).
+(1) EVERY WORKED LINE. PART A: 17 of 68 catalogue lines move, all on REP := `/(?:(?<h>\d)?;)*/` (R13;;, R2e, R23;,
+R23;7;, R27;;, R23;;, R3e, R33;, R33;7;, R37;;, R33;;, R4e, R43;, R43;7;, R47;;, R43;;) and L7 (`REP & (h: !<5)` on
+`7;;`: HOLDS -> FAILS, SEARCHED `7;;`@0 -> `7;`@0); 51 do not (most move only a reported label, `7;;`@5 h = `7` ->
+h absent). PART B: all 23 old-meaning spellings stay at 0 under pass-own. PART C: 30 of 38 libpcre2 models stay
+equal; V7, V8, V9, V29, G1, G2, G3, G4 differ (PCRE2 carries), e.g. V7 8 / 33 / 33 of 364 (first `3;;`).
+(2) THE CONSTRUCTS (carry vs pass-own; reported row, labels compared):
+- last-pass-default, `REP & (h: <5)`: `3;;` HOLDS h = `3` vs FAILS (SEARCHED `3;`@0); `7;3;` HOLDS h = `3` under both;
+  8 / 33 / 33 of 364. With a mandatory label (`/(?:(?<h>\d);)*/`) 0. "A pass that sets nothing keeps the earlier
+  value" holds under carry only.
+- a per-test default AFTER the loop, `REP & (h = 0: <5)`: `7;;` FAILS vs HOLDS (the default fires); 16 / 38 / 66;
+  outside the set, `(h = 9: <5)`: 8 / 33 / 33. INSIDE the loop, item `/(?<h>\d)?;/ & (h = 9: <5)`: 5 / 34 / 34.
+- the every-pass spelling with an OPTIONAL item (rev 24's W1c): carry differs from W1c's old meaning on 5 / 34 / 34,
+  pass-own on 0 (so the re-spelling to the mandatory item is needed under carry only); W2a 0 under both.
+- `some` / `occurs.*` over passes with an optional label (W1d): 0 (they read each pass's own values under both);
+  `occurs.exactly(2, (h: <5))` moves only a reported label (1 / 1 / 1).
+- a bare joint 14 / 18 / 18 of 85; a per-item joint 4 / 6 / 9 (above); under pass-own the bare joint equals
+  joint-last-pass's "last pass's own tuple" candidate (0 of 85).
+- NESTED LOOPS, `/(?:(?:(?<h>\d)?;)*,)*/ & (h: <5)` (WHOLE, a direct evaluator; its carry equals libpcre2 and the
+  engine, its innermost equals the engine's pass-own, 0 of 1,365 each). Two pass-own candidates: the INNERMOST loop's
+  pass unsets h, or EVERY ENCLOSING loop's pass unsets it (ECMAScript's rule for captures in a repeated group):
+  `3;,,` carry HOLDS, innermost HOLDS, every FAILS; `3;;,` HOLDS / FAILS / FAILS; carry vs innermost 6, carry vs
+  every 10, innermost vs every 4, of 1,365 (holds).
+- `occurrences` (a hit is a pass of the one-pattern model): a condition inside, `occurrences(/(?<x>(?<g>a)?b)/ & (g:
+  "a"), min = 1)` on `abb`: carry HOLDS with the last hit `b` (g carried) vs the hits stop at `ab`; 42 / 42 / 42 of
+  364; bare after it the same 42.
+- an alternation in the body, `/(?:(?<a>\d)|(?<b>[a-z]))*/ & (a: <5)`: `3x` HOLDS a = `3` vs FAILS (the last pass
+  set only b); 148 / 221 / 221 of 364.
+- a label set BEFORE the loop and inside it, `/(?<h>\d)?(?:;(?<h>\d)?)*/ & (h: <5)` (duplicate names; a direct
+  evaluator): `3;` carry HOLDS h = `3` vs FAILS; `7;3;` HOLDS vs FAILS (the last pass set none); 18 of 364 (holds).
+  No libpcre2 control (the harness reads captures by unique name).
+(3) A REGEX MODEL. PCRE2 has no reset of a group per pass. (a) An empty alternative that re-sets the label each pass,
+`/(?:(?<h>\d|);)*/` (a branch reset group `(?|(?<h>\d)|())` is the same), gives pass-own's answers for a test (0 / 0 /
+0 of 364, holding and stretch) but NOT with a default: PCRE's conditional sees the empty h as SET, so `(h = 0: <5)`
+differs on 21 / 135 / 225. (b) A helper group marking each pass's start, `/(?:(?<ps>)(?<h>\d)?;)*(?C)/`, the callout
+reading h only when it starts at or after ps: equal to the engine's pass-own bare, with the default and inside the
+body (0 / 0 / 0 each), and differing from the carry (8 / 33 / 33): a regex model with a callout, as `when` and defaults
+have.
+(4) EARLIER RULINGS IT TOUCHES, re-run: last-pass-default (14:30; its "a pass that sets nothing keeps the earlier
+value" is the manager's record and falls: R13;; above); absent-rule (11-16 14:31) clause (1) holds again for bare
+conditions ("a pass that did not set it" is absent); joint-loops (1) (11:17): a bare joint pairs within the LAST pass
+(not every pass); regex-settles (4)'s one-pattern `occurrences`: its hits no longer carry labels; §2.6's THE
+ITERATION'S OWN VALUES (rev 10 LEAN) becomes the rule; PART B's old meanings: all 23 still at 0.
+(5) A LABEL IS NOT A CAPTURE (rulings R4; the owner, on joint-last-pass: "that logic might be justified if you
+differentiate between a label and a capture"). The second candidate read this way: a CAPTURE is regex's (inside rx
+text: `\k<h>`, a conditional group, a callout) and reads what PCRE holds, the carried value included, the regex
+model exactly; a LABEL is the predicate language's (what a condition, a default, a joint, `$h`, `some` / `occurs`
+read) with its own lifetime: a pass's labels are its own, unset when the group took no part in that pass.
+(a) WHAT THE DRAFT SAYS TODAY. It already separates the two in places: §4.3's RULE says "PCRE's own `\k<x>` INSIDE
+rx text sees the last iteration (PCRE's meaning, inside a literal); the expression's `$x` keeps its one meaning at
+every level", and gives a duplicate label inside a loop "the iteration's own values"; §2.6's THE ITERATION'S OWN
+VALUES calls itself "a stated DEPARTURE from PCRE's raw capture state, not from PCRE's parse", and §2.6 refuses an
+`occurrences` argument whose `\k<c>` can read an earlier hit's capture (the raw state) because no per-iteration
+reading can change it. `capture(x) := /(?<${x.label}>${x})/` (§5.3) and the labelled array `[x = R]` IS the rx
+`(?<x>R)` (§3.1): a label is DEFINED by a regex group, so every label today also has a capture. Named groups are
+the literal's labels (§4.1: `x:` constrains, `$x` reads); reading a value out of a pass or hit is the `captures`
+level (§6.1, RULED BY ACCEPTANCE, CF:977). No section states a label's LIFETIME apart from its group's.
+(b) ONE TEXT, TWO ANSWERS (PART Q): on `9:45,10,` libpcre2's capture m after the loop is `45`, and
+`/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/` matches `9:45,10,45` WHOLE; the LABEL m after the loop is `45` under
+the carry and ABSENT under pass-own (WHOLE HOLDS h = `10`, m absent).
+(c) WHEN A LABEL TAKES ITS VALUE. The text fixes the setting point: at the group's close (R.1: a condition "reads the
+labels set so far"; W1a's item condition stands before the `;` that ends the pass). It does not fix the CLEARING
+point; candidates: the start of each pass of the INNERMOST enclosing loop, or of EVERY enclosing loop (the
+nested-loop line above: 4 of 1,365 differ).
+(d) UNDER EXCEPTION-RULE, two views, one sentence each: AS AN EXCEPTION, a label looks like the regex group that
+defines it, so a value that differs from the capture is regex behaving otherwise and needs his allowance (the
+"expected understanding" bar); AS A FEATURE, a label never was regex syntax (it is read only by the language's
+conditions, defaults, joints and `$`), so its lifetime is the definition of a language feature and regex's
+captures stay untouched.
+(e) THE RX MODULE (`docs/design/rx_module.md`): it spells a labelled part `[h = X]` and, by §3.1, that IS
+`(?<h>X)`, so the form carries a capture as well as a label; a label with NO capture would need a new definition
+of `[h = X]` (or a new form), which the note does not give.
 
-### R.9 Reversed rulings and marked sections
+STOP RULE: no two RULINGS decide an answer differently, and no engine fix of rev 24.1 changes an answer the owner
+was shown when he ruled (PART A's 68 lines are unchanged by the fixes; pass-own-labels is a candidate, not a fix, and
+moves 17 of them only when run as the candidate). One manager's restatement conflicts with a
+ruling: sql-picture's atomic clause against regex-settles (5); the ruling wins, the clause is flagged above.
 
-REVERSED (each marked where it stood):
+### R.9 Reversed, narrowed and reopened rulings; marked sections
 
-| ruling | where it stood | reversed by (his words) |
+REVERSED, NARROWED OR REOPENED (each marked where it stood):
+
+| ruling or lean | where it stood | changed by (his words) |
 |---|---|---|
-| 11-15 one-parse reject (CF:953-955; L60) | §4.5 RULE, §0.1 L34, L59, L60, §0.2 ONE READING, §0.3 "PCRE's reading" | branch-scope 11:35: "branch-scope: yes. I like that." |
-| 11-15 note (a), `/(?<a>\d+)(?<b>\d+)/ & (a: 1)` on `123` fails | §4.5 "THE CONDITION FILTERS THE PARSE; IT NEVER STEERS IT" | the same |
-| 11-16 23:48 condition-not's absence clause ("absence never matches, negated or not") | §4.2, §0.1 L30, L82 | absent-under-not 13:25: "Absent under not: use regex rules." |
-| 11-14 Q4 (`x:` = all iterations) and 11-15 search record (2) ("a plain condition = ALL hits") | §2.6, §4.3, §0.1 L36, L52, L55, L88, §0.2 IN, §0.3 pass | last-pass-default 14:30: "last-pass-default: regex." |
-| the retired `all` (11-16 23:18) | §R.4 | revisited by the named every-pass form (spelling open) |
-| rev 23.2's reading (iii) and its scope rule | §3.2, §3.5, §4.1 marks, §4.2, §8 | branch-scope 11:35 |
-| rev 23.2's `when` filter form | §8 | when-meaning 13:55: "when-meaning: agree" |
+| 11-15 one-parse reject (L60) | §4.5 RULE, §0.1 L34, L59, L60, §0.2 ONE READING, §0.3 "PCRE's reading" | REVERSED by branch-scope 11:35: "branch-scope: yes. I like that." |
+| 11-15 note (a), `/(?<a>\d+)(?<b>\d+)/ & (a: 1)` on `123` fails | §4.5 "THE CONDITION FILTERS THE PARSE; IT NEVER STEERS IT" | REVERSED, the same |
+| 11-16 23:48 condition-not's absence clause ("absence never matches, negated or not") | §4.2, §0.1 L30, L82 | REVERSED by absent-under-not 13:25: "Absent under not: use regex rules." |
+| 11-14 Q4 (`x:` = all iterations) and 11-15 search record (2) ("a plain condition = ALL hits") | §2.6, §4.3, §0.1 L36, L52, L55, L58, L61, L88, §0.2 IN, §0.3 pass | REVERSED for bare conditions by last-pass-default 14:30: "last-pass-default: regex." |
+| 11-16 joint-loops (1), per-pass pairing (11:17, its wording 13:29) | §4.3 THE PAIRING RULE, §4.1 OVER A LOOP | REVERSED for bare joints by last-pass-default read literally; asked as **joint-last-pass** |
+| 11-16 absent-rule (LOCKED 14:31): (1) "a pass that did not set it" is an absence; (2) "over several values ... every value ... at least one" | §4.2, the all-question's "one kind of absence" | NARROWED for bare conditions by last-pass-default (R.1.7); (2)'s "it FAILS" holds for the test, NOT inverts it |
+| the retired `all` (11-16 23:18) | §R.4, §1, §3.4, §5.1 | REVISITED (not reversed) by the named every-pass form (spelling open) |
+| rev 23.2's reading (iii) and its scope rule | §3.2, §3.5, §4.1 marks, §4.2, §8 | REVERSED by branch-scope 11:35 |
+| rev 23.2's `when` filter form, and the complement body | §8 | REPLACED by when-meaning: "when-meaning: agree" |
+| §2.5's 2026-11-13 LEAN against a concatenation operator (the manager's) | §2.5, §2.2 | REOPENED by his 14:30 proposal and the 14:55 addendum (item 21) |
+| §2.6 THE ITERATION'S OWN VALUES (rev 10 LEAN) | §2.6, §4.3 | SUPERSEDED as the draft's reading by PCRE's capture state (R.1.7), and KEPT as the second candidate of **pass-own-labels** (the owner's lean) |
+| 13:30's two alternatives ("prove itself" / "requested by name") | rev 24's §R.6, §R.8 | SETTLED by exception-rule (evening): "Exceptions should be requested by using those features explicitly"; regularity is not the bar |
 
-MARKED SECTIONS (each carries a "[REV 24]" mark at its head naming what is superseded): §0 status; §0.1 (rows L16,
-L30, L34, L36, L52, L55, L59, L60, L82, L83, L88); §0.2; §0.3 (pass, PCRE's reading); §2.1; §2.2; §2.6; §3.2; §3.5;
-§4.1; §4.2; §4.3; §4.5; §5.4; §5.6; §6.1; §7.1; §8 (`when`); §12 (head); §13 (head; the C28, O3 and REV 23 blocks).
+MARKED SECTIONS (each carries a "[REV 24]" or "[REV 24.1]" mark at its head or inline, naming what is superseded):
+rev 24's: §0 status; §0.1 (rows L16, L30, L34, L36, L52, L55, L59, L60, L82, L83, L88); §0.2; §0.3 (pass, PCRE's
+reading); §2.1; §2.2; §2.6; §3.2; §3.5; §4.1; §4.2; §4.3; §4.5; §5.4; §5.6; §6.1; §7.1; §8 (`when`); §12 (head); §13
+(head; the C28, O3 and REV 23 blocks). Rev 24.1's (review r40 A8, B5, B7, C5 and the same-kind grep, listed in the
+lane report): §0.1 L1, L25, L30 (edges restated), L39, L58, L61, L83, L95, L100 and the SAME ROWS RE-CHECKED
+paragraph; §1 and §3.4 and §5.1 (`all`); §2.5 (reopened); §2.6 (THE ITERATION'S OWN VALUES); §3.2, §3.5, §4.1 (head
+marks rev 24 listed but did not place; §3.5's condition-or; §4.1's three-valued NOT); §4.3 THE PAIRING RULE; §4.4
+(`NOT (mnum: <3)`); §5.2 (the error under NOT); §6.1 THE ONE READING; §7.1 (counts); §8 (the `when` body paragraph).
 §16 and the changelog are the record and are not marked.
 
 ### R.10 Evidence
 
-`docs/dev/lanes/predspec24_evidence/` (its CLAUDE.md lists the files): `predspec24_model.py` re-uses lane lastpass's
-engine (itself pathimpact's path enumerator over Python `re`) in memory, adds rev 24's nodes, and runs PARTS A-F.
-Validation (each `timeout 1800`, one at a time, from `$PCREC_TMPDIR/scratch/predspec24`):
-- forward run: `predspec24_model.out` (committed). SUMMARY: catalogue 68 lines, MOVED 28; printed rev 23.2 answers
-  109, mismatches 0; old meanings 20 rows, 20 at 0; libpcre2 models 20, 20 equal.
-- `PREDSPEC24_SWAP=1` (PCRE's path order enumerated by another route, the engine's lists reversed and re-sorted):
-  identical output but for the ORDER line.
-- `PREDSPEC24_SABOTAGE=1` (a bare looped label reads the FIRST pass; with SWAP, path order reversed): the counts
-  move and the PCRE2 checks fail (numbers in the lane report).
-- `PREDSPEC24_RULES=23.2`: NOW is rev 23.2's rules: MOVED 0, printed mismatches 0.
-- Premise: lanes pathimpact, rxmodel and lastpass's engines re-run byte-identical to their committed .out files.
+`docs/dev/lanes/predspec241_evidence/` (its CLAUDE.md lists the files): `predspec241_model.py` is lane predspec24's
+engine (itself lane lastpass's over pathimpact's path enumerator over Python `re`) with five fixes, each where it
+disagreed with this text and with PCRE2 (review r40): FIX-A1 a body condition reads the labels set so far; FIX-A2 a
+loop exports every label its item sets, the last setting; FIX-A3 `&` and `!B` run the right operand WHOLE on the
+stretch's own text; FIX-A5 every "(labels compared)" key carries labels in WHOLE too; FIX-C1 the order swap (which
+reversed text pools and order-free folds, nothing that carries meaning) is REPLACED by the ORDER CHECK. Each fix was
+checked by re-running the critic's script against the fixed engine: A1 (PCRE2's W1c vs the engine) 5 / 34 / 34 of
+364 -> 0, the occurrences twin 42 -> 0; A2 300 / 693 of 1,365 -> 0 / 0; A3 `A & B` vs `A & (0: B)` with an
+anchored B 0 / 1,344 / 1,344 -> 0; A5 the WHOLE key now prints E5's 117. Validation (each `timeout 1800`, one at a
+time, from `$PCREC_TMPDIR/scratch/predspec241`):
+- forward run: `predspec241_model.out` (committed). SUMMARY: catalogue 68 lines, MOVED 28; printed rev 23.2 answers
+  109, mismatches 0; old meanings 23 rows, 23 at 0; libpcre2 models 38, 38 equal; order check 3 of 3 differ.
+- ORDER CHECK (in the forward run): each `&` model against the engine with its operands swapped DIFFERS (V19 117 /
+  414 / 414; V21 and V22 0 / 1,008 / 1,197 of 1,365): a check that can fail.
+- `PREDSPEC241_SABOTAGE=1` (a bare looped label reads the FIRST pass; a loop item does not carry; `&` runs its right
+  operand outer): libpcre2 models 19 of 38 equal, order check 0 of 3 differ, MOVED 37: caught.
+- `PREDSPEC241_RULES=23.2`: NOW is rev 23.2's rules: MOVED 0, printed mismatches 0 (libpcre2 15 of 38 equal: rev
+  23.2 is not regex behaviour).
+- Premise: lane predspec24's engine re-runs byte-identical to its committed .out; the critics' scripts for r40 A1,
+  A2, A3 and A5 reproduce the review's numbers before the fixes.
+- PART Q's pass-own-labels and operand-context candidates run inside the forward run (the context `passown`: no
+  carry inside a loop, after the loop the last pass's own value; `AndCtx`: the operand in the subject, end tied),
+  each with its libpcre2 or direct-evaluator controls.
+- LIMIT, stated: a condition inside an ATOMIC part inside a loop item that reads a label an earlier pass set is not
+  covered (the engine's atomic node judges its conditions before the loop fills in the carried labels).
 
-### R.11 THE RULING TABLE (rev 24)
+### R.11 THE RULING TABLE (one row per COND-FAMILY 2026-11-17 entry; review r40 B6, built from RULING-11)
 
-| ruling or reading | status in rev 24 | by |
-|---|---|---|
-| branch-scope: reading (ii); a condition is one more piece of the pattern | RULED, applied (R.1) | 2026-11-17 11:35 |
-| backtracking on a rejecting condition is the general behaviour | RULED | 11:50 |
-| atomic = PCRE's atomic group; spelling | meaning RULED (regex-settles (5)); spelling OPEN | 11:35; 13:25 |
-| regex-settles (1)-(5) | RULED, applied (R.1.4, R.1.5, R.1.9) | 13:25 |
-| absent-under-not | RULED; reverses 11-16 23:48's absence clause | 13:25 |
-| when-meaning: `x & (NOT c \| p)` | RULED; conditional spelling OPEN | 13:55; 14:20 |
-| whole-text | ADOPTED if legal: legal in WHOLE (§R.5) | 14:05 |
-| last-pass-default | RULED, applied (R.1.7); old meanings §R.4 | 14:30 |
-| a library element beyond the user's level | RULED: compile ERROR | 12:10 |
-| a constant is an rx with a count-1 enumeration | RULED | 12:15 |
-| `A & B` = `A & (0: B)` | a LAW, checked (R.1.4), no language change | 12:25 (his question) |
-| noted exceptions | RULED: noted, not excluded; asked for by name | 13:20; 13:30 |
-| options in the source, scope, host cap | IDEAS (item 20) | 12:05; 12:10 |
-| rx module, concatenation | FILED (item 21) | 14:30 |
-| row-is-match, default-scope, default-value, drop-mark, label-twice, joint-loops, optional-as-loop, the 11-15 `&` (one stretch) | STAND | 11-16; 11-15 |
-| 11-15 one-parse reject; note (a) | REVERSED | 11:35 |
-| 11-14 Q4; 11-15 "a plain condition = ALL hits" | REVERSED for bare conditions | 14:30 |
-| three-valued logic; record-under-not; condition-or rule; hits-committed; join-order; polarity-rule; looped-warning; sql-picture | the MANAGER'S READINGS, §R.8 | 13:25-14:35 |
-| repeated-means | MANAGER'S RULING, owner told | 11-16 22:58 (4) |
-| complement-place; nested-complement; lookahead-labels; group-truth / pass-table in named forms | OPEN, §R.8 | rev 23.2 |
-| not-is-complement, first half | STANDS | 11-16 17:29 |
+| # | entry (time) | status in rev 24.1 | where |
+|---|---|---|---|
+| 1 | whole-text asked, PARKED (03:01 (1); 11-17 00:10-00:25) | superseded by rows 22-23 | history |
+| 2 | item 14 filed (11-16 23:54) | IDEA, filed; atomic's target | R.1.4; **atomic-search** |
+| 3 | branch-order, the manager's ruling (03:01 (3)) | retired (withdrawn 03:47; dead 11:35) | §R.8 dissolved |
+| 4 | branch-order WITHDRAWN; branch-scope asked, three readings (03:47 (1)) | retired by row 8 | history |
+| 5 | record-under-not asked (03:47 (2)) | dissolved (row 20's MINE, closed by its regex model) | R.1.5 |
+| 6 | LESSON: a rule that decides answers and is not his words is asked, not told (03:47 (3)) | STANDS (process); governs every manager reading | G24-5, §R.8 |
+| 7 | branch-scope LEAN (ii) + atomic (11:30) | superseded by row 8 | history |
+| 8 | branch-scope (ii) RULED; atomic WANTED, spelling open; one-parse reject and note (a) REVERSED; row-is-match stands (11:35) | RULED / REVERSED / OPEN | R.1, R.1.4, §R.9 |
+| 9 | 11:35 MINE: holding = some path; `&` distributes; never admits; hits re-split; the cost he asked for on 11-15 expected lower, UNMEASURED | derivations checked by the engine: `&` distributes over a LEFT `\|` only (R.1.4); "never admits" scoped (R.1.3); the COST still UNMEASURED (owed to him since 11-15) | R.1.3, R.1.4 |
+| 10 | backtracking is THE GENERAL BEHAVIOUR (11:50) | STANDS | §R preamble |
+| 11 | sql-picture framing (11:50, MINE) | manager's restatement; atomic clause refuted | **sql-picture** |
+| 12 | options in the language (12:05) | IDEA, item 20 | R.1.12 |
+| 13 | a library element beyond the level = COMPILE ERROR (12:10); MINE: the error names element, construct and opt-in | RULED; MINE part unruled | R.1.12 |
+| 14 | a constant = a count-1 enumeration (12:15); MINE: level = f(enumeration), the line is the size budget | RULED; MINE part unruled | R.1.12 |
+| 15 | `A & B` vs `A & (0: B)` (12:25, a question) | answered by the LAW, checked; its places: **zero-place** | R.1.4 |
+| 16 | the regex-model direction (12:55), with "where no regex model exists ... bring that to him" | STANDS; its second half is G24-5 | R.0, §R.8 |
+| 17 | occurrences model "Correct?" (13:10) + "Formatting lost some operators" (13:15) | settled by row 20 (4); character for character UNCONFIRMED | R.1.9 |
+| 18 | exceptions noted, not excluded (13:20) | STANDS | §R.6 |
+| 19 | an exception proves itself (A), or is requested by name (B) (13:30) | settled by row 31 | §R.6 |
+| 20 | regex-settles (1)-(5); absent-under-not (13:25); MINE: three-valued retired, record-under-not dissolves, defaults for "present and not", polarity-rule (his to confirm), join-order told 13:45 | RULED; reverses condition-not's absence clause; MINE: closed where a regex model entails it, else asked (**polarity-rule**, **join-order**) | R.1.4-R.1.6, R.2 |
+| 21 | whole-text model (13:55) | superseded by row 22 | history |
+| 22 | whole-text adopted IF LEGAL; `fail` not adopted (14:05) | ADOPTED as a requested feature (row 31); the searched shape has no ruled spelling | R.1.11, §R.5 |
+| 23 | a 2- or 3-argument conditional as a rewrite (14:15) | IDEA, filed with when-meaning | R.1.10 |
+| 24 | `?` not assumed (14:20) | STANDS (spelling constraint) | R.1.10 |
+| 25 | when-meaning questions (14:25): PCRE conditional groups not built in pcrec, VM-only | facts, no ruling | R.1.12 |
+| 26 | when-meaning RULED (stamped 13:55, after 14:25 per the CORRECTION) | RULED | R.1.10 |
+| 27 | last-pass-default RULED (14:30); old meanings defined AND TESTED; reverses Q4 and search (2); `all` REVISITED | RULED; narrows joint-loops (1) and absent-rule (1), (2) for bare conditions; old meanings §R.4 | R.1.7, §R.4, §R.9 |
+| 28 | rx module + concatenation (14:30, "same message") | PROPOSAL, item 21 | §R.8 |
+| 29 | ADDENDUM about 14:55: reopens §2.5's lean; `?` as a quantifier operator | reopened lean; IDEA | §2.5 mark |
+| 30 | CORRECTION (the manager, review r40 B4): when-meaning's time; the ONE `|` wording is the manager's; the 11:50 sentence in full; "each row remembers its branch" is pathimpact's | applied | R.1.2, R.1.5, R.1.10 |
+| 31 | exception-rule RULED (the evening): regex by default; an exception proves its WORTH, is requested by its own feature, need not be regular; CORRECTS the manager's 13:30 reading | RULED; settles row 19; whole-text ADOPTED as a requested feature | §R.6, R.1.9, R.1.11, §R.5 |
+| 32 | the owner's LEAN on joint-last-pass / pass-own-labels (relayed to the lane as rulings R3): "I think most would expect that a missing group would unset"; asks for the ramifications | LEAN, not a ruling; ramifications run | §R.8 **pass-own-labels** |
+| - | STAND from 11-15 / 11-16: row-is-match, default-scope, default-value, drop-mark, label-twice, optional-as-loop, the 11-15 `&` (one stretch), not-is-complement's first half | STAND | R.1.1, R.1.4, R.1.6 |
+| - | repeated-means (the manager's ruling, owner told 11-16 22:58 (4)) | MANAGER'S RULING | R.1.8 |
 
 ## 0. Status, goals, standing questions
 
-**Status: DRAFT rev 24 (lane predspec24, 2026-11-17: the owner's 2026-11-17 rulings, regex behaviour; NOT STABLE pending §R.8; §R is the condition model and wins over every later section; sections it contradicts carry a "[REV 24]" mark, §R.9; earlier: rev 23 lane predspec23, 23.1 predspec23c, 23.2 predspec23d). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
+**Status: DRAFT rev 24.1 (lane predspec241, 2026-11-17: review r40's fixes on rev 24, lane predspec24's application of the owner's 2026-11-17 rulings, regex behaviour; NOT STABLE pending the owner's answers, §R.8; §R is the condition model and wins over every later section; sections it contradicts carry a "[REV 24]" or "[REV 24.1]" mark, §R.9; earlier: rev 23 lane predspec23, 23.1 predspec23c, 23.2 predspec23d). NOT a ruling, NOT scheduled, NO BUILD GO** (Frank 2026-11-13:
 #6 not scheduled; 2026-11-15, relayed in the predspec5 brief: "the predicate work is not a go to build as we are
 still in design"). Purpose (Frank 2026-11-14): "create a preliminary predicate spec doc with our latest ideas for the
 purpose of critical analysis. Provide reasoning." It consolidates the dated notes in
@@ -1101,7 +1422,7 @@ them (RULING-9): A SET NEVER CONTAINS ABSENCE, kept (D is per label); MEANING, N
 run under the program DOM (§4.2 THE CANDIDATES); SIMPLIFYING SEMANTICS, record = `&` at every depth kept; SAVING
 PEOPLE, the SILENT list is `all(((h, m): R))` on incomplete items and the label controls in searched mode (§4.2,
 §4.3); the one new GAP is §0.1 L97). REV 23 RE-GRADING (lane predspec23b): A SET NEVER CONTAINS ABSENCE, kept
-(absent is UNKNOWN, never a member, §R.1.5); MEANING, NOT SPELLING holds for conditions in the
+(absent is UNKNOWN, never a member, §R.1.5); MEANING, NOT SPELLING holds for conditions in the [REV 24.1: absent is not UNKNOWN: a test on it FAILS and NOT inverts it (R.1.5)]
 narrower, same-TABLE form (a condition reads only its row, so two statements with the same table answer every
 condition alike: the manager's re-derivation, §R.1.3); rev 23.1 (review r33 F13) withdraws "BY CONSTRUCTION" for the
 ruled (*) form, which has not been checked against the compile rules keyed on repeatedness (`predicates_future.md`
@@ -1139,7 +1460,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 
 | # | forms | verdict | diagnostic / reason | source |
 |---|---|---|---|---|
-| L1 | `a & b & c` in any order or grouping, incl. transforms: `alts & !startsWith("#") & length(<=20)` vs `alts & length(<=20) & !startsWith("#")`; `(x & padded(S)) & T` vs `x & (padded(S) & T)` | SAME | `&` is pure intersection (§2.2, OWN-1 ruling). Rev 23.1 (review r33 F6 (d); fix-induced sweep): with a complement or a NOT condition anywhere in the chain it stays SAME: a complement filters the rows of the chain's non-complement operands wherever it is written (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10), and Kleene AND is order-free | OWN-1, RUL-11 |
+| L1 | `a & b & c` in any order or grouping, incl. transforms: `alts & !startsWith("#") & length(<=20)` vs `alts & length(<=20) & !startsWith("#")`; `(x & padded(S)) & T` vs `x & (padded(S) & T)` | SAME | `&` is pure intersection (§2.2, OWN-1 ruling). Rev 23.1 (review r33 F6 (d); fix-induced sweep): with a complement or a NOT condition anywhere in the chain it stays SAME: a complement filters the rows of the chain's non-complement operands wherever it is written (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10), and Kleene AND is order-free | OWN-1, RUL-11 [REV 24.1: holding is order-free; the reported LABELS and, with a lazy operand, the reported stretch depend on the order: **join-order**, §R.8 (117 / 414 / 414 of 1,365, E5; 0 / 1,008 / 1,197 with a lazy operand)] |
 | L2 | a binding vs its expansion: `m := /\d\d/ & padded(between(1, 12))` then `m & T` vs `/\d\d/ & padded(between(1, 12)) & T` | SAME | | OWN-1 (c) |
 | L3 | `isodate & (year: S, month: 2)` vs `isodate & (year: S) & (month: 2)` | SAME | the `( )` RECORD holds its entries together; the AND comes from the record, not the comma (§4.1, §5.4) | C22, CF:866 |
 | L4 | `(major: 1, minor: >=4)` vs `(major: 1 & minor: >=4)` | DIFFERENT: ERROR | the second is a compile ERROR: a label inside a value (`major: (1 & minor: >=4)`) | C22 |
@@ -1163,12 +1484,12 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L22 | `(x: <200 \| >900)` vs top-level `x & <200 \| >900` | DIFFERENT: GAP | inside a condition `\|` binds tighter than `:` (x in either range); at top level D196 parses `(x & <200) \| >900`, a full rx that widens the program; `precedence.section` (proposed, PLAN) | C22, RUL-15 |
 | L23 | `(x: <200, y: >55)` vs `[(x: <200), (y: >55)]` | DIFFERENT: BY DESIGN | AND vs OR, said by the BRACKET (`( )` all together, `[ ]` any one; §5.4); the comma means "next entry" in both, so the look-alike the review flagged (one comma, two logics) is gone; whether the bracket difference still needs a diagnostic: LEAN no (§13 O30 RESOLVED, O38) Rev 20: kept; the answers move on zero passes of a loop (a plain condition now fails there; lane absimpact (RZ): 5 of 1,110) | OWN-9, CF:863 |
 | L24 | `x := /a\|b\|c/`: `/${x}\|d/` vs `x \| /d/` vs `/a\|b\|c\|d/` | DIFFERENT: GAP | one language, different entries: `[2]` and the default-level `.index` differ; `array.hole` (proposed, PLAN) | OWN-8 |
-| L25 | `/a\|b/` vs `/b\|a/` | DIFFERENT: BY DESIGN | SAME under `& \| !` as MEMBERSHIP (one language); differ under `[]`, `.index`, PCRE priority and a CONDITION on a label of the operand (§3.4 and §4.5: structural tools and conditions read the spelling; L60); whether a documented structural difference also needs a diagnostic: §13 O38 | §3.4 |
+| L25 | `/a\|b/` vs `/b\|a/` | DIFFERENT: BY DESIGN | SAME under `& \| !` as MEMBERSHIP (one language); differ under `[]`, `.index`, PCRE priority and a CONDITION on a label of the operand (§3.4 and §4.5: structural tools and conditions read the spelling; L60); whether a documented structural difference also needs a diagnostic: §13 O38 | §3.4 [REV 24.1: a rejecting condition now sends the pattern to the next branch in PCRE's order (branch-scope 11:35), so the order decides which path is REPORTED, never whether a single match holds where no atomic part or lookahead stands (§R.1.3)] |
 | L26 | `enumerate(/[-\/.]/)` vs `enumerate(/[.\/-]/)` | SAME | class members in codepoint order (§5.5) | OWN-10 |
 | L27 | `X[<4]` vs `X[1\|2\|3]` | SAME | numeric filters range over positions 1..n (§3.2) | RUL-9 |
 | L28 | `$x & S` as a condition vs `(x: S)` | DIFFERENT: ERROR | the first is an ERROR "did you mean `x: ...`?" (§4.1) | §4.1 |
 | L29 | `a := 256` vs `b := "256"` under `<a` / `<b` | DIFFERENT: GAP | GAP; OPEN (§13 O27) | OWN-3 |
-| L30 | `!(x: S)` vs `(x: !S)` | SAME on a set-once label (answers and, rev 23.1, compile verdict); DIFFERENT: BY DESIGN on a repeated label (rev 23) | REV 23 (**condition-not**, 23:48): `!(x: S)` is the three-valued NOT, legal. On an absent x both are UNKNOWN (dropped); on a set-once x they are one question; on a repeated x NOT is "not every pass", the set complement "every pass in !S" (on `/(?:(?<h>\d)?;)*/` WHOLE: 20 of 364 differ, first `7;;`). The pattern difference `P & !(P & (x: S))` is the third spelling, keeping absent rows (§R.3; `predspec23_model.out` PART 2). THE EDGES (rev 23.1, review r33 F8, the manager's disposition; rev 23.2: the draft's reading, **polarity-rule**): at an EMPTY S (`NOT (x: <0)` vs `(x: !<0)` on a digit label) both mean "x is present" ON A SET-ONCE LABEL and both are legal (on an always-set label both are constant TRUE and warn, §R.2 POLARITY; on a REPEATED label they part: "some pass sets x" vs "every pass sets x", 30 of 364 WHOLE, first `3;;`, 0 SEARCHED, `predspec23d_model.out` PART Y, rev 23.2, review r34 D2); at a FULL S (`NOT (x: <10)` vs `(x: !<10)`) both can never keep a row and both are the §5.2 error (the error judged after polarity and default, §R.2); answers 0 of 341 differ at both edges on the set-once pool, both modes (`predspec23c_model.out` PART 9) | condition-not 23:48 |
+| L30 | `!(x: S)` vs `(x: !S)` | SAME on a set-once label (answers and, rev 23.1, compile verdict); DIFFERENT: BY DESIGN on a repeated label (rev 23) | REV 23 (**condition-not**, 23:48): `!(x: S)` is the three-valued NOT, legal. On an absent x both are UNKNOWN (dropped); on a set-once x they are one question; on a repeated x NOT is "not every pass", the set complement "every pass in !S" (on `/(?:(?<h>\d)?;)*/` WHOLE: 20 of 364 differ, first `7;;`). The pattern difference `P & !(P & (x: S))` is the third spelling, keeping absent rows (§R.3; `predspec23_model.out` PART 2). THE EDGES (rev 23.1, review r33 F8, the manager's disposition; rev 23.2: the draft's reading, **polarity-rule**): at an EMPTY S (`NOT (x: <0)` vs `(x: !<0)` on a digit label) both mean "x is present" ON A SET-ONCE LABEL and both are legal (on an always-set label both are constant TRUE and warn, §R.2 POLARITY; on a REPEATED label they part: "some pass sets x" vs "every pass sets x", 30 of 364 WHOLE, first `3;;`, 0 SEARCHED, `predspec23d_model.out` PART Y, rev 23.2, review r34 D2); at a FULL S (`NOT (x: <10)` vs `(x: !<10)`) both can never keep a row and both are the §5.2 error (the error judged after polarity and default, §R.2); answers 0 of 341 differ at both edges on the set-once pool, both modes (`predspec23c_model.out` PART 9) | condition-not 23:48 [REV 24.1: two-valued (13:25): NOT holds on an ABSENT label, `!S` fails there, so the pair is DIFFERENT on an optional label; on a looped label both read the last setting; rules rev 24.1, reported row: set-once optional label, empty S 1 / 130 / 148 and full S 1 / 220 / 220 of 341; REP, empty S 6 / 248 / 364 of 364 (PART D D16; rev 23.2: 0, 0, 30 / 94 / 94); §R.3] |
 | L31 | `some((g: "x", h: 1))` vs `some((g: "x")) & some((h: 1))` over a repeated label (`occurrences` hits included) | DIFFERENT: BY DESIGN | SAME HIT BY RECORD: one record = all its entries on the SAME iteration; two `some` calls may be met by different iterations (§4.3; on hits `x2 y1` of `/(?<g>[xy])(?<h>\d)/`: the first false, the second true). Replaces rev 7's GAP row (two `occurs.some` vs one `some(s)`); §13 O29 RESOLVED | CF:915-917 (accepted at CF:905) |
 | L32 | `/${q}/m` vs the inlined text of `q` | DIFFERENT: GAP | GAP; `flag.hole` (proposed); OPEN (§13 O32) | Q1R-11 |
 | L33 | `\k<s>` vs `${$s}` vs `each(..., enumerate(...))` on a finite label | DIFFERENT: GAP | different levels today; OPEN (§13 O34) | RUL-7 |
@@ -1177,7 +1498,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L36 | `(x: S)` vs `(x = d: S)` (d in S) on a repeated label (rev 23; rev 22's row compared `all((x: S))`, retired 23:18) | DIFFERENT: BY DESIGN | the default spells "every pass, possibly none": on zero passes and on a pass lacking x the default reads d (§R.1.7; `(n: <5)` vs `(n = 0: <5)` on the empty text: FAILS / HOLDS in both modes, `predspec23_model.out` PART 5) | all-question 23:18 |
 | L37 | `(wname.index: ==wd)` vs `(b: >$a)` | DIFFERENT: ERROR | REV 20: `(wname.index: ==wd)` is the bare-binding error: on the value side a bare name is a BINDING (here the computed label's macro, which no comparison atom takes), and a label's value is read `$wd`; so E-RFC writes `==$wd` and E-CAL `<=$dim` (§13 C13 RESOLVED) | OWN-11, r8 P6-11 |; colon-scope CF 11:32
 | L38 | `isodate(x).year` vs `(x & isodate).year` | DIFFERENT: ERROR | the first is a compile ERROR (a pattern takes no arguments; hint "write `x & isodate`"); whether `.year` of `x & isodate` is a value or a pattern: OPEN (§13 C29) | RUL-8, 2026-11-15 RULING |
-| L39 | `A & B` vs `B & A` | SAME | BOTH operands are filter roles, matched whole on the same span (RULED, CF:1054-1062 on main, rev 13; review r14 F1: a one-sided "filter side" would break this row), so the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2). Rev 23.1 (review r33 F6 (d)): a complement on either side (`!q & t2` vs `t2 & !q`) is the same program; the first non-complement operand reports (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10) | C1 ruling |
+| L39 | `A & B` vs `B & A` | SAME | BOTH operands are filter roles, matched whole on the same span (RULED, CF:1054-1062 on main, rev 13; review r14 F1: a one-sided "filter side" would break this row), so the same subjects are accepted; the left operand picks the REPORTED span among overlapping qualifiers (D196), so the report may differ (§2.2). Rev 23.1 (review r33 F6 (d)): a complement on either side (`!q & t2` vs `t2 & !q`) is the same program; the first non-complement operand reports (§R.1.4) (the manager's disposition of review r33 F6 (d), not the owner's; rev 23.2, review r34 F-DOC-2: the draft's reading, **complement-place**, §R.8 item 10) | C1 ruling [REV 24.1: SAME for holding only; labels and, with a lazy operand, the stretch differ (**join-order**, §R.8)] |
 | L40 | `isodate(year: S)` vs `isodate & (year: S)` | DIFFERENT: ERROR | the first is a compile ERROR: a pattern has no parameters; hint "write `isodate & (year: ...)`"; a parameterised pattern is a macro, `date_in(years) := isodate & (year: years)` (§5.2) | CF:744 |
 | L41 | `/\w+/ & /^foo/` vs `/\w+/ & startsWith("foo")` | DIFFERENT: WARNING | `anchor.whole` fires on the `^` of `/^foo/` (rev 13 as `anchor.operand`, CF:1054-1062 on main; rev 11-12 class BY DESIGN). The directly applied `/^foo/` matches its stretch whole, so the first is the ONE word `foo` (its `^` is the word's start, never the subject's, and adds nothing); the second is every word starting `foo`. Searched in `foobar` the first reports `foo` (D196 tries the shorter end), the second `foobar`. Rev 10 said SAME (review r12 SIMULATE-1) | CF:761; whole-match: CF:991-993 (accepted at CF:990), restated as the ONE rule (CF:1011, accepted at CF:1006; rev 12) |
 | L42 | `n := count((name: S))` then `headers & (n: ==1)` vs `headers & occurs.exactly(1, (name: S))` | SAME | one count, two spellings; `count()` is refused only over the BUDGET, naming the `occurs` form (§8) | CF:823 (LEAN), CF:832 |
@@ -1196,10 +1517,10 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L55 | `(m: occurrences(r) & (g: S))` vs `(m: occurrences(r, min = 1) & (g: S))` on a span with NO hit | SAME | both reject on `xyz` with `r := /ab(?<g>[xy])/` (the first because the zero-hit null pass row makes `(g: S)` UNKNOWN, the second at `min = 1`); 0 of 5,461 (lane absimpact (OC), WHOLE). REV 23: the marked half retires with the mark; with a default `(g = d: S)`, d in S, the first accepts | absent-rule CF 14:31; drop-mark 21:49 |
 | L56 | `/(?<n>\d)?x/` vs `/(?<n>\d)*x/` under `(n: <5)`, on the span `x` | SAME | ONE KIND OF ABSENCE (**absent-rule**, CF 14:31): n is absent in both, so `(n: <5)` FAILS in both and `(n = 0: <5)` HOLDS in both (rev 23: the mark half retires) | absent-rule CF 14:31 |
 | L57 | `occurrences(x, min = 2)` vs `occurrences(x) & occurs.at_least(2, (hit: /(?s).*/))` | DIFFERENT: ERROR | under PCRE's reading `{2,}` RE-CUTS the hits to reach two: `x := /aab\|a/` on `aab` gives one hit (`aab`@0) at `min` 0 or 1 but two (`a`@0, `a`@1) at `min = 2` (libpcre2 and Python's `re` agree, §2.6), while the `occurs` form counts the default hits (one: rejects). `min` is 0 or 1; a larger `min` is a compile ERROR naming the `occurs.at_least` form (§13 O58 RESOLVED) | `min` 0 or 1: RULED (CF:963-966); the error for other values: LEAN (the record: the manager's reading, CF:968-969) |
-| L58 | `contains(x)` vs `occurrences(x, min = 1)` | SAME | ONE definition (§2.6, §8): `contains(x) := occurrences(x, min = 1)`, so they accept the same values AND read x's labels the same way (leftmost hits, a plain condition = every hit). Rev 8's own body `/(?s).*${x}.*/` accepted the same values but, under the one reading, would read x's labels at the RIGHTMOST occurrence (its greedy lead; `contains(/ab(?<g>[xy])/)` on `abx aby` gives g = `y`, libpcre2), a look-alike the one definition removes. ANSWER MOVE (review r10 FIXB-3): a condition on x's labels after `contains` now reads EVERY hit: `(m: contains(r) & (g: "x"))` on `abx aby` (`r := /ab(?<g>[xy])/`) ACCEPTED under rev 8 (a parse with g = x existed) and REJECTS from rev 9 (hit 2 has g = y); rev 8's meaning is `contains(r & (g: "x"))` or `contains(r) & some((g: "x"))` (L61) | CF:944-945 (note (b)); LEAN (this document) |
+| L58 | `contains(x)` vs `occurrences(x, min = 1)` | SAME | ONE definition (§2.6, §8): `contains(x) := occurrences(x, min = 1)`, so they accept the same values AND read x's labels the same way (leftmost hits, a plain condition = every hit). Rev 8's own body `/(?s).*${x}.*/` accepted the same values but, under the one reading, would read x's labels at the RIGHTMOST occurrence (its greedy lead; `contains(/ab(?<g>[xy])/)` on `abx aby` gives g = `y`, libpcre2), a look-alike the one definition removes. ANSWER MOVE (review r10 FIXB-3): a condition on x's labels after `contains` now reads EVERY hit: `(m: contains(r) & (g: "x"))` on `abx aby` (`r := /ab(?<g>[xy])/`) ACCEPTED under rev 8 (a parse with g = x existed) and REJECTS from rev 9 (hit 2 has g = y); rev 8's meaning is `contains(r & (g: "x"))` or `contains(r) & some((g: "x"))` (L61) | CF:944-945 (note (b)); LEAN (this document) [REV 24.1: still one definition; under rev 24 `contains(r) & (g: "x")`, r := `/ab(?<g>[xy])/`, on `abx aby` HOLDS g = `x` (rev 23.2: FAILS): the condition re-enters the one-pattern loop (PART D D13)] |
 | L59 | `/(?<a>\d+)(?<b>\d+)/ & (a: "1")` vs the constraint written into the pattern, `/(?<a>1)(?<b>\d+)/`, on `123` | DIFFERENT: WARNING | a condition READS PCRE's parse of the pattern it is laid against and never steers it (§4.5): that parse gives a = `12`, so on the WHOLE SPAN `123` the first rejects; a constraint written INTO the pattern changes the pattern, whose parse then gives a = `1`, so the second accepts. `label.ambiguous` names a and shows the witness; the author validates the intended reading (§5.6). SEARCHED in the subject `123`, the first reports `12` (the parse of `12` gives a = `1`): the condition never steers the PARSE of a span, but by D196 it selects which SPAN is reported (§4.5; review r10 FIXB-7 (d)) | CF:953-955; the no-steering statement: LEAN (this document) |
 | L60 | `/(?<a>\d+)(?<b>\d+)/ & (a: "1")` vs `/(?<a>\d+?)(?<b>\d+)/ & (a: "1")` on the span `123`; `A \| B` vs `B \| A` under `(l: "a")` with `A := /(?<l>a)a/`, `B := /(?<l>aa)/`, on `aa` | DIFFERENT: WARNING | ONE LANGUAGE, TWO SPELLINGS, TWO PARSES (review r10 FIXB-1): membership is extensional (§2.2), but a CONDITION reads the parse of the spelling it is laid against (§4.5), so greedy vs lazy (a = `12` vs `1`: the first rejects, the second accepts) and union order (l = `a` vs `aa`: the first accepts, the second rejects) give different answers. `label.ambiguous` names a (resp. l) in both programs. A CONSEQUENCE of the ruled one reading, told to the owner (not asked). libpcre2 10.46, matched whole (PCRE2_ANCHORED with PCRE2_ENDANCHORED) | CF:953-955 (the one reading); the statement: LEAN (this document) |
-| L61 | `(m: contains(r & (g: "x")))` vs `(m: contains(r) & (g: "x"))`, `r := /ab(?<g>[xy])/`, on `abx aby` | DIFFERENT: BY DESIGN | a condition INSIDE the argument narrows WHAT IS SEARCHED FOR (the hits are the occurrences of `abx`: one hit, accepts); a condition on the OPERAND side reads EVERY hit (hit 2 has g = y: rejects). The same pair for `occurrences`: `occurrences(r & (g: S))` changes the hits, `occurrences(r) & (g: S)` tests every hit. The existential spelling over the hits is `some((g: "x"))` (L52) | review r10 FIXB-3 (manager's pick); LEAN |
+| L61 | `(m: contains(r & (g: "x")))` vs `(m: contains(r) & (g: "x"))`, `r := /ab(?<g>[xy])/`, on `abx aby` | DIFFERENT: BY DESIGN | a condition INSIDE the argument narrows WHAT IS SEARCHED FOR (the hits are the occurrences of `abx`: one hit, accepts); a condition on the OPERAND side reads EVERY hit (hit 2 has g = y: rejects). The same pair for `occurrences`: `occurrences(r & (g: S))` changes the hits, `occurrences(r) & (g: S)` tests every hit. The existential spelling over the hits is `some((g: "x"))` (L52) | review r10 FIXB-3 (manager's pick); LEAN [REV 24.1: now SAME: 0 / 0 / 0 of 85 (rules rev 24.1, reported row; rev 23.2: 20 / 20 / 20; PART D D13): a condition after `contains` re-enters it] |
 | L62 | `occurrences(/(?:(?<c>a)\|b)c(?(<c>)a\|d)/)` vs find-all of the same pattern on `acabcd` | DIFFERENT: ERROR | PCRE's loop carries a group's capture from an EARLIER iteration into a backreference or conditional of a later one (the loop finds ONE hit `aca`; find-all finds `aca`@0 and `bcd`@3), so an `occurrences` argument with a backreference or conditional that can run while its group is UNSET IN THE CURRENT HIT (here `(?(<c>)...)` on the `b` path) is REFUSED, the nullable refusal's sibling (§2.6 THE TWO ARGUMENT REFUSALS); an argument whose group is set before its reader on every path (`/(.)\1/`) is admitted (rev 11, review r12 SIMULATE-2) | review r10 SIM-1 (manager's pick); the narrowing: review r12 SIMULATE-2; LEAN |
 | L63 | `contains(/err$/)` vs `endsWith("err")` on the span `err\n` | DIFFERENT: BY DESIGN | `$` is PCRE's `$` with the span as the subject (§11 THE ONE WHOLE-MATCH RULE): it holds at the value's end AND before a final newline, so `contains(/err$/)` ACCEPTS `err\n` (the hit `err`, then the tail gap takes the `\n`), while `endsWith("err")` must END with `err` and REJECTS it (libpcre2 10.46 and Python `re`, `predspec12_anchor.out`). The exact end is PCRE's own `\z`: `contains(/err\z/)` = `endsWith("err")` (both reject `err\n`). Rev 10/11 said SAME, by an exact-end reading of `$` (review r10 SIM-5) that rev 12 withdraws as an extra rule; whether a warning should name a `$` that can meet a final newline: §13 O38 | rev 12: "plain PCRE with the value as the subject, no extra rule" (CF:1013-1014, accepted at CF:1006); the withdrawal of the exact end: LEAN (this document) |
 | L64 | `alt.x[1]` vs `(x[1]: S)` (and `$x[1]`) on `alt := /(?J)(?:(?<x>a)\|(?<x>b))+/` | DIFFERENT: BY DESIGN | `[n]` reads BY POSITION (§5.4 `[ ]` row): in VALUE position (`alt.x[1]`, the rx of the groups labelled x) it is ENTRY 1 of that rx's array interface, the first group in the PATTERN (`a`); on the left of `:` and under `$` (match positions) it is ITERATION 1 of the label in the MATCH (`b` on `ba`) | review r10 FIXA-2, CENSUS-10; LEAN |
@@ -1221,7 +1542,7 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L80 | `P & lex_ge2([^h, ^m], lo)` vs `P & inner([^h, ^m], lo)` with `inner(s, lo) := Q & lex_ge2(s, lo)` (a reference passed into a body that lays it against ANOTHER operand) | [REV 20: PAUSED with the sigil (retire-paused CF 12:51), out of rev 20's language; the record, §16] DIFFERENT: ERROR | a reference keeps the operand it was WRITTEN against; the body's conditions read Q, so the call is a compile error naming both (table (B), B5: 828 of 828 refused, none answered); `wrap(s, lo) := lex_ge2(s, lo)` (the same operand) is SAME as the direct call (B2, 0 differ) | rev 19 |
 | L81 | `P & lex_ge2([^h, ^m], [9, 30])` vs `late := lex_ge2([^h, ^m], [9, 30])` then `P & late` | [REV 20: PAUSED with the sigil (retire-paused CF 12:51), out of rev 20's language; the record, §16] OPEN | under this document's lean (the reference resolved where the bound macro's operand is filled, like a bound condition) SAME (table (B), B4: 1,656 cases, 0 differ), keeping L2's binding/expansion rule; under the strictly visible-`&` reading the bound form is an ERROR ("no `&` in sight"). The owner's (**bound-reference**, §13 O76) | rev 19 |
 | L82 | `((h, m): R)` vs `((h, m = 0): R)` on `t2` (optional minutes) | DIFFERENT: BY DESIGN | the author's ONE control over an absent m (rev 23: the mark is out, drop-mark 21:49): plain is UNKNOWN where m is absent; the default reads m as 0 in this test only. Rev 22's counts (WHOLE): plain vs `m = 0` 90 of 11,110. `NOT ((h, m = 0): R)` is the classical complement on `t2` (no absent part left) | absent-rule CF 14:31; default-scope 22:30 |
-| L83 | `((h, m): (S, T))` vs `(h: S, m: T)` | SAME without NOT; under NOT: OPEN, **record-under-not** (rev 23.1 wrote "DIFFERENT: BY DESIGN", the MANAGER'S scope, rev 23.2, review r34 A4) | the record IS the product (J9) as a test that KEEPS rows. Rev 23.1 (review r33 F1; fix-induced: the SAME rested on UNKNOWN and FALSE dropping the same rows): a joint with an absent part is UNKNOWN, the record with an entry FALSE is FALSE, so under NOT they part: `t2 & NOT ((h, m): (<9, <30))` vs `t2 & NOT (h: <9, m: <30)` on `10` FAILS / FAILS vs HOLDS / HOLDS; 101 / 281 of 11,110 (WHOLE / SEARCHED, first `9`; rev 23.1 printed 371, by value, §R.7d), 0 / 0 without NOT; the closing example's `occurs.none(NOT ((h, m): R))` (the joint) is I2a, its record twin I2b (§R.1.5, §R.7c c4-c5; `predspec23c_model.out` PART 2) | record-is-product CF 11:35; condition-not 23:48 |
+| L83 | `((h, m): (S, T))` vs `(h: S, m: T)` | SAME without NOT; under NOT: OPEN, **record-under-not** (rev 23.1 wrote "DIFFERENT: BY DESIGN", the MANAGER'S scope, rev 23.2, review r34 A4) | the record IS the product (J9) as a test that KEEPS rows. Rev 23.1 (review r33 F1; fix-induced: the SAME rested on UNKNOWN and FALSE dropping the same rows): a joint with an absent part is UNKNOWN, the record with an entry FALSE is FALSE, so under NOT they part: `t2 & NOT ((h, m): (<9, <30))` vs `t2 & NOT (h: <9, m: <30)` on `10` FAILS / FAILS vs HOLDS / HOLDS; 101 / 281 of 11,110 (WHOLE / SEARCHED, first `9`; rev 23.1 printed 371, by value, §R.7d), 0 / 0 without NOT; the closing example's `occurs.none(NOT ((h, m): R))` (the joint) is I2a, its record twin I2b (§R.1.5, §R.7c c4-c5; `predspec23c_model.out` PART 2) | record-is-product CF 11:35; condition-not 23:48 [REV 24.1: SAME with or without NOT: 0 / 0 / 0 of 3,906 (reported row, labels compared, E2); record-under-not DISSOLVED] |
 | L84 | `((h, m): >= (9, 30))` vs `((h, m): (>= 9, >= 30))` | DIFFERENT: BY DESIGN | dictionary order (outside the bracket) vs the per-part product (inside): padded, 2,700 of 11,000 `t` subjects differ (`10:00`; table (O)); unpadded, 1,800 under the domain reading (table (DM)). No warning (the manager's reading, CF 11:20) | two-orders CF 11:20 |
 | L85 | `(9, 0)` vs `[9, 0]` (as a set laid on `(h, m)`) | DIFFERENT: ERROR | one pair (arity 2) vs "9 or 0" (arity 1): `((h, m): >= [9, 0])` is the ARITY error, hint "write `(9, 0)`", never a silent answer | set-arity CF 10:26 |
 | L86 | `((h, m): R)` vs `(h, m: R)` | DIFFERENT: ERROR | the second is two entries, `h` with no `:` (an entry needs a set) and `m: R` with a k-ary set on one label (arity); the joint entry needs the parentheses | J1 |
@@ -1233,12 +1554,12 @@ Sources: review 2026-11-14-r1-predspec finding ids, and r8 (P6-n) for rev 7.
 | L92 | `(h: A, h: B)` vs `(h: A & B)` | DIFFERENT: ERROR | a label named twice in one condition is a compile ERROR ("label-twice: agree an error"); `(h: A) & (h: B)` and `(h: A & B)` are the spellings | label-twice CF 13:16 |
 | L93 | (rev 22: `all((x: S))` vs `(x?: S)`) | RETIRED (rev 23) | both spellings are out of the language (all-question 23:18; drop-mark 21:49); see L36 | 23:18; 21:49 |
 | L94 | `/(?<k>\d)?-(?<h>\d)?/` vs `/(?:(?<k>\d)\|)-(?:(?<h>\d)\|)/` under `(h: <5, k = 3: between(3, 7))` (rev 23; rev 22 wrote `k?`) | SAME | `/x?/` and `/(?:x\|)/` answer alike under the pairing rule; a quantifier with upper bound 1 is not a loop for it (the manager's reading of how): 0 of 121 differ in BOTH modes, with the default and without it (`/x?/` holds WHOLE 30 / SEARCHED 55 with `k = 3`, 25 / 25 without; `predspec23b_model.out` PART 1) | optional-as-loop CF 15:23 |
-| L95 | `t2 & !q`, `q := t2 & ((h, m): R)`, vs `t2 & ((h, m = 0): !R)` | DIFFERENT: BY DESIGN (WHOLE); SAME (SEARCHED, on t2) | rev 23 (rev 22 wrote `((h, m?): !R)`): WHOLE 2,940 vs 2,850 of 11,110 (under §2.2, rev 23.2; 1,970 vs 1,880 by value, §R.7d), differ 90 (first `10`: the default 0 puts (10, 0) in R, the difference keeps `10` as not a row of q); SEARCHED 11,110 both, differ 0 (`predspec23_model.out` PART 3) | drop-mark 21:49 |
+| L95 | `t2 & !q`, `q := t2 & ((h, m): R)`, vs `t2 & ((h, m = 0): !R)` | DIFFERENT: BY DESIGN (WHOLE); SAME (SEARCHED, on t2) | rev 23 (rev 22 wrote `((h, m?): !R)`): WHOLE 2,940 vs 2,850 of 11,110 (under §2.2, rev 23.2; 1,970 vs 1,880 by value, §R.7d), differ 90 (first `10`: the default 0 puts (10, 0) in R, the difference keeps `10` as not a row of q); SEARCHED 11,110 both, differ 0 (`predspec23_model.out` PART 3) | drop-mark 21:49 [REV 24.1: rules rev 24.1, reported row, TP5 (3,906): 6 / 1,482 / 1,908 differ, the same counts as under rev 23.2's rules (PART D D21)] |
 | L96 | `t2 & [m = 0]` vs `t2 & (m = 0: S)` | DIFFERENT: BY DESIGN | an array's `=` NAMES a label (the alternative `0` labelled m); a condition's default READS one: 244 of 11,110 `t2` subjects differ (joint_condition.md table (DK)); the lane unsetdef's WARNING `label.both_sides` is PROPOSED, NOT RULED (§7.1) | J6 |
 | L97 | `t2 & (((h, m): R) \| (h: 10 \| 11))` (an unguarded hand slice) vs `t2 & ((h, m = 0): R)` | DIFFERENT: GAP | with R = `padded(between((9, 30), (11, 0)))`: without a guard "m absent" the slice also admits a PRESENT m (`11:45` passes by h = 11, though 11:45 is past 11:00): 99 of 11,110 differ (joint_condition.md table (DG)); both are legal programs, so no diagnostic is possible; `label.unset`'s text names the default as the fix | J6 |
 | L98 | `m(x) := (x: S)` then `P & m(h)` vs `P & (h: S)` (a macro parameter on the left of `:`) | DIFFERENT: ERROR | (rev 21, review r29 L, CENSUS-7) the left of `:` names LABELS (**colon-scope**, CF 11:32); a parameter name there is a compile ERROR, text illustrative (D26): "x is a parameter of m; the left of `:` names labels of the operand. Write the condition where the label is known, or pass the whole condition: `m(c) := ... c ...`"; a PER-LABEL mark through a macro has no spelling (§13, (e3)). Rev 20 read the parameter silently as a label named x | colon-scope CF 11:32; LEAN (review r29 L) |
 | L99 | (rev 22: `P & (k?: "b") & (h?: <5)` vs the same with `k`) | RETIRED (rev 23) | a row about the mark only (drop-mark 21:49) | 21:49 |
-| L100 | `P & A & B` vs "subjects in both `P & A` and `P & B`" | SAME (WHOLE; rev 23) | with the mark gone every condition is a one-row test, so `&` of conditions is the AND of the rows each keeps; rev 22's DIFFERENT came from "a mark in B" (retired). SEARCHED the two can still part where different stretches survive (§R.6) | drop-mark 21:49 |
+| L100 | `P & A & B` vs "subjects in both `P & A` and `P & B`" | SAME (WHOLE; rev 23) | with the mark gone every condition is a one-row test, so `&` of conditions is the AND of the rows each keeps; rev 22's DIFFERENT came from "a mark in B" (retired). SEARCHED the two can still part where different stretches survive (§R.6) | drop-mark 21:49 [REV 24.1: DIFFERENT under rev 24: P := `/(?<a>\d+)(?<b>\d+)/`, A := `(a: <5)`, B := `(a: >10)`: 156 of 341 WHOLE (first `110`: each half holds by a different path; rules rev 24.1, holds; PART D D12; rev 23.2: 0)] |
 | L101 | `(a = 0: <10, b: >$a)` vs `((a = 0, b): a < 10 & b > a)` (a record reading its own label with `$` vs its joint spelling) | DIFFERENT: BY DESIGN (rev 23; rev 22 SAME) | `$a` reads the REAL label (default-scope 22:30), so on `/5` the record FAILS, the joint HOLDS, both modes (`predspec23_model.out` PART 1, D7/D8); defscope AB 45 vs 54 of 110 (WHOLE). default-reaches-dollar REVERSED | default-scope 22:30 |
 | L102 | `P & !some(c)` vs `P & occurs.none(c)` | SAME (rev 23; rev 22: ERROR) | NOT on a condition is legal (23:48) and `some` is yes/no (the draft's reading, **group-truth**), so the two agree: 0 of 364 differ in both modes (`predspec23_model.out` PART 2) | condition-not 23:48 |
 | L103 | (rev 22: a mark inside `occurs.none`) | RETIRED (rev 23) | mark-in-none retires with the mark (21:49); `occurs.none(((h, m = 0): m < h))` keeps its meaning (a pass without minutes reads 0) | 21:49 |
@@ -1295,7 +1616,7 @@ subject is `0:10` (SEARCHED reports `10`); 1,660 of 11,110 `t2` subjects differ 
 0, re-derived; rev 21's 1,698 under `m?` retires with the mark); `10:00,9:15,` as a list, searched, reports `10:00,`
 (review r29 verify V1); §R.6 adds the nullable-loop case, where every default holds SEARCHED). No warning (as for counts, L66); SILENT under SAVING PEOPLE FROM THEMSELVES; the fix is `anchored(...)`.
 
-SAME ROWS RE-CHECKED UNDER THE ONE READING (rev 10, review r10 FIXB-1: a condition reads the SPELLING's parse). A SAME
+SAME ROWS RE-CHECKED UNDER THE ONE READING (rev 10, review r10 FIXB-1: a condition reads the SPELLING's parse). A SAME [REV 24.1: THE ONE READING (a condition reads the spelling's one parse) is REVERSED by branch-scope (11:35): a condition re-enters the pattern; the SAME verdicts below hold for holding where no condition re-enters, and are re-marked row by row above (§R.1.3, §R.9)]
 row can break only where its two forms spell a LABELLED operand differently. L1 and L39 reorder an `&` chain (the
 operand that defines a label keeps its spelling; its parse does not depend on the other operands), L2 and L46 bind
 what the other form writes out (the same text after expansion), L3 and L36 and L42 lay one or two questions on ONE
@@ -1557,7 +1878,7 @@ LEAN). Each word below names ONE thing throughout; a quoted ruling keeps its own
    come from PCRE's own backtracking, sharing no source with pcrec's ambiguity check (review r10 FIXB-6).
 3. **What moves when data is regenerated.** Relevant only through `file_text`/`import` pins (§7): a changed file
    under a `sha256` pin is a loud compile error; a re-pinned file changes the emitted automaton. O57's result, when
-   measured, moves no emitted byte: it feeds the budget (§13 O39) and the owner's go/no-go on the one reading's cost.
+   measured, moves no emitted byte: it feeds the budget (§13 O39) and the owner's go/no-go on the one reading's cost. [REV 24.1: "the one reading" is reversed (branch-scope); the cost the owner asked for on 11-15 is UNMEASURED (§R.11 row 9)]
 
 ## 1. Layering
 
@@ -1566,7 +1887,7 @@ interfaces (§3), match values, repeated labels and computed labels (§4), capab
 (§6), the compile-time boundary, modules and warnings (§7). LIBRARIES, built on the foundation and changeable without
 it: `each`, `join`, `records`, `file_text`, standard filters and filter modifiers (`between`, `startsWith`,
 `endsWith`, `contains`, `anchored`, `length`, `padded`, `any_case`, `quoted`; `unpadded` CUT in rev 14, `json.quoted` in rev 16), the transform `occurrences`, the group questions
-`some`, `all`, `count` and the `occurs` counts, `assert`, the joint condition's comparison sets in the first-library slot (rev 20; rev 16-19's fixed-size tuple compares RETIRED, §16), blessed callouts (§8). The
+`some`, `all`, `count` and the `occurs` counts, `assert`, the joint condition's comparison sets in the first-library slot (rev 20; rev 16-19's fixed-size tuple compares RETIRED, §16), blessed callouts (§8). The [REV 24.1: `all` RETIRED (23:18), REVISITED by the named every-pass form (**every-pass-spelling**, §R.4)]
 ORGANISATIONAL layer (DECLARED TYPES, type members, UFCS, `types()`; rev 7 called the first "interfaces", a word
 that now names the array and map interfaces, §0.3) is CUT from the first spec (§9); declared types may return as
 library packaging after a build. Modules stay in the foundation (described by their map interface: §7, §13 O46).
@@ -1831,7 +2152,7 @@ own spelling, CF:774). Exact decimal: LEAN. Whether the reading belongs to the l
 component in its literal's domain: the manager's reading (DICT-DOMAIN); the `$` component by value: LEAN (pending
 O27); no warning between the orders: the manager's reading (CF 11:20).
 
-### 2.5 No concatenation operator; arithmetic
+### 2.5 No concatenation operator; arithmetic [REV 24.1: REOPENED: the owner's rx-module proposal with a concatenation operator (2026-11-17, `predicates_future.md` item 21) reopens this section's 2026-11-13 lean (the manager's)]
 
 **RULE.** The expression language has no concatenation operator: sequencing is written inside a literal
 (`/${a}-${b}/`) or by `join`. `+ - * %` are arithmetic only, on numbers (§2.1): subject numbers can be added and
@@ -1964,7 +2285,7 @@ syntactic one. The refusal of the first is the MANAGER'S CALL (LEAN, rev 9;
 (§7): a construct whose PCRE meaning inside the body is not what `occurrences` promises. Elsewhere the hits are
 find-all order, as the owner expects of a search.
 
-THE ITERATION'S OWN VALUES (review r10 SIM-2; the manager's pick, LEAN). A hit's labels are read WITHIN ITS OWN
+THE ITERATION'S OWN VALUES (review r10 SIM-2; the manager's pick, LEAN). A hit's labels are read WITHIN ITS OWN [REV 24.1: no longer the draft's reading: a condition inside the body reads PCRE's capture state, an earlier pass's value included (R.1.7); this paragraph is the second candidate of **pass-own-labels**, the owner's LEAN, asked with **joint-last-pass** (§R.8)]
 ITERATION: a label of the argument that the iteration did not set is UNSET in that hit (§4.2), even when PCRE's raw
 capture state still holds an earlier iteration's value. `occurrences(/(?<g>a)?b/)` on `abb`: hits `ab`@0 (g = `a`) and
 `b`@2 (g UNSET); PCRE's capture state after the match reports g = (0,1), hit 1's `a`, lying outside hit 2. So `(m:
@@ -2263,7 +2584,7 @@ view" is the manager's word, not his). The labelled array as the one spelling of
 withdrawn: LEAN (this document; CF:542's spelling was itself a lean; §13 O42). The metadata members `.index`/`.label`
 vs user labels of those names: a user label so named is an ERROR (the manager's call, LEAN; §13 O31, §5.4 `.` row).
 
-### 3.2 The four tools
+### 3.2 The four tools [REV 24.1: reading (iii) and its scope rule, as this section uses them, are REVERSED by branch-scope (ii) (11:35): a condition is a piece of the pattern and backtracks into `|` (§R.1)]
 
 **RULE.**
 1. `X[...]` = POSITION in the array interface only: integers, integer sets, numeric filters (`X[1]`, `X[<4]`); the
@@ -2318,7 +2639,7 @@ empty string.
 **RULE.** EXTENSIONAL (`& | !`, comparisons, filter modifiers) depend only on the language: which strings pass.
 STRUCTURAL (indexing, `each`, `join`, `where`, `.label`, `enumerate`, entry counts) read the SPELLING: `/a|b/` and
 `/b|a/` are equal under `&` but differ under `[1]` (and in PCRE priority). A CONDITION on a label reads the spelling
-too, through PCRE's parse of it (§4.5): two spellings of one language admit the same strings under `& | !` and may
+too, through PCRE's parse of it (§4.5): two spellings of one language admit the same strings under `& | !` and may [REV 24.1: PCRE's PATHS: a condition can re-enter the pattern (§R.1.3)]
 answer differently under a condition (§0.1 L25, L60; review r10 FIXB-1). Internal rewrites (altcls, alt_normal_form) never change
 user-visible structure. Field-wise narrowing that keeps other entries is structural (`each_group((& (x: d2)), rx)`,
 the condition passed as a section, §5.2; rev 6 passed a bare `&`, an operator as an argument, review r8 P6-8 (d)),
@@ -2329,7 +2650,7 @@ CF:922-923). The array interface applies to two kinds of thing. (1) An rx whose 
 text (a literal `[ ]`, a binding of an rx, a `join` input, an `enumerate` or `records` result) is a SPELLED array: the
 structural tools above read it at compile time, and G4 covers it. (2) The ITERATIONS of a repeated label in one match
 (a group inside a loop, the `hit` label of an `occurrences`, §2.6) exist only per match: the array interface over them is
-§4.3's, where the GROUP QUESTIONS (a plain condition, `some`, `all`, `count`, `occurs.*`) compile to states (phase 1)
+§4.3's, where the GROUP QUESTIONS (a plain condition, `some`, `all`, `count`, `occurs.*`) compile to states (phase 1) [REV 24.1: a plain condition reads the LAST setting (last-pass-default 14:30), not every pass; `all` retired, REVISITED (§R.4)]
 and access to ONE iteration (`$m.hit[2]`) needs captures (RULED BY ACCEPTANCE, CF:977). No structural tool of this section (`each`, `join`,
 `where`, `enumerate`, `.label`) reads iterations: on a label that can repeat it is a compile error naming the group
 questions. Rev 7's MATCH-TIME ARRAY (a search result as an array value, `d := $m ~ /.../`) is gone with `~`: nothing
@@ -2340,7 +2661,7 @@ The two things the array interface applies to: CF:922-923 (accepted at CF:905), 
 structural tool on iterations: LEAN (this document; review r8 DRIFT-2's "two populations", now one population per
 kind of thing).
 
-### 3.5 Arrays of filters and filter modifiers
+### 3.5 Arrays of filters and filter modifiers [REV 24.1: the separate condition-or rule is DELETED: `c | d` between conditions is regex's one `|` (R.1.5); an array of conditions reads under the same two-valued logic]
 
 **RULE.** [Rev 23.2, review r34 F-DOC-1: since rev 23.1 an ARRAY OF CONDITIONS is a CONDITION, Kleene `|` over its
 entries (the OR: the draft's reading, **condition-or**); the macro wording below is rev 5-23's.] Closure one level up: an array of rx is an rx (alternation); an ARRAY OF MACROS is a macro, so an array
@@ -2368,7 +2689,7 @@ filters" as the `[ ]` any-one reading: RULED (CF:863); "filter" read as the role
 
 ## 4. Match values
 
-### 4.1 `x:` constrains, `$x` reads; condition literals
+### 4.1 `x:` constrains, `$x` reads; condition literals [REV 24.1: reading (iii) reversed by branch-scope (ii); three-valued NOT RETIRED: conditions are two-valued, NOT holds on an absent label (R.1.5)]
 
 **RULE.** The entry `x: S` of a condition = the set of WHOLE MATCHES whose label x is in S (inside a condition
 record, a macro awaiting the pattern that defines x). `$x` = the CAPTURED STRING of this match (a one-string set,
@@ -2430,7 +2751,7 @@ THE ERRORS OF THE CONDITION FORM (rev 21, review r29 groups N, K, L; texts illus
 - a MACRO PARAMETER LEFT OF `:`, `m(x) := (x: S)`: "x is a parameter of m; the left of `:` names labels of the
   operand" (L98; L).
 - (rev 23: REMOVED from the error list. `!` on a condition, `!(h: S)`, `!((h, m): R)`, `!some(c)`, is LEGAL, the
-  three-valued NOT, **condition-not** 23:48; §R.1.5, §R.3. Rev 22 listed it here as an error, not-is-complement 17:29.)
+  three-valued NOT, **condition-not** 23:48; §R.1.5, §R.3. Rev 22 listed it here as an error, not-is-complement 17:29.) [REV 24.1: two-valued now (absent-under-not 13:25)]
 - a CONDITION OR DEFAULT ON A LABEL NO MATCH OF THE PROGRAM'S REGEX (ITS `&` OPERANDS, CONDITIONS NOT APPLIED) CAN
   SET (rev 23, review r31 H; §R.5 H; rev 23.1 restores rev 22's qualifier, review r33 F3).
 `=` binds tighter than `:` (`p = v: S` is `(p = v): S`, §5.4 ENTRY EXTENT).
@@ -2484,7 +2805,7 @@ and the flattened chain lookup: LEAN (this document's consequences of the ruled 
 condition written in value position denotes the macro: LEAN (§13 O45) [rev 23.2, review r34 F-DOC-1: since rev
 23.1 it denotes a CONDITION, its own kind (19:31; O45's rev 23.1 note)].
 
-### 4.2 Absent labels: one kind of absence, one control (rev 23)
+### 4.2 Absent labels: one kind of absence, one control (rev 23) [REV 24.1: the premise "ONE kind of absence" is gone for bare conditions after a loop: a label no pass set is absent, a label the LAST pass did not set reads an earlier pass's value under the draft's reading (two absences again: §R.4's W2 "possibly none" vs W3 "a pass lacking h"); absent-rule clauses (1), (2) narrowed (R.1.7); under **pass-own-labels** clause (1) holds again]
 
 [REV 24 (§R.9): REVERSED here, the absence clause of condition-not (2026-11-16 23:48, "absence never matches, negated or not") by absent-under-not (2026-11-17 13:25, "Absent under not: use regex rules."): a test on an absent label FAILS and the pattern tries its next path; its NOT HOLDS (§R.1.5). The UNKNOWN bullets below, the admitting-positions bullet's reading (iii) and its "FIND-ALL REPORTING IS NOT MONOTONE" example are superseded by §R.1.3-R.1.5 (PART D D2, D3).]
 
@@ -2611,7 +2932,7 @@ every `some(s)` over the same set denotes the same occurrence ("two occurrences 
 Which iteration a record means when its labels sit at different depths (g inside the loop, k outside it): §13 O56,
 answered by the pairing rule below.
 
-THE PAIRING RULE (rev 20; RULED, **joint-loops**, CF 11:17: "I agree. Makes sense."; part (1)'s wording RULED at
+THE PAIRING RULE (rev 20; RULED, **joint-loops**, CF 11:17: "I agree. Makes sense."; part (1)'s wording RULED at [REV 24.1: for a BARE joint or record REVERSED by last-pass-default read literally: each label's last setting (R.1.7); asked as **joint-last-pass** with **pass-own-labels** (§R.8); a joint on the loop's item is per pass by construction]
 13:29, "pairing-loop: I agree part 1"; parts (2), (3) SETTLED by **absent-rule** 14:31). A record or a joint condition
 over labels inside loops is tested PER PASS of THE PAIRING LOOP: the DEEPEST loop that encloses any named label;
 every other named label lies in the same pass of it or OUTSIDE it, with one value per pass; otherwise a compile
@@ -2723,7 +3044,7 @@ ruled, §4.2 (e1)): a computed label reading an ABSENT label is ABSENT itself, a
 the one control, §R.1.6; rev 20-22 also offered the mark over DOM of the computed label, out since drop-mark 21:49):
 `mnum := $mname.index` over `/(?<mname>Jan|Feb|Mar)?-(?<d>\d)/` on `-5` (WHOLE / SEARCHED, `predspec23b_model.out`
 PART 4): `(mnum: <3)` FAILS / FAILS, `(mnum = 9: <3)` FAILS / FAILS, `(mnum = 1: <3)` HOLDS / HOLDS (rev 22's
-`(mnum?: <3)` HOLDS, rewritten with a default in the set), `NOT (mnum: <3)` FAILS / FAILS (UNKNOWN stays UNKNOWN);
+`(mnum?: <3)` HOLDS, rewritten with a default in the set), `NOT (mnum: <3)` FAILS / FAILS (UNKNOWN stays UNKNOWN); [REV 24.1: two-valued: `NOT (mnum: <3)` on `-5` HOLDS / `-5`@0 (PART D D17)]
 on `Feb-5` the plain `(mnum: <3)` HOLDS / HOLDS; on `Mar-5` `(mnum = 1: <3)` FAILS / HOLDS reporting `-5`@3 (the
 shorter stretch without the month, §R.6). A COMPUTED LABEL IS ARITY 1 (rev 20; the manager's reading, round jointcond,
 TUPLE-BINDING): a match-dependent tuple (`($sh, $sm)`) is written inline in a condition or passed as an argument,
@@ -2886,7 +3207,7 @@ BUILT-INS are a CLOSED list, reserved in CALL position only: `import`, `enumerat
 `file_text`, `records`, `eval`; and two EFFECT built-ins, reserved after `@` only: `@warn` (§7.1) and `@export` (§7),
 which act on the program or file itself and so are not imported (review r10 CENSUS-7; LEAN). `@assert` comes from a
 module (`assert := import("assert")`, §5.6); the per-entry assertion spelling `@each(...)` is OPEN (§13 O22). Every other name in the examples (`between`, `startsWith`, `contains`, `padded`,
-`days`, `weekday_of`, `within`, `list_of`, `join`, `each`, `occurrences`, ...) is a library name; `some`, `all` and
+`days`, `weekday_of`, `within`, `list_of`, `join`, `each`, `occurrences`, ...) is a library name; `some`, `all` and [REV 24.1: `all` retired, REVISITED (§R.4)]
 `count` are library (prelude) names too (LEAN, review RUL-13; §4.3, §8). Rev 9's reserved scope-supplied labels `$&`
 and `$_` had no stated meaning and no case: the reservation is DROPPED until a case needs one (D77; review r10
 CENSUS-8; LEAN). An undeclared name that is not a label is an error with a suggestion; a binding hiding a label WARNS (`$x` still
@@ -2945,7 +3266,7 @@ with "polarity" and the judged UNIT defined in §R.2 POLARITY, which supersedes 
 condition at its boundary is judged, and its constant-always mirror warns): at a condition literal the error is judged on the TEST AS WRITTEN, after
 its default and its polarity: the test is tried on every value the label takes in a match of the program's `&`
 operands (conditions not applied) and on the default's text when it writes one, and it is the error when it is TRUE
-on none of them (a test made constant-never by NOT or by `!S` is the error; one that is not constant is not). So
+on none of them (a test made constant-never by NOT or by `!S` is the error; one that is not constant is not). So [REV 24.1: under NOT or in a complement: no error and no warning is THE DRAFT'S READING, asked as **polarity-rule** (§R.2, §R.8); whether this error WITHOUT NOT is an allowed exception is asked with it (§R.6)]
 `NOT (x: <10)` and `(x: !<10)` on a digit label are both the error, `NOT (x: <0)` and `(x: !<0)` both legal ("x is
 present"), and the sentinel `occurs.none((h = "x": !<10))` legal (§R.2 has the runs; `dead.branch` reads a branch's
 tests the same way). In the DESIGN (after
@@ -3175,7 +3496,7 @@ with the size (§4.6), never a silent switch. The planner may choose an automato
 speed); it may NOT change level silently. A one-literal program is today's PCRE pattern on today's engines (G3,
 §11). The cost tool's first output is the level a program needed and why.
 
-THE ONE READING AT THE DEFAULT LEVEL (rev 9, §4.5). Every level reads PCRE's parse; the levels differ only in what
+THE ONE READING AT THE DEFAULT LEVEL (rev 9, §4.5). Every level reads PCRE's parse; the levels differ only in what [REV 24.1: "every level reads PCRE's parse" now reads "PCRE's PATHS, in PCRE's order": a rejecting condition re-enters the pattern (branch-scope 11:35, §R.1)]
 they compute it WITH. For an unambiguous label the default level computes it free (the plain automaton); for an
 ambiguous label it builds PCRE's reading as automaton code (backreference-free patterns: still linear, so inside the
 promise) with the extra states shown, and over the budget the program is a compile error naming the level that
@@ -3318,7 +3639,7 @@ empty list since 14:31; rev 23: a default may be any text, default-value 21:49, 
 default that can never be USED; REV 23.1, review r33 F7, the fix-induced lens: (b) is POLARITY-AWARE, it fires only
 on a default under NO NOT and NO complement, because under NOT an out-of-set default turns UNKNOWN into FALSE and NOT
 turns that into TRUE: `NOT (h = 9: <5)` HOLDS on `x` where `NOT (h: <5)` FAILS (§R.3's own column; 1 of 341 WHOLE,
-164 SEARCHED; on a looped h, `NOT (h = "x": <5)` vs `NOT (h: <5)` 18 / 232 of 364), while without NOT the two
+164 SEARCHED; on a looped h, `NOT (h = "x": <5)` vs `NOT (h: <5)` 18 / 232 of 364), while without NOT the two [REV 24.1: under rev 24's two-valued rules both pairs are 0 / 0 / 0 (341 and 364, reported row, labels compared; PART D D15); (b) fires at every polarity (§R.2)]
 answer alike (0 differ, both pools, both modes, and inside `some`; `predspec23c_model.out` PART 3); the 11:05
 premise "a default that can never change an answer" is unchanged, only (b)'s test of it narrows; REV 23.2, review
 r34 D2: "no NOT and no complement" UNDER-FIRES against that premise: under a pattern complement, a set complement
@@ -3451,7 +3772,7 @@ labels read, so the bodies are written for the reading a user expects (rev 9, LE
 argument starts as far LEFT as it can (`endsWith(/(?<n>\d+)/)` on `ab123`: n = `123`; rev 8's greedy `.*` gave n = `3`,
 libpcre2), and `contains` is `occurrences` (§2.6: leftmost hits; rev 8's greedy-lead body read the RIGHTMOST occurrence).
 As SETS nothing changes (a lazy and a greedy gap admit the same strings). `when(c, p)` (REV 22, **not-is-complement**:
-`x & when(c, p)` = `(x & c & p) | (x & !q)` with `q := x & c`, the operand with c, complemented as a PATTERN; rev
+`x & when(c, p)` = `(x & c & p) | (x & !q)` with `q := x & c`, the operand with c, complemented as a PATTERN; rev [REV 24.1: NOT `when` any more: `when(c, p)` := `x & (NOT c | p)` (R.1.10); this complement body equals the NOT body under rev 24 (0 / 0 / 0 of 1,110) and differs from the definition on 0 / 125 / 125 (PART D D14)]
 20-21's body `(x & c & p) | (x & !c)` put `!` on the condition c. The new body gives the old answers: over the 1,110
 subjects of `/(?<k>\d)(?:;(?<h>\d))*/` with p = `(k: between(3, 7))`, 0 differ for c = `(h: <5)` and 0 for c = `(h?:
 <5)` (`predspec22_check.out` PART A (A4); on `0`, h absent on zero passes: HOLDS unmarked, FAILS marked, as before).

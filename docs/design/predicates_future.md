@@ -359,3 +359,19 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   labels of parts flow into the whole (a literal has its own group namespace today); greedy, lazy and possessive
   loops; separators and counts as arguments.
 - SOURCE: COND-FAMILY.md, 2026-11-17. NEXT: a design note (lane rxlib), then the owner.
+
+## 22. One place table for nested programs, as the draft's skeleton (review r40 C6)
+
+- WHAT: rewrite §R of `predicates_draft.md` around ONE TABLE of places (the general form of item 16), one row per
+  place a program can stand (either side of `&`, a `label:` set, an `occurrences`/`contains` argument, a loop body
+  and item, an atomic part, a lookahead, a `records` item, `hits(r)`, the final pattern) and one column per fact the
+  prose now states place by place: its TEXT (stretch, hit, label text, subject, file), its MODE (whole, searched,
+  find-all), whether a condition outside RE-ENTERS it, what `0` names there (**zero-place**), which labels it
+  EXPORTS and which it reads on entry (**pass-own-labels**), where adding a condition can ADMIT, and its regex
+  model (or the allowed exception it is, exception-rule).
+- WHY: review r40's findings A1, A2, A3, A6 and C4 are each one cell of this table stated wrongly or not at all in
+  rev 24's prose; rev 24.1 fixes the cells (§R.1.1's PLACES paragraph names the table) but keeps the prose.
+- SOURCE: review r40 C6 (`docs/dev/reviews/2026-11-17-r40-predspec24.md`), the manager's disposition: not a
+  restructure in rev 24.1; filed here. Not ruled; no plan row (design only, D77).
+- TRIGGER: the owner's answers to rev 24.1's §R.8 questions (the table's open cells), or the next full revision of
+  §R, whichever comes first.
