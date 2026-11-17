@@ -291,6 +291,8 @@ static int st_rep;
  * stretch of up to WR_MAXK positions, stated as spans of G2W_MAXPOS (the
  * kit's span bound until its raise, g2_win.h). */
 static int wr_rep;
+static int g_wr_k;                       /* the stretch the wide REPORT site drew */
+static long wr_rendered, wr_past64;      /* the wide REPORT stream's own population (K35, r36 G9) */
 enum { WR_MAXK = 128 };     /* r45_reply's G2W_MAXPOS: stated as spans of G2W_MAXPOS */
 /* The stretch the site's generator stated (g2_win.h g2w_site.st_*), and
  * whether it is mixed; reset per site. */
@@ -610,6 +612,7 @@ static void gen_facts(int fam, gfacts *x)
         }
         int k = c1_caseless ? 2 + (int)rnd(7) : r2_two ? 1 + (int)rnd(8)
               : wr_rep ? 1 + (int)rnd(WR_MAXK) : 1 + (int)rnd(5);
+        g_wr_k = k;
         for (int start = 0; start < k; start += G2W_MAXPOS) {   /* one span but on the wide sites */
             gspan *sp = &a->span[a->nspan++];
             rand_span(sp, start, k - start > G2W_MAXPOS ? G2W_MAXPOS : k - start, G2W_YES, 0);
@@ -1130,6 +1133,24 @@ static int ctl_render(int kind, int form, int handoff, const char *opts, int k, 
     return 0;
 }
 
+/* THE LEVER'S STRICT VALUE PARSE (review r36 G10), mf_lever's own (the CLI's row is
+ * tests/cli/run_cli_tests.sh): `span-head=N` is plain decimal digits, 0..MF_SPAN_HEAD_MAX;
+ * a sign, a space, an empty value, a trailing byte and one past the top are refused. */
+static void lever_controls(long *ok)
+{
+    static const struct { const char *name; int refused; } c[] = {
+        { "span-head=-0", 1 }, { "span-head=+8", 1 }, { "span-head= 8", 1 }, { "span-head=4096", 1 },
+        { "span-head=", 1 }, { "span-head=8x", 1 }, { "span-head=08", 0 }, { "span-head=4095", 0 },
+    };
+    for (unsigned i = 0; i < sizeof c / sizeof c[0]; i++) {
+        mf_art *art = mf_art_begin(&g_arena, "g2wl", 0, NULL, NULL);
+        if (!art || mf_art_target(art, mf_portable_target())) { fail(-1, "lever control", "no art"); continue; }
+        int rc = mf_lever(art, c[i].name);
+        if (!!rc != c[i].refused) fail(-1, "lever control", c[i].name);
+        else (*ok)++;
+    }
+}
+
 static void s3_controls(long *ok)
 {
     const char *fid = "";
@@ -1176,6 +1197,11 @@ static void emit_set(buf *b, const uint8_t s[32])
 
 enum { MAXLOOP = 96 };
 static int g_head = -1;                 /* the pass's lever head; -1 the default */
+/* The SHIPPED head, a G2 LITERAL (review r36 G1; never read from window.c): the default
+ * pass's loops are pinned (exactly, and none below it) at this head, so a wrong shipped
+ * constant is red here. */
+enum { G2W_SHIPPED_HEAD = 64 };
+static int pin_head(void) { return g_head < 0 ? G2W_SHIPPED_HEAD : g_head; }
 static long pin_sites, pin_loops, mixed_sites, mixed_looped, legit_loops;
 
 /* The loops text `t` renders (wf_loop's `size_t <J> = LO; for (; <J> < END;`):
@@ -1403,6 +1429,7 @@ static void long_rows(buf *defs, buf *ld, long *nl)
                     if (parse_loops(t, lo, end, &n) || parse_loops(ft, lo, end, &n) || n > MAXLOOP)
                         fail(id, "long row", "a loop's head does not read `<J> = LO; for (; <J> < END;`");
                     int hh = st == 2 ? 0 : st == 1 ? -1 : g_head;
+                    int hp = st == 2 ? 0 : st == 1 ? -1 : pin_head();   /* the checks' head: the shipped literal by default */
                     if (st == 1) {
                         if (n) fail(id, "long row", "the deny `no-span-loop` renders a loop (I has none)");
                         else long_deny++;
@@ -1411,22 +1438,22 @@ static void long_rows(buf *defs, buf *ld, long *nl)
                     } else {
                         long_looped++;
                         sort_pairs(lo, end, n);
-                        if (hh >= 0 && lo[0] < hh) fail(id, "long row", "a loop below the head");
+                        if (hp >= 0 && lo[0] < hp) fail(id, "long row", "a loop below the head");
                         /* the exact pin: entries 0..k-1, the stop skipped
                            where C-stop dropped it from the plan (E-find) */
                         int skip = INT32_MIN, inplan = 0;
                         for (int i = 0; i < (int)r.nplan; i++) inplan |= r.plan[i] == r.stop;
                         if (r.has_stop && !inplan && !strcmp(res.form_id, "window-search")) skip = r.stop;
-                        if (hh >= 0 && !strstr(ft, "_sh[256]") && !strstr(ft, "_ofsskip__body(")) {
+                        if (hp >= 0 && !strstr(ft, "_sh[256]") && !strstr(ft, "_ofsskip__body(")) {
                             static ent e[MF_WREACH];
                             for (int j = 0; j < k; j++) e[j] = (ent){ j, 1, lset[j], 0 };
                             int xlo[MAXLOOP], xend[MAXLOOP];
-                            int xn = expect_loops(e, k, skip, hh, xlo, xend);
+                            int xn = expect_loops(e, k, skip, hp, xlo, xend);
                             int same = xn == n;
                             for (int l = 0; same && l < n; l++) same = xlo[l] == lo[l] && xend[l] == end[l];
                             char m[160];
                             snprintf(m, sizeof m, "k %d mid %d head %d (%s): first loop [%d,%d), G2's [%d,%d), %d vs %d loops",
-                                     k, mid, hh, res.form_id, lo[0], end[0], xn ? xlo[0] : -1, xn ? xend[0] : -1, n, xn);
+                                     k, mid, hp, res.form_id, lo[0], end[0], xn ? xlo[0] : -1, xn ? xend[0] : -1, n, xn);
                             if (!same) fail(id, "long row pin", m);
                             else long_pinned++;
                         }
@@ -1518,6 +1545,7 @@ int main(int argc, char **argv)
         if (strcmp(res.form_id, "") == 0) fail(-1, "control", "a spans-only site named no form");
         else refused_ok++;
         s3_controls(&refused_ok);
+        lever_controls(&refused_ok);
     }
 
     bputs(&defs, "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
@@ -1855,6 +1883,7 @@ int main(int argc, char **argv)
             loops[rc_rep ? FAM_N : fam]++;
             mixed_looped += g_mixed;
         }
+        if (wr_rep) { wr_rendered++; wr_past64 += g_wr_k > G2W_SHIPPED_HEAD; }
         /* the loops against G2's own reading; pinned exactly where the
            form's skipped entry is known (E-find: the stop C-stop dropped from
            the plan; the floor: none; D-hors's probe and B-fn's function are
@@ -1866,7 +1895,7 @@ int main(int argc, char **argv)
             for (int i = 0; i < ref.nplan; i++) inplan |= ref.plan[i] == ref.stop;
             int pin = (efind || floor_) && !strstr(ft, "_sh[256]") && !strstr(ft, "_ofsskip__body(");
             int skip = efind && ref.has_stop && !inplan ? ref.stop : INT32_MIN;
-            loops_check(id, &x, &ref, t, ft, g_head, pin, skip);
+            loops_check(id, &x, &ref, t, ft, pin_head(), pin, skip);
         }
         /* the define-time query agrees with a define over the SAME phases
            (§4.5 rule 2: mf_ask answers mf_define's selection, MF_PH_DEFINE;
@@ -2042,6 +2071,7 @@ int main(int argc, char **argv)
     printf("g2_win_gen: span loops legit=%ld pinned_sites=%ld pinned_loops=%ld; long rendered=%ld looped=%ld "
            "deny_witness=%ld pinned=%ld\n", legit_loops, pin_sites, pin_loops, long_rendered, long_looped,
            long_deny, long_pinned);
+    printf("g2_win_gen: wide-report rendered=%ld past64=%ld\n", wr_rendered, wr_past64);
     printf("g2_win_gen failures: %ld\n", fails);
     return fails ? 1 : 0;
 }

@@ -62,7 +62,7 @@ trap 'rm -rf "$WORK"' EXIT
 # own (G2W_R2_SITES; the 2200 before them unchanged): the widened PAIR's
 # population, any two bytes at any position.
 FLOOR_SITES=2500                # every generated site renders (no refusal)
-FLOOR_CONTROLS=104              # the controls, the NOP and REPORT refusals (116)
+FLOOR_CONTROLS=112              # the controls, the NOP and REPORT refusals (116)
 FLOOR_QUERIES=1500              # mf_ask equal to a same-phase define, every site
 FLOOR_TWO_RUNS=77               # alternatives stating two R-shaped spans, refused (F-8 ruling; 86, lane wsc2)
 FLOOR_CALLS=3300000             # answer calls, each in four layouts (3745812)
@@ -107,6 +107,9 @@ FLOOR_PLANTED=56
 # MEASURED (lane formsfixb, 2026-11-17, seed 20261022, the dev box; each a K35 floor ~90% of its measured count,
 # at least 1): the span loops per (family, head) incl. the repeated-class family and its MIXED sites (F13, F16),
 # the head passes' exactly pinned sites (F14), the deterministic breaks (F17), the long rows (F12, F15).
+GRID_HEADS="0 1 2 4 8 16 24 32 64"   # asserted equal to cards.py's GRID below (r36 G13)
+G2W_SHIPPED_HEAD=64                  # the SHIPPED head, a literal (r36 G1): pinned in g2_win_gen.c's default pass
+FLOOR_WR_RENDERED=55 FLOOR_WR_PAST64=XX    # the wide REPORT stream (K35, r36 G9)
 LOOP_FLOORS_DEF="parked:4 pair:5 mass:5 mline:5 part:6 report:7 random:5 repeated:12 mixed:8"
 FLOOR_LONG_RENDERED_DEF=24 FLOOR_LONG_LOOPED_DEF=16 FLOOR_DENY_WITNESS=8 FLOOR_LONG_PINNED_DEF=8
 FLOOR_BREAKS_DEF=2197 FLOOR_SWAPS_DEF=86 FLOOR_LONG_SUBJ_DEF=561 FLOOR_LONG_PINNED_HEAD=8 FLOOR_LONG_SUBJ_HEAD=187
@@ -513,7 +516,33 @@ floor "default long pinned (the force)" "$(sl "$WORK/plain.gen.log" pinned)" "$F
 floor "default breaks" "$(rv "$WORK/plain.run.log" breaks breaks)" "$FLOOR_BREAKS_DEF"
 floor "default class swaps" "$(rv "$WORK/plain.run.log" breaks swaps)" "$FLOOR_SWAPS_DEF"
 floor "default long-row subjects" "$(rv "$WORK/plain.run.log" longrows subjects)" "$FLOOR_LONG_SUBJ_DEF"
-for h in ${G2W_HEADS:-0 1 2 4 8 16 24 32 64}; do
+# THE GRID, asserted (review r36 G13): this script's head list and the generator's RC_HEADS
+# (the finite heads less 0) must equal cards.py's GRID, read from cards.py; a head added
+# to one and not the others is r35 F13's class. G2W_HEADS may SUBSET the passes (a quick
+# run); the lists asserted are the literal GRID_HEADS and the generator's source.
+cards_grid=$(python3 -I - "$ROOT/memfn/tests/span_forms/cards.py" <<'PYEOF'
+import re, sys
+m = re.search(r'^GRID\s*=\s*\[([0-9, ]+)\]', open(sys.argv[1]).read(), re.M)
+print(' '.join(x.strip() for x in m.group(1).split(',')) if m else '')
+PYEOF
+)
+rc_grid=$(python3 -I - "$G2/g2_win_gen.c" <<'PYEOF'
+import re, sys
+m = re.search(r'RC_HEADS\[\]\s*=\s*\{([0-9, ]+)\}', open(sys.argv[1]).read())
+print(' '.join(x.strip() for x in m.group(1).split(',')) if m else '')
+PYEOF
+)
+if [ -z "$cards_grid" ] || [ "$cards_grid" != "$GRID_HEADS" ]; then
+    note "the head grid: this script's GRID_HEADS ($GRID_HEADS) != cards.py's GRID (${cards_grid:-unread})"
+else tp=$((tp + 1)); fi
+if [ "$rc_grid" != "${GRID_HEADS#0 }" ]; then
+    note "the head grid: g2_win_gen.c's RC_HEADS (${rc_grid:-unread}) != cards.py's GRID less 0 (${GRID_HEADS#0 })"
+else tp=$((tp + 1)); fi
+wr() { grep -h '^g2_win_gen: wide-report' "$1" | grep -oE "$2=[0-9]+" | head -1 | cut -d= -f2; }
+echo "G2W wide-report rendered=$(wr "$WORK/plain.gen.log" rendered) past64=$(wr "$WORK/plain.gen.log" past64)"
+floor "wide-report rendered" "$(wr "$WORK/plain.gen.log" rendered)" "$FLOOR_WR_RENDERED"
+floor "wide-report past64" "$(wr "$WORK/plain.gen.log" past64)" "$FLOOR_WR_PAST64"
+for h in ${G2W_HEADS:-$GRID_HEADS}; do
     t0=$(date +%s)
     if [ "$h" = 0 ] && [ -z "${G2W_NOASAN:-}" ]; then
         G2W_SPAN_HEAD="$h" G2W_FORMS_ONLY=1 one_run "head$h" "$LIB"
@@ -539,6 +568,17 @@ for h in ${G2W_HEADS:-0 1 2 4 8 16 24 32 64}; do
     floor "head $h long-row subjects" "$(rv "$WORK/head$h.run.log" longrows subjects)" "$FLOOR_LONG_SUBJ_HEAD"
     echo "G2W head $h wall ${t0:+$(( $(date +%s) - t0 ))}s"
 done
+# THE DEFAULT PASS == THE SHIPPED HEAD'S PASS (r36 G1): the default pass renders the
+# shipped head, so its per-family loop counts (and the head-literal's pass's) must EQUAL.
+# Its generator pins its loops at the literal G2W_SHIPPED_HEAD; this equality catches a
+# shipped constant moved off the literal even where the pin's own text still agrees.
+if [ -f "$WORK/head$G2W_SHIPPED_HEAD.gen.log" ]; then
+    for fam in parked pair mass mline part report random repeated mixed; do
+        d=$(lp "$WORK/plain.gen.log" "$fam"); l=$(lp "$WORK/head$G2W_SHIPPED_HEAD.gen.log" "$fam")
+        if [ -n "$d" ] && [ "$d" = "$l" ]; then tp=$((tp + 1)); else note "default pass loops $fam=${d:-?} != head $G2W_SHIPPED_HEAD pass's ${l:-?}"; fi
+    done
+    echo "G2W default==head$G2W_SHIPPED_HEAD loops: $(grep -h '^g2_win_gen: loops' "$WORK/plain.gen.log" | cut -d' ' -f3-)"
+fi
 echo "G2W wall total $(( $(date +%s) - T_START ))s"
 
 echo "checks passed: $tp"
