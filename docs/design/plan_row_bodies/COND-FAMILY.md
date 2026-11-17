@@ -1945,3 +1945,27 @@ default's scope (dollar-across-and; one default per label or per condition) beco
 HIS WORDS: "drop-mark: another exploration on these ideas". RECORD: not a ruling to drop the mark; lane condkind2
 (opus, design only) explores the model WITHOUT the mark (absence never matches; the default gets past it), rules
 nothing, edits neither predicates_draft.md nor any ruling.
+
+**2026-11-16 OWNER RULINGS — drop-mark, default-value, source-row; default-scope to a lane (Frank, to session 137,
+box clock 21:49; after docs/design/condition_kind.md Parts I-II).** HIS WORDS, whole: "Drop-mark: yes / Default-scope:
+is that oddity the only thing against it? I'd like a lane to consider the options. See if either choice has
+problems. / Default-value: yes / Source-row: yes". RECORD, each as asked to him in the same hour:
+- **drop-mark: YES.** The optional mark is OUT of the language: an absent label is a null that never matches; the
+  author gets past it with a default. As put to him: this RETIRES (they lose their subject; none is reversed)
+  zero-pass-empty, match-context, domain-scope, mark-narrows and mark-in-none, and absent-rule loses its clause
+  offering the mark (LOCKED 14:31; the clause removed by this ruling, the rest stands). The cost named to him: the
+  domain-scope answers are no longer automatic (`(h?: <5) & (k: <5)` on `b3`: rev 22 FAILS, without the mark
+  HOLDS unless the author picks another default; 45 of 680 program pairs). **mark-range** is withdrawn with it. The
+  manager's readings one-witness and not-of-marked retire. MINE, to restate and have checked: the "all" group
+  question, the other reader of the per-program value set (Part II.5).
+- **default-value: YES.** A default may be any text, including one the label can never hold; a warning only on a
+  default that can never be used.
+- **source-row: YES.** A row of the source is the whole subject; a searched pattern gives several result rows per
+  subject; the complement is per subject.
+- **default-scope: NOT RULED.** He asks whether the one-witness oddity is the only thing against the per-test
+  reading and wants a lane to consider the options and find the problems of each: lane defscope (opus,
+  exploration). The manager's answer given to him (from Part II's run): no; the per-test reading also splits a
+  record from its `&` spelling where one entry reads another's `$a` (9 of 110), and the whole-statement reading
+  has its own costs (the default reaches conditions that did not write it; a second default is an error; 333 of 335
+  programs rewrite under it).
+No rev 23 until default-scope is ruled and a critic round has run on the note.
