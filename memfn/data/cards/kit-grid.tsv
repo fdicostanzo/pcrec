@@ -91,6 +91,23 @@
 # MASK stream's continue-after-reject path is timed, not only accepted
 # hits; the slot plans the card as jobs JMB/JMH (slot/plan.py).
 #
+# `ver 7` is the SPAN FORMS' cards C1-C5 (lane forms, R-45 plan A; docs/design/memfn/r45_reply.md
+# rev 6 §3 "The cards"): I (the deny `no-span-loop`) and H(h) for every finite grid head h in
+# {0, 1, 2, 4, 8, 16, 24, 32, 64} (0 = L), set through the test-only lever `span-head=N`, on ONE
+# frozen binary. WHOLE-ARTIFACT cells (pcrec's artifact + one find-all, as J5's `enter`), so no
+# card names a kit:form. dep. dims: `form` (I, h<N>, engine), `pat` (the card's pattern id),
+# `regime` (hit-dense, near-miss, not-warm, miss-heavy, short-subject, random), `layer` (off,
+# on). Unit: ratio to I's time in the same (pat, regime, layer) cell (raw medians, ns per subject
+# byte, 1 MiB subject); C4 is bytes (emitted C, `.text`), no timing; C5 the engine route
+# (`--memfn=no-window-search`) over I. `lengths` `-`: one call length (the 1 MiB subject), no
+# estimator. `aa_rule` `aa-cell`: the floor f is the largest |median ratio - 1| of the lit-l16
+# A/A pair over every regime and layer. The script, its dry run, R0-R5 and the identity check:
+# memfn/tests/span_forms/cards.py. UNMEASURED: no set holds a ver-7 row and no box has run it;
+# the regimes `not-warm` and `short-subject` are the kit's approximations until the bench names
+# its methods (D198 (f), its `short-subject-search` subject). The design names kit-synthetic.tsv
+# for these rows; they live here because kit-synthetic's cards are the synthetic sets', "never
+# measured" (its header), and these are measured method cards (lane forms report, Cards).
+#
 # Divergence recorded (fdb1_report.md F-B1-6): r17b_prime.md §5.2's card table
 # lists `gstar` with dims form;kind;shape, while §1.3's reader R5 reads
 # `kit.gstar.<liner>.<kind>` (two tokens). The card follows the READER; a
@@ -115,3 +132,8 @@ kit	enter_back	4	kind;entry;back	walkbytes	artifact die1 g256	delta 1048576	7	7	
 kit	every_pos	5	form	walkbytes	streamed-fresh pool16Mi miss-only	slope 65536,262144,1048576	7	7	twin-per-arm	-	-	kit:form.every-pos
 kit	find_byte	6	form	ratio	streamed-fresh pool16Mi miss-only	slope 65536,262144,1048576	7	7	twin-per-arm;bimodal-test	-	-	kit:form.mfind-swar;kit:form.mfind-w16;kit:form.mfind-w32;kit:form.fn-memchr
 kit	find_hit	6	form;landing;split;gap;reject	walkbytes	streamed-fresh pool16Mi landed:periodic|random reject:percent	delta 1048576	7	7	twin-per-arm	-	-	kit:form.mfind-swar;kit:form.mfind-w16;kit:form.mfind-w32;kit:form.fn-memchr
+kit	span_cross	7	form;pat;regime;layer	ratio	cards.py C1 k 24,32 hex|dig 1MiB	-	5	1	aa-cell	-	-	-
+kit	span_pop	7	form;pat;regime;layer	ratio	cards.py C2 uuid36 lit40 alt49 abc60 hex64 1MiB	-	5	1	aa-cell	-	-	-
+kit	span_long	7	form;pat;regime;layer	ratio	cards.py C3 k 500,1000 hex|a 1MiB	-	5	1	aa-cell	-	-	-
+kit	span_size	7	form;pat;layer	bytes	cards.py C4 k 32,500,1000,4095 hex|a compile-only	-	1	1	-	-	-	-
+kit	span_engine	7	form;pat;regime	ratio	cards.py C5 C1-C3 patterns engine route 1MiB	-	5	1	aa-cell	-	-	-

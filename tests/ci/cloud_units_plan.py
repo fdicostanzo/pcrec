@@ -73,6 +73,10 @@ def word_of(label, flags):
         return "--tune"
     if "--analysis=" in flags:
         return next(t for t in flags.split() if t.startswith("--analysis="))
+    if "internal arm x SIMD layer" in label:
+        # the AXES word of an internal arm selects its SIMD-layer job too (one unit: a separate
+        # word would select both jobs, run_axes.sh matching the arm's word; lane forms)
+        return next(t for t in flags.split() if t.startswith("--harness="))
     return flags
 
 

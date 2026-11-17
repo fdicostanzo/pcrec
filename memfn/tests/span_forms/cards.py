@@ -30,7 +30,7 @@ Env: PCREC_TREE (default: this file's tree), FROZEN (the frozen tree's build dir
 tree's build/), WIDTH_FLAG (default `--window-search-width=4095`; `none` on a tree without
 main's width option), CPU (taskset core, default 15), LAUNCHES (default 5).
 """
-import hashlib, json, os, random, re, shutil, statistics, subprocess, sys
+import hashlib, json, os, random, re, statistics, subprocess, sys, threading
 from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -300,11 +300,16 @@ def _h(*parts):
     return h.hexdigest()[:16]
 
 
-def artifact(rundir, pat, arm, layer):
+# C4 records sizes AGAINST the size-cap ladder (250,000 / 1,000,000), so its compiles lift the cap
+# past the largest form (I at 4095 is ~630 KB, R-45 FACT); no timed cell lifts it
+SIZE_CAP = ["--max-emit-code-bytes=4000000"]
+
+
+def artifact(rundir, pat, arm, layer, size=False):
     """The cell's artifact (pcrec-level compile on the frozen binary), cached by its inputs."""
     binp, fl = arm_flags(arm)
     wf = [] if WIDTH_FLAG == "none" else [WIDTH_FLAG]
-    args = [binp, "-p", PREFIX, "--features", "all"] + wf + LAYERS[layer] + fl + [
+    args = [binp, "-p", PREFIX, "--features", "all"] + wf + (SIZE_CAP if size else []) + LAYERS[layer] + fl + [
         "-o", "-", "--pattern", PATTERNS[pat][0]]
     d = os.path.join(rundir, "art")
     os.makedirs(d, exist_ok=True)
@@ -314,8 +319,9 @@ def artifact(rundir, pat, arm, layer):
         if r.returncode:
             raise RuntimeError("pcrec refused %s %s %s: %s" % (pat, arm, layer,
                                r.stderr.decode(errors="replace")[-400:]))
-        open(c + ".tmp", "wb").write(r.stdout)
-        os.replace(c + ".tmp", c)
+        tmp = "%s.%d.%d" % (c, os.getpid(), threading.get_ident())
+        open(tmp, "wb").write(r.stdout)
+        os.replace(tmp, c)
     return c
 
 
@@ -327,14 +333,17 @@ def build_cell(rundir, pat, arm, layer):
     if os.path.exists(exe):
         return exe, a
     os.makedirs(os.path.dirname(exe), exist_ok=True)
-    tu = exe + ".c"
+    tu = "%s.%d.%d.src" % (exe, os.getpid(), threading.get_ident())
     open(tu, "w", encoding="latin-1").write("#include <stddef.h>\n#include <stdint.h>\n"
                                              "#include <string.h>\n" + src + "\n" + DRIVER)
-    r = subprocess.run([CC, "-std=gnu11", "-O2", "-w", "-o", exe + ".tmp", tu], capture_output=True,
+    # two arms can render the same text (H(h) is I where h >= k): each build its own temp names
+    tmp = "%s.%d.%d" % (exe, os.getpid(), threading.get_ident())
+    r = subprocess.run([CC, "-std=gnu11", "-O2", "-w", "-x", "c", "-o", tmp, tu], capture_output=True,
                        timeout=1800)
     if r.returncode:
         raise RuntimeError("gcc %s %s %s: %s" % (pat, arm, layer, r.stderr.decode()[-400:]))
-    os.replace(exe + ".tmp", exe)
+    os.replace(tmp, exe)
+    os.replace(tu, exe + ".c")
     return exe, a
 
 
@@ -344,16 +353,18 @@ def subj_file(rundir, pat, regime, n):
         os.makedirs(os.path.dirname(p), exist_ok=True)
         b = subject(pat, regime, n, 1)
         k, s = expect(pat, regime, b)
-        open(p + ".tmp", "wb").write(b)
-        os.replace(p + ".tmp", p)
-        open(p + ".expect", "w").write("%d %d\n" % (k, s))
+        tmp = "%s.%d.%d" % (p, os.getpid(), threading.get_ident())
+        open(tmp + ".e", "w").write("%d %d\n" % (k, s))
+        os.replace(tmp + ".e", p + ".expect")
+        open(tmp, "wb").write(b)
+        os.replace(tmp, p)
     k, s = open(p + ".expect").read().split()
     return p, k, s
 
 
 def size_record(rundir, pat, arm, layer):
     """C4: emitted C bytes, gcc -O2 -c time and max RSS, .text bytes (no timing of the matcher)."""
-    a = artifact(rundir, pat, arm, layer)
+    a = artifact(rundir, pat, arm, layer, size=True)
     obj = os.path.join(rundir, "obj", os.path.basename(a) + ".o")
     os.makedirs(os.path.dirname(obj), exist_ok=True)
     tu = obj + ".c"
@@ -423,7 +434,7 @@ def cmd_dry(args):
         pat, arm, layer, size = b
         try:
             if size:
-                artifact(rundir, pat, arm, layer)
+                artifact(rundir, pat, arm, layer, size=True)
             else:
                 build_cell(rundir, pat, arm, layer)
             return None

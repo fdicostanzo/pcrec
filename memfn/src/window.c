@@ -1462,7 +1462,7 @@ static uint32_t offer_at(const mf_walt *al, int32_t off, const uint8_t set[32])
  * cards (r45_reply rev 6 §3): until the cards C1-C2 run and rule R1 picks h*,
  * the kit ships the grid's top, 64, so that at pcrec's default window width
  * (32: its largest stated offset is 32) no span loops and nothing moves. The
- * cards' script (memfn/data/cards/span_forms.py) replaces it with h* and its
+ * cards' script (memfn/tests/span_forms/cards.py) replaces it with h* and its
  * card ids. */
 enum { WF_SPAN_HEAD = 64 };
 #define WF_LOOP_ID "span-loop"
