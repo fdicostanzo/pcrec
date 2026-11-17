@@ -1,7 +1,12 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 9 for the kit manager (lane formsfixe, 2026-11-17; the design text beside the
-cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 9 applies the re-check of
+Status: DRAFT rev 10 for the kit manager (lane formsfixg, 2026-11-17; the design text beside the
+cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 10 applies the re-check of
+rev 9's fixes, review r38 (`docs/dev/reviews/2026-11-17-r38-memfn-forms4.md`, its RULED section:
+the CLASS behind J1 and J2 closed, not the instance: the twin term per pattern, the launches in
+rounds, and a drill with noise at every level of the night; J3, J4, J7, J8, J9 as text or small
+script fixes; J5 and J6 are lane formsfixh's checks, not this text's; read "Changes in rev 10"
+first). Rev 9 (lane formsfixe) applied the re-check of
 rev 8's fixes, review r37 (`docs/dev/reviews/2026-11-17-r37-memfn-forms3.md`, its RULED section:
 H1 and H2 as ONE mechanism, the twin contrasts, plus H3, H4 and H7 in the rule's text and the
 script; H9 and H10 as text; H5, H6 and H8 are lane formsfixf's checks, not this text's; read
@@ -48,6 +53,29 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `MF_MAX_FWD` 33); `mf_result` 3,000 B; `mf_wspan` 1,164 B; `mf_wreply` 532 B;
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
+
+## Changes in rev 10 (by r38 finding id)
+
+Review r38 re-checked rev 9's fixes (`lane/memfn-forms` 5d2a98710). Its two rule defects (J1,
+J2) were, for the third round running, noise shapes one level below the drills (r36 G2 the
+night, r37 H1 one regime, r38 J1 one pattern; J2 the launch ORDER), masked today exactly as the
+earlier ones (every real night takes step (5) while NOT-WARM and short-subject are
+approximations). The kit manager RULED the class closed, not the instance: the estimator at
+the finest level the night times twins, a night order that does not correlate arm with time,
+and a drill family that varies noise at EVERY level. `cards.py selftest` is the drill record
+({NCHK} checks, 0 failed; lane formsfixg's report, "Validation"). J5 and J6 are lane formsfixh's
+checks (compound section (4), G2), J10 is NOTED.
+
+| id | change | where |
+|---|---|---|
+| J1 | The twin term is ALSO computed per PATTERN, over the pattern's own hash-equal pools in its cells read (df 12 at a 2-arm pool, 36 at `hex24`), a floor in addition to the (regime, layer) one: `f(c) = max(f(r, l), twin(pattern))`; a pattern with no estimate (df 0) voids its cells through the gate, never pooled up. One pattern's arms at offsets τ 2 % / 3 %: {J1ROWS} (r38: 0.40-0.69). Control: `hex64` τ 2 % under rev 9's floor {J1C} (accept > 0.15) | §3 "The twin term PER PATTERN", drill (xxi) |
+| J2 | Each cell is timed in ROUNDS, one launch of every arm per round, the round's arm order a fixed permutation from the cell's key; the cells' order and the ruled night order unchanged. r38's step (+5 % after `hex24`'s H(4)): {J2ROW}. Control: the same step in rev 9's arm-major order under rev 9's floor {J2C} (accept > 0.15); the same cut in rounds under rev 9's floor {J2CI}. A selftest row checks `time_cells` launches in rounds, in the order the drills use | night order step 1, drill (xxi) |
+| CLASS | Drill (xxi), RULED: between-run noise confined to each pooled level in turn (the night, one regime, one layer, one pattern at each pool size, one arm: I, H(64), H(8)) at τ 1/2/3 %, and a box-speed STEP (+2/+5/+10 %, the cut drawn inside the block each night) and a linear DRIFT (2/5/10 % over the block) in a block of each level of the launch order (the night, one pattern's block, one layer of it, one cell, the cell's middle round in `hex24` and in `hex64`): {NCLASS} rows, worst P(h\* != 64) {WORST} over 300 nights each (accept <= 0.05). Every earlier drill re-run: {EARLIER}. POWER (a true 5 % win of H(8) in one regime): {POWER}. Void rate on pure noise: {VOID} of nights (F3: <= 5 %) | drill (xxi), (xv)-(xx) |
+| J3 | RECORDED LIMIT: the agreement gate is sized by N (head comparisons), not its own test count; at N = 0 it voids nearly every cell (re-run rounds, never a wrong h\*); unreachable on a healthy night | §3 "A split that moves a median" (the gate) |
+| J4 | (1) A cell the gate voids only after the first-owed cells are read owes a second `rerun` round; rounds end (each cell re-timed at most once). (2) The gate reads a floor that includes the disagreeing pool's own contrast (stated) | §3 "The re-run", the gate |
+| J7 | The identity check's reach is printed and floored PER SOURCE (cards, census, movers); at h\* < 64 the movers file's own count must be nonzero | §3 "The identity check" |
+| J8 | `cards.py c3`'s VACUOUS text names the cause: H(64) loops nowhere in C3/C4 at this window width (or its loop text moved) | night order 2b (script text) |
+| J9 | memfn/tests NOTES.md lists the forms' later plants (S3285, S3287-S3289, S3300, S3301, S3304); three pointers in formsfixh's files are exact replacement lines for the landing lane (rulings R1) | lane report |
 
 ## Changes in rev 9 (by r37 finding id)
 

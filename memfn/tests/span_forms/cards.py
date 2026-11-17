@@ -1815,11 +1815,12 @@ def cmd_selftest(_args):
               % (ph, NOISE_TRIALS, fmh, nvh))
     # its control: rev 7's floor (the A/A term alone) on the 3x night must FAIL the acceptance;
     # rev 9's twin term and gate also see a noisier regime, so the control turns them off too
-    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False, False
+    # (rev 10: and the per-pattern twin term, which sees a noisier regime too)
+    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = (False,) * 4
     try:
         pc, _nv, _fm = noise_drill(seed=41, rscale={"not-warm": 3.0})
     finally:
-        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True, True
+        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = (True,) * 4
     check("(G2) control: one regime 3x, A/A floor alone", pc > 0.15,
           "P(h* != 64) = %.3f over %d trials (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # its power (the floor's cost, recorded): a true 10 % win of every head <= 8 where it loops
@@ -1875,13 +1876,15 @@ def cmd_selftest(_args):
         check("(G3) 3-of-5 split of I, %.1f f (%.1f %%)" % (mult, 100 * s), offn / NOISE_TRIALS <= 0.05,
               "P(h* != 64) = %.3f over %d nights (accept <= 0.05)" % (offn / NOISE_TRIALS, NOISE_TRIALS))
     # its control: rev 7's reading (I's own arm alone) under the same split must FAIL the acceptance
-    globals()["POOL_I"] = False
+    # (rev 10: rev 7 had no per-pattern twin term either; with I alone no pool has a twin, so the
+    # term would void every cell and blind the control)
+    globals()["POOL_I"], globals()["PAT_TWIN"] = False, False
     try:
         rng = random.Random(65)
         offc = sum(synth_night(rng, 0.01, splits={cellI: (3, 1 + 1.5 * fmed)})["hstar"] != GRID_TOP
                    for _ in range(NOISE_TRIALS))
     finally:
-        globals()["POOL_I"] = True
+        globals()["POOL_I"], globals()["PAT_TWIN"] = True, True
     check("(G3) control: the 1.5 f split, I's arm alone", offc / NOISE_TRIALS > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)"
           % (offc / NOISE_TRIALS, NOISE_TRIALS))
@@ -1912,11 +1915,11 @@ def cmd_selftest(_args):
                   "P(h* != 64) = %.3f over %d nights (accept <= 0.05); median f(A/A) %.4f, f(hit-dense/off) %.4f; "
                   "nights with a first void %d" % (ph, NOISE_TRIALS, fmh, NOISE_LAST["fcell"], nvh))
     # its control: rev 8's rule (no twin term, no agreement gate) on the 2 % one-regime night
-    globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = False, False, False
     try:
         pc, _nv, _fm = noise_drill(seed=301, armoff=(0.02, ("not-warm",), True))
     finally:
-        globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = True, True, True
     check("(H1) control: tau 2 %, one regime, rev 8's rule", pc > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
 
@@ -1934,11 +1937,11 @@ def cmd_selftest(_args):
                                                                           100 * mult * fcell), ph <= 0.05,
                       "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d"
                       % (ph, NOISE_TRIALS, nvh))
-    globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = False, False, False
     try:
         pc, _nv, _fm = noise_drill(seed=499, splits={("C2", "hex64", "I", "hit-dense", "off"): (5, 1 + 1.5 * fcell)})
     finally:
-        globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"], globals()["PAT_TWIN"] = True, True, True
     check("(H2) control: I at hex64, 1.5 f, rev 8's rule", pc > 0.15,
           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # the agreement gate's own cost: the void rate it ADDS on pure noise (F3's acceptance: <= 5 %
