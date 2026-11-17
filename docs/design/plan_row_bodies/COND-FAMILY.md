@@ -2206,3 +2206,13 @@ NOT as he typed it (his message's formatting dropped characters); the manager re
 lazy-gap form (`(.*?(${rx}))*.*`), and the "fix" in the manager's answer is then his own pattern, not a correction.
 Unconfirmed character for character; the meaning (one pattern over the span, the loop walks the hits in order) is
 what is recorded.
+
+**2026-11-17 OWNER — the regex model explains; it does not exclude useful features (Frank, to session 138, box
+clock about 13:20).** After the manager noted that regex keeps only a loop's last capture, so "the list of hits"
+is not a regex notion. HIS WORDS: "That said, we are also attempting to make a useful language. In that way, being
+able to access all the hits of a search is helpful. It's an exception that should be noted but no excluded for
+purity". RECORD: access to ALL the hits of a search STAYS. Where the language offers something regex has no model
+for, that is a NOTED EXCEPTION (stated as such, with what regex alone would give), never a reason to drop it. MINE,
+following from it: the draft keeps one short list of these exceptions (the hit list first; the loop's pass table,
+records and defaults are candidates for the same list, each still the owner's to confirm), and the rule for how a
+condition on such a value interacts with backtracking is asked for each, since regex cannot answer it.
