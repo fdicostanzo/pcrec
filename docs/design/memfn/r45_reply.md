@@ -612,8 +612,8 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
 
 | row | input | output |
 |---|---|---|
-| R0 gate | any form whose answers differ from the byte loop (G2) or from libpcre2 (pcrec's answer rows), or fail a card cell's own answer gate (python `re`) in ANY card, C3 included [rev 7, r35 F5] | that form is DEFECTIVE: it leaves the grid, is filed, and sets nothing. A gate failure is never a void. A gate failure of I or of an A/A arm (the reference itself) makes the night DEFECTIVE: no h is read from it |
-| R1 default | every surviving FINITE grid value h; every timed cell c = (`k`, regime, layer) of C1 and C2 ONLY [rev 3, F11], in EVERY regime of the cards' list, NOT-WARM and `short-subject-search` included [rev 5, Q4/C6]; a cell void twice is read by step (5) [rev 6, R5-2] | (1) per h, `W(h)` = max over the cells READ of `t(H(h), c) / t(I, c)`, each `t` a raw median; `t(I, c)` is the median over the launches of EVERY arm whose built artifact hash-equals I's in that cell (I's POOL: I and each such head, measured per layer when the cells are built, never inferred from `h >= k`; a cell without I's own row is REFUSED loudly, never void) [rev 8, rulings R1, superseding r36 G3's RULED text]; where H(h)'s emitted text equals I's in a cell, `t(H(h), c)` IS that pooled reading: one text, one binary, one reading [rev 7, r35 F2]; a twice-void cell adds the term 1 for each head whose text is I there (`h >= k`) and no term for any other head. (2) The EQUAL set `E = { h : W(h) <= (1 + f_E) x min_g W(g) }`, computed once, never chained; `f_E` is the largest floor of the cells read (W is a worst ratio across cells) [rev 8, r36 G2]. (3) DOMINANCE [RULED r23 R3-1]: g DOMINATES h when `t(H(h), c) / t(H(g), c) > 1 + f(c)` in at least one cell c READ and `t(H(g), c) / t(H(h), c) > 1 + f(c)` in none, `f(c)` the floor of c's (regime, layer) [rev 8, r36 G2]. The dominated members of E are computed once, all against E, and removed together. In general, step (3) keeps the members of E dominated (faster beyond `f` in at least one cell and never slower beyond `f`) by the fewest others [rev 6, R5-6: one wording everywhere]. That is the undominated ones whenever any exist, which is the ruled step. When none exist (a cycle, possible because "beyond `f`" is a tolerance), it is those dominated least [RULED by the kit manager 2026-11-16, rev 5 Q2; the lane's rev 4 clause; rev 6 words "dominated" as above]. (4) **h\* = the LARGEST kept h that is the top or itself beat I beyond `f(c)` in some cell c read** [RULED r22 F10; rev 8, RULED r36 G4: a kept head that measured no win never ships; "the top" is the largest R0-surviving head, r36 G5]. If no kept head qualifies, h\* is the top. A pick that beat I is labelled "MEASURED (kit-grid@7 cards C1 span_cross, C2 span_pop; <n> cells read)" (DERIVED in place of MEASURED when R3 fires) [rev 7, r35 F10]. A pick that did not (the top) is CHOSEN: "h = grid top (64, CHOSEN), on a measured tie of every finite head" (or "of {" the members of E "}"), or "h = grid top (64, CHOSEN): every shorter finite head measured slower beyond `f`" (a colon, as drill (v)) [RULED r23 R3-3; rev 7, F10]. When R0 removed 64, the same labels lead with "h = <top>, the largest R0-surviving head (CHOSEN; the grid top failed R0)" [rev 8, r36 G5]. (5) **VOID** [rev 6, RULED r25 R5-2: a void cell never helps another head]: if any C1-C2 cell is void twice (or void by method), steps (1)-(4)'s pick is RECORDED with the card ids (it does not ship) and h\* is the LARGEST R0-SURVIVING finite head [rev 7, r35 F5]: 64 whenever it survives, labelled "h = grid top (64, CHOSEN): cell(s) <ids> void twice; the cells read picked H(<pick>)"; otherwise labelled "h = <h>, the largest R0-surviving head (CHOSEN; the grid top failed R0): cell(s) ...". If no finite head survives R0, no form ships (plan A's fallback, "Scope"). No void cell removes a head from E or from the dominance count, so a void can neither lower h\* nor move a competitor. Otherwise h\* is step (4)'s |
+| R0 gate | any form whose answers differ from the byte loop (G2) or from libpcre2 (pcrec's answer rows), or fail a card cell's own answer gate (python `re`) in ANY card, C3 included [rev 7, r35 F5], and in ANY reading of a cell: step 1's, a void re-run's or the confirm's (`results_confirm.tsv`, its layout twins included) [rev 11, r39 K2: rev 10's R0 scanned step 1 and C3 only, so a confirm-row gate failure read as "confirms nothing"] | that form is DEFECTIVE: it leaves the grid, is filed, and sets nothing. A gate failure is never a void. A gate failure of I or of an A/A arm (the reference itself) makes the night DEFECTIVE: no h is read from it |
+| R1 default | every surviving FINITE grid value h; every timed cell c = (`k`, regime, layer) of C1 and C2 ONLY [rev 3, F11], in EVERY regime of the cards' list, NOT-WARM and `short-subject-search` included [rev 5, Q4/C6]; a cell void twice is read by step (5) [rev 6, R5-2] | (1) per h, `W(h)` = max over the cells READ of `t(H(h), c) / t(I, c)`, each `t` a raw median; `t(I, c)` is the median over the launches of EVERY arm whose built artifact hash-equals I's in that cell (I's POOL: I and each such head, measured per layer when the cells are built, never inferred from `h >= k`; a cell without I's own row is REFUSED loudly, never void) [rev 8, rulings R1, superseding r36 G3's RULED text]; where H(h)'s emitted text equals I's in a cell, `t(H(h), c)` IS that pooled reading: one text, one binary, one reading [rev 7, r35 F2]; a twice-void cell adds the term 1 for each head whose text is I there (`h >= k`) and no term for any other head. (2) The EQUAL set `E = { h : W(h) <= (1 + f_E) x min_g W(g) }`, computed once, never chained; `f_E` is the largest floor of the cells read (W is a worst ratio across cells) [rev 8, r36 G2]. (3) DOMINANCE [RULED r23 R3-1]: g DOMINATES h when `t(H(h), c) / t(H(g), c) > 1 + f(c)` in at least one cell c READ and `t(H(g), c) / t(H(h), c) > 1 + f(c)` in none, `f(c)` the floor of c's (regime, layer) [rev 8, r36 G2]. The dominated members of E are computed once, all against E, and removed together. In general, step (3) keeps the members of E dominated (faster beyond `f` in at least one cell and never slower beyond `f`) by the fewest others [rev 6, R5-6: one wording everywhere]. That is the undominated ones whenever any exist, which is the ruled step. When none exist (a cycle, possible because "beyond `f`" is a tolerance), it is those dominated least [RULED by the kit manager 2026-11-16, rev 5 Q2; the lane's rev 4 clause; rev 6 words "dominated" as above]. (4) **h\* = the LARGEST kept h that is the top or itself beat I beyond `f(c)` in some cell c read** [RULED r22 F10; rev 8, RULED r36 G4: a kept head that measured no win never ships; "the top" is the largest R0-surviving head, r36 G5], **and whose win there its cell's confirm reproduced** [rev 11, RULED r39 K4, READING B: the confirm gates this predicate ONLY; steps (1)-(3) read the first reading]. If no kept head qualifies, h\* is the top. A pick that beat I is labelled "MEASURED (kit-grid@7 cards C1 span_cross, C2 span_pop; <n> cells read)" (DERIVED in place of MEASURED when R3 fires) [rev 7, r35 F10]. A pick that did not (the top) is CHOSEN: "h = grid top (64, CHOSEN), on a measured tie of every finite head" (or "of {" the members of E "}"), or "h = grid top (64, CHOSEN): every shorter finite head measured slower beyond `f`" (a colon, as drill (v)) [RULED r23 R3-3; rev 7, F10]. When R0 removed 64, the same labels lead with "h = <top>, the largest R0-surviving head (CHOSEN; the grid top failed R0)" [rev 8, r36 G5]. (5) **VOID** [rev 6, RULED r25 R5-2: a void cell never helps another head]: if any C1-C2 cell is void twice (or void by method), steps (1)-(4)'s pick is RECORDED with the card ids (it does not ship) and h\* is the LARGEST R0-SURVIVING finite head [rev 7, r35 F5]: 64 whenever it survives, labelled "h = grid top (64, CHOSEN): cell(s) <ids> void twice; the cells read picked H(<pick>)"; otherwise labelled "h = <h>, the largest R0-surviving head (CHOSEN; the grid top failed R0): cell(s) ...". If no finite head survives R0, no form ships (plan A's fallback, "Scope"). No void cell removes a head from E or from the dominance count, so a void can neither lower h\* nor move a competitor. Otherwise h\* is step (4)'s |
 | R2 dial evidence | every cell of C1-C3 where I beats H(h\*) beyond `f`; C3's cells are timed at the picked h\* after step 2 (night step 2b), so until they are, R2's C3 half is NOT COMPUTED and the rule says so [rev 7, r35 F4] | filed as the evidence for the dial's always-inline option (cover_cap.md §11.3, unlock 2). R2 never changes R1's default |
 | R3 derivation | h\* per card class against (a)'s `E[D]` for that class | if h\* tracks `E[D]` in every class, h becomes a derivation from the byte rate (§6 Q3); otherwise it stays a MEASURED constant. "Tracks" [rev 7, r35 F10]: each class's OWN pick (steps (1)-(4) over that class's cells read) is the surviving grid head nearest its `E[D]` (the larger on a tie), for every class with a cell read whose text MOVES for some surviving head [rev 8, r36 G6: a literal class, `lit40` or `abc60`, renders I at every head, so its own pick is the top on any data and could never track]; then the label reads DERIVED |
 | R4 near-miss | C1's near-miss column: H(h\*) against C5 | a timed loss beyond `f` is §4's trigger (the skip's build); it never changes h\* |
@@ -757,24 +757,50 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       shape). Each round re-times only cells attempted once; no cell is re-timed twice, so the
       rounds end. `rule` names each owed round with `NEXT cards.py rerun RUNDIR`.
     - **Confirm by re-run [rev 10, RULED r38 R2 (the kit manager's rulings entry R2, lane
-      formsfixg)].** The class drill (xxi) found a level no floor can read: between-run noise
+      formsfixg); rev 11, RULED r39 K1-K6].** The class drill (xxi) found a level no floor can read: between-run noise
       confined to ONE head's arm. No twin pool holds a head where that head is compared (its
       twins exist only in `lit40`/`abc60`, where it never is), so a head whose arm carries its
       own offset `exp(N(0, 2 %))` in every cell stayed in E whenever its worst ratio fell under
       `1 + f` and then "won": P(h\* != 64) = 0.187 for H(8) (0.21 H(0), 0.17 H(16), 0.08 H(32);
       rev 9's rule 0.197, J1's per-pattern term neither helps nor hurts). Replication is the
-      general answer over every level: **a head's win beyond `f` in a cell (`t(I, c) / t(H(h), c)
-      > 1 + f(c)`) COUNTS only if the cell's confirming re-run wins again beyond `f(c)`.** After
-      the voids are settled and the gate has run, `rule` lists every cell holding a head's win
-      and owes ONE confirming re-run of each (`cards.py rerun` times every arm of the cell, in
-      rounds, into `results_confirm.tsv`). A win that does not reproduce reads as a TIE with I in
-      that cell (no win, never a void, never a pick); a confirm reading with a missing, void or
-      bimodal arm confirms nothing. The cell's reading of record stays the first one; the
-      confirm decides only whether its wins count. One confirming re-run per winning cell, no
-      more, and the ruled night order is unchanged (the re-run sits inside the cards step).
-      Cost: a pure-noise night holds no win (the floor is sized to α over every comparison:
-      no confirm cell on any of 300 pure-noise nights, normal or t(5) launches); a night with one real 5 % win of one head in one regime confirms about
-      10 (mean 10.0 hit-dense, 9.8 random; 14 at most) cells, about 5 s each.
+      general answer over every level that does not REPLICATE: **a head's win beyond `f` in a cell
+      (`t(I, c) / t(H(h), c) > 1 + f(c)`) COUNTS only if the cell's confirming re-run wins again
+      beyond `f(c)`.** [rev 11, r39 K1: rev 10 called replication "the general answer over every
+      level"; it is not for a level that replicates, and an exe's offset replicated because the
+      confirm re-ran the same exes.] After the voids are settled and the gate has run, `rule`
+      lists every (cell, head) win and owes ONE confirming re-run of each (`cards.py rerun`),
+      **timed on FRESH LAYOUT TWINS [rev 11, RULED r39 K1]:** `I.cf` (I's object code at a second
+      padding, 2,080 bytes: 48 mod 64) and `h<N>.cf` for each winning head, in rounds, into
+      `results_confirm.tsv`; never step 1's exes, so an offset an exe carries cannot replicate.
+      **The confirm's reading of a head's win is `t(I.cf) / t(h<N>.cf)`; an `I.cf` or `h<N>.cf`
+      that is missing, void or bimodal confirms nothing for that head** [rev 11, r39 K3: rev 10's
+      text said "a missing, void or bimodal arm" (any arm) while the script read I's pool and the
+      winning head only; the per-arm reading is the sound one, since another head's void says
+      nothing about this head's win, and the text now says it]. **The confirm feeds ONE
+      predicate, step (4)'s "beat I beyond `f`" (READING B) [rev 11, RULED r39 K4]:** W, E and
+      dominance read the first reading. Rev 10 read an unreproduced win as a TIE with I in W, E
+      and dominance, which MANUFACTURED dominance between equal co-winners (H(8) and H(16) both
+      5 % faster, an unconfirmed H(16) read 1.00 against H(8)'s 0.95, so H(8) "dominated" it by a
+      loss the confirm created): with every head <= 16 truly 5 % faster, h\* = 16 (the rule's own
+      target) on only 122-131 of 300 nights (r39). The cell's reading of record stays the first
+      one; the confirm decides only whether a win counts. One confirming re-run per (cell, head)
+      win: a head whose `.cf` row exists is never owed again, so the confirms end (a later round
+      can owe another head in a cell already confirmed, when R0 from the confirm's own reading
+      lowered N; it re-times `I.cf` there with it). **R0 reads the confirm** like any reading
+      (the R0 row above, r39 K2). **One owed list [rev 11, RULED r39 K6]:** `rule` and `rerun`
+      call ONE function (`owed_now`) with ONE G2 list, `--g2 FILE` recorded in
+      `RUNDIR/rule_g2.json` by whichever command is given it and read by every later call; rev
+      10's `rerun` read an empty G2 list, owed a subset of `rule --g2`'s confirms (R0 shrinks N,
+      so `f` is lower and `rule` owes more), and a night with a G2-defective head stalled between
+      the two (72 of 96 owed-confirm nights, r39 VERIFY). The ruled night order is unchanged
+      (the confirm sits inside the cards step, night order step 1). **Cost [rev 11, r39 K5]:**
+      the bound is every mover cell read with every moving head winning: 56 cells today (4
+      regimes read), 456 arm cells, about 0.06 h by `cards.py plan`'s UNMEASURED constants (84
+      cells with the bench's methods); one real win of one head in one regime is 14 cells (H(8)),
+      2 arm cells each, about 0.004 h; a pure-noise night confirms nothing (0 cells over 300
+      nights, normal and t(5) launches), and a night with per-exe offsets of τ 1/2/3 % and no
+      real win confirms a mean of at most 0.01 cells a night (`selftest`'s (r39 K1) lines print
+      the count).
     - **Void by method [rev 7, r35 F8].** A cell in a regime whose method is the kit's
       approximation (below, "The regimes' methods") is void by method: it counts as void twice
       (no re-run can give it the bench's method) and step (5) reads it.
@@ -799,7 +825,11 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
 - **The floor `f` [rev 7, RULED r35 F2: sized to the comparison count; rev 8, RULED r36 G2: per
   (regime, layer)].** The cards' own A/A
   cells (`lit-l16`, every regime READ and both layers, run with the cards on the same binary)
-  estimate the noise of one ratio of two medians, which is exactly what a head against I is:
+  estimate the noise of one ratio of two medians of two EXES: `aa` against `aa-twin`, its LAYOUT
+  TWIN (the same object code linked at another address) [rev 11, r39 K1: rev 10 said "exactly what
+  a head against I is", but its `aa` and `aa-twin` were one cached exe, so the A/A ratio read
+  launch and between-run noise only, never an offset an exe carries as a whole, while a head
+  against I is two exes; the layout twin term below carries that level per night]:
   `σ` = the RMS of `ln(t(aa) / t(aa-twin))` over those cells, raised to its 95 % upper bound
   `σ_up = σ x sqrt(n / χ²(0.05; n))` (n cells; the bound pays for estimating `σ` from about 8-12
   cells). N = the number of one-sided head-against-I comparisons the rule makes: every
@@ -862,7 +892,34 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     higher floor, not a borrowed one. On a 1 % night the A/A term (about 4.4 %) still binds; the
     per-pattern term binds only where one pattern is noisier (`selftest`'s class drill, drill
     (xxi)).
-  - **Why this mechanism.** Rev 6 used `f_AA`, the max of about 12 A/A draws, as the threshold of
+    - **The layout twin term [rev 11, RULED r39 K1].** Every estimator above is a contrast INSIDE
+    ONE EXE: I's pools are hash-equal artifacts run as one cached exe, the twin terms and the gate
+    read them, and rev 10's A/A pair was one exe too. A head against I is TWO exes, so an offset
+    an exe carries as a whole (code placement, alignment, its cache and branch-predictor
+    footprint) was read by nothing, and it repeated on the confirm, which re-ran the same exes:
+    one offset `exp(N(0, τ))` per distinct exe, held over every reading, gave P(h\* != 64) 0.13-
+    0.17 at τ 1 % and 0.62-0.63 at τ 2 % (r39 SIMULATE-1, VERIFY), with every level drill at
+    0.000. The fourth member of the family (r36 the night, r37 one regime, r38 one pattern, r39
+    one exe); its general form is a check on COMPARISON KINDS: for each comparison the rule
+    makes, the noise estimator holds a contrast of the same physical kind. So the night times
+    I's LAYOUT TWIN `I.lt`: I's compiled object linked a second time behind a padding object
+    (1,040 bytes of `.text` linked first, so the artifact's and the driver's functions sit
+    1,056 bytes higher: 32 mod 64), byte-different, the same object code, its answers gated in
+    every cell like any arm (`cards.py dry` prints the proof: byte-different, `rxa_search`
+    moved, gated). `I.lt` is one more arm of I's pool in every C1-C2 cell, and `aa-twin` is
+    `aa`'s layout twin. Per cell read, `d(c) = ln(t(I.lt, c) / t(I, c))`, two single-arm
+    medians of two exes, the kind of a head against I (whose I side is pooled, so this is
+    conservative); `σ_x` = their RMS, with df = the number of distinct exe PAIRS read (one per
+    (pattern, layer): one exe serves every regime, so its regimes share its offset; df counts
+    pairs, never cells), raised to its 95 % bound like every twin term; the term `exp(z(α / N) x
+    σ_x,up) - 1` floors every cell: `f(c) = max(f(r, l), twin(pattern), layout)`. The night
+    PRINTS the measured between-exe offset (`rule`'s layout line: `sqrt((σ_x² - σ_same²) / 2)`,
+    σ_same the same-exe pools' contrast), the 11-19 night's measurement of the level; the class
+    drill reads it back within 3 % of τ at 1/2/3 % and 0.0004 at τ 0. **Its limit, recorded:**
+    one night-wide term; an exe-offset size that differs by pattern is pooled over the night's
+    18 pairs (a per-pattern estimate has df 2), so the CONFIRM on fresh twins (below) carries the
+    rest: an offset a fresh exe does not share cannot replicate.
+- **Why this mechanism.** Rev 6 used `f_AA`, the max of about 12 A/A draws, as the threshold of
     every comparison, but the rule makes 600 of them with every regime read (108 C1-C2 cells x 9 heads, less the
     cells where a head is I: 50 per regime and layer) and 400 on a night with the two
     approximated regimes void by method [rev 8, r36 SIMULATE-7: rev 7 said "about 700"]. On pure noise H(64) is I at every C1-C2 cell, so h\* != 64 needs a
@@ -1450,7 +1507,13 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
      every arm's median alike; inside the middle round it splits the arms at random (never twins
      against heads by construction), and the bimodal test, the twin terms and the gate read it.
      The order of the cells themselves, and the ruled night order (cards, freeze h, identity,
-     width cells), are unchanged.
+     width cells), are unchanged. **Before h is frozen, step 1 also takes the CONFIRM [rev 10,
+     r38 R2; rev 11, r39 K5]:** once no cell is void, `cards.py rerun` times each cell holding a
+     head's win beyond `f` once more, on FRESH layout twins of I and of each winning head (§3
+     "Confirm by re-run"), into `results_confirm.tsv`; `rule` names it with the same `NEXT
+     cards.py rerun RUNDIR` line as a void re-run. Step 1's cells include I's layout twin `I.lt`
+     (one more arm per C1-C2 cell, +9.1 % of step 1's expected wall by `cards.py plan`'s
+     UNMEASURED constants: 0.115 h against 0.105 h) [rev 11, r39 K1].
   2. h is frozen by that rule's reading.
   2b. C3 is timed at the frozen h\* on the same binary (`cards.py c3`), and R2's C3 half and R5
      read it [rev 7, r35 F4]; C4's size record is taken at h\* (no timing). Before it times
@@ -1938,7 +2001,23 @@ by `git grep`). They are updated in the build or flagged in its report:
      a block of each level of the launch order. The drills place their steps in the order
      `cards.py` times (`launch_order`, one source on purpose: the property drilled is the rule
      on THAT order; a selftest row checks `time_cells` follows it), and each acceptance is the
-     literal 5 % of r35 F2. Each defect class has a control under rev 9's rule that must fail.
+     literal 5 % of r35 F2. ~~Each defect class has a control under rev 9's rule that must
+     fail.~~ [rev 11, r39 K8: which levels have one.] A control that must FAIL exists for each
+     defect a SINGLE plant reproduces: the pattern level (J1, `hex64` τ 2 %), the arm-major
+     order (J2), a head's arm (R2), one regime 3x (G2), I's split (G3), the between-run offset
+     (H1), I's whole-arm shift (H2), the exe level (K1: per-exe offsets under rev 10's floor and
+     confirm) and the co-winner reading (K4: rev 10's tie). The step and drift rows at the night,
+     layer, cell and middle-round levels red under no single plant: they are acceptance rows,
+     not controlled ones. Two rev 10 numbers that were only printed are CHECKED since rev 11:
+     the same J2 cut in rounds under rev 9's floor (<= 0.05: an order that regressed to
+     arm-major reds) and the fast split under rev 9's rule (> 15 of 100: the row that retired a
+     limit now has its control).
+   - **The comparison kinds [rev 11, r39 K1].** Each comparison the rule makes, and the twin
+     that measures its noise: a head against I is two exes (the layout twin term, `I.lt`
+     against I, and the A/A pair, `aa` against its layout twin); I's pool against itself is one
+     exe (the twin terms, the gate); a confirm against a first reading is two runs AND two exes
+     (fresh layout twins). An estimator of a kind the night does not time is a gap, by this
+     list.
    - **Populations are counted.** G2's long rows are named rows; G2-win's per-family, per-h
      line counts the looped sites. The force cell's population is the whole corpus.
 3. **What moves when data is regenerated: relevant if R3 fires.** The forms read no measured

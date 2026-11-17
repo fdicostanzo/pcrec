@@ -4,9 +4,10 @@
 # review 2026-11-17 r35's F2-F11; lane formsfixc, review r36's G2-G8 and rulings R1; lane formsfixe,
 # review r37's H1-H4, H7: the twin term, the agreement gate, the pool record and reach refusals;
 # lane formsfixg, review r38's J1, J2, J7, J8: the per-pattern twin term, the launch rounds, the
-# class drill, the identity reach per source).
+# class drill, the identity reach per source; lane formsfixi, review r39's K1-K6, K8, K12: the layout
+# twins, R0 over the confirm, reading B, one owed list, the checked controls).
 """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
-identity check (docs/design/memfn/r45_reply.md rev 10 §3 "The cards", "The head `h` and the
+identity check (docs/design/memfn/r45_reply.md rev 11 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
 memfn/data/cards/kit-grid.tsv).
 
@@ -17,7 +18,7 @@ shipped compile), I as the deny `--memfn=no-span-loop`, the engine route (C5) as
 `--memfn=no-window-search`; the artifact plus one find-all wrapper is one C file per cell, its
 answers gated against python `re` before any timing.
 
-THE NIGHT (r45_reply rev 9 §3 "the night order"; each step a command, RUNDIR one directory):
+THE NIGHT (r45_reply rev 11 §3 "the night order"; each step a command, RUNDIR one directory):
   plan                     every cell (card, pattern, arm, regime, layer), the counts and the
                            EXPECTED WALL TIME of each timing step (UNMEASURED constants, named)
   dry RUNDIR [--quick]     builds EVERY cell (compile, gcc, the gate on every regime's
@@ -25,19 +26,29 @@ THE NIGHT (r45_reply rev 9 §3 "the night order"; each step a command, RUNDIR on
                            and count; no clock
   run RUNDIR [--with-approx]
                            step 1: times C1, C2, C5 and the A/A cells (results.tsv), each
-                           cell in ROUNDS of one launch per arm (rev 10, r38 J2). Regimes
+                           cell in ROUNDS of one launch per arm (rev 10, r38 J2); C1-C2
+                           cells include I's LAYOUT TWIN `I.lt`, the A/A pair is aa and its
+                           layout twin (rev 11, r39 K1). Regimes
                            the kit only APPROXIMATES are void by method (rev 7, F8) and are not
                            timed unless --with-approx (a record only; the rule never reads them)
-  rerun RUNDIR             re-times every cell `rule` lists as VOID ONCE (all its arms), into
-                           results_rerun.tsv / results_c3_h<H>_rerun.tsv (rev 7, F7)
+  rerun RUNDIR [--g2 FILE] re-times what `rule` OWES, computed by the SAME function with the
+                           same recorded G2 list (rev 11, r39 K6): every cell VOID ONCE (all
+                           its arms) into results_rerun.tsv / results_c3_h<H>_rerun.tsv (rev 7,
+                           F7); once none is void, the CONFIRM: each cell holding a head's win
+                           beyond f, timed on FRESH layout twins (I.cf and each winning head's
+                           h<N>.cf), into results_confirm.tsv (rev 10 R2; rev 11 K1)
   rule RUNDIR [--g2 FILE]  R0-R5: the floor, h*, its label, the filings; exit 0 complete,
-                           2 the night is void or defective, 3 a step is owed (a re-run, or C3
-                           at h*); the line `rule: NEXT ...` names it
+                           2 the night is void or defective, 3 a step is owed (a re-run, a
+                           confirm, or C3 at h*); the line `rule: NEXT ...` names it. --g2
+                           FILE (one G2-defective head a line) is RECORDED in
+                           RUNDIR/rule_g2.json; every later `rule`/`rerun` reads the record
   c3 RUNDIR H              step 2b: times C3 at I, L and H(H) (results_c3_h<H>.tsv) and records
                            C4's sizes at H (sizes_h<H>.tsv); run at the h* `rule` picked (F4)
-  selftest                 the rule against every drill r45_reply rev 10 §3 lists, plus the noise
-                           drill (F2), the unimodal drill (F3), the void/R0/re-run drills and
-                           the CLASS drill (r38: noise, a step and a drift at every level)
+  selftest [--rev11]       the rule against every drill r45_reply rev 11 §3 lists, plus the noise
+                           drill (F2), the unimodal drill (F3), the void/R0/re-run drills, the
+                           CLASS drill (r38: noise, a step and a drift at every level) and rev
+                           11's rows (r39: per-exe offsets, reading B's power, R0 over the
+                           confirm, one owed list); --rev11 runs rev 11's rows alone
   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
                            over the card patterns, the census covers (read from the sweep's own
@@ -71,7 +82,7 @@ GRID_TOP = 64
 SIMD = "-fmemfn-simd=x86-64-v3"
 LAYERS = {"off": [], "on": [SIMD]}
 
-# ---- the rule's statistical constants (r45_reply rev 9 §3 "The floor `f`", "Void") ----------
+# ---- the rule's statistical constants (r45_reply rev 11 §3 "The floor `f`", "Void") ----------
 # ALPHA: the rule's FAMILY-WISE false-pick budget, CHOSEN = the acceptance r35 F2 ruled (P(h* !=
 # 64 on pure noise) <= 5 %). The floor is sized so that ALL the per-cell comparisons together
 # show a false win beyond f with probability at most ALPHA (one-sided Bonferroni over N).
@@ -208,7 +219,7 @@ def method_of(regime):
     return "kit-approx" if regime in APPROX else "kit"
 
 
-# ---- the cards (r45_reply rev 9 §3 "The cards"; kit-grid@7) ---------------------------------
+# ---- the cards (r45_reply rev 11 §3 "The cards"; kit-grid@7) ---------------------------------
 FINITE = ["h%d" % h for h in GRID]
 CARD_ROWS = {"C1": "span_cross", "C2": "span_pop", "C3": "span_long", "C4": "span_size",
              "C5": "span_engine"}
@@ -734,9 +745,11 @@ def cmd_plan(_args):
         by[c[0]] = by.get(c[0], 0) + 1
     for c in cl:
         print("\t".join(c))
-    builds = {(c[1], c[2], c[4]) for c in cl}
-    print("# cells %d (%s); distinct compiles %d" % (len(cl), ", ".join("%s %d" % kv for kv in sorted(by.items())),
-                                                     len(builds)))
+    builds = {(c[1], arm_base(c[2]), c[4], c[0] == "C4") for c in cl}
+    twins = {(c[1], c[2], c[4]) for c in cl if arm_lay(c[2])}
+    print("# cells %d (%s); distinct compiles %d; layout-twin links %d (rev 11, r39 K1: I.lt and aa-twin, the compiled "
+          "object linked behind a %s-byte pad)" % (len(cl), ", ".join("%s %d" % kv for kv in sorted(by.items())),
+                                                  len(builds), len(twins), LAYOUT_PAD[1]))
     for r, why in APPROX.items():
         print("# regime %s: %s; VOID BY METHOD (rev 7, F8)" % (r, why))
     s1 = [c for c in cells(cards=STEP1)]
@@ -748,12 +761,26 @@ def cmd_plan(_args):
           "sweep, LAUNCHES %d, the cells already built by `dry`):" % (EST_LAUNCH_S, EST_SWEEP_S, LAUNCHES))
     print("#   run:  %d cells timed, %.2f h (with --with-approx: %d cells, %.2f h)" % (
         len(s1_read), w(s1_read), len(s1), w(s1)))
+    no_lt = [c for c in s1_read if c[2] != "I.lt"]
+    print("#   run's layout twin I.lt (rev 11, r39 K1): +%d cells, +%.3f h over rev 10's step 1 (%.3f h without it: +%.1f %%)"
+          % (len(s1_read) - len(no_lt), w(s1_read) - w(no_lt), w(no_lt), 100 * (w(s1_read) / w(no_lt) - 1)))
     print("#   c3:   %d cells timed, %.2f h (C4's sizes: compile-only, not in the window)" % (len(s2_read), w(s2_read)))
-    print("#   rerun: one cell per void, ~%.0f s per C1-C2 cell (10 arms)" % (10 * EST_LAUNCH_S * (1 + LAUNCHES)))
-    per = 10 * EST_LAUNCH_S * (1 + LAUNCHES)
-    print("#   confirm (rev 10, r38 R2): one re-run of each C1-C2 cell holding a win beyond f, ~%.0f s a cell; a "
-          "pure-noise night ~0 cells (selftest: mean 0.000 a night), a night with one real 5 %% win of one head in "
-          "one regime ~10-14 cells (selftest: mean ~10), %.2f h" % (per, 14 * per / 3600.0))
+    na = len(GRID) + 2
+    print("#   rerun: one cell per void, ~%.0f s per C1-C2 cell (%d arms)" % (na * EST_LAUNCH_S * (1 + LAUNCHES), na))
+    # THE CONFIRM'S COST (rev 11, r39 K5): one re-run per winning (cell, head), on fresh layout twins (I.cf and the
+    # head's .cf, each a link of an object `dry` compiled); its BOUND is every mover cell read with every moving head
+    # winning; the one-win case is one head in one regime (its moving patterns x 2 layers)
+    lp = EST_LAUNCH_S * (1 + LAUNCHES)
+    movers = [(card, p, rg) for card in ("C1", "C2") for p in CARD_PATS[card] for rg in REGIMES if rg not in APPROX
+              if p not in ("lit40", "abc60") and any(h < len(PATTERNS[p][1]) for h in GRID)]
+    bound_arms = sum(2 * (1 + sum(1 for h in GRID if h < len(PATTERNS[p][1]))) for _c, p, _r in movers)
+    one = sum(2 for card in ("C1", "C2") for p in CARD_PATS[card] if p not in ("lit40", "abc60") and 8 < len(PATTERNS[p][1]))
+    print("#   confirm (rev 10, r38 R2; rev 11, r39 K1/K5): one re-run per winning (cell, head) on FRESH layout twins, ~%.0f s "
+          "per cell and winning head (I.cf + h<N>.cf); BOUND (every mover cell read, every moving head winning): %d "
+          "cells, %d arm cells, %.3f h; one real win of one head in one regime (H(8): %d cells) %.3f h; RECORD (rev 11 "
+          "selftest, not computed here): a pure-noise night 0.000 confirm cells a night (normal and t(5) launches), "
+          "per-exe offsets tau 1/2/3 %% mean <= 0.01 (max 4)" % (2 * lp, 2 * len(movers), bound_arms,
+                                                               bound_arms * lp / 3600.0, one, one * 2 * lp / 3600.0))
     print("# timing order (rev 10, r38 J2): the cells above grouped by (card, pattern, regime, layer), each timed in "
           "%d ROUNDS of one launch per arm (`launch_order`): run %d cells, %d timed launches" % (
               LAUNCHES, len(cell_groups(s1_read)), len(launch_order(s1_read))))
@@ -805,6 +832,34 @@ def cmd_dry(args):
     cbad, cI, creach = c3_deny_check(rundir)
     print("# dry: step 2b's deny check (`c3` refuses on it; r37 H4): %d arm-I C3/C4 artifacts loop-free, reach "
           "(h%d) %d%s" % (cI, GRID_TOP, creach, "; WOULD REFUSE: " + "; ".join(cbad) if cbad else ""))
+    # THE LAYOUT TWINS' PROOF (rev 11, r39 K1): step 1's twins (I.lt, aa-twin; gated above as cells) and the
+    # confirm's fresh twin of I (I.cf, layout 2), built and answer-gated here in every regime of every C1-C2
+    # pattern and layer; each twin must be BYTE-DIFFERENT from its base exe with rxa_search at another address
+    # (the same object code, another layout). The confirm's head twins (h<N>.cf) are links of objects built here.
+    cf = [(card, p, "I.cf", rg, ly) for card in ("C1", "C2") for p in CARD_PATS[card] for rg in REGIMES for ly in LAYERS]
+    with ThreadPoolExecutor(max_workers=jobs) as ex:
+        cfout = list(ex.map(one, cf))
+    cfbad = [err for _c, _o, err in cfout if err]
+    bad += cfbad
+    tw = sorted({(c[1], c[2], c[4]) for c in cl + cf if arm_lay(c[2])})
+    proofs = {}
+    for p, a, ly in tw:
+        try:
+            proofs[(p, a, ly)] = layout_proof(rundir, p, a, ly)
+        except Exception as e:      # noqa: BLE001
+            proofs[(p, a, ly)] = (False, None)
+            bad.append("LAYOUT %s %s %s: %s" % (p, a, ly, e))
+    notdiff = [k for k, (d, _s) in proofs.items() if not d]
+    notmoved = [k for k, (_d, s) in proofs.items() if not s]
+    shifts = sorted({s for _d, s in proofs.values() if s})
+    bad += ["LAYOUT TWIN NOT BYTE-DIFFERENT: %s" % " ".join(k) for k in notdiff]
+    bad += ["LAYOUT TWIN: rxa_search did not move: %s" % " ".join(k) for k in notmoved]
+    ntw = sum(1 for c in cl if arm_lay(c[2]))
+    print("# dry: layout twins (rev 11, r39 K1): %d twin exes (%d step 1, %d confirm I.cf), byte-different %d, rxa_search "
+          "moved %d (shifts %s B); answer-gated: %d step 1 twin cells + %d I.cf cells, failures %d"
+          % (len(tw), sum(1 for k in tw if arm_lay(k[1]) == 1), sum(1 for k in tw if arm_lay(k[1]) == 2),
+             len(tw) - len(notdiff), len(tw) - len(notmoved), ",".join(map(str, shifts)) or "-", ntw, len(cf),
+             len(cfbad) + sum(1 for c in cl if arm_lay(c[2]) and not done.get(c))))
     same = identical_to_I(rundir)
     print("# dry: cells %d, built and gated %d, failures %d; distinct compiles %d; subject %d B" %
           (len(cl), len(cl) - len(bad), len(bad), len(builds), n))
@@ -959,7 +1014,7 @@ def cmd_rerun(args):
     return 0
 
 
-# ---- THE RULE (r45_reply rev 9 §3, R0-R5, steps (1)-(5)) -------------------------------------
+# ---- THE RULE (r45_reply rev 11 §3, R0-R5, steps (1)-(5)) -------------------------------------
 def r1(heads, cells_read, void_cells, t, tI, same_as_I, f, top=None, measured="MEASURED", wins_ok=None):
     """R1 over the FINITE heads `heads` (R0 already applied). cells_read: the C1-C2 cells with a
     reading; void_cells: the cells void twice (or void by method); t[h][c], tI[c] the raw
@@ -1649,7 +1704,7 @@ def death_depth(pat):
     return e
 
 
-# ---- the drills (r45_reply rev 9 §3 "Drills"), each with the result the design states ------
+# ---- the drills (r45_reply rev 11 §3 "Drills"), each with the result the design states ------
 def drill(spec):
     """spec: f, heads, cells [(id, k)], ratios {h: [per cell]} (t(I) = 1 unless tI given),
     void [ids]; the default ratio is 1.0 (a head that ties I)."""
@@ -2683,7 +2738,7 @@ def cmd_selftest(args):
     return 1 if bad else 0
 
 
-# ---- the identity check (r45_reply rev 9 §3 "The head lever and its identity check") -------
+# ---- the identity check (r45_reply rev 11 §3 "The head lever and its identity check") -------
 ENCODINGS = {"byte": [], "utf8": ["-e", "utf8"]}
 
 
