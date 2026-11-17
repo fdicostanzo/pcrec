@@ -2265,3 +2265,13 @@ a condition on J's row, M a search inside J's span (his one-pattern occurrences 
 hits of M requested by name (the all-hits exception); lane rxmodel found the gate REGULAR (no stored values) and
 PCRE2 unable to spell it in one pattern (no unbounded lookbehind), which agrees with "not regex in the single
 pattern sense". The positional one-pattern form ("no B from here on", route (i)) remains what a lookahead means.
+
+**2026-11-17 OWNER RULING — whole-text: adopted if legal (Frank, to session 138, box clock about 14:05).** HIS
+WORDS: "Whole text: adopt it if it's legal. Not sure about the "fail" part". RECORD: whole-text is UN-PARKED and
+ADOPTED as his model of 13:55 (a whole-text check is a condition on a whole-value parse; the search runs inside
+it), ON CONDITION that the next revision shows it is legal, i.e. written with the language's ruled pieces and no
+new rule; if that check fails it comes back to him. The lookahead keeps its positional meaning. The `fail` branch
+is NOT adopted: he is unsure of it. MINE: the gate form needs no `fail` at all (a failing condition fails the
+program), and a general two-branch conditional is `(C & M1) | (NOT C & M2)`; should an always-failing piece ever
+be wanted, regex has one (PCRE's `(*FAIL)`, the empty negative lookahead), so it would be a regex notion, not an
+invention; not proposed now.
