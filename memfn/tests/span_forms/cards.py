@@ -1349,7 +1349,9 @@ def census_covers(frozen_pcrec, limit=None):
     census of record (cover_cap.md §6: "the sweep's count is the count of record"; r35 F9)."""
     sys.path.insert(0, os.path.join(TREE, "scripts"))
     import emit_sweep as es     # noqa: E402
-    pats = sorted({p for _f, _k, p in es.enumerate_corpus(frozen_pcrec, TREE, 60)})
+    # the sweep decodes escapes to bytes; argv takes them back through the fs encoding
+    pats = sorted({os.fsdecode(p) if isinstance(p, bytes) else p
+                   for _f, _k, p in es.enumerate_corpus(frozen_pcrec, TREE, 60)})
     if limit:
         pats = pats[:limit]
 
