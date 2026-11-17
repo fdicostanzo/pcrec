@@ -2399,7 +2399,7 @@ fi
 # digits, 0..4095), pinned on the harness build's `--harness=span-head=N` (the tester's
 # spelling of the kit's `span-head=N`, mf_lever's own: run_g2_win.sh's controls pin that
 # one). Each refused spelling is refused with the option's own text; the accepted ones compile.
-mf_h="$(dirname "$PCREC")/pcrec-harness"
+mf_h="${PCREC%/*}/pcrec-harness"
 if [ -x "$mf_h" ]; then
     for v in -0 +8 " 8" 4096 "" 8x; do
         werr="$(pcrec_run "$mf_h" -p rx "--harness=span-head=$v" -o "$WORKDIR/sh.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
