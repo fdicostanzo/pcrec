@@ -1648,7 +1648,9 @@ def analyse(night, g2_defective, alpha=ALPHA):
                 return ("I", pat, ly)
             return (arm_base(arm), pat, ly)
         return (card, pat, arm_base(arm), ly)
-    te = text_effects([(k, r) for _n, rr in allfiles for k, r in rr.items()], text_of)
+    # keyed (file, cell): each file's row its own level (a confirm or re-run row of one cell is a
+    # second reading, never the same row's launches)
+    te = text_effects([((n, k), r) for n, rr in allfiles for k, r in rr.items()], lambda nk: text_of(nk[1]))
     adj_rows = {k: dict(r, launches=adjusted(r, te, text_of(k))) if r["status"] == "ok" else r
                 for k, r in rows.items()}
     sigs_b, glob_b = launch_sigmas(adj_rows) if VARIANT_BIMODAL else (sigs, glob)
