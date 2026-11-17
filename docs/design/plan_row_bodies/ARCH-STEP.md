@@ -99,3 +99,21 @@ across layers), to be amended in the same change: "agree" (docs/design/stream/ma
 record). Asked **goals-order** (contained decisions / data with its code, accessors / seams, module and layer /
 data shapes / ride-along; the gate above all): "goals-order: agree". Still open from the review: shape-goal,
 new-rules, register-keeper, speed-gate.
+
+## 2026-11-17, the owner on shape-goal, and on judgement
+
+Asked **shape-goal** (the manager's lean: demote "a data shape covers the inputs the plan names" from a goal to a
+rule under the data-with-its-code goal, keeping its check in the architecture note). HIS WORDS: "shape-goal: I
+agree. One thing to understand is the judgement required. There will be an ebb and flow to this. We have to weigh
+choices so we don't remodel with every change. For instance, we might make a small change which goes against the
+goals and note it then if a larger change or a moment to refactor comes along that small violation can be
+corrected. It also allows builds to settle as refactoring with small changes can be myopic."
+
+RECORD: (1) FOUR goals: contained decisions; data with its code; seams; remodels ride along; the shape statement
+is a RULE under the second. (2) JUDGEMENT is part of the method: the goals are weighed, not applied mechanically;
+a small change MAY go against a goal, provided it is NOTED; the noted violation is corrected when a larger change
+or a moment to refactor comes; this also lets a build settle before it is reshaped (refactoring in small steps can
+be short-sighted). MINE, how it is carried: the note of a deviation is a ROW in the ride-along register (what was
+done against which goal, where, and the event that should correct it), so "noted" has one home; the architecture
+critic and the code critic report such a deviation as NOTED with its row, a finding only when it has no row or is
+not small.
