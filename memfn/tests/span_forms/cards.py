@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: 0BSD
 # Provenance: original pcrec-memory-functions text (lane forms, R-45 plan A; lane formsfixa,
 # review 2026-11-17 r35's F2-F11; lane formsfixc, review r36's G2-G8 and rulings R1; lane formsfixe,
-# review r37's H1-H4, H7: the twin term, the agreement gate, the pool record and reach refusals).
+# review r37's H1-H4, H7: the twin term, the agreement gate, the pool record and reach refusals;
+# lane formsfixg, review r38's J1, J2, J7, J8: the per-pattern twin term, the launch rounds, the
+# class drill, the identity reach per source).
 """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
-identity check (docs/design/memfn/r45_reply.md rev 9 §3 "The cards", "The head `h` and the
+identity check (docs/design/memfn/r45_reply.md rev 10 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
 memfn/data/cards/kit-grid.tsv).
 
@@ -22,7 +24,8 @@ THE NIGHT (r45_reply rev 9 §3 "the night order"; each step a command, RUNDIR on
                            subject; C4's size record at the grid top) and prints the cell list
                            and count; no clock
   run RUNDIR [--with-approx]
-                           step 1: times C1, C2, C5 and the A/A cells (results.tsv). Regimes
+                           step 1: times C1, C2, C5 and the A/A cells (results.tsv), each
+                           cell in ROUNDS of one launch per arm (rev 10, r38 J2). Regimes
                            the kit only APPROXIMATES are void by method (rev 7, F8) and are not
                            timed unless --with-approx (a record only; the rule never reads them)
   rerun RUNDIR             re-times every cell `rule` lists as VOID ONCE (all its arms), into
@@ -32,8 +35,9 @@ THE NIGHT (r45_reply rev 9 §3 "the night order"; each step a command, RUNDIR on
                            at h*); the line `rule: NEXT ...` names it
   c3 RUNDIR H              step 2b: times C3 at I, L and H(H) (results_c3_h<H>.tsv) and records
                            C4's sizes at H (sizes_h<H>.tsv); run at the h* `rule` picked (F4)
-  selftest                 the rule against every drill r45_reply rev 9 §3 lists, plus the noise
-                           drill (F2), the unimodal drill (F3) and the void/R0/re-run drills
+  selftest                 the rule against every drill r45_reply rev 10 §3 lists, plus the noise
+                           drill (F2), the unimodal drill (F3), the void/R0/re-run drills and
+                           the CLASS drill (r38: noise, a step and a drift at every level)
   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
                            over the card patterns, the census covers (read from the sweep's own
@@ -658,6 +662,9 @@ def cmd_plan(_args):
         len(s1_read), w(s1_read), len(s1), w(s1)))
     print("#   c3:   %d cells timed, %.2f h (C4's sizes: compile-only, not in the window)" % (len(s2_read), w(s2_read)))
     print("#   rerun: one cell per void, ~%.0f s per C1-C2 cell (10 arms)" % (10 * EST_LAUNCH_S * (1 + LAUNCHES)))
+    print("# timing order (rev 10, r38 J2): the cells above grouped by (card, pattern, regime, layer), each timed in "
+          "%d ROUNDS of one launch per arm (`launch_order`): run %d cells, %d timed launches" % (
+              LAUNCHES, len(cell_groups(s1_read)), len(launch_order(s1_read))))
 
 
 def cmd_dry(args):
@@ -2133,6 +2140,33 @@ def cmd_selftest(_args):
         _p, nv, _f = noise_drill(seed=sd, noise=nz)
         check("(r38) void rate on pure noise, %s launches" % nm, nv / NOISE_TRIALS <= 0.05,
               "nights with a first void %.3f (accept <= 0.05)" % (nv / NOISE_TRIALS))
+    # J2: `time_cells` times in ROUNDS (stubbed execution, no clock): each run of n launches holds
+    # every arm of the cell once, and the order is the one the drills place their steps in
+    import tempfile
+    calls = []
+    real_p, real_e = prepare_cell, _exec
+    globals()["prepare_cell"] = lambda _rd, c, _n: list(c)
+    globals()["_exec"] = lambda argv, c, env=None: calls.append(tuple(c)) or "t %d\n" % (len(calls) + 1)
+    try:
+        cl = [c for c in cells(cards=("C1",)) if c[1] == "hex24" and c[3] in ("hit-dense", "near-miss")]
+        import pwd
+        troot = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % pwd.getpwuid(os.getuid()).pw_name
+        os.makedirs(troot, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=troot) as td:      # the temp root, never /tmp
+            out = os.path.join(td, "r.tsv")
+            open(out, "w").close()
+            time_cells(td, cl, out)
+            nrows = sum(1 for ln in open(out) if not ln.startswith("#"))
+    finally:
+        globals()["prepare_cell"], globals()["_exec"] = real_p, real_e
+    n_arm = len(GRID) + 1
+    rounds = [calls[i:i + n_arm] for i in range(0, len(calls), n_arm)]
+    rr = all(len(set(r)) == n_arm and len({(c[0], c[1], c[3], c[4]) for c in r}) == 1 for r in rounds)
+    same_order = [c for c, _i in launch_order(cl)] == calls
+    check("(r38 J2) time_cells interleaves the arms in rounds", rr and same_order and nrows == len(cl)
+          and len(calls) == LAUNCHES * len(cl),
+          "%d launches over %d arm cells (%d rows): every round of %d holds each arm once: %s; the drills' order: %s"
+          % (len(calls), len(cl), nrows, n_arm, rr, same_order))
     # J7: the identity reach per SOURCE: a movers file that moves nothing fails though a card moves
     rs = (source_reach_refusal(24, {"cards": 1, "census": 0, "movers": 0}, has_movers=True),
           source_reach_refusal(24, {"cards": 1, "census": 0, "movers": 2}, has_movers=True),

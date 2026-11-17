@@ -691,7 +691,19 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       the largest over the smallest exceeds `1 + f(c)` (the cell's own floor, below, whose twin
       term already measures that noise), the cell is VOID, joins the re-run list (§"The re-run")
       and is never a pick. A pool of two voids on any such disagreement: it cannot tell which arm
-      moved. Only I's reading can make every head win or remove 64 (64 reads I's pool at every C1-C2
+      moved. [rev 10, r38 J1] The cell's own floor `f(c)` includes its pattern's twin term, and a
+      cell whose pattern has no twin estimate voids here too. [rev 10, r38 J4 (2)] The gate reads
+      the floor computed over the cells read BEFORE it gates, which includes the disagreeing
+      pool's own contrast: a 2-arm contrast of `s` lifts its (regime, layer) twin floor to about
+      0.86 `s`, and the gate still fires (0.90-0.92 of nights at 2 `f`, r38). A statement, not a
+      defect. [rev 10, RECORDED LIMIT, r38 J3] The gate's threshold is sized by N, the HEAD
+      comparison count, not by the gate's own test count (pools x arm pairs). On a degenerate
+      night where every C1-C2 head is hash-equal to I (N = 0, `z` = 1.645: a no-op lever build,
+      or R0 removing every moving head) it voids nearly every cell on pure noise (first-void
+      0.983-0.993 of nights, 1-3 re-run rounds); the cost is re-run rounds, never a wrong h\*
+      (P(h\* != 64) 0.000-0.003), and a healthy width-32 or width-4095 night never reaches it
+      (0.000 first-void). Recorded, not built against.
+      Only I's reading can make every head win or remove 64 (64 reads I's pool at every C1-C2
       length). A slow split in a head's own arm only makes that head lose. The residual is a FAST
       3-of-5 split in a head arm, which is outside the pool's reach and the gate's: it ships that
       head in 27 of 100 nights at 1.5 `f` (`cards.py selftest`'s RECORD line, not gated;
@@ -704,7 +716,12 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       re-timed WHOLE, every arm of it, in a later step of the same night (`cards.py rerun`),
       and the re-run's rows replace the first reading of that cell. The rule refuses to reach
       step (5) while any cell has been attempted once; a cell is void twice only when its
-      re-run is void too. A gate failure is never re-run (it is R0, F5).
+      re-run is void too. A gate failure is never re-run (it is R0, F5). [rev 10, r38 J4 (1)]
+      `rule` lists the cells void once by a missing or void arm or a bimodal arm BEFORE the
+      agreement gate runs, so a cell the gate voids only once those cells are read owes a
+      SECOND `rerun` round (observed in 4 of 2,100 one-pattern nights; up to 3 rounds in J3's
+      shape). Each round re-times only cells attempted once; no cell is re-timed twice, so the
+      rounds end. `rule` names each owed round with `NEXT cards.py rerun RUNDIR`.
     - **Void by method [rev 7, r35 F8].** A cell in a regime whose method is the kit's
       approximation (below, "The regimes' methods") is void by method: it counts as void twice
       (no re-run can give it the bench's method) and step (5) reads it.
@@ -775,6 +792,23 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     cover_cap.md §11.4's reading, the launch term needs no pool of two, and the twin term carries
     between-run noise per (regime, layer). The comparison against I's POOLED median has less
     noise than two single arms, so `sqrt(2)` is conservative.
+  - **The twin term PER PATTERN [rev 10, RULED r38 J1].** Pooled per (regime, layer) over 9
+    patterns, the twin term dilutes noise confined to ONE pattern: between-run offsets act per
+    binary, i.e. per pattern kernel, and 18 of the 31 df come from `lit40`/`abc60`, which make no
+    head-against-I comparison. Every arm of one pattern carrying its own 2 % offset gave P(h\* !=
+    64) = 0.40-0.69 under rev 9 (r38 SIMULATE-1, VERIFY). So the twin term is ALSO computed at the
+    finest level the night times twins: per pattern, over that pattern's own hash-equal pools in
+    its cells read (its 12 (regime, layer) cells: df 12 at a 2-arm pool, 24 at a 3-arm pool, 36
+    at `hex24`'s 4), by the same formula and the same `z(α / N)`. A cell's floor is `f(c) =
+    max(f(r, l), twin(pattern))`: the per-pattern term is a floor IN ADDITION to the (regime,
+    layer) one, never instead of it. A pattern whose cells read leave no pool of two (df 0) has
+    no estimate: its cells are VOID through the agreement gate (re-run once, then void twice),
+    never pooled up to a coarser level. (Reachable only by a pool record without the grid top,
+    which H3 already refuses, so the clause is a guard.) The χ² bound already pays for a small
+    df: at df 12 its factor is 1.52 (1.27 at df 31), so a pattern with few cells read gets a
+    higher floor, not a borrowed one. On a 1 % night the A/A term (about 4.4 %) still binds; the
+    per-pattern term binds only where one pattern is noisier (`selftest`'s class drill, drill
+    (xxi)).
   - **Why this mechanism.** Rev 6 used `f_AA`, the max of about 12 A/A draws, as the threshold of
     every comparison, but the rule makes 600 of them with every regime read (108 C1-C2 cells x 9 heads, less the
     cells where a head is I: 50 per regime and layer) and 400 on a night with the two
@@ -1216,7 +1250,11 @@ h is compiled into the kit, so timing the grid on ONE binary needs a lever:
     24, 32 and 64, both layers), and then identity at h\* < 64 runs over bytes no head can move.
     So at h\* < 64 the check first renders every pattern of its population (movers, cards, census)
     at lever h\* AND at lever 64 on the FROZEN binary (lever 64's bytes are what a head-blind
-    check degenerates to), prints how many differ, and refuses at zero. It lives with the kit's card script under `memfn/` (outside the G7
+    check degenerates to), prints how many differ, and refuses at zero. [rev 10, RULED r38 J7]
+    The count is printed and floored PER SOURCE (cards, census, movers), not pooled: at h\* < 64
+    the PATTERNS file's own moving count must be nonzero, so a movers file that moves nothing
+    (`a{40}`) fails even where a card moves (rev 9's pooled count passed it on card `hex32` at
+    h 24). It lives with the kit's card script under `memfn/` (outside the G7
     fence); a pcrec-side copy under a fenced directory takes an `ALLOW` entry.
 
 ### Answers, controlled by G2 [rev 2, F9; rev 3, F8]
@@ -1329,7 +1367,19 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
   1. The form cards C1, C2 and C5, with the A/A cells, run on the frozen combined-branch binary,
      h set through the head lever; a cell void once is re-run in the same window (`cards.py
      rerun`) [rev 7, r35 F7]. The rule that picks h (R0-R5 above, the dominance-cycle clause
-     included, as RULED in rev 5, and rev 7's floor) is committed before the run.
+     included, as RULED in rev 5, and rev 7's floor) is committed before the run. **Inside a
+     card's block each cell is timed in ROUNDS [rev 10, RULED r38 J2]:** one launch of every arm
+     of the cell (card, pattern, regime, layer) per round, 5 rounds, each round in a fixed
+     pseudo-random arm order derived from the cell's key (`cards.py` `round_arms`), after every
+     arm's untimed gate run. Rev 9 timed arm-major (all 5 launches of one arm, then the next),
+     and the cell list puts I first and its twins (h24, h32, h64 at `k` = 24) last in a
+     pattern's block, so a step in box speed between them read as a head win: a +4 % step after
+     `hex24`'s H(4) gave P(h\* != 64) = 0.15-0.18, +5 % 0.32-0.37 (r38 SIMULATE-2, VERIFY). In
+     rounds every arm samples the same stretch of time: a step outside a cell's middle round moves
+     every arm's median alike; inside the middle round it splits the arms at random (never twins
+     against heads by construction), and the bimodal test, the twin terms and the gate read it.
+     The order of the cells themselves, and the ruled night order (cards, freeze h, identity,
+     width cells), are unchanged.
   2. h is frozen by that rule's reading.
   2b. C3 is timed at the frozen h\* on the same binary (`cards.py c3`), and R2's C3 half and R5
      read it [rev 7, r35 F4]; C4's size record is taken at h\* (no timing). Before it times
