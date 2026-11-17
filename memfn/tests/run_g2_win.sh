@@ -109,7 +109,7 @@ FLOOR_PLANTED=56
 # the head passes' exactly pinned sites (F14), the deterministic breaks (F17), the long rows (F12, F15).
 GRID_HEADS="0 1 2 4 8 16 24 32 64"   # asserted equal to cards.py's GRID below (r36 G13)
 G2W_SHIPPED_HEAD=64                  # the SHIPPED head, a literal (r36 G1): pinned in g2_win_gen.c's default pass
-FLOOR_WR_RENDERED=55 FLOOR_WR_PAST64=XX    # the wide REPORT stream (K35, r36 G9)
+FLOOR_WR_RENDERED=54 FLOOR_WR_PAST64=32     # the wide REPORT stream (K35, r36 G9; measured 60 / 36, less ~10%)
 LOOP_FLOORS_DEF="parked:4 pair:5 mass:5 mline:5 part:6 report:7 random:5 repeated:12 mixed:8"
 FLOOR_LONG_RENDERED_DEF=24 FLOOR_LONG_LOOPED_DEF=16 FLOOR_DENY_WITNESS=8 FLOOR_LONG_PINNED_DEF=8
 FLOOR_BREAKS_DEF=2197 FLOOR_SWAPS_DEF=86 FLOOR_LONG_SUBJ_DEF=561 FLOOR_LONG_PINNED_HEAD=8 FLOOR_LONG_SUBJ_HEAD=187
