@@ -2063,3 +2063,23 @@ pattern is a statement; a row is one potential match (the subject is the search 
 three-valued test of one row, with `&`, NOT; absent never matches; no optional mark; a default is per test, any
 text; no `all`; a complement of a pattern is the potential matches it does not match, used after `&` as pattern
 difference; `|` is PCRE's one parse; "repeated" is read from the operand regex (the manager's, told).
+
+**2026-11-17 RECORD (session 137, box clock 03:01; filed late after review r33 F14; the first two items are the
+owner's words, the rest the manager's).** (1) **whole-text**, 2026-11-17 about 00:10-00:25: asked whether to add a
+text-level test (placeholder `text.none(B)`) for "the text contains no B anywhere", HIS WORDS in turn: "whole-text:
+explain"; "whole-text: I'm still not sure what scope you're talking about. Are you saying do two searches across
+the entire subject. If the first search matches then return no searches for the second match?" (the manager: yes,
+exactly that: a gate over the whole subject); "whole-text: could you ask this now in a single rx?" (the manager:
+yes for a B without conditions by a lookahead at the start of the text, first match only; CORRECTED later by lane
+predspec23b: the draft's hole rule already lets a lookahead hold a pattern with conditions; it then means "no B
+from here on"); "Let's not answer now." RECORD: whole-text is PARKED by the owner, not ruled; rev 23 section R.8
+lays out both routes. (2) 2026-11-16 about 23:55, HIS WORDS, filed at his request as predicates_future.md item 14:
+"I want to file in the future directions file a potential other interpretation for the record. In your example,
+the pattern returns 9:30. done. Then the late time condition could be added and no change, still returns 9:30
+because it's a late time. Then, instead, the not late time is applied to the pattern. Now the pattern returns
+nothing." (3) MANAGER RULING after review r33 F2, told to the owner by name (**branch-order**): a branch of `|`
+whose own condition rejects its rows falls through to the next branch, in PCRE's own preference order (every row
+of the first branch before any row of the second); derived from row-is-match ("the preferred surviving row") and
+"`|` is PCRE's one parse"; the evidence engine's other order is corrected and the moved counts re-run. (4) OPEN
+with the owner at this entry: pass-table, group-truth, quiet-gate (the kit's), whole-text (parked);
+lookahead-labels arises only if the lookahead route is stated.
