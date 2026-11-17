@@ -16,4 +16,6 @@ Fixes review r38 findings J5 and J6 (two check gaps in R-45 plan A). No compiler
 - S3304 not re-run (its edit target is unchanged; its force floor is unmoved).
 
 ## STATE AT HANDOFF
-Committed on lane/memfn-formsfixh. No rulings file entries applied (none present). OWED: none
+Committed on lane/memfn-formsfixh. No rulings file entries applied (none present).
+
+OWED: none
