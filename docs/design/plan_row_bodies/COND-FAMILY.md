@@ -2147,3 +2147,12 @@ paths over one stretch with different labels are two rows), ordered by PCRE's pr
 AFTER the conditions filter (WHERE, then the first row); ATOMIC is "first row" taken BEFORE the filter (an inner
 statement limited to one row). What changed from 11-15 is then only where the limit sits, not that the inner
 statement reconsiders.
+
+**2026-11-17 OWNER IDEA — options written in the language (Frank, to session 138, box clock about 12:05; an idea,
+NOT a ruling).** After the manager verified that atomic is a VM feature in pcrec today (`(?>ab|a)c` and `a*+a` are
+refused under `--engine=dfa`; `a++b` is discharged and accepted). HIS WORDS: "The predicate form does not preclude
+non-dfa operations but it restricts by default. Perhaps there should be an @options() in the language". RECORD: it
+restates the 2026-11-14 capability levels (default = automaton code only; independent opt-ins `functions`,
+`captures`, `vm`, `eval`; draft §6) and adds the idea that the opt-ins are DECLARED IN THE SOURCE, in the `@` family
+(`@export`, `@check`, `@each`). Filed as predicates_future.md item 20; the spelling is a placeholder (his examples
+are not syntax, D193 add. 4).

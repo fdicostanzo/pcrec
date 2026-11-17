@@ -320,3 +320,19 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   condition outside the literal is part of this item.
 - SOURCE: the owner, 2026-11-17 (COND-FAMILY.md, the branch-scope ruling). TRIGGER: "the start of a different
   discussion" (his words); raise it when the next revision is stable or when he asks.
+
+## 20. Capability opt-ins declared in the source (`@options(...)`, spelling a placeholder)
+
+- WHAT: the capability levels (draft §6: the default promises linear automaton code only; `functions`, `captures`,
+  `vm`, `eval` are independent opt-ins, and a program beyond its level is a compile error naming the opt-in) say
+  WHICH switches exist; this item is WHERE they are written: in the source itself, as a declaration in the `@`
+  family, so a program that needs more than the default says so where it is read. First user in sight: an ATOMIC
+  form (item 19), which is VM-only in pcrec today wherever its cut can discard something.
+- QUESTIONS IT OPENS (the manager's, none ruled): (a) SCOPE: the whole file, or one binding or expression (an
+  atomic form in one program should not lift the promise for its neighbours); (b) LIBRARIES: an imported file's
+  declaration must not silently loosen the importer's promise; the leaning is that the caller's own options are
+  the ceiling and an import needing more is a compile error naming it; (c) THE CALLER: whether a compile option
+  from outside may still cap or grant levels (a host that accepts untrusted programs wants a cap no source can
+  raise); (d) what the cost tool prints (the level a program needed and why, §6) against what it declared.
+- SOURCE: the owner, 2026-11-17 (COND-FAMILY.md). TRIGGER: the atomic discussion (item 19), or the first build
+  step that has to say how an opt-in is given.
