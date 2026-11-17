@@ -169,3 +169,18 @@ today's back-flow recorded as a noted deviation? HIS WORDS: "emitter-backflow: y
 RECORD: planner to emitter is a LAYER handoff, ONE WAY (not a module seam with a return record); code-length gates
 become plan-unit ("op code") gates; today's back-flow is a NOTED DEVIATION (register row 6c in
 docs/dev/guide/architecture.md), corrected when the record-first and stream work reach that site. Not started now.
+
+## 2026-11-17 evening, the owner on new-rules: a structure for the document
+
+Asked **new-rules** (which of the nine new draft rules are adopted; the manager's lean: seven in force, two left
+as draft). HIS WORDS: "new-rules. Structure: 1. high level rules like "decisions made in one place" 2. sub rules
+related to that like "decision tables" 3. corollary rules derived from above so they don't have to be re-derived.
+4. considerations. Less hard than the rules above but worth doing if effort permits. 5. evidence and history".
+RECORD: the answer is a STRUCTURE for the whole document, not an adopt-or-draft list: five tiers. (1) HIGH-LEVEL
+rules (his example: "decisions made in one place"); (2) SUB-RULES under each (his example: "decision tables"); (3)
+COROLLARIES, derived from the rules above and written down so they need not be re-derived; (4) CONSIDERATIONS,
+softer than rules, worth doing if effort permits; (5) EVIDENCE AND HISTORY, apart from the rules. MINE: the four
+goals are tier 1; every existing and new rule is PLACED in a tier under the goal it serves (kept word for word:
+placing is not weakening); the two rules with no refactor behind them are candidates for tier 4; each rule's
+HISTORY line moves to tier 5 with a pointer; the critic raises FINDINGS on tiers 1-3 and NOTES on tier 4. The
+placement is a draft for him.
