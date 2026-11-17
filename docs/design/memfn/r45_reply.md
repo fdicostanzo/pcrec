@@ -1,7 +1,10 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 6 for the kit manager (lane r45f, 2026-11-16, design only; no code, no
-timing). Rev 6 applies the fix-induced re-check of rev 5, review r25
+Status: DRAFT rev 7 for the kit manager (lane formsfixa, 2026-11-17; the design text beside the
+cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 7 applies the code
+round on the build, review r35 (`docs/dev/reviews/2026-11-17-r35-memfn-forms.md`, its RULED section: F2-F11 fixed in the
+rule's text and the script, F1, F19, F21, F25, F27, F28 as text; read "Changes in rev 7" first).
+Rev 6 (lane r45f, 2026-11-16, design only; no code, no timing) applies the fix-induced re-check of rev 5, review r25
 (`docs/dev/reviews/2026-11-16-r25-memfn-r45e.md`, its RULED section: R5-1..R5-6 fixed, R5-7
 and R5-8 noted; read "Changes in rev 6" first). Rev 5 (lane r45e) applied main's check of rev 4 (`git show lane/r45read:docs/dev/lanes/r45read_report.md`,
 contradictions C1-C11, questions Q1-Q5) through the kit's answers Q2-Q5 that main accepted, and
@@ -37,6 +40,31 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `MF_MAX_FWD` 33); `mf_result` 3,000 B; `mf_wspan` 1,164 B; `mf_wreply` 532 B;
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
+
+## Changes in rev 7 (by r35 finding id)
+
+Review r35 was the CODE round on the build of plan A (`lane/memfn-forms` 7506bca30). Its rule
+findings are defects of THIS text as much as of the script (the script implemented rev 6
+faithfully), so rev 7 changes the rule here and `cards.py` the same way, and `cards.py selftest`
+is the drill record (lane formsfixa's report, "Validation", has its output).
+
+| id | change | where |
+|---|---|---|
+| F2 | RULED (the floor is sized to its comparison count; the mechanism is the lane's): `f` = max(the largest A/A ratio, exp(z(α / N) x σ_up) - 1), σ the A/A cells' RMS log ratio raised to its 95 % upper bound, N the head-against-I comparisons the rule makes, α = 0.05; a head whose emitted text equals I's in a cell reads I's median there. The noise drill (108 C1-C2 cells x 9 heads, 300 nights): P(h\* != 64) = 0.033 under normal launch noise and 0.027 under t(5), against 0.487 under rev 6's floor | §3 "The floor `f`", R1 (1), drills (xv)-(xvi) |
+| F3 | "Bimodal" is defined: an arm's launches split into two groups of two or more with a gap of more than 4.5 launch sigmas between them, the sigma pooled per regime and layer (a median). The unimodal drill: 2.0 % of nights void a cell (t(5) launches); a bimodal arm (2 of 5 launches 8 % slow) voids in 48 of 50 | §3 "A cell missing a regime" |
+| F4 | C3 is timed at the PICKED h\*, after step 2 and before the identity check (night step 2b); until it is, R2's C3 half and R5 are NOT COMPUTED | R2, R5, night order |
+| F5 | A cell gate failure (any card, C3 included) is R0 for that head; I's or an A/A arm's makes the night DEFECTIVE. Step (5)'s head is the LARGEST R0-SURVIVING head (64 when it survives), or no form ships. A C3 void is never dropped | R0, R1 (5), R5, drills (viii), (xii'), (xvii) |
+| F6 | Drill (viii)'s last case (every finite head fails R0) is run: no form ships | drills |
+| F7 | The re-run is a step: a cell void once is re-timed (every arm), merged over the first reading, and R1 waits for it; a cell attempted once never reaches step (5) | §3 "A cell missing a regime" |
+| F8 | The kit's approximations of NOT-WARM and `short-subject-search` are not those regimes: their cells are VOID BY METHOD until the bench's methods arrive | §3 "The regimes' methods" |
+| F9 | The identity check's census is read from its source (the sweep's corpus through the cover facts), both encodings; FROZEN is required and must differ from the rebuilt build; at h\* < 64 the predicted-movers file is required | §3 "The identity check" |
+| F10 | Labels: MEASURED names its card rows and cells read; DERIVED is defined (R3); the "slower" grid-top label takes a colon, as drill (v) | R1 (4), R3 |
+| F11 | NOT-WARM is calibrated on calls; `cards.py plan` prints each step's expected wall time | §3 "The added cells' cost" |
+| F1 | Plan B's cap citation corrected: the binding cap is `PCREC_MAX_VM_EMIT_CODE_BYTES` (500,000), and the deny is refused past about 3,330 wide positions | §3 "Plan B", C4 |
+| F19 | The force spelling's form-hash instance is NOT built (no reader); trigger named | §3 "The option" |
+| F21, F25 | The owner's three rulings of 2026-11-16 and the build's h = 64 interim, each with its in-tree record; the owner's 15:00 sentence in full; the near-miss slug's polarity spelled out | §3 "The owner's words", "Scope", §7 |
+| F27 | `\w{32}\B` does not move at h\* <= 32 in this build: the E-find probe's offset splits the run (the predictor stays a superset) | §3 "Which sites move" |
+| F28 | The loop's minimum of two entries is DERIVED (a one-entry loop is a lone test plus a loop's overhead) | §3 "The forms" |
 
 ## Changes in rev 6 (by r25 finding id)
 
@@ -194,7 +222,7 @@ carrier with no per-site-kind bound.
   beats in some cell and never loses to is dropped, and ties among the rest go to the longest
   head. On a tie the head is the grid's top, 64, a CHOSEN value [rev 3, F9, F10; rev 4, R3-1,
   R3-3]. A cell with no reading never helps a head: if any is void twice, the head is 64
-  [rev 6, R5-2]. The forms ride the joint landing: plan A, RULED by the owner (forms now, 2026-11-16)
+  [rev 6, R5-2] (the largest head that passed R0, 64 whenever it passed [rev 7, r35 F5]). The forms ride the joint landing: plan A, RULED by the owner (forms now, 2026-11-16)
   [rev 5] (§3 "Scope").
 - **Readiness [rev 5].** Plan B's part (the carrier, the kit's per-extent working state, the
   two witness rows) was READY with rev 3's text fixes (review r22), and review r23 confirmed
@@ -434,6 +462,10 @@ rows. Rev 2 does not add a second segmenter for L. It generalises this one:
      loop tests one set at every offset it covers, so a span boundary changes nothing it
      renders;
   3. a LONE test: anything else.
+  A one-class repeat needs TWO or more entries [rev 7, r35 F28]: DERIVED, not tuned. A
+  one-entry "loop" is the lone test plus a loop's set-up and exit, so two is the boundary by
+  definition; a two-trip loop is fully unrolled by gcc -O2 (`-fopt-info-loop`, review r35), so
+  the compiler takes the residual choice; the real cut-over is `h`, which the cards measure.
   A periodic segment, such as `(ab){500}`, is a fourth kind, NOT built. It is UNMEASURED.
   TRIGGER: a census row with a periodic span of 36 or more positions (36: DERIVED, the
   smallest census `k` past 32, uuid).
@@ -470,10 +502,13 @@ rows. Rev 2 does not add a second segmenter for L. It generalises this one:
     byte rate and needs no constant.
   - **(b) code size.** h near the length below which the inline chain's size costs nothing
     measurable. The kit has no number for it: UNMEASURED.
-- **The owner's words**, kept separate from the kit's: "default to sub span loops (excepting
-  the measured head inline) then measure if inline was faster", "Then the speed dial option can
-  be always inline should it prove that is faster", and at 15:00, "most all rx ... will inline
-  due to being under the inline head portion". His words name no number. Rev 1's "about 32"
+- **The owner's words**, kept separate from the kit's, quoted in full [rev 7, r35 F25] (2026-11-15,
+  decisions.md D198 addendum 1 and `docs/dev/dev_journal.md`'s 15:00 entry): "I would default to
+  sub span loops (excepting the measured head inline ) then measure if inline was faster than the
+  other way around.", "Then the speed dial option can be always inline should it prove that is
+  faster", and at 15:00, "I predict most all rx will only have a short span and will inline due
+  to being under the inline head portion of the prover. Therefore, this issue is mostly moot".
+  The short-span clause is the prediction drill (i) rests on. His words name no number. Rev 1's "about 32"
   was the kit's, and it is withdrawn.
 - **The grid.** The DEFAULT candidates are the FINITE heads {0, 1, 2, 4, 8, 16, 24, 32, 64}
   [RULED r22 F9]. All-inline, I (`h >= k`), is TIMED in every cell as the REFERENCE: the
@@ -491,12 +526,12 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
 
 | row | input | output |
 |---|---|---|
-| R0 gate | any form whose answers differ from the byte loop (G2) or from libpcre2 (pcrec's answer rows) | that form is DEFECTIVE: it leaves the grid, is filed, and sets nothing |
-| R1 default | every surviving FINITE grid value h; every timed cell c = (`k`, regime, layer) of C1 and C2 ONLY [rev 3, F11], in EVERY regime of the cards' list, NOT-WARM and `short-subject-search` included [rev 5, Q4/C6]; a cell void twice is read by step (5) [rev 6, R5-2] | (1) per h, `W(h)` = max over the cells READ of `t(H(h), c) / t(I, c)`, each `t` a raw median; a twice-void cell adds the term 1 for each head whose text is I there (`h >= k`) and no term for any other head. (2) The EQUAL set `E = { h : W(h) <= (1 + f) x min_g W(g) }`, computed once, never chained. (3) DOMINANCE [RULED r23 R3-1]: g DOMINATES h when `t(H(h), c) / t(H(g), c) > 1 + f` in at least one cell c READ and `t(H(g), c) / t(H(h), c) > 1 + f` in none. The dominated members of E are computed once, all against E, and removed together. In general, step (3) keeps the members of E dominated (faster beyond `f` in at least one cell and never slower beyond `f`) by the fewest others [rev 6, R5-6: one wording everywhere]. That is the undominated ones whenever any exist, which is the ruled step. When none exist (a cycle, possible because "beyond `f`" is a tolerance), it is those dominated least [RULED by the kit manager 2026-11-16, rev 5 Q2; the lane's rev 4 clause; rev 6 words "dominated" as above]. (4) **h\* = the LARGEST kept h** [RULED r22 F10]. The default is H(h\*), labelled MEASURED with its card ids (DERIVED if R3 fires). If h\* is the grid top, the label is "h = grid top (64, CHOSEN), on a measured tie of every finite head" (or "of" the members of E, or "every shorter finite head measured slower beyond `f`") [RULED r23 R3-3]. (5) **VOID** [rev 6, RULED r25 R5-2: a void cell never helps another head]: if any C1-C2 cell is void twice, steps (1)-(4)'s pick is RECORDED with the card ids (it does not ship) and h\* = 64, labelled "h = grid top (64, CHOSEN): cell(s) <ids> void twice; the cells read picked H(<pick>)". No void cell removes a head from E or from the dominance count, so a void can neither lower h\* nor move a competitor. Otherwise h\* is step (4)'s |
-| R2 dial evidence | every cell of C1-C3 where I beats H(h\*) beyond `f` | filed as the evidence for the dial's always-inline option (cover_cap.md §11.3, unlock 2). R2 never changes R1's default |
-| R3 derivation | h\* per card class against (a)'s `E[D]` for that class | if h\* tracks `E[D]` in every class, h becomes a derivation from the byte rate (§6 Q3); otherwise it stays a MEASURED constant |
+| R0 gate | any form whose answers differ from the byte loop (G2) or from libpcre2 (pcrec's answer rows), or fail a card cell's own answer gate (python `re`) in ANY card, C3 included [rev 7, r35 F5] | that form is DEFECTIVE: it leaves the grid, is filed, and sets nothing. A gate failure is never a void. A gate failure of I or of an A/A arm (the reference itself) makes the night DEFECTIVE: no h is read from it |
+| R1 default | every surviving FINITE grid value h; every timed cell c = (`k`, regime, layer) of C1 and C2 ONLY [rev 3, F11], in EVERY regime of the cards' list, NOT-WARM and `short-subject-search` included [rev 5, Q4/C6]; a cell void twice is read by step (5) [rev 6, R5-2] | (1) per h, `W(h)` = max over the cells READ of `t(H(h), c) / t(I, c)`, each `t` a raw median; where H(h)'s emitted text equals I's in a cell (read off the artifacts), `t(H(h), c)` IS I's median there: one text, one binary, one reading [rev 7, r35 F2]; a twice-void cell adds the term 1 for each head whose text is I there (`h >= k`) and no term for any other head. (2) The EQUAL set `E = { h : W(h) <= (1 + f) x min_g W(g) }`, computed once, never chained. (3) DOMINANCE [RULED r23 R3-1]: g DOMINATES h when `t(H(h), c) / t(H(g), c) > 1 + f` in at least one cell c READ and `t(H(g), c) / t(H(h), c) > 1 + f` in none. The dominated members of E are computed once, all against E, and removed together. In general, step (3) keeps the members of E dominated (faster beyond `f` in at least one cell and never slower beyond `f`) by the fewest others [rev 6, R5-6: one wording everywhere]. That is the undominated ones whenever any exist, which is the ruled step. When none exist (a cycle, possible because "beyond `f`" is a tolerance), it is those dominated least [RULED by the kit manager 2026-11-16, rev 5 Q2; the lane's rev 4 clause; rev 6 words "dominated" as above]. (4) **h\* = the LARGEST kept h** [RULED r22 F10]. The default is H(h\*), labelled "MEASURED (kit-grid@7 cards C1 span_cross, C2 span_pop; <n> cells read)" (DERIVED in place of MEASURED when R3 fires) [rev 7, r35 F10]. If h\* is the grid top, the label is "h = grid top (64, CHOSEN), on a measured tie of every finite head" (or "of {" the members of E "}"), or "h = grid top (64, CHOSEN): every shorter finite head measured slower beyond `f`" (a colon, as drill (v)) [RULED r23 R3-3; rev 7, F10]. (5) **VOID** [rev 6, RULED r25 R5-2: a void cell never helps another head]: if any C1-C2 cell is void twice (or void by method), steps (1)-(4)'s pick is RECORDED with the card ids (it does not ship) and h\* is the LARGEST R0-SURVIVING finite head [rev 7, r35 F5]: 64 whenever it survives, labelled "h = grid top (64, CHOSEN): cell(s) <ids> void twice; the cells read picked H(<pick>)"; otherwise labelled "h = <h>, the largest R0-surviving head (CHOSEN; the grid top failed R0): cell(s) ...". If no finite head survives R0, no form ships (plan A's fallback, "Scope"). No void cell removes a head from E or from the dominance count, so a void can neither lower h\* nor move a competitor. Otherwise h\* is step (4)'s |
+| R2 dial evidence | every cell of C1-C3 where I beats H(h\*) beyond `f`; C3's cells are timed at the picked h\* after step 2 (night step 2b), so until they are, R2's C3 half is NOT COMPUTED and the rule says so [rev 7, r35 F4] | filed as the evidence for the dial's always-inline option (cover_cap.md §11.3, unlock 2). R2 never changes R1's default |
+| R3 derivation | h\* per card class against (a)'s `E[D]` for that class | if h\* tracks `E[D]` in every class, h becomes a derivation from the byte rate (§6 Q3); otherwise it stays a MEASURED constant. "Tracks" [rev 7, r35 F10]: each class's OWN pick (steps (1)-(4) over that class's cells read) is the surviving grid head nearest its `E[D]` (the larger on a tie), for every class with a cell read; then the label reads DERIVED |
 | R4 near-miss | C1's near-miss column: H(h\*) against C5 | a timed loss beyond `f` is §4's trigger (the skip's build); it never changes h\* |
-| R5 long sanity | C3's cells: H(h\*) against L and I at 500/1000 | a loss beyond `f` is FILED (with R2's evidence); it never re-picks h\*. It is the TRIGGER to extend the grid past 64 [RULED r23 R3-3] |
+| R5 long sanity | C3's cells, timed at the picked h\* (night step 2b) [rev 7, r35 F4]: H(h\*) against L and I at 500/1000 | a loss beyond `f` is FILED (with R2's evidence); it never re-picks h\*. It is the TRIGGER to extend the grid past 64 [RULED r23 R3-3]. A C3 cell void once is re-run; void twice it is RECORDED as not checked, never dropped. A C3 gate failure is R0 for its head (F5): at H(h\*) it removes h\* and the rule picks again, and C3 is timed at the new pick (F5's worse case: H(64) loops ONLY in C3, so its gate failure there must not read as a clean tie) |
 
 - **Why each choice [rev 3, F11].**
   - The ratio is against I, an arm timed in every cell, so no value's W depends on which other
@@ -540,8 +575,28 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     is one form I shows too, never one the loop form causes.
   - **A cell missing a regime [rev 5; rev 6, R5-2, R5-7].** As cover_cap.md §11.4's procedure:
     a C1-C2 cell missing a regime, or bimodal, is VOID and re-run once, and R1 waits for the
-    re-run only. A cell still void after the re-run is read by step (5): h\* = 64, and the
-    pick of the cells read is recorded, not shipped (no head ships on a missing reading).
+    re-run only. A cell still void after the re-run is read by step (5): h\* = the largest
+    R0-surviving head (64 when it survives) [rev 7, F5], and the pick of the cells read is
+    recorded, not shipped (no head ships on a missing reading).
+    - **Bimodal, defined [rev 7, r35 F3].** cover_cap.md §11.4 leaves "spread" undefined (the
+      bench's field); the cards define it, and a different field from the bench replaces it
+      here. An ARM's 5 launches (log scale, sorted) are bimodal when they split into two groups
+      of two or more with a gap of more than 4.5 launch sigmas between them; the launch sigma is
+      pooled per (regime, layer) as the median of the arms' launch SDs over 0.9161 (the median
+      SD of 5 normal draws, DERIVED), so one bimodal arm cannot inflate its own pool. A cell is
+      void when any arm whose text differs from I's is. 4.5 is CHOSEN from a simulation of 5
+      launches (2 x 10^7 draws): a false split has probability 1 x 10^-7 per arm under normal
+      noise and 7 x 10^-6 under t(5). Rev 6's script compared a range with twice the A/A floor
+      times the median, which is not a bimodality test and voided 95 % of unimodal cells (r35
+      F3). The drills (xvi) check both directions.
+    - **The re-run [rev 7, r35 F7].** A cell void once (missing, an arm void, bimodal) is
+      re-timed WHOLE, every arm of it, in a later step of the same night (`cards.py rerun`),
+      and the re-run's rows replace the first reading of that cell. The rule refuses to reach
+      step (5) while any cell has been attempted once; a cell is void twice only when its
+      re-run is void too. A gate failure is never re-run (it is R0, F5).
+    - **Void by method [rev 7, r35 F8].** A cell in a regime whose method is the kit's
+      approximation (below, "The regimes' methods") is void by method: it counts as void twice
+      (no re-run can give it the bench's method) and step (5) reads it.
     - **Why not rev 5's reading.** Rev 5 read a twice-void cell as a loss (+infinity) for every
       head whose text differs from I there. That REMOVES the head from E, and through the
       fewest-dominators clause a removed head can free another: on r25's drill V (heads 8, 24
@@ -560,16 +615,41 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       cell (R5-7 (b)). If a regime is missing from the `lit-l16` A/A cells, the floor `f` is not
       computable, and the cards follow cover_cap.md §11.4 row 1's reading for B's floor (the
       night is void) (R5-7 (c), noted).
-- **The floor `f`.** The cards' own A/A floor: the `lit-l16` A/A cells, every regime and layer,
-  run with the cards on the same binary, and reduced to one ratio by the procedure cover_cap.md
-  §11.4 uses for B's floor. A RATIO (so `1 + f` multiplies), never a difference.
+- **The floor `f` [rev 7, RULED r35 F2: sized to the comparison count].** The cards' own A/A
+  cells (`lit-l16`, every regime READ and both layers, run with the cards on the same binary)
+  estimate the noise of one ratio of two medians, which is exactly what a head against I is:
+  `σ` = the RMS of `ln(t(aa) / t(aa-twin))` over those cells, raised to its 95 % upper bound
+  `σ_up = σ x sqrt(n / χ²(0.05; n))` (n cells; the bound pays for estimating `σ` from about 8-12
+  cells). N = the number of one-sided head-against-I comparisons the rule makes: every
+  (surviving finite head, cell read) pair where the head's text differs from I's. Then
+  `f = max(f_AA, exp(z(α / N) x σ_up) - 1)`, with `z(p)` the standard normal quantile at
+  `1 - p`, α = 0.05 (CHOSEN: the ruled acceptance rate) and `f_AA` the largest A/A ratio, the
+  floor cover_cap.md §11.4 reads (never undercut). A RATIO (so `1 + f` multiplies), never a
+  difference; R1-R5 use the one `f`.
+  - **Why this mechanism.** Rev 6 used `f_AA`, the max of about 12 A/A draws, as the threshold of
+    every comparison, but the rule makes about 700 of them (108 C1-C2 cells x 9 heads, less the
+    cells where a head is I). On pure noise H(64) is I at every C1-C2 cell, so h\* != 64 needs a
+    head that is "faster beyond `f`" in some cell (it then dominates 64, or survives where 64
+    does not); with a max-of-12 threshold over ~700 chances that happens about one night in two
+    (0.487 in rev 7's noise drill; review r35 measured 0.31-0.42 through the old script). A
+    Bonferroni bound over N sizes the threshold to the chances actually taken, so a false win
+    anywhere has probability at most α, whatever the cell count; it is one formula, needs no
+    extra arm and no extra timing, and reads only what the night already times. The other two
+    options were weaker here: a win "reproduced across layers or regimes" changes WHAT a win is
+    (a regime-specific win, the case K-1 asks R1 to see, would never count), and per-cell A/A
+    twins double the night's arms. Reading I's median where the text is I's removes comparisons
+    that can only be noise. Its price is sensitivity: at a 1 % launch noise `f` is about 4 %, so
+    a head must win by more than that somewhere; drill (xv)'s power line shows a true 10 % win
+    picked in 59 of 60 nights.
 - **Why the largest h among equals [RULED r22 F10].** It is the owner's prediction (short spans
   stay inline under the head) and the fewest movers: a tie buys no byte move. "Less text" (rev
   2's reason for the smallest h) was asserted, never measured, and C4 is not an input to the
   rule.
 
 **Drills, re-run against the rule as written [rev 3, F10, F11; rev 4, R3-1, R3-2, R3-3; rev
-6, R5-2].** Rev 4 re-ran every drill with a script that implements R0-R1 exactly as the table
+6, R5-2; rev 7, r35 F2-F7].** Rev 7's record is `cards.py selftest` (every drill below, the
+whole-night drills (xv)-(xvii) and the re-run, void-by-method and C3 cases; output in lane
+formsfixa's report). Rev 4 re-ran every drill with a script that implements R0-R1 exactly as the table
 states them; rev 6 re-ran every drill with a script that implements steps (1)-(5) as written
 here, and drills (i)-(xi) give the results below unchanged (no drill has a void cell). The
 scripts and their output are in lane r45d's and lane r45f's reports, "Drills". `f` = 0.025 unless stated. A
@@ -602,7 +682,8 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   at (0.80, 2.00) gives W(4) = 1.667, outside E: E and h\* are unchanged.
 - **(viii) A form fails G2.** R0 removes it, and R1 picks among the rest. On (ii)'s data with
   H(64) failing, E = {24, 32}, nothing is dominated, and h\* = 32, MEASURED. If every finite h
-  fails, no form ships and plan A falls back (below).
+  fails, no form ships and plan A falls back (below); the rule prints "no form ships" and no h\*
+  [rev 7, r35 F6: rev 6's script raised an error here].
 - **(ix) A dominance cycle** (the case the lane's search found; three cells: H(8) = (0.95,
   1.02, 0.99), H(16) = (0.97, 0.99, 1.00), H(32) = (0.99, 1.00, 0.97), H(64) = (1.00, 1.00,
   1.00), the shorter heads losing). E = {8, 16, 32, 64}. 16 dominates 8 (at c2), 32 dominates
@@ -633,6 +714,10 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   defect); under step (5) the cells read pick 8 (recorded) and h\* = 64, labelled "cell(s)
   `k` = 24 void twice". The `k` = 40 cell void twice instead: the cells read pick 32
   (recorded), h\* = 64.
+- **(xii') Drill V's `k` = 24 void, with H(64) failed R0 [rev 7, r35 F5].** The cells read still
+  pick 8 (recorded); h\* = 32, the largest R0-surviving head, labelled "h = 32, the largest
+  R0-surviving head (CHOSEN; the grid top failed R0): cell(s) k24 void twice". Rev 6 shipped 64
+  here, a head R0 had removed.
 - **(xiii) r25's drill N: a NOT-WARM-only loss** (`f` = 0.02; `k` = 32; H(8) 0.90 hit-dense and
   1.20 NOT-WARM, H(16) and H(24) 0.99 hit-dense). W(8) = 1.20, so 8 is out of E; nothing in E
   is dominated, and h\* = 64, labelled "on a measured tie of {0, 1, 2, 4, 16, 24, 32, 64}". The
@@ -640,6 +725,22 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
 - **(xiv) A regime's method missing** (drill N's hit-dense cell read; its NOT-WARM cells at
   `k` = 32 and 24 void twice). The cells read pick 8 (recorded); h\* = 64, labelled with both
   cells (R5-7 (a)).
+- **(xv) Pure noise at the real cell count [rev 7, RULED r35 F2].** 108 C1-C2 cells (9
+  patterns x 6 regimes x 2 layers, every regime read) x 9 heads, every arm's 5 launches drawn
+  from one true time with 1 % log noise, A/A cells alike, each night through the whole rule
+  (floor, voids, re-run, R1): over 300 nights P(h\* != 64) = 0.033 under normal noise and 0.027
+  under t(5) noise (accept: <= 0.05); 0.487 with rev 6's floor and every other rev 7 change
+  kept. Power: a true 10 % win of every head <= 8 where it loops picks h\* = 8 in 59 of 60
+  nights.
+- **(xvi) Unimodal launches must not void [rev 7, RULED r35 F3].** The same nights under t(5)
+  launch noise: 2.0 % of nights void any cell once (0.017 % of cells), and the re-run reads
+  them (accept: <= 5 %). Control: one arm with 2 of its 5 launches 8 % slow voids in 48 of 50
+  nights.
+- **(xvii) A gate failure of H(64) in C3 [rev 7, r35 F5's worse case].** On a pure-noise night
+  whose C3 cells at H(64) include one gate failure: H(64) is R0, the rule picks among the rest
+  (here 32, MEASURED on noise, as (viii)) and asks for C3 at the new pick; it never prints a
+  clean "measured tie" at 64. With C3 clean at 64 the night completes (R2's C3 half and R5
+  computed); before C3 is timed the rule prints "R2(C3)/R5 NOT COMPUTED at h\* = 64".
 - **Summary [rev 4, R3-3].** In every outcome but (viii)'s last, a FINITE h ships with its card
   ids. Below 64 it is MEASURED. At 64 it is labelled "h = grid top (64, CHOSEN)" with the
   measured tie or loss that put it there: the head's length is then the grid's choice, checked
@@ -681,7 +782,11 @@ noise of the best.
   subject fails, so the side is core). Its positions `0 .. 32` are one run of `\w`. Checked
   read-only on the main tree's `build/pcrec` (`-p rx --features assertions,classes`): it emits
   `RX_DFA_SCAN "cover"`, and the chain tests `s[c + 32]` with the same `\w` range test as
-  `+ 30`. It is a possible mover at every h\* <= 32. Its kin: `\w{k}\B` and `\W{k}\B` at
+  `+ 30`. It is a possible mover at every h\* <= 32. **In this build it does not move at any
+  h\* <= 32 [rev 7, r35 F27]:** the plan's E-find probe sits at offset 31, so the probe's
+  position splits the run (the plan tests a subset of the stated offsets, below, and a dropped
+  offset splits a run). The predicate stays a stated SUPERSET, so the predictor is not red on
+  it; it is listed as a predicted site that does not move. Its kin: `\w{k}\B` and `\W{k}\B` at
   every cover width `k` (possible movers at h\* <= `k`), and any cover whose after side's set
   equals its last class. Not kin: `\d{32}\B` (cover; its after side is `\w`, not `\d`, so the
   run ends at 31) and `\B\w{32}` (no cover today; a before side at -1 never extends a run
@@ -751,7 +856,16 @@ default users get in between, and the cost.
     forms BUILT but OFF (every span all-inline, as today), and switches them on in a later
     change, which is a second pcrec abi event. That is rev 1's withdrawn hybrid minus the
     unmeasured head: A's cost with B's interim outcome. **Who decides** that the cards cannot
-    run: main, with Frank [RULED r22 F14; rev 4, R3-4]. It is the same call as cover_cap.md §11.6.1's FALLBACK
+    run: main, with Frank [RULED r22 F14; rev 4, R3-4]. **The build's interim [rev 7, r35
+    F21].** The build ships h = 64 as an UNMEASURED DEFAULT (CHOSEN, the cards' grid top) until
+    the cards run: the kit manager's launch ruling for lane forms, recorded in
+    `docs/dev/lanes/forms_report.md` Summary ("The shipped head is 64, labelled `UNMEASURED
+    DEFAULT` (the grid top, set by the cards), so NOTHING MOVES at width 32") and the kit
+    journal's 2026-11-17 03:00 line. It is not the fallback's "built but OFF": H(64) and OFF emit
+    the same bytes for every stretch of 65 or fewer positions; past that H(64) loops where OFF
+    does not, and past about 3,330 wide positions OFF (the deny) is refused where H(64) compiles
+    (r35 F1). Which of the two a landing without cards carries is main's to record with Frank
+    (a decisions.md or plan.md row, r35 F21's main-side part); this text records both. It is the same call as cover_cap.md §11.6.1's FALLBACK
     (land at 32 UNMEASURED, time on landed main); under A the cards precede the width night, so
     that fallback also fires this one.
 - **Plan B (stage-2 minimal; cheaper).**
@@ -760,9 +874,15 @@ default users get in between, and the cost.
   - The forms, the option row, the lever and the cards are the NEXT kit unit.
   - B's honest advantage: it is smaller, it needs no kit timing slot before the landing, and
     it is READY NOW with rev 3's text fixes (review r22).
-  - Form I alone keeps the cover legal at every width: R-45 FACT's ~151 emitted C bytes per
-    position extrapolates to ~630 KB at 4095, under `PCREC_MAX_EMIT_BYTES` 1,000,000
-    (UNMEASURED, an extrapolation; C4 confirms).
+  - ~~Form I alone keeps the cover legal at every width~~ [rev 7, r35 F1: rev 6 named the wrong
+    cap]. R-45 FACT's ~151 emitted C bytes per position extrapolates to ~630 KB at 4095; the
+    BINDING cap is the VM-route emitted-code cap `PCREC_MAX_VM_EMIT_CODE_BYTES` (500,000), not
+    `PCREC_MAX_EMIT_BYTES` (1,000,000). Measured by review r35 on the combined tree at width
+    4095: form I (the deny) is refused past about 3,330 wide positions (`[0-9a-f]{3330}`, 510,342
+    bytes of emitted code) where H(64) and L compile, and it warns at the 250 KB advisory cap
+    where the default does not. Under plan B's text (form I the default) that is a live default
+    refusal; the fit rung or the spec sentence is main's (r35 F1 PLAN). The spec states the
+    deny's refusal (registry.md §6¶8a, tuning.md §2.43¶3d).
   - B's cost: until the next unit lands, users get all-inline on long covers, the opposite of
     the owner's stated default; and the width night times form I, not the form that will
     ship.
@@ -777,7 +897,7 @@ build that adds its form (memory `pcrec-new-method-needs-measurement-card`).
 | C1 crossover | I, and H(h) for every finite grid h (0 = L) | 24, 32 (`[0-9a-f]{k}`, `\d{k}`: the stage-1 movers and their twins) | hit-dense (all members); DENSE NEAR-MISS (`k-1` members then a non-member, repeated: EMITTED-2's shape); NOT-WARM (the matcher not in L1/L2) [rev 5]; miss-heavy (plain text, death at depth 0-1); `short-subject-search` [rev 5]; uniform random bytes. The first five are cover_cap.md §11.4's regimes, timed by §11.4's methods | SIMD-off, and SIMD-on where a level admits it | R1 and R3 cells at the shipped default lengths; R4's near-miss column |
 | C2 population | as C1 | 36 (uuid: `hex{8}-hex{4}-hex{4}-hex{4}-hex{12}`), 40 (`lit-l40`, a literal: the run-compare control, one compare in every form), 49, 60 (the census rows' own patterns), 64 (`[0-9a-f]{64}`, §11.4's synthetic width cell) [rev 3, F13] | as C1 | both | R1 and R3 cells at the population's lengths |
 | C3 long | I, L, H(h\*) | 500, 1000 (`[0-9a-f]{k}`, `a{k}`) | as C1 | both | R2's dial cells and R5 at length |
-| C4 size | I, L, H(h\*) | 32, 500, 1000, 4095 (`[0-9a-f]{k}`, `a{k}`) | none (compile only) | both | emitted C bytes against 250,000 / 1,000,000 (the size-cap ladder, R-45 FACT cost), `gcc -O2 -c` time, RSS and `.text`. Recorded, no timing |
+| C4 size | I, L, H(h\*) | 32, 500, 1000, 4095 (`[0-9a-f]{k}`, `a{k}`) | none (compile only) | both | emitted C bytes against 250,000 / 1,000,000 (the size-cap ladder, R-45 FACT cost) and the VM code cap 500,000 [rev 7, r35 F1], `gcc -O2 -c` time, RSS and `.text`. Recorded, no timing |
 | C5 engine reference | none: pcrec's engine route on the same subjects (`--memfn=no-window-search`) | as C1-C3 | as C1 | n/a | the floor every form is read against in the near-miss regime (R4, §4) |
 
 **The procedure** (kit timing, unofficial, per `memfn/CLAUDE.md` standing question 1):
@@ -798,6 +918,15 @@ build that adds its form (memory `pcrec-new-method-needs-measurement-card`).
   script takes both as the bench names them. If either cannot run on the kit's harness, the
   cells in that regime run on the bench, from the rows above, in the same window. A cell
   missing a regime follows R1's void reading, step (5) ("Why each choice").
+  - **The kit's approximations are void by method [rev 7, r35 F8].** Until the bench names its
+    methods, the card script carries approximations of the two regimes (NOT-WARM: each 4 KiB call
+    after an untimed eviction sweep, timed on miss-heavy text only; `short-subject-search`:
+    LF-separated records of 48-80 bytes). They are NOT those regimes, so their cells are VOID BY
+    METHOD: read as void twice (no re-run gives them the bench's method), and step (5) reads
+    them. A night without the bench's methods therefore ships the largest R0-surviving head (64)
+    and records the pick of the four regimes read. Their A/A cells are not floor inputs. `cards.py
+    run` times them only with `--with-approx`, a record the rule never reads. A regime whose
+    bench method is ported into the script stops being void by method in that change.
   - **In that branch the bench READS the head lever [rev 6, R5-3].** The card cells time each
     H(h) on the frozen binary, so the bench compiles those cells through
     `build/pcrec-harness --harness=span-head=N`, the TEST-ONLY lever (never a shipped compile,
@@ -819,6 +948,13 @@ build that adds its form (memory `pcrec-new-method-needs-measurement-card`).
   launches. The cards' wall time is unmeasured, so whether cards and width cells fit one
   window stays the night order's "one night, or two" question; the added regimes make two
   nights more likely, not certain.
+- **NOT-WARM's calibration and the wall time [rev 7, r35 F11].** A time-calibrated NOT-WARM
+  launch (repeat until 50 ms of timed work) pays an untimed 32 MiB eviction sweep before every
+  4 KiB chunk, about 50 passes of 256 sweeps per launch: 8-20 h a night by arithmetic. NOT-WARM
+  is calibrated on CALLS instead: one pass over the subject's chunks per launch. `cards.py plan`
+  prints each step's expected wall time from named per-launch costs (UNMEASURED: 0.08 s a
+  launch, 4 ms an eviction sweep), for the window request; one launch's wall time in the cards'
+  own window replaces them.
 - G2's per-form answer check is R0, a precondition, not a card.
 
 ### The head lever and its identity check [RULED r22 F12]
@@ -864,9 +1000,18 @@ h is compiled into the kit, so timing the grid on ONE binary needs a lever:
     it reaches pre-check runs, reseed and prefix alternatives and the cross-span covers too, and
     a divergence there must be seen. At h\* = 64 the prediction is empty and the population is
     the cards and the census covers.
+  - **The census, read from its source [rev 7, r35 F9].** "Every census cover" is the sweep's own
+    population (cover_cap.md §6: "the sweep's count is the count of record"): every corpus
+    pattern (`scripts/emit_sweep.py`'s corpus enumeration) whose `--emit-facts` `cover` section,
+    on the FROZEN binary, says `cover` in either encoding. The count is printed and zero fails
+    (K35). A bench-only pattern reaches the check through main's predicted-movers file.
   - **How.** It compiles each pattern twice at pcrec level, the frozen binary's
     `build/pcrec-harness --harness=span-head=<h*>` and the rebuilt `build/pcrec`, and compares
-    the emitted C bytes. It lives with the kit's card script under `memfn/` (outside the G7
+    the emitted C bytes, in BOTH encodings (byte and `-e utf8`) and both layers [rev 7, F9]. The
+    frozen build must be NAMED (an unnamed one would compare the rebuilt tree's own harness, and
+    the frozen-to-rebuilt tie would be lost silently) and must differ from the rebuilt one; at
+    h\* < 64 the predicted-movers file is REQUIRED (it is the population there), and the check
+    refuses without it. It lives with the kit's card script under `memfn/` (outside the G7
     fence); a pcrec-side copy under a fenced directory takes an `ALLOW` entry.
 
 ### Answers, controlled by G2 [rev 2, F9; rev 3, F8]
@@ -955,9 +1100,12 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
   - `tests/ci/measured_axes.tsv` and `cloud_axes_shards.tsv`: a deny cell and a force cell
     [rev 3]. `tests/ci/cloud_units_plan.py:64` may key memfn cells by a `no-` token
     (SUSPECTED in r22); the build checks it against the force spelling.
-  - `memfn/src/formhash.c:425` (`s->opts = e->deny`): the force spelling gets its own form-hash
+  - ~~`memfn/src/formhash.c:425` (`s->opts = e->deny`): the force spelling gets its own form-hash
     instance, so measurement-set staleness sees L's bytes; H at h\* is the default instance
-    [rev 3].
+    [rev 3].~~ NOT BUILT [rev 7, r35 F19]: no reader (D77). The cards are whole-artifact cells
+    (kit-grid@7), so no card reads a `kit:form` hash. TRIGGER: a card that names
+    `kit:form.span-*`. (`tests/ci/measured_axes.tsv`'s span-loop cells come with the next
+    measured run, which generates that file.)
 - **The spec hunks' homes [rev 3, F15].** The row and its states: registry.md §6¶8a. The
   caller-facing behaviour (what the force and the deny do, and dense near-miss subjects as the
   cover's known slow regime, §4): tuning.md §2.43¶3d, beside the window search's denies.
@@ -969,10 +1117,14 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
 - **The order of record (plan A, RULED).** Ruling R1 (kit manager, 2026-11-16, AGREED WITH MAIN
   2026-11-16; main's night-order-edits YES, unconditional since forms now [rev 5]; this
   section and §8 are its record):
-  1. The form cards C1-C3 and C5 run on the frozen combined-branch binary, h set through the
-     head lever. The rule that picks h (R0-R5 above, the dominance-cycle clause included, as
-     RULED in rev 5) is committed before the run.
+  1. The form cards C1, C2 and C5, with the A/A cells, run on the frozen combined-branch binary,
+     h set through the head lever; a cell void once is re-run in the same window (`cards.py
+     rerun`) [rev 7, r35 F7]. The rule that picks h (R0-R5 above, the dominance-cycle clause
+     included, as RULED in rev 5, and rev 7's floor) is committed before the run.
   2. h is frozen by that rule's reading.
+  2b. C3 is timed at the frozen h\* on the same binary (`cards.py c3`), and R2's C3 half and R5
+     read it [rev 7, r35 F4]; C4's size record is taken at h\* (no timing). A C3 gate failure at
+     H(h\*) is R0 for h\*: step 2 picks again and 2b runs at the new pick (F5).
   3. The build compiles h\* in, and the identity check (above) proves that the rebuilt
      binary emits the same bytes as the lever at h\* on the frozen binary. Only then are the
      width cells (cover_cap.md §11.4 B) measured, on that REBUILT binary, through `build/pcrec`
@@ -1487,7 +1639,18 @@ recommendations were all taken; the record below says what each ruling settles.
 - **keep-short-spans**: RULED no. One measured rule at every length: spans of 32 or fewer move
   on a measured win, covers and non-cover window sites alike (§3 "Which sites move").
 - **near-miss-fix-later**: RULED no fix in the first build until a timed card shows the loss
-  (D77; §4). The option's documentation names dense near-miss text as the slow case.
+  (D77; §4). The option's documentation names dense near-miss text as the slow case. Its
+  polarity, spelled out [rev 7, r35 F25]: the ruled answer is "the near-miss fix comes LATER, on
+  a trigger, not in this build"; the slug's "no" answered "a fix in the first build?", so read
+  the slug as "fix later: yes".
+- **Their record [rev 7, r35 F25].** Main relayed them in `memfn/docs/requests.md` R-45,
+  "RULINGS ON THE REPLY (2026-11-16, pcrec manager ...)": "Owner (Frank 2026-11-16, "agree with
+  your leans on all three", the leans being the kit's own): forms-now-or-next = FORMS NOW, in the
+  one joint landing; keep-short-spans = NO; near-miss-fix-later = NO fix in the first build until
+  a timed card shows it." Main's journal (`docs/dev/dev_journal.md` on main at b1bcee85b, the "KIT R-45" entry) carries
+  the same words: "Frank: "agree with your leans on all three" (forms now; no short-span exception;
+  no near-miss fix in the first build)". A decisions.md row (or a D198 addendum) carrying them
+  verbatim with the h = 64 interim (§3 "Scope") is main's (r35 F25, F21).
 
 **The kit manager's:**
 - **dominance-cycle**: RULED (2026-11-16): step (3) keeps the members of E
@@ -1523,7 +1686,7 @@ recommendations were all taken; the record below says what each ruling settles.
 ## 8. responses.md-ready block (for the kit manager to post; facts only, D157)
 
 ```
-## R-45 reply (2026-11-16, kit; rev 6 after reviews r20, r22, r23, r25 and your check r45read) — window spans up to 4095 positions
+## R-45 reply (2026-11-16, kit; rev 6 after reviews r20, r22, r23, r25 and your check r45read; rev 7 2026-11-17 after code round r35) — window spans up to 4095 positions
 - READY; nothing open. Plan A (forms now, one joint landing) is the plan of record.
 - (1) YES on EVERY window span: MF_WSPAN_POS 4095; MF_WREACH = MF_MAX_FWD = 4096. Proof rows
   only for proving classes (window plan, old-field FIND); others proof_n 0. Range [LO, end),
@@ -1536,11 +1699,14 @@ recommendations were all taken; the record below says what each ruling settles.
   (merge only onto A1). S526 stays on MF_MAX_TERM; B2's control is your §11.6.3 build.
 - (3) Forms I/L/H(h) over the existing segmenter, at EVERY window span; literals stay one
   compare. Default H(h*), h* from FINITE heads: W(h) = worst C1-C2 cell of t(H(h))/t(I) in
-  every regime (your §11.4 five by its methods + random bytes); E = within the A/A floor of the
-  best W; keep the members of E dominated (faster beyond f in at least one cell and never
+  every regime (your §11.4 five by its methods + random bytes); E = within the floor of the
+  best W (rev 7: the A/A floor sized to the rule's comparison count, a false pick <= 5 % of
+  pure-noise nights); keep the members of E dominated (faster beyond f in at least one cell and never
   slower beyond f) by the fewest others (RULED); then the LARGEST. On a tie h* = 64, CHOSEN. A
-  loss in any regime moves h, never your width default. Any C1-C2 cell void twice: h* = 64,
-  the read cells' pick recorded (a void never helps a head). Possible movers: every window
+  loss in any regime moves h, never your width default. Any C1-C2 cell void twice: h* = the
+  largest head that passed R0 (64 when it passed), the read cells' pick recorded (a void never
+  helps a head); the kit's approximations of NOT-WARM and short-subject-search are void by
+  method until the bench's methods arrive (rev 7). Possible movers: every window
   alternative (covers, pre-check runs, reseed/prefix) with >= 2 consecutive offsets of one
   identical multi-member set (the per-offset meet, ACROSS span boundaries) whose last offset
   is >= h*. Witness: \w{32}\B (its after side continues \w to offset 32). At width 32, h* = 64
