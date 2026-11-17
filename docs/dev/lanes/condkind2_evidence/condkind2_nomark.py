@@ -579,4 +579,10 @@ print("   marked conditions of rev 22's pools + EXTRA + the WORKED and PROBE pro
 # the drift itself: after an edit `(h = 4: <5)` -> `(h = 4: <3)` the default now equals NOTHING on h's absences
 dr = popc(vec(one("(h: <3)", "h", LT3, "?"), [("c", "4")], A) ^ vec(one("(h: <3)", "h", LT3, "?"), [None], A))
 print("   pool A: `(h = 4: <3)` (after an edit from `<5`) vs `(h: <3)` with no control: differ %d (the default is dead)" % dr)
+# the mark follows an edit of its set; a default does not: `late` edited to padded(>= (9, 45)), the rewrite m = 30
+LATE45 = lambda t, v: num(t[0]) and num(t[1]) and (int(t[0]), int(t[1])) >= (9, 45)
+lm45 = Cond("((h, m?): late45)", [("h", ""), ("m", "?")], LATE45)
+dd = tvec(ans([lm45], T2, "M2c"), T2) ^ vec(lm45, [None, ("c", "30")], T2)
+print("   T2: `late` edited to padded(>= (9, 45)): rev 22's `((h, m?): late45)` vs the kept rewrite `((h, m = 30): late45)`:"
+      " differ %d of %d (smallest %r; the rewrite for the edited set is m = 45)" % (popc(dd), len(T2.source), low(dd, T2)))
 print("\nEND")

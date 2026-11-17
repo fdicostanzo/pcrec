@@ -60,5 +60,6 @@ PART 3: THE DEFAULT'S SCOPE
 PART 4: SILENT DRIFT (a default that does not satisfy its own condition)
    marked conditions of rev 22's pools + EXTRA + the WORKED and PROBE programs: 55 with a constant set (whether a default satisfies its own condition is decidable from the text), 5 reading a `$` (decidable only per match)
    pool A: `(h = 4: <3)` (after an edit from `<5`) vs `(h: <3)` with no control: differ 0 (the default is dead)
+   T2: `late` edited to padded(>= (9, 45)): rev 22's `((h, m?): late45)` vs the kept rewrite `((h, m = 30): late45)`: differ 2 of 11110 (smallest '9'; the rewrite for the edited set is m = 45)
 
 END
