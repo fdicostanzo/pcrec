@@ -23,7 +23,7 @@
   asked with **joint-last-pass** and its RAMIFICATIONS run (17 of 68 catalogue lines move). §R.8 asks: hits-text,
   atomic-search, joint-last-pass, pass-own-labels, hits-committed, join-order, polarity-rule, pass-list-read,
   zero-place, operand-context, shared-label; none chosen. Kept sentences falsified by rev 24 marked "[REV 24.1]"
-  (§R.9). 6,762 lines before, see the lane report for after.
+  (§R.9). 6,762 lines (797,544 bytes) before, 7,083 lines (847,257 bytes) after.
 
 - **rev 24: the owner's 2026-11-17 rulings, regex behaviour (lane predspec24, 2026-11-17); NOT STABLE pending §R.8.**
   §R REPLACED (rev 23.2's §R is the record, §16.7): a condition is one more piece of the pattern and a rejecting one
