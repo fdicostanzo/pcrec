@@ -1,0 +1,238 @@
+ORDER: forward RULE=(ii)
+== PART A: the path enumerator against Python `re` (first path = re.match; per stretch, the first path = re.fullmatch's parse; ends = re.fullmatch's)
+  CONTROL /(?:(?P<h>\d);)*/ over 364 texts: 2005 starts, 2317 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /(?:(?P<h>\d{1,2}),?)+/ over 364 texts: 2005 starts, 2918 stretches; MISMATCHES 0; stretches with 2+ paths 1368, with 2+ label sets 1288
+  CONTROL /(?:[\s\S]*?(?P<hit>\d+))*[\s\S]*/ over 121 texts: 547 starts, 1549 stretches; MISMATCHES 0; stretches with 2+ paths 818, with 2+ label sets 818
+  CONTROL /(?=(?P<x>\d+))\d/ over 341 texts: 1593 starts, 1252 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /(?P<a>1)(?P<b>\d+)/ over 341 texts: 1593 starts, 436 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /(?P<a>\d+)(?P<b>\d+)/ over 341 texts: 1593 starts, 1744 stretches; MISMATCHES 0; stretches with 2+ paths 832, with 2+ label sets 832
+  CONTROL /(?P<a>\d+?)(?P<b>\d+)/ over 341 texts: 1593 starts, 1744 stretches; MISMATCHES 0; stretches with 2+ paths 832, with 2+ label sets 832
+  CONTROL /(?P<b>\d+)(?P<a>\d)?/ over 341 texts: 1593 starts, 2996 stretches; MISMATCHES 0; stretches with 2+ paths 1744, with 2+ label sets 1744
+  CONTROL /(?P<h>\d{1,2})(?::(?P<m>\d\d))?/ over 22 texts: 97 starts, 88 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /(?P<l>\d)\d/ over 341 texts: 1593 starts, 912 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /(?P<l>\d+)/ over 341 texts: 1593 starts, 2996 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /(?P<l>\d\d)/ over 341 texts: 1593 starts, 912 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /(?P<l>a)a/ over 31 texts: 129 starts, 17 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+  CONTROL /(?P<l>aa)/ over 31 texts: 129 starts, 17 stretches; MISMATCHES 0; stretches with 2+ paths 0, with 2+ label sets 0
+== PART B: the four earlier engines re-run under the rule (through predspec23d's script, its canonical fixes kept); BEFORE = predspec23d_model.out as committed
+  ENGINE LINES THAT MOVE (predspec23d's PART B / X / Y lines, every engine line in full): 2 hunks
+    BEFORE ENGINE searchrow: 113 lines, 34 moved
+    AFTER  ENGINE searchrow: 113 lines, 35 moved
+    AFTER    BEFORE  L59 /(?<a>\d+)(?<b>\d+)/ & (a: "1") on `123`: R22 HOLDS `12`@0 | X HOLDS `12`@0 | S HOLDS `12`@0 | M FAILS | M+ HOLDS `12`@0 | Mr HOLDS `12`@0
+    AFTER    AFTER   L59 /(?<a>\d+)(?<b>\d+)/ & (a: "1") on `123`: R22 HOLDS `123`@0 | X HOLDS `12`@0,`123`@0 | S HOLDS `12`@0 | M FAILS | M+ HOLDS `12`@0 | Mr HOLDS `12`@0
+    BEFORE searchrow|  L59 /(?<a>\d+)(?<b>\d+)/ & (a: "1") on `123`: R22 HOLDS `12`@0 | X HOLDS `12`@0 | S HOLDS `12`@0 | M FAILS | M+ HOLDS `12`@0 | Mr HOLDS `12`@0
+    AFTER  searchrow|  L59 /(?<a>\d+)(?<b>\d+)/ & (a: "1") on `123`: R22 HOLDS `123`@0 | X HOLDS `12`@0,`123`@0 | S HOLDS `12`@0 | M FAILS | M+ HOLDS `12`@0 | Mr HOLDS `12`@0
+  CENSUS (every stretch the engines parse; 'paths' = stretches with 2+ paths; 'labels' = with 2+ label sets; 'order' = starts where PCRE's path order of ends differs from the engine's ends_pref):
+    /(?:(?P<a>\d)?-(?P<b>\d)?,)*/: stretches 32, paths 0, labels 0, control mismatches 0; starts 17, order 0
+    /(?:(?P<a>\d)?/)(?P<b>\d)/: stretches 16, paths 0, labels 0, control mismatches 0; starts 12, order 0
+    /(?:(?P<h>\d)?;)*/: stretches 78102, paths 0, labels 0, control mismatches 0; starts 35466, order 0
+    /(?:(?P<h>\d+)(?::(?P<m>\d\d))?,)*/: stretches 101096, paths 0, labels 0, control mismatches 0; starts 0, order 0
+    /(?:(?P<h>\d{1,2})(?::(?P<m>\d\d))?,)*/: stretches 81, paths 0, labels 0, control mismatches 0; starts 40, order 0
+    /(?:(?P<h>\d{1,2}):(?P<m>\d\d),)*/: stretches 2, paths 0, labels 0, control mismatches 0; starts 1, order 0
+    /(?:(?P<k>\d)|)-(?:(?P<h>\d)|)/: stretches 1271, paths 0, labels 0, control mismatches 0; starts 931, order 0
+    /(?:(?P<n>\d))*x/: stretches 2, paths 0, labels 0, control mismatches 0; starts 2, order 0
+    /(?:(?P<n>\d),)*/: stretches 1571, paths 0, labels 0, control mismatches 0; starts 1462, order 0
+    /(?:(?P<n>\d)?,)*/: stretches 12559, paths 0, labels 0, control mismatches 0; starts 8063, order 0
+    /(?P<a>\d+)(?P<b>\d+)/: stretches 43, paths 22, labels 22, control mismatches 0; starts 27, order 0, first 2+ labels `123`
+    /(?P<d>\d+)/: stretches 61171, paths 0, labels 0, control mismatches 0; starts 13176, order 0
+    /(?P<h>\d)?x/: stretches 16738, paths 0, labels 0, control mismatches 0; starts 43439, order 0
+    /(?P<h>\d{1,2})(?::(?P<m>\d\d))?/: stretches 15497998, paths 0, labels 0, control mismatches 0; starts 3315520, order 0
+    /(?P<k>\d)(?:;(?P<h>\d))*/: stretches 303984, paths 0, labels 0, control mismatches 0; starts 118566, order 0
+    /(?P<k>\d)?-(?P<h>\d)?/: stretches 2215, paths 0, labels 0, control mismatches 0; starts 1645, order 0
+    /(?P<mname>Jan|Feb|Mar)?-(?P<d>\d)/: stretches 28, paths 0, labels 0, control mismatches 0; starts 36, order 0
+    /(?P<n>\d)?x/: stretches 2, paths 0, labels 0, control mismatches 0; starts 2, order 0
+    /(?P<n>\d+)/: stretches 153813, paths 0, labels 0, control mismatches 0; starts 49575, order 0
+    /(?P<o>\d)x|y/: stretches 3414, paths 0, labels 0, control mismatches 0; starts 13196, order 0
+    /(?P<x>[\d:]+)/: stretches 44, paths 0, labels 0, control mismatches 0; starts 22, order 0
+    /(?s:.*)/: stretches 2885, paths 0, labels 0, control mismatches 0; starts 541, order 0
+    /(?s:.*?)(?P<h>\d{1,2})(?::(?P<m>\d\d))?/: stretches 103874, paths 65976, labels 65976, control mismatches 0; starts 119047, order 47089, first 2+ labels `9:30`
+    /0+/: stretches 11859, paths 0, labels 0, control mismatches 0; starts 14940, order 0
+    /0|00/: stretches 44, paths 0, labels 0, control mismatches 0; starts 16, order 0
+    /\d+/: stretches 94396, paths 0, labels 0, control mismatches 0; starts 39798, order 0
+    /\d:\d\d/: stretches 88532, paths 0, labels 0, control mismatches 0; starts 105978, order 0
+    /\d\d/: stretches 6755, paths 0, labels 0, control mismatches 0; starts 5746, order 0
+    /a/: stretches 2, paths 0, labels 0, control mismatches 0; starts 3, order 0
+    /a(?P<h>\d)|b(?P<k>\d)|c/: stretches 277, paths 0, labels 0, control mismatches 0; starts 1004, order 0
+    /x|(?:(?P<n>\d))+/: stretches 2, paths 0, labels 0, control mismatches 0; starts 2, order 0
+  REGEXES WITH A STRETCH OF 2+ LABEL SETS: 2 of 31 (/(?P<a>\d+)(?P<b>\d+)/; /(?s:.*?)(?P<h>\d{1,2})(?::(?P<m>\d\d))?/)
+  ORDER CONTROL: the same run with the engines' own end order kept: 2 hunks (identical to the path-order run)
+== PART C: the draft's worked lines on patterns with 2+ paths over one stretch (rev 23.2 = reading (iii) vs the RULE); WHOLE / SEARCHED / FIND-ALL
+  MOVED C01 L60 `(B | A) & (l: "a")` on `aa` (CF:953-955's ruled reject): HOLDS / HOLDS `aa`@0 [l=a] / FIND-ALL [`aa`@0 [l=a]]   <- rev 23.2 (iii): FAILS / FAILS / FIND-ALL []
+  same  C02 L60 `(A | B) & (l: "a")` on `aa`: HOLDS / HOLDS `aa`@0 [l=a] / FIND-ALL [`aa`@0 [l=a]]
+  same  C03 L60 inner `(B & (l: "a")) | (A & (l: "a"))` on `aa`: HOLDS / HOLDS `aa`@0 [l=a] / FIND-ALL [`aa`@0 [l=a]]
+  MOVED C04 section 4.5 / note (a) / L59 `P & (a: "1")` on `123`: HOLDS / HOLDS `123`@0 [a=1, b=23] / FIND-ALL [`123`@0 [a=1, b=23]]   <- rev 23.2 (iii): FAILS / HOLDS `12`@0 [a=1, b=2] / FIND-ALL [`12`@0 [a=1, b=2]]
+  same  C05 section 4.5 `P & (a: "12")` on `123`: HOLDS / HOLDS `123`@0 [a=12, b=3] / FIND-ALL [`123`@0 [a=12, b=3]]
+  same  C06 L60 lazy `/(?<a>\d+?)(?<b>\d+)/ & (a: "1")` on `123`: HOLDS / HOLDS `123`@0 [a=1, b=23] / FIND-ALL [`123`@0 [a=1, b=23]]
+  same  C07 L59 constraint written in `/(?<a>1)(?<b>\d+)/` on `123`: HOLDS / HOLDS `123`@0 [a=1, b=23] / FIND-ALL [`123`@0 [a=1, b=23]]
+  same  C08 L34 / O33 `P & (a: <5) & (b: <5)` on `123`: FAILS / HOLDS `12`@0 [a=1, b=2] / FIND-ALL [`12`@0 [a=1, b=2]]
+  MOVED C09 shown to the owner `(B | A) & (l: <20)` on `25 13`: FAILS / HOLDS `25`@0 [l=2] / FIND-ALL [`25`@0 [l=2], `13`@3 [l=13]]   <- rev 23.2 (iii): FAILS / HOLDS `13`@3 [l=13] / FIND-ALL [`13`@3 [l=13]]
+  MOVED C10 R.8 item 6 `(B | A) & (l: <20)` on `25`: HOLDS / HOLDS `25`@0 [l=2] / FIND-ALL [`25`@0 [l=2]]   <- rev 23.2 (iii): FAILS / FAILS / FIND-ALL []
+  same  C11 R.8 item 6 `(B & (l: <20)) | (A & (l: <20))` on `25`: HOLDS / HOLDS `25`@0 [l=2] / FIND-ALL [`25`@0 [l=2]]
+  MOVED C12 R.1.4 cost (2) `(B | A) & (l: <10)` on `12`: HOLDS / HOLDS `12`@0 [l=1] / FIND-ALL [`12`@0 [l=1]]   <- rev 23.2 (iii): FAILS / FAILS / FIND-ALL []
+  same  C13 R.1.4 cost (2) `((B & (l: >50)) | A) & (l: <10)` on `12`: HOLDS / HOLDS `12`@0 [l=1] / FIND-ALL [`12`@0 [l=1]]
+  MOVED C14 the owner's 25-13 example, find-all on `13 25`: FAILS / HOLDS `13`@0 [l=13] / FIND-ALL [`13`@0 [l=13], `25`@3 [l=2]]   <- rev 23.2 (iii): FAILS / HOLDS `13`@0 [l=13] / FIND-ALL [`13`@0 [l=13]]
+  MOVED C15 section 5.6 `@assert.none("123" & P & (a: "1"))`: FAILS (`"123" & P & (a: "1")` HOLDS)   <- rev 23.2 (iii): PASSES (`"123" & P & (a: "1")` FAILS)
+  same  C15 section 5.6 `@assert.some("123" & P & (a: "12"))`: PASSES (`"123" & P & (a: "12")` HOLDS)
+  same  C16 `when` expansion `(x & c & p) | (x & !(x & c))`, c = (h = 0: <5), on `3;0;5`: HOLDS / HOLDS `3;0`@0 / FIND-ALL [`3;0`@0, `5`@4]
+  same  C17 `x & when(c, p)` (the filter form), c = (h = 0: <5), on `3;0;5`: HOLDS / HOLDS `3;0;5`@0 / FIND-ALL [`3;0;5`@0]
+  same  C16 `when` expansion `(x & c & p) | (x & !(x & c))`, c = (h = 0: <5), on `5;1;9`: HOLDS / HOLDS `5;1`@0 / FIND-ALL [`5;1`@0]
+  same  C17 `x & when(c, p)` (the filter form), c = (h = 0: <5), on `5;1;9`: HOLDS / HOLDS `5;1;9`@0 / FIND-ALL [`5;1;9`@0]
+  same  C16 `when` expansion `(x & c & p) | (x & !(x & c))`, c = (h: <5), on `3;0;5`: HOLDS / HOLDS `3;0`@0 / FIND-ALL [`3;0`@0, `5`@4]
+  same  C17 `x & when(c, p)` (the filter form), c = (h: <5), on `3;0;5`: HOLDS / HOLDS `3;0;5`@0 / FIND-ALL [`3;0;5`@0]
+  same  C16 `when` expansion `(x & c & p) | (x & !(x & c))`, c = (h: <5), on `5;1;9`: HOLDS / HOLDS `5;1`@0 / FIND-ALL [`5;1`@0, `9`@4]
+  same  C17 `x & when(c, p)` (the filter form), c = (h: <5), on `5;1;9`: HOLDS / HOLDS `5;1;9`@0 / FIND-ALL [`5;1;9`@0]
+  CROSS-CHECK vs predspec23d PART Y (alt_accept, a separate implementation) and predspec23c's `when` engine, every reading:
+    ((B & (l: >50)) | A) & (l: <10) on `12`: (i) FAILS / FAILS ; (ii) HOLDS / HOLDS `12`@0 ; (iii) HOLDS / HOLDS `12`@0
+    (B & (l: "a")) | (A & (l: "a")) on `aa`: (i) FAILS / FAILS ; (ii) HOLDS / HOLDS `aa`@0 ; (iii) HOLDS / HOLDS `aa`@0
+    (B & (l: <20)) | (A & (l: <20)) on `25`: (i) FAILS / FAILS ; (ii) HOLDS / HOLDS `25`@0 ; (iii) HOLDS / HOLDS `25`@0
+    (B | A) & (l: <10) on `12`: (i) FAILS / FAILS ; (ii) HOLDS / HOLDS `12`@0 ; (iii) FAILS / FAILS
+    (B | A) & (l: <20) on `25`: (i) FAILS / FAILS ; (ii) HOLDS / HOLDS `25`@0 ; (iii) FAILS / FAILS
+    L60 (B | A) & (l: "a") on `aa`: (i) FAILS / FAILS ; (ii) HOLDS / HOLDS `aa`@0 ; (iii) FAILS / FAILS
+    reading (i) SEARCHED holds (85 texts): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+    reading (i) SEARCHED reported row (85 texts): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+    reading (i) WHOLE (85 texts): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+    reading (ii) SEARCHED holds (85 texts): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+    reading (ii) SEARCHED reported row (85 texts): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+    reading (ii) WHOLE (85 texts): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 0 first None
+    reading (iii) SEARCHED holds (85 texts): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 48 first '00'
+    reading (iii) SEARCHED reported row (85 texts): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 60 first '00'
+    reading (iii) WHOLE (85 texts): `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` differ 12 first '00'
+    `when` expansion, c = (h = 0: <5), reading (i) vs predspec23c's branch-major engine over KH (1,110): WHOLE differ 800 first '0;5'; SEARCHED report differ 400 first '0;5'; FIND-ALL differ 450 first '0;5'
+    `when` expansion, c = (h = 0: <5), reading (ii) vs predspec23c's branch-major engine over KH (1,110): WHOLE differ 0 first None; SEARCHED report differ 0 first None; FIND-ALL differ 0 first None
+    `when` expansion, c = (h = 0: <5), reading (iii) vs predspec23c's branch-major engine over KH (1,110): WHOLE differ 0 first None; SEARCHED report differ 0 first None; FIND-ALL differ 0 first None
+    `when` expansion, c = (h: <5), reading (i) vs predspec23c's branch-major engine over KH (1,110): WHOLE differ 810 first '0'; SEARCHED report differ 835 first '0'; FIND-ALL differ 960 first '0'
+    `when` expansion, c = (h: <5), reading (ii) vs predspec23c's branch-major engine over KH (1,110): WHOLE differ 0 first None; SEARCHED report differ 0 first None; FIND-ALL differ 0 first None
+    `when` expansion, c = (h: <5), reading (iii) vs predspec23c's branch-major engine over KH (1,110): WHOLE differ 0 first None; SEARCHED report differ 0 first None; FIND-ALL differ 0 first None
+== PART D: properties over text sets (RULE; rev 23.2's (iii) beside it); WHOLE / SEARCHED (reported row: stretch and labels) / FIND-ALL (hit list)
+  MOVED D1 HOLDS = SOME PATH `(B | A) & (l: <10)`: vs the some-split oracle over DIG4 (341): WHOLE differ 0; SEARCHED holds differ 0   <- rev 23.2 (iii): vs the some-split oracle over DIG4 (341): WHOLE differ 16 first '00'; SEARCHED holds differ 336 first '00'
+  MOVED D1 HOLDS = SOME PATH `(B | A) & (l: <20)`: vs the some-split oracle over DIG4 (341): WHOLE differ 0; SEARCHED holds differ 0   <- rev 23.2 (iii): vs the some-split oracle over DIG4 (341): WHOLE differ 12 first '00'; SEARCHED holds differ 156 first '00'
+  MOVED D1 HOLDS = SOME PATH `P & (a: "1")`: vs the some-split oracle over DIG4 (341): WHOLE differ 0; SEARCHED holds differ 0   <- rev 23.2 (iii): vs the some-split oracle over DIG4 (341): WHOLE differ 80 first '100'; SEARCHED holds differ 0
+  same  D1 HOLDS = SOME PATH `P & (a: <5) & (b: <5)`: vs the some-split oracle over DIG4 (341): WHOLE differ 0; SEARCHED holds differ 0
+  same  D1 HOLDS = SOME PATH `P & NOT (a: "1")`: vs the some-split oracle over DIG4 (341): WHOLE differ 0; SEARCHED holds differ 0
+  MOVED D2 DISTRIBUTES `(B | A) & (l: "1")` vs `(B & (l: "1")) | (A & (l: "1"))` over DIG4 (341): differ WHOLE 0; SEARCHED 0; FIND-ALL 0   <- rev 23.2 (iii): differ WHOLE 4 (first '10'); SEARCHED 180 (first '10'); FIND-ALL 180 (first '10')
+  MOVED D2 DISTRIBUTES `(B | A) & (l: "1")` vs `(B & (l: "1")) | (A & (l: "1"))` over DSP (1,365): differ WHOLE 0; SEARCHED 0; FIND-ALL 0   <- rev 23.2 (iii): differ WHOLE 3 (first '11'); SEARCHED 693 (first '11'); FIND-ALL 693 (first '11')
+  MOVED D2 DISTRIBUTES `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` over DIG4 (341): differ WHOLE 0; SEARCHED 0; FIND-ALL 0   <- rev 23.2 (iii): differ WHOLE 12 (first '00'); SEARCHED 252 (first '00'); FIND-ALL 300 (first '00')
+  MOVED D2 DISTRIBUTES `(B | A) & (l: <20)` vs `(B & (l: <20)) | (A & (l: <20))` over DSP (1,365): differ WHOLE 0; SEARCHED 0; FIND-ALL 0   <- rev 23.2 (iii): differ WHOLE 6 (first '21'); SEARCHED 798 (first '21'); FIND-ALL 924 (first '21')
+  same  D2 DISTRIBUTES `(B | A) & NOT (l: <20)` vs `(B & NOT (l: <20)) | (A & NOT (l: <20))` over DIG4 (341): differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  same  D2 DISTRIBUTES `(B | A) & NOT (l: <20)` vs `(B & NOT (l: <20)) | (A & NOT (l: <20))` over DSP (1,365): differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  same  D3 ARRAY `t & [f, g]` vs `(t & f) | (t & g)`, t = /(?<l>\d+)/, on `75`: HOLDS / HOLDS `75`@0 [l=75] / FIND-ALL [`75`@0 [l=75]]  vs  HOLDS / HOLDS `7`@0 [l=7] / FIND-ALL [`7`@0 [l=7], `5`@1 [l=5]]
+  same  D3 ARRAY `t & [f, g]` vs `(t & f) | (t & g)`, t = /(?<l>\d+)/, on `75 13`: FAILS / HOLDS `75`@0 [l=75] / FIND-ALL [`75`@0 [l=75], `13`@3 [l=13]]  vs  FAILS / HOLDS `7`@0 [l=7] / FIND-ALL [`7`@0 [l=7], `5`@1 [l=5], `13`@3 [l=13]]
+  same  D3 ARRAY t = /(?<l>\d+)/ over DIG4 (341): differ WHOLE 0; SEARCHED 244 (first '90'); FIND-ALL 300 (first '90')
+  same  D3 ARRAY t = /(?<l>\d+)/ over DSP (1,365): differ WHOLE 0; SEARCHED 822 (first '91'); FIND-ALL 957 (first '91')
+  same  D3 ARRAY `t & [f, g]` vs `(t & f) | (t & g)`, t = /(?<l>\d\d)/, on `75`: HOLDS / HOLDS `75`@0 [l=75] / FIND-ALL [`75`@0 [l=75]]  vs  HOLDS / HOLDS `75`@0 [l=75] / FIND-ALL [`75`@0 [l=75]]
+  same  D3 ARRAY `t & [f, g]` vs `(t & f) | (t & g)`, t = /(?<l>\d\d)/, on `75 13`: FAILS / HOLDS `75`@0 [l=75] / FIND-ALL [`75`@0 [l=75], `13`@3 [l=13]]  vs  FAILS / HOLDS `75`@0 [l=75] / FIND-ALL [`75`@0 [l=75], `13`@3 [l=13]]
+  same  D3 ARRAY t = /(?<l>\d\d)/ over DIG4 (341): differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  same  D3 ARRAY t = /(?<l>\d\d)/ over DSP (1,365): differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  same  D3 ARRAY `t & [f, g]` vs `(t & f) | (t & g)`, t = B | A, on `75`: HOLDS / HOLDS `75`@0 [l=75] / FIND-ALL [`75`@0 [l=75]]  vs  HOLDS / HOLDS `75`@0 [l=7] / FIND-ALL [`75`@0 [l=7]]
+  same  D3 ARRAY `t & [f, g]` vs `(t & f) | (t & g)`, t = B | A, on `75 13`: FAILS / HOLDS `75`@0 [l=75] / FIND-ALL [`75`@0 [l=75], `13`@3 [l=13]]  vs  FAILS / HOLDS `75`@0 [l=7] / FIND-ALL [`75`@0 [l=7], `13`@3 [l=13]]
+  MOVED D3 ARRAY t = B | A over DIG4 (341): differ WHOLE 0; SEARCHED 84 (first '90'); FIND-ALL 132 (first '90')   <- rev 23.2 (iii): differ WHOLE 8 (first '00'); SEARCHED 252 (first '00'); FIND-ALL 300 (first '00')
+  MOVED D3 ARRAY t = B | A over DSP (1,365): differ WHOLE 0; SEARCHED 399 (first '91'); FIND-ALL 525 (first '91')   <- rev 23.2 (iii): differ WHOLE 3 (first '21'); SEARCHED 798 (first '21'); FIND-ALL 924 (first '21')
+  same  D4 ADDING A CONDITION a `|` branch, no outer test: admits WHOLE 0; SEARCHED 0; FIND-ALL 2+ 0
+  MOVED D4 ADDING A CONDITION inside a `|` branch whose label an outer test reads: admits WHOLE 0; SEARCHED 0; FIND-ALL 2+ 0   <- rev 23.2 (iii): admits WHOLE 12 (first '00'); SEARCHED 324 (first '00'); FIND-ALL 2+ 144 (first '0000')
+  MOVED D4 ADDING A CONDITION inside a complement `P & !(P & c)`: admits WHOLE 84 (first '10'); SEARCHED 12 (first '10'); FIND-ALL 2+ 0   <- rev 23.2 (iii): admits WHOLE 4 (first '10'); SEARCHED 4 (first '10'); FIND-ALL 2+ 0
+  same  D4 ADDING A CONDITION inside an `&` operand: admits WHOLE 0; SEARCHED 0; FIND-ALL 2+ 0
+  same  D4 ADDING A CONDITION through a twice-used program `q & !(q & (b: <5))`: admits WHOLE 0; SEARCHED 0; FIND-ALL 2+ 0
+  MOVED D4 ADDING A CONDITION top of the `&` chain: admits WHOLE 0; SEARCHED 0; FIND-ALL 2+ 81 (first '0000')   <- rev 23.2 (iii): admits WHOLE 0; SEARCHED 0; FIND-ALL 2+ 0
+  same  D4 ADDING A CONDITION under NOT `P & NOT c`: admits WHOLE 4 (first '10'); SEARCHED 4 (first '10'); FIND-ALL 2+ 0
+  same  D4 ADDING A CONDITION in a find-all place: `/(?<l>\d+)/` vs `& (l: <100)` over DSP (1,365): admits WHOLE 0; SEARCHED 0; FIND-ALL 2+ 648 (first '111')
+  MOVED D5 RE-SPLIT over DSP (1,365) `(B | A)` vs `(B | A) & (l: <20)`: texts with a hit not among the plain hits 0 (first None)   <- rev 23.2 (iii): texts with a hit not among the plain hits 222 (first '211')
+  same  D5 RE-SPLIT over DSP (1,365) `/(?<l>\d+)/` vs `& (l: <100)`: texts with a hit not among the plain hits 810 (first '111')
+  MOVED D5 RE-SPLIT over DSP (1,365) `P` vs `P & (a: "1")`: texts with a hit not among the plain hits 276 (first '211')   <- rev 23.2 (iii): texts with a hit not among the plain hits 546 (first '111')
+  MOVED D6 BOTH `P & (a: "1")` AND `P & NOT (a: "1")` hold, WHOLE, over DIG4 (341): 80 (first '100')   <- rev 23.2 (iii): 0 (first None)
+  MOVED D6 `P & NOT (a: "1")` vs `P & !(P & (a: "1"))` over DIG4 (341): differ WHOLE 80 (first '100'); SEARCHED 80 (first '100'); FIND-ALL 80 (first '100')   <- rev 23.2 (iii): differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  MOVED D7 SPELLING greedy `P & (a: "1")` vs lazy `/(?<a>\d+?)(?<b>\d+)/ & (a: "1")` over DIG4 (341): differ WHOLE 0; SEARCHED 0; FIND-ALL 0   <- rev 23.2 (iii): differ WHOLE 80 (first '100'); SEARCHED 128 (first '100'); FIND-ALL 128 (first '100')
+  MOVED D7 SPELLING `(A | B) & (l: "a")` vs `(B | A) & (l: "a")` over {a, b} to length 4 (31): differ WHOLE 0; SEARCHED 0; FIND-ALL 0   <- rev 23.2 (iii): differ WHOLE 1 (first 'aa'); SEARCHED 12 (first 'aa'); FIND-ALL 12 (first 'aa')
+  MOVED D7 SPELLING `P & (a: "1")` vs `P & (a: "1")` written in (`/(?<a>1)(?<b>\d+)/`) over DIG4 (341): differ WHOLE 0; SEARCHED 0; FIND-ALL 0   <- rev 23.2 (iii): differ WHOLE 80 (first '100'); SEARCHED 128 (first '100'); FIND-ALL 128 (first '100')
+  MOVED D7 SPELLING `(B | A) & (l: <20)` vs `(A | B) & (l: <20)` over DIG4 (341) (labels compared): differ WHOLE 0; SEARCHED 84 (first '10'); FIND-ALL 132 (first '10')   <- rev 23.2 (iii): differ WHOLE 12 (first '00'); SEARCHED 336 (first '00'); FIND-ALL 336 (first '00')
+  MOVED D7 SPELLING greedy `P & (a: <5)` vs lazy `/(?<a>\d+?)(?<b>\d+)/ & (a: <5)` over DIG4 (341) (labels compared): differ WHOLE 0; SEARCHED 0; FIND-ALL 0   <- rev 23.2 (iii): differ WHOLE 240 (first '000'); SEARCHED 288 (first '000'); FIND-ALL 288 (first '000')
+== PART E: OPEN UNDER THE NEW RULE: each candidate run (RULE = (ii) for everything else); WHOLE / SEARCHED / FIND-ALL
+  E1 JOIN left side's paths outer, `(P & Q) & ((a: "1") | (c: "1"))`, P = /(?<a>\d+)(?<b>\d+)/, Q = /(?<c>\d+)(?<d>\d+)/, on `123`: HOLDS / HOLDS `123`@0 [a=12, b=3, c=1, d=23] / FIND-ALL [`123`@0 [a=12, b=3, c=1, d=23]] ; over DIG4 holds WHOLE 84, SEARCHED 180
+  E1 JOIN right side's paths outer, `(P & Q) & ((a: "1") | (c: "1"))`, P = /(?<a>\d+)(?<b>\d+)/, Q = /(?<c>\d+)(?<d>\d+)/, on `123`: HOLDS / HOLDS `123`@0 [a=1, b=23, c=12, d=3] / FIND-ALL [`123`@0 [a=1, b=23, c=12, d=3]] ; over DIG4 holds WHOLE 84, SEARCHED 180
+  E1 JOIN left vs right over DIG4: reported row differs on 128 of 341 (first '100'); holds differ 0 by construction (the same pairs, another order)
+  E2 LOOP /(?:(?<h>\d);)*/ `(h: <5)` on ``: L1 after the loop FAILS / FAILS / FIND-ALL [] ; L2 a piece in each pass HOLDS / HOLDS ``@0 / FIND-ALL [``@0]: 
+  E2 LOOP /(?:(?<h>\d);)*/ `(h: <5)` on `3;7;`: L1 after the loop FAILS / HOLDS `3;`@0 / FIND-ALL [`3;`@0] ; L2 a piece in each pass FAILS / HOLDS `3;`@0 / FIND-ALL [`3;`@0, ``@2, ``@3, ``@4]: 
+  E2 LOOP /(?:(?<h>\d);)*/ `(h: <5)` on `3;;`: L1 after the loop FAILS / HOLDS `3;`@0 / FIND-ALL [`3;`@0] ; L2 a piece in each pass FAILS / HOLDS `3;`@0 / FIND-ALL [`3;`@0, ``@2, ``@3]: 
+  E2 LOOP /(?:(?<h>\d);)*/ `(h: <5)` on `7;3;`: L1 after the loop FAILS / HOLDS `3;`@2 / FIND-ALL [`3;`@2] ; L2 a piece in each pass FAILS / HOLDS ``@0 / FIND-ALL [``@0, ``@1, `3;`@2, ``@4]: 
+  E2 LOOP /(?:(?<h>\d);)*/ `(h: <5)` L1 vs L2 over {3, 7, ;} to length 5 (364): differ WHOLE 1 (first ''); SEARCHED 324 (first ''); FIND-ALL 364 (first '')
+  E2 LOOP /(?:(?<h>\d)?;)*/ `(h: <5)` on ``: L1 after the loop FAILS / FAILS / FIND-ALL [] ; L2 a piece in each pass HOLDS / HOLDS ``@0 / FIND-ALL [``@0]: 
+  E2 LOOP /(?:(?<h>\d)?;)*/ `(h: <5)` on `3;7;`: L1 after the loop FAILS / HOLDS `3;`@0 / FIND-ALL [`3;`@0] ; L2 a piece in each pass FAILS / HOLDS `3;`@0 / FIND-ALL [`3;`@0, ``@2, `;`@3, ``@4]: 
+  E2 LOOP /(?:(?<h>\d)?;)*/ `(h: <5)` on `3;;`: L1 after the loop FAILS / HOLDS `3;`@0 / FIND-ALL [`3;`@0] ; L2 a piece in each pass HOLDS / HOLDS `3;;`@0 / FIND-ALL [`3;;`@0, ``@3]: 
+  E2 LOOP /(?:(?<h>\d)?;)*/ `(h: <5)` on `7;3;`: L1 after the loop FAILS / HOLDS `3;`@2 / FIND-ALL [`3;`@2] ; L2 a piece in each pass FAILS / HOLDS ``@0 / FIND-ALL [``@0, `;3;`@1, ``@4]: 
+  E2 LOOP /(?:(?<h>\d)?;)*/ `(h: <5)` L1 vs L2 over {3, 7, ;} to length 5 (364): differ WHOLE 18 (first ''); SEARCHED 338 (first ''); FIND-ALL 364 (first '')
+  E2 SET-ONCE `P & (a: "1")` after the operand vs a piece right after a's group, over DIG4 (341): differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  E3 COMPLEMENT C1 (the complemented program judged by the rule: some path) `P & !(P & (a: "1"))` on `123`: FAILS / HOLDS `23`@1 [a=2, b=3] / FIND-ALL [`23`@1 [a=2, b=3]] ; over DIG4 holds WHOLE 252, SEARCHED 324
+  E3 COMPLEMENT C2 (judged by its one parse) `P & !(P & (a: "1"))` on `123`: HOLDS / HOLDS `123`@0 [a=12, b=3] / FIND-ALL [`123`@0 [a=12, b=3]] ; over DIG4 holds WHOLE 332, SEARCHED 332
+  E3 COMPLEMENT C1 vs C2 over DIG4: WHOLE 80 ; SEARCHED 80
+  E4 LOOKAHEAD LA2 re-entered by the outer condition `/(?=(?<x>\d+))\d/ & (x: "1")` on `12`: FAILS / HOLDS `1`@0 [x=1] / FIND-ALL [`1`@0 [x=1]] ; on `112`: FAILS / HOLDS `1`@0 [x=1] / FIND-ALL [`1`@0 [x=1], `1`@1 [x=1]] ; over DIG4 SEARCHED holds 220
+  E4 NEGATIVE LOOKAHEAD NA1 (the inner condition backtracks inside: no late time from here on) `/(?![\s\S]*${q})${t2}/` on `1 9:15`: FAILS / HOLDS `1`@0 / FIND-ALL [`1`@0, `9:15`@2]
+  E4 NEGATIVE LOOKAHEAD NA1 (the inner condition backtracks inside: no late time from here on) `/(?![\s\S]*${q})${t2}/` on `9:15 10:45`: FAILS / HOLDS `0:45`@6 / FIND-ALL [`0:45`@6]
+  E4 NEGATIVE LOOKAHEAD NA1 (the inner condition backtracks inside: no late time from here on) `/(?![\s\S]*${q})${t2}/` on `9:45 1`: FAILS / HOLDS `45`@2 / FIND-ALL [`45`@2, `1`@5]
+  E4 NEGATIVE LOOKAHEAD NA2 (the inner program's first path, judged) `/(?![\s\S]*${q})${t2}/` on `1 9:15`: FAILS / HOLDS `1`@0 / FIND-ALL [`1`@0, `9:15`@2]
+  E4 NEGATIVE LOOKAHEAD NA2 (the inner program's first path, judged) `/(?![\s\S]*${q})${t2}/` on `9:15 10:45`: FAILS / HOLDS `9:15`@0 / FIND-ALL [`9:15`@0, `0:45`@6]
+  E4 NEGATIVE LOOKAHEAD NA2 (the inner program's first path, judged) `/(?![\s\S]*${q})${t2}/` on `9:45 1`: FAILS / HOLDS `45`@2 / FIND-ALL [`45`@2, `1`@5]
+  E4 LOOKAHEAD LA1 atomic (PCRE: the lookahead is not re-entered) `/(?=(?<x>\d+))\d/ & (x: "1")` on `12`: FAILS / FAILS / FIND-ALL [] ; on `112`: FAILS / FAILS / FIND-ALL [] ; over DIG4 SEARCHED holds 85
+  E5 OCCURRENCES `occurrences(/\d+/)` with `(hit: <100)`, H1 (hits fixed, judged), WHOLE on `1234` / `x300 12` / `5 123`: FAILS / FAILS / FAILS ; over {1, 2, space, x} to length 4 (341) WHOLE holds 254
+  E5 OCCURRENCES `occurrences(/\d+/)` with `(hit: <100)`, H2 (the condition re-enters the body), WHOLE on `1234` / `x300 12` / `5 123`: HOLDS / HOLDS / HOLDS ; over {1, 2, space, x} to length 4 (341) WHOLE holds 310
+  E5 H1 vs H2 over {1, 2, space, x} to length 4 (341), WHOLE: differ 56 (first '111')
+  E6 UNKNOWN U1 (rejects and backtracks, as FALSE) `/(?<b>\d+)(?<a>\d)?/ & (a: <5)` on `12` (first path: b = 12, a absent): HOLDS / HOLDS `12`@0 [a=2, b=1] / FIND-ALL [`12`@0 [a=2, b=1]] ; over DIG4: WHOLE holds 252 ; SEARCHED holds 324
+  E6 UNKNOWN U2 (ends the tries at this start) `/(?<b>\d+)(?<a>\d)?/ & (a: <5)` on `12` (first path: b = 12, a absent): FAILS / FAILS / FIND-ALL [] ; over DIG4: WHOLE holds 0 ; SEARCHED holds 0
+  E7 ATOMIC `(B | A) & (l: <20)` on `25 13`: the rule FAILS / HOLDS `25`@0 [l=2] / FIND-ALL [`25`@0 [l=2], `13`@3 [l=13]] ; atomic FAILS / HOLDS `13`@3 [l=13] / FIND-ALL [`13`@3 [l=13]]: 
+  E7 ATOMIC `(B | A) & (l: <20)` on `25`: the rule HOLDS / HOLDS `25`@0 [l=2] / FIND-ALL [`25`@0 [l=2]] ; atomic FAILS / FAILS / FIND-ALL []: 
+  E7 ATOMIC `P & (a: "1")` on `123`: the rule HOLDS / HOLDS `123`@0 [a=1, b=23] / FIND-ALL [`123`@0 [a=1, b=23]] ; atomic FAILS / FAILS / FIND-ALL []: 
+  E7 ATOMIC `t2 & !q` on `9:30 10:15`: the rule FAILS / HOLDS `9`@0 [h=9, m=None] / FIND-ALL [`9`@0 [h=9, m=None], `30`@2 [h=30, m=None], `10`@5 [h=10, m=None], `15`@8 [h=15, m=None]] ; atomic FAILS / HOLDS `30`@2 [h=30, m=None] / FIND-ALL [`30`@2 [h=30, m=None], `0:15`@6 [h=0, m=15]]: 
+  E7 ATOMIC `t2 & !q` on `9:30` (item 14's example): the rule FAILS / HOLDS `9`@0 [h=9, m=None] / FIND-ALL [`9`@0 [h=9, m=None], `30`@2 [h=30, m=None]] ; atomic FAILS / HOLDS `30`@2 [h=30, m=None] / FIND-ALL [`30`@2 [h=30, m=None]]: 
+  E7 ATOMIC `t2 & q` (q := t2 & late) on `9:30`: the rule HOLDS / HOLDS `9:30`@0 [h=9, m=30] / FIND-ALL [`9:30`@0 [h=9, m=30]] ; atomic HOLDS / HOLDS `9:30`@0 [h=9, m=30] / FIND-ALL [`9:30`@0 [h=9, m=30]]: 
+  E7 ATOMIC vs (i) and (iii) over DIG4 for `(B | A) & (l: <20)` (holds; report): atomic vs (i) WHOLE 0 SEARCHED 0 ; atomic vs (iii) WHOLE 0 SEARCHED 0
+== PART F: THE REMAINING OWNER QUESTIONS RE-RUN: each candidate on a WHOLE value, a SEARCHED text and a several-match FIND-ALL text (RULE; MOVED = the line differs from rev 23.2's (iii))
+  same  F record-under-not [completion (item 18)]: WHOLE on `10` HOLDS ; SEARCHED on `10` HOLDS `10`@0 ; FIND-ALL on `10 9 10:15` [`10`@0, `9`@3, `10:15`@5]
+  same  F record-under-not [the record (h: <9, m: <30)]: WHOLE on `10` HOLDS ; SEARCHED on `10` HOLDS `10`@0 ; FIND-ALL on `10 9 10:15` [`10`@0, `9`@3, `10:15`@5]
+  same  F record-under-not [today: joint UNKNOWN on an absent part]: WHOLE on `10` FAILS ; SEARCHED on `10` FAILS ; FIND-ALL on `10 9 10:15` [`10:15`@5]
+  same  F lookahead-labels [LA1 (atomic, PCRE's): `/(?=[\s\S]*${late_m})${t2}/ & (lm: "50")`]: WHOLE on `9:15` FAILS ; SEARCHED on `9:15 10:45 11:50` HOLDS `0:45`@6 [h=0, lm=50] ; FIND-ALL on `9:15 10:45 11:50 1` [`0:45`@6 [h=0, lm=50], `11:50`@11 [h=11, lm=50]]
+  MOVED F lookahead-labels [LA2 (re-entered): `/(?=[\s\S]*${late_m})${t2}/ & (lm: "50")`]: WHOLE on `9:15` FAILS ; SEARCHED on `9:15 10:45 11:50` HOLDS `9:15`@0 [h=9, lm=50] ; FIND-ALL on `9:15 10:45 11:50 1` [`9:15`@0 [h=9, lm=50], `10:45`@5 [h=10, lm=50], `11:50`@11 [h=11, lm=50]]   <- rev 23.2 (iii): WHOLE on `9:15` FAILS ; SEARCHED on `9:15 10:45 11:50` HOLDS `0:45`@6 [h=0, lm=50] ; FIND-ALL on `9:15 10:45 11:50 1` [`0:45`@6 [h=0, lm=50], `11:50`@11 [h=11, lm=50]]
+  same  F repeated-means [`/(?:(?<h>\d);)+/ & /\d;/` & `(h: <5)`]: WHOLE on `3;` HOLDS ; SEARCHED on `7;3;` HOLDS `3;`@2 ; FIND-ALL on `3;7;3;` [`3;`@0, `3;`@4]
+  same  F repeated-means [`/(?<h>\d);/` & `(h: <5)`]: WHOLE on `3;` HOLDS ; SEARCHED on `7;3;` HOLDS `3;`@2 ; FIND-ALL on `3;7;3;` [`3;`@0, `3;`@4]
+  same  F nested-complement [`t2 & contains(t2 & !q)`, complement C1]: WHOLE on `9:30` HOLDS ; SEARCHED on `9:30` HOLDS `9:30`@0 ; FIND-ALL on `9:30 10:45` [`9:30`@0, `10:45`@5]
+  same  F nested-complement [`t2 & contains(t2 & !q)`, complement C2]: WHOLE on `9:30` HOLDS ; SEARCHED on `9:30` HOLDS `9:30`@0 ; FIND-ALL on `9:30 10:45` [`9:30`@0, `10:45`@5]
+  same  F whole-text [route (i)(a) NA1 `/(?![\s\S]*${q})${t2}/`]: WHOLE on `9:30` FAILS ; SEARCHED on `9:30` HOLDS `30`@2 ; FIND-ALL on `9:15 9:30 1` [`30`@7, `1`@10]
+  same  F whole-text [route (i)(a) NA2]: WHOLE on `9:30` FAILS ; SEARCHED on `9:30` HOLDS `30`@2 ; FIND-ALL on `9:15 9:30 1` [`9:15`@0, `30`@7, `1`@10]
+  same  F whole-text [route (ii) `t2 & text.none(q)`]: WHOLE on `9:30` FAILS ; SEARCHED on `9:30` FAILS ; FIND-ALL on `9:15 9:30 1` []
+  same  F whole-text [today `t2 & !q`]: WHOLE on `9:30` FAILS ; SEARCHED on `9:30` HOLDS `9`@0 ; FIND-ALL on `9:15 9:30 1` [`9:15`@0, `9`@5, `30`@7, `1`@10]
+  same  F pass-table [R1 nested pass table: `(h: <5)` Kleene AND over passes]: WHOLE on `7;;` FAILS ; SEARCHED on `7;;` FAILS ; FIND-ALL on `3;;7;;3;` [`3;`@0, `3;`@6]
+  same  F pass-table [R1: `(h: !<5)`]: WHOLE on `7;;` FAILS ; SEARCHED on `7;;` HOLDS `7;`@0 ; FIND-ALL on `3;;7;;3;` [`7;`@3]
+  same  F pass-table [R1: `NOT (h: <5)`]: WHOLE on `7;;` HOLDS ; SEARCHED on `7;;` HOLDS `7;;`@0 ; FIND-ALL on `3;;7;;3;` [`3;;7;;3;`@0]
+  same  F pass-table [no pass table: `(h: <5)` reads PCRE's last capture]: WHOLE on `7;;` FAILS ; SEARCHED on `7;;` FAILS ; FIND-ALL on `3;;7;;3;` [`3;;7;;3;`@0]
+  same  F pass-and [Kleene AND (today): `NOT (h: <5)`]: WHOLE on `7;;` HOLDS ; SEARCHED on `7;;` HOLDS `7;;`@0 ; FIND-ALL on `7;;3;7;;` [`7;;3;7;;`@0]
+  same  F pass-and [a pass lacking h makes it UNKNOWN: `NOT (h: <5)`]: WHOLE on `7;;` FAILS ; SEARCHED on `7;;` HOLDS `7;`@0 ; FIND-ALL on `7;;3;7;;` [`7;`@0, `3;7;`@3]
+  same  F group-truth [EXISTS, two-valued (today): `NOT some((h: <5))`]: WHOLE on `;` HOLDS ; SEARCHED on `;` HOLDS `;`@0 ; FIND-ALL on `;;3;` [`;;`@0, ``@2, `;`@3, ``@4]
+  same  F group-truth [three-valued some over the real passes: `NOT some((h: <5))`]: WHOLE on `;` FAILS ; SEARCHED on `;` HOLDS ``@0 ; FIND-ALL on `;;3;` [``@0, ``@1, ``@2, ``@3, ``@4]
+  same  F condition-or [Kleene OR (today): `NOT ((h: <5) | (k: <5))`]: WHOLE on `b7` FAILS ; SEARCHED on `b7` FAILS ; FIND-ALL on `b7 a3 c a9` []
+  same  F condition-or [two-valued OR (rev 22): `NOT ((h: <5) | (k: <5))`]: WHOLE on `b7` HOLDS ; SEARCHED on `b7` HOLDS `b7`@0 ; FIND-ALL on `b7 a3 c a9` [`b7`@0, `c`@6, `a9`@8]
+  same  F when-meaning [its body `(x & c & p) | (x & !(x & c))`, c = (h: <5)]: WHOLE on `5;1;9` HOLDS ; SEARCHED on `5;1;9` HOLDS `5;1`@0 ; FIND-ALL on `3;0;5 5;1;9` [`3;0`@0, `5`@4, `5;1`@6, `9`@10]
+  same  F when-meaning [the filter form `x & when(c, p)`, c = (h: <5)]: WHOLE on `5;1;9` HOLDS ; SEARCHED on `5;1;9` HOLDS `5;1;9`@0 ; FIND-ALL on `3;0;5 5;1;9` [`3;0;5`@0, `5;1;9`@6]
+  same  F polarity-rule [`((B & (l: >50)) | A) & (l: <10)` (the branch position the draft says can admit)]: WHOLE on `12` HOLDS ; SEARCHED on `9:30 12` HOLDS `30`@2 ; FIND-ALL on `12 9:30 25` [`12`@0, `30`@5, `25`@8]
+  MOVED F polarity-rule [`(B | A) & (l: <10)` without the branch condition]: WHOLE on `12` HOLDS ; SEARCHED on `9:30 12` HOLDS `30`@2 ; FIND-ALL on `12 9:30 25` [`12`@0, `30`@5, `25`@8]   <- rev 23.2 (iii): WHOLE on `12` FAILS ; SEARCHED on `9:30 12` FAILS ; FIND-ALL on `12 9:30 25` []
+  same  F polarity-rule [`t2 & !(t2 & (h: <0))` (the ERROR by local polarity)]: WHOLE on `12` HOLDS ; SEARCHED on `9:30 12` HOLDS `9:30`@0 ; FIND-ALL on `12 9:30 25` [`12`@0, `9:30`@3, `25`@8]
+  same  F polarity-rule [`t2 & NOT (h: <0)` (the WARNING: constant-always)]: WHOLE on `12` HOLDS ; SEARCHED on `9:30 12` HOLDS `9:30`@0 ; FIND-ALL on `12 9:30 25` [`12`@0, `9:30`@3, `25`@8]
+  same  F complement-place [`!q & t2` (= the same, chain rule)]: WHOLE on `9:30` FAILS ; SEARCHED on `9:30` HOLDS `9`@0 ; FIND-ALL on `9:30 10:45` [`9`@0, `30`@2, `10`@5, `45`@8]
+  same  F complement-place [`t2 & !q` (chain rule)]: WHOLE on `9:30` FAILS ; SEARCHED on `9:30` HOLDS `9`@0 ; FIND-ALL on `9:30 10:45` [`9`@0, `30`@2, `10`@5, `45`@8]
+  same  F complement-place [a lone `!q` in a WHOLE place (the value is not a late time)]: on `9:30` FAILS ; on `9` HOLDS ; on `10:45` FAILS (an ERROR today in every mode)
+  same  F hit-list [the draft: the filtered argument's own rows, leftmost, non-overlapping] `occurrences(/(?<n>\d+)/ & (n: <100))`: on `1234` [`12`@0, `34`@2] ; on `5 123` [`5`@0, `12`@2, `3`@4]
+  F hit-list [H2: the outer condition re-enters `occurrences`' body; its first surviving path's hits] on `1234`: ['12', '34']
+  F hit-list [H2: the outer condition re-enters `occurrences`' body; its first surviving path's hits] on `5 123`: ['5', '12', '3']
+  F hit-list [string-set, longest-first alternation]: on `1234` ['`12`@0', '`34`@2'] ; on `5 123` ['`5`@0', '`12`@2', '`3`@4']
+  F hit-list [string-set, shortest-first alternation]: on `1234` ['`1`@0', '`2`@1', '`3`@2', '`4`@3'] ; on `5 123` ['`5`@0', '`1`@2', '`2`@3', '`3`@4']
+== PART G: the rulings-file R1 formulation (a table of every path, conditions filter, the first surviving row reported) vs the program evaluator (RULE)
+  G ATOMIC `atomic(B | A) & (l: <20)`: first row before filtering over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  G ATOMIC `atomic(P & (a: "1"))`: first row before filtering vs the evaluator's atomic (its own condition applied inside) over 341 texts: differ WHOLE 80 (first '100'); SEARCHED 128 (first '100'); FIND-ALL 128 (first '100')
+  G `((B & (l: >50)) | A) & (l: <10)` NAIVE (every condition on every row) over 341 texts: differ WHOLE 16 (first '00'); SEARCHED 336 (first '00'); FIND-ALL 336 (first '00')
+  G `((B & (l: >50)) | A) & (l: <10)` PROVENANCE over 341 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  G `(B & (l: <20)) | (A & (l: <20))` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  G `(B | A) & (l: <20)` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  G `P & !(P & (a: "1"))` (the complement's own table, filtered) over 341 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  G `P & (a: "1")` over 1365 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  G `when` expansion, c = (h: <5), the row remembers its branch over 1110 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  G loop `/(?:(?<h>\d);)*/ & (h: <5)` (a row's passes; zero passes UNKNOWN) over 364 texts: differ WHOLE 0; SEARCHED 0; FIND-ALL 0
+  G witnesses: NAIVE `((B & (l: >50)) | A) & (l: <10)` on `12`: table FAILS, evaluator HOLDS ; `atomic(P & (a: "1"))` on `123`: first-row-before-filtering FAILS, evaluator HOLDS
+== MOVED LINES (PART C, D, F lines whose answer under the RULE differs from rev 23.2's (iii)): 30
+== ENGINE LINES THAT MOVE (PART B hunks): 2
+END

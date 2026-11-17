@@ -267,11 +267,14 @@ class Atomic:                                           # commits to the first p
             if all(v is True for _, v in recs):
                 yield e, row, (); break
 
+CUR = {"rd": RULE}                                    # the reading in force for nested programs (complement, lookaheads)
 UNK = {"v": "U1"}                                     # OPEN: does UNKNOWN backtrack like FALSE?
 def accepted(P, s, i, reading=None, cmp="C1"):
     """The surviving (end, row) pairs at start i, in report order, under a reading."""
-    reading = reading or RULE
-    paths = list(P.walk(s, i, False, cmp))
+    reading = reading or CUR["rd"]
+    prev = CUR["rd"]; CUR["rd"] = reading
+    try: paths = list(P.walk(s, i, False, cmp))
+    finally: CUR["rd"] = prev
     if reading == "ii":
         if UNK["v"] == "U1":                             # UNKNOWN rejects and the pattern backtracks, as on FALSE
             return [(e, row) for e, row, recs in paths if all(v is True for _, v in recs)]
@@ -294,7 +297,7 @@ def accepted(P, s, i, reading=None, cmp="C1"):
 def stretch_ok(B, s, i, e, cmp):
     """Does B keep the stretch (i, e)? C1: B judged by the rule (some surviving path under (ii)); C2: B judged by its
     one parse of the stretch (the first path ending at e), as rev 23.2 judged every program."""
-    return any(e2 == e for e2, _ in accepted(B, s, i, RULE if cmp == "C1" else "i", cmp))
+    return any(e2 == e for e2, _ in accepted(B, s, i, CUR["rd"] if cmp == "C1" else "i", cmp))
 
 def whole(P, s, reading=None, cmp="C1"):
     return any(e == len(s) for e, _ in accepted(P, s, 0, reading, cmp))
@@ -667,6 +670,8 @@ mv((6, "b"), "D6 `P & NOT (a: \"1\")` vs `P & !(P & (a: \"1\"))` over DIG4 (341)
 # D7: one language, two spellings, under a condition.
 mv((7, "a"), "D7 SPELLING greedy `P & (a: \"1\")` vs lazy `/(?<a>\\d+?)(?<b>\\d+)/ & (a: \"1\")` over DIG4 (341)", lambda rd: three(rd, W(PAB, a1), W(PABL, a1), DIG4, ("a", "b")))
 mv((7, "b"), "D7 SPELLING `(A | B) & (l: \"a\")` vs `(B | A) & (l: \"a\")` over {a, b} to length 4 (31)", lambda rd: three(rd, W(Alt(Aa, Ba), la), W(Alt(Ba, Aa), la), AB4, ("l",)))
+mv((7, "d"), "D7 SPELLING `(B | A) & (l: <20)` vs `(A | B) & (l: <20)` over DIG4 (341) (labels compared)", lambda rd: three(rd, W(Alt(Bd, Ad), l20), W(Alt(Ad, Bd), l20), DIG4, ("l",)))
+mv((7, "e"), "D7 SPELLING greedy `P & (a: <5)` vs lazy `/(?<a>\\d+?)(?<b>\\d+)/ & (a: <5)` over DIG4 (341) (labels compared)", lambda rd: three(rd, W(PAB, a5), W(PABL, a5), DIG4, ("a", "b")))
 mv((7, "c"), "D7 SPELLING `P & (a: \"1\")` vs `P & (a: \"1\")` written in (`/(?<a>1)(?<b>\\d+)/`) over DIG4 (341)", lambda rd: three(rd, W(PAB, a1), PA1, DIG4, ("a", "b")))
 flush()
 
@@ -848,6 +853,79 @@ for cm in order(["C1", "C2"]):
 for cand, P_ in order([("today `t2 & !q`", Diff(T2, q)), ("route (ii) `t2 & text.none(q)`", SF(T2, lambda s, i, e: not findall(q, s))),
                        ("route (i)(a) NA1 `/(?![\\s\\S]*${q})${t2}/`", NotAhead(T2, GAPQ, "NA1")), ("route (i)(a) NA2", NotAhead(T2, GAPQ, "NA2"))]):
     fq(13, "whole-text", cand, P_, "9:30", "9:30", "9:15 9:30 1")
+flush()
+
+# ======================================================================================================== PART G
+# Rulings file R1 (the manager's framing, a CLAIM to test): "the table holds every path of the pattern in PCRE's
+# preference order (two paths over one stretch with different labels are two rows); conditions filter; the first
+# surviving row is reported", and atomic = "take the first row BEFORE filtering". Built INDEPENDENTLY of the program
+# evaluator above (no Alt / Where / And / Diff nodes): each program is ONE regex (its `|` branches with their own
+# group names), its table = every path of that regex at each start, a row = the path's labels (and pass lists), and
+# the conditions are ONE keep(row) predicate over the finished row. Two forms of "conditions filter": PROVENANCE (a
+# condition written inside a branch keeps or drops only that branch's rows: the row remembers its branch) and NAIVE
+# (every condition filters every row of the table).
+print("== PART G: the rulings-file R1 formulation (a table of every path, conditions filter, the first surviving row reported) vs the program evaluator (RULE)")
+class Table:
+    def __init__(self, pattern, keep, atomic=False): self.rx, self.keep, self.atomic = RX(pattern), keep, atomic
+    def rows(self, s, i):
+        out = []
+        for e, caps, hist in self.rx.paths(s, i):
+            r = self.rx.labels(s, caps); r["_passes"] = {l: self.rx.passes(s, hist, l) for l in self.rx.names}
+            r["_s"], r["_i"], r["_e"] = s, i, e
+            out.append((e, r))
+        if self.atomic: out = out[:1]                    # atomic: the first row BEFORE filtering
+        return [(e, r) for e, r in out if self.keep(r)]
+def t_whole(T, s): return any(e == len(s) for e, _ in T.rows(s, 0))
+def t_search(T, s, pos=0):
+    for i in range(pos, len(s) + 1):
+        rs = T.rows(s, i)
+        if rs: return i, rs[0][0], rs[0][1]
+    return None
+def t_findall(T, s):
+    out, pos = [], 0
+    while pos <= len(s):
+        r = t_search(T, s, pos)
+        if r is None: break
+        out.append(r); pos = r[1] if r[1] > r[0] else r[1] + 1
+    return out
+def tri(T, P, pool, labs_t, labs_p):
+    def tl(r): return (L(r),) if labs_t == ("l1", "l2") else tuple(r.get(l) for l in labs_t)
+    def pl(r): return tuple(r.get(l) for l in labs_p)
+    out = []
+    for mode in ["WHOLE", "SEARCHED", "FIND-ALL"]:
+        if mode == "WHOLE": d = cnt(pool, lambda s: t_whole(T, s) != whole(P, s))
+        elif mode == "SEARCHED": d = cnt(pool, lambda s: (lambda a, b: (a is None) != (b is None) or (a is not None and (a[:2] != b[:2] or tl(a[2]) != pl(b[2]))))(t_search(T, s), search(P, s)))
+        else: d = cnt(pool, lambda s: [(i, j, tl(r)) for i, j, r in t_findall(T, s)] != [(i, j, pl(r)) for i, j, r in findall(P, s)])
+        out.append("%s %d%s" % (mode, d[0], "" if d[1] is None else " (first %r)" % d[1]))
+    return "differ " + "; ".join(out)
+def L(r): return r["l1"] if r.get("l1") is not None else r.get("l2")
+def lv(S): return lambda r: L(r) is not None and S(L(r))
+CBA = r"(?:(?P<l1>\d\d)|(?P<l2>\d)\d)"
+KH2 = r"(?:(?P<k1>\d)(?:;(?P<h1>\d))*|(?P<k2>\d)(?:;(?P<h2>\d))*)"
+def kh_keep(cpass):                                      # `(x & c & p) | (x & !(x & c))` read on one table row
+    def keep(r):
+        if r.get("k1") is not None:
+            return cpass(r["_passes"]["h1"]) is True and between(3, 7)(r["k1"])
+        s, i, e = r["_s"], r["_i"], r["_e"]          # branch 2: x's stretch is not a row of `x & c`
+        return not any(e2 == e and cpass(rx_h) is True for e2, rx_h in [(e3, RX(KH.rx.pattern).passes(s, h3, "h")) for e3, c3, h3 in RX(KH.rx.pattern).paths(s, i)])
+    return keep
+def cp_lt5(ps): return kand([bool(lt(5)(v)) for v in ps] or [None])
+REPA = r"(?:(?P<h>\d);)*"
+GT = [("`(B | A) & (l: <20)`", Table(CBA, lv(lt(20))), W(Alt(Bd, Ad), l20), DSP, ("l1", "l2"), ("l",)),
+      ("`(B & (l: <20)) | (A & (l: <20))`", Table(CBA, lv(lt(20))), Alt(W(Bd, l20), W(Ad, l20)), DSP, ("l1", "l2"), ("l",)),
+      ("`((B & (l: >50)) | A) & (l: <10)` PROVENANCE", Table(CBA, lambda r: (r.get("l1") is None or gt(50)(r["l1"])) and lv(lt(10))(r)), W(Alt(W(Bd, g50), Ad), l10), DIG4, ("l1", "l2"), ("l",)),
+      ("`((B & (l: >50)) | A) & (l: <10)` NAIVE (every condition on every row)", Table(CBA, lambda r: lv(gt(50))(r) and lv(lt(10))(r)), W(Alt(W(Bd, g50), Ad), l10), DIG4, ("l1", "l2"), ("l",)),
+      ("`P & (a: \"1\")`", Table(PAB.rx.pattern, lambda r: r["a"] == "1"), W(PAB, a1), DSP, ("a", "b"), ("a", "b")),
+      ("`P & !(P & (a: \"1\"))` (the complement's own table, filtered)", Table(PAB.rx.pattern, lambda r: not any(e2 == r["_e"] and rr["a"] == "1" for e2, rr in Table(PAB.rx.pattern, lambda x: True).rows(r["_s"], r["_i"]))), Diff(PAB, W(PAB, a1)), DIG4, ("a", "b"), ("a", "b")),
+      ("loop `/(?:(?<h>\\d);)*/ & (h: <5)` (a row's passes; zero passes UNKNOWN)", Table(REPA, lambda r: cp_lt5(r["_passes"]["h"]) is True), W(R(REPA), ptest("h", lt(5))), RG3, (), ()),
+      ("`when` expansion, c = (h: <5), the row remembers its branch", Table(KH2, kh_keep(cp_lt5)), when_body(ptest("h", lt(5))), KHPOOL, (), ()),
+      ("ATOMIC `atomic(B | A) & (l: <20)`: first row before filtering", Table(CBA, lv(lt(20)), atomic=True), W(Atomic(Alt(Bd, Ad)), l20), DSP, ("l1", "l2"), ("l",)),
+      ("ATOMIC `atomic(P & (a: \"1\"))`: first row before filtering vs the evaluator's atomic (its own condition applied inside)", Table(PAB.rx.pattern, lambda r: r["a"] == "1", atomic=True), Atomic(W(PAB, a1)), DIG4, ("a", "b"), ("a", "b"))]
+for nm, T, P, pool, lt_, lp_ in order(GT):
+    emit((nm,), "  G %s over %d texts: %s" % (nm, len(pool), tri(T, P, pool, lt_, lp_)))
+emit(("z",), "  G witnesses: NAIVE `((B & (l: >50)) | A) & (l: <10)` on `12`: table %s, evaluator %s ; `atomic(P & (a: \"1\"))` on `123`: first-row-before-filtering %s, evaluator %s" % (
+    "HOLDS" if t_whole(Table(CBA, lambda r: lv(gt(50))(r) and lv(lt(10))(r)), "12") else "FAILS", "HOLDS" if whole(W(Alt(W(Bd, g50), Ad), l10), "12") else "FAILS",
+    "HOLDS" if t_whole(Table(PAB.rx.pattern, lambda r: r["a"] == "1", atomic=True), "123") else "FAILS", "HOLDS" if whole(Atomic(W(PAB, a1)), "123") else "FAILS"))
 flush()
 
 print("== MOVED LINES (PART C, D, F lines whose answer under the RULE differs from rev 23.2's (iii)): %d" % len(MOVED))
