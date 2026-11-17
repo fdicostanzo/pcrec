@@ -205,3 +205,27 @@ Each item: what it is, why it is parked, where it is worked out, and the TRIGGER
   model rather than added per case.
 - TRIGGERS (any one): (1) a LIST INSIDE A LIST ITEM wanted (a nested loop); (2) a request to COUNT REPORTED MATCHES
   (a span-level count); (3) **condition-not** re-asked (NOT on a condition, recorded as told-not-ruled in COND-FAMILY).
+
+## 14. Another reading of a searched condition: the pattern returns its match first, then the condition judges it
+
+- SOURCE: the owner, 2026-11-16 23:54, to session 137, after ruling **row-is-match** (COND-FAMILY 23:4x), asking for it
+  to be filed here "for the record". HIS WORDS: "I want to file in the future directions file a potential other
+  interpretation for the record. In your example, the pattern returns 9:30. done. Then the late time condition
+  could be added and no change, still returns 9:30 because it's a late time. Then, instead, the not late time is
+  applied to the pattern. Now the pattern returns nothing."
+- THE READING: on the text `9:30`, the time pattern `/(?<h>\d{1,2})(?::(?<m>\d\d))?/` FIRST returns its own
+  match, `9:30`, and is done. A condition is then a test of that finished match: "late time" keeps it; "not late
+  time" drops it and the program returns NOTHING (the search does not go on to a shorter or later potential match
+  such as `9`).
+- HOW IT DIFFERS FROM THE RULED MODEL: under row-is-match a condition filters the table of POTENTIAL matches and the
+  search reports the preferred survivor, so "a time that is not a late time" on `9:30` holds through `9`
+  (decision D196's retry, 2026-11-12). Here the pattern's own preferred match is fixed before any condition sees
+  it.
+- WHAT IS KNOWN (docs/design/condition_kind.md Part IV, lane searchrow; this reading is its candidate "M", nothing
+  retries; counts are SEARCHED mode, order-swap identical): it keeps "adding a condition never admits a subject"
+  (0 in the lane's constructions) and gives `9:30` FAILS; it gives up D196's retry: `/\d+/ & <256` on
+  `x300 12` reports `12`, not `30`; `/\d+/ & <17` differs from D196 on 356 of 696 subjects; six worked
+  examples of rev 22 that rest on the retry fail. In WHOLE-VALUE mode the two readings answer alike.
+- STATUS: recorded, not ruled, not scheduled. TRIGGER (the manager's, any one): authors are surprised by a shorter
+  stretch being reported in searched programs; D196's retry is re-opened; a "judge the finished match" mode is
+  asked for by name.
