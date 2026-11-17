@@ -70,6 +70,12 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-16 r31, condition_kind.md Parts I-III (`docs/dev/reviews/2026-11-16-r31-condkind.md`), accepted 2026-11-16 (manager): **a DEFINITION note (a model replacing a foundation) gets a MODE-CLOSURE drill: every operator run in every mode the language has (whole value, searched, inside a nested filter role), whatever modes the subject's evidence ran** (finding A: the evidence was whole-only by design; three lenses found the searched-mode splits by three routes).
+
+2026-11-16 r31, same round, accepted 2026-11-16 (manager): **when the record closes with a summary ("STATE OF THE MODEL"), the ruling lens builds the next revision's RULING TABLE (every ruling and reading: stands / retired / reversed / open, by entry) instead of checking the summary alone**; that table was the round's most directly usable output.
+
+2026-11-16 r31, same round, accepted 2026-11-16 (manager): **a "MINE, to be checked" restatement that changes answers on a locked rule's territory is an owner question, not a manager restatement: the ruling lens tests each such item against every LOCKED rule** (RULING-2: the restated `all` against absent-rule (1)).
+
 2026-11-16 r30, predicates_draft.md rev 22 re-check (`docs/dev/reviews/2026-11-16-r30-predspec22.md`), accepted 2026-11-16 (manager): **when the evidence engine implements a rule by TRAPPING a poisoned value (a DOM "consulted"), swap the operand order inside every lambda and re-run; quote a count only after the swap leaves it unchanged** (SIMULATE-9: 30 of 355 by fn order alone).
 
 2026-11-16 r30, same round, accepted 2026-11-16 (manager): **when a fold introduces a NESTED program (a complemented pattern, a named program under an operator), drill every "adding X never ..." claim at three insertion points: the outer chain, inside the nested program, and through a binding both share** (SIMULATE-6, FIXIND-2: two lenses, two sides).

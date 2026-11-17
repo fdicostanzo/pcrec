@@ -39,3 +39,12 @@
 - `2026-11-07-r12-memfn-planframe1.md` (+ `2026-11-07-r12-memfn-planframe1/`) — plan_frame rev 1 (span_pick unit 3.0) critic: 5 opus lenses + verifier, F1-F34; not ready, rev 2 with text fixes; search/stream/check triple confirmed.
 - `2026-11-07-r13-memfn-planframe2.md` (+ `2026-11-07-r13-memfn-planframe2/`) — plan_frame rev 2.1 readiness re-check: one readiness critic per unit plus fix-induced, R1-R28; 3.0a ready with text fixes, 3.0b after the R1/R2 shape rulings.
 - `2026-11-08-r1-spanarms.md` (+ dir) — DESIGN round on docs/design/span_arms.md rev 0 (REP/EMPTY/LOOKAROUND arms): REP+EMPTY ready with text fixes; LOOKAROUND not ready (F1 guard met at the arm, F2 propagation, F15 D168); rev 1 by lane spanarms2.
+
+
+## Index entries moved out of CLAUDE.md (lane file31, 2026-11-16; size limit)
+
+- `2026-11-12-r2-reqpast.md` (+ dir) — CODE round on lane/reqpast ([REQ-PAST-LAST] unbounded handoff row): no answer-level finding; FILEPIN left at abi 103 (CON-1), run_prechecks 5.12b/c false red (CHK-4), re-ask-not-kept unguarded (CHK-1), stop/landmark witnesses thin (CHK-2/3); FIX-NOW items applied by lane rpfix.
+- `2026-11-15-r5-covcap-r2.md` (+ dir) — DESIGN round on docs/design/cover_cap.md rev 2 ([COVER-CAP] straight walk): 5 opus critics + verifier, C-1..C-25; stage 1 ready with text fixes, rev 3 + readiness re-check; dispositions ruled (manager); rev 3 reads the stretch from the anchored machine.
+- `2026-11-15-r6-covcap-r3.md` (+ dir) — DESIGN re-check on docs/design/cover_cap.md rev 3 (anchored-machine reading): 3 opus critics + verifier, R-1..R-14; core reading held; the new span limit could never bind (the anchored state ceiling binds first), deleted in rev 4; dispositions ruled (manager).
+- `2026-11-15-r7-covcap-r4.md` (+ dir) — DESIGN last re-check on docs/design/cover_cap.md rev 4: 2 opus critics + verifier, FI-1..FI-6, READY-1..READY-5; READY WITH LISTED TEXT FIXES for stage 1 (FI-3: C9 must read the rows at k); applied as rev 4.1; dispositions ruled (manager).
+- `2026-11-15-r4-fixposts2c.md` (+ dir) — CODE round on lane/fixposts2 after its r3 fixes (+ lane/s486re): no answer/byte finding (450 pairs SAME); FIX-NOW spec example (RESPELL-1), double-evaluated scan row (RESPELL-2/3), S711 stale reach witness (SABROWS-1), comments; applied by lane fixposts2d.
