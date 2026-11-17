@@ -1220,7 +1220,7 @@ The other 17 uncovered hits the critic found are UNAFFECTED (the other-side sigi
 | S053 | 1033 | 0.3 absent | absent | COVERED | REWRITTEN (§0.3), §R.1.5 |
 | S054 | 1034 | 0.3 optional mark / default | mark; default | COVERED | REWRITTEN (§0.3): the mark row removed |
 | S055 | 1036 | 0.3 DOM(h) | DOM | COVERED | REWRITTEN (§0.3): DOM retired |
-| S056 | 1137 | 2.1 kind table | !M only where M not a condition | COVERED | REWRITTEN in rev 23.1 (review r33 F9; rev 23 said STANDS): §2.1's RULE, TYPING, kind table and STATUS now name THREE kinds, a condition its own kind with Kleene `&`, `\|`, NOT; §2.2's "macros combine pointwise", §4.1's "a condition is a MACRO", §5.4's condition and `&` rows, L46's reason and O45 likewise; a macro body applying `!` to a parameter takes the meaning of the argument (§2.1) |
+| S056 | 1137 | 2.1 kind table | !M only where M not a condition | COVERED | REWRITTEN in rev 23.1 (review r33 F9; rev 23 said STANDS): §2.1's RULE, TYPING, kind table and STATUS now name THREE kinds (rev 23.2, review r34 F-DOC-1: rev 23.1 missed §2.1's "Still TWO kinds", ONE INPUT RULE, the kind table's lead, REASONING, §3.5's RULE, §4.1's STATUS and §16's between body; each now marked), a condition its own kind with Kleene `&`, `\|`, NOT; §2.2's "macros combine pointwise", §4.1's "a condition is a MACRO", §5.4's condition and `&` rows, L46's reason and O45 likewise; a macro body applying `!` to a parameter takes the meaning of the argument (§2.1) |
 | S057 | 1199-1211 | 2.2 RULE extensional ! as filter; standalone !B error | complement; string set | AFFECTED-UNCOVERED | REWRITTEN (§2.2), rev 22 text MOVED to §16.3 |
 | S058 | 1213-1229 | 2.2 WHAT ! TAKES | complement of its string set | AFFECTED-UNCOVERED | REWRITTEN (§2.2), MOVED to §16.3 |
 | S059 | 1231-1233 | 2.2 complemented pattern (1)(2) | own DOMs; no labels | COVERED | REWRITTEN (§2.2), MOVED to §16.3 |
@@ -2163,15 +2163,17 @@ SETS CARRY AN ARITY (rev 20; RULED, **set-arity**, CF 10:26, his words: "Set ari
 every rx-kind value is a set of k-tuples of strings, and today's rx are arity 1; a TUPLE `(9, 30)` is a value, the
 one-tuple set of arity 2 (RULED, **tuple-value**, CF 09:42, "I am ok with the tuple as a value"; **tuple-anywhere**,
 CF 09:49, "You could use them as you say"); `&`, `|`, `!` and the comparison sets work on sets of one arity, and a
-mixed arity is a compile ERROR naming both (`(9, 0) & 9`). Still TWO kinds: a tuple set is an rx-kind value, and a
-macro is as before (CF:858). A tuple set is laid against labels only through the joint condition (§4.1).
+mixed arity is a compile ERROR naming both (`(9, 0) & 9`). A tuple set is an rx-kind value, and a macro is as
+before (CF:858); the kinds are THREE since rev 23.1, the condition its own (19:31, §R.1; rev 23.2, review r34
+F-DOC-1: rev 23.1 left "Still TWO kinds" here). A tuple set is laid against labels only through the joint condition (§4.1).
 
 ONE INPUT RULE. A macro takes input two ways: a CALL fills its PARAMETERS (the call's argument list is ONE record laid
 against them, §5.2); `&` fills its one OPERAND slot with the rx on the other side (the record's "subject slot",
 CF:860; §0.3). The rx is never the thing applied (the operand is never an argument, §2.3). So: a CONDITION (`(x:
-<200)`, `(a: 1, b: 2)`) = a macro with an operand and no parameters; a TRANSFORM (a filter modifier, §2.7, or
+<200)`, `(a: 1, b: 2)`) = rev 5-23's "a macro with an operand and no parameters", since rev 23.1 its OWN kind, filled
+through `&` the same way (19:31, §R.1; rev 23.2, review r34 F-DOC-1); a TRANSFORM (a filter modifier, §2.7, or
 `occurrences`/`contains`, §2.6; §0.3) = a macro whose RESULT is used in a filter role and whose argument lands where its body puts it (§11 THE ROLE TABLE; rev 15, review r16 CENSUS-3); an operator SECTION `(& B)` = only the operand open; prefix
-`!B` = a macro with the operand open (§2.2); an unapplied transform (`padded` alone) = a macro with its
+`!B` = a macro with the operand open (§2.2; under the three kinds, `!` over a CONDITION is Kleene NOT, not this); an unapplied transform (`padded` alone) = a macro with its
 parameter open. A section of something that is already a macro with only its operand open is that macro: `(& M)` =
 M (so `each((& (a: d)), x)` and `each((a: d), x)` are one program, §5.3; review r8 P6-8 (f)).
 
@@ -2211,8 +2213,9 @@ is RULED ("4. agree. Allows "even()" or other checks for count", CF:977-978, to 
 string, no new value kind", CF:975), so an ordinary filter applies to a count (`n := count(c)`, `P & (n: even)`);
 for a number read from the subject it is C9's string sets (§2.4); §13 O40 RESOLVED.
 
-THE KIND TABLE (G0b's KIND COUNT; review r8 P6-8, a DISCLOSURE of everything a name or a mark can denote: the two
-VALUE kinds are unchanged, the other rows are not values):
+THE KIND TABLE (G0b's KIND COUNT; review r8 P6-8, a DISCLOSURE of everything a name or a mark can denote: the VALUE
+kinds are THREE since rev 23.1, rx, macro and condition (rev 23.2, review r34 F-DOC-1: rev 23.1 left "the two VALUE
+kinds are unchanged" here); the other rows are not values):
 
 | thing | what it is | a value? | bound by `:=`? | passed as an argument? | §12 case needing it | status |
 |---|---|---|---|---|---|---|
@@ -2235,8 +2238,9 @@ creates an array or a map as a value (the list of places checked: `docs/dev/lane
 **REASONING.** The closure (a predicate denotes a pattern, 2026-11-12/13) means one algebra serves patterns,
 values and tests; a condition is a term with a free variable, the same kind as a macro awaiting its operand (via `&`).
 The owner's criterion for the type picture: "few types and few operators that always mean the same thing wherever
-they are used" (CF:847-848); on conditions, "It's more like a macro" (CF:849). Two kinds and one input rule are the
-smallest picture that covers every §12 case; the kind table shows what else a NAME can denote (a namespace, a
+they are used" (CF:847-848); on conditions, "It's more like a macro" (CF:849). [REV 23.2, review r34 F-DOC-1: the
+reasoning below is rev 5-23's, for TWO kinds; since rev 23.1 the condition is its own kind (19:31), STATUS.] Two
+kinds and one input rule were the smallest picture that covers every §12 case; the kind table shows what else a NAME can denote (a namespace, a
 parameter) without making those values, so the owner can rule on them (O46) with the whole list in view.
 
 **STATUS.** REV 23.1 (review r33 F9): THREE kinds; the condition its own kind (19:31, §R.1). The record of rev 5-23 follows. Two kinds (rx, macro), a condition is a macro: RULED (CF:858, accepted at CF:851; "It's more like a
@@ -2895,7 +2899,8 @@ kind of thing).
 
 ### 3.5 Arrays of filters and filter modifiers
 
-**RULE.** Closure one level up: an array of rx is an rx (alternation); an ARRAY OF MACROS is a macro, so an array
+**RULE.** [Rev 23.2, review r34 F-DOC-1: since rev 23.1 an ARRAY OF CONDITIONS is a CONDITION, Kleene `|` over its
+entries (the OR: the draft's reading, **condition-or**); the macro wording below is rev 5-23's.] Closure one level up: an array of rx is an rx (alternation); an ARRAY OF MACROS is a macro, so an array
 in the filter role filters pointwise (`t & [f, g]` = `(t & f) | (t & g)`) [REV 23.2, review r34 A2: CONTRADICTED by R.1.4's reading (iii), the draft's current text for a `|` of filtered branches; not rewritten: OPEN, **branch-scope**, §R.8 item 6.] and an ARRAY OF FILTER MODIFIERS is a
 filter modifier (`[padded, any_case](S)` = `padded(S) | any_case(S)`). The `[ ]` bracket gives "any one entry" in
 every case, and the comma only separates entries (§5.4). A MIXED rx/macro array is an error (fix: write the rx entry
@@ -3033,7 +3038,8 @@ withdrawn: RULED (CF:744: "It can't take arguments anymore correct?", answered c
 and the flattened chain lookup: LEAN (this document's consequences of the ruled entry extent). Comma records `(x: <200, y:
 >55)`: RULED (CF:698). The AND from the record, the comma "next entry", `:` constrains an existing label: RULED
 (CF:863, CF:866 (b)); the extent restated in record terms and the `[x: S]` error: LEAN (this document, §13 O43); a
-condition written in value position denotes the macro: LEAN (§13 O45).
+condition written in value position denotes the macro: LEAN (§13 O45) [rev 23.2, review r34 F-DOC-1: since rev
+23.1 it denotes a CONDITION, its own kind (19:31; O45's rev 23.1 note)].
 
 ### 4.2 Absent labels: one kind of absence, one control (rev 23)
 
@@ -6371,8 +6377,8 @@ pointers (§4.1's one exception, §5.4's `^` row, §3.2 tool 1, O75, O76) name r
   `s` is THE PROJECTION (rev 19): a spelled array of FIELD REFERENCES written at the call, one per compared field,
   in the order the compare reads them (`[^h, ^m]`: "h, then m, of the other side of the `&`"; §5.4 `^` row). `lo`
   and `hi` are arrays of numbers. Each bound is the usual prefix expansion: one `[ ]` read as any one entry (§3.5: an
-  array of conditions is a macro), each entry ONE condition RECORD whose entries are all its tests (the record holds
-  them together, §4.1); between is the two halves joined by `&` (macro & macro, pointwise, §2.1). Rev 16's
+  array of conditions is a macro; since rev 23.1 a condition, Kleene `|` over its entries, rev 23.2 F-DOC-1), each entry ONE condition RECORD whose entries are all its tests (the record holds
+  them together, §4.1); between is the two halves joined by `&` (condition & condition, Kleene AND, §2.1, R.1.5; rev 5-23 wrote "macro & macro, pointwise", rev 23.2 F-DOC-1). Rev 16's
   conditions are unchanged; only where the labels come from moved (rev 17), and how they are named (rev 19).
   WHAT THE BODIES USE, each against this document's rules (rev 19): (1) `(s[1]: ...)`, a field-reference
   parameter on the left of `:` in a macro body: §4.1's ONE EXCEPTION, the manager's consequence of the sigil ruling
