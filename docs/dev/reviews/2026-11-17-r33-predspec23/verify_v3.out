@@ -1,0 +1,4 @@
+shortest-first 1234 ['1', '2', '3', '4']
+shortest-first 123456 ['1', '2', '3', '4', '5', '6']
+longest-first 1234 ['12', '34']
+longest-first 123456 ['12', '34', '56']

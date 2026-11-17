@@ -98,3 +98,6 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 
 ## 2026-11-16 — critic round covs2code (review r32)
 - A code round with prebuilt plants and one shared run kit ran 5 opus critics to completion in ~11 min wall, inside an owner evening hold, with the box idle by 23:00: the pattern fits short box windows when the coordinator front-loads the build cost (17 plants + BASE + 2 trace builds in ~72 s, incremental from the subject archive's mtimes). Three lenses converged on one refusal from three sides (emitted size, spec sentence, bound chain); every nested critic's final reply was lost and the files carried the round, which confirms the files-only rule.
+
+## 2026-11-17 — critic round predspec23 (review r33)
+- A 5-critic + 1-verifier design re-check of a 6,000-line draft closed in ~20 min wall from freeze to draft, one hand-back; every nested agent's final reply was lost and pre-created files plus lanecheck carried 100%, so the file rule is load-bearing, not a precaution. A cheap sonnet change-table critic found only doc items (5 min); the from-the-text evaluator found no numeric divergence but found two answer-level gaps by evaluating what the text says where the engine decides alone. Open: the COMMON template's role-name R and the copy dir R/R collided in prose (name the copy dir S/).
