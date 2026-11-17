@@ -604,12 +604,20 @@ def pool_proof(rundir, pat, arm, layer):
         at, rel = lo
         pts = [at + o for o in rel] or [at]
         lay[v] = (tuple(sorted({x % 64 for x in pts})), tuple(sorted({x % 32 for x in pts})), rel)
+    why = pool_refusal(lay)
+    return lay, ("POOL REFUSED %s %s %s: %s" % (pat, arm, layer, why) if why else None)
+
+
+def pool_refusal(lay):
+    """THE POOL REFUSAL (rev 12, RULED r41 L9), one half per clause (r41 L4's lesson: one control a
+    half): `lay` {v: (64-B phase set, 32-B phase set, relative layout)}. Refused when every variant
+    shares ONE 64-B phase set, or ONE relative layout; the text, or None."""
     why = []
     if len({p64 for p64, _p, _r in lay.values()}) < 2:
-        why.append("every variant shares one 64-B phase set %s" % (lay[0][0],))
+        why.append("every variant shares one 64-B phase set %s" % (next(iter(lay.values()))[0],))
     if len({r for _a, _b, r in lay.values()}) < 2:
         why.append("every variant shares one relative layout")
-    return lay, ("POOL REFUSED %s %s %s: %s" % (pat, arm, layer, "; ".join(why)) if why else None)
+    return "; ".join(why) or None
 
 
 def subj_file(rundir, pat, regime, n):
@@ -2352,6 +2360,62 @@ def selftest_rev12(check):
                                                                  round(100 * tau)), nvh / NOISE_TRIALS <= 0.05,
                   "nights with a first void %.3f (F3's acceptance, the bimodal test and the gate under layout "
                   "bimodality: accept <= 0.05)" % (nvh / NOISE_TRIALS))
+    # the POOL REFUSAL, one row per half (r41 L4's lesson): phases moving + layouts moving passes; one
+    # 64-B phase set (layouts moving) refuses; one relative layout (phases moving) refuses; and pool_variants
+    # itself spans the four 16-B phase classes mod 64 and both alignments for every text drawn
+    ok_l = {0: ((0,), (0,), (8,)), 1: ((16,), (16,), (12,)), 2: ((32,), (0,), (8,)), 3: ((48,), (16,), (12,))}
+    one_ph = {v: ((16,), (16,), r) for v, (_a, _b, r) in ok_l.items()}
+    one_rel = {v: (a, b, (8,)) for v, (a, b, _r) in ok_l.items()}
+    spans = all(len({(pre // 16) % 4 for _v, pre, _f in pool_variants("t%d" % i)}) == min(4, POOL_SIZE)
+                and len({tuple(f) for _v, _p, f in pool_variants("t%d" % i)}) == min(2, POOL_SIZE)
+                and all(0 <= pre < 16 * PRELUDE_STEPS and pre % 16 == 0 for _v, pre, _f in pool_variants("t%d" % i))
+                for i in range(2000))
+    r_ok, r_ph, r_rel = pool_refusal(ok_l), pool_refusal(one_ph), pool_refusal(one_rel)
+    check("(r41 L9) the pool refusal, each half", r_ok is None and r_ph and "64-B" in r_ph and "relative" not in r_ph
+          and r_rel and "relative" in r_rel and "64-B" not in r_rel and spans,
+          "moving: %s; one 64-B phase: %s; one relative layout: %s; pool_variants over 2000 texts spans the 16-B "
+          "phase classes and the alignments: %s" % (r_ok, r_ph, r_rel, spans))
+    # L6 (r41): unknown or mistyped arguments refuse (exit 2); the G2 record is keyed by run id and sha
+    import contextlib
+    import io
+    import pwd
+    import tempfile
+
+    def refuses(f, *a):
+        try:
+            with contextlib.redirect_stderr(io.StringIO()):
+                f(*a)
+        except SystemExit as e:
+            return e.code == 2
+        return False
+    pa = [refuses(parse_args, "rule", ["R", "--g2=F", "--gg2", "x"], (), ("--g2",)),
+          refuses(parse_args, "rule", ["R", "--g2"], (), ("--g2",)),
+          refuses(parse_args, "rule", ["R", "--g2="], (), ("--g2",)),
+          refuses(parse_args, "rule", ["R", "S"], (), ("--g2",)),
+          refuses(parse_args, "dry", ["R", "--quik"], ("--quick",)),
+          refuses(parse_args, "rule", [], (), ("--g2",))]
+    good = (parse_args("rule", ["R", "--g2=F"], (), ("--g2",)) == (["R"], {"--g2": "F"})
+            and parse_args("rule", ["--g2", "F", "R"], (), ("--g2",)) == (["R"], {"--g2": "F"}))
+    troot = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % pwd.getpwuid(os.getuid()).pw_name
+    os.makedirs(troot, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=troot) as td:
+        rid = run_id(td, create=True)
+        g = os.path.join(td, "g2.txt")
+        open(g, "w").write("16\n")
+        first = night_g2(td, g)[0] == {16} and night_g2(td)[0] == {16}
+        open(g, "w").write("16\n8\n")
+        moved = refuses(night_g2, td)                       # the recorded file's bytes moved
+        other = os.path.join(td, "g2b.txt")
+        open(other, "w").write("32\n")
+        open(g, "w").write("16\n")
+        differs = refuses(night_g2, td, other)              # a second, different list for the night
+        os.remove(os.path.join(td, RUN_ID))
+        rid2 = run_id(td, create=True)                     # `run` on a reused RUNDIR: a fresh id
+        stale = refuses(night_g2, td) and rid2 != rid
+    check("(r41 L6) strict arguments and the keyed G2 record", all(pa) and good and first and moved and differs and stale,
+          "refused (unknown, valueless x2, extra positional, mistyped flag, none): %s; --g2=F and --g2 F accepted: %s; "
+          "recorded and re-read %s; moved file refused %s; a second list refused %s; another run's record refused %s"
+          % (pa, good, first, moved, differs, stale))
     # GAP_K re-derived (r41 L9's caveat): the per-arm false-split rate when the launches mix pool variants
     for tau in (0.0,) + CLASS_TAUS:
         rate, sg = gapk_rate(tau, seed=3390 + round(1000 * tau))
