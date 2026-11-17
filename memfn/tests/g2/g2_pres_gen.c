@@ -66,6 +66,10 @@
 #include "memfn.h"
 #include "g2_pres.h"
 
+/* The twin held to the kit's own bound (review r35 F12; r45_reply rev 6 §3
+ * names 64, which waits on MF_WSPAN_POS's raise past 32: g2_pres.h). */
+_Static_assert(G2P_MAXRUN <= MF_WSPAN_POS, "G2P_MAXRUN is past the kit's span (MF_WSPAN_POS)");
+
 /* ---- text ------------------------------------------------------------------- */
 
 typedef struct { char *p; size_t len, cap; } buf;

@@ -16,7 +16,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define G2P_MAXRUN  32          /* the longest generated run (MF_WSPAN_POS)   */
+/* the longest generated run (MF_WSPAN_POS), its draw's top (g2_pres_gen.c);
+   AT the kit's bound, asserted there. r45_reply rev 6 §3 names 64: TRIGGER,
+   the MF_WSPAN_POS raise ([COVER-CAP] stage 2) moves it, its draw with it */
+#define G2P_MAXRUN  32
 #define G2P_MAXPART 1           /* the run parts a site lays out: ONE, the part
                                    the kit derives from the run span (MF_SITE_ABI
                                    27; no host-cut window, no second part)   */
