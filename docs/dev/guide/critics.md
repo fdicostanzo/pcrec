@@ -70,6 +70,8 @@ applies, beyond `architecture.md`:
 
 ## Lessons from review rounds
 
+2026-11-16 r32, [COVER-CAP] stage 2 (`docs/dev/reviews/2026-11-16-r32-covs2code.md`), accepted 2026-11-16 (manager): **a spec sentence that promises a fallback ("the compile does not fail") needs its witness at the EXTREME of the newly legal range before the hunk lands: run the range's top through every cap in limits.def's `compile budget` class, not only the cap the design names** (F1: three lenses found the refusal from three sides; the design priced one of two size caps).
+
 2026-11-16 r31, condition_kind.md Parts I-III (`docs/dev/reviews/2026-11-16-r31-condkind.md`), accepted 2026-11-16 (manager): **a DEFINITION note (a model replacing a foundation) gets a MODE-CLOSURE drill: every operator run in every mode the language has (whole value, searched, inside a nested filter role), whatever modes the subject's evidence ran** (finding A: the evidence was whole-only by design; three lenses found the searched-mode splits by three routes).
 
 2026-11-16 r31, same round, accepted 2026-11-16 (manager): **when the record closes with a summary ("STATE OF THE MODEL"), the ruling lens builds the next revision's RULING TABLE (every ruling and reading: stands / retired / reversed / open, by entry) instead of checking the summary alone**; that table was the round's most directly usable output.

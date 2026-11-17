@@ -1,0 +1,52 @@
+SAME [--features all] #1 rc=0 RX_DFA_SCAN "cover" :: \b[0-9a-f]{32}\b
+SAME [--features all] #2 rc=0 RX_DFA_SCAN "cover" :: \b[0-9a-f]{31}\b
+SAME [--features all] #3 rc=0 RX_DFA_SCAN "unanchored" :: \b[0-9a-f]{40}\b
+SAME [--features all] #4 rc=0 RX_DFA_SCAN "cover" :: (?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])
+SAME [--features all] #5 rc=0 RX_DFA_SCAN "unanchored" :: (?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])
+SAME [--features all] #6 rc=0 RX_DFA_SCAN "cover" :: [0-9a-f]{32}(?=\n)
+SAME [--features all] #7 rc=0 RX_DFA_SCAN "unanchored" :: [0-9a-f]{40}(?=\n)
+SAME [--features all] #8 rc=0 RX_DFA_SCAN "rev-end" :: [0-9a-f]{31}\z
+SAME [--features all] #9 rc=0 RX_DFA_SCAN "rev-end" :: [0-9a-f]{40}\z
+SAME [--features all] #10 rc=0 RX_DFA_SCAN "unanchored" :: \s\w{31}\s
+SAME [--features all] #11 rc=0 RX_DFA_SCAN "cover" :: [0-9a-f]{32}
+SAME [--features all] #12 rc=0 RX_DFA_SCAN "unanchored" :: [0-9a-f]{33}
+SAME [--features all] #13 rc=0 RX_DFA_SCAN "unanchored" :: a{4095}
+SAME [--features all -i] #1 rc=0 RX_DFA_SCAN "cover" :: \b[0-9a-f]{32}\b
+SAME [--features all -i] #2 rc=0 RX_DFA_SCAN "cover" :: \b[0-9a-f]{31}\b
+SAME [--features all -i] #3 rc=0 RX_DFA_SCAN "unanchored" :: \b[0-9a-f]{40}\b
+SAME [--features all -i] #4 rc=0 RX_DFA_SCAN "cover" :: (?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])
+SAME [--features all -i] #5 rc=0 RX_DFA_SCAN "unanchored" :: (?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])
+SAME [--features all -i] #6 rc=0 RX_DFA_SCAN "cover" :: [0-9a-f]{32}(?=\n)
+SAME [--features all -i] #7 rc=0 RX_DFA_SCAN "unanchored" :: [0-9a-f]{40}(?=\n)
+SAME [--features all -i] #8 rc=0 RX_DFA_SCAN "rev-end" :: [0-9a-f]{31}\z
+SAME [--features all -i] #9 rc=0 RX_DFA_SCAN "rev-end" :: [0-9a-f]{40}\z
+SAME [--features all -i] #10 rc=0 RX_DFA_SCAN "unanchored" :: \s\w{31}\s
+SAME [--features all -i] #11 rc=0 RX_DFA_SCAN "cover" :: [0-9a-f]{32}
+SAME [--features all -i] #12 rc=0 RX_DFA_SCAN "unanchored" :: [0-9a-f]{33}
+SAME [--features all -i] #13 rc=0 RX_DFA_SCAN "unanchored" :: a{4095}
+SAME [--features all -e utf8] #1 rc=0 RX_DFA_SCAN "cover" :: \b[0-9a-f]{32}\b
+SAME [--features all -e utf8] #2 rc=0 RX_DFA_SCAN "cover" :: \b[0-9a-f]{31}\b
+SAME [--features all -e utf8] #3 rc=0 RX_DFA_SCAN "unanchored" :: \b[0-9a-f]{40}\b
+SAME [--features all -e utf8] #4 rc=0 RX_DFA_SCAN "cover" :: (?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])
+SAME [--features all -e utf8] #5 rc=0 RX_DFA_SCAN "unanchored" :: (?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])
+SAME [--features all -e utf8] #6 rc=0 RX_DFA_SCAN "cover" :: [0-9a-f]{32}(?=\n)
+SAME [--features all -e utf8] #7 rc=0 RX_DFA_SCAN "unanchored" :: [0-9a-f]{40}(?=\n)
+SAME [--features all -e utf8] #8 rc=0 RX_DFA_SCAN "rev-end" :: [0-9a-f]{31}\z
+SAME [--features all -e utf8] #9 rc=0 RX_DFA_SCAN "rev-end" :: [0-9a-f]{40}\z
+SAME [--features all -e utf8] #10 rc=0 RX_DFA_SCAN "unanchored" :: \s\w{31}\s
+SAME [--features all -e utf8] #11 rc=0 RX_DFA_SCAN "cover" :: [0-9a-f]{32}
+SAME [--features all -e utf8] #12 rc=0 RX_DFA_SCAN "unanchored" :: [0-9a-f]{33}
+SAME [--features all -e utf8] #13 rc=0 RX_DFA_SCAN "unanchored" :: a{4095}
+SAME [--features all -fno-rev-end] #1 rc=0 RX_DFA_SCAN "cover" :: \b[0-9a-f]{32}\b
+SAME [--features all -fno-rev-end] #2 rc=0 RX_DFA_SCAN "cover" :: \b[0-9a-f]{31}\b
+SAME [--features all -fno-rev-end] #3 rc=0 RX_DFA_SCAN "unanchored" :: \b[0-9a-f]{40}\b
+SAME [--features all -fno-rev-end] #4 rc=0 RX_DFA_SCAN "cover" :: (?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])
+SAME [--features all -fno-rev-end] #5 rc=0 RX_DFA_SCAN "unanchored" :: (?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])
+SAME [--features all -fno-rev-end] #6 rc=0 RX_DFA_SCAN "cover" :: [0-9a-f]{32}(?=\n)
+SAME [--features all -fno-rev-end] #7 rc=0 RX_DFA_SCAN "unanchored" :: [0-9a-f]{40}(?=\n)
+SAME [--features all -fno-rev-end] #8 rc=0 RX_DFA_SCAN "cover" :: [0-9a-f]{31}\z
+SAME [--features all -fno-rev-end] #9 rc=0 RX_DFA_SCAN "unanchored" :: [0-9a-f]{40}\z
+SAME [--features all -fno-rev-end] #10 rc=0 RX_DFA_SCAN "unanchored" :: \s\w{31}\s
+SAME [--features all -fno-rev-end] #11 rc=0 RX_DFA_SCAN "cover" :: [0-9a-f]{32}
+SAME [--features all -fno-rev-end] #12 rc=0 RX_DFA_SCAN "unanchored" :: [0-9a-f]{33}
+SAME [--features all -fno-rev-end] #13 rc=0 RX_DFA_SCAN "unanchored" :: a{4095}
