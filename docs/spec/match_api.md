@@ -3271,7 +3271,7 @@ larger.
 <a id="s8-2"></a>
 ### 8.2 The option and error structures
 
-<a id="s8-2-p1"></a>[8.2¶1] `pcrec_options`, all twenty-eight members in declaration order; the comment
+<a id="s8-2-p1"></a>[8.2¶1] `pcrec_options`, all thirty-three members in declaration order; the comment
 beside each is a one-line gloss, and the full text is `lib/pcrec.h`'s own
 comment and, for a tuning axis, `docs/spec/tuning.md` §2:
 
@@ -3341,9 +3341,11 @@ typedef struct {
     const char        *allow_code;          /* the CODE GRANT: languages of
                                                embedded code this call may
                                                compile ("c"); NULL = none */
+    const char        *memfn_simd;          /* -fmemfn-simd=LIST's CPU target
+                                               list; NULL = none (¶7d) */
     int                window_search_width; /* 0 = PCREC_DEFAULT_WINDOW_SEARCH_WIDTH,
                                                else 1 .. PCREC_ANCHORED_MAX_STATES - 1;
-                                               tuning.md §2.56, limits.md §3.12 */
+                                               ¶7e */
 } pcrec_options;
 ```
 
@@ -3401,6 +3403,8 @@ string never becomes compiled code without the caller's say-so. An unknown
 language refuses the compile through `pcrec_error`.
 
 <a id="s8-2-p7d"></a>[8.2¶7d] **`memfn_simd`** is the CPU target list of `-fmemfn-simd=LIST` (`cli.md` §1.24): NULL (the default) for none. With `PCREC_FORCE_MEMFN_SIMD` set, NULL means the host family's default list and a LIST means exactly those targets; a list without the force bit, or beside `PCREC_NO_MEMFN_SIMD`, is refused. The tokens are the kit's, parsed by the kit before any pass runs; an unknown or empty token, a list of more than one target, or a list mixing families, refuses the compile through `pcrec_error`, the kit's text unchanged where the kit refused. It is not a flag bit and does not move `rx_info.flags`; the target it resolves to is the artifact's (§6.3.10¶14). `pcrec_cpu_targets_tsv` returns the listing of `cli.md` §2.16.
+
+<a id="s8-2-p7e"></a>[8.2¶7e] **`window_search_width`** is `--window-search-width=N` (`tuning.md` §2.56): the widest fixed-width match, in subject BYTES, the window search reports with no matching engine (`<PREFIX>_DFA_SCAN "cover"`, §6.3.4¶2); a wider one runs the engine with the same answers. 0 (the default) is the built-in `PCREC_DEFAULT_WINDOW_SEARCH_WIDTH`; otherwise the legal range is 1 to `PCREC_ANCHORED_MAX_STATES` less one, and a value outside it makes `pcrec_compile()` return -1 with `invalid window_search_width` in `pcrec_error`, never clamped (`limits.md` §3.12¶3). Settable both ways; a compound artifact's parts compile with their parent's value. It is not a flag bit and does not move `rx_info.flags`.
 
 <a id="s8-2-p8"></a>[8.2¶8] **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
 a comma-separated module-name list spelled as `pcrec --list-syntax`'s `module`
