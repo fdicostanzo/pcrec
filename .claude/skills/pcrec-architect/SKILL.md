@@ -71,7 +71,7 @@ line, with the count. A paragraph-form note that finds two sites converts itself
    - `ACCESSOR` a direct field access to another unit's structure that the feature would add or extend (goal 2;
      rule "A structure is read and written through its owner's accessors"): the structure, its owning file, and
      the accessor that exists or must be added;
-   - `WIDEN` a data shape the feature needs inputs outside of (goal 4; rule "A shape states the inputs it covers"):
+   - `WIDEN` a data shape the feature needs inputs outside of (goal 2; rule "A shape states the inputs it covers"):
      the shape, what it covers today, what the feature and the planned rows need, AND every GENERIC writer or
      copier of the shape (whole-struct copies, memsets, field writes that do not test the kind or variant): each
      is a hazard when the shape changes (retro test 2026-11-17: D70's union turned `rd_node`'s kind-blind
@@ -79,10 +79,11 @@ line, with the count. A paragraph-form note that finds two sites converts itself
    - `AS-IS` the site takes the feature with no change of shape (say why in one clause).
    A site the feature would join by adding a branch to a chain, a second mechanism beside a first, or a private
    copy of a declared table is NEVER `AS-IS`: that is the aggregation this step exists to stop.
-3. REGISTER LOOKUP (goal 5; part 3's HOW TO USE IT). Grep part 3 for every file and function in the site map and for
+3. REGISTER LOOKUP (goal 4; part 3's HOW TO USE IT). Grep part 3 for every file and function in the site map and for
    the feature's plan tag. Each matching row: RIDES FIRST, JOINS <abi event in flight>, or NOT CARRIED with the
    reason. A site classified `CHAIN->TABLE`, `SHARED`, `ACCESSOR` or `WIDEN` with no row PROPOSES a row in the register's own
-   columns. Also read the stream roadmap areas (`docs/design/stream/roadmap.md` §1, register row 12) for the files,
+   columns. Noted-deviation rows on touched sites are looked up the same way (corrected first, like any riding
+   remodel); a note that recommends going against a goal for now PROPOSES a noted-deviation row (part 1 "Judgement"). Also read the stream roadmap areas (`docs/design/stream/roadmap.md` §1, register row 12) for the files,
    and the "Revisit when" triggers of every D-row that names a site in the map (`scripts/entry -g` on the file or
    function): a trigger the feature meets is looked up like a register row (the register is newer than most of
    those triggers; D62's "a fifth AST analysis" was the D70 union's).
@@ -93,7 +94,7 @@ line, with the count. A paragraph-form note that finds two sites converts itself
    does not need yet is not a unit: it becomes a register row with its trigger (rule "Build under measurement").
 5. GENERAL FORM AND SIBLINGS. Name the general form of what the feature adds (rule "Build the general form"); its
    siblings already in the tree (the decision family it joins); the plan rows that will extend the same shape
-   next (grep `docs/dev/plan.md` by tag and vocabulary: goal 4's CHECK); and the unlocks, each with its trigger.
+   next (grep `docs/dev/plan.md` by tag and vocabulary: rule "A shape states the inputs it covers", its BEFORE DESIGN); and the unlocks, each with its trigger.
 6. SEAMS. For each `NEW-SEAM` and each existing seam the feature sends new facts across: the one writer, the
    readers, its kind (goal 3: a MODULE seam carries facts both ways, manifesto §1 F4 and principle 7's SCOPE of 2026-11-17; a LAYER
    handoff carries them one way, and back-flow argues a module split), the layer direction of every new call (rule "Layering holds at
@@ -134,6 +135,9 @@ NEW-SEAM | ACCESSOR | WIDEN | AS-IS. The commands and their hit counts follow th
 [DEPENDS ON THE OWNER: whether a note MUST cite the rows it looked up; written the strict way]
 | register row | why it matches (file, function or tag) | rides first / joins <event> / not carried: reason |
 Then: rows the note PROPOSES (register columns: remodel, shape (rule), where, event, size and gate, deletes).
+Then: every NOTED DEVIATION row (part 1 "Judgement"; part 3 KINDS OF ROW) on a touched site, each corrected first
+or not carried with the reason; and, where this note itself recommends going against a goal or rule for now, the
+noted-deviation row it PROPOSES (what, against which goal or rule, where, why small, the correcting event).
 "No row matched" is written out with the greps that found none.
 
 ## Remodels that land first
@@ -143,7 +147,7 @@ product code; written the strict way] the cells it touches and the speed gate; w
 
 ## The general form and its siblings
 The general form; the family and its members today (with the grep); the planned rows that extend the same shape
-(goal 4: each shown to fit, or the shape widens first); unlocks, each with its trigger.
+(rule "A shape states the inputs it covers": each shown to fit, or the shape widens first); unlocks, each with its trigger.
 
 ## Seams
 | seam | writer | readers | facts down | facts up | new calls and their layer direction | text round trip |

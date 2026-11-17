@@ -17,6 +17,15 @@ and what must change shape first ([ARCH-STEP]); its template and procedure are t
 
 # Part 1. Goals (2026-11-17; the owner's review and order applied; DRAFT only where marked)
 
+STILL DRAFT, open with the owner (each a word slug he can cite; everything else in part 1 is his, or agreed by him):
+- new-rules: which part-2 rules marked NEW 2026-11-17 are adopted.
+- register-keeper: whether an architecture note must cite the register rows it looked up.
+- speed-gate: whether "nothing gets slower on the cells a change touches" gates all product code.
+- ast-accessors: whether goal 2 covers the AST (leaning: sealed-AST reads stay direct, writes go through the owning pass).
+- ctx-owner: who owns `Job`/`Ctx` under goal 2 (leaning: split by writer as areas migrate, the driver owns the rest).
+- emitter-backflow: is planner-to-back-end a module seam or a layer handoff (leaning: a module seam, as roadmap H-FLAGS).
+- accessor-grain: one accessor per question or a getter/setter per field (leaning: per question, as `coding.md` §1.10).
+
 The owner's reason, verbatim: "This project is more than simply its stated goal. It's an effort to produce a
 viable long term project that can grow" (`docs/design/stream/manifesto.md` §1). And the problem this document is
 for: "we discover over time that the feature is aggregated onto existing code and then have to go through a
@@ -30,9 +39,9 @@ change touches. Remodels are answer-identical units (manifesto §1, "a gate, not
 ORDER: THE OWNER'S (2026-11-17). He reviewed the first draft the same day ("goals-ranking",
 `docs/design/plan_row_bodies/ARCH-STEP.md`, last section): he reshaped the draft's goals 1-3 and added one,
 closing "You do cover some of the above as well"; then he agreed the order below ("goals-order: agree", to the
-manager's list). Each goal is answerable yes or no from a diff, a tree or an architecture note. STILL DRAFT, open
-with him: whether goal 4 stays a goal (shape-goal); which NEW 2026-11-17 rules of part 2 are adopted (new-rules);
-whether a note must cite the register rows it looked up (register-keeper); the speed gate's reach (speed-gate).
+manager's list). Then, asked whether "a data shape covers the inputs the plan names" stays a goal, he answered
+"shape-goal: I agree" to the manager's lean: it is now a RULE under goal 2 (part 2, "A shape states the inputs it
+covers"), and part 1 has four goals. Each goal is answerable yes or no from a diff, a tree or an architecture note.
 
 1. **One home per question; each decision contained in one unit.** Every question the compiler answers (where can
    a match start, which engine, is this request refused, how wide is this subtree, which bytes can begin it, what
@@ -69,7 +78,8 @@ whether a note must cite the register rows it looked up (register-keeper); the s
    `struct Ctx` (`src/core/internal.h:3970-4455`, about 70 by A2's count) have no accessor layer; `cx->opt` is read
    directly in 43 files, `cx->job` in 27, `cx->ncap` in 19, `cx->mods` in 17, `cx->emit_in` in 16; 14 `Job` fields
    are written by emitters, one of them read back by the driver's fallback ladder (roadmap H-FLAGS); the flags word (`coding.md` §1.10) and the
-   facts layer are the parts that already meet the goal.
+   facts layer are the parts that already meet the goal. A rule serves this goal for what a structure may hold:
+   "A shape states the inputs it covers" (part 2; a goal until the owner's "shape-goal: I agree", 2026-11-17).
 3. **Seams: a module seam is an API with a contract; a layer hands data one way.** The goal's purpose, in the
    owner's words: "to isolate responsibility to better organize change. Each module has its api and contract."
    There are two kinds of seam. A MODULE seam (his example: pcrec and the kit planner) is a defined API with a
@@ -96,13 +106,7 @@ whether a note must cite the register rows it looked up (register-keeper); the s
    kit's planner and emitter were split)." Also D146/D157 (the kit seam, the model module seam);
    manifesto §3 principle 9 ("Every seam is a document"); A1 entries 4, 9, 13, 18; A2 "Seams without a contract"
    1, 2, 4.
-4. **A data shape covers the inputs the plan already names.** A representation (a node, a class payload, a
-   record) states the range of inputs it covers; when a planned row needs inputs outside it, the shape is widened
-   first, as its own unit, not patched per consumer. CHECK: the architecture note lists the planned rows that
-   will extend each shape the feature introduces or extends, and shows each fits. SOURCES: D70 (owner: "I'm not
-   worried about memory but complexity and flexibility", A1 entry 1); APPROACH.md's encodings section (the
-   256-bit class bitmap stated as a choice, A1 entry 2); A1 entries 1, 2, 19.
-5. **Remodels ride along with the feature that needs them.** A known remodel is built when a feature, plan row or
+4. **Remodels ride along with the feature that needs them.** A known remodel is built when a feature, plan row or
    measurement lands on its site, FIRST, as its own answer-identical unit; never ahead of that event, and never
    skipped by building beside it. CHECK: the architecture note lists every part-3 row whose WHERE or event the
    feature touches, and each lands first or the note says why not. SOURCES: Frank 2026-11-17, the go on this
@@ -110,10 +114,34 @@ whether a note must cite the register rows it looked up (register-keeper); the s
    D153 ("don't live in a house we're remodeling"); D77 (build under measurement); `docs/design/stream/roadmap.md`
    §7 (the ride-along rule); A1's "revisit when" triggers that fired later (entries 1, 2, 6).
 
-PRIORITY when two conflict (the owner's order, above): the gate first; then 1 > 2 > 3 > 4.
-Goal 5 decides WHEN, never WHAT: it may delay a remodel to its event, and when a feature must land before its
-remodel, implement-then-replace with an open register row is allowed (Frank 2026-08-23); a second permanent home is
-not.
+PRIORITY when two conflict (the owner's order, above): the gate first; then 1 > 2 > 3. Goal 4 decides WHEN, never
+WHAT: it may delay a remodel to its event, and when a feature must land before its remodel, implement-then-replace
+with an open register row is allowed (Frank 2026-08-23); a second permanent home is not. How much a goal weighs in
+one change is judgement (next section).
+
+## Judgement: weighing the goals, and noted deviations
+
+The owner, 2026-11-17 (`docs/design/plan_row_bodies/ARCH-STEP.md`, last section), in full: "One thing to understand
+is the judgement required. There will be an ebb and flow to this. We have to weigh choices so we don't remodel with
+every change. For instance, we might make a small change which goes against the goals and note it then if a larger
+change or a moment to refactor comes along that small violation can be corrected. It also allows builds to settle as
+refactoring with small changes can be myopic."
+
+THE MANAGER'S way of carrying it (not his words; open to his correction):
+- (a) WEIGHED, NOT MECHANICAL. The goals are weighed against what a change costs and buys; a review finding against
+  a goal is an argument, not a veto.
+- (b) A SMALL CHANGE MAY GO AGAINST A GOAL when remodelling for it now would cost more than it buys, PROVIDED it is
+  noted.
+- (c) "NOTED" HAS ONE HOME: a part-3 register row of kind "noted deviation": what was done, against which goal or
+  rule, where (file and function, verified by command), why it was small, and the event that should correct it (a
+  larger change on that site, or a named refactor moment). No row, not noted.
+- (d) A NEWLY BUILT AREA SETTLES before it is reshaped: a register row may carry the status "settling until
+  <event>", and the remodel waits for that event (small-step refactoring of a fresh build can be myopic).
+- (e) NOT COVERED: a second permanent mechanism; a deviation with no row; a deviation that is not small. SMALL means
+  it touches one site, adds no new reader of another unit's structure, and changes no seam.
+How this fits rule "Build the general form; no parallel mechanisms or special cases" (Frank 2026-08-23): that rule is
+not softened. A noted deviation is never a second mechanism; where a feature must land beside a mechanism before its
+remodel, the allowance is his own implement-then-replace with an open register row, the same allowance goal 4 cites.
 
 NON-GOALS: speed as an architecture goal (it is the gate; manifesto §1); the harness and tooling (rule "Product
 first, harness minimal"); remodels with no carrying event (D77); frameworks that move every pass at once
@@ -286,7 +314,7 @@ a "remodel overlap" column. **Why:** optimizing a site about to be restructured
 means redoing the work. **Source:** Frank 2026-10-06; D153, D151.
 HISTORY: applied up front by the entry rows before the iterator (A1 12). It covers refactors IN FLIGHT; known but
 unscheduled remodels had no list, so a feature could not see them (part 3 is that list).
-BEFORE DESIGN: the part-3 lookup (goal 5).
+BEFORE DESIGN: the part-3 lookup (goal 4).
 
 ## Product first, harness minimal
 Rank compiler correctness, emitted-code speed and stability, and the public
@@ -381,12 +409,18 @@ is semantic keeps its exhaustive switch (`-Wswitch` is the net). **Why:** 27 fil
 because a defaulted answer was once a miscompile, so this is per pass, never wholesale. **Source:** A2 chain 5 and
 option 4; A1 1, 6.
 
-## A shape states the inputs it covers (NEW 2026-11-17, DRAFT)
-A representation names the range it covers (code points, kinds, engines, offsets); a planned row needing more
-widens the shape first, as its own unit. **Why:** the class bitmap had no room above 0xFF though UTF-8 was planned
-(A1 2); fold handling spread over three files had no owner when alternation folds arrived (A1 19); LOOK-LOCATE's
-signed offset has no field in the start row schema (A2 "Where the next features will land"). **Source:** A1 2, 19;
-goal 4.
+## A shape states the inputs it covers (a rule under goal 2; the owner 2026-11-17, "shape-goal: I agree")
+A representation (a node, a class payload, a record) names the range of inputs it covers (code points, kinds,
+engines, offsets); when a planned row needs inputs outside it, the shape is widened first, as its own unit, not
+patched per consumer. Until 2026-11-17 this was part 1's goal 4; the owner agreed it is a rule under the
+data-with-its-code goal (`docs/design/plan_row_bodies/ARCH-STEP.md`, last section). **Why:** the class bitmap had
+no room above 0xFF though UTF-8 was planned (A1 2); fold handling spread over three files had no owner when
+alternation folds arrived (A1 19); LOOK-LOCATE's signed offset has no field in the start row schema (A2 "Where the
+next features will land"). **Source:** D70 (owner: "I'm not worried about memory but complexity and flexibility",
+A1 entry 1); APPROACH.md's encodings section (the 256-bit class bitmap stated as a choice, A1 entry 2); A1 entries
+1, 2, 19.
+BEFORE DESIGN: the architecture note lists the planned rows that will extend each shape the feature introduces or
+extends, and shows each fits (or the shape widens first).
 
 ## A structure is read and written through its owner's accessors (NEW 2026-11-17, DRAFT)
 The code that writes a structure's fields lives in the structure's own file (or module), beside its definition;
@@ -394,7 +428,7 @@ code in another file reads or modifies it through accessor functions that file p
 operation, never by direct field access. `coding.md` §1.10 (the option word, gated by
 `tests/core/flag_access_check.py`) is this rule's one enforced instance today; the facts layer's `pf_enter`/ask
 accessors are its model for a record. A structure with no accessor yet is not converted wholesale: a feature that
-adds a cross-file read or write adds the accessor (goal 5; register row 6a). **Why:** [FLAG-ACCESS] (A1 9) and D62
+adds a cross-file read or write adds the accessor (goal 4; register row 6a). **Why:** [FLAG-ACCESS] (A1 9) and D62
 to A_CTX (A1 6) paid for direct reads one field family at a time; `Job`/`Ctx` are read directly from every layer
 (`cx->opt` in 43 files) with no declared writer (A2 seam 1). **Source:** the owner 2026-11-17 (goal 2's words,
 ARCH-STEP.md); `coding.md` §1.10; A1 6, 9, 13; A2 "Seams without a contract" 1 and contrast C1.
@@ -419,6 +453,13 @@ commands are in `docs/dev/lanes/archgoals_report.md`). SIZE: S one small lane, M
 L several rounds. GATE: no-mover = answer-identical with a byte-identity gate; abi = an abi event; kit = a kit
 seam event (D146). The stream roadmap's own areas and hubs (`docs/design/stream/roadmap.md` §1-2) are rows by
 reference (row 12); a row below that overlaps one names it.
+KINDS OF ROW. A REMODEL row (rows 1-20 today) is a shape we want. A NOTED DEVIATION row (part 1, "Judgement") records
+a small change that went against a goal or rule, in the same columns: remodel = "NOTED: <what was done>"; shape
+(rule) = the goal or rule it went against; where = file and function, verified by command at the noting commit;
+event = the larger change on that site or the named refactor moment that should correct it; size, gate = why it was
+small (one site, no new reader of another unit's structure, no seam changed); deletes = the deviation itself. STATUS
+values: "open"; "riding <tag>"; "done <commit>"; for a noted deviation "noted <commit>" until "corrected <commit>";
+and, on either kind, "settling until <event>" for a newly built area left to settle before it is reshaped.
 
 | # | remodel | shape (rule) | where | event that carries it | size, gate | deletes | status |
 |---|---|---|---|---|---|---|---|
@@ -449,7 +490,11 @@ HOW TO USE IT. When a feature is planned: (1) grep this table for every file and
 and for its plan tag; (2) each matching row's remodel lands FIRST, as its own answer-identical unit (or joins the
 abi event in flight), and its status becomes "riding <tag>"; (3) if the feature touches a site that shows a part-2
 shape and has no row, the architecture note ADDS a row here; (4) a row that a note decides not to carry says why
-in the note; (5) a row is closed as "done <commit>" at its landing, by the manager.
+in the note; (5) a row is closed as "done <commit>" at its landing, by the manager; a noted deviation is closed as
+"corrected <commit>", naming the commit that corrected it. At a feature's architecture note, the noted deviations
+on the sites it touches are corrected FIRST, like any riding remodel (step 2), unless the note says why not (step
+4). A change that goes against a goal for now adds its noted-deviation row in the same change (the note proposes it;
+the manager writes it at landing); a row in "settling until <event>" is not carried before its event.
 
 Considered, not adopted (A2 options 9-11, and two scopings):
 - A call-level layering gate (an `nm` ratchet in make test): harness for a risk not yet bitten; the known edges are
