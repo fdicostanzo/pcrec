@@ -75,7 +75,7 @@ Option sets, selection, cost
 Memory functions, kit, compound, iterator
 - `memfn/` — [MEMFN] design record (requirements, ISA selection, survey, integration revisions through 4.9, twins, Linux results, later r17 notes); own CLAUDE.md; revision history in `memfn/CLAUDE.md`.
 - `compound.md` — [COMPOUND] compound artifact (rev 2.2), first client [MATCH-SPLIT]; `compound/` — twin; `compound_callout_alignment.md` — compound/callout seams (D163 add. 5); `compound_entries.md` — every entry as a compound controller; `compound_entries/` — probes.
-- `inline_c_requirements.md` — [INLINE-C] REQUIREMENTS (no build go): user C inside pattern `(?C{...})` and template `${{ }}`/`${( )}`; use cases and draft tests, R-P/R-T/R-S rows, post-match predicate analysis, prior art, trust gate, open questions (rev 0).
+- `inline_c_requirements.md` — [INLINE-C] REQUIREMENTS (no build go; full entry in NOTES.md).
 - `inline_c.md` — [INLINE-C] DESIGN, pattern side: one `A_CALLOUT` node, the trust gate, stages 0-5 (full entry in NOTES.md).
 - `match_split_requirements.md` — [MATCH-SPLIT] requirements; `match_split_pinonly.md` — SUPERSEDED (D163) by `compound.md`.
 - `findall_iter.md` — [FINDALL-NEXT] find-all iterator; `findall_iter/` — probes.
@@ -108,6 +108,7 @@ Modules (design notes with `*_measurements/` siblings)
 - `assertions_design.md` + `assertions_measurements/`; `atomic_groups_design.md` + `atomic_groups_measurements/`; `backrefs_design.md` + `backrefs_measurements/`; `lookaround_design.md` + `lookaround_measurements/`; `vlookbehind.md` ([VLOOKBEHIND] bounded variable lookbehind; stage 1 built, stage 2 rev 5.2) + `vlookbehind_pieces.md`; `subroutines_design.md` + `subroutines_measurements/`; `frame_buffer_design.md`.
 - `feature_families.md` — [FEAT-FAMILIES] basic/extended/pcre2 families over D37 (PROPOSED rev 0).
 - `cond_family.md` — [COND-FAMILY] survey; `cond_family_syntax_survey.md` — spellings; `predicates_draft.md` — spec (DRAFT); `joint_condition.md` — (RULED); `condition_kind.md` — condition as its own kind (EXPLORATION); `predicates_future.md` — parked ideas; `fact_consumers_inventory.md` — [FACT-READS].
+- `rx_module.md` — patterns without rx literals: an `rx` construct module, a sequence operator (item 21; PROPOSED).
 - `dfa_captures_research.md` — [ENG-TDFA] captures without the VM.
 - `data_plan.md` — [DATA-PLAN] large data paid only where used, shared where repeated: pcrec's own UCD tables (A) and Unicode data in matchers (B) (PROPOSED); `data_plan/` — its instruments.
 - `uprop_more.md` — [UPROP-MORE] `\p{}` binary properties + Bidi_Class (PCRE2 catch-up) and Block/Age (extension) design (PROPOSED).
