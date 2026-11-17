@@ -1,0 +1,114 @@
+ORDER: forward
+PART 1: examples (program; subject; mode SEARCHED; each candidate's rows)
+  /\d+/ & !/0+/   [review r31 A1] on `0`: R22 FAILS | X FAILS | S FAILS | M FAILS | M+ FAILS | Mr FAILS
+  /\d+/ & !/0+/   [review r31 A1] on `0 7`: R22 HOLDS `7`@2 | X HOLDS `7`@2 | S FAILS | M HOLDS `7`@2 | M+ HOLDS `7`@2 | Mr HOLDS `7`@2
+  /\d+/ & !/0+/   [review r31 A1] on `00 70`: R22 HOLDS `70`@3 | X HOLDS `7`@3,`70`@3 | S FAILS | M HOLDS `70`@3 | M+ HOLDS `70`@3 | Mr HOLDS `70`@3
+  /\d+/ & !/0+/   [review r31 A1] on `10`: R22 HOLDS `10`@0 | X HOLDS `1`@0,`10`@0 | S FAILS | M HOLDS `10`@0 | M+ HOLDS `10`@0 | Mr HOLDS `10`@0
+  /\d+/ & !/0|00/   [Mr vs M+] on `0 00`: R22 FAILS | X FAILS | S FAILS | M FAILS | M+ FAILS | Mr HOLDS `00`@2
+  /\d+/ & !/0|00/   [Mr vs M+] on `00`: R22 FAILS | X FAILS | S FAILS | M FAILS | M+ FAILS | Mr HOLDS `00`@0
+  /\d+/ & !/\d\d/ on `12`: R22 HOLDS `1`@0,`2`@1 | X HOLDS `1`@0,`2`@1 | S FAILS | M FAILS | M+ FAILS | Mr FAILS
+  /\d+/ & !/\d\d/ on `123`: R22 HOLDS `123`@0 | X HOLDS `1`@0,`123`@0,`2`@1,`3`@2 | S FAILS | M HOLDS `123`@0 | M+ HOLDS `123`@0 | Mr HOLDS `123`@0
+  L34 /(?<a>\d+)(?<b>\d+)/ & (a: <5) & (b: <5) on `123`: R22 HOLDS `12`@0 | X HOLDS `12`@0,`23`@1 | S HOLDS `12`@0 | M FAILS | M+ HOLDS `12`@0 | Mr HOLDS `12`@0
+  L59 /(?<a>\d+)(?<b>\d+)/ & (a: "1") on `123`: R22 HOLDS `12`@0 | X HOLDS `12`@0 | S HOLDS `12`@0 | M FAILS | M+ HOLDS `12`@0 | Mr HOLDS `12`@0
+  t2 & !/\d:\d\d/   [the same without the condition] on `9:30`: R22 HOLDS `9`@0,`30`@2 | X HOLDS `9`@0,`3`@2,`30`@2,`0`@3 | S FAILS | M FAILS | M+ FAILS | Mr FAILS
+  t2 & !q   [source-row's one example] on `10:00 9:15`: R22 HOLDS `10`@0,`00`@3,`9:15`@6 | X HOLDS `1`@0,`10`@0,`0`@1,`0:00`@1,`0`@3,`00`@3,`0`@4,`9`@6,`9:15`@6,`1`@8,`15`@8,`5`@9 | S FAILS | M HOLDS `9:15`@6 | M+ HOLDS `9:15`@6 | Mr HOLDS `9:15`@6
+  t2 & !q   [source-row's one example] on `9:15`: R22 HOLDS `9:15`@0 | X HOLDS `9`@0,`9:15`@0,`1`@2,`15`@2,`5`@3 | S HOLDS `9:15`@0 | M HOLDS `9:15`@0 | M+ HOLDS `9:15`@0 | Mr HOLDS `9:15`@0
+  t2 & !q   [source-row's one example] on `9:30`: R22 HOLDS `9`@0,`30`@2 | X HOLDS `9`@0,`3`@2,`30`@2,`0`@3 | S FAILS | M FAILS | M+ FAILS | Mr FAILS
+  t2 & !q   [source-row's one example] on `9:30 1`: R22 HOLDS `9`@0,`30`@2,`1`@5 | X HOLDS `9`@0,`3`@2,`30`@2,`0`@3,`1`@5 | S FAILS | M HOLDS `1`@5 | M+ HOLDS `1`@5 | Mr HOLDS `1`@5
+  t2 & (m = 0: <20) & !/\d:\d\d/   [M+ admits by retry] on `9:30`: R22 HOLDS `9`@0,`30`@2 | X HOLDS `9`@0,`3`@2,`30`@2,`0`@3 | S FAILS | M FAILS | M+ HOLDS `9`@0,`30`@2 | Mr HOLDS `9`@0,`30`@2
+  §11 (i) /\d+/ & <256 on `x300 12`: R22 HOLDS `30`@1,`0`@3,`12`@5 | X HOLDS `3`@1,`30`@1,`0`@2,`00`@2,`0`@3,`1`@5,`12`@5,`2`@6 | S HOLDS `30`@1,`0`@3,`12`@5 | M HOLDS `12`@5 | M+ HOLDS `30`@1,`0`@3,`12`@5 | Mr HOLDS `30`@1,`0`@3,`12`@5
+  §4.2 t2 & ((h, m = 0): padded(>= (9, 30))) on `9:15`: R22 HOLDS `15`@2 | X HOLDS `15`@2 | S HOLDS `15`@2 | M FAILS | M+ HOLDS `15`@2 | Mr HOLDS `15`@2
+  L13 /\d+/ & padded(/^5/) on `x005`: R22 HOLDS `5`@3 | X HOLDS `5`@3 | S HOLDS `5`@3 | M FAILS | M+ HOLDS `5`@3 | Mr HOLDS `5`@3
+PART 2: counts (mode named on each line; smallest witness by length then text)
+  SEARCHED T2 (11,110) t2 & !q holds: R22 11110 first 0
+  SEARCHED T2 (11,110) t2 & !q holds: X 11110 first 0
+  SEARCHED T2 (11,110) t2 & !q holds: S 1970 first 0
+  SEARCHED T2 (11,110) t2 & !q holds: M 1970 first 0
+  SEARCHED T2 (11,110) t2 & !q holds: M+ 1970 first 0
+  SEARCHED T2 (11,110) t2 & !q holds: Mr 1970 first 0
+  SEARCHED T2PAIRS (600) t2 & !q holds: R22 600 first 1
+  SEARCHED T2PAIRS (600) t2 & !q holds: X 600 first 1
+  SEARCHED T2PAIRS (600) t2 & !q holds: S 132 first 1
+  SEARCHED T2PAIRS (600) t2 & !q holds: M 418 first 1
+  SEARCHED T2PAIRS (600) t2 & !q holds: M+ 418 first 1
+  SEARCHED T2PAIRS (600) t2 & !q holds: Mr 418 first 1
+  WHOLE T2 (11,110) t2 & !q holds: 1970
+  WHOLE T2PAIRS (600) t2 & !q holds: 11
+  SEARCHED T2 (11,110) t2 & !q, R22 vs S differ: 9140 first 9:30
+  SEARCHED T2 (11,110) t2 & !q, X vs S differ: 9140 first 9:30
+  SEARCHED T2 (11,110) t2 & !q, M vs S differ: 0 first None
+  SEARCHED T2 (11,110) t2 & !q, M+ vs S differ: 0 first None
+  SEARCHED T2 (11,110) t2 & !q, Mr vs S differ: 0 first None
+  SEARCHED T2PAIRS (600) t2 & !q, R22 vs S differ: 468 first 9:30
+  SEARCHED T2PAIRS (600) t2 & !q, X vs S differ: 468 first 9:30
+  SEARCHED T2PAIRS (600) t2 & !q, M vs S differ: 286 first 1 9:30
+  SEARCHED T2PAIRS (600) t2 & !q, M+ vs S differ: 286 first 1 9:30
+  SEARCHED T2PAIRS (600) t2 & !q, Mr vs S differ: 286 first 1 9:30
+  DIG pool size 696
+  SEARCHED DIG /\d+/ & !/0+/ holds: R22 684; differs from R22 on 0 first None
+  SEARCHED DIG /\d+/ & !/0+/ holds: X 684; differs from R22 on 0 first None
+  SEARCHED DIG /\d+/ & !/0+/ holds: S 138; differs from R22 on 546 first 01
+  SEARCHED DIG /\d+/ & !/0+/ holds: M 684; differs from R22 on 0 first None
+  SEARCHED DIG /\d+/ & !/0+/ holds: M+ 684; differs from R22 on 0 first None
+  SEARCHED DIG /\d+/ & !/0+/ holds: Mr 684; differs from R22 on 0 first None
+  SEARCHED T2 (11,110) when: R22 body 11110 case-when 11110 differ 0 first None
+  SEARCHED T2 (11,110) when: X body 11110 case-when 11110 differ 0 first None
+  SEARCHED T2 (11,110) when: S body 6050 case-when 11110 differ 5060 first 9:45
+  SEARCHED T2 (11,110) when: M body 6050 case-when 6050 differ 0 first None
+  SEARCHED T2 (11,110) when: M+ body 6050 case-when 11110 differ 5060 first 9:45
+  SEARCHED T2 (11,110) when: Mr body 6050 case-when 11110 differ 5060 first 9:45
+  SEARCHED T2PAIRS (600) when: R22 body 600 case-when 600 differ 0 first None
+  SEARCHED T2PAIRS (600) when: X body 600 case-when 600 differ 0 first None
+  SEARCHED T2PAIRS (600) when: S body 426 case-when 600 differ 174 first 9:45
+  SEARCHED T2PAIRS (600) when: M body 558 case-when 558 differ 0 first None
+  SEARCHED T2PAIRS (600) when: M+ body 558 case-when 600 differ 42 first 9:45
+  SEARCHED T2PAIRS (600) when: Mr body 558 case-when 600 differ 42 first 9:45
+  WHOLE T2 (11,110) when: body 6050 case-when 6050
+  WHOLE T2PAIRS (600) when: body 18 case-when 18
+  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): R22 body vs case-when differ 0 first None
+  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): X body vs case-when differ 0 first None
+  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): S body vs case-when differ 4 first 77
+  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): M body vs case-when differ 0 first None
+  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): M+ body vs case-when differ 0 first None
+  SEARCHED DIG-runs (363) when, x=/(?<d>\d+)/ c=(d: <50) p=(d: <5): Mr body vs case-when differ 0 first None
+  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): R22 admitted 0 first None
+  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): X admitted 0 first None
+  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): S admitted 1009 first 9:30
+  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): M admitted 0 first None
+  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): M+ admitted 1009 first 9:30
+  SEARCHED T2 (11,110) add (h: >20) to q in q & !(q & late): Mr admitted 1009 first 9:30
+  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): R22 admitted 0 first None
+  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): X admitted 0 first None
+  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): S admitted 214 first 9:30
+  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): M admitted 0 first None
+  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): M+ admitted 126 first 9:30
+  SEARCHED T2PAIRS (600) add (h: >20) to q in q & !(q & late): Mr admitted 126 first 9:30
+  WHOLE T2 (11,110) add (h: >20): admitted 0
+  WHOLE T2PAIRS (600) add (h: >20): admitted 0
+  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: R22 admitted 0 first None
+  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: X admitted 0 first None
+  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: S admitted 0 first None
+  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: M admitted 0 first None
+  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: M+ admitted 800 first 0:20
+  SEARCHED T2 (11,110) add (m = 0: <20) to t2 & !/\d:\d\d/: Mr admitted 800 first 0:20
+  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: R22 admitted 0 first None
+  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: X admitted 0 first None
+  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: S admitted 0 first None
+  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: M admitted 0 first None
+  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: M+ admitted 90 first 1:30
+  SEARCHED T2PAIRS (600) add (m = 0: <20) to t2 & !/\d:\d\d/: Mr admitted 90 first 1:30
+  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): R22 differ 0 first None
+  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): X differ 0 first None
+  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): S differ 657 first 00
+  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): M differ 0 first None
+  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): M+ differ 90 first 00
+  SEARCHED DIG /\d+/ & !/\d\d/ vs /\d+/ & (a positive filter: not /\d\d/): Mr differ 90 first 00
+  SEARCHED DIG /\d+/ & <17 (no complement): R22 differs from R22 (D196) on 0 first None
+  SEARCHED DIG /\d+/ & <17 (no complement): X differs from R22 (D196) on 0 first None
+  SEARCHED DIG /\d+/ & <17 (no complement): S differs from R22 (D196) on 0 first None
+  SEARCHED DIG /\d+/ & <17 (no complement): M differs from R22 (D196) on 356 first 17
+  SEARCHED DIG /\d+/ & <17 (no complement): M+ differs from R22 (D196) on 0 first None
+  SEARCHED DIG /\d+/ & <17 (no complement): Mr differs from R22 (D196) on 0 first None
+  SEARCHED T2 (11,110) when: M+ body vs case-when per reported match (M's rule) differ 0 first None
+  SEARCHED T2PAIRS (600) when: M+ body vs case-when per reported match (M's rule) differ 0 first None
+END
