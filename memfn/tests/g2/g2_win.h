@@ -14,10 +14,21 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define G2W_MAXPOS  32      /* positions per span (memfn.h MF_WSPAN_POS)        */
+/* The twins of the kit's bounds. They only SIZE arrays: every span G2 draws
+ * has a literal or drawn length of its own. R-45 (r45_reply rev 6 §3
+ * "Answers, controlled by G2"; review r35 F12): G2W_REACH 256, CHOSEN, twice
+ * the span r45_reply names (128, twice the largest finite grid head, 64, so
+ * that head has positions on both sides). G2W_MAXPOS, the positions per
+ * span G2 states, is DERIVED in the generator (the only file that includes
+ * memfn.h, and the only one that reads it): min(128, MF_WSPAN_POS), 32 in a
+ * tree before the [COVER-CAP] stage 2 raise and r45_reply's 128 after it,
+ * with no edit (ruling R1 of lane formsfixb); G2 reaches past 64 with
+ * stretches of several spans either way (a loop crosses span boundaries).
+ * The generator holds each twin to the kit's own bound with a
+ * _Static_assert. */
 #define G2W_MAXSPAN 32      /* spans per alternative (MF_WMAX_SPAN)             */
 #define G2W_LO      (-8)    /* the least offset (memfn.h -MF_MAX_BACK)          */
-#define G2W_REACH   64      /* offsets lie below it (MF_WREACH)                 */
+#define G2W_REACH   256     /* offsets lie below it (MF_WREACH)                 */
 #define G2W_NOFF    (G2W_REACH - G2W_LO)
 #define G2W_PROOF_LO (-8)   /* memfn.h MF_PROOF_LO                             */
 
@@ -87,7 +98,16 @@ typedef struct {
     int         pair;           /* the text keeps two memchr streams (PAIR):
                                    the driver's long subjects                 */
     int         run_left;       /* the art carries the lever run-tie-left    */
+    /* R-45's span forms (review r35 F17): the head the site was rendered at
+       (the lever span-head=N; -1: the shipped default, which G2 does not
+       name), and the ONE-CLASS STRETCH the generator stated, [st_lo, st_end)
+       with a second class from st_mid (st_mid == st_end: one class; st_end
+       0: none). The driver breaks the entries at its edges and at the head
+       deterministically (run_breaks). */
+    int         head, st_lo, st_mid, st_end;
 } g2w_site;
+
+
 
 /* One wrapper per site: the rendered text called on (s, n, lo, fl).
  * *wrote: the site wrote its result (ASSIGN frames); *missed: its on_miss
@@ -95,6 +115,23 @@ typedef struct {
  * (ASSIGN_LO) or 0 (ON_MISS). */
 typedef size_t (*g2w_fn)(const unsigned char *s, size_t n, size_t lo, size_t fl,
                          int *wrote, int *missed);
+
+/* THE LONG ROWS (R-45 r45_reply rev 6 §3 "Long cases"; review r35 F12):
+ * one alternative, one verify-YES all-core stretch of k positions (500, and
+ * the longest one alternative can state, G2W_MAXSPAN spans of G2W_MAXPOS:
+ * 1024 until MF_WSPAN_POS's raise, then 4095) at offsets 0..k-1, set `a`
+ * below `mid` and `b` from it (mid == k: one class), stated in spans of
+ * G2W_MAXPOS; frame STMT/ASSIGN, empty MISS, floor SUBJECT. Their answer is
+ * G2's own byte loop (g2_win_run.c run_long_rows), not the reference's
+ * decision, whose arrays G2W_REACH sizes. `state`: the pass's head, or the
+ * deny (I) or the force (L); `head` -1 where the pass names none. */
+enum { G2W_LS_HEAD, G2W_LS_DENY, G2W_LS_FORCE };
+typedef struct {
+    const char *name;
+    int         k, mid, head, state, kind_report, stop;
+    uint8_t     a[32], b[32];
+    g2w_fn      fn;
+} g2w_long_site;
 
 /* ---- the reference (g2_win_ref.c): written from window_site.md rev 3.2,
  * never from the kit's source ----------------------------------------------- */

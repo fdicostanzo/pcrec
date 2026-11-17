@@ -1539,13 +1539,20 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where, Cli
         /* [FIND-MINW] the minimum-width stop's inverse lever */
         else if (!strcmp(a, "--harness=no-min-width")) st->harness.no_min_width = 1;
         else if (!strcmp(a, "--harness=mfind")) st->harness.mfind = 1;
-        /* [MEMFN] R-45: the kit's valued lever, the span forms' inline head
-           (N is validated by the kit, mf_lever) */
+        /* [MEMFN] R-45: the kit's valued lever, the span forms' inline head.
+           N is parsed here as strictly as mf_lever parses it (plain decimal
+           digits, no sign or space; review r35 F23), its top the kit's own
+           constant, so a refusal is the option's, never a compile's */
         else if (!strncmp(a, "--harness=span-head=", 20)) {
-            char *end;
-            unsigned long n = strtoul(a + 20, &end, 10);
-            if (!a[20] || *end || n > 4095) {
-                cli_err("--harness=span-head= wants a head of 0..4095 positions");
+            const char *v = a + 20;
+            unsigned long n = 0;
+            int bad = !*v;
+            for (; *v && !bad; v++)
+                bad = *v < '0' || *v > '9' ||
+                      (n = n * 10 + (unsigned long)(*v - '0')) > MF_SPAN_HEAD_MAX;
+            if (bad) {
+                cli_err("--harness=span-head= wants a head of 0..%d positions in decimal digits",
+                        MF_SPAN_HEAD_MAX);
                 return 1;
             }
             st->harness.span_head = (unsigned)n + 1;

@@ -1631,7 +1631,7 @@ static const struct {
 };
 
 /* THE VALUED LEVER (R-45 r45_reply rev 6 §3 "The head lever"): `span-head=N`,
- * N in 0..KIT_SPAN_HEAD_MAX decimal, sets the span forms' inline head h on
+ * N in 0..MF_SPAN_HEAD_MAX decimal, sets the span forms' inline head h on
  * the art (window.c wf_span_head), so the form cards time every H(h) on one
  * binary. 1 iff `name` is that lever (*bad set where N is malformed). */
 static int lever_span_head(mf_art *art, const char *name, int *bad)
@@ -1644,7 +1644,7 @@ static int lever_span_head(mf_art *art, const char *name, int *bad)
     *bad = !*v;
     for (; *v && !*bad; v++) {
         if (*v < '0' || *v > '9') *bad = 1;
-        else if ((n = n * 10 + (unsigned long)(*v - '0')) > KIT_SPAN_HEAD_MAX) *bad = 1;
+        else if ((n = n * 10 + (unsigned long)(*v - '0')) > MF_SPAN_HEAD_MAX) *bad = 1;
     }
     if (!*bad) {
         art->levers |= KIT_LEVER_SPAN_HEAD;
@@ -1661,7 +1661,7 @@ int mf_lever(mf_art *art, const char *name)
     int bad = 0;
     if (lever_span_head(art, name, &bad))
         return bad ? kit_fail(art, "mf_lever: `%s` wants a head of 0..%u positions", name,
-                              (unsigned)KIT_SPAN_HEAD_MAX)
+                              (unsigned)MF_SPAN_HEAD_MAX)
                    : 0;
     for (size_t i = 0; i < sizeof kit_levers / sizeof kit_levers[0]; i++)
         if (name && !strcmp(name, kit_levers[i].name)) {
