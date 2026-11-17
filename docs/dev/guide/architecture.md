@@ -623,7 +623,7 @@ and, on either kind, "settling until <event>" for a newly built area left to set
 
 HOW TO USE IT. When a feature is planned: (1) grep this table for every file and function the feature will touch
 and for its plan tag; (2) each matching row's remodel lands FIRST, as its own answer-identical unit (or joins the
-abi event in flight), and its status becomes "riding <tag>"; (3) if the feature touches a site that shows a tiers 2-4
+abi event in flight), and its status becomes "riding <tag>"; (3) if the feature touches a site that shows a tiers 2-3
 rule's shape and has no row, the architecture note ADDS a row here; (4) a row that a note decides not to carry says why
 in the note; (5) a row is closed as "done <commit>" at its landing, by the manager; a noted deviation is closed as
 "corrected <commit>", naming the commit that corrected it. At a feature's architecture note, the noted deviations

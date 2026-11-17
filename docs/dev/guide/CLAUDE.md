@@ -5,7 +5,7 @@ amendment rule (every rule carries a WHY and a source).
 
 ## Files
 
-- `README.md`, `coding.md` (moved from `docs/dev/coding_guide.md`; `coding_guide §N` citations still resolve through the stub there), `architecture.md` (goals, rules, and the ride-along register: consult it when planning a feature; the manager updates the register at each landing that opens, rides or closes a row), `style.md`, `critics.md`.
+- `README.md`, `coding.md` (moved from `docs/dev/coding_guide.md`; `coding_guide §N` citations still resolve through the stub there), `architecture.md` (five tiers: high-level rules (goals), sub-rules, corollaries, considerations, evidence and history; and the ride-along register: consult it when planning a feature; the manager updates the register at each landing that opens, rides or closes a row), `style.md`, `critics.md`.
 - `addenda/` — per-area additions (`README.md`, `kit.md`); each adds to and never contradicts the base.
 
 ## Rules

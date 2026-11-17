@@ -8,8 +8,9 @@ description: Write the ARCHITECTURE NOTE for a pcrec (or memfn kit) feature - th
 The owner's problem (2026-11-17, `docs/design/plan_row_bodies/ARCH-STEP.md`): "we discover over time that the
 feature is aggregated onto existing code and then have to go through a lengthy refactor". The split is
 requirements -> ARCHITECTURE -> design -> build, each with its own review. This skill is the architecture step's
-WRITER. Its standard is `docs/dev/guide/architecture.md`: part 1's goals with their CHECK lines, part 2's rules
-with their BEFORE DESIGN questions, part 3's ride-along register and its HOW TO USE IT. The note answers those;
+WRITER. Its standard is `docs/dev/guide/architecture.md`: tier 1's high-level rules (the goals; "goal N" = high-level
+rule N) with their CHECK lines, the sub-rules and corollaries of tiers 2-3 with their BEFORE DESIGN questions (tier
+4's considerations where a site is their subject; tier 5 is the evidence), the ride-along register and its HOW TO USE IT. The note answers those;
 this skill does not restate them. When the guide and this skill disagree, the guide wins and you fix the skill.
 
 ## 1. Where it sits, and who does what
@@ -47,7 +48,7 @@ line, with the count. A paragraph-form note that finds two sites converts itself
    requirements are not stable (a design-of-record marked NOT STABLE, open owner questions that change WHAT the
    feature does), say so in the header; the note may still be written, but every site that depends on an open
    requirement is marked `REQ-OPEN <slug>`.
-3. The register: `docs/dev/guide/architecture.md` part 3 at `$T` (`git show $T:docs/dev/guide/architecture.md`).
+3. The register: `docs/dev/guide/architecture.md`'s ride-along register at `$T` (`git show $T:docs/dev/guide/architecture.md`).
 
 ## 4. Procedure (architect)
 
@@ -79,17 +80,17 @@ line, with the count. A paragraph-form note that finds two sites converts itself
    - `AS-IS` the site takes the feature with no change of shape (say why in one clause).
    A site the feature would join by adding a branch to a chain, a second mechanism beside a first, or a private
    copy of a declared table is NEVER `AS-IS`: that is the aggregation this step exists to stop.
-3. REGISTER LOOKUP (goal 4; part 3's HOW TO USE IT). Grep part 3 for every file and function in the site map and for
+3. REGISTER LOOKUP (goal 4; the register's HOW TO USE IT). Grep the register for every file and function in the site map and for
    the feature's plan tag. Each matching row: RIDES FIRST, JOINS <abi event in flight>, or NOT CARRIED with the
    reason. A site classified `CHAIN->TABLE`, `SHARED`, `ACCESSOR` or `WIDEN` with no row PROPOSES a row in the register's own
    columns. Noted-deviation rows on touched sites are looked up the same way (corrected first, like any riding
-   remodel); a note that recommends going against a goal for now PROPOSES a noted-deviation row (part 1 "Judgement"). Also read the stream roadmap areas (`docs/design/stream/roadmap.md` §1, register row 12) for the files,
+   remodel); a note that recommends going against a goal for now PROPOSES a noted-deviation row (tier 1 "Judgement"). Also read the stream roadmap areas (`docs/design/stream/roadmap.md` §1, register row 12) for the files,
    and the "Revisit when" triggers of every D-row that names a site in the map (`scripts/entry -g` on the file or
    function): a trigger the feature meets is looked up like a register row (the register is newer than most of
    those triggers; D62's "a fifth AST analysis" was the D70 union's).
 4. REMODELS THAT LAND FIRST. Each `CHAIN->TABLE`, `SHARED`, `ACCESSOR` or `WIDEN` site the feature needs now becomes one unit:
    what changes shape, its GATE (no-mover with byte identity / abi event / kit seam event, D146), its SIZE (S/M/L as
-   part 3), the CHECKS THAT BIND the code it moves (sabotage anchors in `tests/mech/`, pins and manifests, found by
+   the register), the CHECKS THAT BIND the code it moves (sabotage anchors in `tests/mech/`, pins and manifests, found by
    grep; critics.md rule A3), and the test that it is SEPARABLE: it lands, answer-identical, without the feature. A remodel the feature
    does not need yet is not a unit: it becomes a register row with its trigger (rule "Build under measurement").
 5. GENERAL FORM AND SIBLINGS. Name the general form of what the feature adds (rule "Build the general form"); its
@@ -115,10 +116,10 @@ run at `$T`, inline or in the section's command list. No line numbers without th
 # <feature>: architecture note
 STATUS: DRAFT | REVIEWED <review file> | ACCEPTED <date, by whom>
 FORM: full | paragraph   (trigger: <n> existing decision sites touched; mechanisms added: <list or none>)
-TREE: <T>   REQUIREMENTS: <files and rulings, each @commit>   REGISTER READ: architecture.md part 3 @<T>
+TREE: <T>   REQUIREMENTS: <files and rulings, each @commit>   REGISTER READ: architecture.md register @<T>
 
 ## Goals served
-Which part-1 goals the feature touches, and which it trades against (rule "A design states its goals": the
+Which tier-1 goals (high-level rules) the feature touches, and which it trades against (rule "A design states its goals": the
 architecture step's answer to that rule's BEFORE DESIGN question). Not the feature's own goals: those are the
 requirements'.
 
@@ -135,7 +136,7 @@ NEW-SEAM | ACCESSOR | WIDEN | AS-IS. The commands and their hit counts follow th
 [MANDATORY, the owner 2026-11-17: "register-keeper: agree mandatory". With nothing to find, one line: "none", and the search that was run.]
 | register row | why it matches (file, function or tag) | rides first / joins <event> / not carried: reason |
 Then: rows the note PROPOSES (register columns: remodel, shape (rule), where, event, size and gate, deletes).
-Then: every NOTED DEVIATION row (part 1 "Judgement"; part 3 KINDS OF ROW) on a touched site, each corrected first
+Then: every NOTED DEVIATION row (tier 1 "Judgement"; the register's KINDS OF ROW) on a touched site, each corrected first
 or not carried with the reason; and, where this note itself recommends going against a goal or rule for now, the
 noted-deviation row it PROPOSES (what, against which goal or rule, where, why small, the correcting event).
 "No row matched" is written out with the greps that found none.
