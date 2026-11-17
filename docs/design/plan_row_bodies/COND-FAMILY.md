@@ -1852,3 +1852,15 @@ either give the mark a one-match meaning or name it as the one construct that re
 (absent-rule, optional-as-loop, the spelling principle, match-context, zero-pass-empty, domain-scope, mark-narrows,
 not-is-complement, mark-in-none) stand as recorded and are INPUTS to that definition; each is re-read under it, and
 any that the definition cannot keep comes back to him by name.
+
+**2026-11-16 OWNER REMARK — the SQL NULL parallel (Frank, to session 136, box clock 19:44; a remark, an INPUT to the
+condition-kind definition, not a ruling).** His words: "This is the same problems as SQL wrt null field." THE
+MANAGER'S MAPPING given to him (his, unrun): an absent label is NULL; SQL's answer is three-valued logic (a test on
+NULL is UNKNOWN; AND/OR/NOT are Kleene's; a WHERE keeps only TRUE). Under it: absent-rule = WHERE keeps TRUE only;
+"a set never contains absence" = NULL is not a member of any IN list; a default = COALESCE(m, v); "an item lacking
+the label is not counted" = aggregates skip NULL; `!` on a condition is DEFINED (NOT UNKNOWN = UNKNOWN, so a
+negated condition on an absent label still fails: the old "holds when absent" trap does not exist); the optional
+mark = "IS NULL OR ...", i.e. UNKNOWN counts as TRUE, a test of ONE match with no value set. CANDIDATE for the
+definition lane, to be laid beside the per-program value set: it would make domain-scope and mark-narrows
+unnecessary and would change zero-pass-empty's corner (a marked absent label against an empty set would HOLD) and
+not-is-complement (`!` on a condition would have a meaning); each such change goes back to him by name.
