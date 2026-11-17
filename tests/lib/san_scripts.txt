@@ -107,3 +107,9 @@ tests/callouts/run_callouts_tests.sh
 # artifacts compile with $GENCFLAGS, so both axes reach the code sites, the
 # span helpers and the refusal paths (lane ic2, 2026-10-27).
 tests/code/run_code_tests.sh
+
+# [COVER-CAP] stage 2 B7 -- the cover checks under the sanitizers: the counted
+# proof/statement arrays past 32 (cover_cap.md §11.1). The harness is the one
+# beside $PCREC and the drivers compile with $GENCFLAGS, so both axes are
+# instrumented (lane covs2g, 2026-11-16).
+tests/kitproof/run_cover.sh

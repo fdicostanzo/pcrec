@@ -27,8 +27,10 @@ set -u
 here="$(cd "$(dirname "$0")" && pwd)"
 root="${1:-$(cd "$here/../.." && pwd)}"
 . "$root/tests/lib/timeout_bin.sh"
-H="${PCREC_HARNESS:-$root/build/pcrec-harness}"
 P="${PCREC:-$root/build/pcrec}"
+# the harness beside $PCREC, so a sanitizer tree (make asan/ubsan/san, which
+# set PCREC to their own build dir) runs its own instrumented harness
+H="${PCREC_HARNESS:-$(dirname "$P")/pcrec-harness}"
 CC="${CC:-gcc}"
 tmp="$(mktemp -d "${TMPDIR:-$root/build}/kitproof.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
@@ -127,7 +129,8 @@ while IFS=$'\t' read -r fl phex shex want; do
         continue
     fi
     if [ -z "${DRV[$d]+x}" ]; then
-        if "$TIMEOUT_BIN" 120 "$CC" -O1 -std=gnu11 -include "$d/a.h" -o "$d/drv" "$here/drv.c" "$d/a.c" \
+        # shellcheck disable=SC2086  # GENCFLAGS: the sanitizer trees' compilee axis (word-split on purpose)
+        if "$TIMEOUT_BIN" 120 "$CC" ${GENCFLAGS:--O1 -std=gnu11} -include "$d/a.h" -o "$d/drv" "$here/drv.c" "$d/a.c" \
                > "$d/gcc" 2>&1; then DRV[$d]=1; else DRV[$d]=0; fi
     fi
     if [ "${DRV[$d]}" != 1 ]; then bad "answer $fl $pat: the driver does not build: $(head -3 "$d/gcc")"; continue; fi
