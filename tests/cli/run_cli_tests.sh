@@ -2395,6 +2395,29 @@ else
     fail "config --memfn= did not win silently (rc $wrc)" "$werr"
 fi
 
+# [MEMFN] R-45 (review r36 G10): the span-head lever's STRICT value parse (plain decimal
+# digits, 0..4095), pinned on the harness build's `--harness=span-head=N` (the tester's
+# spelling of the kit's `span-head=N`, mf_lever's own: run_g2_win.sh's controls pin that
+# one). Each refused spelling is refused with the option's own text; the accepted ones compile.
+mf_h="${PCREC%/*}/pcrec-harness"
+if [ -x "$mf_h" ]; then
+    for v in -0 +8 " 8" 4096 "" 8x; do
+        werr="$(pcrec_run "$mf_h" -p rx "--harness=span-head=$v" -o "$WORKDIR/sh.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+        if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "^pcrec: --harness=span-head= wants a head of 0\.\.4095 positions"; then
+            pass "--harness=span-head='$v' is refused"
+        else
+            fail "--harness=span-head='$v' was not refused with the option's text (rc $wrc)" "$werr"
+        fi
+    done
+    for v in 08 4095; do
+        werr="$(pcrec_run "$mf_h" -p rx "--harness=span-head=$v" -o "$WORKDIR/sh.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+        if [ "$wrc" -eq 0 ]; then pass "--harness=span-head=$v is accepted"
+        else fail "--harness=span-head=$v was refused (rc $wrc)" "$werr"; fi
+    done
+else
+    fail "span-head lever rows: $mf_h is not built (make all builds it)"
+fi
+
 # D172 S3 (job 600): `(?i)cat` is a fixed-width window, a `cover` artifact by
 # default, which carries no reqrun helper at all; every compile in this block
 # therefore carries the cover row's deny `--memfn=no-window-search` (folded into the
