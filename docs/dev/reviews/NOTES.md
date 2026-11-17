@@ -48,3 +48,12 @@
 - `2026-11-15-r6-covcap-r3.md` (+ dir) — DESIGN re-check on docs/design/cover_cap.md rev 3 (anchored-machine reading): 3 opus critics + verifier, R-1..R-14; core reading held; the new span limit could never bind (the anchored state ceiling binds first), deleted in rev 4; dispositions ruled (manager).
 - `2026-11-15-r7-covcap-r4.md` (+ dir) — DESIGN last re-check on docs/design/cover_cap.md rev 4: 2 opus critics + verifier, FI-1..FI-6, READY-1..READY-5; READY WITH LISTED TEXT FIXES for stage 1 (FI-3: C9 must read the rows at k); applied as rev 4.1; dispositions ruled (manager).
 - `2026-11-15-r4-fixposts2c.md` (+ dir) — CODE round on lane/fixposts2 after its r3 fixes (+ lane/s486re): no answer/byte finding (450 pairs SAME); FIX-NOW spec example (RESPELL-1), double-evaluated scan row (RESPELL-2/3), S711 stale reach witness (SABROWS-1), comments; applied by lane fixposts2d.
+
+
+## Index entries moved out of CLAUDE.md (lane file32, 2026-11-16; size limit)
+
+- `2026-11-15-r8-predspec6.md` (+ dir) — DESIGN round on predicates_draft.md rev 6 (type picture): comma held 200/200; P6-1..P6-18; applied in rev 7.
+- `2026-11-15-r10-predspec9.md` (+ dir) — DESIGN re-check of predicates_draft.md rev 9 (one reading): FIXB-1..9, SIM-1..6, CENSUS-1..17, FIXA-1..11; ruled, applied in rev 10.
+- `2026-11-15-r12-predspec10.md` (+ dir) — confirming re-check of predicates_draft.md rev 10: SIMULATE-1..3, CENSUS-1..12; ruled, applied in rev 11.
+- `2026-11-15-r5-memfn-mfindcomb.md` (+ dir) — CODE round on the mfind combined tip (fused mfind instrument, G2 window checks, draft sets, emitted/contract/fidelity lenses); ruled, fixes by lanes mcfixa (A-C) and mcfixd (D-E).
+- `2026-11-15-r6-memfn-mcfix.md` (+ dir) — light CODE round on the r5 fix diff (slot timing harness, D197 rule table): rule pins/confirm guards, TIMED-SHAPE callee gaps, enum-keyed asserts; ruled, FIX-NOW items applied by lane mcfixb.

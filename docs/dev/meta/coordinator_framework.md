@@ -95,3 +95,6 @@ Evidence: the rounds' process.md files (scratch/crit-*/, not committed; the revi
 
 ## 2026-11-16 — critic round condkind (review r31)
 - A pure design round (a definition note folded against a rulings record) ran in ~25 min wall with 5 agents and no build (4 critics + an opus verifier, 39 findings verified by group into 10 roots); every nested agent's final reply was lost and the files carried everything. Verify-by-group with an opus verifier is the right size when findings interlock; the verifier's opposite-recommendation item turned a conflict into "neither conflicts with a ruling; ask the owner". Fits any "fold a model into a client doc" round.
+
+## 2026-11-16 — critic round covs2code (review r32)
+- A code round with prebuilt plants and one shared run kit ran 5 opus critics to completion in ~11 min wall, inside an owner evening hold, with the box idle by 23:00: the pattern fits short box windows when the coordinator front-loads the build cost (17 plants + BASE + 2 trace builds in ~72 s, incremental from the subject archive's mtimes). Three lenses converged on one refusal from three sides (emitted size, spec sentence, bound chain); every nested critic's final reply was lost and the files carried the round, which confirms the files-only rule.
