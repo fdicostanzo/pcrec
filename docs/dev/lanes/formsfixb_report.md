@@ -116,5 +116,5 @@ report 41/31/16/8, repeated 80/63/35/14, mixed 27/25/16/9; exactly pinned sites 
 ## STATE AT HANDOFF
 
 - Rulings: last entry applied R1 (formsfixb_rulings.md).
-- Branch tip: TIP_PLACEHOLDER.
+- Branch tip: the commit carrying this report (`git -C worktrees/formsfixb log -1`); validation ran at ab4625f53, the commits after it touch only the report, the history index and a balance weight.
 - OWED: none
