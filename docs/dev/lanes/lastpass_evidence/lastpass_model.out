@@ -1,0 +1,705 @@
+== PART A: PREMISE AND THE REGEX MODEL OF R (libpcre2-8 10.46 2025-08-27; callout after the regex)
+  A0 `(?:(\d);)*(?C"r")` on `7;3;`: WHOLE HOLDS, group 1 at the callout = '3' (expect '3') OK
+  A0 `(?:(\d);)*(?C"r")` on ``: WHOLE HOLDS, group 1 at the callout = None (expect None) OK
+  A0 `(?:(\d)?;)*(?C"r")` on `7;;`: WHOLE HOLDS, group 1 at the callout = '7' (expect '7') OK
+  A0 `(?:(\d)?;)*(?C"r")` on `3;;`: WHOLE HOLDS, group 1 at the callout = '3' (expect '3') OK
+  A0 `(?:(\d)?;)*(?C"r")` on `;`: WHOLE HOLDS, group 1 at the callout = None (expect None) OK
+  (A0 rows 3-4: a pass that does not set the label CARRIES the earlier pass's value: R reads `7` on `7;;`, the
+   last pass that SET h, not the last pass; the engine's R reads the same capture state.)
+
+== PART B: THE CATALOGUE, T beside R (WHOLE / SEARCHED / FIND-ALL); MOVES = the R cells differ from T
+  [R3.empty.0] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: <5)` on ``
+      T  FAILS / FAILS / FIND-ALL on `3;7; 7;; 3;` [`3;`@0, `3;`@9]
+      R  FAILS / FAILS / FIND-ALL [`3;`@0, `3;`@9]   same
+      printed in the draft: FAILS / FAILS
+  [R3.empty.1] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & NOT (h: <5)` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  HOLDS / ``@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / FAILS / [`3;7;`@0, `7;;`@5]
+      printed in the draft: FAILS / FAILS
+  [R3.empty.2] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: !<5)` on ``
+      T  FAILS / FAILS / FIND-ALL on `3;7; 7;; 3;` [`7;`@2, `7;`@5]
+      R  FAILS / FAILS / FIND-ALL [`3;7;`@0, `7;;`@5]   MOVES: FIND-ALL
+      printed in the draft: FAILS / FAILS
+  [R3.empty.3] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & !(REP & (h: <5))` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  HOLDS / ``@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [R3.3;.0] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: <5)` on `3;`
+      T  HOLDS / `3;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;`@0, `3;`@9]
+      R  HOLDS / `3;`@0 / FIND-ALL [`3;`@0, `3;`@9]   same
+      printed in the draft: HOLDS / HOLDS
+  [R3.3;.1] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & NOT (h: <5)` on `3;`
+      T  FAILS / ``@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  FAILS / ``@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / FAILS / [`3;7;`@0, `7;;`@5]
+      printed in the draft: FAILS / FAILS
+  [R3.3;.2] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: !<5)` on `3;`
+      T  FAILS / FAILS / FIND-ALL on `3;7; 7;; 3;` [`7;`@2, `7;`@5]
+      R  FAILS / FAILS / FIND-ALL [`3;7;`@0, `7;;`@5]   MOVES: FIND-ALL
+      printed in the draft: FAILS / FAILS
+  [R3.3;.3] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & !(REP & (h: <5))` on `3;`
+      T  FAILS / ``@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  FAILS / ``@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   same
+      printed in the draft: FAILS / HOLDS
+  [R3.3;7;.0] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: <5)` on `3;7;`
+      T  FAILS / `3;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;`@0, `3;`@9]
+      R  FAILS / `3;`@0 / FIND-ALL [`3;`@0, `3;`@9]   same
+      printed in the draft: FAILS / HOLDS
+  [R3.3;7;.1] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & NOT (h: <5)` on `3;7;`
+      T  HOLDS / `3;7;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  HOLDS / `3;7;`@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) HOLDS / `3;7;`@0 / [`3;7;`@0, `7;;`@5]
+      printed in the draft: HOLDS / HOLDS
+  [R3.3;7;.2] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: !<5)` on `3;7;`
+      T  FAILS / `7;`@2 / FIND-ALL on `3;7; 7;; 3;` [`7;`@2, `7;`@5]
+      R  HOLDS / `3;7;`@0 / FIND-ALL [`3;7;`@0, `7;;`@5]   MOVES: WHOLE, SEARCHED, FIND-ALL
+      printed in the draft: FAILS / HOLDS
+  [R3.3;7;.3] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & !(REP & (h: <5))` on `3;7;`
+      T  HOLDS / `3;7;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  HOLDS / `3;7;`@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [R3.7;;.0] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: <5)` on `7;;`
+      T  FAILS / FAILS / FIND-ALL on `3;7; 7;; 3;` [`3;`@0, `3;`@9]
+      R  FAILS / FAILS / FIND-ALL [`3;`@0, `3;`@9]   same
+      printed in the draft: FAILS / FAILS
+  [R3.7;;.1] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & NOT (h: <5)` on `7;;`
+      T  HOLDS / `7;;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  HOLDS / `7;;`@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) HOLDS / `7;;`@0 / [`3;7;`@0, `7;;`@5]
+      printed in the draft: HOLDS / HOLDS
+  [R3.7;;.2] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: !<5)` on `7;;`
+      T  FAILS / `7;`@0 / FIND-ALL on `3;7; 7;; 3;` [`7;`@2, `7;`@5]
+      R  HOLDS / `7;;`@0 / FIND-ALL [`3;7;`@0, `7;;`@5]   MOVES: WHOLE, SEARCHED, FIND-ALL
+      printed in the draft: FAILS / HOLDS
+  [R3.7;;.3] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & !(REP & (h: <5))` on `7;;`
+      T  HOLDS / `7;;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  HOLDS / `7;;`@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [R3.3;;.0] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: <5)` on `3;;`
+      T  FAILS / `3;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;`@0, `3;`@9]
+      R  HOLDS / `3;;`@0 / FIND-ALL [`3;`@0, `3;`@9]   MOVES: WHOLE, SEARCHED
+      printed in the draft: FAILS / HOLDS
+  [R3.3;;.1] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & NOT (h: <5)` on `3;;`
+      T  HOLDS / `3;;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  FAILS / ``@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   MOVES: WHOLE, SEARCHED
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / FAILS / [`3;7;`@0, `7;;`@5]
+      printed in the draft: FAILS / FAILS
+  [R3.3;;.2] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & (h: !<5)` on `3;;`
+      T  FAILS / FAILS / FIND-ALL on `3;7; 7;; 3;` [`7;`@2, `7;`@5]
+      R  FAILS / FAILS / FIND-ALL [`3;7;`@0, `7;;`@5]   MOVES: FIND-ALL
+      printed in the draft: FAILS / FAILS
+  [R3.3;;.3] §R.3 repeated table (also R.8 item 2 on `7;;`) | `REP & !(REP & (h: <5))` on `3;;`
+      T  HOLDS / `3;;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]
+      R  FAILS / ``@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, ``@9, `;`@10, ``@11]   MOVES: WHOLE, SEARCHED
+      printed in the draft: HOLDS / HOLDS
+  [R17.a] §R.1.7 example | `REP & (h = 0: <5)` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `3;7; 7;; 3;` [`3;`@0, ``@2, `;`@3, ``@4, ``@5, `;;`@6, ``@8, `3;`@9, ``@11]
+      R  HOLDS / ``@0 / FIND-ALL [`3;`@0, ``@2, `;`@3, ``@4, ``@5, `;;`@6, ``@8, `3;`@9, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [R17.b] §R.1.7 example | `REP & (h = 0: <5)` on `;`
+      T  HOLDS / `;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;`@0, ``@2, `;`@3, ``@4, ``@5, `;;`@6, ``@8, `3;`@9, ``@11]
+      R  HOLDS / `;`@0 / FIND-ALL [`3;`@0, ``@2, `;`@3, ``@4, ``@5, `;;`@6, ``@8, `3;`@9, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [R17.c] §R.1.7 example | `REP & occurs.none((h = "x": !<5))` on ``   (no bare looped read: a control)
+      T  HOLDS / ``@0 / FIND-ALL on `3;7; 7;; 3;` [`3;`@0, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, `3;`@9, ``@11]
+      R  HOLDS / ``@0 / FIND-ALL [`3;`@0, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, `3;`@9, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [R17.d] §R.1.7 example | `REP & occurs.none((h = "x": !<5))` on `;`   (no bare looped read: a control)
+      T  FAILS / ``@0 / FIND-ALL on `3;7; 7;; 3;` [`3;`@0, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, `3;`@9, ``@11]
+      R  FAILS / ``@0 / FIND-ALL [`3;`@0, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, `3;`@9, ``@11]   same
+      printed in the draft: FAILS / HOLDS
+  [R2.a] §R.2 (empty S, repeated) | `REP & NOT (h: <0)` on `3;;`
+      T  HOLDS / `3;;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;;`@5, ``@8, `3;`@9, ``@11]
+      R  HOLDS / `3;;`@0 / FIND-ALL [`3;7;`@0, ``@4, `7;;`@5, ``@8, `3;`@9, ``@11]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) HOLDS / `3;;`@0 / [`3;7;`@0, `7;;`@5, `3;`@9]
+      printed in the draft: HOLDS / HOLDS
+  [R2.b] §R.2 (empty S, repeated) | `REP & (h: !<0)` on `3;;`
+      T  FAILS / `3;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, `7;`@5, `3;`@9]
+      R  HOLDS / `3;;`@0 / FIND-ALL [`3;7;`@0, `7;;`@5, `3;`@9]   MOVES: WHOLE, SEARCHED, FIND-ALL
+      printed in the draft: FAILS / HOLDS
+  [R2.s.empty] §R.2 sentinel idiom | `REP & occurs.none((h = "x": !<10))` on ``   (no bare looped read: a control)
+      T  HOLDS / ``@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;`@5, ``@7, ``@8, `3;`@9, ``@11]
+      R  HOLDS / ``@0 / FIND-ALL [`3;7;`@0, ``@4, `7;`@5, ``@7, ``@8, `3;`@9, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [R2.s.7;] §R.2 sentinel idiom | `REP & occurs.none((h = "x": !<10))` on `7;`   (no bare looped read: a control)
+      T  HOLDS / `7;`@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;`@5, ``@7, ``@8, `3;`@9, ``@11]
+      R  HOLDS / `7;`@0 / FIND-ALL [`3;7;`@0, ``@4, `7;`@5, ``@7, ``@8, `3;`@9, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [R2.s.;] §R.2 sentinel idiom | `REP & occurs.none((h = "x": !<10))` on `;`   (no bare looped read: a control)
+      T  FAILS / ``@0 / FIND-ALL on `3;7; 7;; 3;` [`3;7;`@0, ``@4, `7;`@5, ``@7, ``@8, `3;`@9, ``@11]
+      R  FAILS / ``@0 / FIND-ALL [`3;7;`@0, ``@4, `7;`@5, ``@7, ``@8, `3;`@9, ``@11]   same
+      printed in the draft: FAILS / 
+  [R6.a] §R.6 nullable loop | `NL & (n = 0: <5)` on `7,`
+      T  FAILS / ``@0 / FIND-ALL on `1,7, 7,, 3,` [`1,`@0, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, `3,`@9, ``@11]
+      R  FAILS / ``@0 / FIND-ALL [`1,`@0, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, `3,`@9, ``@11]   same
+      printed in the draft: FAILS / HOLDS
+  [R6.b.empty] §R.6 a nullable B | `text.none(B), B := NL & (n = 9: >=5)` on ``
+      T  FAILS / FAILS / FIND-ALL on `1, a` []
+      R  FAILS / FAILS / FIND-ALL []   same
+      printed in the draft: FAILS / 
+  [R6.b.1,] §R.6 a nullable B | `text.none(B), B := NL & (n = 9: >=5)` on `1,`
+      T  FAILS / FAILS / FIND-ALL on `1, a` []
+      R  FAILS / FAILS / FIND-ALL []   same
+      printed in the draft: FAILS / 
+  [R6.b.a] §R.6 a nullable B | `text.none(B), B := NL & (n = 9: >=5)` on `a`
+      T  FAILS / FAILS / FIND-ALL on `1, a` []
+      R  FAILS / FAILS / FIND-ALL []   same
+      printed in the draft: FAILS / 
+  [R6.b.7,] §R.6 a nullable B | `text.none(B), B := NL & (n = 9: >=5)` on `7,`
+      T  FAILS / FAILS / FIND-ALL on `1, a` []
+      R  FAILS / FAILS / FIND-ALL []   same
+      printed in the draft: FAILS / 
+  [R7.3.0] §R.7 row 3, §4.3 narrower question (zero passes) | `NL & (n = 0: <5)` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `1,7, 7,, 3,` [`1,`@0, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, `3,`@9, ``@11]
+      R  HOLDS / ``@0 / FIND-ALL [`1,`@0, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, `3,`@9, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [R7.3.1] §R.7 row 3, §4.3 narrower question (zero passes) | `NL & (n: <5)` on ``
+      T  FAILS / FAILS / FIND-ALL on `1,7, 7,, 3,` [`1,`@0, `3,`@9]
+      R  FAILS / FAILS / FIND-ALL [`1,`@0, `3,`@9]   same
+      printed in the draft: FAILS / FAILS
+  [R7.3.2] §R.7 row 3, §4.3 narrower question (zero passes) | `NL & some((n: <5))` on ``   (no bare looped read: a control)
+      T  FAILS / FAILS / FIND-ALL on `1,7, 7,, 3,` [`1,7,`@0, `3,`@9]
+      R  FAILS / FAILS / FIND-ALL [`1,7,`@0, `3,`@9]   same
+      printed in the draft: FAILS / FAILS
+  [R7.3.3] §R.7 row 3, §4.3 narrower question (zero passes) | `NL & NOT some((n: <5))` on ``   (no bare looped read: a control)
+      T  HOLDS / ``@0 / FIND-ALL on `1,7, 7,, 3,` [``@0, ``@1, `7,`@2, ``@4, `7,`@5, ``@7, ``@8, ``@9, ``@10, ``@11]
+      R  HOLDS / ``@0 / FIND-ALL [``@0, ``@1, `7,`@2, ``@4, `7,`@5, ``@7, ``@8, ``@9, ``@10, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [O13.1,7,.0] §13 REV 23 block (also R.7b b2) | `NLO & (n: <5)` on `1,7,`
+      T  FAILS / `1,`@0 / FIND-ALL on `1,7, 7,, 3,` [`1,`@0, `3,`@9]
+      R  FAILS / `1,`@0 / FIND-ALL [`1,`@0, `3,`@9]   same
+      printed in the draft: FAILS / HOLDS
+  [O13.1,7,.1] §13 REV 23 block (also R.7b b2) | `NLO & NOT (n: <5)` on `1,7,`
+      T  HOLDS / `1,7,`@0 / FIND-ALL on `1,7, 7,, 3,` [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]
+      R  HOLDS / `1,7,`@0 / FIND-ALL [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) HOLDS / `1,7,`@0 / [`1,7,`@0, `7,,`@5]
+      printed in the draft: HOLDS / HOLDS
+  [O13.1,7,.2] §13 REV 23 block (also R.7b b2) | `NLO & (n: !<5)` on `1,7,`
+      T  FAILS / `7,`@2 / FIND-ALL on `1,7, 7,, 3,` [`7,`@2, `7,`@5]
+      R  HOLDS / `1,7,`@0 / FIND-ALL [`1,7,`@0, `7,,`@5]   MOVES: WHOLE, SEARCHED, FIND-ALL
+      printed in the draft: FAILS / HOLDS
+  [O13.1,7,.3] §13 REV 23 block (also R.7b b2) | `NLO & !(NLO & (n: <5))` on `1,7,`
+      T  HOLDS / `1,7,`@0 / FIND-ALL on `1,7, 7,, 3,` [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]
+      R  HOLDS / `1,7,`@0 / FIND-ALL [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [O13.7,,.1] §13 REV 23 block (also R.7b b2) | `NLO & NOT (n: <5)` on `7,,`
+      T  HOLDS / `7,,`@0 / FIND-ALL on `1,7, 7,, 3,` [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]
+      R  HOLDS / `7,,`@0 / FIND-ALL [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) HOLDS / `7,,`@0 / [`1,7,`@0, `7,,`@5]
+      printed in the draft: HOLDS / HOLDS
+  [O13.7,,.2] §13 REV 23 block (also R.7b b2) | `NLO & (n: !<5)` on `7,,`
+      T  FAILS / `7,`@0 / FIND-ALL on `1,7, 7,, 3,` [`7,`@2, `7,`@5]
+      R  HOLDS / `7,,`@0 / FIND-ALL [`1,7,`@0, `7,,`@5]   MOVES: WHOLE, SEARCHED, FIND-ALL
+      printed in the draft: FAILS / HOLDS
+  [O13.empty.1] §13 REV 23 block (also R.7b b2) | `NLO & NOT (n: <5)` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `1,7, 7,, 3,` [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]
+      R  HOLDS / ``@0 / FIND-ALL [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / FAILS / [`1,7,`@0, `7,,`@5]
+      printed in the draft: FAILS / FAILS
+  [O13.empty.2] §13 REV 23 block (also R.7b b2) | `NLO & (n: !<5)` on ``
+      T  FAILS / FAILS / FIND-ALL on `1,7, 7,, 3,` [`7,`@2, `7,`@5]
+      R  FAILS / FAILS / FIND-ALL [`1,7,`@0, `7,,`@5]   MOVES: FIND-ALL
+      printed in the draft: FAILS / FAILS
+  [O13.empty.3] §13 REV 23 block (also R.7b b2) | `NLO & !(NLO & (n: <5))` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `1,7, 7,, 3,` [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]
+      R  HOLDS / ``@0 / FIND-ALL [`1,7,`@0, ``@4, `7,,`@5, ``@8, ``@9, `,`@10, ``@11]   same
+      printed in the draft: HOLDS / HOLDS
+  [B6.3-6,.d] §4.3 two optional fields (R.7b b6) | `TWOF & (a = 0: <5, b = 3: between(3, 7))` on `3-6,`
+      T  HOLDS / `3-6,`@0 / FIND-ALL on `3-6,7-2, -6,` [`3-6,`@0, ``@4, ``@5, ``@6, ``@7, ``@8, `-6,`@9, ``@12]
+      R  HOLDS / `3-6,`@0 / FIND-ALL [`3-6,`@0, ``@4, ``@5, ``@6, ``@7, ``@8, `-6,`@9, ``@12]   same
+      printed in the draft: HOLDS / HOLDS
+  [B6.7-2,.d] §4.3 two optional fields (R.7b b6) | `TWOF & (a = 0: <5, b = 3: between(3, 7))` on `7-2,`
+      T  FAILS / ``@0 / FIND-ALL on `3-6,7-2, -6,` [`3-6,`@0, ``@4, ``@5, ``@6, ``@7, ``@8, `-6,`@9, ``@12]
+      R  FAILS / ``@0 / FIND-ALL [`3-6,`@0, ``@4, ``@5, ``@6, ``@7, ``@8, `-6,`@9, ``@12]   same
+      printed in the draft: FAILS / HOLDS
+  [B6.empty.d] §4.3 two optional fields (R.7b b6) | `TWOF & (a = 0: <5, b = 3: between(3, 7))` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `3-6,7-2, -6,` [`3-6,`@0, ``@4, ``@5, ``@6, ``@7, ``@8, `-6,`@9, ``@12]
+      R  HOLDS / ``@0 / FIND-ALL [`3-6,`@0, ``@4, ``@5, ``@6, ``@7, ``@8, `-6,`@9, ``@12]   same
+      printed in the draft: HOLDS / HOLDS
+  [B6.empty.n] §4.3 two optional fields, no defaults | `TWOF & (a: <5, b: between(3, 7))` on ``
+      T  FAILS / FAILS / FIND-ALL on `3-6,7-2, -6,` [`3-6,`@0]
+      R  FAILS / FAILS / FIND-ALL [`3-6,`@0]   same
+      printed in the draft: FAILS / FAILS
+  [B6.-6,.d] §4.3 two optional fields (R.7b b6) | `TWOF & (a = 0: <5, b = 3: between(3, 7))` on `-6,`
+      T  HOLDS / `-6,`@0 / FIND-ALL on `3-6,7-2, -6,` [`3-6,`@0, ``@4, ``@5, ``@6, ``@7, ``@8, `-6,`@9, ``@12]
+      R  HOLDS / `-6,`@0 / FIND-ALL [`3-6,`@0, ``@4, ``@5, ``@6, ``@7, ``@8, `-6,`@9, ``@12]   same
+      printed in the draft: HOLDS / HOLDS
+  [B6.-6,.n] §4.3 two optional fields, no defaults | `TWOF & (a: <5, b: between(3, 7))` on `-6,`
+      T  FAILS / FAILS / FIND-ALL on `3-6,7-2, -6,` [`3-6,`@0]
+      R  FAILS / FAILS / FIND-ALL [`3-6,`@0]   same
+      printed in the draft: FAILS / FAILS
+  [B7.9.n] §4.3 pairing: a label outside the loop (R.7b b7) | `KH & (h: <5, k: between(3, 7))` on `9`
+      T  FAILS / FAILS / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `3;0`@6]
+      R  FAILS / FAILS / FIND-ALL [`5;1`@0, `3;0`@6]   same
+      printed in the draft: FAILS / FAILS
+  [B7.3.n] §4.3 pairing: a label outside the loop (R.7b b7) | `KH & (h: <5, k: between(3, 7))` on `3`
+      T  FAILS / FAILS / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `3;0`@6]
+      R  FAILS / FAILS / FIND-ALL [`5;1`@0, `3;0`@6]   same
+      printed in the draft: FAILS / FAILS
+  [B7.3.d] §4.3 pairing: a label outside the loop (R.7b b7) | `KH & (h = 0: <5, k: between(3, 7))` on `3`
+      T  HOLDS / `3`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `3;0`@6, `5`@10]
+      R  HOLDS / `3`@0 / FIND-ALL [`5;1`@0, `3;0`@6, `5`@10]   same
+      printed in the draft: HOLDS / HOLDS
+  [B7.3;7.d] §4.3 pairing: a label outside the loop (R.7b b7) | `KH & (h = 0: <5, k: between(3, 7))` on `3;7`
+      T  FAILS / `3`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `3;0`@6, `5`@10]
+      R  FAILS / `3`@0 / FIND-ALL [`5;1`@0, `3;0`@6, `5`@10]   same
+      printed in the draft: FAILS / `3`@0
+  [PAIR.a] §4.3 pairing list | `PAIR & ((h, m): padded(>= (9, 30)))` on `10:00,9:30,`
+      T  HOLDS / `10:00,9:30,`@0 / FIND-ALL on `10:00,9:30, 9:15,` [`10:00,9:30,`@0]
+      R  HOLDS / `10:00,9:30,`@0 / FIND-ALL [`10:00,9:30,`@0]   same
+      printed in the draft: HOLDS / HOLDS
+  [TM2L.((h, m): R).empty] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m): R)` on ``
+      T  FAILS / FAILS / FIND-ALL on `10,9:15, 9:45,` [`9:45,`@9]
+      R  FAILS / FAILS / FIND-ALL [`9:45,`@9]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h, m): R).10,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m): R)` on `10,`
+      T  FAILS / FAILS / FIND-ALL on `10,9:15, 9:45,` [`9:45,`@9]
+      R  FAILS / FAILS / FIND-ALL [`9:45,`@9]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h, m): R).9,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m): R)` on `9,`
+      T  FAILS / FAILS / FIND-ALL on `10,9:15, 9:45,` [`9:45,`@9]
+      R  FAILS / FAILS / FIND-ALL [`9:45,`@9]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h, m): R).9:45,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m): R)` on `9:45,`
+      T  HOLDS / `9:45,`@0 / FIND-ALL on `10,9:15, 9:45,` [`9:45,`@9]
+      R  HOLDS / `9:45,`@0 / FIND-ALL [`9:45,`@9]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h, m): R).10,9:15,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m): R)` on `10,9:15,`
+      T  FAILS / FAILS / FIND-ALL on `10,9:15, 9:45,` [`9:45,`@9]
+      R  FAILS / FAILS / FIND-ALL [`9:45,`@9]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h, m = 0): R).empty] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 0): R)` on ``
+      T  FAILS / FAILS / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  FAILS / FAILS / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h, m = 0): R).10,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 0): R)` on `10,`
+      T  HOLDS / `10,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  HOLDS / `10,`@0 / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h, m = 0): R).9,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 0): R)` on `9,`
+      T  FAILS / FAILS / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  FAILS / FAILS / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h, m = 0): R).9:45,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 0): R)` on `9:45,`
+      T  HOLDS / `9:45,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  HOLDS / `9:45,`@0 / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h, m = 0): R).10,9:15,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 0): R)` on `10,9:15,`
+      T  FAILS / `10,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  FAILS / `10,`@0 / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h, m = 30): R).empty] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 30): R)` on ``
+      T  FAILS / FAILS / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  FAILS / FAILS / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h, m = 30): R).10,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 30): R)` on `10,`
+      T  HOLDS / `10,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  HOLDS / `10,`@0 / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h, m = 30): R).9,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 30): R)` on `9,`
+      T  HOLDS / `9,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  HOLDS / `9,`@0 / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h, m = 30): R).9:45,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 30): R)` on `9:45,`
+      T  HOLDS / `9:45,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  HOLDS / `9:45,`@0 / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h, m = 30): R).10,9:15,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h, m = 30): R)` on `10,9:15,`
+      T  FAILS / `10,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, `15,`@5, `9:45,`@9]
+      R  FAILS / `10,`@0 / FIND-ALL [`10,`@0, `15,`@5, `9:45,`@9]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h = 10, m = 0): R).empty] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 0): R)` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  HOLDS / ``@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h = 10, m = 0): R).10,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 0): R)` on `10,`
+      T  HOLDS / `10,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  HOLDS / `10,`@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h = 10, m = 0): R).9,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 0): R)` on `9,`
+      T  FAILS / ``@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  FAILS / ``@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h = 10, m = 0): R).9:45,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 0): R)` on `9:45,`
+      T  HOLDS / `9:45,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  HOLDS / `9:45,`@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h = 10, m = 0): R).10,9:15,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 0): R)` on `10,9:15,`
+      T  FAILS / `10,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  FAILS / `10,`@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: FAILS / 
+  [TM2L.((h = 10, m = 30): R).empty] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 30): R)` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  HOLDS / ``@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h = 10, m = 30): R).10,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 30): R)` on `10,`
+      T  HOLDS / `10,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  HOLDS / `10,`@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h = 10, m = 30): R).9,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 30): R)` on `9,`
+      T  HOLDS / `9,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  HOLDS / `9,`@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h = 10, m = 30): R).9:45,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 30): R)` on `9:45,`
+      T  HOLDS / `9:45,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  HOLDS / `9:45,`@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: HOLDS / 
+  [TM2L.((h = 10, m = 30): R).10,9:15,] §8 (4) TM2-L table (R.7b b9), R = padded(>= (9, 30)) | `TML & ((h = 10, m = 30): R)` on `10,9:15,`
+      T  FAILS / `10,`@0 / FIND-ALL on `10,9:15, 9:45,` [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]
+      R  FAILS / `10,`@0 / FIND-ALL [`10,`@0, ``@3, ``@4, `15,`@5, ``@8, `9:45,`@9, ``@14]   same
+      printed in the draft: FAILS / 
+  [NS.a] §0.1 L56 / L65 | `/(?<n>\d)*x/ & (n: <5)` on `x`
+      T  FAILS / FAILS / FIND-ALL on `x 73x` [`3x`@3]
+      R  FAILS / FAILS / FIND-ALL [`73x`@2]   MOVES: FIND-ALL
+      printed in the draft: FAILS / FAILS
+  [NS.b] §0.1 L56 / L65 | `/(?<n>\d)*x/ & (n = 0: <5)` on `x`
+      T  HOLDS / `x`@0 / FIND-ALL on `x 73x` [`x`@0, `3x`@3]
+      R  HOLDS / `x`@0 / FIND-ALL [`x`@0, `73x`@2]   MOVES: FIND-ALL
+      printed in the draft: HOLDS / HOLDS
+  [NS.c] §0.1 L65 | `/x|(?<n>\d)+/ & (n: <5)` on `x`
+      T  FAILS / FAILS / FIND-ALL on `x 73x` [`3`@3]
+      R  FAILS / FAILS / FIND-ALL [`73`@2]   MOVES: FIND-ALL
+      printed in the draft: FAILS / FAILS
+  [NS.d] §0.1 L65 | `/x|(?<n>\d)+/ & (n = 0: <5)` on `x`
+      T  HOLDS / `x`@0 / FIND-ALL on `x 73x` [`x`@0, `3`@3, `x`@4]
+      R  HOLDS / `x`@0 / FIND-ALL [`x`@0, `73`@2, `x`@4]   MOVES: FIND-ALL
+      printed in the draft: HOLDS / HOLDS
+  [HIT.0] §2.6 / §4.3 hits of /ab(?<g>[xy])/ (R.7b b5; §0.1 L52, L58) | `occurrences(/ab(?<g>[xy])/) & (g: "x")` on `abxabyabx`
+      T  HOLDS / `abxabyabx`@0 / FIND-ALL on `abxabyabx abyabx` [`abxabyabx abyabx`@0]
+      R  HOLDS / `abxabyabx`@0 / FIND-ALL [`abxabyabx abyabx`@0]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / `abxab`@0 / [`abxab`@0, `yabx ab`@5, `yabx`@12]
+      printed in the draft: FAILS / HOLDS
+  [HIT.1] §2.6 / §4.3 hits of /ab(?<g>[xy])/ (R.7b b5; §0.1 L52, L58) | `occurrences(/ab(?<g>[xy])/) & some((g: "x"))` on `abxabyabx`   (no bare looped read: a control)
+      T  HOLDS / `abxabyabx`@0 / FIND-ALL on `abxabyabx abyabx` [`abxabyabx abyabx`@0]
+      R  HOLDS / `abxabyabx`@0 / FIND-ALL [`abxabyabx abyabx`@0]   same
+      printed in the draft: HOLDS / HOLDS
+  [HIT.2] §2.6 / §4.3 hits of /ab(?<g>[xy])/ (R.7b b5; §0.1 L52, L58) | `occurrences(/ab(?<g>[xy])/) & occurs.exactly(2, (g: "x"))` on `abxabyabx`   (no bare looped read: a control)
+      T  HOLDS / `abxabyabx`@0 / FIND-ALL on `abxabyabx abyabx` [`abxabyabx abyabx`@0]
+      R  HOLDS / `abxabyabx`@0 / FIND-ALL [`abxabyabx abyabx`@0]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) HOLDS / `abxabyabx`@0 / [`abxabyabx abyab`@0]
+      printed in the draft: HOLDS / HOLDS
+  [HIT.3] §2.6 / §4.3 hits of /ab(?<g>[xy])/ (R.7b b5; §0.1 L52, L58) | `occurrences(/ab(?<g>[xy])/) & count((g: "y")) = 1` on `abxabyabx`   (no bare looped read: a control)
+      T  HOLDS / `abxabyabx`@0 / FIND-ALL on `abxabyabx abyabx` [`abxabyabx abyabx`@0]
+      R  HOLDS / `abxabyabx`@0 / FIND-ALL [`abxabyabx abyabx`@0]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) HOLDS / `abxabyabx`@0 / [`abxabyabx ab`@0]
+      printed in the draft: HOLDS / HOLDS
+  [HIT.4] §2.6 / §4.3 hits of /ab(?<g>[xy])/ (R.7b b5; §0.1 L52, L58) | `occurrences(/ab(?<g>[xy])/) & (g = "x": "x")` on `abxabyabx`
+      T  HOLDS / `abxabyabx`@0 / FIND-ALL on `abxabyabx abyabx` [`abxabyabx abyabx`@0, ``@16]
+      R  HOLDS / `abxabyabx`@0 / FIND-ALL [`abxabyabx abyabx`@0, ``@16]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / `abxab`@0 / [`abxab`@0, `yabx ab`@5, `yabx`@12, ``@16]
+      printed in the draft: FAILS / 
+  [HIT.5] §2.6 / §4.3 hits of /ab(?<g>[xy])/ (R.7b b5; §0.1 L52, L58) | `occurrences(/ab(?<g>[xy])/) & occurs.none((g: "y"))` on `abxabyabx`   (no bare looped read: a control)
+      T  HOLDS / `abxabyabx`@0 / FIND-ALL on `abxabyabx abyabx` [`abxabyabx abyabx`@0, ``@16]
+      R  HOLDS / `abxabyabx`@0 / FIND-ALL [`abxabyabx abyabx`@0, ``@16]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / `abxab`@0 / [`abxab`@0, `yabx ab`@5, `yabx`@12, ``@16]
+      printed in the draft: FAILS / 
+  [HIT.z1] §2.6 zero hits (§0.1 L55) | `occurrences(/ab(?<g>[xy])/) & (g: "x")` on `xyz`
+      T  FAILS / FAILS / FIND-ALL on `xyz abx` [`xyz abx`@0]
+      R  FAILS / FAILS / FIND-ALL [`xyz abx`@0]   same
+      printed in the draft: FAILS / FAILS
+  [HIT.z2] §2.6 zero hits | `occurrences(/ab(?<g>[xy])/) & (g = "x": "x")` on `xyz`
+      T  HOLDS / `xyz`@0 / FIND-ALL on `xyz abx` [`xyz abx`@0, ``@7]
+      R  HOLDS / `xyz`@0 / FIND-ALL [`xyz abx`@0, ``@7]   same
+      printed in the draft: HOLDS / HOLDS
+  [HIT.z3] §2.6 zero hits, min = 1 (§0.1 L55) | `occurrences(/ab(?<g>[xy])/, min = 1) & (g: "x")` on `xyz`
+      T  FAILS / FAILS / FIND-ALL on `xyz abx` [`xyz abx`@0]
+      R  FAILS / FAILS / FIND-ALL [`xyz abx`@0]   same
+      printed in the draft: FAILS / FAILS
+  [HIT.own] §2.6 THE ITERATION'S OWN VALUES | `occurrences(/(?<g>a)?b/) & (g: "a")` on `abb`
+      T  HOLDS / `abb`@0 / FIND-ALL on `abb ab` [`abb ab`@0]
+      R  HOLDS / `abb`@0 / FIND-ALL [`abb ab`@0]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / `ab`@0 / [`ab`@0, ` ab`@3]
+      printed in the draft: FAILS / 
+  [HIT.L61a] §0.1 L61 | `contains(/ab(?<g>[xy])/ & (g: "x"))` on `abx aby`   (no bare looped read: a control)
+      T  HOLDS / `abx aby`@0 / FIND-ALL on `abx aby aby` [`abx aby aby`@0]
+      R  HOLDS / `abx aby`@0 / FIND-ALL [`abx aby aby`@0]   same
+      printed in the draft: HOLDS / 
+  [HIT.L61b] §0.1 L61 | `contains(/ab(?<g>[xy])/) & (g: "x")` on `abx aby`
+      T  HOLDS / `abx aby`@0 / FIND-ALL on `abx aby aby` [`abx aby aby`@0]
+      R  HOLDS / `abx aby`@0 / FIND-ALL [`abx aby aby`@0]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / `abx ab`@0 / [`abx ab`@0]
+      printed in the draft: FAILS / 
+  [REC.x2 y1.0] §4.3 SAME ITERATION BY RECORD (§0.1 L31) | `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x", h: 1))` on `x2 y1`   (no bare looped read: a control)
+      T  FAILS / FAILS / FIND-ALL on `x1 y2 x2 y1` [`x1 y2 x2 y1`@0]
+      R  FAILS / FAILS / FIND-ALL [`x1 y2 x2 y1`@0]   same
+      printed in the draft: FAILS / FAILS
+  [REC.x2 y1.1] §4.3 SAME ITERATION BY RECORD (§0.1 L31) | `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x")) & some((h: 1))` on `x2 y1`   (no bare looped read: a control)
+      T  HOLDS / `x2 y1`@0 / FIND-ALL on `x1 y2 x2 y1` [`x1 y2 x2 y1`@0]
+      R  HOLDS / `x2 y1`@0 / FIND-ALL [`x1 y2 x2 y1`@0]   same
+      printed in the draft: HOLDS / HOLDS
+  [REC.x2 y1.2] §4.3 SAME ITERATION BY RECORD (§0.1 L31) | `occurrences(/(?<g>[xy])(?<h>\d)/) & (g: "x", h: 1) (the plain record)` on `x2 y1`
+      T  FAILS / FAILS / FIND-ALL on `x1 y2 x2 y1` [`x1 y2 x2 y1`@0]
+      R  FAILS / FAILS / FIND-ALL [`x1 y2 x2 y1`@0]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / FAILS / [`x1 y`@0]
+  [REC.x1 y2.0] §4.3 SAME ITERATION BY RECORD (§0.1 L31) | `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x", h: 1))` on `x1 y2`   (no bare looped read: a control)
+      T  HOLDS / `x1 y2`@0 / FIND-ALL on `x1 y2 x2 y1` [`x1 y2 x2 y1`@0]
+      R  HOLDS / `x1 y2`@0 / FIND-ALL [`x1 y2 x2 y1`@0]   same
+      printed in the draft: HOLDS / HOLDS
+  [REC.x1 y2.1] §4.3 SAME ITERATION BY RECORD (§0.1 L31) | `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x")) & some((h: 1))` on `x1 y2`   (no bare looped read: a control)
+      T  HOLDS / `x1 y2`@0 / FIND-ALL on `x1 y2 x2 y1` [`x1 y2 x2 y1`@0]
+      R  HOLDS / `x1 y2`@0 / FIND-ALL [`x1 y2 x2 y1`@0]   same
+      printed in the draft: HOLDS / HOLDS
+  [REC.x1 y2.2] §4.3 SAME ITERATION BY RECORD (§0.1 L31) | `occurrences(/(?<g>[xy])(?<h>\d)/) & (g: "x", h: 1) (the plain record)` on `x1 y2`
+      T  HOLDS / `x1 y2`@0 / FIND-ALL on `x1 y2 x2 y1` [`x1 y2 x2 y1`@0]
+      R  HOLDS / `x1 y2`@0 / FIND-ALL [`x1 y2 x2 y1`@0]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / `x1 y`@0 / [`x1 y`@0]
+  [HL.a] §R.8 item 11 hit-list (the condition inside the argument) | `occurrences(/(?<n>\d+)/ & (n: <100), min = 2)` on `1234`   (no bare looped read: a control)
+      T  HOLDS / `1234`@0 / FIND-ALL on `1234 5` [`1234 5`@0]
+      R  HOLDS / `1234`@0 / FIND-ALL [`1234 5`@0]   same
+  [RM.a] §R.8 repeated-means | `/(?:(?<h>\d);)+/ & /\d;/ & (h: <5)` on `3;`
+      T  HOLDS / `3;`@0 / FIND-ALL on `3;7;3;` [`3;`@0, `3;`@4]
+      R  HOLDS / `3;`@0 / FIND-ALL [`3;`@0, `3;`@4]   same
+  [RM.b] §R.8 repeated-means | `/(?<h>\d);/ & (h: <5)` on `3;`   (no bare looped read: a control)
+      T  HOLDS / `3;`@0 / FIND-ALL on `3;7;3;` [`3;`@0, `3;`@4]
+      R  HOLDS / `3;`@0 / FIND-ALL [`3;`@0, `3;`@4]   same
+  [W.L] §R.1.4 / §R.8 item 8: the witness list | `/(?:(?<h>\d);)*/ & (h: <5)` on `7;3;`
+      T  FAILS / `3;`@2 / FIND-ALL on `7;3; 3;7;` [`3;`@2, `3;`@5]
+      R  HOLDS / `7;3;`@0 / FIND-ALL [`7;3;`@0, `3;`@5]   MOVES: WHOLE, SEARCHED, FIND-ALL
+  [W.E] the all-question list (CF 23:18) | `/(?:(?<h>\d);)*/ & (h: <5)` on ``
+      T  FAILS / FAILS / FIND-ALL on `7;3; 3;7;` [`3;`@2, `3;`@5]
+      R  FAILS / FAILS / FIND-ALL [`7;3;`@0, `3;`@5]   MOVES: FIND-ALL
+      printed in the draft: FAILS / 
+  [W.E0] the all-question list (CF 23:18) | `/(?:(?<h>\d);)*/ & (h = 0: <5)` on ``
+      T  HOLDS / ``@0 / FIND-ALL on `7;3; 3;7;` [``@0, ``@1, `3;`@2, ``@4, `3;`@5, ``@7, ``@8, ``@9]
+      R  HOLDS / ``@0 / FIND-ALL [`7;3;`@0, ``@4, `3;`@5, ``@7, ``@8, ``@9]   MOVES: FIND-ALL
+      printed in the draft: HOLDS / 
+  [WH.(h: <5).5;1;9.b] §R.1.4 / §R.8 item 8 / §R.7c c1 / §8 `when` body | `(KH & c & p) | (KH & !(KH & c)), c = (h: <5)` on `5;1;9`
+      T  HOLDS / `5;1`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `9`@4, `3;0`@6, `5`@10]
+      R  HOLDS / `5;1`@0 / FIND-ALL [`5;1`@0, `9`@4, `3;0`@6, `5`@10]   same
+      printed in the draft: HOLDS / `5;1`@0
+  [WH.(h: <5).5;1;9.f] §R.8 item 8 / §R.6 `when` filter form | `KH & when(c, p), c = (h: <5)` on `5;1;9`
+      T  HOLDS / `5;1;9`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1;9`@0, `3;0;5`@6]
+      R  HOLDS / `5;1;9`@0 / FIND-ALL [`5;1;9`@0, `3;0;5`@6]   same
+      printed in the draft: HOLDS / `5;1;9`@0
+  [WH.(h: <5).5;9.b] §R.1.4 / §R.8 item 8 / §R.7c c1 / §8 `when` body | `(KH & c & p) | (KH & !(KH & c)), c = (h: <5)` on `5;9`
+      T  HOLDS / `5;9`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `9`@4, `3;0`@6, `5`@10]
+      R  HOLDS / `5;9`@0 / FIND-ALL [`5;1`@0, `9`@4, `3;0`@6, `5`@10]   same
+  [WH.(h: <5).5;9.f] §R.8 item 8 / §R.6 `when` filter form | `KH & when(c, p), c = (h: <5)` on `5;9`
+      T  HOLDS / `5;9`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1;9`@0, `3;0;5`@6]
+      R  HOLDS / `5;9`@0 / FIND-ALL [`5;1;9`@0, `3;0;5`@6]   same
+  [WH.(h: <5).0.b] §R.1.4 / §R.8 item 8 / §R.7c c1 / §8 `when` body | `(KH & c & p) | (KH & !(KH & c)), c = (h: <5)` on `0`
+      T  HOLDS / `0`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `9`@4, `3;0`@6, `5`@10]
+      R  HOLDS / `0`@0 / FIND-ALL [`5;1`@0, `9`@4, `3;0`@6, `5`@10]   same
+  [WH.(h: <5).0.f] §R.8 item 8 / §R.6 `when` filter form | `KH & when(c, p), c = (h: <5)` on `0`
+      T  HOLDS / `0`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1;9`@0, `3;0;5`@6]
+      R  HOLDS / `0`@0 / FIND-ALL [`5;1;9`@0, `3;0;5`@6]   same
+  [WH.(h = 0: <5).5;1;9.b] §R.1.4 / §R.8 item 8 / §R.7c c1 / §8 `when` body | `(KH & c & p) | (KH & !(KH & c)), c = (h = 0: <5)` on `5;1;9`
+      T  HOLDS / `5;1`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `3;0`@6, `5`@10]
+      R  HOLDS / `5;1`@0 / FIND-ALL [`5;1`@0, `3;0`@6, `5`@10]   same
+  [WH.(h = 0: <5).5;1;9.f] §R.8 item 8 / §R.6 `when` filter form | `KH & when(c, p), c = (h = 0: <5)` on `5;1;9`
+      T  HOLDS / `5;1;9`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1;9`@0, `3;0;5`@6]
+      R  HOLDS / `5;1;9`@0 / FIND-ALL [`5;1;9`@0, `3;0;5`@6]   same
+  [WH.(h = 0: <5).5;9.b] §R.1.4 / §R.8 item 8 / §R.7c c1 / §8 `when` body | `(KH & c & p) | (KH & !(KH & c)), c = (h = 0: <5)` on `5;9`
+      T  HOLDS / `5`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `3;0`@6, `5`@10]
+      R  HOLDS / `5`@0 / FIND-ALL [`5;1`@0, `3;0`@6, `5`@10]   same
+      printed in the draft: HOLDS / `5`@0
+  [WH.(h = 0: <5).5;9.f] §R.8 item 8 / §R.6 `when` filter form | `KH & when(c, p), c = (h = 0: <5)` on `5;9`
+      T  HOLDS / `5;9`@0 / FIND-ALL on `5;1;9 3;0;5` [`5;1;9`@0, `3;0;5`@6]
+      R  HOLDS / `5;9`@0 / FIND-ALL [`5;1;9`@0, `3;0;5`@6]   same
+  [WH.(h = 0: <5).0.b] §R.1.4 / §R.8 item 8 / §R.7c c1 / §8 `when` body | `(KH & c & p) | (KH & !(KH & c)), c = (h = 0: <5)` on `0`
+      T  FAILS / FAILS / FIND-ALL on `5;1;9 3;0;5` [`5;1`@0, `3;0`@6, `5`@10]
+      R  FAILS / FAILS / FIND-ALL [`5;1`@0, `3;0`@6, `5`@10]   same
+  [WH.(h = 0: <5).0.f] §R.8 item 8 / §R.6 `when` filter form | `KH & when(c, p), c = (h = 0: <5)` on `0`
+      T  FAILS / FAILS / FIND-ALL on `5;1;9 3;0;5` [`5;1;9`@0, `3;0;5`@6]
+      R  FAILS / FAILS / FIND-ALL [`5;1;9`@0, `3;0;5`@6]   same
+  [WH.occ.b] §R.8 item 8 find-all place | `occurrences((KH & c & p) | (KH & !(KH & c)), min = 2), c = (h: <5)` on `3;0;5`
+      T  HOLDS / `3;0;5`@0 / FIND-ALL on `3;0;5 5;1;9` [`3;0;5 5;1;9`@0]
+      R  HOLDS / `3;0;5`@0 / FIND-ALL [`3;0;5 5;1;9`@0]   same
+      printed in the draft: HOLDS / 
+  [WH.occ.f] §R.8 item 8 find-all place | `occurrences(KH & when(c, p), min = 2), c = (h: <5)` on `3;0;5`
+      T  HOLDS / `3;0;5`@0 / FIND-ALL on `3;0;5 5;1;9` [`3;0;5 5;1;9`@0]
+      R  HOLDS / `3;0;5`@0 / FIND-ALL [`3;0;5 5;1;9`@0]   same
+      T3 (the draft's text: Kleene logic, hits committed; before absent-under-not and regex-settles) FAILS / FAILS / [`3;0;5 5;1;9`@0]
+      printed in the draft: FAILS / 
+
+PART B SUMMARY: 125 catalogue lines; MOVED (any mode) 19; not moved 106
+PART B MOVED ids: R3.empty.2, R3.3;.2, R3.3;7;.2, R3.7;;.2, R3.3;;.0, R3.3;;.1, R3.3;;.2, R3.3;;.3, R2.b, O13.1,7,.2, O13.7,,.2, O13.empty.2, NS.a, NS.b, NS.c, NS.d, W.L, W.E, W.E0
+PART B DRAFT LINES: 122 (the W.* lines are the brief's witness and the all-question list, not counted); MOVED 16
+PART B BARE LOOPED READS: 104 lines read a looped label with a bare condition; 16 of them move; 18 control lines (group questions, set-once labels) move 0
+PART B BARE LINES THAT DO NOT MOVE: R3.empty.0, R3.empty.1, R3.empty.3, R3.3;.0, R3.3;.1, R3.3;.3, R3.3;7;.0, R3.3;7;.1, R3.3;7;.3, R3.7;;.0, R3.7;;.1, R3.7;;.3, R17.a, R17.b, R2.a, R6.a, R6.b.empty, R6.b.1,, R6.b.a, R6.b.7,, R7.3.0, R7.3.1, O13.1,7,.0, O13.1,7,.1, O13.1,7,.3, O13.7,,.1, O13.empty.1, O13.empty.3, B6.3-6,.d, B6.7-2,.d, B6.empty.d, B6.empty.n, B6.-6,.d, B6.-6,.n, B7.9.n, B7.3.n, B7.3.d, B7.3;7.d, PAIR.a, TM2L.((h, m): R).empty, TM2L.((h, m): R).10,, TM2L.((h, m): R).9,, TM2L.((h, m): R).9:45,, TM2L.((h, m): R).10,9:15,, TM2L.((h, m = 0): R).empty, TM2L.((h, m = 0): R).10,, TM2L.((h, m = 0): R).9,, TM2L.((h, m = 0): R).9:45,, TM2L.((h, m = 0): R).10,9:15,, TM2L.((h, m = 30): R).empty, TM2L.((h, m = 30): R).10,, TM2L.((h, m = 30): R).9,, TM2L.((h, m = 30): R).9:45,, TM2L.((h, m = 30): R).10,9:15,, TM2L.((h = 10, m = 0): R).empty, TM2L.((h = 10, m = 0): R).10,, TM2L.((h = 10, m = 0): R).9,, TM2L.((h = 10, m = 0): R).9:45,, TM2L.((h = 10, m = 0): R).10,9:15,, TM2L.((h = 10, m = 30): R).empty, TM2L.((h = 10, m = 30): R).10,, TM2L.((h = 10, m = 30): R).9,, TM2L.((h = 10, m = 30): R).9:45,, TM2L.((h = 10, m = 30): R).10,9:15,, HIT.0, HIT.4, HIT.z1, HIT.z2, HIT.z3, HIT.own, HIT.L61b, REC.x2 y1.2, REC.x1 y2.2, RM.a, WH.(h: <5).5;1;9.b, WH.(h: <5).5;1;9.f, WH.(h: <5).5;9.b, WH.(h: <5).5;9.f, WH.(h: <5).0.b, WH.(h: <5).0.f, WH.(h = 0: <5).5;1;9.b, WH.(h = 0: <5).5;1;9.f, WH.(h = 0: <5).5;9.b, WH.(h = 0: <5).5;9.f, WH.(h = 0: <5).0.b, WH.(h = 0: <5).0.f, WH.occ.b, WH.occ.f
+PART B MOVED by mode: WHOLE 8, SEARCHED 8, FIND-ALL 13
+PART B CONTROL (T3 = the draft's own text: Kleene, hits committed; vs the draft's printed answer): 0 mismatches []
+
+PART B (H1): the hit lines again with the hits COMMITTED (the global search's hits, then judged; the candidate
+meaning of a NAMED all-hits request), two-valued, T beside R:
+  [HIT.0] `occurrences(/ab(?<g>[xy])/) & (g: "x")` on `abxabyabx`: T FAILS / `abxab`@0 / [`abxab`@0, `yabx ab`@5, `yabx`@12] ; R HOLDS / `abxabyabx`@0 / [`abxabyabx abyabx`@0]   MOVES
+  [HIT.1] `occurrences(/ab(?<g>[xy])/) & some((g: "x"))` on `abxabyabx`: T HOLDS / `abxabyabx`@0 / [`abxabyabx abyabx`@0] ; R HOLDS / `abxabyabx`@0 / [`abxabyabx abyabx`@0]
+  [HIT.2] `occurrences(/ab(?<g>[xy])/) & occurs.exactly(2, (g: "x"))` on `abxabyabx`: T HOLDS / `abxabyabx`@0 / [`abxabyabx abyab`@0] ; R HOLDS / `abxabyabx`@0 / [`abxabyabx abyab`@0]
+  [HIT.3] `occurrences(/ab(?<g>[xy])/) & count((g: "y")) = 1` on `abxabyabx`: T HOLDS / `abxabyabx`@0 / [`abxabyabx ab`@0] ; R HOLDS / `abxabyabx`@0 / [`abxabyabx ab`@0]
+  [HIT.4] `occurrences(/ab(?<g>[xy])/) & (g = "x": "x")` on `abxabyabx`: T FAILS / `abxab`@0 / [`abxab`@0, `yabx ab`@5, `yabx`@12, ``@16] ; R HOLDS / `abxabyabx`@0 / [`abxabyabx abyabx`@0, ``@16]   MOVES
+  [HIT.5] `occurrences(/ab(?<g>[xy])/) & occurs.none((g: "y"))` on `abxabyabx`: T FAILS / `abxab`@0 / [`abxab`@0, `yabx ab`@5, `yabx`@12, ``@16] ; R FAILS / `abxab`@0 / [`abxab`@0, `yabx ab`@5, `yabx`@12, ``@16]
+  [HIT.z1] `occurrences(/ab(?<g>[xy])/) & (g: "x")` on `xyz`: T FAILS / FAILS / [`xyz abx`@0] ; R FAILS / FAILS / [`xyz abx`@0]
+  [HIT.z2] `occurrences(/ab(?<g>[xy])/) & (g = "x": "x")` on `xyz`: T HOLDS / `xyz`@0 / [`xyz abx`@0, ``@7] ; R HOLDS / `xyz`@0 / [`xyz abx`@0, ``@7]
+  [HIT.z3] `occurrences(/ab(?<g>[xy])/, min = 1) & (g: "x")` on `xyz`: T FAILS / FAILS / [`xyz abx`@0] ; R FAILS / FAILS / [`xyz abx`@0]
+  [HIT.own] `occurrences(/(?<g>a)?b/) & (g: "a")` on `abb`: T FAILS / `ab`@0 / [`ab`@0, ` ab`@3] ; R HOLDS / `abb`@0 / [`abb ab`@0]   MOVES
+  [HIT.L61a] `contains(/ab(?<g>[xy])/ & (g: "x"))` on `abx aby`: T HOLDS / `abx aby`@0 / [`abx aby aby`@0] ; R HOLDS / `abx aby`@0 / [`abx aby aby`@0]
+  [HIT.L61b] `contains(/ab(?<g>[xy])/) & (g: "x")` on `abx aby`: T FAILS / `abx ab`@0 / [`abx ab`@0] ; R FAILS / `abx ab`@0 / [`abx ab`@0]
+  [REC.x2 y1.0] `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x", h: 1))` on `x2 y1`: T FAILS / FAILS / [`x1 y2 x2 y1`@0] ; R FAILS / FAILS / [`x1 y2 x2 y1`@0]
+  [REC.x2 y1.1] `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x")) & some((h: 1))` on `x2 y1`: T HOLDS / `x2 y1`@0 / [`x1 y2 x2 y1`@0] ; R HOLDS / `x2 y1`@0 / [`x1 y2 x2 y1`@0]
+  [REC.x2 y1.2] `occurrences(/(?<g>[xy])(?<h>\d)/) & (g: "x", h: 1) (the plain record)` on `x2 y1`: T FAILS / FAILS / [`x1 y`@0] ; R FAILS / FAILS / [`x1 y`@0]
+  [REC.x1 y2.0] `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x", h: 1))` on `x1 y2`: T HOLDS / `x1 y2`@0 / [`x1 y2 x2 y1`@0] ; R HOLDS / `x1 y2`@0 / [`x1 y2 x2 y1`@0]
+  [REC.x1 y2.1] `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x")) & some((h: 1))` on `x1 y2`: T HOLDS / `x1 y2`@0 / [`x1 y2 x2 y1`@0] ; R HOLDS / `x1 y2`@0 / [`x1 y2 x2 y1`@0]
+  [REC.x1 y2.2] `occurrences(/(?<g>[xy])(?<h>\d)/) & (g: "x", h: 1) (the plain record)` on `x1 y2`: T FAILS / `x1 y`@0 / [`x1 y`@0] ; R FAILS / `x1 y`@0 / [`x1 y`@0]
+  [HL.a] `occurrences(/(?<n>\d+)/ & (n: <100), min = 2)` on `1234`: T HOLDS / `1234`@0 / [`1234 5`@0] ; R HOLDS / `1234`@0 / [`1234 5`@0]
+  [WH.occ.b] `occurrences((KH & c & p) | (KH & !(KH & c)), min = 2), c = (h: <5)` on `3;0;5`: T HOLDS / `3;0;5`@0 / [`3;0;5 5;1;9`@0] ; R HOLDS / `3;0;5`@0 / [`3;0;5 5;1;9`@0]
+  [WH.occ.f] `occurrences(KH & when(c, p), min = 2), c = (h: <5)` on `3;0;5`: T FAILS / FAILS / [`3;0;5 5;1;9`@0] ; R FAILS / FAILS / [`3;0;5 5;1;9`@0]
+PART B (H1) SUMMARY: 3 of the hit lines move T -> R when the hits are committed
+
+== PART C: COUNTS OVER THE TEXT SETS, per distinct program: T vs R (texts that differ; first differing text)
+  `REP & (h: <5)` over RG3 (364): WHOLE holds T 2 R 18, differ 16 (first '3;;'); SEARCHED report differ 54 (first '3;;'); FIND-ALL differ 54 (first '3;;')
+  `REP & NOT (h: <5)` over RG3 (364): WHOLE holds T 40 R 24, differ 16 (first '3;;'); SEARCHED report differ 36 (first '3;;'); FIND-ALL differ 57 (first '3;;')
+  `REP & (h: !<5)` over RG3 (364): WHOLE holds T 2 R 18, differ 16 (first '7;;'); SEARCHED report differ 54 (first '7;;'); FIND-ALL differ 54 (first '7;;')
+  `REP & !(REP & (h: <5))` over RG3 (364): WHOLE holds T 40 R 24, differ 16 (first '3;;'); SEARCHED report differ 36 (first '3;;'); FIND-ALL differ 57 (first '3;;')
+  `REP & (h = 0: <5)` over RG3 (364): WHOLE holds T 20 R 24, differ 4 (first '7;3;'); SEARCHED report differ 6 (first '7;3;'); FIND-ALL differ 8 (first '7;3;')
+  `REP & occurs.none((h = "x": !<5))` over RG3 (364): WHOLE holds T 3 R 3, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `REP & NOT (h: <0)` over RG3 (364): WHOLE holds T 42 R 42, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `REP & (h: !<0)` over RG3 (364): WHOLE holds T 6 R 36, differ 30 (first '3;;'); SEARCHED report differ 94 (first '3;;'); FIND-ALL differ 94 (first '3;;')
+  `REP & occurs.none((h = "x": !<10))` over RG3 (364): WHOLE holds T 7 R 7, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `NL & (n = 0: <5)` over NL4 (121): WHOLE holds T 3 R 4, differ 1 (first '7,1,'); SEARCHED report differ 1 (first '7,1,'); FIND-ALL differ 1 (first '7,1,')
+  `text.none(B), B := NL & (n = 9: >=5)` over NL4 (121): WHOLE holds T 0 R 0, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `NL & (n: <5)` over NL4 (121): WHOLE holds T 2 R 3, differ 1 (first '7,1,'); SEARCHED report differ 1 (first '7,1,'); FIND-ALL differ 1 (first '7,1,')
+  `NL & some((n: <5))` over NL4 (121): WHOLE holds T 4 R 4, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `NL & NOT some((n: <5))` over NL4 (121): WHOLE holds T 3 R 3, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `NLO & (n: <5)` over NL5 (364): WHOLE holds T 2 R 18, differ 16 (first '1,,'); SEARCHED report differ 54 (first '1,,'); FIND-ALL differ 54 (first '1,,')
+  `NLO & NOT (n: <5)` over NL5 (364): WHOLE holds T 40 R 24, differ 16 (first '1,,'); SEARCHED report differ 36 (first '1,,'); FIND-ALL differ 57 (first '1,,')
+  `NLO & (n: !<5)` over NL5 (364): WHOLE holds T 2 R 18, differ 16 (first '7,,'); SEARCHED report differ 54 (first '7,,'); FIND-ALL differ 54 (first '7,,')
+  `NLO & !(NLO & (n: <5))` over NL5 (364): WHOLE holds T 40 R 24, differ 16 (first '1,,'); SEARCHED report differ 36 (first '1,,'); FIND-ALL differ 57 (first '1,,')
+  `TWOF & (a = 0: <5, b = 3: between(3, 7))` over TWOPOOL (156): WHOLE holds T 85 R 100, differ 15 (first '7-2,3-6,'); SEARCHED report differ 16 (first '7-2,3-6,'); FIND-ALL differ 26 (first '7-2,3-6,')
+  `TWOF & (a: <5, b: between(3, 7))` over TWOPOOL (156): WHOLE holds T 3 R 74, differ 71 (first '3-6,-6,'); SEARCHED report differ 80 (first '3-6,-6,'); FIND-ALL differ 80 (first '3-6,-6,')
+  `KH & (h: <5, k: between(3, 7))` over KHPOOL (1110): WHOLE holds T 150 R 275, differ 125 (first '3;5;0'); SEARCHED report differ 125 (first '3;5;0'); FIND-ALL differ 125 (first '3;5;0')
+  `KH & (h = 0: <5, k: between(3, 7))` over KHPOOL (1110): WHOLE holds T 155 R 280, differ 125 (first '3;5;0'); SEARCHED report differ 125 (first '3;5;0'); FIND-ALL differ 125 (first '3;5;0')
+  `PAIR & ((h, m): padded(>= (9, 30)))` over PAIRPOOL (85): WHOLE holds T 14 R 42, differ 28 (first '9:15,10:00,'); SEARCHED report differ 36 (first '9:15,10:00,'); FIND-ALL differ 36 (first '9:15,10:00,')
+  `TML & ((h, m): R)` over TMPOOL (156): WHOLE holds T 14 R 94, differ 80 (first '9,9:45,'); SEARCHED report differ 95 (first '9,9:45,'); FIND-ALL differ 95 (first '9,9:45,')
+  `TML & ((h, m = 0): R)` over TMPOOL (156): WHOLE holds T 39 R 101, differ 62 (first '9,10,'); SEARCHED report differ 73 (first '9,10,'); FIND-ALL differ 73 (first '9,10,')
+  `TML & ((h, m = 30): R)` over TMPOOL (156): WHOLE holds T 84 R 108, differ 38 (first '9:15,10,'); SEARCHED report differ 44 (first '9:15,10,'); FIND-ALL differ 44 (first '9:15,10,')
+  `TML & ((h = 10, m = 0): R)` over TMPOOL (156): WHOLE holds T 40 R 102, differ 62 (first '9,10,'); SEARCHED report differ 73 (first '9,10,'); FIND-ALL differ 73 (first '9,10,')
+  `TML & ((h = 10, m = 30): R)` over TMPOOL (156): WHOLE holds T 85 R 109, differ 38 (first '9:15,10,'); SEARCHED report differ 44 (first '9:15,10,'); FIND-ALL differ 44 (first '9:15,10,')
+  `/(?<n>\d)*x/ & (n: <5)` over X4 (121): WHOLE holds T 3 R 7, differ 4 (first '73x'); SEARCHED report differ 8 (first '73x'); FIND-ALL differ 8 (first '73x')
+  `/(?<n>\d)*x/ & (n = 0: <5)` over X4 (121): WHOLE holds T 4 R 8, differ 4 (first '73x'); SEARCHED report differ 7 (first '73x'); FIND-ALL differ 8 (first '73x')
+  `/x|(?<n>\d)+/ & (n: <5)` over X4 (121): WHOLE holds T 4 R 15, differ 11 (first '73'); SEARCHED report differ 32 (first '73'); FIND-ALL differ 33 (first '73')
+  `/x|(?<n>\d)+/ & (n = 0: <5)` over X4 (121): WHOLE holds T 5 R 16, differ 11 (first '73'); SEARCHED report differ 24 (first '73'); FIND-ALL differ 33 (first '73')
+  `occurrences(/ab(?<g>[xy])/) & (g: "x")` over XYPOOL (85): WHOLE holds T 45 R 45, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/ab(?<g>[xy])/) & some((g: "x"))` over XYPOOL (85): WHOLE holds T 45 R 45, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/ab(?<g>[xy])/) & occurs.exactly(2, (g: "x"))` over XYPOOL (85): WHOLE holds T 11 R 11, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/ab(?<g>[xy])/) & count((g: "y")) = 1` over XYPOOL (85): WHOLE holds T 45 R 45, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/ab(?<g>[xy])/) & (g = "x": "x")` over XYPOOL (85): WHOLE holds T 85 R 85, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/ab(?<g>[xy])/) & occurs.none((g: "y"))` over XYPOOL (85): WHOLE holds T 85 R 85, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/ab(?<g>[xy])/, min = 1) & (g: "x")` over XYPOOL (85): WHOLE holds T 45 R 45, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/(?<g>a)?b/) & (g: "a")` over ABPOOL (127): WHOLE holds T 99 R 99, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `contains(/ab(?<g>[xy])/ & (g: "x"))` over XYPOOL (85): WHOLE holds T 45 R 45, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `contains(/ab(?<g>[xy])/) & (g: "x")` over XYPOOL (85): WHOLE holds T 45 R 45, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x", h: 1))` over GHPOOL (156): WHOLE holds T 71 R 71, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/(?<g>[xy])(?<h>\d)/) & some((g: "x")) & some((h: 1))` over GHPOOL (156): WHOLE holds T 91 R 91, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/(?<g>[xy])(?<h>\d)/) & (g: "x", h: 1) (the plain record)` over GHPOOL (156): WHOLE holds T 71 R 71, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(/(?<n>\d+)/ & (n: <100), min = 2)` over D3 (121): WHOLE holds T 96 R 96, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `/(?:(?<h>\d);)+/ & /\d;/ & (h: <5)` over RG3 (364): WHOLE holds T 1 R 1, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `/(?<h>\d);/ & (h: <5)` over RG3 (364): WHOLE holds T 1 R 1, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `/(?:(?<h>\d);)*/ & (h: <5)` over RG3 (364): WHOLE holds T 2 R 3, differ 1 (first '7;3;'); SEARCHED report differ 7 (first '7;3;'); FIND-ALL differ 7 (first '7;3;')
+  `/(?:(?<h>\d);)*/ & (h = 0: <5)` over RG3 (364): WHOLE holds T 3 R 4, differ 1 (first '7;3;'); SEARCHED report differ 4 (first '7;3;'); FIND-ALL differ 7 (first '7;3;')
+  `(KH & c & p) | (KH & !(KH & c)), c = (h: <5)` over KHPOOL (1110): WHOLE holds T 960 R 835, differ 125 (first '0;5;0'); SEARCHED report differ 125 (first '0;5;0'); FIND-ALL differ 125 (first '0;5;0')
+  `KH & when(c, p), c = (h: <5)` over KHPOOL (1110): WHOLE holds T 960 R 835, differ 125 (first '0;5;0'); SEARCHED report differ 125 (first '0;5;0'); FIND-ALL differ 125 (first '0;5;0')
+  `(KH & c & p) | (KH & !(KH & c)), c = (h = 0: <5)` over KHPOOL (1110): WHOLE holds T 955 R 830, differ 125 (first '0;5;0'); SEARCHED report differ 250 (first '0;5;0'); FIND-ALL differ 250 (first '0;5;0')
+  `KH & when(c, p), c = (h = 0: <5)` over KHPOOL (1110): WHOLE holds T 955 R 830, differ 125 (first '0;5;0'); SEARCHED report differ 125 (first '0;5;0'); FIND-ALL differ 125 (first '0;5;0')
+  `occurrences((KH & c & p) | (KH & !(KH & c)), min = 2), c = (h: <5)` over D035 (1365): WHOLE holds T 1314 R 1314, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+  `occurrences(KH & when(c, p), min = 2), c = (h: <5)` over D035 (1365): WHOLE holds T 1314 R 1314, differ 0 (first None); SEARCHED report differ 0 (first None); FIND-ALL differ 0 (first None)
+
+== PART D: R VALIDATED ON libpcre2 (the program's regex with ONE callout after it; WHOLE / SEARCHED / FIND-ALL over the set)
+  `REP & (h: <5)` over RG3 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `REP & NOT (h: <5)` over RG3 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `REP & (h: !<5)` over RG3 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `REP & (h = 0: <5)` over RG3 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `REP & NOT (h: <0)` over RG3 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `REP & (h: !<0)` over RG3 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `NL & (n = 0: <5)` over NL4 (121): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `NL & (n: <5)` over NL4 (121): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `NLO & (n: <5)` over NL5 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `NLO & NOT (n: <5)` over NL5 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `NLO & (n: !<5)` over NL5 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `TWOF & (a = 0: <5, b = 3: between(3, 7))` over TWOPOOL (156): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `TWOF & (a: <5, b: between(3, 7))` over TWOPOOL (156): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `KH & (h: <5, k: between(3, 7))` over KHPOOL (1110): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `KH & (h = 0: <5, k: between(3, 7))` over KHPOOL (1110): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `PAIR & ((h, m): padded(>= (9, 30)))` over PAIRPOOL (85): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `TML & ((h, m): R)` over TMPOOL (156): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `TML & ((h, m = 0): R)` over TMPOOL (156): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `TML & ((h, m = 30): R)` over TMPOOL (156): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `TML & ((h = 10, m = 0): R)` over TMPOOL (156): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `TML & ((h = 10, m = 30): R)` over TMPOOL (156): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `/(?<n>\d)*x/ & (n: <5)` over X4 (121): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `/(?<n>\d)*x/ & (n = 0: <5)` over X4 (121): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `/x|(?<n>\d)+/ & (n: <5)` over X4 (121): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `/x|(?<n>\d)+/ & (n = 0: <5)` over X4 (121): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `/(?<h>\d);/ & (h: <5)` over RG3 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `/(?:(?<h>\d);)*/ & (h: <5)` over RG3 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  `/(?:(?<h>\d);)*/ & (h = 0: <5)` over RG3 (364): engine R vs libpcre2 differ WHOLE 0 / SEARCHED 0 / FIND-ALL 0 (first None)
+  the owner's one-pattern body `(?:[\s\S]*?(?<hit>ab(?<g>[xy])))*[\s\S]*` & (g: "x") over XYPOOL: differ 0 / 0 / 0 (first None)
+    the engine's Occ node vs that body as one regex, R, WHOLE over XYPOOL: differ 0
+PART D SUMMARY: 29 programs checked on libpcre2; 0 with any difference
+
+== PART E: WHAT EACH OPEN LOOP QUESTION BECOMES (witness lines; T / R)
+  E2 the bare label `/(?:(?<h>\d);)*/ & (h: <5)` on `7;3;`: T FAILS / `3;`@2 / [`3;`@2, `3;`@5] ; R HOLDS / `7;3;`@0 / [`7;3;`@0, `3;`@5]
+  E2 the bare label, zero passes on ``: T FAILS / FAILS / [] ; R FAILS / FAILS / []
+  E2 under R there is ONE judge: the callout after the loop (PART D shows the engine = libpcre2); L1/L2 is no longer a question of the bare label.
+  the NAMED every-pass test `every((h: <5))` (= occurs.none(NOT (h: <5)), possibly none): judged after the loop (L1) vs a piece in each pass (L2, the regex `(?:[0-4];)*`) over RG3: WHOLE differ 0, SEARCHED differ 0 (first None)
+    witness `7;3;`: L1 searched ``@0, L2 searched ``@0
+  pass-table `REP & NOT (h: <5)` on `7;;`: T HOLDS / `7;;`@0 / [`7;;`@0, ``@3] ; R HOLDS / `7;;`@0 / [`7;;`@0, ``@3]
+  pass-table `REP & (h: !<5)` on `7;;`: T FAILS / `7;`@0 / [`7;`@0] ; R HOLDS / `7;;`@0 / [`7;;`@0]
+  group-truth `REP & NOT some((h: <5))` on `;`: T HOLDS / `;`@0 / [`;`@0, ``@1] ; R HOLDS / `;`@0 / [`;`@0, ``@1]
+  the interaction: `REP & (h: <5)` on ``: T FAILS / FAILS / [] ; R FAILS / FAILS / []
+  the interaction: `REP & NOT some(NOT (h: <5))` on ``: T HOLDS / ``@0 / [``@0] ; R HOLDS / ``@0 / [``@0]
+  RG3 (364) `(h: <5)` vs `NOT some(NOT (h: <5))` (the De Morgan dual, item 5's twin), T: differ WHOLE 1, SEARCHED holds 232 (first WHOLE '')
+  RG3 (364) `(h: <5)` vs `NOT some(NOT (h: <5))` (the De Morgan dual, item 5's twin), R: differ WHOLE 17, SEARCHED holds 232 (first WHOLE '')
+  RG3 (364) `(h: <5)` vs `some((h: <5)) & NOT some(NOT (h: <5))` (T's plain test spelled by the group questions), T: differ WHOLE 0, SEARCHED holds 0 (first WHOLE None)
+  RG3 (364) `(h: <5)` vs `some((h: <5)) & NOT some(NOT (h: <5))` (T's plain test spelled by the group questions), R: differ WHOLE 16, SEARCHED holds 0 (first WHOLE '3;;')
+  RG3 (364) `NOT (h: <5)` vs `(h: !<5)` (L30, R.2), T: differ WHOLE 38, SEARCHED holds 232 (first WHOLE '')
+  RG3 (364) `NOT (h: <5)` vs `(h: !<5)` (L30, R.2), R: differ WHOLE 6, SEARCHED holds 232 (first WHOLE '')
+  RG3 (364) `NOT (h: <0)` vs `(h: !<0)` (R.2 empty S), T: differ WHOLE 36, SEARCHED holds 120 (first WHOLE '')
+  RG3 (364) `NOT (h: <0)` vs `(h: !<0)` (R.2 empty S), R: differ WHOLE 6, SEARCHED holds 120 (first WHOLE '')
+  RG3 (364) `P & !some(c)` vs `P & occurs.none(c)` (L102), T: differ WHOLE 0, SEARCHED holds 0 (first WHOLE None)
+  RG3 (364) `P & !some(c)` vs `P & occurs.none(c)` (L102), R: differ WHOLE 0, SEARCHED holds 0 (first WHOLE None)
+  RG3 (364) `NOT (h = "x": <5)` vs `NOT (h: <5)` (R.7c c6), T: differ WHOLE 0, SEARCHED holds 0 (first WHOLE None)
+  RG3 (364) `NOT (h = "x": <5)` vs `NOT (h: <5)` (R.7c c6), R: differ WHOLE 0, SEARCHED holds 0 (first WHOLE None)
+  RG3 (364) `(h: <5)` vs `(h = 0: <5)` (L36), T: differ WHOLE 18, SEARCHED holds 232 (first WHOLE '')
+  RG3 (364) `(h: <5)` vs `(h = 0: <5)` (L36), R: differ WHOLE 6, SEARCHED holds 232 (first WHOLE '')
+  §4.3 / R.7b b3 over 127 spans, hits H2, T: `occurs.none((g = "": !"a"))` vs `(g = "a": "a")` differ WHOLE 0, SEARCHED holds 0
+  §4.3 / R.7b b3 over 127 spans, hits H2, R: `occurs.none((g = "": !"a"))` vs `(g = "a": "a")` differ WHOLE 0, SEARCHED holds 0
+  §4.3 / R.7b b3 over 127 spans, hits H1, T: `occurs.none((g = "": !"a"))` vs `(g = "a": "a")` differ WHOLE 94, SEARCHED holds 0
+  §4.3 / R.7b b3 over 127 spans, hits H1, R: `occurs.none((g = "": !"a"))` vs `(g = "a": "a")` differ WHOLE 94, SEARCHED holds 0
+  hits `occurrences(/(?<n>\d+)/) & (n: <100)` (H2: the condition re-enters the one pattern) on `1234`: T HOLDS / `1234`@0 / [`1234 5`@0] ; R HOLDS / `1234`@0 / [`1234 5`@0]
+  hits `occurrences(/(?<n>\d+)/ & (n: <100))` (the condition inside the argument: hit-list) on `1234`: T HOLDS / `1234`@0 / [`1234 5`@0, ``@6] ; R HOLDS / `1234`@0 / [`1234 5`@0, ``@6]
+  hits `occurrences(/(?<n>\d+)/, min = 1) & (n: <100)` over {1, 2, space, x} to length 4 (341): T vs R WHOLE differ 0
+  THE CLOSING EXAMPLE (§4.3; CLOSE over 1,111 lists; WHOLE differences from each intent, I1 / I2a / I2b; WHOLE holds):
+    `((h, m): R)` T: 1 / 37 / 12; holds 3
+    `((h, m): R)` R: 135 / 139 / 130; holds 137
+    `occurs.none(((h, m): !R))` T: 36 / 0 / 25; holds 40
+    `occurs.none(((h, m): !R))` R: 36 / 0 / 25; holds 40
+    `occurs.none(NOT ((h, m): R))` T: 0 / 36 / 11; holds 4
+    `occurs.none(NOT ((h, m): R))` R: 0 / 36 / 11; holds 4
+    `occurs.none(NOT (h: <10, m: <30))` T: 0 / 36 / 11; holds 4
+    `occurs.none(NOT (h: <10, m: <30))` R: 0 / 36 / 11; holds 4
+    `occurs.none(((h, m = 99): !R))` T: 0 / 36 / 11; holds 4
+    `occurs.none(((h, m = 99): !R))` R: 0 / 36 / 11; holds 4
+    `occurs.none(((h, m = 0): !R))` T: 11 / 25 / 0; holds 15
+    `occurs.none(((h, m = 0): !R))` R: 11 / 25 / 0; holds 15
+    `((h = 0, m = 0): R)` T: 11 / 25 / 0; holds 15
+    `((h = 0, m = 0): R)` R: 141 / 131 / 130; holds 145
+    `((h, m = 0): R)` T: 12 / 26 / 1; holds 14
+    `((h, m = 0): R)` R: 142 / 132 / 131; holds 144
+  the closing example's stale minute: `CLOSE & ((h, m): R)` on `3:15,3,`: T FAILS / `3:15,`@0 / [`3:15,`@0] ; R HOLDS / `3:15,3,`@0 / [`3:15,3,`@0]
+    and `CLOSE & ((h, m = 0): R)` (the default never fires: m carries `15`) on `3:45,3,`: T FAILS / `5,3,`@3 / [`5,3,`@3] ; R FAILS / `45,3,`@2 / [`45,3,`@2]
+
+== PART F: REGULAR FORMS (plain regex, no callout, no capture read) equal to each reading, WHOLE over the set
+  R `(?:(?<h>\d)?;)*` & (h: <5): the last pass that SET h is < 5 = /(?:\d?;)*[0-4];;*/: differ 0 of 364
+  R `(?:(?<h>\d)?;)*` & NOT (h: <5) = /;*|(?:\d?;)*[5-9];;*/: differ 0 of 364
+  T `(?:(?<h>\d)?;)*` & (h: <5): every pass sets h < 5, at least one = /(?:[0-4];)+/: differ 0 of 364
+  named some((h: <5)) = /(?:\d?;)*[0-4];(?:\d?;)*/: differ 0 of 364
+  named every, possibly none: occurs.none(NOT (h: <5)) = /(?:[0-4];)*/: differ 0 of 364
+  named occurs.exactly(2, (h: <5)) = /(?:(?:[5-9]?;))*[0-4];(?:(?:[5-9]?;))*[0-4];(?:(?:[5-9]?;))*/: differ 0 of 364
+  R hits, re-entered (H2): (g: "x") = some hit is abx = /[\s\S]*abx[\s\S]*/: differ 0 of 85
+  T hits, re-entered (H2): (g: "x") = some hit is abx = /[\s\S]*abx[\s\S]*/: differ 0 of 85
+  H2 occurs.none((g: "y")) holds on every text (a gap swallows each aby) = /[\s\S]*/: differ 0 of 85
+  R hits, committed (H1): the LAST hit's g is x = /[\s\S]*abx(?:(?!ab[xy])[\s\S])*/: differ 0 of 85
+  T hits, committed (H1): EVERY hit's g is x, at least one = /(?:(?!ab[xy])[\s\S])*abx(?:(?:(?!ab[xy])[\s\S])*abx)*(?:(?!ab[xy])[\s\S])*/: differ 0 of 85
+
+== MOVED LINES 19 (of 125); switch LASTPASS_DEFAULT=unset
