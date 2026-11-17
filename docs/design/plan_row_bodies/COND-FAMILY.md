@@ -2097,3 +2097,20 @@ fix made "a record is exactly the AND of its entries" hold only WITHOUT a NOT ar
 record-is-product ("absolutely") and was not returned to him. (3) LESSON, the same one as 11-16: two manager
 rulings in one night (the whole-statement default lean; branch-order) fell to the next round; a rule that decides
 ANSWERS and is not word for word in his record is asked, not told.
+
+**2026-11-17 OWNER LEAN — branch-scope: reading (ii), and an ATOMIC form (Frank, to session 138, box clock about
+11:30; a LEAN in his words, confirmation asked, NOT yet a ruling).** Asked **branch-scope** with the manager's lean
+(i) ("the pattern picks the match, conditions judge it"). HIS WORDS: "I don't remember this discussion. A lot of
+decisions are \"rule A under narrow example does something sensible, do you agree\" then wider examples provide
+different perspective. The condition question from last night took a path that suggests a different choice. It was
+the \"9:30\" question. There, a condition on a pattern reject caused the pattern to backtrack and take a different
+path that satisfied the condition. Your suggestion implies no backtracking and atomic behavior. 1. I think I lean
+number ii. It's more regex 2. it does suggest we should support atomic. An atomic transform would change both
+answers to get the no backtracking behavior". MANAGER (mine): he is right and my lean (i) was wrong: it contradicts
+row-is-match (23:46 on 11-16: on `9:30` the rejected row `9:30` gives way to `9`, another path of the SAME pattern
+through its optional part), and it would make `|` the one choice point a condition cannot send the pattern back
+into (`(?:x)?` and `(?:x|)` would part). Reading (ii) taken generally REVERSES two recorded rulings of 11-15, shown
+to him for confirmation before any revision: the one-parse reject `(B | A) & (l: "a")` on `aa` (CF:953-955, L60) and
+note (a) (`/(?<a>\d+)(?<b>\d+)/ & (a: 1)` on `123` fails); for whether a value holds it is the 2026-11-14 some-parse
+rule again, with PCRE's preference order choosing the reported row. His item 14 of predicates_future.md (the
+pattern returns `9:30`, done; the condition then rejects) is the ATOMIC form.
