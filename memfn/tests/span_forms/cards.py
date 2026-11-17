@@ -129,9 +129,10 @@ MEDSD_REL = 0.4754
 #   I.lt     I's layout twin 1, one more arm of I's pool in every C1-C2 cell (step 1)
 #   aa-twin  the A/A arm's layout twin 1 (rev 10: the same exe as `aa`)
 #   I.cf, h<N>.cf   the CONFIRM's fresh layout twins 2 of I and of each winning head
-# UNMEASURED: the pad sizes are CHOSEN so the two twins sit at different offsets mod 64 (the
-# pad function is 16-aligned: 1040 + 1 B occupies 1056 = 32 mod 64; 2080 + 1 B occupies 2096 =
-# 48 mod 64; the base exe is 0).
+# UNMEASURED: the pad sizes are CHOSEN, about 1 KiB and 2 KiB, so the two twins sit at different
+# addresses from the base and from each other; the shift `dry` MEASURES (nm, `rxa_search`) is the
+# pad rounded up to the TU's .text alignment: 1,056-1,088 B (layout 1), 2,080-2,112 B (layout 2)
+# on the 11-17 dry run (gcc 15.2).
 LAYOUT_PAD = {1: 1040, 2: 2080}
 
 
@@ -862,7 +863,7 @@ def cmd_dry(args):
              len(cfbad) + sum(1 for c in cl if arm_lay(c[2]) and not done.get(c))))
     same = identical_to_I(rundir)
     print("# dry: cells %d, built and gated %d, failures %d; distinct compiles %d; subject %d B" %
-          (len(cl), len(cl) - len(bad), len(bad), len(builds), n))
+          (len(cl), len(cl) - len(bad), len(bad), len({(b[0], arm_base(b[1]), b[2], b[3]) for b in builds}), n))
     print("# dry: H(h) artifact hash-equal to I's (I's pool, measured per layer): %s" % ", ".join(
         "%s/%s:%s" % (p, ly, ",".join(map(str, hs))) for p, d in sorted(same.items()) for ly, hs in sorted(d.items())))
     for b in bad[:20]:

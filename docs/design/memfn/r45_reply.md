@@ -1,7 +1,12 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 10 for the kit manager (lane formsfixg, 2026-11-17; the design text beside the
-cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 10 applies the re-check of
+Status: DRAFT rev 11 for the kit manager (lane formsfixi, 2026-11-17; the design text beside the
+cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 11 applies the re-check of
+rev 10's fixes, review r39 (`docs/dev/reviews/2026-11-17-r39-memfn-forms5.md`, its RULED section:
+the EXE level closed by LAYOUT TWINS (K1), the confirm read by every reader alike (K2, K3, K4:
+reading B), one owed list (K6), the controls checked (K8), the confirm's cost and docs (K5, K12);
+K7, K10 and K11 are lane formsfixj's checks, K9 is PLANned; read "Changes in rev 11" first).
+Rev 10 (lane formsfixg) applied the re-check of
 rev 9's fixes, review r38 (`docs/dev/reviews/2026-11-17-r38-memfn-forms4.md`, its RULED section:
 the CLASS behind J1 and J2 closed, not the instance: the twin term per pattern, the launches in
 rounds, and a drill with noise at every level of the night; the drill's arm level then needed
@@ -54,6 +59,28 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `MF_MAX_FWD` 33); `mf_result` 3,000 B; `mf_wspan` 1,164 B; `mf_wreply` 532 B;
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
+
+## Changes in rev 11 (by r39 finding id)
+
+Review r39 re-checked rev 10's fixes (`lane/memfn-forms` 1aec5d4d3). Its rule defect (K1) was,
+for the fourth round running, a level the estimators pooled over: every noise contrast the night
+had was inside ONE exe, and a head against I is two (r36 the night, r37 one regime, r38 one
+pattern, r39 one exe). The kit manager RULED the layout twin: the night now times the contrast of
+the comparison's own KIND, prints its size, and the confirm re-runs on fresh twins so the level
+cannot replicate. `cards.py selftest` is the drill record (lane formsfixi's report, "Validation").
+Masking as before: while NOT-WARM and short-subject are approximations every real night takes
+step (5), so K1/K4 could not ship a wrong h\* on 11-19; they bind once the bench's methods arrive.
+
+| id | change | where |
+|---|---|---|
+| K1 | LAYOUT TWINS: `I.lt` (I's compiled object linked behind a 1,040-byte padding object: byte-different, the same object code, every function 1,056-1,088 bytes higher, answer-gated in every cell) is one more arm of I's pool in every C1-C2 cell; `aa-twin` is `aa`'s layout twin; the LAYOUT TWIN TERM `exp(z(α / N) x σ_x,up) - 1` (σ_x the RMS of `ln(t(I.lt) / t(I))` over the cells read, df the exe pairs) floors every cell, and `rule` prints the night's MEASURED between-exe offset; the confirm times FRESH layout twins (`I.cf`, `h<N>.cf`, a 2,080-byte pad). Per-exe offsets held over every reading, τ 1/2/3 %: P(h\* != 64) 0.000 / 0.000 / 0.000 (r39: 0.13-0.17 / 0.62-0.63; accept <= 0.05); confirm cells on those no-win nights a mean of 0.00 / 0.01 / 0.00 (max 0 / 4 / 0); the night reads the offset back as 0.0097 / 0.0197 / 0.0296 (0.0004 at τ 0). Control (rev 10's floor and confirm, the same 2 % night): 0.647 (accept > 0.15). The "exactly what a head against I is" sentence corrected. Step 1's expected wall +9.1 % (0.105 -> 0.115 h, `cards.py plan`, UNMEASURED constants) | §3 "The floor `f`", "The layout twin term", "Confirm by re-run", drill (xxii), night order step 1 |
+| K2 | R0 scans EVERY reading: step 1's, a void re-run's, C3's and the confirm's (`results_confirm.tsv`); a confirm-row gate failure of `I.cf` makes the night DEFECTIVE, of `h<N>.cf` removes H(N) (rev 10: "confirms nothing") | §3 R0, `cards.py analyse` |
+| K3 | The confirm's reading of a head's win is I's fresh twin against the head's own; a missing, void or bimodal one of THOSE confirms nothing; another head's void says nothing about this head's win (the script's per-arm reading kept, the text corrected); a selftest row | §3 "Confirm by re-run" |
+| K4 | READING B: the confirm gates only step (4)'s "beat I beyond `f`"; W, E and dominance read the first reading. Every head <= 16 truly 5 % faster in hit-dense: h\* = 16 on 275 of 300 nights (accept >= 85 %; rev 10's reading on the same nights 107, r39 122-131). RECORD: one 4 % winner, H(8) in hit-dense, 184 of 300 (r39: 182 under rev 10) | §3 R1 step (4), "Confirm by re-run", drill (xxii) |
+| K5 | The plan prints the confirm's BOUND (every mover cell read, every moving head winning: 56 cells, 456 arm cells, 0.061 h) beside the one-win case (H(8) in one regime: 14 cells, 0.004 h), and the selftest figures as RECORD; night order step 1 names the confirm before h is frozen | `cards.py plan`, night order step 1 |
+| K6 | ONE owed list: `rule` and `rerun` call one function (`owed_now`) with one G2 list, `--g2 FILE` recorded in `RUNDIR/rule_g2.json` and read by every later call. 12 nights through the commands with G2 = {16}: 0 stalled, `rerun` timed exactly `rule`'s owed list on every pass; control (no record, rev 10's `rerun`): 5 of 12 stalled | §3 "Confirm by re-run", `cards.py rule`/`rerun` |
+| K8 | The J2 cut in rounds under rev 9's floor is CHECKED (<= 0.05), and the fast split under rev 9's rule (> 15 of 100); the standing-questions sentence says which levels have a control | drill (xxi), §6 |
+| K12 | `cards.py`'s usage text (rev 11, `rerun` = voids + the confirm, `results_confirm.tsv`, the G2 record, `rule`'s exit 3 names a confirm); S3310-S3312 named in memfn/tests/NOTES.md (their two other sites, `tests/compound/CLAUDE.md` (4) and `run_shell_checks.sh`'s header, are lane formsfixj's files) | lane report |
 
 ## Changes in rev 10 (by r38 finding id)
 
@@ -769,8 +796,8 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       level"; it is not for a level that replicates, and an exe's offset replicated because the
       confirm re-ran the same exes.] After the voids are settled and the gate has run, `rule`
       lists every (cell, head) win and owes ONE confirming re-run of each (`cards.py rerun`),
-      **timed on FRESH LAYOUT TWINS [rev 11, RULED r39 K1]:** `I.cf` (I's object code at a second
-      padding, 2,080 bytes: 48 mod 64) and `h<N>.cf` for each winning head, in rounds, into
+      **timed on FRESH LAYOUT TWINS [rev 11, RULED r39 K1]:** `I.cf` (I's object code behind a second
+      padding, 2,080 bytes: shifts of 2,080-2,112 bytes measured) and `h<N>.cf` for each winning head, in rounds, into
       `results_confirm.tsv`; never step 1's exes, so an offset an exe carries cannot replicate.
       **The confirm's reading of a head's win is `t(I.cf) / t(h<N>.cf)`; an `I.cf` or `h<N>.cf`
       that is missing, void or bimodal confirms nothing for that head** [rev 11, r39 K3: rev 10's
@@ -904,7 +931,8 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     makes, the noise estimator holds a contrast of the same physical kind. So the night times
     I's LAYOUT TWIN `I.lt`: I's compiled object linked a second time behind a padding object
     (1,040 bytes of `.text` linked first, so the artifact's and the driver's functions sit
-    1,056 bytes higher: 32 mod 64), byte-different, the same object code, its answers gated in
+    higher by the pad rounded to the object's alignment: 1,056-1,088 bytes, MEASURED by `cards.py
+    dry` on 11-17), byte-different, the same object code, its answers gated in
     every cell like any arm (`cards.py dry` prints the proof: byte-different, `rxa_search`
     moved, gated). `I.lt` is one more arm of I's pool in every C1-C2 cell, and `aa-twin` is
     `aa`'s layout twin. Per cell read, `d(c) = ln(t(I.lt, c) / t(I, c))`, two single-arm
@@ -1087,6 +1115,29 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   regime where it loops: 282 (hit-dense) and 274 (random) of 300 of 300 nights (rev 9's rule: 294 and 294; accept >= 90 % and >=
   half of rev 9's). The void rate on pure noise: 0.000 (normal launches) and 0.030 (t(5)) of nights (F3: <= 5 %). Every earlier
   drill (i)-(xx) re-runs under rev 10 with its result unchanged (selftest 182 checks, 0 failed: every rev 9 line holds (noise, heterogeneous noise, splits, whole-arm shifts, between-run offsets, gate cost, R0, re-run, C3, void by method, deny, identity); the earlier controls, now with the per-pattern term and the confirm off too, read 0.177, 0.397, 0.663, 0.403 (accept > 0.15 each); the cost recorded: G4's one-cell 5 % win of H(8) ships 8 in 126 of 200 nights (rev 9: 157), since a single winning cell must now reproduce).
+- **(xxii) The exe level, the confirm's readers and the owed list [rev 11, RULED r39;
+  `selftest`'s (r39) lines, alone `cards.py selftest --rev11`].** 300 nights a row unless
+  stated, 1 % launch noise, every regime read. (1) **Per-exe offsets (K1):** one offset `exp(N(0,
+  τ))` per distinct exe (I's base exe, which I and every hash-equal head run; each other head's;
+  the A/A pair's; each layout twin its own), drawn once a night and held over the first reading,
+  every void re-run and the confirm (whose fresh twins are new exes), τ = 1, 2, 3 %: P(h\* != 64)
+  0.000, 0.000, 0.000 (accept <= 0.05); confirm cells on these no-win nights a mean of 0.00,
+  0.01, 0.00 (max 0, 4, 0); the night's printed between-exe offset reads 0.0097, 0.0197, 0.0296
+  (accept within 35 % of τ) and 0.0004 on a night without offsets (accept <= 0.004). Control:
+  τ 2 % under rev 10's floor and confirm (no exe twinned: `aa-twin` and `I.lt` on their base's
+  exe, the confirm on step 1's exes): 0.647 (accept > 0.15; r39 measured 0.62-0.63). (2)
+  **Reading B (K4):** every head <= 16 truly 5 % faster in every hit-dense cell where it loops:
+  h\* = 16, the largest equal head, on 275 of 300 nights (accept >= 85 %); rev 10's reading on
+  the same nights 107 (the control: accept < 85 %). RECORD (not gated): one 4 % winner (H(8) in
+  hit-dense) ships 8 on 184 of 300 nights. (3) **R0 over the confirm (K2):** a night with a real
+  10 % win of H(8): clean, h\* = 8; H(8)'s confirm row a gate failure, h\* != 8 and R0's line
+  names `results_confirm.tsv`; I's twin `I.cf` a gate failure, the night DEFECTIVE (code 2, no
+  h\*). (4) **Per-arm confirm (K3):** another head's confirm arm void in every owed cell, h\* =
+  8; `I.cf` void there, h\* = 64 (nothing confirms). (5) **One owed list (K6):** 12 nights
+  through the COMMANDS on disk (`rule --g2` with G2 = {16}, then `rerun` without `--g2`, as the
+  night's jobs call them; a real 4.5 % win of H(8)): none stalled, and `rerun` timed exactly
+  `rule`'s owed list on every pass; control (the G2 record removed, rev 10's `rerun`): 5 of 12
+  stalled (accept >= 1).
 - **(xix) A kept head without a win [rev 8, RULED r36 G4; `selftest`'s (G4) lines].** One cell
   (`k` = 60): H(8) = 0.97, H(16) = H(24) = 0.99, H(32) and H(64) = 1.00, the shorter heads
   losing; `f` = 0.025. E = {8, 16, 24} (threshold 0.994) and nothing is dominated (0.99 / 0.97
