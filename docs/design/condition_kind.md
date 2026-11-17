@@ -676,12 +676,12 @@ What a compile-time warning could decide (description only):
 THE VALUE SET'S READERS, by grep over `predicates_draft.md` (`grep -n -i 'DOM(\|domain\|value set\|can hold'`, 107
 lines, each read): the PER-PROGRAM value set (DOM, **domain-scope**, **mark-narrows**) is read by the mark and by
 nothing else: the definition and its rules (lines 2077-2090 THE DOMAIN; 2092-2122 WHICH CONDITIONS NARROW DOM;
-2042-2056 point (3) under F1; 2066-2075 the general form's D = DOM(h); 1036 the glossary), the mark's derived uses
+2042-2049 point (3) under F1; 2066-2075 the general form's D = DOM(h); 1036 the glossary), the mark's derived uses
 (`all(c)` line 4381 and row L93; `(g?: ...)` lines 1509, 1596; a complemented pattern's own DOMs line 1232; the
 mark's projection of a tuple set line 3091; negation over a marked label lines 4587-4591; rows L82, L99, L103, L104). ONE OTHER READER uses "the values h can hold":
 the EMPTY-INTERSECTION ERROR of §5.2 (lines 2333-2334, 2459-2460, the rule at line 2854: "an empty intersection from PURE PARTS"),
 which reads the label's values from the regex and the literal, never the program's conditions. Without the mark it
-stays and needs only a per-LABEL value set (the regex's), the same set item 11 would read. `default.unused` (line 3212)
+stays and needs only a per-LABEL value set (the regex's), the same set item 11 would read. `default.unused` (lines 3212-3213)
 reads sets, not values; line 1325's "literal's domain" is a numeral rule, a different object.
 
 | ruling or reading | without the mark | note |
