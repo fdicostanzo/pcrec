@@ -117,3 +117,21 @@ be short-sighted). MINE, how it is carried: the note of a deviation is a ROW in 
 done against which goal, where, and the event that should correct it), so "noted" has one home; the architecture
 critic and the code critic report such a deviation as NOTED with its row, a finding only when it has no row or is
 not small.
+
+## 2026-11-17, the owner on register-keeper; unit A5 wired
+
+"register-keeper: agree mandatory": every architecture note says which register rows it looked up (one line,
+"none" and the search run, when there is nothing). A5 WIRED the same day (the manager): the manager skill's trigger
+table ("plan a new feature, or charter its design": the goals document first; above the size trigger an
+architecture note and its critic round in mode `arch` come before the design) and its always-on line (the register
+is kept at every landing; a change against a goal lands only with its noted-deviation row);
+docs/dev/lanes/BRIEF_TEMPLATE.md gains the ARCHITECTURE NOTE field. Still PROPOSED, not ruled: the size trigger (a
+feature that touches two or more existing decision sites or adds a mechanism), speed-gate, new-rules.
+
+## 2026-11-17, the owner on the size trigger
+
+Asked **size-trigger** (the full note when a feature touches two or more existing decision sites or adds a
+mechanism; below that one paragraph in the brief with the mandatory register line and no separate review; a fix,
+a measurement or a doc lane has no note; the manager's lean: adopt, provisional until the pilot). HIS WORDS:
+"size-trigger: agree". Still open: speed-gate, new-rules, and the reach of goals 2 and 3 (ast-accessors, ctx-owner,
+emitter-backflow, accessor-grain).

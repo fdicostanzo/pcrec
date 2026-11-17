@@ -30,7 +30,7 @@ this skill does not restate them. When the guide and this skill disagree, the gu
 The writer and the critic are ALWAYS different agents (owner, 2026-11-17: "or a single expert but then it's
 reviewing its own design"). A fix round on the note is a FRESH architect lane briefed from the review.
 
-## 2. When the step applies (the size trigger: PROPOSED, the owner has not ruled it)
+## 2. When the step applies (the size trigger: RULED by the owner 2026-11-17, "size-trigger: agree"; PROVISIONAL until the pilot shows whether two sites is the right number)
 
 FULL NOTE when the feature touches TWO OR MORE existing decision sites, or adds a mechanism (a new table, record,
 pass, seam, AST kind, entry kind or option family). Otherwise the ONE-PARAGRAPH FORM (section 5, last part).
@@ -114,7 +114,7 @@ run at `$T`, inline or in the section's command list. No line numbers without th
 ```
 # <feature>: architecture note
 STATUS: DRAFT | REVIEWED <review file> | ACCEPTED <date, by whom>
-FORM: full | paragraph   (trigger, PROPOSED: <n> existing decision sites touched; mechanisms added: <list or none>)
+FORM: full | paragraph   (trigger: <n> existing decision sites touched; mechanisms added: <list or none>)
 TREE: <T>   REQUIREMENTS: <files and rulings, each @commit>   REGISTER READ: architecture.md part 3 @<T>
 
 ## Goals served
@@ -132,7 +132,7 @@ One row per site. "today" = what the code does there in one clause. class = ROW 
 NEW-SEAM | ACCESSOR | WIDEN | AS-IS. The commands and their hit counts follow the table, so the critic can re-run them.
 
 ## Register rows looked up
-[DEPENDS ON THE OWNER: whether a note MUST cite the rows it looked up; written the strict way]
+[MANDATORY, the owner 2026-11-17: "register-keeper: agree mandatory". With nothing to find, one line: "none", and the search that was run.]
 | register row | why it matches (file, function or tag) | rides first / joins <event> / not carried: reason |
 Then: rows the note PROPOSES (register columns: remodel, shape (rule), where, event, size and gate, deletes).
 Then: every NOTED DEVIATION row (part 1 "Judgement"; part 3 KINDS OF ROW) on a touched site, each corrected first
