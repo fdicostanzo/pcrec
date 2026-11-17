@@ -3,7 +3,7 @@
 First version; the 2026-10-23 S3 code-review round will refine it.
 
 The procedure for running a round (freeze, blind, pick lenses, verify, compile)
-is the `pcrec-critic` skill (`.claude/skills/pcrec-critic/SKILL.md`; design, code or both, run by a coordinator agent);
+is the `pcrec-critic` skill (`.claude/skills/pcrec-critic/SKILL.md`; design, code or both, or an architecture note, run by a coordinator agent);
 this page holds the rules it reviews against. Lenses are chosen per change from
 the skill's lens table; no lens set is standard because an earlier round used it.
 
