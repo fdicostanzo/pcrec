@@ -76,6 +76,8 @@ applies, beyond `architecture.md`:
 
 2026-11-17 r33, predicates_draft.md rev 23 (`docs/dev/reviews/2026-11-17-r33-predspec23.md`), accepted 2026-11-17 (manager): **when a revision RE-ALLOWS an operator, re-run every SAME row, warning and compile error whose stated reason assumed the operator absent** (F1, F7, F8: rev 22's "UNKNOWN and FALSE drop the same rows" silently underwrote L83, the `default.unused` (b) warning and the §5.2 error once NOT on conditions was legal again).
 
+2026-11-17, proposed by the kit after its review rounds through r38 on the form cards' pick rule (three rounds in a row found the defect exactly one level below the drills), accepted 2026-11-17 (manager): **simulate lens: a POOLED noise estimator is drilled with the noise confined to EACH level it pools over (one drill per level, not one for the estimator), plus a launch-order step (the same data presented in another run order).**
+
 2026-11-17 r33, same round (applied by file33 as a plain addition to the simulate lens): **when the evidence engine and the text agree on every number, read the engine's header for the readings it implements and check each is a sentence of the subject** (F2, F4: fallthrough over filtered `|` and find-all hits were the engine's own choices).
 
 2026-11-16 r32, [COVER-CAP] stage 2 (`docs/dev/reviews/2026-11-16-r32-covs2code.md`), accepted 2026-11-16 (manager): **a spec sentence that promises a fallback ("the compile does not fail") needs its witness at the EXTREME of the newly legal range before the hunk lands: run the range's top through every cap in limits.def's `compile budget` class, not only the cap the design names** (F1: three lenses found the refusal from three sides; the design priced one of two size caps).
