@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: 0BSD
 # Provenance: original pcrec-memory-functions text (lane forms, R-45 plan A; lane formsfixa,
-# review 2026-11-17 r35's F2-F11).
+# review 2026-11-17 r35's F2-F11; lane formsfixc, review r36's G2-G8 and rulings R1).
 """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
-identity check (docs/design/memfn/r45_reply.md rev 7 §3 "The cards", "The head `h` and the
+identity check (docs/design/memfn/r45_reply.md rev 8 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
 memfn/data/cards/kit-grid.tsv).
 
@@ -14,7 +14,7 @@ shipped compile), I as the deny `--memfn=no-span-loop`, the engine route (C5) as
 `--memfn=no-window-search`; the artifact plus one find-all wrapper is one C file per cell, its
 answers gated against python `re` before any timing.
 
-THE NIGHT (r45_reply rev 7 §3 "the night order"; each step a command, RUNDIR one directory):
+THE NIGHT (r45_reply rev 8 §3 "the night order"; each step a command, RUNDIR one directory):
   plan                     every cell (card, pattern, arm, regime, layer), the counts and the
                            EXPECTED WALL TIME of each timing step (UNMEASURED constants, named)
   dry RUNDIR [--quick]     builds EVERY cell (compile, gcc, the gate on every regime's
@@ -31,7 +31,7 @@ THE NIGHT (r45_reply rev 7 §3 "the night order"; each step a command, RUNDIR on
                            at h*); the line `rule: NEXT ...` names it
   c3 RUNDIR H              step 2b: times C3 at I, L and H(H) (results_c3_h<H>.tsv) and records
                            C4's sizes at H (sizes_h<H>.tsv); run at the h* `rule` picked (F4)
-  selftest                 the rule against every drill r45_reply rev 7 §3 lists, plus the noise
+  selftest                 the rule against every drill r45_reply rev 8 §3 lists, plus the noise
                            drill (F2), the unimodal drill (F3) and the void/R0/re-run drills
   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
@@ -66,7 +66,7 @@ GRID_TOP = 64
 SIMD = "-fmemfn-simd=x86-64-v3"
 LAYERS = {"off": [], "on": [SIMD]}
 
-# ---- the rule's statistical constants (r45_reply rev 7 §3 "The floor `f`", "Void") ----------
+# ---- the rule's statistical constants (r45_reply rev 8 §3 "The floor `f`", "Void") ----------
 # ALPHA: the rule's FAMILY-WISE false-pick budget, CHOSEN = the acceptance r35 F2 ruled (P(h* !=
 # 64 on pure noise) <= 5 %). The floor is sized so that ALL the per-cell comparisons together
 # show a false win beyond f with probability at most ALPHA (one-sided Bonferroni over N).
@@ -76,9 +76,12 @@ ALPHA = 0.05
 SIGMA_CONF = 0.95
 # GAP_K: a timed arm is BIMODAL when its launches split into two groups of >= 2 each with a gap
 # of more than GAP_K launch sigmas between them (rev 7, F3). CHOSEN from a 2e7-sample simulation
-# of 5 launches (lane formsfixa): P(gap > 4.5 sigma) is 1e-7 under normal noise and 7e-6 under
-# t(5) noise per arm, i.e. <= 1 % of nights at ~1,100 arm cells; `selftest`'s unimodal drill
-# re-checks it through this script, and its bimodal control shows the test can fire.
+# of 5 launches (lane formsfixa): P(gap > 4.5 sigma) is 1e-7 per arm under normal noise; under
+# t(5) noise about 3e-5 per arm (r36 SIMULATE-7: the pooled sigma reads 0.908 of the true one,
+# so the effective gap is ~4.1 true sigmas), consistent with the unimodal drill's 2-3 % of
+# nights; its bimodal control shows the test can fire. A split that MOVES a median (3 of 5) at
+# sizes f..2f is below any 5-launch gate at that false rate (rev 8 §3 "Bimodal"); I's POOLED
+# reading carries that case (rulings R1).
 GAP_K = 4.5
 # MED_SD5: the median of the sample SD of 5 normal draws, in sigma units: sqrt(median
 # chi2(4) / 4) = sqrt(3.3567 / 4). DERIVED. The launch sigma of a (regime, layer) pool is the
@@ -163,7 +166,7 @@ def method_of(regime):
     return "kit-approx" if regime in APPROX else "kit"
 
 
-# ---- the cards (r45_reply rev 7 §3 "The cards"; kit-grid@7) ---------------------------------
+# ---- the cards (r45_reply rev 8 §3 "The cards"; kit-grid@7) ---------------------------------
 FINITE = ["h%d" % h for h in GRID]
 CARD_ROWS = {"C1": "span_cross", "C2": "span_pop", "C3": "span_long", "C4": "span_size",
              "C5": "span_engine"}
@@ -644,23 +647,36 @@ def cmd_dry(args):
     same = identical_to_I(rundir)
     print("# dry: cells %d, built and gated %d, failures %d; distinct compiles %d; subject %d B" %
           (len(cl), len(cl) - len(bad), len(bad), len(builds), n))
-    print("# dry: H(h) text identical to I: %s" % ", ".join("%s:%s" % (p, ",".join(map(str, hs)))
-                                                            for p, hs in sorted(same.items())))
+    print("# dry: H(h) artifact hash-equal to I's (I's pool, measured per layer): %s" % ", ".join(
+        "%s/%s:%s" % (p, ly, ",".join(map(str, hs))) for p, d in sorted(same.items()) for ly, hs in sorted(d.items())))
     for b in bad[:20]:
         print("FAIL", b)
     return 1 if bad else 0
 
 
 def identical_to_I(rundir):
-    """Per C1-C2 pattern, the finite heads whose SIMD-off text equals I's (read off the
-    artifacts, not assumed from h >= k). Where it is, the rule reads I's median for the head:
+    """Per C1-C2 pattern and LAYER, the finite heads whose built artifact hash-equals I's (MEASURED
+    when the cells are built, never inferred from h >= k; rulings R1, rev 8 r36 G3: rev 7 read
+    the SIMD-off layer for both). Where it does, the rule reads I's POOLED median for the head:
     one text, one binary, one reading (rev 7, F2)."""
     out = {}
     for card in ("C1", "C2"):
         for p in CARD_PATS[card]:
-            ia = open(artifact(rundir, p, "I", "off"), "rb").read()
-            out[p] = [h for h in GRID if open(artifact(rundir, p, "h%d" % h, "off"), "rb").read() == ia]
+            out[p] = {}
+            for ly in LAYERS:
+                ia = hashlib.sha256(open(artifact(rundir, p, "I", ly), "rb").read()).hexdigest()
+                out[p][ly] = [h for h in GRID if hashlib.sha256(
+                    open(artifact(rundir, p, "h%d" % h, ly), "rb").read()).hexdigest() == ia]
     return out
+
+
+def same_heads(same, pat, ly):
+    """The heads whose text is I's for (pattern, layer), from the measured record."""
+    v = same.get(pat, {})
+    if isinstance(v, list):
+        raise SystemExit("cards: same_as_I.json holds rev 7's format (SIMD-off only, one list a pattern): "
+                         "re-run `cards.py dry`/`run` to record identity per layer (rev 8)")
+    return v.get(ly, [])
 
 
 def cmd_run(args):
@@ -730,7 +746,7 @@ def cmd_rerun(args):
     return 0
 
 
-# ---- THE RULE (r45_reply rev 7 §3, R0-R5, steps (1)-(5)) -------------------------------------
+# ---- THE RULE (r45_reply rev 8 §3, R0-R5, steps (1)-(5)) -------------------------------------
 def r1(heads, cells_read, void_cells, t, tI, same_as_I, f, top=None, measured="MEASURED"):
     """R1 over the FINITE heads `heads` (R0 already applied). cells_read: the C1-C2 cells with a
     reading; void_cells: the cells void twice (or void by method); t[h][c], tI[c] the raw
@@ -859,6 +875,7 @@ def pool_floors(f_aa, raw, glob, n_all, n_comp, alpha=ALPHA):
     return out
 
 
+POOL_I = True       # selftest's control turns I's pool off (rev 7's reading) to show the G3 drill sees it
 POOL_TERM = True    # selftest's control turns the pool term off (rev 7's floor) to show the drill sees it
 
 
@@ -961,19 +978,30 @@ def analyse(night, g2_defective, alpha=ALPHA):
     # ---- C1-C2 cells: read, void twice, void by method, or owed a re-run (F7, F8) -----------
     ccells, vc, tI, t = [], [], {}, {h: {} for h in heads}
     sa = {h: {} for h in heads}
+    pool_n = {}
     for card in ("C1", "C2"):
         for pat in CARD_PATS[card]:
             for rg in REGIMES:
                 for ly in ("off", "on"):
                     cid = "%s/%s/%s" % (pat, rg, ly)
+                    ident = same_heads(same, pat, ly)
                     for h in heads:
-                        sa[h][cid] = h in same.get(pat, [])
+                        sa[h][cid] = h in ident
                     if rg in APPROX:
                         vc.append(cid + " (void by method)")
                         for h in heads:
                             sa[h][cid + " (void by method)"] = sa[h][cid]
                         continue
-                    arms = ["I"] + ["h%d" % h for h in heads if not sa[h][cid]]
+                    # I's POOL (rulings R1, rev 8 r36 G3): I and every arm whose built artifact
+                    # hash-equals I's in this cell (measured, `same_as_I.json`), R0 or not: one
+                    # binary, so one reading, the median over all their launches
+                    pool = ["I"] + (["h%d" % h for h in GRID if h in ident] if POOL_I else [])
+                    if rows.get((card, pat, "I", rg, ly)) is None:
+                        lines.append("rule: cell %s REFUSED: I's own arm is missing from its pool (no row); the "
+                                     "night is DEFECTIVE (filed)" % cid)
+                        res["code"] = 2
+                        return res
+                    arms = pool + ["h%d" % h for h in heads if not sa[h][cid]]
                     why = []
                     for a in arms:
                         r = rows.get((card, pat, a, rg, ly))
@@ -987,7 +1015,8 @@ def analyse(night, g2_defective, alpha=ALPHA):
                             vc.append(cid)
                         continue
                     ccells.append(cid)
-                    tI[cid] = rows[(card, pat, "I", rg, ly)]["med"]
+                    tI[cid] = statistics.median([v for a in pool for v in rows[(card, pat, a, rg, ly)]["launches"]])
+                    pool_n[cid] = len(pool)
                     for h in heads:
                         t[h][cid] = tI[cid] if sa[h][cid] else rows[(card, pat, "h%d" % h, rg, ly)]["med"]
     # C3 voids are never dropped: once, owed a re-run; twice, carried on the record below
@@ -1019,6 +1048,8 @@ def analyse(night, g2_defective, alpha=ALPHA):
                  % ", ".join("%s/%s %.4f" % (rg, ly, pf(rg, ly)) for rg in REGIMES if rg not in APPROX
                              for ly in ("off", "on")))
     fcell = {c: pf(*c.split("/")[1:3]) for c in ccells}
+    lines.append("rule: I's pool per cell read (arms whose artifact is I's, measured): %s"
+                 % ", ".join("%s %d" % kv for kv in sorted(pool_n.items())))
     lines.append("rule: R0 defective heads: %s; cells read %d, void %d" % (sorted(defective) or "none",
                                                                          len(ccells), len(vc)))
     measured = "MEASURED (kit-grid@7 cards C1 %s, C2 %s; %d cells read)" % (CARD_ROWS["C1"], CARD_ROWS["C2"],
@@ -1041,7 +1072,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
             mine = [c for c in ccells if c.startswith(pat + "/")]
             if not mine:
                 continue
-            if all(h in same.get(pat, []) for h in heads):
+            if all(all(h in same_heads(same, pat, ly) for ly in LAYERS) for h in heads):
                 lines.append("R3 class %s: its text is I's at every surviving head (never a mover): not read" % pat)
                 continue
             any_cls = True
@@ -1062,12 +1093,13 @@ def analyse(night, g2_defective, alpha=ALPHA):
     # R4: C1's near-miss column, H(h*) against C5 (the engine route)
     for pat in CARD_PATS["C1"]:
         for ly in ("off", "on"):
-            hv = rows.get(("C1", pat, "I" if hs in same.get(pat, []) else "h%d" % hs, "near-miss", ly))
+            cid = "%s/near-miss/%s" % (pat, ly)
+            hv = t[hs].get(cid)
             ev = rows.get(("C5", pat, "engine", "near-miss", "off"))
-            if hv and ev and hv["status"] == ev["status"] == "ok" and hv["med"] / ev["med"] > 1 + max(
+            if hv is not None and ev and ev["status"] == "ok" and hv / ev["med"] > 1 + max(
                     pf("near-miss", ly), pf("near-miss", "off")):
                 lines.append("R4 near-miss trigger (r45_reply §4): %s/%s H(%d) %.4f vs engine %.4f"
-                             % (pat, ly, hs, hv["med"], ev["med"]))
+                             % (pat, ly, hs, hv, ev["med"]))
     # C3 at h* (step 2b, F4): R2's C3 half and R5; absent, NOT COMPUTED and owed
     name = "results_c3_h%d.tsv" % hs
     if name not in c3files:
@@ -1132,7 +1164,7 @@ def death_depth(pat):
     return e
 
 
-# ---- the drills (r45_reply rev 7 §3 "Drills"), each with the result the design states ------
+# ---- the drills (r45_reply rev 8 §3 "Drills"), each with the result the design states ------
 def drill(spec):
     """spec: f, heads, cells [(id, k)], ratios {h: [per cell]} (t(I) = 1 unless tI given),
     void [ids]; the default ratio is 1.0 (a head that ties I)."""
@@ -1295,13 +1327,13 @@ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_r
         for pat in CARD_PATS[card]:
             k = len(PATTERNS[pat][1])
             lit = pat in ("lit40", "abc60")
-            same[pat] = [h for h in GRID if lit or h >= k]
+            same[pat] = {ly: [h for h in GRID if lit or h >= k] for ly in LAYERS}
             for rg in (regimes or REGIMES):
                 for ly in ("off", "on"):
                     T = rng.uniform(0.2, 2.0)
                     put((card, pat, "I", rg, ly), T)
                     for h in GRID:
-                        put((card, pat, "h%d" % h, rg, ly), T * (1.0 if h in same[pat] else wins.get(h, 1.0)))
+                        put((card, pat, "h%d" % h, rg, ly), T * (1.0 if h in same[pat]["off"] else wins.get(h, 1.0)))
     for rg in (regimes or REGIMES):
         for ly in ("off", "on"):
             T = rng.uniform(0.2, 2.0)
@@ -1434,6 +1466,42 @@ def cmd_selftest(_args):
     check("(F3) control: a bimodal arm voids", hit >= 45,
           "2 of 5 launches 8 %% slow (~8 launch sigmas): voided in %d of 50 (accept >= 45)" % hit)
 
+    # G3 (rulings R1, rev 8 r36): a MEDIAN-MOVING split (3 of 5 launches slow) of I's arm in ONE
+    # cell, at sizes f..2f (f this script's median floor on a 1 % night): I's pooled reading
+    # keeps it from shipping a head (r36 measured h* = 24 in 54 of 100 nights at 5 %)
+    cellI = ("C1", "hex32", "I", "hit-dense", "off")
+    for mult in (1.0, 1.5, 2.0):
+        s = fmed * mult
+        rng = random.Random(int(50 + 10 * mult))
+        offn = sum(synth_night(rng, 0.01, splits={cellI: (3, 1 + s)})["hstar"] != GRID_TOP
+                   for _ in range(NOISE_TRIALS))
+        check("(G3) 3-of-5 split of I, %.1f f (%.1f %%)" % (mult, 100 * s), offn / NOISE_TRIALS <= 0.05,
+              "P(h* != 64) = %.3f over %d nights (accept <= 0.05)" % (offn / NOISE_TRIALS, NOISE_TRIALS))
+    # its control: rev 7's reading (I's own arm alone) under the same split must FAIL the acceptance
+    globals()["POOL_I"] = False
+    try:
+        rng = random.Random(65)
+        offc = sum(synth_night(rng, 0.01, splits={cellI: (3, 1 + 1.5 * fmed)})["hstar"] != GRID_TOP
+                   for _ in range(NOISE_TRIALS))
+    finally:
+        globals()["POOL_I"] = True
+    check("(G3) control: the 1.5 f split, I's arm alone", offc / NOISE_TRIALS > 0.15,
+          "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)"
+          % (offc / NOISE_TRIALS, NOISE_TRIALS))
+    # its converse: the same split in a HEAD arm (not pooled) never ships that head
+    cellH = ("C1", "hex32", "h8", "hit-dense", "off")
+    for mult in (1.0, 2.0):
+        s = fmed * mult
+        rng = random.Random(int(70 + 10 * mult))
+        picks = [synth_night(rng, 0.01, splits={cellH: (3, 1 + s)})["hstar"] for _ in range(100)]
+        check("(G3) converse: the split in H(8), %.1f f" % mult, sum(x == 8 for x in picks) == 0,
+              "h* = 8 in %d of 100 nights (accept 0); picks %s" % (sum(x == 8 for x in picks), sorted(set(picks))))
+    # RECORD (not a check): a FAST 3-of-5 split in a head arm is outside the pool's reach and the
+    # gate's (r36's null-rate numbers, rev 8 §3 "Bimodal"); its rate is printed for the record
+    rng = random.Random(90)
+    picks = [synth_night(rng, 0.01, splits={cellH: (3, 1 / (1 + 1.5 * fmed))})["hstar"] for _ in range(100)]
+    print("RECORD (G3) a FAST 3-of-5 split in H(8), 1.5 f: h* = 8 in %d of 100 nights (not gated; residual)"
+          % sum(x == 8 for x in picks))
     # F7: the re-run merge: void once -> owed; re-run clean -> read; re-run void -> void twice
     def night_with(first_bimodal, rerun_bimodal, g2=(), c3=None, seed=6):
         rng = random.Random(seed)
@@ -1520,8 +1588,8 @@ def cmd_selftest(_args):
     # H(64), which loops past offset 64 at k = 500), with L as the reach arm
     c3loop = b"x = ({ size_t rxa_mf1_j = 64; for (; rxa_mf1_j < 500; rxa_mf1_j++) if (!(a)) break; });"
     l0 = b"x = ({ size_t rxa_mf1_j = 0; for (; rxa_mf1_j < 500; rxa_mf1_j++) if (!(a)) break; });"
-    lk, rc_ = loop_audit([("hex500 I off", "I", c3loop), ("hex500 h0 off", "h0", l0), ("hex500 h64 off", "h64", c3loop)],
-                         reach_arm="h0")
+    lk, rc_ = loop_audit([("hex500 I off", "I", c3loop), ("hex500 h0 off", "h0", l0),
+                          ("hex500 h64 off", "h64", c3loop)], reach_arm="h0")
     check("(G7) C3 deny check: an ignored deny fails", lk == ["hex500 I off"] and rc_ == ["hex500 h0 off"],
           "leaks %s reach %s" % (lk, rc_))
     lk, rc_ = loop_audit([("hex500 I off", "I", b"if (!(a)) return 0;"), ("hex500 h64 off", "h64", c3loop)],
@@ -1543,7 +1611,7 @@ def cmd_selftest(_args):
     return 1 if bad else 0
 
 
-# ---- the identity check (r45_reply rev 7 §3 "The head lever and its identity check") -------
+# ---- the identity check (r45_reply rev 8 §3 "The head lever and its identity check") -------
 ENCODINGS = {"byte": [], "utf8": ["-e", "utf8"]}
 
 
