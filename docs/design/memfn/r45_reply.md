@@ -1,6 +1,12 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 11 for the kit manager (lane formsfixi, 2026-11-17; the design text beside the
+Status: DRAFT rev 12, STOPPED (lane formsfixk, 2026-11-17): rev 12 applies review r41
+(`docs/dev/reviews/2026-11-17-r41-memfn-forms6.md`, its RULED section): the layout twins are
+REPLACED by layout POOLS (setup randomization of every arm's layout, L9), the strict arguments and
+the keyed G2 record (L6), the confirm's arm list from one source (L5); the lane STOPPED under its
+stop rule because drill and power rows miss their accept lines (read "Changes in rev 12" first;
+the questions it needs ruled are listed there). Rev 11:
+DRAFT rev 11 for the kit manager (lane formsfixi, 2026-11-17; the design text beside the
 cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 11 applies the re-check of
 rev 10's fixes, review r39 (`docs/dev/reviews/2026-11-17-r39-memfn-forms5.md`, its RULED section:
 the EXE level closed by LAYOUT TWINS (K1), the confirm read by every reader alike (K2, K3, K4:
@@ -59,6 +65,49 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `MF_MAX_FWD` 33); `mf_result` 3,000 B; `mf_wspan` 1,164 B; `mf_wreply` 532 B;
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
+
+## Changes in rev 12 (by r41 finding id) [STOPPED: drill rows miss; questions below]
+
+Review r41 re-checked rev 11 (`lane/memfn-forms` 42fd4b33e): the layout twin was a whole-.text shift
+by a multiple of the TU's alignment (L1), so the night's between-exe estimate was a lower bound of
+unknown tightness (L2). The kit manager RULED the general form, SETUP RANDOMIZATION (L9), in place
+of the twins. Built and measured here; the drill rows the ruling named do NOT all hold, so the
+lane stopped (its report, "STATE AT HANDOFF", is the hand-off; lane formsfixk's report quotes
+every row).
+
+| id | change | where |
+|---|---|---|
+| L9 (closes L1, L2, L4's layout half, L7) | LAYOUT POOLS: every arm's text (I, each head, aa, the engine route, C3's arms) is linked as a pool of `POOL_SIZE` = 4 variants (UNMEASURED DEFAULT), each its own compile of the TU with an IN-TU prelude (a top-level `.skip 16 j` ahead of every function; j drawn mod 256, stratified so the four variants take the four 16-B phase classes mod 64 and each alignment's two variants differ by 16 B mod 32) and an alignment variant (odd variants: gcc's code alignment off, x86's tight-loop alignment too); every launch draws a variant (a hash of the run id, the results file, the cell and the round), recorded per launch (`variants` column); every variant answer-gated (`dry`, and `prepare_cell` before timing); `dry` prints each pool's per-hot-loop 64-B and 32-B phases and relative layouts (nm + objdump of `rxa_search`'s backward-branch targets) and REFUSES a pool with one 64-B phase vector or one relative layout. Dry run (WIDTH_FLAG=none, --quick): 80 timed texts x 4 = 320 exes, 1374 cells built and gated, 0 failures, 64-B phase vectors per pool 3-4, 32-B 3-4, relative layouts 2-3, 0 refused. DELETED: `I.lt`, `aa-twin` (the A/A pair is `aa` and `aa.b`, two arms of aa's pool), the layout twin term and `layout_sigma`, the switches LAYOUT_TERM / LAYOUT_TWIN_ARM / LAYOUT_TWINS, the pad objects, the confirm's fresh twins `I.cf` / `h<N>.cf` (the confirm re-times I and the head on fresh pool draws). `rule` prints the night's layout reading (between-variant sigma from I's pools, a RECORD). Drill rows: see "STOP" below | §3 "The layout pools", "Confirm by re-run", "The floor `f`", night order step 1, §6 |
+| L5 | The drills build their confirm rows from `confirm_cells` (the command's own arm list), never their own spelling | `cards.py` `confirm_only` |
+| L6 | Strict arguments for `plan`, `dry`, `run`, `rerun`, `rule`, `c3`, `selftest`: an unknown or mistyped option, a valueless `--g2`, a missing or extra positional refuse (exit 2); `--g2 FILE` and `--g2=FILE` both read. `rule_g2.json` is keyed by the RUNDIR's run id (written once, by the first command that needs it) and the G2 file's sha-256: another run's record, a moved file, or a second different list refuse (exit 2); `run` refuses a RUNDIR holding any results file | `cards.py` `parse_args`, `night_g2`, `run_id` |
+| L3 | The power rows at layout τ 0 and 1 % gated (accept lines as rev 11's), RECORD at 2 % | drill (xxiii) |
+| L4 | Its layout half is deleted with the twins (no layout term remains); its fresh-twin half is deleted with them (the confirm draws from the pools): nothing left to control per half. The pool refusal itself has one control per half (a selftest row) | drill (xxiii) |
+| L7 | Deleted with the twins: no `h<N>.cf`; every exe's cache name carries its variant's prelude bytes and flags | `cards.py` `build_cell` |
+| L8 | S3320 and S3321 named in memfn/tests/NOTES.md, tests/compound/CLAUDE.md (4) and run_shell_checks.sh's header | doc lines |
+
+**STOP (the lane's stop rule: a drill or power row misses its accept line).** Drill (xxiii), 300
+nights a row, 1 % launch noise, every regime read, `cards.py selftest --rev12`:
+
+| layout model | τ 1 % | τ 2 % | τ 3 % |
+|---|---|---|---|
+| a fixed function of (text, 64-B phase) | 0.000 (voids 0.023) | 0.000 (voids **0.310**) | 0.010 (voids **0.490**) |
+| heads only (I's and aa's pools none) | 0.000 (voids 0.040) | **0.057** (voids **0.943**) | 0.007 (voids **1.000**) |
+| rho 0.8 correlated variants | 0.017 (voids 0.003) | **0.247** (voids 0.040) | **0.350** (voids **0.210**) |
+| rho 0.95 correlated variants | **0.117** (voids 0.000) | **0.603** (voids 0.003) | **0.630** (voids 0.013) |
+
+P(h\* != 64), accept <= 0.05; "voids" the nights with a first void, accept <= 0.05 (F3). Power
+(H(8) in hit-dense; multi = every head <= 16 5 % faster), layout τ 0 / 1 % (gated) / 2 % (RECORD):
+one 5 % winner 281 / **192** / 26 of 300 (accept >= 270), one 10 % winner 300 / 299 / 259, multi
+279 / **184** / 30 (accept >= 255). GAP_K's per-arm false-split rate under layout (5 launches over
+4 variants, the pool's sigma read as `launch_sigmas` reads it): 0 at τ 0 and 1 %, 3.5e-4 at 2 %,
+9.1e-4 at 3 % (about 0.4 and 1.1 false voids a night of ~1,200 arms). Three facts the ruling did
+not decide: (1) a share of layout variance COMMON to every variant of a text (rho) is, by
+construction, indistinguishable from the text's own speed; no within-text pool averages it; (2) the
+floor's estimators (A/A, I's pools) read only I's and aa's texts, so a head text more
+layout-sensitive than I is unseen (heads only); (3) the bimodal test reads layout mixture as a
+split (GAP_K 5.5 brings τ 2/3 % to ~0.02/0.10 false voids a night, but the F3 control's arm (2 of 5
+launches 8 % slow at σ 1 %) is then flagged 0.76 of the time, against 0.94 at 4.5). The lane's
+report lists the questions with the measurements behind each.
 
 ## Changes in rev 11 (by r39 finding id)
 
@@ -796,7 +845,9 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       level"; it is not for a level that replicates, and an exe's offset replicated because the
       confirm re-ran the same exes.] After the voids are settled and the gate has run, `rule`
       lists every (cell, head) win and owes ONE confirming re-run of each (`cards.py rerun`),
-      **timed on FRESH LAYOUT TWINS [rev 11, RULED r39 K1]:** `I.cf` (I's object code behind a second
+      **timed on fresh POOL DRAWS [rev 12, r41 L9: I and the head, each launch a new draw of
+      its text's pool, from `confirm_cells`; the text below about `I.cf` / `h<N>.cf` is rev 11's,
+      superseded]:** ~~**timed on FRESH LAYOUT TWINS [rev 11, RULED r39 K1]:**~~ `I.cf` (I's object code behind a second
       padding, 2,080 bytes: shifts of 2,080-2,112 bytes measured) and `h<N>.cf` for each winning head, in rounds, into
       `results_confirm.tsv`; never step 1's exes, so an offset an exe carries cannot replicate.
       **The confirm's reading of a head's win is `t(I.cf) / t(h<N>.cf)`; an `I.cf` or `h<N>.cf`
@@ -852,7 +903,8 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
 - **The floor `f` [rev 7, RULED r35 F2: sized to the comparison count; rev 8, RULED r36 G2: per
   (regime, layer)].** The cards' own A/A
   cells (`lit-l16`, every regime READ and both layers, run with the cards on the same binary)
-  estimate the noise of one ratio of two medians of two EXES: `aa` against `aa-twin`, its LAYOUT
+  estimate the noise of one ratio of two medians [rev 12, r41 L9: `aa` against `aa.b`, two arms of
+  aa's layout pool, every launch its own draw; the twin text below is rev 11's] of two EXES: `aa` against `aa-twin`, its LAYOUT
   TWIN (the same object code linked at another address) [rev 11, r39 K1: rev 10 said "exactly what
   a head against I is", but its `aa` and `aa-twin` were one cached exe, so the A/A ratio read
   launch and between-run noise only, never an offset an exe carries as a whole, while a head
@@ -919,7 +971,16 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     higher floor, not a borrowed one. On a 1 % night the A/A term (about 4.4 %) still binds; the
     per-pattern term binds only where one pattern is noisier (`selftest`'s class drill, drill
     (xxi)).
-    - **The layout twin term [rev 11, RULED r39 K1].** Every estimator above is a contrast INSIDE
+    - **The layout pools [rev 12, RULED r41 L9; STOPPED, see "Changes in rev 12"].** The twin
+    below was a whole-.text shift by a multiple of the TU's alignment: it kept its base's 32-B phase
+    and relative layout (r41 L1), so it read a lower bound (L2). Rev 12 randomizes every arm's
+    layout instead: each text is a pool of variants (an in-TU prelude and an alignment variant),
+    every launch draws one and records it, so layout noise is in every arm's launches, iid across
+    comparisons by construction, and every estimator above (the launch term, the twin terms, the A/A
+    pair `aa`/`aa.b`, the gate) reads it at its own level. No separate term; `rule` prints the
+    night's between-variant sigma as a RECORD. The drill rows (xxiii) that do not hold are the
+    stop.
+    - ~~**The layout twin term [rev 11, RULED r39 K1].**~~ [SUPERSEDED by rev 12, r41 L9: `I.lt`, `aa-twin` and the term are deleted.] Every estimator above is a contrast INSIDE
     ONE EXE: I's pools are hash-equal artifacts run as one cached exe, the twin terms and the gate
     read them, and rev 10's A/A pair was one exe too. A head against I is TWO exes, so an offset
     an exe carries as a whole (code placement, alignment, its cache and branch-predictor
@@ -1115,6 +1176,11 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   regime where it loops: 282 (hit-dense) and 274 (random) of 300 of 300 nights (rev 9's rule: 294 and 294; accept >= 90 % and >=
   half of rev 9's). The void rate on pure noise: 0.000 (normal launches) and 0.030 (t(5)) of nights (F3: <= 5 %). Every earlier
   drill (i)-(xx) re-runs under rev 10 with its result unchanged (selftest 182 checks, 0 failed: every rev 9 line holds (noise, heterogeneous noise, splits, whole-arm shifts, between-run offsets, gate cost, R0, re-run, C3, void by method, deny, identity); the earlier controls, now with the per-pattern term and the confirm off too, read 0.177, 0.397, 0.663, 0.403 (accept > 0.15 each); the cost recorded: G4's one-cell 5 % win of H(8) ships 8 in 126 of 200 nights (rev 9: 157), since a single winning cell must now reproduce).
+- **(xxiii) The layout pools [rev 12, RULED r41 L9, L3, L6; `selftest`'s (r41) lines, alone
+  `cards.py selftest --rev12`].** The table in "Changes in rev 12" (the stop): every layout model
+  the ruling names at τ 1/2/3 % with its void rate, GAP_K's false-split rate under layout, the
+  power rows at τ 0/1 % and the 2 % RECORD; the pool refusal with one control per half (one
+  64-B phase vector; one relative layout); the strict arguments and the keyed G2 record (L6).
 - **(xxii) The exe level, the confirm's readers and the owed list [rev 11, RULED r39;
   `selftest`'s (r39) lines, alone `cards.py selftest --rev11`].** 300 nights a row unless
   stated, 1 % launch noise, every regime read. (1) **Per-exe offsets (K1):** one offset `exp(N(0,
@@ -1570,7 +1636,9 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
      r38 R2; rev 11, r39 K5]:** once no cell is void, `cards.py rerun` times each cell holding a
      head's win beyond `f` once more, on FRESH layout twins of I and of each winning head (§3
      "Confirm by re-run"), into `results_confirm.tsv`; `rule` names it with the same `NEXT
-     cards.py rerun RUNDIR` line as a void re-run. Step 1's cells include I's layout twin `I.lt`
+     cards.py rerun RUNDIR` line as a void re-run. [Rev 12, r41 L9: no `I.lt`; every arm cell is
+     gated on every pool variant before it is timed, +0.0066 h by `cards.py plan` (EST_GATE_S, a
+     gate call measured at ~1.5 ms); step 1 0.11 h, C3 0.01 h, as rev 11.] Step 1's cells include I's layout twin `I.lt`
      (one more arm per C1-C2 cell, +9.1 % of step 1's expected wall by `cards.py plan`'s
      UNMEASURED constants: 0.115 h against 0.105 h) [rev 11, r39 K1].
   2. h is frozen by that rule's reading.
@@ -2071,7 +2139,13 @@ by `git grep`). They are updated in the build or flagged in its report:
      the same J2 cut in rounds under rev 9's floor (<= 0.05: an order that regressed to
      arm-major reds) and the fast split under rev 9's rule (> 15 of 100: the row that retired a
      limit now has its control).
-   - **The comparison kinds [rev 11, r39 K1].** Each comparison the rule makes, and the twin
+   - **The comparison kinds by PERTURBATION [rev 12, r41 L1/L2/L9].** What differs between the two
+     physical objects of each ratio (text, relative layout, 32/64-B phase, page offset, data
+     placement): under the pools a head against I differs in text and in each launch's layout draw;
+     the A/A pair and I's pool differ in the draw only; a text's layout share COMMON to all its
+     variants (and its data placement, which the prelude does not move) is read by no estimator
+     (drill (xxiii)'s rho rows: the stop).
+   - **The comparison kinds [rev 11, r39 K1; superseded by the line above].** Each comparison the rule makes, and the twin
      that measures its noise: a head against I is two exes (the layout twin term, `I.lt`
      against I, and the A/A pair, `aa` against its layout twin); I's pool against itself is one
      exe (the twin terms, the gate); a confirm against a first reading is two runs AND two exes
