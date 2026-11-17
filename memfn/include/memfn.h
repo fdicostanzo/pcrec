@@ -1723,7 +1723,10 @@ int      mf_reach_table(const mf_art *, mf_sink *file_scope);
  * (lane forms, R-45 plan A): "span-head=N", N in 0..MF_SPAN_HEAD_MAX,
  * plain decimal digits only (no sign, no space), the window family's span
  * forms loop from head N instead of the shipped head (the cards' only way
- * to set h; the deny `no-span-loop` still wins). Called before the first
+ * to set h). The option row `span-loop` overrides the lever: its force
+ * (`span-loop`) sets the head to 0 and its deny (`no-span-loop`) renders
+ * every position inline, and given both the deny wins (review r36 G14).
+ * Called before the first
  * define; refused after it, for a name the kit does not list, or for a
  * value outside its range or spelling. */
 #define mf_lever          MF_NS(lever)
