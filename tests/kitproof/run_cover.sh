@@ -169,10 +169,13 @@ else
     bad "width_opt.c does not build: $(head -3 "$tmp/width_opt.gcc")"
 fi
 
-# K35: the populations are counted, never assumed
-[ "$nv" -ge 50 ] && ok || bad "only $nv verdict rows (floor 50)"
-[ "$nf" -ge 19 ] && ok || bad "only $nf facts rows (floor 19)"
-[ "$na" -ge 105 ] && ok || bad "only $na answer rows (floor 105)"
+# K35: the populations are counted, never assumed. Stage 2 B7 (lane covs2g,
+# cover_cap.md §11.6.2 FLOORS): verdict 50 + 10 W twins; facts 19 + 2 W twins;
+# answer 105 + 32 n >= 33 rows on W (end-at-k rows included) + 3 a{5} rows (the
+# §11.6.3 P3/P4 witness; the P1/P2 witness is the W [0-9a-f]{40} '0' x 40 row)
+[ "$nv" -ge 60 ] && ok || bad "only $nv verdict rows (floor 60)"
+[ "$nf" -ge 21 ] && ok || bad "only $nf facts rows (floor 21)"
+[ "$na" -ge 140 ] && ok || bad "only $na answer rows (floor 140)"
 echo "kitproof: $nv verdicts, $nf facts, $na answers ($ncell cells)"
 echo "checks passed: $pass"
 echo "checks failed: $fail"

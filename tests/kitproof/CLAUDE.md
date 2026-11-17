@@ -16,7 +16,7 @@ S3220-S3226, S3234; S1149 retired with the span slice, `docs/design/cover_cap.md
   (`rx_search` at every startoffset and match_api.md §3.1.3's find-all loop,
   every group span, against `answers.tsv`). Every answer pattern must itself
   read `cover` (its REACH), and each row kind's population has a K35 floor
-  literal (50 / 19 / 105) that a change adding rows raises. Also runs
+  literal (60 / 21 / 140 since stage 2 B7, lane covs2g) that a change adding rows raises. Also runs
   `width_opt.c` (the library side of `window_search_width`).
 - `cases.tsv` — the witnesses, each with the sabotage row or kit_proof clause it
   serves. The verdicts are kit_proof.md's witness list (`conj.txt` D) and
