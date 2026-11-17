@@ -1,9 +1,11 @@
 # A condition as its own kind: the owner's SQL model, worked out (EXPLORATION)
 
-STATUS: EXPLORATION, rules nothing. TWO PARTS: Part I (sections 1-7 and "Left open", lane condkind, kept as
+STATUS: EXPLORATION, rules nothing. THREE PARTS: Part I (sections 1-7 and "Left open", lane condkind, kept as
 delivered) works the owner's SQL model out with the optional mark; Part II (the note's own revision, lane condkind2,
 2026-11-16, on the owner's go "drop-mark: another exploration on these ideas", COND-FAMILY 21:19) works the same
-model out WITHOUT the mark. Part I: lane condkind (opus), 2026-11-16, on the owner's go ("Go. Purely exploration",
+model out WITHOUT the mark; Part III (lane defscope, 2026-11-16, after the owner's rulings drop-mark, default-value
+and source-row, COND-FAMILY 21:49) attacks every option for the SCOPE of a default alike and asks **default-scope**
+as what a default IS. Part I: lane condkind (opus), 2026-11-16, on the owner's go ("Go. Purely exploration",
 COND-FAMILY 2026-11-16 20:44, **definition-lane**). Design only, no build go. It edits neither
 `predicates_draft.md` (stays at rev 22) nor any ruling: every 2026-11-16 ruling in COND-FAMILY.md is an INPUT here,
 and where the model would change one, the change comes back as a named question (section 7), never as a new text.
