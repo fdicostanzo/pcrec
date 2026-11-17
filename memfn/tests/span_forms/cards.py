@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: 0BSD
 # Provenance: original pcrec-memory-functions text (lane forms, R-45 plan A; lane formsfixa,
-# review 2026-11-17 r35's F2-F11; lane formsfixc, review r36's G2-G8 and rulings R1).
+# review 2026-11-17 r35's F2-F11; lane formsfixc, review r36's G2-G8 and rulings R1; lane formsfixe,
+# review r37's H1-H4, H7: the twin term, the agreement gate, the pool record and reach refusals).
 """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
-identity check (docs/design/memfn/r45_reply.md rev 8 §3 "The cards", "The head `h` and the
+identity check (docs/design/memfn/r45_reply.md rev 9 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
 memfn/data/cards/kit-grid.tsv).
 
@@ -14,7 +15,7 @@ shipped compile), I as the deny `--memfn=no-span-loop`, the engine route (C5) as
 `--memfn=no-window-search`; the artifact plus one find-all wrapper is one C file per cell, its
 answers gated against python `re` before any timing.
 
-THE NIGHT (r45_reply rev 8 §3 "the night order"; each step a command, RUNDIR one directory):
+THE NIGHT (r45_reply rev 9 §3 "the night order"; each step a command, RUNDIR one directory):
   plan                     every cell (card, pattern, arm, regime, layer), the counts and the
                            EXPECTED WALL TIME of each timing step (UNMEASURED constants, named)
   dry RUNDIR [--quick]     builds EVERY cell (compile, gcc, the gate on every regime's
@@ -31,7 +32,7 @@ THE NIGHT (r45_reply rev 8 §3 "the night order"; each step a command, RUNDIR on
                            at h*); the line `rule: NEXT ...` names it
   c3 RUNDIR H              step 2b: times C3 at I, L and H(H) (results_c3_h<H>.tsv) and records
                            C4's sizes at H (sizes_h<H>.tsv); run at the h* `rule` picked (F4)
-  selftest                 the rule against every drill r45_reply rev 8 §3 lists, plus the noise
+  selftest                 the rule against every drill r45_reply rev 9 §3 lists, plus the noise
                            drill (F2), the unimodal drill (F3) and the void/R0/re-run drills
   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
@@ -66,7 +67,7 @@ GRID_TOP = 64
 SIMD = "-fmemfn-simd=x86-64-v3"
 LAYERS = {"off": [], "on": [SIMD]}
 
-# ---- the rule's statistical constants (r45_reply rev 8 §3 "The floor `f`", "Void") ----------
+# ---- the rule's statistical constants (r45_reply rev 9 §3 "The floor `f`", "Void") ----------
 # ALPHA: the rule's FAMILY-WISE false-pick budget, CHOSEN = the acceptance r35 F2 ruled (P(h* !=
 # 64 on pure noise) <= 5 %). The floor is sized so that ALL the per-cell comparisons together
 # show a false win beyond f with probability at most ALPHA (one-sided Bonferroni over N).
@@ -166,7 +167,7 @@ def method_of(regime):
     return "kit-approx" if regime in APPROX else "kit"
 
 
-# ---- the cards (r45_reply rev 8 §3 "The cards"; kit-grid@7) ---------------------------------
+# ---- the cards (r45_reply rev 9 §3 "The cards"; kit-grid@7) ---------------------------------
 FINITE = ["h%d" % h for h in GRID]
 CARD_ROWS = {"C1": "span_cross", "C2": "span_pop", "C3": "span_long", "C4": "span_size",
              "C5": "span_engine"}
@@ -644,6 +645,9 @@ def cmd_dry(args):
     bad += dbad
     print("# dry: deny check: %d arm-I artifacts with no span loop, %d non-I artifacts with one (reach), "
           "failures %d" % (nI, nreach, len(dbad)))
+    cbad, cI, creach = c3_deny_check(rundir)
+    print("# dry: step 2b's deny check (`c3` refuses on it; r37 H4): %d arm-I C3/C4 artifacts loop-free, reach "
+          "(h%d) %d%s" % (cI, GRID_TOP, creach, "; WOULD REFUSE: " + "; ".join(cbad) if cbad else ""))
     same = identical_to_I(rundir)
     print("# dry: cells %d, built and gated %d, failures %d; distinct compiles %d; subject %d B" %
           (len(cl), len(cl) - len(bad), len(bad), len(builds), n))
@@ -671,12 +675,9 @@ def identical_to_I(rundir):
 
 
 def same_heads(same, pat, ly):
-    """The heads whose text is I's for (pattern, layer), from the measured record."""
-    v = same.get(pat, {})
-    if isinstance(v, list):
-        raise SystemExit("cards: same_as_I.json holds rev 7's format (SIMD-off only, one list a pattern): "
-                         "re-run `cards.py dry`/`run` to record identity per layer (rev 8)")
-    return v.get(ly, [])
+    """The heads whose text is I's for (pattern, layer), from the measured record (validated by
+    `pool_record_refusal` before the rule reads it: no silent default, r37 H3)."""
+    return same[pat][ly]
 
 
 def cmd_run(args):
@@ -698,6 +699,16 @@ def cmd_run(args):
     print("cards: results in %s; next: cards.py rule %s" % (res, rundir))
 
 
+def c3_deny_check(rundir):
+    """The deny check on step 2b's population (rev 8, r36 G7; rev 9, r37 H4). C3 and C4 are where
+    an ignored deny loops; step 1's patterns never reach that. The REACH arm is the DEFECT'S OWN
+    arm: an ignored deny renders I as the build's default head H(64), so the reach is H(64)'s
+    artifacts over C3 and C4, rendered whatever h* the step times (rev 8's L proved the regex
+    works, not that the defect's arm loops: at width 32 only C4's hex32 at h0 loops, and an
+    ignored deny read GREEN). Where H(64) loops nowhere (width 32) the check is VACUOUS and red."""
+    return check_deny(rundir, cells(hstar=GRID_TOP, cards=STEP2B), reach_arm="h%d" % GRID_TOP)
+
+
 def cmd_c3(args):
     rundir, h = args[0], int(args[1])
     if h not in GRID:
@@ -705,10 +716,9 @@ def cmd_c3(args):
     res = os.path.join(rundir, "results_c3_h%d.tsv" % h)
     if os.path.exists(res):
         raise SystemExit("cards: %s exists (re-runs: `rerun`)" % res)
-    # the deny check on THIS step's population (rev 8, r36 G7): C3 and C4 are where an ignored
-    # deny loops (I = H(64) past offset 64); step 1's patterns never reach that; L the reach arm
-    dbad, nI, nreach = check_deny(rundir, cells(hstar=h, cards=STEP2B), reach_arm="h0")
-    print("cards: c3: deny check on C3 and C4: %d arm-I artifacts loop-free, reach (h0) %d" % (nI, nreach))
+    dbad, nI, nreach = c3_deny_check(rundir)
+    print("cards: c3: deny check on C3 and C4: %d arm-I artifacts loop-free, reach (h%d, the arm an ignored deny "
+          "renders) %d" % (nI, GRID_TOP, nreach))
     if dbad:
         for b in dbad:
             print("FAIL", b)
@@ -746,7 +756,7 @@ def cmd_rerun(args):
     return 0
 
 
-# ---- THE RULE (r45_reply rev 8 §3, R0-R5, steps (1)-(5)) -------------------------------------
+# ---- THE RULE (r45_reply rev 9 §3, R0-R5, steps (1)-(5)) -------------------------------------
 def r1(heads, cells_read, void_cells, t, tI, same_as_I, f, top=None, measured="MEASURED"):
     """R1 over the FINITE heads `heads` (R0 already applied). cells_read: the C1-C2 cells with a
     reading; void_cells: the cells void twice (or void by method); t[h][c], tI[c] the raw
@@ -818,10 +828,52 @@ def z_upper(p):
     return statistics.NormalDist().inv_cdf(1 - p)
 
 
+def _gamma_p(a, x):
+    """The regularized lower incomplete gamma P(a, x): series below a + 1, Lentz's continued
+    fraction for Q above (Numerical Recipes' split)."""
+    if x <= 0:
+        return 0.0
+    lead = math.exp(-x + a * math.log(x) - math.lgamma(a))
+    if x < a + 1:
+        s = term = 1.0 / a
+        ap = a
+        for _ in range(10000):
+            ap += 1
+            term *= x / ap
+            s += term
+            if abs(term) < abs(s) * 1e-15:
+                break
+        return s * lead
+    tiny = 1e-300
+    b = x + 1 - a
+    c, d = 1 / tiny, 1 / b
+    h = d
+    for i in range(1, 10000):
+        an = -i * (i - a)
+        b += 2
+        d = an * d + b
+        d = tiny if abs(d) < tiny else d
+        c = b + an / c
+        c = tiny if abs(c) < tiny else c
+        d = 1 / d
+        h *= d * c
+        if abs(d * c - 1) < 1e-15:
+            break
+    return 1 - lead * h
+
+
+@functools.lru_cache(maxsize=None)
 def chi2_lower(q, n):
-    """chi-square(n)'s q quantile, Wilson-Hilferty (within ~1 % at n >= 10)."""
-    z = statistics.NormalDist().inv_cdf(q)
-    return n * (1 - 2 / (9 * n) + z * math.sqrt(2 / (9 * n))) ** 3
+    """chi-square(n)'s q quantile, EXACT by bisection on P(n/2, x/2) (rev 9: the twin term's
+    degrees of freedom can be small, where rev 8's Wilson-Hilferty form is poor)."""
+    lo, hi = 0.0, n + 20 * math.sqrt(2 * n) + 20
+    for _ in range(100):
+        mid = (lo + hi) / 2
+        if _gamma_p(n / 2, mid / 2) < q:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
 
 
 def count_floor(aa_logs, n_comp, alpha=ALPHA):
@@ -857,26 +909,59 @@ def launch_sigmas(rows, raw=False):
     return sigs, glob
 
 
-def pool_floors(f_aa, raw, glob, n_all, n_comp, alpha=ALPHA):
-    """THE PER-(REGIME, LAYER) FLOOR (rev 8, r36 G2): f(regime, layer) = max(the A/A floor
-    `f_aa`, exp(z(alpha / N) x sqrt(2) x SDMED5 x sigma_up) - 1), sigma_up the pool's launch sigma
-    raised to its SIGMA_CONF upper bound (MEDSD_REL / sqrt(n)). A pool noisier than the A/A
-    cells, or A/A cells quieter than the arms, then sizes its own cells' threshold; the A/A term
-    keeps every between-run effect the launches cannot see. A thin pool takes the larger of its
-    own and the night's sigma."""
+def twin_sigmas(pool_logs):
+    """THE TWIN CONTRASTS (rev 9, RULED r37 H1 + H2): per (regime, layer), the noise of one
+    ratio of two arms' medians, read from the arms the night ALREADY times that are one binary:
+    I's pool in each C1-C2 cell read (I and every head whose artifact hash-equals I's there).
+    pool_logs: {(regime, layer): [[ln median of each pool arm], ...]}, one list per cell. Within
+    a pool every arm has one true time, so its spread is launch noise PLUS between-run noise
+    (an arm-level offset held over all 5 launches, which the launch sigma cannot see). sigma_c
+    = sqrt(2 x SS / df), SS the pools' summed squared deviations from their own means and df the
+    summed (arms - 1): the RMS of the pools' log-median contrasts, the log SD of a head against
+    I. Returns {(regime, layer): (sigma_c, df)}; a (regime, layer) with no pool of two is absent."""
+    out = {}
+    for p, pools in pool_logs.items():
+        ss, df = 0.0, 0
+        for xs in pools:
+            if len(xs) >= 2:
+                m = sum(xs) / len(xs)
+                ss += sum((x - m) ** 2 for x in xs)
+                df += len(xs) - 1
+        if df:
+            out[p] = (math.sqrt(2 * ss / df), df)
+    return out
+
+
+def pool_floors(f_aa, raw, glob, n_all, n_comp, alpha=ALPHA, twins=None):
+    """THE PER-(REGIME, LAYER) FLOOR (rev 8, r36 G2; rev 9, r37 H1): f(regime, layer) = max(
+    the A/A floor `f_aa`, the LAUNCH term exp(z(alpha / N) x sqrt(2) x SDMED5 x sigma_up) - 1,
+    the TWIN term exp(z(alpha / N) x sigma_c_up) - 1). sigma_up: the pool's launch sigma raised to
+    its SIGMA_CONF upper bound (MEDSD_REL / sqrt(n)); a thin pool takes the LARGER of its own and
+    the night's sigma (r37 H10 (1): the bimodal test borrows the night's; the floor never goes
+    below its own). sigma_c_up: `twins`' sigma_c raised to its SIGMA_CONF upper bound
+    sqrt(df / chi2(1 - SIGMA_CONF; df)). The launch term sees one arm's launch scatter only; the
+    twin term sees an arm-level (between-run) offset in its own (regime, layer), which neither
+    the launch term nor the night-wide A/A term can (r37 H1)."""
     z = z_upper(alpha / max(1, n_comp))
     zc = statistics.NormalDist().inv_cdf(SIGMA_CONF)
+    twins = twins or {}
     out = {}
     for p, (s, n) in raw.items():
         up = s * (1 + zc * MEDSD_REL / math.sqrt(n))
         if n < MIN_POOL:
             up = max(up, glob * (1 + zc * MEDSD_REL / math.sqrt(max(1, n_all))))
-        out[p] = max(f_aa, math.exp(z * math.sqrt(2) * SDMED5 * up) - 1) if POOL_TERM else f_aa
+        fl = max(f_aa, math.exp(z * math.sqrt(2) * SDMED5 * up) - 1) if POOL_TERM else f_aa
+        if TWIN_TERM and p in twins:
+            sc, df = twins[p]
+            fl = max(fl, math.exp(z * sc * math.sqrt(df / chi2_lower(1 - SIGMA_CONF, df))) - 1)
+        out[p] = fl
     return out
 
 
 POOL_I = True       # selftest's control turns I's pool off (rev 7's reading) to show the G3 drill sees it
 POOL_TERM = True    # selftest's control turns the pool term off (rev 7's floor) to show the drill sees it
+TWIN_TERM = True    # selftest's controls turn the twin term off (rev 8's floor) to show the H1 drill sees it
+AGREE_GATE = True   # ... and the agreement gate off (rev 8's rule) to show the H2 drill sees it
 
 
 def bimodal(launches, sig):
@@ -895,8 +980,35 @@ def load_night(rundir):
             files[name] = (read_rows(os.path.join(rundir, name)),
                            read_rows(os.path.join(rundir, name.replace(".tsv", "_rerun.tsv"))))
     sp = os.path.join(rundir, "same_as_I.json")
-    same = json.load(open(sp)) if os.path.exists(sp) else {}
+    # absent: None, which the rule REFUSES (rev 9, r37 H3); never `{}`, which read as I-alone pools
+    same = json.load(open(sp)) if os.path.exists(sp) else None
     return {"files": files, "same": same}
+
+
+def pool_record_refusal(same):
+    """I's pool record (`same_as_I.json`) must name EVERY C1-C2 pattern x layer, each list holding
+    the grid top (H(64) renders exactly I at every C1-C2 length: rev 8's "at least I and H(64)").
+    A missing file, pattern or layer silently shrank every pool to I alone (r37 H3). Returns the
+    refusal text, or None."""
+    if same is None:
+        return "same_as_I.json is missing (I's pool record; `cards.py run` writes it)"
+    if not isinstance(same, dict):
+        return "same_as_I.json is not a pattern map"
+    for card in ("C1", "C2"):
+        for pat in CARD_PATS[card]:
+            v = same.get(pat)
+            if isinstance(v, list):
+                return ("same_as_I.json holds rev 7's format (SIMD-off only, one list a pattern): re-run "
+                        "`cards.py dry`/`run` to record identity per layer (rev 8)")
+            if not isinstance(v, dict):
+                return "same_as_I.json lacks C1-C2 pattern %s" % pat
+            for ly in LAYERS:
+                if ly not in v:
+                    return "same_as_I.json lacks pattern %s at layer %s" % (pat, ly)
+                if GRID_TOP not in v[ly]:
+                    return ("same_as_I.json: pattern %s layer %s lists %s, without the grid top %d (H(%d) renders "
+                            "exactly I at every C1-C2 length)" % (pat, ly, v[ly], GRID_TOP, GRID_TOP))
+    return None
 
 
 def merge(rows1, rows2):
@@ -920,6 +1032,11 @@ def analyse(night, g2_defective, alpha=ALPHA):
         return res
     rows, att = merge(*night["files"]["results.tsv"])
     same = night["same"]
+    why_pool = pool_record_refusal(same)
+    if why_pool:
+        lines.append("rule: REFUSED: %s; I's pools cannot be read: the night is DEFECTIVE (rev 9, r37 H3)" % why_pool)
+        res["code"] = 2
+        return res
     sigs, glob, sig_raw, n_all = launch_sigmas(rows, raw=True)
     cellk = lambda k: (k[0], k[1], k[3], k[4])      # noqa: E731
 
@@ -978,7 +1095,7 @@ def analyse(night, g2_defective, alpha=ALPHA):
     # ---- C1-C2 cells: read, void twice, void by method, or owed a re-run (F7, F8) -----------
     ccells, vc, tI, t = [], [], {}, {h: {} for h in heads}
     sa = {h: {} for h in heads}
-    pool_n = {}
+    pool_n, pool_meds, cell_key = {}, {}, {}
     for card in ("C1", "C2"):
         for pat in CARD_PATS[card]:
             for rg in REGIMES:
@@ -1017,6 +1134,8 @@ def analyse(night, g2_defective, alpha=ALPHA):
                     ccells.append(cid)
                     tI[cid] = statistics.median([v for a in pool for v in rows[(card, pat, a, rg, ly)]["launches"]])
                     pool_n[cid] = len(pool)
+                    pool_meds[cid] = [rows[(card, pat, a, rg, ly)]["med"] for a in pool]
+                    cell_key[cid] = (card, pat, rg, ly)
                     for h in heads:
                         t[h][cid] = tI[cid] if sa[h][cid] else rows[(card, pat, "h%d" % h, rg, ly)]["med"]
     # C3 voids are never dropped: once, owed a re-run; twice, carried on the record below
@@ -1033,18 +1152,60 @@ def analyse(night, g2_defective, alpha=ALPHA):
         lines.append("rule: NEXT cards.py rerun RUNDIR")
         res["code"] = 3
         return res
-    n_comp = sum(1 for h in heads for c in ccells if not sa[h][c])
     if not aa_logs:
         lines.append("rule: no A/A cell is read: the night is VOID")
         res["code"] = 2
         return res
-    f, fd = count_floor(aa_logs, n_comp, alpha)
+
+    def floors_over(cs):
+        """The floors over the cells `cs` (N and the twin contrasts read from them)."""
+        n_c = sum(1 for h in heads for c in cs if not sa[h][c])
+        f_, fd_ = count_floor(aa_logs, n_c, alpha)
+        logs = {}
+        for c in cs:
+            logs.setdefault(tuple(c.split("/")[1:3]), []).append([math.log(m) for m in pool_meds[c]])
+        tw = twin_sigmas(logs)
+        return f_, fd_, tw, pool_floors(f_, sig_raw, glob, n_all, n_c, alpha, twins=tw)
+    f, fd, tw, floors = floors_over(ccells)
+    # THE AGREEMENT GATE (rev 9, RULED r37 H2): I's pool is one binary, so its arms' medians differ
+    # only by noise. Where they disagree beyond the cell's own floor, one of them moved (a whole-arm
+    # slowdown moves a 2-arm pool's median by ~half its size and no gap test sees it): the cell is
+    # VOID, re-run once, never a pick. A pool of two cannot say which arm moved; it voids too.
+    gated = []
+    if AGREE_GATE:
+        for c in list(ccells):
+            ms = pool_meds[c]
+            fl = floors.get(tuple(c.split("/")[1:3]), f)
+            if len(ms) >= 2 and max(ms) / min(ms) > 1 + fl:
+                gated.append("%s (pool of %d: %.4f > 1 + %.4f)" % (c, len(ms), max(ms) / min(ms), fl))
+                ccells.remove(c)
+                del tI[c], pool_n[c]
+                for h in heads:
+                    t[h].pop(c, None)
+                if att.get(cell_key[c], 1) < 2:
+                    owed.setdefault("results.tsv", set()).add(cell_key[c])
+                else:
+                    vc.append(c)
+    if gated:
+        lines.append("rule: agreement gate: %d cell(s) whose hash-equal arms disagree beyond f: %s"
+                     % (len(gated), "; ".join(gated[:6]) + ("; ..." if len(gated) > 6 else "")))
+    res["gated"] = len(gated)
+    if owed:
+        lines.append("rule: %d cell(s) of results.tsv VOID ONCE by the agreement gate: R1 waits for the re-run"
+                     % len(owed["results.tsv"]))
+        lines.append("rule: NEXT cards.py rerun RUNDIR")
+        res["code"] = 3
+        return res
+    if gated:      # void twice: the floors are re-read over the cells still read
+        f, fd, tw, floors = floors_over(ccells)
     lines.append("rule: f(A/A) = %.4f (count-sized: A/A sigma %.4f, upper %.4f over %d cells; N = %d comparisons, "
                  "z = %.2f; the A/A max ratio alone %.4f)" % (f, fd["sigma"], fd["sigma_up"], len(aa_logs),
                                                                fd["N"], fd["z"], fd["f_aa"]))
-    floors = pool_floors(f, sig_raw, glob, n_all, n_comp, alpha)
     pf = lambda rg, ly: floors.get((rg, ly), f)      # noqa: E731
-    lines.append("rule: f per (regime, layer) = max(f(A/A), the pool's launch-sigma term) (rev 8, r36 G2): %s"
+    lines.append("rule: twin contrasts per (regime, layer) (I's pools, rev 9, r37 H1): %s"
+                 % ", ".join("%s/%s sigma %.4f df %d" % (rg, ly, tw[(rg, ly)][0], tw[(rg, ly)][1])
+                             for rg in REGIMES if rg not in APPROX for ly in ("off", "on") if (rg, ly) in tw))
+    lines.append("rule: f per (regime, layer) = max(f(A/A), the launch-sigma term, the twin term) (rev 9): %s"
                  % ", ".join("%s/%s %.4f" % (rg, ly, pf(rg, ly)) for rg in REGIMES if rg not in APPROX
                              for ly in ("off", "on")))
     fcell = {c: pf(*c.split("/")[1:3]) for c in ccells}
@@ -1164,7 +1325,7 @@ def death_depth(pat):
     return e
 
 
-# ---- the drills (r45_reply rev 8 §3 "Drills"), each with the result the design states ------
+# ---- the drills (r45_reply rev 9 §3 "Drills"), each with the result the design states ------
 def drill(spec):
     """spec: f, heads, cells [(id, k)], ratios {h: [per cell]} (t(I) = 1 unless tI given),
     void [ids]; the default ratio is 1.0 (a head that ties I)."""
@@ -1289,7 +1450,7 @@ DRILLS = [
 
 # ---- synthetic nights: the noise, unimodal and void/R0/re-run drills (rev 7, F2-F7) --------
 def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_read=True, regimes=None,
-               rscale=None, aascale=1.0, splits=None, cellwins=None):
+               rscale=None, aascale=1.0, splits=None, cellwins=None, armoff=None):
     """A synthetic step-1 results set: C1-C2 every arm, A/A every regime and layer; each arm cell's
     LAUNCHES launches are T x exp(noise) with T the cell's true time (one per pattern/regime/
     layer, every arm equal: pure noise) times the arm's `wins` factor where its text is not I's.
@@ -1298,7 +1459,11 @@ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_r
     r36 G2): `rscale` {regime: x} multiplies a regime's launch sigma, `aascale` the A/A arms'.
     `splits` {(card, pat, arm, regime, layer): (n, factor)}: n of the arm's launches x factor (a
     median-moving split when n >= 3, r36 G3). `cellwins` {(card, pat, arm, regime, layer): factor}:
-    one arm's true time in one cell (r36 G4)."""
+    one arm's true time in one cell (r36 G4). `armoff` (tau, regimes, spare_aa): BETWEEN-RUN
+    noise (rev 9, r37 H1): every arm of those regimes (None: every regime) carries its own offset
+    exp(N(0, tau)), held over all its launches; the A/A arms are spared when spare_aa. A re-run
+    draws fresh offsets (a new run). Its draws come after the arm's launches, so a night without
+    `armoff` draws exactly rev 8's stream."""
     wins = wins or {}
     rscale = rscale or {}
     splits = splits or {}
@@ -1320,6 +1485,9 @@ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_r
             ls = [T * math.exp(sg * eps()) * (fac if i < n else 1.0) for i in range(LAUNCHES)]
         else:
             ls = [T * math.exp(sg * eps()) for _ in range(LAUNCHES)]
+        if armoff and (armoff[1] is None or key[3] in armoff[1]) and not (armoff[2] and key[0] == "AA"):
+            o = math.exp(rng.gauss(0, armoff[0]))
+            ls = [v * o for v in ls]
         rows[key] = {"status": "ok", "med": statistics.median(ls), "launches": ls,
                      "method": "kit" if approx_read else method_of(key[3]), "note": ""}
     same = {}
@@ -1369,14 +1537,22 @@ NOISE_TRIALS = 300
 
 
 def noise_drill(trials=NOISE_TRIALS, sigma=0.01, noise="normal", seed=1, **kw):
+    """P(h* != 64), the nights with a first void, the median f(A/A); NOISE_LAST keeps the median
+    floor of (hit-dense, off), the cell floor the H2 drill sizes its shifts by."""
     rng = random.Random(seed)
-    off, voids, fs = 0, 0, []
+    off, voids, fs, fc = 0, 0, [], []
     for _ in range(trials):
         v = synth_night(rng, sigma, noise=noise, **kw)
         off += v["hstar"] != GRID_TOP
         voids += v["voided_first"] > 0
         fs.append(v.get("f", 0))
+        if v.get("floors"):
+            fc.append(v["floors"].get(("hit-dense", "off"), 0))
+    NOISE_LAST["fcell"] = statistics.median(fc) if fc else 0.0
     return off / trials, voids, statistics.median(fs)
+
+
+NOISE_LAST = {}
 
 
 def cmd_selftest(_args):
@@ -1417,12 +1593,13 @@ def cmd_selftest(_args):
         check("(G2) noise drill, %s" % nm, ph <= 0.05,
               "P(h* != 64) = %.3f over %d trials (accept <= 0.05); median f(A/A) %.4f; nights with a first void %d"
               % (ph, NOISE_TRIALS, fmh, nvh))
-    # its control: rev 7's floor (the A/A term alone) on the 3x night must FAIL the acceptance
-    globals()["POOL_TERM"] = False
+    # its control: rev 7's floor (the A/A term alone) on the 3x night must FAIL the acceptance;
+    # rev 9's twin term and gate also see a noisier regime, so the control turns them off too
+    globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False, False
     try:
         pc, _nv, _fm = noise_drill(seed=41, rscale={"not-warm": 3.0})
     finally:
-        globals()["POOL_TERM"] = True
+        globals()["POOL_TERM"], globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True, True
     check("(G2) control: one regime 3x, A/A floor alone", pc > 0.15,
           "P(h* != 64) = %.3f over %d trials (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
     # its power (the floor's cost, recorded): a true 10 % win of every head <= 8 where it loops
@@ -1500,8 +1677,79 @@ def cmd_selftest(_args):
     # gate's (r36's null-rate numbers, rev 8 §3 "Bimodal"); its rate is printed for the record
     rng = random.Random(90)
     picks = [synth_night(rng, 0.01, splits={cellH: (3, 1 / (1 + 1.5 * fmed))})["hstar"] for _ in range(100)]
-    print("RECORD (G3) a FAST 3-of-5 split in H(8), 1.5 f: h* = 8 in %d of 100 nights (not gated; residual)"
-          % sum(x == 8 for x in picks))
+    print("RECORD (G3) a FAST 3-of-5 split in H(8), 1.5 f: h* = 8 in %d of 100 nights (not gated; residual; "
+          "rev 9 re-measured under the twin term and the agreement gate)" % sum(x == 8 for x in picks))
+
+    # H1 (rev 9, RULED r37): BETWEEN-RUN noise, an offset per ARM held over its 5 launches. In one
+    # regime with the A/A cells spared (the shape the launch term and the night-wide A/A term
+    # cannot see), and in every regime (A/A arms included, and spared)
+    for i, tau in enumerate((0.01, 0.02, 0.03)):
+        for nm, ao, sd in (("one regime (not-warm), A/A spared", (tau, ("not-warm",), True), 300 + i),
+                           ("every regime", (tau, None, False), 310 + i),
+                           ("every regime, A/A spared", (tau, None, True), 320 + i)):
+            ph, nvh, fmh = noise_drill(seed=sd, armoff=ao)
+            check("(H1) arm offsets tau %d %%, %s" % (round(100 * tau), nm), ph <= 0.05,
+                  "P(h* != 64) = %.3f over %d nights (accept <= 0.05); median f(A/A) %.4f, f(hit-dense/off) %.4f; "
+                  "nights with a first void %d" % (ph, NOISE_TRIALS, fmh, NOISE_LAST["fcell"], nvh))
+    # its control: rev 8's rule (no twin term, no agreement gate) on the 2 % one-regime night
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False
+    try:
+        pc, _nv, _fm = noise_drill(seed=301, armoff=(0.02, ("not-warm",), True))
+    finally:
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True
+    check("(H1) control: tau 2 %, one regime, rev 8's rule", pc > 0.15,
+          "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
+
+    # H2 (rev 9, RULED r37): a WHOLE-ARM (5-of-5) shift of I and of H(64) in the SMALLEST pools (I,
+    # H(64): hex64, uuid36, alt49), sized by the cell's own floor f (hit-dense, off) on a 1 % night
+    _p, _n, _f = noise_drill(seed=1)
+    fcell = NOISE_LAST["fcell"]
+    for pat in ("hex64", "uuid36", "alt49"):
+        for arm in ("I", "h%d" % GRID_TOP):
+            for j, mult in enumerate((1.0, 1.5, 2.0)):
+                key = ("C2", pat, arm, "hit-dense", "off")
+                ph, nvh, _fm = noise_drill(seed=400 + 10 * j + (arm == "I") + 100 * ("hex64", "uuid36", "alt49").index(pat),
+                                           splits={key: (5, 1 + mult * fcell)})
+                check("(H2) 5-of-5 shift of %s at %s, %.1f f (%.1f %%)" % (arm if arm == "I" else "H(64)", pat, mult,
+                                                                          100 * mult * fcell), ph <= 0.05,
+                      "P(h* != 64) = %.3f over %d nights (accept <= 0.05); nights with a first void %d"
+                      % (ph, NOISE_TRIALS, nvh))
+    globals()["TWIN_TERM"], globals()["AGREE_GATE"] = False, False
+    try:
+        pc, _nv, _fm = noise_drill(seed=499, splits={("C2", "hex64", "I", "hit-dense", "off"): (5, 1 + 1.5 * fcell)})
+    finally:
+        globals()["TWIN_TERM"], globals()["AGREE_GATE"] = True, True
+    check("(H2) control: I at hex64, 1.5 f, rev 8's rule", pc > 0.15,
+          "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.15)" % (pc, NOISE_TRIALS))
+    # the agreement gate's own cost: the void rate it ADDS on pure noise (F3's acceptance: <= 5 %
+    # of nights void a cell once, whatever voids it)
+    for nm, nz, sd in (("normal", "normal", 500), ("t(5)", "t5", 501)):
+        globals()["AGREE_GATE"] = False
+        try:
+            _p0, nv0, _f0 = noise_drill(seed=sd, noise=nz)
+        finally:
+            globals()["AGREE_GATE"] = True
+        _p1, nv1, _f1 = noise_drill(seed=sd, noise=nz)
+        check("(H2) the gate's void rate, %s launches" % nm, nv1 / NOISE_TRIALS <= 0.05,
+              "nights with a first void %.3f with the gate, %.3f without: added %.3f (accept: with <= 0.05)"
+              % (nv1 / NOISE_TRIALS, nv0 / NOISE_TRIALS, (nv1 - nv0) / NOISE_TRIALS))
+    # H3 (rev 9, r37): I's pool record must name every C1-C2 pattern x layer, each with the top
+    full = {p: {ly: [h for h in GRID if h >= len(PATTERNS[p][1]) or p in ("lit40", "abc60")] for ly in LAYERS}
+            for c in ("C1", "C2") for p in CARD_PATS[c]}
+    part = {p: v for p, v in full.items() if p != "hex64"}
+    nolayer = dict(full, uuid36={"off": full["uuid36"]["off"]})
+    no64 = dict(full, alt49={ly: [] for ly in LAYERS})
+    refs = [pool_record_refusal(x) for x in (full, None, part, nolayer, no64)]
+    APP, globals()["APPROX"] = APPROX, {}
+    try:
+        rows, _same = synth_rows(random.Random(11), 0.01)
+        vmiss = analyse({"files": {"results.tsv": (rows, {})}, "same": None}, set())
+    finally:
+        globals()["APPROX"] = APP
+    check("(H3) a missing or partial pool record is refused", refs[0] is None and all(refs[1:]) and vmiss["code"] == 2
+          and vmiss["hstar"] is None and any("REFUSED" in l for l in vmiss["lines"]),
+          "full: %s; missing/partial/layer/no-64 refused: %s; the rule on a missing record: code %d"
+          % (refs[0], [bool(x) for x in refs[1:]], vmiss["code"]))
     # F7: the re-run merge: void once -> owed; re-run clean -> read; re-run void -> void twice
     def night_with(first_bimodal, rerun_bimodal, g2=(), c3=None, seed=6):
         rng = random.Random(seed)
@@ -1584,21 +1832,37 @@ def cmd_selftest(_args):
     notread = sorted(l.split()[2].rstrip(":") for l in v["lines"] if "never a mover" in l)
     check("(G6) R3 DERIVED reachable", v["hstar"] == 1 and v["label"].startswith("DERIVED")
           and notread == ["abc60", "lit40"], "h* %s, %s; classes not read %s" % (v["hstar"], v["label"][:60], notread))
-    # G7 (rev 8, r36): the deny check reds on C3's population (an ignored deny renders I as
-    # H(64), which loops past offset 64 at k = 500), with L as the reach arm
+    # G7 (rev 8, r36; rev 9, r37 H4): the deny check reds on C3's population (an ignored deny
+    # renders I as H(64), which loops past offset 64 at k = 500), with H(64), the DEFECT'S arm, as
+    # the reach arm
     c3loop = b"x = ({ size_t rxa_mf1_j = 64; for (; rxa_mf1_j < 500; rxa_mf1_j++) if (!(a)) break; });"
     l0 = b"x = ({ size_t rxa_mf1_j = 0; for (; rxa_mf1_j < 500; rxa_mf1_j++) if (!(a)) break; });"
     lk, rc_ = loop_audit([("hex500 I off", "I", c3loop), ("hex500 h0 off", "h0", l0),
-                          ("hex500 h64 off", "h64", c3loop)], reach_arm="h0")
-    check("(G7) C3 deny check: an ignored deny fails", lk == ["hex500 I off"] and rc_ == ["hex500 h0 off"],
+                          ("hex500 h64 off", "h64", c3loop)], reach_arm="h64")
+    check("(G7) C3 deny check: an ignored deny fails", lk == ["hex500 I off"] and rc_ == ["hex500 h64 off"],
           "leaks %s reach %s" % (lk, rc_))
-    lk, rc_ = loop_audit([("hex500 I off", "I", b"if (!(a)) return 0;"), ("hex500 h64 off", "h64", c3loop)],
-                         reach_arm="h0")
-    check("(G7) C3 deny check: reach counts h0 only", lk == [] and rc_ == [], "leaks %s reach %s (vacuous: "
-          "the caller fails it)" % (lk, rc_))
-    # G8 (rev 8, r36): an empty movers file at h < 64 is refused; a smoke exits 4 first
-    r_none, r_empty, r_one, r_64 = (movers_refusal(32, None), movers_refusal(32, []), movers_refusal(32, ["a{40}"]),
-                                    movers_refusal(64, []))
+    # H4: at a width where H(64) loops nowhere (32), an ignored deny renders I = H(64) loop-free:
+    # with L as the reach (rev 8) it read GREEN; with H(64) the reach is empty, VACUOUS and red
+    w32 = [("hex500 I off", "I", b"if (!(a)) return 0;"), ("hex32 h0 off", "h0", l0),
+           ("hex500 h64 off", "h64", b"if (!(a)) return 0;")]
+    lk0, rc0 = loop_audit(w32, reach_arm="h0")
+    lk, rc_ = loop_audit(w32, reach_arm="h64")
+    seen = {}
+    real = check_deny
+    globals()["check_deny"] = lambda _rd, cl, reach_arm=None: seen.update(
+        arms=sorted({c[2] for c in cl}), cards=sorted({c[0] for c in cl}), reach=reach_arm) or ([], 0, 0)
+    try:
+        c3_deny_check("-")
+    finally:
+        globals()["check_deny"] = real
+    check("(H4) c3's reach arm is H(64), the defect's", lk0 == [] and rc0 == ["hex32 h0 off"] and lk == [] and rc_ == []
+          and seen.get("reach") == "h64" and "h64" in seen.get("arms", []) and seen.get("cards") == ["C3", "C4"],
+          "width 32, ignored deny: reach h0 %s (rev 8: green), reach h64 %s (vacuous: red); c3 checks %s over "
+          "arms %s, reach %s" % (rc0, rc_, seen.get("cards"), seen.get("arms"), seen.get("reach")))
+    # G8 (rev 8, r36): an empty movers file at h < 64 is refused; a smoke exits 4 first (the
+    # example a real mover, r37 H7: `\w{32}\B` loops at h <= 29)
+    r_none, r_empty, r_one, r_64 = (movers_refusal(32, None), movers_refusal(32, []),
+                                    movers_refusal(24, [r"\w{32}\B"]), movers_refusal(64, []))
     check("(G8) identity: empty movers at h < 64 refused", bool(r_none) and bool(r_empty) and r_one is None
           and r_64 is None, "none: %s; empty: %s; one: %s; h 64 empty: %s" % (
               bool(r_none), (r_empty or "")[:40], r_one, r_64))
@@ -1607,11 +1871,15 @@ def cmd_selftest(_args):
         codes = (census_verdict([], 5), census_verdict(["x"], 5), census_verdict([], None), census_verdict(["x"], None))
     check("(G8) identity: smoke exit 4 before the empty FAIL", codes == (4, None, 1, None),
           "limit+empty %s, limit %s, empty %s, full %s" % codes)
+    # H7 (rev 9, r37): the identity check floors the population that MOVES, not the file
+    rr = (reach_refusal(32, 0, 40), reach_refusal(24, 3, 40), reach_refusal(64, 0, 40))
+    check("(H7) identity: zero movers at h < 64 refused", bool(rr[0]) and rr[1] is None and rr[2] is None,
+          "h 32 none move: %s; h 24 three move: %s; h 64: %s" % (bool(rr[0]), rr[1], rr[2]))
     print("selftest: %d checks, %d failed" % (nchk, bad))
     return 1 if bad else 0
 
 
-# ---- the identity check (r45_reply rev 8 §3 "The head lever and its identity check") -------
+# ---- the identity check (r45_reply rev 9 §3 "The head lever and its identity check") -------
 ENCODINGS = {"byte": [], "utf8": ["-e", "utf8"]}
 
 
@@ -1656,6 +1924,33 @@ def movers_refusal(h, movers):
         return ("h = %d < %d and the PATTERNS file is EMPTY: an empty prediction at h* < 64 is a population "
                 "of zero (K35); refusing" % (h, GRID_TOP))
     return None
+
+
+def reach_refusal(h, n_moving, n_pats):
+    """The identity check's population is the patterns whose bytes MOVE at h, not the file that
+    names them (rev 9, r37 H7: `a{40}` is byte-identical at heads 0-64, so a movers file holding
+    it passed the file-level refusal with zero head-sensitive patterns). At h < 64 a zero is
+    refused (K35). None: proceed."""
+    if h >= GRID_TOP or n_moving:
+        return None
+    return ("h = %d < %d and none of the %d patterns (cards, census, movers) renders differently at lever %d "
+            "than at lever %d on the frozen binary: the identity check would compare a population blind to "
+            "the head (K35); refusing" % (h, GRID_TOP, n_pats, h, GRID_TOP))
+
+
+def lever_reach(h, pats, wf):
+    """The patterns whose FROZEN lever-h text differs from the frozen lever-64 text in some
+    encoding x layer (the defect a head-blind identity check would degenerate to is lever-64's
+    bytes: the reach renders that arm and counts where it differs)."""
+    def one(job):
+        p, ename, ly = job
+        base = ["-p", PREFIX, "--features", "all"] + ENCODINGS[ename] + wf + LAYERS[ly] + ["-o", "-", "--pattern", p]
+        a = subprocess.run([HARNESS, "--harness=span-head=%d" % h] + base, capture_output=True, timeout=600)
+        b = subprocess.run([HARNESS, "--harness=span-head=%d" % GRID_TOP] + base, capture_output=True, timeout=600)
+        return p, a.returncode != b.returncode or a.stdout != b.stdout
+    jobs = [(p, e, ly) for p in pats for e in ENCODINGS for ly in LAYERS]
+    with ThreadPoolExecutor(max_workers=int(os.environ.get("JOBS", "8"))) as ex:
+        return sorted({p for p, d in ex.map(one, jobs) if d})
 
 
 def census_verdict(census, limit):
@@ -1709,6 +2004,16 @@ def cmd_identity(args):
     allp = sorted(set(pats) | set(census) | set(movers))
     rebuilt = os.path.join(rebuilt_dir, "pcrec")
     wf = [] if WIDTH_FLAG == "none" else [WIDTH_FLAG]
+    if h < GRID_TOP:
+        moving = lever_reach(h, allp, wf)
+        print("identity: reach: %d of %d patterns render differently at lever %d than at lever %d on the frozen "
+              "binary (r37 H7)%s" % (len(moving), len(allp), h, GRID_TOP,
+                                     (": " + ", ".join(repr(p) for p in moving[:8]) + (", ..." if len(moving) > 8 else ""))
+                                     if moving else ""))
+        why = reach_refusal(h, len(moving), len(allp))
+        if why:
+            print("identity: FAIL: " + why)
+            return 4 if limit else 1
 
     def one(job):
         p, ename, ly = job

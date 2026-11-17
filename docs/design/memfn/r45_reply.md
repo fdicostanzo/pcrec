@@ -1,7 +1,11 @@
 # R-45 reply draft: window spans of up to 4095 positions ([COVER-CAP] stage 2)
 
-Status: DRAFT rev 8 for the kit manager (lane formsfixc, 2026-11-17; the design text beside the
-cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 8 applies the code
+Status: DRAFT rev 9 for the kit manager (lane formsfixe, 2026-11-17; the design text beside the
+cards' script fixes, `memfn/tests/span_forms/cards.py`; no timing). Rev 9 applies the re-check of
+rev 8's fixes, review r37 (`docs/dev/reviews/2026-11-17-r37-memfn-forms3.md`, its RULED section:
+H1 and H2 as ONE mechanism, the twin contrasts, plus H3, H4 and H7 in the rule's text and the
+script; H9 and H10 as text; H5, H6 and H8 are lane formsfixf's checks, not this text's; read
+"Changes in rev 9" first). Rev 8 (lane formsfixc) applied the code
 re-check on the fixes, review r36 (`docs/dev/reviews/2026-11-17-r36-memfn-forms2.md`, its RULED
 section: G2-G8 in the rule's text and the script, G12-G14 as text; its G3 as SUPERSEDED by the kit
 manager's rulings entry R1, `docs/dev/lanes/formsfixc_rulings.md`; read "Changes in rev 8"
@@ -44,6 +48,28 @@ are in `docs/dev/reviews/2026-11-16-r20-memfn-r45/` (`sz.c`, `prop.c`).
   `MF_MAX_FWD` 33); `mf_result` 3,000 B; `mf_wspan` 1,164 B; `mf_wreply` 532 B;
   `mf_run_reply` 4 B.
 - Rev 2: class 1,640 B, result 1,712 B, `mf_wspan` 32 B, `mf_wreply` 136 B, `mf_run_reply` 8 B.
+
+## Changes in rev 9 (by r37 finding id)
+
+Review r37 re-checked rev 8's fixes (`lane/memfn-forms` e7584a7fd). Its two rule defects (H1,
+H2) were masked on today's night shape, as r36's were (every real night takes step (5) while the
+kit's NOT-WARM and short-subject methods are approximations), and go live when the bench's
+methods arrive. Both are noise SHAPES rev 8's drills did not generate, and they share ONE
+remedy, the twin contrasts: I's pool already times, in every C1-C2 cell, separate arms that are
+one binary. `cards.py selftest` is the drill record (89 checks; lane formsfixe's report,
+"Validation"). H5, H6 and H8 are lane formsfixf's checks (G2, compound, CLI), not this text's.
+
+| id | change | where |
+|---|---|---|
+| H1 | The floor gains the TWIN term: per (regime, layer), `σ_c` = the RMS of the log-median contrasts of the hash-equal arms (I's pools, about 31 degrees of freedom), raised to its 95 % bound; `f(r, l)` = max(the A/A floor, the launch term, `exp(z(α / N) x σ_c,up) - 1`). It carries between-run noise (an offset an arm holds over its 5 launches), which the launch term cannot see and the night-wide A/A term dilutes. Rev 8's "one A/A pair per (regime, layer) ... eight times the A/A arms" is WITHDRAWN (its premise was false). χ² quantiles are now exact. Drill (xx), 300 nights each: per-arm offsets τ 1/2/3 % in one regime (A/A spared): 0.000, 0.000, 0.000; in every regime: 0.000, 0.000, 0.000; in every regime, A/A spared: 0.003, 0.000, 0.000. Control: τ 2 % in one regime under rev 8's rule, 0.663 (r37: 0.26-0.29) | §3 "The floor `f`" (the twin term), drill (xx) |
+| H2 | The AGREEMENT GATE: a C1-C2 cell whose I's-pool arms' medians disagree beyond the cell's floor is VOID, re-run once, never a pick; a pool of two (I, H(64)) voids on any such disagreement. Rev 8's "one arm's transient moves the pooled median by a fraction of a sigma" is struck (false for a pool of two). Drill (xviii) gains the whole-arm (5-of-5) shift in the SMALLEST pools: I and H(64) at `hex64`, `uuid36`, `alt49`, at `f`, 1.5 `f`, 2 `f` (`f` the cell's own floor, 4.4 %): 0.000 to 0.003 in all 18 cases (I and H(64) x three patterns x three sizes). Control: I at `hex64`, 1.5 `f`, rev 8's rule, 0.403 (r37: 0.34). The gate's added void rate on pure noise: none measurable (nights with a first void: 0.000 with the gate and without under normal launches, 0.030 with and without under t(5); r37 asked that it stay within F3's 5 %) | §3 "A split that moves a median", drill (xviii) |
+| H3 | A missing `same_as_I.json`, or one lacking any C1-C2 pattern x layer, or a head list without 64, is REFUSED (the night DEFECTIVE), never read as I-alone pools | §3 "A split that moves a median" |
+| H4 | `cards.py c3`'s deny check uses H(64), the arm an ignored deny renders, as its reach arm, rendered over C3 and C4 whatever h\* the step times; VACUOUS (red) where H(64) loops nowhere | night order 2b |
+| H7 | The identity check counts the patterns whose FROZEN lever-h\* bytes differ from lever-64's, prints it, and refuses at zero when h\* < 64 (`a{40}` passed rev 8's file-level refusal) | §3 "The identity check" |
+| H9 | The owner's 14:35 passage is quoted whole, from "2. stage 2 is fine." | §3 "The owner's words" |
+| H10 | (1) The floor's thin pool takes the LARGER of its own and the night's sigma; the bimodal test borrows. (2) R4 reads `max(f(near-miss, l), f(near-miss, off))` (C5 is timed at `off` only). (3) C3's bimodal test reads step 1's pool sigma | §3 "Bimodal, defined", "The floor `f`" |
+| (fix-induced) | Drill (xv)'s G2 control (rev 7's floor on a 3x regime) turned off only the launch term; rev 9's twin term also sees a noisier regime, so the control read 0.000 and was blind. It now turns the twin term and the gate off too: 0.177 (accept > 0.15) | drill (xv) |
+| NAMED LIMIT | Re-measured under rev 9: a FAST 3-of-5 split in H(8)'s arm at 1.5 `f` ships 8 in 27 of 100 nights (27 under rev 8). Recorded, not gated, as RULED | §3 "A split that moves a median" |
 
 ## Changes in rev 8 (by r36 finding id)
 
@@ -528,8 +554,11 @@ rows. Rev 2 does not add a second segmenter for L. It generalises this one:
   - **(b) code size.** h near the length below which the inline chain's size costs nothing
     measurable. The kit has no number for it: UNMEASURED.
 - **The owner's words**, kept separate from the kit's, quoted in full [rev 7, r35 F25; rev 8, r36
-  G14: the 14:35 passage whole, from "Also,"] (2026-11-15, decisions.md D198 addendum 1 and
-  `docs/dev/dev_journal.md`): at 14:35, "Also, I would default to sub span loops (excepting the
+  G14; rev 9, r37 H9: rev 8 labelled "the 14:35 passage whole, from "Also,"", but the passage
+  opens two points earlier, and its point 3 is the dial §3 "The option" reads: now quoted whole]
+  (2026-11-15, decisions.md D198 addendum 1 and `docs/dev/dev_journal.md`): at 14:35, "2. stage 2
+  is fine. 3. we have a performance dial for pcrec. it could include some options for the kit.
+  Also, I would default to sub span loops (excepting the
   measured head inline ) then measure if inline was faster than the other way around. Measure
   three: all inline, all loops, header inline then loops. Then the speed dial option can be
   always inline should it prove that is faster", and at 15:00, "I predict most all rx will only
@@ -618,8 +647,11 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       SD of 5 normal draws, DERIVED), so one bimodal arm cannot inflate its own pool. The pool
       holds every timed arm of that regime and layer (C1, C2, C5 and the A/A arms); a pool of
       fewer than 10 arms (MIN_POOL, CHOSEN; unreachable on a real night, whose pools hold 92-105
-      arms) borrows the night's pooled sigma [rev 8, r36 G14 (SIMULATE-4)]. A cell is void when
-      ANY of its arms is: I's arm, every arm of I's pool, and every head whose text differs from
+      arms) borrows the night's pooled sigma for this test [rev 8, r36 G14 (SIMULATE-4)]; the
+      floor's launch term (below) never borrows DOWN: it takes the larger of the pool's own sigma
+      and the night's [rev 9, r37 H10 (1): rev 8 said "borrows" for both]. C3's cells read STEP
+      1's pool sigma for their (regime, layer) [rev 9, r37 H10 (3)]. A cell is void when ANY of
+      its arms is: I's arm, every arm of I's pool, and every head whose text differs from
       I's [rev 8: rev 7's "any arm whose text differs from I's" exempted I, which the script
       always tested]. 4.5 is CHOSEN from a simulation of 5 launches (2 x 10^7 draws): a false
       split has probability 1 x 10^-7 per arm under normal noise. Under t(5) it is about
@@ -645,11 +677,25 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
       more launches). Pool membership is MEASURED: `cards.py` hashes each built artifact per
       layer when the cells are built (`same_as_I.json`), and `h >= k` is the expectation, never
       the test. A cell whose I row is missing is REFUSED loudly and the night is DEFECTIVE; it is
-      not void. One arm's transient then moves the pooled median by a fraction of a sigma.
-      Only I's reading can make every head win or remove 64 (64 reads I's pool at every C1-C2
+      not void. So is a night whose pool RECORD is missing, or lacks any C1-C2 pattern x layer, or
+      lists a head set without 64 at a C1-C2 length [rev 9, r37 H3: rev 8 refused a missing I ROW
+      but read a missing record as I-alone pools, silently]. ~~One arm's transient then moves the
+      pooled median by a fraction of a sigma.~~ [rev 9, r37 H2: false for a pool of TWO arms, I and
+      H(64), which is every C1-C2 cell at `k` > 32 at the width R-45 exists for (`hex64`, `uuid36`,
+      `alt49`). A whole-arm shift `s` (all 5 launches) puts 5 of the 10 pooled launches high, so
+      the pooled median moves by about `s` / 2, each arm stays unimodal, and every looping head
+      "wins" by that much: r37 measured P(h\* != 64) = 0.34 at 1.5 `f`.] A pool that holds 3 or
+      more arms bounds one arm's transient to a fraction of a sigma; a pool of two cannot, and
+      neither can say from the pooled median alone which arm moved. **The agreement gate [rev 9,
+      RULED r37 H2]:** I's pool is ONE binary, so its arms' medians differ only by noise; where
+      the largest over the smallest exceeds `1 + f(c)` (the cell's own floor, below, whose twin
+      term already measures that noise), the cell is VOID, joins the re-run list (§"The re-run")
+      and is never a pick. A pool of two voids on any such disagreement: it cannot tell which arm
+      moved. Only I's reading can make every head win or remove 64 (64 reads I's pool at every C1-C2
       length). A slow split in a head's own arm only makes that head lose. The residual is a FAST
       3-of-5 split in a head arm, which is outside the pool's reach and the gate's: it ships that
-      head in 27 of 100 nights at 1.5 `f` (`cards.py selftest`'s RECORD line, not gated). A fast
+      head in 27 of 100 nights at 1.5 `f` (`cards.py selftest`'s RECORD line, not gated;
+      27 of 100 under rev 8). A fast
       transient on 3 of 5 consecutive launches is not the shape interrupts, migrations or
       frequency drops take (they slow a launch). It is recorded, not built against. Drill (xviii)
       checks the pooled reading. C3 (R2's C3 half, R5) still reads I's own arm: C3 never feeds
@@ -701,15 +747,34 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     draws, so `sqrt(2) x 0.5355 x σ` is the log SD of a ratio of two arms' medians (DERIVED).
     σ_up raises σ to its 95 % bound by the median estimator's relative error, 0.4754 / sqrt(n)
     over the pool's n arms (DERIVED: 1 / (2 f(m) m), with f the density of a 5-draw SD at its
-    median m). A cell's comparisons (R1 (3)-(4), R2, R4, R5) use its own (regime, layer)'s
-    floor; E uses the largest floor of the cells read. **Why the launch-sigma bound, not a
-    per-(regime, layer) A/A floor** (the ruling left the choice to the lane): the night times ONE
-    A/A pair per (regime, layer). The 95 % upper bound of a sigma read from n = 1 is
-    `sqrt(1 / χ²(0.05; 1))`, about 16x the reading, so that floor would refuse every real win.
-    Making it usable needs about eight A/A pairs per pool, eight times the A/A arms. The
-    launch-sigma pool is already timed (about 100 arms per pool), already computed for the
-    bimodal test, and it is exactly the heterogeneity at issue. The A/A term stays as a floor
-    under it, because it carries the between-run effects that one arm's launches cannot see.
+    median m). A cell's comparisons (R1 (3)-(4), R2, R5) use its own (regime, layer)'s
+    floor; E uses the largest floor of the cells read. R4 compares H(h\*) at (near-miss, layer)
+    with C5's engine arm, which is timed at layer `off` only, so R4 reads the LARGER of the two
+    floors, `max(f(near-miss, l), f(near-miss, off))` [rev 9, r37 H10 (2): rev 8 said "its own
+    (regime, layer)'s floor"]. ~~**Why the launch-sigma bound, not a per-(regime, layer) A/A
+    floor**: the night times ONE A/A pair per (regime, layer) ... Making it usable needs about
+    eight A/A pairs per pool, eight times the A/A arms.~~ [rev 9, RULED r37 H1: WITHDRAWN. The
+    premise was false: the night already times about 40 hash-equal arms in 9 pools per (regime,
+    layer), I's pools, which is about 31 contrasts with no extra arm. And the launch term cannot
+    see between-run noise (below).]
+  - **The twin term [rev 9, RULED r37 H1 + H2, one mechanism with the agreement gate].** The
+    launch term reads one arm's launch-to-launch scatter, so it cannot see an offset an arm
+    carries over all 5 of its launches (between-run noise: placement, a frequency state, a
+    cache layout fixed at exec). The A/A term sees that, but it is one night-wide number, and an
+    offset in ONE regime dilutes into it: with a per-arm offset of 2 % in one regime, P(h\* !=
+    64) on pure noise was 0.26-0.29 under rev 8 (r37 SIMULATE-1, VERIFY). The arms that measure
+    it are already timed: every C1-C2 cell's I's pool (I and each head whose artifact hash-equals
+    I's there) is ONE binary timed as separate arms, so the spread of its arms' log medians is
+    launch noise plus between-run noise, the full noise of a head against I. Per (regime,
+    layer), over the cells read: `σ_c = sqrt(2 x SS / df)`, SS the pools' summed squared
+    deviations of `ln median` from their own pool mean and df the summed (arms - 1) (the RMS of
+    the twin contrasts; about 31 at the expected pools, `h >= k`: 3 + 3 + 2 + 2 + 1 + 9 + 1 + 9
+    + 1). It is raised to its 95 % bound `σ_c x sqrt(df / χ²(0.05; df))` (χ² now computed
+    exactly, since df can be small), and the floor becomes `f(r, l) = max(f, the launch term,
+    exp(z(α / N) x σ_c,up) - 1)`. Every term is a floor under the others: the A/A term keeps
+    cover_cap.md §11.4's reading, the launch term needs no pool of two, and the twin term carries
+    between-run noise per (regime, layer). The comparison against I's POOLED median has less
+    noise than two single arms, so `sqrt(2)` is conservative.
   - **Why this mechanism.** Rev 6 used `f_AA`, the max of about 12 A/A draws, as the threshold of
     every comparison, but the rule makes 600 of them with every regime read (108 C1-C2 cells x 9 heads, less the
     cells where a head is I: 50 per regime and layer) and 400 on a night with the two
@@ -725,14 +790,15 @@ under plan A only [rev 3, F13]; under plan B no form ships and no h is chosen. P
     twins double the night's arms. Reading I's median where the text is I's removes comparisons
     that can only be noise. Its price is sensitivity: at a 1 % launch noise `f` is about 4 %, so
     a head must win by more than that somewhere; drill (xv)'s power line shows a true 10 % win
-    picked in 60 of 60 nights (rev 8).
+    picked in 60 of 60 nights (rev 8; rev 9, with the twin term: 60 of 60).
 - **Why the largest h among equals [RULED r22 F10].** It is the owner's prediction (short spans
   stay inline under the head) and the fewest movers: a tie buys no byte move. "Less text" (rev
   2's reason for the smallest h) was asserted, never measured, and C4 is not an input to the
   rule.
 
 **Drills, re-run against the rule as written [rev 3, F10, F11; rev 4, R3-1, R3-2, R3-3; rev
-6, R5-2; rev 7, r35 F2-F7; rev 8, r36 G2-G5].** Rev 8's record is `cards.py selftest` (56 checks;
+6, R5-2; rev 7, r35 F2-F7; rev 8, r36 G2-G5; rev 9, r37 H1-H3].** Rev 9's record is `cards.py
+selftest` (89 checks; lane formsfixe's report); rev 8's was the same command (56 checks;
 lane formsfixc's report); rev 7's was (every drill below, the
 whole-night drills (xv)-(xvii) and the re-run, void-by-method and C3 cases; output in lane
 formsfixa's report). Rev 4 re-ran every drill with a script that implements R0-R1 exactly as the table
@@ -825,12 +891,12 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   HETEROGENEOUS noise, 300 nights each, the same acceptance: one regime 2x (`random`) 0.000;
   one regime 3x (NOT-WARM) 0.000; the A/A cells 0.7x the arms 0.000; the regimes at
   0.5/1/3/0.7/2/1x 0.000. Control: the 3x night under rev 7's floor (the A/A term alone) reads
-  0.173 (accept > 0.15: the drill sees the defect).
+  0.173 (accept > 0.15: the drill sees the defect). **Rev 9 [RULED r37 H1]:** under rev 9's rule (the twin term and the agreement gate added) the same drills read P(h\* != 64) = 0.000 (normal) and 0.000 (t(5)), power 60 of 60, and the four heterogeneous nights 0.000 each. Their control now turns the twin term and the gate off too (rev 7's floor is the A/A term alone; rev 9's twin term also sees a noisier regime, so a control that left it on read 0.000 and was blind): 0.177 (the χ² quantile is now exact; rev 8 read 0.173).
 - **(xvi) Unimodal launches must not void [rev 7, RULED r35 F3].** The same nights under t(5)
   launch noise: 2.0 % of nights void any cell once (0.017 % of cells), and the re-run reads
   them (accept: <= 5 %). Control: one arm with 2 of its 5 launches 8 % slow voids in 48 of 50
   nights. Rev 8: 3.0 % of nights (0.025 % of cells), because I's pool adds arms to each cell's
-  void test; the control still voids in 48 of 50.
+  void test; the control still voids in 48 of 50. Rev 9: 3.0 % of nights (0.025 % of cells), and the agreement gate adds none on pure noise (normal: 0.000 with and without it; t(5): 0.030 with and without); the control still voids in 48 of 50.
 - **(xvii) A gate failure of H(64) in C3 [rev 7, r35 F5's worse case].** On a pure-noise night
   whose C3 cells at H(64) include one gate failure: H(64) is R0, the rule picks among the rest
   (here 32, labelled "h = 32, the largest R0-surviving head (CHOSEN; the grid top failed R0), on
@@ -845,6 +911,20 @@ cell list is `(c1, c2, ...)` of `t(H(h), c) / t(I, c)`.
   reading) the 1.5 `f` split gives 0.397 (accept > 0.15). Converse: the same split in H(8)'s
   arm ships 8 in 0 of 100 nights at `f` and at 2 `f`. RECORD (not gated): a FAST split in
   H(8)'s arm at 1.5 `f` ships 8 in 27 of 100 nights ("Bimodal, defined": the residual).
+  **Rev 9 [RULED r37 H2; `selftest`'s (H2) lines]:** every rev 8 line above re-runs under the
+  twin term and the gate (I's 3-of-5 split: 0.000 at `f`, 1.5 `f` and 2 `f`; its control 0.397; the converse 0 of 100 at `f` and 2 `f`). A WHOLE-ARM shift (all 5 launches) of I and of H(64) in
+  the SMALLEST pools, the 2-arm pools (I, H(64)) at `hex64`, `uuid36` and `alt49` (hit-dense,
+  SIMD off), slow by `f`, 1.5 `f` and 2 `f` with `f` the cell's own floor (median 4.4 % on a
+  1 % night): P(h\* != 64) 0.000 to 0.003 in all 18 cases (I and H(64) x three patterns x three sizes) over 300 nights each (accept: <= 0.05). Control: I at
+  `hex64`, 1.5 `f`, under rev 8's rule (no twin term, no gate): 0.403 (accept > 0.15). The
+  gate's own cost on pure noise: none measurable (nights with a first void: 0.000 with the gate and without under normal launches, 0.030 with and without under t(5); r37 asked that it stay within F3's 5 %). RECORD (not gated): the FAST split above now ships 8
+  in 27 of 100 nights.
+- **(xx) Between-run noise [rev 9, RULED r37 H1; `selftest`'s (H1) lines].** Every arm of a
+  regime carries its own offset `exp(N(0, τ))` over all 5 launches (a re-run draws fresh
+  offsets), on 1 % launch noise, 300 nights each (accept: <= 0.05). One regime (NOT-WARM), the
+  A/A cells spared, τ = 1, 2, 3 %: 0.000, 0.000, 0.000. Every regime, the A/A arms too: 0.000, 0.000, 0.000. Every
+  regime, the A/A cells spared: 0.003, 0.000, 0.000. Control: τ 2 % in one regime under rev 8's rule:
+  0.663 (accept > 0.15; r37 measured 0.26-0.29 through VERIFY).
 - **(xix) A kept head without a win [rev 8, RULED r36 G4; `selftest`'s (G4) lines].** One cell
   (`k` = 60): H(8) = 0.97, H(16) = H(24) = 0.99, H(32) and H(64) = 1.00, the shorter heads
   losing; `f` = 0.025. E = {8, 16, 24} (threshold 0.994) and nothing is dominated (0.99 / 0.97
@@ -1130,7 +1210,13 @@ h is compiled into the kit, so timing the grid on ONE binary needs a lever:
     h\* < 64 the predicted-movers file is REQUIRED and must be non-empty (it is the population
     there; an empty file at h\* = 32 and width 32 would pass on cards and census that no head
     can move, rev 8, RULED r36 G8), and the check refuses without it. A `--census-limit` run is a
-    SMOKE: it exits 4, never a verdict, even when its truncated census is empty [rev 8, G8]. It lives with the kit's card script under `memfn/` (outside the G7
+    SMOKE: it exits 4, never a verdict, even when its truncated census is empty [rev 8, G8].
+    **Its reach is the population that MOVES, not the file [rev 9, RULED r37 H7].** A non-empty
+    file can still name no head-sensitive pattern (`a{40}` is byte-identical at lever heads 0,
+    24, 32 and 64, both layers), and then identity at h\* < 64 runs over bytes no head can move.
+    So at h\* < 64 the check first renders every pattern of its population (movers, cards, census)
+    at lever h\* AND at lever 64 on the FROZEN binary (lever 64's bytes are what a head-blind
+    check degenerates to), prints how many differ, and refuses at zero. It lives with the kit's card script under `memfn/` (outside the G7
     fence); a pcrec-side copy under a fenced directory takes an `ALLOW` entry.
 
 ### Answers, controlled by G2 [rev 2, F9; rev 3, F8]
@@ -1248,9 +1334,13 @@ a LITERAL draw, 9 positions at most today (r22 F8). So the build moves the DRAWS
   2b. C3 is timed at the frozen h\* on the same binary (`cards.py c3`), and R2's C3 half and R5
      read it [rev 7, r35 F4]; C4's size record is taken at h\* (no timing). Before it times
      anything, `cards.py c3` checks the deny on C3's and C4's artifacts: no arm-I artifact may
-     carry a span loop, and L (h0) is the reach arm that must [rev 8, RULED r36 G7]. This is
+     carry a span loop, and H(64), the arm an ignored deny renders, is the reach arm that must,
+     rendered over C3 and C4 whatever h\* the step times [rev 8, RULED r36 G7; rev 9, RULED r37
+     H4: rev 8's reach arm L proved the loop text is readable, not that the defect's arm loops;
+     at width 32 only C4's `hex32` at h0 loops, so an ignored deny read green]. This is
      the step where an ignored deny shows: I would render H(64), which loops past offset 64 at
-     `k` = 500, and step 1's patterns never reach that. A C3 gate failure at
+     `k` = 500, and step 1's patterns never reach that. Where H(64) loops nowhere (width 32),
+     the check is VACUOUS and refuses: no timing on a tree that cannot show the defect. A C3 gate failure at
      H(h\*) is R0 for h\*: step 2 picks again and 2b runs at the new pick (F5).
   3. The build compiles h\* in, and the identity check (above) proves that the rebuilt
      binary emits the same bytes as the lever at h\* on the frozen binary. Only then are the
@@ -1813,7 +1903,7 @@ recommendations were all taken; the record below says what each ruling settles.
 ## 8. responses.md-ready block (for the kit manager to post; facts only, D157)
 
 ```
-## R-45 reply (2026-11-16, kit; rev 6 after reviews r20, r22, r23, r25 and your check r45read; rev 7 2026-11-17 after code round r35; rev 8 after its re-check r36) — window spans up to 4095 positions
+## R-45 reply (2026-11-16, kit; rev 6 after reviews r20, r22, r23, r25 and your check r45read; rev 7 2026-11-17 after code round r35; rev 8 after its re-check r36; rev 9 after r37) — window spans up to 4095 positions
 - READY; nothing open. Plan A (forms now, one joint landing) is the plan of record.
 - (1) YES on EVERY window span: MF_WSPAN_POS 4095; MF_WREACH = MF_MAX_FWD = 4096. Proof rows
   only for proving classes (window plan, old-field FIND); others proof_n 0. Range [LO, end),
@@ -1829,7 +1919,9 @@ recommendations were all taken; the record below says what each ruling settles.
   every regime (your §11.4 five by its methods + random bytes), t(I) the median over every arm
   whose built artifact is I's in that cell (rev 8); E = within the floor of the best W (rev 7:
   the A/A floor sized to the rule's comparison count; rev 8: each (regime, layer) at least its
-  own launch noise; a false pick <= 5 % of pure-noise nights, uneven noise included); keep the
+  own launch noise; rev 9: and its own between-run noise, read from the arms already timed whose
+  artifact is I's; a cell whose such arms disagree beyond f is void and re-run; a false pick
+  <= 5 % of pure-noise nights, uneven and between-run noise included); keep the
   members of E dominated (faster beyond f in at least one cell and never slower beyond f) by
   the fewest others (RULED); then the LARGEST of those that beat I beyond f somewhere (rev 8).
   On a tie h* = 64, CHOSEN. A
