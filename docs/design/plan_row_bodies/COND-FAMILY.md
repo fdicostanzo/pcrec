@@ -2288,3 +2288,7 @@ while the alternation rewrite `(x & c & p) | (x & NOT c)` is a different, also w
 may send x back to a shorter match before the second branch is tried); (3) so "rewrite to what" IS the open
 when-meaning question, now asked as: the conditional means PCRE's conditional group. Filed with when-meaning; no
 new item.
+ADDENDUM, same day about 14:20, HIS WORDS: "Although I don't know the spelling. ? Has a meaning in regex". RECORD:
+the conditional's SPELLING is open; `?` is not to be assumed (it is a quantifier, the lazy mark and the group
+prefix in regex). MINE: the draft already spells the two-argument form as a call, `when(c, p)`; a third argument
+(`when(c, p, q)`) would add the else branch with no new mark; a later syntax step decides.
