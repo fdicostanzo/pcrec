@@ -25,12 +25,23 @@
 #       a compiler run to the script or session that started it, never to the shell.
 #       An application is listed when cores >= --min (default 0.02) or run + wait >= 0.10.
 #       Exit 0 when load1 < gate, 1 when not, 2 on a usage error. Reads only; writes nothing.
-# usage: scripts/loadshame [--sec N] [--gate G] [--min C] [--top K] [--all]
+#       THEN, always, the WATCHED APPLICATIONS section: known trouble-makers (the WATCH table below: Steam,
+#       VS Code, ...) that sleep when we look and wake during a timing run, so "busy now" misses them. One
+#       line per application with ANY process, however idle: name, user, process count, root `command
+#       (pid N)` (with the `*` mark), up time, cores used over the sample (0.00 is fine), and what to close.
+#       Presence is reported whether or not a window is visible (we cannot see the owner's display); a
+#       closed window that left processes behind is "stealth open" and is listed the same. None: one line.
+#       An application is recognised by a process's command name, exe path prefix (readable only for our
+#       own user's processes) or control-group unit pattern; adding an application is adding a WATCH row.
+# usage: scripts/loadshame [--sec N] [--gate G] [--min C] [--top K] [--all] [--present]
 #        --all lists every application above the thresholds (default: the top 10).
+#        --present: no sampling (returns at once), prints only the watched-applications section; exit 0
+#        when none is present, 1 when any is (cores show `n/a`).
 # The gate default (2.0) is the timing harness's own QUIET_LOAD (docs/design/memfn/span_cards/slot/run.py);
 # pass --gate when a job uses another. The load average itself lags by about a minute: a process that
 # has just stopped still shows in load1 for a while, and one that has just started shows here first.
 import argparse
+import fnmatch
 import os
 import pwd
 import sys
@@ -42,6 +53,16 @@ ME = os.getpid()
 LAUNCHERS = {"systemd", "init", "tmux: server", "tmux", "screen", "sshd", "sshd-session", "login", "bash", "sh",
              "zsh", "fish", "dash", "gnome-shell", "gnome-session-b", "ptyxis-agent", "ptyxis", "kitty",
              "ghostty", "gnome-terminal-", "konsole", "alacritty", "sudo", "su"}
+
+# WATCH: applications that must be closed before a timing window, whether or not a window is visible.
+# One row each: (display name, command names, exe path prefixes, control-group unit patterns, what to close).
+# A process belongs to the application when ANY of the three recognisers matches it.
+WATCH = [
+    ("Steam", {"steam", "steamwebhelper", "steam-runtime-l", "srt-bwrap"}, ("/home/frank/.steam/",),
+     ("app-*-steam-*.scope",), "Steam (File > Exit, or quit it from its tray icon)"),
+    ("VS Code", {"code"}, ("/snap/code/",), ("snap.code.code-*",),
+     "VS Code (close every window, then File > Quit)"),
+]
 
 
 def stat_fields(path):
@@ -143,6 +164,61 @@ def root_of(pid):
     return cur, name, unit, user_of(cur), detached
 
 
+def exe_of(pid):
+    try:
+        return os.readlink("/proc/%d/exe" % pid)
+    except OSError:
+        return ""                          # another user's process: not readable, the other recognisers decide
+
+
+def watched(snap):
+    """{WATCH row index: [pids]} for every process in snap matching a row (comm, unit or exe prefix)."""
+    found = {}
+    for pid, st in snap.items():
+        unit = unit_of(pid)
+        exe = None
+        for i, (_, comms, exes, units, _) in enumerate(WATCH):
+            hit = st[0] in comms or any(fnmatch.fnmatch(unit, u) for u in units)
+            if not hit:
+                if exe is None:
+                    exe = exe_of(pid)
+                hit = bool(exe) and exe.startswith(exes)
+            if hit:
+                found.setdefault(i, []).append(pid)
+    return found
+
+
+def report_watched(snap, first=None, span=None):
+    """Print the watched-applications section; True when any application is present."""
+    found = watched(snap)
+    print("watched applications (present whether or not a window is visible; a closed window may leave processes):")
+    if not found:
+        print("  none present")
+        return False
+    with open("/proc/uptime") as f:
+        up = float(f.read().split()[0])
+    for i, pidlist in sorted(found.items()):
+        name, _, _, _, closing = WATCH[i]
+        roots = {}
+        for pid in pidlist:
+            r = root_of(pid)
+            if r:
+                roots.setdefault(r[0], [r, 0])[1] += 1
+        r = max(roots.values(), key=lambda x: x[1])[0] if roots else (pidlist[0], snap[pidlist[0]][0], "", "?", False)
+        age = up - int(snap[r[0]][3]) / CLK if r[0] in snap else 0
+        d, rem = divmod(int(max(age, 0)), 86400)
+        up_s = "%dd %dh" % (d, rem // 3600) if d else "%dh %dm" % (rem // 3600, rem % 3600 // 60)
+        if first is None:
+            cores = "n/a"
+        else:
+            tk = sum(max(0, snap[p][2] - (first[p][2] if p in first and first[p][3] == snap[p][3] else 0))
+                     for p in pidlist)
+            cores = "%.2f" % (tk / CLK / span)
+        print("  %s: user %s, %d processes, root %s (pid %d)%s, up %s, cores %s -- close: %s" % (
+            name, r[3], len(pidlist), r[1][:16], r[0], " *" if r[4] else "", up_s, cores, closing))
+    return True
+
+
 def main():
     ap = argparse.ArgumentParser(add_help=True, description="Name the applications loading the box.")
     ap.add_argument("--sec", type=float, default=10.0)
@@ -150,6 +226,7 @@ def main():
     ap.add_argument("--min", type=float, default=0.02, dest="min_cores")
     ap.add_argument("--top", type=int, default=10)
     ap.add_argument("--all", action="store_true")
+    ap.add_argument("--present", action="store_true")
     try:
         a = ap.parse_args()
     except SystemExit as e:
@@ -157,6 +234,9 @@ def main():
     if a.sec <= 0 or a.gate <= 0:
         print("loadshame: --sec and --gate must be positive", file=sys.stderr)
         return 2
+
+    if a.present:
+        return 1 if report_watched(cpu_snapshot()) else 0
 
     looks = max(4, int(a.sec * 2))
     t0 = time.monotonic()
@@ -210,6 +290,7 @@ def main():
         rows = rows[:a.top]
     if not rows:
         print("  (no application above the thresholds)")
+        report_watched(last, first, span)
         return 0 if quiet else 1
     print("  %-5s %-5s %-5s %-8s %-30s %-34s %s" % ("cores", "run", "wait", "user", "close", "unit", "busy"))
     for g in rows:
@@ -220,6 +301,7 @@ def main():
             g["cores"], g["run"], g["wait"], user[:8], close, unit[:34], busy_s))
     if any(g["root"][4] for g in rows):
         print("  * detached: no shell or launcher above it (a closed window that kept running, or a service)")
+    report_watched(last, first, span)
     return 0 if quiet else 1
 
 
