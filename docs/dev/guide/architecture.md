@@ -1,24 +1,29 @@
-# Architecture goals, rules and the ride-along register
+# Architecture rules in five tiers, and the ride-along register
 
 What this is: the project's LIVE architecture document for product code (`src/`, `cli/`, `lib/`, `memfn/src/`).
-Consult it when planning a feature (part 3: which known remodels ride along), when writing or reviewing an
-architecture note or a design (parts 1 and 2), and at code review. Who updates it: the manager, at each landing
+Consult it when planning a feature (the register: which known remodels ride along), when writing or reviewing an
+architecture note or a design (tiers 1-4), and at code review. Who updates it: the manager, at each landing
 that opens, rides or closes a register row; a lane that finds a new shape proposes a row in its report.
 
-Part 1 is the goals (2026-11-17: reshaped to the owner's review and in his order; still DRAFT on the points it marks). Part 2 is the rules, each with the refactor history behind
-it and the question to answer BEFORE design. Part 3 is the register of known remodels and the event that should
-carry each. Code-level rules are in `coding.md`; names and comments in `style.md`. Decision numbers are in
-`docs/dev/decisions.md`. "A1" and "A2" below are the two survey reports this revision was built from:
+The spine is the owner's five tiers (2026-11-17, "new-rules", `docs/design/plan_row_bodies/ARCH-STEP.md`, last
+section): "1. high level rules like "decisions made in one place" 2. sub rules related to that like "decision
+tables" 3. corollary rules derived from above so they don't have to be re-derived. 4. considerations. Less hard
+than the rules above but worth doing if effort permits. 5. evidence and history". Tier 1 is the four high-level
+rules (the goals), under the gate; tier 2 the sub-rules, grouped under the high-level rule each serves; tier 3 the
+corollaries; tier 4 the considerations; tier 5 the evidence and history (each rule's HISTORY, the survey tallies,
+the options considered and not adopted). Tiers 1-4 are what a reader APPLIES; tier 5 is where a reader checks WHY.
+Then the register of known remodels and the event that should carry each. Code-level rules are in `coding.md`;
+names and comments in `style.md`. Decision numbers are in `docs/dev/decisions.md`. "A1" and "A2" below are the
+two survey reports this document was built from:
 `docs/dev/lanes/archhist_report.md` (the refactor history, entries numbered 1-20) and
 `docs/dev/lanes/archreview_report.md` (today's tree: decision chains, parallel mechanisms, seams, options).
 An "architecture note" is the short document that answers, before design, where a feature lives in today's code
 and what must change shape first ([ARCH-STEP]); its template and procedure are the `pcrec-architect` skill
 (`.claude/skills/pcrec-architect/SKILL.md`), its review the `pcrec-critic` skill's architecture mode.
 
-# Part 1. Goals (2026-11-17; the owner's review and order applied; DRAFT only where marked)
+# Tier 1. High-level rules (the goals; 2026-11-17, the owner's review and order applied; DRAFT only where marked)
 
-STILL DRAFT, open with the owner (each a word slug he can cite; everything else in part 1 is his, or agreed by him):
-- new-rules: which part-2 rules marked NEW 2026-11-17 are adopted.
+STILL DRAFT, open with the owner (each a word slug he can cite; everything else in tier 1 is his, or agreed by him):
 - ast-accessors: whether goal 2 covers the AST (leaning: sealed-AST reads stay direct, writes go through the owning pass).
 - ctx-owner: who owns `Job`/`Ctx` under goal 2 (leaning: split by writer as areas migrate, the driver owns the rest).
 - accessor-grain: one accessor per question or a getter/setter per field (leaning: per question, as `coding.md` §1.10).
@@ -26,9 +31,8 @@ STILL DRAFT, open with the owner (each a word slug he can cite; everything else 
 The owner's reason, verbatim: "This project is more than simply its stated goal. It's an effort to produce a
 viable long term project that can grow" (`docs/design/stream/manifesto.md` §1). And the problem this document is
 for: "we discover over time that the feature is aggregated onto existing code and then have to go through a
-lengthy refactor" (Frank 2026-11-17, `docs/design/plan_row_bodies/ARCH-STEP.md`). Of A1's 18 counted refactors,
-9 were a missing shared home (a primitive or a second mechanism beside the first), 3 a decision family that grew
-as branches, 2 a data shape with no room for the next feature, 2 an inconsistent interface.
+lengthy refactor" (Frank 2026-11-17, `docs/design/plan_row_bodies/ARCH-STEP.md`). The refactor tally behind
+that: tier 5.
 
 A GATE above every goal: no answer moves (PCRE2 is the semantics, D26), and NO EXISTING REGEX GETS SLOWER. The
 speed half in the owner's words (2026-11-17, "speed-gate"): "before predicate and other changes, most all work was
@@ -44,10 +48,13 @@ ORDER: THE OWNER'S (2026-11-17). He reviewed the first draft the same day ("goal
 `docs/design/plan_row_bodies/ARCH-STEP.md`, last section): he reshaped the draft's goals 1-3 and added one,
 closing "You do cover some of the above as well"; then he agreed the order below ("goals-order: agree", to the
 manager's list). Then, asked whether "a data shape covers the inputs the plan names" stays a goal, he answered
-"shape-goal: I agree" to the manager's lean: it is now a RULE under goal 2 (part 2, "A shape states the inputs it
-covers"), and part 1 has four goals. Each goal is answerable yes or no from a diff, a tree or an architecture note.
+"shape-goal: I agree" to the manager's lean: it is now a RULE under goal 2 (tier 2, "A shape states the inputs it
+covers"), and tier 1 has four goals. Each goal is answerable yes or no from a diff, a tree or an architecture note.
 
-1. **One home per question; each decision contained in one unit.** Every question the compiler answers (where can
+NAMES: the owner's term for these four is HIGH-LEVEL RULES ("new-rules", 2026-11-17); "goal N" here, in the
+rules below, in the register and in older notes means high-level rule N (the numbers are unchanged).
+
+1. **High-level rule 1: One home per question; each decision contained in one unit.** Every question the compiler answers (where can
    a match start, which engine, is this request refused, how wide is this subtree, which bytes can begin it, what
    did the compile decide) has ONE table, record or function, and new code asks it; and the decision making behind
    the answer is contained in a unit that can be understood, modified, inspected and tested on its own. A declared
@@ -65,7 +72,7 @@ covers"), and part 1 has four goals. Each goal is answerable yes or no from a di
    decision tables and then add to them rather than add more conditions to if tree", ARCH-STEP.md); D151 addendum 3
    ("otherwise logic is spread around which is the opposite of what we want"); A1 entries 1, 3, 6, 8-13, 15-17;
    A2 chains 1-4.
-2. **Data lives with the code that modifies it; everything else uses its accessors.** A data structure (a struct,
+2. **High-level rule 2: Data lives with the code that modifies it; everything else uses its accessors.** A data structure (a struct,
    a record, a table) and the code that writes it are co-located in one unit; code in another unit that needs to
    read or modify it calls accessors the owning unit provides, and does not touch its fields. CHECK: for each struct
    or record the diff reads or writes, the access is in the structure's own file or goes through its accessor; the
@@ -77,14 +84,9 @@ covers"), and part 1 has four goals. Each goal is answerable yes or no from a di
    reads of the flags word in 15 files behind four accessors); A1 entry 6 (D62 to A_CTX) and entry 13 ([VMREC],
    two descriptions of one VM statement until the record became the only writer); A2 "Seams without a contract"
    item 1 (the `Job`/`Ctx` blackboard: "No accessor layer, no declared writer/reader per field"), with the facts
-   layer as the in-tree model (A2 contrast C1: `pf_enter`/ask accessors). DISTANCE TODAY (HEAD 5bfb03a19, commands
-   in `docs/dev/lanes/archgoals2_report.md`): `Job` (`src/core/internal.h:3538-3818`, 63 fields by A2's count) and
-   `struct Ctx` (`src/core/internal.h:3970-4455`, about 70 by A2's count) have no accessor layer; `cx->opt` is read
-   directly in 43 files, `cx->job` in 27, `cx->ncap` in 19, `cx->mods` in 17, `cx->emit_in` in 16; 14 `Job` fields
-   are written by emitters, one of them read back by the driver's fallback ladder (roadmap H-FLAGS); the flags word (`coding.md` §1.10) and the
-   facts layer are the parts that already meet the goal. A rule serves this goal for what a structure may hold:
-   "A shape states the inputs it covers" (part 2; a goal until the owner's "shape-goal: I agree", 2026-11-17).
-3. **Seams: a module seam is an API with a contract; a layer hands data one way.** The goal's purpose, in the
+   layer as the in-tree model (A2 contrast C1: `pf_enter`/ask accessors). DISTANCE TODAY: tier 5. A rule serves this goal for what a structure may hold:
+   "A shape states the inputs it covers" (tier 2; a goal until the owner's "shape-goal: I agree", 2026-11-17).
+3. **High-level rule 3: Seams: a module seam is an API with a contract; a layer hands data one way.** The goal's purpose, in the
    owner's words: "to isolate responsibility to better organize change. Each module has its api and contract."
    There are two kinds of seam. A MODULE seam (his example: pcrec and the kit planner) is a defined API with a
    contract; data travels both ways as needed, and each side keeps its own concern. A LAYER seam (his example: pcrec
@@ -110,9 +112,9 @@ covers"), and part 1 has four goals. Each goal is answerable yes or no from a di
    kit's planner and emitter were split)." Also D146/D157 (the kit seam, the model module seam);
    manifesto §3 principle 9 ("Every seam is a document"); A1 entries 4, 9, 13, 18; A2 "Seams without a contract"
    1, 2, 4.
-4. **Remodels ride along with the feature that needs them.** A known remodel is built when a feature, plan row or
+4. **High-level rule 4: Remodels ride along with the feature that needs them.** A known remodel is built when a feature, plan row or
    measurement lands on its site, FIRST, as its own answer-identical unit; never ahead of that event, and never
-   skipped by building beside it. CHECK: the architecture note lists every part-3 row whose WHERE or event the
+   skipped by building beside it. CHECK: the architecture note lists every register row whose WHERE or event the
    feature touches, and each lands first or the note says why not. SOURCES: Frank 2026-11-17, the go on this
    document ("a good document to keep live and consult on new feature to see if refactors can ride along");
    D153 ("don't live in a house we're remodeling"); D77 (build under measurement); `docs/design/stream/roadmap.md`
@@ -136,7 +138,7 @@ THE MANAGER'S way of carrying it (not his words; open to his correction):
   a goal is an argument, not a veto.
 - (b) A SMALL CHANGE MAY GO AGAINST A GOAL when remodelling for it now would cost more than it buys, PROVIDED it is
   noted.
-- (c) "NOTED" HAS ONE HOME: a part-3 register row of kind "noted deviation": what was done, against which goal or
+- (c) "NOTED" HAS ONE HOME: a register row of kind "noted deviation": what was done, against which goal or
   rule, where (file and function, verified by command), why it was small, and the event that should correct it (a
   larger change on that site, or a named refactor moment). No row, not noted.
 - (d) A NEWLY BUILT AREA SETTLES before it is reshaped: a register row may carry the status "settling until
@@ -149,30 +151,20 @@ remodel, the allowance is his own implement-then-replace with an open register r
 
 NON-GOALS: speed as an architecture goal (it is the gate; manifesto §1); the harness and tooling (rule "Product
 first, harness minimal"); remodels with no carrying event (D77); frameworks that move every pass at once
-(part 3, "considered, not adopted"); mirroring PCRE2's internal structure (D26).
+(tier 5, "Considered, not adopted"); mirroring PCRE2's internal structure (D26).
 
-# Part 2. The rules
+# Tier 2. Sub-rules
 
-Each rule: the rule, Why, Source; then HISTORY (the refactors in A1 or the tree shapes in A2 that taught it or
-came after it) and BEFORE DESIGN (the question an architecture note answers for it). Rules marked NEW 2026-11-17
-are DRAFT for the owner.
+PLACEMENT: a DRAFT FOR THE OWNER (lane archtiers, 2026-11-17); the rules' words are unchanged, only their place.
+Each sub-rule says HOW a high-level rule (or the gate) is met: the rule, Why, Source, a pointer to its history
+in tier 5, and BEFORE DESIGN (the question an architecture note answers for it). A rule serving two high-level
+rules sits under the one it mainly serves, with a one-line pointer from the other. The last two groups hold
+rules that serve no single high-level rule: those that serve the gate, and those on how a design is written.
+An architecture or code critic raises a FINDING against tiers 1-3.
 
-## A design states its goals, ranked, in checkable form
-Every design note opens with a short Goals section: three to five goals, each
-naming who benefits and a measurable form (the comparison and the margin, e.g.
-"a find-all loop over `_next` costs no more than the hand `_search` loop on
-dense subjects, within the A/A floor"); a PRIORITY ORDER saying which goal wins
-when two conflict; and NON-GOALS. Lane briefs restate the goals their work
-serves; critics review the code against them; a measurement that misses a goal
-is a finding against the design, not just a number.
-**Why:** "fast with low overhead" cannot fail a review. RX_FOREACH failed its
-prototype gates and survived to the final timing run because no goal said
-what it was for or whether genericity could cost speed; a ranked goal would
-have cut it early. **Source:** Frank 2026-10-23 (the iterator find-all timing, job 599).
-HISTORY: no A1 refactor traces to missing goals; this rule covers speed and purpose, not shape.
-BEFORE DESIGN: which part-1 goals does the feature touch, and which does it trade against?
+## Under high-level rule 1 (one home per question; each decision contained in one unit)
 
-## Decisions are declared tables, not if-chains
+### Decisions are declared tables, not if-chains
 A selection (engine, form, route, start strategy) is a table of named rows
 with a predicate, a per-row deny, and an action; one selector walks it. First
 match, a combining table, or a priced argmin are all fine. Required: organized
@@ -187,13 +179,208 @@ the fallback ladder); `DFA_SELECT` survives over `dfa_reprs[]`. (Corrected
 per row. **Source:** Frank 2026-09-28 and 2026-10-12; D122, D151. A table is the
 usual TECHNIQUE for goal 1, not a goal of its own (the owner 2026-11-17: "Tables
 fulfill that goal").
-HISTORY: taught by [START-TABLE] and [DEC-FALLBACK] (A1 10, 11; 32 and 42 commits), applied up front by the entry
-rows (A1 12). START-TABLE converted the selection but not the action: the answer is re-dispatched in four emitters
-(A2 chain 1; new rule "Act through the row").
+history: tier 5
 BEFORE DESIGN: list every decision site the feature touches (grep the answer's enum, e.g. `CRA_`, `ENGM_`); for
 each: a row in an existing table, a new arm, or an if-tree that becomes a table first.
 
+### Build the general form; no parallel mechanisms or special cases
+A recognizer, fold or desugar that exists only to reproduce a known construct
+is a special case. Ask what the general form is, and build that. Two callers of
+one mechanism is fine; two mechanisms is not. Implement-then-replace is
+acceptable; parallel paths are not. Dead-capture elision is the worked example.
+**Why:** the special case becomes a duplicate path the general form must later
+delete, and optimizations reach only the narrow class. **Source:** Frank
+2026-08-23; D75 addendum.
+history: tier 5
+BEFORE DESIGN: name each question the feature's new code answers and grep for the existing answer (A2's
+"Parallel mechanisms" list is the worked example).
+
+### One question, one primitive, from the second caller (added 2026-11-17)
+When a second site needs an answer or an operation another site already computes (a tree walk, a width, a flag
+question, a statement's text, saturating arithmetic), both call one primitive; the second caller's arrival is the
+trigger to extract it. A small, local second walk is still a second mechanism.
+**Why:** it is A1's most common shape: D70's union, D62 to A_CTX, the 2026-09-17 review's 75 re-implemented walks,
+[FLAG-ACCESS]'s 65 raw flag reads and [VMREC]'s 132 print sites were each extracted after the sites had grown;
+today `lm_maxw` re-spells `src/opt/mrl.c`'s width walk unsaturated (`src/gen/lmwalk.c:95`).
+**Source:** A1 "Patterns across them" (entries 1, 6, 8, 9, 13); A2 "Parallel mechanisms" 1, 3 and "What the guide
+does not say".
+
+### Notice siblings of a decision family
+Before adding a predicate or a small table, ask whether it is a sibling of an
+existing decision family, and say so. At about three dispersed members, propose
+the unified table. **Why:** a family built incrementally as local branches keeps
+growing until someone asks for the unification; start strategy ended as one
+candidate-row contract. **Source:** Frank 2026-10-06; D124, D151.
+history: tier 5
+BEFORE DESIGN: count the CALL SITES that ask the same question, not only the tables; at about three, the note
+proposes the table.
+
+## Under high-level rule 2 (data lives with the code that modifies it; accessors)
+
+### A structure is read and written through its owner's accessors (added 2026-11-17)
+The code that writes a structure's fields lives in the structure's own file (or module), beside its definition;
+code in another file reads or modifies it through accessor functions that file provides, one per question or
+operation, never by direct field access. `coding.md` §1.10 (the option word, gated by
+`tests/core/flag_access_check.py`) is this rule's one enforced instance today; the facts layer's `pf_enter`/ask
+accessors are its model for a record. A structure with no accessor yet is not converted wholesale: a feature that
+adds a cross-file read or write adds the accessor (goal 4; register row 6a). **Why:** [FLAG-ACCESS] (A1 9) and D62
+to A_CTX (A1 6) paid for direct reads one field family at a time; `Job`/`Ctx` are read directly from every layer
+(`cx->opt` in 43 files) with no declared writer (A2 seam 1). **Source:** the owner 2026-11-17 (goal 2's words,
+ARCH-STEP.md); `coding.md` §1.10; A1 6, 9, 13; A2 "Seams without a contract" 1 and contrast C1.
+BEFORE DESIGN: for each structure the feature reads or writes from outside its file, name the accessor (existing,
+or added by the feature).
+
+### A shape states the inputs it covers (a rule under goal 2; the owner 2026-11-17, "shape-goal: I agree")
+A representation (a node, a class payload, a record) names the range of inputs it covers (code points, kinds,
+engines, offsets); when a planned row needs inputs outside it, the shape is widened first, as its own unit, not
+patched per consumer. Until 2026-11-17 this was part 1's goal 4; the owner agreed it is a rule under the
+data-with-its-code goal (`docs/design/plan_row_bodies/ARCH-STEP.md`, last section). **Why:** the class bitmap had
+no room above 0xFF though UTF-8 was planned (A1 2); fold handling spread over three files had no owner when
+alternation folds arrived (A1 19); LOOK-LOCATE's signed offset has no field in the start row schema (A2 "Where the
+next features will land"). **Source:** D70 (owner: "I'm not worried about memory but complexity and flexibility",
+A1 entry 1); APPROACH.md's encodings section (the 256-bit class bitmap stated as a choice, A1 entry 2); A1 entries
+1, 2, 19.
+BEFORE DESIGN: the architecture note lists the planned rows that will extend each shape the feature introduces or
+extends, and shows each fits (or the shape widens first).
+
+## Under high-level rule 3 (seams: module seams with a contract; layers one way)
+
+### A module seam is an API with a written contract and tests (added 2026-11-17)
+Between modules (pcrec and the kit planner; the kit planner and the kit emitter), the seam is one declared API
+with a contract document and tests that bind it; data may travel both ways as needed, each side keeps its own
+concern, and what crosses is facts (rule "Across the kit boundary, send facts, not methods"; manifesto §3
+principles 7 and 9). **Why:** the two seams A2 found with a written contract and tests (the facts layer, the kit
+seam: A2 contrast C1, C2) are the two that have not been re-cut; the contract-less ones (A2 seams 1, 4, 6) are the
+register's rows 6-7 and 2. **Source:** the owner 2026-11-17 ("Module seams like between pcrec and kit _planner_ are
+a defined api and data can travel back and forth as needed but each tries to keep its own concern. ... Each module
+has its api and contract.", ARCH-STEP.md); D146, D157.
+BEFORE DESIGN: for each module seam the feature crosses, name the API, the contract document and the test.
+
+### Layering holds at the call level; data crosses a layer one way (added 2026-11-17)
+Layer order (`src/facts/CLAUDE.md`) is judged by calls, not only includes: a function that lower layers call
+lives at their level. Data crosses a layer in one direction, down with the calls (pcrec hands data to the
+emitter). Where a lower layer must hand data back to a higher one (an emitter-written `Job` field the driver
+reads, roadmap H-FLAGS), the design names it and argues either the module split that back-and-forth signals or
+an interim. A known wrong-way call or back-flow is written down by name where it lives until it moves (goal 3).
+**Why:** the include graph reads 2 back-edges while about 30 call back-edges exist (facts and parse calling the
+`src/opt/mrl.c` width functions; core calling `pcrec_cand_body_route` in gen). **Source:** A2 seam 2;
+`src/CLAUDE.md` ("What the include graph cannot see"); the direction clause, the owner 2026-11-17 ("Layer seams
+should if possible be one data direction. ... If there needs to be data back and forth between layers, that
+suggests a module split like between the kit planner and kit emitter.", ARCH-STEP.md). Judged at review, not by
+a gate (tier 5, "Considered, not adopted").
+
+### Across the kit boundary, send facts, not methods
+pcrec states facts (positions, rates, sets, bounds); the kit chooses the form.
+Prefer the general fact (an ordered array and a count) over a specific pick. In
+fields, comments, briefs and messages never describe how the kit would use a
+fact. **Why:** a method-shaped field freezes one method into the contract.
+**Source:** D157, D146; see `addenda/kit.md`.
+history: tier 5
+BEFORE DESIGN: for each field the feature sends across the kit seam, state the fact in words with no verb about
+the kit's use of it.
+
+## Under high-level rule 4 (remodels ride along with the feature that needs them)
+
+Also serving this rule: "Build the general form" (under high-level rule 1; its implement-then-replace allowance is goal 4's).
+
+### Build under measurement
+A mechanism or axis waits until a measurement names the need; say what
+measurement would trigger the build. Cut a multi-step plan to what the next
+verdict needs and give each dropped item its trigger. A mechanism withdrawn on
+its own measurement is the process working: record the measured NO and keep the
+instrument. **Why:** an unmeasured build is growth that may be rebuilt or rolled
+back. **Source:** Frank 2026-08-25 and 2026-10-21; D77, D18.
+history: tier 5
+BEFORE DESIGN: a remodel the feature does not need yet becomes a register row with its trigger.
+
+### Simplification is a benefit on its own
+A change that deletes special cases or retires a parallel kind qualifies on
+that alone; present the deletions as the benefit, still measured and costed
+(abi events, identity gates). **Why:** a smaller, more general tree is the goal.
+**Source:** Frank 2026-10-18.
+history: tier 5
+BEFORE DESIGN: the note's "what is deleted" list; a remodel with an empty list needs another reason.
+
+## Rules that serve the gate (no answer moves, no existing regex gets slower)
+
+### Tuning constants are suspect
+An unroll width, block size or cut-over is measured (regime named), derived, or
+left to the compiler; otherwise label it an unmeasured default where it lives.
+Never adopt one silently. **Why:** an unmeasured constant looks like a decision
+and carries no evidence. **Source:** Frank 2026-10-05.
+history: tier 5
+BEFORE DESIGN: list the feature's constants and the evidence for each.
+
+### A VM capacity change is measured through both entries
+A change to how the VM uses its frame or trail capacity measures its cost
+through BOTH the tiered default entry and `<prefix>_search_in` with ample
+buffers. **Why:** the default entry first runs on page-sized buffers and
+escalates; a mechanism that fires there and not under `_in` (K134's fast-tier
+compaction: +15 % on the default entry, +0.8 % under `_in`) is invisible to an
+`_in`-only measurement. **Source:** review 2026-10-29-r2 (F5).
+history: tier 5
+BEFORE DESIGN: does the feature change frame or trail use? If so, name both measurements.
+
+### Pre-release ABI changes happen, by ritual
+Before 1.0 an ABI or layout change is deliberate and methodical but allowed when
+it is the general form. The discipline is the ritual: abi bump, identity re-pin,
+spec hunk in one change, new fields appended, both artifact kinds named. Fold a
+layout change into an abi event already in flight. **Why:** there are no
+consumers yet; avoidance blocks improvements. **Source:** Frank 2026-08-25; D40,
+D76, D94 (ritual in `coding.md` §3.1).
+history: tier 5
+BEFORE DESIGN: does each remodel the feature carries move bytes? If so, which abi event in flight does it join?
+
+## How a design is written and weighed
+
+### A design states its goals, ranked, in checkable form
+Every design note opens with a short Goals section: three to five goals, each
+naming who benefits and a measurable form (the comparison and the margin, e.g.
+"a find-all loop over `_next` costs no more than the hand `_search` loop on
+dense subjects, within the A/A floor"); a PRIORITY ORDER saying which goal wins
+when two conflict; and NON-GOALS. Lane briefs restate the goals their work
+serves; critics review the code against them; a measurement that misses a goal
+is a finding against the design, not just a number.
+**Why:** "fast with low overhead" cannot fail a review. RX_FOREACH failed its
+prototype gates and survived to the final timing run because no goal said
+what it was for or whether genericity could cost speed; a ranked goal would
+have cut it early. **Source:** Frank 2026-10-23 (the iterator find-all timing, job 599).
+history: tier 5
+BEFORE DESIGN: which tier-1 goals does the feature touch, and which does it trade against?
+
+### Product first, harness minimal
+Rank compiler correctness, emitted-code speed and stability, and the public
+surface ahead of tooling. A harness or evaluator gets the least that yields a
+trustworthy verdict (keep list tied to the verdict, drop list with triggers);
+its checks are not future-proofed. Keep the cheapest honest control: a check
+never grades a function against itself. **Why:** the product's client wants
+stability; the harness is ours and can change any time. **Source:** Frank
+2026-10-21; D77; `docs/dev/learnings.md` section 3.
+history: tier 5
+BEFORE DESIGN: is the new structure in product code or in the harness?
+
+### Caller-facing names describe behaviour
+See `style.md` (Naming). **Source:** D174.
+BEFORE DESIGN: list the new caller-facing names.
+
+# Tier 3. Corollaries
+
+PLACEMENT: a DRAFT FOR THE OWNER (lane archtiers, 2026-11-17); the rules' words are unchanged, only their place.
+Each corollary FOLLOWS from tiers 1-2 (its "follows from" line names what) and is written down so it need not
+be re-derived; it binds like the rules it follows from.
+
+## Act through the row, never re-ask its answer (added 2026-11-17)
+follows from: high-level rule 1 (each decision contained in one unit) and rule "Decisions are declared tables" (one
+selector walks the rows; the row carries the action).
+Goal 1's containment, at the consumers. A table's answer is acted on through the chosen row (its action record or hook), never by re-testing the row's
+enum or name in each consumer. **Why:** the start table decides the recover act, then four emitters switch on it
+again (`unanch_scan`, `emit_landmark_walk`, `emit_rev_end`, the prologue prose in `src/gen/emit_dfa.c`) and 26
+sites test the VM route by hand; the prefilter rows already carry their `emit_block`/`emit_define` hooks.
+**Source:** A2 chains 1-2 and option 1; A1 10 (START-TABLE converted the selection, not the action).
+
 ## One table per slot: no private copy of a declared mechanism
+follows from: high-level rule 1 (one home per question) and rule "Build the general form" (two callers of one
+mechanism, never two mechanisms).
 If a table or mechanism already declares how a slot is done, extend that table
 and call it. A private smaller copy beside it is the failure mode.
 Narrowing the table counts as a copy: mapping it onto a smaller enum or
@@ -202,48 +389,42 @@ keying rules on a label instead of on facts drops rows silently.
 reach it. S3's find step mapped the kit's FIND table onto a two-value enum and
 lost the two-stream form (29x on caseless literals). **Source:** 2026-10-23
 S3 code review (`docs/dev/reviews/2026-10-23-r1-memfn-s3-code.md`, C1/C3, C5).
-HISTORY: produced by A1 16 (caught at code review, after the copy was built). Still in the tree: a core-tier
-admission keys on the selected row's name string `"all"` (`src/core/compound.c:210`, A2 seam 6).
+history: tier 5
 BEFORE DESIGN: for every table the feature reads, does it read the table itself, or a mapped enum or row name?
 
-## Build the general form; no parallel mechanisms or special cases
-A recognizer, fold or desugar that exists only to reproduce a known construct
-is a special case. Ask what the general form is, and build that. Two callers of
-one mechanism is fine; two mechanisms is not. Implement-then-replace is
-acceptable; parallel paths are not. Dead-capture elision is the worked example.
-**Why:** the special case becomes a duplicate path the general form must later
-delete, and optimizations reach only the narrow class. **Source:** Frank
-2026-08-23; D75 addendum.
-HISTORY: existed before, and did not prevent, D62 to A_CTX, the span slice (built 2026-10-21, deleted 2026-11-15),
-S3's private copy, D172's REPORT-only path and VMREC (A1 6, 13, 15, 16, 17); `lm_maxw` (`src/gen/lmwalk.c:80`,
-2026-10-29) is a fourth width walk (A2 parallel 1). What was missing: the rule was read at code review, after the
-build, and it names mechanisms where the failures were second answers to one QUESTION (goal 1).
-BEFORE DESIGN: name each question the feature's new code answers and grep for the existing answer (A2's
-"Parallel mechanisms" list is the worked example).
+## A decision is read from its record, never from the emitted text (added 2026-11-17)
+follows from: high-level rule 1 ("what did the compile decide" has one record) and high-level rule 3 (a later stage
+reads the record, never the emitted text; data crosses a layer one way).
+A later stage that needs what was decided reads the record that decided it; it does not parse, count or `strstr`
+the rendered artifact. **Why:** [VMREC]'s root cause was "printing IS recording" (A1 13); four text protocols
+remain (`fd_decisions` parses `#define`s back, `src/dump/facts_dump.c:129`; header marks spliced in
+`src/gen/memfn_stamps.c:334`; `pcrec_vm_stmt_respell`, `src/gen/vm_stmt.c:1085`; a body found by `strstr`,
+`vm_stmt.c:1165`). **Source:** A2 seam 4 and option 6; D182.
 
-## Notice siblings of a decision family
-Before adding a predicate or a small table, ask whether it is a sibling of an
-existing decision family, and say so. At about three dispersed members, propose
-the unified table. **Why:** a family built incrementally as local branches keeps
-growing until someone asks for the unification; start strategy ended as one
-candidate-row contract. **Source:** Frank 2026-10-06; D124, D151.
-HISTORY: the start family had three-plus dispersed members before its fold (A1 10). Families the count missed
-because they have no table: 26 two-way "am I on the VM route" tests and about ten engine-identity tests
-(A2 chains 1-2).
-BEFORE DESIGN: count the CALL SITES that ask the same question, not only the tables; at about three, the note
-proposes the table.
+## A stage-to-stage field names its one writer and its readers (added 2026-11-17)
+follows from: high-level rule 2 (data with the code that writes it; accessors) and high-level rule 3 (every crossing
+value has one named writer and named readers).
+A field of `Job` or `Ctx` (or any record that crosses stages) has one declared writer stage and named reader
+stages; an emitter does not write driver state (goal 3's layer direction); a reader in another file uses the
+owner's accessor (rule "A structure is read and written through its owner's accessors"). **Why:** `Ctx` (`src/core/internal.h:3970`, about 70 fields) and
+`Job` (63 fields) are read from every layer with no declared writer; D62 to A_CTX and [FLAG-ACCESS] paid for this
+one field family at a time (A1 6, 9). **Source:** A2 seam 1 and option 5; roadmap hub H-FLAGS; manifesto §1 F4.
 
 ## A row checks its own contract
+follows from: high-level rule 1 (a decision unit is inspected and tested on its own) and rule "Decisions are
+declared tables" (a predicate and a per-row deny on every row).
 A row's applicability predicate covers every site field it does not honour,
 judged against the FULL contract, not against what the current caller sends.
 Prefer an allowlist of honoured fields so a new field defaults to declined.
 Give every row a population that reaches it. **Why:** K96 sat latent because
 the only caller never exercised the unhonoured fields, and corpus identity
 cannot see that class. **Source:** Frank 2026-10-07 (K96).
-HISTORY: produced by K96 (A1 18); its fix, ROWCON, grew into an engine and an abi event before closing 2026-11-10.
+history: tier 5
 BEFORE DESIGN: for each new or extended row, list the contract's fields and which the row honours.
 
 ## No silent defaults
+follows from: rule "A row checks its own contract" (a row honours only what is stated) and high-level rule 3 (every
+value that crosses has a named writer).
 A row may USE a value only if the caller stated it; an unstated needed value is
 refused loudly. Fields a row does not use are wildcards and stay unset. A
 convenience value gets a named explicit token, never NULL-means-something. A
@@ -252,88 +433,41 @@ evidence is not. Input-shape rules are enforced by a check, not just documented.
 **Why:** a default turns a forgotten statement into silent behaviour that
 surfaces only when circumstances line up. **Source:** Frank 2026-10-07; D161,
 D162.
-HISTORY: no A1 refactor traces to it.
+history: tier 5
 BEFORE DESIGN: list each value the new code uses and who states it.
 
-## Across the kit boundary, send facts, not methods
-pcrec states facts (positions, rates, sets, bounds); the kit chooses the form.
-Prefer the general fact (an ordered array and a count) over a specific pick. In
-fields, comments, briefs and messages never describe how the kit would use a
-fact. **Why:** a method-shaped field freezes one method into the contract.
-**Source:** D157, D146; see `addenda/kit.md`.
-HISTORY: the kit migration (A1 14, 266 commits, deliberate) is the precedent for a declared seam (A2 seam C2).
-BEFORE DESIGN: for each field the feature sends across the kit seam, state the fact in words with no verb about
-the kit's use of it.
-
-## Build under measurement
-A mechanism or axis waits until a measurement names the need; say what
-measurement would trigger the build. Cut a multi-step plan to what the next
-verdict needs and give each dropped item its trigger. A mechanism withdrawn on
-its own measurement is the process working: record the measured NO and keep the
-instrument. **Why:** an unmeasured build is growth that may be rebuilt or rolled
-back. **Source:** Frank 2026-08-25 and 2026-10-21; D77, D18.
-HISTORY: D62 ("revisit when a fifth AST analysis lands"), D42.3 ("re-open when a composition customer appears")
-and the utf8 premise each named a trigger that later fired (A1 1, 4, 6, 2). The trigger was right; what was
-missing was one place a planner looks triggers up when a feature arrives (part 3).
-BEFORE DESIGN: a remodel the feature does not need yet becomes a part-3 row with its trigger.
-
-## Tuning constants are suspect
-An unroll width, block size or cut-over is measured (regime named), derived, or
-left to the compiler; otherwise label it an unmeasured default where it lives.
-Never adopt one silently. **Why:** an unmeasured constant looks like a decision
-and carries no evidence. **Source:** Frank 2026-10-05.
-HISTORY: no A1 refactor. BEFORE DESIGN: list the feature's constants and the evidence for each.
-
-## A VM capacity change is measured through both entries
-A change to how the VM uses its frame or trail capacity measures its cost
-through BOTH the tiered default entry and `<prefix>_search_in` with ample
-buffers. **Why:** the default entry first runs on page-sized buffers and
-escalates; a mechanism that fires there and not under `_in` (K134's fast-tier
-compaction: +15 % on the default entry, +0.8 % under `_in`) is invisible to an
-`_in`-only measurement. **Source:** review 2026-10-29-r2 (F5).
-HISTORY: no A1 refactor. BEFORE DESIGN: does the feature change frame or trail use? If so, name both measurements.
-
-## Simplification is a benefit on its own
-A change that deletes special cases or retires a parallel kind qualifies on
-that alone; present the deletions as the benefit, still measured and costed
-(abi events, identity gates). **Why:** a smaller, more general tree is the goal.
-**Source:** Frank 2026-10-18.
-HISTORY: every table-shaped A1 refactor was a no-mover whose benefit was its deletions (A1 10-12).
-BEFORE DESIGN: the note's "what is deleted" list; a remodel with an empty list needs another reason.
-
-## Pre-release ABI changes happen, by ritual
-Before 1.0 an ABI or layout change is deliberate and methodical but allowed when
-it is the general form. The discipline is the ritual: abi bump, identity re-pin,
-spec hunk in one change, new fields appended, both artifact kinds named. Fold a
-layout change into an abi event already in flight. **Why:** there are no
-consumers yet; avoidance blocks improvements. **Source:** Frank 2026-08-25; D40,
-D76, D94 (ritual in `coding.md` §3.1).
-HISTORY: D49 (abi 1 to 2), D62 to A_CTX (abi 80 to 81), [RUN-POS-SET] stages 1-2b (abi 97) (A1 4, 6, 19).
-BEFORE DESIGN: does each remodel the feature carries move bytes? If so, which abi event in flight does it join?
-
 ## Refactors outrank optimization on the same site
+follows from: high-level rule 4 (a remodel lands first, as its own answer-identical unit) and the gate (a remodel is
+a no-mover, so a mover is never folded into it).
 While a refactor is in flight, an optimization touching its site waits for it.
 Refactors are no-movers; movers are not folded into them. Candidate lists carry
 a "remodel overlap" column. **Why:** optimizing a site about to be restructured
 means redoing the work. **Source:** Frank 2026-10-06; D153, D151.
-HISTORY: applied up front by the entry rows before the iterator (A1 12). It covers refactors IN FLIGHT; known but
-unscheduled remodels had no list, so a feature could not see them (part 3 is that list).
-BEFORE DESIGN: the part-3 lookup (goal 4).
+history: tier 5
+BEFORE DESIGN: the register lookup (goal 4).
 
-## Product first, harness minimal
-Rank compiler correctness, emitted-code speed and stability, and the public
-surface ahead of tooling. A harness or evaluator gets the least that yields a
-trustworthy verdict (keep list tied to the verdict, drop list with triggers);
-its checks are not future-proofed. Keep the cheapest honest control: a check
-never grades a function against itself. **Why:** the product's client wants
-stability; the harness is ours and can change any time. **Source:** Frank
-2026-10-21; D77; `docs/dev/learnings.md` section 3.
-HISTORY: no A1 refactor; it is why the call-level layering gate is not adopted (part 3).
-BEFORE DESIGN: is the new structure in product code or in the harness?
+# Tier 4. Considerations
 
-## Caller-facing names describe behaviour
-See `style.md` (Naming). **Source:** D174.
-BEFORE DESIGN: list the new caller-facing names.
+PLACEMENT: a DRAFT FOR THE OWNER (lane archtiers, 2026-11-17); the rules' words are unchanged, only their place.
+"Less hard than the rules above but worth doing if effort permits" (the owner). IN PRACTICE: an architecture or
+code critic raises a FINDING against tiers 1-3 and a NOTE against tier 4; a consideration not followed needs no
+register row (it is not a deviation); an architecture note mentions one only where the feature's site is its
+subject. A consideration moves up a tier when a refactor or a defect is traced to not following it.
+
+## Refusals are a decision family
+Which requests are refused (option combinations, force/deny pairs, request bits against pattern facts) is a
+declared table of named rows like any selection, listable. Diagnostic wording stays where D26 puts it.
+**Why:** it is the one decision family with no row, no name and no listing: five `if (force_on && ...)` arms in
+`prefilter_decision` (`src/opt/select_engine.c:1079-1107`) and about nine in `compile_driver`
+(`src/core/compile.c:2046`). **Source:** A2 chain 3 and option 2.
+
+## A new AST kind states its cost; a pass reads the kind table where it can
+An architecture note for a new AST kind lists the `src/core/kindrow.def` row and every hand-exhaustive walk the kind
+forces. A pass whose arm only restates the kind table's TEXT or PATH column reads the column; a pass whose answer
+is semantic keeps its exhaustive switch (`-Wswitch` is the net). **Why:** 27 files carry `case A_*` labels (115 in
+`src/opt/atomic.c`); `lm_maxw` lists exactly what kindrow.def's TEXT column already declares. The PATH column exists
+because a defaulted answer was once a miscompile, so this is per pass, never wholesale. **Source:** A2 chain 5 and
+option 4; A1 1, 6.
 
 ## Consider a directory of parts and one runner for a growing set (a choice, not a rule)
 When a tool or record is a SET of independent items that grows over time (checks, monitors, test
@@ -352,112 +486,108 @@ the move worthwhile. **Why:** shared append-only files (the lanes history index,
 cloud shard tables) were the day's merge conflicts; each cost a delay or a re-run, not a wrong
 answer. **Source:** Frank 2026-11-12 ("a tool going forward if we think it works"; to be
 considered, not prescribed).
+history: tier 5
+
+# Tier 5. Evidence and history
+
+Where a reader checks WHY. Nothing here is applied directly; each entry is keyed by the rule or the part of
+tier 1 it supports.
+
+## The refactor tally (A1)
+
+Of A1's 18 counted refactors, 9 were a missing shared home (a primitive or a second mechanism beside the first), 3 a
+decision family that grew as branches, 2 a data shape with no room for the next feature, 2 an inconsistent
+interface.
+
+## Distance today from high-level rule 2 (A2 and its re-count)
+
+DISTANCE TODAY (HEAD 5bfb03a19, commands in `docs/dev/lanes/archgoals2_report.md`): `Job`
+(`src/core/internal.h:3538-3818`, 63 fields by A2's count) and `struct Ctx` (`src/core/internal.h:3970-4455`, about
+70 by A2's count) have no accessor layer; `cx->opt` is read directly in 43 files, `cx->job` in 27, `cx->ncap` in 19,
+`cx->mods` in 17, `cx->emit_in` in 16; 14 `Job` fields are written by emitters, one of them read back by the
+driver's fallback ladder (roadmap H-FLAGS); the flags word (`coding.md` §1.10) and the facts layer are the parts
+that already meet the goal.
+
+## Rule histories (the refactors in A1 or the tree shapes in A2 that taught each rule or came after it)
+
+### Decisions are declared tables, not if-chains
+HISTORY: taught by [START-TABLE] and [DEC-FALLBACK] (A1 10, 11; 32 and 42 commits), applied up front by the entry
+rows (A1 12). START-TABLE converted the selection but not the action: the answer is re-dispatched in four emitters
+(A2 chain 1; new rule "Act through the row").
+
+### Build the general form; no parallel mechanisms or special cases
+HISTORY: existed before, and did not prevent, D62 to A_CTX, the span slice (built 2026-10-21, deleted 2026-11-15),
+S3's private copy, D172's REPORT-only path and VMREC (A1 6, 13, 15, 16, 17); `lm_maxw` (`src/gen/lmwalk.c:80`,
+2026-10-29) is a fourth width walk (A2 parallel 1). What was missing: the rule was read at code review, after the
+build, and it names mechanisms where the failures were second answers to one QUESTION (goal 1).
+
+### Notice siblings of a decision family
+HISTORY: the start family had three-plus dispersed members before its fold (A1 10). Families the count missed
+because they have no table: 26 two-way "am I on the VM route" tests and about ten engine-identity tests
+(A2 chains 1-2).
+
+### Across the kit boundary, send facts, not methods
+HISTORY: the kit migration (A1 14, 266 commits, deliberate) is the precedent for a declared seam (A2 seam C2).
+
+### Build under measurement
+HISTORY: D62 ("revisit when a fifth AST analysis lands"), D42.3 ("re-open when a composition customer appears")
+and the utf8 premise each named a trigger that later fired (A1 1, 4, 6, 2). The trigger was right; what was
+missing was one place a planner looks triggers up when a feature arrives (the register).
+
+### Simplification is a benefit on its own
+HISTORY: every table-shaped A1 refactor was a no-mover whose benefit was its deletions (A1 10-12).
+
+### Tuning constants are suspect
+HISTORY: no A1 refactor.
+
+### A VM capacity change is measured through both entries
+HISTORY: no A1 refactor.
+
+### Pre-release ABI changes happen, by ritual
+HISTORY: D49 (abi 1 to 2), D62 to A_CTX (abi 80 to 81), [RUN-POS-SET] stages 1-2b (abi 97) (A1 4, 6, 19).
+
+### A design states its goals, ranked, in checkable form
+HISTORY: no A1 refactor traces to missing goals; this rule covers speed and purpose, not shape.
+
+### Product first, harness minimal
+HISTORY: no A1 refactor; it is why the call-level layering gate is not adopted (tier 5, "Considered, not adopted").
+
+### One table per slot: no private copy of a declared mechanism
+HISTORY: produced by A1 16 (caught at code review, after the copy was built). Still in the tree: a core-tier
+admission keys on the selected row's name string `"all"` (`src/core/compound.c:210`, A2 seam 6).
+
+### A row checks its own contract
+HISTORY: produced by K96 (A1 18); its fix, ROWCON, grew into an engine and an abi event before closing 2026-11-10.
+
+### No silent defaults
+HISTORY: no A1 refactor traces to it.
+
+### Refactors outrank optimization on the same site
+HISTORY: applied up front by the entry rows before the iterator (A1 12). It covers refactors IN FLIGHT; known but
+unscheduled remodels had no list, so a feature could not see them (the register is that list).
+
+### Consider a directory of parts and one runner for a growing set (a choice, not a rule)
 HISTORY: no A1 refactor (merge conflicts, not reshapes).
 
-## One question, one primitive, from the second caller (NEW 2026-11-17, DRAFT)
-When a second site needs an answer or an operation another site already computes (a tree walk, a width, a flag
-question, a statement's text, saturating arithmetic), both call one primitive; the second caller's arrival is the
-trigger to extract it. A small, local second walk is still a second mechanism.
-**Why:** it is A1's most common shape: D70's union, D62 to A_CTX, the 2026-09-17 review's 75 re-implemented walks,
-[FLAG-ACCESS]'s 65 raw flag reads and [VMREC]'s 132 print sites were each extracted after the sites had grown;
-today `lm_maxw` re-spells `src/opt/mrl.c`'s width walk unsaturated (`src/gen/lmwalk.c:95`).
-**Source:** A1 "Patterns across them" (entries 1, 6, 8, 9, 13); A2 "Parallel mechanisms" 1, 3 and "What the guide
-does not say".
+## Considered, not adopted
 
-## Act through the row, never re-ask its answer (NEW 2026-11-17, DRAFT)
-Goal 1's containment, at the consumers. A table's answer is acted on through the chosen row (its action record or hook), never by re-testing the row's
-enum or name in each consumer. **Why:** the start table decides the recover act, then four emitters switch on it
-again (`unanch_scan`, `emit_landmark_walk`, `emit_rev_end`, the prologue prose in `src/gen/emit_dfa.c`) and 26
-sites test the VM route by hand; the prefilter rows already carry their `emit_block`/`emit_define` hooks.
-**Source:** A2 chains 1-2 and option 1; A1 10 (START-TABLE converted the selection, not the action).
+From A2 options 9-11, and two scopings:
+- A call-level layering gate (an `nm` ratchet in make test): harness for a risk not yet bitten; the known edges are
+  written down by name. Changes on a defect traced to a wrong-way call.
+- A general rewriting / nanopass framework for AST passes: moves every proof-carrying pass at once with no measured
+  need. Changes if several passes share a defect class a framework would have prevented.
+- Link-time registration of parser modules: the registry is already a declared, ordered table with a spec and
+  tests. Changes only if the registry stops needing order.
+- Row 5 wholesale (all passes at once) and row 9 standalone: refused for churn and for losing `-Wswitch`.
 
-## Refusals are a decision family (NEW 2026-11-17, DRAFT)
-Which requests are refused (option combinations, force/deny pairs, request bits against pattern facts) is a
-declared table of named rows like any selection, listable. Diagnostic wording stays where D26 puts it.
-**Why:** it is the one decision family with no row, no name and no listing: five `if (force_on && ...)` arms in
-`prefilter_decision` (`src/opt/select_engine.c:1079-1107`) and about nine in `compile_driver`
-(`src/core/compile.c:2046`). **Source:** A2 chain 3 and option 2.
-
-## Layering holds at the call level; data crosses a layer one way (NEW 2026-11-17, DRAFT)
-Layer order (`src/facts/CLAUDE.md`) is judged by calls, not only includes: a function that lower layers call
-lives at their level. Data crosses a layer in one direction, down with the calls (pcrec hands data to the
-emitter). Where a lower layer must hand data back to a higher one (an emitter-written `Job` field the driver
-reads, roadmap H-FLAGS), the design names it and argues either the module split that back-and-forth signals or
-an interim. A known wrong-way call or back-flow is written down by name where it lives until it moves (goal 3).
-**Why:** the include graph reads 2 back-edges while about 30 call back-edges exist (facts and parse calling the
-`src/opt/mrl.c` width functions; core calling `pcrec_cand_body_route` in gen). **Source:** A2 seam 2;
-`src/CLAUDE.md` ("What the include graph cannot see"); the direction clause, the owner 2026-11-17 ("Layer seams
-should if possible be one data direction. ... If there needs to be data back and forth between layers, that
-suggests a module split like between the kit planner and kit emitter.", ARCH-STEP.md). Judged at review, not by
-a gate (part 3).
-
-## A decision is read from its record, never from the emitted text (NEW 2026-11-17, DRAFT)
-A later stage that needs what was decided reads the record that decided it; it does not parse, count or `strstr`
-the rendered artifact. **Why:** [VMREC]'s root cause was "printing IS recording" (A1 13); four text protocols
-remain (`fd_decisions` parses `#define`s back, `src/dump/facts_dump.c:129`; header marks spliced in
-`src/gen/memfn_stamps.c:334`; `pcrec_vm_stmt_respell`, `src/gen/vm_stmt.c:1085`; a body found by `strstr`,
-`vm_stmt.c:1165`). **Source:** A2 seam 4 and option 6; D182.
-
-## A stage-to-stage field names its one writer and its readers (NEW 2026-11-17, DRAFT)
-A field of `Job` or `Ctx` (or any record that crosses stages) has one declared writer stage and named reader
-stages; an emitter does not write driver state (goal 3's layer direction); a reader in another file uses the
-owner's accessor (rule "A structure is read and written through its owner's accessors"). **Why:** `Ctx` (`src/core/internal.h:3970`, about 70 fields) and
-`Job` (63 fields) are read from every layer with no declared writer; D62 to A_CTX and [FLAG-ACCESS] paid for this
-one field family at a time (A1 6, 9). **Source:** A2 seam 1 and option 5; roadmap hub H-FLAGS; manifesto §1 F4.
-
-## A new AST kind states its cost; a pass reads the kind table where it can (NEW 2026-11-17, DRAFT)
-An architecture note for a new AST kind lists the `src/core/kindrow.def` row and every hand-exhaustive walk the kind
-forces. A pass whose arm only restates the kind table's TEXT or PATH column reads the column; a pass whose answer
-is semantic keeps its exhaustive switch (`-Wswitch` is the net). **Why:** 27 files carry `case A_*` labels (115 in
-`src/opt/atomic.c`); `lm_maxw` lists exactly what kindrow.def's TEXT column already declares. The PATH column exists
-because a defaulted answer was once a miscompile, so this is per pass, never wholesale. **Source:** A2 chain 5 and
-option 4; A1 1, 6.
-
-## A shape states the inputs it covers (a rule under goal 2; the owner 2026-11-17, "shape-goal: I agree")
-A representation (a node, a class payload, a record) names the range of inputs it covers (code points, kinds,
-engines, offsets); when a planned row needs inputs outside it, the shape is widened first, as its own unit, not
-patched per consumer. Until 2026-11-17 this was part 1's goal 4; the owner agreed it is a rule under the
-data-with-its-code goal (`docs/design/plan_row_bodies/ARCH-STEP.md`, last section). **Why:** the class bitmap had
-no room above 0xFF though UTF-8 was planned (A1 2); fold handling spread over three files had no owner when
-alternation folds arrived (A1 19); LOOK-LOCATE's signed offset has no field in the start row schema (A2 "Where the
-next features will land"). **Source:** D70 (owner: "I'm not worried about memory but complexity and flexibility",
-A1 entry 1); APPROACH.md's encodings section (the 256-bit class bitmap stated as a choice, A1 entry 2); A1 entries
-1, 2, 19.
-BEFORE DESIGN: the architecture note lists the planned rows that will extend each shape the feature introduces or
-extends, and shows each fits (or the shape widens first).
-
-## A structure is read and written through its owner's accessors (NEW 2026-11-17, DRAFT)
-The code that writes a structure's fields lives in the structure's own file (or module), beside its definition;
-code in another file reads or modifies it through accessor functions that file provides, one per question or
-operation, never by direct field access. `coding.md` §1.10 (the option word, gated by
-`tests/core/flag_access_check.py`) is this rule's one enforced instance today; the facts layer's `pf_enter`/ask
-accessors are its model for a record. A structure with no accessor yet is not converted wholesale: a feature that
-adds a cross-file read or write adds the accessor (goal 4; register row 6a). **Why:** [FLAG-ACCESS] (A1 9) and D62
-to A_CTX (A1 6) paid for direct reads one field family at a time; `Job`/`Ctx` are read directly from every layer
-(`cx->opt` in 43 files) with no declared writer (A2 seam 1). **Source:** the owner 2026-11-17 (goal 2's words,
-ARCH-STEP.md); `coding.md` §1.10; A1 6, 9, 13; A2 "Seams without a contract" 1 and contrast C1.
-BEFORE DESIGN: for each structure the feature reads or writes from outside its file, name the accessor (existing,
-or added by the feature).
-
-## A module seam is an API with a written contract and tests (NEW 2026-11-17, DRAFT)
-Between modules (pcrec and the kit planner; the kit planner and the kit emitter), the seam is one declared API
-with a contract document and tests that bind it; data may travel both ways as needed, each side keeps its own
-concern, and what crosses is facts (rule "Across the kit boundary, send facts, not methods"; manifesto §3
-principles 7 and 9). **Why:** the two seams A2 found with a written contract and tests (the facts layer, the kit
-seam: A2 contrast C1, C2) are the two that have not been re-cut; the contract-less ones (A2 seams 1, 4, 6) are the
-register's rows 6-7 and 2. **Source:** the owner 2026-11-17 ("Module seams like between pcrec and kit _planner_ are
-a defined api and data can travel back and forth as needed but each tries to keep its own concern. ... Each module
-has its api and contract.", ARCH-STEP.md); D146, D157.
-BEFORE DESIGN: for each module seam the feature crosses, name the API, the contract document and the test.
-
-# Part 3. The ride-along register
+# The ride-along register (beside the tiers; consulted at every feature)
 
 One row per known remodel we want but have not built ahead of a need (D77). WHERE was checked at fed0b4886 (the
 commands are in `docs/dev/lanes/archgoals_report.md`). SIZE: S one small lane, M one lane with a review round,
 L several rounds. GATE: no-mover = answer-identical with a byte-identity gate; abi = an abi event; kit = a kit
 seam event (D146). The stream roadmap's own areas and hubs (`docs/design/stream/roadmap.md` §1-2) are rows by
 reference (row 12); a row below that overlaps one names it.
-KINDS OF ROW. A REMODEL row (rows 1-20 today) is a shape we want. A NOTED DEVIATION row (part 1, "Judgement") records
+KINDS OF ROW. A REMODEL row (rows 1-20 today) is a shape we want. A NOTED DEVIATION row (tier 1, "Judgement") records
 a small change that went against a goal or rule, in the same columns: remodel = "NOTED: <what was done>"; shape
 (rule) = the goal or rule it went against; where = file and function, verified by command at the noting commit;
 event = the larger change on that site or the named refactor moment that should correct it; size, gate = why it was
@@ -493,19 +623,12 @@ and, on either kind, "settling until <event>" for a newly built area left to set
 
 HOW TO USE IT. When a feature is planned: (1) grep this table for every file and function the feature will touch
 and for its plan tag; (2) each matching row's remodel lands FIRST, as its own answer-identical unit (or joins the
-abi event in flight), and its status becomes "riding <tag>"; (3) if the feature touches a site that shows a part-2
-shape and has no row, the architecture note ADDS a row here; (4) a row that a note decides not to carry says why
+abi event in flight), and its status becomes "riding <tag>"; (3) if the feature touches a site that shows a tiers 2-3
+rule's shape and has no row, the architecture note ADDS a row here; (4) a row that a note decides not to carry says why
 in the note; (5) a row is closed as "done <commit>" at its landing, by the manager; a noted deviation is closed as
 "corrected <commit>", naming the commit that corrected it. At a feature's architecture note, the noted deviations
 on the sites it touches are corrected FIRST, like any riding remodel (step 2), unless the note says why not (step
 4). A change that goes against a goal for now adds its noted-deviation row in the same change (the note proposes it;
 the manager writes it at landing); a row in "settling until <event>" is not carried before its event.
 
-Considered, not adopted (A2 options 9-11, and two scopings):
-- A call-level layering gate (an `nm` ratchet in make test): harness for a risk not yet bitten; the known edges are
-  written down by name. Changes on a defect traced to a wrong-way call.
-- A general rewriting / nanopass framework for AST passes: moves every proof-carrying pass at once with no measured
-  need. Changes if several passes share a defect class a framework would have prevented.
-- Link-time registration of parser modules: the registry is already a declared, ordered table with a spec and
-  tests. Changes only if the registry stops needing order.
-- Row 5 wholesale (all passes at once) and row 9 standalone: refused for churn and for losing `-Wswitch`.
+Considered, not adopted (A2 options 9-11, and two scopings): tier 5.

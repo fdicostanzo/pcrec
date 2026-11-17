@@ -13,11 +13,13 @@ that match your area. Critics read `critics.md` as well.
 
 - `coding.md` — house disciplines, taught primitives, emitted-text rules, the
   altitude rubric, writing a check, the do-nots. Cited elsewhere as `coding_guide §N`.
-- `architecture.md` — the LIVE architecture document: ranked goals (DRAFT),
-  design rules (tables for decisions, general mechanisms, facts across the kit
-  boundary, build under measurement), each with its refactor history and the
-  question to answer before design, and the ride-along register of known
-  remodels to consult when planning a feature.
+- `architecture.md` — the LIVE architecture document, in the owner's five
+  tiers: high-level rules (the ranked goals) under the gate; sub-rules under
+  each (tables for decisions, general mechanisms, facts across the kit
+  boundary, build under measurement); corollaries; considerations (softer:
+  a critic NOTE, not a finding); evidence and history (each rule's refactor
+  history). Rules carry the question to answer before design; the ride-along
+  register of known remodels is consulted when planning a feature.
 - `style.md` — naming, comments, spec-in-same-change.
 - `critics.md` — how a code critic uses the guide (first version).
 - `addenda/` — per-area additions (see `addenda/README.md`).
