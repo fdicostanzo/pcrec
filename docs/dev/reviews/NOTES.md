@@ -42,3 +42,9 @@
 - `2026-11-06-r9-memfn-s2c.md` (+ dir) — CODE round on span_pick stage 2 unit S2c (the producer): emission byte-identical; harness-fidelity findings G1-G4 + window items; NOT READY until the FIX-NOW set lands; new lens row.
 - `2026-11-06-r10-memfn-s2rev14.md` — one critic on span_cards rev 1.4 (fix-induced + fidelity + simulate), relayed by message: READY for window 2 with listed fixes; REV14-1 a consistent negative sign passes as zero, REV14-2 uncapped r, REV14-3 null_check substring; fixes on lane/memfn-s2c14fix.
 - `2026-11-07-r11-memfn-s2rev15.md` — span_cards rev 1.5 critic (fused fact fidelity, est-commit bypass, value = max(0, med)); window 2 FULL accepted.
+
+## Index entries moved out of CLAUDE.md (lane formsfixg, 2026-11-17; size limit)
+
+- `2026-11-17-r35-memfn-forms.md` (+ dir) — CODE round on R-45 plan A (lane/memfn-forms 7506bca30; 6 opus lenses: answers, emit, contract, simulate, checks, verify): forms answer-correct and zero-mover; LAND AFTER LISTED FIXES: the cards rule/script F2-F11 (noise picks, void test, C3 at h*, gate fails), G2 coverage F12-F17/F20, the deny refused past ~3,330 wide positions (F1); ruled by the kit manager (fixes: lanes formsfixa, formsfixb).
+- `2026-11-17-r36-memfn-forms2.md` — CODE re-check of the r35 fixes on R-45 plan A (lane/memfn-forms 31f98f49b; 3 opus lenses + verify: simulate, checks, fixind): zero mover held; LAND AFTER LISTED FIXES: the rule's heterogeneous-noise floor (G2), median-moving splits (G3, superseded by rulings R1: I's reading pooled), the pick's win (G4), labels (G5, G6), the deny check's step (G7), the shipped head unpinned (G1); ruled by the kit manager (fixes: lanes formsfixc, formsfixd).
+- `2026-11-17-r37-memfn-forms3.md` — CODE re-check of the r36 fixes (lane/memfn-forms e7584a7fd; simulate, checks, verify): LAND AFTER LISTED FIXES: between-run noise and 2-arm pools (H1, H2: twin contrasts), checks H3-H8; fixes formsfixe, formsfixf.
