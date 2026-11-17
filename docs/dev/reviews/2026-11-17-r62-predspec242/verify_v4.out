@@ -1,0 +1,28 @@
+PF `& (h: <5) [bare control]`: literal vs holes: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365
+   `,` WHOLE: literal None ; holes None
+   `3;7;,` WHOLE: literal None ; holes None
+   `7;3;,` WHOLE: literal (('h', '3'),) ; holes (('h', '3'),)
+   `3;;,7;,` WHOLE: literal None ; holes None
+   `3;,7;,` WHOLE: literal None ; holes None
+   `7;,3;,` WHOLE: literal (('h', '3'),) ; holes (('h', '3'),)
+PF `& some((h: <5))`: literal vs holes: WHOLE 6 (first `3;;,`: (('h', None),) vs None) / SEARCHED 11 (first `3;;,`: (0, 4, (('h', None),)) vs None) / FIND-ALL 11 (first `3;;,`: ((0, 4, (('h', None),)),) vs ()) of 1365
+   `,` WHOLE: literal None ; holes None
+   `3;7;,` WHOLE: literal (('h', '7'),) ; holes None
+   `7;3;,` WHOLE: literal (('h', '3'),) ; holes (('h', '3'),)
+   `3;;,7;,` WHOLE: literal (('h', '7'),) ; holes None
+   `3;,7;,` WHOLE: literal (('h', '7'),) ; holes (('h', '7'),)
+   `7;,3;,` WHOLE: literal (('h', '3'),) ; holes (('h', '3'),)
+PF `& occurs.none(NOT (h: <5))`: literal vs holes: WHOLE 13 (first `,`: (('h', None),) vs None) / SEARCHED 353 (first `,`: (0, 1, (('h', None),)) vs (0, 0, (('h', None),))) / FIND-ALL 973 (first `,`: ((0, 1, (('h', None),)), (1, 1, (('h', None),))) vs ((0, 0, (('h', None),)), (1, 1, (('h', None),)))) of 1365
+   `,` WHOLE: literal (('h', None),) ; holes None
+   `3;7;,` WHOLE: literal None ; holes None
+   `7;3;,` WHOLE: literal None ; holes (('h', '3'),)
+   `3;;,7;,` WHOLE: literal None ; holes None
+   `3;,7;,` WHOLE: literal None ; holes None
+   `7;,3;,` WHOLE: literal None ; holes None
+PF `& (h[2]: <5)`: literal vs holes: WHOLE 7 (first `,3;,`: None vs (('h', '3'),)) / SEARCHED 17 (first `,3;,`: None vs (0, 4, (('h', '3'),))) / FIND-ALL 17 (first `,3;,`: () vs ((0, 4, (('h', '3'),)),)) of 1365
+   `,` WHOLE: literal None ; holes None
+   `3;7;,` WHOLE: literal None ; holes None
+   `7;3;,` WHOLE: literal (('h', '3'),) ; holes None
+   `3;;,7;,` WHOLE: literal None ; holes None
+   `3;,7;,` WHOLE: literal None ; holes None
+   `7;,3;,` WHOLE: literal (('h', '3'),) ; holes (('h', '3'),)

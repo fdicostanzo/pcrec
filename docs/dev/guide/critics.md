@@ -76,6 +76,12 @@ applies, beyond `architecture.md`:
 
 2026-11-17 r40, same round (accepted 2026-11-17, manager): **when evidence prints "(labels compared)", check each MODE's comparison key carries the labels; and name the evidence's ORDER/SWAP switch in COMMON and ask whether it can fail** (A5: a WHOLE key that is a bool compared holding only, 0 printed, 117 real; C1: SWAP reversed nothing that carries meaning in rev 24).
 
+2026-11-17 r62, predicates_draft.md rev 24.2 (`docs/dev/reviews/2026-11-17-r62-predspec242.md`), accepted 2026-11-17 (manager): **COMMON states a document rule by QUOTING the subject's sentence with its line, never by the launcher's paraphrase** (B1: the brief's "unless spelled padded" sent the simulate critic to a refuted consequence; section 2.4 says "unless the literal has them"; the launcher's error).
+
+2026-11-17 r62, same round (accepted 2026-11-17, manager): **a per-pass rule gets a NULLABLE-BODY drill (PCRE runs and keeps a final empty iteration) and its pass forms are drilled at TWO DEPTHS, literal vs hole spelling of one pattern** (A1/A2: two lenses reached the empty pass by two controls; 6 / 11 / 11 and 13 / 353 / 973 differ).
+
+2026-11-17 r62, same round (accepted 2026-11-17, manager): **a callout model of a TEMPORAL rule is drilled with a group set by a lookaround inside a pass** (A5: a positional helper-group construction passed 16 of 16 and failed 9 / 33 / 33 on the lookaround class).
+
 2026-11-17 r34, predicates_draft.md rev 23.1 (`docs/dev/reviews/2026-11-17-r34-predspec231.md`), accepted 2026-11-17 (manager): **on a re-check, diff every count the previous round's VERIFIER printed against the number the revision publishes, and quote the verifier's number beside the critic's in the fix-lane brief** (A1: r33's verifier printed 281 for L83 searched; rev 23.1 published the engine's 371, which read values where the draft's own section 2.2 reads canonical numerals).
 
 2026-11-17 r34, same round (applied by file34 as plain additions to the lens rows): **a manager ruling stated as a DERIVATION is read literally everywhere its premise applies (it can reverse a kept ruling, so it was a scope rule), and find-all places are a mode of their own in the mode-closure lens** (MODECLOSURE-4, A3).

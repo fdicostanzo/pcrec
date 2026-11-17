@@ -1,0 +1,42 @@
+A Q1 `*` `& (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)*(?<h>\d)?;)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q1 `*` `& NOT (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)*(?<h>\d)?;)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q2 `{0,1}` (not a loop) `& (h: <5)`: engine vs model U /(?:(?<h>\d)?;)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q2 `{0,1}` (not a loop) `& NOT (h: <5)`: engine vs model U /(?:(?<h>\d)?;)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q3 `{1}` (not a loop) `& (h: <5)`: engine vs model U /(?:(?<h>\d)?;)(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q3 `{1}` (not a loop) `& NOT (h: <5)`: engine vs model U /(?:(?<h>\d)?;)(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q4 `{0,2}` `& (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)?(?<h>\d)?;)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q4 `{0,2}` `& NOT (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)?(?<h>\d)?;)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q5 `{2}` `& (h: <5)`: engine vs model U /(?:\d)?;(?<h>\d)?;(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q5 `{2}` `& NOT (h: <5)`: engine vs model U /(?:\d)?;(?<h>\d)?;(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q6 lazy `*?` `& (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)*?(?<h>\d)?;)??(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q6 lazy `*?` `& NOT (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)*?(?<h>\d)?;)??(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q7 possessive `*+` `& (h: <5)`: engine vs model U /(?>(?:(?:(?:\d)?;)*(?<h>\d)?;)?)(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q7 possessive `*+` `& NOT (h: <5)`: engine vs model U /(?>(?:(?:(?:\d)?;)*(?<h>\d)?;)?)(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q8 `(?:B+)?`, the ? outside the loop `& (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)*(?<h>\d)?;)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q8 `(?:B+)?`, the ? outside the loop `& NOT (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)*(?<h>\d)?;)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q9 an optional group in the body `(?:(?:(?<h>\d);)?,)*` `& (h: <5)`: engine vs model U /(?:(?:(?:\d;)?,)*(?:(?<h>\d);)?,)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A Q9 an optional group in the body `(?:(?:(?<h>\d);)?,)*` `& NOT (h: <5)`: engine vs model U /(?:(?:(?:\d;)?,)*(?:(?<h>\d);)?,)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A Q10 `{1}` inside `*` `& (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)*(?<h>\d)?;)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q10 `{1}` inside `*` `& NOT (h: <5)`: engine vs model U /(?:(?:(?:\d)?;)*(?<h>\d)?;)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A Q11 `{2}` inside `*` (two depths) `& (h: <5)`: engine vs model U /(?:(?:(?:\d)?;(?:\d)?;,)*(?:\d)?;(?<h>\d)?;,)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A Q11 `{2}` inside `*` (two depths) `& NOT (h: <5)`: engine vs model U /(?:(?:(?:\d)?;(?:\d)?;,)*(?:\d)?;(?<h>\d)?;,)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N1 two depths, literal `& (h: <5)`: engine vs model U /(?:(?:(?:(?:(?:\d)?;)*(?:\d)?;)?,)*(?:(?:(?:\d)?;)*(?<h>\d)?;)?,)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N1 two depths, literal `& NOT (h: <5)`: engine vs model U /(?:(?:(?:(?:(?:\d)?;)*(?:\d)?;)?,)*(?:(?:(?:\d)?;)*(?<h>\d)?;)?,)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N2 two depths, outer lazy `& (h: <5)`: engine vs model U /(?:(?:(?:(?:(?:\d)?;)*(?:\d)?;)?,)*?(?:(?:(?:\d)?;)*(?<h>\d)?;)?,)??(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N2 two depths, outer lazy `& NOT (h: <5)`: engine vs model U /(?:(?:(?:(?:(?:\d)?;)*(?:\d)?;)?,)*?(?:(?:(?:\d)?;)*(?<h>\d)?;)?,)??(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N3 two depths, inner possessive `& (h: <5)`: engine vs model U /(?:(?:(?>(?:(?:(?:\d)?;)*(?:\d)?;)?),)*(?>(?:(?:(?:\d)?;)*(?<h>\d)?;)?),)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N3 two depths, inner possessive `& NOT (h: <5)`: engine vs model U /(?:(?:(?>(?:(?:(?:\d)?;)*(?:\d)?;)?),)*(?>(?:(?:(?:\d)?;)*(?<h>\d)?;)?),)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N4 two depths, outer `{0,1}` (one loop) `& (h: <5)`: engine vs model U /(?:(?:(?:(?:\d)?;)*(?<h>\d)?;)?,)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N4 two depths, outer `{0,1}` (one loop) `& NOT (h: <5)`: engine vs model U /(?:(?:(?:(?:\d)?;)*(?<h>\d)?;)?,)?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N5 two depths, inner `{0,2}` outer `+` `& (h: <5)`: engine vs model U /(?:(?:(?:(?:\d)?;)?(?:\d)?;)?,)*(?:(?:(?:\d)?;)?(?<h>\d)?;)?,(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A N5 two depths, inner `{0,2}` outer `+` `& NOT (h: <5)`: engine vs model U /(?:(?:(?:(?:\d)?;)?(?:\d)?;)?,)*(?:(?:(?:\d)?;)?(?<h>\d)?;)?,(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+A NL nullable body `(?:(?<h>\d)?)*` `& (h: <5)`: engine vs model U /(?:(?:(?:\d)?)*(?<h>\d)?)?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 121 EQUAL
+A NL nullable body `(?:(?<h>\d)?)*` `& NOT (h: <5)`: engine vs model U /(?:(?:(?:\d)?)*(?<h>\d)?)?(?!(?C"t"))/: WHOLE 30 (first `3`: None vs (('h', None),)) / SEARCHED 80 (first `3`: (0, 0, (('h', None),)) vs (0, 1, (('h', None),))) / FIND-ALL 116 (first `3`: ((0, 0, (('h', None),)), (1, 1, (('h', None),))) vs ((0, 1, (('h', None),)), (1, 1, (('h', None),)))) of 121 DIFFER
+A NL2 nullable body `(?:(?<h>\d)|;?)*` `& (h: <5)`: engine vs model U /(?:(?:\d|;?)*(?:(?<h>\d)|;?))?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 121 EQUAL
+A NL2 nullable body `(?:(?<h>\d)|;?)*` `& NOT (h: <5)`: engine vs model U /(?:(?:\d|;?)*(?:(?<h>\d)|;?))?(?!(?C"t"))/: WHOLE 80 (first `3`: None vs (('h', None),)) / SEARCHED 80 (first `3`: (0, 0, (('h', None),)) vs (0, 1, (('h', None),))) / FIND-ALL 80 (first `3`: ((0, 0, (('h', None),)), (1, 1, (('h', None),))) vs ((0, 1, (('h', None),)), (1, 1, (('h', None),)))) of 121 DIFFER
+A LB a lookbehind sets h in its pass `(?:\d|(?<=(?<h>\d))[a-z])*` `& (h: <5)`: engine vs model U /(?:(?:\d|(?<=\d)[a-z])*(?:\d|(?<=(?<h>\d))[a-z]))?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 121 EQUAL
+A LB a lookbehind sets h in its pass `(?:\d|(?<=(?<h>\d))[a-z])*` `& NOT (h: <5)`: engine vs model U /(?:(?:\d|(?<=\d)[a-z])*(?:\d|(?<=(?<h>\d))[a-z]))?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 121 EQUAL
+A LA a lookahead sets h `(?:(?=.(?<h>\d))[a-z]|\d)*` `& (h: <5)`: engine vs model U /(?:(?:(?=.\d)[a-z]|\d)*(?:(?=.(?<h>\d))[a-z]|\d))?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 121 EQUAL
+A LA a lookahead sets h `(?:(?=.(?<h>\d))[a-z]|\d)*` `& NOT (h: <5)`: engine vs model U /(?:(?:(?=.\d)[a-z]|\d)*(?:(?=.(?<h>\d))[a-z]|\d))?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 121 EQUAL
+A AT an atomic body `(?:(?>(?<h>\d)?;))*` `& (h: <5)`: engine vs model U /(?:(?:(?>(?:\d)?;))*(?>(?<h>\d)?;))?(?C"t")/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL
+A AT an atomic body `(?:(?>(?<h>\d)?;))*` `& NOT (h: <5)`: engine vs model U /(?:(?:(?>(?:\d)?;))*(?>(?<h>\d)?;))?(?!(?C"t"))/: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 364 EQUAL

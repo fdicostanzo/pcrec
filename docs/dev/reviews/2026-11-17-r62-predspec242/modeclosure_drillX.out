@@ -1,0 +1,36 @@
+X view (i) every inner pass `/(?:(?:${item})*,)*/`, item := `/(?<h>\d)?;/ & (h: <5)` with `(h: <5)`: engine vs model U' /(?:(?:(?:(?<h>\d)(?C"t")|(?C"no"));)*,)*/ (holds and stretch): WHOLE 906 (first `3`: None vs ERR:'h') / SEARCHED 906 (first `3`: (0, 0, ()) vs ERR:'h') / FIND-ALL 1302 (first `3`: ((0, 0, ()), (1, 1, ())) vs ERR:'h') of 1365 DIFFER
+X view (i) every inner pass `/(?:(?:${item})*,)*/`, item := `/(?<h>\d)?;/ & (h: <5)` with `NOT (h: <5)`: engine vs model U' /(?:(?:(?:(?<h>\d)(?C"t")|(?C"no"));)*,)*/ (holds and stretch): WHOLE 1302 (first `3`: None vs ERR:'h') / SEARCHED 1302 (first `3`: (0, 0, ()) vs ERR:'h') / FIND-ALL 1302 (first `3`: ((0, 0, ()), (1, 1, ())) vs ERR:'h') of 1365 DIFFER
+X view (ii) the inner loop's last pass in each outer pass `/(?:${inner},)*/`, inner := INNER & (h: <5) with `(h: <5)`: engine vs model U' /(?:(?:(?:(?:\d)?;)*(?:(?<h>\d)(?C"t")|(?C"no"));|(?C"no")),)*/ (holds and stretch): WHOLE 906 (first `3`: None vs ERR:'h') / SEARCHED 906 (first `3`: (0, 0, ()) vs ERR:'h') / FIND-ALL 1302 (first `3`: ((0, 0, ()), (1, 1, ())) vs ERR:'h') of 1365 DIFFER
+X view (ii) the inner loop's last pass in each outer pass `/(?:${inner},)*/`, inner := INNER & (h: <5) with `NOT (h: <5)`: engine vs model U' /(?:(?:(?:(?:\d)?;)*(?:(?<h>\d)(?C"t")|(?C"no"));|(?C"no")),)*/ (holds and stretch): WHOLE 1292 (first `3`: None vs ERR:'h') / SEARCHED 1290 (first `3`: (0, 0, ()) vs ERR:'h') / FIND-ALL 1290 (first `3`: ((0, 0, ()), (1, 1, ())) vs ERR:'h') of 1365 DIFFER
+X in an occurrences argument: `occurrences(/(?:(?<h>\d)?;)+/ & (h: <5), min = 1)` with `(h: <5)`: engine vs model U' /(?:[\s\S]*?(?:(?:\d)?;)*(?:(?<h>\d)(?C"t")|(?C"no"));)+[\s\S]*/ (holds and stretch): WHOLE 310 (first `3`: None vs ERR:'h') / SEARCHED 310 (first `3`: None vs ERR:'h') / FIND-ALL 310 (first `3`: () vs ERR:'h') of 341 DIFFER
+X in an occurrences argument: `occurrences(/(?:(?<h>\d)?;)+/ & (h: <5), min = 1)` with `NOT (h: <5)`: engine vs model U' /(?:[\s\S]*?(?:(?:\d)?;)*(?:(?<h>\d)(?C"t")|(?C"no"));)+[\s\S]*/ (holds and stretch): WHOLE 300 (first `3`: None vs ERR:'h') / SEARCHED 300 (first `3`: None vs ERR:'h') / FIND-ALL 300 (first `3`: () vs ERR:'h') of 341 DIFFER
+X a loop inside a LOOKAHEAD inside a loop /(?:(?=(?:(?P<h>\d)?;)*,)[\d;]*,)*/ `& (h: <5)`: engine vs model U: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+X a loop inside a LOOKAHEAD inside a loop /(?:(?=(?:(?P<h>\d)?;)*,)[\d;]*,)*/ `& NOT (h: <5)`: engine vs model U: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+X SAME SAME-1 in a hole loop `/(?:${X},)+/`, condition after: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-1 in a hole loop, condition on the item `/(?:${X & c},)+/`: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-1 in an occurrences argument, condition after: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-1 in an occurrences argument, condition inside: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-1 in the right operand of `&`: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-1 in atomic: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-1 in a complement `/[\d;]*/ & !(X & c)`: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-2 in a hole loop `/(?:${X},)+/`, condition after: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-2 in a hole loop, condition on the item `/(?:${X & c},)+/`: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-2 in an occurrences argument, condition after: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-2 in an occurrences argument, condition inside: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-2 in the right operand of `&`: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-2 in atomic: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-2 in a complement `/[\d;]*/ & !(X & c)`: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-3 in a hole loop `/(?:${X},)+/`, condition after: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-3 in a hole loop, condition on the item `/(?:${X & c},)+/`: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-3 in an occurrences argument, condition after: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-3 in an occurrences argument, condition inside: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-3 in the right operand of `&`: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-3 in atomic: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-3 in a complement `/[\d;]*/ & !(X & c)`: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-4 in a hole loop `/(?:${X},)+/`, condition after: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-4 in a hole loop, condition on the item `/(?:${X & c},)+/`: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-4 in an occurrences argument, condition after: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-4 in an occurrences argument, condition inside: 0 texts x modes differ over 5 conditions (1365 texts)
+X SAME SAME-4 in the right operand of `&`: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-4 in atomic: 0 texts x modes differ over 5 conditions (364 texts)
+X SAME SAME-4 in a complement `/[\d;]*/ & !(X & c)`: 0 texts x modes differ over 5 conditions (364 texts)

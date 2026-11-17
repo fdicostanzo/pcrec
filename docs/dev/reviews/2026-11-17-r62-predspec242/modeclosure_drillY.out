@@ -1,0 +1,10 @@
+Y default NEST & (h = 0: <5): engine vs model U: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+Y default NEST & NOT (h = 9: <5): engine vs model U: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+Y default occurrences(/(?:(?<h>\d)?;)+/, min = 1) & (h = 0: <5): engine vs model U: WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 341 EQUAL
+Y atomic-in-loop `/(?:${atomic(item & (h: <5))})*/`, item := `/(?<h>\d)?;/`: engine vs model U' (holds, stretch): WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+Y atomic-in-loop `/(?:${atomic(INNER & (h: <5))},)*/`, INNER := `/(?:(?<h>\d)?;)*/`: engine vs model U' (holds, stretch): WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 1365 EQUAL
+Y joint two depths bare `/(?:(?<k>\d)(?:(?<h>\d);)*,)*/ & ((h, k): h > k)`: WHOLE `37;,` (('h', '7'), ('k', '3')) ; `3;7,` None ; SEARCHED `x37;3,` None
+Y joint two depths `some(J)`: WHOLE `37;,` REJECTED (group question over ('h', 'k')) ; `3;7,` REJECTED (group question over ('h', 'k')) ; SEARCHED `x37;3,` REJECTED (group question over ('h', 'k'))
+Y joint sibling loops bare `/(?:(?<k>\d);)*(?:(?<h>\d),)*/ & ((h, k): h > k)`: WHOLE `37;,` None ; `3;7,` (('h', '7'), ('k', '3')) ; SEARCHED `x37;3,` None
+Y joint sibling loops `some(J)`: WHOLE `37;,` REJECTED (group question over ('h', 'k')) ; `3;7,` REJECTED (group question over ('h', 'k')) ; SEARCHED `x37;3,` REJECTED (group question over ('h', 'k'))
+Y hits `hits(/(?:(?<h>\d)?;)+/) & (h: <5)` engine vs a libpcre2 global-search model (last committed hit, unrolled): WHOLE 0 / SEARCHED 0 / FIND-ALL 0 of 341 EQUAL
