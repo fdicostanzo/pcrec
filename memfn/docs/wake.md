@@ -19,7 +19,13 @@ and the R-45 reply block (rev 6). 4. D197 (the mfind instrument; one-sided timin
   stays pinned. Triage: scratch/memfn/tri-mfc604, tri-mfc608.
 - Main's combined branch lane/covs2b exists (covs2afix + main + lane/memfn-span4k + raise + READ-2/CHECK-1; pcrec abi 109 there).
   Main reserved sabotage S3260-S3275; the kit's forms lane holds S3276-S3299 (next free S3300).
-- LANE forms (opus) RUNNING since 02:17: worktrees/forms, lane/memfn-forms from lane/memfn-span4k 60c2958ae; R-45 plan A (forms
+- 03:36 FORMS DELIVERED: lane/memfn-forms @ 7506bca30 (report docs/dev/lanes/forms_report.md; width-32 movers 0; width 4095
+  movers 1 [ab]{1000}; main's probe [0-9a-f]{3400}@4095 = 24,024 B, deny refused at 510,538). IN FLIGHT: code round
+  crit-memfn-forms (opus coordinator, scratch/crit-memfn-forms/, ~2.5 h) and cloud test+axes on 7506bca30 (monread --wait
+  armed). Lane asks to rule after the round: cards' home kit-grid@7 vs kit-synthetic; the force spelling's form-hash instance
+  not built; K1/K2 text (report "Cards"); a known tuning.md conflict at landing; R28-2/3 recorded UNREACHED. Then: done line,
+  tell main head length (64, UNMEASURED until the cards run) + the probe number.
+- (history) LANE forms (opus) RAN from 02:17: worktrees/forms, lane/memfn-forms from lane/memfn-span4k 60c2958ae; R-45 plan A (forms
   I/L/H(h), span-loop PAIR row, test-only span-head=N lever, cards C1-C5 + dry run, interim h=64 labelled UNMEASURED, R28-2/3
   witnesses, K1/K2 text, main's r32 F1 probe number). lanewatch armed. CPU ends 19:30 11-17. NEXT on delivery: code round
   (coordinator), cloud test+axes, then deliver; tell main the head length + the probe number.
