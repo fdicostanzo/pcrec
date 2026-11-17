@@ -461,3 +461,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-17 1c353a118 none — lane archreview: architecture-level tree review, ARCH-STEP unit A2 (docs)
 - 2026-11-17 194b33161 none — lane rxlib: rx_module.md design note, PROPOSED rev 0 (docs)
 - 2026-11-17 88885b3a2 none — lane archgoals: architecture goals document, ARCH-STEP unit A3 (docs)
+- 2026-11-17 092e0fd1a none — predicates_draft.md rev 24 (the 11-17 rulings) (docs)
